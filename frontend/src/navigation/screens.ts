@@ -135,6 +135,9 @@ export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'integrations/ShippingView', slug: 'integrations/shipping', section: 'integrations', order: 2 },
   { key: 'integrations/EInvoiceView', slug: 'integrations/einvoice', section: 'integrations', order: 3 },
   { key: 'integrations/ErpView', slug: 'integrations/erp', section: 'integrations', order: 4 },
+  // C1.5 (F-06) bildirim merkezi. Filtreler (tür/okunma) sekme içi durumdur, URL'ye yazılmaz → `urlParams` YOK.
+  // Gerçek menü kaydı (ApplicationDB `menus`, kod `NotificationCenterView`, başlık `notifications`) yerel iştir.
+  { key: 'NotificationCenterView', slug: 'notifications', section: 'general', order: 1, icon: 'mdi-bell-outline', titleKey: 'menu.notifications' },
 ] as const
 
 /** URL'nin ilk segmenti hiçbir zaman bir ekran slug'ı OLAMAZ (ADR-0012 Karar 1 — başka uç noktalar/statikler ile çakışmasın). */

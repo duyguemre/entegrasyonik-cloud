@@ -73,6 +73,7 @@ export const useMenuStore = defineStore('menu', () => {
     ['user/ExitView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/ExitView.vue')))],
 
     ['AuthorizationListView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/AuthorizationListView.vue')))],
+    ['NotificationCenterView', shallowRef(defineAsyncComponent(() => import('@/views/secure/NotificationCenterView.vue')))],
 
   ]);
 

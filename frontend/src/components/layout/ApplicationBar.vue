@@ -52,7 +52,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, inject, ref, watch } from 'vue'
+import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { setI18nLanguage } from '@/plugins/i18n'
@@ -151,6 +151,10 @@ const logout = async () => {
 }
 
 watch(locale, (val) => setI18nLanguage(val))
+
+// C1.5: üst bar rozeti — yalnız okunmamış SAYISI yoklanır (tam liste çekmece/merkez açılınca gelir).
+onMounted(() => notificationDrawer.startPolling())
+onBeforeUnmount(() => notificationDrawer.stopPolling())
 
 defineExpose({ focusSearch: () => searchRef.value?.focus() })
 </script>
