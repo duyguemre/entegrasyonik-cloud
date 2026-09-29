@@ -18,18 +18,21 @@
  *     kapalı kalıyor, ADR-0015 Karar 5.5); yalnızca semantik anahtarlar
  *     (durum paleti + nötr/kenarlık aileleri) tam tanımlanır.
  */
-import { semanticColorsLight, semanticColorsDark } from './tokens/semantic'
 import {
-  legacyColorsLight,
-  legacyColorsDark,
-  DARK_WIRED_LEGACY_KEYS,
-} from './tokens/legacy'
+  appSemanticColorsLight,
+  appSemanticColorsDark,
+  legacyColorsWorkspaceLight,
+  legacyColorsWorkspaceDarkWired,
+} from './tokens/workspace'
 
-function pick<K extends string, V>(source: Record<K, V>, keys: readonly K[]): Record<K, V> {
-  const result = {} as Record<K, V>
-  for (const key of keys) result[key] = source[key]
-  return result
-}
+/*
+ * DS-v2 (Aşama 1) — Vuetify teması artık "workspace" (uygulama) profilinden
+ * beslenir (`tokens/workspace.ts`): paylaşılan anahtarların uygulamaya özgü
+ * değerleri + DS-v2 rolleri + DS-v2'ye eşlenmiş legacy anahtarları. Anahtar
+ * ADLARI değişmedi (hiçbiri kaldırılmadı); dark tarafta legacy kablolaması
+ * önceki gibi `DARK_WIRED_LEGACY_KEYS` ile sınırlı (dark kapısı kapalı).
+ * Site (`tokens.static.css`) bu dosyadan ETKİLENMEZ.
+ */
 
 export interface VuetifyThemeDefinition {
   dark: boolean
@@ -39,15 +42,15 @@ export interface VuetifyThemeDefinition {
 export const lightTheme: VuetifyThemeDefinition = {
   dark: false,
   colors: {
-    ...semanticColorsLight,
-    ...legacyColorsLight,
+    ...appSemanticColorsLight,
+    ...legacyColorsWorkspaceLight,
   },
 }
 
 export const darkTheme: VuetifyThemeDefinition = {
   dark: true,
   colors: {
-    ...semanticColorsDark,
-    ...pick(legacyColorsDark, DARK_WIRED_LEGACY_KEYS),
+    ...appSemanticColorsDark,
+    ...(legacyColorsWorkspaceDarkWired as Record<string, string>),
   },
 }

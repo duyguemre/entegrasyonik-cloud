@@ -18,6 +18,12 @@ import { normalizeColorMap } from './normalizeColor'
  *      13 çekirdek + dark'ta "yeni" anahtar YOKTU) — bu yüzden anahtar
  *      SAYILARI da değişti (bkz. aşağıdaki 2 test).
  *
+ * **DS-v2 Aşama 1 (2026-09-29) — ikinci bilinçli yeniden tabanlama:** tema
+ * `tokens/workspace.ts` uygulama profilinden beslenir (47 yeni rol anahtarı +
+ * paylaşılan/legacy anahtarların uygulama değerleri DS-v2'ye eşlendi; site
+ * profili değişmedi). Ayrıntı: `theme-snapshot.baseline.json` `_meta`,
+ * `frontend/DESIGN_SYSTEM.md`.
+ *
  * Normalize adımı (`normalizeColorMap`) Vuetify'ın `parseColor`/`RGBtoHex`
  * (node_modules/vuetify/lib/util/colorUtils.js) ile aynı mantığı taşır:
  * baştaki `#` isteğe bağlıdır, 3 haneli kısaltmalar 6 haneye açılır.
@@ -43,14 +49,14 @@ describe('vuetify.ts tema characterization ("sonra" durumu — ADR-0015 A1, kas�
     expect(darkTheme).toEqual(baseline.darkTheme)
   })
 
-  it('lightTheme 72 anahtar üretir (ADR-0015 A1: 28 semantik [13 çekirdek + 15 yeni] + 43 legacy anahtarın TAMAMI + Vuetify\'ın override edilmeyen tek çekirdek varsayılanı "on-surface-variant")', async () => {
+  it('lightTheme 119 anahtar üretir (DS-v2: 75 semantik [13 çekirdek + 15 ADR-0015 + 47 DS-v2] + 43 legacy anahtarın TAMAMI + Vuetify\'ın override edilmeyen tek çekirdek varsayılanı "on-surface-variant")', async () => {
     const { lightTheme } = await loadNormalizedThemes()
-    expect(Object.keys(lightTheme)).toHaveLength(72)
+    expect(Object.keys(lightTheme)).toHaveLength(119)
   })
 
-  it('darkTheme 41 anahtar üretir (ADR-0015 A1: 28 semantik [13 çekirdek + 15 yeni, TÜMÜ artık dark\'ta da kablı] + yalnızca DARK_WIRED_LEGACY_KEYS\'teki 12 legacy anahtar + "on-surface-variant")', async () => {
+  it('darkTheme 88 anahtar üretir (DS-v2: 75 semantik [TÜMÜ dark\'ta da kablı] + yalnızca DARK_WIRED_LEGACY_KEYS\'teki 12 legacy anahtar + "on-surface-variant")', async () => {
     const { darkTheme } = await loadNormalizedThemes()
-    expect(Object.keys(darkTheme)).toHaveLength(41)
+    expect(Object.keys(darkTheme)).toHaveLength(88)
   })
 
   it('GİZLİ DAVRANIŞ (şüpheli, BACKLOG.md\'de kayıtlı): darkTheme anahtar kümesi lightTheme\'in bir ALT KÜMESİ değil — ör. lightTheme\'deki "smartSearchColor", "borderColor", "amber" gibi ~35 özel anahtar darkTheme\'de HİÇ tanımlı değil (dark\'a geçildiğinde bu anahtarları kullanan sınıflar/CSS değişkenleri tanımsız kalır — ADR Bağlam madde 5, "loginColor" ile aynı kırık kalıbı). Kullanıcı anahtarı zaten kapalı (Karar 3) olduğu için bugün gözlemlenebilir bir etkisi yok; token omurgası bu anahtar kümesi eşitliğini TS tipiyle zorlayacak (Karar 1).', async () => {

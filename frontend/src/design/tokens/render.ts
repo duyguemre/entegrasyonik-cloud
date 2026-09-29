@@ -22,7 +22,24 @@ import {
   DARK_WIRED_LEGACY_KEYS,
   type LegacyColorKey,
 } from './legacy'
-import { space, radius, fontFamily, fontSize, fontWeight, lineHeight, shadow, duration, easing } from './scale'
+import {
+  space,
+  radius,
+  radiusRole,
+  fontFamily,
+  fontSize,
+  fontWeight,
+  lineHeight,
+  typeRole,
+  iconSize,
+  iconTile,
+  controlHeight,
+  shadow,
+  duration,
+  easing,
+  motionDistance,
+  zIndex,
+} from './scale'
 
 export type RenderTarget = 'app' | 'static'
 
@@ -94,7 +111,60 @@ function renderScaleLines(): string[] {
   for (const [key, value] of Object.entries(lineHeight)) lines.push(cssVarLine(`line-height-${key}`, String(value)))
   for (const [key, value] of Object.entries(duration)) lines.push(cssVarLine(`duration-${key}`, `${value}ms`))
   for (const [key, value] of Object.entries(easing)) lines.push(cssVarLine(`easing-${key}`, value))
+  return [...lines, ...renderDsV2ScaleLines()]
+}
+
+/** DS-v2 — rol token'ları (radius/tipografi/ikon/kontrol/hareket/z-index). */
+function renderDsV2ScaleLines(): string[] {
+  const lines: string[] = []
+  for (const [role, scaleKey] of Object.entries(radiusRole)) {
+    lines.push(cssVarLine(`radius-${role}`, `var(--ek-radius-${scaleKey})`))
+  }
+  for (const [role, t] of Object.entries(typeRole)) {
+    lines.push(pxLine(`type-${role}-size`, t.size))
+    lines.push(pxLine(`type-${role}-line`, t.line))
+    lines.push(cssVarLine(`type-${role}-weight`, String(t.weight)))
+    lines.push(cssVarLine(`type-${role}-tracking`, t.tracking))
+    lines.push(cssVarLine(`type-${role}-icon`, `var(--ek-icon-${t.icon})`))
+  }
+  for (const [key, value] of Object.entries(iconSize)) lines.push(pxLine(`icon-${key}`, value))
+  for (const [key, value] of Object.entries(iconTile)) {
+    lines.push(pxLine(`icon-tile-${key}`, value.box))
+    lines.push(cssVarLine(`icon-tile-${key}-icon`, `var(--ek-icon-${value.icon})`))
+  }
+  for (const [key, value] of Object.entries(controlHeight)) lines.push(pxLine(`control-h-${key}`, value))
+  for (const [key, value] of Object.entries(motionDistance)) lines.push(pxLine(`motion-distance-${key}`, value))
+  for (const [key, value] of Object.entries(zIndex)) lines.push(cssVarLine(`z-${key}`, String(value)))
+  lines.push(
+    cssVarLine(
+      'transition-colors',
+      ['color', 'background-color', 'border-color', 'box-shadow', 'opacity']
+        .map((prop) => `${prop} var(--ek-duration-fast) var(--ek-easing-enter)`)
+        .join(', '),
+    ),
+  )
   return lines
+}
+
+/**
+ * DS-v2 — renk BİLEŞİMLERİ (degrade, saydam scrim, odak halkası). Yalnızca
+ * diğer `--ek-color-*` değişkenlerine başvurur; ham renk içermez. Custom
+ * property içindeki `var()` bildirildiği öğede çözüldüğü için static çıktıda
+ * dark bloğunda da yeniden yazılır.
+ */
+function renderEffectLines(): string[] {
+  return [
+    cssVarLine(
+      'gradient-chrome',
+      'linear-gradient(100deg, var(--ek-color-chrome) 0%, var(--ek-color-chrome-end) 100%)',
+    ),
+    cssVarLine('color-scrim-veil', 'color-mix(in srgb, var(--ek-color-scrim) 44%, transparent)'),
+    cssVarLine(
+      'focus-ring',
+      '0 0 0 2px var(--ek-color-surface), 0 0 0 4px var(--ek-color-border-focus)',
+    ),
+    cssVarLine('selection-ring', 'inset 0 0 0 1px var(--ek-color-action-border)'),
+  ]
 }
 
 function renderShadowLines(light: boolean): string[] {
@@ -118,6 +188,7 @@ export function renderTokenCss(target: RenderTarget): string {
       colorLines,
       scaleLines.join('\n'),
       shadowLightLines.join('\n'),
+      renderEffectLines().join('\n'),
       '}',
       '',
     ].join('\n')
@@ -133,11 +204,13 @@ export function renderTokenCss(target: RenderTarget): string {
     lightColorLines,
     scaleLines.join('\n'),
     shadowLightLines.join('\n'),
+    renderEffectLines().join('\n'),
     '}',
     '',
     '[data-theme="dark"] {',
     darkColorLines,
     shadowDarkLines.join('\n'),
+    renderEffectLines().join('\n'),
     '}',
     '',
   ].join('\n')

@@ -162,3 +162,114 @@ export const darkAccent = {
   checkbox: '#DDDDDD',
   icon: '#1976D2',
 } as const
+
+/* ==========================================================================
+ * DS-v2 (tasarım sistemi v2, Aşama 1 — docs/design-reference/README.md brifi)
+ * --------------------------------------------------------------------------
+ * Aşağıdaki üç ölçek "workspace" (uygulama) profilinin primitifleridir.
+ * Kural değişmedi: bu değerler YALNIZCA token dosyalarında (semantic.ts,
+ * workspace.ts) kullanılır; bileşenler anlamsal `--ek-color-*` adlarını
+ * tüketir. Ölçekler 50 (en açık) → 950 (en koyu) sıralıdır.
+ * ========================================================================== */
+
+/**
+ * `ink` — nötr gri skalası. Lacivert markaya uyumlu, hafif soğuk (mavi-gri)
+ * ton. Metin, kenarlık ve yüzey katmanlarının TEK nötr kaynağı. `slate`
+ * (yukarıda) site profilinde kalır; uygulama profili `ink` kullanır.
+ */
+export const ink = {
+  0: '#FFFFFF',
+  50: '#F6F8FB',
+  100: '#EDF0F5',
+  150: '#E4E8EF',
+  200: '#D9DFE8',
+  300: '#C3CBD8',
+  400: '#99A4B5',
+  500: '#78859A',
+  600: '#505C71',
+  700: '#2F394B',
+  800: '#1F2838',
+  900: '#121A2B',
+  950: '#0A0F1A',
+} as const
+
+/**
+ * `navy` — marka (kimlik) skalası. 900 = logo laciverti (`brand.primary`,
+ * #13255B). Header/sidebar kimlik tonları ve marka öğeleri buradan gelir;
+ * aksiyon rengi DEĞİLDİR (aksiyon = `cobalt`).
+ */
+export const navy = {
+  50: '#EEF2FA',
+  100: '#DCE3F3',
+  200: '#B9C6E6',
+  300: '#8C9FD2',
+  400: '#5F78BA',
+  500: '#3E5AA0',
+  600: '#2D4787',
+  700: '#223A72',
+  800: '#1A2F63',
+  900: '#13255B',
+  950: '#0B173D',
+} as const
+
+/**
+ * `cobalt` — TEK vurgu (aksiyon) rengi skalası. Birincil düğme, etkin
+ * gösterge, odak halkası, bağlantı ve seçim burada. Lacivert kimlikle aynı
+ * aileden ama daha canlı: kimlik kabuğunun (navy) üzerinde ve açık
+ * yüzeylerde "yapılacak ana iş" rengiyle hemen bulunur.
+ * 600 beyaz metinle 6,2:1; 700 (hover) 8,2:1.
+ */
+export const cobalt = {
+  50: '#EEF3FE',
+  100: '#E1E9FC',
+  200: '#C4D3F8',
+  300: '#9BB3F1',
+  400: '#6C8BE6',
+  500: '#4A6BDD',
+  600: '#2E55D4',
+  700: '#2445B0',
+  800: '#1E3A94',
+  900: '#1B3276',
+  950: '#121F48',
+} as const
+
+/**
+ * Durum tonlarının DS-v2 tamamlayıcı adımları (mevcut `red/green/amberScale/
+ * sky` nesneleri site profilinde kullanıldığı için DEĞİŞTİRİLMEZ; eksik
+ * adımlar burada ayrı tutulur). `border` = subtle zemin üzerindeki çerçeve,
+ * `emphasis` = subtle zemin üzerindeki koyu metin (AA ≥ 7:1 hedefi).
+ */
+export const statusSteps = {
+  success: { 50: '#F0FDF4', 200: '#A7E3BC', 800: '#166534', 900: '#14532D' },
+  warning: { 50: '#FFFBEB', 200: '#F3D58A', 800: '#92400E', 900: '#78350F' },
+  error: { 50: '#FEF2F2', 200: '#F5B8B8', 800: '#991B1B', 900: '#7F1D1D' },
+  info: { 50: '#F0F9FF', 200: '#A9D8F3', 800: '#075985', 900: '#0C4A6E' },
+} as const
+
+/**
+ * Dark profil yüzeyleri ve durum dolguları (dark mode kapısı KAPALI —
+ * ADR-0011 Karar 3; değerler token katmanında TAM tanımlıdır, TS tipi
+ * zorlar). Koyu zeminde durum/aksiyon dolgusu açık tondadır; üzerindeki
+ * metin (`*-contrast`) koyu `ink.950`'dir.
+ */
+export const inkDark = {
+  canvas: '#0E131E',
+  surface: '#151B28',
+  raised: '#1B2231',
+  muted: '#1A2130',
+  sunken: '#111724',
+  rail: '#0B0F18',
+  sidebar: '#121826',
+  chromeStart: '#0B1530',
+  chromeEnd: '#132550',
+  chromeRaised: '#1C2E5E',
+  chromeBorder: '#2A3F78',
+  borderSubtle: '#222B3B',
+  borderDefault: '#2C3648',
+  borderStrong: '#3D495E',
+  borderInput: '#6D7A90',
+  textStrong: '#EEF2F8',
+  textDefault: '#CDD4E0',
+  textMuted: '#A3AEC0',
+  textSubtle: '#6D7A90',
+} as const
