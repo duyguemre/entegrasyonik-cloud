@@ -100,7 +100,7 @@ test.describe('ADR-0015 B5-3 — AuthorizationListView + UserAddComponent', () =
     await page.locator('.authorizationListView button:has(.mdi-plus)').click()
     const dialog = page.getByRole('dialog').filter({ hasText: 'Yeni Kullanıcı Ekle' })
     await expect(dialog).toBeVisible()
-    await dialog.getByLabel('İsim').fill('Yeni')
+    await dialog.getByLabel('İsim', { exact: true }).fill('Yeni')
     await dialog.getByLabel('Soyisim').fill('Personel')
     await dialog.getByLabel('E-posta Adresi').fill('yeni.personel@example.com')
     await dialog.getByRole('button', { name: 'Kaydet' }).click()
@@ -120,7 +120,7 @@ test.describe('ADR-0015 B5-3 — AuthorizationListView + UserAddComponent', () =
 
     const dialog = page.getByRole('dialog').filter({ hasText: 'Kullanıcı Düzenle' })
     await expect(dialog).toBeVisible()
-    await expect(dialog.getByLabel('İsim')).toHaveValue('Elif')
+    await expect(dialog.getByLabel('İsim', { exact: true })).toHaveValue('Elif')
   })
 
   test('yetkisiz kullanıcı: NoAuthorizationComponent gösterilir, tablo render edilmez', async ({ page }) => {
