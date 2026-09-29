@@ -2,10 +2,10 @@
   "_meta": "ADR-0011 Karar 2 / Aşama 1 literal-stil mandalı tabanı. node scripts/check-style-baseline.js --write ile üretildi (bkz. scripts/style-literal-counts.js). Hiçbir dosyada/kategoride sayı ARTAMAZ; yeni dosyalar 0 ile başlamalı; düşüş serbest ama bu dosyanın güncellenmesi gerekir (check-style-baseline.js OK dönene kadar).",
   "date": "2026-09-29",
   "totals": {
-    "total": 1615,
-    "hex": 700,
+    "total": 1554,
+    "hex": 683,
     "rgb": 234,
-    "inlineStyle": 665,
+    "inlineStyle": 621,
     "cubicBezier": 10,
     "motion": 6
   },
@@ -1083,12 +1083,12 @@
       "total": 4
     },
     "src/components/productDefinitions/crud/ProductImagesComponent.vue": {
-      "hex": 16,
+      "hex": 0,
       "rgb": 0,
-      "inlineStyle": 23,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 39
+      "total": 0
     },
     "src/components/productDefinitions/products/BatchActions/BatchActionsRootComponent.vue": {
       "hex": 0,
@@ -1189,10 +1189,10 @@
     "src/components/productDefinitions/variants/ProductDetailsComponent.vue": {
       "hex": 0,
       "rgb": 0,
-      "inlineStyle": 2,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 2
+      "total": 0
     },
     "src/components/productDefinitions/variants/ProductSearchVariantComponent.vue": {
       "hex": 0,
@@ -1203,12 +1203,12 @@
       "total": 2
     },
     "src/components/productDefinitions/variants/ProductSingleVariantComponent.vue": {
-      "hex": 1,
+      "hex": 0,
       "rgb": 0,
-      "inlineStyle": 19,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 20
+      "total": 0
     },
     "src/components/productDefinitions/variants/ProductVariantAttributesComponent.vue": {
       "hex": 1,

@@ -1,10 +1,9 @@
 <template>
 
-  <v-card variant="elevated" elevation="0" class="ma-0 pa-0" color="transparent"
-    style="transition: none!important; box-shadow: none; transform: none!important;right:0;" height="100%">
+  <v-card variant="elevated" elevation="0" class="ma-0 pa-0 pdc-s1" color="transparent" height="100%">
 
 
-    <v-card-title class="d-flex" style="display:block!important">
+    <v-card-title class="d-flex pdc-s2">
 
       <v-row>
         <v-col cols="2">
@@ -162,3 +161,20 @@ const findMaximumMarketPrice = (platforms: any) => {
 
 
 <style scoped></style>
+
+<style>
+/* ADR-0015 B5-2 — satir ici stillerden tasinan siniflar (autostyle). Satir ici stilin onceligi
+   !important ile korunur; ayni ozellikte Vuetify yardimci sinifi/`color` prop cakismasi varsa
+   (satir ici stil zaten yeniliyordu) !important eklenmez. Scope'suz: v-dialog/v-menu ve alt
+   bilesen kokleri scoped ozniteligi almayabilir; onek dosyaya ozgudur. */
+.pdc-s1 {
+  transition: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+  right: 0 !important;
+}
+
+.pdc-s2 {
+  display: block !important;
+}
+</style>

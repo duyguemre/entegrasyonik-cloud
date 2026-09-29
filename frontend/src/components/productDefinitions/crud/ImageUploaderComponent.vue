@@ -211,7 +211,9 @@ const upload = async ($event: Event) => {
 }
 
 .iuc-s3 {
-  opacity: .6 !important;
+  /* Onceden opacity .6 ile soluk gosteriliyordu (metin kontrasti AA alti) — soluk gorunum artik
+     metin rengiyle (content-muted, 4.76:1) saglanir. */
+  opacity: 1 !important;
   background-color: var(--ek-color-surface) !important;
   border-radius: 0 !important;
 }
@@ -219,5 +221,6 @@ const upload = async ($event: Event) => {
 .iuc-s4 {
   opacity: 1 !important;
   position: absolute !important;
+  color: var(--ek-color-content-muted);
 }
 </style>
