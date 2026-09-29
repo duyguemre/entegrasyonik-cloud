@@ -270,6 +270,24 @@ export const faq: FaqItem[] = [
     ],
   },
   {
+    id: 'secim-kriterleri',
+    category: 'guvenlik-veri',
+    question: 'Entegrasyon yazılımı seçerken nelere dikkat etmeliyim?',
+    answer:
+      "Karşılaştırırken dört ölçüte bakmanızı öneririz: verilerinizin hesabınıza ayrılmış bir veritabanında tutulması, pazaryeri API anahtarlarının şifreli saklanması, eşzamanlı siparişlerde stok rezervasyonu ve tanımlı olmayan işlemleri varsayılan olarak reddeden bir yetkilendirme modeli. Entegrasyonik'te her müşteri hesabı için ayrı bir veritabanı kullanılır ve API anahtarları AES-256-GCM ile şifrelenerek saklanır. Stok yalnızca mevcut adet kadar rezerve edilir; sunucuda tanımlı işlem listesinde olmayan her işlem reddedilir. Son olarak her kanalda hangi işlemlerin desteklendiğini entegrasyon sayfalarındaki kapsam tablolarından kontrol edin.",
+    evidence: [
+      evidence(PATHS.adr0003, 'ADR-0003 kiracı DB adlandırma', 'entegrasyonikClient_1'),
+      evidence('backend/src/utils/FieldCrypto.ts', 'FieldCrypto AES-256-GCM', 'aes-256-gcm'),
+      evidence(
+        'backend/tests/integration/StockAllocator.concurrency.test.ts',
+        'eşzamanlılık testi: yalnızca stok kadarı rezerve',
+        'tam 10 RESERVED + 40 OVERSOLD',
+      ),
+      evidence('backend/src/api/operationPolicy.ts', 'operationPolicy varsayılan red', 'varsayılan olarak REDDEDİLİR'),
+    ],
+    internalNotes: ['S14: rakip adı VERİLMEZ; ölçütler yalnızca kayıtlı yeteneklerdir (tenant-database, secrets-encryption, stock-reservation, default-deny).'],
+  },
+  {
     id: 'kart-bilgisi',
     category: 'guvenlik-veri',
     question: 'Kart bilgilerim Entegrasyonik\'te saklanır mı?',
@@ -390,3 +408,85 @@ export function getFaqPreview(): PublicFaqItem[] {
   })
 }
 
+
+// ---------------------------------------------------------------------------- S14: destek merkezi (/destek)
+
+/**
+ * Destek merkezi kategorileri (S14). YENİ içerik üretmez: her kategori mevcut SSS kayıtlarını (`faqIds`) ve site
+ * sayfalarını (`links`) derler; "Kanal bağlama" kategorisi ayrıca her mevcut entegrasyonun bağlantı rehberine
+ * (`/entegrasyonlar/[kod]`) bağlanır (`channelGuides`). Her SSS kaydı en az bir kategoride yer alır
+ * (tests/claims.test.ts). `lead` kısa pazarlama kopyasıdır; olgu içermez.
+ */
+export type SupportCategoryId = 'baslangic-kurulum' | 'kanal-baglama' | 'stok-siparis' | 'hesap-guvenlik' | 'fiyat-fatura'
+
+export interface SupportCategory {
+  id: SupportCategoryId
+  label: string
+  lead: string
+  icon: 'bolt' | 'plug' | 'stock' | 'shield' | 'card'
+  faqIds: string[]
+  links: Array<{ label: string; href: string }>
+  channelGuides?: boolean
+}
+
+export const SUPPORT_CATEGORIES: SupportCategory[] = [
+  {
+    id: 'baslangic-kurulum',
+    label: 'Başlangıç ve kurulum',
+    lead: 'Hesabınızı açın, kanallarınızı bağlayın ve ürünlerinizi tek merkezde toplayın.',
+    icon: 'bolt',
+    faqIds: ['nasil-baslarim', 'teknik-bilgi', 'urun-aktarimi', 'destek'],
+    links: [{ label: 'Özellikleri inceleyin', href: '/ozellikler' }],
+  },
+  {
+    id: 'kanal-baglama',
+    label: 'Kanal bağlama',
+    lead: 'Her kanal için gereken bilgiler, adım adım bağlantı rehberi ve kanal bazında kapsam.',
+    icon: 'plug',
+    faqIds: ['baglanti-bilgileri', 'hangi-entegrasyonlar', 'kapsam-ayni-mi', 'erp-baglantisi', 'yeni-kanal', 'pazaryeri-kesinti'],
+    links: [{ label: 'Tüm entegrasyonlar', href: '/entegrasyonlar' }],
+    channelGuides: true,
+  },
+  {
+    id: 'stok-siparis',
+    label: 'Stok ve sipariş',
+    lead: 'Merkezi stok, aşırı satış koruması, sipariş, iade ve kargo bildirimi.',
+    icon: 'stock',
+    faqIds: ['asiri-satis', 'stok-senkron', 'siparis-yonetimi', 'iade-soru', 'kargo-bilgisi'],
+    links: [{ label: 'Stok rezervasyonu nasıl çalışır', href: '/ozellikler/stok-rezervasyonu' }],
+  },
+  {
+    id: 'hesap-guvenlik',
+    label: 'Hesap ve güvenlik',
+    lead: 'API anahtarlarınızın, verilerinizin ve ekip yetkilerinizin nasıl korunduğu.',
+    icon: 'shield',
+    faqIds: ['anahtar-saklama', 'veri-ayrimi', 'ekip-yetki', 'kart-bilgisi', 'secim-kriterleri'],
+    links: [{ label: 'Güvenlik yaklaşımımız', href: '/guvenlik' }],
+  },
+  {
+    id: 'fiyat-fatura',
+    label: 'Fiyat ve fatura',
+    lead: 'Ücretsiz deneme, plan seçimi, plan yükseltme ve kurumsal teklif.',
+    icon: 'card',
+    faqIds: ['deneme', 'plan-secimi', 'plan-yukseltme', 'kurumsal-teklif', 'olceklenme'],
+    links: [{ label: 'Planları karşılaştırın', href: '/fiyatlandirma' }],
+  },
+]
+
+export interface PublicSupportCategory extends Omit<SupportCategory, 'faqIds'> {
+  items: PublicFaqItem[]
+}
+
+/** Sayfaların tek girişi: SSS kayıtları kimlikten çözülür (bilinmeyen kimlik derleme hatasıdır). */
+export function getSupportCategories(): PublicSupportCategory[] {
+  const all = getPublicFaq()
+  return SUPPORT_CATEGORIES.map(({ faqIds, ...c }) => ({
+    ...c,
+    links: c.links.map((l) => ({ ...l })),
+    items: faqIds.map((id) => {
+      const item = all.find((f) => f.id === id)
+      if (!item) throw new Error(`Destek merkezi: SSS kaydı bulunamadı: ${id}`)
+      return item
+    }),
+  }))
+}

@@ -1,0 +1,1636 @@
+{
+ "dashboard": {
+  "colors": [
+   [
+    "bg rgba(0, 0, 0, 0)",
+    366
+   ],
+   [
+    "fg color(srgb 0 0 0 / 0.87)",
+    198
+   ],
+   [
+    "bd color(srgb 0 0 0 / 0.87)",
+    170
+   ],
+   [
+    "fg rgb(30, 41, 59)",
+    45
+   ],
+   [
+    "bd rgb(30, 41, 59)",
+    42
+   ],
+   [
+    "bd rgb(100, 116, 139)",
+    42
+   ],
+   [
+    "fg rgb(100, 116, 139)",
+    40
+   ],
+   [
+    "fg rgb(0, 0, 0)",
+    31
+   ],
+   [
+    "bg color(srgb 0 0 0 / 0.87)",
+    31
+   ],
+   [
+    "bd rgb(0, 0, 0)",
+    30
+   ],
+   [
+    "bg rgb(255, 255, 255)",
+    28
+   ],
+   [
+    "fg rgb(71, 85, 105)",
+    27
+   ],
+   [
+    "bd rgb(226, 232, 240)",
+    26
+   ],
+   [
+    "bg rgb(66, 66, 66)",
+    26
+   ],
+   [
+    "fg rgb(238, 238, 238)",
+    26
+   ],
+   [
+    "bd rgb(238, 238, 238)",
+    26
+   ],
+   [
+    "fg rgb(255, 255, 255)",
+    24
+   ],
+   [
+    "fg rgb(239, 68, 68)",
+    22
+   ],
+   [
+    "bd rgb(255, 255, 255)",
+    21
+   ],
+   [
+    "bd rgb(71, 85, 105)",
+    20
+   ],
+   [
+    "bd rgb(148, 163, 184)",
+    20
+   ],
+   [
+    "fg rgb(148, 163, 184)",
+    19
+   ],
+   [
+    "fg rgb(51, 65, 85)",
+    15
+   ],
+   [
+    "bd rgb(51, 65, 85)",
+    15
+   ],
+   [
+    "fg rgb(37, 99, 235)",
+    15
+   ],
+   [
+    "bd rgb(239, 68, 68)",
+    15
+   ],
+   [
+    "bd rgb(37, 99, 235)",
+    13
+   ],
+   [
+    "fg rgb(248, 250, 252)",
+    11
+   ],
+   [
+    "fg rgb(245, 158, 11)",
+    10
+   ],
+   [
+    "bd rgba(0, 0, 0, 0)",
+    9
+   ],
+   [
+    "bd rgb(248, 250, 252)",
+    8
+   ],
+   [
+    "grad linear-gradient(135deg, color(srgb 0.145098 0.388235 0.921569 / 0.08) 0%, color(srgb 0.113725 0.305882 0.847059 / 0.02) 70%, rgb(255, 255, 255) 100%)",
+    8
+   ],
+   [
+    "bg rgb(239, 68, 68)",
+    8
+   ],
+   [
+    "bg rgb(37, 99, 235)",
+    8
+   ],
+   [
+    "bd rgba(0, 0, 0, 0.12)",
+    7
+   ],
+   [
+    "bd rgb(245, 158, 11)",
+    7
+   ],
+   [
+    "fg rgb(16, 185, 129)",
+    7
+   ],
+   [
+    "grad linear-gradient(135deg, rgb(37, 99, 235) 0%, color(srgb 0.137412 0.324549 0.728314) 100%)",
+    6
+   ],
+   [
+    "bd rgb(16, 185, 129)",
+    6
+   ],
+   [
+    "fg rgb(203, 213, 225)",
+    5
+   ],
+   [
+    "bg rgb(245, 158, 11)",
+    5
+   ],
+   [
+    "fg rgb(59, 130, 246)",
+    5
+   ],
+   [
+    "fg rgb(124, 58, 237)",
+    5
+   ],
+   [
+    "bd rgb(124, 58, 237)",
+    5
+   ],
+   [
+    "bd rgb(59, 130, 246)",
+    4
+   ],
+   [
+    "bg rgb(248, 250, 252)",
+    3
+   ],
+   [
+    "bd rgb(203, 213, 225)",
+    3
+   ],
+   [
+    "bg rgb(254, 242, 242)",
+    3
+   ],
+   [
+    "bd rgb(254, 202, 202)",
+    3
+   ],
+   [
+    "bg color(srgb 0.948627 0.922745 0.992941)",
+    3
+   ],
+   [
+    "fg rgba(255, 255, 255, 0.7)",
+    2
+   ],
+   [
+    "bg color(srgb 1 1 1 / 0.1)",
+    2
+   ],
+   [
+    "bd color(srgb 1 1 1 / 0.16)",
+    2
+   ],
+   [
+    "fg rgb(194, 65, 12)",
+    2
+   ],
+   [
+    "bd rgb(194, 65, 12)",
+    2
+   ],
+   [
+    "bg rgb(241, 245, 249)",
+    2
+   ],
+   [
+    "bg rgb(239, 246, 255)",
+    2
+   ],
+   [
+    "bd rgb(219, 234, 254)",
+    2
+   ],
+   [
+    "bg rgb(59, 130, 246)",
+    2
+   ],
+   [
+    "bg rgb(255, 251, 235)",
+    2
+   ]
+  ],
+  "fonts": [
+   [
+    "Roboto, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Ubuntu, Helvetica, Arial, sans-serif",
+    506
+   ],
+   [
+    "Roboto, sans-serif",
+    7
+   ]
+  ],
+  "fontSizes": [
+   [
+    "16px/400",
+    246
+   ],
+   [
+    "14px/400",
+    43
+   ],
+   [
+    "12px/600",
+    33
+   ],
+   [
+    "13px/400",
+    24
+   ],
+   [
+    "13px/500",
+    23
+   ],
+   [
+    "14px/700",
+    18
+   ],
+   [
+    "11px/700",
+    17
+   ],
+   [
+    "10px/600",
+    16
+   ],
+   [
+    "22px/400",
+    12
+   ],
+   [
+    "9.5px/600",
+    11
+   ],
+   [
+    "17px/500",
+    7
+   ],
+   [
+    "12px/400",
+    7
+   ],
+   [
+    "11px/800",
+    7
+   ],
+   [
+    "13px/600",
+    6
+   ],
+   [
+    "16px/500",
+    6
+   ],
+   [
+    "12px/700",
+    6
+   ],
+   [
+    "9px/600",
+    5
+   ],
+   [
+    "12.5px/600",
+    4
+   ],
+   [
+    "10.5px/800",
+    4
+   ],
+   [
+    "17px/600",
+    2
+   ],
+   [
+    "20px/400",
+    2
+   ],
+   [
+    "9px/700",
+    2
+   ],
+   [
+    "24px/400",
+    2
+   ],
+   [
+    "14px/800",
+    2
+   ],
+   [
+    "11px/400",
+    1
+   ]
+  ],
+  "radii": [
+   [
+    "4px",
+    43
+   ],
+   [
+    "8px",
+    39
+   ],
+   [
+    "50%",
+    31
+   ],
+   [
+    "12px",
+    17
+   ],
+   [
+    "7px",
+    8
+   ],
+   [
+    "6px",
+    4
+   ],
+   [
+    "99px",
+    4
+   ],
+   [
+    "10px",
+    1
+   ]
+  ],
+  "shadows": [
+   [
+    "color(srgb 1 1 1 / 0.25) 0px 1px 0px 0px inset",
+    6
+   ],
+   [
+    "color(srgb 0.486275 0.227451 0.929412 / 0.18) 0px 0px 0px 1px inset",
+    2
+   ],
+   [
+    "color(srgb 0.145098 0.388235 0.921569 / 0.18) 0px 0px 0px 1px inset",
+    2
+   ],
+   [
+    "color(srgb 0.0627451 0.72549 0.505882 / 0.18) 0px 0px 0px 1px inset",
+    2
+   ],
+   [
+    "rgba(255, 255, 255, 0.2) 0px 1px 0px 0px inset, rgba(0, 0, 0, 0.2) 0px 2px 6px 0px",
+    1
+   ],
+   [
+    "color(srgb 1 1 1 / 0.14) 0px 1px 0px 0px inset",
+    1
+   ],
+   [
+    "rgba(15, 23, 42, 0.12) 0px 3px 10px 0px",
+    1
+   ],
+   [
+    "color(srgb 0.117647 0.160784 0.231373 / 0.05) 0px 1px 2px 0px",
+    1
+   ],
+   [
+    "color(srgb 0.960784 0.619608 0.0431373 / 0.65) 0px 3px 8px -3px",
+    1
+   ],
+   [
+    "color(srgb 0.231373 0.509804 0.964706 / 0.65) 0px 3px 8px -3px",
+    1
+   ],
+   [
+    "rgba(37, 99, 235, 0.08) -4px 12px 24px 0px",
+    1
+   ],
+   [
+    "rgb(241, 245, 249) 0px 0px 0px 1px, color(srgb 0.117647 0.160784 0.231373 / 0.4) 0px 6px 16px -12px",
+    1
+   ]
+  ],
+  "cssVars": {
+   "--ref-color-primary": "#2563eb",
+   "--ref-color-primary-hover": "#1d4ed8",
+   "--ref-color-accent": "#ea580c",
+   "--ref-color-accent-hover": "#c2410c",
+   "--ref-color-secondary": "#1e40af",
+   "--ref-color-success": "#10b981",
+   "--ref-color-warning": "#f59e0b",
+   "--ref-color-error": "#ef4444",
+   "--ref-color-info": "#3b82f6",
+   "--ref-color-site-blue": "#2563eb",
+   "--ref-gradient-panel-header": "linear-gradient(\n    135deg,\n    color-mix(in srgb, var(--ref-color-primary) 8%, transparent) 0%,\n    color-mix(in srgb, var(--ref-color-primary-hover) 2%, transparent) 70%,\n    var(--ref-color-surface) 100%\n  )",
+   "--ref-color-panel-header-line": "color-mix(in srgb, var(--ref-color-primary) 16%, transparent)",
+   "--ref-gradient-topbar": "linear-gradient(180deg, color-mix(in srgb, var(--ref-color-secondary) 35%, transparent) 0%, color-mix(in srgb, var(--ref-color-site-blue) 35%, transparent) 100%),\n    linear-gradient(\n      to right,\n      color-mix(in srgb, var(--ref-color-secondary) 78%, var(--ref-color-text-primary)) 0%,\n      var(--ref-color-site-blue) 60%,\n      color-mix(in srgb, var(--ref-color-site-blue) 65%, var(--ref-color-info)) 100%\n    )",
+   "--ref-color-neutral": "#64748b",
+   "--ref-color-background": "#f8fafc",
+   "--ref-color-surface": "#ffffff",
+   "--ref-color-text-primary": "#1e293b",
+   "--ref-color-border": "#cbd5e1",
+   "--ref-color-border-active": "#94a3b8",
+   "--ref-color-slate-100": "#f1f5f9",
+   "--ref-color-slate-200": "#e2e8f0",
+   "--ref-color-slate-600": "#475569",
+   "--ref-color-slate-700": "#334155",
+   "--ref-color-muted-blue": "#4a78c2",
+   "--ref-color-info-tint-bg": "#eff6ff",
+   "--ref-color-info-tint-border": "#dbeafe",
+   "--ref-color-success-tint-bg": "#ecfdf5",
+   "--ref-color-success-tint-border": "#d1fae5",
+   "--ref-color-success-tint-text": "#065f46",
+   "--ref-color-success-tint-text-strong": "#064e3b",
+   "--ref-color-warning-tint-bg": "#fffbeb",
+   "--ref-color-warning-tint-border": "#fde68a",
+   "--ref-color-warning-tint-text": "#92400e",
+   "--ref-color-warning-tint-text-strong": "#78350f",
+   "--ref-color-error-tint-bg": "#fef2f2",
+   "--ref-color-error-tint-border": "#fecaca",
+   "--ref-color-error-tint-text": "#991b1b",
+   "--ref-color-error-tint-text-strong": "#7f1d1d",
+   "--ref-font-size-base": "13px",
+   "--ref-text-heading-size": "calc(var(--font-scale, 1) * 20px)",
+   "--ref-text-heading-weight": "700",
+   "--ref-text-subheading-size": "calc(var(--font-scale, 1) * 15px)",
+   "--ref-text-subheading-weight": "600",
+   "--ref-text-body-size": "calc(var(--font-scale, 1) * 13px)",
+   "--ref-text-body-weight": "400",
+   "--ref-text-secondary-size": "calc(var(--font-scale, 1) * 12px)",
+   "--ref-text-secondary-weight": "500",
+   "--ref-text-label-size": "calc(var(--font-scale, 1) * 10.5px)",
+   "--ref-text-label-weight": "700",
+   "--ref-weight-regular": "400",
+   "--ref-weight-medium": "500",
+   "--ref-weight-semibold": "600",
+   "--ref-weight-bold": "700",
+   "--ref-weight-black": "800",
+   "--ref-shadow-sm": "0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.08)",
+   "--ref-shadow-md": "0 4px 10px -2px rgba(15, 23, 42, 0.10), 0 2px 6px -2px rgba(15, 23, 42, 0.08)",
+   "--ref-shadow-lg": "0 12px 28px -8px rgba(15, 23, 42, 0.16), 0 4px 12px -4px rgba(15, 23, 42, 0.10)",
+   "--ref-header-strip-height": "34px",
+   "--radius-sm": "6px",
+   "--radius-md": "8px",
+   "--radius-lg": "12px",
+   "--radius-pill": "99px",
+   "--radius-circle": "50%",
+   "--ref-control-height": "32px",
+   "--ref-button-height": "var(--ref-control-height, 32px)",
+   "--hover-orange-bg": "#ffedd5",
+   "--scrollbar-thumb": "rgba(37, 99, 235, 0.18)",
+   "--scrollbar-thumb-hover": "rgba(37, 99, 235, 0.32)",
+   "--font-scale": "1",
+   "--font-family-base": "'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Ubuntu', Helvetica, Arial, sans-serif",
+   "--font-family-mono": "'Roboto Mono', 'Cascadia Code', 'Consolas', 'SFMono-Regular', monospace"
+  }
+ },
+ "menu": {
+  "colors": [
+   [
+    "bg rgba(0, 0, 0, 0)",
+    502
+   ],
+   [
+    "fg color(srgb 0 0 0 / 0.87)",
+    198
+   ],
+   [
+    "bd color(srgb 0 0 0 / 0.87)",
+    170
+   ],
+   [
+    "fg rgb(71, 85, 105)",
+    123
+   ],
+   [
+    "bd rgb(71, 85, 105)",
+    84
+   ],
+   [
+    "bd rgb(148, 163, 184)",
+    52
+   ],
+   [
+    "fg rgb(148, 163, 184)",
+    51
+   ],
+   [
+    "bd rgb(100, 116, 139)",
+    48
+   ],
+   [
+    "bd rgba(0, 0, 0, 0)",
+    47
+   ],
+   [
+    "fg rgb(100, 116, 139)",
+    46
+   ],
+   [
+    "fg rgb(0, 0, 0)",
+    45
+   ],
+   [
+    "fg rgb(30, 41, 59)",
+    45
+   ],
+   [
+    "bd rgb(0, 0, 0)",
+    43
+   ],
+   [
+    "bd rgb(30, 41, 59)",
+    42
+   ],
+   [
+    "bg rgb(255, 255, 255)",
+    33
+   ],
+   [
+    "bg rgb(16, 185, 129)",
+    33
+   ],
+   [
+    "bg color(srgb 0 0 0 / 0.87)",
+    31
+   ],
+   [
+    "fg rgb(255, 255, 255)",
+    28
+   ],
+   [
+    "bd rgb(226, 232, 240)",
+    26
+   ],
+   [
+    "bg rgb(66, 66, 66)",
+    26
+   ],
+   [
+    "fg rgb(238, 238, 238)",
+    26
+   ],
+   [
+    "bd rgb(238, 238, 238)",
+    26
+   ],
+   [
+    "bd rgb(255, 255, 255)",
+    23
+   ],
+   [
+    "fg rgb(239, 68, 68)",
+    22
+   ],
+   [
+    "fg rgb(124, 139, 160)",
+    18
+   ],
+   [
+    "fg rgb(51, 65, 85)",
+    15
+   ],
+   [
+    "bd rgb(51, 65, 85)",
+    15
+   ],
+   [
+    "fg rgb(37, 99, 235)",
+    15
+   ],
+   [
+    "bd rgb(239, 68, 68)",
+    15
+   ],
+   [
+    "fg rgb(30, 64, 175)",
+    14
+   ],
+   [
+    "bd rgb(37, 99, 235)",
+    13
+   ],
+   [
+    "bd rgb(30, 64, 175)",
+    12
+   ],
+   [
+    "bd rgb(124, 139, 160)",
+    12
+   ],
+   [
+    "fg rgb(248, 250, 252)",
+    11
+   ],
+   [
+    "fg rgb(245, 158, 11)",
+    10
+   ],
+   [
+    "bd rgb(248, 250, 252)",
+    8
+   ],
+   [
+    "grad linear-gradient(135deg, color(srgb 0.145098 0.388235 0.921569 / 0.08) 0%, color(srgb 0.113725 0.305882 0.847059 / 0.02) 70%, rgb(255, 255, 255) 100%)",
+    8
+   ],
+   [
+    "bg rgb(239, 68, 68)",
+    8
+   ],
+   [
+    "bg rgb(37, 99, 235)",
+    8
+   ],
+   [
+    "bg rgba(100, 116, 139, 0.1)",
+    8
+   ],
+   [
+    "bd rgba(0, 0, 0, 0.12)",
+    7
+   ],
+   [
+    "bd rgb(245, 158, 11)",
+    7
+   ],
+   [
+    "fg rgb(16, 185, 129)",
+    7
+   ],
+   [
+    "bg rgb(248, 250, 252)",
+    6
+   ],
+   [
+    "grad linear-gradient(135deg, rgb(37, 99, 235) 0%, color(srgb 0.137412 0.324549 0.728314) 100%)",
+    6
+   ],
+   [
+    "bd rgb(16, 185, 129)",
+    6
+   ],
+   [
+    "fg rgb(203, 213, 225)",
+    5
+   ],
+   [
+    "bg rgb(245, 158, 11)",
+    5
+   ],
+   [
+    "fg rgb(59, 130, 246)",
+    5
+   ],
+   [
+    "fg rgb(124, 58, 237)",
+    5
+   ],
+   [
+    "bd rgb(124, 58, 237)",
+    5
+   ],
+   [
+    "fg rgba(255, 255, 255, 0.7)",
+    4
+   ],
+   [
+    "bd rgb(59, 130, 246)",
+    4
+   ],
+   [
+    "bd rgba(255, 255, 255, 0.15)",
+    3
+   ],
+   [
+    "bd rgb(203, 213, 225)",
+    3
+   ],
+   [
+    "bg rgb(254, 242, 242)",
+    3
+   ],
+   [
+    "bd rgb(254, 202, 202)",
+    3
+   ],
+   [
+    "bg color(srgb 0.948627 0.922745 0.992941)",
+    3
+   ],
+   [
+    "grad linear-gradient(color(srgb 0.117647 0.25098 0.686275 / 0.35) 0%, color(srgb 0.145098 0.388235 0.921569 / 0.35) 100%), linear-gradient(to right, color(srgb 0.117",
+    2
+   ],
+   [
+    "bd rgba(255, 255, 255, 0.7)",
+    2
+   ]
+  ],
+  "fonts": [
+   [
+    "Roboto, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Ubuntu, Helvetica, Arial, sans-serif",
+    694
+   ],
+   [
+    "Roboto, sans-serif",
+    7
+   ]
+  ],
+  "fontSizes": [
+   [
+    "16px/400",
+    260
+   ],
+   [
+    "12.5px/600",
+    100
+   ],
+   [
+    "14px/400",
+    43
+   ],
+   [
+    "13px/600",
+    38
+   ],
+   [
+    "12px/600",
+    33
+   ],
+   [
+    "13px/400",
+    29
+   ],
+   [
+    "13px/500",
+    23
+   ],
+   [
+    "14px/700",
+    18
+   ],
+   [
+    "11px/700",
+    17
+   ],
+   [
+    "10px/600",
+    16
+   ],
+   [
+    "12.5px/700",
+    16
+   ],
+   [
+    "10px/700",
+    14
+   ],
+   [
+    "22px/400",
+    12
+   ],
+   [
+    "9.5px/600",
+    11
+   ],
+   [
+    "13px/700",
+    8
+   ],
+   [
+    "17px/500",
+    7
+   ],
+   [
+    "12px/400",
+    7
+   ],
+   [
+    "11px/800",
+    7
+   ],
+   [
+    "16px/500",
+    6
+   ],
+   [
+    "12px/700",
+    6
+   ],
+   [
+    "9px/600",
+    5
+   ],
+   [
+    "10.5px/800",
+    4
+   ],
+   [
+    "17px/600",
+    2
+   ],
+   [
+    "20px/400",
+    2
+   ],
+   [
+    "9px/700",
+    2
+   ]
+  ],
+  "radii": [
+   [
+    "8px",
+    79
+   ],
+   [
+    "50%",
+    64
+   ],
+   [
+    "4px",
+    43
+   ],
+   [
+    "12px",
+    18
+   ],
+   [
+    "6px",
+    13
+   ],
+   [
+    "7px",
+    8
+   ],
+   [
+    "99px",
+    4
+   ],
+   [
+    "10px",
+    2
+   ],
+   [
+    "9px",
+    1
+   ]
+  ],
+  "shadows": [
+   [
+    "rgb(16, 185, 129) 0px 0px 6px 0px",
+    32
+   ],
+   [
+    "color(srgb 1 1 1 / 0.25) 0px 1px 0px 0px inset",
+    6
+   ],
+   [
+    "color(srgb 0.486275 0.227451 0.929412 / 0.18) 0px 0px 0px 1px inset",
+    2
+   ],
+   [
+    "color(srgb 0.145098 0.388235 0.921569 / 0.18) 0px 0px 0px 1px inset",
+    2
+   ],
+   [
+    "color(srgb 0.0627451 0.72549 0.505882 / 0.18) 0px 0px 0px 1px inset",
+    2
+   ],
+   [
+    "rgba(37, 99, 235, 0.06) 0px 2px 4px 0px",
+    2
+   ],
+   [
+    "rgba(255, 255, 255, 0.2) 0px 1px 0px 0px inset, rgba(0, 0, 0, 0.2) 0px 2px 6px 0px",
+    1
+   ],
+   [
+    "color(srgb 1 1 1 / 0.14) 0px 1px 0px 0px inset",
+    1
+   ],
+   [
+    "rgba(15, 23, 42, 0.12) 0px 3px 10px 0px",
+    1
+   ],
+   [
+    "color(srgb 0.117647 0.160784 0.231373 / 0.05) 0px 1px 2px 0px",
+    1
+   ],
+   [
+    "color(srgb 0.960784 0.619608 0.0431373 / 0.65) 0px 3px 8px -3px",
+    1
+   ],
+   [
+    "color(srgb 0.231373 0.509804 0.964706 / 0.65) 0px 3px 8px -3px",
+    1
+   ]
+  ],
+  "cssVars": {
+   "--ref-color-primary": "#2563eb",
+   "--ref-color-primary-hover": "#1d4ed8",
+   "--ref-color-accent": "#ea580c",
+   "--ref-color-accent-hover": "#c2410c",
+   "--ref-color-secondary": "#1e40af",
+   "--ref-color-success": "#10b981",
+   "--ref-color-warning": "#f59e0b",
+   "--ref-color-error": "#ef4444",
+   "--ref-color-info": "#3b82f6",
+   "--ref-color-site-blue": "#2563eb",
+   "--ref-gradient-panel-header": "linear-gradient(\n    135deg,\n    color-mix(in srgb, var(--ref-color-primary) 8%, transparent) 0%,\n    color-mix(in srgb, var(--ref-color-primary-hover) 2%, transparent) 70%,\n    var(--ref-color-surface) 100%\n  )",
+   "--ref-color-panel-header-line": "color-mix(in srgb, var(--ref-color-primary) 16%, transparent)",
+   "--ref-gradient-topbar": "linear-gradient(180deg, color-mix(in srgb, var(--ref-color-secondary) 35%, transparent) 0%, color-mix(in srgb, var(--ref-color-site-blue) 35%, transparent) 100%),\n    linear-gradient(\n      to right,\n      color-mix(in srgb, var(--ref-color-secondary) 78%, var(--ref-color-text-primary)) 0%,\n      var(--ref-color-site-blue) 60%,\n      color-mix(in srgb, var(--ref-color-site-blue) 65%, var(--ref-color-info)) 100%\n    )",
+   "--ref-color-neutral": "#64748b",
+   "--ref-color-background": "#f8fafc",
+   "--ref-color-surface": "#ffffff",
+   "--ref-color-text-primary": "#1e293b",
+   "--ref-color-border": "#cbd5e1",
+   "--ref-color-border-active": "#94a3b8",
+   "--ref-color-slate-100": "#f1f5f9",
+   "--ref-color-slate-200": "#e2e8f0",
+   "--ref-color-slate-600": "#475569",
+   "--ref-color-slate-700": "#334155",
+   "--ref-color-muted-blue": "#4a78c2",
+   "--ref-color-info-tint-bg": "#eff6ff",
+   "--ref-color-info-tint-border": "#dbeafe",
+   "--ref-color-success-tint-bg": "#ecfdf5",
+   "--ref-color-success-tint-border": "#d1fae5",
+   "--ref-color-success-tint-text": "#065f46",
+   "--ref-color-success-tint-text-strong": "#064e3b",
+   "--ref-color-warning-tint-bg": "#fffbeb",
+   "--ref-color-warning-tint-border": "#fde68a",
+   "--ref-color-warning-tint-text": "#92400e",
+   "--ref-color-warning-tint-text-strong": "#78350f",
+   "--ref-color-error-tint-bg": "#fef2f2",
+   "--ref-color-error-tint-border": "#fecaca",
+   "--ref-color-error-tint-text": "#991b1b",
+   "--ref-color-error-tint-text-strong": "#7f1d1d",
+   "--ref-font-size-base": "13px",
+   "--ref-text-heading-size": "calc(var(--font-scale, 1) * 20px)",
+   "--ref-text-heading-weight": "700",
+   "--ref-text-subheading-size": "calc(var(--font-scale, 1) * 15px)",
+   "--ref-text-subheading-weight": "600",
+   "--ref-text-body-size": "calc(var(--font-scale, 1) * 13px)",
+   "--ref-text-body-weight": "400",
+   "--ref-text-secondary-size": "calc(var(--font-scale, 1) * 12px)",
+   "--ref-text-secondary-weight": "500",
+   "--ref-text-label-size": "calc(var(--font-scale, 1) * 10.5px)",
+   "--ref-text-label-weight": "700",
+   "--ref-weight-regular": "400",
+   "--ref-weight-medium": "500",
+   "--ref-weight-semibold": "600",
+   "--ref-weight-bold": "700",
+   "--ref-weight-black": "800",
+   "--ref-shadow-sm": "0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.08)",
+   "--ref-shadow-md": "0 4px 10px -2px rgba(15, 23, 42, 0.10), 0 2px 6px -2px rgba(15, 23, 42, 0.08)",
+   "--ref-shadow-lg": "0 12px 28px -8px rgba(15, 23, 42, 0.16), 0 4px 12px -4px rgba(15, 23, 42, 0.10)",
+   "--ref-header-strip-height": "34px",
+   "--radius-sm": "6px",
+   "--radius-md": "8px",
+   "--radius-lg": "12px",
+   "--radius-pill": "99px",
+   "--radius-circle": "50%",
+   "--ref-control-height": "32px",
+   "--ref-button-height": "var(--ref-control-height, 32px)",
+   "--hover-orange-bg": "#ffedd5",
+   "--scrollbar-thumb": "rgba(37, 99, 235, 0.18)",
+   "--scrollbar-thumb-hover": "rgba(37, 99, 235, 0.32)",
+   "--font-scale": "1",
+   "--font-family-base": "'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Ubuntu', Helvetica, Arial, sans-serif",
+   "--font-family-mono": "'Roboto Mono', 'Cascadia Code', 'Consolas', 'SFMono-Regular', monospace"
+  }
+ },
+ "list": {
+  "colors": [
+   [
+    "bg rgba(0, 0, 0, 0)",
+    118
+   ],
+   [
+    "fg rgb(0, 0, 0)",
+    29
+   ],
+   [
+    "bd rgb(0, 0, 0)",
+    29
+   ],
+   [
+    "bg rgb(66, 66, 66)",
+    26
+   ],
+   [
+    "fg rgb(238, 238, 238)",
+    26
+   ],
+   [
+    "bd rgb(238, 238, 238)",
+    26
+   ],
+   [
+    "fg rgb(30, 41, 59)",
+    20
+   ],
+   [
+    "fg rgb(255, 255, 255)",
+    20
+   ],
+   [
+    "bd rgb(30, 41, 59)",
+    16
+   ],
+   [
+    "bd rgb(255, 255, 255)",
+    16
+   ],
+   [
+    "fg rgb(100, 116, 139)",
+    13
+   ],
+   [
+    "bd rgb(100, 116, 139)",
+    13
+   ],
+   [
+    "fg rgb(71, 85, 105)",
+    12
+   ],
+   [
+    "fg rgb(248, 250, 252)",
+    11
+   ],
+   [
+    "fg rgb(37, 99, 235)",
+    10
+   ],
+   [
+    "bd rgba(0, 0, 0, 0)",
+    9
+   ],
+   [
+    "bd rgb(37, 99, 235)",
+    9
+   ],
+   [
+    "bd rgb(248, 250, 252)",
+    8
+   ],
+   [
+    "bd rgb(71, 85, 105)",
+    6
+   ],
+   [
+    "fg color(srgb 0 0 0 / 0.87)",
+    5
+   ],
+   [
+    "bd color(srgb 0 0 0 / 0.87)",
+    5
+   ],
+   [
+    "fg rgb(203, 213, 225)",
+    5
+   ],
+   [
+    "bd rgb(203, 213, 225)",
+    4
+   ],
+   [
+    "bg rgb(255, 255, 255)",
+    4
+   ],
+   [
+    "bg rgb(248, 250, 252)",
+    3
+   ],
+   [
+    "fg rgba(255, 255, 255, 0.7)",
+    2
+   ],
+   [
+    "bg color(srgb 1 1 1 / 0.1)",
+    2
+   ],
+   [
+    "bd color(srgb 1 1 1 / 0.16)",
+    2
+   ],
+   [
+    "fg rgb(194, 65, 12)",
+    2
+   ],
+   [
+    "bd rgb(194, 65, 12)",
+    2
+   ],
+   [
+    "bg rgb(241, 245, 249)",
+    2
+   ],
+   [
+    "fg rgb(51, 65, 85)",
+    2
+   ],
+   [
+    "bd rgb(51, 65, 85)",
+    2
+   ],
+   [
+    "grad linear-gradient(color(srgb 0.117647 0.25098 0.686275 / 0.35) 0%, color(srgb 0.145098 0.388235 0.921569 / 0.35) 100%), linear-gradient(to right, color(srgb 0.117",
+    1
+   ],
+   [
+    "bg rgba(255, 255, 255, 0.1)",
+    1
+   ],
+   [
+    "bd rgba(255, 255, 255, 0.15)",
+    1
+   ],
+   [
+    "bg rgba(59, 130, 246, 0.35)",
+    1
+   ],
+   [
+    "bd rgba(96, 165, 250, 0.4)",
+    1
+   ],
+   [
+    "bd rgba(255, 255, 255, 0.7)",
+    1
+   ],
+   [
+    "fg color(srgb 0.73098 0.828431 0.987647)",
+    1
+   ],
+   [
+    "bd color(srgb 1 1 1 / 0.18)",
+    1
+   ],
+   [
+    "grad linear-gradient(color(srgb 1 1 1 / 0.15) 0%, color(srgb 1 1 1 / 0.08) 100%)",
+    1
+   ],
+   [
+    "fg color(srgb 1 1 1 / 0.75)",
+    1
+   ],
+   [
+    "bg rgb(234, 88, 12)",
+    1
+   ],
+   [
+    "bd rgba(255, 255, 255, 0.3)",
+    1
+   ],
+   [
+    "bg rgb(34, 197, 94)",
+    1
+   ],
+   [
+    "bd rgb(30, 58, 138)",
+    1
+   ],
+   [
+    "fg rgba(255, 255, 255, 0.65)",
+    1
+   ],
+   [
+    "bd rgba(255, 255, 255, 0.65)",
+    1
+   ],
+   [
+    "bg rgb(255, 237, 213)",
+    1
+   ],
+   [
+    "bd rgb(226, 232, 240)",
+    1
+   ],
+   [
+    "grad linear-gradient(135deg, rgb(245, 158, 11) 0%, color(srgb 0.724706 0.491137 0.0958431) 100%)",
+    1
+   ],
+   [
+    "grad linear-gradient(rgb(255, 255, 255) 0%, color(srgb 0.980784 0.986275 0.991765) 100%)",
+    1
+   ],
+   [
+    "fg color(srgb 0.401569 0.571765 0.945098)",
+    1
+   ],
+   [
+    "bd color(srgb 0.401569 0.571765 0.945098)",
+    1
+   ],
+   [
+    "grad linear-gradient(135deg, rgb(59, 130, 246) 0%, color(srgb 0.199529 0.412078 0.759373) 100%)",
+    1
+   ],
+   [
+    "bd color(srgb 0.449804 0.563922 0.781569)",
+    1
+   ],
+   [
+    "grad linear-gradient(color(srgb 0.914627 0.938941 0.983569) 0%, rgb(248, 250, 252) 16px)",
+    1
+   ],
+   [
+    "bd rgb(148, 163, 184)",
+    1
+   ],
+   [
+    "grad linear-gradient(rgb(239, 246, 255) 0%, rgb(219, 234, 254) 100%)",
+    1
+   ]
+  ],
+  "fonts": [
+   [
+    "Roboto, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Ubuntu, Helvetica, Arial, sans-serif",
+    154
+   ],
+   [
+    "Roboto, sans-serif",
+    7
+   ]
+  ],
+  "fontSizes": [
+   [
+    "16px/400",
+    63
+   ],
+   [
+    "14px/400",
+    28
+   ],
+   [
+    "13px/500",
+    22
+   ],
+   [
+    "13px/600",
+    7
+   ],
+   [
+    "17px/500",
+    7
+   ],
+   [
+    "16px/500",
+    5
+   ],
+   [
+    "13px/700",
+    5
+   ],
+   [
+    "13px/400",
+    4
+   ],
+   [
+    "12.5px/600",
+    4
+   ],
+   [
+    "34px/400",
+    3
+   ],
+   [
+    "17px/600",
+    2
+   ],
+   [
+    "20px/400",
+    2
+   ],
+   [
+    "9px/700",
+    1
+   ],
+   [
+    "11px/400",
+    1
+   ],
+   [
+    "10px/400",
+    1
+   ],
+   [
+    "15px/600",
+    1
+   ],
+   [
+    "14px/600",
+    1
+   ],
+   [
+    "16px/600",
+    1
+   ],
+   [
+    "18px/600",
+    1
+   ],
+   [
+    "16.7143px/700",
+    1
+   ],
+   [
+    "22.75px/500",
+    1
+   ]
+  ],
+  "radii": [
+   [
+    "4px",
+    26
+   ],
+   [
+    "50%",
+    14
+   ],
+   [
+    "8px",
+    12
+   ],
+   [
+    "6px",
+    4
+   ],
+   [
+    "7px",
+    2
+   ],
+   [
+    "10px",
+    1
+   ],
+   [
+    "99px",
+    1
+   ],
+   [
+    "12px",
+    1
+   ]
+  ],
+  "shadows": [
+   [
+    "rgba(255, 255, 255, 0.2) 0px 1px 0px 0px inset, rgba(0, 0, 0, 0.2) 0px 2px 6px 0px",
+    1
+   ],
+   [
+    "color(srgb 1 1 1 / 0.14) 0px 1px 0px 0px inset",
+    1
+   ],
+   [
+    "rgba(15, 23, 42, 0.12) 0px 3px 10px 0px",
+    1
+   ],
+   [
+    "color(srgb 0.117647 0.160784 0.231373 / 0.05) 0px 1px 2px 0px",
+    1
+   ],
+   [
+    "color(srgb 0.960784 0.619608 0.0431373 / 0.65) 0px 3px 8px -3px",
+    1
+   ],
+   [
+    "color(srgb 0.231373 0.509804 0.964706 / 0.65) 0px 3px 8px -3px",
+    1
+   ],
+   [
+    "rgba(37, 99, 235, 0.08) -4px 12px 24px 0px",
+    1
+   ],
+   [
+    "color(srgb 0.117647 0.160784 0.231373 / 0.04) 0px 1px 2px 0px, color(srgb 0.117647 0.160784 0.231373 / 0.12) 0px 12px 32px -8px",
+    1
+   ],
+   [
+    "rgba(0, 0, 0, 0.3) 0px 0px 0px 0px, rgba(0, 0, 0, 0.15) 0px 0px 0px 0px",
+    1
+   ],
+   [
+    "color(srgb 1 1 1 / 0.35) 0px 1px 0px 0px inset, color(srgb 0.145098 0.388235 0.921569 / 0.65) 0px 10px 26px -6px, color(srgb 0.117647 0.160784 0.231373 / 0.18) 0px 2px 6px 0px",
+    1
+   ]
+  ],
+  "cssVars": {
+   "--ref-color-primary": "#2563eb",
+   "--ref-color-primary-hover": "#1d4ed8",
+   "--ref-color-accent": "#ea580c",
+   "--ref-color-accent-hover": "#c2410c",
+   "--ref-color-secondary": "#1e40af",
+   "--ref-color-success": "#10b981",
+   "--ref-color-warning": "#f59e0b",
+   "--ref-color-error": "#ef4444",
+   "--ref-color-info": "#3b82f6",
+   "--ref-color-site-blue": "#2563eb",
+   "--ref-gradient-panel-header": "linear-gradient(\n    135deg,\n    color-mix(in srgb, var(--ref-color-primary) 8%, transparent) 0%,\n    color-mix(in srgb, var(--ref-color-primary-hover) 2%, transparent) 70%,\n    var(--ref-color-surface) 100%\n  )",
+   "--ref-color-panel-header-line": "color-mix(in srgb, var(--ref-color-primary) 16%, transparent)",
+   "--ref-gradient-topbar": "linear-gradient(180deg, color-mix(in srgb, var(--ref-color-secondary) 35%, transparent) 0%, color-mix(in srgb, var(--ref-color-site-blue) 35%, transparent) 100%),\n    linear-gradient(\n      to right,\n      color-mix(in srgb, var(--ref-color-secondary) 78%, var(--ref-color-text-primary)) 0%,\n      var(--ref-color-site-blue) 60%,\n      color-mix(in srgb, var(--ref-color-site-blue) 65%, var(--ref-color-info)) 100%\n    )",
+   "--ref-color-neutral": "#64748b",
+   "--ref-color-background": "#f8fafc",
+   "--ref-color-surface": "#ffffff",
+   "--ref-color-text-primary": "#1e293b",
+   "--ref-color-border": "#cbd5e1",
+   "--ref-color-border-active": "#94a3b8",
+   "--ref-color-slate-100": "#f1f5f9",
+   "--ref-color-slate-200": "#e2e8f0",
+   "--ref-color-slate-600": "#475569",
+   "--ref-color-slate-700": "#334155",
+   "--ref-color-muted-blue": "#4a78c2",
+   "--ref-color-info-tint-bg": "#eff6ff",
+   "--ref-color-info-tint-border": "#dbeafe",
+   "--ref-color-success-tint-bg": "#ecfdf5",
+   "--ref-color-success-tint-border": "#d1fae5",
+   "--ref-color-success-tint-text": "#065f46",
+   "--ref-color-success-tint-text-strong": "#064e3b",
+   "--ref-color-warning-tint-bg": "#fffbeb",
+   "--ref-color-warning-tint-border": "#fde68a",
+   "--ref-color-warning-tint-text": "#92400e",
+   "--ref-color-warning-tint-text-strong": "#78350f",
+   "--ref-color-error-tint-bg": "#fef2f2",
+   "--ref-color-error-tint-border": "#fecaca",
+   "--ref-color-error-tint-text": "#991b1b",
+   "--ref-color-error-tint-text-strong": "#7f1d1d",
+   "--ref-font-size-base": "13px",
+   "--ref-text-heading-size": "calc(var(--font-scale, 1) * 20px)",
+   "--ref-text-heading-weight": "700",
+   "--ref-text-subheading-size": "calc(var(--font-scale, 1) * 15px)",
+   "--ref-text-subheading-weight": "600",
+   "--ref-text-body-size": "calc(var(--font-scale, 1) * 13px)",
+   "--ref-text-body-weight": "400",
+   "--ref-text-secondary-size": "calc(var(--font-scale, 1) * 12px)",
+   "--ref-text-secondary-weight": "500",
+   "--ref-text-label-size": "calc(var(--font-scale, 1) * 10.5px)",
+   "--ref-text-label-weight": "700",
+   "--ref-weight-regular": "400",
+   "--ref-weight-medium": "500",
+   "--ref-weight-semibold": "600",
+   "--ref-weight-bold": "700",
+   "--ref-weight-black": "800",
+   "--ref-shadow-sm": "0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.08)",
+   "--ref-shadow-md": "0 4px 10px -2px rgba(15, 23, 42, 0.10), 0 2px 6px -2px rgba(15, 23, 42, 0.08)",
+   "--ref-shadow-lg": "0 12px 28px -8px rgba(15, 23, 42, 0.16), 0 4px 12px -4px rgba(15, 23, 42, 0.10)",
+   "--ref-header-strip-height": "34px",
+   "--radius-sm": "6px",
+   "--radius-md": "8px",
+   "--radius-lg": "12px",
+   "--radius-pill": "99px",
+   "--radius-circle": "50%",
+   "--ref-control-height": "32px",
+   "--ref-button-height": "var(--ref-control-height, 32px)",
+   "--hover-orange-bg": "#ffedd5",
+   "--scrollbar-thumb": "rgba(37, 99, 235, 0.18)",
+   "--scrollbar-thumb-hover": "rgba(37, 99, 235, 0.32)",
+   "--font-scale": "1",
+   "--font-family-base": "'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Ubuntu', Helvetica, Arial, sans-serif",
+   "--font-family-mono": "'Roboto Mono', 'Cascadia Code', 'Consolas', 'SFMono-Regular', monospace"
+  }
+ },
+ "customer": {
+  "colors": [
+   [
+    "bg rgba(0, 0, 0, 0)",
+    6
+   ],
+   [
+    "fg color(srgb 0 0 0 / 0.87)",
+    5
+   ],
+   [
+    "bd color(srgb 0 0 0 / 0.87)",
+    5
+   ],
+   [
+    "fg rgb(0, 0, 0)",
+    2
+   ],
+   [
+    "bd rgb(0, 0, 0)",
+    2
+   ],
+   [
+    "bg rgb(248, 250, 252)",
+    1
+   ]
+  ],
+  "fonts": [
+   [
+    "Roboto, sans-serif",
+    7
+   ]
+  ],
+  "fontSizes": [
+   [
+    "16px/400",
+    7
+   ]
+  ],
+  "radii": [],
+  "shadows": [],
+  "cssVars": {
+   "--ref-color-primary": "#2563eb",
+   "--ref-color-primary-hover": "#1d4ed8",
+   "--ref-color-accent": "#ea580c",
+   "--ref-color-accent-hover": "#c2410c",
+   "--ref-color-secondary": "#1e40af",
+   "--ref-color-success": "#10b981",
+   "--ref-color-warning": "#f59e0b",
+   "--ref-color-error": "#ef4444",
+   "--ref-color-info": "#3b82f6",
+   "--ref-color-site-blue": "#2563eb",
+   "--ref-gradient-panel-header": "linear-gradient(\n    135deg,\n    color-mix(in srgb, var(--ref-color-primary) 8%, transparent) 0%,\n    color-mix(in srgb, var(--ref-color-primary-hover) 2%, transparent) 70%,\n    var(--ref-color-surface) 100%\n  )",
+   "--ref-color-panel-header-line": "color-mix(in srgb, var(--ref-color-primary) 16%, transparent)",
+   "--ref-gradient-topbar": "linear-gradient(180deg, color-mix(in srgb, var(--ref-color-secondary) 35%, transparent) 0%, color-mix(in srgb, var(--ref-color-site-blue) 35%, transparent) 100%),\n    linear-gradient(\n      to right,\n      color-mix(in srgb, var(--ref-color-secondary) 78%, var(--ref-color-text-primary)) 0%,\n      var(--ref-color-site-blue) 60%,\n      color-mix(in srgb, var(--ref-color-site-blue) 65%, var(--ref-color-info)) 100%\n    )",
+   "--ref-color-neutral": "#64748b",
+   "--ref-color-background": "#f8fafc",
+   "--ref-color-surface": "#ffffff",
+   "--ref-color-text-primary": "#1e293b",
+   "--ref-color-border": "#cbd5e1",
+   "--ref-color-border-active": "#94a3b8",
+   "--ref-color-slate-100": "#f1f5f9",
+   "--ref-color-slate-200": "#e2e8f0",
+   "--ref-color-slate-600": "#475569",
+   "--ref-color-slate-700": "#334155",
+   "--ref-color-muted-blue": "#4a78c2",
+   "--ref-color-info-tint-bg": "#eff6ff",
+   "--ref-color-info-tint-border": "#dbeafe",
+   "--ref-color-success-tint-bg": "#ecfdf5",
+   "--ref-color-success-tint-border": "#d1fae5",
+   "--ref-color-success-tint-text": "#065f46",
+   "--ref-color-success-tint-text-strong": "#064e3b",
+   "--ref-color-warning-tint-bg": "#fffbeb",
+   "--ref-color-warning-tint-border": "#fde68a",
+   "--ref-color-warning-tint-text": "#92400e",
+   "--ref-color-warning-tint-text-strong": "#78350f",
+   "--ref-color-error-tint-bg": "#fef2f2",
+   "--ref-color-error-tint-border": "#fecaca",
+   "--ref-color-error-tint-text": "#991b1b",
+   "--ref-color-error-tint-text-strong": "#7f1d1d",
+   "--ref-font-size-base": "13px",
+   "--ref-text-heading-size": "calc(var(--font-scale, 1) * 20px)",
+   "--ref-text-heading-weight": "700",
+   "--ref-text-subheading-size": "calc(var(--font-scale, 1) * 15px)",
+   "--ref-text-subheading-weight": "600",
+   "--ref-text-body-size": "calc(var(--font-scale, 1) * 13px)",
+   "--ref-text-body-weight": "400",
+   "--ref-text-secondary-size": "calc(var(--font-scale, 1) * 12px)",
+   "--ref-text-secondary-weight": "500",
+   "--ref-text-label-size": "calc(var(--font-scale, 1) * 10.5px)",
+   "--ref-text-label-weight": "700",
+   "--ref-weight-regular": "400",
+   "--ref-weight-medium": "500",
+   "--ref-weight-semibold": "600",
+   "--ref-weight-bold": "700",
+   "--ref-weight-black": "800",
+   "--ref-shadow-sm": "0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.08)",
+   "--ref-shadow-md": "0 4px 10px -2px rgba(15, 23, 42, 0.10), 0 2px 6px -2px rgba(15, 23, 42, 0.08)",
+   "--ref-shadow-lg": "0 12px 28px -8px rgba(15, 23, 42, 0.16), 0 4px 12px -4px rgba(15, 23, 42, 0.10)",
+   "--ref-header-strip-height": "34px",
+   "--radius-sm": "6px",
+   "--radius-md": "8px",
+   "--radius-lg": "12px",
+   "--radius-pill": "99px",
+   "--radius-circle": "50%",
+   "--ref-control-height": "32px",
+   "--ref-button-height": "var(--ref-control-height, 32px)",
+   "--hover-orange-bg": "#ffedd5",
+   "--scrollbar-thumb": "rgba(37, 99, 235, 0.18)",
+   "--scrollbar-thumb-hover": "rgba(37, 99, 235, 0.32)",
+   "--font-scale": "1",
+   "--font-family-base": "'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Ubuntu', Helvetica, Arial, sans-serif",
+   "--font-family-mono": "'Roboto Mono', 'Cascadia Code', 'Consolas', 'SFMono-Regular', monospace"
+  }
+ }
+}

@@ -233,13 +233,17 @@ const registerHref = appUrls.register()
       flex: 1;
       align-items: center;
       justify-content: space-between;
-      gap: var(--ek-space-6);
-      margin-inline-start: var(--ek-space-8);
+      gap: var(--ek-space-4);
+      margin-inline-start: var(--ek-space-4);
     }
     .nav-desktop__links {
       display: flex;
       align-items: center;
       gap: var(--ek-space-1);
+    }
+    /* S14: yedinci bağlantı ("Destek") + hareket kontrolü etiketi 1440'ta da sığsın: bağlantı iç boşluğu bir kademe dar. */
+    .nav-desktop__links .nav-link {
+      padding-inline: var(--ek-space-2);
     }
     .nav-desktop__actions {
       display: flex;

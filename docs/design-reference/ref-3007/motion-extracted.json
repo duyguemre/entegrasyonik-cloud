@@ -1,0 +1,142 @@
+{
+ "transitions": [
+  [
+   "background-color, color | 0.15s, 0.15s | ease, ease",
+   9
+  ],
+  [
+   "border-color, background-color, box-shadow, transform | 0.15s, 0.15s, 0.15s, 0.15s | ease, ease, ease, ease",
+   4
+  ],
+  [
+   "all | 0.35s | cubic-bezier(0.16, 1, 0.3, 1)",
+   3
+  ],
+  [
+   "transform | 0.3s | ease",
+   3
+  ],
+  [
+   "height, width, transform, max-width, left, right, top, botto | 0.2s | cubic-bezier(0.4, 0, 0.2, 1)",
+   2
+  ],
+  [
+   "background-color, color | 0.2s, 0.2s | ease, ease",
+   2
+  ],
+  [
+   "transform, opacity | 0s, 0.2s | ease, cubic-bezier(0.4, 0, 0.2, 1)",
+   2
+  ],
+  [
+   "all | 0.2s | ease",
+   1
+  ],
+  [
+   "background-color | 0.2s | ease",
+   1
+  ],
+  [
+   "all | 0.2s | cubic-bezier(0.4, 0, 0.2, 1)",
+   1
+  ],
+  [
+   "transform, opacity | 0.25s, 0.25s | ease, ease",
+   1
+  ],
+  [
+   "flex-basis, flex-grow | 0.5s, 0.5s | cubic-bezier(0.2, 0, 0, 1), cubic-bezier(0.2, 0, 0, 1)",
+   1
+  ],
+  [
+   "border-color, color, background-color | 0.15s, 0.15s, 0.15s | ease, ease, ease",
+   1
+  ],
+  [
+   "opacity | 0.4s | ease",
+   1
+  ],
+  [
+   "background, border-color, box-shadow | 0.25s, 0.25s, 0.25s | ease, ease, ease",
+   1
+  ],
+  [
+   "filter | 0.25s | ease",
+   1
+  ],
+  [
+   "background-color, border-color, box-shadow | 0.25s, 0.25s, 0.25s | ease, ease, ease",
+   1
+  ],
+  [
+   "background-color | 0.25s | ease",
+   1
+  ],
+  [
+   "background, box-shadow | 0.22s, 0.22s | ease, ease",
+   1
+  ],
+  [
+   "background, color, border-color | 0.18s, 0.18s, 0.18s | ease, ease, ease",
+   1
+  ],
+  [
+   "background, box-shadow, opacity | 0.2s, 0.2s, 0.2s | ease, ease, ease",
+   1
+  ],
+  [
+   "background-color, color, box-shadow, transform | 0.15s, 0.15s, 0.15s, 0.1s | ease, ease, ease, ease",
+   1
+  ],
+  [
+   "box-shadow, transform, opacity, background | 0.28s | cubic-bezier(0.4, 0, 0.2, 1)",
+   1
+  ],
+  [
+   "opacity | 0.2s | ease-in-out",
+   1
+  ]
+ ],
+ "animations": {
+  "anim-1": {
+   "timing": "0.55s cubic-bezier(0.16, 1, 0.3, 1) delay 2.64s",
+   "keyframes": "0% {opacity: 0; transform: translateY(18px);} 100% {opacity: 1; transform: translateY(0px);}"
+  },
+  "anim-2": {
+   "timing": "0.45s cubic-bezier(0.16, 1, 0.3, 1) delay 2.42s",
+   "keyframes": "0% {opacity: 0; transform: scaleX(0);} 100% {opacity: 1; transform: scaleX(1);}"
+  },
+  "anim-3": {
+   "timing": "16s ease-in-out delay 0s",
+   "keyframes": "0%, 100% {opacity: 0.7; transform: scale(0.98);} 50% {opacity: 0.95; transform: scale(1.04);}"
+  },
+  "anim-4": {
+   "timing": "18s ease-in-out delay 0s",
+   "keyframes": "0%, 100% {transform: translateY(0px) rotate(0deg);} 50% {transform: translateY(-6px) rotate(0.4deg);}"
+  },
+  "anim-5": {
+   "timing": "0.45s cubic-bezier(0.16, 1, 0.3, 1) delay 1.94s",
+   "keyframes": "0% {opacity: 0; transform: translateY(12px) scale(0.78);} 65% {transform: translateY(-2px) scale(1.06);} 100% {opacity: 1; transform: translateY(0px) scale(1);}"
+  },
+  "anim-6": {
+   "timing": "0.55s cubic-bezier(0.16, 1, 0.3, 1) delay 2.1s",
+   "keyframes": "0% {opacity: 0; transform: translateY(18px) scale(0.96);} 100% {opacity: 1; transform: translateY(0px) scale(1);}"
+  },
+  "anim-7": {
+   "timing": "0.5s cubic-bezier(0.16, 1, 0.3, 1) delay 2.24s",
+   "keyframes": "0% {opacity: 0; transform: translateY(14px) scale(0.97);} 100% {opacity: 1; transform: translateY(0px) scale(1);}"
+  },
+  "anim-8": {
+   "timing": "0.4s cubic-bezier(0.16, 1, 0.3, 1) delay 1.82s",
+   "keyframes": "0% {opacity: 0; transform: translateX(-8px);} 100% {opacity: 1; transform: translateX(0px);}"
+  },
+  "anim-9": {
+   "timing": "2s ease delay 0s",
+   "keyframes": "0%, 100% {opacity: 1; transform: scale(1);} 50% {opacity: 0.5; transform: scale(1.2);}"
+  },
+  "anim-10": {
+   "timing": "0.16s ease-out delay 0s",
+   "keyframes": "0% {opacity: 0.85;} 100% {opacity: 1;}"
+  }
+ }
+}

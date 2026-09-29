@@ -9,10 +9,15 @@
  * (sol: adımlar, sağ: gerekli bilgiler, altta çip şeridi) — 4 ayrı tam-genişlik bölüm yerine 2 bölüm, boşluk
  * kapandı. Hero görseli artık kayıttan hesaplanan bir kapsam segment çubuğu + ilk 4 yeteneğin mini listesini
  * gösteriyor (sayılar yalnızca `aria-label`'da — görünür metinde rakam yok, `tests/pages.test.ts` bunu zorlar).
+ *
+ * S14: "Nasıl bağlanırsınız" → adım adım "Bağlantı rehberi" (`#baglanti-rehberi`): numaralı adım rayı (numaralar CSS
+ * sayacı; adımlar `getConnectGuide()` + hesap açma adımı + pazaryerlerinde "pasif bağlantı" kontrolü — SSS
+ * `teknik-bilgi` kaydıyla aynı kanıt) ve sağda gerekli bilgileri maskeli alanlarla gösteren örnek ayar paneli
+ * (yalnızca kimlik bilgisi TÜRLERİ; değer/sır yok). SEO: başlık/açıklama kurulum niyetine göre güçlendirildi,
+ * `HowTo` JSON-LD adımları sayfadaki adımlarla birebir aynıdır.
  */
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import Section from '../../components/Section.astro'
-import Card from '../../components/Card.astro'
 import Badge from '../../components/Badge.astro'
 import Icon from '../../components/home/Icon.astro'
 import PageHero from '../../components/pages/PageHero.astro'
@@ -20,11 +25,13 @@ import PageMeta from '../../components/pages/PageMeta.astro'
 import LevelBadge from '../../components/pages/LevelBadge.astro'
 import ChannelMono from '../../components/pages/ChannelMono.astro'
 import CtaBand from '../../components/pages/CtaBand.astro'
+import SectionHead from '../../components/pages/SectionHead.astro'
 import { getPublicIntegrations, type PublicIntegration, type CoverageLevel } from '../../data/integrations'
 import { getConnectGuide } from '../../data/connect'
 import { getPublicCapabilities } from '../../data/capabilities'
 import { breadcrumbJsonLd } from '../../lib/seo'
-import { appUrls } from '../../lib/site-config'
+import { appUrls, siteConfig } from '../../lib/site-config'
+import { trialOffer } from '../../data/plans'
 
 export function getStaticPaths() {
   return getPublicIntegrations().map((integration) => ({
@@ -44,11 +51,39 @@ const coverageTone: Record<CoverageLevel, 'success' | 'info' | 'warning'> = {
   limited: 'warning',
 }
 
-const title = `${i.name} entegrasyonu`
-const description = `${i.name} entegrasyonunun kapsamı, sınırlamaları ve bağlantı için gereken bilgiler. ${i.summary}`
+const heading = `${i.name} entegrasyonu`
+const title = `${i.name} entegrasyonu: bağlantı rehberi ve kapsam`
 const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Entegrasyonlar', href: '/entegrasyonlar' }, { label: i.name }]
 
 const guide = getConnectGuide(i.code, i.kind)
+const credentialList = guide ? guide.credentials.map((c) => c.toLocaleLowerCase('tr-TR')).join(', ') : ''
+const description = guide
+  ? `${i.name} entegrasyonunu kod yazmadan adım adım bağlayın: gereken bilgiler (${credentialList}), desteklenen işlemler ve bilinen sınırlar.`
+  : `${i.name} entegrasyonunun kapsamı, sınırlamaları ve bağlantı için gereken bilgiler. ${i.summary}`
+
+// Rehber adımları: hesap açma + kayıttaki adımlar (+ pazaryerlerinde bağlantı durumu kontrolü; SSS `teknik-bilgi` kanıtı).
+const accountStep = trialOffer.cardRequired
+  ? 'Entegrasyonik hesabınızı oluşturun.'
+  : 'Entegrasyonik hesabınızı oluşturun; ücretsiz deneme için kart bilgisi istenmez.'
+const statusStep =
+  i.kind === 'marketplace' ? 'Bağlantı durumunu kontrol edin: bilgiler hatalıysa bağlantı pasif görünür; bilgileri düzeltip yeniden kaydedin.' : undefined
+const guideSteps = guide ? [accountStep, ...guide.steps, ...(statusStep ? [statusStep] : [])] : []
+const abs = (path: string) => (siteConfig.siteUrl ? new URL(path, siteConfig.siteUrl).href : path)
+const howToJsonLd = guide
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'HowTo',
+      name: `${i.name} entegrasyonu nasıl bağlanır`,
+      description,
+      supply: guide.credentials.map((c) => ({ '@type': 'HowToSupply', name: c })),
+      step: guideSteps.map((text, idx) => ({
+        '@type': 'HowToStep',
+        position: idx + 1,
+        text,
+        url: abs(`/entegrasyonlar/${i.code}#rehber-adim-${idx + 1}`),
+      })),
+    }
+  : undefined
 const secretsSummary = getPublicCapabilities('security').find((c) => c.id === 'secrets-encryption')?.summary
 const others = getPublicIntegrations().filter((x) => x.code !== i.code)
 const hasLimits = i.limitations.length > 0 || i.notProvided.length > 0
@@ -78,11 +113,13 @@ const previewCapabilities = i.capabilities.slice(0, 4)
         { label: 'Entegrasyonlar', path: '/entegrasyonlar' },
         { label: i.name, path: `/entegrasyonlar/${i.code}` },
       ]),
+      ...(howToJsonLd ? [howToJsonLd] : []),
     ]}
   />
 
-  <PageHero title={title} lead={i.summary} crumbs={crumbs} eyebrow={i.kindLabel}>
+  <PageHero title={heading} lead={i.summary} crumbs={crumbs} eyebrow={i.kindLabel}>
     <Badge tone={coverageTone[i.coverage]}>{i.coverageLabel}</Badge>
+    {guide && <a class="hero-guide-link" href="#baglanti-rehberi">Bağlantı rehberi</a>}
     <Fragment slot="visual">
       <div class="hero-visual">
         <div class="hero-visual__id">
@@ -167,36 +204,61 @@ const previewCapabilities = i.capabilities.slice(0, 4)
     </div>
   </Section>
 
-  <Section labelledby="baglan-title" tone="muted" class="tight-section">
-    <div class="head">
-      <h2 id="baglan-title">Nasıl bağlanırsınız</h2>
-      <p>Bağlantı için yalnızca aşağıdaki kimlik bilgisi türleri gerekir.</p>
-    </div>
+  <Section id="baglanti-rehberi" labelledby="baglan-title" tone="muted" class="tight-section">
+    <SectionHead
+      id="baglan-title"
+      eyebrow="Bağlantı rehberi"
+      title={`${i.name} nasıl bağlanır?`}
+      lead="Kod yazmanız gerekmez: aşağıdaki adımları izleyin, yalnızca listelenen kimlik bilgisi türlerini hazır bulundurun."
+    />
     {
       guide && (
-        <div class="two">
-          <Card as="section" aria-labelledby="adimlar-title">
-            <h3 id="adimlar-title">Adımlar</h3>
-            <ol class="steps" data-testid="connect-steps">
-              {guide.steps.map((step) => (
-                <li>{step}</li>
-              ))}
-            </ol>
-          </Card>
-          <Card as="section" aria-labelledby="bilgiler-title">
-            <h3 id="bilgiler-title">Gerekli bilgiler</h3>
-            <ul class="chips" role="list" data-testid="credential-types">
+        <div class="guide">
+          <ol class="guide-steps" role="list" data-testid="connect-steps">
+            {guideSteps.map((step, idx) => (
+              <li class="guide-step" id={`rehber-adim-${idx + 1}`}>
+                <p class="guide-step__text">
+                  {step}
+                  {idx === 0 && (
+                    <>
+                      {' '}
+                      <a href={appUrls.register()}>Hesap oluşturun</a>
+                    </>
+                  )}
+                </p>
+              </li>
+            ))}
+          </ol>
+
+          <section class="cred-panel" aria-labelledby="bilgiler-title">
+            <div class="cred-panel__head">
+              <ChannelMono code={i.code} name={i.name} size="sm" />
+              <div>
+                <p class="cred-panel__eyebrow">Örnek ayar ekranı</p>
+                <h3 id="bilgiler-title">Gerekli bilgiler</h3>
+              </div>
+            </div>
+            <ul class="cred-fields" role="list" data-testid="credential-types">
               {guide.credentials.map((label) => (
-                <li>{label}</li>
+                <li class="cred-field">
+                  <span class="cred-field__label">{label}</span>
+                  <span class="cred-field__input" aria-hidden="true">
+                    <span class="cred-field__mask"></span>
+                    <Icon name="lock" size="sm" />
+                  </span>
+                </li>
               ))}
             </ul>
             {secretsSummary && (
-              <p class="note">
-                {secretsSummary} <a href="/guvenlik">Güvenlik yaklaşımımız</a>
+              <p class="cred-panel__note">
+                <Icon name="shield" size="sm" />
+                <span>
+                  {secretsSummary} <a href="/guvenlik">Güvenlik yaklaşımımız</a>
+                </span>
               </p>
             )}
-            {guide.note && <p class="note note--warn">{guide.note}</p>}
-          </Card>
+            {guide.note && <p class="cred-panel__warn">{guide.note}</p>}
+          </section>
         </div>
       )
     }
@@ -406,8 +468,7 @@ const previewCapabilities = i.capabilities.slice(0, 4)
   .bound-card--off h3 {
     color: var(--ek-color-content-muted);
   }
-  .bullets,
-  .steps {
+  .bullets {
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-3);
@@ -435,39 +496,170 @@ const previewCapabilities = i.capabilities.slice(0, 4)
   .bullets--off li::before {
     background: var(--ek-color-content-muted);
   }
-  .steps {
-    padding-inline-start: var(--ek-space-5);
-    list-style: decimal;
-  }
 
-  .two {
-    display: grid;
-    gap: var(--ek-space-6);
-    grid-template-columns: 1fr;
-  }
-  .chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ek-space-2);
-  }
-  .chips li {
-    padding: var(--ek-space-2) var(--ek-space-4);
-    border: var(--site-border-width) solid var(--ek-color-border-strong);
+  /* --- Hero: rehbere atlama bağlantısı --- */
+  .hero-guide-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--site-tap-target);
+    padding-inline: var(--ek-space-4);
+    border: var(--site-border-width) solid var(--site-color-on-primary-muted);
     border-radius: var(--ek-radius-full);
-    color: var(--ek-color-content-strong);
+    color: var(--site-color-on-primary);
     font-size: var(--ek-font-size-md);
     font-weight: var(--ek-font-weight-medium);
+    text-decoration: none;
+    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
   }
-  .note {
+  .hero-guide-link:hover {
+    border-color: var(--site-color-on-primary);
+  }
+
+  /* --- Bağlantı rehberi: numaralı adım rayı + örnek ayar paneli --- */
+  .guide {
+    display: grid;
+    gap: var(--ek-space-8);
+    align-items: start;
+  }
+  .guide-steps {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: guide;
+  }
+  .guide-step {
+    position: relative;
+    padding: 0 0 var(--ek-space-5) var(--ek-space-12);
+    counter-increment: guide;
+    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
+  }
+  .guide-step:last-child {
+    padding-bottom: 0;
+  }
+  /* Numara CSS sayacıyla (görünür HTML metninde rakam yok). */
+  .guide-step::before {
+    content: counter(guide);
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-primary);
+    box-shadow: 0 0 0 var(--ek-space-1) var(--ek-color-surface-muted);
+    color: var(--site-color-on-primary);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-bold);
+  }
+  .guide-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    inset-inline-start: calc(var(--ek-space-5) - var(--site-border-width) / 2);
+    top: var(--ek-space-10);
+    bottom: 0;
+    width: var(--site-border-width);
+    background: linear-gradient(180deg, var(--ek-color-primary), var(--ek-color-border-strong));
+  }
+  .guide-step__text {
+    min-height: var(--ek-space-10);
+    padding: var(--ek-space-4) var(--ek-space-5);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-lg);
+    line-height: var(--ek-line-height-normal);
+  }
+  .guide-step:first-child .guide-step__text a {
+    font-weight: var(--ek-font-weight-semibold);
+  }
+
+  .cred-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-5);
+    padding: var(--ek-space-6);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--site-radius-panel);
+    background: var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card-hover);
+  }
+  .cred-panel__head {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-3);
+    padding-bottom: var(--ek-space-4);
+    border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
+  }
+  .cred-panel__eyebrow {
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .cred-panel__head h3 {
+    font-size: var(--ek-font-size-xl);
+  }
+  .cred-fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-4);
+  }
+  .cred-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+  }
+  .cred-field__label {
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .cred-field__input {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ek-space-3);
+    min-height: var(--site-tap-target);
+    padding-inline: var(--ek-space-4);
+    border: var(--site-border-width) solid var(--ek-color-border-strong);
+    border-radius: var(--ek-radius-md);
+    background: var(--ek-color-surface-muted);
+    color: var(--ek-color-content-muted);
+  }
+  /* Maskeli değer: yalnızca dekoratif nokta dizisi (değer/sır yok). */
+  .cred-field__mask {
+    width: calc(var(--ek-space-3) * 9);
+    height: var(--ek-space-2);
+    background-image: radial-gradient(circle, var(--ek-color-content-muted) 45%, transparent 50%);
+    background-size: var(--ek-space-3) var(--ek-space-2);
+    background-repeat: repeat-x;
+  }
+  .cred-panel__note {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ek-space-2);
     color: var(--ek-color-content-muted);
     font-size: var(--ek-font-size-md);
   }
-  /* Card'ın `.card p` kuralını (özgüllük 0,1,1) geçmek için iki sınıf. */
-  .note.note--warn {
+  .cred-panel__note :global(svg) {
+    flex: none;
+    margin-top: var(--ek-space-1);
+    color: var(--ek-color-success);
+  }
+  .cred-panel__warn {
     padding: var(--ek-space-3) var(--ek-space-4);
     border-radius: var(--ek-radius-lg);
     background: var(--ek-color-warning-subtle);
     color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-md);
   }
 
   /* "Diğer entegrasyonlar" artık "Nasıl bağlanırsınız" bölümünün alt şeridi (S11b — ayrı tam bölüm değil). */
@@ -528,8 +720,11 @@ const previewCapabilities = i.capabilities.slice(0, 4)
       gap: var(--ek-space-6);
       align-items: start;
     }
-    .two {
-      grid-template-columns: repeat(2, 1fr);
+    .guide {
+      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    }
+    .guide-step {
+      padding: 0 0 var(--ek-space-6) var(--ek-space-16);
     }
   }
   @media (min-width: 900px) {

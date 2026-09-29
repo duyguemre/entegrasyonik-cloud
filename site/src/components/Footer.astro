@@ -8,11 +8,11 @@
  */
 import Container from './Container.astro'
 import Logo from './Logo.astro'
-import { primaryNav, legalNav, published } from '../data/navigation'
+import { primaryNav, featureNav, legalNav, published } from '../data/navigation'
 import { getPublicIntegrations } from '../data/integrations'
 import { appUrls } from '../lib/site-config'
 
-const productLinks = published(primaryNav)
+const productLinks = [...published(primaryNav), ...published(featureNav)]
 const legalLinks = published(legalNav)
 const integrationLinks = getPublicIntegrations()
 const year = new Date().getFullYear()
