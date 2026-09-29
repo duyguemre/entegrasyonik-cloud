@@ -64,8 +64,7 @@ const cards = plans.map((p, i) => {
 })
 ---
 
-<Section id="fiyatlar" labelledby="fiyat-baslik" class="pr">
-  <span class="pr__halo" aria-hidden="true"></span>
+<Section id="fiyatlar" labelledby="fiyat-baslik">
   <SectionHeading
     id="fiyat-baslik"
     align="center"
@@ -196,25 +195,6 @@ const cards = plans.map((p, i) => {
 </Section>
 
 <style>
-  .pr:global(.section) {
-    position: relative;
-    isolation: isolate;
-    overflow: hidden;
-  }
-  /* Bölüm arkasındaki çok yumuşak ışık halesi: önerilen kartın arkasında derinlik (dekoratif). */
-  .pr__halo {
-    position: absolute;
-    inset-block-start: 38%;
-    inset-inline-start: 50%;
-    z-index: -1;
-    width: 64rem;
-    height: 40rem;
-    translate: -50% -50%;
-    background: var(--site-glow-secondary);
-    opacity: 0.55;
-    pointer-events: none;
-  }
-
   /* --- Deneme şeridi --- */
   .pr__perks {
     display: flex;
