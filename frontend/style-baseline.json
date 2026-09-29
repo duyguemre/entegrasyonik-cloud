@@ -2,12 +2,12 @@
   "_meta": "ADR-0011 Karar 2 / Aşama 1 literal-stil mandalı tabanı. node scripts/check-style-baseline.js --write ile üretildi (bkz. scripts/style-literal-counts.js). Hiçbir dosyada/kategoride sayı ARTAMAZ; yeni dosyalar 0 ile başlamalı; düşüş serbest ama bu dosyanın güncellenmesi gerekir (check-style-baseline.js OK dönene kadar).",
   "date": "2026-09-29",
   "totals": {
-    "total": 2217,
-    "hex": 903,
-    "rgb": 247,
-    "inlineStyle": 1051,
-    "cubicBezier": 10,
-    "motion": 6
+    "total": 2002,
+    "hex": 809,
+    "rgb": 206,
+    "inlineStyle": 974,
+    "cubicBezier": 8,
+    "motion": 5
   },
   "files": {
     "public/assets/css/integrations.css": {
@@ -257,6 +257,62 @@
       "cubicBezier": 0,
       "motion": 0,
       "total": 6
+    },
+    "src/components/adminPanel/integrations/IntegrationConfigSettingsBody.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/adminPanel/integrations/PlatformAdminGuard.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/adminPanel/integrations/PublishConfirmDialog.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/adminPanel/integrations/SettingField.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/adminPanel/integrations/settingsCatalogMirror.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/adminPanel/integrations/useIntegrationConfigApi.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/adminPanel/integrations/useOpenIntegrationConfigTab.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
     },
     "src/components/claim/ClaimDetailComponent.vue": {
       "hex": 0,
@@ -563,6 +619,14 @@
       "total": 0
     },
     "src/components/ds/templates/EkWizardTemplate.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/financial/FinancialSummaryBar.vue": {
       "hex": 0,
       "rgb": 0,
       "inlineStyle": 0,
@@ -1339,12 +1403,20 @@
       "total": 0
     },
     "src/components/ticket/TicketDetailComponent.vue": {
-      "hex": 11,
+      "hex": 0,
       "rgb": 0,
-      "inlineStyle": 3,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 14
+      "total": 0
+    },
+    "src/components/ticket/composables/ticketPriorityTone.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
     },
     "src/components/ticket/composables/useTicketActions.ts": {
       "hex": 0,
@@ -1363,20 +1435,20 @@
       "total": 0
     },
     "src/components/user/NotificationDrawerComponent.vue": {
-      "hex": 31,
-      "rgb": 7,
-      "inlineStyle": 6,
-      "cubicBezier": 0,
-      "motion": 0,
-      "total": 44
-    },
-    "src/components/user/UserAddComponent.vue": {
       "hex": 0,
-      "rgb": 3,
+      "rgb": 0,
       "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 3
+      "total": 0
+    },
+    "src/components/user/UserAddComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
     },
     "src/components/utility/BatchMenuComponent.vue": {
       "hex": 0,
@@ -1931,12 +2003,12 @@
       "total": 0
     },
     "src/views/secure/FinancialListView.vue": {
-      "hex": 24,
-      "rgb": 6,
-      "inlineStyle": 15,
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 45
+      "total": 0
     },
     "src/views/secure/InvoiceListView.vue": {
       "hex": 0,
@@ -1971,20 +2043,20 @@
       "total": 0
     },
     "src/views/secure/PrintoutListView.vue": {
-      "hex": 14,
+      "hex": 4,
       "rgb": 0,
-      "inlineStyle": 20,
+      "inlineStyle": 1,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 34
+      "total": 5
     },
     "src/views/secure/SettingListView.vue": {
-      "hex": 14,
-      "rgb": 13,
+      "hex": 10,
+      "rgb": 0,
       "inlineStyle": 2,
-      "cubicBezier": 1,
-      "motion": 1,
-      "total": 31
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 12
     },
     "src/views/secure/adminPanel/AdminClientListView.vue": {
       "hex": 2,
@@ -2017,6 +2089,38 @@
       "cubicBezier": 0,
       "motion": 0,
       "total": 25
+    },
+    "src/views/secure/adminPanel/integrations/EffectiveConfigView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/views/secure/adminPanel/integrations/EngineSettingsView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/views/secure/adminPanel/integrations/IntegrationConfigListView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/views/secure/adminPanel/integrations/IntegrationSettingsView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
     },
     "src/views/secure/definitions/BrandDefinitionView.vue": {
       "hex": 0,
@@ -2187,28 +2291,28 @@
       "total": 13
     },
     "src/views/secure/supports/TicketListView.vue": {
-      "hex": 6,
-      "rgb": 4,
-      "inlineStyle": 15,
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 25
+      "total": 0
     },
     "src/views/secure/user/AuthorizationListView.vue": {
-      "hex": 8,
-      "rgb": 8,
-      "inlineStyle": 3,
-      "cubicBezier": 1,
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
       "motion": 0,
-      "total": 20
+      "total": 0
     },
     "src/views/secure/user/ChangePasswordView.vue": {
       "hex": 0,
       "rgb": 0,
-      "inlineStyle": 6,
+      "inlineStyle": 1,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 6
+      "total": 1
     },
     "src/views/secure/user/ExitView.vue": {
       "hex": 0,
@@ -2221,10 +2325,10 @@
     "src/views/secure/user/InvoiceInfoView.vue": {
       "hex": 0,
       "rgb": 0,
-      "inlineStyle": 13,
+      "inlineStyle": 2,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 13
+      "total": 2
     },
     "src/views/secure/user/SubscriptionView.vue": {
       "hex": 0,
