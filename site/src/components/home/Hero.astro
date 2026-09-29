@@ -3,7 +3,8 @@
  * Hero (ADR-0014 Karar 2, bölüm 1; S12 pazarlama dili; S13 "show merkezi") — değer önerisi + birincil/ikincil CTA +
  * sistemin genelini anlatan koyu, derinlikli bir SHOW SAHNESİ. Sahne kökü: `data-scene="hero-mock"` (src/styles/scenes.css
  * giriş + scenes-loops.css döngü + src/scripts/scenes.ts durum). Tamamen HTML/CSS/satır içi SVG (görsel dosya, kütüphane
- * yok) ve AÇIKÇA "Örnek görünüm" etiketlidir: sipariş ve sayılar gerçek veri değil, arayüz örneğidir.
+ * yok). Sipariş ve sayılar gerçek veri değil, arayüz örneğidir (S15: görünür "Örnek görünüm" rozeti kullanıcı isteğiyle
+ * kaldırıldı; panel aria-hidden dekoratif bir sahnedir, sayılar hiçbir yerde ölçüm/iddia olarak sunulmaz).
  *
  * S13 (kullanıcı: "beyaz fonlu amatör kalmış ... show merkezi ... sistemin genelini ilgilendiren showlar"): tek ekran
  * takibi yerine 30 sn'de dönen DÖRT sahne (her biri 7,5 sn, çapraz geçişli; altta ilerleme göstergesi):
@@ -116,7 +117,6 @@ const secureItems = [
       <div class="show" data-scene="hero-mock" data-tilt aria-hidden="true" data-testid="hero-mock">
         <div class="show__bar">
           <span class="show__brand"><i class="show__live"></i>Operasyon merkezi</span>
-          <span class="show__tag">Örnek görünüm</span>
         </div>
 
         <div class="show__stage">
@@ -302,7 +302,6 @@ const secureItems = [
           }
         </ol>
       </div>
-      <p class="sr-only">Örnek görünüm — gerçek veri değildir.</p>
     </div>
   </div>
 </section>
@@ -552,16 +551,6 @@ const secureItems = [
     background: var(--site-accent);
     box-shadow: 0 0 0 calc(var(--site-border-width) * 3) color-mix(in srgb, var(--ek-color-secondary) 25%, transparent), 0 0 var(--ek-space-3) var(--show-glow);
   }
-  .show__tag {
-    padding: calc(var(--ek-space-1) / 2) var(--ek-space-2);
-    border: var(--site-border-width) solid var(--show-line);
-    border-radius: var(--ek-radius-full);
-    color: var(--site-text-on-dark-meta);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-semibold);
-    white-space: nowrap;
-  }
-
   /* Sahneler aynı ızgara hücresinde üst üste durur (yükseklik = en uzun sahne; yerleşim animasyonla değişmez). */
   .show__stage {
     position: relative;

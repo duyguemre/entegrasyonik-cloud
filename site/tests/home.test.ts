@@ -169,6 +169,11 @@ describe('entegrasyon ekosistemi (S12: vizyon dili; kanal adı ve durum dili ana
     const proofText = textOf(proof)
     for (const i of available) expect(proofText, i.name).not.toContain(i.name)
     expect(proofText.toLocaleLowerCase('tr-TR')).not.toMatch(/uygulanan|bugün bağlanabilen|aes-256/)
+    // S15: görünür şerit başlığı ("Tek panelde yönettikleriniz") kaldırıldı; grup erişilebilir adını aria-label ile taşır
+    expect(proofText).not.toMatch(/Tek panelde|yönettikleriniz/)
+    expect(proof).toMatch(/data-scene="marquee" role="group" aria-label="[^"]+"/)
+    // S15: kartlar koyu sahnenin devamı (beyaz blok değil) — bölüm koyu yüzey işaretli, vurgu açık teal varyantına döner
+    expect(proof).toMatch(/^<section class="proof"[^>]*data-surface="dark"/)
     // şerit: erişilebilir birinci küme + aria-hidden kopya küme
     const marquee = html.match(/data-testid="marquee"[\s\S]*?<\/section>/)![0]
     const sets = [...marquee.matchAll(/<ul class="marquee__set[^"]*"[^>]*>[\s\S]*?<\/ul>/g)].map((m) => m[0])
@@ -316,10 +321,12 @@ describe('içerik kayıttan gelir', () => {
     for (const i of getPublicIntegrations()) expect(t, i.name).not.toContain(i.name)
   })
 
-  it('hero mock: "Örnek görünüm" etiketli; kanal noktaları seçiciden (renk kodu), panelde ve hero metninde kanal ADI yok (S12)', () => {
+  it('hero mock: dekoratif (aria-hidden), "Örnek görünüm" rozeti yok (S15); kanal noktaları seçiciden (renk kodu), panelde ve hero metninde kanal ADI yok (S12)', () => {
     const hero = html.match(/data-testid="hero"[\s\S]*?<\/section>/)![0]
     const mock = html.match(/data-testid="hero-mock"[\s\S]*?<\/section>/)![0]
-    expect(mock).toContain('Örnek görünüm')
+    // S15: görünür rozet kullanıcı isteğiyle kaldırıldı; panel ekran okuyucuya veri olarak sunulmaz (dekoratif sahne)
+    expect(mock).not.toContain('Örnek görünüm')
+    expect(html).toMatch(/<div[^>]*data-scene="hero-mock"[^>]*aria-hidden="true"[^>]*data-testid="hero-mock"/)
     const dots = [...mock.matchAll(/<li[^>]*data-part="chan"[^>]*>/g)].map((m) => m[0].match(/data-code="([^"]+)"/)?.[1])
     expect(dots).toEqual(getPublicIntegrations().map((i) => i.code))
     // S12: ana mesajda pazaryeri adları ön plana çıkmaz ("pazaryerleri" denir); panel genel etiket kullanır
