@@ -6,16 +6,18 @@ const isMatrixLayout = (page: Page) => (page.viewportSize()?.width ?? 0) >= 768
 
 // ADR-0014 S2a — ana sayfa bölümleri: görünürlük, yatay taşma yok, klavye/odak, etkileşim.
 
+// Bu turda (S12 Parça A) sahiplenilen bölümlerin başlıkları birebir; diğer bölümlerin başlıkları paralel turlarda
+// (Parça B/C) pazarlama diliyle yeniden yazılabildiğinden yalnızca var ve boş değil olarak denetlenir.
 const SECTION_TITLES = [
   ['sorun-cozum-baslik', /Dağınık yönetim/],
   ['senaryo-baslik', /Bir sipariş geldiğinde ne olur\?/],
-  ['yetenek-baslik', /Satışın tüm akışı tek panelde/],
-  ['entegrasyon-baslik', /Bugün bağlanabilen entegrasyonlar/],
-  ['nasil-baslik', /Dört adımda tek panele geçin/],
-  ['fiyat-baslik', /İşinizin ölçeğine göre planlar/],
-  ['guvenlik-baslik', /Anahtarlarınız ve verileriniz/],
-  ['sss-baslik', /Aklınıza takılanlar/],
-  ['kapanis-baslik', /tek yerde toplayın/],
+  ['yetenek-baslik', /\S/],
+  ['entegrasyon-baslik', /\S/],
+  ['nasil-baslik', /\S/],
+  ['fiyat-baslik', /\S/],
+  ['guvenlik-baslik', /\S/],
+  ['sss-baslik', /\S/],
+  ['kapanis-baslik', /\S/],
 ] as const
 
 test.describe('Ana sayfa bölümleri', () => {
@@ -37,9 +39,8 @@ test.describe('Ana sayfa bölümleri', () => {
     expect(overflow).toBeLessThanOrEqual(0)
   })
 
-  test('entegrasyon vitrini: 6 kart, 6 hero kanal çipi, 6 şerit öğesi, kapsam matrisi ve dürüst sınır notları', async ({ page }) => {
+  test('entegrasyon vitrini: 6 kart, 6 hero kanal noktası, kapsam matrisi ve dürüst sınır notları', async ({ page }) => {
     await page.goto('/')
-    await expect(page.getByTestId('integration-count')).toContainText('6')
     await expect(page.locator('[data-part="integration"]')).toHaveCount(6)
     await expect(page.locator('[data-part="chan"]')).toHaveCount(6)
     await expect(page.getByTestId('integration-grid')).toContainText('Bilinmesi gerekenler')
@@ -125,7 +126,7 @@ test.describe('Ana sayfa bölümleri', () => {
     expect(ring.width).toBeGreaterThanOrEqual(1.5)
   })
 
-  test('mobilde hero mock kanal çipleri panel çerçevesinden taşmaz ve birbirini örtmez', async ({ page }) => {
+  test('mobilde hero mock kanal noktaları panel çerçevesinden taşmaz ve birbirini örtmez', async ({ page }) => {
     test.skip(isDesktop(page), 'yalnızca mobil/tablet')
     await page.goto('/')
     await waitForFonts(page)
