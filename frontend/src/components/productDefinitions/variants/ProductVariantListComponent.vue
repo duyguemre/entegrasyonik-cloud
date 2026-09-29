@@ -488,22 +488,6 @@ const STATUS_META: Record<PRODUCT_INTEGRATION_STATUS, { icon: string; order: num
   },
 };
 
-const getColor = (status: PRODUCT_INTEGRATION_STATUS) => {
-  switch (status) {
-    case PRODUCT_INTEGRATION_STATUS.PENDING:
-      return '#2196F3'; // Orijinal mavi
-    case PRODUCT_INTEGRATION_STATUS.SENT:
-      return '#2196F3'; // Teknik süreçte, hala mavi kalabilir
-    case PRODUCT_INTEGRATION_STATUS.WAITING:
-      return '#00897B'; // Onay bekliyor süreci (Orijinal yeşil tonun)
-    case PRODUCT_INTEGRATION_STATUS.FAILED:
-      return '#ff0000'; // Orijinal kırmızı
-    case PRODUCT_INTEGRATION_STATUS.COMPLETED:
-      return '#00bb00'; // Orijinal parlak yeşil
-    default:
-      return '#2196F3';
-  }
-}
 const openProduntInPlatform = (code: string, item: any) => {
   console.log(code)
   switch (code) {
