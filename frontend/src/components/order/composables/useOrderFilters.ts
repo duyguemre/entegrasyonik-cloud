@@ -9,7 +9,9 @@ export function useOrderFilters(getOrders: Function) {
             startDate: undefined as any,
             endDate: undefined as any,
             integrationCodes: [] as string[],
-            internalStatuses: [] as string[]
+            internalStatuses: [] as string[],
+            // C1.1: kalem stok tahsis durumu (OrderService/getOrders `filter.allocationStates`, API_TENANT_SURFACE §2.2)
+            allocationStates: [] as string[]
         },
         form: { menu: false }
     });
@@ -51,7 +53,8 @@ export function useOrderFilters(getOrders: Function) {
             startDate: undefined,
             endDate: undefined,
             integrationCodes: [],
-            internalStatuses: []
+            internalStatuses: [],
+            allocationStates: []
         };
         // Filtreler sıfırlanınca ilk sayfaya dön ve veriyi çek
         getOrders(true);

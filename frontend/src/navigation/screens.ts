@@ -74,7 +74,15 @@ export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'DashboardView', slug: 'dashboard', section: 'general', order: 0 },
   // `internalStatuses`: OrderListView.vue/ClaimListView.vue'nin GERÇEKTEN okuduğu (`parameters?.internalStatuses`)
   // çoklu-seçim durum filtresi alanı (bkz. dosya başı yorumu) — uydurma bir isim DEĞİL.
-  { key: 'OrderListView', slug: 'orders', urlParams: [{ name: 'internalStatuses', kind: 'enum', multi: true }], section: 'orders', order: 0 },
+  {
+    key: 'OrderListView', slug: 'orders', section: 'orders', order: 0,
+    urlParams: [
+      { name: 'internalStatuses', kind: 'enum', multi: true },
+      // C1.1 (F-01): kalem stok tahsis durumu filtresi — OrderListView `parameters?.allocationStates`'i okur ve
+      // `OrderService/getOrders` `filter.allocationStates`'e gönderir (docs/API_TENANT_SURFACE.md §2.2). Kapalı küme.
+      { name: 'allocationStates', kind: 'enum', multi: true, allowed: ['RESERVED', 'COMMITTED', 'RELEASED', 'OVERSOLD', 'RESTOCKED', 'UNMAPPED'] },
+    ],
+  },
   {
     key: 'productDefinitions/ProductListView',
     slug: 'products',

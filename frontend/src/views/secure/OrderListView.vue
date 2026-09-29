@@ -96,6 +96,8 @@
           item-title="title" item-value="code" label="Kanal" multiple chips closable-chips clearable />
         <v-select v-model="searchOrderForm.data.internalStatuses" :items="statusOptions" item-title="title"
           item-value="id" label="Sipariş durumu" multiple chips closable-chips clearable />
+        <v-select v-model="searchOrderForm.data.allocationStates" :items="allocationOptions" item-title="title"
+          item-value="id" label="Stok durumu" multiple chips closable-chips clearable />
       </template>
 
       <template #bulk-actions>
@@ -130,6 +132,16 @@
           <span class="ek-num">{{ row.items?.length || 0 }} kalem</span>
           <span v-if="row.items?.length > 0" class="ek-order-items__name">{{ row.items[0].productName }}</span>
         </button>
+      </template>
+      <template #cell-allocation="{ row }">
+        <span v-if="allocationSummary(row)" class="ek-order-alloc">
+          <EkStatusChip :tone="ALLOCATION_STATE_TONE[allocationSummary(row)!.state].tone"
+            :label="$t(ALLOCATION_STATE_TONE[allocationSummary(row)!.state].labelKey)" />
+          <span v-if="allocationSummary(row)!.distinct > 1" class="ek-order-alloc__count ek-num">
+            {{ allocationSummary(row)!.count }}/{{ allocationSummary(row)!.tracked }} kalem
+          </span>
+        </span>
+        <span v-else class="ek-order-alloc__none">—</span>
       </template>
       <template #cell-orderDate="{ row }">
         <span class="ek-num">{{ formatDateTime(row.dates?.orderDate) }}</span>
@@ -174,7 +186,9 @@ import { useOrderActions } from '@/components/order/composables/useOrderActions'
 import { useOrderCancel } from '@/components/order/composables/useOrderCancel'
 import { useLifecycle } from '@/composables/useLifecycle'
 import { formatMoney, formatDateTime } from '@/composables/format'
-import { ORDER_STATUS_TONE } from '@/design/status-map'
+import { ORDER_STATUS_TONE, ALLOCATION_STATE_TONE, ALLOCATION_STATES } from '@/design/status-map'
+import { useI18n } from 'vue-i18n'
+import { isAllocationState, summarizeOrderAllocation } from '@/composables/useStockHealthApi'
 
 // Types & Enums
 import { OrderInternalStatusEnum } from '@/types/OrderTypes'
@@ -208,6 +222,7 @@ defineProps<{
 
 // --- INITIALIZATION ---
 const restApi = useRestApi()
+const { t } = useI18n()
 const snackbarStore = useSnackbarStore()
 const integrationStore = useIntegrationStore()
 
@@ -218,6 +233,8 @@ const columns: EkGridColumn[] = [
   { key: 'integrationCode', label: 'Kanal', sortable: true },
   { key: 'customer', label: 'Müşteri' },
   { key: 'items', label: 'İçerik' },
+  // C1.1: kalem stok tahsis durumu (en önemli kalem durumu; getOrders items[].allocationState)
+  { key: 'allocation', label: 'Stok' },
   { key: 'orderDate', label: 'Tarih', sortable: true },
   { key: 'total', label: 'Tutar', type: 'num', sortable: true },
   { key: 'internalStatus', label: 'Durum', sortable: true },
@@ -317,7 +334,19 @@ function onGridSort(sort: EkGridSort) {
 }
 
 // Aktif filtre çipleri — SON SORGULANAN değerlerden (panelde düzenlenip henüz sorgulanmamış değer çip olmaz).
-const applied = ref({ globalSearch: '', integrationCodes: [] as string[], internalStatuses: [] as string[] })
+const applied = ref({ globalSearch: '', integrationCodes: [] as string[], internalStatuses: [] as string[], allocationStates: [] as string[] })
+
+// "Stok durumu" filtresi — kapalı küme (status-map ALLOCATION_STATES), etiketler status.allocation.*
+const allocationOptions = computed(() => ALLOCATION_STATES.map(id => ({ id, title: allocationTitle(id) })))
+function allocationTitle(id: string): string {
+  return isAllocationState(id) ? t(ALLOCATION_STATE_TONE[id].labelKey) : id
+}
+const allocationSummary = (row: any) => summarizeOrderAllocation(row?.items)
+/** Sekme/URL parametresinden yalnızca geçerli durum kodları (screens.ts `allocationStates` ile aynı küme). */
+function allocationParam(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  return value.filter(isAllocationState)
+}
 
 const activeChips = computed<EkActiveFilterChip[]>(() => {
   const chips: EkActiveFilterChip[] = []
@@ -329,16 +358,21 @@ const activeChips = computed<EkActiveFilterChip[]>(() => {
     const titleOf = (id: string) => statusOptions.value.find(o => o.id === id)?.title ?? id
     chips.push({ key: 'internalStatuses', label: 'Durum', value: applied.value.internalStatuses.map(titleOf).join(', ') })
   }
+  if (applied.value.allocationStates.length) {
+    chips.push({ key: 'allocationStates', label: 'Stok durumu', value: applied.value.allocationStates.map(allocationTitle).join(', ') })
+  }
   return chips
 })
 
-const panelFilterCount = computed(() => (applied.value.integrationCodes.length ? 1 : 0) + (applied.value.internalStatuses.length ? 1 : 0))
+const panelFilterCount = computed(() => (applied.value.integrationCodes.length ? 1 : 0) + (applied.value.internalStatuses.length ? 1 : 0)
+  + (applied.value.allocationStates.length ? 1 : 0))
 
 function removeChip(key: string) {
   const data = searchOrderForm.value.data
   if (key === 'globalSearch') data.globalSearch = ''
   if (key === 'integrationCodes') data.integrationCodes = []
   if (key === 'internalStatuses') data.internalStatuses = []
+  if (key === 'allocationStates') data.allocationStates = []
   getOrders(true)
 }
 
@@ -389,7 +423,10 @@ async function getOrders(resetPage: boolean = false) {
   loading.value = true;
   loadError.value = false;
   const d = searchOrderForm.value.data;
-  applied.value = { globalSearch: d.globalSearch || '', integrationCodes: [...(d.integrationCodes || [])], internalStatuses: [...(d.internalStatuses || [])] };
+  applied.value = {
+    globalSearch: d.globalSearch || '', integrationCodes: [...(d.integrationCodes || [])], internalStatuses: [...(d.internalStatuses || [])],
+    allocationStates: [...(d.allocationStates || [])],
+  };
 
   try {
     const res = await restApi.post('OrderService/getOrders', {
@@ -570,6 +607,10 @@ const initialize = async (parameters: any) => {
   if (parameters?.globalSearch) {
     searchOrderForm.value.data.globalSearch = parameters.globalSearch;
   }
+  const allocationStates = allocationParam(parameters?.allocationStates);
+  if (allocationStates) {
+    searchOrderForm.value.data.allocationStates = allocationStates;
+  }
   await getOrders(true);
   emits('clear')
 };
@@ -582,6 +623,11 @@ const activate = async (parameters: any) => {
   }
   if (parameters?.internalStatuses) {
     searchOrderForm.value.data.internalStatuses = parameters.internalStatuses;
+    flag = true
+  }
+  const allocationStates = allocationParam(parameters?.allocationStates);
+  if (allocationStates) {
+    searchOrderForm.value.data.allocationStates = allocationStates;
     flag = true
   }
   if (flag) {
@@ -669,6 +715,19 @@ defineExpose({
   display: inline-flex;
   align-items: center;
   gap: var(--ek-space-1);
+}
+
+.ek-order-alloc {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.ek-order-alloc__count,
+.ek-order-alloc__none {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
 }
 
 .ek-row-actions {
