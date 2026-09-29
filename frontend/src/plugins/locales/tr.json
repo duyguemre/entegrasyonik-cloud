@@ -1307,5 +1307,22 @@
       "success": "Stok politikası kaydedildi.",
       "error": "Stok politikası kaydedilemedi — tekrar deneyin."
     }
+  },
+  "verifyEmail": {
+    "title": "E-posta doğrulaması",
+    "verifying": "E-posta adresiniz doğrulanıyor…",
+    "success": "E-posta adresiniz doğrulandı. Teşekkürler!",
+    "toApp": "Uygulamaya git",
+    "toLogin": "Giriş ekranına dön",
+    "resendHint": "Giriş yaptıktan sonra Hesabım ve güvenlik ekranından yeni bir doğrulama bağlantısı isteyebilirsiniz.",
+    "noToken": {
+      "title": "Bağlantı geçersiz",
+      "message": "Bu sayfaya doğrudan erişilemez. Doğrulama e-postasındaki bağlantıyı kullanın."
+    },
+    "errors": {
+      "tokenInvalid": "Bu doğrulama bağlantısının süresi dolmuş veya daha önce kullanılmış.",
+      "rateLimited": "Çok fazla deneme yapıldı — birkaç dakika sonra tekrar deneyin.",
+      "generic": "E-posta adresiniz şu an doğrulanamadı — birkaç dakika sonra bağlantıyı yeniden açın."
+    }
   }
 }

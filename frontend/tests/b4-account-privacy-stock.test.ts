@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { apiCode, apiMessage, apiStatus, isApiError } from '../src/composables/apiErrors'
 import { countCharacterClasses, passwordHints, passwordHintsMet, utf8ByteLength } from '../src/composables/passwordPolicyHints'
-import { changePasswordError, resendVerificationErrorKey } from '../src/composables/useAccountSecurityApi'
+import { changePasswordError, resendVerificationErrorKey, verifyEmailResultKey } from '../src/composables/useAccountSecurityApi'
 import { SCREENS } from '../src/navigation/screens'
 import {
   buildChannelPatch, computePublishQuantity, effectiveNumbers, isStockPolicyResponse, parseDraftNumber, toDraft, validateDraft,
@@ -93,6 +93,19 @@ describe('changePasswordError / resendVerificationErrorKey (N1)', () => {
       resendVerificationErrorKey(503, 'EMAIL_NOT_CONFIGURED'),
       resendVerificationErrorKey(undefined, undefined),
     ]
+    for (const k of keys) expect(trHas(k), k).toBe(true)
+  })
+})
+
+describe('verifyEmailResultKey (/verify-email — sözleşme #4)', () => {
+  it('TOKEN_INVALID tek mesaj; 429 ayrı; diğerleri genel; anahtarlar tr.json\'da', () => {
+    const keys = [
+      verifyEmailResultKey({ ok: true }),
+      verifyEmailResultKey({ ok: false, status: 400, code: 'TOKEN_INVALID' }),
+      verifyEmailResultKey({ ok: false, status: 429 }),
+      verifyEmailResultKey({ ok: false, status: 500 }),
+    ]
+    expect(keys).toEqual(['verifyEmail.success', 'verifyEmail.errors.tokenInvalid', 'verifyEmail.errors.rateLimited', 'verifyEmail.errors.generic'])
     for (const k of keys) expect(trHas(k), k).toBe(true)
   })
 })

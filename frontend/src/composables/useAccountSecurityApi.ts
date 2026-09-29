@@ -1,7 +1,7 @@
 /**
  * frontend/src/composables/useAccountSecurityApi.ts
  *
- * ADR-0015 B4-P0 (N1 "Hesabım ve güvenlik") — `docs/API_ACCOUNT_LIFECYCLE.md` #1 `changePassword`
+ * ADR-0015 B4-P0 (N1 "Hesabım ve güvenlik" + `/verify-email`) — `docs/API_ACCOUNT_LIFECYCLE.md` #1 `changePassword`
  * (ÖZEL rota, kimlikli, member) + #5 `resendVerificationEmail` (jenerik RPC, member) + profil DTO'su
  * (`GET userContext`, `backend/src/api/profileDto.ts` beyaz listesi: email/name/surname/owner/
  * roleCode/emailVerified). Uydurma alan/uç YOK; oturumları ayrı ayrı listeleme/kapatma ucu
@@ -28,6 +28,8 @@ export function useAccountSecurityApi() {
       restApi.post('AccountService/changePassword', { currentPassword, newPassword }) as Promise<any>,
     // Sözleşme: "İstek gövdesi boş".
     resendVerificationEmail: () => restApi.post('AccountService/resendVerificationEmail', {}) as Promise<any>,
+    // #4 AÇIK (kimliksiz) özel rota: e-postadaki `/verify-email?token=` bağlantısının hedefi (VerifyEmailView).
+    verifyEmail: (token: string) => restApi.post('AccountService/verifyEmail', { token }) as Promise<any>,
   }
 }
 
@@ -65,4 +67,12 @@ export function resendVerificationErrorKey(status: number | undefined, code: str
   if (code === 'EMAIL_NOT_CONFIGURED' || status === 503) return 'accountSecurity.verify.errors.notConfigured'
   if (code === 'MAIL_FAILED' || status === 502) return 'accountSecurity.verify.errors.mailFailed'
   return 'accountSecurity.verify.errors.generic'
+}
+
+/** E-posta doğrulama (`verifyEmail`) sonucu → i18n anahtarı (`verifyEmail.*`). Saf. */
+export function verifyEmailResultKey(res: { ok: boolean; status?: number; code?: string }): string {
+  if (res.ok) return 'verifyEmail.success'
+  if (res.code === 'TOKEN_INVALID') return 'verifyEmail.errors.tokenInvalid'
+  if (res.status === 429) return 'verifyEmail.errors.rateLimited'
+  return 'verifyEmail.errors.generic'
 }
