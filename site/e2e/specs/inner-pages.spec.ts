@@ -83,14 +83,38 @@ test.describe('gezinme', () => {
     expect(response?.status()).toBe(404)
   })
 
-  test('entegrasyonlar: karşılaştırma tablosu odaklanabilir kaydırma bölgesi, başlıklar scope ile', async ({ page }) => {
-    await page.goto('/entegrasyonlar')
-    const region = page.getByTestId('comparison-table')
+  test('entegrasyonlar: kanal bazında kapsam — odaklanabilir bölge, başlıklar scope ile (>=768px); mobilde kompakt kart', async ({ page }) => {
+    await page.goto('/entegrasyonlar#kapsam')
+    const width = page.viewportSize()?.width ?? 0
+    const region = page.getByTestId('coverage-matrix')
+    if (width < 768) {
+      await expect(region).toBeHidden()
+      await expect(page.locator('.cm__card')).toHaveCount(6)
+      return
+    }
     await region.scrollIntoViewIfNeeded()
     await region.focus()
     await expect(region).toBeFocused()
-    await expect(region.locator('thead th[scope="col"]')).toHaveCount(7)
-    await expect(region.locator('tbody th[scope="row"]').first()).toBeVisible()
+    await expect(region.locator('thead th[scope="col"]')).toHaveCount(9)
+    await expect(region.locator('tbody th[scope="row"]')).toHaveCount(6)
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
+    expect(overflow).toBeLessThanOrEqual(0)
+  })
+
+  test('entegrasyonlar: yapışkan kapsam başlığı site header\'ının ALTINDA durur, satırları örtmez (masaüstü)', async ({ page }) => {
+    test.skip((page.viewportSize()?.width ?? 0) < 1024, 'yapışkan başlık yalnızca >=1024px')
+    await page.goto('/entegrasyonlar')
+    const row = page.locator('.cm__row').nth(3)
+    const top = await row.evaluate((e) => e.getBoundingClientRect().top + window.scrollY)
+    await page.evaluate((y) => window.scrollTo(0, y - 200), top)
+    await page.waitForTimeout(100)
+    const header = await page.locator('.site-header').boundingBox()
+    const head = await page.locator('.cm__table thead th').first().boundingBox()
+    const rowBox = await row.boundingBox()
+    // başlık satırı sayfaya yapıştı: header'ın hemen altında (üst üste binmez)
+    expect(Math.abs(head!.y - (header!.y + header!.height))).toBeLessThanOrEqual(2)
+    // ve kaydırılan satırı örtmez
+    expect(head!.y + head!.height).toBeLessThanOrEqual(rowBox!.y + 1)
   })
 })
 
