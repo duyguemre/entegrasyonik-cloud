@@ -80,7 +80,8 @@
       "adminClientDetail": "Mağaza Detayı",
       "adminTicketList": "Destek Yönetimi",
       "adminOperations": "Platform İşlemleri",
-      "adminSystemManagement": "Sistem Yönetimi"
+      "adminSystemManagement": "Sistem Yönetimi",
+      "adminIntegrationCompliance": "Entegrasyon Uyum"
     },
     "integrations": {
       "integrations": "Entegrasyonlar",
@@ -96,7 +97,10 @@
       "settingList": "Uygulama Ayarları",
       "printoutList": "Çıktılar",
       "logList": "İşlemler"
-    }
+    },
+    "accountSecurity": "Hesabım ve Güvenlik",
+    "privacyData": "Veri ve Gizlilik",
+    "stockPolicy": "Stok Politikası"
   },
   "batch": {
     "menu": {
@@ -1090,6 +1094,199 @@
       "published": "Yayında",
       "superseded": "Yerini Aldı",
       "discarded": "Atıldı"
+    },
+    "findingSeverity": {
+      "critical": "Kritik",
+      "high": "Yüksek",
+      "medium": "Orta",
+      "low": "Düşük",
+      "info": "Bilgi"
+    },
+    "findingStatus": {
+      "new": "Yeni",
+      "triaged": "Triyajda",
+      "accepted": "Kabul edildi",
+      "fixed": "Düzeltildi",
+      "wontfix": "Düzeltilmeyecek",
+      "falsePositive": "Yanlış pozitif"
+    },
+    "jobRunOutcome": {
+      "ok": "Başarılı",
+      "partial": "Kısmi",
+      "failed": "Başarısız",
+      "skipped": "Atlandı"
+    }
+  },
+  "integrationCompliance": {
+    "title": "Entegrasyon uyum",
+    "section": "Yönetim",
+    "description": "Entegrasyon API'lerindeki değişiklik belirtilerini izleyin, triyaj edin ve kararla kapatın.",
+    "searchPlaceholder": "Konu anahtarı veya entegrasyon ara",
+    "filters": {
+      "integration": "Entegrasyon",
+      "category": "Kategori",
+      "kind": "Tür",
+      "severity": "Şiddet",
+      "status": "Durum",
+      "chip": "{label}: {value}"
+    },
+    "category": {
+      "marketplace": "Pazaryeri",
+      "ecommerce": "E-ticaret",
+      "erp": "ERP",
+      "einvoice": "E-fatura",
+      "shipping": "Kargo"
+    },
+    "kind": {
+      "schema": "Şema",
+      "unknown_enum": "Bilinmeyen değer",
+      "endpoint": "Uç nokta",
+      "version": "Sürüm",
+      "deprecation": "Kullanımdan kaldırma",
+      "auth": "Kimlik doğrulama",
+      "ratelimit": "Oran sınırı",
+      "doc": "Doküman"
+    },
+    "source": {
+      "guard": "Sözleşme bekçisi",
+      "probe": "Probe",
+      "source_monitor": "Kaynak izleme",
+      "manual": "Manuel",
+      "agent": "Ajan"
+    },
+    "summary": {
+      "title": "Entegrasyon özeti",
+      "description": "Adaptör sürümü, son manuel doğrulama ve şiddete göre açık bulgular. Bir karta tıklayarak listeyi o entegrasyona süzün.",
+      "adapterVersion": "Adaptör sürümü",
+      "lastVerifiedAt": "Son doğrulama",
+      "notVerified": "Kayıt yok",
+      "noOpen": "Açık bulgu yok",
+      "severityCount": "{label} {n}",
+      "filterBy": "{name}: bulguları süz",
+      "filterActive": "{name}: süzme etkin, kaldırmak için tıklayın",
+      "loadError": "Entegrasyon özeti yüklenemedi — tekrar deneyin.",
+      "empty": "Katalogda tanımlı bir entegrasyon bulunamadı."
+    },
+    "probe": {
+      "title": "Son probe turu",
+      "scopeNote": "Probe tüm entegrasyonlar için tek bir platform turu olarak koşar; bu sonuç entegrasyon başına ayrı değildir.",
+      "never": "Henüz kayıtlı bir probe turu yok.",
+      "notFinished": "Henüz tamamlanmadı",
+      "processed": "{n} probe işlendi",
+      "failed": "{n} başarısız"
+    },
+    "table": {
+      "title": "Bulgular",
+      "ariaLabel": "Uyum bulguları tablosu",
+      "integration": "Entegrasyon",
+      "subject": "Konu",
+      "severity": "Şiddet",
+      "status": "Durum",
+      "tenants": "Tenant",
+      "occurrences": "Gözlem",
+      "lastSeen": "Son görülme",
+      "openDetail": "{subject} detayını aç",
+      "count": "{n} bulgu"
+    },
+    "confirmed": {
+      "yes": "Doğrulandı",
+      "no": "Onay bekliyor"
+    },
+    "empty": {
+      "title": "Şu an bilinen bir uyum sorunu yok",
+      "message": "İzleme aktif — yeni bulgular sözleşme bekçisi, probe ve kaynak izleme tarafından buraya eklenir.",
+      "note": "Boş liste yalnızca izlenen sözleşmelerde ve kaynaklarda sorun görülmediği anlamına gelir; izlenmeyen uçlardaki değişiklikleri kapsamaz."
+    },
+    "emptyFiltered": {
+      "title": "Sonuç yok",
+      "message": "Seçili filtrelere veya aramaya uyan bulgu yok.",
+      "action": "Filtreleri temizle"
+    },
+    "loadError": "Uyum bulguları yüklenemedi — bağlantınızı kontrol edip tekrar deneyin.",
+    "detail": {
+      "identity": "{integration} · {kind}",
+      "loadError": "Bulgu ayrıntısı yüklenemedi — tekrar deneyin.",
+      "sections": {
+        "overview": "Özet",
+        "evidence": "Kanıt",
+        "impact": "Etki",
+        "recommendation": "Öneri",
+        "decision": "Karar",
+        "record": "Karar kaydı"
+      },
+      "fields": {
+        "subjectKey": "Konu anahtarı",
+        "kind": "Tür",
+        "source": "Kaynak",
+        "category": "Kategori",
+        "confirmed": "Doğrulama",
+        "occurrences": "Gözlem sayısı",
+        "firstSeen": "İlk görülme",
+        "lastSeen": "Son görülme",
+        "adapterVersionSeen": "Görüldüğü adaptör sürümü",
+        "fixedInAdapterVersion": "Düzeltildiği adaptör sürümü",
+        "fixRef": "Düzeltme referansı",
+        "decidedBy": "Karar veren",
+        "decidedAt": "Karar zamanı",
+        "notes": "Gerekçe",
+        "closedAt": "Kapanış"
+      },
+      "evidence": {
+        "redactedNote": "Kanıt redakte edilmiştir: yalnız anahtar yolları, tip adları, kod değerleri ve başlık adları saklanır; gövde değeri veya müşteri verisi tutulmaz.",
+        "paths": "Anahtar yolları",
+        "types": "Tip adları",
+        "enumValue": "Bilinmeyen değer",
+        "httpStatus": "HTTP durumu",
+        "headerNames": "Başlık adları",
+        "sunsetAt": "Sunset tarihi",
+        "docDiff": "Doküman farkı",
+        "fingerprint": "Şekil parmak izi",
+        "none": "Bu bulgu için kanıt kaydı yok."
+      },
+      "impact": {
+        "tenants": "Etkilenen tenant sayısı",
+        "tenantsNote": "Tenant kimlikleri bu ekranda gösterilmez; kayıt en fazla 100 tenant tutar."
+      },
+      "recommendationNone": "Bu bulgu için öneri kaydı yok.",
+      "recordNone": "Henüz karar verilmedi."
+    },
+    "decision": {
+      "description": "Kararınız denetim kaydına yazılır.",
+      "actionLabel": "Eylem",
+      "actions": {
+        "triage": "Triyaja al",
+        "accept": "Kabul et",
+        "wontfix": "Düzeltilmeyecek",
+        "false_positive": "Yanlış pozitif",
+        "fixed": "Düzeltildi"
+      },
+      "hints": {
+        "triage": "İncelemeye alındı; henüz karar verilmedi.",
+        "accept": "Gerçek bir değişiklik; düzeltme planlanacak.",
+        "wontfix": "Gerçek ama düzeltilmeyecek; bulgu kapanır.",
+        "false_positive": "Gerçek bir değişiklik değil; bulgu kapanır.",
+        "fixed": "Adaptör düzeltildi; düzeltme referansı zorunlu, bulgu kapanır."
+      },
+      "reason": "Gerekçe (isteğe bağlı)",
+      "fixRef": "Düzeltme referansı (commit/PR) *",
+      "fixRefHint": "Düzeltmeyi içeren commit veya PR referansı.",
+      "fixedInAdapterVersion": "Düzeltildiği adaptör sürümü (isteğe bağlı)",
+      "submit": "Kararı uygula",
+      "errors": {
+        "actionRequired": "Bir eylem seçin.",
+        "reasonTooLong": "Gerekçe en fazla 500 karakter olabilir — kısaltın.",
+        "fixRefRequired": "Düzeltme referansı zorunlu — commit veya PR referansını girin.",
+        "fixRefTooLong": "Düzeltme referansı en fazla 200 karakter olabilir — kısaltın.",
+        "versionTooLong": "Adaptör sürümü en fazla 32 karakter olabilir — kısaltın.",
+        "failed": "Karar kaydedilemedi — tekrar deneyin."
+      },
+      "confirm": {
+        "title": "Bulgu “{action}” olarak işaretlensin mi?",
+        "description": "{integration} · {subject}. Karar denetim kaydına yazılır.",
+        "closes": "Bulgu kapanır.",
+        "regression": "Aynı imza 24 saat sonra tekrar görülürse bulgu yeniden açılır."
+      },
+      "success": "Karar kaydedildi: {status}."
     }
   },
   "shell": {
@@ -1138,6 +1335,188 @@
     },
     "return": {
       "title": "İade Tanımları"
+    }
+  },
+  "accountSecurity": {
+    "title": "Hesabım ve güvenlik",
+    "description": "Hesap bilgileriniz, e-posta doğrulamanız ve parolanız.",
+    "loadError": "Hesap bilgileriniz yüklenemedi — bağlantınızı kontrol edip tekrar deneyin.",
+    "profile": {
+      "title": "Hesap bilgileri",
+      "description": "Oturum açtığınız hesaba ait bilgiler. Ad ve e-posta, yetkili bir yönetici tarafından Yetkilendirme ekranından güncellenir.",
+      "fullName": "Ad soyad",
+      "email": "E-posta",
+      "accountType": "Hesap türü",
+      "owner": "Mağaza sahibi",
+      "member": "Ekip üyesi"
+    },
+    "verify": {
+      "title": "E-posta doğrulaması",
+      "description": "Doğrulanmış e-posta adresi, parola sıfırlama ve güvenlik bildirimlerinin size ulaşmasını sağlar.",
+      "verified": "Doğrulandı",
+      "unverified": "Doğrulanmadı",
+      "verifiedHint": "E-posta adresiniz doğrulanmış. Başka bir işlem gerekmiyor.",
+      "unverifiedHint": "Doğrulama bağlantısı e-posta adresinize gönderilir ve 24 saat geçerlidir.",
+      "send": "Doğrulama bağlantısını gönder",
+      "sent": "Doğrulama bağlantısı e-posta adresinize gönderildi. Gelen kutunuzu ve istenmeyen klasörünü kontrol edin.",
+      "alreadyVerified": "E-posta adresiniz zaten doğrulanmış.",
+      "errors": {
+        "cooldown": "Kısa süre önce bir bağlantı gönderildi — bir dakika bekleyip tekrar deneyin.",
+        "notConfigured": "E-posta gönderimi şu an yapılandırılmamış — lütfen destek ekibiyle iletişime geçin.",
+        "mailFailed": "E-posta gönderilemedi — birkaç dakika sonra tekrar deneyin.",
+        "generic": "Doğrulama bağlantısı gönderilemedi — bağlantınızı kontrol edip tekrar deneyin."
+      }
+    },
+    "password": {
+      "title": "Parola",
+      "description": "Parolanızı değiştirdiğinizde bu cihaz dışındaki tüm oturumlarınız kapatılır ve e-posta adresinize bilgilendirme gönderilir.",
+      "current": "Mevcut parola",
+      "new": "Yeni parola",
+      "confirm": "Yeni parola (tekrar)",
+      "hintsLabel": "Parola kuralları",
+      "hints": {
+        "length": "En az 10 karakter",
+        "classes": "16 karakterden kısaysa en az 3 tür: küçük harf, büyük harf, rakam, sembol",
+        "bytes": "En fazla 72 bayt (Türkçe karakterler 2 bayt sayılır)"
+      },
+      "hintMet": "(sağlandı)",
+      "hintUnmet": "(henüz sağlanmadı)",
+      "submit": "Parolayı değiştir",
+      "changed": "Parolanız değiştirildi. Diğer cihazlardaki oturumlarınız kapatıldı; bu cihazda oturumunuz açık kalır.",
+      "changedToast": "Parolanız değiştirildi."
+    },
+    "errors": {
+      "currentRequired": "Mevcut parolanızı girin.",
+      "newRequired": "Yeni parolayı girin.",
+      "hintsUnmet": "Yeni parola aşağıdaki kuralları karşılamıyor.",
+      "mismatch": "Girdiğiniz parolalar birbiriyle uyuşmuyor.",
+      "invalidCurrent": "Mevcut parolanız doğrulanamadı — kontrol edip tekrar deneyin.",
+      "weak": "Yeni parola güvenlik kurallarını karşılamıyor — daha uzun veya çeşitli bir parola seçin.",
+      "same": "Yeni parola mevcut parolanızla aynı — farklı bir parola seçin.",
+      "invalidRequest": "Parola alanları geçersiz — iki alanı da doldurup tekrar deneyin.",
+      "conflict": "Parolanız aynı anda başka bir yerden değiştirildi — sayfayı yenileyip tekrar deneyin.",
+      "rateLimited": "Çok fazla deneme yapıldı — birkaç dakika sonra tekrar deneyin.",
+      "generic": "Parolanız şu an değiştirilemedi — bağlantınızı kontrol edip tekrar deneyin."
+    }
+  },
+  "privacyData": {
+    "title": "Veri ve gizlilik",
+    "description": "Mağaza verilerinizin bir kopyasını alın ve kişisel verilerin işlenmesine ilişkin belgeleri inceleyin.",
+    "export": {
+      "title": "Verilerinizi dışa aktarın",
+      "description": "KVKK kapsamındaki veri taşınabilirliği için mağazanıza ait verilerin tamamını tek bir arşiv olarak indirin.",
+      "facts": {
+        "scope": "Ürünler, varyantlar, kategoriler, markalar, siparişler, müşteriler, iadeler, faturalar, mesajlar, finans kayıtları, ayarlar ve kullanıcılar ZIP arşivinde NDJSON dosyaları olarak yer alır.",
+        "secrets": "Parolalar ve pazaryeri API anahtarları gibi gizli bilgiler arşive eklenmez.",
+        "validity": "İndirme bağlantısı 24 saat geçerlidir; hazırlık, veri hacmine göre birkaç dakika sürebilir.",
+        "singleUse": "Bağlantı tek kullanımlıktır: indirme tamamlanınca arşiv sunucudan silinir."
+      },
+      "ownerOnlyHint": "Veri dışa aktarma yalnızca mağaza sahibi tarafından yapılabilir. Bir kopyaya ihtiyacınız varsa mağaza sahibinden isteyin.",
+      "action": "Dışa aktarma dosyası hazırla",
+      "preparing": "Arşiv hazırlanıyor — bu sayfadan ayrılmayın.",
+      "readyTitle": "Arşiviniz hazır",
+      "readyText": "İndirme bağlantısı {expiresAt} tarihine kadar geçerlidir ve yalnızca bir kez kullanılabilir.",
+      "again": "Yeni dışa aktarma hazırla",
+      "errors": {
+        "ownerOnly": "Bu işlem yalnızca mağaza sahibi tarafından yapılabilir — mağaza sahibi hesabıyla giriş yapın.",
+        "noTenant": "Aktif bir mağaza seçili değil — önce mağazanızı seçip tekrar deneyin.",
+        "generic": "Dışa aktarma dosyası hazırlanamadı — birkaç dakika sonra tekrar deneyin."
+      }
+    },
+    "download": {
+      "action": "Arşivi indir",
+      "doneTitle": "Arşiv indirildi",
+      "doneText": "{filename} bilgisayarınıza kaydedildi. Güvenliğiniz için arşiv sunucudan silindi; yeniden gerekirse yeni bir dışa aktarma hazırlayın.",
+      "toast": "Veri arşivi indirildi.",
+      "errors": {
+        "invalid": "İndirme bağlantısının süresi dolmuş veya geçersiz — yeni bir dışa aktarma hazırlayın.",
+        "gone": "Bu arşiv daha önce indirildi veya artık mevcut değil — yeni bir dışa aktarma hazırlayın.",
+        "rateLimited": "Çok fazla indirme denemesi yapıldı — birkaç dakika sonra tekrar deneyin.",
+        "generic": "Arşiv indirilemedi — bağlantınızı kontrol edip tekrar deneyin."
+      }
+    },
+    "legal": {
+      "title": "Aydınlatma metni ve yasal belgeler",
+      "description": "Kişisel verilerin hangi amaçlarla işlendiğini ve KVKK kapsamındaki haklarınızı bu belgelerde bulabilirsiniz.",
+      "kvkk": "KVKK Aydınlatma Metni",
+      "terms": "Kullanım Koşulları",
+      "newTab": "(yeni sekmede açılır)"
+    }
+  },
+  "stockPolicy": {
+    "title": "Stok politikası",
+    "description": "Aynı stoğun birden fazla pazaryerinde satıldığı durumlarda aşırı satışı önleyen tampon ve telafi kuralları.",
+    "loadError": "Stok politikası yüklenemedi — bağlantınızı kontrol edip tekrar deneyin.",
+    "forbidden": {
+      "title": "Bu ayarlara erişiminiz yok",
+      "message": "Stok politikası yalnızca mağaza sahibi ve yöneticiler tarafından görüntülenip değiştirilebilir."
+    },
+    "empty": {
+      "title": "Henüz bağlı pazaryeri yok",
+      "message": "Stok politikası, en az bir pazaryeri entegrasyonu bağlandıktan sonra ayarlanabilir.",
+      "action": "Pazaryeri entegrasyonlarına git"
+    },
+    "primary": {
+      "title": "Birincil kanal",
+      "description": "Son adetler birincil kanalda satılır; diğer kanallara tampon düşülerek daha az stok yayınlanır. Otomatik seçimde ilk bağlanan pazaryeri birincil sayılır.",
+      "label": "Birincil satış kanalı",
+      "auto": "Otomatik ({channel})",
+      "effective": "Şu an geçerli birincil kanal: {channel}",
+      "disconnectedItem": "{channel} (artık bağlı değil)",
+      "stale": "Seçili birincil kanal ({channel}) artık bağlı değil — geçerli bir kanal seçin veya otomatik kurala dönün."
+    },
+    "channels": {
+      "title": "Kanal kuralları",
+      "description": "Boş bırakılan alanlarda varsayılan değer kullanılır. Yayınlanan stok = satılabilir stok − en büyüğü (tampon adet, stok × tampon yüzdesi).",
+      "primaryChip": "Birincil kanal",
+      "disabledChip": "Pasif",
+      "preview": "Örnek: {available} adet satılabilir stokta bu kanala {published} adet yayınlanır."
+    },
+    "fields": {
+      "bufferUnits": "Tampon adet",
+      "bufferUnitsHint": "Bu kanala yayınlanan stoktan düşülecek sabit adet.",
+      "bufferUnitsPrimaryHint": "Birincil kanalda tampon adet uygulanmaz.",
+      "bufferPercent": "Tampon yüzdesi",
+      "bufferPercentHint": "Stoğun bu yüzdesi bu kanala yayınlanmaz.",
+      "graceMinutes": "Aşırı satış bekleme süresi",
+      "graceMinutesHint": "Aşırı satışta stok gelmesi için beklenecek süre.",
+      "minutes": "dk",
+      "autoCancel": "Aşırı satışta otomatik iptal",
+      "autoCancelHint": "Bekleme süresi dolunca satır pazaryerinde iptal edilir.",
+      "autoCancelUnsupported": "Bu pazaryerinde otomatik iptal desteklenmiyor; aşırı satışta size görev düşer.",
+      "autoCancelDefault": "Varsayılan ({value})",
+      "on": "Açık",
+      "off": "Kapalı",
+      "defaultPlaceholder": "Varsayılan: {value}",
+      "unsupported": "Desteklenmiyor"
+    },
+    "errors": {
+      "notNumber": "Geçerli bir sayı girin.",
+      "integer": "Tam sayı girin.",
+      "range": "0 ile {max} arasında bir değer girin."
+    },
+    "save": {
+      "unsaved": "Kaydedilmemiş {count} değişiklik var.",
+      "fixErrors": "Kaydetmeden önce {count} alan düzeltilmeli.",
+      "success": "Stok politikası kaydedildi.",
+      "error": "Stok politikası kaydedilemedi — tekrar deneyin."
+    }
+  },
+  "verifyEmail": {
+    "title": "E-posta doğrulaması",
+    "verifying": "E-posta adresiniz doğrulanıyor…",
+    "success": "E-posta adresiniz doğrulandı. Teşekkürler!",
+    "toApp": "Uygulamaya git",
+    "toLogin": "Giriş ekranına dön",
+    "resendHint": "Giriş yaptıktan sonra Hesabım ve güvenlik ekranından yeni bir doğrulama bağlantısı isteyebilirsiniz.",
+    "noToken": {
+      "title": "Bağlantı geçersiz",
+      "message": "Bu sayfaya doğrudan erişilemez. Doğrulama e-postasındaki bağlantıyı kullanın."
+    },
+    "errors": {
+      "tokenInvalid": "Bu doğrulama bağlantısının süresi dolmuş veya daha önce kullanılmış.",
+      "rateLimited": "Çok fazla deneme yapıldı — birkaç dakika sonra tekrar deneyin.",
+      "generic": "E-posta adresiniz şu an doğrulanamadı — birkaç dakika sonra bağlantıyı yeniden açın."
     }
   }
 }

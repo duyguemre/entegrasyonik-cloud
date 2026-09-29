@@ -179,7 +179,7 @@ const cards = plans.map((p, i) => {
       <li><Icon name="shield" size="sm" />Her müşteri hesabına ayrı veritabanı</li>
     </ul>
     {pricingHref && (
-      <a class="pr__more" href={pricingHref}>
+      <a class="link pr__more" href={pricingHref}>
         Planları ayrıntılı karşılaştırın <Icon name="arrow" size="sm" />
       </a>
     )}
@@ -512,13 +512,9 @@ const cards = plans.map((p, i) => {
   .pr__trust :global(.icon) {
     color: var(--ek-color-secondary-darken-1);
   }
+  /* S15: alt çizgisiz merkezi `.link` stili (global.css); burada yalnızca boyut */
   .pr__more {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-    min-height: var(--site-tap-target);
     font-size: var(--ek-font-size-lg);
-    font-weight: var(--ek-font-weight-semibold);
   }
   .pr__notice {
     display: inline-flex;

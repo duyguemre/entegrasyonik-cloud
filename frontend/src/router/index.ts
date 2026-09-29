@@ -60,6 +60,16 @@ const routes: RouteRecordRaw[] = [
           requiresAuth: false
         }
       },
+      // ADR-0015 B4-P0 — `docs/API_ACCOUNT_LIFECYCLE.md` #4: e-posta doğrulama bağlantısının hedefi
+      // (yalnızca EKLEME). Kimliksiz; `?token=` okur, açılışta `AccountService/verifyEmail` çağırır.
+      {
+        path: 'verify-email',
+        name: 'VerifyEmail',
+        component: () => import('@/views/unsecure/VerifyEmailView.vue'),
+        meta: {
+          requiresAuth: false
+        }
+      },
     ],
   },
 ]

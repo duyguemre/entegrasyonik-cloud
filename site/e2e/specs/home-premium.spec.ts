@@ -78,14 +78,15 @@ test.describe('MotionToggle header\'a sığar (320–1600 px)', () => {
   })
 })
 
-test.describe('Hero ürün paneli (Örnek görünüm)', () => {
-  test('mock görünür, "Örnek görünüm" etiketli, kanal noktaları (isimsiz) ve konsol temiz', async ({ page }) => {
+test.describe('Hero ürün paneli', () => {
+  test('mock görünür, "Örnek görünüm" rozeti yok (S15), kanal noktaları (isimsiz) ve konsol temiz', async ({ page }) => {
     const problems = collectProblems(page)
     await page.goto('/')
     await waitForFonts(page)
     const mock = page.getByTestId('hero-mock')
     await expect(mock).toBeVisible()
-    await expect(mock).toContainText('Örnek görünüm') // rozet yeter (S8 2. tur: ayrı altyazı kaldırıldı)
+    await expect(mock).not.toContainText('Örnek görünüm') // S15: kullanıcı isteğiyle rozet kaldırıldı
+    await expect(mock).toHaveAttribute('aria-hidden', 'true') // dekoratif sahne; veri olarak sunulmaz
     await expect(page.locator('[data-testid="hero-mock"] [data-part="chan"]')).toHaveCount(6)
     // S12: kanal adı yerine genel etiket
     await expect(mock).toContainText('Pazaryeri siparişi')
