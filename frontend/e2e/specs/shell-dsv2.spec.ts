@@ -7,6 +7,8 @@ import { test, expect, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { installApiMocks } from '../fixtures/mockApi'
 import { gotoAuthed, openDrawer, openScreen, waitForPlatformListStable } from '../fixtures/nav'
+import { menuFixtureWithProductUpdate } from '../fixtures/productUpdate'
+import { choicesDoluFixture } from '../fixtures/apiData'
 
 const AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
 const TAB = '.workplace-tabs [role="tab"]'
@@ -244,6 +246,31 @@ test.describe('DS-v2 kabuk — sekme menüsü ve sol menü', () => {
     const railAxe = await shellAxe(page).analyze()
     expect(railAxe.violations).toEqual([])
     await page.keyboard.press('Control+b')
+  })
+
+  test('üst bar çalışma alanı anahtarı: kayıt sekmesi açılınca "seçili kayıt" etkinleşir, Genel ↔ kayıt geçer', async ({ page }) => {
+    await installApiMocks(page, {
+      MenuService: menuFixtureWithProductUpdate,
+      ChoiceService: choicesDoluFixture,
+    })
+    await gotoAuthed(page)
+    const record = page.getByRole('radiogroup', { name: 'Çalışma alanı' }).getByRole('radio').nth(1)
+    await expect(record).toBeDisabled()
+
+    await openScreen(page, 'ProductListView')
+    // Ürün görseli (küçük resim) kayıt sekmesini açar (ProductListView `openEditProduct` — çok örnekli sekme).
+    await page.locator('.productListView .plv-thumb-wrap').first().click()
+    await expect(page.locator(TAB)).toHaveCount(3, { timeout: 20_000 })
+    await expect(record).toBeEnabled()
+    await expect(record).toContainText('E2E Test Ürünü')
+    await expect(record).toHaveAttribute('aria-checked', 'true')
+
+    await page.getByRole('radio', { name: 'Genel' }).click()
+    await expect(page.getByRole('radio', { name: 'Genel' })).toHaveAttribute('aria-checked', 'true')
+    await expect(page.getByRole('tab', { name: 'Ürünler' })).toHaveAttribute('aria-selected', 'true')
+    await record.click()
+    await expect(record).toHaveAttribute('aria-checked', 'true')
+    await expect(page.getByRole('tab', { name: 'E2E Test Ürünü' })).toHaveAttribute('aria-selected', 'true')
   })
 
   test('axe: kabuk (üst bar, sol menü, sekme şeridi) WCAG 2.1 AA ihlali 0', async ({ page }) => {

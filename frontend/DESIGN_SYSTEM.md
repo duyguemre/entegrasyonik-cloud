@@ -1,6 +1,7 @@
 # Entegrasyonik Tasarım Sistemi — DS-v2
 
-> **Durum:** Aşama 1 (yalnızca tasarım sistemi + vitrin) — **kullanıcı onayı bekliyor.** Ekran göçü yapılmadı.
+> **Durum:** Aşama 1 (tasarım sistemi + vitrin) tamam. **Aşama 2 / adım 1 — kabuk göçü uygulandı** (`cloud/ds-v2-shell`, §13);
+> liste / diyalog-form / dashboard adımları paralel dallarda. Görsel taban onayı yerelde (Windows) yapılır.
 > **Vitrin:** `npm run dev` → `http://localhost:3000/design-system` (yalnızca geliştirme; üretim derlemesinde yok, menüde yok).
 > **İnceleme görselleri:** `frontend/docs/design-system-review/` (liste §12).
 > **Kaynaklar:** kullanıcı brifi `docs/design-reference/README.md` (görsel yön), ADR-0011 (token mimarisi), ADR-0015 (süreç/test/desen kataloğu; görsel yönü bu brifle geçersiz kılındı).
@@ -168,8 +169,18 @@ Mevcut ds bileşenlerinin (EkStatusChip, EkDataTable, EkKpiCard, EkFilterBar, Ek
 | `EkPagerBar` | sayfalama | çerçevenin ALTINA SABİT; sol boyut+toplam, orta sayfalar, sağ `#trailing` |
 | `EkListFrame` | liste ekranı iskeleti | filtreler → kart (toolbar → grid [yalnız burası kayar] → pager) |
 | `EkCascadePicker` | kategori ağacı, ekran başlatıcı | Miller kolonları, seçili yol vurgusu, arama tam yol, ←→↑↓ Enter |
+| `EkDateField` | TÜM tarih alanları | her zaman **GG.AA.YYYY** (tarayıcının yerel `type="date"`'i kullanılmaz); yazarken nokta otomatik; geçersiz tarihte hata metni; takvim Türkçe, pazartesi başlar; v-model ISO `YYYY-MM-DD` |
 
 Vitrin-only prop'lar (`forceState`, `forceHoverKey`, `forceOpen`, `inline`) yalnızca vitrin içindir.
+
+**Aşama 2'de eklenen (geri uyumlu) özellikler:** `EkSmartSearch` `openOnFocus` · `emptyText` · öğede `platform` (marka renkli nokta) ·
+`dismiss` olayı · dar ekranda görünüm alanına yaslanan açılır · `EkWorkspaceTabs` yalnızca **kesilen** başlıkta tooltip · sağ tık /
+Shift+F10 / Menü tuşu → `contextmenu(id,{x,y})` · orta tık kapatır · `focusActive()` · `EkSidebarNav` etiketler kırpılmadan sarılır ·
+etkin öğenin grubu kendiliğinden açılır · `#item-trailing` (düğmenin kardeşi) · ray'de grup → `expand-request` · `hookClasses` ·
+`EkAppHeader` menü düğmesinde kısayollu ipucu · `menuShortcut` · `menuExpanded` · `recordHint` · `data-header-action` çapaları ·
+`#end-start` · `EkMenuPanel` `autofocus` · `EkPlatformMark` `variant="dot"`.
+**Kural (tooltip):** Vuetify `VTooltip` varsayılanı `eager: true` — boş `role=tooltip` düğümleri DOM'da kalır (axe `aria-tooltip-name`).
+Kabuk/DS tooltip'lerinde `:eager="false"` + `transition="fade-transition"` (ölçek animasyonu yok) kullanılır.
 
 ## 7. Erişilebilirlik ve testler
 
@@ -186,7 +197,7 @@ Vitrin-only prop'lar (`forceState`, `forceHoverKey`, `forceOpen`, `inline`) yaln
 
 Her adım ADR-0015 süreçleriyle: spec önce yeşil → göç → ekran görüntüsü bilinçli yeniden tabanlama (Windows) → axe 0 → mandallar düşüş.
 
-1. **Kabuk** — `SecureLayout`, `ApplicationBar` → `EkAppHeader` + `EkSmartSearch` (komut paleti ile birleşik arama, Ctrl+K); `NavigationMenu`/`NavigationRail` → `EkSidebarNav` (kesilen alt menüler); `WorkplaceTabSwitcher`/`.workplace-tabs` → `EkWorkspaceTabs` (soldaki boşluk kalkar; `'ANASAYFA'` büyük harf spec çapası Karar 5.1 listesine alınır). Kısayollar: Ctrl+K, Ctrl+←/→, Ctrl+B.
+1. **Kabuk** ✅ (uygulandı, §13) — `SecureLayout`, `ApplicationBar` → `EkAppHeader` + `EkSmartSearch` (komut paleti ile birleşik arama, Ctrl+K); `NavigationMenu`/`NavigationRail` → `EkSidebarNav` (kesilen alt menüler); `WorkplaceTabSwitcher`/`.workplace-tabs` → `EkWorkspaceTabs` (soldaki boşluk kalkar; `'ANASAYFA'` büyük harf spec çapası Karar 5.1 listesine alınır). Kısayollar: Ctrl+K, Ctrl+←/→, Ctrl+B.
 2. **Liste standardı** — tüm listeler (sipariş, ürün, iade, müşteri, fatura, mesaj, loglar, admin listeleri) `EkListFrame` + `EkFilterPanel` + `EkActiveFilters` + `EkDataGrid` + `EkPagerBar`. Tam sayfa filtre popup'ları kalkar; sayfalama alta sabit. `EkDataTable`/`EkPagination`/`EkFilterBar` bu adımda DS-v2'ye delege eder (API korunur).
 3. **Diyalog / menü / form** — `ConfirmationDialogComponent`, `ActionDialogComponent`, `CustomDialogComponent`, `EkConfirmDialog`, `EkFormDialog` → `EkDialog`; `BatchProcessMenu`, satır menüleri → `EkContextMenu`; **tüm formlar `EkFormGrid`** — öncelik **Trendyol pazaryeri entegrasyon formu** (`integrations/*`, üst üste binen alanlar) ve diğer entegrasyon/ayar formları. Bu adımda `site.css` `.v-dialog .v-overlay__content` global kuralı kaldırılır.
 4. **Dashboard** — `EkMetricCard` KPI satırı, `EkCard` özet bölümleri (bekleyen aksiyonlar, pazaryeri bağlantı durumu), ECharts teması uygulama profiline bağlanır.
@@ -237,3 +248,37 @@ Global legacy CSS: `public/assets/css/site.css` (hex 83, rgb 68, cubic-bezier 5)
 `00-vitrin-1440x900-tam.png`, `00-vitrin-1440x900-ilk-ekran.png`, `00-vitrin-390x844-tam.png`, `00-vitrin-390x844-ilk-ekran.png`,
 `01-renk` · `02-yuzey` · `03-tipografi` · `04-olcek` · `05-buton` · `06-form` · `07-kart` · `08-rozet` · `09-diyalog` · `10-kabuk` · `11-liste` · `12-kademeli`,
 `20-canli-baglam-menusu`, `21-canli-tehlikeli-diyalog`, `m-kabuk-390` · `m-liste-390` · `m-form-390`.
+
+## 13. Aşama 2 / adım 1 — Kabuk (uygulandı)
+
+| Parça | Dosya | Ne yapar |
+|---|---|---|
+| Yerleşim | `layouts/SecureLayout.vue` | Üst bar tam genişlik (Vuetify layout sırası), altında sol menü + sekme şeridi + çalışma alanı. Üst bölüm daraltma (üst bar yukarı kayar), odak modu (üst bar + sol menü gizli, destekleniyorsa tarayıcı tam ekranı; tam ekrandan Esc ile çıkış odak modunu da kapatır). Sekme değişiminde çalışma alanına kısa giriş hareketi (opaklık + 4px, `--ek-duration-base`, `--ek-easing-enter`; reduced-motion'da yok). Tüm kısayolların tek dinleyicisi. |
+| Üst bar | `components/layout/ApplicationBar.vue` | `v-app-bar` (düzen) + `EkAppHeader` (görünüm). Çalışma alanı anahtarı: **Genel ↔ seçili kayıt** (en son açılan çok örnekli sekme, ör. ürün düzenleme; yoksa devre dışı + açıklama). Yardım ve hesap menüleri `EkMenuPanel` (kısayollu, tehlikeli "Çıkış" en sonda). |
+| Akıllı arama | `components/layout/ShellSearch.vue` | Komut paleti ile BİRLEŞİK (Ctrl+K). Boş sorgu: **Son açılanlar** (oturum içi, yalnız bellekte). Sorgu: **Ekranlar** (menü, anında) + ≥2 karakterde `SmartService/unifiedSearch` → Siparişler / Ürünler / Müşteriler / İadeler ve talepler; grup başlığı + sayaç, eşleşme `<mark>`, "ETİKET değer" çipleri, kanal marka noktası. Seçim eski davranışla aynı (arama değeri sekme parametresi — URL'ye yazılmaz). Uydurma sonuç yok. |
+| Sekmeler | `components/layout/ShellTabStrip.vue` | `EkWorkspaceTabs`; her açık örnek ayrı sekme; pano sekmesi sabit. Sağ tık: Kapat · Diğerlerini kapat · Sağdakileri kapat. Sağ uçta: açık sekmeler listesi (Alt+1…9 ipuçlu, "Tümünü kapat"), üst bölümü daralt, odak modu. |
+| Sol menü | `components/layout/NavigationMenu.vue`, `NavigationRail.vue`, `useShellMenu.ts` | `EkSidebarNav` (tam) ve aynı modelin ray sunumu (ikon + sağa açılan ipucu). Favori yıldızı öğenin sağında. Spec çapaları korunur: `.soft-nav`, `.soft-item`, `.v-list-group`/`__header`, `.sub-item-soft`, `.soft-rail`, `.rail-logo-btn`, `.collapse-btn`. |
+| Kısayol kaydı | `navigation/shortcuts.ts` | Kısayolların TEK tanımı; dinleyici, ipuçları (EkKbd) ve `?` diyaloğu (`ShortcutHelpDialog.vue`) buradan okur. |
+
+**Kısayollar** (metin alanında yalnızca Ctrl'li olanlar çalışır; tarayıcının kendi kısayolları ezilmez):
+
+| Tuş | Eylem |
+|---|---|
+| Ctrl+K | Akıllı aramaya git (üst bar gizliyse geçici olarak gösterir; Esc önceki odağa döner) |
+| ? | Klavye kısayolları listesi |
+| Ctrl+→ / Ctrl+← | Sonraki / önceki sekme |
+| Alt+1…9 | N. sekmeye git |
+| Alt+W | Etkin sekmeyi kapat (pano sekmesi kapanmaz) |
+| Ctrl+B | Sol menü: masaüstünde tam ↔ ray, tablet/mobilde katmanı aç/kapa |
+| Alt+U | Üst bölümü daralt / göster |
+| Ctrl+Shift+F | Odak modu |
+| Sekme şeridinde ←/→ · Home/End · Enter · Delete · Shift+F10 | gezin · etkinleştir · kapat · sekme menüsü |
+| Aramada ↑/↓ · Enter · Esc | gezin · aç · kapat |
+
+**Ölçü:** `--ek-app-tabstrip-height` 36 → **40px** (`design/app.css`; etkin sekme 36px + üst boşluk). Token dosyalarına dokunulmadı.
+**Spec'ler:** yeni `e2e/specs/shell-dsv2.spec.ts` (kısayollar, arama klavyesi, sekme menüsü, kayıt anahtarı, kabuk bölgelerinde axe AA = 0);
+`shell-v2`/`navigation`/`session-isolation` + `fixtures/session.ts` yalnızca seçici güncellemesi (Karar 5.1 izinli değişiklik 1 — iddialar aynı;
+komut paleti iddiaları birleşik aramaya taşındı; sekme başlıkları artık cümle düzeninde, `'ANASAYFA'` karşılaştırması büyük harfe çevrilerek).
+**İnceleme görselleri:** `a2-shell-1440-{kabuk,arama,sekme-menusu,kisayollar,ray,ust-daraltilmis}.png`, `a2-shell-390-{kabuk,arama,sekme-menusu,kisayollar,menu}.png`
+(`SHELL_REVIEW_CAPTURE=1 SHELL_REVIEW_WIDTH=1440|390 npx playwright test e2e/specs/shell-dsv2.spec.ts -g inceleme`).
+**Açık:** görsel tabanlar (`shell-dashboard` vb.) Windows'ta bilinçli yeniden tabanlanmalı; `menu.user.user` gibi eksik i18n anahtarları test menü verisindendir.
