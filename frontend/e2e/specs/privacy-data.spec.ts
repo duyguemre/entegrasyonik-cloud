@@ -159,4 +159,194 @@ test.describe('ADR-0015 B4-P0 — N4 Veri ve gizlilik (KVKK)', () => {
     const ready = await new AxeBuilder({ page }).include(ROOT).withTags(AXE_TAGS).analyze()
     expect(ready.violations, JSON.stringify(ready.violations, null, 2)).toEqual([])
   })
+
+  // --- C1.6 — Mağaza silme talebi (`TenantDataService/requestDeletion`, owner) -----------------------------
+  // Sözleşme (salt-okunur): tenant-data-service.ts:27 → `{ order, status, deletionScheduledAt }`; hatalar 400/401/404/409.
+  // 401 bu uçta YANLIŞ PAROLA'dır (oturum değil): genel "/login" yönlendirmesi tetiklenmemeli.
+})
+
+const STORE = 'E2E Test Mağazası'
+const DELETION_OK = { order: 7, status: 'DELETION_PENDING', deletionScheduledAt: '2026-10-29T10:15:00.000Z' }
+
+async function openDeletionDialog(page: any) {
+  const root = page.locator(ROOT)
+  await root.getByRole('button', { name: 'Silme talebi oluştur' }).click()
+  const dialog = page.getByRole('dialog').filter({ hasText: 'Kimliğinizi doğrulayın' })
+  await expect(dialog).toBeVisible()
+  return dialog
+}
+
+async function fillVerify(dialog: any, password: string, name: string) {
+  await dialog.getByLabel('Parola').fill(password)
+  await dialog.getByLabel('Mağaza adı').fill(name)
+}
+
+test.describe('C1.6 — Mağaza silme talebi (owner)', () => {
+  test('smoke: sahip için "Mağazayı sil" bölümü, nötr açıklama ve yasal bağlantı render olur', async ({ page }) => {
+    await mocks(page)
+    await openB4Screen(page, 'PrivacyDataView')
+    const root = page.locator(ROOT)
+
+    await expect(root.getByRole('heading', { level: 2, name: 'Mağazayı sil' })).toBeVisible()
+    await expect(root.getByText('Talep sonrası mağaza 30 gün askıda kalır.')).toBeVisible()
+    await expect(root.getByText('Bu süre içinde geri alma yalnızca destek ekibi üzerinden yapılabilir.')).toBeVisible()
+    const info = root.getByRole('link', { name: /Ayrıntılı bilgi/ })
+    await expect(info).toHaveAttribute('href', /\/yasal\/kvkk-aydinlatma$/)
+    await expect(info).toHaveAttribute('target', '_blank')
+    await expect(root.getByRole('button', { name: 'Silme talebi oluştur' })).toBeVisible()
+  })
+
+  test('rol: sahip olmayan (ADMIN) kullanıcıda silme bölümü YOK, istek atılmaz', async ({ page }) => {
+    let called = false
+    await mocks(page, {
+      userContext: { ...userContextFixture, owner: false, roleCode: 'ADMIN' },
+      'TenantDataService/requestDeletion': async (route: any, headers: Record<string, string>) => {
+        called = true
+        return route.fulfill({ status: 200, contentType: 'application/json', headers, body: JSON.stringify(DELETION_OK) })
+      },
+    })
+    await openB4Screen(page, 'PrivacyDataView')
+    const root = page.locator(ROOT)
+
+    await expect(root.getByRole('heading', { level: 1, name: 'Veri ve gizlilik' })).toBeVisible()
+    await expect(root.getByRole('heading', { name: 'Mağazayı sil' })).toHaveCount(0)
+    await expect(root.getByRole('button', { name: 'Silme talebi oluştur' })).toHaveCount(0)
+    expect(called).toBe(false)
+  })
+
+  test('etkileşim: ad eşleşmeden "Sil" etkin değil → son onay (odak Vazgeç) → istek gövdesi → askı durumu', async ({ page }) => {
+    let body: any
+    await mocks(page, {
+      'TenantDataService/requestDeletion': async (route: any, headers: Record<string, string>) => {
+        body = route.request().postDataJSON()
+        return route.fulfill({ status: 200, contentType: 'application/json', headers, body: JSON.stringify(DELETION_OK) })
+      },
+    })
+    await openB4Screen(page, 'PrivacyDataView')
+    const dialog = await openDeletionDialog(page)
+    const next = dialog.getByRole('button', { name: 'Sil', exact: true })
+
+    await expect(dialog.getByText(STORE, { exact: true })).toBeVisible()
+    await expect(next).toBeDisabled()
+    await fillVerify(dialog, 'e2e-sentetik-parola', 'e2e test mağazası')
+    await expect(next).toBeDisabled() // büyük/küçük harf dahil AYNEN
+    await dialog.getByLabel('Mağaza adı').fill(STORE)
+    await expect(next).toBeEnabled()
+    await next.click()
+
+    const confirm = page.getByRole('dialog').filter({ hasText: 'silme talebi oluşturulsun mu?' })
+    await expect(confirm.getByRole('heading', { name: `'${STORE}' için silme talebi oluşturulsun mu?` })).toBeVisible()
+    await expect(confirm.getByRole('button', { name: 'Vazgeç' })).toBeFocused()
+    expect(body).toBeUndefined()
+    await confirm.getByRole('button', { name: 'Silme talebi oluştur' }).click()
+
+    const root = page.locator(ROOT)
+    await expect(root.getByText('Silme talebi alındı')).toBeVisible()
+    await expect(root.getByText(/29\.10\.2026 \d{2}:\d{2} tarihine kadar askıda kalacak/)).toBeVisible()
+    expect(body).toEqual({ password: 'e2e-sentetik-parola', confirmTenantName: STORE })
+    await expect(root.getByRole('button', { name: 'Silme talebi oluştur' })).toHaveCount(0)
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+  })
+
+  test('vazgeç: son onayda Vazgeç → istek atılmaz, alanlar temizlenir', async ({ page }) => {
+    let called = false
+    await mocks(page, {
+      'TenantDataService/requestDeletion': async (route: any, headers: Record<string, string>) => {
+        called = true
+        return route.fulfill({ status: 200, contentType: 'application/json', headers, body: JSON.stringify(DELETION_OK) })
+      },
+    })
+    await openB4Screen(page, 'PrivacyDataView')
+    let dialog = await openDeletionDialog(page)
+    await fillVerify(dialog, 'e2e-sentetik-parola', STORE)
+    await dialog.getByRole('button', { name: 'Sil', exact: true }).click()
+    await page.getByRole('dialog').filter({ hasText: 'silme talebi oluşturulsun mu?' }).getByRole('button', { name: 'Vazgeç' }).click()
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+    expect(called).toBe(false)
+
+    dialog = await openDeletionDialog(page)
+    await expect(dialog.getByLabel('Parola')).toHaveValue('')
+    await expect(dialog.getByLabel('Mağaza adı')).toHaveValue('')
+  })
+
+  test('hata: yanlış parola 401 → alan hatası "Parola doğrulanamadı.", oturum DÜŞMEZ (girişe yönlenmez)', async ({ page }) => {
+    let calls = 0
+    await mocks(page, {
+      'TenantDataService/requestDeletion': async (route: any, headers: Record<string, string>) => {
+        calls += 1
+        return route.fulfill({ status: 401, contentType: 'application/json', headers, body: JSON.stringify({ error: 'Parola doğrulanamadı.' }) })
+      },
+    })
+    await openB4Screen(page, 'PrivacyDataView')
+    const dialog = await openDeletionDialog(page)
+    await fillVerify(dialog, 'yanlis-sentetik-parola', STORE)
+    await dialog.getByRole('button', { name: 'Sil', exact: true }).click()
+    await page.getByRole('dialog').getByRole('button', { name: 'Silme talebi oluştur' }).click()
+
+    await expect(dialog).toBeVisible()
+    await expect(dialog.getByText('Parola doğrulanamadı.')).toBeVisible()
+    await expect(dialog.getByLabel('Parola')).toHaveValue('')
+    await expect(dialog.getByLabel('Mağaza adı')).toHaveValue(STORE)
+    await page.waitForTimeout(1200) // genel 401 yakalayıcısı dinamik import + push yapar; tetiklenmediğini doğrula
+    await expect(page).toHaveURL(/\/account\/privacy$/)
+    await expect(page.locator(ROOT)).toBeVisible()
+    expect(calls).toBe(1)
+  })
+
+  test('hata: 400 mağaza adı → ad alanı hatası; 500 → insan-okunur uyarı, ham hata sızmaz', async ({ page }) => {
+    let calls = 0
+    await mocks(page, {
+      'TenantDataService/requestDeletion': async (route: any, headers: Record<string, string>) => {
+        calls += 1
+        if (calls === 1) return route.fulfill({ status: 400, contentType: 'application/json', headers, body: JSON.stringify({ error: 'Mağaza adı doğrulanamadı.' }) })
+        return route.fulfill({ status: 500, contentType: 'application/json', headers, body: JSON.stringify({ error: 'MongoServerError stack' }) })
+      },
+    })
+    await openB4Screen(page, 'PrivacyDataView')
+    const dialog = await openDeletionDialog(page)
+    await fillVerify(dialog, 'e2e-sentetik-parola', STORE)
+    await dialog.getByRole('button', { name: 'Sil', exact: true }).click()
+    await page.getByRole('dialog').getByRole('button', { name: 'Silme talebi oluştur' }).click()
+    await expect(dialog.getByText('Mağaza adı doğrulanamadı — adı büyük/küçük harf dahil aynen yazın.')).toBeVisible()
+
+    await dialog.getByRole('button', { name: 'Sil', exact: true }).click()
+    await page.getByRole('dialog').getByRole('button', { name: 'Silme talebi oluştur' }).click()
+    const root = page.locator(ROOT)
+    await expect(root.getByRole('alert')).toHaveText('Silme talebi oluşturulamadı — birkaç dakika sonra tekrar deneyin.')
+    await expect(page.locator('body')).not.toContainText('MongoServerError')
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+  })
+
+  test('ekran görüntüsü tabanı (silme — doğrulama diyaloğu)', async ({ page }) => {
+    await mocks(page)
+    await openB4Screen(page, 'PrivacyDataView')
+    const dialog = await openDeletionDialog(page)
+    await fillVerify(dialog, 'e2e-sentetik-parola', STORE)
+    await page.waitForTimeout(300)
+    await expect(page).toHaveScreenshot('privacy-deletion-verify.png', { fullPage: false })
+  })
+
+  test('axe: WCAG 2.1 AA — 0 ihlal (bölüm, doğrulama diyaloğu, son onay, askı durumu)', async ({ page }) => {
+    await mocks(page, { 'TenantDataService/requestDeletion': DELETION_OK })
+    await openB4Screen(page, 'PrivacyDataView')
+    const section = await new AxeBuilder({ page }).include(ROOT).withTags(AXE_TAGS).analyze()
+    expect(section.violations, JSON.stringify(section.violations, null, 2)).toEqual([])
+
+    const dialog = await openDeletionDialog(page)
+    await fillVerify(dialog, 'e2e-sentetik-parola', STORE)
+    await page.waitForTimeout(400) // açılış geçişi bitsin (opaklık animasyonu kontrastı yanıltır)
+    const verify = await new AxeBuilder({ page }).include('.v-overlay--active .v-overlay__content').withTags(AXE_TAGS).analyze()
+    expect(verify.violations, JSON.stringify(verify.violations, null, 2)).toEqual([])
+
+    await dialog.getByRole('button', { name: 'Sil', exact: true }).click()
+    await expect(page.getByRole('dialog').filter({ hasText: 'silme talebi oluşturulsun mu?' })).toBeVisible()
+    await page.waitForTimeout(400)
+    const confirm = await new AxeBuilder({ page }).include('.v-overlay--active .v-overlay__content').withTags(AXE_TAGS).analyze()
+    expect(confirm.violations, JSON.stringify(confirm.violations, null, 2)).toEqual([])
+
+    await page.getByRole('dialog').getByRole('button', { name: 'Silme talebi oluştur' }).click()
+    await expect(page.locator(ROOT).getByText('Silme talebi alındı')).toBeVisible()
+    const done = await new AxeBuilder({ page }).include(ROOT).withTags(AXE_TAGS).analyze()
+    expect(done.violations, JSON.stringify(done.violations, null, 2)).toEqual([])
+  })
 })

@@ -11,10 +11,10 @@
   karşılığı (salt-okunur, grep): `tenant-data-service.ts:70`, `ExportDownloadApiManager.ts:18`.
   Arşiv kapsamı `backend/src/operations/tenant/exportCollections.ts` envanterinden yazıldı (sırlar hariç).
 
+  Hesap/mağaza silme talebi (`TenantDataService/requestDeletion`, yalnız owner): `AccountDeletionPanel`
+  (iki adımlı DS-v2 `EkDialog` akışı; yanlış parola 401'i yerelde yakalanır, genel oturum yönlendirmesi değişmez).
+
   BİLİNÇLİ SINIRLAR ("sözleşme bekliyor", rapora yazıldı):
-  - Hesap/mağaza silme talebi (`TenantDataService/requestDeletion`): backend'de VAR ama yanıt şekli ve
-    talep sonrası oturum/erişim davranışı API dokümanlarında TANIMLI DEĞİL → yıkıcı bir akış tahminle
-    yazılmadı, ekranda gösterilmez.
   - Müşteri anonimleştirme (`CustomerService.anonymizeCustomer`) müşteri detayına aittir (B4 dışı dosya).
   - "Arşiv 7 gün sonra silinir" İDDİA EDİLMEZ: backend'de zamanlayıcı yok (§5 sınırlama 2).
 -->
@@ -77,6 +77,15 @@
         </template>
       </EkSettingsSection>
 
+      <EkSettingsSection
+        v-if="isOwner"
+        :title="$t('privacyData.deletion.title')"
+        :description="$t('privacyData.deletion.description')"
+        class="privacyDataView__deletion"
+      >
+        <AccountDeletionPanel :store-name="storeName" />
+      </EkSettingsSection>
+
       <EkSettingsSection :title="$t('privacyData.legal.title')" :description="$t('privacyData.legal.description')">
         <ul class="privacyDataView__links">
           <li v-for="link in legalLinks" :key="link.key">
@@ -97,6 +106,7 @@
 import { computed, ref } from 'vue'
 import EkSettingsTemplate from '@/components/ds/templates/EkSettingsTemplate.vue'
 import EkSettingsSection from '@/components/ds/templates/EkSettingsSection.vue'
+import AccountDeletionPanel from '@/components/privacy/AccountDeletionPanel.vue'
 import useUser from '@/composables/user'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from 'vue-i18n'
@@ -112,6 +122,9 @@ const { t } = useI18n()
 
 // İstemci tarafı görünürlük ipucu (savunma derinliği); ASIL yetki sınırı backend `owner` kademesidir.
 const isOwner = computed(() => userApi.isOwner?.() === true)
+// Silme onayında yazılacak ad. Not: backend `Clients.title` ile karşılaştırır; FE'de o alan yok,
+// en yakın kaynak ayarlardaki mağaza adıdır (farklıysa sunucu 400 döner ve alan hatası gösterilir — YEREL NOT).
+const storeName = computed(() => String(userApi.getStoreName?.() ?? '').trim())
 
 const facts = [
   { key: 'privacyData.export.facts.scope', icon: 'mdi-folder-zip-outline' },

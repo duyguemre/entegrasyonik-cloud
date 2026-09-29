@@ -1435,6 +1435,46 @@
         "generic": "Arşiv indirilemedi — bağlantınızı kontrol edip tekrar deneyin."
       }
     },
+    "deletion": {
+      "title": "Mağazayı sil",
+      "description": "Mağazanızın ve ona ait tüm verilerin silinmesi için talep oluşturun. Bu işlemi yalnızca mağaza sahibi yapabilir.",
+      "panelTitle": "Mağaza silme talebi",
+      "panelText": "Talep oluşturulduğunda mağazanız silinmek üzere askıya alınır.",
+      "facts": {
+        "suspend": "Talep sonrası mağaza 30 gün askıda kalır.",
+        "restore": "Bu süre içinde geri alma yalnızca destek ekibi üzerinden yapılabilir.",
+        "export": "Verilerinizin bir kopyasına ihtiyacınız varsa talepten önce yukarıdan dışa aktarma hazırlayın."
+      },
+      "moreInfo": "Ayrıntılı bilgi: gizlilik ve KVKK belgeleri",
+      "action": "Silme talebi oluştur",
+      "verify": {
+        "title": "Kimliğinizi doğrulayın",
+        "description": "Devam etmek için parolanızı girin ve mağaza adını aynen yazın.",
+        "passwordLabel": "Parola",
+        "typeNameHint": "Onaylamak için şu adı aynen yazın:",
+        "typeNameHintUnknown": "Onaylamak için mağaza adınızı aynen yazın.",
+        "nameLabel": "Mağaza adı",
+        "confirm": "Sil"
+      },
+      "confirm": {
+        "title": "'{name}' için silme talebi oluşturulsun mu?",
+        "description": "Mağaza 30 gün askıda kalır; bu süre içinde geri alma yalnızca destek ekibi üzerinden yapılabilir.",
+        "action": "Silme talebi oluştur"
+      },
+      "doneTitle": "Silme talebi alındı",
+      "doneText": "Mağazanız {date} tarihine kadar askıda kalacak. Bu süre içinde geri almak için destek ekibiyle iletişime geçin.",
+      "doneTextNoDate": "Mağazanız 30 gün askıda kalacak. Bu süre içinde geri almak için destek ekibiyle iletişime geçin.",
+      "toast": "Silme talebi oluşturuldu.",
+      "errors": {
+        "wrongPassword": "Parola doğrulanamadı.",
+        "passwordRequired": "Parola gerekli.",
+        "storeNameMismatch": "Mağaza adı doğrulanamadı — adı büyük/küçük harf dahil aynen yazın.",
+        "ownerOnly": "Bu işlem yalnızca mağaza sahibi tarafından yapılabilir — mağaza sahibi hesabıyla giriş yapın.",
+        "notEligible": "Mağazanız şu anda silme talebine uygun durumda değil — destek ekibiyle iletişime geçin.",
+        "noTenant": "Mağaza bulunamadı — sayfayı yenileyip tekrar deneyin.",
+        "generic": "Silme talebi oluşturulamadı — birkaç dakika sonra tekrar deneyin."
+      }
+    },
     "legal": {
       "title": "Aydınlatma metni ve yasal belgeler",
       "description": "Kişisel verilerin hangi amaçlarla işlendiğini ve KVKK kapsamındaki haklarınızı bu belgelerde bulabilirsiniz.",

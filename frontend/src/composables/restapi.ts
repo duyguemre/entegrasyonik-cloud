@@ -5,6 +5,19 @@ import logger from '@/composables/logger'
 import { apiBaseUrl, imageBaseUrl } from '@/config/env'
 axios.defaults.withCredentials = true
 
+// Çağrı başına seçenek: `skipSessionRedirect` → bu isteğin 401'i genel "oturum düştü → /login" yakalayıcısını
+// TETİKLEMEZ; hata her zamanki gibi çağırana `resolve` edilir. YALNIZCA 401'i oturum dışı bir anlamla döndüren
+// uçlar içindir (ör. `TenantDataService/requestDeletion`: yanlış parola = 401 'Parola doğrulanamadı.').
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    skipSessionRedirect?: boolean
+  }
+}
+
+export interface PostOptions {
+  skipSessionRedirect?: boolean
+}
+
 // ADR-0017 Karar 1.6/1.8 — hata yakalayıcılarda ham axios hata nesnesini (istek
 // yapılandırması dahil) LOGLAMAK yerine yalnızca teşhis için gerekli, güvenli alanları
 // çıkarır; backend'in yanıt başlığındaki `X-Request-Id`'yi (varsa) bağlar. Mevcut
@@ -30,7 +43,7 @@ axios.interceptors.response.use(
   response => response,
   async error => {
     const url: string = error?.config?.url ?? ''
-    if (error?.response?.status === 401 && !AUTH_FLOW_PATHS.some(p => url.includes(p)) && !redirectingToLogin) {
+    if (error?.response?.status === 401 && !error?.config?.skipSessionRedirect && !AUTH_FLOW_PATHS.some(p => url.includes(p)) && !redirectingToLogin) {
       redirectingToLogin = true
       try {
         // Dinamik import: router -> view -> restapi döngüsel bağımlılığını önler
@@ -119,13 +132,13 @@ const getExternalService = async (externalUrl: string) => {
 }
 
 
-const postService = async (service: string, data: any) => {
+const postService = async (service: string, data: any, options?: PostOptions) => {
   if (!service) {
     logger.warn('restApi.post: boş servis adıyla çağrıldı', { module: 'restapi', op: 'post' })
     return undefined
   }
   return new Promise((resolve: any) => {
-    axios.post(baseUrl + service, data)
+    axios.post(baseUrl + service, data, options?.skipSessionRedirect ? { skipSessionRedirect: true } : undefined)
       .then(response => {
         resolve(response.data)
       })
@@ -209,8 +222,8 @@ export default function useRestApi() {
     return resp
   }
 
-  const post = async (service: string, data: any, mode: boolean = true, message?: string) => {
-    const resp: any = await postService(service, data)
+  const post = async (service: string, data: any, mode: boolean = true, message?: string, options?: PostOptions) => {
+    const resp: any = await postService(service, data, options)
     processResponse(resp, mode)
     return resp
   }
