@@ -34,6 +34,8 @@
           density="compact"
           class="ek-list-screen__search"
           @update:model-value="(v: string | null) => emit('update:search', v ?? '')"
+          @keyup.enter="emit('search-submit')"
+          @click:clear="emit('search-submit')"
         />
         <slot name="header-actions" />
         <EkButton v-if="refreshable" tone="ghost" icon="mdi-refresh" icon-only aria-label="Yenile" :loading="loading" @click="emit('refresh')" />
@@ -73,6 +75,8 @@
         :row-key="rowKey"
         :label-key="labelKey ?? rowKey"
         :row-class="rowClass"
+        :expanded-keys="expandedKeys"
+        :indeterminate-keys="indeterminateKeys"
         :selectable="selectable"
         :selected="selected"
         :sort="sort"
@@ -89,6 +93,7 @@
         @row-click="(r: Record<string, any>) => emit('row-click', r)"
       >
         <template v-for="name in cellSlots" :key="name" #[name]="scope"><slot :name="name" v-bind="scope" /></template>
+        <template v-if="$slots.expanded" #expanded="scope"><slot name="expanded" v-bind="scope" /></template>
         <template #empty-action>
           <EkButton v-if="isFiltered" tone="secondary" size="sm" icon="mdi-filter-remove-outline" @click="emit('clear-filters')">Filtreleri temizle</EkButton>
           <slot v-else name="empty-action" />
@@ -138,6 +143,8 @@ const props = withDefaults(
     rowKey?: string
     labelKey?: string
     rowClass?: (row: Record<string, any>) => string | Record<string, boolean> | undefined
+    expandedKeys?: Array<string | number>
+    indeterminateKeys?: Array<string | number>
     loading?: boolean
     error?: boolean
     errorTitle?: string
@@ -193,6 +200,8 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   'update:search': [value: string]
+  /** Hızlı aramada Enter / temizle — "yazdıkça" değil "Enter ile" arayan ekranlar için. */
+  'search-submit': []
   'update:filterCollapsed': [value: boolean]
   'update:selected': [keys: Array<string | number>]
   'update:sort': [sort: EkGridSort]

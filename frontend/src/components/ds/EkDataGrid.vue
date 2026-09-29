@@ -12,6 +12,7 @@
       kapsülü + başlık + açıklama + #empty-action), HATA (`error`; boştan ayrı
       ton + #error-action / `retry` olayı)
     - Kolon `hideLabel`: başlık görsel olarak boş (eylem kolonu), ekran okuyucu adı korunur
+    - Genişletme: `expandedKeys` + `#expanded="{ row }"` → satırın altında tam genişlik satır
     - Kolon `pin: 'end'`: yatay kaydırmada sağa yapışık (satır eylemleri hep görünür)
     - Hücre slot kapsamı: `{ row, item, value, index }` (`item` = `row`, göç kolaylığı)
   Yükseklik: kapsayıcısını doldurur (`EkListFrame` içinde kullanılır);
@@ -71,9 +72,8 @@
         </tr>
       </tbody>
       <tbody v-else-if="rows.length">
+        <template v-for="(row, ri) in rows" :key="row[rowKey]">
         <tr
-          v-for="(row, ri) in rows"
-          :key="row[rowKey]"
           class="ek-grid__row"
           :class="[{ 'is-selected': isSelected(row), 'is-hover': forceHoverIndex === ri }, rowClass?.(row)]"
           @click="emit('row-click', row)"
@@ -83,6 +83,7 @@
               type="checkbox"
               class="ek-grid__check"
               :checked="isSelected(row)"
+              :indeterminate.prop="indeterminateSet.has(row[rowKey])"
               :aria-label="`${row[labelKey] ?? row[rowKey]} satırını seç`"
               @change="toggleRow(row)"
             />
@@ -96,6 +97,12 @@
             <slot :name="`cell-${col.key}`" :row="row" :item="row" :value="row[col.key]" :index="ri">{{ row[col.key] ?? '—' }}</slot>
           </td>
         </tr>
+        <tr v-if="expandedSet.has(row[rowKey])" class="ek-grid__expanded">
+          <td class="ek-grid__expanded-cell" :colspan="columns.length + (selectable ? 1 : 0)">
+            <slot name="expanded" :row="row" :item="row" />
+          </td>
+        </tr>
+        </template>
       </tbody>
       <tbody v-else>
         <tr>
@@ -155,6 +162,10 @@ const props = withDefaults(
     errorTitle?: string
     errorText?: string
     rowClass?: (row: Row) => string | Record<string, boolean> | undefined
+    /** Satırın altında tam genişlik `#expanded` satırı açık olan anahtarlar. */
+    expandedKeys?: Array<string | number>
+    /** Kısmi seçili (ör. varyantlarının bir kısmı seçili ürün) satır anahtarları — onay kutusu belirsiz. */
+    indeterminateKeys?: Array<string | number>
   }>(),
   {
     rowKey: 'id',
@@ -168,6 +179,8 @@ const props = withDefaults(
     emptyText: 'Filtreleri değiştirip yeniden sorgulayın.',
     emptyIcon: 'mdi-text-box-search-outline',
     error: false,
+    expandedKeys: () => [],
+    indeterminateKeys: () => [],
     errorTitle: 'Kayıtlar yüklenemedi',
     errorText: 'Bağlantınızı kontrol edip yeniden deneyin.',
   },
@@ -181,6 +194,8 @@ const emit = defineEmits<{
 
 const allRef = ref<HTMLInputElement | null>(null)
 const selectedSet = computed(() => new Set(props.selected))
+const expandedSet = computed(() => new Set(props.expandedKeys))
+const indeterminateSet = computed(() => new Set(props.indeterminateKeys))
 const allSelected = computed(() => props.rows.length > 0 && props.rows.every((r) => selectedSet.value.has(r[props.rowKey])))
 const someSelected = computed(() => props.rows.some((r) => selectedSet.value.has(r[props.rowKey])))
 
@@ -332,6 +347,13 @@ function toggleSort(key: string) {
 .ek-grid__th.ek-grid__pin-end {
   z-index: calc(var(--ek-z-sticky) + 1);
   background: var(--ek-color-surface-muted);
+}
+
+.ek-grid__expanded-cell {
+  padding: 0;
+  border-bottom: 1px solid var(--ek-color-border-default);
+  background: var(--ek-color-surface-sunken);
+  box-shadow: inset 3px 0 0 var(--ek-color-action-border);
 }
 
 .ek-grid__td--wrap {
