@@ -9,6 +9,9 @@
  * bölümde 4 seviyeli hiyerarşili (`--site-card-*`) kart ızgarası + kanal kapsamı yatay rozet şeridi olarak
  * özetleniyor; imleç takipli ışık/eğim (`data-tilt`, S8) eklendi. Sayı uydurulmaz: hero'daki özet, dizideki
  * gerçek yetenek/kapsam sayılarından hesaplanır.
+ *
+ * S14: kart değer satırı soyut "tek panel" dili yerine kayıttaki somut akış cümlesidir (`action`, capabilities.ts);
+ * `summary` altında ikincil metin olarak kalır. Stok rezervasyonu kartı derin sayfaya bağlanır.
  */
 import BaseLayout from '../layouts/BaseLayout.astro'
 import Section from '../components/Section.astro'
@@ -26,7 +29,7 @@ import { appUrls } from '../lib/site-config'
 
 const title = 'Özellikler'
 const description =
-  'Stok rezervasyonu, birleşik sipariş yönetimi, iade, soru-cevap ve finans görünümü: Entegrasyonik özellikleri ve kanal bazında kapsamları.'
+  'Eşzamanlı siparişte stok rezervasyonu, tek listede siparişler, iade onayı ve reddi, müşteri sorularını yanıtlama, hakediş takibi: Entegrasyonik özellikleri ve kanal bazında kapsamları.'
 const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Özellikler' }]
 
 const capabilities = getPublicCapabilities('core')
@@ -48,7 +51,7 @@ const channels = getPublicIntegrations()
 
   <PageHero
     title="Özellikler"
-    lead="Satış kanallarınızı tek panelden yönetmek için gereken temel işlemler. Her özelliğin hangi kanallarda ve hangi kapsamda çalıştığı yazılıdır."
+    lead="Eşzamanlı siparişte stok rezerve edilir; siz iadeyi onaylar, müşteri sorusunu yanıtlar, fiyat ve stoğu tek yerden güncellersiniz. Her özelliğin hangi kanallarda ve hangi kapsamda çalıştığı yazılıdır."
     crumbs={crumbs}
   >
     <nav class="toc" aria-label="Bu sayfadaki özellikler">
@@ -83,13 +86,19 @@ const channels = getPublicIntegrations()
                   <Badge tone={statusTone(c.status)} class="cap-card__eyebrow">{c.statusLabel}</Badge>
                 </div>
                 <h3 id={`${c.id}-title`} class="cap-card__title">{c.title}</h3>
-                <p class="cap-card__value">{c.summary}</p>
+                <p class="cap-card__value">{c.action ?? c.summary}</p>
+                {c.action && <p class="cap-card__desc">{c.summary}</p>}
                 {points.length > 0 && (
                   <ul class="cap-card__points" role="list">
                     {points.map((p) => (
                       <li>{p}</li>
                     ))}
                   </ul>
+                )}
+                {c.id === 'stock-reservation' && (
+                  <a class="cap-card__more" href="/ozellikler/stok-rezervasyonu">
+                    Aşırı satış nasıl önlenir <span aria-hidden="true">→</span>
+                  </a>
                 )}
                 {c.caveat && (
                   <p class="cap-card__caveat">
@@ -245,6 +254,18 @@ const channels = getPublicIntegrations()
     font-size: var(--site-card-value-size);
     font-weight: var(--site-card-value-weight);
     line-height: var(--ek-line-height-normal);
+  }
+  .cap-card__desc {
+    color: var(--ek-color-content-muted);
+    font-size: var(--site-card-desc-size);
+    font-weight: var(--site-card-desc-weight);
+  }
+  .cap-card__more {
+    align-self: flex-start;
+    color: var(--site-color-link);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+    text-underline-offset: 0.2em;
   }
   .cap-card__points {
     display: flex;

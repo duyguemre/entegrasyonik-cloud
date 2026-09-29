@@ -1,0 +1,466 @@
+---
+/**
+ * /destek — destek merkezi (S14). YENİ içerik üretmez: `getSupportCategories()` (faq.ts) mevcut SSS kayıtlarını beş
+ * kategoride derler; "Kanal bağlama" kategorisi her mevcut entegrasyonun bağlantı rehberine
+ * (`/entegrasyonlar/[kod]#baglanti-rehberi`, `connect.ts` verisi) bağlanır. Soru bağlantıları `/sss#<id>` hedefler
+ * (SSS sayfası hedeflenen soruyu açar). Arama kutusu bilinçli olarak YOK (statik site; arama altyapısı yok).
+ * Destek kanalı/süre taahhüdü yazılmaz: "Hâlâ yardım" kutusu SSS `destek` kaydının cevabını aynen kullanır.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro'
+import Section from '../components/Section.astro'
+import Button from '../components/Button.astro'
+import Icon from '../components/home/Icon.astro'
+import PageHero from '../components/pages/PageHero.astro'
+import PageMeta from '../components/pages/PageMeta.astro'
+import ChannelMono from '../components/pages/ChannelMono.astro'
+import CtaBand from '../components/pages/CtaBand.astro'
+import { getPublicFaq, getSupportCategories } from '../data/faq'
+import { getPublicIntegrations } from '../data/integrations'
+import { connectGuides } from '../data/connect'
+import { breadcrumbJsonLd } from '../lib/seo'
+import { appUrls } from '../lib/site-config'
+
+const title = 'Destek merkezi'
+const description =
+  'Entegrasyonik destek merkezi: başlangıç ve kurulum, kanal bağlama rehberleri, stok ve sipariş, hesap ve güvenlik, fiyat ve fatura soruları tek yerde.'
+const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Destek merkezi' }]
+
+// Kanal bağlama (rehberli, geniş kart) ızgaranın başında; diğerleri kayıt sırasıyla 2x2.
+const all = getSupportCategories()
+const categories = [...all.filter((c) => c.channelGuides), ...all.filter((c) => !c.channelGuides)]
+const tocCategories = all
+const guideCodes = new Set(connectGuides.map((g) => g.code))
+const channels = getPublicIntegrations().filter((i) => guideCodes.has(i.code))
+const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
+---
+
+<BaseLayout title={title} description={description}>
+  <PageMeta
+    slot="head"
+    title={title}
+    description={description}
+    jsonLd={[breadcrumbJsonLd([{ label: 'Ana sayfa', path: '/' }, { label: title, path: '/destek' }])]}
+  />
+
+  <PageHero
+    title="Destek merkezi"
+    lead="Kurulumdan plan seçimine kadar sık sorulan sorular ve kanal bağlantı rehberleri, konularına göre ayrılmış hâlde. Aradığınız cevaba kısa yoldan ulaşın."
+    crumbs={crumbs}
+  >
+    <nav class="toc" aria-label="Destek kategorileri">
+      {tocCategories.map((c) => <a href={`#${c.id}`}>{c.label}</a>)}
+    </nav>
+    <Fragment slot="visual">
+      <p class="quick__tag">Hızlı başlangıç</p>
+      <ul class="quick" role="list">
+        <li>
+          <a class="quick__link" href="#kanal-baglama">
+            <span class="quick__icon" aria-hidden="true"><Icon name="plug" size="sm" /></span>
+            <span>Kanal bağlantı rehberleri</span>
+            <span class="quick__arrow" aria-hidden="true"><Icon name="arrow" size="sm" /></span>
+          </a>
+        </li>
+        <li>
+          <a class="quick__link" href="/ozellikler/stok-rezervasyonu">
+            <span class="quick__icon" aria-hidden="true"><Icon name="stock" size="sm" /></span>
+            <span>Aşırı satış nasıl önlenir</span>
+            <span class="quick__arrow" aria-hidden="true"><Icon name="arrow" size="sm" /></span>
+          </a>
+        </li>
+        <li>
+          <a class="quick__link" href="/sss">
+            <span class="quick__icon" aria-hidden="true"><Icon name="chat" size="sm" /></span>
+            <span>Tüm sık sorulan sorular</span>
+            <span class="quick__arrow" aria-hidden="true"><Icon name="arrow" size="sm" /></span>
+          </a>
+        </li>
+      </ul>
+    </Fragment>
+  </PageHero>
+
+  <Section labelledby="kategori-title" class="tight-section">
+    <h2 id="kategori-title" class="sr-only">Destek kategorileri</h2>
+    <ul class="support-grid" role="list">
+      {
+        categories.map((c) => (
+          <li class:list={['support-cell', { 'support-cell--wide': c.channelGuides }]}>
+            <article id={c.id} class="support-card" aria-labelledby={`${c.id}-title`} data-testid="support-category">
+              <div class="support-card__head">
+                <span class="support-card__icon" aria-hidden="true">
+                  <Icon name={c.icon} size="md" />
+                </span>
+                <div>
+                  <h3 id={`${c.id}-title`}>{c.label}</h3>
+                  <p class="support-card__lead">{c.lead}</p>
+                </div>
+              </div>
+
+              <div class="support-card__body">
+              {c.channelGuides && (
+                <div class="guides">
+                  <p class="guides__label">Adım adım bağlantı rehberleri</p>
+                  <ul class="guides__list" role="list" data-testid="support-channel-guides">
+                    {channels.map((ch) => (
+                      <li>
+                        <a class="guides__link" href={`/entegrasyonlar/${ch.code}#baglanti-rehberi`} data-code={ch.code}>
+                          <ChannelMono code={ch.code} name={ch.name} size="sm" />
+                          <span>{ch.name} rehberi</span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <ul class="questions" role="list">
+                {c.items.map((q) => (
+                  <li>
+                    <a class="questions__link" href={`/sss#${q.id}`}>
+                      <span>{q.question}</span>
+                      <span class="questions__chev" aria-hidden="true">
+                        <Icon name="chevron" size="sm" />
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              </div>
+
+              <div class="support-card__foot">
+                {c.links.map((l) => (
+                  <a class="support-card__more" href={l.href}>
+                    {l.label} <span aria-hidden="true">→</span>
+                  </a>
+                ))}
+              </div>
+            </article>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section tone="muted" labelledby="yardim-title" class="tight-section">
+    <div class="help">
+      <div class="help__copy">
+        <span class="help__icon" aria-hidden="true"><Icon name="chat" size="md" /></span>
+        <div>
+          <h2 id="yardim-title">Aradığınızı bulamadınız mı?</h2>
+          {supportAnswer && <p>{supportAnswer}</p>}
+        </div>
+      </div>
+      <div class="help__actions">
+        <Button href={appUrls.login()} variant="primary" size="lg">Uygulamaya giriş yapın</Button>
+        <Button href="/iletisim" variant="secondary" size="lg">İletişim sayfası</Button>
+      </div>
+    </div>
+  </Section>
+
+  <CtaBand
+    id="destek-cta"
+    title="Kanallarınızı bugün bağlayın"
+    text="Ücretsiz denemeyle hesabınızı açın; bağlantı rehberini izleyerek ilk kanalınızı kod yazmadan ekleyin."
+    primary={{ label: 'Ücretsiz dene', href: appUrls.register() }}
+    secondary={{ label: 'Entegrasyonlar', href: '/entegrasyonlar' }}
+  />
+</BaseLayout>
+
+<script>
+  import '../scripts/interactions'
+</script>
+
+<style>
+  .tight-section:global(.section) {
+    padding-block: calc(var(--site-section-y) * 0.72);
+  }
+  .toc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2) var(--ek-space-3);
+  }
+  .toc a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--site-tap-target);
+    padding-inline: var(--ek-space-4);
+    border: var(--site-border-width) solid var(--site-color-on-primary-muted);
+    border-radius: var(--ek-radius-full);
+    color: var(--site-color-on-primary);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-medium);
+    text-decoration: none;
+    transition:
+      background-color var(--ek-duration-base) var(--ek-easing-standard),
+      border-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .toc a:hover {
+    background: color-mix(in srgb, var(--ek-color-background) 12%, transparent);
+    border-color: var(--site-color-on-primary);
+  }
+  .toc a:focus-visible {
+    outline-color: var(--site-color-on-primary);
+  }
+
+  /* --- Hero görsel: hızlı başlangıç bağlantıları --- */
+  .quick__tag {
+    margin: 0 0 var(--ek-space-4);
+    color: var(--site-color-on-primary-muted);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .quick {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+  }
+  .quick__link {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-3);
+    min-height: var(--site-tap-target);
+    padding: var(--ek-space-3) var(--ek-space-4);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-lg);
+    background: color-mix(in srgb, var(--ek-color-background) 6%, transparent);
+    color: var(--site-color-on-primary);
+    font-weight: var(--ek-font-weight-medium);
+    text-decoration: none;
+    transition:
+      border-color var(--ek-duration-base) var(--ek-easing-standard),
+      background-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .quick__link:hover {
+    border-color: var(--site-color-on-primary-muted);
+    background: color-mix(in srgb, var(--ek-color-background) 12%, transparent);
+  }
+  .quick__link:focus-visible {
+    outline-color: var(--site-color-on-primary);
+  }
+  .quick__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-8);
+    height: var(--ek-space-8);
+    border-radius: var(--ek-radius-md);
+    background: color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
+    color: var(--ek-color-secondary);
+  }
+  .quick__arrow {
+    margin-inline-start: auto;
+    color: var(--site-color-on-primary-muted);
+    transition: transform var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .quick__link:hover .quick__arrow {
+    transform: translateX(var(--ek-space-1));
+  }
+
+  /* --- Kategori ızgarası --- */
+  .support-grid {
+    display: grid;
+    gap: var(--ek-space-6);
+  }
+  .support-cell {
+    display: flex;
+  }
+  .support-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-5);
+    width: 100%;
+    padding: var(--ek-space-6);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--site-radius-panel);
+    background: var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
+    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
+    transition:
+      border-color var(--ek-duration-base) var(--ek-easing-standard),
+      box-shadow var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .support-card:hover,
+  .support-card:focus-within {
+    border-color: var(--ek-color-border-strong);
+    box-shadow: var(--site-shadow-card-hover);
+  }
+  .support-card__head {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ek-space-4);
+  }
+  .support-card__icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-12);
+    height: var(--ek-space-12);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-primary);
+    color: var(--site-color-on-primary);
+    box-shadow: var(--site-shadow-card);
+  }
+  .support-card h3 {
+    font-size: var(--site-card-title-size);
+    font-weight: var(--site-card-title-weight);
+    line-height: var(--ek-line-height-tight);
+  }
+  .support-card__lead {
+    margin-top: var(--ek-space-1);
+    color: var(--ek-color-content-muted);
+    font-size: var(--site-card-desc-size);
+  }
+
+  .support-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-5);
+  }
+  .guides {
+    padding: var(--ek-space-4);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface-muted);
+  }
+  .guides__label {
+    margin: 0 0 var(--ek-space-3);
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .guides__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 9.5rem), 1fr));
+    gap: var(--ek-space-2);
+  }
+  .guides__link {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    min-height: var(--site-tap-target);
+    padding: var(--ek-space-1) var(--ek-space-3) var(--ek-space-1) var(--ek-space-1);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-surface);
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-medium);
+    text-decoration: none;
+    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .guides__link:hover {
+    border-color: color-mix(in srgb, var(--chan, var(--ek-color-primary)) 60%, transparent);
+  }
+
+  .questions {
+    display: flex;
+    flex-direction: column;
+  }
+  .questions li + li {
+    border-top: var(--site-border-width) solid var(--ek-color-border-default);
+  }
+  .questions__link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ek-space-3);
+    min-height: var(--site-tap-target);
+    padding-block: var(--ek-space-3);
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-medium);
+    line-height: var(--ek-line-height-tight);
+    text-decoration: none;
+  }
+  .questions__link:hover span:first-child {
+    color: var(--ek-color-primary);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+  .questions__chev {
+    flex: none;
+    color: var(--ek-color-content-muted);
+    transform: rotate(-90deg);
+  }
+  .support-card__foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-4);
+    margin-top: auto;
+    padding-top: var(--ek-space-4);
+    border-top: var(--site-border-width) solid var(--ek-color-border-default);
+  }
+  .support-card__more {
+    color: var(--site-color-link);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+    text-underline-offset: 0.2em;
+  }
+
+  /* --- Hâlâ yardım --- */
+  .help {
+    display: grid;
+    gap: var(--ek-space-6);
+    align-items: center;
+    padding: var(--ek-space-8);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--site-radius-panel);
+    background: var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
+  }
+  .help__copy {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ek-space-4);
+  }
+  .help__icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-12);
+    height: var(--ek-space-12);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-info-subtle);
+    color: var(--ek-color-info);
+  }
+  .help h2 {
+    margin-bottom: var(--ek-space-2);
+    font-size: var(--ek-font-size-2xl);
+    line-height: var(--ek-line-height-tight);
+  }
+  .help p {
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-lg);
+  }
+  .help__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-3);
+  }
+
+  @media (min-width: 768px) {
+    .support-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .support-cell--wide {
+      grid-column: 1 / -1;
+    }
+  }
+  @media (min-width: 1024px) {
+    .support-cell--wide .support-card__body {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: var(--ek-space-8);
+      align-items: start;
+    }
+  }
+  @media (min-width: 1200px) {
+    .help {
+      grid-template-columns: minmax(0, 3fr) auto;
+    }
+  }
+</style>
