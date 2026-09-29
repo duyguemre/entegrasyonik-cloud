@@ -87,6 +87,7 @@ export const useMenuStore = defineStore('menu', () => {
     ['AccountSecurityView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/AccountSecurityView.vue')))],
     ['PrivacyDataView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/PrivacyDataView.vue')))],
     ['StockPolicyView', shallowRef(defineAsyncComponent(() => import('@/views/secure/integrations/StockPolicyView.vue')))],
+    ['StockHealthView', shallowRef(defineAsyncComponent(() => import('@/views/secure/StockHealthView.vue')))],
 
   ]);
 

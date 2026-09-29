@@ -115,7 +115,8 @@
     "auditLog": "Denetim Günlüğü",
     "accountSecurity": "Hesabım ve Güvenlik",
     "privacyData": "Veri ve Gizlilik",
-    "stockPolicy": "Stok Politikası"
+    "stockPolicy": "Stok Politikası",
+    "stockHealth": "Stok Sağlığı"
   },
   "batch": {
     "menu": {
@@ -1130,6 +1131,14 @@
       "partial": "Kısmi",
       "failed": "Başarısız",
       "skipped": "Atlandı"
+    },
+    "allocation": {
+      "reserved": "Rezerve",
+      "committed": "Sevk edildi",
+      "released": "Serbest",
+      "oversold": "Aşırı satış",
+      "restocked": "Stoka döndü",
+      "unmapped": "Eşleşmedi"
     }
   },
   "integrationCompliance": {
@@ -1751,6 +1760,91 @@
       "tokenInvalid": "Bu doğrulama bağlantısının süresi dolmuş veya daha önce kullanılmış.",
       "rateLimited": "Çok fazla deneme yapıldı — birkaç dakika sonra tekrar deneyin.",
       "generic": "E-posta adresiniz şu an doğrulanamadı — birkaç dakika sonra bağlantıyı yeniden açın."
+    }
+  },
+  "stockHealth": {
+    "section": "Katalog",
+    "title": "Stok sağlığı",
+    "description": "Açıkta kalan sipariş kalemleri ve varyant stok dengesi",
+    "updatedAt": "Son güncelleme {time}",
+    "refresh": "Yenile",
+    "retry": "Tekrar dene",
+    "loadError": "Stok sağlığı yüklenemedi — bağlantınızı kontrol edip tekrar deneyin.",
+    "staleNotice": "Güncel veriler alınamadı. Gösterilen bilgiler {time} tarihli.",
+    "forbidden": {
+      "title": "Bu ekrana erişiminiz yok",
+      "message": "Stok sağlığını görüntüleme yetkiniz bulunmuyor. Erişim için hesap sahibinizle görüşün."
+    },
+    "kpiLabel": "Stok göstergeleri",
+    "unit": {
+      "lines": "{n} kalem",
+      "units": "{n} adet",
+      "variants": "{n} varyant"
+    },
+    "kpi": {
+      "oversold": "Açık aşırı satış",
+      "oversoldUnits": "{n} adet stokta karşılanamadı",
+      "oversoldNone": "Açık aşırı satış yok",
+      "unmapped": "Eşleşmeyen kalem",
+      "unmappedUnits": "{n} adet ürünle eşleşmedi",
+      "unmappedNone": "Eşleşmeyen açık kalem yok",
+      "available": "Kullanılabilir stok",
+      "availableDesc": "{reserved} adet rezerve · toplam {total} adet",
+      "publishPending": "Yayın bekleyen",
+      "publishPendingDesc": "Stok değişikliği kanallara gönderilecek",
+      "publishPendingNone": "Bekleyen stok gönderimi yok"
+    },
+    "attention": {
+      "title": "Dikkat gerektiren siparişler",
+      "subtitle": "Aşırı satış veya eşleşmeyen kalemi olan siparişler",
+      "subtitleCount": "{orders} siparişte {lines} kalem",
+      "openAll": "Siparişlerde filtrele",
+      "openOrder": "{order} siparişini sipariş listesinde aç",
+      "emptyTitle": "Dikkat gerektiren sipariş yok",
+      "emptyText": "Aşırı satış veya eşleşmeyen kalem içeren açık sipariş bulunmuyor.",
+      "escalated": "Manuel işlem bildirildi · {time}",
+      "qty": "{n} adet",
+      "limitNote": "En yeni {n} sipariş gösteriliyor. Tamamı için sipariş listesinde filtreleyin."
+    },
+    "col": {
+      "order": "Sipariş",
+      "channel": "Kanal",
+      "product": "Ürün",
+      "quantity": "Adet",
+      "state": "Stok durumu",
+      "sku": "Stok kodu",
+      "barcode": "Barkod",
+      "noIdentifier": "Stok kodu / barkod yok"
+    },
+    "balance": {
+      "title": "Varyant stok dengesi",
+      "subtitle": "Tüm varyantların toplamı",
+      "availableOf": "adet kullanılabilir · toplam {total}",
+      "barLabel": "Kullanılabilir {available} adet, rezerve {reserved} adet",
+      "available": "Kullanılabilir",
+      "reserved": "Rezerve",
+      "total": "Toplam varyant",
+      "withReservations": "Rezervasyonlu varyant",
+      "overReserved": "Stoğu aşan rezerv",
+      "publishPending": "Yayın bekleyen varyant",
+      "check": "Kontrol edin"
+    },
+    "reconciliation": {
+      "title": "Stok mutabakatı",
+      "untrackedChip": "İzlenmiyor",
+      "untrackedTitle": "Mutabakat sonuçları henüz kaydedilmiyor",
+      "untrackedText": "Mutabakat işleri bulduğu farkları yalnızca \"yayın bekleyen\" olarak işaretliyor; sonuç kaydı tutulmadığı için son çalışma zamanı burada gösterilemiyor.",
+      "lastRun": "Son mutabakat",
+      "neverRun": "Mutabakat henüz çalışmadı."
+    },
+    "legend": {
+      "title": "Stok durumları",
+      "RESERVED": "Stok bu kalem için ayrıldı; kullanılabilir miktardan düşüldü.",
+      "COMMITTED": "Kalem kargoya verildi; ayrılan stok kesin olarak düşüldü.",
+      "RELEASED": "Kalem iptal edildi; ayrılan stok serbest bırakıldı.",
+      "OVERSOLD": "Sipariş geldiğinde yeterli stok yoktu. Stok politikanıza göre yeniden denenir veya iptal edilir.",
+      "RESTOCKED": "İade edilen ürün stoğa geri eklendi.",
+      "UNMAPPED": "Kalem hiçbir varyantla eşleşmedi; stok ayrılamadı. Stok kodunu veya barkodu kontrol edin."
     }
   }
 }

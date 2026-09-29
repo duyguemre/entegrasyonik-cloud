@@ -74,7 +74,15 @@ export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'DashboardView', slug: 'dashboard', section: 'general', order: 0 },
   // `internalStatuses`: OrderListView.vue/ClaimListView.vue'nin GERÇEKTEN okuduğu (`parameters?.internalStatuses`)
   // çoklu-seçim durum filtresi alanı (bkz. dosya başı yorumu) — uydurma bir isim DEĞİL.
-  { key: 'OrderListView', slug: 'orders', urlParams: [{ name: 'internalStatuses', kind: 'enum', multi: true }], section: 'orders', order: 0 },
+  {
+    key: 'OrderListView', slug: 'orders', section: 'orders', order: 0,
+    urlParams: [
+      { name: 'internalStatuses', kind: 'enum', multi: true },
+      // C1.1 (F-01): kalem stok tahsis durumu filtresi — OrderListView `parameters?.allocationStates`'i okur ve
+      // `OrderService/getOrders` `filter.allocationStates`'e gönderir (docs/API_TENANT_SURFACE.md §2.2). Kapalı küme.
+      { name: 'allocationStates', kind: 'enum', multi: true, allowed: ['RESERVED', 'COMMITTED', 'RELEASED', 'OVERSOLD', 'RESTOCKED', 'UNMAPPED'] },
+    ],
+  },
   {
     key: 'productDefinitions/ProductListView',
     slug: 'products',
@@ -161,6 +169,9 @@ export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'AccountSecurityView', slug: 'account/security', icon: 'mdi-shield-account-outline', titleKey: 'menu.accountSecurity' },
   { key: 'PrivacyDataView', slug: 'account/privacy', icon: 'mdi-shield-lock-outline', titleKey: 'menu.privacyData' },
   { key: 'StockPolicyView', slug: 'catalog/stock-policy', section: 'catalog', order: 5, icon: 'mdi-scale-balance', titleKey: 'menu.stockPolicy' },
+  // C1.1 (F-01) stok sağlığı (StockService/getStockOverview, member). Ekran filtre/parametre okumaz → `urlParams` YOK.
+  // Gerçek menü kaydı (ApplicationDB `menus`, kod `StockHealthView`, başlık `stockHealth`) yerel iştir.
+  { key: 'StockHealthView', slug: 'catalog/stock-health', section: 'catalog', order: 6, icon: 'mdi-scale-unbalanced', titleKey: 'menu.stockHealth' },
 ] as const
 
 /** URL'nin ilk segmenti hiçbir zaman bir ekran slug'ı OLAMAZ (ADR-0012 Karar 1 — başka uç noktalar/statikler ile çakışmasın). */
