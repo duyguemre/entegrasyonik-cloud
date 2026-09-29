@@ -352,7 +352,7 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
                   <span class="art__thread">
                     <span class="art__bubble art__bubble--in" data-code={chans[0]?.code}>
                       <i class="art__dot" />
-                      <i class="art__skel" />
+                      <span class="art__lines"><i class="art__skel" /><i class="art__skel art__skel--short" /></span>
                     </span>
                     <span class="art__bubble art__bubble--out">
                       <i class="art__typing" />
@@ -1458,7 +1458,7 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     display: flex;
     flex: 1;
     flex-direction: column;
-    gap: var(--ek-space-2);
+    gap: calc(var(--ek-space-1) * 1.5);
   }
   .art__bubble {
     gap: var(--ek-space-2);
@@ -1467,18 +1467,28 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
   }
   .art__bubble--in {
     align-self: flex-start;
-    width: 62%;
+    width: 70%;
   }
   .art__bubble--out {
     align-self: flex-end;
     gap: var(--ek-space-1);
+    padding-inline: var(--ek-space-4);
     border-color: transparent;
     border-radius: var(--ek-radius-lg) var(--ek-radius-lg) var(--ek-radius-sm) var(--ek-radius-lg);
     background: linear-gradient(150deg, var(--ek-color-primary), var(--ek-color-primary-darken-1));
   }
+  .art__lines {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+  }
+  .art__skel--short {
+    width: 60%;
+  }
   .art__skel {
     display: block;
-    flex: 1;
+    flex: none;
     height: var(--ek-space-1);
     border-radius: var(--ek-radius-full);
     background: color-mix(in srgb, var(--ek-color-content-muted) 25%, var(--ek-color-surface-sunken));
