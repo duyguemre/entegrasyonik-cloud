@@ -66,18 +66,10 @@
         <div style="height:30px"></div>
 
 
-        <div v-if="stepper == 0">
-          <v-row>
-            <v-col :cols="2">
-            </v-col>
-            <v-col>
-              <v-form ref="formStep0Ref" @submit.stop>
-                <CategorySelectBoxLevelComponent v-model="productInfoForm.category" />
-              </v-form>
-            </v-col>
-            <v-col :cols="2">
-            </v-col>
-          </v-row>
+        <div v-if="stepper == 0" class="pdv-category-step">
+          <v-form ref="formStep0Ref" @submit.stop>
+            <CategorySelectBoxLevelComponent v-model="productInfoForm.category" />
+          </v-form>
         </div>
 
 
@@ -684,4 +676,13 @@ const headers = [
   width:100%!important
 }
  */
+</style>
+
+<style scoped>
+/* DS-v2 A2 — kategori adımı: kademeli seçici sayfa genişliğinde, okunur en fazla genişlikte ortalı. */
+.pdv-category-step {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--ek-space-6);
+}
 </style>

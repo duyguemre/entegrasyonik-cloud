@@ -10,10 +10,15 @@
     alt çubuk: seçili yol kırıntısı ........ Vazgeç · Seç
   Arama: yazınca kolonlar yerine eşleşen YAPRAKLAR tam yollarıyla listelenir.
   Klavye: ↑/↓ kolon içinde, → alt kolona geç, ← üst kolona dön, Enter yaprağı seç.
+  Aşama 2 eklemeleri (geri uyumlu): arama kutusunda ↓ ilk kolona/ilk sonuca
+  iner; sonuç listesinde ↑/↓ gezinir, Enter seçer, Esc aramayı temizler.
+  Seçim ilerledikçe kolon şeridi son kolona kayar. `embedded`: kimlik
+  degradesi yerine nötr başlık bandı (sayfa içine gömülü kullanım; diyalog
+  değil). `selectableBranches`: yaprak olmayan düğüm de seçilebilir.
   Veri çağırandan gelir (sunum bileşeni); `select` seçilen yolun id dizisini yayar.
 -->
 <template>
-  <div class="ek-cascade" :aria-labelledby="titleId">
+  <div class="ek-cascade" :class="{ 'ek-cascade--embedded': embedded }" role="group" :aria-labelledby="titleId">
     <header class="ek-cascade__head">
       <span class="ek-cascade__head-icon" aria-hidden="true"><v-icon :icon="icon" /></span>
       <div class="ek-cascade__titles">
@@ -22,7 +27,7 @@
       </div>
       <label class="ek-cascade__search">
         <v-icon icon="mdi-magnify" aria-hidden="true" />
-        <input v-model="query" type="search" :placeholder="searchPlaceholder" :aria-label="searchPlaceholder" autocomplete="off" />
+        <input v-model="query" type="search" :placeholder="searchPlaceholder" :aria-label="searchPlaceholder" autocomplete="off" @keydown="onSearchKeydown" />
       </label>
       <button v-if="closable" type="button" class="ek-cascade__close" aria-label="Kapat" @click="emit('close')">
         <v-icon icon="mdi-close" aria-hidden="true" />
@@ -68,22 +73,27 @@
       </div>
     </div>
 
-    <div v-else class="ek-cascade__results">
-      <p class="ek-cascade__results-head">{{ matches.length }} eşleşme</p>
-      <ul v-if="matches.length" class="ek-cascade__list" role="listbox" aria-label="Arama sonuçları">
+    <div v-else ref="resultsRef" class="ek-cascade__results">
+      <p class="ek-cascade__results-head" role="status">{{ matches.length }} eşleşme</p>
+      <ul v-if="matches.length" class="ek-cascade__list" role="listbox" aria-label="Arama sonuçları" @keydown="onResultsKeydown">
         <li
-          v-for="m in matches"
+          v-for="(m, mi) in matches"
           :key="m.ids.join('/')"
           class="ek-cascade__item ek-cascade__item--result"
           role="option"
-          :aria-selected="false"
-          tabindex="0"
+          :aria-selected="m.ids.join('/') === path.join('/')"
+          :class="{ 'is-chosen': m.ids.join('/') === path.join('/') }"
+          :tabindex="mi === 0 ? 0 : -1"
+          :data-result="mi"
           @click="pickPath(m.ids)"
-          @keydown.enter="pickPath(m.ids)"
         >
           <v-icon class="ek-cascade__item-icon" icon="mdi-tag-outline" aria-hidden="true" />
           <span class="ek-cascade__item-label">
-            <span class="ek-cascade__result-name">{{ m.labels[m.labels.length - 1] }}</span>
+            <span class="ek-cascade__result-name">
+              <template v-for="(part, pi) in highlight(m.labels[m.labels.length - 1])" :key="pi">
+                <mark v-if="part.hit">{{ part.text }}</mark><template v-else>{{ part.text }}</template>
+              </template>
+            </span>
             <span class="ek-cascade__result-path">{{ m.labels.slice(0, -1).join(' › ') }}</span>
           </span>
         </li>
@@ -127,6 +137,8 @@ const props = withDefaults(
     modelValue?: string[]
     searchPlaceholder?: string
     closable?: boolean
+    embedded?: boolean
+    selectableBranches?: boolean
   }>(),
   {
     icon: 'mdi-file-tree-outline',
@@ -134,6 +146,8 @@ const props = withDefaults(
     modelValue: () => [],
     searchPlaceholder: 'Kategori ara…',
     closable: false,
+    embedded: false,
+    selectableBranches: false,
   },
 )
 
@@ -144,6 +158,7 @@ const query = ref('')
 const path = ref<string[]>([...props.modelValue])
 const focusCol = ref(0)
 const columnsRef = ref<HTMLElement | null>(null)
+const resultsRef = ref<HTMLElement | null>(null)
 
 watch(
   () => props.modelValue,
@@ -166,7 +181,7 @@ const pathNodes = computed(() => nodeAt(path.value))
 const pathLabels = computed(() => pathNodes.value.map((n) => n.label))
 const leafChosen = computed(() => {
   const last = pathNodes.value[pathNodes.value.length - 1]
-  return !!last && !last.children?.length
+  return !!last && (props.selectableBranches || !last.children?.length)
 })
 
 const columns = computed(() => {
@@ -181,7 +196,12 @@ function choose(ci: number, node: EkCascadeNode) {
   path.value = [...path.value.slice(0, ci), node.id]
   focusCol.value = ci
   emit('update:modelValue', path.value)
-  if (!node.children?.length) emit('select', path.value)
+  if (!node.children?.length || props.selectableBranches) emit('select', path.value)
+  // yeni açılan kolon görünür olsun (dar ekranda şerit yatay kayar)
+  nextTick(() => {
+    const el = columnsRef.value
+    if (el) el.scrollTo({ left: el.scrollWidth, behavior: 'auto' })
+  })
 }
 
 function pickPath(ids: string[]) {
@@ -198,8 +218,11 @@ const matches = computed(() => {
     for (const n of nodes) {
       const nextIds = [...ids, n.id]
       const nextLabels = [...labels, n.label]
-      if (n.children?.length) walk(n.children, nextIds, nextLabels)
-      else if (n.label.toLocaleLowerCase('tr-TR').includes(q)) out.push({ ids: nextIds, labels: nextLabels })
+      const hit = n.label.toLocaleLowerCase('tr-TR').includes(q)
+      if (n.children?.length) {
+        if (props.selectableBranches && hit) out.push({ ids: nextIds, labels: nextLabels })
+        walk(n.children, nextIds, nextLabels)
+      } else if (hit) out.push({ ids: nextIds, labels: nextLabels })
     }
   }
   if (q) walk(props.nodes, [], [])
@@ -210,6 +233,56 @@ function focusItem(ci: number, id: string | undefined) {
   if (!id) return
   focusCol.value = ci
   nextTick(() => columnsRef.value?.querySelector<HTMLElement>(`[data-col="${ci}"][data-id="${CSS.escape(id)}"]`)?.focus())
+}
+
+/** Sonuç adında aranan parçayı `<mark>` ile vurgulamak için böler (tr-TR harf duyarsız). */
+function highlight(label: string): Array<{ text: string; hit: boolean }> {
+  const q = query.value.trim().toLocaleLowerCase('tr-TR')
+  const at = q ? label.toLocaleLowerCase('tr-TR').indexOf(q) : -1
+  if (at < 0) return [{ text: label, hit: false }]
+  return [
+    { text: label.slice(0, at), hit: false },
+    { text: label.slice(at, at + q.length), hit: true },
+    { text: label.slice(at + q.length), hit: false },
+  ].filter((p) => p.text)
+}
+
+function onSearchKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape' && query.value) {
+    event.preventDefault()
+    event.stopPropagation()
+    query.value = ''
+  } else if (event.key === 'ArrowDown') {
+    event.preventDefault()
+    if (query.value.trim()) focusResult(0)
+    else {
+      const ci = Math.max(0, Math.min(path.value.length, columns.value.length) - 1)
+      focusItem(ci, path.value[ci] ?? columns.value[ci]?.nodes[0]?.id)
+    }
+  } else if (event.key === 'Enter' && matches.value.length === 1) {
+    event.preventDefault()
+    pickPath(matches.value[0].ids)
+  }
+}
+
+function focusResult(index: number) {
+  nextTick(() => resultsRef.value?.querySelector<HTMLElement>(`[data-result="${index}"]`)?.focus())
+}
+
+function onResultsKeydown(event: KeyboardEvent) {
+  const index = Number((event.target as HTMLElement).dataset.result)
+  if (Number.isNaN(index)) return
+  const count = matches.value.length
+  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    event.preventDefault()
+    focusResult((index + (event.key === 'ArrowDown' ? 1 : -1) + count) % count)
+  } else if (event.key === 'Home' || event.key === 'End') {
+    event.preventDefault()
+    focusResult(event.key === 'Home' ? 0 : count - 1)
+  } else if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault()
+    pickPath(matches.value[index].ids)
+  }
 }
 
 function onKeydown(event: KeyboardEvent) {
@@ -505,6 +578,13 @@ function onKeydown(event: KeyboardEvent) {
   background: var(--ek-color-surface);
 }
 
+.ek-cascade__result-name mark {
+  padding: 0 1px;
+  border-radius: 2px;
+  background: var(--ek-color-highlight);
+  color: inherit;
+}
+
 .ek-cascade__results-head {
   margin: 0;
   padding: var(--ek-space-3) var(--ek-space-5) 0;
@@ -563,6 +643,54 @@ function onKeydown(event: KeyboardEvent) {
 
 .ek-cascade__crumbs-empty {
   font-style: italic;
+}
+
+/* Sayfa içine gömülü (diyalog değil): nötr başlık bandı, kart gölgesi. */
+.ek-cascade--embedded {
+  border-color: var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  box-shadow: var(--ek-shadow-card);
+}
+
+.ek-cascade--embedded .ek-cascade__head {
+  background: var(--ek-color-surface-muted);
+  border-bottom: 1px solid var(--ek-color-border-subtle);
+  color: var(--ek-color-content-strong);
+}
+
+.ek-cascade--embedded .ek-cascade__head-icon {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action);
+}
+
+.ek-cascade--embedded .ek-cascade__subtitle {
+  color: var(--ek-color-content-muted);
+}
+
+.ek-cascade--embedded .ek-cascade__search {
+  border-color: var(--ek-color-border-input);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-muted);
+}
+
+.ek-cascade--embedded .ek-cascade__search:focus-within {
+  border-color: var(--ek-color-border-focus);
+  box-shadow: var(--ek-focus-ring);
+}
+
+.ek-cascade--embedded .ek-cascade__search input {
+  color: var(--ek-color-content-strong);
+}
+
+.ek-cascade--embedded .ek-cascade__search input::placeholder {
+  color: var(--ek-color-content-muted);
+}
+
+.ek-cascade--embedded .ek-cascade__close {
+  border-color: var(--ek-color-border-default);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-default);
 }
 
 @media (max-width: 767px) {
