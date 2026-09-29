@@ -1,25 +1,14 @@
 <!--
   frontend/src/views/secure/supports/TicketListView.vue
 
-  ADR-0015 B5-3 — GÖRSEL KATMAN (bkz. e2e/specs/support-tickets.spec.ts). Davranış/API sözleşmesi
-  DEĞİŞMEDİ: `TicketService/getTickets` gövdesi (pagination/sortBy/searchTicketForm), useTicketFilters/
-  useTicketActions composable'ları, detay diyaloğunun satır nesnesini DOĞRUDAN kullanması, CLOSED
-  talepte "Kapat" eyleminin olmaması, toplu kapatma akışı AYNEN korundu.
-
-  - Başlık/arama/yenile `EkListPage`'e taşındı (B1 emsali: MessageListView/OrderListView); arama,
-    emsallerle AYNI şekilde yazdıkça `getTickets(true)` tetikler.
-  - Tablo BİLEREK `v-data-table-server` olarak KORUNDU (AuthorizationListView emsali): DS
-    `EkDataTable` sıralanabilir başlık desteklemiyor, ekran ise `onSortUpdate` ile backend'e
-    `sortBy` gönderiyor.
-  - Durum/öncelik rozetleri `EkStatusChip`'e taşındı (durum: paylaşılan `TICKET_STATUS_TONE`,
-    öncelik: yerel `ticketPriorityTone.ts` — status-map.ts A-owned, dokunulmadı).
-  - Karakterizasyon (DÜZELTİLMEDİ): `getTickets` hata durumunu yalnızca console'a yazar; ayrı bir
-    hata görünümü YOKTUR — 500 de "Destek Talebi Bulunamadı" boş durumuna düşer.
+  DS-v2 Aşama 2 — liste standardı (EkListScreen). API sözleşmesi DEĞİŞMEDİ: `TicketService/getTickets`
+  gövdesi (pagination/sortBy/searchTicketForm), useTicketActions, detay diyaloğunun satır nesnesini
+  DOĞRUDAN kullanması, CLOSED talepte "Kapat" eyleminin olmaması, toplu kapatma akışı AYNEN korundu.
+  Sıralama SUNUCUDA (ticketNumber, subject, priority, status, lastMessageAt). useTicketFilters
+  yalnız durum kaynağı olarak kullanılır (sıfırlama/sıralama yerelde `getTickets(true)` ile).
 -->
 <template>
-  <div class="ticketListView d-flex flex-column">
-    <LoadingComponent attach=".ticketListView" ref="loadingComponentRef"></LoadingComponent>
-
+  <div class="ticketListView">
     <!-- Diyaloglar -->
     <ConfirmationDialogComponent v-model="confirmDialog.show" :title="confirmDialog.title" attach=".ticketListView"
       :subtitle="confirmDialog.subtitle" :message="confirmDialog.message" :icon="confirmDialog.icon"
@@ -30,188 +19,97 @@
 
     <TicketDetailComponent v-model="isDetailOpen" :ticket="selectedTicketForDetail" @reply="handleSendReply" />
 
-    <!-- Gelişmiş Filtre Diyalogu -->
-    <ActionDialogComponent v-model="searchTicketForm.form.menu" title="Destek Filtreleri" attach=".ticketListView"
-      subtitle="Durum, Öncelik ve Tip bazlı filtreleme" icon="mdi-filter-variant" color="passiveColor" maxWidth="600px"
-      confirmText="SONUÇLARI GÖSTER" @confirm="getTickets(true); searchTicketForm.form.menu = false"
-      @cancel="resetFilters()">
-      <v-row dense>
-        <v-col cols="12" sm="6">
-          <v-select v-model="searchTicketForm.data.statuses" :items="statusOptions" item-title="title" item-value="id"
-            label="Durumlar" variant="outlined" density="compact" multiple chips></v-select>
-        </v-col>
-        <v-col cols="12" sm="6">
-          <v-select v-model="searchTicketForm.data.priorities" :items="priorityOptions" item-title="title"
-            item-value="id" label="Öncelik Seviyesi" variant="outlined" density="compact" multiple chips></v-select>
-        </v-col>
-        <v-col cols="12">
-          <v-select v-model="searchTicketForm.data.types" :items="typeOptions" item-title="title" item-value="id"
-            label="Talep Tipleri" variant="outlined" density="compact" multiple chips></v-select>
-        </v-col>
-      </v-row>
-    </ActionDialogComponent>
-
-    <EkListPage
-      section="Destek"
+    <EkListScreen
       title="Destek Talepleri"
       description="Destek ekibiyle yazışmalarınızı buradan takip edin ve yeni talep açın."
-      :primary-action="{ label: 'Yeni Bilet Aç', icon: 'mdi-plus', onClick: () => (isCreateDialogOpen = true) }"
-      :secondary-actions="[{ label: 'Filtreler', icon: 'mdi-filter-variant', onClick: () => (searchTicketForm.form.menu = true) }]"
+      label="Destek talepleri tablosu"
+      noun="talep"
+      row-key="_id"
+      label-key="ticketNumber"
+      :columns="columns"
+      :rows="tickets"
+      :row-class="(r) => getStatusRowClass(r.status)"
+      :loading="loading"
+      :error="loadError"
+      error-title="Destek talepleri yüklenemedi"
       :search="searchTicketForm.data.globalSearch"
       search-placeholder="Destek No veya Konu Ara"
-      :state="viewState"
+      :chips="activeChips"
+      :filter-count="panelFilterCount"
+      selectable
+      v-model:selected="selectedTickets"
+      :sort="gridSort"
+      :page="pagination.page"
+      :page-size="pagination.limit"
+      :total="pagination.totalNumberOfRecords"
+      :page-size-options="[15, 25, 50, 100]"
+      empty-title="Destek Talebi Bulunamadı"
+      empty-text="Destek ekibiyle yazışmalarınız burada listelenir."
+      empty-icon="mdi-lifebuoy"
+      filtered-empty-title="Destek Talebi Bulunamadı"
+      filtered-empty-text="Arama kriterlerinize uygun herhangi bir destek talebi kaydı bulunamadı."
       @update:search="onSearchInput"
+      @update:sort="onGridSort"
+      @update:page="onPageChange"
+      @update:page-size="onPageSizeChange"
+      @filter-submit="getTickets(true)"
+      @filter-reset="resetFilters"
+      @remove-chip="removeChip"
       @clear-filters="resetFilters"
-      @refresh="() => getTickets(true)"
+      @refresh="getTickets(true)"
     >
-      <template #filters-extra>
-        <v-menu v-model="startDateMenuInline" :close-on-content-click="false">
-          <template v-slot:activator="{ props }">
-            <v-text-field :model-value="formattedStartDate" label="Başlangıç" prepend-inner-icon="mdi-calendar-start"
-              hide-details readonly clearable @click:clear="searchTicketForm.data.startDate = null" v-bind="props"
-              class="ek-ticket-date"></v-text-field>
-          </template>
-          <v-card>
-            <v-date-picker v-model="searchTicketForm.data.startDate" :max="searchTicketForm.data.endDate" hide-header
-              locale="tr" color="primary" @update:model-value="startDateMenuInline = false"
-              show-adjacent-months></v-date-picker>
-          </v-card>
-        </v-menu>
-
-        <v-menu v-model="endDateMenuInline" :close-on-content-click="false">
-          <template v-slot:activator="{ props }">
-            <v-text-field :model-value="formattedEndDate" label="Bitiş" prepend-inner-icon="mdi-calendar-end"
-              hide-details readonly clearable @click:clear="searchTicketForm.data.endDate = null" v-bind="props"
-              class="ek-ticket-date"></v-text-field>
-          </template>
-          <v-card>
-            <v-date-picker v-model="searchTicketForm.data.endDate" :min="searchTicketForm.data.startDate" hide-header
-              locale="tr" color="primary" @update:model-value="endDateMenuInline = false"
-              show-adjacent-months></v-date-picker>
-          </v-card>
-        </v-menu>
+      <template #header-actions>
+        <EkButton icon="mdi-plus" @click="isCreateDialogOpen = true">Yeni Bilet Aç</EkButton>
       </template>
 
-      <template #empty>
-        <EkEmptyState variant="no-results" title="Destek Talebi Bulunamadı"
-          message="Arama kriterlerinize uygun herhangi bir destek talebi kaydı bulunamadı." />
+      <template #filters>
+        <v-select v-model="searchTicketForm.data.statuses" :items="statusOptions" item-title="title" item-value="id"
+          label="Durumlar" multiple chips clearable />
+        <v-select v-model="searchTicketForm.data.priorities" :items="priorityOptions" item-title="title"
+          item-value="id" label="Öncelik Seviyesi" multiple chips clearable />
+        <v-select v-model="searchTicketForm.data.types" :items="typeOptions" item-title="title" item-value="id"
+          label="Talep Tipleri" multiple chips clearable />
+        <EkDateField v-model="searchTicketForm.data.startDate" label="Başlangıç" :max="searchTicketForm.data.endDate" />
+        <EkDateField v-model="searchTicketForm.data.endDate" label="Bitiş" :min="searchTicketForm.data.startDate" />
       </template>
 
-      <div class="ek-ticket-table-wrapper">
-        <v-data-table-server v-if="$vuetify.display.mdAndUp" v-model="selectedTickets" v-model:sort-by="sortBy"
-          item-value="_id" :itemsLength="pagination.totalNumberOfRecords" :items="tickets" fixed-header
-          :headers="headers" show-select hide-default-footer @update:sortBy="onSortUpdate">
-
-          <template v-slot:item="{ item }: any">
-            <tr :key="item._id" :class="getStatusRowClass(item.status)">
-              <td>
-                <v-checkbox-btn :model-value="selectedTickets.includes(item._id)" color="primary"
-                  :aria-label="`Talebi seç: ${item.ticketNumber}`"
-                  @update:model-value="val => onTicketSelectionUpdate(item._id, !!val)"
-                  density="compact"></v-checkbox-btn>
-              </td>
-
-              <td class="text-left py-2">
-                <div class="d-flex align-center">
-                  <v-avatar color="surface-muted" rounded="lg" size="32" class="mr-3">
-                    <v-icon color="primary" size="18">mdi-ticket-outline</v-icon>
-                  </v-avatar>
-                  <div class="d-flex flex-column">
-                    <span class="font-weight-semibold text-body-2 ek-num">{{ item.ticketNumber }}</span>
-                    <span class="text-caption ek-muted">{{ translateType(item.type) }}</span>
-                  </div>
-                </div>
-              </td>
-
-              <td class="text-left py-2">
-                <div class="d-flex flex-column ek-ticket-subject">
-                  <span class="text-body-2 font-weight-medium text-truncate">{{ item.subject }}</span>
-                  <span class="text-caption ek-muted text-truncate">{{ item.lastMessageSnippet }}</span>
-                </div>
-              </td>
-
-              <td class="text-center">
-                <EkStatusChip :tone="priorityTone(item.priority)" :label="translatePriority(item.priority)" />
-              </td>
-
-              <td class="text-left">
-                <EkStatusChip :tone="statusTone(item.status)" :label="translateStatus(item.status)" />
-              </td>
-
-              <td class="text-left py-3">
-                <div class="d-flex flex-column">
-                  <span class="text-caption font-weight-medium ek-num">Aktif: {{ formatDate(item.lastMessageAt) }}</span>
-                  <span class="text-caption ek-muted ek-num">Açılış: {{ formatDate(item.createdDate) }}</span>
-                </div>
-              </td>
-
-              <td>
-                <div class="d-flex justify-end ek-gap-1 pr-1">
-                  <v-btn icon variant="text" density="comfortable" aria-label="Görüntüle / Yanıtla"
-                    @click="openTicketDetail(item)">
-                    <v-icon>mdi-message-text-outline</v-icon>
-                    <v-tooltip activator="parent" location="top">Görüntüle / Yanıtla</v-tooltip>
-                  </v-btn>
-                  <v-btn v-if="item.status !== TicketStatusEnum.CLOSED" icon variant="text" density="comfortable"
-                    color="success" aria-label="Kapat" @click="confirmCloseTicket(item)">
-                    <v-icon>mdi-check-circle-outline</v-icon>
-                    <v-tooltip activator="parent" location="top">Kapat</v-tooltip>
-                  </v-btn>
-                </div>
-              </td>
-            </tr>
-          </template>
-        </v-data-table-server>
-
-        <!-- Mobil Görünüm -->
-        <div v-else class="d-flex flex-column">
-          <div class="ek-ticket-sort-bar d-flex align-center justify-space-between">
-            <div class="d-flex align-center">
-              <v-icon size="18" class="ek-muted mr-2">mdi-sort-variant</v-icon>
-              <span class="text-caption font-weight-medium ek-muted">Sıralama</span>
-            </div>
-            <v-select v-model="mobileSortValue" :items="mobileSortOptions" item-title="title" item-value="value"
-              density="compact" hide-details aria-label="Sıralama" class="ek-ticket-sort-select"
-              @update:model-value="onMobileSortChange"></v-select>
-          </div>
-
-          <v-card v-for="item in tickets" :key="item._id" class="mb-3" variant="flat" border rounded="lg">
-            <div class="d-flex align-center justify-space-between pa-3 ek-ticket-card-head">
-              <div class="d-flex align-center ek-gap-2">
-                <v-checkbox-btn :model-value="selectedTickets.includes(item._id)" color="primary" density="compact"
-                  :aria-label="`Talebi seç: ${item.ticketNumber}`"
-                  @update:model-value="val => onTicketSelectionUpdate(item._id, !!val)"></v-checkbox-btn>
-                <span class="text-caption font-weight-semibold ek-num">{{ item.ticketNumber }}</span>
-                <EkStatusChip :tone="priorityTone(item.priority)" :label="translatePriority(item.priority)" />
-              </div>
-              <EkStatusChip :tone="statusTone(item.status)" :label="translateStatus(item.status)" />
-            </div>
-
-            <div class="pa-3" @click="openTicketDetail(item)">
-              <div class="text-body-2 font-weight-medium mb-2">{{ item.subject }}</div>
-              <div class="ek-ticket-snippet text-caption ek-muted mb-3">{{ item.lastMessageSnippet }}</div>
-              <div class="d-flex align-center justify-space-between">
-                <span class="text-caption ek-muted ek-num">
-                  <v-icon size="12" class="mr-1">mdi-clock-outline</v-icon>Son işlem: {{ formatDate(item.lastMessageAt) }}
-                </span>
-                <v-btn icon="mdi-message-text" variant="tonal" color="primary" density="comfortable"
-                  aria-label="Görüntüle / Yanıtla" @click.stop="openTicketDetail(item)"></v-btn>
-              </div>
-            </div>
-          </v-card>
-        </div>
-      </div>
-
-      <template #pagination>
-        <EkPagination :page="pagination.page" :page-size="pagination.limit" :total="pagination.totalNumberOfRecords"
-          :page-size-options="[15, 25, 50, 100]" @update:page="onPageChange" @update:page-size="onPageSizeChange" />
+      <template #bulk-actions>
+        <EkButton size="sm" icon="mdi-check-all" @click="handleBulkAction('CLOSE')">
+          Toplu Kapat ({{ selectedTickets.length }})
+        </EkButton>
       </template>
-    </EkListPage>
 
-    <!-- Toplu İşlem Menüsü -->
-    <BatchProcessMenu :model-value="selectedTickets" title="Destek Talebi Seçildi" :actions="[
-      { id: 'CLOSE', label: 'Toplu Kapat', icon: 'mdi-check-all', color: 'success', badgeCount: selectedTickets.length }
-    ]" @action="handleBulkAction" @clear="selectedTickets = []" />
+      <template #cell-ticketNumber="{ row }">
+        <span class="ek-ticket-id">
+          <span class="ek-num ek-ticket-id__no">{{ row.ticketNumber }}</span>
+          <span class="ek-ticket-muted">{{ translateType(row.type) }}</span>
+        </span>
+      </template>
+      <template #cell-subject="{ row }">
+        <span class="ek-ticket-subject">
+          <span class="ek-ticket-subject__title">{{ row.subject }}</span>
+          <span class="ek-ticket-muted ek-ticket-subject__snippet">{{ row.lastMessageSnippet }}</span>
+        </span>
+      </template>
+      <template #cell-priority="{ row }">
+        <EkStatusChip :tone="priorityTone(row.priority)" :label="translatePriority(row.priority)" />
+      </template>
+      <template #cell-status="{ row }">
+        <EkStatusChip :tone="statusTone(row.status)" :label="translateStatus(row.status)" />
+      </template>
+      <template #cell-lastMessageAt="{ row }">
+        <span class="ek-ticket-id">
+          <span class="ek-num">Aktif: {{ formatDateTime(row.lastMessageAt) }}</span>
+          <span class="ek-ticket-muted ek-num">Açılış: {{ formatDateTime(row.createdDate) }}</span>
+        </span>
+      </template>
+      <template #cell-actions="{ row }">
+        <span class="ek-row-actions">
+          <EkButton tone="ghost" size="sm" icon="mdi-message-text-outline" icon-only aria-label="Görüntüle / Yanıtla" @click="openTicketDetail(row)" />
+          <EkButton v-if="row.status !== TicketStatusEnum.CLOSED" tone="ghost" size="sm" icon="mdi-check-circle-outline" icon-only aria-label="Kapat" @click="confirmCloseTicket(row)" />
+        </span>
+      </template>
+    </EkListScreen>
   </div>
 </template>
 
@@ -235,29 +133,28 @@ import { TICKET_STATUS_TONE } from '@/design/status-map'
 import { TICKET_PRIORITY_TONE } from '@/components/ticket/composables/ticketPriorityTone'
 
 // Components
-import LoadingComponent from '@/components/LoadingComponent.vue'
 import ConfirmationDialogComponent from '@/components/layout/ConfirmationDialogComponent.vue'
-import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue'
-import BatchProcessMenu from '@/components/layout/BatchProcessMenu.vue'
 import TicketDetailComponent from '@/components/ticket/TicketDetailComponent.vue'
 import TicketCreateDialog from '@/components/ticket/TicketCreateDialog.vue'
-import EkListPage from '@/components/ds/templates/EkListPage.vue'
-import EkPagination from '@/components/ds/EkPagination.vue'
+import EkListScreen from '@/components/ds/templates/EkListScreen.vue'
+import type { EkGridColumn, EkGridSort } from '@/components/ds/EkDataGrid.vue'
+import type { EkActiveFilterChip } from '@/components/ds/EkActiveFilters.vue'
+import EkButton from '@/components/ds/EkButton.vue'
+import EkDateField from '@/components/ds/EkDateField.vue'
 import EkStatusChip from '@/components/ds/EkStatusChip.vue'
-import EkEmptyState from '@/components/ds/EkEmptyState.vue'
+import { isRequestError } from '@/components/ds/listStandard'
+import { formatDate as formatDay, formatDateTime } from '@/composables/format'
 
 // --- INITIALIZATION ---
 const restApi = useRestApi()
 const { t } = useI18n()
-const loadingComponentRef = ref<any>(null)
 const loading = ref(false)
+const loadError = ref(false)
 const tickets = ref<any[]>([])
-const selectedTickets = ref<string[]>([])
+const selectedTickets = ref<Array<string | number>>([])
 const actionLoading = ref(false)
 
-// UI Menus
-const startDateMenuInline = ref(false)
-const endDateMenuInline = ref(false)
+// UI
 const isCreateDialogOpen = ref(false)
 const isDetailOpen = ref(false)
 const selectedTicketForDetail = ref<any>(null)
@@ -265,25 +162,8 @@ const selectedTicketForDetail = ref<any>(null)
 // Composables
 const {
   searchTicketForm, pagination, sortBy,
-  statusOptions, typeOptions, priorityOptions,
-  formattedStartDate, formattedEndDate,
-  resetFilters, onSortUpdate, handlePageChange
+  statusOptions, typeOptions, priorityOptions
 } = useTicketFilters(() => getTickets())
-
-// --- MOBİL SIRALAMA ---
-const mobileSortValue = ref('lastActivityAt_desc');
-const mobileSortOptions = [
-  { title: 'Son İşlem: En Yeni', value: 'lastActivityAt_desc' },
-  { title: 'Son İşlem: En Eski', value: 'lastActivityAt_asc' },
-  { title: 'Oluşturma: En Yeni', value: 'createdDate_desc' },
-  { title: 'Oluşturma: En Eski', value: 'createdDate_asc' }
-];
-
-const onMobileSortChange = (val: string) => {
-  const [key, order] = val.split('_');
-  sortBy.value = [{ key, order: order as any }];
-  getTickets(true);
-};
 
 const { createTicket, sendMessage, closeTicket } = useTicketActions(() => getTickets())
 
@@ -293,21 +173,66 @@ const confirmDialog = reactive({
   confirmText: '', onConfirm: () => { }, onCancel: () => { }
 });
 
-const headers: any = [
-  { title: 'Destek No & Tip', key: 'ticketNumber', sortable: true, align: 'start', width: '180px' },
-  { title: 'Konu & Mesaj Snippet', key: 'subject', sortable: true, align: 'start', width: '300px' },
-  { title: 'Öncelik', key: 'priority', sortable: true, align: 'center', width: '120px' },
-  { title: 'Statü', key: 'status', sortable: true, align: 'left', width: '150px' },
-  { title: 'Zamanlama', key: 'lastMessageAt', sortable: true, align: 'start', width: '180px' },
-  { title: 'İşlemler', key: 'actions', sortable: false, align: 'end', width: '120px' },
+// DS-v2 liste standardı. TicketService.getTickets `sortBy.key` ile SUNUCUDA sıralar
+// (anahtar = kayıt alanı); sıralanabilir kolonlar: destek no, konu, öncelik, statü, zamanlama.
+const columns: EkGridColumn[] = [
+  { key: 'ticketNumber', label: 'Destek no & tip', sortable: true },
+  { key: 'subject', label: 'Konu & mesaj', sortable: true },
+  { key: 'priority', label: 'Öncelik', sortable: true },
+  { key: 'status', label: 'Statü', sortable: true },
+  { key: 'lastMessageAt', label: 'Zamanlama', sortable: true },
+  { key: 'actions', label: 'İşlemler', align: 'end', hideLabel: true, pin: 'end' },
 ]
+
+const gridSort = computed<EkGridSort>(() => {
+  const current = sortBy.value?.[0]
+  return current ? { key: current.key, dir: current.order === 'asc' ? 'asc' : 'desc' } : null
+})
+
+const onGridSort = (sort: EkGridSort) => {
+  sortBy.value = sort ? [{ key: sort.key, order: sort.dir }] : []
+  getTickets(true)
+}
+
+// Aktif filtre çipleri — SON SORGULANAN değerlerden.
+type TicketFilterData = typeof searchTicketForm.value.data
+const applied = ref<TicketFilterData>({ ...searchTicketForm.value.data })
+
+const activeChips = computed<EkActiveFilterChip[]>(() => {
+  const a = applied.value
+  const chips: EkActiveFilterChip[] = []
+  if (a.globalSearch) chips.push({ key: 'globalSearch', label: 'Arama', value: a.globalSearch })
+  if (a.statuses.length) chips.push({ key: 'statuses', label: 'Durum', value: a.statuses.map(translateStatus).join(', ') })
+  if (a.priorities.length) chips.push({ key: 'priorities', label: 'Öncelik', value: a.priorities.map(translatePriority).join(', ') })
+  if (a.types.length) chips.push({ key: 'types', label: 'Tip', value: a.types.map(translateType).join(', ') })
+  if (a.startDate) chips.push({ key: 'startDate', label: 'Başlangıç', value: formatDay(a.startDate) })
+  if (a.endDate) chips.push({ key: 'endDate', label: 'Bitiş', value: formatDay(a.endDate) })
+  return chips
+})
+
+const panelFilterCount = computed(() => activeChips.value.filter(c => c.key !== 'globalSearch').length)
+
+const removeChip = (key: string) => {
+  const d = searchTicketForm.value.data as Record<string, any>
+  d[key] = Array.isArray(d[key]) ? [] : key === 'globalSearch' ? '' : null
+  getTickets(true)
+}
+
+const resetFilters = () => {
+  searchTicketForm.value.data = {
+    globalSearch: '', startDate: null, endDate: null, statuses: [], types: [], priorities: []
+  }
+  getTickets(true)
+}
 
 // --- CORE ACTIONS ---
 
 const getTickets = async (resetPage: boolean = false) => {
   if (resetPage) pagination.page = 1;
   loading.value = true;
-  const guid = loadingComponentRef.value?.info() || "loading";
+  loadError.value = false;
+  const d = searchTicketForm.value.data;
+  applied.value = { ...d, statuses: [...d.statuses], types: [...d.types], priorities: [...d.priorities] };
 
   try {
     const res = await restApi.post('TicketService/getTickets', {
@@ -319,16 +244,18 @@ const getTickets = async (resetPage: boolean = false) => {
       searchTicketForm: searchTicketForm.value
     });
 
-    if (res.tickets) {
+    if (isRequestError(res)) {
+      loadError.value = true;
+    } else if (res.tickets) {
       tickets.value = res.tickets;
       pagination.totalNumberOfRecords = res.totalNumberOfRecords || 0;
       pagination.totalNumberOfPages = Math.ceil(pagination.totalNumberOfRecords / pagination.limit) || 1;
     }
   } catch (error) {
+    loadError.value = true;
     console.error('Biletler getirilirken hata:', error);
   } finally {
     loading.value = false;
-    loadingComponentRef.value?.remove(guid);
   }
 };
 
@@ -376,29 +303,13 @@ const handleBulkAction = (actionId: string) => {
     confirmDialog.onConfirm = async () => {
       confirmDialog.show = false;
       for (const id of selectedTickets.value) {
-        await closeTicket(id);
+        await closeTicket(String(id));
       }
       selectedTickets.value = [];
     };
     confirmDialog.show = true;
   }
 };
-
-const onTicketSelectionUpdate = (id: string, isSelected: boolean) => {
-  if (isSelected) {
-    if (!selectedTickets.value.includes(id)) selectedTickets.value.push(id);
-  } else {
-    selectedTickets.value = selectedTickets.value.filter(item => item !== id);
-  }
-};
-
-// Karakterizasyon: ayrı bir hata durumu YOK (getTickets hatayı yalnızca console'a yazar) —
-// boş liste, gerçek boş sonuç ile aynı "empty" görünümüne düşer.
-const viewState = computed<'loading' | 'empty' | 'ready'>(() => {
-  if (loading.value) return 'loading';
-  if (!tickets.value?.length) return 'empty';
-  return 'ready';
-});
 
 const onSearchInput = (value: string) => {
   searchTicketForm.value.data.globalSearch = value;
@@ -407,17 +318,15 @@ const onSearchInput = (value: string) => {
 
 const onPageChange = (page: number) => {
   pagination.page = page;
-  handlePageChange();
+  getTickets();
 };
 
 const onPageSizeChange = (size: number) => {
   pagination.limit = size;
-  pagination.page = 1;
-  handlePageChange();
+  getTickets(true);
 };
 
 // --- UTILS ---
-const formatDate = (date: any) => date ? new Date(date).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
 const translateStatus = (s: any) => TICKET_STATUS_LABELS[s as TicketStatusEnum] || s;
 const statusTone = (s: any) => TICKET_STATUS_TONE[s as TicketStatusEnum]?.tone || 'neutral';
 const translatePriority = (p: any) => TICKET_PRIORITY_LABELS[p as TicketPriorityEnum] || p;
@@ -431,62 +340,55 @@ onMounted(() => getTickets());
 <style scoped>
 .ticketListView {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  inset: 0;
   display: flex;
   flex-direction: column;
-  overflow: auto;
-  padding: var(--ek-space-6);
-  gap: var(--ek-space-4);
+  overflow: hidden;
+  padding: var(--ek-space-5) var(--ek-space-6);
 }
 
-.ek-ticket-table-wrapper {
-  width: 100%;
+@media (max-width: 767px) {
+  .ticketListView {
+    overflow-y: auto;
+    padding: var(--ek-space-4);
+  }
 }
 
-.ek-ticket-date {
-  min-width: 160px;
+.ek-ticket-id,
+.ek-ticket-subject {
+  display: flex;
+  flex-direction: column;
+}
+
+.ek-ticket-id__no,
+.ek-ticket-subject__title {
+  color: var(--ek-color-content-strong);
+  font-weight: var(--ek-font-weight-medium);
 }
 
 .ek-ticket-subject {
-  max-width: 250px;
+  max-width: 320px;
 }
 
-.ek-ticket-sort-bar {
-  gap: var(--ek-space-3);
-  padding: var(--ek-space-2) 0 var(--ek-space-3);
-}
-
-.ek-ticket-sort-select {
-  max-width: 200px;
-}
-
-.ek-ticket-card-head {
-  border-bottom: 1px dashed var(--ek-color-border-default);
-}
-
-.ek-ticket-snippet {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+.ek-ticket-subject__title,
+.ek-ticket-subject__snippet {
   overflow: hidden;
-  padding: var(--ek-space-2);
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-md);
+  text-overflow: ellipsis;
+}
+
+.ek-ticket-muted {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+}
+
+.ek-row-actions {
+  display: inline-flex;
+  gap: var(--ek-space-1);
 }
 
 /* Müşteri yanıtı bekleyen talepler (WAITING_CLIENT) satırda vurgulanır — orijinal davranış. */
-.row-status-waiting_client {
-  background-color: var(--ek-color-error-subtle) !important;
+:deep(.row-status-waiting_client) {
+  background-color: var(--ek-color-error-subtle);
   box-shadow: inset 4px 0 0 var(--ek-color-danger);
 }
-
-.ek-muted {
-  color: var(--ek-color-content-muted);
-}
-
-.ek-gap-1 { gap: var(--ek-space-1); }
-.ek-gap-2 { gap: var(--ek-space-2); }
 </style>

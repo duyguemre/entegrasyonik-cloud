@@ -1,27 +1,13 @@
 <!--
   frontend/src/views/secure/user/AuthorizationListView.vue
 
-  ADR-0015 B5-3 — GÖRSEL KATMAN (bkz. e2e/specs/authorization.spec.ts). Davranış/API sözleşmesi
-  DEĞİŞMEDİ: `UserService/getUsers|getRoles|createUser|updateUser|deleteUser` çağrıları, sayfalama
-  alanları (`pagination.limit/page/...`), arama/filtre state şekli, `checkAuthorization` kapısı,
-  mağaza yöneticisi (`item.owner`) silme kısıtı AYNEN korundu.
-
-  Karakterizasyon notu (şüpheli davranış, DÜZELTİLMEDİ — final rapora yazıldı): rol rozeti
-  `item.roleCode` HAM DEĞERİNİ gösteriyordu ("MANAGER" gibi), `UserService/getRoles`'un döndürdüğü
-  rol ADINA ("Yönetici") hiç ÇEVRİLMİYORDU — bu AYNEN korunuyor (`roleLabel` fonksiyonu SADECE
-  görüntüleme metnini token'lı `EkStatusChip`'e taşıyor, ham `roleCode` değerini DEĞİŞTİRMİYOR).
-
-  Tablo BİLEREK `v-data-table-server` olarak KORUNDU (`EkDataTable`'a taşınmadı): DS `EkDataTable`
-  sıralanabilir sütun BAŞLIĞI desteklemiyor, oysa orijinal ekran `v-model:sort-by` +
-  `@update:sortBy` ile backend'e `sortBy` gönderiyordu — bu etkileşimi KORUMAK için `v-data-table-
-  server` kullanılmaya devam edildi; global Vuetify `defaults` (A1, Karar 3.1 "VDataTable/
-  VDataTableServer") zaten token tabanlı premium görünümü SAĞLIYOR. Sayfalama `EkPagination`'a,
-  silme onayı `EkConfirmDialog`'a taşındı (Karar 3.2/3.8/6.1). Gelişmiş filtre diyaloğu
-  `ActionDialogComponent` olarak KORUNDU (özel "FİLTRELERİ UYGULA" düğme metni test edilmemiş
-  olsa da içerik değişikliğini en aza indirmek için).
+  DS-v2 Aşama 2 — liste standardı (EkListScreen). API sözleşmesi DEĞİŞMEDİ: `UserService/getUsers|
+  getRoles|createUser|updateUser|deleteUser`, sayfalama alanları, `checkAuthorization` kapısı,
+  mağaza yöneticisi (`item.owner`) silme kısıtı AYNEN korundu. Sıralama SUNUCUDA (name, email, roleCode).
+  Karakterizasyon (DÜZELTİLMEDİ): rol rozeti ham `roleCode` değerini gösterir (rol adına çevrilmez).
 -->
 <template>
-  <div class="authorizationListView d-flex flex-column pt-4">
+  <div class="authorizationListView">
     <template v-if="userApi.checkAuthorization('navigation.authorization')" class="pa-12 text-center h-100">
       <NoAuthorizationComponent />
     </template>
@@ -41,87 +27,67 @@
       <UserAddComponent v-if="addUserFormMenu" :editUser="selectedUser" @close="addUserFormMenu = false"
         @refreshUsers="getUsers(true)" @onSave="createOrUpdateUser" />
 
-      <ActionDialogComponent v-model="searchUserForm.menu" title="GELİŞMİŞ FİLTRELEME" attach=".authorizationListView"
-        subtitle="Rol ve yetki bazlı filtreleme" icon="mdi-filter-cog" color="passiveColor" maxWidth="600px"
-        confirmText="FİLTRELERİ UYGULA" @confirm="getUsers(true); searchUserForm.menu = false"
-        @cancel="searchUserForm.filters = { roleCodes: [] }; getUsers(true);">
-        <v-row dense>
-          <v-col cols="12">
-            <v-select v-model="searchUserForm.filters.roleCodes" :items="globalRoles" label="Yetki Grubu (Çoklu Seçim)"
-              variant="outlined" density="compact" multiple chips item-title="name" item-value="code"
-              class="mt-2" />
-          </v-col>
-        </v-row>
-      </ActionDialogComponent>
-
-      <EkListPage
-        section="Ayarlar"
+      <EkListScreen
         :title="$t('menu.authorization')"
         description="Mağazanıza erişimi olan personeli ve yetki gruplarını yönetin."
-        :primary-action="{ label: 'Yeni personel', icon: 'mdi-plus', onClick: () => openAddUser() }"
-        :secondary-actions="[{ label: 'Filtrele', icon: 'mdi-filter-variant', onClick: () => (searchUserForm.menu = true) }]"
+        label="Personel tablosu"
+        noun="personel"
+        row-key="_id"
+        label-key="email"
+        :columns="columns"
+        :rows="users"
+        :loading="loading"
+        :error="loadError"
+        error-title="Personel listesi yüklenemedi"
         :search="searchUserForm.search"
         search-placeholder="İsim, e-posta veya yetki ara..."
-        :state="viewState"
+        :chips="activeChips"
+        :filter-count="panelFilterCount"
+        :sort="gridSort"
+        :page="pagination.page"
+        :page-size="pagination.limit"
+        :total="pagination.totalNumberOfRecords"
+        empty-title="Personel Bulunamadı"
+        empty-text="Mağazanıza erişimi olan personel burada listelenir."
+        empty-icon="mdi-account-group-outline"
+        filtered-empty-title="Personel Bulunamadı"
+        filtered-empty-text="Arama kriterlerinizi değiştirmeyi veya filtreleri temizlemeyi deneyin."
         @update:search="onSearchInput"
+        @update:sort="onGridSort"
+        @update:page="onPageChange"
+        @update:page-size="onPageSizeChange"
+        @filter-submit="getUsers(true)"
+        @filter-reset="resetFilters"
+        @remove-chip="removeChip"
         @clear-filters="clearSearch"
-        @refresh="() => getUsers(true)"
+        @refresh="getUsers(true)"
       >
-        <template #empty>
-          <EkEmptyState variant="no-data" title="Personel Bulunamadı"
-            message="Arama kriterlerinizi değiştirmeyi veya filtreleri temizlemeyi deneyin."
-            show-action action-text="TÜMÜNÜ GÖSTER" @action="clearSearch" />
+        <template #header-actions>
+          <EkButton icon="mdi-plus" @click="openAddUser()">Yeni personel</EkButton>
         </template>
 
-        <div class="table-wrapper">
-          <v-data-table-server v-model:sort-by="sortBy" item-value="_id"
-            :itemsLength="pagination.totalNumberOfRecords" :items="users" :headers="headers" fixed-header
-            hide-default-footer @update:sortBy="getUsers(true)">
-
-            <template v-slot:item.name="{ item }: any">
-              <div class="d-flex align-center py-2">
-                <v-avatar size="40" color="primary-lighten-5" class="mr-4 border-primary-soft">
-                  <span class="text-primary font-weight-black text-caption">
-                    {{ item.name?.charAt(0) }}{{ item.surname?.charAt(0) }}
-                  </span>
-                </v-avatar>
-                <div class="d-flex flex-column">
-                  <span class="font-weight-medium">{{ item.name }} {{ item.surname }}</span>
-                  <div class="d-flex align-center ga-1 mt-1">
-                    <v-icon size="12" icon="mdi-clock-outline" class="ek-muted" />
-                    <span class="text-xs ek-muted">Eklenme: {{ formatDate(item.createdAt) }}</span>
-                  </div>
-                </div>
-              </div>
-            </template>
-
-            <template v-slot:item.email="{ item }: any">
-              <div class="d-flex align-center">
-                <v-icon size="16" icon="mdi-email-outline" class="ek-muted mr-2" />
-                <span>{{ item.email }}</span>
-              </div>
-            </template>
-
-            <template v-slot:item.roleCode="{ item }: any">
-              <EkStatusChip :tone="roleTone(item)" :label="roleLabel(item)" />
-            </template>
-
-            <template v-slot:item.actions="{ item }: any">
-              <div class="d-flex justify-end ga-2 pr-1">
-                <v-btn icon="mdi-pencil" variant="text" density="comfortable" aria-label="Düzenle"
-                  @click="openAddUser(item)" />
-                <v-btn icon="mdi-delete" variant="text" density="comfortable" color="error" :disabled="item.owner"
-                  :aria-label="item.owner ? 'Mağaza yöneticisi silinemez' : 'Sil'" @click="triggerDelete(item)" />
-              </div>
-            </template>
-          </v-data-table-server>
-        </div>
-
-        <template #pagination>
-          <EkPagination :page="pagination.page" :page-size="pagination.limit" :total="pagination.totalNumberOfRecords"
-            @update:page="onPageChange" @update:page-size="onPageSizeChange" />
+        <template #filters>
+          <v-select v-model="searchUserForm.filters.roleCodes" :items="globalRoles" label="Yetki grubu"
+            multiple chips clearable item-title="name" item-value="code" class="ek-span-2" />
         </template>
-      </EkListPage>
+
+        <template #cell-name="{ row }">
+          <span class="ek-auth-person">
+            <span class="ek-auth-person__name">{{ row.name }} {{ row.surname }}</span>
+            <span class="ek-auth-person__meta ek-num">Eklenme: {{ formatDate(row.createdAt) }}</span>
+          </span>
+        </template>
+        <template #cell-roleCode="{ row }">
+          <EkStatusChip :tone="roleTone(row)" :label="roleLabel(row)" />
+        </template>
+        <template #cell-actions="{ row }">
+          <span class="ek-row-actions">
+            <EkButton tone="ghost" size="sm" icon="mdi-pencil" icon-only aria-label="Düzenle" @click="openAddUser(row)" />
+            <EkButton tone="ghost" size="sm" icon="mdi-delete" icon-only class="ek-auth-danger" :disabled="row.owner"
+              :aria-label="row.owner ? 'Mağaza yöneticisi silinemez' : 'Sil'" @click="triggerDelete(row)" />
+          </span>
+        </template>
+      </EkListScreen>
     </template>
   </div>
 </template>
@@ -129,8 +95,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import { ref, onMounted, onBeforeMount, onActivated, computed, onDeactivated } from 'vue'
-import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue';
-
 import LoadingComponent from '@/components/LoadingComponent.vue'
 import useRestApi from '@/composables/restapi'
 import UserAddComponent from '@/components/user/UserAddComponent.vue';
@@ -140,11 +104,13 @@ import useUser from '@/composables/user';
 // ADR-0015 Karar 6.3 — tek biçimlendirici örnek kullanımı (SIFIR-FARK, bkz. `tests/format.test.ts`).
 import { formatDate } from '@/composables/format';
 import NoAuthorizationComponent from '@/components/NoAuthorizationComponent.vue';
-import EkListPage from '@/components/ds/templates/EkListPage.vue'
-import EkPagination from '@/components/ds/EkPagination.vue'
+import EkListScreen from '@/components/ds/templates/EkListScreen.vue'
+import type { EkGridColumn, EkGridSort } from '@/components/ds/EkDataGrid.vue'
+import type { EkActiveFilterChip } from '@/components/ds/EkActiveFilters.vue'
+import EkButton from '@/components/ds/EkButton.vue'
 import EkStatusChip from '@/components/ds/EkStatusChip.vue'
 import EkConfirmDialog from '@/components/ds/EkConfirmDialog.vue'
-import EkEmptyState from '@/components/ds/EkEmptyState.vue'
+import { isRequestError } from '@/components/ds/listStandard'
 import type { StatusTone } from '@/design/status-map'
 const userApi = useUser()
 
@@ -174,6 +140,7 @@ const addUserFormMenu = ref(false)
 const users: any = ref<any>([])
 const fromTo: any = ref({})
 const loading = ref(false)
+const loadError = ref(false)
 const globalRoles = ref<any[]>([])
 const sortBy = ref<any>([{ key: '_id', order: 'asc' }])
 
@@ -183,14 +150,6 @@ const pagination = ref({
   page: 1,
   totalNumberOfPages: 1,
   totalNumberOfRecords: 0
-})
-
-// Karakterizasyon: liste boşsa (gerçek boş SONUÇ veya mock'lu 500 — bkz. spec "gizli davranış"
-// notu) tek bir "empty" durumu gösterilir; orijinalde ayrı bir hata görünümü YOKTU.
-const viewState = computed<'loading' | 'empty' | 'ready'>(() => {
-  if (loading.value) return 'loading'
-  if (!users.value || users.value.length === 0) return 'empty'
-  return 'ready'
 })
 
 // Karakterizasyon: `item.roleCode` HAM değeri korunuyor — yalnızca EkStatusChip'e taşınıyor.
@@ -205,12 +164,49 @@ function roleTone(item: any): StatusTone {
   return 'neutral'
 }
 
-const headers: any = [
-  { title: 'PERSONEL BİLGİLERİ', key: 'name', sortable: true, align: 'start', width: '350px' },
-  { title: 'İLETİŞİM', key: 'email', sortable: true, align: 'start', width: '250px' },
-  { title: 'YETKİ GRUBU', key: 'roleCode', sortable: true, align: 'start', width: '200px' },
-  { title: '', key: 'actions', sortable: false, align: 'end', width: '120px' },
+// DS-v2 liste standardı. UserService.getUsers `sortBy.key` ile SUNUCUDA sıralar (izinli alanlar:
+// _id, name, email, roleCode); sıralanabilir kolonlar: personel, e-posta, yetki grubu.
+const columns: EkGridColumn[] = [
+  { key: 'name', label: 'Personel', sortable: true },
+  { key: 'email', label: 'E-posta', sortable: true },
+  { key: 'roleCode', label: 'Yetki grubu', sortable: true },
+  { key: 'actions', label: 'İşlemler', align: 'end', hideLabel: true, pin: 'end' },
 ]
+
+const gridSort = computed<EkGridSort>(() => {
+  const current = sortBy.value?.[0]
+  return current ? { key: current.key, dir: current.order === 'asc' ? 'asc' : 'desc' } : null
+})
+
+const onGridSort = (sort: EkGridSort) => {
+  sortBy.value = sort ? [{ key: sort.key, order: sort.dir }] : []
+  getUsers(true)
+}
+
+// Aktif filtre çipleri — SON SORGULANAN değerlerden.
+const applied = ref<{ search: string; roleCodes: string[] }>({ search: '', roleCodes: [] })
+
+const activeChips = computed<EkActiveFilterChip[]>(() => {
+  const a = applied.value
+  const chips: EkActiveFilterChip[] = []
+  if (a.search) chips.push({ key: 'search', label: 'Arama', value: a.search })
+  if (a.roleCodes.length) chips.push({ key: 'roleCodes', label: 'Yetki grubu', value: a.roleCodes.map(c => globalRoles.value.find(r => r.code === c)?.name ?? c).join(', ') })
+  return chips
+})
+
+const panelFilterCount = computed(() => activeChips.value.filter(c => c.key !== 'search').length)
+
+const removeChip = (key: string) => {
+  if (key === 'search') searchUserForm.value.search = ''
+  else searchUserForm.value.filters.roleCodes = []
+  getUsers(true)
+}
+
+// Panel "Temizle": yalnız panel alanları (arama korunur).
+const resetFilters = () => {
+  searchUserForm.value.filters = { roleCodes: [] }
+  getUsers(true)
+}
 
 const openAddUser = (user?: any) => {
   selectedUser.value = user || {}
@@ -254,6 +250,7 @@ const onSearchInput = (value: string) => {
 
 const clearSearch = () => {
   searchUserForm.value.search = ''
+  searchUserForm.value.filters = { roleCodes: [] }
   getUsers(true)
 }
 
@@ -270,7 +267,8 @@ const onPageSizeChange = (pageSize: number) => {
 const getUsers = async (reset: boolean = false) => {
   if (reset) pagination.value.page = 1
   loading.value = true
-  let guid = loadingComponentRef.value.info()
+  loadError.value = false
+  applied.value = { search: searchUserForm.value.search, roleCodes: [...searchUserForm.value.filters.roleCodes] }
 
   try {
     let sortPayload: any = undefined
@@ -288,6 +286,10 @@ const getUsers = async (reset: boolean = false) => {
       filters: searchUserForm.value.filters
     })
 
+    if (isRequestError(response)) {
+      loadError.value = true
+      return
+    }
     fromTo.value = response.fromTo
     if (response && response.users) {
       users.value = response.users
@@ -296,9 +298,9 @@ const getUsers = async (reset: boolean = false) => {
       loading.value = false
     }
   } catch (error) {
+    loadError.value = true
     snackbarStore.addSnackbar({ text: "Veri yükleme hatası!", color: "error" })
   } finally {
-    loadingComponentRef.value.remove(guid)
     loading.value = false
   }
 }
@@ -397,18 +399,42 @@ const reset = () => {
 
 <style scoped>
 .authorizationListView {
-  min-height: 0;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: var(--ek-space-5) var(--ek-space-6);
 }
 
-.ek-muted {
+@media (max-width: 767px) {
+  .authorizationListView {
+    overflow-y: auto;
+    padding: var(--ek-space-4);
+  }
+}
+
+.ek-auth-person {
+  display: flex;
+  flex-direction: column;
+}
+
+.ek-auth-person__name {
+  color: var(--ek-color-content-strong);
+  font-weight: var(--ek-font-weight-medium);
+}
+
+.ek-auth-person__meta {
   color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
 }
 
-.text-xs {
-  font-size: var(--ek-font-size-xs);
+.ek-row-actions {
+  display: inline-flex;
+  gap: var(--ek-space-1);
 }
 
-.border-primary-soft {
-  border: 1px solid color-mix(in srgb, var(--ek-color-primary) 10%, transparent);
+.ek-auth-danger {
+  color: var(--ek-color-error);
 }
 </style>
