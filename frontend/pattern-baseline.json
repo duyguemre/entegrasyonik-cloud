@@ -2,15 +2,15 @@
   "_meta": "ADR-0015 Karar 6.4 desen mandalı tabanı. node scripts/check-pattern-baseline.js --write ile üretildi (bkz. scripts/pattern-counts.js). Hiçbir dosyada/kategoride sayı ARTAMAZ; yeni dosyalar 0 ile başlamalı; düşüş serbest ama bu dosyanın güncellenmesi gerekir. patternExceptions BİLGİ AMAÇLIDIR (C'de raporlanır, mandal tarafından zorlanmaz).",
   "date": "2026-09-29",
   "totals": {
-    "total": 185,
+    "total": 176,
     "rawDataTable": 25,
     "rawDialog": 13,
     "rawChip": 67,
     "rawFormat": 51,
     "rawSpinner": 5,
-    "iconBtnNoLabel": 24,
+    "iconBtnNoLabel": 15,
     "patternExceptions": 4,
-    "pageHeaderMissing": 35
+    "pageHeaderMissing": 33
   },
   "files": {
     "src/App.vue": {
@@ -1719,9 +1719,9 @@
       "rawChip": 3,
       "rawFormat": 0,
       "rawSpinner": 0,
-      "iconBtnNoLabel": 5,
+      "iconBtnNoLabel": 0,
       "patternExceptions": 0,
-      "total": 9
+      "total": 4
     },
     "src/views/secure/productDefinitions/HashtagListView.vue": {
       "rawDataTable": 1,
@@ -1729,9 +1729,9 @@
       "rawChip": 1,
       "rawFormat": 0,
       "rawSpinner": 0,
-      "iconBtnNoLabel": 4,
+      "iconBtnNoLabel": 0,
       "patternExceptions": 0,
-      "total": 6
+      "total": 2
     },
     "src/views/secure/productDefinitions/ProductListView.vue": {
       "rawDataTable": 1,
@@ -1866,8 +1866,8 @@
     "src/views/secure/integrations/ShippingView.vue": 0,
     "src/views/secure/productDefinitions/BrandListView.vue": 1,
     "src/views/secure/productDefinitions/CategoryListView.vue": 1,
-    "src/views/secure/productDefinitions/ChoiceListView.vue": 1,
-    "src/views/secure/productDefinitions/HashtagListView.vue": 1,
+    "src/views/secure/productDefinitions/ChoiceListView.vue": 0,
+    "src/views/secure/productDefinitions/HashtagListView.vue": 0,
     "src/views/secure/productDefinitions/ProductListView.vue": 0,
     "src/views/secure/productDefinitions/TEST.vue": 1,
     "src/views/secure/supports/TicketListView.vue": 1,
