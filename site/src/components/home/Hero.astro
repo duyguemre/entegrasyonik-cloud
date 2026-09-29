@@ -646,6 +646,22 @@ const secureItems = [
     position: relative;
     aspect-ratio: 2 / 1;
   }
+  /* derinlik: merkezin arkasında sönümlenen eşmerkezli halkalar (statik doku) */
+  .hub::before {
+    content: '';
+    position: absolute;
+    inset: -8% 18%;
+    border-radius: var(--ek-radius-full);
+    background: repeating-radial-gradient(
+      circle at 50% 50%,
+      transparent 0 1.9rem,
+      color-mix(in srgb, var(--ek-color-secondary) 16%, transparent) 1.9rem calc(1.9rem + var(--site-border-width)),
+      transparent calc(1.9rem + var(--site-border-width)) 3.2rem
+    );
+    -webkit-mask-image: radial-gradient(closest-side, var(--ek-color-content-strong) 30%, transparent);
+    mask-image: radial-gradient(closest-side, var(--ek-color-content-strong) 30%, transparent);
+    pointer-events: none;
+  }
   .hub__lines {
     position: absolute;
     inset: 0;
