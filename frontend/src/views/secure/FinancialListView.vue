@@ -6,9 +6,19 @@
   detay diyaloğu (satır nesnesini doğrudan kullanır) AYNEN korundu. Sıralama SUNUCUDA (externalId,
   netAmount, transactionDate). Tarih filtreleri EkDateField (Date modeli — eski v-date-picker ile aynı).
   Arama Enter ile sorgular. Özet şeridi tablonun üstünde kalır.
+
+  C1.4 — sayfa başlığı (EkPageHeader) + sekmeler (EkPageTabs): İşlemler (yukarıdaki içerik, DEĞİŞMEDİ) ·
+  Özet · Kargo faturaları · Ödeme dökümü (components/financial/*Tab.vue, her biri kendi EkListFrame'inde).
+  Sekme URL'de `?tab=` (screens.ts `urlParams`); ekran `parameters.tab`'ı okur (ilk açılış + activate).
+  İşlemler içeriği `v-show` ile korunur (filtre/sayfa durumu sekme değişiminde kaybolmaz) ve ilk kez
+  görünür olduğunda yüklenir; diğer sekmeler KeepAlive ile önbelleğe alınır, yalnız aktifken DOM'dadır.
 -->
 <template>
   <div class="financialListView">
+    <div class="ek-fin-head">
+      <EkPageHeader :title="t('finance.title')" :description="t('finance.description')" />
+      <EkPageTabs v-model="activeTab" :tabs="tabs" :aria-label="t('finance.tabs.label')" />
+    </div>
 
     <!-- İşlem Detay Diyaloğu -->
     <ActionDialogComponent v-model="isDetailOpen" title="FİNANSAL İŞLEM DETAYI" attach=".financialListView"
@@ -163,6 +173,7 @@
       </div>
     </ActionDialogComponent>
 
+    <div v-show="activeTab === 'transactions'" class="ek-fin-panel-slot ek-fin-transactions">
     <FinancialSummaryBar class="ek-fin-summary-slot" :summary="summary" :loading="summary.loading"
       :compact="!$vuetify.display.mdAndUp" :format-currency="formatCurrency" />
 
@@ -248,11 +259,22 @@
         <EkButton tone="ghost" size="sm" icon="mdi-eye" icon-only aria-label="Detayı görüntüle" @click="openDetail(row)" />
       </template>
     </EkListScreen>
+    </div>
+
+    <div v-if="activeTab !== 'transactions'" class="ek-fin-panel-slot" :class="{ 'ek-fin-panel-slot--flow': activeTab === 'summary' }">
+      <KeepAlive>
+        <FinancialSummaryTab v-if="activeTab === 'summary'" />
+        <FinancialCargoInvoicesTab v-else-if="activeTab === 'cargo-invoices'" />
+        <FinancialPayoutsTab v-else-if="activeTab === 'payouts'" />
+      </KeepAlive>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { useIntegrationStore } from '@/stores/integrationStore';
 import useRestApi from '@/composables/restapi';
 
@@ -269,6 +291,12 @@ import EkStatusChip from '@/components/ds/EkStatusChip.vue';
 import { isRequestError } from '@/components/ds/listStandard';
 import { formatDate as formatDay } from '@/composables/format';
 import FinancialSummaryBar from '@/components/financial/FinancialSummaryBar.vue';
+import FinancialSummaryTab from '@/components/financial/FinancialSummaryTab.vue';
+import FinancialCargoInvoicesTab from '@/components/financial/FinancialCargoInvoicesTab.vue';
+import FinancialPayoutsTab from '@/components/financial/FinancialPayoutsTab.vue';
+import EkPageHeader from '@/components/ds/EkPageHeader.vue';
+import EkPageTabs, { type EkPageTab } from '@/components/ds/EkPageTabs.vue';
+import { buildScreenPath, resolveScreenByKey } from '@/navigation/screens';
 import type { StatusTone } from '@/design/status-map';
 
 // Sabitler
@@ -468,7 +496,48 @@ const onPageSizeChange = (size: number) => {
   getFinancials(true);
 };
 
-onMounted(() => getFinancials());
+// ---- C1.4 sekmeler + URL parametresi (`?tab=`) ----
+const props = defineProps<{ parameters?: any }>();
+const { t } = useI18n();
+const router = useRouter();
+
+const FINANCE_TABS = ['transactions', 'summary', 'cargo-invoices', 'payouts'] as const;
+type FinanceTab = (typeof FINANCE_TABS)[number];
+const isFinanceTab = (v: unknown): v is FinanceTab => typeof v === 'string' && (FINANCE_TABS as readonly string[]).includes(v);
+
+const tabs = computed<EkPageTab[]>(() => [
+  { value: 'transactions', label: t('finance.tabs.transactions') },
+  { value: 'summary', label: t('finance.tabs.summary') },
+  { value: 'cargo-invoices', label: t('finance.tabs.cargoInvoices') },
+  { value: 'payouts', label: t('finance.tabs.payouts') },
+]);
+
+const activeTab = ref<FinanceTab>(isFinanceTab(props.parameters?.tab) ? props.parameters.tab : 'transactions');
+
+// Sekme değişimi URL'ye `replace` ile yazılır (geçmiş girdisi üretmez). Yalnız bu ekranın rotasındayken:
+// kabuğun rota izleyicisi değeri sekmenin `link.parameters`'ına geri yazar (ADR-0012 parametre sahipliği).
+const screen = resolveScreenByKey('FinancialListView');
+const syncUrl = (tab: FinanceTab) => {
+  if (!screen) return;
+  const current = router.currentRoute.value;
+  if (current.path !== buildScreenPath(screen) || current.query.tab === tab) return;
+  router.replace({ path: current.path, query: { ...current.query, tab } }).catch(() => {});
+};
+
+// İşlemler yalnız ilk kez görünür olduğunda yüklenir (derin bağlantı başka sekmeye açtıysa gereksiz istek yok).
+let transactionsLoaded = false;
+watch(activeTab, (tab, previous) => {
+  if (tab === 'transactions' && !transactionsLoaded) {
+    transactionsLoaded = true;
+    getFinancials();
+  }
+  if (previous !== undefined) syncUrl(tab);
+}, { immediate: true });
+
+const applyParameters = (parameters: any) => {
+  if (isFinanceTab(parameters?.tab)) activeTab.value = parameters.tab;
+};
+defineExpose({ initialize: applyParameters, activate: applyParameters });
 </script>
 
 <style scoped>
@@ -482,6 +551,22 @@ onMounted(() => getFinancials());
   padding: var(--ek-space-5) var(--ek-space-6);
 }
 
+.ek-fin-head {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: var(--ek-space-3);
+}
+.ek-fin-panel-slot {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--ek-space-3);
+  min-height: 0;
+}
+.ek-fin-panel-slot > :only-child { flex: 1; min-height: 0; }
+.ek-fin-panel-slot--flow { overflow-y: auto; }
+.ek-fin-panel-slot--flow > :only-child { flex: none; }
 .ek-fin-summary-slot { flex: none; }
 .ek-fin-screen { flex: 1; min-height: 0; }
 
@@ -490,6 +575,7 @@ onMounted(() => getFinancials());
     overflow-y: auto;
     padding: var(--ek-space-4);
   }
+  .ek-fin-panel-slot { flex: none; }
 }
 
 .ek-muted { color: var(--ek-color-content-muted); }

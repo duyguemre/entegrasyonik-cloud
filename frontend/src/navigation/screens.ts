@@ -144,6 +144,11 @@ export const SCREENS: readonly ScreenDefinition[] = [
     key: 'adminPanel/ComplianceView', slug: 'admin/integration-compliance', section: 'admin', order: 7,
     icon: 'mdi-shield-search', titleKey: 'menu.adminPanel.adminIntegrationCompliance',
   },
+  // C1.4 — finans sekmeleri: `tab` FinancialListView.vue'nin GERÇEKTEN okuduğu (`parameters?.tab`) sekme anahtarı.
+  {
+    key: 'FinancialListView', slug: 'finance', section: 'finance', order: 0,
+    urlParams: [{ name: 'tab', kind: 'enum', allowed: ['transactions', 'summary', 'cargo-invoices', 'payouts'] }],
+  },
   // ADR-0014 S4b: kayıt sonrası abonelik ekranı derin bağlantısı (`/subscription?plan=<kod>`). `plan` YALNIZCA
   // kapalı, izinli plan kodu kümesidir (registerIntent.ts; seed ile testle eşit) — PII/serbest metin YOK.
   { key: 'user/SubscriptionView', slug: 'subscription', urlParams: [{ name: 'plan', kind: 'enum', allowed: REGISTER_PLAN_CODES }], section: 'finance', order: 1 },
