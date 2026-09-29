@@ -28,6 +28,7 @@
     :contained="!!resolvedAttach"
     :retain-focus="retainFocus"
     :aria-labelledby="titleId"
+    :activator="activator"
     class="ek-dialog-overlay"
     :content-class="`ek-dialog-content ek-dialog-content--${maxWidth ? 'custom' : width}`"
     :content-props="contentProps"
@@ -66,6 +67,8 @@ const props = withDefaults(
     hideClose?: boolean
     asForm?: boolean
     retainFocus?: boolean
+    /** Vuetify `activator` (ör. "parent") — diyaloğu tetikleyici öğeye bağlar. */
+    activator?: string
     /** İkon kapsülü tonu (varsayılan: tehlikede `error`, değilse `action`). */
     iconTone?: EkTone
     /** false: Vazgeç yalnızca `cancel` yayar, diyaloğu kapatmaz (ör. "Temizle" düğmesi). */

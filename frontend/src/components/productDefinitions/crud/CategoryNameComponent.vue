@@ -1,24 +1,8 @@
 <template>
-
-
-
-<v-dialog
-        v-model="dialog"
-        activator="parent"
-        width="50%"
-      >
-        <v-card>
-          <v-card-text>
-            <v-text-field clearable  density="comfortable" class="mr-4 pt-2"
-              :label="$t('productDefinitions.category.new.title')" variant="outlined" bg-color="textfieldColor">
-            </v-text-field>
-      
-          </v-card-text>
-          <v-card-actions>
-            <v-btn color="primary" block @click="dialog = false">Kapat</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
+  <EkDialog v-model="dialog" activator="parent" :title="$t('productDefinitions.category.new.title')"
+    icon="mdi-shape-plus-outline" width="md" hide-cancel confirm-label="Kapat" @confirm="dialog = false">
+    <v-text-field clearable :label="$t('productDefinitions.category.new.title')" />
+  </EkDialog>
 
 <!--   <div class="d-flex  align-center">
     <div>
@@ -56,6 +40,7 @@
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
+import EkDialog from '@/components/ds/EkDialog.vue'
 import { ref, onMounted, watch } from 'vue'
 
 var dialog = ref(false)

@@ -20,7 +20,7 @@
         @click="pickerOpen = true" @keydown.enter.prevent="pickerOpen = true" @keydown.space.prevent="pickerOpen = true"
         @click:clear.stop="setCategory(undefined)" @click:append-inner="pickerOpen = true" />
 
-      <EkCascadeDialog v-model="pickerOpen" :nodes="tree" :path="selectedPath"
+      <EkCascadeDialog v-model="pickerOpen" :nodes="tree" :path="selectedPath" :attach="attach"
         :title="`${platformTitle} kategorisi seç`" :subtitle="`${formatNumber(leafCount)} yaprak kategori`"
         @confirm="(ids) => setCategory(ids[ids.length - 1])" />
     </div>
@@ -44,7 +44,10 @@ const loadingComponentRef: any = ref(null)
 const pickerOpen = ref(false)
 
 const categoryId = defineModel({ default: undefined })
-const props = defineProps<{ mandatory?: boolean, integrationCode: string }>()
+const props = withDefaults(defineProps<{ mandatory?: boolean, integrationCode: string, attach?: string }>(), {
+  // Seçici diyalog çalışma alanı sekmesini örter (sol menünün ALTINDA kalmaz).
+  attach: '.categoryListView',
+})
 const formRules: any = useFormRules()
 
 watch(() => props.integrationCode, async (newCode) => {
@@ -79,42 +82,52 @@ watch(() => props.integrationCode, async (newCode) => {
 
 const platformTitle = computed(() => integrationStore.getIntegrationTitle(props.integrationCode) || props.integrationCode)
 
-// Düz platform kategori listesi (parentId) → kademeli seçici ağacı.
+// Platform kategori listesi → kademeli seçici ağacı. Mağaza verisi iç içe ağacın düzleştirilmiş
+// hâlidir (`children` nesne ya da kimlik); ebeveyn ilişkisi `children`'dan, yoksa `parentId`'den kurulur.
+const byId = computed(() => new Map(integrationCategories.value.map((c: any) => [String(c._id), c])))
+const childrenOf = (c: any): any[] =>
+  (c.children ?? []).map((ch: any) => (ch && typeof ch === 'object' ? byId.value.get(String(ch._id)) ?? ch : byId.value.get(String(ch)))).filter(Boolean)
+const parentOf = computed(() => {
+  const map = new Map<string, string>()
+  for (const c of integrationCategories.value) for (const ch of childrenOf(c)) map.set(String(ch._id), String(c._id))
+  for (const c of integrationCategories.value)
+    if (!map.has(String(c._id)) && c.parentId != null && byId.value.has(String(c.parentId))) map.set(String(c._id), String(c.parentId))
+  return map
+})
+
 const tree = computed<EkCascadeNode[]>(() => {
-  const byParent = new Map<string, any[]>()
-  const ids = new Set(integrationCategories.value.map((c: any) => String(c._id)))
+  const kids = new Map<string, any[]>()
+  const roots: any[] = []
   for (const c of integrationCategories.value) {
-    const parent = c.parentId != null && ids.has(String(c.parentId)) ? String(c.parentId) : ''
-    if (!byParent.has(parent)) byParent.set(parent, [])
-    byParent.get(parent)!.push(c)
+    const parent = parentOf.value.get(String(c._id))
+    if (parent == undefined) roots.push(c)
+    else {
+      if (!kids.has(parent)) kids.set(parent, [])
+      kids.get(parent)!.push(c)
+    }
   }
-  const build = (parent: string): EkCascadeNode[] =>
-    (byParent.get(parent) ?? []).map((c: any) => {
-      const children = build(String(c._id))
+  const build = (list: any[]): EkCascadeNode[] =>
+    list.map((c: any) => {
+      const children = build(kids.get(String(c._id)) ?? [])
       return { id: String(c._id), label: c.title, children, count: children.length ? children.length : undefined }
     })
-  return build('')
+  return build(roots)
 })
 
 const leafCount = computed(() => integrationCategories.value.filter((c: any) => !c.isParent).length)
 
 const selectedPath = computed<string[]>(() => {
-  if (categoryId.value == undefined) return []
-  const byId = new Map(integrationCategories.value.map((c: any) => [String(c._id), c]))
+  if (categoryId.value == undefined || !byId.value.has(String(categoryId.value))) return []
   const out: string[] = []
-  let cur: any = byId.get(String(categoryId.value))
-  while (cur) {
-    out.unshift(String(cur._id))
-    cur = cur.parentId != null ? byId.get(String(cur.parentId)) : undefined
+  let cur: string | undefined = String(categoryId.value)
+  while (cur != undefined && !out.includes(cur)) {
+    out.unshift(cur)
+    cur = parentOf.value.get(cur)
   }
   return out
 })
 
-const selectedLabel = computed(() => {
-  if (categoryId.value == undefined) return ''
-  const byId = new Map(integrationCategories.value.map((c: any) => [String(c._id), c]))
-  return selectedPath.value.map((id) => byId.get(id)?.title).filter(Boolean).join(' › ')
-})
+const selectedLabel = computed(() => selectedPath.value.map((id) => byId.value.get(id)?.title).filter(Boolean).join(' › '))
 
 const hintText = computed(() => {
   const base = `${platformTitle.value} kategorisini buradan seçebilirsiniz.`
@@ -124,7 +137,7 @@ const hintText = computed(() => {
 
 function setCategory(id: string | undefined) {
   // Platform kimlikleri sayısal olabilir: seçilen yol string'dir, orijinal tipe geri çevrilir.
-  const original = id == undefined ? undefined : integrationCategories.value.find((c: any) => String(c._id) === id)?._id
+  const original = id == undefined ? undefined : byId.value.get(id)?._id
   categoryId.value = original
   emits('change', '')
 }
