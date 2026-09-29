@@ -1,26 +1,26 @@
 <template>
   <div class="category-mapping-wrapper">
 
-    <v-btn icon="mdi-close" variant="text" size="x-small" class="position-absolute"
-      style="right: 8px; top: 8px; z-index: 10;" @click="emit('close')" aria-label="Kapat"></v-btn>
+    <v-btn icon="mdi-close" variant="text" size="x-small" class="mapping-close" @click="emit('close')"
+      aria-label="Kapat"></v-btn>
 
 
     <v-fade-transition hide-on-leave mode="out-in">
 
       <div v-if="isMapped" :key="'mapped-state'"
-        class="mapped-success-state d-flex align-start pa-4 rounded-lg border-success shadow-sm">
+        class="mapped-success-state d-flex align-start pa-4 rounded-lg">
         <v-icon color="success" size="32" class="mr-4 mt-1">mdi-check-decagram</v-icon>
         <div class="d-flex flex-column">
-          <span class="text-subtitle-1 font-weight-black text-success" style="line-height: 1.2;">
+          <span class="mapped-title">
             Kategori Eşleşmesi Doğrulandı
           </span>
-          <p class="text-caption text-grey-darken-2 mt-1 mb-2">
+          <p class="mapped-text mt-1 mb-2">
             Ürün çekim işleminde bu kategori için eşleşme bulunamamıştı, ancak şu an sisteminizdeki
-            <b class="text-grey-darken-4">{{ localCategoryTitle }}</b>
+            <b class="mapped-strong">{{ localCategoryTitle }}</b>
             ile başarıyla bağlı durumda. Detaylı inceleme veya değişiklik için kategori sayfasına gidebilirsiniz.
           </p>
           <div class="d-flex align-center">
-            <v-btn variant="text" color="success" size="x-small" class="pa-0 font-weight-bold" @click="openCategoryPage"
+            <v-btn variant="text" color="success" size="x-small" class="pa-0 font-weight-medium" @click="openCategoryPage"
               prepend-icon="mdi-arrow-right-circle-outline">
               KATEGORİ LİSTESİNE GİT VE DÜZENLE
             </v-btn>
@@ -28,43 +28,43 @@
         </div>
       </div>
 
-      <div v-else :key="'selection-state'" class="mapping-step-box shadow-sm">
-        <div class="context-card mb-4 border-red-lighten-4">
-          <div class="context-row bg-red-lighten-5">
+      <div v-else :key="'selection-state'" class="mapping-step-box">
+        <div class="context-card mb-4">
+          <div class="context-row context-row--danger">
             <div class="context-col">
-              <span class="context-label text-red-darken-4">Pazaryeri Kategorisi</span>
-              <span class="context-value text-red-darken-4 font-weight-black">
+              <span class="context-label context-label--danger">Pazaryeri Kategorisi</span>
+              <span class="context-value context-value--danger">
                 {{ computedPlatformCategoryTitle || 'Yükleniyor...' }}
               </span>
             </div>
             <div class="context-divider">
-              <v-icon size="16" color="red-darken-3">mdi-ray-start-arrow</v-icon>
+              <v-icon size="16" color="error">mdi-ray-start-arrow</v-icon>
             </div>
             <div class="context-col text-right">
-              <span class="context-label text-red-darken-4">Yerel Kategori</span>
-              <span class="context-value text-red-darken-2 font-italic">Eşleşme Bekleniyor...</span>
+              <span class="context-label context-label--danger">Yerel Kategori</span>
+              <span class="context-value context-value--pending">Eşleşme Bekleniyor...</span>
             </div>
           </div>
         </div>
 
-        <div class="info-alert pa-3 mb-5 rounded-lg bg-red-lighten-5 border-red-subtle">
+        <div class="info-alert pa-3 mb-5 rounded-lg">
           <div class="d-flex align-center mb-1">
-            <v-icon size="16" color="red-darken-3" class="mr-2">mdi-alert-circle-outline</v-icon>
-            <span class="text-caption font-weight-bold text-red-darken-4 uppercase-track">Eksik Karşılık</span>
+            <v-icon size="16" color="error" class="mr-2">mdi-alert-circle-outline</v-icon>
+            <span class="info-alert__title uppercase-track">Eksik Karşılık</span>
           </div>
-          <p class="text-caption text-grey-darken-3 mb-0">
+          <p class="info-alert__text mb-0">
             Aktarımın tamamlanabilmesi için bu kategorinin sisteminizde hangi kategoriye karşılık geldiğini
             seçmelisiniz.
           </p>
         </div>
 
         <div class="d-flex align-center mb-4">
-          <span class="text-subtitle-2 font-weight-black text-grey-darken-3">Yerel Kategori Seçin</span>
+          <span class="step-title">Yerel Kategori Seçin</span>
         </div>
 
         <CategorySelectBoxComponent v-model="tempLocalCategoryId" :noInit="true" :withAll="false" class="mb-4" />
 
-        <v-btn block size="large" color="red-darken-3" elevation="0" :loading="loading" :disabled="!tempLocalCategoryId"
+        <v-btn block size="large" color="primary" elevation="0" :loading="loading" :disabled="!tempLocalCategoryId"
           class="font-weight-bold premium-btn" @click="handleSaveCategoryMapping">
           <v-icon start>mdi-link-variant-plus</v-icon>
           EŞLEŞTİR VE KAYDET
@@ -184,16 +184,46 @@ const handleSaveCategoryMapping = async () => {
 </script>
 
 <style scoped>
+.category-mapping-wrapper {
+  position: relative;
+}
+
+.mapping-close {
+  position: absolute;
+  right: var(--ek-space-2);
+  top: var(--ek-space-2);
+  z-index: 10;
+}
+
 .mapping-step-box {
-  border: 1px solid #eee;
-  padding: 24px;
-  border-radius: 16px;
-  background: #ffffff;
+  border: 1px solid var(--ek-color-border-default);
+  padding: var(--ek-space-6);
+  border-radius: var(--ek-radius-xl);
+  background: var(--ek-color-surface);
+  box-shadow: var(--ek-shadow-sm);
 }
 
 .mapped-success-state {
-  background-color: #f1f8e9;
-  border: 1px solid #c5e1a5;
+  background-color: var(--ek-color-success-subtle);
+  border: 1px solid var(--ek-color-border-default);
+  border-left: 4px solid var(--ek-color-success);
+  gap: var(--ek-space-4);
+}
+
+.mapped-title {
+  font-size: var(--ek-font-size-md);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-success);
+  line-height: var(--ek-line-height-tight);
+}
+
+.mapped-text {
+  font-size: var(--ek-font-size-sm);
+  color: var(--ek-color-content-default);
+}
+
+.mapped-strong {
+  color: var(--ek-color-content-strong);
 }
 
 .context-card {
@@ -206,67 +236,87 @@ const handleSaveCategoryMapping = async () => {
 .context-row {
   display: flex;
   align-items: center;
-  padding: 10px 14px;
+  padding: var(--ek-space-3) var(--ek-space-4);
+}
+
+.context-row--danger {
+  background-color: var(--ek-color-error-subtle);
 }
 
 .context-col {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .context-label {
-  font-size: 9px;
+  font-size: var(--ek-font-size-xs);
   text-transform: uppercase;
-  color: var(--ek-color-content-subtle);
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  margin-bottom: 2px;
+  color: var(--ek-color-content-muted);
+  font-weight: var(--ek-font-weight-semibold);
+  letter-spacing: 0.04em;
+  margin-bottom: var(--ek-space-1);
+}
+
+.context-label--danger {
+  color: var(--ek-color-error);
 }
 
 .context-value {
-  font-size: 11px;
-  font-weight: 600;
-  color: #1e293b;
+  font-size: var(--ek-font-size-sm);
+  font-weight: var(--ek-font-weight-medium);
+  color: var(--ek-color-content-strong);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+.context-value--danger {
+  color: var(--ek-color-error);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.context-value--pending {
+  color: var(--ek-color-content-muted);
+  font-style: italic;
+}
+
 .context-divider {
-  padding: 0 10px;
+  padding: 0 var(--ek-space-3);
 }
 
 .info-alert {
-  border: 1px solid transparent;
-  border-left: 4px solid #d32f2f !important;
+  border: 1px solid var(--ek-color-border-default);
+  border-left: 4px solid var(--ek-color-error);
+  background-color: var(--ek-color-error-subtle);
 }
 
-.border-red-lighten-4 {
-  border-color: #ffcdd2 !important;
+.info-alert__title {
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-error);
 }
 
-.bg-red-lighten-5 {
-  background-color: #ffebee !important;
+.info-alert__text {
+  font-size: var(--ek-font-size-sm);
+  color: var(--ek-color-content-default);
 }
 
-.border-red-subtle {
-  border-color: #ef9a9a !important;
-}
-
-.border-red {
-  border: 2px solid #ef9a9a !important;
+.step-title {
+  font-size: var(--ek-font-size-sm);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-strong);
 }
 
 .uppercase-track {
-  letter-spacing: 0.8px;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  font-size: 10px !important;
 }
 
 .premium-btn {
-  border-radius: 10px !important;
-  letter-spacing: 0.5px;
+  border-radius: var(--ek-radius-lg) !important;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
   height: 44px !important;
 }
