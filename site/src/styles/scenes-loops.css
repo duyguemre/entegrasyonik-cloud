@@ -1170,7 +1170,7 @@
   }
 
   /* ---------------------------------------------------------------------------------------- */
-  /* marquee — entegrasyon şeridi (30 sn / tam küme); üzerine gelince ve durdurulunca durur          */
+  /* marquee — yetenek şeridi (30 sn / tam küme, S13: ray içinde); üzerine gelince ve durdurulunca durur */
   /* ---------------------------------------------------------------------------------------- */
   @keyframes loop-marquee {
     from {
