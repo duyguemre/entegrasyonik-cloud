@@ -35,7 +35,7 @@ const contactHref = pageHref('/iletisim')
           </nav>
         )
       }
-      {faqHref && <a class="faq__more" href={faqHref}>Tüm {total} soruyu görün <Icon name="arrow" size="sm" /></a>}
+      {faqHref && <a class="link faq__more" href={faqHref}>Tüm {total} soruyu görün <Icon name="arrow" size="sm" /></a>}
       {
         contactHref && (
           <div class="faq__ask">
@@ -44,7 +44,7 @@ const contactHref = pageHref('/iletisim')
               <strong>Sorunuzun yanıtı burada yok mu?</strong>
               <span>İşletmenize özel sorularınız için ekibimize yazın.</span>
             </p>
-            <a href={contactHref}>Bize ulaşın</a>
+            <a class="link" href={contactHref}>Bize ulaşın <Icon name="arrow" size="sm" /></a>
           </div>
         )
       }
