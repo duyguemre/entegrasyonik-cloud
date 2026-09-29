@@ -86,7 +86,7 @@ a:hover {
   align-items: center;
   gap: var(--ek-space-2);
   min-height: var(--site-tap-target);
-  color: var(--site-accent);
+  color: var(--site-link-accent);
   font-weight: var(--ek-font-weight-semibold);
   text-decoration: none;
 }
@@ -152,6 +152,7 @@ ul {
   --site-card-value-color: var(--site-text-on-dark-body);
   --site-card-desc-color: var(--site-text-on-dark-meta);
   --site-color-link: var(--site-accent-on-dark);
+  --site-link-accent: var(--site-accent-on-dark);
 }
 
 ::selection {
