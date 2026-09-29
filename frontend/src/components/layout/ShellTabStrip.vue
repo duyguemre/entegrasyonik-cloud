@@ -27,7 +27,7 @@
         <div class="ek-shell-tabs__tools">
           <v-menu v-model="listOpen" location="bottom end" :offset="6">
             <template #activator="{ props: menuProps }">
-              <v-tooltip :eager="false" location="bottom" :open-delay="400">
+              <v-tooltip :eager="false" transition="fade-transition" location="bottom" :open-delay="400">
                 <template #activator="{ props: tipProps }">
                   <button v-bind="{ ...menuProps, ...tipProps }" type="button" class="ek-shell-tabs__tool" :aria-label="`Açık sekmeler (${viewTabs.length})`">
                     <v-icon icon="mdi-view-list-outline" aria-hidden="true" />
@@ -42,7 +42,7 @@
 
           <template v-if="!compact">
             <span class="ek-shell-tabs__sep" aria-hidden="true"></span>
-            <v-tooltip :eager="false" location="bottom" :open-delay="400">
+            <v-tooltip :eager="false" transition="fade-transition" location="bottom" :open-delay="400">
               <template #activator="{ props: tipProps }">
                 <button
                   v-bind="tipProps"
@@ -58,7 +58,7 @@
               <span class="ek-shell-tabs__tip">{{ headerCollapsed ? 'Üst bölümü göster' : 'Üst bölümü daralt' }} <EkKbd :keys="shortcutKeys('headerToggle')" tone="inverse" /></span>
             </v-tooltip>
           </template>
-          <v-tooltip :eager="false" location="bottom" :open-delay="400">
+          <v-tooltip :eager="false" transition="fade-transition" location="bottom" :open-delay="400">
             <template #activator="{ props: tipProps }">
               <button
                 v-bind="tipProps"

@@ -14,7 +14,7 @@
 <template>
   <header class="ek-header">
     <div class="ek-header__start">
-      <v-tooltip :eager="false" location="bottom" :open-delay="400">
+      <v-tooltip :eager="false" transition="fade-transition" location="bottom" :open-delay="400">
         <template #activator="{ props: tip }">
           <button
             v-bind="tip"

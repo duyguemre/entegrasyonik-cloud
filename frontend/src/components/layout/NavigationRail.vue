@@ -12,7 +12,7 @@
 <template>
   <v-navigation-drawer id="tour-homepage-menu" :model-value="true" permanent :width="64" class="soft-rail ek-shell-rail" aria-label="Daraltılmış gezinme menüsü">
     <div class="ek-shell-rail__wrap">
-      <v-tooltip :eager="false" location="end" :open-delay="300">
+      <v-tooltip :eager="false" transition="fade-transition" location="end" :open-delay="300">
         <template #activator="{ props: tip }">
           <button
             v-bind="tip"

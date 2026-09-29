@@ -622,6 +622,10 @@ defineExpose({ focus: () => inputRef.value?.focus(), blur: () => inputRef.value?
     position: static;
   }
 
+  .ek-search__hint {
+    display: none;
+  }
+
   .ek-search__panel {
     position: fixed;
     top: calc(var(--ek-app-topbar-height) + var(--ek-space-1));

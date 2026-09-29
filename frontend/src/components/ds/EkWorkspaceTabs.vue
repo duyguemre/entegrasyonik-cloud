@@ -27,7 +27,7 @@
         @contextmenu.prevent="emit('contextmenu', tab.id, { x: $event.clientX, y: $event.clientY })"
         @auxclick="onAuxClick($event, tab)"
       >
-        <v-tooltip :eager="false" :disabled="!truncated.has(tab.id)" location="bottom" :open-delay="500" :text="tab.title">
+        <v-tooltip :eager="false" transition="fade-transition" :disabled="!truncated.has(tab.id)" location="bottom" :open-delay="500" :text="tab.title">
           <template #activator="{ props: tipProps }">
             <button
               v-bind="tipProps"
@@ -359,6 +359,13 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
 @media (hover: none) {
   .ek-tab__close {
     opacity: 1;
+  }
+}
+
+@media (max-width: 767px) {
+  .ek-tab {
+    flex-basis: 160px;
+    min-width: 96px;
   }
 }
 </style>

@@ -13,6 +13,7 @@ import { useI18n } from 'vue-i18n'
 import { useMenuStore } from '@/stores/site/menu'
 import { useWorkspaceStore } from '@/stores/workspace'
 import { screenKeyForLink } from '@/navigation/screens'
+import { SECTIONS } from '@/navigation/sections'
 import type { EkSideSection, EkSideItem } from '@/components/ds/EkSidebarNav.vue'
 
 /** Sidebar'ın sağında favori yıldızı taşıyabilen öğe (menü `isConstant` değilse). */
@@ -32,7 +33,7 @@ export function useShellMenu() {
   const menuStore: any = useMenuStore()
   const workspace = useWorkspaceStore()
   const eventBus: any = inject('eventBus', undefined)
-  const { t } = useI18n({ useScope: 'global' })
+  const { t, te } = useI18n({ useScope: 'global' })
 
   const titleOf = (link: any) => (link?.singleton === false && link?.title ? link.title : t(link?.fullPath ?? ''))
 
@@ -44,8 +45,12 @@ export function useShellMenu() {
   const sectionLabel = (group: any) => {
     if (group.group === 'dashboard') return t('shell.section.general')
     if (group.group === 'userManagement' || group.edit === false) return ''
-    const label = t(`menu.${group.group}`)
-    return label === `menu.${group.group}` ? '' : label
+    const key = `menu.${group.group}`
+    const label = te(key) ? t(key) : key
+    if (label !== key && typeof label === 'string' && label.trim()) return label
+    // Menü grubu i18n'de bir alt ağaçsa (ör. `menu.integrations`), kabuğun bölüm etiketi kullanılır.
+    const section = SECTIONS.find((s) => s.id === group.group)
+    return section ? t(section.labelKey) : ''
   }
 
   /** Sidebar bölümleri (EkSidebarNav modeli) + anahtar → menü düğümü eşlemesi. */

@@ -27,7 +27,7 @@
           class="ek-side__entry"
           :class="[item.children ? hookClasses?.group : undefined, { 'has-trailing': !!$slots['item-trailing'] && !collapsed }]"
         >
-          <v-tooltip :eager="false" :disabled="!collapsed" location="end" :text="item.label">
+          <v-tooltip :eager="false" transition="fade-transition" :disabled="!collapsed" location="end" :text="item.label">
             <template #activator="{ props: tipProps }">
               <button
                 v-bind="tipProps"
