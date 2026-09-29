@@ -57,8 +57,8 @@
         <v-select v-model="searchForm.data.type" :items="typeOptions" label="Mesaj tipi" item-title="label" item-value="value" clearable />
         <v-select v-model="searchForm.data.isRejected" :items="REJECT_OPTIONS" label="Red durumu" item-title="label" item-value="value" />
         <v-select v-model="searchForm.data.integrationCodes" :items="CHANNEL_OPTIONS" item-title="title" item-value="value" label="Kanal" multiple chips closable-chips clearable />
-        <v-text-field v-model="searchForm.data.startDate" label="Başlangıç tarihi" type="date" clearable />
-        <v-text-field v-model="searchForm.data.endDate" label="Bitiş tarihi" type="date" clearable />
+        <EkDateField v-model="searchForm.data.startDate" label="Başlangıç tarihi" value-format="iso-date" :max="searchForm.data.endDate" />
+        <EkDateField v-model="searchForm.data.endDate" label="Bitiş tarihi" value-format="iso-date" :min="searchForm.data.startDate" />
       </template>
 
       <template #bulk-actions>
@@ -124,6 +124,7 @@ import EkListScreen from '@/components/ds/templates/EkListScreen.vue';
 import type { EkGridColumn, EkGridSort } from '@/components/ds/EkDataGrid.vue';
 import type { EkActiveFilterChip } from '@/components/ds/EkActiveFilters.vue';
 import EkButton from '@/components/ds/EkButton.vue';
+import EkDateField from '@/components/ds/EkDateField.vue';
 import EkChannelDot from '@/components/ds/EkChannelDot.vue';
 import EkStatusChip from '@/components/ds/EkStatusChip.vue';
 import { isRequestError } from '@/components/ds/listStandard';

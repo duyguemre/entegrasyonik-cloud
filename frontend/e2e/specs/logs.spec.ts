@@ -51,7 +51,7 @@ test.describe('P2 — Ürün Gönderim İşlemleri (ExportLogList)', () => {
     await expect(page.getByText('Gönderim Kaydı Bulunamadı', { exact: true })).toBeVisible()
   })
 
-  test('hata durumu: 500 alındığında da aynı "Gönderim Kaydı Bulunamadı" boş-durumuna düşülür, ham hata sızmaz (gizli davranış — bkz. BACKLOG.md)', async ({ page }, testInfo) => {
+  test('hata durumu: 500 alındığında "Gönderim kayıtları yüklenemedi" + Tekrar dene gösterilir (boştan AYRI), ham hata sızmaz', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'Masaüstü tablo (mdAndUp/>=960px) gerektiriyor — bkz. dosya başı NOT')
     // GİZLİ DAVRANIŞ (characterization, düzeltilmedi — BACKLOG.md): `restApi.post` HİÇBİR ZAMAN
     // reddetmiyor (bkz. restapi.ts `postService`); `getJobs`'daki `finally` HER ZAMAN tetiklenir
@@ -62,7 +62,9 @@ test.describe('P2 — Ürün Gönderim İşlemleri (ExportLogList)', () => {
     await gotoAuthed(page)
     await openScreen(page, 'LogListView')
 
-    await expect(page.getByText('Gönderim Kaydı Bulunamadı', { exact: true })).toBeVisible()
+    // DS-v2 Aşama 2 — BİLİNÇLİ DAVRANIŞ DEĞİŞİKLİĞİ: hata artık boş durumdan ayrı (isRequestError); API çağrısı AYNI.
+    await expect(page.getByText('Gönderim kayıtları yüklenemedi')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Tekrar dene' })).toBeVisible()
     await expect(page.locator('body')).not.toContainText('500')
   })
 
@@ -122,14 +124,16 @@ test.describe('P2 — Ürün Çekim İşlemleri (ImportLogList)', () => {
     await expect(page.getByText('Aktarım Kaydı Bulunamadı', { exact: true })).toBeVisible()
   })
 
-  test('hata durumu: 500 alındığında da aynı "Aktarım Kaydı Bulunamadı" boş-durumuna düşülür, ham hata sızmaz (gizli davranış — bkz. BACKLOG.md)', async ({ page }, testInfo) => {
+  test('hata durumu: 500 alındığında "Aktarım kayıtları yüklenemedi" + Tekrar dene gösterilir (boştan AYRI), ham hata sızmaz', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'Masaüstü tablo (mdAndUp/>=960px) gerektiriyor — bkz. dosya başı NOT')
     await installApiMocks(page, withLogsMenu({ 'IntegrationService/getImportJobs': mockError(500) }))
     await gotoAuthed(page)
     await openScreen(page, 'LogListView')
     await openImportTab(page)
 
-    await expect(page.getByText('Aktarım Kaydı Bulunamadı', { exact: true })).toBeVisible()
+    // DS-v2 Aşama 2 — BİLİNÇLİ DAVRANIŞ DEĞİŞİKLİĞİ: hata artık boş durumdan ayrı (isRequestError); API çağrısı AYNI.
+    await expect(page.getByText('Aktarım kayıtları yüklenemedi')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Tekrar dene' })).toBeVisible()
     await expect(page.locator('body')).not.toContainText('500')
   })
 

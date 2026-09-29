@@ -18,8 +18,8 @@
 -->
 <template>
   <div class="ek-list-screen">
-    <header class="ek-list-screen__head">
-      <div class="ek-list-screen__titles">
+    <header class="ek-list-screen__head" :class="{ 'is-headless': !title }">
+      <div v-if="title" class="ek-list-screen__titles">
         <h1 class="ek-list-screen__title">{{ title }}</h1>
         <p v-if="description" class="ek-list-screen__desc">{{ description }}</p>
       </div>
@@ -38,7 +38,7 @@
           @click:clear="emit('search-submit')"
         />
         <slot name="header-actions" />
-        <EkButton v-if="refreshable" tone="ghost" icon="mdi-refresh" icon-only aria-label="Yenile" :loading="loading" @click="emit('refresh')" />
+        <EkButton v-if="refreshable" tone="ghost" icon="mdi-refresh" icon-only :aria-label="refreshLabel" :loading="loading" @click="emit('refresh')" />
       </div>
     </header>
 
@@ -109,7 +109,7 @@
           :page-size="pageSize"
           :total="total"
           :page-size-options="pageSizeOptions"
-          :label="`${title} sayfalama`"
+          :label="`${label} sayfalama`"
           @update:page="(p: number) => emit('update:page', p)"
           @update:page-size="(s: number) => emit('update:pageSize', s)"
         >
@@ -132,7 +132,8 @@ import EkButton from '../EkButton.vue'
 
 const props = withDefaults(
   defineProps<{
-    title: string
+    /** Boşsa başlık bloğu çizilmez (ör. sekmeli bir sayfanın içindeki liste — başlığı taşıyan sayfadır). */
+    title?: string
     description?: string
     /** Tablo ve çerçevenin erişilebilir adı. */
     label: string
@@ -171,6 +172,7 @@ const props = withDefaults(
     filteredEmptyTitle?: string
     filteredEmptyText?: string
     refreshable?: boolean
+    refreshLabel?: string
   }>(),
   {
     noun: 'kayıt',
@@ -195,6 +197,8 @@ const props = withDefaults(
     filteredEmptyTitle: 'Bu filtrelerle kayıt yok',
     filteredEmptyText: 'Filtreleri gevşetin veya temizleyip yeniden sorgulayın.',
     refreshable: true,
+    refreshLabel: 'Yenile',
+    title: '',
   },
 )
 
@@ -245,6 +249,15 @@ function setCollapsed(v: boolean) {
   align-items: center;
   justify-content: space-between;
   gap: var(--ek-space-3) var(--ek-space-4);
+}
+
+.ek-list-screen__head.is-headless .ek-list-screen__head-actions {
+  flex: 1;
+  justify-content: flex-start;
+}
+
+.ek-list-screen__head.is-headless .ek-list-screen__search {
+  flex: 0 1 420px;
 }
 
 .ek-list-screen__titles {
