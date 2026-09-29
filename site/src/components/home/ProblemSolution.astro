@@ -363,6 +363,9 @@ const comparison = [
     grid-template-columns: minmax(0, 1fr) var(--ps-line) var(--ek-space-5) auto;
     align-items: center;
     padding-block: var(--ek-space-1);
+    /* Işık paketi sarmalayıcıları translate ile çizgi dışına kayar: sayfa taşmasın (halkalar için pay bırakılır). */
+    overflow: clip;
+    overflow-clip-margin: var(--ek-space-6);
   }
   .ps__tidy {
     display: flex;
@@ -378,6 +381,7 @@ const comparison = [
   }
   .ps__tpanel-chan {
     position: relative;
+    z-index: 1; /* ışık paketi çipin altından çıkar */
     display: inline-flex;
     flex: none;
     align-items: center;
@@ -547,6 +551,7 @@ const comparison = [
   }
   .ps__result {
     position: relative;
+    margin-top: var(--ek-space-2);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -791,8 +796,8 @@ const comparison = [
         translate: 0 0;
       }
       54% {
-        opacity: 0.3;
-        translate: 0 calc(var(--site-motion-distance) * 0.5);
+        opacity: 0.5;
+        translate: 0 calc(var(--site-motion-distance) * 0.35);
       }
     }
     @keyframes loop-ps-edge {
