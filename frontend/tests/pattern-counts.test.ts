@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { countFileContent } = require('../scripts/pattern-counts.js')
+const { countFileContent, hasPageHeader } = require('../scripts/pattern-counts.js')
 
 /** ADR-0015 Karar 6.4 — desen mandalı sayım mantığı birim testleri. */
 describe('pattern-counts.js countFileContent', () => {
@@ -63,5 +63,19 @@ describe('pattern-counts.js countFileContent', () => {
     const counts = countFileContent('<template><span>merhaba</span></template>')
     expect(counts.total).toBe(0)
     expect(counts.iconBtnNoLabel).toBe(0)
+  })
+})
+
+describe('hasPageHeader (DS-v2 liste standardı)', () => {
+  it('EkPageHeader içeren ekran başlıklıdır', () => {
+    expect(hasPageHeader('<template><EkPageHeader title="X" /></template>')).toBe(true)
+  })
+  it('başlıklı EkListScreen başlıklıdır (öznitelik değerinde => olsa da)', () => {
+    const tpl = '<template>\n  <EkListScreen\n    :row-class="(r) => r.x"\n    title="Siparişler"\n    label="t"\n  >\n  </EkListScreen>\n</template>'
+    expect(hasPageHeader(tpl)).toBe(true)
+  })
+  it('başlıksız EkListScreen (sekmeli sayfa içi) başlık sayılmaz', () => {
+    const tpl = '<template>\n  <EkListScreen\n    label="t"\n  >\n    <template #cell-x="{ row }"><span title="ipucu">x</span></template>\n  </EkListScreen>\n</template>'
+    expect(hasPageHeader(tpl)).toBe(false)
   })
 })
