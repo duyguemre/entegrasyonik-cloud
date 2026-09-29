@@ -51,7 +51,8 @@
           <v-icon size="16" aria-hidden="true">mdi-open-in-new</v-icon>
           <span class="accountDeletion__sr">{{ $t('privacyData.legal.newTab') }}</span>
         </a>
-        <EkButton tone="danger" icon="mdi-delete-outline" @click="openVerify">
+        <!-- Sayfada tek birincil eylem dışa aktarmadır; yıkıcı giriş ikincil tondadır, `danger` dolgu son onaydadır. -->
+        <EkButton tone="secondary" icon="mdi-delete-outline" class="accountDeletion__start" @click="openVerify">
           {{ $t('privacyData.deletion.action') }}
         </EkButton>
       </div>
@@ -248,7 +249,12 @@ async function submit() {
 }
 
 .accountDeletion__panel--done {
-  background: var(--ek-color-error-subtle);
+  border-color: var(--ek-color-border-default);
+  border-left: 3px solid var(--ek-color-error);
+}
+
+.accountDeletion__start :deep(.v-icon) {
+  color: var(--ek-color-error);
 }
 
 .accountDeletion__head {
