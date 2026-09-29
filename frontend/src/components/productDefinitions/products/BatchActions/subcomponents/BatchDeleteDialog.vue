@@ -16,11 +16,10 @@
 
                 <div class="mt-6 d-flex justify-center gap-4 flex-wrap">
                     <v-btn color="grey-darken-1" variant="outlined" @click="$emit('update:modelValue', false)"
-                        class="flex-grow-1" style="max-width: 150px;">
+                        class="flex-grow-1 bdd-s1">
                         Hayır
                     </v-btn>
-                    <v-btn color="error" variant="flat" @click="$emit('deleteProducts')" class="flex-grow-1"
-                        style="max-width: 150px;">
+                    <v-btn color="error" variant="flat" @click="$emit('deleteProducts')" class="flex-grow-1 bdd-s1">
                         Evet, Sil
                     </v-btn>
                 </div>
@@ -37,5 +36,15 @@ defineEmits(['update:modelValue', 'deleteProducts'])
 <style scoped>
 .gap-4 {
     gap: 16px;
+}
+</style>
+
+<style>
+/* ADR-0015 B5-2 — satir ici stillerden tasinan siniflar (autostyle). Satir ici stilin onceligi
+   !important ile korunur; ayni ozellikte Vuetify yardimci sinifi/`color` prop cakismasi varsa
+   (satir ici stil zaten yeniliyordu) !important eklenmez. Scope'suz: v-dialog/v-menu ve alt
+   bilesen kokleri scoped ozniteligi almayabilir; onek dosyaya ozgudur. */
+.bdd-s1 {
+  max-width: 150px !important;
 }
 </style>

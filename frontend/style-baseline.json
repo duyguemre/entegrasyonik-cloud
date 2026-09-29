@@ -2,10 +2,10 @@
   "_meta": "ADR-0011 Karar 2 / Aşama 1 literal-stil mandalı tabanı. node scripts/check-style-baseline.js --write ile üretildi (bkz. scripts/style-literal-counts.js). Hiçbir dosyada/kategoride sayı ARTAMAZ; yeni dosyalar 0 ile başlamalı; düşüş serbest ama bu dosyanın güncellenmesi gerekir (check-style-baseline.js OK dönene kadar).",
   "date": "2026-09-29",
   "totals": {
-    "total": 1644,
-    "hex": 709,
-    "rgb": 235,
-    "inlineStyle": 684,
+    "total": 1615,
+    "hex": 700,
+    "rgb": 234,
+    "inlineStyle": 665,
     "cubicBezier": 10,
     "motion": 6
   },
@@ -1100,27 +1100,27 @@
     },
     "src/components/productDefinitions/products/BatchActions/subcomponents/BatchActionMenu.vue": {
       "hex": 0,
-      "rgb": 1,
-      "inlineStyle": 14,
+      "rgb": 0,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 15
+      "total": 0
     },
     "src/components/productDefinitions/products/BatchActions/subcomponents/BatchDeleteDialog.vue": {
       "hex": 0,
       "rgb": 0,
-      "inlineStyle": 2,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 2
+      "total": 0
     },
     "src/components/productDefinitions/products/BatchActions/subcomponents/BatchProcessDialog.vue": {
-      "hex": 6,
+      "hex": 0,
       "rgb": 1,
       "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 7
+      "total": 1
     },
     "src/components/productDefinitions/products/BatchActions/useBatchActions.ts": {
       "hex": 0,
@@ -1147,12 +1147,12 @@
       "total": 20
     },
     "src/components/productDefinitions/products/ProductImageComponent.vue": {
-      "hex": 3,
+      "hex": 0,
       "rgb": 0,
-      "inlineStyle": 3,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 6
+      "total": 0
     },
     "src/components/productDefinitions/products/ProductTransferComponent.vue": {
       "hex": 10,

@@ -7,7 +7,9 @@
             <v-col cols="12" class="pa-0 mb-6" v-if="mode !== 'FETCH_PRODUCT'">
                 <div class="scope-toggle-container">
                     <div v-for="scope in scopes" :key="scope.value" class="scope-item"
-                        :class="{ 'active': form.scope === scope.value }" @click="form.scope = scope.value">
+                        :class="{ 'active': form.scope === scope.value }" @click="form.scope = scope.value"
+                        role="button" tabindex="0" :aria-pressed="form.scope === scope.value"
+                        @keydown.enter.prevent="form.scope = scope.value" @keydown.space.prevent="form.scope = scope.value">
                         <v-icon :icon="getScopeIcon(scope.value)" size="small" class="mr-2"></v-icon>
                         <span>{{ scope.title }}</span>
                     </div>
@@ -95,7 +97,7 @@ const getScopeIcon = (val: number) => {
 /* KAPSAM SEÇİCİ (SCOPE TOGGLE) */
 .scope-toggle-container {
     display: flex;
-    background: #e2e8f0;
+    background: var(--ek-color-surface-sunken);
     padding: 4px;
     border-radius: 12px;
     gap: 4px;
@@ -110,24 +112,29 @@ const getScopeIcon = (val: number) => {
     border-radius: 10px;
     font-size: 0.85rem;
     font-weight: 600;
-    color: #64748b;
+    color: var(--ek-color-content-muted);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background-color var(--ek-duration-base) var(--ek-easing-standard), color var(--ek-duration-base) var(--ek-easing-standard), box-shadow var(--ek-duration-base) var(--ek-easing-standard);
+}
+
+.scope-item:focus-visible {
+    outline: 2px solid var(--ek-color-primary);
+    outline-offset: 2px;
 }
 
 .scope-item.active {
-    background: white;
-    color: #0f172a;
+    background: var(--ek-color-surface);
+    color: var(--ek-color-content-strong);
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
 }
 
 .selection-alert {
-    background: #fee2e2;
-    color: #b91c1c;
+    background: var(--ek-color-error-subtle);
+    color: var(--ek-color-error);
     padding: 8px 12px;
     border-radius: 8px;
     font-size: 0.75rem;
-    border-left: 4px solid #ef4444;
+    border-left: 4px solid var(--ek-color-error);
 }
 
 /* PLATFORM GRID */
@@ -146,4 +153,11 @@ const getScopeIcon = (val: number) => {
         grid-template-columns: repeat(2, 1fr);
     }
 }
+</style>
+
+<style>
+/* ADR-0015 B5-2 — satir ici stillerden tasinan siniflar (autostyle). Satir ici stilin onceligi
+   !important ile korunur; ayni ozellikte Vuetify yardimci sinifi/`color` prop cakismasi varsa
+   (satir ici stil zaten yeniliyordu) !important eklenmez. Scope'suz: v-dialog/v-menu ve alt
+   bilesen kokleri scoped ozniteligi almayabilir; onek dosyaya ozgudur. */
 </style>
