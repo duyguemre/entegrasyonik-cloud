@@ -9,8 +9,8 @@
     "rawFormat": 51,
     "rawSpinner": 5,
     "iconBtnNoLabel": 24,
-    "patternExceptions": 4,
-    "pageHeaderMissing": 35
+    "patternExceptions": 6,
+    "pageHeaderMissing": 25
   },
   "files": {
     "src/App.vue": {
@@ -302,6 +302,46 @@
       "iconBtnNoLabel": 0,
       "patternExceptions": 0,
       "total": 2
+    },
+    "src/components/adminPanel/integrations/IntegrationConfigSettingsBody.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/components/adminPanel/integrations/PlatformAdminGuard.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/components/adminPanel/integrations/PublishConfirmDialog.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/components/adminPanel/integrations/SettingField.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
     },
     "src/components/claim/ClaimDetailComponent.vue": {
       "rawDataTable": 0,
@@ -1543,6 +1583,46 @@
       "patternExceptions": 0,
       "total": 6
     },
+    "src/views/secure/adminPanel/integrations/EffectiveConfigView.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/views/secure/adminPanel/integrations/EngineSettingsView.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/views/secure/adminPanel/integrations/IntegrationConfigListView.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/views/secure/adminPanel/integrations/IntegrationSettingsView.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
     "src/views/secure/definitions/BrandDefinitionView.vue": {
       "rawDataTable": 1,
       "rawDialog": 0,
@@ -1620,7 +1700,7 @@
       "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
-      "patternExceptions": 0,
+      "patternExceptions": 1,
       "total": 1
     },
     "src/views/secure/definitions/ProductUpdateView.vue": {
@@ -1630,7 +1710,7 @@
       "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
-      "patternExceptions": 0,
+      "patternExceptions": 1,
       "total": 1
     },
     "src/views/secure/definitions/ReturnDefinitionView.vue": {
@@ -1849,16 +1929,20 @@
     "src/views/secure/adminPanel/AdminSystemManagementView.vue": 1,
     "src/views/secure/adminPanel/AdminTicketListView.vue": 1,
     "src/views/secure/adminPanel/AdminView.vue": 1,
-    "src/views/secure/definitions/BrandDefinitionView.vue": 1,
-    "src/views/secure/definitions/CategoryDefinitionView.vue": 1,
-    "src/views/secure/definitions/CustomerDefinitionView.vue": 1,
-    "src/views/secure/definitions/HashtagDefinitionView.vue": 1,
-    "src/views/secure/definitions/InvoiceDefinitionView.vue": 1,
-    "src/views/secure/definitions/OptionDefinitionView.vue": 1,
-    "src/views/secure/definitions/OrderDefinitionView.vue": 1,
-    "src/views/secure/definitions/ProductDefinitionView.vue": 1,
-    "src/views/secure/definitions/ProductUpdateView.vue": 1,
-    "src/views/secure/definitions/ReturnDefinitionView.vue": 1,
+    "src/views/secure/adminPanel/integrations/EffectiveConfigView.vue": 0,
+    "src/views/secure/adminPanel/integrations/EngineSettingsView.vue": 0,
+    "src/views/secure/adminPanel/integrations/IntegrationConfigListView.vue": 0,
+    "src/views/secure/adminPanel/integrations/IntegrationSettingsView.vue": 0,
+    "src/views/secure/definitions/BrandDefinitionView.vue": 0,
+    "src/views/secure/definitions/CategoryDefinitionView.vue": 0,
+    "src/views/secure/definitions/CustomerDefinitionView.vue": 0,
+    "src/views/secure/definitions/HashtagDefinitionView.vue": 0,
+    "src/views/secure/definitions/InvoiceDefinitionView.vue": 0,
+    "src/views/secure/definitions/OptionDefinitionView.vue": 0,
+    "src/views/secure/definitions/OrderDefinitionView.vue": 0,
+    "src/views/secure/definitions/ProductDefinitionView.vue": 0,
+    "src/views/secure/definitions/ProductUpdateView.vue": 0,
+    "src/views/secure/definitions/ReturnDefinitionView.vue": 0,
     "src/views/secure/integrations/ECommerceView.vue": 0,
     "src/views/secure/integrations/EInvoiceView.vue": 0,
     "src/views/secure/integrations/ErpView.vue": 0,
