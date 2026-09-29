@@ -301,6 +301,43 @@ test.describe('Sorun -> çözüm kaydırma ilerlemesi (S12)', () => {
   })
 })
 
+test.describe('S15-B: tek merkez akışı (kanallar -> göbek -> senkron)', () => {
+  const running = (page: Page) =>
+    page.evaluate(() => {
+      const scene = document.querySelector('[data-testid="problem-solution"]')!
+      return document
+        .getAnimations()
+        .filter((a) => a.playState === 'running' && a.effect instanceof KeyframeEffect && scene.contains(a.effect.target as Node))
+        .map((a) => (a as CSSAnimation).animationName)
+    })
+  const newOpacity = (page: Page) => page.locator('.ps__chip-new').first().evaluate((el) => getComputedStyle(el).opacity)
+
+  test('görünürken akış döngüsü çalışır; hareket durdurulunca senkron son durum (yeni değer görünür, paket yok)', async ({ page }) => {
+    await page.goto('/')
+    await readyMotion(page)
+    await page.locator('.ps__net').scrollIntoViewIfNeeded()
+    await expect.poll(async () => (await running(page)).filter((n) => n.startsWith('loop-ps-')).length).toBeGreaterThan(5)
+    const names = await running(page)
+    for (const k of ['loop-ps-in', 'loop-ps-back', 'loop-ps-new', 'loop-ps-ring']) expect(names, k).toContain(k)
+    await page.getByTestId('motion-toggle').click()
+    await expect.poll(async () => (await running(page)).filter((n) => n.startsWith('loop-ps-')).length).toBe(0)
+    expect(await newOpacity(page)).toBe('1')
+    await expect(page.locator('.ps__packet').first()).toHaveCSS('opacity', '0')
+  })
+
+  test('reduced-motion: döngü hiç başlamaz; tüm çipler aynı (senkron) değeri gösterir', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.goto('/')
+    await page.locator('.ps__net').scrollIntoViewIfNeeded()
+    expect((await running(page)).filter((n) => n.startsWith('loop-ps-'))).toEqual([])
+    const values = await page.locator('.ps__chip-new').allTextContents()
+    expect(values).toHaveLength(4)
+    expect(new Set(values).size).toBe(1)
+    for (const el of await page.locator('.ps__chip-new').all()) await expect(el).toHaveCSS('opacity', '1')
+    for (const el of await page.locator('.ps__chip-old').all()) await expect(el).toHaveCSS('opacity', '0')
+  })
+})
+
 test.describe('S13-B: "Nasıl çalışır" demoları ve ekosistem akışı', () => {
   const visual = (page: Page, key: string) => page.locator(`.how__visual[data-demo="${key}"]`)
 
