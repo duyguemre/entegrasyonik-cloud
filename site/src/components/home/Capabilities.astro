@@ -1,22 +1,24 @@
 ---
 /**
- * Yetenekler (ADR-0014 Karar 2, bölüm 4) — S7: bento düzeni. Kaynak: `getPublicCapabilities()`; metin, durum rozeti ve
- * kanal listeleri kayıttan gelir (kanallar `integrations.ts`'ten türetilir). Sınır notları (caveat) görünür.
- * Beş ana özellik için ayrı, animasyonlu "UI parçası" (hepsi HTML/CSS; aria-hidden — anlam çevredeki metindedir):
+ * Yetenekler (ADR-0014 Karar 2, bölüm 4) — S12: pazarlama dili, sade kart hiyerarşisi.
+ * Üç katman: (1) koyu bantta dört değer sütunu (`getHomePillars()`), (2) beş animasyonlu bento karo,
+ * (3) "Günlük işleriniz için" kartları. Metinler kayıttaki `home` alanlarından gelir (capabilities.ts).
+ * Ana sayfada kanal ADI, durum rozeti (Mevcut/Kısmi) ve kapsam notu YOK (S12 kullanıcı geri bildirimi);
+ * kanal ayrımı yalnızca isimsiz renkli noktayla (`data-code` -> `--chan`). Kapsam farkları ve sınır notları
+ * alt sayfalarda (/ozellikler, /entegrasyonlar) eksiksiz yazılıdır.
+ * Beş "UI parçası" (hepsi HTML/CSS; aria-hidden — anlam çevredeki metindedir; giriş hareketi scenes.css):
  *   - `stock-single-winner`: son adet için eşzamanlı iki sipariş -> biri rezerve, diğeri aşırı satış olarak işaretlenir
  *   - `orders-merge`: farklı kanallardan sipariş ve iade talepleri iki yönden gelip tek listede birleşir
- *   - `integration-status`: her entegrasyonun kapsam düzeyi (kayıttaki `coverage`; sınırlar ayrıca yazılıdır)
+ *   - `integration-status`: bağlı kanallar (tür etiketiyle) tek merkezde; ürün/stok/sipariş akış çubukları
  *   - `secret-encryption`: girilen anahtar -> kilit -> `enc:v1:` biçiminde saklanan -> arayüzde maskeli
  *   - `tenant-isolation`: her müşteri hesabı kendi veritabanına bağlanır
- * Diğer yetenekler (iade, soru-cevap, finans, kargo/fatura bildirimi, ERP, çoklu pazaryeri) kayıttaki kartlardır.
  * Tüm örnek değerler "Örnek görünüm"dür; uydurma müşteri/ölçüm YOK.
  */
 import Section from '../Section.astro'
 import SectionHeading from './SectionHeading.astro'
 import Icon from './Icon.astro'
-import { getPublicCapabilities, type PublicProductCapability } from '../../data/capabilities'
-import { getPublicIntegrations } from '../../data/integrations'
-import { getPublicFaq } from '../../data/faq'
+import { getPublicCapabilities, getHomePillars, type PublicProductCapability } from '../../data/capabilities'
+import { getPublicIntegrations, type CapabilityKey } from '../../data/integrations'
 
 const all = getPublicCapabilities('core')
 const security = getPublicCapabilities('security')
@@ -25,49 +27,15 @@ const byId = (list: PublicProductCapability[], id: string): PublicProductCapabil
   if (!c) throw new Error(`Yetenek kaydı bulunamadı: ${id}`)
   return c
 }
+const homeOf = (c: PublicProductCapability) => c.home ?? { title: c.title, line: c.summary }
 
 const stock = byId(all, 'stock-reservation')
 const orders = byId(all, 'unified-orders')
 const secrets = byId(security, 'secrets-encryption')
-const masked = byId(security, 'secrets-masked')
 const tenant = byId(security, 'tenant-database')
 const spotlightIds = new Set([stock.id, orders.id])
 const rest = all.filter((c) => !spotlightIds.has(c.id))
-const tenantNote = getPublicFaq().find((f) => f.id === 'veri-ayrimi')?.answer.split('. ').slice(1).join('. ') ?? ''
-
-// Dört küme özeti (S8, üst özet): başlık/madde metinleri yalnızca kayıttaki yetenek başlıklarından; tek
-// satırlık "değer cümlesi" (lead) de kayıttaki ilgili yeteneğin özetinden — yeni metin uydurulmaz.
-const roleBased = byId(security, 'role-based-access')
-const clusters = [
-  {
-    id: 'oversell',
-    icon: 'stock' as const,
-    title: 'Aşırı satış koruması',
-    lead: stock.summary,
-    items: [stock.title, byId(all, 'multi-channel-products').title],
-  },
-  {
-    id: 'ops',
-    icon: 'orders' as const,
-    title: 'Tek panel operasyon',
-    lead: orders.summary,
-    items: [orders.title, byId(all, 'returns').title, byId(all, 'questions').title],
-  },
-  {
-    id: 'isolation',
-    icon: 'database' as const,
-    title: 'Veri izolasyonu ve şifreleme',
-    lead: tenant.summary,
-    items: [tenant.title, secrets.title, masked.title],
-  },
-  {
-    id: 'rbac',
-    icon: 'users' as const,
-    title: 'Rol tabanlı erişim',
-    lead: roleBased.summary,
-    items: [roleBased.title, byId(security, 'default-deny').title, byId(security, 'session-cookie').title],
-  },
-]
+const pillars = getHomePillars()
 
 const ICONS: Record<string, 'stock' | 'layers' | 'orders' | 'returns' | 'chat' | 'finance' | 'notice' | 'plug'> = {
   'stock-reservation': 'stock',
@@ -79,90 +47,72 @@ const ICONS: Record<string, 'stock' | 'layers' | 'orders' | 'returns' | 'chat' |
   'shipping-invoice-notice': 'notice',
   'erp-read': 'plug',
 }
-// Kart hiyerarşisinin en üst seviyesi ("eyebrow"): kısa yapısal kategori etiketi (bento karolarındaki
-// `tile__eyebrow` ile aynı dilde) — yeni bir olgusal iddia değildir, yalnızca gruplama başlığıdır.
-const EYEBROWS: Record<string, string> = {
-  'multi-channel-products': 'Ürün',
-  returns: 'İade',
-  questions: 'İletişim',
-  finance: 'Finans',
-  'shipping-invoice-notice': 'Bildirim',
-  'erp-read': 'ERP',
-}
 
 const integrations = getPublicIntegrations()
-const marketplaces = getPublicIntegrations('marketplace').map((i) => i.name)
-const [chanA = '', chanB = ''] = marketplaces
-// Örnek liste: kanallar sırayla tekrar eder; durum sözcükleri yalnızca arayüz örneğidir.
+const marketplaceCodes = getPublicIntegrations('marketplace').map((i) => i.code)
+const [codeA = '', codeB = ''] = marketplaceCodes
+// Örnek liste: kanal renkleri sırayla tekrar eder (ad yok); durum sözcükleri yalnızca arayüz örneğidir.
 const STATUSES = ['Yeni', 'Hazırlanıyor', 'İade talebi', 'Kargoda', 'Yeni']
-const rows = STATUSES.map((status, i) => ({ status, channel: marketplaces[i % marketplaces.length] ?? '' }))
-const filters = marketplaces.slice(0, 3)
-const METER: Record<string, number> = { broad: 3, partial: 2, limited: 1 }
+const rows = STATUSES.map((status, i) => ({ status, code: marketplaceCodes[i % marketplaceCodes.length] ?? '' }))
 const isAlert = (s: string) => s === 'İade talebi'
-
-const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
+// "Bağlı kanallar" karosu: çubuk yalnızca kanalın kayıtta o veri türü için yeteneği varsa dolu (dürüstlük:
+// örn. ERP bağlantısı stok yazmaz → stok çubuğu soluk). Seviye farkı ana sayfada gösterilmez (alt sayfada).
+const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
 ---
 
 <Section id="ozellikler" labelledby="yetenek-baslik">
   <SectionHeading
     id="yetenek-baslik"
     eyebrow="Yetenekler"
-    title="Satışın tüm akışı tek panelde"
-    accent="tek panelde"
-    lead="Stoktan siparişe, iadeden finans görünümüne: günlük operasyonunuzun ihtiyaç duyduğu işlemler aynı yerde."
+    title="Çok kanallı satışın tamamı, tek merkezde"
+    accent="tek merkezde"
+    lead="Merkezi stok yönetiminden sipariş operasyonuna, iadeden finans görünümüne: omnichannel satışın her adımı aynı panelde, aynı ritimde."
   />
 
   <div class="clusters-band">
-  <ul class="clusters" data-scene="reveal" data-testid="capability-clusters">
-    {
-      clusters.map((c) => (
-        <li class="cluster" data-part="cluster" data-reveal data-tilt>
-          <span class="cluster__icon"><Icon name={c.icon} size="lg" /></span>
-          <h3 class="cluster__title">{c.title}</h3>
-          <p class="cluster__lead">{c.lead}</p>
-          <ul class="cluster__items">
-            {c.items.map((item) => (
-              <li>
-                <Icon name="check" size="sm" />
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        </li>
-      ))
-    }
-  </ul>
+    <ul class="clusters" data-scene="reveal" data-testid="capability-clusters">
+      {
+        pillars.map((p) => (
+          <li class="cluster" data-part="cluster" data-reveal data-tilt>
+            <span class="cluster__icon"><Icon name={p.icon} size="md" /></span>
+            <h3 class="cluster__title">{p.title}</h3>
+            <p class="cluster__lead">{p.line}</p>
+            <ul class="cluster__items">
+              {p.points.map((item) => (
+                <li>
+                  <Icon name="check" size="sm" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </li>
+        ))
+      }
+    </ul>
   </div>
 
   <div class="bento" data-testid="bento">
-    {/* A: stok rezervasyonu (geniş, iki satır) */}
+    {/* A: stok rezervasyonu (geniş) */}
     <article class="tile tile--stock" aria-labelledby="spot-stock-title" data-tilt data-scene="tile">
       <div class="tile__copy" data-reveal>
-        <p class="tile__eyebrow">Stok</p>
         <span class="tile__icon"><Icon name="stock" size="md" /></span>
-        <h3 id="spot-stock-title" class="tile__title">{stock.title}</h3>
-        <p class="tile__text">{stock.summary}</p>
-        {
-          stock.caveat && (
-            <p class="tile__caveat">
-              <Icon name="info" size="sm" />
-              <span>{stock.caveat}</span>
-            </p>
-          )
-        }
+        <h3 id="spot-stock-title" class="tile__title">{homeOf(stock).title}</h3>
+        <p class="tile__text">{homeOf(stock).line}</p>
       </div>
       <div class="tile__frame" data-reveal>
         <div class="stock" data-scene="stock-single-winner" aria-hidden="true">
-          <p class="stock__caption">Örnek senaryo: son adet için iki kanaldan eşzamanlı sipariş</p>
+          <p class="stock__caption">Örnek senaryo · son adet için iki kanaldan eşzamanlı sipariş</p>
           <div class="stock__flow">
             <div class="stock__orders">
-              <div class="stock__order" data-part="order-a">
-                <span class="stock__chan">{chanA}</span>
+              <div class="stock__order" data-part="order-a" data-code={codeA}>
+                <span class="stock__dot"></span>
                 <span class="stock__status">Yeni sipariş</span>
+                <span class="stock__line stock__line--short"></span>
               </div>
-              <div class="stock__order" data-part="order-b">
-                <span class="stock__chan">{chanB}</span>
+              <div class="stock__order" data-part="order-b" data-code={codeB}>
+                <span class="stock__dot"></span>
                 <span class="stock__status">Yeni sipariş</span>
+                <span class="stock__line stock__line--short"></span>
               </div>
             </div>
             <svg class="stock__arrow" data-part="arrow-a" viewBox="0 0 24 24" focusable="false"><path d="M4 12h16 M14 6l6 6-6 6"></path></svg>
@@ -184,14 +134,14 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
                 <Icon name="check" size="md" />
                 <div>
                   <strong>Rezerve edildi</strong>
-                  <span>{chanA} siparişi</span>
+                  <span>İlk gelen sipariş</span>
                 </div>
               </div>
               <div class="stock__result stock__result--warn" data-part="result-oversold">
                 <Icon name="info" size="md" />
                 <div>
                   <strong>Aşırı satış olarak işaretlendi</strong>
-                  <span>{chanB} siparişi, telafi akışında</span>
+                  <span>Telafi akışına alındı</span>
                 </div>
               </div>
             </div>
@@ -203,23 +153,9 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
     {/* B: birleşik siparişler ve iadeler */}
     <article class="tile tile--orders" aria-labelledby="spot-orders-title" data-tilt data-scene="tile">
       <div class="tile__copy" data-reveal>
-        <p class="tile__eyebrow">Sipariş ve iade</p>
         <span class="tile__icon"><Icon name="orders" size="md" /></span>
-        <h3 id="spot-orders-title" class="tile__title">{orders.title}</h3>
-        <p class="tile__text">{orders.summary}</p>
-        {
-          orders.channels.length > 0 && (
-            <ul class="chips" aria-label="Sipariş çekilen kanallar">
-              {orders.channels.map((c) => (
-                <li class:list={['chip', c.level === 'limited' && 'chip--limited']} data-code={c.code}>
-                  <span class="chip__mono" aria-hidden="true">{c.name.slice(0, 1)}</span>
-                  {c.name}
-                  {c.level === 'limited' && <span class="chip__note"> · sınırlı</span>}
-                </li>
-              ))}
-            </ul>
-          )
-        }
+        <h3 id="spot-orders-title" class="tile__title">{homeOf(orders).title}</h3>
+        <p class="tile__text">{homeOf(orders).line}</p>
       </div>
       <div class="tile__frame" data-reveal>
         <div class="win" data-scene="orders-merge" aria-hidden="true">
@@ -230,13 +166,14 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
           </div>
           <ul class="win__filters">
             <li class="win__filter win__filter--active">Tümü</li>
-            {filters.map((f) => <li class="win__filter">{f}</li>)}
+            <li class="win__filter">Yeni</li>
+            <li class="win__filter">İade</li>
           </ul>
           <ul class="win__rows">
             {
               rows.map((r) => (
-                <li class="win__row" data-part="order-row">
-                  <span class="win__chan">{r.channel}</span>
+                <li class="win__row" data-part="order-row" data-code={r.code}>
+                  <span class="win__chan"></span>
                   <span class="win__cells">
                     <span class="win__skel win__skel--a"></span>
                     <span class="win__skel win__skel--b"></span>
@@ -250,31 +187,31 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
       </div>
     </article>
 
-    {/* C: entegrasyon durumu */}
+    {/* C: kanallar tek merkezde */}
     <article class="tile tile--status" aria-labelledby="spot-status-title" data-tilt data-scene="tile">
       <div class="tile__copy" data-reveal>
-        <p class="tile__eyebrow">Entegrasyon kapsamı</p>
         <span class="tile__icon"><Icon name="plug" size="md" /></span>
-        <h3 id="spot-status-title" class="tile__title">Entegrasyon durumu bir bakışta</h3>
-        <p class="tile__text">
-          Her kanalın kapsamı ve sınırları açıkça yazılıdır: neyin desteklendiğini, neyin sınırlı olduğunu önceden bilirsiniz.
-        </p>
+        <h3 id="spot-status-title" class="tile__title">Her kanal aynı merkezde</h3>
+        <p class="tile__text">Pazaryerleri, e-ticaret altyapınız ve ERP sisteminiz tek panelde buluşur.</p>
       </div>
       <div class="tile__frame" data-reveal>
         <div class="istat" data-scene="integration-status" aria-hidden="true">
-          <p class="istat__caption">Kapsam düzeyi · örnek görünüm</p>
+          <p class="istat__caption">
+            <span>Bağlı kanallar</span>
+            <span class="istat__cols"><i>Ürün</i><i>Stok</i><i>Sipariş</i></span>
+          </p>
           <ul class="istat__rows">
             {
               integrations.map((i) => (
                 <li class="istat__row" data-part="istat-row" data-code={i.code}>
                   <span class="istat__dot"></span>
-                  <span class="istat__name">{i.name}</span>
+                  <span class="istat__name">{i.kindLabel}</span>
                   <span class="istat__meter">
-                    {[1, 2, 3].map((n) => (
-                      <i class:list={['istat__seg', n <= METER[i.coverage] && 'is-on']} data-part={n <= METER[i.coverage] ? 'seg' : undefined}></i>
-                    ))}
+                    {FLOW_KEYS.map((k) => {
+                      const on = i.capabilities.some((c) => c.key === k)
+                      return <i class:list={['istat__seg', on && 'is-on']} data-part={on ? 'seg' : undefined}></i>
+                    })}
                   </span>
-                  <span class="istat__label">{i.coverageLabel}</span>
                 </li>
               ))
             }
@@ -286,11 +223,9 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
     {/* D: şifreli anahtarlar */}
     <article class="tile tile--vault" aria-labelledby="spot-vault-title" data-tilt data-scene="tile">
       <div class="tile__copy" data-reveal>
-        <p class="tile__eyebrow">Şifreleme</p>
         <span class="tile__icon"><Icon name="lock" size="md" /></span>
         <h3 id="spot-vault-title" class="tile__title">{secrets.title}</h3>
         <p class="tile__text">{secrets.summary}</p>
-        <p class="tile__text tile__text--sub">{masked.summary}</p>
       </div>
       <div class="tile__frame" data-reveal>
         <div class="vault" data-scene="secret-encryption" aria-hidden="true">
@@ -313,7 +248,6 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
             <span class="vault__label">Arayüz ve API yanıtlarında</span>
             <span class="vault__field" data-part="masked">••••••••</span>
           </div>
-          <p class="vault__note">Gösterim örneğidir; gerçek bir değer değildir.</p>
         </div>
       </div>
     </article>
@@ -321,57 +255,47 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
     {/* E: çoklu kiracı */}
     <article class="tile tile--tenant" aria-labelledby="spot-tenant-title" data-tilt data-scene="tile">
       <div class="tile__copy" data-reveal>
-        <p class="tile__eyebrow">Veri izolasyonu</p>
         <span class="tile__icon"><Icon name="database" size="md" /></span>
         <h3 id="spot-tenant-title" class="tile__title">{tenant.title}</h3>
         <p class="tile__text">{tenant.summary}</p>
-        {tenantNote && <p class="tile__text tile__text--sub">{tenantNote}</p>}
       </div>
       <div class="tile__frame" data-reveal>
         <div class="tenant" data-scene="tenant-isolation" aria-hidden="true">
-          <p class="tenant__caption">Örnek görünüm</p>
           <div class="tenant__cols">
             {
               [1, 2, 3].map(() => (
                 <div class="tenant__col" data-part="tenant-col">
-                  <span class="tenant__acct" data-part="tenant-acct"><Icon name="users" size="md" /><span>Müşteri hesabı</span><i class="tenant__bar"></i></span>
+                  <span class="tenant__acct" data-part="tenant-acct"><Icon name="users" size="md" /><span>Hesap</span></span>
                   <span class="tenant__link" data-part="tenant-link"></span>
-                  <span class="tenant__db" data-part="tenant-db"><Icon name="database" size="md" /><span>Ayrı veritabanı</span><i class="tenant__bar"></i><i class="tenant__bar tenant__bar--short"></i></span>
+                  <span class="tenant__db" data-part="tenant-db"><Icon name="database" size="md" /><span>Ayrı veritabanı</span></span>
                 </div>
               ))
             }
           </div>
-          <p class="tenant__platform" data-part="tenant-platform"><Icon name="server" size="sm" />Ortak platform veritabanı: hesap ve yapılandırma kayıtları</p>
+          <p class="tenant__platform" data-part="tenant-platform"><Icon name="server" size="sm" />Ortak platform: yalnızca hesap ve yapılandırma kayıtları</p>
         </div>
       </div>
     </article>
   </div>
 
-  <h3 class="more__title" data-testid="more-title">Ve günlük işleriniz için</h3>
+  <div class="more">
+    <h3 class="more__title" data-testid="more-title">Günlük işleriniz için</h3>
+    <p class="more__lead">Operasyonel verimliliği artıran araçlar, aynı panelde.</p>
+  </div>
 
-  {/* Diğer yetenekler */}
   <ul class="caps" data-scene="reveal" data-testid="capability-grid">
     {
       rest.map((c) => (
         <li class="cap" data-part="capability" data-id={c.id} data-reveal data-tilt>
-          <div class="cap__top">
-            <span class="cap__icon"><Icon name={ICONS[c.id] ?? 'layers'} size="lg" /></span>
-            <span class={`cap__badge cap__badge--${badgeTone(c.status)}`}>{c.statusLabel}</span>
-          </div>
-          {EYEBROWS[c.id] && <p class="cap__eyebrow">{EYEBROWS[c.id]}</p>}
-          <h4 class="cap__title">{c.title}</h4>
-          <p class="cap__text">{c.summary}</p>
-          {c.caveat && <p class="cap__caveat">{c.caveat}</p>}
+          <span class="cap__icon"><Icon name={ICONS[c.id] ?? 'layers'} size="md" /></span>
+          <h4 class="cap__title">{homeOf(c).title}</h4>
+          <p class="cap__text">{homeOf(c).line}</p>
           {c.channels.length > 0 && (
-            <ul class="chips" aria-label={`${c.title}: kanallar`}>
+            <span class="cap__dots" aria-hidden="true">
               {c.channels.map((ch) => (
-                <li class:list={['chip', ch.level === 'limited' && 'chip--limited']} data-code={ch.code}>
-                  <span class="chip__mono" aria-hidden="true">{ch.name.slice(0, 1)}</span>
-                  {ch.name}
-                  {ch.level === 'limited' && <span class="chip__note"> · sınırlı</span>}
-                </li>
+                <i data-code={ch.code}></i>
               ))}
-            </ul>
+            </span>
           )}
         </li>
       ))
@@ -380,15 +304,21 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
 </Section>
 
 <style>
-  /* --- Dört küme özeti: koyu "sahne" bandı (bölümler arası ritim) --- */
+  /*
+   * Renk hiyerarşisi (S12): tek başlık tonu (content-strong) + tek gövde tonu (content-default). Üçüncü bir ton
+   * yok; vurgu yalnızca ikon rozetinde ve isimsiz kanal noktalarında. Tipografi `--site-card-*` token setinden.
+   */
+
+  /* --- Dört değer sütunu: koyu "sahne" bandı --- */
   .clusters-band {
     position: relative;
     overflow: hidden;
     isolation: isolate;
-    margin-top: var(--ek-space-10);
-    padding: var(--ek-space-8) var(--ek-space-5);
+    margin-top: var(--ek-space-12);
+    padding: var(--ek-space-6) var(--ek-space-4);
     border-radius: var(--site-radius-panel);
     background: var(--site-stage-mesh);
+    box-shadow: var(--site-shadow-panel);
   }
   .clusters-band::before {
     content: '';
@@ -403,14 +333,14 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
   }
   .clusters {
     display: grid;
-    gap: var(--ek-space-4);
+    gap: var(--ek-space-3);
     grid-template-columns: minmax(0, 1fr);
   }
   .cluster {
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-3);
-    padding: var(--ek-space-5);
+    padding: var(--ek-space-6);
     border: var(--site-border-width) solid var(--site-glass-border);
     border-radius: var(--ek-radius-xl);
     background: var(--site-glass-bg);
@@ -429,24 +359,25 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: var(--ek-space-12);
-    height: var(--ek-space-12);
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
+    margin-bottom: var(--ek-space-2);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 45%, transparent);
     border-radius: var(--ek-radius-lg);
-    background: linear-gradient(140deg, var(--ek-color-secondary), var(--ek-color-primary-darken-1));
-    color: var(--site-color-on-primary);
-    box-shadow: 0 0.5rem 1rem -0.5rem color-mix(in srgb, var(--ek-color-secondary) 60%, transparent);
+    background: color-mix(in srgb, var(--ek-color-secondary) 16%, transparent);
+    color: var(--ek-color-secondary);
   }
-  /* Aynı 4 seviyeli hiyerarşi token seti (site-tokens.css `--site-card-*`) burada da: başlık -> değer cümlesi. */
   .cluster__title {
     color: var(--site-color-on-primary);
     font-size: var(--site-card-title-size);
     font-weight: var(--site-card-title-weight);
     line-height: var(--ek-line-height-tight);
+    letter-spacing: -0.01em;
   }
   .cluster__lead {
     color: var(--site-color-on-primary-muted);
-    font-size: var(--site-card-value-size);
-    font-weight: var(--site-card-value-weight);
+    font-size: var(--site-card-desc-size);
+    font-weight: var(--site-card-desc-weight);
     line-height: var(--ek-line-height-normal);
   }
   .cluster__items {
@@ -454,24 +385,28 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
     flex-direction: column;
     gap: var(--ek-space-2);
     margin-top: auto;
-    padding-top: var(--ek-space-3);
+    padding-top: var(--ek-space-4);
     border-top: var(--site-border-width) solid var(--site-glass-border);
-    color: var(--site-color-on-primary-muted);
+    color: var(--site-color-on-primary);
     font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-medium);
   }
   .cluster__items li {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: var(--ek-space-2);
   }
   .cluster__items :global(.icon) {
     flex: none;
-    margin-top: calc(var(--ek-space-1) * 0.5);
     color: var(--ek-color-secondary);
   }
 
   @media (min-width: 640px) {
+    .clusters-band {
+      padding: var(--ek-space-8);
+    }
     .clusters {
+      gap: var(--ek-space-4);
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
@@ -488,14 +423,14 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
   .bento {
     display: grid;
     gap: var(--ek-space-5);
-    margin-top: var(--ek-space-12);
+    margin-top: var(--ek-space-8);
     grid-template-columns: minmax(0, 1fr);
   }
   .tile {
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: var(--ek-space-6);
+    gap: var(--ek-space-8);
     min-width: 0;
     padding: var(--ek-space-6);
     border: var(--site-border-width) solid transparent;
@@ -521,106 +456,62 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
     flex-direction: column;
     align-items: flex-start;
     gap: var(--ek-space-3);
+    max-width: 34rem;
   }
-  .tile__eyebrow {
-    color: var(--ek-color-primary-darken-1);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-bold);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-  .tile__icon {
+  .tile__icon,
+  .cap__icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: var(--ek-space-10);
     height: var(--ek-space-10);
+    margin-bottom: var(--ek-space-2);
     border-radius: var(--ek-radius-lg);
     background: linear-gradient(140deg, var(--ek-color-primary-darken-1), var(--ek-color-primary));
     color: var(--site-color-on-primary);
     box-shadow: 0 0.5rem 1rem -0.5rem color-mix(in srgb, var(--ek-color-primary) 60%, transparent);
     transition: transform var(--ek-duration-base) var(--ek-easing-standard);
   }
-  .tile:hover .tile__icon {
+  .tile:hover .tile__icon,
+  .cap:hover .cap__icon {
     transform: scale(1.06);
   }
   .tile__title {
+    color: var(--ek-color-content-strong);
     font-size: var(--ek-font-size-2xl);
-    font-weight: var(--ek-font-weight-bold);
-    letter-spacing: -0.01em;
+    font-weight: var(--site-card-title-weight);
+    line-height: var(--ek-line-height-tight);
+    letter-spacing: -0.015em;
     text-wrap: balance;
   }
   .tile__text {
     color: var(--ek-color-content-default);
-    font-size: var(--ek-font-size-lg);
+    font-size: var(--site-card-desc-size);
+    font-weight: var(--site-card-desc-weight);
     line-height: var(--ek-line-height-normal);
-  }
-  .tile__text--sub {
-    color: var(--ek-color-content-muted);
-    font-size: var(--ek-font-size-md);
-  }
-  .tile__caveat {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--ek-space-2);
-    padding: var(--ek-space-3);
-    border-radius: var(--ek-radius-lg);
-    background: var(--ek-color-warning-subtle);
-    color: var(--ek-color-content-strong);
-    font-size: var(--ek-font-size-md);
-    line-height: var(--ek-line-height-normal);
-  }
-  .tile__caveat :global(.icon) {
-    margin-top: var(--ek-space-1);
   }
   .tile__frame {
     min-width: 0;
     margin-top: auto;
   }
 
-  /* --- Ortak çipler --- */
-  .chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ek-space-2);
-    margin-top: var(--ek-space-2);
-  }
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-1);
-    padding: var(--ek-space-1) var(--ek-space-3) var(--ek-space-1) var(--ek-space-1);
-    border: var(--site-border-width) solid var(--ek-color-border-strong);
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-surface);
-    color: var(--ek-color-content-strong);
-    font-size: var(--ek-font-size-md);
-    font-weight: var(--ek-font-weight-medium);
-  }
-  .chip--limited {
-    border-style: dashed;
-    color: var(--ek-color-content-default);
-  }
-  .chip__mono {
-    display: inline-flex;
+  /* Ortak isimsiz kanal noktası (renk: [data-code] -> --chan, global.css). */
+  .stock__dot,
+  .win__chan,
+  .istat__dot,
+  .cap__dots i {
+    display: inline-block;
     flex: none;
-    align-items: center;
-    justify-content: center;
-    width: var(--ek-space-5);
-    height: var(--ek-space-5);
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
     border-radius: var(--ek-radius-full);
-    background: var(--chan-fill, var(--ek-color-primary));
-    color: var(--site-color-on-primary);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--site-font-display-weight);
-  }
-  .chip__note {
-    color: var(--ek-color-content-muted);
+    background: var(--chan, var(--ek-color-secondary));
+    box-shadow: 0 0 0 calc(var(--site-border-width) * 3) color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 18%, transparent);
   }
 
   /* --- A: stok rezervasyonu görseli --- */
   .stock {
-    padding: var(--ek-space-4);
+    padding: var(--ek-space-5);
     border: var(--site-border-width) solid var(--ek-color-border-default);
     border-radius: var(--ek-radius-xl);
     background-color: var(--ek-color-surface-sunken);
@@ -630,8 +521,10 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
   .stock__caption {
     margin-bottom: var(--ek-space-4);
     color: var(--ek-color-content-muted);
-    font-size: var(--ek-font-size-sm);
+    font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
   }
   .stock__flow {
     display: grid;
@@ -654,19 +547,18 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
     box-shadow: var(--ek-shadow-sm);
   }
   .stock__order {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-1);
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: var(--ek-space-2) var(--ek-space-3);
   }
-  .stock__chan {
-    color: var(--ek-color-content-strong);
-    font-size: var(--ek-font-size-md);
-    font-weight: var(--ek-font-weight-semibold);
+  .stock__order .stock__line {
+    grid-column: 2;
   }
   .stock__status {
-    color: var(--ek-color-primary-darken-1);
+    color: var(--ek-color-content-strong);
     font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-medium);
+    font-weight: var(--ek-font-weight-semibold);
   }
   .stock__arrow {
     width: var(--ek-space-6);
@@ -685,6 +577,7 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
     align-items: center;
     gap: var(--ek-space-2) var(--ek-space-3);
     border-color: var(--ek-color-secondary);
+    box-shadow: 0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-secondary) 14%, transparent), var(--ek-shadow-sm);
   }
   .stock__thumb {
     grid-row: span 2;
@@ -747,7 +640,7 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
     line-height: var(--ek-line-height-tight);
   }
   .stock__result span {
-    color: var(--ek-color-content-muted);
+    color: var(--ek-color-content-default);
   }
   .stock__result--ok {
     border-color: var(--ek-color-success);
@@ -786,6 +679,9 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
   }
   .win__title {
     flex: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
     color: var(--ek-color-content-strong);
     font-size: var(--ek-font-size-sm);
     font-weight: var(--ek-font-weight-semibold);
@@ -793,8 +689,8 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
   .win__tag {
     padding: 0 var(--ek-space-2);
     border-radius: var(--ek-radius-full);
-    background: var(--ek-color-info-subtle);
-    color: var(--ek-color-content-strong);
+    background: var(--ek-color-surface-sunken);
+    color: var(--ek-color-content-default);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
     white-space: nowrap;
@@ -810,8 +706,8 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
     border-radius: var(--ek-radius-full);
     background: var(--ek-color-surface-sunken);
     color: var(--ek-color-content-default);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-medium);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
   }
   .win__filter--active {
     background: var(--ek-color-primary);
@@ -819,19 +715,11 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
   }
   .win__row {
     display: grid;
-    grid-template-columns: minmax(0, 5.5rem) minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
     gap: var(--ek-space-3);
-    padding: var(--ek-space-2) var(--ek-space-3);
+    padding: var(--ek-space-3);
     border-top: var(--site-border-width) solid var(--ek-color-border-default);
-  }
-  .win__chan {
-    overflow: hidden;
-    color: var(--ek-color-content-strong);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-semibold);
-    white-space: nowrap;
-    text-overflow: ellipsis;
   }
   .win__cells {
     display: flex;
@@ -845,10 +733,11 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
     background: var(--ek-color-surface-sunken);
   }
   .win__skel--a {
-    width: 82%;
+    width: 72%;
+    background: color-mix(in srgb, var(--ek-color-content-muted) 22%, var(--ek-color-surface-sunken));
   }
   .win__skel--b {
-    width: 50%;
+    width: 44%;
   }
   .win__pill {
     padding: var(--ek-space-1) var(--ek-space-3);
@@ -863,21 +752,39 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
     background: var(--ek-color-warning-subtle);
   }
 
-  /* --- C: entegrasyon durumu --- */
+  /* --- C: kanallar tek merkezde --- */
   .istat {
-    padding: var(--ek-space-4);
+    padding: var(--ek-space-4) var(--ek-space-5);
     border: var(--site-border-width) solid var(--ek-color-border-default);
     border-radius: var(--ek-radius-xl);
     background: var(--ek-color-surface);
     box-shadow: var(--ek-shadow-sm);
   }
   .istat__caption {
-    margin-bottom: var(--ek-space-3);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ek-space-3);
+    margin-bottom: var(--ek-space-2);
     color: var(--ek-color-content-muted);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
     letter-spacing: 0.06em;
     text-transform: uppercase;
+  }
+  .istat__cols {
+    display: inline-flex;
+    gap: var(--ek-space-1);
+  }
+  .istat__cols i,
+  .istat__seg {
+    width: var(--ek-space-12);
+  }
+  .istat__cols i {
+    font-style: normal;
+    letter-spacing: 0.02em;
+    text-align: center;
+    text-transform: none;
   }
   .istat__rows {
     display: flex;
@@ -885,34 +792,29 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
   }
   .istat__row {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
     gap: var(--ek-space-3);
-    padding-block: var(--ek-space-2);
+    padding-block: var(--ek-space-3);
     border-top: var(--site-border-width) solid var(--ek-color-border-default);
   }
   .istat__row:first-child {
     border-top: 0;
   }
-  .istat__dot {
-    width: var(--ek-space-2);
-    height: var(--ek-space-2);
-    border-radius: var(--ek-radius-full);
-    background: var(--chan, var(--ek-color-success));
-  }
   .istat__name {
-    color: var(--ek-color-content-strong);
-    font-size: var(--ek-font-size-md);
-    font-weight: var(--ek-font-weight-semibold);
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-medium);
   }
   .istat__meter {
     display: inline-flex;
     gap: var(--ek-space-1);
   }
   .istat__seg {
+    position: relative;
+    overflow: hidden;
     display: block;
-    width: var(--ek-space-4);
-    height: var(--ek-space-2);
+    height: var(--ek-space-1);
     border-radius: var(--ek-radius-full);
     background: var(--ek-color-surface-sunken);
     transform-origin: 0 50%;
@@ -920,11 +822,59 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
   .istat__seg.is-on {
     background: var(--site-gradient-accent);
   }
-  .istat__label {
-    min-width: 6.5rem;
-    color: var(--ek-color-content-muted);
-    font-size: var(--ek-font-size-sm);
-    text-align: end;
+
+  /* Görünürken ince ışık kanal çubuklarında soldan sağa akar (veri akışı hissi; yalnızca translate/opacity,
+     durdurulmuş/reduced/JS'siz durumda yok; görünmezken duraklatılır). */
+  .istat__seg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ek-color-background) 85%, transparent), transparent);
+    opacity: 0;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes cap-flow {
+      0% {
+        opacity: 0;
+        translate: -100% 0;
+      }
+      12% {
+        opacity: 1;
+      }
+      30%,
+      100% {
+        opacity: 0;
+        translate: 100% 0;
+      }
+    }
+    :global(html[data-motion='play']) .istat .istat__seg.is-on::after {
+      animation: cap-flow var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+      animation-delay: calc(var(--site-motion-ambient-fast) * var(--flow-i, 0) * 0.07);
+    }
+    :global(html[data-motion='play']) .istat[data-visible='true'] .istat__seg.is-on::after {
+      animation-play-state: running;
+    }
+    .istat__row:nth-child(2) {
+      --flow-i: 2;
+    }
+    .istat__row:nth-child(3) {
+      --flow-i: 4;
+    }
+    .istat__row:nth-child(4) {
+      --flow-i: 6;
+    }
+    .istat__row:nth-child(5) {
+      --flow-i: 8;
+    }
+    .istat__row:nth-child(6) {
+      --flow-i: 10;
+    }
+    :global(html[data-motion='play']) .istat .istat__seg.is-on:nth-child(2)::after {
+      animation-delay: calc(var(--site-motion-ambient-fast) * (var(--flow-i, 0) * 0.07 + 0.05));
+    }
+    :global(html[data-motion='play']) .istat .istat__seg.is-on:nth-child(3)::after {
+      animation-delay: calc(var(--site-motion-ambient-fast) * (var(--flow-i, 0) * 0.07 + 0.1));
+    }
   }
 
   /* --- D: anahtar şifreleme --- */
@@ -932,7 +882,7 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-3);
-    padding: var(--ek-space-4);
+    padding: var(--ek-space-5);
     border-radius: var(--ek-radius-xl);
     background: var(--site-stage-mesh);
     box-shadow: var(--ek-shadow-md);
@@ -994,28 +944,15 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
     font-size: var(--ek-font-size-sm);
     font-weight: var(--ek-font-weight-semibold);
   }
-  .vault__note {
-    max-width: none;
-    color: var(--site-color-on-primary-muted);
-    font-size: var(--ek-font-size-xs);
-  }
 
   /* --- E: çoklu kiracı --- */
   .tenant {
-    padding: var(--ek-space-4);
+    padding: var(--ek-space-5);
     border: var(--site-border-width) solid var(--ek-color-border-default);
     border-radius: var(--ek-radius-xl);
     background-color: var(--ek-color-surface-sunken);
     background-image: var(--site-texture-dots);
     background-size: var(--site-texture-dots-size);
-  }
-  .tenant__caption {
-    margin-bottom: var(--ek-space-3);
-    color: var(--ek-color-content-muted);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
   }
   .tenant__cols {
     display: grid;
@@ -1026,7 +963,6 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 0;
   }
   .tenant__acct,
   .tenant__db {
@@ -1034,7 +970,7 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
     flex-direction: column;
     align-items: center;
     gap: var(--ek-space-1);
-    padding: var(--ek-space-2);
+    padding: var(--ek-space-3) var(--ek-space-2);
     border: var(--site-border-width) solid var(--ek-color-border-default);
     border-radius: var(--ek-radius-lg);
     background: var(--ek-color-surface);
@@ -1047,6 +983,7 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
   .tenant__db {
     border-color: var(--ek-color-secondary);
     color: var(--ek-color-secondary-darken-1);
+    box-shadow: 0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-secondary) 12%, transparent);
   }
   .tenant__acct span,
   .tenant__db span {
@@ -1054,35 +991,17 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
   }
   .tenant__link {
     align-self: center;
-    width: var(--site-border-width);
-    height: var(--ek-space-6);
+    width: calc(var(--site-border-width) * 2);
+    height: var(--ek-space-8);
     background: linear-gradient(180deg, var(--ek-color-primary-darken-1), var(--ek-color-secondary));
     transform-origin: 50% 0;
-  }
-  .tenant__link {
-    height: var(--ek-space-10);
-  }
-  .tenant__bar {
-    display: block;
-    align-self: stretch;
-    height: var(--ek-space-1);
-    margin-top: var(--ek-space-1);
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-surface-sunken);
-  }
-  .tenant__db .tenant__bar {
-    background: color-mix(in srgb, var(--ek-color-secondary) 30%, var(--ek-color-surface));
-  }
-  .tenant__bar--short {
-    align-self: flex-start;
-    width: 60%;
   }
   .tenant__platform {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: var(--ek-space-2);
-    margin-top: var(--ek-space-3);
+    margin-top: var(--ek-space-4);
     padding: var(--ek-space-2) var(--ek-space-3);
     border: var(--site-border-width) dashed var(--ek-color-border-strong);
     border-radius: var(--ek-radius-lg);
@@ -1092,23 +1011,36 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
     text-align: center;
   }
 
-  /* --- Diğer yetenekler --- */
-  .more__title {
+  /* --- Günlük işleriniz için --- */
+  .more {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
     margin-top: var(--ek-space-16);
-    font-size: var(--ek-font-size-2xl);
-    font-weight: var(--ek-font-weight-bold);
+  }
+  .more__title {
+    color: var(--ek-color-content-strong);
+    font-size: var(--site-font-display-sm);
+    font-weight: var(--site-font-display-weight);
+    line-height: var(--site-font-display-line-height);
+    letter-spacing: var(--site-font-display-tracking);
+  }
+  .more__lead {
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-lg);
   }
   .caps {
     display: grid;
     gap: var(--ek-space-4);
-    margin-top: var(--ek-space-6);
+    margin-top: var(--ek-space-8);
     grid-template-columns: minmax(0, 1fr);
   }
   .cap {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-2);
-    padding: var(--ek-space-5);
+    padding: var(--ek-space-6);
     border: var(--site-border-width) solid var(--ek-color-border-default);
     border-radius: var(--ek-radius-xl);
     background: var(--ek-color-surface);
@@ -1121,71 +1053,37 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
   }
   .cap:hover {
     translate: 0 calc(var(--ek-space-1) * -1);
-    border-color: var(--ek-color-secondary);
+    border-color: color-mix(in srgb, var(--ek-color-secondary) 55%, var(--ek-color-border-default));
     box-shadow: var(--site-shadow-card-hover);
   }
-  .cap__top {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
+  .cap__icon {
     margin-bottom: var(--ek-space-3);
   }
-  .cap__icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--ek-space-12);
-    height: var(--ek-space-12);
-    border-radius: var(--ek-radius-lg);
-    background: linear-gradient(140deg, var(--ek-color-secondary), var(--ek-color-primary-darken-1));
-    color: var(--site-color-on-primary);
-    box-shadow: 0 0.5rem 1rem -0.5rem color-mix(in srgb, var(--ek-color-secondary) 55%, transparent);
-  }
-  .cap__badge {
-    padding: var(--ek-space-1) var(--ek-space-4);
-    border-radius: var(--ek-radius-full);
-    color: var(--ek-color-content-strong);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-bold);
-    letter-spacing: 0.02em;
-    box-shadow: var(--ek-shadow-sm);
-  }
-  .cap__badge--ok {
-    background: var(--ek-color-success-subtle);
-  }
-  .cap__badge--part {
-    background: var(--ek-color-warning-subtle);
-  }
-  /*
-   * Kart içi 4 seviyeli hiyerarşi (S9, `--site-card-*` — tüm kart tipi bileşenlerde aynı token seti):
-   * eyebrow (yapısal kategori) -> başlık -> değer cümlesi (belirgin) -> soluk açıklama -> etiketler.
-   */
-  .cap__eyebrow {
-    color: var(--ek-color-primary-darken-1);
-    font-size: var(--site-card-eyebrow-size);
-    font-weight: var(--site-card-eyebrow-weight);
-    letter-spacing: var(--site-card-eyebrow-tracking);
-    text-transform: uppercase;
-  }
   .cap__title {
+    color: var(--ek-color-content-strong);
     font-size: var(--site-card-title-size);
     font-weight: var(--site-card-title-weight);
     line-height: var(--ek-line-height-tight);
+    letter-spacing: -0.01em;
   }
   .cap__text {
-    color: var(--ek-color-content-strong);
-    font-size: var(--site-card-value-size);
-    font-weight: var(--site-card-value-weight);
-    line-height: var(--ek-line-height-normal);
-  }
-  .cap__caveat {
-    color: var(--ek-color-content-muted);
+    color: var(--ek-color-content-default);
     font-size: var(--site-card-desc-size);
     font-weight: var(--site-card-desc-weight);
+    line-height: var(--ek-line-height-normal);
   }
-  .cap .chips {
+  /* Kanal noktaları: isimsiz, silik; yalnızca "çok kanallı" hissi (anlam metindedir). */
+  .cap__dots {
+    display: inline-flex;
+    gap: var(--ek-space-2);
     margin-top: auto;
-    padding-top: var(--ek-space-2);
+    padding-top: var(--ek-space-4);
+    opacity: 0.8;
+  }
+  .cap__dots i {
+    width: calc(var(--ek-space-2) * 0.75);
+    height: calc(var(--ek-space-2) * 0.75);
+    box-shadow: none;
   }
 
   @media (min-width: 640px) {
@@ -1203,8 +1101,21 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
     .bento {
       grid-template-columns: repeat(12, minmax(0, 1fr));
     }
+    .tile {
+      padding: var(--ek-space-10);
+    }
+    .tile__text {
+      font-size: var(--ek-font-size-lg);
+    }
     .tile--stock {
       grid-column: span 12;
+      display: grid;
+      grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.5fr);
+      align-items: center;
+      gap: var(--ek-space-12);
+    }
+    .tile--stock .tile__frame {
+      margin-top: 0;
     }
     .tile--orders {
       grid-column: span 7;
@@ -1212,46 +1123,33 @@ const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
     .tile--status {
       grid-column: span 5;
     }
-    .tile--vault {
-      grid-column: span 6;
-    }
+    .tile--vault,
     .tile--tenant {
       grid-column: span 6;
     }
-    .tile {
-      padding: var(--ek-space-8);
-    }
-    .tile--stock {
-      display: grid;
-      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.4fr);
-      align-items: center;
-      gap: var(--ek-space-10);
-    }
-    .tile--stock .tile__frame {
-      margin-top: 0;
-    }
     .caps {
+      gap: var(--ek-space-5);
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
   @media (max-width: 639px) {
+    .tile {
+      padding: var(--ek-space-5);
+    }
+    .stock,
+    .tenant,
+    .vault {
+      padding: var(--ek-space-4);
+    }
+    .istat__cols i,
+    .istat__seg {
+      width: var(--ek-space-8);
+    }
     .stock__flow {
       grid-template-columns: minmax(0, 1fr);
     }
-    /* Dar ekranda kapsam etiketi adın altına iner; ölçer sağda kalır. */
-    .istat__row {
-      grid-template-columns: auto minmax(0, 1fr) auto;
-      row-gap: 0;
-    }
-    .istat__meter {
-      grid-column: 3;
-      grid-row: 1 / span 2;
-    }
-    .istat__label {
-      grid-column: 2;
-      grid-row: 2;
-      min-width: 0;
-      text-align: start;
+    .tile__title {
+      font-size: var(--ek-font-size-xl);
     }
   }
 </style>
