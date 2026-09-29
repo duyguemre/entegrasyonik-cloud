@@ -1,12 +1,11 @@
 ---
 /**
- * /sss — sık sorulan sorular (ADR-0014 Karar 2). Kaynak: `getPublicFaq()` (her cevabın kanıtı `faq.ts`'te).
+ * /sss — sık sorulan sorular (ADR-0014 Karar 2). Kaynak: `getPublicFaqByCategory()` (her cevabın kanıtı `faq.ts`'te).
  * JS'siz `<details>` akordeonu + `FAQPage` JSON-LD şeması.
  *
- * S11: sekiz soru artık üç kategoriye ayrılmış olarak (sticky kategori menüsü + akordeon grupları) sunulur —
- * `getPublicFaq()` içeriği ve sırası DEĞİŞMEZ (JSON-LD şeması hâlâ orijinal düz diziyi kullanır, yalnızca
- * görünen akordeonun gruplanması içindir). Bir kategoriye taşınmayan soru olursa derleme zamanında hata verir
- * (kayıt kaybolmaz).
+ * S12 (PARÇA C): sorular altı kategoride (Başlangıç ve kurulum, Pazaryeri ve kanal uyumu, Stok ve sipariş yönetimi,
+ * Güvenlik ve veri, Fiyatlandırma ve plan, Destek ve ölçeklenme). Kategori ataması `faq.ts` kaydındadır;
+ * `getPublicFaq()` kategori sırasıyla döner, JSON-LD de aynı sırayı kullanır. Boş kategori derleme hatasıdır.
  */
 import BaseLayout from '../layouts/BaseLayout.astro'
 import Section from '../components/Section.astro'
@@ -14,35 +13,25 @@ import PageHero from '../components/pages/PageHero.astro'
 import PageMeta from '../components/pages/PageMeta.astro'
 import Accordion from '../components/pages/Accordion.astro'
 import CtaBand from '../components/pages/CtaBand.astro'
-import { getPublicFaq, type PublicFaqItem } from '../data/faq'
+import Icon from '../components/home/Icon.astro'
+import { getPublicFaq, getPublicFaqByCategory, type FaqCategoryId } from '../data/faq'
 import { breadcrumbJsonLd, faqJsonLd } from '../lib/seo'
+import { appUrls } from '../lib/site-config'
 
 const title = 'Sık sorulan sorular'
 const description =
-  'Entegrasyonik hakkında sık sorulan sorular: mevcut entegrasyonlar, aşırı satışın önlenmesi, anahtar saklama, veri ayrımı ve kart bilgileri.'
+  'Entegrasyonik hakkında sık sorulan sorular: kurulum, pazaryeri uyumu, merkezi stok ve overselling koruması, güvenlik, fiyatlandırma, destek ve ölçeklenme.'
 const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Sık sorulan sorular' }]
 const items = getPublicFaq()
+const categories = getPublicFaqByCategory()
 
-// Görünen gruplama (yalnızca sunum): JSON-LD ve `items` sırası değişmez. Her kategori en az bir soru taşır;
-// bir kayıt hiçbir kategoriye eklenmemişse derleme zamanında hata verir (kayıt sessizce kaybolmaz).
-const CATEGORIES: Array<{ id: string; heading: string; ids: string[] }> = [
-  { id: 'entegrasyonlar', heading: 'Entegrasyonlar', ids: ['hangi-entegrasyonlar', 'kapsam-ayni-mi', 'kargo-bilgisi'] },
-  { id: 'stok-siparis', heading: 'Stok ve siparişler', ids: ['asiri-satis', 'baglanti-bilgileri'] },
-  { id: 'guvenlik-veri', heading: 'Güvenlik ve veri', ids: ['anahtar-saklama', 'veri-ayrimi', 'kart-bilgisi'] },
-]
-const byId = new Map(items.map((i) => [i.id, i]))
-const categories = CATEGORIES.map((c) => ({
-  ...c,
-  items: c.ids.map((id) => {
-    const item = byId.get(id)
-    if (!item) throw new Error(`SSS: "${id}" kategoriye eklenemedi (faq.ts'te bulunamadı)`)
-    return item
-  }),
-}))
-const categorized = new Set(categories.flatMap((c) => c.ids))
-const uncategorized = items.filter((i) => !categorized.has(i.id))
-if (uncategorized.length > 0) {
-  throw new Error(`SSS: kategorisiz soru kaldı: ${uncategorized.map((i) => i.id).join(', ')}`)
+const CATEGORY_ICONS: Record<FaqCategoryId, 'bolt' | 'plug' | 'stock' | 'shield' | 'card' | 'chat'> = {
+  baslangic: 'bolt',
+  kanallar: 'plug',
+  'stok-siparis': 'stock',
+  'guvenlik-veri': 'shield',
+  'fiyat-plan': 'card',
+  'destek-olcek': 'chat',
 }
 ---
 
@@ -59,11 +48,11 @@ if (uncategorized.length > 0) {
 
   <PageHero
     title="Sık sorulan sorular"
-    lead="Entegrasyonik'in ne yaptığı, hangi kanalları kapsadığı ve verilerinizi nasıl ele aldığı hakkında kısa cevaplar."
+    lead="Kurulumdan güvenliğe, stok yönetiminden fiyatlandırmaya: çok kanallı satış operasyonunuzu Entegrasyonik'e taşımadan önce merak ettiğiniz her şey."
     crumbs={crumbs}
   >
     <nav class="toc" aria-label="SSS kategorileri">
-      {categories.map((c) => <a href={`#${c.id}`}>{c.heading}</a>)}
+      {categories.map((c) => <a href={`#${c.id}`}>{c.label}</a>)}
     </nav>
   </PageHero>
 
@@ -72,14 +61,20 @@ if (uncategorized.length > 0) {
     <div class="faq-layout">
       <nav class="faq-nav" aria-label="Kategoriler">
         <ul role="list">
-          {categories.map((c) => <li><a href={`#${c.id}`}>{c.heading}</a></li>)}
+          {categories.map((c) => <li><a href={`#${c.id}`}>{c.label}</a></li>)}
         </ul>
       </nav>
       <div class="faq-groups">
         {
           categories.map((c) => (
             <section class="faq-group" id={c.id} aria-labelledby={`${c.id}-title`}>
-              <h3 id={`${c.id}-title`}>{c.heading}</h3>
+              <div class="faq-group__head">
+                <span class="faq-group__icon" aria-hidden="true"><Icon name={CATEGORY_ICONS[c.id]} size="md" /></span>
+                <div>
+                  <h3 id={`${c.id}-title`}>{c.label}</h3>
+                  <p>{c.lead}</p>
+                </div>
+              </div>
               <Accordion items={c.items} />
             </section>
           ))
@@ -87,16 +82,16 @@ if (uncategorized.length > 0) {
       </div>
     </div>
     <p class="more">
-      Cevabını bulamadığınız bir soru için <a href="/iletisim">bize yazabilirsiniz</a>.
+      Sorunuzun yanıtını bulamadınız mı? <a href="/iletisim">Ekibimize yazın</a>; işletmenize özel sorularınızı birlikte yanıtlayalım.
     </p>
   </Section>
 
   <CtaBand
     id="sss-cta"
-    title="Kendi hesabınızda deneyin"
-    text="Kanallarınızı bağlayın ve ürün, stok ve siparişlerinizi tek panelden yönetin."
-    primary={{ label: 'Entegrasyonları incele', href: '/entegrasyonlar' }}
-    secondary={{ label: 'Güvenlik yaklaşımı', href: '/guvenlik' }}
+    title="Tüm kanallarınızı tek panelde yönetmeye başlayın"
+    text="Ücretsiz denemeyle kanallarınızı bağlayın; merkezi stok yönetimi ve birleşik sipariş akışını kendi operasyonunuzda görün."
+    primary={{ label: 'Ücretsiz deneyin', href: appUrls.register() }}
+    secondary={{ label: 'Planları karşılaştırın', href: '/fiyatlandirma' }}
   />
 </BaseLayout>
 
@@ -170,8 +165,38 @@ if (uncategorized.length > 0) {
     gap: var(--ek-space-12);
     min-width: 0;
   }
+  .faq-group {
+    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
+  }
+  .faq-group__head {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ek-space-4);
+    margin-bottom: var(--ek-space-5);
+  }
+  .faq-group__head p {
+    margin-top: var(--ek-space-1);
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-lg);
+  }
+  .faq-group__icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-12);
+    height: var(--ek-space-12);
+    border-radius: var(--ek-radius-lg);
+    background: color-mix(in srgb, var(--ek-color-secondary) 16%, transparent);
+    color: var(--ek-color-secondary-darken-1);
+  }
+  .faq-nav__count {
+    margin-inline-start: auto;
+    padding-inline-start: var(--ek-space-2);
+    color: var(--ek-color-content-muted);
+    font-variant-numeric: tabular-nums;
+  }
   .faq-group h3 {
-    margin-bottom: var(--ek-space-4);
     scroll-margin-top: var(--ek-space-16);
     font-size: var(--site-font-display-sm);
     font-weight: var(--site-font-display-weight);

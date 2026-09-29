@@ -1,7 +1,10 @@
 ---
 /**
- * Kapanış CTA (ADR-0014 Karar 2, bölüm 9) — koyu "stage" zemin. Uygulama bağlantıları site-config'ten.
- * S7: eş merkezli halkalar (dekoratif) + güven çipleri (deneme süresi, kartsız, şifreli anahtar) — hepsi kayıttan.
+ * Kapanış CTA (ADR-0014 Karar 2, bölüm 9; S12 PARÇA C) — koyu "stage" zemin. Uygulama bağlantıları site-config'ten.
+ * Satın almaya teşvik eden son çağrı: fayda odaklı başlık + üç kazanım (merkezi stok, birleşik sipariş, güvenlik),
+ * birincil "ücretsiz başlat", ikincil giriş; altında deneme notu ve kazanım/güvenlik çipleri. Tüm olgular kayıttan
+ * (deneme süresi/kart gereksinimi: seed; güvenlik çipleri: yetenek kaydı).
+ * Görsel: eş merkezli halkalar (dekoratif, `cta-rings` döngüsü scenes-loops.css) + yavaşça dönen ışık halkası.
  */
 import Section from '../Section.astro'
 import Button from '../Button.astro'
@@ -9,28 +12,41 @@ import Icon from './Icon.astro'
 import { appUrls } from '../../lib/site-config'
 import { getPublicTrial } from '../../data/plans'
 import { getPublicCapabilities } from '../../data/capabilities'
+import { pageHref } from './links'
 
 const trial = getPublicTrial()
-const security = getPublicCapabilities('security')
-const encrypted = security.some((c) => c.id === 'secrets-encryption')
-const tenant = security.some((c) => c.id === 'tenant-database')
+const capabilities = getPublicCapabilities()
+const has = (id: string) => capabilities.some((c) => c.id === id)
+const encrypted = has('secrets-encryption')
+const tenant = has('tenant-database')
+const contactHref = pageHref('/iletisim')
+
+// Kazanım satırı: yalnızca kayıtta `available` olan yeteneklere dayanır (kopya, olgu değil).
+const gains = [
+  has('stock-reservation') && { icon: 'stock' as const, text: 'Merkezi stok ve overselling koruması' },
+  has('unified-orders') && { icon: 'orders' as const, text: 'Tüm kanallardan tek sipariş akışı' },
+  ].filter((g): g is { icon: 'stock' | 'orders'; text: string } => Boolean(g))
 ---
 
 <Section tone="stage" labelledby="kapanis-baslik" size="narrow">
   <div class="cta" data-scene="cta-reveal">
     <span class="cta__rings" data-part="cta-rings" aria-hidden="true"><i></i><i></i><i></i></span>
-    <h2 id="kapanis-baslik" class="cta__title" data-reveal>Stoğunuzu ve siparişlerinizi tek yerde toplayın</h2>
+    <span class="cta__orbit" aria-hidden="true"></span>
+    <p class="cta__eyebrow" data-reveal><span class="cta__dot" aria-hidden="true"></span>Çok kanallı satışın yeni merkezi</p>
+    <h2 id="kapanis-baslik" class="cta__title" data-reveal>
+      Tüm kanallarınızı <span class="cta__accent">tek yerde toplayın</span>, büyümeye odaklanın
+    </h2>
     <p class="cta__lead" data-reveal>
-      Hesabınızı açın, kanallarınızı bağlayın ve satış operasyonunuzu tek panelden yönetmeye başlayın.
+      Stok, sipariş ve ürün operasyonunuzu tek panelde birleştirin; overselling riskini azaltın, ekibinize operasyonel
+      verimlilik kazandırın. Kurulum için kod yazmanız gerekmez.
     </p>
     <div class="cta__actions" data-reveal>
-      <Button href={appUrls.register()} variant="inverse" size="lg" data-testid="closing-cta-primary">Ücretsiz dene</Button>
+      <Button href={appUrls.register()} variant="inverse" size="lg" data-testid="closing-cta-primary">Ücretsiz denemeyi başlatın</Button>
       <Button href={appUrls.login()} variant="inverse-outline" size="lg" data-testid="closing-cta-login">Giriş yap</Button>
     </div>
-    <p class="cta__note" data-reveal><span data-count={trial.days}>{trial.days}</span> gün ücretsiz deneme{!trial.cardRequired && ', kart bilgisi gerekmez'}.</p>
-    <ul class="cta__chips" data-reveal aria-label="Öne çıkanlar">
-      <li><Icon name="clock" size="sm" />{trial.days} gün deneme</li>
-      {!trial.cardRequired && <li><Icon name="card" size="sm" />Kartsız başlangıç</li>}
+    <p class="cta__note" data-reveal><span data-count={trial.days}>{trial.days}</span> gün ücretsiz deneme{!trial.cardRequired && ', kart bilgisi gerekmez'}.{contactHref && <> Kurumsal ihtiyaçlarınız için <a href={contactHref}>bizimle görüşün</a>.</>}</p>
+    <ul class="cta__chips" data-reveal aria-label="Kazanımlar">
+      {gains.map((g) => <li><Icon name={g.icon} size="sm" />{g.text}</li>)}
       {encrypted && <li><Icon name="lock" size="sm" />Şifreli anahtar saklama</li>}
       {tenant && <li><Icon name="database" size="sm" />Ayrı müşteri veritabanı</li>}
     </ul>
@@ -75,6 +91,55 @@ const tenant = security.some((c) => c.id === 'tenant-database')
     width: 54rem;
     opacity: 0.3;
   }
+  .cta__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-1) var(--ek-space-4);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-full);
+    background: var(--site-glass-bg);
+    color: var(--site-color-on-primary);
+    font-size: var(--site-card-eyebrow-size);
+    font-weight: var(--site-card-eyebrow-weight);
+    letter-spacing: var(--site-card-eyebrow-tracking);
+    text-transform: uppercase;
+  }
+  .cta__dot {
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-secondary);
+    box-shadow: var(--site-glow-ring);
+  }
+  .cta__accent {
+    background: var(--site-gradient-accent);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  /* Dönen ışık halkası: başlığın arkasında ince konik ışık (dekoratif; yalnızca oynatma durumunda döner). */
+  .cta__orbit {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    z-index: -1;
+    width: 38rem;
+    aspect-ratio: 1 / 1;
+    translate: -50% -50%;
+    border-radius: var(--ek-radius-full);
+    background: conic-gradient(from 0deg, transparent 0 70%, color-mix(in srgb, var(--ek-color-secondary) 45%, transparent) 88%, transparent 100%);
+    -webkit-mask-image: radial-gradient(closest-side, transparent calc(100% - var(--ek-space-1)), var(--ek-color-background) calc(100% - var(--ek-space-1)));
+    mask-image: radial-gradient(closest-side, transparent calc(100% - var(--ek-space-1)), var(--ek-color-background) calc(100% - var(--ek-space-1)));
+    pointer-events: none;
+  }
+  .cta__note a {
+    color: var(--site-color-on-primary);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .cta__note a:focus-visible {
+    outline-color: var(--site-color-on-primary);
+  }
   .cta__title {
     font-size: var(--site-font-display-md);
     font-weight: var(--site-font-display-weight);
@@ -117,5 +182,19 @@ const tenant = security.some((c) => c.id === 'tenant-database')
   }
   .cta__chips :global(.icon) {
     color: var(--ek-color-secondary);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes cta-orbit-spin {
+      to {
+        rotate: 360deg;
+      }
+    }
+    :global(html[data-motion='play']) [data-scene='cta-reveal'][data-state='play'] .cta__orbit {
+      animation: cta-orbit-spin var(--site-motion-loop-scene) var(--site-motion-ease-linear) infinite paused;
+    }
+    :global(html[data-motion='play']) [data-scene='cta-reveal'][data-state='play'][data-visible='true'] .cta__orbit {
+      animation-play-state: running;
+    }
   }
 </style>

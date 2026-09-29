@@ -21,7 +21,7 @@ import {
   collectPublicIntegrationContent,
 } from '../src/data/integrations'
 import { productCapabilities, getPublicCapabilities } from '../src/data/capabilities'
-import { faq, getPublicFaq } from '../src/data/faq'
+import { faq, getPublicFaq, FAQ_CATEGORIES, getFaqPreview } from '../src/data/faq'
 import {
   defaultPlanSource,
   getPublicPlans,
@@ -34,7 +34,7 @@ import {
   PROPOSAL_NOTICE,
   PLAN_SEED_PATH,
 } from '../src/data/plans'
-import { getComparisonRows, getPricingFaq, getPricingFaqRecords } from '../src/data/pricing'
+import { getComparisonRows, getPricingFaq, getPricingFaqRecords, getPlanPitch, getPlanCommonFeatures } from '../src/data/pricing'
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const repoRoot = path.resolve(siteRoot, '..')
@@ -93,6 +93,10 @@ function publicContent() {
     vatNotice: getVatNotice(),
     comparison: getComparisonRows(),
     pricingFaq: getPricingFaq(),
+    // S12: SSS kategorileri ve plan tanıtım kopyası da görünür metindir (aynı yasaklı ifade/sayı denetimi)
+    faqCategories: FAQ_CATEGORIES,
+    planPitch: getPublicPlans().map((p) => getPlanPitch(p.code)),
+    planCommon: getPlanCommonFeatures(),
   }
 }
 
@@ -210,7 +214,8 @@ describe('(2) evidence: dolu, dosya mevcut, atıf metni dosyada geçiyor', () =>
   it('kayıt sayıları beklenen aralıkta (test sessizce boşalmasın)', () => {
     expect(integrations.length).toBeGreaterThanOrEqual(6)
     expect(productCapabilities.length).toBeGreaterThanOrEqual(10)
-    expect(faq.length).toBeGreaterThanOrEqual(6)
+    expect(faq.length).toBeGreaterThanOrEqual(16)
+    expect(faq.length).toBeLessThanOrEqual(24)
     expect(owned.length).toBeGreaterThan(60)
   })
 
@@ -652,5 +657,36 @@ describe('(4) gizli roadmap öğeleri hiçbir yerde görünmez', () => {
       for (const p of ABSOLUTE_PREFIXES) if (prefixRe(p).test(text)) hits.push(`${path.relative(siteRoot, f)}: "${p}"`)
     }
     expect(hits).toEqual([])
+  })
+})
+
+// ------------------------------------------------------------------------------------------ SSS yapısı (S12)
+
+describe('SSS yapısı: kategoriler, önizleme, benzersizlik', () => {
+  it('altı kategori; her soru bilinen bir kategoride ve her kategoride en az iki soru', () => {
+    expect(FAQ_CATEGORIES.map((c) => c.id)).toEqual(['baslangic', 'kanallar', 'stok-siparis', 'guvenlik-veri', 'fiyat-plan', 'destek-olcek'])
+    const ids = new Set(FAQ_CATEGORIES.map((c) => c.id))
+    for (const f of faq) expect(ids.has(f.category), f.id).toBe(true)
+    for (const c of FAQ_CATEGORIES) expect(faq.filter((f) => f.category === c.id).length, c.id).toBeGreaterThanOrEqual(2)
+  })
+
+  it('soru kimlikleri ve metinleri benzersiz; yanıtlar kısa (en fazla dört cümle)', () => {
+    expect(new Set(faq.map((f) => f.id)).size).toBe(faq.length)
+    expect(new Set(faq.map((f) => f.question)).size).toBe(faq.length)
+    for (const f of getPublicFaq()) {
+      const sentences = f.answer.split(/(?<=[.!?])\s+/).filter(Boolean)
+      expect(sentences.length, f.id).toBeLessThanOrEqual(4)
+    }
+  })
+
+  it('ana sayfa önizlemesi altı-sekiz soru ve hepsi kayıtta', () => {
+    const preview = getFaqPreview()
+    expect(preview.length).toBeGreaterThanOrEqual(6)
+    expect(preview.length).toBeLessThanOrEqual(8)
+  })
+
+  it('destek yanıtı saat/süre/kanal taahhüdü içermez', () => {
+    const text = norm(getPublicFaq().filter((f) => f.category === 'destek-olcek').map((f) => f.answer).join(' '))
+    for (const w of ['saat icinde', 'dakika icinde', 'canli destek', 'telefon', 'hafta ici', 'mesai']) expect(text, w).not.toContain(w)
   })
 })

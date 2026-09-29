@@ -1,189 +1,336 @@
 ---
 /**
- * Fiyat özeti (ADR-0014 Karar 2, bölüm 7). Sahne: `data-scene="price-emphasis"` (S3 sahne 7) — plan kartları görünür
- * olunca sırayla yükselir, fiyat rakamı ince bir ölçek vurgusuyla yerine oturur (içerik/etiket değişmez). Kaynak: `getPublicPlans()` — nihai fiyatlar insan kararıdır
- * (Açık Soru 1); fixture ÖNERİ olduğunda `getPlanSourceNotice()` bölümde görünür. Canlı olmayan özellikler
- * seçici tarafından zaten elenir. Ayrıntılı tablo/aylık-yıllık anahtarı `/fiyatlandirma` (S4b).
+ * Fiyat özeti (ADR-0014 Karar 2, bölüm 7; S12 PARÇA C premium yenileme).
+ *
+ * Kaynak: fiyat/limit/KDV/deneme değerleri YALNIZCA `plans.ts` seçicilerinden (seed); plan konumlandırma kopyası
+ * `pricing.ts` (`getPlanPitch`, `getPlanCommonFeatures`) — olgu içermez. Canlı olmayan özellikler seçici tarafından
+ * zaten elenir. Fixture ÖNERİ olduğunda `getPlanSourceNotice()` bölüm sonunda küçük bir dipnot olarak görünür
+ * (ürün kararı bekliyor — kaldırılmaz, görsel ağırlığı dipnota indirildi).
+ *
+ * Görsel dil: önerilen plan koyu, derinlikli bir "sahne" kartıdır (açık bölüm içinde tek koyu yüzey → göz ilk
+ * oraya gider); kenarında yavaşça dönen ince bir ışık hüzmesi (`plan__beam`) ve arkada nefes alan ışıma
+ * (`plan-glow`, scenes-loops.css). Diğer kartlar sade, açık yüzeylidir. Kart iç hiyerarşisi `--site-card-*`.
+ * Sahne: `data-scene="price-emphasis"` (scenes.css: kartlar sırayla yükselir, fiyat ince ölçekle oturur).
+ * Hüzme dönüşü yalnızca `prefers-reduced-motion: no-preference` + `html[data-motion='play']` + sahne görünürken
+ * çalışır; statik hâlde hüzme sabit bir kenar vurgusudur (anlam taşımaz).
+ *
+ * Vurgulanan plan: sabit fiyatlı planlar arasında en kapsamlı özellik setine sahip kademe (seed'deki plan koduna
+ * bağlı TASARIM kararı; "en popüler" gibi uydurma istatistik İDDİASI DEĞİLDİR).
  */
 import Section from '../Section.astro'
 import SectionHeading from './SectionHeading.astro'
 import Button from '../Button.astro'
-import Badge from '../Badge.astro'
 import Icon from './Icon.astro'
 import { appUrls } from '../../lib/site-config'
-import { getPublicPlans, getPlanSourceNotice, getPublicTrial } from '../../data/plans'
+import { getPublicPlans, getPlanSourceNotice, getPublicTrial, getTrialPlanCode, type PublicPlan } from '../../data/plans'
+import { getPlanPitch, getPlanCommonFeatures } from '../../data/pricing'
 import { pageHref } from './links'
 
 const plans = getPublicPlans()
 const notice = getPlanSourceNotice()
 const trial = getPublicTrial()
+const trialPlanCode = getTrialPlanCode()
+const common = getPlanCommonFeatures()
 const pricingHref = pageHref('/fiyatlandirma')
 const contactHref = pageHref('/iletisim')
 const fmt = (n: number) => new Intl.NumberFormat('tr-TR').format(n)
 
-// Vurgulanan plan: ölçek arayan çoğu ekibin ihtiyacı olan orta kademe (sabit fiyatlı planlar arasında en
-// kapsamlı özellik setine sahip olan). Uydurma istatistik/sıralama İDDİASI DEĞİLDİR — yalnızca sayfanın hangi
-// kartı görsel olarak öne çıkaracağına dair bir tasarım kararıdır (seed'deki plan koduna bağlı).
 const RECOMMENDED_PLAN_CODE = 'growth'
+
+/** Bir önceki plana göre limit artışı var mı (ya da özel limit mi)? Kart "artı" listesinde tek satır özetler. */
+const limitStep = (p: PublicPlan, prev: PublicPlan | undefined): string | undefined => {
+  if (!prev) return undefined
+  if (p.limits.every((l) => l.value === null)) return 'Kanal, ürün ve kullanıcı limitleri ihtiyacınıza göre'
+  const higher = p.limits.some((l) => {
+    const before = prev.limits.find((x) => x.key === l.key)?.value
+    return l.value !== null && before !== null && before !== undefined && l.value > before
+  })
+  return higher ? 'Daha fazla kanal, ürün varyantı ve kullanıcı' : undefined
+}
+
+const cards = plans.map((p, i) => {
+  const prev = plans[i - 1]
+  const prevFeatures = new Set(prev?.features.map((f) => f.code) ?? [])
+  const extra = [limitStep(p, prev), p.priceKind === 'quote' ? 'Operasyonunuza özel fiyat teklifi' : undefined, ...p.features.filter((f) => !prevFeatures.has(f.code)).map((f) => f.label)].filter(
+    (x): x is string => Boolean(x),
+  )
+  return {
+    plan: p,
+    pitch: getPlanPitch(p.code),
+    recommended: p.code === RECOMMENDED_PLAN_CODE,
+    includesLabel: prev ? `${prev.name} planındaki her şey, artı:` : 'Her planda standart:',
+    includes: prev ? extra : common,
+  }
+})
 ---
 
-<Section id="fiyatlar" labelledby="fiyat-baslik">
+<Section id="fiyatlar" labelledby="fiyat-baslik" class="pr">
+  <span class="pr__halo" aria-hidden="true"></span>
   <SectionHeading
     id="fiyat-baslik"
+    align="center"
     eyebrow="Fiyatlandırma"
     title="İşinizin ölçeğine göre planlar"
-    lead="Kanal, ürün varyantı ve kullanıcı sayınıza göre bir plan seçin. Kurumsal ihtiyaçlar için özel teklif hazırlanır."
+    accent="ölçeğine göre"
+    lead="Çok kanallı satışa bugün ihtiyacınız olan kapasiteyle başlayın; kanal, ürün ve ekip sayınız büyüdükçe planınızı uygulama içinden yükseltin."
   />
 
-  {
-    notice && (
-      <p class="pr__notice" data-testid="plan-notice">
-        <Badge tone="warning">Taslak fiyatlar</Badge>
-        <span>{notice}</span>
-      </p>
-    )
-  }
+  <ul class="pr__perks" aria-label="Deneme koşulları">
+    <li><Icon name="clock" size="sm" /><span><strong>{trial.days} gün</strong> ücretsiz deneme</span></li>
+    {!trial.cardRequired && <li><Icon name="card" size="sm" /><span>Kart bilgisi gerekmez</span></li>}
+    <li><Icon name="refresh" size="sm" /><span>Planınızı büyüdükçe yükseltin</span></li>
+  </ul>
 
   <ul class="pr__grid" data-scene="price-emphasis" data-testid="plan-grid">
     {
-      plans.map((p) => {
-        const recommended = p.code === RECOMMENDED_PLAN_CODE
-        return (
-        <li class="plan" data-part="plan" data-code={p.code} data-tilt data-recommended={recommended ? 'true' : undefined}>
-          {recommended && <span class="plan__glow" data-part="plan-glow" aria-hidden="true"></span>}
-          {recommended && (
-            <span class="plan__badge" data-part="plan-badge">
-              <Badge tone="info">Önerilen</Badge>
-            </span>
-          )}
-          <h3 class="plan__name">{p.name}</h3>
-          <p class="plan__tagline">{p.tagline}</p>
-          <p class="plan__price">
-            {p.priceKind === 'fixed' ? (
-              <span class="plan__amount" data-part="price" data-count={Math.round(p.priceMinor / 100)} data-count-final={p.priceLabel}>
-                {p.priceLabel}
-              </span>
-            ) : (
-              <span class="plan__amount" data-part="price">{p.priceLabel}</span>
-            )}
-            {p.periodLabel && <span class="plan__period">{p.periodLabel}</span>}
-          </p>
-          <p class="plan__vat">{p.vatLabel || 'Size özel hazırlanır'}</p>
+      cards.map(({ plan: p, pitch, recommended, includesLabel, includes }) => (
+        <li class:list={['plan', { 'plan--rec': recommended }]} data-part="plan" data-code={p.code} data-tilt data-recommended={recommended ? 'true' : undefined}>
+          {recommended && <span class="plan__glow" data-part="plan-glow" aria-hidden="true" />}
+          <div class="plan__frame">
+            {recommended && <span class="plan__beam" aria-hidden="true" />}
+            <div class="plan__top">
+              <h3 class="plan__name">{p.name}</h3>
+              {recommended && (
+                <span class="plan__badge" data-part="plan-badge">
+                  <Icon name="sparkle" size="sm" />
+                  Önerilen
+                </span>
+              )}
+            </div>
+            {pitch && <p class="plan__pitch">{pitch.headline}</p>}
+            <p class="plan__tagline">{p.tagline}</p>
 
-          <dl class="plan__limits">
-            {
-              p.limits.map((l) => (
-                <div class="plan__limit">
-                  <dt>{l.label}</dt>
-                  <dd>{l.value === null ? 'Özel limit' : fmt(l.value)}</dd>
-                </div>
-              ))
-            }
-          </dl>
+            <p class="plan__price">
+              {p.priceKind === 'fixed' ? (
+                <span class="plan__amount" data-part="price" data-count={Math.round(p.priceMinor / 100)} data-count-final={p.priceLabel}>
+                  {p.priceLabel}
+                </span>
+              ) : (
+                <span class="plan__amount plan__amount--quote" data-part="price">{p.priceLabel}</span>
+              )}
+              {p.periodLabel && <span class="plan__period">{p.periodLabel}</span>}
+            </p>
+            <p class="plan__vat">{p.vatLabel || 'Size özel hazırlanır'}</p>
 
-          {
-            p.features.length > 0 && (
-              <ul class="plan__features">
-                {p.features.map((f) => (
-                  <li>
-                    <Icon name="check" size="sm" />
-                    <span>{f.label}</span>
-                  </li>
-                ))}
-              </ul>
-            )
-          }
+            <div class="plan__cta">
+              {p.cta === 'trial' && (
+                <>
+                  <Button
+                    href={appUrls.register({ plan: p.code, interval: p.interval })}
+                    variant={recommended ? 'inverse' : 'primary'}
+                    size="lg"
+                    data-testid={`plan-cta-${p.code}`}
+                  >
+                    {pitch?.ctaLabel ?? 'Ücretsiz deneyin'}
+                  </Button>
+                  <p class="plan__trial">
+                    {trialPlanCode === p.code
+                      ? `${trial.days} gün ücretsiz${trial.cardRequired ? '' : ', kart bilgisi gerekmez'}`
+                      : 'Ücretsiz denemeyle başlayın, planı uygulamada seçin'}
+                  </p>
+                </>
+              )}
+              {p.cta === 'contact' && contactHref && (
+                <>
+                  <Button href={contactHref} variant="secondary" size="lg" data-testid={`plan-cta-${p.code}`}>
+                    {pitch?.ctaLabel ?? 'Teklif isteyin'}
+                  </Button>
+                  <p class="plan__trial">İhtiyacınıza göre kapsam ve limitler</p>
+                </>
+              )}
+              {p.cta === 'contact' && !contactHref && (
+                <p class="plan__trial">Teklif için iletişim bilgileri sitenin yayın sürümünde yer alacaktır.</p>
+              )}
+            </div>
 
-          <div class="plan__cta">
-            {p.cta === 'trial' && (
-              <>
-                <Button href={appUrls.register({ plan: p.code, interval: p.interval })} variant="primary" data-testid={`plan-cta-${p.code}`}>
-                  Ücretsiz dene
-                </Button>
-                <p class="plan__trial">{trial.days} gün ücretsiz deneme</p>
-              </>
-            )}
-            {p.cta === 'contact' && contactHref && (
-              <Button href={contactHref} variant="secondary" data-testid={`plan-cta-${p.code}`}>Teklif isteyin</Button>
-            )}
-            {p.cta === 'contact' && !contactHref && (
-              <p class="plan__trial">Teklif için iletişim bilgileri sitenin yayın sürümünde yer alacaktır.</p>
+            <dl class="plan__limits">
+              {
+                p.limits.map((l) => (
+                  <div class="plan__limit">
+                    <dt>{l.label}</dt>
+                    <dd>{l.value === null ? 'Özel limit' : fmt(l.value)}</dd>
+                  </div>
+                ))
+              }
+            </dl>
+
+            {includes.length > 0 && (
+              <div class="plan__inc">
+                <p class="plan__inc-label">{includesLabel}</p>
+                <ul class="plan__features">
+                  {includes.map((f) => (
+                    <li>
+                      <span class="plan__tick"><Icon name="check" size="sm" /></span>
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </div>
         </li>
-        )
-      })
+      ))
     }
   </ul>
 
-  {pricingHref && <p class="pr__more"><a href={pricingHref}>Planları ayrıntılı karşılaştırın</a></p>}
+  <div class="pr__foot">
+    <ul class="pr__trust" aria-label="Güvenceler">
+      <li><Icon name="lock" size="sm" />Kart verisi sistemlerimizden geçmez</li>
+      <li><Icon name="users" size="sm" />Ekip arkadaşlarınız için rol tabanlı yetki</li>
+      <li><Icon name="shield" size="sm" />Her müşteri hesabına ayrı veritabanı</li>
+    </ul>
+    {pricingHref && (
+      <a class="pr__more" href={pricingHref}>
+        Planları ayrıntılı karşılaştırın <Icon name="arrow" size="sm" />
+      </a>
+    )}
+    {
+      notice && (
+        <p class="pr__notice" data-testid="plan-notice">
+          <span class="pr__notice-tag">Taslak fiyatlar</span>
+          <span>{notice}</span>
+        </p>
+      )
+    }
+  </div>
 </Section>
 
 <style>
-  .pr__notice {
+  .pr:global(.section) {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+  }
+  /* Bölüm arkasındaki çok yumuşak ışık halesi: önerilen kartın arkasında derinlik (dekoratif). */
+  .pr__halo {
+    position: absolute;
+    inset-block-start: 38%;
+    inset-inline-start: 50%;
+    z-index: -1;
+    width: 64rem;
+    height: 40rem;
+    translate: -50% -50%;
+    background: var(--site-glow-secondary);
+    opacity: 0.55;
+    pointer-events: none;
+  }
+
+  /* --- Deneme şeridi --- */
+  .pr__perks {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--ek-space-2) var(--ek-space-3);
+    margin-top: var(--ek-space-6);
+  }
+  .pr__perks li {
+    display: inline-flex;
     align-items: center;
-    gap: var(--ek-space-3);
-    max-width: none;
-    margin-top: var(--ek-space-8);
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-2) var(--ek-space-4);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-surface);
     color: var(--ek-color-content-default);
     font-size: var(--ek-font-size-md);
+    box-shadow: var(--site-shadow-card);
   }
+  .pr__perks strong {
+    color: var(--ek-color-content-strong);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .pr__perks :global(.icon) {
+    color: var(--ek-color-secondary-darken-1);
+  }
+
+  /* --- Kartlar --- */
   .pr__grid {
     display: grid;
     gap: var(--ek-space-5);
-    margin-top: var(--ek-space-8);
-    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    margin-top: var(--ek-space-12);
+    grid-template-columns: 1fr;
     align-items: stretch;
   }
   .plan {
     position: relative;
     display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-3);
-    padding: var(--ek-space-6);
-    border: var(--site-border-width) solid transparent;
     border-radius: var(--site-radius-panel);
-    background:
-      var(--site-surface-tint) padding-box,
-      linear-gradient(var(--ek-color-border-default), var(--ek-color-border-default)) border-box;
-    box-shadow: var(--site-shadow-card);
     /* `transform` (eğim) buraya da eklenir: aksi hâlde bu kuralın `transition` kısayolu `[data-tilt]`'in
        kısayolunu tamamen geçersiz kılar (kısayol birleşmez) ve eğim geçişsiz "aniden" sıfırlanır. */
     transition:
       box-shadow var(--ek-duration-base) var(--ek-easing-standard),
-      background var(--ek-duration-base) var(--ek-easing-standard),
       translate var(--ek-duration-base) var(--ek-easing-standard),
       transform var(--tilt-transition-duration, var(--ek-duration-fast)) var(--ek-easing-standard);
   }
+  .plan__frame {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-8) var(--ek-space-6);
+    border: var(--site-border-width) solid transparent;
+    border-radius: inherit;
+    background:
+      var(--site-surface-tint) padding-box,
+      linear-gradient(var(--ek-color-border-default), var(--ek-color-border-default)) border-box;
+    box-shadow: var(--site-shadow-card);
+    transition:
+      box-shadow var(--ek-duration-base) var(--ek-easing-standard),
+      background var(--ek-duration-base) var(--ek-easing-standard);
+  }
   .plan:hover {
     translate: 0 calc(var(--ek-space-1) * -1);
+  }
+  .plan:hover .plan__frame {
     background:
       var(--site-surface-tint) padding-box,
       var(--site-gradient-border) border-box;
     box-shadow: var(--site-shadow-card-hover);
   }
-  /*
-   * Önerilen plan (S10): sabit gradyan kenarlık + hafif yükseltilmiş duruş (yalnızca `translate` — `[data-tilt]`'in
-   * kendi `transform`'uyla çakışmaz) + arkada yumuşak, nefes alan ışıma (`plan__glow`, döngü: scenes-loops.css
-   * `loop-plan-glow`, yalnızca oynatma durumunda ve görünürken çalışır). Rozet üst kenarda taşar.
-   */
-  .plan[data-recommended='true'] {
-    isolation: isolate;
+
+  /* --- Önerilen plan: koyu sahne kartı --- */
+  .plan--rec {
+    color: var(--site-color-on-primary);
+  }
+  .plan--rec .plan__frame,
+  .plan--rec:hover .plan__frame {
     border-color: transparent;
     background:
-      var(--site-surface-tint) padding-box,
-      var(--site-gradient-border) border-box;
-    box-shadow: var(--site-shadow-card-hover);
+      var(--site-glow-secondary) padding-box,
+      var(--site-gradient-stage) padding-box,
+      linear-gradient(var(--site-glass-border), var(--site-glass-border)) border-box;
+    box-shadow: var(--site-shadow-panel);
   }
-  @media (min-width: 768px) {
-    .plan[data-recommended='true'] {
-      translate: 0 calc(var(--ek-space-3) * -1);
-    }
-    .plan[data-recommended='true']:hover {
-      translate: 0 calc(var(--ek-space-3) * -1 - var(--ek-space-1));
-    }
+  /* Kenar hüzmesi: kartın arkasında (iç yüzeyin altında) dönen konik ışık; yalnızca ince kenarda görünür. */
+  .plan__beam {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    z-index: -2;
+    width: 160%;
+    aspect-ratio: 1 / 1;
+    translate: -50% -50%;
+    rotate: 35deg;
+    background: conic-gradient(
+      from 0deg,
+      transparent 0 62%,
+      color-mix(in srgb, var(--ek-color-secondary) 90%, var(--ek-color-background)) 78%,
+      transparent 92%
+    );
+    pointer-events: none;
+  }
+  .plan--rec .plan__frame::before {
+    content: '';
+    position: absolute;
+    inset: var(--site-border-width);
+    z-index: -1;
+    border-radius: calc(var(--site-radius-panel) - var(--site-border-width));
+    background:
+      var(--site-glow-secondary) no-repeat 110% -30% / 70% 60%,
+      var(--site-gradient-stage);
   }
   .plan__glow {
     position: absolute;
@@ -192,39 +339,80 @@ const RECOMMENDED_PLAN_CODE = 'growth'
     border-radius: calc(var(--site-radius-panel) + var(--ek-space-3));
     background: var(--site-gradient-accent);
     opacity: 0.3;
-    filter: blur(var(--ek-space-5));
+    filter: blur(var(--ek-space-6));
     pointer-events: none;
   }
-  .plan__badge {
-    position: absolute;
-    inset-block-start: calc(var(--ek-space-3) * -1);
-    inset-inline: 0;
+  @media (min-width: 1024px) {
+    .plan--rec {
+      translate: 0 calc(var(--ek-space-4) * -1);
+    }
+    .plan--rec:hover {
+      translate: 0 calc(var(--ek-space-4) * -1 - var(--ek-space-1));
+    }
+  }
+
+  .plan__top {
     display: flex;
-    justify-content: center;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ek-space-3);
   }
   .plan__name {
-    font-size: var(--ek-font-size-2xl);
-    font-weight: var(--ek-font-weight-semibold);
+    font-size: var(--site-card-title-size);
+    font-weight: var(--site-card-title-weight);
+  }
+  .plan__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-1);
+    padding: var(--ek-space-1) var(--ek-space-3);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 55%, transparent);
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-secondary) 18%, transparent);
+    color: var(--site-color-on-primary);
+    font-size: var(--site-card-eyebrow-size);
+    font-weight: var(--site-card-eyebrow-weight);
+    letter-spacing: var(--site-card-eyebrow-tracking);
+    text-transform: uppercase;
+  }
+  .plan__pitch {
+    color: var(--ek-color-content-strong);
+    font-size: var(--site-card-value-size);
+    font-weight: var(--site-card-value-weight);
+    line-height: var(--ek-line-height-tight);
   }
   .plan__tagline {
-    min-height: 4.5em;
     color: var(--ek-color-content-default);
-    font-size: var(--ek-font-size-md);
+    font-size: var(--site-card-desc-size);
+    font-weight: var(--site-card-desc-weight);
+  }
+  .plan--rec :is(.plan__name, .plan__pitch) {
+    color: var(--site-color-on-primary);
+  }
+  .plan--rec :is(.plan__tagline, .plan__vat, .plan__period, .plan__trial, .plan__limit dt, .plan__features, .plan__inc-label) {
+    color: var(--site-color-on-primary-muted);
   }
   .plan__price {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
     gap: var(--ek-space-2);
-    margin-top: var(--ek-space-2);
+    margin-top: var(--ek-space-4);
   }
   .plan__amount {
-    display: inline-block; /* S3: ince ölçek vurgusu için; satır kutusunu değiştirmez */
+    display: inline-block; /* ince ölçek vurgusu için; satır kutusunu değiştirmez */
     color: var(--ek-color-content-strong);
-    font-size: var(--site-font-display-sm);
+    font-size: var(--site-font-display-md);
     font-weight: var(--site-font-display-weight);
     letter-spacing: var(--site-font-display-tracking);
     line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .plan__amount--quote {
+    font-size: var(--site-font-display-sm);
+  }
+  .plan--rec .plan__amount {
+    color: var(--site-color-on-primary);
   }
   .plan__period {
     color: var(--ek-color-content-muted);
@@ -232,12 +420,27 @@ const RECOMMENDED_PLAN_CODE = 'growth'
   }
   .plan__vat {
     color: var(--ek-color-content-muted);
-    font-size: var(--ek-font-size-md);
+    font-size: var(--site-card-desc-size);
+  }
+  .plan__cta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    margin-top: var(--ek-space-3);
+  }
+  .plan__cta :global(.btn) {
+    width: 100%;
+  }
+  .plan__trial {
+    max-width: none;
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-sm);
+    text-align: center;
   }
   .plan__limits {
     display: flex;
     flex-direction: column;
-    margin: var(--ek-space-3) 0 0;
+    margin: var(--ek-space-4) 0 0;
     border-top: var(--site-border-width) solid var(--ek-color-border-default);
   }
   .plan__limit {
@@ -246,7 +449,10 @@ const RECOMMENDED_PLAN_CODE = 'growth'
     gap: var(--ek-space-3);
     padding: var(--ek-space-3) 0;
     border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
-    font-size: var(--ek-font-size-md);
+    font-size: var(--site-card-desc-size);
+  }
+  .plan--rec :is(.plan__limits, .plan__limit) {
+    border-color: var(--site-glass-border);
   }
   .plan__limit dt {
     color: var(--ek-color-content-default);
@@ -255,43 +461,132 @@ const RECOMMENDED_PLAN_CODE = 'growth'
     margin: 0;
     color: var(--ek-color-content-strong);
     font-weight: var(--ek-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
     text-align: end;
+  }
+  .plan--rec .plan__limit dd {
+    color: var(--site-color-on-primary);
+  }
+  .plan__inc {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    margin-top: var(--ek-space-3);
+  }
+  .plan__inc-label {
+    color: var(--ek-color-content-strong);
+    font-size: var(--site-card-desc-size);
+    font-weight: var(--ek-font-weight-semibold);
   }
   .plan__features {
     display: flex;
     flex-direction: column;
-    gap: var(--ek-space-2);
+    gap: var(--ek-space-3);
     color: var(--ek-color-content-default);
-    font-size: var(--ek-font-size-md);
+    font-size: var(--site-card-desc-size);
   }
   .plan__features li {
     display: flex;
     align-items: flex-start;
-    gap: var(--ek-space-2);
+    gap: var(--ek-space-3);
   }
-  .plan__features :global(.icon) {
-    margin-top: var(--ek-space-1);
+  .plan__tick {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-5);
+    height: var(--ek-space-5);
+    margin-top: calc(var(--ek-space-1) / 2);
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-secondary) 16%, transparent);
     color: var(--ek-color-secondary-darken-1);
   }
-  .plan__cta {
+  .plan--rec .plan__tick {
+    background: color-mix(in srgb, var(--ek-color-secondary) 30%, transparent);
+    color: var(--site-color-on-primary);
+  }
+
+  /* --- Alt bilgi: güvence satırı, karşılaştırma bağlantısı, taslak dipnotu --- */
+  .pr__foot {
     display: flex;
     flex-direction: column;
-    gap: var(--ek-space-2);
-    margin-top: auto;
-    padding-top: var(--ek-space-4);
-  }
-  .plan__cta :global(.btn) {
-    width: 100%;
-  }
-  .plan__trial {
-    color: var(--ek-color-content-muted);
-    font-size: var(--ek-font-size-sm);
+    align-items: center;
+    gap: var(--ek-space-5);
+    margin-top: var(--ek-space-12);
     text-align: center;
   }
+  .pr__trust {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--ek-space-3) var(--ek-space-8);
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-md);
+  }
+  .pr__trust li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+  }
+  .pr__trust :global(.icon) {
+    color: var(--ek-color-secondary-darken-1);
+  }
   .pr__more {
-    margin-top: var(--ek-space-6);
-    max-width: none;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    min-height: var(--site-tap-target);
     font-size: var(--ek-font-size-lg);
     font-weight: var(--ek-font-weight-semibold);
+  }
+  .pr__notice {
+    display: inline-flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: var(--ek-space-2);
+    max-width: none;
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-xs);
+  }
+  .pr__notice-tag {
+    padding: 0 var(--ek-space-2);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-sm);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  @media (min-width: 768px) {
+    .pr__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1024px) {
+    .pr__grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--ek-space-6);
+      align-items: stretch;
+    }
+  }
+
+  /* Kenar hüzmesi yavaşça döner (yalnızca oynatma durumunda ve sahne görünürken; dönüş = transform sınıfı). */
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes pr-beam-spin {
+      from {
+        rotate: 35deg;
+      }
+      to {
+        rotate: 395deg;
+      }
+    }
+    :global(html[data-motion='play']) [data-scene='price-emphasis'][data-state='play'] .plan__beam {
+      animation: pr-beam-spin var(--site-motion-loop-scene) var(--site-motion-ease-linear) infinite paused;
+    }
+    :global(html[data-motion='play']) [data-scene='price-emphasis'][data-state='play'][data-visible='true'] .plan__beam {
+      animation-play-state: running;
+    }
   }
 </style>
