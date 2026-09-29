@@ -250,3 +250,5 @@ Global legacy CSS: `public/assets/css/site.css` (hex 83, rgb 68, cubic-bezier 5)
 `00-vitrin-1440x900-tam.png`, `00-vitrin-1440x900-ilk-ekran.png`, `00-vitrin-390x844-tam.png`, `00-vitrin-390x844-ilk-ekran.png`,
 `01-renk` · `02-yuzey` · `03-tipografi` · `04-olcek` · `05-buton` · `06-form` · `07-kart` · `08-rozet` · `09-diyalog` · `10-kabuk` · `11-liste` · `12-kademeli`,
 `20-canli-baglam-menusu`, `21-canli-tehlikeli-diyalog`, `m-kabuk-390` · `m-liste-390` · `m-form-390`.
+
+**Aşama 2 / Adım 3 (diyalog/menü/form):** `a2-overlays-trendyol-api-{before,after}-1440`, `a2-overlays-trendyol-varsayilan-{before,after}-{1440,800,390}`, `a2-overlays-dialog-danger-{1440,390}`, `a2-overlays-category-picker-{1440,800}`, `a2-overlays-category-picker-search-1440`, `a2-overlays-product-info-form-1440` (bulutta Linux Chromium ile e2e sahte verisinden alındı; görsel onay yerelde).
