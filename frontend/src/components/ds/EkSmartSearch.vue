@@ -106,7 +106,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, useId, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
 import EkBadge from './EkBadge.vue'
 import EkKbd from './EkKbd.vue'
 import EkPlatformMark from './EkPlatformMark.vue'
@@ -161,6 +161,27 @@ const inputRef = ref<HTMLInputElement | null>(null)
 const focused = ref(false)
 const activeId = ref('')
 
+/**
+ * Açılır, arama alanının ortasına hizalanır ama görünüm alanından TAŞMAZ (dar/orta ekranda alan
+ * kenara yakınsa kaydırılır). Konum CSS değişkenleriyle verilir (şablonda satır içi stil yok).
+ */
+const panelLeft = ref('50%')
+const panelWidth = ref('min(560px, calc(100vw - 32px))')
+const panelShift = ref('-50%')
+const VIEWPORT_GUTTER = 16
+
+function placePanel() {
+  const field = rootRef.value?.getBoundingClientRect()
+  if (!field || typeof window === 'undefined') return
+  const vw = window.innerWidth
+  const width = Math.max(field.width, Math.min(560, vw - VIEWPORT_GUTTER * 2))
+  const ideal = field.left + field.width / 2 - width / 2
+  const left = Math.min(Math.max(ideal, VIEWPORT_GUTTER), vw - VIEWPORT_GUTTER - width)
+  panelLeft.value = `${Math.round(left - field.left)}px`
+  panelWidth.value = `${Math.round(width)}px`
+  panelShift.value = '0px'
+}
+
 const visibleGroups = computed(() => props.groups.filter((g) => g.items.length))
 const flat = computed(() => visibleGroups.value.flatMap((g) => g.items))
 const isOpen = computed(
@@ -170,6 +191,18 @@ const isOpen = computed(
       (props.modelValue.trim().length > 0 || (props.openOnFocus && (props.loading || visibleGroups.value.length > 0)))),
 )
 const optionId = (item: EkSearchItem) => `${listId}-opt-${item.id}`
+
+watch(isOpen, (open) => {
+  if (typeof window === 'undefined') return
+  if (open) {
+    nextTick(placePanel)
+    window.addEventListener('resize', placePanel)
+  } else {
+    window.removeEventListener('resize', placePanel)
+  }
+}, { immediate: true })
+onMounted(() => isOpen.value && placePanel())
+onBeforeUnmount(() => typeof window !== 'undefined' && window.removeEventListener('resize', placePanel))
 
 watch(
   flat,
@@ -358,9 +391,9 @@ defineExpose({ focus: () => inputRef.value?.focus(), blur: () => inputRef.value?
 .ek-search__panel {
   position: absolute;
   top: calc(100% + var(--ek-space-2));
-  left: 50%;
-  width: max(100%, min(560px, calc(100vw - var(--ek-space-8))));
-  transform: translateX(-50%);
+  left: v-bind(panelLeft);
+  width: v-bind(panelWidth);
+  transform: translateX(v-bind(panelShift));
   z-index: var(--ek-z-dropdown);
   display: flex;
   flex-direction: column;

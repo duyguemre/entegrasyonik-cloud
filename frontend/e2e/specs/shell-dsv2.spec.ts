@@ -249,6 +249,7 @@ test.describe('DS-v2 kabuk — sekme menüsü ve sol menü', () => {
   })
 
   test('üst bar çalışma alanı anahtarı: kayıt sekmesi açılınca "seçili kayıt" etkinleşir, Genel ↔ kayıt geçer', async ({ page }) => {
+    test.skip(isMobile(page), 'Dar ekranda anahtar gizli (EkAppHeader <768) — kayıt sekmesi şeritte')
     await installApiMocks(page, {
       MenuService: menuFixtureWithProductUpdate,
       ChoiceService: choicesDoluFixture,

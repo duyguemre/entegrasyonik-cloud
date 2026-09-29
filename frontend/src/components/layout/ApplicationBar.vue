@@ -20,7 +20,7 @@
       :user-name="identityName"
       :store-name="identityMeta"
       :notification-count="notificationDrawer.unreadCount"
-      :compact="isMobile"
+      :compact="!isDesktop"
       :menu-shortcut="shortcutKeys('sidebarToggle')"
       :menu-expanded="menuExpanded"
       @toggle-menu="$emit('toggle-menu')"
@@ -84,7 +84,7 @@ const userApi = useUser()
 const workspace = useWorkspaceStore()
 const notificationDrawer = useNotificationDrawerStore()
 const { locale } = useI18n({ useScope: 'global' })
-const { isMobile } = useShellBreakpoints()
+const { isDesktop } = useShellBreakpoints()
 
 const storeName = computed(() => userApi.getStoreName() || '')
 // Kimlik: birincil satır mağaza (tenant) adı, ikincil satır oturumdaki kullanıcı.
