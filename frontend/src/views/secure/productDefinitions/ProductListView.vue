@@ -22,37 +22,8 @@
         @checkVariantStatus="(processItem) => checkProductStatus(selectedProduct, processItem)" />
     </teleport>
     <div id="variant-target-0" v-show="false" class="plv-variant-target-placeholder"></div>
-    <v-menu v-model="confirmationDelete.isDialogOpen" :close-on-content-click="false"
-      :activator="confirmationDelete.activator" @update:model-value="cancelDeleteProduct()">
-      <template v-slot:activator>
-        <span></span>
-      </template>
-
-      <v-card prepend-icon="mdi-delete-outline" color="danger" class="pl-4 pr-4">
-        <template v-slot:prepend>
-        </template>
-        <template v-slot:title>
-          <div class="d-flex align-center justify-center">
-            <v-icon>mdi-exclamation</v-icon>
-            ÜRÜN SİLİNECEK
-            <v-icon size="xx-large">mdi-exclamation</v-icon>
-          </div>
-        </template>
-        <template v-slot:text>
-          <div class="d-flex justify-center">Silmek istediğnizden emin misiniz?</div>
-          <div class="mt-4 mb-4 text-center">
-            <v-btn color="tonal" min-width="100" variant="outlined" @click="cancelDeleteProduct()" class="mr-4">
-              {{ $t('common.cancel') }}
-            </v-btn>
-
-            <v-btn color="error" bg-color="error" variant="flat" class="plv-border-surface" min-width="100"
-              @click="deleteProduct()">
-              {{ $t('common.delete') }}
-            </v-btn>
-          </div>
-        </template>
-      </v-card>
-    </v-menu>
+    <ProductDeleteConfirmDialog v-model="confirmationDelete.isDialogOpen" :product="confirmationDelete.product"
+      @confirm="deleteProduct()" @cancel="cancelDeleteProduct()" />
 
 
     <LoadingComponent :attach="dialogAttach" ref="loadingComponentRef"></LoadingComponent>
@@ -502,6 +473,7 @@ import { useStaticsStore } from '@/stores/staticsStore';
 import useUser from '@/composables/user';
 import { PLATFORM_PROCESS } from '@/types/PlatformProcess';
 import BatchActionsRootComponent from '@/components/productDefinitions/products/BatchActions/BatchActionsRootComponent.vue';
+import ProductDeleteConfirmDialog from '@/components/productDefinitions/products/ProductDeleteConfirmDialog.vue';
 const userApi = useUser()
 
 const emits = defineEmits(['clear'])
