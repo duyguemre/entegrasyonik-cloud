@@ -1,33 +1,12 @@
 <template>
-  <template v-for="(category, index) of categories" :style="{'background-color':level%2==0?'#eee':'#fff'}">
-
-
+  <template v-for="(category, index) of categories" :key="category._id">
 
     <div v-if="category.isMain == true" class="mt-1">
       <div class="d-flex">
-        <!--ana kategori-->
-        <!--       <v-card
-        :class="[(isDropPossibleToTop = isDropPossible(draggingCategory, { _id: 0, parentId: 0 })) ? 'drop-is-possible' : 'drop-is-not-possible']"
-        @drop.stop="drop(draggingCategory, { _id: 0, parentId: 0 })" draggable="false" @dragend.stop="dragend"
-        @dragover="isDropPossibleToTop ? $event.preventDefault() : 0" style="border:1px solid #ccc;height:43px"
-        class="text-center justify-center align-center mr-4">
-        <div class="font-weight-medium pt-2 pb-2">          
-          
-          <v-icon style="opacity:.6" class="mr-2 ml-2">mdi-shape</v-icon>Ana Kategori
-          <v-icon v-if="isDropPossibleToTop" style="opacity:.6" class="mr-2">mdi-arrow-down-thin</v-icon>
-          <v-icon v-else style="opacity:.6" class="mr-2">mdi-cancel</v-icon>
-          <v-btn class="ml-2 mr-2 mt-0" density="comfortable" color="processButtonColor" min-width=0 @click.stop="openCategorySync(category)"><span
-                    class="">
-                    <v-icon size="large" style="opacity:1" btn color="">mdi-cog-sync-outline</v-icon>
-                  </span></v-btn>
 
-        </div>
-      </v-card>
- --> 
-      
  <v-form v-model="topLevelCategoryForm" style="display:contents" @keydown.enter.prevent @submit.prevent>
-          <v-text-field variant="outlined" density="compact" type="tel" maxlength="160" counter clearable 
-            bg-color="textfieldColor" :hint="$t('productDefinitions.category.subcategoryDesc')" class="customTextField"
+          <v-text-field type="tel" maxlength="160" counter clearable
+            :hint="$t('productDefinitions.category.subcategoryDesc')" class="ek-cat-add"
             v-model="topLevelCategoryName" :rules="titleRules"
             @keyup.enter="emits('addCategory', { parentId: category._id, title: topLevelCategoryName }); topLevelCategoryName = undefined">
             <template v-slot:label>
@@ -35,47 +14,37 @@
                 }}</span>
             </template>
             <template v-slot:append-inner>
-              <v-btn class="fill-height" size="40" flat min-width=0 density="compact" color="processButtonColor"
+              <EkButton tone="primary" size="sm" icon="mdi-plus" icon-only aria-label="Alt kategori ekle"
                 :disabled="!topLevelCategoryForm || topLevelCategoryName == undefined"
-                @click="emits('addCategory', { parentId: category._id, title: topLevelCategoryName }); topLevelCategoryName = undefined"><span
-                  class="text-captio1n">
-                  <v-icon>mdi-plus</v-icon>
-                </span></v-btn>
+                @click="emits('addCategory', { parentId: category._id, title: topLevelCategoryName }); topLevelCategoryName = undefined" />
             </template>
           </v-text-field>
         </v-form>
       </div>
     </div>
 
-
-
-
-    <div :class="[category.level == 0 ? '' : 'ml-12 mr-2']"
+    <div :class="[category.level == 0 ? '' : 'ml-12 mr-2', level % 2 == 0 ? 'is-even' : 'is-odd']"
       v-if="category.isMain != true && (!category.isHidden || category.isHidden == false)"
-      style="position:relative;border:1px solid #bbb;border-bottom-left-radius:2px;border-bottom-right-radius:2px;"
-      class="mb-3 category-menu" :style="{ 'background-color': level % 2 == 0 ? '#f7f7f7' : '#fbfbfb' }">
+      class="mb-2 category-menu ek-cat-row">
       <v-list-group :value="category._id" @click="eventBus.emit('pageResize', '')"
-        :style="{ 'background-color': draggingCategory && draggingCategory._id == category._id ? '#f4f4ff' : '' }">
+        :class="{ 'is-dragging': draggingCategory && draggingCategory._id == category._id }">
         <template v-slot:activator="{ props, isOpen }">
           <v-list-item v-bind="props" :prepend-icon="category.icon" :value="category._id" draggable="true"
             @drag="drag($event)" @drop.stop="drop(draggingCategory, category)" @dragend.stop="dragend"
             @dragover="category.isDropPossible ? $event.preventDefault() : 0" @dragstart="dragstart($event, category)"
             class="pt-0 pb-0  pl-2 mb-0 pr-0  elevation-0 category-list-item"
-            style="padding-inline-start: 8px!important"
-            :class="[(category.isDropPossible = isDropPossible(draggingCategory, category)) ? 'drop-is-possible' : 'drop-is-not-possible', (category.isOpen = isOpen) ? '' : '']">
+            :class="['ek-cat-item', (category.isDropPossible = isDropPossible(draggingCategory, category)) ? 'drop-is-possible' : 'drop-is-not-possible', (category.isOpen = isOpen) ? '' : '']">
             <template v-slot:prepend="{ isSelected, isActive }">
-              <div style="border:1px solid black"
-                :style="{ 'background-color': (category.isOrderDropPossible = isOrderDropPossible(draggingCategory, category)) ? '#f3fff3' : 'unset' }"
-                class="pr-3 pl-3 mr-4" @drop.stop="dropForOrder(draggingCategory, category)" @dragover.prevent> {{
+              <div class="ek-cat-order ek-num" :class="{ 'is-drop': (category.isOrderDropPossible = isOrderDropPossible(draggingCategory, category)) }"
+                @drop.stop="dropForOrder(draggingCategory, category)" @dragover.prevent> {{
                   category.level == 0 ?index:index+1 }}
-                <v-icon v-if="category.isOrderDropPossible">mdi-swap-vertical</v-icon>
-                <v-icon v-else style="opacity:.6">mdi-swap-vertical</v-icon>
+                <v-icon size="16" :class="{ 'ek-cat-muted': !category.isOrderDropPossible }">mdi-swap-vertical</v-icon>
               </div>
             </template>
             <div class="pt-3 pb-3">
               <v-tooltip :text="constructBreadcrumb(category)">
                 <template v-slot:activator="{ props }">
-                  <v-icon v-bind="props" :style="category.children.length>0?{opacity:.6}:{opacity:.8}" :color="category.children.length>0?'primary':'success'" class="mr-2">mdi-shape</v-icon>
+                  <v-icon v-bind="props" :icon="category.children.length > 0 ? 'mdi-folder-outline' : 'mdi-tag-outline'" size="18" class="mr-2 ek-cat-muted" />
                 </template>
               </v-tooltip>
               <span :class="category.children.length>0?[]:['font-weight-bold']">
@@ -84,33 +53,15 @@
               <span class="text-caption">({{ category.children.filter((item: any) => !item.isHidden
                 ||
                 item.isHidden==false ).length }}) </span>
-              <v-icon v-if="category.isDropPossible" style="opacity:.6" class="ml-2">mdi-arrow-down-thin</v-icon>
-              <v-icon v-else-if="draggingCategory" style="opacity:.6" class="ml-2">mdi-cancel</v-icon>
-              <v-icon v-else style="opacity:.6" class="ml-2">mdi-arrow-up-down1</v-icon>
+              <v-icon v-if="category.isDropPossible" class="ml-2 ek-cat-muted">mdi-arrow-down-thin</v-icon>
+              <v-icon v-else-if="draggingCategory" class="ml-2 ek-cat-muted">mdi-cancel</v-icon>
             </div>
             <template v-slot:append="{ isSelected, isActive }">
-              <v-list-item-action end style="height:100%!important">
-                                      <v-icon size="large" @click.stop="openCategorySync(category)" style="opacity:1;" class="mr-4" btn color="processButtonColor">mdi-cog</v-icon>
+              <v-list-item-action end>
+                <EkButton tone="ghost" size="sm" icon="mdi-cog" icon-only :aria-label="`${category.title} ayarları`"
+                  @click.stop="openCategorySync(category)" />
 
-                <!--                 <v-icon btn :color="isActive ? 'black' : 'black'" v-ripple.stop
-                  @click.stop="emits('startEdit', category)" style="opacity:1" class="mr-2">mdi-pencil</v-icon>
- -->
-                <!--                   <v-btn class="ml-2" density="comfortable" color="processButtonColor" min-width=0 @click.stop="emits('startEdit', category)"><span
-                    class="text-captio1n">
-                    <v-icon size="large" style="opacity:1" btn color="">mdi-pencil-outline</v-icon>
-                  </span></v-btn>
- -->
-
-<!--                 <v-btn-group elevation="0" class="d-block" density="compact"
-                  style="height:47px;border-radius:0px!important;border-top-left-radius:0!important;border-bottom-left-radius:0!important">
-                  <v-btn class="ml-0 fill-height" block density="comfortable" style="border:0px solid #ddd;border-radius:0!important"
-                    color="transparent" min-width=0
-                    @click.stop="openCategorySync(category)"><span
-                      class="text-captio1n">
-                      <v-icon size="large" style="opacity:1" btn color="processButtonColor">mdi-cog</v-icon>
-                    </span></v-btn>
-                </v-btn-group>
- -->              </v-list-item-action>
+              </v-list-item-action>
             </template>
           </v-list-item>
         </template>
@@ -123,22 +74,18 @@
           <div class="ml-12">
             <div class="d-flex">
               <v-form v-model="category.form" style="display:contents" @keydown.enter.prevent @submit.prevent>
-                <v-text-field variant="outlined" density="compact" type="tel" maxlength="160" counter clearable 
-                  bg-color="textfieldColor" :hint="$t('productDefinitions.category.subcategoryDesc')" class="mr-2 customTextField"
+                <v-text-field type="tel" maxlength="160" counter clearable
+                  :hint="$t('productDefinitions.category.subcategoryDesc')" class="mr-2 ek-cat-add"
                   v-model="category.newTitle" :rules="titleRules"
                   @keyup.enter="emits('addCategory', { parentId: category._id, title: category.newTitle })">
                   <template v-slot:label>
-                    <span class="font-weight-light">{{ category.title }}<v-icon size="small"
-                        style="opacity:.5">mdi-arrow-right</v-icon> <span class="text-ca1ption font-italic mr-1">{{
-                          $t('productDefinitions.category.subcategoryName') }} </span></span>
+                    <span>{{ category.title }} <v-icon size="small" class="ek-cat-muted">mdi-arrow-right</v-icon>
+                      {{ $t('productDefinitions.category.subcategoryName') }}</span>
                   </template>
                   <template v-slot:append-inner>
-                    <v-btn class="fill-height" size="40" flat min-width=0 density="compact" color="processButtonColor"
+                    <EkButton tone="primary" size="sm" icon="mdi-plus" icon-only aria-label="Alt kategori ekle"
                       :disabled="!category.form || category.newTitle == undefined"
-                      @click="emits('addCategory', { parentId: category._id, title: category.newTitle })"><span
-                        class="text-captio1n">
-                        <v-icon>mdi-plus</v-icon>
-                      </span></v-btn>
+                      @click="emits('addCategory', { parentId: category._id, title: category.newTitle })" />
                   </template>
                 </v-text-field>
               </v-form>
@@ -152,6 +99,7 @@
 
 <script lang="ts" setup>
 import { inject, ref, onBeforeUnmount } from 'vue'
+import EkButton from '@/components/ds/EkButton.vue'
 import { useI18n } from 'vue-i18n';
 
 var props = defineProps<{
@@ -298,4 +246,49 @@ const dropForOrder = (draggingCategory: any, category: any) => {
 }
 </script>
 
-<style></style>
+<style scoped>
+.ek-cat-row {
+  position: relative;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface);
+}
+
+.ek-cat-row.is-odd {
+  background: var(--ek-color-surface-muted);
+}
+
+.ek-cat-row :deep(.is-dragging) {
+  background: var(--ek-color-action-subtle);
+}
+
+.ek-cat-item {
+  padding-inline-start: var(--ek-space-2) !important;
+}
+
+.ek-cat-order {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  margin-right: var(--ek-space-3);
+  padding: 2px var(--ek-space-2);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-sm);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+}
+
+.ek-cat-order.is-drop {
+  border-color: var(--ek-color-success-border);
+  background: var(--ek-color-success-subtle);
+  color: var(--ek-color-success-emphasis);
+}
+
+.ek-cat-muted {
+  color: var(--ek-color-content-muted);
+}
+
+.ek-cat-add {
+  margin-bottom: var(--ek-space-2);
+}
+</style>
