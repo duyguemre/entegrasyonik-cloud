@@ -14,8 +14,13 @@
  * çekilir, marka kartı yükselip tam parlaklığa gelir, akış hatları merkeze doğru uzar (yalnızca transform/opacity).
  * Hareket kapalı / JS'siz: `--scroll-p` yazılmaz → varsayılan 1 = anlamlı statik SON durum (iki taraf da görünür,
  * iyi taraf baskın). Giriş ve döngü: scenes.css / scenes-loops.css.
- * Kanallar isimsiz renkli noktalardır (`[data-code]` → `--chan`); stok sayıları "Örnek senaryo" etiketli sabit
- * görsel örnektir, gerçek veri değildir. Fayda metinleri yetenek kayıtlarına dayanır (capabilities.ts).
+ * S15-B (tek merkez akışı): her kanal, stok değerini taşıyan isimsiz bir çiptir (`[data-code]` → `--chan`). 12 sn'lik
+ * sakin döngü (yalnızca hareket açık + görünürken): kanallar kendi değerlerini gösterir → ışık paketleri çipin ALTINDAN
+ * çıkıp ortak hatta birleşir ve göbeğe iner → göbekte yumuşak nabız → geri yayılan dalga kanallara döner → değer tüm
+ * kanallarda aynı olur (senkron). Statik hâl = senkron son durum (tüm çipler aynı değer, paket/halka görünmez).
+ * Paketler marka kartının içinde kalır (kart `overflow: hidden`): sayfa taşması yok.
+ * Stok sayıları senaryoyu anlatan sabit görseldir, gerçek veri değildir (S15-C: ayrı "örnek" etiketi yok; sahne
+ * aria-hidden, anlam başlık ve fayda metinlerinde). Fayda metinleri yetenek kayıtlarına dayanır (capabilities.ts).
  */
 import Section from '../Section.astro'
 import SectionHeading from './SectionHeading.astro'
@@ -131,17 +136,28 @@ const gains = [
             {
               channels.map((c) => (
                 <li class="ps__node" data-code={c.code}>
-                  <span class="ps__node-dot" />
+                  <span class="ps__chip" data-part="chip">
+                    <span class="ps__node-dot" />
+                    <span class="ps__chip-num">
+                      <b class="ps__chip-old" data-part="chip-old">{c.stock}</b>
+                      <b class="ps__chip-new" data-part="chip-new">{SYNCED_STOCK}</b>
+                    </span>
+                  </span>
                   <span class="ps__flow" data-part="flow">
                     <i class="ps__packet" data-part="packet" />
+                    <i class="ps__packet ps__packet--back" data-part="packet-back" />
                   </span>
                 </li>
               ))
             }
           </ul>
           <span class="ps__bus" data-part="bus"></span>
-          <span class="ps__stem" data-part="bus"></span>
+          <span class="ps__stem" data-part="bus">
+            <i class="ps__packet ps__packet--stem" data-part="stem-packet" />
+          </span>
           <div class="ps__hub" data-part="hub">
+            <span class="ps__hub-ring" data-part="hub-ring"></span>
+            <span class="ps__hub-ring ps__hub-ring--late" data-part="hub-ring"></span>
             <Icon name="stock" size="md" />
           </div>
           <div class="ps__result" data-part="result">
@@ -444,15 +460,64 @@ const gains = [
     display: flex;
     flex-direction: column;
     align-items: center;
+    min-width: 0;
+  }
+  /*
+   * Kanal çipi: isimsiz renk noktası + o kanaldaki stok değeri. OPAK yüzey ve `z-index: 1`: ışık paketi çipin ALTINDAN
+   * çıkar / geri döndüğünde altına girer. Statik hâlde yalnızca senkron değer (`ps__chip-new`) görünür.
+   */
+  .ps__chip {
+    position: relative;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: calc(var(--ek-space-1) * 1.5);
+    padding: var(--ek-space-1) calc(var(--ek-space-1) * 2.5) var(--ek-space-1) calc(var(--ek-space-1) * 1.5);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--chan, var(--site-accent)) 45%, transparent);
+    border-radius: var(--ek-radius-full);
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--ek-color-background) 8%, transparent), transparent),
+      color-mix(in srgb, var(--site-stage-deep) 84%, var(--ek-color-secondary));
+    box-shadow:
+      inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 12%, transparent),
+      0 var(--ek-space-2) var(--ek-space-4) calc(var(--ek-space-2) * -1) color-mix(in srgb, var(--chan, var(--site-accent)) 55%, transparent);
+  }
+  /* Geri yayılan dalganın çipte açtığı ince halka (statik hâlde görünmez). */
+  .ps__chip::after {
+    content: '';
+    position: absolute;
+    inset: calc(var(--site-border-width) * -1);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 80%, transparent);
+    border-radius: inherit;
+    opacity: 0;
+    pointer-events: none;
   }
   .ps__node-dot {
-    width: var(--ek-space-4);
-    height: var(--ek-space-4);
+    flex: none;
+    width: var(--ek-space-3);
+    height: var(--ek-space-3);
     border-radius: var(--ek-radius-full);
     background: var(--chan, var(--site-accent));
     box-shadow:
-      0 0 0 calc(var(--site-border-width) * 4) color-mix(in srgb, var(--chan, var(--site-accent)) 22%, transparent),
-      0 0 var(--ek-space-4) color-mix(in srgb, var(--chan, var(--site-accent)) 60%, transparent);
+      0 0 0 calc(var(--site-border-width) * 3) color-mix(in srgb, var(--chan, var(--site-accent)) 22%, transparent),
+      0 0 var(--ek-space-3) color-mix(in srgb, var(--chan, var(--site-accent)) 60%, transparent);
+  }
+  .ps__chip-num {
+    display: grid;
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-sm);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .ps__chip-num b {
+    grid-area: 1 / 1;
+    min-width: 2ch;
+    font-weight: var(--ek-font-weight-semibold);
+    text-align: center;
+  }
+  .ps__chip-old {
+    color: var(--site-text-on-dark-meta);
+    opacity: 0;
   }
   .ps__flow {
     position: relative;
@@ -460,23 +525,48 @@ const gains = [
     height: var(--ek-space-10);
     margin-top: var(--ek-space-2);
     border-radius: var(--ek-radius-full);
-    background: linear-gradient(180deg, var(--chan, var(--site-accent)), var(--site-accent));
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--chan, var(--site-accent)) 80%, transparent),
+      color-mix(in srgb, var(--site-accent) 85%, transparent)
+    );
     transform-origin: 50% 0;
     transform: scaleY(calc(0.2 + var(--p) * 0.8));
   }
+  /*
+   * Işık paketi: sarmalayıcı hat boyundadır (inset 0), ışık noktası ::before ile üst uçtadır; döngü sarmalayıcıyı
+   * `translate` ile kaydırır (0 -60% = çipin altında gizli, 0 100% = ortak hatta). Statik/JS'siz hâlde görünmez.
+   */
   .ps__packet {
     position: absolute;
-    inset-inline-start: 50%;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .ps__packet::before {
+    content: '';
+    position: absolute;
     inset-block-start: 0;
+    inset-inline-start: 50%;
     width: var(--ek-space-2);
     height: var(--ek-space-2);
-    translate: -50% 0;
+    translate: -50% -50%;
     border-radius: var(--ek-radius-full);
-    background: var(--ek-color-background);
-    box-shadow: 0 0 var(--ek-space-3) var(--site-accent);
-    opacity: 0;
+    background: color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 35%, var(--ek-color-background));
+    box-shadow:
+      0 0 var(--ek-space-2) var(--chan, var(--ek-color-secondary)),
+      0 0 var(--ek-space-4) color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 60%, transparent);
+  }
+  /* Geri dalga ve gövde paketi marka renginde (merkezden gelen tek değer). */
+  .ps__packet--back::before,
+  .ps__packet--stem::before {
+    background: color-mix(in srgb, var(--ek-color-secondary) 35%, var(--ek-color-background));
+    box-shadow:
+      0 0 var(--ek-space-2) var(--ek-color-secondary),
+      0 0 var(--ek-space-4) color-mix(in srgb, var(--ek-color-secondary) 60%, transparent);
   }
   .ps__bus {
+    position: relative;
     display: block;
     width: 75%;
     height: calc(var(--site-border-width) * 2);
@@ -485,7 +575,30 @@ const gains = [
     box-shadow: 0 0 var(--ek-space-3) color-mix(in srgb, var(--site-accent) 70%, transparent);
     transform: scaleX(var(--p));
   }
+  /* Ortak hat üzerinde iki uçtan ortaya dolan ışık (döngüde; statik hâlde görünmez). */
+  .ps__bus::before,
+  .ps__bus::after {
+    content: '';
+    position: absolute;
+    inset-block: calc(var(--site-border-width) * -1);
+    width: 50%;
+    border-radius: var(--ek-radius-full);
+    box-shadow: 0 0 var(--ek-space-3) color-mix(in srgb, var(--ek-color-secondary) 80%, transparent);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .ps__bus::before {
+    inset-inline-start: 0;
+    transform-origin: 0 50%;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ek-color-secondary) 40%, var(--ek-color-background)));
+  }
+  .ps__bus::after {
+    inset-inline-end: 0;
+    transform-origin: 100% 50%;
+    background: linear-gradient(270deg, transparent, color-mix(in srgb, var(--ek-color-secondary) 40%, var(--ek-color-background)));
+  }
   .ps__stem {
+    position: relative;
     display: block;
     width: calc(var(--site-border-width) * 2);
     height: var(--ek-space-5);
@@ -518,7 +631,17 @@ const gains = [
     background: color-mix(in srgb, var(--ek-color-secondary) 40%, transparent);
     opacity: 0;
   }
+  /* Varış anında göbekten dışa açılan iki ince halka (statik hâlde görünmez). */
+  .ps__hub-ring {
+    position: absolute;
+    inset: 0;
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 80%, transparent);
+    border-radius: inherit;
+    opacity: 0;
+    pointer-events: none;
+  }
   .ps__result {
+    position: relative;
     display: flex;
     align-items: center;
     gap: var(--ek-space-3);
@@ -528,6 +651,18 @@ const gains = [
     border-radius: var(--ek-radius-lg);
     background: color-mix(in srgb, var(--ek-color-secondary) 10%, transparent);
     opacity: calc(0.2 + var(--p) * 0.8);
+  }
+  /* Senkron anında kart kenarında beliren ince ışık (döngüde; statik hâlde görünmez). */
+  .ps__result::after {
+    content: '';
+    position: absolute;
+    inset: calc(var(--site-border-width) * -1);
+    border-radius: inherit;
+    box-shadow:
+      0 0 0 var(--site-border-width) var(--ek-color-secondary),
+      0 0 var(--ek-space-5) color-mix(in srgb, var(--ek-color-secondary) 45%, transparent);
+    opacity: 0;
+    pointer-events: none;
   }
   .ps__result-num {
     color: var(--site-text-on-dark-heading);
