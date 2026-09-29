@@ -21,6 +21,11 @@ const ticketsDoluFixture = {
       _id: 'ticket-e2e-0001', ticketNumber: 'DSK-100001', subject: 'E2E fatura kesim sorunu',
       type: 'BILLING', priority: 'HIGH', status: 'OPEN', lastMessageSnippet: 'Fatura oluşturulamıyor',
       lastMessageAt: '2026-09-29T09:00:00.000Z', createdDate: '2026-09-28T10:00:00.000Z',
+      // Detay diyalogu satir nesnesini (`openTicketDetail(item)`) DOGRUDAN kullanir; ayri bir
+      // detay istegi YOK — mesajlar liste yanitindaki satirdan gelir (karakterizasyon).
+      messages: [
+        { senderType: 'CLIENT', senderName: 'E2E Kullanıcı', content: 'Fatura oluşturamıyorum.', date: '2026-09-28T10:05:00.000Z' },
+      ],
     },
     {
       _id: 'ticket-e2e-0002', ticketNumber: 'DSK-100002', subject: 'E2E entegrasyon sorusu',
@@ -48,7 +53,7 @@ test.describe('ADR-0015 B5-3 — TicketListView (destek) + TicketCreateDialog + 
     await openScreen(page, 'TicketListView')
 
     await expect(page.locator('.ticketListView')).toBeVisible()
-    await expect(page.getByLabel('Destek No veya Konu Ara')).toBeVisible()
+    await expect(page.getByLabel('Destek No veya Konu Ara', { exact: true })).toBeVisible()
     await expect(page.getByText('DSK-100001')).toBeVisible()
     await expect(page.getByText('E2E fatura kesim sorunu')).toBeVisible()
     await expect(page.getByText('E2E entegrasyon sorusu')).toBeVisible()
@@ -85,8 +90,8 @@ test.describe('ADR-0015 B5-3 — TicketListView (destek) + TicketCreateDialog + 
     await page.locator('.ticketListView button:has(.mdi-plus)').click()
     const dialog = page.getByRole('dialog').filter({ hasText: 'YENİ DESTEK TALEBİ' })
     await expect(dialog).toBeVisible()
-    await dialog.getByLabel('Konu').fill('E2E test talebi')
-    await dialog.getByLabel('Mesajınız').fill('Bu bir E2E test mesajıdır.')
+    await dialog.getByLabel('Konu', { exact: true }).fill('E2E test talebi')
+    await dialog.getByLabel('Mesajınız', { exact: true }).fill('Bu bir E2E test mesajıdır.')
     await dialog.getByRole('button', { name: 'Talebi Gönder' }).click()
 
     await expect.poll(() => created).not.toBeNull()

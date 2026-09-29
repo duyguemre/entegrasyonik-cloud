@@ -33,7 +33,7 @@ test.describe('ADR-0015 B5-3 — AuthorizationListView + UserAddComponent', () =
     await openScreen(page, 'AuthorizationListView')
 
     await expect(page.locator('.authorizationListView')).toBeVisible()
-    await expect(page.getByLabel('İsim, e-posta veya yetki ara...')).toBeVisible()
+    await expect(page.getByLabel('İsim, e-posta veya yetki ara...', { exact: true })).toBeVisible()
     await expect(page.getByText('Elif Yıldız')).toBeVisible()
     await expect(page.getByText('elif.yildiz@example.com')).toBeVisible()
     await expect(page.locator('.authorizationListView tbody tr')).toHaveCount(3)
@@ -101,8 +101,8 @@ test.describe('ADR-0015 B5-3 — AuthorizationListView + UserAddComponent', () =
     const dialog = page.getByRole('dialog').filter({ hasText: 'Yeni Kullanıcı Ekle' })
     await expect(dialog).toBeVisible()
     await dialog.getByLabel('İsim', { exact: true }).fill('Yeni')
-    await dialog.getByLabel('Soyisim').fill('Personel')
-    await dialog.getByLabel('E-posta Adresi').fill('yeni.personel@example.com')
+    await dialog.getByLabel('Soyisim', { exact: true }).fill('Personel')
+    await dialog.getByLabel('E-posta Adresi', { exact: true }).fill('yeni.personel@example.com')
     await dialog.getByRole('button', { name: 'Kaydet' }).click()
 
     await expect.poll(() => created).not.toBeNull()

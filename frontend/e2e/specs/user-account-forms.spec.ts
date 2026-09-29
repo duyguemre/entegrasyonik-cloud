@@ -35,7 +35,7 @@ test.describe('ADR-0015 B5-3 — Hesap ekranları (ExitView / ChangePasswordView
     await openScreen(page, 'ChangePasswordView')
 
     await expect(page.getByLabel('Yeni Şifre', { exact: true })).toBeVisible()
-    await expect(page.getByLabel('Yeni Şifre (Tekrar)')).toBeVisible()
+    await expect(page.getByLabel('Yeni Şifre (Tekrar)', { exact: true })).toBeVisible()
     // Karakterizasyon: script bloğu boş, hiçbir "Değiştir/Kaydet" düğmesi DOM'da yok.
     await expect(page.getByRole('button', { name: /değiştir|kaydet/i })).toHaveCount(0)
   })
@@ -49,15 +49,17 @@ test.describe('ADR-0015 B5-3 — Hesap ekranları (ExitView / ChangePasswordView
     await expect(page.getByText('Tüzel Kişi')).toBeVisible()
     await expect(page.getByLabel('İsim', { exact: true })).toBeVisible()
     await expect(page.getByLabel('Soyisim', { exact: true })).toBeVisible()
-    await expect(page.getByLabel('TC Kimlik No')).toBeVisible()
-    await expect(page.getByLabel('Firma Ünvanı')).toBeVisible()
-    await expect(page.getByLabel('Vergi Dairesi')).toBeVisible()
-    await expect(page.getByLabel('Vergi No')).toBeVisible()
+    await expect(page.getByLabel('TC Kimlik No', { exact: true })).toBeVisible()
+    await expect(page.getByLabel('Firma Ünvanı', { exact: true })).toBeVisible()
+    await expect(page.getByLabel('Vergi Dairesi', { exact: true })).toBeVisible()
+    await expect(page.getByLabel('Vergi No', { exact: true })).toBeVisible()
     // Karakterizasyon (çeviri boşluğu, DÜZELTİLMEDİ): `user.invoiceInfo.address` tr.json'da
     // çevrilmemiş — etiket literal İngilizce "Address" metnini gösteriyor.
     await expect(page.getByLabel('Address', { exact: true })).toBeVisible()
-    await expect(page.getByLabel('İl', { exact: true })).toBeVisible()
-    await expect(page.getByLabel('İlçe', { exact: true })).toBeVisible()
+    // v-select etiketi input'a <label for> ile baglanmiyor (getByLabel bulamaz); alan, etiket
+    // metnini tasiyan .v-select kapsayicisi uzerinden dogrulanir.
+    await expect(page.locator('.v-select').filter({ has: page.getByText('İl', { exact: true }) }).first()).toBeVisible()
+    await expect(page.locator('.v-select').filter({ has: page.getByText('İlçe', { exact: true }) }).first()).toBeVisible()
     // Karakterizasyon: `buttons` script'te tanımlı ama template'te KULLANILMIYOR — "Güncelle" düğmesi DOM'da yok.
     await expect(page.getByRole('button', { name: 'Güncelle' })).toHaveCount(0)
   })
