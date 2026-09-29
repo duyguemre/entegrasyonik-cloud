@@ -1,162 +1,85 @@
+<!--
+  frontend/src/views/secure/PrintoutListView.vue
+
+  ADR-0015 B5-3 — GÖRSEL KATMAN (bkz. e2e/specs/printouts.spec.ts). Davranış DEĞİŞMEDİ: ekran bir
+  liste değil, backend'e HİÇ istek atmayan bir şablon tasarımcısı taslağıdır; sürükle-bırak (dragstart/
+  drop/dragend), tuvale `<p type="move">` ekleme, tıklayınca seçme (seçili öğe #00f), ayar paneli,
+  "Sil", kâğıt boyutu düğmeleri (tuval `:width/:height` inline style), ölü "Test Çıktısı"/"Temizle"
+  düğmeleri ve `#a4` kimliği AYNEN korundu. Görünen metinler/etiketler değişmedi.
+
+  - Başlık `EkPageHeader`'a; token'sız hex/inline style, `bg-color="textfieldColor"`, eski
+    `scroll-element`/`expand-background-patch`/`ScrollComponent` (özel kaydırma çubuğu) kaldırıldı;
+    kaydırma yerel `overflow:auto`. Palet metinleri `paletteGroups` verisinden render edilir.
+  - Yerleşim: araç çubuğu sarılır (mobil/tabletteki üst üste binme giderildi), tuval küçülmez
+    (`flex:none`, kap içinde kaydırılır).
+  - Karakterizasyon (DÜZELTİLMEDİ): seçim rengi "#00f" ve sürükleme opaklığı script'te DOM'a
+    doğrudan yazılır (spec bunu mavi olarak bekler); Genişlik/Yükseklik/Çıktı Tipi/Yazı Tipi/Yazı
+    Büyüklüğü/Kopya Sayısı alanları hiçbir state'e bağlı değil; "Sil" sonrası seçim temizlenmez;
+    paletteki alanlar klavyeyle sürüklenemez (yalnızca HTML5 fare DnD).
+-->
 <template>
-  <div class="pa-4">
+  <div class="printoutListView">
+    <EkPageHeader
+      section="Finans"
+      :title="$t('menu.printoutList')"
+      description="Sipariş çıktı şablonlarınızı alanları tuvale sürükleyerek tasarlayın."
+    />
 
-    <div class="d-flex">
-      <div style="width:20%">
-        <v-select clearable prepend-icon="mdi-form-textbox" density="comfortable"
-          :label="$t('printouts.printout.searchlabel')" variant="outlined" bg-color="textfieldColor"
-          hide-details></v-select>
-      </div>
-      <div style="width:4%">
-      </div>
-      <div style="width:20%">
-        <div class="d-flex">
-          <div v-for="paperSize in paperSizes">
-            <v-btn elevation="0" class="pa-2 mr-1 font-weight-bold" @click="selectedPaperSize = paperSize"
-              :color="selectedPaperSize.id == paperSize.id ? 'primary' : ''" style="border:1px solid #444; min-width:0;"
-              :style="{ width: paperSize.width / 12 + 'px', height: paperSize.height / 12 + 'px' }">
-              {{ paperSize.name }}
-            </v-btn>
-          </div>
-        </div>
-      </div>
-      <div style="width:56%">
-        <div class="d-flex">
-          <div style="width:22%">
-            <v-select clearable density="comfortable" class="mr-2" :label="$t('printouts.printout.fontsize')"
-              variant="outlined" bg-color="textfieldColor" hide-details></v-select>
-          </div>
-          <div style="width:22%">
-            <v-select clearable density="comfortable" class="mr-2" :label="$t('printouts.printout.fontfamily')"
-              variant="outlined" bg-color="textfieldColor" hide-details></v-select>
-          </div>
-          <div style="width:22%">
-            <v-select clearable density="comfortable" :label="$t('printouts.printout.copy')" variant="outlined"
-              bg-color="textfieldColor" hide-details></v-select>
-          </div>
-          <div style="width:4%">
-          </div>
-          <div style="width:30%">
-            <v-btn-group class="pa-0 ml-2" elevation="2">
-              <v-btn prepend-icon="mdi-printer" elevation=1 color="actionButtonColor" min-width="150px"> {{
-                $t("printouts.printout.test") }}</v-btn>
-              <v-btn prepend-icon="mdi-cancel" elevation=1 color="processButtonColor" min-width="150px"> {{
-                $t("printouts.printout.clear") }}</v-btn>
-            </v-btn-group>
+    <div class="ek-printout__toolbar">
+      <v-select clearable prepend-icon="mdi-form-textbox" density="comfortable"
+        :label="$t('printouts.printout.searchlabel')" variant="outlined" hide-details
+        class="ek-printout__select ek-printout__select--type"></v-select>
 
-          </div>
-        </div>
+      <div class="ek-printout__papers" role="group" aria-label="Kâğıt boyutu">
+        <v-btn v-for="paperSize in paperSizes" :key="paperSize.id" elevation="0" class="ek-printout__paper"
+          :class="{ 'ek-printout__paper--active': selectedPaperSize.id == paperSize.id }"
+          :aria-pressed="selectedPaperSize.id == paperSize.id" @click="selectedPaperSize = paperSize"
+          :color="selectedPaperSize.id == paperSize.id ? 'primary' : ''"
+          :style="{ width: paperSize.width / 12 + 'px', height: paperSize.height / 12 + 'px' }">
+          {{ paperSize.name }}
+        </v-btn>
       </div>
 
+      <v-select clearable density="comfortable" :label="$t('printouts.printout.fontsize')" variant="outlined"
+        hide-details class="ek-printout__select"></v-select>
+      <v-select clearable density="comfortable" :label="$t('printouts.printout.fontfamily')" variant="outlined"
+        hide-details class="ek-printout__select"></v-select>
+      <v-select clearable density="comfortable" :label="$t('printouts.printout.copy')" variant="outlined"
+        hide-details class="ek-printout__select"></v-select>
+
+      <div class="ek-printout__actions">
+        <v-btn prepend-icon="mdi-printer" color="primary" variant="flat">{{ $t("printouts.printout.test") }}</v-btn>
+        <v-btn prepend-icon="mdi-cancel" variant="outlined">{{ $t("printouts.printout.clear") }}</v-btn>
+      </div>
     </div>
 
-    <div class="d-flex scroll-element" :style="{ top: '100px' }">
-      <div class="expand-background-patch"></div>
+    <div class="ek-printout__workspace">
+      <div class="ek-printout__palette" @dragstart="dragStart">
+        <section v-for="group in paletteGroups" :key="group.title" class="ek-printout__group">
+          <h2 class="ek-printout__group-title">{{ group.title }}</h2>
+          <div v-for="field in group.fields" :key="field" draggable="true" class="ek-printout__field">{{ field }}</div>
+        </section>
+      </div>
 
-      <v-card class="scroll-card pa-4" variant="outlined" style="border-color:#ddd;background-color:#f4f4f4">
-
-        <div class="d-flex">
-          <div @dragstart="dragStart">
-            <div class="d-flex mb-2">
-              <v-card class="mr-2" width="200px" elevation="0" style="border-color:#ddd;background-color:#fbfbfb"
-                variant="outlined">
-                <v-card-title class="text-caption">
-                  Müşteri Bilgileri
-                </v-card-title>
-                <v-card-text>
-                  <div draggable="true">Müşteri Adı/Soyadı</div>
-                  <div draggable="true">TC Kimlik/Vergi Numarası</div>
-                  <div draggable="true">Teslimat Adresi</div>
-                  <div draggable="true">Fatura Adresi</div>
-                  <div draggable="true">İl</div>
-                  <div draggable="true">İlçe</div>
-                  <div draggable="true">Vergi Dairesi</div>
-                </v-card-text>
-              </v-card>
-              <v-card class="mr-2" width="200px" elevation="0" style="border-color:#ddd;background-color:#fbfbfb"
-                variant="outlined">
-                <v-card-title class="text-caption">
-                  Ürün Bilgileri
-                </v-card-title>
-                <v-card-text>
-                  <div draggable="true">Ürün Adı</div>
-                  <div draggable="true">Ürün Stok Kodu</div>
-                  <div draggable="true">Ürün Adedi</div>
-                  <div draggable="true">Ürün Barkodu</div>
-                  <div draggable="true">Ürün Birim Fiyat</div>
-                  <div draggable="true">Ürün KDV Oranı</div>
-                  <div draggable="true">Ürün KDV Tutarı</div>
-                  <div draggable="true">Ürün Toplam Tutar</div>
-                </v-card-text>
-              </v-card>
-            </div>
-
-            <div class="d-flex">
-              <v-card class="mr-2" width="200px" elevation="0" style="border-color:#ddd;background-color:#fbfbfb"
-                variant="outlined">
-                <v-card-title class="text-caption">
-                  Fatura Bilgileri
-                </v-card-title>
-                <v-card-text>
-                  <div draggable="true">Sipariş Numarası</div>
-                  <div draggable="true">Tarih</div>
-                  <div draggable="true">Saat</div>
-                  <div draggable="true">Sevk Tarihi</div>
-                  <div draggable="true">Açıklama</div>
-                  <div draggable="true">Sabit Açıklama</div>
-                  <div draggable="true">KDV %18</div>
-                  <div draggable="true">KDV %8</div>
-                  <div draggable="true">KDV %1</div>
-                </v-card-text>
-              </v-card>
-
-              <v-card class="mr-2" width="200px" elevation="0" style="border-color:#ddd;background-color:#fbfbfb"
-                variant="outlined">
-                <v-card-title class="text-caption">
-                  Toplamlar
-                </v-card-title>
-                <v-card-text>
-                  <div draggable="true">KDV Toplamı</div>
-                  <div draggable="true">KDV'siz Toplam</div>
-                  <div draggable="true">KDV'li Toplam</div>
-                </v-card-text>
-              </v-card>
-            </div>
+      <div class="ek-printout__stage">
+        <div v-if="selectedDragElement" class="ek-printout__panel">
+          <div class="ek-printout__panel-title">{{ selectedDragElement.target.innerHTML }}</div>
+          <div class="ek-printout__panel-fields">
+            <v-text-field clearable density="comfortable" :label="$t('printouts.printout.width')"
+              variant="outlined" hide-details></v-text-field>
+            <v-text-field clearable density="comfortable" :label="$t('printouts.printout.height')"
+              variant="outlined" hide-details></v-text-field>
           </div>
-
-          <v-card id="a4" :height="selectedPaperSize.height" :width="selectedPaperSize.width" @drop="drop" class="mr-2"
-            @dragover="allowDrop" @dragend="dragLeave">
-          </v-card>
-
-          <div v-if="selectedDragElement" style="widt1h:22%">
-            <div style="position:fixed1;min-width:400px;">
-              <v-card variant="outlined" class="pa-0 ma-0" style="border-color:#ddd">
-                <v-card-title class="text-caption">
-                  <div class="mb-2">{{ selectedDragElement.target.innerHTML }}</div>
-                </v-card-title>
-                <v-card-text>
-                  <div class="d-flex">
-                    <v-text-field clearable density="comfortable" :label="$t('printouts.printout.width')"
-                      variant="outlined" bg-color="textfieldColor" hide-details class="mb-2 mr-2"></v-text-field>
-                    <v-text-field clearable density="comfortable" class="mb-2 mr-2"
-                      :label="$t('printouts.printout.height')" variant="outlined" bg-color="textfieldColor"
-                      hide-details></v-text-field>
-                  </div>
-                  <v-btn prepend-icon="mdi-delete-outline" @click="selectedDragElement.target.remove()" elevation=1
-                    color="deleteButtonColor" class="mt-4" min-width="150px"> {{
-                      $t("printouts.printout.delete") }}</v-btn>
-                </v-card-text>
-              </v-card>
-            </div>
-          </div>
-
-
-
+          <v-btn prepend-icon="mdi-delete-outline" @click="selectedDragElement.target.remove()" variant="outlined"
+            color="error" class="ek-printout__delete">{{ $t("printouts.printout.delete") }}</v-btn>
         </div>
-      </v-card>
 
-      <ScrollComponent id=".scroll-element .scroll-card"  :isExpandable="false"/>
-
+        <div class="ek-printout__canvas-scroll">
+          <v-card id="a4" :height="selectedPaperSize.height" :width="selectedPaperSize.width" @drop="drop"
+            class="ek-printout__canvas" elevation="0" @dragover="allowDrop" @dragend="dragLeave">
+          </v-card>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -164,6 +87,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import { ref, reactive, onMounted, watch } from 'vue'
+import EkPageHeader from '@/components/ds/EkPageHeader.vue'
 
 
 const { t } = useI18n()
@@ -219,6 +143,14 @@ var paperSizes = [
   },
 ]
 var selectedPaperSize: any = ref(paperSizes[0])
+
+// Sürüklenebilir alan paleti (görsel katman — önceki statik şablonla AYNI metinler/sıra/gruplar).
+const paletteGroups = [
+  { title: 'Müşteri Bilgileri', fields: ['Müşteri Adı/Soyadı', 'TC Kimlik/Vergi Numarası', 'Teslimat Adresi', 'Fatura Adresi', 'İl', 'İlçe', 'Vergi Dairesi'] },
+  { title: 'Ürün Bilgileri', fields: ['Ürün Adı', 'Ürün Stok Kodu', 'Ürün Adedi', 'Ürün Barkodu', 'Ürün Birim Fiyat', 'Ürün KDV Oranı', 'Ürün KDV Tutarı', 'Ürün Toplam Tutar'] },
+  { title: 'Fatura Bilgileri', fields: ['Sipariş Numarası', 'Tarih', 'Saat', 'Sevk Tarihi', 'Açıklama', 'Sabit Açıklama', 'KDV %18', 'KDV %8', 'KDV %1'] },
+  { title: 'Toplamlar', fields: ['KDV Toplamı', "KDV'siz Toplam", "KDV'li Toplam"] },
+]
 
 
 var selectDragElement = (event: any) => {
@@ -645,4 +577,181 @@ var openUpdate = (id: number) => {
 }
 </script>
 
-<style></style>
+<style scoped>
+.printoutListView {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-4);
+  padding: var(--ek-space-6);
+  min-width: 0;
+}
+
+.ek-printout__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ek-space-3);
+}
+
+.ek-printout__select {
+  flex: 1 1 160px;
+  min-width: 160px;
+  max-width: 240px;
+}
+
+.ek-printout__select--type {
+  flex-basis: 200px;
+}
+
+.ek-printout__papers {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--ek-space-2);
+}
+
+.ek-printout__paper {
+  min-width: 0;
+  padding: 0;
+  font-weight: var(--ek-font-weight-semibold);
+  text-transform: lowercase;
+  border: 1px solid var(--ek-color-border-strong);
+  border-radius: var(--ek-radius-sm);
+  transition: background-color var(--ek-duration-fast) var(--ek-easing-standard),
+    border-color var(--ek-duration-fast) var(--ek-easing-standard);
+}
+
+.ek-printout__paper--active {
+  border-color: var(--ek-color-primary);
+}
+
+.ek-printout__actions {
+  display: flex;
+  gap: var(--ek-space-2);
+  margin-left: auto;
+}
+
+.ek-printout__workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 424px) minmax(0, 1fr);
+  gap: var(--ek-space-4);
+  align-items: start;
+  padding: var(--ek-space-4);
+  background: var(--ek-color-surface-muted);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-lg);
+}
+
+.ek-printout__palette {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ek-space-3);
+  align-items: start;
+}
+
+.ek-printout__group {
+  padding: var(--ek-space-3);
+  background: var(--ek-color-surface);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+}
+
+.ek-printout__group-title {
+  margin: 0 0 var(--ek-space-2);
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-muted);
+}
+
+.ek-printout__field {
+  padding: var(--ek-space-1) var(--ek-space-2);
+  font-size: var(--ek-font-size-sm);
+  color: var(--ek-color-content-default);
+  border-radius: var(--ek-radius-sm);
+  cursor: grab;
+  transition: background-color var(--ek-duration-fast) var(--ek-easing-standard);
+}
+
+.ek-printout__field:hover {
+  background: var(--ek-color-surface-sunken);
+}
+
+.ek-printout__stage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-3);
+  min-width: 0;
+}
+
+.ek-printout__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-3);
+  max-width: 420px;
+  padding: var(--ek-space-4);
+  background: var(--ek-color-surface);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+}
+
+.ek-printout__panel-title {
+  font-size: var(--ek-font-size-sm);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-strong);
+}
+
+.ek-printout__panel-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ek-space-2);
+}
+
+.ek-printout__panel-fields > * {
+  flex: 1 1 140px;
+}
+
+.ek-printout__delete {
+  align-self: flex-start;
+}
+
+.ek-printout__canvas-scroll {
+  overflow: auto;
+  max-width: 100%;
+}
+
+.ek-printout__canvas {
+  flex: none;
+  background: var(--ek-color-surface);
+  border: 1px solid var(--ek-color-border-strong);
+  border-radius: var(--ek-radius-sm);
+  box-shadow: var(--ek-shadow-sm);
+}
+
+.ek-printout__canvas :deep(p) {
+  margin: 0;
+  padding: 0 var(--ek-space-1);
+  font-size: var(--ek-font-size-sm);
+  cursor: grab;
+}
+
+@media (max-width: 959px) {
+  .printoutListView {
+    padding: var(--ek-space-4);
+  }
+
+  .ek-printout__workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ek-printout__actions {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ek-printout__paper,
+  .ek-printout__field {
+    transition: none;
+  }
+}
+</style>
