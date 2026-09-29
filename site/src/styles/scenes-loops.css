@@ -67,14 +67,14 @@
       opacity: 1;
       translate: 0 0;
     }
-    19%,
+    18%,
     97.9% {
       opacity: 0;
       translate: 0 calc(var(--site-motion-distance) * -1.5);
     }
     98% {
       opacity: 0;
-      translate: 0 calc(var(--site-motion-distance) * 1.5);
+      translate: 0 calc(var(--site-motion-distance) * 3);
     }
     100% {
       opacity: 1;
@@ -83,16 +83,16 @@
   }
   @keyframes loop-count-2 {
     0%,
-    17% {
+    18% {
       opacity: 0;
-      translate: 0 calc(var(--site-motion-distance) * 1.5);
+      translate: 0 calc(var(--site-motion-distance) * 3);
     }
-    19%,
+    19.5%,
     37% {
       opacity: 1;
       translate: 0 0;
     }
-    39%,
+    38%,
     100% {
       opacity: 0;
       translate: 0 calc(var(--site-motion-distance) * -1.5);
@@ -100,16 +100,16 @@
   }
   @keyframes loop-count-3 {
     0%,
-    37% {
+    38% {
       opacity: 0;
-      translate: 0 calc(var(--site-motion-distance) * 1.5);
+      translate: 0 calc(var(--site-motion-distance) * 3);
     }
-    39%,
+    39.5%,
     57% {
       opacity: 1;
       translate: 0 0;
     }
-    59%,
+    58%,
     100% {
       opacity: 0;
       translate: 0 calc(var(--site-motion-distance) * -1.5);
@@ -117,11 +117,11 @@
   }
   @keyframes loop-count-4 {
     0%,
-    57% {
+    58% {
       opacity: 0;
-      translate: 0 calc(var(--site-motion-distance) * 1.5);
+      translate: 0 calc(var(--site-motion-distance) * 3);
     }
-    59%,
+    59.5%,
     96% {
       opacity: 1;
       translate: 0 0;
@@ -543,25 +543,26 @@
       translate: 0 0;
     }
   }
+  /* Sayaç: eski sayı yukarı çıkıp tamamen söndükten SONRA yenisi aşağıdan gelir (üst üste binme yok). */
   @keyframes loop-viz-count-out {
     0%,
     40% {
       opacity: 1;
       translate: 0 0;
     }
-    50%,
+    45%,
     100% {
       opacity: 0;
-      translate: 0 calc(var(--site-motion-distance) * -2);
+      translate: 0 calc(var(--site-motion-distance) * -4);
     }
   }
   @keyframes loop-viz-count-in {
     0%,
-    40% {
+    45% {
       opacity: 0;
-      translate: 0 calc(var(--site-motion-distance) * 2);
+      translate: 0 calc(var(--site-motion-distance) * 4);
     }
-    50%,
+    51%,
     100% {
       opacity: 1;
       translate: 0 0;
