@@ -168,6 +168,9 @@ Mevcut ds bileşenlerinin (EkStatusChip, EkDataTable, EkKpiCard, EkFilterBar, Ek
 | `EkPagerBar` | sayfalama | çerçevenin ALTINA SABİT; sol boyut+toplam, orta sayfalar, sağ `#trailing` |
 | `EkListFrame` | liste ekranı iskeleti | filtreler → kart (toolbar → grid [yalnız burası kayar] → pager) |
 | `EkCascadePicker` | kategori ağacı, ekran başlatıcı | Miller kolonları, seçili yol vurgusu, arama tam yol, ←→↑↓ Enter |
+| `EkFormSection` | form bölümleri (entegrasyon, ürün, diyalog gövdeleri) | `fieldset` + `legend` (ikon + başlık) + isteğe bağlı yardım; içi `EkFormGrid` (varsayılan 2 kolon); hata metni alanın altında `error` tonunda, `aria-describedby` ile bağlı |
+| `EkDialogHost` | sekme içinden açılan panel/çekmece gövdeleri (varyant, eşitleme, galeri) | `EkDialog` kabuğu olmadan yalnız overlay; `attach` ile sekme kapsayıcısına bağlanır (sol menünün altında kalmaz); `placement` center/end |
+| `EkCascadeDialog` | form içinde kademeli seçim (pazaryeri kategori eşleştirme) | salt-okunur alan + modal `EkCascadePicker`; taslak yol, Onayla ile yaprak kimliği döner; Esc/Vazgeç değişiklik yapmaz |
 
 Vitrin-only prop'lar (`forceState`, `forceHoverKey`, `forceOpen`, `inline`) yalnızca vitrin içindir.
 
@@ -191,6 +194,16 @@ Her adım ADR-0015 süreçleriyle: spec önce yeşil → göç → ekran görün
 3. **Diyalog / menü / form** — `ConfirmationDialogComponent`, `ActionDialogComponent`, `CustomDialogComponent`, `EkConfirmDialog`, `EkFormDialog` → `EkDialog`; `BatchProcessMenu`, satır menüleri → `EkContextMenu`; **tüm formlar `EkFormGrid`** — öncelik **Trendyol pazaryeri entegrasyon formu** (`integrations/*`, üst üste binen alanlar) ve diğer entegrasyon/ayar formları. Bu adımda `site.css` `.v-dialog .v-overlay__content` global kuralı kaldırılır.
 4. **Dashboard** — `EkMetricCard` KPI satırı, `EkCard` özet bölümleri (bekleyen aksiyonlar, pazaryeri bağlantı durumu), ECharts teması uygulama profiline bağlanır.
 
+### Adım 3 (diyalog / menü / form) — uygulandı (`cloud/ds-v2-overlays`)
+
+- **Diyalog:** `ConfirmationDialogComponent`, `ActionDialogComponent` aynı API ile `EkDialog` üzerine yeniden yazıldı (`layout/dialogTone.ts`: eski `color` → ton; tehlikeli renk → `tone="danger"`, soru başlığı, varsayılan odak Vazgeç). `EkConfirmDialog`/`EkFormDialog` `EkDialog`'a delege eder (API korunur, `role="alertdialog"` sürer). `EkDialog` geri uyumlu eklemeler: `width="xl"` (1040), `maxWidth`, `attach`, `hideActions/hideCancel/hideClose`, `asForm` (Enter = onay), `iconTone`, `cancelCloses`. Ham `<v-dialog>` kullanan ürün/tanım gövdeleri (toplu silme, varyant, ürün tanımlama/güncelleme, ürün silme) standarda taşındı.
+- **Global kural kaldırıldı:** `site.css` `.v-dialog .v-overlay__content { top:0; left:0; max-width: unset; padding: 8px }` silindi; diyalog yerleşimi yalnız `ds/ek-dialog-overlay.css`'ten gelir.
+- **Menü:** ürün toplu işlem menüsü → `EkMenuPanel` (gruplar, ayraç, tehlikeli en sonda); varyant satır menüsü → `EkContextMenu`.
+- **Form:** 6 entegrasyon formu (Trendyol, Hepsiburada, N11, Pazarama, Ideasoft, Bizimhesap) `IntegrationFormFrame` + `EkFormSection`; sekmeler kart başlığında, eylem çubuğu Vazgeç/Kaydet sağda. Ürün tanım/güncelleme sihirbazı (`ProductInfoFormComponent` ortak gövde, tekil ürün, detaylar), marka/kategori tanım panelleri, manuel fatura/sevkiyat, destek talebi, kullanıcı/istemci ekleme diyalog gövdeleri `EkFormGrid`/`EkFormSection`'a geçti.
+- **Kategori:** ürün kategori adımı gömülü `EkCascadePicker` (`embedded`, klavye + arama); pazaryeri kategori eşleştirme alanı `EkCascadeDialog`.
+- **Testler:** `integration-forms.spec.ts`, `definition-forms.spec.ts`, `product-form-bodies.spec.ts` (gönderilen gövdeleri göçten ÖNCE sabitledi, sonra da yeşil), `ds-overlays.spec.ts` (seçici klavye/arama, tehlikeli diyalog, form hata metni, axe AA = 0).
+- **Kapsam dışı kalan (paralel oturumlar):** ListView içi filtre diyalogları, log listesi filtre formları, sipariş satır menüsü, komut paleti.
+
 ## 9. Eski / tutarsız renk envanteri (Aşama 2 temizlik listesi)
 
 Ölçüm 2026-09-29 (`style-baseline.json` + hedefli grep; `src/design/tokens` hariç).
@@ -213,7 +226,7 @@ Global legacy CSS: `public/assets/css/site.css` (hex 83, rgb 68, cubic-bezier 5)
 
 **Material palet adları (ton dışı renk):** `color="white"` 39 · `bg-color="white"` 19 · `color="red"` 12 · `color="grey"` 7 · `red-lighten-1/darken-4`, `grey-lighten-*`, `blue-grey-*`, `indigo(-accent-2)`, `orange-darken-2` ve `text-red`/`bg-grey-lighten-5`/`bg-green` sınıfları → semantik tonlar.
 
-**Global kural çakışmaları:** `site.css` `.v-dialog .v-overlay__content { top:0; left:0; max-width: unset !important; padding: 8px !important }` (diyalogları sol üste/tam genişliğe zorlar — `EkDialog` kendi `content-class`'ıyla korunuyor), `.v-overlay__scrim { top:1px }`, drawer z-index `!important`'ları.
+**Global kural çakışmaları:** ~~`site.css` `.v-dialog .v-overlay__content {…}`~~ (Aşama 2 / Adım 3'te kaldırıldı), `.v-overlay__scrim { top:1px }`, drawer z-index `!important`'ları.
 
 ## 10. Tasarım kararları ve gerekçeleri
 
