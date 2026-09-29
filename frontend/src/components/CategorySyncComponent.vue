@@ -21,7 +21,7 @@
     <LoadingComponent attach=".categoryListView" ref="loadingComponentRef"></LoadingComponent>
 
     <EkDialogHost :model-value="choiceSyncInfo.isChoiceSyncOpen || isChoiceMappingOpen"
-      attach=".categoryListComponentView" width="xl"
+      attach=".categoryListView" width="xl"
       @update:model-value="(v) => { if (!v) { choiceSyncInfo.isChoiceSyncOpen = false; isChoiceMappingOpen = false } }">
       <keep-alive>
         <ChoicesSyncComponent v-model="choiceSyncInfo" key="ChoicesSyncComponent"
