@@ -1,70 +1,32 @@
 <template>
-
-  <v-card variant="elevated" elevation="0" class="ma-0 pa-0 pdc-s1" color="transparent" height="100%">
-
-
-    <v-card-title class="d-flex pdc-s2">
-
-      <v-row>
-        <v-col cols="2">
-        </v-col>
-
-        <v-col>
-          <v-text-field clearable :rules="formRules.length_0_16" maxlength="20" type="tel" class="mb-3 mt-2"
-            density="compact" v-model="productInfoForm.maxPurchaseQuantity" variant="outlined" bg-color="textfieldColor"
-            hint="Üründen tek seferde maksimum sipariş edilebilecek miktar" counter>
-            <template #label>
-              Maksimum Satış Adedi (Varsayılan <span class="font-weight-medium">{{ computedDefaultMaxPurchaseQuantity }}
-                Adet</span>)
-            </template>
-          </v-text-field>
-          <v-text-field clearable :rules="formRules.length_0_16" maxlength="20" type="tel" class="mb-3 mt-2"
-            density="compact" v-model="productInfoForm.shippingDuration" variant="outlined" bg-color="textfieldColor"
-            hint="Ürünün kargoya verilme süresi" counter>
-            <template #label>
-              Kargo Süresi (Varsayılan <span class="font-weight-medium">{{ computedDefaultShipingDuration }} Gün</span>)
-            </template>
-          </v-text-field>
-          <v-text-field clearable :rules="formRules.length_0_16" maxlength="16" type="tel" class="mb-3 mt-2"
-            density="compact" v-model="productInfoForm.desi" variant="outlined" bg-color="textfieldColor"
-            hint="Ürünün desi miktarı" counter>
-            <template #label>
-              Desi (Varsayılan <span class="font-weight-medium">{{ computedDefaultDesi }} dm3</span>)
-            </template>
-          </v-text-field>
-          <v-text-field clearable :rules="formRules.length_0_16" maxlength="16" type="tel" class="mb-3 mt-2"
-            density="compact" v-model="productInfoForm.warranty" variant="outlined" bg-color="textfieldColor"
-            hint="Ürünün desi miktarı" counter>
-            <template #label>
-              Garanti Süresi(Varsayılan <span class="font-weight-medium">{{ computedDefaultWarranty }} Ay</span>)
-            </template>
-          </v-text-field>
-
-          <v-select density="compact" class="customTextField" clearable
-            v-model.number="productInfoForm.taxPercentage" item-value="_id" :items="taxList" variant="outlined"
-            bg-color="textfieldColor">
-            <template #label>
-              KDV (Varsayılan <span class="font-weight-medium">%{{ computedDefaultTaxPercentage }}</span>)
-            </template>
-          </v-select>
-
-        </v-col>
-        <v-col cols="2">
-        </v-col>
-
-      </v-row>
-
-    </v-card-title>
-    <v-card-text class="mt-0 pt-1 vertical-table-container">
-
-
-    </v-card-text>
-  </v-card>
-
+  <section class="pdc-card" aria-labelledby="pdc-title">
+    <h2 id="pdc-title" class="pdc-title">Detay bilgiler</h2>
+    <p class="pdc-desc">Boş bırakılan alanlarda pazaryeri ayarlarındaki varsayılan değerler kullanılır.</p>
+    <EkFormSection title="Satış ve kargo" icon="mdi-truck-fast-outline">
+      <v-text-field clearable :rules="formRules.length_0_16" maxlength="20" type="tel" counter
+        v-model="productInfoForm.maxPurchaseQuantity" label="Maksimum Satış Adedi"
+        :hint="`Tek seferde sipariş edilebilecek en fazla miktar · varsayılan ${computedDefaultMaxPurchaseQuantity} adet`"
+        persistent-hint />
+      <v-text-field clearable :rules="formRules.length_0_16" maxlength="20" type="tel" counter
+        v-model="productInfoForm.shippingDuration" label="Kargo Süresi"
+        :hint="`Ürünün kargoya verilme süresi · varsayılan ${computedDefaultShipingDuration} gün`" persistent-hint />
+    </EkFormSection>
+    <EkFormSection title="Ölçü, garanti ve vergi" icon="mdi-package-variant-closed">
+      <v-text-field clearable :rules="formRules.length_0_16" maxlength="16" type="tel" counter
+        v-model="productInfoForm.desi" label="Desi"
+        :hint="`Ürünün desi miktarı · varsayılan ${computedDefaultDesi} dm³`" persistent-hint />
+      <v-text-field clearable :rules="formRules.length_0_16" maxlength="16" type="tel" counter
+        v-model="productInfoForm.warranty" label="Garanti Süresi"
+        :hint="`Ürünün garanti süresi · varsayılan ${computedDefaultWarranty} ay`" persistent-hint />
+      <v-select clearable v-model.number="productInfoForm.taxPercentage" item-value="_id" :items="taxList" label="KDV"
+        :hint="`Varsayılan %${computedDefaultTaxPercentage}`" persistent-hint />
+    </EkFormSection>
+  </section>
 </template>
 
 <script setup lang="ts">
 import { ref, onBeforeMount, onMounted, computed } from 'vue'
+import EkFormSection from '@/components/ds/EkFormSection.vue'
 import { useI18n } from 'vue-i18n';
 import { useStaticsStore } from '@/stores/staticsStore';
 import { useIntegrationStore } from '@/stores/integrationStore';
@@ -159,22 +121,34 @@ const findMaximumMarketPrice = (platforms: any) => {
 
 </script>
 
-
-<style scoped></style>
-
-<style>
-/* ADR-0015 B5-2 — satir ici stillerden tasinan siniflar (autostyle). Satir ici stilin onceligi
-   !important ile korunur; ayni ozellikte Vuetify yardimci sinifi/`color` prop cakismasi varsa
-   (satir ici stil zaten yeniliyordu) !important eklenmez. Scope'suz: v-dialog/v-menu ve alt
-   bilesen kokleri scoped ozniteligi almayabilir; onek dosyaya ozgudur. */
-.pdc-s1 {
-  transition: none !important;
-  box-shadow: none !important;
-  transform: none !important;
-  right: 0 !important;
+<style scoped>
+.pdc-card {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: var(--ek-space-6);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface);
+  box-shadow: var(--ek-shadow-card);
 }
 
-.pdc-s2 {
-  display: block !important;
+.pdc-title {
+  margin: 0;
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-heading-size);
+  line-height: var(--ek-type-heading-line);
+  font-weight: var(--ek-type-heading-weight);
+}
+
+.pdc-desc {
+  margin: var(--ek-space-1) 0 var(--ek-space-5);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+}
+
+@media (max-width: 599px) {
+  .pdc-card {
+    padding: var(--ek-space-4);
+  }
 }
 </style>
