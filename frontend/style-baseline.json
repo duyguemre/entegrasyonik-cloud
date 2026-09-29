@@ -2,10 +2,10 @@
   "_meta": "ADR-0011 Karar 2 / Aşama 1 literal-stil mandalı tabanı. node scripts/check-style-baseline.js --write ile üretildi (bkz. scripts/style-literal-counts.js). Hiçbir dosyada/kategoride sayı ARTAMAZ; yeni dosyalar 0 ile başlamalı; düşüş serbest ama bu dosyanın güncellenmesi gerekir (check-style-baseline.js OK dönene kadar).",
   "date": "2026-09-29",
   "totals": {
-    "total": 2217,
-    "hex": 903,
+    "total": 2209,
+    "hex": 901,
     "rgb": 247,
-    "inlineStyle": 1051,
+    "inlineStyle": 1045,
     "cubicBezier": 10,
     "motion": 6
   },
@@ -2139,20 +2139,20 @@
       "total": 0
     },
     "src/views/secure/productDefinitions/BrandListView.vue": {
-      "hex": 1,
+      "hex": 0,
       "rgb": 0,
-      "inlineStyle": 3,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 4
+      "total": 0
     },
     "src/views/secure/productDefinitions/CategoryListView.vue": {
-      "hex": 1,
+      "hex": 0,
       "rgb": 0,
-      "inlineStyle": 3,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 4
+      "total": 0
     },
     "src/views/secure/productDefinitions/ChoiceListView.vue": {
       "hex": 9,
