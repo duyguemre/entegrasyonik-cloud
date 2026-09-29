@@ -87,7 +87,9 @@ const drawerVisible = computed({
 function onSelect(key: string) {
   const link = linkFor(key)
   if (!link) return
-  if (link.code === 'ExitView') {
+  // Eski davranış AYNEN: yalnızca ÜST DÜZEY "Çıkış" öğesi oturumu kapatır; bir grubun ALT öğesi
+  // olan ExitView ekran olarak açılır (karakterizasyon: user-account-forms.spec.ts).
+  if (link.code === 'ExitView' && !link.parent) {
     userApi.logout()
     return
   }

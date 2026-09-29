@@ -20,7 +20,7 @@
     inputmode="numeric"
     autocomplete="off"
     maxlength="10"
-    :error-messages="invalid ? [invalidText] : $attrs['error-messages'] as string[] | undefined"
+    :error-messages="errorMessages"
     @update:model-value="onType"
     @blur="commit"
   >
@@ -60,6 +60,7 @@ const attrs = useAttrs()
 const open = ref(false)
 const text = ref(isoToTr(props.modelValue))
 const invalid = ref(false)
+const errorMessages = computed(() => (invalid.value ? [props.invalidText] : (attrs['error-messages'] as string[] | string | undefined)))
 const labelSuffix = computed(() => (typeof attrs.label === 'string' ? `: ${attrs.label}` : ''))
 
 watch(

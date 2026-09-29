@@ -53,7 +53,8 @@ const userApi = useUser()
 const { model, activeKey, linkFor, openKey } = useShellMenu()
 
 function onSelect(key: string) {
-  if (linkFor(key)?.code === 'ExitView') {
+  const link = linkFor(key)
+  if (link?.code === 'ExitView' && !link.parent) {
     userApi.logout()
     return
   }

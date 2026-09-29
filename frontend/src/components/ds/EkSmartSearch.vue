@@ -27,9 +27,9 @@
         :placeholder="placeholder"
         :aria-label="label"
         :aria-expanded="isOpen"
-        :aria-controls="listId"
+        :aria-controls="isOpen && !loading && flat.length ? listId : undefined"
         aria-autocomplete="list"
-        :aria-activedescendant="activeId || undefined"
+        :aria-activedescendant="isOpen && !loading && activeId ? activeId : undefined"
         autocomplete="off"
         @input="onInput"
         @focus="onFocus"
@@ -42,7 +42,7 @@
       </button>
     </div>
 
-    <div v-show="isOpen" class="ek-search__panel">
+    <div v-if="isOpen" class="ek-search__panel">
       <div v-if="loading" class="ek-search__results">
         <div v-for="n in 3" :key="n" class="ek-search__skeleton" aria-hidden="true">
           <span class="ek-search__skeleton-avatar"></span>
