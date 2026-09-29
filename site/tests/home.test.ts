@@ -292,7 +292,7 @@ describe('içerik kayıttan gelir', () => {
     expect([...nav.matchAll(/data-spy-link=/g)]).toHaveLength(4)
   })
 
-  it('senaryo (zaman çizgisi): beş adım, her adım yayımlanmış bir yetenek kaydına bağlı; kanal adı yok; örnek görünümler etiketli (S12)', () => {
+  it('senaryo (zaman çizgisi): beş adım, her adım yayımlanmış bir yetenek kaydına bağlı; kanal adı yok; örnek beyanı bölüm girişinde (S12 + S15-B)', () => {
     const block = html.match(/<ol[^>]*data-testid="story-steps"[\s\S]*?<\/ol>/)![0]
     const steps = [...block.matchAll(/<li[^>]*data-scene="story-step"[^>]*>/g)].map((m) => m[0])
     expect(steps).toHaveLength(5)
@@ -308,8 +308,12 @@ describe('içerik kayıttan gelir', () => {
     expect(t).toContain('yalnızca mevcut stok kadar rezervasyon yapılır')
     expect(t).toContain('onaylanır veya reddedilir')
     for (const i of getPublicIntegrations()) expect(t, i.name).not.toContain(i.name)
-    // her sahne "Örnek görünüm" etiketi taşır (uydurma veri yok)
-    expect([...block.matchAll(/Örnek görünüm/g)].length).toBeGreaterThanOrEqual(5)
+    // S15-B (S15-C deseniyle uyum): sahne başına görünür "Örnek görünüm" etiketi YOK; sayıların örnek olduğunu
+    // bölüm girişindeki tek cümle beyan eder (uydurma veri iddiası yok). Sahneler aria-hidden kalır.
+    expect(block).not.toMatch(/Örnek görünüm/)
+    expect([...block.matchAll(/<div class="viz"[^>]*>/g)].every((m) => m[0].includes('aria-hidden="true"'))).toBe(true)
+    const section = html.match(/<section[^>]*id="senaryo"[\s\S]*?<\/section>/)![0]
+    expect(textOf(section.split('data-testid="story-steps"')[0])).toContain('Aşağıdaki sahneler örnek görünümdür.')
   })
 
   it('sorun -> çözüm: tek kurgu (kaos + marka kartı); alttaki karşılaştırma tablosu yok; faydalar kanıtlı (S12)', () => {
@@ -318,6 +322,25 @@ describe('içerik kayıttan gelir', () => {
     expect(ps).not.toContain('ps__compare')
     const t = textOf(ps)
     for (const g of ['Merkezi stok yönetimi', 'Aşırı satışa karşı rezervasyon', 'Tek sipariş akışı', 'Kurumsal düzeyde güvenlik']) expect(t, g).toContain(g)
+    for (const i of getPublicIntegrations()) expect(t, i.name).not.toContain(i.name)
+  })
+
+  it('sorun -> çözüm tek merkez akışı (S15-B): isimsiz kanal çipleri; statik HTML senkron son durumu taşır (tüm çiplerde aynı değer)', () => {
+    const ps = html.match(/data-scene="problem-solution"[\s\S]*?<\/section>/)![0]
+    const net = ps.match(/<div class="ps__net[^"]*"[^>]*aria-hidden="true"[\s\S]*?class="ps__result/)![0]
+    const chips = [...net.matchAll(/<li class="ps__node[^"]*"[^>]*data-code="([^"]+)"/g)].map((m) => m[1])
+    expect(chips).toHaveLength(4)
+    const synced = [...net.matchAll(/data-part="chip-new"[^>]*>(\d+)</g)].map((m) => m[1])
+    expect(synced).toHaveLength(4)
+    expect(new Set(synced).size).toBe(1)
+    // tek stok değeri: sonuç kartı ile kanal çipleri aynı sayıyı gösterir
+    expect(ps).toMatch(new RegExp(`class="ps__result-num[^"]*"[^>]*>${synced[0]}<`))
+    // akış parçaları: gidiş/dönüş paketi her kanalda, gövde paketi ve iki göbek halkası
+    expect([...net.matchAll(/data-part="packet"/g)]).toHaveLength(4)
+    expect([...net.matchAll(/data-part="packet-back"/g)]).toHaveLength(4)
+    expect([...net.matchAll(/data-part="hub-ring"/g)]).toHaveLength(2)
+    expect(net).toContain('data-part="stem-packet"')
+    const t = textOf(net)
     for (const i of getPublicIntegrations()) expect(t, i.name).not.toContain(i.name)
   })
 

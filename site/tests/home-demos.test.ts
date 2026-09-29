@@ -228,3 +228,52 @@ describe('S15-C: ekosistem düğümlerinin iç hareketi (yörünge korunur)', ()
     }
   })
 })
+
+describe('S15-B: tek merkez akışı (sorun -> çözüm) ve sipariş hikâyesi cam katmanları', () => {
+  const psCss = styleOf('components/home/ProblemSolution.astro')
+  const rule = (css: string, sel: string) => {
+    const i = css.indexOf(`${sel} {`)
+    expect(i, sel).toBeGreaterThanOrEqual(0)
+    return css.slice(i, css.indexOf('}', i))
+  }
+  const loops = stripComments(read('styles/scenes-loops.css'))
+
+  it('statik hâl = senkron son durum: eski değer, paketler, halkalar ve ışıklar görünmez', () => {
+    for (const sel of ['.ps__chip-old', '.ps__packet', '.ps__hub-ring', '.ps__chip::after', '.ps__bus::after', '.ps__result::after']) {
+      expect(rule(psCss, sel), sel).toMatch(/opacity:\s*0;/)
+    }
+    // yeni (senkron) değerin statik opaklığı düşürülmez
+    expect(psCss).not.toMatch(/\.ps__chip-new\s*\{[^}]*opacity/)
+  })
+
+  it('paketler çipin ALTINDAN çıkar (çip opak katman, z-index 1) ve marka kartının içinde kalır (sayfa taşması yok)', () => {
+    expect(rule(psCss, '.ps__chip')).toMatch(/z-index:\s*1;/)
+    expect(rule(psCss, '.ps__chip')).toMatch(/position:\s*relative;/)
+    expect(rule(psCss, '.ps__after')).toMatch(/overflow:\s*hidden;/)
+  })
+
+  it('döngü: 12 sn sahne token\'ı, yalnızca oynatma + görünürken; paket gidiş/dönüş, nabız ve senkron kareleri tanımlı', () => {
+    for (const k of ['loop-ps-old', 'loop-ps-new', 'loop-ps-in', 'loop-ps-bus', 'loop-ps-stem', 'loop-ps-ring', 'loop-ps-glow', 'loop-ps-back', 'loop-ps-halo', 'loop-ps-result']) {
+      expect(loops, k).toContain(`@keyframes ${k} {`)
+      const use = loops.match(new RegExp(`\\{\\s*animation-name:\\s*${k};`))
+      expect(use, k).not.toBeNull()
+    }
+    const timing = loops.match(/\[data-scene='problem-solution'\]\[data-state='play'\] :is\([^{]*\{([^}]*)\}/)![1]
+    expect(timing).toMatch(/animation-duration:\s*var\(--site-motion-loop-scene\)/)
+    expect(timing).toMatch(/animation-play-state:\s*paused/)
+    expect(loops).toMatch(/\[data-scene='problem-solution'\]\[data-state='play'\]\[data-visible='true'\] :is\([^{]*\{\s*animation-play-state:\s*running/)
+  })
+
+  it('sipariş hikâyesi: kart > sahne > öğe cam katmanları tek renk ailesinde (token), sahne başına etiket yok', () => {
+    const file = 'components/home/OrderStory.astro'
+    const css = styleOf(file)
+    for (const t of ['--story-card-tint', '--story-scene-bg', '--story-item-bg', '--story-item-edge']) {
+      expect(css, t).toMatch(new RegExp(`${t}:\\s*color-mix\\(in srgb, var\\(--(?:ek-color-secondary|site-stage-deep)\\)`))
+    }
+    expect(rule(css, '.story__card')).toContain('var(--story-card-tint)')
+    expect(rule(css, '.viz')).toContain('var(--story-scene-bg)')
+    expect(css).toMatch(/\.vret__steps\) \{\s*border: var\(--site-border-width\) solid var\(--story-item-edge\);[^}]*background: var\(--story-item-bg\)/)
+    const markup = read(file).split('<style>')[0].replace(/\/\*[\s\S]*?\*\//g, '')
+    expect(markup).not.toMatch(/Örnek görünüm|viz__tag/)
+  })
+})
