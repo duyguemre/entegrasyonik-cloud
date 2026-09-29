@@ -33,6 +33,18 @@ async function baseMocks(page: any, overrides: Record<string, any> = {}) {
   })
 }
 
+// DS-v2 Aşama 2 — BİLİNÇLİ DEĞİŞİKLİK: "Varsayılan dışı" filtresi sayfa içi panelde (onay kutusu), "Sorgula" ile uygulanır.
+async function applyNonDefaultFilter(page: any) {
+  const view = page.locator('.effectiveConfigView')
+  await expect(view.locator('.ek-grid')).toBeVisible()
+  const panel = view.locator('.ek-filter')
+  const toggle = view.getByRole('button', { name: /Filtreler/ })
+  if ((await toggle.getAttribute('aria-expanded')) === 'false') await toggle.click()
+  await expect(panel.locator('form')).toBeVisible()
+  await panel.getByText('Varsayılan dışı', { exact: true }).click()
+  await panel.getByRole('button', { name: /Sorgula/ }).click()
+}
+
 async function openTrendyolEffectiveConfig(page: any) {
   await gotoAuthed(page)
   await openScreen(page, 'IntegrationConfigListView')
@@ -60,7 +72,7 @@ test.describe('ADR-0020 Aşama C — Etkin yapılandırma (Trendyol)', () => {
     await openTrendyolEffectiveConfig(page)
     const view = page.locator('.effectiveConfigView')
 
-    await view.getByRole('button', { name: 'Varsayılan dışı' }).click()
+    await applyNonDefaultFilter(page)
     await expect(view.getByText('HTTP zaman aşımı', { exact: true })).toHaveCount(0)
     await expect(view.getByText('Dakikada istek sınırı', { exact: true })).toBeVisible()
   })
@@ -69,14 +81,16 @@ test.describe('ADR-0020 Aşama C — Etkin yapılandırma (Trendyol)', () => {
     await baseMocks(page, { 'IntegrationConfigService/getEffectiveConfig': mockError(500) })
     await openTrendyolEffectiveConfig(page)
     const view = page.locator('.effectiveConfigView')
+    // DS-v2 Aşama 2: hata durumu tablo içinde ("Etkin yapılandırma yüklenemedi" + "Tekrar dene").
     await expect(view.getByText('tekrar deneyin', { exact: false }).first()).toBeVisible()
+    await expect(view.getByRole('button', { name: 'Tekrar dene' })).toBeVisible()
     await expect(view).not.toContainText('500')
   })
 
   test('boş durum: hiç değer yoksa filtreyle "sonuç yok" gösterilir', async ({ page }) => {
     await baseMocks(page, { 'IntegrationConfigService/getEffectiveConfig': { target: 'trendyol', publishedVersion: 0, catalogVersion: '2026-09-29.b1', values: [] } })
     await openTrendyolEffectiveConfig(page)
-    await page.getByRole('button', { name: 'Varsayılan dışı' }).click()
+    await applyNonDefaultFilter(page)
     await expect(page.getByText('Sonuç yok', { exact: true })).toBeVisible()
   })
 
@@ -103,11 +117,7 @@ test.describe('ADR-0020 Aşama C — Etkin yapılandırma (Trendyol)', () => {
     await page.waitForTimeout(600)
     const scoped = await new AxeBuilder({ page }).include('.effectiveConfigView').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
     await testInfo.attach('axe-EffectiveConfigView-sonuclari.json', { body: JSON.stringify(scoped.violations, null, 2), contentType: 'application/json' })
-    // Bilinen DS düzeyi borç (bkz. orders.spec.ts/customers.spec.ts/claims.spec.ts AYNI not) —
-    // `EkDataTable` (salt-oku, bu görevin DIŞI) `role="table"` div'i içine literal `<table>`
-    // yerleştiriyor VE mobil genişlikte taşan tablo klavye odağı ALMIYOR.
-    const knownDsIssues = new Set(['aria-required-children', 'scrollable-region-focusable'])
-    const ownViolations = scoped.violations.filter((v) => !knownDsIssues.has(v.id))
-    expect(ownViolations, JSON.stringify(ownViolations, null, 2)).toEqual([])
+    // DS-v2 Aşama 2: liste EkDataGrid (yerel tablo) — `knownDsIssues` istisnası kaldırıldı.
+    expect(scoped.violations, JSON.stringify(scoped.violations, null, 2)).toEqual([])
   })
 })
