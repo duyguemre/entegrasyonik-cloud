@@ -5,54 +5,68 @@
   başına kullanılmaz; overlay'li ve vitrin (inline) sunumu aynı kartı paylaşır.
 -->
 <template>
-  <div
+  <component
+    :is="asForm ? 'form' : 'div'"
     class="ek-dialog"
     :class="[`ek-dialog--${tone}`, `ek-dialog--${width}`, { 'ek-dialog--inline': inline }]"
     :role="inline ? 'group' : undefined"
-    :aria-labelledby="titleId"
-    :aria-describedby="description ? descId : undefined"
+    :aria-labelledby="resolvedTitleId"
+    :aria-describedby="description || $slots.description ? descId : undefined"
+    :novalidate="asForm || undefined"
+    @submit.prevent="onSubmit"
   >
     <header class="ek-dialog__header">
-      <EkIconTile v-if="icon" :icon="icon" :tone="tone === 'danger' ? 'error' : 'action'" size="md" />
+      <EkIconTile v-if="icon" :icon="icon" :tone="iconTone ?? (tone === 'danger' ? 'error' : 'action')" size="md" />
       <div class="ek-dialog__titles">
-        <h2 :id="titleId" class="ek-dialog__title">{{ title }}</h2>
-        <p v-if="description" :id="descId" class="ek-dialog__desc">{{ description }}</p>
+        <h2 :id="resolvedTitleId" class="ek-dialog__title">{{ title }}</h2>
+        <p v-if="description || $slots.description" :id="descId" class="ek-dialog__desc">
+          <slot name="description">{{ description }}</slot>
+        </p>
       </div>
-      <EkButton tone="ghost" size="sm" icon="mdi-close" icon-only aria-label="Kapat" @click="close" />
+      <slot name="header-actions" />
+      <EkButton v-if="!hideClose" tone="ghost" size="sm" icon="mdi-close" icon-only aria-label="Kapat" @click="close" />
     </header>
-    <div class="ek-dialog__body">
+    <div v-if="$slots.default" class="ek-dialog__body">
       <slot />
     </div>
-    <footer class="ek-dialog__actions">
+    <footer v-if="!hideActions" class="ek-dialog__actions">
       <div class="ek-dialog__actions-start"><slot name="actions-start" /></div>
       <slot name="actions">
-        <EkButton ref="cancelRef" tone="secondary" @click="cancel">{{ cancelLabel }}</EkButton>
+        <EkButton v-if="!hideCancel" ref="cancelRef" tone="secondary" @click="cancel">{{ cancelLabel }}</EkButton>
         <EkButton
           :tone="tone === 'danger' ? 'danger' : 'primary'"
           :icon="confirmIcon"
           :loading="confirmLoading"
           :disabled="confirmDisabled"
-          @click="emit('confirm')"
+          :type="asForm ? 'submit' : 'button'"
+          @click="asForm ? undefined : emit('confirm')"
         >
           {{ confirmLabel }}
         </EkButton>
       </slot>
     </footer>
-  </div>
+  </component>
 </template>
 
 <script setup lang="ts">
-import { ref, useId } from 'vue'
+import { computed, ref, useId } from 'vue'
 import EkButton from './EkButton.vue'
-import EkIconTile from './EkIconTile.vue'
+import EkIconTile, { type EkTone } from './EkIconTile.vue'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     title: string
+    /** EkDialog'un overlay'e verdiği başlık kimliği (aria-labelledby) — yoksa yerel üretilir. */
+    titleId?: string
+    hideActions?: boolean
+    hideCancel?: boolean
+    hideClose?: boolean
+    asForm?: boolean
     description?: string
     icon?: string
+    iconTone?: EkTone
     tone?: 'default' | 'danger'
-    width?: 'sm' | 'md' | 'lg'
+    width?: 'sm' | 'md' | 'lg' | 'xl' | 'custom'
     confirmLabel?: string
     confirmIcon?: string
     cancelLabel?: string
@@ -60,13 +74,13 @@ withDefaults(
     confirmDisabled?: boolean
     inline?: boolean
   }>(),
-  { tone: 'default', width: 'md', confirmLabel: 'Kaydet', cancelLabel: 'Vazgeç', confirmLoading: false, confirmDisabled: false, inline: false },
+  { hideActions: false, hideCancel: false, hideClose: false, asForm: false, tone: 'default', width: 'md', confirmLabel: 'Kaydet', cancelLabel: 'Vazgeç', confirmLoading: false, confirmDisabled: false, inline: false },
 )
 
 const emit = defineEmits<{ close: []; cancel: []; confirm: [] }>()
 
 const uid = useId()
-const titleId = `ek-dialog-title-${uid}`
+const resolvedTitleId = computed(() => props.titleId ?? `ek-dialog-title-${uid}`)
 const descId = `ek-dialog-desc-${uid}`
 const cancelRef = ref<InstanceType<typeof EkButton> | null>(null)
 
@@ -76,6 +90,10 @@ function close() {
 
 function cancel() {
   emit('cancel')
+}
+
+function onSubmit() {
+  if (props.asForm && !props.confirmDisabled && !props.confirmLoading) emit('confirm')
 }
 
 defineExpose({
@@ -110,6 +128,10 @@ defineExpose({
 
 .ek-dialog--lg {
   max-width: 760px;
+}
+
+.ek-dialog--xl {
+  max-width: 1040px;
 }
 
 .ek-dialog__header {
