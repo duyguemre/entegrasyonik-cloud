@@ -11,6 +11,10 @@
  * düğüm, çizgi, kart ve sahne parçaları sırayla belirir (scenes.css); döngüler yalnızca görünürken (scenes-loops.css).
  * Statik hâl (reduced-motion / durdurulmuş / JS'siz): her sahne son durumunu gösterir (sipariş listede, stok 11,
  * tüm kanallar güncel, paket pazaryerinde, iade adımları tamam).
+ *
+ * S13-C (kullanıcı geri bildirimi: "beyaz kart ile animasyon arka planı arasında çok fazla kontrast"): bölüm artık
+ * tek bir koyu sahnedir (`tone="stage"`). Kartlar koyu cam (yarı saydam yüzey + ince iç kenar ışığı + derin yumuşak
+ * gölge), canlı sahne paneli kartın içine GÖMÜLÜ daha derin bir yüzeydir — beyaz/koyu sert geçişi yoktur.
  */
 import Section from '../Section.astro'
 import SectionHeading from './SectionHeading.astro'
@@ -70,9 +74,10 @@ const steps = [
 ]
 ---
 
-<Section tone="muted" id="senaryo" labelledby="senaryo-baslik">
+<Section tone="stage" id="senaryo" labelledby="senaryo-baslik" class="story-section">
   <SectionHeading
     id="senaryo-baslik"
+    tone="dark"
     eyebrow="Senaryo"
     title="Bir sipariş geldiğinde ne olur?"
     lead="Siparişin düştüğü andan iadeye kadar her adım tek merkezde ilerler. Aşağıdaki sahneler örnek görünümdür."
@@ -269,10 +274,14 @@ const steps = [
     width: var(--ek-space-10);
     height: var(--ek-space-10);
     border-radius: var(--ek-radius-full);
-    background: var(--ek-color-background);
+    background:
+      radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--ek-color-secondary) 34%, transparent), transparent 70%),
+      color-mix(in srgb, var(--site-stage-deep) 82%, var(--ek-color-secondary));
     box-shadow:
-      0 0 0 var(--site-border-width) color-mix(in srgb, var(--site-accent) 45%, transparent),
-      0 0 0 var(--ek-space-1) var(--site-accent-soft);
+      inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 22%, transparent),
+      0 0 0 var(--site-border-width) color-mix(in srgb, var(--site-accent) 55%, transparent),
+      0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-secondary) 12%, transparent),
+      0 0 var(--ek-space-6) color-mix(in srgb, var(--ek-color-secondary) 30%, transparent);
     color: var(--site-accent);
   }
   .story__line {
@@ -281,7 +290,7 @@ const steps = [
     width: calc(var(--site-border-width) * 2);
     margin-block: var(--ek-space-1);
     border-radius: var(--ek-radius-full);
-    background: linear-gradient(180deg, var(--site-accent-line), var(--ek-color-border-default));
+    background: linear-gradient(180deg, var(--site-accent-line), var(--site-glass-border));
     transform-origin: 50% 0;
   }
   .story__step:last-child .story__line {
@@ -297,19 +306,49 @@ const steps = [
     height: var(--ek-space-2);
     border-radius: var(--ek-radius-full);
     background: var(--site-accent);
-    box-shadow: var(--site-glow-ring);
+    box-shadow: var(--site-glow-ring), 0 0 var(--ek-space-3) var(--site-accent);
     opacity: 0;
     pointer-events: none;
   }
+  /*
+   * Koyu cam kart: yarı saydam, üstten hafif aydınlanan yüzey + ince degrade kenar ışığı (padding-box/border-box)
+   * + üst iç kenarda tek piksellik ışık + derin, yumuşak gölge. Sahnenin mesh zemini kartın içinden sezilir.
+   */
   .story__card {
     display: grid;
     gap: var(--ek-space-5);
     margin-bottom: var(--ek-space-6);
     padding: var(--ek-space-5);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border: var(--site-border-width) solid transparent;
     border-radius: var(--site-radius-panel);
-    background: var(--ek-color-surface);
-    box-shadow: var(--site-shadow-card);
+    background:
+      radial-gradient(90% 120% at 0% 0%, color-mix(in srgb, var(--ek-color-secondary) 9%, transparent), transparent 60%) padding-box,
+      linear-gradient(
+          180deg,
+          color-mix(in srgb, var(--ek-color-background) 6%, transparent),
+          color-mix(in srgb, var(--site-stage-deep) 24%, transparent)
+        )
+        padding-box,
+      linear-gradient(
+          160deg,
+          color-mix(in srgb, var(--ek-color-background) 26%, transparent),
+          color-mix(in srgb, var(--ek-color-background) 6%, transparent) 42%,
+          color-mix(in srgb, var(--ek-color-secondary) 30%, transparent)
+        )
+        border-box;
+    backdrop-filter: blur(var(--site-glass-blur));
+    box-shadow:
+      inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 10%, transparent),
+      0 var(--ek-space-6) var(--ek-space-12) calc(var(--ek-space-6) * -1) color-mix(in srgb, var(--site-stage-deep) 80%, transparent);
+    transition:
+      box-shadow var(--ek-duration-base) var(--ek-easing-standard),
+      transform var(--tilt-transition-duration, var(--ek-duration-fast)) var(--ek-easing-standard);
+  }
+  .story__card:hover {
+    box-shadow:
+      inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 14%, transparent),
+      0 0 0 var(--site-border-width) color-mix(in srgb, var(--ek-color-secondary) 28%, transparent),
+      0 var(--ek-space-8) var(--ek-space-16) calc(var(--ek-space-8) * -1) color-mix(in srgb, var(--ek-color-secondary) 26%, transparent);
   }
   .story__step:last-child .story__card {
     margin-bottom: 0;
@@ -321,8 +360,8 @@ const steps = [
     min-width: 0;
   }
   /* Kart hiyerarşisi: site-tokens.css `--site-card-*` (eyebrow -> başlık -> gövde). */
-  .story__index {
-    color: var(--site-card-eyebrow-color);
+  .story .story__index {
+    color: var(--site-accent);
     font-size: var(--site-card-eyebrow-size);
     font-weight: var(--site-card-eyebrow-weight);
     letter-spacing: var(--site-card-eyebrow-tracking);
@@ -352,8 +391,15 @@ const steps = [
     justify-content: center;
     min-height: 14rem;
     padding: var(--ek-space-10) var(--ek-space-5) var(--ek-space-6);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-background) 8%, transparent);
     border-radius: var(--ek-radius-xl);
-    background: var(--site-stage-mesh);
+    /* Kartın içine gömülü, bir ton daha derin yüzey (ayrı bir "pencere" değil): kenarda sert geçiş yok. */
+    background:
+      radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--ek-color-secondary) 14%, transparent), transparent 60%),
+      linear-gradient(180deg, color-mix(in srgb, var(--site-stage-deep) 55%, transparent), color-mix(in srgb, var(--site-stage-deep) 30%, transparent));
+    box-shadow:
+      inset 0 var(--site-border-width) var(--ek-space-3) color-mix(in srgb, var(--site-stage-deep) 60%, transparent),
+      inset 0 calc(var(--site-border-width) * -1) 0 color-mix(in srgb, var(--ek-color-background) 6%, transparent);
     color: var(--site-text-on-dark-body);
     font-size: var(--ek-font-size-sm);
   }
@@ -366,6 +412,7 @@ const steps = [
     background-size: var(--site-texture-grid-size);
     -webkit-mask-image: var(--site-texture-fade);
     mask-image: var(--site-texture-fade);
+    opacity: 0.7;
   }
   .viz::after {
     content: '';
@@ -376,7 +423,7 @@ const steps = [
     width: 80%;
     aspect-ratio: 1;
     border-radius: var(--ek-radius-full);
-    background: radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-secondary) 26%, transparent), transparent);
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-secondary) 18%, transparent), transparent);
   }
   .viz__tag {
     position: absolute;
