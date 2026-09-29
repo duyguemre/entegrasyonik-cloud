@@ -121,6 +121,22 @@ describe('llms-full.txt (kapsamlı özet)', () => {
   })
 })
 
+describe('S14: yeni sayfalar llms* içinde', () => {
+  it('llms.txt destek merkezi ve stok rezervasyonu sayfasını listeler', () => {
+    expect(llms).toContain(`${SITE_URL}/destek`)
+    expect(llms).toContain(`${SITE_URL}/ozellikler/stok-rezervasyonu`)
+  })
+
+  it('llms-full.txt stok rezervasyonu anlatısını, destek kategorilerini ve bağlantı rehberlerini içerir', () => {
+    expect(llmsFull).toContain('## Stok rezervasyonu: aşırı satış nasıl önlenir')
+    expect(llmsFull).toContain('## Destek merkezi')
+    for (const label of ['Başlangıç ve kurulum', 'Kanal bağlama', 'Stok ve sipariş', 'Hesap ve güvenlik', 'Fiyat ve fatura']) {
+      expect(llmsFull).toContain(`**${label}**`)
+    }
+    expect((llmsFull.match(/- Nasıl bağlanır: /g) ?? []).length).toBe(AVAILABLE_INTEGRATION_CODES.length)
+  })
+})
+
 describe('llms* çıktısı: yasaklı ifade / mutlak iddia / roadmap sızıntısı yok (claims.test.ts ile aynı disiplin)', () => {
   const roadmapNames = integrations.filter((i) => i.status === 'roadmap').flatMap((i) => [i.name, ...i.aliases])
   const forbiddenNames = [...new Set([...STATIC_FORBIDDEN_NAMES, ...roadmapNames])]

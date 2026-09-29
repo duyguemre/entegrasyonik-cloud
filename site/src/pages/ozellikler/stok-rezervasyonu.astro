@@ -66,15 +66,15 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
       <figure class="ledger" data-scene="reveal">
         <figcaption class="ledger__tag">Kullanılabilir stok</figcaption>
         <ul class="ledger__rows" role="list">
-          <li class="ledger__row" data-reveal style="--i: 0">
+          <li class="ledger__row" data-reveal>
             <span class="ledger__label">Eldeki stok</span>
             <span class="ledger__bar" aria-hidden="true"><span class="ledger__fill ledger__fill--stock"></span></span>
           </li>
-          <li class="ledger__row" data-reveal style="--i: 1">
+          <li class="ledger__row" data-reveal>
             <span class="ledger__label"><span class="ledger__op" aria-hidden="true">−</span> Rezerve edilen</span>
             <span class="ledger__bar" aria-hidden="true"><span class="ledger__fill ledger__fill--reserved"></span></span>
           </li>
-          <li class="ledger__row ledger__row--result" data-reveal style="--i: 2">
+          <li class="ledger__row ledger__row--result" data-reveal>
             <span class="ledger__label"><span class="ledger__op" aria-hidden="true">=</span> Kullanılabilir</span>
             <span class="ledger__bar" aria-hidden="true"><span class="ledger__fill ledger__fill--available"></span></span>
           </li>

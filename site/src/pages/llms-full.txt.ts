@@ -6,10 +6,11 @@
 import type { APIRoute } from 'astro'
 import { siteConfig } from '../lib/site-config'
 import { getPublicIntegrations } from '../data/integrations'
-import { getPublicCapabilities } from '../data/capabilities'
-import { getPublicFaq } from '../data/faq'
+import { getPublicCapabilities, getStockReservationStory } from '../data/capabilities'
+import { getPublicFaq, getSupportCategories } from '../data/faq'
+import { getConnectGuide } from '../data/connect'
 import { getPublicPlans, getPlanSourceNotice, getVatNotice, getPublicTrial } from '../data/plans'
-import { primaryNav, legalNav, published } from '../data/navigation'
+import { primaryNav, featureNav, legalNav, published } from '../data/navigation'
 
 const base = siteConfig.siteUrl ?? ''
 const url = (path: string) => `${base}${path}`
@@ -38,6 +39,7 @@ export const GET: APIRoute = () => {
   lines.push('')
   lines.push(`- [Ana sayfa](${url('/')})`)
   for (const p of published(primaryNav)) lines.push(`- [${p.label}](${url(p.href)})`)
+  for (const p of published(featureNav)) lines.push(`- [${p.label}](${url(p.href)})`)
   lines.push('')
 
   lines.push('## Entegrasyonlar')
@@ -50,6 +52,11 @@ export const GET: APIRoute = () => {
     for (const c of i.capabilities) lines.push(`- ${c.label} (${c.levelLabel}): ${c.note}`)
     if (i.notProvided.length > 0) lines.push(`- Sunulmayan: ${i.notProvided.join('; ')}`)
     for (const l of i.limitations) lines.push(`- Sınır: ${l}`)
+    const guide = getConnectGuide(i.code, i.kind)
+    if (guide) {
+      lines.push(`- Gerekli bilgiler: ${guide.credentials.join(', ')}`)
+      lines.push(`- Nasıl bağlanır: ${guide.steps.join(' ')}${guide.note ? ` ${guide.note}` : ''} Rehber: ${url(`/entegrasyonlar/${i.code}`)}`)
+    }
     lines.push('')
   }
 
@@ -60,6 +67,21 @@ export const GET: APIRoute = () => {
     const caveat = c.caveat ? ` ${c.caveat}` : ''
     lines.push(`- **${c.title}** (${c.statusLabel}): ${c.summary}${caveat}${channels}`)
   }
+  lines.push('')
+
+  const story = getStockReservationStory()
+  lines.push('## Stok rezervasyonu: aşırı satış nasıl önlenir')
+  lines.push('')
+  lines.push(`Ayrıntı: ${url('/ozellikler/stok-rezervasyonu')}`)
+  lines.push('')
+  lines.push('Sorun:')
+  for (const x of story.problems) lines.push(`- **${x.title}**: ${x.text}`)
+  lines.push('')
+  lines.push('Nasıl çalışır:')
+  for (const x of story.steps) lines.push(`- **${x.title}**: ${x.text}`)
+  lines.push('')
+  lines.push('Fayda:')
+  for (const x of story.benefits) lines.push(`- **${x.title}**: ${x.text}`)
   lines.push('')
 
   lines.push('## Güvenlik ve KVKK')
@@ -89,6 +111,16 @@ export const GET: APIRoute = () => {
     lines.push(f.answer)
     lines.push('')
   }
+
+  lines.push('## Destek merkezi')
+  lines.push('')
+  lines.push(`Kategorili destek sayfası: ${url('/destek')}`)
+  lines.push('')
+  for (const c of getSupportCategories()) {
+    const guides = c.channelGuides ? ' Kanal bağlantı rehberleri her entegrasyonun sayfasındadır.' : ''
+    lines.push(`- **${c.label}**: ${c.lead}${guides} Sorular: ${c.items.map((q) => q.question).join(' / ')}`)
+  }
+  lines.push('')
 
   lines.push('## Optional')
   lines.push('')

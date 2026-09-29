@@ -23,8 +23,8 @@ import {
   ecosystemPromises,
   getEcosystemNodes,
 } from '../src/data/integrations'
-import { productCapabilities, getPublicCapabilities, getHomePillars, homePillars } from '../src/data/capabilities'
-import { faq, getPublicFaq, FAQ_CATEGORIES, getFaqPreview } from '../src/data/faq'
+import { productCapabilities, getPublicCapabilities, getHomePillars, homePillars, getStockReservationStory } from '../src/data/capabilities'
+import { faq, getPublicFaq, FAQ_CATEGORIES, getFaqPreview, SUPPORT_CATEGORIES, getSupportCategories } from '../src/data/faq'
 import {
   defaultPlanSource,
   getPublicPlans,
@@ -104,6 +104,9 @@ function publicContent() {
     faqCategories: FAQ_CATEGORIES,
     planPitch: getPublicPlans().map((p) => getPlanPitch(p.code)),
     planCommon: getPlanCommonFeatures(),
+    // S14: stok rezervasyonu anlatısı (sahne etiketleri dahil) ve destek merkezi kategorileri de görünür metindir
+    stockStory: getStockReservationStory(),
+    support: getSupportCategories().map(({ label, lead, links }) => ({ label, lead, links: links.map((l) => l.label) })),
   }
 }
 
@@ -256,7 +259,7 @@ describe('(2) evidence: dolu, dosya mevcut, atıf metni dosyada geçiyor', () =>
     expect(integrations.length).toBeGreaterThanOrEqual(6)
     expect(productCapabilities.length).toBeGreaterThanOrEqual(10)
     expect(faq.length).toBeGreaterThanOrEqual(16)
-    expect(faq.length).toBeLessThanOrEqual(24)
+    expect(faq.length).toBeLessThanOrEqual(26) // S14: +1 (secim-kriterleri)
     expect(owned.length).toBeGreaterThan(60)
   })
 
@@ -729,5 +732,59 @@ describe('SSS yapısı: kategoriler, önizleme, benzersizlik', () => {
   it('destek yanıtı saat/süre/kanal taahhüdü içermez', () => {
     const text = norm(getPublicFaq().filter((f) => f.category === 'destek-olcek').map((f) => f.answer).join(' '))
     for (const w of ['saat icinde', 'dakika icinde', 'canli destek', 'telefon', 'hafta ici', 'mesai']) expect(text, w).not.toContain(w)
+  })
+})
+
+// ------------------------------------------------------------------------------------------ S14
+
+describe('S14: stok rezervasyonu anlatısı, somut akış cümleleri ve destek merkezi kayıtlara dayanır', () => {
+  const visible = new Set(getPublicCapabilities().map((c) => c.id))
+
+  it('anlatı (sorun/nasıl çalışır/fayda) her maddesi görünür, roadmap olmayan yeteneklere bağlı ve stock-reservation merkezde', () => {
+    const story = getStockReservationStory()
+    expect(story.problems.length).toBeGreaterThanOrEqual(2)
+    expect(story.steps.length).toBeGreaterThanOrEqual(2)
+    expect(story.benefits.length).toBeGreaterThanOrEqual(2)
+    for (const item of [...story.problems, ...story.steps, ...story.benefits]) {
+      expect(item.basedOn.length, item.title).toBeGreaterThan(0)
+      for (const id of item.basedOn) expect(visible.has(id), `${item.title} -> ${id}`).toBe(true)
+    }
+    expect(story.steps.every((s) => s.basedOn.includes('stock-reservation'))).toBe(true)
+  })
+
+  it('anlatı ve sahne etiketlerinde kanal adı geçmez (kanal adları yalnızca kanal detay sayfalarında)', () => {
+    const text = norm(JSON.stringify(getStockReservationStory()))
+    for (const i of integrations.filter((x) => x.status === 'available')) expect(phraseRe(i.name).test(text), i.name).toBe(false)
+  })
+
+  it('her görünür çekirdek yeteneğin somut akış cümlesi (action) var; kanal adı içermez', () => {
+    for (const c of getPublicCapabilities('core')) {
+      expect(c.action, c.id).toBeTruthy()
+      for (const i of integrations) expect(phraseRe(i.name).test(norm(c.action!)), `${c.id}: ${i.name}`).toBe(false)
+    }
+  })
+
+  it('destek merkezi: beş kategori, her SSS kaydı en az bir kategoride, kimlikler geçerli ve tekrarsız', () => {
+    expect(SUPPORT_CATEGORIES.map((c) => c.label)).toEqual([
+      'Başlangıç ve kurulum',
+      'Kanal bağlama',
+      'Stok ve sipariş',
+      'Hesap ve güvenlik',
+      'Fiyat ve fatura',
+    ])
+    const ids = SUPPORT_CATEGORIES.flatMap((c) => c.faqIds)
+    expect(new Set(ids).size).toBe(ids.length)
+    const known = new Set(faq.map((f) => f.id))
+    for (const id of ids) expect(known.has(id), id).toBe(true)
+    for (const f of faq) expect(ids, f.id).toContain(f.id)
+    expect(SUPPORT_CATEGORIES.filter((c) => c.channelGuides).map((c) => c.id)).toEqual(['kanal-baglama'])
+  })
+
+  it('"seçim kriterleri" sorusu rakip adı vermez ve dört kayıtlı ölçütü anlatır', () => {
+    const item = getPublicFaq().find((f) => f.id === 'secim-kriterleri')!
+    expect(item).toBeTruthy()
+    const t = norm(item.answer)
+    for (const w of ['entegra', 'sopyo', 'yengec']) expect(phraseRe(w).test(t), w).toBe(false)
+    for (const w of ['veritabani', 'sifrel', 'stok rezervasyonu', 'varsayilan olarak']) expect(t, w).toContain(w)
   })
 })

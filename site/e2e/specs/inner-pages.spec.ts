@@ -11,6 +11,8 @@ const PAGES = [
   ['guvenlik', '/guvenlik'],
   ['sss', '/sss'],
   ['iletisim', '/iletisim'],
+  ['stok-rezervasyonu', '/ozellikler/stok-rezervasyonu'],
+  ['destek', '/destek'],
 ] as const
 
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
@@ -143,6 +145,40 @@ test.describe('sss — JS\'siz akordeon', () => {
   })
 })
 
+test.describe('S14 — destek merkezi ve bağlantı rehberi', () => {
+  test('destek: soru bağlantısı SSS\'te hedef soruyu açar', async ({ page }) => {
+    await page.goto('/destek')
+    await expect(page.getByTestId('support-category')).toHaveCount(5)
+    await page.locator('#stok-siparis').getByRole('link', { name: /Overselling/ }).click()
+    await expect(page).toHaveURL(/\/sss\/?#asiri-satis$/)
+    await expect(page.locator('details#asiri-satis')).toHaveAttribute('open', '')
+    await expect(page.locator('details#asiri-satis .acc__body')).toBeVisible()
+  })
+
+  test('destek: kanal rehberi bağlantısı detay sayfasının rehber bölümüne gider', async ({ page }) => {
+    await page.goto('/destek')
+    await page.getByTestId('support-channel-guides').getByRole('link', { name: 'Pazarama rehberi' }).click()
+    await expect(page).toHaveURL(/\/entegrasyonlar\/pazarama\/?#baglanti-rehberi$/)
+    await expect(page.getByRole('heading', { level: 2, name: 'Pazarama nasıl bağlanır?' })).toBeInViewport()
+    await expect(page.getByTestId('connect-steps').locator('li')).toHaveCount(5)
+  })
+
+  test('stok rezervasyonu: reduced-motion altında sahne statik ve tam görünür', async ({ browser }) => {
+    const context = await browser.newContext({ reducedMotion: 'reduce' })
+    const page = await context.newPage()
+    await page.goto('/ozellikler/stok-rezervasyonu')
+    const scene = page.locator('[data-scene="stock-flow"]')
+    await scene.scrollIntoViewIfNeeded()
+    await expect(page.locator('html')).toHaveAttribute('data-motion', 'reduced')
+    for (const part of ['order-a', 'hub', 'result-ok', 'result-oversold', 'publish']) {
+      await expect(scene.locator(`[data-part="${part}"]`)).toHaveCSS('opacity', '1')
+    }
+    const running = await scene.evaluate((el) => el.getAnimations({ subtree: true }).length)
+    expect(running).toBe(0)
+    await context.close()
+  })
+})
+
 test.describe('iletisim', () => {
   test('form yok; adres yer tutucusu (mailto yalnızca adres verilince) ve künye yer tutucuları', async ({ page }) => {
     await page.goto('/iletisim')
@@ -175,6 +211,8 @@ test.describe('iç sayfalar — ekran görüntüleri (3 viewport)', () => {
     ['guvenlik', '/guvenlik'],
     ['sss', '/sss'],
     ['iletisim', '/iletisim'],
+    ['stok-rezervasyonu', '/ozellikler/stok-rezervasyonu'],
+    ['destek', '/destek'],
   ] as const) {
     test(name, async ({ page }) => {
       await page.goto(route)

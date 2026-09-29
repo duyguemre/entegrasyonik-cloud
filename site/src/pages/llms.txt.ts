@@ -8,7 +8,7 @@
  */
 import type { APIRoute } from 'astro'
 import { siteConfig } from '../lib/site-config'
-import { primaryNav, legalNav, published } from '../data/navigation'
+import { primaryNav, featureNav, legalNav, published } from '../data/navigation'
 import { getPublicIntegrations } from '../data/integrations'
 
 const base = siteConfig.siteUrl ?? ''
@@ -35,13 +35,14 @@ export const GET: APIRoute = () => {
   lines.push('')
   lines.push(`- [Ana sayfa](${url('/')}): Ürün özeti, yetenekler, entegrasyonlar ve fiyatlandırma.`)
   for (const p of pages) lines.push(`- [${p.label}](${url(p.href)})`)
+  for (const p of published(featureNav)) lines.push(`- [${p.label}](${url(p.href)}): Aşırı satış (overselling) nasıl önlenir; eşzamanlı siparişte stok rezervasyonu.`)
   lines.push('')
 
   lines.push('## Entegrasyonlar')
   lines.push('')
   for (const i of integrations) {
     const limits = i.limitations.length > 0 ? ` Sınırlar: ${i.limitations.join(' ')}` : ''
-    lines.push(`- **${i.name}** (${i.kindLabel}, ${i.coverageLabel}): ${i.summary}${limits}`)
+    lines.push(`- **${i.name}** (${i.kindLabel}, ${i.coverageLabel}): ${i.summary}${limits} Bağlantı rehberi: ${url(`/entegrasyonlar/${i.code}`)}`)
   }
   lines.push('')
 

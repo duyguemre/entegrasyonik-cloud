@@ -11,8 +11,8 @@ import { fileURLToPath } from 'node:url'
 import { buildSite } from '../scripts/lib/build.mjs'
 import { PATHS } from '../src/data/evidence'
 import { integrations, AVAILABLE_INTEGRATION_CODES, getPublicIntegrations } from '../src/data/integrations'
-import { getPublicCapabilities } from '../src/data/capabilities'
-import { getPublicFaq } from '../src/data/faq'
+import { getPublicCapabilities, getStockReservationStory } from '../src/data/capabilities'
+import { getPublicFaq, getSupportCategories } from '../src/data/faq'
 import { connectGuides, getConnectGuide } from '../src/data/connect'
 import { featureDetails } from '../src/data/feature-details'
 import { legalNav, primaryNav, published } from '../src/data/navigation'
@@ -32,6 +32,8 @@ const INNER_PAGES = [
   '/guvenlik',
   '/sss',
   '/iletisim',
+  '/ozellikler/stok-rezervasyonu',
+  '/destek',
 ]
 
 let draftDir = ''
@@ -84,7 +86,7 @@ describe('rota kümesi', () => {
 
   it('ana gezinmedeki 5 iç sayfa ve fiyat sayfası (S4b) yayımlı', () => {
     const on = published(primaryNav).map((i) => i.href)
-    for (const h of ['/ozellikler', '/entegrasyonlar', '/guvenlik', '/sss', '/iletisim', '/fiyatlandirma']) expect(on).toContain(h)
+    for (const h of ['/ozellikler', '/entegrasyonlar', '/guvenlik', '/sss', '/iletisim', '/fiyatlandirma', '/destek']) expect(on).toContain(h)
   })
 })
 
@@ -342,6 +344,81 @@ describe('/iletisim', () => {
     expect(html(draftDir, '/iletisim')).toContain('data-testid="kunye-details"')
     expect(visibleText(html(draftDir, '/iletisim'))).toContain('{{ŞİRKET_UNVANI}}')
   })
+})
+
+describe('S14: /ozellikler/stok-rezervasyonu', () => {
+  const page = () => html(draftDir, '/ozellikler/stok-rezervasyonu')
+
+  it('sorun → nasıl çalışır → fayda: tüm anlatı maddeleri, yetenek özeti, kanıtlı maddeler ve kapsam notu görünür', () => {
+    const text = visibleText(page())
+    const story = getStockReservationStory()
+    for (const x of [...story.problems, ...story.steps, ...story.benefits]) {
+      expect(text, x.title).toContain(x.title)
+      expect(text, x.title).toContain(x.text)
+    }
+    const cap = getPublicCapabilities('core').find((c) => c.id === 'stock-reservation')!
+    expect(text).toContain(cap.summary)
+    expect(text).toContain(cap.caveat!)
+    for (const p of featureDetails['stock-reservation']) expect(text).toContain(p.text)
+    expect(page()).toMatch(/<section[^>]*id="nasil-calisir"/)
+  })
+
+  it('animasyonlu sahne: hareket kontrolü var, sahne dekoratif (aria-hidden) ve SSS akordeonu var', () => {
+    expect(page()).toContain('data-motion-toggle')
+    expect(page()).toMatch(/data-scene="stock-flow"[^>]*aria-hidden="true"|aria-hidden="true"[^>]*data-scene="stock-flow"/)
+    expect(page()).toContain('data-testid="accordion"')
+  })
+
+  it('/ozellikler somut akış cümlelerini gösterir ve derin sayfaya bağlanır', () => {
+    const oz = html(draftDir, '/ozellikler')
+    for (const c of getPublicCapabilities('core')) expect(visibleText(oz), c.id).toContain(c.action!)
+    expect(oz).toContain('href="/ozellikler/stok-rezervasyonu"')
+  })
+})
+
+describe('S14: /destek', () => {
+  const page = () => html(draftDir, '/destek')
+
+  it('beş kategori kartı; her kategori SSS kayıtlarına (/sss#id) bağlanır; arama kutusu yok', () => {
+    expect((page().match(/data-testid="support-category"/g) ?? []).length).toBe(5)
+    for (const c of getSupportCategories()) {
+      expect(page()).toMatch(new RegExp(`id="${c.id}"`))
+      for (const q of c.items) {
+        expect(page(), q.id).toContain(`href="/sss#${q.id}"`)
+        expect(visibleText(page())).toContain(q.question)
+      }
+    }
+    expect(page()).not.toMatch(/type="search"/)
+  })
+
+  it('kanal bağlama kategorisi her mevcut entegrasyonun bağlantı rehberine bağlanır', () => {
+    for (const c of AVAILABLE_INTEGRATION_CODES) expect(page(), c).toContain(`href="/entegrasyonlar/${c}#baglanti-rehberi"`)
+  })
+
+  it('gezinme ve footer destek merkezine, footer stok rezervasyonu sayfasına bağlanır', () => {
+    const home = readFileSync(path.join(draftDir, 'index.html'), 'utf8')
+    expect(home.match(/<header[\s\S]*?<\/header>/)![0]).toContain('href="/destek"')
+    const footer = home.match(/<footer[\s\S]*?<\/footer>/)![0]
+    expect(footer).toContain('href="/destek"')
+    expect(footer).toContain('href="/ozellikler/stok-rezervasyonu"')
+  })
+})
+
+describe('S14: kanal bağlantı rehberi', () => {
+  for (const i of getPublicIntegrations()) {
+    it(`${i.code}: numaralı rehber, HowTo şeması adımlarla birebir, SEO başlığı`, () => {
+      const page = html(draftDir, `/entegrasyonlar/${i.code}`)
+      expect(page).toMatch(/<section[^>]*id="baglanti-rehberi"/)
+      expect(page).toMatch(new RegExp(`<title>${escapeRe(i.name)} entegrasyonu: bağlantı rehberi ve kapsam · Entegrasyonik</title>`))
+      const ld = [...page.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => JSON.parse(m[1]))
+      const howTo = ld.find((x) => x['@type'] === 'HowTo')
+      expect(howTo, 'HowTo').toBeTruthy()
+      const text = visibleText(page)
+      for (const step of howTo.step) expect(text).toContain(step.text)
+      const guide = getConnectGuide(i.code, i.kind)!
+      expect(howTo.supply.map((s: { name: string }) => s.name)).toEqual(guide.credentials)
+    })
+  }
 })
 
 describe('bağlantı denetimi (iç bağlantılar 404 vermez)', () => {
