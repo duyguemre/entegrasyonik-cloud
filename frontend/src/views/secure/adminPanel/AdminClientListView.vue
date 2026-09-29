@@ -1,32 +1,39 @@
 <template>
-  <div class="adminClientListView d-flex flex-column pt-2">
+  <div class="adminClientListView d-flex flex-column">
     <LoadingComponent :attach="dialogAttach" ref="loadingComponentRef" />
 
+    <!-- ek-pattern-exception: EkListPage/EkDataTable — admin-characterization.spec.ts "gizli davranış" olarak
+         v-data-table-server'ın @update:options ile limit 10 gönderdiğini, admin-clients.spec.ts ise
+         `thead button:has(.mdi-plus)` ve `tbody tr` kancalarını sabitliyor; EkDataTable istemci-taraflı
+         olduğundan bu sözleşmeyi taşıyamaz. Sunucu-taraflı EkDataTable varyantı gelince (Aşama C) geçilecek. -->
+    <EkPageHeader class="ek-admin-clients-header" section="Yönetim" title="Mağaza Yönetimi"
+      description="Platformdaki tüm mağaza kayıtlarını görüntüleyin, oluşturun ve yönetin." />
+
     <!-- Search & Filter Bar -->
-    <div class="d-flex pa-2 pt-0 pb-0 mt-1 mb-1 align-start flex-wrap search-section">
+    <div class="d-flex align-start flex-wrap search-section">
 
       <v-text-field clearable density="compact" label="Müşteri / Mağaza Ara" variant="outlined" v-model="search"
-        bg-color="white" class="customTextField flex-grow-1" hide-details placeholder="Mağaza adı veya ID giriniz..."
+        class="customTextField flex-grow-1" hide-details placeholder="Mağaza adı veya ID giriniz..."
         @keyup.enter.stop="loadClients()">
         <template #append-inner>
-          <v-btn flat size="40" class="pa-2 search-icon-btn" elevation="0" color="white" @click.stop="loadClients()"
+          <v-btn icon variant="text" density="comfortable" @click.stop="loadClients()"
             aria-label="Mağazaları ara">
-            <v-icon size="x-large" color="passiveColor">mdi-magnify</v-icon>
+            <v-icon>mdi-magnify</v-icon>
           </v-btn>
         </template>
       </v-text-field>
 
       <div class="d-flex align-center flex-wrap gap-2">
-        <v-btn @click="loadClients()" size="40" elevation="0" color="white" class="premium-cube-btn cube-btn-bordered"
+        <v-btn @click="loadClients()" icon variant="outlined" density="comfortable"
           aria-label="Listeyi yenile">
-          <v-icon size="x-large" color="passiveColor">mdi-refresh</v-icon>
+          <v-icon>mdi-refresh</v-icon>
           <v-tooltip activator="parent" location="top">Yenile</v-tooltip>
         </v-btn>
       </div>
     </div>
 
     <!-- Table Section -->
-    <div class="table-wrapper mt-1">
+    <div class="table-wrapper ">
       <v-data-table-server v-model:sort-by="sortBy" :items="clients" :items-length="pagination.total"
         :loading="loading" :headers="headers" class="pa-0 ma-0 custom-table desktop-table" fixed-header
         aria-label="Mağazalar tablosu" @update:options="onOptionsUpdate">
@@ -46,15 +53,15 @@
             </div>
             <v-divider vertical class="mx-3 summary-divider" />
             <div class="summary-stat">
-              <v-icon size="14" color="success" class="mr-1">mdi-check-circle-outline</v-icon>
+              <v-icon size="14" color="content-muted" class="mr-1">mdi-check-circle-outline</v-icon>
               <span class="summary-label">Aktif Mağaza</span>
-              <span class="summary-value text-success">{{ activeCount }}</span>
+              <span class="summary-value ek-text-success">{{ activeCount }}</span>
             </div>
             <v-divider vertical class="mx-3 summary-divider" />
             <div class="summary-stat">
-              <v-icon size="14" color="error" class="mr-1">mdi-minus-circle-outline</v-icon>
+              <v-icon size="14" color="content-muted" class="mr-1">mdi-minus-circle-outline</v-icon>
               <span class="summary-label">Pasif</span>
-              <span class="summary-value text-error">{{ (pagination.total || 0) - activeCount }}</span>
+              <span class="summary-value ek-text-danger">{{ (pagination.total || 0) - activeCount }}</span>
             </div>
             <v-spacer />
           </div>
@@ -62,9 +69,9 @@
 
         <template v-slot:header.actions>
           <div class="d-flex justify-end">
-            <v-btn @click="openCreateDialog()" color="success" class="premium-cube-btn" elevation="0" size="35"
+            <v-btn @click="openCreateDialog()" color="primary" icon density="comfortable"
               aria-label="Yeni mağaza oluştur">
-              <v-icon size="large">mdi-plus</v-icon>
+              <v-icon>mdi-plus</v-icon>
               <v-tooltip activator="parent" location="top">Yeni Mağaza Oluştur</v-tooltip>
             </v-btn>
           </div>
@@ -74,7 +81,7 @@
           <tr :key="item._id" class="row-hover cursor-pointer" @click="viewDetail(item)">
             <td class="text-left py-2">
               <div class="d-flex align-center">
-                <v-avatar size="32" color="slate-100" class="mr-3 border">
+                <v-avatar size="32" color="surface-sunken" class="mr-3 border">
                   <span class="text-micro font-weight-black color-slate-700">{{ item.name?.[0] || 'C' }}</span>
                 </v-avatar>
                 <div class="d-flex flex-column">
@@ -91,22 +98,20 @@
             <td class="text-left font-weight-bold color-slate-700">{{ item.title }}</td>
 
             <td class="text-left">
-              <v-chip size="small" :color="item.status === 'ACTIVE' ? 'success' : 'passiveColor'" variant="flat"
-                class="font-weight-black">
-                {{ item.status === 'ACTIVE' ? 'AKTİF' : 'PASİF' }}
-              </v-chip>
+              <EkStatusChip :tone="item.status === 'ACTIVE' ? 'success' : 'neutral'"
+                :label="item.status === 'ACTIVE' ? 'AKTİF' : 'PASİF'" />
             </td>
 
             <td class="text-right">
               <div class="d-flex justify-end gap-2 pr-1">
-                <v-btn flat size="35" color="white" class="premium-cube-btn border-subtle" @click.stop="viewDetail(item)"
+                <v-btn icon variant="text" density="comfortable" @click.stop="viewDetail(item)"
                   :aria-label="`${item.name} mağaza detaylarını görüntüle`">
-                  <v-icon size="large" color="primary">mdi-eye-outline</v-icon>
+                  <v-icon>mdi-eye-outline</v-icon>
                   <v-tooltip activator="parent" location="top">Detaylar</v-tooltip>
                 </v-btn>
-                <v-btn flat size="35" color="danger" class="premium-cube-btn"
+                <v-btn icon variant="text" density="comfortable"
                   @click.stop="confirmDelete(item)" :aria-label="`${item.name} mağazasını sil`">
-                  <v-icon size="large" color="white">mdi-delete-sweep-outline</v-icon>
+                  <v-icon>mdi-delete-sweep-outline</v-icon>
                   <v-tooltip activator="parent" location="top">Sil</v-tooltip>
                 </v-btn>
               </div>
@@ -146,6 +151,8 @@ import ConfirmationDialogComponent from '@/components/layout/ConfirmationDialogC
 import AdminClientDetailComponent from '@/components/adminPanel/AdminClientDetailComponent.vue';
 import AdminClientCreateComponent from '@/components/adminPanel/AdminClientCreateComponent.vue';
 import EmptyState from '@/components/layout/EmptyState.vue';
+import EkPageHeader from '@/components/ds/EkPageHeader.vue';
+import EkStatusChip from '@/components/ds/EkStatusChip.vue';
 
 const restApi = useRestApi();
 const snackbarStore = useSnackbarStore();
@@ -262,26 +269,18 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  // Çalışma alanı zemini: token setinde TAM eşleşen değer yok (en yakın `surface-muted`
-  // slate-50, farklı bir ton) — ADR-0011 Açık Soru 4 gereği yakın-ama-farklı renk
-  // ZORLANMADI, canlı değer olduğu gibi korundu (mandalda tek literal).
-  background-color: #f5f7f9;
+  padding: var(--ek-space-6);
+  gap: var(--ek-space-4);
 }
+
+.ek-text-success { color: var(--ek-color-success); }
+.ek-text-danger { color: var(--ek-color-error); }
 
 .search-section {
   max-width: 1200px;
   gap: var(--ek-space-2);
   background: transparent;
   z-index: 10;
-}
-
-.search-icon-btn {
-  border: 1px solid var(--ek-color-surface);
-}
-
-// Yenile düğmesindeki (eski inline style) vurgulu kenarlık: legacy `borderColor` token'ı.
-.cube-btn-bordered {
-  border: 1px solid var(--ek-color-border-color);
 }
 
 .table-summary-bar {
@@ -313,17 +312,19 @@ onMounted(() => {
 .summary-value {
   font-size: var(--ek-font-size-xs);
   font-weight: var(--ek-font-weight-bold);
-  // slate-800 için semantik token yok (content-strong = slate-900) — yakın-ama-farklı, zorlanmadı.
-  color: #1e293b;
+  color: var(--ek-color-content-strong);
 }
 
 .summary-divider {
   opacity: 0.25;
-  height: 20px !important;
+  height: var(--ek-space-5) !important;
   align-self: center;
 }
 
 .table-wrapper {
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+  overflow: hidden;
   flex-grow: 1;
   position: relative;
   min-height: 0;
@@ -357,10 +358,6 @@ onMounted(() => {
 
 .cursor-pointer {
   cursor: pointer;
-}
-
-.border-subtle {
-  border: 1px solid var(--ek-color-surface-sunken);
 }
 
 .color-slate-900 {
@@ -400,12 +397,5 @@ onMounted(() => {
     color: var(--ek-color-content-default) !important;
     letter-spacing: 0.5px;
   }
-}
-
-// `transition: all` yerine yalnızca değişen özellikler (işlevsel geri bildirim, 200ms ease-in-out).
-.premium-cube-btn {
-  border: 1px solid var(--ek-color-border-default);
-  transition: background-color var(--ek-duration-base) var(--ek-easing-standard),
-    border-color var(--ek-duration-base) var(--ek-easing-standard);
 }
 </style>

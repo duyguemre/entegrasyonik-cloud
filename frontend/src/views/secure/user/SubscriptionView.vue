@@ -1,15 +1,13 @@
 <template>
   <div class="subscriptionView">
     <div class="subscription-inner">
-      <div class="subscription-header">
-        <h2 class="page-title">Abonelik ve Planlar</h2>
-        <p class="page-subtitle">İşletmenize uygun planı seçin, mevcut aboneliğinizin durumunu buradan izleyin.</p>
-      </div>
+      <EkPageHeader section="Hesap" title="Abonelik ve Planlar"
+        description="İşletmenize uygun planı seçin, mevcut aboneliğinizin durumunu buradan izleyin." />
 
       <!-- Durum bandı (ADR-0008 §3 durum makinesi -- boş/hata/yükleniyor AYRI durumlardır) -->
       <section aria-live="polite" class="status-section">
         <div v-if="subLoading" class="status-banner status-banner--loading">
-          <v-skeleton-loader type="text@2" />
+          <EkSkeleton type="form" />
         </div>
         <div v-else-if="subError" class="status-banner status-banner--error">
           <v-icon icon="mdi-alert-circle-outline" color="error" />
@@ -26,7 +24,7 @@
           <div class="status-banner-body">
             <div class="status-banner-title">
               {{ statusMeta.label }}
-              <v-chip v-if="subscriptionData?.billingExempt" size="x-small" variant="tonal" color="secondary" class="ml-2">Kurumsal Anlaşma</v-chip>
+              <EkStatusChip v-if="subscriptionData?.billingExempt" tone="info" label="Kurumsal Anlaşma" class="ml-2" />
             </div>
             <div class="status-banner-text">{{ statusMessage }}</div>
           </div>
@@ -44,15 +42,15 @@
         </div>
 
         <div v-if="plansLoading" class="plans-grid" aria-hidden="true">
-          <v-skeleton-loader v-for="n in 3" :key="n" type="card" class="plan-card-skeleton" />
+          <EkSkeleton v-for="n in 3" :key="n" type="cards" :rows="1" class="plan-card-skeleton" />
         </div>
 
-        <EmptyState v-else-if="plansError" icon="mdi-cloud-alert-outline" title="Planlar Yüklenemedi"
+        <EkEmptyState v-else-if="plansError" variant="error" title="Planlar Yüklenemedi"
           message="Plan bilgileri şu anda getirilemedi -- bağlantınızı kontrol edip tekrar deneyin."
-          show-action action-text="Tekrar Dene" action-icon="mdi-refresh" action-color="primary"
+          show-action action-text="Tekrar Dene" action-icon="mdi-refresh"
           @action="fetchPlans" />
 
-        <EmptyState v-else-if="!plans.length" icon="mdi-tag-off-outline" title="Plan Tanımları Henüz Yayınlanmadı"
+        <EkEmptyState v-else-if="!plans.length" variant="no-data" title="Plan Tanımları Henüz Yayınlanmadı"
           message="Şu anda satışa açık bir plan bulunmuyor. Lütfen daha sonra tekrar kontrol edin veya destek ekibimizle iletişime geçin." />
 
         <div v-else class="plans-grid" role="list" aria-label="Abonelik planları">
@@ -69,22 +67,20 @@
             </div>
 
             <ul class="plan-card-limits">
-              <li><v-icon size="16" color="passiveColor">mdi-storefront-outline</v-icon> {{ formatLimit(plan.limits?.channels) }} Kanal (Pazaryeri + E-ticaret)</li>
-              <li><v-icon size="16" color="passiveColor">mdi-package-variant-closed</v-icon> {{ formatLimit(plan.limits?.skus) }} Varyant (SKU)</li>
-              <li><v-icon size="16" color="passiveColor">mdi-account-group-outline</v-icon> {{ formatLimit(plan.limits?.users) }} Kullanıcı</li>
-              <li><v-icon size="16" color="passiveColor">mdi-robot-outline</v-icon> {{ formatLimit(plan.limits?.mcpCallsPerDay) }} MCP Çağrısı / gün</li>
+              <li><v-icon size="16" color="content-muted">mdi-storefront-outline</v-icon> {{ formatLimit(plan.limits?.channels) }} Kanal (Pazaryeri + E-ticaret)</li>
+              <li><v-icon size="16" color="content-muted">mdi-package-variant-closed</v-icon> {{ formatLimit(plan.limits?.skus) }} Varyant (SKU)</li>
+              <li><v-icon size="16" color="content-muted">mdi-account-group-outline</v-icon> {{ formatLimit(plan.limits?.users) }} Kullanıcı</li>
+              <li><v-icon size="16" color="content-muted">mdi-robot-outline</v-icon> {{ formatLimit(plan.limits?.mcpCallsPerDay) }} MCP Çağrısı / gün</li>
             </ul>
 
             <div v-if="plan.features?.length" class="plan-card-features">
-              <v-chip v-for="f in plan.features" :key="f" size="x-small" variant="tonal" color="primary" class="mr-1 mb-1">
-                {{ featureLabel(f) }}
-              </v-chip>
+              <EkStatusChip v-for="f in plan.features" :key="f" tone="neutral" :label="featureLabel(f)" />
             </div>
 
             <v-btn block class="plan-card-action text-none mt-auto"
               :disabled="isCurrentPlan(plan) && isActiveLike"
               :loading="checkingOutCode === plan.code"
-              :color="isCurrentPlan(plan) ? 'passiveColor' : 'primary'"
+              :color="isCurrentPlan(plan) ? 'default' : 'primary'"
               :variant="isCurrentPlan(plan) ? 'outlined' : 'flat'"
               :aria-label="`${plan.name} planı için: ${planActionLabel(plan)}`"
               @click="openConfirm(plan)">
@@ -128,7 +124,11 @@
 import { ref, computed, onMounted } from 'vue';
 import useRestApi from '@/composables/restapi';
 import { useSnackbarStore } from '@/stores/snackbarStore';
-import EmptyState from '@/components/layout/EmptyState.vue';
+import EkEmptyState from '@/components/ds/EkEmptyState.vue';
+import EkPageHeader from '@/components/ds/EkPageHeader.vue';
+import EkSkeleton from '@/components/ds/EkSkeleton.vue';
+import EkStatusChip from '@/components/ds/EkStatusChip.vue';
+import { formatDate as formatDateDs, formatNumber } from '@/composables/format';
 import ConfirmationDialogComponent from '@/components/layout/ConfirmationDialogComponent.vue';
 import { text, emphasis, type MessagePart } from '@/components/layout/messageParts';
 import { isRegisterPlanCode } from '@/navigation/registerIntent';
@@ -181,7 +181,7 @@ const FEATURE_LABELS: Record<string, string> = {
 const statusMeta = computed(() => STATUS_META[subscriptionStatus.value] || STATUS_META.no_subscription);
 const isActiveLike = computed(() => subscriptionStatus.value === 'trialing' || subscriptionStatus.value === 'active');
 
-const formatDate = (val?: string) => val ? new Date(val).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+const formatDate = (val?: string) => val ? formatDateDs(val) : '';
 
 const statusMessage = computed(() => {
   const sub = subscriptionData.value;
@@ -219,7 +219,7 @@ function planActionLabel(plan: Plan): string {
 
 function formatLimit(n?: number): string {
   if (n === undefined || n === null) return '—';
-  return n.toLocaleString('tr-TR');
+  return formatNumber(n);
 }
 
 function featureLabel(f: string): string {
@@ -228,7 +228,7 @@ function featureLabel(f: string): string {
 
 function formatPrice(plan: Plan): string {
   if (!plan.priceMinor) return 'Özel Teklif';
-  const amount = (plan.priceMinor / 100).toLocaleString('tr-TR', { maximumFractionDigits: 0 });
+  const amount = formatNumber(Math.round(plan.priceMinor / 100));
   return `${amount} ₺ / ${plan.interval === 'year' ? 'yıl' : 'ay'}`;
 }
 
@@ -337,25 +337,6 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-6);
-}
-
-.subscription-header {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ek-space-1);
-}
-
-.page-title {
-  font-size: var(--ek-font-size-2xl);
-  font-weight: var(--ek-font-weight-bold);
-  color: var(--ek-color-content-strong);
-  margin: 0;
-}
-
-.page-subtitle {
-  font-size: var(--ek-font-size-md);
-  color: var(--ek-color-content-muted);
-  margin: 0;
 }
 
 .section-title {
@@ -503,6 +484,7 @@ onMounted(() => {
 .plan-card-features {
   display: flex;
   flex-wrap: wrap;
+  gap: var(--ek-space-1);
 }
 
 .plan-card-action {

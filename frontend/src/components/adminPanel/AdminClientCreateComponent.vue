@@ -1,8 +1,8 @@
 <template>
   <ActionDialogComponent :modelValue="modelValue" @update:modelValue="$emit('update:modelValue', $event)"
     title="Yeni Mağaza Oluştur" subtitle="Sisteme yeni bir dükkan ve yönetici hesabı tanımlayın" icon="mdi-store-plus-outline"
-    color="success" maxWidth="800px" showFooter confirmText="MAĞAZA OLUŞTUR" cancelText="İPTAL"
-    confirmButtomColor="success" :isLoading="saving" @confirm="save" @cancel="$emit('close')" @close="$emit('close')"
+    color="primary" maxWidth="800px" showFooter confirmText="MAĞAZA OLUŞTUR" cancelText="İPTAL"
+    confirmButtomColor="primary" :isLoading="saving" @confirm="save" @cancel="$emit('close')" @close="$emit('close')"
     attach=".adminClientListView">
 
     <div class="pa-0">
@@ -132,10 +132,8 @@ watch(() => props.modelValue, (val) => {
   border: 1px solid var(--ek-color-border-default) !important;
 }
 
-// slate-800 için semantik token yok (content-strong = slate-900) — yakın-ama-farklı, ADR-0011
-// Açık Soru 4 gereği zorlanmadı.
 .color-slate-800 {
-  color: #1e293b;
+  color: var(--ek-color-content-strong);
 }
 
 // Bu sınıf yalnızca METİN (yönerge notu) için kullanılıyor: `content-subtle` (slate-400) beyazda

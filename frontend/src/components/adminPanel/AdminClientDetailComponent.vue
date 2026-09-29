@@ -20,41 +20,37 @@
       <v-window v-model="activeTab" class="pa-4">
         <!-- Overview Tab -->
         <v-window-item value="overview">
-          <div v-if="loadingOverview" class="d-flex justify-center align-center py-10">
-            <v-progress-circular indeterminate color="primary" aria-label="Genel bakış yükleniyor"></v-progress-circular>
+          <div v-if="loadingOverview" role="status" aria-label="Genel bakış yükleniyor" class="py-4">
+            <EkSkeleton type="cards" :rows="2" />
           </div>
 
           <template v-else>
-            <div class="premium-stats-row mb-6">
-              <ClientStatsCard title="Toplam Ürün" :value="metrics.productCount" icon="mdi-package-variant-closed"
-                colorClass="highlight-card" />
-              <ClientStatsCard title="Varyant Sayısı" :value="metrics.variantCount" icon="mdi-layers-outline" />
-              <ClientStatsCard title="Siparişler" :value="metrics.orderCount" icon="mdi-cart-outline"
-                colorClass="teal-card" :subValue="metrics.totalRevenue" subUnit="TRY" />
-              <ClientStatsCard title="İadeler" :value="metrics.claimCount" icon="mdi-package-variant-remove"
-                colorClass="rose-card" :subValue="metrics.totalReturnAmount" subUnit="TRY" />
-            </div>
+            <EkKpiRow class="mb-6">
+              <ClientStatsCard title="Toplam Ürün" :value="metrics.productCount" />
+              <ClientStatsCard title="Varyant Sayısı" :value="metrics.variantCount" />
+              <ClientStatsCard title="Siparişler" :value="metrics.orderCount" :subValue="metrics.totalRevenue" subUnit="TRY" />
+              <ClientStatsCard title="İadeler" :value="metrics.claimCount" :subValue="metrics.totalReturnAmount" subUnit="TRY" />
+            </EkKpiRow>
 
             <v-row>
               <v-col cols="12" md="8">
                 <v-card flat border class="rounded-xl pa-5 h-100 bg-slate-50 border-subtle">
                   <div class="d-flex align-center mb-6">
-                    <v-icon color="indigo" class="mr-2">mdi-connection</v-icon>
+                    <v-icon color="primary" class="mr-2">mdi-connection</v-icon>
                     <span class="text-subtitle-1 font-weight-black color-slate-800">Aktif Entegrasyonlar</span>
                   </div>
 
                   <v-row v-if="integrations.length > 0">
                     <v-col v-for="int in integrations" :key="int._id" cols="12" sm="6">
-                      <v-card flat border class="pa-4 rounded-lg d-flex align-center hover-card bg-white">
-                        <v-avatar color="indigo-lighten-5" size="44" class="mr-4 border">
-                          <v-icon color="indigo" size="20">mdi-cloud-sync-outline</v-icon>
+                      <v-card flat border class="pa-4 rounded-lg d-flex align-center hover-card bg-surface">
+                        <v-avatar color="surface-sunken" size="44" class="mr-4 border">
+                          <v-icon color="primary" size="20">mdi-cloud-sync-outline</v-icon>
                         </v-avatar>
                         <div class="flex-grow-1">
                           <div class="d-flex align-center justify-space-between">
                             <span class="text-subtitle-2 font-weight-black color-slate-900">{{ int.integrationCode
                               }}</span>
-                            <v-chip size="x-small" color="success" variant="flat"
-                              class="font-weight-black">AKTİF</v-chip>
+                            <EkStatusChip tone="success" label="AKTİF" />
                           </div>
                           <div class="text-micro font-weight-bold color-slate-500 mt-1 line-clamp-1">
                             {{ int.title || 'Platform Entegrasyonu' }}
@@ -77,7 +73,7 @@
                     <span class="text-subtitle-1 font-weight-black color-slate-800">Kullanıcı Özeti</span>
                   </div>
 
-                  <div class="text-center py-4 bg-white rounded-xl mb-6 border">
+                  <div class="text-center py-4 bg-surface rounded-xl mb-6 border">
                     <div class="text-h3 font-weight-black color-primary">{{ metrics.userCount }}</div>
                     <div class="text-micro font-weight-black color-slate-500 uppercase">Kayıtlı Kullanıcı</div>
                   </div>
@@ -87,16 +83,14 @@
                   <div class="d-flex flex-column gap-3">
                     <div class="d-flex align-center justify-space-between">
                       <span class="text-caption font-weight-bold color-slate-600">VIP Durumu</span>
-                      <v-chip size="x-small" :color="metrics.totalRevenue > 100000 ? 'amber' : 'slate-200'"
-                        variant="flat" class="font-weight-black">
-                        {{ metrics.totalRevenue > 100000 ? 'PLATINUM' : 'STANDART' }}
-                      </v-chip>
+                      <EkStatusChip :tone="metrics.totalRevenue > 100000 ? 'info' : 'neutral'"
+                        :label="metrics.totalRevenue > 100000 ? 'PLATINUM' : 'STANDART'" />
                     </div>
                     <div class="d-flex align-center justify-space-between">
                       <span class="text-caption font-weight-bold color-slate-600">İade Oranı</span>
                       <span class="text-caption font-weight-black"
                         :class="returnRate > 10 ? 'text-error' : 'text-success'">
-                        %{{ returnRate.toFixed(1) }}
+                        {{ formatPercent(returnRate / 100) }}
                       </span>
                     </div>
                   </div>
@@ -108,8 +102,8 @@
 
         <!-- Operations Tab -->
         <v-window-item value="operations">
-          <div v-if="loadingOps" class="d-flex justify-center align-center py-10">
-            <v-progress-circular indeterminate color="primary" aria-label="Operasyon verileri yükleniyor"></v-progress-circular>
+          <div v-if="loadingOps" role="status" aria-label="Operasyon verileri yükleniyor" class="py-4">
+            <EkSkeleton type="cards" :rows="2" />
           </div>
 
           <template v-else>
@@ -125,11 +119,11 @@
                 <v-card flat border class="rounded-xl pa-5 bg-slate-50 border-subtle h-100">
                   <div class="d-flex align-center justify-space-between mb-4">
                     <span class="text-subtitle-2 font-weight-black color-slate-800">EXPORT DURUMU</span>
-                    <v-icon color="indigo" size="20">mdi-upload-network-outline</v-icon>
+                    <v-icon color="primary" size="20">mdi-upload-network-outline</v-icon>
                   </div>
                   <div class="d-flex flex-wrap gap-2">
                     <div v-for="exp in exportStats" :key="exp._id"
-                      class="metric-pill pa-2 px-3 rounded-lg border flex-grow-1 bg-white">
+                      class="metric-pill pa-2 px-3 rounded-lg border flex-grow-1 bg-surface">
                       <div class="d-flex align-center justify-space-between">
                         <span class="text-micro font-weight-black color-slate-500 uppercase">{{ exp._id }}</span>
                         <span class="text-subtitle-2 font-weight-black" :class="getStatusColorClass(exp._id)">{{
@@ -144,11 +138,11 @@
                 <v-card flat border class="rounded-xl pa-5 bg-slate-50 border-subtle h-100">
                   <div class="d-flex align-center justify-space-between mb-4">
                     <span class="text-subtitle-2 font-weight-black color-slate-800">IMPORT DURUMU</span>
-                    <v-icon color="success" size="20">mdi-download-network-outline</v-icon>
+                    <v-icon color="content-muted" size="20">mdi-download-network-outline</v-icon>
                   </div>
                   <div class="d-flex flex-wrap gap-2">
                     <div v-for="imp in importStats" :key="imp._id"
-                      class="metric-pill pa-2 px-3 rounded-lg border flex-grow-1 bg-white">
+                      class="metric-pill pa-2 px-3 rounded-lg border flex-grow-1 bg-surface">
                       <div class="d-flex align-center justify-space-between">
                         <span class="text-micro font-weight-black color-slate-500 uppercase">{{ imp._id }}</span>
                         <span class="text-subtitle-2 font-weight-black" :class="getStatusColorClass(imp._id)">{{
@@ -161,7 +155,7 @@
             </v-row>
 
             <!-- Status Legend -->
-            <v-card flat border class="rounded-xl pa-4 bg-white border-subtle">
+            <v-card flat border class="rounded-xl pa-4 bg-surface border-subtle">
               <div class="d-flex flex-wrap gap-6 justify-center">
                 <div class="d-flex align-center gap-2">
                   <div class="status-dot bg-warning"></div>
@@ -202,7 +196,7 @@
                         density="compact" class="customTextField" hide-details></v-select>
                     </v-col>
                     <v-col cols="12" md="6">
-                      <v-text-field :model-value="formatDate(form.lastSuccessfulOrderSync)" label="Son Başarılı Sipariş Senkronizasyonu" 
+                      <v-text-field :model-value="formatSyncDate(form.lastSuccessfulOrderSync)" label="Son Başarılı Sipariş Senkronizasyonu" 
                         variant="outlined" density="compact" class="customTextField" hide-details readonly prepend-inner-icon="mdi-history">
                       </v-text-field>
                     </v-col>
@@ -275,10 +269,10 @@
                     <v-row>
                       <v-col v-for="item in form.integrations" :key="item.integrationCode" cols="12" md="4" sm="6">
                         <v-card flat border class="pa-3 rounded-lg d-flex align-center bg-slate-50">
-                          <v-avatar size="32" class="mr-3" color="white" border>
+                          <v-avatar size="32" class="mr-3" color="surface" border>
                             <v-img v-if="getIntegrationLogo(item.integrationCode)" :src="getIntegrationLogo(item.integrationCode)"
                               :alt="`${item.integrationCode} logosu`" />
-                            <v-icon v-else size="18" color="slate-400">mdi-api</v-icon>
+                            <v-icon v-else size="18" color="content-muted">mdi-api</v-icon>
                           </v-avatar>
                           <div class="flex-grow-1">
                             <div class="text-micro font-weight-black color-slate-700 uppercase">{{ item.integrationCode }}</div>
@@ -291,7 +285,7 @@
                     </v-row>
                   </div>
                   <div v-else class="text-center py-6 opacity-50">
-                    <v-icon size="32" color="slate-300">mdi-link-variant-off</v-icon>
+                    <v-icon size="32" color="content-muted">mdi-link-variant-off</v-icon>
                     <p class="text-caption mt-2">Entegrasyon tanımı bulunamadı.</p>
                   </div>
                 </v-card>
@@ -299,10 +293,10 @@
             </v-row>
 
             <div class="d-flex justify-end mt-6 ga-3">
-              <v-btn flat color="white" class="premium-cube-btn px-6 border-subtle font-weight-black" @click="$emit('close')">
+              <v-btn variant="outlined" class="px-6 font-weight-black" @click="$emit('close')">
                 İPTAL
               </v-btn>
-              <v-btn color="error" class="premium-cube-btn px-8 font-weight-black" elevation="0" :loading="saving"
+              <v-btn color="primary" class="px-8 font-weight-black" elevation="0" :loading="saving"
                 @click="save">
                 <v-icon start size="18">mdi-content-save-outline</v-icon>
                 GÜNCELLE
@@ -322,6 +316,10 @@ import { useSnackbarStore } from '@/stores/snackbarStore';
 import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue';
 import ClientStatsCard from '@/components/adminPanel/ClientStatsCard.vue';
 import useMarketplaceStore from '@/stores/marketplace';
+import EkKpiRow from '@/components/ds/EkKpiRow.vue';
+import EkSkeleton from '@/components/ds/EkSkeleton.vue';
+import EkStatusChip from '@/components/ds/EkStatusChip.vue';
+import { formatDateTime, formatPercent } from '@/composables/format';
 
 const marketplaceStore = useMarketplaceStore();
 
@@ -383,9 +381,9 @@ const importStats = ref<any[]>([]);
 
 const returnRate = computed(() => metrics.value.orderCount > 0 ? (metrics.value.claimCount / metrics.value.orderCount) * 100 : 0);
 
-function formatDate(date: any) {
+function formatSyncDate(date: any) {
   if (!date) return 'Hiç yapılmadı';
-  return new Date(date).toLocaleString('tr-TR');
+  return formatDateTime(date);
 }
 const clientId = computed(() => props.client?.order);
 const clientName = computed(() => props.client?.name);
@@ -425,7 +423,7 @@ function getStatusColorClass(status: string) {
   if (['FAILED', 'CANCELLED', 'ERROR'].includes(status)) return 'text-error';
   if (['COMPLETED', 'SENT', 'SUCCESS'].includes(status)) return 'text-success';
   if (['PENDING', 'QUEUED', 'PROCESSING', 'FETCHING'].includes(status)) return 'text-warning';
-  return 'text-slate-400';
+  return 'ek-muted';
 }
 
 function getIntegrationLogo(code: string) {
@@ -490,10 +488,8 @@ watch(activeTab, (val) => {
   }
 }
 
-.premium-stats-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ek-space-4);
+.ek-muted {
+  color: var(--ek-color-content-muted);
 }
 
 // Hover: yalnızca renk/kenarlık geri bildirimi (token süre, 200ms). Eski `translateY(-2px)` "zıplama"
@@ -505,8 +501,7 @@ watch(activeTab, (val) => {
 
   &:hover {
     border-color: color-mix(in srgb, var(--ek-color-primary) 30%, transparent) !important;
-    // Marka mavisine yakın indigo tonu: tam eşleşen token yok (ADR-0011 Açık Soru 4), zorlanmadı.
-    background-color: #f5f7ff !important;
+    background-color: var(--ek-color-surface-muted) !important;
   }
 }
 
@@ -534,14 +529,12 @@ watch(activeTab, (val) => {
   color: var(--ek-color-content-strong);
 }
 
-// slate-800 / slate-600 için semantik token yok (content-strong=900, content-default=700) —
-// yakın-ama-farklı, ADR-0011 Açık Soru 4 gereği zorlanmadı.
 .color-slate-800 {
-  color: #1e293b;
+  color: var(--ek-color-content-strong);
 }
 
 .color-slate-600 {
-  color: #475569;
+  color: var(--ek-color-content-default);
 }
 
 .color-slate-500 {
