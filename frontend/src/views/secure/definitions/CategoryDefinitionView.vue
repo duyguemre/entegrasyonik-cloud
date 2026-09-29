@@ -5,11 +5,14 @@
       :title="$t('definitions.category.title')"
       :description="$t('definitions.category.description')"
     />
-    <v-row style="height:100%">
-      <v-col>
+    <!-- B5-1 duzeltme: CategoryListComponent kokundeki `.workarea-scroll` (site.css) position:absolute;
+         konumlu bir ata olmadan sekme kabine yayilip EkPageHeader'in USTUNU ortuyordu. Kardes ekran
+         productDefinitions/CategoryListView.vue ile AYNI desen: sutunlar position:relative + yukseklik (asagidaki scoped stil). -->
+    <v-row class="mt-0 mb-0">
+      <v-col class="category-definition__col">
         <CategoryListComponent v-model="isCategoriesListed" @openCategorySync="openCategorySync($event)" />
       </v-col>
-      <v-col>
+      <v-col class="category-definition__col">
         <CategorySyncComponent v-model="selectedCategory" />
       </v-col>
     </v-row>
@@ -104,3 +107,10 @@ const drawer = computed({
 })
 
 </script>
+
+<style scoped>
+.category-definition__col {
+  position: relative;
+  height: calc(100vh - 200px);
+}
+</style>

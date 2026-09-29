@@ -1,10 +1,15 @@
 <template>
-  <div>
+  <div class="legacy-definition-root">
     <EkPageHeader
       section="Katalog"
       :title="$t('definitions.brand.title')"
     />
 
+  <!-- B5-1 duzeltme: asagidaki `.expand-element`/`.scroll-element` (site.css) ve PaginationComponent
+       position:absolute ve sabit `top` degerleriyle konumlanir; konumlu bir ata olmadan sekme kabina
+       gore yerlesip ustteki EkPageHeader'i hesaba katmiyor, arama satirinin USTUNU ortuyorlardi.
+       Bu govde, baslik sonrasinda kalan alani kaplayan konumlu ata olur - icerik/davranis AYNI. -->
+  <div class="legacy-definition-body">
   <div class="search-section" >
     <div class="d-flex">
       <div style="width:48%">
@@ -86,6 +91,7 @@
     <ScrollComponent id=".scroll-element .v-table__wrapper"  :isExpandable="true"/>
   </div>
   <PaginationComponent />
+  </div>
   </div>
 </template>
 
@@ -279,4 +285,17 @@ var openUpdate = (id: number) => {
 }
 </script>
 
-<style></style>
+<style scoped>
+.legacy-definition-root {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.legacy-definition-body {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+</style>
