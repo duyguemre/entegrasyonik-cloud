@@ -1,3 +1,10 @@
+<!--
+  frontend/src/components/ticket/TicketCreateDialog.vue
+
+  ADR-0015 B5-3 — GÖRSEL KATMAN (bkz. e2e/specs/support-tickets.spec.ts). Form mantığı (`formData`,
+  `handleConfirm`, `@confirm` sözleşmesi) DEĞİŞMEDİ; yalnızca legacy `customTextField` sınıfı
+  kaldırıldı (global Vuetify `defaults`, A1, zaten outlined/compact/primary uyguluyor).
+-->
 <template>
   <ActionDialogComponent :model-value="modelValue" @update:model-value="val => $emit('update:modelValue', val)"
     title="YENİ DESTEK TALEBİ" subtitle="Size nasıl yardımcı olabiliriz? Lütfen detayları paylaşın."
@@ -8,17 +15,17 @@
         <v-col cols="12">
           <v-text-field v-model="formData.subject" label="Konu" variant="outlined" density="compact"
             placeholder="Kısaca sorununuzu belirtin" :rules="[v => !!v || 'Konu zorunludur']"
-            class="customTextField mb-2"></v-text-field>
+            class="mb-2"></v-text-field>
         </v-col>
 
         <v-col cols="12" sm="6">
           <v-select v-model="formData.type" :items="typeOptions" item-title="title" item-value="id" label="Talep Tipi"
-            variant="outlined" density="compact" class="customTextField"></v-select>
+            variant="outlined" density="compact"></v-select>
         </v-col>
 
         <v-col cols="12" sm="6">
           <v-select v-model="formData.priority" :items="priorityOptions" item-title="title" item-value="id"
-            label="Öncelik" variant="outlined" density="compact" class="customTextField">
+            label="Öncelik" variant="outlined" density="compact">
             <template v-slot:item="{ props, item }">
               <v-list-item v-bind="props">
                 <template #prepend>
@@ -32,7 +39,7 @@
         <v-col cols="12">
           <v-textarea v-model="formData.message" label="Mesajınız" variant="outlined"
             placeholder="Sorununuzu veya talebinizi detaylıca açıklayın..."
-            :rules="[v => !!v || 'Mesaj alanı zorunludur']" rows="5" counter class="customTextField"></v-textarea>
+            :rules="[v => !!v || 'Mesaj alanı zorunludur']" rows="5" counter></v-textarea>
         </v-col>
       </v-row>
     </v-form>
