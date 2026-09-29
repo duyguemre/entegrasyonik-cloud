@@ -151,9 +151,14 @@ const catalog = Array.from({ length: 3 })
                           </span>
                         </span>
                       ))}
-                      <span class="acct__btn">
-                        Ücretsiz dene
-                        <i class="acct__shine"></i>
+                      <span class="acct__cta">
+                        <span class="acct__btn">
+                          Ücretsiz dene
+                          <i class="acct__shine"></i>
+                        </span>
+                        <svg class="cursor" viewBox="0 0 16 20" focusable="false">
+                          <path d="M1 1 L1 16 L5 12.5 L8 19 L10.5 18 L7.6 11.6 L13 11.6 Z"></path>
+                        </svg>
                       </span>
                       <span class="acct__done">
                         <span class="okmark">
@@ -721,6 +726,27 @@ const catalog = Array.from({ length: 3 })
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-3);
+  }
+  .acct__cta {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  /* İmleç: düğmeye gelip tıklar (statik: görünmez). */
+  .cursor {
+    position: absolute;
+    inset-block-start: 55%;
+    inset-inline-start: 58%;
+    z-index: 1;
+    width: var(--ek-space-4);
+    height: var(--ek-space-5);
+    fill: var(--ek-color-content-strong);
+    stroke: var(--ek-color-surface);
+    stroke-width: 1.2;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 var(--ek-space-1) var(--ek-space-1) color-mix(in srgb, var(--ek-color-content-strong) 35%, transparent));
+    opacity: 0;
+    pointer-events: none;
   }
   .acct__btn {
     position: relative;
@@ -1470,24 +1496,54 @@ const catalog = Array.from({ length: 3 })
     :global(html[data-motion='play']) [data-demo-on][data-b2] .field--key .type__focus {
       animation: how-focus var(--site-motion-duration-reveal-lg) var(--ek-easing-standard);
     }
+    @keyframes how-cursor {
+      0% {
+        opacity: 0;
+        translate: calc(var(--ek-space-16) * -1) calc(var(--ek-space-12) * -1.4);
+      }
+      20% {
+        opacity: 1;
+      }
+      55% {
+        translate: 0 0;
+        scale: 1;
+      }
+      68% {
+        scale: 0.85;
+      }
+      82% {
+        opacity: 1;
+        scale: 1;
+      }
+      100% {
+        opacity: 0;
+        translate: 0 0;
+      }
+    }
+    :global(html[data-motion='play']) [data-demo-on][data-b3] .cursor {
+      animation: how-cursor var(--site-motion-duration-reveal-lg) var(--site-motion-ease-loop);
+    }
     :global(html[data-motion='play']) [data-demo-on][data-b3] .acct__btn {
       animation: how-press var(--site-motion-duration-reveal-sm) var(--ek-easing-standard);
+      animation-delay: var(--site-motion-duration-reveal-sm);
     }
     :global(html[data-motion='play']) [data-demo-on][data-b3] .acct__shine {
-      animation: how-sweep var(--site-motion-duration-reveal) var(--site-motion-ease-reveal);
+      animation: how-sweep var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
+      animation-delay: var(--site-motion-duration-reveal-sm);
     }
     :global(html[data-motion='play']) [data-demo-on]:not([data-b4]) .acct__done {
       opacity: 0;
     }
     :global(html[data-motion='play']) [data-demo-on][data-b4] .acct__done {
       animation: how-rise var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
+      animation-delay: var(--site-motion-duration-reveal-sm);
     }
     :global(html[data-motion='play']) [data-demo-on]:not([data-b4]) .acct__done .okmark {
       opacity: 0;
     }
     :global(html[data-motion='play']) [data-demo-on][data-b4] .acct__done .okmark {
       animation: how-pop var(--site-motion-duration-reveal-sm) var(--site-motion-ease-reveal) backwards;
-      animation-delay: calc(var(--site-motion-stagger) * 3);
+      animation-delay: calc(var(--site-motion-duration-reveal-sm) + var(--site-motion-stagger) * 3);
     }
     :global(html[data-motion='play']) [data-demo-on][data-b5] .acct__done .okmark__glow {
       animation: how-glow var(--site-motion-duration-reveal-lg) var(--site-motion-ease-reveal);
