@@ -89,13 +89,13 @@ const metaOf = (e: IntegrationHealthEntry) => {
   const parts: string[] = []
   if (e.credentialsConfigured === false) return 'Kimlik bilgileri girilmemiş'
   if (e.lastSuccessfulSyncAt) parts.push(`Eşitleme ${formatRelative(e.lastSuccessfulSyncAt)}`)
-  if (e.last24h?.total > 0) parts.push(`24 sa ${formatNumber(e.last24h.success)}/${formatNumber(e.last24h.total)} başarılı`)
+  if (e.last24h?.total > 0) parts.push(`${formatNumber(e.last24h.success)}/${formatNumber(e.last24h.total)} çağrı başarılı`)
   return parts.length ? parts.join(' · ') : 'Son 24 saatte çağrı yok'
 }
 
 const errorLineOf = (e: IntegrationHealthEntry) =>
   e.lastError && (e.health === 'degraded' || e.health === 'down')
-    ? `Son hata ${formatRelative(e.lastError.at)}: ${ERROR_CODE[e.lastError.code] ?? 'bilinmeyen hata'}`
+    ? `Hata: ${ERROR_CODE[e.lastError.code] ?? 'bilinmeyen hata'} (${formatRelative(e.lastError.at)})`
     : ''
 
 

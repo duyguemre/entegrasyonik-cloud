@@ -254,6 +254,13 @@ const openTransfer = (integrationCode: string, statuses: string[]) =>
     display: none;
   }
 
+  .dash-catalog__table thead th,
+  .dash-catalog__table tbody th,
+  .dash-catalog__table tbody td {
+    padding-right: var(--ek-space-1);
+    padding-left: var(--ek-space-1);
+  }
+
   .dash-catalog__facts {
     gap: var(--ek-space-2);
   }

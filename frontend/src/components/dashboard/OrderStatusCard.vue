@@ -142,15 +142,15 @@ const option = computed(() => ({
 <style scoped>
 .dash-status__layout {
   display: grid;
-  grid-template-columns: 168px minmax(0, 1fr);
+  grid-template-columns: 152px minmax(0, 1fr);
   align-items: center;
   gap: var(--ek-space-5);
 }
 
 .dash-status__ring {
   position: relative;
-  width: 168px;
-  height: 168px;
+  width: 152px;
+  height: 152px;
 }
 
 .dash-status__chart {
@@ -255,8 +255,8 @@ const option = computed(() => ({
 }
 
 .dash-status__ring-skeleton {
-  width: 168px;
-  height: 168px;
+  width: 152px;
+  height: 152px;
   border-radius: 50%;
   border: 24px solid var(--ek-color-surface-sunken);
 }
@@ -282,6 +282,7 @@ const option = computed(() => ({
   .dash-status__layout {
     grid-template-columns: minmax(0, 1fr);
     justify-items: center;
+    gap: var(--ek-space-4);
   }
 
   .dash-status__list {

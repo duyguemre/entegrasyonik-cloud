@@ -8,6 +8,12 @@ import { gotoAuthed, expectScreenOpen, waitForPlatformListStable, menuFixture } 
 
 // `waitForShellReady` (nav.ts) kabuk hazır çapası olarak bu mikro etiketi bekler.
 const DASHBOARD_READY_TEXT = 'İŞLETME PERFORMANSI'
+// Saat sabitlenmez (ECharts animasyonu zamanlayıcıya bağlı); gerçek saate bağlı metinler
+// ("Son güncelleme", göreli zamanlar) ekran görüntüsünde maskelenir.
+const timeMasks = (page: Page) => [
+  page.locator('.dashboard .ek-page-header__description'),
+  page.locator('.dash-health__meta, .dash-health__error, .dash-jobs__meta'),
+]
 
 const kpi = (page: Page, key: string) => page.locator(`[data-kpi="${key}"]`)
 const card = (page: Page, title: string) => page.locator('.dashboard section.ek-card').filter({ has: page.getByRole('heading', { name: title, exact: true }) })
@@ -26,6 +32,7 @@ test.describe('P1 — Dashboard', () => {
     await installApiMocks(page)
     await gotoAuthed(page)
 
+    await expect(page.getByText(DASHBOARD_READY_TEXT)).toBeVisible()
     const f = orderDashboardInsightsFixture
     await expect(kpi(page, 'today-count')).toContainText(String(f.today.count))
     await expect(kpi(page, 'today-revenue')).toContainText('₺349,90')
@@ -62,7 +69,7 @@ test.describe('P1 — Dashboard', () => {
     const health = card(page, 'Entegrasyon sağlığı')
     await expect(health.locator('[data-health="trendyol"]')).toContainText('Sağlıklı')
     await expect(health.locator('[data-health="hepsiburada"]')).toContainText('Sorunlu')
-    await expect(health.locator('[data-health="hepsiburada"]')).toContainText('istek sınırı aşıldı')
+    await expect(health.locator('[data-health="hepsiburada"]')).toContainText('Hata: istek sınırı aşıldı')
     await expect(health.locator('[data-health="bizimhesap"]')).toContainText('Kimlik bilgileri girilmemiş')
 
     const catalog = card(page, 'Katalog ve kanal aktarımı')
@@ -163,7 +170,8 @@ test.describe('P1 — Dashboard', () => {
     await card(page, 'Bekleyen aksiyonlar').locator('[data-pending="shipping"]').click()
     await expectScreenOpen(page, '.orderListView')
 
-    await page.locator('.workplace-tabs').getByText('ANASAYFA').click()
+    // Kabuğun sekme şeridine bağımlı olmamak için dashboard'a yeni oturumla dönülür.
+    await gotoAuthed(page)
     await page.getByRole('button', { name: 'Ürün listesini aç' }).click()
     await expectScreenOpen(page, '.productListView')
   })
@@ -174,7 +182,7 @@ test.describe('P1 — Dashboard', () => {
     await waitForPlatformListStable(page)
     await expect(kpi(page, 'today-count')).toContainText('2')
     await page.waitForTimeout(400)
-    await expect(page).toHaveScreenshot('dashboard.png', { fullPage: false })
+    await expect(page).toHaveScreenshot('dashboard.png', { fullPage: false, mask: timeMasks(page) })
   })
 
   test('axe: dashboard içeriğinde WCAG 2.1 AA ihlali 0', async ({ page }, testInfo) => {
