@@ -26,6 +26,8 @@ export const useMenuStore = defineStore('menu', () => {
     ['adminPanel/IntegrationSettingsView', shallowRef(defineAsyncComponent(() => import('@/views/secure/adminPanel/integrations/IntegrationSettingsView.vue')))],
     ['adminPanel/EngineSettingsView', shallowRef(defineAsyncComponent(() => import('@/views/secure/adminPanel/integrations/EngineSettingsView.vue')))],
     ['adminPanel/EffectiveConfigView', shallowRef(defineAsyncComponent(() => import('@/views/secure/adminPanel/integrations/EffectiveConfigView.vue')))],
+    // ADR-0018 Karar 2 "Konsol" — Entegrasyon uyum (`platformAdmin`); menü kaydı bu görevin kapsamı dışı (bkz. `screens.ts`).
+    ['adminPanel/ComplianceView', shallowRef(defineAsyncComponent(() => import('@/views/secure/adminPanel/integrations/ComplianceView.vue')))],
 
     ['productDefinitions/TEST', shallowRef(defineAsyncComponent(() => import('@/views/secure/productDefinitions/TEST.vue')))],
 

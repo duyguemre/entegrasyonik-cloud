@@ -127,6 +127,15 @@ export const SCREENS: readonly ScreenDefinition[] = [
     key: 'adminPanel/EffectiveConfigView', slug: 'admin/effective-config', section: 'admin', order: 6,
     urlParams: [{ name: 'code', kind: 'enum', allowed: ['trendyol', 'hepsiburada', 'n11', 'pazarama', 'ideasoft', 'bizimhesap', '_engine'] }],
   },
+  // ADR-0018 Karar 2 "Konsol" (Aşama B) — "Entegrasyon uyum" (`platformAdmin`; YALNIZCA EKLEME). Menü kaydı
+  // (ApplicationDB `menus`, admin grubu) diğer admin ekranlarıyla AYNI gerekçeyle bu bulut görevinin kapsamı DIŞI;
+  // `menuSource:'registry'` + `minRole` altyapısı henüz UYGULANMADIĞI için kullanılmadı — görünürlük bugün
+  // `MenuService`'ten, erişim sınırı backend `platformAdmin` (OPERATION_POLICY) + `PlatformAdminGuard`'dan gelir.
+  // `urlParams` YOK: filtreler URL'ye yazılmaz (bulgu kimliği/konu anahtarı teknik de olsa derin bağlantı ihtiyacı yok).
+  {
+    key: 'adminPanel/ComplianceView', slug: 'admin/integration-compliance', section: 'admin', order: 7,
+    icon: 'mdi-shield-search', titleKey: 'menu.adminPanel.adminIntegrationCompliance',
+  },
   // ADR-0014 S4b: kayıt sonrası abonelik ekranı derin bağlantısı (`/subscription?plan=<kod>`). `plan` YALNIZCA
   // kapalı, izinli plan kodu kümesidir (registerIntent.ts; seed ile testle eşit) — PII/serbest metin YOK.
   { key: 'user/SubscriptionView', slug: 'subscription', urlParams: [{ name: 'plan', kind: 'enum', allowed: REGISTER_PLAN_CODES }], section: 'finance', order: 1 },
