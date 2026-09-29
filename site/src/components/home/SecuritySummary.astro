@@ -89,10 +89,10 @@ if (unplaced.length > 0) throw new Error(`Güvenlik özeti: sütuna atanmamış 
 
 // Kalkan illüstrasyonunun koruma katmanı çipleri: yalnızca kayıtta bulunan iddialar.
 const GUARDS: Array<{ id: string; icon: 'lock' | 'users' | 'shield' | 'database' | 'key'; label: string; sub: string }> = [
-  { id: 'tenant-database', icon: 'database', label: 'Veri izolasyonu', sub: 'Hesabınıza ayrılmış veritabanı' },
+  { id: 'tenant-database', icon: 'database', label: 'Veri izolasyonu', sub: 'Hesaba özel veritabanı' },
   { id: 'secrets-encryption', icon: 'key', label: 'Şifreli anahtarlar', sub: 'AES-256-GCM' },
-  { id: 'role-based-access', icon: 'users', label: 'Rol tabanlı yetki', sub: 'Üye, yönetici, ana yönetici' },
-  { id: 'default-deny', icon: 'shield', label: 'Varsayılan red', sub: 'Tanımsız işlem geçemez' },
+  { id: 'role-based-access', icon: 'users', label: 'Rol tabanlı yetki', sub: 'Üç yetki kademesi' },
+  { id: 'default-deny', icon: 'shield', label: 'Varsayılan red', sub: 'Tanımsız işlem reddedilir' },
 ]
 const guards = GUARDS.filter((g) => byId.has(g.id))
 
@@ -407,7 +407,7 @@ const cells = Array.from({ length: 24 }, (_, i) => ({ x: (i % 8) * 29 + 4, y: Ma
   .guard__list {
     grid-area: list;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--ek-space-3);
     margin: 0;
     padding: 0;
@@ -656,6 +656,11 @@ const cells = Array.from({ length: 24 }, (_, i) => ({ x: (i % 8) * 29 + 4, y: Ma
     margin-top: var(--ek-space-1);
   }
 
+  @media (min-width: 560px) {
+    .guard__list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
   @media (min-width: 768px) {
     .sec__grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));

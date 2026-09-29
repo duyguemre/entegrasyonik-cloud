@@ -42,24 +42,24 @@ const flow = FLOW_STEPS.filter((s) => security.some((i) => i.id === s.id))
 
 /** Kayıtları temalara böler; hiçbir kayıt kaybolmasın diye tanımsız olanlar "Diğer" başlığına düşer. */
 const themes: Array<{ id: string; heading: string; lead: string; ids: string[] }> = [
-  { id: 'veri', heading: 'Verileriniz', lead: 'Her müşteri hesabının verisi ayrı tutulur.', ids: ['tenant-database'] },
+  { id: 'veri', heading: 'Veri izolasyonu', lead: 'Ürün, stok ve sipariş verileriniz hesabınıza ayrılmış veritabanında tutulur.', ids: ['tenant-database'] },
   {
     id: 'anahtarlar',
-    heading: 'Entegrasyon anahtarlarınız',
-    lead: 'Pazaryeri ve entegrasyon kimlik bilgileri hassas veri olarak ele alınır.',
+    heading: 'Şifreli anahtar kasası',
+    lead: 'Pazaryeri ve entegrasyon kimlik bilgileriniz durağan veride şifrelenir, arayüzde maskelenir.',
     ids: ['secrets-encryption', 'secrets-masked'],
   },
   {
     id: 'erisim',
-    heading: 'Erişim ve oturum',
-    lead: 'Kimin neyi yapabileceği sunucuda denetlenir.',
+    heading: 'Yetki ve erişim kontrolü',
+    lead: 'Ekibinizde kimin neyi yapabileceğini siz belirlersiniz; her işlem sunucuda yetki denetiminden geçer.',
     ids: ['role-based-access', 'default-deny', 'session-cookie'],
   },
-  { id: 'odeme', heading: 'Ödeme', lead: 'Kart verisi sistemlerimizden geçmeyecek şekilde tasarlanmıştır.', ids: ['hosted-payment'] },
+  { id: 'odeme', heading: 'Güvenli ödeme altyapısı', lead: 'Kart verisi sistemlerimizden geçmeyecek şekilde tasarlanmıştır.', ids: ['hosted-payment'] },
   {
     id: 'dayaniklilik',
-    heading: 'Dayanıklılık',
-    lead: 'Dış sistemlerle konuşurken geçici hatalara karşı koruma.',
+    heading: 'Dayanıklı altyapı',
+    lead: 'Pazaryeri bağlantılarınız geçici hatalara karşı hata toleranslı bir katmandan geçer.',
     ids: ['integration-resilience'],
   },
 ]
@@ -97,7 +97,7 @@ for (const g of groups) {
 
   <PageHero
     title="Güvenlik"
-    lead="Bu sayfa yalnızca yazılımda uygulanmış ve doğrulanabilir güvenlik özelliklerini anlatır. Her madde kodda veya mimari kararlarda karşılığı olan bir davranışa dayanır."
+    lead="Pazaryeri API anahtarlarınızdan operasyon verilerinize kadar her katman kurumsal düzeyde güvenlik ilkeleriyle tasarlandı. Aşağıdaki her madde, ürünün yazılımında uygulanmış bir korumaya dayanır."
     crumbs={crumbs}
   >
     <Fragment slot="visual">
@@ -105,7 +105,7 @@ for (const g of groups) {
         <span class="hero-visual__icon"><Icon name="shield" size="lg" /></span>
         <span class="hero-visual__icon hero-visual__icon--accent"><Icon name="lock" size="md" /></span>
       </div>
-      <p class="stat-panel__caption">Anahtarlarınız ve verileriniz için tasarlandı.</p>
+      <p class="stat-panel__caption">Anahtarlarınız ve verileriniz için kurumsal düzeyde güvenlik.</p>
     </Fragment>
   </PageHero>
 
