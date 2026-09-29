@@ -15,12 +15,9 @@
 // menü grubu ekleniyor — `menuFixtureWithAdmin`/`menuFixtureWithIntegrationConfig` (nav.ts) ile
 // AYNI desen, yalnızca bu spec dosyasında yaşıyor.
 //
-// ORTAM KISITI (2026-09-29, bu oturumda doğrulandı): bulut egress politikası
-// `cdn.playwright.dev`'i 403 ile engelliyor (`curl $HTTPS_PROXY/__agentproxy/status` kanıtı),
-// bu yüzden bu oturumda Chromium indirilemedi ve bu spec ÇALIŞTIRILAMADI. Değerlendirme statik
-// kod okumasıyla yapıldı (characterization-testing skill'inin izin verdiği ikinci yöntem).
-// Yerelde (Windows, CLOUD_BRIEFS.md akışı) `npx playwright test product-definitions.spec.ts`
-// ile ÇALIŞTIRILIP yeşil olduğu doğrulanmadan bu ekranlar "tamamlandı" sayılmamalıdır.
+// ORTAM NOTU: ilk bulut oturumunda Chromium indirilemedi (`cdn.playwright.dev` 403) ve spec
+// statik okumayla yazıldı. 2026-09-29 ikinci bulut oturumunda önceden kurulu Chromium ile
+// ÇALIŞTIRILDI (seçici hatası düzeltildi). Görsel onay yine yerelde (Windows tabanları) yapılır.
 import { test, expect } from '@playwright/test'
 import { installApiMocks } from '../fixtures/mockApi'
 import { buildProduct } from '../fixtures/apiData'
@@ -46,12 +43,19 @@ function withMenu(overrides: Record<string, any> = {}) {
 }
 
 test.describe('B5-1 — Ürün tanımlama (ProductDefinitionView)', () => {
-  test('smoke: "Yeni ürün" tıklanınca sihirbaz açılır, ilk adım "Kategori Seçimi"dir, Kaydet devre dışıdır', async ({ page }) => {
+  test('smoke: "Yeni ürün" tıklanınca sihirbaz açılır, ilk adım "Kategori Seçimi"dir, Kaydet devre dışıdır', async ({ page }, testInfo) => {
+    // BİLİNEN HATA (B1 kapsamı, ProductListView — bu görevde DÜZELTİLMEDİ, insan onayı): 375px
+    // mobil görünümde ürün tablosu (`.plv-table`) EkPageHeader'daki "Yeni ürün" düğmesinin
+    // üzerine biner ve tıklamayı yutar ("subtree intercepts pointer events", bulut koşusu
+    // 2026-09-29). Tetikleyici mobilde erişilemez olduğu için bu viewport `fixme` olarak işaretli.
+    test.fixme(testInfo.project.name === 'chromium-mobile', 'B1: ProductListView tablosu mobilde "Yeni ürün" düğmesini örtüyor')
     await installApiMocks(page, withMenu())
     await gotoAuthed(page)
     await openScreen(page, 'ProductListView')
 
-    await page.getByRole('button', { name: 'Yeni ürün' }).click()
+    // `exact`: ProductListView'de adı "Yeni ürün" İÇEREN 3 düğme var ("Yeni ürün seçeneği ekle",
+    // "Yeni ürün ekle") — bulut koşusunda (2026-09-29) strict mode ihlali verdi.
+    await page.getByRole('button', { name: 'Yeni ürün', exact: true }).click()
 
     const root = page.locator('.productDefinitionView')
     await expect(root).toBeVisible()

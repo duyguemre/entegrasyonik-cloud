@@ -15,9 +15,10 @@
 // olduğu için değil, "böyle davrandığı" için (characterization-testing skill). Sentetik menü
 // girişiyle açılır (`e2e/fixtures/definitionsMenu.ts`).
 //
-// ORTAM KISITI: bu oturumda Chromium indirilemedi (`cdn.playwright.dev` 403, egress politikası) —
-// spec ÇALIŞTIRILAMADI, değerlendirme statik kod okumasıyla yapıldı. Yerelde çalıştırılıp yeşil
-// olduğu doğrulanmalıdır (bkz. `product-definitions.spec.ts` baş yorumu).
+// ORTAM NOTU: ilk bulut oturumunda Chromium indirilemedi (`cdn.playwright.dev` 403) ve spec
+// statik okumayla yazıldı. 2026-09-29 ikinci bulut oturumunda önceden kurulu Chromium ile
+// ÇALIŞTIRILDI; ortaya çıkan seçici hataları ve görsel regresyon burada düzeltildi. Görsel
+// onay yine yerelde (Windows tabanları) yapılır.
 import { test, expect } from '@playwright/test'
 import { installApiMocks } from '../fixtures/mockApi'
 import { gotoAuthed } from '../fixtures/nav'
@@ -44,9 +45,19 @@ test.describe('B5-1 — Eski/prototip tanım ekranları (7 ekran, aynı sahte i�
       // GİZLİ DAVRANIŞ (characterization, düzeltilmedi — insan onayı önerilir): tablo API'den
       // gelmiyor, kaynak kodda sabit kodlu; her satır AYNI kişidir. Bu adres metni bu 7 ekranın
       // sahte verisine özgüdür (başka hiçbir ekranda geçmez) — sekme sayımı riskini önlemek için
-      // genel `tbody tr` yerine bu özgün metin sayılıyor.
+      // genel `tbody tr` yerine bu özgün metin sayılıyor. Not: sokak adresi (`address.desc`) salt
+      // okunur bir `<input>` DEĞERİ olarak render edilir (getByText göremez); bu yüzden düz metin
+      // olarak basılan "ilçe / il / ülke" satırı sayılıyor (bulut koşusu 2026-09-29).
       await expect(page.getByText('EMRE YALÇINKAYA').first()).toBeVisible()
-      await expect(page.getByText('Özgür Mah. Kelebek Sok. Tan Apt. Daire 3')).toHaveCount(6)
+      await expect(page.getByText('Merkez / Karabük / Türkiye')).toHaveCount(6)
+
+      // Regresyon kilidi (bulut koşusu 2026-09-29): tablo kabı (`.expand-element`, site.css
+      // position:absolute + sabit `top`) EkPageHeader eklenince arama satırının ÜSTÜNÜ örtüyordu.
+      // Arama satırının (alan + düğme grubu) altı, tablo başlık satırının üstünden aşağıda olmamalı.
+      // (Not: "Müşteri Ara" `to=` taşıdığı için `<a>` olarak render edilir — button rolü YOK.)
+      const searchBox = await page.locator('.search-section .v-btn-group').boundingBox({ timeout: 5000 })
+      const headerRowBox = await page.locator('.scroll-element thead').boundingBox({ timeout: 5000 })
+      expect(searchBox && headerRowBox && searchBox.y + searchBox.height <= headerRowBox.y).toBeTruthy()
     })
   }
 })

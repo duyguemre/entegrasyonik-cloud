@@ -56,13 +56,16 @@ export const menuFixtureWithLegacyDefinitions = [
 /**
  * `openScreen` (nav.ts) ile AYNI tıklama mekaniği (yalnızca üst-düzey, gruplanmamış öğe —
  * bu sentetik grupta hiçbir öğe bir `v-list-group` içine gömülü değil). `MENU_SCREENS`'e
- * (nav.ts, tipli sabit liste) DOKUNMADAN, herhangi bir ikon sınıfıyla üst-düzey bir menü
- * öğesi seçer.
+ * (nav.ts, tipli sabit liste) DOKUNMADAN, sentetik başlığıyla üst-düzey bir menü öğesi seçer.
  */
 export async function openHiddenDefinitionScreen(page: Page, screen: HiddenDefinitionScreenDef) {
   await openDrawer(page)
   const drawer = page.locator('.v-navigation-drawer.soft-nav')
-  const item = drawer.locator('.soft-item').filter({ has: page.locator(`.${screen.icon}`) }).first()
+  // Ikona gore secim YETERSIZ: `mdi-receipt-text-outline`/`mdi-undo-variant` gercek "Faturalar"/
+  // "Iade Yonetimi" ogeleriyle cakisiyor (bulut kosusu 2026-09-29, `.first()` yanlis ekrani acti).
+  // Sentetik `title` (`b5_1_<code>`) benzersizdir; i18n anahtari cevrilmedigi icin DOM metninde
+  // `menu.b5_1_<code>` olarak gorunur.
+  const item = drawer.locator('.soft-item').filter({ hasText: `b5_1_${screen.code}` })
   await expect(item).toBeVisible()
   await item.click()
 }
