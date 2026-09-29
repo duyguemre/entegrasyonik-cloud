@@ -19,8 +19,11 @@ import {
   getPublicIntegrations,
   getPublicRoadmap,
   collectPublicIntegrationContent,
+  ecosystemNodes,
+  ecosystemPromises,
+  getEcosystemNodes,
 } from '../src/data/integrations'
-import { productCapabilities, getPublicCapabilities } from '../src/data/capabilities'
+import { productCapabilities, getPublicCapabilities, getHomePillars, homePillars } from '../src/data/capabilities'
 import { faq, getPublicFaq } from '../src/data/faq'
 import {
   defaultPlanSource,
@@ -93,6 +96,10 @@ function publicContent() {
     vatNotice: getVatNotice(),
     comparison: getComparisonRows(),
     pricingFaq: getPricingFaq(),
+    // S12 ana sayfa pazarlama metinleri de aynı yasaklı ifade / sayı taramasından geçer
+    homePillars: getHomePillars(),
+    ecosystem: getEcosystemNodes(),
+    ecosystemPromises,
   }
 }
 
@@ -130,6 +137,40 @@ describe('(1) available entegrasyonlar === IntegrationFactory kodları', () => {
     for (const i of integrations.filter((x) => x.status === 'available')) {
       expect(['marketplace', 'ecommerce', 'erp'], i.code).toContain(i.kind)
     }
+  })
+})
+
+// ------------------------------------------------------------------------------------------ S12 pazarlama metinleri
+
+describe('S12 ana sayfa pazarlama metinleri kayıtlı gerçek yeteneklere dayanır', () => {
+  const live = productCapabilities.filter((c) => c.status !== 'roadmap').map((c) => c.id)
+
+  it('her çekirdek (görünür) yeteneğin ana sayfa başlığı ve tek satırlık fayda cümlesi var', () => {
+    for (const c of getPublicCapabilities('core')) {
+      expect(c.home?.title, c.id).toBeTruthy()
+      expect(c.home?.line, c.id).toBeTruthy()
+    }
+  })
+
+  it('dört değer sütunu yalnızca roadmap OLMAYAN yeteneklere dayanır; en fazla üç kısa madde', () => {
+    expect(homePillars).toHaveLength(4)
+    for (const p of homePillars) {
+      expect(p.basedOn.length, p.id).toBeGreaterThan(0)
+      for (const id of p.basedOn) expect(live, `${p.id} -> ${id}`).toContain(id)
+      expect(p.points.length, p.id).toBeLessThanOrEqual(3)
+    }
+  })
+
+  it('ekosistem düğümleri mevcut bir entegrasyon türüne veya kayıtlı yeteneğe dayanır; ad içermez', () => {
+    const nodes = getEcosystemNodes()
+    expect(nodes).toHaveLength(ecosystemNodes.length)
+    for (const n of nodes) expect(n.channelCodes.length, n.id).toBeGreaterThan(0)
+    const names = integrations.filter((i) => i.status === 'available').map((i) => i.name)
+    for (const n of [...ecosystemNodes, ...ecosystemPromises]) {
+      for (const name of names) expect(phraseRe(name).test(norm(`${n.title} ${n.line}`)), `${n.id}: ${name}`).toBe(false)
+    }
+    // kargo/fatura düğümü yalnızca bildirim yeteneğine dayanır (kargo firması / fatura sağlayıcı iddiası değil)
+    expect(ecosystemNodes.find((n) => n.id === 'fulfilment')!.capabilityKeys).toEqual(['shippingNotice', 'invoiceNotice'])
   })
 })
 
@@ -362,7 +403,7 @@ const NUMERIC_ALLOWLIST: Array<{ token: string; why: EvidenceRef }> = [
 ]
 
 /** Sayısal-iddia denetiminden muaf anahtarlar (biçimlenmiş fiyat, kimlik/kod, taslak notu). */
-const NON_PROSE_KEYS = new Set(['priceLabel', 'code', 'id', 'notice', 'periodLabel'])
+const NON_PROSE_KEYS = new Set(['priceLabel', 'code', 'id', 'notice', 'periodLabel', 'channelCodes', 'basedOn', 'icon'])
 
 describe('(3) görünür içerikte yasaklı ifade / mutlak / kanıtsız sayısal iddia yok', () => {
   const content = publicContent()

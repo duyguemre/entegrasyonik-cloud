@@ -178,18 +178,35 @@ describe('gizli öğe yok (roadmap, evidence, dahili notlar)', () => {
 describe('/entegrasyonlar', () => {
   const page = () => html(draftDir, '/entegrasyonlar')
 
-  it('yalnızca mevcut entegrasyon kartları (her koda tam 1 kart), karşılaştırma tablosu var', () => {
+  it('yalnızca mevcut entegrasyon kartları (her koda tam 1 kart), "Kanal bazında kapsam" bölümü var (S12: ana sayfadan taşındı)', () => {
     const codes = [...page().matchAll(/data-testid="integration-card" data-code="([a-z0-9]+)"/g)].map((m) => m[1])
     expect(codes.sort()).toEqual([...AVAILABLE_INTEGRATION_CODES].sort())
-    expect(page()).toContain('data-testid="comparison-table"')
+    expect(page()).toMatch(/<section[^>]*id="kapsam"/)
+    expect(page()).toContain('data-testid="coverage-matrix"')
+    expect(page()).toContain('href="#kapsam"')
   })
 
-  it('dürüst yetenek gösterimi: sınırlı/sunulmuyor etiketleri ve kapsam rozetleri görünür', () => {
+  it('dürüst ve sakin kapsam gösterimi: destekleniyor / temel düzeyde / bu kanalda yok etiketleri ve kapsam rozetleri görünür', () => {
     const text = visibleText(page())
-    expect(text).toContain('Sınırlı')
-    expect(text).toContain('Sunulmuyor')
+    expect(text).toContain('Temel düzeyde')
+    expect(text).toContain('Bu kanalda yok')
     expect(text).toContain('Destekleniyor')
     for (const i of getPublicIntegrations()) expect(text).toContain(i.coverageLabel)
+  })
+
+  it('kapsam matrisi: caption, her kanala bir satır (detay bağlantılı), her hücre durumu metinle; mobil kompakt kartlar aynı veriyle', () => {
+    const matrix = page().match(/<table[\s\S]*?<\/table>/)![0]
+    expect(matrix).toMatch(/<caption class="sr-only"[^>]*>[^<]+<\/caption>/)
+    expect([...matrix.matchAll(/<tr class="cm__row"/g)]).toHaveLength(AVAILABLE_INTEGRATION_CODES.length)
+    for (const c of AVAILABLE_INTEGRATION_CODES) expect(matrix, c).toContain(`href="/entegrasyonlar/${c}"`)
+    // her satırda 8 hücre, her hücrede ekran okuyucu metni
+    expect([...matrix.matchAll(/<td\b/g)]).toHaveLength(AVAILABLE_INTEGRATION_CODES.length * 8)
+    expect([...matrix.matchAll(/<td\b[^>]*>[\s\S]*?class="sr-only"[\s\S]*?<\/td>/g)]).toHaveLength(AVAILABLE_INTEGRATION_CODES.length * 8)
+    const cards = page().match(/<ul class="cm__cards[^"]*"[\s\S]*?<\/ul>\s*<\/div>/)![0]
+    expect(cards.match(/^<ul[^>]*>/)![0]).toMatch(/aria-label="[^"]+"/)
+    expect([...cards.matchAll(/<li class="cm__card"/g)]).toHaveLength(AVAILABLE_INTEGRATION_CODES.length)
+    // kapsam verisi kayıtla birebir: Bizimhesap stok/fiyat yazmaz -> "Bu kanalda yok"
+    expect(visibleText(cards)).toMatch(/Stok ve fiyat güncelleme: Bu kanalda yok/)
   })
 
   it('her kart kendi detay sayfasına bağlanır', () => {
