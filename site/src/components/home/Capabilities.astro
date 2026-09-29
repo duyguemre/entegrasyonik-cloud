@@ -51,6 +51,19 @@ const ICONS: Record<string, 'stock' | 'layers' | 'orders' | 'returns' | 'chat' |
   'erp-read': 'plug',
 }
 
+// "Günlük işleriniz için" kartlarında küçük, canlı illüstrasyon (S13-C). Yalnızca biçim/iskelet: metin, sayı veya
+// kanal adı taşımaz; kanal noktaları kaydın `channels` listesinden (isimsiz renk).
+type Art = 'sync' | 'returns' | 'chat' | 'finance' | 'ship' | 'erp'
+const ARTS: Record<string, Art> = {
+  'multi-channel-products': 'sync',
+  returns: 'returns',
+  questions: 'chat',
+  finance: 'finance',
+  'shipping-invoice-notice': 'ship',
+  'erp-read': 'erp',
+}
+const FIN_BARS = [0.45, 0.7, 0.55, 0.85, 0.6, 1]
+
 const integrations = getPublicIntegrations()
 const marketplaceCodes = getPublicIntegrations('marketplace').map((i) => i.code)
 const [codeA = '', codeB = ''] = marketplaceCodes
@@ -295,20 +308,89 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
 
   <ul class="caps" data-scene="reveal" data-testid="capability-grid">
     {
-      rest.map((c) => (
-        <li class="cap" data-part="capability" data-id={c.id} data-reveal data-tilt>
-          <span class="cap__icon"><Icon name={ICONS[c.id] ?? 'layers'} size="md" /></span>
-          <h4 class="cap__title">{homeOf(c).title}</h4>
-          <p class="cap__text">{homeOf(c).line}</p>
-          {c.channels.length > 0 && (
-            <span class="cap__dots" aria-hidden="true">
-              {c.channels.map((ch) => (
-                <i data-code={ch.code}></i>
-              ))}
-            </span>
-          )}
-        </li>
-      ))
+      rest.map((c) => {
+        const art = ARTS[c.id]
+        const chans = c.channels.slice(0, 5)
+        return (
+          <li class="cap" data-part="capability" data-id={c.id} data-reveal data-tilt>
+            <div class="cap__head">
+              <span class="cap__icon"><Icon name={ICONS[c.id] ?? 'layers'} size="md" /></span>
+              {chans.length > 0 && (
+                <span class="cap__dots" aria-hidden="true">
+                  {chans.map((ch) => (
+                    <i data-code={ch.code} />
+                  ))}
+                </span>
+              )}
+            </div>
+            <h4 class="cap__title">{homeOf(c).title}</h4>
+            <p class="cap__text">{homeOf(c).line}</p>
+            {art && (
+              <div class={`art art--${art}`} aria-hidden="true">
+                {art === 'sync' && (
+                  <>
+                    <span class="art__hub"><Icon name="layers" size="sm" /></span>
+                    <span class="art__fan">
+                      <i class="art__wire" />
+                      {chans.map((ch) => (
+                        <span class="art__spoke" data-code={ch.code}>
+                          <i class="art__node" />
+                        </span>
+                      ))}
+                    </span>
+                  </>
+                )}
+                {art === 'returns' && (
+                  <span class="art__steps">
+                    <span class="art__track"><i class="art__progress" /></span>
+                    <i class="art__step" />
+                    <i class="art__step" />
+                    <i class="art__step art__step--end" />
+                  </span>
+                )}
+                {art === 'chat' && (
+                  <span class="art__thread">
+                    <span class="art__bubble art__bubble--in" data-code={chans[0]?.code}>
+                      <i class="art__dot" />
+                      <i class="art__skel" />
+                    </span>
+                    <span class="art__bubble art__bubble--out">
+                      <i class="art__typing" />
+                      <i class="art__typing" />
+                      <i class="art__typing" />
+                    </span>
+                  </span>
+                )}
+                {art === 'finance' && (
+                  <span class="art__bars">
+                    {FIN_BARS.map((_h, k) => (
+                      <i class="art__bar" data-k={k} />
+                    ))}
+                  </span>
+                )}
+                {art === 'ship' && (
+                  <span class="art__road">
+                    <span class="art__end"><Icon name="receipt" size="sm" /></span>
+                    <span class="art__lane-wrap">
+                      <span class="art__lane"><span class="art__parcel"><Icon name="notice" size="sm" /></span></span>
+                    </span>
+                    <span class="art__end art__end--to" data-code={chans[0]?.code}><i class="art__dot" /></span>
+                  </span>
+                )}
+                {art === 'erp' && (
+                  <span class="art__road">
+                    <span class="art__box"><Icon name="database" size="sm" /></span>
+                    <span class="art__lane-wrap art__lane-wrap--solid">
+                      <span class="art__lane"><span class="art__packet" /></span>
+                    </span>
+                    <span class="art__box art__box--panel"><Icon name="eye" size="sm" /></span>
+                  </span>
+                )}
+              </div>
+            )}
+          </li>
+        )
+      })
     }
   </ul>
 </Section>
@@ -431,35 +513,84 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
 
   /* --- Bento ızgarası --- */
   .bento {
+    /* Yerel yardımcılar: süzülen iç kart gölgesi ve vitrin "kuyusu" zemini (yalnızca token türevleri). */
+    --float-shadow:
+      0 var(--site-border-width) calc(var(--site-border-width) * 2) color-mix(in srgb, var(--ek-color-content-strong) 6%, transparent),
+      0 var(--ek-space-2) var(--ek-space-5) calc(var(--ek-space-2) * -1) color-mix(in srgb, var(--ek-color-primary-darken-1) 22%, transparent);
+    --window-shadow:
+      0 0 0 var(--site-border-width) color-mix(in srgb, var(--ek-color-content-strong) 4%, transparent),
+      0 var(--ek-space-3) var(--ek-space-6) calc(var(--ek-space-3) * -1) color-mix(in srgb, var(--ek-color-content-strong) 12%, transparent),
+      0 var(--ek-space-8) var(--ek-space-12) calc(var(--ek-space-6) * -1) color-mix(in srgb, var(--ek-color-primary-darken-1) 26%, transparent);
+    --well-bg:
+      radial-gradient(80% 70% at 50% 0%, color-mix(in srgb, var(--ek-color-secondary) 10%, transparent), transparent 70%),
+      var(--site-texture-dots),
+      linear-gradient(180deg, var(--ek-color-surface-sunken), color-mix(in srgb, var(--ek-color-surface-sunken) 60%, var(--ek-color-surface)));
+    --well-size: auto, var(--site-texture-dots-size), auto;
     display: grid;
     gap: var(--ek-space-5);
     margin-top: var(--ek-space-8);
     grid-template-columns: minmax(0, 1fr);
   }
+  /*
+   * S13-C — premium karo yüzeyi (kullanıcı: "beyaz arka planlı kartlara çok daha fazla çalış"): üç katman
+   * (1) köşeden sızan çok hafif vurgu ışıması + yukarıdan aşağı yüzey degradesi, (2) ince degrade kenar
+   * (padding-box/border-box; üstte aydınlık, altta vurguya dönen), (3) üst iç kenarda tek piksellik ışık + derin,
+   * yumuşak, çok katmanlı gölge. Sağ üstte solan nokta dokusu (::after) yüzeye derinlik verir; içerik altında kalır.
+   */
   .tile {
     position: relative;
+    isolation: isolate;
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-8);
     min-width: 0;
     padding: var(--ek-space-6);
     border: var(--site-border-width) solid transparent;
-    border-radius: var(--site-radius-panel);
+    border-radius: calc(var(--site-radius-panel) + var(--ek-space-1));
     background:
-      var(--site-surface-tint) padding-box,
-      linear-gradient(var(--ek-color-border-default), var(--ek-color-border-default)) border-box;
-    box-shadow: var(--site-shadow-card);
+      radial-gradient(70% 55% at 0% 0%, color-mix(in srgb, var(--ek-color-secondary) 7%, transparent), transparent 70%) padding-box,
+      linear-gradient(180deg, var(--ek-color-surface) 0%, var(--ek-color-surface-muted) 100%) padding-box,
+      linear-gradient(
+          165deg,
+          color-mix(in srgb, var(--ek-color-border-default) 70%, var(--ek-color-surface)) 0%,
+          var(--ek-color-border-default) 45%,
+          color-mix(in srgb, var(--ek-color-secondary) 30%, var(--ek-color-border-default)) 100%
+        )
+        border-box;
+    box-shadow:
+      inset 0 var(--site-border-width) 0 var(--ek-color-surface),
+      0 var(--site-border-width) calc(var(--site-border-width) * 2) color-mix(in srgb, var(--ek-color-content-strong) 5%, transparent),
+      0 var(--ek-space-3) var(--ek-space-6) calc(var(--ek-space-3) * -1) color-mix(in srgb, var(--ek-color-content-strong) 9%, transparent),
+      0 var(--ek-space-10) var(--ek-space-16) calc(var(--ek-space-8) * -1) color-mix(in srgb, var(--ek-color-primary-darken-1) 20%, transparent);
     /* `transform` (eğim) buraya da eklenir (bkz. PricingSummary.astro aynı not: kısayol birleşmez). */
     transition:
       box-shadow var(--ek-duration-base) var(--ek-easing-standard),
       background var(--ek-duration-base) var(--ek-easing-standard),
       transform var(--tilt-transition-duration, var(--ek-duration-fast)) var(--ek-easing-standard);
   }
+  .tile::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background-image: var(--site-texture-dots);
+    background-size: var(--site-texture-dots-size);
+    -webkit-mask-image: radial-gradient(60% 55% at 100% 0%, var(--ek-color-content-strong), transparent 75%);
+    mask-image: radial-gradient(60% 55% at 100% 0%, var(--ek-color-content-strong), transparent 75%);
+    opacity: 0.55;
+    pointer-events: none;
+  }
   .tile:hover {
     background:
-      var(--site-surface-tint) padding-box,
+      radial-gradient(70% 55% at 0% 0%, color-mix(in srgb, var(--ek-color-secondary) 10%, transparent), transparent 70%) padding-box,
+      linear-gradient(180deg, var(--ek-color-surface) 0%, var(--ek-color-surface-muted) 100%) padding-box,
       var(--site-gradient-border) border-box;
-    box-shadow: var(--site-shadow-card-hover);
+    box-shadow:
+      inset 0 var(--site-border-width) 0 var(--ek-color-surface),
+      0 var(--site-border-width) calc(var(--site-border-width) * 2) color-mix(in srgb, var(--ek-color-content-strong) 6%, transparent),
+      0 var(--ek-space-4) var(--ek-space-8) calc(var(--ek-space-4) * -1) color-mix(in srgb, var(--ek-color-content-strong) 12%, transparent),
+      0 var(--ek-space-12) calc(var(--ek-space-16) * 1.5) calc(var(--ek-space-10) * -1) color-mix(in srgb, var(--ek-color-secondary-darken-1) 30%, transparent);
   }
   .tile__copy {
     display: flex;
@@ -468,30 +599,53 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     gap: var(--ek-space-3);
     max-width: 34rem;
   }
+  /*
+   * İkon rozeti (karo + günlük iş kartları): derin marka degradesi, üst iç kenar ışığı, vurgu tonunda iç halka
+   * ve yumuşak renkli ışıma. Hover'da rozet hafifçe yükselir, içindeki çizgi ikon küçük bir açıyla döner.
+   */
   .tile__icon,
   .cap__icon {
+    position: relative;
     display: inline-flex;
+    flex: none;
     align-items: center;
     justify-content: center;
-    width: var(--ek-space-10);
-    height: var(--ek-space-10);
+    width: var(--ek-space-12);
+    height: var(--ek-space-12);
     margin-bottom: var(--ek-space-2);
-    border-radius: var(--ek-radius-lg);
-    background: linear-gradient(140deg, var(--ek-color-primary-darken-1), var(--ek-color-primary));
+    border-radius: calc(var(--ek-radius-xl) + var(--site-border-width) * 2);
+    background:
+      radial-gradient(120% 90% at 30% 0%, color-mix(in srgb, var(--ek-color-secondary) 55%, transparent), transparent 60%),
+      linear-gradient(150deg, var(--ek-color-primary) 0%, var(--ek-color-primary-darken-1) 100%);
     color: var(--site-color-on-primary);
-    box-shadow: 0 0.5rem 1rem -0.5rem color-mix(in srgb, var(--ek-color-primary) 60%, transparent);
-    transition: transform var(--ek-duration-base) var(--ek-easing-standard);
+    box-shadow:
+      inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 35%, transparent),
+      inset 0 0 0 var(--site-border-width) color-mix(in srgb, var(--ek-color-secondary) 35%, transparent),
+      0 var(--ek-space-2) var(--ek-space-4) calc(var(--ek-space-1) * -1) color-mix(in srgb, var(--ek-color-primary-darken-1) 45%, transparent),
+      0 var(--ek-space-3) var(--ek-space-8) calc(var(--ek-space-3) * -1) color-mix(in srgb, var(--ek-color-secondary) 55%, transparent);
+    transition: translate var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .tile__icon :global(svg),
+  .cap__icon :global(svg) {
+    transition: rotate var(--ek-duration-base) var(--ek-easing-standard), scale var(--ek-duration-base) var(--ek-easing-standard);
   }
   .tile:hover .tile__icon,
-  .cap:hover .cap__icon {
-    transform: scale(1.06);
+  .cap:hover .cap__icon,
+  .cap:focus-within .cap__icon {
+    translate: 0 calc(var(--ek-space-1) * -0.5);
+  }
+  .tile:hover .tile__icon :global(svg),
+  .cap:hover .cap__icon :global(svg),
+  .cap:focus-within .cap__icon :global(svg) {
+    rotate: -8deg;
+    scale: 1.1;
   }
   .tile__title {
     color: var(--ek-color-content-strong);
     font-size: var(--ek-font-size-2xl);
-    font-weight: var(--site-card-title-weight);
+    font-weight: var(--site-font-display-weight);
     line-height: var(--ek-line-height-tight);
-    letter-spacing: -0.015em;
+    letter-spacing: -0.022em;
     text-wrap: balance;
   }
   .tile__text {
@@ -499,20 +653,30 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     font-size: var(--site-card-desc-size);
     font-weight: var(--site-card-desc-weight);
     line-height: var(--ek-line-height-normal);
+    text-wrap: pretty;
   }
   .nowrap {
     white-space: nowrap;
   }
+  /* Mini arayüz bir "ürün vitrini" gibi karonun üzerinde süzülür; hover'da hafifçe yükselir (yalnızca translate). */
   .tile__frame {
     min-width: 0;
     margin-top: auto;
+  }
+  .tile__frame > * {
+    transition:
+      translate var(--ek-duration-slow) var(--ek-easing-standard),
+      box-shadow var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .tile:hover .tile__frame > * {
+    translate: 0 calc(var(--ek-space-1) * -1);
   }
 
   /* Ortak isimsiz kanal noktası (renk: [data-code] -> --chan, global.css). */
   .stock__dot,
   .win__chan,
-  .istat__dot,
-  .cap__dots i {
+  .istat__dot {
+    position: relative;
     display: inline-block;
     flex: none;
     width: var(--ek-space-2);
@@ -523,13 +687,14 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
   }
 
   /* --- A: stok rezervasyonu görseli --- */
-  .stock {
+  .stock,
+  .tenant {
     padding: var(--ek-space-5);
     border: var(--site-border-width) solid var(--ek-color-border-default);
     border-radius: var(--ek-radius-xl);
-    background-color: var(--ek-color-surface-sunken);
-    background-image: var(--site-texture-dots);
-    background-size: var(--site-texture-dots-size);
+    background: var(--well-bg);
+    background-size: var(--well-size);
+    box-shadow: inset 0 var(--site-border-width) var(--ek-space-2) color-mix(in srgb, var(--ek-color-content-strong) 5%, transparent);
   }
   .stock__caption {
     margin-bottom: var(--ek-space-4);
@@ -557,7 +722,7 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     border: var(--site-border-width) solid var(--ek-color-border-default);
     border-radius: var(--ek-radius-lg);
     background: var(--ek-color-surface);
-    box-shadow: var(--ek-shadow-sm);
+    box-shadow: var(--float-shadow);
   }
   .stock__order {
     display: grid;
@@ -589,8 +754,9 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     grid-template-columns: auto 1fr;
     align-items: center;
     gap: var(--ek-space-2) var(--ek-space-3);
+    position: relative;
     border-color: var(--ek-color-secondary);
-    box-shadow: 0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-secondary) 14%, transparent), var(--ek-shadow-sm);
+    box-shadow: 0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-secondary) 14%, transparent), var(--float-shadow);
   }
   .stock__thumb {
     grid-row: span 2;
@@ -665,12 +831,18 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
   }
 
   /* --- B: sipariş/iade penceresi --- */
-  .win {
+  .win,
+  .istat {
     overflow: hidden;
     border: var(--site-border-width) solid var(--ek-color-border-default);
     border-radius: var(--ek-radius-xl);
     background: var(--ek-color-surface);
-    box-shadow: var(--ek-shadow-md);
+    box-shadow: var(--window-shadow);
+  }
+  .tile:hover .tile__frame > :is(.win, .istat) {
+    box-shadow:
+      var(--window-shadow),
+      0 var(--ek-space-10) var(--ek-space-16) calc(var(--ek-space-8) * -1) color-mix(in srgb, var(--ek-color-secondary) 28%, transparent);
   }
   .win__bar {
     display: flex;
@@ -678,7 +850,7 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     gap: var(--ek-space-3);
     padding: var(--ek-space-2) var(--ek-space-3);
     border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
-    background: var(--ek-color-surface-muted);
+    background: linear-gradient(180deg, var(--ek-color-surface), var(--ek-color-surface-muted));
   }
   .win__dots {
     display: inline-flex;
@@ -726,6 +898,9 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     background: var(--ek-color-primary);
     color: var(--site-color-on-primary);
   }
+  .win__rows {
+    position: relative;
+  }
   .win__row {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
@@ -768,10 +943,6 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
   /* --- C: kanallar tek merkezde --- */
   .istat {
     padding: var(--ek-space-4) var(--ek-space-5);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-xl);
-    background: var(--ek-color-surface);
-    box-shadow: var(--ek-shadow-sm);
   }
   .istat__caption {
     display: flex;
@@ -897,8 +1068,11 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     gap: var(--ek-space-3);
     padding: var(--ek-space-5);
     border-radius: var(--ek-radius-xl);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-background) 10%, transparent);
     background: var(--site-stage-mesh);
-    box-shadow: var(--ek-shadow-md);
+    box-shadow:
+      inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 14%, transparent),
+      var(--window-shadow);
     color: var(--site-color-on-primary);
   }
   .vault__row {
@@ -927,6 +1101,8 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     letter-spacing: 0.08em;
   }
   .vault__field--cipher {
+    position: relative;
+    overflow: hidden;
     color: var(--ek-color-secondary);
   }
   .vault__prefix {
@@ -946,6 +1122,7 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     background: color-mix(in srgb, var(--ek-color-secondary) 60%, transparent);
   }
   .vault__step {
+    position: relative;
     display: inline-flex;
     align-items: center;
     align-self: center;
@@ -959,14 +1136,6 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
   }
 
   /* --- E: çoklu kiracı --- */
-  .tenant {
-    padding: var(--ek-space-5);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-xl);
-    background-color: var(--ek-color-surface-sunken);
-    background-image: var(--site-texture-dots);
-    background-size: var(--site-texture-dots-size);
-  }
   .tenant__cols {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -987,6 +1156,7 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     border: var(--site-border-width) solid var(--ek-color-border-default);
     border-radius: var(--ek-radius-lg);
     background: var(--ek-color-surface);
+    box-shadow: var(--float-shadow);
     color: var(--ek-color-primary-darken-1);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
@@ -996,13 +1166,14 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
   .tenant__db {
     border-color: var(--ek-color-secondary);
     color: var(--ek-color-secondary-darken-1);
-    box-shadow: 0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-secondary) 12%, transparent);
+    box-shadow: 0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-secondary) 12%, transparent), var(--float-shadow);
   }
   .tenant__acct span,
   .tenant__db span {
     color: var(--ek-color-content-strong);
   }
   .tenant__link {
+    position: relative;
     align-self: center;
     width: calc(var(--site-border-width) * 2);
     height: var(--ek-space-8);
@@ -1048,55 +1219,695 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     margin-top: var(--ek-space-8);
     grid-template-columns: minmax(0, 1fr);
   }
+  /*
+   * Günlük iş kartı (S13-C): sade ama etkileyici — büyük degrade ikon rozeti, tek güçlü başlık, kısa gövde ve altta
+   * küçük canlı illüstrasyon ("ürün vitrini"). Katmanlı yüzey + iç kenar ışığı; hover'da üstten vurgu ışıması (::after).
+   */
   .cap {
     position: relative;
+    isolation: isolate;
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-2);
     padding: var(--ek-space-6);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-xl);
-    background: var(--ek-color-surface);
+    border: var(--site-border-width) solid transparent;
+    border-radius: var(--site-radius-panel);
+    background:
+      linear-gradient(180deg, var(--ek-color-surface) 0%, var(--ek-color-surface-muted) 100%) padding-box,
+      linear-gradient(170deg, color-mix(in srgb, var(--ek-color-border-default) 60%, var(--ek-color-surface)), var(--ek-color-border-default)) border-box;
+    box-shadow:
+      inset 0 var(--site-border-width) 0 var(--ek-color-surface),
+      0 var(--site-border-width) calc(var(--site-border-width) * 2) color-mix(in srgb, var(--ek-color-content-strong) 5%, transparent),
+      0 var(--ek-space-4) var(--ek-space-8) calc(var(--ek-space-4) * -1) color-mix(in srgb, var(--ek-color-content-strong) 10%, transparent);
     /* `transform` (eğim) buraya da eklenir (bkz. PricingSummary.astro aynı not: kısayol birleşmez). */
     transition:
-      border-color var(--ek-duration-base) var(--ek-easing-standard),
       box-shadow var(--ek-duration-base) var(--ek-easing-standard),
+      background var(--ek-duration-base) var(--ek-easing-standard),
       translate var(--ek-duration-base) var(--ek-easing-standard),
       transform var(--tilt-transition-duration, var(--ek-duration-fast)) var(--ek-easing-standard);
   }
-  .cap:hover {
+  .cap::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: radial-gradient(80% 60% at 20% 0%, color-mix(in srgb, var(--ek-color-secondary) 13%, transparent), transparent 70%);
+    opacity: 0;
+    transition: opacity var(--ek-duration-slow) var(--ek-easing-standard);
+    pointer-events: none;
+  }
+  .cap:hover,
+  .cap:focus-within {
     translate: 0 calc(var(--ek-space-1) * -1);
-    border-color: color-mix(in srgb, var(--ek-color-secondary) 55%, var(--ek-color-border-default));
-    box-shadow: var(--site-shadow-card-hover);
+    background:
+      linear-gradient(180deg, var(--ek-color-surface) 0%, var(--ek-color-surface-muted) 100%) padding-box,
+      var(--site-gradient-border) border-box;
+    box-shadow:
+      inset 0 var(--site-border-width) 0 var(--ek-color-surface),
+      0 var(--site-border-width) calc(var(--site-border-width) * 2) color-mix(in srgb, var(--ek-color-content-strong) 6%, transparent),
+      0 var(--ek-space-8) var(--ek-space-16) calc(var(--ek-space-8) * -1) color-mix(in srgb, var(--ek-color-secondary-darken-1) 34%, transparent);
+  }
+  .cap:hover::after,
+  .cap:focus-within::after {
+    opacity: 1;
+  }
+  .cap__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--ek-space-3);
+    margin-bottom: var(--ek-space-3);
   }
   .cap__icon {
-    margin-bottom: var(--ek-space-3);
+    margin-bottom: 0;
   }
   .cap__title {
     color: var(--ek-color-content-strong);
     font-size: var(--site-card-title-size);
-    font-weight: var(--site-card-title-weight);
+    font-weight: var(--site-font-display-weight);
     line-height: var(--ek-line-height-tight);
-    letter-spacing: -0.01em;
+    letter-spacing: -0.018em;
   }
   .cap__text {
     color: var(--ek-color-content-default);
     font-size: var(--site-card-desc-size);
     font-weight: var(--site-card-desc-weight);
     line-height: var(--ek-line-height-normal);
+    text-wrap: pretty;
   }
-  /* Kanal noktaları: isimsiz, silik; yalnızca "çok kanallı" hissi (anlam metindedir). */
+  /* Kanal noktaları: isimsiz, rozetin karşısında küçük bir "bağlı kanallar" imzası (anlam metindedir). */
   .cap__dots {
     display: inline-flex;
-    gap: var(--ek-space-2);
-    margin-top: auto;
-    padding-top: var(--ek-space-4);
-    opacity: 0.8;
+    gap: calc(var(--ek-space-1) * 1.5);
+    margin-top: var(--ek-space-2);
+    padding: var(--ek-space-1) var(--ek-space-2);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-surface);
   }
-  .cap__dots i {
+  .cap__dots i,
+  .art__dot,
+  .art__node {
+    display: block;
+    flex: none;
     width: calc(var(--ek-space-2) * 0.75);
     height: calc(var(--ek-space-2) * 0.75);
-    box-shadow: none;
+    border-radius: var(--ek-radius-full);
+    background: var(--chan, var(--ek-color-secondary));
+  }
+
+  /* --- Kart illüstrasyonları (aria-hidden; yalnızca biçim) --- */
+  .art {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    height: calc(var(--ek-space-16) + var(--ek-space-4));
+    margin-top: auto;
+    padding: var(--ek-space-3) var(--ek-space-4);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-xl);
+    background:
+      radial-gradient(90% 80% at 50% 0%, color-mix(in srgb, var(--ek-color-secondary) 9%, transparent), transparent 70%),
+      var(--site-texture-dots),
+      var(--ek-color-surface-sunken);
+    background-size: auto, var(--site-texture-dots-size), auto;
+    box-shadow: inset 0 var(--site-border-width) var(--ek-space-2) color-mix(in srgb, var(--ek-color-content-strong) 5%, transparent);
+    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .cap__text {
+    margin-bottom: var(--ek-space-4);
+  }
+  .cap:hover .art {
+    border-color: color-mix(in srgb, var(--ek-color-secondary) 40%, var(--ek-color-border-default));
+  }
+  /* Ortak "chip" yüzeyi: süzülen beyaz öğe */
+  .art__hub,
+  .art__box,
+  .art__end,
+  .art__bubble {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    background: var(--ek-color-surface);
+    box-shadow:
+      0 var(--site-border-width) calc(var(--site-border-width) * 2) color-mix(in srgb, var(--ek-color-content-strong) 6%, transparent),
+      0 var(--ek-space-2) var(--ek-space-4) calc(var(--ek-space-2) * -1) color-mix(in srgb, var(--ek-color-primary-darken-1) 22%, transparent);
+    color: var(--site-accent);
+  }
+
+  /* sync: merkez -> kanallara yelpaze */
+  .art--sync {
+    gap: var(--ek-space-3);
+  }
+  .art__hub {
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
+    border-color: color-mix(in srgb, var(--ek-color-secondary) 55%, var(--ek-color-border-default));
+    border-radius: var(--ek-radius-lg);
+  }
+  /* Tek tel üzerinde kanallar; sinyal soldan sağa akar, eriştiği kanal noktası kısa bir an büyür. */
+  .art__fan {
+    position: relative;
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: space-between;
+    padding-inline-start: var(--ek-space-4);
+  }
+  .art__wire {
+    position: absolute;
+    inset-inline: 0 var(--ek-space-3);
+    inset-block-start: 50%;
+    overflow: hidden;
+    height: calc(var(--site-border-width) * 2);
+    translate: 0 -50%;
+    border-radius: var(--ek-radius-full);
+    background: linear-gradient(90deg, color-mix(in srgb, var(--ek-color-secondary) 55%, transparent), var(--ek-color-border-default));
+  }
+  /* Akan sinyal: tel boyunca uzanan şerit, döngüde soldan sağa kayar (statik hâlde görünmez). */
+  .art__wire::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, var(--ek-color-secondary), transparent);
+    translate: -100% 0;
+    opacity: 0;
+  }
+  .art__spoke {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-6);
+    height: var(--ek-space-6);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 45%, var(--ek-color-border-default));
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-surface);
+    box-shadow: 0 var(--ek-space-1) var(--ek-space-2) calc(var(--ek-space-1) * -1) color-mix(in srgb, var(--ek-color-content-strong) 20%, transparent);
+  }
+  .art__node {
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+  }
+
+  /* returns: üç adımlı ilerleme */
+  .art__steps {
+    position: relative;
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: space-between;
+    padding-inline: var(--ek-space-2);
+  }
+  .art__track {
+    position: absolute;
+    inset-inline: var(--ek-space-4);
+    inset-block-start: 50%;
+    height: calc(var(--site-border-width) * 2);
+    translate: 0 -50%;
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-border-default);
+  }
+  .art__progress {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--site-gradient-accent);
+    transform-origin: 0 50%;
+  }
+  .art__step {
+    position: relative;
+    display: block;
+    width: var(--ek-space-4);
+    height: var(--ek-space-4);
+    border: calc(var(--site-border-width) * 2) solid var(--site-accent);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-surface);
+    box-shadow: 0 0 0 var(--ek-space-1) var(--site-accent-soft);
+  }
+  .art__step--end {
+    background: var(--site-accent);
+  }
+
+  /* chat: gelen soru + yazılıyor yanıtı */
+  .art__thread {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+  }
+  .art__bubble {
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-2) var(--ek-space-3);
+    border-radius: var(--ek-radius-lg) var(--ek-radius-lg) var(--ek-radius-lg) var(--ek-radius-sm);
+  }
+  .art__bubble--in {
+    align-self: flex-start;
+    width: 62%;
+  }
+  .art__bubble--out {
+    align-self: flex-end;
+    gap: var(--ek-space-1);
+    border-color: transparent;
+    border-radius: var(--ek-radius-lg) var(--ek-radius-lg) var(--ek-radius-sm) var(--ek-radius-lg);
+    background: linear-gradient(150deg, var(--ek-color-primary), var(--ek-color-primary-darken-1));
+  }
+  .art__skel {
+    display: block;
+    flex: 1;
+    height: var(--ek-space-1);
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-content-muted) 25%, var(--ek-color-surface-sunken));
+  }
+  .art__typing {
+    display: block;
+    width: calc(var(--ek-space-1) * 1.5);
+    height: calc(var(--ek-space-1) * 1.5);
+    border-radius: var(--ek-radius-full);
+    background: var(--site-color-on-primary);
+    opacity: 0.85;
+  }
+
+  /* finance: iskelet sütun grafik (değer/sayı yok) */
+  .art__bars {
+    display: flex;
+    flex: 1;
+    align-items: flex-end;
+    gap: var(--ek-space-2);
+    height: 100%;
+    padding-top: var(--ek-space-1);
+    border-bottom: var(--site-border-width) solid var(--ek-color-border-strong);
+  }
+  .art__bar {
+    display: block;
+    flex: 1;
+    height: 100%;
+    border-radius: var(--ek-radius-sm) var(--ek-radius-sm) 0 0;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--ek-color-secondary) 70%, var(--ek-color-surface)), color-mix(in srgb, var(--ek-color-secondary) 25%, var(--ek-color-surface)));
+    transform-origin: 50% 100%;
+  }
+  /* Yalnızca biçim (değer yok): sabit iskelet yükseklikleri; döngü bunları ölçekler. */
+  .art__bar:nth-child(1) {
+    height: 45%;
+  }
+  .art__bar:nth-child(2) {
+    height: 70%;
+  }
+  .art__bar:nth-child(3) {
+    height: 55%;
+  }
+  .art__bar:nth-child(4) {
+    height: 85%;
+  }
+  .art__bar:nth-child(5) {
+    height: 62%;
+  }
+  .art__bar:nth-child(6) {
+    background: var(--site-gradient-accent);
+  }
+
+  /* ship / erp: iki uç arasında akan paket */
+  .art__road {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: var(--ek-space-2);
+  }
+  .art__end,
+  .art__box {
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
+    border-radius: var(--ek-radius-lg);
+  }
+  .art__end--to {
+    border-radius: var(--ek-radius-full);
+    border-color: color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 50%, var(--ek-color-border-default));
+  }
+  .art__end--to .art__dot {
+    width: var(--ek-space-3);
+    height: var(--ek-space-3);
+  }
+  .art__box--panel {
+    border-color: color-mix(in srgb, var(--ek-color-secondary) 55%, var(--ek-color-border-default));
+  }
+  .art__lane-wrap {
+    position: relative;
+    flex: 1;
+    height: calc(var(--site-border-width) * 2);
+    background: repeating-linear-gradient(90deg, var(--site-accent-line) 0 var(--ek-space-2), transparent var(--ek-space-2) var(--ek-space-3));
+  }
+  .art__lane-wrap--solid {
+    background: linear-gradient(90deg, var(--ek-color-border-strong), var(--site-accent-line));
+  }
+  /* Şerit yol boyunca uzanır; statik hâlde paket varışta (%100). */
+  .art__lane {
+    position: absolute;
+    inset: 0;
+    translate: 100% 0;
+  }
+  .art__parcel,
+  .art__packet {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 0;
+    translate: -100% -50%;
+  }
+  .art__parcel {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-6);
+    height: var(--ek-space-6);
+    border-radius: var(--ek-radius-md);
+    background: var(--site-accent);
+    box-shadow: 0 var(--ek-space-1) var(--ek-space-3) color-mix(in srgb, var(--ek-color-secondary) 45%, transparent);
+    color: var(--site-color-on-primary);
+  }
+  .art__packet {
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-secondary);
+    box-shadow: 0 0 0 var(--ek-space-1) var(--site-accent-soft);
+  }
+
+  /*
+   * Canlı döngüler (S13-C). KURALLAR (scenes-loops.css ile aynı sözleşme): yalnızca opacity/translate/scale;
+   * tamamı `prefers-reduced-motion: no-preference` + `html[data-motion='play']` koşullu → durdurulmuş/reduced/JS'siz
+   * durumda statik son hâl; `paused` başlar, YALNIZCA sahne görünürken (`data-visible='true'`) çalışır; sekme
+   * gizliyken scenes.css genel kuralı durdurur. Süreler token (6 / 12 sn). Adlar `cap-*`.
+   */
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes cap-wire {
+      0%,
+      8% {
+        opacity: 0;
+        translate: -100% 0;
+      }
+      14% {
+        opacity: 1;
+      }
+      34%,
+      100% {
+        opacity: 0;
+        translate: 100% 0;
+      }
+    }
+    @keyframes cap-node {
+      0%,
+      26%,
+      100% {
+        scale: 1;
+      }
+      32% {
+        scale: 1.5;
+      }
+      44% {
+        scale: 1;
+      }
+    }
+    @keyframes cap-progress {
+      0% {
+        scale: 0 1;
+      }
+      40%,
+      86% {
+        scale: 1 1;
+      }
+      96%,
+      100% {
+        scale: 0 1;
+      }
+    }
+    @keyframes cap-typing {
+      0%,
+      60%,
+      100% {
+        opacity: 0.35;
+        translate: 0 0;
+      }
+      30% {
+        opacity: 1;
+        translate: 0 calc(var(--ek-space-1) * -0.5);
+      }
+    }
+    @keyframes cap-bars {
+      0%,
+      100% {
+        scale: 1 1;
+      }
+      50% {
+        scale: 1 0.82;
+      }
+    }
+    @keyframes cap-lane {
+      0% {
+        translate: 0 0;
+        opacity: 0;
+      }
+      8% {
+        opacity: 1;
+      }
+      55%,
+      88% {
+        translate: 100% 0;
+        opacity: 1;
+      }
+      96%,
+      100% {
+        translate: 100% 0;
+        opacity: 0;
+      }
+    }
+    @keyframes cap-scan {
+      0% {
+        opacity: 0;
+        translate: 0 0;
+      }
+      6%,
+      18% {
+        opacity: 1;
+        translate: 0 0;
+      }
+      24%,
+      38% {
+        translate: 0 100%;
+      }
+      44%,
+      58% {
+        translate: 0 200%;
+      }
+      64%,
+      78% {
+        translate: 0 300%;
+      }
+      84%,
+      92% {
+        opacity: 1;
+        translate: 0 400%;
+      }
+      100% {
+        opacity: 0;
+        translate: 0 400%;
+      }
+    }
+    @keyframes cap-ring {
+      0% {
+        opacity: 0.55;
+        scale: 1;
+      }
+      40%,
+      100% {
+        opacity: 0;
+        scale: 2.6;
+      }
+    }
+    @keyframes cap-shine {
+      0%,
+      30% {
+        opacity: 0;
+        translate: -100% 0;
+      }
+      38% {
+        opacity: 1;
+      }
+      60%,
+      100% {
+        opacity: 0;
+        translate: 100% 0;
+      }
+    }
+    @keyframes cap-drop {
+      0%,
+      10% {
+        opacity: 0;
+        translate: -50% 0;
+      }
+      18% {
+        opacity: 1;
+      }
+      42% {
+        opacity: 1;
+        translate: -50% var(--ek-space-8);
+      }
+      50%,
+      100% {
+        opacity: 0;
+        translate: -50% var(--ek-space-8);
+      }
+    }
+
+    /* --- Günlük iş kartları --- */
+    :global(html[data-motion='play']) .art__wire::after {
+      animation: cap-wire var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+      animation-delay: calc(var(--site-motion-stagger) * var(--d, 0));
+    }
+    :global(html[data-motion='play']) .art__node {
+      animation: cap-node var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+      animation-delay: calc(var(--site-motion-stagger) * var(--d, 0));
+    }
+    :global(html[data-motion='play']) .art__progress {
+      animation: cap-progress var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+      animation-delay: calc(var(--site-motion-stagger) * var(--d, 0));
+    }
+    :global(html[data-motion='play']) .art__typing {
+      animation: cap-typing calc(var(--site-motion-ambient-fast) / 4) var(--site-motion-ease-loop) infinite paused;
+      animation-delay: calc(var(--site-motion-stagger) * var(--d, 0));
+    }
+    :global(html[data-motion='play']) .art__bar {
+      animation: cap-bars var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+      animation-delay: calc(var(--site-motion-stagger) * var(--d, 0));
+    }
+    :global(html[data-motion='play']) .art__lane {
+      animation: cap-lane var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+      animation-delay: calc(var(--site-motion-stagger) * var(--d, 0));
+    }
+    /* Faz kaydırma: `--d` × stagger (özel özellik ::after'a da miras kalır). */
+    .art__spoke:nth-child(3),
+    .art__typing:nth-child(2),
+    .art__bar:nth-child(2),
+    .tenant__col:nth-child(2) {
+      --d: 3;
+    }
+    .art__spoke:nth-child(4),
+    .art__typing:nth-child(3),
+    .art__bar:nth-child(3) {
+      --d: 6;
+    }
+    .art__spoke:nth-child(5),
+    .art__bar:nth-child(4),
+    .tenant__col:nth-child(3) {
+      --d: 9;
+    }
+    .art__spoke:nth-child(6),
+    .art__bar:nth-child(5) {
+      --d: 12;
+    }
+    .art__bar:nth-child(6) {
+      --d: 15;
+    }
+    :global(html[data-motion='play']) .caps[data-visible='true'] :is(.art__node, .art__progress, .art__typing, .art__bar, .art__lane),
+    :global(html[data-motion='play']) .caps[data-visible='true'] .art__wire::after {
+      animation-play-state: running;
+    }
+
+    /* --- Bento karoları --- */
+    .win__rows::before {
+      content: '';
+      position: absolute;
+      inset-inline: 0;
+      inset-block-start: 0;
+      z-index: 0;
+      height: 20%;
+      background: linear-gradient(90deg, color-mix(in srgb, var(--ek-color-secondary) 12%, transparent), color-mix(in srgb, var(--ek-color-secondary) 4%, transparent));
+      box-shadow: inset calc(var(--site-border-width) * 2) 0 0 var(--ek-color-secondary);
+      opacity: 0;
+      pointer-events: none;
+    }
+    :global(html[data-motion='play']) .win__rows::before {
+      animation: cap-scan var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
+      animation-delay: var(--site-motion-scene-max);
+    }
+    :global(html[data-motion='play']) [data-scene='orders-merge'][data-visible='true'] .win__rows::before {
+      animation-play-state: running;
+    }
+
+    .istat__dot::after,
+    .vault__step::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      box-shadow: 0 0 0 var(--site-border-width) var(--chan, var(--ek-color-secondary));
+      opacity: 0;
+      pointer-events: none;
+    }
+    :global(html[data-motion='play']) :is(.istat__dot, .vault__step)::after {
+      animation: cap-ring var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+      animation-delay: calc(var(--site-motion-stagger) * var(--ring-i, 0) * 4);
+    }
+    .istat__row:nth-child(2) {
+      --ring-i: 2;
+    }
+    .istat__row:nth-child(3) {
+      --ring-i: 4;
+    }
+    .istat__row:nth-child(4) {
+      --ring-i: 6;
+    }
+    .istat__row:nth-child(5) {
+      --ring-i: 8;
+    }
+    .istat__row:nth-child(6) {
+      --ring-i: 10;
+    }
+    :global(html[data-motion='play']) .istat[data-visible='true'] .istat__dot::after,
+    :global(html[data-motion='play']) [data-scene='secret-encryption'][data-visible='true'] .vault__step::after {
+      animation-play-state: running;
+    }
+
+    .vault__field--cipher::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ek-color-secondary) 30%, transparent), transparent);
+      opacity: 0;
+      translate: -100% 0;
+      pointer-events: none;
+    }
+    :global(html[data-motion='play']) .vault__field--cipher::after {
+      animation: cap-shine var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+    }
+    :global(html[data-motion='play']) [data-scene='secret-encryption'][data-visible='true'] .vault__field--cipher::after {
+      animation-play-state: running;
+    }
+
+    .tenant__link::after {
+      content: '';
+      position: absolute;
+      inset-block-start: 0;
+      inset-inline-start: 50%;
+      width: calc(var(--ek-space-1) * 1.5);
+      height: calc(var(--ek-space-1) * 1.5);
+      margin-block-start: calc(var(--ek-space-1) * -0.75);
+      border-radius: var(--ek-radius-full);
+      background: var(--ek-color-secondary);
+      box-shadow: 0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-secondary) 25%, transparent);
+      opacity: 0;
+      translate: -50% 0;
+      pointer-events: none;
+    }
+    :global(html[data-motion='play']) .tenant__link::after {
+      animation: cap-drop var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+      animation-delay: calc(var(--site-motion-stagger) * var(--d, 0));
+    }
+    :global(html[data-motion='play']) [data-scene='tenant-isolation'][data-visible='true'] .tenant__link::after {
+      animation-play-state: running;
+    }
   }
 
   @media (min-width: 640px) {
