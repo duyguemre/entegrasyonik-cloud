@@ -230,6 +230,7 @@ test.describe('DS-v2 liste standardı — inceleme görselleri', () => {
     await openList(page, 'ProductListView', { 'ProductService/getProducts': manyProducts(15) })
     const view = page.locator('.productListView')
     await expect(view.getByText('Örnek ürün 1 — pamuklu, uzun kollu')).toBeVisible()
+    await view.evaluate((el) => el.scrollTo(0, 0))
     await page.mouse.move(0, 0)
     await page.waitForTimeout(400)
     await page.screenshot({ path: out('urun'), fullPage: false })

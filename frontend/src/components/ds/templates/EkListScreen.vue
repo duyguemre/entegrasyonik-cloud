@@ -307,13 +307,14 @@ function setCollapsed(v: boolean) {
     height: auto;
   }
 
-  .ek-list-screen__head-actions,
-  .ek-list-screen__search {
+  .ek-list-screen__head-actions {
     width: 100%;
   }
 
-  .ek-list-screen__search {
-    flex: 1;
+  .ek-list-screen__search,
+  .ek-list-screen__head.is-headless .ek-list-screen__search {
+    flex: 1 1 180px;
+    width: auto;
   }
 }
 </style>
