@@ -309,7 +309,9 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
   .ledger__fill--stock {
     background: color-mix(in srgb, var(--ek-color-background) 70%, transparent);
   }
+  /* Rezerve çubuğu sağ uçtan dolar: kullanılabilir (sol) + rezerve (sağ) = eldeki stok, görsel olarak toplanır. */
   .ledger__fill--reserved {
+    transform-origin: right center;
     background: var(--ek-color-warning);
     transform: scaleX(0.35);
   }
