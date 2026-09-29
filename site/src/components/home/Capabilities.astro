@@ -33,6 +33,9 @@ const stock = byId(all, 'stock-reservation')
 const orders = byId(all, 'unified-orders')
 const secrets = byId(security, 'secrets-encryption')
 const tenant = byId(security, 'tenant-database')
+// Algoritma adı satır sonunda tirelerinden bölünmesin (metnin kendisi kayıttan, değişmeden).
+const ALGO = 'AES-256-GCM'
+const secretParts = secrets.summary.split(ALGO)
 const spotlightIds = new Set([stock.id, orders.id])
 const rest = all.filter((c) => !spotlightIds.has(c.id))
 const pillars = getHomePillars()
@@ -225,7 +228,14 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
       <div class="tile__copy" data-reveal>
         <span class="tile__icon"><Icon name="lock" size="md" /></span>
         <h3 id="spot-vault-title" class="tile__title">{secrets.title}</h3>
-        <p class="tile__text">{secrets.summary}</p>
+        <p class="tile__text">
+          {secretParts.map((part, n) => (
+            <>
+              {part}
+              {n < secretParts.length - 1 && <span class="nowrap">{ALGO}</span>}
+            </>
+          ))}
+        </p>
       </div>
       <div class="tile__frame" data-reveal>
         <div class="vault" data-scene="secret-encryption" aria-hidden="true">
@@ -489,6 +499,9 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     font-size: var(--site-card-desc-size);
     font-weight: var(--site-card-desc-weight);
     line-height: var(--ek-line-height-normal);
+  }
+  .nowrap {
+    white-space: nowrap;
   }
   .tile__frame {
     min-width: 0;
