@@ -8,13 +8,12 @@
           description="Kargo firmalarınızı bağlayın ve ayarlarını buradan yönetin." />
       </div>
 
-      <v-row class="ma-0">
-        <v-col cols="12" lg="8" class="pa-0">
-          <div class="pa-6">
+      <div class="ek-integration-layout">
+        <div class="ek-integration-layout__main">
+          <div>
             <IntegrationPlatformRail :items="clientShipments" :model-value="editingClientIntegration.code"
               :live-codes="LIVE_CODES" ariaLabel="Kargo firması seçimi"
               @select="setAndRetrieveEditingClientShipment" />
-            <DividerComponent />
           </div>
           <v-form ref="newVariantFormRef" v-model="isFormValid">
             <v-card-text class="pa-0 px-0" role="tabpanel"
@@ -65,34 +64,12 @@
                 message="Yukarıdaki listeden bir kargo firması seçerek ayarları yönetmeye başlayabilirsiniz." />
             </v-card-text>
           </v-form>
-        </v-col>
+        </div>
 
-        <v-col cols="12" lg="4" class="pa-6">
-          <CardComponent>
-            <div class="d-flex align-center mb-6">
-              <v-icon color="passiveColor" class="mr-2">mdi-lightbulb-on-outline</v-icon>
-              <span class="text-subtitle-1 font-weight-bold">Hızlı Başlangıç Rehberi</span>
-            </div>
-
-            <div v-for="(step, i) in guideSteps" :key="i" class="mb-5 d-flex">
-              <div class="step-number mr-4">{{ i + 1 }}</div>
-              <div>
-                <div class="text-subtitle-2 font-weight-bold mb-1">{{ step.title }}</div>
-                <div class="text-caption opacity-60">{{ step.text }}</div>
-              </div>
-            </div>
-
-            <v-divider class="my-6 opacity-10"></v-divider>
-
-            <v-alert variant="tonal" color="passiveColor" density="compact" class="rounded-lg border-opacity-25">
-              <template v-slot:prepend>
-                <v-icon size="small">mdi-help-circle-outline</v-icon>
-              </template>
-              <div class="text-caption">API bilgileriniz hatalı ise bağlantı "Pasif" görünecektir.</div>
-            </v-alert>
-          </CardComponent>
-        </v-col>
-      </v-row>
+        <aside class="ek-integration-layout__aside">
+          <IntegrationGuideCard :steps="guideSteps" />
+        </aside>
+      </div>
     </div>
   </div>
 </template>
@@ -112,8 +89,7 @@ import LoadingComponent from '@/components/LoadingComponent.vue'
 import useRestApi from '@/composables/restapi'
 import { useIntegrationStore } from '@/stores/integrationStore'
 import { useI18n } from 'vue-i18n'
-import CardComponent from '@/components/CardComponent.vue'
-import DividerComponent from '@/components/layout/DividerComponent.vue'
+import IntegrationGuideCard from '@/components/integrations/IntegrationGuideCard.vue'
 import EkPageHeader from '@/components/ds/EkPageHeader.vue'
 import EkEmptyState from '@/components/ds/EkEmptyState.vue'
 import IntegrationPlatformRail from '@/components/integrations/IntegrationPlatformRail.vue'
@@ -175,33 +151,6 @@ const setAndRetrieveEditingClientShipment = async (integrationCode: string) => {
 .screen-scroll-inset {
   bottom: var(--ek-space-1);
 }
-
-.step-number {
-  min-width: var(--ek-space-6);
-  height: var(--ek-space-6);
-  background: var(--ek-color-passive-color);
-  color: white;
-  border-radius: var(--ek-radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--ek-font-size-xs);
-  font-weight: var(--ek-font-weight-bold);
-}
-
-.opacity-70 {
-  opacity: 0.7;
-}
-
-.opacity-60 {
-  opacity: 0.6;
-}
-
-.opacity-50 {
-  opacity: 0.5;
-}
-
-.opacity-10 {
-  opacity: 0.1;
-}
 </style>
+
+<style scoped src="@/components/integrations/integration-layout.css"></style>

@@ -10,22 +10,14 @@
     title="YENİ DESTEK TALEBİ" subtitle="Size nasıl yardımcı olabiliriz? Lütfen detayları paylaşın."
     icon="mdi-plus-circle-outline" color="passiveColor" confirm-text="Talebi Gönder" :loading="loading"
     attach="ticketListView" @confirm="handleConfirm" @cancel="$emit('update:modelValue', false)" maxWidth="600px">
-    <v-form ref="formRef" class="pa-4">
-      <v-row dense>
-        <v-col cols="12">
-          <v-text-field v-model="formData.subject" label="Konu" variant="outlined" density="compact"
+    <v-form ref="formRef">
+      <EkFormGrid :columns="2">
+          <v-text-field class="ek-span-full" v-model="formData.subject" label="Konu"
             placeholder="Kısaca sorununuzu belirtin" :rules="[v => !!v || 'Konu zorunludur']"
-            class="mb-2"></v-text-field>
-        </v-col>
-
-        <v-col cols="12" sm="6">
-          <v-select v-model="formData.type" :items="typeOptions" item-title="title" item-value="id" label="Talep Tipi"
-            variant="outlined" density="compact"></v-select>
-        </v-col>
-
-        <v-col cols="12" sm="6">
+></v-text-field>
+          <v-select v-model="formData.type" :items="typeOptions" item-title="title" item-value="id" label="Talep Tipi"></v-select>
           <v-select v-model="formData.priority" :items="priorityOptions" item-title="title" item-value="id"
-            label="Öncelik" variant="outlined" density="compact">
+            label="Öncelik">
             <template v-slot:item="{ props, item }">
               <v-list-item v-bind="props">
                 <template #prepend>
@@ -34,20 +26,17 @@
               </v-list-item>
             </template>
           </v-select>
-        </v-col>
-
-        <v-col cols="12">
-          <v-textarea v-model="formData.message" label="Mesajınız" variant="outlined"
+          <v-textarea class="ek-span-full" v-model="formData.message" label="Mesajınız"
             placeholder="Sorununuzu veya talebinizi detaylıca açıklayın..."
             :rules="[v => !!v || 'Mesaj alanı zorunludur']" rows="5" counter></v-textarea>
-        </v-col>
-      </v-row>
+      </EkFormGrid>
     </v-form>
   </ActionDialogComponent>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
+import EkFormGrid from '@/components/ds/EkFormGrid.vue'
 import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue';
 import { TicketTypeEnum, TicketPriorityEnum, TICKET_TYPE_LABELS, TICKET_PRIORITY_LABELS, TICKET_PRIORITY_COLORS } from '@/types/TicketTypes';
 

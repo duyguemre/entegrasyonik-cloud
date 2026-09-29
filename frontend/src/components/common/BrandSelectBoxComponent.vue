@@ -3,7 +3,7 @@
     <LoadingComponent v-if="loading" ref="loadingComponentRef" attach=".brand-select-wrapper"></LoadingComponent>
 
     <v-autocomplete v-model="brandId" v-model:search="brandSearchText" :items="computedBrands" item-value="_id"
-      item-title="title" variant="outlined" density="compact" bg-color="textfieldColor" class="customTextField"
+      item-title="title"
       :rules="mandatory ? formRules.mandatoryRule : []" :placeholder="$t('productDefinitions.brand.search')"
       :no-data-text="$t('productDefinitions.brand.nodata')" auto-select-first clearable persistent-hint :menu-props="{
         contentClass: 'brand-autocomplete-menu',
@@ -12,15 +12,12 @@
       }">
 
       <template #label>
-        <div>
-          {{ $t('productDefinitions.brand.name') }}
-          <v-icon v-if="mandatory" size="12" class="mb-2 ml-1">mdi-asterisk</v-icon>
-        </div>
+        {{ $t('productDefinitions.brand.name') }}{{ mandatory ? ' *' : '' }}
       </template>
 
       <template v-slot:selection="{ item }: any">
         <div class="d-flex align-center overflow-hidden">
-          <span class="text-subtitle-2 font-weight-bold text-truncate" style="color: rgb(var(--v-theme-passiveColor))">
+          <span class="text-truncate">
             {{ item.title }}
           </span>
         </div>
@@ -153,31 +150,22 @@ onMounted(() => {
 }
 
 .custom-brand-item {
-  border-bottom: 1px solid #f5f5f5 !important;
-  min-height: 40px !important;
+  min-height: var(--ek-control-h-lg) !important;
+  border-bottom: 1px solid var(--ek-color-border-subtle);
 }
 
 .leaf-indicator {
   position: absolute;
-  left: -16px;
-  height: 60%;
+  left: calc(var(--ek-space-4) * -1);
   width: 3px;
-  background-color: #1867C0;
-  border-radius: 0 4px 4px 0;
-  box-shadow: 1px 0 6px rgba(24, 103, 192, 0.4);
+  height: 60%;
+  border-radius: 0 var(--ek-radius-sm) var(--ek-radius-sm) 0;
+  background-color: var(--ek-color-action);
 }
 
 .brand-text {
-  font-weight: 500;
-  color: rgb(var(--v-theme-passiveColor));
-  font-size: 0.85rem;
-}
-
-.custom-brand-item:hover {
-  background-color: #f5f7f9 !important;
-}
-
-:deep(.v-field__input) {
-  font-size: 0.9rem !important;
+  color: var(--ek-color-content-default);
+  font-size: var(--ek-type-body-size);
+  font-weight: var(--ek-type-label-weight);
 }
 </style>

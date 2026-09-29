@@ -1,13 +1,15 @@
 <!--
   frontend/src/components/ds/EkConfirmDialog.vue
 
-  ADR-0015 Karar 3.8/6.1 — onay diyaloğu, TEK KAYNAK (mevcut
-  `ConfirmationDialogComponent`/`ActionDialogComponent`'in yeniden stillenmiş
-  hâli — API BENZER, yeni ekranlar BUNU kullanır). 400px, başlık BİR SORU
-  CÜMLESİDİR ("… silinsin mi?"), gövde sonucu açıklar, eylemler SAĞDA:
-  Vazgeç · [Onayla]. Yıkıcı ise onay düğmesi `error` dolgu, etiketinde FİİL
-  bulunur ("Sil"), varsayılan odak **Vazgeç** üzerindedir (yanlışlıkla
-  yıkıcı eylemi tetiklememek için).
+  ADR-0015 Karar 3.8/6.1 — onay diyaloğu, TEK KAYNAK. DS-v2 (Aşama 2): `EkDialog`
+  kabuğu (sm 440). Başlık BİR SORU CÜMLESİDİR ("… silinsin mi?"), açıklama
+  sonucu anlatır, eylemler SAĞDA: Vazgeç · [Onayla]. Yıkıcıysa (`danger`) ikon
+  kapsülü + üst şerit + onay düğmesi `error`, etikette FİİL bulunur ("Sil"),
+  varsayılan odak **Vazgeç** üzerindedir (yanlışlıkla Enter ile silme yok).
+  Varsayılan slot (isteğe bağlı) gövdeye ek bilgi koyar (ör. etkilenen kayıtlar).
+
+  API geri uyumlu; yeni (isteğe bağlı): `icon`, `confirmIcon`, `attach`.
+  Rol: `alertdialog` (onay isteyen kesinti — eski sürümle aynı).
 
   Kullanım:
     <EkConfirmDialog
@@ -20,25 +22,29 @@
     />
 -->
 <template>
-  <v-dialog v-model="isOpen" max-width="400" role="alertdialog">
-    <v-card>
-      <v-card-title class="ek-confirm-dialog__title">{{ title }}</v-card-title>
-      <v-card-text v-if="description" class="ek-confirm-dialog__description">{{ description }}</v-card-text>
-      <v-card-actions class="ek-confirm-dialog__actions">
-        <v-spacer />
-        <v-btn variant="outlined" autofocus @click="onCancel">
-          {{ cancelLabel }}
-        </v-btn>
-        <v-btn :color="danger ? 'error' : 'primary'" :loading="loading" @click="onConfirm">
-          {{ confirmLabel }}
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+  <EkDialog
+    v-model="isOpen"
+    role="alertdialog"
+    :title="title"
+    :description="description"
+    :icon="resolvedIcon"
+    :tone="danger ? 'danger' : 'default'"
+    width="sm"
+    :attach="attach"
+    :confirm-label="confirmLabel"
+    :confirm-icon="resolvedConfirmIcon"
+    :cancel-label="cancelLabel"
+    :confirm-loading="loading"
+    @confirm="emit('confirm')"
+    @cancel="emit('cancel')"
+  >
+    <template v-if="$slots.default" v-slot:default><slot /></template>
+  </EkDialog>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import EkDialog from './EkDialog.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -51,12 +57,16 @@ const props = withDefaults(
     /** Yıkıcı eylem: onay düğmesi `error` dolgu olur. */
     danger?: boolean
     loading?: boolean
+    icon?: string
+    confirmIcon?: string
+    attach?: string | boolean | Element
   }>(),
   {
     confirmLabel: 'Onayla',
     cancelLabel: 'Vazgeç',
     danger: false,
     loading: false,
+    attach: false,
   },
 )
 
@@ -71,27 +81,6 @@ const isOpen = computed({
   set: (value: boolean) => emit('update:modelValue', value),
 })
 
-function onCancel() {
-  emit('cancel')
-  isOpen.value = false
-}
-
-function onConfirm() {
-  emit('confirm')
-}
+const resolvedIcon = computed(() => props.icon ?? (props.danger ? 'mdi-alert-octagon-outline' : 'mdi-help-circle-outline'))
+const resolvedConfirmIcon = computed(() => props.confirmIcon)
 </script>
-
-<style scoped>
-.ek-confirm-dialog__title {
-  font-size: var(--ek-font-size-lg);
-  font-weight: var(--ek-font-weight-semibold);
-}
-
-.ek-confirm-dialog__description {
-  color: var(--ek-color-content-muted);
-}
-
-.ek-confirm-dialog__actions {
-  padding: var(--ek-space-4);
-}
-</style>

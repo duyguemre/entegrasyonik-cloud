@@ -12,6 +12,12 @@
   TEK kaynaktır; platform bileşenleri yalnızca sekme İÇERİĞİNİ (`v-window-item`)
   slot olarak verir.
 
+  DS-v2 Aşama 2: sekmeler kartın başlık bandında; kart gövdesi = `surface` + `border-default` + `shadow-card`,
+  eylem çubuğu kartın ALTINDA bant (diyalog eylem çubuğuyla aynı dil):
+  [#actions-start] ........ Vazgeç (ikincil) · Kaydet (birincil). Sekme
+  içerikleri `EkFormSection` + `EkFormGrid` ile dizilir (alanlar üst üste
+  binmez). Dış API (props/olaylar/slot) DEĞİŞMEDİ.
+
   Kullanım:
     <IntegrationFormFrame v-model="activeTab" :tabs="[{value:1,label:'Api Bilgileri'},{value:2,label:'Varsayılan Bilgiler'}]"
       @save="emits('update', editingClientIntegration)" @clear="emits('refresh', editingClientIntegration.code)">
@@ -21,39 +27,35 @@
 -->
 <template>
   <div class="ek-integration-frame">
-    <EkPageTabs
-      :model-value="String(modelValue)"
-      :tabs="tabs.map(tab => ({ value: String(tab.value), label: tab.label }))"
-      class="ek-integration-frame__tabs"
-      @update:model-value="(v) => emit('update:modelValue', castBack(v))"
-    />
-
-    <v-card variant="flat" class="ek-integration-frame__card">
-      <v-card-text class="pa-6">
+    <section class="ek-integration-frame__card">
+      <EkPageTabs
+        :model-value="String(modelValue)"
+        :tabs="tabs.map(tab => ({ value: String(tab.value), label: tab.label }))"
+        class="ek-integration-frame__tabs"
+        @update:model-value="(v) => emit('update:modelValue', castBack(v))"
+      />
+      <div class="ek-integration-frame__body">
         <v-window :model-value="modelValue">
           <slot />
         </v-window>
-      </v-card-text>
-    </v-card>
+      </div>
 
-    <div class="ek-integration-frame__actions">
-      <v-btn variant="outlined" class="ek-integration-frame__btn-clear" @click="emit('clear')">
-        <v-icon start size="18">mdi-undo-variant</v-icon>
-        {{ clearLabel }}
-      </v-btn>
-
-      <v-spacer class="d-none d-sm-block" />
-
-      <v-btn color="primary" class="ek-integration-frame__btn-save" @click.stop="emit('save')">
-        <v-icon start size="18">mdi-check-circle-outline</v-icon>
-        {{ saveLabel }}
-      </v-btn>
-    </div>
+      <footer class="ek-integration-frame__actions">
+        <div class="ek-integration-frame__actions-start"><slot name="actions-start" /></div>
+        <EkButton tone="secondary" icon="mdi-undo-variant" class="ek-integration-frame__btn-clear" @click="emit('clear')">
+          {{ clearLabel }}
+        </EkButton>
+        <EkButton tone="primary" icon="mdi-content-save-outline" class="ek-integration-frame__btn-save" @click.stop="emit('save')">
+          {{ saveLabel }}
+        </EkButton>
+      </footer>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
 import EkPageTabs from '@/components/ds/EkPageTabs.vue'
+import EkButton from '@/components/ds/EkButton.vue'
 
 export interface IntegrationFormTab {
   value: number | string
@@ -97,26 +99,63 @@ function castBack(value: string) {
 }
 
 .ek-integration-frame__card {
+  overflow: hidden;
+  background: var(--ek-color-surface);
   border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-lg);
+  border-radius: var(--ek-radius-card);
+  box-shadow: var(--ek-shadow-card);
+}
+
+.ek-integration-frame__tabs {
+  padding: 0 var(--ek-space-4);
+  background: var(--ek-color-surface-muted);
+}
+
+.ek-integration-frame__body {
+  padding: var(--ek-space-6);
 }
 
 .ek-integration-frame__actions {
   display: flex;
   align-items: center;
-  gap: var(--ek-space-3);
+  justify-content: flex-end;
   flex-wrap: wrap;
+  gap: var(--ek-space-2);
+  padding: var(--ek-space-3) var(--ek-space-6);
+  border-top: 1px solid var(--ek-color-border-subtle);
+  background: var(--ek-color-surface-muted);
 }
 
-.ek-integration-frame__btn-clear,
-.ek-integration-frame__btn-save {
-  flex: 1 1 auto;
+.ek-integration-frame__actions-start {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
 }
 
-@media (min-width: 600px) {
+.ek-integration-frame__actions-start:empty {
+  display: none;
+}
+
+@media (max-width: 599px) {
+  .ek-integration-frame__body {
+    padding: var(--ek-space-4);
+  }
+
+  .ek-integration-frame__tabs {
+    padding: 0;
+  }
+
+  .ek-integration-frame__actions {
+    padding: var(--ek-space-3) var(--ek-space-4);
+  }
+
+  .ek-integration-frame__actions-start {
+    flex-basis: 100%;
+  }
   .ek-integration-frame__btn-clear,
   .ek-integration-frame__btn-save {
-    flex: none;
+    flex: 1 1 0;
   }
 }
 </style>

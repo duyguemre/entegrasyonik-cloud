@@ -646,16 +646,11 @@ table {
   /*   opacity:.5!important */
 }
 
-.v-dialog .v-overlay__content {
-  margin: 0px !important;
-  padding: 8px !important;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  max-width: unset !important;
-  max-height: unset !important;
-}
+/* DS-v2 Aşama 2: eski `.v-dialog .v-overlay__content { top/left/right/bottom:0; margin:0; padding:8px;
+   max-width/max-height: unset !important }` kuralı KALDIRILDI. Eski `attach=` tabanlı tam-alan diyalog kurgusu
+   içindi; artık tüm diyaloglar `EkDialog` / `EkDialogHost` / `EkCascadeDialog` (ds) üzerinden kendi genişliklerini
+   taşıyor. Kural kalsaydı Vuetify `max-width` değerlerini ezip komut paleti gibi diyalogları tam ekrana ve sol
+   menünün altına itiyordu (DESIGN_SYSTEM.md §9 "Global kural çakışmaları"). */
 
 /* ADR-0015 Aşama B1 — A-yaması: yukarıdaki kural eski `attach="..."` tabanlı
    diyalog kurgusu (workarea'yı tam doldurma) için yazılmıştı. Yeni

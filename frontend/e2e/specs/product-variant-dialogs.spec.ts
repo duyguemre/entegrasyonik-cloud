@@ -36,7 +36,8 @@ async function axeReport(page: Page, testInfo: any, name: string, include: strin
 
 async function openOpsMenuItem(page: Page, root: Locator, label: string) {
   await root.locator('thead').getByRole('button').filter({ has: page.locator('.mdi-menu') }).click()
-  const menu = page.locator('.v-overlay--active .v-list').filter({ hasText: 'Varyant İşlemleri' })
+  // DS-v2 A2: EkContextMenu (role=menu) — eski .v-list seçicisi bilinçli güncellendi.
+  const menu = page.locator('.v-overlay--active [role="menu"]').filter({ hasText: 'Varyant İşlemleri' })
   await menu.getByText(label, { exact: true }).click()
 }
 

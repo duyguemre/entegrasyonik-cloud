@@ -2,8 +2,7 @@
   <CardComponent icon="mdi-image-multiple-outline" title="Ürün Resim Galerisi" class="productImagesComponent pim-s1">
     <LoadingComponent attach=".productImagesComponent" ref="loadingComponentRef"></LoadingComponent>
     <template #header>
-      <v-btn @click="emits('close')" elevation="0" aria-label="Kapat"
-        min-width="0" color="white" class="pim-s2"><v-icon size="x-large" color="primary">mdi-close</v-icon></v-btn>
+      <EkButton tone="ghost" size="sm" icon="mdi-close" icon-only aria-label="Kapat" @click="emits('close')" />
     </template>
     <v-row no-gutters>
       <v-col class="pl-2 pr-4">
@@ -127,6 +126,7 @@
 
 <script setup lang="ts">
 import { Sortable } from "sortablejs-vue3";
+import EkButton from '@/components/ds/EkButton.vue'
 
 import { ref, computed, onMounted, onBeforeMount, nextTick, reactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n';

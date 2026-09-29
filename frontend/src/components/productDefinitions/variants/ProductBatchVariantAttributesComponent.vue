@@ -2,15 +2,8 @@
   <CardComponent icon="mdi-checkbox-multiple-marked" title="Toplu Varyant Bilgileri" :isHovered="false" class="pbva-s1">
     <LoadingComponent attach=".productDefinitionView" ref="loadingComponentRef"></LoadingComponent>
     <template #header>
-      <v-btn-group elevation="0" class="ml-2 mr-2" density="compact">
-        <v-btn density="compact" color="#E53935ff"
-          @click="batchVariantAttributesUpdate(); emits('close')" class="pbva-s2">
-          <span class="">
-            Bütün Varyantlara Ata
-          </span></v-btn>
-      </v-btn-group>
-      <v-btn aria-label="Kapat" @click="emits('close')" elevation="0" min-width="0"
-        color="white" class="pbva-s3"><v-icon size="x-large" color="primary">mdi-close</v-icon></v-btn>
+      <EkButton tone="primary" size="sm" icon="mdi-check" @click="batchVariantAttributesUpdate(); emits('close')">Bütün Varyantlara Ata</EkButton>
+      <EkButton tone="ghost" size="sm" icon="mdi-close" icon-only aria-label="Kapat" @click="emits('close')" />
     </template>
 
     <template v-if="tab">
@@ -372,6 +365,7 @@
 
 <script setup lang="ts">
 import { Sortable } from "sortablejs-vue3";
+import EkButton from '@/components/ds/EkButton.vue'
 
 import { ref, computed, onMounted, onBeforeMount, nextTick, reactive, onActivated, defineAsyncComponent } from 'vue'
 import { useI18n } from 'vue-i18n';

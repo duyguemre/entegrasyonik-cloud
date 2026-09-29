@@ -53,8 +53,9 @@ withDefaults(
   gap: var(--ek-space-3);
   padding: var(--ek-space-8) var(--ek-space-6);
   border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-lg);
+  border-radius: var(--ek-radius-card);
   background: var(--ek-color-surface);
+  box-shadow: var(--ek-shadow-card);
 }
 
 .ek-coming-soon-panel__text {

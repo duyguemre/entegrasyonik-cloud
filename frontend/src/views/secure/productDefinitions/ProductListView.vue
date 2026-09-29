@@ -4,39 +4,12 @@
          (`#expanded`, `#variant-target-<id>` kancası korunur), kısmi (varyant) seçim, platform
          hazır/yüklü durumu satır içinde. Toplu işlem merkezi ve aktarım panelleri (diyalog gövdeleri)
          bu adımın kapsamı dışında, olduğu gibi. -->
-    <v-menu v-model="confirmationDelete.isDialogOpen" :close-on-content-click="false"
-      :activator="confirmationDelete.activator" @update:model-value="cancelDeleteProduct()">
-      <template v-slot:activator>
-        <span></span>
-      </template>
-      <v-card prepend-icon="mdi-delete-outline" color="danger" class="pl-4 pr-4">
-        <template v-slot:prepend>
-        </template>
-        <template v-slot:title>
-          <div class="d-flex align-center justify-center">
-            <v-icon>mdi-exclamation</v-icon>
-            ÜRÜN SİLİNECEK
-            <v-icon size="xx-large">mdi-exclamation</v-icon>
-          </div>
-        </template>
-        <template v-slot:text>
-          <div class="d-flex justify-center">Silmek istediğnizden emin misiniz?</div>
-          <div class="mt-4 mb-4 text-center">
-            <v-btn min-width="100" variant="outlined" @click="cancelDeleteProduct()" class="mr-4">
-              {{ $t('common.cancel') }}
-            </v-btn>
-            <v-btn color="error" variant="flat" min-width="100" @click="deleteProduct()">
-              {{ $t('common.delete') }}
-            </v-btn>
-          </div>
-        </template>
-      </v-card>
-    </v-menu>
+    <ProductDeleteConfirmDialog v-model="confirmationDelete.isDialogOpen" :product="confirmationDelete.product"
+      @confirm="deleteProduct()" @cancel="cancelDeleteProduct()" />
     <LoadingComponent :attach="dialogAttach" ref="loadingComponentRef"></LoadingComponent>
-    <v-dialog scrim persistent :retain-focus="false" v-model="show" location-strategy="connected" target="cursor"
-      no-click-animation :close-on-content-click="false" :attach="dialogAttach" class="plv-dialog-transition"
-      :class="{ 'plv-dialog-hidden': !batchPlatformProcessMenu && !transferProductForm.transferProductFormMenu && !batchProcessFormMenu }"
-      :contained="true" location="left" height="100%" width="100%">
+    <EkDialogHost :model-value="!!(transferProductForm.transferProductFormMenu || batchProcessFormMenu)"
+      :attach="dialogAttach" placement="end" width="lg"
+      @update:model-value="(v) => { if (!v) { transferProductForm.transferProductFormMenu = false; batchProcessFormMenu = false } }">
       <keep-alive>
         <ProductTransferComponent v-if="transferProductForm.transferProductFormMenu"
           key="ProductTransferComponent" v-model="transferProductForm"
@@ -49,7 +22,7 @@
           @close="batchProcessFormMenu = false" @refreshProducts="getProducts" v-model="batchProcessFormMenu"
           :selectedProducts="selectedProducts" :searchProductForm="searchProductForm" />
       </keep-alive>
-    </v-dialog>
+    </EkDialogHost>
 
     <EkListScreen
       title="Ürünler"
@@ -258,6 +231,8 @@ import { useSnackbarStore } from '@/stores/snackbarStore';
 import { useStaticsStore } from '@/stores/staticsStore';
 import useUser from '@/composables/user';
 import { PLATFORM_PROCESS } from '@/types/PlatformProcess';
+import EkDialogHost from '@/components/ds/EkDialogHost.vue';
+import ProductDeleteConfirmDialog from '@/components/productDefinitions/products/ProductDeleteConfirmDialog.vue';
 import BatchActionsRootComponent from '@/components/productDefinitions/products/BatchActions/BatchActionsRootComponent.vue';
 const userApi = useUser()
 

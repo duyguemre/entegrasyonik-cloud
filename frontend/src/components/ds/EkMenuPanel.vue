@@ -9,6 +9,9 @@
   (`close` yayar). WAI-ARIA menu deseni: role=menu / menuitem, roving tabindex.
   `EkContextMenu` bunu v-menu içinde açar; vitrin doğrudan çizer.
   `autofocus` (geri uyumlu ek): v-menu içinde her açılışta ilk öğeye odaklanır.
+  Aşama 2 (geri uyumlu): isteğe bağlı görünür başlık (`title` + `description`)
+  — uzun işlem menülerinde (ör. toplu ürün işlemleri) menünün kapsamını söyler;
+  ekran okuyucuya `aria-describedby` ile okunur.
 -->
 <template>
   <div
@@ -16,8 +19,13 @@
     class="ek-menu"
     role="menu"
     :aria-label="label"
+    :aria-describedby="description ? descId : undefined"
     @keydown="onKeydown"
   >
+    <div v-if="title" class="ek-menu__head" aria-hidden="true">
+      <span class="ek-menu__head-title">{{ title }}</span>
+      <span v-if="description" :id="descId" class="ek-menu__head-desc">{{ description }}</span>
+    </div>
     <template v-for="(group, gi) in groups" :key="group.label ?? gi">
       <div v-if="gi > 0" class="ek-menu__divider" role="separator"></div>
       <div v-if="group.label" class="ek-menu__group-label" aria-hidden="true">{{ group.label }}</div>
@@ -47,7 +55,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref, useId } from 'vue'
 import EkKbd from './EkKbd.vue'
 
 export interface EkMenuItem {
@@ -71,7 +79,11 @@ const props = defineProps<{
   forceHoverKey?: string
   /** Açılır katmanda (v-menu) her açılışta monte edilince ilk etkin öğeye odaklan. */
   autofocus?: boolean
+  title?: string
+  description?: string
 }>()
+
+const descId = `ek-menu-desc-${useId()}`
 
 const emit = defineEmits<{ select: [item: EkMenuItem]; close: [] }>()
 
@@ -139,6 +151,31 @@ defineExpose({ focusFirst: () => focusItem(enabled.value[0]?.key) })
   border: 1px solid var(--ek-color-border-subtle);
   border-radius: var(--ek-radius-popover);
   box-shadow: var(--ek-shadow-popover);
+}
+
+.ek-menu__head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: calc(var(--ek-space-1) * -1) calc(var(--ek-space-1) * -1) var(--ek-space-1);
+  padding: var(--ek-space-3) var(--ek-space-4);
+  border-bottom: 1px solid var(--ek-color-border-subtle);
+  border-radius: var(--ek-radius-popover) var(--ek-radius-popover) 0 0;
+  background: var(--ek-color-surface-muted);
+}
+
+.ek-menu__head-title {
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-subheading-size);
+  line-height: var(--ek-type-subheading-line);
+  font-weight: var(--ek-type-subheading-weight);
+}
+
+.ek-menu__head-desc {
+  max-width: 320px;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
 }
 
 .ek-menu__group-label {

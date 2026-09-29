@@ -1,5 +1,5 @@
 <template>
-  <div class="productDefinitionView">
+  <div class="productDefinitionView pdv-root">
     <!-- ek-pattern-exception: EkWizardTemplate — bu ekran çok adımlı bir sihirbaz değil,
          kendi adım/gezinme+Kaydet şeridini taşıyan mevcut bir `v-stepper`dir (ADR-0015
          Karar 6, B5-1); yapısal göç ayrı ve daha riskli bir iş olduğu için bu turda
@@ -15,20 +15,13 @@
 
     <LoadingComponent attach=".productDefinitionView" ref="loadingComponentRef"></LoadingComponent>
 
-    <v-dialog scrim persistent :retain-focus="false" v-model="show" location-strategy="connected" target="cursor"
-      no-click-animation :close-on-content-click="false" :attach="dialogAttach"
-      style="transition: opacity .1s ease-in!important"
-      :style="!isImagesDialog ? { 'visibility': 'hidden', 'opacity': '.2!important' } : {}" :contained="true"
-      location="left" height="100%" width="100%">
-
+    <EkDialogHost :model-value="isImagesDialog" :attach="dialogAttach" width="xl"
+      @update:model-value="(v) => { if (!v) isImagesDialog = false }">
       <keep-alive>
-        <ProductImagesComponent v-model="isImagesDialog" style="transition: opacity .2s ease-in!important"
-          :style="!isImagesDialog ? { 'opacity': '.2!important' } : {}" key="ProductImagesComponent"
+        <ProductImagesComponent v-model="isImagesDialog" key="ProductImagesComponent"
           @close="isImagesDialog = false" v-if="isImagesDialog == true" :productInfoForm="productInfoForm" />
-
       </keep-alive>
-
-    </v-dialog>
+    </EkDialogHost>
 
     <v-form @keydown.enter.prevent @submit.prevent ref="productInfoFormRef" v-model="isProductInfoFormValid">
 
@@ -68,96 +61,18 @@
 
         <div style="height:30px"></div>
 
-        <div v-if="stepper == 0">
-          <v-row>
-            <v-col :cols="2">
-            </v-col>
-            <v-col>
-              <v-form ref="formStep0Ref" @submit.stop>
-                <CategorySelectBoxLevelComponent v-model="productInfoForm.category" />
-              </v-form>
-            </v-col>
-            <v-col :cols="2">
-            </v-col>
-          </v-row>
+        <div v-if="stepper == 0" class="pdv-category-step">
+          <v-form ref="formStep0Ref" @submit.stop>
+            <CategorySelectBoxLevelComponent v-model="productInfoForm.category" />
+          </v-form>
         </div>
 
 
         <div v-if="stepper == 1">
           <v-form ref="formStep1Ref" @submit.stop>
-
-            <v-btn :disabled="!productInfoForm.tempId" density="compact" elevation="0" class=" ml-12"
-              style="position:absolute;top:100px;z-index:1;min-width:0!important;padding:2px;width:193px;height:216px;border:1px solid var(--ek-color-border-default)"
-              color="surface" @click="isImagesDialog = true">
-              <v-row>
-                <v-col>
-                  <div v-if="productInfoForm.images == undefined || !productInfoForm.images[0]">
-                    <v-icon size="180" style="opacity:.5" color="content-muted">mdi-image-outline</v-icon>
-                  </div>
-                  <div v-else>
-                    <div style="width:189px;height:191px;background-color:white;" class="d-flex">
-                      <ProductImageComponent v-model="productInfoForm.images[0]" :productId="productInfoForm.tempId"
-                        :height="187">
-                      </ProductImageComponent>
-                    </div>
-                  </div>
-                  Resim Galerisi <span class="text-caption" v-if="productInfoForm.images">({{
-                    productInfoForm.images?.length }})</span>
-                </v-col>
-              </v-row>
-            </v-btn>
-            <v-row>
-              <v-col :cols="2">
-              </v-col>
-              <v-col class="pb-0">
-                <div class="d-flex mt-2">
-                  <div style="width:270px!important">
-                    <v-radio-group inline v-model="productInfoForm.hasVariant">
-                      <v-radio :value=false
-                        :label="$t('productDefinitions.product.define.withoutVariant')">
-                      </v-radio>
-                      <v-radio :value=true
-                        :label="$t('productDefinitions.product.define.withVariant')">
-                      </v-radio>
-                    </v-radio-group>
-                  </div>
-                  <v-text-field class="customTextField mb-0" clearable maxlength="32" type="tel"
-                    v-if="productInfoForm.hasVariant" :rules="formRules.stockcodeRules" density="compact"
-                    v-model="productInfoForm.maincode" variant="outlined"
-                    :hint="$t('productDefinitions.product.define.maincodeDesc')" counter>
-                    <template #label>
-                      {{ $t('productDefinitions.product.define.maincode') }}<v-icon size="12"
-                        class="mb-2 ml-1">mdi-asterisk</v-icon>
-                    </template>
-                  </v-text-field>
-                </div>
-              </v-col>
-              <v-col :cols="2">
-              </v-col>
-            </v-row>
-            <v-row>
-              <v-col :cols="2">
-              </v-col>
-              <v-col>
-                <BrandSelectBoxComponent v-model="productInfoForm.brand" :mandatory="true" class="mt-0" />
-                <v-text-field class="customTextField mb-3 mt-2" clearable :rules="formRules.titleRules" maxlength="160"
-                  type="tel" density="compact" v-model="productInfoForm.title" variant="outlined"
-                  :hint="$t('productDefinitions.product.define.productTitleDesc')" counter>
-                  <template #label>
-                    {{ $t('productDefinitions.product.define.productTitle') }}<v-icon size="12"
-                      class="mb-2 ml-1">mdi-asterisk</v-icon>
-                  </template>
-                </v-text-field>
-                <div class="d-flex ml-0">
-                  <div style="height:385px;width:100%">
-                    <QuillEditor v-model:content="productInfoForm.description" content-type="html" theme="snow"
-                      :toolbar="quillToolbar" />
-                  </div>
-                </div>
-              </v-col>
-              <v-col :cols="2">
-              </v-col>
-            </v-row>
+            <ProductInfoFormComponent :productInfoForm="productInfoForm" :quillToolbar="quillToolbar"
+              :galleryDisabled="!productInfoForm.tempId" :imageProductId="productInfoForm.tempId"
+              @openGallery="isImagesDialog = true" />
           </v-form>
         </div>
 
@@ -182,18 +97,10 @@
           </v-form>
         </temnplate>
 
-        <div v-if="stepper == 3">
-          <v-row>
-            <v-col :cols="2">
-            </v-col>
-            <v-col>
-              <v-form ref="formStep0Ref" @submit.stop>
-                <ProductDetailsComponent :productInfoForm="productInfoForm" />
-              </v-form>
-            </v-col>
-            <v-col :cols="2">
-            </v-col>
-          </v-row>
+        <div v-if="stepper == 3" class="pdv-step">
+          <v-form ref="formStep0Ref" @submit.stop>
+            <ProductDetailsComponent :productInfoForm="productInfoForm" />
+          </v-form>
         </div>
       </div>
     </v-form>
@@ -210,13 +117,9 @@ import ProductCompetitivePricesComponent from '@/components/productDefinitions/c
 import ProductVariantsComponent from '@/components/productDefinitions/variants/ProductVariantsComponent.vue'
 import ProductImagesComponent from '@/components/productDefinitions/crud/ProductImagesComponent.vue'
 import LoadingComponent from '@/components/LoadingComponent.vue'
-import BrandSelectBoxComponent from '@/components/common/BrandSelectBoxComponent.vue'
-import ProductImageComponent from '@/components/productDefinitions/products/ProductImageComponent.vue'
 import { useChoicesStore } from '@/stores/choicesStore';
 
 
-import { QuillEditor } from '@vueup/vue-quill';
-import '@vueup/vue-quill/dist/vue-quill.snow.css';
 import useIntegrations from '@/composables/integrations';
 import usePriceCalculator from '@/composables/priceCalculator';
 import useFormRules from '@/composables/formrules';
@@ -226,9 +129,11 @@ import { ObjectId } from 'bson'
 import { useBrandsStore } from '@/stores/brandsStore';
 import { useCategoriesStore } from '@/stores/categoriesStore';
 import { useIntegrationStore } from '@/stores/integrationStore';
+import EkDialogHost from '@/components/ds/EkDialogHost.vue';
 import CategorySelectBoxLevelComponent from '@/components/CategorySelectBoxLevelComponent.vue';
 import ProductSingleVariantComponent from '@/components/productDefinitions/variants/ProductSingleVariantComponent.vue';
 import ProductDetailsComponent from '@/components/productDefinitions/variants/ProductDetailsComponent.vue';
+import ProductInfoFormComponent from '@/components/productDefinitions/crud/ProductInfoFormComponent.vue';
 import { useSnackbarStore } from '@/stores/snackbarStore';
 const snackbarStore = useSnackbarStore();
 
@@ -257,7 +162,6 @@ const generatedVariants: any = ref([])
 
 
 const dialogAttach: any = ref()
-const show = ref(true)
 const productInfoFormRef = ref()
 const isProductInfoFormValid = ref(false)
 const productInfoForm = ref()
@@ -756,4 +660,24 @@ defineExpose({
   width:100%!important
 }
  */
+</style>
+
+<style scoped>
+/* DS-v2 A2 — kategori adımı: kademeli seçici sayfa genişliğinde, okunur en fazla genişlikte ortalı. */
+/* Sayfa kenar boşluğu — başlık/adım şeridi/içerik iş alanı kenarına yapışmasın. */
+.pdv-root {
+  padding: var(--ek-space-2) var(--ek-space-6) var(--ek-space-6);
+}
+
+@media (max-width: 599px) {
+  .pdv-root {
+    padding: var(--ek-space-2) var(--ek-space-4) var(--ek-space-4);
+  }
+}
+
+.pdv-category-step,
+.pdv-step {
+  max-width: 1200px;
+  margin: 0 auto;
+}
 </style>

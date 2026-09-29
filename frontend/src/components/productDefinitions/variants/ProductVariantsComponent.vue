@@ -2,9 +2,8 @@
   <div>
     <LoadingComponent :attach="dialogAttach" ref="loadingComponentRef"></LoadingComponent>
 
-    <v-dialog scrim persistent :retain-focus="false" v-model="show" location-strategy="connected" target="cursor"
-      no-click-animation :close-on-content-click="false" :attach="dialogAttach"
-      :contained="true" location="left" height="100%" width="100%" class="pv-fade-fast" :class="{ 'pv-dialog-idle': !searchVariantForm.searchVariantFormMenu && !batchProcessFormMenu && !newVariantMenu && !isVariantPlatformPricesMenu && !isImagesDialog && !isVariantAttributesDialog && !isBatchVariantDialog && !isVariantImagesDialog && !isBatchVariantPlatformPricesMenu }">
+    <EkDialogHost :model-value="isAnyVariantPanelOpen" :attach="dialogAttach" :width="variantPanelWidth"
+      @update:model-value="(v) => { if (!v) closeVariantPanels() }">
 
       <keep-alive>
         <ProductImagesComponent v-model="isImagesDialog" key="ProductImagesComponent"
@@ -61,7 +60,7 @@
           v-if="isBatchVariantPlatformPricesMenu == true" :productInfoForm="productInfoForm" class="pv-fade" :class="{ 'pv-dim': !isBatchVariantPlatformPricesMenu }" />
       </keep-alive>
 
-    </v-dialog>
+    </EkDialogHost>
     <div class="pt-12" v-if="!productInfoForm.hasVariant">
     </div>
     <v-data-table-server v-model="selectedVariants" :items-length="originalVariants ? originalVariants.length : 0"
@@ -518,75 +517,15 @@
             </v-list>
           </v-menu>
 
-          <v-menu scroll-strategy="close">
-            <template v-slot:activator="{ props }">
+          <EkContextMenu :groups="variantOpsMenu" label="Varyant işlemleri" title="Varyant İşlemleri"
+            description="İşlem yalnızca bu ürün için uygulama kataloğunda yapılır." @select="onVariantOp">
+            <template #activator="{ props }">
               <v-btn flat size="35" v-bind="props" elevation=0
                 color="transparent" class="pv-head-btn pv-head-btn--surface" aria-label="Varyant işlemleri">
                 <v-icon color="processButtonColor" size="x-large" class="">mdi-menu</v-icon>
               </v-btn>
             </template>
-            <v-card class="pv-menu-card">
-              <v-list class="pt-0 pb-0 pv-ops-list" density="compact">
-                <v-divider color="passiveColor" class="ml-5 mr-5" />
-                <v-list-subheader
-                  class="mt-0 d-flex align-center justify-start bg-primaryLightenMore text-white font-weight-bold">
-                  <v-tooltip location="top" :open-delay="700">
-                    <template #activator="{ props }">
-                      <div v-bind="props">
-                        Varyant İşlemleri
-                      </div>
-                    </template>
-                    <span>İşlem, sadece bu ürün için uygulama kataloğunda yapılacaktır.</span>
-                  </v-tooltip>
-                </v-list-subheader>
-
-                <v-divider color="passiveColor" class="ml-5 mr-5" />
-                <v-list-item @click="searchVariantForm.searchVariantFormMenu = !searchVariantForm.searchVariantFormMenu"
-                  class="font-weight-medium">
-                  <template #prepend>
-                    <v-icon color="primary" size="25" class="pv-icon-opaque">mdi-magnify</v-icon>
-                  </template>
-                  Ara
-                </v-list-item>
-
-
-
-                <v-divider color="passiveColor" class="ml-5 mr-5" />
-                <v-list-item @click="isBatchVariantDialog = !isBatchVariantDialog" class="font-weight-medium">
-                  <template #prepend>
-                    <v-icon color="success" size="25" class="pv-icon-opaque">mdi-checkbox-multiple-marked-outline</v-icon>
-                  </template>
-                  Toplu Özellik Düzenleme
-                </v-list-item>
-                <v-divider color="passiveColor" class="ml-5 mr-5" />
-
-                <v-list-item @click="openBatchVariantPlatformPrices" class="font-weight-medium">
-                  <template #prepend>
-                    <v-icon color="success" size="25" class="pv-icon-opaque">mdi-currency-try</v-icon>
-                  </template>
-                  Toplu Fiyat Düzenleme
-                </v-list-item>
-                <v-divider color="passiveColor" class="ml-5 mr-5" />
-
-                <v-list-item @click="mapAllChoices" class="font-weight-medium">
-                  <template #prepend>
-                    <v-icon color="success" size="25" class="pv-icon-opaque">mdi-map</v-icon>
-                  </template>
-                  Toplu Seçenek Eşleştir
-                </v-list-item>
-                <v-divider color="passiveColor" class="ml-5 mr-5" />
-
-                <v-list-item @click="deleteAllBatchProcess" class="font-weight-medium">
-                  <template #prepend>
-                    <v-icon color="deleteButtonColor" size="25" class="pv-icon-opaque">mdi-delete</v-icon>
-                  </template>
-                  Toplu Silme
-                </v-list-item>
-
-
-              </v-list>
-            </v-card>
-          </v-menu>
+          </EkContextMenu>
         </div>
       </template>
       <template v-slot:item="{ item, index }: any">
@@ -805,6 +744,9 @@
 
 <script setup lang="ts">
 import { ref, mergeProps, inject, nextTick, watch, computed, onBeforeMount, onMounted } from 'vue'
+import EkDialogHost from '@/components/ds/EkDialogHost.vue'
+import EkContextMenu from '@/components/ds/EkContextMenu.vue'
+import type { EkMenuGroup, EkMenuItem } from '@/components/ds/EkMenuPanel.vue'
 import { useI18n } from 'vue-i18n';
 import PaginationComponent from '@/components/PaginationComponent.vue';
 import { useChoicesStore } from '@/stores/choicesStore';
@@ -846,7 +788,6 @@ const brandsStore = useBrandsStore()
 const integrationStore = useIntegrationStore()
 const snackbarStore = useSnackbarStore()
 
-const show = ref(true)
 const emits = defineEmits(['refreshImages', 'refreshVariants', 'refreshTotalVariantsStockCount', 'close'])
 const batchVariant: any = ref({})
 
@@ -1943,6 +1884,50 @@ const setEditingField = (header: any, variantId: any) => {
 }
 
 
+
+// DS-v2 A2 — varyant panelleri tek diyalog kabuğunda (EkDialogHost): yalnızca bir panel açıkken açık.
+const isAnyVariantPanelOpen = computed(() => !!(searchVariantForm.value?.searchVariantFormMenu || batchProcessFormMenu.value ||
+  isVariantPlatformPricesMenu.value || isImagesDialog.value || isVariantAttributesDialog.value || isBatchVariantDialog.value ||
+  isVariantImagesDialog.value || isBatchVariantPlatformPricesMenu.value))
+
+const variantPanelWidth = computed<'md' | 'lg' | 'xl'>(() => {
+  if (batchProcessFormMenu.value) return 'md'
+  if (searchVariantForm.value?.searchVariantFormMenu) return 'lg'
+  if (isVariantPlatformPricesMenu.value || isBatchVariantPlatformPricesMenu.value) return 'lg'
+  return 'xl'
+})
+
+function closeVariantPanels() {
+  if (searchVariantForm.value) searchVariantForm.value.searchVariantFormMenu = false
+  batchProcessFormMenu.value = false
+  isVariantPlatformPricesMenu.value = false
+  isImagesDialog.value = false
+  isVariantAttributesDialog.value = false
+  isBatchVariantDialog.value = false
+  isVariantImagesDialog.value = false
+  isBatchVariantPlatformPricesMenu.value = false
+}
+
+// DS-v2 A2 — "Varyant işlemleri" menüsü (EkContextMenu). Eylemler önceki v-list öğeleriyle AYNI.
+const variantOpsMenu: EkMenuGroup[] = [
+  {
+    items: [
+      { key: 'search', label: 'Ara', icon: 'mdi-magnify' },
+      { key: 'batchAttributes', label: 'Toplu Özellik Düzenleme', icon: 'mdi-checkbox-multiple-marked-outline' },
+      { key: 'batchPrices', label: 'Toplu Fiyat Düzenleme', icon: 'mdi-currency-try' },
+      { key: 'mapChoices', label: 'Toplu Seçenek Eşleştir', icon: 'mdi-map-outline' },
+    ],
+  },
+  { items: [{ key: 'deleteAll', label: 'Toplu Silme', icon: 'mdi-trash-can-outline', danger: true }] },
+]
+
+function onVariantOp(item: EkMenuItem) {
+  if (item.key === 'search') searchVariantForm.value.searchVariantFormMenu = !searchVariantForm.value.searchVariantFormMenu
+  else if (item.key === 'batchAttributes') isBatchVariantDialog.value = !isBatchVariantDialog.value
+  else if (item.key === 'batchPrices') openBatchVariantPlatformPrices()
+  else if (item.key === 'mapChoices') mapAllChoices()
+  else if (item.key === 'deleteAll') deleteAllBatchProcess()
+}
 </script>
 
 

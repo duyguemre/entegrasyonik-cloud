@@ -1,140 +1,88 @@
 <template>
-  <CardComponent icon="mdi-checkbox-multiple-marked" title="Seçenek Eşleştirme" :isHovered="false"
-    style="overflow-y:scroll;border:1px solid #ddd;height:calc(100vh - 110px)!important">
+  <EkDialogCard title="Seçenek Eşleştirme" icon="mdi-checkbox-multiple-marked-outline" width="custom"
+    :description="integrationCategoryId ? `${integrationStore.getIntegrationTitle(integrationCode)} · ${integrationStore.getIntegrationCategory2(integrationCode, integrationCategoryId)?.title ?? ''}` : undefined"
+    class="cm-card" @close="emits('close')">
     <LoadingComponent attach=".categoryDefinition" ref="loadingComponentRef"></LoadingComponent>
 
-    <template #header>
-      <v-tooltip open-delay="1000" text="Eşleştirmelerin otomatik yapılması için...">
-        <template v-slot:activator="{ props: tooltipProps }">
-          <v-btn-group elevation="0" class="ml-2" density="compact">
-            <v-btn v-bind="tooltipProps" density="compact" color="processButtonColor"
-              style="min-width:150px;border:1px solid #aaa;" :disabled="!choice" @click="autoMapping()">
-              <span>Otomatik Eşleştir</span>
-            </v-btn>
-          </v-btn-group>
-        </template>
-      </v-tooltip>
+    <p v-if="!integrationCategoryId" class="cm-note">
+      <v-icon icon="mdi-information-outline" size="16" aria-hidden="true" />
+      <span>Platform Kategori Eşleştirme bölümünden
+        <strong>{{ integrationStore.getIntegrationTitle(integrationCode) }} Kategori</strong>sini belirleyiniz.</span>
+    </p>
 
-      <v-tooltip open-delay="1000">
-        <template v-slot:activator="{ props: tooltipProps }">
-          <v-btn-group elevation="0" class="ml-2" density="compact">
-            <v-btn v-bind="tooltipProps" :disabled="!integrationChoice || !choice" density="compact" color="#E53935ff"
-              style="min-width:150px;border:1px solid #aaa;" @click="save">
-              <span>{{ $t('common.save') }}</span>
-            </v-btn>
-          </v-btn-group>
-        </template>
-      </v-tooltip>
+    <p v-else-if="!integrationChoice" class="cm-note">
+      <v-icon icon="mdi-information-outline" size="16" aria-hidden="true" />
+      <span>Platform Kategori Eşleştirme bölümünden
+        <strong>{{ integrationStore.getIntegrationTitle(integrationCode) }} - {{
+          integrationStore.getIntegrationCategory2(integrationCode, integrationCategoryId)?.title }}</strong> kategorisi
+        için <strong>Seçenek Grubu</strong>nu belirleyiniz.</span>
+    </p>
 
-      <v-btn style="border:1px solid #bbb;width:30px; opacity:.9;" @click="emits('close')" elevation="0" class="ml-2"
-        min-width="0" color="white"><v-icon size="x-large" color="primary">mdi-close</v-icon></v-btn>
+    <template v-else>
+      <EkFormSection title="Entegrasyonik seçenek grubu" icon="mdi-format-list-group" :columns="1">
+        <v-select :items="choices" v-model="choice" return-object label="Entegrasyonik Seçenek Grubu"
+          @update:model-value="reset">
+          <template v-slot:item="{ item, index, props: itemProps }: any">
+            <v-list-item v-bind="itemProps" :title="undefined">
+              <div class="cm-option">
+                <span class="cm-option__index ek-num">{{ index + 1 }}</span>
+                <span class="cm-option__title">{{ item.title }}</span>
+              </div>
+            </v-list-item>
+          </template>
+        </v-select>
+
+        <div v-if="choice" class="cm-toggles">
+          <button type="button" class="cm-toggle" :class="{ 'is-on': isSlicer }" :aria-pressed="isSlicer"
+            :disabled="isAnyOtherSlicerExists && !isSlicer" @click="toggleSlicer">
+            <v-icon icon="mdi-filter-variant" size="16" aria-hidden="true" /> Grup (slicer)
+          </button>
+          <button type="button" class="cm-toggle" :class="{ 'is-on': isVarianter }" :aria-pressed="isVarianter"
+            @click="toggleVarianter">
+            <v-icon icon="mdi-layers-triple-outline" size="16" aria-hidden="true" /> Varyant
+          </button>
+          <span v-if="isAnyOtherSlicerExists && !isSlicer" class="cm-toggles__hint">
+            Bu kategori için başka bir Grup (slicer) atanmış.
+          </span>
+        </div>
+      </EkFormSection>
+
+      <EkFormSection v-if="choice" title="Değer eşleştirme" icon="mdi-link-variant" :columns="3"
+        :description="`${integrationStore.getIntegrationTitle(integrationCode)} değerleri Entegrasyonik değerleriyle eşleştirilir.`">
+        <template v-for="choiceValue of choice?.values" :key="choiceValue._id">
+          <v-text-field v-if="computedAllowCustom" v-model="mapping[choiceValue._id]" :label="choiceValue.title" />
+          <v-autocomplete v-else item-value="id" item-title="title" :label="choiceValue.title"
+            :items="integrationChoice.values" v-model="mapping[choiceValue._id]"
+            :menu-props="{ closeOnContentClick: true }" auto-select-first clearable>
+            <template v-slot:item="{ item, index, props: itemProps }: any">
+              <v-list-item v-bind="itemProps" :title="undefined">
+                <div class="cm-option">
+                  <span class="cm-option__index ek-num">{{ index + 1 }}</span>
+                  <span>{{ item.title }}</span>
+                </div>
+              </v-list-item>
+            </template>
+          </v-autocomplete>
+        </template>
+      </EkFormSection>
     </template>
 
-    <div v-if="!integrationCategoryId" class="mt-12 d-flex justify-center">
-      Platform Kategori Eşleştirme bölümünden
-      <span class="pr-0 pl-1 font-weight-bold">{{ integrationStore.getIntegrationTitle(integrationCode) }}
-        Kategori</span>sini belirleyiniz.
-    </div>
-
-    <div v-else-if="!integrationChoice" class="mt-12 d-flex justify-center">
-      Platform Kategori Eşleştirme bölümünden
-      <span class="pr-1 pl-1 font-weight-bold">{{ integrationStore.getIntegrationTitle(integrationCode) }} - {{
-        integrationStore.getIntegrationCategory2(integrationCode, integrationCategoryId)?.title }}</span> kategorisi
-      için
-      <span class="font-weight-bold pl-1"> Seçenek Grubu</span>nu belirleyiniz.
-    </div>
-
-    <div v-else>
-
-      <div class="d-flex mb-4 align-center" v-if="choice">
-        <v-chip size="x-small" :color="isSlicer ? 'green-darken-1' : 'grey-lighten-2'"
-          :disabled="isAnyOtherSlicerExists && !isSlicer" variant="flat" class="mr-2 font-weight-bold rounded-xl"
-          @click="toggleSlicer">
-          <v-icon start size="12">mdi-filter-variant</v-icon> GRUP (SLICER)
-        </v-chip>
-        <v-chip size="x-small" :color="isVarianter ? 'primary' : 'grey-lighten-2'" variant="flat"
-          class="font-weight-bold rounded-xl" @click="toggleVarianter">
-          <v-icon start size="12">mdi-layers-triple</v-icon> VARYANT
-        </v-chip>
-        <span v-if="isAnyOtherSlicerExists && !isSlicer" class="text-caption text-red ml-2"
-          style="font-size: 10px!important">
-          * Bu kategori için başka Grup(Slicer) atanmış.
-        </span>
-      </div>
-
-
-      <v-select variant="outlined" density="compact" :items="choices" v-model="choice" return-object hide-details
-        class="mb-4 customTextField" @update:model-value="reset">
-        <template v-slot:label>Entegrasyonik Seçenek Grubu</template>
-
-        <template v-slot:selection="{ item }: any">
-          <span class="font-weight-bold" style="color: rgb(var(--v-theme-black))">
-            {{ item.title }}
-          </span>
-        </template>
-
-        <template v-slot:item="{ item, index, props: itemProps }: any">
-          <v-list-item v-bind="itemProps" class="custom-list-item">
-            <template v-slot:title>
-              <div class="d-flex align-center">
-                <span class="index-column">{{ index + 1 }}</span>
-                <span class="text-body-2" style="color: rgb(var(--v-theme-passiveColor));font-weight:bold">{{
-                  item.title
-                  }}</span>
-              </div>
-            </template>
-          </v-list-item>
-        </template>
-      </v-select>
-
-      <v-divider class="ma-8" />
-
-      <div class="d-flex align-start justify-center" v-if="choice">
-        <div class="flex-grow-1">
-          <v-row>
-            <v-col cols="12" md="6" sm="12" lg="4" xl="3" v-for="choiceValue of choice?.values" :key="choiceValue._id">
-
-              <v-text-field v-if="computedAllowCustom" variant="outlined" density="compact" hide-details
-                v-model="mapping[choiceValue._id]" bg-color="textfieldColor" class="customTextField">
-                <template v-slot:label>{{ choiceValue.title }}</template>
-              </v-text-field>
-
-              <v-autocomplete v-else variant="outlined" density="compact" bg-color="textfieldColor" item-value="id"
-                item-title="title" :label="choiceValue.title" :items="integrationChoice.values"
-                v-model="mapping[choiceValue._id]" hide-details class="customTextField"
-                :menu-props="{ closeOnContentClick: true, contentClass: 'custom-autocomplete-menu' }" auto-select-first
-                clearable>
-                <template v-slot:selection="{ item }: any">
-                  <span class="font-weight-bold" style="color: rgb(var(--v-theme-passiveColor))">
-                    {{ item.title }}
-                  </span>
-                </template>
-
-                <template v-slot:item="{ item, index, props: itemProps }: any">
-                  <v-list-item v-bind="itemProps" class="custom-list-item">
-                    <template v-slot:title>
-                      <div class="d-flex align-center">
-                        <span class="index-column">{{ index + 1 }}</span>
-                        <span class="text-body-2">{{ item.title }}</span>
-                      </div>
-                    </template>
-                  </v-list-item>
-                </template>
-              </v-autocomplete>
-
-            </v-col>
-          </v-row>
-        </div>
-      </div>
-    </div>
-  </CardComponent>
+    <template #actions>
+      <EkButton tone="secondary" icon="mdi-auto-fix" :disabled="!choice" @click="autoMapping()">Otomatik Eşleştir</EkButton>
+      <EkButton tone="primary" icon="mdi-content-save-outline" :disabled="!integrationChoice || !choice" @click="save">
+        {{ $t('common.save') }}
+      </EkButton>
+    </template>
+  </EkDialogCard>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onActivated, nextTick } from 'vue'
+import EkDialogCard from '@/components/ds/EkDialogCard.vue'
+import EkFormSection from '@/components/ds/EkFormSection.vue'
+import EkButton from '@/components/ds/EkButton.vue'
 import { storeToRefs } from 'pinia'
 import LoadingComponent from '@/components/LoadingComponent.vue'
-import CardComponent from '@/components/CardComponent.vue'
 import { useIntegrationStore } from '@/stores/integrationStore'
 import useRestApi from '@/composables/restapi'
 import { useChoicesStore } from '@/stores/choicesStore'
@@ -303,33 +251,77 @@ watch(() => choice.value, () => {
 </script>
 
 <style scoped>
-/* Index kolonu için stil: Silik ve sabit genişlik */
-.index-column {
-  min-width: 30px;
-  font-weight: 200;
-  opacity: 0.5;
-  font-size: 0.85rem;
+.cm-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ek-space-2);
+  margin: var(--ek-space-4) 0;
+  padding: var(--ek-space-3);
+  border: 1px solid var(--ek-color-info-border);
+  border-radius: var(--ek-radius-control);
+  background: var(--ek-color-info-subtle);
+  color: var(--ek-color-info-emphasis);
+  font-size: var(--ek-type-body-size);
 }
 
-/* Liste öğesi için padding ayarı */
-.custom-list-item {
-  border-bottom: 1px solid #eee;
-  min-height: 40px !important;
-  font-weight: bold;
-  color: rgb(var(--v-theme-passiveColor));
-  padding-left: 12px !important;
+.cm-toggles {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ek-space-2);
 }
 
-/* Seçim kutularının içindeki yazı boyutu ve genel hizalama */
-:deep(.customTextField .v-field__input) {
-  font-size: 0.9rem !important;
-  color: rgb(var(--v-theme-passiveColor)) !important;
-  font-weight: bold !important;
+.cm-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  height: var(--ek-control-h-sm);
+  padding: 0 var(--ek-space-3);
+  border: 1px solid var(--ek-color-border-strong);
+  border-radius: var(--ek-radius-chip);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-default);
+  font-family: inherit;
+  font-size: var(--ek-type-label-size);
+  font-weight: var(--ek-type-label-weight);
+  cursor: pointer;
+  transition: var(--ek-transition-colors);
 }
 
-/* Autocomplete menü genişliği ve sınırları */
-:deep(.custom-autocomplete-menu) {
-  border: 1px solid #ddd !important;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1) !important;
+.cm-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+}
+
+.cm-toggle.is-on {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.cm-toggle:disabled {
+  color: var(--ek-color-content-subtle);
+  cursor: not-allowed;
+}
+
+.cm-toggles__hint {
+  color: var(--ek-color-error);
+  font-size: var(--ek-type-caption-size);
+}
+
+.cm-option {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+}
+
+.cm-option__index {
+  min-width: var(--ek-space-6);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+}
+
+.cm-option__title {
+  font-weight: var(--ek-font-weight-semibold);
 }
 </style>
