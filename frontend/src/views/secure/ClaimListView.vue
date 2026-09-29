@@ -1,5 +1,5 @@
 <template>
-  <div class="claimListView d-flex flex-column pt-4">
+  <div class="claimListView">
     <LoadingComponent :attach="dialogAttach" ref="loadingComponentRef"></LoadingComponent>
 
     <EkConfirmDialog
@@ -20,145 +20,80 @@
         label="Red gerekçesi" return-object prepend-inner-icon="mdi-comment-question-outline" />
     </EkFormDialog>
 
-    <EkFormDialog v-model="searchClaimForm.form.menu" title="Talep filtreleri" @submit="() => { getClaims(true); searchClaimForm.form.menu = false }" @cancel="resetFilters()">
-      <v-select v-model="searchClaimForm.data.integrationCodes" :items="integrationStore.getClientPlatforms()"
-        item-title="title" item-value="code" label="Platformlar" multiple chips />
-      <v-select v-model="searchClaimForm.data.internalStatuses" :items="statusOptions" item-title="title"
-        item-value="id" label="Talep durumu" multiple chips />
-    </EkFormDialog>
-
-    <EkListPage
-      section="Siparişler"
+    <EkListScreen
       title="İade talepleri"
       description="Pazaryerlerinden gelen iade/talep süreçlerini buradan yönetin."
-      :secondary-actions="[{ label: 'Filtrele', icon: 'mdi-filter-variant', onClick: () => (searchClaimForm.form.menu = true) }]"
+      label="İade talepleri tablosu"
+      noun="talep"
+      row-key="_id"
+      label-key="externalClaimId"
+      :columns="columns"
+      :rows="claims"
+      :loading="loading"
+      :error="loadError"
+      error-title="İade talepleri yüklenemedi"
       :search="searchClaimForm.data.globalSearch"
       search-placeholder="İade No, Sipariş No veya Takip Ara"
-      :state="viewState"
+      :chips="activeChips"
+      :filter-count="panelFilterCount"
+      selectable
+      v-model:selected="selectedClaims"
+      :sort="gridSort"
+      :page="pagination.page"
+      :page-size="pagination.limit"
+      :total="pagination.totalNumberOfRecords"
+      :page-size-options="[15, 25, 50, 100]"
+      empty-title="Talep Bulunamadı"
+      empty-text="Pazaryerlerinden iade talebi geldikçe burada listelenir."
+      empty-icon="mdi-undo-variant"
+      filtered-empty-title="Talep Bulunamadı"
+      filtered-empty-text="Arama kriterlerinize uygun herhangi bir iade talebi bulunamadı."
       @update:search="onSearchInput"
+      @update:sort="onGridSort"
+      @update:page="onPageChange"
+      @update:page-size="onPageSizeChange"
+      @filter-submit="getClaims(true)"
+      @filter-reset="resetFilters"
+      @remove-chip="removeChip"
       @clear-filters="resetFilters"
-      @refresh="() => getClaims(true)"
+      @refresh="getClaims(true)"
     >
-      <template #filters-extra>
-        <v-select v-model="mobileSortValue" :items="mobileSortOptions" item-title="title" item-value="value"
-          label="Sıralama" density="compact" hide-details class="ek-claim-sort-select" @update:model-value="onMobileSortChange" />
-      </template>
-      <template #empty>
-        <EkEmptyState variant="no-results" title="Talep Bulunamadı" message="Arama kriterlerinize uygun herhangi bir iade talebi bulunamadı." />
-      </template>
-      <template #error>
-        <EkErrorState message="İade talepleri yüklenemedi — bağlantınızı kontrol edip tekrar deneyin." @retry="() => getClaims(true)" />
+      <template #filters>
+        <v-select v-model="searchClaimForm.data.integrationCodes" :items="integrationStore.getClientPlatforms()"
+          item-title="title" item-value="code" label="Kanal" multiple chips closable-chips clearable />
+        <v-select v-model="searchClaimForm.data.internalStatuses" :items="statusOptions" item-title="title"
+          item-value="id" label="Talep durumu" multiple chips closable-chips clearable />
       </template>
 
-      <div class="ek-claim-table-wrapper">
-        <EkDataTable v-if="$vuetify.display.mdAndUp" :items="claims" :columns="columns" row-key="_id" aria-label="İade talepleri tablosu">
-          <template #cell-select="{ item }">
-            <v-checkbox-btn :model-value="isClaimSelected(item)" color="primary" density="compact"
-              :aria-label="`Talebi seç: ${item.externalClaimId}`"
-              @update:model-value="val => onClaimSelectionUpdate(item, !!val)" />
-          </template>
-
-          <template #cell-externalClaimId="{ item }">
-            <div class="d-flex align-center">
-              <EkPlatformMark :name="platformName(item.integrationCode)" :code="item.integrationCode" class="mr-3" />
-              <div class="d-flex flex-column">
-                <span class="font-weight-medium text-body-2">{{ item.externalClaimId }}</span>
-                <span class="text-caption ek-muted">Sipariş: {{ item.externalOrderId }}</span>
-              </div>
-            </div>
-          </template>
-
-          <template #cell-items="{ item }">
-            <div class="d-flex flex-column ek-gap-1">
-              <EkStatusChip tone="neutral" :label="`${item.items?.length || 0} kalem ürün`" />
-              <span class="text-caption ek-muted text-truncate ek-claim-item-name">{{ item.items?.[0]?.productName }}</span>
-            </div>
-          </template>
-
-          <template #cell-totalRefundAmount="{ item }">
-            <div class="d-flex flex-column align-end">
-              <span class="font-weight-semibold ek-num">{{ formatMoney(item.totalRefundAmount, item.currencyCode) }}</span>
-              <span class="text-caption ek-muted text-uppercase">{{ item.type }}</span>
-            </div>
-          </template>
-
-          <template #cell-internalStatus="{ item }">
-            <EkStatusChip :tone="statusEntry(item.internalStatus).tone" :label="$t(statusEntry(item.internalStatus).labelKey)" />
-          </template>
-
-          <template #cell-claimedAt="{ item }">
-            <span class="text-caption font-weight-medium ek-num">{{ formatDateTime(item.claimedAt) }}</span>
-          </template>
-
-          <template #cell-actions="{ item }">
-            <div class="d-flex justify-end ek-gap-1">
-              <v-btn icon variant="text" density="comfortable" aria-label="Talep detayını görüntüle" @click="openDetailedReport(item)">
-                <v-icon>mdi-eye</v-icon>
-              </v-btn>
-              <v-btn icon variant="text" density="comfortable" :disabled="!isClaimActionAllowed(item, 'APPROVE')" aria-label="Talebi onayla" @click="triggerSingleApprove(item)">
-                <v-icon>mdi-package-variant-closed-check</v-icon>
-              </v-btn>
-              <v-btn icon variant="text" density="comfortable" :disabled="!isClaimActionAllowed(item, 'REJECT')" aria-label="Talebi reddet" @click="openRejectAction(item)">
-                <v-icon>mdi-package-variant-remove</v-icon>
-              </v-btn>
-            </div>
-          </template>
-        </EkDataTable>
-
-        <div v-else class="mobile-claims-list d-flex flex-column h-100">
-          <div class="pa-2 overflow-y-auto flex-grow-1 d-flex flex-column mobile-claims-scroll">
-            <EkEmptyState v-if="!claims?.length" variant="no-results" title="Talep Bulunamadı" message="Arama kriterlerinize uygun herhangi bir iade talebi bulunamadı." />
-            <v-card v-for="item in claims" :key="item._id" class="mobile-claim-card mb-3" variant="flat" border rounded="lg" @click="openDetailedReport(item)">
-              <div class="d-flex align-center justify-space-between pa-3 border-bottom-dashed">
-                <div class="d-flex align-center">
-                  <v-checkbox-btn :model-value="isClaimSelected(item)" color="primary" density="compact" class="mr-1"
-                    :aria-label="`Talebi seç: ${item.externalClaimId}`" @click.stop
-                    @update:model-value="val => onClaimSelectionUpdate(item, !!val)" />
-                  <EkPlatformMark :name="platformName(item.integrationCode)" :code="item.integrationCode" size="sm" :show-name="false" />
-                </div>
-                <EkStatusChip :tone="statusEntry(item.internalStatus).tone" :label="$t(statusEntry(item.internalStatus).labelKey)" />
-              </div>
-
-              <div class="pa-3">
-                <div class="d-flex justify-space-between mb-3">
-                  <div class="d-flex flex-column">
-                    <span class="text-caption font-weight-medium">{{ item.externalClaimId }}</span>
-                    <span class="text-caption ek-muted">Sipariş: {{ item.externalOrderId }}</span>
-                  </div>
-                  <div class="d-flex flex-column align-end">
-                    <span class="text-body-2 font-weight-semibold ek-num">{{ formatMoney(item.totalRefundAmount, item.currencyCode) }}</span>
-                    <span class="text-caption ek-muted text-uppercase">{{ item.type }}</span>
-                  </div>
-                </div>
-
-                <div class="pa-2 border-subtle rounded mb-3">
-                  <span class="text-caption font-weight-medium d-block text-truncate">{{ item.items?.[0]?.productName || 'Ürün bilgisi yok' }}</span>
-                  <span class="text-caption ek-muted d-block">{{ item.items?.length || 0 }} kalem ürün</span>
-                </div>
-
-                <div class="d-flex align-center justify-space-between mt-2">
-                  <span class="text-caption ek-muted"><v-icon size="12" class="mr-1">mdi-clock-outline</v-icon>{{ formatDateTime(item.claimedAt) }}</span>
-                  <div class="d-flex ek-gap-1">
-                    <v-btn icon variant="text" density="comfortable" aria-label="Talep detayını görüntüle" @click.stop="openDetailedReport(item)"><v-icon>mdi-eye</v-icon></v-btn>
-                    <v-btn icon variant="text" density="comfortable" :disabled="!isClaimActionAllowed(item, 'APPROVE')" aria-label="Talebi onayla" @click.stop="triggerSingleApprove(item)"><v-icon>mdi-check</v-icon></v-btn>
-                    <v-btn icon variant="text" density="comfortable" :disabled="!isClaimActionAllowed(item, 'REJECT')" aria-label="Talebi reddet" @click.stop="openRejectAction(item)"><v-icon>mdi-close</v-icon></v-btn>
-                  </div>
-                </div>
-              </div>
-            </v-card>
-          </div>
-        </div>
-      </div>
-
-      <template #pagination>
-        <EkPagination :page="pagination.page" :page-size="pagination.limit" :total="pagination.totalNumberOfRecords"
-          @update:page="onPageChange" @update:pageSize="onPageSizeChange" />
+      <template #bulk-actions>
+        <EkButton size="sm" icon="mdi-check-all" :disabled="bulkActionCounts.APPROVE === 0" @click="triggerBulkAction('APPROVE')">
+          Toplu onayla ({{ bulkActionCounts.APPROVE }})
+        </EkButton>
       </template>
-    </EkListPage>
 
-    <BatchProcessMenu :model-value="selectedClaims" title="İade Talebi Seçildi" :actions="[
-      { id: 'APPROVE', label: 'Toplu Onayla', icon: 'mdi-check-all', color: 'success', badgeCount: bulkActionCounts.APPROVE, disabled: bulkActionCounts.APPROVE === 0 }
-    ]" @action="id => triggerBulkAction(id)" @clear="selectedClaims = []" />
+      <template #cell-externalOrderId="{ row }"><span class="ek-num">{{ row.externalOrderId || '—' }}</span></template>
+      <template #cell-integrationCode="{ row }"><EkChannelDot :code="row.integrationCode" /></template>
+      <template #cell-items="{ row }">
+        <span class="ek-claim-items">
+          <span class="ek-num">{{ row.items?.length || 0 }} kalem</span>
+          <span v-if="row.items?.length" class="ek-claim-items__name">{{ row.items[0].productName }}</span>
+        </span>
+      </template>
+      <template #cell-totalRefundAmount="{ row }">
+        <span class="ek-num">{{ formatMoney(row.totalRefundAmount, row.currencyCode) }}</span>
+      </template>
+      <template #cell-internalStatus="{ row }">
+        <EkStatusChip :tone="statusEntry(row.internalStatus).tone" :label="$t(statusEntry(row.internalStatus).labelKey)" />
+      </template>
+      <template #cell-claimedAt="{ row }"><span class="ek-num">{{ formatDateTime(row.claimedAt) }}</span></template>
+      <template #cell-actions="{ row }">
+        <span class="ek-row-actions">
+          <EkButton tone="ghost" size="sm" icon="mdi-eye" icon-only aria-label="Talep detayını görüntüle" @click="openDetailedReport(row)" />
+          <EkButton tone="ghost" size="sm" icon="mdi-package-variant-closed-check" icon-only :disabled="!isClaimActionAllowed(row, 'APPROVE')" aria-label="Talebi onayla" @click="triggerSingleApprove(row)" />
+          <EkButton tone="ghost" size="sm" icon="mdi-package-variant-remove" icon-only :disabled="!isClaimActionAllowed(row, 'REJECT')" aria-label="Talebi reddet" @click="openRejectAction(row)" />
+        </span>
+      </template>
+    </EkListScreen>
   </div>
 </template>
 
@@ -181,16 +116,15 @@ import { ClaimInternalStatusEnum } from '@/types/ClaimTypes'
 // Components
 import LoadingComponent from '@/components/LoadingComponent.vue'
 import ClaimDetailComponent from '@/components/claim/ClaimDetailComponent.vue'
-import BatchProcessMenu from '@/components/layout/BatchProcessMenu.vue'
-import EkListPage from '@/components/ds/templates/EkListPage.vue'
-import EkDataTable, { type EkTableColumn } from '@/components/ds/EkDataTable.vue'
-import EkPagination from '@/components/ds/EkPagination.vue'
-import EkEmptyState from '@/components/ds/EkEmptyState.vue'
-import EkErrorState from '@/components/ds/EkErrorState.vue'
+import EkListScreen from '@/components/ds/templates/EkListScreen.vue'
+import type { EkGridColumn, EkGridSort } from '@/components/ds/EkDataGrid.vue'
+import type { EkActiveFilterChip } from '@/components/ds/EkActiveFilters.vue'
+import EkButton from '@/components/ds/EkButton.vue'
+import EkChannelDot from '@/components/ds/EkChannelDot.vue'
+import { isRequestError } from '@/components/ds/listStandard'
 import EkStatusChip from '@/components/ds/EkStatusChip.vue'
 import EkConfirmDialog from '@/components/ds/EkConfirmDialog.vue'
 import EkFormDialog from '@/components/ds/EkFormDialog.vue'
-import EkPlatformMark from '@/components/ds/EkPlatformMark.vue'
 
 const emits = defineEmits(['clear'])
 // --- INITIALIZATION ---
@@ -203,7 +137,7 @@ const dialogAttach = ref(".claimListView")
 const loading = ref(false)
 const loadError = ref(false)
 const claims = ref<any[]>([])
-const selectedClaims = ref<string[]>([])
+const selectedClaims = ref<Array<string | number>>([])
 const isDetailOpen = ref(false)
 const selectedClaimForDetail = ref<any>(null)
 
@@ -213,58 +147,78 @@ const confirmDialog = reactive({
   confirmText: '', onConfirm: () => { }, onCancel: () => { }
 });
 
-const columns: EkTableColumn[] = [
-  { key: 'select', label: '' },
-  { key: 'externalClaimId', label: 'TALEP NO & PAZAR YERİ' },
-  { key: 'items', label: 'TALEP İÇERİĞİ' },
-  { key: 'totalRefundAmount', label: 'İADE TUTARI', align: 'end' },
-  { key: 'internalStatus', label: 'TALEP DURUMU' },
-  { key: 'claimedAt', label: 'TALEP TARİHİ', align: 'end' },
-  { key: 'actions', label: '', type: 'actions', align: 'end' },
+// DS-v2 liste standardı. Sıralanabilir kolonlar ClaimService.getClaims `sort.field`
+// izin listesindeki alanlardır (SUNUCU tarafı sıralama).
+const columns: EkGridColumn[] = [
+  { key: 'externalClaimId', label: 'Talep no', type: 'id', sortable: true },
+  { key: 'externalOrderId', label: 'Sipariş no', sortable: true },
+  { key: 'integrationCode', label: 'Kanal', sortable: true },
+  { key: 'items', label: 'İçerik' },
+  { key: 'type', label: 'Tür', type: 'muted', sortable: true },
+  { key: 'claimedAt', label: 'Tarih', sortable: true },
+  { key: 'totalRefundAmount', label: 'İade tutarı', type: 'num', sortable: true },
+  { key: 'internalStatus', label: 'Durum', sortable: true },
+  { key: 'actions', label: 'İşlemler', align: 'end', hideLabel: true, pin: 'end' },
 ]
 
-// --- MOBİL SIRALAMA LOGIC ---
-const mobileSortValue = ref('claimedAt_desc');
-const mobileSortOptions = [
-  { title: 'Tarih: En Yeni', value: 'claimedAt_desc' },
-  { title: 'Tarih: En Eski', value: 'claimedAt_asc' },
-  { title: 'Tutar: En Yüksek', value: 'totalRefundAmount_desc' },
-  { title: 'Tutar: En Düşük', value: 'totalRefundAmount_asc' }
-];
+const gridSort = computed<EkGridSort>(() => {
+  const current = sortBy.value[0]
+  return current?.key ? { key: current.key, dir: current.order === 'asc' ? 'asc' : 'desc' } : null
+})
 
-const onMobileSortChange = (val: string) => {
-  const [key, order] = val.split('_');
-  sortBy.value = [{ key, order: order as any }];
-  getClaims(true);
-};
+function onGridSort(sort: EkGridSort) {
+  sortBy.value = sort ? [{ key: sort.key, order: sort.dir }] : [{ key: 'claimedAt', order: 'desc' }]
+  getClaims(true)
+}
+
+// Aktif filtre çipleri — SON SORGULANAN değerlerden.
+const applied = ref({ globalSearch: '', integrationCodes: [] as string[], internalStatuses: [] as string[] })
+
+const activeChips = computed<EkActiveFilterChip[]>(() => {
+  const chips: EkActiveFilterChip[] = []
+  if (applied.value.globalSearch) chips.push({ key: 'globalSearch', label: 'Arama', value: applied.value.globalSearch })
+  if (applied.value.integrationCodes.length) chips.push({ key: 'integrationCodes', label: 'Kanal', value: applied.value.integrationCodes.map(platformName).join(', ') })
+  if (applied.value.internalStatuses.length) {
+    const titleOf = (id: string) => statusOptions.value.find((o: any) => o.id === id)?.title ?? id
+    chips.push({ key: 'internalStatuses', label: 'Durum', value: applied.value.internalStatuses.map(titleOf).join(', ') })
+  }
+  return chips
+})
+
+const panelFilterCount = computed(() => (applied.value.integrationCodes.length ? 1 : 0) + (applied.value.internalStatuses.length ? 1 : 0))
+
+function removeChip(key: string) {
+  const data = searchClaimForm.value.data
+  if (key === 'globalSearch') data.globalSearch = ''
+  if (key === 'integrationCodes') data.integrationCodes = []
+  if (key === 'internalStatuses') data.internalStatuses = []
+  getClaims(true)
+}
 
 function statusEntry(status: ClaimInternalStatusEnum) {
   return CLAIM_STATUS_TONE[status] ?? { tone: 'neutral' as const, labelKey: 'status.claim.waiting' }
 }
 
 function platformName(code: string): string {
+  if (code === 'n11') return 'N11'
   return code ? code.charAt(0).toUpperCase() + code.slice(1) : 'Bilinmeyen'
 }
-
-const viewState = computed(() => {
-  if (loading.value) return 'loading'
-  if (loadError.value) return 'error'
-  if (!claims.value.length) return 'empty'
-  return 'ready'
-})
 
 // --- API & FILTERS ---
 const getClaimsInternal = async (resetPage: boolean = false) => {
   if (resetPage) pagination.page = 1;
   loading.value = true;
   loadError.value = false;
-  const guid = loadingComponentRef.value?.info("") || "loading";
+  const d = searchClaimForm.value.data;
+  applied.value = { globalSearch: d.globalSearch || '', integrationCodes: [...(d.integrationCodes || [])], internalStatuses: [...(d.internalStatuses || [])] };
 
   try {
     const res = await restApi.post('ClaimService/getClaims', {
       searchClaimForm: prepareFilterPayload()
     });
-    if (res.claims) {
+    if (isRequestError(res)) {
+      loadError.value = true;
+    } else if (res?.claims) {
       claims.value = res.claims;
       pagination.totalNumberOfRecords = res.totalNumberOfRecords || 0;
       pagination.totalNumberOfPages = Math.ceil(pagination.totalNumberOfRecords / pagination.limit) || 1;
@@ -272,7 +226,6 @@ const getClaimsInternal = async (resetPage: boolean = false) => {
   } catch (e) {
     loadError.value = true;
   } finally {
-    loadingComponentRef.value?.remove(guid);
     loading.value = false;
   }
 };
@@ -312,12 +265,6 @@ function onPageSizeChange(size: number) {
 const openDetailedReport = (item: any) => { selectedClaimForDetail.value = item; isDetailOpen.value = true; };
 const triggerSingleApprove = (item: any) => handleApproveRequest(item, confirmDialog);
 
-const onClaimSelectionUpdate = (item: any, isSelected: boolean) => {
-  if (isSelected) selectedClaims.value.push(item._id);
-  else selectedClaims.value = selectedClaims.value.filter(id => id !== item._id);
-};
-
-const isClaimSelected = (item: any) => selectedClaims.value.includes(item._id);
 
 const bulkActionCounts = computed(() => {
   const selectedObjects = claims.value.filter(c => selectedClaims.value.includes(c._id));
@@ -376,46 +323,35 @@ defineExpose({
 <style scoped>
 .claimListView {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  inset: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: var(--ek-space-6);
-  gap: var(--ek-space-4);
+  padding: var(--ek-space-5) var(--ek-space-6);
 }
 
-.ek-claim-table-wrapper {
-  width: 100%;
+@media (max-width: 767px) {
+  .claimListView {
+    overflow-y: auto;
+    padding: var(--ek-space-4);
+  }
 }
 
-.ek-claim-item-name {
-  max-width: 200px;
+.ek-claim-items {
+  display: inline-flex;
+  flex-direction: column;
+  max-width: 240px;
 }
 
-.ek-claim-sort-select {
-  max-width: 220px;
-}
-
-.ek-muted {
+.ek-claim-items__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
 }
 
-.ek-gap-1 {
+.ek-row-actions {
+  display: inline-flex;
   gap: var(--ek-space-1);
-}
-
-.mobile-claims-scroll {
-  padding-bottom: var(--ek-space-8);
-}
-
-.border-bottom-dashed {
-  border-bottom: 1px dashed var(--ek-color-border-default);
-}
-
-.border-subtle {
-  border: 1px solid var(--ek-color-border-default);
 }
 </style>

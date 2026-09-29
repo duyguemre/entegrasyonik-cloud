@@ -12,6 +12,7 @@
       kapsülü + başlık + açıklama + #empty-action), HATA (`error`; boştan ayrı
       ton + #error-action / `retry` olayı)
     - Kolon `hideLabel`: başlık görsel olarak boş (eylem kolonu), ekran okuyucu adı korunur
+    - Kolon `pin: 'end'`: yatay kaydırmada sağa yapışık (satır eylemleri hep görünür)
     - Hücre slot kapsamı: `{ row, item, value, index }` (`item` = `row`, göç kolaylığı)
   Yükseklik: kapsayıcısını doldurur (`EkListFrame` içinde kullanılır);
   sayfalama bu bileşenin DIŞINDA, çerçevenin altına sabittir.
@@ -36,7 +37,7 @@
             v-for="col in columns"
             :key="col.key"
             class="ek-grid__th"
-            :class="[`ek-grid__th--${col.align ?? alignFor(col)}`, { 'is-sorted': sort?.key === col.key }]"
+            :class="[`ek-grid__th--${col.align ?? alignFor(col)}`, { 'is-sorted': sort?.key === col.key, 'ek-grid__pin-end': col.pin === 'end' }]"
             scope="col"
             :aria-sort="col.sortable ? ariaSort(col.key) : undefined"
             v-bind="col.width ? { width: col.width } : {}"
@@ -90,7 +91,7 @@
             v-for="col in columns"
             :key="col.key"
             class="ek-grid__td"
-            :class="[`ek-grid__td--${col.type ?? 'text'}`, `ek-grid__td--${col.align ?? alignFor(col)}`, { 'ek-grid__td--wrap': col.wrap }]"
+            :class="[`ek-grid__td--${col.type ?? 'text'}`, `ek-grid__td--${col.align ?? alignFor(col)}`, { 'ek-grid__td--wrap': col.wrap, 'ek-grid__pin-end': col.pin === 'end' }]"
           >
             <slot :name="`cell-${col.key}`" :row="row" :item="row" :value="row[col.key]" :index="ri">{{ row[col.key] ?? '—' }}</slot>
           </td>
@@ -127,6 +128,8 @@ export interface EkGridColumn {
   hideLabel?: boolean
   /** Hücre metni satır kırabilir (varsayılan tek satır). */
   wrap?: boolean
+  /** `end`: kolon sağa yapışık kalır (yatay kaydırmada satır eylemleri görünür). */
+  pin?: 'end'
 }
 
 export type EkGridSort = { key: string; dir: 'asc' | 'desc' } | null
@@ -317,6 +320,18 @@ function toggleSort(key: string) {
   border-bottom: 1px solid var(--ek-color-border-subtle);
   white-space: nowrap;
   transition: var(--ek-transition-colors);
+}
+
+.ek-grid__pin-end {
+  position: sticky;
+  right: 0;
+  background: var(--ek-color-surface);
+  box-shadow: inset 1px 0 0 var(--ek-color-border-subtle);
+}
+
+.ek-grid__th.ek-grid__pin-end {
+  z-index: calc(var(--ek-z-sticky) + 1);
+  background: var(--ek-color-surface-muted);
 }
 
 .ek-grid__td--wrap {

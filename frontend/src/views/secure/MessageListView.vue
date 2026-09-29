@@ -1,5 +1,5 @@
 <template>
-  <div class="messageListView d-flex flex-column pt-4">
+  <div class="messageListView">
     <LoadingComponent :attach="dialogAttach" ref="loadingComponentRef" />
 
     <!-- ek-pattern-exception: EkConfirmDialog — R7 (e2e/specs/confirmation-dialog.spec.ts,
@@ -13,137 +13,92 @@
 
     <MessageDetailComponent v-model="detailDialog.show" :message="selectedMessage" @reply="handleReply" />
 
-    <EkFormDialog v-model="filterDialog" title="Mesaj filtreleme" @submit="applyAdvancedFilters">
-      <v-select v-model="searchForm.data.status" :items="statusOptions" label="Mesaj durumu" item-title="label" item-value="value" />
-      <v-select v-model="searchForm.data.type" :items="typeOptions" label="Mesaj tipi" item-title="label" item-value="value" />
-      <v-select v-model="searchForm.data.isRejected"
-        :items="[{ label: 'Tümü', value: null }, { label: 'Sadece reddedilenler', value: true }, { label: 'Reddedilmeyenler', value: false }]"
-        label="Red durumu" item-title="label" item-value="value" />
-      <v-select v-model="searchForm.data.integrationCodes" :items="['trendyol', 'hepsiburada', 'n11']" label="Pazaryeri" multiple chips />
-      <v-text-field :model-value="formattedStartDate" label="Başlangıç tarihi" readonly type="date" @update:model-value="v => searchForm.data.startDate = v || null" />
-      <v-text-field :model-value="formattedEndDate" label="Bitiş tarihi" readonly type="date" @update:model-value="v => searchForm.data.endDate = v || null" />
-    </EkFormDialog>
-
-    <EkListPage
-      section="Siparişler"
+    <EkListScreen
       title="Mesajlar"
       description="Pazaryerlerinden gelen müşteri mesajlarını buradan yönetin."
-      :secondary-actions="[{ label: 'Gelişmiş filtre', icon: 'mdi-filter-variant', onClick: () => (filterDialog = true) }]"
+      label="Mesajlar tablosu"
+      noun="mesaj"
+      row-key="_id"
+      label-key="shortText"
+      :columns="columns"
+      :rows="rows"
+      :row-class="(r) => (r.status === 'UNREAD' ? 'ek-message-unread' : undefined)"
+      :loading="loading"
+      :error="loadError"
+      error-title="Mesajlar yüklenemedi"
       :search="searchForm.data.globalSearch"
       search-placeholder="Mesaj içeriği, Ürün Adı veya Sipariş No"
-      :state="viewState"
+      :chips="activeChips"
+      :filter-count="panelFilterCount"
+      selectable
+      v-model:selected="selectedMessages"
+      :sort="gridSort"
+      :page="pagination.page"
+      :page-size="pagination.limit"
+      :total="pagination.totalNumberOfRecords"
+      :page-size-options="[15, 25, 50, 100]"
+      empty-title="Mesaj Bulunamadı"
+      empty-text="Pazaryerlerinden gelen müşteri soruları burada listelenir."
+      empty-icon="mdi-message-text-outline"
+      filtered-empty-title="Mesaj Bulunamadı"
+      filtered-empty-text="Arama kriterlerinize uygun herhangi bir mesaj bulunamadı."
       @update:search="onSearchInput"
+      @update:sort="onGridSort"
+      @update:page="handlePageChange"
+      @update:page-size="onPageSizeChange"
+      @filter-submit="applyAdvancedFilters"
+      @filter-reset="resetFilters"
+      @remove-chip="removeChip"
       @clear-filters="resetFilters"
-      @refresh="() => getMessages(true)"
+      @refresh="getMessages(true)"
     >
-      <template #empty>
-        <EkEmptyState variant="no-results" title="Mesaj Bulunamadı" message="Arama kriterlerinize uygun herhangi bir mesaj bulunamadı." />
+      <template #filters>
+        <v-select v-model="searchForm.data.status" :items="statusOptions" label="Mesaj durumu" item-title="label" item-value="value" clearable />
+        <v-select v-model="searchForm.data.type" :items="typeOptions" label="Mesaj tipi" item-title="label" item-value="value" clearable />
+        <v-select v-model="searchForm.data.isRejected" :items="REJECT_OPTIONS" label="Red durumu" item-title="label" item-value="value" />
+        <v-select v-model="searchForm.data.integrationCodes" :items="CHANNEL_OPTIONS" item-title="title" item-value="value" label="Kanal" multiple chips closable-chips clearable />
+        <v-text-field v-model="searchForm.data.startDate" label="Başlangıç tarihi" type="date" clearable />
+        <v-text-field v-model="searchForm.data.endDate" label="Bitiş tarihi" type="date" clearable />
       </template>
-      <template #error>
-        <EkErrorState message="Mesajlar yüklenemedi — bağlantınızı kontrol edip tekrar deneyin." @retry="() => getMessages(true)" />
+
+      <template #bulk-actions>
+        <EkButton size="sm" icon="mdi-delete-sweep-outline" class="ek-bulk-danger" @click="triggerBulkDelete">
+          Toplu sil ({{ selectedMessages.length }})
+        </EkButton>
       </template>
 
-      <div class="ek-message-table-wrapper">
-        <EkDataTable v-if="$vuetify.display.mdAndUp" :items="messages" :columns="columns" row-key="_id" aria-label="Mesajlar tablosu">
-          <template #cell-select="{ item }">
-            <v-checkbox-btn :model-value="isMessageSelected(item)" color="primary" density="compact"
-              :aria-label="`Mesajı seç: ${item.text?.slice(0, 30)}`"
-              @update:model-value="val => onMessageSelectionUpdate(item, !!val)" />
-          </template>
-
-          <template #cell-type="{ item }">
-            <div class="d-flex align-center">
-              <v-icon :icon="MESSAGE_TYPE_ICONS[item.type as MessageTypeEnum]" size="20" :color="effectiveTone(item) === 'danger' ? 'error' : 'content-muted'" class="mr-2" />
-              <div class="d-flex flex-column">
-                <span class="font-weight-medium text-body-2">{{ MESSAGE_TYPE_LABELS[item.type as MessageTypeEnum] }}</span>
-                <span class="text-caption ek-muted">{{ item.integrationCode }}</span>
-              </div>
-            </div>
-          </template>
-
-          <template #cell-text="{ item }">
-            <div class="d-flex flex-column ek-message-text-cell">
-              <span class="text-caption" :class="item.status === 'UNREAD' ? 'font-weight-semibold' : 'font-weight-medium'">{{ item.text }}</span>
-              <span v-if="item.context?.productName" class="text-caption ek-muted text-truncate">Ürün: {{ item.context.productName }}</span>
-              <span v-if="item.context?.orderNumber" class="text-caption ek-num ek-link-color">Sipariş: {{ item.context.orderNumber }}</span>
-            </div>
-          </template>
-
-          <template #cell-customer="{ item }">
-            <div v-if="item.customer" class="d-flex align-center">
-              <v-avatar color="surface-muted" size="28" class="mr-2">
-                <span class="text-caption font-weight-bold">{{ item.customer.firstName?.[0] }}{{ item.customer.lastName?.[0] }}</span>
-              </v-avatar>
-              <div class="d-flex flex-column">
-                <span class="text-caption font-weight-medium">{{ item.customer.firstName }} {{ item.customer.lastName }}</span>
-                <span class="text-caption ek-muted">{{ item.customer.phone || 'Telefon yok' }}</span>
-              </div>
-            </div>
-            <span v-else class="text-caption ek-muted">{{ item.externalUserName || 'Anonim müşteri' }}</span>
-          </template>
-
-          <template #cell-status="{ item }">
-            <EkStatusChip :tone="effectiveTone(item)" :label="effectiveLabel(item)" />
-          </template>
-
-          <template #cell-date="{ item }">
-            <div class="d-flex flex-column align-end">
-              <span class="text-caption font-weight-medium ek-num">{{ formatDate(item.date) }}</span>
-              <span class="text-caption ek-muted ek-num">{{ formatTime(item.date) }}</span>
-            </div>
-          </template>
-
-          <template #cell-actions="{ item }">
-            <div class="d-flex justify-end ek-gap-1">
-              <v-btn icon variant="text" density="comfortable" :aria-label="needsReply(item) ? 'Mesajı cevapla' : 'Mesajı görüntüle'" @click="openDetail(item)">
-                <v-icon>{{ needsReply(item) ? 'mdi-message-reply-text' : 'mdi-eye' }}</v-icon>
-                <v-tooltip activator="parent" location="top">{{ needsReply(item) ? 'Cevapla' : 'Görüntüle' }}</v-tooltip>
-              </v-btn>
-              <v-btn icon variant="text" density="comfortable" aria-label="Mesajı sil" @click="triggerDelete(item)">
-                <v-icon>mdi-delete-sweep-outline</v-icon>
-              </v-btn>
-            </div>
-          </template>
-        </EkDataTable>
-
-        <div v-else class="mobile-list d-flex flex-column h-100">
-          <div class="pa-2 overflow-y-auto flex-grow-1 d-flex flex-column mobile-list-scroll">
-            <EkEmptyState v-if="!messages?.length" variant="no-results" title="Mesaj Bulunamadı" message="Arama kriterlerinize uygun herhangi bir mesaj bulunamadı." />
-            <v-card v-for="item in messages" :key="item._id" class="mobile-card mb-3" variant="flat" border rounded="lg" @click="openDetail(item)">
-              <div class="pa-3 border-bottom-dashed d-flex justify-space-between align-center">
-                <div class="d-flex align-center">
-                  <v-checkbox-btn :model-value="isMessageSelected(item)" color="primary" density="compact" class="mr-2"
-                    :aria-label="`Mesajı seç: ${item.text?.slice(0, 30)}`"
-                    @click.stop @update:model-value="val => onMessageSelectionUpdate(item, !!val)" />
-                  <v-icon :icon="MESSAGE_TYPE_ICONS[item.type as MessageTypeEnum]" size="18" class="mr-2" color="content-muted" />
-                  <span class="font-weight-medium text-caption">{{ MESSAGE_TYPE_LABELS[item.type as MessageTypeEnum] }}</span>
-                </div>
-                <EkStatusChip :tone="effectiveTone(item)" :label="effectiveLabel(item)" />
-              </div>
-
-              <div class="pa-3">
-                <div class="text-caption ek-message-clamp mb-2" :class="item.status === 'UNREAD' ? 'font-weight-semibold' : 'font-weight-medium'">
-                  {{ item.text }}
-                </div>
-                <div class="d-flex justify-space-between align-end">
-                  <span v-if="item.customer" class="text-caption font-weight-medium">{{ item.customer.firstName }} {{ item.customer.lastName }}</span>
-                  <span class="text-caption ek-muted ek-num">{{ formatDate(item.date) }}</span>
-                </div>
-              </div>
-            </v-card>
-          </div>
-        </div>
-      </div>
-
-      <template #pagination>
-        <EkPagination :page="pagination.page" :page-size="pagination.limit" :total="pagination.totalNumberOfRecords"
-          @update:page="handlePageChange" @update:pageSize="onPageSizeChange" />
+      <template #cell-type="{ row }">
+        <span class="ek-message-type">
+          <v-icon :icon="MESSAGE_TYPE_ICONS[row.type as MessageTypeEnum]" size="16" aria-hidden="true" :class="{ 'is-danger': effectiveTone(row) === 'danger' }" />
+          {{ MESSAGE_TYPE_LABELS[row.type as MessageTypeEnum] }}
+        </span>
       </template>
-    </EkListPage>
-
-    <BatchProcessMenu :model-value="selectedMessages" title="Mesaj Seçildi" :actions="[
-      { id: 'DELETE', label: 'Toplu Sil', icon: 'mdi-delete-sweep-outline', color: 'error', badgeCount: bulkActionCounts.DELETE }
-    ]" @action="triggerBulkDelete" @clear="selectedMessages = []" />
+      <template #cell-channel="{ row }"><EkChannelDot :code="row.integrationCode" /></template>
+      <template #cell-text="{ row }">
+        <span class="ek-message-text">
+          <span class="ek-message-text__body">{{ row.text }}</span>
+          <span v-if="row.context?.productName || row.context?.orderNumber" class="ek-message-text__ctx">
+            <template v-if="row.context?.productName">Ürün: {{ row.context.productName }}</template>
+            <template v-if="row.context?.productName && row.context?.orderNumber"> · </template>
+            <span v-if="row.context?.orderNumber" class="ek-num">Sipariş: {{ row.context.orderNumber }}</span>
+          </span>
+        </span>
+      </template>
+      <template #cell-customer="{ row }">
+        <template v-if="row.customer">{{ row.customer.firstName }} {{ row.customer.lastName }}</template>
+        <span v-else class="ek-muted">{{ row.externalUserName || 'Anonim müşteri' }}</span>
+      </template>
+      <template #cell-status="{ row }">
+        <EkStatusChip :tone="effectiveTone(row)" :label="effectiveLabel(row)" />
+      </template>
+      <template #cell-date="{ row }"><span class="ek-num">{{ formatDateTime(row.date) }}</span></template>
+      <template #cell-actions="{ row }">
+        <span class="ek-row-actions">
+          <EkButton tone="ghost" size="sm" :icon="needsReply(row) ? 'mdi-message-reply-text' : 'mdi-eye'" icon-only :aria-label="needsReply(row) ? 'Mesajı cevapla' : 'Mesajı görüntüle'" @click="openDetail(row)" />
+          <EkButton tone="ghost" size="sm" icon="mdi-delete-sweep-outline" icon-only aria-label="Mesajı sil" @click="triggerDelete(row)" />
+        </span>
+      </template>
+    </EkListScreen>
   </div>
 </template>
 
@@ -159,20 +114,19 @@ import {
   MESSAGE_TYPE_ICONS
 } from '@/types/MessageTypes';
 import { MESSAGE_STATUS_TONE, type StatusTone } from '@/design/status-map';
-import { formatDate as formatDateShared, formatDateTime } from '@/composables/format';
+import { formatDate, formatDateTime } from '@/composables/format';
 import { text, emphasis } from '@/components/layout/messageParts';
 
 import LoadingComponent from '@/components/LoadingComponent.vue';
 import ConfirmationDialogComponent from '@/components/layout/ConfirmationDialogComponent.vue';
-import BatchProcessMenu from '@/components/layout/BatchProcessMenu.vue';
 import MessageDetailComponent from '@/components/message/MessageDetailComponent.vue';
-import EkListPage from '@/components/ds/templates/EkListPage.vue';
-import EkDataTable, { type EkTableColumn } from '@/components/ds/EkDataTable.vue';
-import EkPagination from '@/components/ds/EkPagination.vue';
-import EkEmptyState from '@/components/ds/EkEmptyState.vue';
-import EkErrorState from '@/components/ds/EkErrorState.vue';
+import EkListScreen from '@/components/ds/templates/EkListScreen.vue';
+import type { EkGridColumn, EkGridSort } from '@/components/ds/EkDataGrid.vue';
+import type { EkActiveFilterChip } from '@/components/ds/EkActiveFilters.vue';
+import EkButton from '@/components/ds/EkButton.vue';
+import EkChannelDot from '@/components/ds/EkChannelDot.vue';
 import EkStatusChip from '@/components/ds/EkStatusChip.vue';
-import EkFormDialog from '@/components/ds/EkFormDialog.vue';
+import { isRequestError } from '@/components/ds/listStandard';
 
 const emits = defineEmits(['clear'])
 
@@ -183,15 +137,12 @@ const loadingComponentRef = ref<any>(null);
 const dialogAttach = ref(".messageListView");
 const loading = ref(false);
 const loadError = ref(false);
-const filterDialog = ref(false);
 const messages = ref<any[]>([]);
-const selectedMessages = ref<string[]>([]);
+const selectedMessages = ref<Array<string | number>>([]);
 const selectedMessage = ref<any>(null);
 const detailDialog = ref({ show: false });
 const actionDialog = ref<any>({ show: false });
 
-const formattedStartDate = computed(() => searchForm.data.startDate ?? '');
-const formattedEndDate = computed(() => searchForm.data.endDate ?? '');
 
 const pagination = reactive({
   page: 1,
@@ -218,22 +169,57 @@ const searchForm = reactive({
 const statusOptions = Object.entries(MESSAGE_STATUS_LABELS).map(([value, label]) => ({ value, label }));
 const typeOptions = Object.entries(MESSAGE_TYPE_LABELS).map(([value, label]) => ({ value, label }));
 
-const columns: EkTableColumn[] = [
-  { key: 'select', label: '' },
-  { key: 'type', label: 'TİP / KAYNAK' },
-  { key: 'text', label: 'MESAJ İÇERİĞİ' },
-  { key: 'customer', label: 'MÜŞTERİ' },
-  { key: 'status', label: 'DURUM' },
-  { key: 'date', label: 'TARİH', align: 'end' },
-  { key: 'actions', label: '', type: 'actions', align: 'end' },
+const REJECT_OPTIONS = [{ label: 'Tümü', value: null }, { label: 'Sadece reddedilenler', value: true }, { label: 'Reddedilmeyenler', value: false }];
+const CHANNEL_OPTIONS = [{ title: 'Trendyol', value: 'trendyol' }, { title: 'Hepsiburada', value: 'hepsiburada' }, { title: 'N11', value: 'n11' }];
+
+// DS-v2 liste standardı. MessageService.getMessages `sortBy.key` ile SUNUCUDA sıralar
+// (saklanan alanlar: tip, durum, tarih).
+const columns: EkGridColumn[] = [
+  { key: 'type', label: 'Tip', sortable: true },
+  { key: 'channel', label: 'Kanal' },
+  { key: 'text', label: 'Mesaj' },
+  { key: 'customer', label: 'Müşteri' },
+  { key: 'date', label: 'Tarih', sortable: true },
+  { key: 'status', label: 'Durum', sortable: true },
+  { key: 'actions', label: 'İşlemler', align: 'end', hideLabel: true, pin: 'end' },
 ];
 
-const viewState = computed(() => {
-  if (loading.value) return 'loading';
-  if (loadError.value) return 'error';
-  if (!messages.value.length) return 'empty';
-  return 'ready';
+const rows = computed(() => messages.value.map((m: any) => ({ ...m, shortText: `Mesaj: ${String(m.text ?? '').slice(0, 30)}` })));
+
+const gridSort = computed<EkGridSort>(() => {
+  const current = sortBy.value[0] ?? { key: 'date', order: 'desc' };
+  return { key: current.key, dir: current.order === 'asc' ? 'asc' : 'desc' };
 });
+
+function onGridSort(sort: EkGridSort) {
+  sortBy.value = sort ? [{ key: sort.key, order: sort.dir }] : [];
+  getMessages(true);
+}
+
+// Aktif filtre çipleri — SON SORGULANAN değerlerden.
+type MessageFilterData = typeof searchForm.data;
+const applied = ref<MessageFilterData>({ ...searchForm.data });
+
+const activeChips = computed<EkActiveFilterChip[]>(() => {
+  const a = applied.value;
+  const chips: EkActiveFilterChip[] = [];
+  if (a.globalSearch) chips.push({ key: 'globalSearch', label: 'Arama', value: a.globalSearch });
+  if (a.status) chips.push({ key: 'status', label: 'Durum', value: MESSAGE_STATUS_LABELS[a.status as MessageStatusEnum] ?? a.status });
+  if (a.type) chips.push({ key: 'type', label: 'Tip', value: MESSAGE_TYPE_LABELS[a.type as MessageTypeEnum] ?? a.type });
+  if (a.isRejected !== null) chips.push({ key: 'isRejected', label: 'Red', value: a.isRejected ? 'Reddedilenler' : 'Reddedilmeyenler' });
+  if (a.integrationCodes.length) chips.push({ key: 'integrationCodes', label: 'Kanal', value: a.integrationCodes.map(c => CHANNEL_OPTIONS.find(o => o.value === c)?.title ?? c).join(', ') });
+  if (a.startDate) chips.push({ key: 'startDate', label: 'Başlangıç', value: formatDate(a.startDate) });
+  if (a.endDate) chips.push({ key: 'endDate', label: 'Bitiş', value: formatDate(a.endDate) });
+  return chips;
+});
+
+const panelFilterCount = computed(() => activeChips.value.filter(c => c.key !== 'globalSearch').length);
+
+function removeChip(key: string) {
+  const d = searchForm.data as Record<string, any>;
+  d[key] = key === 'integrationCodes' ? [] : key === 'globalSearch' ? '' : null;
+  getMessages(true);
+}
 
 function needsReply(item: any): boolean {
   return item.status === MessageStatusEnum.WAITING_SELLER || !!item.isRejected;
@@ -251,13 +237,12 @@ function effectiveLabel(item: any): string {
 
 async function getMessages(resetPage: boolean = false) { await getMessagesInternal(resetPage); }
 
-const bulkActionCounts = computed(() => ({ DELETE: selectedMessages.value.length }));
 
 const getMessagesInternal = async (resetPage: boolean = false) => {
   if (resetPage) pagination.page = 1;
   loading.value = true;
   loadError.value = false;
-  const guid = loadingComponentRef.value?.info("Mesajlar yükleniyor...") || "loading";
+  applied.value = { ...searchForm.data, integrationCodes: [...searchForm.data.integrationCodes] };
 
   try {
     const payload = {
@@ -267,7 +252,9 @@ const getMessagesInternal = async (resetPage: boolean = false) => {
     };
 
     const res = await restApi.post('MessageService/getMessages', payload);
-    if (res.messages) {
+    if (isRequestError(res)) {
+      loadError.value = true;
+    } else if (res?.messages) {
       messages.value = res.messages;
       pagination.totalNumberOfRecords = res.totalNumberOfRecords || 0;
       pagination.totalNumberOfPages = res.totalNumberOfPages || 1;
@@ -276,7 +263,6 @@ const getMessagesInternal = async (resetPage: boolean = false) => {
     loadError.value = true;
     snackbarStore.addSnackbar({ text: "Veri yükleme hatası!", color: "error" });
   } finally {
-    loadingComponentRef.value?.remove(guid);
     loading.value = false;
   }
 };
@@ -287,7 +273,6 @@ function onSearchInput(value: string) {
 }
 
 function applyAdvancedFilters() {
-  filterDialog.value = false;
   getMessages(true);
 }
 
@@ -398,18 +383,6 @@ const triggerBulkDelete = () => {
   };
 };
 
-const onMessageSelectionUpdate = (item: any, isSelected: boolean) => {
-  if (isSelected) selectedMessages.value.push(item._id);
-  else selectedMessages.value = selectedMessages.value.filter(id => id !== item._id);
-};
-
-const isMessageSelected = (item: any) => selectedMessages.value.includes(item._id);
-
-const formatDate = (date: any) => formatDateShared(date);
-const formatTime = (date: any) => {
-  const full = formatDateTime(date);
-  return full === '—' ? '' : full.split(' ')[1] ?? '';
-};
 
 // onMounted YOK (initialize/activate ile çağrılıyor — parent şell tab yaşam döngüsü, davranış korunur).
 
@@ -443,47 +416,66 @@ defineExpose({
 <style scoped>
 .messageListView {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  inset: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: var(--ek-space-6);
-  gap: var(--ek-space-4);
+  padding: var(--ek-space-5) var(--ek-space-6);
 }
 
-.ek-message-table-wrapper {
-  width: 100%;
-}
-
-.ek-message-text-cell {
-  max-width: 320px;
-}
-
-.ek-message-clamp {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
+@media (max-width: 767px) {
+  .messageListView {
+    overflow-y: auto;
+    padding: var(--ek-space-4);
+  }
 }
 
 .ek-muted {
   color: var(--ek-color-content-muted);
 }
 
-.ek-link-color {
-  color: var(--ek-color-primary);
+.ek-message-type {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
 }
 
-.mobile-list-scroll {
-  padding-bottom: var(--ek-space-8);
+.ek-message-type .v-icon {
+  color: var(--ek-color-content-muted);
 }
 
-.border-bottom-dashed {
-  border-bottom: 1px dashed var(--ek-color-border-default);
+.ek-message-type .v-icon.is-danger {
+  color: var(--ek-color-error);
 }
 
-.ek-gap-1 { gap: var(--ek-space-1); }
+.ek-message-text {
+  display: flex;
+  flex-direction: column;
+  max-width: 420px;
+}
+
+.ek-message-text__body,
+.ek-message-text__ctx {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ek-message-text__ctx {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+}
+
+:deep(.ek-message-unread) .ek-message-text__body {
+  color: var(--ek-color-content-strong);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.ek-row-actions {
+  display: inline-flex;
+  gap: var(--ek-space-1);
+}
+
+.ek-bulk-danger {
+  color: var(--ek-color-error);
+}
 </style>

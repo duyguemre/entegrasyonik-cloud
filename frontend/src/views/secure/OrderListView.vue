@@ -221,7 +221,7 @@ const columns: EkGridColumn[] = [
   { key: 'orderDate', label: 'Tarih', sortable: true },
   { key: 'total', label: 'Tutar', type: 'num', sortable: true },
   { key: 'internalStatus', label: 'Durum', sortable: true },
-  { key: 'actions', label: 'İşlemler', align: 'end', hideLabel: true },
+  { key: 'actions', label: 'İşlemler', align: 'end', hideLabel: true, pin: 'end' },
 ]
 
 const SORT_FIELD: Record<string, string> = {
