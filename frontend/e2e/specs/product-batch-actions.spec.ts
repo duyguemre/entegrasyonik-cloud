@@ -21,7 +21,8 @@ async function openBatchMenu(page: Page) {
   await gotoAuthed(page)
   await openScreen(page, 'ProductListView')
   await page.locator('.productListView').getByRole('button', { name: 'Toplu işlemler' }).click()
-  const menu = page.locator('.v-overlay--active .v-list').filter({ hasText: 'Toplu Ürün İşlemleri' })
+  // DS-v2 A2: menü içeriği EkMenuPanel (role=menu) — eski `.v-list` seçicisi bilinçli güncellendi.
+  const menu = page.locator('.v-overlay--active [role="menu"]').filter({ hasText: 'Toplu Ürün İşlemleri' })
   await expect(menu).toBeVisible({ timeout: 15_000 })
   return menu
 }
@@ -33,9 +34,15 @@ test.describe('P3 (B5-2) — Ürün toplu işlemleri (BatchActions)', () => {
       await expect(menu.getByText(label, { exact: true })).toBeVisible()
     }
     await page.waitForTimeout(300)
-    const results = await new AxeBuilder({ page }).include('.v-overlay--active:not(.v-snackbar) .v-list').withTags(AXE_TAGS).analyze()
+    const results = await new AxeBuilder({ page }).include('.v-overlay--active:not(.v-snackbar) [role="menu"]').withTags(AXE_TAGS).analyze()
     await testInfo.attach('axe-BatchActionMenu-sonuclari.json', { body: JSON.stringify(results.violations, null, 2), contentType: 'application/json' })
-    console.log(`[axe] BatchActionMenu: ${results.violations.length} WCAG 2.1 AA ihlali`)
+    expect(results.violations.map((v) => v.id)).toEqual([])
+    // Klavye: menü açılınca odak ilk işlemde; ↓ sonraki işleme gider.
+    await expect(menu.getByRole('menuitem', { name: 'Platformlara Yükle' })).toBeFocused()
+    await page.keyboard.press('ArrowDown')
+    await expect(menu.getByRole('menuitem', { name: 'Platformlarda Güncelle' })).toBeFocused()
+    // Tehlikeli öğe en sonda.
+    await expect(menu.getByRole('menuitem').last()).toHaveText('Toplu Sil')
   })
 
   test('platform işlemi: "Platformlara Yükle" toplu işlem diyaloğunu açar; seçim yoksa uyarı gösterilir', async ({ page }, testInfo) => {
