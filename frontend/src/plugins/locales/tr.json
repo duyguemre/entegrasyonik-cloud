@@ -1204,5 +1204,49 @@
       "rateLimited": "Çok fazla deneme yapıldı — birkaç dakika sonra tekrar deneyin.",
       "generic": "Parolanız şu an değiştirilemedi — bağlantınızı kontrol edip tekrar deneyin."
     }
+  },
+  "privacyData": {
+    "title": "Veri ve gizlilik",
+    "description": "Mağaza verilerinizin bir kopyasını alın ve kişisel verilerin işlenmesine ilişkin belgeleri inceleyin.",
+    "export": {
+      "title": "Verilerinizi dışa aktarın",
+      "description": "KVKK kapsamındaki veri taşınabilirliği için mağazanıza ait verilerin tamamını tek bir arşiv olarak indirin.",
+      "facts": {
+        "scope": "Ürünler, varyantlar, kategoriler, markalar, siparişler, müşteriler, iadeler, faturalar, mesajlar, finans kayıtları, ayarlar ve kullanıcılar ZIP arşivinde NDJSON dosyaları olarak yer alır.",
+        "secrets": "Parolalar ve pazaryeri API anahtarları gibi gizli bilgiler arşive eklenmez.",
+        "validity": "İndirme bağlantısı 24 saat geçerlidir; hazırlık, veri hacmine göre birkaç dakika sürebilir.",
+        "singleUse": "Bağlantı tek kullanımlıktır: indirme tamamlanınca arşiv sunucudan silinir."
+      },
+      "ownerOnlyHint": "Veri dışa aktarma yalnızca mağaza sahibi tarafından yapılabilir. Bir kopyaya ihtiyacınız varsa mağaza sahibinden isteyin.",
+      "action": "Dışa aktarma dosyası hazırla",
+      "preparing": "Arşiv hazırlanıyor — bu sayfadan ayrılmayın.",
+      "readyTitle": "Arşiviniz hazır",
+      "readyText": "İndirme bağlantısı {expiresAt} tarihine kadar geçerlidir ve yalnızca bir kez kullanılabilir.",
+      "again": "Yeni dışa aktarma hazırla",
+      "errors": {
+        "ownerOnly": "Bu işlem yalnızca mağaza sahibi tarafından yapılabilir — mağaza sahibi hesabıyla giriş yapın.",
+        "noTenant": "Aktif bir mağaza seçili değil — önce mağazanızı seçip tekrar deneyin.",
+        "generic": "Dışa aktarma dosyası hazırlanamadı — birkaç dakika sonra tekrar deneyin."
+      }
+    },
+    "download": {
+      "action": "Arşivi indir",
+      "doneTitle": "Arşiv indirildi",
+      "doneText": "{filename} bilgisayarınıza kaydedildi. Güvenliğiniz için arşiv sunucudan silindi; yeniden gerekirse yeni bir dışa aktarma hazırlayın.",
+      "toast": "Veri arşivi indirildi.",
+      "errors": {
+        "invalid": "İndirme bağlantısının süresi dolmuş veya geçersiz — yeni bir dışa aktarma hazırlayın.",
+        "gone": "Bu arşiv daha önce indirildi veya artık mevcut değil — yeni bir dışa aktarma hazırlayın.",
+        "rateLimited": "Çok fazla indirme denemesi yapıldı — birkaç dakika sonra tekrar deneyin.",
+        "generic": "Arşiv indirilemedi — bağlantınızı kontrol edip tekrar deneyin."
+      }
+    },
+    "legal": {
+      "title": "Aydınlatma metni ve yasal belgeler",
+      "description": "Kişisel verilerin hangi amaçlarla işlendiğini ve KVKK kapsamındaki haklarınızı bu belgelerde bulabilirsiniz.",
+      "kvkk": "KVKK Aydınlatma Metni",
+      "terms": "Kullanım Koşulları",
+      "newTab": "(yeni sekmede açılır)"
+    }
   }
 }

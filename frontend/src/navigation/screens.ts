@@ -140,6 +140,7 @@ export const SCREENS: readonly ScreenDefinition[] = [
   // + `minRole` altyapısı henüz uygulanmadığı için KULLANILMADI. Bu ekranlar `urlParams` okumaz (PII/serbest metin yok).
   // `titleKey`/`icon`: menüde henüz karşılığı yokken sunum yüzeylerinin (breadcrumb/palet) yedeği.
   { key: 'AccountSecurityView', slug: 'account/security', icon: 'mdi-shield-account-outline', titleKey: 'menu.accountSecurity' },
+  { key: 'PrivacyDataView', slug: 'account/privacy', icon: 'mdi-shield-lock-outline', titleKey: 'menu.privacyData' },
 ] as const
 
 /** URL'nin ilk segmenti hiçbir zaman bir ekran slug'ı OLAMAZ (ADR-0012 Karar 1 — başka uç noktalar/statikler ile çakışmasın). */

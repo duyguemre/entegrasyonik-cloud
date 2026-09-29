@@ -7,6 +7,7 @@ import { apiCode, apiMessage, apiStatus, isApiError } from '../src/composables/a
 import { countCharacterClasses, passwordHints, passwordHintsMet, utf8ByteLength } from '../src/composables/passwordPolicyHints'
 import { changePasswordError, resendVerificationErrorKey } from '../src/composables/useAccountSecurityApi'
 import { SCREENS } from '../src/navigation/screens'
+import { EXPORT_FALLBACK_FILENAME, downloadErrorKey, exportErrorKey, exportFilenameFromDisposition } from '../src/composables/useTenantDataApi'
 
 const tr = JSON.parse(readFileSync(fileURLToPath(new URL('../src/plugins/locales/tr.json', import.meta.url)), 'utf8'))
 function trHas(key: string): boolean {
@@ -93,10 +94,26 @@ describe('changePasswordError / resendVerificationErrorKey (N1)', () => {
   })
 })
 
+describe('useTenantDataApi saf yardımcıları (N4 — API_TENANT_SURFACE §5)', () => {
+  it('Content-Disposition\'dan yalnızca güvenli .zip adını alır; aksi yedek ad', () => {
+    expect(exportFilenameFromDisposition('attachment; filename="entegrasyonik-veri-disa-aktarma-7-20260929.zip"')).toBe('entegrasyonik-veri-disa-aktarma-7-20260929.zip')
+    expect(exportFilenameFromDisposition(undefined)).toBe(EXPORT_FALLBACK_FILENAME)
+    expect(exportFilenameFromDisposition('attachment; filename="../../etc/passwd"')).toBe(EXPORT_FALLBACK_FILENAME)
+    expect(exportFilenameFromDisposition('attachment; filename="rapor.exe"')).toBe(EXPORT_FALLBACK_FILENAME)
+  })
+
+  it('indirme hata tablosunu (400/403/410/429/5xx) ayrı mesajlara eşler; anahtarlar tr.json\'da', () => {
+    const keys = [400, 403, 410, 429, 500, undefined].map((s) => downloadErrorKey(s))
+    expect(new Set(keys).size).toBe(5)
+    expect(downloadErrorKey(410)).toBe('privacyData.download.errors.gone')
+    for (const k of [...keys, exportErrorKey(403), exportErrorKey(400), exportErrorKey(500)]) expect(trHas(k), k).toBe(true)
+  })
+})
+
 describe('B4-P0 ekran kayıtları (screens.ts — yalnızca ekleme)', () => {
   it('yeni ekranların menü başlık anahtarları tr.json\'da vardır ve urlParams taşımaz', () => {
-    const b4 = SCREENS.filter((s) => ['AccountSecurityView'].includes(s.key))
-    expect(b4.length).toBe(1)
+    const b4 = SCREENS.filter((s) => ['AccountSecurityView', 'PrivacyDataView'].includes(s.key))
+    expect(b4.length).toBe(2)
     for (const s of b4) {
       expect(trHas(s.titleKey!), s.titleKey).toBe(true)
       expect(s.urlParams).toBeUndefined()
