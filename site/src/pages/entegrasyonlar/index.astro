@@ -2,14 +2,15 @@
 /**
  * /entegrasyonlar — mevcut entegrasyonların vitrini (ADR-0014 Karar 2, S2b).
  * Yalnızca `getPublicIntegrations()` seçicisi: `available` entegrasyonlar; yol haritası öğeleri hiçbir koşulda yok
- * (`ROADMAP_VISIBLE=false`). Kapsam ve sınırlar dürüstçe (Destekleniyor / Sınırlı / Sunulmuyor) gösterilir.
+ * (`ROADMAP_VISIBLE=false`). Kapsam ve farklar sakin bir dille "Kanal bazında kapsam" bölümünde (S12: ana sayfadaki
+ * kapsam matrisi buraya taşındı; `CoverageMatrix`) ve kartlarda eksiksiz gösterilir.
  */
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import Section from '../../components/Section.astro'
 import PageHero from '../../components/pages/PageHero.astro'
 import PageMeta from '../../components/pages/PageMeta.astro'
 import IntegrationCard from '../../components/pages/IntegrationCard.astro'
-import ComparisonTable from '../../components/pages/ComparisonTable.astro'
+import CoverageMatrix from '../../components/pages/CoverageMatrix.astro'
 import CtaBand from '../../components/pages/CtaBand.astro'
 import { getPublicIntegrations, COVERAGE_LABELS, type CoverageLevel, type IntegrationKind } from '../../data/integrations'
 import { breadcrumbJsonLd } from '../../lib/seo'
@@ -17,7 +18,7 @@ import { appUrls } from '../../lib/site-config'
 
 const title = 'Entegrasyonlar'
 const description =
-  'Entegrasyonik ile bağlanabilen pazaryeri, e-ticaret ve ERP entegrasyonları; her birinin kapsamı ve sınırları açıkça yazılıdır.'
+  'Entegrasyonik pazaryerlerini, e-ticaret altyapınızı ve ERP sisteminizi tek panelde buluşturur; her entegrasyonun kapsamı kanal bazında açıkça yazılıdır.'
 const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Entegrasyonlar' }]
 
 const all = getPublicIntegrations()
@@ -59,12 +60,12 @@ const coverageLevels = Object.keys(COVERAGE_LABELS) as CoverageLevel[]
 
   <PageHero
     title="Entegrasyonlar"
-    lead="Pazaryeri, e-ticaret altyapısı ve ERP bağlantılarınızı tek panelden yönetin. Her entegrasyonun neyi desteklediği ve neyi desteklemediği açıkça yazılıdır."
+    lead="Pazaryerlerinizi, e-ticaret altyapınızı ve ERP sisteminizi tek panelde buluşturun. Her kanalın hangi işlemleri desteklediğini kanal bazında şeffafça gösteriyoruz."
     crumbs={crumbs}
   >
     <nav class="kind-nav" aria-label="Entegrasyon türleri">
       {visibleGroups.map((g) => <a href={`#${g.id}`}>{g.heading}</a>)}
-      <a href="#karsilastirma">Kapsam karşılaştırması</a>
+      <a href="#kapsam">Kanal bazında kapsam</a>
     </nav>
     <Fragment slot="visual">
       <p class="stat-panel__tag">Kapsam nasıl okunur</p>
@@ -109,15 +110,16 @@ const coverageLevels = Object.keys(COVERAGE_LABELS) as CoverageLevel[]
     }
   </Section>
 
-  <Section id="karsilastirma" labelledby="karsilastirma-title" tone="muted" class="tight-section">
+  <Section id="kapsam" labelledby="kapsam-title" tone="muted" class="tight-section">
     <div class="group__head">
-      <h2 id="karsilastirma-title">Kapsam karşılaştırması</h2>
+      <h2 id="kapsam-title">Kanal bazında kapsam</h2>
       <p>
-        Kapsam entegrasyona göre değişir. “Sunulmuyor”, ilgili işlemin bu sürümde o entegrasyonda bulunmadığı anlamına gelir.
+        Her kanalın desteklediği işlemler bir bakışta. Kapsam, kanalın sunduğu olanaklara göre farklılaşır; ayrıntılar
+        her entegrasyonun kendi sayfasındadır.
       </p>
     </div>
-    <ComparisonTable integrations={all} labelledby="karsilastirma-title" />
-    <p class="fineprint">Listede yer almayan bir entegrasyon şu an mevcut değildir.</p>
+    <CoverageMatrix integrations={all} labelledby="kapsam-title" />
+    <p class="fineprint">Bu sayfada yer alan entegrasyonları hesabınıza bugün bağlayabilirsiniz.</p>
   </Section>
 
   <CtaBand
