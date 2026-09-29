@@ -64,6 +64,13 @@ export const MENU_SCREENS: Record<string, MenuScreenDef> = {
   AdminClientListView: { code: 'AdminClientListView', icon: 'mdi-store-outline', groupIcon: 'mdi-shield-account-outline', subIndex: 0 },
   AdminTicketListView: { code: 'AdminTicketListView', icon: 'mdi-face-agent', groupIcon: 'mdi-shield-account-outline', subIndex: 1 },
   AdminSystemManagementView: { code: 'AdminSystemManagementView', icon: 'mdi-server-network-outline', groupIcon: 'mdi-shield-account-outline', subIndex: 2 },
+  // ADR-0020 Aşama C (entegrasyon/motor ayar yönetimi) — gerçek menü ağacı kaydı (ApplicationDB
+  // `menus`) bu görevin kapsamı DIŞI (bkz. `screens.ts`/`menu.ts` aynı satırdaki not); yalnız bu
+  // sentetik grup (`menuFixtureWithIntegrationConfig`, aşağıda) `openScreen()`in İLK giriş noktasını
+  // açması için var — Ayarlar/Motor/Etkin-yapılandırma ekranlarına geçiş `useOpenIntegrationConfigTab`
+  // (derin bağlantı/klonlama, menüden BAĞIMSIZ) ile yapıldığı için yalnız liste ekranının burada
+  // bir girişi var.
+  IntegrationConfigListView: { code: 'IntegrationConfigListView', icon: 'mdi-cog-sync-outline', groupIcon: 'mdi-shield-account-outline', subIndex: 3 },
 }
 
 // e2e/fixtures/menuData.ts ile aynı sırayı/ikonları kullanır (bkz. dosyanın altı).
@@ -182,6 +189,45 @@ export const menuFixtureWithAdmin = [
     ],
   },
 ]
+
+/**
+ * ADR-0020 Aşama C — `menuFixtureWithAdmin` + Entegrasyonlar (liste) girişi. `admin-clients.spec.ts`
+ * ile AYNI gerekçeyle (satır ~159 notu) paylaşılan `menuFixture`'a EKLENMEDİ, yalnızca
+ * `admin-integration-config-*.spec.ts` bu genişletilmiş menüyü kullanır. Ayarlar/Motor/Etkin-
+ * yapılandırma ekranları menüde YOK (kasıtlı — `useOpenIntegrationConfigTab` ile açılırlar).
+ */
+export const menuFixtureWithIntegrationConfig = menuFixtureWithAdmin.map((group) =>
+  group.group === 'applicationAdministration'
+    ? {
+        ...group,
+        links: group.links.map((link: any) =>
+          link.code === 'adminPanel'
+            ? {
+                ...link,
+                children: [
+                  ...link.children,
+                  { code: 'IntegrationConfigListView', parent: 'adminPanel', title: 'adminIntegrationConfigList', icon: MENU_SCREENS.IntegrationConfigListView.icon, singleton: true },
+                  // ARAŞTIRMA BULGUSU (bu görevde bulundu, rapora yazıldı): `workspace.ts` her
+                  // `mySelectedTab` değişiminde URL'i senkronlar (`watch(mySelectedTab, ...)`) VE
+                  // route değişimini AYRICA izler (`resolveActiveFromRoute`) — o da
+                  // `findLinkByScreenKey` ile hedefi MENÜ AĞACINDA arar; menüde YOKSA "erişiminiz
+                  // yok" uyarısıyla `/dashboard`'a GERİ ATIYOR. Yani `useOpenIntegrationConfigTab`
+                  // (derin bağlantı/klonlama) ile açılan bir sekme bile, ayakta KALABİLMESİ için
+                  // hedefinin menü ağacında (`code`+`parent` eşleşmesi yeter, görünürlük ayrı)
+                  // BULUNMASINI gerektiriyor — yalnızca liste ekranini menüye eklemek YETMİYORDU
+                  // (ilk denemede tüm alt ekranlar sessizce panoya düşüyordu). Bu, GERÇEK ortamda da
+                  // 4 ekranın TAMAMININ ApplicationDB `menus`'a kaydedilmesi gerektiği anlamına gelir
+                  // (yalnızca liste değil) — BACKLOG'a yazıldı.
+                  { code: 'IntegrationSettingsView', parent: 'adminPanel', title: 'adminIntegrationSettings', icon: 'mdi-tune', singleton: false },
+                  { code: 'EngineSettingsView', parent: 'adminPanel', title: 'adminEngineSettings', icon: 'mdi-engine-outline', singleton: false },
+                  { code: 'EffectiveConfigView', parent: 'adminPanel', title: 'adminEffectiveConfig', icon: 'mdi-table-eye', singleton: false },
+                ],
+              }
+            : link,
+        ),
+      }
+    : group,
+)
 
 /**
  * Tam kenar menünün (`NavigationMenu.vue`, `.soft-nav`) GERÇEKTEN ekranda olup olmadığını

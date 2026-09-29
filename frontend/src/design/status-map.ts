@@ -120,3 +120,34 @@ export const INTEGRATION_CONNECTION_TONE: Record<IntegrationConnectionStatus, St
   disconnected: { tone: 'neutral', labelKey: 'status.integration.disconnected' },
   error: { tone: 'danger', labelKey: 'status.integration.error' },
 }
+
+// ---- ADR-0020 Karar 4.2 — ayar tehlike rozeti (`SettingDef.danger`). `safe` rozet GÖSTERMEZ
+// (Karar 4.2 "`safe` rozet göstermez") — bu yüzden harita `null` döner, çağıran rozeti hiç render etmez. ----
+export type SettingDanger = 'safe' | 'caution' | 'dangerous'
+
+export const SETTING_DANGER_TONE: Record<SettingDanger, StatusMapEntry | null> = {
+  safe: null,
+  caution: { tone: 'warning', labelKey: 'status.setting.caution' },
+  dangerous: { tone: 'danger', labelKey: 'status.setting.dangerous' },
+}
+
+// ---- ADR-0020 Karar 3.8/3.1 — entegrasyon kabul durumu (`IntegrationConfigHeads.intake`).
+// Aşama D (`setIntake` yazma ucu + bakım modu) henüz BAĞLANMADI; bu harita yalnızca `list()`'in
+// bugün döndürdüğü salt-okunur `intake` alanını (varsayılan `'on'`) göstermek içindir. ----
+export type ConfigIntakeStatus = 'on' | 'drain' | 'off'
+
+export const CONFIG_INTAKE_TONE: Record<ConfigIntakeStatus, StatusMapEntry> = {
+  on: { tone: 'success', labelKey: 'status.configIntake.on' },
+  drain: { tone: 'warning', labelKey: 'status.configIntake.drain' },
+  off: { tone: 'danger', labelKey: 'status.configIntake.off' },
+}
+
+// ---- ADR-0020 Karar 3.1 — revizyon durumu (`IntegrationConfigRevisions.status`, sürüm geçmişi tablosu). ----
+export type ConfigRevisionStatus = 'draft' | 'published' | 'superseded' | 'discarded'
+
+export const CONFIG_REVISION_STATUS_TONE: Record<ConfigRevisionStatus, StatusMapEntry> = {
+  draft: { tone: 'info', labelKey: 'status.configRevision.draft' },
+  published: { tone: 'success', labelKey: 'status.configRevision.published' },
+  superseded: { tone: 'neutral', labelKey: 'status.configRevision.superseded' },
+  discarded: { tone: 'neutral', labelKey: 'status.configRevision.discarded' },
+}

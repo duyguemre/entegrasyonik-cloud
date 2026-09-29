@@ -1075,6 +1075,21 @@
       "connected": "Bağlı",
       "disconnected": "Bağlı Değil",
       "error": "Hata"
+    },
+    "setting": {
+      "caution": "Dikkat",
+      "dangerous": "Tehlikeli"
+    },
+    "configIntake": {
+      "on": "Açık",
+      "drain": "Boşaltılıyor",
+      "off": "Kapalı"
+    },
+    "configRevision": {
+      "draft": "Taslak",
+      "published": "Yayında",
+      "superseded": "Yerini Aldı",
+      "discarded": "Atıldı"
     }
   },
   "shell": {

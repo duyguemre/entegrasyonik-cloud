@@ -10,6 +10,9 @@ import {
   JOB_STATUS_TONE,
   SUBSCRIPTION_STATUS_TONE,
   INTEGRATION_CONNECTION_TONE,
+  SETTING_DANGER_TONE,
+  CONFIG_INTAKE_TONE,
+  CONFIG_REVISION_STATUS_TONE,
   storeStatusTone,
   type StatusMapEntry,
   type StatusTone,
@@ -58,4 +61,41 @@ describe('status-map.ts — ADR-0015 Karar 3.3 (tek anlamsal palet, 5 ton)', () 
     expect(readTrJsonKey(storeStatusTone(true).labelKey)).toBe('Aktif')
     expect(readTrJsonKey(storeStatusTone(false).labelKey)).toBe('Pasif')
   })
+
+  // ADR-0020 Karar 4.2 — `SETTING_DANGER_TONE.safe` bilerek `null`dur (rozet gösterilmez);
+  // ALL_MAPS genel döngüsüne (StatusMapEntry-only) SOKULMAZ, ayrı doğrulanır.
+  describe('ADR-0020 — SETTING_DANGER_TONE (safe rozet göstermez)', () => {
+    it('safe → null (rozet YOK)', () => {
+      expect(SETTING_DANGER_TONE.safe).toBeNull()
+    })
+
+    for (const danger of ['caution', 'dangerous'] as const) {
+      it(`"${danger}" → geçerli ton + tr.json'da MEVCUT labelKey`, () => {
+        const entry = SETTING_DANGER_TONE[danger]
+        expect(entry).not.toBeNull()
+        expect(VALID_TONES).toContain(entry!.tone)
+        const value = readTrJsonKey(entry!.labelKey)
+        expect(typeof value).toBe('string')
+        expect(value).not.toHaveLength(0)
+      })
+    }
+  })
+
+  const EXTRA_MAPS: Record<string, Record<string, StatusMapEntry>> = {
+    configIntake: CONFIG_INTAKE_TONE,
+    configRevision: CONFIG_REVISION_STATUS_TONE,
+  }
+
+  for (const [domain, map] of Object.entries(EXTRA_MAPS)) {
+    describe(`domain: ${domain} (ADR-0020)`, () => {
+      for (const [code, entry] of Object.entries(map)) {
+        it(`"${code}" → geçerli ton + tr.json'da MEVCUT labelKey`, () => {
+          expect(VALID_TONES).toContain(entry.tone)
+          const value = readTrJsonKey(entry.labelKey)
+          expect(typeof value).toBe('string')
+          expect(value).not.toHaveLength(0)
+        })
+      }
+    })
+  }
 })

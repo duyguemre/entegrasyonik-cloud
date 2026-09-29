@@ -263,6 +263,14 @@ export default function useUser() {
     return userContext.value.owner
   }
 
+  // ADR-0020 Aşama C — admin panel (Entegrasyon Ayarları) ekranları, `platformAdmin`
+  // dikeyinin İSTEMCİ tarafı görünürlük ipucudur (savunma derinliği; ASIL yetki sınırı
+  // backend'de `principal.ga === true`, bkz. `operationPolicy.ts` `resolveTier`).
+  // `profileDto.ts` beyaz listesi `isGlobalAdmin` alanını döner (`toProfileDto`, PROFILE_FIELDS).
+  const isPlatformAdmin = () => {
+    return userContext.value?.isGlobalAdmin === true
+  }
+
   return {
     getRoles,
     selectStore,
@@ -270,6 +278,7 @@ export default function useUser() {
     activeClientId,
     getCaptcha,
     isOwner,
+    isPlatformAdmin,
     getStoreName,
     getStoreLogo,
     getResources,

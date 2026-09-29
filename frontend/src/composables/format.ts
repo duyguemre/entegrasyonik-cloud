@@ -73,6 +73,48 @@ export function formatDateTime(value: Date | string | number | null | undefined)
 }
 
 /**
+ * ADR-0020 Karar 4.2 — "Süreler insan biçiminde girilir ve gösterilir (‘30 sn’, ‘15 dk’)".
+ * `unit` katalog `SettingDef.unit`'idir (`ms|s|min|h|day|count|perMin|percent`). `ms` değerleri en
+ * uygun büyük birime (gün→saat→dakika→saniye) YALNIZCA tam bölünüyorsa otomatik ölçeklenir (ör.
+ * `300000` → `"5 dk"`); tam bölünmüyorsa ham `ms` gösterilir (veri kaybı/yanıltıcı yuvarlama YOK).
+ * Diğer birimler zaten kataloğun kendi insan-ölçekli biriminde saklanır (ör. `unit:'day'` → değer
+ * zaten gün sayısıdır), yalnızca uygun son ek eklenir. Geçersiz/null → `formatNumber` ile AYNI "—".
+ */
+const MS_SCALE: ReadonlyArray<{ ms: number; suffix: string }> = [
+  { ms: 86400000, suffix: 'gün' },
+  { ms: 3600000, suffix: 'sa' },
+  { ms: 60000, suffix: 'dk' },
+  { ms: 1000, suffix: 'sn' },
+]
+
+export function formatDuration(value: number | string | null | undefined, unit?: string): string {
+  const num = toFiniteNumber(value)
+  if (num === null) return EMPTY
+  if (unit === 'ms') {
+    for (const scale of MS_SCALE) {
+      if (Math.abs(num) >= scale.ms && num % scale.ms === 0) return `${formatNumber(num / scale.ms)} ${scale.suffix}`
+    }
+    return `${formatNumber(num)} ms`
+  }
+  switch (unit) {
+    case 's':
+      return `${formatNumber(num)} sn`
+    case 'min':
+      return `${formatNumber(num)} dk`
+    case 'h':
+      return `${formatNumber(num)} sa`
+    case 'day':
+      return `${formatNumber(num)} gün`
+    case 'perMin':
+      return `${formatNumber(num)}/dk`
+    case 'percent':
+      return `%${formatNumber(num)}`
+    default:
+      return formatNumber(num)
+  }
+}
+
+/**
  * `formatRelative(...)` → `"3 dk önce"`. Yalnızca "son senkron" gibi kısa
  * bağlamlarda kullanılır (Karar 6.3); gelecek zaman `"az önce"`'ye yuvarlanır.
  */

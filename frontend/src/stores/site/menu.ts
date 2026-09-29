@@ -18,6 +18,14 @@ export const useMenuStore = defineStore('menu', () => {
     ['adminPanel/AdminClientListView', shallowRef(defineAsyncComponent(() => import('@/views/secure/adminPanel/AdminClientListView.vue')))],
     ['adminPanel/AdminTicketListView', shallowRef(defineAsyncComponent(() => import('@/views/secure/adminPanel/AdminTicketListView.vue')))],
     ['adminPanel/AdminSystemManagementView', shallowRef(defineAsyncComponent(() => import('@/views/secure/adminPanel/AdminSystemManagementView.vue')))],
+    // ADR-0020 Aşama C — entegrasyon/motor ayar yönetimi (`platformAdmin`). Gerçek menü ağacı kaydı
+    // (ApplicationDB `menus`) bu görevin kapsamı dışı (bkz. `screens.ts` aynı satırdaki not); bileşen
+    // eşlemesi burada olduğu için ekranlar `useOpenIntegrationConfigTab` ile (derin bağlantı/klonlama
+    // deseni, `ProductListView.vue` `openEditProduct` ile AYNI) birbirine açılabilir.
+    ['adminPanel/IntegrationConfigListView', shallowRef(defineAsyncComponent(() => import('@/views/secure/adminPanel/integrations/IntegrationConfigListView.vue')))],
+    ['adminPanel/IntegrationSettingsView', shallowRef(defineAsyncComponent(() => import('@/views/secure/adminPanel/integrations/IntegrationSettingsView.vue')))],
+    ['adminPanel/EngineSettingsView', shallowRef(defineAsyncComponent(() => import('@/views/secure/adminPanel/integrations/EngineSettingsView.vue')))],
+    ['adminPanel/EffectiveConfigView', shallowRef(defineAsyncComponent(() => import('@/views/secure/adminPanel/integrations/EffectiveConfigView.vue')))],
 
     ['productDefinitions/TEST', shallowRef(defineAsyncComponent(() => import('@/views/secure/productDefinitions/TEST.vue')))],
 

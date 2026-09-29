@@ -111,6 +111,22 @@ export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'adminPanel/AdminClientListView', slug: 'admin/clients', section: 'admin', order: 0 },
   { key: 'adminPanel/AdminTicketListView', slug: 'admin/tickets', section: 'admin', order: 1 },
   { key: 'adminPanel/AdminSystemManagementView', slug: 'admin/system', section: 'admin', order: 2 },
+  // ADR-0020 Aşama C (entegrasyon/motor ayar yönetimi, `platformAdmin`) — gerçek menü kaydı
+  // (ApplicationDB `menus`, "admin.integrations" grubu) diğer admin ekranlarıyla AYNI gerekçeyle
+  // (satır 109 notu) bu görevin kapsamı DIŞI; BACKLOG'a yazıldı. `code`/`target` teknik entegrasyon
+  // kodudur (kapalı küme — `enum`), PII/serbest metin DEĞİL.
+  {
+    key: 'adminPanel/IntegrationConfigListView', slug: 'admin/integrations', section: 'admin', order: 3,
+  },
+  {
+    key: 'adminPanel/IntegrationSettingsView', slug: 'admin/integrations/settings', section: 'admin', order: 4,
+    urlParams: [{ name: 'code', kind: 'enum', allowed: ['trendyol', 'hepsiburada', 'n11', 'pazarama', 'ideasoft', 'bizimhesap'] }],
+  },
+  { key: 'adminPanel/EngineSettingsView', slug: 'admin/engine-settings', section: 'admin', order: 5 },
+  {
+    key: 'adminPanel/EffectiveConfigView', slug: 'admin/effective-config', section: 'admin', order: 6,
+    urlParams: [{ name: 'code', kind: 'enum', allowed: ['trendyol', 'hepsiburada', 'n11', 'pazarama', 'ideasoft', 'bizimhesap', '_engine'] }],
+  },
   // ADR-0014 S4b: kayıt sonrası abonelik ekranı derin bağlantısı (`/subscription?plan=<kod>`). `plan` YALNIZCA
   // kapalı, izinli plan kodu kümesidir (registerIntent.ts; seed ile testle eşit) — PII/serbest metin YOK.
   { key: 'user/SubscriptionView', slug: 'subscription', urlParams: [{ name: 'plan', kind: 'enum', allowed: REGISTER_PLAN_CODES }], section: 'finance', order: 1 },

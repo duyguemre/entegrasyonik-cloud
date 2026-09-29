@@ -6,6 +6,7 @@ import {
   formatDate,
   formatDateTime,
   formatRelative,
+  formatDuration,
 } from '../src/composables/format'
 
 /** ADR-0015 Karar 6.3 — tek biçimlendirici birim testleri (tr-TR sabit, PLATFORM_BASELINE.md C5). */
@@ -98,5 +99,42 @@ describe('formatRelative', () => {
 
   it('geçersiz değer için "—" döner', () => {
     expect(formatRelative(null, now)).toBe('—')
+  })
+})
+
+/** ADR-0020 Karar 4.2 — "Süreler insan biçiminde girilir ve gösterilir (‘30 sn’, ‘15 dk’)". */
+describe('formatDuration', () => {
+  it('unit="ms": tam bölünen büyük birime otomatik ölçeklenir', () => {
+    expect(formatDuration(300000, 'ms')).toBe('5 dk')
+    expect(formatDuration(900000, 'ms')).toBe('15 dk')
+    expect(formatDuration(1000, 'ms')).toBe('1 sn')
+    expect(formatDuration(3600000, 'ms')).toBe('1 sa')
+    expect(formatDuration(86400000, 'ms')).toBe('1 gün')
+  })
+
+  it('unit="ms": tam bölünmeyen değer ham ms olarak kalır (yanıltıcı yuvarlama YOK)', () => {
+    expect(formatDuration(1500, 'ms')).toBe('1.500 ms')
+  })
+
+  it('unit="s"/"min"/"h"/"day": kataloğun kendi biriminde, yalnızca son ek eklenir', () => {
+    expect(formatDuration(15, 's')).toBe('15 sn')
+    expect(formatDuration(1, 'min')).toBe('1 dk')
+    expect(formatDuration(24, 'h')).toBe('24 sa')
+    expect(formatDuration(14, 'day')).toBe('14 gün')
+  })
+
+  it('unit="perMin": "/dk" son eki', () => {
+    expect(formatDuration(1800, 'perMin')).toBe('1.800/dk')
+  })
+
+  it('unit tanımsız/count: yalnızca formatNumber', () => {
+    expect(formatDuration(30)).toBe('30')
+    expect(formatDuration(30, 'count')).toBe('30')
+  })
+
+  it('geçersiz/null/boş değer için "—" döner', () => {
+    expect(formatDuration(null, 'ms')).toBe('—')
+    expect(formatDuration(undefined, 'min')).toBe('—')
+    expect(formatDuration('abc', 's')).toBe('—')
   })
 })
