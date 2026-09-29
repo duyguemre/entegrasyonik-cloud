@@ -2024,7 +2024,6 @@ const setEditingField = (header: any, variantId: any) => {
 .pv-field-caption {
   font-size: var(--ek-font-size-xs) !important;
   line-height: .7;
-  color: var(--ek-color-content-muted);
 }
 
 .pv-btn-group {
