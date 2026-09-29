@@ -9,6 +9,10 @@
   ARIA combobox deseni: input `role=combobox` + `aria-activedescendant`,
   sonuç listesi `role=listbox`, satır `role=option`. Veri çağırandan gelir
   (sunum bileşeni); `select` yayılır. `forceOpen` yalnızca vitrin içindir.
+  Ek (geri uyumlu): `openOnFocus` — sorgu boşken de odakta açılır (ör. "Son
+  açılanlar" grubu); `emptyText` — sonuç yok metni; öğede `platform` →
+  başlık yanında kanal marka renkli nokta (EkPlatformMark `dot`); Esc →
+  `dismiss` (çağıran odağı önceki yere döndürebilir).
 -->
 <template>
   <div ref="rootRef" class="ek-search" :class="{ 'is-open': isOpen, 'is-focused': focused }">
@@ -72,6 +76,7 @@
             <span class="ek-search__option-main">
               <span class="ek-search__option-title">
                 <span class="ek-search__option-text"><template v-for="(part, pi) in highlight(item.title)" :key="pi"><mark v-if="part.match" class="ek-search__mark">{{ part.text }}</mark><template v-else>{{ part.text }}</template></template></span>
+                <EkPlatformMark v-if="item.platform" class="ek-search__platform" variant="dot" :name="item.platform.name" :code="item.platform.code" />
                 <EkBadge v-if="item.typeLabel" :tone="item.tone ?? 'action'" :text="item.typeLabel" />
               </span>
               <span v-if="item.meta?.length" class="ek-search__meta">
@@ -88,7 +93,7 @@
       <div v-else class="ek-search__results">
         <p class="ek-search__empty" role="status">
           <v-icon icon="mdi-text-search" aria-hidden="true" />
-          <span>"{{ modelValue }}" için sonuç yok — sipariş no, ürün adı, barkod veya SKU deneyin.</span>
+          <span>{{ emptyText ?? `"${modelValue}" için sonuç yok — sipariş no, ürün adı, barkod veya SKU deneyin.` }}</span>
         </p>
       </div>
       <div class="ek-search__footer" aria-hidden="true">
@@ -104,6 +109,7 @@
 import { computed, ref, useId, watch } from 'vue'
 import EkBadge from './EkBadge.vue'
 import EkKbd from './EkKbd.vue'
+import EkPlatformMark from './EkPlatformMark.vue'
 
 export interface EkSearchItem {
   id: string
@@ -112,6 +118,8 @@ export interface EkSearchItem {
   tone?: 'action' | 'success' | 'warning' | 'error' | 'info' | 'neutral'
   icon?: string
   meta?: Array<{ label: string; value: string }>
+  /** Kanal (pazaryeri/entegrasyon) — başlık yanında marka renkli nokta + ad. */
+  platform?: { name: string; code?: string }
 }
 
 export interface EkSearchGroup {
@@ -130,6 +138,8 @@ const props = withDefaults(
     loading?: boolean
     forceOpen?: boolean
     initialActiveIndex?: number
+    openOnFocus?: boolean
+    emptyText?: string
   }>(),
   {
     placeholder: 'Sipariş no, ürün, barkod, müşteri ara…',
@@ -137,10 +147,12 @@ const props = withDefaults(
     loading: false,
     forceOpen: false,
     initialActiveIndex: 0,
+    openOnFocus: false,
+    emptyText: undefined,
   },
 )
 
-const emit = defineEmits<{ 'update:modelValue': [value: string]; select: [item: EkSearchItem] }>()
+const emit = defineEmits<{ 'update:modelValue': [value: string]; select: [item: EkSearchItem]; dismiss: [] }>()
 
 const uid = useId()
 const listId = `ek-search-list-${uid}`
@@ -151,7 +163,12 @@ const activeId = ref('')
 
 const visibleGroups = computed(() => props.groups.filter((g) => g.items.length))
 const flat = computed(() => visibleGroups.value.flatMap((g) => g.items))
-const isOpen = computed(() => props.forceOpen || (focused.value && props.modelValue.trim().length > 0))
+const isOpen = computed(
+  () =>
+    props.forceOpen ||
+    (focused.value &&
+      (props.modelValue.trim().length > 0 || (props.openOnFocus && (props.loading || visibleGroups.value.length > 0)))),
+)
 const optionId = (item: EkSearchItem) => `${listId}-opt-${item.id}`
 
 watch(
@@ -218,7 +235,14 @@ function move(delta: number) {
 }
 
 function onKeydown(event: KeyboardEvent) {
-  if (!isOpen.value) return
+  if (!isOpen.value) {
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      inputRef.value?.blur()
+      emit('dismiss')
+    }
+    return
+  }
   if (event.key === 'ArrowDown') {
     event.preventDefault()
     move(1)
@@ -235,10 +259,11 @@ function onKeydown(event: KeyboardEvent) {
     event.preventDefault()
     focused.value = false
     inputRef.value?.blur()
+    emit('dismiss')
   }
 }
 
-defineExpose({ focus: () => inputRef.value?.focus() })
+defineExpose({ focus: () => inputRef.value?.focus(), blur: () => inputRef.value?.blur() })
 </script>
 
 <style scoped>
@@ -487,6 +512,10 @@ defineExpose({ focus: () => inputRef.value?.focus() })
   font-weight: var(--ek-font-weight-bold);
 }
 
+.ek-search__platform {
+  flex: none;
+}
+
 .ek-search__meta {
   display: flex;
   flex-wrap: wrap;
@@ -585,5 +614,22 @@ defineExpose({ focus: () => inputRef.value?.focus() })
   display: inline-flex;
   align-items: center;
   gap: var(--ek-space-1);
+}
+
+/* Dar ekranda açılır, arama alanına değil görünüm alanına yaslanır (taşma yok). */
+@media (max-width: 767px) {
+  .ek-search {
+    position: static;
+  }
+
+  .ek-search__panel {
+    position: fixed;
+    top: calc(var(--ek-app-topbar-height) + var(--ek-space-1));
+    left: var(--ek-space-2);
+    right: var(--ek-space-2);
+    width: auto;
+    transform: none;
+    max-height: calc(100vh - var(--ek-app-topbar-height) - var(--ek-space-4));
+  }
 }
 </style>

@@ -56,7 +56,8 @@ export async function loginViaForm(page: Page, email: string, landing: RegExp = 
 
 export async function logoutViaAccountMenu(page: Page) {
   await page.getByRole('button', { name: 'Hesap menüsü' }).click()
-  await page.locator('.v-overlay--active .v-list-item').filter({ hasText: 'Çıkış' }).click()
+  // [DS-v2 Aşama 2] Hesap menüsü `EkMenuPanel` (role=menuitem) — niyet aynı: menüden "Çıkış".
+  await page.locator('.v-overlay--active').getByRole('menuitem', { name: 'Çıkış' }).click()
   await expect(page).toHaveURL(/\/login/, { timeout: 10_000 })
 }
 

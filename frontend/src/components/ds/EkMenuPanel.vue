@@ -8,6 +8,7 @@
   Klavye: ↑/↓ gezin (devre dışıları atlar), Home/End, Enter/Space seç, Esc kapat
   (`close` yayar). WAI-ARIA menu deseni: role=menu / menuitem, roving tabindex.
   `EkContextMenu` bunu v-menu içinde açar; vitrin doğrudan çizer.
+  `autofocus` (geri uyumlu ek): v-menu içinde her açılışta ilk öğeye odaklanır.
 -->
 <template>
   <div
@@ -46,7 +47,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import EkKbd from './EkKbd.vue'
 
 export interface EkMenuItem {
@@ -68,6 +69,8 @@ const props = defineProps<{
   groups: EkMenuGroup[]
   label: string
   forceHoverKey?: string
+  /** Açılır katmanda (v-menu) her açılışta monte edilince ilk etkin öğeye odaklan. */
+  autofocus?: boolean
 }>()
 
 const emit = defineEmits<{ select: [item: EkMenuItem]; close: [] }>()
@@ -117,6 +120,11 @@ function onKeydown(event: KeyboardEvent) {
       break
   }
 }
+
+// v-menu içeriği geçiş sırasında monte olur; odak bir kare sonra taşınır (katman yerleşsin).
+onMounted(() => {
+  if (props.autofocus) requestAnimationFrame(() => focusItem(enabled.value[0]?.key))
+})
 
 defineExpose({ focusFirst: () => focusItem(enabled.value[0]?.key) })
 </script>

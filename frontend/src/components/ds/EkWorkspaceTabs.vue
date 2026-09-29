@@ -11,6 +11,9 @@
   slot'u isteğe bağlı sabit öğe içindir, ör. modül başlatıcı).
   Klavye: ←/→ sekmeler arası, Home/End, Enter/Space etkinleştir, Delete kapat
   (WAI-ARIA tabs deseni, roving tabindex). Taşma: yatay kaydırma.
+  Ek (geri uyumlu): başlık gerçekten kesildiyse (…) tam başlık v-tooltip'te
+  (yalnızca taşan sekmede — kesilmeyen başlıkta tekrar eden ipucu yok);
+  sağ tık / Shift+F10 / Menü tuşu → `contextmenu(id, {x,y})`; orta tık kapatır.
 -->
 <template>
   <div class="ek-tabs">
@@ -21,27 +24,33 @@
         :key="tab.id"
         class="ek-tab"
         :class="{ 'is-active': tab.id === modelValue, 'is-hover': forceHoverId === tab.id }"
+        @contextmenu.prevent="emit('contextmenu', tab.id, { x: $event.clientX, y: $event.clientY })"
+        @auxclick="onAuxClick($event, tab)"
       >
-        <button
-          :id="`ek-tab-${tab.id}`"
-          type="button"
-          class="ek-tab__button"
-          role="tab"
-          :data-tab-id="tab.id"
-          :aria-selected="tab.id === modelValue"
-          :aria-controls="panelIdPrefix ? `${panelIdPrefix}-${tab.id}` : undefined"
-          :tabindex="tab.id === focusId ? 0 : -1"
-          :title="tab.title"
-          :aria-describedby="tab.closable !== false ? closeHintId : undefined"
-          @click="activate(tab.id)"
-        >
-          <v-icon v-if="tab.icon" class="ek-tab__icon" :icon="tab.icon" aria-hidden="true" />
-          <span class="ek-tab__title">{{ tab.title }}</span>
-          <span v-if="tab.dirty" class="ek-tab__dirty" aria-label="Kaydedilmemiş değişiklik var"></span>
-        </button>
-        <!-- Kapatma: fareyle bu simge, klavyeyle sekme odaktayken Delete. tablist
-             içinde ikinci bir düğme ARIA sözleşmesini bozacağı için simge
-             ekran okuyucudan gizlidir; sekmenin açıklaması kısayolu söyler. -->
+        <v-tooltip :eager="false" :disabled="!truncated.has(tab.id)" location="bottom" :open-delay="500" :text="tab.title">
+          <template #activator="{ props: tipProps }">
+            <button
+              v-bind="tipProps"
+              :id="`ek-tab-${tab.id}`"
+              type="button"
+              class="ek-tab__button"
+              role="tab"
+              :data-tab-id="tab.id"
+              :aria-selected="tab.id === modelValue"
+              :aria-controls="panelIdPrefix ? `${panelIdPrefix}-${tab.id}` : undefined"
+              :tabindex="tab.id === focusId ? 0 : -1"
+              :aria-describedby="describedBy(tipProps, tab)"
+              @click="activate(tab.id)"
+            >
+              <v-icon v-if="tab.icon" class="ek-tab__icon" :icon="tab.icon" aria-hidden="true" />
+              <span class="ek-tab__title" :data-title-id="tab.id">{{ tab.title }}</span>
+              <span v-if="tab.dirty" class="ek-tab__dirty" aria-label="Kaydedilmemiş değişiklik var"></span>
+            </button>
+          </template>
+        </v-tooltip>
+        <!-- Kapatma: fareyle bu simge (veya orta tık), klavyeyle sekme odaktayken
+             Delete. tablist içinde ikinci bir düğme ARIA sözleşmesini bozacağı için
+             simge ekran okuyucudan gizlidir; sekmenin açıklaması kısayolu söyler. -->
         <span
           v-if="tab.closable !== false"
           class="ek-tab__close"
@@ -59,7 +68,7 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, ref, useId, watch } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, onUpdated, ref, useId, watch } from 'vue'
 
 export interface EkWorkspaceTab {
   id: string
@@ -77,7 +86,11 @@ const props = defineProps<{
   forceHoverId?: string
 }>()
 
-const emit = defineEmits<{ 'update:modelValue': [id: string]; close: [id: string] }>()
+const emit = defineEmits<{
+  'update:modelValue': [id: string]
+  close: [id: string]
+  contextmenu: [id: string, point: { x: number; y: number }]
+}>()
 
 const closeHintId = `ek-tabs-close-hint-${useId()}`
 const listRef = ref<HTMLElement | null>(null)
@@ -86,6 +99,46 @@ watch(
   () => props.modelValue,
   (id) => (focusId.value = id),
 )
+
+/** Başlığı gerçekten kesilen (…) sekmeler — yalnızca onlarda tooltip açılır. */
+const truncated = ref(new Set<string>())
+let resizeObserver: ResizeObserver | undefined
+
+function measure() {
+  const next = new Set<string>()
+  listRef.value?.querySelectorAll<HTMLElement>('[data-title-id]').forEach((el) => {
+    if (el.scrollWidth > el.clientWidth + 1) next.add(el.dataset.titleId as string)
+  })
+  const same = next.size === truncated.value.size && [...next].every((id) => truncated.value.has(id))
+  if (!same) truncated.value = next
+}
+
+onMounted(() => {
+  measure()
+  if (typeof ResizeObserver !== 'undefined' && listRef.value) {
+    resizeObserver = new ResizeObserver(() => measure())
+    resizeObserver.observe(listRef.value)
+  }
+})
+onUpdated(() => nextTick(measure))
+onBeforeUnmount(() => resizeObserver?.disconnect())
+
+function describedBy(tipProps: Record<string, unknown>, tab: EkWorkspaceTab) {
+  const ids = [tipProps['aria-describedby'], tab.closable !== false ? closeHintId : undefined].filter(Boolean)
+  return ids.length ? ids.join(' ') : undefined
+}
+
+function onAuxClick(event: MouseEvent, tab: EkWorkspaceTab) {
+  if (event.button !== 1 || tab.closable === false) return
+  event.preventDefault()
+  emit('close', tab.id)
+}
+
+function openContextMenuFor(id: string) {
+  const el = listRef.value?.querySelector<HTMLElement>(`[data-tab-id="${id}"]`)
+  const rect = el?.getBoundingClientRect()
+  emit('contextmenu', id, { x: rect ? rect.left + 8 : 0, y: rect ? rect.bottom : 0 })
+}
 
 function focusTab(id: string) {
   focusId.value = id
@@ -118,6 +171,13 @@ function onKeydown(event: KeyboardEvent) {
     case ' ':
       event.preventDefault()
       return activate(focusId.value)
+    case 'ContextMenu':
+      event.preventDefault()
+      return openContextMenuFor(focusId.value)
+    case 'F10':
+      if (!event.shiftKey) return
+      event.preventDefault()
+      return openContextMenuFor(focusId.value)
     case 'Delete': {
       const tab = props.tabs[index]
       if (tab.closable !== false) emit('close', tab.id)
@@ -125,6 +185,8 @@ function onKeydown(event: KeyboardEvent) {
     }
   }
 }
+
+defineExpose({ focusActive: () => focusTab(props.modelValue) })
 </script>
 
 <style scoped>

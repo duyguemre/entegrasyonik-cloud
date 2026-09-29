@@ -19,7 +19,8 @@
   --ek-app-sidebar-width: 248px;
   --ek-app-sidebar-rail-width: 64px;
   --ek-app-topbar-height: 56px;
-  --ek-app-tabstrip-height: 36px;
+  /* DS-v2 Aşama 2: gerçek sekme şeridi (EkWorkspaceTabs) 40px — etkin sekme 36px + üst boşluk. */
+  --ek-app-tabstrip-height: 40px;
 
   /* ---- Yoğunluk (Karar 1.1 — varsayılan "rahat") ----
    * `<html data-density="compact">` ile kompakt moda geçilir (localStorage

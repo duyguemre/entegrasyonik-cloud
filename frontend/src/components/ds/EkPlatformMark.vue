@@ -15,11 +15,14 @@
 
   Kullanım:
     <EkPlatformMark name="Trendyol" code="trendyol" />
+    <EkPlatformMark name="Trendyol" code="trendyol" variant="dot" />  (tablo/arama satırı)
     <EkPlatformMark name="Bilinmeyen Kanal" size="lg" />
 -->
 <template>
-  <span class="ek-platform-mark">
+  <span class="ek-platform-mark" :class="{ 'ek-platform-mark--dot': variant === 'dot' }">
+    <span v-if="variant === 'dot'" class="ek-platform-mark__dot" aria-hidden="true"></span>
     <span
+      v-else
       class="ek-platform-mark__badge"
       :class="`ek-platform-mark__badge--${size}`"
     >
@@ -40,20 +43,26 @@ const props = withDefaults(
     code?: string
     size?: 'sm' | 'lg'
     showName?: boolean
+    /** `badge` (varsayılan): monogram + sol şerit. `dot`: tablo/arama satırı için 8px marka renkli nokta + ad. */
+    variant?: 'badge' | 'dot'
   }>(),
   {
     size: 'sm',
     showName: true,
+    variant: 'badge',
   },
 )
 
 const initial = computed(() => props.name?.trim().charAt(0).toUpperCase() || '?')
 // `v-bind()` (aşağıdaki <style>) ile CSS değişkenine bağlanır — şablonda
 // dinamik bir stil bağlaması YAZILMAZ (literal-stil mandalı bu deseni de sayıyor).
-const accentBorderColor = computed(() => {
-  const hex = props.code ? (integrationAccent as Record<string, string>)[props.code] : undefined
-  return hex ?? 'transparent'
+const accentHex = computed(() => {
+  const key = (props.code ?? '').toLowerCase()
+  return key ? (integrationAccent as Record<string, string>)[key] : undefined
 })
+const accentBorderColor = computed(() => accentHex.value ?? 'transparent')
+// Nokta varyantı: bilinmeyen kanalda nötr (kenarlık tonu) — renk tek başına anlam taşımaz, ad yanında durur.
+const accentDotColor = computed(() => accentHex.value ?? 'var(--ek-color-border-strong)')
 </script>
 
 <style scoped>
@@ -86,6 +95,23 @@ const accentBorderColor = computed(() => {
   width: 32px;
   height: 32px;
   font-size: var(--ek-font-size-sm);
+}
+
+.ek-platform-mark__dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--ek-radius-chip);
+  background: v-bind(accentDotColor);
+}
+
+.ek-platform-mark--dot {
+  gap: var(--ek-space-1);
+}
+
+.ek-platform-mark--dot .ek-platform-mark__name {
+  font-size: var(--ek-type-caption-size);
+  color: var(--ek-color-content-muted);
 }
 
 .ek-platform-mark__name {

@@ -35,11 +35,11 @@
       <div class="d-flex align-center">
         <v-btn icon="mdi-check-all" variant="text" density="comfortable" aria-label="Tümünü okundu işaretle"
           @click="notificationStore.markAsRead()" />
-        <v-tooltip activator="parent" location="bottom">Tümünü Okundu İşaretle</v-tooltip>
+        <v-tooltip :eager="false" activator="parent" location="bottom">Tümünü Okundu İşaretle</v-tooltip>
 
         <v-btn icon="mdi-trash-can-outline" variant="text" density="comfortable" aria-label="Tümünü sil"
           @click="notificationStore.deleteNotification()" />
-        <v-tooltip activator="parent" location="bottom">Tümünü Sil</v-tooltip>
+        <v-tooltip :eager="false" activator="parent" location="bottom">Tümünü Sil</v-tooltip>
 
         <v-btn icon="mdi-close" variant="text" density="comfortable" class="ml-1" aria-label="Kapat"
           @click="notificationStore.drawer = false" />

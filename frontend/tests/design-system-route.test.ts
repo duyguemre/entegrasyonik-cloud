@@ -24,8 +24,8 @@ describe('/design-system rotası (yalnız geliştirme)', () => {
     expect(outside).not.toContain('DesignSystemView')
   })
 
-  it('menü / komut paleti kaynaklarında vitrin yok', () => {
-    for (const p of ['src/components/layout/NavigationMenu.vue', 'src/components/layout/EkCommandPalette.vue']) {
+  it('menü / akıllı arama kaynaklarında vitrin yok', () => {
+    for (const p of ['src/components/layout/NavigationMenu.vue', 'src/components/layout/ShellSearch.vue', 'src/components/layout/useShellMenu.ts']) {
       expect(read(p)).not.toMatch(/design-system|DesignSystem/)
     }
   })

@@ -1,0 +1,263 @@
+<!--
+  frontend/src/components/layout/ShellTabStrip.vue
+
+  DS-v2 Aşama 2 — çalışma alanı sekme şeridi. Görünüm `EkWorkspaceTabs`
+  (gerçek sekme hissi: etkin sekme içerikle birleşir; kapatma hover/etkin'de;
+  kesilen başlıkta tooltip; soldaki boşluk YOK — ilk sekme şeridin başından
+  başlar). Durum `stores/workspace.ts`'te; bu bileşen yalnızca görünüm + eylem.
+    - Sağ tık / Shift+F10: Kapat · Diğerlerini kapat · Sağdakileri kapat
+    - Sağ uç: açık sekmeler listesi (Alt+1…9 ipuçlu), üst bölümü daralt (Alt+U),
+      odak modu (Ctrl+Shift+F)
+  Her sekme ayrı bir örnektir (çok örnekli kayıt sekmeleri de ayrı sekme).
+  Spec çapası: kök `.workplace-tabs` (kabuğun mount olduğunun işareti).
+-->
+<template>
+  <div class="workplace-tabs ek-shell-tabs">
+    <EkWorkspaceTabs
+      ref="tabsRef"
+      class="ek-shell-tabs__strip"
+      :tabs="viewTabs"
+      :model-value="activeId"
+      label="Açık sekmeler"
+      @update:model-value="onActivate"
+      @close="onClose"
+      @contextmenu="onContextMenu"
+    >
+      <template #trailing>
+        <div class="ek-shell-tabs__tools">
+          <v-menu v-model="listOpen" location="bottom end" :offset="6">
+            <template #activator="{ props: menuProps }">
+              <v-tooltip :eager="false" location="bottom" :open-delay="400">
+                <template #activator="{ props: tipProps }">
+                  <button v-bind="{ ...menuProps, ...tipProps }" type="button" class="ek-shell-tabs__tool" :aria-label="`Açık sekmeler (${viewTabs.length})`">
+                    <v-icon icon="mdi-view-list-outline" aria-hidden="true" />
+                    <span class="ek-shell-tabs__count ek-num">{{ viewTabs.length }}</span>
+                  </button>
+                </template>
+                <span>Açık sekmeler</span>
+              </v-tooltip>
+            </template>
+            <EkMenuPanel autofocus ref="listPanelRef" class="ek-shell-tabs__list" :groups="listGroups" label="Açık sekmeler" @select="onListSelect" @close="listOpen = false" />
+          </v-menu>
+
+          <template v-if="!compact">
+            <span class="ek-shell-tabs__sep" aria-hidden="true"></span>
+            <v-tooltip :eager="false" location="bottom" :open-delay="400">
+              <template #activator="{ props: tipProps }">
+                <button
+                  v-bind="tipProps"
+                  type="button"
+                  class="ek-shell-tabs__tool"
+                  :aria-pressed="headerCollapsed"
+                  :aria-label="withShortcut(headerCollapsed ? 'Üst bölümü göster' : 'Üst bölümü daralt', 'headerToggle')"
+                  @click="$emit('toggle-header')"
+                >
+                  <v-icon :icon="headerCollapsed ? 'mdi-chevron-down' : 'mdi-chevron-up'" aria-hidden="true" />
+                </button>
+              </template>
+              <span class="ek-shell-tabs__tip">{{ headerCollapsed ? 'Üst bölümü göster' : 'Üst bölümü daralt' }} <EkKbd :keys="shortcutKeys('headerToggle')" tone="inverse" /></span>
+            </v-tooltip>
+          </template>
+          <v-tooltip :eager="false" location="bottom" :open-delay="400">
+            <template #activator="{ props: tipProps }">
+              <button
+                v-bind="tipProps"
+                type="button"
+                class="ek-shell-tabs__tool"
+                :aria-pressed="focusMode"
+                :aria-label="withShortcut(focusMode ? 'Odak modundan çık' : 'Odak modu', 'focusMode')"
+                @click="$emit('toggle-focus')"
+              >
+                <v-icon :icon="focusMode ? 'mdi-arrow-collapse' : 'mdi-arrow-expand'" aria-hidden="true" />
+              </button>
+            </template>
+            <span class="ek-shell-tabs__tip">{{ focusMode ? 'Odak modundan çık' : 'Odak modu' }} <EkKbd :keys="shortcutKeys('focusMode')" tone="inverse" /></span>
+          </v-tooltip>
+        </div>
+      </template>
+    </EkWorkspaceTabs>
+
+    <v-menu v-model="ctxOpen" :target="ctxPoint" location="bottom start" :offset="4">
+      <EkMenuPanel autofocus ref="ctxPanelRef" :groups="ctxGroups" label="Sekme işlemleri" @select="onCtxSelect" @close="ctxOpen = false" />
+    </v-menu>
+  </div>
+</template>
+
+<script lang="ts" setup>
+import { computed, nextTick, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import EkWorkspaceTabs, { type EkWorkspaceTab } from '@/components/ds/EkWorkspaceTabs.vue'
+import EkMenuPanel, { type EkMenuGroup, type EkMenuItem } from '@/components/ds/EkMenuPanel.vue'
+import EkKbd from '@/components/ds/EkKbd.vue'
+import { isPinnedLink, useWorkspaceStore } from '@/stores/workspace'
+import { shortcutKeys, withShortcut } from '@/navigation/shortcuts'
+
+withDefaults(defineProps<{ headerCollapsed?: boolean; focusMode?: boolean; compact?: boolean }>(), {
+  headerCollapsed: false,
+  focusMode: false,
+  compact: false,
+})
+defineEmits<{ 'toggle-header': []; 'toggle-focus': [] }>()
+
+const { t } = useI18n({ useScope: 'global' })
+const workspace = useWorkspaceStore()
+
+const tabsRef = ref<InstanceType<typeof EkWorkspaceTabs> | null>(null)
+const listPanelRef = ref<InstanceType<typeof EkMenuPanel> | null>(null)
+const ctxPanelRef = ref<InstanceType<typeof EkMenuPanel> | null>(null)
+const listOpen = ref(false)
+const ctxOpen = ref(false)
+const ctxPoint = ref<[number, number]>([0, 0])
+const ctxTabId = ref<string>()
+
+const titleOf = (link: any) => (link?.singleton === false ? String(link?.title ?? '') : t(link?.fullPath ?? ''))
+
+const viewTabs = computed<EkWorkspaceTab[]>(() =>
+  workspace.tabs.map((tab: any) => ({
+    id: String(tab.id),
+    title: titleOf(tab.link),
+    icon: tab.link?.icon,
+    closable: !isPinnedLink(tab.link),
+  })),
+)
+const activeId = computed(() => (workspace.mySelectedTab ? String(workspace.mySelectedTab.id) : ''))
+const tabById = (id: string | undefined) => workspace.tabs.find((tab: any) => String(tab.id) === id)
+
+function onActivate(id: string) {
+  workspace.activateTab(tabById(id))
+}
+
+function onClose(id: string) {
+  const tab = tabById(id)
+  if (tab && !isPinnedLink(tab.link)) workspace.closeTab(tab)
+}
+
+
+// --- Sağ tık menüsü ---
+const ctxGroups = computed<EkMenuGroup[]>(() => {
+  const tabs = workspace.tabs
+  const index = tabs.findIndex((tab: any) => String(tab.id) === ctxTabId.value)
+  const tab = tabs[index]
+  const closable = (list: any[]) => list.some((x: any) => !isPinnedLink(x.link))
+  return [
+    {
+      items: [
+        { key: 'close', label: 'Kapat', icon: 'mdi-close', shortcut: shortcutKeys('tabClose'), disabled: !tab || isPinnedLink(tab.link) },
+        { key: 'close-others', label: 'Diğerlerini kapat', icon: 'mdi-tab-remove', disabled: !closable(tabs.filter((x: any) => x !== tab)) },
+        { key: 'close-right', label: 'Sağdakileri kapat', icon: 'mdi-arrow-collapse-right', disabled: !closable(tabs.slice(index + 1)) },
+      ],
+    },
+  ]
+})
+
+function onContextMenu(id: string, point: { x: number; y: number }) {
+  ctxTabId.value = id
+  ctxPoint.value = [point.x, point.y]
+  ctxOpen.value = true
+}
+
+function onCtxSelect(item: EkMenuItem) {
+  const tab = tabById(ctxTabId.value)
+  ctxOpen.value = false
+  if (!tab) return
+  if (item.key === 'close') workspace.closeTab(tab)
+  else if (item.key === 'close-others') workspace.closeOthers(tab)
+  else if (item.key === 'close-right') workspace.closeToRight(tab)
+  nextTick(() => tabsRef.value?.focusActive())
+}
+
+// --- Açık sekmeler listesi ---
+const listGroups = computed<EkMenuGroup[]>(() => [
+  {
+    label: `Açık sekmeler (${viewTabs.value.length})`,
+    items: viewTabs.value.map((tab, index) => ({
+      key: tab.id,
+      label: tab.title,
+      icon: tab.id === activeId.value ? 'mdi-check' : tab.icon,
+      shortcut: index < 9 ? ['Alt', String(index + 1)] : undefined,
+    })),
+  },
+  {
+    items: [{ key: '__close-all', label: 'Tümünü kapat', icon: 'mdi-close-box-multiple-outline', danger: true, disabled: !viewTabs.value.some((x) => x.closable) }],
+  },
+])
+
+function onListSelect(item: EkMenuItem) {
+  listOpen.value = false
+  if (item.key === '__close-all') workspace.closeAll()
+  else workspace.activateTab(tabById(item.key))
+}
+</script>
+
+<style scoped>
+.ek-shell-tabs {
+  position: relative;
+}
+
+.ek-shell-tabs__strip {
+  height: var(--ek-app-tabstrip-height);
+}
+
+.ek-shell-tabs__tools {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-left: var(--ek-space-1);
+}
+
+.ek-shell-tabs__sep {
+  width: 1px;
+  height: 16px;
+  margin: 0 var(--ek-space-1);
+  background: var(--ek-color-border-strong);
+}
+
+.ek-shell-tabs__tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 var(--ek-space-1);
+  border: 0;
+  border-radius: var(--ek-radius-control);
+  background: transparent;
+  color: var(--ek-color-content-muted);
+  font-family: inherit;
+  font-size: var(--ek-icon-md);
+  cursor: pointer;
+  transition: var(--ek-transition-colors);
+}
+
+.ek-shell-tabs__tool:hover {
+  background: var(--ek-color-tab-hover);
+  color: var(--ek-color-content-strong);
+}
+
+.ek-shell-tabs__tool[aria-pressed='true'] {
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.ek-shell-tabs__tool:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--ek-color-border-focus);
+}
+
+.ek-shell-tabs__count {
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.ek-shell-tabs__tip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+}
+
+.ek-shell-tabs__list {
+  max-height: min(480px, calc(100vh - 120px));
+  overflow-y: auto;
+}
+</style>
