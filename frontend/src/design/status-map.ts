@@ -151,3 +151,18 @@ export const CONFIG_REVISION_STATUS_TONE: Record<ConfigRevisionStatus, StatusMap
   superseded: { tone: 'neutral', labelKey: 'status.configRevision.superseded' },
   discarded: { tone: 'neutral', labelKey: 'status.configRevision.discarded' },
 }
+
+// ---- ADR-0004 / docs/API_TENANT_SURFACE.md §2 — sipariş kalemi stok tahsis durumu
+// (`Orders.items[].allocationState`; backend şeması `Order.ts` enum'uyla AYNI 6 kod). Kalem durumu
+// sipariş durumundan AYRIDIR: siparişin kendisi onaylı olsa da kalemi stokta karşılanamamış olabilir. ----
+export const ALLOCATION_STATES = ['RESERVED', 'COMMITTED', 'RELEASED', 'OVERSOLD', 'RESTOCKED', 'UNMAPPED'] as const
+export type AllocationState = (typeof ALLOCATION_STATES)[number]
+
+export const ALLOCATION_STATE_TONE: Record<AllocationState, StatusMapEntry> = {
+  RESERVED: { tone: 'info', labelKey: 'status.allocation.reserved' },
+  COMMITTED: { tone: 'success', labelKey: 'status.allocation.committed' },
+  RELEASED: { tone: 'neutral', labelKey: 'status.allocation.released' },
+  OVERSOLD: { tone: 'danger', labelKey: 'status.allocation.oversold' },
+  RESTOCKED: { tone: 'neutral', labelKey: 'status.allocation.restocked' },
+  UNMAPPED: { tone: 'warning', labelKey: 'status.allocation.unmapped' },
+}

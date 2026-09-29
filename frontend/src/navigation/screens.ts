@@ -135,6 +135,9 @@ export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'integrations/ShippingView', slug: 'integrations/shipping', section: 'integrations', order: 2 },
   { key: 'integrations/EInvoiceView', slug: 'integrations/einvoice', section: 'integrations', order: 3 },
   { key: 'integrations/ErpView', slug: 'integrations/erp', section: 'integrations', order: 4 },
+  // C1.1 (F-01) stok sağlığı (StockService/getStockOverview, member). Ekran filtre/parametre okumaz → `urlParams` YOK.
+  // Gerçek menü kaydı (ApplicationDB `menus`, kod `StockHealthView`, başlık `stockHealth`) yerel iştir.
+  { key: 'StockHealthView', slug: 'catalog/stock-health', section: 'catalog', order: 6, icon: 'mdi-scale-unbalanced', titleKey: 'menu.stockHealth' },
 ] as const
 
 /** URL'nin ilk segmenti hiçbir zaman bir ekran slug'ı OLAMAZ (ADR-0012 Karar 1 — başka uç noktalar/statikler ile çakışmasın). */

@@ -26,7 +26,8 @@
     "settings": "Settings",
     "logs": "Logs",
     "add_product": "Add Product",
-    "add_customer": "Add Customer"
+    "add_customer": "Add Customer",
+    "stockHealth": "Stock Health"
   },
   "title": {
     "config": "Configuration"
