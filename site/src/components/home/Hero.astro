@@ -7,7 +7,7 @@
  *
  * S12 (kullanıcı geri bildirimi): ana mesajda pazaryeri ADI geçmez ("pazaryerleri"); panelde kanal adı yerine
  * isimsiz renkli noktalar (`--site-channel-*`, `[data-code]` eşlemesi) ve genel etiketler ("Pazaryeri siparişi",
- * "Web mağaza siparişi"). Panel renkleri site paletinden (lacivert + tek vurgu teal). Güven maddeleri üst seviye
+ * "Web mağaza"). Panel renkleri site paletinden (lacivert + tek vurgu teal). Güven maddeleri üst seviye
  * faydadır; her biri kanıtlı bir yetenek kaydına bağlıdır (kayıt yoksa madde gösterilmez).
  * Statik hâl (reduced-motion / durdurulmuş / JS'siz): üç sipariş "Rezerve", stok 9, rezerve 3, kanallar senkron.
  * Hareketli hâl (yalnızca görünürken, 12 sn döngü): siparişler sırayla vurgulanır -> rezerve edilir -> stok sayacı
@@ -38,7 +38,7 @@ const benefits = [
 const orders = [
   { code: marketplaces[0]?.code, label: 'Pazaryeri siparişi' },
   { code: marketplaces[1]?.code, label: 'Pazaryeri siparişi' },
-  storefront ? { code: storefront.code, label: 'Web mağaza siparişi' } : { code: marketplaces[2]?.code, label: 'Pazaryeri siparişi' },
+  storefront ? { code: storefront.code, label: 'Web mağaza' } : { code: marketplaces[2]?.code, label: 'Pazaryeri siparişi' },
 ]
 ---
 
