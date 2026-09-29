@@ -57,12 +57,15 @@ test.describe('P3 (B5-2) — Varyant Grupları (ChoiceListView)', () => {
     await expect(page.getByText('Grup Bulunamadı')).toBeVisible()
   })
 
-  test('hata durumu: ChoiceService 500 verdiğinde ham hata sızmaz (karakterizasyon — bkz. not)', async ({ page }) => {
+  // DS-v2 Aşama 2 — BİLİNÇLİ DEĞİŞİKLİK: 500 artık boş duruma düşmez; "Varyant grupları yüklenemedi" + "Tekrar dene".
+  test('hata durumu: ChoiceService 500 verdiğinde ham hata sızmaz, "yüklenemedi" + Tekrar dene gösterilir', async ({ page }) => {
     await installApiMocks(page, { MenuService: menuFixtureWithChoice, ChoiceService: mockError(500) })
     await gotoAuthed(page)
     await openChoiceListView(page)
 
     await expectScreenOpen(page, '.choiceListView')
+    await expect(page.getByText('Varyant grupları yüklenemedi')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Tekrar dene' })).toBeVisible()
     await expect(page.locator('body')).not.toContainText('500')
   })
 

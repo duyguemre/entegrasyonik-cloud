@@ -1,5 +1,5 @@
 <template>
-  <div class="hashtagListView d-flex flex-column h-100 overflow-hidden">
+  <div class="hashtagListView">
 
     <LoadingComponent attach=".hashtagListView" ref="loadingComponentRef" />
     <ConfirmationDialogComponent v-model="confirmationDelete.isDialogOpen" title="Grubu Sil?"
@@ -7,187 +7,166 @@
       icon="mdi-delete-alert-outline" color="error" confirmText="SİL" cancelText="İPTAL" @confirm="removeHashtag()"
       @cancel="confirmationDelete.isDialogOpen = false" />
 
-    <div class="hashtag-header">
-      <EkPageHeader section="Katalog" :title="$t('menu.productDefinitions.hashtagList')" />
-    </div>
-
-    <div class="d-flex align-start flex-wrap search-section">
-      <v-text-field v-model="searchText" clearable density="compact" :label="$t('products.product.searchlabel')"
-        variant="outlined" hide-details bg-color="textfieldColor" class="customTextField search-field">
-        <template #append-inner>
-          <v-tooltip open-delay="1000" :text="$t('products.product.search')">
-            <template v-slot:activator="{ props: tooltipProps }">
-              <v-btn flat size="40" v-bind="{ ...tooltipProps }" class="pa-2 search-btn" elevation="0" color="white"
-                :aria-label="$t('products.product.search')" @click.stop=""><v-icon size="x-large"
-                  color="processButtonColor">mdi-magnify</v-icon></v-btn>
+    <EkListScreen
+      :title="$t('menu.productDefinitions.hashtagList')"
+      label="Etiket grupları tablosu"
+      noun="grup"
+      row-key="_id"
+      label-key="title"
+      :columns="columns"
+      :rows="pagedHashtags"
+      :loading="loading"
+      :error="loadError"
+      error-title="Etiketler yüklenemedi"
+      v-model:search="searchText"
+      :search-placeholder="$t('products.product.searchlabel')"
+      :sort="gridSort"
+      :page="pagination.page"
+      :page-size="pagination.limit"
+      :total="pagination.totalNumberOfRecords"
+      :page-size-options="[10, 15, 25, 50, 100]"
+      empty-title="Etiket Bulunamadı"
+      empty-text="Arama kriterlerinize uygun herhangi bir etiket grubu bulunamadı."
+      filtered-empty-title="Etiket Bulunamadı"
+      filtered-empty-text="Arama kriterlerinize uygun herhangi bir etiket grubu bulunamadı."
+      empty-icon="mdi-pound"
+      refresh-label="Yenile"
+      @update:sort="(s) => { gridSort = s; pagination.page = 1 }"
+      @update:page="(p) => (pagination.page = p)"
+      @update:page-size="(n) => { pagination.limit = n; pagination.page = 1 }"
+      @refresh="retrieveHashtags()"
+    >
+      <template #header-actions>
+        <v-form v-model="newHashtagForm" @submit.prevent="addHashtag" class="new-hashtag-form">
+          <v-text-field v-model="newHashtagTitle" variant="outlined" density="compact" hide-details
+            :rules="newHashtagRules" bg-color="textfieldColor" class="customTextField"
+            :placeholder="$t('productDefinitions.hashtag.new.title')">
+            <template v-slot:label>
+              <span class="font-weight-light new-field-label">{{ $t('productDefinitions.hashtag.new.title') }}</span>
             </template>
-          </v-tooltip>
-        </template>
-      </v-text-field>
+            <template v-slot:append-inner>
+              <v-btn icon="mdi-plus" size="x-small" color="processButtonColor" variant="tonal" class="rounded-lg"
+                :aria-label="$t('productDefinitions.hashtag.new.title')" :disabled="!newHashtagForm || !newHashtagTitle"
+                @click="addHashtag">
+              </v-btn>
+            </template>
+          </v-text-field>
+        </v-form>
+      </template>
 
-      <v-tooltip open-delay="1000" text="Yenile">
-        <template v-slot:activator="{ props: tooltipProps }">
-          <v-btn v-bind="{ ...tooltipProps }" flat @click="retrieveHashtags()" size="40" color="white"
-            class="premium-cube-btn ml-2" aria-label="Yenile">
-            <v-icon size="x-large" color="processButtonColor">mdi-refresh</v-icon>
-          </v-btn>
-        </template>
-      </v-tooltip>
+      <template #cell-title="{ row: item }">
+        <div class="d-flex align-center py-2 hashtag-title-cell">
+          <v-menu v-model="item.showEditMenu" :close-on-content-click="false" location="bottom start"
+            transition="scale-transition">
+            <template v-slot:activator="{ props }">
+              <button v-bind="props" type="button" class="cursor-pointer font-weight-bold d-flex align-center group-title"
+                @click="item.tempTitle = item.title">
+                <v-icon size="18" :color="item.color || undefined" class="mr-2 group-title__tag" aria-hidden="true">mdi-label-variant</v-icon>
+                {{ item.title }}
+                <v-icon size="14" class="ml-2 group-title__icon" aria-hidden="true">mdi-pencil-outline</v-icon>
+              </button>
+            </template>
+            <v-card min-width="300" class="pa-4 rounded-lg shadow-xl border">
+              <v-text-field v-model="item.tempTitle" label="Grup Adını Düzenle" variant="outlined" density="compact"
+                hide-details class="mb-3 customTextField"></v-text-field>
 
-      <v-divider vertical class="mx-4" length="40"></v-divider>
+              <div class="text-caption mb-2 swatch-caption">Grup Rengi</div>
+              <div class="d-flex flex-wrap gap-1 mb-4" role="group" aria-label="Grup Rengi">
+                <v-btn v-for="c in swatchList" :key="c" :color="c" variant="flat" icon density="compact" size="24"
+                  class="swatch" :class="{ 'swatch--selected': item.color === c }"
+                  :aria-label="c" :aria-pressed="item.color === c" @click="item.color = c" />
+              </div>
 
-      <v-form v-model="newHashtagForm" @submit.prevent="addHashtag"
-        class="d-flex align-center gap-2 flex-grow-1 new-hashtag-form">
-        <v-text-field v-model="newHashtagTitle" variant="outlined" density="compact" hide-details
-          :rules="newHashtagRules" bg-color="textfieldColor" class="customTextField"
-          :placeholder="$t('productDefinitions.hashtag.new.title')">
-          <template v-slot:label>
-            <span class="font-weight-light new-field-label">{{ $t('productDefinitions.hashtag.new.title')
-              }}</span>
-          </template>
-          <template v-slot:append-inner>
-            <v-btn icon="mdi-plus" size="x-small" color="processButtonColor" variant="tonal" class="rounded-lg"
-              :aria-label="$t('productDefinitions.hashtag.new.title')" :disabled="!newHashtagForm || !newHashtagTitle"
-              @click="addHashtag">
-            </v-btn>
-          </template>
-        </v-text-field>
-      </v-form>
-    </div>
+              <v-btn block color="success" size="40" variant="flat"
+                @click="item.title = item.tempTitle; updateHashtag(item); item.showEditMenu = false;">
+                KAYDET
+              </v-btn>
+            </v-card>
+          </v-menu>
+        </div>
+      </template>
 
-    <div class="table-wrapper mt-2">
-      <v-data-table-server :itemsLength="pagination.totalNumberOfRecords" :items="computedHashtags" :headers="headers"
-        fixed-header class="pa-0 ma-0 desktop-table">
+      <template #cell-hashtags="{ row: item }">
+        <div class="d-flex flex-wrap gap-2 py-2 align-center min-h-60">
+          <v-chip v-for="val in item.values" :key="val._id" size="small" variant="flat"
+            :color="val.color || undefined" class="hashtag-chip-item"
+            :class="val.color ? (getTextColor(val.color) === 'white' ? 'is-on-dark' : 'is-on-light') : 'is-neutral'"
+            role="button" tabindex="0">
+            <span class="mr-2 font-weight-bold hashtag-chip-item__text"><v-icon
+                size="12" class="mr-1" aria-hidden="true">mdi-tag</v-icon>{{ val.title }}</span>
+            <v-menu v-model="val.showValueMenu" activator="parent" :close-on-content-click="false"
+              transition="fade-transition"
+              @update:model-value="(state) => state ? item.editingHashtagValue = copy(val) : null">
+              <v-card width="260" class="pa-3 rounded-lg border shadow-lg">
+                <v-text-field v-model="item.editingHashtagValue.title" density="compact" variant="outlined"
+                  label="Etiket Adı" hide-details class="mb-3 customTextField"></v-text-field>
 
-        <template v-slot:item.title="{ item }: any">
-          <div class="d-flex align-center py-2">
-            <v-menu v-model="item.showEditMenu" :close-on-content-click="false" location="bottom start"
-              transition="scale-transition">
-              <template v-slot:activator="{ props }">
-                <button v-bind="props" type="button" class="cursor-pointer font-weight-bold d-flex align-center group-title"
-                  @click="item.tempTitle = item.title">
-                  <v-icon size="18" :color="item.color || 'grey'" class="mr-2" aria-hidden="true">mdi-label-variant</v-icon>
-                  {{ item.title }}
-                  <v-icon size="14" class="ml-2 group-title__icon" aria-hidden="true">mdi-pencil-outline</v-icon>
-                </button>
-              </template>
-              <v-card min-width="300" class="pa-4 rounded-lg shadow-xl border">
-                <v-text-field v-model="item.tempTitle" label="Grup Adını Düzenle" variant="outlined" density="compact"
-                  hide-details class="mb-3 customTextField"></v-text-field>
-
-                <div class="text-caption mb-2 swatch-caption">Grup Rengi</div>
-                <div class="d-flex flex-wrap gap-1 mb-4" role="group" aria-label="Grup Rengi">
-                  <button v-for="c in swatchList" :key="c" type="button" class="swatch"
-                    :class="{ 'swatch--selected': item.color === c }" :style="{ background: c }"
-                    :aria-label="c" :aria-pressed="item.color === c" @click="item.color = c">
-                  </button>
+                <div class="text-caption mb-2 swatch-caption">Etiket Rengi</div>
+                <div class="d-flex flex-wrap gap-1 mb-4" role="group" aria-label="Etiket Rengi">
+                  <v-btn v-for="c in swatchList" :key="c" :color="c" variant="flat" icon density="compact" size="22"
+                    class="swatch" :class="{ 'swatch--selected': item.editingHashtagValue.color === c }"
+                    :aria-label="c" :aria-pressed="item.editingHashtagValue.color === c"
+                    @click="item.editingHashtagValue.color = c" />
                 </div>
 
-                <v-btn block color="success" size="40" variant="flat"
-                  @click="item.title = item.tempTitle; updateHashtag(item); item.showEditMenu = false;">
-                  KAYDET
-                </v-btn>
+                <div class="d-flex justify-space-between align-center">
+                  <v-menu v-model="val.showValueDeleteConfirm" :close-on-content-click="false" location="top center">
+                    <template v-slot:activator="{ props }">
+                      <v-btn v-bind="props" icon="mdi-delete" size="30" color="danger" variant="flat"
+                        class="premium-cube-btn" aria-label="Etiketi sil"></v-btn>
+                    </template>
+                    <v-card class="pa-3 border shadow-xl rounded-lg" min-width="200">
+                      <div class="text-caption mb-2 text-center font-weight-bold confirm-title">Etiketi Sil?</div>
+                      <div class="d-flex justify-center gap-2">
+                        <EkButton tone="secondary" size="sm" @click="val.showValueDeleteConfirm = false">İPTAL</EkButton>
+                        <EkButton tone="danger" size="sm"
+                          @click="deleteHashtagValue(item._id, val._id); val.showValueDeleteConfirm = false;">SİL</EkButton>
+                      </div>
+                    </v-card>
+                  </v-menu>
+                  <v-btn color="success" size="30" variant="flat" icon="mdi-check" class="premium-cube-btn"
+                    aria-label="Kaydet" @click="updateHashtagValue(item); val.showValueMenu = false;"></v-btn>
+                </div>
               </v-card>
             </v-menu>
-          </div>
-        </template>
+          </v-chip>
 
-        <template v-slot:item.hashtags="{ item }: any">
-          <div class="d-flex flex-wrap gap-2 py-2 align-center min-h-60">
-            <v-chip v-for="val in item.values" :key="val._id" size="small" variant="flat"
-              :color="val.color || 'grey-lighten-3'" class="hashtag-chip-item" role="button" tabindex="0">
-              <span class="mr-2 font-weight-bold hashtag-chip-item__text"
-                :class="getTextColor(val.color) === 'white' ? 'text-white' : 'text-black'"><v-icon
-                  size="12" class="mr-1" aria-hidden="true">mdi-tag</v-icon>{{ val.title }}</span>
-              <v-menu v-model="val.showValueMenu" activator="parent" :close-on-content-click="false"
-                transition="fade-transition"
-                @update:model-value="(state) => state ? item.editingHashtagValue = copy(val) : null">
-                <v-card width="260" class="pa-3 rounded-lg border shadow-lg">
-                  <v-text-field v-model="item.editingHashtagValue.title" density="compact" variant="outlined"
-                    label="Etiket Adı" hide-details class="mb-3 customTextField"></v-text-field>
+          <v-text-field v-if="item.showAddInput" v-model="item.tempValueTitle" density="compact" variant="outlined"
+            hide-details autofocus class="add-val-input customTextField" aria-label="Yeni etiket"
+            @keyup.enter="item.editingHashtagValue = { title: item.tempValueTitle }; addHashtagValue(item); item.showAddInput = false; item.tempValueTitle = ''"
+            @blur="!item.tempValueTitle ? item.showAddInput = false : null">
+            <template v-slot:append-inner>
+              <v-icon color="success" size="22" class="opacity-100 font-weight-black mr-1" aria-label="Etiket ekle"
+                @click="item.editingHashtagValue = { title: item.tempValueTitle }; addHashtagValue(item); item.showAddInput = false; item.tempValueTitle = ''">mdi-plus-circle</v-icon>
+            </template>
+          </v-text-field>
 
-                  <div class="text-caption mb-2 swatch-caption">Etiket Rengi</div>
-                  <div class="d-flex flex-wrap gap-1 mb-4" role="group" aria-label="Etiket Rengi">
-                    <button v-for="c in swatchList" :key="c" type="button" class="swatch swatch--sm"
-                      :class="{ 'swatch--selected': item.editingHashtagValue.color === c }" :style="{ background: c }"
-                      :aria-label="c" :aria-pressed="item.editingHashtagValue.color === c"
-                      @click="item.editingHashtagValue.color = c">
-                    </button>
-                  </div>
+          <v-btn v-else icon="mdi-plus" size="x-small" color="processButtonColor" variant="tonal" class="rounded-lg"
+            aria-label="Etiket ekle" @click="item.showAddInput = true"></v-btn>
+        </div>
+      </template>
 
-                  <div class="d-flex justify-space-between align-center">
-                    <v-menu v-model="val.showValueDeleteConfirm" :close-on-content-click="false" location="top center">
-                      <template v-slot:activator="{ props }">
-                        <v-btn v-bind="props" icon="mdi-delete" size="30" color="danger" variant="flat"
-                          class="premium-cube-btn" aria-label="Etiketi sil"></v-btn>
-                      </template>
-                      <v-card class="pa-3 border shadow-xl rounded-lg bg-danger" min-width="200">
-                        <div class="text-caption mb-2 text-center text-white font-weight-bold">Etiketi Sil?</div>
-                        <div class="d-flex justify-center gap-2">
-                          <v-btn width="60" size="x-small" variant="flat" color="red-lighten-1"
-                            class="rounded-sm text-white confirm-btn" @click="val.showValueDeleteConfirm = false">İPTAL</v-btn>
-                          <v-btn width="60" size="x-small" color="red-darken-4" variant="flat"
-                            class="rounded-sm text-white confirm-btn"
-                            @click="deleteHashtagValue(item._id, val._id); val.showValueDeleteConfirm = false;">SİL</v-btn>
-                        </div>
-                      </v-card>
-                    </v-menu>
-                    <v-btn color="success" size="30" variant="flat" icon="mdi-check" class="premium-cube-btn"
-                      aria-label="Kaydet" @click="updateHashtagValue(item); val.showValueMenu = false;"></v-btn>
-                  </div>
-                </v-card>
-              </v-menu>
-            </v-chip>
-
-            <v-text-field v-if="item.showAddInput" v-model="item.tempValueTitle" density="compact" variant="outlined"
-              hide-details autofocus class="add-val-input customTextField" aria-label="Yeni etiket"
-              @keyup.enter="item.editingHashtagValue = { title: item.tempValueTitle }; addHashtagValue(item); item.showAddInput = false; item.tempValueTitle = ''"
-              @blur="!item.tempValueTitle ? item.showAddInput = false : null">
-              <template v-slot:append-inner>
-                <v-icon color="success" size="22" class="opacity-100 font-weight-black mr-1" aria-label="Etiket ekle"
-                  @click="item.editingHashtagValue = { title: item.tempValueTitle }; addHashtagValue(item); item.showAddInput = false; item.tempValueTitle = ''">mdi-plus-circle</v-icon>
-              </template>
-            </v-text-field>
-
-            <v-btn v-else icon="mdi-plus" size="x-small" color="processButtonColor" variant="tonal" class="rounded-lg"
-              aria-label="Etiket ekle" @click="item.showAddInput = true"></v-btn>
-          </div>
-        </template>
-
-        <template v-slot:item.actions="{ item }: any">
-          <div class="d-flex justify-end pr-2">
-            <v-btn flat size="35" color="danger" class="premium-cube-btn" aria-label="Grubu sil"
-              @click="openDeleteConfirm(item)">
-              <v-icon size="x-large" color="white">mdi-delete</v-icon>
-            </v-btn>
-          </div>
-        </template>
-
-        <template v-slot:no-data>
-          <EmptyState title="Etiket Bulunamadı" message="Arama kriterlerinize uygun herhangi bir etiket grubu bulunamadı." />
-        </template>
-
-        <template v-slot:bottom>
-          <PaginationComponent :totalNumberOfPages="pagination.totalNumberOfPages" :pagination="pagination"
-            @setPage="handlePageChange" v-model="pagination.page" class="table-pagination" />
-        </template>
-      </v-data-table-server>
-    </div>
+      <template #cell-actions="{ row }">
+        <EkButton tone="ghost" size="sm" icon="mdi-delete" icon-only class="hashtag-danger" aria-label="Grubu sil"
+          @click="openDeleteConfirm(row)" />
+      </template>
+    </EkListScreen>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onBeforeMount, reactive } from 'vue'
+import { ref, computed, onBeforeMount, reactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n';
 import { useHashtagsStore } from '@/stores/hashtagsStore';
 import { useSnackbarStore } from '@/stores/snackbarStore';
 import useFormRules from '@/composables/formrules';
 import useRestApi from '@/composables/restapi';
-import PaginationComponent from '@/components/PaginationComponent.vue';
 import LoadingComponent from '@/components/LoadingComponent.vue';
 import ConfirmationDialogComponent from '@/components/layout/ConfirmationDialogComponent.vue';
-import EmptyState from '@/components/layout/EmptyState.vue';
-import EkPageHeader from '@/components/ds/EkPageHeader.vue';
+import EkListScreen from '@/components/ds/templates/EkListScreen.vue';
+import EkButton from '@/components/ds/EkButton.vue';
+import type { EkGridColumn, EkGridSort } from '@/components/ds/EkDataGrid.vue';
+import { isRequestError, sortRows } from '@/components/ds/listStandard';
 
 const { t } = useI18n()
 const hashtagsStore = useHashtagsStore()
@@ -201,6 +180,10 @@ const searchText = ref('')
 const newHashtagTitle = ref('')
 const newHashtagForm = ref(false)
 const hashtagsStoreHashtags = ref<any[]>([])
+const loading = ref(false)
+const loadError = ref(false)
+// Sıralama İSTEMCİDE (liste zaten tamamı bellekte; backend sıralaması yok).
+const gridSort = ref<EkGridSort>(null)
 
 const pagination = reactive({
   page: 1,
@@ -211,24 +194,34 @@ const pagination = reactive({
 
 const newHashtagRules = [...formRules.mandatoryRule, ...formRules.length_2_160]
 
+// Etiket rengi VERİdir (DB'de '#RRGGBB' olarak saklanır) — tasarım token'ı değil, kullanıcının seçtiği palet;
+// bu nedenle literal hex olarak kalır (style mandalı bu dosyada bunları sayar).
 const swatchList = [
-  '#FF0000', '#AA0000', '#550000',
-  '#FFFF00', '#AAAA00', '#555500',
-  '#00FF00', '#00AA00', '#005500',
-  '#00FFFF', '#00AAAA', '#005555',
-  '#0000FF', '#0000AA', '#000055',
-  '#E91E63', '#9C27B0', '#673AB7', '#3F51B5', '#2196F3', '#03A9F4', '#00BCD4', '#009688',
-  '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722', '#795548', '#9E9E9E', '#607D8B'
+  '#FF0000', '#AA0000', '#550000', '#FFFF00', '#AAAA00', '#555500', '#00FF00', '#00AA00',
+  '#005500', '#00FFFF', '#00AAAA', '#005555', '#0000FF', '#0000AA', '#000055', '#E91E63',
+  '#9C27B0', '#673AB7', '#3F51B5', '#2196F3', '#03A9F4', '#00BCD4', '#009688', '#4CAF50',
+  '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722', '#795548', '#9E9E9E',
+  '#607D8B',
 ]
+
+watch(searchText, () => { pagination.page = 1 })
 
 onBeforeMount(() => retrieveHashtags())
 
 const copy = (obj: any) => obj ? JSON.parse(JSON.stringify(obj)) : null
 
 const retrieveHashtags = async () => {
-  let guid = loadingComponentRef.value?.info(t('loading.info.retrievingData'))
+  loading.value = true
+  loadError.value = false
   await hashtagsStore.retrieve()
-  const rawData = copy(hashtagsStore.hashtags)
+  const fetched: any = hashtagsStore.hashtags
+  if (isRequestError(fetched)) {
+    loadError.value = true
+    hashtagsStoreHashtags.value = []
+    loading.value = false
+    return
+  }
+  const rawData = Array.isArray(fetched) ? copy(fetched) : []
   hashtagsStoreHashtags.value = (rawData || []).map((c: any) => ({
     ...c,
     showAddInput: false,
@@ -238,15 +231,13 @@ const retrieveHashtags = async () => {
     showEditMenu: false,
     showDeleteConfirm: false
   }))
-  if (guid) loadingComponentRef.value.remove(guid)
+  loading.value = false
 }
 
 const openDeleteConfirm = (item: any) => {
   confirmationDelete.item = item
   confirmationDelete.isDialogOpen = true
 }
-
-const handlePageChange = () => { };
 
 const computedSearchHashtags = computed(() => {
   const query = searchText.value?.toLocaleUpperCase('tr') || ''
@@ -261,9 +252,9 @@ const computedSearchHashtags = computed(() => {
   return filtered
 })
 
-const computedHashtags = computed(() => {
+const pagedHashtags = computed(() => {
   const start = (pagination.page - 1) * pagination.limit
-  return computedSearchHashtags.value.slice(start, start + pagination.limit)
+  return sortRows(computedSearchHashtags.value, gridSort.value).slice(start, start + pagination.limit)
 })
 
 const addHashtag = async () => {
@@ -340,10 +331,10 @@ const getTextColor = (bgColor: string) => {
   return (L > 0.179) ? 'black' : 'white'
 }
 
-const headers: any = [
-  { title: "Etiket Grubu", key: "title", width: '400px', align: 'start' },
-  { title: "Etiketler", key: "hashtags", sortable: false, align: 'start' },
-  { title: '', key: "actions", sortable: false, align: 'end', width: '60px' },
+const columns: EkGridColumn[] = [
+  { key: 'title', label: 'Etiket grubu', sortable: true },
+  { key: 'hashtags', label: 'Etiketler', wrap: true },
+  { key: 'actions', label: 'İşlemler', align: 'end', hideLabel: true, pin: 'end' },
 ]
 </script>
 
@@ -354,31 +345,19 @@ const headers: any = [
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background-color: var(--ek-color-surface-muted);
+  padding: var(--ek-space-5) var(--ek-space-6);
 }
 
-.hashtag-header {
-  flex-shrink: 0;
-  padding: var(--ek-space-4) var(--ek-space-4) var(--ek-space-2);
-}
-
-.search-section {
-  flex-shrink: 0;
-  z-index: 10;
-  max-width: 1200px;
-  padding: 0 var(--ek-space-4) var(--ek-space-2);
-}
-
-.search-field {
-  max-width: 400px;
-}
-
-.search-btn {
-  border: 1px solid var(--ek-color-surface);
+@media (max-width: 767px) {
+  .hashtagListView {
+    overflow-y: auto;
+    padding: var(--ek-space-4);
+  }
 }
 
 .new-hashtag-form {
-  max-width: 500px;
+  width: 320px;
+  max-width: 100%;
 }
 
 .new-field-label {
@@ -386,39 +365,18 @@ const headers: any = [
 }
 
 /* Global `.customTextField .v-label` (site.css, opacity .8 !important) kontrastı AA altına düşürüyor
-   (axe color-contrast) — yalnızca bu ekranın iki alanında yerel olarak düzeltilir. */
-.search-field :deep(.v-field .v-field-label),
+   (axe color-contrast) — yalnızca bu alanda yerel olarak düzeltilir. */
 .new-hashtag-form :deep(.v-field .v-field-label) {
   color: var(--ek-color-content-muted) !important;
   opacity: 1 !important;
 }
 
-.table-wrapper {
-  flex-grow: 1;
-  position: relative;
-  min-height: 0;
+.hashtag-title-cell {
+  min-width: 260px;
 }
 
-.desktop-table {
-  position: absolute;
-  inset: 0;
-  border-top: 1px solid var(--ek-color-border-default);
-  background-color: var(--ek-color-surface) !important;
-}
-
-:deep(.v-data-table__th) {
-  background-color: var(--ek-color-surface) !important;
-  z-index: 2 !important;
-}
-
-:deep(.v-table__wrapper) {
-  flex-grow: 1 !important;
-  height: 100% !important;
-  overflow-y: auto !important;
-}
-
-:deep(.v-data-table-header__content) {
-  font-weight: var(--ek-font-weight-bold) !important;
+.hashtag-danger {
+  color: var(--ek-color-error);
 }
 
 .group-title {
@@ -428,6 +386,10 @@ const headers: any = [
   border: 0;
   padding: 0;
   text-align: start;
+}
+
+.group-title__tag {
+  color: var(--ek-color-content-subtle);
 }
 
 .group-title__icon {
@@ -445,19 +407,10 @@ const headers: any = [
   color: var(--ek-color-content-muted);
 }
 
-/* Renk kutuları: arka plan, kullanıcının seçtiği VERİ rengidir (swatchList) — token değil. */
+/* Renk kutuları: zemin, kullanıcının seçtiği VERİ rengidir (v-btn `color` prop'u) — token değil. */
 .swatch {
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  cursor: pointer;
   border-radius: var(--ek-radius-sm);
   border: 1px solid var(--ek-color-border-default);
-}
-
-.swatch--sm {
-  width: 22px;
-  height: 22px;
 }
 
 .swatch--selected {
@@ -470,17 +423,26 @@ const headers: any = [
   border-radius: var(--ek-radius-sm);
 }
 
+/* Etiket rengi veri; metin rengi zemin parlaklığına göre (getTextColor) token'dan seçilir. */
+.hashtag-chip-item.is-on-dark {
+  color: var(--ek-color-content-inverse);
+}
+
+.hashtag-chip-item.is-on-light {
+  color: var(--ek-color-content-strong);
+}
+
+.hashtag-chip-item.is-neutral {
+  background: var(--ek-color-surface-sunken);
+  color: var(--ek-color-content-strong);
+}
+
 .hashtag-chip-item__text {
   font-size: var(--ek-font-size-xs);
 }
 
-.confirm-btn {
-  border: 1px solid var(--ek-color-surface);
-}
-
-.table-pagination {
-  position: relative;
-  border-top: 1px solid var(--ek-color-border-default);
+.confirm-title {
+  color: var(--ek-color-content-strong);
 }
 
 .add-val-input {

@@ -54,12 +54,15 @@ test.describe('P3 (B5-2) — Etiketler (HashtagListView)', () => {
     await expect(page.getByText('Etiket Bulunamadı')).toBeVisible()
   })
 
-  test('hata durumu: HashtagService 500 verdiğinde ham hata sızmaz (karakterizasyon)', async ({ page }) => {
+  // DS-v2 Aşama 2 — BİLİNÇLİ DEĞİŞİKLİK: 500 artık boş duruma düşmez; "Etiketler yüklenemedi" + "Tekrar dene".
+  test('hata durumu: HashtagService 500 verdiğinde ham hata sızmaz, "yüklenemedi" + Tekrar dene gösterilir', async ({ page }) => {
     await installApiMocks(page, { MenuService: menuFixtureWithHashtag, HashtagService: mockError(500) })
     await gotoAuthed(page)
     await openHashtagListView(page)
 
     await expectScreenOpen(page, '.hashtagListView')
+    await expect(page.getByText('Etiketler yüklenemedi')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Tekrar dene' })).toBeVisible()
     await expect(page.locator('body')).not.toContainText('500')
   })
 

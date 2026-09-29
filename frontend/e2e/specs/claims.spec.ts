@@ -29,7 +29,7 @@ test.describe('P2 — İade Talepleri (ClaimListView)', () => {
     await expect(page.getByText('Talep Bulunamadı')).toBeVisible()
   })
 
-  test('hata durumu: 500 alındığında da aynı "Talep Bulunamadı" boş-durumuna düşülür, ham hata sızmaz (gizli davranış — bkz. BACKLOG.md)', async ({ page }) => {
+  test('hata durumu: 500 alındığında "İade talepleri yüklenemedi" + Tekrar dene gösterilir (boştan AYRI), ham hata sızmaz', async ({ page }) => {
     // GİZLİ DAVRANIŞ (characterization, düzeltilmedi — BACKLOG.md): `restApi.post` HİÇBİR ZAMAN
     // reddetmiyor (bkz. restapi.ts `postService` — hata `resolve(error)` ile çözülüyor); bu yüzden
     // `getClaimsInternal`'ın try/finally'si (catch bile YOK) hiç tetiklenmiyor, `res.claims`
@@ -39,7 +39,9 @@ test.describe('P2 — İade Talepleri (ClaimListView)', () => {
     await gotoAuthed(page)
     await openScreen(page, 'ClaimListView')
 
-    await expect(page.getByText('Talep Bulunamadı')).toBeVisible()
+    // DS-v2 Aşama 2 — BİLİNÇLİ DAVRANIŞ DEĞİŞİKLİĞİ: hata artık boş durumdan ayrı (isRequestError); API çağrısı AYNI.
+    await expect(page.getByText('İade talepleri yüklenemedi')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Tekrar dene' })).toBeVisible()
     await expect(page.locator('body')).not.toContainText('500')
   })
 

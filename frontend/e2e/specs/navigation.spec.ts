@@ -17,7 +17,9 @@ test.describe('ADR-0012 — Derin bağlantı', () => {
     await expect(page.locator('.orderListView')).toBeVisible()
     // Filtre gerçekten uygulandı: OrderListView.vue `parameters?.internalStatuses`'u okuyup
     // çoklu-seçim durum alanına yazıyor (bkz. navigation/screens.ts yorumu) — chip olarak görünür.
-    await expect(page.getByText('Satıcı Onayı Bekliyor')).toBeVisible()
+    // DS-v2 Aşama 2: aynı metin artık panel alanında, aktif filtre çipinde ve satır durumunda görünür;
+    // filtrenin uygulandığını aktif filtre çipi kanıtlar.
+    await expect(page.locator('.orderListView').getByRole('group', { name: 'Aktif filtreler' }).getByText('Satıcı Onayı Bekliyor')).toBeVisible()
   })
 
   test('bilinmeyen slug panoya düşer + bildirim gösterilir', async ({ page }) => {

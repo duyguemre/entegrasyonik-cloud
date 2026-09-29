@@ -9,7 +9,12 @@
     - Kolon tipleri: id (aksiyon renginde yarı kalın kimlik), num (sağa, tabular),
       muted (ikincil bilgi), text (varsayılan). Hücre içeriği `#cell-<key>` slot'u
     - Durumlar: yükleniyor (iskelet satırlar, başlık korunur), boş (ikon
-      kapsülü + başlık + açıklama + #empty-action)
+      kapsülü + başlık + açıklama + #empty-action), HATA (`error`; boştan ayrı
+      ton + #error-action / `retry` olayı)
+    - Kolon `hideLabel`: başlık görsel olarak boş (eylem kolonu), ekran okuyucu adı korunur
+    - Genişletme: `expandedKeys` + `#expanded="{ row }"` → satırın altında tam genişlik satır
+    - Kolon `pin: 'end'`: yatay kaydırmada sağa yapışık (satır eylemleri hep görünür)
+    - Hücre slot kapsamı: `{ row, item, value, index }` (`item` = `row`, göç kolaylığı)
   Yükseklik: kapsayıcısını doldurur (`EkListFrame` içinde kullanılır);
   sayfalama bu bileşenin DIŞINDA, çerçevenin altına sabittir.
 -->
@@ -33,7 +38,7 @@
             v-for="col in columns"
             :key="col.key"
             class="ek-grid__th"
-            :class="[`ek-grid__th--${col.align ?? alignFor(col)}`, { 'is-sorted': sort?.key === col.key }]"
+            :class="[`ek-grid__th--${col.align ?? alignFor(col)}`, { 'is-sorted': sort?.key === col.key, 'ek-grid__pin-end': col.pin === 'end' }]"
             scope="col"
             :aria-sort="col.sortable ? ariaSort(col.key) : undefined"
             v-bind="col.width ? { width: col.width } : {}"
@@ -42,7 +47,7 @@
               <span>{{ col.label }}</span>
               <v-icon class="ek-grid__sort-icon" :icon="sortIcon(col.key)" aria-hidden="true" />
             </button>
-            <span v-else>{{ col.label }}</span>
+            <span v-else :class="{ 'ek-sr-only': col.hideLabel }">{{ col.label }}</span>
           </th>
         </tr>
       </thead>
@@ -54,12 +59,23 @@
           </td>
         </tr>
       </tbody>
+      <tbody v-else-if="error">
+        <tr>
+          <td class="ek-grid__empty-cell" :colspan="columns.length + (selectable ? 1 : 0)">
+            <div class="ek-grid__empty" role="alert">
+              <EkIconTile icon="mdi-alert-circle-outline" tone="error" size="lg" />
+              <p class="ek-grid__empty-title">{{ errorTitle }}</p>
+              <p class="ek-grid__empty-text">{{ errorText }}</p>
+              <slot name="error-action" />
+            </div>
+          </td>
+        </tr>
+      </tbody>
       <tbody v-else-if="rows.length">
+        <template v-for="(row, ri) in rows" :key="row[rowKey]">
         <tr
-          v-for="(row, ri) in rows"
-          :key="row[rowKey]"
           class="ek-grid__row"
-          :class="{ 'is-selected': isSelected(row), 'is-hover': forceHoverIndex === ri }"
+          :class="[{ 'is-selected': isSelected(row), 'is-hover': forceHoverIndex === ri }, rowClass?.(row)]"
           @click="emit('row-click', row)"
         >
           <td v-if="selectable" class="ek-grid__td ek-grid__td--select" @click.stop>
@@ -67,6 +83,7 @@
               type="checkbox"
               class="ek-grid__check"
               :checked="isSelected(row)"
+              :indeterminate.prop="indeterminateSet.has(row[rowKey])"
               :aria-label="`${row[labelKey] ?? row[rowKey]} satırını seç`"
               @change="toggleRow(row)"
             />
@@ -75,11 +92,17 @@
             v-for="col in columns"
             :key="col.key"
             class="ek-grid__td"
-            :class="[`ek-grid__td--${col.type ?? 'text'}`, `ek-grid__td--${col.align ?? alignFor(col)}`]"
+            :class="[`ek-grid__td--${col.type ?? 'text'}`, `ek-grid__td--${col.align ?? alignFor(col)}`, { 'ek-grid__td--wrap': col.wrap, 'ek-grid__pin-end': col.pin === 'end' }]"
           >
-            <slot :name="`cell-${col.key}`" :row="row" :value="row[col.key]">{{ row[col.key] ?? '—' }}</slot>
+            <slot :name="`cell-${col.key}`" :row="row" :item="row" :value="row[col.key]" :index="ri">{{ row[col.key] ?? '—' }}</slot>
           </td>
         </tr>
+        <tr v-if="expandedSet.has(row[rowKey])" class="ek-grid__expanded">
+          <td class="ek-grid__expanded-cell" :colspan="columns.length + (selectable ? 1 : 0)">
+            <slot name="expanded" :row="row" :item="row" />
+          </td>
+        </tr>
+        </template>
       </tbody>
       <tbody v-else>
         <tr>
@@ -108,6 +131,12 @@ export interface EkGridColumn {
   align?: 'start' | 'end' | 'center'
   sortable?: boolean
   width?: string
+  /** Başlık görsel olarak gizli (ör. eylem kolonu); ekran okuyucu için ad korunur. */
+  hideLabel?: boolean
+  /** Hücre metni satır kırabilir (varsayılan tek satır). */
+  wrap?: boolean
+  /** `end`: kolon sağa yapışık kalır (yatay kaydırmada satır eylemleri görünür). */
+  pin?: 'end'
 }
 
 export type EkGridSort = { key: string; dir: 'asc' | 'desc' } | null
@@ -129,6 +158,14 @@ const props = withDefaults(
     emptyText?: string
     emptyIcon?: string
     forceHoverIndex?: number
+    error?: boolean
+    errorTitle?: string
+    errorText?: string
+    rowClass?: (row: Row) => string | Record<string, boolean> | undefined
+    /** Satırın altında tam genişlik `#expanded` satırı açık olan anahtarlar. */
+    expandedKeys?: Array<string | number>
+    /** Kısmi seçili (ör. varyantlarının bir kısmı seçili ürün) satır anahtarları — onay kutusu belirsiz. */
+    indeterminateKeys?: Array<string | number>
   }>(),
   {
     rowKey: 'id',
@@ -141,6 +178,11 @@ const props = withDefaults(
     emptyTitle: 'Kayıt bulunamadı',
     emptyText: 'Filtreleri değiştirip yeniden sorgulayın.',
     emptyIcon: 'mdi-text-box-search-outline',
+    error: false,
+    expandedKeys: () => [],
+    indeterminateKeys: () => [],
+    errorTitle: 'Kayıtlar yüklenemedi',
+    errorText: 'Bağlantınızı kontrol edip yeniden deneyin.',
   },
 )
 
@@ -152,6 +194,8 @@ const emit = defineEmits<{
 
 const allRef = ref<HTMLInputElement | null>(null)
 const selectedSet = computed(() => new Set(props.selected))
+const expandedSet = computed(() => new Set(props.expandedKeys))
+const indeterminateSet = computed(() => new Set(props.indeterminateKeys))
 const allSelected = computed(() => props.rows.length > 0 && props.rows.every((r) => selectedSet.value.has(r[props.rowKey])))
 const someSelected = computed(() => props.rows.some((r) => selectedSet.value.has(r[props.rowKey])))
 
@@ -291,6 +335,30 @@ function toggleSort(key: string) {
   border-bottom: 1px solid var(--ek-color-border-subtle);
   white-space: nowrap;
   transition: var(--ek-transition-colors);
+}
+
+.ek-grid__pin-end {
+  position: sticky;
+  right: 0;
+  background: var(--ek-color-surface);
+  box-shadow: inset 1px 0 0 var(--ek-color-border-subtle);
+}
+
+.ek-grid__th.ek-grid__pin-end {
+  z-index: calc(var(--ek-z-sticky) + 1);
+  background: var(--ek-color-surface-muted);
+}
+
+.ek-grid__expanded-cell {
+  padding: 0;
+  border-bottom: 1px solid var(--ek-color-border-default);
+  background: var(--ek-color-surface-sunken);
+  box-shadow: inset 3px 0 0 var(--ek-color-action-border);
+}
+
+.ek-grid__td--wrap {
+  white-space: normal;
+  min-width: 160px;
 }
 
 .ek-grid__td--end {

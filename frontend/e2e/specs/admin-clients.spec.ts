@@ -44,7 +44,7 @@ test.describe('P2 — Admin / Mağaza Yönetimi (AdminClientListView)', () => {
     await expect(page.getByText('Mağaza Bulunamadı', { exact: true })).toBeVisible()
   })
 
-  test('hata durumu: 500 alındığında da aynı boş-durumuna düşülür, ham hata sızmaz (gizli davranış — bkz. BACKLOG.md)', async ({ page }) => {
+  test('hata durumu: 500 alındığında "Mağazalar yüklenemedi" + Tekrar dene gösterilir, ham hata sızmaz', async ({ page }) => {
     // GİZLİ DAVRANIŞ (characterization, düzeltilmedi — BACKLOG.md): `restApi.post` HİÇBİR ZAMAN
     // reddetmiyor (bkz. restapi.ts `postService`); `loadClients` yalnızca `try/finally` kullanıyor
     // (catch YOK) ve `res?.success` falsy olunca `clients` başlangıç değeri `[]`'de kalıyor —
@@ -54,7 +54,9 @@ test.describe('P2 — Admin / Mağaza Yönetimi (AdminClientListView)', () => {
     await gotoAuthed(page)
     await openScreen(page, 'AdminClientListView')
 
-    await expect(page.getByText('Mağaza Bulunamadı', { exact: true })).toBeVisible()
+    // DS-v2 Aşama 2 — BİLİNÇLİ DEĞİŞİKLİK: hata artık boş durumdan AYRI ("Mağazalar yüklenemedi" + "Tekrar dene").
+    await expect(page.getByText('Mağazalar yüklenemedi', { exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Tekrar dene' })).toBeVisible()
     await expect(page.locator('body')).not.toContainText('500')
   })
 
@@ -82,7 +84,8 @@ test.describe('P2 — Admin / Mağaza Yönetimi (AdminClientListView)', () => {
     await gotoAuthed(page)
     await openScreen(page, 'AdminClientListView')
 
-    await page.locator('.adminClientListView thead button:has(.mdi-plus)').click()
+    // DS-v2 Aşama 2 — BİLİNÇLİ DEĞİŞİKLİK: "+" başlık düğmesi yerine başlık eylemi "Yeni mağaza oluştur".
+    await page.getByRole('button', { name: 'Yeni mağaza oluştur' }).click()
 
     const dialog = page.getByRole('dialog').filter({ hasText: 'Yeni Mağaza Oluştur' })
     await expect(dialog).toBeVisible()

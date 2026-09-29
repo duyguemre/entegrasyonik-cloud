@@ -123,7 +123,19 @@ function buildCounts(repoRoot) {
   return map;
 }
 
-/** `views/secure/**\/*.vue` altında `EkPageHeader` İÇERMEYEN ekran kökleri. */
+/**
+ * Ekran sayfa başlığını standart bileşenle mi çiziyor? `EkPageHeader` ya da DS-v2 liste
+ * standardı şablonu `EkListScreen` (başlık verilmişse kendi H1 başlık bloğunu çizer).
+ */
+function hasPageHeader(content) {
+  if (content.includes('EkPageHeader')) return true;
+  const at = content.search(/<EkListScreen\b/);
+  if (at < 0) return false;
+  // Açılış etiketinin öznitelikleri (öznitelik değerlerinde `=>` olabildiği için `>`e göre kesilmez).
+  return /\s:?title=/.test(content.slice(at, at + 2000).split(/\n\s*>\s*\n/)[0]);
+}
+
+/** `views/secure/**\/*.vue` altında sayfa başlığı (EkPageHeader / başlıklı EkListScreen) İÇERMEYEN ekran kökleri. */
 function buildPageHeaderMissing(repoRoot) {
   const viewsDir = path.join(repoRoot, 'src', 'views', 'secure');
   if (!fs.existsSync(viewsDir)) return {};
@@ -132,12 +144,13 @@ function buildPageHeaderMissing(repoRoot) {
   for (const absPath of files) {
     const relPath = path.relative(repoRoot, absPath).split(path.sep).join('/');
     const content = fs.readFileSync(absPath, 'utf8');
-    map[relPath] = content.includes('EkPageHeader') ? 0 : 1;
+    map[relPath] = hasPageHeader(content) ? 0 : 1;
   }
   return map;
 }
 
 module.exports = {
+  hasPageHeader,
   RAW_PATTERNS,
   countFileContent,
   listVueFiles,

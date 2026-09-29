@@ -105,9 +105,11 @@ test.describe('ADR-0015 B5-3 — FinancialListView (finans)', () => {
     await expect(page.getByText('Arama kriterlerinize uygun herhangi bir finansal işlem kaydı bulunamadı.')).toBeVisible()
   })
 
-  test('hata durumu: 500 alındığında da AYNI boş durum görünür (Karakterizasyon (DÜZELTİLMEDİ): getFinancials catch YOK, ayrı hata görünümü yok)', async ({ page }) => {
+  // DS-v2 Aşama 2 — BİLİNÇLİ DEĞİŞİKLİK: 500 artık boş duruma DÜŞMEZ; "Finansal işlemler yüklenemedi" + "Tekrar dene" gösterilir.
+  test('hata durumu: 500 alındığında "Finansal işlemler yüklenemedi" + "Tekrar dene" gösterilir', async ({ page }) => {
     await open(page, { [ENDPOINT]: mockError(500) })
-    await expect(page.getByText('Finansal Kayıt Bulunamadı')).toBeVisible()
+    await expect(page.getByText('Finansal işlemler yüklenemedi')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Tekrar dene' })).toBeVisible()
   })
 
   test('ilk yükleme: istek gövdesi page/limit/sortBy + boş filtre alanlarını taşır', async ({ page }) => {
@@ -149,56 +151,45 @@ test.describe('ADR-0015 B5-3 — FinancialListView (finans)', () => {
     expect(bodies[bodies.length - 1].page).toBe(1)
   })
 
-  test('filtre diyaloğu: tür seçilip "SONUÇLARI GÖSTER" ile transactionTypes gönderilir; "Temizle" (cancel) yeniden İSTEK ATMAZ', async ({ page }) => {
+  // DS-v2 Aşama 2 — BİLİNÇLİ DEĞİŞİKLİK: filtre diyaloğu kalktı; sayfa içi panel (.ek-filter). "Temizle" artık yeniden sorgular.
+  test('filtre paneli: tür seçilip "Sorgula" ile transactionTypes gönderilir; "Temizle" yeniden sorgular', async ({ page }) => {
     const bodies: any[] = []
     await open(page, { [ENDPOINT]: capturing(bodies) })
+    const view = page.locator('.financialListView')
     await expect(page.getByText('SIP-E2E-1001')).toBeVisible()
 
-    await page.locator('.financialListView button:has(.mdi-filter-variant)').first().click()
-    const dialog = page.getByRole('dialog').filter({ hasText: 'Finansal Filtreler' })
-    await expect(dialog).toBeVisible()
+    const panel = view.locator('.ek-filter')
+    // Panel masaüstünde açık başlar, dar ekranda kapalı: kapalıysa başlıktan aç.
+    if (!(await panel.locator('form').isVisible())) await view.getByRole('button', { name: /Filtreler/ }).click()
+    await expect(panel).toBeVisible()
 
-    await dialog.locator('.v-select').filter({ hasText: 'İşlem Tipi' }).click()
+    await panel.locator('.v-select').filter({ hasText: 'İşlem Tipi' }).click()
     // Karakterizasyon (DÜZELTİLMEDİ): seçenekler çevrilmemiş ham kodlarla listelenir (SALE, RETURN...).
     await page.getByRole('option', { name: 'SALE', exact: true }).click()
     await page.keyboard.press('Escape')
-    await dialog.getByRole('button', { name: 'SONUÇLARI GÖSTER' }).click()
+    await panel.getByRole('button', { name: /Sorgula/ }).click()
 
     await expect.poll(() => bodies[bodies.length - 1]?.transactionTypes).toEqual(['SALE'])
     expect(bodies[bodies.length - 1].page).toBe(1)
-    await expect(dialog).toBeHidden()
 
-    // Cancel: filtreler sıfırlanır, diyalog kapanır ama Karakterizasyon (DÜZELTİLMEDİ): yeniden fetch YOK.
-    await page.locator('.financialListView button:has(.mdi-filter-variant)').first().click()
-    await expect(dialog).toBeVisible()
-    const countBeforeCancel = bodies.length
-    await dialog.getByRole('button', { name: 'Temizle' }).click()
-    await expect(dialog).toBeHidden()
-    await page.waitForTimeout(400)
-    expect(bodies.length).toBe(countBeforeCancel)
+    const countBeforeReset = bodies.length
+    await panel.getByRole('button', { name: /Temizle/ }).click()
+    await expect.poll(() => bodies.length).toBeGreaterThan(countBeforeReset)
+    expect(bodies[bodies.length - 1].transactionTypes).toEqual([])
   })
 
-  test('masaüstü sıralama: "Net Etki" başlığı sortBy ile yeniden istek atar', async ({ page }, testInfo) => {
+  test('masaüstü sıralama: "Net etki" başlığı sortBy ile yeniden istek atar', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'Sıralanabilir tablo başlıkları yalnızca masaüstü tablosunda (>=960px) var')
     const bodies: any[] = []
     await open(page, { [ENDPOINT]: capturing(bodies) })
     await expect(page.getByText('SIP-E2E-1001')).toBeVisible()
 
-    await page.getByRole('columnheader', { name: /Net Etki/ }).click()
+    await page.getByRole('columnheader', { name: /Net etki/ }).click()
     await expect.poll(() => bodies[bodies.length - 1]?.sortBy).toEqual([{ key: 'netAmount', order: 'asc' }])
     expect(bodies[bodies.length - 1].page).toBe(1)
   })
 
-  test('mobil sıralama: seçici "Tarih: En Eski" seçilince sortBy asc ile istek atar', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name === 'chromium-desktop', 'Mobil sıralama seçicisi yalnızca kart görünümünde (<960px) var')
-    const bodies: any[] = []
-    await open(page, { [ENDPOINT]: capturing(bodies) })
-    await expect(page.getByText('SIP-E2E-1001')).toBeVisible()
-
-    await page.locator('.financialListView .v-select').first().click()
-    await page.getByRole('option', { name: 'Tarih: En Eski' }).click()
-    await expect.poll(() => bodies[bodies.length - 1]?.sortBy).toEqual([{ key: 'transactionDate', order: 'asc' }])
-  })
+  // DS-v2 Aşama 2 — BİLİNÇLİ DEĞİŞİKLİK: mobil sıralama seçicisi kaldırıldı (kolon başlığı sıralaması tüm genişliklerde).
 
   test('detay: göz ikonu işlem detayını açar (externalId, net hakediş, KDV meta, komisyon)', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'Detay yalnızca masaüstü tablosundaki göz düğmesiyle açılır; mobil kartta detay eylemi yok (Karakterizasyon: DÜZELTİLMEDİ)')

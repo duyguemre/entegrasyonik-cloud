@@ -1,33 +1,14 @@
 <template>
-  <div class="productListView pt-4">
-    <!-- ek-pattern-exception: EkListPage/EkDataTable/EkDetailSheet — gerçekten farklı bir
-         etkileşim modeli (satır-içi varyant genişletme [rowspan+teleport], sürükle-seç
-         benzeri toplu platform işlem paneli, sıralanabilir özel başlık slot'ları); mevcut
-         spec kancası (`.productListView tbody tr` + satır tıklamasıyla açılan
-         `.v-checkbox-btn`) bu yapıya sıkı bağlı. EkPageHeader/EkEmptyState ile hafif
-         dokunuşla iyileştirildi (ADR-0015 Karar 6, B1 teslim raporunda gerekçelendirildi). -->
-    <EkPageHeader
-      section="Katalog"
-      title="Ürünler"
-      description="Tüm kanallardaki ürünlerinizi buradan yönetin."
-      :primary-action="{ label: 'Yeni ürün', icon: 'mdi-plus', onClick: () => openProductDefinition() }"
-    />
-    <teleport v-if="isMounted" v-show="productIdForVariantList" :to="`#variant-target-${productIdForVariantList}`">
-      <ProductVariantListComponent v-if="selectedProduct" :productInfoForm="selectedProduct"
-        v-model:selectedVariants="selectedVariantsMap[selectedProduct._id]"
-        @transferVariant="(processItem) => transferProduct(selectedProduct, processItem)"
-        @updatePriceVariant="(processItem) => updatePriceProduct(selectedProduct, processItem)"
-        @updateStockVariant="(processItem) => updateStockProduct(selectedProduct, processItem)"
-        @updateVariant="(processItem) => updateProduct(selectedProduct, processItem)"
-        @checkVariantStatus="(processItem) => checkProductStatus(selectedProduct, processItem)" />
-    </teleport>
-    <div id="variant-target-0" v-show="false" class="plv-variant-target-placeholder"></div>
+  <div class="productListView">
+    <!-- DS-v2 Aşama 2 — liste standardı (EkListScreen). Ürüne özgü: satır altı varyant açılımı
+         (`#expanded`, `#variant-target-<id>` kancası korunur), kısmi (varyant) seçim, platform
+         hazır/yüklü durumu satır içinde. Toplu işlem merkezi ve aktarım panelleri (diyalog gövdeleri)
+         bu adımın kapsamı dışında, olduğu gibi. -->
     <v-menu v-model="confirmationDelete.isDialogOpen" :close-on-content-click="false"
       :activator="confirmationDelete.activator" @update:model-value="cancelDeleteProduct()">
       <template v-slot:activator>
         <span></span>
       </template>
-
       <v-card prepend-icon="mdi-delete-outline" color="danger" class="pl-4 pr-4">
         <template v-slot:prepend>
         </template>
@@ -41,451 +22,228 @@
         <template v-slot:text>
           <div class="d-flex justify-center">Silmek istediğnizden emin misiniz?</div>
           <div class="mt-4 mb-4 text-center">
-            <v-btn color="tonal" min-width="100" variant="outlined" @click="cancelDeleteProduct()" class="mr-4">
+            <v-btn min-width="100" variant="outlined" @click="cancelDeleteProduct()" class="mr-4">
               {{ $t('common.cancel') }}
             </v-btn>
-
-            <v-btn color="error" bg-color="error" variant="flat" class="plv-border-surface" min-width="100"
-              @click="deleteProduct()">
+            <v-btn color="error" variant="flat" min-width="100" @click="deleteProduct()">
               {{ $t('common.delete') }}
             </v-btn>
           </div>
         </template>
       </v-card>
     </v-menu>
-
-
     <LoadingComponent :attach="dialogAttach" ref="loadingComponentRef"></LoadingComponent>
     <v-dialog scrim persistent :retain-focus="false" v-model="show" location-strategy="connected" target="cursor"
       no-click-animation :close-on-content-click="false" :attach="dialogAttach" class="plv-dialog-transition"
-      :class="{ 'plv-dialog-hidden': !batchPlatformProcessMenu && !transferProductForm.transferProductFormMenu && !searchProductForm.searchProductFormMenu && !batchProcessFormMenu }"
+      :class="{ 'plv-dialog-hidden': !batchPlatformProcessMenu && !transferProductForm.transferProductFormMenu && !batchProcessFormMenu }"
       :contained="true" location="left" height="100%" width="100%">
-
       <keep-alive>
-        <ProductTransferComponent class="plv-panel-transition"
-          v-if="transferProductForm.transferProductFormMenu"
-          :class="{ 'plv-panel-hidden': !transferProductForm.transferProductFormMenu }"
+        <ProductTransferComponent v-if="transferProductForm.transferProductFormMenu"
           key="ProductTransferComponent" v-model="transferProductForm"
           @close="transferProductForm.transferProductFormMenu = false" @transferProducts="transferProducts"
           :isFiltered="isFiltered" />
       </keep-alive>
-
-
       <keep-alive>
-        <ProductBatchProcessComponent class="plv-panel-transition" v-if="batchProcessFormMenu"
-          key="ProductBatchProcessComponent" :class="{ 'plv-panel-hidden': !batchProcessFormMenu }"
+        <ProductBatchProcessComponent v-if="batchProcessFormMenu"
+          key="ProductBatchProcessComponent"
           @close="batchProcessFormMenu = false" @refreshProducts="getProducts" v-model="batchProcessFormMenu"
           :selectedProducts="selectedProducts" :searchProductForm="searchProductForm" />
       </keep-alive>
-
     </v-dialog>
 
-    <div class="d-flex pa-2 plv-search-row">
-      <v-text-field clearable density="compact" :label="$t('products.product.searchlabel')" variant="outlined"
-        v-model="searchProductForm.data.searchText" bg-color="textfieldColor" class="customTextField"
-        @keyup.enter.stop="search()">
-
-        <template #append-inner>
-          <v-tooltip open-delay="1000" :text="$t('products.product.search')">
-            <template v-slot:activator="{ props: tooltipProps }">
-              <v-btn flat size="40" v-bind="{ ...tooltipProps }" class="pa-2 plv-border-surface" elevation="0"
-                :color="isFiltered ? 'activeButtonColor' : 'white'" aria-label="Ürünleri ara"
-                @click.stop="search()"><v-icon size="x-large" color="processButtonColor">mdi-magnify</v-icon></v-btn>
-            </template>
-          </v-tooltip>
-
-        </template>
-      </v-text-field>
-
-
-      <ProductAdvancedSearchComponent v-model="searchProductForm.data" :is-dirty="isFormDirty()"
-        :transfer-status-items="transferStatusItems" @search="searchAdvanced" @clear="clearForm" />
-
-      <v-tooltip open-delay="1000" text="Ürün listesini yenilemek için basınız">
-        <template v-slot:activator="{ props: tooltipProps }">
-          <v-btn @click="getProducts(true)" size="40" color="white" class="premium-cube-btn ml-2" elevation="0" aria-label="Ürün listesini yenile">
-            <v-icon size="x-large" color="processButtonColor">mdi-refresh</v-icon>
-          </v-btn>
-        </template>
-      </v-tooltip>
-    </div>
-
-    <v-data-table-server v-model="selectedProducts" item-value="_id" :loading="false" :itemsLength="products.length"
-      :items="products" fixed-header :headers="headers" class="pa-0 ma-0 premium-table desktop-table plv-table"
-      show-select @update:sort-by="sortProducts">
-
-
-      <template v-slot:header.data-table-select="{ allSelected, selectAll, someSelected }">
-        <v-checkbox-btn :model-value="allSelected" :indeterminate="someSelected && !allSelected" color="primaryLighten"
-          @update:model-value="toggleAllProductsSelection"></v-checkbox-btn>
+    <EkListScreen
+      title="Ürünler"
+      description="Tüm kanallardaki ürünlerinizi buradan yönetin."
+      label="Ürün listesi"
+      noun="ürün"
+      row-key="_id"
+      label-key="title"
+      :columns="columns"
+      :rows="products"
+      :row-class="(r) => (r.onsale === false ? 'plv-row-offsale' : undefined)"
+      :expanded-keys="productIdForVariantList ? [productIdForVariantList] : []"
+      :indeterminate-keys="indeterminateKeys"
+      :loading="loading"
+      :error="loadError"
+      error-title="Ürünler yüklenemedi"
+      :search="searchProductForm.data.searchText ?? ''"
+      :search-placeholder="$t('products.product.searchlabel')"
+      :chips="activeChips"
+      :filter-count="panelFilterCount"
+      :filter-collapsed="filterCollapsed"
+      selectable
+      :selected="gridSelectedKeys"
+      :sort="gridSort"
+      :page="searchProductForm.pagination.page"
+      :page-size="searchProductForm.pagination.limit"
+      :total="searchProductForm.pagination.totalNumberOfRecords"
+      :skeleton-rows="searchProductForm.pagination.limit"
+      empty-title="Ürün Bulunamadı"
+      empty-text="Henüz ürün eklenmemiş. İlk ürününüzü tanımlayarak başlayın."
+      empty-icon="mdi-tag-outline"
+      filtered-empty-title="Ürün Bulunamadı"
+      filtered-empty-text="Arama kriterlerinize uygun herhangi bir ürün kaydı bulunamadı."
+      @update:search="(v) => (searchProductForm.data.searchText = v || undefined)"
+      @search-submit="search()"
+      @update:filter-collapsed="(v) => (filterCollapsed = v)"
+      @update:selected="onGridSelection"
+      @update:sort="onGridSort"
+      @update:page="onPageChange"
+      @update:page-size="onPageSizeChange"
+      @filter-submit="searchAdvanced"
+      @filter-reset="clearForm"
+      @remove-chip="removeChip"
+      @clear-filters="clearForm"
+      @refresh="getProducts(true)"
+    >
+      <template #header-actions>
+        <EkButton icon="mdi-plus" @click="openProductDefinition()">Yeni ürün</EkButton>
       </template>
 
-      <template v-slot:item="{ item, isSelected, toggleSelect }: any">
-        <tr
-          :class="{
-            'plv-row-dimmed': productIdForVariantList != item._id && productIdForVariantList != 0,
-            'plv-row-active-shadow': productIdForVariantList == item._id && productIdForVariantList != 0
-          }">
+      <template #filters>
+        <v-text-field v-model="searchProductForm.data.title" clearable maxlength="160" :label="$t('productDefinitions.product.define.productTitle')" />
+        <v-text-field v-model="searchProductForm.data.barcode" clearable label="Barkod" />
+        <v-text-field v-model="searchProductForm.data.stockcode" clearable label="Stok kodu" />
+        <v-select v-model="searchProductForm.data.onSale" item-value="id" item-title="title" :items="ON_SALE_ITEMS" label="Satış durumu" />
+        <CategorySelectBoxComponent v-model="searchProductForm.data.category" :withAll="false" noInit />
+        <BrandSelectBoxComponent v-model="searchProductForm.data.brand" :withAll="false" noInit />
+        <VCurrencyComponentVue v-model="searchProductForm.data.prices.minSalePrice" :isIconExist="false" label="Minimum fiyat" clearable :required="false" />
+        <VCurrencyComponentVue v-model="searchProductForm.data.prices.maxSalePrice" :isIconExist="false" label="Maksimum fiyat" clearable :required="false" />
+        <v-select v-model="searchProductForm.data.transferStatuses" :items="transferStatusOptions" item-title="title" item-value="value"
+          label="Platform yüklenme durumu" multiple chips closable-chips clearable class="ek-span-2" />
+      </template>
 
-          <td :rowspan="item.hasVariant && productIdForVariantList == item._id ? 2 : 1"
-            :class="{ 'plv-cell-no-border': item.hasVariant && productIdForVariantList == item._id }"
-            class="pa-0">
+      <template #bulk-actions>
+        <v-menu scroll-strategy="close" v-model="headerMenu" :close-on-content-click="false" location="bottom end">
+          <template v-slot:activator="{ props: menuProps }">
+            <EkButton v-bind="menuProps" size="sm" icon="mdi-dots-vertical">Toplu işlemler</EkButton>
+          </template>
+          <v-card class="plv-menu-card">
+            <keep-alive>
+              <BatchActionsRootComponent v-model:headerMenu="headerMenu" key="BatchActionsRootComponent" @refreshProducts="getProducts"
+                v-model="batchPlatformProcessMenu" :selectedProducts="selectedProducts"
+                v-model:selectedVariants="selectedVariantsMap" :searchProductForm="searchProductForm" mode="UPDATE" />
+            </keep-alive>
+          </v-card>
+        </v-menu>
+      </template>
+      <template #toolbar-start>
+        <span class="plv-hint">Toplu işlem için satır seçin veya tüm filtre sonucuna uygulayın</span>
+      </template>
+      <template #toolbar-end>
+        <v-menu scroll-strategy="close" v-model="headerMenu" :close-on-content-click="false" location="bottom end">
+          <template v-slot:activator="{ props: menuProps }">
+            <EkButton v-bind="menuProps" size="sm" icon="mdi-dots-vertical">Toplu işlemler</EkButton>
+          </template>
+          <v-card class="plv-menu-card">
+            <keep-alive>
+              <BatchActionsRootComponent v-model:headerMenu="headerMenu" key="BatchActionsRootComponent" @refreshProducts="getProducts"
+                v-model="batchPlatformProcessMenu" :selectedProducts="selectedProducts"
+                v-model:selectedVariants="selectedVariantsMap" :searchProductForm="searchProductForm" mode="UPDATE" />
+            </keep-alive>
+          </v-card>
+        </v-menu>
+      </template>
 
-            <div class="d-flex align-center justify-center fill-height w-100">
-              <v-checkbox-btn class="plv-checkbox-flex" :model-value="isProductSelected(item)"
-                :indeterminate="isProductIndeterminate(item)" color="primaryLighten"
-                @update:model-value="val => onProductSelectionUpdate(item, !!val)" />
-            </div>
-
-
-
-          </td>
-
-          <td @click="selectProduct(item)" class="plv-cursor-pointer plv-cell-tight">
-            <div class="d-flex align-center"
-              :class="{ 'plv-cell-offsale': item.onsale == false }">
-              <div class="text-center mr-4 elevation-1 plv-thumb-wrap"
-                @click="openEditProduct(item)">
-                <div class="text-processButtonColor plv-image-count-badge"
-                  v-if="item.images && item.images != 0">
-                  <v-icon size="9">mdi-image-multiple-outline</v-icon>
-                  <span class="font-weight-light plv-image-count-text">{{ item.images.length }}</span>
-                </div>
-                <v-tooltip location="bottom" open-delay="1000" text="Ürünü düzenlemek için basınız">
-                  <template v-slot:activator="{ props: tooltipProps }">
-                    <ProductImageComponent v-bind="tooltipProps" :productId="item._id" v-model="item.images[0]"
-                      class="plv-cursor-pointer" />
-                  </template>
-                </v-tooltip>
-              </div>
-
-              <div>
-                <span class="font-weight-bold text-body-2">{{ item.title }}</span>
-                <template v-if="item.hasVariant">
-                  <div class="font-weight-light text-caption text-left plv-caption-10">
-                    ({{ item.variants.length }} Seçenek)
-                    <div class="d-flex justify-left ml-4">
-                      <v-icon size="20" color="processButtonColor">mdi-menu-down</v-icon>
-                    </div>
-                  </div>
-                </template>
-                <div class="d-flex">
-                  <div class="plv-stockcode-col" v-if="item.hasVariant == false">
-                    <div class="font-weight-light text-caption mt-1 plv-micro-caption">
-                      Stok
-                      Kodu
-                    </div>
-                    <span class="font-weight-bold">{{ item.variants[0]?.stockcode }}</span>
-                    <div class="font-weight-light text-caption mt-1 plv-micro-caption">
-                      Barkod
-                    </div>
-                    <span class="font-weight-medium">{{ item.variants[0]?.barcode }}&nbsp</span>
-                  </div>
-                  <div class="ml-8">
-                    <template v-for="hashtag of item.hashtags">
-                      <v-tooltip open-delay="500" :text="hashtag.title">
-                        <template v-slot:activator="{ props: tooltipProps }">
-
-                          <v-btn v-bind="{ ...tooltipProps }" class="mr-1 plv-hashtag-btn" flat size="13"
-                            :style="{ '--plv-hashtag-color': hashtag.value }">
-                          </v-btn>
-
-                        </template>
-                      </v-tooltip>
-                    </template>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-
-          </td>
-          <td>
-
-
-            <div class="d-flex fill-height align-center plv-cursor-pointer plv-border-right-default">
-
-              <div>
-                <span class="font-weight-bold"> {{ formatMoney(item.prices?.minSalePrice) }} - {{
-                  formatMoney(item.prices?.maxSalePrice) }} </span>
-              </div>
-            </div>
-          </td>
-          <td>
-            <div :class="{ 'plv-opacity-full': item.onsale == false }">
-              <div class="font-weight-light text-caption mt-0 plv-micro-caption">
-                Stok
-              </div>
-              <span class="font-weight-bold">
-                {{ item.stock }}
+      <template #cell-title="{ row }">
+        <div class="plv-product" @click="selectProduct(row)">
+          <button type="button" class="plv-thumb" :aria-label="`${row.title} ürününü düzenle`" @click.stop="openEditProduct(row)">
+            <ProductImageComponent :productId="row._id" v-model="row.images[0]" />
+            <span v-if="row.images?.length" class="plv-thumb__count ek-num" aria-hidden="true">{{ row.images.length }}</span>
+          </button>
+          <span class="plv-product__text">
+            <span class="plv-product__title">{{ row.title }}</span>
+            <button v-if="row.hasVariant" type="button" class="plv-variants-toggle" :aria-expanded="productIdForVariantList == row._id"
+              @click.stop="selectProduct(row)">
+              ({{ row.variants.length }} Seçenek)
+              <v-icon size="16" :icon="productIdForVariantList == row._id ? 'mdi-chevron-up' : 'mdi-chevron-down'" aria-hidden="true" />
+            </button>
+            <span v-if="row.hashtags?.length" class="plv-tags">
+              <span v-for="hashtag of row.hashtags" :key="hashtag._id ?? hashtag.title" class="plv-tag" :title="hashtag.title">
+                <span class="plv-tag__dot" aria-hidden="true" :style="{ '--plv-hashtag-color': hashtag.value }"></span>{{ hashtag.title }}
               </span>
-            </div>
-          </td>
-          <td>
-            <div :class="{ 'plv-opacity-full': item.onsale == false }">
-              <div class="font-weight-light text-caption mt-1 plv-micro-caption">Marka
-              </div>
-              <span class="font-weight-medium plv-opacity-90">{{ brandsStore.getBrand(item.brand)?.title }}</span>
-              <div class="font-weight-light text-caption mt-1 plv-micro-caption">Kategori
-              </div>
-              <span class="font-weight-medium plv-opacity-90"> {{ categoriesStore.getCategory(item.category)?.title
-                }}
-              </span>
-            </div>
-          </td>
-          <td class="status-summary-cell">
-            <div class="d-flex fill-height align-center plv-border-right-default"
-              v-if="item.hasVariant == false">
-
-              <div class="mt-1 mb-1 d-flex flex-wrap plv-platform-badges-wrap">
-                <template v-if="integrationStore" v-for="(integration, index) of integrationStore.getClientPlatforms()">
-                  <div class="plv-platform-badge-pos">
-                    <div class="plv-platform-status-icon-pos">
-                      <v-icon size="15"
-                        v-if="item.platformUploads && item.platformUploads[integration.code] && item.platformUploads[integration.code].isUploaded"
-                        color="white" class="elevation-0 bg-green plv-border-surface">mdi-check</v-icon>
-                      <v-icon v-else color="white" class="elevation-0 bg-red plv-border-surface"
-                        size="15">mdi-close</v-icon>
-                    </div>
-                    <IntegrationAvatarComponent mode="text" :platform="integration" width="85px" height="20px"
-                      :class="[
-                        'mb-2 mr-1 plv-cursor-pointer plv-platform-avatar',
-                        (item.platformUploads && item.platformUploads[integration.code] && item.platformUploads[integration.code].isReady)
-                          ? 'plv-platform-avatar-ready' : 'plv-platform-avatar-not-ready'
-                      ]"
-                      :style="{ '--plv-platform-color': integration.color }"
-                      @click.stop="savePlatformUploadIsReadyForProduct(item, integration.code)" />
-                  </div>
-                </template>
-              </div>
-            </div>
-            <div v-else>
-
-              <div class="status-badge-wrapper">
-                <template v-for="(summary, index) of getCountSummary(item.variants)" :key="summary.type">
-
-                  <div class="status-item">
-                    <v-tooltip activator="parent" location="top" :open-delay="50">
-                      {{ getStatusLabel(summary.type) }}
-                    </v-tooltip>
-
-                    <div class="status-dot" :class="summary.type.toLowerCase()"></div>
-
-                    <span class="status-count">
-                      {{ summary.count }}<span v-if="summary.type === 'COMPLETED'" class="on-sale">/{{
-                        summary.onSaleCount }}</span>
-                    </span>
-
-                    <div v-if="index < getCountSummary(item.variants).length - 1" class="mini-divider"></div>
-                  </div>
-
-                </template>
-              </div>
-
-            </div>
-          </td>
-          <td>
-            <div class="d-flex justify-end">
-
-              <v-btn flat size="35" @click="openEditProduct(item)" elevation=0 class="premium-cube-btn mr-0"
-                color="processButtonColor" aria-label="Ürünü düzenle">
-                <v-icon size="x-large" class="plv-opacity-full">mdi-tag-edit</v-icon>
-              </v-btn>
-              <v-btn flat size="35" @click="deleteConfirmation(item, $event)" elevation=0 class="premium-cube-btn ml-2"
-                color="danger" aria-label="Ürünü sil">
-                <v-icon size="x-large" class="plv-opacity-full">mdi-delete</v-icon>
-              </v-btn>
-
-
-
-
-            </div>
-
-          </td>
-        </tr>
-        <tr v-show="item.hasVariant && productIdForVariantList == item._id"
-          class="plv-variant-row-shadow">
-          <td colspan="8" class="pa-0">
-            <div :id="`variant-target-${item._id}`"></div>
-          </td>
-        </tr>
-
-        <tr v-show="false"
-          class="plv-variant-row-shadow">
-          <td colspan="8" class="pa-0">
-          </td>
-        </tr>
-      </template>
-      <template v-slot:no-data>
-        <EkEmptyState variant="no-results" title="Ürün Bulunamadı" message="Arama kriterlerinize uygun herhangi bir ürün kaydı bulunamadı."
-          show-action action-text="Yeni ürün ekle" @action="openProductDefinition()" />
-      </template>
-
-      <template v-slot:header.title="{ column, getSortIcon, isSorted, someSelected }">
-        <div class="d-flex  fill-height align-center plv-border-left-none">
-          <div class="plv-col-header-image text-center"><v-icon class="mr-8">mdi-image-outline</v-icon></div>
-
-          <div class="font-weight-bold text-body-2 plv-col-header-60"
-            @click="toggleSort('title')" @mouseenter="sortIcon = 'title'" @mouseleave="sortIcon = undefined">
-            Ürün
-            <template v-if="searchProductForm.sort.field === 'title'">
-              <v-icon>
-                {{ searchProductForm.sort.direction === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-              </v-icon>
-            </template>
-            <v-icon v-else class="plv-opacity-half" v-if="sortIcon == 'title'">
-              {{ searchProductForm.sort.direction === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-            </v-icon>
-          </div>
-          |
-          <div class="font-weight-bold text-caption ml-1 plv-col-header-95"
-            @click="toggleSort('stockcode')" @mouseenter="sortIcon = 'stockcode'" @mouseleave="sortIcon = undefined">
-            Stok Kodu
-            <template v-if="searchProductForm.sort.field === 'stockcode'">
-              <v-icon class="text-caption">
-                {{ searchProductForm.sort.direction === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-              </v-icon>
-            </template>
-            <v-icon class="text-caption plv-opacity-half" v-else v-if="sortIcon == 'stockcode'">
-              {{ searchProductForm.sort.direction === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-            </v-icon>
-          </div>
-          |
-          <div class="font-weight-bold text-caption ml-1 " @click="toggleSort('barcode')"
-            @mouseenter="sortIcon = 'barcode'" @mouseleave="sortIcon = undefined">
-            Barkod
-            <template v-if="searchProductForm.sort.field === 'barcode'">
-              <v-icon class="text-caption">
-                {{ searchProductForm.sort.direction === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-              </v-icon>
-            </template>
-            <v-icon class="text-caption plv-opacity-half" v-else v-if="sortIcon == 'barcode'">
-              {{ searchProductForm.sort.direction === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-            </v-icon>
-          </div>
-        </div>
-
-      </template>
-
-
-      <template v-slot:header.price>
-        <div class="d-flex fill-height align-center plv-border-right-default">
-
-          <div class="font-weight-bold plv-col-header-70" @click="toggleSort('price')"
-            @mouseenter="sortIcon = 'price'" @mouseleave="sortIcon = undefined">
-            Fiyat
-            <template v-if="searchProductForm.sort.field === 'price'">
-              <v-icon>
-                {{ searchProductForm.sort.direction === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-              </v-icon>
-            </template>
-            <v-icon v-else class="plv-opacity-half" v-if="sortIcon == 'price'">
-              {{ searchProductForm.sort.direction === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-            </v-icon>
-          </div>
+            </span>
+          </span>
         </div>
       </template>
-      <template v-slot:header.category>
-        <div class="d-flex">
-          <div class="font-weight-bold text-body-2 plv-col-header-70"
-            @mouseenter="sortIcon = 'brand'" @mouseleave="sortIcon = undefined">
-            Marka
-          </div>
-          |
-          <div class="font-weight-bold text-caption ml-1 plv-col-header-95"
-            @mouseenter="sortIcon = 'category'" @mouseleave="sortIcon = undefined">
-            Kategori
-          </div>
+      <template #cell-stockcode="{ row }">
+        <span v-if="!row.hasVariant" class="ek-num">{{ row.variants[0]?.stockcode || '—' }}</span>
+        <span v-else class="plv-muted">Varyantlı</span>
+      </template>
+      <template #cell-barcode="{ row }">
+        <span v-if="!row.hasVariant" class="ek-num">{{ row.variants[0]?.barcode || '—' }}</span>
+        <span v-else class="plv-muted">—</span>
+      </template>
+      <template #cell-price="{ row }">
+        <span class="ek-num">{{ priceText(row) }}</span>
+      </template>
+      <template #cell-stock="{ row }">
+        <span class="ek-num" :class="{ 'plv-stock-zero': !row.stock }">{{ row.stock ?? '—' }}</span>
+      </template>
+      <template #cell-brandCategory="{ row }">
+        <span v-if="row.brand || row.category" class="plv-two-line">
+          <span>{{ brandsStore.getBrand(row.brand)?.title || '—' }}</span>
+          <span class="plv-muted">{{ categoriesStore.getCategory(row.category)?.title || '—' }}</span>
+        </span>
+        <span v-else class="plv-muted">—</span>
+      </template>
+      <template #cell-platforms="{ row }">
+        <span v-if="!row.hasVariant" class="plv-platforms">
+          <button v-for="integration of integrationStore.getClientPlatforms()" :key="integration.code" type="button"
+            class="plv-platform" :class="{ 'is-ready': isReady(row, integration.code) }"
+            :aria-label="platformAriaLabel(row, integration)"
+            :title="platformAriaLabel(row, integration)"
+            @click.stop="savePlatformUploadIsReadyForProduct(row, integration.code)">
+            <EkChannelDot :code="integration.code" :name="integration.title" :show-name="false" />
+            <v-icon size="14" :icon="isUploaded(row, integration.code) ? 'mdi-check-circle' : 'mdi-close-circle-outline'"
+              :class="isUploaded(row, integration.code) ? 'plv-ok' : 'plv-no'" aria-hidden="true" />
+          </button>
+        </span>
+        <span v-else class="plv-summary">
+          <span v-for="summary of getCountSummary(row.variants)" :key="summary.type" class="plv-summary__item" :title="getStatusLabel(summary.type)">
+            <span class="plv-summary__dot" :class="`is-${summary.type.toLowerCase()}`" aria-hidden="true"></span>
+            <span class="ek-sr-only">{{ getStatusLabel(summary.type) }}:</span>
+            <span class="ek-num">{{ summary.count }}<template v-if="summary.type === 'COMPLETED'">/{{ summary.onSaleCount }}</template></span>
+          </span>
+        </span>
+      </template>
+      <template #cell-actions="{ row }">
+        <span class="plv-row-actions">
+          <EkButton tone="ghost" size="sm" icon="mdi-tag-edit" icon-only aria-label="Ürünü düzenle" @click="openEditProduct(row)" />
+          <EkButton tone="ghost" size="sm" icon="mdi-delete" icon-only aria-label="Ürünü sil" class="plv-danger" @click="deleteConfirmation(row, $event)" />
+        </span>
+      </template>
+
+      <template #expanded="{ row }">
+        <div :id="`variant-target-${row._id}`" class="plv-variants">
+          <ProductVariantListComponent v-if="selectedProduct && selectedProduct._id === row._id" :productInfoForm="selectedProduct"
+            v-model:selectedVariants="selectedVariantsMap[selectedProduct._id]"
+            @transferVariant="(processItem) => transferProduct(selectedProduct, processItem)"
+            @updatePriceVariant="(processItem) => updatePriceProduct(selectedProduct, processItem)"
+            @updateStockVariant="(processItem) => updateStockProduct(selectedProduct, processItem)"
+            @updateVariant="(processItem) => updateProduct(selectedProduct, processItem)"
+            @checkVariantStatus="(processItem) => checkProductStatus(selectedProduct, processItem)" />
         </div>
       </template>
-
-
-      <template v-slot:header.stock>
-        <div class="d-flex">
-          <div class="font-weight-bold plv-col-header-70" @click="toggleSort('stock')"
-            @mouseenter="sortIcon = 'stock'" @mouseleave="sortIcon = undefined">
-            Stok
-            <template v-if="searchProductForm.sort.field === 'stock'">
-              <v-icon>
-                {{ searchProductForm.sort.direction === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-              </v-icon>
-            </template>
-            <v-icon v-else class="plv-opacity-half" v-if="sortIcon == 'stock'">
-              {{ searchProductForm.sort.direction === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-            </v-icon>
-          </div>
-        </div>
-      </template>
-
-
-      <template v-slot:header.platforms>
-        <div class="d-flex  fill-height align-center plv-border-right-default">
-          <div class="font-weight-bold">
-            Platform Yüklenme Durumu
-          </div>
-        </div>
-
-      </template>
-
-
-      <template v-slot:header.actions>
-        <div class="d-flex justify-end">
-          <v-menu scroll-strategy="close" v-model="headerMenu" :close-on-content-click="false"
-            attach=".productListView">
-            <template v-slot:activator="{ props }">
-              <v-btn flat size="35" v-bind="props" elevation=0 color="white" class="premium-cube-btn mr-2 mt-1 mb-1" aria-label="Toplu işlemler">
-                <v-icon color="processButtonColor" size="x-large"
-                  class="plv-opacity-full">mdi-dots-vertical</v-icon>
-
-
-              </v-btn>
-
-
-            </template>
-
-
-            <v-card class="plv-menu-card">
-
-              <keep-alive>
-                <BatchActionsRootComponent class="plv-panel-transition"
-                  v-model:headerMenu="headerMenu" key="BatchActionsRootComponent" @refreshProducts="getProducts"
-                  v-model="batchPlatformProcessMenu" :selectedProducts="selectedProducts"
-                  v-model:selectedVariants="selectedVariantsMap" :searchProductForm="searchProductForm" mode="UPDATE" />
-              </keep-alive>
-
-            </v-card>
-          </v-menu>
-
-          <v-tooltip open-delay="1000" text="Ürün seçeneği eklemek için kullanabilirsiniz">
-            <template v-slot:activator="{ props: tooltipProps }">
-              <v-btn flat size="35" color="success" v-bind="{ ...tooltipProps }" @click="openProductDefinition()"
-                class="premium-cube-btn mt-1 mb-1" elevation="0" aria-label="Yeni ürün seçeneği ekle"><v-icon size="x-large">mdi-plus</v-icon></v-btn>
-            </template>
-          </v-tooltip>
-        </div>
-      </template>
-
-      <template v-slot:bottom="{ }">
-        <PaginationComponent :totalNumberOfPages="searchProductForm.pagination.totalNumberOfPages"
-          :pagination="searchProductForm.pagination" @setPage="getProducts" v-model="searchProductForm.pagination.page"
-          class="plv-pagination-bar" />
-      </template>
-
-    </v-data-table-server>
-
+    </EkListScreen>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import { ref, onMounted, onBeforeMount, onActivated, watch, computed, nextTick, getCurrentInstance, inject, onDeactivated, onUnmounted, reactive } from 'vue'
-import PaginationComponent from '@/components/PaginationComponent.vue';
-import ProductAdvancedSearchComponent from '@/components/productDefinitions/products/ProductAdvancedSearchComponent.vue';
 import LoadingComponent from '@/components/LoadingComponent.vue'
 import ProductImageComponent from '@/components/productDefinitions/products/ProductImageComponent.vue'
-import EkPageHeader from '@/components/ds/EkPageHeader.vue'
-import EkEmptyState from '@/components/ds/EkEmptyState.vue'
 import { formatMoney } from '@/composables/format'
+import EkListScreen from '@/components/ds/templates/EkListScreen.vue'
+import EkButton from '@/components/ds/EkButton.vue'
+import EkChannelDot from '@/components/ds/EkChannelDot.vue'
+import type { EkGridColumn, EkGridSort } from '@/components/ds/EkDataGrid.vue'
+import type { EkActiveFilterChip } from '@/components/ds/EkActiveFilters.vue'
+import { isRequestError } from '@/components/ds/listStandard'
+import CategorySelectBoxComponent from '@/components/common/CategorySelectBoxComponent.vue'
+import BrandSelectBoxComponent from '@/components/common/BrandSelectBoxComponent.vue'
+import VCurrencyComponentVue from '@/components/VCurrencyComponent.vue'
 
 import ProductTransferComponent from '@/components/productDefinitions/products/ProductTransferComponent.vue'
 import ProductVariantListComponent from '@/components/productDefinitions/variants/ProductVariantListComponent.vue'
@@ -496,7 +254,6 @@ import { useBrandsStore } from '@/stores/brandsStore';
 import { useCategoriesStore } from '@/stores/categoriesStore';
 import { useIntegrationStore } from '@/stores/integrationStore';
 import { useTabStore } from '@/composables/opentab'
-import IntegrationAvatarComponent from '@/components/IntegrationAvatarComponent.vue';
 import { useSnackbarStore } from '@/stores/snackbarStore';
 import { useStaticsStore } from '@/stores/staticsStore';
 import useUser from '@/composables/user';
@@ -543,8 +300,6 @@ const batchPlatformProcessMenu: any = ref(false)
 const isFiltered = ref(false)
 const products: any = ref<any>([])
 const fromTo: any = ref({})
-const verticalTableRef: any = ref(null)
-const tableRecordCount: any = ref(0)
 const loading = ref(false)
 const show = ref(true)
 
@@ -678,13 +433,6 @@ const openEditProduct = (product?: any) => {
   eventBus.emit('openTab', clonedLink)
 }
 
-const tableContentWidth = computed(() => {
-  if (verticalTableRef.value) {
-    let divider = tableRecordCount.value
-    return Math.ceil(Number(verticalTableRef.value.clientWidth - 190) / divider)
-  }
-  return 0
-})
 
 
 const toggleSort = (key: any) => {
@@ -801,8 +549,8 @@ const transferProducts = async () => {
 
 const getProducts = async (reset: boolean = false) => {
   loading.value = true
+  loadError.value = false
   selectedProducts.value.length = 0
-  let guid = loadingComponentRef.value.info(t('loading.info.getProducts'))
   isSkeletonVisible.value = false
   if (reset == true) {
     searchProductForm.value.pagination.page = 1
@@ -844,10 +592,15 @@ const getProducts = async (reset: boolean = false) => {
     }
   }
 
+  applied.value = JSON.parse(JSON.stringify(searchProductForm.value.data))
   let response = await restApi.post("ProductService/getProducts", { searchProductForm: searchProductFormCloned })
   isSkeletonVisible.value = false
-  loadingComponentRef.value.remove(guid)
-  fromTo.value = response.fromTo
+  loading.value = false
+  if (isRequestError(response)) {
+    loadError.value = true
+    return
+  }
+  fromTo.value = response?.fromTo
 
   if (response && response.products) {
     products.value = response.products
@@ -879,8 +632,113 @@ const getProducts = async (reset: boolean = false) => {
 
     loading.value = false
   }
-  tableRecordCount.value = searchProductForm.value.pagination.limit
 }
+
+// --- DS-v2 liste standardı (EkListScreen) ---
+const loadError = ref(false)
+// 9 alanlı panel: tablo ilk ekranda görünsün diye kapalı başlar (aktif filtreler çip olarak görünür).
+const filterCollapsed = ref(true)
+const ON_SALE_ITEMS = [{ id: -1, title: 'Hepsi' }, { id: 1, title: 'Satışta olanlar' }, { id: 0, title: 'Satışta olmayanlar' }]
+const TRANSFER_STATUS_TITLES: Record<string, string> = { PENDING: 'Hazırlanan', WAITING: 'Onay bekleyen', FAILED: 'Hatalı', COMPLETED: 'Onaylanan' }
+
+// Sıralama: ProductService.getProducts `sort.field` izin listesi (SUNUCU tarafı). Kolon anahtarı = alan.
+const columns: EkGridColumn[] = [
+  { key: 'title', label: 'Ürün', sortable: true },
+  { key: 'stockcode', label: 'Stok kodu', sortable: true },
+  { key: 'barcode', label: 'Barkod', sortable: true },
+  { key: 'price', label: 'Fiyat', type: 'num', sortable: true },
+  { key: 'stock', label: 'Stok', type: 'num', sortable: true },
+  { key: 'brandCategory', label: 'Marka / kategori' },
+  { key: 'platforms', label: 'Platform durumu' },
+  { key: 'actions', label: 'İşlemler', align: 'end', hideLabel: true, pin: 'end' },
+]
+
+const gridSort = computed<EkGridSort>(() => {
+  const sort = searchProductForm.value?.sort
+  if (!sort?.field || sort.field === '_id') return null
+  return { key: sort.field, dir: sort.direction === 'asc' ? 'asc' : 'desc' }
+})
+
+function onGridSort(sort: EkGridSort) {
+  searchProductForm.value.sort = sort ? { field: sort.key, direction: sort.dir } : { field: '_id', direction: 'desc' }
+  getProducts(true)
+}
+
+// Grid seçimi → mevcut ürün/varyant seçim mantığı (tümü / tek satır).
+function onGridSelection(keys: Array<string | number>) {
+  const total = products.value.length
+  const before = gridSelectedKeys.value.length
+  // Başlıktaki "tümünü seç" kutusu: tümü ↔ hiçbiri
+  if (total > 1 && keys.length === total && before !== total && keys.length - before > 1) return toggleAllProductsSelection(true)
+  if (total > 1 && keys.length === 0 && before === total) return toggleAllProductsSelection(false)
+  const next = new Set(keys)
+  for (const product of products.value) {
+    const was = gridSelectedKeys.value.includes(product._id)
+    const now = next.has(product._id)
+    if (was !== now) onProductSelectionUpdate(product, now)
+  }
+}
+
+const gridSelectedKeys = computed(() => products.value.filter((p: any) => isProductSelected(p)).map((p: any) => p._id))
+const indeterminateKeys = computed(() => products.value.filter((p: any) => isProductIndeterminate(p)).map((p: any) => p._id))
+
+const transferStatusOptions = computed(() => transferStatusItems.value.flatMap((group: any) =>
+  (group.children ?? []).map((child: any) => ({ title: `${TRANSFER_STATUS_TITLES[group.id] ?? group.id} · ${child.title}`, value: child.id }))))
+
+// Aktif filtre çipleri — SON SORGULANAN değerlerden.
+const applied = ref<any>({})
+
+const activeChips = computed<EkActiveFilterChip[]>(() => {
+  const a = applied.value || {}
+  const chips: EkActiveFilterChip[] = []
+  if (a.searchText) chips.push({ key: 'searchText', label: 'Arama', value: a.searchText })
+  if (a.title?.trim()) chips.push({ key: 'title', label: 'Ürün adı', value: a.title })
+  if (a.barcode?.trim()) chips.push({ key: 'barcode', label: 'Barkod', value: a.barcode })
+  if (a.stockcode?.trim()) chips.push({ key: 'stockcode', label: 'Stok kodu', value: a.stockcode })
+  if (a.onSale !== undefined && a.onSale !== null && a.onSale !== -1) chips.push({ key: 'onSale', label: 'Satış', value: ON_SALE_ITEMS.find(i => i.id === a.onSale)?.title ?? String(a.onSale) })
+  if (a.category) chips.push({ key: 'category', label: 'Kategori', value: categoriesStore.getCategory(a.category)?.title ?? 'Seçili' })
+  if (a.brand) chips.push({ key: 'brand', label: 'Marka', value: brandsStore.getBrand(a.brand)?.title ?? 'Seçili' })
+  if (a.prices?.minSalePrice) chips.push({ key: 'minSalePrice', label: 'Min. fiyat', value: formatMoney(a.prices.minSalePrice) })
+  if (a.prices?.maxSalePrice) chips.push({ key: 'maxSalePrice', label: 'Maks. fiyat', value: formatMoney(a.prices.maxSalePrice) })
+  if (a.transferStatuses?.length) {
+    const titleOf = (id: string) => transferStatusOptions.value.find((o: any) => o.value === id)?.title ?? id
+    chips.push({ key: 'transferStatuses', label: 'Platform durumu', value: a.transferStatuses.map(titleOf).join(', ') })
+  }
+  return chips
+})
+
+const panelFilterCount = computed(() => activeChips.value.filter(c => c.key !== 'searchText').length)
+
+function removeChip(key: string) {
+  const d = searchProductForm.value.data
+  if (key === 'minSalePrice' || key === 'maxSalePrice') d.prices[key] = 0
+  else if (key === 'onSale') d.onSale = -1
+  else if (key === 'transferStatuses') d.transferStatuses = []
+  else d[key] = undefined
+  getProducts(true)
+}
+
+function onPageChange(page: number) {
+  searchProductForm.value.pagination.page = page
+  getProducts()
+}
+
+function onPageSizeChange(size: number) {
+  searchProductForm.value.pagination.limit = size
+  getProducts(true)
+}
+
+function priceText(item: any): string {
+  const min = item.prices?.minSalePrice
+  const max = item.prices?.maxSalePrice
+  if (min === undefined && max === undefined) return '—'
+  return min === max || max === undefined ? formatMoney(min) : `${formatMoney(min)} – ${formatMoney(max)}`
+}
+
+const isUploaded = (item: any, code: string) => !!item.platformUploads?.[code]?.isUploaded
+const isReady = (item: any, code: string) => !!item.platformUploads?.[code]?.isReady
+const platformAriaLabel = (item: any, integration: any) =>
+  `${integration.title}: ${isUploaded(item, integration.code) ? 'yüklendi' : 'yüklenmedi'}, ${isReady(item, integration.code) ? 'gönderime hazır' : 'gönderime hazır değil'} — değiştirmek için tıklayın`
 
 const isObject = (value: any) => {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -1113,43 +971,6 @@ const getStatusLabel = (type: string) => {
   return labels[type] || type;
 };
 
-const headers = [
-  {
-    id: 1,
-    title: 'Ürün / Stok Kodu / Barkod',
-    value: "title",
-    sortable: true
-  },
-  {
-    id: 1,
-    title: 'Fiyat',
-    value: "price",
-    sortable: true
-  },
-  {
-    id: 1,
-    title: 'Stok',
-    value: "stock",
-    sortable: true
-  },
-  {
-    id: 1,
-    title: 'Kategori',
-    value: "category",
-    sortable: true
-  },
-  {
-    id: 2,
-    title: 'Platform Durumu',
-    value: "platforms",
-    sortable: true
-  },
-  {
-    id: 1,
-    title: "actions",
-    value: "actions"
-  },
-]
 
 </script>
 
@@ -1190,12 +1011,9 @@ const headers = [
   width: 100%;
 }
 
-
 .custom-float {
   animation: float 1s ease-in-out infinite;
 }
-
-
 
 @keyframes float {
   0% {
@@ -1210,7 +1028,6 @@ const headers = [
     transform: translateY(0);
   }
 }
-
 
 /* Ana Kapsayıcı: Tek bir temiz rozet görünümü */
 .status-badge-wrapper {
@@ -1295,18 +1112,8 @@ const headers = [
   padding: 4px 8px;
 }
 
-/* --- ADR-0011 Karar 2 göçü: şablondan taşınan inline stil sınıfları (plv- öneki,
-   bu <style> global olduğu için ad çakışmasını önler) --- */
-.plv-variant-target-placeholder {
-  position: absolute;
-  z-index: -20;
-  left: 2000px;
-}
-
-.plv-border-surface {
-  border: 1px solid var(--ek-color-surface);
-}
-
+/* --- plv- öneki: bu <style> global olduğu için ad çakışmasını önler. Toplu işlem/aktarım
+   diyaloğu kabın içine (attach) iliştirilir; kapalıyken görünmez tutulur. --- */
 .plv-dialog-transition {
   transition: opacity var(--ek-duration-fast) var(--ek-easing-enter) !important;
 }
@@ -1316,185 +1123,248 @@ const headers = [
   opacity: .2 !important;
 }
 
-.plv-panel-transition {
-  transition: opacity var(--ek-duration-base) var(--ek-easing-enter) !important;
-}
-
-.plv-panel-hidden {
-  opacity: .2 !important;
-}
-
-.plv-table {
-  position: absolute;
-  top: 75px;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  width: auto;
-  height: auto;
-}
-
-.plv-search-row {
-  max-width: 900px;
-}
-
-.plv-row-dimmed {
-  filter: blur(0px);
-  opacity: .4;
-}
-
-.plv-row-active-shadow {
-  box-shadow: -2px -4px 6px 4px color-mix(in srgb, var(--ek-color-border-strong) 60%, transparent);
-}
-
-.plv-cell-no-border {
-  border-right: 0px solid var(--ek-color-border-default) !important;
-}
-
-.plv-checkbox-flex {
-  flex: 0 0 !important;
-}
-
-.plv-cursor-pointer {
-  cursor: pointer;
-}
-
-.plv-cell-tight {
-  cursor: pointer;
-  padding-left: 1px;
-}
-
-.plv-cell-offsale {
-  background-color: color-mix(in srgb, var(--ek-color-error) 4%, white);
-  border-right: 2px solid var(--ek-color-surface-sunken) !important;
-}
-
-.plv-thumb-wrap {
-  position: relative;
-  width: 110px;
-  min-width: 110px;
-}
-
-.plv-image-count-badge {
-  position: absolute;
-  cursor: pointer;
-  opacity: .6;
-  background-color: var(--ek-color-surface);
-  margin-top: -2px;
-  margin-left: 3px;
-  z-index: 1;
-  border-radius: 7px;
-}
-
-.plv-image-count-text {
-  font-size: 10px;
-  margin-left: 2px;
-}
-
-.plv-caption-10 {
-  font-size: 10px !important;
-}
-
-.plv-stockcode-col {
-  min-width: 130px;
-}
-
-.plv-micro-caption {
-  line-height: .7;
-  font-size: 10px !important;
-}
-
-.plv-hashtag-btn {
-  border-radius: 2px !important;
-  background-color: var(--plv-hashtag-color) !important;
-  border: 1px solid var(--ek-color-content-muted);
-}
-
-.plv-border-right-default {
-  border-right: 1px solid var(--ek-color-border-default);
-}
-
-.plv-opacity-full {
-  opacity: 1;
-}
-
-.plv-opacity-90 {
-  opacity: .9;
-}
-
-.plv-platform-badges-wrap {
-  max-width: 400px;
-  white-space: wrap;
-}
-
-.plv-platform-badge-pos {
-  position: relative;
-}
-
-.plv-platform-status-icon-pos {
-  position: absolute;
-  right: 0px;
-  top: -6px;
-  margin-right: 1px;
-  z-index: 1;
-}
-
-.plv-platform-avatar {
-  cursor: pointer;
-}
-
-.plv-platform-avatar-ready {
-  background-color: var(--plv-platform-color);
-  opacity: 1;
-  border: 1px solid var(--ek-color-border-default);
-}
-
-.plv-platform-avatar-not-ready {
-  background-color: var(--ek-color-content-default);
-  opacity: .6;
-  border: 1px solid var(--ek-color-surface);
-}
-
-.plv-variant-row-shadow {
-  position: relative;
-  z-index: 1;
-  box-shadow: 0px 6px 4px 2px color-mix(in srgb, var(--ek-color-border-strong) 60%, transparent);
-  border-spacing: 0 0 !important;
-}
-
-.plv-border-left-none {
-  border-left: 0px solid var(--ek-color-border-default);
-}
-
-.plv-col-header-image {
-  width: 124px;
-  opacity: .6;
-}
-
-.plv-col-header-60 {
-  width: 60px;
-  height: 20px !important;
-}
-
-.plv-col-header-95 {
-  min-width: 95px !important;
-}
-
-.plv-col-header-70 {
-  width: 70px;
-  height: 20px !important;
-}
-
-.plv-opacity-half {
-  opacity: .5;
-}
-
 .plv-menu-card {
-  border-radius: 5px;
+  border-radius: var(--ek-radius-popover);
 }
 
-.plv-pagination-bar {
+</style>
+
+<style scoped>
+.productListView {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: var(--ek-space-5) var(--ek-space-6);
+}
+
+@media (max-width: 767px) {
+  .productListView {
+    overflow-y: auto;
+    padding: var(--ek-space-4);
+  }
+}
+
+.plv-hint,
+.plv-muted {
+  color: var(--ek-color-content-muted);
+}
+
+.plv-hint {
+  font-size: var(--ek-type-caption-size);
+}
+
+.plv-product {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-3);
+  min-width: 260px;
+  max-width: 380px;
+  padding: var(--ek-space-1) 0;
+  cursor: pointer;
+}
+
+.plv-thumb {
   position: relative;
-  border-top: 1px solid var(--ek-color-border-default);
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface-sunken);
+  cursor: pointer;
+}
+
+.plv-thumb:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+}
+
+.plv-thumb :deep(img),
+.plv-thumb :deep(.v-img) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.plv-thumb__count {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  min-width: 16px;
+  padding: 0 3px;
+  border-radius: var(--ek-radius-chip);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-default);
+  font-size: 10px;
+  line-height: 14px;
+  text-align: center;
+}
+
+.plv-product__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  white-space: normal;
+}
+
+.plv-product__title {
+  color: var(--ek-color-content-strong);
+  font-weight: var(--ek-font-weight-semibold);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.plv-variants-toggle {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ek-color-action);
+  font: inherit;
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-semibold);
+  cursor: pointer;
+}
+
+.plv-variants-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+  border-radius: var(--ek-radius-sm);
+}
+
+.plv-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ek-space-1);
+  margin-top: 2px;
+}
+
+.plv-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+}
+
+.plv-tag__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--ek-radius-chip);
+  background: var(--plv-hashtag-color, var(--ek-color-neutral));
+}
+
+.plv-stock-zero {
+  color: var(--ek-color-error);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.plv-two-line {
+  display: inline-flex;
+  flex-direction: column;
+}
+
+.plv-two-line .plv-muted {
+  font-size: var(--ek-type-caption-size);
+}
+
+.plv-platforms {
+  display: inline-flex;
+  gap: var(--ek-space-1);
+}
+
+.plv-platform {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  height: 24px;
+  padding: 0 var(--ek-space-1) 0 var(--ek-space-2);
+  border: 1px dashed var(--ek-color-border-strong);
+  border-radius: var(--ek-radius-chip);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-muted);
+  font: inherit;
+  font-size: var(--ek-type-caption-size);
+  cursor: pointer;
+  transition: var(--ek-transition-colors);
+}
+
+.plv-platform.is-ready {
+  border-style: solid;
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.plv-platform:hover {
+  border-color: var(--ek-color-border-input);
+}
+
+.plv-platform:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+}
+
+.plv-ok {
+  color: var(--ek-color-success);
+}
+
+.plv-no {
+  color: var(--ek-color-content-muted);
+}
+
+.plv-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-3);
+  height: 24px;
+  padding: 0 var(--ek-space-2);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-chip);
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.plv-summary__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.plv-summary__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--ek-radius-chip);
+}
+
+.plv-summary__dot.is-pending { background: var(--ek-color-info); }
+.plv-summary__dot.is-waiting { background: var(--ek-color-warning); }
+.plv-summary__dot.is-failed { background: var(--ek-color-error); }
+.plv-summary__dot.is-completed { background: var(--ek-color-success); }
+
+.plv-row-actions {
+  display: inline-flex;
+  gap: var(--ek-space-1);
+}
+
+.plv-danger {
+  color: var(--ek-color-error);
+}
+
+.plv-variants {
+  padding: var(--ek-space-2) var(--ek-space-3) var(--ek-space-3);
+}
+
+:deep(.plv-row-offsale) .plv-product__title {
+  color: var(--ek-color-content-muted);
 }
 </style>

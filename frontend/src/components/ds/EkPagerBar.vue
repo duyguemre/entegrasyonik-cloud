@@ -13,7 +13,7 @@
       <label class="ek-pager__size">
         <span class="ek-sr-only">Sayfa başına kayıt</span>
         <select class="ek-pager__select" :value="pageSize" @change="onSize">
-          <option v-for="n in pageSizeOptions" :key="n" :value="n">{{ n }}</option>
+          <option v-for="n in sizeOptions" :key="n" :value="n">{{ n }}</option>
         </select>
         <v-icon class="ek-pager__select-icon" icon="mdi-chevron-down" aria-hidden="true" />
       </label>
@@ -64,6 +64,9 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{ 'update:page': [page: number]; 'update:pageSize': [size: number] }>()
+
+/** Mevcut sayfa boyutu listede yoksa (ör. ekranın varsayılanı 15) seçeneklere eklenir — seçici boş görünmez. */
+const sizeOptions = computed(() => [...new Set([...props.pageSizeOptions, props.pageSize])].sort((a, b) => a - b))
 
 const pageCount = computed(() => Math.max(1, Math.ceil(props.total / props.pageSize)))
 const rangeText = computed(() => {

@@ -4,24 +4,29 @@
   DS-v2 — tarih alanı, HER ZAMAN tr-TR biçiminde (GG.AA.YYYY). Tarayıcının
   yerel `type="date"` denetimi işletim sistemi diline göre (ör. AA/GG/YYYY)
   çizildiği için kullanılmaz.
-    - v-model: ISO gün (`YYYY-MM-DD`) veya boş dize — saat dilimi kayması yok
     - yazarken noktalar kendiliğinden eklenir (29092026 → 29.09.2026)
     - geçersiz tarih alan terk edilince açıklayıcı hata metniyle işaretlenir
-    - takvim düğmesi (alanın başında) Vuetify takvimini açar: Türkçe ay/gün
-      adları, hafta pazartesi başlar
-  Diğer tüm v-text-field özellikleri (label, hint, density…) iletilir.
-    <EkDateField v-model="orderDate" label="Sipariş tarihi" />
+    - takvim düğmesi (alanın başında) sayfa içi küçük bir takvim açar (tam sayfa
+      popup DEĞİL): Türkçe ay/gün adları, hafta pazartesi başlar; `min`/`max` iletilir
+    - alan temizlenebilir (filtre panelleri)
+  Model: `valueFormat="iso-date"` → "YYYY-AA-GG" metni; `"date"` → `Date`. Verilmezse
+  gelen değerin türü korunur (metin gelirse metin, aksi halde `Date`).
+  Diğer tüm v-text-field özellikleri (hint, density…) iletilir.
+    <EkDateField v-model="filters.startDate" label="Başlangıç" :max="filters.endDate" />
 -->
 <template>
   <v-text-field
     v-bind="$attrs"
+    :label="label"
     :model-value="text"
     placeholder="GG.AA.YYYY"
     inputmode="numeric"
     autocomplete="off"
     maxlength="10"
+    :clearable="clearable"
     :error-messages="errorMessages"
     @update:model-value="onType"
+    @click:clear="clear"
     @blur="commit"
   >
     <template #prepend-inner>
@@ -34,6 +39,8 @@
         <v-date-picker
           class="ek-date__picker"
           :model-value="pickerValue"
+          :min="toIso(min) || undefined"
+          :max="toIso(max) || undefined"
           first-day-of-week="1"
           show-adjacent-months
           hide-header
@@ -50,29 +57,64 @@ import { computed, ref, useAttrs, watch } from 'vue'
 
 defineOptions({ inheritAttrs: false })
 
-const props = withDefaults(defineProps<{ modelValue?: string; invalidText?: string }>(), {
-  modelValue: '',
-  invalidText: 'Geçerli bir tarih girin (GG.AA.YYYY).',
-})
-const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
+type DateValue = Date | string | null | undefined
+
+const props = withDefaults(
+  defineProps<{
+    modelValue?: DateValue
+    label?: string
+    min?: DateValue
+    max?: DateValue
+    valueFormat?: 'date' | 'iso-date'
+    clearable?: boolean
+    invalidText?: string
+  }>(),
+  {
+    modelValue: null,
+    label: undefined,
+    min: undefined,
+    max: undefined,
+    valueFormat: undefined,
+    clearable: true,
+    invalidText: 'Geçerli bir tarih girin (GG.AA.YYYY).',
+  },
+)
+const emit = defineEmits<{ 'update:modelValue': [value: Date | string | null] }>()
 const attrs = useAttrs()
 
 const open = ref(false)
-const text = ref(isoToTr(props.modelValue))
+const text = ref(isoToTr(toIso(props.modelValue)))
 const invalid = ref(false)
 const errorMessages = computed(() => (invalid.value ? [props.invalidText] : (attrs['error-messages'] as string[] | string | undefined)))
-const labelSuffix = computed(() => (typeof attrs.label === 'string' ? `: ${attrs.label}` : ''))
+const labelSuffix = computed(() => (props.label ? `: ${props.label}` : ''))
+const asText = computed(() => props.valueFormat === 'iso-date' || (!props.valueFormat && typeof props.modelValue === 'string'))
 
 watch(
   () => props.modelValue,
-  (iso) => {
+  (value) => {
+    const iso = toIso(value)
     if (iso !== trToIso(text.value)) text.value = isoToTr(iso)
     invalid.value = false
   },
 )
 
-function isoToTr(iso: string | undefined): string {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso ?? '')
+function pad(n: number): string {
+  return String(n).padStart(2, '0')
+}
+
+/** Date | ISO metni → "YYYY-MM-DD" (yerel gün; saat dilimi kayması yok). */
+function toIso(value: DateValue): string {
+  if (!value) return ''
+  if (typeof value === 'string') {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value)
+    if (m) return `${m[1]}-${m[2]}-${m[3]}`
+  }
+  const d = value instanceof Date ? value : new Date(value)
+  return Number.isNaN(d.getTime()) ? '' : `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+function isoToTr(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso)
   return m ? `${m[3]}.${m[2]}.${m[1]}` : ''
 }
 
@@ -86,18 +128,32 @@ function trToIso(value: string): string {
   return real ? `${m[3]}-${m[2]}-${m[1]}` : ''
 }
 
+function out(iso: string): Date | string | null {
+  if (!iso) return null
+  if (asText.value) return iso
+  const [y, mo, d] = iso.split('-').map(Number)
+  return new Date(y, mo - 1, d)
+}
+
 /** Yalnızca rakamları alır, 2. ve 4. rakamdan sonra nokta koyar. */
 function mask(value: string): string {
   const digits = value.replace(/\D/g, '').slice(0, 8)
   return [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4)].filter(Boolean).join('.')
 }
 
-function onType(value: string) {
+function onType(value: string | null) {
   text.value = mask(value ?? '')
   invalid.value = false
   const iso = trToIso(text.value)
-  if (iso && iso !== props.modelValue) emit('update:modelValue', iso)
-  if (!text.value && props.modelValue) emit('update:modelValue', '')
+  const current = toIso(props.modelValue)
+  if (iso && iso !== current) emit('update:modelValue', out(iso))
+  if (!text.value && current) emit('update:modelValue', asText.value ? '' : null)
+}
+
+function clear() {
+  text.value = ''
+  invalid.value = false
+  emit('update:modelValue', asText.value ? '' : null)
 }
 
 function commit() {
@@ -105,17 +161,17 @@ function commit() {
 }
 
 const pickerValue = computed(() => {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(props.modelValue)
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(toIso(props.modelValue))
   return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : undefined
 })
 
 function onPick(value: unknown) {
   const date = value instanceof Date ? value : undefined
   if (!date) return
-  const iso = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+  const iso = toIso(date)
   text.value = isoToTr(iso)
   invalid.value = false
-  emit('update:modelValue', iso)
+  emit('update:modelValue', out(iso))
   open.value = false
 }
 </script>

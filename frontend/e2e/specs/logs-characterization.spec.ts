@@ -70,7 +70,9 @@ test.describe('B3 karakterizasyon — log listeleri istek gövdeleri', () => {
     expect(bodies[1]).toEqual(bodies[0])
   })
 
-  test('gönderim listesi: gelişmiş filtre diyaloğu açılır, "Sonuçları göster" advancedSearchExportJobs çağırır', async ({ page }) => {
+  test('gönderim listesi: sayfa içi filtre paneli açılır, "Sorgula" advancedSearchExportJobs çağırır', async ({ page }) => {
+    // DS-v2 Aşama 2 — BİLİNÇLİ DEĞİŞİKLİK: tam sayfa "Gelişmiş Sorgulama Paneli" diyaloğu kalktı; aynı
+    // alanlar sekme içi katlanır filtre panelinde. İstek gövdesi AYNI (advancedSearchExportJobs).
     const advBodies: any[] = []
     await installApiMocks(page, {
       MenuService: menuFixtureWithLogs,
@@ -80,11 +82,11 @@ test.describe('B3 karakterizasyon — log listeleri istek gövdeleri', () => {
     await openScreen(page, 'LogListView')
     await expect(page.getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
 
-    await page.getByRole('button', { name: 'Gelişmiş arama ve filtreleme seçenekleri' }).click()
-    const dialog = page.getByRole('dialog').filter({ hasText: 'Gelişmiş Sorgulama Paneli' })
-    await expect(dialog).toBeVisible()
-    await dialog.getByLabel('Ürün Adı').fill('Elbise')
-    await dialog.locator('button', { hasText: trLabel('Sonuçları göster') }).click()
+    const view = page.locator('.exportLogList')
+    await view.getByRole('button', { name: /Filtreler/ }).click()
+    const panel = view.locator('.ek-filter')
+    await panel.getByRole('textbox', { name: /Ürün adı/ }).fill('Elbise')
+    await panel.getByRole('button', { name: 'Sorgula' }).click()
     await expect.poll(() => advBodies.length).toBe(1)
     expect(advBodies[0]).toMatchObject({ page: 1, limit: 13, sortBy: 'createdAt', sortOrder: 'desc', title: 'Elbise', integrationCode: [], statuses: [] })
   })
