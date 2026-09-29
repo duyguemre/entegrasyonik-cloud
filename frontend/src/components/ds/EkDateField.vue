@@ -15,7 +15,7 @@
   <v-menu v-model="open" :close-on-content-click="false" location="bottom start">
     <template #activator="{ props: activatorProps }">
       <v-text-field
-        v-bind="activatorProps"
+        v-bind="triggerProps(activatorProps)"
         :model-value="display"
         :label="label"
         prepend-inner-icon="mdi-calendar-blank-outline"
@@ -53,6 +53,13 @@ const open = ref(false)
 
 const pickerValue = computed(() => (props.modelValue ? new Date(props.modelValue as any) : null))
 const display = computed(() => (props.modelValue ? formatDate(props.modelValue as any) : ''))
+
+// Menü tetikleyici öznitelikleri metin alanına bağlanır; `aria-expanded/haspopup/controls` yalnız
+// combobox/düğme rolünde geçerlidir (axe aria-allowed-attr) — olay dinleyicileri korunur, ARIA durumu atılır.
+function triggerProps(p: Record<string, unknown>) {
+  const { 'aria-expanded': _e, 'aria-haspopup': _h, 'aria-controls': _c, ...rest } = p
+  return rest
+}
 
 function toIsoDate(d: Date): string {
   const p = (n: number) => String(n).padStart(2, '0')
