@@ -118,7 +118,7 @@ const cells = Array.from({ length: 24 }, (_, i) => ({ x: (i % 8) * 29 + 4, y: Ma
         {byId.has('tenant-database') && <li><Icon name="database" size="sm" />Hesaba özel veritabanı</li>}
         {byId.has('role-based-access') && <li><Icon name="users" size="sm" />Rol tabanlı erişim</li>}
       </ul>
-      {detailHref && <a class="sec__link" href={detailHref}>Güvenlik mimarisini inceleyin <Icon name="arrow" size="sm" /></a>}
+      {detailHref && <a class="link sec__link" href={detailHref}>Güvenlik mimarisini inceleyin <Icon name="arrow" size="sm" /></a>}
     </div>
 
     <div class="guard" data-scene="request-guard" aria-hidden="true">

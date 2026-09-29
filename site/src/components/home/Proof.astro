@@ -5,12 +5,12 @@
  * ifadeler kaldırıldı; şeritte kanal ADI yerine panelde yönetilen işler yazılır. Her fayda kanıtlı bir yetenek
  * kaydına bağlıdır (kayıt yoksa gösterilmez); tek sayı deneme süresidir (seçiciden). Uydurma müşteri/ölçüm/logo YOK.
  *
- * S13 (kullanıcı: "daha albenili" / "kayan yazı formunu çok daha profesyonel, premium bir hale çevir"):
- *  - Dört fayda, hero'nun alt kenarına taşan (koyu sahneden açık zemine köprü kuran) cam kartlardır: degrade ince
- *    kenar, ışımalı ikon karosu, güçlü tipografi; giriş sırayla yükselir (genel `[data-reveal]`), imleçle ışık/eğim
- *    (`data-tilt`, global.css — hareket kapalıyken nötr).
- *  - Şerit: sabit etiket sütunu + ikon çipleri; kenarlarda yumuşak maske; tek sıra, sakin tempo (30 sn/küme),
- *    üzerine gelince durur. Reduced-motion'da sarılan, ortalanmış, tam görünür liste.
+ * S13 + S15 (kullanıcı: "daha albenili" / "kayan yazı formunu çok daha profesyonel, premium bir hale çevir"):
+ *  - S15: bölüm hero'nun koyu sahnesinin devamıdır; dört fayda yarı saydam KOYU CAM kartlardır (ince ışık kenarı,
+ *    ışımalı ikon karosu); giriş sırayla yükselir (genel `[data-reveal]`), imleçle ışık/eğim (`data-tilt`, global.css —
+ *    hareket kapalıyken nötr).
+ *  - Şerit: görünür başlık YOK (S15, kullanıcı isteği; erişilebilir ad `aria-label`), ikon çipleri; kenarlarda yumuşak
+ *    maske; tek sıra, sakin tempo (30 sn/küme), üzerine gelince durur. Reduced-motion'da sarılan, ortalanmış liste.
  * Sahneler: `data-scene="stat-counters"` (deneme günü sayacı görünür olunca 0'dan sayar; JS yok/hareket kapalıysa
  * son değer statiktir) ve `data-scene="marquee"` (şerit yalnızca oynatma durumunda ve görünürken kayar).
  * Şeritte ikinci küme aria-hidden kopyadır (kesintisiz döngü); erişilebilir liste birinci kümedir.
@@ -42,7 +42,7 @@ const ribbon = [
 ].filter((r) => capIds.has(r.id))
 ---
 
-<section class="proof" aria-label="Bir bakışta">
+<section class="proof" aria-label="Bir bakışta" data-surface="dark">
   <div class="proof__inner">
     <ul class="stats" data-scene="stat-counters" data-testid="stat-list">
       {
@@ -70,11 +70,7 @@ const ribbon = [
       }
     </ul>
 
-    <div class="marquee" data-scene="marquee" role="group" aria-labelledby="marquee-title" data-testid="marquee">
-      <p class="marquee__title" id="marquee-title">
-        <span class="marquee__eyebrow">Tek panelde</span>
-        <span class="marquee__heading">yönettikleriniz</span>
-      </p>
+    <div class="marquee" data-scene="marquee" role="group" aria-label="Panelde yönetilen işler" data-testid="marquee">
       <div class="marquee__rail">
         <div class="marquee__track">
           <ul class="marquee__set" data-testid="marquee-list">
@@ -104,83 +100,106 @@ const ribbon = [
 </section>
 
 <style>
+  /*
+   * S15 (kullanıcı: "kutular çok beyaz ... kontrast çok fazla, daha albenili bir seviyeye çek"): bölüm artık hero'nun
+   * koyu sahnesinin DEVAMIDIR — üst kenar hero'nun alt tonuyla (--site-stage-base + sol alt lacivert ışıma) başlar,
+   * aşağı doğru derin tona iner; alt kenarda ince teal ışık çizgisi açık bölüme geçişi işaretler. Kartlar beyaz blok
+   * değil, yarı saydam koyu cam: ince ışık kenarı (üstte parlak iç çizgi), yumuşak teal hâle. `data-surface="dark"`
+   * vurgu rengini açık teal varyantına çevirir (global.css) → metin/ikon kontrastı AA.
+   */
   .proof {
     position: relative;
     z-index: 1;
     background:
-      radial-gradient(60% 120% at 50% 0%, color-mix(in srgb, var(--ek-color-secondary) 7%, transparent), transparent 70%),
-      var(--ek-color-background);
-    border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
+      radial-gradient(50% 70% at 6% 0%, color-mix(in srgb, var(--ek-color-primary-darken-1) 44%, transparent), transparent 72%),
+      radial-gradient(42% 90% at 88% 100%, color-mix(in srgb, var(--ek-color-secondary) 9%, transparent), transparent 72%),
+      linear-gradient(180deg, var(--site-stage-base) 0%, var(--site-stage-deep) 100%);
+    color: var(--site-text-on-dark-body);
+  }
+  /* alt kenar: açık zemine geçişte ince teal ışık çizgisi (sert kesit yerine) */
+  .proof::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    height: var(--site-border-width);
+    background: var(--site-gradient-hairline);
+    opacity: 0.7;
+    pointer-events: none;
   }
   .proof__inner {
     width: 100%;
     margin-inline: auto;
-    padding: 0 var(--site-gutter) var(--ek-space-10);
+    padding: 0 var(--site-gutter) var(--ek-space-12);
     max-width: calc(var(--site-container-max) + 2 * var(--site-gutter));
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-10);
   }
 
-  /* --- Fayda kartları: hero'nun alt kenarına taşar (koyu sahneden açık zemine köprü) --- */
+  /* --- Fayda kartları: koyu cam (hero'nun alt kenarına hafifçe taşar; iki koyu yüzey tek sahne gibi akar) --- */
   .stats {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--ek-space-3);
-    margin-top: calc(var(--ek-space-10) * -1);
+    margin-top: calc(var(--ek-space-8) * -1);
   }
   .stat {
     position: relative;
     isolation: isolate;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-1);
     min-width: 0;
     padding: var(--ek-space-5) var(--ek-space-4);
-    /* Degrade ince kenar: iç zemin padding-box, teal -> nötr kenar border-box */
-    border: var(--site-border-width) solid transparent;
+    border: var(--site-border-width) solid var(--site-glass-border);
     border-radius: var(--site-radius-panel);
     background:
-      linear-gradient(180deg, var(--ek-color-background) 0%, var(--ek-color-surface-muted) 100%) padding-box,
+      radial-gradient(70% 60% at 0% 0%, color-mix(in srgb, var(--ek-color-secondary) 12%, transparent), transparent 70%),
       linear-gradient(
-          160deg,
-          color-mix(in srgb, var(--ek-color-secondary) 55%, var(--ek-color-border-default)) 0%,
-          var(--ek-color-border-default) 40%,
-          var(--ek-color-border-default) 100%
-        )
-        border-box;
+        180deg,
+        color-mix(in srgb, var(--ek-color-background) 9%, transparent) 0%,
+        color-mix(in srgb, var(--ek-color-background) 3%, transparent) 100%
+      );
+    -webkit-backdrop-filter: blur(var(--site-glass-blur));
+    backdrop-filter: blur(var(--site-glass-blur));
     box-shadow:
-      0 0.0625rem 0.125rem color-mix(in srgb, var(--ek-color-content-strong) 6%, transparent),
-      0 1.25rem 2.5rem -1.25rem color-mix(in srgb, var(--ek-color-primary-darken-1) 32%, transparent);
+      inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 22%, transparent),
+      0 1.5rem 3rem -1.5rem color-mix(in srgb, var(--site-stage-deep) 80%, transparent);
   }
-  /* sakin ışıma: ikonun arkasında yumuşak, statik teal hâle */
+  /* ince ışık kenarı: üst kenarda ortası parlak teal çizgi */
   .stat::after {
     content: '';
     position: absolute;
     z-index: -1;
-    inset-block-start: calc(var(--ek-space-6) * -1);
-    inset-inline-start: calc(var(--ek-space-6) * -1);
-    width: calc(var(--ek-space-16) * 2);
-    aspect-ratio: 1 / 1;
-    border-radius: var(--ek-radius-full);
-    background: radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-secondary) 16%, transparent), transparent);
+    inset-inline: var(--ek-space-6);
+    inset-block-start: 0;
+    height: var(--site-border-width);
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ek-color-secondary) 85%, var(--ek-color-background)) 50%, transparent);
+    opacity: 0.8;
     pointer-events: none;
   }
   .stat__icon {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: var(--ek-space-10);
     height: var(--ek-space-10);
     margin-bottom: var(--ek-space-3);
-    border: var(--site-border-width) solid var(--site-accent-line);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 40%, transparent);
     border-radius: var(--ek-radius-lg);
-    background: linear-gradient(145deg, color-mix(in srgb, var(--ek-color-secondary) 22%, var(--ek-color-background)), color-mix(in srgb, var(--ek-color-secondary) 8%, var(--ek-color-background)));
-    box-shadow: 0 0.5rem 1.25rem -0.5rem color-mix(in srgb, var(--ek-color-secondary) 55%, transparent);
+    background: linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--ek-color-secondary) 26%, transparent),
+      color-mix(in srgb, var(--ek-color-secondary) 6%, transparent)
+    );
+    box-shadow: 0 0 1.5rem -0.25rem color-mix(in srgb, var(--ek-color-secondary) 45%, transparent);
     color: var(--site-accent);
   }
   .stat__label {
-    color: var(--site-text-heading);
+    color: var(--site-text-on-dark-heading);
     font-size: var(--ek-font-size-xl);
     font-weight: var(--ek-font-weight-bold);
     letter-spacing: -0.015em;
@@ -197,47 +216,23 @@ const ribbon = [
     font-variant-numeric: tabular-nums;
   }
   .stat__sub {
-    color: var(--site-text-meta);
+    color: var(--site-text-on-dark-body);
     font-size: var(--ek-font-size-md);
     line-height: var(--ek-line-height-normal);
   }
 
-  /* --- Şerit: sabit etiket + maskelenmiş ray üzerinde ikon çipleri --- */
+  /* --- Şerit: maskelenmiş ray üzerinde koyu cam ikon çipleri (başlık yok — S15) --- */
   .marquee {
     display: flex;
     flex-direction: column;
-    gap: var(--ek-space-4);
-  }
-  .marquee__title {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: center;
-    gap: var(--ek-space-1) var(--ek-space-2);
-    max-width: none;
-    text-align: center;
-  }
-  .marquee__eyebrow {
-    color: var(--site-accent);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-  .marquee__heading {
-    color: var(--site-text-meta);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-medium);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
   }
   .marquee__rail {
     position: relative;
     overflow: hidden;
     min-width: 0;
     padding-block: var(--ek-space-1);
-    -webkit-mask-image: linear-gradient(to right, transparent, var(--ek-color-content-strong) 12%, var(--ek-color-content-strong) 88%, transparent);
-    mask-image: linear-gradient(to right, transparent, var(--ek-color-content-strong) 12%, var(--ek-color-content-strong) 88%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, var(--ek-color-content-strong) 10%, var(--ek-color-content-strong) 90%, transparent);
+    mask-image: linear-gradient(to right, transparent, var(--ek-color-content-strong) 10%, var(--ek-color-content-strong) 90%, transparent);
   }
   .marquee__track {
     display: flex;
@@ -258,10 +253,10 @@ const ribbon = [
     align-items: center;
     gap: var(--ek-space-2);
     padding: var(--ek-space-1) var(--ek-space-4) var(--ek-space-1) var(--ek-space-1);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border: var(--site-border-width) solid var(--site-glass-border);
     border-radius: var(--ek-radius-full);
-    background: linear-gradient(180deg, var(--ek-color-background), var(--ek-color-surface-muted));
-    box-shadow: 0 0.0625rem 0.125rem color-mix(in srgb, var(--ek-color-content-strong) 5%, transparent);
+    background: var(--site-glass-bg);
+    box-shadow: inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 10%, transparent);
     white-space: nowrap;
   }
   .marquee__mono {
@@ -271,11 +266,11 @@ const ribbon = [
     width: var(--ek-space-8);
     height: var(--ek-space-8);
     border-radius: var(--ek-radius-full);
-    background: var(--site-accent-soft);
+    background: color-mix(in srgb, var(--ek-color-secondary) 16%, transparent);
     color: var(--site-accent);
   }
   .marquee__name {
-    color: var(--site-text-heading);
+    color: var(--site-text-on-dark-body);
     font-size: var(--ek-font-size-md);
     font-weight: var(--ek-font-weight-medium);
     letter-spacing: -0.005em;
@@ -316,7 +311,7 @@ const ribbon = [
       margin-top: calc(var(--ek-space-12) * -1);
     }
     .proof__inner {
-      padding-bottom: var(--ek-space-12);
+      padding-bottom: var(--ek-space-16);
     }
   }
   @media (min-width: 1024px) {
@@ -325,28 +320,6 @@ const ribbon = [
     }
     .stats {
       grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-    /* geniş ekranda etiket solda sabit sütun, ray sağda akar */
-    .marquee {
-      display: grid;
-      grid-template-columns: auto minmax(0, 1fr);
-      align-items: center;
-      gap: var(--ek-space-8);
-    }
-    .marquee__title {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0;
-      padding-inline-end: var(--ek-space-8);
-      border-inline-end: var(--site-border-width) solid var(--ek-color-border-default);
-      text-align: start;
-    }
-    .marquee__heading {
-      color: var(--site-text-heading);
-      font-size: var(--ek-font-size-lg);
-      font-weight: var(--ek-font-weight-semibold);
-      letter-spacing: -0.01em;
-      text-transform: none;
     }
   }
 </style>

@@ -105,6 +105,8 @@
   --site-text-meta: var(--ek-color-content-muted);
   --site-accent: var(--ek-color-secondary-darken-1);
   --site-accent-on-dark: var(--ek-color-secondary);
+  /* S15: bağımsız `.link` rengi — açık/renkli yüzeylerde de AA (≥4.5:1) kalsın diye vurgudan bir ton koyu */
+  --site-link-accent: color-mix(in srgb, var(--ek-color-secondary-darken-1) 82%, var(--ek-color-content-strong));
   --site-accent-soft: color-mix(in srgb, var(--ek-color-secondary) 12%, transparent);
   --site-accent-line: color-mix(in srgb, var(--ek-color-secondary) 55%, transparent);
   --site-text-on-dark-heading: var(--site-color-on-primary);

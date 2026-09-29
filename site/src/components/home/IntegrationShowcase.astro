@@ -13,6 +13,8 @@
  * diğerleri geri çekilir (`:has`, JS yok; hareket kapalıyken de çalışan statik vurgu).
  * Sahne `ecosystem` (bu dosyadaki stil): yalnızca transform/opacity; döngüler yalnızca görünürken
  * (`data-visible='true'`) çalışır; reduced-motion / "Hareket" kapalı / JS'siz durumda statik şema.
+ * S15-C: yörünge noktaları korunur; çevredeki düğüm kartlarının İÇİNDE de ölçülü hareket var — kendi çeyrek
+ * fazında ikon hafifçe uyanır, kanal noktaları sırayla nabız atar, alt kenardaki akış çizgisinde ışık merkeze akar.
  * Alt vizyon şeridi genel `reveal` girişini kullanır.
  */
 import Section from '../Section.astro'
@@ -103,6 +105,7 @@ const innerCodes = orbitCodes.filter((_, i) => i % 2 === 1)
               {n.channelCodes.map((code) => (
                 <i data-code={code} />
               ))}
+              <span class="eco__flow"><span class="eco__stream"></span></span>
             </span>
           </li>
         ))
@@ -354,16 +357,40 @@ const innerCodes = orbitCodes.filter((_, i) => i % 2 === 1)
   }
   .eco__dots {
     grid-column: 2;
-    display: inline-flex;
+    display: flex;
+    align-items: center;
     gap: var(--ek-space-2);
     padding-top: var(--ek-space-1);
   }
-  .eco__dots i {
+  .eco__dots > i {
     width: calc(var(--ek-space-2) * 0.75);
     height: calc(var(--ek-space-2) * 0.75);
     border-radius: var(--ek-radius-full);
     background: var(--chan, var(--ek-color-secondary));
     opacity: 0.85;
+  }
+
+  /* Kart içi akış çizgisi: kanal noktalarından kartın kenarına uzanan ince hat; döngüde üzerinde ışık merkeze
+     doğru akar (statik: yalnızca soluk çizgi). */
+  .eco__flow {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+    height: calc(var(--site-border-width) * 2);
+    margin-inline-start: var(--ek-space-1);
+    border-radius: var(--ek-radius-full);
+    background: linear-gradient(90deg, color-mix(in srgb, var(--ek-color-secondary) 30%, var(--ek-color-border-default)), transparent);
+  }
+  .eco__node--tr .eco__flow,
+  .eco__node--br .eco__flow {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--ek-color-secondary) 30%, var(--ek-color-border-default)), color-mix(in srgb, var(--ek-color-secondary) 12%, transparent));
+  }
+  .eco__stream {
+    position: absolute;
+    inset: 0;
+    width: 40%;
+    background: linear-gradient(90deg, transparent, var(--ek-color-secondary), transparent);
+    opacity: 0;
   }
 
   /* --- Vizyon şeridi --- */
@@ -757,7 +784,92 @@ const innerCodes = orbitCodes.filter((_, i) => i % 2 === 1)
       animation: eco-lit var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
       animation-delay: calc(var(--T) * var(--k, 0) / 4 + var(--T) * 0.3);
     }
-    :global(html[data-motion='play']) .eco[data-state='play'][data-visible='true'] :is(.eco__ring, .eco__orbit, .eco__packet, .eco__beam, .eco__lit) {
+    /*
+     * S15-C — düğüm kartlarının İÇ hareketi (sakin; her düğüm kendi çeyrek fazında, paket vardığı an):
+     * ikon küçük bir açıyla "uyanır", kanal noktaları soldan sağa sırayla nabız atar, alt kenardaki akış çizgisinde
+     * ışık merkeze doğru akar. Bir düğüm hareketliyken diğerleri durgundur (harekete boğmadan).
+     */
+    @keyframes eco-wake {
+      0%,
+      100% {
+        scale: 1;
+        rotate: 0deg;
+      }
+      5% {
+        scale: 1.14;
+        rotate: -8deg;
+      }
+      12% {
+        scale: 1;
+        rotate: 0deg;
+      }
+    }
+    @keyframes eco-dot {
+      0%,
+      100% {
+        opacity: 0.85;
+        scale: 1;
+      }
+      4% {
+        opacity: 1;
+        scale: 1.7;
+      }
+      10% {
+        opacity: 0.85;
+        scale: 1;
+      }
+    }
+    @keyframes eco-stream {
+      0% {
+        opacity: 0;
+        translate: var(--from) 0;
+      }
+      4%,
+      14% {
+        opacity: 1;
+      }
+      22%,
+      100% {
+        opacity: 0;
+        translate: var(--to-x) 0;
+      }
+    }
+    /* Işık merkeze bakan uca doğru akar: soldaki düğümlerde sağa, sağdakilerde sola (şerit %40 genişlikte). */
+    .eco__node {
+      --from: -100%;
+      --to-x: 250%;
+    }
+    .eco__node--tr,
+    .eco__node--br {
+      --from: 250%;
+      --to-x: -100%;
+    }
+    .eco__dots > i:nth-child(2) {
+      --j: 1;
+    }
+    .eco__dots > i:nth-child(3) {
+      --j: 2;
+    }
+    .eco__dots > i:nth-child(4) {
+      --j: 3;
+    }
+    .eco__dots > i:nth-child(n + 5) {
+      --j: 4;
+    }
+    :global(html[data-motion='play']) .eco[data-state='play'] .eco__icon :global(svg) {
+      animation: eco-wake var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+      animation-delay: calc(var(--T) * var(--k, 0) / 4 + var(--T) * 0.3);
+    }
+    :global(html[data-motion='play']) .eco[data-state='play'] .eco__dots > i {
+      animation: eco-dot var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+      animation-delay: calc(var(--T) * var(--k, 0) / 4 + var(--T) * 0.34 + var(--site-motion-stagger) * var(--j, 0) * 2);
+    }
+    :global(html[data-motion='play']) .eco[data-state='play'] .eco__stream {
+      animation: eco-stream var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+      animation-delay: calc(var(--T) * var(--k, 0) / 4 + var(--T) * 0.42);
+    }
+    :global(html[data-motion='play']) .eco[data-state='play'][data-visible='true'] :is(.eco__ring, .eco__orbit, .eco__packet, .eco__beam, .eco__lit, .eco__dots > i, .eco__stream),
+    :global(html[data-motion='play']) .eco[data-state='play'][data-visible='true'] .eco__icon :global(svg) {
       animation-play-state: running;
     }
     /* Üzerine gelinen kartın halkası sürekli yanar (döngü yerine). */

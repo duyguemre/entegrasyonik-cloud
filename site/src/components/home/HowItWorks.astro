@@ -3,7 +3,7 @@
  * Nasıl çalışır (ADR-0014 Karar 2, bölüm 5) — dört adım (S8: hesap -> kanal bağlama -> ürün aktarımı ->
  * stok/sipariş yönetimi). Adım metinleri kayıttan gelir (SSS + yetenek + deneme).
  * S7: geniş ekranda sol sütun YAPIŞKAN (başlık, adım göstergesi, CTA), sağda adımlar kaydırılır; her adımın altında
- * "Örnek görünüm" mini arayüzü. Kaydırırken etkin adım göstergede vurgulanır
+ * mini arayüz (S15-C: pencere başlığında ayrı "Örnek görünüm" etiketi yok; görseller aria-hidden, anlam metinde). Kaydırırken etkin adım göstergede vurgulanır
  * (`data-spy` / `data-spy-link`, src/scripts/scenes.ts — IntersectionObserver; scroll dinleyicisi YOK).
  * Sahne: `data-scene="how-progress"` — işaretler ve aralarındaki çizgi görünür olunca sırayla dolar. Statik hâl: çizgi dolu.
  * Adım numaraları dizideki sıradan üretilir (sabit rakam yok).
@@ -132,7 +132,6 @@ const catalog = Array.from({ length: 3 })
                 <div class="how__chrome">
                   <span class="how__dots"><i></i><i></i><i></i></span>
                   <span class="how__app">{s.app}</span>
-                  <span class="how__tag">Örnek görünüm</span>
                   <span class="how__progress"><i></i></span>
                 </div>
 
@@ -594,14 +593,6 @@ const catalog = Array.from({ length: 3 })
     font-weight: var(--ek-font-weight-semibold);
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-  .how__visual .how__tag {
-    flex: none;
-    color: var(--ek-color-content-muted);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
   }
   /* Pencere altındaki ince ilerleme çizgisi: demo boyunca soldan sağa dolar (statik: dolu). */
   .how__progress {
@@ -1266,11 +1257,6 @@ const catalog = Array.from({ length: 3 })
     line-height: var(--ek-space-5);
   }
 
-  @media (max-width: 479px) {
-    .how__visual .how__app {
-      visibility: hidden;
-    }
-  }
   @media (min-width: 480px) {
     .panel__kpis {
       grid-template-columns: repeat(4, minmax(0, 1fr));

@@ -78,14 +78,15 @@ test.describe('MotionToggle header\'a sığar (320–1600 px)', () => {
   })
 })
 
-test.describe('Hero ürün paneli (Örnek görünüm)', () => {
-  test('mock görünür, "Örnek görünüm" etiketli, kanal noktaları (isimsiz) ve konsol temiz', async ({ page }) => {
+test.describe('Hero ürün paneli', () => {
+  test('mock görünür, "Örnek görünüm" rozeti yok (S15), kanal noktaları (isimsiz) ve konsol temiz', async ({ page }) => {
     const problems = collectProblems(page)
     await page.goto('/')
     await waitForFonts(page)
     const mock = page.getByTestId('hero-mock')
     await expect(mock).toBeVisible()
-    await expect(mock).toContainText('Örnek görünüm') // rozet yeter (S8 2. tur: ayrı altyazı kaldırıldı)
+    await expect(mock).not.toContainText('Örnek görünüm') // S15: kullanıcı isteğiyle rozet kaldırıldı
+    await expect(mock).toHaveAttribute('aria-hidden', 'true') // dekoratif sahne; veri olarak sunulmaz
     await expect(page.locator('[data-testid="hero-mock"] [data-part="chan"]')).toHaveCount(6)
     // S12: kanal adı yerine genel etiket
     await expect(mock).toContainText('Pazaryeri siparişi')
@@ -297,6 +298,43 @@ test.describe('Sorun -> çözüm kaydırma ilerlemesi (S12)', () => {
     await page.getByTestId('problem-solution').scrollIntoViewIfNeeded()
     expect(await progress(page)).toBe('')
     await expect(page.locator('.ps__after')).toHaveCSS('opacity', '1')
+  })
+})
+
+test.describe('S15-B: tek merkez akışı (kanallar -> göbek -> senkron)', () => {
+  const running = (page: Page) =>
+    page.evaluate(() => {
+      const scene = document.querySelector('[data-testid="problem-solution"]')!
+      return document
+        .getAnimations()
+        .filter((a) => a.playState === 'running' && a.effect instanceof KeyframeEffect && scene.contains(a.effect.target as Node))
+        .map((a) => (a as CSSAnimation).animationName)
+    })
+  const newOpacity = (page: Page) => page.locator('.ps__chip-new').first().evaluate((el) => getComputedStyle(el).opacity)
+
+  test('görünürken akış döngüsü çalışır; hareket durdurulunca senkron son durum (yeni değer görünür, paket yok)', async ({ page }) => {
+    await page.goto('/')
+    await readyMotion(page)
+    await page.locator('.ps__net').scrollIntoViewIfNeeded()
+    await expect.poll(async () => (await running(page)).filter((n) => n.startsWith('loop-ps-')).length).toBeGreaterThan(5)
+    const names = await running(page)
+    for (const k of ['loop-ps-in', 'loop-ps-back', 'loop-ps-new', 'loop-ps-ring']) expect(names, k).toContain(k)
+    await page.getByTestId('motion-toggle').click()
+    await expect.poll(async () => (await running(page)).filter((n) => n.startsWith('loop-ps-')).length).toBe(0)
+    expect(await newOpacity(page)).toBe('1')
+    await expect(page.locator('.ps__packet').first()).toHaveCSS('opacity', '0')
+  })
+
+  test('reduced-motion: döngü hiç başlamaz; tüm çipler aynı (senkron) değeri gösterir', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.goto('/')
+    await page.locator('.ps__net').scrollIntoViewIfNeeded()
+    expect((await running(page)).filter((n) => n.startsWith('loop-ps-'))).toEqual([])
+    const values = await page.locator('.ps__chip-new').allTextContents()
+    expect(values).toHaveLength(4)
+    expect(new Set(values).size).toBe(1)
+    for (const el of await page.locator('.ps__chip-new').all()) await expect(el).toHaveCSS('opacity', '1')
+    for (const el of await page.locator('.ps__chip-old').all()) await expect(el).toHaveCSS('opacity', '0')
   })
 })
 
