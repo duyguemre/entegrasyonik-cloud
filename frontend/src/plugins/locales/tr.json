@@ -1248,5 +1248,64 @@
       "terms": "Kullanım Koşulları",
       "newTab": "(yeni sekmede açılır)"
     }
+  },
+  "stockPolicy": {
+    "title": "Stok politikası",
+    "description": "Aynı stoğun birden fazla pazaryerinde satıldığı durumlarda aşırı satışı önleyen tampon ve telafi kuralları.",
+    "loadError": "Stok politikası yüklenemedi — bağlantınızı kontrol edip tekrar deneyin.",
+    "forbidden": {
+      "title": "Bu ayarlara erişiminiz yok",
+      "message": "Stok politikası yalnızca mağaza sahibi ve yöneticiler tarafından görüntülenip değiştirilebilir."
+    },
+    "empty": {
+      "title": "Henüz bağlı pazaryeri yok",
+      "message": "Stok politikası, en az bir pazaryeri entegrasyonu bağlandıktan sonra ayarlanabilir.",
+      "action": "Pazaryeri entegrasyonlarına git"
+    },
+    "primary": {
+      "title": "Birincil kanal",
+      "description": "Son adetler birincil kanalda satılır; diğer kanallara tampon düşülerek daha az stok yayınlanır. Otomatik seçimde ilk bağlanan pazaryeri birincil sayılır.",
+      "label": "Birincil satış kanalı",
+      "auto": "Otomatik ({channel})",
+      "effective": "Şu an geçerli birincil kanal: {channel}",
+      "disconnectedItem": "{channel} (artık bağlı değil)",
+      "stale": "Seçili birincil kanal ({channel}) artık bağlı değil — geçerli bir kanal seçin veya otomatik kurala dönün."
+    },
+    "channels": {
+      "title": "Kanal kuralları",
+      "description": "Boş bırakılan alanlarda varsayılan değer kullanılır. Yayınlanan stok = satılabilir stok − en büyüğü (tampon adet, stok × tampon yüzdesi).",
+      "primaryChip": "Birincil kanal",
+      "disabledChip": "Pasif",
+      "preview": "Örnek: {available} adet satılabilir stokta bu kanala {published} adet yayınlanır."
+    },
+    "fields": {
+      "bufferUnits": "Tampon adet",
+      "bufferUnitsHint": "Bu kanala yayınlanan stoktan düşülecek sabit adet.",
+      "bufferUnitsPrimaryHint": "Birincil kanalda tampon adet uygulanmaz.",
+      "bufferPercent": "Tampon yüzdesi",
+      "bufferPercentHint": "Stoğun bu yüzdesi bu kanala yayınlanmaz.",
+      "graceMinutes": "Aşırı satış bekleme süresi",
+      "graceMinutesHint": "Aşırı satışta stok gelmesi için beklenecek süre.",
+      "minutes": "dk",
+      "autoCancel": "Aşırı satışta otomatik iptal",
+      "autoCancelHint": "Bekleme süresi dolunca satır pazaryerinde iptal edilir.",
+      "autoCancelUnsupported": "Bu pazaryerinde otomatik iptal desteklenmiyor; aşırı satışta size görev düşer.",
+      "autoCancelDefault": "Varsayılan ({value})",
+      "on": "Açık",
+      "off": "Kapalı",
+      "defaultPlaceholder": "Varsayılan: {value}",
+      "unsupported": "Desteklenmiyor"
+    },
+    "errors": {
+      "notNumber": "Geçerli bir sayı girin.",
+      "integer": "Tam sayı girin.",
+      "range": "0 ile {max} arasında bir değer girin."
+    },
+    "save": {
+      "unsaved": "Kaydedilmemiş {count} değişiklik var.",
+      "fixErrors": "Kaydetmeden önce {count} alan düzeltilmeli.",
+      "success": "Stok politikası kaydedildi.",
+      "error": "Stok politikası kaydedilemedi — tekrar deneyin."
+    }
   }
 }

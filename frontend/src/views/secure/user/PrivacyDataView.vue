@@ -181,6 +181,19 @@ defineExpose({
   padding: var(--ek-space-6);
 }
 
+/* ADR-0015 Karar 6.2 — sayfa iç boşluğu: masaüstü 6, tablet 4, mobil 3. */
+@media (max-width: 1023px) {
+  .privacyDataView {
+    padding: var(--ek-space-4);
+  }
+}
+
+@media (max-width: 767px) {
+  .privacyDataView {
+    padding: var(--ek-space-3);
+  }
+}
+
 .privacyDataView__facts,
 .privacyDataView__links {
   list-style: none;

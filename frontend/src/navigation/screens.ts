@@ -141,6 +141,7 @@ export const SCREENS: readonly ScreenDefinition[] = [
   // `titleKey`/`icon`: menüde henüz karşılığı yokken sunum yüzeylerinin (breadcrumb/palet) yedeği.
   { key: 'AccountSecurityView', slug: 'account/security', icon: 'mdi-shield-account-outline', titleKey: 'menu.accountSecurity' },
   { key: 'PrivacyDataView', slug: 'account/privacy', icon: 'mdi-shield-lock-outline', titleKey: 'menu.privacyData' },
+  { key: 'StockPolicyView', slug: 'catalog/stock-policy', section: 'catalog', order: 5, icon: 'mdi-scale-balance', titleKey: 'menu.stockPolicy' },
 ] as const
 
 /** URL'nin ilk segmenti hiçbir zaman bir ekran slug'ı OLAMAZ (ADR-0012 Karar 1 — başka uç noktalar/statikler ile çakışmasın). */

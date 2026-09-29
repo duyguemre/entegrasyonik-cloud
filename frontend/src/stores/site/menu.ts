@@ -78,6 +78,7 @@ export const useMenuStore = defineStore('menu', () => {
     // (ApplicationDB `menus`) bu bulut görevinin kapsamı dışı — ADR-0020 ekranlarıyla aynı emsal (yukarıda).
     ['AccountSecurityView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/AccountSecurityView.vue')))],
     ['PrivacyDataView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/PrivacyDataView.vue')))],
+    ['StockPolicyView', shallowRef(defineAsyncComponent(() => import('@/views/secure/integrations/StockPolicyView.vue')))],
 
   ]);
 

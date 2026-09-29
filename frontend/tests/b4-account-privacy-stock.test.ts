@@ -7,6 +7,9 @@ import { apiCode, apiMessage, apiStatus, isApiError } from '../src/composables/a
 import { countCharacterClasses, passwordHints, passwordHintsMet, utf8ByteLength } from '../src/composables/passwordPolicyHints'
 import { changePasswordError, resendVerificationErrorKey } from '../src/composables/useAccountSecurityApi'
 import { SCREENS } from '../src/navigation/screens'
+import {
+  buildChannelPatch, computePublishQuantity, effectiveNumbers, isStockPolicyResponse, parseDraftNumber, toDraft, validateDraft,
+} from '../src/composables/useStockPolicyApi'
 import { EXPORT_FALLBACK_FILENAME, downloadErrorKey, exportErrorKey, exportFilenameFromDisposition } from '../src/composables/useTenantDataApi'
 
 const tr = JSON.parse(readFileSync(fileURLToPath(new URL('../src/plugins/locales/tr.json', import.meta.url)), 'utf8'))
@@ -110,10 +113,59 @@ describe('useTenantDataApi saf yardımcıları (N4 — API_TENANT_SURFACE §5)',
   })
 })
 
+describe('useStockPolicyApi saf yardımcıları (N5 — API_TENANT_SURFACE §1)', () => {
+  const limits = { bufferUnitsMax: 100000, bufferPercentMax: 100, graceMinutesMax: 10080 }
+  const defaults = { bufferUnits: 1, bufferPercent: 0, graceMinutes: 30, autoCancelOversold: true }
+
+  it('computePublishQuantity backend StockPublishTrigger formülünün aynasıdır (ADR-0004 Karar 5-6)', () => {
+    // publish = clamp(available − max(bufferUnits, floor(available×bufferPercent/100)), 0, max); birincilde bufferUnits=0
+    expect(computePublishQuantity(20, { isPrimary: false })).toBe(19)
+    expect(computePublishQuantity(20, { isPrimary: true })).toBe(20)
+    expect(computePublishQuantity(20, { isPrimary: true, bufferUnits: 5, bufferPercent: 10 })).toBe(18)
+    expect(computePublishQuantity(20, { isPrimary: false, bufferUnits: 3, bufferPercent: 10 })).toBe(17)
+    expect(computePublishQuantity(20, { isPrimary: false, bufferUnits: 1, bufferPercent: 25 })).toBe(15)
+    expect(computePublishQuantity(1, { isPrimary: false })).toBe(0)
+    expect(computePublishQuantity(0, { isPrimary: true })).toBe(0)
+    expect(computePublishQuantity(30000, { isPrimary: true, channelMax: 20000 })).toBe(20000)
+  })
+
+  it('taslak dönüşümü: ayarlı alanlar metne, eksikler boşa/null\'a; ondalık virgül', () => {
+    expect(toDraft({ bufferPercent: 12.5, autoCancelOversold: false })).toEqual({ bufferUnits: '', bufferPercent: '12,5', graceMinutes: '', autoCancelOversold: false })
+    expect(parseDraftNumber('')).toBeNull()
+    expect(parseDraftNumber(' 12,5 ')).toBe(12.5)
+    expect(Number.isNaN(parseDraftNumber('on beş') as number)).toBe(true)
+    expect(Number.isNaN(parseDraftNumber('-3') as number)).toBe(true)
+  })
+
+  it('doğrulama backend stockPolicyValidation kurallarıyla aynı (tamsayı/aralık)', () => {
+    const base = toDraft({})
+    expect(validateDraft({ ...base, bufferUnits: '2.5' }, limits)).toEqual({ bufferUnits: 'stockPolicy.errors.integer' })
+    expect(validateDraft({ ...base, bufferPercent: '100,5' }, limits)).toEqual({ bufferPercent: 'stockPolicy.errors.range' })
+    expect(validateDraft({ ...base, bufferPercent: '99,5' }, limits)).toEqual({})
+    expect(validateDraft({ ...base, graceMinutes: '10081' }, limits)).toEqual({ graceMinutes: 'stockPolicy.errors.range' })
+    expect(validateDraft({ ...base, graceMinutes: 'x' }, limits)).toEqual({ graceMinutes: 'stockPolicy.errors.notNumber' })
+    for (const k of ['stockPolicy.errors.integer', 'stockPolicy.errors.range', 'stockPolicy.errors.notNumber']) expect(trHas(k), k).toBe(true)
+  })
+
+  it('yama yalnızca DEĞİŞEN alanları taşır; temizlenen alan null (varsayılana dön)', () => {
+    const original = { bufferPercent: 10, graceMinutes: 45 }
+    expect(buildChannelPatch(original, toDraft(original))).toEqual({})
+    expect(buildChannelPatch(original, { ...toDraft(original), bufferPercent: '' })).toEqual({ bufferPercent: null })
+    expect(buildChannelPatch(original, { ...toDraft(original), bufferUnits: '3', autoCancelOversold: false })).toEqual({ bufferUnits: 3, autoCancelOversold: false })
+    expect(buildChannelPatch({ autoCancelOversold: true }, { ...toDraft({}), autoCancelOversold: null })).toEqual({ autoCancelOversold: null })
+  })
+
+  it('etkin değerler: boş/geçersiz alan varsayılana düşer; yanıt şekli denetimi', () => {
+    expect(effectiveNumbers({ ...toDraft({}), bufferPercent: '15', graceMinutes: 'x' }, defaults)).toEqual({ bufferUnits: 1, bufferPercent: 15, graceMinutes: 30 })
+    expect(isStockPolicyResponse({ channels: [], defaults, limits })).toBe(true)
+    expect(isStockPolicyResponse({ response: { status: 500 } })).toBe(false)
+  })
+})
+
 describe('B4-P0 ekran kayıtları (screens.ts — yalnızca ekleme)', () => {
   it('yeni ekranların menü başlık anahtarları tr.json\'da vardır ve urlParams taşımaz', () => {
-    const b4 = SCREENS.filter((s) => ['AccountSecurityView', 'PrivacyDataView'].includes(s.key))
-    expect(b4.length).toBe(2)
+    const b4 = SCREENS.filter((s) => ['AccountSecurityView', 'PrivacyDataView', 'StockPolicyView'].includes(s.key))
+    expect(b4.length).toBe(3)
     for (const s of b4) {
       expect(trHas(s.titleKey!), s.titleKey).toBe(true)
       expect(s.urlParams).toBeUndefined()
