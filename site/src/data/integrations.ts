@@ -69,7 +69,7 @@ export const KIND_LABELS: Record<IntegrationKind, string> = {
 export const COVERAGE_LABELS: Record<CoverageLevel, string> = {
   broad: 'Geniş kapsam',
   partial: 'Kısmi kapsam',
-  limited: 'Sınırlı kapsam',
+  limited: 'Temel kapsam',
 }
 
 export const CAPABILITY_LABELS: Record<CapabilityKey, string> = {
@@ -87,7 +87,7 @@ export const CAPABILITY_LABELS: Record<CapabilityKey, string> = {
 
 export const CAPABILITY_LEVEL_LABELS: Record<CapabilityLevel, string> = {
   supported: 'Destekleniyor',
-  limited: 'Sınırlı',
+  limited: 'Temel düzeyde',
 }
 
 const M = 'backend/src/integration/modules'

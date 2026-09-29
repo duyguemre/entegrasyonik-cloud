@@ -1,7 +1,7 @@
 ---
 /**
  * IntegrationCard — `/entegrasyonlar` vitrin kartı. Yalnızca `PublicIntegration` (getPublic* çıktısı) alır:
- * destekleneni ve sınırlı olanı AYRI satırlarda dürüstçe gösterir; ayrıntı sayfasına bağlanır.
+ * destekleneni ve temel düzeyde olanı AYRI satırlarda dürüstçe gösterir; ayrıntı sayfasına bağlanır.
  */
 import Card from '../Card.astro'
 import Badge from '../Badge.astro'
@@ -52,7 +52,7 @@ const titleId = `int-${i.code}`
     {
       limited.length > 0 && (
         <div>
-          <dt>Sınırlı</dt>
+          <dt>Temel düzeyde</dt>
           <dd>{limited.join(', ')}</dd>
         </div>
       )

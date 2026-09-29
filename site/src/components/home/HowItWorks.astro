@@ -7,6 +7,11 @@
  * (`data-spy` / `data-spy-link`, src/scripts/scenes.ts — IntersectionObserver; scroll dinleyicisi YOK).
  * Sahne: `data-scene="how-progress"` — işaretler ve aralarındaki çizgi görünür olunca sırayla dolar. Statik hâl: çizgi dolu.
  * Adım numaraları dizideki sıradan üretilir (sabit rakam yok).
+ * S12: adım metinleri kısa pazarlama dilinde (kayıttaki `home` / özet alanlarından); görsellerde kanal ADI yok
+ * (isimsiz renkli nokta). Sağdan kayarak gelen "ekran" korunur ve güçlendirilir; her adımın kendi mikro
+ * hareketi vardır (form dolar → onay parlar; anahtar kilitten geçip merkeze akar; ürünler kanallara sırayla
+ * aktarılır; panel kutucukları yerine oturur). Tümü bu dosyanın stilinde, yalnızca transform/opacity,
+ * `prefers-reduced-motion: no-preference` + `html[data-motion='play']` koşullu; statik hâl = tamamlanmış son durum.
  */
 import Section from '../Section.astro'
 import SectionHeading from './SectionHeading.astro'
@@ -15,7 +20,6 @@ import Icon from './Icon.astro'
 import { appUrls } from '../../lib/site-config'
 import { getPublicTrial } from '../../data/plans'
 import { getPublicCapabilities } from '../../data/capabilities'
-import { getPublicFaq } from '../../data/faq'
 import { getPublicIntegrations } from '../../data/integrations'
 
 const trial = getPublicTrial()
@@ -24,39 +28,36 @@ const cap = (id: string) => {
   if (!c) throw new Error(`Yetenek kaydı bulunamadı: ${id}`)
   return c
 }
-const faqAnswer = (id: string) => {
-  const f = getPublicFaq().find((x) => x.id === id)
-  if (!f) throw new Error(`SSS kaydı bulunamadı: ${id}`)
-  return f.answer
+const homeLine = (id: string) => {
+  const c = cap(id)
+  return c.home?.line ?? c.summary
 }
-
-const connectSentence = `${faqAnswer('baglanti-bilgileri').split('. ')[0]}.`
-const marketplaces = getPublicIntegrations('marketplace').map((i) => i.name)
+const channelCodes = getPublicIntegrations('marketplace').map((i) => i.code)
 
 const steps = [
   {
     key: 'account',
     nav: 'Hesap',
     title: 'Hesabınızı açın',
-    text: `Ücretsiz deneme ile başlayın: ${trial.days} gün${trial.cardRequired ? '' : ', kart bilgisi gerekmez'}.`,
+    text: `${trial.days} gün ücretsiz deneyin${trial.cardRequired ? '' : '; kart bilgisi gerekmez'}.`,
   },
   {
     key: 'connect',
     nav: 'Kanallar',
-    title: 'Pazaryeri API anahtarınızı bağlayın',
-    text: `${connectSentence} ${cap('secrets-encryption').summary}`,
+    title: 'Kanallarınızı bağlayın',
+    text: `Bağlantı bilgilerinizi bir kez girin. ${cap('secrets-encryption').summary}`,
   },
   {
     key: 'import',
     nav: 'Ürünler',
     title: 'Ürünlerinizi aktarın',
-    text: cap('multi-channel-products').summary,
+    text: homeLine('multi-channel-products'),
   },
   {
     key: 'manage',
     nav: 'Yönetim',
-    title: 'Stok ve siparişleri tek panelden yönetin',
-    text: `${cap('unified-orders').summary} ${cap('stock-reservation').summary}`,
+    title: 'Tek panelden yönetin',
+    text: `${homeLine('unified-orders')} Merkezi stok rezervasyonu aşırı satış riskini kontrol altında tutar.`,
   },
 ]
 const tiles = [
@@ -76,7 +77,7 @@ const tiles = [
         eyebrow="Nasıl çalışır"
         title="Dört adımda tek panele geçin"
         accent="Dört adımda"
-        lead="Kurulum; hesap açma, kanal bağlama, ürün aktarımı ve tek panelden yönetim adımlarından oluşur."
+        lead="Hesabınızı açın, kanallarınızı bağlayın, ürünlerinizi aktarın: çok kanallı operasyonunuz tek panelde yönetilmeye hazır."
       />
       <ul class="hw__nav" aria-hidden="true">
         {
@@ -106,32 +107,57 @@ const tiles = [
               <p class="how__text">{s.text}</p>
 
               <div class="how__visual" data-tilt aria-hidden="true">
-                <p class="how__tag">Örnek görünüm</p>
+                <div class="how__chrome">
+                  <span class="how__dots"><i></i><i></i><i></i></span>
+                  <span class="how__tag">Örnek görünüm</span>
+                </div>
                 {s.key === 'account' && (
                   <div class="form">
-                    <span class="form__field"><i></i></span>
-                    <span class="form__field"><i></i></span>
+                    <span class="form__field"><em>Firma adı</em><i class="fill fill--a"></i></span>
+                    <span class="form__field"><em>E-posta</em><i class="fill fill--b"></i></span>
                     <span class="form__btn">Ücretsiz dene</span>
-                    <span class="form__badge"><Icon name="check" size="sm" />{trial.days} gün deneme</span>
+                    <span class="form__badge done">
+                      <span class="done__glow"></span>
+                      <Icon name="check" size="sm" />
+                      {trial.days} gün ücretsiz deneme
+                    </span>
                   </div>
                 )}
                 {s.key === 'connect' && (
                   <div class="form">
                     <ul class="form__chips">
-                      {marketplaces.map((m, n) => <li class:list={['form__chip', n === 0 && 'is-on']}>{m}</li>)}
+                      {channelCodes.map((code, n) => (
+                        <li class:list={['form__chip', n === 0 && 'is-on']} data-code={code}>
+                          <i></i>
+                          {n === 0 && <Icon name="check" size="sm" />}
+                        </li>
+                      ))}
                     </ul>
                     <span class="form__field form__field--key"><em>API anahtarı</em><b>••••••••••••</b></span>
-                    <span class="form__field form__field--key"><em>Gizli anahtar</em><b>••••••••••••</b></span>
-                    <span class="form__badge"><Icon name="lock" size="sm" />Şifreli saklanır</span>
+                    <div class="wire">
+                      <span class="wire__node"><Icon name="key" size="sm" /></span>
+                      <span class="wire__line"><i class="wire__packet"></i></span>
+                      <span class="wire__node wire__node--lock"><Icon name="lock" size="sm" /></span>
+                      <span class="wire__line"><i class="wire__packet wire__packet--late"></i></span>
+                      <span class="wire__node wire__node--hub"><Icon name="database" size="sm" /></span>
+                    </div>
+                    <span class="form__badge done">
+                      <span class="done__glow"></span>
+                      <Icon name="lock" size="sm" />
+                      Şifreli saklanır
+                    </span>
                   </div>
                 )}
                 {s.key === 'import' && (
                   <ul class="import">
-                    {marketplaces.map((m, n) => (
-                      <li class="import__row">
-                        <span class="import__chan">{m}</span>
-                        <span class="import__bar"><i class:list={['import__fill', n === 0 && 'is-done']}></i></span>
-                        <span class="import__state">{n === 0 ? 'Aktarıldı' : 'Sırada'}</span>
+                    {channelCodes.map((code) => (
+                      <li class="import__row" data-code={code}>
+                        <span class="import__dot"></span>
+                        <span class="import__bar"><i class="import__fill"></i></span>
+                        <span class="import__ok">
+                          <span class="done__glow"></span>
+                          <Icon name="check" size="sm" />
+                        </span>
                       </li>
                     ))}
                   </ul>
@@ -216,6 +242,10 @@ const tiles = [
   }
 
   .how {
+    /* Sağdan kayan "ekran" giriş sırasında yatay taşma üretmesin; `clip` kaydırma kapsayıcısı DEĞİLDİR
+       (sol sütunun yapışkanlığı etkilenmez), gölge/eğim için kenarda pay bırakılır. */
+    overflow-x: clip;
+    overflow-clip-margin: var(--ek-space-8);
     padding: 0;
     list-style: none;
     display: flex;
@@ -273,21 +303,43 @@ const tiles = [
     font-size: var(--ek-font-size-lg);
   }
 
-  /* --- Mini arayüzler --- */
+  /* --- Mini arayüzler ("ekran"): açık yüzeyli uygulama penceresi --- */
   .how__visual {
+    position: relative;
     display: flex;
     flex-direction: column;
-    gap: var(--ek-space-3);
-    margin-top: var(--ek-space-3);
-    padding: var(--ek-space-4);
+    gap: var(--ek-space-4);
+    margin-top: var(--ek-space-4);
+    padding: var(--ek-space-5);
     border: var(--site-border-width) solid var(--ek-color-border-default);
     border-radius: var(--site-radius-panel);
-    background-color: var(--ek-color-surface-muted);
+    background-color: var(--ek-color-surface);
     background-image: var(--site-texture-dots);
     background-size: var(--site-texture-dots-size);
-    box-shadow: var(--site-shadow-card);
+    box-shadow:
+      0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-secondary) 10%, transparent),
+      var(--site-shadow-panel);
+    transition: transform var(--tilt-transition-duration, var(--ek-duration-fast)) var(--ek-easing-standard);
   }
-  /* Koyu sahnede Section'ın `p` rengi (açık) açık zeminli kartta görünmez kalıyordu → özgüllük artırıldı. */
+  .how__chrome {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ek-space-3);
+    padding-bottom: var(--ek-space-3);
+    border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
+  }
+  .how__dots {
+    display: inline-flex;
+    gap: var(--ek-space-1);
+  }
+  .how__dots i {
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-border-strong);
+  }
+  /* Koyu sahnede Section'ın `p`/span rengi açık zeminli kartta görünmez kalmasın → özgüllük artırıldı. */
   .how__visual .how__tag {
     color: var(--ek-color-content-muted);
     font-size: var(--ek-font-size-xs);
@@ -311,14 +363,8 @@ const tiles = [
     background: var(--ek-color-surface);
     font-size: var(--ek-font-size-sm);
   }
-  .form__field i {
-    display: block;
-    width: 45%;
-    height: var(--ek-space-2);
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-surface-sunken);
-  }
   .form__field em {
+    flex: none;
     color: var(--ek-color-content-muted);
     font-style: normal;
   }
@@ -326,6 +372,19 @@ const tiles = [
     color: var(--ek-color-content-strong);
     font-family: var(--ek-font-mono);
     letter-spacing: 0.08em;
+  }
+  .fill {
+    display: block;
+    height: var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-content-muted) 30%, var(--ek-color-surface-sunken));
+    transform-origin: 0 50%;
+  }
+  .fill--a {
+    width: 42%;
+  }
+  .fill--b {
+    width: 58%;
   }
   .form__btn {
     padding: var(--ek-space-3);
@@ -337,6 +396,7 @@ const tiles = [
     text-align: center;
   }
   .form__badge {
+    position: relative;
     display: inline-flex;
     align-items: center;
     align-self: flex-start;
@@ -348,24 +408,90 @@ const tiles = [
     font-size: var(--ek-font-size-sm);
     font-weight: var(--ek-font-weight-semibold);
   }
+  /* Tamamlanma ışıması: onay yerine oturunca bir kez genişleyip söner (statik hâlde görünmez). */
+  .done__glow {
+    position: absolute;
+    inset: calc(var(--ek-space-1) * -1);
+    border: calc(var(--site-border-width) * 2) solid var(--ek-color-success);
+    border-radius: var(--ek-radius-full);
+    opacity: 0;
+    pointer-events: none;
+  }
   .form__chips {
     display: flex;
     flex-wrap: wrap;
     gap: var(--ek-space-2);
   }
   .form__chip {
-    padding: var(--ek-space-1) var(--ek-space-3);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ek-space-1);
+    min-width: var(--ek-space-10);
+    height: var(--ek-space-8);
+    padding-inline: var(--ek-space-3);
     border: var(--site-border-width) solid var(--ek-color-border-strong);
     border-radius: var(--ek-radius-full);
     background: var(--ek-color-surface);
-    color: var(--ek-color-content-default);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-medium);
+    color: var(--ek-color-success);
+  }
+  .form__chip i {
+    width: var(--ek-space-3);
+    height: var(--ek-space-3);
+    border-radius: var(--ek-radius-full);
+    background: var(--chan, var(--ek-color-secondary));
   }
   .form__chip.is-on {
-    border-color: var(--ek-color-primary);
-    background: var(--ek-color-primary);
+    border-color: var(--ek-color-secondary);
+    box-shadow: 0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-secondary) 16%, transparent);
+  }
+  /* Anahtar -> kilit -> merkez: bağlantı hattı ve üzerinde akan paket. */
+  .wire {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-3) var(--ek-space-2);
+  }
+  .wire__node {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-8);
+    height: var(--ek-space-8);
+    border: var(--site-border-width) solid var(--ek-color-border-strong);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-surface);
+    color: var(--ek-color-primary-darken-1);
+  }
+  .wire__node--lock {
+    border-color: var(--ek-color-secondary);
+    color: var(--ek-color-secondary-darken-1);
+  }
+  .wire__node--hub {
+    border-color: transparent;
+    background: linear-gradient(140deg, var(--ek-color-primary-darken-1), var(--ek-color-primary));
     color: var(--site-color-on-primary);
+  }
+  .wire__line {
+    position: relative;
+    container-type: inline-size;
+    height: calc(var(--site-border-width) * 2);
+    border-radius: var(--ek-radius-full);
+    background: linear-gradient(90deg, var(--ek-color-border-strong), var(--ek-color-secondary));
+    transform-origin: 0 50%;
+  }
+  .wire__packet {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 0;
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    margin-top: calc(var(--ek-space-1) * -1);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-secondary);
+    box-shadow: 0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-secondary) 25%, transparent);
+    opacity: 0;
   }
   .import {
     display: flex;
@@ -374,43 +500,46 @@ const tiles = [
   }
   .import__row {
     display: grid;
-    grid-template-columns: minmax(0, 5.5rem) minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
     gap: var(--ek-space-3);
-    padding: var(--ek-space-2) var(--ek-space-3);
+    padding: var(--ek-space-3);
     border: var(--site-border-width) solid var(--ek-color-border-default);
     border-radius: var(--ek-radius-lg);
     background: var(--ek-color-surface);
   }
-  .import__chan {
-    overflow: hidden;
-    color: var(--ek-color-content-strong);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-semibold);
-    white-space: nowrap;
-    text-overflow: ellipsis;
+  .import__dot {
+    width: var(--ek-space-3);
+    height: var(--ek-space-3);
+    border-radius: var(--ek-radius-full);
+    background: var(--chan, var(--ek-color-secondary));
+    box-shadow: 0 0 0 calc(var(--site-border-width) * 3) color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 18%, transparent);
   }
   .import__bar {
     display: block;
-    height: var(--ek-space-1);
+    height: var(--ek-space-2);
+    overflow: hidden;
     border-radius: var(--ek-radius-full);
     background: var(--ek-color-surface-sunken);
   }
   .import__fill {
     display: block;
-    width: 12%;
+    width: 100%;
     height: 100%;
     border-radius: var(--ek-radius-full);
     background: var(--site-gradient-accent);
+    transform-origin: 0 50%;
   }
-  .import__fill.is-done {
-    width: 100%;
-  }
-  .import__state {
-    color: var(--ek-color-content-muted);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-semibold);
-    white-space: nowrap;
+  .import__ok {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-6);
+    height: var(--ek-space-6);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-success);
+    color: var(--site-color-on-primary);
   }
   .tiles {
     display: grid;
@@ -421,10 +550,11 @@ const tiles = [
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-2);
-    padding: var(--ek-space-3);
+    padding: var(--ek-space-4);
     border: var(--site-border-width) solid var(--ek-color-border-default);
     border-radius: var(--ek-radius-lg);
     background: var(--ek-color-surface);
+    box-shadow: var(--ek-shadow-sm);
   }
   .tiles__icon {
     display: inline-flex;
@@ -443,10 +573,177 @@ const tiles = [
   }
   .tiles__bar i {
     display: block;
-    width: 60%;
+    width: 64%;
     height: 100%;
     border-radius: var(--ek-radius-full);
     background: var(--site-gradient-accent);
+    transform-origin: 0 50%;
+  }
+  .tiles__item:nth-child(2) .tiles__bar i {
+    width: 82%;
+  }
+  .tiles__item:nth-child(3) .tiles__bar i {
+    width: 48%;
+  }
+  .tiles__item:nth-child(4) .tiles__bar i {
+    width: 30%;
+  }
+
+  /*
+   * Hareket (adım görünür olunca, `how-progress` sahnesinin `data-state`'ine bağlı):
+   *  1) "ekran" sağdan kayarak gelir (korunan S7 davranışı; daha belirgin mesafe)
+   *  2) adıma özgü mikro hareket: alanlar dolar / hat çizilir / çubuklar sırayla dolar / kutucuklar yükselir
+   *  3) tamamlanınca onay ışıması bir kez genişleyip söner
+   *  4) görünürken (yalnızca 2. adım) paket anahtar -> kilit -> merkez hattında akar
+   * Yalnızca translate/scale/opacity; reduced-motion / "Hareket" kapalı / JS'siz → statik tamamlanmış hâl.
+   */
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes how-screen-in {
+      from {
+        opacity: 0;
+        translate: calc(var(--site-motion-distance) * 6) 0;
+      }
+    }
+    @keyframes how-fill {
+      from {
+        scale: 0 1;
+      }
+    }
+    @keyframes how-pop {
+      from {
+        opacity: 0;
+        scale: var(--site-motion-scale-from);
+      }
+    }
+    @keyframes how-rise {
+      from {
+        opacity: 0;
+        translate: 0 var(--site-motion-distance);
+      }
+    }
+    @keyframes how-glow {
+      0% {
+        opacity: 0;
+        scale: 0.9;
+      }
+      30% {
+        opacity: 0.8;
+      }
+      100% {
+        opacity: 0;
+        scale: 1.35;
+      }
+    }
+    @keyframes how-travel {
+      0% {
+        opacity: 0;
+        translate: 0 0;
+      }
+      8%,
+      40% {
+        opacity: 1;
+      }
+      48%,
+      100% {
+        opacity: 0;
+        translate: var(--travel, 0) 0;
+      }
+    }
+    .how__step {
+      --d0: var(--site-motion-duration-reveal-sm);
+    }
+    :global(html[data-motion='play']) .how__step[data-state='ready'] .how__visual {
+      opacity: 0;
+    }
+    :global(html[data-motion='play']) .how__step[data-state='play'] .how__visual {
+      animation: how-screen-in var(--site-motion-duration-reveal-lg) var(--site-motion-ease-reveal) backwards;
+      animation-delay: calc(var(--site-motion-stagger) * 2);
+    }
+    /* 1. adım: alanlar dolar, rozet oturur, ışıma */
+    :global(html[data-motion='play']) .how__step[data-state='play'] .fill {
+      animation: how-fill var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
+      animation-delay: calc(var(--d0) + var(--site-motion-stagger) * 2);
+    }
+    :global(html[data-motion='play']) .how__step[data-state='play'] .fill--b {
+      animation-delay: calc(var(--d0) + var(--site-motion-stagger) * 5);
+    }
+    :global(html[data-motion='play']) .how__step[data-state='play'] .done {
+      animation: how-pop var(--site-motion-duration-reveal-sm) var(--site-motion-ease-reveal) backwards;
+      animation-delay: calc(var(--d0) + var(--site-motion-stagger) * 9);
+    }
+    :global(html[data-motion='play']) .how__step[data-state='play'] .done__glow {
+      animation: how-glow var(--site-motion-duration-reveal-lg) var(--site-motion-ease-reveal) backwards;
+      animation-delay: calc(var(--d0) + var(--site-motion-stagger) * 12);
+    }
+    /* 2. adım: hat soldan sağa çizilir; görünürken paketler akar */
+    :global(html[data-motion='play']) .how__step[data-state='play'] .wire__line {
+      animation: how-fill var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
+      animation-delay: calc(var(--d0) + var(--site-motion-stagger) * 3);
+    }
+    :global(html[data-motion='play']) .how__step[data-state='play'] .wire__line + .wire__node + .wire__line {
+      animation-delay: calc(var(--d0) + var(--site-motion-stagger) * 6);
+    }
+    :global(html[data-motion='play']) .how__step[data-state='play'] .wire__node--lock,
+    :global(html[data-motion='play']) .how__step[data-state='play'] .wire__node--hub {
+      animation: how-pop var(--site-motion-duration-reveal-sm) var(--site-motion-ease-reveal) backwards;
+      animation-delay: calc(var(--d0) + var(--site-motion-stagger) * 5);
+    }
+    :global(html[data-motion='play']) .how__step[data-state='play'] .wire__node--hub {
+      animation-delay: calc(var(--d0) + var(--site-motion-stagger) * 8);
+    }
+    .wire__packet {
+      --travel: calc(100cqw - var(--ek-space-2));
+    }
+    :global(html[data-motion='play']) .how__step[data-state='play'] .wire__packet {
+      animation: how-travel var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+      animation-delay: calc(var(--site-motion-duration-reveal-lg) * 2);
+    }
+    :global(html[data-motion='play']) .how__step[data-state='play'] .wire__packet--late {
+      animation-delay: calc(var(--site-motion-duration-reveal-lg) * 2 + var(--site-motion-ambient-fast) * 0.25);
+    }
+    :global(html[data-motion='play']) .how__step[data-state='play'][data-visible='true'] .wire__packet {
+      animation-play-state: running;
+    }
+    /* 3. adım: her kanal satırı sırayla dolar, onay oturur ve parlar */
+    .import__row:nth-child(2) {
+      --r: 3;
+    }
+    .import__row:nth-child(3) {
+      --r: 6;
+    }
+    .import__row:nth-child(n + 4) {
+      --r: 9;
+    }
+    :global(html[data-motion='play']) .how__step[data-state='play'] .import__fill {
+      animation: how-fill var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
+      animation-delay: calc(var(--d0) + var(--site-motion-stagger) * (var(--r, 0) + 2));
+    }
+    :global(html[data-motion='play']) .how__step[data-state='play'] .import__ok {
+      animation: how-pop var(--site-motion-duration-reveal-sm) var(--site-motion-ease-reveal) backwards;
+      animation-delay: calc(var(--d0) + var(--site-motion-duration-reveal) + var(--site-motion-stagger) * var(--r, 0));
+    }
+    :global(html[data-motion='play']) .how__step[data-state='play'] .import__ok .done__glow {
+      animation: how-glow var(--site-motion-duration-reveal-lg) var(--site-motion-ease-reveal) backwards;
+      animation-delay: calc(var(--d0) + var(--site-motion-duration-reveal) + var(--site-motion-stagger) * (var(--r, 0) + 4));
+    }
+    /* 4. adım: kutucuklar sırayla yükselir, çubuklar dolar */
+    .tiles__item:nth-child(2) {
+      --r: 2;
+    }
+    .tiles__item:nth-child(3) {
+      --r: 4;
+    }
+    .tiles__item:nth-child(4) {
+      --r: 6;
+    }
+    :global(html[data-motion='play']) .how__step[data-state='play'] .tiles__item {
+      animation: how-rise var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
+      animation-delay: calc(var(--d0) + var(--site-motion-stagger) * var(--r, 0));
+    }
+    :global(html[data-motion='play']) .how__step[data-state='play'] .tiles__bar i {
+      animation: how-fill var(--site-motion-duration-reveal-lg) var(--site-motion-ease-reveal) backwards;
+      animation-delay: calc(var(--d0) + var(--site-motion-stagger) * (var(--r, 0) + 4));
+    }
   }
 
   @media (min-width: 1024px) {
