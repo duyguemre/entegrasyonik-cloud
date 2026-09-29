@@ -17,7 +17,7 @@
         </template>
       </v-text-field>
       <v-select label="Seçim (select)" :items="channels" model-value="Trendyol" hint="Tek kanal seçin" persistent-hint />
-      <v-text-field label="Tarih" type="date" model-value="2026-09-29" prepend-inner-icon="mdi-calendar-outline" hint="gg.aa.yyyy" persistent-hint />
+      <EkDateField v-model="formDate" label="Tarih" hint="GG.AA.YYYY — yazın veya takvimden seçin" persistent-hint />
       <v-text-field label="Zorunlu alan *" aria-required="true" hint="* zorunlu alanları işaretler" persistent-hint />
     </EkFormGrid>
     <div class="ds-checks">
@@ -65,7 +65,10 @@
 import DsSpecimen from './DsSpecimen.vue'
 import EkFormGrid from '@/components/ds/EkFormGrid.vue'
 import EkButton from '@/components/ds/EkButton.vue'
+import EkDateField from '@/components/ds/EkDateField.vue'
+import { ref } from 'vue'
 
+const formDate = ref('2026-09-29')
 const channels = ['Trendyol', 'Hepsiburada', 'N11', 'Pazarama']
 </script>
 

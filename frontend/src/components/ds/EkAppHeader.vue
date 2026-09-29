@@ -8,13 +8,28 @@
   Çalışma alanı anahtarı: genel çalışma alanı ↔ seçili kayıt bağlamı
   (sipariş/ürün/entegrasyon). Bağlam yoksa ikinci segment devre dışıdır.
   Dar ekranda (<768) segment etiketleri gizlenir, yalnız ikonlar kalır.
+  Ek (geri uyumlu): menü düğmesinde kısayollu ipucu; `data-header-action`
+  çapaları (kabuk, v-menu'leri bu düğmelere bağlar); `#end-start` slot'u.
 -->
 <template>
   <header class="ek-header">
     <div class="ek-header__start">
-      <button type="button" class="ek-header__icon-btn" aria-label="Menüyü aç/kapat (Ctrl+B)" @click="emit('toggle-menu')">
-        <v-icon icon="mdi-menu" aria-hidden="true" />
-      </button>
+      <v-tooltip :eager="false" transition="fade-transition" location="bottom" :open-delay="400">
+        <template #activator="{ props: tip }">
+          <button
+            v-bind="tip"
+            type="button"
+            class="ek-header__icon-btn"
+            data-header-action="menu"
+            :aria-label="`Menüyü aç/kapat (${menuShortcut.join('+')})`"
+            :aria-expanded="menuExpanded"
+            @click="emit('toggle-menu')"
+          >
+            <v-icon icon="mdi-menu" aria-hidden="true" />
+          </button>
+        </template>
+        <span class="ek-header__tip">Menüyü aç/kapat <EkKbd :keys="menuShortcut" tone="inverse" /></span>
+      </v-tooltip>
       <EkBrandLogo tone="inverse" :variant="compact ? 'mark' : 'full'" :size="28" class="ek-header__brand" />
       <div class="ek-header__switch" role="radiogroup" aria-label="Çalışma alanı">
         <button
@@ -35,6 +50,7 @@
           :class="{ 'is-on': workspace === 'record' }"
           :aria-checked="workspace === 'record'"
           :disabled="!recordLabel"
+          :title="recordLabel ? recordLabel : recordHint"
           @click="emit('update:workspace', 'record')"
         >
           <v-icon icon="mdi-package-variant-closed" aria-hidden="true" />
@@ -48,14 +64,15 @@
     </div>
 
     <div class="ek-header__end">
-      <button type="button" class="ek-header__icon-btn" :aria-label="`Bildirimler, ${notificationCount} okunmamış`" @click="emit('notifications')">
+      <slot name="end-start" />
+      <button type="button" class="ek-header__icon-btn" data-header-action="notifications" :aria-label="`Bildirimler, ${notificationCount} okunmamış`" @click="emit('notifications')">
         <v-icon icon="mdi-bell-outline" aria-hidden="true" />
         <EkBadge v-if="notificationCount" class="ek-header__count" variant="count" tone="error" :text="notificationCount" />
       </button>
-      <button type="button" class="ek-header__icon-btn ek-header__help" aria-label="Yardım merkezi" @click="emit('help')">
+      <button type="button" class="ek-header__icon-btn ek-header__help" data-header-action="help" aria-label="Yardım merkezi" aria-haspopup="menu" @click="emit('help')">
         <v-icon icon="mdi-help-circle-outline" aria-hidden="true" />
       </button>
-      <button type="button" class="ek-header__user" :aria-label="`Hesap menüsü: ${userName}`" @click="emit('account')">
+      <button type="button" class="ek-header__user" data-header-action="account" :aria-label="`Hesap menüsü: ${userName}`" aria-haspopup="menu" @click="emit('account')">
         <span class="ek-header__avatar" aria-hidden="true">{{ initials }}</span>
         <span v-if="!compact" class="ek-header__user-text">
           <span class="ek-header__user-name">{{ userName }}</span>
@@ -71,6 +88,7 @@
 import { computed } from 'vue'
 import EkBrandLogo from './EkBrandLogo.vue'
 import EkBadge from './EkBadge.vue'
+import EkKbd from './EkKbd.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -80,8 +98,21 @@ const props = withDefaults(
     storeName: string
     notificationCount?: number
     compact?: boolean
+    /** Menü düğmesi ipucundaki kısayol (kabuk kısayol kaydından gelir). */
+    menuShortcut?: string[]
+    /** Sol menü açık mı (menü düğmesi `aria-expanded`). */
+    menuExpanded?: boolean
+    /** Seçili kayıt yokken ikinci segmentin açıklaması. */
+    recordHint?: string
   }>(),
-  { workspace: 'general', notificationCount: 0, compact: false },
+  {
+    workspace: 'general',
+    notificationCount: 0,
+    compact: false,
+    menuShortcut: () => ['Ctrl', 'B'],
+    menuExpanded: undefined,
+    recordHint: 'Bir kayıt (ör. ürün düzenleme) açıldığında etkinleşir',
+  },
 )
 
 const emit = defineEmits<{
@@ -167,6 +198,12 @@ const initials = computed(() =>
   outline-offset: 1px;
 }
 
+.ek-header__tip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+}
+
 .ek-header__count {
   position: absolute;
   top: 2px;
@@ -223,6 +260,7 @@ const initials = computed(() =>
 
 .ek-header__segment:disabled {
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .ek-header__user {

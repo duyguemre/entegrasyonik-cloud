@@ -66,7 +66,10 @@ async function runFlow(page: Page, how: Leave, next: 'A' | 'B') {
   await expect(page.getByText(next === 'A' ? 'A Mağazası (E2E)' : 'B Mağazası (E2E)').first()).toBeVisible()
   await page.waitForTimeout(500)
 
-  const tabTitles = (await page.locator('.workplace-tab').allInnerTexts()).join('|')
+  // [DS-v2 Aşama 2, Karar 5.1 izinli değişiklik 1] Sekme başlıkları artık cümle düzeninde (okunaklılık —
+  // kullanıcı brifi madde 4); karşılaştırma büyük harfe çevrilerek yapılır, iddialar ('ANASAYFA' var /
+  // 'İADE YÖNETİMİ' yok) DEĞİŞMEDİ.
+  const tabTitles = (await page.locator('.workplace-tabs [role="tab"]').allInnerTexts()).join('|').toLocaleUpperCase('tr-TR')
   const claimsTabMounted = await page.locator('.claimListView').count()
   // [ADR-0015 A3] Eski ham `img[src="/assets/images/logo6.png"]` seçicisi yerine paylaşılan
   // `openDrawer()` yardımcısı (bkz. dosya başı import) — kabuk artık kalıcı/ray/geçici üç sunumdan

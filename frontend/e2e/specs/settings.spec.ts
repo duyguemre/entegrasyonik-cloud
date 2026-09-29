@@ -118,7 +118,8 @@ test.describe('ADR-0015 B5-3 — SettingListView', () => {
     await expect(page.getByLabel('Firma Ünvanı', { exact: true })).toHaveCount(0)
     await expect(page.getByLabel('MERSIS No', { exact: true })).toHaveCount(0)
 
-    await page.getByRole('radio').nth(1).check({ force: true })
+    // [DS-v2 Aşama 2 kabuk, Karar 5.1 izinli değişiklik 1 — yalnızca kapsam] Üst barda da radio (çalışma alanı anahtarı) var.
+    await page.locator('.workplace-area').getByRole('radio').nth(1).check({ force: true })
     await expect(page.getByLabel('Firma Ünvanı', { exact: true })).toBeVisible()
     await expect(page.getByLabel('Vergi Dairesi', { exact: true })).toBeVisible()
     await expect(page.getByLabel('Vergi No', { exact: true })).toBeVisible()

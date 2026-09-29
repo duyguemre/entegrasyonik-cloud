@@ -6,33 +6,46 @@
   (`sidebar-active` zemin + `action-emphasis` metin + solda 3px aksiyon
   göstergesi), açık grup (ok döner, alt öğeler girintili ve dikey kılavuz
   çizgili).
-  UZUN METİN KESİLMEZ: etiket en fazla 2 satıra sarılır; daha uzunsa
-  (nadir) tam metin `title` + ekran okuyucu için zaten DOM'da.
+  UZUN METİN KESİLMEZ: etiket gerektiği kadar satıra sarılır (kırpma yok).
   `collapsed` (ray) modunda yalnızca ikonlar; ad `aria-label` + tooltip.
   Klavye: doğal Tab sırası (düğmeler); grup düğmesi `aria-expanded`.
+  Etkin öğe bir grubun içindeyse grup kendiliğinden açılır.
+  Ek (geri uyumlu): `hookClasses` — kabukta eski spec çapası sınıfları
+  (öğe/grup/grup başlığı/alt öğe) düğmelere eklemek için; `#item-trailing`
+  — yaprak öğenin sağında, düğmenin KARDEŞİ olarak (iç içe düğme yok) ek
+  eylem (ör. favori yıldızı); ray modunda grup tıklaması `expand-request`.
 -->
 <template>
   <nav class="ek-side" :class="{ 'ek-side--collapsed': collapsed }" :aria-label="label">
     <div v-for="section in sections" :key="section.label" class="ek-side__section">
-      <p v-if="!collapsed" class="ek-side__section-label">{{ section.label }}</p>
-      <div v-else class="ek-side__section-rule" aria-hidden="true"></div>
+      <p v-if="!collapsed && section.label" class="ek-side__section-label">{{ section.label }}</p>
+      <div v-else-if="collapsed" class="ek-side__section-rule" aria-hidden="true"></div>
       <ul class="ek-side__list">
-        <li v-for="item in section.items" :key="item.key">
-          <v-tooltip :disabled="!collapsed" location="end" :text="item.label">
+        <li
+          v-for="item in section.items"
+          :key="item.key"
+          class="ek-side__entry"
+          :class="[item.children ? hookClasses?.group : undefined, { 'has-trailing': !!$slots['item-trailing'] && !collapsed }]"
+        >
+          <v-tooltip :eager="false" transition="fade-transition" :disabled="!collapsed" location="end" :text="item.label">
             <template #activator="{ props: tipProps }">
               <button
                 v-bind="tipProps"
                 type="button"
                 class="ek-side__item"
-                :class="{
-                  'is-active': isActive(item),
-                  'is-hover': forceHoverKey === item.key,
-                  'is-parent-active': !!item.children && isAncestor(item),
-                }"
+                :class="[
+                  hookClasses?.item,
+                  item.children ? hookClasses?.groupHeader : undefined,
+                  {
+                    'is-active': isActive(item),
+                    'is-hover': forceHoverKey === item.key,
+                    'is-parent-active': !!item.children && isAncestor(item),
+                  },
+                ]"
+                :data-key="item.key"
                 :aria-current="item.key === activeKey ? 'page' : undefined"
-                :aria-expanded="item.children ? isOpen(item.key) : undefined"
+                :aria-expanded="item.children && !collapsed ? isOpen(item.key) : undefined"
                 :aria-label="collapsed ? item.label : undefined"
-                :title="collapsed ? undefined : item.label"
                 @click="onItem(item)"
               >
                 <v-icon class="ek-side__icon" :icon="item.icon ?? 'mdi-circle-small'" aria-hidden="true" />
@@ -48,12 +61,16 @@
               </button>
             </template>
           </v-tooltip>
+          <span v-if="$slots['item-trailing'] && !collapsed && !item.children" class="ek-side__trailing">
+            <slot name="item-trailing" :item="item" />
+          </span>
           <ul v-if="item.children && isOpen(item.key) && !collapsed" class="ek-side__sublist">
             <li v-for="child in item.children" :key="child.key">
               <button
                 type="button"
                 class="ek-side__subitem"
-                :class="{ 'is-active': child.key === activeKey, 'is-hover': forceHoverKey === child.key }"
+                :class="[hookClasses?.subItem, { 'is-active': child.key === activeKey, 'is-hover': forceHoverKey === child.key }]"
+                :data-key="child.key"
                 :aria-current="child.key === activeKey ? 'page' : undefined"
                 @click="emit('select', child.key)"
               >
@@ -69,7 +86,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import EkBadge from './EkBadge.vue'
 
 export interface EkSideItem {
@@ -94,12 +111,29 @@ const props = withDefaults(
     collapsed?: boolean
     defaultOpen?: string[]
     forceHoverKey?: string
+    /** Kabuk entegrasyonu: düğmelere eklenecek ek sınıflar (spec çapaları). */
+    hookClasses?: { item?: string; group?: string; groupHeader?: string; subItem?: string }
   }>(),
   { label: 'Ana menü', collapsed: false, defaultOpen: () => [] },
 )
 
-const emit = defineEmits<{ select: [key: string] }>()
+const emit = defineEmits<{ select: [key: string]; 'expand-request': [key: string] }>()
 const open = ref(new Set(props.defaultOpen))
+
+// Etkin öğe kapalı bir grubun içindeyse grubu aç (kullanıcı nerede olduğunu görsün).
+watch(
+  () => [props.activeKey, props.sections] as const,
+  () => {
+    for (const section of props.sections) {
+      for (const item of section.items) {
+        if (item.children?.some((c) => c.key === props.activeKey) && !open.value.has(item.key)) {
+          open.value = new Set([...open.value, item.key])
+        }
+      }
+    }
+  },
+  { immediate: true },
+)
 
 const isOpen = (key: string) => open.value.has(key)
 const isAncestor = (item: EkSideItem) => !!item.children?.some((c) => c.key === props.activeKey)
@@ -107,6 +141,7 @@ const isActive = (item: EkSideItem) => item.key === props.activeKey || (props.co
 
 function onItem(item: EkSideItem) {
   if (!item.children) return emit('select', item.key)
+  if (props.collapsed) return emit('expand-request', item.key)
   const next = new Set(open.value)
   if (next.has(item.key)) next.delete(item.key)
   else next.add(item.key)
@@ -225,11 +260,24 @@ function onItem(item: EkSideItem) {
 .ek-side__label {
   flex: 1;
   min-width: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+}
+
+.ek-side__entry {
+  position: relative;
+}
+
+.ek-side__entry.has-trailing > .ek-side__item {
+  padding-right: calc(var(--ek-space-3) + 24px);
+}
+
+.ek-side__trailing {
+  position: absolute;
+  top: 0;
+  right: var(--ek-space-2);
+  display: flex;
+  align-items: center;
+  height: var(--ek-control-h-md);
 }
 
 .ek-side__chevron {
@@ -268,7 +316,24 @@ function onItem(item: EkSideItem) {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ek-side__chevron {
+  .ek-side__entry {
+  position: relative;
+}
+
+.ek-side__entry.has-trailing > .ek-side__item {
+  padding-right: calc(var(--ek-space-3) + 24px);
+}
+
+.ek-side__trailing {
+  position: absolute;
+  top: 0;
+  right: var(--ek-space-2);
+  display: flex;
+  align-items: center;
+  height: var(--ek-control-h-md);
+}
+
+.ek-side__chevron {
     transition: none;
   }
 }

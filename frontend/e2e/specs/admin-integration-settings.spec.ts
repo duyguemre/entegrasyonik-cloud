@@ -56,7 +56,8 @@ test.describe('ADR-0020 Aşama C — Entegrasyon ayarları (Trendyol)', () => {
     await baseMocks(page)
     await openTrendyolSettings(page)
 
-    await expect(page.getByText('Genel', { exact: true })).toBeVisible()
+    // [DS-v2 Aşama 2 kabuk, Karar 5.1 izinli değişiklik 1 — yalnızca kapsam] Üst bar/sol menü de "Genel" içeriyor.
+    await expect(page.locator('.workplace-area').getByText('Genel', { exact: true })).toBeVisible()
     await expect(page.getByText('Oran sınırları ve dayanıklılık', { exact: true })).toBeVisible()
     await expect(page.getByText('Mock / gerçek mod', { exact: true })).toBeVisible()
     await expect(page.getByText('HTTP zaman aşımı', { exact: true })).toBeVisible()

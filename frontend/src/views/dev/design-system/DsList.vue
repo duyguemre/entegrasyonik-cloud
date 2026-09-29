@@ -8,7 +8,7 @@
             <v-text-field label="Sipariş no" model-value="TY-1023" />
             <v-select label="Kanal" :items="['Tümü', 'Trendyol', 'Hepsiburada', 'N11']" model-value="Trendyol" />
             <v-select label="Durum" :items="['Tümü', 'Kargo bekliyor', 'Hazırlanıyor']" model-value="Kargo bekliyor" />
-            <v-text-field label="Sipariş tarihi" type="date" model-value="2026-09-29" prepend-inner-icon="mdi-calendar-outline" />
+            <EkDateField v-model="orderDate" label="Sipariş tarihi" />
             <v-text-field label="Müşteri" />
             <v-text-field label="Minimum tutar" />
             <v-text-field label="Maksimum tutar" />
@@ -42,7 +42,7 @@
           :force-hover-index="3"
         >
           <template #cell-channel="{ value }">
-            <span class="ds-channel"><span class="ds-channel__dot" aria-hidden="true"></span>{{ value }}</span>
+            <EkPlatformMark variant="dot" :name="value" :code="String(value).toLowerCase()" />
           </template>
           <template #cell-status="{ row }">
             <EkStatusChip :tone="row.status.tone" :label="row.status.label" />
@@ -109,9 +109,12 @@ import EkPagerBar from '@/components/ds/EkPagerBar.vue'
 import EkButton from '@/components/ds/EkButton.vue'
 import EkStatusChip from '@/components/ds/EkStatusChip.vue'
 import EkContextMenu from '@/components/ds/EkContextMenu.vue'
+import EkDateField from '@/components/ds/EkDateField.vue'
+import EkPlatformMark from '@/components/ds/EkPlatformMark.vue'
 import { demoOrders, orderColumns, rowMenu } from './demoData'
 
 const collapsed = ref(false)
+const orderDate = ref('2026-09-29')
 const filters = ref<EkActiveFilterChip[]>([
   { key: 'no', label: 'Sipariş no', value: 'TY-1023' },
   { key: 'channel', label: 'Kanal', value: 'Trendyol' },
@@ -179,19 +182,6 @@ const noop = () => undefined
 .ds-selection__hint {
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
-}
-
-.ds-channel {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ek-space-2);
-}
-
-.ds-channel__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: var(--ek-radius-chip);
-  background: var(--ek-color-neutral);
 }
 
 .ds-row-actions {
