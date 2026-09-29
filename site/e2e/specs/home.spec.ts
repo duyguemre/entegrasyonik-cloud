@@ -50,7 +50,7 @@ test.describe('Ana sayfa bölümleri', () => {
     await expect(page.getByTestId('integration-matrix')).toHaveCount(0)
     await page.getByTestId('ecosystem-link').click()
     await expect(page).toHaveURL(/\/entegrasyonlar\/?#kapsam$/)
-    await expect(page.getByTestId('coverage-matrix').or(page.locator('.cm__cards')).first()).toBeVisible()
+    await expect(page.getByTestId('coverage')).toBeVisible()
   })
 
   test('ekosistem şeması masaüstünde düğümleri merkezin iki yanında konumlar; mobilde dikey yığın, taşma yok', async ({ page }) => {
