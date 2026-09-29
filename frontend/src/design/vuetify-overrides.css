@@ -26,20 +26,48 @@
 .v-autocomplete .v-field,
 .v-combobox .v-field,
 .v-textarea .v-field {
-  border-radius: var(--ek-radius-md) !important;
+  /* DS-v2: ölçek adı yerine ROL (`--ek-radius-control` = 8). */
+  border-radius: var(--ek-radius-control) !important;
 }
 
 /* ---- Radius (kart/diyalog = radius-lg) ---- */
 .v-card,
 .v-dialog > .v-overlay__content,
 .v-dialog > .v-overlay__content > .v-card {
-  border-radius: var(--ek-radius-lg) !important;
+  border-radius: var(--ek-radius-card) !important;
+}
+
+/* DS-v2: diyalog bir kademe daha yuvarlak (`--ek-radius-dialog` = 16). */
+.v-dialog > .v-overlay__content,
+.v-dialog > .v-overlay__content > .v-card {
+  border-radius: var(--ek-radius-dialog) !important;
 }
 
 /* ---- Radius (komut paleti/menü = radius-lg) ---- */
 .v-menu > .v-overlay__content,
 .v-overlay__content .v-list {
-  border-radius: var(--ek-radius-lg) !important;
+  border-radius: var(--ek-radius-popover) !important;
+}
+
+/* ---- DS-v2: yükselen katmanlar (menü/açılır liste) ----
+ * Ayrım gölge + ince kenarlıkla (`surface-raised` tonu kartla aynı). */
+.v-menu > .v-overlay__content {
+  box-shadow: var(--ek-shadow-popover) !important; /* Vuetify elevation sınıfları aksi halde önceliği alır */
+  border: 1px solid var(--ek-color-border-subtle);
+}
+
+/* ---- DS-v2: tooltip = ters yüzey, etiket tipografisi ----
+ * `!important` gerekçesi: Vuetify `.v-tooltip > .v-overlay__content` kendi
+ * zemin/yazı boyutunu aynı özgüllükte tanımlıyor. */
+.v-tooltip > .v-overlay__content {
+  background: var(--ek-color-surface-inverse) !important;
+  color: var(--ek-color-content-inverse) !important;
+  font-size: var(--ek-type-caption-size) !important;
+  line-height: var(--ek-type-caption-line);
+  font-weight: var(--ek-font-weight-medium);
+  border-radius: var(--ek-radius-md) !important;
+  padding: var(--ek-space-1) var(--ek-space-2) !important;
+  box-shadow: var(--ek-shadow-raised);
 }
 
 /* ---- Radius (rozet = radius-full) ----
@@ -98,4 +126,41 @@
  * `.v-card` temel stili aynı özgüllükte `border-color` yazıyor. */
 .v-card {
   border-color: var(--ek-color-border-default) !important;
+}
+
+/* DS-v2: kart zeminden bir kademe açık + ince kenarlık + YUMUŞAK gölge
+ * (brif: "kartlar ... ince kenarlık + yumuşak gölgeyle ayrışır"). Yalnızca
+ * düz (flat) kartlar; Vuetify `elevation-*` verilen kartlar kendi gölgesini
+ * korur. Diyalog içindeki kart gölgeyi diyalogdan alır. */
+.v-card.v-card--variant-flat:not(.v-dialog .v-card) {
+  box-shadow: var(--ek-shadow-card);
+}
+
+/* ---- DS-v2: tablo başlığı (sunucu/istemci v-data-table) ----
+ * `surface-muted` zemin + `content-muted` 12/600. Metin DÖNÜŞÜMÜ (büyük harf)
+ * burada UYGULANMAZ — spec'ler görünen metne bağlı; yeni `EkDataGrid`
+ * mikro etiket stilini kendisi taşır. */
+.v-data-table .v-data-table__th,
+.v-table > .v-table__wrapper > table > thead > tr > th {
+  background: var(--ek-color-surface-muted) !important; /* fixed-header zemini Vuetify'da inline değişkenle gelir */
+  color: var(--ek-color-content-muted);
+  font-weight: var(--ek-font-weight-semibold) !important;
+}
+
+/* ---- DS-v2: outlined form alanı ----
+ * Zemin her zaman `surface` (tonlu panel/filtre gövdesinde de alan "beyaz
+ * kutu" olarak ayrışır) ve kenarlık `border-input` (yüzeyde ≥3:1, WCAG
+ * 1.4.11). Odak/hata/devre dışı durumlarında Vuetify'ın kendi rengi kalır.
+ * `!important` gerekmez: Vuetify opaklığı değişkenle (`--v-field-border-opacity`) verir. */
+.v-field--variant-outlined {
+  background: var(--ek-color-surface);
+}
+
+.v-field--variant-outlined:not(.v-field--focused):not(.v-field--error):not(.v-field--disabled) .v-field__outline {
+  --v-field-border-opacity: 1;
+  color: var(--ek-color-border-input);
+}
+
+.v-field--variant-outlined:hover:not(.v-field--focused):not(.v-field--error):not(.v-field--disabled) .v-field__outline {
+  color: var(--ek-color-content-muted);
 }

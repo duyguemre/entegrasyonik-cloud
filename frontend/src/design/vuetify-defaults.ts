@@ -13,6 +13,13 @@
  * Playwright `getByLabel(...)` spec çapasıdır (ADR-0015 Karar 5.1 Ek A).
  * Bu dosya hiçbir bileşenin `label`/`aria-*` davranışını DEĞİŞTİRMEZ — yalnızca
  * görünüm (`variant`/`density`/`elevation`/`color`) varsayılanlarıdır.
+ *
+ * DS-v2 (Aşama 1): renkler (`color: 'primary'` = uygulamada aksiyon/cobalt)
+ * Vuetify teması üzerinden token'lardan gelir; radius/gölge/tooltip/menü/
+ * tablo başlığı görünümü `vuetify-overrides.css` rol token'larıyla
+ * (`--ek-radius-control|card|popover|dialog`, `--ek-shadow-card|popover`)
+ * uygulanır — Vuetify `rounded`/`elevation` prop'ları KULLANILMAZ (SASS
+ * `configFile` kapalı, ADR-0011).
  */
 export const vuetifyDefaults = {
   // Ripple global kapalı (ADR-0015 Karar 1.1 — "hoplama-zıplama yok").
@@ -98,8 +105,10 @@ export const vuetifyDefaults = {
     transition: 'fade-transition',
     scrollable: true,
   },
+  // DS-v2: açılan katman tetikleyiciden 6px ayrık durur (gölge nefes alır).
   VMenu: {
     transition: 'fade-transition',
+    offset: 6,
   },
   VTooltip: {
     openDelay: 400,

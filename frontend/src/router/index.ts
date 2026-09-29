@@ -64,6 +64,19 @@ const routes: RouteRecordRaw[] = [
   },
 ]
 
+// DS-v2 Aşama 1 — tasarım sistemi vitrini: YALNIZCA geliştirmede (`vite` dev sunucusu).
+// `import.meta.env.DEV` derleme zamanında sabitlenir; üretim derlemesinde bu dal ve
+// `DesignSystemView` chunk'ı tamamen elenir (statik test: tests/design-system-route.test.ts).
+// Menüde/komut paletinde YOKTUR. Kimlik gerektirmez (API çağrısı yapmaz).
+if (import.meta.env.DEV) {
+  routes.unshift({
+    path: '/design-system',
+    name: 'DesignSystem',
+    component: () => import('@/views/dev/DesignSystemView.vue'),
+    meta: { requiresAuth: false },
+  })
+}
+
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes,

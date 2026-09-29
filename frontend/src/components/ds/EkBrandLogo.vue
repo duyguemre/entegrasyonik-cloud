@@ -55,11 +55,11 @@ withDefaults(
   display: inline-flex;
   align-items: center;
   gap: var(--ek-space-2);
-  color: var(--ek-color-primary);
+  color: var(--ek-color-brand);
 }
 
 .ek-brand-logo--inverse {
-  color: var(--ek-color-background);
+  color: var(--ek-color-chrome-text);
 }
 
 .ek-brand-logo__mark {
@@ -67,11 +67,11 @@ withDefaults(
 }
 
 .ek-brand-logo__tile {
-  fill: var(--ek-color-primary);
+  fill: var(--ek-color-brand);
 }
 
 .ek-brand-logo--inverse .ek-brand-logo__tile {
-  fill: var(--ek-color-background);
+  fill: var(--ek-color-chrome-text);
 }
 
 .ek-brand-logo__hub {
@@ -79,11 +79,11 @@ withDefaults(
 }
 
 .ek-brand-logo__node {
-  fill: var(--ek-color-background);
+  fill: var(--ek-color-chrome-text);
 }
 
 .ek-brand-logo--inverse .ek-brand-logo__node {
-  fill: var(--ek-color-primary);
+  fill: var(--ek-color-brand);
 }
 
 .ek-brand-logo__word {

@@ -28,12 +28,13 @@
   --ek-app-control-h: 40px;
 
   /* ---- Giriş paneli degradesi (Karar 4) ----
-   * Sitenin `--site-gradient-stage` formülüyle AYNI: `primary` →
-   * `color-mix(primary 62%, primary-darken-1)`. */
+   * Sitenin `--site-gradient-stage` formülüyle AYNI yapı. DS-v2: uygulamada
+   * `primary` artık aksiyon rengi (cobalt) olduğu için marka tonu `brand`
+   * (logo laciverti) → `chrome-end` kullanılır; sitedeki görünümle aynı aile. */
   --ek-app-login-gradient: linear-gradient(
     160deg,
-    var(--ek-color-primary) 0%,
-    color-mix(in srgb, var(--ek-color-primary) 62%, var(--ek-color-primary-darken-1)) 100%
+    var(--ek-color-brand) 0%,
+    color-mix(in srgb, var(--ek-color-brand) 62%, var(--ek-color-chrome-end)) 100%
   );
 }
 
@@ -59,4 +60,14 @@
  * KPI değerleri titremez). */
 .ek-num {
   font-variant-numeric: tabular-nums;
+}
+
+/* DS-v2 — yalnızca ekran okuyucuya görünen metin (görsel olarak gizli). */
+.ek-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }

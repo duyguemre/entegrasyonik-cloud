@@ -149,7 +149,7 @@ export const workspaceColorsLight: Record<WorkspaceColorKey, string> = {
   'surface-inverse': ink[800],
   scrim: ink[950],
   chrome: navy[900],
-  'chrome-end': navy[700],
+  'chrome-end': navy[600],
   'chrome-raised': navy[800],
   'chrome-border': navy[600],
   'chrome-text': ink[0],
