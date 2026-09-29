@@ -9,6 +9,7 @@
   Varsayılan slot (isteğe bağlı) gövdeye ek bilgi koyar (ör. etkilenen kayıtlar).
 
   API geri uyumlu; yeni (isteğe bağlı): `icon`, `confirmIcon`, `attach`.
+  Rol: `alertdialog` (onay isteyen kesinti — eski sürümle aynı).
 
   Kullanım:
     <EkConfirmDialog
@@ -23,6 +24,7 @@
 <template>
   <EkDialog
     v-model="isOpen"
+    role="alertdialog"
     :title="title"
     :description="description"
     :icon="resolvedIcon"
