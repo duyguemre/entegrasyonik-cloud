@@ -1,5 +1,10 @@
 <template>
   <div class="categoryDefinition">
+    <EkPageHeader
+      section="Katalog"
+      :title="$t('definitions.category.title')"
+      :description="$t('definitions.category.description')"
+    />
     <v-row style="height:100%">
       <v-col>
         <CategoryListComponent v-model="isCategoriesListed" @openCategorySync="openCategorySync($event)" />
@@ -14,6 +19,7 @@
 <script setup lang="ts">
 import { computed, inject, ref, onMounted, onBeforeMount } from 'vue'
 import { useMenuStore } from '@/stores/site/menu'
+import EkPageHeader from '@/components/ds/EkPageHeader.vue'
 import CategoryListComponent from '@/components/CategoryListComponent.vue';
 import CategorySyncComponent from '@/components/CategorySyncComponent.vue';
 import useIntegrations from '@/composables/integrations';
@@ -98,23 +104,3 @@ const drawer = computed({
 })
 
 </script>
-
-<style scoped>
-.navigation-scroll-container1::-webkit-scrollbar {
-  display: none !important
-}
-
-.navigation-scroll-container1 {
-  position: absolute;
-  transition: all .1s ease;
-  border-radius: 0px;
-  border-top: 0px solid #aaa;
-  overflow-y: scroll;
-  overflow-x: hidden;
-  bottom: 20px;
-  top: 10px;
-  left: 0px;
-  right: 50%;
-  width: auto;
-}
-</style>
