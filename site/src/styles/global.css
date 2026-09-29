@@ -21,7 +21,7 @@ body {
   display: flex;
   flex-direction: column;
   background: var(--ek-color-background);
-  color: var(--ek-color-content-default);
+  color: var(--site-text-body);
   font-family: var(--site-font-sans);
   font-size: var(--site-font-body);
   font-weight: var(--ek-font-weight-regular);
@@ -40,7 +40,7 @@ h2,
 h3,
 h4 {
   margin: 0;
-  color: var(--ek-color-content-strong);
+  color: var(--site-text-heading);
   font-weight: var(--ek-font-weight-bold);
   line-height: var(--ek-line-height-tight);
 }
@@ -71,6 +71,21 @@ ul {
   outline: var(--site-focus-ring-width) solid var(--site-color-focus-ring);
   outline-offset: var(--site-focus-ring-offset);
   border-radius: var(--ek-radius-sm);
+}
+
+/*
+ * S12 — tek vurgu rengi, zemine göre: koyu yüzeylerde (Section `tone="stage"` ve `[data-surface='dark']` işaretli
+ * bloklar — hero, koyu sahne kartları) vurgu ve vurgu degradesi AÇIK teal varyantına döner. Bileşenler yalnızca
+ * `--site-accent` / `--site-gradient-accent` kullanır; zemine göre doğru tonu bu eşleme seçer (AA kontrast).
+ */
+.section--stage,
+[data-surface='dark'] {
+  --site-accent: var(--site-accent-on-dark);
+  --site-gradient-accent: var(--site-gradient-accent-on-dark);
+  --site-card-eyebrow-color: var(--site-accent-on-dark);
+  --site-card-title-color: var(--site-text-on-dark-heading);
+  --site-card-value-color: var(--site-text-on-dark-body);
+  --site-card-desc-color: var(--site-text-on-dark-meta);
 }
 
 ::selection {
@@ -120,11 +135,13 @@ ul {
 }
 
 /*
- * Kart etkileşimi (S8): imleç takipli ışık (spotlight) + hafif 3D eğim (tilt). Değerler
- * `src/scripts/interactions.ts` tarafından `--mx`/`--my`/`--rx`/`--ry` özel özellikleriyle güncellenir;
- * betik yoksa (JS kapalı) veya `pointer: fine` değilse öğe başlangıç (nötr) değerlerinde kalır — statik
- * hâl anlamlıdır. Yalnızca `transform`/`opacity`: yerleşim değişmez. Klavye odağında eşdeğer vurgu
+ * Kart etkileşimi (S8; S12 sakinleştirildi): imleç takipli ışık (spotlight) + çok hafif 3D eğim (tilt, en fazla
+ * --site-tilt-max = 2°). Değerler `src/scripts/interactions.ts` tarafından `--mx`/`--my`/`--rx`/`--ry` özel
+ * özellikleriyle güncellenir; betik yoksa (JS kapalı) veya `pointer: fine` değilse öğe başlangıç (nötr) değerlerinde
+ * kalır — statik hâl anlamlıdır. Yalnızca `transform`/`opacity`: yerleşim değişmez. Klavye odağında eşdeğer vurgu
  * `:focus-within` ile (imleç konumu olmadan, sabit merkezli ışık).
+ * Çıkış (S12): imleç karttan ayrılınca eğim --site-tilt-leave-duration (700 ms) boyunca ease-out ile nötre döner;
+ * ışık da daha yavaş (--ek-duration-slow) söner — "bir anda eski hâline dönme" hissi yok.
  */
 [data-tilt] {
   --mx: 50%;
@@ -133,9 +150,10 @@ ul {
   --ry: 0deg;
   /* İzleme sırasında kısa/tepkisel, çıkışta yumuşak (interactions.ts değiştirir; bkz. site-tokens.css notu). */
   --tilt-transition-duration: var(--ek-duration-fast);
+  --tilt-transition-ease: var(--ek-easing-standard);
   position: relative;
   transform: perspective(75rem) rotateX(var(--rx)) rotateY(var(--ry));
-  transition: transform var(--tilt-transition-duration) var(--ek-easing-standard);
+  transition: transform var(--tilt-transition-duration) var(--tilt-transition-ease);
 }
 [data-tilt]::before {
   content: '';
@@ -145,11 +163,11 @@ ul {
   border-radius: inherit;
   background: radial-gradient(
     var(--site-spotlight-size) circle at var(--mx) var(--my),
-    color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 16%, transparent),
+    color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 12%, transparent),
     transparent 62%
   );
   opacity: 0;
-  transition: opacity var(--ek-duration-base) var(--ek-easing-standard);
+  transition: opacity var(--ek-duration-slow) var(--ek-easing-standard);
   pointer-events: none;
 }
 [data-tilt]:hover::before,

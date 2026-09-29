@@ -271,11 +271,29 @@ describe('içerik kayıttan gelir', () => {
     expect([...block.matchAll(/Örnek görünüm/g)].length).toBeGreaterThanOrEqual(5)
   })
 
-  it('hero mock: "Örnek görünüm" etiketi panelde (rozet yeter, ayrı altyazı yok — S8 2. tur); kanal çipleri seçiciden', () => {
+  it('hero mock: "Örnek görünüm" etiketli; kanal noktaları seçiciden (renk kodu), panelde ve hero metninde kanal ADI yok (S12)', () => {
+    const hero = html.match(/data-testid="hero"[\s\S]*?<\/section>/)![0]
     const mock = html.match(/data-testid="hero-mock"[\s\S]*?<\/section>/)![0]
     expect(mock).toContain('Örnek görünüm')
-    const chips = [...mock.matchAll(/data-part="chan"[^>]*>([\s\S]*?)<\/li>/g)].map((m) => textOf(m[1]))
-    expect(chips).toEqual(getPublicIntegrations().map((i) => i.name))
+    const dots = [...mock.matchAll(/<li[^>]*data-part="chan"[^>]*>/g)].map((m) => m[0].match(/data-code="([^"]+)"/)?.[1])
+    expect(dots).toEqual(getPublicIntegrations().map((i) => i.code))
+    // S12: ana mesajda pazaryeri adları ön plana çıkmaz ("pazaryerleri" denir); panel genel etiket kullanır
+    const heroText = textOf(hero)
+    for (const i of getPublicIntegrations()) expect(heroText, i.name).not.toContain(i.name)
+    expect(heroText).toContain('Pazaryeri siparişi')
+    expect(heroText).toContain('pazaryerleriniz')
+    // S12: durum/backlog dili yok
+    expect(heroText.toLocaleLowerCase('tr-TR')).not.toMatch(/uygulanan|bugün bağlanabilen/)
+  })
+
+  it('hero fayda maddeleri üst seviye ve her biri kanıtlı bir yetenek kaydına dayanır (S12)', () => {
+    const list = html.match(/<ul[^>]*data-testid="hero-benefits"[\s\S]*?<\/ul>/)![0]
+    const items = [...list.matchAll(/<li\b[\s\S]*?<\/li>/g)].map((m) => textOf(m[0]))
+    expect(items).toEqual(['Merkezi stok yönetimi', 'Tüm siparişler tek ekranda', 'Kurumsal düzeyde güvenlik'])
+    const ids = getPublicCapabilities().map((c) => c.id)
+    for (const id of ['stock-reservation', 'multi-channel-products', 'unified-orders', 'secrets-encryption', 'tenant-database', 'role-based-access']) {
+      expect(ids, id).toContain(id)
+    }
   })
 })
 

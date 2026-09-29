@@ -1,13 +1,17 @@
 ---
 /**
- * Hero (ADR-0014 Karar 2, bölüm 1) — değer önerisi + birincil/ikincil CTA + CANLI HİSSİ veren ürün paneli mock'u.
- * Sahne: `data-scene="hero-mock"` (S7; src/styles/scenes.css + scenes-loops.css + src/scripts/scenes.ts).
- * Panel tamamen HTML/CSS ile çizilir (görsel dosya yok) ve AÇIKÇA "Örnek görünüm" etiketlidir: ürün, sipariş ve
- * sayılar gerçek veri değil, arayüz örneğidir; müşteri/logo/ölçüm uydurulmaz.
- * Statik hâl (reduced-motion / durdurulmuş / JS'siz): üç sipariş listede "Rezerve", stok 9, rezerve 3, kanallar bağlı.
- * Hareketli hâl (yalnızca görünürken, 12 sn döngü): siparişler sırayla düşer -> rezerve edilir -> stok sayısı değişir ->
- * güncelleme sinyali kanal çiplerine yayılır.
- * Kanal çipleri YALNIZCA `getPublicIntegrations()` çıktısındandır (logo yok: marka izni Açık Soru 3).
+ * Hero (ADR-0014 Karar 2, bölüm 1; S12 pazarlama dili) — değer önerisi + birincil/ikincil CTA + CANLI HİSSİ veren
+ * "sipariş ve stok merkezi" paneli. Sahne: `data-scene="hero-mock"` (src/styles/scenes.css + scenes-loops.css +
+ * src/scripts/scenes.ts). Panel tamamen HTML/CSS ile çizilir (görsel dosya yok) ve AÇIKÇA "Örnek görünüm" etiketlidir:
+ * sipariş ve sayılar gerçek veri değil, arayüz örneğidir; müşteri/logo/ölçüm uydurulmaz.
+ *
+ * S12 (kullanıcı geri bildirimi): ana mesajda pazaryeri ADI geçmez ("pazaryerleri"); panelde kanal adı yerine
+ * isimsiz renkli noktalar (`--site-channel-*`, `[data-code]` eşlemesi) ve genel etiketler ("Pazaryeri siparişi",
+ * "Web mağaza siparişi"). Panel renkleri site paletinden (lacivert + tek vurgu teal). Güven maddeleri üst seviye
+ * faydadır; her biri kanıtlı bir yetenek kaydına bağlıdır (kayıt yoksa madde gösterilmez).
+ * Statik hâl (reduced-motion / durdurulmuş / JS'siz): üç sipariş "Rezerve", stok 9, rezerve 3, kanallar senkron.
+ * Hareketli hâl (yalnızca görünürken, 12 sn döngü): siparişler sırayla vurgulanır -> rezerve edilir -> stok sayacı
+ * akarak azalır -> güncelleme sinyali kanal noktalarına yayılır.
  */
 import Button from '../Button.astro'
 import Icon from './Icon.astro'
@@ -15,22 +19,30 @@ import { appUrls } from '../../lib/site-config'
 import { getPublicIntegrations } from '../../data/integrations'
 import { getPublicCapabilities } from '../../data/capabilities'
 import { getPublicTrial } from '../../data/plans'
-import { joinTr } from './links'
 
-const integrations = getPublicIntegrations()
-const marketplaceNames = joinTr(getPublicIntegrations('marketplace').map((i) => i.name))
 const trial = getPublicTrial()
-const channels = integrations.map((c) => ({ name: c.name, code: c.code }))
+// Kanal noktaları: yalnızca mevcut entegrasyonların RENGİ (ad DOM'a yazılmaz; panel aria-hidden'dır).
+const channels = getPublicIntegrations().map((c) => ({ code: c.code }))
 const marketplaces = getPublicIntegrations('marketplace')
+const storefront = getPublicIntegrations('ecommerce')[0]
 
-const trustIds = ['secrets-encryption', 'tenant-database', 'role-based-access']
-const trust = getPublicCapabilities('security').filter((c) => trustIds.includes(c.id))
+// Üst seviye faydalar — her biri kanıtlı bir yetenek kaydına dayanır (capabilities.ts); kayıt yoksa gösterilmez.
+const capIds = new Set(getPublicCapabilities().map((c) => c.id))
+const benefits = [
+  { icon: 'stock' as const, label: 'Merkezi stok yönetimi', requires: ['stock-reservation', 'multi-channel-products'] },
+  { icon: 'orders' as const, label: 'Tüm siparişler tek ekranda', requires: ['unified-orders'] },
+  { icon: 'shield' as const, label: 'Kurumsal düzeyde güvenlik', requires: ['secrets-encryption', 'tenant-database', 'role-based-access'] },
+].filter((b) => b.requires.every((id) => capIds.has(id)))
 
-// Panel örneği: sipariş satırları (kanal + durum). Sayılar arayüz örneğidir (etiket: "Örnek görünüm").
-const orders = marketplaces.slice(0, 3)
+// Panel örneği: iki pazaryeri siparişi + bir web mağaza siparişi (genel etiket; renk kanal paletinden).
+const orders = [
+  { code: marketplaces[0]?.code, label: 'Pazaryeri siparişi' },
+  { code: marketplaces[1]?.code, label: 'Pazaryeri siparişi' },
+  storefront ? { code: storefront.code, label: 'Web mağaza siparişi' } : { code: marketplaces[2]?.code, label: 'Pazaryeri siparişi' },
+]
 ---
 
-<section class="hero" aria-labelledby="hero-title" data-testid="hero">
+<section class="hero" aria-labelledby="hero-title" data-testid="hero" data-surface="dark">
   <div class="hero__bg" aria-hidden="true" data-scene="hero-bg">
     <span class="hero__grid"></span>
     <span class="hero__orb hero__orb--a" data-part="orb"></span>
@@ -39,25 +51,27 @@ const orders = marketplaces.slice(0, 3)
 
   <div class="hero__inner">
     <div class="hero__copy">
-      <p class="hero__eyebrow"><span class="hero__eyebrow-dot" aria-hidden="true"></span>Pazaryeri entegrasyon ve stok yönetimi</p>
+      <p class="hero__eyebrow"><span class="hero__eyebrow-dot" aria-hidden="true"></span>Çok kanallı satış yönetimi</p>
       <h1 id="hero-title" class="hero__title">
         Tüm pazaryerleriniz, <span class="hero__accent">tek stok</span>, tek panel.
       </h1>
-      <p class="hero__lead">
-        Entegrasyonik; {marketplaceNames} kanallarındaki ürün, stok, sipariş ve iade süreçlerinizi tek panelde toplar.
-        Aynı stok için eşzamanlı siparişlerde stok rezervasyonuyla aşırı satış riskini azaltır.
+      <p class="hero__lead" data-testid="hero-lead">
+        Pazaryerlerindeki ürün, stok, sipariş ve iade operasyonunuzu tek merkezde birleştirin. Eşzamanlı gelen
+        siparişlerde stok rezerve edilir, aşırı satış riski azalır; ekibiniz panel panel dolaşmak yerine satışa odaklanır.
       </p>
       <div class="hero__actions">
         <Button href={appUrls.register()} variant="inverse" size="lg" data-testid="hero-cta-primary">Ücretsiz dene</Button>
         <Button href="#nasil-calisir" variant="inverse-outline" size="lg" data-testid="hero-cta-secondary">Nasıl çalışır</Button>
       </div>
       <p class="hero__note">{trial.days} gün ücretsiz deneme{!trial.cardRequired && ', kart bilgisi gerekmez'}.</p>
-      <ul class="hero__trust" aria-label="Güvenlik özeti">
+      <ul class="hero__trust" aria-label="Öne çıkan faydalar" data-testid="hero-benefits">
         {
-          trust.map((t) => (
+          benefits.map((b) => (
             <li>
-              <Icon name="check" size="sm" />
-              <span>{t.title}</span>
+              <span class="hero__trust-icon" aria-hidden="true">
+                <Icon name={b.icon} size="sm" />
+              </span>
+              <span>{b.label}</span>
             </li>
           ))
         }
@@ -68,35 +82,30 @@ const orders = marketplaces.slice(0, 3)
       <div class="mock" data-scene="hero-mock" data-tilt aria-hidden="true" data-testid="hero-mock">
         <div class="mock__bar">
           <span class="mock__dots"><i></i><i></i><i></i></span>
-          <span class="mock__title">Stok ve siparişler</span>
+          <span class="mock__title">Sipariş ve stok merkezi</span>
           <span class="mock__tag">Örnek görünüm</span>
         </div>
 
         <div class="mock__body">
-          <div class="mock__section">
-            <p class="mock__label">Bağlı kanallar</p>
+          <div class="mock__channels-row">
+            <p class="mock__label">Satış kanalları</p>
             <ul class="mock__channels">
-              {
-                channels.map((c) => (
-                  <li class="mock__chan" data-part="chan" data-code={c.code}>
-                    <span class="mock__dot"></span>
-                    {c.name}
-                  </li>
-                ))
-              }
+              {channels.map((c) => <li class="mock__chan" data-part="chan" data-code={c.code} />)}
             </ul>
+            <span class="mock__sync"><i class="mock__live"></i>Senkron</span>
             <div class="mock__rail"><span class="mock__glow" data-part="glow"></span></div>
           </div>
 
           <div class="mock__cols">
             <div class="mock__stock">
-              <p class="mock__label">Kullanılabilir stok</p>
+              <p class="mock__label">Merkezi stok</p>
               <p class="mock__big">
                 <span class="mock__num mock__num--a" data-part="num">12</span>
                 <span class="mock__num mock__num--b" data-part="num">11</span>
                 <span class="mock__num mock__num--c" data-part="num">10</span>
                 <span class="mock__num mock__num--d" data-part="num">9</span>
               </p>
+              <p class="mock__unit">adet · tüm kanallarda</p>
               <div class="mock__meter"><span class="mock__fill" data-part="fill"></span></div>
               <p class="mock__sub">
                 Rezerve
@@ -110,16 +119,15 @@ const orders = marketplaces.slice(0, 3)
             </div>
 
             <div class="mock__feed">
-              <p class="mock__label">Sipariş akışı</p>
+              <p class="mock__label">Gelen siparişler</p>
               <ul class="mock__rows">
                 {
                   orders.map((o) => (
                     <li class="mock__row" data-part="row" data-code={o.code}>
                       <span class="mock__rchan">
-                        <span class="mock__rmono" aria-hidden="true">{o.name.slice(0, 1)}</span>
-                        {o.name}
+                        <span class="mock__rdot" />
+                        <span class="mock__rlabel">{o.label}</span>
                       </span>
-                      <span class="mock__skel"><i></i><i></i></span>
                       <span class="mock__pills">
                         <span class="mock__pill mock__pill--new" data-part="pill-new">Yeni</span>
                         <span class="mock__pill mock__pill--ok">Rezerve</span>
@@ -133,7 +141,7 @@ const orders = marketplaces.slice(0, 3)
         </div>
 
         <p class="mock__toast" data-part="toast">
-          <Icon name="bolt" size="sm" />
+          <span class="mock__toast-icon"><Icon name="refresh" size="sm" /></span>
           <span>Stok güncellemesi kanallara iletildi</span>
         </p>
       </div>
@@ -149,10 +157,10 @@ const orders = marketplaces.slice(0, 3)
     isolation: isolate;
     padding-block: var(--ek-space-12) var(--ek-space-16);
     background: var(--site-stage-mesh);
-    color: var(--site-color-on-primary);
+    color: var(--site-text-on-dark-heading);
   }
 
-  /* --- Arka plan: ızgara dokusu (radyal solma) + iki yavaş ışıma --- */
+  /* --- Arka plan: ızgara dokusu (radyal solma) + iki yavaş ışıma (tek vurgu ailesi: teal + lacivert) --- */
   .hero__bg {
     position: absolute;
     inset: 0;
@@ -177,12 +185,12 @@ const orders = marketplaces.slice(0, 3)
   .hero__orb--a {
     inset-block-start: -8rem;
     inset-inline-end: -6rem;
-    background: radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-secondary) 26%, transparent), transparent);
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-secondary) 24%, transparent), transparent);
   }
   .hero__orb--b {
     inset-block-end: -10rem;
     inset-inline-start: -8rem;
-    background: radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-primary-darken-1) 40%, transparent), transparent);
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-primary-darken-1) 38%, transparent), transparent);
   }
 
   .hero__inner {
@@ -209,7 +217,7 @@ const orders = marketplaces.slice(0, 3)
     border: var(--site-border-width) solid var(--site-glass-border);
     border-radius: var(--ek-radius-full);
     background: var(--site-glass-bg);
-    color: var(--site-color-on-primary);
+    color: var(--site-text-on-dark-heading);
     font-size: var(--ek-font-size-sm);
     font-weight: var(--ek-font-weight-semibold);
     letter-spacing: 0.04em;
@@ -218,12 +226,11 @@ const orders = marketplaces.slice(0, 3)
     width: var(--ek-space-2);
     height: var(--ek-space-2);
     border-radius: var(--ek-radius-full);
-    background: var(--ek-color-secondary);
+    background: var(--site-accent);
     box-shadow: var(--site-glow-ring);
   }
   .hero__title {
-    position: relative;
-    color: var(--site-color-on-primary);
+    color: var(--site-text-on-dark-heading);
     font-size: var(--site-font-display-lg);
     font-weight: var(--site-font-display-weight);
     line-height: var(--site-font-display-line-height);
@@ -235,55 +242,13 @@ const orders = marketplaces.slice(0, 3)
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    color: var(--ek-color-secondary);
-  }
-  /*
-   * Tek seferlik parlama (S10): statik gradient korunur; sayfa yüklenince (hero-mock paneli oturduktan hemen
-   * sonra) ince bir ışık bandı BAŞLIĞIN TAMAMININ üzerinden BİR KEZ geçer. Yalnızca opacity/translate;
-   * `mix-blend-mode` katman rengini metnin altındaki renklerle karıştırır, düzeni etkilemez.
-   * ÖNEMLİ (a11y): `::after` üretilmiş içerik `.hero__title` (h1, blok düzeyi) üzerindedir — `.hero__accent`
-   * (satır içi `<span>`) DEĞİL. `position: relative` bir satır içi öğeye uygulandığında (denendi: hem gerçek
-   * bir iç `<span>` hem de salt `display: inline-block`/`position: relative` ile) Chromium'un erişilebilir ad
-   * hesaplamasına fazladan bir boşluk sızdırıyordu ("tek stok ,"), h1'in erişilebilir adını bozuyordu; blok
-   * düzeyindeki `.hero__title` üzerinde bu sorun yok. Bu yüzden ışık bandı tüm başlığın üzerinden geçer,
-   * yalnızca vurgulanan kelimenin üzerinden değil.
-   */
-  .hero__title::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--ek-color-background) 65%, transparent) 50%, transparent 70%);
-    /* `screen` (yalnızca aydınlatır) kullanılır: koyu "sahne" zemininde `overlay` kontrast-koruyucu
-       davranışı yüzünden ışık bandı neredeyse görünmez kalıyordu. */
-    mix-blend-mode: screen;
-    opacity: 0;
-    pointer-events: none;
-  }
-  @media (prefers-reduced-motion: no-preference) {
-    @keyframes hero-accent-shine {
-      0% {
-        opacity: 0;
-        translate: -18% 0;
-      }
-      45% {
-        opacity: 1;
-        translate: 0 0;
-      }
-      100% {
-        opacity: 0;
-        translate: 18% 0;
-      }
-    }
-    html[data-motion='play'] .hero__title::after {
-      animation: hero-accent-shine var(--site-motion-duration-reveal-lg) var(--site-motion-ease-reveal) 1;
-      animation-delay: var(--site-motion-duration-reveal-lg);
-    }
+    color: var(--site-accent);
   }
   .hero__lead {
-    color: var(--site-color-on-primary-muted);
+    color: var(--site-text-on-dark-body);
     font-size: var(--ek-font-size-xl);
-    line-height: var(--ek-line-height-normal);
-    max-width: 38rem;
+    line-height: var(--site-font-body-line-height);
+    max-width: 36rem;
   }
   .hero__actions {
     display: flex;
@@ -291,28 +256,36 @@ const orders = marketplaces.slice(0, 3)
     gap: var(--ek-space-3);
   }
   .hero__note {
-    color: var(--site-color-on-primary-muted);
+    color: var(--site-text-on-dark-meta);
     font-size: var(--ek-font-size-md);
   }
   .hero__trust {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--ek-space-2) var(--ek-space-5);
+    gap: var(--ek-space-3) var(--ek-space-6);
     padding-top: var(--ek-space-5);
     border-top: var(--site-border-width) solid var(--site-glass-border);
-    color: var(--site-color-on-primary);
+    color: var(--site-text-on-dark-heading);
     font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-medium);
   }
   .hero__trust li {
     display: inline-flex;
     align-items: center;
     gap: var(--ek-space-2);
   }
-  .hero__trust :global(.icon) {
-    color: var(--ek-color-secondary);
+  .hero__trust-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-6);
+    height: var(--ek-space-6);
+    border-radius: var(--ek-radius-md);
+    background: color-mix(in srgb, var(--site-accent) 16%, transparent);
+    color: var(--site-accent);
   }
 
-  /* --- Ürün paneli mock'u --- */
+  /* --- Ürün paneli --- */
   .hero__visual {
     position: relative;
     isolation: isolate;
@@ -321,13 +294,12 @@ const orders = marketplaces.slice(0, 3)
     gap: var(--ek-space-3);
     min-width: 0;
   }
-  /* Panelin arkasında yumuşak ışıma: derinlik hissi (dekoratif) */
   .hero__visual::before {
     content: '';
     position: absolute;
     z-index: -1;
     inset: -14% -12% 4%;
-    background: radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-secondary) 24%, transparent), transparent);
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-secondary) 22%, transparent), transparent);
     pointer-events: none;
   }
   /*
@@ -349,16 +321,18 @@ const orders = marketplaces.slice(0, 3)
     pointer-events: none;
   }
   .mock {
+    /* Panel açık yüzeydir: hero'nun koyu-zemin vurgusu yerine açık-zemin (AA) vurgu tonu. */
+    --site-accent: var(--ek-color-secondary-darken-1);
+    --mock-ink: var(--ek-color-primary);
     position: relative;
     border-radius: var(--site-radius-panel);
     background: var(--ek-color-background);
     box-shadow: var(--site-shadow-panel);
-    color: var(--ek-color-content-default);
+    color: var(--site-text-body);
     font-size: var(--ek-font-size-sm);
     line-height: var(--ek-line-height-tight);
     user-select: none;
   }
-  /* Katman hissi: panelin arkasında ofsetli, yarı saydam ikinci pencere (S9: parallax ile hafifçe kayar). */
   .mock::after {
     content: '';
     position: absolute;
@@ -394,7 +368,7 @@ const orders = marketplaces.slice(0, 3)
   .mock__title {
     flex: 1;
     min-width: 0;
-    color: var(--ek-color-content-strong);
+    color: var(--site-text-heading);
     font-weight: var(--ek-font-weight-semibold);
     white-space: nowrap;
     overflow: hidden;
@@ -403,8 +377,8 @@ const orders = marketplaces.slice(0, 3)
   .mock__tag {
     padding: var(--ek-space-1) var(--ek-space-2);
     border-radius: var(--ek-radius-full);
-    background: var(--ek-color-info-subtle);
-    color: var(--ek-color-content-strong);
+    background: var(--ek-color-surface-sunken);
+    color: var(--site-text-meta);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
     white-space: nowrap;
@@ -416,58 +390,70 @@ const orders = marketplaces.slice(0, 3)
     padding: var(--ek-space-4);
   }
   .mock__label {
-    margin-bottom: var(--ek-space-2);
-    color: var(--ek-color-content-muted);
+    color: var(--site-text-meta);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
     letter-spacing: 0.06em;
     text-transform: uppercase;
   }
-  .mock__channels {
+
+  /* Kanal satırı: isimsiz renkli noktalar + "Senkron" durumu + güncelleme ışını */
+  .mock__channels-row {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--ek-space-1);
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--ek-space-2) var(--ek-space-3);
+    padding: var(--ek-space-3) var(--ek-space-4);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface-muted);
+  }
+  .mock__channels {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-2);
   }
   .mock__chan {
     position: relative;
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-1);
-    min-width: 0;
-    padding: var(--ek-space-1) var(--ek-space-2);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--chan, var(--ek-color-border-default)) 40%, var(--ek-color-border-default));
+    flex: none;
+    width: var(--ek-space-3);
+    height: var(--ek-space-3);
     border-radius: var(--ek-radius-full);
-    background: var(--ek-color-surface);
-    color: var(--ek-color-content-strong);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-medium);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    background: var(--chan, var(--site-accent));
+    box-shadow: 0 0 0 calc(var(--site-border-width) * 2) var(--ek-color-background);
   }
   /* Sinyal halkası: 12 sn döngüde kanal güncellemesi geldiğinde belirir (scenes-loops.css); statik hâlde görünmez. */
   .mock__chan::after {
     content: '';
     position: absolute;
     inset: calc(var(--ek-space-1) * -1);
-    border: var(--site-border-width) solid var(--ek-color-secondary);
+    border: var(--site-border-width) solid var(--chan, var(--site-accent));
     border-radius: var(--ek-radius-full);
     opacity: 0;
     pointer-events: none;
   }
-  .mock__dot {
+  .mock__sync {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-1);
+    color: var(--site-accent);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .mock__live {
     width: var(--ek-space-2);
     height: var(--ek-space-2);
     border-radius: var(--ek-radius-full);
-    background: var(--chan, var(--ek-color-success));
+    background: var(--site-accent);
+    box-shadow: 0 0 0 calc(var(--site-border-width) * 3) var(--site-accent-soft);
   }
   .mock__rail {
+    grid-column: 1 / -1;
     position: relative;
     overflow: hidden;
-    height: calc(var(--ek-space-1) * 1.5);
-    margin-top: var(--ek-space-3);
+    height: calc(var(--site-border-width) * 2);
     border-radius: var(--ek-radius-full);
-    background: var(--ek-color-surface-sunken);
+    background: var(--ek-color-border-default);
   }
   .mock__glow {
     position: absolute;
@@ -475,25 +461,35 @@ const orders = marketplaces.slice(0, 3)
     inset-inline-start: 0;
     width: 28%;
     border-radius: var(--ek-radius-full);
-    background: var(--site-gradient-accent);
+    background: linear-gradient(90deg, transparent, var(--site-accent), transparent);
     opacity: 0;
   }
+
   .mock__cols {
     display: grid;
     gap: var(--ek-space-4);
   }
   .mock__stock,
   .mock__feed {
-    padding: var(--ek-space-3) var(--ek-space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-4);
     border: var(--site-border-width) solid var(--ek-color-border-default);
     border-radius: var(--ek-radius-lg);
     background: var(--ek-color-surface);
   }
+  .mock__stock {
+    background:
+      radial-gradient(120% 90% at 100% 0%, var(--site-accent-soft), transparent 60%),
+      var(--ek-color-surface);
+  }
   .mock__big {
     display: grid;
+    overflow: hidden;
     max-width: none;
-    color: var(--ek-color-content-strong);
-    font-size: var(--ek-font-size-3xl);
+    color: var(--mock-ink);
+    font-size: var(--site-font-display-sm);
     font-weight: var(--site-font-display-weight);
     letter-spacing: var(--site-font-display-tracking);
     line-height: 1.1;
@@ -505,10 +501,15 @@ const orders = marketplaces.slice(0, 3)
   .mock__num--d {
     opacity: 1;
   }
+  .mock__unit {
+    margin-top: calc(var(--ek-space-1) * -1);
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-xs);
+  }
   .mock__meter {
+    margin-top: auto;
     overflow: hidden;
-    height: var(--ek-space-2);
-    margin-block: var(--ek-space-3);
+    height: calc(var(--ek-space-1) * 1.5);
     border-radius: var(--ek-radius-full);
     background: var(--ek-color-surface-sunken);
   }
@@ -517,7 +518,7 @@ const orders = marketplaces.slice(0, 3)
     width: 100%;
     height: 100%;
     border-radius: var(--ek-radius-full);
-    background: var(--site-gradient-accent);
+    background: linear-gradient(90deg, var(--mock-ink), var(--site-accent));
     transform-origin: 0 50%;
     scale: 0.75 1;
   }
@@ -526,11 +527,11 @@ const orders = marketplaces.slice(0, 3)
     align-items: baseline;
     justify-content: space-between;
     max-width: none;
-    color: var(--ek-color-content-muted);
+    color: var(--site-text-meta);
   }
   .mock__resv {
     display: inline-grid;
-    color: var(--ek-color-content-strong);
+    color: var(--mock-ink);
     font-weight: var(--ek-font-weight-bold);
     text-align: end;
   }
@@ -544,75 +545,72 @@ const orders = marketplaces.slice(0, 3)
   .mock__rows {
     display: flex;
     flex-direction: column;
-    gap: var(--ek-space-2);
+    gap: var(--ek-space-1);
   }
   .mock__row {
-    display: grid;
-    grid-template-columns: minmax(0, 6.5rem) minmax(0, 1fr) auto;
+    position: relative;
+    isolation: isolate;
+    display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: var(--ek-space-3);
-    padding-block: var(--ek-space-1);
+    padding: var(--ek-space-2);
+    border-radius: var(--ek-radius-md);
+  }
+  /* Satır vurgusu: sipariş rezerve edilirken kısa süre belirir (döngü: scenes-loops.css); statik hâlde görünmez. */
+  .mock__row::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--site-accent-soft);
+    opacity: 0;
   }
   .mock__rchan {
     display: flex;
     align-items: center;
-    gap: var(--ek-space-1);
-    overflow: hidden;
-    color: var(--ek-color-content-strong);
+    gap: var(--ek-space-2);
+    min-width: 0;
+    color: var(--site-text-heading);
     font-weight: var(--ek-font-weight-semibold);
+  }
+  .mock__rdot {
+    flex: none;
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: var(--chan, var(--site-accent));
+    box-shadow: 0 0 0 calc(var(--site-border-width) * 3) color-mix(in srgb, var(--chan, var(--site-accent)) 18%, transparent);
+  }
+  .mock__rlabel {
+    overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
   }
-  .mock__rmono {
-    display: inline-flex;
-    flex: none;
-    align-items: center;
-    justify-content: center;
-    width: var(--ek-space-5);
-    height: var(--ek-space-5);
-    border-radius: var(--ek-radius-full);
-    background: var(--chan-fill, var(--ek-color-primary));
-    color: var(--site-color-on-primary);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--site-font-display-weight);
-  }
-  .mock__skel {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-1);
-  }
-  .mock__skel i {
-    display: block;
-    height: var(--ek-space-1);
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-surface-sunken);
-  }
-  .mock__skel i:first-child {
-    width: 84%;
-  }
-  .mock__skel i:last-child {
-    width: 52%;
-  }
   .mock__pills {
     display: inline-grid;
+    flex: none;
     justify-items: stretch;
   }
   .mock__pill {
     grid-area: 1 / 1;
     padding: var(--ek-space-1) var(--ek-space-2);
     border-radius: var(--ek-radius-full);
-    color: var(--ek-color-content-strong);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
     text-align: center;
     white-space: nowrap;
   }
   .mock__pill--new {
-    background: var(--ek-color-info-subtle);
+    background: var(--ek-color-background);
+    box-shadow: inset 0 0 0 var(--site-border-width) var(--site-accent);
+    color: var(--site-accent);
     opacity: 0;
   }
   .mock__pill--ok {
-    background: var(--ek-color-success-subtle);
+    background: color-mix(in srgb, var(--mock-ink) 9%, var(--ek-color-background));
+    color: var(--mock-ink);
   }
   .mock__toast {
     position: relative;
@@ -622,22 +620,29 @@ const orders = marketplaces.slice(0, 3)
     gap: var(--ek-space-2);
     width: fit-content;
     max-width: calc(100% - 2 * var(--ek-space-4));
-    padding: var(--ek-space-2) var(--ek-space-3);
+    padding: var(--ek-space-2) var(--ek-space-3) var(--ek-space-2) var(--ek-space-2);
     border: var(--site-border-width) solid var(--ek-color-border-default);
     border-radius: var(--ek-radius-lg);
     background: var(--ek-color-background);
     box-shadow: var(--ek-shadow-lg);
-    color: var(--ek-color-content-strong);
+    color: var(--site-text-heading);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
   }
-  .mock__toast :global(.icon) {
-    color: var(--ek-color-secondary-darken-1);
+  .mock__toast-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-6);
+    height: var(--ek-space-6);
+    border-radius: var(--ek-radius-md);
+    background: var(--site-accent-soft);
+    color: var(--site-accent);
   }
 
   @media (min-width: 30rem) {
     .mock__cols {
-      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
     }
   }
 
@@ -658,7 +663,7 @@ const orders = marketplaces.slice(0, 3)
       padding-block: var(--site-space-24) var(--site-space-24);
     }
     .hero__inner {
-      grid-template-columns: minmax(0, 1.22fr) minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
       gap: var(--ek-space-10);
     }
   }

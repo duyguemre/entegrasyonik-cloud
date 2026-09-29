@@ -13,7 +13,7 @@
 
 @media (prefers-reduced-motion: no-preference) {
   /* ---------------------------------------------------------------------------------------- */
-  /* hero-mock — 12 sn senaryo: üç sipariş satırı her zaman görünür; sırayla "Yeni" -> "Rezerve" olur, */
+  /* hero-mock — 12 sn senaryo: üç sipariş satırı her zaman görünür; sırayla vurgulanıp "Yeni" -> "Rezerve" olur, */
   /*   stok ve rezerve sayaçları eşlik eder, sinyal kanal çiplerine yayılır (satır 1: 18, satır 2: 38, */
   /*   satır 3: 58; bekleme 60–95; döngü 96–100'de sıfırlanır)                                         */
   /* ---------------------------------------------------------------------------------------- */
@@ -57,60 +57,116 @@
       opacity: 1;
     }
   }
-  /* Stok sayısı (12 -> 11 -> 10 -> 9) ve rezerve sayısı (0 -> 1 -> 2 -> 3): üst üste bindirilmiş sayılar rezervasyon anında hızlıca (~70 ms) yer değiştirir. */
+  /*
+   * Stok sayısı (12 -> 11 -> 10 -> 9) ve rezerve sayısı (0 -> 1 -> 2 -> 3): üst üste bindirilmiş sayılar rezervasyon
+   * anında sayaç gibi AKAR (S12: eski sayı yukarı kayarak söner, yenisi aşağıdan gelir — yalnızca opacity/translate).
+   */
   @keyframes loop-count-1 {
     0%,
     17% {
       opacity: 1;
+      translate: 0 0;
     }
-    17.6%,
+    19%,
+    97.9% {
+      opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * -1.5);
+    }
     98% {
       opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * 1.5);
     }
     100% {
       opacity: 1;
+      translate: 0 0;
     }
   }
   @keyframes loop-count-2 {
     0%,
     17% {
       opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * 1.5);
     }
-    17.6%,
+    19%,
     37% {
       opacity: 1;
+      translate: 0 0;
     }
-    37.6%,
+    39%,
     100% {
       opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * -1.5);
     }
   }
   @keyframes loop-count-3 {
     0%,
     37% {
       opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * 1.5);
     }
-    37.6%,
+    39%,
     57% {
       opacity: 1;
+      translate: 0 0;
     }
-    57.6%,
+    59%,
     100% {
       opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * -1.5);
     }
   }
   @keyframes loop-count-4 {
     0%,
     57% {
       opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * 1.5);
     }
-    57.6%,
+    59%,
     96% {
       opacity: 1;
+      translate: 0 0;
     }
-    97%,
+    98%,
     100% {
       opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * -1.5);
+    }
+  }
+  /* Sipariş satırı vurgusu (S12): sipariş rezerve edilirken satırın zemini yumuşakça aydınlanıp söner. */
+  @keyframes loop-row-1 {
+    0%,
+    13%,
+    27%,
+    100% {
+      opacity: 0;
+    }
+    17%,
+    20% {
+      opacity: 1;
+    }
+  }
+  @keyframes loop-row-2 {
+    0%,
+    33%,
+    47%,
+    100% {
+      opacity: 0;
+    }
+    37%,
+    40% {
+      opacity: 1;
+    }
+  }
+  @keyframes loop-row-3 {
+    0%,
+    53%,
+    67%,
+    100% {
+      opacity: 0;
+    }
+    57%,
+    60% {
+      opacity: 1;
     }
   }
   @keyframes loop-meter {
@@ -253,6 +309,7 @@
       [data-part='glow'],
       [data-part='toast']
     ),
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] :is([data-part='row'])::before,
   html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='chan']::after {
     animation-duration: var(--site-motion-loop-scene);
     animation-timing-function: var(--site-motion-ease-loop);
@@ -267,8 +324,18 @@
       [data-part='glow'],
       [data-part='toast']
     ),
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'][data-visible='true'] [data-part='row']::before,
   html[data-motion='play'] [data-scene='hero-mock'][data-state='play'][data-visible='true'] [data-part='chan']::after {
     animation-play-state: running;
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='row']:nth-child(1)::before {
+    animation-name: loop-row-1;
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='row']:nth-child(2)::before {
+    animation-name: loop-row-2;
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='row']:nth-child(3)::before {
+    animation-name: loop-row-3;
   }
   html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='row']:nth-child(1) [data-part='pill-new'] {
     animation-name: loop-new-1;
