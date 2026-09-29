@@ -27,6 +27,8 @@ const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
 
 async function axeReport(page: Page, testInfo: any, name: string, include: string) {
   await page.waitForTimeout(400) // geçiş animasyonu bitsin (ara opaklık kontrastı bozar)
+  // Paylaşılan bildirim bileşeni (snackbar; view kaynaklı hata bildirimleri) de bir overlay'dir —
+  // diyaloğun kendi ihlallerini ölçmek için hariç tutulur.
   const results = await new AxeBuilder({ page }).include(include).withTags(AXE_TAGS).analyze()
   await testInfo.attach(`axe-${name}-sonuclari.json`, { body: JSON.stringify(results.violations, null, 2), contentType: 'application/json' })
   console.log(`[axe] ${name}: ${results.violations.length} WCAG 2.1 AA ihlali`)
@@ -50,7 +52,7 @@ test.describe('P3 (B5-2) — Varyant diyalogları (ProductVariantsComponent alt 
     await expect(card).toBeVisible()
     await expect(card.getByRole('button', { name: 'Varyanta Ata' })).toBeVisible()
     await shot(page, 'variant-attributes.png')
-    await axeReport(page, testInfo, 'ProductVariantAttributesComponent', '.v-overlay--active')
+    await axeReport(page, testInfo, 'ProductVariantAttributesComponent', '.v-overlay--active:not(.v-snackbar)')
   })
 
   test('toplu özellik düzenleme: "Toplu Varyant Bilgileri" kartı açılır', async ({ page }, testInfo) => {
@@ -61,7 +63,7 @@ test.describe('P3 (B5-2) — Varyant diyalogları (ProductVariantsComponent alt 
     await expect(card).toBeVisible()
     await expect(card.getByText('Platform Bazında Bilgiler')).toBeVisible()
     await shot(page, 'variant-batch-attributes.png')
-    await axeReport(page, testInfo, 'ProductBatchVariantAttributesComponent', '.v-overlay--active')
+    await axeReport(page, testInfo, 'ProductBatchVariantAttributesComponent', '.v-overlay--active:not(.v-snackbar)')
   })
 
   test('toplu fiyat düzenleme: satış/piyasa fiyatı alanları ve platform bazında fiyat seçeneği görünür', async ({ page }, testInfo) => {
@@ -73,7 +75,7 @@ test.describe('P3 (B5-2) — Varyant diyalogları (ProductVariantsComponent alt 
     await expect(card.getByLabel('Piyasa Fiyatı', { exact: true })).toBeVisible()
     await expect(card.getByText('Platform Bazında Fiyat').first()).toBeVisible()
     await shot(page, 'variant-batch-prices.png')
-    await axeReport(page, testInfo, 'ProductBatchVariantPlatformPricesComponent', '.v-overlay--active')
+    await axeReport(page, testInfo, 'ProductBatchVariantPlatformPricesComponent', '.v-overlay--active:not(.v-snackbar)')
   })
 
   test('platform bazında varyant fiyatı: işaretlenip fiyat hücresine tıklanınca platform fiyat kartı açılır', async ({ page }, testInfo) => {
@@ -85,7 +87,7 @@ test.describe('P3 (B5-2) — Varyant diyalogları (ProductVariantsComponent alt 
     const card = page.locator('.v-overlay--active').filter({ hasText: 'Platform Bazında Varyant Fiyatları' }).first()
     await expect(card).toBeVisible()
     await shot(page, 'variant-platform-prices.png')
-    await axeReport(page, testInfo, 'ProductVariantPlatformPricesComponent', '.v-overlay--active')
+    await axeReport(page, testInfo, 'ProductVariantPlatformPricesComponent', '.v-overlay--active:not(.v-snackbar)')
   })
 
   test('varyant arama: "Ara" arama formunu (stok kodu/barkod/stok/raf) açar', async ({ page }, testInfo) => {
@@ -95,7 +97,7 @@ test.describe('P3 (B5-2) — Varyant diyalogları (ProductVariantsComponent alt 
     const card = page.locator('.v-overlay--active').filter({ has: page.locator('.mdi-magnify') }).last()
     await expect(card).toBeVisible()
     await shot(page, 'variant-search.png')
-    await axeReport(page, testInfo, 'ProductSearchVariantComponent', '.v-overlay--active')
+    await axeReport(page, testInfo, 'ProductSearchVariantComponent', '.v-overlay--active:not(.v-snackbar)')
   })
 
   test('varyant oluşturucu: yeşil "+" menüsü seçenek gruplarını listeler', async ({ page }, testInfo) => {
@@ -106,7 +108,7 @@ test.describe('P3 (B5-2) — Varyant diyalogları (ProductVariantsComponent alt 
     await expect(menu).toBeVisible()
     await expect(menu.getByText('E2E Renk Grubu').first()).toBeVisible()
     await shot(page, 'variant-generator.png')
-    await axeReport(page, testInfo, 'ProductVariantGeneratorComponent', '.v-overlay--active')
+    await axeReport(page, testInfo, 'ProductVariantGeneratorComponent', '.v-overlay--active:not(.v-snackbar)')
   })
 
   test('varyant resimleri: satırdaki resim "Varyant Resimleri" kartını açar', async ({ page }, testInfo) => {
@@ -118,6 +120,6 @@ test.describe('P3 (B5-2) — Varyant diyalogları (ProductVariantsComponent alt 
     const card = page.locator('.v-overlay--active').filter({ hasText: 'Varyant Resimleri' }).first()
     await expect(card).toBeVisible()
     await shot(page, 'variant-images.png')
-    await axeReport(page, testInfo, 'ProductVariantImagesComponent', '.v-overlay--active')
+    await axeReport(page, testInfo, 'ProductVariantImagesComponent', '.v-overlay--active:not(.v-snackbar)')
   })
 })

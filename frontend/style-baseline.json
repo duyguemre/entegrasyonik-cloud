@@ -2,10 +2,10 @@
   "_meta": "ADR-0011 Karar 2 / Aşama 1 literal-stil mandalı tabanı. node scripts/check-style-baseline.js --write ile üretildi (bkz. scripts/style-literal-counts.js). Hiçbir dosyada/kategoride sayı ARTAMAZ; yeni dosyalar 0 ile başlamalı; düşüş serbest ama bu dosyanın güncellenmesi gerekir (check-style-baseline.js OK dönene kadar).",
   "date": "2026-09-29",
   "totals": {
-    "total": 1923,
-    "hex": 819,
+    "total": 1644,
+    "hex": 709,
     "rgb": 235,
-    "inlineStyle": 853,
+    "inlineStyle": 684,
     "cubicBezier": 10,
     "motion": 6
   },
@@ -1059,20 +1059,20 @@
       "total": 4
     },
     "src/components/productDefinitions/crud/ImageUploaderComponent.vue": {
-      "hex": 14,
+      "hex": 0,
       "rgb": 0,
-      "inlineStyle": 6,
+      "inlineStyle": 2,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 20
+      "total": 2
     },
     "src/components/productDefinitions/crud/PlatformPriceComponent.vue": {
-      "hex": 1,
+      "hex": 0,
       "rgb": 0,
-      "inlineStyle": 20,
+      "inlineStyle": 1,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 21
+      "total": 1
     },
     "src/components/productDefinitions/crud/ProductCompetitivePricesComponent.vue": {
       "hex": 1,
@@ -1171,20 +1171,20 @@
       "total": 20
     },
     "src/components/productDefinitions/variants/ProductBatchVariantAttributesComponent.vue": {
-      "hex": 22,
+      "hex": 1,
       "rgb": 0,
-      "inlineStyle": 36,
+      "inlineStyle": 3,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 58
+      "total": 4
     },
     "src/components/productDefinitions/variants/ProductBatchVariantPlatformPricesComponent.vue": {
-      "hex": 13,
+      "hex": 0,
       "rgb": 0,
-      "inlineStyle": 10,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 23
+      "total": 0
     },
     "src/components/productDefinitions/variants/ProductDetailsComponent.vue": {
       "hex": 0,
@@ -1195,12 +1195,12 @@
       "total": 2
     },
     "src/components/productDefinitions/variants/ProductSearchVariantComponent.vue": {
-      "hex": 5,
+      "hex": 0,
       "rgb": 0,
-      "inlineStyle": 18,
+      "inlineStyle": 2,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 23
+      "total": 2
     },
     "src/components/productDefinitions/variants/ProductSingleVariantComponent.vue": {
       "hex": 1,
@@ -1211,44 +1211,44 @@
       "total": 20
     },
     "src/components/productDefinitions/variants/ProductVariantAttributesComponent.vue": {
-      "hex": 27,
+      "hex": 1,
       "rgb": 0,
-      "inlineStyle": 44,
+      "inlineStyle": 3,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 71
+      "total": 4
     },
     "src/components/productDefinitions/variants/ProductVariantGeneratorComponent.vue": {
-      "hex": 4,
+      "hex": 1,
       "rgb": 1,
-      "inlineStyle": 8,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 13
+      "total": 2
     },
     "src/components/productDefinitions/variants/ProductVariantImageComponent.vue": {
-      "hex": 3,
+      "hex": 0,
       "rgb": 0,
-      "inlineStyle": 3,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 6
+      "total": 0
     },
     "src/components/productDefinitions/variants/ProductVariantImageEditComponent.vue": {
-      "hex": 3,
+      "hex": 0,
       "rgb": 0,
-      "inlineStyle": 3,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 6
+      "total": 0
     },
     "src/components/productDefinitions/variants/ProductVariantImagesComponent.vue": {
-      "hex": 20,
+      "hex": 1,
       "rgb": 0,
-      "inlineStyle": 30,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 50
+      "total": 1
     },
     "src/components/productDefinitions/variants/ProductVariantListComponent.vue": {
       "hex": 0,
@@ -1267,12 +1267,12 @@
       "total": 5
     },
     "src/components/productDefinitions/variants/ProductVariantPlatformPricesComponent.vue": {
-      "hex": 2,
+      "hex": 0,
       "rgb": 0,
-      "inlineStyle": 2,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 4
+      "total": 0
     },
     "src/components/productDefinitions/variants/ProductVariantsComponent.vue": {
       "hex": 0,

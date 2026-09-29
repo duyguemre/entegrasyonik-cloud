@@ -6,16 +6,15 @@
       <div class="ma-4">
         <div class="d-flex mb-4">
 
-          <v-btn-group elevation="0" class="d-block flex-grow-1  mr-1" density="compact"
-            style="box-shadow:0px 0px 10px rgba(200,220,240,.0)!important">
-            <v-btn density="compact" block class="fill-height" color="white" style="border:1px solid #bbb;"
+          <v-btn-group elevation="0" class="d-block flex-grow-1  mr-1 pvg-s1" density="compact">
+            <v-btn density="compact" block class="fill-height pvg-s2" color="white"
               @click="clearForm">
               <span class="">
                 Vazgeç
               </span></v-btn>
           </v-btn-group>
-          <v-btn-group elevation="0" class="d-block  flex-grow-1 ml-1" density="compact" style="">
-            <v-btn density="compact" block class="fill-height" color="#E53935ff" style="border:1px solid #aaa;"
+          <v-btn-group elevation="0" class="d-block  flex-grow-1 ml-1" density="compact">
+            <v-btn density="compact" block class="fill-height pvg-s2" color="#E53935ff"
               @click="validateAndAddVariants">
               <span class="">
                 {{ $t('common.add') }}
@@ -29,14 +28,14 @@
 
 
           <template v-for="(choice, index) of computedChoices">
-            <v-select multiple item-value="_id" item-title="title" @click.stop style="min-width:200px"
+            <v-select multiple item-value="_id" item-title="title" @click.stop
               v-if="newVariant && newVariant['choices']" v-model="newVariants[index].choiceValueIds"
-              :label="choice.title" @change="newVariantCounter++" :items="choice.values" density="compact" class="mb-2"
+              :label="choice.title" @change="newVariantCounter++" :items="choice.values" density="compact" class="mb-2 pvg-s3"
               v-model:menu="newVariants[index].isMenuOpen" variant="outlined" bg-color="textfieldColor" hide-details>
               <template v-slot:append-item>
-                <v-list-item class="" style="border:1px solid #ddd;border-top:none" @click.stop>
+                <v-list-item class="pvg-s4" @click.stop>
                   <div class="mt-4 mb-2">
-                    <v-form v-model="choiceForm" style="display:contents" @keydown.enter.prevent @submit.prevent>
+                    <v-form v-model="choiceForm" @keydown.enter.prevent @submit.prevent class="pvg-s5">
                       <v-text-field variant="outlined" @mousedown.stop density="compact" type="tel" maxlength="32"
                         counter clearable bg-color="textfieldColor" hint="Yeni Seçenek Değeri" class="customTextField"
                         v-model="choiceValueTitle" @keydown.stop
@@ -59,7 +58,7 @@
                 </v-list-item>
               </template>
               <template #append>
-                <v-icon style="cursor:pointer" :color="newVariants[index].isMenuOpen ? 'passiveColor' : 'transparent'">mdi-close</v-icon>
+                <v-icon :color="newVariants[index].isMenuOpen ? 'passiveColor' : 'transparent'" class="pvg-s6">mdi-close</v-icon>
               </template>
 
             </v-select>
@@ -146,3 +145,34 @@ const validateAndAddVariants = async () => {
 </script>
 
 <style scoped></style>
+
+<style>
+/* ADR-0015 B5-2 — satir ici stillerden tasinan siniflar (autostyle). Satir ici stilin onceligi
+   !important ile korunur; ayni ozellikte Vuetify yardimci sinifi/`color` prop cakismasi varsa
+   (satir ici stil zaten yeniliyordu) !important eklenmez. Scope'suz: v-dialog/v-menu ve alt
+   bilesen kokleri scoped ozniteligi almayabilir; onek dosyaya ozgudur. */
+.pvg-s1 {
+  box-shadow: 0px 0px 10px rgba(200,220,240,.0) !important;
+}
+
+.pvg-s2 {
+  border: 1px solid var(--ek-color-border-strong) !important;
+}
+
+.pvg-s3 {
+  min-width: 200px !important;
+}
+
+.pvg-s4 {
+  border: 1px solid var(--ek-color-border-default) !important;
+  border-top: none !important;
+}
+
+.pvg-s5 {
+  display: contents !important;
+}
+
+.pvg-s6 {
+  cursor: pointer !important;
+}
+</style>

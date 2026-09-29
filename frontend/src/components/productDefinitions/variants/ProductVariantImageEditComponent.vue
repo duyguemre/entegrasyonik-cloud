@@ -1,7 +1,7 @@
 <template>
-  <div class="d-flex pa-0" style="border-top:0px solid #ccc;border-right:0px solid #ccc;background-color:#fff;width:100%">
-    <div v-if="computedImage.src == undefined" style="width:100%">
-      <v-icon :size="height" style="opacity:.1">mdi-image-outline</v-icon>
+  <div class="d-flex pa-0 pvie-s1">
+    <div v-if="computedImage.src == undefined" class="pvie-s2">
+      <v-icon :size="height" class="pvie-s3">mdi-image-outline</v-icon>
     </div>
     <v-img v-else     ref="imageRef"  @load="onImageLoad"   :height="height" :width="computedImage.width" :src="computedImage.src"/>
   </div>
@@ -62,3 +62,24 @@ const computedImage = computed(() => {
 })
 </script>
 <style scoped></style>
+
+<style>
+/* ADR-0015 B5-2 — satir ici stillerden tasinan siniflar (autostyle). Satir ici stilin onceligi
+   !important ile korunur; ayni ozellikte Vuetify yardimci sinifi/`color` prop cakismasi varsa
+   (satir ici stil zaten yeniliyordu) !important eklenmez. Scope'suz: v-dialog/v-menu ve alt
+   bilesen kokleri scoped ozniteligi almayabilir; onek dosyaya ozgudur. */
+.pvie-s1 {
+  border-top: 0px solid var(--ek-color-border-default) !important;
+  border-right: 0px solid var(--ek-color-border-default) !important;
+  background-color: var(--ek-color-surface) !important;
+  width: 100% !important;
+}
+
+.pvie-s2 {
+  width: 100% !important;
+}
+
+.pvie-s3 {
+  opacity: .1 !important;
+}
+</style>

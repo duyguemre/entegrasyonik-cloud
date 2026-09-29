@@ -1,18 +1,18 @@
 <template>
   <LoadingComponent attach=".productDefinitionView" ref="loadingComponentRef"></LoadingComponent>
-  <div :style="{ width: width ? width+'px' : '100%' + '!important' }" class="elevation-0 mb-2 uploadBox" style="border-radius:5px;border:1px solid #bbb;">
+  <div :style="{ width: width ? width+'px' : '100%' + '!important' }" class="elevation-0 mb-2 uploadBox iuc-s1">
     <div :class="[dragging ? 'dragDropOn' : 'dragDropOff']">
       <v-card @dragleave="dragging = false" @dragenter="dragging = true" @dragend="dragging = false" elevation=0
-        @drop="dragging = false" class="ma-0 dragCard" color="transparent" style="border-radius:10px;border-bottom-left-radius: 0;border-bottom-right-radius: 0;">
-        <v-btn style="opacity:.6;background-color:#fff;border-radius: 0;" :style="{ height: height ? height+'px' : '100%' + '!important' }"
-          class="pt-15 pb-15" block elevation=2>
-          <div style="opacity:1;position:absolute">
+        @drop="dragging = false" class="ma-0 dragCard iuc-s2" color="transparent">
+        <v-btn :style="{ height: height ? height+'px' : '100%' + '!important' }"
+          class="pt-15 pb-15 iuc-s3" block elevation=2 aria-label="Resim yükle" @click="openFilePicker">
+          <div class="iuc-s4">
             <v-icon size="60" color="processButtonColor">mdi-plus</v-icon>
             <template v-if="!width || width > 200">
               Resimleri bu alana sürükleyebilirsiniz
             </template>
           </div>
-          <input ref="fileInputRef" class="fileInput" type="file" multiple @change="upload">
+          <input ref="fileInputRef" class="fileInput" type="file" multiple tabindex="-1" aria-hidden="true" @change="upload">
         </v-btn>
       </v-card>
     </div>
@@ -44,6 +44,14 @@ const emits = defineEmits(['uploadedEvent'])
 onMounted(() => {
   fileInputRef.value = ""
 })
+
+// Klavye erisimi: dosya girisi sekme sirasinin disinda (buton icinde ic ice etkilesimli oge olmasin).
+// Fare tiklamasi zaten gorunmez girisin kendisine duser; buton klavyeyle tetiklenince girisi acar.
+// (fileInputRef onMounted'da "" ile eziliyor — bu yuzden ref yerine olay hedefinden bulunur.)
+const openFilePicker = (event: MouseEvent) => {
+  const input = (event.currentTarget as HTMLElement | null)?.querySelector('input[type="file"]') as HTMLInputElement | null
+  if (input && event.target !== input) input.click()
+}
 
 const upload = async ($event: Event) => {
   const target = $event.target as HTMLInputElement;
@@ -78,12 +86,12 @@ const upload = async ($event: Event) => {
 <style>
 
 .uploadBox:hover {
-  background-color: #fafafa !important;
-  box-shadow: 0px 0px 20px #bcc1c488 !important;
+  background-color: var(--ek-color-surface-muted) !important;
+  box-shadow: 0px 0px 20px var(--ek-color-border-default) !important;
 }
 
 .uploadBox {
-  background-color: #f6f7f8 !important;
+  background-color: var(--ek-color-surface-muted) !important;
 }
 
 
@@ -101,17 +109,17 @@ const upload = async ($event: Event) => {
 }
 
 .dropZone:hover .dropZone-title {
-  color: #1975A0;
+  color: var(--ek-color-info);
 }
 
 .dropZone-info {
-  color: #A8A8A8;
+  color: var(--ek-color-content-muted);
   position: absolute;
   text-align: center;
 }
 
 .dropZone-title {
-  color: #787878;
+  color: var(--ek-color-content-muted);
 }
 
 .fileInput {
@@ -123,13 +131,13 @@ const upload = async ($event: Event) => {
 }
 
 .dragDropOn .dragDropOnZone {
-  background-color: #1975A0;
+  background-color: var(--ek-color-info);
 }
 
 .dragDropOff .dragDropOnZone {}
 
 .dragDropOn {
-  background-color: #1975A0;
+  background-color: var(--ek-color-info);
 }
 
 .dragDropOff {}
@@ -146,7 +154,7 @@ const upload = async ($event: Event) => {
   bottom: 2px;
   right: 0;
   left: 0; */
-  border: 0px dashed #ccc;
+  border: 0px dashed var(--ek-color-border-default);
 
 }
 
@@ -162,7 +170,7 @@ const upload = async ($event: Event) => {
 }
 
 .dropZone-over {
-  background: #ddd;
+  background: var(--ek-color-surface-sunken);
   opacity: 0.8;
 }
 
@@ -170,18 +178,46 @@ const upload = async ($event: Event) => {
   width: 80%;
   height: 200px;
   position: relative;
-  border: 0px dashed #eee;
+  border: 0px dashed var(--ek-color-border-default);
 }
 
 .dropZone-uploaded-info {
   display: flex;
   flex-direction: column;
   align-items: center;
-  color: #A8A8A8;
+  color: var(--ek-color-content-muted);
   position: absolute;
   top: 50%;
   width: 100%;
   transform: translate(0, -50%);
   text-align: center;
+}
+</style>
+
+<style>
+/* ADR-0015 B5-2 — satir ici stillerden tasinan siniflar (autostyle). Satir ici stilin onceligi
+   !important ile korunur; ayni ozellikte Vuetify yardimci sinifi/`color` prop cakismasi varsa
+   (satir ici stil zaten yeniliyordu) !important eklenmez. Scope'suz: v-dialog/v-menu ve alt
+   bilesen kokleri scoped ozniteligi almayabilir; onek dosyaya ozgudur. */
+.iuc-s1 {
+  border-radius: 5px !important;
+  border: 1px solid var(--ek-color-border-strong) !important;
+}
+
+.iuc-s2 {
+  border-radius: 10px !important;
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.iuc-s3 {
+  opacity: .6 !important;
+  background-color: var(--ek-color-surface) !important;
+  border-radius: 0 !important;
+}
+
+.iuc-s4 {
+  opacity: 1 !important;
+  position: absolute !important;
 }
 </style>

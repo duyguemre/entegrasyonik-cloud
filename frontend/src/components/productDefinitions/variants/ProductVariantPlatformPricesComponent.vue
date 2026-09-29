@@ -2,11 +2,11 @@
   <v-row>
     <v-col cols="6" offset="3">
       <CardComponent icon="mdi-image-multiple-outline" title="Platform Bazında Varyant Fiyatları"
-        :whiteBackground="false" style="overflow-y:scroll;border:1px solid #ddd;height:calc(100vh - 110px)!important">
+        :whiteBackground="false" class="pvpp-s1">
         <LoadingComponent attach=".productDefinitionView" ref="loadingComponentRef"></LoadingComponent>
         <template #header>
-          <v-btn style="border:1px solid #bbb;width:30px; opacity:.9;" @click="editingVariantMenu = false"
-            elevation="0" min-width="0" color="white"><v-icon size="x-large" color="primary">mdi-close</v-icon></v-btn>
+          <v-btn aria-label="Kapat" @click="editingVariantMenu = false"
+            elevation="0" min-width="0" color="white" class="pvpp-s2"><v-icon size="x-large" color="primary">mdi-close</v-icon></v-btn>
         </template>
         <PlatformPriceComponent :platformPriceForm="editingVariant" :categoryId="productInfoForm.category" />
       </CardComponent>
@@ -42,3 +42,21 @@ defineExpose({
 </script>
 
 <style></style>
+
+<style>
+/* ADR-0015 B5-2 — satir ici stillerden tasinan siniflar (autostyle). Satir ici stilin onceligi
+   !important ile korunur; ayni ozellikte Vuetify yardimci sinifi/`color` prop cakismasi varsa
+   (satir ici stil zaten yeniliyordu) !important eklenmez. Scope'suz: v-dialog/v-menu ve alt
+   bilesen kokleri scoped ozniteligi almayabilir; onek dosyaya ozgudur. */
+.pvpp-s1 {
+  overflow-y: scroll !important;
+  border: 1px solid var(--ek-color-border-default) !important;
+  height: calc(100vh - 110px) !important;
+}
+
+.pvpp-s2 {
+  border: 1px solid var(--ek-color-border-strong) !important;
+  width: 30px !important;
+  opacity: .9 !important;
+}
+</style>
