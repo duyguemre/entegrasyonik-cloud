@@ -264,13 +264,15 @@ describe('sahne süreleri bağlayıcı sınırlar içinde (ADR-0014 Karar 3)', (
     expect(11 * stagger + reveal).toBeLessThanOrEqual(maxScene)
   })
 
-  it('döngü süreleri 6–30 sn: senaryo 12 sn, ışın 6 sn, şerit/ışıma 30 sn', () => {
+  it('döngü süreleri 6–30 sn: senaryo 12 sn, ışın 6 sn, şerit/ışıma/hero show 30 sn', () => {
     for (const name of ['--site-motion-ambient-fast', '--site-motion-loop-scene', '--site-motion-loop-marquee']) {
       const ms = tokenMs(name)
       expect(ms, name).toBeGreaterThanOrEqual(6000)
       expect(ms, name).toBeLessThanOrEqual(30000)
     }
-    expect(loops.body).toMatch(/animation-duration:\s*var\(--site-motion-loop-scene\)/)
+    // S13: hero show merkezi 30 sn'de dört sahne (dilim başına 7,5 sn); 12 sn senaryo token'ı diğer sahnelerde sürer
+    expect(loops.body).toMatch(/animation-duration:\s*var\(--site-motion-loop-marquee\)/)
+    expect(loops.body).toMatch(/var\(--site-motion-loop-scene\)/)
     expect(loops.body).toMatch(/animation:\s*loop-marquee var\(--site-motion-loop-marquee\)/)
   })
 })

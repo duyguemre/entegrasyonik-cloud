@@ -1,17 +1,20 @@
 ---
 /**
- * Hero (ADR-0014 Karar 2, bölüm 1; S12 pazarlama dili) — değer önerisi + birincil/ikincil CTA + CANLI HİSSİ veren
- * "sipariş ve stok merkezi" paneli. Sahne: `data-scene="hero-mock"` (src/styles/scenes.css + scenes-loops.css +
- * src/scripts/scenes.ts). Panel tamamen HTML/CSS ile çizilir (görsel dosya yok) ve AÇIKÇA "Örnek görünüm" etiketlidir:
- * sipariş ve sayılar gerçek veri değil, arayüz örneğidir; müşteri/logo/ölçüm uydurulmaz.
+ * Hero (ADR-0014 Karar 2, bölüm 1; S12 pazarlama dili; S13 "show merkezi") — değer önerisi + birincil/ikincil CTA +
+ * sistemin genelini anlatan koyu, derinlikli bir SHOW SAHNESİ. Sahne kökü: `data-scene="hero-mock"` (src/styles/scenes.css
+ * giriş + scenes-loops.css döngü + src/scripts/scenes.ts durum). Tamamen HTML/CSS/satır içi SVG (görsel dosya, kütüphane
+ * yok) ve AÇIKÇA "Örnek görünüm" etiketlidir: sipariş ve sayılar gerçek veri değil, arayüz örneğidir.
  *
- * S12 (kullanıcı geri bildirimi): ana mesajda pazaryeri ADI geçmez ("pazaryerleri"); panelde kanal adı yerine
- * isimsiz renkli noktalar (`--site-channel-*`, `[data-code]` eşlemesi) ve genel etiketler ("Pazaryeri siparişi",
- * "Web mağaza"). Panel renkleri site paletinden (lacivert + tek vurgu teal). Güven maddeleri üst seviye
- * faydadır; her biri kanıtlı bir yetenek kaydına bağlıdır (kayıt yoksa madde gösterilmez).
- * Statik hâl (reduced-motion / durdurulmuş / JS'siz): üç sipariş "Rezerve", stok 9, rezerve 3, kanallar senkron.
- * Hareketli hâl (yalnızca görünürken, 12 sn döngü): siparişler sırayla vurgulanır -> rezerve edilir -> stok sayacı
- * akarak azalır -> güncelleme sinyali kanal noktalarına yayılır.
+ * S13 (kullanıcı: "beyaz fonlu amatör kalmış ... show merkezi ... sistemin genelini ilgilendiren showlar"): tek ekran
+ * takibi yerine 30 sn'de dönen DÖRT sahne (her biri 7,5 sn, çapraz geçişli; altta ilerleme göstergesi):
+ *   1) Tek merkez      — isimsiz kanal noktalarından siparişler merkeze akar, stok 12 -> 9 düşer, senkron dalgası yayılır
+ *   2) Rezervasyon     — son adet için eşzamanlı iki sipariş: biri rezerve edilir, diğeri aşırı satış olarak işaretlenir
+ *   3) Kanallara yayın — tek güncelleme tüm kanallara sırayla iletilir
+ *   4) Güvenlik        — kalkan + şifreli anahtar + izolasyon/rol maddeleri
+ * Her sahne kanıtlı bir yetenek kaydına dayanır (kayıt yoksa derleme durur — sahne kanıtsız gösterilmez). Kanal ADI yok:
+ * isimsiz renkli noktalar (`--site-channel-*`, `[data-code]` eşlemesi) ve genel etiketler ("Pazaryeri siparişi").
+ * Statik hâl (reduced-motion / "Hareket" durdurulmuş / JS'siz): YALNIZCA 1. sahnenin son durumu — üç sipariş
+ * "Rezerve", stok 9, rezerve 3; diğer sahneler görünmez. Döngü yalnızca görünürken çalışır, üzerine gelince durur.
  */
 import Button from '../Button.astro'
 import Icon from './Icon.astro'
@@ -21,7 +24,7 @@ import { getPublicCapabilities } from '../../data/capabilities'
 import { getPublicTrial } from '../../data/plans'
 
 const trial = getPublicTrial()
-// Kanal noktaları: yalnızca mevcut entegrasyonların RENGİ (ad DOM'a yazılmaz; panel aria-hidden'dır).
+// Kanal noktaları: yalnızca mevcut entegrasyonların RENGİ (ad DOM'a yazılmaz; sahne aria-hidden'dır).
 const channels = getPublicIntegrations().map((c) => ({ code: c.code }))
 const marketplaces = getPublicIntegrations('marketplace')
 const storefront = getPublicIntegrations('ecommerce')[0]
@@ -34,12 +37,41 @@ const benefits = [
   { icon: 'shield' as const, label: 'Kurumsal düzeyde güvenlik', requires: ['secrets-encryption', 'tenant-database', 'role-based-access'] },
 ].filter((b) => b.requires.every((id) => capIds.has(id)))
 
-// Panel örneği: iki pazaryeri siparişi + bir web mağaza siparişi (genel etiket; renk kanal paletinden).
+// Show sahneleri: her biri bir yetenek kaydına dayanır. Zamanlama 4 sahneye göre kuruludur (scenes-loops.css) →
+// kayıt eksikse sahneyi sessizce düşürmek yerine derleme durur (kanıtsız gösterim yok, zamanlama bozulmaz).
+const scenes = [
+  { key: 'hub', label: 'Tek merkez', short: 'Merkez', requires: ['unified-orders', 'stock-reservation'] },
+  { key: 'race', label: 'Rezervasyon', short: 'Rezerve', requires: ['stock-reservation'] },
+  { key: 'publish', label: 'Kanallara yayın', short: 'Yayın', requires: ['multi-channel-products'] },
+  { key: 'secure', label: 'Güvenlik', short: 'Güvenlik', requires: ['secrets-encryption', 'tenant-database'] },
+]
+for (const s of scenes) {
+  for (const id of s.requires) if (!capIds.has(id)) throw new Error(`Hero show sahnesi "${s.key}" için yetenek kaydı yok: ${id}`)
+}
+
+// Sahne 1: iki pazaryeri siparişi + bir web mağaza siparişi (genel etiket; renk kanal paletinden). Her sipariş kendi
+// kanal noktasından merkeze akar (şerit `data-order` = sipariş sırası).
 const orders = [
   { code: marketplaces[0]?.code, label: 'Pazaryeri siparişi' },
   { code: marketplaces[1]?.code, label: 'Pazaryeri siparişi' },
   storefront ? { code: storefront.code, label: 'Web mağaza' } : { code: marketplaces[2]?.code, label: 'Pazaryeri siparişi' },
 ]
+const orderOfLane = new Map<number, number>()
+orders.forEach((o, k) => {
+  const lane = channels.findIndex((c) => c.code === o.code)
+  if (lane >= 0 && !orderOfLane.has(lane)) orderOfLane.set(lane, k)
+})
+
+// Sahne 2: son adet için iki farklı kanaldan eşzamanlı sipariş.
+const raceA = marketplaces[0]?.code
+const raceB = marketplaces[1]?.code ?? storefront?.code
+
+// Sahne 4: güvenlik maddeleri (her biri kayda bağlı).
+const secureItems = [
+  { label: 'Şifreli anahtarlar', requires: 'secrets-encryption' },
+  { label: 'Veri izolasyonu', requires: 'tenant-database' },
+  { label: 'Rol tabanlı erişim', requires: 'role-based-access' },
+].filter((i) => capIds.has(i.requires))
 ---
 
 <section class="hero" aria-labelledby="hero-title" data-testid="hero" data-surface="dark">
@@ -78,72 +110,197 @@ const orders = [
       </ul>
     </div>
 
+
     <div class="hero__visual" data-parallax-root>
-      <div class="mock" data-scene="hero-mock" data-tilt aria-hidden="true" data-testid="hero-mock">
-        <div class="mock__bar">
-          <span class="mock__dots"><i></i><i></i><i></i></span>
-          <span class="mock__title">Sipariş ve stok merkezi</span>
-          <span class="mock__tag">Örnek görünüm</span>
+      <span class="hero__depth" aria-hidden="true"></span>
+      <div class="show" data-scene="hero-mock" data-tilt aria-hidden="true" data-testid="hero-mock">
+        <div class="show__bar">
+          <span class="show__brand"><i class="show__live"></i>Operasyon merkezi</span>
+          <span class="show__tag">Örnek görünüm</span>
         </div>
 
-        <div class="mock__body">
-          <div class="mock__channels-row">
-            <p class="mock__label">Satış kanalları</p>
-            <ul class="mock__channels">
-              {channels.map((c) => <li class="mock__chan" data-part="chan" data-code={c.code} />)}
+        <div class="show__stage">
+          {/* 1) Tek merkez: kanallardan gelen siparişler tek stokta buluşur (statik hâl = bu sahnenin son durumu) */}
+          <div class="show__scene show__scene--hub" data-part="show-scene">
+            <p class="show__cap">
+              <span class="show__kicker">Tek merkez</span>
+              <span class="show__headline">Kanallardan gelen siparişler tek stokta buluşur</span>
+            </p>
+            <div class="hub">
+              <svg class="hub__lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+                <line x1="7" y1="18" x2="50" y2="50"></line>
+                <line x1="7" y1="50" x2="50" y2="50"></line>
+                <line x1="7" y1="82" x2="50" y2="50"></line>
+                <line x1="93" y1="18" x2="50" y2="50"></line>
+                <line x1="93" y1="50" x2="50" y2="50"></line>
+                <line x1="93" y1="82" x2="50" y2="50"></line>
+              </svg>
+              <div class="hub__lanes">
+                {
+                  channels.map((_, i) => (
+                    <span class="hub__lane" data-code={channels[i].code} data-order={orderOfLane.get(i)}>
+                      {orderOfLane.has(i) && <span class="hub__mover" data-part="hub-in" />}
+                      <span class="hub__mover hub__mover--out" data-part="hub-out" />
+                    </span>
+                  ))
+                }
+              </div>
+              <ul class="hub__nodes">
+                {channels.map((c) => <li class="hub__node" data-part="chan" data-code={c.code} />)}
+              </ul>
+              <div class="hub__core" data-part="hub-core">
+                <p class="hub__label">Merkezi stok</p>
+                <p class="hub__big">
+                  <span class="hub__num" data-part="num">12</span>
+                  <span class="hub__num" data-part="num">11</span>
+                  <span class="hub__num" data-part="num">10</span>
+                  <span class="hub__num hub__num--final" data-part="num">9</span>
+                </p>
+                <div class="hub__meter"><span class="hub__fill" data-part="fill"></span></div>
+                <p class="hub__sub">
+                  Rezerve
+                  <span class="hub__resv">
+                    <b class="hub__num" data-part="rnum">0</b>
+                    <b class="hub__num" data-part="rnum">1</b>
+                    <b class="hub__num" data-part="rnum">2</b>
+                    <b class="hub__num hub__num--final" data-part="rnum">3</b>
+                  </span>
+                </p>
+              </div>
+            </div>
+            <ul class="feed">
+              {
+                orders.map((o) => (
+                  <li class="show__row" data-part="row" data-code={o.code}>
+                    <span class="show__rlabel">
+                      <span class="show__rdot" />
+                      {o.label}
+                    </span>
+                    <span class="show__pills">
+                      <span class="show__pill show__pill--new" data-part="pill-new">Yeni</span>
+                      <span class="show__pill show__pill--ok">Rezerve</span>
+                    </span>
+                  </li>
+                ))
+              }
             </ul>
-            <span class="mock__sync"><i class="mock__live"></i>Senkron</span>
-            <div class="mock__rail"><span class="mock__glow" data-part="glow"></span></div>
           </div>
 
-          <div class="mock__cols">
-            <div class="mock__stock">
-              <p class="mock__label">Merkezi stok</p>
-              <p class="mock__big">
-                <span class="mock__num mock__num--a" data-part="num">12</span>
-                <span class="mock__num mock__num--b" data-part="num">11</span>
-                <span class="mock__num mock__num--c" data-part="num">10</span>
-                <span class="mock__num mock__num--d" data-part="num">9</span>
-              </p>
-              <p class="mock__unit">adet · tüm kanallarda</p>
-              <div class="mock__meter"><span class="mock__fill" data-part="fill"></span></div>
-              <p class="mock__sub">
-                Rezerve
-                <span class="mock__resv">
-                  <b class="mock__rnum mock__rnum--a" data-part="rnum">0</b>
-                  <b class="mock__rnum mock__rnum--b" data-part="rnum">1</b>
-                  <b class="mock__rnum mock__rnum--c" data-part="rnum">2</b>
-                  <b class="mock__rnum mock__rnum--d" data-part="rnum">3</b>
+          {/* 2) Rezervasyon: son adet için eşzamanlı iki sipariş -> biri rezerve, diğeri aşırı satış olarak işaretlenir */}
+          <div class="show__scene show__scene--race" data-part="show-scene">
+            <p class="show__cap">
+              <span class="show__kicker">Stok rezervasyonu</span>
+              <span class="show__headline">Son adet için eşzamanlı iki sipariş; yalnızca biri rezerve edilir</span>
+            </p>
+            <div class="race">
+              <div class="race__order race__order--a" data-part="race-a" data-code={raceA}>
+                <span class="race__who"><span class="show__rdot"></span>Pazaryeri siparişi</span>
+                <span class="race__st">
+                  <span class="race__badge race__badge--new" data-part="race-out">Yeni sipariş</span>
+                  <span class="race__badge race__badge--ok" data-part="race-in"><Icon name="check" size="sm" />Rezerve edildi</span>
                 </span>
-              </p>
+              </div>
+              <span class="race__lane race__lane--a"><span class="race__pkt" data-part="race-pkt"></span></span>
+              <div class="race__product">
+                <span class="race__thumb"><Icon name="stock" size="md" /></span>
+                <span class="race__plabel">Kalan stok</span>
+                <span class="race__big">
+                  <span class="hub__num" data-part="race-out">1</span>
+                  <span class="hub__num" data-part="race-in">0</span>
+                </span>
+                <span class="race__lock" data-part="race-lock"><Icon name="lock" size="sm" />Kilitlendi</span>
+              </div>
+              <span class="race__lane race__lane--b"><span class="race__pkt" data-part="race-pkt"></span></span>
+              <div class="race__order race__order--b" data-part="race-b" data-code={raceB}>
+                <span class="race__who"><span class="show__rdot"></span>Pazaryeri siparişi</span>
+                <span class="race__st">
+                  <span class="race__badge race__badge--new" data-part="race-out">Yeni sipariş</span>
+                  <span class="race__badge race__badge--warn" data-part="race-in"><Icon name="info" size="sm" />Aşırı satış işaretlendi</span>
+                </span>
+              </div>
             </div>
+            <p class="show__result" data-part="race-result"><Icon name="shield" size="sm" />Stok eksiye düşmez</p>
+          </div>
 
-            <div class="mock__feed">
-              <p class="mock__label">Gelen siparişler</p>
-              <ul class="mock__rows">
+          {/* 3) Kanallara yayın: tek güncelleme tüm kanallara sırayla iletilir */}
+          <div class="show__scene show__scene--publish" data-part="show-scene">
+            <p class="show__cap">
+              <span class="show__kicker">Kanallara yayın</span>
+              <span class="show__headline">Fiyat ve stok değişikliği bağlı kanallara tek yerden iletilir</span>
+            </p>
+            <div class="pub">
+              <div class="pub__src">
+                <span class="pub__thumb"><Icon name="layers" size="md" /></span>
+                <span class="pub__title">Ürün kartı</span>
+                <span class="pub__field"><span>Fiyat</span><i class="pub__bar"></i></span>
+                <span class="pub__field"><span>Stok</span><i class="pub__bar pub__bar--short"></i></span>
+                <span class="pub__flag" data-part="pub-flag"><Icon name="refresh" size="sm" />Güncellendi</span>
+              </div>
+              <ul class="pub__list">
                 {
-                  orders.map((o) => (
-                    <li class="mock__row" data-part="row" data-code={o.code}>
-                      <span class="mock__rchan">
-                        <span class="mock__rdot" />
-                        <span class="mock__rlabel">{o.label}</span>
-                      </span>
-                      <span class="mock__pills">
-                        <span class="mock__pill mock__pill--new" data-part="pill-new">Yeni</span>
-                        <span class="mock__pill mock__pill--ok">Rezerve</span>
-                      </span>
+                  channels.map((c) => (
+                    <li class="pub__row" data-code={c.code}>
+                      <span class="pub__track"><span class="pub__beam" data-part="pub-beam" /></span>
+                      <span class="show__rdot" />
+                      <span class="pub__skel" />
+                      <span class="pub__check" data-part="pub-check"><Icon name="check" size="sm" /></span>
                     </li>
                   ))
                 }
               </ul>
             </div>
           </div>
+
+          {/* 4) Güvenlik: kalkan + şifreli anahtar + izolasyon / rol maddeleri */}
+          <div class="show__scene show__scene--secure" data-part="show-scene">
+            <p class="show__cap">
+              <span class="show__kicker">Kurumsal güvenlik</span>
+              <span class="show__headline">Anahtarlar şifreli saklanır, veriniz hesabınıza ayrılır</span>
+            </p>
+            <div class="sec">
+              <div class="sec__emblem">
+                <span class="sec__wave" data-part="sec-wave"></span>
+                <span class="sec__wave" data-part="sec-wave"></span>
+                <span class="sec__wave" data-part="sec-wave"></span>
+                <span class="sec__core"><Icon name="shield" size="lg" /></span>
+              </div>
+              <div class="sec__side">
+                <div class="sec__key">
+                  <span class="sec__klabel"><Icon name="key" size="sm" />API anahtarı</span>
+                  <span class="sec__kval">
+                    <span class="sec__mask">••••••••••••</span>
+                    <span class="sec__scan" data-part="sec-scan"></span>
+                  </span>
+                  <span class="sec__lock" data-part="sec-lock"><Icon name="lock" size="sm" />Şifreli</span>
+                </div>
+                <ul class="sec__list">
+                  {
+                    secureItems.map((i) => (
+                      <li class="sec__item" data-part="sec-item">
+                        <span class="sec__tick"><Icon name="check" size="sm" /></span>
+                        {i.label}
+                      </li>
+                    ))
+                  }
+                </ul>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <p class="mock__toast" data-part="toast">
-          <span class="mock__toast-icon"><Icon name="refresh" size="sm" /></span>
-          <span>Stok güncellemesi kanallara iletildi</span>
-        </p>
+        <ol class="show__nav">
+          {
+            scenes.map((s) => (
+              <li class="show__step">
+                <span class="show__track"><span class="show__prog" data-part="show-prog" /></span>
+                <span class="show__slabel" data-part="show-step">
+                  <span class="show__slabel-long">{s.label}</span>
+                  <span class="show__slabel-short">{s.short}</span>
+                </span>
+              </li>
+            ))
+          }
+        </ol>
       </div>
       <p class="sr-only">Örnek görünüm — gerçek veri değildir.</p>
     </div>
@@ -285,25 +442,25 @@ const orders = [
     color: var(--site-accent);
   }
 
-  /* --- Ürün paneli --- */
+
+  /* --- Show sahnesi (S13): koyu, derinlikli sahne; 4 dönen sahne (döngü: scenes-loops.css) --- */
   .hero__visual {
     position: relative;
     isolation: isolate;
     display: flex;
     flex-direction: column;
-    gap: var(--ek-space-3);
     min-width: 0;
   }
   .hero__visual::before {
     content: '';
     position: absolute;
     z-index: -1;
-    inset: -14% -12% 4%;
-    background: radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-secondary) 22%, transparent), transparent);
+    inset: -18% -14% -6%;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-secondary) 26%, transparent), transparent);
     pointer-events: none;
   }
   /*
-   * İkinci (en uzak) ofset pencere katmanı: .mock::after ile birlikte 2 katmanlı derinlik yığını oluşturur.
+   * İkinci (en uzak) ofset pencere katmanı: .hero__depth ile birlikte 2 katmanlı derinlik yığını oluşturur.
    * S9: her iki katman da imleç konumuna (`pointer: fine`) ve kaydırma konumuna göre birkaç piksel kayar
    * (src/scripts/interactions.ts `--depth-a-*`/`--depth-b-*`); JS'siz/hareket kapalıyken sabit ofsette kalır.
    */
@@ -315,26 +472,14 @@ const orders = [
     border: var(--site-border-width) solid var(--site-glass-border);
     border-radius: var(--site-radius-panel);
     background: var(--site-glass-bg);
-    opacity: 0.5;
+    opacity: 0.45;
     translate: var(--depth-b-x, 0) var(--depth-b-y, 0);
     transition: translate var(--ek-duration-slow) var(--ek-easing-standard);
     pointer-events: none;
   }
-  .mock {
-    /* Panel açık yüzeydir: hero'nun koyu-zemin vurgusu yerine açık-zemin (AA) vurgu tonu. */
-    --site-accent: var(--ek-color-secondary-darken-1);
-    --mock-ink: var(--ek-color-primary);
-    position: relative;
-    border-radius: var(--site-radius-panel);
-    background: var(--ek-color-background);
-    box-shadow: var(--site-shadow-panel);
-    color: var(--site-text-body);
-    font-size: var(--ek-font-size-sm);
-    line-height: var(--ek-line-height-tight);
-    user-select: none;
-  }
-  .mock::after {
-    content: '';
+
+  /* Yakın ofset pencere katmanı (S9 derinlik yığını; S13: sahnenin DIŞINDA — koyu cam içinden kenarı görünmesin). */
+  .hero__depth {
     position: absolute;
     z-index: -1;
     inset: var(--ek-space-5) calc(var(--ek-space-4) * -1) calc(var(--ek-space-5) * -1) var(--ek-space-5);
@@ -345,316 +490,902 @@ const orders = [
     transition: translate var(--ek-duration-slow) var(--ek-easing-standard);
     pointer-events: none;
   }
-  .mock__bar {
-    display: flex;
-    align-items: center;
-    gap: var(--ek-space-3);
-    padding: var(--ek-space-3) var(--ek-space-4);
-    border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
-    border-start-start-radius: var(--site-radius-panel);
-    border-start-end-radius: var(--site-radius-panel);
-    background: var(--ek-color-surface-muted);
-  }
-  .mock__dots {
-    display: inline-flex;
-    gap: var(--ek-space-1);
-  }
-  .mock__dots i {
-    width: var(--ek-space-2);
-    height: var(--ek-space-2);
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-border-strong);
-  }
-  .mock__title {
-    flex: 1;
-    min-width: 0;
-    color: var(--site-text-heading);
-    font-weight: var(--ek-font-weight-semibold);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .mock__tag {
-    padding: var(--ek-space-1) var(--ek-space-2);
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-surface-sunken);
-    color: var(--site-text-meta);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-semibold);
-    white-space: nowrap;
-  }
-  .mock__body {
+  .show {
+    /* Sahne zamanlaması: 30 sn döngü, 4 eşit dilim (scenes-loops.css `--show-delay` ile kaydırır). */
+    --show-cycle: var(--site-motion-loop-marquee);
+    --show-slot: calc(var(--show-cycle) / 4);
+    --show-line: color-mix(in srgb, var(--ek-color-background) 12%, transparent);
+    --show-line-strong: color-mix(in srgb, var(--ek-color-background) 20%, transparent);
+    --show-glass: color-mix(in srgb, var(--ek-color-background) 5%, transparent);
+    --show-glass-strong: color-mix(in srgb, var(--ek-color-background) 9%, transparent);
+    --show-solid: color-mix(in srgb, var(--ek-color-content-strong) 86%, var(--ek-color-primary));
+    --show-glow: color-mix(in srgb, var(--ek-color-secondary) 60%, transparent);
+    --show-warn: color-mix(in srgb, var(--ek-color-amber) 85%, var(--ek-color-background));
+    --show-warn-soft: color-mix(in srgb, var(--ek-color-amber) 22%, transparent);
+    position: relative;
     display: flex;
     flex-direction: column;
-    gap: var(--ek-space-4);
-    padding: var(--ek-space-4);
+    /* Degrade kenarlık: iç zemin padding-box, ince teal->cam kenar border-box (tek öğe, ek katman yok). */
+    border: var(--site-border-width) solid transparent;
+    border-radius: var(--site-radius-panel);
+    background:
+      radial-gradient(70% 50% at 50% 40%, color-mix(in srgb, var(--ek-color-secondary) 15%, transparent), transparent 72%) padding-box,
+      radial-gradient(60% 40% at 100% 100%, color-mix(in srgb, var(--ek-color-primary-darken-1) 40%, transparent), transparent 70%) padding-box,
+      linear-gradient(165deg, color-mix(in srgb, var(--ek-color-primary) 58%, var(--ek-color-content-strong)) 0%, var(--ek-color-content-strong) 100%) padding-box,
+      linear-gradient(
+          150deg,
+          color-mix(in srgb, var(--ek-color-secondary) 70%, transparent) 0%,
+          var(--site-glass-border) 30%,
+          color-mix(in srgb, var(--ek-color-background) 8%, transparent) 65%,
+          color-mix(in srgb, var(--ek-color-secondary) 40%, transparent) 100%
+        )
+        border-box;
+    box-shadow:
+      var(--site-shadow-panel),
+      0 0 6rem -1.5rem color-mix(in srgb, var(--ek-color-secondary) 30%, transparent),
+      inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 14%, transparent);
+    color: var(--site-text-on-dark-body);
+    font-size: var(--ek-font-size-sm);
+    line-height: var(--ek-line-height-tight);
+    user-select: none;
   }
-  .mock__label {
-    color: var(--site-text-meta);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-
-  /* Kanal satırı: isimsiz renkli noktalar + "Senkron" durumu + güncelleme ışını */
-  .mock__channels-row {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: center;
-    gap: var(--ek-space-2) var(--ek-space-3);
-    padding: var(--ek-space-3) var(--ek-space-4);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-lg);
-    background: var(--ek-color-surface-muted);
-  }
-  .mock__channels {
+  .show__bar {
     display: flex;
     align-items: center;
-    gap: var(--ek-space-2);
+    justify-content: space-between;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-3) var(--ek-space-4);
+    border-bottom: var(--site-border-width) solid var(--show-line);
   }
-  .mock__chan {
-    position: relative;
-    flex: none;
-    width: var(--ek-space-3);
-    height: var(--ek-space-3);
-    border-radius: var(--ek-radius-full);
-    background: var(--chan, var(--site-accent));
-    box-shadow: 0 0 0 calc(var(--site-border-width) * 2) var(--ek-color-background);
-  }
-  /* Sinyal halkası: 12 sn döngüde kanal güncellemesi geldiğinde belirir (scenes-loops.css); statik hâlde görünmez. */
-  .mock__chan::after {
-    content: '';
-    position: absolute;
-    inset: calc(var(--ek-space-1) * -1);
-    border: var(--site-border-width) solid var(--chan, var(--site-accent));
-    border-radius: var(--ek-radius-full);
-    opacity: 0;
-    pointer-events: none;
-  }
-  .mock__sync {
+  .show__brand {
     display: inline-flex;
     align-items: center;
-    gap: var(--ek-space-1);
-    color: var(--site-accent);
-    font-size: var(--ek-font-size-xs);
+    gap: var(--ek-space-2);
+    color: var(--site-text-on-dark-heading);
     font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.01em;
   }
-  .mock__live {
+  .show__live {
     width: var(--ek-space-2);
     height: var(--ek-space-2);
     border-radius: var(--ek-radius-full);
     background: var(--site-accent);
-    box-shadow: 0 0 0 calc(var(--site-border-width) * 3) var(--site-accent-soft);
+    box-shadow: 0 0 0 calc(var(--site-border-width) * 3) color-mix(in srgb, var(--ek-color-secondary) 25%, transparent), 0 0 var(--ek-space-3) var(--show-glow);
   }
-  .mock__rail {
-    grid-column: 1 / -1;
-    position: relative;
-    overflow: hidden;
-    height: calc(var(--site-border-width) * 2);
+  .show__tag {
+    padding: calc(var(--ek-space-1) / 2) var(--ek-space-2);
+    border: var(--site-border-width) solid var(--show-line);
     border-radius: var(--ek-radius-full);
-    background: var(--ek-color-border-default);
-  }
-  .mock__glow {
-    position: absolute;
-    inset-block: 0;
-    inset-inline-start: 0;
-    width: 28%;
-    border-radius: var(--ek-radius-full);
-    background: linear-gradient(90deg, transparent, var(--site-accent), transparent);
-    opacity: 0;
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    white-space: nowrap;
   }
 
-  .mock__cols {
-    display: grid;
-    gap: var(--ek-space-4);
-  }
-  .mock__stock,
-  .mock__feed {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-2);
-    padding: var(--ek-space-4);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-lg);
-    background: var(--ek-color-surface);
-  }
-  .mock__stock {
-    background:
-      radial-gradient(120% 90% at 100% 0%, var(--site-accent-soft), transparent 60%),
-      var(--ek-color-surface);
-  }
-  .mock__big {
-    display: grid;
-    overflow: hidden;
-    max-width: none;
-    color: var(--mock-ink);
-    font-size: var(--site-font-display-sm);
-    font-weight: var(--site-font-display-weight);
-    letter-spacing: var(--site-font-display-tracking);
-    line-height: 1.1;
-  }
-  .mock__num {
-    grid-area: 1 / 1;
-    opacity: 0;
-  }
-  .mock__num--d {
-    opacity: 1;
-  }
-  .mock__unit {
-    margin-top: calc(var(--ek-space-1) * -1);
-    color: var(--site-text-meta);
-    font-size: var(--ek-font-size-xs);
-  }
-  .mock__meter {
-    margin-top: auto;
-    overflow: hidden;
-    height: calc(var(--ek-space-1) * 1.5);
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-surface-sunken);
-  }
-  .mock__fill {
-    display: block;
-    width: 100%;
-    height: 100%;
-    border-radius: var(--ek-radius-full);
-    background: linear-gradient(90deg, var(--mock-ink), var(--site-accent));
-    transform-origin: 0 50%;
-    scale: 0.75 1;
-  }
-  .mock__sub {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    max-width: none;
-    color: var(--site-text-meta);
-  }
-  .mock__resv {
-    display: inline-grid;
-    color: var(--mock-ink);
-    font-weight: var(--ek-font-weight-bold);
-    text-align: end;
-  }
-  .mock__rnum {
-    grid-area: 1 / 1;
-    opacity: 0;
-  }
-  .mock__rnum--d {
-    opacity: 1;
-  }
-  .mock__rows {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-1);
-  }
-  .mock__row {
+  /* Sahneler aynı ızgara hücresinde üst üste durur (yükseklik = en uzun sahne; yerleşim animasyonla değişmez). */
+  .show__stage {
     position: relative;
-    isolation: isolate;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--ek-space-3);
-    padding: var(--ek-space-2);
-    border-radius: var(--ek-radius-md);
+    display: grid;
+    padding: var(--ek-space-4);
   }
-  /* Satır vurgusu: sipariş rezerve edilirken kısa süre belirir (döngü: scenes-loops.css); statik hâlde görünmez. */
-  .mock__row::before {
+  .show__stage::before {
     content: '';
     position: absolute;
     inset: 0;
-    z-index: -1;
-    border-radius: inherit;
-    background: var(--site-accent-soft);
+    background-image: var(--site-texture-dots);
+    background-size: var(--site-texture-dots-size);
+    opacity: 0.5;
+    -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, var(--ek-color-content-strong), transparent 80%);
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, var(--ek-color-content-strong), transparent 80%);
+    pointer-events: none;
+  }
+  .show__scene {
+    --show-delay: calc(var(--show-slot) * var(--n, 0));
+    grid-area: 1 / 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-4);
+    min-width: 0;
+  }
+  /* Statik hâl: yalnızca 1. sahne görünür (diğerleri yalnızca döngüde belirir). */
+  .show__scene:not(:first-child) {
     opacity: 0;
   }
-  .mock__rchan {
-    display: flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-    min-width: 0;
-    color: var(--site-text-heading);
-    font-weight: var(--ek-font-weight-semibold);
+  .show__scene:nth-child(2),
+  .show__step:nth-child(2) {
+    --n: 1;
   }
-  .mock__rdot {
+  .show__scene:nth-child(3),
+  .show__step:nth-child(3) {
+    --n: 2;
+  }
+  .show__scene:nth-child(4),
+  .show__step:nth-child(4) {
+    --n: 3;
+  }
+  .show__cap {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+    max-width: none;
+  }
+  .show__kicker {
+    color: var(--site-accent);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .show__headline {
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-lg);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: -0.01em;
+    line-height: var(--ek-line-height-tight);
+    text-wrap: balance;
+  }
+  .show__rdot {
     flex: none;
     width: var(--ek-space-2);
     height: var(--ek-space-2);
     border-radius: var(--ek-radius-full);
     background: var(--chan, var(--site-accent));
-    box-shadow: 0 0 0 calc(var(--site-border-width) * 3) color-mix(in srgb, var(--chan, var(--site-accent)) 18%, transparent);
+    box-shadow: 0 0 var(--ek-space-2) color-mix(in srgb, var(--chan, var(--site-accent)) 70%, transparent);
   }
-  .mock__rlabel {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-  .mock__pills {
-    display: inline-grid;
-    flex: none;
-    justify-items: stretch;
-  }
-  .mock__pill {
+  .hub__num {
     grid-area: 1 / 1;
-    padding: var(--ek-space-1) var(--ek-space-2);
+    opacity: 0;
+  }
+  .hub__num--final {
+    opacity: 1;
+  }
+
+  /* 1) Tek merkez: kanal noktaları iki sütunda, çizgiler merkeze; paketler şerit boyunca (kutu köşesinden köşesine) kayar */
+  .hub {
+    position: relative;
+    aspect-ratio: 2 / 1;
+  }
+  .hub__lines {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+  .hub__lines line {
+    stroke: color-mix(in srgb, var(--ek-color-secondary) 32%, transparent);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+  .hub__lanes,
+  .hub__nodes {
+    position: absolute;
+    inset: 0;
+  }
+  .hub__lane {
+    position: absolute;
+    /* Varsayılan: sol üst düğüm (7,18) -> merkez (50,50). Başlangıç köşesi (--px/--py) ve yön (--dx/--dy). */
+    --px: 0%;
+    --py: 0%;
+    --dx: 100%;
+    --dy: 100%;
+    inset-inline-start: 7%;
+    inset-block-start: 18%;
+    width: 43%;
+    height: 32%;
+  }
+  .hub__lane:nth-child(2) {
+    inset-block-start: 50%;
+    height: 0;
+    --dy: 0%;
+  }
+  .hub__lane:nth-child(3) {
+    inset-block-start: 50%;
+    --py: 100%;
+    --dy: -100%;
+  }
+  .hub__lane:nth-child(n + 4) {
+    inset-inline-start: 50%;
+    --px: 100%;
+    --dx: -100%;
+  }
+  .hub__lane:nth-child(5) {
+    inset-block-start: 50%;
+    height: 0;
+    --dy: 0%;
+  }
+  .hub__lane:nth-child(6) {
+    inset-block-start: 50%;
+    --py: 100%;
+    --dy: -100%;
+  }
+  .hub__lane[data-order='1'] {
+    --k: 1;
+  }
+  .hub__lane[data-order='2'] {
+    --k: 2;
+  }
+  .hub__mover {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+  }
+  .hub__mover::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: var(--px);
+    inset-block-start: var(--py);
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    translate: -50% -50%;
+    background: var(--chan, var(--site-accent));
+    box-shadow: 0 0 var(--ek-space-3) calc(var(--site-border-width) * 2) color-mix(in srgb, var(--chan, var(--site-accent)) 75%, transparent);
+  }
+  .hub__mover--out::before {
+    width: calc(var(--ek-space-1) * 1.5);
+    height: calc(var(--ek-space-1) * 1.5);
+    background: var(--site-accent);
+    box-shadow: 0 0 var(--ek-space-3) calc(var(--site-border-width) * 2) var(--show-glow);
+  }
+  .hub__node {
+    position: absolute;
+    inset-inline-start: 7%;
+    inset-block-start: 18%;
+    width: var(--ek-space-4);
+    height: var(--ek-space-4);
+    border-radius: var(--ek-radius-full);
+    translate: -50% -50%;
+    background: radial-gradient(circle, var(--chan, var(--site-accent)) 0 45%, color-mix(in srgb, var(--chan, var(--site-accent)) 30%, transparent) 48% 100%);
+    box-shadow: 0 0 var(--ek-space-4) color-mix(in srgb, var(--chan, var(--site-accent)) 55%, transparent);
+  }
+  .hub__node:nth-child(2),
+  .hub__node:nth-child(5) {
+    inset-block-start: 50%;
+  }
+  .hub__node:nth-child(3),
+  .hub__node:nth-child(6) {
+    inset-block-start: 82%;
+  }
+  .hub__node:nth-child(n + 4) {
+    inset-inline-start: 93%;
+  }
+  /* Senkron halkası: dalga düğüme ulaştığında yayılıp söner (döngü); statik hâlde görünmez. */
+  .hub__node::after {
+    content: '';
+    position: absolute;
+    inset: calc(var(--ek-space-2) * -1);
+    border: var(--site-border-width) solid var(--chan, var(--site-accent));
+    border-radius: var(--ek-radius-full);
+    opacity: 0;
+  }
+  .hub__core {
+    position: absolute;
+    inset-inline-start: 50%;
+    inset-block-start: 50%;
+    translate: -50% -50%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+    width: 46%;
+    padding: var(--ek-space-3) var(--ek-space-4);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 42%, transparent);
+    border-radius: var(--ek-radius-lg);
+    background:
+      radial-gradient(120% 100% at 50% 0%, color-mix(in srgb, var(--ek-color-secondary) 18%, transparent), transparent 70%),
+      var(--show-solid);
+    box-shadow:
+      0 0 3rem -0.5rem color-mix(in srgb, var(--ek-color-secondary) 45%, transparent),
+      inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 14%, transparent);
+  }
+  .hub__core::after {
+    content: '';
+    position: absolute;
+    inset: calc(var(--site-border-width) * -1);
+    border: var(--site-border-width) solid var(--site-accent);
+    border-radius: inherit;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .hub__label {
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .hub__big {
+    display: grid;
+    overflow: hidden;
+    max-width: none;
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--site-font-display-sm);
+    font-weight: var(--site-font-display-weight);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: var(--site-font-display-tracking);
+    line-height: 1.05;
+  }
+  .hub__meter {
+    overflow: hidden;
+    height: calc(var(--ek-space-1) * 1.25);
+    border-radius: var(--ek-radius-full);
+    background: var(--show-line);
+  }
+  .hub__fill {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: var(--ek-radius-full);
+    background: var(--site-gradient-accent);
+    transform-origin: 0 50%;
+    scale: 0.75 1;
+  }
+  .hub__sub {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    max-width: none;
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-xs);
+  }
+  .hub__resv {
+    display: inline-grid;
+    overflow: hidden;
+    color: var(--site-text-on-dark-heading);
+    font-weight: var(--ek-font-weight-bold);
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+  }
+
+  .feed {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--ek-space-2);
+  }
+  .show__row {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--ek-space-2);
+    min-width: 0;
+    padding: var(--ek-space-2) var(--ek-space-3);
+    border: var(--site-border-width) solid var(--show-line);
+    border-radius: var(--ek-radius-md);
+    background: var(--show-glass);
+  }
+  .show__row:nth-child(2) {
+    --k: 1;
+  }
+  .show__row:nth-child(3) {
+    --k: 2;
+  }
+  /* Satır vurgusu: sipariş merkeze ulaştığında kısa süre belirir (döngü); statik hâlde görünmez. */
+  .show__row::before {
+    content: '';
+    position: absolute;
+    inset: calc(var(--site-border-width) * -1);
+    z-index: -1;
+    border: var(--site-border-width) solid var(--site-accent-line);
+    border-radius: inherit;
+    background: color-mix(in srgb, var(--ek-color-secondary) 14%, transparent);
+    opacity: 0;
+  }
+  .show__rlabel {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    max-width: 100%;
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .show__pills {
+    display: inline-grid;
+  }
+  .show__pill {
+    grid-area: 1 / 1;
+    padding: calc(var(--ek-space-1) / 2) var(--ek-space-2);
     border-radius: var(--ek-radius-full);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
     text-align: center;
     white-space: nowrap;
   }
-  .mock__pill--new {
-    background: var(--ek-color-background);
-    box-shadow: inset 0 0 0 var(--site-border-width) var(--site-accent);
-    color: var(--site-accent);
+  .show__pill--new {
+    background: var(--show-solid);
+    box-shadow: inset 0 0 0 var(--site-border-width) var(--show-line-strong);
+    color: var(--site-text-on-dark-body);
     opacity: 0;
   }
-  .mock__pill--ok {
-    background: color-mix(in srgb, var(--mock-ink) 9%, var(--ek-color-background));
-    color: var(--mock-ink);
-  }
-  .mock__toast {
-    position: relative;
-    margin: 0 var(--ek-space-4) var(--ek-space-4);
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-    width: fit-content;
-    max-width: calc(100% - 2 * var(--ek-space-4));
-    padding: var(--ek-space-2) var(--ek-space-3) var(--ek-space-2) var(--ek-space-2);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-lg);
-    background: var(--ek-color-background);
-    box-shadow: var(--ek-shadow-lg);
-    color: var(--site-text-heading);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-semibold);
-  }
-  .mock__toast-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--ek-space-6);
-    height: var(--ek-space-6);
-    border-radius: var(--ek-radius-md);
-    background: var(--site-accent-soft);
+  .show__pill--ok {
+    background: color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
     color: var(--site-accent);
   }
 
-  @media (min-width: 30rem) {
-    .mock__cols {
-      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  /* 2) Rezervasyon: iki sipariş (sol sütun) aynı anda tek ürüne (sağ) akar */
+  .race {
+    flex: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--ek-space-10) minmax(0, 0.78fr);
+    grid-template-rows: auto auto;
+    align-content: center;
+    align-items: center;
+    row-gap: var(--ek-space-4);
+  }
+  .race__order {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-4);
+    border: var(--site-border-width) solid var(--show-line);
+    border-radius: var(--ek-radius-lg);
+    background: var(--show-glass);
+  }
+  .race__order--a {
+    grid-area: 1 / 1;
+  }
+  .race__order--b {
+    grid-area: 2 / 1;
+  }
+  .race__lane--a {
+    grid-area: 1 / 2;
+  }
+  .race__lane--b {
+    grid-area: 2 / 2;
+  }
+  .race__who {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .race__st {
+    display: inline-grid;
+    justify-items: start;
+  }
+  .race__badge {
+    grid-area: 1 / 1;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-1);
+    padding: calc(var(--ek-space-1) / 2) var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .race__badge--new {
+    background: var(--show-solid);
+    box-shadow: inset 0 0 0 var(--site-border-width) var(--show-line-strong);
+    color: var(--site-text-on-dark-body);
+    opacity: 0;
+  }
+  .race__badge--ok {
+    background: color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
+    color: var(--site-accent);
+  }
+  .race__badge--warn {
+    background: var(--show-warn-soft);
+    color: var(--show-warn);
+  }
+  .race__lane {
+    position: relative;
+    height: var(--site-border-width);
+    background: linear-gradient(90deg, var(--show-line), color-mix(in srgb, var(--ek-color-secondary) 45%, transparent));
+  }
+  .race__pkt {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+  }
+  .race__pkt::before {
+    content: '';
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 0;
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    translate: -50% -50%;
+    background: var(--site-accent);
+    box-shadow: 0 0 var(--ek-space-3) calc(var(--site-border-width) * 2) var(--show-glow);
+  }
+  .race__product {
+    grid-area: 1 / 3 / 3 / 4;
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-4) var(--ek-space-3);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 42%, transparent);
+    border-radius: var(--ek-radius-lg);
+    background:
+      radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--ek-color-secondary) 18%, transparent), transparent 70%),
+      var(--show-solid);
+    box-shadow: 0 0 3rem -0.75rem color-mix(in srgb, var(--ek-color-secondary) 40%, transparent);
+    text-align: center;
+  }
+  .race__thumb,
+  .pub__thumb {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
+    border-radius: var(--ek-radius-md);
+    background: color-mix(in srgb, var(--ek-color-secondary) 16%, transparent);
+    color: var(--site-accent);
+  }
+  .race__plabel {
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .race__big {
+    display: grid;
+    overflow: hidden;
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--site-font-display-md);
+    font-weight: var(--site-font-display-weight);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.05;
+  }
+  .race__lock,
+  .sec__lock,
+  .pub__flag {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-1);
+    padding: calc(var(--ek-space-1) / 2) var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
+    color: var(--site-accent);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    white-space: nowrap;
+  }
+  .show__result {
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-1) var(--ek-space-3);
+    border: var(--site-border-width) solid var(--site-accent-line);
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-secondary) 12%, transparent);
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .show__result :global(.icon) {
+    color: var(--site-accent);
+  }
+
+  /* 3) Kanallara yayın: kaynak kart -> dikey veri yolu -> her kanal satırına ışın + onay */
+  .pub {
+    flex: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.3fr);
+    align-content: center;
+    align-items: center;
+  }
+  .pub__src {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-4);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 42%, transparent);
+    border-radius: var(--ek-radius-lg);
+    background:
+      radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--ek-color-secondary) 18%, transparent), transparent 70%),
+      var(--show-solid);
+    box-shadow: 0 0 3rem -0.75rem color-mix(in srgb, var(--ek-color-secondary) 40%, transparent);
+  }
+  .pub__title {
+    color: var(--site-text-on-dark-heading);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .pub__field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ek-space-3);
+    width: 100%;
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-xs);
+  }
+  .pub__bar {
+    width: 55%;
+    height: calc(var(--ek-space-1) * 1.5);
+    border-radius: var(--ek-radius-full);
+    background: var(--show-line-strong);
+  }
+  .pub__bar--short {
+    width: 35%;
+  }
+  .pub__list {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+  }
+  /* dikey veri yolu: kaynak kartın sağ kenarından kanallara */
+  .pub__list::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    inset-block: 8%;
+    width: var(--site-border-width);
+    background: color-mix(in srgb, var(--ek-color-secondary) 40%, transparent);
+  }
+  .pub__row {
+    display: grid;
+    grid-template-columns: var(--ek-space-8) auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--ek-space-2);
+    padding-block: var(--ek-space-1);
+  }
+  .pub__row:nth-child(2) {
+    --k: 1;
+  }
+  .pub__row:nth-child(3) {
+    --k: 2;
+  }
+  .pub__row:nth-child(4) {
+    --k: 3;
+  }
+  .pub__row:nth-child(5) {
+    --k: 4;
+  }
+  .pub__row:nth-child(n + 6) {
+    --k: 5;
+  }
+  .pub__track {
+    position: relative;
+    overflow: hidden;
+    height: var(--site-border-width);
+    background: var(--show-line);
+  }
+  .pub__beam {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, var(--site-accent));
+    opacity: 0;
+  }
+  .pub__skel {
+    height: calc(var(--ek-space-1) * 1.5);
+    border-radius: var(--ek-radius-full);
+    background: linear-gradient(90deg, var(--show-line-strong), var(--show-line));
+  }
+  .pub__check,
+  .sec__tick {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-5);
+    height: var(--ek-space-5);
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
+    color: var(--site-accent);
+  }
+
+  /* 4) Güvenlik: kalkan amblemi (yayılan halkalar) + şifreli anahtar + maddeler */
+  .sec {
+    flex: 1;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-content: center;
+    align-items: center;
+    gap: var(--ek-space-6);
+  }
+  .sec__emblem {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 10rem;
+    aspect-ratio: 1 / 1;
+  }
+  .sec__emblem::before {
+    content: '';
+    position: absolute;
+    inset: 12%;
+    border: var(--site-border-width) dashed var(--show-line-strong);
+    border-radius: var(--ek-radius-full);
+  }
+  .sec__wave {
+    position: absolute;
+    inset: 18%;
+    border: var(--site-border-width) solid var(--site-accent);
+    border-radius: var(--ek-radius-full);
+    opacity: 0;
+  }
+  .sec__wave:nth-child(2) {
+    --k: 1;
+  }
+  .sec__wave:nth-child(3) {
+    --k: 2;
+  }
+  .sec__core {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 58%;
+    aspect-ratio: 1 / 1;
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 55%, transparent);
+    border-radius: var(--ek-radius-full);
+    background:
+      radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--ek-color-secondary) 30%, transparent), transparent 70%),
+      var(--show-solid);
+    box-shadow: 0 0 3rem -0.25rem color-mix(in srgb, var(--ek-color-secondary) 50%, transparent);
+    color: var(--site-accent);
+  }
+  .sec__side {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    min-width: 0;
+  }
+  .sec__key {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--ek-space-2) var(--ek-space-3);
+    padding: var(--ek-space-3);
+    border: var(--site-border-width) solid var(--show-line);
+    border-radius: var(--ek-radius-lg);
+    background: var(--show-glass);
+  }
+  .sec__klabel {
+    grid-column: 1 / -1;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .sec__kval {
+    position: relative;
+    overflow: hidden;
+    min-width: 0;
+    padding: calc(var(--ek-space-1) / 2) var(--ek-space-2);
+    border-radius: var(--ek-radius-md);
+    background: color-mix(in srgb, var(--ek-color-content-strong) 50%, transparent);
+    color: var(--site-text-on-dark-body);
+    font-family: var(--ek-font-mono, monospace);
+    letter-spacing: 0.12em;
+    white-space: nowrap;
+  }
+  .sec__scan {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: 40%;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ek-color-secondary) 45%, transparent), transparent);
+    opacity: 0;
+  }
+  .sec__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+  }
+  .sec__item {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    color: var(--site-text-on-dark-heading);
+    font-weight: var(--ek-font-weight-medium);
+  }
+  .sec__item:nth-child(2) {
+    --k: 1;
+  }
+  .sec__item:nth-child(3) {
+    --k: 2;
+  }
+
+  /* Sahne göstergesi: etkin sahnenin çubuğu dolar; statik hâlde 1. sahne etkin */
+  .show__nav {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-3) var(--ek-space-4) var(--ek-space-4);
+    border-top: var(--site-border-width) solid var(--show-line);
+  }
+  .show__step {
+    --show-delay: calc(var(--show-slot) * var(--n, 0));
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    min-width: 0;
+  }
+  .show__track {
+    overflow: hidden;
+    height: calc(var(--site-border-width) * 2);
+    border-radius: var(--ek-radius-full);
+    background: var(--show-line);
+  }
+  .show__prog {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--site-gradient-accent);
+    box-shadow: 0 0 var(--ek-space-2) var(--show-glow);
+    transform-origin: 0 50%;
+    scale: 0 1;
+  }
+  .show__step:first-child .show__prog {
+    scale: 1 1;
+  }
+  .show__slabel {
+    overflow: hidden;
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    opacity: 0.5;
+  }
+  .show__step:first-child .show__slabel {
+    opacity: 1;
+  }
+  .show__slabel-short {
+    display: none;
+  }
+
+  @media (max-width: 29.99rem) {
+    .show__rlabel {
+      align-items: flex-start;
+    }
+    .show__headline {
+      font-size: var(--ek-font-size-md);
+    }
+    .hub {
+      aspect-ratio: 1.45 / 1;
+    }
+    .hub__core {
+      width: 52%;
+      padding: var(--ek-space-2) var(--ek-space-3);
+    }
+    .race {
+      grid-template-columns: minmax(0, 1fr) var(--ek-space-5) minmax(0, 0.8fr);
+    }
+    .sec {
+      gap: var(--ek-space-4);
+    }
+    .sec__emblem {
+      width: 6rem;
+    }
+    .show__nav {
+      gap: var(--ek-space-2);
+    }
+    .show__slabel-long {
+      display: none;
+    }
+    .show__slabel-short {
+      display: inline;
     }
   }
 
   @media (min-width: 768px) {
-    .mock__body {
+    .show__bar {
+      padding-inline: var(--ek-space-5);
+    }
+    .show__stage {
       padding: var(--ek-space-5);
     }
-    .mock__toast {
-      position: absolute;
-      inset-inline-end: calc(var(--ek-space-6) * -1);
-      inset-block-end: calc(var(--ek-space-4) * -1);
-      margin: 0;
+    .show__nav {
+      padding-inline: var(--ek-space-5);
     }
   }
 

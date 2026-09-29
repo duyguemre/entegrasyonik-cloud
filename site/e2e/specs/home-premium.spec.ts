@@ -144,9 +144,9 @@ test.describe('Hero ürün paneli (Örnek görünüm)', () => {
     expect(await stockText(page)).toBe('9')
     // üç sipariş "Rezerve" (statik son durum); "Yeni" rozeti görünmez
     const pills = await page.evaluate(() =>
-      [...document.querySelectorAll<HTMLElement>('[data-testid="hero-mock"] .mock__row')].map((row) => ({
+      [...document.querySelectorAll<HTMLElement>('[data-testid="hero-mock"] .show__row')].map((row) => ({
         row: Number(getComputedStyle(row).opacity),
-        neu: Number(getComputedStyle(row.querySelector('.mock__pill--new')!).opacity),
+        neu: Number(getComputedStyle(row.querySelector('.show__pill--new')!).opacity),
       })),
     )
     expect(pills).toHaveLength(3)
