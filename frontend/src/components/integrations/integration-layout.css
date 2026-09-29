@@ -1,0 +1,38 @@
+/*
+ * DS-v2 Aşama 2 — entegrasyon ekranları (pazaryeri/e-ticaret/kargo/e-fatura/ERP)
+ * ortak yerleşimi. Ana kolon (platform rayı + ayar formu) + sağda rehber kolonu;
+ * 1280px altında tek kolon (rehber formun ALTINA iner). Önceden ayar kartı sol
+ * kenara yapışıktı (padding'siz kolon) — tüm içerik aynı 24px sayfa boşluğunda.
+ * Görünümlerde `<style scoped src="…">` ile yüklenir.
+ */
+.ek-integration-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  gap: var(--ek-space-6);
+  align-items: start;
+  padding: var(--ek-space-5) var(--ek-space-6) var(--ek-space-6);
+}
+
+.ek-integration-layout__main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-5);
+  min-width: 0;
+}
+
+.ek-integration-layout__aside {
+  min-width: 0;
+}
+
+@media (max-width: 1279px) {
+  .ek-integration-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 599px) {
+  .ek-integration-layout {
+    padding: var(--ek-space-4);
+    gap: var(--ek-space-4);
+  }
+}
