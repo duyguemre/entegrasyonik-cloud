@@ -4,8 +4,7 @@
     class="productVariantImagesComponent pvi-s1">
     <LoadingComponent attach=".productDefinitionView" ref="loadingComponentRef"></LoadingComponent>
     <template #header>
-      <v-btn aria-label="Kapat" @click="emits('close')" elevation="0"
-        min-width="0" color="white" class="pvi-s2"><v-icon size="x-large" color="primary">mdi-close</v-icon></v-btn>
+      <EkButton tone="ghost" size="sm" icon="mdi-close" icon-only aria-label="Kapat" @click="emits('close')" />
     </template>
 
     <LoadingComponent attach=".productVariantImagesComponent" ref="loadingComponentRef"></LoadingComponent>
@@ -161,6 +160,7 @@
 
 <script setup lang="ts">
 import { Sortable } from "sortablejs-vue3";
+import EkButton from '@/components/ds/EkButton.vue'
 
 import { ref, computed, onMounted, onBeforeMount, nextTick, reactive, onActivated } from 'vue'
 import { useI18n } from 'vue-i18n';

@@ -5,15 +5,9 @@
 
     <template #header>
 
-      <v-btn-group elevation="0" class="ml-2 mr-2" density="compact">
-        <v-btn density="compact" color="#E53935ff" @click="save()" class="pva-s2">
-          <span class="">
-            Varyanta Ata
-          </span></v-btn>
-      </v-btn-group>
+      <EkButton tone="primary" size="sm" icon="mdi-check" @click="save()">Varyanta Ata</EkButton>
 
-      <v-btn aria-label="Kapat" @click="emits('close')" elevation="0" min-width="0"
-        color="white" class="pva-s3"><v-icon size="x-large" color="primary">mdi-close</v-icon></v-btn>
+      <EkButton tone="ghost" size="sm" icon="mdi-close" icon-only aria-label="Kapat" @click="emits('close')" />
 
     </template>
 
@@ -491,6 +485,7 @@
 
 <script setup lang="ts">
 import { Sortable } from "sortablejs-vue3";
+import EkButton from '@/components/ds/EkButton.vue'
 
 import { ref, computed, onMounted, onBeforeMount, nextTick, reactive, onActivated, defineAsyncComponent, shallowRef } from 'vue'
 import { useI18n } from 'vue-i18n';

@@ -120,9 +120,9 @@
       <div class="d-flex pa-2 psvc-s10">
       </div>
 
-      <v-dialog scrim persistent :retain-focus="false" v-model="show" location-strategy="connected" target="cursor"
-        no-click-animation :close-on-content-click="false" :attach="dialogAttach"
-        :contained="true" location="left" height="100%" width="100%" class="psvc-s11" :class="{ 'psvc-dialog-idle': !isVariantPlatformPricesDialog && !isVariantAttributesDialog }">
+      <EkDialogHost :model-value="isVariantPlatformPricesDialog || isVariantAttributesDialog" :attach="dialogAttach"
+        :width="isVariantAttributesDialog ? 'xl' : 'lg'"
+        @update:model-value="(v) => { if (!v) { isVariantPlatformPricesDialog = false; isVariantAttributesDialog = false } }">
 
 
         <keep-alive>
@@ -138,7 +138,7 @@
             :productInfoForm="productInfoForm" class="psvc-s11" :class="{ 'psvc-dim': !isVariantPlatformPricesDialog }" />
         </keep-alive>
 
-      </v-dialog>
+      </EkDialogHost>
 
 
     </v-card-text>
@@ -148,6 +148,7 @@
 
 <script setup lang="ts">
 import { ref, onBeforeMount, onMounted } from 'vue'
+import EkDialogHost from '@/components/ds/EkDialogHost.vue'
 import { useI18n } from 'vue-i18n';
 import LoadingComponent from '@/components/LoadingComponent.vue'
 
@@ -156,7 +157,6 @@ import VCurrencyComponentVue from '@/components/VCurrencyComponent.vue';
 import ProductVariantAttributesComponent from './ProductVariantAttributesComponent.vue';
 import ProductVariantPlatformPricesComponent from './ProductVariantPlatformPricesComponent.vue';
 
-const show = ref(true)
 const emits = defineEmits(['refreshImages', 'refreshVariants', 'refreshTotalVariantsStockCount', 'close'])
 
 const formRules = useFormRules()

@@ -15,20 +15,13 @@
 
     <LoadingComponent attach=".productDefinitionView" ref="loadingComponentRef"></LoadingComponent>
 
-    <v-dialog scrim persistent :retain-focus="false" v-model="show" location-strategy="connected" target="cursor"
-      no-click-animation :close-on-content-click="false" :attach="dialogAttach"
-      style="transition: opacity .1s ease-in!important"
-      :style="!isImagesDialog ? { 'visibility': 'hidden', 'opacity': '.2!important' } : {}" :contained="true"
-      location="left" height="100%" width="100%">
-
+    <EkDialogHost :model-value="isImagesDialog" :attach="dialogAttach" width="xl"
+      @update:model-value="(v) => { if (!v) isImagesDialog = false }">
       <keep-alive>
-        <ProductImagesComponent v-model="isImagesDialog" style="transition: opacity .2s ease-in!important"
-          :style="!isImagesDialog ? { 'opacity': '.2!important' } : {}" key="ProductImagesComponent"
+        <ProductImagesComponent v-model="isImagesDialog" key="ProductImagesComponent"
           @close="isImagesDialog = false" v-if="isImagesDialog == true" :productInfoForm="productInfoForm" />
-
       </keep-alive>
-
-    </v-dialog>
+    </EkDialogHost>
 
     <v-form @keydown.enter.prevent @submit.prevent ref="productInfoFormRef" v-model="isProductInfoFormValid">
 
@@ -218,6 +211,7 @@ import { ObjectId } from 'bson'
 import { useBrandsStore } from '@/stores/brandsStore';
 import { useCategoriesStore } from '@/stores/categoriesStore';
 import { useIntegrationStore } from '@/stores/integrationStore';
+import EkDialogHost from '@/components/ds/EkDialogHost.vue';
 import CategorySelectBoxLevelComponent from '@/components/CategorySelectBoxLevelComponent.vue';
 import ProductSingleVariantComponent from '@/components/productDefinitions/variants/ProductSingleVariantComponent.vue';
 import ProductDetailsComponent from '@/components/productDefinitions/variants/ProductDetailsComponent.vue';
@@ -249,7 +243,6 @@ const generatedVariants: any = ref([])
 
 
 const dialogAttach: any = ref()
-const show = ref(true)
 const productInfoFormRef = ref()
 const isProductInfoFormValid = ref(false)
 const productInfoForm = ref()

@@ -2,9 +2,8 @@
   <div>
     <LoadingComponent :attach="dialogAttach" ref="loadingComponentRef"></LoadingComponent>
 
-    <v-dialog scrim persistent :retain-focus="false" v-model="show" location-strategy="connected" target="cursor"
-      no-click-animation :close-on-content-click="false" :attach="dialogAttach"
-      :contained="true" location="left" height="100%" width="100%" class="pv-fade-fast" :class="{ 'pv-dialog-idle': !searchVariantForm.searchVariantFormMenu && !batchProcessFormMenu && !newVariantMenu && !isVariantPlatformPricesMenu && !isImagesDialog && !isVariantAttributesDialog && !isBatchVariantDialog && !isVariantImagesDialog && !isBatchVariantPlatformPricesMenu }">
+    <EkDialogHost :model-value="isAnyVariantPanelOpen" :attach="dialogAttach" :width="variantPanelWidth"
+      @update:model-value="(v) => { if (!v) closeVariantPanels() }">
 
       <keep-alive>
         <ProductImagesComponent v-model="isImagesDialog" key="ProductImagesComponent"
@@ -61,7 +60,7 @@
           v-if="isBatchVariantPlatformPricesMenu == true" :productInfoForm="productInfoForm" class="pv-fade" :class="{ 'pv-dim': !isBatchVariantPlatformPricesMenu }" />
       </keep-alive>
 
-    </v-dialog>
+    </EkDialogHost>
     <div class="pt-12" v-if="!productInfoForm.hasVariant">
     </div>
     <v-data-table-server v-model="selectedVariants" :items-length="originalVariants ? originalVariants.length : 0"
@@ -745,6 +744,7 @@
 
 <script setup lang="ts">
 import { ref, mergeProps, inject, nextTick, watch, computed, onBeforeMount, onMounted } from 'vue'
+import EkDialogHost from '@/components/ds/EkDialogHost.vue'
 import EkContextMenu from '@/components/ds/EkContextMenu.vue'
 import type { EkMenuGroup, EkMenuItem } from '@/components/ds/EkMenuPanel.vue'
 import { useI18n } from 'vue-i18n';
@@ -788,7 +788,6 @@ const brandsStore = useBrandsStore()
 const integrationStore = useIntegrationStore()
 const snackbarStore = useSnackbarStore()
 
-const show = ref(true)
 const emits = defineEmits(['refreshImages', 'refreshVariants', 'refreshTotalVariantsStockCount', 'close'])
 const batchVariant: any = ref({})
 
@@ -1885,6 +1884,29 @@ const setEditingField = (header: any, variantId: any) => {
 }
 
 
+
+// DS-v2 A2 — varyant panelleri tek diyalog kabuğunda (EkDialogHost): yalnızca bir panel açıkken açık.
+const isAnyVariantPanelOpen = computed(() => !!(searchVariantForm.value?.searchVariantFormMenu || batchProcessFormMenu.value ||
+  isVariantPlatformPricesMenu.value || isImagesDialog.value || isVariantAttributesDialog.value || isBatchVariantDialog.value ||
+  isVariantImagesDialog.value || isBatchVariantPlatformPricesMenu.value))
+
+const variantPanelWidth = computed<'md' | 'lg' | 'xl'>(() => {
+  if (batchProcessFormMenu.value) return 'md'
+  if (searchVariantForm.value?.searchVariantFormMenu) return 'lg'
+  if (isVariantPlatformPricesMenu.value || isBatchVariantPlatformPricesMenu.value) return 'lg'
+  return 'xl'
+})
+
+function closeVariantPanels() {
+  if (searchVariantForm.value) searchVariantForm.value.searchVariantFormMenu = false
+  batchProcessFormMenu.value = false
+  isVariantPlatformPricesMenu.value = false
+  isImagesDialog.value = false
+  isVariantAttributesDialog.value = false
+  isBatchVariantDialog.value = false
+  isVariantImagesDialog.value = false
+  isBatchVariantPlatformPricesMenu.value = false
+}
 
 // DS-v2 A2 — "Varyant işlemleri" menüsü (EkContextMenu). Eylemler önceki v-list öğeleriyle AYNI.
 const variantOpsMenu: EkMenuGroup[] = [

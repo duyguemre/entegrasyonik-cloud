@@ -1,80 +1,36 @@
 <template>
-  <v-row>
-    <v-col cols="6" offset="3">
-      <v-card variant="elevated" elevation="1" class="ma-0 pbvp-s1">
-        <LoadingComponent attach=".productDefinitionView" ref="loadingComponentRef"></LoadingComponent>
+  <EkDialogCard title="Toplu Varyant Fiyatları" icon="mdi-currency-try"
+    description="Girilen fiyatlar ürünün tüm varyantlarına uygulanır." width="custom" class="pbvp-card"
+    @close="emits('close')">
+    <LoadingComponent attach=".productDefinitionView" ref="loadingComponentRef"></LoadingComponent>
+    <v-checkbox :label="$t('productDefinitions.product.platformPrice')" hide-details class="pbvp-check"
+      v-model="batchVariant.prices.isPlatformBasedPrice" @click.stop />
 
-        <v-card-title class="mb-0" >
+    <EkFormGrid v-if="!batchVariant.prices.isPlatformBasedPrice" :columns="2" class="pbvp-grid">
+      <VCurrencyComponentVue @click.stop v-model="batchVariant.prices.salePrice" :compact="true" label="Satış Fiyatı"
+        clearable :required="false" :isIconExist="false" :hint="$t('productDefinitions.product.define.amountDesc')"
+        persistent-hint />
+      <VCurrencyComponentVue @click.stop v-model="batchVariant.prices.marketPrice" :compact="true"
+        label="Piyasa Fiyatı" clearable :required="false" :isIconExist="false"
+        :hint="$t('productDefinitions.product.define.amountDesc')" persistent-hint />
+    </EkFormGrid>
+    <PlatformPriceComponent v-else :platformPriceForm="batchVariant" :categoryId="productInfoForm.category" />
 
-          <div
-            class="elevation-1 pbvp-s2">
-          </div>
-
-          <v-btn aria-label="Kapat"
-            @click="emits('close')" elevation="1" min-width="0" color="red" class="pbvp-s3"><v-icon
-              size="x-large">mdi-close</v-icon></v-btn>
-
-          <v-btn aria-label="Kapat"
-            @click="emits('close')" elevation="1" min-width="0" color="red" class="pbvp-s4"><v-icon
-              size="x-large">mdi-close</v-icon></v-btn>
-
-            
-            
-            <span class="font-weight-medium  text-h6 ml-8">
-            <v-icon class="mr-0 pbvp-s5" size="20">mdi-image-multiple-outline</v-icon>
-            Toplu Varyant Fiyatları</span>
-
-        </v-card-title>
-
-        <v-card-text class="mt-0 pbvp-s6">
-          <div class="pb-4 pbvp-s7">
-            <v-checkbox :label="$t('productDefinitions.product.platformPrice')" @update:modelValue=""
-                      density="compact" hide-details class="ma-0 mb-2 mt-4 pa-0 pbvp-s8"
-                      v-model="batchVariant.prices.isPlatformBasedPrice" @click.stop />
-
-                      <v-divider/>
-
-            <div class="d-flex" v-if="!batchVariant.prices.isPlatformBasedPrice">
-            <VCurrencyComponentVue
-                          prepend-icon="mdi-currency-try" @click.stop
-                          v-model="batchVariant.prices.salePrice" :compact="false"
-                          label="Satış Fiyatı" clearable :required="false"
-                          :hint="$t('productDefinitions.product.define.amountDesc')" class="mb-2 mt-3"
-                          :hide-details="false" counter>
-          </VCurrencyComponentVue>
-          <VCurrencyComponentVue
-                          prepend-icon="mdi-currency-try" @click.stop
-                          v-model="batchVariant.prices.marketPrice" :compact="false"
-                          label="Piyasa Fiyatı" clearable :required="false"
-                          :hint="$t('productDefinitions.product.define.amountDesc')" class="mb-2 mt-3"
-                          :hide-details="false" counter>
-          </VCurrencyComponentVue>
-        </div>
-
-
-            <PlatformPriceComponent v-else :platformPriceForm="batchVariant" 
-              :categoryId="productInfoForm.category" />
-          </div>
-        </v-card-text>
-        <v-card-actions>
-          <v-btn-group elevation="1" class="mt-0 pbvp-s9" density="compact" >
-                        <v-btn density="compact" block class="fill-height pbvp-s10" color="saveButtonColor"                          
-                          @click="batchVariantPricesUpdate">
-                          <span class="">
-                            <v-icon>mdi-plus-box-multiple-outline</v-icon> Bütün Varyantların Fiyatlarını Güncelle
-                          </span></v-btn>
-                      </v-btn-group>
-
-
-        </v-card-actions>
-      </v-card>
-      </v-col>
-      </v-row>
+    <template #actions>
+      <EkButton tone="secondary" @click="emits('close')">Vazgeç</EkButton>
+      <EkButton tone="primary" icon="mdi-content-save-outline" @click="batchVariantPricesUpdate">
+        Bütün Varyantların Fiyatlarını Güncelle
+      </EkButton>
+    </template>
+  </EkDialogCard>
 </template>
 
 <script setup lang="ts">
 
 import { ref, computed, onMounted, onBeforeMount, nextTick, reactive } from 'vue'
+import EkDialogCard from '@/components/ds/EkDialogCard.vue'
+import EkFormGrid from '@/components/ds/EkFormGrid.vue'
+import EkButton from '@/components/ds/EkButton.vue'
 import { useI18n } from 'vue-i18n';
 import LoadingComponent from '@/components/LoadingComponent.vue'
 import useRestApi from '@/composables/restapi'
@@ -465,182 +421,12 @@ const imageSrc = computed(() => {
 
 </script>
 
-<style>
-.dropZone {
-  position: relative;
-  border: 1px dashed black;
+<style scoped>
+.pbvp-check {
+  margin-bottom: var(--ek-space-3);
 }
 
-.dropZone:hover {
-  background-color: red;
-}
-
-.dropZone:hover .dropZone-title {
-  color: var(--ek-color-info);
-}
-
-.dropZone-info {
-  color: var(--ek-color-content-muted);
-  position: absolute;
-  text-align: center;
-}
-
-.dropZone-title {
-  color: var(--ek-color-content-muted);
-}
-
-.fileInput {
-  position: absolute;
-  cursor: pointer;
-  opacity: 0;
-  height: 100%;
-  width: 100%;
-}
-
-.dragDropOn .dragDropOnZone {
-  background-color: var(--ek-color-info);
-}
-
-.dragDropOff .dragDropOnZone {}
-
-.dragDropOn {
-  background-color: var(--ek-color-info);
-}
-
-.dragDropOff {}
-
-.dragDropOn .dragCard {
-  /*   top: 204px; */
-
-}
-
-.dragCard {
-  /*   position: absolute; */
-  /*   top: 184px; */
-  /*   top: 150px;
-  bottom: 2px;
-  right: 0;
-  left: 0; */
-  border: 0px dashed var(--ek-color-border-default);
-
-}
-
-.dropZone input {
-  cursor: pointer;
-  opacity: 1;
-}
-
-.dropZone-upload-limit-info {
-  display: flex;
-  justify-content: flex-start;
-  flex-direction: column;
-}
-
-.dropZone-over {
-  background: var(--ek-color-surface-sunken);
-  opacity: 0.8;
-}
-
-.dropZone-uploaded {
-  width: 80%;
-  height: 200px;
-  position: relative;
-  border: 0px dashed var(--ek-color-border-default);
-}
-
-.dropZone-uploaded-info {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  color: var(--ek-color-content-muted);
-  position: absolute;
-  top: 50%;
-  width: 100%;
-  transform: translate(0, -50%);
-  text-align: center;
-}
-
-.removeFile {
-  width: 200px;
-}
-</style>
-
-<style>
-/* ADR-0015 B5-2 — satir ici stillerden tasinan siniflar (autostyle). Satir ici stilin onceligi
-   !important ile korunur; ayni ozellikte Vuetify yardimci sinifi/`color` prop cakismasi varsa
-   (satir ici stil zaten yeniliyordu) !important eklenmez. Scope'suz: v-dialog/v-menu ve alt
-   bilesen kokleri scoped ozniteligi almayabilir; onek dosyaya ozgudur. */
-.pbvp-s1 {
-  transition: none !important;
-  box-shadow: none !important;
-  transform: none !important;
-  background-color: var(--ek-color-surface-sunken) !important;
-}
-
-.pbvp-s2 {
-  position: absolute !important;
-  top: 0px !important;
-  left: 0px !important;
-  right: 0 !important;
-  height: 1px !important;
-  width: auto !important;
-  opacity: .9 !important;
-  background-color: red !important;
-}
-
-.pbvp-s3 {
-  position: absolute !important;
-  border: 1px solid var(--ek-color-surface) !important;
-  border-top: none !important;
-  border-right: none !important;
-  top: 0px !important;
-  right: 0px !important;
-  height: 40px !important;
-  width: 40px !important;
-  opacity: .9 !important;
-  border-radius: 0 !important;
-  border-bottom-left-radius: 20px !important;
-}
-
-.pbvp-s4 {
-  position: absolute !important;
-  border: 1px solid var(--ek-color-surface) !important;
-  border-top: none !important;
-  border-left: none !important;
-  top: 0px !important;
-  left: 0px !important;
-  height: 40px !important;
-  width: 40px !important;
-  opacity: .9 !important;
-  border-radius: 0 !important;
-  border-bottom-right-radius: 20px !important;
-}
-
-.pbvp-s5 {
-  opacity: .7 !important;
-}
-
-.pbvp-s6 {
-  background-color: var(--ek-color-surface-sunken) !important;
-}
-
-.pbvp-s7 {
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  min-height: 100px !important;
-  height: auto !important;
-  max-height: calc(100vh - 280px) !important;
-}
-
-.pbvp-s8 {
-  min-width: 180px !important;
-}
-
-.pbvp-s9 {
-  width: 100% !important;
-}
-
-.pbvp-s10 {
-  border: 1px solid white !important;
+.pbvp-grid {
+  padding-top: var(--ek-space-2);
 }
 </style>

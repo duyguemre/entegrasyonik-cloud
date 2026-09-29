@@ -27,10 +27,9 @@
 
 
     <LoadingComponent :attach="dialogAttach" ref="loadingComponentRef"></LoadingComponent>
-    <v-dialog scrim persistent :retain-focus="false" v-model="show" location-strategy="connected" target="cursor"
-      no-click-animation :close-on-content-click="false" :attach="dialogAttach" class="plv-dialog-transition"
-      :class="{ 'plv-dialog-hidden': !batchPlatformProcessMenu && !transferProductForm.transferProductFormMenu && !searchProductForm.searchProductFormMenu && !batchProcessFormMenu }"
-      :contained="true" location="left" height="100%" width="100%">
+    <EkDialogHost :model-value="!!(transferProductForm.transferProductFormMenu || batchProcessFormMenu)"
+      :attach="dialogAttach" placement="end" width="lg"
+      @update:model-value="(v) => { if (!v) { transferProductForm.transferProductFormMenu = false; batchProcessFormMenu = false } }">
 
       <keep-alive>
         <ProductTransferComponent class="plv-panel-transition"
@@ -49,7 +48,7 @@
           :selectedProducts="selectedProducts" :searchProductForm="searchProductForm" />
       </keep-alive>
 
-    </v-dialog>
+    </EkDialogHost>
 
     <div class="d-flex pa-2 plv-search-row">
       <v-text-field clearable density="compact" :label="$t('products.product.searchlabel')" variant="outlined"
@@ -473,6 +472,7 @@ import { useStaticsStore } from '@/stores/staticsStore';
 import useUser from '@/composables/user';
 import { PLATFORM_PROCESS } from '@/types/PlatformProcess';
 import BatchActionsRootComponent from '@/components/productDefinitions/products/BatchActions/BatchActionsRootComponent.vue';
+import EkDialogHost from '@/components/ds/EkDialogHost.vue';
 import ProductDeleteConfirmDialog from '@/components/productDefinitions/products/ProductDeleteConfirmDialog.vue';
 const userApi = useUser()
 
