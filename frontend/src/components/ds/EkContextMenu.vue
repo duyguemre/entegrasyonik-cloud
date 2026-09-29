@@ -16,7 +16,8 @@
     <template #activator="{ props: activatorProps }">
       <slot name="activator" :props="activatorProps" />
     </template>
-    <EkMenuPanel ref="panelRef" :groups="groups" :label="label" @select="onSelect" @close="open = false" />
+    <EkMenuPanel ref="panelRef" :groups="groups" :label="label" :title="title" :description="description"
+      @select="onSelect" @close="open = false" />
   </v-menu>
 </template>
 
@@ -29,6 +30,9 @@ withDefaults(
     groups: EkMenuGroup[]
     label: string
     location?: 'bottom end' | 'bottom start' | 'top end' | 'top start'
+    /** İsteğe bağlı görünür menü başlığı (EkMenuPanel `title`/`description`). */
+    title?: string
+    description?: string
   }>(),
   { location: 'bottom end' },
 )
