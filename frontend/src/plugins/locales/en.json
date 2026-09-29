@@ -31,6 +31,181 @@
   "title": {
     "config": "Configuration"
   },
+  "integrationCompliance": {
+    "title": "Integration compliance",
+    "section": "Administration",
+    "description": "Track signs of change in integration APIs, triage them and close them with a decision.",
+    "searchPlaceholder": "Search subject key or integration",
+    "filters": {
+      "integration": "Integration",
+      "category": "Category",
+      "kind": "Kind",
+      "severity": "Severity",
+      "status": "Status",
+      "chip": "{label}: {value}"
+    },
+    "category": {
+      "marketplace": "Marketplace",
+      "ecommerce": "E-commerce",
+      "erp": "ERP",
+      "einvoice": "E-invoice",
+      "shipping": "Shipping"
+    },
+    "kind": {
+      "schema": "Schema",
+      "unknown_enum": "Unknown value",
+      "endpoint": "Endpoint",
+      "version": "Version",
+      "deprecation": "Deprecation",
+      "auth": "Authentication",
+      "ratelimit": "Rate limit",
+      "doc": "Documentation"
+    },
+    "source": {
+      "guard": "Contract guard",
+      "probe": "Probe",
+      "source_monitor": "Source monitor",
+      "manual": "Manual",
+      "agent": "Agent"
+    },
+    "summary": {
+      "title": "Integration overview",
+      "description": "Adapter version, last manual verification and open findings by severity. Click a card to filter the list to that integration.",
+      "adapterVersion": "Adapter version",
+      "lastVerifiedAt": "Last verified",
+      "notVerified": "No record",
+      "openFindings": "Open findings",
+      "noOpen": "No open findings",
+      "openCount": "{n} open",
+      "severityCount": "{label} {n}",
+      "filterBy": "{name}: filter findings",
+      "filterActive": "{name}: filter active, click to remove",
+      "loadError": "Integration overview could not be loaded — try again.",
+      "empty": "No integrations are defined in the catalog."
+    },
+    "probe": {
+      "title": "Last probe run",
+      "scopeNote": "The probe runs as a single platform-level pass for all integrations; this result is not per integration.",
+      "never": "No probe run has been recorded yet.",
+      "notFinished": "Not finished yet",
+      "processed": "{n} probes processed",
+      "failed": "{n} failed"
+    },
+    "table": {
+      "title": "Findings",
+      "ariaLabel": "Compliance findings table",
+      "integration": "Integration",
+      "subject": "Subject",
+      "severity": "Severity",
+      "status": "Status",
+      "confirmed": "Confirmation",
+      "tenants": "Tenants",
+      "occurrences": "Occurrences",
+      "lastSeen": "Last seen",
+      "openDetail": "Open details of {subject}",
+      "count": "{n} findings"
+    },
+    "confirmed": {
+      "yes": "Confirmed",
+      "no": "Awaiting confirmation"
+    },
+    "empty": {
+      "title": "No known compliance issues right now",
+      "message": "Monitoring is active — new findings are added here by the contract guard, probes and source monitoring.",
+      "note": "An empty list only means no issues were seen in monitored contracts and sources; it does not cover changes in unmonitored endpoints."
+    },
+    "emptyFiltered": {
+      "title": "No results",
+      "message": "No findings match the selected filters or search.",
+      "action": "Clear filters"
+    },
+    "loadError": "Compliance findings could not be loaded — check your connection and try again.",
+    "detail": {
+      "identity": "{integration} · {kind}",
+      "loadError": "Finding details could not be loaded — try again.",
+      "sections": {
+        "overview": "Overview",
+        "evidence": "Evidence",
+        "impact": "Impact",
+        "recommendation": "Recommendation",
+        "decision": "Decision",
+        "record": "Decision record"
+      },
+      "fields": {
+        "subjectKey": "Subject key",
+        "kind": "Kind",
+        "source": "Source",
+        "category": "Category",
+        "confirmed": "Confirmation",
+        "occurrences": "Occurrences",
+        "firstSeen": "First seen",
+        "lastSeen": "Last seen",
+        "adapterVersionSeen": "Adapter version seen",
+        "fixedInAdapterVersion": "Fixed in adapter version",
+        "fixRef": "Fix reference",
+        "decidedBy": "Decided by",
+        "decidedAt": "Decided at",
+        "notes": "Reason",
+        "closedAt": "Closed at"
+      },
+      "evidence": {
+        "redactedNote": "Evidence is redacted: only key paths, type names, code values and header names are stored; no body values or customer data.",
+        "paths": "Key paths",
+        "types": "Type names",
+        "enumValue": "Unknown value",
+        "httpStatus": "HTTP status",
+        "headerNames": "Header names",
+        "sunsetAt": "Sunset date",
+        "docDiff": "Document diff",
+        "fingerprint": "Shape fingerprint",
+        "none": "No evidence recorded for this finding."
+      },
+      "impact": {
+        "tenants": "Affected tenants",
+        "tenantsNote": "Tenant IDs are not shown on this screen; the record keeps at most 100 tenants."
+      },
+      "recommendationNone": "No recommendation recorded for this finding.",
+      "recordNone": "No decision yet."
+    },
+    "decision": {
+      "description": "Your decision is written to the audit log.",
+      "actionLabel": "Action",
+      "actions": {
+        "triage": "Triage",
+        "accept": "Accept",
+        "wontfix": "Won't fix",
+        "false_positive": "False positive",
+        "fixed": "Fixed"
+      },
+      "hints": {
+        "triage": "Under review; no decision yet.",
+        "accept": "A real change; a fix will be planned.",
+        "wontfix": "Real but will not be fixed; the finding closes.",
+        "false_positive": "Not a real change; the finding closes.",
+        "fixed": "Adapter fixed; a fix reference is required, the finding closes."
+      },
+      "reason": "Reason (optional)",
+      "fixRef": "Fix reference (commit/PR) *",
+      "fixRefHint": "The commit or PR that contains the fix.",
+      "fixedInAdapterVersion": "Fixed in adapter version (optional)",
+      "submit": "Apply decision",
+      "errors": {
+        "actionRequired": "Select an action.",
+        "reasonTooLong": "Reason can be at most 500 characters — shorten it.",
+        "fixRefRequired": "Fix reference is required — enter the commit or PR reference.",
+        "fixRefTooLong": "Fix reference can be at most 200 characters — shorten it.",
+        "versionTooLong": "Adapter version can be at most 32 characters — shorten it.",
+        "failed": "The decision could not be saved — try again."
+      },
+      "confirm": {
+        "title": "Mark the finding as “{action}”?",
+        "description": "{integration} · {subject}. The decision is written to the audit log.",
+        "closes": "The finding closes.",
+        "regression": "If the same signature is seen again after 24 hours, the finding reopens."
+      },
+      "success": "Decision saved: {status}."
+    }
+  },
   "shell": {
     "section": {
       "general": "General",

@@ -151,3 +151,40 @@ export const CONFIG_REVISION_STATUS_TONE: Record<ConfigRevisionStatus, StatusMap
   superseded: { tone: 'neutral', labelKey: 'status.configRevision.superseded' },
   discarded: { tone: 'neutral', labelKey: 'status.configRevision.discarded' },
 }
+
+// ---- ADR-0018 Karar 2 — entegrasyon uyum bulgusu (`IntegrationFinding`) şiddeti ve yaşam döngüsü durumu.
+// Şiddet: critical/high → danger (ikisi de "müşteriyi etkileyebilir", ayrım METİNDE); medium → warning;
+// low → info; info → neutral (ADR: `doc` bulguları her zaman `info`, alarm üretmez). Durum: açık üçlü
+// (new/triaged/accepted) dikkat ister; kapalı üçlüden yalnız `fixed` başarıdır, `wontfix`/`false_positive` nötr. ----
+export type FindingSeverity = 'critical' | 'high' | 'medium' | 'low' | 'info'
+
+export const FINDING_SEVERITY_TONE: Record<FindingSeverity, StatusMapEntry> = {
+  critical: { tone: 'danger', labelKey: 'status.findingSeverity.critical' },
+  high: { tone: 'danger', labelKey: 'status.findingSeverity.high' },
+  medium: { tone: 'warning', labelKey: 'status.findingSeverity.medium' },
+  low: { tone: 'info', labelKey: 'status.findingSeverity.low' },
+  info: { tone: 'neutral', labelKey: 'status.findingSeverity.info' },
+}
+
+export type FindingStatus = 'new' | 'triaged' | 'accepted' | 'fixed' | 'wontfix' | 'false_positive'
+
+export const FINDING_STATUS_TONE: Record<FindingStatus, StatusMapEntry> = {
+  new: { tone: 'warning', labelKey: 'status.findingStatus.new' },
+  triaged: { tone: 'info', labelKey: 'status.findingStatus.triaged' },
+  accepted: { tone: 'info', labelKey: 'status.findingStatus.accepted' },
+  fixed: { tone: 'success', labelKey: 'status.findingStatus.fixed' },
+  wontfix: { tone: 'neutral', labelKey: 'status.findingStatus.wontfix' },
+  false_positive: { tone: 'neutral', labelKey: 'status.findingStatus.falsePositive' },
+}
+
+// ---- ADR-0017 `JobState.lastStatus` (zamanlanmış iş koşu sonucu; ADR-0018 uyum konsolunda son probe turu).
+// Karar 3.3 "canlı iş-durumu paleti" ile aynı ilke: tamamlandı → success, kısmi → warning, hatalı → danger;
+// `skipped` (ör. canlı probe kimlikleri yok) hata değil → neutral. ----
+export type JobRunOutcome = 'ok' | 'partial' | 'failed' | 'skipped'
+
+export const JOB_RUN_OUTCOME_TONE: Record<JobRunOutcome, StatusMapEntry> = {
+  ok: { tone: 'success', labelKey: 'status.jobRunOutcome.ok' },
+  partial: { tone: 'warning', labelKey: 'status.jobRunOutcome.partial' },
+  failed: { tone: 'danger', labelKey: 'status.jobRunOutcome.failed' },
+  skipped: { tone: 'neutral', labelKey: 'status.jobRunOutcome.skipped' },
+}

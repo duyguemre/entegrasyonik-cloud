@@ -80,7 +80,8 @@
       "adminClientDetail": "Mağaza Detayı",
       "adminTicketList": "Destek Yönetimi",
       "adminOperations": "Platform İşlemleri",
-      "adminSystemManagement": "Sistem Yönetimi"
+      "adminSystemManagement": "Sistem Yönetimi",
+      "adminIntegrationCompliance": "Entegrasyon Uyum"
     },
     "integrations": {
       "integrations": "Entegrasyonlar",
@@ -1090,6 +1091,202 @@
       "published": "Yayında",
       "superseded": "Yerini Aldı",
       "discarded": "Atıldı"
+    },
+    "findingSeverity": {
+      "critical": "Kritik",
+      "high": "Yüksek",
+      "medium": "Orta",
+      "low": "Düşük",
+      "info": "Bilgi"
+    },
+    "findingStatus": {
+      "new": "Yeni",
+      "triaged": "Triyajda",
+      "accepted": "Kabul edildi",
+      "fixed": "Düzeltildi",
+      "wontfix": "Düzeltilmeyecek",
+      "falsePositive": "Yanlış pozitif"
+    },
+    "jobRunOutcome": {
+      "ok": "Başarılı",
+      "partial": "Kısmi",
+      "failed": "Başarısız",
+      "skipped": "Atlandı"
+    }
+  },
+  "integrationCompliance": {
+    "title": "Entegrasyon uyum",
+    "section": "Yönetim",
+    "description": "Entegrasyon API'lerindeki değişiklik belirtilerini izleyin, triyaj edin ve kararla kapatın.",
+    "searchPlaceholder": "Konu anahtarı veya entegrasyon ara",
+    "filters": {
+      "integration": "Entegrasyon",
+      "category": "Kategori",
+      "kind": "Tür",
+      "severity": "Şiddet",
+      "status": "Durum",
+      "chip": "{label}: {value}"
+    },
+    "category": {
+      "marketplace": "Pazaryeri",
+      "ecommerce": "E-ticaret",
+      "erp": "ERP",
+      "einvoice": "E-fatura",
+      "shipping": "Kargo"
+    },
+    "kind": {
+      "schema": "Şema",
+      "unknown_enum": "Bilinmeyen değer",
+      "endpoint": "Uç nokta",
+      "version": "Sürüm",
+      "deprecation": "Kullanımdan kaldırma",
+      "auth": "Kimlik doğrulama",
+      "ratelimit": "Oran sınırı",
+      "doc": "Doküman"
+    },
+    "source": {
+      "guard": "Sözleşme bekçisi",
+      "probe": "Probe",
+      "source_monitor": "Kaynak izleme",
+      "manual": "Manuel",
+      "agent": "Ajan"
+    },
+    "summary": {
+      "title": "Entegrasyon özeti",
+      "description": "Adaptör sürümü, son manuel doğrulama ve şiddete göre açık bulgular. Bir karta tıklayarak listeyi o entegrasyona süzün.",
+      "adapterVersion": "Adaptör sürümü",
+      "lastVerifiedAt": "Son doğrulama",
+      "notVerified": "Kayıt yok",
+      "openFindings": "Açık bulgular",
+      "noOpen": "Açık bulgu yok",
+      "openCount": "{n} açık",
+      "severityCount": "{label} {n}",
+      "filterBy": "{name}: bulguları süz",
+      "filterActive": "{name}: süzme etkin, kaldırmak için tıklayın",
+      "loadError": "Entegrasyon özeti yüklenemedi — tekrar deneyin.",
+      "empty": "Katalogda tanımlı bir entegrasyon bulunamadı."
+    },
+    "probe": {
+      "title": "Son probe turu",
+      "scopeNote": "Probe tüm entegrasyonlar için tek bir platform turu olarak koşar; bu sonuç entegrasyon başına ayrı değildir.",
+      "never": "Henüz kayıtlı bir probe turu yok.",
+      "notFinished": "Henüz tamamlanmadı",
+      "processed": "{n} probe işlendi",
+      "failed": "{n} başarısız"
+    },
+    "table": {
+      "title": "Bulgular",
+      "ariaLabel": "Uyum bulguları tablosu",
+      "integration": "Entegrasyon",
+      "subject": "Konu",
+      "severity": "Şiddet",
+      "status": "Durum",
+      "confirmed": "Doğrulama",
+      "tenants": "Tenant",
+      "occurrences": "Gözlem",
+      "lastSeen": "Son görülme",
+      "openDetail": "{subject} detayını aç",
+      "count": "{n} bulgu"
+    },
+    "confirmed": {
+      "yes": "Doğrulandı",
+      "no": "Onay bekliyor"
+    },
+    "empty": {
+      "title": "Şu an bilinen bir uyum sorunu yok",
+      "message": "İzleme aktif — yeni bulgular sözleşme bekçisi, probe ve kaynak izleme tarafından buraya eklenir.",
+      "note": "Boş liste yalnızca izlenen sözleşmelerde ve kaynaklarda sorun görülmediği anlamına gelir; izlenmeyen uçlardaki değişiklikleri kapsamaz."
+    },
+    "emptyFiltered": {
+      "title": "Sonuç yok",
+      "message": "Seçili filtrelere veya aramaya uyan bulgu yok.",
+      "action": "Filtreleri temizle"
+    },
+    "loadError": "Uyum bulguları yüklenemedi — bağlantınızı kontrol edip tekrar deneyin.",
+    "detail": {
+      "identity": "{integration} · {kind}",
+      "loadError": "Bulgu ayrıntısı yüklenemedi — tekrar deneyin.",
+      "sections": {
+        "overview": "Özet",
+        "evidence": "Kanıt",
+        "impact": "Etki",
+        "recommendation": "Öneri",
+        "decision": "Karar",
+        "record": "Karar kaydı"
+      },
+      "fields": {
+        "subjectKey": "Konu anahtarı",
+        "kind": "Tür",
+        "source": "Kaynak",
+        "category": "Kategori",
+        "confirmed": "Doğrulama",
+        "occurrences": "Gözlem sayısı",
+        "firstSeen": "İlk görülme",
+        "lastSeen": "Son görülme",
+        "adapterVersionSeen": "Görüldüğü adaptör sürümü",
+        "fixedInAdapterVersion": "Düzeltildiği adaptör sürümü",
+        "fixRef": "Düzeltme referansı",
+        "decidedBy": "Karar veren",
+        "decidedAt": "Karar zamanı",
+        "notes": "Gerekçe",
+        "closedAt": "Kapanış"
+      },
+      "evidence": {
+        "redactedNote": "Kanıt redakte edilmiştir: yalnız anahtar yolları, tip adları, kod değerleri ve başlık adları saklanır; gövde değeri veya müşteri verisi tutulmaz.",
+        "paths": "Anahtar yolları",
+        "types": "Tip adları",
+        "enumValue": "Bilinmeyen değer",
+        "httpStatus": "HTTP durumu",
+        "headerNames": "Başlık adları",
+        "sunsetAt": "Sunset tarihi",
+        "docDiff": "Doküman farkı",
+        "fingerprint": "Şekil parmak izi",
+        "none": "Bu bulgu için kanıt kaydı yok."
+      },
+      "impact": {
+        "tenants": "Etkilenen tenant sayısı",
+        "tenantsNote": "Tenant kimlikleri bu ekranda gösterilmez; kayıt en fazla 100 tenant tutar."
+      },
+      "recommendationNone": "Bu bulgu için öneri kaydı yok.",
+      "recordNone": "Henüz karar verilmedi."
+    },
+    "decision": {
+      "description": "Kararınız denetim kaydına yazılır.",
+      "actionLabel": "Eylem",
+      "actions": {
+        "triage": "Triyaja al",
+        "accept": "Kabul et",
+        "wontfix": "Düzeltilmeyecek",
+        "false_positive": "Yanlış pozitif",
+        "fixed": "Düzeltildi"
+      },
+      "hints": {
+        "triage": "İncelemeye alındı; henüz karar verilmedi.",
+        "accept": "Gerçek bir değişiklik; düzeltme planlanacak.",
+        "wontfix": "Gerçek ama düzeltilmeyecek; bulgu kapanır.",
+        "false_positive": "Gerçek bir değişiklik değil; bulgu kapanır.",
+        "fixed": "Adaptör düzeltildi; düzeltme referansı zorunlu, bulgu kapanır."
+      },
+      "reason": "Gerekçe (isteğe bağlı)",
+      "fixRef": "Düzeltme referansı (commit/PR) *",
+      "fixRefHint": "Düzeltmeyi içeren commit veya PR referansı.",
+      "fixedInAdapterVersion": "Düzeltildiği adaptör sürümü (isteğe bağlı)",
+      "submit": "Kararı uygula",
+      "errors": {
+        "actionRequired": "Bir eylem seçin.",
+        "reasonTooLong": "Gerekçe en fazla 500 karakter olabilir — kısaltın.",
+        "fixRefRequired": "Düzeltme referansı zorunlu — commit veya PR referansını girin.",
+        "fixRefTooLong": "Düzeltme referansı en fazla 200 karakter olabilir — kısaltın.",
+        "versionTooLong": "Adaptör sürümü en fazla 32 karakter olabilir — kısaltın.",
+        "failed": "Karar kaydedilemedi — tekrar deneyin."
+      },
+      "confirm": {
+        "title": "Bulgu “{action}” olarak işaretlensin mi?",
+        "description": "{integration} · {subject}. Karar denetim kaydına yazılır.",
+        "closes": "Bulgu kapanır.",
+        "regression": "Aynı imza 24 saat sonra tekrar görülürse bulgu yeniden açılır."
+      },
+      "success": "Karar kaydedildi: {status}."
     }
   },
   "shell": {
