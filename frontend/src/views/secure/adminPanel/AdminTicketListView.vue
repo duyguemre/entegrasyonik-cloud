@@ -2,82 +2,67 @@
   <div class="admin-view ticket-list-view d-flex flex-column">
     <LoadingComponent :attach="dialogAttach" ref="loadingComponentRef"></LoadingComponent>
 
-    <EkConfirmDialog
-      v-model="confirmDialog.show"
-      :title="confirmDialog.title"
-      :description="confirmDialog.description"
-      confirm-label="Sil"
-      danger
-      :loading="deleting"
-      @confirm="confirmDialog.onConfirm"
-      @cancel="confirmDialog.show = false"
-    />
+    <ConfirmationDialogComponent v-model="confirmDialog.show" :title="confirmDialog.title"
+      :subtitle="confirmDialog.subtitle" :message="confirmDialog.message" :icon="confirmDialog.icon"
+      :color="confirmDialog.color" :confirm-text="confirmDialog.confirmText" @confirm="confirmDialog.onConfirm"
+      maxWidth="400px" />
 
-    <div class="pa-4 pb-0">
-      <EkPageHeader
-        section="Yönetim"
-        title="Destek Yönetimi"
-        description="Müşteri taleplerini ve teknik destek biletlerini buradan yönetin ve cevaplayın."
-      />
+    <!-- ek-pattern-exception: EkListPage/EkDataTable — talep listesi sunucu-taraflı sayfalama/sıralama yapar
+         (`@update:options` ile limit/sortBy alır) ve admin-tickets.spec.ts `thead button:has(.mdi-plus)` ile
+         `tbody tr` kancalarını sabitliyor; EkDataTable istemci-taraflıdır. Sunucu-taraflı varyant gelince (Aşama C) geçilecek. -->
+    <EkPageHeader section="Yönetim" title="Destek Yönetimi"
+      description="Talepleri filtreleyin, yanıtlayın veya yeni bir destek süreci başlatın." />
+
+    <!-- Bilgi bandı -->
+    <div class="info-banner" role="note">
+      <v-icon size="20" class="info-banner__icon" aria-hidden="true">mdi-information-outline</v-icon>
+      <div class="info-banner__text">
+        <span class="info-banner__title">DESTEK MERKEZİ ANALİZİ</span>
+        <span class="info-banner__body">Müşteri talepleri ve teknik destek biletlerini buradan
+          yönetebilir ve cevaplayabilirsiniz.</span>
+      </div>
     </div>
 
-    <!-- Bilgi bandı: spec çapası metin "DESTEK MERKEZİ ANALİZİ" büyük harf AYNEN kalır (Karar 1.2
-         istisnası — üst etiket/overline stiliyle), açıklama cümle düzeninde. -->
-    <div class="pa-4 pb-0">
-      <v-alert border="start" density="compact" color="warning" variant="tonal" class="info-banner">
-        <template v-slot:prepend>
-          <v-icon size="20">mdi-information-outline</v-icon>
-        </template>
-        <div class="d-flex flex-column">
-          <span class="info-banner-overline">DESTEK MERKEZİ ANALİZİ</span>
-          <span class="info-banner-text">Müşteri talepleri ve teknik destek biletlerini buradan yönetebilir ve cevaplayabilirsiniz.</span>
-        </div>
-      </v-alert>
-    </div>
-
-    <!-- Arama ve filtreler -->
-    <div class="d-flex pa-4 pt-2 pb-0 align-center flex-wrap search-section">
-      <v-text-field clearable label="Talep No, Konu veya Mesaj Ara" v-model="search"
-        class="flex-grow-1" hide-details @keyup.enter.stop="loadTickets(true)"
+    <!-- Arama ve filtre -->
+    <div class="d-flex align-center flex-wrap search-section">
+      <v-text-field clearable density="compact" label="Talep No, Konu veya Mesaj Ara" variant="outlined" v-model="search"
+        class="customTextField flex-grow-1" hide-details @keyup.enter.stop="loadTickets(true)"
         @click:clear="search = ''; loadTickets(true)">
         <template #append-inner>
           <v-btn icon variant="text" density="comfortable" @click.stop="loadTickets(true)"
-            aria-label="Talepleri ara"><v-icon>mdi-magnify</v-icon></v-btn>
+            aria-label="Talepleri ara">
+            <v-icon>mdi-magnify</v-icon>
+          </v-btn>
         </template>
       </v-text-field>
 
       <div class="d-flex align-center filter-group">
         <div class="status-select-wrap">
-          <v-select v-model="activeTab" :items="statusOptions" item-title="title" item-value="id"
-            class="status-select-premium" aria-label="Talep durumu filtresi">
+          <v-select v-model="activeTab" :items="statusOptions" item-title="title" item-value="id" variant="outlined"
+            density="compact" hide-details class="customTextField status-select-premium" aria-label="Talep durumu filtresi">
             <template v-slot:prepend-inner>
-              <v-icon size="18" color="content-muted">mdi-filter-outline</v-icon>
+              <v-icon size="18">mdi-filter-outline</v-icon>
             </template>
           </v-select>
         </div>
 
-        <v-btn icon variant="outlined" density="comfortable" @click="loadTickets(true)"
-          :loading="loading" aria-label="Talepleri yenile">
+        <v-btn @click="loadTickets(true)" icon variant="outlined" density="comfortable" :loading="loading"
+          aria-label="Talepleri yenile">
           <v-icon>mdi-refresh</v-icon>
           <v-tooltip activator="parent" location="top">Yenile</v-tooltip>
         </v-btn>
       </div>
     </div>
 
-    <!-- ek-pattern-exception: EkDataTable — e2e/specs/admin-tickets.spec.ts satır 98/114 sıralı DOM
-         kancalarına bağlıdır (`thead button:has(.mdi-plus)`, `.status-select-premium`, `tbody tr`
-         sayımı); bu kancalar ADR-0015 Ek A'da AÇIKÇA korunan yapılardır ("tbody tr / thead button
-         yapıları"). `EkDataTable` başlık hücrelerine özel slot SUNMUYOR (yalnızca `cell-<key>`),
-         bu yüzden "+" düğmesini `<thead>` içine taşıyamıyoruz — hedef aşama: spec kancası
-         `data-testid`'e taşınınca (BACKLOG), bu tablo `EkDataTable`'a geçirilecek. -->
-    <div class="table-wrapper mt-2">
+    <!-- Tablo -->
+    <div class="table-wrapper">
       <v-data-table-server v-model:sort-by="sortBy" :items="tickets" :items-length="pagination.total" :loading="loading"
-        :headers="headers" class="pa-0 ma-0 desktop-table" fixed-header aria-label="Destek talepleri tablosu"
+        :headers="headers" class="pa-0 ma-0 custom-table desktop-table" fixed-header aria-label="Destek talepleri tablosu"
         @update:options="onOptionsUpdate">
 
         <template v-slot:header.actions>
           <div class="d-flex justify-end">
-            <v-btn icon variant="text" density="comfortable" color="primary" @click="openCreateDialog()"
+            <v-btn @click="openCreateDialog()" color="primary" icon density="comfortable"
               aria-label="Yeni talep başlat">
               <v-icon>mdi-plus</v-icon>
               <v-tooltip activator="parent" location="top">Yeni Talep Başlat</v-tooltip>
@@ -86,31 +71,38 @@
         </template>
 
         <template v-slot:item="{ item }: any">
-          <tr :key="item._id" @click="openTicket(item)" class="cursor-pointer">
-            <td class="cell-muted">TKT-{{ item.ticketNumber }}</td>
+          <tr :key="item._id" @click="openTicket(item)" class="row-hover cursor-pointer">
+            <td class="ticket-no">TKT-{{ item.ticketNumber }}</td>
             <td>
               <div class="d-flex flex-column">
-                <span class="cell-title">{{ item.subject }}</span>
-                <span class="cell-overline">{{ item.type }}</span>
+                <span class="ticket-subject-cell">{{ item.subject }}</span>
+                <span class="ticket-type-cell">{{ item.type }}</span>
               </div>
             </td>
             <td>
               <EkStatusChip tone="neutral" :label="`ID: ${item.clientId}`" />
             </td>
             <td>
-              <EkStatusChip :tone="priorityTone(item.priority)" :label="item.priority" />
+              <EkStatusChip :tone="getPriorityTone(item.priority)" :label="item.priority" />
             </td>
             <td class="text-left">
-              <EkStatusChip :tone="statusTone(item.status)" :label="$t(statusEntry(item.status).labelKey)" />
+              <EkStatusChip :tone="getStatusTone(item.status)" :label="formatStatus(item.status)" />
             </td>
             <td>
               <div class="d-flex flex-column">
-                <span class="cell-snippet line-clamp-1">{{ item.lastMessageSnippet || 'Mesaj yok' }}</span>
-                <span class="cell-time">{{ formatTime(item.lastMessageAt) }}</span>
+                <span class="last-message line-clamp-1">
+                  {{ item.lastMessageSnippet || 'Mesaj yok' }}
+                </span>
+                <span class="last-message-time">{{ formatDateTime(item.lastMessageAt) }}</span>
               </div>
             </td>
             <td>
-              <div class="d-flex justify-end">
+              <div class="d-flex justify-end ga-2">
+                <v-btn icon variant="text" density="comfortable" @click.stop="openTicket(item)"
+                  :aria-label="`TKT-${item.ticketNumber} talebini yanıtla`">
+                  <v-icon>mdi-message-reply-text-outline</v-icon>
+                  <v-tooltip activator="parent" location="top">Cevapla</v-tooltip>
+                </v-btn>
                 <v-btn icon variant="text" density="comfortable"
                   @click.stop="confirmDelete(item)" :aria-label="`TKT-${item.ticketNumber} talebini sil`">
                   <v-icon>mdi-delete-sweep-outline</v-icon>
@@ -123,37 +115,35 @@
 
         <template v-slot:bottom>
           <div class="sticky-pagination-wrapper">
-            <EkPagination :page="pagination.page" :page-size="pagination.limit" :total="pagination.total"
-              @update:page="onPageChange" @update:page-size="onPageSizeChange" />
+            <PaginationComponent v-model="pagination.page"
+              :totalNumberOfPages="Math.ceil(pagination.total / pagination.limit)" :pagination="pagination"
+              :static="true" @setPage="loadTickets" />
           </div>
         </template>
 
         <template v-slot:no-data>
-          <EkEmptyState v-if="!loading" variant="no-results" title="Talep bulunamadı."
-            message="Arama kriterlerinize uygun destek talebi yok." />
+          <EkEmptyState v-if="!loading" variant="no-data" title="Talep bulunamadı."
+            message="Filtreyi değiştirin veya yeni bir destek talebi başlatın." />
         </template>
       </v-data-table-server>
     </div>
 
     <AdminChatComponent v-model="chatDialog" :ticket="selectedTicket" @reply="handleReply" />
 
-    <!-- ek-pattern-exception: EkFormDialog — e2e/specs/admin-tickets.spec.ts:118
-         `getByRole('button', { name: /TALEBİ OLUŞTUR/ })` (i bayraksız regex) DOM'da birebir metin
-         ister; `EkFormDialog`'un onay düğmesi sabit "Kaydet" metnine sahip (özelleştirilemiyor).
-         `ActionDialogComponent` (mevcut, `confirmText` prop'u destekliyor) KORUNDU. -->
     <ActionDialogComponent v-model="createDialog.show" title="Yeni Destek Talebi Başlat"
-      subtitle="Belirli bir dükkan için yeni bir destek süreci başlatın" icon="mdi-store-edit-outline" color="primary"
-      confirmText="TALEBİ OLUŞTUR" cancelText="İptal" :isLoading="createDialog.loading" @confirm="doCreateTicket"
+      subtitle="Belirli bir dükkan için yeni bir destek süreci başlatın" icon="mdi-store-edit-outline" color="success"
+      confirmText="TALEBİ OLUŞTUR" cancelText="İPTAL" :isLoading="createDialog.loading" @confirm="doCreateTicket"
       @cancel="createDialog.show = false" attach=".ticket-list-view" maxWidth="600px">
-      <div class="pa-2 d-flex flex-column ga-4">
+      <div class="pa-2">
         <v-autocomplete v-model="createDialog.targetClientId" :items="clients" item-title="name" item-value="clientId"
-          label="Hedef Mağaza (Dükkan)" prepend-inner-icon="mdi-store-outline" hide-details></v-autocomplete>
+          label="Hedef Mağaza (Dükkan)" variant="outlined" density="compact" class="customTextField mb-4"
+          prepend-inner-icon="mdi-store-outline" hide-details></v-autocomplete>
 
-        <v-text-field v-model="createDialog.subject" label="Talep Konusu"
-          prepend-inner-icon="mdi-format-title" hide-details></v-text-field>
+        <v-text-field v-model="createDialog.subject" label="Talep Konusu" variant="outlined" density="compact"
+          class="customTextField mb-4" prepend-inner-icon="mdi-format-title" hide-details></v-text-field>
 
-        <v-textarea v-model="createDialog.content" label="İlk Mesaj İçeriği"
-          prepend-inner-icon="mdi-text-box-outline" rows="4" hide-details></v-textarea>
+        <v-textarea v-model="createDialog.content" label="İlk Mesaj İçeriği" variant="outlined" density="compact"
+          class="customTextField" prepend-inner-icon="mdi-text-box-outline" rows="4" hide-details></v-textarea>
       </div>
     </ActionDialogComponent>
   </div>
@@ -163,17 +153,16 @@
 import { ref, reactive, watch, onMounted } from 'vue';
 import useRestApi from '@/composables/restapi';
 import AdminChatComponent from '@/components/adminPanel/AdminChatComponent.vue';
+import PaginationComponent from '@/components/PaginationComponent.vue';
 import LoadingComponent from '@/components/LoadingComponent.vue';
 import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue';
+import ConfirmationDialogComponent from '@/components/layout/ConfirmationDialogComponent.vue';
+import { useSnackbarStore } from '@/stores/snackbarStore';
 import EkPageHeader from '@/components/ds/EkPageHeader.vue';
-import EkConfirmDialog from '@/components/ds/EkConfirmDialog.vue';
 import EkStatusChip from '@/components/ds/EkStatusChip.vue';
 import EkEmptyState from '@/components/ds/EkEmptyState.vue';
-import EkPagination from '@/components/ds/EkPagination.vue';
 import { formatDateTime } from '@/composables/format';
-import { TICKET_STATUS_TONE, type StatusMapEntry, type StatusTone } from '@/design/status-map';
-import { TicketStatusEnum } from '@/types/TicketTypes';
-import { useSnackbarStore } from '@/stores/snackbarStore';
+import type { StatusTone } from '@/design/status-map';
 
 const restApi = useRestApi();
 const snackbarStore = useSnackbarStore();
@@ -181,7 +170,6 @@ const loadingComponentRef = ref<any>(null);
 const dialogAttach = ref(".ticket-list-view");
 
 const loading = ref(false);
-const deleting = ref(false);
 const tickets = ref<any[]>([]);
 const clients = ref<any[]>([]);
 const activeTab = ref('ALL');
@@ -204,8 +192,9 @@ const createDialog = reactive({
   content: ''
 });
 
-const confirmDialog = reactive<{ show: boolean; description: string; title: string; onConfirm: () => void }>({
-  show: false, title: 'Talebi sil', description: '', onConfirm: () => { },
+const confirmDialog = reactive({
+  show: false, title: '', subtitle: '', message: '', icon: '', color: 'error', confirmText: '',
+  onConfirm: () => { }
 });
 
 const sortBy = ref<any[]>([{ key: 'lastMessageAt', order: 'desc' }]);
@@ -223,7 +212,7 @@ const headers: any = [
   { title: 'ÖNCELİK', key: 'priority', align: 'start', sortable: true, width: '120px' },
   { title: 'DURUM', key: 'status', align: 'start', sortable: true, width: '120px' },
   { title: 'SON MESAJ', key: 'lastMessageAt', align: 'start', sortable: true, width: '180px' },
-  { title: '', key: 'actions', align: 'end', sortable: false, width: '80px' },
+  { title: '', key: 'actions', align: 'end', sortable: false, width: '100px' },
 ];
 
 async function loadTickets(resetPage = false) {
@@ -266,16 +255,6 @@ function onOptionsUpdate(options: any) {
   sortBy.value = options.sortBy;
   pagination.limit = options.itemsPerPage;
   loadTickets();
-}
-
-function onPageChange(page: number) {
-  pagination.page = page;
-  loadTickets();
-}
-
-function onPageSizeChange(size: number) {
-  pagination.limit = size;
-  loadTickets(true);
 }
 
 watch(activeTab, () => loadTickets(true));
@@ -328,7 +307,7 @@ async function handleReply({ ticketId, content }: any) {
 }
 
 async function doDelete(ticket: any) {
-  deleting.value = true;
+  loading.value = true;
   try {
     const res = await restApi.post('AdminService/deleteTicket', { ticketId: ticket._id });
     if (res?.success) {
@@ -336,36 +315,46 @@ async function doDelete(ticket: any) {
       loadTickets();
     }
   } finally {
-    deleting.value = false;
+    loading.value = false;
     confirmDialog.show = false;
   }
 }
 
 function confirmDelete(ticket: any) {
-  confirmDialog.title = `'TKT-${ticket.ticketNumber}' silinsin mi?`;
-  confirmDialog.description = 'Bu işlem geri alınamaz; talep ve mesaj geçmişi kalıcı olarak silinir.';
+  confirmDialog.title = 'Talebi Sil';
+  confirmDialog.message = `TKT-${ticket.ticketNumber} numaralı talebi silmek istediğinizden emin misiniz?`;
+  confirmDialog.icon = 'mdi-delete-alert';
+  confirmDialog.color = 'error';
   confirmDialog.onConfirm = () => doDelete(ticket);
   confirmDialog.show = true;
 }
 
-// Karar 3.3 — durum kodu status-map.ts TEK KAYNAĞINDAN okunur (ekran renk seçmez).
-function statusEntry(status: string): StatusMapEntry {
-  return TICKET_STATUS_TONE[status as TicketStatusEnum] ?? { tone: 'neutral', labelKey: 'status.ticket.closed' };
-}
-function statusTone(status: string): StatusTone {
-  return statusEntry(status).tone;
-}
-
-// Öncelik (priority), status-map.ts'in kapsadığı durum ailelerinden biri DEĞİL — talebe özgü, yerel
-// bir ton eşlemesidir (bkz. AdminChatComponent.vue'daki AYNI eşleme).
-const PRIORITY_TONE: Record<string, StatusTone> = {
-  URGENT: 'danger', HIGH: 'warning', MEDIUM: 'info', LOW: 'neutral',
-};
-function priorityTone(priority: string): StatusTone {
-  return PRIORITY_TONE[priority] ?? 'neutral';
+function formatStatus(status: string) {
+  const mapping: any = {
+    'OPEN': 'AÇIK',
+    'IN_PROGRESS': 'İŞLEMDE',
+    'RESOLVED': 'ÇÖZÜLDÜ'
+  };
+  return mapping[status] || status;
 }
 
-const formatTime = (date: any) => date ? formatDateTime(date) : '—';
+function getStatusTone(status: string): StatusTone {
+  switch (status) {
+    case 'OPEN': return 'danger';
+    case 'IN_PROGRESS': return 'warning';
+    case 'RESOLVED': return 'success';
+    default: return 'neutral';
+  }
+}
+
+function getPriorityTone(priority: string): StatusTone {
+  switch (priority) {
+    case 'URGENT': return 'danger';
+    case 'HIGH': return 'warning';
+    case 'LOW': return 'neutral';
+    default: return 'info';
+  }
+}
 
 onMounted(() => {
   loadTickets();
@@ -381,8 +370,41 @@ onMounted(() => {
   right: 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  background: var(--ek-color-background);
+  overflow-y: auto;
+  padding: var(--ek-space-6);
+  gap: var(--ek-space-4);
+  background-color: var(--ek-color-surface-muted);
+}
+
+.info-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-3);
+  padding: var(--ek-space-3) var(--ek-space-4);
+  background: var(--ek-color-warning-subtle);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-lg);
+}
+
+.info-banner__icon {
+  color: var(--ek-color-warning);
+}
+
+.info-banner__text {
+  display: flex;
+  flex-direction: column;
+}
+
+.info-banner__title {
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-semibold);
+  letter-spacing: 0.04em;
+  color: var(--ek-color-content-strong);
+}
+
+.info-banner__body {
+  font-size: var(--ek-font-size-xs);
+  color: var(--ek-color-content-default);
 }
 
 .search-section {
@@ -399,9 +421,12 @@ onMounted(() => {
 }
 
 .table-wrapper {
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+  overflow: hidden;
   flex-grow: 1;
   position: relative;
-  min-height: 0;
+  min-height: 320px;
 }
 
 .desktop-table {
@@ -421,34 +446,15 @@ onMounted(() => {
   border-top: 1px solid var(--ek-color-border-default);
 }
 
-/* A-yaması bulgusu (B3): `EkPagination`'ın sayfa-başına seçicisinin yüzen etiketi Vuetify
-   varsayılan rengiyle (~4,29:1) render oluyor, AA'nın (4,5:1) altında kalıyor — `ds/**`
-   dokunulmaz olduğu için burada, YEREL olarak `content-default`'a bağlandı (BACKLOG'a A-yaması
-   olarak yazıldı: EkPagination.vue'nun kendisi düzeltilmeli, tüm tüketicileri etkiliyor). */
-:deep(.ek-pagination__page-size .v-field-label) {
-  color: var(--ek-color-content-default) !important;
-  opacity: 1 !important;
+.row-hover {
+  transition: background-color var(--ek-duration-base) var(--ek-easing-standard);
+
+  &:hover {
+    background-color: color-mix(in srgb, var(--ek-color-surface-sunken) 60%, transparent) !important;
+  }
 }
 
-.info-banner {
-  border-color: var(--ek-color-warning) !important;
-}
-
-.info-banner-overline {
-  font-size: var(--ek-font-size-xs);
-  font-weight: var(--ek-font-weight-semibold);
-  letter-spacing: 0.04em;
-  color: var(--ek-color-content-muted);
-  line-height: 1.4;
-}
-
-.info-banner-text {
-  font-size: var(--ek-font-size-xs);
-  font-weight: var(--ek-font-weight-medium);
-  color: var(--ek-color-content-muted);
-}
-
-// Tablo başlık metni: global başlık zemininde AA kontrastı için `content-default`.
+// Tablo başlık metni: `content-default` (slate-700) — tablo başlık zemininde AA (4,5:1).
 :deep(.v-data-table-header__content) {
   span {
     font-size: var(--ek-font-size-xs) !important;
@@ -459,34 +465,33 @@ onMounted(() => {
 .status-select-premium :deep(.v-field__input) {
   font-size: var(--ek-font-size-xs) !important;
   font-weight: var(--ek-font-weight-semibold) !important;
+  text-transform: uppercase;
 }
 
-.cell-muted {
-  color: var(--ek-color-content-muted);
+// Metin rolleri: `content-subtle` (slate-400) metin için AA'yı geçemez → `content-muted`.
+.ticket-no {
   font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-muted);
 }
 
-.cell-title {
+.ticket-subject-cell {
   font-size: var(--ek-font-size-sm);
   font-weight: var(--ek-font-weight-semibold);
   color: var(--ek-color-content-strong);
 }
 
-.cell-overline {
+.ticket-type-cell {
   font-size: var(--ek-font-size-xs);
-  font-weight: var(--ek-font-weight-medium);
-  color: var(--ek-color-content-muted);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  color: var(--ek-color-content-muted);
 }
 
-.cell-snippet {
+.last-message {
   font-size: var(--ek-font-size-xs);
-  font-weight: var(--ek-font-weight-medium);
-  color: var(--ek-color-neutral);
+  color: var(--ek-color-content-default);
 }
 
-.cell-time {
+.last-message-time {
   font-size: var(--ek-font-size-xs);
   color: var(--ek-color-content-muted);
 }

@@ -192,6 +192,8 @@ export interface IApplicationDB {
     // ADR-0020 Karar 3.1 (Aşama B): sürümlü platform geçersiz kılmaları + yayın başlığı (poll edilen küçük belge).
     getIntegrationConfigRevisionModel(): any
     getIntegrationConfigHeadModel(): any
+    // ADR-0021 Karar 4 (Aşama A/D7): göç kaydı (`dev-tools/migrate.js`).
+    getSchemaMigrationModel(): any
 }
 
 

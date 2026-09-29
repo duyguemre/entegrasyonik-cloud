@@ -101,6 +101,10 @@ export interface CreateDraftInput {
     target: string;
     catalogVersion: string;
     createdBy: string;
+    /** Varsayılan `{kind:'manual'}`. ADR-0020 Karar 5 (Aşama D) — `proposeFromFinding` bir bulgudan açılan taslağı
+     *  `{kind:'finding', ref: findingId}` ile işaretler. VAR OLAN bir taslak varsa bu alan YOK SAYILIR (taslağın
+     *  origin'i İLK açanınkidir, ikinci çağıran onu DEĞİŞTİRMEZ). */
+    origin?: RevisionDoc['origin'];
     now?: () => Date;
 }
 
@@ -124,7 +128,7 @@ export async function getOrCreateDraft(models: RevisionModels, input: CreateDraf
             overrides: {},
             basedOnVersion: head.publishedVersion,
             catalogVersion: input.catalogVersion,
-            origin: { kind: 'manual' },
+            origin: input.origin ?? { kind: 'manual' },
             diff: [],
             createdBy: input.createdBy,
             createdAt: now,
@@ -332,4 +336,38 @@ export async function rollbackToVersion(models: RevisionModels, input: RollbackI
         publishedBy: input.createdBy,
         now: input.now,
     });
+}
+
+export interface SetIntakeInput {
+    target: string;
+    intake: HeadDoc['intake'];
+    /** `undefined` → dokunma; `null` → temizle (`$unset`); nesne → set eder. */
+    maintenance?: HeadDoc['maintenance'] | null;
+    now?: () => Date;
+}
+
+/**
+ * ADR-0020 Karar 3.8 (Aşama D) — kill-switch. `Heads` üzerinde DOĞRUDAN günceller; `IntegrationConfigRevisions`'a
+ * YENİ bir revizyon YARATMAZ ("`intake` değişikliği yayın akışının DIŞINDADIR", Karar 3.8 son paragraf — bu yüzden
+ * `publishDraft`in koşullu `basedOnVersion` yarış koruması burada YOKTUR, gerekmez: hedef başına TEK küçük belge,
+ * atomik `$set`/`$unset` yeterlidir, C23 dersi burada da geçerli: `publishedVersion` `upsert`te bile default'uyla
+ * her zaman sayısal kalır). Hedefin hiç `Head`i yoksa (hiç yayın yapılmamış bir entegrasyon/motor) `upsert` ile
+ * `publishedVersion:0` olarak yaratılır.
+ */
+export async function setIntakeState(models: RevisionModels, input: SetIntakeInput): Promise<HeadDoc> {
+    const now = (input.now ?? (() => new Date()))();
+    const set: Record<string, unknown> = { intake: input.intake, updatedAt: now };
+    const update: Record<string, unknown> = { $set: set };
+    if (input.maintenance === null) {
+        update.$unset = { maintenance: '' };
+    } else if (input.maintenance !== undefined) {
+        set.maintenance = input.maintenance;
+    }
+
+    const updated = await models.headModel.findOneAndUpdate(
+        { _id: input.target },
+        update,
+        { new: true, upsert: true, setDefaultsOnInsert: true },
+    ).lean();
+    return updated as HeadDoc;
 }

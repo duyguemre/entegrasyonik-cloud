@@ -1,12 +1,11 @@
 <template>
   <div class="categoryListView">
     <div class="workarea-scroll">
-
-      <v-row style="height:100%" class="mt-0 mb-0">
-        <v-col style="height:calc(100vh - 110px);position:relative">
+      <v-row class="mt-0 mb-0 cdv-row">
+        <v-col class="cdv-col">
           <CategoryListComponent v-model="isCategoriesListed" @openCategorySync="openCategorySync($event)" />
         </v-col>
-        <v-col style="height:calc(100vh - 110px);position:relative">
+        <v-col class="cdv-col">
           <CategorySyncComponent v-model="selectedCategory" />
         </v-col>
       </v-row>
@@ -104,21 +103,17 @@ const drawer = computed({
 </script>
 
 <style scoped>
-.navigation-scroll-container1::-webkit-scrollbar {
-  display: none !important
+/* ADR-0015 B5-2 — bu ekran içeriğini kapsam dışı kök bileşenlere (CategoryListComponent/
+   CategorySyncComponent) devrediyor; kendi görsel sorumluluğu yalnızca iki panelin tam
+   yükseklikte yan yana yerleşimi. (Önceki `.navigation-scroll-container1` bloğu şablonda
+   HİÇBİR yerde kullanılmıyordu — ölü CSS, literal renk içeriyordu, kaldırıldı; davranış
+   değişmedi.) 110px kabuk sekme/başlık şeridinin yüksekliği — ADR-0015 A3 kabuk sabiti. */
+.cdv-row {
+  height: 100%;
 }
 
-.navigation-scroll-container1 {
-  position: absolute;
-  transition: all .1s ease;
-  border-radius: 0px;
-  border-top: 0px solid #aaa;
-  overflow-y: scroll;
-  overflow-x: hidden;
-  bottom: 20px;
-  top: 10px;
-  left: 0px;
-  right: 50%;
-  width: auto;
+.cdv-col {
+  height: calc(100vh - 110px);
+  position: relative;
 }
 </style>

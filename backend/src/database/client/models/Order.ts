@@ -209,3 +209,8 @@ export const OrderSchema = new Schema<IOrderDocument>({
 });
 
 OrderSchema.index({ integrationCode: 1, externalOrderId: 1 }, { unique: true });
+// ADR-0021 Karar 3 D9 / DATA_MODEL_CONVENTIONS.md §12 "Sipariş listesi `Orders {internalStatus?, integrationCode?}`
+// sort `dates.orderDate`" -- getOrders/unifiedSearch liste+filtre+sıralama sorguları (order-service.ts, smart-service.ts).
+// Uygulama: backend/migrations/0002-d9-indexes-tenant.js.
+OrderSchema.index({ internalStatus: 1, 'dates.orderDate': -1 }, { name: 'internalStatus_1_dates.orderDate_-1' });
+OrderSchema.index({ integrationCode: 1, 'dates.orderDate': -1 }, { name: 'integrationCode_1_dates.orderDate_-1' });

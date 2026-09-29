@@ -1,8 +1,19 @@
 import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import IntegrationFactory from '@integration/modules/IntegrationFactory';
+import { ApplicationError } from '../Security'
 import { ClaimInternalStatusEnum } from '@interfaces/claim';
 import { containsRegex, normalizePagination } from '@utils/search';
+
+/**
+ * [MM-08 / ADR-0021 aynı desen] getClaims sıralama alanı izin listesi. `ClaimSchema` (Claim.ts) alanlarından,
+ * FE iade tablosunun (ClaimListView.vue) sıralanabilir başlıklarına ve mobil sıralama seçeneklerine karşılık gelir.
+ * `OrderService.getOrders` ile AYNI keyfi-alan-adı-enjeksiyonu riskini kapatır (BACKLOG "ADR-0021 Aşama A" AÇIK ucu).
+ */
+const CLAIM_SORT_FIELDS: readonly string[] = [
+    'claimedAt', 'externalClaimId', 'externalOrderId', 'integrationCode', 'internalStatus', 'type', 'totalRefundAmount',
+];
+const DEFAULT_CLAIM_SORT_FIELD = 'claimedAt';
 
 export default class ClaimService extends BaseApi implements IService {
 
@@ -31,9 +42,12 @@ export default class ClaimService extends BaseApi implements IService {
 
             if (sort && sort.field) {
                 direction = sort.direction === 'asc' ? 1 : -1;
+                if (typeof sort.field !== 'string' || !CLAIM_SORT_FIELDS.includes(sort.field)) {
+                    throw new ApplicationError('sort.field geçersiz: ' + CLAIM_SORT_FIELDS.join(', ') + ' değerlerinden biri olmalıdır.', 400);
+                }
                 sortBy[sort.field] = direction;
             } else {
-                sortBy.claimedAt = -1;
+                sortBy[DEFAULT_CLAIM_SORT_FIELD] = -1;
             }
 
             const filterQuery: any = {};

@@ -1,12 +1,11 @@
 <template>
 
-  <CardComponent icon="mdi-image-multiple-outline" title="Varyant Resimleri" :whiteBackground="true"
-    class="productVariantImagesComponent"
-    style="overflow-y:scroll;border:1px solid #ddd;height:calc(100vh - 110px)!important">
+  <CardComponent tabindex="0" icon="mdi-image-multiple-outline" title="Varyant Resimleri" :whiteBackground="true"
+    class="productVariantImagesComponent pvi-s1">
     <LoadingComponent attach=".productDefinitionView" ref="loadingComponentRef"></LoadingComponent>
     <template #header>
-      <v-btn style="border:1px solid #bbb;width:30px; opacity:.9;" @click="emits('close')" elevation="0"
-        min-width="0" color="white"><v-icon size="x-large" color="primary">mdi-close</v-icon></v-btn>
+      <v-btn aria-label="Kapat" @click="emits('close')" elevation="0"
+        min-width="0" color="white" class="pvi-s2"><v-icon size="x-large" color="primary">mdi-close</v-icon></v-btn>
     </template>
 
     <LoadingComponent attach=".productVariantImagesComponent" ref="loadingComponentRef"></LoadingComponent>
@@ -14,16 +13,15 @@
     <v-row no-gutters>
       <v-col class="pl-2 pr-4">
         <div>
-          <CardComponent style="overflow-y:scroll;height:calc(100vh - 190px)!important" :whiteBackground="true">
+          <CardComponent tabindex="0" :whiteBackground="true" class="pvi-s3">
             <v-row>
               <v-col>
                 <div v-if="sortedImageIds?.length == 0" class="d-flex align-center justify-start mt-0 pa-3">
-                  <v-card density="compact" class="" :height="width + 80" :width="width + 120" elevation=0
-                    style="background-color:white;border:1px solid #ccc">
+                  <v-card density="compact" class="pvi-s4" :height="width + 80" :width="width + 120" elevation=0>
                     <v-card-text class="d-flex align-center justify-center fill-height">
                       <div>
-                        <v-icon size="200" style="opacity:.2">mdi-image-outline</v-icon>
-                        <div class="text-center text-caption" style="opacity:.4;font-style:italic">
+                        <v-icon size="200" class="pvi-s5">mdi-image-outline</v-icon>
+                        <div class="text-center text-caption pvi-s6">
                           Henüz resim eklenmemiş
                         </div>
                       </div>
@@ -34,35 +32,32 @@
                   :options="{ handle: '.drag-handle' }" class="d-flex flex-wrap mt-1 ml-1 mr-1">
                   <template #item="{ element, index }">
                     <div class="draggable pa-0 hoveredContainer" :data-id="element">
-                      <v-card density="compact" class="hoveredBorder d-flex flex-column" :height="width + 82"
-                        :width="width + 122" style="background-color:#fff"
+                      <v-card density="compact" class="hoveredBorder d-flex flex-column pvi-s7" :height="width + 82"
+                        :width="width + 122"
                         :elevation="isSelectionExistForVariant(element) == -1 ? 0 : 2"
                         @click.stop="toggleSelectedImagesForIdForVariant(element)"
-                        :style="{ 'opacity': selectedImagesForVariant.length > 0 && isSelectionExistForVariant(element) == -1 ? '.5' : '1' }">
-                        <v-btn class="hovered"
-                          style="position:absolute;top:0px;right:0px;height:30px;width:30px; opacity:.9;border-radius:0;border-bottom-left-radius:20px;z-index:1"
+                        :class="{ 'pvi-unselected': selectedImagesForVariant.length > 0 && isSelectionExistForVariant(element) == -1 }">
+                        <v-btn aria-label="Resmi kaldır" class="hovered pvi-s8"
                           @click.stop="deleteImageForVariant(element)" elevation="0" min-width="0"
                           color="transparent"><v-icon size="large"
                             color="deleteButtonColor">mdi-close-thick</v-icon></v-btn>
-                        <v-btn class="hovered"
-                          style="position:absolute;top:0px;left:0px;height:30px;width:30px; opacity:.9;border-radius:0;border-bottom-right-radius:20px;z-index:1"
+                        <v-btn class="hovered pvi-s9"
                           @click.stop="downloadImage(element)" elevation="0" min-width="0" color="transparent"><v-icon
                             size="large" color="primary">mdi-download</v-icon></v-btn>
-                        <v-card outlined class="drag-handle hovered"
-                          style="position:absolute;bottom:0px;left:0px;right:0;height:30px;width:auto; opacity:.9;border-radius:0;border-top-left-radius:20px;border-top-right-radius:20px;z-index:1"
+                        <v-card outlined class="drag-handle hovered pvi-s10"
                           elevation="1" min-width="0" color="infoButtonColor">
                           <div class="d-flex justify-center text-center">
-                            <div class="text-caption" style="position:absolute;bottom:2px;opacity:.7">
-                              <v-icon size="25" style="" color="processButtonColor">mdi-drag</v-icon>
+                            <div class="text-caption pvi-s11">
+                              <v-icon size="25" color="processButtonColor">mdi-drag</v-icon>
                             </div>
                           </div>
                         </v-card>
                         <v-card-text class="pa-0">
                           <ProductVariantImageEditComponent v-model="sortedImageIds[index]"
-                            :productInfoForm="productInfoForm" :height="206" style="max-height:140px">
+                            :productInfoForm="productInfoForm" :height="206" class="pvi-s12">
                           </ProductVariantImageEditComponent>
                         </v-card-text>
-                        <v-card-actions class="align-start justify-center" style="max-height:30px!important">
+                        <v-card-actions class="align-start justify-center pvi-s13">
                         </v-card-actions>
                       </v-card>
                     </div>
@@ -83,18 +78,16 @@
 
 
 
-        <CardComponent icon="mdi-image-multiple-outline" title="Ürün Resim Galerisi" :whiteBackground="true"
-          class="productVariantImagesComponent"
-          style="overflow-y:scroll;border:1px solid #ddd;height:calc(100vh - 510px)!important">
+        <CardComponent tabindex="0" icon="mdi-image-multiple-outline" title="Ürün Resim Galerisi" :whiteBackground="true"
+          class="productVariantImagesComponent pvi-s14">
 
           <div v-if="productInfoForm.images == undefined || productInfoForm.images.length == 0"
             class="d-flex align-center justify-start mt-0">
-            <v-card density="compact" class="" :height="width + 80" :width="width + 120" elevation=0
-              style="background-color:#f3f3f3;border:1px solid #ccc">
+            <v-card density="compact" class="pvi-s15" :height="width + 80" :width="width + 120" elevation=0>
               <v-card-text class="d-flex align-center justify-center fill-height">
                 <div>
-                  <v-icon size="200" style="opacity:.05">mdi-image-outline</v-icon>
-                  <div class="text-center text-caption" style="opacity:.6">
+                  <v-icon size="200" class="pvi-s16">mdi-image-outline</v-icon>
+                  <div class="text-center text-caption pvi-s17">
                     Henüz resim eklenmemiş
                   </div>
                 </div>
@@ -107,30 +100,26 @@
             :options="{ disabled: true }" class="d-flex flex-wrap">
             <template #item="{ element, index }">
               <div class="draggable pa-0 hoveredContainer" :data-id="element._id">
-                <v-card density="compact" class=" d-flex flex-column" :height="width - 32" :width="width + 16"
-                  style="background-color:#fff;" :elevation="0"
-                  :style="{ 'opacity': selectedImages.length > 0 && isSelectionExist(element._id) == -1 ? '.5' : '1' }">
-                  <div class="hovered"
-                    style="position:absolute;z-index:2;display: flex;align-items: start;padding-bottom:5px; justify-content: center; width: 100%; height: 100%;">
-                    <v-btn style="height:100%;width:100%; border-radius:5px;border:1px solid #bbb"
-                      @click.stop="assignImage(element)" elevation="0" min-width="0" color="#ffffff99"><v-icon size="70"
-                        color="processButtonColor" style="opacity:.8">mdi-plus</v-icon></v-btn>
+                <v-card density="compact" class="d-flex flex-column pvi-s7" :height="width - 32" :width="width + 16" :elevation="0"
+                  :class="{ 'pvi-unselected': selectedImages.length > 0 && isSelectionExist(element._id) == -1 }">
+                  <div class="hovered pvi-s18">
+                    <v-btn
+                      @click.stop="assignImage(element)" elevation="0" min-width="0" color="#ffffff99" class="pvi-s19"><v-icon size="70"
+                        color="processButtonColor" class="pvi-s20">mdi-plus</v-icon></v-btn>
                   </div>
 
                   <v-card outlined
-                    style="position:absolute;bottom:0px;left:0px;right:0;height:30px;width:auto; opacity:.9;border-radius:0;border-top-left-radius:20px;border-top-right-radius:20px;z-index:1"
-                    elevation="1" min-width="0" color="infoButtonColor">
+                    elevation="1" min-width="0" color="infoButtonColor" class="pvi-s10">
                     <div class="d-flex justify-center text-center">
                     </div>
                   </v-card>
                   <v-card-text class="pa-0">
 
                     <ProductImageComponent v-model="productInfoForm.images[index]"
-                      :productId="productInfoForm._id ? productInfoForm._id : productInfoForm.tempId" :height="96"
-                      style="max-height:30px">
+                      :productId="productInfoForm._id ? productInfoForm._id : productInfoForm.tempId" :height="96" class="pvi-s13">
                     </ProductImageComponent>
                   </v-card-text>
-                  <v-card-actions class="align-start justify-center" style="max-height:30px!important">
+                  <v-card-actions class="align-start justify-center pvi-s13">
                   </v-card-actions>
                 </v-card>
               </div>
@@ -139,7 +128,7 @@
         </CardComponent>
 
 
-        <div class="ma-0 mt-8" style="height:100px">
+        <div class="ma-0 mt-8 pvi-s21">
           <v-checkbox hide-details density="compact" v-model="selectAllImagesForVariant"
             :indeterminate="selectedImagesForVariant.length != 0 && selectedImagesForVariant.length < productInfoForm.images.length">
             <template #label>
@@ -151,10 +140,10 @@
 
           <v-btn-group v-if="selectedImagesForVariant.length > 0" elevation="0" class="ml-1  mt-1 mb-2"
             density="compact">
-            <v-btn density="compact" block class="fill-height" color="saveButtonColor" style="border:1px solid #bbb;"
+            <v-btn density="compact" block class="fill-height pvi-s22" color="saveButtonColor"
               :disabled="selectedImagesForVariant.length <= 0" @click="deleteImageSelectedForVariant">
               <div v-if="selectedImagesForVariant.length > 0">
-                Seçili <span class="font-weight-bold" style="font-size:1.2em">{{ selectedImagesForVariant.length
+                Seçili <span class="font-weight-bold pvi-s23">{{ selectedImagesForVariant.length
                 }}</span>
                 Resmi
                 Kaldır
@@ -623,17 +612,17 @@ const imageSrc = computed(() => {
 }
 
 .dropZone:hover .dropZone-title {
-  color: #1975A0;
+  color: var(--ek-color-info);
 }
 
 .dropZone-info {
-  color: #A8A8A8;
+  color: var(--ek-color-content-muted);
   position: absolute;
   text-align: center;
 }
 
 .dropZone-title {
-  color: #787878;
+  color: var(--ek-color-content-muted);
 }
 
 .fileInput {
@@ -645,13 +634,13 @@ const imageSrc = computed(() => {
 }
 
 .dragDropOn .dragDropOnZone {
-  background-color: #1975A0;
+  background-color: var(--ek-color-info);
 }
 
 .dragDropOff .dragDropOnZone {}
 
 .dragDropOn {
-  background-color: #1975A0;
+  background-color: var(--ek-color-info);
 }
 
 .dragDropOff {}
@@ -668,7 +657,7 @@ const imageSrc = computed(() => {
   bottom: 2px;
   right: 0;
   left: 0; */
-  border: 0px dashed #ccc;
+  border: 0px dashed var(--ek-color-border-default);
 
 }
 
@@ -684,7 +673,7 @@ const imageSrc = computed(() => {
 }
 
 .dropZone-over {
-  background: #ddd;
+  background: var(--ek-color-surface-sunken);
   opacity: 0.8;
 }
 
@@ -692,14 +681,14 @@ const imageSrc = computed(() => {
   width: 80%;
   height: 200px;
   position: relative;
-  border: 0px dashed #eee;
+  border: 0px dashed var(--ek-color-border-default);
 }
 
 .dropZone-uploaded-info {
   display: flex;
   flex-direction: column;
   align-items: center;
-  color: #A8A8A8;
+  color: var(--ek-color-content-muted);
   position: absolute;
   top: 50%;
   width: 100%;
@@ -713,5 +702,156 @@ const imageSrc = computed(() => {
 
 .custom-expansion-panel .v-expansion-panel-text__wrapper {
   padding: 0 !important
+}
+</style>
+
+<style>
+/* ADR-0015 B5-2 — satir ici stillerden tasinan siniflar (autostyle). Satir ici stilin onceligi
+   !important ile korunur; ayni ozellikte Vuetify yardimci sinifi/`color` prop cakismasi varsa
+   (satir ici stil zaten yeniliyordu) !important eklenmez. Scope'suz: v-dialog/v-menu ve alt
+   bilesen kokleri scoped ozniteligi almayabilir; onek dosyaya ozgudur. */
+.pvi-s1 {
+  overflow-y: scroll !important;
+  border: 1px solid var(--ek-color-border-default) !important;
+  height: calc(100vh - 110px) !important;
+}
+
+.pvi-s2 {
+  border: 1px solid var(--ek-color-border-strong) !important;
+  width: 30px !important;
+  opacity: .9 !important;
+}
+
+.pvi-s3 {
+  overflow-y: scroll !important;
+  height: calc(100vh - 190px) !important;
+}
+
+.pvi-s4 {
+  background-color: white !important;
+  border: 1px solid var(--ek-color-border-default) !important;
+}
+
+.pvi-s5 {
+  opacity: .2 !important;
+}
+
+.pvi-s6 {
+  opacity: .4 !important;
+  font-style: italic !important;
+}
+
+.pvi-s7 {
+  background-color: var(--ek-color-surface) !important;
+}
+
+.pvi-s8 {
+  position: absolute !important;
+  top: 0px !important;
+  right: 0px !important;
+  height: 30px !important;
+  width: 30px !important;
+  opacity: .9 !important;
+  border-radius: 0 !important;
+  border-bottom-left-radius: 20px !important;
+  z-index: 1 !important;
+}
+
+.pvi-s9 {
+  position: absolute !important;
+  top: 0px !important;
+  left: 0px !important;
+  height: 30px !important;
+  width: 30px !important;
+  opacity: .9 !important;
+  border-radius: 0 !important;
+  border-bottom-right-radius: 20px !important;
+  z-index: 1 !important;
+}
+
+.pvi-s10 {
+  position: absolute !important;
+  bottom: 0px !important;
+  left: 0px !important;
+  right: 0 !important;
+  height: 30px !important;
+  width: auto !important;
+  opacity: .9 !important;
+  border-radius: 0 !important;
+  border-top-left-radius: 20px !important;
+  border-top-right-radius: 20px !important;
+  z-index: 1 !important;
+}
+
+.pvi-s11 {
+  position: absolute !important;
+  bottom: 2px !important;
+  opacity: .7 !important;
+}
+
+.pvi-s12 {
+  max-height: 140px !important;
+}
+
+.pvi-s13 {
+  max-height: 30px !important;
+}
+
+.pvi-s14 {
+  overflow-y: scroll !important;
+  border: 1px solid var(--ek-color-border-default) !important;
+  height: calc(100vh - 510px) !important;
+}
+
+.pvi-s15 {
+  background-color: var(--ek-color-surface-sunken) !important;
+  border: 1px solid var(--ek-color-border-default) !important;
+}
+
+.pvi-s16 {
+  opacity: .05 !important;
+}
+
+.pvi-s17 {
+  opacity: .6 !important;
+}
+
+.pvi-s18 {
+  position: absolute !important;
+  z-index: 2 !important;
+  display: flex !important;
+  align-items: start !important;
+  padding-bottom: 5px !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.pvi-s19 {
+  height: 100% !important;
+  width: 100% !important;
+  border-radius: 5px !important;
+  border: 1px solid var(--ek-color-border-strong) !important;
+}
+
+.pvi-s20 {
+  opacity: .8 !important;
+}
+
+.pvi-s21 {
+  height: 100px !important;
+}
+
+.pvi-s22 {
+  border: 1px solid var(--ek-color-border-strong) !important;
+}
+
+.pvi-s23 {
+  font-size: 1.2em !important;
+}
+
+/* Secim varken secilmemis resimler soluk (onceki dinamik satir ici opacity). */
+.pvi-unselected {
+  opacity: .5 !important;
 }
 </style>

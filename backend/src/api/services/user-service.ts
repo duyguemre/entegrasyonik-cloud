@@ -14,6 +14,17 @@ export const USER_LIST_PROJECTION = {
 const isDuplicateKeyError = (e: any) => !!e && (e.code === 11000 || e.code === 11001);
 const EMAIL_TAKEN = 'Bu e-posta adresi kullanılamıyor.';
 
+/**
+ * [MM-08 / ADR-0021 aynı desen] getUsers sıralama alanı izin listesi. `USER_LIST_PROJECTION` beyaz listesinden
+ * ve FE personel tablosunun (AuthorizationListView.vue) @click ile sıralanabilir başlıklarından türetildi:
+ * name, email, roleCode; varsayılan `_id`. `OrderService.getOrders` ile AYNI keyfi-alan-adı-enjeksiyonu riskini
+ * kapatır (`sortBy.key` DOĞRULAMASIZ bir nesneye yazılıyordu).
+ * [DÜZELTME, 2026-09-29, orkestratör — BACKLOG.md "ADR-0003 aşama 3a" madde 1 KAPANDI] `sortBy` ÖNCEDEN
+ * hesaplanıyor ama pipeline'a HİÇ UYGULANMIYORDU (ölü kod, sıralama isteği sessizce yok sayılıyordu) — artık
+ * `users` dalına `$skip`/`$limit`'ten ÖNCE `{ $sort: sortBy }` eklendi.
+ */
+const USER_SORT_FIELDS: readonly string[] = ['_id', 'name', 'email', 'roleCode'];
+
 export default class UserService extends BaseApi implements IService {
     currentClientId!: any
     constructor(clientId: number, protected request: any) {
@@ -31,6 +42,9 @@ export default class UserService extends BaseApi implements IService {
             const sortBy: any = {}
             if (this.request.sortBy != undefined && this.request.sortBy.key) {
                 direction = this.request.sortBy.order == 'asc' ? 1 : -1
+                if (typeof this.request.sortBy.key !== 'string' || !USER_SORT_FIELDS.includes(this.request.sortBy.key)) {
+                    throw new ApplicationError('sortBy.key geçersiz: ' + USER_SORT_FIELDS.join(', ') + ' değerlerinden biri olmalıdır.', 400);
+                }
                 sortBy[this.request.sortBy.key] = direction
             } else {
                 sortBy._id = 1
@@ -47,6 +61,7 @@ export default class UserService extends BaseApi implements IService {
                     $facet: {
                         totalNumberOfRecords: [{ $count: 'count' }],
                         users: [
+                            { $sort: sortBy },
                             { $skip: skipCount },
                             { $limit: limitCount },
                             { $project: USER_LIST_PROJECTION }

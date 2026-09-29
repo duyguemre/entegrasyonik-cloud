@@ -71,6 +71,21 @@ export const MENU_SCREENS: Record<string, MenuScreenDef> = {
   // (derin bağlantı/klonlama, menüden BAĞIMSIZ) ile yapıldığı için yalnız liste ekranının burada
   // bir girişi var.
   IntegrationConfigListView: { code: 'IntegrationConfigListView', icon: 'mdi-cog-sync-outline', groupIcon: 'mdi-shield-account-outline', subIndex: 3 },
+  // ADR-0015 B5-3 (kullanıcı/destek/finans ekranları, 2026-09-29): `menuStore.views`
+  // (stores/site/menu.ts) anahtarlarıyla birebir. `AuthorizationListView`/`FinancialListView`/
+  // `PrintoutListView`/`SettingListView` kök seviyededir (`parent===''`); `InvoiceInfoView`/
+  // `ChangePasswordView`/`ExitView` mevcut 'user' grubunun (bkz. `SubscriptionView` girişi,
+  // satır ~55) çocuklarıdır — `menuFixtureWithAccountSupport` (aşağıda) o grubu GENİŞLETİR.
+  // `TicketListView` (destek talepleri, `supports/TicketListView`) kendi sentetik 'supports'
+  // grubunda — `AdminTicketListView`'dan (admin panel) FARKLI bir ekran/kod.
+  AuthorizationListView: { code: 'AuthorizationListView', icon: 'mdi-account-multiple-outline' },
+  FinancialListView: { code: 'FinancialListView', icon: 'mdi-cash-multiple' },
+  PrintoutListView: { code: 'PrintoutListView', icon: 'mdi-printer-outline' },
+  SettingListView: { code: 'SettingListView', icon: 'mdi-cog-outline' },
+  InvoiceInfoView: { code: 'InvoiceInfoView', icon: 'mdi-receipt-text-edit-outline', groupIcon: 'mdi-account-circle-outline', subIndex: 1 },
+  ChangePasswordView: { code: 'ChangePasswordView', icon: 'mdi-lock-reset', groupIcon: 'mdi-account-circle-outline', subIndex: 2 },
+  ExitView: { code: 'ExitView', icon: 'mdi-logout', groupIcon: 'mdi-account-circle-outline', subIndex: 3 },
+  TicketListView: { code: 'TicketListView', icon: 'mdi-lifebuoy', groupIcon: 'mdi-lifebuoy', subIndex: 0 },
 }
 
 // e2e/fixtures/menuData.ts ile aynı sırayı/ikonları kullanır (bkz. dosyanın altı).
@@ -228,6 +243,67 @@ export const menuFixtureWithIntegrationConfig = menuFixtureWithAdmin.map((group)
       }
     : group,
 )
+
+/**
+ * ADR-0015 B5-3 (kullanıcı/destek/finans ekranları, 2026-09-29) — `menuFixture`'a EKLENMEDİ,
+ * `menuFixtureWithLogs`/`menuFixtureWithAdmin` ile AYNI gerekçe (satır ~141/~166 notları): blast
+ * radius, ilgisiz P1/P2 ekranlarının ekran görüntüsü tabanlarını etkilememek için yalnızca bu
+ * görevin kendi spec dosyaları (`user-account-forms.spec.ts`, `authorization.spec.ts`,
+ * `support-tickets.spec.ts`, `financial.spec.ts`, `printouts.spec.ts`, `app-settings.spec.ts`)
+ * bu genişletilmiş menüyü kullanır. Mevcut 'account' grubunun 'user' çocuğu (`SubscriptionView`)
+ * KORUNUR, yalnızca yanına yeni çocuklar eklenir; kök seviyeye 3 yeni grup eklenir.
+ */
+export const menuFixtureWithAccountSupport = menuFixture
+  .map((group) =>
+    group.group === 'account'
+      ? {
+          ...group,
+          links: group.links.map((link: any) =>
+            link.code === 'user'
+              ? {
+                  ...link,
+                  children: [
+                    ...link.children,
+                    { code: 'InvoiceInfoView', parent: 'user', title: 'invoiceInfo', icon: MENU_SCREENS.InvoiceInfoView.icon, singleton: true },
+                    { code: 'ChangePasswordView', parent: 'user', title: 'changePassword', icon: MENU_SCREENS.ChangePasswordView.icon, singleton: true },
+                    { code: 'ExitView', parent: 'user', title: 'exit', icon: MENU_SCREENS.ExitView.icon, singleton: true },
+                  ],
+                }
+              : link,
+          ),
+        }
+      : group,
+  )
+  .concat([
+    {
+      group: 'management',
+      links: [
+        { code: 'AuthorizationListView', parent: '', title: 'authorization', icon: MENU_SCREENS.AuthorizationListView.icon, singleton: true },
+      ],
+    },
+    {
+      group: 'finance',
+      links: [
+        { code: 'FinancialListView', parent: '', title: 'financialList', icon: MENU_SCREENS.FinancialListView.icon, singleton: true },
+        { code: 'PrintoutListView', parent: '', title: 'printoutList', icon: MENU_SCREENS.PrintoutListView.icon, singleton: true },
+        { code: 'SettingListView', parent: '', title: 'settingList', icon: MENU_SCREENS.SettingListView.icon, singleton: true },
+      ],
+    },
+    {
+      group: 'supports',
+      links: [
+        {
+          code: 'supports',
+          parent: '',
+          title: 'support_ticket_list',
+          icon: MENU_SCREENS.TicketListView.groupIcon,
+          children: [
+            { code: 'TicketListView', parent: 'supports', title: 'support_ticket_list', icon: MENU_SCREENS.TicketListView.icon, singleton: true },
+          ],
+        },
+      ],
+    },
+  ])
 
 /**
  * Tam kenar menünün (`NavigationMenu.vue`, `.soft-nav`) GERÇEKTEN ekranda olup olmadığını

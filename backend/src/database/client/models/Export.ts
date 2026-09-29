@@ -91,3 +91,11 @@ ExportStagedProductSchema.index({ barcode: 1, status: 1, mode: 1 });
 
 // 4. Variant bazlı geçmiş sorguları
 ExportStagedProductSchema.index({ barcode: 1, createdAt: -1 });
+
+// 5. ADR-0021 Karar 3 D9 / DATA_MODEL_CONVENTIONS.md §12 "Dispatcher `ExportStagedProducts {integrationCode,
+// status, mode}` sort `{priorityScore:-1, createdAt:1}`" (Dispatcher chunk seçim sorgusu). Uygulama:
+// backend/migrations/0002-d9-indexes-tenant.js.
+ExportStagedProductSchema.index(
+    { integrationCode: 1, status: 1, mode: 1, priorityScore: -1, createdAt: 1 },
+    { name: 'integrationCode_1_status_1_mode_1_priorityScore_-1_createdAt_1' },
+);

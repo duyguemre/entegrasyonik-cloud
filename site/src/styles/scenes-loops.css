@@ -13,62 +13,114 @@
 
 @media (prefers-reduced-motion: no-preference) {
   /* ---------------------------------------------------------------------------------------- */
-  /* hero-mock — 12 sn senaryo: üç sipariş satırı her zaman görünür; sırayla vurgulanıp "Yeni" -> "Rezerve" olur, */
-  /*   stok ve rezerve sayaçları eşlik eder, sinyal kanal çiplerine yayılır (satır 1: 18, satır 2: 38, */
-  /*   satır 3: 58; bekleme 60–95; döngü 96–100'de sıfırlanır)                                         */
+  /* hero-mock — S13 SHOW MERKEZİ: 30 sn döngüde dört sahne (her biri 7,5 sn = döngünün %25'i).        */
+  /*   Tüm parçalar aynı süreyi (--site-motion-loop-marquee) ve sahnesinin kaydırmasını             */
+  /*   (`--show-delay` = sahne sırası x dilim; Hero.astro) kullanır → keyframes YEREL zaman çizelgesidir: */
+  /*   %0–2,5 sahne belirir, %2,5–24,5 senaryo oynar, %24,5–27 sonraki sahneyle çapraz geçer.       */
+  /*   `backwards` dolgu: sahne sırası gelene kadar parçalar %0 pozunda bekler.                       */
+  /*   Sahne 1 (tek merkez) yüzdeleri: sipariş k (0..2) merkeze %6 + 6k'da ulaşır; stok 12 -> 9,       */
+  /*   rezerve 0 -> 3; her varıştan sonra senkron dalgası kanal noktalarına yayılır.                  */
+  /*   Statik hâl = 1. sahnenin son durumu (Hero.astro).                                              */
   /* ---------------------------------------------------------------------------------------- */
-  /* "Yeni" rozeti: döngü başında görünür, rezervasyon anında solar (altındaki "Rezerve" rozeti ortaya çıkar). */
-  @keyframes loop-new-1 {
-    0%,
-    17% {
-      opacity: 1;
-    }
-    18.2%,
-    98% {
+  @keyframes loop-show-scene {
+    0% {
       opacity: 0;
+      translate: 0 var(--site-motion-distance);
     }
-    100% {
-      opacity: 1;
-    }
-  }
-  @keyframes loop-new-2 {
-    0%,
-    37% {
-      opacity: 1;
-    }
-    38.2%,
-    98% {
-      opacity: 0;
-    }
-    100% {
-      opacity: 1;
-    }
-  }
-  @keyframes loop-new-3 {
-    0%,
-    57% {
-      opacity: 1;
-    }
-    58.2%,
-    98% {
-      opacity: 0;
-    }
-    100% {
-      opacity: 1;
-    }
-  }
-  /*
-   * Stok sayısı (12 -> 11 -> 10 -> 9) ve rezerve sayısı (0 -> 1 -> 2 -> 3): üst üste bindirilmiş sayılar rezervasyon
-   * anında sayaç gibi AKAR (S12: eski sayı yukarı kayarak söner, yenisi aşağıdan gelir — yalnızca opacity/translate).
-   */
-  @keyframes loop-count-1 {
-    0%,
-    17% {
+    2.5%,
+    24.5% {
       opacity: 1;
       translate: 0 0;
     }
-    18%,
-    97.9% {
+    27%,
+    100% {
+      opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * -1);
+    }
+  }
+  @keyframes loop-show-prog {
+    0% {
+      opacity: 1;
+      scale: 0 1;
+    }
+    25% {
+      opacity: 1;
+      scale: 1 1;
+    }
+    27%,
+    100% {
+      opacity: 0;
+      scale: 1 1;
+    }
+  }
+  @keyframes loop-show-step {
+    0%,
+    27%,
+    100% {
+      opacity: 0.5;
+    }
+    2%,
+    25% {
+      opacity: 1;
+    }
+  }
+
+  /* Sahne 1 — sipariş paketi kanal noktasından merkeze (şerit kutusunun köşesinden köşesine) akar. */
+  @keyframes loop-hub-in {
+    0%,
+    2.6% {
+      opacity: 0;
+      translate: 0 0;
+    }
+    3.2% {
+      opacity: 1;
+      translate: calc(var(--dx) * 0.12) calc(var(--dy) * 0.12);
+    }
+    5.6% {
+      opacity: 1;
+      translate: var(--dx) var(--dy);
+    }
+    6%,
+    100% {
+      opacity: 0;
+      translate: var(--dx) var(--dy);
+    }
+  }
+  /* Sipariş satırı vurgusu: paket merkeze ulaşınca yumuşakça aydınlanıp söner. */
+  @keyframes loop-hub-row {
+    0%,
+    5.4%,
+    10%,
+    100% {
+      opacity: 0;
+    }
+    6%,
+    8% {
+      opacity: 1;
+    }
+  }
+  /* "Yeni" rozeti: varışta söner (altındaki "Rezerve" görünür); sahne gizliyken yeniden belirir. */
+  @keyframes loop-hub-pill {
+    0%,
+    5.8%,
+    72%,
+    100% {
+      opacity: 1;
+    }
+    6.4%,
+    70% {
+      opacity: 0;
+    }
+  }
+  /* Stok (12 -> 11 -> 10 -> 9) ve rezerve (0 -> 1 -> 2 -> 3) sayaçları: eski sayı yukarı kayarak söner, yenisi aşağıdan gelir. */
+  @keyframes loop-hub-count-1 {
+    0%,
+    5.9% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    6.6%,
+    97% {
       opacity: 0;
       translate: 0 calc(var(--site-motion-distance) * -1.5);
     }
@@ -81,47 +133,47 @@
       translate: 0 0;
     }
   }
-  @keyframes loop-count-2 {
+  @keyframes loop-hub-count-2 {
+    0%,
+    6% {
+      opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * 3);
+    }
+    6.8%,
+    11.9% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    12.6%,
+    100% {
+      opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * -1.5);
+    }
+  }
+  @keyframes loop-hub-count-3 {
+    0%,
+    12% {
+      opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * 3);
+    }
+    12.8%,
+    17.9% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    18.6%,
+    100% {
+      opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * -1.5);
+    }
+  }
+  @keyframes loop-hub-count-4 {
     0%,
     18% {
       opacity: 0;
       translate: 0 calc(var(--site-motion-distance) * 3);
     }
-    19.5%,
-    37% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    38%,
-    100% {
-      opacity: 0;
-      translate: 0 calc(var(--site-motion-distance) * -1.5);
-    }
-  }
-  @keyframes loop-count-3 {
-    0%,
-    38% {
-      opacity: 0;
-      translate: 0 calc(var(--site-motion-distance) * 3);
-    }
-    39.5%,
-    57% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    58%,
-    100% {
-      opacity: 0;
-      translate: 0 calc(var(--site-motion-distance) * -1.5);
-    }
-  }
-  @keyframes loop-count-4 {
-    0%,
-    58% {
-      opacity: 0;
-      translate: 0 calc(var(--site-motion-distance) * 3);
-    }
-    59.5%,
+    18.8%,
     96% {
       opacity: 1;
       translate: 0 0;
@@ -132,57 +184,20 @@
       translate: 0 calc(var(--site-motion-distance) * -1.5);
     }
   }
-  /* Sipariş satırı vurgusu (S12): sipariş rezerve edilirken satırın zemini yumuşakça aydınlanıp söner. */
-  @keyframes loop-row-1 {
+  @keyframes loop-hub-meter {
     0%,
-    13%,
-    27%,
-    100% {
-      opacity: 0;
-    }
-    17%,
-    20% {
-      opacity: 1;
-    }
-  }
-  @keyframes loop-row-2 {
-    0%,
-    33%,
-    47%,
-    100% {
-      opacity: 0;
-    }
-    37%,
-    40% {
-      opacity: 1;
-    }
-  }
-  @keyframes loop-row-3 {
-    0%,
-    53%,
-    67%,
-    100% {
-      opacity: 0;
-    }
-    57%,
-    60% {
-      opacity: 1;
-    }
-  }
-  @keyframes loop-meter {
-    0%,
-    17% {
+    5.9% {
       scale: 1 1;
     }
-    19%,
-    37% {
+    6.8%,
+    11.9% {
       scale: 0.917 1;
     }
-    39%,
-    57% {
+    12.8%,
+    17.9% {
       scale: 0.833 1;
     }
-    59%,
+    18.8%,
     96% {
       scale: 0.75 1;
     }
@@ -191,199 +206,557 @@
       scale: 1 1;
     }
   }
-  /* Güncelleme sinyali: kanal şeridinde soldan sağa akan ışık, her rezervasyondan sonra bir kez. */
-  @keyframes loop-sweep {
+  /* Merkez çekirdeği: her varışta ince bir halka yayılır. */
+  @keyframes loop-hub-core {
     0%,
-    17.5% {
+    5.6% {
       opacity: 0;
-      translate: -100% 0;
+      scale: 1;
     }
-    18% {
-      opacity: 1;
-      translate: -100% 0;
+    6.2% {
+      opacity: 0.9;
+      scale: 1;
     }
-    24% {
-      opacity: 1;
-      translate: 360% 0;
-    }
-    24.5%,
-    37.5% {
+    8.6%,
+    11.6% {
       opacity: 0;
-      translate: 360% 0;
+      scale: 1.12;
     }
-    38% {
-      opacity: 1;
-      translate: -100% 0;
-    }
-    44% {
-      opacity: 1;
-      translate: 360% 0;
-    }
-    44.5%,
-    57.5% {
+    11.7% {
       opacity: 0;
-      translate: 360% 0;
+      scale: 1;
     }
-    58% {
-      opacity: 1;
-      translate: -100% 0;
+    12.2% {
+      opacity: 0.9;
+      scale: 1;
     }
-    64% {
-      opacity: 1;
-      translate: 360% 0;
+    14.6%,
+    17.6% {
+      opacity: 0;
+      scale: 1.12;
     }
-    64.5%,
+    17.7% {
+      opacity: 0;
+      scale: 1;
+    }
+    18.2% {
+      opacity: 0.9;
+      scale: 1;
+    }
+    20.6%,
     100% {
       opacity: 0;
-      translate: 360% 0;
+      scale: 1.12;
     }
   }
-  /* Kanal çiplerinde halka: sinyal geldiğinde belirir ve yumuşakça yayılıp söner (çip başına 80 ms gecikme). */
-  @keyframes loop-ring {
+  /* Senkron dalgası: merkezden TÜM kanal noktalarına (üç kez, her rezervasyondan sonra). */
+  @keyframes loop-hub-out {
     0%,
-    19% {
+    6.1% {
       opacity: 0;
-      scale: 0.96;
+      translate: var(--dx) var(--dy);
     }
-    21% {
+    6.5% {
       opacity: 1;
-      scale: 1;
+      translate: calc(var(--dx) * 0.88) calc(var(--dy) * 0.88);
     }
-    27%,
-    39% {
+    8.2% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    8.6%,
+    12.1% {
       opacity: 0;
-      scale: 1.08;
+      translate: 0 0;
     }
-    41% {
-      opacity: 1;
-      scale: 1;
-    }
-    47%,
-    59% {
+    12.2% {
       opacity: 0;
-      scale: 1.08;
+      translate: var(--dx) var(--dy);
     }
-    61% {
+    12.5% {
       opacity: 1;
-      scale: 1;
+      translate: calc(var(--dx) * 0.88) calc(var(--dy) * 0.88);
     }
-    67%,
+    14.2% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    14.6%,
+    18.1% {
+      opacity: 0;
+      translate: 0 0;
+    }
+    18.2% {
+      opacity: 0;
+      translate: var(--dx) var(--dy);
+    }
+    18.5% {
+      opacity: 1;
+      translate: calc(var(--dx) * 0.88) calc(var(--dy) * 0.88);
+    }
+    20.2% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    20.6%,
     100% {
       opacity: 0;
-      scale: 1.08;
+      translate: 0 0;
     }
   }
-  @keyframes loop-toast {
+  /* Kanal noktasında halka: dalga ulaşınca belirir, yayılıp söner. */
+  @keyframes loop-hub-ring {
     0%,
-    18% {
+    8% {
+      opacity: 0;
+      scale: 0.6;
+    }
+    8.5% {
+      opacity: 0.9;
+      scale: 1;
+    }
+    10.6%,
+    14% {
+      opacity: 0;
+      scale: 1.9;
+    }
+    14.1% {
+      opacity: 0;
+      scale: 0.6;
+    }
+    14.5% {
+      opacity: 0.9;
+      scale: 1;
+    }
+    16.6%,
+    20% {
+      opacity: 0;
+      scale: 1.9;
+    }
+    20.1% {
+      opacity: 0;
+      scale: 0.6;
+    }
+    20.5% {
+      opacity: 0.9;
+      scale: 1;
+    }
+    22.6%,
+    100% {
+      opacity: 0;
+      scale: 1.9;
+    }
+  }
+
+  /* Sahne 2 — iki sipariş aynı anda gelir, paketler ürüne akar; biri rezerve, diğeri işaretlenir. */
+  @keyframes loop-race-order {
+    0%,
+    1.5% {
+      opacity: 0;
+      translate: calc(var(--site-motion-distance) * -4) 0;
+    }
+    4%,
+    100% {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+  @keyframes loop-race-pkt {
+    0%,
+    4.4% {
+      opacity: 0;
+      translate: 0 0;
+    }
+    4.8% {
+      opacity: 1;
+      translate: 10% 0;
+    }
+    6.4% {
+      opacity: 1;
+      translate: 100% 0;
+    }
+    6.8%,
+    100% {
+      opacity: 0;
+      translate: 100% 0;
+    }
+  }
+  @keyframes loop-race-out {
+    0%,
+    6.4% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    7%,
+    100% {
+      opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * -1.5);
+    }
+  }
+  @keyframes loop-race-in {
+    0%,
+    7% {
+      opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * 1.5);
+    }
+    7.8%,
+    100% {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+  @keyframes loop-race-lock {
+    0%,
+    6.6% {
+      opacity: 0;
+      scale: 0.85;
+    }
+    7.6%,
+    100% {
+      opacity: 1;
+      scale: 1;
+    }
+  }
+  @keyframes loop-race-result {
+    0%,
+    9% {
       opacity: 0;
       translate: 0 var(--site-motion-distance);
     }
-    21%,
-    44% {
+    10.5%,
+    100% {
       opacity: 1;
       translate: 0 0;
     }
-    47%,
-    58% {
+  }
+
+  /* Sahne 3 — kaynak "Güncellendi" olur; ışın veri yolundan her kanala sırayla ulaşır, onay belirir. */
+  @keyframes loop-pub-flag {
+    0%,
+    2.4% {
       opacity: 0;
-      translate: 0 0;
+      scale: 0.9;
     }
-    61%,
-    76% {
+    3.4%,
+    100% {
       opacity: 1;
-      translate: 0 0;
+      scale: 1;
     }
-    79%,
+  }
+  @keyframes loop-pub-beam {
+    0%,
+    3.6% {
+      opacity: 0;
+      translate: -100% 0;
+    }
+    4% {
+      opacity: 1;
+      translate: -80% 0;
+    }
+    6.2% {
+      opacity: 1;
+      translate: 100% 0;
+    }
+    6.6%,
     100% {
       opacity: 0;
-      translate: 0 calc(var(--site-motion-distance) * -0.5);
+      translate: 100% 0;
+    }
+  }
+  @keyframes loop-pub-check {
+    0%,
+    6% {
+      opacity: 0;
+      scale: 0.5;
+    }
+    7%,
+    100% {
+      opacity: 1;
+      scale: 1;
+    }
+  }
+
+  /* Sahne 4 — kalkandan yayılan halkalar (üç dalga), anahtar taraması, "Şifreli" ve maddeler sırayla. */
+  @keyframes loop-sec-wave {
+    0%,
+    1% {
+      opacity: 0;
+      scale: 0.7;
+    }
+    1.6% {
+      opacity: 0.6;
+      scale: 0.78;
+    }
+    8.2% {
+      opacity: 0;
+      scale: 1.55;
+    }
+    8.3%,
+    8.6% {
+      opacity: 0;
+      scale: 0.7;
+    }
+    9.2% {
+      opacity: 0.6;
+      scale: 0.78;
+    }
+    15.8% {
+      opacity: 0;
+      scale: 1.55;
+    }
+    15.9%,
+    16.2% {
+      opacity: 0;
+      scale: 0.7;
+    }
+    16.8% {
+      opacity: 0.6;
+      scale: 0.78;
+    }
+    23.4%,
+    100% {
+      opacity: 0;
+      scale: 1.55;
+    }
+  }
+  @keyframes loop-sec-scan {
+    0%,
+    3% {
+      opacity: 0;
+      translate: -100% 0;
+    }
+    3.5% {
+      opacity: 1;
+      translate: -60% 0;
+    }
+    7.5% {
+      opacity: 1;
+      translate: 250% 0;
+    }
+    8%,
+    100% {
+      opacity: 0;
+      translate: 250% 0;
+    }
+  }
+  @keyframes loop-sec-lock {
+    0%,
+    7.4% {
+      opacity: 0;
+      scale: 0.85;
+    }
+    8.4%,
+    100% {
+      opacity: 1;
+      scale: 1;
+    }
+  }
+  @keyframes loop-sec-item {
+    0%,
+    9% {
+      opacity: 0;
+      translate: 0 var(--site-motion-distance);
+    }
+    10.5%,
+    100% {
+      opacity: 1;
+      translate: 0 0;
     }
   }
 
   html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] :is(
-      [data-part='pill-new'],
+      [data-part='show-scene'],
+      [data-part='show-prog'],
+      [data-part='show-step'],
+      [data-part='hub-in'],
+      [data-part='hub-out'],
       [data-part='num'],
       [data-part='rnum'],
       [data-part='fill'],
-      [data-part='glow'],
-      [data-part='toast']
+      [data-part='pill-new'],
+      [data-part='race-a'],
+      [data-part='race-b'],
+      [data-part='race-pkt'],
+      [data-part='race-out'],
+      [data-part='race-in'],
+      [data-part='race-lock'],
+      [data-part='race-result'],
+      [data-part='pub-flag'],
+      [data-part='pub-beam'],
+      [data-part='pub-check'],
+      [data-part='sec-wave'],
+      [data-part='sec-scan'],
+      [data-part='sec-lock'],
+      [data-part='sec-item']
     ),
-  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] :is([data-part='row'])::before,
-  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='chan']::after {
-    animation-duration: var(--site-motion-loop-scene);
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] :is([data-part='row'], [data-part='chan'], [data-part='hub-core'])::before,
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] :is([data-part='row'], [data-part='chan'], [data-part='hub-core'])::after {
+    animation-duration: var(--site-motion-loop-marquee);
     animation-timing-function: var(--site-motion-ease-loop);
     animation-iteration-count: infinite;
+    animation-fill-mode: backwards;
+    animation-delay: var(--show-delay);
     animation-play-state: paused;
   }
   html[data-motion='play'] [data-scene='hero-mock'][data-state='play'][data-visible='true'] :is(
-      [data-part='pill-new'],
+      [data-part='show-scene'],
+      [data-part='show-prog'],
+      [data-part='show-step'],
+      [data-part='hub-in'],
+      [data-part='hub-out'],
       [data-part='num'],
       [data-part='rnum'],
       [data-part='fill'],
-      [data-part='glow'],
-      [data-part='toast']
+      [data-part='pill-new'],
+      [data-part='race-a'],
+      [data-part='race-b'],
+      [data-part='race-pkt'],
+      [data-part='race-out'],
+      [data-part='race-in'],
+      [data-part='race-lock'],
+      [data-part='race-result'],
+      [data-part='pub-flag'],
+      [data-part='pub-beam'],
+      [data-part='pub-check'],
+      [data-part='sec-wave'],
+      [data-part='sec-scan'],
+      [data-part='sec-lock'],
+      [data-part='sec-item']
     ),
-  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'][data-visible='true'] [data-part='row']::before,
-  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'][data-visible='true'] [data-part='chan']::after {
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'][data-visible='true'] :is([data-part='row'], [data-part='chan'], [data-part='hub-core'])::before,
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'][data-visible='true'] :is([data-part='row'], [data-part='chan'], [data-part='hub-core'])::after {
     animation-play-state: running;
   }
-  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='row']:nth-child(1)::before {
-    animation-name: loop-row-1;
+  /* Üzerine gelince (izleyici bir sahneyi incelerken) tüm show duraklar; ayrılınca kaldığı yerden sürer. */
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'][data-visible='true']:hover :is(
+      [data-part='show-scene'],
+      [data-part='show-prog'],
+      [data-part='show-step'],
+      [data-part='hub-in'],
+      [data-part='hub-out'],
+      [data-part='num'],
+      [data-part='rnum'],
+      [data-part='fill'],
+      [data-part='pill-new'],
+      [data-part='race-a'],
+      [data-part='race-b'],
+      [data-part='race-pkt'],
+      [data-part='race-out'],
+      [data-part='race-in'],
+      [data-part='race-lock'],
+      [data-part='race-result'],
+      [data-part='pub-flag'],
+      [data-part='pub-beam'],
+      [data-part='pub-check'],
+      [data-part='sec-wave'],
+      [data-part='sec-scan'],
+      [data-part='sec-lock'],
+      [data-part='sec-item']
+    ),
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'][data-visible='true']:hover :is([data-part='row'], [data-part='chan'], [data-part='hub-core'])::before,
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'][data-visible='true']:hover :is([data-part='row'], [data-part='chan'], [data-part='hub-core'])::after {
+    animation-play-state: paused;
   }
-  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='row']:nth-child(2)::before {
-    animation-name: loop-row-2;
+
+  /* Sahne kapsayıcıları ve gösterge */
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='show-scene'] {
+    animation-name: loop-show-scene;
   }
-  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='row']:nth-child(3)::before {
-    animation-name: loop-row-3;
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='show-prog'] {
+    animation-name: loop-show-prog;
+    animation-timing-function: var(--site-motion-ease-linear);
   }
-  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='row']:nth-child(1) [data-part='pill-new'] {
-    animation-name: loop-new-1;
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='show-step'] {
+    animation-name: loop-show-step;
   }
-  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='row']:nth-child(2) [data-part='pill-new'] {
-    animation-name: loop-new-2;
+
+  /* Sahne 1 — sipariş k'nın parçaları (paket, satır, rozet) döngünün %6'sı x k kadar kayar */
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] :is([data-part='hub-in'], [data-part='pill-new']),
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='row']::before {
+    animation-delay: calc(var(--show-delay) + var(--show-cycle) * 0.06 * var(--k, 0));
   }
-  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='row']:nth-child(3) [data-part='pill-new'] {
-    animation-name: loop-new-3;
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='hub-in'] {
+    animation-name: loop-hub-in;
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='row']::before {
+    animation-name: loop-hub-row;
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='pill-new'] {
+    animation-name: loop-hub-pill;
   }
   html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] :is([data-part='num'], [data-part='rnum']):nth-child(1) {
-    animation-name: loop-count-1;
+    animation-name: loop-hub-count-1;
   }
   html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] :is([data-part='num'], [data-part='rnum']):nth-child(2) {
-    animation-name: loop-count-2;
+    animation-name: loop-hub-count-2;
   }
   html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] :is([data-part='num'], [data-part='rnum']):nth-child(3) {
-    animation-name: loop-count-3;
+    animation-name: loop-hub-count-3;
   }
   html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] :is([data-part='num'], [data-part='rnum']):nth-child(4) {
-    animation-name: loop-count-4;
+    animation-name: loop-hub-count-4;
   }
   html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='fill'] {
-    animation-name: loop-meter;
+    animation-name: loop-hub-meter;
   }
-  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='glow'] {
-    animation-name: loop-sweep;
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='hub-core']::after {
+    animation-name: loop-hub-core;
   }
-  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='toast'] {
-    animation-name: loop-toast;
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='hub-out'] {
+    animation-name: loop-hub-out;
   }
   html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='chan']::after {
-    animation-name: loop-ring;
+    animation-name: loop-hub-ring;
   }
-  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='chan']:nth-child(2)::after {
-    animation-delay: var(--site-motion-stagger);
+
+  /* Sahne 2 */
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] :is([data-part='race-a'], [data-part='race-b']) {
+    animation-name: loop-race-order;
   }
-  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='chan']:nth-child(3)::after {
-    animation-delay: calc(var(--site-motion-stagger) * 2);
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='race-pkt'] {
+    animation-name: loop-race-pkt;
   }
-  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='chan']:nth-child(4)::after {
-    animation-delay: calc(var(--site-motion-stagger) * 3);
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='race-out'] {
+    animation-name: loop-race-out;
   }
-  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='chan']:nth-child(5)::after {
-    animation-delay: calc(var(--site-motion-stagger) * 4);
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='race-in'] {
+    animation-name: loop-race-in;
   }
-  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='chan']:nth-child(n + 6)::after {
-    animation-delay: calc(var(--site-motion-stagger) * 5);
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='race-lock'] {
+    animation-name: loop-race-lock;
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='race-result'] {
+    animation-name: loop-race-result;
+  }
+
+  /* Sahne 3 — satır k'nın ışını/onayı döngünün %1,2'si x k kadar kayar (satır başına ~0,36 sn) */
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='pub-flag'] {
+    animation-name: loop-pub-flag;
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] :is([data-part='pub-beam'], [data-part='pub-check']) {
+    animation-delay: calc(var(--show-delay) + var(--show-cycle) * 0.012 * var(--k, 0));
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='pub-beam'] {
+    animation-name: loop-pub-beam;
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='pub-check'] {
+    animation-name: loop-pub-check;
+  }
+
+  /* Sahne 4 — halka k döngünün %2,5'i x k, madde k %3'ü x k kadar kayar */
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='sec-wave'] {
+    animation-name: loop-sec-wave;
+    animation-delay: calc(var(--show-delay) + var(--show-cycle) * 0.025 * var(--k, 0));
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='sec-scan'] {
+    animation-name: loop-sec-scan;
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='sec-lock'] {
+    animation-name: loop-sec-lock;
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='sec-item'] {
+    animation-name: loop-sec-item;
+    animation-delay: calc(var(--show-delay) + var(--show-cycle) * 0.03 * var(--k, 0));
   }
 
   /* ---------------------------------------------------------------------------------------- */
@@ -797,7 +1170,7 @@
   }
 
   /* ---------------------------------------------------------------------------------------- */
-  /* marquee — entegrasyon şeridi (30 sn / tam küme); üzerine gelince ve durdurulunca durur          */
+  /* marquee — yetenek şeridi (30 sn / tam küme, S13: ray içinde); üzerine gelince ve durdurulunca durur */
   /* ---------------------------------------------------------------------------------------- */
   @keyframes loop-marquee {
     from {

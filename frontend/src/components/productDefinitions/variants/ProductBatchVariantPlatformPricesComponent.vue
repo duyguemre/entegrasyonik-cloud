@@ -1,38 +1,35 @@
 <template>
   <v-row>
     <v-col cols="6" offset="3">
-      <v-card variant="elevated" elevation="1" class="ma-0"
-        style="transition: none!important; box-shadow: none; transform: none!important;background-color:#eee">
+      <v-card variant="elevated" elevation="1" class="ma-0 pbvp-s1">
         <LoadingComponent attach=".productDefinitionView" ref="loadingComponentRef"></LoadingComponent>
 
         <v-card-title class="mb-0" >
 
-          <div style="position:absolute;top:0px;left:0px;right:0;height:1px;width:auto;opacity:.9;background-color:red"
-            class="elevation-1">
+          <div
+            class="elevation-1 pbvp-s2">
           </div>
 
-          <v-btn
-            style="position:absolute;border:1px solid #fff;border-top:none;border-right:none;top:0px;right:0px;height:40px;width:40px; opacity:.9;border-radius:0;border-bottom-left-radius:20px;"
-            @click="emits('close')" elevation="1" min-width="0" color="red"><v-icon
+          <v-btn aria-label="Kapat"
+            @click="emits('close')" elevation="1" min-width="0" color="red" class="pbvp-s3"><v-icon
               size="x-large">mdi-close</v-icon></v-btn>
 
-          <v-btn
-            style="position:absolute;border:1px solid #fff;border-top:none;border-left:none;top:0px;left:0px;height:40px;width:40px; opacity:.9;border-radius:0;border-bottom-right-radius:20px;"
-            @click="emits('close')" elevation="1" min-width="0" color="red"><v-icon
+          <v-btn aria-label="Kapat"
+            @click="emits('close')" elevation="1" min-width="0" color="red" class="pbvp-s4"><v-icon
               size="x-large">mdi-close</v-icon></v-btn>
 
             
             
             <span class="font-weight-medium  text-h6 ml-8">
-            <v-icon class="mr-0" style="opacity:.7" size="20">mdi-image-multiple-outline</v-icon>
+            <v-icon class="mr-0 pbvp-s5" size="20">mdi-image-multiple-outline</v-icon>
             Toplu Varyant Fiyatları</span>
 
         </v-card-title>
 
-        <v-card-text style="background-color:#eee" class="mt-0">
-          <div style="overflow-y:auto;overflow-x:hidden;min-height:100px!important;height:auto;max-height:calc(100vh - 280px)" class="pb-4">
+        <v-card-text class="mt-0 pbvp-s6">
+          <div class="pb-4 pbvp-s7">
             <v-checkbox :label="$t('productDefinitions.product.platformPrice')" @update:modelValue=""
-                      density="compact" hide-details class="ma-0 mb-2 mt-4 pa-0" style="min-width:180px"
+                      density="compact" hide-details class="ma-0 mb-2 mt-4 pa-0 pbvp-s8"
                       v-model="batchVariant.prices.isPlatformBasedPrice" @click.stop />
 
                       <v-divider/>
@@ -60,9 +57,8 @@
           </div>
         </v-card-text>
         <v-card-actions>
-          <v-btn-group elevation="1" class="mt-0" style="width:100%" density="compact" >
-                        <v-btn density="compact" block class="fill-height" color="saveButtonColor"
-                          style="border:1px solid white;"                          
+          <v-btn-group elevation="1" class="mt-0 pbvp-s9" density="compact" >
+                        <v-btn density="compact" block class="fill-height pbvp-s10" color="saveButtonColor"                          
                           @click="batchVariantPricesUpdate">
                           <span class="">
                             <v-icon>mdi-plus-box-multiple-outline</v-icon> Bütün Varyantların Fiyatlarını Güncelle
@@ -480,17 +476,17 @@ const imageSrc = computed(() => {
 }
 
 .dropZone:hover .dropZone-title {
-  color: #1975A0;
+  color: var(--ek-color-info);
 }
 
 .dropZone-info {
-  color: #A8A8A8;
+  color: var(--ek-color-content-muted);
   position: absolute;
   text-align: center;
 }
 
 .dropZone-title {
-  color: #787878;
+  color: var(--ek-color-content-muted);
 }
 
 .fileInput {
@@ -502,13 +498,13 @@ const imageSrc = computed(() => {
 }
 
 .dragDropOn .dragDropOnZone {
-  background-color: #1975A0;
+  background-color: var(--ek-color-info);
 }
 
 .dragDropOff .dragDropOnZone {}
 
 .dragDropOn {
-  background-color: #1975A0;
+  background-color: var(--ek-color-info);
 }
 
 .dragDropOff {}
@@ -525,7 +521,7 @@ const imageSrc = computed(() => {
   bottom: 2px;
   right: 0;
   left: 0; */
-  border: 0px dashed #ccc;
+  border: 0px dashed var(--ek-color-border-default);
 
 }
 
@@ -541,7 +537,7 @@ const imageSrc = computed(() => {
 }
 
 .dropZone-over {
-  background: #ddd;
+  background: var(--ek-color-surface-sunken);
   opacity: 0.8;
 }
 
@@ -549,14 +545,14 @@ const imageSrc = computed(() => {
   width: 80%;
   height: 200px;
   position: relative;
-  border: 0px dashed #eee;
+  border: 0px dashed var(--ek-color-border-default);
 }
 
 .dropZone-uploaded-info {
   display: flex;
   flex-direction: column;
   align-items: center;
-  color: #A8A8A8;
+  color: var(--ek-color-content-muted);
   position: absolute;
   top: 50%;
   width: 100%;
@@ -566,5 +562,85 @@ const imageSrc = computed(() => {
 
 .removeFile {
   width: 200px;
+}
+</style>
+
+<style>
+/* ADR-0015 B5-2 — satir ici stillerden tasinan siniflar (autostyle). Satir ici stilin onceligi
+   !important ile korunur; ayni ozellikte Vuetify yardimci sinifi/`color` prop cakismasi varsa
+   (satir ici stil zaten yeniliyordu) !important eklenmez. Scope'suz: v-dialog/v-menu ve alt
+   bilesen kokleri scoped ozniteligi almayabilir; onek dosyaya ozgudur. */
+.pbvp-s1 {
+  transition: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+  background-color: var(--ek-color-surface-sunken) !important;
+}
+
+.pbvp-s2 {
+  position: absolute !important;
+  top: 0px !important;
+  left: 0px !important;
+  right: 0 !important;
+  height: 1px !important;
+  width: auto !important;
+  opacity: .9 !important;
+  background-color: red !important;
+}
+
+.pbvp-s3 {
+  position: absolute !important;
+  border: 1px solid var(--ek-color-surface) !important;
+  border-top: none !important;
+  border-right: none !important;
+  top: 0px !important;
+  right: 0px !important;
+  height: 40px !important;
+  width: 40px !important;
+  opacity: .9 !important;
+  border-radius: 0 !important;
+  border-bottom-left-radius: 20px !important;
+}
+
+.pbvp-s4 {
+  position: absolute !important;
+  border: 1px solid var(--ek-color-surface) !important;
+  border-top: none !important;
+  border-left: none !important;
+  top: 0px !important;
+  left: 0px !important;
+  height: 40px !important;
+  width: 40px !important;
+  opacity: .9 !important;
+  border-radius: 0 !important;
+  border-bottom-right-radius: 20px !important;
+}
+
+.pbvp-s5 {
+  opacity: .7 !important;
+}
+
+.pbvp-s6 {
+  background-color: var(--ek-color-surface-sunken) !important;
+}
+
+.pbvp-s7 {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  min-height: 100px !important;
+  height: auto !important;
+  max-height: calc(100vh - 280px) !important;
+}
+
+.pbvp-s8 {
+  min-width: 180px !important;
+}
+
+.pbvp-s9 {
+  width: 100% !important;
+}
+
+.pbvp-s10 {
+  border: 1px solid white !important;
 }
 </style>

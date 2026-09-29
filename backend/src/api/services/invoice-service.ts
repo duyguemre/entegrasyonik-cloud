@@ -2,7 +2,18 @@ import { IService, OrderInternalStatusEnum, IPlatformResponse } from '@interface
 import { BaseApi } from '../BaseApi'
 import { Types } from 'mongoose'
 import IntegrationFactory from '@integration/modules/IntegrationFactory';
+import { ApplicationError } from '../Security'
 import { containsRegex, normalizePagination } from '@utils/search';
+
+/**
+ * [MM-08 / ADR-0021 aynı desen] getInvoices sıralama alanı izin listesi. `InvoiceSchema` (Invoice.ts, `timestamps:true`
+ * -> `createdAt`) alanlarından ve FE fatura tablosunun (InvoiceListView.vue) sıralanabilir başlıklarına/sıralama
+ * seçeneklerine karşılık gelir. `OrderService.getOrders` ile AYNI keyfi-alan-adı-enjeksiyonu riskini kapatır.
+ */
+const INVOICE_SORT_FIELDS: readonly string[] = [
+    'createdAt', 'invoiceNumber', 'issueDate', 'totalAmount', 'status',
+];
+const DEFAULT_INVOICE_SORT_FIELD = 'createdAt';
 
 export default class InvoiceService extends BaseApi implements IService {
 
@@ -74,11 +85,14 @@ export default class InvoiceService extends BaseApi implements IService {
         try {
             var direction = 1;
             const sortBy: any = {};
-            if (this.request.sortBy != undefined) {
+            if (this.request.sortBy != undefined && this.request.sortBy.key) {
                 direction = this.request.sortBy.order == 'asc' ? 1 : -1;
+                if (typeof this.request.sortBy.key !== 'string' || !INVOICE_SORT_FIELDS.includes(this.request.sortBy.key)) {
+                    throw new ApplicationError('sortBy.key geçersiz: ' + INVOICE_SORT_FIELDS.join(', ') + ' değerlerinden biri olmalıdır.', 400);
+                }
                 sortBy[this.request.sortBy.key] = direction;
             } else {
-                sortBy.createdAt = -1;
+                sortBy[DEFAULT_INVOICE_SORT_FIELD] = -1;
             }
 
             const filterQuery: any = {};

@@ -1,30 +1,27 @@
 <template>
-  <!-- ADR-0015 B3 — Karar 6.1 "Detay" satırı: EkDetailSheet (side-sheet). `identity` spec çapasıdır
-       (e2e/specs/admin-tickets.spec.ts:68 `getByRole('dialog').filter({ hasText: 'Destek Talebi Detayı' })`). -->
-  <EkDetailSheet v-model="isOpen" identity="Destek Talebi Detayı">
-    <template #status>
-      <EkStatusChip v-if="ticket" tone="neutral" :label="`TKT-${ticket.ticketNumber}`" />
-    </template>
+  <ActionDialogComponent :modelValue="modelValue" @update:modelValue="$emit('update:modelValue', $event)"
+    @cancel="close" @close="close" title="Destek Talebi Detayı" :subtitle="ticket ? `TKT-${ticket.ticketNumber}` : 'Detay'"
+    icon="mdi-face-agent" :color="getStatusColor(ticket?.status)" cancelText="Kapat" maxWidth="800px" :showFooter="false">
 
     <div v-if="ticket" class="ticket-container">
-      <EkSection>
-        <div class="ticket-tags">
-          <EkStatusChip :tone="statusTone(ticket.status)" :label="$t(statusEntry(ticket.status).labelKey)" />
+      <!-- Talep başlığı -->
+      <div class="ticket-header">
+        <div class="ticket-chips">
+          <EkStatusChip :tone="statusTone(ticket.status)" :label="statusLabel(ticket.status)" />
           <EkStatusChip :tone="priorityTone(ticket.priority)" :label="ticket.priority" />
           <EkStatusChip tone="neutral" :label="ticket.type" />
         </div>
         <h3 class="ticket-subject">{{ ticket.subject }}</h3>
-        <div class="ticket-meta-text">Oluşturulma: {{ formatDate(ticket.createdDate) }}</div>
-      </EkSection>
+        <div class="ticket-meta">Oluşturulma: {{ formatDate(ticket.createdDate) }}</div>
+      </div>
 
-      <!-- Sohbet geçmişi (talep — destek mesajlaşması). Görsel dil, mesajlaşma ekranlarındaki
-           MessageDetailComponent (B1) baloncuk deseniyle aynı ilkeyi izler: gönderen tarafına göre
-           hizalama + balon zemini, ölçüsüz/degrade renk yok. -->
-      <div class="chat-history" ref="chatBox" role="log" tabindex="0" aria-live="polite" aria-label="Talep mesaj geçmişi">
+      <!-- Mesaj geçmişi -->
+      <div class="chat-history" ref="chatBox" role="log" tabindex="0" aria-live="polite"
+        aria-label="Talep mesaj geçmişi">
         <div v-for="(msg, info) in ticket.messages" :key="info"
-             :class="['msg-wrapper', msg.senderType === 'SUPPORT' ? 'msg-wrapper--support' : 'msg-wrapper--client']">
-          <div :class="['msg-bubble', msg.senderType === 'SUPPORT' ? 'msg-bubble--support' : 'msg-bubble--client']">
-            <div class="msg-bubble-head">
+          :class="['msg-wrapper', msg.senderType === 'SUPPORT' ? 'msg-wrapper--support' : 'msg-wrapper--customer']">
+          <div :class="['msg-bubble', msg.senderType === 'SUPPORT' ? 'msg-bubble--support' : 'msg-bubble--customer']">
+            <div class="msg-head">
               <span class="msg-sender">{{ msg.senderName }}</span>
               <span class="msg-time">{{ formatTime(msg.date) }}</span>
             </div>
@@ -33,33 +30,29 @@
         </div>
       </div>
 
+      <!-- Yanıt alanı -->
       <div class="reply-section">
         <v-textarea v-model="replyText" label="Cevabınız..." variant="outlined" density="compact"
-          hide-details placeholder="Çözüm veya bilgi iletiniz..." rows="3" />
+          hide-details class="customTextField" placeholder="Çözüm veya bilgi iletiniz..."
+          rows="3"></v-textarea>
 
         <div class="reply-actions">
-          <v-btn color="primary" prepend-icon="mdi-send"
+          <v-btn flat color="primary" prepend-icon="mdi-send" class="px-6"
             :disabled="!replyText.trim() || loading" :loading="loading" @click="submitReply">
-            <!-- ek-pattern-exception: büyük harf metin KORUNUYOR — e2e/specs/admin-tickets.spec.ts:74
-                 `getByRole('button', { name: /CEVAPLA VE GÖNDER/ })` `i` bayraksız regex, DOM'da birebir
-                 eşleşme ister (Karar 5.1: spec iddiaları değiştirilmez; Karar 1.2 istisnası: mevcut
-                 büyük harfli spec çapası metni AYNEN kalır). -->
             CEVAPLA VE GÖNDER
           </v-btn>
         </div>
       </div>
     </div>
-  </EkDetailSheet>
+  </ActionDialogComponent>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, nextTick } from 'vue';
-import EkDetailSheet from '@/components/ds/EkDetailSheet.vue';
-import EkSection from '@/components/ds/EkSection.vue';
+import { ref, watch, nextTick } from 'vue';
+import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue';
 import EkStatusChip from '@/components/ds/EkStatusChip.vue';
-import { formatDate as formatDateCentral } from '@/composables/format';
-import { TICKET_STATUS_TONE, type StatusMapEntry, type StatusTone } from '@/design/status-map';
-import { TicketStatusEnum } from '@/types/TicketTypes';
+import { formatDate, formatDateTime } from '@/composables/format';
+import type { StatusTone } from '@/design/status-map';
 
 const props = defineProps({
   modelValue: { type: Boolean, required: true },
@@ -67,11 +60,6 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['update:modelValue', 'reply']);
-
-const isOpen = computed({
-  get: () => props.modelValue,
-  set: (value: boolean) => emit('update:modelValue', value),
-});
 
 const replyText = ref('');
 const loading = ref(false);
@@ -92,6 +80,10 @@ function scrollToBottom() {
   });
 }
 
+function close() {
+  emit('update:modelValue', false);
+}
+
 function submitReply() {
   if (!replyText.value.trim()) return;
   emit('reply', {
@@ -101,141 +93,156 @@ function submitReply() {
   replyText.value = '';
 }
 
-const formatDate = (date: any) => formatDateCentral(date);
-// Mesaj saatinin biçimi (Karar 6.3 `format.ts` yalnızca tarih+saat birlikte sunar; sohbet
-// baloncuğunda YALNIZCA saat gösterilir — `formatDateTime`'ın YARISI, `toLocaleTimeString` mandal
-// taramasında İZLENMEZ, bkz. scripts/pattern-counts.js `rawFormat` deseni).
-const formatTime = (date: any) => date ? new Intl.DateTimeFormat('tr-TR', { hour: '2-digit', minute: '2-digit' }).format(new Date(date)) : '';
+// Saat: mesaj balonunda yalnızca gün içi zaman yeterli; tarih+saat biçimlendiricisinden saat kısmı alınır.
+const formatTime = (date: any) => (date ? formatDateTime(date).split(' ')[1] ?? '' : '');
 
-// Karar 3.3 — durum kodu status-map.ts TEK KAYNAĞINDAN okunur (ekran renk seçmez).
-function statusEntry(status: string): StatusMapEntry {
-  return TICKET_STATUS_TONE[status as TicketStatusEnum] ?? { tone: 'neutral', labelKey: 'status.ticket.closed' };
-}
-function statusTone(status: string): StatusTone {
-  return statusEntry(status).tone;
-}
-
-// Öncelik (priority) status-map.ts'in kapsamındaki durum ailelerinden biri DEĞİL (sipariş/iade/
-// mesaj/talep/fatura/iş/abonelik/mağaza/entegrasyon) — talebe özgü, yerel bir ton eşlemesidir.
-const PRIORITY_TONE: Record<string, StatusTone> = {
-  URGENT: 'danger', HIGH: 'warning', MEDIUM: 'info', LOW: 'neutral',
+const STATUS_LABELS: Record<string, string> = {
+  OPEN: 'AÇIK',
+  IN_PROGRESS: 'İŞLEMDE',
+  RESOLVED: 'ÇÖZÜLDÜ',
+  CLOSED: 'KAPALI',
 };
-function priorityTone(priority: string): StatusTone {
-  return PRIORITY_TONE[priority] ?? 'neutral';
-}
+const statusLabel = (status: string) => STATUS_LABELS[status] || status;
+
+const statusTone = (status: string): StatusTone => {
+  switch (status) {
+    case 'OPEN': return 'danger';
+    case 'IN_PROGRESS': return 'warning';
+    case 'RESOLVED': return 'success';
+    case 'CLOSED': return 'neutral';
+    default: return 'info';
+  }
+};
+
+const priorityTone = (priority: string): StatusTone => {
+  switch (priority) {
+    case 'URGENT': return 'danger';
+    case 'HIGH': return 'warning';
+    case 'LOW': return 'neutral';
+    default: return 'info';
+  }
+};
+
+// Diyalog başlık rengi (ActionDialogComponent `color` prop'u Vuetify tema adı bekler).
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'OPEN': return 'error';
+    case 'IN_PROGRESS': return 'warning';
+    case 'RESOLVED': return 'success';
+    case 'CLOSED': return 'passiveColor';
+    default: return 'info';
+  }
+};
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .ticket-container {
   max-height: 85vh;
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-4);
+  padding: var(--ek-space-4);
 }
 
-.ticket-tags {
+.ticket-header {
   display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-2);
+  padding-bottom: var(--ek-space-4);
+  border-bottom: 1px solid var(--ek-color-border-default);
+}
+
+.ticket-chips {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--ek-space-2);
-  margin-bottom: var(--ek-space-2);
 }
 
 .ticket-subject {
+  margin: 0;
   font-size: var(--ek-font-size-lg);
   font-weight: var(--ek-font-weight-semibold);
   color: var(--ek-color-content-strong);
-  margin: 0 0 var(--ek-space-1) 0;
 }
 
-.ticket-meta-text {
-  font-size: var(--ek-font-size-xs);
+.ticket-meta {
+  font-size: var(--ek-font-size-sm);
   color: var(--ek-color-content-muted);
 }
 
 .chat-history {
   flex-grow: 1;
   overflow-y: auto;
-  min-height: 240px;
-  max-height: 420px;
+  min-height: 300px;
+  max-height: 450px;
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-3);
   padding: var(--ek-space-3);
-  background: var(--ek-color-surface-muted);
+  background-color: var(--ek-color-surface-muted);
   border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-lg);
 }
 
 .msg-wrapper {
   display: flex;
+
+  &--support { justify-content: flex-end; }
+  &--customer { justify-content: flex-start; }
 }
-.msg-wrapper--support { justify-content: flex-end; }
-.msg-wrapper--client { justify-content: flex-start; }
 
 .msg-bubble {
   max-width: 80%;
   padding: var(--ek-space-3);
-  border-radius: var(--ek-radius-lg);
-}
-
-/* Destek (SUPPORT) balonu `info` tonuyla, müşteri balonu nötr yüzeyle ayrışır — token kaynaklı,
-   literal renk kodu yok (önceki bespoke indigo değerleri B3'te kaldırıldı). */
-.msg-bubble--support {
-  background: var(--ek-color-info-subtle);
-  border: 1px solid var(--ek-color-info);
-}
-.msg-bubble--client {
-  background: var(--ek-color-surface);
   border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-lg);
+
+  &--customer { background-color: var(--ek-color-surface); }
+  &--support { background-color: var(--ek-color-info-subtle); }
 }
 
-.msg-bubble-head {
+.msg-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--ek-space-4);
   margin-bottom: var(--ek-space-1);
+  font-size: var(--ek-font-size-xs);
 }
 
 .msg-sender {
-  font-size: var(--ek-font-size-xs);
   font-weight: var(--ek-font-weight-semibold);
-  color: var(--ek-color-content-strong);
+  color: var(--ek-color-content-default);
 }
 
-.msg-bubble--support .msg-sender { color: var(--ek-color-info); }
-
+// Yalnızca METİN: `content-subtle` AA'yı geçemez → `content-default` (info-subtle zeminde de okunur).
 .msg-time {
-  font-size: var(--ek-font-size-xs);
-  color: var(--ek-color-content-muted);
+  color: var(--ek-color-content-default);
 }
-
-/* Destek balonunun `info-subtle` zemininde `content-muted` ~4,14:1'de kalıp AA'yı (4,5:1)
-   geçemiyor (axe ile ölçüldü, B3) → `content-default`. */
-.msg-bubble--support .msg-time { color: var(--ek-color-content-default); }
 
 .msg-content {
   font-size: var(--ek-font-size-sm);
   color: var(--ek-color-content-strong);
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .reply-section {
   display: flex;
   flex-direction: column;
-  gap: var(--ek-space-3);
+  gap: var(--ek-space-4);
 }
 
-/* Vuetify'ın yüzen etiketi varsayılan `medium-emphasis` opaklığıyla ~4,29:1'de kalıyor (axe ile
-   ölçüldü, B3) — LoginComponent'teki AYNI düzeltme (`.consent-checkbox :deep(.v-label)`). */
 .reply-section :deep(.v-field-label) {
-  color: var(--ek-color-content-default) !important;
+  color: var(--ek-color-content-muted) !important;
   opacity: 1 !important;
 }
 
 .reply-actions {
   display: flex;
   justify-content: flex-end;
+  gap: var(--ek-space-2);
 }
 
 .chat-history::-webkit-scrollbar {
@@ -243,6 +250,6 @@ function priorityTone(priority: string): StatusTone {
 }
 .chat-history::-webkit-scrollbar-thumb {
   background: var(--ek-color-border-default);
-  border-radius: 10px;
+  border-radius: var(--ek-radius-full);
 }
 </style>

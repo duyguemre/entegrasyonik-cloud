@@ -5,6 +5,20 @@ import { ApplicationError } from '../Security';
 
 export const MAX_SHIPMENTS_PAGE_LIMIT = 100;
 
+/**
+ * [MM-08 / ADR-0021 aynı desen] getShipments sıralama alanı izin listesi. `getShipments` `Orders` koleksiyonunu
+ * sorguladığından (`getOrderModel()`) alanlar Order şemasından türetildi (OrderService.getOrders ile TUTARLI).
+ * `price` özel eşlemesi (`sortBy['prices.' + key]`) MEVCUT davranış olarak KORUNDU (BULGU: Order şemasında
+ * `prices` alanı yok, muhtemelen `financials` ile karıştırılmış — düzeltilmedi, yalnızca doğrulandı).
+ * [DÜZELTME, 2026-09-29, orkestratör] `sortBy` ÖNCEDEN hesaplanıyor ama pipeline'daki `$facet`e HİÇ
+ * UYGULANMIYORDU (ölü kod, sıralama isteği sessizce yok sayılıyordu) — artık `orders` dalına `$skip`/`$limit`'ten
+ * ÖNCE `{ $sort: sortBy }` eklendi.
+ */
+const SHIPMENT_SORT_FIELD_ALIASES: Record<string, string> = { price: 'prices.price' };
+const SHIPMENT_SORT_FIELDS: readonly string[] = [
+    'prices.price', 'orderNumber', 'externalOrderId', 'internalStatus', 'integrationCode', '_id',
+];
+
 export default class ShipmentService extends BaseApi implements IService {
 
     currentClientId: any
@@ -20,13 +34,13 @@ export default class ShipmentService extends BaseApi implements IService {
         try {
             var direction = 1
             const sortBy: any = {}
-            if (this.request.sortBy != undefined) {
+            if (this.request.sortBy != undefined && this.request.sortBy.key) {
                 direction = this.request.sortBy.order == 'asc' ? 1 : -1
-                if (this.request.sortBy.key == 'price') {
-                    sortBy['prices.' + this.request.sortBy.key] = direction
-                } else {
-                    sortBy[this.request.sortBy.key] = direction
+                const field = SHIPMENT_SORT_FIELD_ALIASES[this.request.sortBy.key] ?? this.request.sortBy.key;
+                if (typeof field !== 'string' || !SHIPMENT_SORT_FIELDS.includes(field)) {
+                    throw new ApplicationError('sortBy.key geçersiz: ' + SHIPMENT_SORT_FIELDS.join(', ') + ' değerlerinden biri olmalıdır.', 400);
                 }
+                sortBy[field] = direction
             } else {
                 sortBy._id = 1
             }
@@ -51,6 +65,7 @@ export default class ShipmentService extends BaseApi implements IService {
                             { $count: 'count' }
                         ],
                         orders: [
+                            { $sort: sortBy },
                             { $skip: skipCount },
                             { $limit: limitCount }
                         ]

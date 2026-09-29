@@ -12,16 +12,25 @@ import type { RevisionModels } from '@integration/config/revisionRepository'
 import { validatePatch } from '@integration/config/validatePatch'
 import { computeDiff, highestDanger, computeActiveTenantsImpact, type DiffEntry } from '@integration/config/diffAndImpact'
 import { assertApprovalSatisfied, ApprovalRequiredError } from '@integration/config/approvalGate'
+import { setTargetIntake, type IntakeValue } from '@integration/config/platformOverrideStore'
 
-// ADR-0020 Karar 3/6 (Aşama B) — `IntegrationConfigService`: taslak/fark/onay/yayın/geri alma/kilit/statik test.
-// Yalnız `platformAdmin` (OPERATION_POLICY, capabilities/domains/platform.ts) çağırabilir; kademe kontrolü
-// RunOperation'da yapılır, burada TEKRARLANMAZ (ADR-0001 Karar 8).
+// ADR-0020 Karar 3/6 (Aşama B) + Karar 3.8/5 (Aşama D) — `IntegrationConfigService`: taslak/fark/onay/yayın/geri
+// alma/kilit/statik test + kill-switch (`setIntake`) + drift önerisi (`proposeFromFinding`). Yalnız `platformAdmin`
+// (OPERATION_POLICY, capabilities/domains/platform.ts) çağırabilir; kademe kontrolü RunOperation'da yapılır, burada
+// TEKRARLANMAZ (ADR-0001 Karar 8).
 //
 // BİLİNÇLİ KAPSAM SINIRLARI (rapora yazılır):
-//  - `proposeFromFinding` YOK (ADR-0018 Aşama C'ye bağlı, bu görevin KAPSAMI DIŞI).
 //  - `testEndpoint` yalnız `static`/`replay` (replay bu turda BAĞLANMADI, ADR-0018 `ProbeRunner` gerekir); `live` her
 //    zaman "platform test hesabı tanımlı değil" döner (E3: sahte başarı YOK).
-//  - `setIntake`/kill-switch (Karar 3.8) BU SERVİSTE YOK (Aşama D kapsamı).
+//  - `setIntake`: motor tüketicileri (Dispatcher/OrderQueueProducer/StockPublishTrigger/IntegrationService)
+//    `platformOverrideStore.isIntakeOpen()`'ı BU GÖREVDE ÇAĞIRMAZ (yalnız OKUNABİLİR durum + bu uç kuruldu; bağlama
+//    ayrı BACKLOG kalemi — görev talimatı, "hızlandırma eşiği" bugün karşılanmıyor). ADR-0017 `IntegrationHealthItem`
+//    (bakım nedeni → tenant sağlığı) HENÜZ KODDA YOK (doğrulandı, `grep IntegrationHealthItem` = 0 model) — bu yüzden
+//    bakım nedeni yalnız `Heads.maintenance`de durur, sağlık modeline YAZILMAZ (ADR-0017 birleştiğinde bağlanır).
+//    ADR-0019 `SystemFlags.disabledCapabilities` ile ilişki (Karar 3.8 son paragraf) BİLİNÇLİ olarak ENTEGRE
+//    EDİLMEDİ (ayrı ADR/görev; ikisi bağımsız birer "geçici kapalı" nedeni olarak var olabilir).
+//  - `proposeFromFinding`: yalnız BİLGİ taşıyan bir taslak açar (host/replacementKey ÖNERİSİ), hiçbir değeri
+//    taslağa OTOMATİK YAZMAZ (ADR Karar 5 kuralı — admin `SettingField` formundan elle uygular).
 
 function assertKnownTarget(target: unknown): string {
     if (typeof target !== 'string' || target.length === 0) throw new ApplicationError('target zorunludur.', 400, 'VALIDATION')
@@ -298,5 +307,123 @@ export default class IntegrationConfigService extends BaseApi implements IServic
         const value = this.request?.value
         const errors = value === undefined ? [] : validatePatch({ [key]: value }, { target, descriptor: descriptorHostInfo(target) })
         return { target, key, mode, ok: errors.length === 0, issues: errors.map((e) => e.message) }
+    }
+
+    private parseMaintenanceInput(raw: unknown): repo.HeadDoc['maintenance'] | undefined {
+        if (raw === undefined || raw === null) return undefined
+        if (typeof raw !== 'object') throw new ApplicationError('maintenance geçersiz biçimde.', 400, 'VALIDATION')
+        const m = raw as Record<string, unknown>
+        const msgRaw = (m.message && typeof m.message === 'object') ? m.message as Record<string, unknown> : {}
+        const tr = typeof msgRaw.tr === 'string' ? msgRaw.tr.slice(0, 500) : undefined
+        const en = typeof msgRaw.en === 'string' ? msgRaw.en.slice(0, 500) : undefined
+        let until: Date | undefined
+        if (m.until !== undefined && m.until !== null) {
+            const parsed = new Date(m.until as any)
+            if (Number.isNaN(parsed.getTime())) throw new ApplicationError('maintenance.until geçerli bir tarih olmalıdır.', 400, 'VALIDATION')
+            until = parsed
+        }
+        return { message: { tr, en }, until }
+    }
+
+    /**
+     * `platform.integrations.setIntake` (Karar 3.8, Aşama D) — `on|drain|off` + isteğe bağlı bakım iletisi. `drain`/
+     * `off` gerekçe ZORUNLUDUR (görev talimatı); `off` EK OLARAK Karar 9.1'in "dangerous yayın ve setIntake(off)"
+     * onay kapısını (yazılı onay = hedef kodu + bayrak açıksa iki kişi kuralı) taşır — `approvalGate.ts` AYNEN
+     * TÜKETİLİR (yeniden yazılmadı). `drain` bu ikinci katmanı taşımaz (ADR metninde yalnız "gerekçe zorunlu" açıkça
+     * yazılı; typed/iki-kişi Karar 9.1'de YALNIZ `off`a bağlı — bu BİR ADR BELİRSİZLİĞİDİR, rapora yazıldı).
+     * `'on'`a dönüşte `maintenance` AÇIKÇA verilmediyse TEMİZLENİR (bilinçli varsayılan: normale dönüş bakım
+     * iletisini de kapatır; rapora yazıldı).
+     */
+    async setIntake(): Promise<any> {
+        const target = assertKnownTarget(this.request?.target)
+        const intake: IntakeValue | undefined = ['on', 'drain', 'off'].includes(this.request?.intake) ? this.request.intake : undefined
+        if (!intake) throw new ApplicationError('intake geçersiz. Beklenen: on | drain | off', 400, 'VALIDATION')
+        const actor = this.actor()
+
+        const danger: 'safe' | 'caution' | 'dangerous' = intake === 'off' ? 'dangerous' : intake === 'drain' ? 'caution' : 'safe'
+        try {
+            assertApprovalSatisfied({
+                danger, target, publishedBy: actor,
+                reason: this.request?.reason, typedConfirmation: this.request?.typedConfirmation,
+                approvedBy: this.request?.approvedBy,
+                twoPersonRuleEnabled: config.integrationConfig.twoPersonRuleEnabled,
+            })
+        } catch (e) {
+            void AuditLogger.fromRequest(this.request, 'integration_config.set_intake', 'error', { target, intake, reason: 'approval_required' })
+            if (e instanceof ApprovalRequiredError) throw new ApplicationError(e.message, 400, 'APPROVAL_REQUIRED')
+            throw e
+        }
+
+        const maintenanceInput = this.parseMaintenanceInput(this.request?.maintenance)
+        const maintenance: repo.HeadDoc['maintenance'] | null | undefined =
+            maintenanceInput !== undefined ? maintenanceInput : (intake === 'on' ? null : undefined)
+
+        try {
+            const head = await repo.setIntakeState(this.models(), { target, intake, maintenance })
+            setTargetIntake(target, head.intake, head.maintenance) // yerel pod ANINDA görür; diğerleri ≤15 sn'de poll ile
+            void AuditLogger.fromRequest(this.request, 'integration_config.set_intake', 'ok', {
+                target, intake, reason: this.request?.reason, maintenanceUntil: head.maintenance?.until,
+            })
+            return { target, intake: head.intake, maintenance: head.maintenance }
+        } catch (e) {
+            void AuditLogger.fromRequest(this.request, 'integration_config.set_intake', 'error', { target, intake })
+            throw e
+        }
+    }
+
+    /**
+     * `platform.integrationConfig.proposeFromFinding` (Karar 5, Aşama D) — ADR-0018 bulgusundan bir TASLAK REVİZYON
+     * açar. Yalnız `kind ∈ {endpoint, version, deprecation}` VE `status ∈ {new, triaged, accepted}` kabul edilir;
+     * kod değişikliği gerektiren bulgular (ör. `schema`/`unknown_enum`) REDDEDİLİR (ADR: "Panel yalnız host/eski-değer
+     * temizliği yapar"). `IntegrationComplianceService`'i YENİDEN YAZMAZ, `IntegrationFindingModel`'i AYNI desenle
+     * doğrudan okur (bkz. `integration-compliance-service.ts::findByDedupKey`, aynı desen tekrarlandı -- ayrı bir
+     * servisi örnekleyip çağırmak yerine, `BaseApi` alt sınıflarının birbirini örneklemediği MEVCUT desenle tutarlı).
+     * Öneri (host/replacementKey) yalnız BİLGİ döner, taslağa OTOMATİK DEĞER YAZMAZ (ADR'nin kendi kuralı).
+     */
+    async proposeFromFinding(): Promise<any> {
+        const findingId = this.request?.findingId
+        if (typeof findingId !== 'string' || !findingId) throw new ApplicationError('findingId zorunludur.', 400, 'VALIDATION')
+
+        const finding = await this.applicationDB.getIntegrationFindingModel().findOne({ dedupKey: findingId }).lean()
+        if (!finding) throw new ApplicationError('Bulgu bulunamadı.', 404, 'NOT_FOUND')
+
+        const CODE_CHANGE_KINDS = new Set(['endpoint', 'version', 'deprecation'])
+        if (!CODE_CHANGE_KINDS.has(finding.kind)) {
+            throw new ApplicationError(`Bu bulgu türü (${finding.kind}) için ayar önerisi açılamaz: kod değişikliği gerekir.`, 400, 'VALIDATION')
+        }
+        const OPEN_STATUSES = new Set(['new', 'triaged', 'accepted'])
+        if (!OPEN_STATUSES.has(finding.status)) {
+            throw new ApplicationError(`Bulgu durumu (${finding.status}) için ayar önerisi açılamaz.`, 400, 'VALIDATION')
+        }
+
+        const target = assertKnownTarget(finding.integrationCode)
+        const actor = this.actor()
+        const descriptor = target === ENGINE_TARGET ? undefined : getIntegrationDescriptor(target)
+
+        // Emekli uç eşleşmesi (Karar 5 "replacementKey'in host seçimi") -- BİLGİ amaçlı, en iyi çaba (subjectKey ya da
+        // kanıt yolları desenle örtüşüyorsa). İkinci bir doğruluk kaynağı AÇILMAZ, yalnız manifestodan OKUNUR.
+        const subjectHay = [finding.subjectKey, ...(finding.evidence?.paths ?? [])].filter((s): s is string => typeof s === 'string').map((s) => s.toLowerCase())
+        const retiredMatch = descriptor?.config.retiredEndpoints?.find((r) => {
+            const pat = r.pattern.toLowerCase()
+            return subjectHay.some((h) => h.includes(pat) || pat.includes(h))
+        })
+
+        try {
+            const draft = await repo.getOrCreateDraft(this.models(), {
+                target, catalogVersion: CATALOG_VERSION, createdBy: actor, origin: { kind: 'finding', ref: findingId },
+            })
+            void AuditLogger.fromRequest(this.request, 'integration_config.propose_from_finding', 'ok', {
+                target, findingId, draftVersion: draft.version, kind: finding.kind,
+            })
+            return {
+                target, draftVersion: draft.version, draftRev: draft.draftRev, origin: draft.origin,
+                finding: { dedupKey: finding.dedupKey, kind: finding.kind, status: finding.status, subjectKey: finding.subjectKey, severity: finding.severity },
+                suggestion: retiredMatch ? { kind: 'retiredEndpoint', pattern: retiredMatch.pattern, replacementKey: retiredMatch.replacementKey, retiredAt: retiredMatch.retiredAt } : undefined,
+                recommendation: finding.recommendation,
+            }
+        } catch (e) {
+            void AuditLogger.fromRequest(this.request, 'integration_config.propose_from_finding', 'error', { target, findingId })
+            throw e
+        }
     }
 }

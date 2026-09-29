@@ -89,9 +89,8 @@ export const PLATFORM_CAPABILITIES = [
         ui: onScreens(SYSTEM), mcp: PA, agent: NO_AGENT,
     }),
 
-    // --- ADR-0020 Karar 6 (Aşama B): entegrasyon/motor ayar yönetimi (IntegrationConfigService) ---
+    // --- ADR-0020 Karar 6 (Aşama B + Aşama D): entegrasyon/motor ayar yönetimi (IntegrationConfigService) ---
     // FE ekranları (Karar 4) ADR-0020 Aşama C kapsamı; backend hazır, `ui: noUi(...)` (BACKEND_ONLY_NOT_YET_IN_FE).
-    // `proposeFromFinding` ve `setIntake` (kill-switch/bakım) BU GÖREVİN KAPSAMI DIŞI (ADR-0018 Aşama C / ADR-0020 Aşama D).
     c({
         id: 'platform.integrations.list', domain: 'platform', summary: { tr: 'Tüm entegrasyon/motor ayar hedeflerini listele', en: 'List all integration/engine config targets' },
         effect: 'read', minTier: 'platformAdmin', bindings: [{ rpc: 'IntegrationConfigService/list' }],
@@ -144,6 +143,18 @@ export const PLATFORM_CAPABILITIES = [
         id: 'platform.integration_config.test_endpoint', domain: 'platform', summary: { tr: 'Ayar/uç nokta doğrulaması (yalnız statik + replay; canlı mod ADR-0018 B+ gerektirir)', en: 'Setting/endpoint validation (static + replay only; live mode requires ADR-0018 B+)' },
         effect: 'read', minTier: 'platformAdmin', bindings: [{ rpc: 'IntegrationConfigService/testEndpoint' }],
         ui: noUi('Backend-only: ADR-0020 Aşama C ekranları henüz yok.'), mcp: PA, agent: NO_AGENT,
+    }),
+    c({
+        id: 'platform.integration_config.propose_from_finding', domain: 'platform', summary: { tr: 'Bir uyum bulgusundan ayar değişikliği taslağı öner (Karar 5: yalnız taslak açar, otomatik değer YAZMAZ)', en: 'Propose a config-change draft from a compliance finding (Decision 5: only opens a draft, never auto-writes a value)' },
+        effect: 'write', minTier: 'platformAdmin', idempotency: 'key', bindings: [{ rpc: 'IntegrationConfigService/proposeFromFinding' }],
+        ui: noUi('Backend-only: ADR-0020 Aşama C ekranları henüz yok.'), mcp: PA, agent: NO_AGENT,
+        undo: { kind: 'compensate', with: 'platform.integration_config.discard_draft' },
+    }),
+    c({
+        id: 'platform.integrations.set_intake', domain: 'platform', summary: { tr: 'Kill-switch: entegrasyon kabul durumunu değiştir (on/drain/off) + bakım iletisi', en: 'Kill-switch: change an integration\'s intake state (on/drain/off) + maintenance message' },
+        effect: 'destructive', minTier: 'platformAdmin', bindings: [{ rpc: 'IntegrationConfigService/setIntake' }],
+        ui: noUi('Backend-only: ADR-0020 Aşama C ekranları henüz yok.'), mcp: PA, agent: NO_AGENT,
+        undo: { kind: 'compensate', with: 'platform.integrations.set_intake' },
     }),
 
     // --- ADR-0018 Karar 2/4 (Aşama B): entegrasyon uyum bulguları (IntegrationComplianceService) ---

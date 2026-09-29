@@ -1,20 +1,29 @@
 <template>
-  <div>
+  <div class="legacy-definition-root">
+    <EkPageHeader
+      section="Katalog"
+      :title="$t('definitions.option.title')"
+    />
   
 
+  <!-- B5-1 duzeltme: asagidaki `.expand-element`/`.scroll-element` (site.css) ve PaginationComponent
+       position:absolute ve sabit `top` degerleriyle konumlanir; konumlu bir ata olmadan sekme kabina
+       gore yerlesip ustteki EkPageHeader'i hesaba katmiyor, arama satirinin USTUNU ortuyorlardi.
+       Bu govde, baslik sonrasinda kalan alani kaplayan konumlu ata olur - icerik/davranis AYNI. -->
+  <div class="legacy-definition-body">
   <div class="search-section" >
     <div class="d-flex">
       <div style="width:48%">
         <div class="d-flex">
           <v-text-field clearable prepend-icon="mdi-form-textbox" density="comfortable"
-            :label="$t('customers.customer.searchlabel')" variant="outlined" bg-color="textfieldColor"></v-text-field>
+            :label="$t('customers.customer.searchlabel')" variant="outlined"></v-text-field>
           <v-bottom-sheet>
             <template v-slot:activator="{ props }">
-              <v-btn-group class="pa-0 ml-2" elevation="2">
-                <v-btn prepend-icon="mdi-magnify" to="/orderList" elevation=1 color="actionButtonColor"
+              <v-btn-group class="pa-0 ml-2">
+                <v-btn prepend-icon="mdi-magnify" to="/orderList" color="primary"
                   min-width="200px">
                   {{ $t("customers.customer.search") }}</v-btn>
-                <v-btn v-bind="props" class="ml-0" color="navigationButtonColor" elevation=1>
+                <v-btn v-bind="props" class="ml-0" color="primary" variant="tonal">
                   <v-icon class="advanced-search-button-background1" size="x-large">mdi-text-search
                     text-center</v-icon>
                 </v-btn>
@@ -30,7 +39,7 @@
 
   
   <div class="d-flex scroll-element expand-element no-expand">
-    <v-data-table style="background-color: white!important;" :items="items" fixed-header :headers="headers"
+    <v-data-table :items="items" fixed-header :headers="headers"
       class="pa-0 ma-0" show-select>
       <template #bottom></template>
       <template v-slot:header.actions>
@@ -70,11 +79,11 @@
 
       <template v-slot:item.actions="{ item, index }">
         <div class="text-center justify-center align-center">
-          <v-btn-group elevation=2 class="pa-0" density="comfortable">
-            <v-btn class="" min-width=0 elevation="2" color="newButtonColor">
+          <v-btn-group class="pa-0" density="comfortable">
+            <v-btn class="" min-width=0 variant="text" aria-label="Düzenle">
               <v-icon>mdi-pencil</v-icon>
             </v-btn>
-            <v-btn class="" min-width=0 elevation="2" color="deleteButtonColor">
+            <v-btn class="" min-width=0 variant="text" color="error" aria-label="Sil">
               <v-icon>mdi-delete</v-icon>
             </v-btn>
           </v-btn-group>
@@ -85,9 +94,11 @@
   </div>
   <PaginationComponent />
   </div>
+  </div>
 </template>
 
 <script setup lang="ts">
+import EkPageHeader from '@/components/ds/EkPageHeader.vue'
 import { useI18n } from 'vue-i18n';
 import { ref, onMounted, watch } from 'vue'
 
@@ -286,4 +297,17 @@ var openUpdate = (id: number) => {
 }
 </script>
 
-<style></style>
+<style scoped>
+.legacy-definition-root {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.legacy-definition-body {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+</style>

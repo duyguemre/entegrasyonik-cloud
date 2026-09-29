@@ -25,3 +25,7 @@ AuditLogSchema.index({ at: 1 }, { expireAfterSeconds: AUDIT_LOG_TTL_SECONDS });
 // Sorgu indeksleri
 AuditLogSchema.index({ event: 1, at: -1 });
 AuditLogSchema.index({ sub: 1, at: -1 });
+// ADR-0021 Karar 3 D9 / DATA_MODEL_CONVENTIONS.md §12 "Denetim `AuditLogs {tid}` + `at` aralığı"
+// (audit-service.ts:30-34 -- tenant denetim kaydı listesi, tid filtresi + at aralık sıralaması).
+// Uygulama: backend/migrations/0001-d9-indexes-app.js.
+AuditLogSchema.index({ tid: 1, at: -1 }, { name: 'tid_1_at_-1' });

@@ -3,10 +3,23 @@ import { BASE_IMAGE_URL } from 'src/Constants'
 import { ImageOperations, storageService } from '@services/index'
 import { BaseApi } from '../BaseApi'
 import { ObjectId } from 'mongodb'
+import { ApplicationError } from '../Security'
 import { containsRegex, normalizePagination } from '@utils/search'
 import * as XLSX from 'xlsx'
 import crypto from 'crypto';
 import { StatsOperations } from '@operations/client/StatsOperations';
+
+/**
+ * [MM-08 / ADR-0021 aynı desen] getProducts sıralama alanı izin listesi. `ProductSchema` (Product.ts) alanlarından
+ * ve FE ürün listesinin (ProductListView.vue) tıklanabilir/sıralanabilir başlıklarından türetildi: title, stockcode,
+ * barcode, stock, ve özel eşleme `price` -> `prices.minSalePrice` (MEVCUT davranış KORUNDU). `brand`/`category`
+ * başlıkları FE'de sıralama tetiklemiyor (yalnızca hover, @click YOK) — allowlist'e alınmadı. `OrderService.getOrders`
+ * ile AYNI keyfi-alan-adı-enjeksiyonu riskini kapatır.
+ */
+const PRODUCT_SORT_FIELD_ALIASES: Record<string, string> = { price: 'prices.minSalePrice' };
+const PRODUCT_SORT_FIELDS: readonly string[] = [
+    'title', 'stockcode', 'barcode', 'stock', 'prices.minSalePrice', '_id',
+];
 
 /**
  * [N6 / ADR-0004 Karar 1] `Variants` üzerindeki zero-oversell alanları YALNIZCA StockAllocator'ın atomik geçişleriyle yazılır
@@ -85,12 +98,12 @@ export default class ProductService extends BaseApi implements IService {
 
             let direction = sort?.direction === 'asc' ? 1 : -1;
             const sortBy: any = {};
-            if (sort) {
-                if (sort.field === 'price') {
-                    sortBy['prices.minSalePrice'] = direction;
-                } else {
-                    sortBy[sort.field] = direction;
+            if (sort && sort.field) {
+                const field = PRODUCT_SORT_FIELD_ALIASES[sort.field] ?? sort.field;
+                if (typeof field !== 'string' || !PRODUCT_SORT_FIELDS.includes(field)) {
+                    throw new ApplicationError('sort.field geçersiz: ' + PRODUCT_SORT_FIELDS.join(', ') + ' değerlerinden biri olmalıdır.', 400);
                 }
+                sortBy[field] = direction;
             }
             sortBy._id = direction;
 

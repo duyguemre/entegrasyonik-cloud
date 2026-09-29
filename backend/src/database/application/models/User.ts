@@ -31,6 +31,11 @@ export const UserSchema = new mongoose.Schema({
 
 // Tekil indeks: ön kontrol (precheck-tenant-duplicates.js) temiz olmadan hedef DB'de kurulmamalıdır (bkz. Client.ts notu).
 UserSchema.index({ email: 1 }, { unique: true, name: 'uniq_email', partialFilterExpression: { email: { $type: 'string' } } });
+// ADR-0021 Karar 3 D9 / DATA_MODEL_CONVENTIONS.md §12 "Tenant kullanıcıları `Users {clientId}` (merkezi, ADR-0021 D11)"
+// -- `clientId` bu şemada henüz BEYAN EDİLMİYOR (strict:false; user-service.ts:115-122 yazıyor/sorguluyor;
+// D11'de alan resmen eklenecek) ama strict:false altında beyansız alana indeks kurmak geçerlidir.
+// Uygulama: backend/migrations/0001-d9-indexes-app.js.
+UserSchema.index({ clientId: 1 }, { name: 'clientId_1' });
 
 export const ResourceSchema = new mongoose.Schema({
     code: { type: String, required: true },

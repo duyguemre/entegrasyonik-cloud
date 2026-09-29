@@ -4,11 +4,16 @@
  * Merkezde platform çekirdeği; çevresinde dört ekosistem düğümü (`getEcosystemNodes()`): pazaryerleri,
  * e-ticaret altyapıları, ERP/muhasebe, kargo ve fatura akışı. Kanal adı YOK; kanal ayrımı isimsiz renkli nokta
  * (`data-code` -> `--chan`). Her düğüm kayıttaki gerçek bir entegrasyona/yeteneğe dayanır (dayanağı yoksa
- * seçici düğümü döndürmez). Kanal bazında kapsam ve farklar /entegrasyonlar sayfasındadır (S12: kapsam
- * matrisi ana sayfadan oraya taşındı).
- * Sahne `ecosystem` (bu dosyadaki stil): düğümler sırayla belirir; görünürken merkez halkası yavaşça genişleyip
- * söner ve veri paketleri çizgiler boyunca akar (yalnızca translate/opacity; reduced-motion / "Hareket"
- * kapalı / JS'siz durumda statik şema). Alt vizyon şeridi genel `reveal` girişini kullanır.
+ * seçici düğümü döndürmez). Kanal bazında kapsam ve farklar /entegrasyonlar sayfasındadır.
+ *
+ * S13 (parça B): şema daha derin ve canlı — ışıklı, katmanlı merkez çekirdek; çevresinde iki yörünge halkası
+ * ve üzerinde dönen isimsiz renkli kanal noktaları; her hatta İKİ YÖNLÜ veri paketleri (düğümden merkeze
+ * kanal renginde, merkezden düğüme vurgu renginde); hatlar saat yönünde SIRAYLA ışır, paket vardığında düğüm
+ * kartı parlar, merkeze varan akış çekirdekten dalga yayar. Üzerine gelinen düğümün hattı ve akışı vurgulanır,
+ * diğerleri geri çekilir (`:has`, JS yok; hareket kapalıyken de çalışan statik vurgu).
+ * Sahne `ecosystem` (bu dosyadaki stil): yalnızca transform/opacity; döngüler yalnızca görünürken
+ * (`data-visible='true'`) çalışır; reduced-motion / "Hareket" kapalı / JS'siz durumda statik şema.
+ * Alt vizyon şeridi genel `reveal` girişini kullanır.
  */
 import Section from '../Section.astro'
 import SectionHeading from './SectionHeading.astro'
@@ -19,8 +24,13 @@ import { pageHref } from './links'
 
 const nodes = getEcosystemNodes()
 const detailHref = pageHref('/entegrasyonlar')
-/** Masaüstü şemadaki konumlar (sol üst, sağ üst, sol alt, sağ alt); sol düğümler merkeze akar, sağdakiler merkezden. */
+/** Masaüstü şemadaki konumlar (sol üst, sağ üst, sol alt, sağ alt). */
 const SLOTS = ['tl', 'tr', 'bl', 'br'] as const
+const lanes = nodes.map((n, i) => ({ slot: SLOTS[i] ?? 'tl', code: n.channelCodes[0] }))
+/** Yörüngedeki isimsiz kanal noktaları: düğümlerin dayandığı kanalların birleşimi (ad yok, yalnızca renk). */
+const orbitCodes = [...new Set(nodes.flatMap((n) => n.channelCodes))]
+const outerCodes = orbitCodes.filter((_, i) => i % 2 === 0)
+const innerCodes = orbitCodes.filter((_, i) => i % 2 === 1)
 ---
 
 <Section tone="muted" id="entegrasyonlar" labelledby="entegrasyon-baslik">
@@ -33,25 +43,42 @@ const SLOTS = ['tl', 'tr', 'bl', 'br'] as const
   />
 
   <div class="eco" data-scene="ecosystem" data-testid="ecosystem">
+    <span class="eco__spot" aria-hidden="true"></span>
     <svg class="eco__lines" viewBox="0 0 160 70" preserveAspectRatio="none" aria-hidden="true" focusable="false">
       <defs>
         <linearGradient id="eco-wire" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0" class="eco__stop-a"></stop>
-          <stop offset="1" class="eco__stop-b"></stop>
+          <stop offset="0.5" class="eco__stop-b"></stop>
+          <stop offset="1" class="eco__stop-a"></stop>
         </linearGradient>
       </defs>
-      <path d="M48 17.5 L80 35 L112 17.5 M48 52.5 L80 35 L112 52.5"></path>
+      <path class="eco__wire eco__wire--tl" d="M48 17.5 L80 35"></path>
+      <path class="eco__wire eco__wire--tr" d="M112 17.5 L80 35"></path>
+      <path class="eco__wire eco__wire--bl" d="M48 52.5 L80 35"></path>
+      <path class="eco__wire eco__wire--br" d="M112 52.5 L80 35"></path>
+      <path class="eco__beam eco__beam--tl" d="M48 17.5 L80 35"></path>
+      <path class="eco__beam eco__beam--tr" d="M112 17.5 L80 35"></path>
+      <path class="eco__beam eco__beam--bl" d="M48 52.5 L80 35"></path>
+      <path class="eco__beam eco__beam--br" d="M112 52.5 L80 35"></path>
     </svg>
-    <span class="eco__packet eco__packet--tl" aria-hidden="true"></span>
-    <span class="eco__packet eco__packet--tl eco__packet--late" aria-hidden="true"></span>
-    <span class="eco__packet eco__packet--bl" aria-hidden="true"></span>
-    <span class="eco__packet eco__packet--bl eco__packet--late" aria-hidden="true"></span>
-    <span class="eco__packet eco__packet--tr" aria-hidden="true"></span>
-    <span class="eco__packet eco__packet--tr eco__packet--late" aria-hidden="true"></span>
-    <span class="eco__packet eco__packet--br" aria-hidden="true"></span>
-    <span class="eco__packet eco__packet--br eco__packet--late" aria-hidden="true"></span>
+
+    {
+      lanes.map((l) => (
+        <span class={`eco__lane eco__lane--${l.slot}`} aria-hidden="true">
+          <i class="eco__packet eco__packet--in" data-code={l.code}></i>
+          <i class="eco__packet eco__packet--in eco__packet--late" data-code={l.code}></i>
+          <i class="eco__packet eco__packet--out"></i>
+        </span>
+      ))
+    }
 
     <div class="eco__hub" aria-hidden="true">
+      <span class="eco__orbit eco__orbit--outer">
+        {outerCodes.map((code) => <i class="eco__sat" data-code={code}></i>)}
+      </span>
+      <span class="eco__orbit eco__orbit--inner">
+        {innerCodes.map((code) => <i class="eco__sat" data-code={code}></i>)}
+      </span>
       <span class="eco__ring"></span>
       <span class="eco__ring eco__ring--late"></span>
       <span class="eco__core">
@@ -64,6 +91,7 @@ const SLOTS = ['tl', 'tr', 'bl', 'br'] as const
       {
         nodes.map((n, i) => (
           <li class={`eco__node eco__node--${SLOTS[i] ?? 'tl'}`} data-part="eco-node" data-reveal>
+            <span class="eco__lit" aria-hidden="true"></span>
             <span class="eco__icon">
               <Icon name={n.icon} size="md" />
             </span>
@@ -110,11 +138,13 @@ const SLOTS = ['tl', 'tr', 'bl', 'br'] as const
 
 <style>
   /*
-   * Şema: mobilde (<1024px) merkez + düğüm kartları dikey yığın; çizgi ve paketler gizli.
+   * Şema: mobilde (<1024px) merkez (yörüngeleriyle) + düğüm kartları dikey yığın; hat ve paketler gizli.
    * Masaüstünde sabit en-boy oranlı sahne (`aspect-ratio` + `container-type: size`): düğümler yüzde konumlu,
-   * çizgiler aynı oranlı viewBox'ta, paketler `cqw/cqh` ile çizgi boyunca kayar → geometri her genişlikte tutarlı.
+   * hatlar aynı oranlı viewBox'ta, paketler `cqw/cqh` ile hat boyunca kayar → geometri her genişlikte tutarlı.
+   * Katman sırası: hat (svg) < paket < düğüm kartı (paket kartın altına "girer") < merkez.
    */
   .eco {
+    --glow: color-mix(in srgb, var(--ek-color-secondary) 55%, transparent);
     position: relative;
     display: flex;
     flex-direction: column;
@@ -122,18 +152,19 @@ const SLOTS = ['tl', 'tr', 'bl', 'br'] as const
     margin-top: var(--ek-space-10);
   }
   .eco__lines,
-  .eco__packet {
+  .eco__lane,
+  .eco__spot {
     display: none;
   }
 
-  /* --- Merkez --- */
+  /* --- Merkez çekirdek --- */
   .eco__hub {
     position: relative;
     display: grid;
     place-items: center;
     align-self: center;
     width: calc(var(--ek-space-16) * 2.5);
-    margin-block: var(--ek-space-6) var(--ek-space-8);
+    margin-block: var(--ek-space-12);
     aspect-ratio: 1;
   }
   .eco__core {
@@ -146,12 +177,37 @@ const SLOTS = ['tl', 'tr', 'bl', 'br'] as const
     gap: var(--ek-space-2);
     width: 100%;
     height: 100%;
-    border: var(--site-border-width) solid var(--site-glass-border);
+    overflow: hidden;
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 45%, var(--site-glass-border));
     border-radius: var(--ek-radius-full);
     background: var(--site-stage-mesh);
     box-shadow:
       0 0 0 var(--ek-space-2) color-mix(in srgb, var(--ek-color-secondary) 12%, transparent),
+      0 0 var(--ek-space-16) var(--ek-space-2) color-mix(in srgb, var(--ek-color-secondary) 30%, transparent),
       var(--site-shadow-panel);
+  }
+  /* Derinlik: üst-solda ışık, alt kenarda iç gölge halkası (küre hissi). */
+  .eco__core::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background:
+      radial-gradient(circle at 32% 24%, color-mix(in srgb, var(--ek-color-secondary) 38%, transparent), transparent 55%),
+      radial-gradient(circle at 70% 90%, color-mix(in srgb, var(--ek-color-primary) 55%, transparent), transparent 60%);
+    pointer-events: none;
+  }
+  .eco__core::after {
+    content: '';
+    position: absolute;
+    inset: var(--ek-space-2);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-background) 12%, transparent);
+    border-radius: inherit;
+    pointer-events: none;
+  }
+  .eco__core > :global(*) {
+    position: relative;
+    z-index: 1;
   }
   .eco__core :global(.logo__word) {
     font-size: var(--ek-font-size-md);
@@ -163,18 +219,61 @@ const SLOTS = ['tl', 'tr', 'bl', 'br'] as const
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
-  /* Statik yörünge: merkezin çevresinde ince kesik çizgili halka (hareketten bağımsız). */
-  .eco__hub::before {
-    content: '';
+  /* Yörüngeler: ince halkalar, üzerinde isimsiz renkli kanal noktaları (hareket açıkken yavaşça döner). */
+  .eco__orbit {
     position: absolute;
-    inset: -14%;
-    border: var(--site-border-width) dashed color-mix(in srgb, var(--ek-color-secondary) 40%, var(--ek-color-border-default));
     border-radius: var(--ek-radius-full);
+    pointer-events: none;
+  }
+  .eco__orbit--outer {
+    inset: -30%;
+    border: var(--site-border-width) dashed color-mix(in srgb, var(--ek-color-secondary) 40%, var(--ek-color-border-default));
+  }
+  .eco__orbit--inner {
+    inset: -13%;
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 28%, var(--ek-color-border-default));
+  }
+  .eco__sat {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    width: var(--ek-space-3);
+    height: var(--ek-space-3);
+    margin: calc(var(--ek-space-3) / -2) 0 0 calc(var(--ek-space-3) / -2);
+    border: calc(var(--site-border-width) * 2) solid var(--ek-color-surface);
+    border-radius: var(--ek-radius-full);
+    background: var(--chan, var(--ek-color-secondary));
+    box-shadow: 0 0 0 var(--ek-space-1) color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 22%, transparent);
+  }
+  /* Nokta, yörünge çemberine açıyla yerleştirilir: merkezden yarıçap kadar dışarı (halka öğesinin yarısı). */
+  .eco__orbit--outer .eco__sat {
+    transform: rotate(var(--a)) translateY(calc(var(--ek-space-16) * -2)) rotate(calc(var(--a) * -1));
+  }
+  .eco__orbit--inner .eco__sat {
+    transform: rotate(var(--a)) translateY(calc(var(--ek-space-16) * -1.575)) rotate(calc(var(--a) * -1));
+  }
+  .eco__sat:nth-child(1) {
+    --a: 20deg;
+  }
+  .eco__sat:nth-child(2) {
+    --a: 140deg;
+  }
+  .eco__sat:nth-child(3) {
+    --a: 260deg;
+  }
+  .eco__orbit--inner .eco__sat:nth-child(1) {
+    --a: 80deg;
+  }
+  .eco__orbit--inner .eco__sat:nth-child(2) {
+    --a: 200deg;
+  }
+  .eco__orbit--inner .eco__sat:nth-child(3) {
+    --a: 320deg;
   }
   .eco__ring {
     position: absolute;
     inset: 0;
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 55%, transparent);
+    border: calc(var(--site-border-width) * 2) solid var(--glow);
     border-radius: var(--ek-radius-full);
     opacity: 0;
   }
@@ -187,7 +286,7 @@ const SLOTS = ['tl', 'tr', 'bl', 'br'] as const
   }
   .eco__node {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
     align-items: start;
@@ -199,11 +298,26 @@ const SLOTS = ['tl', 'tr', 'bl', 'br'] as const
     box-shadow: var(--site-shadow-card);
     transition:
       border-color var(--ek-duration-base) var(--ek-easing-standard),
-      box-shadow var(--ek-duration-base) var(--ek-easing-standard);
+      box-shadow var(--ek-duration-base) var(--ek-easing-standard),
+      opacity var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  /* Paket vardığında / üzerine gelindiğinde kartın çevresinde yanan vurgu halkası (statik: görünmez). */
+  .eco__lit {
+    position: absolute;
+    inset: calc(var(--site-border-width) * -1);
+    border: calc(var(--site-border-width) * 2) solid var(--ek-color-secondary);
+    border-radius: inherit;
+    box-shadow:
+      0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-secondary) 14%, transparent),
+      0 var(--ek-space-4) var(--ek-space-10) calc(var(--ek-space-4) * -1) var(--glow);
+    opacity: 0;
+    pointer-events: none;
   }
   .eco__node:hover {
-    border-color: color-mix(in srgb, var(--ek-color-secondary) 55%, var(--ek-color-border-default));
     box-shadow: var(--site-shadow-card-hover);
+  }
+  .eco__node:hover .eco__lit {
+    opacity: 1;
   }
   .eco__icon {
     display: inline-flex;
@@ -215,6 +329,10 @@ const SLOTS = ['tl', 'tr', 'bl', 'br'] as const
     background: linear-gradient(140deg, var(--ek-color-primary-darken-1), var(--ek-color-primary));
     color: var(--site-color-on-primary);
     box-shadow: 0 0.5rem 1rem -0.5rem color-mix(in srgb, var(--ek-color-primary) 60%, transparent);
+    transition: scale var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .eco__node:hover .eco__icon {
+    scale: 1.06;
   }
   .eco__copy {
     display: flex;
@@ -317,6 +435,7 @@ const SLOTS = ['tl', 'tr', 'bl', 'br'] as const
       display: block;
       aspect-ratio: 16 / 7;
       container-type: size;
+      overflow: hidden;
       margin-top: var(--ek-space-12);
       border: var(--site-border-width) solid var(--ek-color-border-default);
       border-radius: var(--site-radius-panel);
@@ -325,6 +444,24 @@ const SLOTS = ['tl', 'tr', 'bl', 'br'] as const
       background-size: var(--site-texture-dots-size);
       box-shadow: var(--site-shadow-card);
     }
+    /* Merkezin arkasındaki yumuşak ışık alanı (derinlik). */
+    .eco__spot {
+      display: block;
+      position: absolute;
+      inset-inline-start: 50%;
+      inset-block-start: 50%;
+      width: 60cqw;
+      height: 60cqw;
+      translate: -50% -50%;
+      border-radius: var(--ek-radius-full);
+      background: radial-gradient(
+        circle,
+        color-mix(in srgb, var(--ek-color-secondary) 16%, transparent) 0%,
+        color-mix(in srgb, var(--ek-color-secondary) 6%, transparent) 35%,
+        transparent 65%
+      );
+      pointer-events: none;
+    }
     .eco__lines {
       display: block;
       position: absolute;
@@ -332,15 +469,24 @@ const SLOTS = ['tl', 'tr', 'bl', 'br'] as const
       width: 100%;
       height: 100%;
       fill: none;
-      stroke: url(#eco-wire);
-      stroke-width: 2;
       stroke-linecap: round;
     }
     .eco__lines path {
       vector-effect: non-scaling-stroke;
+      transition: opacity var(--ek-duration-base) var(--ek-easing-standard);
+    }
+    .eco__wire {
+      stroke: url(#eco-wire);
+      stroke-width: 2;
+    }
+    /* Işın: hattın üzerinde parlayan, daha kalın kopya (sırayla ışır; statik: görünmez). */
+    .eco__beam {
+      stroke: var(--ek-color-secondary);
+      stroke-width: 5;
+      opacity: 0;
     }
     .eco__stop-a {
-      stop-color: color-mix(in srgb, var(--ek-color-secondary) 45%, var(--ek-color-border-default));
+      stop-color: color-mix(in srgb, var(--ek-color-secondary) 40%, var(--ek-color-border-default));
     }
     .eco__stop-b {
       stop-color: var(--ek-color-secondary);
@@ -353,6 +499,15 @@ const SLOTS = ['tl', 'tr', 'bl', 'br'] as const
       width: 19cqw;
       margin: 0;
       translate: -50% -50%;
+    }
+    .eco__core :global(.logo__word) {
+      font-size: clamp(var(--ek-font-size-md), 1.5cqw, var(--ek-font-size-lg));
+    }
+    .eco__orbit--outer .eco__sat {
+      transform: rotate(var(--a)) translateY(-15.2cqw) rotate(calc(var(--a) * -1));
+    }
+    .eco__orbit--inner .eco__sat {
+      transform: rotate(var(--a)) translateY(-11.97cqw) rotate(calc(var(--a) * -1));
     }
     .eco__nodes {
       position: static;
@@ -379,39 +534,91 @@ const SLOTS = ['tl', 'tr', 'bl', 'br'] as const
     .eco__node--br {
       inset-block-start: 75%;
     }
-    /* Veri paketi: çizginin kart ucundan (x=30cqw) merkeze (x=50cqw) — sağda tersine, merkezden karta. */
-    .eco__packet {
+
+    /* Paket şeritleri: her hat için bir katman (üzerine gelince topluca vurgulanır / geri çekilir). */
+    .eco__lane {
       display: block;
       position: absolute;
-      z-index: 2;
-      width: var(--ek-space-2);
-      height: var(--ek-space-2);
-      margin: calc(var(--ek-space-1) * -1) 0 0 calc(var(--ek-space-1) * -1);
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      transition: opacity var(--ek-duration-base) var(--ek-easing-standard);
+    }
+    /* Düğüm ucu (x=30/70 %, y=25/75 %) ile merkez (50 %, 50 %) arası: `--in` düğümden merkeze, `--out` tersi. */
+    .eco__lane--tl {
+      --ex: 30%;
+      --ey: 25%;
+      --dx: 20cqw;
+      --dy: 25cqh;
+    }
+    .eco__lane--tr {
+      --ex: 70%;
+      --ey: 25%;
+      --dx: -20cqw;
+      --dy: 25cqh;
+    }
+    .eco__lane--bl {
+      --ex: 30%;
+      --ey: 75%;
+      --dx: 20cqw;
+      --dy: -25cqh;
+    }
+    .eco__lane--br {
+      --ex: 70%;
+      --ey: 75%;
+      --dx: -20cqw;
+      --dy: -25cqh;
+    }
+    .eco__packet {
+      --size: calc(var(--ek-space-2) * 1.25);
+      position: absolute;
+      width: var(--size);
+      height: var(--size);
+      margin: calc(var(--size) / -2) 0 0 calc(var(--size) / -2);
       border-radius: var(--ek-radius-full);
-      background: var(--ek-color-secondary);
-      box-shadow: 0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-secondary) 25%, transparent);
       opacity: 0;
     }
-    .eco__packet--tl {
-      inset-inline-start: 30%;
-      inset-block-start: 25%;
-      --to: 20cqw 25cqh;
+    .eco__packet--in {
+      inset-inline-start: var(--ex);
+      inset-block-start: var(--ey);
+      --to: var(--dx) var(--dy);
+      background: var(--chan, var(--ek-color-secondary));
+      box-shadow: 0 0 0 var(--ek-space-1) color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 22%, transparent);
     }
-    .eco__packet--bl {
-      inset-inline-start: 30%;
-      inset-block-start: 75%;
-      --to: 20cqw -25cqh;
-    }
-    .eco__packet--tr {
+    .eco__packet--out {
       inset-inline-start: 50%;
       inset-block-start: 50%;
-      --to: 20cqw -25cqh;
+      --to: calc(var(--dx) * -1) calc(var(--dy) * -1);
+      --size: var(--ek-space-4);
+      border: calc(var(--site-border-width) * 2) solid var(--ek-color-surface);
+      background: var(--ek-color-secondary);
+      box-shadow:
+        0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-secondary) 25%, transparent),
+        0 0 var(--ek-space-4) var(--ek-space-1) var(--glow);
     }
-    .eco__packet--br {
-      inset-inline-start: 50%;
-      inset-block-start: 50%;
-      --to: 20cqw 25cqh;
+
+    /* Üzerine gelinen düğüm: kendi hattı ve şeridi öne çıkar, diğerleri geri çekilir (hareketten bağımsız). */
+    .eco:has(.eco__node:hover) .eco__wire,
+    .eco:has(.eco__node:hover) .eco__lane {
+      opacity: 0.25;
     }
+    .eco:has(.eco__node:hover) .eco__node:not(:hover) {
+      opacity: 0.72;
+    }
+    .eco:has(.eco__node--tl:hover) :is(.eco__wire--tl, .eco__lane--tl),
+    .eco:has(.eco__node--tr:hover) :is(.eco__wire--tr, .eco__lane--tr),
+    .eco:has(.eco__node--bl:hover) :is(.eco__wire--bl, .eco__lane--bl),
+    .eco:has(.eco__node--br:hover) :is(.eco__wire--br, .eco__lane--br) {
+      opacity: 1;
+    }
+    .eco:has(.eco__node--tl:hover) .eco__beam--tl,
+    .eco:has(.eco__node--tr:hover) .eco__beam--tr,
+    .eco:has(.eco__node--bl:hover) .eco__beam--bl,
+    .eco:has(.eco__node--br:hover) .eco__beam--br {
+      animation: none;
+      opacity: 0.55;
+    }
+
     .promises {
       margin-top: var(--ek-space-10);
       padding-top: 0;
@@ -420,9 +627,12 @@ const SLOTS = ['tl', 'tr', 'bl', 'br'] as const
   }
 
   /*
-   * Hareket (yalnızca opacity/translate/scale; `prefers-reduced-motion: no-preference` + `html[data-motion='play']`):
-   *  - giriş: düğümler genel [data-reveal] kuralıyla sırayla yükselir (scenes.css) — çekirdek yakınlaşarak belirir
-   *  - döngü: görünürken halka yavaşça genişleyip söner; paketler çizgi boyunca akar. Görünmezken duraklatılır.
+   * Hareket (yalnızca opacity/translate/scale/rotate; `prefers-reduced-motion: no-preference` + `html[data-motion='play']`):
+   *  - giriş: düğümler genel [data-reveal] kuralıyla sırayla yükselir (scenes.css); çekirdek yakınlaşarak belirir
+   *  - döngü (T = ambient-fast): hatlar saat yönünde (sol üst → sağ üst → sağ alt → sol alt) T/4 arayla ışır;
+   *    ışınla birlikte merkezden düğüme vurgu paketi gider, vardığında düğüm kartı parlar; yarım tur sonra aynı
+   *    hattan düğümden merkeze kanal renginde iki paket döner, çekirdek dalga yayar. Yörüngeler yavaşça döner.
+   *    Tümü `paused` başlar, yalnızca `data-visible='true'` iken çalışır.
    */
   @media (prefers-reduced-motion: no-preference) {
     @keyframes eco-core-in {
@@ -439,7 +649,7 @@ const SLOTS = ['tl', 'tr', 'bl', 'br'] as const
       70%,
       100% {
         opacity: 0;
-        scale: 1.45;
+        scale: 1.5;
       }
     }
     @keyframes eco-travel {
@@ -447,18 +657,66 @@ const SLOTS = ['tl', 'tr', 'bl', 'br'] as const
         opacity: 0;
         translate: 0 0;
       }
-      6% {
+      5%,
+      32% {
         opacity: 1;
       }
-      34% {
-        opacity: 1;
-      }
-      40%,
+      38%,
       100% {
         opacity: 0;
         translate: var(--to);
       }
     }
+    @keyframes eco-beam {
+      0%,
+      100% {
+        opacity: 0;
+      }
+      10% {
+        opacity: 0.85;
+      }
+      38% {
+        opacity: 0;
+      }
+    }
+    @keyframes eco-lit {
+      0%,
+      100% {
+        opacity: 0;
+      }
+      6% {
+        opacity: 1;
+      }
+      30% {
+        opacity: 0;
+      }
+    }
+    @keyframes eco-orbit {
+      to {
+        rotate: 1turn;
+      }
+    }
+
+    .eco {
+      --T: var(--site-motion-ambient-fast);
+    }
+    /* Saat yönünde sıra: tl 0, tr 1, br 2, bl 3 (çeyrek tur arayla). */
+    .eco__lane--tr,
+    .eco__beam--tr,
+    .eco__node--tr {
+      --k: 1;
+    }
+    .eco__lane--br,
+    .eco__beam--br,
+    .eco__node--br {
+      --k: 2;
+    }
+    .eco__lane--bl,
+    .eco__beam--bl,
+    .eco__node--bl {
+      --k: 3;
+    }
+
     :global(html[data-motion='play']) .eco[data-state='ready'] .eco__core {
       opacity: 0;
     }
@@ -467,36 +725,44 @@ const SLOTS = ['tl', 'tr', 'bl', 'br'] as const
     }
     :global(html[data-motion='play']) .eco[data-state='play'] .eco__ring {
       animation: eco-ring var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+      animation-duration: calc(var(--T) / 2);
+      animation-delay: calc(var(--T) * 0.35);
     }
     :global(html[data-motion='play']) .eco[data-state='play'] .eco__ring--late {
-      animation-delay: calc(var(--site-motion-ambient-fast) / 2);
+      animation-delay: calc(var(--T) * 0.6);
     }
-    :global(html[data-motion='play']) .eco[data-state='play'] .eco__packet {
+    :global(html[data-motion='play']) .eco[data-state='play'] .eco__orbit--outer {
+      animation: eco-orbit var(--site-motion-ambient-slow) var(--site-motion-ease-linear) infinite paused;
+    }
+    :global(html[data-motion='play']) .eco[data-state='play'] .eco__orbit--inner {
+      animation: eco-orbit var(--site-motion-ambient-slow) var(--site-motion-ease-linear) infinite reverse paused;
+      animation-duration: calc(var(--site-motion-ambient-slow) * 0.7);
+    }
+    :global(html[data-motion='play']) .eco[data-state='play'] .eco__packet--out {
       animation: eco-travel var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+      animation-delay: calc(var(--T) * var(--k, 0) / 4);
     }
-    :global(html[data-motion='play']) .eco[data-state='play'] .eco__packet--bl {
-      animation-delay: calc(var(--site-motion-ambient-fast) * 0.25);
-    }
-    :global(html[data-motion='play']) .eco[data-state='play'] .eco__packet--tr {
-      animation-delay: calc(var(--site-motion-ambient-fast) * 0.4);
-    }
-    :global(html[data-motion='play']) .eco[data-state='play'] .eco__packet--br {
-      animation-delay: calc(var(--site-motion-ambient-fast) * 0.65);
+    :global(html[data-motion='play']) .eco[data-state='play'] .eco__packet--in {
+      animation: eco-travel var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+      animation-delay: calc(var(--T) * var(--k, 0) / 4 + var(--T) / 2);
     }
     :global(html[data-motion='play']) .eco[data-state='play'] .eco__packet--late {
-      animation-delay: calc(var(--site-motion-ambient-fast) * 0.5);
+      animation-delay: calc(var(--T) * var(--k, 0) / 4 + var(--T) * 0.62);
     }
-    :global(html[data-motion='play']) .eco[data-state='play'] .eco__packet--bl.eco__packet--late {
-      animation-delay: calc(var(--site-motion-ambient-fast) * 0.75);
+    :global(html[data-motion='play']) .eco[data-state='play'] .eco__beam {
+      animation: eco-beam var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+      animation-delay: calc(var(--T) * var(--k, 0) / 4);
     }
-    :global(html[data-motion='play']) .eco[data-state='play'] .eco__packet--tr.eco__packet--late {
-      animation-delay: calc(var(--site-motion-ambient-fast) * 0.9);
+    :global(html[data-motion='play']) .eco[data-state='play'] .eco__node .eco__lit {
+      animation: eco-lit var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+      animation-delay: calc(var(--T) * var(--k, 0) / 4 + var(--T) * 0.3);
     }
-    :global(html[data-motion='play']) .eco[data-state='play'] .eco__packet--br.eco__packet--late {
-      animation-delay: calc(var(--site-motion-ambient-fast) * 0.15);
-    }
-    :global(html[data-motion='play']) .eco[data-state='play'][data-visible='true'] :is(.eco__ring, .eco__packet) {
+    :global(html[data-motion='play']) .eco[data-state='play'][data-visible='true'] :is(.eco__ring, .eco__orbit, .eco__packet, .eco__beam, .eco__lit) {
       animation-play-state: running;
+    }
+    /* Üzerine gelinen kartın halkası sürekli yanar (döngü yerine). */
+    :global(html[data-motion='play']) .eco[data-state='play'] .eco__node:hover .eco__lit {
+      animation: none;
     }
   }
 </style>

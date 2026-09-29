@@ -613,3 +613,61 @@ export const adminExportDetailsFixture = {
     statuses: [{ name: 'COMPLETED', value: 42 }, { name: 'WAITING', value: 7 }],
   },
 }
+
+// ADR-0015 B5-2 (productDefinitions — Brand/Category/Choice/Hashtag) — sentetik veri (Protokol 7).
+// `BrandService`/`CategoryService` GET yanıt biçimi `stores/brandsStore.ts` / `categoriesStore.ts`
+// tüketimiyle (düz dizi, `title`/`_id`/`parentId`) uyumlu; ağaç derinliği gerçek `CategoryListComponent`
+// (kapsam dışı) sürükle-bırak ağacını beslemek için yeterli (kök + 1 alt kategori).
+export const brandsDoluFixture = [
+  { _id: 'brand-e2e-1', title: 'E2E Marka Bir', parentId: null },
+  { _id: 'brand-e2e-2', title: 'E2E Marka İki', parentId: null },
+]
+
+// `stores/categoriesStore.ts` `retrieve()` düz bir dizi DEĞİL, backend'den GELEN bir AĞAÇ
+// bekliyor (`children` alanı iç içe) — kök (`isMain: true`) düğüm `addCategory`'nin varsayılan
+// üst kategori araması için GEREKLİ (karakterizasyon bulgusu).
+export const categoriesDoluFixture = [
+  {
+    _id: 'cat-e2e-root',
+    title: 'Kategoriler',
+    isMain: true,
+    children: [
+      { _id: 'cat-e2e-1', title: 'E2E Kategori Bir', children: [{ _id: 'cat-e2e-2', title: 'E2E Alt Kategori', children: [] }] },
+    ],
+  },
+]
+
+export function buildChoice(overrides: Record<string, any> = {}) {
+  return {
+    _id: 'choice-e2e-1',
+    title: 'E2E Renk Grubu',
+    isSlicer: true,
+    isVarianter: false,
+    values: [
+      { _id: 'choiceval-e2e-1', title: 'Siyah' },
+      { _id: 'choiceval-e2e-2', title: 'Beyaz' },
+    ],
+    ...overrides,
+  }
+}
+
+export const choicesDoluFixture = [buildChoice(), buildChoice({ _id: 'choice-e2e-2', title: 'E2E Beden Grubu', isSlicer: false, isVarianter: true, values: [{ _id: 'choiceval-e2e-3', title: 'Small' }] })]
+
+export const choicesBosFixture: any[] = []
+
+export function buildHashtag(overrides: Record<string, any> = {}) {
+  return {
+    _id: 'hashtag-e2e-1',
+    title: 'E2E Kampanya Etiketi',
+    color: '#4CAF50',
+    values: [
+      { _id: 'hashtagval-e2e-1', title: 'yaz-indirimi', color: '#FF5722' },
+      { _id: 'hashtagval-e2e-2', title: 'yeni-sezon', color: '#2196F3' },
+    ],
+    ...overrides,
+  }
+}
+
+export const hashtagsDoluFixture = [buildHashtag()]
+
+export const hashtagsBosFixture: any[] = []

@@ -10,27 +10,24 @@
 </template> -->
 
 
-    <v-card variant="elevated" class="ma-2 pa-0" elevation="1"
-      style="transition: none!important; box-shadow: none; transform: none!important;right:0;background-color:#f3f3f3"
+    <v-card variant="elevated" class="ma-2 pa-0 psv-s1" elevation="1"
       height="100%">
 
 
 
       <v-card-title>
-        <div style="position:absolute;top:0px;left:0px;right:0;height:1px;width:auto;opacity:.9;background-color:red" class="elevation-1">
+        <div class="elevation-1 psv-s2">
           </div>
 
-          <v-btn
-        style="position:absolute;top:0px;right:0px;height:40px;width:40px; opacity:.9;border-radius:0;border-bottom-left-radius:20px;"
-        @click="emits('close')" elevation="1" min-width="0" color="red"><v-icon
+          <v-btn aria-label="Kapat"
+        @click="emits('close')" elevation="1" min-width="0" color="red" class="psv-s3"><v-icon
           size="x-large">mdi-close</v-icon></v-btn>
 
-        <v-btn
-        style="position:absolute;top:0px;left:0px;height:40px;width:40px; opacity:.9;border-radius:0;border-bottom-right-radius:20px;"
-        @click="emits('close')" elevation="1" min-width="0" color="red"><v-icon
+        <v-btn aria-label="Kapat"
+        @click="emits('close')" elevation="1" min-width="0" color="red" class="psv-s4"><v-icon
           size="x-large">mdi-close</v-icon></v-btn>
 
-<div class="font-weight-light ml-8 text-body-1" style="position:absolute;top:2px;left:20px;opacity:.8">
+<div class="font-weight-light ml-8 text-body-1 psv-s5">
         <span class="font-weight-bold">{{ productInfoForm.stockcode }} <span class="ml-2 mr-2"></span> <span
             class="font-weight-medium">{{ productInfoForm.title }}</span></span>
 
@@ -38,7 +35,7 @@
         <!-- Ürününe Ait -->
         <!-- <span class="font-weight-bold">{{ pagination.totalNumberOfRecords }}</span> {{ $t('common.count') }}  -->
         <span class="font-weight-bold text-h6"> |
-          <v-icon class="mr-0" style="opacity:.7" size="20">mdi-magnify</v-icon>
+          <v-icon class="mr-0 psv-s6" size="20">mdi-magnify</v-icon>
           {{ $t('productDefinitions.product.variants.search') }}</span>
       </div>
 
@@ -47,19 +44,19 @@
 
       <v-form ref="searchVariantFormRef" v-model="isSearchVariantFormValid">
 
-            <v-card  v-if="searchVariantForm" style="position:absolute;overflow-y:scroll;top: 48px;left:0;right:0;bottom:70px;border-top:1px solid #ddd;background-color:#eee" variant="flat">
+            <v-card  v-if="searchVariantForm" variant="flat" class="psv-s7">
           <v-card-text>
             <v-row>
               <v-col>
-                <v-card variant="outlined" class="mb-0 mt-0 pt-0" style="border-color:transparent">
+                <v-card variant="outlined" class="mb-0 mt-0 pt-0 psv-s8">
                   <v-card-text>
 
 
                     <template v-for="(choice, index) of choicesStoreChoices" :key="choice.title">
                       <v-select prepend-icon="mdi-checkbox-outline" multiple item-value="_id" item-title="title"
-                        @click.stop style="min-width:200px" v-if="searchVariantForm && searchVariantForm['choices']"
+                        @click.stop v-if="searchVariantForm && searchVariantForm['choices']"
                         v-model="searchVariantForm['choices'][index].choiceValueIds" :label="choice.title"
-                        :items="choice.values" density="compact" class="mt-2" variant="outlined"
+                        :items="choice.values" density="compact" class="mt-2 psv-s9" variant="outlined"
                         bg-color="textfieldColor">
                       </v-select>
                     </template>
@@ -76,11 +73,11 @@
                 </v-card>
               </v-col>
               <v-col>
-                <v-card variant="outlined" class="mb-0 mt-0 pt-0" style="border-color:transparent">
+                <v-card variant="outlined" class="mb-0 mt-0 pt-0 psv-s8">
                   <v-card-text>
-                    <v-text-field style="min-width:260px" prepend-icon="mdi-qrcode" @click.stop maxlength="32"
+                    <v-text-field prepend-icon="mdi-qrcode" @click.stop maxlength="32"
                       type="tel" clearable :label="$t('productDefinitions.product.define.variants.headers.stockcode')"
-                      density="compact" variant="outlined" bg-color="textfieldColor" class="mt-2"
+                      density="compact" variant="outlined" bg-color="textfieldColor" class="mt-2 psv-s10"
                       v-model="searchVariantForm.stockcode"></v-text-field>
                     <v-text-field prepend-icon="mdi-barcode" @click.stop clearable maxlength="32" type="tel"
                       :label="$t('productDefinitions.product.define.variants.headers.barcode')" density="compact"
@@ -101,16 +98,14 @@
                 </v-card>
               </v-col>
               <v-col>
-                <v-card variant="outlined" class="mb-0 mt-0 pt-0"
-                  style="border-color:transparent;height:400px;border-bottom:1px solid #ddd">
+                <v-card variant="outlined" class="mb-0 mt-0 pt-0 psv-s11">
                   <v-card-text>
-                    <div class="d-flex mt-2" style="min-width:300px">
+                    <div class="d-flex mt-2 psv-s12">
                       <VCurrencyComponentVue prepend-icon="mdi-currency-try" @click.stop :compact="false"
-                        v-model="searchVariantForm.min" :label="$t('common.min')" clearable :required="false"
-                         style="min-width:200px">
+                        v-model="searchVariantForm.min" :label="$t('common.min')" clearable :required="false" class="psv-s9">
                       </VCurrencyComponentVue>
                       <VCurrencyComponentVue @click.stop :compact="false" :label="$t('common.max')" clearable
-                        v-model="searchVariantForm.max" :required="false" class="ml-4" style="min-width:200px">
+                        v-model="searchVariantForm.max" :required="false" class="ml-4 psv-s9">
                       </VCurrencyComponentVue>
                     </div>
 
@@ -124,7 +119,7 @@
           </v-card-text>
 
         </v-card>
-        <div style="position:absolute;bottom:0px;width:100%;border-top:1px solid #ddd" class="pa-4">
+        <div class="pa-4 psv-s13">
           <v-row>
 <!--             <v-col>
               <v-btn-group elevation="1" class="d-block" density="compact">
@@ -212,3 +207,101 @@ const validateAndSearchVariants = async () => {
 </script>
 
 <style scoped></style>
+
+<style>
+/* ADR-0015 B5-2 — satir ici stillerden tasinan siniflar (autostyle). Satir ici stilin onceligi
+   !important ile korunur; ayni ozellikte Vuetify yardimci sinifi/`color` prop cakismasi varsa
+   (satir ici stil zaten yeniliyordu) !important eklenmez. Scope'suz: v-dialog/v-menu ve alt
+   bilesen kokleri scoped ozniteligi almayabilir; onek dosyaya ozgudur. */
+.psv-s1 {
+  transition: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+  right: 0 !important;
+  background-color: var(--ek-color-surface-sunken) !important;
+}
+
+.psv-s2 {
+  position: absolute !important;
+  top: 0px !important;
+  left: 0px !important;
+  right: 0 !important;
+  height: 1px !important;
+  width: auto !important;
+  opacity: .9 !important;
+  background-color: red !important;
+}
+
+.psv-s3 {
+  position: absolute !important;
+  top: 0px !important;
+  right: 0px !important;
+  height: 40px !important;
+  width: 40px !important;
+  opacity: .9 !important;
+  border-radius: 0 !important;
+  border-bottom-left-radius: 20px !important;
+}
+
+.psv-s4 {
+  position: absolute !important;
+  top: 0px !important;
+  left: 0px !important;
+  height: 40px !important;
+  width: 40px !important;
+  opacity: .9 !important;
+  border-radius: 0 !important;
+  border-bottom-right-radius: 20px !important;
+}
+
+.psv-s5 {
+  position: absolute !important;
+  top: 2px !important;
+  left: 20px !important;
+  opacity: .8 !important;
+}
+
+.psv-s6 {
+  opacity: .7 !important;
+}
+
+.psv-s7 {
+  position: absolute !important;
+  overflow-y: scroll !important;
+  top: 48px !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 70px !important;
+  border-top: 1px solid var(--ek-color-border-default) !important;
+  background-color: var(--ek-color-surface-sunken) !important;
+}
+
+.psv-s8 {
+  border-color: transparent !important;
+}
+
+.psv-s9 {
+  min-width: 200px !important;
+}
+
+.psv-s10 {
+  min-width: 260px !important;
+}
+
+.psv-s11 {
+  border-color: transparent !important;
+  height: 400px !important;
+  border-bottom: 1px solid var(--ek-color-border-default) !important;
+}
+
+.psv-s12 {
+  min-width: 300px !important;
+}
+
+.psv-s13 {
+  position: absolute !important;
+  bottom: 0px !important;
+  width: 100% !important;
+  border-top: 1px solid var(--ek-color-border-default) !important;
+}
+</style>

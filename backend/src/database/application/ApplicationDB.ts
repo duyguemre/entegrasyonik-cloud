@@ -103,4 +103,6 @@ export default class ApplicationDB implements IApplicationDB {
     // ADR-0020 Karar 3.1 (Aşama B): sürümlü platform geçersiz kılmaları + yayın başlığı.
     public getIntegrationConfigRevisionModel() { return this.database.getModel('integration_config_revision'); }
     public getIntegrationConfigHeadModel() { return this.database.getModel('integration_config_head'); }
+    // ADR-0021 Karar 4 (Aşama A/D7): göç kaydı (`dev-tools/migrate.js` status/plan/up/down burayı okur/yazar).
+    public getSchemaMigrationModel() { return this.database.getModel('schema_migration'); }
 }

@@ -23,6 +23,7 @@ import { MetricRollupSchema } from './models/MetricRollup';
 import { ErrorEventSchema } from './models/ErrorEvent';
 import { SourceSnapshotSchema } from './models/SourceSnapshot';
 import { IntegrationConfigRevisionSchema, IntegrationConfigHeadSchema } from './models/IntegrationConfig';
+import { SchemaMigrationSchema } from './models/SchemaMigration';
 
 export default (mongooseConnection: Connection): Record<string, Model<any>> => {
     return {
@@ -64,5 +65,7 @@ export default (mongooseConnection: Connection): Record<string, Model<any>> => {
         // ADR-0020 Karar 3.1 (Aşama B): sürümlü platform geçersiz kılmaları + yayın başlığı (poll edilen küçük belge).
         integration_config_revision: mongooseConnection.model('integration_config_revision', IntegrationConfigRevisionSchema),
         integration_config_head: mongooseConnection.model('integration_config_head', IntegrationConfigHeadSchema),
+        // ADR-0021 Karar 4 (Aşama A/D7): kalıcı göç altyapısı kaydı (`dev-tools/migrate.js`).
+        schema_migration: mongooseConnection.model('schema_migration', SchemaMigrationSchema),
     }
 }

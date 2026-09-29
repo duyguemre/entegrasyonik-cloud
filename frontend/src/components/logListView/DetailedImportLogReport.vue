@@ -2,69 +2,53 @@
   <div class="report-content-wrapper">
     <LoadingComponent attach=".reportContainer" ref="loadingComponentRef"></LoadingComponent>
 
-    <div v-if="reportData && localItem" class="pa-0 pr-3">
+    <EkSkeleton v-if="loading && !localItem" type="detail" />
 
-      <div class="d-flex flex-column mb-6 rounded-lg border bg-grey-lighten-5 position-relative overflow-hidden"
-        style="gap: var(--ek-space-3);">
+    <div v-if="reportData && localItem" class="report-body">
 
-        <div class="pa-4 pb-0">
-          <div class="d-flex flex-wrap align-center pb-3" style="gap: var(--ek-space-5);">
-            <div class="d-flex align-center">
-              <span class="text-caption font-weight-bold text-grey-darken-1 mr-2">İşlem No:</span>
-              <span class="text-body-2 font-weight-black">{{ localItem.jobId }}</span>
-            </div>
-            <div class="d-flex align-center">
-              <span class="text-caption font-weight-bold text-grey-darken-1 mr-2">Platform:</span>
-              <PlatformImageComponent :integrationCode="localItem.integrationCode" :width="80" :height="35"
-                class="mr-4">
-              </PlatformImageComponent>
-
-              <!--                 <v-chip size="x-small" :color="getPlatformColor(localItem.integrationCode)" variant="flat"
-                  class="font-weight-bold text-white">
-                  {{ localItem.integrationCode?.toUpperCase() }}
-                </v-chip> -->
-            </div>
-            <div class="d-flex align-center text-no-wrap">
-              <v-icon size="16" color="grey" class="mr-1">mdi-clock-start</v-icon>
-              <span class="text-caption font-weight-bold text-grey-darken-1 mr-1">Başlangıç:</span>
-              <span class="text-caption font-weight-bold">{{ formatDate(localItem.startedAt) }}</span>
-            </div>
-            <div class="d-flex align-center text-no-wrap">
-              <v-icon size="16" color="grey" class="mr-1">mdi-clock-check</v-icon>
-              <span class="text-caption font-weight-bold text-grey-darken-1 mr-1">Bitiş:</span>
-              <span class="text-caption font-weight-bold">{{ formatDate(localItem.completedAt) }}</span>
-            </div>
+      <div class="panel panel--muted">
+        <div class="meta-row">
+          <div class="meta-item">
+            <span class="meta-item__label">İşlem No:</span>
+            <span class="meta-item__value">{{ localItem.jobId }}</span>
           </div>
+          <div class="meta-item">
+            <span class="meta-item__label">Platform:</span>
+            <PlatformImageComponent :integrationCode="localItem.integrationCode" :width="80" :height="35">
+            </PlatformImageComponent>
+          </div>
+          <div class="meta-item">
+            <v-icon size="16" aria-hidden="true">mdi-clock-start</v-icon>
+            <span class="meta-item__label">Başlangıç:</span>
+            <span class="meta-item__value">{{ formatDate(localItem.startedAt) }}</span>
+          </div>
+          <div class="meta-item">
+            <v-icon size="16" aria-hidden="true">mdi-clock-check</v-icon>
+            <span class="meta-item__label">Bitiş:</span>
+            <span class="meta-item__value">{{ formatDate(localItem.completedAt) }}</span>
+          </div>
+        </div>
 
-          <div class="w-100 pb-4 stepper-wrapper">
-            <div class="stepper-content">
-              <div class="stepper-line"></div>
-              <div v-for="(step, index) in steps" :key="index" class="step-item">
-                <v-avatar size="16"
-                  :color="currentStepIndex === index ? getStatusColor(localItem.status) : (currentStepIndex > index ? getStatusColor(step.status) : '#e0e0e0')"
-                  :class="[currentStepIndex === index && isProcessing ? 'status-pulse-intense' : '', 'step-avatar', currentStepIndex > index ? 'step-passed' : '']"
-                  style="border: 2px solid white; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); position: relative; z-index: 2;">
-                </v-avatar>
-                <div class="step-text-container" style="z-index: 2;">
-                  <span class="step-title"
-                    :class="{ 'active-text': currentStepIndex === index, 'passed-text': currentStepIndex > index }"
-                    style="font-size: 10px; font-weight: 700; text-transform: uppercase;">
-                    {{ currentStepIndex === index && localItem.status === 'FAILED' ? 'Hata Oluştu' : (currentStepIndex
-                      ===
-                      index && localItem.status === 'CANCELLED' ? 'İptal Edildi' : step.title) }}
-                  </span>
-                </div>
-              </div>
+        <div class="stepper-wrapper">
+          <div class="stepper-content">
+            <div class="stepper-line"></div>
+            <div v-for="(step, index) in steps" :key="index" class="step-item">
+              <span class="step-dot"
+                :class="[stepDotClass(index, step.status), currentStepIndex === index && isProcessing ? 'step-dot--processing' : '']"></span>
+              <span class="step-title"
+                :class="{ 'active-text': currentStepIndex === index, 'passed-text': currentStepIndex > index }">
+                {{ currentStepIndex === index && localItem.status === 'FAILED' ? 'Hata Oluştu' : (currentStepIndex
+                  ===
+                  index && localItem.status === 'CANCELLED' ? 'İptal Edildi' : step.title) }}
+              </span>
             </div>
           </div>
         </div>
 
-        <v-progress-linear v-if="showProgress" :model-value="progressPercentage" height="12"
-          class="premium-progress mt-auto" bg-color="#ddd" :bg-opacity="1" style="border-top: 1px solid #ccc;">
+        <v-progress-linear v-if="showProgress" :model-value="progressPercentage" height="16" color="primary"
+          class="progress-bar" :aria-label="`İlerleme yüzde ${progressPercentage}`">
           <template v-slot:default="{ value }">
-            <strong style="font-weight:bold; font-size: 10px; color: white; text-shadow: 0px 0px 2px rgba(0,0,0,0.8);">
-              {{ Math.ceil(value) }}%
-            </strong>
+            <strong class="progress-bar__text">{{ Math.ceil(value) }}%</strong>
           </template>
         </v-progress-linear>
       </div>
@@ -72,121 +56,98 @@
       <v-row class="mb-2" align="stretch">
         <v-col cols="12" md="5" class="d-flex flex-column">
           <div class="info-grid flex-grow-1">
-            <div class="d-flex flex-column flex-sm-row mb-2" style="gap: var(--ek-space-2);">
-              <div class="info-item-card border-passive w-100" style="background-color: #f8f9fa;">
-                <div class="text-overline">Toplam Çekilen</div>
-                <b class="text-h5" style="color: #455a64;">{{ localItem.totalCount || 0 }}</b>
-                <div class="text-caption mt-1">Mağazanızdan çekilen toplam ham ürün ve varyant kaydı.</div>
+            <div class="info-pair">
+              <div class="info-item-card info-item-card--neutral">
+                <div class="info-item-card__label">Toplam Çekilen</div>
+                <b class="info-item-card__value info-item-card__value--lg">{{ localItem.totalCount || 0 }}</b>
+                <div class="info-item-card__hint">Mağazanızdan çekilen toplam ham ürün ve varyant kaydı.</div>
               </div>
-              <div class="info-item-card border-warning w-100" style="background-color: #fff9e9;">
-
-                <span class="text-subtitle-2 font-weight-black text-orange text-darken-2">Kritik Veri
-                  Eksikliği</span>
-                <b class="text-h6 text-orange text-darken-2">{{ localItem.invalidCount || 0 }}</b>
-                <div class="text-caption mt-1">Eksik eşleşme nedeniyle işleme alınamayan ürünler.</div>
+              <div class="info-item-card info-item-card--warning">
+                <div class="info-item-card__label info-item-card__label--warning">Kritik Veri Eksikliği</div>
+                <b class="info-item-card__value info-item-card__value--warning">{{ localItem.invalidCount || 0 }}</b>
+                <div class="info-item-card__hint">Eksik eşleşme nedeniyle işleme alınamayan ürünler.</div>
               </div>
             </div>
 
-            <div class="info-item-card border-candidate">
-              <div class="d-flex align-center mb-1">
-                <v-icon color="#06b6d4" size="small" class="mr-2">mdi-check-decagram</v-icon>
-                <span class="text-subtitle-2 font-weight-black" style="color: #06b6d4;">Aday Aktarım</span>
+            <div class="info-item-card info-item-card--info">
+              <div class="info-item-card__head">
+                <v-icon color="info" size="small" aria-hidden="true">mdi-check-decagram</v-icon>
+                <span class="info-item-card__label info-item-card__label--info">Aday Aktarım</span>
                 <v-spacer></v-spacer>
-                <b class="text-h6" style="color: #06b6d4;">{{ localItem.validCount || 0 }}</b>
+                <b class="info-item-card__value info-item-card__value--info">{{ localItem.validCount || 0 }}</b>
               </div>
-              <div class="text-caption">Zenginleştirme süreci tamamlanmış, sisteme girmeye hazır ürünler.</div>
+              <div class="info-item-card__hint">Zenginleştirme süreci tamamlanmış, sisteme girmeye hazır ürünler.</div>
             </div>
-            <div class="info-item-card border-success" style="background-color: #f1f8e9;">
-              <div class="d-flex align-center mb-1">
-                <v-icon color="success" size="small" class="mr-2">mdi-alert-circle</v-icon>
-                <span class="text-subtitle-2 font-weight-black text-success text-darken-2">Aktarılan Varyant</span>
+            <div class="info-item-card info-item-card--success">
+              <div class="info-item-card__head">
+                <v-icon color="success" size="small" aria-hidden="true">mdi-check-circle-outline</v-icon>
+                <span class="info-item-card__label info-item-card__label--success">Aktarılan Varyant</span>
                 <v-spacer></v-spacer>
-                <b class="text-h6 text-success text-darken-2">{{ localItem.processedCount || 0 }}</b>
+                <b class="info-item-card__value info-item-card__value--success">{{ localItem.processedCount || 0 }}</b>
               </div>
-              <div class="text-caption">Tüm kontrollerden geçerek sisteme işlenen nihai ürünler.</div>
+              <div class="info-item-card__hint">Tüm kontrollerden geçerek sisteme işlenen nihai ürünler.</div>
             </div>
-            <div class="info-item-card border-info">
-              <div class="d-flex align-center mb-1">
-                <v-icon color="info" size="small" class="mr-2">mdi-content-copy</v-icon>
-                <span class="text-subtitle-2 font-weight-black" style="color:#6366f1">Mevcut/Mükerrer
-                  Ürünler</span>
+            <div class="info-item-card info-item-card--neutral">
+              <div class="info-item-card__head">
+                <v-icon size="small" aria-hidden="true">mdi-content-copy</v-icon>
+                <span class="info-item-card__label">Mevcut/Mükerrer Ürünler</span>
                 <v-spacer></v-spacer>
-                <b class="text-h6" style="color:#6366f1">{{ localItem.duplicateCount || 0 }}</b>
+                <b class="info-item-card__value">{{ localItem.duplicateCount || 0 }}</b>
               </div>
-              <div class="text-caption">Sistemde zaten kayıtlı olduğu için atlanan ürünler.</div>
+              <div class="info-item-card__hint">Sistemde zaten kayıtlı olduğu için atlanan ürünler.</div>
             </div>
-            <div class="info-item-card border-error">
-              <div class="d-flex align-center mb-1">
-                <v-icon color="error" size="small" class="mr-2">mdi-close-octagon</v-icon>
-                <span class="text-subtitle-2 font-weight-black text-error">İşlem Hatası</span>
+            <div class="info-item-card info-item-card--danger">
+              <div class="info-item-card__head">
+                <v-icon color="error" size="small" aria-hidden="true">mdi-close-octagon</v-icon>
+                <span class="info-item-card__label info-item-card__label--danger">İşlem Hatası</span>
                 <v-spacer></v-spacer>
-                <b class="text-h6 text-error">{{ localItem.failedCount || 0 }}</b>
+                <b class="info-item-card__value info-item-card__value--danger">{{ localItem.failedCount || 0 }}</b>
               </div>
-              <div class="text-caption ">İşlem sırasında oluşan beklenmedik teknik kesintiler.</div>
+              <div class="info-item-card__hint">İşlem sırasında oluşan beklenmedik teknik kesintiler.</div>
             </div>
           </div>
         </v-col>
         <v-col cols="12" md="7">
-          <div class="chart-card d-flex align-center" style="height: 100%;">
-            <v-chart v-if="isMounted" class="chart" :option="chartOption" autoresize style="min-height: 400px; width: 100%;" />
+          <div class="chart-card">
+            <v-chart v-if="isMounted" class="chart" theme="entegrasyonik" :option="chartOption" autoresize />
           </div>
         </v-col>
       </v-row>
 
-      <div v-if="allImpactedCategories.length" class="mt-8 pa-4 rounded-lg border bg-grey-lighten-5"
-        style="border:1px solid #ddd!important;">
-        <div class="d-flex align-center mb-1">
-          <v-icon color="error" class="mr-2">mdi-tag-off</v-icon>
-          <span class="text-subtitle-1 font-weight-bold">Eksik Eşleştirme Detayları</span>
+      <div v-if="allImpactedCategories.length" class="panel panel--muted mapping-section">
+        <div class="mapping-section__head">
+          <v-icon color="error" aria-hidden="true">mdi-tag-off</v-icon>
+          <h3 class="mapping-section__title">Eksik Eşleştirme Detayları</h3>
         </div>
-        <div class="text-caption text-grey-darken-1 mb-4 pl-sm-8 pl-0">
+        <div class="mapping-section__desc">
           Pazaryerinden çekilen ürünlerin sisteme tam entegre edilebilmesi için kategori eşleşmelerinin ve ürün
           özellik tanımlamalarının tamamlanması gerekmektedir.
         </div>
 
-
-        <div class="d-flex align-center mb-4 pl-sm-8 pl-0 flex-wrap" style="gap: var(--ek-space-4);">
-          <div class="d-flex align-center px-3 py-1 rounded-pill bg-white border"
-            style="gap: 6px; border-style: dashed !important;">
-            <div style="width: 8px; height: 8px; border-radius: 50%; background-color: #318600;"></div>
-            <span class="text-caption font-weight-bold text-grey-darken-3" style="font-size: 10px !important;">Eşleşme
-              Tamam</span>
+        <div class="legend-row">
+          <div class="legend-item">
+            <span class="legend-dot legend-dot--success"></span>
+            <span class="legend-item__text">Eşleşme Tamam</span>
           </div>
-          <div class="d-flex align-center px-3 py-1 rounded-pill bg-white border"
-            style="gap: 6px; border-style: dashed !important;">
-            <div style="width: 8px; height: 8px; border-radius: 50%; background-color: #c62828;"></div>
-            <span class="text-caption font-weight-bold text-grey-darken-3" style="font-size: 10px !important;">Eşleşme
-              Bekleniyor</span>
+          <div class="legend-item">
+            <span class="legend-dot legend-dot--danger"></span>
+            <span class="legend-item__text">Eşleşme Bekleniyor</span>
           </div>
           <v-divider vertical class="mx-1 hidden-xs-only"></v-divider>
-          <span class="text-caption text-grey-darken-1 italic" style="font-size: 10px !important;">
+          <span class="legend-hint">
             * Kategori ve seçeneklerin üzerine tıklayarak eşleştirmeleri anlık olarak tamamlayabilirsiniz.
           </span>
         </div>
 
+        <div class="d-flex flex-column cat-list">
+          <div v-for="(catId, index) in allImpactedCategories" :key="index" class="cat-row"
+            :class="reportData.missingCategories?.includes(catId) ? 'cat-row--danger' : 'cat-row--warning'">
 
-        <!--           <div class="d-flex flex-column mb-4 pl-sm-8 pl-0" style="gap: var(--ek-space-3);">
-            <div>
-              <v-btn elevation="0" color="white" size="small" class="font-weight-bold px-4"
-                style="border:1px solid #bbb; text-transform: none; color: var(--ek-color-process-button-color);">
-                <v-icon start size="18">mdi-magic-staff</v-icon>
-                Eksik Tanımlamaları Otomatik Oluştur
-              </v-btn>
-            </div>
-          </div>
- -->
-        <div class="d-flex flex-column" style="gap: var(--ek-space-3);">
-          <div v-for="(catId, index) in allImpactedCategories" :key="index"
-            class="pa-3 rounded-lg bg-white border d-flex flex-column shadow-sm"
-            style="gap: var(--ek-space-3); border-left: 5px solid !important;"
-            :style="{ 'border-color': reportData.missingCategories?.includes(catId) ? '#c6282822!important' : '#e6510022!important', borderLeftColor: reportData.missingCategories?.includes(catId) ? '#c62828' : '#e65100' }">
-
-            <div class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between"
-              style="gap: var(--ek-space-2);">
-              <div class="text-caption d-flex align-center flex-wrap" style="line-height: 1.6;">
-                <span v-if="resolvedCategories[catId]" class="d-flex align-center flex-wrap">
+            <div class="cat-row__head">
+              <div class="cat-row__path">
+                <span v-if="resolvedCategories[catId]" class="cat-row__path-inner">
                   <template v-if="resolvedCategories[catId].path">
-                    <span class="text-grey-darken-1 font-weight-medium mr-1">{{
+                    <span class="cat-row__crumb">{{
                       resolvedCategories[catId].path.replaceAll('/', ' / ') }}</span>
                   </template>
 
@@ -195,27 +156,17 @@
                     v-if="reportData.missingCategories?.includes(catId)" :close-on-content-click="false"
                     location="bottom start" offset="5" transition="scale-transition">
                     <template v-slot:activator="{ props: menuProps }">
-
-                      <v-chip v-bind="menuProps" size="x-small" label class="px-2 font-weight-black" color="#ef5350"
-                        style="background-color: #ffebee;border:1px solid #aaa; color: #c62828;" variant="flat"
-                        :style="attributeMappingStore.isIntegrationCategoryMapped(localItem.integrationCode, catId) ? { color: '#318600' } : { color: '#c62828' }">
+                      <button v-bind="menuProps" type="button" class="map-chip"
+                        :class="attributeMappingStore.isIntegrationCategoryMapped(localItem.integrationCode, catId) ? 'map-chip--success' : 'map-chip--danger'">
                         {{ resolvedCategories[catId].last }}
-                      </v-chip>
-
+                      </button>
                     </template>
 
-
-                    <v-card :style="$vuetify.display.smAndDown ? { 'margin-top': '150px' } : {}"
-                      :width="$vuetify.display.smAndDown ? '95vw' : '700'"
-                      class="elevation-24 rounded-lg border overflow-y-auto mx-auto shadow-lg pa-3"
-                      style="display: flex; flex-direction: column; max-height: 80vh;">
-
-                      <!--                       <v-card min-width="280" class="pa-3 shadow-lg border-0 rounded-lg"
-                        style="height:fit-content;width:fit-content"> -->
-                      <div class="d-flex align-center mb-2">
-                        <v-icon size="14" color="orange-darken-3" class="mr-1">mdi-link-variant</v-icon>
-                        <span class="text-caption font-weight-black text-grey-darken-3">Platform Kategori
-                          Eşleştirme</span>
+                    <v-card :width="$vuetify.display.smAndDown ? '95vw' : '700'" class="map-menu-card"
+                      :class="{ 'map-menu-card--mobile': $vuetify.display.smAndDown }">
+                      <div class="map-menu-card__head">
+                        <v-icon size="14" color="warning" aria-hidden="true">mdi-link-variant</v-icon>
+                        <span class="map-menu-card__title">Platform Kategori Eşleştirme</span>
                       </div>
                       <DetailedImportLogReportMissingCategory :integrationCode="localItem.integrationCode"
                         :platformCategoryId="catId" @close="activeMenuCatId = null">
@@ -223,62 +174,48 @@
                     </v-card>
                   </v-menu>
 
-
-
-                  <span v-else class="font-weight-black" style="color: #e65100; font-size: 11px;">
+                  <span v-else class="cat-row__name-warning">
                     {{ resolvedCategories[catId].last }}
                   </span>
                 </span>
-                <span v-else class="text-grey italic">Kategori bilgisi yükleniyor...</span>
+                <span v-else class="cat-row__loading">Kategori bilgisi yükleniyor...</span>
               </div>
 
-              <v-chip size="x-small" variant="outlined" class="font-weight-bold cursor-pointer"
+              <button type="button" class="count-chip"
+                :class="reportData.missingCategories?.includes(catId) ? 'count-chip--danger' : 'count-chip--warning'"
                 @click="copyToClipboard(catId)"
-                :aria-label="`${getMissingCategoryProductCount(catId)} ürün — kategori kimliğini kopyala`"
-                :color="reportData.missingCategories?.includes(catId) ? 'error' : 'orange-darken-3'"
-                style="border-style: dashed !important; text-transform: none;">
-                <!--                   <v-icon start size="12">mdi-counter</v-icon> -->
+                :aria-label="`${getMissingCategoryProductCount(catId)} ürün — kategori kimliğini kopyala`">
                 {{ getMissingCategoryProductCount(catId) }}
-              </v-chip>
+              </button>
             </div>
 
-            <div v-if="groupedMissingAttributes[catId]" class="d-flex flex-column" style="gap: var(--ek-space-3); margin-top: 4px;">
-
-
-
+            <div v-if="groupedMissingAttributes[catId]" class="attr-groups">
               <div v-for="(attrData, attrName) in groupedMissingAttributes[catId]" :key="attrName"
-                class="d-flex flex-column" style="gap: 6px;">
-                <span class="text-subtitle-3 ml-1 font-weight-bold" style="font-size: 10px; line-height: 1;" :style="attributeMappingStore.isIntegrationAttributeMapped(localItem.integrationCode, catId,
-                  attrData.id) ? { color: '#318600' } : { color: '#e65100' }">
+                class="attr-group">
+                <span class="attr-group__name"
+                  :class="attributeMappingStore.isIntegrationAttributeMapped(localItem.integrationCode, catId, attrData.id) ? 'attr-group__name--success' : 'attr-group__name--warning'">
                   {{ attrName }}
                 </span>
 
-                <div class="d-flex flex-wrap" style="gap: var(--ek-space-2);">
-
+                <div class="attr-group__values">
                   <v-menu scroll-strategy="block"
                     :model-value="activeMenuCatId === catId + attr.attributeId + attr.attributeValueId + attr.attributeValue"
                     @update:model-value="(val) => val ? activeMenuCatId = catId + attr.attributeId + attr.attributeValueId + attr.attributeValue : activeMenuCatId = null"
                     v-for="(attr, aIdx) in attrData.values" :key="aIdx" :close-on-content-click="false"
                     location="bottom start" offset="5" transition="scale-transition">
                     <template v-slot:activator="{ props: menuProps }">
-                      <v-chip v-bind="menuProps" size="x-small" variant="flat" :color="'#fff3e0'"
-                        class="font-weight-bold" style="color: #e65100 !important; border: 1px solid #ddd !important;"
-                        :style="attributeMappingStore.isIntegrationAttributeValueMapped(localItem.integrationCode, catId,
-                          attr.attributeId, attr.attributeValuId, attr.attributeValue) ? { color: '#318600' } : { color: '#e65100' }">
+                      <button v-bind="menuProps" type="button" class="map-chip"
+                        :class="attributeMappingStore.isIntegrationAttributeValueMapped(localItem.integrationCode, catId,
+                          attr.attributeId, attr.attributeValuId, attr.attributeValue) ? 'map-chip--success' : 'map-chip--warning'">
                         {{ attr.attributeValue }}
-                      </v-chip>
+                      </button>
                     </template>
 
-
-                    <v-card :style="$vuetify.display.smAndDown ? { 'margin-top': '150px' } : {}"
-                      :width="$vuetify.display.smAndDown ? '95vw' : '700'"
-                      class="elevation-24 rounded-lg border overflow-y-auto mx-auto shadow-lg pa-3"
-                      style="display: flex; flex-direction: column; max-height: 80vh;">
-
-                      <div class="d-flex align-center mb-2">
-                        <v-icon size="14" color="orange-darken-3" class="mr-1">mdi-link-variant</v-icon>
-                        <span class="text-caption font-weight-black text-grey-darken-3">Platform Seçenek
-                          Eşleştirme</span>
+                    <v-card :width="$vuetify.display.smAndDown ? '95vw' : '700'" class="map-menu-card"
+                      :class="{ 'map-menu-card--mobile': $vuetify.display.smAndDown }">
+                      <div class="map-menu-card__head">
+                        <v-icon size="14" color="warning" aria-hidden="true">mdi-link-variant</v-icon>
+                        <span class="map-menu-card__title">Platform Seçenek Eşleştirme</span>
                       </div>
                       <DetailedImportLogReportMissingAttribute :integrationCode="localItem.integrationCode"
                         :platformCategoryId="catId" :attribute="attr" @close="activeMenuCatId = null">
@@ -293,19 +230,9 @@
       </div>
     </div>
 
-    <div v-else-if="!loading" class="d-flex flex-column align-center justify-center text-center pa-12"
-      style="height: 100%;">
-      <v-icon size="80" color="grey-lighten-2">mdi-database-off-outline</v-icon>
-      <h3 class="text-h6 font-weight-black mt-4 grey--text text--darken-2">Rapor Verilerine Ulaşılamadı</h3>
-      <p class="text-body-2 text-grey-darken-1 mt-2" style="max-width: 400px;">
-        İşlem raporu henüz hazırlanmamış olabilir veya sunucuyla olan bağlantıda bir sorun yaşanıyor.
-      </p>
-
-      <v-btn color="processButtonColor" elevation="0" style="min-width:0;border:1px solid #bbb"
-        class="mt-6 font-weight-bold" @click="getReport()">
-        YENİDEN DENE
-      </v-btn>
-    </div>
+    <EkEmptyState v-else-if="!loading" variant="error" title="Rapor Verilerine Ulaşılamadı"
+      message="İşlem raporu henüz hazırlanmamış olabilir veya sunucuyla olan bağlantıda bir sorun yaşanıyor."
+      showAction actionText="Yeniden dene" actionIcon="mdi-refresh" @action="getReport()" />
   </div>
 </template>
 
@@ -325,6 +252,11 @@ import { useAttributeMappingStore } from '@/stores/site/attributeMapping'
 import DetailedImportLogReportMissingCategory from './DetailedImportLogReportMissingCategory.vue'
 import DetailedImportLogReportMissingAttribute from './DetailedImportLogReportMissingAttribute.vue'
 import PlatformImageComponent from '../platforms/PlatformImageComponent.vue'
+import EkEmptyState from '@/components/ds/EkEmptyState.vue'
+import EkSkeleton from '@/components/ds/EkSkeleton.vue'
+import { formatDateTime } from '@/composables/format'
+import { semanticColorsLight } from '@/design/tokens'
+import type { StatusTone } from '@/design/status-map'
 
 use([CanvasRenderer, BarChart, TooltipComponent, GridComponent, LegacyGridContainLabel])
 const activeMenuCatId = ref<string | null>(null);
@@ -436,19 +368,16 @@ const chartOption = computed(() => {
   if (!localItem.value) return {};
   const categories = ['Eksik Veri', 'Aktarılan', 'Mevcut', 'Hata'];
   const values = [localItem.value.invalidCount || 0, localItem.value.processedCount || 0, localItem.value.duplicateCount || 0, localItem.value.failedCount || 0];
-  const colors = [{ start: '#f59e0b', end: '#d97706' }, { start: '#06b6d4', end: '#0891b2' }, { start: '#6366f1', end: '#4f46e5' }, { start: '#f43f5e', end: '#e11d48' }];
+  const colors = [toneHex('warning'), toneHex('success'), toneHex('neutral'), toneHex('danger')];
   return {
     tooltip: { trigger: 'axis', axisPointer: { type: 'none' } },
     grid: { top: '15%', left: '3%', right: '4%', bottom: '5%', containLabel: true },
-    xAxis: { type: 'category', data: categories, axisTick: { show: false }, axisLabel: { fontWeight: 'bold' } },
+    xAxis: { type: 'category', data: categories, axisTick: { show: false } },
     yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed' } } },
     series: [{
       name: 'Ürün Sayısı', type: 'bar', barWidth: '40%',
-      data: values.map((val, idx) => ({
-        value: val,
-        itemStyle: { borderRadius: [6, 6, 0, 0], color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: colors[idx].start }, { offset: 1, color: colors[idx].end }] } }
-      })),
-      label: { show: true, position: 'top', fontWeight: 'bold' }
+      data: values.map((val, idx) => ({ value: val, itemStyle: { color: colors[idx] } })),
+      label: { show: true, position: 'top' }
     }]
   };
 });
@@ -505,23 +434,31 @@ const resolveCategoryNames = async () => {
 };
 
 const copyToClipboard = (text: string) => { navigator.clipboard.writeText(text).then(() => { snackbarStore.addSnackbar({ show: true, text: 'ID kopyalandı', color: 'success' }); }); };
-// ADR-0011 Karar 1/Açık Soru 4 kapsamı DIŞI (bilinçli, göç edilmedi) — bkz.
-// ExportLogList.vue'daki AYNI gerekçe (ImportLogList.vue'da BİREBİR tekrarlanan palet).
-const getStatusColor = (status: string) => {
-  const s = status?.toUpperCase();
-  const colors: any = { COMPLETED: '#10b981', FAILED: '#f43f5e', CANCELLED: '#757575', PROCESSING: '#0078D4', READY_TO_SYNC: '#6366f1', FETCHING: '#f59e0b', WAITING_FOR_FETCH: 'var(--ek-color-content-subtle)' };
-  return colors[s] || 'grey';
+/**
+ * İş durumu -> anlamsal ton (ADR-0015 Karar 3.3: bespoke "canlı iş-durumu paleti" yerine
+ * merkezi anlamsal tonlar; renk tek başına anlam taşımaz, adım etiketi her zaman görünür).
+ */
+const STATUS_TONES: Record<string, StatusTone> = {
+  COMPLETED: 'success',
+  FAILED: 'danger',
+  CANCELLED: 'neutral',
+  PROCESSING: 'info',
+  READY_TO_SYNC: 'info',
+  FETCHING: 'warning',
+  WAITING_FOR_FETCH: 'neutral',
+};
+const TONE_KEY = { success: 'success', danger: 'error', info: 'info', warning: 'warning', neutral: 'neutral' } as const;
+/** ECharts canvas'ı CSS değişkeni çözemez; tema kaynağındaki değer okunur. */
+const toneHex = (tone: StatusTone) => semanticColorsLight[TONE_KEY[tone]];
+const statusTone = (status: string): StatusTone => STATUS_TONES[status?.toUpperCase()] || 'neutral';
+
+/** Akış adımı noktası: aktif adım durumun tonunu, geçilenler kendi adım tonunu, gelecek adımlar nötr alır. */
+const stepDotClass = (index: number, stepStatus: string) => {
+  if (currentStepIndex.value === index) return `step-dot--${statusTone(localItem.value?.status)}`;
+  return currentStepIndex.value > index ? `step-dot--${statusTone(stepStatus)} step-dot--done` : 'step-dot--upcoming';
 };
 
-// GİZLİ DAVRANIŞ (YENİ bulgu, T4g — BACKLOG.md, kod DEĞİŞTİRİLMEDİ): ÖLÜ KOD,
-// yalnızca yorum satırına alınmış bir `<v-chip>`'ten çağrılıyor (bkz. dosya
-// içindeki yorumlu blok + ImportLogList.vue'daki AYNI bulgu).
-const getPlatformColor = (code: string) => {
-  const c = code?.toLowerCase();
-  const colors: any = { trendyol: '#f27a1a', hepsiburada: '#ff6000', n11: '#5e43a9', pazarama: '#005494' };
-  return colors[c] || 'grey-darken-2';
-};
-const formatDate = (date: any) => date ? new Date(date).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+const formatDate = (date: any) => date ? formatDateTime(date) : '-';
 
 onMounted(() => {
   isMounted.value = true
@@ -541,6 +478,54 @@ onBeforeUnmount(() => {
   height: calc(100vh - 280px);
 }
 
+.report-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-4);
+  padding-right: var(--ek-space-3);
+}
+
+.panel {
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-lg);
+  background: var(--ek-color-surface);
+  padding: var(--ek-space-4);
+  position: relative;
+  overflow: hidden;
+}
+
+.panel--muted {
+  background: var(--ek-color-surface-muted);
+}
+
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ek-space-5);
+  padding-bottom: var(--ek-space-3);
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  color: var(--ek-color-content-muted);
+}
+
+.meta-item__label {
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-medium);
+  color: var(--ek-color-content-muted);
+}
+
+.meta-item__value {
+  font-size: var(--ek-font-size-sm);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-strong);
+}
+
+/* Sayaç kartları */
 .info-grid {
   display: flex;
   flex-direction: column;
@@ -548,50 +533,376 @@ onBeforeUnmount(() => {
   height: 100%;
 }
 
+.info-pair {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ek-space-2);
+}
+
+.info-pair > .info-item-card {
+  flex: 1 1 180px;
+}
+
 .info-item-card {
-  background: white;
-  padding: 12px 16px;
-  border-radius: var(--ek-radius-lg);
-  border: 1px solid #ddd;
-  border-left: 5px solid transparent;
-  flex-grow: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  flex-grow: 1;
+  gap: var(--ek-space-1);
+  padding: var(--ek-space-3) var(--ek-space-4);
+  border: 1px solid var(--ek-color-border-default);
+  border-left: 4px solid var(--ek-color-border-strong);
+  border-radius: var(--ek-radius-lg);
+  background: var(--ek-color-surface);
 }
 
-.border-success {
-  border-left-color: #10b981;
-}
-
-.border-info {
-  border-left-color: #6366f1;
-}
-
-.border-warning {
-  border-left-color: #f59e0b;
-}
-
-.border-error {
-  border-left-color: #f43f5e;
-}
-
-.border-passive {
+.info-item-card--neutral {
   border-left-color: var(--ek-color-content-subtle);
 }
 
-.border-candidate {
-  border-left-color: #06b6d4;
+.info-item-card--warning {
+  border-left-color: var(--ek-color-warning);
+}
+
+.info-item-card--info {
+  border-left-color: var(--ek-color-info);
+}
+
+.info-item-card--success {
+  border-left-color: var(--ek-color-success);
+}
+
+.info-item-card--danger {
+  border-left-color: var(--ek-color-error);
+}
+
+.info-item-card__head {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+}
+
+.info-item-card__label {
+  font-size: var(--ek-font-size-sm);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-default);
+}
+
+.info-item-card__label--warning {
+  color: var(--ek-color-warning);
+}
+
+.info-item-card__label--info {
+  color: var(--ek-color-info);
+}
+
+.info-item-card__label--success {
+  color: var(--ek-color-success);
+}
+
+.info-item-card__label--danger {
+  color: var(--ek-color-error);
+}
+
+.info-item-card__value {
+  font-size: var(--ek-font-size-xl);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-strong);
+}
+
+.info-item-card__value--lg {
+  font-size: var(--ek-font-size-2xl);
+}
+
+.info-item-card__value--warning {
+  color: var(--ek-color-warning);
+}
+
+.info-item-card__value--info {
+  color: var(--ek-color-info);
+}
+
+.info-item-card__value--success {
+  color: var(--ek-color-success);
+}
+
+.info-item-card__value--danger {
+  color: var(--ek-color-error);
+}
+
+.info-item-card__hint {
+  font-size: var(--ek-font-size-xs);
+  color: var(--ek-color-content-muted);
 }
 
 .chart-card {
-  background: white;
+  display: flex;
+  align-items: center;
+  height: 100%;
   width: 100%;
-  padding: 15px;
+  padding: var(--ek-space-4);
+  border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-lg);
-  border: 1px solid #ddd;
+  background: var(--ek-color-surface);
 }
 
+.chart {
+  min-height: 400px;
+  width: 100%;
+}
+
+.progress-bar {
+  margin-top: var(--ek-space-3);
+  border-radius: var(--ek-radius-full);
+}
+
+.progress-bar__text {
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-surface);
+}
+
+/* Eksik eşleştirme */
+.mapping-section {
+  margin-top: var(--ek-space-4);
+}
+
+.mapping-section__head {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  margin-bottom: var(--ek-space-1);
+}
+
+.mapping-section__title {
+  font-size: var(--ek-font-size-lg);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-strong);
+}
+
+.mapping-section__desc {
+  font-size: var(--ek-font-size-xs);
+  color: var(--ek-color-content-muted);
+  margin-bottom: var(--ek-space-4);
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ek-space-4);
+  margin-bottom: var(--ek-space-4);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  padding: var(--ek-space-1) var(--ek-space-3);
+  border: 1px dashed var(--ek-color-border-strong);
+  border-radius: var(--ek-radius-full);
+  background: var(--ek-color-surface);
+}
+
+.legend-item__text {
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-medium);
+  color: var(--ek-color-content-default);
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--ek-radius-full);
+}
+
+.legend-dot--success {
+  background-color: var(--ek-color-success);
+}
+
+.legend-dot--danger {
+  background-color: var(--ek-color-error);
+}
+
+.legend-hint {
+  font-size: var(--ek-font-size-xs);
+  font-style: italic;
+  color: var(--ek-color-content-muted);
+}
+
+.cat-list {
+  gap: var(--ek-space-3);
+}
+
+.cat-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-3);
+  padding: var(--ek-space-3);
+  border: 1px solid var(--ek-color-border-default);
+  border-left: 4px solid var(--ek-color-border-strong);
+  border-radius: var(--ek-radius-lg);
+  background: var(--ek-color-surface);
+  box-shadow: var(--ek-shadow-sm);
+}
+
+.cat-row--danger {
+  border-left-color: var(--ek-color-error);
+}
+
+.cat-row--warning {
+  border-left-color: var(--ek-color-warning);
+}
+
+.cat-row__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ek-space-2);
+}
+
+.cat-row__path {
+  font-size: var(--ek-font-size-xs);
+  line-height: var(--ek-line-height-normal);
+  min-width: 0;
+}
+
+.cat-row__path-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ek-space-1);
+}
+
+.cat-row__crumb {
+  color: var(--ek-color-content-muted);
+  font-weight: var(--ek-font-weight-medium);
+}
+
+.cat-row__name-warning {
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-warning);
+}
+
+.cat-row__loading {
+  font-style: italic;
+  color: var(--ek-color-content-muted);
+}
+
+.map-chip,
+.count-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--ek-space-2);
+  min-height: 24px;
+  border: 1px solid var(--ek-color-border-strong);
+  border-radius: var(--ek-radius-sm);
+  background: var(--ek-color-surface);
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-semibold);
+  cursor: pointer;
+  transition: background-color var(--ek-duration-fast) var(--ek-easing-standard);
+}
+
+.map-chip:focus-visible,
+.count-chip:focus-visible {
+  outline: 2px solid var(--ek-color-primary);
+  outline-offset: 2px;
+}
+
+.map-chip--danger {
+  color: var(--ek-color-error);
+  background: var(--ek-color-error-subtle);
+}
+
+.map-chip--warning {
+  color: var(--ek-color-warning);
+  background: var(--ek-color-warning-subtle);
+}
+
+.map-chip--success {
+  color: var(--ek-color-success);
+  background: var(--ek-color-success-subtle);
+}
+
+.map-chip:hover {
+  background: var(--ek-color-surface-sunken);
+}
+
+.count-chip {
+  border-style: dashed;
+}
+
+.count-chip--danger {
+  color: var(--ek-color-error);
+}
+
+.count-chip--warning {
+  color: var(--ek-color-warning);
+}
+
+.attr-groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-3);
+}
+
+.attr-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-2);
+}
+
+.attr-group__name {
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.attr-group__name--success {
+  color: var(--ek-color-success);
+}
+
+.attr-group__name--warning {
+  color: var(--ek-color-warning);
+}
+
+.attr-group__values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ek-space-2);
+}
+
+.map-menu-card {
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+  overflow-y: auto;
+  margin: 0 auto;
+  padding: var(--ek-space-3);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-lg);
+  box-shadow: var(--ek-shadow-lg);
+}
+
+.map-menu-card--mobile {
+  margin-top: 150px;
+}
+
+.map-menu-card__head {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  margin-bottom: var(--ek-space-2);
+}
+
+.map-menu-card__title {
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-strong);
+}
+
+/* Akış adımları */
 .stepper-content {
   display: flex;
   justify-content: space-between;
@@ -603,6 +914,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: var(--ek-space-2);
   flex: 1;
   z-index: 2;
   position: relative;
@@ -614,8 +926,69 @@ onBeforeUnmount(() => {
   left: 10%;
   right: 10%;
   height: 1px;
-  background: #ddd;
+  background: var(--ek-color-border-strong);
   z-index: 1;
+}
+
+.step-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: var(--ek-radius-full);
+  border: 2px solid var(--ek-color-surface);
+  background: var(--ek-color-border-strong);
+  position: relative;
+  z-index: 2;
+  transition: background-color var(--ek-duration-slow) var(--ek-easing-standard);
+}
+
+.step-dot--upcoming {
+  background: var(--ek-color-border-strong);
+}
+
+.step-dot--success {
+  background: var(--ek-color-success);
+}
+
+.step-dot--danger {
+  background: var(--ek-color-error);
+}
+
+.step-dot--info {
+  background: var(--ek-color-info);
+}
+
+.step-dot--warning {
+  background: var(--ek-color-warning);
+}
+
+.step-dot--neutral {
+  background: var(--ek-color-content-subtle);
+}
+
+.step-dot--done {
+  opacity: 0.7;
+}
+
+/* İşlemde olan adım: sakin, statik halka (sonsuz animasyon yok). */
+.step-dot--processing {
+  box-shadow: 0 0 0 4px var(--ek-color-info-subtle);
+}
+
+.step-title {
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-medium);
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--ek-color-content-muted);
+}
+
+.active-text {
+  color: var(--ek-color-content-strong);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.passed-text {
+  color: var(--ek-color-content-muted);
 }
 
 @media (max-width: 600px) {
@@ -623,12 +996,12 @@ onBeforeUnmount(() => {
     flex-direction: column;
     align-items: flex-start;
     gap: var(--ek-space-5);
-    padding-left: 10px;
+    padding-left: var(--ek-space-3);
   }
 
   .step-item {
     flex-direction: row;
-    gap: 15px;
+    gap: var(--ek-space-4);
     width: 100%;
     align-items: center;
   }
@@ -641,71 +1014,8 @@ onBeforeUnmount(() => {
     height: auto;
   }
 
-  .step-text-container {
+  .step-title {
     text-align: left;
-  }
-}
-
-.step-avatar {
-  transition: all var(--ek-duration-slow) var(--ek-easing-standard);
-}
-
-.step-passed {
-  opacity: 0.6;
-  filter: grayscale(0.3);
-}
-
-.step-title {
-  color: #bbb;
-  text-align: center;
-}
-
-.active-text {
-  color: #333 !important;
-  font-weight: 900;
-}
-
-.passed-text {
-  color: #888 !important;
-}
-
-@keyframes intense-pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(var(--v-theme-primary), 0.7);
-  }
-  100% {
-    box-shadow: 0 0 0 12px rgba(var(--v-theme-primary), 0);
-  }
-}
-
-/* ADR-0011 Bağlam "pulse/ripple ihlali" — bkz. DetailedExportLogReport.vue'daki
-   AYNI gerekçe (ClaimDetailComponent'teki T4f göçüyle birebir): `infinite`
-   tekrar korunuyor, tek döngü süresi/eğrisi token'a çekildi. */
-.status-pulse-intense {
-  animation: intense-pulse var(--ek-duration-slow) var(--ek-easing-standard) infinite !important;
-  z-index: 3;
-}
-
-.status-pulse-intense::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border-radius: 50%;
-  border: 2px solid rgba(var(--v-theme-primary), 0.5);
-  animation: ripple-effect var(--ek-duration-slow) var(--ek-easing-standard) infinite;
-}
-
-@keyframes ripple-effect {
-  0% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1.8);
-    opacity: 0;
   }
 }
 </style>

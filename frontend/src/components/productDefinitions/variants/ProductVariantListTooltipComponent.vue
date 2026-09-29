@@ -1,7 +1,7 @@
 <template>
   <v-card class="premium-status-container" rounded="lg">
 
-    <div class="header-section" :class="{ 'on-sale': isActuallyOnSale }">
+    <div class="header-section" :class="{ 'is-on-sale': isActuallyOnSale }">
       <div class="d-flex justify-space-between align-start">
         <div class="d-flex align-center">
           <div class="status-icon-bg">
@@ -39,7 +39,7 @@
 
       <div v-if="data?.upload?.statusMessages?.length" class="alert-box mt-3">
         <div v-for="(msg, index) in data.upload.statusMessages" :key="index" class="alert-item">
-          <v-icon size="14" color="amber-darken-3" class="mr-2">mdi-alert-circle-outline</v-icon>
+          <v-icon size="14" color="warning" class="mr-2" aria-hidden="true">mdi-alert-circle-outline</v-icon>
           {{ msg }}
         </div>
       </div>
@@ -119,10 +119,10 @@ const getSaleStatusText = computed(() => {
 });
 
 const getSaleStatusColor = computed(() => {
-  if (isActuallyOnSale.value) return '#10b981';
+  if (isActuallyOnSale.value) return 'var(--ek-color-success)';
   const transferStatus = props.data?.upload?.TRANSFER?.status;
-  if (transferStatus === 'WAITING' || transferStatus === 'SENT') return '#f59e0b';
-  return '#ef4444';
+  if (transferStatus === 'WAITING' || transferStatus === 'SENT') return 'var(--ek-color-warning)';
+  return 'var(--ek-color-error)';
 });
 
 const getSaleStatusIcon = computed(() => {
@@ -144,12 +144,13 @@ const filteredIntegrationSteps = computed(() => {
 
 const getIntegrationColor = (status: PRODUCT_INTEGRATION_STATUS) => {
   switch (status) {
-    case PRODUCT_INTEGRATION_STATUS.PENDING: return '#3b82f6';
-    case PRODUCT_INTEGRATION_STATUS.SENT: return '#6366f1';
-    case PRODUCT_INTEGRATION_STATUS.WAITING: return '#f59e0b';
-    case PRODUCT_INTEGRATION_STATUS.FAILED: return '#ef4444';
-    case PRODUCT_INTEGRATION_STATUS.COMPLETED: return '#10b981';
-    default: return '#94a3b8';
+    // ADR-0015 Karar 3.3 durum tonları (AA token'ları): info / primary / warning / error / success / neutral.
+    case PRODUCT_INTEGRATION_STATUS.PENDING: return 'var(--ek-color-info)';
+    case PRODUCT_INTEGRATION_STATUS.SENT: return 'var(--ek-color-primary)';
+    case PRODUCT_INTEGRATION_STATUS.WAITING: return 'var(--ek-color-warning)';
+    case PRODUCT_INTEGRATION_STATUS.FAILED: return 'var(--ek-color-error)';
+    case PRODUCT_INTEGRATION_STATUS.COMPLETED: return 'var(--ek-color-success)';
+    default: return 'var(--ek-color-content-muted)';
   }
 };
 
@@ -178,65 +179,66 @@ const formatCurrency = (number: number) => {
 <style scoped>
 /* Konteynır: Menü içine otursun diye dış padding/margin optimize edildi */
 .premium-status-container {
-  padding: 16px;
-  background-color: #ffffff;
+  padding: var(--ek-space-4);
+  background-color: var(--ek-color-surface);
   min-width: 340px;
   max-width: 400px;
 }
 
-/* Header Section: Arka plandan ayrışan temiz bir başlık */
+/* Header Section: Arka plandan ayrışan temiz bir başlık.
+   Not: durum sınıfı `is-on-sale` — `on-sale` adı ProductListView'ın GLOBAL `.on-sale`
+   (opacity .6) kuralıyla çakışıp başlığı soluklaştırıyordu (ADR-0015 B5-2 bulgusu). */
 .header-section {
-  background: #f8fafc;
-  border-radius: 10px;
-  padding: 12px;
-  margin-bottom: 20px;
-  border: 1px solid #f1f5f9;
+  background: var(--ek-color-surface-muted);
+  border-radius: var(--ek-radius-lg);
+  padding: var(--ek-space-3);
+  margin-bottom: var(--ek-space-5);
+  border: 1px solid var(--ek-color-border-default);
 }
 
-.header-section.on-sale {
-  background: #f0fdf4;
-  border-color: #dcfce7;
+.header-section.is-on-sale {
+  background: var(--ek-color-success-subtle);
+  border-color: var(--ek-color-success-subtle);
 }
 
 .status-icon-bg {
-  background: white;
+  background: var(--ek-color-surface);
   padding: 6px;
-  border-radius: 8px;
+  border-radius: var(--ek-radius-lg);
   display: flex;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
 }
 
 .status-main-text {
-  font-size: 0.95rem;
-  font-weight: 800;
+  font-size: var(--ek-font-size-md);
+  font-weight: var(--ek-font-weight-bold);
   letter-spacing: -0.3px;
 }
 
 .date-tag {
-  font-size: 0.65rem;
-  color: #94a3b8;
-  font-weight: 700;
-  background: #ffffff;
+  font-size: var(--ek-font-size-xs);
+  color: var(--ek-color-content-muted);
+  font-weight: var(--ek-font-weight-bold);
+  background: var(--ek-color-surface);
   padding: 2px 6px;
-  border-radius: 4px;
-  border: 1px solid #f1f5f9;
+  border-radius: var(--ek-radius-sm);
+  border: 1px solid var(--ek-color-border-default);
 }
 
 .alert-box {
-  border-top: 1px dashed #e2e8f0;
-  padding-top: 8px;
+  border-top: 1px dashed var(--ek-color-border-default);
+  padding-top: var(--ek-space-2);
 }
 
 /* PAZARYERİ VERİLERİ GRID */
 .platform-data-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-  background: white;
+  gap: var(--ek-space-2);
+  background: var(--ek-color-surface);
   padding: 10px;
-  border-radius: 8px;
-  border: 1px solid #f1f5f9;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.02);
+  border-radius: var(--ek-radius-lg);
+  border: 1px solid var(--ek-color-border-default);
 }
 
 .data-box {
@@ -245,31 +247,31 @@ const formatCurrency = (number: number) => {
 }
 
 .data-box .label {
-  font-size: 0.6rem;
-  font-weight: 700;
-  color: #94a3b8;
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-bold);
+  color: var(--ek-color-content-muted);
   text-transform: uppercase;
   margin-bottom: 2px;
 }
 
 .data-box .value {
-  font-size: 0.8rem;
-  font-weight: 800;
-  color: #1e293b;
+  font-size: var(--ek-font-size-sm);
+  font-weight: var(--ek-font-weight-bold);
+  color: var(--ek-color-content-strong);
 }
 
 .text-error {
-  color: #ef4444 !important;
+  color: var(--ek-color-error) !important;
 }
 
 /* Timeline Akışı */
 .timeline-body {
-  padding-left: 4px;
+  padding-left: var(--ek-space-1);
 }
 
 .timeline-item {
   display: flex;
-  gap: 16px;
+  gap: var(--ek-space-4);
 }
 
 .indicator-wrapper {
@@ -281,7 +283,7 @@ const formatCurrency = (number: number) => {
 .status-circle {
   width: 26px;
   height: 26px;
-  border-radius: 50%;
+  border-radius: var(--ek-radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -292,13 +294,13 @@ const formatCurrency = (number: number) => {
 .connector-line {
   width: 2px;
   flex-grow: 1;
-  background: #f1f5f9;
+  background: var(--ek-color-border-default);
   margin: 2px 0;
 }
 
 .timeline-item.status-completed .connector-line {
-  background: #10b98133;
   /* Hafif yeşil çizgi */
+  background: var(--ek-color-success-subtle);
 }
 
 .content-wrapper {
@@ -307,33 +309,34 @@ const formatCurrency = (number: number) => {
 }
 
 .step-title {
-  font-weight: 700;
-  font-size: 0.85rem;
-  color: #334155;
+  font-weight: var(--ek-font-weight-bold);
+  font-size: var(--ek-font-size-sm);
+  color: var(--ek-color-content-default);
 }
 
 .step-date {
-  font-size: 0.65rem;
-  color: #cbd5e1;
-  font-weight: 600;
+  font-size: var(--ek-font-size-xs);
+  color: var(--ek-color-content-muted);
+  font-weight: var(--ek-font-weight-semibold);
 }
 
 .info-bubble {
-  background: #ffffff;
-  border: 1px solid #f1f5f9;
-  border-radius: 8px;
-  padding: 8px 12px;
-  transition: all 0.2s ease;
+  background: var(--ek-color-surface);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-lg);
+  padding: var(--ek-space-2) var(--ek-space-3);
+  transition: border-color var(--ek-duration-base) var(--ek-easing-standard),
+    background-color var(--ek-duration-base) var(--ek-easing-standard);
 }
 
 .timeline-item:hover .info-bubble {
-  border-color: #e2e8f0;
-  background: #fcfcfd;
+  border-color: var(--ek-color-border-strong);
+  background: var(--ek-color-surface-muted);
 }
 
 .status-label {
-  font-size: 0.75rem;
-  font-weight: 700;
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-bold);
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
@@ -341,12 +344,12 @@ const formatCurrency = (number: number) => {
 .log-section {
   margin-top: 6px;
   padding-top: 6px;
-  border-top: 1px solid #f8fafc;
+  border-top: 1px solid var(--ek-color-border-default);
 }
 
 .log-row {
-  font-size: 0.7rem;
-  color: #64748b;
+  font-size: var(--ek-font-size-xs);
+  color: var(--ek-color-content-muted);
   line-height: 1.5;
   position: relative;
   padding-left: 10px;
@@ -359,14 +362,14 @@ const formatCurrency = (number: number) => {
   top: 7px;
   width: 4px;
   height: 4px;
-  border-radius: 50%;
-  background: #e2e8f0;
+  border-radius: var(--ek-radius-full);
+  background: var(--ek-color-border-strong);
 }
 
 .text-overline {
-  font-size: 0.6rem !important;
-  color: #94a3b8;
-  font-weight: 800;
+  font-size: var(--ek-font-size-xs) !important;
+  color: var(--ek-color-content-default);
+  font-weight: var(--ek-font-weight-bold);
 }
 
 .lh-1 {

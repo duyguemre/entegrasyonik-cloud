@@ -1,29 +1,54 @@
+<!--
+  frontend/src/views/secure/user/ChangePasswordView.vue
+
+  ADR-0015 B5-3 — GÖRSEL KATMAN, mantık KESİNLİKLE DEĞİŞMEDİ (görev talimatı: oturum/güvenlik
+  akışı ekranı — bkz. e2e/specs/user-account-forms.spec.ts). Karakterizasyon: script bloğu BOŞTU,
+  hiçbir "Kaydet/Değiştir" düğmesi render EDİLMİYORDU — bu AYNEN korunuyor, YENİ bir düğme/olay
+  işleyici EKLENMEDİ. Yalnızca iki alanın düzeni (eski `style="width:48%"` inline hack'i) DS
+  grid/token'larıyla değiştirildi. `.changePasswordView` kök sınıfı yeni eklendi (kardeş ekranlarla
+  aynı isimlendirme kuralı; davranışı ETKİLEMEZ).
+
+  ADR notu (gap analizi §d, `docs/adr/0015-uygulama-gorsel-yenileme.md`): bu ekranın nihai kaderi
+  N1 "Hesabım ve güvenlik" ile DEĞİŞTİRİLMESİDİR (B4-P0) — bu görev kapsamında yalnızca görsel
+  iyileştirme yapıldı, işlevsel tamamlama (gerçek şifre değiştirme akışı) bilinçli olarak
+  EKLENMEDİ (kapsam dışı, final rapora yazıldı).
+-->
 <template>
-<div>
+  <div class="changePasswordView ek-static-screen">
+    <EkPageHeader section="Ayarlar" :title="$t('menu.changePassword')" />
 
-<div style="width:100%">
-  <div class="d-flex">
-    <div style="width:48%">
-    </div>
-    <div style="width:4%">
-    </div>
-    <div style="width:48%">
-      <div class="d-flex">
-        <v-text-field clearable prepend-inner-icon="mdi-form-textbox" density="comfortable" class="mr-2"
-          :label="$t('user.changePassword.password')" variant="outlined" bg-color="textfieldColor"
-          style="width:50%"></v-text-field>
-        <v-text-field clearable prepend-inner-icon="mdi-form-textbox" density="comfortable" class=" "
-          :label="$t('user.changePassword.repassword')" variant="outlined" bg-color="textfieldColor"
-          style="width:50%"></v-text-field>
-      </div>
-
+    <div class="ek-static-screen__form">
+      <!-- Karakterizasyon: orijinalde `type` YOK (düz metin girişi) — DEĞİŞTİRİLMEDİ, bkz. dosya başı notu. -->
+      <v-text-field clearable prepend-inner-icon="mdi-lock-outline" density="comfortable"
+        :label="$t('user.changePassword.password')" variant="outlined"></v-text-field>
+      <v-text-field clearable prepend-inner-icon="mdi-lock-check-outline" density="comfortable"
+        :label="$t('user.changePassword.repassword')" variant="outlined"></v-text-field>
     </div>
   </div>
-</div>
-</div>
 </template>
 
 <script setup lang="ts">
+import EkPageHeader from '@/components/ds/EkPageHeader.vue'
 </script>
 
-<style></style>
+<style scoped>
+.changePasswordView {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-4);
+  padding: var(--ek-space-6);
+}
+
+.ek-static-screen__form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ek-space-4);
+  max-width: 560px;
+}
+
+@media (max-width: 767px) {
+  .ek-static-screen__form {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

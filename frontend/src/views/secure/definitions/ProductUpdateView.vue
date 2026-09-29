@@ -1,5 +1,15 @@
 <template>
   <div :class="[dialogAttach.substring(1)]">
+    <!-- ek-pattern-exception: EkWizardTemplate — bu ekran çok adımlı bir sihirbaz değil,
+         kendi adım/gezinme+Güncelle şeridini taşıyan mevcut bir `v-stepper`dir (ADR-0015
+         Karar 6, B5-1); yapısal göç ayrı ve daha riskli bir iş olduğu için bu turda
+         yalnızca EkPageHeader eklenip mevcut stepper token'larla yenilendi. -->
+    <EkPageHeader
+      section="Katalog"
+      :title="$t('definitions.product.update.title')"
+      :description="$t('definitions.product.update.description')"
+    />
+
     <ProductCompetitivePricesComponent v-model="isCompetitivePricesDialog" ref="productCompetitivePricesComponentRef"
       :productInfoForm="productInfoForm" v-if="isCompetitivePricesDialog" />
 
@@ -27,10 +37,10 @@
             <v-stepper-item @click="stepper = 0" title="Kategori Seçimi" value="1" :complete="stepper > 0" editable
               color="primary">
             </v-stepper-item>
-            <v-divider class="mr-1 ml-1" color="navy"></v-divider>
+            <v-divider class="mr-1 ml-1" color="border-default" opacity="1"></v-divider>
             <v-stepper-item @click="stepper = 1" title="Ürün Tanımı" value="2" :complete="stepper > 1"
               :editable="productInfoForm.category != undefined" color="primary"></v-stepper-item>
-            <v-divider class="mr-1 ml-1" color="navy"></v-divider>
+            <v-divider class="mr-1 ml-1" color="border-default" opacity="1"></v-divider>
             <v-stepper-item @click="stepper = 2; checkSingleVariant()" value="3" :complete="stepper > 2"
               :editable="isVariantInfoEditable()" color="primary">
               <template v-slot:title>
@@ -38,13 +48,13 @@
                 <span v-else>Tekil Ürün Bilgisi</span>
               </template>
             </v-stepper-item>
-            <v-divider class="mr-2 ml-1" color="navy"></v-divider>
+            <v-divider class="mr-2 ml-1" color="border-default" opacity="1"></v-divider>
             <v-stepper-item @click="stepper = 3" title="Detay Bilgiler" value="4" :complete="stepper > 3"
               :editable="productInfoForm.title?.length > 2" color="primary"></v-stepper-item>
-            <v-divider class="mr-1 ml-1" color="navy"></v-divider>
+            <v-divider class="mr-1 ml-1" color="border-default" opacity="1"></v-divider>
             <v-btn-group elevation="0" class="ma-0 mr-4"
               style="height:40px;border:0px solid white;min-width:113px!important;margin-top:0px" density="compact">
-              <v-btn class="fill-height" color="saveButtonColor" @click="updateProduct" :disabled="isUpdateDisabled()"
+              <v-btn class="fill-height" color="primary" @click="updateProduct" :disabled="isUpdateDisabled()"
                 style="height:40px;min-width:0;padding:0;width:100%">
                 <span class="">
                   Güncelle
@@ -76,12 +86,12 @@
           <v-form ref="formStep1Ref" @submit.stop>
             <v-btn :disabled="!productInfoForm._id && !productInfoForm.tempId" density="compact" elevation="0"
               class=" ml-12"
-              style="position:absolute;top:100px;z-index:1;min-width:0!important;padding:2px;width:193px;height:216px;border:1px solid #bbb"
-              :color="'white'" @click="isImagesDialog = true">
+              style="position:absolute;top:100px;z-index:1;min-width:0!important;padding:2px;width:193px;height:216px;border:1px solid var(--ek-color-border-default)"
+              color="surface" @click="isImagesDialog = true">
               <v-row>
                 <v-col>
                   <div v-if="productInfoForm.images == undefined || !productInfoForm.images[0]">
-                    <v-icon size="180" style="opacity:.5" color="processButtonColor">mdi-image-outline</v-icon>
+                    <v-icon size="180" style="opacity:.5" color="content-muted">mdi-image-outline</v-icon>
                   </div>
                   <div v-else>
                     <div style="width:189px;height:191px;background-color:white" class="d-flex">
@@ -102,17 +112,17 @@
                 <div class="d-flex mt-2">
                   <div style="width:270px!important">
                     <v-radio-group inline v-model="productInfoForm.hasVariant">
-                      <v-radio color="processButtonColor" :value=false
+                      <v-radio :value=false
                         :label="$t('productDefinitions.product.define.withoutVariant')">
                       </v-radio>
-                      <v-radio color="processButtonColor" :value=true
+                      <v-radio :value=true
                         :label="$t('productDefinitions.product.define.withVariant')">
                       </v-radio>
                     </v-radio-group>
                   </div>
                   <v-text-field clearable maxlength="32" type="tel" v-if="productInfoForm.hasVariant"
                     :rules="formRules.stockcodeRules" density="compact" class="mb-0" v-model="productInfoForm.maincode"
-                    variant="outlined" bg-color="textfieldColor"
+                    variant="outlined"
                     :hint="$t('productDefinitions.product.define.maincodeDesc')" counter>
                     <template #label>
                       {{ $t('productDefinitions.product.define.maincode') }}<v-icon size="12"
@@ -131,7 +141,7 @@
                 <BrandSelectBoxComponent v-model="productInfoForm.brand" :mandatory="true" class="mt-0" />
                 <v-text-field clearable :rules="formRules.titleRules" maxlength="160" type="tel"
                   class="mb-3 mt-2 customTextField" density="compact" v-model="productInfoForm.title" variant="outlined"
-                  bg-color="textfieldColor" :hint="$t('productDefinitions.product.define.productTitleDesc')" counter>
+                  :hint="$t('productDefinitions.product.define.productTitleDesc')" counter>
                   <template #label>
                     {{ $t('productDefinitions.product.define.productTitle') }}<v-icon size="12"
                       class="mb-2 ml-1">mdi-asterisk</v-icon>
@@ -187,6 +197,11 @@
       </div>
 
     </v-form>
+    <!-- Yükleniyor durumu (ADR-0015 premium-ui-standards): `initialized` false iken önceden
+         hiçbir görsel geri bildirim yoktu (boş ekran) — davranış AYNI kalır (form yine
+         `retrieveProduct()` tamamlanınca render olur), yalnızca bu bekleme aralığına sade bir
+         iskelet eklendi. -->
+    <EkSkeleton v-else type="form" />
   </div>
 </template>
 
@@ -195,6 +210,8 @@ import { ref, computed, watch, onBeforeMount, nextTick, onBeforeUnmount, onMount
 import { useI18n } from 'vue-i18n';
 import { useDisplay } from 'vuetify'
 
+import EkPageHeader from '@/components/ds/EkPageHeader.vue'
+import EkSkeleton from '@/components/ds/EkSkeleton.vue'
 import ProductCompetitivePricesComponent from '@/components/productDefinitions/crud/ProductCompetitivePricesComponent.vue'
 import ProductVariantsComponent from '@/components/productDefinitions/variants/ProductVariantsComponent.vue'
 import ProductImagesComponent from '@/components/productDefinitions/crud/ProductImagesComponent.vue'

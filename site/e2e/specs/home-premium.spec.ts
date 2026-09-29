@@ -144,9 +144,9 @@ test.describe('Hero ürün paneli (Örnek görünüm)', () => {
     expect(await stockText(page)).toBe('9')
     // üç sipariş "Rezerve" (statik son durum); "Yeni" rozeti görünmez
     const pills = await page.evaluate(() =>
-      [...document.querySelectorAll<HTMLElement>('[data-testid="hero-mock"] .mock__row')].map((row) => ({
+      [...document.querySelectorAll<HTMLElement>('[data-testid="hero-mock"] .show__row')].map((row) => ({
         row: Number(getComputedStyle(row).opacity),
-        neu: Number(getComputedStyle(row.querySelector('.mock__pill--new')!).opacity),
+        neu: Number(getComputedStyle(row.querySelector('.show__pill--new')!).opacity),
       })),
     )
     expect(pills).toHaveLength(3)
@@ -297,5 +297,72 @@ test.describe('Sorun -> çözüm kaydırma ilerlemesi (S12)', () => {
     await page.getByTestId('problem-solution').scrollIntoViewIfNeeded()
     expect(await progress(page)).toBe('')
     await expect(page.locator('.ps__after')).toHaveCSS('opacity', '1')
+  })
+})
+
+test.describe('S13-B: "Nasıl çalışır" demoları ve ekosistem akışı', () => {
+  const visual = (page: Page, key: string) => page.locator(`.how__visual[data-demo="${key}"]`)
+
+  test('demo görünür olunca vuruşlarla ilerler (b1..bN); hareket durdurulunca statik son duruma döner', async ({ page }) => {
+    await page.goto('/')
+    await readyMotion(page)
+    const v = visual(page, 'import')
+    await v.evaluate((e) => e.scrollIntoView({ block: 'center' }))
+    await expect(v).toHaveAttribute('data-demo-on', '')
+    await expect(v).toHaveAttribute('data-live', 'true')
+    await expect(v).toHaveAttribute('data-b1', '', { timeout: 3000 })
+    // tüm vuruşlar birikir (6 vuruş x ~700 ms)
+    await expect(v).toHaveAttribute('data-b6', '', { timeout: 8000 })
+    expect(await v.getAttribute('data-b3')).toBe('')
+    // durdur: demo kancaları kalkar, uçan kart görünmez, çubuklar dolu
+    await page.getByTestId('motion-toggle').click()
+    await expect(page.locator('html')).toHaveAttribute('data-motion', 'paused')
+    await expect(v).not.toHaveAttribute('data-demo-on', /.*/)
+    await expect(v).not.toHaveAttribute('data-b1', /.*/)
+    expect(await runningAnimations(page, false, '#nasil-calisir')).toBe(0)
+    const fills = await v.locator('.ship__fill').evaluateAll((els) => els.map((e) => getComputedStyle(e).opacity))
+    expect(fills.every((o) => o === '1')).toBe(true)
+  })
+
+  test('görünümden çıkınca demo durur (data-live=false, yeni vuruş eklenmez)', async ({ page }) => {
+    await page.goto('/')
+    await readyMotion(page)
+    const v = visual(page, 'account')
+    await v.evaluate((e) => e.scrollIntoView({ block: 'center' }))
+    await expect(v).toHaveAttribute('data-b1', '', { timeout: 3000 })
+    await page.evaluate(() => window.scrollTo(0, 0))
+    await expect(v).toHaveAttribute('data-live', 'false')
+    const count = () => v.evaluate((e) => [...e.attributes].filter((a) => /^data-b\d$/.test(a.name)).length)
+    const before = await count()
+    await page.waitForTimeout(2000)
+    expect(await count()).toBe(before)
+  })
+
+  test('reduced-motion: demolar hiç başlamaz, tüm örnek görünümler tamamlanmış hâlde', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.goto('/')
+    await readyMotion(page)
+    await page.locator('#nasil-calisir').scrollIntoViewIfNeeded()
+    await expect(page.locator('.how__visual[data-demo-on]')).toHaveCount(0)
+    const v = visual(page, 'connect')
+    await v.scrollIntoViewIfNeeded()
+    for (const el of await v.locator('.chip__ok, .conn__badge').all()) await expect(el).toHaveCSS('opacity', '1')
+    await expect(visual(page, 'manage').locator('.feed__pill')).toBeVisible()
+  })
+
+  test('ekosistem: iki yönlü paketler; üzerine gelinen düğümün şeridi öne çıkar, diğerleri geri çekilir (masaüstü)', async ({ page }) => {
+    test.skip(!isDesktop(page), 'şema hatları yalnızca masaüstü yerleşiminde')
+    await page.goto('/')
+    await readyMotion(page)
+    const eco = page.getByTestId('ecosystem')
+    await eco.scrollIntoViewIfNeeded()
+    await expect(eco.locator('.eco__packet--in')).toHaveCount(8)
+    await expect(eco.locator('.eco__packet--out')).toHaveCount(4)
+    await expect(eco).toHaveAttribute('data-visible', 'true')
+    expect(await runningAnimations(page, true, '[data-testid="ecosystem"]')).toBeGreaterThan(10)
+    await eco.locator('.eco__node--br').hover()
+    await expect(eco.locator('.eco__lane--br')).toHaveCSS('opacity', '1')
+    await expect(eco.locator('.eco__lane--tl')).toHaveCSS('opacity', '0.25')
+    await expect(eco.locator('.eco__node--br .eco__lit')).toHaveCSS('opacity', '1')
   })
 })

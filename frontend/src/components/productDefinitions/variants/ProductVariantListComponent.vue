@@ -1,20 +1,20 @@
 <template>
   <v-data-table-server v-model="selectedVariants" :items-length="originalVariants ? originalVariants.length : 0"
-    :items="originalVariants" fixed-header item-value="barcode" :headers="headers" class="pa-0 ma-0 pl-0 pb-0 ma-0"
-    elevation="0" :show-select="true"
-    style="position:absolute1;left:0;z-index:1;right:0;width:auto;border:1px solid  rgb(var(--v-theme-borderColor));border-radius:3px;">
+    :items="originalVariants" fixed-header item-value="barcode" :headers="headers" class="pa-0 ma-0 pl-0 pb-0 ma-0 vl-table"
+    elevation="0" :show-select="true">
 
     <template v-slot:header.data-table-select="{ allSelected, selectAll, someSelected }">
-      <div class="d-flex align-center justify-center fill-height" style="border-right:1px solid #ccc">
+      <div class="d-flex align-center justify-center fill-height vl-head-sep">
         <v-checkbox-btn :model-value="allSelected" :indeterminate="someSelected && !allSelected" color="primaryLighten"
+          aria-label="Tüm varyantları seç"
           @update:model-value="selectAll(!allSelected)"></v-checkbox-btn>
       </div>
     </template>
 
     <template v-slot:header.variant="{ column, getSortIcon, isSorted, someSelected }">
-      <div class="d-flex  fill-height align-center" style=" border-right:0px solid #ddd;border-left:px solid #ddd;">
-        <div style="width:124px;opacity:.6" class="text-center"><v-icon class="mr-8">mdi-image-outline</v-icon></div>
-        <div class="font-weight-bold" style="width:130px;height:20px!important;" @click="toggleSort('stockcode')"
+      <div class="d-flex  fill-height align-center">
+        <div class="text-center vl-image-head"><v-icon class="mr-8">mdi-image-outline</v-icon></div>
+        <div class="font-weight-bold vl-sort-head vl-w-130" @click="toggleSort('stockcode')"
           @mouseenter="sortIcon = 'stockcode'" @mouseleave="sortIcon = undefined">
 
           Stok Kodu
@@ -23,13 +23,13 @@
               {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
             </v-icon>
           </template>
-          <v-icon v-else style="opacity:.5" v-if="sortIcon == 'stockcode'">
+          <v-icon v-else v-if="sortIcon == 'stockcode'" class="vl-sort-icon--hint">
             {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
           </v-icon>
 
         </div>
         |
-        <div class="font-weight-bold text-caption ml-1 " style="width:60px;height:20px!important"
+        <div class="font-weight-bold text-caption ml-1 vl-sort-head vl-w-60"
           @click="toggleSort('barcode')" @mouseenter="sortIcon = 'barcode'" @mouseleave="sortIcon = undefined">
           Barkod
           <template v-if="sortBy === 'barcode'">
@@ -37,7 +37,7 @@
               {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
             </v-icon>
           </template>
-          <v-icon class="text-caption" v-else style="opacity:.5" v-if="sortIcon == 'barcode'">
+          <v-icon class="text-caption vl-sort-icon--hint" v-else v-if="sortIcon == 'barcode'">
             {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
           </v-icon>
         </div>
@@ -47,8 +47,8 @@
 
 
     <template v-slot:header.choices="{ column, getSortIcon, isSorted, someSelected }">
-      <div class="d-flex fill-height align-center" style="border-right:1px solid #ccc">
-        <div class="font-weight-bold text-body-2" style="width:95px;height:20px!important"
+      <div class="d-flex fill-height align-center vl-head-sep">
+        <div class="font-weight-bold text-body-2 vl-sort-head vl-w-95"
           @click="toggleSort('choices')" @mouseenter="sortIcon = 'choices'" @mouseleave="sortIcon = undefined">
           Seçenekler
           <template v-if="sortBy === 'choices'">
@@ -56,7 +56,7 @@
               {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
             </v-icon>
           </template>
-          <v-icon v-else style="opacity:.5" v-if="sortIcon == 'choices'">
+          <v-icon v-else v-if="sortIcon == 'choices'" class="vl-sort-icon--hint">
             {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
           </v-icon>
         </div>
@@ -65,8 +65,8 @@
 
 
     <template v-slot:header.prices>
-      <div class="d-flex fill-height align-center" style="border-right:1px solid #ccc">
-        <div class="font-weight-bold text-body-2" style="width:150px;height:20px!important"
+      <div class="d-flex fill-height align-center vl-head-sep">
+        <div class="font-weight-bold text-body-2 vl-sort-head vl-w-150"
           @click="toggleSort('prices.salePrice')" @mouseenter="sortIcon = 'prices.salePrice'"
           @mouseleave="sortIcon = undefined">
 
@@ -77,12 +77,12 @@
               {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
             </v-icon>
           </template>
-          <v-icon v-else style="opacity:.5" v-if="sortIcon == 'prices.salePrice'">
+          <v-icon v-else v-if="sortIcon == 'prices.salePrice'" class="vl-sort-icon--hint">
             {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
           </v-icon>
         </div>
         |
-        <div class="font-weight-bold text-caption ml-1" style="width:150px!important;;height:20px!important"
+        <div class="font-weight-bold text-caption ml-1 vl-sort-head vl-w-150"
           @click="toggleSort('prices.marketPrice')" @mouseenter="sortIcon = 'prices.marketPrice'"
           @mouseleave="sortIcon = undefined">
 
@@ -92,7 +92,7 @@
               {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
             </v-icon>
           </template>
-          <v-icon class="text-caption" v-else style="opacity:.5" v-if="sortIcon == 'prices.marketPrice'">
+          <v-icon class="text-caption vl-sort-icon--hint" v-else v-if="sortIcon == 'prices.marketPrice'">
             {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
           </v-icon>
         </div>
@@ -102,8 +102,8 @@
 
 
     <template v-slot:header.stock>
-      <div class="d-flex fill-height align-center" style="border-right:1px solid #ccc">
-        <div class="font-weight-bold" style="width:70px;height:20px!important" @click="toggleSort('stock')"
+      <div class="d-flex fill-height align-center vl-head-sep">
+        <div class="font-weight-bold vl-sort-head vl-w-70" @click="toggleSort('stock')"
           @mouseenter="sortIcon = 'stock'" @mouseleave="sortIcon = undefined">
 
           Stok Adedi
@@ -112,7 +112,7 @@
               {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
             </v-icon>
           </template>
-          <v-icon v-else style="opacity:.5" v-if="sortIcon == 'stock'">
+          <v-icon v-else v-if="sortIcon == 'stock'" class="vl-sort-icon--hint">
             {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
           </v-icon>
         </div>
@@ -124,7 +124,7 @@
     <template v-slot:header.choiceTitle="{ column }">
 
       <div class="d-flex fill-height align-center">
-        <div class="font-weight-bold text-body-2" style="height:20px!important" @click="toggleSort('choiceValueTitle')"
+        <div class="font-weight-bold text-body-2 vl-sort-head" @click="toggleSort('choiceValueTitle')"
           @mouseenter="sortIcon = 'choiceValueTitle'" @mouseleave="sortIcon = undefined">
           Grup
           <template v-if="sortBy === 'choiceValueTitle'">
@@ -132,10 +132,10 @@
               {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
             </v-icon>
           </template>
-          <v-icon v-else-if="sortIcon == 'choiceValueTitle'" style="opacity:.5">
+          <v-icon v-else-if="sortIcon == 'choiceValueTitle'" class="vl-sort-icon--hint">
             {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
           </v-icon>
-          <v-icon v-else style="opacity:0">
+          <v-icon v-else class="vl-sort-icon--hidden">
             {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
           </v-icon>
 
@@ -146,8 +146,8 @@
     </template>
 
     <template v-slot:header.platforms="{ column }">
-      <div class="d-flex fill-height align-center" style="border-right:1px solid #ccc">
-        <div class="font-weight-bold text-left" style="text-align:center;width:100%!important">{{ column.title }}
+      <div class="d-flex fill-height align-center vl-head-sep">
+        <div class="font-weight-bold text-left vl-platforms-head">{{ column.title }}
         </div>
       </div>
     </template>
@@ -167,45 +167,44 @@
 
     <template v-slot:item="{ item, index, isSelected, toggleSelect }: any">
       <tr v-if="index != 0 && rowspanSet.get(item.barcode)">
-        <td :colspan="headers.length + 1" style="min-height:10px;line-height:10px;height:30px">
+        <td :colspan="headers.length + 1" class="vl-group-spacer">
         </td>
       </tr>
 
 
       <tr>
-        <td class="pa-0 ma-0" style="border-right:1px solid #ddd;">
+        <td class="pa-0 ma-0 vl-cell-sep">
           <div class="d-flex align-center justify-center fill-height w-100">
-            <v-checkbox-btn style="flex:0 0" :model-value="selectedVariants.includes(item.barcode)"
+            <v-checkbox-btn :model-value="selectedVariants.includes(item.barcode)" aria-label="Varyantı seç"
               color="primaryLighten" @update:model-value="val => {
                 if (val) selectedVariants.push(item.barcode)
                 else selectedVariants = selectedVariants.filter((id: any) => id !== item.barcode)
-              }" />
+              }" class="vl-cb-fixed" />
 
           </div>
         </td>
-        <td style="border-right:1px solid #ddd;" class="pl-0">
-          <div class="d-flex align-center fill-height;" style="" @click="">
-            <div class="text-center mr-4 elevation-1" style="width:110px;min-width:110px;">
+        <td class="pl-0 vl-cell-sep">
+          <div class="d-flex align-center fill-height;" @click="">
+            <div class="text-center mr-4 elevation-1 vl-thumb">
               <v-tooltip location="bottom" open-delay="1000" text="Ürünü düzenlemek için basınız">
                 <template v-slot:activator="{ props: tooltipProps }">
 
                   <ProductVariantImageComponent v-bind="{ ...tooltipProps }" :productInfoForm="productInfoForm"
                     @click.stop="isVariantImagesDialog = true; selectedVariantForEdit = item"
-                    :imageId="item.images ? item.images[0] : undefined"
-                    style="border-bottom:1px solid #f3f3f3!important;" />
+                    :imageId="item.images ? item.images[0] : undefined" class="vl-thumb-img" />
 
                 </template>
               </v-tooltip>
             </div>
-            <div style="width:100%!important" class="d-flex align-center fill-height">
+            <div class="d-flex align-center fill-height vl-w-full">
               <div class="d-flex">
                 <div>
-                  <div class="font-weight-light text-caption mt-1" style="line-height: .7;font-size:10px!important">
+                  <div class="font-weight-light text-caption mt-1 vl-field-caption">
                     Stok
                     Kodu
                   </div>
                   <span class="font-weight-bold">{{ item.stockcode }}</span>
-                  <div class="font-weight-light text-caption mt-1" style="line-height: .7;font-size:10px!important">
+                  <div class="font-weight-light text-caption mt-1 vl-field-caption">
                     Barkod
                   </div>
                   <span class="font-weight-medium">{{ item.barcode }}</span>
@@ -228,20 +227,18 @@
 
         </td>
         <td :rowspan="rowspanSet.get(item.barcode)" v-if="productInfoForm.hasVariant && rowspanSet.get(item.barcode)"
-          style="border-color:#e7e7e7!important;background-color:rgb(var(--v-theme-cardComponentHoverColor))"
-          class="text-center">
+          class="text-center vl-td-group">
           <div class="font-weight-bold">{{ choicesStore.getChoiceValueName(getSlicerChoice(item.choices).choiceId,
             getSlicerChoice(item.choices).choiceValueId) }} </div>
         </td>
 
-        <td style="border-left:1px solid #ddd;">
-          <div class="d-flex fill-height align-center d-block mt-1"
-            style="border-right:1px solid #ddd;width:100%!important">
+        <td class="vl-td-choices">
+          <div class="d-flex fill-height align-center d-block mt-1 vl-cell-sep vl-w-full">
             <div>
               <div v-for="(choice, index) of item.choices">
                 <div class="d-flex" v-if="choice.slicer != true">
                   <div :class="(index as any) > 0 ? ['pt-1'] : []">
-                    <div class="font-weight-light text-caption " style="line-height: .7;font-size:10px!important">
+                    <div class="font-weight-light text-caption vl-field-caption">
                       {{ choicesStore.getChoiceTitle(choice.choiceId) }} </div>
                     <span class="font-weight-bold">{{ choicesStore.getChoiceValueName(choice.choiceId,
                       choice.choiceValueId) }}</span>
@@ -253,25 +250,24 @@
 
         </td>
         <td>
-          <div class="d-flex fill-height align-center" style="border-right:1px solid #ddd;width:100%">
+          <div class="d-flex fill-height align-center vl-cell-sep vl-w-full-soft">
 
-            <div class="d-flex align-center fill-height" style="width:100%!important;">
+            <div class="d-flex align-center fill-height vl-w-full">
 
               <template v-if="item.prices.isPlatformBasedPrice == true">
-                <div @click="editingVariantMenu = true; editingVariant = item" class="d-flex align-center fill-height"
-                  style="width:auto!important;min-width:130px">
+                <div @click="editingVariantMenu = true; editingVariant = item" class="d-flex align-center fill-height vl-price-cell">
                   <div>
                     <!--                         Platform Bazında <span class="font-weight-medium">Satış</span> Fiyatları -->
-                    <div class="font-weight-light text-caption mb-3" style="line-height: .7;font-size:10px!important">
+                    <div class="font-weight-light text-caption mb-3 vl-field-caption">
                       (Platform Bazında)
                     </div>
 
-                    <div class="font-weight-light text-caption mt-1" style="line-height: .7;font-size:10px!important">
+                    <div class="font-weight-light text-caption mt-1 vl-field-caption">
                       Satış Fiyatı
                     </div>
                     <span class="font-weight-bold"> {{ formatCurrency(findMinimumSalePrice(item.platforms)) }} - {{
                       formatCurrency(findMaximumSalePrice(item.platforms)) }}</span>
-                    <div class="font-weight-light text-caption mt-1" style="line-height: .7;font-size:10px!important">
+                    <div class="font-weight-light text-caption mt-1 vl-field-caption">
                       Piyasa Fiyatı
                     </div>
                     <span class="font-weight-medium"> {{ formatCurrency(findMinimumMarketPrice(item.platforms)) }} - {{
@@ -281,14 +277,14 @@
                 </div>
               </template>
               <template v-else>
-                <div @click="" class="d-flex align-center fill-height" style="width:auto!important;min-width:130px">
+                <div @click="" class="d-flex align-center fill-height vl-price-cell">
                   <div>
 
-                    <div class="font-weight-light text-caption mt-1" style="line-height: .7;font-size:10px!important">
+                    <div class="font-weight-light text-caption mt-1 vl-field-caption">
                       Satış Fiyatı
                     </div>
                     <span class="font-weight-bold"> {{ formatCurrency(item.prices.salePrice) }}</span>
-                    <div class="font-weight-light text-caption mt-1" style="line-height: .7;font-size:10px!important">
+                    <div class="font-weight-light text-caption mt-1 vl-field-caption">
                       Piyasa Fiyatı
                     </div>
                     <span class="font-weight-medium"> {{ formatCurrency(item.prices.marketPrice) }}</span>
@@ -300,24 +296,23 @@
 
         </td>
         <td>
-          <div class="d-flex font-weight-bold fill-height align-center pr-4"
-            style="border-right:1px solid #ddd;width:100%!important;">
+          <div class="d-flex font-weight-bold fill-height align-center pr-4 vl-cell-sep vl-w-full">
 
             <div>
               <div>
-                <div class="font-weight-light text-caption mt-1" style="line-height: .7;font-size:10px!important">
+                <div class="font-weight-light text-caption mt-1 vl-field-caption">
                   Stok Adedi
                 </div>
-                <div class="d-flex font-weight-bold fill-height align-center" style="width:100%!important;">
+                <div class="d-flex font-weight-bold fill-height align-center vl-w-full">
                   {{ item.stock }}
                 </div>
               </div>
 
               <div>
-                <div class="font-weight-light text-caption mt-1" style="line-height: .7;font-size:10px!important">
+                <div class="font-weight-light text-caption mt-1 vl-field-caption">
                   Raf
                 </div>
-                <div class="d-flex font-weight-bold fill-height align-center" style="width:100%!important">
+                <div class="d-flex font-weight-bold fill-height align-center vl-w-full">
                   {{ item.shelf || '-' }}
                 </div>
               </div>
@@ -328,20 +323,21 @@
         </td>
         <td>
 
-          <div class="d-flex fill-height align-center" style="border-right:1px solid #ddd;"
-            :style="item.onsale == false ? {} : {}">
+          <div class="d-flex fill-height align-center vl-cell-sep">
 
-            <div class="mt-1 mb-1 d-flex flex-wrap ga-3 align-center" style="max-width:450px;">
+            <div class="mt-1 mb-1 d-flex flex-wrap ga-3 align-center vl-platforms">
               <template v-if="integrationStore" v-for="integration of integrationStore.getClientPlatforms()"
                 :key="integration.code">
 
                 <v-menu :close-on-content-click="false" location="bottom center" transition="scale-transition"
                   offset="10">
                   <template v-slot:activator="{ props: tooltipProps }">
-                    <div v-bind="tooltipProps" class="position-relative d-flex align-center">
+                    <div v-bind="tooltipProps" class="position-relative d-flex align-center vl-platform-trigger"
+                      role="button" tabindex="0" :aria-label="`${integration.title || integration.code} durum bilgisi`"
+                      @keydown.enter.prevent="($event.currentTarget as HTMLElement).click()"
+                      @keydown.space.prevent="($event.currentTarget as HTMLElement).click()">
 
-                      <div v-if="getBadgeColor(integration, item) !== 'transparent'" class="status-indicator-dot"
-                        :style="{ backgroundColor: 'green' }"></div>
+                      <div v-if="getBadgeColor(integration, item) !== 'transparent'" class="status-indicator-dot vl-dot--active"></div>
 
                       <PlatformImageComponent :integrationCode="integration.code" height="25" width="100"
                         class="platform-mini-card"
@@ -492,22 +488,6 @@ const STATUS_META: Record<PRODUCT_INTEGRATION_STATUS, { icon: string; order: num
   },
 };
 
-const getColor = (status: PRODUCT_INTEGRATION_STATUS) => {
-  switch (status) {
-    case PRODUCT_INTEGRATION_STATUS.PENDING:
-      return '#2196F3'; // Orijinal mavi
-    case PRODUCT_INTEGRATION_STATUS.SENT:
-      return '#2196F3'; // Teknik süreçte, hala mavi kalabilir
-    case PRODUCT_INTEGRATION_STATUS.WAITING:
-      return '#00897B'; // Onay bekliyor süreci (Orijinal yeşil tonun)
-    case PRODUCT_INTEGRATION_STATUS.FAILED:
-      return '#ff0000'; // Orijinal kırmızı
-    case PRODUCT_INTEGRATION_STATUS.COMPLETED:
-      return '#00bb00'; // Orijinal parlak yeşil
-    default:
-      return '#2196F3';
-  }
-}
 const openProduntInPlatform = (code: string, item: any) => {
   console.log(code)
   switch (code) {
@@ -985,92 +965,6 @@ const search = async () => {
 
 
 <style scoped>
-@media (max-width: 3200px) {
-  .special-table-width {
-    max-width: 72vw !important;
-  }
-}
-
-@media (max-width: 2800px) {
-  .special-table-width {
-    max-width: 70vw !important;
-  }
-}
-
-@media (max-width: 2500px) {
-  .special-table-width {
-    max-width: 68vw !important;
-  }
-}
-
-@media (max-width: 2200px) {
-  .special-table-width {
-    max-width: 65vw !important;
-  }
-}
-
-@media (max-width: 2000px) {
-  .special-table-width {
-    max-width: 60vw !important;
-  }
-}
-
-@media (max-width: 1800px) {
-  .special-table-width {
-    max-width: 55vw !important;
-  }
-}
-
-@media (max-width: 1600px) {
-  .special-table-width {
-    max-width: 50vw !important;
-  }
-}
-
-@media (max-width: 1400px) {
-  .special-table-width {
-    max-width: 45vw !important;
-  }
-}
-
-@media (max-width: 1200px) {
-  .special-table-width {
-    max-width: 40vw !important;
-  }
-
-  @media (max-width: 1100px) {
-    .special-table-width {
-      max-width: 30vw !important;
-    }
-  }
-
-
-  .sticky-container {
-    width: 100%;
-  }
-
-  .sticky-row {
-    position: -webkit-sticky;
-    /* For Safari */
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    /* Adjust z-index if needed */
-    background-color: white;
-    /* Optional: Add background color */
-  }
-}
-
-.custom-checkbox {
-  height: 24px;
-  width: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-
-
 .status-indicator-dot {
   position: absolute;
   top: -4px;
@@ -1080,10 +974,140 @@ const search = async () => {
   border-radius: 50%;
   z-index: 2;
   /* Beyaz çerçeve ile logonun üzerinden ayrılmasını sağlar */
-  border: 2px solid white;
+  border: 2px solid var(--ek-color-surface);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 /* Badge Renklerinin Anlamları (Görsel Netlik İçin) */
 /* Yeşil: Yayında, Kırmızı: Hatalı, Turuncu: Bekliyor vb. */
+
+/*
+  ADR-0015 B5-2 — önceki satır içi stillerin token'lı karşılıkları. Satır içi stilin önceliği,
+  Vuetify'ın yüksek özgüllüklü kurallarıyla (td yüksekliği/kenarlığı, tablo genişliği) çakışan
+  yerlerde `!important` ile korunur.
+*/
+.vl-dot--active {
+  background-color: var(--ek-color-success);
+}
+
+.vl-table {
+  left: 0;
+  z-index: 1;
+  right: 0;
+  width: auto !important;
+  border: 1px solid var(--ek-color-border-color);
+  border-radius: var(--ek-radius-sm);
+}
+
+.vl-head-sep {
+  border-right: 1px solid var(--ek-color-border-default);
+}
+
+.vl-cell-sep {
+  border-right: 1px solid var(--ek-color-border-default) !important;
+}
+
+.vl-image-head {
+  width: 124px;
+  opacity: .6;
+}
+
+.vl-sort-head {
+  height: 20px !important;
+  cursor: pointer;
+}
+
+.vl-w-130 {
+  width: 130px;
+}
+
+.vl-w-60 {
+  width: 60px;
+}
+
+.vl-w-95 {
+  width: 95px;
+}
+
+.vl-w-150 {
+  width: 150px !important;
+}
+
+.vl-w-70 {
+  width: 70px;
+}
+
+.vl-sort-icon--hint {
+  opacity: .5 !important;
+}
+
+.vl-sort-icon--hidden {
+  opacity: 0 !important;
+}
+
+.vl-platforms-head {
+  text-align: center;
+  width: 100% !important;
+}
+
+.vl-group-spacer {
+  min-height: 10px !important;
+  line-height: 10px !important;
+  height: 30px !important;
+}
+
+.vl-cb-fixed {
+  flex: 0 0 !important;
+}
+
+.vl-thumb {
+  width: 110px;
+  min-width: 110px;
+}
+
+/* ProductVariantImageComponent kökünün kendi satır içi stili var → :global + !important. */
+:global(.vl-thumb-img) {
+  border-bottom: 1px solid var(--ek-color-surface-sunken) !important;
+}
+
+.vl-td-group {
+  border-color: var(--ek-color-border-default) !important;
+  background-color: var(--ek-color-card-component-hover-color) !important;
+}
+
+.vl-td-choices {
+  border-left: 1px solid var(--ek-color-border-default) !important;
+}
+
+.vl-field-caption {
+  font-size: var(--ek-font-size-xs) !important;
+  line-height: .7;
+}
+
+.vl-price-cell {
+  width: auto !important;
+  min-width: 130px;
+}
+
+.vl-w-full {
+  width: 100% !important;
+}
+
+.vl-w-full-soft {
+  width: 100%;
+}
+
+.vl-platforms {
+  max-width: 450px;
+}
+
+.vl-platform-trigger {
+  cursor: pointer;
+  border-radius: var(--ek-radius-sm);
+}
+
+.vl-platform-trigger:focus-visible {
+  outline: 2px solid var(--ek-color-primary);
+  outline-offset: 2px;
+}
 </style>

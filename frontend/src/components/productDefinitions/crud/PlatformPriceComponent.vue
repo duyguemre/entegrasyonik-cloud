@@ -1,9 +1,8 @@
 <template>
-  <v-row class="fill-height" style="min-height:500px">
+  <v-row class="fill-height ppc-s1">
     <v-col class="pb-0">
-      <div style="position:relative" class="fill-height ">
-        <div v-for="(platform, index) of [...integrationStore.getClientMarketplaces(),...integrationStore.getClientECommerces()]" class="pa-2"
-          style="border-bottom:1px solid #ccc">
+      <div class="fill-height ppc-s2">
+        <div v-for="(platform, index) of [...integrationStore.getClientMarketplaces(),...integrationStore.getClientECommerces()]" class="pa-2 ppc-s3">
           <VCurrencyComponentVue v-if="index == 0" prepend-icon="mdi-currency-try" @click.stop v-model="batch.price"
             :compact="false" label="Toplu Fiyat Atama" clearable :required="false"
             hint="Fiyatları toplu olarak değiştirmek için miktar ya da yüzdelik oran giriniz" class="mb-2 mt-3"
@@ -13,7 +12,7 @@
                 <template v-slot:activator="{ props }">
                   <v-menu>
                     <template v-slot:activator="{ props }">
-                      <v-btn v-bind="props" style="" elevation=0 color="processButtonColor">
+                      <v-btn v-bind="props" elevation=0 color="processButtonColor">
                         Uygula <v-icon size="large">mdi-menu-down</v-icon>
                       </v-btn>
                     </template>
@@ -42,22 +41,21 @@
                         <v-divider thickness="2" />
                         <v-list-item @click="applyPrices('CONSTANT')">
                           <template #prepend>
-                            <v-icon color="updateButtonColor" class="" style="opacity: .7;">mdi-currency-try</v-icon>
+                            <v-icon color="updateButtonColor" class="ppc-s4">mdi-currency-try</v-icon>
                           </template>
                           {{ batch.isSalePrice ? 'Satış' : 'Piyasa' }} Fiyatlarına Ata
                         </v-list-item>
                         <v-divider />
                         <v-list-item @click="applyPrices('PERCENTAGE')">
                           <template #prepend>
-                            <v-icon color="processButtonColor" class="" style="opacity: .7;">mdi-percent</v-icon>
+                            <v-icon color="processButtonColor" class="ppc-s4">mdi-percent</v-icon>
                           </template>
                           Yüzdelik Olarak {{ batch.isSalePrice ? 'Satış' : 'Piyasa' }} {{ !batch.isDecrease ? 'Fiyatlarına Ekle':'Fiyatlarından Çıkar'}}
                         </v-list-item>
                         <v-divider />
                         <v-list-item @click="applyPrices('VALUE')">
                           <template #prepend>
-                            <v-icon color="updateButtonColor" class=""
-                              style="opacity: .7;">{{ !batch.isDecrease ? 'mdi-plus' : 'mdi-minus' }}</v-icon>
+                            <v-icon color="updateButtonColor" class="ppc-s4">{{ !batch.isDecrease ? 'mdi-plus' : 'mdi-minus' }}</v-icon>
                           </template>
                           {{ batch.isSalePrice ? 'Satış' : 'Piyasa' }} {{ !batch.isDecrease ? 'Fiyatlarına Ekle' : 'Fiyatlarından Çıkar'}}
                         </v-list-item>
@@ -75,18 +73,16 @@
 
           <v-row v-if="index == 0 && false">
             <v-col>
-              <v-list v-model:opened="open" class="pa-0 ma-0 elevation-1"
-                style="background-color:transparent;border:1px solid white" rounded>
+              <v-list v-model:opened="open" class="pa-0 ma-0 elevation-1 ppc-s5" rounded>
 
                 <v-list-group value="batch">
                   <template v-slot:activator="{ props }">
-                    <v-list-item v-bind="props" class="pl-1 pr-2"
-                      style="border-radius:0px;min-height:30px!important;font-size:.9em" title="Toplu İşlemler">
+                    <v-list-item v-bind="props" class="pl-1 pr-2 ppc-s6" title="Toplu İşlemler">
                       <template #prepend>
                         <v-icon color="processButtonColor">mdi-card-multiple-outline</v-icon>
                       </template>
                       <template #title>
-                        <span class="font-weight-medium" style="font-size:.9em">
+                        <span class="font-weight-medium ppc-s7">
                           Toplu İşlemler
                         </span>
                       </template>
@@ -94,7 +90,7 @@
                     <v-divider />
                   </template>
 
-                  <v-list-item class="pa-4" style="padding-inline-start:16px!important">
+                  <v-list-item class="pa-4 ppc-s8">
 
                     <v-row>
                       <v-col>
@@ -108,7 +104,7 @@
                               <template v-slot:activator="{ props }">
                                 <v-menu>
                                   <template v-slot:activator="{ props }">
-                                    <v-btn v-bind="props" style="" elevation=0 color="processButtonColor">
+                                    <v-btn v-bind="props" elevation=0 color="processButtonColor">
                                       Uygula <v-icon size="large">mdi-menu-down</v-icon>
                                     </v-btn>
                                   </template>
@@ -138,16 +134,14 @@
                                       <v-divider thickness="2" />
                                       <v-list-item @click="">
                                         <template #prepend>
-                                          <v-icon color="updateButtonColor" class=""
-                                            style="opacity: .7;">mdi-currency-try</v-icon>
+                                          <v-icon color="updateButtonColor" class="ppc-s4">mdi-currency-try</v-icon>
                                         </template>
                                         {{ batch.isSalePrice ? 'Satış' : 'Piyasa' }} Fiyatlarına Ata
                                       </v-list-item>
                                       <v-divider />
                                       <v-list-item @click="">
                                         <template #prepend>
-                                          <v-icon color="processButtonColor" class=""
-                                            style="opacity: .7;">mdi-percent</v-icon>
+                                          <v-icon color="processButtonColor" class="ppc-s4">mdi-percent</v-icon>
                                         </template>
                                         Yüzdelik Olarak {{ batch.isSalePrice ? 'Satış' : 'Piyasa' }}
                                         {{ !batch.isDecrease ? 'Fiyatlarına Ekle':'Fiyatlarından Çıkar'}}
@@ -155,8 +149,7 @@
                                       <v-divider />
                                       <v-list-item @click="">
                                         <template #prepend>
-                                          <v-icon color="updateButtonColor" class=""
-                                            style="opacity: .7;">{{ !batch.isDecrease ? 'mdi-plus' : 'mdi-minus' }}</v-icon>
+                                          <v-icon color="updateButtonColor" class="ppc-s4">{{ !batch.isDecrease ? 'mdi-plus' : 'mdi-minus' }}</v-icon>
                                         </template>
                                         {{ batch.isSalePrice ? 'Satış' : 'Piyasa' }} {{ !batch.isDecrease ? 'Fiyatlarına Ekle':'Fiyatlarından Çıkar'}}
                                       </v-list-item>
@@ -205,7 +198,7 @@
                             <v-tooltip open-delay="1000"
                               :text="$t('productDefinitions.product.define.applyIncreaseDecreasePricesDesc')">
                               <template v-slot:activator="{ props }">
-                                <v-btn-group elevation="1" class="d-block" v-bind="props" style="" density="compact">
+                                <v-btn-group elevation="1" class="d-block" v-bind="props" density="compact">
                                   <v-btn density="compact" block class="fill-height" color="processButtonColor"
                                     @click="applyIncreaseDecreasePrices">
                                     <span class="">
@@ -227,9 +220,8 @@
           <v-row v-if="platformPriceForm.platforms[platform.code].prices">
             <v-col>
               <div class="d-flex justify-center  align-center row-title">
-          <v-sheet 
-            style="cursor:pointer;border-radius:5px!important;border:1px solid white;width:120px;height:60px"
-            class="mt-0 mr-0 mb-0 ml-0 mr-0 pa-3 text-center d-flex justify-center elevation-1"
+          <v-sheet
+            class="mt-0 mr-0 mb-0 ml-0 mr-0 pa-3 text-center d-flex justify-center elevation-1 ppc-s9"
             :style="{'background-color': platform.color}">
             <v-img :width="platform.width"
               :src="integrationStore.getIntegrationImagePath(platform)"></v-img>
@@ -240,13 +232,12 @@
                 <VCurrencyComponentVue prepend-icon="mdi-currency-try" @click.stop
                   v-model="platformPriceForm.platforms[platform.code].prices.salePrice" :rules="formRules.mandatoryRule"
                   :compact="true" :label="$t('productDefinitions.product.variants.salePrice')" clearable
-                  :required="true" class="ml-2" style="min-width:200px">
+                  :required="true" class="ml-2 ppc-s10">
                 </VCurrencyComponentVue>
                 <VCurrencyComponentVue prepend-icon="mdi-currency-try" @click.stop
                   v-model="platformPriceForm.platforms[platform.code].prices.marketPrice"
                   :rules="formRules.mandatoryRule" :compact="true"
-                  :label="$t('productDefinitions.product.variants.marketPrice')" clearable :required="true" class="ml-4"
-                  style="min-width:200px">
+                  :label="$t('productDefinitions.product.variants.marketPrice')" clearable :required="true" class="ml-4 ppc-s10">
                 </VCurrencyComponentVue>
               </div>
             </v-col>
@@ -389,3 +380,56 @@ defineExpose({
 </script>
 
 <style></style>
+
+<style>
+/* ADR-0015 B5-2 — satir ici stillerden tasinan siniflar (autostyle). Satir ici stilin onceligi
+   !important ile korunur; ayni ozellikte Vuetify yardimci sinifi/`color` prop cakismasi varsa
+   (satir ici stil zaten yeniliyordu) !important eklenmez. Scope'suz: v-dialog/v-menu ve alt
+   bilesen kokleri scoped ozniteligi almayabilir; onek dosyaya ozgudur. */
+.ppc-s1 {
+  min-height: 500px;
+}
+
+.ppc-s2 {
+  position: relative !important;
+}
+
+.ppc-s3 {
+  border-bottom: 1px solid var(--ek-color-border-default) !important;
+}
+
+.ppc-s4 {
+  opacity: .7 !important;
+}
+
+.ppc-s5 {
+  background-color: transparent !important;
+  border: 1px solid white !important;
+}
+
+.ppc-s6 {
+  border-radius: 0px !important;
+  min-height: 30px !important;
+  font-size: .9em !important;
+}
+
+.ppc-s7 {
+  font-size: .9em !important;
+}
+
+.ppc-s8 {
+  padding-inline-start: 16px !important;
+}
+
+.ppc-s9 {
+  cursor: pointer !important;
+  border-radius: 5px !important;
+  border: 1px solid white !important;
+  width: 120px !important;
+  height: 60px !important;
+}
+
+.ppc-s10 {
+  min-width: 200px !important;
+}
+</style>

@@ -2,12 +2,12 @@
   "_meta": "ADR-0011 Karar 2 / Aşama 1 literal-stil mandalı tabanı. node scripts/check-style-baseline.js --write ile üretildi (bkz. scripts/style-literal-counts.js). Hiçbir dosyada/kategoride sayı ARTAMAZ; yeni dosyalar 0 ile başlamalı; düşüş serbest ama bu dosyanın güncellenmesi gerekir (check-style-baseline.js OK dönene kadar).",
   "date": "2026-09-29",
   "totals": {
-    "total": 2083,
-    "hex": 800,
-    "rgb": 235,
-    "inlineStyle": 1032,
-    "cubicBezier": 10,
-    "motion": 6
+    "total": 944,
+    "hex": 383,
+    "rgb": 168,
+    "inlineStyle": 380,
+    "cubicBezier": 8,
+    "motion": 5
   },
   "files": {
     "public/assets/css/integrations.css": {
@@ -626,6 +626,14 @@
       "motion": 0,
       "total": 0
     },
+    "src/components/financial/FinancialSummaryBar.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
     "src/components/integrations/IntegrationComingSoonPanel.vue": {
       "hex": 0,
       "rgb": 0,
@@ -973,18 +981,18 @@
     "src/components/logListView/DetailedExportLogReport.vue": {
       "hex": 0,
       "rgb": 0,
-      "inlineStyle": 9,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 9
+      "total": 0
     },
     "src/components/logListView/DetailedImportLogReport.vue": {
-      "hex": 64,
-      "rgb": 5,
-      "inlineStyle": 53,
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 122
+      "total": 0
     },
     "src/components/logListView/DetailedImportLogReportMissingAttribute.vue": {
       "hex": 0,
@@ -1003,20 +1011,20 @@
       "total": 0
     },
     "src/components/logListView/ExportLogList.vue": {
-      "hex": 14,
-      "rgb": 5,
-      "inlineStyle": 52,
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 71
+      "total": 0
     },
     "src/components/logListView/ImportLogList.vue": {
-      "hex": 22,
-      "rgb": 3,
-      "inlineStyle": 23,
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 48
+      "total": 0
     },
     "src/components/login/AuthShell.vue": {
       "hex": 0,
@@ -1115,20 +1123,20 @@
       "total": 4
     },
     "src/components/productDefinitions/crud/ImageUploaderComponent.vue": {
-      "hex": 14,
+      "hex": 0,
       "rgb": 0,
-      "inlineStyle": 6,
+      "inlineStyle": 2,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 20
+      "total": 2
     },
     "src/components/productDefinitions/crud/PlatformPriceComponent.vue": {
-      "hex": 1,
+      "hex": 0,
       "rgb": 0,
-      "inlineStyle": 20,
+      "inlineStyle": 1,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 21
+      "total": 1
     },
     "src/components/productDefinitions/crud/ProductCompetitivePricesComponent.vue": {
       "hex": 1,
@@ -1139,12 +1147,12 @@
       "total": 4
     },
     "src/components/productDefinitions/crud/ProductImagesComponent.vue": {
-      "hex": 16,
+      "hex": 0,
       "rgb": 0,
-      "inlineStyle": 23,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 39
+      "total": 0
     },
     "src/components/productDefinitions/products/BatchActions/BatchActionsRootComponent.vue": {
       "hex": 0,
@@ -1156,27 +1164,27 @@
     },
     "src/components/productDefinitions/products/BatchActions/subcomponents/BatchActionMenu.vue": {
       "hex": 0,
-      "rgb": 1,
-      "inlineStyle": 14,
+      "rgb": 0,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 15
+      "total": 0
     },
     "src/components/productDefinitions/products/BatchActions/subcomponents/BatchDeleteDialog.vue": {
       "hex": 0,
       "rgb": 0,
-      "inlineStyle": 2,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 2
+      "total": 0
     },
     "src/components/productDefinitions/products/BatchActions/subcomponents/BatchProcessDialog.vue": {
-      "hex": 6,
+      "hex": 0,
       "rgb": 1,
       "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 7
+      "total": 1
     },
     "src/components/productDefinitions/products/BatchActions/useBatchActions.ts": {
       "hex": 0,
@@ -1203,12 +1211,12 @@
       "total": 20
     },
     "src/components/productDefinitions/products/ProductImageComponent.vue": {
-      "hex": 3,
+      "hex": 0,
       "rgb": 0,
-      "inlineStyle": 3,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 6
+      "total": 0
     },
     "src/components/productDefinitions/products/ProductTransferComponent.vue": {
       "hex": 10,
@@ -1227,22 +1235,30 @@
       "total": 20
     },
     "src/components/productDefinitions/variants/ProductBatchVariantAttributesComponent.vue": {
-      "hex": 22,
+      "hex": 1,
       "rgb": 0,
-      "inlineStyle": 36,
+      "inlineStyle": 3,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 58
+      "total": 4
     },
     "src/components/productDefinitions/variants/ProductBatchVariantPlatformPricesComponent.vue": {
-      "hex": 13,
+      "hex": 0,
       "rgb": 0,
-      "inlineStyle": 10,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 23
+      "total": 0
     },
     "src/components/productDefinitions/variants/ProductDetailsComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/productDefinitions/variants/ProductSearchVariantComponent.vue": {
       "hex": 0,
       "rgb": 0,
       "inlineStyle": 2,
@@ -1250,93 +1266,85 @@
       "motion": 0,
       "total": 2
     },
-    "src/components/productDefinitions/variants/ProductSearchVariantComponent.vue": {
-      "hex": 5,
-      "rgb": 0,
-      "inlineStyle": 18,
-      "cubicBezier": 0,
-      "motion": 0,
-      "total": 23
-    },
     "src/components/productDefinitions/variants/ProductSingleVariantComponent.vue": {
-      "hex": 1,
+      "hex": 0,
       "rgb": 0,
-      "inlineStyle": 19,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 20
+      "total": 0
     },
     "src/components/productDefinitions/variants/ProductVariantAttributesComponent.vue": {
-      "hex": 27,
-      "rgb": 0,
-      "inlineStyle": 44,
-      "cubicBezier": 0,
-      "motion": 0,
-      "total": 71
-    },
-    "src/components/productDefinitions/variants/ProductVariantGeneratorComponent.vue": {
-      "hex": 4,
-      "rgb": 1,
-      "inlineStyle": 8,
-      "cubicBezier": 0,
-      "motion": 0,
-      "total": 13
-    },
-    "src/components/productDefinitions/variants/ProductVariantImageComponent.vue": {
-      "hex": 3,
+      "hex": 1,
       "rgb": 0,
       "inlineStyle": 3,
-      "cubicBezier": 0,
-      "motion": 0,
-      "total": 6
-    },
-    "src/components/productDefinitions/variants/ProductVariantImageEditComponent.vue": {
-      "hex": 3,
-      "rgb": 0,
-      "inlineStyle": 3,
-      "cubicBezier": 0,
-      "motion": 0,
-      "total": 6
-    },
-    "src/components/productDefinitions/variants/ProductVariantImagesComponent.vue": {
-      "hex": 20,
-      "rgb": 0,
-      "inlineStyle": 30,
-      "cubicBezier": 0,
-      "motion": 0,
-      "total": 50
-    },
-    "src/components/productDefinitions/variants/ProductVariantListComponent.vue": {
-      "hex": 22,
-      "rgb": 5,
-      "inlineStyle": 66,
-      "cubicBezier": 0,
-      "motion": 0,
-      "total": 93
-    },
-    "src/components/productDefinitions/variants/ProductVariantListTooltipComponent.vue": {
-      "hex": 34,
-      "rgb": 3,
-      "inlineStyle": 3,
-      "cubicBezier": 0,
-      "motion": 0,
-      "total": 40
-    },
-    "src/components/productDefinitions/variants/ProductVariantPlatformPricesComponent.vue": {
-      "hex": 2,
-      "rgb": 0,
-      "inlineStyle": 2,
       "cubicBezier": 0,
       "motion": 0,
       "total": 4
     },
-    "src/components/productDefinitions/variants/ProductVariantsComponent.vue": {
-      "hex": 9,
-      "rgb": 9,
-      "inlineStyle": 113,
+    "src/components/productDefinitions/variants/ProductVariantGeneratorComponent.vue": {
+      "hex": 1,
+      "rgb": 1,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 131
+      "total": 2
+    },
+    "src/components/productDefinitions/variants/ProductVariantImageComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/productDefinitions/variants/ProductVariantImageEditComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/productDefinitions/variants/ProductVariantImagesComponent.vue": {
+      "hex": 1,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 1
+    },
+    "src/components/productDefinitions/variants/ProductVariantListComponent.vue": {
+      "hex": 0,
+      "rgb": 3,
+      "inlineStyle": 10,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 13
+    },
+    "src/components/productDefinitions/variants/ProductVariantListTooltipComponent.vue": {
+      "hex": 0,
+      "rgb": 2,
+      "inlineStyle": 3,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 5
+    },
+    "src/components/productDefinitions/variants/ProductVariantPlatformPricesComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/productDefinitions/variants/ProductVariantsComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 2,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 2
     },
     "src/components/productDefinitions/variants/platformInfos/HepsiburadaVariantInfoComponent.vue": {
       "hex": 0,
@@ -1395,12 +1403,20 @@
       "total": 0
     },
     "src/components/ticket/TicketDetailComponent.vue": {
-      "hex": 11,
+      "hex": 0,
       "rgb": 0,
-      "inlineStyle": 3,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 14
+      "total": 0
+    },
+    "src/components/ticket/composables/ticketPriorityTone.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
     },
     "src/components/ticket/composables/useTicketActions.ts": {
       "hex": 0,
@@ -1419,20 +1435,20 @@
       "total": 0
     },
     "src/components/user/NotificationDrawerComponent.vue": {
-      "hex": 31,
-      "rgb": 7,
-      "inlineStyle": 6,
-      "cubicBezier": 0,
-      "motion": 0,
-      "total": 44
-    },
-    "src/components/user/UserAddComponent.vue": {
       "hex": 0,
-      "rgb": 3,
+      "rgb": 0,
       "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 3
+      "total": 0
+    },
+    "src/components/user/UserAddComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
     },
     "src/components/utility/BatchMenuComponent.vue": {
       "hex": 0,
@@ -1987,12 +2003,12 @@
       "total": 0
     },
     "src/views/secure/FinancialListView.vue": {
-      "hex": 24,
-      "rgb": 6,
-      "inlineStyle": 15,
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 45
+      "total": 0
     },
     "src/views/secure/InvoiceListView.vue": {
       "hex": 0,
@@ -2027,20 +2043,20 @@
       "total": 0
     },
     "src/views/secure/PrintoutListView.vue": {
-      "hex": 14,
+      "hex": 4,
       "rgb": 0,
-      "inlineStyle": 20,
+      "inlineStyle": 1,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 34
+      "total": 5
     },
     "src/views/secure/SettingListView.vue": {
-      "hex": 14,
-      "rgb": 13,
+      "hex": 10,
+      "rgb": 0,
       "inlineStyle": 2,
-      "cubicBezier": 1,
-      "motion": 1,
-      "total": 31
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 12
     },
     "src/views/secure/adminPanel/AdminClientListView.vue": {
       "hex": 0,
@@ -2109,82 +2125,82 @@
     "src/views/secure/definitions/BrandDefinitionView.vue": {
       "hex": 0,
       "rgb": 0,
-      "inlineStyle": 2,
-      "cubicBezier": 0,
-      "motion": 0,
-      "total": 2
-    },
-    "src/views/secure/definitions/CategoryDefinitionView.vue": {
-      "hex": 1,
-      "rgb": 0,
       "inlineStyle": 1,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 2
+      "total": 1
+    },
+    "src/views/secure/definitions/CategoryDefinitionView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
     },
     "src/views/secure/definitions/CustomerDefinitionView.vue": {
       "hex": 0,
       "rgb": 0,
-      "inlineStyle": 2,
+      "inlineStyle": 1,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 2
+      "total": 1
     },
     "src/views/secure/definitions/HashtagDefinitionView.vue": {
       "hex": 0,
       "rgb": 0,
-      "inlineStyle": 2,
+      "inlineStyle": 1,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 2
+      "total": 1
     },
     "src/views/secure/definitions/InvoiceDefinitionView.vue": {
       "hex": 0,
       "rgb": 0,
-      "inlineStyle": 2,
+      "inlineStyle": 1,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 2
+      "total": 1
     },
     "src/views/secure/definitions/OptionDefinitionView.vue": {
       "hex": 0,
       "rgb": 0,
-      "inlineStyle": 2,
+      "inlineStyle": 1,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 2
+      "total": 1
     },
     "src/views/secure/definitions/OrderDefinitionView.vue": {
       "hex": 0,
       "rgb": 0,
-      "inlineStyle": 2,
+      "inlineStyle": 1,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 2
+      "total": 1
     },
     "src/views/secure/definitions/ProductDefinitionView.vue": {
-      "hex": 1,
+      "hex": 0,
       "rgb": 0,
       "inlineStyle": 18,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 19
+      "total": 18
     },
     "src/views/secure/definitions/ProductUpdateView.vue": {
-      "hex": 1,
+      "hex": 0,
       "rgb": 0,
       "inlineStyle": 18,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 19
+      "total": 18
     },
     "src/views/secure/definitions/ReturnDefinitionView.vue": {
       "hex": 0,
       "rgb": 0,
-      "inlineStyle": 2,
+      "inlineStyle": 1,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 2
+      "total": 1
     },
     "src/views/secure/integrations/ECommerceView.vue": {
       "hex": 0,
@@ -2227,36 +2243,36 @@
       "total": 0
     },
     "src/views/secure/productDefinitions/BrandListView.vue": {
-      "hex": 1,
+      "hex": 0,
       "rgb": 0,
-      "inlineStyle": 3,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 4
+      "total": 0
     },
     "src/views/secure/productDefinitions/CategoryListView.vue": {
-      "hex": 1,
+      "hex": 0,
       "rgb": 0,
-      "inlineStyle": 3,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 4
+      "total": 0
     },
     "src/views/secure/productDefinitions/ChoiceListView.vue": {
-      "hex": 9,
+      "hex": 0,
       "rgb": 0,
-      "inlineStyle": 13,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 22
+      "total": 0
     },
     "src/views/secure/productDefinitions/HashtagListView.vue": {
-      "hex": 41,
+      "hex": 33,
       "rgb": 0,
-      "inlineStyle": 14,
+      "inlineStyle": 2,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 55
+      "total": 35
     },
     "src/views/secure/productDefinitions/ProductListView.vue": {
       "hex": 0,
@@ -2275,28 +2291,28 @@
       "total": 13
     },
     "src/views/secure/supports/TicketListView.vue": {
-      "hex": 6,
-      "rgb": 4,
-      "inlineStyle": 15,
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 25
+      "total": 0
     },
     "src/views/secure/user/AuthorizationListView.vue": {
-      "hex": 8,
-      "rgb": 8,
-      "inlineStyle": 3,
-      "cubicBezier": 1,
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
       "motion": 0,
-      "total": 20
+      "total": 0
     },
     "src/views/secure/user/ChangePasswordView.vue": {
       "hex": 0,
       "rgb": 0,
-      "inlineStyle": 6,
+      "inlineStyle": 1,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 6
+      "total": 1
     },
     "src/views/secure/user/ExitView.vue": {
       "hex": 0,
@@ -2309,10 +2325,10 @@
     "src/views/secure/user/InvoiceInfoView.vue": {
       "hex": 0,
       "rgb": 0,
-      "inlineStyle": 13,
+      "inlineStyle": 2,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 13
+      "total": 2
     },
     "src/views/secure/user/SubscriptionView.vue": {
       "hex": 0,

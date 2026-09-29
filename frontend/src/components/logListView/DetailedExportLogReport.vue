@@ -1,199 +1,147 @@
 <template>
-
-
   <div class="report-content-wrapper">
     <LoadingComponent attach=".reportContainer" ref="loadingComponentRef"></LoadingComponent>
 
-    <!-- ADR-0011 Karar 2 KAPSAM ("eksik boş/hata/yükleniyor durumlarını tamamla") —
-         `localItem` boş kaldığında (rapor bulunamadı/servis hatası) HİÇBİR şey
-         render OLMUYORDU (DetailedImportLogReport.vue'nin AYNI durum için zaten
-         sahip olduğu "Rapor Verilerine Ulaşılamadı" geri dönüşünden FARKLI olarak
-         eksikti). İş mantığı (veri çekme/`getReport()` yeniden deneme) DEĞİŞMEDİ,
-         yalnızca eksik görsel durum eklendi (bkz. BACKLOG.md, e2e/specs/logs.spec.ts). -->
-    <div v-if="!localItem && !loading" class="pa-0 pr-3">
-      <EmptyState icon="mdi-database-off-outline" title="Rapor Verilerine Ulaşılamadı"
-        message="İşlem raporu henüz hazırlanmamış olabilir veya sunucuyla olan bağlantıda bir sorun yaşanıyor."
-        showAction actionText="YENİDEN DENE" actionIcon="mdi-refresh" @action="getReport()" />
-    </div>
+    <EkSkeleton v-if="loading && !localItem" type="detail" />
 
-    <div v-if="localItem" class="pa-0 pr-3">
+    <!-- `localItem` boş kaldığında (rapor bulunamadı/servis hatası) aksiyon alınabilir boş/hata durumu.
+         İş mantığı (veri çekme/`getReport()` yeniden deneme) DEĞİŞMEDİ. -->
+    <EkEmptyState v-if="!localItem && !loading" variant="error" title="Rapor Verilerine Ulaşılamadı"
+      message="İşlem raporu henüz hazırlanmamış olabilir veya sunucuyla olan bağlantıda bir sorun yaşanıyor."
+      showAction actionText="Yeniden dene" actionIcon="mdi-refresh" @action="getReport()" />
 
-      <v-expand-transition>
-        <div v-if="isFailed" class="mb-4 rounded-lg border-error bg-red-lighten-5 pa-4 d-flex align-center shadow-sm">
-          <v-icon color="error" size="32" class="mr-4">mdi-lightbulb-on-outline</v-icon>
-          <div>
-            <div class="text-subtitle-2 font-weight-black text-red-darken-4">Sistem Çözüm Önerisi</div>
-            <div class="text-caption text-red-darken-3 font-weight-medium">
-              {{ getSmartSolution(localItem.logs) }}
-            </div>
-          </div>
-          <v-spacer></v-spacer>
-          <v-btn color="error" variant="text" size="small" class="font-weight-black" prepend-icon="mdi-lifebuoy">DESTEK
-            AL</v-btn>
+    <div v-if="localItem" class="report-body">
+
+      <div v-if="isFailed" class="solution-band" role="alert">
+        <v-icon color="error" size="28" aria-hidden="true">mdi-lightbulb-on-outline</v-icon>
+        <div class="solution-band__text">
+          <div class="solution-band__title">Sistem Çözüm Önerisi</div>
+          <div class="solution-band__message">{{ getSmartSolution(localItem.logs) }}</div>
         </div>
-      </v-expand-transition>
+        <v-btn color="error" variant="text" size="small" prepend-icon="mdi-lifebuoy">DESTEK AL</v-btn>
+      </div>
 
-      <div class="d-flex flex-column mb-4 rounded-lg border bg-grey-lighten-5" style="gap: var(--ek-space-3);">
-        <div class="pa-4 pb-0">
+      <div class="panel panel--muted">
+        <div class="meta-row">
+          <PlatformImageComponent :integrationCode="localItem.integrationCode" :width="80" :height="35">
+          </PlatformImageComponent>
 
-          <div class="d-flex flex-wrap align-center pb-3" style="gap: var(--ek-space-5);">
-            <PlatformImageComponent :integrationCode="localItem.integrationCode" :width="80" :height="35" class="mr-4">
-            </PlatformImageComponent>
+          <EkStatusChip tone="info" :dot="true"
+            :label="PLATFORM_PROCESS_LABELS[localItem.mode as PLATFORM_PROCESS] || localItem.mode" />
 
-
-            <div class="mode-badge"
-              :style="{ '--mode-color': getModeColor(localItem.mode), 'background-color': getModeColor(localItem.mode) + '15' }">
-              <span class="status-dot-static"></span>
-              <span class="mode-text">{{ PLATFORM_PROCESS_LABELS[localItem.mode as PLATFORM_PROCESS] }}</span>
-            </div>
-
-            <v-spacer></v-spacer>
-            <div class="d-flex align-center text-no-wrap">
-              <v-icon size="16" color="grey" class="mr-1">mdi-clock-outline</v-icon>
-              <span class="text-caption font-weight-bold text-grey-darken-1 mr-1">Başlangıç:</span>
-              <span class="text-caption font-weight-bold" v-html="formatDate(localItem.createdAt)"></span>
-            </div>
-            <div class="d-flex align-center text-no-wrap">
-              <v-icon size="16" color="grey" class="mr-1">mdi-clock-check</v-icon>
-              <span class="text-caption font-weight-bold text-grey-darken-1 mr-1">Bitiş:</span>
-              <span class="text-caption font-weight-bold"
-                v-html="localItem.completedAt ? formatDate(localItem.completedAt) : '-'"></span>
-            </div>
-            <div v-if="localItem.nextRunAt && !localItem.completedAt" class="d-flex align-center text-no-wrap">
-              <v-icon size="16" color="indigo" class="mr-1">mdi-calendar-clock</v-icon>
-              <span class="text-caption font-weight-bold text-indigo-darken-1 mr-1">Sonraki İşlem:</span>
-              <span class="text-caption font-weight-bold text-indigo" v-html="formatDate(localItem.nextRunAt)"></span>
-            </div>
+          <span class="meta-spacer"></span>
+          <div class="meta-item">
+            <v-icon size="16" aria-hidden="true">mdi-clock-outline</v-icon>
+            <span class="meta-item__label">Başlangıç:</span>
+            <span class="meta-item__value">{{ formatDateTime(localItem.createdAt) }}</span>
           </div>
-          <div class="w-100 pb-4 stepper-wrapper">
-            <div class="stepper-content">
-              <div class="stepper-line"></div>
-              <div v-for="(step, index) in exportSteps" :key="index" class="step-item">
-                <v-avatar size="16"
-                  :color="currentStepIndex === index ? getStatusColor(localItem.status) : (currentStepIndex > index ? 'success' : 'neutral-subtle')"
-                  :class="[currentStepIndex === index && isProcessing ? 'status-pulse-intense' : '', 'step-avatar', currentStepIndex > index ? 'step-passed' : '']"
-                  class="step-avatar-ring">
-                </v-avatar>
-                <div class="step-text-container">
-                  <span class="step-title step-title-text"
-                    :class="{ 'active-text': currentStepIndex === index, 'passed-text': currentStepIndex > index }">
-                    {{ step.title }}
-                  </span>
-                </div>
-              </div>
+          <div class="meta-item">
+            <v-icon size="16" aria-hidden="true">mdi-clock-check</v-icon>
+            <span class="meta-item__label">Bitiş:</span>
+            <span class="meta-item__value">{{ localItem.completedAt ? formatDateTime(localItem.completedAt) : '-' }}</span>
+          </div>
+          <div v-if="localItem.nextRunAt && !localItem.completedAt" class="meta-item">
+            <v-icon size="16" aria-hidden="true">mdi-calendar-clock</v-icon>
+            <span class="meta-item__label">Sonraki İşlem:</span>
+            <span class="meta-item__value">{{ formatDateTime(localItem.nextRunAt) }}</span>
+          </div>
+        </div>
+
+        <div class="stepper-wrapper">
+          <div class="stepper-content">
+            <div class="stepper-line"></div>
+            <div v-for="(step, index) in exportSteps" :key="index" class="step-item">
+              <span class="step-dot"
+                :class="[stepDotClass(index), currentStepIndex === index && isProcessing ? 'step-dot--processing' : '']"></span>
+              <span class="step-title"
+                :class="{ 'active-text': currentStepIndex === index, 'passed-text': currentStepIndex > index }">
+                {{ step.title }}
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      <v-row class="mb-4" dense>
-        <v-col cols="12">
-          <div class="pa-4 rounded-lg border bg-white d-flex align-start flex-wrap" style="gap:var(--ek-space-5)">
-            <v-img v-if="localItem.image" :src="localItem.image" width="175" height="175" cover
-              class="rounded border bg-grey-lighten-4 flex-grow-0" style="max-width: 175px;"></v-img>
-            <div v-else class="d-flex align-center justify-center rounded border bg-grey-lighten-4"
-              style="width: 175px; height: 175px;">
-              <v-icon color="grey-lighten-1" size="40">mdi-image-off</v-icon>
-            </div>
-            <div class="d-flex flex-column flex-grow-1" style="min-width: 300px;">
-              <div class="mb-4">
-                <div class="d-flex align-center justify-space-between mb-2">
-                  <span class="text-subtitle-1 font-weight-black text-grey-darken-3">{{ localItem.title
-                  }}</span>
+      <div class="panel product-card">
+        <v-img v-if="localItem.image" :src="localItem.image" width="175" height="175" cover
+          class="product-card__image" :alt="localItem.title"></v-img>
+        <div v-else class="product-card__image product-card__image--empty">
+          <v-icon size="40" aria-hidden="true">mdi-image-off</v-icon>
+        </div>
+        <div class="product-card__body">
+          <div class="product-card__title">{{ localItem.title }}</div>
 
-                </div>
-
-                <div class="d-flex flex-wrap choice-chip-row">
-                  <EkStatusChip v-for="choice in localItem.choices" :key="choice._id" tone="neutral"
-                    :label="`${choice.choiceTitle}: ${choice.choiceValueTitle}`" />
-                </div>
-              </div>
-              <div class="d-flex flex-wrap pt-2 meta-row-divider">
-                <div class="d-flex flex-column"><span
-                    class="text-tiny text-passiveColor font-weight-bold mb-1 uppercase">Barkod</span><span
-                    class="text-caption font-weight-black text-grey-darken-3">{{ localItem.barcode }}</span></div>
-                <div class="d-flex flex-column"><span
-                    class="text-tiny text-passiveColor font-weight-bold mb-1 uppercase">Stok Kodu</span><span
-                    class="text-caption font-weight-bold text-grey-darken-1">{{ localItem.stockcode || '-'
-                    }}</span></div>
-                <div class="d-flex flex-column"><span
-                    class="text-tiny text-passiveColor font-weight-bold mb-1 uppercase">KATEGORİ</span><span
-                    class="text-caption font-weight-black text-grey-darken-3">{{
-                      categoriesStore.getCategoryTitle(localItem.category) || '-' }}</span></div>
-                <div class="d-flex flex-column"><span
-                    class="text-tiny text-passiveColor font-weight-bold mb-1 uppercase">MARKA</span><span
-                    class="text-caption font-weight-bold text-grey-darken-1">{{
-                      brandsStore.getBrandTitle(localItem.brand) || '-' }}</span></div>
-              </div>
-
-              <div class="d-flex align-center mt-4 price-stock-row">
-                <div v-if="localItem.price" class="price-wrapper-mobile">
-                  <v-icon size="14" color="info" class="mr-2">mdi-tag-outline</v-icon>
-                  <span class="price-amount-mobile">{{ formatMoney(localItem.price) }}</span>
-                </div>
-                <EkStatusChip v-if="localItem.stock !== undefined" tone="success" :label="`${formatNumber(localItem.stock)} stok`" />
-              </div>
-
-            </div>
+          <div class="choice-list">
+            <span v-for="choice in localItem.choices" :key="choice._id" class="choice-pill">
+              <span class="choice-pill__key">{{ choice.choiceTitle }}</span>
+              <span class="choice-pill__value">{{ choice.choiceValueTitle }}</span>
+            </span>
           </div>
-        </v-col>
-      </v-row>
 
-      <v-row dense>
-        <v-col cols="12" class="mb-4">
+          <div class="field-row">
+            <div class="field"><span class="field__label">Barkod</span><span class="field__value">{{ localItem.barcode }}</span></div>
+            <div class="field"><span class="field__label">Stok Kodu</span><span class="field__value">{{ localItem.stockcode || '-' }}</span></div>
+            <div class="field"><span class="field__label">KATEGORİ</span><span class="field__value">{{
+              categoriesStore.getCategoryTitle(localItem.category) || '-' }}</span></div>
+            <div class="field"><span class="field__label">MARKA</span><span class="field__value">{{
+              brandsStore.getBrandTitle(localItem.brand) || '-' }}</span></div>
+          </div>
 
-          <CardComponent title="İşlem Günlüğü ve Akış Analizi" icon="mdi-history" contentBackgroundColor="white">
-            <v-timeline density="compact" line-thickness="1">
-              <v-timeline-item v-for="(log, idx) in localItem.logs" :key="idx"
-                :dot-color="getLogStatusColor(log.status)" size="x-small">
-                <div class="log-card" :class="getLogClass(log.status)">
-                  <div class="log-card-header d-flex align-center flex-wrap" style="gap: var(--ek-space-2);">
-                    <div class="d-flex align-center">
-                      <span class="worker-name mr-1">{{ translateWorker(log.worker) }}</span>
-                      <v-tooltip location="top" max-width="300">
-                        <template v-slot:activator="{ props }"><v-icon v-bind="props" size="14" color="grey-lighten-1"
-                            class="cursor-pointer">mdi-help-circle-outline</v-icon></template>
-                        <span class="text-caption">{{ getWorkerDescription(log.worker) }}</span>
-                      </v-tooltip>
-                    </div>
-                    <EkStatusChip :tone="statusTone(log.status)" :label="translateStatus(log.status)" />
-                    <v-spacer></v-spacer>
-                    <div class="d-flex align-center time-group">
-                      <v-icon size="12" class="mr-1">mdi-clock-outline</v-icon>
-                      <span class="timestamp" v-html="formatDate(log.timestamp)"></span>
-                    </div>
-                    <div v-if="Number(idx) > 0" class="duration-badge">+ {{
-                      calculateDuration(localItem.logs[Number(idx)
-                        - 1].timestamp, log.timestamp) }}</div>
+          <div class="price-row">
+            <span v-if="localItem.price" class="price-tag">
+              <v-icon size="14" aria-hidden="true">mdi-tag-outline</v-icon>
+              {{ localItem.price }} TL
+            </span>
+            <EkStatusChip v-if="localItem.stock !== undefined" tone="success" :label="`${localItem.stock} STOK`" />
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <EkSection title="İşlem Günlüğü ve Akış Analizi">
+          <v-timeline density="compact" line-thickness="1">
+            <v-timeline-item v-for="(log, idx) in localItem.logs" :key="idx"
+              :dot-color="getLogStatusColor(log.status)" size="x-small">
+              <div class="log-card" :class="getLogClass(log.status)">
+                <div class="log-card-header">
+                  <div class="worker-group">
+                    <span class="worker-name">{{ translateWorker(log.worker) }}</span>
+                    <v-tooltip location="top" max-width="300">
+                      <template v-slot:activator="{ props }">
+                        <button v-bind="props" type="button" class="help-btn"
+                          :aria-label="`${translateWorker(log.worker)} açıklaması`">
+                          <v-icon size="14" aria-hidden="true">mdi-help-circle-outline</v-icon>
+                        </button>
+                      </template>
+                      <span class="text-caption">{{ getWorkerDescription(log.worker) }}</span>
+                    </v-tooltip>
                   </div>
-                  <div class="log-card-body">{{ log.message }}</div>
+                  <EkStatusChip :tone="getLogTone(log.status)" :label="translateStatus(log.status)" />
+                  <span class="meta-spacer"></span>
+                  <div class="time-group">
+                    <v-icon size="12" aria-hidden="true">mdi-clock-outline</v-icon>
+                    <span class="timestamp">{{ formatDateTime(log.timestamp) }}</span>
+                  </div>
+                  <div v-if="Number(idx) > 0" class="duration-badge">+ {{
+                    calculateDuration(localItem.logs[Number(idx) - 1].timestamp, log.timestamp) }}</div>
                 </div>
-              </v-timeline-item>
-            </v-timeline>
-          </CardComponent>
-        </v-col>
-
-        <v-col cols="12">
-
-          <CardComponent title="Performans Analizi" icon="mdi-chart-bar" contentBackgroundColor="white">
-
-            <template #header>
-              <div class="premium-duration-badge">
-                <div class="badge-icon"><v-icon size="18" color="white">mdi-timer-sand</v-icon></div>
-                <div class="badge-content">
-                  <span class="label">TOPLAM SÜREÇ</span>
-                  <span class="value">{{ totalDurationText }}</span>
-                </div>
+                <div class="log-card-body">{{ log.message }}</div>
               </div>
-            </template>
+            </v-timeline-item>
+          </v-timeline>
+        </EkSection>
+      </div>
 
-
-            <div class="pa-4">
-              <v-chart v-if="isMounted" class="chart" :option="chartOption" autoresize style="min-height: 300px; width: 100%;" />
-            </div>
-          </CardComponent>
-        </v-col>
-      </v-row>
+      <div class="panel">
+        <EkSection title="Performans Analizi">
+          <div class="duration-total">
+            <v-icon size="18" aria-hidden="true">mdi-timer-sand</v-icon>
+            <span class="duration-total__label">TOPLAM SÜREÇ</span>
+            <span class="duration-total__value">{{ totalDurationText }}</span>
+          </div>
+          <v-chart v-if="isMounted" class="chart" theme="entegrasyonik" :option="chartOption" autoresize />
+        </EkSection>
+      </div>
     </div>
   </div>
 </template>
@@ -202,7 +150,6 @@
 import { ref, onMounted, onUnmounted, onBeforeUnmount, computed } from 'vue'
 import useRestApi from '@/composables/restapi'
 import LoadingComponent from '@/components/LoadingComponent.vue'
-import CardComponent from '@/components/CardComponent.vue'
 import { useCategoriesStore } from '@/stores/categoriesStore'
 import { useBrandsStore } from '@/stores/brandsStore'
 import VChart from 'vue-echarts'
@@ -212,12 +159,15 @@ import { BarChart } from 'echarts/charts'
 import { TooltipComponent, GridComponent } from 'echarts/components'
 import { LegacyGridContainLabel } from 'echarts/features'
 import PlatformImageComponent from '../platforms/PlatformImageComponent.vue'
-import EmptyState from '@/components/layout/EmptyState.vue'
+import EkEmptyState from '@/components/ds/EkEmptyState.vue'
+import EkSkeleton from '@/components/ds/EkSkeleton.vue'
 import EkStatusChip from '@/components/ds/EkStatusChip.vue'
-import { escapeHtml } from '@/utils/escapeHtml'
-import { PLATFORM_PROCESS_LABELS, PLATFORM_PROCESS, PLATFORM_PROCESS_COLORS } from '@/types/PlatformProcess'
-import { formatMoney, formatNumber, formatDate as formatDateCentral } from '@/composables/format'
+import EkSection from '@/components/ds/EkSection.vue'
+import { formatDateTime } from '@/composables/format'
 import { semanticColorsLight } from '@/design/tokens'
+import type { StatusTone } from '@/design/status-map'
+import { escapeHtml } from '@/utils/escapeHtml'
+import { PLATFORM_PROCESS_LABELS, PLATFORM_PROCESS } from '@/types/PlatformProcess'
 
 use([CanvasRenderer, BarChart, TooltipComponent, GridComponent, LegacyGridContainLabel])
 
@@ -286,16 +236,12 @@ const getWorkerDescription = (worker: string) => {
 };
 
 // Grafik verilerini formatlayan fonksiyon
-// ek-pattern-exception: composables/format.ts — gün/saat/dakika/saniye birleşik süre dizgisi
-// ("2g 3s 14dk 5.20 sn") üretir; format.ts'in TEK biçimlendiricilerinin (formatNumber/formatMoney/
-// formatRelative) hiçbiri bu bileşik süre gösterimini karşılamıyor — gerçekten farklı bir
-// biçimlendirme ihtiyacı (Karar 6.4 istisna gerekçesi).
 const formatChartValue = (seconds: number) => {
   if (seconds === 0) return '0 sn';
   const d = Math.floor(seconds / (3600 * 24));
   const h = Math.floor((seconds % (3600 * 24)) / 3600);
   const m = Math.floor((seconds % 3600) / 60);
-  const s = (seconds % 60).toFixed(2);
+  const s = String(Math.round((seconds % 60) * 100) / 100);
 
   const res = [];
   if (d > 0) res.push(`${d}g`);
@@ -314,7 +260,7 @@ const chartOption = computed(() => {
       data.push({
         name: translateWorker(log.worker),
         value: Math.max(0, diff),
-        itemStyle: { color: statusColorHex(log.status) }
+        itemStyle: { color: toneHex(getLogTone(log.status)) }
       });
     }
   });
@@ -381,12 +327,9 @@ const getReport = async (isSilent = false) => {
 const startPolling = () => { stopPolling(); pollTimer = setTimeout(() => { getReport(true) }, 5000); };
 const stopPolling = () => { if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; } };
 
-// ek-pattern-exception: composables/format.ts — iki zaman damgası arasındaki farkı "X dk Y sn"
-// biçiminde süre olarak gösterir (para/tarih/sayı değil); format.ts'te süre farkı biçimlendiricisi
-// yok (Karar 6.4 istisna gerekçesi, bkz. formatChartValue AYNI gerekçe).
 const calculateDuration = (start: any, end: any) => {
   const diff = new Date(end).getTime() - new Date(start).getTime();
-  const seconds = Number((diff / 1000).toFixed(2));
+  const seconds = Math.round((diff / 1000) * 100) / 100;
   return seconds < 0 ? '0 sn' : seconds < 60 ? `${seconds} sn` : `${Math.ceil(seconds / 60)} dk ${seconds % 60} sn`;
 };
 
@@ -410,58 +353,35 @@ const getLogClass = (status: string) => {
 };
 
 /**
- * Karar 3.3 "canlı iş-durumu paleti" KARARI — status-map.ts'in JOB_STATUS_TONE ailesiyle AYNI
- * mantık, bu dosyanın KENDİ ham durum kümesine (QUEUED/PREPARING/PENDING/SENT/WAITING/COMPLETED/
- * FAILED) uyarlanmış TEK yerel harita. İki tüketici bağlamı var: Vuetify bileşen `color` prop'u
- * (tema anahtarı ADI, `statusColorName`) ve ECharts JS değeri (canvas CSS okuyamaz — ADR-0011
- * Karar 2 istisnası — gerçek hex, `statusColorHex`, `semanticColorsLight`'tan okunur).
+ * İş durumu -> anlamsal ton (ADR-0015 Karar 3.3: "canlı iş-durumu paleti" yerine
+ * merkezi anlamsal tonlar; renk tek başına anlam taşımaz, etiket metni her zaman görünür).
  */
-const JOB_STATUS_COLOR_NAME: Record<string, 'success' | 'warning' | 'error' | 'info' | 'neutral'> = {
-  QUEUED: 'neutral',
-  PREPARING: 'neutral',
-  PENDING: 'info',
+const STATUS_TONES: Record<string, StatusTone> = {
+  COMPLETED: 'success',
+  FAILED: 'danger',
+  ERROR: 'danger',
   SENT: 'info',
   WAITING: 'warning',
-  COMPLETED: 'success',
-  FAILED: 'error',
-  ERROR: 'error',
+  PENDING: 'info',
+  PREPARING: 'neutral',
+  QUEUED: 'neutral',
 };
 
-const statusColorName = (status: string): 'success' | 'warning' | 'error' | 'info' | 'neutral' => {
-  return JOB_STATUS_COLOR_NAME[status?.toUpperCase()] || 'neutral';
-};
+const getLogTone = (status: string): StatusTone => STATUS_TONES[status?.toUpperCase()] || 'neutral';
 
-const statusColorHex = (status: string): string => {
-  return semanticColorsLight[statusColorName(status)];
-};
+const TONE_KEY = { success: 'success', danger: 'error', info: 'info', warning: 'warning', neutral: 'neutral' } as const;
+/** CSS özel özelliği olarak ton rengi (Vuetify `color`/`dot-color` prop'ları için). */
+const toneVar = (tone: StatusTone) => `var(--ek-color-${TONE_KEY[tone]})`;
+/** ECharts canvas'ı CSS değişkeni çözemez; tema kaynağındaki değer okunur. */
+const toneHex = (tone: StatusTone) => semanticColorsLight[TONE_KEY[tone]];
 
-/** `EkStatusChip` `tone` prop'u (status-map.ts `StatusTone`) için — Vuetify tema anahtarı 'error',
-    StatusTone'da 'danger' adını taşır (Karar 3.3). */
-const statusTone = (status: string): 'success' | 'warning' | 'danger' | 'info' | 'neutral' => {
-  const name = statusColorName(status);
-  return name === 'error' ? 'danger' : name;
-};
+/** Log satırları için Vuetify `dot-color` değeri. */
+const getLogStatusColor = (status: string) => toneVar(getLogTone(status));
 
-/** Genel statü rengi — UI bileşenlerinde (Chip, Badge, Avatar `color` prop'u) kullanım içindir. */
-const getStatusColor = statusColorName;
-
-/** Log satırları veya metin bazlı durum göstergeleri için tema anahtarı adı döner. */
-const getLogStatusColor = statusColorName;
-const getModeColor = (mode: string) => {
-  const m = mode?.toUpperCase();
-  return PLATFORM_PROCESS_COLORS[m] || semanticColorsLight['content-default'];
-};
-
-// ek-pattern-exception: composables/format.ts — tarih kısmı `formatDateCentral` (composables/
-// format.ts) ile TEK kaynağa bağlandı; saat kısmı SANİYE hassasiyeti gerektirir (teknik işlem
-// günlüğünde aynı dakika içindeki adımları ayırt etmek için) — format.ts'in saat+dakika+saniye
-// birleşik bir biçimlendiricisi yok, bu yüzden saat kısmı doğrudan Intl API'siyle üretilir
-// (desen mandalının izlediği biçimlendirme çağrıları arasında yer almaz).
-const formatDate = (date: any) => {
-  if (!date) return '-';
-  const d = new Date(date);
-  const timePart = new Intl.DateTimeFormat('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(d);
-  return `${formatDateCentral(d)} <span class="font-weight-black">${timePart}</span>`;
+/** Akış adımı noktası: aktif adım durumun tonunu, geçilenler başarı tonunu, gelecek adımlar nötr alır. */
+const stepDotClass = (index: number) => {
+  if (currentStepIndex.value === index) return `step-dot--${getLogTone(localItem.value?.status)}`;
+  return currentStepIndex.value > index ? 'step-dot--done' : 'step-dot--upcoming';
 };
 
 onMounted(() => {
@@ -481,70 +401,207 @@ onBeforeUnmount(() => {
   height: calc(100vh - 280px);
 }
 
-.choice-chip-row {
-  gap: var(--ek-space-1);
+.report-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-4);
+  padding-right: var(--ek-space-3);
 }
 
-.price-stock-row {
+.panel {
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-lg);
+  background: var(--ek-color-surface);
+  padding: var(--ek-space-4);
+}
+
+.panel--muted {
+  background: var(--ek-color-surface-muted);
+}
+
+.solution-band {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-4);
+  flex-wrap: wrap;
+  padding: var(--ek-space-4);
+  border: 1px solid var(--ek-color-error);
+  border-radius: var(--ek-radius-lg);
+  background: var(--ek-color-error-subtle);
+}
+
+.solution-band__text {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.solution-band__title {
+  font-size: var(--ek-font-size-sm);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-error);
+}
+
+.solution-band__message {
+  font-size: var(--ek-font-size-xs);
+  color: var(--ek-color-content-default);
+}
+
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ek-space-4);
+  padding-bottom: var(--ek-space-3);
+}
+
+.meta-spacer {
+  flex: 1 1 0;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  white-space: nowrap;
+  color: var(--ek-color-content-muted);
+}
+
+.meta-item__label {
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-medium);
+  color: var(--ek-color-content-muted);
+}
+
+.meta-item__value {
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-strong);
+}
+
+/* Ürün kartı */
+.product-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--ek-space-5);
+}
+
+.product-card__image {
+  flex: 0 0 175px;
+  width: 175px;
+  max-width: 175px;
+  height: 175px;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface-sunken);
+}
+
+.product-card__image--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ek-color-content-subtle);
+}
+
+.product-card__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 300px;
+  min-width: 0;
   gap: var(--ek-space-3);
 }
 
-.mode-badge {
+.product-card__title {
+  font-size: var(--ek-font-size-lg);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-strong);
+}
+
+.choice-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ek-space-1);
+}
+
+.choice-pill {
   display: inline-flex;
   align-items: center;
-  padding: 4px 12px;
+  gap: var(--ek-space-2);
+  padding: var(--ek-space-1) var(--ek-space-3);
   border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-full);
-  transition: border-color var(--ek-duration-base) var(--ek-easing-standard),
-    box-shadow var(--ek-duration-base) var(--ek-easing-standard);
+  background: var(--ek-color-surface-muted);
 }
 
-.mode-badge:hover {
-  box-shadow: var(--ek-shadow-sm);
+.choice-pill__key {
+  font-size: var(--ek-font-size-xs);
+  color: var(--ek-color-content-muted);
 }
 
-.status-dot-static {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  margin-right: 8px;
-  background-color: var(--mode-color);
-  box-shadow: 0 0 4px var(--mode-color);
+.choice-pill__value {
+  font-size: var(--ek-font-size-sm);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-strong);
 }
 
-.mode-text {
-  font-size: 10px;
-  font-weight: 900;
-  color: var(--ek-color-content-default);
+.field-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ek-space-4) var(--ek-space-10);
+  padding-top: var(--ek-space-3);
+  border-top: 1px solid var(--ek-color-border-default);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-1);
+  min-width: 0;
+}
+
+.field__label {
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-medium);
+  color: var(--ek-color-content-muted);
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.04em;
 }
 
-.price-wrapper-mobile {
-  background: var(--ek-color-info-subtle);
-  border: 1px solid var(--ek-color-info);
+.field__value {
+  font-size: var(--ek-font-size-sm);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-strong);
+  overflow-wrap: anywhere;
+}
+
+.price-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ek-space-3);
+}
+
+.price-tag {
   display: inline-flex;
   align-items: center;
-  padding: 4px 12px;
-  border-radius: var(--ek-radius-lg);
-  transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
-}
-
-.price-amount-mobile {
-  font-weight: 900;
-  font-size: 15px;
-  color: var(--ek-color-info);
-  letter-spacing: -0.2px;
-}
-
-.log-card {
-  background: var(--ek-color-surface);
-  border-radius: var(--ek-radius-lg);
+  gap: var(--ek-space-2);
+  padding: var(--ek-space-1) var(--ek-space-3);
   border: 1px solid var(--ek-color-border-default);
-  box-shadow: var(--ek-shadow-sm);
-  margin-bottom: 4px;
+  border-radius: var(--ek-radius-lg);
+  background: var(--ek-color-info-subtle);
+  font-size: var(--ek-font-size-md);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-info);
+}
+
+/* İşlem günlüğü */
+.log-card {
   position: relative;
   overflow: hidden;
+  margin-bottom: var(--ek-space-1);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-lg);
+  background: var(--ek-color-surface);
 }
 
 .log-card::before {
@@ -554,9 +611,6 @@ onBeforeUnmount(() => {
   top: 0;
   bottom: 0;
   width: 3px;
-}
-
-.log-info::before {
   background-color: var(--ek-color-content-subtle);
 }
 
@@ -573,34 +627,65 @@ onBeforeUnmount(() => {
 }
 
 .log-card-header {
-  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ek-space-2);
+  padding: var(--ek-space-2) var(--ek-space-3);
   background-color: var(--ek-color-surface-muted);
-  border-bottom: 1px solid var(--ek-color-surface-sunken);
+  border-bottom: 1px solid var(--ek-color-border-default);
+}
+
+.worker-group {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-1);
 }
 
 .worker-name {
-  font-size: 11px;
-  font-weight: 800;
-  color: var(--ek-color-neutral);
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-default);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.04em;
+}
+
+.help-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--ek-radius-full);
+  color: var(--ek-color-content-muted);
+  cursor: pointer;
+}
+
+.help-btn:focus-visible {
+  outline: 2px solid var(--ek-color-primary);
+  outline-offset: 2px;
+}
+
+.time-group {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  font-size: var(--ek-font-size-xs);
+  color: var(--ek-color-content-muted);
 }
 
 .duration-badge {
   background: var(--ek-color-surface-sunken);
-  color: var(--ek-color-content-muted);
-  padding: 2px 8px;
+  color: var(--ek-color-content-default);
+  padding: var(--ek-space-1) var(--ek-space-2);
   border-radius: var(--ek-radius-sm);
-  font-size: 10px;
-  font-weight: 700;
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-medium);
 }
 
 .log-card-body {
-  padding: 10px 12px;
-  font-size: 12.5px;
-  line-height: 1.5;
+  padding: var(--ek-space-3);
+  font-size: var(--ek-font-size-sm);
+  line-height: var(--ek-line-height-normal);
   color: var(--ek-color-content-default);
-  font-weight: 500;
 }
 
 .log-error .log-card-body {
@@ -613,70 +698,37 @@ onBeforeUnmount(() => {
   background-color: var(--ek-color-info-subtle);
 }
 
-.meta-row-divider {
-  gap: var(--ek-space-10);
-  border-top: 1px solid var(--ek-color-border-default);
+/* Performans */
+.duration-total {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: var(--ek-space-2);
+  padding: var(--ek-space-2) var(--ek-space-3);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-lg);
+  color: var(--ek-color-primary);
 }
 
-.text-tiny {
-  font-size: 10px;
-}
-
-.text-passiveColor {
+.duration-total__label {
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-medium);
+  letter-spacing: 0.04em;
   color: var(--ek-color-content-muted);
 }
 
-.uppercase {
-  text-transform: uppercase;
-}
-
-.border-error {
-  border: 1px solid var(--ek-color-error) !important;
-}
-
-.premium-duration-badge {
-  display: flex;
-  align-items: center;
-  background: var(--ek-color-surface);
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-lg);
-  padding: 4px 12px 4px 4px;
-  box-shadow: var(--ek-shadow-sm);
-}
-
-.badge-icon {
-  /* Karar 1.1 — dekoratif degrade YASAK; düz `primary` zemine çekildi. */
-  background: var(--ek-color-primary);
-  width: 32px;
-  height: 32px;
-  border-radius: var(--ek-radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 10px;
-}
-
-.badge-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.badge-content .label {
-  font-size: 8px;
-  font-weight: 800;
-  color: var(--ek-color-content-subtle);
-  letter-spacing: 1px;
-  line-height: 1;
-  margin-bottom: 2px;
-}
-
-.badge-content .value {
-  font-size: var(--ek-font-size-xs);
-  font-weight: 900;
+.duration-total__value {
+  font-size: var(--ek-font-size-sm);
+  font-weight: var(--ek-font-weight-semibold);
   color: var(--ek-color-content-strong);
-  line-height: 1;
 }
 
+.chart {
+  min-height: 300px;
+  width: 100%;
+}
+
+/* Akış adımları */
 .stepper-content {
   display: flex;
   justify-content: space-between;
@@ -690,7 +742,7 @@ onBeforeUnmount(() => {
   left: 10%;
   right: 10%;
   height: 1px;
-  background: var(--ek-color-border-default);
+  background: var(--ek-color-border-strong);
   z-index: 1;
 }
 
@@ -698,26 +750,72 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: var(--ek-space-2);
   flex: 1;
   z-index: 2;
   position: relative;
 }
 
-.step-avatar-ring {
+.step-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: var(--ek-radius-full);
   border: 2px solid var(--ek-color-surface);
-  box-shadow: var(--ek-shadow-sm);
+  background: var(--ek-color-border-strong);
   position: relative;
   z-index: 2;
+  transition: background-color var(--ek-duration-slow) var(--ek-easing-standard);
 }
 
-.step-text-container {
-  z-index: 2;
+.step-dot--upcoming {
+  background: var(--ek-color-border-strong);
 }
 
-.step-title-text {
-  font-size: 10px;
-  font-weight: 700;
+.step-dot--done,
+.step-dot--success {
+  background: var(--ek-color-success);
+}
+
+.step-dot--danger {
+  background: var(--ek-color-error);
+}
+
+.step-dot--info {
+  background: var(--ek-color-info);
+}
+
+.step-dot--warning {
+  background: var(--ek-color-warning);
+}
+
+.step-dot--neutral {
+  background: var(--ek-color-content-subtle);
+}
+
+.step-dot--done {
+  opacity: 0.7;
+}
+
+/* İşlemde olan adım: sakin, statik halka (sonsuz animasyon yok). */
+.step-dot--processing {
+  box-shadow: 0 0 0 4px var(--ek-color-info-subtle);
+}
+
+.step-title {
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-medium);
   text-transform: uppercase;
+  text-align: center;
+  color: var(--ek-color-content-muted);
+}
+
+.active-text {
+  color: var(--ek-color-content-strong);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.passed-text {
+  color: var(--ek-color-success);
 }
 
 @media (max-width: 768px) {
@@ -725,7 +823,7 @@ onBeforeUnmount(() => {
     flex-direction: column;
     align-items: flex-start;
     gap: var(--ek-space-5);
-    padding-left: 20px;
+    padding-left: var(--ek-space-5);
   }
 
   .stepper-line {
@@ -740,75 +838,12 @@ onBeforeUnmount(() => {
   .step-item {
     flex-direction: row;
     align-items: center;
-    gap: 15px;
+    gap: var(--ek-space-4);
     flex: none;
   }
-}
 
-.step-avatar {
-  transition: all var(--ek-duration-slow) var(--ek-easing-standard);
-}
-
-.step-passed {
-  opacity: 0.6;
-}
-
-.step-title {
-  color: var(--ek-color-content-subtle);
-  text-align: center;
-}
-
-.active-text {
-  color: var(--ek-color-content-strong) !important;
-  font-weight: 900;
-}
-
-.passed-text {
-  color: var(--ek-color-success) !important;
-}
-
-@keyframes intense-pulse {
-  0% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--ek-color-primary) 70%, transparent);
-  }
-  100% {
-    box-shadow: 0 0 0 12px transparent;
-  }
-}
-
-/* ADR-0011 Bağlam "pulse/ripple ihlali": eskiden çok daha uzun bir döngü
-   süresi ve overshoot eğrisi kullanılıyordu; premium-ui-standards'ın motion
-   sınırını (yalnızca duration/easing token aralığı, bounce/elastik eğrisi
-   YASAK) aşıyordu. `infinite` tekrarı (aktif adımı işaret eden bir durum
-   göstergesi) KORUNDU — yalnızca tek döngünün süresi/eğrisi token'a
-   çekildi (bilinçli davranış değişikliği, ekran görüntüsü
-   `animations:'disabled'` ile alındığı için testte fark üretmiyor, bkz.
-   e2e/specs/logs.spec.ts — ClaimDetailComponent'teki AYNI göç, T4f). */
-.status-pulse-intense {
-  animation: intense-pulse var(--ek-duration-slow) var(--ek-easing-standard) infinite !important;
-  z-index: 3;
-}
-
-.status-pulse-intense::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border-radius: 50%;
-  border: 2px solid color-mix(in srgb, var(--ek-color-primary) 50%, transparent);
-  animation: ripple-effect var(--ek-duration-slow) var(--ek-easing-standard) infinite;
-}
-
-@keyframes ripple-effect {
-  0% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1.8);
-    opacity: 0;
+  .step-title {
+    text-align: left;
   }
 }
 </style>

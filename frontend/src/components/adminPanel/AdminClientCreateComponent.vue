@@ -1,11 +1,7 @@
 <template>
-  <!-- ek-pattern-exception: EkFormDialog — 2 başlıklı bölüme ayrılmış 5 alanlı form (Karar 3.7
-       "uzun formlar başlıklı bölümlere ayrılır"), EkFormDialog'un "≤5 alan, bölümsüz" sözleşmesini
-       aşıyor; gerçekten farklı bir etkileşim modeli. `ActionDialogComponent` (confirmText/cancelText
-       özelleştirilebilir) KORUNDU, yalnızca token'lara bağlandı. -->
   <ActionDialogComponent :modelValue="modelValue" @update:modelValue="$emit('update:modelValue', $event)"
     title="Yeni Mağaza Oluştur" subtitle="Sisteme yeni bir dükkan ve yönetici hesabı tanımlayın" icon="mdi-store-plus-outline"
-    color="primary" maxWidth="800px" showFooter confirmText="Mağaza oluştur" cancelText="Vazgeç"
+    color="primary" maxWidth="800px" showFooter confirmText="MAĞAZA OLUŞTUR" cancelText="İPTAL"
     confirmButtomColor="primary" :isLoading="saving" @confirm="save" @cancel="$emit('close')" @close="$emit('close')"
     attach=".adminClientListView">
 
@@ -13,14 +9,16 @@
       <v-row>
         <!-- Basic Info -->
         <v-col cols="12">
-          <v-card flat border class="pa-5 border-subtle mb-4 bg-slate-50">
-            <div class="section-overline mb-4">Mağaza temel bilgileri</div>
+          <v-card flat border class="rounded-xl pa-5 border-subtle mb-4 bg-slate-50">
+            <div class="text-subtitle-2 font-weight-black color-slate-800 mb-4 uppercase">MAĞAZA TEMEL BİLGİLERİ</div>
             <v-row>
               <v-col cols="12" md="6">
-                <v-text-field v-model="form.name" label="Mağaza Adı" hide-details placeholder="Örn: Trendyol Mağazam"></v-text-field>
+                <v-text-field v-model="form.name" label="Mağaza Adı" variant="outlined" density="compact"
+                  class="customTextField" hide-details placeholder="Örn: Trendyol Mağazam"></v-text-field>
               </v-col>
               <v-col cols="12" md="6">
-                <v-text-field v-model="form.title" label="Mağaza Başlığı" hide-details placeholder="Örn: MyStore E-Ticaret"></v-text-field>
+                <v-text-field v-model="form.title" label="Mağaza Başlığı" variant="outlined" density="compact"
+                  class="customTextField" hide-details placeholder="Örn: MyStore E-Ticaret"></v-text-field>
               </v-col>
             </v-row>
           </v-card>
@@ -28,17 +26,20 @@
 
         <!-- Administrator User Info -->
         <v-col cols="12">
-          <v-card flat border class="pa-5 border-subtle mb-4 bg-slate-50">
-            <div class="section-overline mb-4">Yönetici hesabı (owner)</div>
+          <v-card flat border class="rounded-xl pa-5 border-subtle mb-4 bg-slate-50">
+            <div class="text-subtitle-2 font-weight-black color-slate-800 mb-4 uppercase">YÖNETİCİ HESABI (OWNER)</div>
             <v-row>
               <v-col cols="12" md="4">
-                <v-text-field v-model="userForm.fullName" label="Ad Soyad" hide-details placeholder="Yönetici Adı"></v-text-field>
+                <v-text-field v-model="userForm.fullName" label="Ad Soyad" variant="outlined" density="compact"
+                  class="customTextField" hide-details placeholder="Yönetici Adı"></v-text-field>
               </v-col>
               <v-col cols="12" md="4">
-                <v-text-field v-model="userForm.email" label="E-Posta Adresi" hide-details placeholder="admin@magaza.com"></v-text-field>
+                <v-text-field v-model="userForm.email" label="E-Posta Adresi" variant="outlined" density="compact"
+                  class="customTextField" hide-details placeholder="admin@magaza.com"></v-text-field>
               </v-col>
               <v-col cols="12" md="4">
-                <v-text-field v-model="userForm.password" label="Giriş Şifresi" type="password" hide-details></v-text-field>
+                <v-text-field v-model="userForm.password" label="Giriş Şifresi" type="password" variant="outlined"
+                  density="compact" class="customTextField" hide-details></v-text-field>
               </v-col>
             </v-row>
           </v-card>
@@ -46,8 +47,8 @@
 
         <!-- Default Storage Settings (Pre-filled) -->
         <v-col cols="12">
-          <div class="storage-note mb-2 px-2">
-            Varsayılan depolama (R2) ayarları otomatik olarak atanacaktır. Daha sonra ayarlardan güncelleyebilirsiniz.
+          <div class="text-micro font-weight-bold color-slate-400 mb-2 px-2 uppercase">
+            * Varsayılan depolama (R2) ayarları otomatik olarak atanacaktır. Daha sonra ayarlardan güncelleyebilirsiniz.
           </div>
         </v-col>
       </v-row>
@@ -131,17 +132,21 @@ watch(() => props.modelValue, (val) => {
   border: 1px solid var(--ek-color-border-default) !important;
 }
 
-// Karar 1.2 — bölüm başlığı "üst etiket" (overline) stilindedir: xs 12/600, harf aralığı, muted.
-.section-overline {
-  font-size: var(--ek-font-size-xs);
-  font-weight: var(--ek-font-weight-semibold);
-  letter-spacing: 0.04em;
+.color-slate-800 {
+  color: var(--ek-color-content-strong);
+}
+
+// Bu sınıf yalnızca METİN (yönerge notu) için kullanılıyor: `content-subtle` (slate-400) beyazda
+// 2,56:1 ile AA'yı geçemez ve token belgesi metin için kullanımı yasaklar → `content-muted` (4,76:1).
+.color-slate-400 {
   color: var(--ek-color-content-muted);
 }
 
-.storage-note {
+.uppercase {
+  text-transform: uppercase;
+}
+
+.text-micro {
   font-size: var(--ek-font-size-xs);
-  font-weight: var(--ek-font-weight-medium);
-  color: var(--ek-color-content-muted);
 }
 </style>

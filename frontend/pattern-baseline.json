@@ -2,15 +2,15 @@
   "_meta": "ADR-0015 Karar 6.4 desen mandalı tabanı. node scripts/check-pattern-baseline.js --write ile üretildi (bkz. scripts/pattern-counts.js). Hiçbir dosyada/kategoride sayı ARTAMAZ; yeni dosyalar 0 ile başlamalı; düşüş serbest ama bu dosyanın güncellenmesi gerekir. patternExceptions BİLGİ AMAÇLIDIR (C'de raporlanır, mandal tarafından zorlanmaz).",
   "date": "2026-09-29",
   "totals": {
-    "total": 147,
-    "rawDataTable": 25,
+    "total": 90,
+    "rawDataTable": 21,
     "rawDialog": 13,
-    "rawChip": 43,
-    "rawFormat": 39,
+    "rawChip": 13,
+    "rawFormat": 31,
     "rawSpinner": 3,
-    "iconBtnNoLabel": 24,
-    "patternExceptions": 18,
-    "pageHeaderMissing": 30
+    "iconBtnNoLabel": 9,
+    "patternExceptions": 12,
+    "pageHeaderMissing": 13
   },
   "files": {
     "src/App.vue": {
@@ -270,7 +270,7 @@
       "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
-      "patternExceptions": 1,
+      "patternExceptions": 0,
       "total": 0
     },
     "src/components/adminPanel/AdminClientCreateComponent.vue": {
@@ -280,7 +280,7 @@
       "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
-      "patternExceptions": 1,
+      "patternExceptions": 0,
       "total": 0
     },
     "src/components/adminPanel/AdminClientDetailComponent.vue": {
@@ -444,6 +444,16 @@
       "total": 0
     },
     "src/components/dashboard/StatisticsComponent.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/components/financial/FinancialSummaryBar.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
       "rawChip": 0,
@@ -877,21 +887,21 @@
       "rawDataTable": 0,
       "rawDialog": 0,
       "rawChip": 0,
-      "rawFormat": 2,
+      "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
-      "patternExceptions": 3,
-      "total": 2
+      "patternExceptions": 0,
+      "total": 0
     },
     "src/components/logListView/DetailedImportLogReport.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
-      "rawChip": 5,
-      "rawFormat": 1,
+      "rawChip": 0,
+      "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
       "patternExceptions": 0,
-      "total": 6
+      "total": 0
     },
     "src/components/logListView/DetailedImportLogReportMissingAttribute.vue": {
       "rawDataTable": 0,
@@ -914,24 +924,24 @@
       "total": 0
     },
     "src/components/logListView/ExportLogList.vue": {
-      "rawDataTable": 1,
+      "rawDataTable": 0,
       "rawDialog": 0,
-      "rawChip": 6,
-      "rawFormat": 3,
+      "rawChip": 0,
+      "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
-      "patternExceptions": 0,
-      "total": 10
+      "patternExceptions": 1,
+      "total": 0
     },
     "src/components/logListView/ImportLogList.vue": {
-      "rawDataTable": 1,
+      "rawDataTable": 0,
       "rawDialog": 0,
-      "rawChip": 5,
-      "rawFormat": 1,
+      "rawChip": 0,
+      "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
-      "patternExceptions": 0,
-      "total": 7
+      "patternExceptions": 1,
+      "total": 0
     },
     "src/components/login/AuthShell.vue": {
       "rawDataTable": 0,
@@ -1366,22 +1376,22 @@
     "src/components/ticket/TicketDetailComponent.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
-      "rawChip": 2,
+      "rawChip": 0,
       "rawFormat": 1,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
       "patternExceptions": 0,
-      "total": 3
+      "total": 1
     },
     "src/components/user/NotificationDrawerComponent.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
-      "rawChip": 1,
+      "rawChip": 0,
       "rawFormat": 0,
       "rawSpinner": 0,
-      "iconBtnNoLabel": 5,
+      "iconBtnNoLabel": 0,
       "patternExceptions": 0,
-      "total": 6
+      "total": 0
     },
     "src/components/user/UserAddComponent.vue": {
       "rawDataTable": 0,
@@ -1476,12 +1486,12 @@
     "src/views/secure/FinancialListView.vue": {
       "rawDataTable": 1,
       "rawDialog": 0,
-      "rawChip": 3,
+      "rawChip": 0,
       "rawFormat": 2,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
       "patternExceptions": 0,
-      "total": 6
+      "total": 3
     },
     "src/views/secure/InvoiceListView.vue": {
       "rawDataTable": 0,
@@ -1500,7 +1510,7 @@
       "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
-      "patternExceptions": 0,
+      "patternExceptions": 1,
       "total": 0
     },
     "src/views/secure/MessageListView.vue": {
@@ -1536,12 +1546,12 @@
     "src/views/secure/SettingListView.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
-      "rawChip": 1,
+      "rawChip": 0,
       "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
       "patternExceptions": 0,
-      "total": 1
+      "total": 0
     },
     "src/views/secure/adminPanel/AdminClientListView.vue": {
       "rawDataTable": 1,
@@ -1550,18 +1560,18 @@
       "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
-      "patternExceptions": 2,
+      "patternExceptions": 1,
       "total": 1
     },
     "src/views/secure/adminPanel/AdminSystemManagementView.vue": {
-      "rawDataTable": 2,
+      "rawDataTable": 0,
       "rawDialog": 0,
       "rawChip": 0,
       "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
-      "patternExceptions": 2,
-      "total": 2
+      "patternExceptions": 1,
+      "total": 0
     },
     "src/views/secure/adminPanel/AdminTicketListView.vue": {
       "rawDataTable": 1,
@@ -1570,7 +1580,7 @@
       "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
-      "patternExceptions": 2,
+      "patternExceptions": 1,
       "total": 1
     },
     "src/views/secure/adminPanel/AdminView.vue": {
@@ -1700,7 +1710,7 @@
       "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
-      "patternExceptions": 0,
+      "patternExceptions": 1,
       "total": 1
     },
     "src/views/secure/definitions/ProductUpdateView.vue": {
@@ -1710,7 +1720,7 @@
       "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
-      "patternExceptions": 0,
+      "patternExceptions": 1,
       "total": 1
     },
     "src/views/secure/definitions/ReturnDefinitionView.vue": {
@@ -1799,9 +1809,9 @@
       "rawChip": 3,
       "rawFormat": 0,
       "rawSpinner": 0,
-      "iconBtnNoLabel": 5,
+      "iconBtnNoLabel": 0,
       "patternExceptions": 0,
-      "total": 9
+      "total": 4
     },
     "src/views/secure/productDefinitions/HashtagListView.vue": {
       "rawDataTable": 1,
@@ -1809,9 +1819,9 @@
       "rawChip": 1,
       "rawFormat": 0,
       "rawSpinner": 0,
-      "iconBtnNoLabel": 4,
+      "iconBtnNoLabel": 0,
       "patternExceptions": 0,
-      "total": 6
+      "total": 2
     },
     "src/views/secure/productDefinitions/ProductListView.vue": {
       "rawDataTable": 1,
@@ -1836,22 +1846,22 @@
     "src/views/secure/supports/TicketListView.vue": {
       "rawDataTable": 1,
       "rawDialog": 0,
-      "rawChip": 4,
-      "rawFormat": 1,
-      "rawSpinner": 0,
-      "iconBtnNoLabel": 1,
-      "patternExceptions": 0,
-      "total": 7
-    },
-    "src/views/secure/user/AuthorizationListView.vue": {
-      "rawDataTable": 1,
-      "rawDialog": 0,
-      "rawChip": 3,
+      "rawChip": 0,
       "rawFormat": 1,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
       "patternExceptions": 0,
-      "total": 5
+      "total": 2
+    },
+    "src/views/secure/user/AuthorizationListView.vue": {
+      "rawDataTable": 1,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 1
     },
     "src/views/secure/user/ChangePasswordView.vue": {
       "rawDataTable": 0,
@@ -1890,7 +1900,7 @@
       "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
-      "patternExceptions": 3,
+      "patternExceptions": 0,
       "total": 0
     },
     "src/views/unsecure/LoginView.vue": {
@@ -1923,8 +1933,8 @@
     "src/views/secure/LogListView.vue": 0,
     "src/views/secure/MessageListView.vue": 1,
     "src/views/secure/OrderListView.vue": 1,
-    "src/views/secure/PrintoutListView.vue": 1,
-    "src/views/secure/SettingListView.vue": 1,
+    "src/views/secure/PrintoutListView.vue": 0,
+    "src/views/secure/SettingListView.vue": 0,
     "src/views/secure/adminPanel/AdminClientListView.vue": 0,
     "src/views/secure/adminPanel/AdminSystemManagementView.vue": 0,
     "src/views/secure/adminPanel/AdminTicketListView.vue": 0,
@@ -1933,16 +1943,16 @@
     "src/views/secure/adminPanel/integrations/EngineSettingsView.vue": 0,
     "src/views/secure/adminPanel/integrations/IntegrationConfigListView.vue": 0,
     "src/views/secure/adminPanel/integrations/IntegrationSettingsView.vue": 0,
-    "src/views/secure/definitions/BrandDefinitionView.vue": 1,
-    "src/views/secure/definitions/CategoryDefinitionView.vue": 1,
-    "src/views/secure/definitions/CustomerDefinitionView.vue": 1,
-    "src/views/secure/definitions/HashtagDefinitionView.vue": 1,
-    "src/views/secure/definitions/InvoiceDefinitionView.vue": 1,
-    "src/views/secure/definitions/OptionDefinitionView.vue": 1,
-    "src/views/secure/definitions/OrderDefinitionView.vue": 1,
-    "src/views/secure/definitions/ProductDefinitionView.vue": 1,
-    "src/views/secure/definitions/ProductUpdateView.vue": 1,
-    "src/views/secure/definitions/ReturnDefinitionView.vue": 1,
+    "src/views/secure/definitions/BrandDefinitionView.vue": 0,
+    "src/views/secure/definitions/CategoryDefinitionView.vue": 0,
+    "src/views/secure/definitions/CustomerDefinitionView.vue": 0,
+    "src/views/secure/definitions/HashtagDefinitionView.vue": 0,
+    "src/views/secure/definitions/InvoiceDefinitionView.vue": 0,
+    "src/views/secure/definitions/OptionDefinitionView.vue": 0,
+    "src/views/secure/definitions/OrderDefinitionView.vue": 0,
+    "src/views/secure/definitions/ProductDefinitionView.vue": 0,
+    "src/views/secure/definitions/ProductUpdateView.vue": 0,
+    "src/views/secure/definitions/ReturnDefinitionView.vue": 0,
     "src/views/secure/integrations/ECommerceView.vue": 0,
     "src/views/secure/integrations/EInvoiceView.vue": 0,
     "src/views/secure/integrations/ErpView.vue": 0,
@@ -1950,15 +1960,15 @@
     "src/views/secure/integrations/ShippingView.vue": 0,
     "src/views/secure/productDefinitions/BrandListView.vue": 1,
     "src/views/secure/productDefinitions/CategoryListView.vue": 1,
-    "src/views/secure/productDefinitions/ChoiceListView.vue": 1,
-    "src/views/secure/productDefinitions/HashtagListView.vue": 1,
+    "src/views/secure/productDefinitions/ChoiceListView.vue": 0,
+    "src/views/secure/productDefinitions/HashtagListView.vue": 0,
     "src/views/secure/productDefinitions/ProductListView.vue": 0,
     "src/views/secure/productDefinitions/TEST.vue": 1,
     "src/views/secure/supports/TicketListView.vue": 1,
     "src/views/secure/user/AuthorizationListView.vue": 1,
-    "src/views/secure/user/ChangePasswordView.vue": 1,
-    "src/views/secure/user/ExitView.vue": 1,
-    "src/views/secure/user/InvoiceInfoView.vue": 1,
+    "src/views/secure/user/ChangePasswordView.vue": 0,
+    "src/views/secure/user/ExitView.vue": 0,
+    "src/views/secure/user/InvoiceInfoView.vue": 0,
     "src/views/secure/user/SubscriptionView.vue": 0
   }
 }

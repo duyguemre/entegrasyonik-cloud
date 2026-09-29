@@ -8,69 +8,67 @@
 
       <v-row>
         <v-col cols="12" md="7" class="pr-md-6">
-          <div class="text-subtitle-1 font-weight-bold mb-4 text-primary d-flex align-center">
+          <div class="ek-form-section-title d-flex align-center">
             <v-icon start color="primary">mdi-account-details-outline</v-icon>
             Hesap Bilgileri
           </div>
 
           <v-row dense>
             <v-col cols="12" sm="6">
-              <v-text-field v-model="user.name" density="compact" label="İsim" variant="outlined"
-                class="customTextField mb-2" bg-color="white" />
+              <v-text-field v-model="user.name" density="compact" label="İsim" variant="outlined" class="mb-2" />
             </v-col>
             <v-col cols="12" sm="6">
-              <v-text-field v-model="user.surname" density="compact" label="Soyisim" variant="outlined"
-                class="customTextField mb-2" bg-color="white" />
+              <v-text-field v-model="user.surname" density="compact" label="Soyisim" variant="outlined" class="mb-2" />
             </v-col>
           </v-row>
 
           <v-text-field v-model="user.email" density="compact" label="E-posta Adresi" variant="outlined"
-            class="customTextField mb-2" bg-color="white" prepend-inner-icon="mdi-email-outline" />
+            class="mb-2" prepend-inner-icon="mdi-email-outline" />
 
-          <v-divider class="my-4" opacity="0.1" />
+          <v-divider class="my-4" />
 
-          <div class="text-caption font-weight-bold mb-2 text-grey-darken-1">Güvenlik Bilgileri</div>
+          <div class="ek-form-section-subtitle">Güvenlik Bilgileri</div>
           <v-row dense>
             <v-col cols="12" sm="6">
               <v-text-field v-model="user.password" density="compact" label="Şifre" type="password" variant="outlined"
-                class="customTextField mb-2" bg-color="white" prepend-inner-icon="mdi-lock-outline"
+                class="mb-2" prepend-inner-icon="mdi-lock-outline"
                 :placeholder="user._id ? 'Değiştirmek istemiyorsanız boş bırakın' : ''" />
             </v-col>
             <v-col cols="12" sm="6" v-if="!user._id">
               <v-text-field v-model="user.password2" density="compact" label="Şifre Tekrar" type="password"
-                variant="outlined" class="customTextField mb-2" bg-color="white" />
+                variant="outlined" class="mb-2" />
             </v-col>
           </v-row>
         </v-col>
 
         <v-col cols="12" md="5" class="border-left-md">
-          <div class="text-subtitle-1 font-weight-bold mb-4 text-primary d-flex align-center">
+          <div class="ek-form-section-title d-flex align-center">
             <v-icon start color="primary">mdi-shield-account-outline</v-icon>
             Rol ve Yetkiler
           </div>
 
           <v-select v-model="user.roleCode" :items="globalRoles" item-title="name" item-value="code"
-            label="Kullanıcı Rolü Seçiniz" variant="outlined" density="compact" class="customTextField mb-4"
-            bg-color="white" :readonly="user.owner">
+            label="Kullanıcı Rolü Seçiniz" variant="outlined" density="compact" class="mb-4"
+            :readonly="user.owner">
             <template #append-inner>
               <v-icon color="primary">mdi-chevron-down</v-icon>
             </template>
           </v-select>
 
-          <div v-if="selectedRoleInfo" class="role-preview-card pa-4 rounded-xl shadow-sm">
+          <div v-if="selectedRoleInfo" class="role-preview-card pa-4">
             <div class="d-flex align-center mb-2">
               <v-icon color="primary" size="20" class="mr-2">mdi-information-outline</v-icon>
-              <span class="text-caption font-weight-bold text-primary">
+              <span class="text-caption font-weight-semibold text-primary">
                 {{ selectedRoleInfo?.name }} Rolü Hakkında
               </span>
             </div>
-            <p class="text-caption text-grey-darken-2 lh-sm mb-0">
+            <p class="text-caption ek-muted lh-sm mb-0">
               {{ selectedRoleInfo?.description || 'Bu rol için bir açıklama tanımlanmamış.' }}
             </p>
           </div>
 
           <v-alert v-if="user.owner" type="warning" variant="tonal" density="compact"
-            class="mt-4 rounded-xl text-caption" icon="mdi-alert-decagram">
+            class="mt-4 text-caption" icon="mdi-alert-decagram">
             Bu kullanıcı Mağaza Yöneticisi olduğu için rolü değiştirilemez.
           </v-alert>
         </v-col>
@@ -140,10 +138,29 @@ onActivated(async () => {
   min-height: 400px;
 }
 
+.ek-form-section-title {
+  font-size: var(--ek-font-size-lg);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-primary);
+  margin-bottom: var(--ek-space-4);
+}
+
+.ek-form-section-subtitle {
+  font-size: var(--ek-font-size-sm);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-muted);
+  margin-bottom: var(--ek-space-2);
+}
+
+.ek-muted {
+  color: var(--ek-color-content-muted);
+}
+
 .role-preview-card {
-  background-color: rgba(var(--v-theme-primary), 0.04);
-  border: 1px dashed rgba(var(--v-theme-primary), 0.2);
-  transition: all 0.3s ease;
+  background-color: color-mix(in srgb, var(--ek-color-primary) 6%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--ek-color-primary) 25%, transparent);
+  border-radius: var(--ek-radius-lg);
+  transition: background-color var(--ek-duration-base) var(--ek-easing-standard);
 }
 
 .lh-sm {
@@ -152,13 +169,8 @@ onActivated(async () => {
 
 @media (min-width: 960px) {
   .border-left-md {
-    border-left: 1px solid rgba(0, 0, 0, 0.05);
-    padding-left: 24px;
+    border-left: 1px solid var(--ek-color-border-default);
+    padding-left: var(--ek-space-6);
   }
-}
-
-/* Form elemanlarını ActionDialog'un modern yapısına uyduralım */
-:deep(.v-field--variant-outlined) {
-  border-radius: 12px !important;
 }
 </style>

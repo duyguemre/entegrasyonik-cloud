@@ -1,58 +1,44 @@
 <template>
 
-  <CardComponent icon="mdi-checkbox-multiple-marked" title="Varyant Bilgileri" :isHovered="false"
-    style="overflow-y:scroll;border:1px solid #ddd;height:calc(100vh - 110px)!important">
+  <CardComponent icon="mdi-checkbox-multiple-marked" title="Varyant Bilgileri" :isHovered="false" class="pva-s1">
     <LoadingComponent attach=".productDefinitionView" ref="loadingComponentRef"></LoadingComponent>
 
     <template #header>
 
-      <v-btn-group elevation="0" class="ml-2 mr-2" density="compact" style="">
-        <v-btn density="compact" color="#E53935ff" style="min-width:150px;border:1px solid #aaa;" @click="save()">
+      <v-btn-group elevation="0" class="ml-2 mr-2" density="compact">
+        <v-btn density="compact" color="#E53935ff" @click="save()" class="pva-s2">
           <span class="">
             Varyanta Ata
           </span></v-btn>
       </v-btn-group>
 
-      <v-btn style="border:1px solid #bbb;width:30px; opacity:.9;" @click="emits('close')" elevation="0" min-width="0"
-        color="white"><v-icon size="x-large" color="primary">mdi-close</v-icon></v-btn>
+      <v-btn aria-label="Kapat" @click="emits('close')" elevation="0" min-width="0"
+        color="white" class="pva-s3"><v-icon size="x-large" color="primary">mdi-close</v-icon></v-btn>
 
     </template>
 
     <template v-if="tab">
 
       <div
-        style="position:fixed;z-index:0;background-color:transparent;height:100%;min-width:150px;border-right:0px solid #ddd;"
-        class="pt-0">
+        class="pt-0 pva-s4">
 
         <div v-for="clientMarketplace of computedPlatformList" class="pa-0 pt-0"
-          :style="tab.code == clientMarketplace.code ? { filter: 'brightness(1)' } : { opacity: '.8', filter: 'brightness(0.9)' }">
+          :class="tab.code == clientMarketplace.code ? 'pva-tab--active' : 'pva-tab--idle-8'">
           <v-sheet v-if="clientMarketplace?.type?.code == 'marketplace'"
-            style="cursor:pointer;border-radius:5px!important;border:1px solid white"
             @click="changeIntegration(clientMarketplace.code); tab = clientMarketplace"
-            class="mt-0 mr-0 mb-0 ml-0 mr-0 pa-3 text-center d-flex justify-center"
-            :class="[tab.code == clientMarketplace.code ? 'elevation-5' : '']" :style="{
-              width: tab.code == clientMarketplace.code ? '130px' : '80px',
-              height: tab.code == clientMarketplace.code ? '70px' : '70px',
-              'background-color': clientMarketplace.color,
-              transition: 'all 0.3s ease'
-
-            }">
+            class="mt-0 mr-0 mb-0 ml-0 mr-0 pa-3 text-center d-flex justify-center pva-s5"
+            :class="[tab.code == clientMarketplace.code ? 'elevation-5 pva-logo--active' : 'pva-logo--idle']" :style="{ 'background-color': clientMarketplace.color }">
             <v-img :width="clientMarketplace.width"
               :src="integrationStore.getIntegrationImagePath(clientMarketplace)"></v-img>
           </v-sheet>
         </div>
 
         <div v-for="clientEcommerce of integrationStore.getClientECommerces()" class="pa-0 pt-0"
-          :style="tab.code == clientEcommerce.code ? { filter: 'brightness(1)' } : { opacity: '.9', filter: 'brightness(0.9)' }">
-          <v-sheet style="cursor:pointer;border-radius:5px!important;border:1px solid white"
+          :class="tab.code == clientEcommerce.code ? 'pva-tab--active' : 'pva-tab--idle-9'">
+          <v-sheet
             @click="changeIntegration(clientEcommerce.code); tab = clientEcommerce"
-            class="mt-0 mr-0 mb-0 ml-0 mr-0 pa-3 text-center d-flex justify-center"
-            :class="[tab.code == clientEcommerce.code ? 'elevation-5' : '']" :style="{
-              width: tab.code == clientEcommerce.code ? '130px' : '80px',
-              height: tab.code == clientEcommerce.code ? '70px' : '70px',
-              'background-color': clientEcommerce.color,
-              transition: 'all 0.3s ease'
-            }">
+            class="mt-0 mr-0 mb-0 ml-0 mr-0 pa-3 text-center d-flex justify-center pva-s5"
+            :class="[tab.code == clientEcommerce.code ? 'elevation-5 pva-logo--active' : 'pva-logo--idle']" :style="{ 'background-color': clientEcommerce.color }">
             <v-img :width="clientEcommerce.width"
               :src="integrationStore.getIntegrationImagePath(clientEcommerce)"></v-img>
           </v-sheet>
@@ -61,16 +47,11 @@
 
 
         <div v-for="clientErp of integrationStore.getClientErps()" class="pa-0 pt-0"
-          :style="tab.code == clientErp.code ? { filter: 'brightness(1)' } : { opacity: '.9', filter: 'brightness(0.9)' }">
-          <v-sheet style="cursor:pointer;border-radius:5px!important;border:1px solid white"
+          :class="tab.code == clientErp.code ? 'pva-tab--active' : 'pva-tab--idle-9'">
+          <v-sheet
             @click="changeIntegration(clientErp.code); tab = clientErp"
-            class="mt-0 mr-0 mb-0 ml-0 mr-0 pa-3 text-center d-flex justify-center "
-            :class="[tab.code == clientErp.code ? 'elevation-5' : '']" :style="{
-              width: tab.code == clientErp.code ? '130px' : '80px',
-              height: tab.code == clientErp.code ? '70px' : '70px',
-              'background-color': clientErp.color,
-              transition: 'all 0.3s ease'
-            }">
+            class="mt-0 mr-0 mb-0 ml-0 mr-0 pa-3 text-center d-flex justify-center pva-s5"
+            :class="[tab.code == clientErp.code ? 'elevation-5 pva-logo--active' : 'pva-logo--idle']" :style="{ 'background-color': clientErp.color }">
             <v-img :width="clientErp.width" :src="integrationStore.getIntegrationImagePath(clientErp)"></v-img>
           </v-sheet>
         </div>
@@ -78,18 +59,17 @@
       </div>
 
 
-      <div style="margin-left:160px" v-if="editingVariant.platforms">
+      <div v-if="editingVariant.platforms" class="pva-s6">
 
-        <v-list class="pa-0 ma-0 card-component" style="z-index:0">
+        <v-list class="pa-0 ma-0 card-component pva-s7">
 
           <v-list-group value="batch">
             <template v-slot:activator="{ props }">
 
-              <v-list-item v-bind="props" class="pl-2 pr-2 card-component-header"
-                style="border-radius:0px;min-height:40px!important;border:1px solid #ccc;">
+              <v-list-item v-bind="props" class="pl-2 pr-2 card-component-header pva-s8">
                 <template #title>
-                  <span style="font-size:.8em">
-                    <div class="font-weight-bold" style="font-size:1.1em"><v-icon
+                  <span class="pva-s9">
+                    <div class="font-weight-bold pva-s10"><v-icon
                         class="mr-1">mdi-information-outline</v-icon>Platform Bazında Bilgiler</div>
                   </span>
                 </template>
@@ -97,7 +77,7 @@
             </template>
             <v-divider class="mb-4" />
 
-            <v-list-item class="pl-0" style="padding-inline-start:0px!important"
+            <v-list-item class="pl-0 pva-s11"
               v-if="editingVariant.platforms[tab.code]">
               <VariantInfoComponent v-model="editingVariant.platforms[tab.code].mapping"
                 :productInfoForm="productInfoForm" />
@@ -208,7 +188,7 @@
                         </template>
 
                         <template v-slot:prepend-item>
-                          <v-list-item style="border:1px solid #ddd;border-top:none">
+                          <v-list-item class="pva-s12">
                             <v-text-field append-inner-icon="mdi-magnify" @click.stop="1" v-ripple.stop
                               variant="outlined" @keydown.stop @mousedown.stop="1" density="compact" type="tel"
                               maxlength="160" class="mt-2 customTextField" clearable counter
@@ -222,16 +202,14 @@
                         </template>
 
                         <template v-slot:item="{ item, index, props }: any">
-                          <v-list-item v-bind="props" class="" style="border:1px solid #ddd;border-top:none">
+                          <v-list-item v-bind="props" class="pva-s12">
                             <template #title>
                             </template>
                             <div class="d-flex justify-start align-center ml-6">
-                              <div v-if="item.raw.level && item.raw.level > 0" v-for="n in item.raw.level"
-                                style="width:25px">
+                              <div v-if="item.raw.level && item.raw.level > 0" v-for="n in item.raw.level" class="pva-s13">
                               </div>
                               <div class="mr-2 font-weight-thin">{{ index + 1 }}</div> {{ item.title }} <span
-                                v-if="item.raw.mandatory == true" class="ml-2 font-weight-bold"
-                                style="color:red">Zorunlu</span>
+                                v-if="item.raw.mandatory == true" class="ml-2 font-weight-bold pva-s14">Zorunlu</span>
                             </div>
                           </v-list-item>
                         </template>
@@ -257,7 +235,7 @@
                         </template>
 
                         <template v-slot:prepend-item>
-                          <v-list-item style="border:1px solid #ddd;border-top:none">
+                          <v-list-item class="pva-s12">
                             <v-text-field append-inner-icon="mdi-magnify" @click.stop="1" v-ripple.stop
                               variant="outlined" @keydown.stop @mousedown.stop="1" density="compact" type="tel"
                               maxlength="160" class="mt-2 customTextField" clearable counter
@@ -271,16 +249,14 @@
                         </template>
 
                         <template v-slot:item="{ item, index, props }: any">
-                          <v-list-item v-bind="props" class="" style="border:1px solid #ddd;border-top:none">
+                          <v-list-item v-bind="props" class="pva-s12">
                             <template #title>
                             </template>
                             <div class="d-flex justify-start align-center ml-6">
-                              <div v-if="item.raw.level && item.raw.level > 0" v-for="n in item.raw.level"
-                                style="width:25px">
+                              <div v-if="item.raw.level && item.raw.level > 0" v-for="n in item.raw.level" class="pva-s13">
                               </div>
                               <div class="mr-2 font-weight-thin">{{ index + 1 }}</div> {{ item.title }} <span
-                                v-if="item.raw.mandatory == true" class="ml-2 font-weight-bold"
-                                style="color:red">Zorunlu</span>
+                                v-if="item.raw.mandatory == true" class="ml-2 font-weight-bold pva-s14">Zorunlu</span>
                             </div>
                           </v-list-item>
                         </template>
@@ -316,7 +292,7 @@
                         </template>
 
                         <template v-slot:prepend-item>
-                          <v-list-item style="border:1px solid #ddd;border-top:none">
+                          <v-list-item class="pva-s12">
                             <v-text-field append-inner-icon="mdi-magnify" @click.stop="1" v-ripple.stop
                               variant="outlined" @keydown.stop @mousedown.stop="1" density="compact" type="tel"
                               maxlength="160" class="mt-2 customTextField" clearable counter
@@ -330,16 +306,14 @@
                         </template>
 
                         <template v-slot:item="{ item, index, props }: any">
-                          <v-list-item v-bind="props" class="" style="border:1px solid #ddd;border-top:none">
+                          <v-list-item v-bind="props" class="pva-s12">
                             <template #title>
                             </template>
                             <div class="d-flex justify-start align-center ml-6">
-                              <div v-if="item.raw.level && item.raw.level > 0" v-for="n in item.raw.level"
-                                style="width:25px">
+                              <div v-if="item.raw.level && item.raw.level > 0" v-for="n in item.raw.level" class="pva-s13">
                               </div>
                               <div class="mr-2 font-weight-thin">{{ index + 1 }}</div> {{ item.title }} <span
-                                v-if="item.raw.mandatory == true" class="ml-2 font-weight-bold"
-                                style="color:red">Zorunlu</span>
+                                v-if="item.raw.mandatory == true" class="ml-2 font-weight-bold pva-s14">Zorunlu</span>
                             </div>
                           </v-list-item>
                         </template>
@@ -364,7 +338,7 @@
                         </template>
 
                         <template v-slot:prepend-item>
-                          <v-list-item style="border:1px solid #ddd;border-top:none">
+                          <v-list-item class="pva-s12">
                             <v-text-field append-inner-icon="mdi-magnify" @click.stop="1" v-ripple.stop
                               variant="outlined" @keydown.stop @mousedown.stop="1" density="compact" type="tel"
                               maxlength="160" class="mt-2 customTextField" clearable counter
@@ -378,16 +352,14 @@
                         </template>
 
                         <template v-slot:item="{ item, index, props }: any">
-                          <v-list-item v-bind="props" class="" style="border:1px solid #ddd;border-top:none">
+                          <v-list-item v-bind="props" class="pva-s12">
                             <template #title>
                             </template>
                             <div class="d-flex justify-start align-center ml-6">
-                              <div v-if="item.raw.level && item.raw.level > 0" v-for="n in item.raw.level"
-                                style="width:25px">
+                              <div v-if="item.raw.level && item.raw.level > 0" v-for="n in item.raw.level" class="pva-s13">
                               </div>
                               <div class="mr-2 font-weight-thin">{{ index + 1 }}</div> {{ item.title }} <span
-                                v-if="item.raw.mandatory == true" class="ml-2 font-weight-bold"
-                                style="color:red">Zorunlu</span>
+                                v-if="item.raw.mandatory == true" class="ml-2 font-weight-bold pva-s14">Zorunlu</span>
                             </div>
                           </v-list-item>
                         </template>
@@ -422,7 +394,7 @@
                           </div>
                         </template>
                         <template v-slot:prepend-item>
-                          <v-list-item style="border:1px solid #ddd;border-top:none">
+                          <v-list-item class="pva-s12">
                             <v-text-field append-inner-icon="mdi-magnify" @click.stop="1" v-ripple.stop
                               variant="outlined" @keydown.stop @mousedown.stop="1" density="compact" type="tel"
                               maxlength="160" class="mt-2 customTextField" clearable counter
@@ -436,16 +408,14 @@
                         </template>
 
                         <template v-slot:item="{ item, index, props }: any">
-                          <v-list-item v-bind="props" class="" style="border:1px solid #ddd;border-top:none">
+                          <v-list-item v-bind="props" class="pva-s12">
                             <template #title>
                             </template>
                             <div class="d-flex justify-start align-center ml-6">
-                              <div v-if="item.raw.level && item.raw.level > 0" v-for="n in item.raw.level"
-                                style="width:25px">
+                              <div v-if="item.raw.level && item.raw.level > 0" v-for="n in item.raw.level" class="pva-s13">
                               </div>
                               <div class="mr-2 font-weight-thin">{{ index + 1 }}</div> {{ item.title }} <span
-                                v-if="item.raw.mandatory == true" class="ml-2 font-weight-bold"
-                                style="color:red">Zorunlu</span>
+                                v-if="item.raw.mandatory == true" class="ml-2 font-weight-bold pva-s14">Zorunlu</span>
                             </div>
                           </v-list-item>
                         </template>
@@ -470,7 +440,7 @@
                         </template>
 
                         <template v-slot:prepend-item>
-                          <v-list-item style="border:1px solid #ddd;border-top:none">
+                          <v-list-item class="pva-s12">
                             <v-text-field append-inner-icon="mdi-magnify" @click.stop="1" v-ripple.stop
                               variant="outlined" @keydown.stop @mousedown.stop="1" density="compact" type="tel"
                               maxlength="160" class="mt-2 customTextField" clearable counter
@@ -484,16 +454,14 @@
                         </template>
 
                         <template v-slot:item="{ item, index, props }: any">
-                          <v-list-item v-bind="props" class="" style="border:1px solid #ddd;border-top:none">
+                          <v-list-item v-bind="props" class="pva-s12">
                             <template #title>
                             </template>
                             <div class="d-flex justify-start align-center ml-6">
-                              <div v-if="item.raw.level && item.raw.level > 0" v-for="n in item.raw.level"
-                                style="width:25px">
+                              <div v-if="item.raw.level && item.raw.level > 0" v-for="n in item.raw.level" class="pva-s13">
                               </div>
                               <div class="mr-2 font-weight-thin">{{ index + 1 }}</div> {{ item.title }} <span
-                                v-if="item.raw.mandatory == true" class="ml-2 font-weight-bold"
-                                style="color:red">Zorunlu</span>
+                                v-if="item.raw.mandatory == true" class="ml-2 font-weight-bold pva-s14">Zorunlu</span>
                             </div>
                           </v-list-item>
                         </template>
@@ -1198,17 +1166,17 @@ const imageSrc = computed(() => {
 }
 
 .dropZone:hover .dropZone-title {
-  color: #1975A0;
+  color: var(--ek-color-info);
 }
 
 .dropZone-info {
-  color: #A8A8A8;
+  color: var(--ek-color-content-muted);
   position: absolute;
   text-align: center;
 }
 
 .dropZone-title {
-  color: #787878;
+  color: var(--ek-color-content-muted);
 }
 
 .fileInput {
@@ -1220,13 +1188,13 @@ const imageSrc = computed(() => {
 }
 
 .dragDropOn .dragDropOnZone {
-  background-color: #1975A0;
+  background-color: var(--ek-color-info);
 }
 
 .dragDropOff .dragDropOnZone {}
 
 .dragDropOn {
-  background-color: #1975A0;
+  background-color: var(--ek-color-info);
 }
 
 .dragDropOff {}
@@ -1243,7 +1211,7 @@ const imageSrc = computed(() => {
   bottom: 2px;
   right: 0;
   left: 0; */
-  border: 0px dashed #ccc;
+  border: 0px dashed var(--ek-color-border-default);
 
 }
 
@@ -1259,7 +1227,7 @@ const imageSrc = computed(() => {
 }
 
 .dropZone-over {
-  background: #ddd;
+  background: var(--ek-color-surface-sunken);
   opacity: 0.8;
 }
 
@@ -1267,14 +1235,14 @@ const imageSrc = computed(() => {
   width: 80%;
   height: 200px;
   position: relative;
-  border: 0px dashed #eee;
+  border: 0px dashed var(--ek-color-border-default);
 }
 
 .dropZone-uploaded-info {
   display: flex;
   flex-direction: column;
   align-items: center;
-  color: #A8A8A8;
+  color: var(--ek-color-content-muted);
   position: absolute;
   top: 50%;
   width: 100%;
@@ -1284,5 +1252,111 @@ const imageSrc = computed(() => {
 
 .removeFile {
   width: 200px;
+}
+</style>
+
+<style>
+/* ADR-0015 B5-2 — satir ici stillerden tasinan siniflar (autostyle). Satir ici stilin onceligi
+   !important ile korunur; ayni ozellikte Vuetify yardimci sinifi/`color` prop cakismasi varsa
+   (satir ici stil zaten yeniliyordu) !important eklenmez. Scope'suz: v-dialog/v-menu ve alt
+   bilesen kokleri scoped ozniteligi almayabilir; onek dosyaya ozgudur. */
+.pva-s1 {
+  overflow-y: scroll !important;
+  border: 1px solid var(--ek-color-border-default) !important;
+  height: calc(100vh - 110px) !important;
+}
+
+.pva-s2 {
+  min-width: 150px !important;
+  border: 1px solid var(--ek-color-border-strong) !important;
+}
+
+.pva-s3 {
+  border: 1px solid var(--ek-color-border-strong) !important;
+  width: 30px !important;
+  opacity: .9 !important;
+}
+
+.pva-s4 {
+  position: fixed !important;
+  z-index: 0 !important;
+  background-color: transparent !important;
+  height: 100% !important;
+  min-width: 150px !important;
+  border-right: 0px solid var(--ek-color-border-default) !important;
+}
+
+.pva-s5 {
+  cursor: pointer !important;
+  border-radius: 5px !important;
+  border: 1px solid white !important;
+}
+
+.pva-s6 {
+  margin-left: 160px !important;
+}
+
+.pva-s7 {
+  z-index: 0 !important;
+}
+
+.pva-s8 {
+  border-radius: 0px !important;
+  min-height: 40px !important;
+  border: 1px solid var(--ek-color-border-default) !important;
+}
+
+.pva-s9 {
+  font-size: .8em !important;
+}
+
+.pva-s10 {
+  font-size: 1.1em !important;
+}
+
+.pva-s11 {
+  padding-inline-start: 0px !important;
+}
+
+.pva-s12 {
+  border: 1px solid var(--ek-color-border-default) !important;
+  border-top: none !important;
+}
+
+.pva-s13 {
+  width: 25px !important;
+}
+
+.pva-s14 {
+  color: red !important;
+}
+
+/* Platform sekme logolari (onceki dinamik satir ici stil; arka plan VERI rengi olarak satir icinde kalir). */
+.pva-tab--active {
+  filter: brightness(1);
+}
+
+.pva-tab--idle-8 {
+  opacity: .8;
+  filter: brightness(0.9);
+}
+
+.pva-tab--idle-9 {
+  opacity: .9;
+  filter: brightness(0.9);
+}
+
+.pva-logo--active,
+.pva-logo--idle {
+  height: 70px !important;
+  transition: width var(--ek-duration-slow) var(--ek-easing-standard), box-shadow var(--ek-duration-slow) var(--ek-easing-standard);
+}
+
+.pva-logo--active {
+  width: 130px !important;
+}
+
+.pva-logo--idle {
+  width: 80px !important;
 }
 </style>

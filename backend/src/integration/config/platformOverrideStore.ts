@@ -79,9 +79,68 @@ export function getPollDiagnosticsForTests(): { consecutiveFailures: number; las
     return { consecutiveFailures, lastSuccessAt, lastFailureAt, targets: [...state.keys()] };
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+// ADR-0020 Karar 3.8 (Aşama D) — kill-switch/bakım OKUMA yüzeyi. `ConfigHeadPollScheduler.pollOnce` HER turda
+// (sürüm değişmese bile, `intake` yayın akışının DIŞINDadır — Karar 3.8 son paragraf) `setTargetIntake` çağırır;
+// `IntegrationConfigService.setIntake` de YEREL pod'da ANINDA senkronlar (diğer pod'lar ≤15 sn'de yoklamayla alır).
+//
+// BİLİNÇLİ SINIR (rapora yazılır): bu dosya yalnız OKUNABİLİR durumu sağlar (`isIntakeOpen`/`getIntake`/
+// `getMaintenance`). Motor tüketicileri (Dispatcher/OrderQueueProducer/StockPublishTrigger/IntegrationService)
+// BU GÖREVDE bu fonksiyonları ÇAĞIRMAZ — bağlama ayrı bir BACKLOG kalemidir (görev talimatı, "hızlandırma eşiği"
+// bugün karşılanmıyor).
+// ---------------------------------------------------------------------------------------------------------------------
+export type IntakeValue = 'on' | 'drain' | 'off';
+export interface IntakeMaintenance { message?: { tr?: string; en?: string }; until?: Date }
+
+const intakeState = new Map<string, { intake: IntakeValue; maintenance?: IntakeMaintenance }>();
+const longIntakeWarned = new Set<string>();
+/** Karar 3.8: "`drain/off` 24 saati aşarsa ADR-0017 uyarısı üretilir". */
+const INTAKE_WARNING_THRESHOLD_MS = 24 * 60 * 60 * 1000;
+
+/** `ConfigHeadPollScheduler` (her turda, TÜM hedefler) VE `IntegrationConfigService.setIntake` (yerel pod, anında) çağırır. */
+export function setTargetIntake(target: string, intake: IntakeValue, maintenance?: IntakeMaintenance): void {
+    intakeState.set(target, { intake, maintenance: maintenance ? { ...maintenance } : undefined });
+}
+
+/** Bilinmeyen hedef → `'on'` (ADR §3.1 `IntegrationConfigHeads.intake` varsayılanıyla TUTARLI: hiç Head yoksa `'on'`). */
+export function getIntake(target: string): IntakeValue {
+    return intakeState.get(target)?.intake ?? 'on';
+}
+
+/** Karar 3.8 "drain: yeni iş alınmaz" — motor tüketicileri için tek satırlık okunabilir kapı (BAĞLANMADI, yukarı bkz). */
+export function isIntakeOpen(target: string): boolean {
+    return getIntake(target) === 'on';
+}
+
+export function getMaintenance(target: string): IntakeMaintenance | undefined {
+    return intakeState.get(target)?.maintenance;
+}
+
+/**
+ * Karar 3.8 "24 saati aşarsa ADR-0017 uyarısı" — AYNI `notifySystemWarning` kancasını kullanır (gerçek ADR-0017
+ * mekanizması (SystemWarnings/health bandı) henüz KODDA yok, bkz. dosya başı notu; no-op/log kalır). Bir hedef
+ * `'on'`a dönene kadar YALNIZ BİR KEZ uyarır (poll'un her 15 sn'de tekrar tekrar uyarmaması için).
+ */
+export function checkIntakeDurationWarning(target: string, intake: IntakeValue, since: Date | undefined, now: () => Date = () => new Date()): void {
+    if (intake === 'on') { longIntakeWarned.delete(target); return; }
+    if (longIntakeWarned.has(target)) return;
+    const sinceMs = since instanceof Date ? since.getTime() : NaN;
+    if (!Number.isFinite(sinceMs)) return;
+    if (now().getTime() - sinceMs >= INTAKE_WARNING_THRESHOLD_MS) {
+        longIntakeWarned.add(target);
+        notifySystemWarning(`${target}: entegrasyon '${intake}' durumunda 24 saati aştı (ADR-0020 Karar 3.8).`);
+    }
+}
+
+export function getIntakeDiagnosticsForTests(): { entries: Array<{ target: string; intake: IntakeValue }>; warned: string[] } {
+    return { entries: [...intakeState.entries()].map(([target, s]) => ({ target, intake: s.intake })), warned: [...longIntakeWarned] };
+}
+
 /** Yalnız testler: depoyu ve sayaçları sıfırlar. */
 export function resetPlatformOverrideStoreForTests(): void {
     state.clear();
+    intakeState.clear();
+    longIntakeWarned.clear();
     consecutiveFailures = 0;
     warnedForCurrentStreak = false;
     lastSuccessAt = undefined;

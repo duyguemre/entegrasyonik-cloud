@@ -1,18 +1,31 @@
-<template>
-  <v-navigation-drawer v-model="drawer" temporary location="right" :width="480" color="navigationDrawer"
-    class="notification-drawer-border d-flex flex-column" elevation="10">
+<!--
+  frontend/src/components/user/NotificationDrawerComponent.vue
 
-    <div class="pa-5 d-flex align-center shadow-sm flex-shrink-0 sticky-header"
-      :style="{ backgroundColor: `rgb(var(--v-theme-passiveColor))` }">
+  ADR-0015 B5-3 — GÖRSEL KATMAN (bkz. e2e/specs/notification-drawer.spec.ts). API sözleşmesi/
+  davranış DEĞİŞMEDİ: `NotificationService` (GET), `NotificationService/markAsRead|delete`
+  çağrıları, id'siz (toplu) eylemlerin `fetchNotifications()`'ı yan etki olarak tetiklemesi AYNEN
+  korundu. Karakterizasyon notu (şüpheli davranış, DÜZELTİLMEDİ — final rapora yazıldı):
+  `notificationDrawer` store'unun `startPolling()`'i hiçbir yerden çağrılmıyor — çekmece ilk
+  açıldığında veri OTOMATİK YÜKLENMİYOR (yalnızca toplu eylemler tetikliyor).
+
+  Renkli ikon kutuları/pastel zeminler (Karar 1.1 "renkli ikon kutuları... yasaktır") tek anlamsal
+  palete (success/warning/danger/info/neutral, `EkStatusChip` ile AYNI ton kümesi) taşındı. `mode`
+  rozeti (`PLATFORM_PROCESS_COLORS`, `types/PlatformProcess.ts`) bu görevin kapsamı DIŞI (paylaşılan
+  tip dosyası) — kategori-başı renk şeması KORUNDU, yalnızca bu dosyadaki eski gri yedek hex
+  değeri token'a çevrildi.
+-->
+<template>
+  <v-navigation-drawer v-model="drawer" temporary location="right" :width="420"
+    class="ek-notification-drawer d-flex flex-column" elevation="3">
+
+    <div class="ek-notification-drawer__header pa-5 d-flex align-center flex-shrink-0">
       <v-badge :content="notificationStore.unreadCount" :model-value="notificationStore.unreadCount > 0" color="error"
         overlap>
-        <v-icon size="26" color="white">mdi-bell-outline</v-icon>
+        <v-icon size="24" icon="mdi-bell-outline" color="primary" />
       </v-badge>
       <div class="ml-4">
-        <h3 class="text-subtitle-1 font-weight-bold text-white mb-0">
-          Bildirimler
-        </h3>
-        <span class="text-caption text-white opacity-80">
+        <h2 class="ek-notification-drawer__title">Bildirimler</h2>
+        <span class="ek-notification-drawer__subtitle">
           {{ notificationStore.unreadCount }} okunmamış bildiriminiz var
         </span>
       </div>
@@ -20,158 +33,126 @@
       <v-spacer></v-spacer>
 
       <div class="d-flex align-center">
-        <v-tooltip text="Tümünü Okundu İşaretle" location="bottom">
-          <template v-slot:activator="{ props }">
-            <v-btn v-bind="props" icon variant="text" size="small" color="white" class="mr-1"
-              @click="notificationStore.markAsRead()">
-              <v-icon size="20">mdi-check-all</v-icon>
-            </v-btn>
-          </template>
-        </v-tooltip>
+        <v-btn icon="mdi-check-all" variant="text" density="comfortable" aria-label="Tümünü okundu işaretle"
+          @click="notificationStore.markAsRead()" />
+        <v-tooltip activator="parent" location="bottom">Tümünü Okundu İşaretle</v-tooltip>
 
-        <v-tooltip text="Tümünü Sil" location="bottom">
-          <template v-slot:activator="{ props }">
-            <v-btn v-bind="props" icon variant="text" size="small" color="white"
-              @click="notificationStore.deleteNotification()">
-              <v-icon size="20">mdi-trash-can-outline</v-icon>
-            </v-btn>
-          </template>
-        </v-tooltip>
+        <v-btn icon="mdi-trash-can-outline" variant="text" density="comfortable" aria-label="Tümünü sil"
+          @click="notificationStore.deleteNotification()" />
+        <v-tooltip activator="parent" location="bottom">Tümünü Sil</v-tooltip>
 
-        <v-btn icon="mdi-close" size="small" variant="tonal" color="white" class="ml-3 rounded-lg"
-          @click="notificationStore.drawer = false"></v-btn>
+        <v-btn icon="mdi-close" variant="text" density="comfortable" class="ml-1" aria-label="Kapat"
+          @click="notificationStore.drawer = false" />
       </div>
     </div>
 
-    <div class="custom-scroll-area flex-grow-1 pa-4">
-      <div v-if="notificationStore.notifications.length === 0"
-        class="d-flex flex-column align-center justify-center py-10 opacity-50 text-center">
-        <v-icon size="64" color="grey">mdi-bell-off-outline</v-icon>
-        <span class="mt-2 font-weight-medium">Henüz bildiriminiz yok</span>
-      </div>
+    <div class="ek-notification-drawer__body flex-grow-1 pa-4">
+      <EkEmptyState v-if="notificationStore.notifications.length === 0" variant="no-data"
+        title="Henüz bildiriminiz yok" message="Yeni bildirimler burada görünecek." />
 
-      <v-card v-for="(item, index) in notificationStore.notifications" :key="item._id" variant="outlined"
-        class="notification-card mb-3" :class="{ 'unread-active': !item.isRead }">
+      <v-card v-for="item in notificationStore.notifications" :key="item._id" variant="outlined"
+        class="ek-notification-card mb-3" :class="{ 'ek-notification-card--unread': !item.isRead }">
         <div class="pa-4">
           <div class="d-flex align-start">
-            <v-avatar size="40" variant="flat" :color="getSeverityInfo(item.severity).bg" class="mr-4 rounded-lg">
-              <v-icon size="22" :color="getSeverityInfo(item.severity).color">
-                {{ getSeverityInfo(item.severity).icon }}
-              </v-icon>
-            </v-avatar>
+            <div class="ek-notif-icon mr-4" :class="`ek-notif-icon--${severityTone(item.severity)}`">
+              <v-icon size="20" :icon="severityIcon(item.severity)" />
+            </div>
 
             <div class="flex-grow-1">
               <div class="d-flex justify-space-between align-start mb-1">
                 <div class="d-flex flex-column">
-                  <span class="text-subtitle-2 font-weight-bold text-grey-darken-4">
-                    {{ item.title }}
-                  </span>
-                  <v-chip v-if="item.mode" size="x-small" :color="getModeInfo(item.mode).color" variant="tonal"
-                    class="mt-1 font-weight-bold text-uppercase rounded-sm"
-                    style="height: 18px; font-size: 0.6rem; width: fit-content;">
-                    {{ getModeInfo(item.mode).label }}
-                  </v-chip>
+                  <span class="ek-notification-card__title">{{ item.title }}</span>
+                  <EkStatusChip v-if="item.mode" class="mt-1" tone="neutral" :label="getModeInfo(item.mode).label" />
                 </div>
-                <span class="text-xxs text-medium-emphasis font-weight-medium">
-                  {{ formatTime(item.createdAt) }}
-                </span>
+                <span class="ek-notification-card__time ek-num">{{ formatTime(item.createdAt) }}</span>
               </div>
 
-              <div class="message-body" :class="{ 'mb-3': ['BATCH_PROCESS', 'IMPORT_READY'].includes(item.type) }">
+              <div class="ek-notification-card__message"
+                :class="{ 'mb-3': ['BATCH_PROCESS', 'IMPORT_READY'].includes(item.type) }">
                 {{ item.message }}
               </div>
 
-              <div v-if="item.type === 'BATCH_PROCESS' && item.metaData" class="batch-summary-box pa-3 rounded-lg">
+              <div v-if="item.type === 'BATCH_PROCESS' && item.metaData" class="ek-notification-summary pa-3">
                 <div class="d-flex align-center justify-space-between mb-2">
-                  <span class="summary-title">İşlem Özeti</span>
-                  <span class="text-xxs font-weight-black text-uppercase text-grey-darken-1"
-                    style="font-size: 0.75rem !important;">
-                    {{ item.metaData.integrationCode }}
-                  </span>
+                  <span class="ek-notification-summary__title">İşlem Özeti</span>
+                  <span class="ek-notification-summary__badge">{{ item.metaData.integrationCode }}</span>
                 </div>
 
-                <div class="summary-list">
-                  <div class="summary-row">
+                <div class="ek-notification-summary__list">
+                  <div class="ek-notification-summary__row">
                     <span class="label"><v-icon size="14" color="success" class="mr-1">mdi-check-circle</v-icon> İşleme
                       Alınan</span>
-                    <span class="value text-success-darken-2">{{ item.metaData.totalAccepted || 0 }}</span>
+                    <span class="value text-success">{{ item.metaData.totalAccepted || 0 }}</span>
                   </div>
 
-                  <div v-if="item.metaData.totalAlreadyTransfer" class="summary-row">
+                  <div v-if="item.metaData.totalAlreadyTransfer" class="ek-notification-summary__row">
                     <span class="label"><v-icon size="14" color="info" class="mr-1">mdi-information</v-icon> Zaten
                       Eşleşmiş</span>
-                    <span class="value text-info-darken-2">{{ item.metaData.totalAlreadyTransfer }}</span>
+                    <span class="value text-info">{{ item.metaData.totalAlreadyTransfer }}</span>
                   </div>
 
-                  <div v-if="item.metaData.totalNoTransferSkipped" class="summary-row">
+                  <div v-if="item.metaData.totalNoTransferSkipped" class="ek-notification-summary__row">
                     <span class="label"><v-icon size="14" color="warning" class="mr-1">mdi-alert</v-icon>Gönderim
                       Gereken Ürünler</span>
-                    <span class="value text-warning-darken-2">{{ item.metaData.totalNoTransferSkipped }}</span>
+                    <span class="value text-warning">{{ item.metaData.totalNoTransferSkipped }}</span>
                   </div>
                 </div>
               </div>
 
-              <div v-if="item.type === 'IMPORT_READY' && item.metaData" class="batch-summary-box pa-3 rounded-lg">
+              <div v-if="item.type === 'IMPORT_READY' && item.metaData" class="ek-notification-summary pa-3">
                 <div class="d-flex align-center justify-space-between mb-2">
-                  <span class="summary-title">İşlem Özeti</span>
-                  <span class="text-xxs font-weight-black text-uppercase text-grey-darken-1"
-                    style="font-size: 0.75rem !important;">
-                    {{ item.metaData.integrationCode }}
-                  </span>
+                  <span class="ek-notification-summary__title">İşlem Özeti</span>
+                  <span class="ek-notification-summary__badge">{{ item.metaData.integrationCode }}</span>
                 </div>
 
-                <div class="summary-list">
-                  <div class="summary-row">
+                <div class="ek-notification-summary__list">
+                  <div class="ek-notification-summary__row">
                     <span class="label"><v-icon size="14" color="primary" class="mr-1">mdi-database-import</v-icon>
-                      Toplam
-                      Çekilen Ürün</span>
+                      Toplam Çekilen Ürün</span>
                     <span class="value text-primary">{{ item.metaData.totalCount || 0 }}</span>
                   </div>
-                  <div v-if="item.metaData.invalidCount" class="summary-row">
+                  <div v-if="item.metaData.invalidCount" class="ek-notification-summary__row">
                     <span class="label"><v-icon size="14" color="warning" class="mr-1">mdi-close-circle-outline</v-icon>
                       Eksik Ürün</span>
-                    <span class="value text-warning-darken-2">{{ item.metaData.invalidCount }}</span>
+                    <span class="value text-warning">{{ item.metaData.invalidCount }}</span>
                   </div>
-                  <div class="summary-row">
-                    <span class="label"><v-icon size="14" color="rgb(6, 182, 212)" class="mr-1">mdi-check-all</v-icon>
-                      Aday
-                      Aktarım</span>
-                    <span class="value " style="color:rgb(6, 182, 212)">{{ item.metaData.validCount || 0 }}</span>
+                  <div class="ek-notification-summary__row">
+                    <span class="label"><v-icon size="14" color="info" class="mr-1">mdi-check-all</v-icon>
+                      Aday Aktarım</span>
+                    <span class="value text-info">{{ item.metaData.validCount || 0 }}</span>
                   </div>
-                  <div class="summary-row" style="background-color:#f9fff4;border:1px solid #eee">
+                  <div class="ek-notification-summary__row ek-notification-summary__row--highlight">
                     <span class="label font-weight-bold"><v-icon size="14" color="success"
                         class="mr-1">mdi-content-copy</v-icon>
                       Aktarılan Ürün</span>
-                    <span class="value text-success-darken-2">{{ item.metaData.processedCount }}</span>
+                    <span class="value text-success">{{ item.metaData.processedCount }}</span>
                   </div>
-                  <div v-if="item.metaData.duplicateCount" class="summary-row">
-                    <span class="label"><v-icon size="14" color="indigo" class="mr-1">mdi-content-copy</v-icon>
+                  <div v-if="item.metaData.duplicateCount" class="ek-notification-summary__row">
+                    <span class="label"><v-icon size="14" color="neutral" class="mr-1">mdi-content-copy</v-icon>
                       Mükerrer Ürün</span>
-                    <span class="value text-indigo-darken-2">{{ item.metaData.duplicateCount }}</span>
+                    <span class="value">{{ item.metaData.duplicateCount }}</span>
                   </div>
-                  <div v-if="item.metaData.failedCount" class="summary-row">
+                  <div v-if="item.metaData.failedCount" class="ek-notification-summary__row">
                     <span class="label"><v-icon size="14" color="error" class="mr-1">mdi-close-circle-outline</v-icon>
                       İşlem Hatası</span>
-                    <span class="value text-danger">{{ item.metaData.failedCount }}</span>
+                    <span class="value text-error">{{ item.metaData.failedCount }}</span>
                   </div>
                 </div>
               </div>
-              <div class="d-flex align-center mt-4 pt-3 border-t-subtle">
-                <v-btn v-if="item.actionUrl" :to="item.actionUrl" size="x-small" color="processButtonColor"
-                  variant="flat" class="text-none px-4 rounded-md font-weight-bold elevation-0"
+
+              <div class="d-flex align-center mt-4 pt-3 ek-notification-card__footer">
+                <v-btn v-if="item.actionUrl" :to="item.actionUrl" size="small" color="primary" variant="tonal"
                   @click="notificationStore.drawer = false">
                   Detayları Gör
                 </v-btn>
 
                 <v-spacer />
 
-                <v-btn v-if="!item.isRead" icon="mdi-check" size="30" variant="text" color="success"
-                  class="rounded-md mr-1" @click="notificationStore.markAsRead(item._id)">
-                </v-btn>
+                <v-btn v-if="!item.isRead" icon="mdi-check" size="small" variant="text" color="success"
+                  aria-label="Okundu işaretle" @click="notificationStore.markAsRead(item._id)" />
 
-                <v-btn icon="mdi-delete-outline" size="30" variant="text" color="deleteButtonColor" class="rounded-md"
-                  @click="notificationStore.deleteNotification(item._id)">
-                </v-btn>
+                <v-btn icon="mdi-delete-outline" size="small" variant="text" aria-label="Sil"
+                  @click="notificationStore.deleteNotification(item._id)" />
               </div>
             </div>
           </div>
@@ -185,6 +166,8 @@
 import { computed } from 'vue'
 import { useNotificationDrawerStore } from '@/stores/notificationDrawer'
 import { PLATFORM_PROCESS_LABELS, PLATFORM_PROCESS_COLORS, PLATFORM_PROCESS } from '@/types/PlatformProcess';
+import EkEmptyState from '@/components/ds/EkEmptyState.vue'
+import EkStatusChip from '@/components/ds/EkStatusChip.vue'
 const notificationStore = useNotificationDrawerStore()
 
 const drawer = computed({
@@ -195,21 +178,31 @@ const drawer = computed({
 const getModeInfo = (mode: string) => {
   return {
     label: PLATFORM_PROCESS_LABELS[mode as PLATFORM_PROCESS] || mode,
-    color: PLATFORM_PROCESS_COLORS[mode as PLATFORM_PROCESS] || '#757575' // Default grey
+    // Karakterizasyon: `PLATFORM_PROCESS_COLORS` (kategori-başı hex şeması) bu görevin kapsamı
+    // DIŞI (paylaşılan `types/PlatformProcess.ts`) — yalnızca yerel yedek değeri token'a çevrildi.
+    color: PLATFORM_PROCESS_COLORS[mode as PLATFORM_PROCESS] || 'var(--ek-color-content-muted)'
   };
 }
 
-const getSeverityInfo = (severity: string) => {
-  // İkonlar ve arka plan renkleri (bg) güncellendi
-  const configs: any = {
-    success: { icon: 'mdi-check-decagram-outline', color: '#2E7D32', bg: '#E8F5E9' },
-    info: { icon: 'mdi-database-search-outline', color: '#1565C0', bg: '#E3F2FD' },
-    warning: { icon: 'mdi-alert-box-outline', color: '#EF6C00', bg: '#FFF3E0' },
-    error: { icon: 'mdi-shield-remove-outline', color: '#C62828', bg: '#FFEBEE' },
-    primary: { icon: 'mdi-star-outline', color: '#6A1B9A', bg: '#F3E5F5' },
-    danger: { icon: 'mdi-alert-circle-outline', color: '#C62828', bg: '#FFEBEE' }
+type SeverityTone = 'success' | 'info' | 'warning' | 'danger' | 'neutral'
+
+const severityIcon = (severity: string): string => {
+  const icons: Record<string, string> = {
+    success: 'mdi-check-decagram-outline',
+    info: 'mdi-database-search-outline',
+    warning: 'mdi-alert-box-outline',
+    error: 'mdi-shield-remove-outline',
+    primary: 'mdi-star-outline',
+    danger: 'mdi-alert-circle-outline',
   }
-  return configs[severity] || configs.info
+  return icons[severity] || icons.info
+}
+
+const severityTone = (severity: string): SeverityTone => {
+  const tones: Record<string, SeverityTone> = {
+    success: 'success', info: 'info', warning: 'warning', error: 'danger', danger: 'danger', primary: 'info',
+  }
+  return tones[severity] || 'info'
 }
 
 const formatTime = (dateStr: string) => {
@@ -220,121 +213,139 @@ const formatTime = (dateStr: string) => {
 </script>
 
 <style scoped>
-.notification-drawer-border {
-  border-left: 1px solid rgba(0, 0, 0, 0.05) !important;
-  overflow: hidden !important;
+.ek-notification-drawer {
+  border-left: 1px solid var(--ek-color-border-default);
 }
 
-.sticky-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  flex-shrink: 0;
+.ek-notification-drawer__header {
+  border-bottom: 1px solid var(--ek-color-border-default);
+  background: var(--ek-color-surface);
 }
 
-.custom-scroll-area {
-  overflow-y: auto !important;
-  overflow-x: hidden;
-  background-color: rgb(var(--v-theme-workplaceColor)) !important;
+.ek-notification-drawer__title {
+  font-size: var(--ek-font-size-lg);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-strong);
+  margin: 0;
 }
 
-.custom-scroll-area::-webkit-scrollbar {
-  width: 6px;
-  display: block;
+.ek-notification-drawer__subtitle {
+  font-size: var(--ek-font-size-xs);
+  color: var(--ek-color-content-muted);
 }
 
-.custom-scroll-area::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.03);
+.ek-notification-drawer__body {
+  overflow-y: auto;
+  background: var(--ek-color-surface-muted);
 }
 
-.custom-scroll-area::-webkit-scrollbar-thumb {
-  background: #bdbdbd;
-  border-radius: 10px;
+.ek-notification-card {
+  background-color: var(--ek-color-surface);
+  border-color: var(--ek-color-border-default);
+  border-radius: var(--ek-radius-lg);
+  transition: border-color var(--ek-duration-fast) var(--ek-easing-standard);
 }
 
-.custom-scroll-area::-webkit-scrollbar-thumb:hover {
-  background: #9e9e9e;
+.ek-notification-card--unread {
+  border-left: 3px solid var(--ek-color-primary);
 }
 
-.notification-card {
-  background-color: #ffffff !important;
-  border: 1px solid #eceff1 !important;
-  border-radius: 10px !important;
-  transition: border-color 0.25s ease, background-color 0.25s ease;
+.ek-notif-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--ek-radius-md);
+  flex: none;
 }
 
-/* Hover efekti yumuşatıldı */
-.notification-card:hover {
-  border-color: #cfd8dc !important;
-  background-color: #fafbfc !important;
+.ek-notif-icon--success {
+  background-color: var(--ek-color-success-subtle);
+  color: var(--ek-color-success);
+}
+.ek-notif-icon--info {
+  background-color: var(--ek-color-info-subtle);
+  color: var(--ek-color-info);
+}
+.ek-notif-icon--warning {
+  background-color: var(--ek-color-warning-subtle);
+  color: var(--ek-color-warning);
+}
+.ek-notif-icon--danger {
+  background-color: var(--ek-color-error-subtle);
+  color: var(--ek-color-error);
 }
 
-.unread-active {
-  border-left: 4px solid rgb(var(--v-theme-passiveColor)) !important;
+.ek-notification-card__title {
+  font-size: var(--ek-font-size-sm);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-strong);
 }
 
-.message-body {
-  font-size: 0.85rem;
+.ek-notification-card__time {
+  font-size: var(--ek-font-size-xs);
+  color: var(--ek-color-content-muted);
+  flex: none;
+  white-space: nowrap;
+}
+
+.ek-notification-card__message {
+  font-size: var(--ek-font-size-sm);
   line-height: 1.45;
-  color: #546e7a;
+  color: var(--ek-color-content-default);
 }
 
-.batch-summary-box {
-  background-color: #fafbfc;
-  border: 1px solid #f1f3f5;
+.ek-notification-card__footer {
+  border-top: 1px solid var(--ek-color-border-default);
 }
 
-.summary-title {
-  font-size: 0.65rem;
-  font-weight: 800;
-  color: #b0bec5;
+.ek-notification-summary {
+  background-color: var(--ek-color-surface-muted);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+}
+
+.ek-notification-summary__title {
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.04em;
 }
 
-.summary-list {
+.ek-notification-summary__badge {
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-muted);
+  text-transform: uppercase;
+}
+
+.ek-notification-summary__list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--ek-space-2);
 }
 
-.summary-row {
+.ek-notification-summary__row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.75rem;
+  font-size: var(--ek-font-size-xs);
 }
 
-.summary-row .label {
-  color: #78909c;
+.ek-notification-summary__row .label {
+  color: var(--ek-color-content-muted);
 }
 
-/* Rakam Renkleri */
-.value {
-  font-weight: 800;
+.ek-notification-summary__row .value {
+  font-weight: var(--ek-font-weight-semibold);
 }
 
-.text-success-darken-2 {
-  color: #2e7d32;
-}
-
-.text-info-darken-2 {
-  color: #1565c0;
-}
-
-.text-warning-darken-2 {
-  color: #ef6c00;
-}
-
-.text-red-darken-2 {
-  color: #c62828;
-}
-
-.text-xxs {
-  font-size: 0.65rem;
-}
-
-.border-t-subtle {
-  border-top: 1px solid #f5f7f9;
+.ek-notification-summary__row--highlight {
+  background-color: color-mix(in srgb, var(--ek-color-success) 8%, transparent);
+  border-radius: var(--ek-radius-sm);
+  padding: 2px var(--ek-space-2);
+  margin: 0 calc(var(--ek-space-2) * -1);
 }
 </style>
