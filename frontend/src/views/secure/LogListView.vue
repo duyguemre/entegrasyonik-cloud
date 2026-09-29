@@ -1,107 +1,54 @@
 <template>
-  <div class="logListView pt-2 h-100">
-    <v-card elevation="0" class="transparent-tabs-container mb-2">
-      <v-tabs v-model="activeTab" color="primary" align-tabs="start" density="compact" class="premium-tabs" height="45"
-        hide-slider>
-        <v-tab value="export" class="text-none font-weight-bold tab-item" :ripple="false">
-          <v-icon start size="20">mdi-cloud-upload-outline</v-icon>
-          Ürün Gönderim İşlemleri
-          <div class="active-indicator"></div>
-        </v-tab>
+  <div class="logListView d-flex flex-column">
+    <!-- ek-pattern-exception: EkListPage — bu ekran iki ayrı liste sekmesi barındırıyor; her sekmenin kendi arama/filtre/sayfalama düzeni (Enter ile arama, iş numarası araması, gelişmiş sorgu paneli) logs*.spec.ts ile sabit ve EkFilterBar'a sığmıyor — hedef: Aşama C (sekme başına EkListPage) -->
+    <EkPageHeader
+      section="Entegrasyonlar"
+      title="İşlem Kayıtları"
+      description="Pazaryerlerine gönderilen ve pazaryerlerinden çekilen ürün işlemlerini buradan izleyin."
+    />
 
-        <v-tab value="import" class="text-none font-weight-bold tab-item" :ripple="false">
-          <v-icon start size="20">mdi-cloud-download-outline</v-icon>
-          Ürün Çekim İşlemleri
-          <div class="active-indicator"></div>
-        </v-tab>
-      </v-tabs>
-      <v-divider></v-divider>
-    </v-card>
+    <EkPageTabs v-model="activeTab" :tabs="tabs" />
 
-    <template v-if="activeTab === 'import'">
-      <ImportLogList />
-    </template>
-    <template v-else>
-      <ExportLogList />
-    </template>
-
+    <div class="logListView__body">
+      <ImportLogList v-if="activeTab === 'import'" />
+      <ExportLogList v-else />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import EkPageHeader from '@/components/ds/EkPageHeader.vue';
+import EkPageTabs from '@/components/ds/EkPageTabs.vue';
 import ImportLogList from '@/components/logListView/ImportLogList.vue';
 import ExportLogList from '@/components/logListView/ExportLogList.vue';
 
 // Default olarak "Ürün Gönderim İşlemleri" seçili geliyor
 const activeTab = ref('export');
+const tabs = [
+  { value: 'export', label: 'Ürün Gönderim İşlemleri' },
+  { value: 'import', label: 'Ürün Çekim İşlemleri' },
+];
 </script>
 
 <style scoped>
-/* GİZLİ DAVRANIŞ (kod DEĞİŞTİRİLMEDİ): bu sınıf hiçbir template düğümünde
-   KULLANILMIYOR (ölü CSS) — BACKLOG.md'ye not düşüldü. */
-.desktop-loglistView {
+/* Alt listeler eskiden en yakın konumlanmış atalara göre (inset 0) yerleşiyordu; kök de
+   aynı alanı kaplar, böylece gövde kalan yüksekliği alır. */
+.logListView {
   position: absolute;
-  top: 75px;
+  top: 0;
   bottom: 0;
   left: 0;
   right: 0;
-  width: auto;
-  height: auto;
-  border: 1px solid var(--ek-color-border-color);
-  background-color: var(--ek-color-surface) !important;
-}
-
-
-.logListView {
+  padding: var(--ek-space-6);
+  gap: var(--ek-space-4);
   background-color: transparent;
 }
 
-/* PREMIUM TAB TASARIMI */
-.premium-tabs :deep(.v-slide-group__content) {
-  padding-left: 8px;
-}
-
-.tab-item {
-  letter-spacing: 0.5px;
-  font-size: 0.9rem;
-  color: #757575 !important;
-  transition: all var(--ek-duration-slow) var(--ek-easing-standard);
+/* Alt listeler (ExportLogList/ImportLogList) bu gövdeye göre konumlanır. */
+.logListView__body {
   position: relative;
-  opacity: 0.7;
-}
-
-.tab-item.v-tab--selected {
-  color: var(--ek-color-passive-color) !important;
-  opacity: 1;
-}
-
-/* Aktif tab altındaki özel indicator çizgisi */
-.active-indicator {
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  width: 0;
-  height: 2px;
-  background: var(--ek-color-passive-color);
-  transition: all var(--ek-duration-slow) var(--ek-easing-standard);
-  transform: translateX(-50%);
-  border-radius: 3px 3px 0 0;
-  box-shadow: 0 -2px 10px rgba(var(--v-theme-passiveColor), 0.2);
-}
-
-.tab-item.v-tab--selected .active-indicator {
-  width: 80%;
-}
-
-.transparent-tabs-container {
-  background: transparent !important;
-}
-
-/* İçerik geçiş animasyonu için — premium-ui-standards motion sınırı
-   (150 ms – 300 ms, yalnızca ease-in-out/ease-out; bounce/elastik eğri YASAK)
-   aşılıyordu (400 ms + cubic-bezier overshoot), --ek-duration-slow'a çekildi. */
-.v-window {
-  transition: var(--ek-duration-slow) var(--ek-easing-standard);
+  flex: 1 1 auto;
+  min-height: 0;
 }
 </style>

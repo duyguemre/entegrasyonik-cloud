@@ -1,13 +1,11 @@
 <template>
-  <div class="importLogList d-flex flex-column" style="margin-top:55px">
-    <div id="variant-target-0" v-show="false" style="position:absolute;z-index:-20;left:2000px"></div>
+  <div class="importLogList d-flex flex-column">
 
     <ActionDialogComponent v-model="reportInfo.isOpen" title="Ürün Çekim İşlemi Detaylı Raporu"
       subtitle="Analiz ve Aktarım Verileri" icon="mdi-chart-bar" color="primary" maxWidth="1200" :showFooter="false"
       attach=".importLogList">
       <keep-alive>
-        <DetailedImportLogReport :jobId="reportInfo.jobId" @close="reportInfo.isOpen = false"
-          style="transition: opacity var(--ek-duration-base) var(--ek-easing-standard)!important" />
+        <DetailedImportLogReport :jobId="reportInfo.jobId" @close="reportInfo.isOpen = false" />
       </keep-alive>
     </ActionDialogComponent>
 
@@ -19,15 +17,15 @@
 
     <LoadingComponent :attach="dialogAttach" ref="loadingComponentRef"></LoadingComponent>
 
-    <div class="d-flex pa-2 pt-2 pb-0 mt-1 mb-1 align-start flex-wrap search-section" style="max-width:900px">
+    <div class="d-flex pa-2 pt-2 pb-0 mt-1 mb-1 align-start flex-wrap search-section">
       <v-text-field clearable density="compact" label="İşlem No ile Ara" variant="outlined" v-model="searchJobId"
         hide-details bg-color="textfieldColor" class="customTextField" @keyup.enter.stop="getJobs()"
         @click:clear="getJobs(true)">
         <template #append-inner>
           <v-tooltip open-delay="1000" :text="$t('products.product.search')">
             <template v-slot:activator="{ props: tooltipProps }">
-              <v-btn flat size="40" v-bind="{ ...tooltipProps }" class="pa-2 " elevation="0"
-                style="border:1px solid white" color="white" @click.stop="getJobs()"
+              <v-btn flat size="40" v-bind="{ ...tooltipProps }" class="pa-2 ek-log-btn" elevation="0"
+                color="white" @click.stop="getJobs()"
                 aria-label="Aktarım kayıtlarında ara"><v-icon size="x-large"
                   color="processButtonColor">mdi-magnify</v-icon></v-btn>
             </template>
@@ -74,70 +72,53 @@
     </div>
 
     <div class="table-wrapper">
-      <v-data-table-server v-if="$vuetify.display.mdAndUp" v-model="selectedJobs" v-model:sort-by="sortBy"
+      <!-- ek-pattern-exception: EkDataTable — sunucu tarafı sıralama (v-data-table-server @update:sortBy) + limit 13 davranışı logs-characterization.spec.ts ile sabit; EkDataTable sütun sıralamayı desteklemiyor — hedef: Aşama C (EkDataTable sıralama desteği) --><v-data-table-server v-if="$vuetify.display.mdAndUp" v-model="selectedJobs" v-model:sort-by="sortBy"
         item-value="_id" :loading="loading" :itemsLength="pagination.totalNumberOfRecords" :items="jobs" fixed-header
         :headers="headers" class="pa-0 ma-0 custom-table desktop-table" show-select @update:sortBy="onSortUpdate"
         aria-label="Aktarım işlemleri tablosu">
 
-        <!-- ADR-0011 Karar 2 KAPSAM ("eksik boş/hata/yükleniyor durumlarını tamamla") —
-             bu slot YOKTU (ExportLogList/InvoiceListView ile AYNI eksiklik/AYNI tamamlama,
-             T4f/T4g). İş mantığı DEĞİŞMEDİ, yalnızca eksik görsel durum eklendi. -->
+        <!-- Boş durum: hata ile "gerçekten kayıt yok" AYNI karta düşer (gizli davranış,
+             logs.spec.ts / BACKLOG.md — bilinçli korunuyor). -->
         <template v-slot:no-data>
-          <EmptyState title="Aktarım Kaydı Bulunamadı" message="Arama kriterlerinize uygun herhangi bir aktarım kaydı bulunamadı." />
+          <EkEmptyState variant="no-results" title="Aktarım Kaydı Bulunamadı" message="Arama kriterlerinize uygun herhangi bir aktarım kaydı bulunamadı." />
         </template>
 
         <template v-slot:item="{ item }: any">
           <tr>
-            <td><v-checkbox-btn :model-value="isJobSelected(item)"
+            <td><v-checkbox-btn :model-value="isJobSelected(item)" color="primary"
                 @update:model-value="val => onJobSelectionUpdate(item, !!val)" density="compact"
                 aria-label="Aktarım kaydını seç"></v-checkbox-btn></td>
-            <td class="text-center"><span class="text-caption" v-html="formatDate(item.startedAt)"></span></td>
-            <td class="text-center"><span class="text-caption"
-                v-html="item.completedAt ? formatDate(item.completedAt) : '-'"></span></td>
+            <td class="text-center"><span class="text-caption ek-num">{{ formatDateTime(item.startedAt) }}</span></td>
+            <td class="text-center"><span class="text-caption ek-num">{{ item.completedAt ? formatDateTime(item.completedAt) : '-' }}</span></td>
             <td class="text-center">
-
-
               <PlatformImageComponent :integrationCode="item.integrationCode" :width="80" :height="35" class="mr-4">
               </PlatformImageComponent>
-
-              <!--               <v-chip size="x-small" :color="getPlatformColor(item.integrationCode)" variant="flat"
-                class="text-white font-weight-bold" @click="copyToClipboard(item.jobId)">
-                {{ item.integrationCode?.toUpperCase() }}
-              </v-chip> -->
             </td>
             <td class="text-center">
-              <v-chip size="x-small" :color="getStatusColor(item.status)" variant="tonal" style="border:1px solid #ddd"
-                class="font-weight-bold">
-                {{ translateStatus(item.status) }}
-              </v-chip>
+              <EkStatusChip :tone="statusTone(item.status)" :label="translateStatus(item.status)" />
             </td>
 
             <td class="text-center">
               <div class="d-flex flex-column align-center justify-center pa-1">
-                <div class="d-flex align-center mb-1" style="gap: var(--ek-space-1);">
+                <div class="d-flex align-center mb-1 ek-log-gap-1">
                   <v-icon size="12" color="passiveColor">mdi-package-variant</v-icon>
-                  <span class="text-caption font-weight-bold text-passiveColor" style="font-size: 11px!important;">
-                    {{ item.totalCount || 0 }}
-                  </span>
+                  <span class="text-caption font-weight-medium ek-num">{{ formatNumber(item.totalCount || 0) }}</span>
                 </div>
-                <div class="d-flex align-center px-2 py-0 rounded bg-success-lighten-5 border-success"
-                  style="gap: var(--ek-space-1); background-color: #f1f8e9; border: 1px solid #c5e1a5; border-radius: var(--ek-radius-sm)!important;">
+                <div class="d-flex align-center px-2 ek-log-processed ek-log-gap-1">
                   <v-icon size="10" color="success">mdi-check-all</v-icon>
-                  <span class="text-caption font-weight-black text-success" style="font-size: 11px!important;">
-                    {{ item.processedCount || 0 }}
-                  </span>
+                  <span class="text-caption font-weight-medium ek-num ek-log-processed__value">{{ formatNumber(item.processedCount || 0) }}</span>
                 </div>
               </div>
             </td>
 
             <td class="text-center pa-4">
               <div class="d-flex align-center justify-center">
-                <div class="data-group-capsule d-flex align-center px-2 py-1 rounded-pill border shadow-sm">
+                <div class="data-group-capsule d-flex align-center px-2 py-1 rounded-pill border">
                   <v-tooltip text="Aktarılmaya aday ürünler" location="top">
                     <template v-slot:activator="{ props }">
                       <div v-bind="props" class="stat-item d-flex align-center px-2">
                         <v-icon size="14" color="success" class="mr-1">mdi-check-circle-outline</v-icon>
-                        <span class="stat-value text-success font-weight-black">{{ item.validCount || 0 }}</span>
+                        <span class="stat-value ek-num text-success">{{ formatNumber(item.validCount || 0) }}</span>
                       </div>
                     </template>
                   </v-tooltip>
@@ -145,9 +126,8 @@
                   <v-tooltip text="Formatı hatalı ürünler" location="top">
                     <template v-slot:activator="{ props }">
                       <div v-bind="props" class="stat-item d-flex align-center px-2">
-                        <v-icon size="14" color="orange-darken-1" class="mr-1">mdi-alert-outline</v-icon>
-                        <span class="stat-value text-orange-darken-2 font-weight-black">{{ item.invalidCount || 0
-                        }}</span>
+                        <v-icon size="14" color="warning" class="mr-1">mdi-alert-outline</v-icon>
+                        <span class="stat-value ek-num text-warning">{{ formatNumber(item.invalidCount || 0) }}</span>
                       </div>
                     </template>
                   </v-tooltip>
@@ -156,7 +136,7 @@
                     <template v-slot:activator="{ props }">
                       <div v-bind="props" class="stat-item d-flex align-center px-2">
                         <v-icon size="14" color="info" class="mr-1">mdi-content-copy</v-icon>
-                        <span class="stat-value text-info font-weight-black">{{ item.duplicateCount || 0 }}</span>
+                        <span class="stat-value ek-num text-info">{{ formatNumber(item.duplicateCount || 0) }}</span>
                       </div>
                     </template>
                   </v-tooltip>
@@ -165,7 +145,7 @@
                     <template v-slot:activator="{ props }">
                       <div v-bind="props" class="stat-item d-flex align-center px-2">
                         <v-icon size="14" color="error" class="mr-1">mdi-close-circle-outline</v-icon>
-                        <span class="stat-value text-error font-weight-black">{{ item.failedCount || 0 }}</span>
+                        <span class="stat-value ek-num text-error">{{ formatNumber(item.failedCount || 0) }}</span>
                       </div>
                     </template>
                   </v-tooltip>
@@ -195,111 +175,90 @@
 
         <template v-slot:bottom>
           <PaginationComponent :totalNumberOfPages="pagination.totalNumberOfPages" :pagination="pagination"
-            @setPage="handlePageChange" v-model="pagination.page" style="position:relative;border-top:1px solid #ddd" />
+            @setPage="handlePageChange" v-model="pagination.page" class="ek-log-pagination" />
         </template>
       </v-data-table-server>
 
       <div v-else class="mobile-container pa-2 overflow-y-auto">
-        <EmptyState v-if="!jobs.length" title="Aktarım Kaydı Bulunamadı" message="Arama kriterlerinize uygun herhangi bir aktarım kaydı bulunamadı." />
-        <v-card v-for="item in jobs" :key="item._id" class="mb-4 rounded-lg border shadow-sm" elevation="0">
-          <div class="pa-3 border-bottom d-flex align-center justify-space-between bg-grey-lighten-5"
-            style="background-color:white">
-
+        <EkEmptyState v-if="!jobs.length" variant="no-results" title="Aktarım Kaydı Bulunamadı" message="Arama kriterlerinize uygun herhangi bir aktarım kaydı bulunamadı." />
+        <v-card v-for="item in jobs" :key="item._id" class="mb-4 rounded-lg border" elevation="0">
+          <div class="pa-3 ek-log-card-head d-flex align-center justify-space-between">
             <div class="d-flex align-center">
-              <v-checkbox-btn :model-value="isJobSelected(item)"
+              <v-checkbox-btn :model-value="isJobSelected(item)" color="primary"
                 @update:model-value="val => onJobSelectionUpdate(item, !!val)" density="compact"
                 class="mr-2" aria-label="Aktarım kaydını seç"></v-checkbox-btn>
               <PlatformImageComponent :integrationCode="item.integrationCode" :width="80" :height="35" class="mr-4">
               </PlatformImageComponent>
-
-              <!--               <v-chip size="x-small" :color="getPlatformColor(item.integrationCode)" variant="flat"
-                class="text-white font-weight-bold mr-2">{{ item.integrationCode?.toUpperCase() }}</v-chip> -->
             </div>
-            <v-chip size="x-small" :color="getStatusColor(item.status)" variant="tonal" class="font-weight-bold">{{
-              translateStatus(item.status) }}</v-chip>
+            <EkStatusChip :tone="statusTone(item.status)" :label="translateStatus(item.status)" />
           </div>
 
-          <!-- GİZLİ DAVRANIŞ (YENİ bulgu, T4g — BACKLOG.md): `workspaceColor` hiçbir
-               temada tanımlı bir Vuetify anahtarı DEĞİL (kod tabanında BAŞKA HİÇBİR
-               yerde kullanılmıyor — muhtemelen `workplaceColor`un yazım hatası);
-               `loginColor` ile AYNI kırık kalıp — bu arka plan bildirimi zaten bugün
-               de geçersiz/`unset`. Davranış BİLİNÇLİ OLARAK korunuyor, `--ek-color-
-               workspace-color` de kasıtlı olarak tanımsız bırakıldı. -->
-          <v-card-text class="pa-3" style="background-color:var(--ek-color-workspace-color)!important">
-            <div class="d-flex justify-space-between align-center mb-4 pa-2 rounded-lg bg-grey-lighten-4">
-              <div class="text-center flex-grow-1 border-right">
-                <div class="text-caption text-grey-darken-1" style="font-size: 10px!important">Toplam Ürün</div>
-                <div class="font-weight-black text-passiveColor" style="font-size: var(--ek-font-size-md)">{{ item.totalCount || 0 }}
-                </div>
+          <!-- GİZLİ DAVRANIŞ (BACKLOG.md): eski `workspaceColor` arka planı hiçbir temada
+               tanımlı değildi (zaten `unset`); yenilemede kaldırıldı, kart zemini görünür. -->
+          <v-card-text class="pa-3">
+            <div class="d-flex justify-space-between align-center mb-4 pa-2 rounded-lg ek-log-summary">
+              <div class="text-center flex-grow-1 ek-log-summary__divider">
+                <div class="text-caption ek-muted">Toplam Ürün</div>
+                <div class="font-weight-semibold ek-num ek-log-summary__value">{{ formatNumber(item.totalCount || 0) }}</div>
               </div>
               <div class="text-center flex-grow-1">
-                <div class="text-caption text-grey-darken-1" style="font-size: 10px!important">Aktarılan Ürün</div>
-                <div class="font-weight-black text-success" style="font-size: var(--ek-font-size-md)">{{ item.processedCount || 0 }}</div>
+                <div class="text-caption ek-muted">Aktarılan Ürün</div>
+                <div class="font-weight-semibold ek-num text-success ek-log-summary__value">{{ formatNumber(item.processedCount || 0) }}</div>
               </div>
             </div>
 
             <div class="d-flex align-center justify-center mb-4">
-              <div
-                class="data-group-capsule d-flex align-center px-2 py-1 rounded-pill border shadow-sm bg-white w-100 justify-space-around">
+              <div class="data-group-capsule d-flex align-center px-2 py-1 rounded-pill border w-100 justify-space-around">
                 <div class="stat-item d-flex align-center px-1"
                   @click="snackbarStore.addSnackbar({ text: 'Aktarılmaya aday ürünler', color: 'success', textColor: 'white' })">
                   <v-icon size="14" color="success" class="mr-1">mdi-check-circle-outline</v-icon>
-                  <span class="stat-value text-success font-weight-black">{{ item.validCount || 0 }}</span>
+                  <span class="stat-value ek-num text-success">{{ formatNumber(item.validCount || 0) }}</span>
                 </div>
                 <v-divider vertical length="12"></v-divider>
                 <div class="stat-item d-flex align-center px-1"
                   @click="snackbarStore.addSnackbar({ text: 'Formatı hatalı ürünler', color: 'orange', textColor: 'white' })">
-                  <v-icon size="14" color="orange-darken-1" class="mr-1">mdi-alert-outline</v-icon>
-                  <span class="stat-value text-orange-darken-2 font-weight-black">{{ item.invalidCount || 0 }}</span>
+                  <v-icon size="14" color="warning" class="mr-1">mdi-alert-outline</v-icon>
+                  <span class="stat-value ek-num text-warning">{{ formatNumber(item.invalidCount || 0) }}</span>
                 </div>
                 <v-divider vertical length="12"></v-divider>
                 <div class="stat-item d-flex align-center px-1"
                   @click="snackbarStore.addSnackbar({ text: 'Sistemde zaten mevcut olanlar', color: 'info', textColor: 'white' })">
                   <v-icon size="14" color="info" class="mr-1">mdi-content-copy</v-icon>
-                  <span class="stat-value text-info font-weight-black">{{ item.duplicateCount || 0 }}</span>
+                  <span class="stat-value ek-num text-info">{{ formatNumber(item.duplicateCount || 0) }}</span>
                 </div>
                 <v-divider vertical length="12"></v-divider>
                 <div class="stat-item d-flex align-center px-1"
                   @click="snackbarStore.addSnackbar({ text: 'Hata alanlar', color: 'error', textColor: 'white' })">
                   <v-icon size="14" color="error" class="mr-1">mdi-close-circle-outline</v-icon>
-                  <span class="stat-value text-error font-weight-black">{{ item.failedCount || 0 }}</span>
+                  <span class="stat-value ek-num text-error">{{ formatNumber(item.failedCount || 0) }}</span>
                 </div>
               </div>
             </div>
 
-            <div class="d-flex justify-space-between mb-3 px-3 py-3 bg-white rounded-lg border shadow-sm">
+            <div class="d-flex justify-space-between mb-3 pa-3 rounded-lg border ek-log-time-card">
               <div class="d-flex align-center">
-                <v-avatar size="28" color="blue-lighten-5" class="mr-2 border border-blue-lighten-3">
-                  <v-icon size="16" color="blue-darken-2">mdi-clock-start</v-icon>
-                </v-avatar>
+                <v-icon size="18" color="content-muted" class="mr-2">mdi-clock-start</v-icon>
                 <div class="d-flex flex-column">
-                  <span class="text-grey-darken-1 font-weight-black"
-                    style="font-size: 9px; text-transform: uppercase;">Başlangıç</span>
-                  <span style="font-size: 11px;" class="font-weight-medium text-grey-darken-4"
-                    v-html="formatDate(item.startedAt)"></span>
+                  <span class="ek-log-time-label">Başlangıç</span>
+                  <span class="text-caption ek-num">{{ formatDateTime(item.startedAt) }}</span>
                 </div>
               </div>
               <v-divider vertical class="mx-2"></v-divider>
               <div class="d-flex align-center">
                 <div class="d-flex flex-column text-right mr-2">
-                  <span class="text-grey-darken-1 font-weight-black"
-                    style="font-size: 9px; text-transform: uppercase;">Bitiş</span>
-                  <span style="font-size: 11px;" class="font-weight-medium text-grey-darken-4"
-                    v-html="item.completedAt ? formatDate(item.completedAt) : 'Devam...'"></span>
+                  <span class="ek-log-time-label">Bitiş</span>
+                  <span class="text-caption ek-num">{{ item.completedAt ? formatDateTime(item.completedAt) : 'Devam...' }}</span>
                 </div>
-                <v-avatar size="28" color="teal-lighten-5" class="border border-teal-lighten-3">
-                  <v-icon size="16" color="teal-darken-2">mdi-flag-checkered</v-icon>
-                </v-avatar>
+                <v-icon size="18" color="content-muted">mdi-flag-checkered</v-icon>
               </div>
             </div>
 
-            <div class="d-flex justify-end align-center pa-0" style="gap: var(--ek-space-2);">
-              <v-btn flat size="35" color="passiveColor" variant="outlined"
-                style="border:1px solid var(--ek-color-border-color);" @click="openDetailedReport(item)"
-                aria-label="Aktarım detaylarını görüntüle">
+            <div class="d-flex justify-end align-center pa-0 ek-log-gap-2">
+              <v-btn flat size="35" color="passiveColor" variant="outlined" class="ek-log-btn"
+                @click="openDetailedReport(item)" aria-label="Aktarım detaylarını görüntüle">
                 <v-icon size="x-large">mdi-eye-outline</v-icon>
               </v-btn>
-              <v-btn flat size="35" color="danger" variant="flat" style="border:1px solid #ccc;"
+              <v-btn flat size="35" color="danger" variant="flat" class="ek-log-btn"
                 :disabled="!isDeletable(item)" @click="openDeleteConfirm($event, 'single', item)"
                 aria-label="Aktarım kaydını sil">
                 <v-icon size="x-large">mdi-delete</v-icon>
@@ -323,7 +282,10 @@ import PaginationComponent from '@/components/PaginationComponent.vue'
 import DetailedImportLogReport from '@/components/logListView/DetailedImportLogReport.vue'
 import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue'
 import ConfirmationDialogComponent from '@/components/layout/ConfirmationDialogComponent.vue'
-import EmptyState from '@/components/layout/EmptyState.vue'
+import EkEmptyState from '@/components/ds/EkEmptyState.vue'
+import EkStatusChip from '@/components/ds/EkStatusChip.vue'
+import { formatDateTime, formatNumber } from '@/composables/format'
+import type { StatusTone } from '@/design/status-map'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import { useIntegrationStore } from '@/stores/integrationStore'
 import PlatformImageComponent from '../platforms/PlatformImageComponent.vue'
@@ -440,40 +402,16 @@ const getJobs = async (reset: boolean = false) => {
   } finally { loadingComponentRef.value.remove(guid); loading.value = false; }
 };
 
-// ADR-0011 Karar 1/Açık Soru 4 kapsamı DIŞI (bilinçli, göç edilmedi) — bkz.
-// ExportLogList.vue'daki AYNI gerekçe (canlı iş-durumu paleti, mevcut token
-// setiyle GÖZLE GÖRÜLÜR fark üretmeden eşleşmiyor; DetailedImportLogReport.vue'da
-// BİREBİR tekrarlanıyor). `WAITING_FOR_FETCH` tek istisna: slate-400 ↔
-// `content-subtle` TAM eşleşiyor (slate-400), o yüzden zaten token'landı.
-const getStatusColor = (status: string) => {
-  const s = status?.toUpperCase();
-  const colors: any = { COMPLETED: '#10b981', FAILED: '#f43f5e', CANCELLED: '#757575', PROCESSING: '#0078D4', READY_TO_SYNC: '#6366f1', FETCHING: '#f59e0b', WAITING_FOR_FETCH: 'var(--ek-color-content-subtle)' };
-  return colors[s] || 'grey';
+// Durum → EkStatusChip tonu (ADR-0015 Karar 3.3; renk ekranda SEÇİLMEZ).
+const statusTone = (status: string): StatusTone => {
+  const tones: Record<string, StatusTone> = { COMPLETED: 'success', FAILED: 'danger', CANCELLED: 'neutral', PROCESSING: 'info', READY_TO_SYNC: 'info', FETCHING: 'warning', WAITING_FOR_FETCH: 'neutral' };
+  return tones[status?.toUpperCase()] || 'neutral';
 };
 
 const translateStatus = (status: string) => {
   const s = status?.toUpperCase();
   const translations: any = { WAITING_FOR_FETCH: 'Sırada', FETCHING: 'Ürünler Çekiliyor', READY_TO_SYNC: 'Analiz Ediliyor', PROCESSING: 'Ürünler Aktarılıyor', COMPLETED: 'Tamamlandı', FAILED: 'Hata', CANCELLED: 'İptal Edildi' };
   return translations[s] || status;
-};
-
-// GİZLİ DAVRANIŞ (YENİ bulgu, T4g — BACKLOG.md, kod DEĞİŞTİRİLMEDİ): bu fonksiyon
-// ÖLÜ KOD — yalnızca yorum satırına alınmış bir `<v-chip>`'ten çağrılıyor
-// (`PlatformImageComponent` marka görselini zaten gösteriyor). Marka renkleri
-// (Trendyol/Hepsiburada/N11/Pazarama) üçüncü taraf kimlik renkleri olduğundan
-// zaten token'lanmazdı; kullanılmadığı için hiç dokunulmadı.
-const getPlatformColor = (code: string) => {
-  const c = code?.toLowerCase();
-  const colors: any = { trendyol: '#f27a1a', hepsiburada: '#ff6000', n11: '#5e43a9', pazarama: '#005494' };
-  return colors[c] || 'grey-darken-2';
-};
-
-const formatDate = (date: any) => {
-  if (!date) return '-';
-  const d = new Date(date);
-  const datePart = d.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  const timePart = d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-  return `${datePart} <b class="font-weight-black">${timePart}</b>`;
 };
 
 onMounted(() => { getJobs(); });
@@ -490,15 +428,16 @@ onBeforeMount(() => { pagination.page = 1; });
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background-color: #f5f7f9;
+  background-color: var(--ek-color-surface-muted);
 }
 
 .search-section {
   flex-shrink: 0;
   z-index: 10;
+  max-width: 900px;
 }
 
-/* A11y (WCAG 1.4.3 — bilinçli görsel değişiklik): bkz. ExportLogList.vue'daki AYNI gerekçe. */
+/* A11y (WCAG 1.4.3): bkz. ExportLogList.vue'daki AYNI gerekçe. */
 .search-section :deep(.v-field:not(.v-field--focused) .v-field-label) {
   color: var(--ek-color-content-muted);
   opacity: 1;
@@ -518,13 +457,14 @@ onBeforeMount(() => { pagination.page = 1; });
   right: 0;
   display: flex !important;
   flex-direction: column;
-  border-top: 1px solid #96a9b7;
-  background-color: white !important;
+  border-top: 1px solid var(--ek-color-border-default);
+  background-color: var(--ek-color-surface) !important;
 }
 
 :deep(.v-table__wrapper) {
   flex-grow: 1 !important;
   overflow-y: auto !important;
+  overflow-x: auto !important;
 }
 
 .mobile-container {
@@ -533,48 +473,32 @@ onBeforeMount(() => { pagination.page = 1; });
   bottom: 0;
   left: 0;
   right: 0;
-  background-color: #f5f7f9;
+  background-color: var(--ek-color-surface-muted);
   overflow-y: auto;
 }
 
-.border-bottom {
-  border-bottom: 1px solid #eee;
-}
-
-.border-right {
-  border-right: 1px solid #ddd;
-}
-
 :deep(.v-data-table-header__content) {
-  font-weight: bold !important;
+  font-weight: var(--ek-font-weight-semibold) !important;
   justify-content: center !important;
-}
-
-.text-passiveColor {
-  color: #96a9b7;
-}
-
-.text-danger {
-  color: #ff5252;
 }
 
 .custom-menu-item {
   min-height: 30px !important;
   height: 35px !important;
-  padding: 0 12px !important;
-  border-bottom: 1px solid #eee;
+  padding: 0 var(--ek-space-3) !important;
+  border-bottom: 1px solid var(--ek-color-border-default);
 }
 
 .compact-title {
   color: var(--ek-color-passive-color);
   font-size: var(--ek-font-size-xs) !important;
-  font-weight: 600;
+  font-weight: var(--ek-font-weight-semibold);
   line-height: 1 !important;
 }
 
 .customTextField :deep(.v-select__selection-text) {
   color: var(--ek-color-passive-color) !important;
-  font-weight: 700;
+  font-weight: var(--ek-font-weight-bold);
 }
 
 .customTextField :deep(.v-prepend-inner .v-icon) {
@@ -588,12 +512,67 @@ onBeforeMount(() => { pagination.page = 1; });
   }
 }
 
+.ek-muted {
+  color: var(--ek-color-content-muted);
+}
+
+.ek-log-gap-1 {
+  gap: var(--ek-space-1);
+}
+
+.ek-log-gap-2 {
+  gap: var(--ek-space-2);
+}
+
+.ek-log-btn {
+  border: 1px solid var(--ek-color-border-default);
+}
+
+.ek-log-pagination {
+  position: relative !important;
+  flex-shrink: 0;
+  border-top: 1px solid var(--ek-color-border-default);
+}
+
+.ek-log-processed {
+  background: var(--ek-color-success-subtle);
+  border-radius: var(--ek-radius-sm);
+}
+
+.ek-log-processed__value {
+  color: var(--ek-color-success);
+}
+
+.ek-log-card-head {
+  background: var(--ek-color-surface);
+  border-bottom: 1px solid var(--ek-color-border-default);
+}
+
+.ek-log-summary {
+  background: var(--ek-color-surface-muted);
+}
+
+.ek-log-summary__divider {
+  border-right: 1px solid var(--ek-color-border-default);
+}
+
+.ek-log-summary__value {
+  font-size: var(--ek-font-size-md);
+}
+
+.ek-log-time-card {
+  background: var(--ek-color-surface);
+}
+
+.ek-log-time-label {
+  font-size: var(--ek-font-size-xs);
+  color: var(--ek-color-content-muted);
+}
+
 .data-group-capsule {
-  background: rgba(var(--v-theme-surface), 0.7);
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  background: var(--ek-color-surface);
+  border: 1px solid var(--ek-color-border-default) !important;
   height: 28px;
-  transition: all var(--ek-duration-base) var(--ek-easing-standard);
 }
 
 .stat-item {
@@ -606,11 +585,11 @@ onBeforeMount(() => { pagination.page = 1; });
 }
 
 .stat-value {
-  font-size: 11px;
-  letter-spacing: -0.2px;
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-semibold);
 }
 
 :deep(.v-divider--vertical) {
-  border-color: rgba(0, 0, 0, 0.08) !important;
+  border-color: var(--ek-color-border-default) !important;
 }
 </style>
