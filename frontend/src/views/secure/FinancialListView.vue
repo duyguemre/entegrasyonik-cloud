@@ -261,7 +261,7 @@
     </EkListScreen>
     </div>
 
-    <div v-if="activeTab !== 'transactions'" class="ek-fin-panel-slot">
+    <div v-if="activeTab !== 'transactions'" class="ek-fin-panel-slot" :class="{ 'ek-fin-panel-slot--flow': activeTab === 'summary' }">
       <KeepAlive>
         <FinancialSummaryTab v-if="activeTab === 'summary'" />
         <FinancialCargoInvoicesTab v-else-if="activeTab === 'cargo-invoices'" />
@@ -565,6 +565,8 @@ defineExpose({ initialize: applyParameters, activate: applyParameters });
   min-height: 0;
 }
 .ek-fin-panel-slot > :only-child { flex: 1; min-height: 0; }
+.ek-fin-panel-slot--flow { overflow-y: auto; }
+.ek-fin-panel-slot--flow > :only-child { flex: none; }
 .ek-fin-summary-slot { flex: none; }
 .ek-fin-screen { flex: 1; min-height: 0; }
 

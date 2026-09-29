@@ -45,7 +45,7 @@
       @row-click="(r: Record<string, any>) => open(r as FinancialTransactionRow)"
     >
       <template #header-actions>
-        <form class="ek-fin-payouts__lookup" role="search" :aria-label="t('finance.payouts.lookupLabel')" @submit.prevent="openById">
+        <form class="ek-fin-payouts__lookup" @submit.prevent="openById">
           <v-text-field
             v-model="lookupId"
             :label="t('finance.payouts.lookupLabel')"

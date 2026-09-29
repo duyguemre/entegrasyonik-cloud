@@ -32,7 +32,7 @@
             <dd class="ek-payout-stats__value ek-num">{{ stat.value }}</dd>
           </div>
         </dl>
-        <div class="ek-payout-items">
+        <div class="ek-payout-items" tabindex="0" role="region" :aria-label="t('finance.payoutDetail.items')">
           <EkDataGrid
             :columns="columns"
             :rows="items"
@@ -224,9 +224,19 @@ watch(
 }
 
 .ek-payout-items {
-  overflow: hidden;
+  overflow-x: auto;
   border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-lg);
+}
+
+/* Kaydırma bu sarmalayıcıda (odaklanabilir bölge, klavyeyle yatay kaydırılabilir); ızgara kendi içinde kaydırmaz. */
+.ek-payout-items :deep(.ek-grid) {
+  overflow: visible;
+}
+
+.ek-payout-items:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
 }
 
 .ek-payout-ref {

@@ -71,6 +71,7 @@
       </div>
     </template>
 
+    <div class="ek-fin-breakdown-scroll" tabindex="0" role="region" :aria-label="t('finance.summary.breakdownTitle')">
     <EkDataGrid
       :columns="columns"
       :rows="breakdown"
@@ -94,6 +95,7 @@
         <span class="ek-num ek-fin-breakdown-net" :class="{ 'is-negative': row.summary?.transactionCount && row.summary.netAmount < 0 }">{{ amountOf(row, 'netAmount') }}</span>
       </template>
     </EkDataGrid>
+    </div>
   </EkListFrame>
 </template>
 
@@ -221,6 +223,32 @@ onMounted(load)
 </script>
 
 <style scoped>
+/* Özet sayfa akışında kayar (kanal kırılımı kısa bir tablodur): kart kendi içinde kaydırılmaz, böylece
+ * KPI satırı + kırılım dar yükseklikte de kesilmez ve tablo odaklanamayan bir kaydırma bölgesi olmaz. */
+.ek-fin-summary-tab {
+  height: auto;
+}
+
+.ek-fin-summary-tab :deep(.ek-list-frame__card) {
+  flex: none;
+  height: auto;
+  min-height: 0;
+}
+
+.ek-fin-breakdown-scroll {
+  overflow-x: auto;
+}
+
+/* Kaydırma sarmalayıcıda (odaklanabilir bölge); ızgara kendi içinde kaydırmaz. */
+.ek-fin-breakdown-scroll :deep(.ek-grid) {
+  overflow: visible;
+}
+
+.ek-fin-breakdown-scroll:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+}
+
 .ek-fin-kpis {
   display: flex;
   flex-direction: column;
