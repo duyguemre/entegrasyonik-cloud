@@ -277,7 +277,7 @@ Global legacy CSS: `public/assets/css/site.css` (hex 83, rgb 68, cubic-bezier 5)
 
 **Ölçü:** `--ek-app-tabstrip-height` 36 → **40px** (`design/app.css`; etkin sekme 36px + üst boşluk). Token dosyalarına dokunulmadı.
 **Spec'ler:** yeni `e2e/specs/shell-dsv2.spec.ts` (kısayollar, arama klavyesi, sekme menüsü, kayıt anahtarı, kabuk bölgelerinde axe AA = 0);
-`shell-v2`/`navigation`/`session-isolation` + `fixtures/session.ts` yalnızca seçici güncellemesi (Karar 5.1 izinli değişiklik 1 — iddialar aynı;
+`shell-v2`/`navigation`/`session-isolation`/`admin-integration-settings`/`settings` + `fixtures/session.ts` yalnızca seçici güncellemesi (sayfa-genel seçiciler `.workplace-area`'ya kapsandı — üst barda artık "Genel" metni ve radio var) (Karar 5.1 izinli değişiklik 1 — iddialar aynı;
 komut paleti iddiaları birleşik aramaya taşındı; sekme başlıkları artık cümle düzeninde, `'ANASAYFA'` karşılaştırması büyük harfe çevrilerek).
 **İnceleme görselleri:** `a2-shell-1440-{kabuk,arama,sekme-menusu,kisayollar,ray,ust-daraltilmis}.png`, `a2-shell-390-{kabuk,arama,sekme-menusu,kisayollar,menu}.png`
 (`SHELL_REVIEW_CAPTURE=1 SHELL_REVIEW_WIDTH=1440|390 npx playwright test e2e/specs/shell-dsv2.spec.ts -g inceleme`).
