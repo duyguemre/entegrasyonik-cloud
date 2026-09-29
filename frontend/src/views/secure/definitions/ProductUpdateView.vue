@@ -37,10 +37,10 @@
             <v-stepper-item @click="stepper = 0" title="Kategori Seçimi" value="1" :complete="stepper > 0" editable
               color="primary">
             </v-stepper-item>
-            <v-divider class="mr-1 ml-1" color="border-default"></v-divider>
+            <v-divider class="mr-1 ml-1" color="border-default" opacity="1"></v-divider>
             <v-stepper-item @click="stepper = 1" title="Ürün Tanımı" value="2" :complete="stepper > 1"
               :editable="productInfoForm.category != undefined" color="primary"></v-stepper-item>
-            <v-divider class="mr-1 ml-1" color="border-default"></v-divider>
+            <v-divider class="mr-1 ml-1" color="border-default" opacity="1"></v-divider>
             <v-stepper-item @click="stepper = 2; checkSingleVariant()" value="3" :complete="stepper > 2"
               :editable="isVariantInfoEditable()" color="primary">
               <template v-slot:title>
@@ -48,10 +48,10 @@
                 <span v-else>Tekil Ürün Bilgisi</span>
               </template>
             </v-stepper-item>
-            <v-divider class="mr-2 ml-1" color="border-default"></v-divider>
+            <v-divider class="mr-2 ml-1" color="border-default" opacity="1"></v-divider>
             <v-stepper-item @click="stepper = 3" title="Detay Bilgiler" value="4" :complete="stepper > 3"
               :editable="productInfoForm.title?.length > 2" color="primary"></v-stepper-item>
-            <v-divider class="mr-1 ml-1" color="border-default"></v-divider>
+            <v-divider class="mr-1 ml-1" color="border-default" opacity="1"></v-divider>
             <v-btn-group elevation="0" class="ma-0 mr-4"
               style="height:40px;border:0px solid white;min-width:113px!important;margin-top:0px" density="compact">
               <v-btn class="fill-height" color="primary" @click="updateProduct" :disabled="isUpdateDisabled()"
