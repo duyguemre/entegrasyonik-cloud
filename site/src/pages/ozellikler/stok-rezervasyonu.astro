@@ -1,0 +1,858 @@
+---
+/**
+ * /ozellikler/stok-rezervasyonu — "Aşırı satış (overselling) nasıl önlenir?" (S14). Sorun → nasıl çalışır → fayda
+ * anlatısı + SSS + CTA. İçerik YALNIZCA kayıttan gelir: `getStockReservationStory()` (capabilities.ts, `basedOn`
+ * bağlı), `stock-reservation` yeteneğinin özeti/kapsam notu ve `feature-details.ts` maddeleri, SSS kayıtları.
+ *
+ * Koyu "nasıl çalışır" sahnesi (`data-scene="stock-flow"`): iki adsız kanaldan son adet için eşzamanlı sipariş →
+ * merkezi stok → biri rezerve, diğeri aşırı satış olarak işaretlenir → güncel stok bağlı kanallara iletilir.
+ * Hareket kuralları (ADR-0014 Karar 3): yalnızca transform/opacity; tüm animasyonlar
+ * `@media (prefers-reduced-motion: no-preference)` + `html[data-motion='play']` koşullu (reduced-motion / "Hareket"
+ * durdurulmuş / JS'siz durumda sahne anlamlı statik son hâlindedir); döngüler yalnızca sahne görünürken çalışır.
+ * Görünür metinde rakam yok (tests/pages.test.ts); adım numaraları CSS sayacıyla çizilir.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import Section from '../../components/Section.astro'
+import Button from '../../components/Button.astro'
+import Icon from '../../components/home/Icon.astro'
+import PageHero from '../../components/pages/PageHero.astro'
+import PageMeta from '../../components/pages/PageMeta.astro'
+import Accordion from '../../components/pages/Accordion.astro'
+import CtaBand from '../../components/pages/CtaBand.astro'
+import SectionHead from '../../components/pages/SectionHead.astro'
+import { getPublicCapabilities, getStockReservationStory } from '../../data/capabilities'
+import { getFeaturePoints } from '../../data/feature-details'
+import { getPublicFaq } from '../../data/faq'
+import { breadcrumbJsonLd } from '../../lib/seo'
+import { appUrls } from '../../lib/site-config'
+
+const title = 'Stok rezervasyonu: aşırı satış (overselling) nasıl önlenir?'
+const description =
+  'Eşzamanlı siparişlerde stok yalnızca mevcut adet kadar rezerve edilir; stok eksiye düşmez, aşırı satış işaretlenip telafi akışına alınır. Entegrasyonik stok rezervasyonu nasıl çalışır?'
+const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Özellikler', href: '/ozellikler' }, { label: 'Stok rezervasyonu' }]
+
+const capability = getPublicCapabilities('core').find((c) => c.id === 'stock-reservation')
+if (!capability) throw new Error('stok rezervasyonu sayfası: yetenek kaydı yok')
+const story = getStockReservationStory()
+const [formulaPoint, ...points] = getFeaturePoints('stock-reservation')
+
+const FAQ_IDS = ['asiri-satis', 'stok-senkron', 'siparis-yonetimi', 'secim-kriterleri']
+const faqItems = getPublicFaq().filter((f) => FAQ_IDS.includes(f.id))
+
+const PROBLEM_ICONS = ['orders', 'clock', 'info'] as const
+const BENEFIT_ICONS = ['stock', 'refresh', 'eye', 'layers'] as const
+/** Yayın satırındaki adsız kanal düğümleri (yalnızca dekoratif). */
+const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
+---
+
+<BaseLayout title={title} description={description} scenes>
+  <PageMeta
+    slot="head"
+    title={title}
+    description={description}
+    jsonLd={[
+      breadcrumbJsonLd([
+        { label: 'Ana sayfa', path: '/' },
+        { label: 'Özellikler', path: '/ozellikler' },
+        { label: 'Stok rezervasyonu', path: '/ozellikler/stok-rezervasyonu' },
+      ]),
+    ]}
+  />
+
+  <PageHero title="Aşırı satış (overselling) nasıl önlenir?" lead={capability.summary} crumbs={crumbs} eyebrow="Stok rezervasyonu">
+    <Button href={appUrls.register()} variant="inverse" size="lg">Ücretsiz dene</Button>
+    <Button href="#nasil-calisir" variant="inverse-outline" size="lg">Nasıl çalışır</Button>
+    <Fragment slot="visual">
+      <figure class="ledger" data-scene="reveal">
+        <figcaption class="ledger__tag">Kullanılabilir stok</figcaption>
+        <ul class="ledger__rows" role="list">
+          <li class="ledger__row" data-reveal style="--i: 0">
+            <span class="ledger__label">Eldeki stok</span>
+            <span class="ledger__bar" aria-hidden="true"><span class="ledger__fill ledger__fill--stock"></span></span>
+          </li>
+          <li class="ledger__row" data-reveal style="--i: 1">
+            <span class="ledger__label"><span class="ledger__op" aria-hidden="true">−</span> Rezerve edilen</span>
+            <span class="ledger__bar" aria-hidden="true"><span class="ledger__fill ledger__fill--reserved"></span></span>
+          </li>
+          <li class="ledger__row ledger__row--result" data-reveal style="--i: 2">
+            <span class="ledger__label"><span class="ledger__op" aria-hidden="true">=</span> Kullanılabilir</span>
+            <span class="ledger__bar" aria-hidden="true"><span class="ledger__fill ledger__fill--available"></span></span>
+          </li>
+        </ul>
+        <p class="ledger__caption">{formulaPoint}</p>
+      </figure>
+    </Fragment>
+  </PageHero>
+
+  <!-- Sorun -->
+  <Section labelledby="sorun-title" class="tight-section">
+    <SectionHead id="sorun-title" eyebrow="Sorun" title="Aynı son ürün iki kanalda satıldığında" />
+    <ol class="problems" role="list">
+      {
+        story.problems.map((p, idx) => (
+          <li class="problem" data-testid="stock-problem">
+            <span class="problem__icon" aria-hidden="true">
+              <Icon name={PROBLEM_ICONS[idx % PROBLEM_ICONS.length]} size="md" />
+            </span>
+            <h3 class="problem__title">{p.title}</h3>
+            <p class="problem__text">{p.text}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </Section>
+
+  <!-- Nasıl çalışır: koyu sahne + akış -->
+  <Section tone="stage" id="nasil-calisir" labelledby="nasil-title" class="flow-section">
+    <SectionHead id="nasil-title" eyebrow="Nasıl çalışır" title="Her sipariş önce rezervasyondan geçer" inverse />
+    <div class="flow-layout">
+      <ol class="flow-steps" role="list" data-testid="stock-steps">
+        {
+          story.steps.map((s) => (
+            <li class="flow-step">
+              <h3 class="flow-step__title">{s.title}</h3>
+              <p class="flow-step__text">{s.text}</p>
+            </li>
+          ))
+        }
+      </ol>
+
+      <div class="flow-card" data-scene="stock-flow" aria-hidden="true">
+        <div class="flow-orders">
+          <div class="flow-order" data-part="order-a">
+            <span class="flow-order__dot flow-order__dot--a"></span>
+            <span>{story.scene.orderA}</span>
+          </div>
+          <div class="flow-order" data-part="order-b">
+            <span class="flow-order__dot flow-order__dot--b"></span>
+            <span>{story.scene.orderB}</span>
+          </div>
+        </div>
+
+        <div class="flow-wires flow-wires--in" data-part="wires-in">
+          <span class="flow-wire"><span class="flow-signal flow-signal--a"></span></span>
+          <span class="flow-wire"><span class="flow-signal flow-signal--b"></span></span>
+        </div>
+
+        <div class="flow-hub" data-part="hub">
+          <div class="flow-hub__head">
+            <Icon name="stock" size="sm" />
+            <span>{story.scene.hub}</span>
+          </div>
+          <div class="flow-units">
+            <span class="flow-unit flow-unit--sold"></span>
+            <span class="flow-unit flow-unit--sold"></span>
+            <span class="flow-unit flow-unit--sold"></span>
+            <span class="flow-unit flow-unit--last" data-part="last-unit">
+              <Icon name="lock" size="sm" />
+            </span>
+          </div>
+          <p class="flow-hub__note">{story.scene.lastUnit}</p>
+        </div>
+
+        <div class="flow-wires flow-wires--out" data-part="wires-out">
+          <span class="flow-wire"></span>
+          <span class="flow-wire"></span>
+        </div>
+
+        <div class="flow-results">
+          <div class="flow-result flow-result--ok" data-part="result-ok">
+            <Icon name="check" size="sm" />
+            <div>
+              <strong>{story.scene.reserved}</strong>
+              <span>{story.scene.reservedNote}</span>
+            </div>
+          </div>
+          <div class="flow-result flow-result--warn" data-part="result-oversold">
+            <Icon name="info" size="sm" />
+            <div>
+              <strong>{story.scene.oversold}</strong>
+              <span>{story.scene.oversoldNote}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flow-publish" data-part="publish">
+          <p class="flow-publish__label">
+            <Icon name="refresh" size="sm" />
+            <span>{story.scene.publish}</span>
+          </p>
+          <div class="flow-publish__track">
+            <span class="flow-publish__line"><span class="flow-beam"></span></span>
+            <ul class="flow-publish__nodes" role="list">
+              {PUBLISH_NODES.map((n) => <li class={`flow-node flow-node--${n}`}></li>)}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </Section>
+
+  <!-- Fayda -->
+  <Section tone="muted" labelledby="fayda-title" class="tight-section">
+    <SectionHead id="fayda-title" eyebrow="Fayda" title="Stoğunuz tek merkezde, kontrol sizde" />
+    <ul class="benefits" role="list" data-testid="stock-benefits">
+      {
+        story.benefits.map((b, idx) => (
+          <li class="benefit">
+            <span class="benefit__icon" aria-hidden="true">
+              <Icon name={BENEFIT_ICONS[idx % BENEFIT_ICONS.length]} size="md" />
+            </span>
+            <div>
+              <h3 class="benefit__title">{b.title}</h3>
+              <p class="benefit__text">{b.text}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+    <div class="facts">
+      <div class="facts__list">
+        <h3 class="facts__title">Arka planda ne olur</h3>
+        <ul class="bullets" role="list">
+          {points.map((p) => <li>{p}</li>)}
+        </ul>
+      </div>
+      {
+        capability.caveat && (
+          <p class="facts__caveat">
+            <strong>Kapsam notu:</strong> {capability.caveat}
+          </p>
+        )
+      }
+    </div>
+  </Section>
+
+  <!-- SSS -->
+  <Section labelledby="stok-sss-title" class="tight-section" size="narrow">
+    <SectionHead id="stok-sss-title" eyebrow="SSS" title="Stok rezervasyonu hakkında sorular" />
+    <Accordion items={faqItems} />
+    <p class="more">
+      Başka bir sorunuz mu var? <a href="/destek">Destek merkezine</a> göz atın ya da <a href="/sss">tüm soruları</a> inceleyin.
+    </p>
+  </Section>
+
+  <CtaBand
+    id="stok-cta"
+    title="Stoğunuzu tek merkezden yönetmeye başlayın"
+    text="Kanallarınızı bağlayın; siparişleriniz rezervasyondan geçsin, aşırı satış görünür olsun."
+    primary={{ label: 'Ücretsiz dene', href: appUrls.register() }}
+    secondary={{ label: 'Tüm özellikler', href: '/ozellikler' }}
+  />
+</BaseLayout>
+
+<script>
+  import '../../scripts/interactions'
+</script>
+
+<style>
+  .tight-section:global(.section) {
+    padding-block: calc(var(--site-section-y) * 0.72);
+  }
+
+  /* ------------------------------------------------------------------ Hero görsel: kullanılabilir stok defteri */
+  .ledger {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-5);
+    margin: 0;
+  }
+  .ledger__tag {
+    color: var(--site-color-on-primary-muted);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .ledger__rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-4);
+  }
+  .ledger__row {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    gap: var(--ek-space-4);
+    align-items: center;
+  }
+  .ledger__row--result {
+    padding-top: var(--ek-space-4);
+    border-top: var(--site-border-width) solid var(--site-glass-border);
+  }
+  .ledger__label {
+    color: var(--site-color-on-primary);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-medium);
+  }
+  .ledger__op {
+    display: inline-block;
+    min-width: var(--ek-space-4);
+    color: var(--site-accent-on-dark);
+    font-weight: var(--ek-font-weight-bold);
+  }
+  .ledger__bar {
+    position: relative;
+    display: block;
+    height: var(--ek-space-3);
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-background) 14%, transparent);
+    overflow: hidden;
+  }
+  .ledger__fill {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: 100%;
+    border-radius: inherit;
+    transform-origin: left center;
+  }
+  .ledger__fill--stock {
+    background: color-mix(in srgb, var(--ek-color-background) 70%, transparent);
+  }
+  .ledger__fill--reserved {
+    background: var(--ek-color-warning);
+    transform: scaleX(0.35);
+  }
+  .ledger__fill--available {
+    background: var(--ek-color-secondary);
+    transform: scaleX(0.65);
+  }
+  .ledger__caption {
+    color: var(--site-color-on-primary-muted);
+    font-size: var(--ek-font-size-sm);
+  }
+
+  /* ------------------------------------------------------------------ Sorun kartları */
+  .problems,
+  .flow-steps {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .problems {
+    display: grid;
+    gap: var(--ek-space-5);
+    counter-reset: problem;
+  }
+  .problem {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-6);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--site-radius-panel);
+    background: var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
+  }
+  .problem:last-child {
+    border-color: color-mix(in srgb, var(--ek-color-warning) 45%, var(--ek-color-border-default));
+    background: linear-gradient(180deg, var(--ek-color-warning-subtle), var(--ek-color-surface) 70%);
+  }
+  .problem__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface-muted);
+    color: var(--ek-color-content-strong);
+  }
+  .problem:last-child .problem__icon {
+    background: var(--ek-color-warning-subtle);
+    color: var(--ek-color-warning);
+  }
+  .problem__title {
+    font-size: var(--site-card-title-size);
+    font-weight: var(--site-card-title-weight);
+    line-height: var(--ek-line-height-tight);
+  }
+  .problem__text {
+    color: var(--ek-color-content-default);
+    font-size: var(--site-card-desc-size);
+  }
+
+  /* ------------------------------------------------------------------ Nasıl çalışır (koyu sahne) */
+  .flow-layout {
+    display: grid;
+    gap: var(--ek-space-10);
+    align-items: center;
+  }
+  .flow-steps {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-6);
+    counter-reset: flow;
+  }
+  .flow-step {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    padding-inline-start: var(--ek-space-16);
+    counter-increment: flow;
+  }
+  /* Adım numarası CSS sayacıyla (görünür HTML metninde rakam yok). */
+  .flow-step::before {
+    content: counter(flow, decimal-leading-zero);
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-12);
+    height: var(--ek-space-12);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-lg);
+    background: var(--site-glass-bg);
+    color: var(--site-accent-on-dark);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-bold);
+    letter-spacing: 0.04em;
+  }
+  .flow-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    inset-inline-start: calc(var(--ek-space-6) - var(--site-border-width) / 2);
+    top: calc(var(--ek-space-12) + var(--ek-space-2));
+    bottom: calc(var(--ek-space-6) * -1 + var(--ek-space-2));
+    width: var(--site-border-width);
+    background: linear-gradient(180deg, var(--site-glass-border), transparent);
+  }
+  .flow-step__title {
+    font-size: var(--ek-font-size-xl);
+    font-weight: var(--ek-font-weight-semibold);
+    line-height: var(--ek-line-height-tight);
+  }
+  .flow-step__text {
+    font-size: var(--ek-font-size-lg);
+    line-height: var(--ek-line-height-normal);
+  }
+
+  .flow-card {
+    --flow-wire-h: var(--ek-space-8);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding: var(--ek-space-6);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--site-radius-panel);
+    background: var(--site-glass-bg);
+    box-shadow: var(--site-shadow-panel);
+    -webkit-backdrop-filter: blur(var(--site-glass-blur));
+    backdrop-filter: blur(var(--site-glass-blur));
+    color: var(--site-color-on-primary);
+    font-size: var(--ek-font-size-sm);
+  }
+  .flow-orders,
+  .flow-results {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--ek-space-3);
+  }
+  .flow-order {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-3);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-lg);
+    background: color-mix(in srgb, var(--ek-color-background) 8%, transparent);
+    font-weight: var(--ek-font-weight-medium);
+  }
+  .flow-order__dot {
+    flex: none;
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+  }
+  .flow-order__dot--a {
+    background: var(--ek-color-secondary);
+  }
+  .flow-order__dot--b {
+    background: var(--site-accent-on-dark);
+  }
+
+  .flow-wires {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    height: var(--flow-wire-h);
+  }
+  .flow-wire {
+    position: relative;
+    justify-self: center;
+    width: var(--site-border-width);
+    height: 100%;
+    background: linear-gradient(180deg, var(--site-glass-border), color-mix(in srgb, var(--ek-color-background) 30%, transparent));
+    overflow: visible;
+  }
+  .flow-signal {
+    position: absolute;
+    top: 0;
+    inset-inline-start: 50%;
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    margin-inline-start: calc(var(--ek-space-2) / -2);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-secondary);
+    box-shadow: var(--site-glow-secondary);
+    opacity: 0;
+  }
+  .flow-signal--b {
+    background: var(--site-accent-on-dark);
+  }
+
+  .flow-hub {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-4);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 55%, transparent);
+    border-radius: var(--ek-radius-xl);
+    background: color-mix(in srgb, var(--ek-color-secondary) 12%, transparent);
+    box-shadow: var(--site-glow-ring);
+  }
+  .flow-hub__head {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .flow-hub__head :global(svg) {
+    color: var(--ek-color-secondary);
+  }
+  .flow-units {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--ek-space-2);
+  }
+  .flow-unit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: var(--ek-space-8);
+    border-radius: var(--ek-radius-md);
+  }
+  .flow-unit--sold {
+    border: var(--site-border-width) dashed var(--site-glass-border);
+  }
+  .flow-unit--last {
+    border: var(--site-border-width) solid var(--ek-color-secondary);
+    background: color-mix(in srgb, var(--ek-color-secondary) 35%, transparent);
+    color: var(--site-color-on-primary);
+  }
+  .flow-hub__note {
+    color: var(--site-color-on-primary-muted);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-align: end;
+    text-transform: uppercase;
+  }
+
+  .flow-result {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-3);
+    border-radius: var(--ek-radius-lg);
+    border: var(--site-border-width) solid;
+  }
+  .flow-result :global(svg) {
+    flex: none;
+    margin-top: var(--site-border-width);
+  }
+  .flow-result div {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+  }
+  .flow-result strong {
+    color: var(--site-color-on-primary);
+    font-weight: var(--ek-font-weight-semibold);
+    line-height: var(--ek-line-height-tight);
+  }
+  .flow-result span {
+    color: var(--site-color-on-primary-muted);
+    font-size: var(--ek-font-size-xs);
+  }
+  .flow-result--ok {
+    border-color: color-mix(in srgb, var(--ek-color-success) 60%, transparent);
+    background: color-mix(in srgb, var(--ek-color-success) 16%, transparent);
+  }
+  .flow-result--ok :global(svg) {
+    color: var(--ek-color-success);
+  }
+  .flow-result--warn {
+    border-color: color-mix(in srgb, var(--ek-color-warning) 60%, transparent);
+    background: color-mix(in srgb, var(--ek-color-warning) 14%, transparent);
+  }
+  .flow-result--warn :global(svg) {
+    color: var(--ek-color-warning);
+  }
+
+  .flow-publish {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    margin-top: var(--ek-space-5);
+    padding-top: var(--ek-space-4);
+    border-top: var(--site-border-width) solid var(--site-glass-border);
+  }
+  .flow-publish__label {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    color: var(--site-color-on-primary);
+    font-weight: var(--ek-font-weight-medium);
+  }
+  .flow-publish__label :global(svg) {
+    color: var(--ek-color-secondary);
+  }
+  .flow-publish__track {
+    position: relative;
+    display: flex;
+    align-items: center;
+    height: var(--ek-space-6);
+  }
+  .flow-publish__line {
+    position: absolute;
+    inset-inline: var(--ek-space-2);
+    top: 50%;
+    height: var(--site-border-width);
+    background: var(--site-glass-border);
+    overflow: hidden;
+  }
+  .flow-beam {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: 30%;
+    background: linear-gradient(90deg, transparent, var(--ek-color-secondary), transparent);
+    opacity: 0;
+  }
+  .flow-publish__nodes {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+  }
+  .flow-node {
+    width: var(--ek-space-3);
+    height: var(--ek-space-3);
+    border: var(--site-border-width) solid var(--ek-color-secondary);
+    border-radius: var(--ek-radius-full);
+    background: var(--site-stage-deep);
+  }
+
+  /* Sahne hareketi — yalnızca oynatma durumunda; statik son hâl yukarıdaki kurallardır. */
+  .flow-card [data-part='order-a'] {
+    --i: 0;
+  }
+  .flow-card [data-part='order-b'] {
+    --i: 1;
+  }
+  .flow-card [data-part='wires-in'] {
+    --i: 3;
+  }
+  .flow-card [data-part='hub'] {
+    --i: 4;
+  }
+  .flow-card [data-part='wires-out'] {
+    --i: 7;
+  }
+  .flow-card [data-part='result-ok'] {
+    --i: 8;
+  }
+  .flow-card [data-part='result-oversold'] {
+    --i: 10;
+  }
+  .flow-card [data-part='publish'] {
+    --i: 12;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html[data-motion='play']) .flow-card[data-state='ready'] [data-part] {
+      opacity: 0;
+    }
+    :global(html[data-motion='play']) .flow-card[data-state='play'] :is([data-part='order-a'], [data-part='order-b'], [data-part='result-ok'], [data-part='result-oversold'], [data-part='publish']) {
+      animation: scene-rise var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
+      animation-delay: calc(var(--site-motion-stagger) * var(--i));
+    }
+    :global(html[data-motion='play']) .flow-card[data-state='play'] :is([data-part='wires-in'], [data-part='wires-out']) {
+      animation: scene-fade var(--site-motion-duration-reveal-sm) var(--site-motion-ease-reveal) backwards;
+      animation-delay: calc(var(--site-motion-stagger) * var(--i));
+    }
+    :global(html[data-motion='play']) .flow-card[data-state='play'] [data-part='hub'] {
+      animation: scene-zoom var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
+      animation-delay: calc(var(--site-motion-stagger) * var(--i));
+    }
+
+    /* Döngü: sipariş sinyalleri merkeze akar, güncel stok kanallara yayılır. `paused` başlar; yalnızca görünürken. */
+    :global(html[data-motion='play']) .flow-card .flow-signal,
+    :global(html[data-motion='play']) .flow-card .flow-beam {
+      animation-duration: var(--site-motion-ambient-fast);
+      animation-timing-function: var(--site-motion-ease-loop);
+      animation-iteration-count: infinite;
+      animation-play-state: paused;
+    }
+    :global(html[data-motion='play']) .flow-card .flow-signal {
+      animation-name: loop-stock-signal;
+    }
+    :global(html[data-motion='play']) .flow-card .flow-signal--b {
+      animation-delay: calc(var(--site-motion-phase) / 2);
+    }
+    :global(html[data-motion='play']) .flow-card .flow-beam {
+      animation-name: loop-stock-beam;
+    }
+    :global(html[data-motion='play']:not([data-tab='hidden'])) .flow-card[data-visible='true'] :is(.flow-signal, .flow-beam) {
+      animation-play-state: running;
+    }
+    @keyframes loop-stock-signal {
+      0% {
+        opacity: 0;
+        transform: translateY(0);
+      }
+      8% {
+        opacity: 1;
+      }
+      30% {
+        opacity: 1;
+        transform: translateY(var(--flow-wire-h));
+      }
+      36%,
+      100% {
+        opacity: 0;
+        transform: translateY(var(--flow-wire-h));
+      }
+    }
+    @keyframes loop-stock-beam {
+      0%,
+      45% {
+        opacity: 0;
+        transform: translateX(-100%);
+      }
+      55% {
+        opacity: 1;
+      }
+      90% {
+        opacity: 1;
+        transform: translateX(340%);
+      }
+      100% {
+        opacity: 0;
+        transform: translateX(340%);
+      }
+    }
+  }
+
+  /* ------------------------------------------------------------------ Fayda */
+  .benefits {
+    display: grid;
+    gap: var(--ek-space-5);
+  }
+  .benefit {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ek-space-4);
+    padding: var(--ek-space-6);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--site-radius-panel);
+    background: var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
+  }
+  .benefit__icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-success-subtle);
+    color: var(--ek-color-success);
+  }
+  .benefit__title {
+    margin-bottom: var(--ek-space-2);
+    font-size: var(--site-card-title-size);
+    font-weight: var(--site-card-title-weight);
+    line-height: var(--ek-line-height-tight);
+  }
+  .benefit__text {
+    color: var(--ek-color-content-default);
+    font-size: var(--site-card-desc-size);
+  }
+  .facts {
+    display: grid;
+    gap: var(--ek-space-5);
+    margin-top: var(--ek-space-8);
+    padding: var(--ek-space-6);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--site-radius-panel);
+    background: var(--ek-color-surface);
+  }
+  .facts__title {
+    margin-bottom: var(--ek-space-3);
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .bullets {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-md);
+  }
+  .bullets li {
+    position: relative;
+    padding-inline-start: var(--ek-space-5);
+  }
+  .bullets li::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0.6em;
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-secondary-darken-1);
+  }
+  .facts__caveat {
+    align-self: start;
+    padding: var(--ek-space-3) var(--ek-space-4);
+    border-inline-start: var(--ek-space-1) solid var(--ek-color-warning);
+    border-radius: var(--ek-radius-md);
+    background: var(--ek-color-warning-subtle);
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-md);
+  }
+
+  .more {
+    margin-top: var(--ek-space-6);
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-lg);
+  }
+
+  @media (min-width: 768px) {
+    .problems {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .benefits {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .facts {
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+      align-items: start;
+    }
+  }
+  @media (min-width: 1024px) {
+    .flow-layout {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    }
+  }
+</style>

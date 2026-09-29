@@ -15,7 +15,13 @@ export const primaryNav: NavItem[] = [
   { label: 'Fiyatlandırma', href: '/fiyatlandirma', published: true }, // S4b
   { label: 'Güvenlik', href: '/guvenlik', published: true }, // S2b
   { label: 'SSS', href: '/sss', published: true }, // S2b
+  { label: 'Destek', href: '/destek', published: true }, // S14
   { label: 'İletişim', href: '/iletisim', published: true }, // S2b
+]
+
+/** Özellik derin sayfaları (S14): footer "Ürün" sütununa eklenir; ana gezinmede yer almaz. */
+export const featureNav: NavItem[] = [
+  { label: 'Stok rezervasyonu', href: '/ozellikler/stok-rezervasyonu', published: true }, // S14
 ]
 
 /** Yasal sayfalar (Karar 5) — S5: 8 sayfa yazıldı (TASLAK, hukuki inceleme bekliyor; içerik src/data/legal/*). */

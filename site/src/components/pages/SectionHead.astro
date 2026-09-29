@@ -1,0 +1,61 @@
+---
+/**
+ * SectionHead — iç sayfa bölüm başlığı (S14): küçük üst etiket + <h2> + isteğe bağlı giriş cümlesi.
+ * Ana sayfa `home/SectionHeading` bileşeninden bağımsızdır (paralel S13 turu o dizine dokunur).
+ * `inverse`: koyu ("stage") zeminde vurgu rengi açık varyanta geçer.
+ */
+interface Props {
+  id: string
+  title: string
+  eyebrow?: string
+  lead?: string
+  inverse?: boolean
+}
+
+const { id, title, eyebrow, lead, inverse = false } = Astro.props
+---
+
+<div class:list={['shead', { 'shead--inverse': inverse }]}>
+  {eyebrow && <p class="shead__eyebrow">{eyebrow}</p>}
+  <h2 id={id}>{title}</h2>
+  {lead && <p class="shead__lead">{lead}</p>}
+</div>
+
+<style>
+  .shead {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    max-width: var(--site-container-narrow);
+    margin-bottom: var(--ek-space-10);
+  }
+  .shead__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    color: var(--ek-color-primary);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .shead__eyebrow::before {
+    content: '';
+    width: var(--ek-space-6);
+    height: var(--site-border-width);
+    background: currentColor;
+  }
+  .shead--inverse .shead__eyebrow {
+    color: var(--site-accent-on-dark);
+  }
+  .shead h2 {
+    font-size: var(--site-font-display-sm);
+    font-weight: var(--site-font-display-weight);
+    line-height: var(--site-font-display-line-height);
+    letter-spacing: var(--site-font-display-tracking);
+  }
+  .shead__lead {
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-lg);
+  }
+</style>
