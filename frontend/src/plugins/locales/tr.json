@@ -88,7 +88,8 @@
       "ecommerce": "E-Ticaret",
       "erp": "Erp",
       "shipping": "Kargo",
-      "einvoice": "E-Fatura"
+      "einvoice": "E-Fatura",
+      "integrationHealth": "Entegrasyon Sağlığı"
     },
     "settings": {
       "settings": "Ayarlar",
@@ -1225,10 +1226,12 @@
     },
     "circuit": {
       "closed": "Kapalı (normal)",
-      "open": "Açık — çağrılar durduruldu",
-      "half_open": "Yarı açık — deneniyor",
+      "open": "Açık",
+      "half_open": "Yarı açık",
       "none": "Gözlem yok",
-      "stale": "eski gözlem"
+      "stale": "eski gözlem",
+      "openHint": "Çağrılar geçici olarak durduruldu",
+      "half_openHint": "Deneme çağrıları yapılıyor"
     },
     "errorCode": {
       "AUTH": "Kimlik doğrulama",
