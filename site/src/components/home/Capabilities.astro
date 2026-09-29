@@ -931,10 +931,7 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     position: absolute;
     inset: 0;
     z-index: -1;
-    background:
-      radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--ek-color-secondary) 26%, transparent), transparent 62%),
-      var(--site-texture-grid);
-    background-size: auto, var(--site-texture-grid-size);
+    background: radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--ek-color-secondary) 26%, transparent), transparent 62%);
     pointer-events: none;
   }
   .stock__flash {
@@ -2768,6 +2765,13 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     }
   }
 
+  /* Karo iki sütuna bölündüğü ara genişlikte (1024–1279) sonuç kartlarında rozet metnin üstünde (dar sütun). */
+  @media (min-width: 1024px) and (max-width: 1279px) {
+    .stock .stock__result {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
   /* Stok görseli: yeterli genişlikte soldan sağa akış (hatlar yatay). */
   @media (min-width: 48rem) {
     .stock__flow {
