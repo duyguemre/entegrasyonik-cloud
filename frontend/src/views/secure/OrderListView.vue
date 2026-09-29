@@ -1,5 +1,5 @@
 <template>
-  <div class="orderListView d-flex flex-column pt-4">
+  <div class="orderListView">
     <LoadingComponent :attach="dialogAttach" ref="loadingComponentRef"></LoadingComponent>
 
     <BarcodePrintComponent ref="barcodePrintComponentRef" />
@@ -53,206 +53,117 @@
       </div>
     </EkFormDialog>
 
-    <EkFormDialog v-model="searchOrderForm.form.menu" title="Sipariş filtreleri" @submit="() => { getOrders(true); searchOrderForm.form.menu = false }" @cancel="resetFilters()">
-      <v-select v-model="searchOrderForm.data.integrationCodes" :items="integrationStore.getClientPlatforms()"
-        item-title="title" item-value="code" label="Platformlar" multiple chips clearable />
-      <v-select v-model="searchOrderForm.data.internalStatuses" :items="statusOptions" item-title="title"
-        item-value="id" label="Sipariş durumu" multiple chips clearable />
-    </EkFormDialog>
-
-    <EkListPage
-      section="Siparişler"
+    <EkListScreen
       title="Siparişler"
       description="Tüm pazaryeri siparişlerinizi buradan yönetin."
-      :secondary-actions="[{ label: 'Filtrele', icon: 'mdi-filter-variant', onClick: () => (searchOrderForm.form.menu = true) }]"
+      label="Siparişler tablosu"
+      noun="sipariş"
+      row-key="_id"
+      label-key="orderNumber"
+      :columns="columns"
+      :rows="orders"
+      :loading="loading"
+      :error="loadError"
+      error-title="Siparişler yüklenemedi"
       :search="searchOrderForm.data.globalSearch"
       search-placeholder="Sipariş No, Müşteri Adı veya Telefon Ara"
-      :state="viewState"
+      :chips="activeChips"
+      :filter-count="panelFilterCount"
+      selectable
+      v-model:selected="selectedOrders"
+      :sort="gridSort"
+      :page="pagination.page"
+      :page-size="pagination.limit"
+      :total="pagination.totalNumberOfRecords"
+      :page-size-options="[15, 25, 50, 100]"
+      empty-title="Sipariş Bulunamadı"
+      empty-text="Pazaryerlerinden sipariş geldikçe burada listelenir."
+      empty-icon="mdi-cart-outline"
+      filtered-empty-title="Sipariş Bulunamadı"
+      filtered-empty-text="Arama kriterlerinize uygun herhangi bir sipariş kaydı bulunamadı."
       @update:search="onSearchInput"
+      @update:sort="onGridSort"
+      @update:page="onPageChange"
+      @update:page-size="onPageSizeChange"
+      @filter-submit="getOrders(true)"
+      @filter-reset="resetFilters"
+      @remove-chip="removeChip"
       @clear-filters="resetFilters"
-      @refresh="() => getOrders(true)"
+      @refresh="getOrders(true)"
     >
-      <template #empty>
-        <EkEmptyState variant="no-results" title="Sipariş Bulunamadı" message="Arama kriterlerinize uygun herhangi bir sipariş kaydı bulunamadı." />
+      <template #filters>
+        <v-select v-model="searchOrderForm.data.integrationCodes" :items="integrationStore.getClientPlatforms()"
+          item-title="title" item-value="code" label="Kanal" multiple chips closable-chips clearable />
+        <v-select v-model="searchOrderForm.data.internalStatuses" :items="statusOptions" item-title="title"
+          item-value="id" label="Sipariş durumu" multiple chips closable-chips clearable />
       </template>
-      <template #error>
-        <EkErrorState message="Siparişler yüklenemedi — bağlantınızı kontrol edip tekrar deneyin." @retry="() => getOrders(true)" />
+
+      <template #bulk-actions>
+        <EkButton size="sm" icon="mdi-check-circle-outline" :disabled="bulkActionCounts.APPROVE === 0" @click="triggerBulkAction('APPROVE')">
+          Onayla ({{ bulkActionCounts.APPROVE }})
+        </EkButton>
+        <EkButton size="sm" icon="mdi-file-document-edit-outline" :disabled="bulkActionCounts.INVOICE === 0" @click="triggerBulkAction('INVOICE')">
+          Fatura kes ({{ bulkActionCounts.INVOICE }})
+        </EkButton>
+        <EkButton size="sm" icon="mdi-truck-delivery-outline" :disabled="bulkActionCounts.SHIP === 0" @click="triggerBulkAction('SHIP')">
+          Kargoya ver ({{ bulkActionCounts.SHIP }})
+        </EkButton>
+        <EkButton size="sm" icon="mdi-delete-sweep-outline" class="ek-bulk-danger" :disabled="bulkActionCounts.CANCEL === 0" @click="handleCancelRequest()">
+          İptal et ({{ bulkActionCounts.CANCEL }})
+        </EkButton>
       </template>
 
-      <div class="ek-order-table-wrapper">
-        <EkDataTable v-if="isDesktopTable" :items="orders" :columns="columns" row-key="_id" aria-label="Siparişler tablosu">
-          <template #cell-select="{ item }">
-            <v-checkbox-btn :model-value="isOrderSelected(item)" color="primary" density="compact"
-              :aria-label="`Siparişi seç: ${item.orderNumber}`"
-              @update:model-value="val => onOrderSelectionUpdate(item, !!val)" />
-          </template>
-
-          <template #cell-orderNumber="{ item }">
-            <div class="d-flex align-center">
-              <EkPlatformMark :name="platformName(item.integrationCode)" :code="item.integrationCode" size="sm" :show-name="false" class="mr-3" />
-              <div class="d-flex flex-column">
-                <div class="d-flex align-center ek-gap-1">
-                  <span class="font-weight-medium text-body-2">{{ item.orderNumber }}</span>
-                  <v-icon v-if="item.flags?.isInvoiceGenerated" size="14" color="primary" aria-label="Fatura kesildi">mdi-receipt-text-check</v-icon>
-                </div>
-                <span class="text-caption ek-muted">{{ item.billingAddress?.firstName }} {{ item.billingAddress?.lastName }}</span>
-              </div>
-            </div>
-          </template>
-
-          <template #cell-items="{ item }">
-            <div class="d-flex flex-column ek-gap-1 ek-clickable" @click="openDetailedReport(item)">
-              <EkStatusChip tone="neutral" :label="`${item.items?.length || 0} kalem ürün`" />
-              <span v-if="item.items?.length > 0" class="text-caption ek-muted text-truncate ek-order-item-name">{{ item.items[0].productName }}</span>
-            </div>
-          </template>
-
-          <template #cell-total="{ item }">
-            <div class="d-flex flex-column align-end">
-              <span class="font-weight-semibold ek-num">{{ formatMoney(item.financials?.grandTotal) }}</span>
-              <EkStatusChip v-if="item.platformDiscrepancy?.hasDiscrepancy" tone="danger" label="Tutar uyuşmuyor" />
-            </div>
-          </template>
-
-          <template #cell-internalStatus="{ item }">
-            <div class="d-flex flex-column align-start ek-gap-1">
-              <EkStatusChip :tone="statusEntry(item.internalStatus).tone" :label="$t(statusEntry(item.internalStatus).labelKey)" />
-              <EkStatusChip v-if="isOrderLocked(item)" tone="warning" label="Kilitli / işlem sürüyor" />
-              <EkStatusChip v-if="item.internalStatus === OrderInternalStatusEnum.CANCELLED" tone="neutral" :label="getCancelSourceLabel(item.cancelSource)" />
-            </div>
-          </template>
-
-          <template #cell-orderDate="{ item }">
-            <span class="text-caption font-weight-medium ek-num">{{ formatDateTime(item.dates?.orderDate) }}</span>
-          </template>
-
-          <template #cell-actions="{ item }">
-            <div class="d-flex justify-end align-center ek-gap-1">
-              <v-btn icon variant="text" density="comfortable" aria-label="Sipariş detayını görüntüle" @click="openDetailedReport(item)">
-                <v-icon>mdi-eye</v-icon>
-              </v-btn>
-              <v-menu v-if="hasAnyRowAction(item)">
-                <template #activator="{ props: menuProps }">
-                  <v-btn icon variant="text" density="comfortable" aria-label="Diğer eylemler" v-bind="menuProps">
-                    <v-icon>mdi-dots-horizontal</v-icon>
-                  </v-btn>
-                </template>
-                <v-list density="compact">
-                  <v-list-item v-if="isOrderActionAllowed(item, 'APPROVE')" :disabled="isOrderLocked(item)" @click="handlePlatformAction(item._id, 'APPROVE')">
-                    <template #prepend><v-icon size="18">mdi-check-circle-outline</v-icon></template>
-                    <v-list-item-title>Onayla</v-list-item-title>
-                  </v-list-item>
-                  <v-list-item v-if="isOrderActionAllowed(item, 'INVOICE')" :disabled="isOrderLocked(item)" @click="handlePlatformAction(item._id, 'INVOICE')">
-                    <template #prepend><v-icon size="18">mdi-receipt-text-plus-outline</v-icon></template>
-                    <v-list-item-title>Fatura oluştur</v-list-item-title>
-                  </v-list-item>
-                  <v-list-item v-if="isOrderActionAllowed(item, 'SHIP')" :disabled="isOrderLocked(item)" @click="handlePlatformAction(item._id, 'SHIP')">
-                    <template #prepend><v-icon size="18">mdi-truck-fast-outline</v-icon></template>
-                    <v-list-item-title>Kargoya ver</v-list-item-title>
-                  </v-list-item>
-                  <v-list-item v-if="isOrderActionAllowed(item, 'PRINT_LABEL')" :disabled="isOrderLocked(item)" @click="printShippingLabel(item)">
-                    <template #prepend><v-icon size="18">mdi-barcode-scan</v-icon></template>
-                    <v-list-item-title>Kargo etiketi yazdır</v-list-item-title>
-                  </v-list-item>
-                  <v-list-item v-if="isOrderActionAllowed(item, 'CANCEL')" :disabled="isOrderLocked(item)" class="text-error" @click="handleCancelRequest(item)">
-                    <template #prepend><v-icon size="18">mdi-delete-sweep-outline</v-icon></template>
-                    <v-list-item-title>Siparişi iptal et</v-list-item-title>
-                  </v-list-item>
-                </v-list>
-              </v-menu>
-            </div>
-          </template>
-        </EkDataTable>
-
-        <div v-else class="mobile-orders-list d-flex flex-column h-100">
-          <div v-if="loading" class="pa-2">
-            <v-skeleton-loader v-for="n in 4" :key="n" type="card" class="mb-3 rounded-lg" />
-          </div>
-          <template v-else>
-            <EkEmptyState v-if="!orders?.length" variant="no-results" title="Sipariş Bulunamadı" message="Arama kriterlerinize uygun herhangi bir sipariş kaydı bulunamadı." />
-            <v-card v-for="item in orders" :key="item._id" class="mobile-card mb-3" variant="flat" border rounded="lg">
-              <div class="pa-3">
-                <div class="d-flex align-start justify-space-between mb-3 ek-gap-2">
-                  <div class="d-flex align-start ek-gap-3">
-                    <v-checkbox-btn :model-value="isOrderSelected(item)" density="compact" color="primary"
-                      :aria-label="`Siparişi seç: ${item.orderNumber}`"
-                      @update:model-value="val => onOrderSelectionUpdate(item, !!val)" />
-                    <div class="d-flex flex-column">
-                      <EkPlatformMark :name="platformName(item.integrationCode)" :code="item.integrationCode" size="sm" :show-name="false" class="mb-1" />
-                      <span class="font-weight-medium text-body-2">{{ item.orderNumber }}</span>
-                    </div>
-                  </div>
-                  <div class="d-flex flex-column align-end ek-gap-1">
-                    <EkStatusChip :tone="statusEntry(item.internalStatus).tone" :label="$t(statusEntry(item.internalStatus).labelKey)" />
-                    <EkStatusChip v-if="item.internalStatus === OrderInternalStatusEnum.CANCELLED" tone="neutral" :label="getCancelSourceLabel(item.cancelSource)" />
-                    <EkStatusChip v-if="isOrderLocked(item)" tone="warning" label="Kilitli" />
-                  </div>
-                </div>
-
-                <div class="d-flex flex-wrap align-center justify-space-between mb-3 ek-gap-2">
-                  <div>
-                    <div class="text-caption ek-muted">Toplam tutar</div>
-                    <span class="font-weight-semibold ek-num">{{ formatMoney(item.financials?.grandTotal) }}</span>
-                  </div>
-                  <div>
-                    <div class="text-caption ek-muted text-right">Sipariş tarihi</div>
-                    <span class="text-caption font-weight-medium ek-num d-block">{{ formatDateTime(item.dates?.orderDate) }}</span>
-                  </div>
-                </div>
-
-                <div class="d-flex flex-wrap mb-3 ek-clickable" @click="openDetailedReport(item)">
-                  <div class="d-flex flex-column ek-gap-1 flex-grow-1">
-                    <EkStatusChip tone="neutral" :label="`${item.items?.length || 0} kalem ürün`" />
-                    <span v-if="item.items?.length > 0" class="text-caption ek-muted">{{ item.items[0].productName }}</span>
-                  </div>
-                  <div class="text-right">
-                    <div class="text-caption ek-muted">Müşteri</div>
-                    <span class="text-caption text-truncate">{{ item.billingAddress?.firstName }} {{ item.billingAddress?.lastName }}</span>
-                  </div>
-                </div>
-
-                <div class="d-flex flex-wrap justify-end ek-gap-1 pt-2 border-top-dashed">
-                  <v-btn icon variant="text" density="comfortable" aria-label="Sipariş detayını görüntüle" @click="openDetailedReport(item)"><v-icon>mdi-eye</v-icon></v-btn>
-                  <v-btn v-if="isOrderActionAllowed(item, 'INVOICE')" icon variant="text" density="comfortable" :disabled="isOrderLocked(item)" aria-label="Fatura oluştur" @click="handlePlatformAction(item._id, 'INVOICE')"><v-icon>mdi-receipt-text-plus-outline</v-icon></v-btn>
-                  <v-btn v-if="isOrderActionAllowed(item, 'SHIP')" icon variant="text" density="comfortable" :disabled="isOrderLocked(item)" aria-label="Kargoya ver" @click="handlePlatformAction(item._id, 'SHIP')"><v-icon>mdi-truck-fast-outline</v-icon></v-btn>
-                  <v-btn v-if="isOrderActionAllowed(item, 'PRINT_LABEL')" icon variant="text" density="comfortable" :disabled="isOrderLocked(item)" aria-label="Kargo etiketi yazdır" @click="printShippingLabel(item)"><v-icon>mdi-barcode-scan</v-icon></v-btn>
-                  <v-btn v-if="isOrderActionAllowed(item, 'CANCEL')" icon variant="text" density="comfortable" :disabled="isOrderLocked(item)" aria-label="Siparişi iptal et" @click="handleCancelRequest(item)"><v-icon>mdi-delete-sweep-outline</v-icon></v-btn>
-                </div>
-              </div>
-            </v-card>
-          </template>
-        </div>
-      </div>
-
-      <template #pagination>
-        <EkPagination :page="pagination.page" :page-size="pagination.limit" :total="pagination.totalNumberOfRecords"
-          @update:page="onPageChange" @update:pageSize="onPageSizeChange" />
+      <template #cell-orderNumber="{ row }">
+        <span class="ek-order-no">
+          {{ row.orderNumber }}
+          <v-icon v-if="row.flags?.isInvoiceGenerated" size="14" icon="mdi-receipt-text-check" class="ek-order-no__icon" aria-label="Fatura kesildi" />
+        </span>
       </template>
-    </EkListPage>
-
-    <div v-if="selectedOrders.length > 0" class="ek-order-bulk-bar">
-      <span class="text-body-2 font-weight-medium">{{ selectedOrders.length }} seçildi</span>
-      <v-btn variant="outlined" prepend-icon="mdi-check-circle-outline" :disabled="bulkActionCounts.APPROVE === 0" @click="triggerBulkAction('APPROVE')">
-        Onayla ({{ bulkActionCounts.APPROVE }})
-      </v-btn>
-      <v-btn variant="outlined" prepend-icon="mdi-file-document-edit-outline" :disabled="bulkActionCounts.INVOICE === 0" @click="triggerBulkAction('INVOICE')">
-        Fatura kes ({{ bulkActionCounts.INVOICE }})
-      </v-btn>
-      <v-btn variant="outlined" prepend-icon="mdi-truck-delivery-outline" :disabled="bulkActionCounts.SHIP === 0" @click="triggerBulkAction('SHIP')">
-        Kargoya ver ({{ bulkActionCounts.SHIP }})
-      </v-btn>
-      <v-btn color="error" variant="outlined" prepend-icon="mdi-delete-sweep-outline" :disabled="bulkActionCounts.CANCEL === 0" @click="handleCancelRequest()">
-        İptal et ({{ bulkActionCounts.CANCEL }})
-      </v-btn>
-      <v-btn icon="mdi-close" variant="text" density="comfortable" aria-label="Seçimi kaldır" @click="selectedOrders = []" />
-    </div>
+      <template #cell-integrationCode="{ row }">
+        <EkChannelDot :code="row.integrationCode" />
+      </template>
+      <template #cell-customer="{ row }">
+        {{ customerName(row) }}
+      </template>
+      <template #cell-items="{ row }">
+        <button type="button" class="ek-order-items" :aria-label="`${row.orderNumber} içeriğini görüntüle`" @click="openDetailedReport(row)">
+          <span class="ek-num">{{ row.items?.length || 0 }} kalem</span>
+          <span v-if="row.items?.length > 0" class="ek-order-items__name">{{ row.items[0].productName }}</span>
+        </button>
+      </template>
+      <template #cell-orderDate="{ row }">
+        <span class="ek-num">{{ formatDateTime(row.dates?.orderDate) }}</span>
+      </template>
+      <template #cell-total="{ row }">
+        <span class="ek-order-total">
+          <span class="ek-num">{{ formatMoney(row.financials?.grandTotal) }}</span>
+          <EkStatusChip v-if="row.platformDiscrepancy?.hasDiscrepancy" tone="danger" label="Tutar uyuşmuyor" />
+        </span>
+      </template>
+      <template #cell-internalStatus="{ row }">
+        <span class="ek-order-status">
+          <EkStatusChip :tone="statusEntry(row.internalStatus).tone" :label="$t(statusEntry(row.internalStatus).labelKey)" />
+          <EkStatusChip v-if="isOrderLocked(row)" tone="warning" label="Kilitli" />
+          <EkStatusChip v-if="row.internalStatus === OrderInternalStatusEnum.CANCELLED" tone="neutral" :label="getCancelSourceLabel(row.cancelSource)" />
+        </span>
+      </template>
+      <template #cell-actions="{ row }">
+        <span class="ek-row-actions">
+          <EkButton tone="ghost" size="sm" icon="mdi-eye" icon-only aria-label="Sipariş detayını görüntüle" @click="openDetailedReport(row)" />
+          <span v-if="!hasAnyRowAction(row)" class="ek-row-actions__spacer" aria-hidden="true"></span>
+          <EkContextMenu v-else :groups="rowMenu(row)" :label="`${row.orderNumber} işlemleri`" @select="(it) => onRowMenu(row, it.key)">
+            <template #activator="{ props: menuProps }">
+              <EkButton v-bind="menuProps" tone="ghost" size="sm" icon="mdi-dots-horizontal" icon-only :aria-label="`${row.orderNumber} için diğer eylemler`" />
+            </template>
+          </EkContextMenu>
+        </span>
+      </template>
+    </EkListScreen>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
-import { useDisplay } from 'vuetify'
-import { breakpoint } from '@/design/tokens'
 
 // Composables
 import useRestApi from '@/composables/restapi'
@@ -274,11 +185,14 @@ import OrderDetailComponent from '@/components/order/OrderDetailComponent.vue'
 import ManualInvoiceComponent from '@/components/order/ManualInvoiceComponent.vue'
 import ManualShipmentComponent from '@/components/order/ManualShipmentComponent.vue'
 import BarcodePrintComponent from '@/components/order/BarcodePrintComponent.vue'
-import EkListPage from '@/components/ds/templates/EkListPage.vue'
-import EkDataTable, { type EkTableColumn } from '@/components/ds/EkDataTable.vue'
-import EkPagination from '@/components/ds/EkPagination.vue'
-import EkEmptyState from '@/components/ds/EkEmptyState.vue'
-import EkErrorState from '@/components/ds/EkErrorState.vue'
+import EkListScreen from '@/components/ds/templates/EkListScreen.vue'
+import type { EkGridColumn, EkGridSort } from '@/components/ds/EkDataGrid.vue'
+import type { EkActiveFilterChip } from '@/components/ds/EkActiveFilters.vue'
+import type { EkMenuGroup } from '@/components/ds/EkMenuPanel.vue'
+import EkButton from '@/components/ds/EkButton.vue'
+import EkContextMenu from '@/components/ds/EkContextMenu.vue'
+import EkChannelDot from '@/components/ds/EkChannelDot.vue'
+import { isRequestError } from '@/components/ds/listStandard'
 import EkStatusChip from '@/components/ds/EkStatusChip.vue'
 import EkConfirmDialog from '@/components/ds/EkConfirmDialog.vue'
 import EkFormDialog from '@/components/ds/EkFormDialog.vue'
@@ -297,21 +211,26 @@ const restApi = useRestApi()
 const snackbarStore = useSnackbarStore()
 const integrationStore = useIntegrationStore()
 
-// Vuetify'ın global display.thresholds'una DEĞİL, ADR-0011/ADR-0012 kırılım
-// token'larına (breakpoint.desktop) bağlı yerel kırılım — ADR-0011 Karar 1
-// "display.thresholds omurgada DEĞİŞMEZ" kararıyla tutarlı.
-const { width: viewportWidth } = useDisplay()
-const isDesktopTable = computed(() => viewportWidth.value >= breakpoint.desktop)
-
-const columns: EkTableColumn[] = [
-  { key: 'select', label: '' },
-  { key: 'orderNumber', label: 'SİPARİŞ & MÜŞTERİ' },
-  { key: 'items', label: 'SİPARİŞ İÇERİĞİ' },
-  { key: 'total', label: 'TUTAR', align: 'end' },
-  { key: 'internalStatus', label: 'SİPARİŞ DURUMU' },
-  { key: 'orderDate', label: 'SİPARİŞ TARİHİ', align: 'end' },
-  { key: 'actions', label: '', type: 'actions', align: 'end' },
+// DS-v2 liste standardı: kolonlar. Sıralanabilir kolonlar backend izin listesindeki alanlara
+// eşlenir (OrderService.getOrders `sort.field` — SUNUCU tarafı sıralama).
+const columns: EkGridColumn[] = [
+  { key: 'orderNumber', label: 'Sipariş no', type: 'id', sortable: true },
+  { key: 'integrationCode', label: 'Kanal', sortable: true },
+  { key: 'customer', label: 'Müşteri' },
+  { key: 'items', label: 'İçerik' },
+  { key: 'orderDate', label: 'Tarih', sortable: true },
+  { key: 'total', label: 'Tutar', type: 'num', sortable: true },
+  { key: 'internalStatus', label: 'Durum', sortable: true },
+  { key: 'actions', label: 'İşlemler', align: 'end', hideLabel: true },
 ]
+
+const SORT_FIELD: Record<string, string> = {
+  orderNumber: 'orderNumber',
+  integrationCode: 'integrationCode',
+  orderDate: 'dates.orderDate',
+  total: 'financials.grandTotal',
+  internalStatus: 'internalStatus',
+}
 
 const loadingComponentRef = ref<any>(null)
 const barcodePrintComponentRef = ref()
@@ -363,8 +282,8 @@ const askForBarcode = (isBulkPrint: boolean = false, count: number = 1): Promise
 // --- COMPOSABLES ---
 
 const {
-  searchOrderForm, pagination, statusOptions,
-  resetFilters,
+  searchOrderForm, pagination, statusOptions, sortBy,
+  resetFilters, onSortUpdate,
   handlePageChange, prepareFilterPayload
 } = useOrderFilters(getOrders);
 
@@ -385,12 +304,69 @@ const { isOrderActionAllowed } = useLifecycle();
 
 // --- COMPUTED ---
 
-const viewState = computed(() => {
-  if (loading.value) return 'loading'
-  if (loadError.value) return 'error'
-  if (!orders.value.length) return 'empty'
-  return 'ready'
+// Grid sıralama durumu ← sunucu sıralama durumu (varsayılan: tarih, yeniden eskiye).
+const gridSort = computed<EkGridSort>(() => {
+  const current = sortBy.value[0]
+  const key = Object.keys(SORT_FIELD).find(k => SORT_FIELD[k] === current?.key)
+  return key ? { key, dir: current.order === 'asc' ? 'asc' : 'desc' } : null
 })
+
+function onGridSort(sort: EkGridSort) {
+  // Üçüncü tık (sıralama kaldır) → backend varsayılanı: en yeni sipariş üstte.
+  onSortUpdate(sort ? [{ key: SORT_FIELD[sort.key], order: sort.dir }] : [{ key: 'dates.orderDate', order: 'desc' }])
+}
+
+// Aktif filtre çipleri — SON SORGULANAN değerlerden (panelde düzenlenip henüz sorgulanmamış değer çip olmaz).
+const applied = ref({ globalSearch: '', integrationCodes: [] as string[], internalStatuses: [] as string[] })
+
+const activeChips = computed<EkActiveFilterChip[]>(() => {
+  const chips: EkActiveFilterChip[] = []
+  if (applied.value.globalSearch) chips.push({ key: 'globalSearch', label: 'Arama', value: applied.value.globalSearch })
+  if (applied.value.integrationCodes.length) {
+    chips.push({ key: 'integrationCodes', label: 'Kanal', value: applied.value.integrationCodes.map(platformName).join(', ') })
+  }
+  if (applied.value.internalStatuses.length) {
+    const titleOf = (id: string) => statusOptions.value.find(o => o.id === id)?.title ?? id
+    chips.push({ key: 'internalStatuses', label: 'Durum', value: applied.value.internalStatuses.map(titleOf).join(', ') })
+  }
+  return chips
+})
+
+const panelFilterCount = computed(() => (applied.value.integrationCodes.length ? 1 : 0) + (applied.value.internalStatuses.length ? 1 : 0))
+
+function removeChip(key: string) {
+  const data = searchOrderForm.value.data
+  if (key === 'globalSearch') data.globalSearch = ''
+  if (key === 'integrationCodes') data.integrationCodes = []
+  if (key === 'internalStatuses') data.internalStatuses = []
+  getOrders(true)
+}
+
+function rowMenu(item: any): EkMenuGroup[] {
+  const locked = isOrderLocked(item)
+  const ops = [
+    { key: 'APPROVE', label: 'Onayla', icon: 'mdi-check-circle-outline' },
+    { key: 'INVOICE', label: 'Fatura oluştur', icon: 'mdi-receipt-text-plus-outline' },
+    { key: 'SHIP', label: 'Kargoya ver', icon: 'mdi-truck-fast-outline' },
+    { key: 'PRINT_LABEL', label: 'Kargo etiketi yazdır', icon: 'mdi-barcode-scan' },
+  ].filter(o => isOrderActionAllowed(item, o.key as any)).map(o => ({ ...o, disabled: locked }))
+  const groups: EkMenuGroup[] = ops.length ? [{ items: ops }] : []
+  if (isOrderActionAllowed(item, 'CANCEL')) {
+    groups.push({ items: [{ key: 'CANCEL', label: 'Siparişi iptal et', icon: 'mdi-delete-sweep-outline', danger: true, disabled: locked }] })
+  }
+  return groups
+}
+
+function onRowMenu(item: any, key: string) {
+  if (key === 'PRINT_LABEL') return printShippingLabel(item)
+  if (key === 'CANCEL') return handleCancelRequest(item)
+  handlePlatformAction(item._id, key as 'INVOICE' | 'SHIP' | 'APPROVE')
+}
+
+function customerName(item: any): string {
+  const name = [item.billingAddress?.firstName, item.billingAddress?.lastName].filter(Boolean).join(' ')
+  return name || '—'
+}
 
 const selectedOrderObjects = computed(() => {
   return orders.value.filter(order => selectedOrders.value.includes(order._id));
@@ -412,13 +388,16 @@ async function getOrders(resetPage: boolean = false) {
   if (resetPage) pagination.page = 1;
   loading.value = true;
   loadError.value = false;
-  const guid = loadingComponentRef.value?.info("") || "loading";
+  const d = searchOrderForm.value.data;
+  applied.value = { globalSearch: d.globalSearch || '', integrationCodes: [...(d.integrationCodes || [])], internalStatuses: [...(d.internalStatuses || [])] };
 
   try {
     const res = await restApi.post('OrderService/getOrders', {
       searchOrderForm: prepareFilterPayload()
     });
-    if (res.orders) {
+    if (isRequestError(res)) {
+      loadError.value = true;
+    } else if (res?.orders) {
       orders.value = res.orders;
 
       if (isDetailOpen.value && selectedOrderForDetail.value) {
@@ -432,7 +411,6 @@ async function getOrders(resetPage: boolean = false) {
   } catch (e) {
     loadError.value = true;
   } finally {
-    loadingComponentRef.value?.remove(guid);
     loading.value = false;
   }
 }
@@ -461,6 +439,8 @@ function statusEntry(status: OrderInternalStatusEnum) {
 }
 
 function platformName(code: string): string {
+  const known: Record<string, string> = { n11: 'N11' }
+  if (known[code]) return known[code]
   return code ? code.charAt(0).toUpperCase() + code.slice(1) : 'Bilinmeyen';
 }
 
@@ -624,62 +604,83 @@ defineExpose({
 <style scoped>
 .orderListView {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  inset: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: var(--ek-space-6);
-  gap: var(--ek-space-4);
+  padding: var(--ek-space-5) var(--ek-space-6);
 }
 
-.ek-order-table-wrapper {
-  width: 100%;
-}
-
-.ek-order-item-name {
-  max-width: 200px;
-}
-
-.ek-clickable {
-  cursor: pointer;
+@media (max-width: 767px) {
+  .orderListView {
+    overflow-y: auto;
+    padding: var(--ek-space-4);
+  }
 }
 
 .ek-muted {
   color: var(--ek-color-content-muted);
 }
 
-.ek-gap-1 { gap: var(--ek-space-1); }
-.ek-gap-2 { gap: var(--ek-space-2); }
-.ek-gap-3 { gap: var(--ek-space-3); }
-
 .border-subtle {
   border: 1px solid var(--ek-color-border-default);
 }
 
-.border-top-dashed {
-  border-top: 1px dashed var(--ek-color-border-default);
-}
-
-.mobile-orders-list {
-  width: 100%;
-}
-
-/* Toplu eylem çubuğu — Karar 3.2 "n seçildi · [eylemler] · Seçimi kaldır",
-   sade sabit alt çubuk (bounce/hover-lift YOK, Karar 1.1). */
-.ek-order-bulk-bar {
-  position: sticky;
-  bottom: 0;
-  display: flex;
+.ek-order-no {
+  display: inline-flex;
   align-items: center;
-  gap: var(--ek-space-3);
-  padding: var(--ek-space-3) var(--ek-space-4);
-  background: var(--ek-color-surface);
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-lg);
-  box-shadow: var(--ek-shadow-md);
-  margin-top: var(--ek-space-2);
+  gap: var(--ek-space-1);
+}
+
+.ek-order-no__icon {
+  color: var(--ek-color-action);
+}
+
+.ek-order-items {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 240px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ek-order-items:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+  border-radius: var(--ek-radius-sm);
+}
+
+.ek-order-items__name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+}
+
+.ek-order-total,
+.ek-order-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+}
+
+.ek-row-actions {
+  display: inline-flex;
+  gap: var(--ek-space-1);
+}
+
+.ek-row-actions__spacer {
+  width: var(--ek-control-h-sm);
+}
+
+.ek-bulk-danger {
+  color: var(--ek-color-error);
 }
 </style>

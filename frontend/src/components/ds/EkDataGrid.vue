@@ -9,7 +9,10 @@
     - Kolon tipleri: id (aksiyon renginde yarı kalın kimlik), num (sağa, tabular),
       muted (ikincil bilgi), text (varsayılan). Hücre içeriği `#cell-<key>` slot'u
     - Durumlar: yükleniyor (iskelet satırlar, başlık korunur), boş (ikon
-      kapsülü + başlık + açıklama + #empty-action)
+      kapsülü + başlık + açıklama + #empty-action), HATA (`error`; boştan ayrı
+      ton + #error-action / `retry` olayı)
+    - Kolon `hideLabel`: başlık görsel olarak boş (eylem kolonu), ekran okuyucu adı korunur
+    - Hücre slot kapsamı: `{ row, item, value, index }` (`item` = `row`, göç kolaylığı)
   Yükseklik: kapsayıcısını doldurur (`EkListFrame` içinde kullanılır);
   sayfalama bu bileşenin DIŞINDA, çerçevenin altına sabittir.
 -->
@@ -42,7 +45,7 @@
               <span>{{ col.label }}</span>
               <v-icon class="ek-grid__sort-icon" :icon="sortIcon(col.key)" aria-hidden="true" />
             </button>
-            <span v-else>{{ col.label }}</span>
+            <span v-else :class="{ 'ek-sr-only': col.hideLabel }">{{ col.label }}</span>
           </th>
         </tr>
       </thead>
@@ -54,12 +57,24 @@
           </td>
         </tr>
       </tbody>
+      <tbody v-else-if="error">
+        <tr>
+          <td class="ek-grid__empty-cell" :colspan="columns.length + (selectable ? 1 : 0)">
+            <div class="ek-grid__empty" role="alert">
+              <EkIconTile icon="mdi-alert-circle-outline" tone="error" size="lg" />
+              <p class="ek-grid__empty-title">{{ errorTitle }}</p>
+              <p class="ek-grid__empty-text">{{ errorText }}</p>
+              <slot name="error-action" />
+            </div>
+          </td>
+        </tr>
+      </tbody>
       <tbody v-else-if="rows.length">
         <tr
           v-for="(row, ri) in rows"
           :key="row[rowKey]"
           class="ek-grid__row"
-          :class="{ 'is-selected': isSelected(row), 'is-hover': forceHoverIndex === ri }"
+          :class="[{ 'is-selected': isSelected(row), 'is-hover': forceHoverIndex === ri }, rowClass?.(row)]"
           @click="emit('row-click', row)"
         >
           <td v-if="selectable" class="ek-grid__td ek-grid__td--select" @click.stop>
@@ -75,9 +90,9 @@
             v-for="col in columns"
             :key="col.key"
             class="ek-grid__td"
-            :class="[`ek-grid__td--${col.type ?? 'text'}`, `ek-grid__td--${col.align ?? alignFor(col)}`]"
+            :class="[`ek-grid__td--${col.type ?? 'text'}`, `ek-grid__td--${col.align ?? alignFor(col)}`, { 'ek-grid__td--wrap': col.wrap }]"
           >
-            <slot :name="`cell-${col.key}`" :row="row" :value="row[col.key]">{{ row[col.key] ?? '—' }}</slot>
+            <slot :name="`cell-${col.key}`" :row="row" :item="row" :value="row[col.key]" :index="ri">{{ row[col.key] ?? '—' }}</slot>
           </td>
         </tr>
       </tbody>
@@ -108,6 +123,10 @@ export interface EkGridColumn {
   align?: 'start' | 'end' | 'center'
   sortable?: boolean
   width?: string
+  /** Başlık görsel olarak gizli (ör. eylem kolonu); ekran okuyucu için ad korunur. */
+  hideLabel?: boolean
+  /** Hücre metni satır kırabilir (varsayılan tek satır). */
+  wrap?: boolean
 }
 
 export type EkGridSort = { key: string; dir: 'asc' | 'desc' } | null
@@ -129,6 +148,10 @@ const props = withDefaults(
     emptyText?: string
     emptyIcon?: string
     forceHoverIndex?: number
+    error?: boolean
+    errorTitle?: string
+    errorText?: string
+    rowClass?: (row: Row) => string | Record<string, boolean> | undefined
   }>(),
   {
     rowKey: 'id',
@@ -141,6 +164,9 @@ const props = withDefaults(
     emptyTitle: 'Kayıt bulunamadı',
     emptyText: 'Filtreleri değiştirip yeniden sorgulayın.',
     emptyIcon: 'mdi-text-box-search-outline',
+    error: false,
+    errorTitle: 'Kayıtlar yüklenemedi',
+    errorText: 'Bağlantınızı kontrol edip yeniden deneyin.',
   },
 )
 
@@ -291,6 +317,11 @@ function toggleSort(key: string) {
   border-bottom: 1px solid var(--ek-color-border-subtle);
   white-space: nowrap;
   transition: var(--ek-transition-colors);
+}
+
+.ek-grid__td--wrap {
+  white-space: normal;
+  min-width: 160px;
 }
 
 .ek-grid__td--end {
