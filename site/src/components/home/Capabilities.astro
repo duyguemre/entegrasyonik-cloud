@@ -214,13 +214,19 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
           <div class="win__bar">
             <span class="win__dots"><i></i><i></i><i></i></span>
             <span class="win__title">Siparişler ve iadeler</span>
-            <span class="win__tag">Örnek görünüm</span>
+            <span class="win__search"><Icon name="search" size="sm" /><i></i></span>
           </div>
           <ul class="win__filters">
             <li class="win__filter win__filter--active">Tümü</li>
             <li class="win__filter">Yeni</li>
             <li class="win__filter">İade</li>
           </ul>
+          <div class="win__body">
+          <span class="win__toast" data-code={codeB}>
+            <span class="win__chan"></span>
+            <strong>Yeni sipariş</strong>
+            <i class="win__skel win__skel--b"></i>
+          </span>
           <ul class="win__rows">
             {
               rows.map((r) => (
@@ -235,6 +241,7 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
               ))
             }
           </ul>
+          </div>
         </div>
       </div>
     </article>
@@ -268,6 +275,7 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
               ))
             }
           </ul>
+          <p class="istat__hub"><span class="istat__hub-icon"><Icon name="plug" size="sm" /></span>Tek panel</p>
         </div>
       </div>
     </article>
@@ -290,7 +298,7 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
         <div class="vault" data-scene="secret-encryption" aria-hidden="true">
           <div class="vault__row">
             <span class="vault__label">Girdiğiniz API anahtarı</span>
-            <span class="vault__field" data-part="plain">••••••••••••••••</span>
+            <span class="vault__field" data-part="plain"><Icon name="key" size="sm" />••••••••••••••••</span>
           </div>
           <div class="vault__step" data-part="lock">
             <Icon name="lock" size="md" />
@@ -305,8 +313,9 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
           </div>
           <div class="vault__row">
             <span class="vault__label">Arayüz ve API yanıtlarında</span>
-            <span class="vault__field" data-part="masked">••••••••</span>
+            <span class="vault__field" data-part="masked"><Icon name="eye" size="sm" />••••••••<em class="vault__hidden">gizli</em></span>
           </div>
+          <span class="vault__rail"><i class="vault__spark"></i></span>
         </div>
       </div>
     </article>
@@ -322,11 +331,12 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
         <div class="tenant" data-scene="tenant-isolation" aria-hidden="true">
           <div class="tenant__cols">
             {
-              [1, 2, 3].map(() => (
+              [1, 2, 3].map((n) => (
                 <div class="tenant__col" data-part="tenant-col">
+                  {n > 1 && <span class="tenant__wall"><Icon name="shield" size="sm" /></span>}
                   <span class="tenant__acct" data-part="tenant-acct"><Icon name="users" size="md" /><span>Hesap</span></span>
                   <span class="tenant__link" data-part="tenant-link"></span>
-                  <span class="tenant__db" data-part="tenant-db"><Icon name="database" size="md" /><span>Ayrı veritabanı</span></span>
+                  <span class="tenant__db" data-part="tenant-db"><Icon name="database" size="md" /><span>Ayrı veritabanı</span><span class="tenant__rows"><i></i><i></i><i></i></span></span>
                 </div>
               ))
             }
@@ -1120,14 +1130,57 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     font-size: var(--ek-font-size-sm);
     font-weight: var(--ek-font-weight-semibold);
   }
-  .win__tag {
-    padding: 0 var(--ek-space-2);
+  /* Arama alanı iskeleti (pencereyi gerçek bir listeye benzetir; metin/sayı yok). */
+  .win__search {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    width: 30%;
+    min-width: var(--ek-space-16);
+    padding: calc(var(--ek-space-1) * 0.75) var(--ek-space-2);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-surface);
+    color: var(--ek-color-content-muted);
+  }
+  .win__search i {
+    display: block;
+    flex: 1;
+    height: var(--ek-space-1);
     border-radius: var(--ek-radius-full);
     background: var(--ek-color-surface-sunken);
-    color: var(--ek-color-content-default);
+  }
+  .win__body {
+    position: relative;
+  }
+  /* Gelen sipariş bildirimi: döngüde listenin üstüne süzülür, birleşir ve söner (statik: görünmez). */
+  .win__toast {
+    position: absolute;
+    inset-block-start: calc((var(--ek-space-10) + var(--ek-space-1)) * -1);
+    inset-inline-end: var(--ek-space-3);
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    width: 46%;
+    padding: var(--ek-space-2) var(--ek-space-3);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 45%, var(--ek-color-border-default));
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface);
+    box-shadow:
+      0 var(--ek-space-2) var(--ek-space-6) calc(var(--ek-space-2) * -1) color-mix(in srgb, var(--ek-color-content-strong) 28%, transparent),
+      0 0 0 var(--ek-space-1) color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 12%, transparent);
+    color: var(--ek-color-content-strong);
     font-size: var(--ek-font-size-xs);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .win__toast strong {
+    flex: none;
     font-weight: var(--ek-font-weight-semibold);
-    white-space: nowrap;
+  }
+  .win__toast .win__skel {
+    flex: 1;
   }
   .win__filters {
     display: flex;
@@ -1219,9 +1272,69 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     text-align: center;
     text-transform: none;
   }
+  /* Kanal noktaları dikey bir "veri hattı" üzerindeki duraklardır; hat alttaki tek panele iner. */
   .istat__rows {
+    position: relative;
     display: flex;
     flex-direction: column;
+  }
+  .istat__rows::before {
+    content: '';
+    position: absolute;
+    inset-block: calc(var(--ek-space-3) + var(--ek-space-1)) calc(var(--ek-space-4) * -1);
+    inset-inline-start: calc(var(--ek-space-1) - var(--site-border-width));
+    width: calc(var(--site-border-width) * 2);
+    border-radius: var(--ek-radius-full);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--ek-color-secondary) 20%, var(--ek-color-border-default)), var(--ek-color-secondary));
+  }
+  /* Hat boyunca aşağı akan ışık (statik: görünmez). Sözde öğe hattın boyundadır; translate yüzdesi = hat boyu. */
+  .istat__rows::after {
+    content: '';
+    position: absolute;
+    inset-block: 0 calc(var(--ek-space-4) * -1);
+    inset-inline-start: calc(var(--ek-space-1) - var(--ek-space-2) * 0.625);
+    width: calc(var(--ek-space-2) * 1.25);
+    background: radial-gradient(circle at 50% var(--ek-space-2), var(--ek-color-secondary) 0 calc(var(--ek-space-1) * 0.8), color-mix(in srgb, var(--ek-color-secondary) 30%, transparent) calc(var(--ek-space-1) * 1.2), transparent var(--ek-space-3)) no-repeat;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .istat__hub {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    margin-top: var(--ek-space-4);
+    margin-inline-start: calc(var(--ek-space-3) * -1);
+    padding: var(--ek-space-1) var(--ek-space-3) var(--ek-space-1) var(--ek-space-1);
+    border-radius: var(--ek-radius-full);
+    background: var(--site-stage-mesh);
+    box-shadow:
+      0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-secondary) 14%, transparent),
+      0 var(--ek-space-2) var(--ek-space-5) calc(var(--ek-space-2) * -1) color-mix(in srgb, var(--ek-color-primary-darken-1) 50%, transparent);
+    color: var(--site-color-on-primary);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.04em;
+  }
+  .istat__hub-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-6);
+    height: var(--ek-space-6);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-secondary);
+    color: var(--ek-color-content-strong);
+  }
+  .istat__hub::after {
+    content: '';
+    position: absolute;
+    inset: calc(var(--site-border-width) * -2);
+    border: calc(var(--site-border-width) * 2) solid var(--ek-color-secondary);
+    border-radius: inherit;
+    box-shadow: 0 0 var(--ek-space-4) var(--ek-color-secondary);
+    opacity: 0;
+    pointer-events: none;
   }
   .istat__row {
     display: grid;
@@ -1312,6 +1425,7 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
 
   /* --- D: anahtar şifreleme --- */
   .vault {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-3);
@@ -1348,6 +1462,60 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     font-family: var(--ek-font-mono);
     font-size: var(--ek-font-size-md);
     letter-spacing: 0.08em;
+  }
+  .vault__field > :global(.icon) {
+    flex: none;
+    color: var(--site-color-on-primary-muted);
+  }
+  .vault__hidden {
+    margin-inline-start: auto;
+    padding: 0 var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
+    color: var(--site-color-on-primary);
+    font-family: var(--ek-font-sans, inherit);
+    font-size: var(--ek-font-size-xs);
+    font-style: normal;
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.02em;
+  }
+  /* Anahtarın yolculuğu: girdi alanından kilidin arkasından geçip saklanan alana inen ince hat; üzerinde ışık iner. */
+  .vault__rail {
+    position: absolute;
+    inset-block-start: calc(var(--ek-space-16) + var(--ek-space-5));
+    inset-inline-start: calc(50% - var(--site-border-width));
+    z-index: 0;
+    width: calc(var(--site-border-width) * 2);
+    height: calc(var(--ek-space-16) + var(--ek-space-4));
+    border-radius: var(--ek-radius-full);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--ek-color-secondary) 55%, transparent), color-mix(in srgb, var(--ek-color-secondary) 25%, transparent));
+    pointer-events: none;
+  }
+  .vault > :not(.vault__rail) {
+    position: relative;
+    z-index: 1;
+  }
+  .vault__spark {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 0, var(--ek-color-secondary) 0 var(--ek-space-1), transparent calc(var(--ek-space-1) * 1.6)) no-repeat;
+    background-size: var(--ek-space-3) var(--ek-space-3);
+    background-position: 50% 0;
+    overflow: visible;
+    opacity: 0;
+  }
+  .vault__bars i {
+    position: relative;
+    overflow: hidden;
+  }
+  .vault__bars i::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--ek-color-secondary);
+    box-shadow: 0 0 var(--ek-space-2) var(--ek-color-secondary);
+    opacity: 0;
   }
   .vault__field--cipher {
     position: relative;
@@ -1391,6 +1559,7 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     gap: var(--ek-space-3);
   }
   .tenant__col {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -1428,6 +1597,60 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     height: var(--ek-space-8);
     background: linear-gradient(180deg, var(--ek-color-primary-darken-1), var(--ek-color-secondary));
     transform-origin: 50% 0;
+  }
+  /* İzolasyon duvarı: sütunlar arasında kesikli ayraç + kalkan rozeti (veri paylaşılmaz). */
+  .tenant__wall {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: calc(var(--ek-space-3) / -2);
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 0;
+    border-inline-start: var(--site-border-width) dashed color-mix(in srgb, var(--ek-color-secondary) 55%, var(--ek-color-border-strong));
+    color: var(--ek-color-secondary-darken-1);
+  }
+  .tenant__wall :global(.icon) {
+    box-sizing: content-box;
+    padding: calc(var(--ek-space-1) * 0.75);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 55%, var(--ek-color-border-default));
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-surface);
+    box-shadow: var(--float-shadow);
+  }
+  .tenant__db {
+    position: relative;
+  }
+  .tenant__db::after {
+    content: '';
+    position: absolute;
+    inset: calc(var(--site-border-width) * -1);
+    border: calc(var(--site-border-width) * 2) solid var(--ek-color-secondary);
+    border-radius: inherit;
+    box-shadow: 0 0 var(--ek-space-5) calc(var(--ek-space-1) * -1) var(--ek-color-secondary);
+    opacity: 0;
+    pointer-events: none;
+  }
+  /* Veritabanının içindeki kayıt satırları (yalnızca biçim). */
+  .tenant__rows {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--ek-space-1) * 0.75);
+    align-self: stretch;
+    margin-top: var(--ek-space-1);
+  }
+  .tenant__rows i {
+    display: block;
+    height: calc(var(--ek-space-1) * 0.75);
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-secondary) 35%, var(--ek-color-surface-sunken));
+    transform-origin: 0 50%;
+  }
+  .tenant__rows i:nth-child(2) {
+    width: 80%;
+  }
+  .tenant__rows i:nth-child(3) {
+    width: 55%;
   }
   .tenant__platform {
     display: flex;
@@ -2162,9 +2385,168 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     }
     :global(html[data-motion='play']) .tenant__link::after {
       animation: cap-drop var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
-      animation-delay: calc(var(--site-motion-stagger) * var(--d, 0));
+      animation-delay: calc(var(--site-motion-ambient-fast) * var(--q, 0) / 3);
     }
     :global(html[data-motion='play']) [data-scene='tenant-isolation'][data-visible='true'] .tenant__link::after {
+      animation-play-state: running;
+    }
+
+    /*
+     * Bento karoları (S15-C) — sakin, tek odaklı döngüler (T = ambient-fast):
+     *  B gelen sipariş bildirimi listeye süzülür · C ışık kanal hattından aşağı iner, "Tek panel" yanar ·
+     *  D ışık anahtarın yolunu izler, kilit oturur, şifreli çubuklar sırayla parlar · E hesaplar sırayla kendi
+     *  veritabanına yazar (kayıt satırları dolar, veritabanı yanar); sütunlar arası duvar sabit kalır.
+     */
+    @keyframes cap-toast {
+      0%,
+      8% {
+        opacity: 0;
+        translate: 0 calc(var(--ek-space-3) * -1);
+      }
+      14%,
+      34% {
+        opacity: 1;
+        translate: 0 0;
+      }
+      42%,
+      100% {
+        opacity: 0;
+        translate: 0 var(--ek-space-3);
+      }
+    }
+    @keyframes cap-fall {
+      0% {
+        opacity: 0;
+        translate: 0 0;
+      }
+      5% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 1;
+        translate: 0 100%;
+      }
+      56%,
+      100% {
+        opacity: 0;
+        translate: 0 100%;
+      }
+    }
+    @keyframes cap-glow {
+      0%,
+      48% {
+        opacity: 0;
+      }
+      54%,
+      60% {
+        opacity: 1;
+      }
+      80%,
+      100% {
+        opacity: 0;
+      }
+    }
+    @keyframes cap-snap {
+      0%,
+      9%,
+      100% {
+        scale: 1;
+        rotate: 0deg;
+      }
+      15% {
+        scale: 1.18;
+        rotate: -10deg;
+      }
+      23% {
+        scale: 1;
+        rotate: 0deg;
+      }
+    }
+    @keyframes cap-cipher {
+      0%,
+      40% {
+        opacity: 0;
+      }
+      46% {
+        opacity: 0.85;
+      }
+      60%,
+      100% {
+        opacity: 0;
+      }
+    }
+    @keyframes cap-write {
+      0%,
+      30% {
+        scale: 0 1;
+        opacity: 0.4;
+      }
+      42%,
+      86% {
+        scale: 1 1;
+        opacity: 1;
+      }
+      96%,
+      100% {
+        scale: 1 1;
+        opacity: 1;
+      }
+    }
+    :global(html[data-motion='play']) [data-scene='orders-merge'][data-state='play'] .win__toast {
+      animation: cap-toast var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
+      animation-delay: calc(var(--site-motion-scene-max) + var(--site-motion-loop-scene) * 0.05);
+    }
+    :global(html[data-motion='play']) .istat[data-state='play'] .istat__rows::after,
+    :global(html[data-motion='play']) [data-scene='secret-encryption'][data-state='play'] .vault__spark {
+      animation: cap-fall var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+    }
+    :global(html[data-motion='play']) .istat[data-state='play'] .istat__hub::after {
+      animation: cap-glow var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+    }
+    :global(html[data-motion='play']) [data-scene='secret-encryption'][data-state='play'] .vault__step :global(svg) {
+      animation: cap-snap var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+    }
+    :global(html[data-motion='play']) [data-scene='secret-encryption'][data-state='play'] .vault__bars i::after {
+      animation: cap-cipher var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+      animation-delay: calc(var(--site-motion-stagger) * var(--d, 0) + var(--site-motion-ambient-fast) * 0.04);
+    }
+    .vault__bars i:nth-child(2) {
+      --d: 2;
+    }
+    .vault__bars i:nth-child(3) {
+      --d: 4;
+    }
+    .vault__bars i:nth-child(4) {
+      --d: 6;
+    }
+    /* E: sütunlar sırayla (üçte bir tur arayla) — damla iner, satırlar yazılır, veritabanı yanar. */
+    .tenant__col {
+      --q: 0;
+    }
+    .tenant__col:nth-child(2) {
+      --q: 1;
+    }
+    .tenant__col:nth-child(3) {
+      --q: 2;
+    }
+    :global(html[data-motion='play']) [data-scene='tenant-isolation'][data-state='play'] .tenant__db::after {
+      animation: cap-glow var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+      animation-delay: calc(var(--site-motion-ambient-fast) * (var(--q) / 3 - 0.1));
+    }
+    :global(html[data-motion='play']) [data-scene='tenant-isolation'][data-state='play'] .tenant__rows i {
+      animation: cap-write var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+      animation-delay: calc(var(--site-motion-ambient-fast) * (var(--q) / 3 + 0.1) + var(--site-motion-stagger) * var(--r, 0));
+    }
+    .tenant__rows i:nth-child(2) {
+      --r: 2;
+    }
+    .tenant__rows i:nth-child(3) {
+      --r: 4;
+    }
+    :global(html[data-motion='play']) [data-scene='orders-merge'][data-visible='true'] .win__toast,
+    :global(html[data-motion='play']) .istat[data-visible='true'] :is(.istat__rows, .istat__hub)::after,
+    :global(html[data-motion='play']) [data-scene='secret-encryption'][data-visible='true'] :is(.vault__spark, .vault__step :global(svg), .vault__bars i::after),
+    :global(html[data-motion='play']) [data-scene='tenant-isolation'][data-visible='true'] :is(.tenant__db::after, .tenant__rows i) {
       animation-play-state: running;
     }
 
@@ -2491,6 +2873,15 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
   @media (max-width: 639px) {
     .tile {
       padding: var(--ek-space-5);
+    }
+    /* Dar ekranda bildirim filtre çiplerini örtmesin: ilk satırın iskelet alanının üzerinde, kısa hâliyle. */
+    .win__toast {
+      inset-block-start: var(--ek-space-2);
+      inset-inline: var(--ek-space-8) auto;
+      width: auto;
+    }
+    .win__toast .win__skel {
+      display: none;
     }
     .stock,
     .tenant,

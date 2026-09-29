@@ -30,10 +30,20 @@ function balancedBlock(css: string, startIndex: number): string {
 }
 const styleOf = (file: string) => stripComments(read(file).match(/<style>([\s\S]*?)<\/style>/)![1])
 const scriptOf = (file: string) => read(file).match(/<script>([\s\S]*?)<\/script>/)?.[1] ?? ''
+/** Tüm `no-preference` bloklarını birleştirir (bir bileşende birden fazla olabilir); dışarıda kalan = statik CSS. */
 function split(css: string) {
   const start = css.indexOf(NO_PREF)
-  const body = balancedBlock(css, start + NO_PREF.length - 1)
-  return { start, body, outside: css.slice(0, start) + css.slice(start + NO_PREF.length + body.length + 1) }
+  let body = ''
+  let outside = ''
+  let from = 0
+  for (let i = start; i >= 0; i = css.indexOf(NO_PREF, from)) {
+    const b = balancedBlock(css, i + NO_PREF.length - 1)
+    outside += css.slice(from, i)
+    body += `${b}\n`
+    from = i + NO_PREF.length + b.length + 1
+  }
+  outside += css.slice(from)
+  return { start, body, outside }
 }
 const rulesOf = (body: string) => [...body.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => ({ selector: m[1].trim(), body: m[2] }))
 const keyframesOf = (body: string) =>
@@ -42,6 +52,7 @@ const keyframesOf = (body: string) =>
 const FILES = {
   how: 'components/home/HowItWorks.astro',
   eco: 'components/home/IntegrationShowcase.astro',
+  caps: 'components/home/Capabilities.astro',
 } as const
 
 describe.each(Object.entries(FILES))('%s: bileşen içi hareket sözleşmesi', (_key, file) => {
@@ -153,5 +164,67 @@ describe('Ekosistem: iki yönlü akış, sıralı ışıma, hover vurgusu', () =
   it('yörünge noktaları isimsiz: yalnızca data-code (kanal adı metni yok)', () => {
     expect(html).toMatch(/<i class="eco__sat" data-code=\{code\}><\/i>/)
     expect(html).not.toMatch(/\.name\b/)
+  })
+})
+
+describe('S15-C: "Örnek görünüm" etiketi yok; görseller aria-hidden (anlam çevredeki metinde)', () => {
+  it.each(Object.values(FILES))('%s: görünür etiket metni yok', (file) => {
+    const markup = read(file).split('<style>')[0].replace(/\/\*[\s\S]*?\*\//g, '')
+    expect(markup).not.toMatch(/Örnek görünüm|örnek görünüm/)
+  })
+
+  it('bento/stok görsellerinin kökleri aria-hidden kalır', () => {
+    const html = read(FILES.caps)
+    for (const scene of ['stock-single-winner', 'orders-merge', 'integration-status', 'secret-encryption', 'tenant-isolation']) {
+      expect(html, scene).toMatch(new RegExp(`data-scene="${scene}" aria-hidden="true"`))
+    }
+  })
+})
+
+describe('S15-C: stok rezervasyonu anlatısı (eşzamanlı iki sipariş -> biri rezerve, diğeri aşırı satış)', () => {
+  const html = read(FILES.caps)
+  const css = styleOf(FILES.caps)
+  const { body, outside } = split(css)
+
+  it('scenes.css giriş kancaları korunur; iki giriş hattı + iki çıkış hattı ve ışık taşıyıcıları var', () => {
+    for (const part of ['order-a', 'order-b', 'arrow-a', 'product', 'arrow-b', 'left-a', 'left-b', 'result-ok', 'result-oversold']) {
+      expect(html, part).toContain(`data-part="${part}"`)
+    }
+    for (const c of ['a', 'b', 'ok', 'warn']) expect(html).toContain(`stock__carrier stock__carrier--${c}`)
+    expect(html).toContain('Rezerve edildi')
+    expect(html).toContain('Aşırı satış olarak işaretlendi')
+  })
+
+  it('statik son durum: kalan 0, döngü öğeleri (ışık, parlama, "1") hareket kapalıyken görünmez', () => {
+    expect(outside).toMatch(/\.stock__left-a,\s*\.stock__one\s*\{\s*opacity:\s*0/)
+    expect(outside).toMatch(/\.stock__pulse\s*\{[^}]*opacity:\s*0/)
+    expect(outside).toMatch(/\.stock__flash\s*\{[^}]*opacity:\s*0/)
+    expect(outside).not.toMatch(/\.stock__zero\s*\{[^}]*opacity:\s*0/)
+  })
+
+  it('iki sipariş ışığı AYNI fazda (eşzamanlı); başarı hattı uyarı hattından önce', () => {
+    const phase = (sel: string) => Number(body.match(new RegExp(`${sel}[^{]*\\{\\s*--p:\\s*([\\d.]+)`))![1])
+    expect(body).toMatch(/\.stock__carrier--a,\s*\.stock__carrier--b\s*\{\s*--p:/)
+    expect(phase('\\.stock__carrier--ok')).toBeLessThan(phase('\\.stock__carrier--warn'))
+    expect(phase('\\.stock__result--ok')).toBeLessThan(phase('\\.stock__result--warn'))
+  })
+})
+
+describe('S15-C: ekosistem düğümlerinin iç hareketi (yörünge korunur)', () => {
+  const html = read(FILES.eco)
+  const { body } = split(styleOf(FILES.eco))
+
+  it('yörünge noktaları ve dönüşü korunur', () => {
+    expect(html).toContain('eco__orbit eco__orbit--outer')
+    expect(body).toMatch(/\.eco__orbit--outer\s*\{\s*animation:\s*eco-orbit/)
+  })
+
+  it('düğüm içi: ikon uyanışı, kanal noktası nabzı ve akış çizgisi düğümün çeyrek fazına (--k) bağlı', () => {
+    expect(html).toContain('<span class="eco__flow"><span class="eco__stream"></span></span>')
+    for (const sel of ['.eco__icon', '.eco__dots > i', '.eco__stream']) {
+      const r = rulesOf(body).find((x) => x.selector.includes(sel) && /animation-delay/.test(x.body))
+      expect(r, sel).toBeDefined()
+      expect(r!.body, sel).toMatch(/var\(--k, 0\) \/ 4/)
+    }
   })
 })
