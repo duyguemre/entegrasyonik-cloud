@@ -1,0 +1,35 @@
+---
+/** Badge — durum rozeti (ör. ileride plan kartlarında "yakında"). Yalnızca *-subtle zeminler + güçlü metin. */
+interface Props {
+  tone?: 'neutral' | 'info' | 'success' | 'warning'
+  class?: string
+}
+
+const { tone = 'neutral', class: className } = Astro.props
+---
+
+<span class:list={['badge', `badge--${tone}`, className]}><slot /></span>
+
+<style>
+  .badge {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: center;
+    padding: var(--ek-space-1) var(--ek-space-3);
+    border-radius: var(--ek-radius-full);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+    line-height: var(--ek-line-height-tight);
+    color: var(--ek-color-content-strong);
+    background: var(--ek-color-surface-sunken);
+  }
+  .badge--info {
+    background: var(--ek-color-info-subtle);
+  }
+  .badge--success {
+    background: var(--ek-color-success-subtle);
+  }
+  .badge--warning {
+    background: var(--ek-color-warning-subtle);
+  }
+</style>

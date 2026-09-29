@@ -1,0 +1,11 @@
+node_modules/
+**/node_modules/
+dist/
+dist-*/
+test-results/
+playwright-report/
+.env
+.env.*
+!.env.example
+# Görsel tabanlar yerelde (Windows) üretilir; bulutun Linux tabanları commit'lenmez.
+**/*-linux.png

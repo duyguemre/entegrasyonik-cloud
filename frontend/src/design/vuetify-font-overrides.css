@@ -1,0 +1,38 @@
+/**
+ * frontend/src/design/vuetify-font-overrides.css
+ *
+ * ADR-0011 Açık Soru 1 (KARARLANDI 2026-09-27, kullanıcı): Roboto → Inter.
+ *
+ * Vuetify'ın derlenmiş CSS'i (`vuetify/styles` → `lib/styles/main.css` ve
+ * `autoImport: true` ile enjekte edilen `VBadge.css`) `font-family:
+ * "Roboto", sans-serif`'i aşağıdaki tam selector kümesinde (SASS derleme
+ * zamanı `$body-font-family` değeri) DOĞRUDAN gömer. `vuetify.ts` SASS
+ * `configFile` AÇMADIĞI için (ADR-0011 Karar 1 — build süresi gerekçesi)
+ * bu değer kaynağında değiştirilemez; bu yüzden aynı selector kümesi
+ * `--ek-font-sans` token'ına yönlendirilir.
+ *
+ * `!important` KULLANIMI BİLİNÇLİDİR: `autoImport: true` component CSS'lerini
+ * (ör. VBadge.css) modül grafiğinin herhangi bir noktasında enjekte
+ * edebildiğinden, bu dosyanın kademe SIRASINA güvenilemez — eşit
+ * özgüllükte kazanmanın tek güvenilir yolu budur. Kapsam KASITLI OLARAK DAR
+ * TUTULUR: yalnızca Vuetify'ın gerçekten `font-family: "Roboto"` yazdığı
+ * selector'lar (grep ile doğrulandı). Simge fontları (`.mdi`, `.v-icon`)
+ * BU LİSTEYE DAHİL DEĞİLDİR ve dokunulmaz.
+ */
+html,
+.text-h1,
+.text-h2,
+.text-h3,
+.text-h4,
+.text-h5,
+.text-h6,
+.text-subtitle-1,
+.text-subtitle-2,
+.text-body-1,
+.text-body-2,
+.text-button,
+.text-caption,
+.text-overline,
+.v-badge__badge {
+  font-family: var(--ek-font-sans) !important;
+}

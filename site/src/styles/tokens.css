@@ -1,0 +1,8 @@
+/*
+ * Design token girişi (ADR-0011 + ADR-0014). `tokens.static.css` KOPYALANMAZ, doğrudan import edilir
+ * → drift yok. `packages/ui-kit` doğduğunda (ADR-0007) yalnızca bu tek yol değişir.
+ * Sıra önemli: önce --ek-* (kaynak), sonra --site-* (yalnızca onlara dayanan genişletme).
+ */
+@import '../../../frontend/src/design/tokens/dist/tokens.static.css';
+@import './fonts.css';
+@import './site-tokens.css';

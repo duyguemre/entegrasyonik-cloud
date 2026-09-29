@@ -1,0 +1,51 @@
+---
+/**
+ * ChannelMono — kanal (pazaryeri/entegrasyon) monogram rozeti (S11). Logo YOK (marka izni açık soru,
+ * ADR-0014 Açık Soru 3): yalnızca ilk harf + marka rengi zemini. Renk `[data-code]` eşlemesi ile
+ * `src/styles/global.css`'ten gelir (`--chan`/`--chan-fill`); burada yeni renk tanımlanmaz.
+ * Anlam metinle taşınır (`aria-hidden`, yanında her zaman kanal adı görünür).
+ */
+interface Props {
+  code: string
+  name: string
+  size?: 'sm' | 'md' | 'lg'
+  class?: string
+}
+
+const { code, name, size = 'md', class: className } = Astro.props
+---
+
+<span class:list={['chan-mono', `chan-mono--${size}`, className]} data-code={code} aria-hidden="true">
+  {name.slice(0, 1)}
+</span>
+
+<style>
+  .chan-mono {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--ek-radius-lg);
+    background: linear-gradient(140deg, var(--chan, var(--ek-color-primary)), var(--chan-fill, var(--ek-color-primary-darken-1)));
+    box-shadow: var(--ek-shadow-md);
+    color: var(--site-color-on-primary);
+    font-weight: var(--ek-font-weight-bold);
+    line-height: 1;
+  }
+  .chan-mono--sm {
+    width: var(--ek-space-8);
+    height: var(--ek-space-8);
+    font-size: var(--ek-font-size-md);
+    border-radius: var(--ek-radius-md);
+  }
+  .chan-mono--md {
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
+    font-size: var(--ek-font-size-lg);
+  }
+  .chan-mono--lg {
+    width: calc(var(--ek-space-16) * 0.85);
+    height: calc(var(--ek-space-16) * 0.85);
+    font-size: var(--site-font-display-sm);
+  }
+</style>

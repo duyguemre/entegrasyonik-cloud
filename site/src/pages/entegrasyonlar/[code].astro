@@ -1,0 +1,544 @@
+---
+/**
+ * /entegrasyonlar/[code] — entegrasyon detay sayfası (ADR-0014 Karar 2, S2b). Statik yollar `getPublicIntegrations()`
+ * ile VERİDEN üretilir (yol haritası öğesi için sayfa YOK). İçerik: yetenek matrisi, sunulmayanlar/sınırlamalar,
+ * nasıl bağlanır (yalnızca kimlik bilgisi TÜRLERİ — sır/örnek değer yok).
+ *
+ * S11b: "Sınırlamalar ve sunulmayanlar" artık matrisle AYNI bölümde sticky yan kutu (masaüstü) / matrisin
+ * hemen altında kompakt şerit (mobil); "Nasıl bağlanırsınız" + "Diğer entegrasyonlar" tek bölümde birleşti
+ * (sol: adımlar, sağ: gerekli bilgiler, altta çip şeridi) — 4 ayrı tam-genişlik bölüm yerine 2 bölüm, boşluk
+ * kapandı. Hero görseli artık kayıttan hesaplanan bir kapsam segment çubuğu + ilk 4 yeteneğin mini listesini
+ * gösteriyor (sayılar yalnızca `aria-label`'da — görünür metinde rakam yok, `tests/pages.test.ts` bunu zorlar).
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import Section from '../../components/Section.astro'
+import Card from '../../components/Card.astro'
+import Badge from '../../components/Badge.astro'
+import Icon from '../../components/home/Icon.astro'
+import PageHero from '../../components/pages/PageHero.astro'
+import PageMeta from '../../components/pages/PageMeta.astro'
+import LevelBadge from '../../components/pages/LevelBadge.astro'
+import ChannelMono from '../../components/pages/ChannelMono.astro'
+import CtaBand from '../../components/pages/CtaBand.astro'
+import { getPublicIntegrations, type PublicIntegration, type CoverageLevel } from '../../data/integrations'
+import { getConnectGuide } from '../../data/connect'
+import { getPublicCapabilities } from '../../data/capabilities'
+import { breadcrumbJsonLd } from '../../lib/seo'
+import { appUrls } from '../../lib/site-config'
+
+export function getStaticPaths() {
+  return getPublicIntegrations().map((integration) => ({
+    params: { code: integration.code },
+    props: { integration },
+  }))
+}
+
+interface Props {
+  integration: PublicIntegration
+}
+
+const { integration: i } = Astro.props
+const coverageTone: Record<CoverageLevel, 'success' | 'info' | 'warning'> = {
+  broad: 'success',
+  partial: 'info',
+  limited: 'warning',
+}
+
+const title = `${i.name} entegrasyonu`
+const description = `${i.name} entegrasyonunun kapsamı, sınırlamaları ve bağlantı için gereken bilgiler. ${i.summary}`
+const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Entegrasyonlar', href: '/entegrasyonlar' }, { label: i.name }]
+
+const guide = getConnectGuide(i.code, i.kind)
+const secretsSummary = getPublicCapabilities('security').find((c) => c.id === 'secrets-encryption')?.summary
+const others = getPublicIntegrations().filter((x) => x.code !== i.code)
+const hasLimits = i.limitations.length > 0 || i.notProvided.length > 0
+
+// Hero görseli: kapsam segment çubuğu (destekleniyor/kısmi oranı, kayıttan) — görünür metinde rakam YOK,
+// gerçek sayı yalnızca `aria-label`'da (ekran okuyucu için). İlk 4 yetenek: ikonlu mini önizleme.
+const totalCapabilities = i.capabilities.length
+const supportedCount = i.capabilities.filter((c) => c.level === 'supported').length
+const limitedCount = totalCapabilities - supportedCount
+const METER_SEGMENTS = 5
+const filledSegments = totalCapabilities > 0 ? Math.round((supportedCount / totalCapabilities) * METER_SEGMENTS) : 0
+const meterLabel =
+  limitedCount > 0
+    ? `Yetenek matrisinde bir kısmı destekleniyor, bir kısmı kısmi kapsamlı; ayrıntı aşağıdadır.`
+    : `Yetenek matrisindeki tüm işlemler destekleniyor; ayrıntı aşağıdadır.`
+const previewCapabilities = i.capabilities.slice(0, 4)
+---
+
+<BaseLayout title={title} description={description}>
+  <PageMeta
+    slot="head"
+    title={title}
+    description={description}
+    jsonLd={[
+      breadcrumbJsonLd([
+        { label: 'Ana sayfa', path: '/' },
+        { label: 'Entegrasyonlar', path: '/entegrasyonlar' },
+        { label: i.name, path: `/entegrasyonlar/${i.code}` },
+      ]),
+    ]}
+  />
+
+  <PageHero title={title} lead={i.summary} crumbs={crumbs} eyebrow={i.kindLabel}>
+    <Badge tone={coverageTone[i.coverage]}>{i.coverageLabel}</Badge>
+    <Fragment slot="visual">
+      <div class="hero-visual">
+        <div class="hero-visual__id">
+          <ChannelMono code={i.code} name={i.name} size="lg" />
+          <p class="hero-visual__kind">{i.kindLabel}</p>
+        </div>
+        <div class="hero-meter" role="img" aria-label={meterLabel}>
+          {
+            Array.from({ length: METER_SEGMENTS }).map((_, idx) => (
+              <span class:list={['hero-meter__seg', { 'hero-meter__seg--on': idx < filledSegments }]} />
+            ))
+          }
+        </div>
+        <ul class="hero-preview">
+          {
+            previewCapabilities.map((c) => (
+              <li>
+                <Icon name={c.level === 'supported' ? 'check' : 'info'} size="sm" />
+                <span>{c.label}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </Fragment>
+  </PageHero>
+
+  <Section labelledby="matris-title" class="tight-section">
+    <div class="head">
+      <h2 id="matris-title">Yetenek matrisi</h2>
+      <p>Bu entegrasyonda hangi işlemlerin desteklendiği ve hangilerinin sınırlı olduğu.</p>
+    </div>
+    <div class:list={['matrix-layout', { 'matrix-layout--split': hasLimits }]}>
+      <ul class="rows" role="list" data-testid="capability-matrix">
+        {
+          i.capabilities.map((c) => (
+            <li class="row" data-level={c.level}>
+              <span class="row__icon" aria-hidden="true">
+                <Icon name={c.level === 'supported' ? 'check' : 'info'} size="sm" />
+              </span>
+              <div class="row__body">
+                <div class="row__label">
+                  <h3>{c.label}</h3>
+                  <LevelBadge level={c.level} label={c.levelLabel} />
+                </div>
+                <p class="row__note">{c.note}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ul>
+      {
+        hasLimits && (
+          <aside class="limits-aside" aria-label="Sınırlamalar ve sunulmayanlar">
+            {i.limitations.length > 0 && (
+              <div class="bound-card bound-card--warn" aria-labelledby="sinirlamalar-title" data-testid="limitations">
+                <h3 id="sinirlamalar-title">
+                  <Icon name="info" size="sm" /> Sınırlamalar
+                </h3>
+                <ul class="bullets" role="list">
+                  {i.limitations.map((text) => (
+                    <li>{text}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {i.notProvided.length > 0 && (
+              <div class="bound-card bound-card--off" aria-labelledby="sunulmayan-title" data-testid="not-provided">
+                <h3 id="sunulmayan-title">
+                  <Icon name="x" size="sm" /> Sunulmayanlar
+                </h3>
+                <ul class="bullets bullets--off" role="list">
+                  {i.notProvided.map((text) => (
+                    <li>{text}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </aside>
+        )
+      }
+    </div>
+  </Section>
+
+  <Section labelledby="baglan-title" tone="muted" class="tight-section">
+    <div class="head">
+      <h2 id="baglan-title">Nasıl bağlanırsınız</h2>
+      <p>Bağlantı için yalnızca aşağıdaki kimlik bilgisi türleri gerekir.</p>
+    </div>
+    {
+      guide && (
+        <div class="two">
+          <Card as="section" aria-labelledby="adimlar-title">
+            <h3 id="adimlar-title">Adımlar</h3>
+            <ol class="steps" data-testid="connect-steps">
+              {guide.steps.map((step) => (
+                <li>{step}</li>
+              ))}
+            </ol>
+          </Card>
+          <Card as="section" aria-labelledby="bilgiler-title">
+            <h3 id="bilgiler-title">Gerekli bilgiler</h3>
+            <ul class="chips" role="list" data-testid="credential-types">
+              {guide.credentials.map((label) => (
+                <li>{label}</li>
+              ))}
+            </ul>
+            {secretsSummary && (
+              <p class="note">
+                {secretsSummary} <a href="/guvenlik">Güvenlik yaklaşımımız</a>
+              </p>
+            )}
+            {guide.note && <p class="note note--warn">{guide.note}</p>}
+          </Card>
+        </div>
+      )
+    }
+    <div class="related">
+      <h3 class="related__label">Diğer entegrasyonlar</h3>
+      <ul class="others" role="list">
+        {
+          others.map((o) => (
+            <li>
+              <a class="others__link" href={`/entegrasyonlar/${o.code}`} data-code={o.code}>
+                <ChannelMono code={o.code} name={o.name} size="sm" />
+                <span>{o.name}</span>
+              </a>
+            </li>
+          ))
+        }
+        <li><a class="others__all" href="/entegrasyonlar">Tüm entegrasyonlar</a></li>
+      </ul>
+    </div>
+  </Section>
+
+  <CtaBand
+    id="detay-cta"
+    title={`${i.name} kanalınızı bağlayın`}
+    text="Hesabınızı oluşturun ve kimlik bilgilerinizi girerek başlayın."
+    primary={{ label: 'Ücretsiz dene', href: appUrls.register() }}
+    secondary={{ label: 'İletişime geçin', href: '/iletisim' }}
+  />
+</BaseLayout>
+
+<script>
+  import '../../scripts/interactions'
+</script>
+
+<style>
+  .head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    margin-bottom: var(--ek-space-8);
+  }
+  .head h2 {
+    font-size: var(--site-font-display-sm);
+    font-weight: var(--site-font-display-weight);
+    line-height: var(--site-font-display-line-height);
+    letter-spacing: var(--site-font-display-tracking);
+  }
+  .head p {
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-lg);
+  }
+
+  /* Bölümler arası dikey ritim genel olarak sıkılaştırıldı (S11b). */
+  .tight-section:global(.section) {
+    padding-block: calc(var(--site-section-y) * 0.72);
+  }
+
+  /* --- Hero görsel: kanal monogramı + kapsam segment çubuğu + ilk 4 yetenek --- */
+  .hero-visual {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-5);
+  }
+  .hero-visual__id {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--ek-space-3);
+    text-align: center;
+  }
+  .hero-visual__kind {
+    color: var(--site-color-on-primary-muted);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .hero-meter {
+    display: flex;
+    gap: var(--ek-space-1);
+  }
+  .hero-meter__seg {
+    flex: 1;
+    height: var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-background) 22%, transparent);
+  }
+  .hero-meter__seg--on {
+    background: var(--ek-color-secondary);
+  }
+  .hero-preview {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    padding-top: var(--ek-space-4);
+    border-top: var(--site-border-width) solid var(--site-glass-border);
+  }
+  .hero-preview li {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    color: var(--site-color-on-primary-muted);
+    font-size: var(--ek-font-size-sm);
+  }
+  .hero-preview :global(svg) {
+    flex: none;
+    color: var(--ek-color-secondary);
+  }
+
+  /* --- Yetenek matrisi + sınırlar yan kutusu --- */
+  .matrix-layout {
+    display: grid;
+    gap: var(--ek-space-8);
+    align-items: start;
+  }
+  .rows {
+    display: flex;
+    flex-direction: column;
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-xl);
+    background: var(--ek-color-surface);
+    overflow: hidden;
+  }
+  /* Desteklenen/kısmi işlemler ikon + renk + etiketle ayrılır (yalnızca renk anlam taşımaz: ikon + metin de var). */
+  .row {
+    display: grid;
+    gap: var(--ek-space-3) var(--ek-space-4);
+    grid-template-columns: auto 1fr;
+    align-items: start;
+    padding: var(--ek-space-5) var(--ek-space-6);
+    border-inline-start: var(--ek-space-1) solid transparent;
+  }
+  .row[data-level='supported'] {
+    border-inline-start-color: var(--ek-color-success);
+  }
+  .row[data-level='limited'] {
+    border-inline-start-color: var(--ek-color-warning);
+  }
+  .row + .row {
+    border-top: var(--site-border-width) solid var(--ek-color-border-default);
+  }
+  .row__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-8);
+    height: var(--ek-space-8);
+    margin-top: var(--ek-space-1);
+    border-radius: var(--ek-radius-full);
+  }
+  .row[data-level='supported'] .row__icon {
+    background: var(--ek-color-success-subtle);
+    color: var(--ek-color-success);
+  }
+  .row[data-level='limited'] .row__icon {
+    background: var(--ek-color-warning-subtle);
+    color: var(--ek-color-warning);
+  }
+  .row__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    min-width: 0;
+  }
+  .row__label {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ek-space-2) var(--ek-space-3);
+  }
+  .row__label h3 {
+    font-size: var(--ek-font-size-xl);
+  }
+  .row__note {
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-lg);
+  }
+
+  /* Yan kutu (masaüstü sticky; "Sınırlamalar ve sunulmayanlar" artık ayrı bölüm değil, S11b). */
+  .limits-aside {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-5);
+  }
+  .bound-card {
+    padding: var(--ek-space-5);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-inline-start: var(--ek-space-1) solid var(--ek-color-border-strong);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface);
+  }
+  .bound-card--warn {
+    border-inline-start-color: var(--ek-color-warning);
+  }
+  .bound-card--off {
+    border-inline-start-color: var(--ek-color-content-muted);
+  }
+  .bound-card h3 {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    font-size: var(--ek-font-size-lg);
+  }
+  .bound-card--warn h3 {
+    color: var(--ek-color-warning);
+  }
+  .bound-card--off h3 {
+    color: var(--ek-color-content-muted);
+  }
+  .bullets,
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-lg);
+  }
+  .bound-card .bullets {
+    margin-top: var(--ek-space-3);
+    font-size: var(--ek-font-size-md);
+  }
+  .bullets li {
+    position: relative;
+    padding-inline-start: var(--ek-space-5);
+  }
+  .bullets li::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0.6em;
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-border-strong);
+  }
+  .bullets--off li::before {
+    background: var(--ek-color-content-muted);
+  }
+  .steps {
+    padding-inline-start: var(--ek-space-5);
+    list-style: decimal;
+  }
+
+  .two {
+    display: grid;
+    gap: var(--ek-space-6);
+    grid-template-columns: 1fr;
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2);
+  }
+  .chips li {
+    padding: var(--ek-space-2) var(--ek-space-4);
+    border: var(--site-border-width) solid var(--ek-color-border-strong);
+    border-radius: var(--ek-radius-full);
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-medium);
+  }
+  .note {
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-md);
+  }
+  /* Card'ın `.card p` kuralını (özgüllük 0,1,1) geçmek için iki sınıf. */
+  .note.note--warn {
+    padding: var(--ek-space-3) var(--ek-space-4);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-warning-subtle);
+    color: var(--ek-color-content-strong);
+  }
+
+  /* "Diğer entegrasyonlar" artık "Nasıl bağlanırsınız" bölümünün alt şeridi (S11b — ayrı tam bölüm değil). */
+  .related {
+    margin-top: var(--ek-space-10);
+    padding-top: var(--ek-space-8);
+    border-top: var(--site-border-width) solid var(--ek-color-border-default);
+  }
+  .related__label {
+    margin: 0 0 var(--ek-space-4);
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .others {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-3);
+  }
+  .others__link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    min-height: var(--site-tap-target);
+    padding-inline: var(--ek-space-3) var(--ek-space-4);
+    border: var(--site-border-width) solid var(--ek-color-border-strong);
+    border-radius: var(--ek-radius-full);
+    color: var(--ek-color-content-strong);
+    font-weight: var(--ek-font-weight-medium);
+    text-decoration: none;
+    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .others__link:hover {
+    border-color: color-mix(in srgb, var(--chan, var(--ek-color-primary)) 60%, transparent);
+  }
+  .others__all {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--site-tap-target);
+    padding-inline: var(--ek-space-4);
+    border: var(--site-border-width) dashed var(--ek-color-border-strong);
+    border-radius: var(--ek-radius-full);
+    color: var(--ek-color-primary);
+    font-weight: var(--ek-font-weight-medium);
+    text-decoration: none;
+    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .others__all:hover {
+    border-color: var(--ek-color-primary);
+  }
+
+  @media (min-width: 768px) {
+    .row__body {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+      gap: var(--ek-space-6);
+      align-items: start;
+    }
+    .two {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (min-width: 900px) {
+    .matrix-layout--split {
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    }
+    .limits-aside {
+      position: sticky;
+      top: calc(var(--site-header-height) + var(--ek-space-6));
+    }
+  }
+</style>

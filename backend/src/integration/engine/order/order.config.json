@@ -1,0 +1,39 @@
+{
+    "syncIntervalMs": 60000,
+    "defaultSyncFallbackDays": 1,
+    "workerConcurrency": 5,
+    "retryLimits": {
+        "maxAttempts": 5,
+        "backoffDelayMs": 2000,
+        "timeoutMs": 15000
+    },
+    "memoryManagement": {
+        "removeOnComplete": { "age": 86400, "count": 1000 },
+        "removeOnFail": { "count": 500 }
+    },
+    "claimSync": {
+        "intervalMs": 900000,
+        "cursorOverlapMs": 3600000,
+        "fullSweepIntervalMs": 86400000,
+        "fullSweepWindowDays": 32
+    },
+    "financeSync": {
+        "intervalMs": 21600000,
+        "cursorOverlapMs": 86400000,
+        "fullSweepIntervalMs": 86400000,
+        "fullSweepWindowDays": 30
+    },
+    "messageSync": {
+        "intervalMs": 300000,
+        "cursorOverlapMs": 900000
+    },
+    "orderSync": {
+        "cursorOverlapMs": 300000
+    },
+    "webhookHealthy": {
+        "reconciliationIntervalMs": 300000
+    },
+    "webhookHealthCheck": {
+        "detectionWithoutWebhookWindowMs": 1800000
+    }
+}

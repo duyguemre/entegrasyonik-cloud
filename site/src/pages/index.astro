@@ -1,0 +1,56 @@
+---
+/**
+ * Ana sayfa (ADR-0014 Karar 2 — bölüm sırası; S2a; S7 premium görsel dil; S10 sırası yeniden gözden geçirildi).
+ * Tüm içerik `getPublic*` seçicilerinden gelir; sayfada uydurma rakam, mutlak iddia veya yol haritası adı
+ * YOKTUR (tests/claims.test.ts + tests/home.test.ts korur). Bölümler statik hâlde anlamlıdır.
+ *
+ * S10 bölüm sırası (satış hikâyesi mantığı: sorun -> farkımız -> ne sunuyoruz -> hangi kanallar -> nasıl
+ * başlarım -> fiyat -> güven -> SSS -> kapanış):
+ *   Hero -> Proof (kanıt) -> Sorun/Çözüm (+karşılaştırma) -> Sipariş hikâyesi (farkımız: stok rezervasyonu) ->
+ *   Yetenekler (ne sunuyoruz) -> Entegrasyonlar (hangi kanallar) -> Nasıl çalışır (nasıl başlarım) ->
+ *   Fiyat -> Güvenlik (fiyattan hemen sonra son bir güven pekiştirmesi) -> SSS -> Kapanış.
+ * Koyu "sahne" ritmi (Hero, Yetenekler'in iç küme bandı, Nasıl çalışır, Güvenlik, Kapanış) İKİ KOYU BÖLÜM ARKA
+ * ARKAYA GELMEYECEK şekilde dağıtılmıştır: Güvenlik kasıtlı olarak Nasıl-çalışır'ın hemen ardına değil, Fiyat'tan
+ * hemen sonraya alınmıştır (Nasıl-çalışır ve Güvenlik ikisi de --site-glass-* / stage'e derinden bağlı olduğundan
+ * tonlarını değiştirmek yerine ARALARINA açık bir bölüm --Fiyat-- girmesi tercih edildi).
+ *
+ * Hero'da "Örnek görünüm" ürün paneli, kanıt şeridi + kayan entegrasyon şeridi, bento yetenekler (beş
+ * animasyonlu UI parçası), "Bir sipariş geldiğinde ne olur" zaman çizgisi, yapışkan "nasıl çalışır", güvenlik
+ * istek yolu. Animasyon sahneleri `data-scene="…"` ile (src/styles/scenes.css + scenes-loops.css +
+ * src/scripts/scenes.ts). `scenes` → header'da hareket durdurma kontrolü.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro'
+import Hero from '../components/home/Hero.astro'
+import Proof from '../components/home/Proof.astro'
+import ProblemSolution from '../components/home/ProblemSolution.astro'
+import OrderStory from '../components/home/OrderStory.astro'
+import Capabilities from '../components/home/Capabilities.astro'
+import IntegrationShowcase from '../components/home/IntegrationShowcase.astro'
+import HowItWorks from '../components/home/HowItWorks.astro'
+import PricingSummary from '../components/home/PricingSummary.astro'
+import SecuritySummary from '../components/home/SecuritySummary.astro'
+import FaqPreview from '../components/home/FaqPreview.astro'
+import ClosingCta from '../components/home/ClosingCta.astro'
+---
+
+<BaseLayout
+  scenes
+  title="Pazaryeri entegrasyonu ve stok yönetimi"
+  description="Entegrasyonik, pazaryerlerindeki ürün, stok, sipariş ve iade süreçlerinizi tek panelde toplar; stok rezervasyonuyla aşırı satış riskini azaltır."
+>
+  <Hero />
+  <Proof />
+  <ProblemSolution />
+  <OrderStory />
+  <Capabilities />
+  <IntegrationShowcase />
+  <HowItWorks />
+  <PricingSummary />
+  <SecuritySummary />
+  <FaqPreview />
+  <ClosingCta />
+</BaseLayout>
+
+<script>
+  import '../scripts/interactions'
+</script>

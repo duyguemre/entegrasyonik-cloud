@@ -1,0 +1,626 @@
+/*
+ * Animasyon sahneleri — DÖNGÜSEL (ambient) katman (ADR-0014 Karar 3, S7). Giriş sahneleri: scenes.css.
+ * KURALLAR (tests/scenes.test.ts korur):
+ *  - Tüm bildirimler `@media (prefers-reduced-motion: no-preference)` içinde ve `html[data-motion='play']` ister →
+ *    reduced-motion / durdurulmuş / JS'siz durumda döngü YOKTUR; sahne anlamlı statik son durumundadır.
+ *  - Her sonsuz animasyon `paused` başlar ve YALNIZCA sahne görünürken (`data-visible='true'`) `running` olur;
+ *    sekme arka plandayken durur (scenes.css). Böylece görünmeyen hiçbir döngü işlemci harcamaz.
+ *  - Döngü süreleri 6–30 sn (token: 12 sn senaryo, 30 sn şerit/ışıma, 6 sn ışın) — ani/hızlı titreşim yok.
+ *  - Yalnızca `opacity`, `translate`, `scale` (yerleşim değişmez, CLS 0). Kaydırma/scroll bağlantısı yok.
+ *  - Keyframes TAM döngüyü (yüzdelerle) tanımlar; başlangıç/bitiş durumu aynıdır (kesintisiz).
+ *  - Ad kuralı: "loop-*" (yasaklı lunapark sözcükleri kullanılmaz).
+ */
+
+@media (prefers-reduced-motion: no-preference) {
+  /* ---------------------------------------------------------------------------------------- */
+  /* hero-mock — 12 sn senaryo: üç sipariş satırı her zaman görünür; sırayla "Yeni" -> "Rezerve" olur, */
+  /*   stok ve rezerve sayaçları eşlik eder, sinyal kanal çiplerine yayılır (satır 1: 18, satır 2: 38, */
+  /*   satır 3: 58; bekleme 60–95; döngü 96–100'de sıfırlanır)                                         */
+  /* ---------------------------------------------------------------------------------------- */
+  /* "Yeni" rozeti: döngü başında görünür, rezervasyon anında solar (altındaki "Rezerve" rozeti ortaya çıkar). */
+  @keyframes loop-new-1 {
+    0%,
+    17% {
+      opacity: 1;
+    }
+    18.2%,
+    98% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  @keyframes loop-new-2 {
+    0%,
+    37% {
+      opacity: 1;
+    }
+    38.2%,
+    98% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  @keyframes loop-new-3 {
+    0%,
+    57% {
+      opacity: 1;
+    }
+    58.2%,
+    98% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  /* Stok sayısı (12 -> 11 -> 10 -> 9) ve rezerve sayısı (0 -> 1 -> 2 -> 3): üst üste bindirilmiş sayılar rezervasyon anında hızlıca (~70 ms) yer değiştirir. */
+  @keyframes loop-count-1 {
+    0%,
+    17% {
+      opacity: 1;
+    }
+    17.6%,
+    98% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  @keyframes loop-count-2 {
+    0%,
+    17% {
+      opacity: 0;
+    }
+    17.6%,
+    37% {
+      opacity: 1;
+    }
+    37.6%,
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes loop-count-3 {
+    0%,
+    37% {
+      opacity: 0;
+    }
+    37.6%,
+    57% {
+      opacity: 1;
+    }
+    57.6%,
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes loop-count-4 {
+    0%,
+    57% {
+      opacity: 0;
+    }
+    57.6%,
+    96% {
+      opacity: 1;
+    }
+    97%,
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes loop-meter {
+    0%,
+    17% {
+      scale: 1 1;
+    }
+    19%,
+    37% {
+      scale: 0.917 1;
+    }
+    39%,
+    57% {
+      scale: 0.833 1;
+    }
+    59%,
+    96% {
+      scale: 0.75 1;
+    }
+    98%,
+    100% {
+      scale: 1 1;
+    }
+  }
+  /* Güncelleme sinyali: kanal şeridinde soldan sağa akan ışık, her rezervasyondan sonra bir kez. */
+  @keyframes loop-sweep {
+    0%,
+    17.5% {
+      opacity: 0;
+      translate: -100% 0;
+    }
+    18% {
+      opacity: 1;
+      translate: -100% 0;
+    }
+    24% {
+      opacity: 1;
+      translate: 360% 0;
+    }
+    24.5%,
+    37.5% {
+      opacity: 0;
+      translate: 360% 0;
+    }
+    38% {
+      opacity: 1;
+      translate: -100% 0;
+    }
+    44% {
+      opacity: 1;
+      translate: 360% 0;
+    }
+    44.5%,
+    57.5% {
+      opacity: 0;
+      translate: 360% 0;
+    }
+    58% {
+      opacity: 1;
+      translate: -100% 0;
+    }
+    64% {
+      opacity: 1;
+      translate: 360% 0;
+    }
+    64.5%,
+    100% {
+      opacity: 0;
+      translate: 360% 0;
+    }
+  }
+  /* Kanal çiplerinde halka: sinyal geldiğinde belirir ve yumuşakça yayılıp söner (çip başına 80 ms gecikme). */
+  @keyframes loop-ring {
+    0%,
+    19% {
+      opacity: 0;
+      scale: 0.96;
+    }
+    21% {
+      opacity: 1;
+      scale: 1;
+    }
+    27%,
+    39% {
+      opacity: 0;
+      scale: 1.08;
+    }
+    41% {
+      opacity: 1;
+      scale: 1;
+    }
+    47%,
+    59% {
+      opacity: 0;
+      scale: 1.08;
+    }
+    61% {
+      opacity: 1;
+      scale: 1;
+    }
+    67%,
+    100% {
+      opacity: 0;
+      scale: 1.08;
+    }
+  }
+  @keyframes loop-toast {
+    0%,
+    18% {
+      opacity: 0;
+      translate: 0 var(--site-motion-distance);
+    }
+    21%,
+    44% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    47%,
+    58% {
+      opacity: 0;
+      translate: 0 0;
+    }
+    61%,
+    76% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    79%,
+    100% {
+      opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * -0.5);
+    }
+  }
+
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] :is(
+      [data-part='pill-new'],
+      [data-part='num'],
+      [data-part='rnum'],
+      [data-part='fill'],
+      [data-part='glow'],
+      [data-part='toast']
+    ),
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='chan']::after {
+    animation-duration: var(--site-motion-loop-scene);
+    animation-timing-function: var(--site-motion-ease-loop);
+    animation-iteration-count: infinite;
+    animation-play-state: paused;
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'][data-visible='true'] :is(
+      [data-part='pill-new'],
+      [data-part='num'],
+      [data-part='rnum'],
+      [data-part='fill'],
+      [data-part='glow'],
+      [data-part='toast']
+    ),
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'][data-visible='true'] [data-part='chan']::after {
+    animation-play-state: running;
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='row']:nth-child(1) [data-part='pill-new'] {
+    animation-name: loop-new-1;
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='row']:nth-child(2) [data-part='pill-new'] {
+    animation-name: loop-new-2;
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='row']:nth-child(3) [data-part='pill-new'] {
+    animation-name: loop-new-3;
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] :is([data-part='num'], [data-part='rnum']):nth-child(1) {
+    animation-name: loop-count-1;
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] :is([data-part='num'], [data-part='rnum']):nth-child(2) {
+    animation-name: loop-count-2;
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] :is([data-part='num'], [data-part='rnum']):nth-child(3) {
+    animation-name: loop-count-3;
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] :is([data-part='num'], [data-part='rnum']):nth-child(4) {
+    animation-name: loop-count-4;
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='fill'] {
+    animation-name: loop-meter;
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='glow'] {
+    animation-name: loop-sweep;
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='toast'] {
+    animation-name: loop-toast;
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='chan']::after {
+    animation-name: loop-ring;
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='chan']:nth-child(2)::after {
+    animation-delay: var(--site-motion-stagger);
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='chan']:nth-child(3)::after {
+    animation-delay: calc(var(--site-motion-stagger) * 2);
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='chan']:nth-child(4)::after {
+    animation-delay: calc(var(--site-motion-stagger) * 3);
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='chan']:nth-child(5)::after {
+    animation-delay: calc(var(--site-motion-stagger) * 4);
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='chan']:nth-child(n + 6)::after {
+    animation-delay: calc(var(--site-motion-stagger) * 5);
+  }
+
+  /* ---------------------------------------------------------------------------------------- */
+  /* problem-solution — "tek merkez" tarafında her kanaldan göbeğe doğru akan sinyal noktası        */
+  /*   (yalnızca opacity/translate; dikey hat üzerinde yukarıdan aşağı, kanal başına 80 ms gecikme)  */
+  /* ---------------------------------------------------------------------------------------- */
+  @keyframes loop-flow {
+    0%,
+    4% {
+      opacity: 0;
+      translate: -50% 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    88% {
+      opacity: 1;
+      translate: -50% var(--site-motion-distance);
+    }
+    94%,
+    100% {
+      opacity: 0;
+      translate: -50% var(--site-motion-distance);
+    }
+  }
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='packet'] {
+    animation: loop-flow var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
+  }
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'][data-visible='true'] [data-part='packet'] {
+    animation-play-state: running;
+  }
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='tidy-row'] > :nth-child(2) [data-part='packet'] {
+    animation-delay: var(--site-motion-stagger);
+  }
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='tidy-row'] > :nth-child(3) [data-part='packet'] {
+    animation-delay: calc(var(--site-motion-stagger) * 2);
+  }
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='tidy-row'] > :nth-child(4) [data-part='packet'] {
+    animation-delay: calc(var(--site-motion-stagger) * 3);
+  }
+
+  /* Göbekte nabız gibi yayılan ışıma (yalnızca opacity/scale). */
+  @keyframes loop-radiate {
+    0%,
+    100% {
+      opacity: 0.55;
+      scale: 0.85;
+    }
+    50% {
+      opacity: 0;
+      scale: 1.35;
+    }
+  }
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='hub']::after {
+    animation: loop-radiate var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+  }
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'][data-visible='true'] [data-part='hub']::after {
+    animation-play-state: running;
+  }
+
+  /* Uyarı rozetinin ölçülü yanıp sönmesi (ayrı öğe — panelin giriş animasyonuyla çakışmaz). */
+  @keyframes loop-blink {
+    0%,
+    60%,
+    100% {
+      opacity: 1;
+    }
+    30% {
+      opacity: 0.45;
+    }
+  }
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='flag'] {
+    animation: loop-blink var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+  }
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'][data-visible='true'] [data-part='flag'] {
+    animation-play-state: running;
+  }
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='messy-panel']:nth-child(2) [data-part='flag'] {
+    animation-delay: var(--site-motion-stagger);
+  }
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='messy-panel']:nth-child(3) [data-part='flag'] {
+    animation-delay: calc(var(--site-motion-stagger) * 2);
+  }
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='messy-panel']:nth-child(4) [data-part='flag'] {
+    animation-delay: calc(var(--site-motion-stagger) * 3);
+  }
+
+  /* ---------------------------------------------------------------------------------------- */
+  /* problem-solution — "dağınık" panelleri hafifçe yüzer (yalnızca translate; statik eğim korunur    */
+  /*   çünkü float, eğimi taşıyan `<li>` değil iç sarmalayıcıya uygulanır); "Uyumsuz" rozeti ölçülü   */
+  /*   şekilde nabız atar (yalnızca opacity/scale); göbekte (hub) dışa doğru genişleyen nabız ışıması */
+  /* ---------------------------------------------------------------------------------------- */
+  @keyframes loop-float {
+    0%,
+    100% {
+      translate: 0 0;
+    }
+    50% {
+      translate: 0 calc(var(--site-motion-distance) * -0.6);
+    }
+  }
+  @keyframes loop-flag {
+    0%,
+    100% {
+      opacity: 0.75;
+      scale: 1;
+    }
+    50% {
+      opacity: 1;
+      scale: 1.06;
+    }
+  }
+  @keyframes loop-hub-glow {
+    0%,
+    100% {
+      opacity: 0.25;
+      scale: 0.9;
+    }
+    50% {
+      opacity: 0.6;
+      scale: 1.15;
+    }
+  }
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='float'] {
+    animation: loop-float var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
+  }
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'][data-visible='true'] [data-part='float'] {
+    animation-play-state: running;
+  }
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='messy-panel']:nth-child(2) [data-part='float'] {
+    animation-delay: calc(var(--site-motion-ambient-fast) * -0.16);
+  }
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='messy-panel']:nth-child(3) [data-part='float'] {
+    animation-delay: calc(var(--site-motion-ambient-fast) * -0.33);
+  }
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='messy-panel']:nth-child(4) [data-part='float'] {
+    animation-delay: calc(var(--site-motion-ambient-fast) * -0.5);
+  }
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='flag'] {
+    animation: loop-flag var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+  }
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'][data-visible='true'] [data-part='flag'] {
+    animation-play-state: running;
+  }
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='hub']::after {
+    animation: loop-hub-glow var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+  }
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'][data-visible='true'] [data-part='hub']::after {
+    animation-play-state: running;
+  }
+
+  /* ---------------------------------------------------------------------------------------- */
+  /* story-step — adımlar arasında akan veri paketi (küçük nabız) + mini arayüzde durum rozeti   */
+  /*   nabzı (ikinci rozet ara sıra belirip sabit rozetin üstüne biner, sonra geri söner)         */
+  /* ---------------------------------------------------------------------------------------- */
+  @keyframes loop-story-packet {
+    0%,
+    6% {
+      opacity: 0;
+      translate: -50% 0;
+    }
+    16%,
+    70% {
+      opacity: 1;
+    }
+    82%,
+    100% {
+      opacity: 0;
+      translate: -50% var(--site-motion-distance);
+    }
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='play'] [data-part='story-packet'] {
+    animation: loop-story-packet var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='play'][data-visible='true'] [data-part='story-packet'] {
+    animation-play-state: running;
+  }
+  @keyframes loop-badge-cycle {
+    0%,
+    38% {
+      opacity: 0;
+    }
+    48%,
+    78% {
+      opacity: 1;
+    }
+    90%,
+    100% {
+      opacity: 0;
+    }
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='play'] [data-part='story-badge-pulse'] {
+    animation: loop-badge-cycle var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='play'][data-visible='true'] [data-part='story-badge-pulse'] {
+    animation-play-state: running;
+  }
+
+  /* ---------------------------------------------------------------------------------------- */
+  /* price-emphasis — önerilen plan kartının arkasında yumuşak, nefes alan ışıma                  */
+  /* ---------------------------------------------------------------------------------------- */
+  @keyframes loop-plan-glow {
+    0%,
+    100% {
+      opacity: 0.24;
+      scale: 0.97;
+    }
+    50% {
+      opacity: 0.5;
+      scale: 1.05;
+    }
+  }
+  html[data-motion='play'] [data-scene='price-emphasis'][data-state='play'] [data-part='plan-glow'] {
+    animation: loop-plan-glow var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
+  }
+  html[data-motion='play'] [data-scene='price-emphasis'][data-state='play'][data-visible='true'] [data-part='plan-glow'] {
+    animation-play-state: running;
+  }
+
+  /* ---------------------------------------------------------------------------------------- */
+  /* cta-reveal — kapanışın arkasındaki eş merkezli halkalar çok yavaş (30 sn) nefes alır          */
+  /* ---------------------------------------------------------------------------------------- */
+  @keyframes loop-cta-rings {
+    0%,
+    100% {
+      opacity: 1;
+      scale: 1;
+    }
+    50% {
+      opacity: 0.7;
+      scale: 1.06;
+    }
+  }
+  html[data-motion='play'] [data-scene='cta-reveal'][data-state='play'] [data-part='cta-rings'] {
+    animation: loop-cta-rings var(--site-motion-loop-marquee) var(--site-motion-ease-loop) infinite paused;
+  }
+  html[data-motion='play'] [data-scene='cta-reveal'][data-state='play'][data-visible='true'] [data-part='cta-rings'] {
+    animation-play-state: running;
+  }
+
+  /* ---------------------------------------------------------------------------------------- */
+  /* hero-bg — iki ışıma çok yavaş (30 sn) süzülür                                                */
+  /* ---------------------------------------------------------------------------------------- */
+  @keyframes loop-drift {
+    0%,
+    100% {
+      translate: 0 0;
+    }
+    50% {
+      translate: 2.5rem 1.5rem;
+    }
+  }
+  html[data-motion='play'] [data-scene='hero-bg'][data-state='play'] [data-part='orb'] {
+    animation: loop-drift var(--site-motion-loop-marquee) var(--site-motion-ease-loop) infinite paused;
+  }
+  html[data-motion='play'] [data-scene='hero-bg'][data-state='play'] [data-part='orb']:nth-child(3) {
+    animation-direction: reverse;
+  }
+  html[data-motion='play'] [data-scene='hero-bg'][data-state='play'][data-visible='true'] [data-part='orb'] {
+    animation-play-state: running;
+  }
+
+  /* ---------------------------------------------------------------------------------------- */
+  /* marquee — entegrasyon şeridi (30 sn / tam küme); üzerine gelince ve durdurulunca durur          */
+  /* ---------------------------------------------------------------------------------------- */
+  @keyframes loop-marquee {
+    from {
+      translate: 0 0;
+    }
+    to {
+      translate: -50% 0;
+    }
+  }
+  html[data-motion='play'] [data-scene='marquee'][data-state='play'] .marquee__track {
+    animation: loop-marquee var(--site-motion-loop-marquee) var(--site-motion-ease-linear) infinite paused;
+  }
+  html[data-motion='play'] [data-scene='marquee'][data-state='play'][data-visible='true'] .marquee__track {
+    animation-play-state: running;
+  }
+  html[data-motion='play'] [data-scene='marquee'][data-state='play'][data-visible='true']:hover .marquee__track {
+    animation-play-state: paused;
+  }
+
+  /* ---------------------------------------------------------------------------------------- */
+  /* request-guard — denetim yolunda yavaş bir ışın (6 sn) yukarıdan aşağı süzülür                  */
+  /* ---------------------------------------------------------------------------------------- */
+  @keyframes loop-beam {
+    0% {
+      opacity: 0;
+      translate: 0 -100%;
+    }
+    15%,
+    85% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      translate: 0 330%;
+    }
+  }
+  html[data-motion='play'] [data-scene='request-guard'][data-state='play'] [data-part='beam'] {
+    animation: loop-beam var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+  }
+  html[data-motion='play'] [data-scene='request-guard'][data-state='play'][data-visible='true'] [data-part='beam'] {
+    animation-play-state: running;
+  }
+}

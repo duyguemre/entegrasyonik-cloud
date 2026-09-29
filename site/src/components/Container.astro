@@ -1,0 +1,27 @@
+---
+/** Container — içerik genişliği (~1200 px) + akışkan yan boşluk. */
+interface Props {
+  size?: 'default' | 'narrow'
+  as?: string
+  class?: string
+  [attr: string]: unknown
+}
+
+const { size = 'default', as: Tag = 'div', class: className, ...rest } = Astro.props
+---
+
+<Tag class:list={['container', `container--${size}`, className]} {...rest}>
+  <slot />
+</Tag>
+
+<style>
+  .container {
+    width: 100%;
+    margin-inline: auto;
+    padding-inline: var(--site-gutter);
+    max-width: calc(var(--site-container-max) + 2 * var(--site-gutter));
+  }
+  .container--narrow {
+    max-width: calc(var(--site-container-narrow) + 2 * var(--site-gutter));
+  }
+</style>

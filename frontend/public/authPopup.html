@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Redirect Handler</title>
+</head>
+<body>
+  <script>
+    (function() {
+      // URL parametrelerini al
+      const params = new URLSearchParams(window.location.search);
+      const data = {};
+      for (const [key, value] of params.entries()) {
+        data[key] = value;
+      }
+
+      // Post etmek için form oluştur
+      function postMessageToParent(data) {
+        if (!window.opener && !window.parent) {
+          console.error('No parent or opener window found.');
+          return;
+        }
+
+        // Eğer parent varsa mesaj gönderelim (postMessage ile)
+        const targetWindow = window.opener || window.parent;
+
+        // PostMessage ile data gönder (json olarak)
+        targetWindow.postMessage({ type: 'redirectParams', data }, '*');
+      }
+
+      postMessageToParent(data);
+
+      // İstersen burada bir mesaj göster
+      document.body.innerText = '';
+
+      // 2 saniye sonra kendini kapatabilir popup ise
+      if (window.opener) {
+        setTimeout(() => window.close(), 200);
+      }
+    })();
+  </script>
+</body>
+</html>

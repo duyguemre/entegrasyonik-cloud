@@ -1,0 +1,235 @@
+---
+/**
+ * Footer — yasal bağlantılar (yayımlanmış sayfalar) + künye YER TUTUCULARI (`{{…}}`).
+ * Künye değerleri (unvan, MERSİS/vergi no, adres) insan tarafından verilir — ADR-0014 Karar 5 / Açık Soru 4;
+ * doğrulanmamış unvan asla yazılmaz.
+ * S7: gradient üst çizgi, koyu zemin, dört sütun (marka + Ürün + Entegrasyonlar + Yasal) ve hesap bağlantıları.
+ * Entegrasyon sütunu yalnızca `getPublicIntegrations()` (mevcut entegrasyonlar).
+ */
+import Container from './Container.astro'
+import Logo from './Logo.astro'
+import { primaryNav, legalNav, published } from '../data/navigation'
+import { getPublicIntegrations } from '../data/integrations'
+import { appUrls } from '../lib/site-config'
+
+const productLinks = published(primaryNav)
+const legalLinks = published(legalNav)
+const integrationLinks = getPublicIntegrations()
+const year = new Date().getFullYear()
+---
+
+<footer class="site-footer">
+  <Container>
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="/" class="footer-logo" aria-label="Entegrasyonik — ana sayfa"><Logo tone="inverse" /></a>
+        <p class="footer-tagline">Pazaryeri entegrasyon ve stok yönetimi: tek stok, tek panel.</p>
+        <div class="footer-cta">
+          <a class="footer-btn footer-btn--primary" href={appUrls.register()} data-testid="footer-register">Ücretsiz dene</a>
+          <a class="footer-btn" href={appUrls.login()} data-testid="footer-login">Giriş yap</a>
+        </div>
+        <p class="footer-kunye" data-testid="kunye-placeholder">
+          Şirket bilgileri yayın öncesinde eklenecektir.
+          <span class="sr-only">{'{{ŞİRKET_UNVANI}}'} · {'{{MERSİS_NO}}'} · {'{{ADRES}}'}</span>
+        </p>
+      </div>
+
+      {
+        productLinks.length > 0 && (
+          <nav aria-labelledby="footer-product-heading">
+            <h2 id="footer-product-heading" class="footer-heading">Ürün</h2>
+            <ul class="footer-list">
+              {productLinks.map((item) => (
+                <li>
+                  <a href={item.href}>{item.label}</a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )
+      }
+
+      {
+        integrationLinks.length > 0 && (
+          <nav aria-labelledby="footer-integrations-heading">
+            <h2 id="footer-integrations-heading" class="footer-heading">Entegrasyonlar</h2>
+            <ul class="footer-list">
+              {integrationLinks.map((i) => (
+                <li>
+                  <a href={`/entegrasyonlar/${i.code}`}>{i.name}</a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )
+      }
+
+      {
+        legalLinks.length > 0 && (
+          <nav aria-labelledby="footer-legal-heading">
+            <h2 id="footer-legal-heading" class="footer-heading">Yasal</h2>
+            <ul class="footer-list">
+              {legalLinks.map((item) => (
+                <li>
+                  <a href={item.href}>{item.label}</a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )
+      }
+    </div>
+
+    <p class="footer-copy">© {year} Entegrasyonik. Tüm hakları saklıdır.</p>
+  </Container>
+</footer>
+
+<style>
+  .site-footer {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    padding-block: var(--ek-space-16) var(--ek-space-8);
+    background:
+      radial-gradient(50% 60% at 12% 0%, color-mix(in srgb, var(--ek-color-primary-darken-1) 26%, transparent), transparent 70%),
+      var(--site-stage-deep);
+    color: var(--site-color-on-primary-muted);
+    font-size: var(--ek-font-size-lg);
+  }
+  .site-footer::before {
+    content: '';
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    height: var(--site-border-width);
+    background: var(--site-gradient-hairline);
+  }
+  .site-footer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image: var(--site-texture-grid);
+    background-size: var(--site-texture-grid-size);
+    -webkit-mask-image: linear-gradient(180deg, var(--ek-color-content-strong), transparent 70%);
+    mask-image: linear-gradient(180deg, var(--ek-color-content-strong), transparent 70%);
+    pointer-events: none;
+  }
+  .footer-grid {
+    display: grid;
+    gap: var(--ek-space-10);
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .footer-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--ek-space-4);
+  }
+  .footer-logo {
+    display: inline-flex;
+    align-self: flex-start;
+    min-height: var(--site-tap-target);
+    align-items: center;
+    text-decoration: none;
+  }
+  .footer-tagline {
+    max-width: 22rem;
+    color: var(--site-color-on-primary);
+    font-size: var(--ek-font-size-lg);
+    line-height: var(--ek-line-height-normal);
+  }
+  .footer-cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2);
+  }
+  .footer-btn {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--site-tap-target);
+    padding-inline: var(--ek-space-4);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-lg);
+    color: var(--site-color-on-primary);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+    text-decoration: none;
+    transition:
+      background-color var(--ek-duration-base) var(--ek-easing-standard),
+      border-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .footer-btn:hover {
+    background: var(--site-glass-bg);
+    border-color: var(--site-color-on-primary-muted);
+  }
+  .footer-btn--primary {
+    border-color: transparent;
+    background: var(--ek-color-background);
+    color: var(--ek-color-primary);
+  }
+  .footer-btn--primary:hover {
+    background: var(--ek-color-surface-sunken);
+    border-color: transparent;
+  }
+  .footer-btn:focus-visible {
+    outline-color: var(--site-color-on-primary);
+  }
+  .footer-kunye {
+    max-width: 22rem;
+    font-size: var(--ek-font-size-md);
+    overflow-wrap: anywhere;
+  }
+  .footer-heading {
+    margin-bottom: var(--ek-space-3);
+    color: var(--site-color-on-primary);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .footer-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+  }
+  .footer-list a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--site-tap-target);
+    color: var(--site-color-on-primary-muted);
+    text-decoration: none;
+    transition: color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .footer-list a:hover {
+    color: var(--site-color-on-primary);
+    text-decoration: underline;
+  }
+  .site-footer :global(a:focus-visible) {
+    outline-color: var(--site-color-on-primary);
+  }
+  .footer-copy {
+    max-width: none;
+    margin-top: var(--ek-space-12);
+    padding-top: var(--ek-space-6);
+    border-top: var(--site-border-width) solid var(--site-glass-border);
+    font-size: var(--ek-font-size-md);
+  }
+
+  @media (min-width: 640px) {
+    .footer-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .footer-brand {
+      grid-column: 1 / -1;
+    }
+  }
+  @media (min-width: 1024px) {
+    .footer-grid {
+      grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr));
+    }
+    .footer-brand {
+      grid-column: auto;
+    }
+  }
+</style>

@@ -1,0 +1,14 @@
+---
+/** LevelBadge — yetenek düzeyi rozeti. Renk tek başına anlam taşımaz: metin her zaman görünür. */
+import Badge from '../Badge.astro'
+import type { CapabilityLevel } from '../../data/integrations'
+
+interface Props {
+  level: CapabilityLevel
+  label: string
+}
+
+const { level, label } = Astro.props
+---
+
+<Badge tone={level === 'supported' ? 'success' : 'warning'}>{label}</Badge>

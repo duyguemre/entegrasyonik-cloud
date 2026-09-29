@@ -1,0 +1,7 @@
+{
+  "errorCount": 0,
+  "date": "2026-09-28",
+  "note": "R4 (docs/FRONTEND_CODE_AUDIT.md §2.7/§9.1 R4): 15 -> 0. 7 gerçek çalışma-zamanı hatası (T-01 postImageUpload dışa verme x5, T-02/T-03 dead-code kırık çağrılar) düzeltildi/kaldırıldı; kalan 8 tip-inceliği hatası (ClaimDetailComponent enum indeksleme, EmptyState actionVariant birleşim tipi, useOrderActions dönüş tipi, PlatformImageComponent aritmetik/undefined, AdminTicketListView confirmText alanı, ClaimListView SHIPPED/DELIVERED olmayan enum üyeleri) tek tek düzeltildi. Mandal artık yalnızca aşağı inebilir (0'dan sonrası regresyon = hata).",
+  "command": "npx vue-tsc --noEmit",
+  "countMethod": "stdout+stderr içindeki ': error TS' desenini içeren satır sayısı"
+}

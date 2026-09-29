@@ -1,0 +1,87 @@
+---
+/**
+ * Section — dikey ritim (`--site-section-y`) + zemin tonu.
+ * `tone="stage"`: koyu derinlikli zemin (mesh degrade + ince ızgara dokusu), beyaz metin (ADR-0014 Karar 4 "sahne").
+ * `tone="muted"`: açık gri zemin + solan nokta dokusu.
+ * Erişilebilirlik: başlığı olan bölümlerde `labelledby` verin.
+ */
+import Container from './Container.astro'
+
+interface Props {
+  tone?: 'default' | 'muted' | 'stage'
+  id?: string
+  labelledby?: string
+  size?: 'default' | 'narrow'
+  class?: string
+}
+
+const { tone = 'default', id, labelledby, size = 'default', class: className } = Astro.props
+---
+
+<section id={id} aria-labelledby={labelledby} class:list={['section', `section--${tone}`, className]}>
+  <Container size={size}>
+    <slot />
+  </Container>
+</section>
+
+<style>
+  .section {
+    position: relative;
+    padding-block: var(--site-section-y);
+  }
+  .section--muted {
+    isolation: isolate;
+    background: var(--ek-color-surface-muted);
+    border-block: var(--site-border-width) solid var(--ek-color-border-default);
+  }
+  .section--muted::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image: var(--site-texture-dots);
+    background-size: var(--site-texture-dots-size);
+    -webkit-mask-image: linear-gradient(180deg, var(--ek-color-content-strong), transparent 55%);
+    mask-image: linear-gradient(180deg, var(--ek-color-content-strong), transparent 55%);
+    opacity: 0.6;
+    pointer-events: none;
+  }
+  .section--stage {
+    overflow: hidden;
+    isolation: isolate;
+    background: var(--site-stage-mesh);
+    color: var(--site-color-on-primary);
+  }
+  /* Dekoratif ızgara dokusu — yalnızca token renklerinden; içerik DOM'unda karşılığı gerekmez. */
+  .section--stage::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image: var(--site-texture-grid);
+    background-size: var(--site-texture-grid-size);
+    -webkit-mask-image: var(--site-texture-fade);
+    mask-image: var(--site-texture-fade);
+    pointer-events: none;
+  }
+  /* Yumuşak bölüm geçişi: koyu sahnenin üst kenarında hafif bir ışık sızıntısı — komşu (açık) bölümden
+     gelen sert kesimi yumuşatır (yalnızca dekoratif, içerik etkilenmez). */
+  .section--stage::after {
+    content: '';
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    z-index: -1;
+    height: var(--site-space-24);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--ek-color-background) 16%, transparent), transparent);
+    pointer-events: none;
+  }
+  .section--stage :global(h1),
+  .section--stage :global(h2),
+  .section--stage :global(h3) {
+    color: var(--site-color-on-primary);
+  }
+  .section--stage :global(p) {
+    color: var(--site-color-on-primary-muted);
+  }
+</style>

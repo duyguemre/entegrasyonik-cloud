@@ -1,0 +1,137 @@
+---
+/**
+ * 404 — markalı, hafif animasyonlu (S11). Koyu "sahne" zemini (diğer iç sayfa hero'larıyla aynı mesh/ızgara);
+ * `scenes` BaseLayout'a geçilmez (bu sayfa ayrı bir sahne/hareket-durdurma altyapısı gerektirmez), bu yüzden
+ * dekoratif kopuk-bağlantı animasyonu kendi `<style>` bloğunda, yalnızca `prefers-reduced-motion: no-preference`
+ * altında ve yalnızca `opacity`/`transform` ile çalışır (global.css'teki genel reduced-motion kuralı da ayrıca korur).
+ */
+import BaseLayout from '../layouts/BaseLayout.astro'
+import Section from '../components/Section.astro'
+import Button from '../components/Button.astro'
+---
+
+<BaseLayout title="Sayfa bulunamadı" noindex>
+  <Section tone="stage" labelledby="nf-title" size="narrow" class="nf-section">
+    <div class="nf">
+      <div class="nf__glyph" aria-hidden="true">
+        <span class="nf__node nf__node--a"></span>
+        <span class="nf__link"></span>
+        <span class="nf__node nf__node--b"></span>
+      </div>
+      <p class="nf__code" aria-hidden="true">404</p>
+      <h1 id="nf-title">Sayfa bulunamadı</h1>
+      <p>Aradığınız sayfa taşınmış ya da kaldırılmış olabilir. Adresi kontrol edebilir veya ana sayfaya dönebilirsiniz.</p>
+      <div class="nf__actions">
+        <Button href="/" variant="inverse" size="lg">Ana sayfaya dön</Button>
+      </div>
+      <p class="nf__more">
+        Aradığınızı bulamadıysanız <a href="/sss">sık sorulan sorulara</a> bakabilir veya{' '}
+        <a href="/iletisim">bize yazabilirsiniz</a>.
+      </p>
+    </div>
+  </Section>
+</BaseLayout>
+
+<style>
+  .nf-section:global(.section) {
+    display: flex;
+    align-items: center;
+    min-height: calc(60vh - var(--site-header-height));
+  }
+  .nf {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--ek-space-4);
+  }
+  .nf__glyph {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    margin-bottom: var(--ek-space-2);
+  }
+  .nf__node {
+    width: var(--ek-space-6);
+    height: var(--ek-space-6);
+    border-radius: var(--ek-radius-md);
+    background: var(--ek-color-secondary);
+  }
+  .nf__link {
+    width: var(--ek-space-10);
+    height: var(--site-border-width);
+    background: repeating-linear-gradient(
+      90deg,
+      var(--site-color-on-primary-muted) 0,
+      var(--site-color-on-primary-muted) var(--ek-space-2),
+      transparent var(--ek-space-2),
+      transparent var(--ek-space-3)
+    );
+  }
+  .nf__code {
+    color: var(--site-color-on-primary-muted);
+    font-size: var(--ek-font-size-xl);
+    font-weight: var(--site-font-display-weight);
+    letter-spacing: var(--site-font-display-tracking);
+    font-variant-numeric: tabular-nums;
+  }
+  .nf h1 {
+    font-size: var(--site-font-display-md);
+    font-weight: var(--site-font-display-weight);
+    line-height: var(--site-font-display-line-height);
+    letter-spacing: var(--site-font-display-tracking);
+  }
+  .nf p {
+    max-width: var(--site-measure);
+  }
+  .nf__actions {
+    margin-top: var(--ek-space-4);
+  }
+  .nf__more {
+    color: var(--site-color-on-primary-muted);
+    font-size: var(--ek-font-size-md);
+  }
+  .nf__more a {
+    color: var(--site-color-on-primary);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+
+  /* Kopuk bağlantı animasyonu: iki düğüm hafifçe uzaklaşıp yaklaşır (yalnızca transform/opacity, CLS 0). */
+  @media (prefers-reduced-motion: no-preference) {
+    .nf__node--a {
+      animation: nf-drift-a var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite;
+    }
+    .nf__node--b {
+      animation: nf-drift-b var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite;
+    }
+    .nf__link {
+      animation: nf-fade var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite;
+    }
+    @keyframes nf-drift-a {
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+      50% {
+        transform: translateX(calc(var(--ek-space-1) * -1));
+      }
+    }
+    @keyframes nf-drift-b {
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+      50% {
+        transform: translateX(var(--ek-space-1));
+      }
+    }
+    @keyframes nf-fade {
+      0%,
+      100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.35;
+      }
+    }
+  }
+</style>

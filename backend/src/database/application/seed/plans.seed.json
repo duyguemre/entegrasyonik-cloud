@@ -1,0 +1,63 @@
+{
+  "_meta": {
+    "status": "ÖNERİ — insan kararı bekliyor (Protokol 12)",
+    "source": "docs/adr/0008-odeme-saglayicisi-ve-abonelik-modeli.md §2 (plan/limit tablosu) + docs/adr/0014-tanitim-sitesi-mimari-ve-tasarim.md Karar 2 (tek doğruluk kaynağı)",
+    "schemaVersion": 1,
+    "note": "Fiyatlar (priceMinor = kuruş, tamsayı), limitler, özellik listeleri ve KDV oranı NİHAİ DEĞİLDİR; ADR-0008'deki öneri değerlerdir. Bu dosya backend'siz saf JSON'dur: tanıtım sitesi (site/) derleme sırasında OKUR, seed script'i (npm run seed:plans) Plans koleksiyonuna aynı dosyadan yazar. Değişiklikte ilgili planın `version` alanı artırılır. Yıllık faturalama için ayrı plan kodu (ör. starter_year) EKLENMEDİ: Plans.code unique ve tek `interval` taşır; yıllık indirim/kod kararı insana aittir.",
+    "consumers": ["backend/dev-tools/seed-plans.js", "backend/src/operations/tenant/trialSubscription.ts", "site/ (derleme zamanı okuyucu)"]
+  },
+  "trial": {
+    "planCode": "starter",
+    "days": 14,
+    "cardRequired": false,
+    "source": "ADR-0008 §3 (trialing: 14 gün, kartsız; plan limiti = Başlangıç)"
+  },
+  "vat": {
+    "ratePercent": 20,
+    "status": "ÖNERİ — mali müşavir onayına tabi (ADR-0014 Karar 2)"
+  },
+  "plans": [
+    {
+      "code": "starter",
+      "name": "Başlangıç",
+      "version": 1,
+      "interval": "month",
+      "priceMinor": 249000,
+      "currency": "TRY",
+      "vatIncluded": false,
+      "limits": { "channels": 2, "skus": 5000, "users": 3, "mcpCallsPerDay": 500 },
+      "features": [],
+      "featureNotes": ["ERP veya e-fatura: 1 (ikisinden biri)"],
+      "active": true,
+      "public": true
+    },
+    {
+      "code": "growth",
+      "name": "Büyüme",
+      "version": 1,
+      "interval": "month",
+      "priceMinor": 599000,
+      "currency": "TRY",
+      "vatIncluded": false,
+      "limits": { "channels": 5, "skus": 25000, "users": 10, "mcpCallsPerDay": 2000 },
+      "features": ["erp", "einvoice", "shipping"],
+      "featureNotes": [],
+      "active": true,
+      "public": true
+    },
+    {
+      "code": "enterprise",
+      "name": "Kurumsal",
+      "version": 1,
+      "interval": "month",
+      "priceMinor": 0,
+      "currency": "TRY",
+      "vatIncluded": false,
+      "limits": { "channels": 0, "skus": 0, "users": 0, "mcpCallsPerDay": 0 },
+      "features": ["erp", "einvoice", "shipping", "mcp", "desktopApp"],
+      "featureNotes": ["Özel teklif: limitler abonelik başına limitOverrides ile belirlenir; priceMinor 0 = 'Özel teklif' (checkout başlatılamaz, /iletisim)"],
+      "active": true,
+      "public": true
+    }
+  ]
+}

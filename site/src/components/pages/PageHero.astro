@@ -1,0 +1,111 @@
+---
+/**
+ * PageHero — iç sayfa üst bölümü: ekmek kırıntısı + TEK <h1> + giriş metni (+ isteğe bağlı eylem/rozet yuvaları).
+ * Koyu "stage" zemini (ADR-0014 Karar 4); ana sayfa hero'sundan bağımsızdır, S2a ile çakışmaz.
+ * S11: isteğe bağlı `visual` adlı slot — sayfaya özgü küçük bir örnek görünüm/ikon kompozisyonu. Slot boşsa
+ * tek sütunlu düzen aynen korunur (görünmez ekstra alan yok).
+ */
+import Section from '../Section.astro'
+import Breadcrumb from './Breadcrumb.astro'
+import type { Crumb } from './types'
+
+interface Props {
+  title: string
+  lead?: string
+  crumbs: Crumb[]
+  /** Küçük üst etiket (ör. "Entegrasyon"). */
+  eyebrow?: string
+}
+
+const { title, lead, crumbs, eyebrow } = Astro.props
+const hasVisual = Astro.slots.has('visual')
+---
+
+<Section tone="stage" labelledby="page-title" class="page-hero">
+  <Breadcrumb items={crumbs} inverse />
+  <div class:list={['page-hero__grid', { 'page-hero__grid--split': hasVisual }]}>
+    <div class="page-hero__body">
+      {eyebrow && <p class="page-hero__eyebrow">{eyebrow}</p>}
+      <h1 id="page-title">{title}</h1>
+      {lead && <p class="page-hero__lead">{lead}</p>}
+      <div class="page-hero__extra"><slot /></div>
+    </div>
+    {hasVisual && (
+      <div class="page-hero__visual" data-tilt>
+        <slot name="visual" />
+      </div>
+    )}
+  </div>
+</Section>
+
+<style>
+  /* Bölüm ritmini iç sayfa için kısaltır (ana sayfa hero'su kadar geniş boşluk gerekmez). */
+  .page-hero:global(.section) {
+    padding-block: var(--ek-space-8) calc(var(--site-section-y) * 0.6);
+  }
+  .page-hero__grid {
+    display: grid;
+    gap: var(--ek-space-10);
+    margin-top: var(--ek-space-6);
+  }
+  .page-hero__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-4);
+    max-width: calc(var(--site-container-narrow) + var(--ek-space-16));
+    min-width: 0;
+  }
+  .page-hero__eyebrow {
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .page-hero h1 {
+    font-size: var(--site-font-display-lg);
+    font-weight: var(--site-font-display-weight);
+    line-height: var(--site-font-display-line-height);
+    letter-spacing: var(--site-font-display-tracking);
+  }
+  .page-hero__lead {
+    font-size: var(--ek-font-size-xl);
+    line-height: var(--ek-line-height-normal);
+  }
+  .page-hero__extra:empty {
+    display: none;
+  }
+  .page-hero__extra {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ek-space-2) var(--ek-space-3);
+    margin-top: var(--ek-space-2);
+  }
+
+  /* Sayfaya özgü görsel kompozisyon: cam panel, sahne zemininin üstünde hafif yükselir. */
+  .page-hero__visual {
+    position: relative;
+    min-width: 0;
+    padding: var(--ek-space-6);
+    border-radius: var(--site-radius-panel);
+    background: var(--site-glass-bg);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    backdrop-filter: blur(var(--site-glass-blur));
+    -webkit-backdrop-filter: blur(var(--site-glass-blur));
+    box-shadow: var(--site-shadow-panel);
+    transform: perspective(75rem) rotateX(var(--rx)) rotateY(var(--ry));
+    transition: transform var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  @media (prefers-reduced-motion: reduce), (pointer: coarse) {
+    .page-hero__visual {
+      transform: none;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .page-hero__grid--split {
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+      align-items: center;
+    }
+  }
+</style>

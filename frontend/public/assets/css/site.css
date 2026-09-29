@@ -1,0 +1,1485 @@
+html {
+  font-size: 14px;
+  text-shadow: 0px 0px 10px rgba(0, 0, 0, 0);
+  background: linear-gradient(90deg, white 20%, white 60%) !important;
+  /*   background: linear-gradient(90deg, #f5f6fc 20%, #f8f9ff 60%) !important; */
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  height: 100%;
+
+  /* f1f6f9 */
+}
+
+
+.v-field {
+  font-size: 14px !important
+}
+
+body {
+  font-size: 14px !important;
+  /*   background: linear-gradient(90deg, #fff 0%, #fbfbfb 100%) !important; */
+}
+
+body::-webkit-scrollbar {
+  display: none
+}
+
+
+
+
+.driver-popover {
+  border-radius: 17px !important;
+  border: 1px solid #666 !important;
+  box-shadow:
+    0px 0px 50px rgba(150, 180, 180, 37),
+    inset 0px 0px 20px rgba(0, 0, 0, .1) !important;
+}
+
+
+
+
+a:link {
+  text-decoration: none !important;
+}
+
+.hide-component {
+  visibility: hidden !important;
+  transition: visibility 2s ease;
+}
+
+.workarea-scroll {
+  position: absolute;
+  overflow-y: auto;
+  overflow-x: hidden;
+  bottom: 2px;
+  top: 0px;
+  left: 0px;
+  right: 0px;
+  width: auto
+}
+
+.v-toolbar__content {
+  height: unset !important;
+}
+
+.outlinedTab {
+  border-left: 2px solid !important;
+  width: 140px !important;
+}
+
+.entegrasyonik-application .v-checkbox .v-selection-control {
+  min-height: 0 !important;
+}
+
+.entegrasyonik-application .v-input input {
+  /*   font-size: 1em !important; */
+  font-size: 14px !important;
+}
+
+.entegrasyonik-application .v-field {
+  font-size: 14px !important;
+}
+
+.entegrasyonik-application .v-field-label {
+  font-size: 14px !important;
+}
+
+.entegrasyonik-application .duyguDahil {
+  font-size: 2px;
+}
+
+.entegrasyonik-application .v-label {
+  font-size: 14px !important;
+  /*   font-size:.8em; */
+  /*    font-size: .9em !important; */
+  /*   font-size: .7em !important;
+  font-weight:normal;
+  height: 20px;
+  line-height: 20px;
+  letter-spacing: normal;
+ */
+  /*     font-size: 14px !important;   */
+}
+
+.entegrasyonik-application .v-field-label--floating {
+  font-size: 10px !important;
+
+  /*  letter-spacing: normal !important;
+         font-size: 15px !important; 
+ */
+  /*      font-size: .7em !important; */
+
+  /*   font-size: .7em !important;
+  font-weight:normal;
+  height: 20px;
+  line-height: 20px;
+  letter-spacing: normal;
+ */
+}
+
+
+
+.entegrasyonik-application .v-btn {
+  /*    font-size: 14px !important;  */
+  /*       font-size: .875em !important;   */
+  font-size: 12px !important;
+  letter-spacing: normal !important;
+}
+
+
+.noDecoration {
+  text-transform: none !important;
+  text-decoration: none !important;
+}
+
+.selectedTabClass {
+  font-weight: 900
+}
+
+.darkTheme.dashboard-link-background {
+  background: linear-gradient(45deg, transparent 0%, transparent 57%, #191919 100%), linear-gradient(-45deg, #292929 0%, #222 112%) !important;
+}
+
+.lightTheme.dashboard-link-background {
+  background: linear-gradient(45deg, transparent 0%, transparent 57%, #2986e2 100%), linear-gradient(-45deg, #0060c0 0%, #1976D2 112%) !important;
+}
+
+
+.lightTheme.appbar-background {
+  background-color: #1976D2 !important;
+
+  /*   background: linear-gradient(45deg, transparent 0%, transparent 57%, #1976D2 100%), linear-gradient(-45deg, #1976D2 0%, #1976D2 112%) !important; */
+}
+
+.lightTheme.tab-background {
+  background-color: #1976D2 !important;
+  /*   background: linear-gradient(180deg,  #1976D2 100%) !important; */
+}
+
+.lightTheme.footer-background {
+  background-color: #1976D2 !important;
+}
+
+.lightTheme.support-menu-background {
+  background: linear-gradient(45deg, transparent 0%, transparent 57%, #00897B 100%), linear-gradient(-45deg, #4DB6AC 0%, #00897B 112%) !important;
+}
+
+.lightTheme.system-link-background {
+  background: linear-gradient(45deg, transparent 0%, transparent 57%, #EF5350 100%), linear-gradient(-45deg, #EF9A9A 0%, #EF5350 112%) !important;
+}
+
+.icon-background {
+  display: none !important;
+  position: absolute !important;
+  opacity: .07 !important;
+  bottom: 0px;
+  font-size: 105px !important;
+  left: 50%;
+  transform: translate(-50%, 0%);
+}
+
+.icon-background-justify {
+  position: absolute !important;
+  opacity: .07;
+  font-size: 160px !important;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.system-icon {
+  position: absolute !important;
+  opacity: .8;
+  bottom: 15px;
+  font-size: 50px !important;
+  left: 50%;
+  transform: translate(-50%, 0%);
+}
+
+.system-icon-background {
+  position: absolute !important;
+  opacity: .3;
+  bottom: 0;
+  font-size: 80px !important;
+  right: 0;
+  transform: translate(0%, 0%);
+}
+
+
+.title-background {
+  position: absolute !important;
+  top: 13%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+
+.icon-left-top {
+  position: absolute !important;
+  top: 5px;
+  left: 5px;
+  font-size: 20px !important;
+  opacity: .8
+}
+
+.icon-right-top {
+  position: absolute !important;
+  top: 5px;
+  right: 10px;
+  font-size: 20px !important;
+  opacity: .8
+}
+
+.title-base-background {
+  position: absolute;
+  left: 2px;
+  top: 3px;
+  width: 92%;
+  height: 35px;
+  background-color: #1976D2;
+  opacity: .6;
+}
+
+
+.advanced-search-button-background {
+  position: absolute !important;
+  font-size: 30px !important;
+  opacity: .4;
+  right: 0;
+  top: 50%;
+  transform: translate(0%, -50%);
+}
+
+
+.hoveredContainer .hovered {
+  visibility: hidden
+}
+
+.hoveredContainer:hover .hoveredBorder {
+  border: 1px solid #ddd;
+}
+
+.hoveredContainer .hoveredBorder {
+  border: 1px solid transparent;
+}
+
+.hoveredContainer:hover .hovered {
+  visibility: visible
+}
+
+.number-shadow {
+  text-shadow:
+    0px 0px 1px rgba(0, 0, 0, 1),
+    1px 1px 2px rgba(0, 0, 0, .7)
+}
+
+
+.number-shadow-dark {
+  font-weight: 600 !important;
+  color: #3a4f45 !important;
+}
+
+
+
+
+.card-component {
+  position: relative !important;
+  box-shadow: 0px 0px 5px #f4f5f9ff !important;
+  border: 1px solid #a6b9c7 !important;
+  background-color: rgb(var(--v-theme-cardComponentColor)) !important;
+}
+
+.card-component.hoverable:hover {
+  box-shadow: 0px 0px 15px #c4c5caff !important;
+  border: 1px solid #8699a7 !important;
+  background-color: rgb(var(--v-theme-cardComponentHoverColor)) !important;
+  transition: all 0.3s ease-in;
+}
+
+.card-component.hoverable:hover .card-component-header {
+  background-color: rgb(var(--v-theme-cardComponentHeaderHoverColor)) !important;
+}
+
+/* rgb(var(--v-theme-green)) */
+
+.card-component-header {
+  position: sticky;
+  left: 0;
+  right: 0;
+  top: 0px;
+  z-index: 1;
+  background-color: rgb(var(--v-theme-cardComponentHeaderColor));
+  border-bottom: 1px solid #ccc;
+  transition: all 0.3s ease-in;
+}
+
+.card-component .card-component-header .card-component-title {
+  font-weight: 400;
+  opacity: .6;
+  color: #000 !important;
+  transition: all 0.3s ease-in;
+}
+
+.card-component.hoverable:hover .card-component-header .card-component-title {
+  font-weight: 800;
+  opacity: 1;
+  color: #000 !important
+}
+
+
+
+
+/* CUSTOM STEPPER */
+
+.custom-stepper .v-stepper-item__avatar {
+  background-color: rgb(var(--v-theme-passiveColor)) !important;
+  opacity: 1;
+  /*   border: 1px solid #888 */
+}
+
+.custom-stepper .v-stepper-item--selected .v-stepper-item__avatar {
+  background-color: rgb(var(--v-theme-borderColor)) !important;
+  /*   box-shadow: 0px 0px 1px #999; */
+  /*   border: 1px solid #888; */
+  background-color: rgb(var(--v-theme-primary)) !important;
+  opacity: .7 !important;
+}
+
+.custom-stepper .v-stepper-item--selected .v-stepper-item__title {
+  font-weight: 500;
+}
+
+.custom-stepper .v-stepper-item {
+  border-radius: 5px;
+  padding: 0px 10px 0px 10px !important;
+  border: 1px solid transparent;
+}
+
+.custom-stepper .v-stepper-item.v-stepper-item--selected {
+  background-color: white;
+  border: 1px solid rgb(var(--v-theme-passiveColor));
+
+}
+
+
+
+
+
+
+/* ADR-0015 Karar 3.12/A1b — `.page-title { background-color:#1976D2
+ * !important }` kuralı KALDIRILDI (2026-09-28). Bulgu 8: bu global sınıf,
+ * `src/**`'teki HERHANGİ bir `.page-title` kullanan bileşenin kendi
+ * (scoped) stilini `!important` ile eziyordu — somut kırık: SubscriptionView
+ * başlığı parlak mavi bir şerit olarak görünüyordu. grep kanıtı (2026-09-28):
+ * `src/**` içinde bu seçiciyi kullanan TEK dosya `SubscriptionView.vue`, ve
+ * o dosyanın KENDİ `scoped` `.page-title` kuralı zaten tam stillidir — bu
+ * global kural hiçbir ekrana gerekli bir stil SAĞLAMIYORDU, yalnızca sızıyordu. */
+
+.page-buttons {
+  position: absolute;
+  top: -42px;
+  right: 4px;
+  padding-top: 5px
+}
+
+.page-actions-background {
+  position: absolute;
+  background-color: #eee;
+  border-top: 1px solid #ddd;
+  border-left: 1px solid #ddd;
+  border-bottom-left-radius: 0 !important;
+  border-right: 1px solid #ddd;
+  border-bottom-right-radius: 0 !important;
+  border-radius: 4px;
+  top: -43px;
+  right: -2px;
+  padding-bottom: 0px;
+  padding-top: 3px;
+  padding-left: 26px;
+  padding-right: 26px;
+  width: 56%;
+  height: 43px;
+}
+
+
+
+
+.search-section {
+  max-height: 400px;
+  padding: 8px;
+  margin-top: 12px;
+  transition: max-height .3s ease-in-out, opacity .9s ease-in-out !important;
+}
+
+.search-section.hide {
+  max-height: 0px;
+  opacity: 0;
+  transition: opacity .2s ease-in-out, max-height .3s ease-in-out !important
+}
+
+
+#popupId {
+  position: absolute;
+  width: 100%;
+  bottom: 50px;
+  transition: top .5s ease-in-out !important;
+}
+
+
+.scroll-table {
+  position: absolute;
+  width: 100%;
+  bottom: 50px;
+  transition: top .3s ease !important;
+}
+
+.scroll-card {
+  width: 100%;
+  transition: top .3s ease !important;
+}
+
+.scroll-table th {
+  background-color: #eee !important;
+}
+
+.scroll-table th,
+td {
+  max-width: 60vh;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+.scroll-table .scroll-card {
+  overflow: auto !important
+}
+
+.scroll-table th .header-scroll-contain1er {
+  padding-left: 40px;
+  padding-right: 40px;
+  padding-top: 10px;
+  background-color: #f9f9f9 !important;
+  border: 1px solid #ccc
+}
+
+.v-slider.v-input--vertical>.v-input__control {
+  min-height: 50px !important;
+}
+
+
+table {
+  border-spacing: 0px 1px !important;
+}
+
+.custom-v-btn {
+  border: 1px solid white !important;
+}
+
+
+.entegrasyonik-badge .v-badge__badge {
+  height: auto;
+  padding-right: 3px !important;
+  padding-left: 3px !important;
+  padding: 0px !important;
+  background-color: #ffffff10 !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+}
+
+
+
+.expand-background-patch {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -10px;
+  right: -10;
+  width: 100%;
+  height: 55px;
+  background-color: #eee
+}
+
+.scroll-element {
+  position: absolute;
+  width: auto;
+  right: 0 !important;
+  left: 2px;
+  bottom: 50px;
+  top: -53px;
+  padding-left: 8px !important;
+}
+
+.scroll-element .v-table__wrapper::-webkit-scrollbar {
+  display: none
+}
+
+
+.header-scroll-container {
+  padding-left: 40px;
+  padding-right: 40px;
+  padding-top: 10px !important;
+  background-color: #eee !important;
+  border: 1px solid #bbb !important;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+}
+
+@media (max-width: 5000px) {
+  .special-table-width {
+    max-width: 80vw !important;
+  }
+}
+
+@media (max-width: 2200px) {
+  .special-table-width {
+    max-width: 58vw !important;
+  }
+}
+
+@media (max-width: 2000px) {
+  .special-table-width {
+    max-width: 55vw !important;
+  }
+}
+
+@media (max-width: 1800px) {
+  .special-table-width {
+    max-width: 45vw !important;
+  }
+}
+
+@media (max-width: 1600px) {
+  .special-table-width {
+    max-width: 40vw !important;
+  }
+}
+
+@media (max-width: 1400px) {
+  .special-table-width {
+    max-width: 35vw !important;
+  }
+}
+
+@media (max-width: 1200px) {
+  .special-table-width {
+    max-width: 25vw !important;
+  }
+}
+
+
+.special-table-width {
+  transition: all .4s ease;
+}
+
+
+.content-scroll-container {
+  background-color: #fbfbfb;
+  overflow-x: auto;
+  padding-left: 40px;
+  padding-right: 40px;
+  padding-top: 0px;
+  border-left: 1px solid #bbb;
+  border-right: 1px solid #bbb;
+
+  box-shadow:
+    3px 0px 3px 1px var(--v-shadow-key-umbra-opacity, rgba(0, 0, 0, 0.1)),
+    -3px 0px 3px 1px var(--v-shadow-key-penumbra-opacity, rgba(0, 0, 0, 0.1)),
+    inset 0px 0px 0px 0px var(--v-shadow-key-penumbra-opacity, rgba(0, 0, 0, 0.14)),
+    inset 0px 0px 0px 0px var(--v-shadow-key-penumbra-opacity, rgba(0, 0, 0, 0.12)) !important
+}
+
+.content-bottom {
+  border-bottom: 1px solid #ccc;
+  margin-bottom: 2px;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+  box-shadow:
+    3px 0px 3px 1px var(--v-shadow-key-umbra-opacity, rgba(0, 0, 0, 0.1)),
+    -3px 0px 3px 1px var(--v-shadow-key-penumbra-opacity, rgba(0, 0, 0, 0.1)),
+    inset 0px 0px 0px 0px var(--v-shadow-key-penumbra-opacity, rgba(0, 0, 0, 0.14)),
+    inset 0px 0px 0px 0px var(--v-shadow-key-penumbra-opacity, rgba(0, 0, 0, 0.12)) !important
+}
+
+.content-scroll-container::-webkit-scrollbar {
+  display: none
+}
+
+.expand-element {
+  position: absolute;
+  background-color: #eee;
+  width: auto;
+  right: 0 !important;
+  margin: 0;
+  padding: 0;
+  top: 91px;
+  z-index: 1;
+  transition: top .2s ease-in-out;
+}
+
+.expand-element.expand {
+  top: -105px !important;
+  z-index: 1006;
+}
+
+.expand-element.no-expand {
+  transition: all .2s ease-in-out, z-index .2s ease-in-out !important;
+}
+
+
+
+/*input prepend icon margin ayarlaması*/
+.v-input--horizontal .v-input__prepend {
+  margin-inline-end: 4px !important;
+}
+
+
+/* .v-table__wrapper::-webkit-scrollbar {
+  display: none !important
+}
+ */
+
+/* dialog sadece workarea da açılsın diye */
+.v-overlay__scrim {
+  top: 1px !important;
+  bottom: 0px !important;
+  /*   opacity:.5!important */
+}
+
+.v-dialog .v-overlay__content {
+  margin: 0px !important;
+  padding: 8px !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-width: unset !important;
+  max-height: unset !important;
+}
+
+/* ADR-0015 Aşama B1 — A-yaması: yukarıdaki kural eski `attach="..."` tabanlı
+   diyalog kurgusu (workarea'yı tam doldurma) için yazılmıştı. Yeni
+   `EkDetailSheet` (`src/components/ds/EkDetailSheet.vue`, dokunulamaz —
+   ds/** kapsam dışı) `attach` KULLANMAZ, `<body>`'ye teleport eder ve
+   `content-class="ek-detail-sheet"` + kendi `width:720px` ile sağa-yaslı bir
+   yan-sayfa (side-sheet) sunumu hedefler (Karar 3.8). Yukarıdaki kuralın
+   `left:0` + `right:0` + açık `width:720px` üçlüsü aşırı-kısıtlama
+   (over-constrained) üretip kutuyu SOLA yaslıyordu (kanıt: bu görevde
+   `getBoundingClientRect()` ile doğrulandı — `left:0,width:720` yerine
+   `right:0` bekleniyordu). Bu ek kural YALNIZCA `.ek-detail-sheet` sınıfını
+   hedefler, yukarıdaki kuralı DEĞİŞTİRMEZ (eski `attach=` tabanlı diyaloglar
+   etkilenmez). Not: `EkFormDialog`/`EkConfirmDialog` (`ds/**`) `content-class`
+   TAŞIMADIĞI için aynı şekilde düzeltilemedi — bu ikisi hâlâ tam-ekran
+   açılıyor, ayrı bir A-yaması olarak raporlandı (bkz. B1 teslim raporu). */
+.v-dialog .ek-detail-sheet.v-overlay__content {
+  left: auto !important;
+  right: 0 !important;
+  padding: 0 !important;
+}
+
+
+/* menu dialog üstünde açılması için */
+.v-navigation-drawer__scrim {
+  z-index: 3000 !important
+}
+
+.v-navigation-drawer--left,
+.v-navigation-drawer--right {
+  z-index: 3001 !important
+}
+
+
+
+/* category manipulations */
+
+.category-list-item {
+  border-bottom-left-radius: 2px;
+  border-bottom-right-radius: 2px;
+  border-bottom: 1px solid #ccc;
+}
+
+.drop-is-possible {
+  background-color: #e7efe7 !important;
+}
+
+
+.outer-drag-div {
+  position: absolute;
+  display: block;
+  opacity: .8;
+  background-color: #eee;
+  padding: 10px;
+  font-weight: bold;
+  padding-left: 24px;
+  border: 0px dashed black;
+  z-index: 1000;
+}
+
+.inner-drag-div {
+  font-weight: normal;
+  opacity: 1;
+  font-size: .8em;
+}
+
+
+
+/* transition fade */
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: all 2.1s !important;
+}
+
+.fade-enter-from {
+  opacity: 0;
+}
+
+.fade-enter,
+.fade-leave-to {
+  opacity: 0
+}
+
+
+.dialog-info {
+  font-size: .6em;
+  opacity: .7;
+  line-height: 1.3;
+  font-weight: normal !important;
+  white-space: wrap
+}
+
+.numeric-title-order {
+  position: absolute !important;
+  z-index: 1;
+  opacity: .1;
+  width: 60px;
+  height: 60px;
+  top: 0px;
+  left: auto;
+  right: 0;
+  bottom: auto;
+  font-size: 56px !important
+}
+
+.numeric-order {
+  border: 1px solid #bbb !important;
+  font-size: 19px !important;
+  height: 50px;
+  width: 50px;
+  left: 0;
+  opacity: .5;
+  margin-bottom: 2px;
+  margin-right: 12px;
+}
+
+.numeric-order-small {
+  position: absolute !important;
+  right: 10px !important;
+  border: 1px solid #ccc !important;
+  font-size: 19px !important;
+  opacity: .5;
+}
+
+
+.custom-vertical-table table tr {
+  display: flex;
+  flex-direction: column;
+  float: left;
+}
+
+.custom-vertical-table thead,
+.custom-vertical-table tbody {
+  float: left;
+}
+
+.custom-vertical-table .v-data-footer {
+  justify-content: flex-start;
+  margin-left: 15px
+}
+
+.custom-vertical-table thead tr th {
+  align-content: center;
+  min-height: 56px;
+
+}
+
+.custom-vertical-table tr:hover {
+  border-bottom: none !important;
+}
+
+.custom-vertical-table tbody tr td {
+  border-bottom-width: 1px !important;
+  min-height: 56px !important;
+  vertical-align: center;
+  justify-content: center;
+  align-content: center;
+}
+
+.custom-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.v-input.v-input--focused .v-field--variant-outlined {
+  border-color: #1976d2 !important;
+  /* İstediğin renk */
+}
+
+
+
+
+.vertical-table {
+  max-height: 860px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-bottom: 1px solid #ddd;
+
+}
+
+.vertical-table table {
+  border-collapse: collapse;
+  border-spacing: 4px 0px;
+  background-color: white;
+  /*   width: 400px; */
+}
+
+.vertical-table thead {
+  transition: all 1s;
+  position: sticky;
+  top: 0px !important;
+  left: 0px !important;
+  z-index: 3;
+}
+
+.vertical-table .table-title {
+  height: 60px !important;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: auto;
+  height: auto;
+  background-color: #eee;
+  margin-right: 1px;
+  border-bottom: 1px solid #bbb;
+  /*   margin-bottom:1px; */
+  /*   border:1px solid #aaa; */
+  /*   box-shadow: 1px 0px 1px 1px var(--v-shadow-key-umbra-opacity, rgba(0, 0, 0, 0.2)), 0px 0px 0px 0px var(--v-shadow-key-umbra-opacity, rgba(0, 0, 0, 0.2)), 0px 0px 0px 1px var(--v-shadow-key-umbra-opacity, rgba(0, 0, 0, 0.2))   */
+  box-shadow: 1px 0px 1px 0px var(--v-shadow-key-umbra-opacity, rgba(0, 0, 0, 0.2))
+}
+
+
+.vertical-table .column-title {
+  font-weight: 500;
+  user-select: none;
+  text-align: start;
+  white-space: nowrap;
+  line-height: 1.5;
+  color: rgba(var(--v-theme-on-surface), var(--v-high-emphasis-opacity));
+  font-size: 0.875rem;
+  border-right: 1px solid #77f !important;
+  border-bottom: 1px solid #bbb !important;
+  border-top: 0px solid black !important;
+  background-color: #eee;
+  height: 60px;
+  font-size: 1.2em;
+  /*   box-shadow: 1px 0px 1px 0px var(--v-shadow-key-umbra-opacity, rgba(0, 0, 0, 0.2)), -1px 0px 1px 0px var(--v-shadow-key-umbra-opacity, rgba(0, 0, 0, 0.2)), 0px 1px 1px 0px var(--v-shadow-key-umbra-opacity, rgba(0, 0, 0, 0.2)) */
+}
+
+.vertical-table .row-title {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: auto;
+  height: auto;
+  right: 0;
+  bottom: 0;
+  font-weight: 500;
+  user-select: none;
+  text-align: start;
+  white-space: nowrap;
+  line-height: 1.5;
+  color: rgba(var(--v-theme-on-surface), var(--v-high-emphasis-opacity));
+  font-size: 0.875rem;
+  background-color: #eee;
+  border-right: 1px solid #bbb;
+  /*   box-shadow: inset -1px 0px 1px 0px var(--v-shadow-key-umbra-opacity, rgba(0, 0, 0, .2)) */
+}
+
+.vertical-table .row-content {
+  /*   width: 280px !important; */
+  transition: all .2s;
+  cursor: pointer;
+  border: 1px solid #ddd;
+  min-width: 150px;
+  border-right: 2px solid #ddd;
+}
+
+.vertical-table .row-title-fixed {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  min-width: 170px;
+  border-bottom: 1px solid #bbb;
+}
+
+.vertical-table .row-title-shadow {
+
+  /*   border-bottom:1px solid #ddd;border-right:2px solid #ddd; */
+  box-shadow: 0px 0px 1px 0px var(--v-shadow-key-umbra-opacity, rgba(0, 0, 0, 0.2)), -11px 20px 1px 0px var(--v-shadow-key-umbra-opacity, rgba(0, 0, 0, 1.2))
+}
+
+.custom-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+
+
+/* Projedeki tüm takvimlerin seçili günlerine elevation uygular */
+
+.v-date-picker .v-date-picker-month__day--selected .v-btn {
+  /* Özel Premium Gölgelendirme (Örn: Color Glow) */
+  /* Gözü yormayan, modern bir derinlik */
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.1) !important;
+
+  /* Biraz daha estetik köşeler */
+  border-radius: 12px !important;
+}
+
+
+
+/* Tek tek her bir gün harfini (P, S, Ç...) hedefle */
+.v-date-picker-month__weekday,
+.v-date-picker-controls__month-btn,
+.v-date-picker-controls__month .v-btn,
+.v-date-picker-controls__mode-btn {
+  font-weight: 800 !important;
+  /* Daha vurgulu ve stylish */
+  color: rgb(var(--v-theme-passiveColor)) !important;
+  /* Soft bir Slate rengi */
+  font-size: 0.7rem !important;
+  /* Hafif küçük olması modern durur */
+  text-transform: uppercase;
+  /* Hepsi büyük harf olsun */
+  letter-spacing: 0.1em;
+  /* Harf aralarını açarak premium hava kat */
+  opacity: 1;
+  /* Biraz transparanlık derinlik katar */
+}
+
+
+
+/* Scoped kelimesini sildik ki tüm siteye yayılsın */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(var(--v-theme-passiveColor), 0.4);
+  /* Vuetify değişkenini de kullanabilirsin */
+  border-radius: 20px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--v-theme-passiveColor), 0.6);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.v-data-table {
+  background-color: transparent !important;
+  border-spacing: 0 0.5rem;
+}
+
+.v-table tr:hover {
+  background-color: rgb(var(--v-theme-cardComponentHoverColor)) !important;
+  border-bottom: 4px solid #eee !important
+}
+
+
+.transparent-table tbody tr:nth-of-type(even) {
+  background-color: transparent !important;
+}
+
+.transparent-table tbody tr:nth-of-type(odd) {
+  background-color: transparent !important;
+}
+
+
+tbody tr:nth-of-type(even) {
+  background-color: white !important;
+}
+
+tbody tr:nth-of-type(odd) {
+  background-color: rgb(var(--v-theme-loginForm)) !important;
+}
+
+
+.v-table tr {
+  background-color: #fff !important;
+}
+
+.v-table td {
+  border-bottom: 1.5px solid rgb(var(--v-theme-tableHeaderColor)) !important
+}
+
+.v-data-table ::v-deep div>table {
+
+  border-spacing: 0 0.5rem;
+}
+
+
+
+
+
+
+.v-table.v-table--fixed-header>.v-table__wrapper>table>thead>tr>th {
+  background-color: rgb(var(--v-theme-tableHeaderColor)) !important;
+  color: rgb(var(--v-theme-primaryLighten)) !important;
+}
+
+.v-table:hover.v-table--fixed-header>.v-table__wrapper>table>thead>tr>th {
+  background-color: rgb(var(--v-theme-tableHeaderHoverColor)) !important;
+}
+
+.custom-pagination {
+  background-color: rgb(var(--v-theme-tableHeaderColor)) !important;
+}
+
+.v-table:hover .custom-pagination {
+  background-color: rgb(var(--v-theme-tableHeaderHoverColor)) !important;
+}
+
+
+
+.no-row-color .v-data-table__td {
+  background-color: white !important;
+}
+
+.no-row-color .v-data-table__td {
+  border-bottom: none !important;
+}
+
+
+
+.v-table__wrapper {
+  transition: height .5s cubic-bezier(0.445, 0.05, 0.55, 0.95) !important;
+}
+
+
+
+
+.v-table__wrapper th {
+  background-color: #eee !important;
+  height: 35px !important;
+}
+
+.v-table__wrapper th,
+td {
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.v-table__wrapper {
+  background-color: white !important
+}
+
+
+
+
+
+
+
+/* --- PREMIUM DELETE BUTONU --- */
+.premium-delete-btn {
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+
+  /* Önceki kart tasarımınızla aynı ovallik (12px) */
+  border-radius: 12px !important;
+
+  /* İlk başta sakin, saydam ve sadece paletinizden ince bir kenarlığa sahip */
+  background-color: transparent !important;
+  border: 1px solid rgb(var(--v-theme-borderColorLight)) !important;
+  color: rgb(var(--v-theme-passiveColor)) !important;
+
+  /* Yumuşak ve kaliteli bir geçiş animasyonu */
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* --- HOVER (ÜZERİNE GELME) EFEKTİ --- */
+.premium-delete-btn:hover {
+  /* Silme işlemi olduğu için zarif bir mercan/kırmızı tonuna geçiş */
+  border-color: #ef4444 !important;
+  background-color: rgba(239, 68, 68, 0.05) !important;
+  /* Çok şeffaf kırmızı arka plan */
+  color: #ef4444 !important;
+
+  /* Hafifçe yukarı kalkma ve uçuk bir kırmızı gölge (Apple/Stripe tarzı) */
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15) !important;
+}
+
+/* --- TIKLAMA (ACTIVE) ANİMASYONU --- */
+.btn-icon {
+  transition: transform 0.2s ease;
+}
+
+/* Tıklandığında ikonun çok hafif küçülüp esnemesi, fiziksel bir butona basma hissi verir */
+.premium-delete-btn:active .btn-icon {
+  transform: scale(0.85);
+}
+
+
+
+
+/* --- PREMIUM KAYDET BUTONU (ANA AKSİYON) --- */
+.premium-save-btn {
+  height: 40px !important;
+  min-width: 130px !important;
+  border-radius: 12px !important;
+  /* Önceki kartlar ve butonla tam uyum */
+
+  /* Modern tipografi: Tümü büyük harf yerine daha okunaklı ve şık bir yapı */
+  text-transform: none !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  font-size: 0.95rem !important;
+  box-shadow: none;
+  /* İlk başta hafif, ana renginizle uyumlu bir gölge */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  padding-left: 14px !important;
+  padding-right: 14px !important;
+}
+
+/* --- HOVER (ÜZERİNE GELME) EFEKTİ --- */
+/* Sadece buton aktifken hover efekti çalışsın (:not(:disabled)) */
+.premium-save-btn:not(:disabled):hover {
+
+  /* Tıklanmaya davet eden hafif yükseliş */
+  /* Gölge yayılarak butonun parladığı hissini verir */
+  /* Rengi ekstra değişken tanımlamadan çok hafif parlatmak için sihirli dokunuş: */
+  filter: brightness(1.08);
+}
+
+/* --- TIKLAMA (ACTIVE) ANİMASYONU --- */
+.premium-save-btn:not(:disabled):active {
+  transform: translateY(1px);
+  /* Fiziksel basma hissi */
+  box-shadow: 0 2px 8px rgba(var(--v-theme-primary), 0.1) !important;
+  filter: brightness(0.95);
+  /* Basıldığında hafif koyulaşma */
+}
+
+/* --- DISABLED (PASİF/DEĞİŞİKLİK YOK) DURUMU --- */
+.premium-save-btn:disabled {
+  opacity: 0.5 !important;
+  /* Pasifken gölge ve kalkma efekti tamamen iptal edilir */
+  box-shadow: none !important;
+  transform: none !important;
+  filter: grayscale(20%);
+  /* Rengi hafif soldurarak tıklanamaz olduğunu hissettirir */
+}
+
+/* İkon için ufak bir animasyon */
+.premium-save-btn .v-icon {
+  transition: transform 0.2s ease;
+}
+
+.premium-save-btn:not(:disabled):hover .v-icon {
+  transform: scale(1.1);
+  /* Sadece ikon çok hafif büyür */
+}
+
+
+
+/* --- PREMIUM PROCESS (EŞLEŞTİRME) BUTONU --- */
+.premium-process-btn {
+  height: 40px !important;
+  /* Diğer butonlarla standartlaştırıldı */
+  padding: 0 20px !important;
+  border-radius: 12px !important;
+  /* İmza kavisiniz */
+
+  /* Tipografi: Kurumsal, net ve sadece baş harfler büyük */
+  text-transform: none !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.015em !important;
+  font-size: 0.9rem !important;
+
+  /* Renginize özel, pastel ve derin bir gölge */
+  box-shadow: 0 4px 12px rgba(var(--v-theme-processButtonColor), 0.2) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* --- HOVER (ÜZERİNE GELME) EFEKTİ --- */
+.premium-process-btn:not(:disabled):hover {
+  transform: translateY(-2px);
+  /* Tıklamaya davet eden kalkış */
+  box-shadow: 0 6px 18px rgba(var(--v-theme-processButtonColor), 0.3) !important;
+  filter: brightness(1.1);
+  /* Rengi %10 aydınlat */
+}
+
+/* --- TIKLAMA (ACTIVE) ANİMASYONU --- */
+.premium-process-btn:not(:disabled):active {
+  transform: translateY(1px);
+  /* İçeri çökme hissi */
+  box-shadow: 0 2px 6px rgba(var(--v-theme-processButtonColor), 0.15) !important;
+  filter: brightness(0.95);
+}
+
+/* --- DISABLED (PASİF/BEKLEME) DURUMU --- */
+/* Seçim yapılmamışsa buton kullanıcının gözünü yormamalı */
+.premium-process-btn:disabled {
+  opacity: 0.6 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  filter: grayscale(40%);
+  /* Rengi biraz soldurarak odağı dağıtmasını engeller */
+}
+
+/* --- İKON ANİMASYONU --- */
+.premium-process-btn .v-icon {
+  transition: transform 0.3s ease;
+}
+
+/* Üzerine gelince ikon hafifçe büyür ve eşleşme/kilitlenme hissi vermek için hafifçe döner */
+.premium-process-btn:not(:disabled):hover .v-icon {
+  transform: scale(1.1) rotate(-10deg);
+}
+
+
+
+
+/* --- ORTAK BUTON YAPISI --- */
+.premium-connection-btn {
+  border-radius: 12px !important;
+  text-transform: none !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  font-size: 0.9rem !important;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* --- DURUM 1: BUTON (KAYDETMEYE HAZIR) --- */
+.premium-connection-btn:not(.is-connected) {
+  box-shadow: 0 4px 14px rgba(var(--v-theme-saveButtonColor), 0.15) !important;
+}
+
+.premium-connection-btn:not(.is-connected):not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(var(--v-theme-saveButtonColor), 0.25) !important;
+  filter: brightness(1.08);
+}
+
+.premium-connection-btn:not(.is-connected):not(:disabled):active {
+  transform: translateY(1px);
+}
+
+/* Sadece Kategori seçilmediğindeki gerçek pasif (disabled) durumu */
+.premium-connection-btn:not(.is-connected):disabled {
+  opacity: 0.5 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  filter: grayscale(20%);
+}
+
+/* --- DURUM 2: ROZET (BAĞLANTI KURULDU) --- */
+/* Buton hissiyatını tamamen silip şık bir durum belirtecine dönüştürüyoruz */
+.premium-connection-btn.is-connected {
+  /* Zümrüt Yeşili (Emerald) tonlarında premium onay renkleri */
+  background-color: rgba(16, 185, 129, 0.08) !important;
+  color: #059669 !important;
+  /* Daha koyu, okunaklı bir yeşil metin */
+
+  /* Rozet hissiyatını veren ince kenarlık */
+  border: 1px solid rgba(16, 185, 129, 0.25) !important;
+
+  box-shadow: none !important;
+  transform: none !important;
+
+  /* CRITICAL: Elementi disabled yapmadan tıklanmasını ve hover olmasını engeller */
+  pointer-events: none !important;
+}
+
+/* İkonlar arası geçişi yumuşat */
+.premium-connection-btn .v-icon {
+  transition: all 0.3s ease;
+}
+
+.premium-connection-btn.is-connected .v-icon {
+  transform: scale(1.1);
+  /* Onay ikonu bir tık daha belirgin dursun */
+}
+
+
+
+
+
+
+/* --- 1. ARKA PLAN VE KAVİS --- */
+.customTextField .v-field {
+  background-color: #ffffff !important;
+  border-radius: 8px !important;
+}
+
+.customTextField .v-field__outline::before,
+.customTextField .v-field__outline::after {
+  display: none !important;
+}
+
+/* --- 2. NATIVE KENARLIK (OUTLINE) RENKLENDİRMESİ --- */
+.customTextField .v-field__outline {
+  /* Normal durum: borderColor */
+  color: rgb(var(--v-theme-borderColor)) !important;
+  --v-field-border-opacity: 1 !important;
+  transition: color 0.2s ease !important;
+}
+
+/* --- 3. HOVER (ÜZERİNE GELME) DURUMU --- */
+.customTextField:hover .v-field__outline {
+  color: rgba(var(--v-theme-passiveColor), 0.7) !important;
+}
+
+/* --- 4. FOCUS (SEÇİLME / ODAKLANMA) DURUMU --- */
+.customTextField.v-input--focused .v-field__outline {
+  /* Seçilince net passiveColor rengi ve 2px vurgu */
+  color: rgb(var(--v-theme-passiveColor)) !important;
+  --v-field-border-width: 2px !important;
+}
+
+/* --- 5. TİPOGRAFİ: BİLGİ GİRİŞİ --- */
+.customTextField .v-field input,
+.customTextField .v-select__selection,
+.customTextField .v-combobox__selection {
+  color: #0f172a !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.015em !important;
+}
+
+/* --- 6. TİPOGRAFİ: ETİKET (LABEL) --- */
+.customTextField .v-field .v-label {
+  color: rgb(var(--v-theme-passiveColor)) !important;
+  font-weight: 500 !important;
+  opacity: 0.8 !important;
+}
+
+.customTextField.v-input--focused .v-label {
+  color: rgb(var(--v-theme-passiveColor)) !important;
+  opacity: 1 !important;
+  font-weight: 600 !important;
+}
+
+/* --- 7. İKON VE İÇ BUTON HİZALAMALARI (PADDING SIFIRLANDI) --- */
+.customTextField .v-field--appended {
+  /* İçeri eklenen butonların sağa tam yapışması için sıfırlandı */
+  padding-inline-end: 0 !important;
+}
+
+.customTextField .v-field__append-inner,
+.customTextField .v-field__clearable {
+  /* Buton/İkon üst boşlukları sıfırlandı, tam ortalama sağlandı */
+  padding-top: 0 !important;
+  align-items: center !important;
+  color: rgb(var(--v-theme-passiveColor)) !important;
+}
+
+.customTextField.v-input--focused .v-field__append-inner,
+.customTextField.v-input--focused .v-field__clearable {
+  color: rgb(var(--v-theme-passiveColor)) !important;
+  opacity: 1 !important;
+}
+
+/* --- TEMİZLEME (CLEAR) BUTONU --- */
+/* Hem kapsayıcıyı hem de içindeki ikonu kesin olarak hedefler */
+.customTextField .v-field__clearable,
+.customTextField .v-field__clearable .v-icon,
+.customTextField .v-field__clearable i {
+  color: rgb(var(--v-theme-passiveColor)) !important;
+  opacity: 0.6 !important;
+  /* Normalde biraz saydam dursun ki içeriğin önüne geçmesin */
+  transition: all 0.2s ease !important;
+}
+
+/* Kullanıcı temizleme ikonunun üzerine geldiğinde */
+.customTextField .v-field__clearable:hover .v-icon,
+.customTextField .v-field__clearable:hover i {
+  opacity: 1 !important;
+  /* Tamamen netleşir */
+  transform: scale(1);
+  /* Silme işlemine davet eden çok zarif bir büyüme efekti */
+}
+
+.premium-cube-btn {
+  border: 1px solid rgb(var(--v-theme-borderColor)) !important;
+  border-radius: 8px !important;
+}
+
+
+
+
+.v-data-table-header__content {
+  font-weight: 800 !important;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+
+
+.gap-1 {
+  gap: 4px;
+}
+
+.gap-2 {
+  gap: 8px;
+}
+
+.gap-4 {
+  gap: 16px;
+}
+
+
+
+
+.table-wrapper {
+  flex-grow: 1;
+  position: relative;
+  min-height: 0;
+}
+
+.desktop-table {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  border-top: 1px solid #96a9b7;
+  background-color: white !important;
+}
+/* V-Data-Table Empty State Full Height Fix */
+.v-data-table.desktop-table .v-table__wrapper > table:has(.v-data-table-rows-no-data) {
+  height: 100% !important;
+}
+
+.v-data-table.desktop-table .v-data-table-rows-no-data,
+.v-data-table.desktop-table .v-data-table-rows-no-data td {
+  height: 100% !important;
+  vertical-align: middle !important;
+}

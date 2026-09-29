@@ -1,0 +1,121 @@
+---
+/**
+ * Kapanış CTA (ADR-0014 Karar 2, bölüm 9) — koyu "stage" zemin. Uygulama bağlantıları site-config'ten.
+ * S7: eş merkezli halkalar (dekoratif) + güven çipleri (deneme süresi, kartsız, şifreli anahtar) — hepsi kayıttan.
+ */
+import Section from '../Section.astro'
+import Button from '../Button.astro'
+import Icon from './Icon.astro'
+import { appUrls } from '../../lib/site-config'
+import { getPublicTrial } from '../../data/plans'
+import { getPublicCapabilities } from '../../data/capabilities'
+
+const trial = getPublicTrial()
+const security = getPublicCapabilities('security')
+const encrypted = security.some((c) => c.id === 'secrets-encryption')
+const tenant = security.some((c) => c.id === 'tenant-database')
+---
+
+<Section tone="stage" labelledby="kapanis-baslik" size="narrow">
+  <div class="cta" data-scene="cta-reveal">
+    <span class="cta__rings" data-part="cta-rings" aria-hidden="true"><i></i><i></i><i></i></span>
+    <h2 id="kapanis-baslik" class="cta__title" data-reveal>Stoğunuzu ve siparişlerinizi tek yerde toplayın</h2>
+    <p class="cta__lead" data-reveal>
+      Hesabınızı açın, kanallarınızı bağlayın ve satış operasyonunuzu tek panelden yönetmeye başlayın.
+    </p>
+    <div class="cta__actions" data-reveal>
+      <Button href={appUrls.register()} variant="inverse" size="lg" data-testid="closing-cta-primary">Ücretsiz dene</Button>
+      <Button href={appUrls.login()} variant="inverse-outline" size="lg" data-testid="closing-cta-login">Giriş yap</Button>
+    </div>
+    <p class="cta__note" data-reveal><span data-count={trial.days}>{trial.days}</span> gün ücretsiz deneme{!trial.cardRequired && ', kart bilgisi gerekmez'}.</p>
+    <ul class="cta__chips" data-reveal aria-label="Öne çıkanlar">
+      <li><Icon name="clock" size="sm" />{trial.days} gün deneme</li>
+      {!trial.cardRequired && <li><Icon name="card" size="sm" />Kartsız başlangıç</li>}
+      {encrypted && <li><Icon name="lock" size="sm" />Şifreli anahtar saklama</li>}
+      {tenant && <li><Icon name="database" size="sm" />Ayrı müşteri veritabanı</li>}
+    </ul>
+  </div>
+</Section>
+
+<style>
+  .cta {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--ek-space-5);
+    padding-block: var(--ek-space-2);
+    text-align: center;
+  }
+  /* Dekoratif eş merkezli halkalar — yavaşça nefes alır (döngü: scenes-loops.css `loop-cta-rings`). */
+  .cta__rings {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    z-index: -1;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+  }
+  .cta__rings i {
+    position: absolute;
+    translate: -50% -50%;
+    aspect-ratio: 1 / 1;
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-full);
+  }
+  .cta__rings i:nth-child(1) {
+    width: 24rem;
+  }
+  .cta__rings i:nth-child(2) {
+    width: 38rem;
+    opacity: 0.6;
+  }
+  .cta__rings i:nth-child(3) {
+    width: 54rem;
+    opacity: 0.3;
+  }
+  .cta__title {
+    font-size: var(--site-font-display-md);
+    font-weight: var(--site-font-display-weight);
+    line-height: var(--site-font-display-line-height);
+    letter-spacing: var(--site-font-display-tracking);
+    text-wrap: balance;
+  }
+  .cta__lead {
+    font-size: var(--ek-font-size-xl);
+    line-height: var(--ek-line-height-normal);
+  }
+  .cta__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--ek-space-3);
+    margin-top: var(--ek-space-3);
+  }
+  .cta__note {
+    font-size: var(--ek-font-size-md);
+  }
+  .cta__chips {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--ek-space-2);
+    margin-top: var(--ek-space-3);
+  }
+  .cta__chips li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-1) var(--ek-space-3);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-full);
+    background: var(--site-glass-bg);
+    color: var(--site-color-on-primary);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-medium);
+  }
+  .cta__chips :global(.icon) {
+    color: var(--ek-color-secondary);
+  }
+</style>

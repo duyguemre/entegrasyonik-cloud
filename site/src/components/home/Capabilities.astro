@@ -1,0 +1,1257 @@
+---
+/**
+ * Yetenekler (ADR-0014 Karar 2, bölüm 4) — S7: bento düzeni. Kaynak: `getPublicCapabilities()`; metin, durum rozeti ve
+ * kanal listeleri kayıttan gelir (kanallar `integrations.ts`'ten türetilir). Sınır notları (caveat) görünür.
+ * Beş ana özellik için ayrı, animasyonlu "UI parçası" (hepsi HTML/CSS; aria-hidden — anlam çevredeki metindedir):
+ *   - `stock-single-winner`: son adet için eşzamanlı iki sipariş -> biri rezerve, diğeri aşırı satış olarak işaretlenir
+ *   - `orders-merge`: farklı kanallardan sipariş ve iade talepleri iki yönden gelip tek listede birleşir
+ *   - `integration-status`: her entegrasyonun kapsam düzeyi (kayıttaki `coverage`; sınırlar ayrıca yazılıdır)
+ *   - `secret-encryption`: girilen anahtar -> kilit -> `enc:v1:` biçiminde saklanan -> arayüzde maskeli
+ *   - `tenant-isolation`: her müşteri hesabı kendi veritabanına bağlanır
+ * Diğer yetenekler (iade, soru-cevap, finans, kargo/fatura bildirimi, ERP, çoklu pazaryeri) kayıttaki kartlardır.
+ * Tüm örnek değerler "Örnek görünüm"dür; uydurma müşteri/ölçüm YOK.
+ */
+import Section from '../Section.astro'
+import SectionHeading from './SectionHeading.astro'
+import Icon from './Icon.astro'
+import { getPublicCapabilities, type PublicProductCapability } from '../../data/capabilities'
+import { getPublicIntegrations } from '../../data/integrations'
+import { getPublicFaq } from '../../data/faq'
+
+const all = getPublicCapabilities('core')
+const security = getPublicCapabilities('security')
+const byId = (list: PublicProductCapability[], id: string): PublicProductCapability => {
+  const c = list.find((x) => x.id === id)
+  if (!c) throw new Error(`Yetenek kaydı bulunamadı: ${id}`)
+  return c
+}
+
+const stock = byId(all, 'stock-reservation')
+const orders = byId(all, 'unified-orders')
+const secrets = byId(security, 'secrets-encryption')
+const masked = byId(security, 'secrets-masked')
+const tenant = byId(security, 'tenant-database')
+const spotlightIds = new Set([stock.id, orders.id])
+const rest = all.filter((c) => !spotlightIds.has(c.id))
+const tenantNote = getPublicFaq().find((f) => f.id === 'veri-ayrimi')?.answer.split('. ').slice(1).join('. ') ?? ''
+
+// Dört küme özeti (S8, üst özet): başlık/madde metinleri yalnızca kayıttaki yetenek başlıklarından; tek
+// satırlık "değer cümlesi" (lead) de kayıttaki ilgili yeteneğin özetinden — yeni metin uydurulmaz.
+const roleBased = byId(security, 'role-based-access')
+const clusters = [
+  {
+    id: 'oversell',
+    icon: 'stock' as const,
+    title: 'Aşırı satış koruması',
+    lead: stock.summary,
+    items: [stock.title, byId(all, 'multi-channel-products').title],
+  },
+  {
+    id: 'ops',
+    icon: 'orders' as const,
+    title: 'Tek panel operasyon',
+    lead: orders.summary,
+    items: [orders.title, byId(all, 'returns').title, byId(all, 'questions').title],
+  },
+  {
+    id: 'isolation',
+    icon: 'database' as const,
+    title: 'Veri izolasyonu ve şifreleme',
+    lead: tenant.summary,
+    items: [tenant.title, secrets.title, masked.title],
+  },
+  {
+    id: 'rbac',
+    icon: 'users' as const,
+    title: 'Rol tabanlı erişim',
+    lead: roleBased.summary,
+    items: [roleBased.title, byId(security, 'default-deny').title, byId(security, 'session-cookie').title],
+  },
+]
+
+const ICONS: Record<string, 'stock' | 'layers' | 'orders' | 'returns' | 'chat' | 'finance' | 'notice' | 'plug'> = {
+  'stock-reservation': 'stock',
+  'multi-channel-products': 'layers',
+  'unified-orders': 'orders',
+  returns: 'returns',
+  questions: 'chat',
+  finance: 'finance',
+  'shipping-invoice-notice': 'notice',
+  'erp-read': 'plug',
+}
+// Kart hiyerarşisinin en üst seviyesi ("eyebrow"): kısa yapısal kategori etiketi (bento karolarındaki
+// `tile__eyebrow` ile aynı dilde) — yeni bir olgusal iddia değildir, yalnızca gruplama başlığıdır.
+const EYEBROWS: Record<string, string> = {
+  'multi-channel-products': 'Ürün',
+  returns: 'İade',
+  questions: 'İletişim',
+  finance: 'Finans',
+  'shipping-invoice-notice': 'Bildirim',
+  'erp-read': 'ERP',
+}
+
+const integrations = getPublicIntegrations()
+const marketplaces = getPublicIntegrations('marketplace').map((i) => i.name)
+const [chanA = '', chanB = ''] = marketplaces
+// Örnek liste: kanallar sırayla tekrar eder; durum sözcükleri yalnızca arayüz örneğidir.
+const STATUSES = ['Yeni', 'Hazırlanıyor', 'İade talebi', 'Kargoda', 'Yeni']
+const rows = STATUSES.map((status, i) => ({ status, channel: marketplaces[i % marketplaces.length] ?? '' }))
+const filters = marketplaces.slice(0, 3)
+const METER: Record<string, number> = { broad: 3, partial: 2, limited: 1 }
+const isAlert = (s: string) => s === 'İade talebi'
+
+const badgeTone = (s: string) => (s === 'available' ? 'ok' : 'part')
+---
+
+<Section id="ozellikler" labelledby="yetenek-baslik">
+  <SectionHeading
+    id="yetenek-baslik"
+    eyebrow="Yetenekler"
+    title="Satışın tüm akışı tek panelde"
+    accent="tek panelde"
+    lead="Stoktan siparişe, iadeden finans görünümüne: günlük operasyonunuzun ihtiyaç duyduğu işlemler aynı yerde."
+  />
+
+  <div class="clusters-band">
+  <ul class="clusters" data-scene="reveal" data-testid="capability-clusters">
+    {
+      clusters.map((c) => (
+        <li class="cluster" data-part="cluster" data-reveal data-tilt>
+          <span class="cluster__icon"><Icon name={c.icon} size="lg" /></span>
+          <h3 class="cluster__title">{c.title}</h3>
+          <p class="cluster__lead">{c.lead}</p>
+          <ul class="cluster__items">
+            {c.items.map((item) => (
+              <li>
+                <Icon name="check" size="sm" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </li>
+      ))
+    }
+  </ul>
+  </div>
+
+  <div class="bento" data-testid="bento">
+    {/* A: stok rezervasyonu (geniş, iki satır) */}
+    <article class="tile tile--stock" aria-labelledby="spot-stock-title" data-tilt data-scene="tile">
+      <div class="tile__copy" data-reveal>
+        <p class="tile__eyebrow">Stok</p>
+        <span class="tile__icon"><Icon name="stock" size="md" /></span>
+        <h3 id="spot-stock-title" class="tile__title">{stock.title}</h3>
+        <p class="tile__text">{stock.summary}</p>
+        {
+          stock.caveat && (
+            <p class="tile__caveat">
+              <Icon name="info" size="sm" />
+              <span>{stock.caveat}</span>
+            </p>
+          )
+        }
+      </div>
+      <div class="tile__frame" data-reveal>
+        <div class="stock" data-scene="stock-single-winner" aria-hidden="true">
+          <p class="stock__caption">Örnek senaryo: son adet için iki kanaldan eşzamanlı sipariş</p>
+          <div class="stock__flow">
+            <div class="stock__orders">
+              <div class="stock__order" data-part="order-a">
+                <span class="stock__chan">{chanA}</span>
+                <span class="stock__status">Yeni sipariş</span>
+              </div>
+              <div class="stock__order" data-part="order-b">
+                <span class="stock__chan">{chanB}</span>
+                <span class="stock__status">Yeni sipariş</span>
+              </div>
+            </div>
+            <svg class="stock__arrow" data-part="arrow-a" viewBox="0 0 24 24" focusable="false"><path d="M4 12h16 M14 6l6 6-6 6"></path></svg>
+            <div class="stock__product" data-part="product">
+              <span class="stock__thumb"><Icon name="stock" size="md" /></span>
+              <span class="stock__line stock__line--long"></span>
+              <span class="stock__line stock__line--short"></span>
+              <span class="stock__left">
+                Kalan
+                <span class="stock__left-num">
+                  <b class="stock__left-a" data-part="left-a">1</b>
+                  <b class="stock__left-b" data-part="left-b">0</b>
+                </span>
+              </span>
+            </div>
+            <svg class="stock__arrow" data-part="arrow-b" viewBox="0 0 24 24" focusable="false"><path d="M4 12h16 M14 6l6 6-6 6"></path></svg>
+            <div class="stock__results">
+              <div class="stock__result stock__result--ok" data-part="result-ok">
+                <Icon name="check" size="md" />
+                <div>
+                  <strong>Rezerve edildi</strong>
+                  <span>{chanA} siparişi</span>
+                </div>
+              </div>
+              <div class="stock__result stock__result--warn" data-part="result-oversold">
+                <Icon name="info" size="md" />
+                <div>
+                  <strong>Aşırı satış olarak işaretlendi</strong>
+                  <span>{chanB} siparişi, telafi akışında</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    {/* B: birleşik siparişler ve iadeler */}
+    <article class="tile tile--orders" aria-labelledby="spot-orders-title" data-tilt data-scene="tile">
+      <div class="tile__copy" data-reveal>
+        <p class="tile__eyebrow">Sipariş ve iade</p>
+        <span class="tile__icon"><Icon name="orders" size="md" /></span>
+        <h3 id="spot-orders-title" class="tile__title">{orders.title}</h3>
+        <p class="tile__text">{orders.summary}</p>
+        {
+          orders.channels.length > 0 && (
+            <ul class="chips" aria-label="Sipariş çekilen kanallar">
+              {orders.channels.map((c) => (
+                <li class:list={['chip', c.level === 'limited' && 'chip--limited']} data-code={c.code}>
+                  <span class="chip__mono" aria-hidden="true">{c.name.slice(0, 1)}</span>
+                  {c.name}
+                  {c.level === 'limited' && <span class="chip__note"> · sınırlı</span>}
+                </li>
+              ))}
+            </ul>
+          )
+        }
+      </div>
+      <div class="tile__frame" data-reveal>
+        <div class="win" data-scene="orders-merge" aria-hidden="true">
+          <div class="win__bar">
+            <span class="win__dots"><i></i><i></i><i></i></span>
+            <span class="win__title">Siparişler ve iadeler</span>
+            <span class="win__tag">Örnek görünüm</span>
+          </div>
+          <ul class="win__filters">
+            <li class="win__filter win__filter--active">Tümü</li>
+            {filters.map((f) => <li class="win__filter">{f}</li>)}
+          </ul>
+          <ul class="win__rows">
+            {
+              rows.map((r) => (
+                <li class="win__row" data-part="order-row">
+                  <span class="win__chan">{r.channel}</span>
+                  <span class="win__cells">
+                    <span class="win__skel win__skel--a"></span>
+                    <span class="win__skel win__skel--b"></span>
+                  </span>
+                  <span class:list={['win__pill', isAlert(r.status) && 'win__pill--alert']}>{r.status}</span>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </div>
+    </article>
+
+    {/* C: entegrasyon durumu */}
+    <article class="tile tile--status" aria-labelledby="spot-status-title" data-tilt data-scene="tile">
+      <div class="tile__copy" data-reveal>
+        <p class="tile__eyebrow">Entegrasyon kapsamı</p>
+        <span class="tile__icon"><Icon name="plug" size="md" /></span>
+        <h3 id="spot-status-title" class="tile__title">Entegrasyon durumu bir bakışta</h3>
+        <p class="tile__text">
+          Her kanalın kapsamı ve sınırları açıkça yazılıdır: neyin desteklendiğini, neyin sınırlı olduğunu önceden bilirsiniz.
+        </p>
+      </div>
+      <div class="tile__frame" data-reveal>
+        <div class="istat" data-scene="integration-status" aria-hidden="true">
+          <p class="istat__caption">Kapsam düzeyi · örnek görünüm</p>
+          <ul class="istat__rows">
+            {
+              integrations.map((i) => (
+                <li class="istat__row" data-part="istat-row" data-code={i.code}>
+                  <span class="istat__dot"></span>
+                  <span class="istat__name">{i.name}</span>
+                  <span class="istat__meter">
+                    {[1, 2, 3].map((n) => (
+                      <i class:list={['istat__seg', n <= METER[i.coverage] && 'is-on']} data-part={n <= METER[i.coverage] ? 'seg' : undefined}></i>
+                    ))}
+                  </span>
+                  <span class="istat__label">{i.coverageLabel}</span>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </div>
+    </article>
+
+    {/* D: şifreli anahtarlar */}
+    <article class="tile tile--vault" aria-labelledby="spot-vault-title" data-tilt data-scene="tile">
+      <div class="tile__copy" data-reveal>
+        <p class="tile__eyebrow">Şifreleme</p>
+        <span class="tile__icon"><Icon name="lock" size="md" /></span>
+        <h3 id="spot-vault-title" class="tile__title">{secrets.title}</h3>
+        <p class="tile__text">{secrets.summary}</p>
+        <p class="tile__text tile__text--sub">{masked.summary}</p>
+      </div>
+      <div class="tile__frame" data-reveal>
+        <div class="vault" data-scene="secret-encryption" aria-hidden="true">
+          <div class="vault__row">
+            <span class="vault__label">Girdiğiniz API anahtarı</span>
+            <span class="vault__field" data-part="plain">••••••••••••••••</span>
+          </div>
+          <div class="vault__step" data-part="lock">
+            <Icon name="lock" size="md" />
+            <span class="vault__algo" data-part="algorithm">AES-256-GCM</span>
+          </div>
+          <div class="vault__row">
+            <span class="vault__label">Veritabanında saklanan</span>
+            <span class="vault__field vault__field--cipher" data-part="cipher">
+              <span class="vault__prefix">enc:v1:</span>
+              <span class="vault__bars"><i data-part="bar"></i><i data-part="bar"></i><i data-part="bar"></i><i data-part="bar"></i></span>
+            </span>
+          </div>
+          <div class="vault__row">
+            <span class="vault__label">Arayüz ve API yanıtlarında</span>
+            <span class="vault__field" data-part="masked">••••••••</span>
+          </div>
+          <p class="vault__note">Gösterim örneğidir; gerçek bir değer değildir.</p>
+        </div>
+      </div>
+    </article>
+
+    {/* E: çoklu kiracı */}
+    <article class="tile tile--tenant" aria-labelledby="spot-tenant-title" data-tilt data-scene="tile">
+      <div class="tile__copy" data-reveal>
+        <p class="tile__eyebrow">Veri izolasyonu</p>
+        <span class="tile__icon"><Icon name="database" size="md" /></span>
+        <h3 id="spot-tenant-title" class="tile__title">{tenant.title}</h3>
+        <p class="tile__text">{tenant.summary}</p>
+        {tenantNote && <p class="tile__text tile__text--sub">{tenantNote}</p>}
+      </div>
+      <div class="tile__frame" data-reveal>
+        <div class="tenant" data-scene="tenant-isolation" aria-hidden="true">
+          <p class="tenant__caption">Örnek görünüm</p>
+          <div class="tenant__cols">
+            {
+              [1, 2, 3].map(() => (
+                <div class="tenant__col" data-part="tenant-col">
+                  <span class="tenant__acct" data-part="tenant-acct"><Icon name="users" size="md" /><span>Müşteri hesabı</span><i class="tenant__bar"></i></span>
+                  <span class="tenant__link" data-part="tenant-link"></span>
+                  <span class="tenant__db" data-part="tenant-db"><Icon name="database" size="md" /><span>Ayrı veritabanı</span><i class="tenant__bar"></i><i class="tenant__bar tenant__bar--short"></i></span>
+                </div>
+              ))
+            }
+          </div>
+          <p class="tenant__platform" data-part="tenant-platform"><Icon name="server" size="sm" />Ortak platform veritabanı: hesap ve yapılandırma kayıtları</p>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <h3 class="more__title" data-testid="more-title">Ve günlük işleriniz için</h3>
+
+  {/* Diğer yetenekler */}
+  <ul class="caps" data-scene="reveal" data-testid="capability-grid">
+    {
+      rest.map((c) => (
+        <li class="cap" data-part="capability" data-id={c.id} data-reveal data-tilt>
+          <div class="cap__top">
+            <span class="cap__icon"><Icon name={ICONS[c.id] ?? 'layers'} size="lg" /></span>
+            <span class={`cap__badge cap__badge--${badgeTone(c.status)}`}>{c.statusLabel}</span>
+          </div>
+          {EYEBROWS[c.id] && <p class="cap__eyebrow">{EYEBROWS[c.id]}</p>}
+          <h4 class="cap__title">{c.title}</h4>
+          <p class="cap__text">{c.summary}</p>
+          {c.caveat && <p class="cap__caveat">{c.caveat}</p>}
+          {c.channels.length > 0 && (
+            <ul class="chips" aria-label={`${c.title}: kanallar`}>
+              {c.channels.map((ch) => (
+                <li class:list={['chip', ch.level === 'limited' && 'chip--limited']} data-code={ch.code}>
+                  <span class="chip__mono" aria-hidden="true">{ch.name.slice(0, 1)}</span>
+                  {ch.name}
+                  {ch.level === 'limited' && <span class="chip__note"> · sınırlı</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </li>
+      ))
+    }
+  </ul>
+</Section>
+
+<style>
+  /* --- Dört küme özeti: koyu "sahne" bandı (bölümler arası ritim) --- */
+  .clusters-band {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    margin-top: var(--ek-space-10);
+    padding: var(--ek-space-8) var(--ek-space-5);
+    border-radius: var(--site-radius-panel);
+    background: var(--site-stage-mesh);
+  }
+  .clusters-band::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image: var(--site-texture-grid);
+    background-size: var(--site-texture-grid-size);
+    -webkit-mask-image: var(--site-texture-fade);
+    mask-image: var(--site-texture-fade);
+    pointer-events: none;
+  }
+  .clusters {
+    display: grid;
+    gap: var(--ek-space-4);
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cluster {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-5);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-xl);
+    background: var(--site-glass-bg);
+    backdrop-filter: blur(var(--site-glass-blur));
+    /* `transform` (eğim) buraya da eklenir (bkz. PricingSummary.astro aynı not: kısayol birleşmez). */
+    transition:
+      box-shadow var(--ek-duration-base) var(--ek-easing-standard),
+      border-color var(--ek-duration-base) var(--ek-easing-standard),
+      transform var(--tilt-transition-duration, var(--ek-duration-fast)) var(--ek-easing-standard);
+  }
+  .cluster:hover {
+    border-color: color-mix(in srgb, var(--ek-color-secondary) 60%, transparent);
+    box-shadow: var(--site-shadow-card-hover);
+  }
+  .cluster__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-12);
+    height: var(--ek-space-12);
+    border-radius: var(--ek-radius-lg);
+    background: linear-gradient(140deg, var(--ek-color-secondary), var(--ek-color-primary-darken-1));
+    color: var(--site-color-on-primary);
+    box-shadow: 0 0.5rem 1rem -0.5rem color-mix(in srgb, var(--ek-color-secondary) 60%, transparent);
+  }
+  /* Aynı 4 seviyeli hiyerarşi token seti (site-tokens.css `--site-card-*`) burada da: başlık -> değer cümlesi. */
+  .cluster__title {
+    color: var(--site-color-on-primary);
+    font-size: var(--site-card-title-size);
+    font-weight: var(--site-card-title-weight);
+    line-height: var(--ek-line-height-tight);
+  }
+  .cluster__lead {
+    color: var(--site-color-on-primary-muted);
+    font-size: var(--site-card-value-size);
+    font-weight: var(--site-card-value-weight);
+    line-height: var(--ek-line-height-normal);
+  }
+  .cluster__items {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    margin-top: auto;
+    padding-top: var(--ek-space-3);
+    border-top: var(--site-border-width) solid var(--site-glass-border);
+    color: var(--site-color-on-primary-muted);
+    font-size: var(--ek-font-size-sm);
+  }
+  .cluster__items li {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ek-space-2);
+  }
+  .cluster__items :global(.icon) {
+    flex: none;
+    margin-top: calc(var(--ek-space-1) * 0.5);
+    color: var(--ek-color-secondary);
+  }
+
+  @media (min-width: 640px) {
+    .clusters {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1024px) {
+    .clusters-band {
+      padding: var(--ek-space-10);
+    }
+    .clusters {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  /* --- Bento ızgarası --- */
+  .bento {
+    display: grid;
+    gap: var(--ek-space-5);
+    margin-top: var(--ek-space-12);
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-6);
+    min-width: 0;
+    padding: var(--ek-space-6);
+    border: var(--site-border-width) solid transparent;
+    border-radius: var(--site-radius-panel);
+    background:
+      var(--site-surface-tint) padding-box,
+      linear-gradient(var(--ek-color-border-default), var(--ek-color-border-default)) border-box;
+    box-shadow: var(--site-shadow-card);
+    /* `transform` (eğim) buraya da eklenir (bkz. PricingSummary.astro aynı not: kısayol birleşmez). */
+    transition:
+      box-shadow var(--ek-duration-base) var(--ek-easing-standard),
+      background var(--ek-duration-base) var(--ek-easing-standard),
+      transform var(--tilt-transition-duration, var(--ek-duration-fast)) var(--ek-easing-standard);
+  }
+  .tile:hover {
+    background:
+      var(--site-surface-tint) padding-box,
+      var(--site-gradient-border) border-box;
+    box-shadow: var(--site-shadow-card-hover);
+  }
+  .tile__copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--ek-space-3);
+  }
+  .tile__eyebrow {
+    color: var(--ek-color-primary-darken-1);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-bold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .tile__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
+    border-radius: var(--ek-radius-lg);
+    background: linear-gradient(140deg, var(--ek-color-primary-darken-1), var(--ek-color-primary));
+    color: var(--site-color-on-primary);
+    box-shadow: 0 0.5rem 1rem -0.5rem color-mix(in srgb, var(--ek-color-primary) 60%, transparent);
+    transition: transform var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .tile:hover .tile__icon {
+    transform: scale(1.06);
+  }
+  .tile__title {
+    font-size: var(--ek-font-size-2xl);
+    font-weight: var(--ek-font-weight-bold);
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .tile__text {
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-lg);
+    line-height: var(--ek-line-height-normal);
+  }
+  .tile__text--sub {
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-md);
+  }
+  .tile__caveat {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-3);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-warning-subtle);
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-md);
+    line-height: var(--ek-line-height-normal);
+  }
+  .tile__caveat :global(.icon) {
+    margin-top: var(--ek-space-1);
+  }
+  .tile__frame {
+    min-width: 0;
+    margin-top: auto;
+  }
+
+  /* --- Ortak çipler --- */
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2);
+    margin-top: var(--ek-space-2);
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-1);
+    padding: var(--ek-space-1) var(--ek-space-3) var(--ek-space-1) var(--ek-space-1);
+    border: var(--site-border-width) solid var(--ek-color-border-strong);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-surface);
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-medium);
+  }
+  .chip--limited {
+    border-style: dashed;
+    color: var(--ek-color-content-default);
+  }
+  .chip__mono {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-5);
+    height: var(--ek-space-5);
+    border-radius: var(--ek-radius-full);
+    background: var(--chan-fill, var(--ek-color-primary));
+    color: var(--site-color-on-primary);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--site-font-display-weight);
+  }
+  .chip__note {
+    color: var(--ek-color-content-muted);
+  }
+
+  /* --- A: stok rezervasyonu görseli --- */
+  .stock {
+    padding: var(--ek-space-4);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-xl);
+    background-color: var(--ek-color-surface-sunken);
+    background-image: var(--site-texture-dots);
+    background-size: var(--site-texture-dots-size);
+  }
+  .stock__caption {
+    margin-bottom: var(--ek-space-4);
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .stock__flow {
+    display: grid;
+    gap: var(--ek-space-3);
+    align-items: center;
+  }
+  .stock__orders,
+  .stock__results {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+  }
+  .stock__order,
+  .stock__result,
+  .stock__product {
+    padding: var(--ek-space-3);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface);
+    box-shadow: var(--ek-shadow-sm);
+  }
+  .stock__order {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+  }
+  .stock__chan {
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .stock__status {
+    color: var(--ek-color-primary-darken-1);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-medium);
+  }
+  .stock__arrow {
+    width: var(--ek-space-6);
+    height: var(--ek-space-6);
+    margin-inline: auto;
+    fill: none;
+    stroke: var(--ek-color-content-subtle);
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    rotate: 90deg;
+  }
+  .stock__product {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: var(--ek-space-2) var(--ek-space-3);
+    border-color: var(--ek-color-secondary);
+  }
+  .stock__thumb {
+    grid-row: span 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
+    border-radius: var(--ek-radius-md);
+    background: var(--ek-color-surface-sunken);
+    color: var(--ek-color-primary-darken-1);
+  }
+  .stock__line {
+    display: block;
+    height: var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-surface-sunken);
+  }
+  .stock__line--short {
+    width: 55%;
+  }
+  .stock__left {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: var(--ek-space-2);
+    border-top: var(--site-border-width) dashed var(--ek-color-border-default);
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .stock__left-num {
+    display: inline-grid;
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-xl);
+    text-align: end;
+  }
+  .stock__left-a,
+  .stock__left-b {
+    grid-area: 1 / 1;
+  }
+  .stock__left-a {
+    opacity: 0;
+  }
+  .stock__result {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ek-space-2);
+    font-size: var(--ek-font-size-sm);
+  }
+  .stock__result div {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+  }
+  .stock__result strong {
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-md);
+    line-height: var(--ek-line-height-tight);
+  }
+  .stock__result span {
+    color: var(--ek-color-content-muted);
+  }
+  .stock__result--ok {
+    border-color: var(--ek-color-success);
+    background: var(--ek-color-success-subtle);
+  }
+  .stock__result--warn {
+    border-color: var(--ek-color-warning);
+    background: var(--ek-color-warning-subtle);
+  }
+
+  /* --- B: sipariş/iade penceresi --- */
+  .win {
+    overflow: hidden;
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-xl);
+    background: var(--ek-color-surface);
+    box-shadow: var(--ek-shadow-md);
+  }
+  .win__bar {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-2) var(--ek-space-3);
+    border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
+    background: var(--ek-color-surface-muted);
+  }
+  .win__dots {
+    display: inline-flex;
+    gap: var(--ek-space-1);
+  }
+  .win__dots i {
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-border-strong);
+  }
+  .win__title {
+    flex: 1;
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .win__tag {
+    padding: 0 var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-info-subtle);
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    white-space: nowrap;
+  }
+  .win__filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-3);
+  }
+  .win__filter {
+    padding: var(--ek-space-1) var(--ek-space-3);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-surface-sunken);
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-medium);
+  }
+  .win__filter--active {
+    background: var(--ek-color-primary);
+    color: var(--site-color-on-primary);
+  }
+  .win__row {
+    display: grid;
+    grid-template-columns: minmax(0, 5.5rem) minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-2) var(--ek-space-3);
+    border-top: var(--site-border-width) solid var(--ek-color-border-default);
+  }
+  .win__chan {
+    overflow: hidden;
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .win__cells {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+  }
+  .win__skel {
+    display: block;
+    height: var(--ek-space-1);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-surface-sunken);
+  }
+  .win__skel--a {
+    width: 82%;
+  }
+  .win__skel--b {
+    width: 50%;
+  }
+  .win__pill {
+    padding: var(--ek-space-1) var(--ek-space-3);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-info-subtle);
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    white-space: nowrap;
+  }
+  .win__pill--alert {
+    background: var(--ek-color-warning-subtle);
+  }
+
+  /* --- C: entegrasyon durumu --- */
+  .istat {
+    padding: var(--ek-space-4);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-xl);
+    background: var(--ek-color-surface);
+    box-shadow: var(--ek-shadow-sm);
+  }
+  .istat__caption {
+    margin-bottom: var(--ek-space-3);
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .istat__rows {
+    display: flex;
+    flex-direction: column;
+  }
+  .istat__row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: var(--ek-space-3);
+    padding-block: var(--ek-space-2);
+    border-top: var(--site-border-width) solid var(--ek-color-border-default);
+  }
+  .istat__row:first-child {
+    border-top: 0;
+  }
+  .istat__dot {
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: var(--chan, var(--ek-color-success));
+  }
+  .istat__name {
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .istat__meter {
+    display: inline-flex;
+    gap: var(--ek-space-1);
+  }
+  .istat__seg {
+    display: block;
+    width: var(--ek-space-4);
+    height: var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-surface-sunken);
+    transform-origin: 0 50%;
+  }
+  .istat__seg.is-on {
+    background: var(--site-gradient-accent);
+  }
+  .istat__label {
+    min-width: 6.5rem;
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-sm);
+    text-align: end;
+  }
+
+  /* --- D: anahtar şifreleme --- */
+  .vault {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-4);
+    border-radius: var(--ek-radius-xl);
+    background: var(--site-stage-mesh);
+    box-shadow: var(--ek-shadow-md);
+    color: var(--site-color-on-primary);
+  }
+  .vault__row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+  }
+  .vault__label {
+    color: var(--site-color-on-primary-muted);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .vault__field {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-2) var(--ek-space-3);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-md);
+    background: var(--site-glass-bg);
+    color: var(--site-color-on-primary);
+    font-family: var(--ek-font-mono);
+    font-size: var(--ek-font-size-md);
+    letter-spacing: 0.08em;
+  }
+  .vault__field--cipher {
+    color: var(--ek-color-secondary);
+  }
+  .vault__prefix {
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0;
+  }
+  .vault__bars {
+    display: inline-flex;
+    flex: 1;
+    gap: var(--ek-space-1);
+  }
+  .vault__bars i {
+    display: block;
+    flex: 1;
+    height: var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-secondary) 60%, transparent);
+  }
+  .vault__step {
+    display: inline-flex;
+    align-items: center;
+    align-self: center;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-1) var(--ek-space-3);
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
+    color: var(--site-color-on-primary);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .vault__note {
+    max-width: none;
+    color: var(--site-color-on-primary-muted);
+    font-size: var(--ek-font-size-xs);
+  }
+
+  /* --- E: çoklu kiracı --- */
+  .tenant {
+    padding: var(--ek-space-4);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-xl);
+    background-color: var(--ek-color-surface-sunken);
+    background-image: var(--site-texture-dots);
+    background-size: var(--site-texture-dots-size);
+  }
+  .tenant__caption {
+    margin-bottom: var(--ek-space-3);
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .tenant__cols {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--ek-space-3);
+  }
+  .tenant__col {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+  .tenant__acct,
+  .tenant__db {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--ek-space-1);
+    padding: var(--ek-space-2);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface);
+    color: var(--ek-color-primary-darken-1);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    line-height: var(--ek-line-height-tight);
+    text-align: center;
+  }
+  .tenant__db {
+    border-color: var(--ek-color-secondary);
+    color: var(--ek-color-secondary-darken-1);
+  }
+  .tenant__acct span,
+  .tenant__db span {
+    color: var(--ek-color-content-strong);
+  }
+  .tenant__link {
+    align-self: center;
+    width: var(--site-border-width);
+    height: var(--ek-space-6);
+    background: linear-gradient(180deg, var(--ek-color-primary-darken-1), var(--ek-color-secondary));
+    transform-origin: 50% 0;
+  }
+  .tenant__link {
+    height: var(--ek-space-10);
+  }
+  .tenant__bar {
+    display: block;
+    align-self: stretch;
+    height: var(--ek-space-1);
+    margin-top: var(--ek-space-1);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-surface-sunken);
+  }
+  .tenant__db .tenant__bar {
+    background: color-mix(in srgb, var(--ek-color-secondary) 30%, var(--ek-color-surface));
+  }
+  .tenant__bar--short {
+    align-self: flex-start;
+    width: 60%;
+  }
+  .tenant__platform {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ek-space-2);
+    margin-top: var(--ek-space-3);
+    padding: var(--ek-space-2) var(--ek-space-3);
+    border: var(--site-border-width) dashed var(--ek-color-border-strong);
+    border-radius: var(--ek-radius-lg);
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    text-align: center;
+  }
+
+  /* --- Diğer yetenekler --- */
+  .more__title {
+    margin-top: var(--ek-space-16);
+    font-size: var(--ek-font-size-2xl);
+    font-weight: var(--ek-font-weight-bold);
+  }
+  .caps {
+    display: grid;
+    gap: var(--ek-space-4);
+    margin-top: var(--ek-space-6);
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cap {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-5);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-xl);
+    background: var(--ek-color-surface);
+    /* `transform` (eğim) buraya da eklenir (bkz. PricingSummary.astro aynı not: kısayol birleşmez). */
+    transition:
+      border-color var(--ek-duration-base) var(--ek-easing-standard),
+      box-shadow var(--ek-duration-base) var(--ek-easing-standard),
+      translate var(--ek-duration-base) var(--ek-easing-standard),
+      transform var(--tilt-transition-duration, var(--ek-duration-fast)) var(--ek-easing-standard);
+  }
+  .cap:hover {
+    translate: 0 calc(var(--ek-space-1) * -1);
+    border-color: var(--ek-color-secondary);
+    box-shadow: var(--site-shadow-card-hover);
+  }
+  .cap__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: var(--ek-space-3);
+  }
+  .cap__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-12);
+    height: var(--ek-space-12);
+    border-radius: var(--ek-radius-lg);
+    background: linear-gradient(140deg, var(--ek-color-secondary), var(--ek-color-primary-darken-1));
+    color: var(--site-color-on-primary);
+    box-shadow: 0 0.5rem 1rem -0.5rem color-mix(in srgb, var(--ek-color-secondary) 55%, transparent);
+  }
+  .cap__badge {
+    padding: var(--ek-space-1) var(--ek-space-4);
+    border-radius: var(--ek-radius-full);
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-bold);
+    letter-spacing: 0.02em;
+    box-shadow: var(--ek-shadow-sm);
+  }
+  .cap__badge--ok {
+    background: var(--ek-color-success-subtle);
+  }
+  .cap__badge--part {
+    background: var(--ek-color-warning-subtle);
+  }
+  /*
+   * Kart içi 4 seviyeli hiyerarşi (S9, `--site-card-*` — tüm kart tipi bileşenlerde aynı token seti):
+   * eyebrow (yapısal kategori) -> başlık -> değer cümlesi (belirgin) -> soluk açıklama -> etiketler.
+   */
+  .cap__eyebrow {
+    color: var(--ek-color-primary-darken-1);
+    font-size: var(--site-card-eyebrow-size);
+    font-weight: var(--site-card-eyebrow-weight);
+    letter-spacing: var(--site-card-eyebrow-tracking);
+    text-transform: uppercase;
+  }
+  .cap__title {
+    font-size: var(--site-card-title-size);
+    font-weight: var(--site-card-title-weight);
+    line-height: var(--ek-line-height-tight);
+  }
+  .cap__text {
+    color: var(--ek-color-content-strong);
+    font-size: var(--site-card-value-size);
+    font-weight: var(--site-card-value-weight);
+    line-height: var(--ek-line-height-normal);
+  }
+  .cap__caveat {
+    color: var(--ek-color-content-muted);
+    font-size: var(--site-card-desc-size);
+    font-weight: var(--site-card-desc-weight);
+  }
+  .cap .chips {
+    margin-top: auto;
+    padding-top: var(--ek-space-2);
+  }
+
+  @media (min-width: 640px) {
+    .stock__flow {
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1.15fr);
+    }
+    .stock__arrow {
+      rotate: 0deg;
+    }
+    .caps {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1024px) {
+    .bento {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+    .tile--stock {
+      grid-column: span 12;
+    }
+    .tile--orders {
+      grid-column: span 7;
+    }
+    .tile--status {
+      grid-column: span 5;
+    }
+    .tile--vault {
+      grid-column: span 6;
+    }
+    .tile--tenant {
+      grid-column: span 6;
+    }
+    .tile {
+      padding: var(--ek-space-8);
+    }
+    .tile--stock {
+      display: grid;
+      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.4fr);
+      align-items: center;
+      gap: var(--ek-space-10);
+    }
+    .tile--stock .tile__frame {
+      margin-top: 0;
+    }
+    .caps {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 639px) {
+    .stock__flow {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    /* Dar ekranda kapsam etiketi adın altına iner; ölçer sağda kalır. */
+    .istat__row {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      row-gap: 0;
+    }
+    .istat__meter {
+      grid-column: 3;
+      grid-row: 1 / span 2;
+    }
+    .istat__label {
+      grid-column: 2;
+      grid-row: 2;
+      min-width: 0;
+      text-align: start;
+    }
+  }
+</style>

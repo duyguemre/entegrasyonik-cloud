@@ -1,0 +1,34 @@
+{
+    "exportOrchestrator": {
+        "exportLoopDelay": 300000,
+        "rateLimitRetryDelay": 500,
+        "zombieCheckInterval": 900000,
+        "lockTimeout": 1800000
+    },
+    "validator": {
+        "fetchLimit": 100,
+        "chunkSize": 50,
+        "errorTimeout": 10000
+    },
+    "publisher": {
+        "syncCooldownSeconds": 15,
+        "chunkSize": 30,
+        "maxVariantBatchSize": 50,
+        "retryInterval": 300000,
+        "maxRetryCount": 3,
+        "errorTimeout": 10000
+    },
+    "sentinel": {
+        "syncCooldownSeconds": 15,
+        "trackingMaxAge": 86400000,
+        "cooldownMinutes": 1,
+        "fetchLimit": 50,
+        "errorTimeout": 10000
+    },
+    "synchronizer": {
+        "batchSize": 50,
+        "waitingTimeoutDays": 14,
+        "cooldownMinutes": 1,
+        "errorTimeout": 10000
+    }
+}

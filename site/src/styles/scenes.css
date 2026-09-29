@@ -1,0 +1,511 @@
+/*
+ * Animasyon sahneleri — GİRİŞ (reveal) katmanı (ADR-0014 Karar 3, S3 + S7). Döngüsel (ambient) hareketler: scenes-loops.css.
+ * KURALLAR (tests/scenes.test.ts + tests/tokens.test.ts korur):
+ *  - Bu dosyadaki TÜM animasyon bildirimleri `@media (prefers-reduced-motion: no-preference)` içindedir ve
+ *    `html[data-motion='play']` ister (src/scripts/scenes.ts). Reduced-motion / durdurulmuş / JS'siz durumda
+ *    hiçbir kural eşleşmez → her sahne kendi bileşeninin ANLAMLI STATİK SON DURUMUNDA kalır.
+ *  - Keyframes yalnızca `from` tanımlar; varış (`to`) elemanın statik değeridir → statik hâl = son durum (sapma yok).
+ *  - Yalnızca `opacity` ve bağımsız dönüşüm özellikleri (`translate`, `scale`): yerleşim (layout) değişmez, CLS 0.
+ *  - Süre/eğri/mesafe yalnızca --site-motion-* / --ek-* token'ları; ham süre/px yok.
+ *  - Giriş (reveal) sahneleri görünür olunca BİR KEZ oynar (400–900 ms, stagger <= 80 ms, sahne toplamı <= 1,6 sn).
+ *  - Sahneler dekoratiftir (aria-hidden) veya içeriği zaten DOM'da olan bloklardır; animasyon bilgi taşımaz.
+ *  - Scroll'a bağlı animasyon / scroll-jacking YOK: yalnızca görünürlük eşiği (IntersectionObserver). Her sahne kendi
+ *    eşiğinde tetiklenir (kaydırdıkça sırayla belirir); ilk giriş dışında hiçbir şey tekrarlanmaz.
+ *
+ * Genel sözleşme (bileşen kancaları):
+ *  - `[data-scene]`: sahne kökü (JS `data-state` = ready | play, `data-visible` = true | false üretir)
+ *  - `[data-reveal]`: sahnenin doğrudan/dolaylı çocuğu; görünür olunca sırayla yükselir (sıra = kardeş sırası, <= 12)
+ *  - `[data-part='…']`: sahneye özgü parçalar (aşağıda sahne başına)
+ */
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes scene-rise {
+    from {
+      opacity: 0;
+      translate: 0 var(--site-motion-distance);
+    }
+  }
+  @keyframes scene-slide {
+    from {
+      opacity: 0;
+      translate: var(--slide-from);
+    }
+  }
+  @keyframes scene-fade {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes scene-fade-out {
+    from {
+      opacity: 1;
+    }
+  }
+  @keyframes scene-zoom {
+    from {
+      opacity: 0;
+      scale: var(--site-motion-scale-from);
+    }
+  }
+  @keyframes scene-grow {
+    from {
+      opacity: 0;
+      scale: var(--grow-from);
+    }
+  }
+
+  /* Sekme arka plandayken (ve sahne görünmezken) hiçbir sahne animasyonu ilerlemez. */
+  html[data-tab='hidden'] [data-scene],
+  html[data-tab='hidden'] [data-scene] *,
+  html[data-tab='hidden'] [data-scene] *::before,
+  html[data-tab='hidden'] [data-scene] *::after {
+    animation-play-state: paused !important;
+  }
+
+  /* ------------------------------------------------------------------------------------------- */
+  /* 0) Genel giriş: [data-reveal] öğeleri kardeş sırasına göre (<= 12) sırayla yükselir              */
+  /* ------------------------------------------------------------------------------------------- */
+  [data-scene] [data-reveal]:nth-child(1) {
+    --i: 0;
+  }
+  [data-scene] [data-reveal]:nth-child(2) {
+    --i: 1;
+  }
+  [data-scene] [data-reveal]:nth-child(3) {
+    --i: 2;
+  }
+  [data-scene] [data-reveal]:nth-child(4) {
+    --i: 3;
+  }
+  [data-scene] [data-reveal]:nth-child(5) {
+    --i: 4;
+  }
+  [data-scene] [data-reveal]:nth-child(6) {
+    --i: 5;
+  }
+  [data-scene] [data-reveal]:nth-child(7) {
+    --i: 6;
+  }
+  [data-scene] [data-reveal]:nth-child(8) {
+    --i: 7;
+  }
+  [data-scene] [data-reveal]:nth-child(9) {
+    --i: 8;
+  }
+  [data-scene] [data-reveal]:nth-child(10) {
+    --i: 9;
+  }
+  [data-scene] [data-reveal]:nth-child(11) {
+    --i: 10;
+  }
+  [data-scene] [data-reveal]:nth-child(n + 12) {
+    --i: 11;
+  }
+  html[data-motion='play'] [data-scene][data-state='ready'] [data-reveal] {
+    opacity: 0;
+  }
+  html[data-motion='play'] [data-scene][data-state='play'] [data-reveal] {
+    animation: scene-rise var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
+    animation-delay: calc(var(--site-motion-stagger) * var(--i));
+  }
+
+  /* ------------------------------------------------------------------------------------------- */
+  /* 1) hero-mock — ürün paneli girişi (içindeki 12 sn'lik döngü: scenes-loops.css)                    */
+  /* ------------------------------------------------------------------------------------------- */
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='ready'] {
+    opacity: 0;
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] {
+    animation: scene-rise var(--site-motion-duration-reveal-lg) var(--site-motion-ease-reveal) backwards;
+  }
+
+  /* ---------------------------------------------------------------------------------------- */
+  /* 2) problem-solution — dağınık panel kartları belirir; tek merkez tarafında akış çizgileri     */
+  /*    merkeze büyür, göbek ve sonuç kartı yerine oturur (akan sinyal noktaları: scenes-loops.css) */
+  /* ---------------------------------------------------------------------------------------- */
+  [data-scene='problem-solution'] [data-part='messy-panel']:nth-child(1) {
+    --i: 0;
+  }
+  [data-scene='problem-solution'] [data-part='messy-panel']:nth-child(2) {
+    --i: 1;
+  }
+  [data-scene='problem-solution'] [data-part='messy-panel']:nth-child(3) {
+    --i: 2;
+  }
+  [data-scene='problem-solution'] [data-part='messy-panel']:nth-child(4) {
+    --i: 3;
+  }
+  [data-scene='problem-solution'] [data-part='tidy-row'] {
+    --i: 4;
+  }
+  [data-scene='problem-solution'] [data-part='bus'] {
+    --i: 5;
+    --grow-from: 0 1;
+    transform-origin: 50% 0;
+  }
+  [data-scene='problem-solution'] [data-part='hub'] {
+    --i: 6;
+  }
+  [data-scene='problem-solution'] [data-part='result'] {
+    --i: 7;
+  }
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='ready'] :is([data-part='messy-panel'], [data-part='tidy-row'], [data-part='bus'], [data-part='hub'], [data-part='result']) {
+    opacity: 0;
+  }
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='messy-panel'] {
+    animation: scene-fade var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
+    animation-delay: calc(var(--site-motion-stagger) * var(--i));
+  }
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] :is([data-part='tidy-row'], [data-part='result']) {
+    animation: scene-rise var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
+    animation-delay: calc(var(--site-motion-stagger) * var(--i));
+  }
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='bus'] {
+    animation: scene-grow var(--site-motion-duration-reveal-sm) var(--site-motion-ease-reveal) backwards;
+    animation-delay: calc(var(--site-motion-stagger) * var(--i));
+  }
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='hub'] {
+    animation: scene-zoom var(--site-motion-duration-reveal-sm) var(--site-motion-ease-reveal) backwards;
+    animation-delay: calc(var(--site-motion-stagger) * var(--i));
+  }
+
+  /* ---------------------------------------------------------------------------------------- */
+  /* 3) stock-single-winner — iki sipariş AYNI ANDA gelir; biri rezerve edilir, diğeri işaretlenir */
+  /*    "Kalan" sayacı: 1 -> 0 (statik son durum 0; `left-a` yalnızca giriş sırasında görünür)      */
+  /* ---------------------------------------------------------------------------------------- */
+  [data-scene='stock-single-winner'] :is([data-part='order-a'], [data-part='order-b']) {
+    --i: 0;
+  }
+  [data-scene='stock-single-winner'] [data-part='arrow-a'] {
+    --i: 3;
+  }
+  [data-scene='stock-single-winner'] [data-part='product'] {
+    --i: 4;
+  }
+  [data-scene='stock-single-winner'] [data-part='arrow-b'] {
+    --i: 9;
+  }
+  [data-scene='stock-single-winner'] [data-part='result-ok'] {
+    --i: 10;
+  }
+  [data-scene='stock-single-winner'] [data-part='result-oversold'] {
+    --i: 12;
+  }
+  [data-scene='stock-single-winner'] :is([data-part='left-a'], [data-part='left-b']) {
+    --i: 10;
+  }
+  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='ready'] :is(
+      [data-part='order-a'],
+      [data-part='order-b'],
+      [data-part='arrow-a'],
+      [data-part='product'],
+      [data-part='arrow-b'],
+      [data-part='result-ok'],
+      [data-part='result-oversold'],
+      [data-part='left-b']
+    ) {
+    opacity: 0;
+  }
+  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] :is([data-part='order-a'], [data-part='order-b'], [data-part='result-ok'], [data-part='result-oversold']) {
+    animation: scene-rise var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
+    animation-delay: calc(var(--site-motion-stagger) * var(--i));
+  }
+  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] :is([data-part='arrow-a'], [data-part='arrow-b'], [data-part='left-b']) {
+    animation: scene-fade var(--site-motion-duration-reveal-sm) var(--site-motion-ease-reveal) backwards;
+    animation-delay: calc(var(--site-motion-stagger) * var(--i));
+  }
+  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] [data-part='left-a'] {
+    animation: scene-fade-out var(--site-motion-duration-reveal-sm) var(--site-motion-ease-reveal) backwards;
+    animation-delay: calc(var(--site-motion-stagger) * var(--i));
+  }
+  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] [data-part='product'] {
+    animation: scene-zoom var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
+    animation-delay: calc(var(--site-motion-stagger) * var(--i));
+  }
+
+  /* -------------------------------------------------------------------------------- */
+  /* 4) orders-merge — kanallardan siparişler iki yönden gelip tek listede birleşir     */
+  /* -------------------------------------------------------------------------------- */
+  [data-scene='orders-merge'] [data-part='order-row'] {
+    --slide-from: calc(var(--site-motion-distance) * -4) 0;
+  }
+  [data-scene='orders-merge'] [data-part='order-row']:nth-child(even) {
+    --slide-from: calc(var(--site-motion-distance) * 4) 0;
+  }
+  [data-scene='orders-merge'] [data-part='order-row']:nth-child(1) {
+    --i: 0;
+  }
+  [data-scene='orders-merge'] [data-part='order-row']:nth-child(2) {
+    --i: 1;
+  }
+  [data-scene='orders-merge'] [data-part='order-row']:nth-child(3) {
+    --i: 2;
+  }
+  [data-scene='orders-merge'] [data-part='order-row']:nth-child(4) {
+    --i: 3;
+  }
+  [data-scene='orders-merge'] [data-part='order-row']:nth-child(n + 5) {
+    --i: 4;
+  }
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='ready'] [data-part='order-row'] {
+    opacity: 0;
+  }
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row'] {
+    animation: scene-slide var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
+    animation-delay: calc(var(--site-motion-stagger) * var(--i));
+  }
+
+  /* ------------------------------------------------------------------------------------------ */
+  /* 5) integration-status — satırlar yükselir, kapsam ölçerleri sırayla dolar                     */
+  /* ------------------------------------------------------------------------------------------ */
+  [data-scene='integration-status'] [data-part='istat-row']:nth-child(1) {
+    --i: 0;
+  }
+  [data-scene='integration-status'] [data-part='istat-row']:nth-child(2) {
+    --i: 1;
+  }
+  [data-scene='integration-status'] [data-part='istat-row']:nth-child(3) {
+    --i: 2;
+  }
+  [data-scene='integration-status'] [data-part='istat-row']:nth-child(4) {
+    --i: 3;
+  }
+  [data-scene='integration-status'] [data-part='istat-row']:nth-child(5) {
+    --i: 4;
+  }
+  [data-scene='integration-status'] [data-part='istat-row']:nth-child(n + 6) {
+    --i: 5;
+  }
+  [data-scene='integration-status'] [data-part='seg'] {
+    --grow-from: 0 1;
+    --k: 0;
+  }
+  [data-scene='integration-status'] [data-part='seg']:nth-child(2) {
+    --k: 1;
+  }
+  [data-scene='integration-status'] [data-part='seg']:nth-child(3) {
+    --k: 2;
+  }
+  html[data-motion='play'] [data-scene='integration-status'][data-state='ready'] :is([data-part='istat-row'], [data-part='seg']) {
+    opacity: 0;
+  }
+  html[data-motion='play'] [data-scene='integration-status'][data-state='play'] [data-part='istat-row'] {
+    animation: scene-rise var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
+    animation-delay: calc(var(--site-motion-stagger) * var(--i));
+  }
+  html[data-motion='play'] [data-scene='integration-status'][data-state='play'] [data-part='seg'] {
+    animation: scene-grow var(--site-motion-duration-reveal-sm) var(--site-motion-ease-reveal) backwards;
+    animation-delay: calc(var(--site-motion-stagger) * (var(--i) + var(--k) + 3));
+  }
+
+  /* ------------------------------------------------------------------------------------- */
+  /* 6) tenant-isolation — her hesap kendi veritabanına bağlanır (üç bağımsız sütun)          */
+  /* ------------------------------------------------------------------------------------- */
+  [data-scene='tenant-isolation'] [data-part='tenant-col']:nth-child(1) {
+    --i: 0;
+  }
+  [data-scene='tenant-isolation'] [data-part='tenant-col']:nth-child(2) {
+    --i: 1;
+  }
+  [data-scene='tenant-isolation'] [data-part='tenant-col']:nth-child(n + 3) {
+    --i: 2;
+  }
+  [data-scene='tenant-isolation'] [data-part='tenant-link'] {
+    --grow-from: 1 0;
+  }
+  html[data-motion='play'] [data-scene='tenant-isolation'][data-state='ready'] :is([data-part='tenant-acct'], [data-part='tenant-link'], [data-part='tenant-db'], [data-part='tenant-platform']) {
+    opacity: 0;
+  }
+  html[data-motion='play'] [data-scene='tenant-isolation'][data-state='play'] [data-part='tenant-platform'] {
+    animation: scene-fade var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
+    animation-delay: calc(var(--site-motion-stagger) * 9);
+  }
+  html[data-motion='play'] [data-scene='tenant-isolation'][data-state='play'] [data-part='tenant-acct'] {
+    animation: scene-rise var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
+    animation-delay: calc(var(--site-motion-stagger) * var(--i));
+  }
+  html[data-motion='play'] [data-scene='tenant-isolation'][data-state='play'] [data-part='tenant-link'] {
+    animation: scene-grow var(--site-motion-duration-reveal-sm) var(--site-motion-ease-reveal) backwards;
+    animation-delay: calc(var(--site-motion-stagger) * (var(--i) + 3));
+  }
+  html[data-motion='play'] [data-scene='tenant-isolation'][data-state='play'] [data-part='tenant-db'] {
+    animation: scene-zoom var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
+    animation-delay: calc(var(--site-motion-stagger) * (var(--i) + 6));
+  }
+
+  /* ------------------------------------------------------------------------------------------ */
+  /* 7) story-step — her adım kendi eşiğinde belirir: düğme, çizgi, kart, mini arayüz sırayla       */
+  /* ------------------------------------------------------------------------------------------ */
+  [data-scene='story-step'] [data-part='story-line'] {
+    --grow-from: 1 0;
+  }
+  [data-scene='story-step'] [data-part='mini-item']:nth-child(1) {
+    --i: 3;
+  }
+  [data-scene='story-step'] [data-part='mini-item']:nth-child(2) {
+    --i: 4;
+  }
+  [data-scene='story-step'] [data-part='mini-item']:nth-child(3) {
+    --i: 5;
+  }
+  [data-scene='story-step'] [data-part='mini-item']:nth-child(4) {
+    --i: 6;
+  }
+  [data-scene='story-step'] [data-part='mini-item']:nth-child(5) {
+    --i: 7;
+  }
+  [data-scene='story-step'] [data-part='mini-item']:nth-child(n + 6) {
+    --i: 8;
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='ready'] :is([data-part='story-node'], [data-part='story-line'], [data-part='story-card'], [data-part='mini-item']) {
+    opacity: 0;
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='play'] [data-part='story-node'] {
+    animation: scene-zoom var(--site-motion-duration-reveal-sm) var(--site-motion-ease-reveal) backwards;
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='play'] [data-part='story-line'] {
+    animation: scene-grow var(--site-motion-duration-reveal-lg) var(--site-motion-ease-reveal) backwards;
+    animation-delay: var(--site-motion-stagger);
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='play'] [data-part='story-card'] {
+    animation: scene-rise var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
+    animation-delay: calc(var(--site-motion-stagger) * 2);
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='play'] [data-part='mini-item'] {
+    animation: scene-rise var(--site-motion-duration-reveal-sm) var(--site-motion-ease-reveal) backwards;
+    animation-delay: calc(var(--site-motion-stagger) * var(--i));
+  }
+
+  /* ------------------------------------------------------------------------------------- */
+  /* 8) how-progress — her adım kendi eşiğinde: işaret zoom, çizgi yukarıdan aşağı dolar, gövde yükselir */
+  /* ------------------------------------------------------------------------------------- */
+  [data-scene='how-progress'] {
+    --grow-from: 1 0;
+  }
+  [data-scene='how-progress']::after {
+    transform-origin: 50% 0;
+  }
+  html[data-motion='play'] [data-scene='how-progress'][data-state='ready'] :is([data-part='marker'], .how__body),
+  html[data-motion='play'] [data-scene='how-progress'][data-state='ready']::after {
+    opacity: 0;
+  }
+  html[data-motion='play'] [data-scene='how-progress'][data-state='play'] [data-part='marker'] {
+    animation: scene-zoom var(--site-motion-duration-reveal-sm) var(--site-motion-ease-reveal) backwards;
+  }
+  html[data-motion='play'] [data-scene='how-progress'][data-state='play']::after {
+    animation: scene-grow var(--site-motion-duration-reveal-lg) var(--site-motion-ease-reveal) backwards;
+    animation-delay: var(--site-motion-duration-reveal-sm);
+  }
+  html[data-motion='play'] [data-scene='how-progress'][data-state='play'] .how__body {
+    animation: scene-rise var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
+    animation-delay: var(--site-motion-stagger);
+  }
+
+  /* ------------------------------------------------------------------------------------- */
+  /* 9) secret-encryption — girilen anahtar -> kilit -> enc:v1: biçiminde saklanan -> maskeli   */
+  /* ------------------------------------------------------------------------------------- */
+  [data-scene='secret-encryption'] > :nth-child(1) {
+    --i: 0;
+  }
+  [data-scene='secret-encryption'] > :nth-child(2) {
+    --i: 3;
+  }
+  [data-scene='secret-encryption'] > :nth-child(3) {
+    --i: 5;
+  }
+  [data-scene='secret-encryption'] > :nth-child(4) {
+    --i: 11;
+  }
+  [data-scene='secret-encryption'] [data-part='bar'] {
+    --grow-from: 0 1;
+    transform-origin: 0 50%;
+  }
+  [data-scene='secret-encryption'] [data-part='bar']:nth-child(1) {
+    --i: 8;
+  }
+  [data-scene='secret-encryption'] [data-part='bar']:nth-child(2) {
+    --i: 9;
+  }
+  [data-scene='secret-encryption'] [data-part='bar']:nth-child(3) {
+    --i: 10;
+  }
+  [data-scene='secret-encryption'] [data-part='bar']:nth-child(4) {
+    --i: 11;
+  }
+  html[data-motion='play'] [data-scene='secret-encryption'][data-state='ready'] > :is(:nth-child(1), :nth-child(2), :nth-child(3), :nth-child(4)),
+  html[data-motion='play'] [data-scene='secret-encryption'][data-state='ready'] [data-part='bar'] {
+    opacity: 0;
+  }
+  html[data-motion='play'] [data-scene='secret-encryption'][data-state='play'] > :is(:nth-child(1), :nth-child(2), :nth-child(3), :nth-child(4)) {
+    animation: scene-rise var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
+    animation-delay: calc(var(--site-motion-stagger) * var(--i));
+  }
+  html[data-motion='play'] [data-scene='secret-encryption'][data-state='play'] [data-part='bar'] {
+    animation: scene-grow var(--site-motion-duration-reveal-sm) var(--site-motion-ease-reveal) backwards;
+    animation-delay: calc(var(--site-motion-stagger) * var(--i));
+  }
+
+  /* ------------------------------------------------------------------------------------- */
+  /* 10) request-guard — istek dört denetimden sırayla geçer (onay işaretleri sonra oturur)     */
+  /* ------------------------------------------------------------------------------------- */
+  [data-scene='request-guard'] [data-part='guard-step']:nth-child(1) {
+    --i: 0;
+  }
+  [data-scene='request-guard'] [data-part='guard-step']:nth-child(2) {
+    --i: 1;
+  }
+  [data-scene='request-guard'] [data-part='guard-step']:nth-child(3) {
+    --i: 2;
+  }
+  [data-scene='request-guard'] [data-part='guard-step']:nth-child(n + 4) {
+    --i: 3;
+  }
+  [data-scene='request-guard'] .guard__ok {
+    --d: 4;
+  }
+  html[data-motion='play'] [data-scene='request-guard'][data-state='ready'] :is([data-part='guard-step'], .guard__ok) {
+    opacity: 0;
+  }
+  html[data-motion='play'] [data-scene='request-guard'][data-state='play'] [data-part='guard-step'] {
+    animation: scene-rise var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
+    animation-delay: calc(var(--site-motion-stagger) * var(--i) * 2);
+  }
+  html[data-motion='play'] [data-scene='request-guard'][data-state='play'] .guard__ok {
+    animation: scene-zoom var(--site-motion-duration-reveal-sm) var(--site-motion-ease-reveal) backwards;
+    animation-delay: calc(var(--site-motion-stagger) * (var(--i) * 2 + var(--d)));
+  }
+
+  /* ----------------------------------------------------------------------------------------- */
+  /* 11) price-emphasis — plan kartları sırayla yükselir, fiyat rakamı ince ölçek vurgusuyla oturur */
+  /* ----------------------------------------------------------------------------------------- */
+  [data-scene='price-emphasis'] [data-part='plan']:nth-child(1) {
+    --i: 0;
+    --j: 3;
+  }
+  [data-scene='price-emphasis'] [data-part='plan']:nth-child(2) {
+    --i: 1;
+    --j: 4;
+  }
+  [data-scene='price-emphasis'] [data-part='plan']:nth-child(3) {
+    --i: 2;
+    --j: 5;
+  }
+  [data-scene='price-emphasis'] [data-part='plan']:nth-child(n + 4) {
+    --i: 3;
+    --j: 6;
+  }
+  [data-scene='price-emphasis'] [data-part='price'] {
+    transform-origin: 0 50%;
+  }
+  html[data-motion='play'] [data-scene='price-emphasis'][data-state='ready'] [data-part='plan'] {
+    opacity: 0;
+  }
+  html[data-motion='play'] [data-scene='price-emphasis'][data-state='play'] [data-part='plan'] {
+    animation: scene-rise var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
+    animation-delay: calc(var(--site-motion-stagger) * var(--i));
+  }
+  html[data-motion='play'] [data-scene='price-emphasis'][data-state='play'] [data-part='price'] {
+    animation: scene-zoom var(--site-motion-duration-reveal-sm) var(--site-motion-ease-reveal) backwards;
+    animation-delay: calc(var(--site-motion-stagger) * var(--j));
+  }
+}

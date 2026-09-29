@@ -1,0 +1,105 @@
+---
+/**
+ * Hareket durdurma kontrolü (WCAG 2.2.2 — 5 sn'den uzun süren otomatik hareket için durdur/oynat).
+ * - Yalnızca animasyon sahnesi olan sayfalarda, Header içinde (klavye sırasında `main`'den ÖNCE) render edilir.
+ * - Erişilebilir ad sabit ("Hareketi durdur"); durum `aria-pressed` ile bildirilir (basılı = hareket durdu).
+ *   Görünür etiket ("Hareket") adın içinde geçer (WCAG 2.5.3) ve yalnızca geniş üstlükte gösterilir; dar alanda yalnızca simge.
+ * - S7: header'a SIĞAR — 320–1440 px arasında taşmaz (kontrol simge boyutunda, etiket >= 90rem'de eklenir).
+ * - Davranış src/scripts/scenes.ts'te: tercih localStorage'da (çerez YOK); JS yoksa kontrol gizlidir (hareket de yoktur).
+ * - `prefers-reduced-motion: reduce` altında hareket zaten kapalıdır → kontrol gösterilmez.
+ * - Dokunma hedefi >= 44 px; odak halkası global :focus-visible; yalnızca renk geçişi (200 ms).
+ */
+---
+
+<button type="button" class="motion-toggle" data-motion-toggle data-testid="motion-toggle" aria-pressed="false" title="Hareketi durdur">
+  <svg class="motion-toggle__icon motion-toggle__icon--pause" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M9 6v12M15 6v12"></path>
+  </svg>
+  <svg class="motion-toggle__icon motion-toggle__icon--play" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M8 5.5v13l10-6.5z"></path>
+  </svg>
+  <span class="sr-only">Hareketi durdur</span>
+  <span class="motion-toggle__label" aria-hidden="true">Hareket</span>
+</button>
+
+<script>
+  import '../scripts/scenes'
+</script>
+
+<style>
+  .motion-toggle {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ek-space-2);
+    min-width: var(--site-tap-target);
+    min-height: var(--site-tap-target);
+    margin-inline-start: auto;
+    padding: var(--ek-space-2);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-surface);
+    color: var(--ek-color-primary);
+    font-family: inherit;
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+    line-height: var(--ek-line-height-tight);
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      background-color var(--ek-duration-base) var(--ek-easing-standard),
+      border-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .motion-toggle:hover {
+    background: var(--ek-color-surface-sunken);
+    border-color: var(--ek-color-border-strong);
+  }
+  .motion-toggle[aria-pressed='true'] {
+    background: var(--ek-color-surface-sunken);
+    border-color: var(--ek-color-primary);
+  }
+
+  /* JS çalışmadan kontrol görünmez ama yer tutar (düzen kayması yok); reduced-motion'da hiç gösterilmez. */
+  :global(html:not([data-motion])) .motion-toggle {
+    visibility: hidden;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .motion-toggle {
+      display: none;
+    }
+  }
+
+  .motion-toggle__icon {
+    width: var(--ek-space-5);
+    height: var(--ek-space-5);
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .motion-toggle__icon--play {
+    display: none;
+    fill: currentColor;
+  }
+  .motion-toggle[aria-pressed='true'] .motion-toggle__icon--pause {
+    display: none;
+  }
+  .motion-toggle[aria-pressed='true'] .motion-toggle__icon--play {
+    display: block;
+  }
+
+  /* Dar ekranda yalnızca simge (ad ekran okuyucuya ve title ipucunda); geniş ekranda kısa etiket. */
+  .motion-toggle__label {
+    display: none;
+  }
+  @media (min-width: 90rem) {
+    .motion-toggle {
+      padding-inline: var(--ek-space-3);
+    }
+    .motion-toggle__label {
+      display: inline;
+    }
+  }
+</style>

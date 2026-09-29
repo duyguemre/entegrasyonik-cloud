@@ -1,0 +1,1091 @@
+{
+  "language": {
+    "en": "English",
+    "tr": "Türkçe"
+  },
+  "menu": {
+    "test": "Test Sayfası",
+    "mainpage": "Anasayfa",
+    "system": "Sistem",
+    "help": "Yardım",
+    "notification": "Bildirimler",
+    "messages": "Mesajlar",
+    "financialList": "Finansal İşlemler",
+    "educationCenter": "Eğitim Merkezi",
+    "appManagement": "Uygulama Yönetimi",
+    "userManagement": "",
+    "sales": "ETicaret Yönetim",
+    "profile": "Kullanıcı",
+    "change_password": "Şifre Değiştir",
+    "roles": "Yetkilendirme",
+    "exit": "Çıkış",
+    "support_ticket": "Destek Kaydı",
+    "support_ticket_list": "Destek Kayıtları",
+    "support_school": "Eğitim Merkezi",
+    "applicationAdministration": "Uygulama Yönetimi",
+    "userAdministration": "Kullanıcı Yönetimi",
+    "invoiceInfo": "Fatura Bilgileri",
+    "changePassword": "Şifre Değiştir",
+    "authorization": "Yetkilendirme",
+    "subscription": "Abonelik İşlemleri",
+    "sale": "Satış",
+    "favorites": "Favoriler",
+    "dashboard": "Anasayfa",
+    "orderList": "Sipariş Yönetimi",
+    "ticketList": "Destek Kayıtları",
+    "settingList": "Ayarlar",
+    "claimList": "İade Yönetimi",
+    "customerList": "Müşteriler",
+    "messageList": "Mesajlar",
+    "invoiceList": "Faturalar",
+    "reports": "Raporlar",
+    "printoutList": "Çıktılar",
+    "logList": "İşlemler",
+    "define_product": "Ürün Tanımla",
+    "add_customer": "Müşteri Ekle",
+    "new": {
+      "new": "Yeni",
+      "productDefinition": "Ürün Tanımla",
+      "categoryDefinition": "Kategori Ekle",
+      "brandDefinition": "Marka Ekle",
+      "optionDefinition": "Seçenek Grubu Ekle",
+      "hashtagDefinition": "Etiket Ekle",
+      "ticketDefinition": "Destek Kaydı Oluştur",
+      "orderDefinition": "Sipariş Ekle",
+      "returnDefinition": "İade Oluştur",
+      "customerDefinition": "Müşteri Ekle",
+      "invoiceDefinition": "Fatura Oluştur"
+    },
+    "productDefinitions": {
+      "productDefinition": "Ürün Ekle",
+      "productDefinitions": "Ürün Kataloğu",
+      "productList": "Ürünler",
+      "categoryList": "Kategoriler",
+      "brandList": "Markalar",
+      "choiceList": "Seçenek Grupları",
+      "hashtagList": "Etiketler",
+      "newProduct": "Ürün Ekle",
+      "newCategory": "Kategori Ekle",
+      "newBrand": "Marka Ekle",
+      "properties": {
+        "properties": "Ürün Özellikleri",
+        "propertiesList": "Ürün Özelliklerinde Ara",
+        "newOption": "Seçenek Grubu Ekle",
+        "newTag": "Etiket Ekle"
+      }
+    },
+    "adminPanel": {
+      "adminPanel": "Admin Paneli",
+      "adminClientlist": "Mağaza Yönetimi",
+      "adminClientDetail": "Mağaza Detayı",
+      "adminTicketList": "Destek Yönetimi",
+      "adminOperations": "Platform İşlemleri",
+      "adminSystemManagement": "Sistem Yönetimi"
+    },
+    "integrations": {
+      "integrations": "Entegrasyonlar",
+      "marketplace": "Pazaryeri",
+      "ecommerce": "E-Ticaret",
+      "erp": "Erp",
+      "shipping": "Kargo",
+      "einvoice": "E-Fatura"
+    },
+    "settings": {
+      "settings": "Ayarlar",
+      "authorizationList": "Yetkilendirme",
+      "settingList": "Uygulama Ayarları",
+      "printoutList": "Çıktılar",
+      "logList": "İşlemler"
+    }
+  },
+  "batch": {
+    "menu": {
+      "title": "Toplu İşlemler",
+      "desc": "Toplu İşlemleri Bu Menu Üzerinden Yapabilirsiniz"
+    }
+  },
+  "title": {
+    "config": "Configuration"
+  },
+  "returns": {
+    "return": {
+      "searchlabel": "Sipariş Id, Platform, Müşteri vb...",
+      "search": "İadelerde Ara",
+      "total": "Toplam",
+      "all": "Bütün İadeler",
+      "unapproved": "Onaylanmamış İadeler",
+      "canceled": "Reddedilen İadeler",
+      "shipping": "Aksiyon Alınacak İadeler",
+      "date": "İade Tarihi",
+      "platform": "Platform",
+      "maxcost": "Maksimum Tutar",
+      "mincost": "Minimum Tutar",
+      "orderDate": "Sipariş Tarihi",
+      "orderId": "Sipariş Numarası",
+      "returnDate": "İade Tarihi",
+      "returnId": "İade Numarası",
+      "reason": "Sebep",
+      "count": "adet",
+      "desc": "Açıklama",
+      "sellerDate": "Aksiyon Tarihi",
+      "marketplaceDate": "Aksiyon Tarihi",
+      "resultDate": "Sonuçlanma Tarihi",
+      "steps": {
+        "order": "Sipariş Oluşturma",
+        "return": "İade Talebi",
+        "seller": "Satıcı Aksiyonu",
+        "marketplace": "Pazaryeri Aksiyonu",
+        "result": "Sonuç"
+      },
+      "headers": {
+        "actions": "İade Adımları",
+        "platform": "Platform",
+        "customer": "Müşteri",
+        "product": "Ürün Adı",
+        "stockcode": "Stok Kodu",
+        "count": "Adet",
+        "commission": "Komisyon",
+        "price": "Tutar",
+        "status": "Durum"
+      }
+    }
+  },
+  "customers": {
+    "customer": {
+      "new": {
+        "title": "Yeni Müşteri",
+        "customer": "Müşteri Adı",
+        "email": "EPosta",
+        "phone": "Telefon",
+        "real": "Gerçek Kişi",
+        "corporate": "Tüzel Kişi",
+        "tckn": "TC Kimlik No",
+        "vkn": "Vergi Numarası",
+        "taxissuer": "Vergi Dairesi",
+        "state": "İl",
+        "district": "İlçe",
+        "county": "Mahalle",
+        "street": "Sokak",
+        "desc": "Açıklama",
+        "save": "Kaydet",
+        "clear": "Temizle"
+      },
+      "email": "EPosta",
+      "search": "Müşteri Ara",
+      "searchlabel": "Müşteri Adı, Adresi, Eposta vb...",
+      "phone": "Telefon",
+      "address": {
+        "desc": "Açık Adres",
+        "county": "İlçe",
+        "state": "İl",
+        "country": "Ülke"
+      },
+      "customerType": {
+        "tc": "TC Kimlik No",
+        "taxId": "Vergi Numarası/TC Kimlik Numarası",
+        "taxIssuer": "Vergi Dairesi"
+      },
+      "headers": {
+        "customer": "Müşteri",
+        "address": "Adres",
+        "customerType": "Müşteri Tipi",
+        "actions": "İşlemler"
+      }
+    }
+  },
+  "supports": {
+    "ticket": {
+      "new": {
+        "title": "Yeni Destek Kaydı",
+        "search": "Destek Kayıtlarında Ara",
+        "type": "Destek Tipi",
+        "platform": "Platform",
+        "subject": "Konu",
+        "uploadFile": "Dosya Yükle",
+        "save": "Kaydet",
+        "clear": "Temizle"
+      },
+      "update": {
+        "title": "Destek Kaydını Güncelle",
+        "type": "Destek Tipi",
+        "platform": "Platform",
+        "subject": "Konu",
+        "uploadFile": "Dosya Yükle",
+        "save": "Kaydet",
+        "clear": "Temizle"
+      },
+      "search": "Destek Kayıtlarında Ara",
+      "searchlabel": "Destek Konusu vb...",
+      "headers": {
+        "supportType": "Destek Tipi",
+        "platform": "Platform",
+        "createDate": "Oluşturulma Tarihi",
+        "updateDate": "Güncelleme Tarihi",
+        "status": "Durum",
+        "subject": "Konu"
+      }
+    }
+  },
+  "messages": {
+    "message": {
+      "update": {
+        "title": "Mesajı Yanıtla",
+        "type": "Destek Tipi",
+        "platform": "Platform",
+        "subject": "Konu",
+        "uploadFile": "Dosya Yükle",
+        "save": "Kaydet",
+        "clear": "Temizle",
+        "orderNo": "Sipariş No",
+        "orderDate": "Sipariş Tarihi"
+      },
+      "search": "Mesajlarda Ara",
+      "searchlabel": "Mesaj Konusu vb...",
+      "headers": {
+        "customer": "Müşteri",
+        "platform": "Platform",
+        "createDate": "Gönderilme Tarihi",
+        "updateDate": "Güncelleme Tarihi",
+        "status": "Durum",
+        "subject": "Konu"
+      }
+    }
+  },
+  "invoices": {
+    "invoice": {
+      "new": {
+        "clear": "Temizle",
+        "newcustomer": "Yeni Müşteri",
+        "title": "Yeni Fatura",
+        "save": "Kaydet",
+        "customer": "Müşteri",
+        "tckn": "TC Kimlik No",
+        "vkn": "Vergi Numarası",
+        "email": "EPosta",
+        "customerName": "Müşteri Adı",
+        "phone": "Telefon",
+        "taxissuer": "Vergi Dairesi",
+        "orderno": "Sipariş Numarası",
+        "invoicedate": "Fatura Tarihi",
+        "websold": "Internet Satışı",
+        "normalsold": "Normal Satış",
+        "shipping": "Kargo Firması",
+        "shippingcampaign": "Kargo Kampanya Kodu",
+        "source": "Fatura Kaynağı",
+        "paymentMethod": "Ödeme Yöntemi",
+        "product": "Ürün",
+        "count": "Adet",
+        "eachprice": "Adet",
+        "tax": "KDV",
+        "productTotal": "Ürün Toplamı",
+        "desc": "Açıklama",
+        "yettotal": "ARA TOPLAM",
+        "taxtotal": "KDV TOPLAMI",
+        "total": "TOPLAM"
+      },
+      "searchlabel": "Fatura Id, Sipariş Id, Platform, Müşteri vb...",
+      "search": "Faturalarda Ara",
+      "total": "Toplam",
+      "priceTotal": "Toplam Tutar",
+      "commissionTotal": "Toplam Komisyon",
+      "countTotal": "Toplam Adet",
+      "orderId": "Sipariş Numarası",
+      "all": "Tüm Faturalar",
+      "email": "EPosta",
+      "phone": "Telefon",
+      "unapproved": "Arşivlenmemiş",
+      "canceled": "İptal Faturalar",
+      "shipping": "Kargoda ki Faturalar",
+      "date": "Fatura Tarihi",
+      "platform": "Platform",
+      "maxcost": "Maksimum Tutar",
+      "mincost": "Minimum Tutar",
+      "earchive": "Arşivle",
+      "shippingReceipt": "Kargo Fişi",
+      "orderReceipt": "Sipariş Fişi",
+      "invoiceReceipt": "Fatura",
+      "headers": {
+        "platform": "Platform",
+        "customer": "Müşteri",
+        "orderId": "Sipariş Numarası",
+        "invoiceId": "Fatura Numarası",
+        "addressInvoice": "Fatura Adresi",
+        "addressShipping": "Kargo Adresi",
+        "status": "Durum"
+      }
+    }
+  },
+  "printouts": {
+    "printout": {
+      "width": "Genişlik",
+      "height": "Yükseklik",
+      "test": "Test Çıktısı",
+      "clear": "Temizle",
+      "save": "Kaydet",
+      "delete": "Sil",
+      "fontsize": "Yazı Büyüklüğü",
+      "fontfamily": "Yazı Tipi",
+      "copy": "Kopya Sayısı",
+      "searchlabel": "Çıktı Tipi",
+      "search": "Çıktılarda Ara",
+      "total": "Toplam",
+      "priceTotal": "Toplam Tutar",
+      "commissionTotal": "Toplam Komisyon",
+      "countTotal": "Toplam Adet",
+      "orderId": "Sipariş Numarası",
+      "all": "Bütün Siparişler",
+      "unapproved": "Onaylanmamış Siparişler",
+      "canceled": "İptal Siparişler",
+      "shipping": "Kargodaki Siparişler",
+      "date": "Sipariş Tarihi",
+      "platform": "Platform",
+      "maxcost": "Maksimum Tutar",
+      "mincost": "Minimum Tutar",
+      "reports": {
+        "title": "Çıktı Raporları",
+        "desc": "Arama kriterlerinize göre sipariş rapor ve analizlerini incelemek için bu menüyü kullanabilirsiniz",
+        "tax": "KDV Dağılımları",
+        "commission": "Komisyon Dağılımları",
+        "category": "Kategori Bazlı",
+        "brand": "Marka Bazlı"
+      },
+      "headers": {
+        "platform": "Platform",
+        "customer": "Müşteri",
+        "product": "Ürün Adı",
+        "stockcode": "Stok Kodu",
+        "count": "Adet",
+        "commission": "Komisyon",
+        "price": "Tutar",
+        "status": "Durum"
+      }
+    }
+  },
+  "products": {
+    "product": {
+      "searchlabel": "Ürün Adı, Stok Kodu, Barkod",
+      "search": "Ürünlerde Ara"
+    }
+  },
+  "orders": {
+    "order": {
+      "searchlabel": "Sipariş Id, Platform, Müşteri vb...",
+      "search": "Siparişlerde Ara",
+      "total": "Toplam",
+      "priceTotal": "Toplam Tutar",
+      "commissionTotal": "Toplam Komisyon",
+      "countTotal": "Toplam Adet",
+      "orderId": "Sipariş Numarası",
+      "all": "Bütün Siparişler",
+      "unapproved": "Onaylanmamış Siparişler",
+      "canceled": "İptal Siparişler",
+      "shipping": "Kargodaki Siparişler",
+      "date": "Sipariş Tarihi",
+      "platform": "Platform",
+      "maxcost": "Maksimum Tutar",
+      "mincost": "Minimum Tutar",
+      "reports": {
+        "title": "Sipariş Raporları",
+        "desc": "Arama kriterlerinize göre sipariş rapor ve analizlerini incelemek için bu menüyü kullanabilirsiniz",
+        "tax": "KDV Dağılımları",
+        "commission": "Komisyon Dağılımları",
+        "category": "Kategori Bazlı",
+        "brand": "Marka Bazlı"
+      },
+      "headers": {
+        "platform": "Platform",
+        "customer": "Müşteri",
+        "product": "Ürün Adı",
+        "stockcode": "Stok Kodu",
+        "count": "Adet",
+        "commission": "Komisyon",
+        "price": "Tutar",
+        "status": "Durum"
+      }
+    }
+  },
+  "settings": {
+    "save": "Kaydet",
+    "company": {
+      "title": "Firma Ayarları"
+    },
+    "notification": {
+      "title": "Bildirim Ayarları"
+    }
+  },
+  "login": {
+    "forgottenpassword": {
+      "title": "Şifremi Unuttum",
+      "reset": "Şifremi Sıfırla"
+    },
+    "register": {
+      "title": "Kayıt Ol",
+      "repassword": "Şifre (Tekrar)",
+      "name": "İsim",
+      "surname": "Soyisim"
+    },
+    "username": "Kullanıcı Adı",
+    "email": "EPosta",
+    "password": "Şifre",
+    "title": "Giriş",
+    "google": "Google İle Giriş Yap"
+  },
+  "legal": {
+    "clarificationText": "Aydınlatma Metni",
+    "cookiePolicy": "Çerez Politikası",
+    "termsOfUse": "Kullanım Koşulları"
+  },
+  "logs": {
+    "log": {
+      "new": "Yeni Müşteri Oluştur",
+      "email": "EPosta",
+      "search": "İşlem Ara",
+      "searchlabel": "İşlem Adı",
+      "phone": "Telefon",
+      "address": {
+        "desc": "Açık Adres",
+        "county": "İlçe",
+        "state": "İl",
+        "country": "Ülke"
+      },
+      "customerType": {
+        "tc": "TC Kimlik No",
+        "taxId": "Vergi Numarası/TC Kimlik Numarası",
+        "taxIssuer": "Vergi Dairesi"
+      },
+      "headers": {
+        "log": "İşlem",
+        "logType": "İşlem Tipi",
+        "date": "Tarih",
+        "status": "Sonuç",
+        "address": "Adres",
+        "customerType": "Müşteri Tipi"
+      }
+    }
+  },
+  "productDefinitions": {
+    "retrieveProducts": "Ürünleri Getir",
+    "productList": "Ürünler",
+    "categoryList": "Kategoriler",
+    "brandList": "Markalar",
+    "optionList": "Seçenek Grupları",
+    "hashtagList": "Etiketler",
+    "product": {
+      "transfer": "Ürün Yükleme",
+      "price": "Fiyat",
+      "regeneratePrices": "Fiyatları Yeniden Oluştur",
+      "regeneratePricesDesc": "Girilen Satış Fiyatı değerine göre platforma ait komisyon ve indirim oranlarını kullanarak, platformlar için fiyatları yeniden otomatik oluşturabilirsiniz",
+      "applyMarketPricesDesc": "Girdiğiniz Piyasa Fiyatını bütün platformlara uygulayabilirsiniz",
+      "applySalePricesDesc": "Girdiğiniz Satış Fiyatını bütün platformlara uygulayabilirsiniz",
+      "applyPercentagePricesDesc": "Girdiğiniz yüzdelik miktarı bütün platformlara uygulayabilirsiniz",
+      "applyAmountPricesDesc": "Girdiğiniz miktar fiyatını bütün platformlara uygulayabilirsiniz",
+      "name": "Ürün",
+      "search": "Ürünlerde Ara",
+      "platformPriceEdit": "Platform Bazında Fiyatları Düzenle",
+      "platformInfo": "Platform Bilgileri",
+      "images": "Resimler",
+      "platformPrice": "Platform Bazında Fiyat",
+      "activatePlatformPrice": "Platform Bazında Fiyatı Aç",
+      "searchlabel": "Stok Kodu, Barkod, Ürün Adı...",
+      "list": "Ürünler",
+      "add": "YENİ ÜRÜN EKLE",
+      "save": "KAYDET",
+      "update": "GÜNCELLE",
+      "copy": "KOPYALA",
+      "delete": "TÜMÜNÜ SİL",
+      "notfound": "Ürün Bulunamadı",
+      "reports": {
+        "title": "Ürün Raporları",
+        "desc": "Arama kriterlerine  göre ilgili ürünlerin rapor ve analizlerine bu menüyü kullanarak göz atabilirsiniz.",
+        "sold": "Satış Adetlerine Göre",
+        "bestseller": "En Çok Satılan"
+      },
+      "headers": {
+        "product": "Ürün",
+        "price": "Fiyat",
+        "stock": "Stok",
+        "platform": "Platform",
+        "status": "Durum"
+      },
+      "variants": {
+        "searchLabel": "Stok Kodu, Barkod",
+        "atLeaastOneChoice": "En az 1 adet seçenek belirlemelisiniz",
+        "edit": "Ürün Seçeneğini Düzenle",
+        "singleVariant": "Tekli Ekle",
+        "singlePrice": "'Platform Bazında Fiyat' seçeneğinin işaretli/açık olması gerekir.",
+        "multipleVariantsDesc": "Seçenek gruplarından seçeneklerinizi belirledikten sonra seçenekleri eklediğinizde çoklu olarak seçeneklerin bütün varyasyonlarını oluşturabilirsiniz ",
+        "multipleVariants": "Çoklu Ekle",
+        "notfound": "Ürün Seçeneği Bulunamadı",
+        "info": "Ürün Seçenek Bilgileri",
+        "batch": "Ürün Seçenekleri Toplu İşlemler",
+        "title": "Ürün Seçenekleri",
+        "titleText": "Ürün Seçenekleri",
+        "salePrice": "Satış Fiyatı",
+        "marketPrice": "Piyasa Fiyatı",
+        "search": "Ürün Seçeneklerinde Ara",
+        "add": "Ürün Seçeneği Ekle",
+        "searchDesc": "Ürün seçeneklerinde aramak için burayı kullanabilirsiniz"
+      },
+      "define": {
+        "title": "Yeni Ürün Ekle",
+        "basicInfo": "Temel Bilgiler",
+        "platformInfo": "Platform Bazında Bilgiler",
+        "createBarcodeDesc": "Barkod oluşturmak için",
+        "productTitle": "Ürün Başlığı",
+        "productTitleDesc": "Ürünün en dikkat çekici ve özetleyici adı",
+        "barcodeDesc": "Ürünün Barkod Numarası",
+        "stockcodeDesc": "Ürünün Stok Kodu",
+        "maincodeDesc": "Ürün bu kod üzerinden varyantları ile bağlanacaktır",
+        "maincode": "Varyant Grup Kodu",
+        "withoutVariant": "Tekil Ürün",
+        "withVariant": "Varyantlı Ürün",
+        "stockDesc": "Ürünün Stok Sayısı",
+        "stockVariantDesc": "Adet Ürün Seçeneğinin Toplam Stok Sayısı",
+        "stockVariant": "Stok (Seçenek Stok Toplamı)",
+        "desiDesc": "Ürünün Desi Değeri",
+        "calculateDesiDesc": "Ürünün Desi Değerini Hesapla",
+        "warrantydurationDesc": "Ürünün Gün Olarak Garanti Süresi ",
+        "prepdurationDesc": "Ürünün Kargo Öncesi Hazırlık Süresi ",
+        "invoicetitleDesc": "Ürünün Fatura Başlığı",
+        "productSubTitleDesc": "Ürünün Alt Başlığı",
+        "shelfDesc": "Ürünün Raf Numarası",
+        "costPriceDesc": "Ürünün Maliyet Fiyatı",
+        "priceDesc": "Ürünün Fiyatı",
+        "salePriceDesc": "Ürünün Satış Fiyatı",
+        "marketPriceDesc": "Ürünün Piyasa Fiyatı",
+        "productDesc": "Diğer Bilgiler",
+        "productSubTitle": "Ürün Alt Başlığı",
+        "barcode": "Barkod",
+        "stockcode": "Stok Kodu",
+        "stock": "Stok",
+        "desi": "Desi",
+        "imagesTitle": "Ürün Resimleri",
+        "variantsAndImages": "Varyantlar & Resimler",
+        "createBarcode": "Oluştur",
+        "calculateDesi": "Hesapla",
+        "description": "Ürün Açıklaması",
+        "platformBatch": "Toplu İşlemler",
+        "percentageAmount": "Yüzdelik Miktar",
+        "priceAmount": "Miktar",
+        "decreasePrice": "Fiyatı Azalt",
+        "increasePrice": "Fiyatı Arttır",
+        "applyIncreaseDecreasePricesDesc": "Tüm platformlara fiyatı arttırmak/azaltmak için",
+        "applyPricesDesc": "Fiyatı tüm platformlara uygula",
+        "amount": "Miktar",
+        "amountDesc": "Arrtırmak veya azaltmak istediğiniz miktar",
+        "percentageAmountDesc": "Yüzdelik olarak arttırmak/azaltmak için",
+        "priceAmountDesc": "Miktar olarak arttırmak/azaltmak için",
+        "invoicetitle": "Fatura Başlığı",
+        "prepduration": "Hazırlık Süresi",
+        "warrantyduration": "Garanti Süresi",
+        "stockfalldown": "Stoktan Düşülecek Miktar",
+        "canbuy": "Tek Seferde Maksimum Satılabilir",
+        "gtin": "GTIN",
+        "taxPercentage": "KDV Oranı",
+        "price": "Fiyat",
+        "priceWithoutTax": "KDV'siz Fiyat",
+        "priceWithoutTaxDesc": "Ürünün KDV'siz Fiyatı",
+        "costPrice": "Maliyet Fiyatı",
+        "listPrice": "Liste(Piyasa) Fiyatı",
+        "salePrice": "Satış Fiyatı",
+        "marketPrice": "Piyasa Fiyatı",
+        "manuelPrices": "Fiyatları manuel gir",
+        "competitivePrices": "Rekabet Fiyatları",
+        "competitiveMinPrice": "Minimum Rekabet Fiyatı",
+        "competitiveStepAmount": "Düşülecek Miktar",
+        "competitiveMinPriceDesc": "Bu fiyatın altına ürün fiyatı düşemez",
+        "competitiveStepAmountDesc": "En düşük fiyatın ne kadar altına düşülmeli",
+        "competitivePricesEdit": "Rekabet Fiyat Stratejisini Düzenle",
+        "competitivePricesDesc": "Ürünün en düşük (minimum) rekabet fiyatını ve daha düşük bir fiyat yakalandığında bu fiyatın ne kadar aşağısına düşüleceğini belirleyebilirsiniz.",
+        "productlink": "N11 Ürün Linki",
+        "productlinkDesc": "N11 Ürün Linki",
+        "info": "Bilgiler",
+        "images": "Resimler",
+        "prices": "Fiyatlar",
+        "price_type": "Fiyat Türü (Ürün, Varyant)",
+        "price_product": "Ürün Fiyatı",
+        "image_type": "Resim Türü (Ürün, Varyant)",
+        "image_product": "Ürün Resmi",
+        "other": "Ek Bilgiler",
+        "platform": "Platform Bilgileri",
+        "sku": "Hepsiburada SKU",
+        "gtinDesc": "GTIN Değeri",
+        "stockfalldownDesc": "Stoktan Düşülecek Miktar",
+        "canbuyDesc": "Tek Seferde Alınabilecek Maksimum Miktar",
+        "asin": "Amazon ASIN",
+        "skuDesc": "Hepsiburada SKU Değeri",
+        "asinDesc": "Amazon ASIN Değeri",
+        "shelf": "Raf",
+        "catalogNumber": "Katalog Numarası",
+        "variants": {
+          "addImagesToVariant": "Ürün Seçeneklerine Ekle",
+          "title": "Varyantlar",
+          "salePrice": "Satış Fiyatı",
+          "marketPrice": "Piyasa Fiyatı",
+          "searchlabel": "İsim, özellik...",
+          "search": "Varyantlarda Ara",
+          "headers": {
+            "properties": "Özellikler",
+            "stock": "Stok",
+            "stockcode": "Stok Kodu",
+            "barcode": "Barkod",
+            "sku": "SKU",
+            "gtin": "GTIN",
+            "shelf": "Raf",
+            "catalogNumber": "Katalog Numarası"
+          },
+          "tooltips": {
+            "deleteall": "Bütün Varyantları Sil",
+            "delete": "Varyantı Sil",
+            "new": "Yeni Varyant Ekle",
+            "advanced_search": "Varyanları Detaylı Aramak İçin Tıklayın"
+          },
+          "new": {
+            "title": "Yeni Variant Ekle"
+          }
+        }
+      },
+      "properties": {
+        "title": "Ürün Özellikleri",
+        "options": {
+          "title": "Seçenek Grupları",
+          "info": "Bilgiler",
+          "search": "Seçenek Gruplarında Ara",
+          "searchlabel": "İsim, Seçenek...",
+          "add": "YENİ SEÇENEK GRUBU EKLE",
+          "update": "SEÇENEK GRUBUNU GÜNCELLE",
+          "save": "SEÇENEK GRUBUNU KAYDET",
+          "copy": "SEÇENEK GRUBUNU KOPYALA",
+          "delete": "SEÇENEK GRUBUNU SİL",
+          "headers": {
+            "name": "Seçenek Grubu Adı",
+            "options": "Seçenekler",
+            "status": "Durum"
+          }
+        },
+        "tags": {
+          "title": "Etiketler",
+          "info": "Bilgiler",
+          "search": "Etiketlerde Ara",
+          "searchlabel": "İsim, Etiket...",
+          "add": "YENİ ETİKET EKLE",
+          "update": "ETİKETİ GÜNCELLE",
+          "save": "ETİKETİ KAYDET",
+          "copy": "ETİKETİ KOPYALA",
+          "delete": "ETİKETİ SİL",
+          "headers": {
+            "name": "Etiket Adı",
+            "color": "Renk",
+            "status": "Durum"
+          }
+        }
+      }
+    },
+    "category": {
+      "name": "Kategori",
+      "categorySearcDesc": "Kategori adı ile arama yapabilirsiniz",
+      "searchDesc": "Kategori ve seçenek adı ile arama yapabilirsiniz",
+      "categoryWarning": "Eşitleme için önce Kategori seçmelisiniz",
+      "title": "Kategori Adı",
+      "nameDesc": "Yeni kategori ismi",
+      "subcategory": "Alt Kategori",
+      "choices": "Seçenekler",
+      "choice": "Seçenek",
+      "chooseCategory": "Kategori Seçimi",
+      "selectChoiceFirst": "Seçenekler Bölümünden Seçim Yapınız",
+      "choiceValues": "Değerleri",
+      "platformTitle": "Platform Kategorisi",
+      "platformDesc": "Platformda karşılık gelen kategoriyi buradan seçebilirsiniz",
+      "syncPlatformDesc": "Seçtiğiniz kategoriye platformda hangi platform kategorisinin karşılık geleceğini ve seçili kategorinin seçeneklerinin yine platformda ilgili kategoride hangi seçeneklere karşılık geleceğini buradan belirleyebilirsiniz.",
+      "syncPlatform": "Kategorisi İçin Eşitleme Seçimleri",
+      "platformChoiceDesc": "Platformda karşılık gelen seçenek",
+      "editPlatform": "Platform Eşitleme Ayarları",
+      "edit": "Kategorisini Düzenle",
+      "subcategoryName": "Alt Kategori İsmi",
+      "editCategory": "Kategori Düzenle",
+      "deleteConfirmationSubCategoriesWarning": "* Bu kategorinin alt kategorileri bir üst kategorinin altına taşınacaktır.",
+      "deleteConfirmationProductsWarning": "* Bu kategorinin direk altında bulunan ürünler bir üst kategoriye bağlanacaktır.",
+      "deleteConfirmation": "Bu kategoriyi silmek istediğinize emin misiniz?",
+      "updateCategoryDesc": "Mevcut kategori adını güncelleyebilirsiniz",
+      "subcategoryDesc": "Yeni alt kategori açmak için kullanabilirsiniz",
+      "search": "Kategorilerde Ara",
+      "searchlabel": "İsim...",
+      "list": "Kategoriler",
+      "add": "YENİ KATEGORİ EKLE",
+      "save": "KAYDET",
+      "update": "GÜNCELLE",
+      "copy": "KOPYALA",
+      "delete": "TÜMÜNÜ SİL",
+      "headers": {
+        "category": "Kategori",
+        "platform": "Platform",
+        "status": "Durum"
+      },
+      "new": {
+        "title": "Yeni Kategori Ekle",
+        "info": "Bilgiler"
+      }
+    },
+    "brand": {
+      "title": "Marka Adı",
+      "brandSearchDesc": "Marka adıyla arama yapabilirsiniz",
+      "nodata": "Marka Bulunamadı!",
+      "nodataHint": "Marka ismini düzenleyip yeniden arama yapabilirsiniz ya da yeni marka ekleyebilirsiniz",
+      "searchDesc": "Mark adı ile arama yapabilirsiniz",
+      "brandWarning": "Eşitleme için önce Marka seçmelisiniz",
+      "brandNameDesc": "Yeni marka eklemek için önce ismini yazınız",
+      "chooseBrand": "Marka Seçimi",
+      "selectChoiceFirst": "Seçenekler Bölümünden Seçim Yapınız",
+      "choiceValues": "Değerleri",
+      "platformTitle": "Platform Markası",
+      "platformDesc": "Platformda karşılık gelen markayı buradan seçebilirsiniz",
+      "syncPlatformDesc": "Seçtiğiniz markaya platformda hangi platform markasının karşılık geleceğini ve seçili markanın seçeneklerinin yine platformda ilgili markada hangi seçeneklere karşılık geleceğini buradan belirleyebilirsiniz.",
+      "syncPlatform": "Markası İçin Eşitleme Seçimleri",
+      "platformChoiceDesc": "Platformda karşılık gelen seçenek",
+      "editPlatform": "Platform Eşitleme Ayarları",
+      "editBrand": "Marka Düzenle",
+      "deleteConfirmationProductsWarning": "* Bu markanın altında bulunan ürünler ana markaya bağlanacaktır.",
+      "deleteConfirmation": "Bu markayı silmek istediğinize emin misiniz?",
+      "updateBrandDesc": "Mevcut marka adını güncelleyebilirsiniz",
+      "name": "Marka",
+      "search": "Markalarda Ara",
+      "searchlabel": "İsim...",
+      "list": "Markalar",
+      "add": "YENİ MARKA EKLE",
+      "save": "KAYDET",
+      "update": "GÜNCELLE",
+      "copy": "KOPYALA",
+      "delete": "TÜMÜNÜ SİL",
+      "headers": {
+        "brand": "Marka",
+        "platform": "Platform",
+        "status": "Durum"
+      },
+      "new": {
+        "title": "Yeni Marka Ekle",
+        "info": "Bilgiler"
+      }
+    },
+    "choice": {
+      "choices": "Seçenekler",
+      "choiceValues": "Seçenek Değerleri",
+      "name": "Seçenek Grubu",
+      "title": "Seçenek Grubu Adı",
+      "valueTitle": "Seçenek Grubu Değeri",
+      "updateChoiceDesc": "Seçenek Grubu adını değiştirmek için burayı kullanabilirsiniz",
+      "updateChoiceValueDesc": "Seçenek Grubu Değerinin adını değiştirmek ya da yeni değer eklemek için burayı kullanabilirsiniz",
+      "deleteConfirmation": "Seçenek grubunu silmek istediğinizden emin misiniz?",
+      "deleteConfirmationCategoriesWarning": "* Bu seçenek ile yapılan eşitlemeler kullanılamaz.",
+      "editChoice": "Seçenek Grubununu Düzenle",
+      "editChoiceValue": "Seçenek Grubu Değerini Düzenle",
+      "newChoiceValue": "Yeni Seçenek Grubu Değeri Ekle",
+      "newChoiceDesc": "Yeni Seçenek Grubu ismini yazıp ekleyebilirsiniz",
+      "search": "Seçenek Gruplarında Ara",
+      "searchlabel": "Seçenek Grubu İsmi, Seçenek Grubu Değeri İle Arama Yapabilirsiniz",
+      "searchChoiceDesc": "Grup ismi ya da değerin ismini yazabilirsiniz",
+      "list": "Seçenek Grupları",
+      "add": "YENİ SEÇENEK GRUBU EKLE",
+      "save": "KAYDET",
+      "update": "GÜNCELLE",
+      "copy": "KOPYALA",
+      "delete": "TÜMÜNÜ SİL",
+      "headers": {
+        "choiceGroup": "Seçenek Grubu",
+        "option": "Seçenek",
+        "choices": "Seçenekler",
+        "platform": "Platform",
+        "status": "Durum"
+      },
+      "new": {
+        "title": "Yeni Seçenek Grubu Ekle",
+        "info": "Bilgiler",
+        "color": "Renk",
+        "number": "Numara",
+        "size": "Beden",
+        "prepdesc": "Hazır Seçenek Grupları listesinden ekleme yapabilirsiniz"
+      }
+    },
+    "hashtag": {
+      "name": "Etiketler",
+      "search": "Etiketlerde Ara",
+      "searchlabel": "İsim...",
+      "list": "Etiketler",
+      "add": "YENİ ETİKET EKLE",
+      "save": "KAYDET",
+      "update": "GÜNCELLE",
+      "copy": "KOPYALA",
+      "delete": "TÜMÜNÜ SİL",
+      "headers": {
+        "hashtag": "Etiket",
+        "color": "Renk",
+        "status": "Durum"
+      },
+      "new": {
+        "title": "Yeni Etiket Ekle",
+        "info": "Bilgiler"
+      }
+    }
+  },
+  "notification": {
+    "title": "BİLDİRİMLER",
+    "deleteall": "Hepsini Sil",
+    "opensettings": "Bildirim Ayarlarını Aç"
+  },
+  "user": {
+    "invoiceInfo": {
+      "name": "İsim",
+      "surname": "Soyisim",
+      "taxissuer": "Vergi Dairesi",
+      "taxid": "Vergi No",
+      "tc": "TC Kimlik No",
+      "address": "Address",
+      "state": "İl",
+      "district": "İlçe",
+      "save": "Güncelle",
+      "company": "Firma Ünvanı"
+    },
+    "changePassword": {
+      "password": "Yeni Şifre",
+      "repassword": "Yeni Şifre (Tekrar)",
+      "save": "Değiştir"
+    },
+    "subscription": {},
+    "authorization": {}
+  },
+  "integrations": {
+    "fetchProducts": "Ürünleri Getir",
+    "integration": "Entegrasyon",
+    "productInfo": "Ürün Bilgileri",
+    "storelink": "Mağaza (Site) Linki",
+    "constantProductDesc": "Sabit Ürün Açıklaması",
+    "updatePrices": "Fiyatlar Güncellensin",
+    "updateStocks": "Stoklar Güncellensin",
+    "help": "Yardım",
+    "storename": "Mağaza Adı",
+    "apikey": "API Key (Merchant ID)",
+    "apisecret": "API Secret",
+    "sellerid": "Satıcı Id",
+    "isSynchronized": "Eşitleme Yapılsın",
+    "isUnapprovedOrders": "Onaylanmamış Siparişler Çekilsin",
+    "shippingDuration": "Kargo Süresi",
+    "status": "Entegrasyon Durumu",
+    "apiinfo": "API Bilgileri",
+    "shippinginfo": "Kargo Bilgileri",
+    "autoProcessOrders": "Siparişler Otomatik İşleme Alınsın",
+    "barcodeIntegration": "Ortak Barcode Entegrasyonu",
+    "predefinedShippingAddress": "Ön Tanımlı Kargo Adresi",
+    "predefinedReturnAddress": "Ön Tanımlı İade Adresi",
+    "marketplace": {
+      "name": "Pazaryeri",
+      "save": "KAYDET",
+      "update": "GÜNCELLE",
+      "copy": "KOPYALA",
+      "delete": "TÜMÜNÜ SİL"
+    },
+    "ecommerce": {
+      "name": "E-Ticaret",
+      "save": "KAYDET",
+      "update": "GÜNCELLE",
+      "copy": "KOPYALA",
+      "delete": "TÜMÜNÜ SİL"
+    },
+    "erp": {
+      "name": "ERP",
+      "save": "KAYDET",
+      "update": "GÜNCELLE",
+      "copy": "KOPYALA",
+      "delete": "TÜMÜNÜ SİL"
+    },
+    "einvoice": {
+      "name": "E-Fatura",
+      "save": "KAYDET",
+      "update": "GÜNCELLE",
+      "copy": "KOPYALA",
+      "delete": "TÜMÜNÜ SİL"
+    },
+    "shipping": {
+      "name": "Kargo",
+      "save": "KAYDET",
+      "update": "GÜNCELLE",
+      "copy": "KOPYALA",
+      "delete": "TÜMÜNÜ SİL"
+    }
+  },
+  "common": {
+    "selectAllImages": "Bütün Resimleri Seç",
+    "images": "Resimler",
+    "all": "Hepsi",
+    "select": "Seçiniz",
+    "apply": "Uygula",
+    "smartsearch": "Akıllı Arama",
+    "count": "adet",
+    "platformPrices": "Platform Fiyat Bilgileri",
+    "ok": "Tamam",
+    "refresh": "Yenile",
+    "min": "Minimum",
+    "max": "Maksimum",
+    "cancel": "İptal",
+    "addProductVariant": "Ürün Seçeneği Ekle",
+    "editProductVariant": "Ürün Seçeneğini Güncelle",
+    "addProductVariants": "Ürün Seçeneklerini Ekle",
+    "batchDelete": "Toplu Sil",
+    "batchUpdate": "Toplu Güncelle",
+    "search": "Ara",
+    "clear": "Temizle",
+    "save": "Kaydet",
+    "addZip": "Toplu Ekle",
+    "moveSelected": "Seçili Resimleri Taşı",
+    "deleteSelected": "Seçili Resimleri Sil",
+    "deleteAll": "Hepsini Sil",
+    "approve": "Onayla",
+    "exit": "Çıkış",
+    "expand": {
+      "minimize": "Tabloyu Tam Ekran Görmek İçin Tıklayabilirsiniz",
+      "smart": "Sipariş No, Ürün Adı, Ürün Stok Kodu, Müşteri Adı vb."
+    },
+    "add": "Ekle",
+    "delete": "Sil",
+    "update": "Güncelle",
+    "search1": "Ara",
+    "advanced_search": "Detaylı Ara",
+    "product": "Ürün",
+    "price": "Fiyat",
+    "stock": "Stok",
+    "platform": "Platform",
+    "status": "Durum",
+    "actions": "İşlemler"
+  },
+  "rules": {
+    "mandatory": "Bu alan zorunlu",
+    "ipformatted": "IP formatı girilmeli (192.168.1.1)",
+    "urlformatted": "Url formatı girilmeli (http://www.example.com)",
+    "2_160characters": "Bu alan 2-160 karakter içermeli",
+    "4_250characters": "Bu alan 4-250 karakter içermeli",
+    "start_0_not": "0 ile başlamamalı",
+    "1_8characters": "Bu alan 1-8 karakter içermeli",
+    "1_4characters": "Bu alan 1-4 karakter içermeli",
+    "mustnumber": "Sayı girilmeli",
+    "2_32characters": "Bu alan 2-32 karakter içermeli",
+    "4_15characters": "Bu alan 4-15 karakter içermeli",
+    "4_25characters": "Bu alan 4-25 karakter içermeli",
+    "4_256characters": "Bu alan 4-256 karakter içermeli",
+    "0_16characters": "Bu alan 0-16 karakter içermeli"
+  },
+  "loading": {
+    "info": {
+      "newProduct": "Yeni Ürün Ekleniyor...",
+      "updateProduct": "Yeni Ürün Güncelleniyor...",
+      "addVariant": "Yeni ürün seçeneği ekleniyor...",
+      "updateVariant": "Ürün seçeneği güncelleniyor...",
+      "getVariants": "Ürün seçenekleri getiriliyor...",
+      "getVariantsList": "Ürün seçenekleri getiriliyor...",
+      "imageUploading": "Resim yükleniyor...",
+      "getImages": "Resimler getiriliyor...",
+      "getProducts": "Ürünler getiriliyor...",
+      "batchProcessDelete": "Ürün seçenekleri siliniyor...",
+      "batchProcessUpdate": "Ürün seçenekleri güncelleniyor...",
+      "deleteVariant": "Ürün seçeneği siliniyor...",
+      "updateVariantField": "Ürün seçeneği güncelleniyor...",
+      "addVariants": "Yeni ürün seçenekleri  ekleniyor..."
+    },
+    "success": {
+      "newProduct": "Ürün Eklendi",
+      "updateProduct": "Ürün Güncellendi",
+      "addVariant": "Yeni ürün seçeneği eklendi...",
+      "updateVariant": "Ürün seçeneği güncellendi...",
+      "batchProcessDelete": "Ürün seçenekleri silindi...",
+      "batchProcessUpdate": "Ürün Seçenekleri Güncellendi...",
+      "deleteVariant": "Ürün Seçeneği Silindi...",
+      "updateVariantField": "Ürün seçeneği güncellendi...",
+      "addVariants": "Yeni ürün seçenekleri eklendi..."
+    },
+    "warning": {
+      "addVariant": "Ürün Seçeneği Zaten Var",
+      "updateVariant": "Ürün seçeneği güncellenemedi...",
+      "addVariants": "Ürün Seçenekleri Zaten Var"
+    },
+    "error": {
+      "batchProcessDelete": "Ürün Seçenekleri Silinemedi",
+      "batchProcessUpdate": "Ürün Seçenekleri Güncellenemedi",
+      "deleteVariant": "Ürün Seçeneği Silinemedi",
+      "updateVariantField": "Ürün Güncellenemedi"
+    }
+  },
+  "status": {
+    "order": {
+      "unapproved": "Platform Onayı Bekliyor",
+      "awaitingApproval": "Satıcı Onayı Bekliyor",
+      "approved": "Sipariş Onaylandı",
+      "shipped": "Teslimat Bekleniyor",
+      "delivered": "Teslim Edildi",
+      "cancelled": "İptal Edildi",
+      "returned": "İade Edildi"
+    },
+    "claim": {
+      "waiting": "İade Talebi Oluşturuldu",
+      "underReview": "İncelemede",
+      "approved": "Tamamlandı",
+      "rejected": "Tamamlandı",
+      "cancelled": "İptal Edildi",
+      "disputed": "İncelemede",
+      "completed": "Tamamlandı"
+    },
+    "message": {
+      "waitingSeller": "Cevap Bekleniyor",
+      "answered": "Cevaplandı",
+      "rejected": "Reddedildi",
+      "unread": "Okunmadı",
+      "read": "Okundu",
+      "waitingApproval": "Onay Bekliyor"
+    },
+    "ticket": {
+      "open": "Açık",
+      "inProgress": "İşleniyor",
+      "waitingClient": "Yanıt Bekliyor",
+      "resolved": "Çözüldü",
+      "closed": "Kapatıldı"
+    },
+    "invoice": {
+      "draft": "Taslak",
+      "queued": "Kuyrukta",
+      "processing": "İşleniyor",
+      "approved": "Onaylandı",
+      "failed": "Hatalı",
+      "cancelled": "İptal Edildi"
+    },
+    "job": {
+      "queued": "Kuyrukta",
+      "processing": "İşleniyor",
+      "completed": "Tamamlandı",
+      "partial": "Kısmi",
+      "failed": "Hatalı"
+    },
+    "subscription": {
+      "noSubscription": "Abonelik Yok",
+      "trialing": "Deneme Sürümü",
+      "active": "Aktif",
+      "pastDue": "Ödeme Gecikti",
+      "canceled": "İptal Edildi"
+    },
+    "store": {
+      "active": "Aktif",
+      "passive": "Pasif"
+    },
+    "integration": {
+      "connected": "Bağlı",
+      "disconnected": "Bağlı Değil",
+      "error": "Hata"
+    }
+  },
+  "shell": {
+    "section": {
+      "general": "Genel",
+      "catalog": "Katalog",
+      "orders": "Siparişler",
+      "integrations": "Entegrasyonlar",
+      "finance": "Finans ve Raporlar",
+      "admin": "Yönetim",
+      "other": "Diğer"
+    }
+  }
+}

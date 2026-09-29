@@ -1,0 +1,325 @@
+---
+/**
+ * /ozellikler — yetenek anlatımı (ADR-0014 Karar 2, S2b; premium kart ızgarası S11). Yalnızca
+ * `getPublicCapabilities('core')` (kayıtlı ve gösterilebilir yetenekler; yol haritası öğeleri gelmez).
+ * Kanal listeleri entegrasyon kaydından türetilir. Kısmi yeteneklerde kapsam notu ve kanal bazında düzey
+ * (Destekleniyor / Sınırlı) görünür.
+ *
+ * S11: önceki sürüm her yeteneği kendi tam genişlikte bölümünde art arda diziyordu (aşırı boşluk). Artık tek
+ * bölümde 4 seviyeli hiyerarşili (`--site-card-*`) kart ızgarası + kanal kapsamı yatay rozet şeridi olarak
+ * özetleniyor; imleç takipli ışık/eğim (`data-tilt`, S8) eklendi. Sayı uydurulmaz: hero'daki özet, dizideki
+ * gerçek yetenek/kapsam sayılarından hesaplanır.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro'
+import Section from '../components/Section.astro'
+import Badge from '../components/Badge.astro'
+import PageHero from '../components/pages/PageHero.astro'
+import PageMeta from '../components/pages/PageMeta.astro'
+import LevelBadge from '../components/pages/LevelBadge.astro'
+import ChannelMono from '../components/pages/ChannelMono.astro'
+import CtaBand from '../components/pages/CtaBand.astro'
+import { getPublicCapabilities, type ProductCapabilityStatus } from '../data/capabilities'
+import { CAPABILITY_LEVEL_LABELS, getPublicIntegrations } from '../data/integrations'
+import { getFeaturePoints } from '../data/feature-details'
+import { breadcrumbJsonLd } from '../lib/seo'
+import { appUrls } from '../lib/site-config'
+
+const title = 'Özellikler'
+const description =
+  'Stok rezervasyonu, birleşik sipariş yönetimi, iade, soru-cevap ve finans görünümü: Entegrasyonik özellikleri ve kanal bazında kapsamları.'
+const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Özellikler' }]
+
+const capabilities = getPublicCapabilities('core')
+// Gösterilebilir durumlar yalnızca mevcut/kısmi'dir; diğerleri nötr rozete düşer.
+const statusTone = (status: ProductCapabilityStatus): 'success' | 'warning' | 'neutral' =>
+  status === 'available' ? 'success' : status === 'partial' ? 'warning' : 'neutral'
+
+// Hero görseli: hiçbir uydurma/sabit rakam yok (tests/pages.test.ts) — yalnızca kanal adları.
+const channels = getPublicIntegrations()
+---
+
+<BaseLayout title={title} description={description}>
+  <PageMeta
+    slot="head"
+    title={title}
+    description={description}
+    jsonLd={[breadcrumbJsonLd([{ label: 'Ana sayfa', path: '/' }, { label: title, path: '/ozellikler' }])]}
+  />
+
+  <PageHero
+    title="Özellikler"
+    lead="Satış kanallarınızı tek panelden yönetmek için gereken temel işlemler. Her özelliğin hangi kanallarda ve hangi kapsamda çalıştığı yazılıdır."
+    crumbs={crumbs}
+  >
+    <nav class="toc" aria-label="Bu sayfadaki özellikler">
+      {capabilities.map((c) => <a href={`#${c.id}`}>{c.title}</a>)}
+    </nav>
+    <Fragment slot="visual">
+      <p class="stat-panel__tag">Tüm kanallarda geçerli</p>
+      <ul class="chan-cluster" role="list">
+        {
+          channels.map((c) => (
+            <li>
+              <ChannelMono code={c.code} name={c.name} size="md" />
+              <span class="chan-cluster__name">{c.name}</span>
+            </li>
+          ))
+        }
+      </ul>
+      <p class="stat-panel__caption">Kapsam kanala göre değişir; her kartın altında ayrıntı var.</p>
+    </Fragment>
+  </PageHero>
+
+  <Section labelledby="cap-grid-title">
+    <h2 id="cap-grid-title" class="sr-only">Temel özellikler</h2>
+    <ul class="cap-grid" role="list">
+      {
+        capabilities.map((c) => {
+          const points = getFeaturePoints(c.id)
+          return (
+            <li>
+              <article id={c.id} class="cap-card" aria-labelledby={`${c.id}-title`} data-tilt data-testid="feature">
+                <div class="cap-card__head">
+                  <Badge tone={statusTone(c.status)} class="cap-card__eyebrow">{c.statusLabel}</Badge>
+                </div>
+                <h3 id={`${c.id}-title`} class="cap-card__title">{c.title}</h3>
+                <p class="cap-card__value">{c.summary}</p>
+                {points.length > 0 && (
+                  <ul class="cap-card__points" role="list">
+                    {points.map((p) => (
+                      <li>{p}</li>
+                    ))}
+                  </ul>
+                )}
+                {c.caveat && (
+                  <p class="cap-card__caveat">
+                    <strong>Kapsam notu:</strong> {c.caveat}
+                  </p>
+                )}
+                {c.channels.length > 0 && (
+                  <div class="cap-card__channels">
+                    <p class="cap-card__channels-label">Kanallara göre kapsam</p>
+                    <ul class="chan-row" role="list">
+                      {c.channels.map((ch) => (
+                        <li>
+                          <a class="chan-chip" href={`/entegrasyonlar/${ch.code}`} data-code={ch.code}>
+                            <ChannelMono code={ch.code} name={ch.name} size="sm" />
+                            <span class="chan-chip__name">{ch.name}</span>
+                            <LevelBadge level={ch.level} label={CAPABILITY_LEVEL_LABELS[ch.level]} />
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </article>
+            </li>
+          )
+        })
+      }
+    </ul>
+  </Section>
+
+  <CtaBand
+    id="ozellik-cta"
+    title="Özellikleri kendi hesabınızda deneyin"
+    text="Kanal kapsamının ayrıntısı için entegrasyon sayfalarına, veri ve anahtar güvenliği için güvenlik sayfasına bakabilirsiniz."
+    primary={{ label: 'Ücretsiz dene', href: appUrls.register() }}
+    secondary={{ label: 'Entegrasyonlar', href: '/entegrasyonlar' }}
+  />
+</BaseLayout>
+
+<script>
+  import '../scripts/interactions'
+</script>
+
+<style>
+  .toc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2) var(--ek-space-3);
+  }
+  .toc a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--site-tap-target);
+    padding-inline: var(--ek-space-4);
+    border: var(--site-border-width) solid var(--site-color-on-primary-muted);
+    border-radius: var(--ek-radius-full);
+    color: var(--site-color-on-primary);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-medium);
+    text-decoration: none;
+    transition:
+      background-color var(--ek-duration-base) var(--ek-easing-standard),
+      border-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .toc a:hover {
+    background: color-mix(in srgb, var(--ek-color-background) 12%, transparent);
+    border-color: var(--site-color-on-primary);
+  }
+  .toc a:focus-visible {
+    outline-color: var(--site-color-on-primary);
+  }
+
+  /* --- Hero görsel: sayfa özeti (gerçek sayılar) --- */
+  .stat-panel__tag {
+    margin: 0 0 var(--ek-space-4);
+    color: var(--site-color-on-primary-muted);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .stat-panel__caption {
+    margin: var(--ek-space-5) 0 0;
+    color: var(--site-color-on-primary-muted);
+    font-size: var(--ek-font-size-sm);
+  }
+  .chan-cluster {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--ek-space-4);
+  }
+  .chan-cluster li {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--ek-space-2);
+    text-align: center;
+  }
+  .chan-cluster__name {
+    color: var(--site-color-on-primary-muted);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-medium);
+  }
+
+  /* --- Yetenek kart ızgarası ---
+     CSS çoklu sütun (masonry benzeri, S11b): kartlar farklı yükseklikte (bazılarında kapsam notu/madde
+     listesi var, bazılarında yok) — satır bazlı grid bunu eşit hücrelere sığdırıp ya boş hücre ya da göze
+     batan yükseklik farkı bırakıyordu. Sütun düzeninde her kart kendi yüksekliğinde akar, sütun aşağı doğru
+     doldurulur; son satırda yapay boşluk kalmaz, yükseklik farkı da satır hizası olmadığı için batmaz. DOM
+     sırası (okuma/erişilebilirlik sırası) değişmez, yalnızca görsel yerleşim değişir. */
+  .cap-grid {
+    column-gap: var(--ek-space-6);
+  }
+  .cap-grid > li {
+    break-inside: avoid;
+    margin-bottom: var(--ek-space-6);
+  }
+  .cap-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    width: 100%;
+    padding: var(--ek-space-6);
+    background: var(--ek-color-surface);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--site-radius-panel);
+    box-shadow: var(--site-shadow-card);
+    scroll-margin-top: var(--ek-space-16);
+    transition:
+      border-color var(--ek-duration-base) var(--ek-easing-standard),
+      box-shadow var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .cap-card:hover,
+  .cap-card:focus-within {
+    border-color: var(--ek-color-border-strong);
+    box-shadow: var(--site-shadow-card-hover);
+  }
+  .cap-card__head {
+    display: flex;
+  }
+  .cap-card__eyebrow {
+    font-size: var(--site-card-eyebrow-size);
+    font-weight: var(--site-card-eyebrow-weight);
+    letter-spacing: var(--site-card-eyebrow-tracking);
+  }
+  .cap-card__title {
+    font-size: var(--site-card-title-size);
+    font-weight: var(--site-card-title-weight);
+    line-height: var(--ek-line-height-tight);
+  }
+  .cap-card__value {
+    color: var(--ek-color-content-default);
+    font-size: var(--site-card-value-size);
+    font-weight: var(--site-card-value-weight);
+    line-height: var(--ek-line-height-normal);
+  }
+  .cap-card__points {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    color: var(--ek-color-content-muted);
+    font-size: var(--site-card-desc-size);
+    font-weight: var(--site-card-desc-weight);
+  }
+  .cap-card__points li {
+    position: relative;
+    padding-inline-start: var(--ek-space-5);
+  }
+  .cap-card__points li::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0.6em;
+    width: var(--ek-space-2);
+    height: var(--site-border-width);
+    background: var(--ek-color-secondary-darken-1);
+  }
+  .cap-card__caveat {
+    padding: var(--ek-space-3) var(--ek-space-4);
+    border-inline-start: var(--ek-space-1) solid var(--ek-color-warning);
+    border-radius: var(--ek-radius-md);
+    background: var(--ek-color-warning-subtle);
+    color: var(--ek-color-content-strong);
+    font-size: var(--site-card-desc-size);
+  }
+  .cap-card__channels {
+    margin-top: auto;
+    padding-top: var(--ek-space-4);
+    border-top: var(--site-border-width) solid var(--ek-color-border-default);
+  }
+  .cap-card__channels-label {
+    margin: 0 0 var(--ek-space-3);
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .chan-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2);
+  }
+  .chan-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-1) var(--ek-space-3) var(--ek-space-1) var(--ek-space-1);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-full);
+    color: var(--ek-color-content-strong);
+    text-decoration: none;
+    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .chan-chip:hover {
+    border-color: color-mix(in srgb, var(--chan, var(--ek-color-primary)) 60%, transparent);
+  }
+  .chan-chip__name {
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-medium);
+  }
+
+  @media (min-width: 768px) {
+    .cap-grid {
+      columns: 2;
+    }
+  }
+  @media (min-width: 1200px) {
+    .cap-grid {
+      columns: 3;
+    }
+  }
+</style>

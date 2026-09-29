@@ -1,0 +1,159 @@
+---
+/**
+ * SSS önizleme (ADR-0014 Karar 2, bölüm 8). Kaynak: `getPublicFaq()`. Yerel `<details>` akordeonu (JS'siz çalışır,
+ * klavye/odak yerel); yalnızca etkileşim geri bildirimi motion token'ları kullanır. Tam liste `/sss` (S2b).
+ */
+import Section from '../Section.astro'
+import SectionHeading from './SectionHeading.astro'
+import Icon from './Icon.astro'
+import { getPublicFaq } from '../../data/faq'
+import { pageHref } from './links'
+
+const PREVIEW_IDS = ['hangi-entegrasyonlar', 'kapsam-ayni-mi', 'asiri-satis', 'veri-ayrimi', 'anahtar-saklama']
+const all = getPublicFaq()
+const items = PREVIEW_IDS.map((id) => all.find((f) => f.id === id)).filter((f): f is (typeof all)[number] => Boolean(f))
+const faqHref = pageHref('/sss')
+---
+
+<Section tone="muted" id="sss" labelledby="sss-baslik">
+  <div class="faq">
+    <div class="faq__intro">
+      <SectionHeading
+        id="sss-baslik"
+        eyebrow="Sık sorulan sorular"
+        title="Aklınıza takılanlar"
+        lead="Entegrasyon kapsamı, stok ve anahtarların saklanması hakkında kısa yanıtlar."
+      />
+      {faqHref && <a class="faq__more" href={faqHref}>Tüm soruları görün</a>}
+    </div>
+
+    <div class="faq__list" data-scene="reveal" data-testid="faq-list">
+      {
+        items.map((f) => (
+          <details class="faq__item" data-part="faq-item" data-reveal data-tilt>
+            <summary class="faq__q">
+              <span>{f.question}</span>
+              <Icon name="chevron" size="md" class="faq__chevron" />
+            </summary>
+            <div class="faq__a-wrap">
+              <p class="faq__a">{f.answer}</p>
+            </div>
+          </details>
+        ))
+      }
+    </div>
+  </div>
+</Section>
+
+<style>
+  .faq {
+    display: grid;
+    gap: var(--ek-space-10);
+    align-items: start;
+  }
+  .faq__intro {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-5);
+  }
+  .faq__more {
+    align-self: flex-start;
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .faq__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+  }
+  .faq__item {
+    border: var(--site-border-width) solid transparent;
+    border-radius: var(--ek-radius-xl);
+    background:
+      linear-gradient(var(--ek-color-surface), var(--ek-color-surface)) padding-box,
+      linear-gradient(var(--ek-color-border-default), var(--ek-color-border-default)) border-box;
+    box-shadow: var(--site-shadow-card);
+    /* `transform` (eğim) buraya da eklenir (bkz. PricingSummary.astro aynı not). */
+    transition:
+      box-shadow var(--ek-duration-base) var(--ek-easing-standard),
+      background var(--ek-duration-base) var(--ek-easing-standard),
+      transform var(--tilt-transition-duration, var(--ek-duration-fast)) var(--ek-easing-standard);
+  }
+  .faq__item:hover,
+  .faq__item[open] {
+    background:
+      linear-gradient(var(--ek-color-surface), var(--ek-color-surface)) padding-box,
+      var(--site-gradient-border) border-box;
+    box-shadow: var(--site-shadow-card-hover);
+  }
+  .faq__q {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ek-space-4);
+    min-height: var(--site-tap-target);
+    padding: var(--ek-space-4) var(--ek-space-5);
+    border-radius: var(--ek-radius-xl);
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-lg);
+    font-weight: var(--ek-font-weight-semibold);
+    line-height: var(--ek-line-height-tight);
+    cursor: pointer;
+    list-style: none;
+  }
+  .faq__q::-webkit-details-marker {
+    display: none;
+  }
+  .faq__q:hover {
+    background: var(--ek-color-surface-muted);
+  }
+  .faq__q :global(.faq__chevron) {
+    color: var(--ek-color-content-muted);
+    transition: transform var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .faq__item[open] .faq__q :global(.faq__chevron) {
+    transform: rotate(180deg);
+  }
+  /*
+   * Akordeon açılışı JS'siz ve yumuşak (S10): `<details>` UA-stiliyle kapalıyken çocukları `display:none`
+   * yapar (geçiş imkansız) — bu satır o kuralı geçersiz kılar (yazar kuralı UA kuralını her zaman geçer;
+   * `grid-template-rows: 0fr` sıfır yüksekliği verir). Yalnızca `grid-template-rows`/`visibility` geçer;
+   * `visibility` gecikmesi kapanışta içerik tamamen küçüldükten SONRA erişilebilirlik ağacından/sekme
+   * sırasından çıkmasını sağlar (açılışta gecikmesiz görünür olur).
+   */
+  .faq__a-wrap {
+    display: grid;
+    grid-template-rows: 0fr;
+    visibility: hidden;
+    transition:
+      grid-template-rows var(--ek-duration-slow) var(--ek-easing-standard),
+      visibility 0s linear var(--ek-duration-slow);
+  }
+  .faq__item[open] .faq__a-wrap {
+    grid-template-rows: 1fr;
+    visibility: visible;
+    transition:
+      grid-template-rows var(--ek-duration-slow) var(--ek-easing-standard),
+      visibility 0s linear 0s;
+  }
+  .faq__a-wrap > .faq__a {
+    min-height: 0;
+    overflow: hidden;
+  }
+  .faq__a {
+    max-width: none;
+    padding: 0 var(--ek-space-5) var(--ek-space-5);
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-lg);
+  }
+
+  @media (min-width: 1024px) {
+    .faq {
+      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+      gap: var(--ek-space-16);
+    }
+    .faq__intro {
+      position: sticky;
+      inset-block-start: calc(var(--site-header-height) + var(--ek-space-8));
+    }
+  }
+</style>

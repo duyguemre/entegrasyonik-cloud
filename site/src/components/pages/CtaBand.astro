@@ -1,0 +1,58 @@
+---
+/** CtaBand — iç sayfa kapanış çağrısı (koyu zemin). Ana sayfa kapanış CTA'sından (S2a) bağımsızdır. */
+import Section from '../Section.astro'
+import Button from '../Button.astro'
+
+interface Action {
+  label: string
+  href: string
+}
+
+interface Props {
+  id: string
+  title: string
+  text?: string
+  primary: Action
+  secondary?: Action
+}
+
+const { id, title, text, primary, secondary } = Astro.props
+---
+
+<Section tone="stage" labelledby={id} class="cta-band">
+  <div class="cta-band__body">
+    <h2 id={id}>{title}</h2>
+    {text && <p>{text}</p>}
+    <div class="cta-band__actions">
+      <Button href={primary.href} variant="inverse" size="lg">{primary.label}</Button>
+      {secondary && <Button href={secondary.href} variant="inverse-outline" size="lg">{secondary.label}</Button>}
+    </div>
+  </div>
+</Section>
+
+<style>
+  .cta-band:global(.section) {
+    padding-block: calc(var(--site-section-y) * 0.7);
+  }
+  .cta-band__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-4);
+    max-width: var(--site-container-narrow);
+  }
+  .cta-band h2 {
+    font-size: var(--site-font-display-sm);
+    font-weight: var(--site-font-display-weight);
+    line-height: var(--site-font-display-line-height);
+    letter-spacing: var(--site-font-display-tracking);
+  }
+  .cta-band p {
+    font-size: var(--ek-font-size-xl);
+  }
+  .cta-band__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-3);
+    margin-top: var(--ek-space-2);
+  }
+</style>

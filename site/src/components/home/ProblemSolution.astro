@@ -1,0 +1,681 @@
+---
+/**
+ * Sorun → çözüm (ADR-0014 Karar 2, bölüm 2; S8 premium sahne). Sahne: `data-scene="problem-solution"`
+ * (scenes.css + scenes-loops.css). Sol taraf ("Dağınık"): her pazaryeri kendi küçük panelinde, stok sayıları
+ * birbiriyle çelişir (statik hâlde de böyle görünür — örnek/uydurma değil, senaryoyu anlatan sabit görsel
+ * örnektir, "Örnek senaryo" etiketlidir). Sağ taraf ("Tek merkez"): aynı kanallar merkezdeki tek panele akar
+ * (döngüsel sinyal — yalnızca oynatma durumunda ve görünürken), tek ve senkron bir stok değeri gösterilir.
+ * Renkler yalnızca ayırt edici vurgu (bkz. src/data/channel-colors.ts); metin rengi marka rengi DEĞİLDİR.
+ * Altta kısa bir karşılaştırma tablosu: yalnızca kanıtlı yeteneklere dayanır (capabilities.ts).
+ */
+import Section from '../Section.astro'
+import SectionHeading from './SectionHeading.astro'
+import Icon from './Icon.astro'
+import Logo from '../Logo.astro'
+import { getPublicIntegrations } from '../../data/integrations'
+import { getPublicCapabilities } from '../../data/capabilities'
+
+const problems = [
+  'Her pazaryerinde stoğu ayrı ayrı elle güncellemek',
+  'Aynı ürünün birden fazla kanalda satılması ve aşırı satış riski',
+  'Sipariş, iade ve soruların farklı panellere dağılması',
+  'Kanal başına ayrı fiyat ve ürün takibi',
+]
+const solutions = [
+  'Ürün, fiyat ve stok tek panelde; değişiklikler bağlı kanallara iletilir',
+  'Stok rezervasyonu ile aşırı satış riskinin azaltılması',
+  'Siparişler tek listede, iade ve sorular tek yerde',
+  'Kanalların kapsamı ve sınırları açıkça görünür',
+]
+
+const marketplaces = getPublicIntegrations('marketplace')
+// Örnek senaryo: her kanalın kendi panelinde farklı (çelişen) stok sayısı görmesi — sabit görsel örnek,
+// gerçek veri değildir ("Örnek senaryo" etiketiyle işaretlenir; bkz. Hero.astro'daki aynı sözleşme).
+const EXAMPLE_STOCK = [14, 9, 21, 6]
+const messy = marketplaces.map((m, i) => ({ ...m, stock: EXAMPLE_STOCK[i % EXAMPLE_STOCK.length] }))
+const SYNCED_STOCK = 6
+
+const core = getPublicCapabilities('core')
+const security = getPublicCapabilities('security')
+const cap = (list: typeof core, id: string) => {
+  const c = list.find((x) => x.id === id)
+  if (!c) throw new Error(`Yetenek kaydı bulunamadı: ${id}`)
+  return c
+}
+const stock = cap(core, 'stock-reservation')
+const orders = cap(core, 'unified-orders')
+const secrets = cap(security, 'secrets-encryption')
+const tenant = cap(security, 'tenant-database')
+
+// Karşılaştırma: yalnızca kanıtlı yeteneklere dayanır (capabilities.ts); "dağınık" sütunu genel sorun
+// tanımıdır (problems listesiyle aynı gerekçe), Entegrasyonik iddiası uydurulmaz. `afterTitle` kaydın KENDİ
+// `title` alanı (kısa, zaten kanıtlı) — yeni metin uydurulmaz; `afterDesc` aynı kaydın `summary`'sidir.
+const comparison = [
+  { label: 'Müşteri verisi', icon: 'database' as const, before: 'Tek ortak sistemde, hesaplar arası ayrım yok', afterTitle: tenant.title, afterDesc: tenant.summary },
+  { label: 'Entegrasyon anahtarları', icon: 'key' as const, before: 'Saklama biçimi pazaryeri paneline göre değişir', afterTitle: secrets.title, afterDesc: secrets.summary },
+  { label: 'Aynı ürün, birden çok kanal', icon: 'stock' as const, before: 'Elle takip; aşırı satış riski yüksektir', afterTitle: stock.title, afterDesc: stock.summary },
+  { label: 'Sipariş listesi', icon: 'orders' as const, before: 'Her pazaryeri kendi panelinde ayrı listelenir', afterTitle: orders.title, afterDesc: orders.summary },
+  {
+    label: 'Kanal kapsamı',
+    icon: 'layers' as const,
+    before: 'Neyin desteklendiği pazaryeri dokümantasyonuna bakmadan bilinmez',
+    afterTitle: 'Kapsam ve sınırlar açıkça yazılır',
+    afterDesc: 'Her entegrasyonda desteklenen işlemler ve bilinen sınırlar sayfada açıkça yazılıdır.',
+  },
+]
+---
+
+<Section labelledby="sorun-cozum-baslik">
+  <SectionHeading
+    id="sorun-cozum-baslik"
+    eyebrow="Sorun ve çözüm"
+    title="Dağınık yönetim zaman ve stok kaybettirir"
+    accent="zaman ve stok kaybettirir"
+    lead="Kanal sayısı arttıkça her panelde aynı işleri tekrarlamak hem yorucu hem risklidir. Entegrasyonik bu işleri tek merkeze toplar."
+  />
+
+  <div class="ps" data-scene="problem-solution">
+    <article class="ps__card ps__card--before" aria-labelledby="ps-before-title">
+      <div class="ps__stage">
+        <span class="ps__stage-label">Dağınık</span>
+        <p class="ps__stage-caption">Örnek senaryo: her kanal kendi panelinde, kendi (çelişen) stok sayısını gösterir</p>
+        <ul class="ps__messy">
+          {
+            messy.map((m) => (
+              <li class="ps__mpanel" data-part="messy-panel" data-code={m.code}>
+                <p class="ps__mpanel-chan">
+                  <span class="ps__mono" aria-hidden="true">{m.name.slice(0, 1)}</span>
+                  {m.name}
+                </p>
+                <p class="ps__mpanel-stat">
+                  <span>Stok</span>
+                  <b>{m.stock}</b>
+                </p>
+                <p class="ps__mpanel-flag" data-part="flag">
+                  <Icon name="info" size="sm" />
+                  Uyumsuz
+                </p>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <h3 id="ps-before-title" class="ps__title">Bugün</h3>
+      <ul class="ps__list">
+        {
+          problems.map((p) => (
+            <li>
+              <span class="ps__mark ps__mark--bad"><Icon name="x" size="sm" /></span>
+              <span>{p}</span>
+            </li>
+          ))
+        }
+      </ul>
+    </article>
+
+    <article class="ps__card ps__card--after" aria-labelledby="ps-after-title">
+      <div class="ps__stage ps__stage--after">
+        <span class="ps__stage-label">Tek merkez</span>
+        <p class="ps__stage-caption">Örnek senaryo: aynı kanallar tek panele akar, tek stok sayısı geçerli olur</p>
+        <ul class="ps__tidy" data-part="tidy-row">
+          {
+            messy.map((m) => (
+              <li class="ps__tpanel" data-code={m.code}>
+                <p class="ps__tpanel-chan">
+                  <span class="ps__mono" aria-hidden="true">{m.name.slice(0, 1)}</span>
+                  {m.name}
+                </p>
+                <span class="ps__flow" aria-hidden="true">
+                  <i class="ps__flow-dot" data-part="packet"></i>
+                </span>
+              </li>
+            ))
+          }
+        </ul>
+        <div class="ps__bus" data-part="bus" aria-hidden="true"></div>
+        <div class="ps__stem" aria-hidden="true"></div>
+        <div class="ps__hub" data-part="hub">
+          <Icon name="stock" size="md" />
+        </div>
+        <div class="ps__result" data-part="result">
+          <p class="ps__result-label">Kullanılabilir stok · tüm kanallarda</p>
+          <p class="ps__result-num">{SYNCED_STOCK}</p>
+        </div>
+      </div>
+      <h3 id="ps-after-title" class="ps__title">Entegrasyonik ile</h3>
+      <ul class="ps__list">
+        {
+          solutions.map((s) => (
+            <li>
+              <span class="ps__mark ps__mark--good"><Icon name="check" size="sm" /></span>
+              <span>{s}</span>
+            </li>
+          ))
+        }
+      </ul>
+    </article>
+  </div>
+
+  <div class="ps__compare">
+    <h3 class="ps__compare-title">Dağınık yöntemler ve Entegrasyonik</h3>
+    <div class="ps__compare-table" data-scene="reveal">
+      <div class="ps__compare-head" aria-hidden="true">
+        <span class="ps__compare-head-cell ps__compare-head-cell--crit">Kriter</span>
+        <span class="ps__compare-head-cell ps__compare-head-cell--before">Dağınık yöntemler</span>
+        <span class="ps__compare-head-cell ps__compare-head-cell--after"><Logo /></span>
+      </div>
+      <ul class="ps__compare-rows" aria-label="Kriter bazında dağınık yöntemler ve Entegrasyonik karşılaştırması">
+        {
+          comparison.map((row) => (
+            <li class="ps__compare-row" data-reveal>
+              <div class="ps__compare-crit">
+                <span class="ps__compare-crit-icon" aria-hidden="true">
+                  <Icon name={row.icon} size="sm" />
+                </span>
+                <span class="ps__compare-crit-label">{row.label}</span>
+              </div>
+              <div class="ps__compare-cell ps__compare-cell--before">
+                <span class="ps__compare-tag">Dağınık yöntemler</span>
+                <span class="ps__compare-icon ps__compare-icon--bad" aria-hidden="true">
+                  <Icon name="x" size="sm" />
+                </span>
+                <span class="ps__compare-text">{row.before}</span>
+              </div>
+              <div class="ps__compare-cell ps__compare-cell--after">
+                <span class="ps__compare-tag">Entegrasyonik</span>
+                <span class="ps__compare-icon ps__compare-icon--good" aria-hidden="true">
+                  <Icon name="check" size="sm" />
+                </span>
+                <span class="ps__compare-text">
+                  <strong class="ps__compare-diff">{row.afterTitle}</strong>
+                  <span class="ps__compare-desc">{row.afterDesc}</span>
+                </span>
+              </div>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </div>
+</Section>
+
+<style>
+  .ps {
+    display: grid;
+    gap: var(--ek-space-6);
+    margin-top: var(--ek-space-12);
+  }
+  .ps__card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-5);
+    padding: var(--ek-space-5);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--site-radius-panel);
+    background: var(--ek-color-surface-muted);
+  }
+  .ps__card--after {
+    border-color: transparent;
+    background:
+      linear-gradient(var(--ek-color-surface), var(--ek-color-surface)) padding-box,
+      var(--site-gradient-border) border-box;
+    box-shadow: var(--site-shadow-card-hover);
+  }
+  .ps__stage {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-4);
+    padding: var(--ek-space-6) var(--ek-space-4) var(--ek-space-5);
+    border-radius: var(--ek-radius-xl);
+    background-color: var(--ek-color-surface-sunken);
+    background-image: var(--site-texture-dots);
+    background-size: var(--site-texture-dots-size);
+  }
+  .ps__stage--after {
+    background-color: color-mix(in srgb, var(--ek-color-secondary) 9%, var(--ek-color-surface));
+  }
+  .ps__stage-label {
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .ps__stage-caption {
+    margin-top: calc(var(--ek-space-4) * -1);
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-sm);
+  }
+
+  /* --- Dağınık: her kanal kendi paneli, hafif çarpık/kaotik yerleşim (statik hâl anlamlıdır) --- */
+  .ps__messy {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--ek-space-4) var(--ek-space-3);
+    padding-block: var(--ek-space-2);
+  }
+  .ps__mpanel {
+    padding: var(--ek-space-3);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-top: calc(var(--ek-space-1) * 0.75) solid var(--chan, var(--ek-color-border-strong));
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface);
+    box-shadow: var(--ek-shadow-sm);
+  }
+  .ps__messy .ps__mpanel:nth-child(1) {
+    rotate: -2.5deg;
+  }
+  .ps__messy .ps__mpanel:nth-child(2) {
+    rotate: 1.5deg;
+    translate: 0 var(--ek-space-2);
+  }
+  .ps__messy .ps__mpanel:nth-child(3) {
+    rotate: 2deg;
+    translate: 0 calc(var(--ek-space-1) * -1);
+  }
+  .ps__messy .ps__mpanel:nth-child(4) {
+    rotate: -1.5deg;
+    translate: 0 var(--ek-space-1);
+  }
+  .ps__mpanel-chan {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .ps__mono {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-5);
+    height: var(--ek-space-5);
+    border-radius: var(--ek-radius-full);
+    background: var(--chan-fill, var(--ek-color-primary));
+    color: var(--site-color-on-primary);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--site-font-display-weight);
+  }
+  .ps__mpanel-stat {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-top: var(--ek-space-2);
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-xs);
+  }
+  .ps__mpanel-stat b {
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-xl);
+    font-weight: var(--site-font-display-weight);
+  }
+  .ps__mpanel-flag {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-1);
+    margin-top: var(--ek-space-2);
+    color: var(--ek-color-error);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+
+  /* --- Tek merkez: kanallar üstte, akış çizgileri ortak hatta birleşip merkeze iner --- */
+  .ps__tidy {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--ek-space-3) var(--ek-space-2);
+  }
+  .ps__tpanel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  .ps__tpanel-chan {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-1);
+    padding: var(--ek-space-1) var(--ek-space-2);
+    border: var(--site-border-width) solid var(--chan, var(--ek-color-border-strong));
+    border-radius: var(--ek-radius-md);
+    background: var(--ek-color-surface);
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  .ps__flow {
+    position: relative;
+    width: calc(var(--site-border-width) * 2);
+    height: var(--ek-space-10);
+    background: linear-gradient(180deg, var(--chan, var(--ek-color-secondary)), var(--ek-color-secondary));
+    box-shadow: 0 0 var(--ek-space-2) 0 color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 55%, transparent);
+    border-radius: var(--ek-radius-full);
+  }
+  .ps__flow-dot {
+    position: absolute;
+    inset-inline-start: 50%;
+    inset-block-start: 0;
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    translate: -50% 0;
+    border-radius: var(--ek-radius-full);
+    background: var(--chan, var(--ek-color-secondary));
+    box-shadow: 0 0 0 calc(var(--ek-space-1) * 0.9) color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 45%, transparent);
+    opacity: 0;
+  }
+  .ps__bus {
+    height: calc(var(--site-border-width) * 2);
+    border-radius: var(--ek-radius-full);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--ek-color-secondary) 15%,
+      var(--ek-color-secondary) 85%,
+      transparent
+    );
+    box-shadow: 0 0 var(--ek-space-2) 0 color-mix(in srgb, var(--ek-color-secondary) 45%, transparent);
+  }
+  .ps__stem {
+    align-self: center;
+    width: calc(var(--site-border-width) * 2);
+    height: var(--ek-space-4);
+    background: var(--ek-color-secondary);
+  }
+  .ps__hub {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    width: var(--ek-space-12);
+    height: var(--ek-space-12);
+    border-radius: var(--ek-radius-full);
+    background: linear-gradient(140deg, var(--ek-color-primary-darken-1), var(--ek-color-primary));
+    color: var(--site-color-on-primary);
+    box-shadow: var(--site-glow-ring);
+  }
+  /* Göbekte nabız gibi yayılan ışıma halkası (yalnızca oynatma durumunda ve görünürken: scenes-loops.css). */
+  .ps__hub::after {
+    content: '';
+    position: absolute;
+    inset: calc(var(--ek-space-2) * -1);
+    z-index: -1;
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-secondary) 40%, transparent);
+    opacity: 0;
+  }
+  .ps__result {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--ek-space-1);
+    padding: var(--ek-space-3) var(--ek-space-4);
+    border: var(--site-border-width) solid var(--ek-color-secondary);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface);
+    text-align: center;
+  }
+  .ps__result-label {
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .ps__result-num {
+    color: var(--ek-color-content-strong);
+    font-size: var(--site-font-display-sm);
+    font-weight: var(--site-font-display-weight);
+    line-height: 1;
+  }
+
+  .ps__title {
+    padding-inline: var(--ek-space-2);
+    font-size: var(--ek-font-size-2xl);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .ps__list {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--ek-space-4);
+    padding: 0 var(--ek-space-2) var(--ek-space-2);
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-lg);
+  }
+  .ps__list li {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ek-space-3);
+  }
+  .ps__mark {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-6);
+    height: var(--ek-space-6);
+    margin-top: var(--ek-space-1);
+    border-radius: var(--ek-radius-full);
+  }
+  .ps__mark--bad {
+    background: var(--ek-color-error-subtle);
+    color: var(--ek-color-error);
+  }
+  .ps__mark--good {
+    background: var(--ek-color-success-subtle);
+    color: var(--ek-color-content-strong);
+  }
+
+  /* --- Karşılaştırma tablosu --- */
+  .ps__compare {
+    margin-top: var(--ek-space-16);
+  }
+  .ps__compare-title {
+    margin-bottom: var(--ek-space-4);
+    font-size: var(--ek-font-size-2xl);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  /*
+   * Karşılaştırma tablosu (S10 2. tur): mobilde her satır kriter (ikon+ad) üstte, iki durum (Dağınık/
+   * Entegrasyonik) alt alta — her durumun kendi (küçük) etiketi vardır. >=768px'te 3 sütunlu bir ızgaraya
+   * dönüşür (Kriter | Dağınık yöntemler | Entegrasyonik); etiketler tek bir YAPIŞKAN başlık satırına taşınır
+   * (`.ps__compare-head`, site header'ın hemen altına yapışır) ve satır içi etiketler (`.ps__compare-tag`)
+   * gizlenir — aynı metnin beş kez tekrarlanmasının önüne geçer. Satırlar görünür olunca genel [data-reveal]
+   * girişiyle sırayla belirir (data-scene="reveal", scenes.css).
+   */
+  .ps__compare-table {
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--site-radius-panel);
+    background: var(--ek-color-surface);
+  }
+  .ps__compare-head {
+    display: none;
+  }
+  .ps__compare-rows {
+    display: flex;
+    flex-direction: column;
+  }
+  .ps__compare-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-4);
+    border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
+  }
+  .ps__compare-rows > :last-child {
+    border-bottom: 0;
+  }
+  .ps__compare-crit {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    color: var(--ek-color-content-strong);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .ps__compare-crit-icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-8);
+    height: var(--ek-space-8);
+    border-radius: var(--ek-radius-md);
+    background: var(--ek-color-surface-muted);
+    color: var(--ek-color-primary-darken-1);
+  }
+  .ps__compare-cell {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--ek-space-1) var(--ek-space-2);
+    padding: var(--ek-space-3);
+    border-radius: var(--ek-radius-lg);
+  }
+  .ps__compare-cell--before {
+    background: var(--ek-color-surface-muted);
+  }
+  .ps__compare-cell--after {
+    border: var(--site-border-width) solid transparent;
+    background:
+      color-mix(in srgb, var(--ek-color-secondary) 10%, var(--ek-color-surface)) padding-box,
+      var(--site-gradient-border) border-box;
+    box-shadow: 0 0 0 calc(var(--site-border-width) * 3) color-mix(in srgb, var(--ek-color-secondary) 10%, transparent);
+  }
+  /* Mobilde etiket kendi satırına düşer (flex-basis 100%); >=768px'te yapışkan başlık üstlenir, gizlenir. */
+  .ps__compare-tag {
+    flex: 1 0 100%;
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .ps__compare-cell--after .ps__compare-tag {
+    color: var(--ek-color-secondary-darken-1);
+  }
+  .ps__compare-icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-6);
+    height: var(--ek-space-6);
+    border-radius: var(--ek-radius-full);
+  }
+  .ps__compare-icon--bad {
+    background: var(--ek-color-error-subtle);
+    color: var(--ek-color-error);
+  }
+  .ps__compare-icon--good {
+    background: var(--ek-color-secondary);
+    color: var(--site-color-on-primary);
+  }
+  .ps__compare-text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+    min-width: 0;
+    padding-top: calc(var(--ek-space-1) * 0.5);
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-sm);
+  }
+  .ps__compare-diff {
+    color: var(--ek-color-content-strong);
+    font-weight: var(--ek-font-weight-bold);
+  }
+  .ps__compare-desc {
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-xs);
+  }
+
+  @media (min-width: 1024px) {
+    .ps__messy,
+    .ps__tidy {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 768px) {
+    .ps__compare-table {
+      overflow: visible;
+    }
+    .ps__compare-head,
+    .ps__compare-row {
+      grid-template-columns: 10rem minmax(0, 1fr) minmax(0, 1.15fr);
+      gap: var(--ek-space-5);
+    }
+    .ps__compare-head {
+      position: sticky;
+      inset-block-start: var(--site-header-height);
+      z-index: 2;
+      display: grid;
+      align-items: center;
+      padding: var(--ek-space-3) var(--ek-space-5);
+      border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
+      border-start-start-radius: var(--site-radius-panel);
+      border-start-end-radius: var(--site-radius-panel);
+      background: var(--ek-color-surface);
+    }
+    .ps__compare-head-cell {
+      color: var(--ek-color-content-muted);
+      font-size: var(--ek-font-size-sm);
+      font-weight: var(--ek-font-weight-semibold);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .ps__compare-head-cell--after {
+      display: flex;
+    }
+    .ps__compare-head-cell--after :global(.logo__mark) {
+      width: var(--ek-space-6);
+      height: var(--ek-space-6);
+    }
+    .ps__compare-head-cell--after :global(.logo__word) {
+      font-size: var(--ek-font-size-lg);
+      background: var(--site-gradient-accent);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .ps__compare-rows > :last-child {
+      border-end-start-radius: var(--site-radius-panel);
+      border-end-end-radius: var(--site-radius-panel);
+    }
+    .ps__compare-row {
+      display: grid;
+      align-items: center;
+      padding: var(--ek-space-3) var(--ek-space-5);
+      border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
+    }
+    .ps__compare-tag {
+      display: none;
+    }
+    .ps__compare-cell {
+      flex-wrap: nowrap;
+      height: 100%;
+    }
+    .ps__compare-text {
+      padding-top: 0;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .ps {
+      grid-template-columns: 1fr 1fr;
+    }
+    .ps__card {
+      padding: var(--ek-space-6);
+    }
+  }
+</style>

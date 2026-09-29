@@ -1,0 +1,297 @@
+---
+/**
+ * Fiyat özeti (ADR-0014 Karar 2, bölüm 7). Sahne: `data-scene="price-emphasis"` (S3 sahne 7) — plan kartları görünür
+ * olunca sırayla yükselir, fiyat rakamı ince bir ölçek vurgusuyla yerine oturur (içerik/etiket değişmez). Kaynak: `getPublicPlans()` — nihai fiyatlar insan kararıdır
+ * (Açık Soru 1); fixture ÖNERİ olduğunda `getPlanSourceNotice()` bölümde görünür. Canlı olmayan özellikler
+ * seçici tarafından zaten elenir. Ayrıntılı tablo/aylık-yıllık anahtarı `/fiyatlandirma` (S4b).
+ */
+import Section from '../Section.astro'
+import SectionHeading from './SectionHeading.astro'
+import Button from '../Button.astro'
+import Badge from '../Badge.astro'
+import Icon from './Icon.astro'
+import { appUrls } from '../../lib/site-config'
+import { getPublicPlans, getPlanSourceNotice, getPublicTrial } from '../../data/plans'
+import { pageHref } from './links'
+
+const plans = getPublicPlans()
+const notice = getPlanSourceNotice()
+const trial = getPublicTrial()
+const pricingHref = pageHref('/fiyatlandirma')
+const contactHref = pageHref('/iletisim')
+const fmt = (n: number) => new Intl.NumberFormat('tr-TR').format(n)
+
+// Vurgulanan plan: ölçek arayan çoğu ekibin ihtiyacı olan orta kademe (sabit fiyatlı planlar arasında en
+// kapsamlı özellik setine sahip olan). Uydurma istatistik/sıralama İDDİASI DEĞİLDİR — yalnızca sayfanın hangi
+// kartı görsel olarak öne çıkaracağına dair bir tasarım kararıdır (seed'deki plan koduna bağlı).
+const RECOMMENDED_PLAN_CODE = 'growth'
+---
+
+<Section id="fiyatlar" labelledby="fiyat-baslik">
+  <SectionHeading
+    id="fiyat-baslik"
+    eyebrow="Fiyatlandırma"
+    title="İşinizin ölçeğine göre planlar"
+    lead="Kanal, ürün varyantı ve kullanıcı sayınıza göre bir plan seçin. Kurumsal ihtiyaçlar için özel teklif hazırlanır."
+  />
+
+  {
+    notice && (
+      <p class="pr__notice" data-testid="plan-notice">
+        <Badge tone="warning">Taslak fiyatlar</Badge>
+        <span>{notice}</span>
+      </p>
+    )
+  }
+
+  <ul class="pr__grid" data-scene="price-emphasis" data-testid="plan-grid">
+    {
+      plans.map((p) => {
+        const recommended = p.code === RECOMMENDED_PLAN_CODE
+        return (
+        <li class="plan" data-part="plan" data-code={p.code} data-tilt data-recommended={recommended ? 'true' : undefined}>
+          {recommended && <span class="plan__glow" data-part="plan-glow" aria-hidden="true"></span>}
+          {recommended && (
+            <span class="plan__badge" data-part="plan-badge">
+              <Badge tone="info">Önerilen</Badge>
+            </span>
+          )}
+          <h3 class="plan__name">{p.name}</h3>
+          <p class="plan__tagline">{p.tagline}</p>
+          <p class="plan__price">
+            {p.priceKind === 'fixed' ? (
+              <span class="plan__amount" data-part="price" data-count={Math.round(p.priceMinor / 100)} data-count-final={p.priceLabel}>
+                {p.priceLabel}
+              </span>
+            ) : (
+              <span class="plan__amount" data-part="price">{p.priceLabel}</span>
+            )}
+            {p.periodLabel && <span class="plan__period">{p.periodLabel}</span>}
+          </p>
+          <p class="plan__vat">{p.vatLabel || 'Size özel hazırlanır'}</p>
+
+          <dl class="plan__limits">
+            {
+              p.limits.map((l) => (
+                <div class="plan__limit">
+                  <dt>{l.label}</dt>
+                  <dd>{l.value === null ? 'Özel limit' : fmt(l.value)}</dd>
+                </div>
+              ))
+            }
+          </dl>
+
+          {
+            p.features.length > 0 && (
+              <ul class="plan__features">
+                {p.features.map((f) => (
+                  <li>
+                    <Icon name="check" size="sm" />
+                    <span>{f.label}</span>
+                  </li>
+                ))}
+              </ul>
+            )
+          }
+
+          <div class="plan__cta">
+            {p.cta === 'trial' && (
+              <>
+                <Button href={appUrls.register({ plan: p.code, interval: p.interval })} variant="primary" data-testid={`plan-cta-${p.code}`}>
+                  Ücretsiz dene
+                </Button>
+                <p class="plan__trial">{trial.days} gün ücretsiz deneme</p>
+              </>
+            )}
+            {p.cta === 'contact' && contactHref && (
+              <Button href={contactHref} variant="secondary" data-testid={`plan-cta-${p.code}`}>Teklif isteyin</Button>
+            )}
+            {p.cta === 'contact' && !contactHref && (
+              <p class="plan__trial">Teklif için iletişim bilgileri sitenin yayın sürümünde yer alacaktır.</p>
+            )}
+          </div>
+        </li>
+        )
+      })
+    }
+  </ul>
+
+  {pricingHref && <p class="pr__more"><a href={pricingHref}>Planları ayrıntılı karşılaştırın</a></p>}
+</Section>
+
+<style>
+  .pr__notice {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ek-space-3);
+    max-width: none;
+    margin-top: var(--ek-space-8);
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-md);
+  }
+  .pr__grid {
+    display: grid;
+    gap: var(--ek-space-5);
+    margin-top: var(--ek-space-8);
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    align-items: stretch;
+  }
+  .plan {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-6);
+    border: var(--site-border-width) solid transparent;
+    border-radius: var(--site-radius-panel);
+    background:
+      var(--site-surface-tint) padding-box,
+      linear-gradient(var(--ek-color-border-default), var(--ek-color-border-default)) border-box;
+    box-shadow: var(--site-shadow-card);
+    /* `transform` (eğim) buraya da eklenir: aksi hâlde bu kuralın `transition` kısayolu `[data-tilt]`'in
+       kısayolunu tamamen geçersiz kılar (kısayol birleşmez) ve eğim geçişsiz "aniden" sıfırlanır. */
+    transition:
+      box-shadow var(--ek-duration-base) var(--ek-easing-standard),
+      background var(--ek-duration-base) var(--ek-easing-standard),
+      translate var(--ek-duration-base) var(--ek-easing-standard),
+      transform var(--tilt-transition-duration, var(--ek-duration-fast)) var(--ek-easing-standard);
+  }
+  .plan:hover {
+    translate: 0 calc(var(--ek-space-1) * -1);
+    background:
+      var(--site-surface-tint) padding-box,
+      var(--site-gradient-border) border-box;
+    box-shadow: var(--site-shadow-card-hover);
+  }
+  /*
+   * Önerilen plan (S10): sabit gradyan kenarlık + hafif yükseltilmiş duruş (yalnızca `translate` — `[data-tilt]`'in
+   * kendi `transform`'uyla çakışmaz) + arkada yumuşak, nefes alan ışıma (`plan__glow`, döngü: scenes-loops.css
+   * `loop-plan-glow`, yalnızca oynatma durumunda ve görünürken çalışır). Rozet üst kenarda taşar.
+   */
+  .plan[data-recommended='true'] {
+    isolation: isolate;
+    border-color: transparent;
+    background:
+      var(--site-surface-tint) padding-box,
+      var(--site-gradient-border) border-box;
+    box-shadow: var(--site-shadow-card-hover);
+  }
+  @media (min-width: 768px) {
+    .plan[data-recommended='true'] {
+      translate: 0 calc(var(--ek-space-3) * -1);
+    }
+    .plan[data-recommended='true']:hover {
+      translate: 0 calc(var(--ek-space-3) * -1 - var(--ek-space-1));
+    }
+  }
+  .plan__glow {
+    position: absolute;
+    inset: calc(var(--ek-space-3) * -1);
+    z-index: -1;
+    border-radius: calc(var(--site-radius-panel) + var(--ek-space-3));
+    background: var(--site-gradient-accent);
+    opacity: 0.3;
+    filter: blur(var(--ek-space-5));
+    pointer-events: none;
+  }
+  .plan__badge {
+    position: absolute;
+    inset-block-start: calc(var(--ek-space-3) * -1);
+    inset-inline: 0;
+    display: flex;
+    justify-content: center;
+  }
+  .plan__name {
+    font-size: var(--ek-font-size-2xl);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .plan__tagline {
+    min-height: 4.5em;
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-md);
+  }
+  .plan__price {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--ek-space-2);
+    margin-top: var(--ek-space-2);
+  }
+  .plan__amount {
+    display: inline-block; /* S3: ince ölçek vurgusu için; satır kutusunu değiştirmez */
+    color: var(--ek-color-content-strong);
+    font-size: var(--site-font-display-sm);
+    font-weight: var(--site-font-display-weight);
+    letter-spacing: var(--site-font-display-tracking);
+    line-height: 1;
+  }
+  .plan__period {
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-lg);
+  }
+  .plan__vat {
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-md);
+  }
+  .plan__limits {
+    display: flex;
+    flex-direction: column;
+    margin: var(--ek-space-3) 0 0;
+    border-top: var(--site-border-width) solid var(--ek-color-border-default);
+  }
+  .plan__limit {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-3) 0;
+    border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
+    font-size: var(--ek-font-size-md);
+  }
+  .plan__limit dt {
+    color: var(--ek-color-content-default);
+  }
+  .plan__limit dd {
+    margin: 0;
+    color: var(--ek-color-content-strong);
+    font-weight: var(--ek-font-weight-semibold);
+    text-align: end;
+  }
+  .plan__features {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-md);
+  }
+  .plan__features li {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ek-space-2);
+  }
+  .plan__features :global(.icon) {
+    margin-top: var(--ek-space-1);
+    color: var(--ek-color-secondary-darken-1);
+  }
+  .plan__cta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    margin-top: auto;
+    padding-top: var(--ek-space-4);
+  }
+  .plan__cta :global(.btn) {
+    width: 100%;
+  }
+  .plan__trial {
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-sm);
+    text-align: center;
+  }
+  .pr__more {
+    margin-top: var(--ek-space-6);
+    max-width: none;
+    font-size: var(--ek-font-size-lg);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+</style>

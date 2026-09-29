@@ -1,0 +1,135 @@
+---
+/**
+ * ComparisonTable — entegrasyonlar arası yetenek karşılaştırması (`/entegrasyonlar`).
+ * Satırlar `CAPABILITY_LABELS` sırasında ve yalnızca en az bir entegrasyonda kayıtlı yetenekler; hücre:
+ * Destekleniyor / Sınırlı / Sunulmuyor. Dar ekranda yatay kaydırılabilir, odaklanabilir bölge (WCAG 2.1.1).
+ */
+import { CAPABILITY_LABELS, type PublicIntegration, type CapabilityKey } from '../../data/integrations'
+
+interface Props {
+  integrations: PublicIntegration[]
+  labelledby: string
+}
+
+const { integrations, labelledby } = Astro.props
+const keys = (Object.keys(CAPABILITY_LABELS) as CapabilityKey[]).filter((k) =>
+  integrations.some((i) => i.capabilities.some((c) => c.key === k)),
+)
+const cellOf = (i: PublicIntegration, k: CapabilityKey) => i.capabilities.find((c) => c.key === k)
+---
+
+<div class="cmp" role="region" aria-labelledby={labelledby} tabindex="0" data-testid="comparison-table">
+  <table class="cmp__table">
+    <thead>
+      <tr>
+        <th scope="col" class="cmp__corner"><span class="sr-only">Yetenek</span></th>
+        {
+          integrations.map((i) => (
+            <th scope="col">
+              <a href={`/entegrasyonlar/${i.code}`}>{i.name}</a>
+            </th>
+          ))
+        }
+      </tr>
+    </thead>
+    <tbody>
+      {
+        keys.map((k) => (
+          <tr>
+            <th scope="row">{CAPABILITY_LABELS[k]}</th>
+            {integrations.map((i) => {
+              const c = cellOf(i, k)
+              return (
+                <td>
+                  {!c && <span class="cmp__none">Sunulmuyor</span>}
+                  {c?.level === 'supported' && (
+                    <span class="cmp__yes">
+                      <span class="cmp__dot" aria-hidden="true" />
+                      {c.levelLabel}
+                    </span>
+                  )}
+                  {c?.level === 'limited' && <span class="cmp__limited">{c.levelLabel}</span>}
+                </td>
+              )
+            })}
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</div>
+
+<style>
+  .cmp {
+    overflow-x: auto;
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-xl);
+    background: var(--ek-color-surface);
+  }
+  .cmp__table {
+    width: 100%;
+    min-width: calc(var(--site-container-narrow) + var(--ek-space-16));
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: var(--ek-font-size-md);
+  }
+  .cmp__table th,
+  .cmp__table td {
+    padding: var(--ek-space-3) var(--ek-space-4);
+    border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
+    text-align: start;
+    vertical-align: middle;
+  }
+  .cmp__table tbody tr:last-child > * {
+    border-bottom: 0;
+  }
+  .cmp__table thead th {
+    background: var(--ek-color-surface-muted);
+    color: var(--ek-color-content-strong);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .cmp__table thead a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .cmp__table thead a:hover {
+    color: var(--ek-color-primary);
+    text-decoration: underline;
+  }
+  .cmp__table tbody th {
+    position: sticky;
+    inset-inline-start: 0;
+    background: var(--ek-color-surface);
+    color: var(--ek-color-content-strong);
+    font-weight: var(--ek-font-weight-medium);
+    white-space: nowrap;
+  }
+  .cmp__corner {
+    position: sticky;
+    inset-inline-start: 0;
+  }
+  .cmp__yes {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    color: var(--ek-color-content-strong);
+    font-weight: var(--ek-font-weight-medium);
+  }
+  .cmp__dot {
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-success);
+  }
+  .cmp__limited {
+    display: inline-flex;
+    padding: var(--ek-space-1) var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-warning-subtle);
+    color: var(--ek-color-content-strong);
+    font-weight: var(--ek-font-weight-medium);
+  }
+  .cmp__none {
+    color: var(--ek-color-content-muted);
+  }
+</style>

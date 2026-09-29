@@ -1,0 +1,282 @@
+---
+/**
+ * Güvenlik ve KVKK özeti (ADR-0014 Karar 2 bölüm 6 + Karar 5 "izinli iddialar"). Kaynak:
+ * `getPublicCapabilities('security')` — yalnızca kanıtlı iddialar; sertifika/veri konumu/uptime iddiası YOK.
+ * S7: sağdaki görsel "istek yolu" (`data-scene="request-guard"`): bir istek sırayla oturum çerezi, yetki kademesi,
+ * varsayılan red ve kiracı veritabanı kontrollerinden geçer — her adım aşağıdaki kartlardaki bir iddiaya karşılık gelir
+ * (oturum çerezi, rol tabanlı erişim, varsayılan red, ayrı veritabanı). Adım etiketleri kısa özetlerdir; ayrıntı ve kanıtlı
+ * ifade kartlardadır. Şifreleme gösterimi (`secret-encryption`) "Yetenekler" bento'sundadır.
+ * Görsel "Örnek akış"tır (aria-hidden); anlam çevredeki metinde ve kartlardadır.
+ */
+import Section from '../Section.astro'
+import SectionHeading from './SectionHeading.astro'
+import Icon from './Icon.astro'
+import { getPublicCapabilities } from '../../data/capabilities'
+import { getPublicFaq } from '../../data/faq'
+import { pageHref } from './links'
+
+const items = getPublicCapabilities('security')
+const detailHref = pageHref('/guvenlik')
+
+const ICONS: Record<string, 'database' | 'lock' | 'key' | 'users' | 'card' | 'shield'> = {
+  'tenant-database': 'database',
+  'secrets-encryption': 'lock',
+  'secrets-masked': 'key',
+  'role-based-access': 'users',
+  'hosted-payment': 'card',
+  'default-deny': 'shield',
+  'session-cookie': 'shield',
+  'integration-resilience': 'shield',
+}
+
+// Kısmi (ödeme) iddiası için dürüst not: SSS kaydındaki son cümle ("...test (sandbox) aşamasında").
+const cardAnswer = getPublicFaq().find((f) => f.id === 'kart-bilgisi')?.answer ?? ''
+const partialNote = cardAnswer.split('. ').slice(-1)[0]
+
+// İstek yolu: kayıt kimliği -> kısa etiket. Yalnızca kayıtta bulunan iddialar gösterilir.
+const GUARDS: Array<{ id: string; icon: 'lock' | 'users' | 'shield' | 'database'; label: string; sub: string }> = [
+  { id: 'session-cookie', icon: 'lock', label: 'Oturum', sub: 'İmzalı belirteç, HTTP-only çerez' },
+  { id: 'role-based-access', icon: 'users', label: 'Yetki kademesi', sub: 'Üye, yönetici, ana yönetici' },
+  { id: 'default-deny', icon: 'shield', label: 'Varsayılan red', sub: 'Tanımlı olmayan işlem reddedilir' },
+  { id: 'tenant-database', icon: 'database', label: 'Müşteri veritabanı', sub: 'Hesabınıza ayrılmış veri' },
+]
+const guards = GUARDS.filter((g) => items.some((i) => i.id === g.id))
+---
+
+<Section tone="stage" id="guvenlik" labelledby="guvenlik-baslik">
+  <div class="sec">
+    <div class="sec__intro">
+      <SectionHeading
+        id="guvenlik-baslik"
+        tone="dark"
+        eyebrow="Güvenlik ve KVKK"
+        title="Anahtarlarınız ve verileriniz için tasarlandı"
+        lead="Pazaryeri anahtarlarınız şifreli saklanır, her müşteri hesabı için ayrı veritabanı kullanılır ve hassas işlemler yetki kademelerine bağlıdır."
+      />
+      {detailHref && <a class="sec__link" href={detailHref}>Güvenlik ayrıntıları <Icon name="arrow" size="sm" /></a>}
+    </div>
+
+    <div class="guard" data-scene="request-guard" aria-hidden="true">
+      <p class="guard__tag">Örnek akış: bir istek nasıl denetlenir</p>
+      <ol class="guard__list">
+        {
+          guards.map((g) => (
+            <li class="guard__step" data-part="guard-step">
+              <span class="guard__icon"><Icon name={g.icon} size="md" /></span>
+              <span class="guard__text">
+                <strong>{g.label}</strong>
+                <span>{g.sub}</span>
+              </span>
+              <span class="guard__ok"><Icon name="check" size="sm" /></span>
+            </li>
+          ))
+        }
+      </ol>
+      <span class="guard__beam" data-part="beam"></span>
+    </div>
+  </div>
+
+  <ul class="sec__grid" data-scene="reveal" data-testid="security-grid">
+    {
+      items.map((i) => (
+        <li class="sec__card" data-part="security-item" data-id={i.id} data-reveal data-tilt>
+          <span class="sec__icon"><Icon name={ICONS[i.id] ?? 'shield'} size="md" /></span>
+          <h3 class="sec__title">{i.title}</h3>
+          <p class="sec__text">{i.summary}</p>
+          {i.status === 'partial' && partialNote && <p class="sec__note">{partialNote}</p>}
+        </li>
+      ))
+    }
+  </ul>
+</Section>
+
+<style>
+  .sec {
+    display: grid;
+    gap: var(--ek-space-10);
+    align-items: center;
+  }
+  .sec__intro {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-5);
+  }
+  .sec__link {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: var(--ek-space-2);
+    min-height: var(--site-tap-target);
+    color: var(--site-color-on-primary);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .sec__link:focus-visible {
+    outline-color: var(--site-color-on-primary);
+  }
+
+  /* --- İstek yolu --- */
+  .guard {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-4);
+    padding: var(--ek-space-6);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--site-radius-panel);
+    background: var(--site-glass-bg);
+    backdrop-filter: blur(var(--site-glass-blur));
+    box-shadow: var(--site-shadow-panel);
+  }
+  .guard__tag {
+    max-width: none;
+    color: var(--site-color-on-primary-muted);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .guard__list {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  /* Adımları birleştiren dikey çizgi */
+  .guard__list::before {
+    content: '';
+    position: absolute;
+    inset-block: var(--ek-space-6);
+    inset-inline-start: calc(var(--ek-space-3) + var(--ek-space-5));
+    width: var(--site-border-width);
+    background: linear-gradient(180deg, var(--ek-color-secondary), var(--site-glass-border));
+  }
+  .guard__step {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-3);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-lg);
+    background: color-mix(in srgb, var(--ek-color-content-strong) 86%, var(--ek-color-primary));
+  }
+  .guard__icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
+    border-radius: var(--ek-radius-md);
+    background: color-mix(in srgb, var(--ek-color-secondary) 24%, transparent);
+    color: var(--site-color-on-primary);
+  }
+  .guard__text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+    min-width: 0;
+    color: var(--site-color-on-primary-muted);
+    font-size: var(--ek-font-size-sm);
+  }
+  .guard__text strong {
+    color: var(--site-color-on-primary);
+    font-size: var(--ek-font-size-lg);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .guard__ok {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-6);
+    height: var(--ek-space-6);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-secondary);
+    color: var(--ek-color-content-strong);
+  }
+  /* Akış ışığı: yalnızca oynatma durumunda hareket eder (scenes-loops.css); statik hâlde görünmez. */
+  .guard__beam {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    height: 30%;
+    background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--ek-color-secondary) 16%, transparent), transparent);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* --- Güvenlik kartları --- */
+  .sec__grid {
+    display: grid;
+    gap: var(--ek-space-5);
+    margin-top: var(--ek-space-16);
+    grid-template-columns: 1fr;
+  }
+  .sec__card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-6);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--site-radius-panel);
+    background: var(--site-glass-bg);
+    /* Cam his: yarı saydam zemin + üstte ince iç kenar ışığı (yalnızca token renkleri). */
+    box-shadow: inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 18%, transparent);
+    /* `transform` (eğim) buraya da eklenir (bkz. PricingSummary.astro aynı not: kısayol birleşmez). */
+    transition:
+      border-color var(--ek-duration-base) var(--ek-easing-standard),
+      background-color var(--ek-duration-base) var(--ek-easing-standard),
+      box-shadow var(--ek-duration-base) var(--ek-easing-standard),
+      translate var(--ek-duration-base) var(--ek-easing-standard),
+      transform var(--tilt-transition-duration, var(--ek-duration-fast)) var(--ek-easing-standard);
+  }
+  .sec__card:hover {
+    translate: 0 calc(var(--ek-space-1) * -1);
+    border-color: color-mix(in srgb, var(--ek-color-secondary) 60%, transparent);
+    background: color-mix(in srgb, var(--ek-color-background) 10%, transparent);
+  }
+  .sec__icon {
+    display: inline-flex;
+    align-self: flex-start;
+    padding: var(--ek-space-2);
+    border-radius: var(--ek-radius-lg);
+    background: color-mix(in srgb, var(--ek-color-secondary) 24%, transparent);
+    color: var(--site-color-on-primary);
+  }
+  /* Aynı 4 seviyeli hiyerarşi token seti (site-tokens.css `--site-card-*`): başlık -> değer cümlesi -> açıklama. */
+  .sec__title {
+    font-size: var(--site-card-title-size);
+    font-weight: var(--site-card-title-weight);
+  }
+  .sec__text {
+    font-size: var(--site-card-value-size);
+    font-weight: var(--site-card-value-weight);
+  }
+  .sec__note {
+    padding-top: var(--ek-space-3);
+    border-top: var(--site-border-width) solid var(--site-glass-border);
+    font-size: var(--site-card-desc-size);
+  }
+
+  @media (min-width: 768px) {
+    .sec__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1024px) {
+    .sec {
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      gap: var(--ek-space-16);
+    }
+    .sec__grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+</style>

@@ -1,0 +1,128 @@
+---
+/**
+ * Bileşen önizleme (yalnızca `SITE_PREVIEW_ROUTES=true` derlemesinde; astro.config.mjs → previewRoutes).
+ * Görsel doğrulama + axe için: her bileşen/varyant tek sayfada. Production'da YOK; her zaman noindex.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro'
+import Section from '../components/Section.astro'
+import Button from '../components/Button.astro'
+import Card from '../components/Card.astro'
+import Badge from '../components/Badge.astro'
+---
+
+<BaseLayout title="Bileşen önizleme" noindex>
+  <Section labelledby="type-title">
+    <h1 id="type-title" class="pv-title">Bileşen önizleme</h1>
+    <p class="pv-note">Tipografi ölçeği, düğmeler, kartlar ve rozetler.</p>
+
+    <h2 class="pv-h2">Display ölçeği</h2>
+    <div class="pv-stack">
+      <p class="d-sm">Display sm</p>
+      <p class="d-md">Display md</p>
+      <p class="d-lg">Display lg</p>
+      <p class="d-xl">Display xl</p>
+      <p>Gövde metni: Türkçe karakterler — ğüşiöç ĞÜŞİÖÇ ı İ. 0123456789 ₺2.490,00</p>
+    </div>
+
+    <h2 class="pv-h2">Düğmeler</h2>
+    <div class="pv-row">
+      <Button variant="primary">Birincil</Button>
+      <Button variant="secondary">İkincil</Button>
+      <Button variant="ghost">Hayalet</Button>
+      <Button variant="primary" size="lg">Büyük birincil</Button>
+      <Button href="/" variant="secondary" size="lg">Bağlantı düğmesi</Button>
+    </div>
+
+    <h2 class="pv-h2">Kartlar ve rozetler</h2>
+    <div class="pv-grid">
+      <Card as="article">
+        <Badge>Nötr</Badge>
+        <h3>Kart başlığı</h3>
+        <p>Kart açıklaması burada yer alır; kenarlıklı, gölgesiz yüzey.</p>
+      </Card>
+      <Card as="article">
+        <Badge tone="info">Bilgi</Badge>
+        <h3>Kart başlığı</h3>
+        <p>Kart açıklaması burada yer alır; kenarlıklı, gölgesiz yüzey.</p>
+      </Card>
+      <Card as="article">
+        <div class="pv-row">
+          <Badge tone="success">Başarılı</Badge>
+          <Badge tone="warning">Yakında</Badge>
+        </div>
+        <h3>Kart başlığı</h3>
+        <p>Kart açıklaması burada yer alır; kenarlıklı, gölgesiz yüzey.</p>
+      </Card>
+    </div>
+  </Section>
+
+  <Section tone="muted" labelledby="muted-title">
+    <h2 id="muted-title" class="pv-h2 pv-h2--first">Muted bölüm</h2>
+    <p>Muted ton: ince kenarlıklı, açık slate zemin.</p>
+  </Section>
+
+  <Section tone="stage" labelledby="stage-title">
+    <h2 id="stage-title" class="pv-h2 pv-h2--first">Stage bölüm</h2>
+    <p class="pv-note">Koyu lacivert degrade zemin, token renklerinden türetilmiş ışıma.</p>
+    <div class="pv-row">
+      <Button variant="inverse" size="lg">Ters birincil</Button>
+      <Button variant="inverse-outline" size="lg">Ters çerçeveli</Button>
+    </div>
+  </Section>
+</BaseLayout>
+
+<style>
+  .pv-title {
+    font-size: var(--site-font-display-md);
+    font-weight: var(--site-font-display-weight);
+    letter-spacing: var(--site-font-display-tracking);
+    line-height: var(--site-font-display-line-height);
+  }
+  .pv-note {
+    margin-top: var(--ek-space-3);
+  }
+  .pv-h2 {
+    margin-block: var(--ek-space-10) var(--ek-space-4);
+    font-size: var(--ek-font-size-2xl);
+  }
+  .pv-h2--first {
+    margin-top: 0;
+  }
+  .pv-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+  }
+  .pv-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ek-space-3);
+  }
+  .pv-grid {
+    display: grid;
+    gap: var(--ek-space-4);
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  }
+  .d-sm,
+  .d-md,
+  .d-lg,
+  .d-xl {
+    font-weight: var(--site-font-display-weight);
+    line-height: var(--site-font-display-line-height);
+    letter-spacing: var(--site-font-display-tracking);
+    color: var(--ek-color-content-strong);
+  }
+  .d-sm {
+    font-size: var(--site-font-display-sm);
+  }
+  .d-md {
+    font-size: var(--site-font-display-md);
+  }
+  .d-lg {
+    font-size: var(--site-font-display-lg);
+  }
+  .d-xl {
+    font-size: var(--site-font-display-xl);
+  }
+</style>

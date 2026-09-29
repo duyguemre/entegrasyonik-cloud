@@ -1,0 +1,214 @@
+---
+/**
+ * /sss — sık sorulan sorular (ADR-0014 Karar 2). Kaynak: `getPublicFaq()` (her cevabın kanıtı `faq.ts`'te).
+ * JS'siz `<details>` akordeonu + `FAQPage` JSON-LD şeması.
+ *
+ * S11: sekiz soru artık üç kategoriye ayrılmış olarak (sticky kategori menüsü + akordeon grupları) sunulur —
+ * `getPublicFaq()` içeriği ve sırası DEĞİŞMEZ (JSON-LD şeması hâlâ orijinal düz diziyi kullanır, yalnızca
+ * görünen akordeonun gruplanması içindir). Bir kategoriye taşınmayan soru olursa derleme zamanında hata verir
+ * (kayıt kaybolmaz).
+ */
+import BaseLayout from '../layouts/BaseLayout.astro'
+import Section from '../components/Section.astro'
+import PageHero from '../components/pages/PageHero.astro'
+import PageMeta from '../components/pages/PageMeta.astro'
+import Accordion from '../components/pages/Accordion.astro'
+import CtaBand from '../components/pages/CtaBand.astro'
+import { getPublicFaq, type PublicFaqItem } from '../data/faq'
+import { breadcrumbJsonLd, faqJsonLd } from '../lib/seo'
+
+const title = 'Sık sorulan sorular'
+const description =
+  'Entegrasyonik hakkında sık sorulan sorular: mevcut entegrasyonlar, aşırı satışın önlenmesi, anahtar saklama, veri ayrımı ve kart bilgileri.'
+const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Sık sorulan sorular' }]
+const items = getPublicFaq()
+
+// Görünen gruplama (yalnızca sunum): JSON-LD ve `items` sırası değişmez. Her kategori en az bir soru taşır;
+// bir kayıt hiçbir kategoriye eklenmemişse derleme zamanında hata verir (kayıt sessizce kaybolmaz).
+const CATEGORIES: Array<{ id: string; heading: string; ids: string[] }> = [
+  { id: 'entegrasyonlar', heading: 'Entegrasyonlar', ids: ['hangi-entegrasyonlar', 'kapsam-ayni-mi', 'kargo-bilgisi'] },
+  { id: 'stok-siparis', heading: 'Stok ve siparişler', ids: ['asiri-satis', 'baglanti-bilgileri'] },
+  { id: 'guvenlik-veri', heading: 'Güvenlik ve veri', ids: ['anahtar-saklama', 'veri-ayrimi', 'kart-bilgisi'] },
+]
+const byId = new Map(items.map((i) => [i.id, i]))
+const categories = CATEGORIES.map((c) => ({
+  ...c,
+  items: c.ids.map((id) => {
+    const item = byId.get(id)
+    if (!item) throw new Error(`SSS: "${id}" kategoriye eklenemedi (faq.ts'te bulunamadı)`)
+    return item
+  }),
+}))
+const categorized = new Set(categories.flatMap((c) => c.ids))
+const uncategorized = items.filter((i) => !categorized.has(i.id))
+if (uncategorized.length > 0) {
+  throw new Error(`SSS: kategorisiz soru kaldı: ${uncategorized.map((i) => i.id).join(', ')}`)
+}
+---
+
+<BaseLayout title={title} description={description}>
+  <PageMeta
+    slot="head"
+    title={title}
+    description={description}
+    jsonLd={[
+      breadcrumbJsonLd([{ label: 'Ana sayfa', path: '/' }, { label: title, path: '/sss' }]),
+      faqJsonLd(items),
+    ]}
+  />
+
+  <PageHero
+    title="Sık sorulan sorular"
+    lead="Entegrasyonik'in ne yaptığı, hangi kanalları kapsadığı ve verilerinizi nasıl ele aldığı hakkında kısa cevaplar."
+    crumbs={crumbs}
+  >
+    <nav class="toc" aria-label="SSS kategorileri">
+      {categories.map((c) => <a href={`#${c.id}`}>{c.heading}</a>)}
+    </nav>
+  </PageHero>
+
+  <Section labelledby="sss-title" class="tight-section">
+    <h2 id="sss-title" class="sr-only">Sorular ve cevaplar</h2>
+    <div class="faq-layout">
+      <nav class="faq-nav" aria-label="Kategoriler">
+        <ul role="list">
+          {categories.map((c) => <li><a href={`#${c.id}`}>{c.heading}</a></li>)}
+        </ul>
+      </nav>
+      <div class="faq-groups">
+        {
+          categories.map((c) => (
+            <section class="faq-group" id={c.id} aria-labelledby={`${c.id}-title`}>
+              <h3 id={`${c.id}-title`}>{c.heading}</h3>
+              <Accordion items={c.items} />
+            </section>
+          ))
+        }
+      </div>
+    </div>
+    <p class="more">
+      Cevabını bulamadığınız bir soru için <a href="/iletisim">bize yazabilirsiniz</a>.
+    </p>
+  </Section>
+
+  <CtaBand
+    id="sss-cta"
+    title="Kendi hesabınızda deneyin"
+    text="Kanallarınızı bağlayın ve ürün, stok ve siparişlerinizi tek panelden yönetin."
+    primary={{ label: 'Entegrasyonları incele', href: '/entegrasyonlar' }}
+    secondary={{ label: 'Güvenlik yaklaşımı', href: '/guvenlik' }}
+  />
+</BaseLayout>
+
+<style>
+  /* Bölümler arası dikey ritim genel olarak sıkılaştırıldı (S11b). */
+  .tight-section:global(.section) {
+    padding-block: calc(var(--site-section-y) * 0.72);
+  }
+  .toc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2) var(--ek-space-3);
+  }
+  .toc a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--site-tap-target);
+    padding-inline: var(--ek-space-4);
+    border: var(--site-border-width) solid var(--site-color-on-primary-muted);
+    border-radius: var(--ek-radius-full);
+    color: var(--site-color-on-primary);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-medium);
+    text-decoration: none;
+    transition:
+      background-color var(--ek-duration-base) var(--ek-easing-standard),
+      border-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .toc a:hover {
+    background: color-mix(in srgb, var(--ek-color-background) 12%, transparent);
+    border-color: var(--site-color-on-primary);
+  }
+  .toc a:focus-visible {
+    outline-color: var(--site-color-on-primary);
+  }
+
+  .faq-layout {
+    display: grid;
+    gap: var(--ek-space-10);
+  }
+  /* Mobil/tablet: kategori menüsü yatay bir şerit (sticky yan sütun için yer yok). */
+  .faq-nav ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2) var(--ek-space-3);
+    margin: 0 0 var(--ek-space-2);
+    padding: 0;
+    list-style: none;
+  }
+  .faq-nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--site-tap-target);
+    padding-inline: var(--ek-space-4);
+    border: var(--site-border-width) solid var(--ek-color-border-strong);
+    border-radius: var(--ek-radius-full);
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-medium);
+    text-decoration: none;
+    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .faq-nav a:hover {
+    border-color: var(--ek-color-primary);
+    color: var(--ek-color-primary);
+  }
+
+  .faq-groups {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-12);
+    min-width: 0;
+  }
+  .faq-group h3 {
+    margin-bottom: var(--ek-space-4);
+    scroll-margin-top: var(--ek-space-16);
+    font-size: var(--site-font-display-sm);
+    font-weight: var(--site-font-display-weight);
+    line-height: var(--site-font-display-line-height);
+    letter-spacing: var(--site-font-display-tracking);
+  }
+
+  .more {
+    margin-top: var(--ek-space-8);
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-lg);
+  }
+
+  @media (min-width: 900px) {
+    .faq-layout {
+      grid-template-columns: minmax(12rem, 15rem) minmax(0, 1fr);
+      align-items: start;
+      gap: var(--ek-space-12);
+    }
+    .faq-nav {
+      position: sticky;
+      top: calc(var(--site-header-height) + var(--ek-space-6));
+    }
+    .faq-nav ul {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .faq-nav a {
+      justify-content: flex-start;
+      border: none;
+      padding-inline: var(--ek-space-3);
+      border-inline-start: var(--ek-space-1) solid var(--ek-color-border-default);
+      border-radius: 0;
+    }
+    .faq-nav a:hover {
+      border-inline-start-color: var(--ek-color-primary);
+      background: var(--ek-color-surface-muted);
+    }
+  }
+</style>

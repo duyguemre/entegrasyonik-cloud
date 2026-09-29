@@ -1,0 +1,2262 @@
+{
+  "_meta": "ADR-0011 Karar 2 / Aşama 1 literal-stil mandalı tabanı. node scripts/check-style-baseline.js --write ile üretildi (bkz. scripts/style-literal-counts.js). Hiçbir dosyada/kategoride sayı ARTAMAZ; yeni dosyalar 0 ile başlamalı; düşüş serbest ama bu dosyanın güncellenmesi gerekir (check-style-baseline.js OK dönene kadar).",
+  "date": "2026-09-29",
+  "totals": {
+    "total": 2217,
+    "hex": 903,
+    "rgb": 247,
+    "inlineStyle": 1051,
+    "cubicBezier": 10,
+    "motion": 6
+  },
+  "files": {
+    "public/assets/css/integrations.css": {
+      "hex": 61,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 61
+    },
+    "public/assets/css/site.css": {
+      "hex": 83,
+      "rgb": 68,
+      "inlineStyle": 0,
+      "cubicBezier": 5,
+      "motion": 1,
+      "total": 157
+    },
+    "src/App.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/BrandIntegrationSelectBoxComponent.vue": {
+      "hex": 2,
+      "rgb": 0,
+      "inlineStyle": 4,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 6
+    },
+    "src/components/BrandListComponent.vue": {
+      "hex": 14,
+      "rgb": 0,
+      "inlineStyle": 13,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 27
+    },
+    "src/components/BrandSyncComponent.vue": {
+      "hex": 2,
+      "rgb": 0,
+      "inlineStyle": 7,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 9
+    },
+    "src/components/CardComponent.vue": {
+      "hex": 0,
+      "rgb": 14,
+      "inlineStyle": 1,
+      "cubicBezier": 0,
+      "motion": 2,
+      "total": 17
+    },
+    "src/components/CategoryIntegrationSelectBoxComponent.vue": {
+      "hex": 6,
+      "rgb": 3,
+      "inlineStyle": 5,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 14
+    },
+    "src/components/CategoryListComponent.vue": {
+      "hex": 9,
+      "rgb": 0,
+      "inlineStyle": 12,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 21
+    },
+    "src/components/CategorySelectBoxLevelComponent.vue": {
+      "hex": 9,
+      "rgb": 13,
+      "inlineStyle": 0,
+      "cubicBezier": 1,
+      "motion": 0,
+      "total": 23
+    },
+    "src/components/CategorySyncComponent.vue": {
+      "hex": 6,
+      "rgb": 3,
+      "inlineStyle": 20,
+      "cubicBezier": 1,
+      "motion": 1,
+      "total": 31
+    },
+    "src/components/CategoryTreeComponent.vue": {
+      "hex": 9,
+      "rgb": 0,
+      "inlineStyle": 27,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 36
+    },
+    "src/components/ChoicesMappingComponent.vue": {
+      "hex": 7,
+      "rgb": 6,
+      "inlineStyle": 8,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 21
+    },
+    "src/components/ChoicesSyncComponent.vue": {
+      "hex": 12,
+      "rgb": 0,
+      "inlineStyle": 22,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 34
+    },
+    "src/components/CustomDialogComponent.vue": {
+      "hex": 4,
+      "rgb": 0,
+      "inlineStyle": 1,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 5
+    },
+    "src/components/HashtagSelectBoxComponent.vue": {
+      "hex": 1,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 1
+    },
+    "src/components/HintComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 1,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 1
+    },
+    "src/components/HorizontalScrollComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 2,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 2
+    },
+    "src/components/IntegrationAvatarComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 3,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 3
+    },
+    "src/components/IntegrationChoiceValuesSelectBoxComponent.vue": {
+      "hex": 2,
+      "rgb": 0,
+      "inlineStyle": 4,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 6
+    },
+    "src/components/LoadingComponent.vue": {
+      "hex": 6,
+      "rgb": 0,
+      "inlineStyle": 7,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 13
+    },
+    "src/components/NoAuthorizationComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 2,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 2
+    },
+    "src/components/PaginationComponent.vue": {
+      "hex": 0,
+      "rgb": 4,
+      "inlineStyle": 8,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 12
+    },
+    "src/components/ScrollComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 3,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 3
+    },
+    "src/components/SnackbarComponent.vue": {
+      "hex": 0,
+      "rgb": 4,
+      "inlineStyle": 3,
+      "cubicBezier": 0,
+      "motion": 1,
+      "total": 8
+    },
+    "src/components/VCurrencyComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/WrapperComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/adminPanel/AdminChatComponent.vue": {
+      "hex": 2,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 2
+    },
+    "src/components/adminPanel/AdminClientCreateComponent.vue": {
+      "hex": 1,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 1
+    },
+    "src/components/adminPanel/AdminClientDetailComponent.vue": {
+      "hex": 3,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 3
+    },
+    "src/components/adminPanel/ClientStatsCard.vue": {
+      "hex": 6,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 6
+    },
+    "src/components/claim/ClaimDetailComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/claim/composables/useClaimActions.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/claim/composables/useClaimFilters.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/common/BrandSelectBoxComponent.vue": {
+      "hex": 3,
+      "rgb": 3,
+      "inlineStyle": 1,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 7
+    },
+    "src/components/common/CategorySelectBoxComponent.vue": {
+      "hex": 4,
+      "rgb": 4,
+      "inlineStyle": 3,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 11
+    },
+    "src/components/customer/CustomerDetailComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/customer/composables/useCustomerActions.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/customer/composables/useCustomerFilters.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/dashboard/DashboardQuickLinkList.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/dashboard/MarketplaceLinksComponent.vue": {
+      "hex": 1,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 1
+    },
+    "src/components/dashboard/NavigationLinksComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/dashboard/NavigationLinksComponentBottom.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/dashboard/NavigationLinksComponentLeft.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/dashboard/NavigationLinksComponentRight.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/dashboard/StatisticsComponent.vue": {
+      "hex": 1,
+      "rgb": 1,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 2
+    },
+    "src/components/ds/EkBrandLogo.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/EkConfirmDialog.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/EkDataTable.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/EkDescriptionList.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/EkDetailSheet.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/EkEmptyState.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/EkErrorState.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/EkFilterBar.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/EkFormDialog.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/EkKpiCard.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/EkKpiRow.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/EkPageHeader.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/EkPageTabs.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/EkPagination.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/EkPlatformMark.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/EkSection.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/EkSkeleton.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/EkStatusChip.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/EkToastHost.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/templates/EkListPage.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/templates/EkReadonlyPanelTemplate.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/templates/EkSettingsSection.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/templates/EkSettingsTemplate.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/templates/EkWizardTemplate.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/integrations/IntegrationComingSoonPanel.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/integrations/IntegrationFormFrame.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/integrations/IntegrationPlatformRail.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/integrations/ecommerce/AnkaETicaretComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/integrations/ecommerce/ETicaretSoftComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/integrations/ecommerce/IdeasoftComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/integrations/ecommerce/OpencartComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/integrations/ecommerce/ShopifyComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/integrations/ecommerce/TicimaxComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/integrations/ecommerce/WixComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/integrations/ecommerce/WooCommerceComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/integrations/einvoice/ELogoComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/integrations/einvoice/GelirIdaresiComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/integrations/einvoice/TrendyolEFaturamComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/integrations/einvoice/TurkcellESirketComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/integrations/erp/BizimhesapComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/integrations/marketplace/HepsiburadaComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/integrations/marketplace/N11Component.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/integrations/marketplace/PazaramaComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/integrations/marketplace/TrendyolComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/integrations/shipment/ArasComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/integrations/shipment/HepsijetComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/integrations/shipment/MNGComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/integrations/shipment/OplogComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/integrations/shipment/PttComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/integrations/shipment/SendeoComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/integrations/shipment/SuratComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/integrations/shipment/UPSComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/integrations/shipment/YurticiComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/invoice/CreateInvoiceComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/invoice/InvoiceDetailComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/layout/ActionDialogComponent.vue": {
+      "hex": 10,
+      "rgb": 5,
+      "inlineStyle": 3,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 18
+    },
+    "src/components/layout/ApplicationBar.vue": {
+      "hex": 0,
+      "rgb": 14,
+      "inlineStyle": 13,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 27
+    },
+    "src/components/layout/BatchProcessMenu.vue": {
+      "hex": 7,
+      "rgb": 4,
+      "inlineStyle": 2,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 13
+    },
+    "src/components/layout/ConfirmationDialogComponent.vue": {
+      "hex": 1,
+      "rgb": 6,
+      "inlineStyle": 4,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 11
+    },
+    "src/components/layout/DividerComponent.vue": {
+      "hex": 0,
+      "rgb": 3,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 3
+    },
+    "src/components/layout/EkCommandPalette.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/layout/EmptyState.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 1,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 1
+    },
+    "src/components/layout/NavigationMenu.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 1,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 1
+    },
+    "src/components/layout/NavigationRail.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/layout/StoreLogoAvatar.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/layout/WorkplaceTabSwitcher.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/layout/messageParts.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/logListView/DetailedExportLogReport.vue": {
+      "hex": 45,
+      "rgb": 8,
+      "inlineStyle": 18,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 71
+    },
+    "src/components/logListView/DetailedImportLogReport.vue": {
+      "hex": 64,
+      "rgb": 5,
+      "inlineStyle": 53,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 122
+    },
+    "src/components/logListView/DetailedImportLogReportMissingAttribute.vue": {
+      "hex": 17,
+      "rgb": 3,
+      "inlineStyle": 6,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 26
+    },
+    "src/components/logListView/DetailedImportLogReportMissingCategory.vue": {
+      "hex": 10,
+      "rgb": 0,
+      "inlineStyle": 2,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 12
+    },
+    "src/components/logListView/ExportLogList.vue": {
+      "hex": 15,
+      "rgb": 5,
+      "inlineStyle": 53,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 73
+    },
+    "src/components/logListView/ImportLogList.vue": {
+      "hex": 23,
+      "rgb": 3,
+      "inlineStyle": 24,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 50
+    },
+    "src/components/login/AuthShell.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/login/LoginComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/message/MessageDetailComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/order/BarcodePrintComponent.vue": {
+      "hex": 6,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 6
+    },
+    "src/components/order/ManualInvoiceComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/order/ManualShipmentComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/order/OrderDetailComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/order/composables/useOrderActions.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/order/composables/useOrderCancel.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/order/composables/useOrderFilters.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/platforms/PlatformImageComponent.vue": {
+      "hex": 3,
+      "rgb": 2,
+      "inlineStyle": 7,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 12
+    },
+    "src/components/productDefinitions/crud/CategoryNameComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 4,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 4
+    },
+    "src/components/productDefinitions/crud/ImageUploaderComponent.vue": {
+      "hex": 14,
+      "rgb": 0,
+      "inlineStyle": 6,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 20
+    },
+    "src/components/productDefinitions/crud/PlatformPriceComponent.vue": {
+      "hex": 1,
+      "rgb": 0,
+      "inlineStyle": 20,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 21
+    },
+    "src/components/productDefinitions/crud/ProductCompetitivePricesComponent.vue": {
+      "hex": 1,
+      "rgb": 0,
+      "inlineStyle": 3,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 4
+    },
+    "src/components/productDefinitions/crud/ProductImagesComponent.vue": {
+      "hex": 16,
+      "rgb": 0,
+      "inlineStyle": 23,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 39
+    },
+    "src/components/productDefinitions/products/BatchActions/BatchActionsRootComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/productDefinitions/products/BatchActions/subcomponents/BatchActionMenu.vue": {
+      "hex": 0,
+      "rgb": 1,
+      "inlineStyle": 14,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 15
+    },
+    "src/components/productDefinitions/products/BatchActions/subcomponents/BatchDeleteDialog.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 2,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 2
+    },
+    "src/components/productDefinitions/products/BatchActions/subcomponents/BatchProcessDialog.vue": {
+      "hex": 6,
+      "rgb": 1,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 7
+    },
+    "src/components/productDefinitions/products/BatchActions/useBatchActions.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/productDefinitions/products/ProductAdvancedSearchComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/productDefinitions/products/ProductBatchProcessComponent.vue": {
+      "hex": 6,
+      "rgb": 0,
+      "inlineStyle": 14,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 20
+    },
+    "src/components/productDefinitions/products/ProductImageComponent.vue": {
+      "hex": 3,
+      "rgb": 0,
+      "inlineStyle": 3,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 6
+    },
+    "src/components/productDefinitions/products/ProductTransferComponent.vue": {
+      "hex": 10,
+      "rgb": 0,
+      "inlineStyle": 23,
+      "cubicBezier": 1,
+      "motion": 0,
+      "total": 34
+    },
+    "src/components/productDefinitions/variants/ProductBatchProcessVariantComponent.vue": {
+      "hex": 4,
+      "rgb": 0,
+      "inlineStyle": 16,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 20
+    },
+    "src/components/productDefinitions/variants/ProductBatchVariantAttributesComponent.vue": {
+      "hex": 22,
+      "rgb": 0,
+      "inlineStyle": 36,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 58
+    },
+    "src/components/productDefinitions/variants/ProductBatchVariantPlatformPricesComponent.vue": {
+      "hex": 13,
+      "rgb": 0,
+      "inlineStyle": 10,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 23
+    },
+    "src/components/productDefinitions/variants/ProductDetailsComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 2,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 2
+    },
+    "src/components/productDefinitions/variants/ProductSearchVariantComponent.vue": {
+      "hex": 5,
+      "rgb": 0,
+      "inlineStyle": 18,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 23
+    },
+    "src/components/productDefinitions/variants/ProductSingleVariantComponent.vue": {
+      "hex": 1,
+      "rgb": 0,
+      "inlineStyle": 19,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 20
+    },
+    "src/components/productDefinitions/variants/ProductVariantAttributesComponent.vue": {
+      "hex": 27,
+      "rgb": 0,
+      "inlineStyle": 44,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 71
+    },
+    "src/components/productDefinitions/variants/ProductVariantGeneratorComponent.vue": {
+      "hex": 4,
+      "rgb": 1,
+      "inlineStyle": 8,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 13
+    },
+    "src/components/productDefinitions/variants/ProductVariantImageComponent.vue": {
+      "hex": 3,
+      "rgb": 0,
+      "inlineStyle": 3,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 6
+    },
+    "src/components/productDefinitions/variants/ProductVariantImageEditComponent.vue": {
+      "hex": 3,
+      "rgb": 0,
+      "inlineStyle": 3,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 6
+    },
+    "src/components/productDefinitions/variants/ProductVariantImagesComponent.vue": {
+      "hex": 20,
+      "rgb": 0,
+      "inlineStyle": 30,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 50
+    },
+    "src/components/productDefinitions/variants/ProductVariantListComponent.vue": {
+      "hex": 22,
+      "rgb": 5,
+      "inlineStyle": 66,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 93
+    },
+    "src/components/productDefinitions/variants/ProductVariantListTooltipComponent.vue": {
+      "hex": 34,
+      "rgb": 3,
+      "inlineStyle": 3,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 40
+    },
+    "src/components/productDefinitions/variants/ProductVariantPlatformPricesComponent.vue": {
+      "hex": 2,
+      "rgb": 0,
+      "inlineStyle": 2,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 4
+    },
+    "src/components/productDefinitions/variants/ProductVariantsComponent.vue": {
+      "hex": 9,
+      "rgb": 9,
+      "inlineStyle": 113,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 131
+    },
+    "src/components/productDefinitions/variants/platformInfos/HepsiburadaVariantInfoComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 2,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 2
+    },
+    "src/components/productDefinitions/variants/platformInfos/IdeasoftVariantInfoComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 3,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 3
+    },
+    "src/components/productDefinitions/variants/platformInfos/N11VariantInfoComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 2,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 2
+    },
+    "src/components/productDefinitions/variants/platformInfos/PazaramaVariantInfoComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 4,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 4
+    },
+    "src/components/productDefinitions/variants/platformInfos/TrendyolVariantInfoComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 2,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 2
+    },
+    "src/components/productDefinitions/variants/platformInfos/VariantInfoComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 2,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 2
+    },
+    "src/components/ticket/TicketCreateDialog.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ticket/TicketDetailComponent.vue": {
+      "hex": 11,
+      "rgb": 0,
+      "inlineStyle": 3,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 14
+    },
+    "src/components/ticket/composables/useTicketActions.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ticket/composables/useTicketFilters.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/user/NotificationDrawerComponent.vue": {
+      "hex": 31,
+      "rgb": 7,
+      "inlineStyle": 6,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 44
+    },
+    "src/components/user/UserAddComponent.vue": {
+      "hex": 0,
+      "rgb": 3,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 3
+    },
+    "src/components/utility/BatchMenuComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 1,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 1
+    },
+    "src/components/utility/ExpandComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/utility/ReportMenuComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 1,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 1
+    },
+    "src/composables/barcode.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/composables/clientLogTransport.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/composables/errorReporting.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/composables/format.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/composables/formrules.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/composables/integrations.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/composables/logger.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/composables/opentab.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/composables/priceCalculator.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/composables/restapi.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/composables/site/communication.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/composables/useLifecycle.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/composables/useOnboarding.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/composables/useShellBreakpoints.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/composables/useToast.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/composables/user.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/config/env.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/config/siteLinks.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/design/app.css": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/design/echarts-theme.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/design/status-map.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/design/vuetify-defaults.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/design/vuetify-font-overrides.css": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/design/vuetify-overrides.css": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/design/vuetify-theme.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/layouts/SecureLayout.vue": {
+      "hex": 0,
+      "rgb": 1,
+      "inlineStyle": 14,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 15
+    },
+    "src/layouts/UnsecureLayout.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/main.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/navigation/registerIntent.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/navigation/screens.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/navigation/sections.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/plugins/i18n.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/plugins/index.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/plugins/vuetify.ts": {
+      "hex": 1,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 1
+    },
+    "src/registerServiceWorker.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/router/index.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/stores/brandsStore.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/stores/categoriesStore.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/stores/choicesStore.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/stores/context.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/stores/ecommerce.ts": {
+      "hex": 8,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 8
+    },
+    "src/stores/einvoice.ts": {
+      "hex": 4,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 4
+    },
+    "src/stores/hashtagsStore.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/stores/integrationStore.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/stores/loadingStore.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/stores/marketplace.ts": {
+      "hex": 8,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 8
+    },
+    "src/stores/notificationDrawer.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/stores/resetRegistry.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/stores/sidebar.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/stores/site/attributeMapping.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/stores/site/menu.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/stores/snackbarStore.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/stores/staticsStore.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/stores/theme.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/stores/workspace.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/types/ClaimTypes.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/types/InvoiceTypes.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/types/MessageTypes.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/types/OrderTypes.ts": {
+      "hex": 2,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 2
+    },
+    "src/types/PlatformProcess.ts": {
+      "hex": 6,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 6
+    },
+    "src/types/TicketTypes.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/utils/escapeHtml.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/utils/oauthPopup.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/views/secure/ClaimListView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/views/secure/CustomerListView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/views/secure/DashboardView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/views/secure/FinancialListView.vue": {
+      "hex": 24,
+      "rgb": 6,
+      "inlineStyle": 15,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 45
+    },
+    "src/views/secure/InvoiceListView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/views/secure/LogListView.vue": {
+      "hex": 1,
+      "rgb": 1,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 2
+    },
+    "src/views/secure/MessageListView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/views/secure/OrderListView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/views/secure/PrintoutListView.vue": {
+      "hex": 14,
+      "rgb": 0,
+      "inlineStyle": 20,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 34
+    },
+    "src/views/secure/SettingListView.vue": {
+      "hex": 14,
+      "rgb": 13,
+      "inlineStyle": 2,
+      "cubicBezier": 1,
+      "motion": 1,
+      "total": 31
+    },
+    "src/views/secure/adminPanel/AdminClientListView.vue": {
+      "hex": 2,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 2
+    },
+    "src/views/secure/adminPanel/AdminSystemManagementView.vue": {
+      "hex": 9,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 9
+    },
+    "src/views/secure/adminPanel/AdminTicketListView.vue": {
+      "hex": 5,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 5
+    },
+    "src/views/secure/adminPanel/AdminView.vue": {
+      "hex": 13,
+      "rgb": 3,
+      "inlineStyle": 9,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 25
+    },
+    "src/views/secure/definitions/BrandDefinitionView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 2,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 2
+    },
+    "src/views/secure/definitions/CategoryDefinitionView.vue": {
+      "hex": 1,
+      "rgb": 0,
+      "inlineStyle": 1,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 2
+    },
+    "src/views/secure/definitions/CustomerDefinitionView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 2,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 2
+    },
+    "src/views/secure/definitions/HashtagDefinitionView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 2,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 2
+    },
+    "src/views/secure/definitions/InvoiceDefinitionView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 2,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 2
+    },
+    "src/views/secure/definitions/OptionDefinitionView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 2,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 2
+    },
+    "src/views/secure/definitions/OrderDefinitionView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 2,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 2
+    },
+    "src/views/secure/definitions/ProductDefinitionView.vue": {
+      "hex": 1,
+      "rgb": 0,
+      "inlineStyle": 18,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 19
+    },
+    "src/views/secure/definitions/ProductUpdateView.vue": {
+      "hex": 1,
+      "rgb": 0,
+      "inlineStyle": 18,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 19
+    },
+    "src/views/secure/definitions/ReturnDefinitionView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 2,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 2
+    },
+    "src/views/secure/integrations/ECommerceView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/views/secure/integrations/EInvoiceView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/views/secure/integrations/ErpView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/views/secure/integrations/MarketplaceView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/views/secure/integrations/ShippingView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/views/secure/productDefinitions/BrandListView.vue": {
+      "hex": 1,
+      "rgb": 0,
+      "inlineStyle": 3,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 4
+    },
+    "src/views/secure/productDefinitions/CategoryListView.vue": {
+      "hex": 1,
+      "rgb": 0,
+      "inlineStyle": 3,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 4
+    },
+    "src/views/secure/productDefinitions/ChoiceListView.vue": {
+      "hex": 9,
+      "rgb": 0,
+      "inlineStyle": 13,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 22
+    },
+    "src/views/secure/productDefinitions/HashtagListView.vue": {
+      "hex": 41,
+      "rgb": 0,
+      "inlineStyle": 14,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 55
+    },
+    "src/views/secure/productDefinitions/ProductListView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 2,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 2
+    },
+    "src/views/secure/productDefinitions/TEST.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 13,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 13
+    },
+    "src/views/secure/supports/TicketListView.vue": {
+      "hex": 6,
+      "rgb": 4,
+      "inlineStyle": 15,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 25
+    },
+    "src/views/secure/user/AuthorizationListView.vue": {
+      "hex": 8,
+      "rgb": 8,
+      "inlineStyle": 3,
+      "cubicBezier": 1,
+      "motion": 0,
+      "total": 20
+    },
+    "src/views/secure/user/ChangePasswordView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 6,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 6
+    },
+    "src/views/secure/user/ExitView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/views/secure/user/InvoiceInfoView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 13,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 13
+    },
+    "src/views/secure/user/SubscriptionView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/views/unsecure/LoginView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/views/unsecure/ResetPasswordView.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/vite-env.d.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    }
+  }
+}

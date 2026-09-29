@@ -1,0 +1,74 @@
+[
+  {
+    "id": 42,
+    "code": "DHLMP",
+    "name": "DHL",
+    "taxnumber": "951-241-77-13"
+  },
+  {
+    "id": 38,
+    "code": "SENDEOMP",
+    "name": "Sendeo",
+    "taxnumber": "2910804196"
+  },
+  {
+    "id": 30,
+    "code": "BORMP",
+    "name": "Borusan Lojistik",
+    "taxnumber": "1800038254"
+  },
+  {
+    "id": 14,
+    "code": "CAIMP",
+    "name": "Cainiao",
+    "taxnumber": "0"
+  },
+  {
+    "id": 10,
+    "code": "MNGMP",
+    "name": "MNG Kargo",
+    "taxnumber": "6080712084"
+  },
+  {
+    "id": 19,
+    "code": "PTTMP",
+    "name": "PTT Kargo",
+    "taxnumber": "7320068060"
+  },
+  {
+    "id": 9,
+    "code": "SURATMP",
+    "name": "Sürat Kargo",
+    "taxnumber": "7870233582"
+  },
+  {
+    "id": 17,
+    "code": "TEXMP",
+    "name": "Trendyol Express",
+    "taxnumber": "8590921777"
+  },
+  {
+    "id": 6,
+    "code": "HOROZMP",
+    "name": "Horoz Kargo",
+    "taxnumber": "4630097122"
+  },
+  {
+    "id": 20,
+    "code": "CEVAMP",
+    "name": "CEVA",
+    "taxnumber": "8450298557"
+  },
+  {
+    "id": 4,
+    "code": "YKMP",
+    "name": "Yurtiçi Kargo",
+    "taxnumber": "3130557669"
+  },
+  {
+    "id": 7,
+    "code": "ARASMP",
+    "name": "Aras Kargo",
+    "taxnumber": "720039666"
+  }
+]

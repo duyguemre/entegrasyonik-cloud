@@ -1,0 +1,382 @@
+---
+/**
+ * /guvenlik — doğrulanabilir güvenlik anlatısı (ADR-0014 Karar 5). Yalnızca `getPublicCapabilities('security')`
+ * kayıtları (her biri kodda/ADR'de kanıtlı; kanıtlar `tests/claims.test.ts` ile doğrulanır). Sertifika/uyumluluk,
+ * veri konumu ve SLA iddiası YOKTUR. KVKK bağlantısı yalnızca ilgili yasal sayfa `published` ise verilir (S5).
+ */
+import BaseLayout from '../layouts/BaseLayout.astro'
+import Section from '../components/Section.astro'
+import Badge from '../components/Badge.astro'
+import Icon from '../components/home/Icon.astro'
+import PageHero from '../components/pages/PageHero.astro'
+import PageMeta from '../components/pages/PageMeta.astro'
+import CtaBand from '../components/pages/CtaBand.astro'
+import { getPublicCapabilities, type PublicProductCapability } from '../data/capabilities'
+import { legalNav, published } from '../data/navigation'
+import { breadcrumbJsonLd } from '../lib/seo'
+import { appUrls } from '../lib/site-config'
+
+const title = 'Güvenlik'
+const description =
+  'Entegrasyonik güvenlik yaklaşımı: müşteri başına ayrı veritabanı, şifreli entegrasyon anahtarları, rol tabanlı erişim, HTTP-only oturum çerezi ve dayanıklılık katmanı.'
+const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Güvenlik' }]
+
+const security = getPublicCapabilities('security')
+
+// İstek yolu + şifreleme diyagramı (S11): kayıtta bulunan iddialar dışında adım eklenmez.
+const ICONS: Record<string, 'lock' | 'users' | 'shield' | 'database' | 'key'> = {
+  'session-cookie': 'lock',
+  'role-based-access': 'users',
+  'default-deny': 'shield',
+  'secrets-encryption': 'key',
+  'tenant-database': 'database',
+}
+const FLOW_STEPS: Array<{ id: string; label: string; sub: string }> = [
+  { id: 'session-cookie', label: 'Oturum doğrulanır', sub: 'İmzalı belirteç, HTTP-only çerez' },
+  { id: 'role-based-access', label: 'Yetki kademesi kontrol edilir', sub: 'Üye, yönetici, ana yönetici' },
+  { id: 'default-deny', label: 'Tanımsız işlem reddedilir', sub: 'Varsayılan: red' },
+  { id: 'secrets-encryption', label: 'Anahtar şifresi çözülür', sub: 'AES-256-GCM, yalnızca sunucuda' },
+  { id: 'tenant-database', label: 'Müşteri veritabanına ulaşır', sub: 'Hesabınıza ayrılmış veri' },
+]
+const flow = FLOW_STEPS.filter((s) => security.some((i) => i.id === s.id))
+
+/** Kayıtları temalara böler; hiçbir kayıt kaybolmasın diye tanımsız olanlar "Diğer" başlığına düşer. */
+const themes: Array<{ id: string; heading: string; lead: string; ids: string[] }> = [
+  { id: 'veri', heading: 'Verileriniz', lead: 'Her müşteri hesabının verisi ayrı tutulur.', ids: ['tenant-database'] },
+  {
+    id: 'anahtarlar',
+    heading: 'Entegrasyon anahtarlarınız',
+    lead: 'Pazaryeri ve entegrasyon kimlik bilgileri hassas veri olarak ele alınır.',
+    ids: ['secrets-encryption', 'secrets-masked'],
+  },
+  {
+    id: 'erisim',
+    heading: 'Erişim ve oturum',
+    lead: 'Kimin neyi yapabileceği sunucuda denetlenir.',
+    ids: ['role-based-access', 'default-deny', 'session-cookie'],
+  },
+  { id: 'odeme', heading: 'Ödeme', lead: 'Kart verisi sistemlerimizden geçmeyecek şekilde tasarlanmıştır.', ids: ['hosted-payment'] },
+  {
+    id: 'dayaniklilik',
+    heading: 'Dayanıklılık',
+    lead: 'Dış sistemlerle konuşurken geçici hatalara karşı koruma.',
+    ids: ['integration-resilience'],
+  },
+]
+const claimed = new Set(themes.flatMap((t) => t.ids))
+const rest = security.filter((c) => !claimed.has(c.id))
+const groups = [
+  ...themes.map((t) => ({ ...t, items: t.ids.map((id) => security.find((c) => c.id === id)).filter((c): c is PublicProductCapability => !!c) })),
+  ...(rest.length > 0 ? [{ id: 'diger', heading: 'Diğer', lead: '', ids: [], items: rest }] : []),
+].filter((g) => g.items.length > 0)
+
+const kvkk = published(legalNav).find((i) => i.href === '/yasal/kvkk-aydinlatma')
+const privacy = published(legalNav).find((i) => i.href === '/yasal/gizlilik')
+
+// Tek kartlık temalar (ör. "Veriler", "Ödeme") tam genişlikte kendi satırında yalnız kalınca büyük bir yan
+// boşluk bırakıyordu (S11 — özellikler/entegrasyonlar sayfalarındaki aynı düzeltme). Ardışık küçük (≤2 kart)
+// temalar tek satırda kümelenir; zengin temalar (ör. "Erişim ve oturum") kendi satırında kalır.
+const SMALL_THEME_MAX = 2
+type Group = (typeof groups)[number]
+const groupRows: Group[][] = []
+for (const g of groups) {
+  const prevRow = groupRows[groupRows.length - 1]
+  const prevIsSmall = prevRow && prevRow.length === 1 && prevRow[0].items.length <= SMALL_THEME_MAX
+  if (prevIsSmall && g.items.length <= SMALL_THEME_MAX) prevRow.push(g)
+  else groupRows.push([g])
+}
+---
+
+<BaseLayout title={title} description={description}>
+  <PageMeta
+    slot="head"
+    title={title}
+    description={description}
+    jsonLd={[breadcrumbJsonLd([{ label: 'Ana sayfa', path: '/' }, { label: title, path: '/guvenlik' }])]}
+  />
+
+  <PageHero
+    title="Güvenlik"
+    lead="Bu sayfa yalnızca yazılımda uygulanmış ve doğrulanabilir güvenlik özelliklerini anlatır. Her madde kodda veya mimari kararlarda karşılığı olan bir davranışa dayanır."
+    crumbs={crumbs}
+  >
+    <Fragment slot="visual">
+      <div class="hero-visual">
+        <span class="hero-visual__icon"><Icon name="shield" size="lg" /></span>
+        <span class="hero-visual__icon hero-visual__icon--accent"><Icon name="lock" size="md" /></span>
+      </div>
+      <p class="stat-panel__caption">Anahtarlarınız ve verileriniz için tasarlandı.</p>
+    </Fragment>
+  </PageHero>
+
+  <Section labelledby="akis-title" tone="stage" class="tight-section">
+    <div class="head head--dark">
+      <h2 id="akis-title">Bir istek nasıl denetlenir</h2>
+      <p>Panelden yapılan bir işlem sunucuya ulaştığında sırayla şu kontrollerden geçer.</p>
+    </div>
+    <ol class="flow" data-testid="request-flow">
+      {
+        flow.map((s) => (
+          <li class="flow__step">
+            <span class="flow__icon"><Icon name={ICONS[s.id]} size="md" /></span>
+            <span class="flow__text">
+              <strong>{s.label}</strong>
+              <span>{s.sub}</span>
+            </span>
+          </li>
+        ))
+      }
+    </ol>
+  </Section>
+
+  <Section labelledby="claim-groups-title" tone="stage" class="tight-section">
+    <h2 id="claim-groups-title" class="sr-only">Güvenlik iddiaları</h2>
+    {
+      groupRows.map((row, index) => (
+        <div class:list={['claim-row', { 'claim-row--cluster': row.length > 1 }]} data-first={index === 0 ? 'true' : undefined}>
+          {row.map((g) => (
+            <div class="claim-group" id={g.id}>
+              <div class="head head--dark">
+                <h3 id={`${g.id}-title`}>{g.heading}</h3>
+                {g.lead && <p>{g.lead}</p>}
+              </div>
+              <ul class="grid" role="list">
+                {g.items.map((c) => (
+                  <li>
+                    <article class="sec-card" aria-labelledby={`sec-${c.id}`} data-testid="security-claim" data-claim={c.id} data-tilt>
+                      <div class="sec-card__head">
+                        <h4 id={`sec-${c.id}`}>{c.title}</h4>
+                        {c.status === 'partial' && <Badge tone="warning">{c.statusLabel}</Badge>}
+                      </div>
+                      <p>{c.summary}</p>
+                      {c.caveat && <p class="sec-card__caveat">{c.caveat}</p>}
+                    </article>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      ))
+    }
+  </Section>
+
+  <Section labelledby="kapsam-title" size="narrow" class="tight-section">
+    <div class="head">
+      <h2 id="kapsam-title">Kapsam ve KVKK</h2>
+    </div>
+    <div class="prose">
+      <p>
+        Bu sayfa bir sertifikasyon veya bağımsız denetim belgesi değildir; yalnızca ürünün uyguladığı teknik önlemleri özetler.
+        Sunulan tüm bilgiler ürünün mevcut sürümüne aittir.
+      </p>
+      {
+        kvkk ? (
+          <p>
+            Kişisel verilerin işlenmesine ilişkin ayrıntılar için <a href={kvkk.href}>{kvkk.label}</a>
+            {privacy ? (
+              <>
+                {' '}ve <a href={privacy.href}>{privacy.label}</a>
+              </>
+            ) : null}
+            {' '}sayfalarına bakabilirsiniz.
+          </p>
+        ) : (
+          <p data-testid="kvkk-pending">KVKK aydınlatma metni ve gizlilik politikası yayımlandığında bu sayfadan erişilebilecektir.</p>
+        )
+      }
+    </div>
+  </Section>
+
+  <CtaBand
+    id="guvenlik-cta"
+    title="Sorularınız için bize yazın"
+    text="Güvenlik yaklaşımımıza dair ek bilgi istiyorsanız iletişim sayfasından bize ulaşabilirsiniz."
+    primary={{ label: 'İletişim', href: '/iletisim' }}
+    secondary={{ label: 'Sık sorulan sorular', href: '/sss' }}
+  />
+</BaseLayout>
+
+<script>
+  import '../scripts/interactions'
+</script>
+
+<style>
+  /* Bölümler arası dikey ritim genel olarak sıkılaştırıldı (S11b). */
+  .tight-section:global(.section) {
+    padding-block: calc(var(--site-section-y) * 0.72);
+  }
+  .head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    margin-bottom: var(--ek-space-8);
+  }
+  .head h2,
+  .head h3 {
+    font-size: var(--site-font-display-sm);
+    font-weight: var(--site-font-display-weight);
+    line-height: var(--site-font-display-line-height);
+    letter-spacing: var(--site-font-display-tracking);
+  }
+  .head p {
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-lg);
+  }
+  /* Koyu sahnede Section'ın genel `p` rengi zaten açık (site-color-on-primary-muted); burada özgüllükle korunur. */
+  .head.head--dark p {
+    color: var(--site-color-on-primary-muted);
+  }
+
+  /* --- Hero görsel --- */
+  .hero-visual {
+    display: flex;
+    justify-content: center;
+    gap: var(--ek-space-4);
+  }
+  .hero-visual__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(var(--ek-space-16) * 0.9);
+    height: calc(var(--ek-space-16) * 0.9);
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-secondary) 20%, transparent);
+    color: var(--site-color-on-primary);
+  }
+  .hero-visual__icon--accent {
+    align-self: flex-end;
+    width: var(--ek-space-12);
+    height: var(--ek-space-12);
+    background: var(--ek-color-secondary);
+    color: var(--ek-color-content-strong);
+  }
+  .stat-panel__caption {
+    margin: var(--ek-space-5) 0 0;
+    text-align: center;
+    color: var(--site-color-on-primary-muted);
+    font-size: var(--ek-font-size-sm);
+  }
+
+  /* --- İstek yolu --- */
+  .flow {
+    display: grid;
+    gap: var(--ek-space-4);
+    grid-template-columns: 1fr;
+  }
+  .flow__step {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-4);
+    padding: var(--ek-space-5);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--site-radius-panel);
+    background: var(--site-glass-bg);
+    backdrop-filter: blur(var(--site-glass-blur));
+    -webkit-backdrop-filter: blur(var(--site-glass-blur));
+  }
+  .flow__icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
+    border-radius: var(--ek-radius-md);
+    background: color-mix(in srgb, var(--ek-color-secondary) 24%, transparent);
+    color: var(--site-color-on-primary);
+  }
+  .flow__text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+    color: var(--site-color-on-primary-muted);
+    font-size: var(--ek-font-size-sm);
+  }
+  .flow__text strong {
+    color: var(--site-color-on-primary);
+    font-size: var(--ek-font-size-lg);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+
+  /* --- İddia grupları: cam kartlar (S11) --- */
+  .claim-row + .claim-row {
+    margin-top: var(--ek-space-16);
+    padding-top: var(--ek-space-16);
+    border-top: var(--site-border-width) solid var(--site-glass-border);
+  }
+  /* Ardışık küçük temalar (≤2 kart) yan yana kümelenir — tek başına kalan tema sağda boşluk bırakmasın. */
+  .claim-row--cluster {
+    display: grid;
+    gap: var(--ek-space-10);
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 700px) {
+    .claim-row--cluster {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .grid {
+    display: grid;
+    gap: var(--ek-space-5);
+    grid-template-columns: 1fr;
+  }
+  .sec-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    height: 100%;
+    padding: var(--ek-space-6);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--site-radius-panel);
+    background: var(--site-glass-bg);
+    box-shadow: inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 18%, transparent);
+    color: var(--site-color-on-primary-muted);
+    transition:
+      border-color var(--ek-duration-base) var(--ek-easing-standard),
+      background-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .sec-card:hover,
+  .sec-card:focus-within {
+    border-color: color-mix(in srgb, var(--ek-color-secondary) 60%, transparent);
+    background: color-mix(in srgb, var(--ek-color-background) 10%, transparent);
+  }
+  .sec-card__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--ek-space-2) var(--ek-space-3);
+  }
+  .sec-card__head h4 {
+    color: var(--site-color-on-primary);
+    font-size: var(--site-card-title-size);
+    font-weight: var(--site-card-title-weight);
+  }
+  .sec-card__caveat {
+    padding-top: var(--ek-space-3);
+    border-top: var(--site-border-width) solid var(--site-glass-border);
+    color: var(--site-color-on-primary-muted);
+    font-size: var(--ek-font-size-sm);
+  }
+  .prose {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-4);
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-lg);
+  }
+  @media (min-width: 768px) {
+    .grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .flow {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (min-width: 1200px) {
+    .grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+</style>

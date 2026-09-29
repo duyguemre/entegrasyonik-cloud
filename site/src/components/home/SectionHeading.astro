@@ -1,0 +1,101 @@
+---
+/**
+ * SectionHeading — bölüm başlığı bloğu (eyebrow + h2 + giriş metni). Koyu ("stage") zeminde `tone="dark"`.
+ * Stage zeminde başlık/metin rengini `Section` verir; burada yalnızca eyebrow ve ritim vardır.
+ * Sahne (S7): `data-scene="section-head"` — üç öğe görünür olunca sırayla yükselir (reduced-motion'da statik).
+ */
+interface Props {
+  id: string
+  eyebrow?: string
+  title: string
+  /** Başlık içinde gradyan vurguyla işaretlenecek birebir alt dize (varsa ve title içinde geçiyorsa uygulanır). */
+  accent?: string
+  lead?: string
+  tone?: 'light' | 'dark'
+  align?: 'start' | 'center'
+}
+
+const { id, eyebrow, title, accent, lead, tone = 'light', align = 'start' } = Astro.props
+const parts = accent && title.includes(accent) ? title.split(accent) : null
+---
+
+<header class:list={['sh', `sh--${tone}`, `sh--${align}`]} data-scene="section-head">
+  {
+    eyebrow && (
+      <p class="sh__eyebrow" data-reveal>
+        <span class="sh__eyebrow-mark" aria-hidden="true" />
+        {eyebrow}
+      </p>
+    )
+  }
+  <h2 id={id} class="sh__title" data-reveal>
+    {parts ? (
+      <>
+        {parts[0]}
+        <span class="sh__accent">{accent}</span>
+        {parts[1]}
+      </>
+    ) : (
+      title
+    )}
+  </h2>
+  {lead && <p class="sh__lead" data-reveal>{lead}</p>}
+</header>
+
+<style>
+  .sh {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-4);
+    max-width: 48rem;
+  }
+  .sh--center {
+    margin-inline: auto;
+    align-items: center;
+    text-align: center;
+  }
+  .sh__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    color: var(--ek-color-primary-darken-1);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .sh__eyebrow-mark {
+    width: var(--ek-space-5);
+    height: var(--ek-space-1);
+    border-radius: var(--ek-radius-full);
+    background: var(--site-gradient-accent);
+  }
+  .sh--dark .sh__eyebrow {
+    color: var(--ek-color-secondary);
+  }
+  .sh__accent {
+    background: var(--site-gradient-accent);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: var(--ek-color-secondary-darken-1);
+  }
+  .sh--dark .sh__accent {
+    color: var(--ek-color-secondary);
+  }
+  .sh__title {
+    font-size: var(--site-font-display-md);
+    font-weight: var(--site-font-display-weight);
+    line-height: var(--site-font-display-line-height);
+    letter-spacing: var(--site-font-display-tracking);
+    text-wrap: balance;
+  }
+  .sh__lead {
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-xl);
+    line-height: var(--ek-line-height-normal);
+  }
+  .sh--dark .sh__lead {
+    color: var(--site-color-on-primary-muted);
+  }
+</style>

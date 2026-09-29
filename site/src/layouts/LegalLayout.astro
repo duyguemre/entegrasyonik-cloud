@@ -1,0 +1,538 @@
+---
+/**
+ * LegalLayout — yasal sayfaların ortak iskeleti (ADR-0014 Karar 5, S5). BaseLayout'u sarar; BaseLayout'a dokunmaz.
+ * - Belirgin "TASLAK — hukuki inceleme bekliyor (Protokol 12)" bandı (LEGAL_REVIEWED=false iken; insan onayı ile kapanır)
+ * - Sürüm + güncelleme tarihi, içindekiler (yalnızca sayfa içi bağlantı, JS yok), okunabilir ölçü (--site-measure)
+ * - Belgede geçen HER `{{YER_TUTUCU}}` için sayfa sonunda "Doldurulması gereken alanlar" listesi (kayıttan üretilir)
+ * - İnceleme notları (`note` blokları) yalnızca SITE_DRAFT=true iken görünür
+ * - Yazdırma stili: üst/alt bilgi ve gezinme gizlenir, metin sayfa genişliğine yayılır
+ * Girdi yalnızca repodaki veri dosyalarıdır (src/data/legal/*); satır içi işaretleme src/lib/legal-render.ts'te kaçırılarak dönüştürülür.
+ */
+import BaseLayout from './BaseLayout.astro'
+import Container from '../components/Container.astro'
+import { siteConfig } from '../lib/site-config'
+import { renderInline, usedPlaceholderKeys } from '../lib/legal-render'
+import { placeholders } from '../data/legal/placeholders'
+import { legalDocs, legalHref, LEGAL_DRAFT_BANNER, LEGAL_REVIEWED } from '../data/legal'
+import type { LegalDoc } from '../data/legal/types'
+
+interface Props {
+  doc: LegalDoc
+}
+
+const { doc } = Astro.props
+const showBanner = !LEGAL_REVIEWED
+const showNotes = siteConfig.draft
+const keys = usedPlaceholderKeys(doc)
+const related = legalDocs.filter((d) => d.slug !== doc.slug)
+const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR', {
+  timeZone: 'UTC',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+})
+---
+
+<BaseLayout title={doc.title} description={doc.description} noindex={!LEGAL_REVIEWED}>
+  <article class="legal" data-testid="legal-page" data-slug={doc.slug} aria-labelledby="legal-title">
+    <Container>
+      <header class="legal-head">
+        {
+          showBanner && (
+            <div class="legal-draft" role="note" data-testid="legal-draft-banner">
+              <strong>{LEGAL_DRAFT_BANNER}</strong>
+              <span>
+                Bu metin hukuki incelemeden geçmemiştir; yayımlanmış bir sözleşme veya hukuki görüş değildir. Metindeki
+                vurgulu, çerçeveli alanlar yer tutucudur ve doldurulmayı bekliyor.
+              </span>
+            </div>
+          )
+        }
+        <p class="legal-eyebrow">Yasal</p>
+        <h1 id="legal-title">{doc.title}</h1>
+        <p class="legal-summary">{doc.summary}</p>
+        <dl class="legal-meta">
+          <div>
+            <dt>Sürüm</dt>
+            <dd data-testid="legal-version">{doc.version}</dd>
+          </div>
+          <div>
+            <dt>Son güncelleme</dt>
+            <dd><time datetime={doc.updatedAt}>{updated}</time></dd>
+          </div>
+        </dl>
+      </header>
+
+      <div class="legal-grid">
+        <nav class="legal-toc" aria-labelledby="legal-toc-title" data-testid="legal-toc">
+          <h2 id="legal-toc-title" class="legal-toc__title">İçindekiler</h2>
+          <ul class="legal-toc__list">
+            {
+              doc.sections.map((section) => (
+                <li>
+                  <a href={`#${section.id}`}>{section.title}</a>
+                </li>
+              ))
+            }
+            {
+              keys.length > 0 && (
+                <li>
+                  <a href="#doldurulacak-alanlar">Doldurulması gereken alanlar</a>
+                </li>
+              )
+            }
+          </ul>
+        </nav>
+
+        <div class="legal-main">
+          <div class="legal-body" data-testid="legal-body">
+            {
+              doc.sections.map((section) => (
+                <section id={section.id} aria-labelledby={`${section.id}-title`} class="legal-section">
+                  <h2 id={`${section.id}-title`}>{section.title}</h2>
+                  {section.blocks.map((block) => {
+                    switch (block.type) {
+                      case 'p':
+                        return <p set:html={renderInline(block.text)} />
+                      case 'h3':
+                        return <h3>{block.text}</h3>
+                      case 'ul':
+                        return (
+                          <ul class="legal-list">
+                            {block.items.map((item) => (
+                              <li set:html={renderInline(item)} />
+                            ))}
+                          </ul>
+                        )
+                      case 'ol':
+                        return (
+                          <ol class="legal-list legal-list--ordered">
+                            {block.items.map((item) => (
+                              <li set:html={renderInline(item)} />
+                            ))}
+                          </ol>
+                        )
+                      case 'table':
+                        return (
+                          <div class="legal-table-wrap" role="region" aria-label={block.caption} tabindex="0">
+                            <table class:list={["legal-table", { "legal-table--wide": block.head.length >= 4 }]}>
+                              <caption class="sr-only">{block.caption}</caption>
+                              <thead>
+                                <tr>
+                                  {block.head.map((h) => (
+                                    <th scope="col">{h}</th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {block.rows.map((row) => (
+                                  <tr>
+                                    {row.map((cell) => (
+                                      <td set:html={renderInline(cell)} />
+                                    ))}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )
+                      case 'note':
+                        return (
+                          showNotes && (
+                            <div class="review-note" role="note" data-testid="review-note">
+                              <strong>İnsan/hukuk kararı notu</strong>
+                              <span set:html={renderInline(block.text)} />
+                            </div>
+                          )
+                        )
+                    }
+                  })}
+                </section>
+              ))
+            }
+          </div>
+
+          {
+            keys.length > 0 && (
+              <section id="doldurulacak-alanlar" class="legal-fields" aria-labelledby="legal-fields-title" data-testid="legal-fields">
+                <h2 id="legal-fields-title">Doldurulması gereken alanlar</h2>
+                <p>
+                  Aşağıdaki {keys.length} alan bu belgede yer tutucu olarak duruyor. Değerleri işletme, hukuk veya mali müşavir
+                  sağlar; doğrulanmamış hiçbir bilgi metne yazılmamıştır.
+                </p>
+                <dl class="legal-fields__list">
+                  {keys.map((key) => (
+                    <div class="legal-fields__item" data-key={key}>
+                      <dt>
+                        <mark class="ph" data-ph={key}>
+                          {'{{' + key + '}}'}
+                        </mark>
+                      </dt>
+                      <dd>
+                        <span>{placeholders[key]?.description}</span>
+                        <span class="legal-fields__owner">Karar/onay: {placeholders[key]?.owner}</span>
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </section>
+            )
+          }
+
+          <nav class="legal-related" aria-labelledby="legal-related-title" data-testid="legal-related">
+            <h2 id="legal-related-title">İlgili yasal belgeler</h2>
+            <ul>
+              {
+                related.map((d) => (
+                  <li>
+                    <a href={legalHref(d.slug)}>{d.title}</a>
+                  </li>
+                ))
+              }
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </Container>
+  </article>
+</BaseLayout>
+
+<style>
+  .legal {
+    padding-block: var(--ek-space-10) var(--site-section-y);
+  }
+
+  /* --- Başlık bloğu --- */
+  .legal-head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    max-width: var(--site-container-narrow);
+    margin-bottom: var(--ek-space-10);
+  }
+  .legal-draft {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+    padding: var(--ek-space-4) var(--ek-space-5);
+    margin-bottom: var(--ek-space-4);
+    background: var(--ek-color-warning-subtle);
+    border: var(--site-border-width) solid var(--ek-color-border-strong);
+    border-inline-start-width: var(--ek-space-1);
+    border-radius: var(--ek-radius-md);
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-lg);
+  }
+  .legal-draft strong {
+    font-weight: var(--ek-font-weight-bold);
+  }
+  .legal-eyebrow {
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .legal-head h1 {
+    font-size: var(--site-font-display-sm);
+    font-weight: var(--site-font-display-weight);
+    line-height: var(--site-font-display-line-height);
+    letter-spacing: var(--site-font-display-tracking);
+  }
+  .legal-summary {
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-xl);
+  }
+  .legal-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2) var(--ek-space-8);
+    margin: var(--ek-space-2) 0 0;
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-md);
+  }
+  .legal-meta dt {
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .legal-meta dd {
+    margin: 0;
+  }
+  .legal-meta div {
+    display: flex;
+    gap: var(--ek-space-2);
+  }
+
+  /* --- Izgara: içindekiler + metin --- */
+  .legal-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ek-space-8);
+  }
+  .legal-toc {
+    padding: var(--ek-space-5);
+    background: var(--ek-color-surface-muted);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-lg);
+  }
+  .legal-toc__title {
+    margin-bottom: var(--ek-space-3);
+    font-size: var(--ek-font-size-md);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .legal-toc__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+  }
+  .legal-toc__list a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--site-tap-target);
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-lg);
+    text-decoration: none;
+    transition: color var(--ek-duration-fast) var(--ek-easing-standard);
+  }
+  .legal-toc__list a:hover {
+    color: var(--site-color-link);
+    text-decoration: underline;
+  }
+
+  /* --- Metin --- */
+  .legal-main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-12);
+    min-width: 0;
+  }
+  .legal-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-10);
+  }
+  .legal-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-4);
+  }
+  .legal-section h2,
+  .legal-fields h2,
+  .legal-related h2 {
+    font-size: var(--ek-font-size-2xl);
+    line-height: var(--ek-line-height-tight);
+  }
+  .legal-section h3 {
+    margin-top: var(--ek-space-2);
+    font-size: var(--ek-font-size-xl);
+  }
+  .legal-body :global(a),
+  .legal-fields :global(a) {
+    color: var(--site-color-link);
+  }
+  .legal-body :global(strong) {
+    color: var(--ek-color-content-strong);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .legal-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    padding-inline-start: var(--ek-space-6);
+    max-width: var(--site-measure);
+  }
+  .legal-list > li {
+    list-style: disc;
+    padding-inline-start: var(--ek-space-1);
+  }
+  .legal-list--ordered > li {
+    list-style: decimal;
+  }
+
+  /* --- Tablo --- */
+  .legal-table-wrap {
+    overflow-x: auto;
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-lg);
+  }
+  .legal-table {
+    width: 100%;
+    min-width: calc(var(--site-container-narrow) * 0.75);
+    border-collapse: collapse;
+    font-size: var(--ek-font-size-lg);
+  }
+  .legal-table--wide {
+    min-width: calc(var(--site-container-narrow) * 1.25);
+  }
+  .legal-table th,
+  .legal-table td {
+    padding: var(--ek-space-3) var(--ek-space-4);
+    text-align: start;
+    vertical-align: top;
+    border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
+    overflow-wrap: break-word;
+  }
+  .legal-table th:first-child,
+  .legal-table td:first-child {
+    min-width: calc(var(--ek-space-16) * 2);
+  }
+  .legal-table thead th {
+    background: var(--ek-color-surface-muted);
+    color: var(--ek-color-content-strong);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .legal-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  /* --- Yer tutucu ve inceleme notu --- */
+  .legal :global(mark.ph) {
+    padding: 0 var(--ek-space-1);
+    background: var(--ek-color-warning-subtle);
+    border: var(--site-border-width) dashed var(--ek-color-border-strong);
+    border-radius: var(--ek-radius-sm);
+    color: var(--ek-color-content-strong);
+    font-weight: var(--ek-font-weight-medium);
+    overflow-wrap: anywhere;
+  }
+  .review-note {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+    padding: var(--ek-space-4) var(--ek-space-5);
+    background: var(--ek-color-info-subtle);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-inline-start: var(--ek-space-1) solid var(--ek-color-info);
+    border-radius: var(--ek-radius-md);
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-lg);
+  }
+  .review-note strong {
+    font-weight: var(--ek-font-weight-semibold);
+  }
+
+  /* --- Doldurulması gereken alanlar --- */
+  .legal-fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-4);
+    padding: var(--ek-space-6);
+    background: var(--ek-color-surface-muted);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-xl);
+  }
+  .legal-fields__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-4);
+    margin: 0;
+  }
+  .legal-fields__item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+    padding-bottom: var(--ek-space-4);
+    border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
+  }
+  .legal-fields__item:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+  .legal-fields__item dt {
+    font-size: var(--ek-font-size-lg);
+  }
+  .legal-fields__item dd {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+    margin: 0;
+    max-width: var(--site-measure);
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-lg);
+  }
+  .legal-fields__owner {
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-medium);
+  }
+
+  /* --- İlgili belgeler --- */
+  .legal-related {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+  }
+  .legal-related ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-1) var(--ek-space-6);
+  }
+  .legal-related a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--site-tap-target);
+    font-size: var(--ek-font-size-lg);
+  }
+
+  @media (min-width: 1024px) {
+    .legal-grid {
+      grid-template-columns: calc(var(--site-container-narrow) / 3) minmax(0, 1fr);
+      gap: var(--ek-space-12);
+      align-items: start;
+    }
+    .legal-toc {
+      position: sticky;
+      top: calc(var(--site-header-height) + var(--ek-space-6));
+    }
+  }
+
+  /* --- Yazdırma: yalnızca belge metni --- */
+  @media print {
+    .legal :global(mark.ph) {
+      border-style: solid;
+    }
+    :global(.skip-link),
+    :global(.draft-banner),
+    :global(.site-header),
+    :global(.site-footer),
+    .legal-toc,
+    .legal-related {
+      display: none !important;
+    }
+    .legal {
+      padding-block: 0;
+    }
+    .legal-grid {
+      display: block;
+    }
+    .legal-head,
+    .legal-list,
+    .legal-fields__item dd {
+      max-width: none;
+    }
+    .legal-section,
+    .legal-table-wrap,
+    .review-note,
+    .legal-fields__item {
+      break-inside: avoid;
+    }
+    .legal-section h2,
+    .legal-section h3 {
+      break-after: avoid;
+    }
+    .legal-table-wrap {
+      overflow: visible;
+    }
+    .legal-table {
+      min-width: 0;
+    }
+    .legal-fields {
+      break-before: page;
+      background: none;
+    }
+    .legal-body :global(a[href^='/'])::after {
+      content: ' (' attr(href) ')';
+      font-size: var(--ek-font-size-sm);
+    }
+  }
+</style>

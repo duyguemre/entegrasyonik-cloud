@@ -1,0 +1,110 @@
+import { IOrderPackage, IOrderRejectParams, IPlatformResponse, ISendInvoicePayload, ISendTrackingPayload } from '@interfaces/index';
+import { integrationCode } from '../constants';
+import { OrderTransformer } from '../transformers/OrderTransformer';
+import Service from './Service';
+import { IntegrationError } from '@integration/modules/common/IntegrationError';
+
+export class OrderService {
+    private transformer: OrderTransformer;
+    private clientId: string;
+
+    constructor(private params: any, private service: Service) {
+        this.clientId = params.clientId || 'UnknownClient';
+        this.transformer = new OrderTransformer();
+    }
+
+    public async fetchOrders(query?: Record<string, any>): Promise<IOrderPackage[]> {
+        try {
+            const urls = this.params.integrationSettings?.urls || {};
+            const orderListUrl = urls.orderListUrl || 'orders';
+
+            const apiParams: any = { limit: 100, page: 1 };
+            if (query?.lastSyncTimestamp) {
+                apiParams.startDate = new Date(query.lastSyncTimestamp).toISOString().split('T')[0];
+            } else {
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                apiParams.startDate = yesterday.toISOString().split('T')[0];
+            }
+
+            const allOrders: any[] = [];
+            let page = 1;
+
+            while (true) {
+                const response = await this.service.get(orderListUrl, { ...apiParams, page });
+                const items = Array.isArray(response.data) ? response.data : (response.data?.data || []);
+                if (!items.length) break;
+                allOrders.push(...items);
+                if (items.length < 100) break;
+                page++;
+            }
+
+            return this.transformer.toInternalOrderPackages(allOrders);
+        } catch (error: any) {
+            if (IntegrationError.isIntegrationError(error)) throw error;
+            throw new Error(`[${this.clientId}][${integrationCode}OrderService:fetchOrders] ${error.message}`);
+        }
+    }
+
+    public async approveOrder(externalOrderId: string, params?: any): Promise<boolean | IPlatformResponse> {
+        try {
+            const urls = this.params.integrationSettings?.urls || {};
+            const updateUrl = (urls.updateOrderUrl || 'orders/<ORDERID>').replace('<ORDERID>', externalOrderId);
+            await this.service.put(updateUrl, { status: 'preparing' });
+            return true;
+        } catch (error: any) {
+            if (IntegrationError.isIntegrationError(error)) throw error;
+            throw new Error(`[${this.clientId}][${integrationCode}OrderService:approveOrder] ${error.message}`);
+        }
+    }
+
+    public async rejectOrder(externalOrderId: string, params: IOrderRejectParams): Promise<boolean> {
+        try {
+            const urls = this.params.integrationSettings?.urls || {};
+            const updateUrl = (urls.updateOrderUrl || 'orders/<ORDERID>').replace('<ORDERID>', externalOrderId);
+            await this.service.put(updateUrl, { status: 'cancelled', cancelReason: params.description || params.reasonId });
+            return true;
+        } catch (error: any) {
+            if (IntegrationError.isIntegrationError(error)) throw error;
+            throw new Error(`[${this.clientId}][${integrationCode}OrderService:rejectOrder] ${error.message}`);
+        }
+    }
+
+    public async sendOrderShipping(payload: ISendTrackingPayload): Promise<IPlatformResponse> {
+        try {
+            const urls = this.params.integrationSettings?.urls || {};
+            const updateUrl = (urls.updateOrderUrl || 'orders/<ORDERID>').replace('<ORDERID>', payload.orderId);
+            await this.service.put(updateUrl, {
+                status: 'shipped',
+                trackingNumber: payload.trackingCode,
+                cargoCompany: payload.carrierName
+            });
+            return { success: true };
+        } catch (error: any) {
+            if (IntegrationError.isIntegrationError(error)) throw error;
+            throw new Error(`[${this.clientId}][${integrationCode}OrderService:sendOrderShipping] ${error.message}`);
+        }
+    }
+
+    /**
+     * [ADR-0006 Karar 2] TERS ÇEVRİLDİ (BACKLOG C9 sahte başarı listesi — ADR-0006 Bağlam bölümü
+     * "Ideasoft sendOrderInvoice no-op success:true"): ÖNCEKİ DAVRANIŞ hiçbir çağrı yapmadan
+     * `{success:true}` dönüyordu. Gerçek Ideasoft fatura bildirim uç noktası uygulanana kadar
+     * NOT_SUPPORTED fırlatılır (tüketici `invoice-service.ts#syncInvoiceToPlatform` bunu try/catch
+     * ile yakalayıp honest `{success:false}` döner, davranışı bozmaz).
+     */
+    public async sendOrderInvoice(payload: ISendInvoicePayload): Promise<IPlatformResponse> {
+        throw new IntegrationError('NOT_SUPPORTED', 'Ideasoft sipariş faturası bildirimi henüz gerçek olarak uygulanmadı.', {
+            integrationCode, operation: 'sendOrderInvoice', clientId: this.clientId,
+        });
+    }
+
+    public async retrieveOrderRejectionReasons(): Promise<any[]> {
+        return [
+            { id: '1', title: 'Stokta Yok' },
+            { id: '2', title: 'Hatalı Fiyat' },
+            { id: '3', title: 'Müşteri Talebi' },
+            { id: '4', title: 'Diğer' }
+        ];
+    }
+}

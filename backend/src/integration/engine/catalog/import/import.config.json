@@ -1,0 +1,19 @@
+{
+    "importOrchestrator": {
+        "importLoopDelay": 30000,
+        "rateLimitRetryDelay": 500,
+        "zombieCheckInterval": 900000,
+        "lockTimeout": 1800000
+    },
+    "stager": {
+        "globalLoopDelay": 15000,
+        "errorTimeout": 10000
+    },
+    "importer": {
+        "globalLoopDelay": 30000,
+        "errorTimeout": 15000,
+        "fetchLimit": 50,
+        "retryCount": 3,
+        "retryDelay": 3000
+    }
+}

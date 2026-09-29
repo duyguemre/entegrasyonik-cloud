@@ -1,0 +1,45 @@
+{
+  "language": {
+    "en": "English",
+    "tr": "Türkçe"
+  },
+  "menu": {
+    "profile" :"Profile",
+    "change_password" :"Change Password",
+    "roles" :"Roles",
+    "exit" :"Exit",
+    "support_ticket": "Open Ticket",
+    "support_ticket_list": "Ticket List",
+    "support_school": "Documentation",
+    "administration": "Administration",
+    "sale": "Sale",
+    "favorites": "Favorites",
+    "dashboard": "Dashbooard",
+    "orders": "Orders",
+    "returns": "Returns",
+    "customers": "Customers",
+    "invoices": "Invoices",
+    "reports": "Reports",
+    "products": "Products",
+    "integrations": "Integrations",
+    "printouts": "Printouts",
+    "settings": "Settings",
+    "logs": "Logs",
+    "add_product": "Add Product",
+    "add_customer": "Add Customer"
+  },
+  "title": {
+    "config": "Configuration"
+  },
+  "shell": {
+    "section": {
+      "general": "General",
+      "catalog": "Catalog",
+      "orders": "Orders",
+      "integrations": "Integrations",
+      "finance": "Finance & Reports",
+      "admin": "Administration",
+      "other": "Other"
+    }
+  }
+}

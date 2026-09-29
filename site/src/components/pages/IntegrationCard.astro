@@ -1,0 +1,140 @@
+---
+/**
+ * IntegrationCard — `/entegrasyonlar` vitrin kartı. Yalnızca `PublicIntegration` (getPublic* çıktısı) alır:
+ * destekleneni ve sınırlı olanı AYRI satırlarda dürüstçe gösterir; ayrıntı sayfasına bağlanır.
+ */
+import Card from '../Card.astro'
+import Badge from '../Badge.astro'
+import ChannelMono from './ChannelMono.astro'
+import type { PublicIntegration, CoverageLevel } from '../../data/integrations'
+
+interface Props {
+  integration: PublicIntegration
+}
+
+const { integration: i } = Astro.props
+const coverageTone: Record<CoverageLevel, 'success' | 'info' | 'warning'> = {
+  broad: 'success',
+  partial: 'info',
+  limited: 'warning',
+}
+/** Görsel kapsam segmenti (aria-hidden nokta şeridi); anlam yanındaki `coverageLabel` metnindedir. */
+const COVERAGE_METER: Record<CoverageLevel, number> = { broad: 3, partial: 2, limited: 1 }
+const supported = i.capabilities.filter((c) => c.level === 'supported').map((c) => c.label)
+const limited = i.capabilities.filter((c) => c.level === 'limited').map((c) => c.label)
+const titleId = `int-${i.code}`
+---
+
+<Card as="article" class="int-card" aria-labelledby={titleId} data-testid="integration-card" data-code={i.code} data-tilt>
+  <div class="int-card__head">
+    <ChannelMono code={i.code} name={i.name} />
+    <div class="int-card__id">
+      <h3 id={titleId}>{i.name}</h3>
+      <Badge class="int-card__kind">{i.kindLabel}</Badge>
+    </div>
+  </div>
+  <p class="int-card__summary">{i.summary}</p>
+  <p class="int-card__coverage">
+    <span class="int-card__meter" aria-hidden="true" data-level={COVERAGE_METER[i.coverage]}>
+      <span></span><span></span><span></span>
+    </span>
+    <Badge tone={coverageTone[i.coverage]}>{i.coverageLabel}</Badge>
+  </p>
+  <dl class="int-card__caps">
+    {
+      supported.length > 0 && (
+        <div>
+          <dt>Destekleniyor</dt>
+          <dd>{supported.join(', ')}</dd>
+        </div>
+      )
+    }
+    {
+      limited.length > 0 && (
+        <div>
+          <dt>Sınırlı</dt>
+          <dd>{limited.join(', ')}</dd>
+        </div>
+      )
+    }
+  </dl>
+  <a class="int-card__link" href={`/entegrasyonlar/${i.code}`}>{i.name} ayrıntıları<span aria-hidden="true"> →</span></a>
+</Card>
+
+<style>
+  .int-card {
+    height: 100%;
+    gap: var(--ek-space-4);
+    transition:
+      border-color var(--ek-duration-base) var(--ek-easing-standard),
+      box-shadow var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .int-card:hover,
+  .int-card:focus-within {
+    border-color: var(--ek-color-border-strong);
+    box-shadow: var(--site-shadow-card-hover);
+  }
+  .int-card__head {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-3);
+  }
+  .int-card__id {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    min-width: 0;
+  }
+  .int-card__kind {
+    align-self: flex-start;
+  }
+  .int-card__coverage {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ek-space-3);
+  }
+  .int-card__meter {
+    display: inline-flex;
+    gap: var(--ek-space-1);
+  }
+  .int-card__meter span {
+    width: var(--ek-space-4);
+    height: var(--ek-space-1);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-border-default);
+  }
+  .int-card__meter[data-level='1'] span:nth-child(1),
+  .int-card__meter[data-level='2'] span:nth-child(-n + 2),
+  .int-card__meter[data-level='3'] span {
+    background: var(--ek-color-secondary-darken-1);
+  }
+  .int-card__caps {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    margin: 0;
+  }
+  .int-card__caps dt {
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .int-card__caps dd {
+    margin: 0;
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-md);
+  }
+  .int-card__link {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    min-height: var(--site-tap-target);
+    margin-top: auto;
+    font-weight: var(--ek-font-weight-semibold);
+    text-decoration: none;
+  }
+  .int-card__link:hover {
+    text-decoration: underline;
+  }
+</style>

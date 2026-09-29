@@ -1,0 +1,251 @@
+---
+/**
+ * Header — logotip, birincil gezinme, "Giriş yap" ve "Ücretsiz dene" (uygulamaya bağlantı; ADR-0014 Karar 2).
+ * Masaüstü (>=1024): satır içi gezinme. Altında: yerel <details> ile açılan mobil menü — JS kapalıyken de
+ * çalışır; `src/scripts/menu.ts` yalnızca Esc / dışarı tıklama / yeniden boyutlandırmada kapanmayı ekler.
+ * Menüde henüz yayımlanmış sayfa yoksa (S0) yalnızca uygulama bağlantıları görünür.
+ */
+import Container from './Container.astro'
+import Button from './Button.astro'
+import Logo from './Logo.astro'
+import MotionToggle from './MotionToggle.astro'
+import { primaryNav, published } from '../data/navigation'
+import { appUrls } from '../lib/site-config'
+
+interface Props {
+  /** Sayfada animasyon sahnesi varsa "Animasyonları durdur" kontrolünü (ve sahne betiğini) ekler (S3). */
+  motionControl?: boolean
+}
+const { motionControl = false } = Astro.props
+
+const links = published(primaryNav)
+const loginHref = appUrls.login()
+const registerHref = appUrls.register()
+---
+
+<header class="site-header">
+  <Container class="bar">
+    <a class="brand" href="/" aria-label="Entegrasyonik — ana sayfa">
+      <Logo />
+    </a>
+
+    <nav class="nav-desktop" aria-label="Ana gezinme">
+      {
+        links.length > 0 && (
+          <ul class="nav-desktop__links">
+            {links.map((item) => (
+              <li>
+                <a class="nav-link" href={item.href}>
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+      <div class="nav-desktop__actions">
+        <Button href={loginHref} variant="ghost" data-testid="login-link">Giriş yap</Button>
+        <Button href={registerHref} variant="primary" data-testid="register-link">Ücretsiz dene</Button>
+      </div>
+    </nav>
+
+    {motionControl && <MotionToggle />}
+
+    <details class="nav-mobile" data-mobile-menu>
+      <summary class="nav-mobile__toggle" data-testid="menu-toggle">
+        <span class="sr-only">Menü</span>
+        <svg class="icon-menu" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M4 7h16M4 12h16M4 17h16"></path>
+        </svg>
+        <svg class="icon-close" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M6 6l12 12M18 6L6 18"></path>
+        </svg>
+      </summary>
+      <nav class="nav-mobile__panel" aria-label="Ana gezinme">
+        {
+          links.length > 0 && (
+            <ul class="nav-mobile__links">
+              {links.map((item) => (
+                <li>
+                  <a class="nav-link nav-link--block" href={item.href}>
+                    {item.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+        <div class="nav-mobile__actions">
+          <Button href={loginHref} variant="secondary" size="lg" data-testid="login-link-mobile">Giriş yap</Button>
+          <Button href={registerHref} variant="primary" size="lg" data-testid="register-link-mobile">Ücretsiz dene</Button>
+        </div>
+      </nav>
+    </details>
+  </Container>
+</header>
+
+<script>
+  import '../scripts/menu'
+</script>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: color-mix(in srgb, var(--ek-color-background) 88%, transparent);
+    -webkit-backdrop-filter: saturate(1.4) blur(var(--site-glass-blur));
+    backdrop-filter: saturate(1.4) blur(var(--site-glass-blur));
+    border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
+    transition:
+      box-shadow var(--ek-duration-base) var(--ek-easing-standard),
+      border-color var(--ek-duration-base) var(--ek-easing-standard),
+      background-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  /* Kaydırınca (src/scripts/menu.ts sentinel): daha opak zemin + yumuşak gölge */
+  :global(html[data-scrolled='true']) .site-header {
+    background: color-mix(in srgb, var(--ek-color-background) 94%, transparent);
+    border-bottom-color: color-mix(in srgb, var(--ek-color-border-strong) 70%, transparent);
+    box-shadow: var(--ek-shadow-md);
+  }
+  .bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ek-space-4);
+    min-height: var(--site-header-height);
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--site-tap-target);
+    text-decoration: none;
+  }
+
+  .nav-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--site-tap-target);
+    padding-inline: var(--ek-space-3);
+    border-radius: var(--ek-radius-md);
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-lg);
+    font-weight: var(--ek-font-weight-medium);
+    text-decoration: none;
+    transition: color var(--ek-duration-base) var(--ek-easing-standard),
+      background-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .nav-link:hover {
+    color: var(--ek-color-content-strong);
+    background: var(--ek-color-surface-sunken);
+  }
+  .nav-link--block {
+    display: flex;
+    padding-inline: var(--ek-space-2);
+  }
+
+  /* --- Mobil / tablet (< 1024): <details> menü --- */
+  .nav-desktop {
+    display: none;
+  }
+  .nav-mobile {
+    display: block;
+  }
+  .nav-mobile__toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--site-tap-target);
+    height: var(--site-tap-target);
+    border-radius: var(--ek-radius-md);
+    color: var(--ek-color-primary);
+    cursor: pointer;
+    list-style: none;
+    transition: background-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .nav-mobile__toggle::-webkit-details-marker {
+    display: none;
+  }
+  .nav-mobile__toggle:hover {
+    background: var(--ek-color-surface-sunken);
+  }
+  .nav-mobile__toggle svg {
+    width: var(--ek-space-6);
+    height: var(--ek-space-6);
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+  .nav-mobile__toggle .icon-close {
+    display: none;
+  }
+  .nav-mobile[open] .icon-menu {
+    display: none;
+  }
+  .nav-mobile[open] .icon-close {
+    display: block;
+  }
+
+  .nav-mobile__panel {
+    position: absolute;
+    inset-inline: 0;
+    top: 100%;
+    max-height: calc(100dvh - var(--site-header-height));
+    overflow-y: auto;
+    padding: var(--ek-space-4) var(--site-gutter) var(--ek-space-6);
+    background: var(--ek-color-background);
+    border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
+    box-shadow: var(--ek-shadow-md);
+    animation: menu-in var(--ek-duration-base) var(--ek-easing-enter);
+  }
+  .nav-mobile__links {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+    margin-bottom: var(--ek-space-4);
+  }
+  .nav-mobile__actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+  }
+  .nav-mobile__actions :global(.btn) {
+    width: 100%;
+  }
+  @keyframes menu-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* --- Masaüstü (>= 1024): satır içi gezinme --- */
+  /* 80rem (1280 px): gezinme + eylemler + hareket kontrolü 1280–1440 arasında taşmadan sığar; altında menü düğmesi. */
+  @media (min-width: 80rem) {
+    .nav-mobile {
+      display: none;
+    }
+    .nav-desktop {
+      display: flex;
+      flex: 1;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--ek-space-6);
+      margin-inline-start: var(--ek-space-8);
+    }
+    .nav-desktop__links {
+      display: flex;
+      align-items: center;
+      gap: var(--ek-space-1);
+    }
+    .nav-desktop__actions {
+      display: flex;
+      align-items: center;
+      gap: var(--ek-space-2);
+      margin-inline-start: auto;
+    }
+  }
+</style>

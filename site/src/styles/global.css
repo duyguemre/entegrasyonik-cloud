@@ -1,0 +1,180 @@
+/* Temel stiller — yalnızca token'lar (tests/tokens.test.ts ham renk/px yasağını denetler). */
+@import './tokens.css';
+@import './scenes.css';
+@import './scenes-loops.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: calc(var(--site-header-height) + var(--ek-space-4));
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--ek-color-background);
+  color: var(--ek-color-content-default);
+  font-family: var(--site-font-sans);
+  font-size: var(--site-font-body);
+  font-weight: var(--ek-font-weight-regular);
+  line-height: var(--site-font-body-line-height);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+main {
+  flex: 1 0 auto;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  color: var(--ek-color-content-strong);
+  font-weight: var(--ek-font-weight-bold);
+  line-height: var(--ek-line-height-tight);
+}
+
+p {
+  margin: 0;
+  max-width: var(--site-measure);
+}
+
+a {
+  color: var(--site-color-link);
+  text-underline-offset: 0.2em;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+:focus-visible {
+  outline: var(--site-focus-ring-width) solid var(--site-color-focus-ring);
+  outline-offset: var(--site-focus-ring-offset);
+  border-radius: var(--ek-radius-sm);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--ek-color-secondary) 35%, transparent);
+}
+
+.sr-only {
+  position: absolute;
+  width: var(--site-border-width);
+  height: var(--site-border-width);
+  padding: 0;
+  margin: calc(var(--site-border-width) * -1);
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/*
+ * Kanal (pazaryeri/entegrasyon) marka rengi eşlemesi (S8) — bkz. src/data/channel-colors.ts.
+ * `--chan`: ham yaklaşık marka tonu (kenarlık/nokta/ince vurgu; metin taşımaz).
+ * `--chan-fill`: karartılmış, beyaz harfle AA-güvenli dolu monogram zemini.
+ */
+[data-code='trendyol'] {
+  --chan: var(--site-channel-trendyol);
+  --chan-fill: var(--site-channel-trendyol-fill);
+}
+[data-code='hepsiburada'] {
+  --chan: var(--site-channel-hepsiburada);
+  --chan-fill: var(--site-channel-hepsiburada-fill);
+}
+[data-code='n11'] {
+  --chan: var(--site-channel-n11);
+  --chan-fill: var(--site-channel-n11-fill);
+}
+[data-code='pazarama'] {
+  --chan: var(--site-channel-pazarama);
+  --chan-fill: var(--site-channel-pazarama-fill);
+}
+[data-code='ideasoft'] {
+  --chan: var(--site-channel-ideasoft);
+  --chan-fill: var(--site-channel-ideasoft-fill);
+}
+[data-code='bizimhesap'] {
+  --chan: var(--site-channel-bizimhesap);
+  --chan-fill: var(--site-channel-bizimhesap-fill);
+}
+
+/*
+ * Kart etkileşimi (S8): imleç takipli ışık (spotlight) + hafif 3D eğim (tilt). Değerler
+ * `src/scripts/interactions.ts` tarafından `--mx`/`--my`/`--rx`/`--ry` özel özellikleriyle güncellenir;
+ * betik yoksa (JS kapalı) veya `pointer: fine` değilse öğe başlangıç (nötr) değerlerinde kalır — statik
+ * hâl anlamlıdır. Yalnızca `transform`/`opacity`: yerleşim değişmez. Klavye odağında eşdeğer vurgu
+ * `:focus-within` ile (imleç konumu olmadan, sabit merkezli ışık).
+ */
+[data-tilt] {
+  --mx: 50%;
+  --my: 50%;
+  --rx: 0deg;
+  --ry: 0deg;
+  /* İzleme sırasında kısa/tepkisel, çıkışta yumuşak (interactions.ts değiştirir; bkz. site-tokens.css notu). */
+  --tilt-transition-duration: var(--ek-duration-fast);
+  position: relative;
+  transform: perspective(75rem) rotateX(var(--rx)) rotateY(var(--ry));
+  transition: transform var(--tilt-transition-duration) var(--ek-easing-standard);
+}
+[data-tilt]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  background: radial-gradient(
+    var(--site-spotlight-size) circle at var(--mx) var(--my),
+    color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 16%, transparent),
+    transparent 62%
+  );
+  opacity: 0;
+  transition: opacity var(--ek-duration-base) var(--ek-easing-standard);
+  pointer-events: none;
+}
+[data-tilt]:hover::before,
+[data-tilt]:focus-within::before {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce), (pointer: coarse) {
+  [data-tilt] {
+    transform: none;
+  }
+}
+
+/* Karar 3: reduced-motion → kaydırma/animasyon/geçiş son duruma iner; yalnızca <= 150 ms opaklık kalır. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: var(--ek-duration-fast) !important;
+    transition-property: opacity, background-color, color, border-color !important;
+    scroll-behavior: auto !important;
+  }
+}

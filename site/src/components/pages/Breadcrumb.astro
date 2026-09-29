@@ -1,0 +1,88 @@
+---
+/**
+ * Breadcrumb — ekmek kırıntısı (WCAG: nav landmark + `aria-current="page"`). Son öğe bağlantı değildir.
+ * `inverse`: koyu ("stage") zeminde açık renkler.
+ */
+import type { Crumb } from './types'
+
+interface Props {
+  items: Crumb[]
+  inverse?: boolean
+}
+
+const { items, inverse = false } = Astro.props
+---
+
+<nav class:list={['breadcrumb', { 'breadcrumb--inverse': inverse }]} aria-label="Sayfa yolu">
+  <ol class="breadcrumb__list">
+    {
+      items.map((item, index) => (
+        <li class="breadcrumb__item">
+          {item.href && index < items.length - 1 ? (
+            <a class="breadcrumb__link" href={item.href}>
+              {item.label}
+            </a>
+          ) : (
+            <span class="breadcrumb__current" aria-current="page">
+              {item.label}
+            </span>
+          )}
+        </li>
+      ))
+    }
+  </ol>
+</nav>
+
+<style>
+  .breadcrumb__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ek-space-1) var(--ek-space-2);
+    font-size: var(--ek-font-size-md);
+  }
+  .breadcrumb__item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+  }
+  .breadcrumb__item + .breadcrumb__item::before {
+    content: '/';
+    color: var(--ek-color-content-subtle);
+  }
+  .breadcrumb__link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--site-tap-target);
+    color: var(--ek-color-content-default);
+    text-decoration: none;
+    transition: color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .breadcrumb__link:hover {
+    color: var(--ek-color-primary);
+    text-decoration: underline;
+  }
+  .breadcrumb__current {
+    color: var(--ek-color-content-strong);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+
+  .breadcrumb--inverse .breadcrumb__item + .breadcrumb__item::before {
+    color: var(--site-color-on-primary-muted);
+  }
+  .breadcrumb--inverse .breadcrumb__link {
+    color: var(--site-color-on-primary-muted);
+  }
+  .breadcrumb--inverse .breadcrumb__link:hover {
+    color: var(--site-color-on-primary);
+  }
+  .breadcrumb--inverse .breadcrumb__current {
+    color: var(--site-color-on-primary);
+  }
+  .breadcrumb--inverse .breadcrumb__link:focus-visible {
+    outline-color: var(--site-color-on-primary);
+  }
+</style>

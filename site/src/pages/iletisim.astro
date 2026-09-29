@@ -1,0 +1,233 @@
+---
+/**
+ * /iletisim — `mailto:` tabanlı iletişim (ADR-0014 Karar 2). Form YOK, backend YOK, site kişisel veri toplamaz.
+ * Adres `PUBLIC_CONTACT_EMAIL` env'inden gelir; verilmemişse `{{İLETİŞİM_E_POSTA}}` yer tutucusu gösterilir ve
+ * bağlantı üretilmez. Yanıt süresi/destek saati iddiası YOK. Şirket künyesi Footer ile aynı yer tutuculardır.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro'
+import Section from '../components/Section.astro'
+import Card from '../components/Card.astro'
+import Button from '../components/Button.astro'
+import Icon from '../components/home/Icon.astro'
+import PageHero from '../components/pages/PageHero.astro'
+import PageMeta from '../components/pages/PageMeta.astro'
+import { contactEmail, mailtoHref, CONTACT_EMAIL_PLACEHOLDER } from '../lib/contact'
+import { breadcrumbJsonLd } from '../lib/seo'
+import { appUrls } from '../lib/site-config'
+
+const title = 'İletişim'
+const description =
+  'Entegrasyonik ile iletişime geçin: kurumsal teklif, genel sorular ve mevcut müşteri destek talepleri için e-posta.'
+const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'İletişim' }]
+
+const topics: Array<{ id: string; label: string; text: string; subject: string; icon: 'layers' | 'chat' | 'users' }> = [
+  { id: 'teklif', label: 'Kurumsal teklif', text: 'Özel gereksinimleriniz veya birden fazla hesap için teklif isteyin.', subject: 'Kurumsal teklif talebi', icon: 'layers' },
+  { id: 'soru', label: 'Genel soru', text: 'Ürün, kapsam veya entegrasyonlar hakkında bir sorunuz mu var?', subject: 'Genel soru', icon: 'chat' },
+  { id: 'destek', label: 'Mevcut müşteri', text: 'Hesabınızla ilgili bir konuda yardım isteyin.', subject: 'Destek talebi', icon: 'users' },
+]
+---
+
+<BaseLayout title={title} description={description}>
+  <PageMeta
+    slot="head"
+    title={title}
+    description={description}
+    jsonLd={[breadcrumbJsonLd([{ label: 'Ana sayfa', path: '/' }, { label: title, path: '/iletisim' }])]}
+  />
+
+  <PageHero
+    title="İletişim"
+    lead="Bize e-posta ile ulaşın. Bu sayfada form yoktur; mesajınız kendi e-posta uygulamanızda hazırlanır ve site kişisel veri toplamaz."
+    crumbs={crumbs}
+  >
+    <Fragment slot="visual">
+      <div class="hero-visual">
+        <span class="hero-visual__icon"><Icon name="chat" size="lg" /></span>
+      </div>
+      <p class="address address--hero" data-testid="contact-address">
+        {
+          contactEmail ? (
+            <a href={mailtoHref(contactEmail)}>{contactEmail}</a>
+          ) : (
+            <span class="placeholder" data-testid="contact-placeholder">{CONTACT_EMAIL_PLACEHOLDER}</span>
+          )
+        }
+      </p>
+    </Fragment>
+  </PageHero>
+
+  <Section labelledby="konu-title" class="tight-section">
+    <div class="head">
+      <h2 id="konu-title">Bize yazın</h2>
+      <p>Konunuza uygun başlığı seçin; e-posta uygulamanız konu satırı doldurulmuş olarak açılır.</p>
+    </div>
+
+    <ul class="topics" role="list">
+      {
+        topics.map((t) => (
+          <li>
+            <Card as="article" class="topic" aria-labelledby={`topic-${t.id}`}>
+              <span class="topic__icon"><Icon name={t.icon} size="md" /></span>
+              <h3 id={`topic-${t.id}`}>{t.label}</h3>
+              <p>{t.text}</p>
+              {contactEmail ? (
+                <Button href={mailtoHref(contactEmail, t.subject)} variant="secondary" data-testid="contact-mailto">
+                  E-posta oluştur
+                </Button>
+              ) : null}
+            </Card>
+          </li>
+        ))
+      }
+    </ul>
+    {!contactEmail && <p class="pending">İletişim adresi yayın öncesinde eklenecektir.</p>}
+  </Section>
+
+  <Section labelledby="kunye-title" tone="muted" size="narrow" class="tight-section">
+    <div class="head">
+      <h2 id="kunye-title">Şirket bilgileri</h2>
+      <p>Hizmet sağlayıcıya ilişkin bilgiler yayın öncesinde eklenecektir.</p>
+    </div>
+    <Card as="div" class="kunye">
+      <dl class="kunye__list" data-testid="kunye-details">
+        <div><dt>Unvan</dt><dd>{'{{ŞİRKET_UNVANI}}'}</dd></div>
+        <div><dt>MERSİS no</dt><dd>{'{{MERSİS_NO}}'}</dd></div>
+        <div><dt>Adres</dt><dd>{'{{ADRES}}'}</dd></div>
+        <div><dt>Telefon</dt><dd>{'{{TELEFON}}'}</dd></div>
+      </dl>
+    </Card>
+  </Section>
+
+  <Section labelledby="giris-title" class="tight-section">
+    <h2 id="giris-title" class="giris__title">Zaten müşteri misiniz?</h2>
+    <p class="giris__text">Hesabınıza giriş yaparak panelinize erişebilirsiniz.</p>
+    <div class="giris__actions">
+      <Button href={appUrls.login()} variant="primary" size="lg">Giriş yap</Button>
+      <Button href="/sss" variant="secondary" size="lg">Sık sorulan sorular</Button>
+    </div>
+  </Section>
+</BaseLayout>
+
+<script>
+  import '../scripts/interactions'
+</script>
+
+<style>
+  /* Bölümler arası dikey ritim genel olarak sıkılaştırıldı (S11b). */
+  .tight-section:global(.section) {
+    padding-block: calc(var(--site-section-y) * 0.72);
+  }
+  .head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    margin-bottom: var(--ek-space-8);
+  }
+  .head h2,
+  .giris__title {
+    font-size: var(--site-font-display-sm);
+    font-weight: var(--site-font-display-weight);
+    line-height: var(--site-font-display-line-height);
+    letter-spacing: var(--site-font-display-tracking);
+  }
+  .head p,
+  .giris__text {
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-lg);
+  }
+
+  /* --- Hero görsel: e-posta adresi ön plana çıkar --- */
+  .hero-visual {
+    display: flex;
+    justify-content: center;
+  }
+  .hero-visual__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(var(--ek-space-16) * 0.9);
+    height: calc(var(--ek-space-16) * 0.9);
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-secondary) 20%, transparent);
+    color: var(--site-color-on-primary);
+  }
+  .address--hero {
+    margin: var(--ek-space-5) 0 0;
+    color: var(--site-color-on-primary);
+    font-size: var(--ek-font-size-lg);
+    font-weight: var(--ek-font-weight-semibold);
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+  .placeholder {
+    padding: var(--ek-space-1) var(--ek-space-3);
+    border: var(--site-border-width) dashed var(--site-color-on-primary-muted);
+    border-radius: var(--ek-radius-md);
+    color: var(--site-color-on-primary-muted);
+    font-family: var(--ek-font-mono);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-regular);
+  }
+  .topics {
+    display: grid;
+    gap: var(--ek-space-6);
+    grid-template-columns: 1fr;
+  }
+  .topic {
+    height: 100%;
+    align-items: flex-start;
+  }
+  .topic__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface-sunken);
+    color: var(--ek-color-primary);
+  }
+  .topic :global(.btn) {
+    margin-top: auto;
+  }
+  .pending {
+    margin-top: var(--ek-space-6);
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-md);
+  }
+  .kunye {
+    max-width: 28rem;
+  }
+  .kunye__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-4);
+    margin: 0;
+  }
+  .kunye__list dt {
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-md);
+  }
+  .kunye__list dd {
+    margin: 0;
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-lg);
+    font-weight: var(--ek-font-weight-medium);
+    overflow-wrap: anywhere;
+  }
+  .giris__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-3);
+    margin-top: var(--ek-space-6);
+  }
+  .giris__title {
+    margin-bottom: var(--ek-space-3);
+  }
+
+  @media (min-width: 768px) {
+    .topics {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+</style>

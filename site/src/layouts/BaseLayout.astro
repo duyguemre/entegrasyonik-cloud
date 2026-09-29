@@ -1,0 +1,89 @@
+---
+/**
+ * BaseLayout — tüm sayfaların iskeleti (ADR-0014). Sıcak dosya: yalnızca orkestratör birleştirmesiyle değişir.
+ * - lang="tr", skip-link, header, <main id="main">, footer
+ * - SITE_DRAFT iken TÜM sayfalarda `noindex,nofollow` (site geneli TASLAK bandı kullanıcı isteğiyle kaldırıldı, 2026-09-29;
+ *   yasal sayfalardaki hukuki TASLAK bandı LegalLayout'ta sürer); `noindex` prop'u ile sayfa bazında da zorlanabilir
+ * - Font ön yüklemesi (S3): değişken Inter latin + latin-ext (Türkçe ğ/ş/İ hemen her sayfada gerekir; iki dosya ~133 KB)
+ * - `scenes` (S3): animasyon sahneleri olan sayfada durdurma kontrolünü (header) ve sahne betiğini yükler
+ */
+import '../styles/global.css'
+import Header from '../components/Header.astro'
+import Footer from '../components/Footer.astro'
+import interLatin from '../../node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url'
+import interLatinExt from '../../node_modules/@fontsource-variable/inter/files/inter-latin-ext-wght-normal.woff2?url'
+import { siteConfig } from '../lib/site-config'
+import { lightToken } from '../lib/tokens-node'
+
+interface Props {
+  title: string
+  description?: string
+  noindex?: boolean
+  /** Sayfada animasyon sahneleri varsa true: durdurma kontrolü + sahne betiği yüklenir (ADR-0014 S3). */
+  scenes?: boolean
+}
+
+const { title, description = 'Entegrasyonik tanıtım sitesi.', noindex = false, scenes = false } = Astro.props
+const fullTitle = title === 'Entegrasyonik' ? title : `${title} · Entegrasyonik`
+const robots = siteConfig.draft || noindex ? 'noindex,nofollow' : 'index,follow'
+const themeColor = lightToken('--ek-color-primary')
+const canonical = !siteConfig.draft && siteConfig.siteUrl ? new URL(Astro.url.pathname, siteConfig.siteUrl).href : undefined
+---
+
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content={robots} />
+    <meta name="theme-color" content={themeColor} />
+    {canonical && <link rel="canonical" href={canonical} />}
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="alternate" type="text/plain" href="/llms.txt" />
+    <link rel="preload" href={interLatin} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={interLatinExt} as="font" type="font/woff2" crossorigin />
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Ana içeriğe geç</a>
+    <span class="scroll-sentinel" data-scroll-sentinel aria-hidden="true"></span>
+    <Header motionControl={scenes} />
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>
+
+<style>
+  .skip-link {
+    position: absolute;
+    inset-inline-start: var(--ek-space-4);
+    top: var(--ek-space-2);
+    z-index: 20;
+    padding: var(--ek-space-3) var(--ek-space-4);
+    border-radius: var(--ek-radius-md);
+    background: var(--ek-color-primary);
+    color: var(--site-color-on-primary);
+    font-weight: var(--ek-font-weight-semibold);
+    text-decoration: none;
+    transform: translateY(-200%);
+  }
+  .skip-link:focus {
+    transform: translateY(0);
+  }
+  main:focus {
+    outline: none;
+  }
+  /* Header gölge/opaklık geçişi için: sayfanın en üstünü işaretler (IntersectionObserver; scroll dinleyicisi yok). */
+  .scroll-sentinel {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    width: var(--site-border-width);
+    height: var(--ek-space-10);
+    pointer-events: none;
+  }
+</style>

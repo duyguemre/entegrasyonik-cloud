@@ -1,0 +1,68 @@
+import { Connection, Model } from 'mongoose'
+import { ClientSchema } from './models/Client';
+import { CounterSchema, CachedIntegrationDataSchema, DeadLetterQueueSchema } from './models/Common';
+import { ExportFlagSchema, ExportSignalSchema } from './models/Export';
+import { ImportJobSchema } from './models/Import';
+import { IntegrationSchema, IntegrationTypeSchema } from './models/Integration';
+import { MenuSchema } from './models/Menu';
+import { TicketSchema } from './models/Ticket';
+import { ResourceSchema, UserSchema } from './models/User';
+import { GlobalRoleSchema } from './models/GlobalRole';
+import { OperationLogSchema } from './models/OperationLog';
+import { AuditLogSchema } from './models/AuditLog';
+import { IntegrationCallMetricSchema } from './models/IntegrationCallMetric';
+import { QueueMetricsSchema } from './models/QueueMetrics';
+import { PlanSchema } from './models/Plan';
+import { SubscriptionSchema } from './models/Subscription';
+import { BillingEventSchema } from './models/BillingEvent';
+import { AccountTokenSchema } from './models/AccountToken';
+import { JobLeaseSchema } from './models/JobLease';
+import { JobStateSchema, JobRunSchema } from './models/JobRunRegistry';
+import { IntegrationFindingSchema } from './models/IntegrationFinding';
+import { MetricRollupSchema } from './models/MetricRollup';
+import { ErrorEventSchema } from './models/ErrorEvent';
+import { SourceSnapshotSchema } from './models/SourceSnapshot';
+import { IntegrationConfigRevisionSchema, IntegrationConfigHeadSchema } from './models/IntegrationConfig';
+
+export default (mongooseConnection: Connection): Record<string, Model<any>> => {
+    return {
+        integration: mongooseConnection.model('integration', IntegrationSchema),
+        integration_type: mongooseConnection.model('integration_type', IntegrationTypeSchema),
+        menu: mongooseConnection.model('menu', MenuSchema),
+        user: mongooseConnection.model('user', UserSchema),
+        global_role: mongooseConnection.model('global_role', GlobalRoleSchema),
+        resource: mongooseConnection.model('resource', ResourceSchema),
+        client: mongooseConnection.model('client', ClientSchema),
+        ticket: mongooseConnection.model('ticket', TicketSchema),
+        counter: mongooseConnection.model('counter', CounterSchema),
+        cached_integration_data: mongooseConnection.model('cached_integration_data', CachedIntegrationDataSchema),
+        export_signal: mongooseConnection.model('export_signal', ExportSignalSchema),
+        export_flag: mongooseConnection.model('export_flag', ExportFlagSchema),
+        import_job: mongooseConnection.model('import_job', ImportJobSchema),
+        dead_letter_queue: mongooseConnection.model('dead_letter_queue', DeadLetterQueueSchema),
+        operation_log: mongooseConnection.model('operation_log', OperationLogSchema),
+        audit_log: mongooseConnection.model('audit_log', AuditLogSchema),
+        integration_call_metric: mongooseConnection.model('integration_call_metric', IntegrationCallMetricSchema),
+        queue_metrics: mongooseConnection.model('queue_metrics', QueueMetricsSchema),
+        // ADR-0008 Aşama A: billing veri modeli
+        plan: mongooseConnection.model('plan', PlanSchema),
+        subscription: mongooseConnection.model('subscription', SubscriptionSchema),
+        billing_event: mongooseConnection.model('billing_event', BillingEventSchema),
+        // Hesap yaşam döngüsü: parola sıfırlama / e-posta doğrulama token'ları (yalnızca HASH; TTL)
+        account_token: mongooseConnection.model('account_token', AccountTokenSchema),
+        // ADR-0016 §2 / ADR-0017 Karar 3: zamanlayıcı lease + JobRunRegistry (JobState/JobRuns)
+        job_lease: mongooseConnection.model('job_lease', JobLeaseSchema),
+        job_state: mongooseConnection.model('job_state', JobStateSchema),
+        job_run: mongooseConnection.model('job_run', JobRunSchema),
+        // ADR-0018 Karar 2: entegrasyon uyum bulgusu (pasif bekçi/probe/kaynak izleme/mock senkronu tek modeli).
+        integration_finding: mongooseConnection.model('integration_finding', IntegrationFindingSchema),
+        // ADR-0017 Aşama B (Karar 2.1/2.4): metrik kovaları + hata olayları ("mini-Sentry").
+        metric_rollup: mongooseConnection.model('metric_rollup', MetricRollupSchema),
+        error_event: mongooseConnection.model('error_event', ErrorEventSchema),
+        // ADR-0018 Karar 2c (Aşama B): haftalık kaynak izleyici -- URL başına tek doküman (hash/diff, içerik YOK).
+        source_snapshot: mongooseConnection.model('source_snapshot', SourceSnapshotSchema),
+        // ADR-0020 Karar 3.1 (Aşama B): sürümlü platform geçersiz kılmaları + yayın başlığı (poll edilen küçük belge).
+        integration_config_revision: mongooseConnection.model('integration_config_revision', IntegrationConfigRevisionSchema),
+        integration_config_head: mongooseConnection.model('integration_config_head', IntegrationConfigHeadSchema),
+    }
+}
