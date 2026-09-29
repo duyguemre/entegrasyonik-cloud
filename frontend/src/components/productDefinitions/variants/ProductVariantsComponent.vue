@@ -4,97 +4,81 @@
 
     <v-dialog scrim persistent :retain-focus="false" v-model="show" location-strategy="connected" target="cursor"
       no-click-animation :close-on-content-click="false" :attach="dialogAttach"
-      style="transition: opacity .1s ease-in!important"
-      :style="!searchVariantForm.searchVariantFormMenu && !batchProcessFormMenu && !newVariantMenu && !isVariantPlatformPricesMenu && !isImagesDialog && !isVariantAttributesDialog && !isBatchVariantDialog && !isVariantImagesDialog && !isBatchVariantPlatformPricesMenu ? { 'visibility': 'hidden', 'opacity': '.2!important' } : {}"
-      :contained="true" location="left" height="100%" width="100%">
+      :contained="true" location="left" height="100%" width="100%" class="pv-fade-fast" :class="{ 'pv-dialog-idle': !searchVariantForm.searchVariantFormMenu && !batchProcessFormMenu && !newVariantMenu && !isVariantPlatformPricesMenu && !isImagesDialog && !isVariantAttributesDialog && !isBatchVariantDialog && !isVariantImagesDialog && !isBatchVariantPlatformPricesMenu }">
 
       <keep-alive>
-        <ProductImagesComponent v-model="isImagesDialog" style="transition: opacity .2s ease-in!important"
-          :style="!isImagesDialog ? { 'opacity': '.2!important' } : {}" key="ProductImagesComponent"
-          @close="isImagesDialog = false" v-if="isImagesDialog == true" :productInfoForm="productInfoForm" />
+        <ProductImagesComponent v-model="isImagesDialog" key="ProductImagesComponent"
+          @close="isImagesDialog = false" v-if="isImagesDialog == true" :productInfoForm="productInfoForm" class="pv-fade" :class="{ 'pv-dim': !isImagesDialog }" />
 
       </keep-alive>
 
       <keep-alive>
-        <ProductVariantImagesComponent v-model="isVariantImagesDialog" :variant="selectedVariantForEdit"
-          style="transition: opacity .2s ease-in!important"
-          :style="!isVariantImagesDialog ? { 'opacity': '.2!important' } : {}" key="ProductImagesComponent"
+        <ProductVariantImagesComponent v-model="isVariantImagesDialog" :variant="selectedVariantForEdit" key="ProductImagesComponent"
           @close="isVariantImagesDialog = false" v-if="isVariantImagesDialog == true"
-          :productInfoForm="productInfoForm" />
+          :productInfoForm="productInfoForm" class="pv-fade" :class="{ 'pv-dim': !isVariantImagesDialog }" />
 
       </keep-alive>
 
       <keep-alive>
-        <ProductVariantAttributesComponent v-model="isVariantAttributesDialog"
-          style="transition: opacity .2s ease-in!important" :editingVariant="editingVariant"
-          :style="!isVariantAttributesDialog ? { 'opacity': '.2!important' } : {}" key="ProductImagesComponent"
+        <ProductVariantAttributesComponent v-model="isVariantAttributesDialog" :editingVariant="editingVariant" key="ProductImagesComponent"
           @close="isVariantAttributesDialog = false" v-if="isVariantAttributesDialog == true"
-          :productInfoForm="productInfoForm" />
+          :productInfoForm="productInfoForm" class="pv-fade" :class="{ 'pv-dim': !isVariantAttributesDialog }" />
       </keep-alive>
 
       <keep-alive>
-        <ProductBatchVariantAttributesComponent v-model="isBatchVariantDialog"
-          style="transition: opacity .2s ease-in!important" :batchVariant="batchVariant"
+        <ProductBatchVariantAttributesComponent v-model="isBatchVariantDialog" :batchVariant="batchVariant"
           @batchVariantAttributesUpdate="batchVariantAttributesUpdate"
-          :style="!isBatchVariantDialog ? { 'opacity': '.2!important' } : {}"
           key="ProductBatchVariantAttributesComponent" @close="isBatchVariantDialog = false"
-          v-if="isBatchVariantDialog == true" :productInfoForm="productInfoForm" />
+          v-if="isBatchVariantDialog == true" :productInfoForm="productInfoForm" class="pv-fade" :class="{ 'pv-dim': !isBatchVariantDialog }" />
       </keep-alive>
 
 
       <keep-alive>
-        <ProductSearchVariantComponent style="transition: opacity .2s ease-in!important"
+        <ProductSearchVariantComponent
           v-if="searchVariantForm.searchVariantFormMenu"
-          :style="!searchVariantForm.searchVariantFormMenu ? { 'opacity': '.2!important' } : {}"
           key="ProductSearchVariantComponent" v-model="searchVariantForm"
           @close="searchVariantForm.searchVariantFormMenu = false" @searchVariants="search" :isFiltered="isFiltered"
-          :productInfoForm="productInfoForm" />
+          :productInfoForm="productInfoForm" class="pv-fade" :class="{ 'pv-dim': !searchVariantForm.searchVariantFormMenu }" />
       </keep-alive>
 
       <keep-alive>
-        <ProductBatchProcessVariantComponent style="transition: opacity .2s ease-in!important"
-          v-if="batchProcessFormMenu" key="ProductBatchProcessVariantComponent"
-          :style="!batchProcessFormMenu ? { 'opacity': '.2!important' } : {}" @close="batchProcessFormMenu = false"
+        <ProductBatchProcessVariantComponent
+          v-if="batchProcessFormMenu" key="ProductBatchProcessVariantComponent" @close="batchProcessFormMenu = false"
           @batchProcessUpdate="batchProcessUpdate" v-model="batchProcessFormMenu"
           @batchProcessDelete="batchProcessDelete" :productInfoForm="productInfoForm"
-          :totalNumberOfVariants="pagination.totalNumberOfRecords" />
+          :totalNumberOfVariants="pagination.totalNumberOfRecords" class="pv-fade" :class="{ 'pv-dim': !batchProcessFormMenu }" />
       </keep-alive>
       <keep-alive>
         <ProductVariantPlatformPricesComponent v-model="isVariantPlatformPricesMenu" :editingVariant="editingVariant"
-          style="transition: opacity .2s ease-in!important"
-          :style="!isVariantPlatformPricesMenu ? { 'opacity': '.2!important' } : {}"
           key="ProductVariantPlatformPricesComponent" @close="isVariantPlatformPricesMenu = false"
-          v-if="isVariantPlatformPricesMenu == true" :productInfoForm="productInfoForm" />
+          v-if="isVariantPlatformPricesMenu == true" :productInfoForm="productInfoForm" class="pv-fade" :class="{ 'pv-dim': !isVariantPlatformPricesMenu }" />
       </keep-alive>
 
       <keep-alive>
         <ProductBatchVariantPlatformPricesComponent v-model="isBatchVariantPlatformPricesMenu"
           :batchVariant="batchVariant" @batchVariantPricesUpdate="batchVariantPricesUpdate"
-          style="transition: opacity .2s ease-in!important"
-          :style="!isBatchVariantPlatformPricesMenu ? { 'opacity': '.2!important' } : {}"
           key="ProductBatchVariantPlatformPricesComponent" @close="isBatchVariantPlatformPricesMenu = false"
-          v-if="isBatchVariantPlatformPricesMenu == true" :productInfoForm="productInfoForm" />
+          v-if="isBatchVariantPlatformPricesMenu == true" :productInfoForm="productInfoForm" class="pv-fade" :class="{ 'pv-dim': !isBatchVariantPlatformPricesMenu }" />
       </keep-alive>
 
     </v-dialog>
     <div class="pt-12" v-if="!productInfoForm.hasVariant">
     </div>
     <v-data-table-server v-model="selectedVariants" :items-length="originalVariants ? originalVariants.length : 0"
-      :items="originalVariants" fixed-header item-value="tempId" :headers="headers" class="pa-0 ma-0"
-      :show-select="productInfoForm.hasVariant"
-      style="position:absolute;top:75px;bottom:0;left:0;right:0; width:auto;height:calc(100vh - 170px);border:1px solid #96a9b7;background-color:white!important;">
+      :items="originalVariants" fixed-header item-value="tempId" :headers="headers" class="pa-0 ma-0 pv-table"
+      :show-select="productInfoForm.hasVariant">
 
       <template v-slot:header.variant="{ column, getSortIcon, isSorted, someSelected }">
         <div class="d-flex fill-height align-center">
-          <div style="width:124px;opacity:.6" class="text-center"><v-icon>mdi-image-outline</v-icon></div>
+          <div class="text-center pv-image-head"><v-icon>mdi-image-outline</v-icon></div>
           <div :class="isDisplayMd() ? ['mt-0'] : ['d-flex']" class="align-center" v-if="productInfoForm.hasVariant">
-            <div class="font-weight-bold" style="width:120px;height:20px!important;" @click="toggleSort('stockcode')"
+            <div class="font-weight-bold pv-sort-head pv-w-120" @click="toggleSort('stockcode')"
               @mouseenter="sortIcon = 'stockcode'" @mouseleave="sortIcon = undefined">
               <v-menu v-model="batchProcesses.stockcode.menu">
                 <template v-slot:activator="{ props: menu }">
                   <v-tooltip location="top">
                     <template v-slot:activator="{ props: tooltip }">
-                      <v-icon v-bind="mergeProps(menu, tooltip)" class="mr-1"
+                      <v-icon v-bind="mergeProps(menu, tooltip)" class="mr-1" aria-label="Toplu stok kodu oluştur"
                         color="processButtonColor">mdi-card-multiple</v-icon>
                     </template>
                     <span>Toplu stok kodu oluştur.</span>
@@ -102,7 +86,7 @@
                 </template>
                 <v-card min-width="240px">
                   <v-card-text>
-                    <v-btn-group elevation="1" class="d-block" density="compact" style="border:1px solid white;">
+                    <v-btn-group elevation="1" class="d-block pv-btn-group" density="compact">
                       <v-btn density="compact" block class="fill-height" color="processButtonColor"
                         @click.stop="stockcodeBatchProcess">
                         <span class="">
@@ -120,14 +104,14 @@
                   {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
                 </v-icon>
               </template>
-              <v-icon v-else :style="sortIcon == 'stockcode' ? { opacity: .5 } : { opacity: 0 }">
+              <v-icon v-else :class="sortIcon == 'stockcode' ? 'pv-sort-icon--hint' : 'pv-sort-icon--hidden'">
                 {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
               </v-icon>
 
             </div>
             {{ isDisplayMd() ? '' : '|' }}
 
-            <div class="font-weight-bold " style="height:20px!important" @click="toggleSort('barcode')"
+            <div class="font-weight-bold pv-sort-head" @click="toggleSort('barcode')"
               @mouseenter="sortIcon = 'barcode'" @mouseleave="sortIcon = undefined">
 
 
@@ -135,7 +119,7 @@
                 <template v-slot:activator="{ props: menu }">
                   <v-tooltip location="top">
                     <template v-slot:activator="{ props: tooltip }">
-                      <v-icon v-bind="mergeProps(menu, tooltip)" class="mr-1"
+                      <v-icon v-bind="mergeProps(menu, tooltip)" class="mr-1" aria-label="Toplu barkod oluştur"
                         color="processButtonColor">mdi-card-multiple</v-icon>
                     </template>
                     <span>Toplu barkod oluştur.</span>
@@ -143,7 +127,7 @@
                 </template>
                 <v-card min-width="240px">
                   <v-card-text>
-                    <v-btn-group elevation="1" class="d-block" density="compact" style="border:1px solid white;">
+                    <v-btn-group elevation="1" class="d-block pv-btn-group" density="compact">
                       <v-btn density="compact" block class="fill-height" color="processButtonColor"
                         @click.stop="barcodeBatchProcess">
                         <span class="">
@@ -162,7 +146,7 @@
                   {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
                 </v-icon>
               </template>
-              <v-icon v-else :style="sortIcon == 'barcode' ? { opacity: .5 } : { opacity: 0 }">
+              <v-icon v-else :class="sortIcon == 'barcode' ? 'pv-sort-icon--hint' : 'pv-sort-icon--hidden'">
                 {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
               </v-icon>
             </div>
@@ -173,8 +157,8 @@
 
 
       <template v-slot:header.choices="{ column, getSortIcon, isSorted, someSelected }">
-        <div class="d-flex fill-height align-center" style="" v-if="productInfoForm.hasVariant">
-          <div class="font-weight-bold text-body-2" style="height:20px!important" @click="toggleSort('choices')"
+        <div class="d-flex fill-height align-center" v-if="productInfoForm.hasVariant">
+          <div class="font-weight-bold text-body-2 pv-sort-head" @click="toggleSort('choices')"
             @mouseenter="sortIcon = 'choices'" @mouseleave="sortIcon = undefined">
 
             {{ isDisplayMd() ? 'Seç.ler' : 'Seçenekler' }}
@@ -184,7 +168,7 @@
                 {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
               </v-icon>
             </template>
-            <v-icon v-else :style="sortIcon == 'choices' ? { opacity: .5 } : { opacity: 0 }">
+            <v-icon v-else :class="sortIcon == 'choices' ? 'pv-sort-icon--hint' : 'pv-sort-icon--hidden'">
               {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
             </v-icon>
           </div>
@@ -193,10 +177,10 @@
 
 
       <template v-slot:header.prices>
-        <div :class="isDisplayMd() ? [] : ['d-flex']" class=" fill-height align-center" style=""
+        <div :class="isDisplayMd() ? [] : ['d-flex']" class=" fill-height align-center"
           v-if="productInfoForm.hasVariant">
           <div></div>
-          <div class="font-weight-bold  ml-1" style="width:115px!important;;height:20px!important"
+          <div class="font-weight-bold  ml-1 pv-sort-head pv-w-115"
             @click="toggleSort('prices.salePrice')" @mouseenter="sortIcon = 'prices.salePrice'"
             @mouseleave="sortIcon = undefined">
 
@@ -205,7 +189,7 @@
               <template v-slot:activator="{ props: menu }">
                 <v-tooltip location="top">
                   <template v-slot:activator="{ props: tooltip }">
-                    <v-icon v-bind="mergeProps(menu, tooltip)" class="mr-1"
+                    <v-icon v-bind="mergeProps(menu, tooltip)" class="mr-1" aria-label="Toplu satış fiyatı değiştir"
                       color="processButtonColor">mdi-card-multiple</v-icon>
                   </template>
                   <span>Toplu piyasa fiyatı değiştir</span>
@@ -214,23 +198,22 @@
               <v-card min-width="240px">
                 <v-card-text>
                   <v-checkbox :label="$t('productDefinitions.product.platformPrice')" @update:modelValue=""
-                    density="compact" hide-details class="ma-0 mb-2 pa-0" style="min-width:180px"
+                    density="compact" hide-details class="ma-0 mb-2 pa-0 pv-minw-180"
                     v-model="batchProcesses.salePrice.isPlatformBasedPrice" @click.stop />
 
                   <VCurrencyComponentVue v-model="batchProcesses.salePrice.value" :rules="formRules.mandatoryRule"
                     v-if="!batchProcesses.salePrice.isPlatformBasedPrice" :compact="true"
                     :label="$t('productDefinitions.product.variants.salePrice')" clearable @click.stop :required="true"
-                    class="mt-2 mb-2" style="max-width:300px">
+                    class="mt-2 mb-2 pv-mw-300">
                   </VCurrencyComponentVue>
 
-                  <div v-else v-for="(platform, index) of integrationStore.getClientMarketplaces()" class="pa-2"
-                    style="border-bottom:1px solid #ccc">
+                  <div v-else v-for="(platform, index) of integrationStore.getClientMarketplaces()" class="pa-2 pv-platform-row">
                     <v-row>
                       <v-col>
                         <div class="d-flex justify-center  align-center row-title">
                           <v-avatar rounded="2"
-                            class="mt-0 mr-1 mb-0 ml-2 mr-2 pa-2 text-center d-flex justify-center elevation-4"
-                            elevation=2 style="width:70px;height:70px;border:1px solid white"
+                            class="mt-0 mr-1 mb-0 ml-2 mr-2 pa-2 text-center d-flex justify-center elevation-4 pv-platform-avatar"
+                            elevation=2
                             :style="{ 'background-color': platform.color }">
                             <v-img :width="platform.width"
                               :src="integrations.getTypePath(platform.type._id) + platform.logo"></v-img>
@@ -238,14 +221,14 @@
                           <VCurrencyComponentVue prepend-icon="mdi-currency-try" @click.stop
                             v-model="batchProcesses.salePrice.prices[platform.code]" :rules="formRules.mandatoryRule"
                             :compact="true" :label="$t('productDefinitions.product.variants.salePrice')" clearable
-                            :required="true" class="ml-4" style="min-width:200px">
+                            :required="true" class="ml-4 pv-minw-200">
                           </VCurrencyComponentVue>
                         </div>
                       </v-col>
                     </v-row>
                   </div>
 
-                  <v-btn-group elevation="1" class="d-block" density="compact" style="border:1px solid white;">
+                  <v-btn-group elevation="1" class="d-block pv-btn-group" density="compact">
                     <v-btn density="compact" block class="fill-height" color="processButtonColor"
                       @click.stop="salePriceBatchProcess">
                       <span class="">
@@ -264,19 +247,19 @@
                 {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
               </v-icon>
             </template>
-            <v-icon v-else :style="sortIcon == 'prices.salePrice' ? { opacity: .5 } : { opacity: 0 }">
+            <v-icon v-else :class="sortIcon == 'prices.salePrice' ? 'pv-sort-icon--hint' : 'pv-sort-icon--hidden'">
               {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
             </v-icon>
           </div>
           {{ isDisplayMd() ? '' : '|' }}
-          <div class="font-weight-bold ml-1" style="height:20px!important" @click="toggleSort('prices.marketPrice')"
+          <div class="font-weight-bold ml-1 pv-sort-head" @click="toggleSort('prices.marketPrice')"
             @mouseenter="sortIcon = 'prices.marketPrice'" @mouseleave="sortIcon = undefined">
 
             <v-menu v-model="batchProcesses.marketPrice.menu">
               <template v-slot:activator="{ props: menu }">
                 <v-tooltip location="top">
                   <template v-slot:activator="{ props: tooltip }">
-                    <v-icon v-bind="mergeProps(menu, tooltip)" class="mr-1"
+                    <v-icon v-bind="mergeProps(menu, tooltip)" class="mr-1" aria-label="Toplu piyasa fiyatı değiştir"
                       color="processButtonColor">mdi-card-multiple</v-icon>
                   </template>
                   <span>Toplu piyasa fiyatı değiştir</span>
@@ -285,23 +268,22 @@
               <v-card min-width="240px">
                 <v-card-text>
                   <v-checkbox :label="$t('productDefinitions.product.platformPrice')" @update:modelValue=""
-                    density="compact" hide-details class="ma-0 mb-2 pa-0" style="min-width:180px"
+                    density="compact" hide-details class="ma-0 mb-2 pa-0 pv-minw-180"
                     v-model="batchProcesses.marketPrice.isPlatformBasedPrice" @click.stop />
 
                   <VCurrencyComponentVue v-model="batchProcesses.marketPrice.value" :rules="formRules.mandatoryRule"
                     v-if="!batchProcesses.marketPrice.isPlatformBasedPrice" :compact="true"
                     :label="$t('productDefinitions.product.variants.marketPrice')" clearable @click.stop
-                    :required="true" class="mt-2 mb-2" style="max-width:300px">
+                    :required="true" class="mt-2 mb-2 pv-mw-300">
                   </VCurrencyComponentVue>
 
-                  <div v-else v-for="(platform, index) of integrationStore.getClientMarketplaces()" class="pa-2"
-                    style="border-bottom:1px solid #ccc">
+                  <div v-else v-for="(platform, index) of integrationStore.getClientMarketplaces()" class="pa-2 pv-platform-row">
                     <v-row>
                       <v-col>
                         <div class="d-flex justify-center  align-center row-title">
                           <v-avatar rounded="2"
-                            class="mt-0 mr-1 mb-0 ml-2 mr-2 pa-2 text-center d-flex justify-center elevation-4"
-                            elevation=2 style="width:70px;height:70px;border:1px solid white"
+                            class="mt-0 mr-1 mb-0 ml-2 mr-2 pa-2 text-center d-flex justify-center elevation-4 pv-platform-avatar"
+                            elevation=2
                             :style="{ 'background-color': platform.color }">
                             <v-img :width="platform.width"
                               :src="integrations.getTypePath(platform.type._id) + platform.logo"></v-img>
@@ -309,14 +291,14 @@
                           <VCurrencyComponentVue prepend-icon="mdi-currency-try" @click.stop
                             v-model="batchProcesses.marketPrice.prices[platform.code]" :rules="formRules.mandatoryRule"
                             :compact="true" :label="$t('productDefinitions.product.variants.marketPrice')" clearable
-                            :required="true" class="ml-4" style="min-width:200px">
+                            :required="true" class="ml-4 pv-minw-200">
                           </VCurrencyComponentVue>
                         </div>
                       </v-col>
                     </v-row>
                   </div>
 
-                  <v-btn-group elevation="1" class="d-block" density="compact" style="border:1px solid white;">
+                  <v-btn-group elevation="1" class="d-block pv-btn-group" density="compact">
                     <v-btn density="compact" block class="fill-height" color="processButtonColor"
                       @click.stop="marketPriceBatchProcess">
                       <span class="">
@@ -336,20 +318,20 @@
                 {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
               </v-icon>
             </template>
-            <v-icon v-else :style="sortIcon == 'prices.marketPrice' ? { opacity: .5 } : { opacity: 0 }">
+            <v-icon v-else :class="sortIcon == 'prices.marketPrice' ? 'pv-sort-icon--hint' : 'pv-sort-icon--hidden'">
               {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
             </v-icon>
           </div>
 
           {{ isDisplayMd() ? '' : '|' }}
 
-          <div class="font-weight-bold ml-1" style="height:20px!important">
+          <div class="font-weight-bold ml-1 pv-sort-head">
 
             <v-menu v-model="batchProcesses.isPlatformBasedPrice.menu">
               <template v-slot:activator="{ props: menu }">
                 <v-tooltip location="top">
                   <template v-slot:activator="{ props: tooltip }">
-                    <v-icon v-bind="mergeProps(menu, tooltip)" class="mr-1"
+                    <v-icon v-bind="mergeProps(menu, tooltip)" class="mr-1" aria-label="Toplu platform bazında fiyat değiştir"
                       color="processButtonColor">mdi-card-multiple</v-icon>
                   </template>
                   <span>Toplu platform bazında fiyat değiştir</span>
@@ -358,10 +340,10 @@
               <v-card width="240px">
                 <v-card-text>
                   <v-checkbox :label="$t('productDefinitions.product.platformPrice')" @update:modelValue=""
-                    density="compact" hide-details class="ma-0 mb-2 pa-0" style="min-width:180px"
+                    density="compact" hide-details class="ma-0 mb-2 pa-0 pv-minw-180"
                     v-model="batchProcesses.isPlatformBasedPrice.value" @click.stop />
 
-                  <v-btn-group elevation="1" class="d-block" density="compact" style="border:1px solid white;">
+                  <v-btn-group elevation="1" class="d-block pv-btn-group" density="compact">
                     <v-btn density="compact" block class="fill-height" color="processButtonColor"
                       @click.stop="isPlatformBasedPriceBatchProcess">
                       <span class="">
@@ -385,14 +367,14 @@
       <template v-slot:header.stock>
         <div :class="isDisplayMd() ? ['mt-0'] : ['d-flex']" class="align-center">
           <div class="d-flex fill-height align-center" v-if="productInfoForm.hasVariant">
-            <div class="font-weight-bold" style="height:20px!important" @click="toggleSort('stock')"
+            <div class="font-weight-bold pv-sort-head" @click="toggleSort('stock')"
               @mouseenter="sortIcon = 'stock'" @mouseleave="sortIcon = undefined">
 
               <v-menu v-model="batchProcesses.stock.menu">
                 <template v-slot:activator="{ props: menu }">
                   <v-tooltip location="top">
                     <template v-slot:activator="{ props: tooltip }">
-                      <v-icon v-bind="mergeProps(menu, tooltip)" class="mr-1"
+                      <v-icon v-bind="mergeProps(menu, tooltip)" class="mr-1" aria-label="Toplu stok değiştir"
                         color="processButtonColor">mdi-card-multiple</v-icon>
                     </template>
                     <span>Toplu stok değiştir</span>
@@ -401,10 +383,10 @@
                 <v-card width="240px">
                   <v-card-text>
                     <v-text-field label="Stok Adedi" prepend-icon="mdi-counter" density="compact" variant="outlined"
-                      bg-color="textfieldColor" class="" style="max-width:300px" v-model="batchProcesses.stock.value"
+                      bg-color="textfieldColor" class="pv-mw-300" v-model="batchProcesses.stock.value"
                       @click.stop clearable>
                     </v-text-field>
-                    <v-btn-group elevation="1" class="d-block" density="compact" style="border:1px solid white;">
+                    <v-btn-group elevation="1" class="d-block pv-btn-group" density="compact">
                       <v-btn density="compact" block class="fill-height" color="processButtonColor"
                         @click.stop="stockBatchProcess">
                         <span class="">
@@ -423,7 +405,7 @@
                   {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
                 </v-icon>
               </template>
-              <v-icon v-else :style="sortIcon == 'stock' ? { opacity: .5 } : { opacity: 0 }">
+              <v-icon v-else :class="sortIcon == 'stock' ? 'pv-sort-icon--hint' : 'pv-sort-icon--hidden'">
                 {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
               </v-icon>
 
@@ -432,7 +414,7 @@
 
 
           <div class="d-flex fill-height align-center" v-if="productInfoForm.hasVariant">
-            <div class="font-weight-bold" style="height:20px!important" @click="toggleSort('shelf')"
+            <div class="font-weight-bold pv-sort-head" @click="toggleSort('shelf')"
               @mouseenter="sortIcon = 'shelf'" @mouseleave="sortIcon = undefined">
 
 
@@ -440,7 +422,7 @@
                 <template v-slot:activator="{ props: menu }">
                   <v-tooltip location="top">
                     <template v-slot:activator="{ props: tooltip }">
-                      <v-icon v-bind="mergeProps(menu, tooltip)" class="mr-1"
+                      <v-icon v-bind="mergeProps(menu, tooltip)" class="mr-1" aria-label="Toplu raf değiştir"
                         color="processButtonColor">mdi-card-multiple</v-icon>
                     </template>
                     <span>Toplu raf değiştir</span>
@@ -449,10 +431,10 @@
                 <v-card width="240px">
                   <v-card-text>
                     <v-text-field label="Raf" prepend-icon="mdi-counter" density="compact" variant="outlined"
-                      bg-color="textfieldColor" class="" style="max-width:300px" v-model="batchProcesses.shelf.value"
+                      bg-color="textfieldColor" class="pv-mw-300" v-model="batchProcesses.shelf.value"
                       @click.stop clearable>
                     </v-text-field>
-                    <v-btn-group elevation="1" class="d-block" density="compact" style="border:1px solid white;">
+                    <v-btn-group elevation="1" class="d-block pv-btn-group" density="compact">
                       <v-btn density="compact" block class="fill-height" color="processButtonColor"
                         @click.stop="shelfBatchProcess">
                         <span class="">
@@ -470,7 +452,7 @@
                   {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
                 </v-icon>
               </template>
-              <v-icon v-else :style="sortIcon == 'shelf' ? { opacity: .5 } : { opacity: 0 }">
+              <v-icon v-else :class="sortIcon == 'shelf' ? 'pv-sort-icon--hint' : 'pv-sort-icon--hidden'">
                 {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
               </v-icon>
             </div>
@@ -485,7 +467,7 @@
       <template v-slot:header.choiceTitle="{ column }">
 
         <div class="d-flex fill-height align-center">
-          <div class="font-weight-bold text-body-2" style="height:20px!important"
+          <div class="font-weight-bold text-body-2 pv-sort-head"
             @click="toggleSort('choiceValueTitle')" @mouseenter="sortIcon = 'choiceValueTitle'"
             @mouseleave="sortIcon = undefined">
             Grup
@@ -494,10 +476,10 @@
                 {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
               </v-icon>
             </template>
-            <v-icon v-else-if="sortIcon == 'choiceValueTitle'" style="opacity:.5">
+            <v-icon v-else-if="sortIcon == 'choiceValueTitle'" class="pv-sort-icon--hint">
               {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
             </v-icon>
-            <v-icon v-else style="opacity:0">
+            <v-icon v-else class="pv-sort-icon--hidden">
               {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
             </v-icon>
 
@@ -517,8 +499,7 @@
 
           <v-menu :close-on-content-click="false" v-model="isVariantGeneratorMenu">
             <template v-slot:activator="{ props }">
-              <v-btn v-bind="props" size="35" elevation=0 color="success" class="mr-2"
-                style="border:1px solid rgb(var(--v-theme-borderColor))">
+              <v-btn v-bind="props" size="35" elevation=0 color="success" class="mr-2 pv-head-btn" aria-label="Varyant oluştur">
                 <v-icon size="large">mdi-plus</v-icon>
               </v-btn>
             </template>
@@ -539,14 +520,13 @@
 
           <v-menu scroll-strategy="close">
             <template v-slot:activator="{ props }">
-              <v-btn flat size="35" v-bind="props"
-                style="background-color:white!important;border:1px solid rgb(var(--v-theme-borderColor));" elevation=0
-                color="transparent">
-                <v-icon color="processButtonColor" v-bind="props" size="x-large" class="" style="">mdi-menu</v-icon>
+              <v-btn flat size="35" v-bind="props" elevation=0
+                color="transparent" class="pv-head-btn pv-head-btn--surface" aria-label="Varyant işlemleri">
+                <v-icon color="processButtonColor" size="x-large" class="">mdi-menu</v-icon>
               </v-btn>
             </template>
-            <v-card style="border-radius:5px">
-              <v-list class="pt-0 pb-0" density="compact" style="background-color:rgb(var(--v-theme-loginForm))">
+            <v-card class="pv-menu-card">
+              <v-list class="pt-0 pb-0 pv-ops-list" density="compact">
                 <v-divider color="passiveColor" class="ml-5 mr-5" />
                 <v-list-subheader
                   class="mt-0 d-flex align-center justify-start bg-primaryLightenMore text-white font-weight-bold">
@@ -564,7 +544,7 @@
                 <v-list-item @click="searchVariantForm.searchVariantFormMenu = !searchVariantForm.searchVariantFormMenu"
                   class="font-weight-medium">
                   <template #prepend>
-                    <v-icon color="primary" size="25" class="" style="opacity: 1;">mdi-magnify</v-icon>
+                    <v-icon color="primary" size="25" class="pv-icon-opaque">mdi-magnify</v-icon>
                   </template>
                   Ara
                 </v-list-item>
@@ -574,8 +554,7 @@
                 <v-divider color="passiveColor" class="ml-5 mr-5" />
                 <v-list-item @click="isBatchVariantDialog = !isBatchVariantDialog" class="font-weight-medium">
                   <template #prepend>
-                    <v-icon color="success" size="25" class=""
-                      style="opacity: 1;">mdi-checkbox-multiple-marked-outline</v-icon>
+                    <v-icon color="success" size="25" class="pv-icon-opaque">mdi-checkbox-multiple-marked-outline</v-icon>
                   </template>
                   Toplu Özellik Düzenleme
                 </v-list-item>
@@ -583,7 +562,7 @@
 
                 <v-list-item @click="openBatchVariantPlatformPrices" class="font-weight-medium">
                   <template #prepend>
-                    <v-icon color="success" size="25" class="" style="opacity: 1;">mdi-currency-try</v-icon>
+                    <v-icon color="success" size="25" class="pv-icon-opaque">mdi-currency-try</v-icon>
                   </template>
                   Toplu Fiyat Düzenleme
                 </v-list-item>
@@ -591,7 +570,7 @@
 
                 <v-list-item @click="mapAllChoices" class="font-weight-medium">
                   <template #prepend>
-                    <v-icon color="success" size="25" class="" style="opacity: 1;">mdi-map</v-icon>
+                    <v-icon color="success" size="25" class="pv-icon-opaque">mdi-map</v-icon>
                   </template>
                   Toplu Seçenek Eşleştir
                 </v-list-item>
@@ -599,7 +578,7 @@
 
                 <v-list-item @click="deleteAllBatchProcess" class="font-weight-medium">
                   <template #prepend>
-                    <v-icon color="deleteButtonColor" size="25" class="" style="opacity: 1;">mdi-delete</v-icon>
+                    <v-icon color="deleteButtonColor" size="25" class="pv-icon-opaque">mdi-delete</v-icon>
                   </template>
                   Toplu Silme
                 </v-list-item>
@@ -613,7 +592,7 @@
       <template v-slot:item="{ item, index }: any">
 
         <tr v-if="index != 0 && rowspanSet.get(item.tempId)">
-          <td colspan="9" style="min-height:10px;line-height:10px;height:30px">
+          <td colspan="9" class="pv-group-spacer">
           </td>
         </tr>
 
@@ -622,42 +601,39 @@
 
           <td class="text-center " v-if="productInfoForm.hasVariant">
             <div>
-              <v-checkbox v-model="selectedVariants" style="margin-left:1px" :value="item.tempId" density="compact"
-                hide-details></v-checkbox>
+              <v-checkbox v-model="selectedVariants" :value="item.tempId" density="compact" aria-label="Varyantı seç"
+                hide-details class="pv-select-cb"></v-checkbox>
             </div>
           </td>
-          <td style="border-right:1px solid #ddd;cursor:pointer">
-            <div class="d-flex align-center fill-height;" style="border-right:0px solid #ddd;cursor:pointer"
+          <td class="pv-td-variant">
+            <div class="d-flex align-center fill-height; pv-clickable"
               @click="setEditingField({ value: 'stockcode' }, item.tempId)">
-              <div class="text-center mr-4 elevation-1"
-                style="width:110px;min-width:110px;border:0px solid #e9e9e9!important;">
+              <div class="text-center mr-4 elevation-1 pv-thumb">
                 <v-tooltip location="bottom" open-delay="1000" text="Ürünü düzenlemek için basınız">
                   <template v-slot:activator="{ props: tooltipProps }">
 
                     <ProductVariantImageComponent v-bind="{ ...tooltipProps }" :productInfoForm="productInfoForm"
                       @click.stop="isVariantImagesDialog = true; selectedVariantForEdit = item"
-                      :imageId="item.images ? item.images[0] : undefined"
-                      style="border-bottom:1px solid #f3f3f3!important;cursor:pointer" />
+                      :imageId="item.images ? item.images[0] : undefined" class="pv-thumb-img" />
 
                   </template>
                 </v-tooltip>
               </div>
-              <div v-if="editingVariantId == item.tempId && editingHeaderValue == 'stockcode'"
-                style="width:100%!important" class="pr-4">
-                <v-text-field density="compact" variant="outlined" bg-color="textfieldColor" class="" style=""
+              <div v-if="editingVariantId == item.tempId && editingHeaderValue == 'stockcode'" class="pr-4 pv-w-full">
+                <v-text-field density="compact" variant="outlined" bg-color="textfieldColor" class=""
                   label="Stok Kodu" v-model="item.stockcode" @click.stop hide-details></v-text-field>
-                <v-text-field density="compact" variant="outlined" bg-color="textfieldColor" class="mt-2" style=""
+                <v-text-field density="compact" variant="outlined" bg-color="textfieldColor" class="mt-2"
                   label="Barkod" v-model="item.barcode" @click.stop hide-details></v-text-field>
               </div>
-              <div v-else style="width:100%!important" class="d-flex align-center fill-height">
+              <div v-else class="d-flex align-center fill-height pv-w-full">
                 <div class="d-flex">
                   <div>
-                    <div class="font-weight-light text-caption mt-1" style="line-height: .7;font-size:10px!important">
+                    <div class="font-weight-light text-caption mt-1 pv-field-caption">
                       Stok
                       Kodu
                     </div>
                     <span class="font-weight-bold">{{ item.stockcode }}</span>
-                    <div class="font-weight-light text-caption mt-1" style="line-height: .7;font-size:10px!important">
+                    <div class="font-weight-light text-caption mt-1 pv-field-caption">
                       Barkod
                     </div>
                     <span class="font-weight-medium">{{ item.barcode }}</span>
@@ -668,20 +644,19 @@
 
           </td>
           <td :rowspan="rowspanSet.get(item.tempId)" v-if="productInfoForm.hasVariant && rowspanSet.get(item.tempId)"
-            style="border-left:1px solid rgb(var(--v-theme-tableHeaderColor));;background-color:rgb(var(--v-theme-cardComponentHoverColor))"
-            class="text-center">
+            class="text-center pv-td-group">
             <div class="font-weight-bold">{{ choicesStore.getChoiceValueName(item.choices[0]?.choiceId,
               item.choices[0]?.choiceValueId) }} </div>
           </td>
 
-          <td style="border-left:2px solid rgb(var(--v-theme-tableHeaderColor));cursor:pointer"
-            v-if="productInfoForm.hasVariant">
-            <div class="d-flex fill-height align-center d-block mt-1" style="width:100%!important">
+          <td
+            v-if="productInfoForm.hasVariant" class="pv-td-choices">
+            <div class="d-flex fill-height align-center d-block mt-1 pv-w-full">
               <div>
                 <div v-for="(choice, index) of item.choices">
                   <div class="d-flex" v-if="index > 0">
                     <div :class="index > 0 ? ['pt-1'] : []">
-                      <div class="font-weight-light text-caption " style="line-height: .7;font-size:10px!important">
+                      <div class="font-weight-light text-caption pv-field-caption">
                         {{ choicesStore.getChoiceTitle(choice.choiceId) }} </div>
                       <span class="font-weight-bold">{{ choicesStore.getChoiceValueName(choice.choiceId,
                         choice.choiceValueId) }}</span>
@@ -692,40 +667,37 @@
             </div>
 
           </td>
-          <td style="border-left:1.5px solid rgb(var(--v-theme-tableHeaderColor));">
-            <div class="d-flex fill-height align-center" style="width:100%">
+          <td class="pv-td-price">
+            <div class="d-flex fill-height align-center pv-w-full-soft">
 
-              <div :class="isDisplayMd() ? [] : ['d-flex', 'align-center']"
-                style="cursor:pointer;width:100%!important;">
+              <div :class="isDisplayMd() ? [] : ['d-flex', 'align-center']" class="pv-clickable pv-w-full">
                 <div
-                  v-if="item.prices.isPlatformBasedPrice == false && editingVariantId == item.tempId && editingHeaderValue == 'prices'"
-                  style="min-width:200px!important">
+                  v-if="item.prices.isPlatformBasedPrice == false && editingVariantId == item.tempId && editingHeaderValue == 'prices'" class="pv-minw-200i">
                   <div class="d-flex align-center justify-start">
                     <VCurrencyComponentVue v-model="item.prices.salePrice" :rules="formRules.mandatoryRule"
                       :compact="true" :label="$t('productDefinitions.product.variants.salePrice')" clearable
-                      :required="true" class="mt-1" style="max-width:300px">
+                      :required="true" class="mt-1 pv-mw-300">
                     </VCurrencyComponentVue>
                   </div>
 
                   <div class="d-flex align-center justify-start">
                     <VCurrencyComponentVue v-model="item.prices.marketPrice" :rules="formRules.mandatoryRule"
                       :compact="true" :label="$t('productDefinitions.product.variants.marketPrice')" clearable
-                      :required="true" class="mt-2" style="max-width:300px">
+                      :required="true" class="mt-2 pv-mw-300">
                     </VCurrencyComponentVue>
                   </div>
                 </div>
 
                 <template v-else-if="item.prices.isPlatformBasedPrice == true">
-                  <div @click="openVariantPlatformPrices(item)" class="d-flex align-center fill-height"
-                    style="cursor:pointer;width:auto!important;min-width:130px">
+                  <div @click="openVariantPlatformPrices(item)" class="d-flex align-center fill-height pv-price-cell">
                     <div>
 
-                      <div class="font-weight-light text-caption mt-1" style="line-height: .7;font-size:10px!important">
+                      <div class="font-weight-light text-caption mt-1 pv-field-caption">
                         Satış Fiyatı
                       </div>
                       <span class="font-weight-bold"> {{ formatCurrency(findMinimumSalePrice(item.platforms)) }} - {{
                         formatCurrency(findMaximumSalePrice(item.platforms)) }}</span>
-                      <div class="font-weight-light text-caption mt-1" style="line-height: .7;font-size:10px!important">
+                      <div class="font-weight-light text-caption mt-1 pv-field-caption">
                         Piyasa Fiyatı
                       </div>
                       <span class="font-weight-medium"> {{ formatCurrency(findMinimumMarketPrice(item.platforms)) }} -
@@ -736,14 +708,14 @@
                 </template>
                 <template v-else>
                   <div @click="setEditingField({ value: 'prices' }, item.tempId)"
-                    class="d-flex align-center fill-height" style="cursor:pointer;width:auto!important;min-width:130px">
+                    class="d-flex align-center fill-height pv-price-cell">
                     <div>
 
-                      <div class="font-weight-light text-caption mt-1" style="line-height: .7;font-size:10px!important">
+                      <div class="font-weight-light text-caption mt-1 pv-field-caption">
                         Satış Fiyatı
                       </div>
                       <span class="font-weight-bold"> {{ formatCurrency(item.prices.salePrice) }}</span>
-                      <div class="font-weight-light text-caption mt-1" style="line-height: .7;font-size:10px!important">
+                      <div class="font-weight-light text-caption mt-1 pv-field-caption">
                         Piyasa Fiyatı
                       </div>
                       <span class="font-weight-medium"> {{ formatCurrency(item.prices.marketPrice) }}</span>
@@ -754,49 +726,47 @@
                 <div>
                   <v-checkbox :class="isDisplayMd() ? [''] : ['ml-12']"
                     :label="$t('productDefinitions.product.platformPrice')" @update:modelValue="" density="compact"
-                    hide-details v-model="item.prices.isPlatformBasedPrice" @click.stop class="ma-0  pa-0 "
-                    style="min-width:180px" color="processButtonColor" />
+                    hide-details v-model="item.prices.isPlatformBasedPrice" @click.stop class="ma-0  pa-0 pv-minw-180" color="processButtonColor" />
                 </div>
 
               </div>
             </div>
 
           </td>
-          <td style="border:1.5px solid rgb(var(--v-theme-tableHeaderColor));border-top:none;border-bottom:none">
+          <td class="pv-td-stock">
 
 
 
             <div :class="isDisplayMd() ? [''] : ['d-flex']" class="align-center">
 
-              <div class="d-flex font-weight-bold align-center pr-4" style="cursor:pointer"
+              <div class="d-flex font-weight-bold align-center pr-4 pv-clickable"
                 @click="setEditingField({ value: 'stock' }, item.tempId)">
 
                 <v-text-field v-if="editingVariantId == item.tempId && editingHeaderValue == 'stock'" label="Stok"
-                  type="number" density="compact" variant="outlined" bg-color="textfieldColor" class=""
-                  style="width:90px" v-model.number="item.stock" @click.stop hide-details></v-text-field>
+                  type="number" density="compact" variant="outlined" bg-color="textfieldColor" class="pv-w-90" v-model.number="item.stock" @click.stop hide-details></v-text-field>
 
                 <div v-else :class="isDisplayMd() ? [''] : ['pr-6']">
-                  <div class="font-weight-light text-caption mt-1" style="line-height: .7;font-size:10px!important">
+                  <div class="font-weight-light text-caption mt-1 pv-field-caption">
                     Stok
                   </div>
-                  <div class="d-flex font-weight-bold fill-height align-center" style="cursor:pointer">
+                  <div class="d-flex font-weight-bold fill-height align-center pv-clickable">
                     {{ item.stock }}
                   </div>
                 </div>
 
               </div>
 
-              <div class="d-flex align-center d-block" style="cursor:pointer"
+              <div class="d-flex align-center d-block pv-clickable"
                 @click="setEditingField({ value: 'shelf' }, item.tempId)">
                 <v-text-field v-if="editingVariantId == item.tempId && editingHeaderValue == 'shelf'" label="Raf"
-                  density="compact" variant="outlined" bg-color="textfieldColor" class="" style="min-width:90px"
+                  density="compact" variant="outlined" bg-color="textfieldColor" class="pv-minw-90"
                   v-model="item.shelf" @click.stop hide-details></v-text-field>
 
                 <div v-else :class="isDisplayMd() ? [''] : ['pl-6']">
-                  <div class="font-weight-light text-caption mt-1" style="line-height: .7;font-size:10px!important">
+                  <div class="font-weight-light text-caption mt-1 pv-field-caption">
                     Raf
                   </div>
-                  <div class="d-flex font-weight-bold fill-height align-center" style="">
+                  <div class="d-flex font-weight-bold fill-height align-center">
                     {{ item.shelf || '-' }}
                   </div>
                 </div>
@@ -809,15 +779,14 @@
               <v-tooltip location="bottom" open-delay="1000" text="Ürün seçeneğini düzenlemek için basınız">
                 <template v-slot:activator="{ props: tooltipProps }">
 
-                  <v-btn v-bind="{ ...tooltipProps }" elevation="0" size="35" class="mr-2"
-                    style="min-width:0;border:1px solid #bbb"
+                  <v-btn v-bind="{ ...tooltipProps }" elevation="0" size="35" class="mr-2 pv-row-btn"
                     @click.stop="isVariantAttributesDialog = !isVariantAttributesDialog; editingVariant = item"
-                    color="processButtonColor"><v-icon size="large">mdi-pencil</v-icon></v-btn>
+                    color="processButtonColor" aria-label="Varyantı düzenle"><v-icon size="large">mdi-pencil</v-icon></v-btn>
                 </template>
               </v-tooltip>
 
-              <v-btn v-if="productInfoForm.hasVariant" elevation="0" size="35" class=""
-                @click.stop="deleteVariant(item)" style="min-width:0;border:1px solid #bbb" color="danger"><v-icon
+              <v-btn v-if="productInfoForm.hasVariant" elevation="0" size="35" class="pv-row-btn"
+                @click.stop="deleteVariant(item)" color="danger" aria-label="Varyantı sil"><v-icon
                   size="large">mdi-delete</v-icon></v-btn>
             </div>
           </td>
@@ -825,8 +794,7 @@
       </template>
       <template v-slot:bottom="{ }">
         <PaginationComponent :totalNumberOfPages="pagination.totalNumberOfPages" :pagination="pagination"
-          v-if="productInfoForm.hasVariant" @set-page="search" v-model="pagination.page"
-          style="position:relative;border-top:1px solid rgb(var(--v-theme-cardComponentColor))" />
+          v-if="productInfoForm.hasVariant" @set-page="search" v-model="pagination.page" class="pv-pagination" />
       </template>
 
     </v-data-table-server>
@@ -1979,87 +1947,204 @@ const setEditingField = (header: any, variantId: any) => {
 
 
 <style scoped>
-@media (max-width: 3200px) {
-  .special-table-width {
-    max-width: 72vw !important;
-  }
+/*
+  ADR-0015 B5-2 — önceki satır içi stillerin (131 literal) token'lı karşılıkları. Satır içi stil
+  her zaman en yüksek önceliğe sahipti; Vuetify'ın yüksek özgüllüklü kurallarıyla (td yüksekliği,
+  tablo kenarlıkları, v-btn/v-avatar ölçüleri) çakışan yerlerde aynı sonucu korumak için
+  `!important` kullanılır.
+*/
+
+/* Kök fragment/teleport (v-dialog) veya kendi satır içi stili olan alt bileşenler (CardComponent,
+   PaginationComponent, ProductVariantImageComponent) scoped özniteliği almayabilir → :global. */
+:global(.pv-fade) {
+  transition: opacity var(--ek-duration-base) var(--ek-easing-standard) !important;
 }
 
-@media (max-width: 2800px) {
-  .special-table-width {
-    max-width: 70vw !important;
-  }
+:global(.pv-fade-fast) {
+  transition: opacity var(--ek-duration-fast) var(--ek-easing-standard) !important;
 }
 
-@media (max-width: 2500px) {
-  .special-table-width {
-    max-width: 68vw !important;
-  }
+:global(.pv-dim) {
+  opacity: .2 !important;
 }
 
-@media (max-width: 2200px) {
-  .special-table-width {
-    max-width: 65vw !important;
-  }
+:global(.pv-dialog-idle) {
+  visibility: hidden !important;
+  opacity: .2 !important;
 }
 
-@media (max-width: 2000px) {
-  .special-table-width {
-    max-width: 60vw !important;
-  }
+:global(.pv-thumb-img) {
+  border-bottom: 1px solid var(--ek-color-surface-sunken) !important;
+  cursor: pointer;
 }
 
-@media (max-width: 1800px) {
-  .special-table-width {
-    max-width: 55vw !important;
-  }
+:global(.pv-pagination) {
+  position: relative !important;
+  border-top: 1px solid var(--ek-color-card-component-color);
 }
 
-@media (max-width: 1600px) {
-  .special-table-width {
-    max-width: 50vw !important;
-  }
+.pv-table {
+  position: absolute !important;
+  top: 75px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: auto !important;
+  height: calc(100vh - 170px);
+  border: 1px solid var(--ek-color-border-strong);
+  background-color: var(--ek-color-surface) !important;
 }
 
-@media (max-width: 1400px) {
-  .special-table-width {
-    max-width: 45vw !important;
-  }
+.pv-image-head {
+  width: 124px;
+  opacity: .6;
 }
 
-@media (max-width: 1200px) {
-  .special-table-width {
-    max-width: 40vw !important;
-  }
-
-  @media (max-width: 1100px) {
-    .special-table-width {
-      max-width: 30vw !important;
-    }
-  }
-
-
-  .sticky-container {
-    width: 100%;
-  }
-
-  .sticky-row {
-    position: -webkit-sticky;
-    /* For Safari */
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    /* Adjust z-index if needed */
-    background-color: white;
-    /* Optional: Add background color */
-  }
+.pv-sort-head {
+  height: 20px !important;
+  cursor: pointer;
 }
 
-.custom-checkbox {
-  height: 24px;
-  width: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.pv-w-120 {
+  width: 120px;
+}
+
+.pv-w-115 {
+  width: 115px !important;
+}
+
+.pv-sort-icon--hint {
+  opacity: .5 !important;
+}
+
+.pv-sort-icon--hidden {
+  opacity: 0 !important;
+}
+
+.pv-field-caption {
+  font-size: var(--ek-font-size-xs) !important;
+  line-height: .7;
+  color: var(--ek-color-content-muted);
+}
+
+.pv-btn-group {
+  border: 1px solid var(--ek-color-surface);
+}
+
+.pv-platform-row {
+  border-bottom: 1px solid var(--ek-color-border-default);
+}
+
+.pv-platform-avatar {
+  width: 70px !important;
+  height: 70px !important;
+  border: 1px solid var(--ek-color-surface);
+}
+
+.pv-head-btn {
+  border: 1px solid var(--ek-color-border-color) !important;
+}
+
+.pv-head-btn--surface {
+  background-color: var(--ek-color-surface) !important;
+}
+
+.pv-menu-card {
+  border-radius: var(--ek-radius-md) !important;
+}
+
+.pv-ops-list {
+  background-color: var(--ek-color-login-form) !important;
+}
+
+.pv-icon-opaque {
+  opacity: 1 !important;
+}
+
+.pv-group-spacer {
+  min-height: 10px !important;
+  line-height: 10px !important;
+  height: 30px !important;
+}
+
+.pv-select-cb {
+  margin-left: 1px;
+}
+
+.pv-td-variant {
+  border-right: 1px solid var(--ek-color-border-default) !important;
+  cursor: pointer;
+}
+
+.pv-thumb {
+  width: 110px;
+  min-width: 110px;
+}
+
+.pv-td-group {
+  border-left: 1px solid var(--ek-color-table-header-color) !important;
+  background-color: var(--ek-color-card-component-hover-color) !important;
+}
+
+.pv-td-choices {
+  border-left: 2px solid var(--ek-color-table-header-color) !important;
+  cursor: pointer;
+}
+
+.pv-td-price {
+  border-left: 1.5px solid var(--ek-color-table-header-color) !important;
+}
+
+.pv-td-stock {
+  border: 1.5px solid var(--ek-color-table-header-color) !important;
+  border-top: none !important;
+  border-bottom: none !important;
+}
+
+.pv-price-cell {
+  cursor: pointer;
+  width: auto !important;
+  min-width: 130px;
+}
+
+.pv-row-btn {
+  min-width: 0 !important;
+  border: 1px solid var(--ek-color-border-strong) !important;
+}
+
+.pv-clickable {
+  cursor: pointer;
+}
+
+.pv-w-full {
+  width: 100% !important;
+}
+
+.pv-w-full-soft {
+  width: 100%;
+}
+
+.pv-w-90 {
+  width: 90px;
+}
+
+.pv-mw-300 {
+  max-width: 300px;
+}
+
+.pv-minw-90 {
+  min-width: 90px;
+}
+
+.pv-minw-180 {
+  min-width: 180px;
+}
+
+.pv-minw-200 {
+  min-width: 200px;
+}
+
+.pv-minw-200i {
+  min-width: 200px !important;
 }
 </style>

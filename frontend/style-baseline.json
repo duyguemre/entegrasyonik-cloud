@@ -2,10 +2,10 @@
   "_meta": "ADR-0011 Karar 2 / Aşama 1 literal-stil mandalı tabanı. node scripts/check-style-baseline.js --write ile üretildi (bkz. scripts/style-literal-counts.js). Hiçbir dosyada/kategoride sayı ARTAMAZ; yeni dosyalar 0 ile başlamalı; düşüş serbest ama bu dosyanın güncellenmesi gerekir (check-style-baseline.js OK dönene kadar).",
   "date": "2026-09-29",
   "totals": {
-    "total": 2167,
-    "hex": 884,
-    "rgb": 247,
-    "inlineStyle": 1020,
+    "total": 2038,
+    "hex": 875,
+    "rgb": 238,
+    "inlineStyle": 909,
     "cubicBezier": 10,
     "motion": 6
   },
@@ -1275,12 +1275,12 @@
       "total": 4
     },
     "src/components/productDefinitions/variants/ProductVariantsComponent.vue": {
-      "hex": 9,
-      "rgb": 9,
-      "inlineStyle": 113,
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 2,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 131
+      "total": 2
     },
     "src/components/productDefinitions/variants/platformInfos/HepsiburadaVariantInfoComponent.vue": {
       "hex": 0,

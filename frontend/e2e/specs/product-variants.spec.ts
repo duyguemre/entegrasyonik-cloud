@@ -99,8 +99,8 @@ test.describe('P3 (B5-2) — Ürün varyantları (ProductVariantsComponent)', ()
     const root = await openVariantStep(page)
 
     await root.getByText('SK-E2E-SIYAH').click()
-    await expect(root.getByLabel('Stok Kodu')).toHaveValue('SK-E2E-SIYAH')
-    await expect(root.getByLabel('Barkod')).toHaveValue('8690000000101')
+    await expect(root.getByLabel('Stok Kodu', { exact: true })).toHaveValue('SK-E2E-SIYAH')
+    await expect(root.getByLabel('Barkod', { exact: true })).toHaveValue('8690000000101')
   })
 
   test('varyant işlemleri menüsü: menü butonu "Varyant İşlemleri" listesini açar', async ({ page }) => {
@@ -139,7 +139,9 @@ test.describe('P3 (B5-2) — Ürün varyantları (ProductVariantsComponent)', ()
   test('ekran görüntüsü tabanı (ürün varyantları)', async ({ page }) => {
     await openVariantStep(page)
     await page.waitForTimeout(300)
-    await expect(page).toHaveScreenshot('product-variants.png', { fullPage: false })
+    // View'ın (B5-1, kapsam dışı) kategori adımından gelen hata bildirimi rastgele bir destek kodu
+    // içerir — kararlı taban için maskelenir.
+    await expect(page).toHaveScreenshot('product-variants.png', { fullPage: false, mask: [page.locator('.v-snackbar__wrapper')] })
   })
 
   test('axe: WCAG 2.1 AA taraması', async ({ page }, testInfo) => {
