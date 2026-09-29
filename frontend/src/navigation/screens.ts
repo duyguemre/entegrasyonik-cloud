@@ -127,6 +127,11 @@ export const SCREENS: readonly ScreenDefinition[] = [
     key: 'adminPanel/EffectiveConfigView', slug: 'admin/effective-config', section: 'admin', order: 6,
     urlParams: [{ name: 'code', kind: 'enum', allowed: ['trendyol', 'hepsiburada', 'n11', 'pazarama', 'ideasoft', 'bizimhesap', '_engine'] }],
   },
+  // C1.4 — finans sekmeleri: `tab` FinancialListView.vue'nin GERÇEKTEN okuduğu (`parameters?.tab`) sekme anahtarı.
+  {
+    key: 'FinancialListView', slug: 'finance', section: 'finance', order: 0,
+    urlParams: [{ name: 'tab', kind: 'enum', allowed: ['transactions', 'summary', 'cargo-invoices', 'payouts'] }],
+  },
   // ADR-0014 S4b: kayıt sonrası abonelik ekranı derin bağlantısı (`/subscription?plan=<kod>`). `plan` YALNIZCA
   // kapalı, izinli plan kodu kümesidir (registerIntent.ts; seed ile testle eşit) — PII/serbest metin YOK.
   { key: 'user/SubscriptionView', slug: 'subscription', urlParams: [{ name: 'plan', kind: 'enum', allowed: REGISTER_PLAN_CODES }], section: 'finance', order: 1 },
