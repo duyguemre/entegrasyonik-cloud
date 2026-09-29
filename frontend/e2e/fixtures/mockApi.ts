@@ -21,6 +21,7 @@ import {
   importJobsDoluFixture,
   importJobByJobIdFixture,
   importJobReportFixture,
+  integrationHealthFixture,
   integrationDefinitionsFixture,
   integrationTypesFixture,
   invoicesDoluFixture,
@@ -33,6 +34,7 @@ import {
   resourcesFixture,
   retrieveClientSettingsResponse,
   settingsFixture,
+  stockOverviewFixture,
   userContextFixture,
 } from './apiData'
 import { menuFixture } from './nav'
@@ -74,6 +76,9 @@ export const defaultRoutes: Record<string, MockValue> = {
   'ChoiceService': [],
   'HashtagService': [],
   'OrderService/getOrderDashboardInsights': orderDashboardInsightsFixture,
+  // DS-v2 dashboard kartları (stok uyarıları, entegrasyon sağlığı).
+  'StockService/getStockOverview': stockOverviewFixture,
+  'IntegrationService/getIntegrationHealth': integrationHealthFixture,
   'OrderService/getOrders': ordersDoluFixture,
   'ProductService/getProducts': productsDoluFixture,
   'ClaimService/getClaims': claimsDoluFixture,
