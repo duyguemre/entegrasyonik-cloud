@@ -1,7 +1,7 @@
 <!--
   frontend/src/components/ds/EkDialog.vue
 
-  DS-v2 — diyalog. Üç bölge HER diyalogda aynı:
+  DS-v2 — diyalog. Üç bölge HER diyalogda aynı (bkz. EkDialogCard):
     Başlık bandı: [ikon kapsülü] Başlık / açıklama ............ [kapat ×]
     İçerik: varsayılan slot (form ise EkFormGrid)
     Eylem çubuğu (sağa yaslı): [#actions-start] ... Vazgeç (ikincil) · Onay (birincil)
@@ -10,54 +10,34 @@
   silme yok). Genişlik: sm 440 (onay) · md 560 (kısa form) · lg 760.
   Esc kapatır; odak diyalog içinde tutulur (Vuetify v-dialog).
   `inline` yalnızca geliştirme vitrini içindir: aynı kartı overlay'siz çizer.
+  Not: v-dialog şablonda DOĞRUDAN yazılır — vite-plugin-vuetify bileşen CSS'ini
+  yalnızca şablonda gördüğü bileşenler için yükler (dinamik `<component :is>` ile
+  dialog stilleri eksik kalıp içerik sol üste yapışıyordu).
 -->
 <template>
-  <component
-    :is="inline ? 'div' : VDialog"
-    v-bind="inline ? { class: 'ek-dialog-inline' } : dialogAttrs"
+  <v-dialog
+    v-if="!inline"
+    :model-value="modelValue"
+    :persistent="persistent || confirmLoading"
+    :max-width="maxWidth"
+    class="ek-dialog-overlay"
+    :content-class="`ek-dialog-content ek-dialog-content--${width}`"
+    @update:model-value="(v: boolean) => emit('update:modelValue', v)"
   >
-    <div
-      class="ek-dialog"
-      :class="[`ek-dialog--${tone}`, `ek-dialog--${width}`]"
-      :role="inline ? 'group' : undefined"
-      :aria-labelledby="titleId"
-      :aria-describedby="description ? descId : undefined"
-    >
-      <header class="ek-dialog__header">
-        <EkIconTile v-if="icon" :icon="icon" :tone="tone === 'danger' ? 'error' : 'action'" size="md" />
-        <div class="ek-dialog__titles">
-          <h2 :id="titleId" class="ek-dialog__title">{{ title }}</h2>
-          <p v-if="description" :id="descId" class="ek-dialog__desc">{{ description }}</p>
-        </div>
-        <EkButton tone="ghost" size="sm" icon="mdi-close" icon-only aria-label="Kapat" @click="close" />
-      </header>
-      <div class="ek-dialog__body">
-        <slot />
-      </div>
-      <footer class="ek-dialog__actions">
-        <div class="ek-dialog__actions-start"><slot name="actions-start" /></div>
-        <slot name="actions">
-          <EkButton ref="cancelRef" tone="secondary" @click="cancel">{{ cancelLabel }}</EkButton>
-          <EkButton
-            :tone="tone === 'danger' ? 'danger' : 'primary'"
-            :icon="confirmIcon"
-            :loading="confirmLoading"
-            :disabled="confirmDisabled"
-            @click="emit('confirm')"
-          >
-            {{ confirmLabel }}
-          </EkButton>
-        </slot>
-      </footer>
-    </div>
-  </component>
+    <EkDialogCard ref="cardRef" v-bind="cardProps" @close="close" @cancel="cancel" @confirm="emit('confirm')">
+      <template v-for="(_, name) in $slots" #[name]="scope"><slot :name="name" v-bind="scope ?? {}" /></template>
+    </EkDialogCard>
+  </v-dialog>
+  <div v-else class="ek-dialog-inline">
+    <EkDialogCard v-bind="cardProps" inline @close="close" @cancel="cancel" @confirm="emit('confirm')">
+      <template v-for="(_, name) in $slots" #[name]="scope"><slot :name="name" v-bind="scope ?? {}" /></template>
+    </EkDialogCard>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, useId, watch } from 'vue'
-import { VDialog } from 'vuetify/components'
-import EkButton from './EkButton.vue'
-import EkIconTile from './EkIconTile.vue'
+import { computed, nextTick, ref, watch } from 'vue'
+import EkDialogCard from './EkDialogCard.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -94,18 +74,19 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
-const uid = useId()
-const titleId = `ek-dialog-title-${uid}`
-const descId = `ek-dialog-desc-${uid}`
-const cancelRef = ref<InstanceType<typeof EkButton> | null>(null)
-
-const dialogAttrs = computed(() => ({
-  modelValue: props.modelValue,
-  'onUpdate:modelValue': (value: boolean) => emit('update:modelValue', value),
-  persistent: props.persistent || props.confirmLoading,
-  maxWidth: props.width === 'sm' ? 440 : props.width === 'md' ? 560 : 760,
-  scrim: true,
-  class: 'ek-dialog-overlay',
+const cardRef = ref<InstanceType<typeof EkDialogCard> | null>(null)
+const maxWidth = computed(() => (props.width === 'sm' ? 440 : props.width === 'md' ? 560 : 760))
+const cardProps = computed(() => ({
+  title: props.title,
+  description: props.description,
+  icon: props.icon,
+  tone: props.tone,
+  width: props.width,
+  confirmLabel: props.confirmLabel,
+  confirmIcon: props.confirmIcon,
+  cancelLabel: props.cancelLabel,
+  confirmLoading: props.confirmLoading,
+  confirmDisabled: props.confirmDisabled,
 }))
 
 function close() {
@@ -123,100 +104,10 @@ watch(
   async (open) => {
     if (!open || props.tone !== 'danger') return
     await nextTick()
-    const el = (cancelRef.value as unknown as { $el?: HTMLElement } | null)?.$el
-    el?.focus()
+    setTimeout(() => cardRef.value?.focusCancel(), 0)
   },
 )
 </script>
-
-<style scoped>
-.ek-dialog {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  max-height: calc(100vh - var(--ek-space-16));
-  background: var(--ek-color-surface-raised);
-  border: 1px solid var(--ek-color-border-subtle);
-  border-radius: var(--ek-radius-dialog);
-  box-shadow: var(--ek-shadow-dialog);
-  overflow: hidden;
-}
-
-.ek-dialog-inline .ek-dialog {
-  max-height: none;
-}
-
-.ek-dialog--sm {
-  max-width: 440px;
-}
-
-.ek-dialog--md {
-  max-width: 560px;
-}
-
-.ek-dialog--lg {
-  max-width: 760px;
-}
-
-.ek-dialog__header {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--ek-space-3);
-  padding: var(--ek-space-5) var(--ek-space-4) var(--ek-space-4) var(--ek-space-6);
-}
-
-.ek-dialog__titles {
-  flex: 1;
-  min-width: 0;
-  padding-top: 2px;
-}
-
-.ek-dialog__title {
-  margin: 0;
-  color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-heading-size);
-  line-height: var(--ek-type-heading-line);
-  font-weight: var(--ek-type-heading-weight);
-}
-
-.ek-dialog__desc {
-  margin: var(--ek-space-1) 0 0;
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-body-size);
-  line-height: var(--ek-type-body-line);
-}
-
-.ek-dialog__body {
-  flex: 1;
-  overflow: auto;
-  /* üst 8px: outlined alanın yüzen etiketi kaydırma alanında kesilmesin */
-  padding: var(--ek-space-2) var(--ek-space-6) var(--ek-space-5);
-  color: var(--ek-color-content-default);
-  font-size: var(--ek-type-body-size);
-  line-height: var(--ek-type-body-line);
-}
-
-.ek-dialog__actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--ek-space-2);
-  padding: var(--ek-space-3) var(--ek-space-6);
-  border-top: 1px solid var(--ek-color-border-subtle);
-  background: var(--ek-color-surface-muted);
-}
-
-.ek-dialog__actions-start {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: var(--ek-space-2);
-}
-
-.ek-dialog--danger .ek-dialog__header {
-  box-shadow: inset 0 3px 0 var(--ek-color-error);
-}
-</style>
 
 <style>
 /* Overlay'in kendisi (teleport edildiği için scoped DEĞİL). Scrim token'dan. */
@@ -227,5 +118,32 @@ watch(
 
 .ek-dialog-overlay > .v-overlay__content {
   box-shadow: none;
+}
+
+/* Eski global kural (`public/assets/css/site.css`: `.v-dialog .v-overlay__content
+ * { top:0; left:0; max-width: unset !important; padding: 8px !important … }`)
+ * diyaloğu sol üste ve tam genişliğe zorluyor. DS-v2 diyaloğu kendi içerik
+ * sınıfıyla bu kuraldan korunur (Aşama 2'de eski kural kaldırılınca bu blok
+ * sadeleşir — DESIGN_SYSTEM.md §Envanter). `!important` gerekçesi: eski kural
+ * `!important` kullanıyor. */
+.v-dialog > .ek-dialog-content.v-overlay__content {
+  position: relative;
+  inset: auto;
+  width: calc(100% - var(--ek-space-12));
+  max-height: calc(100% - var(--ek-space-12)) !important;
+  margin: var(--ek-space-6) auto !important;
+  padding: 0 !important;
+}
+
+.v-dialog > .ek-dialog-content--sm.v-overlay__content {
+  max-width: 440px !important;
+}
+
+.v-dialog > .ek-dialog-content--md.v-overlay__content {
+  max-width: 560px !important;
+}
+
+.v-dialog > .ek-dialog-content--lg.v-overlay__content {
+  max-width: 760px !important;
 }
 </style>

@@ -11,7 +11,11 @@
         :error-messages="['Stok adedi tam sayı olmalı — ondalık kısmı silin.']"
       />
       <v-text-field label="Devre dışı" model-value="Otomatik hesaplanır" disabled hint="Sistem tarafından doldurulur" persistent-hint />
-      <v-text-field label="Yükleniyor" model-value="Kategori özellikleri" loading hint="Trendyol'dan özellik listesi çekiliyor" persistent-hint />
+      <v-text-field label="Yükleniyor" model-value="Kategori özellikleri" loading hint="Trendyol'dan özellik listesi çekiliyor" persistent-hint>
+        <template #loader="{ isActive }">
+          <v-progress-linear :active="isActive" indeterminate absolute aria-label="Özellik listesi yükleniyor" />
+        </template>
+      </v-text-field>
       <v-select label="Seçim (select)" :items="channels" model-value="Trendyol" hint="Tek kanal seçin" persistent-hint />
       <v-text-field label="Tarih" type="date" model-value="2026-09-29" prepend-inner-icon="mdi-calendar-outline" hint="gg.aa.yyyy" persistent-hint />
       <v-text-field label="Zorunlu alan *" aria-required="true" hint="* zorunlu alanları işaretler" persistent-hint />

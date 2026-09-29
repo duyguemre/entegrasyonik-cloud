@@ -147,9 +147,14 @@ const bodyId = `ek-filter-body-${uid}`
   border-top: 1px solid var(--ek-color-border-subtle);
 }
 
+.ek-filter__actions {
+  flex-wrap: wrap;
+}
+
 .ek-filter__extra {
   display: flex;
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 0;
   align-items: center;
   gap: var(--ek-space-2);
 }

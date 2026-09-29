@@ -6,7 +6,8 @@
     #filters  (EkFilterPanel + EkActiveFilters) — kaymaz
     kart: #toolbar (seçim çubuğu / başlık) → varsayılan slot (EkDataGrid, YALNIZ
           BURASI kayar) → #pager (EkPagerBar, kartın altına sabit)
-  Çerçeve kapsayıcısının yüksekliğini doldurur (sekme içerik alanı).
+  Çerçeve kapsayıcısının yüksekliğini doldurur (sekme içerik alanı); <768px'te
+  sayfayla kayar, tablo kartı 72vh (min 360px) yüksekliğini korur.
 -->
 <template>
   <div class="ek-list-frame">
@@ -63,5 +64,19 @@ defineProps<{ label: string }>()
 
 .ek-list-frame__pager {
   flex: none;
+}
+
+/* Dar ekranda filtreler tek kolona iner ve uzar: çerçeve sayfayla birlikte
+ * kayar, tablo kartı kendi yüksekliğini korur (başlık + sayfalama yine sabit). */
+@media (max-width: 767px) {
+  .ek-list-frame {
+    height: auto;
+  }
+
+  .ek-list-frame__card {
+    flex: none;
+    height: 72vh;
+    min-height: 360px;
+  }
 }
 </style>

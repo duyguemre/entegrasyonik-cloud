@@ -144,6 +144,12 @@ const noop = () => undefined
   height: 340px;
 }
 
+@media (max-width: 767px) {
+  .ds-list {
+    height: auto;
+  }
+}
+
 .ds-list-states {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
@@ -152,6 +158,7 @@ const noop = () => undefined
 
 .ds-selection {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--ek-space-2);
   min-height: 48px;

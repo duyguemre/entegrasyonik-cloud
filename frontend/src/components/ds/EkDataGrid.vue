@@ -193,6 +193,7 @@ function toggleSort(key: string) {
 
 <style scoped>
 .ek-grid {
+  container-type: inline-size;
   position: relative;
   height: 100%;
   min-height: 0;
@@ -371,6 +372,11 @@ function toggleSort(key: string) {
 }
 
 .ek-grid__empty {
+  /* Tablo yatay kaysa da boş durum görünür alanda ortalı kalır. */
+  position: sticky;
+  left: 0;
+  box-sizing: border-box;
+  width: 100cqi;
   display: flex;
   flex-direction: column;
   align-items: center;

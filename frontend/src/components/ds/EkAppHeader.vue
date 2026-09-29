@@ -52,7 +52,7 @@
         <v-icon icon="mdi-bell-outline" aria-hidden="true" />
         <EkBadge v-if="notificationCount" class="ek-header__count" variant="count" tone="error" :text="notificationCount" />
       </button>
-      <button type="button" class="ek-header__icon-btn" aria-label="Yardım merkezi" @click="emit('help')">
+      <button type="button" class="ek-header__icon-btn ek-header__help" aria-label="Yardım merkezi" @click="emit('help')">
         <v-icon icon="mdi-help-circle-outline" aria-hidden="true" />
       </button>
       <button type="button" class="ek-header__user" :aria-label="`Hesap menüsü: ${userName}`" @click="emit('account')">
@@ -291,8 +291,19 @@ const initials = computed(() =>
   }
 
   .ek-header__segment-label,
-  .ek-header__switch {
+  .ek-header__switch,
+  .ek-header__help {
     display: none;
+  }
+
+  .ek-header__center {
+    min-width: 0;
+  }
+
+  .ek-header__user {
+    padding: 0 var(--ek-space-1);
+    border-color: transparent;
+    background: transparent;
   }
 }
 </style>
