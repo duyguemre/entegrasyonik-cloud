@@ -9,3 +9,6 @@ playwright-report/
 !.env.example
 # Görsel tabanlar yerelde (Windows) üretilir; bulutun Linux tabanları commit'lenmez.
 **/*-linux.png
+
+# Agent tool isolation:"worktree" checkouts (tooling scratch, not project content)
+.claude/worktrees/
