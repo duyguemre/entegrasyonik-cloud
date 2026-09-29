@@ -79,7 +79,7 @@ test.describe('MotionToggle header\'a sığar (320–1600 px)', () => {
 })
 
 test.describe('Hero ürün paneli (Örnek görünüm)', () => {
-  test('mock görünür, "Örnek görünüm" etiketli, kanal çipleri ve konsol temiz', async ({ page }) => {
+  test('mock görünür, "Örnek görünüm" etiketli, kanal noktaları (isimsiz) ve konsol temiz', async ({ page }) => {
     const problems = collectProblems(page)
     await page.goto('/')
     await waitForFonts(page)
@@ -87,6 +87,9 @@ test.describe('Hero ürün paneli (Örnek görünüm)', () => {
     await expect(mock).toBeVisible()
     await expect(mock).toContainText('Örnek görünüm') // rozet yeter (S8 2. tur: ayrı altyazı kaldırıldı)
     await expect(page.locator('[data-testid="hero-mock"] [data-part="chan"]')).toHaveCount(6)
+    // S12: kanal adı yerine genel etiket
+    await expect(mock).toContainText('Pazaryeri siparişi')
+    await expect(mock).not.toContainText('Trendyol')
     expect(problems).toEqual([])
   })
 
@@ -152,13 +155,13 @@ test.describe('Hero ürün paneli (Örnek görünüm)', () => {
 })
 
 test.describe('Kayan şerit, sayaçlar, yapışkan öğeler', () => {
-  test('kanıt sayaçları son değere ulaşır (6, 14) ve şerit tam listeyi içerir', async ({ page }) => {
+  test('deneme günü sayacı son değere ulaşır (14) ve şerit tam listeyi içerir (S12: durum sayacı yok)', async ({ page }) => {
     await page.goto('/')
     await readyMotion(page)
     await page.locator('[data-testid="stat-list"]').scrollIntoViewIfNeeded()
-    await expect(page.locator('[data-testid="integration-count"] [data-count]')).toHaveText('6', { timeout: 5000 })
-    await expect(page.locator('.stats [data-count]').nth(1)).toHaveText('14', { timeout: 5000 })
-    await expect(page.getByTestId('marquee-list').locator('li')).toHaveCount(6)
+    await expect(page.getByTestId('integration-count')).toHaveCount(0)
+    await expect(page.locator('[data-testid="trial-stat"] [data-count]')).toHaveText('14', { timeout: 5000 })
+    await expect(page.getByTestId('marquee-list').locator('li')).toHaveCount(8)
   })
 
   test('reduced-motion: şerit sarılan ve tam görünür liste; kopya küme gizli; taşma yok', async ({ page }) => {
@@ -166,8 +169,8 @@ test.describe('Kayan şerit, sayaçlar, yapışkan öğeler', () => {
     await page.goto('/')
     await waitForFonts(page)
     const items = page.getByTestId('marquee-list').locator('li')
-    await expect(items).toHaveCount(6)
-    // altı öğenin hepsi yatayda görünüm alanının içinde (sarılmış; kırpılan/kayan öğe yok)
+    await expect(items).toHaveCount(8)
+    // tüm öğeler yatayda görünüm alanının içinde (sarılmış; kırpılan/kayan öğe yok)
     const rects = await items.evaluateAll((els) => els.map((el) => el.getBoundingClientRect()).map((r) => ({ x: r.x, right: r.right, w: r.width })))
     const vw = await page.evaluate(() => window.innerWidth)
     for (const r of rects) {
@@ -210,7 +213,7 @@ test.describe('Kayan şerit, sayaçlar, yapışkan öğeler', () => {
   })
 })
 
-test.describe('Kart eğim (tilt) çıkış geçişi (S10)', () => {
+test.describe('Kart eğim (tilt) çıkış geçişi (S10; S12: 2°, 700 ms ease-out)', () => {
   /** `transform`'un transition-duration'ı: `transition-property` listesindeki konumuna göre okunur. */
   const transformDuration = (page: Page, selector: string) =>
     page.evaluate((sel) => {
@@ -234,12 +237,14 @@ test.describe('Kart eğim (tilt) çıkış geçişi (S10)', () => {
     await page.mouse.move(box.x + box.width * 0.2, box.y + box.height * 0.2)
     await page.mouse.move(box.x + box.width * 0.8, box.y + box.height * 0.8, { steps: 4 })
     await expect.poll(() => transformDuration(page, '.plan')).toBe('0.15s')
-    const midTilt = await card.evaluate((el) => getComputedStyle(el).getPropertyValue('--ry'))
-    expect(midTilt.trim()).not.toBe('0deg')
+    await expect.poll(() => card.evaluate((el) => getComputedStyle(el).getPropertyValue('--ry').trim())).not.toBe('0deg')
+    // S12: eğim en fazla 2°
+    const midTilt = await card.evaluate((el) => parseFloat(getComputedStyle(el).getPropertyValue('--ry')))
+    expect(Math.abs(midTilt)).toBeLessThanOrEqual(2)
 
     // ayrılınca: uzun geçiş (--site-tilt-leave-duration) + eğim nötr konuma döner
     await page.mouse.move(box.x - 40, box.y - 40)
-    await expect.poll(() => transformDuration(page, '.plan')).toBe('0.5s')
+    await expect.poll(() => transformDuration(page, '.plan')).toBe('0.7s')
     await expect(card).toHaveCSS('--rx', '0deg')
     await expect(card).toHaveCSS('--ry', '0deg')
   })
@@ -262,5 +267,35 @@ test.describe('Taşma ve düzen (320–1600 px)', () => {
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
       expect(overflow, `${width}`).toBeLessThanOrEqual(0)
     }
+  })
+})
+
+test.describe('Sorun -> çözüm kaydırma ilerlemesi (S12)', () => {
+  const progress = (page: Page) =>
+    page.evaluate(() => document.querySelector<HTMLElement>('[data-testid="problem-solution"]')!.style.getPropertyValue('--scroll-p'))
+
+  test('sahne görünüme girerken --scroll-p 0 -> 1 artar; durdurulunca kaldırılır (statik son durum = 1)', async ({ page }) => {
+    await page.goto('/')
+    await readyMotion(page)
+    const top = await page.evaluate(() => document.querySelector('[data-testid="problem-solution"]')!.getBoundingClientRect().top + window.scrollY)
+    const vh = await page.evaluate(() => window.innerHeight)
+    await page.evaluate((y) => window.scrollTo(0, y), top - vh * 0.95)
+    await expect.poll(async () => Number(await progress(page))).toBeLessThan(0.1)
+    await page.evaluate((y) => window.scrollTo(0, y), top - vh * 0.6)
+    await expect.poll(async () => Number(await progress(page))).toBeGreaterThan(0.2)
+    await page.evaluate((y) => window.scrollTo(0, y), top - vh * 0.1)
+    await expect.poll(async () => Number(await progress(page))).toBe(1)
+    await page.getByTestId('motion-toggle').click()
+    await expect.poll(() => progress(page)).toBe('')
+    // yalnızca transform/opacity: marka kartı tam opak
+    await expect(page.locator('.ps__after')).toHaveCSS('opacity', '1')
+  })
+
+  test('reduced-motion: ilerleme yazılmaz, sahne statik son durumda', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.goto('/')
+    await page.getByTestId('problem-solution').scrollIntoViewIfNeeded()
+    expect(await progress(page)).toBe('')
+    await expect(page.locator('.ps__after')).toHaveCSS('opacity', '1')
   })
 })

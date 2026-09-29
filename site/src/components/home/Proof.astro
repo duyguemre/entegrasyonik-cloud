@@ -1,80 +1,86 @@
 ---
 /**
- * Kanıt şeridi (S7) — hero'nun hemen altında: doğrulanabilir dört sayı/etiket + kayan (marquee) entegrasyon şeridi.
- * Değerlerin HEPSİ kayıttan gelir: entegrasyon sayısı `getPublicIntegrations()`, deneme süresi `getPublicTrial()`,
- * algoritma adı güvenlik yeteneği metninden, kiracı ayrımı yetenek başlığından. Uydurma müşteri/ölçüm/logo YOK.
- * Sahneler: `data-scene="stat-counters"` (sayaçlar görünür olunca 0'dan değere sayar; JS yok/hareket kapalıysa
+ * Fayda şeridi (S7; S12 pazarlama dili) — hero'nun hemen altında dört üst seviye fayda + kayan yetenek şeridi.
+ * S12 (kullanıcı geri bildirimi): "uygulanan entegrasyon sayısı", algoritma adı, "ayrı veritabanı" gibi durum/teknik
+ * ifadeler kaldırıldı; şeritte kanal ADI yerine panelde yönetilen işler yazılır. Her fayda kanıtlı bir yetenek
+ * kaydına bağlıdır (kayıt yoksa gösterilmez); tek sayı deneme süresidir (seçiciden). Uydurma müşteri/ölçüm/logo YOK.
+ * Sahneler: `data-scene="stat-counters"` (deneme günü sayacı görünür olunca 0'dan sayar; JS yok/hareket kapalıysa
  * son değer statiktir) ve `data-scene="marquee"` (şerit yalnızca oynatma durumunda ve görünürken kayar).
  * Şeritte ikinci küme aria-hidden kopyadır (kesintisiz döngü); erişilebilir liste birinci kümedir.
  */
 import Icon from './Icon.astro'
-import { getPublicIntegrations } from '../../data/integrations'
 import { getPublicCapabilities } from '../../data/capabilities'
 import { getPublicTrial } from '../../data/plans'
 
-const items = getPublicIntegrations()
 const trial = getPublicTrial()
-const security = getPublicCapabilities('security')
-const algorithm = security.find((c) => c.id === 'secrets-encryption')?.summary.match(/AES-256-GCM/)?.[0]
-const tenant = security.find((c) => c.id === 'tenant-database')
-const kinds = [...new Set(items.map((i) => i.kindLabel))].join(', ')
+const capIds = new Set(getPublicCapabilities().map((c) => c.id))
+const has = (...ids: string[]) => ids.every((id) => capIds.has(id))
+
+const pillars = [
+  { icon: 'layers' as const, title: 'Tek merkez', sub: 'Tüm satış kanallarınız tek panelde', show: has('multi-channel-products', 'unified-orders') },
+  { icon: 'stock' as const, title: 'Eşzamanlı stok', sub: 'Siparişte stok rezerve edilir, aşırı satış riski azalır', show: has('stock-reservation') },
+  { icon: 'shield' as const, title: 'Kurumsal güvenlik', sub: 'Şifreli anahtarlar ve veri izolasyonu', show: has('secrets-encryption', 'tenant-database') },
+].filter((p) => p.show)
+
+// Şerit: panelde yönetilen işler (her biri yayımlanmış bir yetenek kaydına karşılık gelir).
+const ribbon = [
+  { icon: 'layers' as const, label: 'Ürün ve fiyat yönetimi', id: 'multi-channel-products' },
+  { icon: 'stock' as const, label: 'Merkezi stok', id: 'stock-reservation' },
+  { icon: 'orders' as const, label: 'Birleşik sipariş listesi', id: 'unified-orders' },
+  { icon: 'returns' as const, label: 'İade talepleri', id: 'returns' },
+  { icon: 'chat' as const, label: 'Müşteri soruları', id: 'questions' },
+  { icon: 'finance' as const, label: 'Hakediş görünümü', id: 'finance' },
+  { icon: 'notice' as const, label: 'Kargo ve fatura bildirimi', id: 'shipping-invoice-notice' },
+  { icon: 'database' as const, label: 'ERP kataloğu', id: 'erp-read' },
+].filter((r) => capIds.has(r.id))
 ---
 
 <section class="proof" aria-label="Bir bakışta">
   <div class="proof__inner">
     <ul class="stats" data-scene="stat-counters" data-testid="stat-list">
-      <li class="stat" data-reveal>
-        <p class="stat__value" data-testid="integration-count">
-          <span class="stat__num" data-count={items.length}>{items.length}</span>
-        </p>
-        <p class="stat__label">uygulanan entegrasyon</p>
-        <p class="stat__sub">{kinds}</p>
-      </li>
-      <li class="stat" data-reveal>
-        <p class="stat__value"><span class="stat__num" data-count={trial.days}>{trial.days}</span></p>
-        <p class="stat__label">gün ücretsiz deneme</p>
-        <p class="stat__sub">{!trial.cardRequired ? 'Kart bilgisi gerekmez' : 'Deneme süresince'}</p>
-      </li>
       {
-        algorithm && (
+        pillars.slice(0, 2).map((p) => (
           <li class="stat" data-reveal>
-            <p class="stat__value stat__value--text">{algorithm}</p>
-            <p class="stat__label">ile şifreli saklama</p>
-            <p class="stat__sub">Entegrasyon anahtarları</p>
+            <span class="stat__icon" aria-hidden="true"><Icon name={p.icon} size="md" /></span>
+            <p class="stat__label">{p.title}</p>
+            <p class="stat__sub">{p.sub}</p>
           </li>
-        )
+        ))
       }
+      <li class="stat" data-reveal data-testid="trial-stat">
+        <span class="stat__icon" aria-hidden="true"><Icon name="clock" size="md" /></span>
+        <p class="stat__label"><span class="stat__num" data-count={trial.days}>{trial.days}</span> gün ücretsiz</p>
+        <p class="stat__sub">{!trial.cardRequired ? 'Kart bilgisi gerekmez' : 'Deneme süresince tüm özellikler'}</p>
+      </li>
       {
-        tenant && (
+        pillars.slice(2).map((p) => (
           <li class="stat" data-reveal>
-            <p class="stat__value stat__value--icon"><Icon name="database" size="lg" /></p>
-            <p class="stat__label">Ayrı veritabanı</p>
-            <p class="stat__sub">Her müşteri hesabı için</p>
+            <span class="stat__icon" aria-hidden="true"><Icon name={p.icon} size="md" /></span>
+            <p class="stat__label">{p.title}</p>
+            <p class="stat__sub">{p.sub}</p>
           </li>
-        )
+        ))
       }
     </ul>
 
-    <div class="marquee" data-scene="marquee" role="group" aria-label="Bugün bağlanabilen entegrasyonlar" data-testid="marquee">
+    <div class="marquee" data-scene="marquee" role="group" aria-label="Tek panelde yönettikleriniz" data-testid="marquee">
       <div class="marquee__track">
         <ul class="marquee__set" data-testid="marquee-list">
           {
-            items.map((i) => (
-              <li class="marquee__item" data-code={i.code}>
-                <span class="marquee__mono" aria-hidden="true">{i.name.slice(0, 1)}</span>
-                <span class="marquee__name">{i.name}</span>
-                <span class="marquee__kind">{i.kindLabel}</span>
+            ribbon.map((r) => (
+              <li class="marquee__item">
+                <span class="marquee__mono" aria-hidden="true"><Icon name={r.icon} size="sm" /></span>
+                <span class="marquee__name">{r.label}</span>
               </li>
             ))
           }
         </ul>
         <ul class="marquee__set marquee__set--copy" aria-hidden="true">
           {
-            items.map((i) => (
-              <li class="marquee__item" data-code={i.code}>
-                <span class="marquee__mono">{i.name.slice(0, 1)}</span>
-                <span class="marquee__name">{i.name}</span>
-                <span class="marquee__kind">{i.kindLabel}</span>
+            ribbon.map((r) => (
+              <li class="marquee__item">
+                <span class="marquee__mono"><Icon name={r.icon} size="sm" /></span>
+                <span class="marquee__name">{r.label}</span>
               </li>
             ))
           }
@@ -108,60 +114,44 @@ const kinds = [...new Set(items.map((i) => i.kindLabel))].join(', ')
     gap: var(--ek-space-8);
   }
 
-  /* --- Sayılar --- */
+  /* --- Fayda sütunları: ikon -> başlık -> tek satır açıklama (tek hiyerarşi) --- */
   .stats {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--ek-space-6) var(--ek-space-4);
+    gap: var(--ek-space-8) var(--ek-space-5);
   }
   .stat {
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-1);
-    padding-inline-start: var(--ek-space-4);
-    border-inline-start: var(--site-border-width) solid var(--ek-color-border-default);
     min-width: 0;
   }
-  .stat__value {
-    display: flex;
+  .stat__icon {
+    display: inline-flex;
     align-items: center;
-    min-height: var(--ek-space-10);
-    max-width: none;
-    color: var(--ek-color-content-strong);
-    font-size: var(--site-font-display-md);
-    font-weight: var(--site-font-display-weight);
-    letter-spacing: var(--site-font-display-tracking);
-    line-height: 1;
+    justify-content: center;
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
+    margin-bottom: var(--ek-space-3);
+    border-radius: var(--ek-radius-lg);
+    background: var(--site-accent-soft);
+    color: var(--site-accent);
   }
-  .stat__value--text {
+  .stat__label {
+    color: var(--site-text-heading);
     font-size: var(--ek-font-size-xl);
-    white-space: nowrap;
-    background: linear-gradient(100deg, var(--ek-color-secondary-darken-1), var(--ek-color-primary-darken-1));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: var(--ek-color-secondary-darken-1);
-  }
-  .stat__value--icon {
-    color: var(--ek-color-primary-darken-1);
+    font-weight: var(--ek-font-weight-bold);
+    letter-spacing: -0.01em;
+    line-height: var(--ek-line-height-tight);
   }
   .stat__num {
     display: inline-block;
     min-width: 2ch;
+    color: var(--site-accent);
     font-variant-numeric: tabular-nums;
-    background: linear-gradient(180deg, var(--ek-color-content-strong), var(--ek-color-primary-darken-1));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-  .stat__label {
-    color: var(--ek-color-content-strong);
-    font-size: var(--ek-font-size-lg);
-    font-weight: var(--ek-font-weight-semibold);
-    line-height: var(--ek-line-height-tight);
   }
   .stat__sub {
-    color: var(--ek-color-content-muted);
+    color: var(--site-text-meta);
     font-size: var(--ek-font-size-md);
     line-height: var(--ek-line-height-normal);
   }
@@ -170,8 +160,8 @@ const kinds = [...new Set(items.map((i) => i.kindLabel))].join(', ')
   .marquee {
     position: relative;
     overflow: hidden;
-    border-block: var(--site-border-width) solid var(--ek-color-border-default);
-    padding-block: var(--ek-space-4);
+    border-top: var(--site-border-width) solid var(--ek-color-border-default);
+    padding-block: var(--ek-space-5) 0;
   }
   .marquee__track {
     display: flex;
@@ -181,8 +171,8 @@ const kinds = [...new Set(items.map((i) => i.kindLabel))].join(', ')
   .marquee__set {
     display: flex;
     flex: none;
-    gap: var(--ek-space-4);
-    padding-inline-end: var(--ek-space-4);
+    gap: var(--ek-space-8);
+    padding-inline-end: var(--ek-space-8);
   }
   .marquee__set--copy {
     display: none;
@@ -190,49 +180,19 @@ const kinds = [...new Set(items.map((i) => i.kindLabel))].join(', ')
   .marquee__item {
     display: inline-flex;
     align-items: center;
-    gap: var(--ek-space-3);
-    padding: var(--ek-space-2) var(--ek-space-5) var(--ek-space-2) var(--ek-space-2);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-surface-muted);
+    gap: var(--ek-space-2);
     white-space: nowrap;
-    transition:
-      border-color var(--ek-duration-base) var(--ek-easing-standard),
-      background var(--ek-duration-base) var(--ek-easing-standard);
-  }
-  .marquee__item:hover {
-    border-color: color-mix(in srgb, var(--chan, var(--ek-color-border-strong)) 55%, var(--ek-color-border-default));
-    background: var(--ek-color-surface);
   }
   .marquee__mono {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: var(--ek-space-10);
-    height: var(--ek-space-10);
-    border-radius: var(--ek-radius-full);
-    background: linear-gradient(140deg, var(--chan, var(--ek-color-primary)), var(--chan-fill, var(--ek-color-primary-darken-1)));
-    box-shadow: var(--ek-shadow-sm);
-    color: var(--site-color-on-primary);
-    font-size: var(--ek-font-size-2xl);
-    font-weight: var(--ek-font-weight-bold);
-    transition:
-      transform var(--ek-duration-base) var(--ek-easing-standard),
-      box-shadow var(--ek-duration-base) var(--ek-easing-standard);
-  }
-  /* Şerit üzerine gelince (döngü de durur) monogram hafifçe büyür — dikkat çeker, hover'a özel, döngüden bağımsız. */
-  .marquee__item:hover .marquee__mono {
-    transform: scale(1.08);
-    box-shadow: var(--ek-shadow-md);
+    color: var(--site-accent);
   }
   .marquee__name {
-    color: var(--ek-color-content-strong);
+    color: var(--site-text-body);
     font-size: var(--ek-font-size-lg);
-    font-weight: var(--ek-font-weight-semibold);
-  }
-  .marquee__kind {
-    color: var(--ek-color-content-muted);
-    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-medium);
   }
 
   /*
@@ -240,8 +200,8 @@ const kinds = [...new Set(items.map((i) => i.kindLabel))].join(', ')
    * reduced-motion'da şerit sarılan, ortalanmış, tam görünür bir listedir (ikinci küme gizli).
    */
   .marquee {
-    -webkit-mask-image: linear-gradient(to right, transparent, var(--ek-color-content-strong) 8%, var(--ek-color-content-strong) 92%, transparent);
-    mask-image: linear-gradient(to right, transparent, var(--ek-color-content-strong) 8%, var(--ek-color-content-strong) 92%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, var(--ek-color-content-strong) 10%, var(--ek-color-content-strong) 90%, transparent);
+    mask-image: linear-gradient(to right, transparent, var(--ek-color-content-strong) 10%, var(--ek-color-content-strong) 90%, transparent);
   }
   @media (prefers-reduced-motion: no-preference) {
     .marquee__set--copy {
@@ -252,8 +212,6 @@ const kinds = [...new Set(items.map((i) => i.kindLabel))].join(', ')
     .marquee {
       -webkit-mask-image: none;
       mask-image: none;
-      border-block: 0;
-      padding-block: 0;
     }
     .marquee__track {
       width: auto;
@@ -262,15 +220,25 @@ const kinds = [...new Set(items.map((i) => i.kindLabel))].join(', ')
       flex: 1 1 100%;
       flex-wrap: wrap;
       justify-content: center;
+      gap: var(--ek-space-3) var(--ek-space-6);
       padding-inline-end: 0;
     }
   }
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
+    .stat__label {
+      font-size: var(--ek-font-size-2xl);
+    }
     .stats {
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: var(--ek-space-6);
+      gap: var(--ek-space-8);
     }
+    .stat + .stat {
+      padding-inline-start: var(--ek-space-8);
+      border-inline-start: var(--site-border-width) solid var(--ek-color-border-default);
+    }
+  }
+  @media (min-width: 768px) {
     .proof__inner {
       padding-block: var(--ek-space-12) var(--ek-space-10);
     }

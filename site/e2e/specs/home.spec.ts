@@ -1,21 +1,20 @@
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect } from '@playwright/test'
 import { APP_URL, collectProblems, isDesktop, waitForFonts } from '../helpers'
-
-/** Kapsam matrisi kırılım noktası (768px, proje tablet eşiği) — `isDesktop` (1024px) ile KARIŞTIRILMAMALI. */
-const isMatrixLayout = (page: Page) => (page.viewportSize()?.width ?? 0) >= 768
 
 // ADR-0014 S2a — ana sayfa bölümleri: görünürlük, yatay taşma yok, klavye/odak, etkileşim.
 
+// Bu turda (S12 Parça A) sahiplenilen bölümlerin başlıkları birebir; diğer bölümlerin başlıkları paralel turlarda
+// (Parça B/C) pazarlama diliyle yeniden yazılabildiğinden yalnızca var ve boş değil olarak denetlenir.
 const SECTION_TITLES = [
   ['sorun-cozum-baslik', /Dağınık yönetim/],
   ['senaryo-baslik', /Bir sipariş geldiğinde ne olur\?/],
-  ['yetenek-baslik', /Satışın tüm akışı tek panelde/],
-  ['entegrasyon-baslik', /Bugün bağlanabilen entegrasyonlar/],
-  ['nasil-baslik', /Dört adımda tek panele geçin/],
-  ['fiyat-baslik', /İşinizin ölçeğine göre planlar/],
-  ['guvenlik-baslik', /Anahtarlarınız ve verileriniz/],
-  ['sss-baslik', /Aklınıza takılanlar/],
-  ['kapanis-baslik', /tek yerde toplayın/],
+  ['yetenek-baslik', /\S/],
+  ['entegrasyon-baslik', /\S/],
+  ['nasil-baslik', /\S/],
+  ['fiyat-baslik', /\S/],
+  ['guvenlik-baslik', /\S/],
+  ['sss-baslik', /\S/],
+  ['kapanis-baslik', /\S/],
 ] as const
 
 test.describe('Ana sayfa bölümleri', () => {
@@ -37,44 +36,38 @@ test.describe('Ana sayfa bölümleri', () => {
     expect(overflow).toBeLessThanOrEqual(0)
   })
 
-  test('entegrasyon vitrini: 6 kart, 6 hero kanal çipi, 6 şerit öğesi, kapsam matrisi ve dürüst sınır notları', async ({ page }) => {
+  test('entegrasyon ekosistemi: dört düğüm, isimsiz kanal noktaları, kapsam sayfasına bağlantı; hero kanal noktaları', async ({ page }) => {
     await page.goto('/')
-    await expect(page.getByTestId('integration-count')).toContainText('6')
-    await expect(page.locator('[data-part="integration"]')).toHaveCount(6)
     await expect(page.locator('[data-part="chan"]')).toHaveCount(6)
-    await expect(page.getByTestId('integration-grid')).toContainText('Bilinmesi gerekenler')
-    await expect(page.getByTestId('integration-matrix').locator('.ig__matrix-row')).toHaveCount(6)
+    const eco = page.getByTestId('ecosystem')
+    await eco.scrollIntoViewIfNeeded()
+    await expect(eco.locator('[data-part="eco-node"]')).toHaveCount(4)
+    for (const node of await eco.locator('[data-part="eco-node"]').all()) await expect(node).toBeVisible()
+    // ana mesajda kanal adı yok, kapsam matrisi alt sayfada
+    for (const name of ['Trendyol', 'Hepsiburada', 'Pazarama', 'Ideasoft', 'Bizimhesap']) {
+      await expect(page.locator('#entegrasyonlar')).not.toContainText(name)
+      await expect(page.locator('#ozellikler')).not.toContainText(name)
+    }
+    await expect(page.getByTestId('integration-matrix')).toHaveCount(0)
+    await page.getByTestId('ecosystem-link').click()
+    await expect(page).toHaveURL(/\/entegrasyonlar\/?#kapsam$/)
+    await expect(page.getByTestId('coverage')).toBeVisible()
   })
 
-  test('kapsam matrisi: satır ve sütun üzerine gelince "crosshair" vurgusu (S10 2. tur, masaüstü)', async ({ page }) => {
-    test.skip(!isMatrixLayout(page), 'matris yalnızca >=768px görünür; mobilde kompakt kart devralır')
+  test('ekosistem şeması masaüstünde düğümleri merkezin iki yanında konumlar; mobilde dikey yığın, taşma yok', async ({ page }) => {
     await page.goto('/')
-    const matrix = page.getByTestId('integration-matrix')
-    await expect(matrix.locator('caption')).toHaveText(/./)
-    // Ortadaki bir satır seçilir: ilk satır sayfa yapışkan üst bilgisiyle (site header + matris thead) aynı
-    // banda denk gelebilir (sticky başlıkların bilinen/beklenen davranışı) — hover testini etkilemesin diye.
-    const midRow = matrix.locator('.ig__matrix-row').nth(2)
-    await midRow.scrollIntoViewIfNeeded()
-    const cell = midRow.locator('td').nth(2)
-    const colHeadBefore = await matrix.locator('thead th').nth(3).evaluate((el) => getComputedStyle(el).backgroundColor)
-    await cell.hover()
-    // satır vurgusu: aynı satırdaki başka bir hücre de arka plan değiştirir
-    const otherCellInRow = midRow.locator('td').nth(5)
-    await expect.poll(() => otherCellInRow.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe('rgba(0, 0, 0, 0)')
-    // sütun vurgusu ("crosshair"): hover edilen hücrenin sütun başlığı da vurgulanır
-    await expect
-      .poll(() => matrix.locator('thead th').nth(3).evaluate((el) => getComputedStyle(el).backgroundColor))
-      .not.toBe(colHeadBefore)
-  })
-
-  test('kapsam matrisi mobilde kompakt kart olarak görünür, yatay taşma yok', async ({ page }) => {
-    test.skip(isMatrixLayout(page), 'yalnızca <768px (mobil)')
-    await page.goto('/')
-    const matrix = page.getByTestId('integration-matrix')
-    await expect(matrix).toBeHidden()
-    const cards = page.locator('.ig__mcard')
-    await expect(cards).toHaveCount(6)
-    await cards.first().scrollIntoViewIfNeeded()
+    const eco = page.getByTestId('ecosystem')
+    await eco.scrollIntoViewIfNeeded()
+    const hub = await eco.locator('.eco__hub').boundingBox()
+    const nodes = await Promise.all((await eco.locator('[data-part="eco-node"]').all()).map((n) => n.boundingBox()))
+    if (isDesktop(page)) {
+      // sol düğümler merkezin solunda, sağ düğümler sağında; birbirini örtmez
+      expect(nodes[0]!.x + nodes[0]!.width).toBeLessThan(hub!.x)
+      expect(nodes[1]!.x).toBeGreaterThan(hub!.x + hub!.width)
+      expect(nodes[0]!.y + nodes[0]!.height).toBeLessThan(nodes[2]!.y)
+    } else {
+      expect(hub!.y + hub!.height).toBeLessThanOrEqual(nodes[0]!.y)
+    }
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
     expect(overflow).toBeLessThanOrEqual(0)
   })
@@ -125,7 +118,7 @@ test.describe('Ana sayfa bölümleri', () => {
     expect(ring.width).toBeGreaterThanOrEqual(1.5)
   })
 
-  test('mobilde hero mock kanal çipleri panel çerçevesinden taşmaz ve birbirini örtmez', async ({ page }) => {
+  test('mobilde hero mock kanal noktaları panel çerçevesinden taşmaz ve birbirini örtmez', async ({ page }) => {
     test.skip(isDesktop(page), 'yalnızca mobil/tablet')
     await page.goto('/')
     await waitForFonts(page)

@@ -31,6 +31,7 @@ import AccountService from "./services/account-service"
 import StockService from "./services/stock-service"
 import AuditService from "./services/audit-service"
 import IntegrationConfigService from "./services/integration-config-service"
+import IntegrationComplianceService from "./services/integration-compliance-service"
 export default {
     MenuService,
     SecurityService,
@@ -64,5 +65,6 @@ export default {
     AccountService,
     StockService,
     AuditService,
-    IntegrationConfigService
+    IntegrationConfigService,
+    IntegrationComplianceService
 }

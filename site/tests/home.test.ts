@@ -10,9 +10,9 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { gzipSync } from 'node:zlib'
 import path from 'node:path'
 import { buildSite, siteRoot } from '../scripts/lib/build.mjs'
-import { getPublicIntegrations, integrations, AVAILABLE_INTEGRATION_CODES } from '../src/data/integrations'
+import { getPublicIntegrations, integrations, AVAILABLE_INTEGRATION_CODES, getEcosystemNodes, ecosystemPromises } from '../src/data/integrations'
 import { getPublicPlans, getPlanSourceNotice, getPublicTrial } from '../src/data/plans'
-import { getPublicCapabilities } from '../src/data/capabilities'
+import { getPublicCapabilities, getHomePillars } from '../src/data/capabilities'
 import { getPublicFaq } from '../src/data/faq'
 
 const APP_URL = 'https://app.example.test'
@@ -89,6 +89,7 @@ describe('sahne kancaları (S2a yer tutucuları + S3 sahneleri + S7 sahneleri)',
     'secret-encryption',
     'tenant-isolation',
     'request-guard',
+    'ecosystem',
   ]
   /** Birden çok öğede kullanılan sahneler: en az bu kadar. */
   const REPEATED: Record<string, number> = { 'section-head': 8, reveal: 3, tile: 5, 'story-step': 5, 'how-progress': 3 }
@@ -151,38 +152,59 @@ describe('CTA ve bağlantılar', () => {
   })
 })
 
-describe('entegrasyon vitrini = seçici çıktısı (yalnızca mevcut entegrasyonlar)', () => {
+describe('entegrasyon ekosistemi (S12: vizyon dili; kanal adı ve durum dili ana mesajda yok)', () => {
   const available = getPublicIntegrations()
+  const sectionOf = (id: string) => html.match(new RegExp(`<section[^>]*id="${id}"[\\s\\S]*?</section>`))![0]
 
-  it('mevcut sayı 6 ve sayfada 6 kart + 6 hero kanal çipi + 6 şerit öğesi (+ aria-hidden kopya) + 6 durum satırı + 6 kapsam satırı görünür', () => {
+  it('mevcut sayı 6: 6 hero kanal noktası + 6 durum satırı; entegrasyon kartları ekosistem şemasına dönüştü (S12); fayda şeridinde durum sayacı/kanal adı yok', () => {
     expect(available).toHaveLength(6)
     expect(AVAILABLE_INTEGRATION_CODES).toHaveLength(6)
-    // kanıt şeridindeki sayaç: statik metin = kayıttaki sayı; JS yalnızca 0'dan sayar
-    expect(html).toMatch(/data-testid="integration-count"[^>]*>\s*<span class="stat__num[^"]*"[^>]*data-count="6"[^>]*>6<\/span>/)
-    expect([...html.matchAll(/data-part="integration"/g)]).toHaveLength(6)
     expect([...html.matchAll(/data-part="chan"/g)]).toHaveLength(6)
     expect([...html.matchAll(/data-part="istat-row"/g)]).toHaveLength(6)
+    // S12: "uygulanan entegrasyon" sayacı kaldırıldı; tek sayaç deneme günüdür (statik metin = kayıttaki değer)
+    expect(html).not.toContain('data-testid="integration-count"')
+    const trial = getPublicTrial()
+    expect(html).toMatch(new RegExp(`data-testid="trial-stat"[\\s\\S]*?data-count="${trial.days}"[^>]*>${trial.days}<`))
+    const proof = html.match(/<section class="proof[\s\S]*?<\/section>/)![0]
+    const proofText = textOf(proof)
+    for (const i of available) expect(proofText, i.name).not.toContain(i.name)
+    expect(proofText.toLocaleLowerCase('tr-TR')).not.toMatch(/uygulanan|bugün bağlanabilen|aes-256/)
+    // şerit: erişilebilir birinci küme + aria-hidden kopya küme
     const marquee = html.match(/data-testid="marquee"[\s\S]*?<\/section>/)![0]
     const sets = [...marquee.matchAll(/<ul class="marquee__set[^"]*"[^>]*>[\s\S]*?<\/ul>/g)].map((m) => m[0])
     expect(sets).toHaveLength(2)
-    expect([...sets[0].matchAll(/<li class="marquee__item/g)]).toHaveLength(6)
+    expect([...sets[0].matchAll(/<li class="marquee__item/g)].length).toBeGreaterThanOrEqual(6)
     expect(sets[0].match(/^<ul[^>]*>/)![0]).not.toContain('aria-hidden') // erişilebilir liste birinci kümedir
     expect(sets[1].match(/^<ul[^>]*>/)![0]).toContain('aria-hidden="true"') // ikinci küme yalnızca kesintisiz döngü için kopya
-    const matrix = html.match(/<table[^>]*data-testid="integration-matrix"[\s\S]*?<\/table>/)![0]
-    expect([...matrix.matchAll(/<tr class="ig__matrix-row"/g)]).toHaveLength(6)
-    // mobil kompakt kartlar (aynı veri, CSS ile kırılım noktasına göre gösterilir/gizlenir)
-    expect([...html.matchAll(/<li class="ig__mcard"/g)]).toHaveLength(6)
   })
 
-  it('her mevcut entegrasyonun adı, özeti ve kapsam etiketi görünür; sınırlar dürüstçe yazılı', () => {
-    const text = textOf(html)
-    for (const i of available) {
-      expect(text, i.name).toContain(i.name)
-      expect(text, `${i.name} özet`).toContain(i.summary)
-      expect(text, `${i.name} kapsam`).toContain(i.coverageLabel)
-      for (const l of i.limitations) expect(text, `${i.name} sınır`).toContain(l)
+  it('ekosistem düğümleri seçiciden (dayanağı olan dört düğüm) ve vizyon cümleleri görünür; kapsam matrisi ana sayfada YOK', () => {
+    const nodes = getEcosystemNodes()
+    expect(nodes.map((n) => n.id)).toEqual(['marketplaces', 'ecommerce', 'erp', 'fulfilment'])
+    const eco = html.match(/data-testid="ecosystem"[\s\S]*?data-testid="ecosystem-promises"/)![0]
+    expect([...eco.matchAll(/data-part="eco-node"/g)]).toHaveLength(nodes.length)
+    const t = textOf(eco)
+    for (const n of nodes) {
+      expect(t, n.id).toContain(n.title)
+      expect(t, n.id).toContain(n.line)
     }
-    expect(text).toContain('Burada listelenmeyen bir entegrasyon şu an mevcut değildir')
+    for (const p of ecosystemPromises) expect(textOf(sectionOf('entegrasyonlar')), p.id).toContain(p.line)
+    // kanal ayrımı yalnızca isimsiz renkli noktalar (data-code) — aria-hidden
+    expect(eco).toMatch(/<span class="eco__dots[^"]*"[^>]*aria-hidden="true"/)
+    // kapsam matrisi /entegrasyonlar sayfasına taşındı
+    expect(html).not.toContain('data-testid="integration-matrix"')
+    expect(html).not.toContain('data-testid="coverage-matrix"')
+    expect(html).toMatch(/href="\/entegrasyonlar#kapsam"/)
+  })
+
+  it('Yetenekler ve Entegrasyon bölümlerinde kanal adı, durum rozeti veya eksik/sınır dili yok (S12 geri bildirimi)', () => {
+    for (const id of ['ozellikler', 'entegrasyonlar']) {
+      const t = textOf(sectionOf(id))
+      for (const i of available) expect(t, `${id}: ${i.name}`).not.toContain(i.name)
+      for (const phrase of ['Mevcut', 'Kısmi', 'Sınırlı', 'sınırlı', 'Bilinmesi gerekenler', 'mevcut değildir', 'Bugün bağlanabilen', 'Sunulmuyor', 'kapsam notu']) {
+        expect(t, `${id}: ${phrase}`).not.toContain(phrase)
+      }
+    }
   })
 
   it('gizli roadmap öğeleri, takma adları ve iç alanlar sayfada yok', () => {
@@ -199,11 +221,18 @@ describe('entegrasyon vitrini = seçici çıktısı (yalnızca mevcut entegrasyo
 describe('içerik kayıttan gelir', () => {
   const text = () => textOf(html)
 
-  it('yetenekler: çekirdek yeteneklerin başlık/özet/sınır notu ve durum etiketi görünür', () => {
+  it('yetenekler: dört değer sütunu + her çekirdek yeteneğin ana sayfa başlığı/fayda cümlesi görünür; sınır notu ve durum rozeti ana sayfada YOK (alt sayfalarda)', () => {
+    const caps = textOf(html.match(/<section[^>]*id="ozellikler"[\s\S]*?<\/section>/)![0])
+    for (const p of getHomePillars()) {
+      expect(caps, p.id).toContain(p.title)
+      expect(caps, p.id).toContain(p.line)
+      for (const item of p.points) expect(caps, `${p.id}: ${item}`).toContain(item)
+    }
     for (const c of getPublicCapabilities('core')) {
-      expect(text(), c.title).toContain(c.title)
-      expect(text(), `${c.id} özet`).toContain(c.summary)
-      if (c.caveat) expect(text(), `${c.id} sınır`).toContain(c.caveat)
+      expect(c.home, `${c.id}: home metni`).toBeDefined()
+      expect(caps, c.id).toContain(c.home!.title)
+      expect(caps, `${c.id} fayda`).toContain(c.home!.line)
+      if (c.caveat) expect(caps, `${c.id} sınır notu ana sayfada olmamalı`).not.toContain(c.caveat)
     }
     expect(html).toContain('Aşırı satış olarak işaretlendi')
   })
@@ -258,24 +287,58 @@ describe('içerik kayıttan gelir', () => {
     expect([...nav.matchAll(/data-spy-link=/g)]).toHaveLength(4)
   })
 
-  it('senaryo (zaman çizgisi): beş adım, her adım kayıttaki yetenek metniyle; örnek görünümler etiketli', () => {
+  it('senaryo (zaman çizgisi): beş adım, her adım yayımlanmış bir yetenek kaydına bağlı; kanal adı yok; örnek görünümler etiketli (S12)', () => {
     const block = html.match(/<ol[^>]*data-testid="story-steps"[\s\S]*?<\/ol>/)![0]
-    const steps = [...block.matchAll(/<li[^>]*data-scene="story-step"/g)]
+    const steps = [...block.matchAll(/<li[^>]*data-scene="story-step"[^>]*>/g)].map((m) => m[0])
     expect(steps).toHaveLength(5)
+    const caps = steps.map((s) => s.match(/data-cap="([^"]+)"/)?.[1])
+    expect(caps).toEqual(['unified-orders', 'stock-reservation', 'multi-channel-products', 'shipping-invoice-notice', 'returns'])
+    const published = getPublicCapabilities('core').map((c) => c.id)
+    for (const id of caps) expect(published, id).toContain(id)
     const t = textOf(block)
-    const core = getPublicCapabilities('core')
-    for (const id of ['unified-orders', 'stock-reservation', 'multi-channel-products', 'shipping-invoice-notice', 'returns']) {
-      expect(t, id).toContain(core.find((c) => c.id === id)!.summary)
+    for (const title of ['Sipariş gelir', 'Stok rezerve edilir', 'Tüm kanallar güncellenir', 'Kargo ve fatura bilgisi iletilir', 'İade talebi yönetilir']) {
+      expect(t, title).toContain(title)
     }
-    // her mini arayüz "Örnek görünüm" etiketi taşır (uydurma veri yok)
+    // anlam korunur: rezervasyon ve iade metinleri kaydın söylediğinin ötesine geçmez
+    expect(t).toContain('yalnızca mevcut stok kadar rezervasyon yapılır')
+    expect(t).toContain('onaylanır veya reddedilir')
+    for (const i of getPublicIntegrations()) expect(t, i.name).not.toContain(i.name)
+    // her sahne "Örnek görünüm" etiketi taşır (uydurma veri yok)
     expect([...block.matchAll(/Örnek görünüm/g)].length).toBeGreaterThanOrEqual(5)
   })
 
-  it('hero mock: "Örnek görünüm" etiketi panelde (rozet yeter, ayrı altyazı yok — S8 2. tur); kanal çipleri seçiciden', () => {
+  it('sorun -> çözüm: tek kurgu (kaos + marka kartı); alttaki karşılaştırma tablosu yok; faydalar kanıtlı (S12)', () => {
+    const ps = html.match(/data-scene="problem-solution"[\s\S]*?<\/section>/)![0]
+    expect(ps).toContain('data-scroll-progress')
+    expect(ps).not.toContain('ps__compare')
+    const t = textOf(ps)
+    for (const g of ['Merkezi stok yönetimi', 'Aşırı satışa karşı rezervasyon', 'Tek sipariş akışı', 'Kurumsal düzeyde güvenlik']) expect(t, g).toContain(g)
+    for (const i of getPublicIntegrations()) expect(t, i.name).not.toContain(i.name)
+  })
+
+  it('hero mock: "Örnek görünüm" etiketli; kanal noktaları seçiciden (renk kodu), panelde ve hero metninde kanal ADI yok (S12)', () => {
+    const hero = html.match(/data-testid="hero"[\s\S]*?<\/section>/)![0]
     const mock = html.match(/data-testid="hero-mock"[\s\S]*?<\/section>/)![0]
     expect(mock).toContain('Örnek görünüm')
-    const chips = [...mock.matchAll(/data-part="chan"[^>]*>([\s\S]*?)<\/li>/g)].map((m) => textOf(m[1]))
-    expect(chips).toEqual(getPublicIntegrations().map((i) => i.name))
+    const dots = [...mock.matchAll(/<li[^>]*data-part="chan"[^>]*>/g)].map((m) => m[0].match(/data-code="([^"]+)"/)?.[1])
+    expect(dots).toEqual(getPublicIntegrations().map((i) => i.code))
+    // S12: ana mesajda pazaryeri adları ön plana çıkmaz ("pazaryerleri" denir); panel genel etiket kullanır
+    const heroText = textOf(hero)
+    for (const i of getPublicIntegrations()) expect(heroText, i.name).not.toContain(i.name)
+    expect(heroText).toContain('Pazaryeri siparişi')
+    expect(heroText).toContain('pazaryerleriniz')
+    // S12: durum/backlog dili yok
+    expect(heroText.toLocaleLowerCase('tr-TR')).not.toMatch(/uygulanan|bugün bağlanabilen/)
+  })
+
+  it('hero fayda maddeleri üst seviye ve her biri kanıtlı bir yetenek kaydına dayanır (S12)', () => {
+    const list = html.match(/<ul[^>]*data-testid="hero-benefits"[\s\S]*?<\/ul>/)![0]
+    const items = [...list.matchAll(/<li\b[\s\S]*?<\/li>/g)].map((m) => textOf(m[0]))
+    expect(items).toEqual(['Merkezi stok yönetimi', 'Tüm siparişler tek ekranda', 'Kurumsal düzeyde güvenlik'])
+    const ids = getPublicCapabilities().map((c) => c.id)
+    for (const id of ['stock-reservation', 'multi-channel-products', 'unified-orders', 'secrets-encryption', 'tenant-database', 'role-based-access']) {
+      expect(ids, id).toContain(id)
+    }
   })
 })
 
@@ -293,15 +356,6 @@ describe('CSP ve erişilebilirlik ön koşulları', () => {
       expect(svg[0], svg[0]).toMatch(/aria-hidden="true"|class="stock__arrow"|class="ps__diagram"/)
     }
     for (const img of html.matchAll(/<img\b[^>]*>/g)) expect(img[0]).toContain('alt=')
-  })
-
-  it('kapsam matrisi adlandırılmıştır (caption); her hücre durumu ekran okuyucuya metinle iletilir (S10 2. tur: hizalı <table> + mobil kompakt kartlar)', () => {
-    const matrix = html.match(/<table[^>]*data-testid="integration-matrix"[\s\S]*?<\/table>/)![0]
-    expect(matrix).toMatch(/<caption class="sr-only"[^>]*>[^<]+<\/caption>/)
-    for (const label of ['Destekleniyor', 'Sınırlı', 'Sunulmuyor']) expect(matrix, label).toContain(label)
-    const mcards = html.match(/<ul class="ig__mcards"[\s\S]*?<p class="ig__foot"/)![0]
-    expect(mcards.match(/^<ul[^>]*>/)![0]).toMatch(/aria-label="[^"]+"/)
-    for (const label of ['Destekleniyor', 'Sınırlı', 'Sunulmuyor']) expect(mcards, label).toContain(label)
   })
 
   it('site kökü doğru çözülür (test kendini sınar)', () => {

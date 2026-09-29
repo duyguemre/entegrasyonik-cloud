@@ -1,8 +1,8 @@
 <template>
   <div class="category-mapping-wrapper">
 
-    <v-btn icon="mdi-close" variant="text" size="x-small" class="position-absolute"
-      style="right: 8px; top: 8px; z-index: 10;" @click="emit('close')" aria-label="Kapat"></v-btn>
+    <v-btn icon="mdi-close" variant="text" size="x-small" class="close-btn-corner"
+      @click="emit('close')" aria-label="Kapat"></v-btn>
 
 
     <v-fade-transition hide-on-leave mode="out-in">
@@ -11,7 +11,7 @@
         class="mapped-success-state d-flex align-start pa-4 rounded-lg border-success shadow-sm">
         <v-icon color="success" size="32" class="mr-4 mt-1">mdi-check-decagram</v-icon>
         <div class="d-flex flex-column">
-          <span class="text-subtitle-1 font-weight-black text-success" style="line-height: 1.2;">
+          <span class="text-subtitle-1 font-weight-black text-success tight-line-height">
             Kategori Eşleşmesi Doğrulandı
           </span>
           <p class="text-caption text-grey-darken-2 mt-1 mb-2">
@@ -22,7 +22,7 @@
           <div class="d-flex align-center">
             <v-btn variant="text" color="success" size="x-small" class="pa-0 font-weight-bold" @click="openCategoryPage"
               prepend-icon="mdi-arrow-right-circle-outline">
-              KATEGORİ LİSTESİNE GİT VE DÜZENLE
+              Kategori listesine git ve düzenle
             </v-btn>
           </div>
         </div>
@@ -32,25 +32,25 @@
         <div class="context-card mb-4 border-red-lighten-4">
           <div class="context-row bg-red-lighten-5">
             <div class="context-col">
-              <span class="context-label text-red-darken-4">Pazaryeri Kategorisi</span>
-              <span class="context-value text-red-darken-4 font-weight-black">
+              <span class="context-label text-error">Pazaryeri Kategorisi</span>
+              <span class="context-value text-error font-weight-black">
                 {{ computedPlatformCategoryTitle || 'Yükleniyor...' }}
               </span>
             </div>
             <div class="context-divider">
-              <v-icon size="16" color="red-darken-3">mdi-ray-start-arrow</v-icon>
+              <v-icon size="16" color="error">mdi-ray-start-arrow</v-icon>
             </div>
             <div class="context-col text-right">
-              <span class="context-label text-red-darken-4">Yerel Kategori</span>
-              <span class="context-value text-red-darken-2 font-italic">Eşleşme Bekleniyor...</span>
+              <span class="context-label text-error">Yerel Kategori</span>
+              <span class="context-value text-error font-italic">Eşleşme Bekleniyor...</span>
             </div>
           </div>
         </div>
 
         <div class="info-alert pa-3 mb-5 rounded-lg bg-red-lighten-5 border-red-subtle">
           <div class="d-flex align-center mb-1">
-            <v-icon size="16" color="red-darken-3" class="mr-2">mdi-alert-circle-outline</v-icon>
-            <span class="text-caption font-weight-bold text-red-darken-4 uppercase-track">Eksik Karşılık</span>
+            <v-icon size="16" color="error" class="mr-2">mdi-alert-circle-outline</v-icon>
+            <span class="text-caption font-weight-bold text-error uppercase-track">Eksik Karşılık</span>
           </div>
           <p class="text-caption text-grey-darken-3 mb-0">
             Aktarımın tamamlanabilmesi için bu kategorinin sisteminizde hangi kategoriye karşılık geldiğini
@@ -64,10 +64,10 @@
 
         <CategorySelectBoxComponent v-model="tempLocalCategoryId" :noInit="true" :withAll="false" class="mb-4" />
 
-        <v-btn block size="large" color="red-darken-3" elevation="0" :loading="loading" :disabled="!tempLocalCategoryId"
+        <v-btn block size="large" color="error" :loading="loading" :disabled="!tempLocalCategoryId"
           class="font-weight-bold premium-btn" @click="handleSaveCategoryMapping">
           <v-icon start>mdi-link-variant-plus</v-icon>
-          EŞLEŞTİR VE KAYDET
+          Eşleştir ve kaydet
         </v-btn>
       </div>
 
@@ -184,16 +184,27 @@ const handleSaveCategoryMapping = async () => {
 </script>
 
 <style scoped>
+.close-btn-corner {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  z-index: 10;
+}
+
+.tight-line-height {
+  line-height: 1.2;
+}
+
 .mapping-step-box {
-  border: 1px solid #eee;
-  padding: 24px;
-  border-radius: 16px;
-  background: #ffffff;
+  border: 1px solid var(--ek-color-border-default);
+  padding: var(--ek-space-6);
+  border-radius: var(--ek-radius-lg);
+  background: var(--ek-color-surface);
 }
 
 .mapped-success-state {
-  background-color: #f1f8e9;
-  border: 1px solid #c5e1a5;
+  background-color: var(--ek-color-success-subtle);
+  border: 1px solid var(--ek-color-success);
 }
 
 .context-card {
@@ -227,7 +238,7 @@ const handleSaveCategoryMapping = async () => {
 .context-value {
   font-size: 11px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--ek-color-content-strong);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -239,23 +250,19 @@ const handleSaveCategoryMapping = async () => {
 
 .info-alert {
   border: 1px solid transparent;
-  border-left: 4px solid #d32f2f !important;
+  border-left: 4px solid var(--ek-color-error) !important;
 }
 
 .border-red-lighten-4 {
-  border-color: #ffcdd2 !important;
+  border-color: var(--ek-color-error-subtle) !important;
 }
 
 .bg-red-lighten-5 {
-  background-color: #ffebee !important;
+  background-color: var(--ek-color-error-subtle) !important;
 }
 
 .border-red-subtle {
-  border-color: #ef9a9a !important;
-}
-
-.border-red {
-  border: 2px solid #ef9a9a !important;
+  border-color: var(--ek-color-error) !important;
 }
 
 .uppercase-track {
@@ -265,7 +272,6 @@ const handleSaveCategoryMapping = async () => {
 }
 
 .premium-btn {
-  border-radius: 10px !important;
   letter-spacing: 0.5px;
   text-transform: uppercase;
   height: 44px !important;

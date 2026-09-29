@@ -42,7 +42,11 @@ export default class VariantService extends BaseApi implements IService {
             // aksine, bkz. product-service.ts aynı metot) -> aşağıdaki constructMatchQuery/constructUpdateQuery'nin
             // `item.type.code` erişimi hep undefined dönüyor, marketplace/ecommerce filtresi HER ZAMAN boş kalıyor,
             // min/max fiyat aramasında {$or:[]} üretilip gerçek Mongo'da "must be a nonempty array" hatasıyla patlıyordu.
-            return await this.applicationDB.getIntegrationModel().find(filterQuery, { projection }).populate('type')
+            // [BULGU DÜZELTMESİ, 2026-09-29] `find(filterQuery, { projection })` de AYRICA yanlış sarmalanmıştı —
+            // mongoose'un ikinci argümanı DOĞRUDAN alan-seçim nesnesi bekler. Gerçek Mongo'da (mongodb-memory-server
+            // ile doğrulandı, bkz. tests/mongo-semantics/integrationProjectionShape.mongoSemantics.test.ts) bu HATA
+            // FIRLATMIYORDU, sessizce TÜM alanları (settings dahil) döndürüyordu — B4 gereksiz alan sızıntısı.
+            return await this.applicationDB.getIntegrationModel().find(filterQuery, projection).populate('type')
         } catch (error) {
             throw error
         }

@@ -70,14 +70,13 @@
               <div class="stepper-line"></div>
               <div v-for="(step, index) in exportSteps" :key="index" class="step-item">
                 <v-avatar size="16"
-                  :color="currentStepIndex === index ? getStatusColor(localItem.status) : (currentStepIndex > index ? '#10b981' : '#e0e0e0')"
+                  :color="currentStepIndex === index ? getStatusColor(localItem.status) : (currentStepIndex > index ? 'success' : 'neutral-subtle')"
                   :class="[currentStepIndex === index && isProcessing ? 'status-pulse-intense' : '', 'step-avatar', currentStepIndex > index ? 'step-passed' : '']"
-                  style="border: 2px solid white; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); position: relative; z-index: 2;">
+                  class="step-avatar-ring">
                 </v-avatar>
-                <div class="step-text-container" style="z-index: 2;">
-                  <span class="step-title"
-                    :class="{ 'active-text': currentStepIndex === index, 'passed-text': currentStepIndex > index }"
-                    style="font-size: 10px; font-weight: 700; text-transform: uppercase;">
+                <div class="step-text-container">
+                  <span class="step-title step-title-text"
+                    :class="{ 'active-text': currentStepIndex === index, 'passed-text': currentStepIndex > index }">
                     {{ step.title }}
                   </span>
                 </div>
@@ -104,16 +103,12 @@
 
                 </div>
 
-                <div class="d-flex flex-wrap" style="gap:var(--ek-space-1)">
-                  <v-chip v-for="choice in localItem.choices" :key="choice._id" size="small" variant="flat"
-                    color="grey-lighten-4" class="px-3 border border-grey-lighten-2">
-                    <span class="text-grey-darken-1 mr-2" style="font-size: 10px">{{ choice.choiceTitle }}</span>
-                    <span class="font-weight-black text-grey-darken-4 text-body-2">{{ choice.choiceValueTitle
-                    }}</span>
-                  </v-chip>
+                <div class="d-flex flex-wrap choice-chip-row">
+                  <EkStatusChip v-for="choice in localItem.choices" :key="choice._id" tone="neutral"
+                    :label="`${choice.choiceTitle}: ${choice.choiceValueTitle}`" />
                 </div>
               </div>
-              <div class="d-flex flex-wrap pt-2" style="gap: var(--ek-space-10); border-top: 1px solid #f5f5f5;">
+              <div class="d-flex flex-wrap pt-2 meta-row-divider">
                 <div class="d-flex flex-column"><span
                     class="text-tiny text-passiveColor font-weight-bold mb-1 uppercase">Barkod</span><span
                     class="text-caption font-weight-black text-grey-darken-3">{{ localItem.barcode }}</span></div>
@@ -131,16 +126,12 @@
                       brandsStore.getBrandTitle(localItem.brand) || '-' }}</span></div>
               </div>
 
-              <div class="d-flex align-center mt-4" style="gap: var(--ek-space-3);">
-                <div v-if="localItem.price" class="price-wrapper-mobile" style="padding: 4px 12px; border-radius: var(--ek-radius-lg);">
-                  <v-icon size="14" color="indigo-darken-2" class="mr-2">mdi-tag-outline</v-icon>
-                  <span class="price-amount-mobile" style="font-size: 15px;">{{ localItem.price }} TL</span>
+              <div class="d-flex align-center mt-4 price-stock-row">
+                <div v-if="localItem.price" class="price-wrapper-mobile">
+                  <v-icon size="14" color="info" class="mr-2">mdi-tag-outline</v-icon>
+                  <span class="price-amount-mobile">{{ formatMoney(localItem.price) }}</span>
                 </div>
-                <v-chip v-if="localItem.stock !== undefined" size="small" color="success" variant="tonal"
-                  class="font-weight-black px-3">
-                  <v-icon start size="14">mdi-layers-outline</v-icon>
-                  {{ localItem.stock }} STOK
-                </v-chip>
+                <EkStatusChip v-if="localItem.stock !== undefined" tone="success" :label="`${formatNumber(localItem.stock)} stok`" />
               </div>
 
             </div>
@@ -165,10 +156,7 @@
                         <span class="text-caption">{{ getWorkerDescription(log.worker) }}</span>
                       </v-tooltip>
                     </div>
-                    <v-chip size="x-small" label variant="flat" :color="getLogStatusColor(log.status)"
-                      class="status-chip font-weight-black">
-                      {{ translateStatus(log.status) }}
-                    </v-chip>
+                    <EkStatusChip :tone="statusTone(log.status)" :label="translateStatus(log.status)" />
                     <v-spacer></v-spacer>
                     <div class="d-flex align-center time-group">
                       <v-icon size="12" class="mr-1">mdi-clock-outline</v-icon>
@@ -225,8 +213,11 @@ import { TooltipComponent, GridComponent } from 'echarts/components'
 import { LegacyGridContainLabel } from 'echarts/features'
 import PlatformImageComponent from '../platforms/PlatformImageComponent.vue'
 import EmptyState from '@/components/layout/EmptyState.vue'
+import EkStatusChip from '@/components/ds/EkStatusChip.vue'
 import { escapeHtml } from '@/utils/escapeHtml'
 import { PLATFORM_PROCESS_LABELS, PLATFORM_PROCESS, PLATFORM_PROCESS_COLORS } from '@/types/PlatformProcess'
+import { formatMoney, formatNumber, formatDate as formatDateCentral } from '@/composables/format'
+import { semanticColorsLight } from '@/design/tokens'
 
 use([CanvasRenderer, BarChart, TooltipComponent, GridComponent, LegacyGridContainLabel])
 
@@ -295,6 +286,10 @@ const getWorkerDescription = (worker: string) => {
 };
 
 // Grafik verilerini formatlayan fonksiyon
+// ek-pattern-exception: composables/format.ts — gün/saat/dakika/saniye birleşik süre dizgisi
+// ("2g 3s 14dk 5.20 sn") üretir; format.ts'in TEK biçimlendiricilerinin (formatNumber/formatMoney/
+// formatRelative) hiçbiri bu bileşik süre gösterimini karşılamıyor — gerçekten farklı bir
+// biçimlendirme ihtiyacı (Karar 6.4 istisna gerekçesi).
 const formatChartValue = (seconds: number) => {
   if (seconds === 0) return '0 sn';
   const d = Math.floor(seconds / (3600 * 24));
@@ -319,7 +314,7 @@ const chartOption = computed(() => {
       data.push({
         name: translateWorker(log.worker),
         value: Math.max(0, diff),
-        itemStyle: { color: getLogStatusColor(log.status) }
+        itemStyle: { color: statusColorHex(log.status) }
       });
     }
   });
@@ -386,6 +381,9 @@ const getReport = async (isSilent = false) => {
 const startPolling = () => { stopPolling(); pollTimer = setTimeout(() => { getReport(true) }, 5000); };
 const stopPolling = () => { if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; } };
 
+// ek-pattern-exception: composables/format.ts — iki zaman damgası arasındaki farkı "X dk Y sn"
+// biçiminde süre olarak gösterir (para/tarih/sayı değil); format.ts'te süre farkı biçimlendiricisi
+// yok (Karar 6.4 istisna gerekçesi, bkz. formatChartValue AYNI gerekçe).
 const calculateDuration = (start: any, end: any) => {
   const diff = new Date(end).getTime() - new Date(start).getTime();
   const seconds = Number((diff / 1000).toFixed(2));
@@ -412,67 +410,58 @@ const getLogClass = (status: string) => {
 };
 
 /**
- * Genel statü renklerini döner.
- * UI bileşenlerinde (Chip, Badge vb.) kullanım için uygundur.
- *
- * ADR-0011 Karar 1/Açık Soru 4 kapsamı DIŞI (bilinçli, göç edilmedi) — bkz.
- * ExportLogList.vue'daki AYNI gerekçe: bu canlı iş-durumu paleti mevcut 13
- * çekirdek + 12 yeni semantik token'ın hiçbiriyle GÖZLE GÖRÜLÜR fark
- * üretmeden eşleşmiyor; `PREPARING`/`WAITING_FOR_FETCH` tek istisna
- * (slate-400 ↔ `content-subtle` TAM eşleşme).
+ * Karar 3.3 "canlı iş-durumu paleti" KARARI — status-map.ts'in JOB_STATUS_TONE ailesiyle AYNI
+ * mantık, bu dosyanın KENDİ ham durum kümesine (QUEUED/PREPARING/PENDING/SENT/WAITING/COMPLETED/
+ * FAILED) uyarlanmış TEK yerel harita. İki tüketici bağlamı var: Vuetify bileşen `color` prop'u
+ * (tema anahtarı ADI, `statusColorName`) ve ECharts JS değeri (canvas CSS okuyamaz — ADR-0011
+ * Karar 2 istisnası — gerçek hex, `statusColorHex`, `semanticColorsLight`'tan okunur).
  */
-const getStatusColor = (status: string) => {
-  const colors: any = {
-    COMPLETED: '#10b981', // Yeşil
-    FAILED: '#f43f5e',    // Kırmızı
-    SENT: '#0ea5e9',      // Açık Mavi
-    WAITING: '#f59e0b',   // Turuncu/Sarı
-    PENDING: '#6366f1',   // İndigo
-    PREPARING: 'var(--ek-color-content-subtle)', // Gri/Mavi
-    QUEUED: '#8b5cf6'      // Mor (Yeni: Kuyrukta bekleme)
-  };
-  return colors[status?.toUpperCase()] || 'grey';
+const JOB_STATUS_COLOR_NAME: Record<string, 'success' | 'warning' | 'error' | 'info' | 'neutral'> = {
+  QUEUED: 'neutral',
+  PREPARING: 'neutral',
+  PENDING: 'info',
+  SENT: 'info',
+  WAITING: 'warning',
+  COMPLETED: 'success',
+  FAILED: 'error',
+  ERROR: 'error',
 };
 
-/**
- * Log satırları veya metin bazlı durum göstergeleri için renk döner.
- */
-const getLogStatusColor = (status: string) => {
-  const s = status?.toUpperCase();
-  const colors: any = {
-    COMPLETED: '#10b981',
-    FAILED: '#f43f5e',
-    ERROR: '#f43f5e',
-    SENT: '#0ea5e9',
-    WAITING: '#f59e0b',
-    PENDING: '#6366f1',
-    PREPARING: 'var(--ek-color-content-subtle)',
-    QUEUED: '#8b5cf6'    // Mor (Yeni: Loglarda tutarlılık için)
-  };
-  return colors[s] || 'var(--ek-color-content-subtle)';
+const statusColorName = (status: string): 'success' | 'warning' | 'error' | 'info' | 'neutral' => {
+  return JOB_STATUS_COLOR_NAME[status?.toUpperCase()] || 'neutral';
 };
 
+const statusColorHex = (status: string): string => {
+  return semanticColorsLight[statusColorName(status)];
+};
 
+/** `EkStatusChip` `tone` prop'u (status-map.ts `StatusTone`) için — Vuetify tema anahtarı 'error',
+    StatusTone'da 'danger' adını taşır (Karar 3.3). */
+const statusTone = (status: string): 'success' | 'warning' | 'danger' | 'info' | 'neutral' => {
+  const name = statusColorName(status);
+  return name === 'error' ? 'danger' : name;
+};
 
+/** Genel statü rengi — UI bileşenlerinde (Chip, Badge, Avatar `color` prop'u) kullanım içindir. */
+const getStatusColor = statusColorName;
 
+/** Log satırları veya metin bazlı durum göstergeleri için tema anahtarı adı döner. */
+const getLogStatusColor = statusColorName;
 const getModeColor = (mode: string) => {
   const m = mode?.toUpperCase();
-  return PLATFORM_PROCESS_COLORS[m] || '#455a64';
+  return PLATFORM_PROCESS_COLORS[m] || semanticColorsLight['content-default'];
 };
 
-
-// GİZLİ DAVRANIŞ (YENİ bulgu, T4g — BACKLOG.md, kod DEĞİŞTİRİLMEDİ): bu fonksiyon
-// ÖLÜ KOD — hiçbir template düğümünden ÇAĞRILMIYOR (`PlatformImageComponent`
-// marka görselini zaten gösteriyor, bkz. ImportLogList.vue'daki AYNI bulgu).
-const getPlatformColor = (code: string) => {
-  const colors: any = { trendyol: '#f27a1a', hepsiburada: '#ff6000', n11: '#5e43a9', pazarama: '#005494' };
-  return colors[code?.toLowerCase()] || 'grey-darken-2';
-};
-
+// ek-pattern-exception: composables/format.ts — tarih kısmı `formatDateCentral` (composables/
+// format.ts) ile TEK kaynağa bağlandı; saat kısmı SANİYE hassasiyeti gerektirir (teknik işlem
+// günlüğünde aynı dakika içindeki adımları ayırt etmek için) — format.ts'in saat+dakika+saniye
+// birleşik bir biçimlendiricisi yok, bu yüzden saat kısmı doğrudan Intl API'siyle üretilir
+// (desen mandalının izlediği biçimlendirme çağrıları arasında yer almaz).
 const formatDate = (date: any) => {
   if (!date) return '-';
   const d = new Date(date);
-  return `${d.toLocaleDateString('tr-TR')} <span class="font-weight-black">${d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>`;
+  const timePart = new Intl.DateTimeFormat('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(d);
+  return `${formatDateCentral(d)} <span class="font-weight-black">${timePart}</span>`;
 };
 
 onMounted(() => {
@@ -492,19 +481,26 @@ onBeforeUnmount(() => {
   height: calc(100vh - 280px);
 }
 
+.choice-chip-row {
+  gap: var(--ek-space-1);
+}
+
+.price-stock-row {
+  gap: var(--ek-space-3);
+}
+
 .mode-badge {
   display: inline-flex;
   align-items: center;
   padding: 4px 12px;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  border-radius: 20px;
-  backdrop-filter: blur(4px);
-  transition: all var(--ek-duration-base) var(--ek-easing-standard);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-full);
+  transition: border-color var(--ek-duration-base) var(--ek-easing-standard),
+    box-shadow var(--ek-duration-base) var(--ek-easing-standard);
 }
 
 .mode-badge:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--ek-shadow-sm);
 }
 
 .status-dot-static {
@@ -525,24 +521,27 @@ onBeforeUnmount(() => {
 }
 
 .price-wrapper-mobile {
-  background: #f0f2ff;
-  border: 1px solid #c7d2fe;
+  background: var(--ek-color-info-subtle);
+  border: 1px solid var(--ek-color-info);
   display: inline-flex;
   align-items: center;
-  transition: all var(--ek-duration-base) var(--ek-easing-standard);
+  padding: 4px 12px;
+  border-radius: var(--ek-radius-lg);
+  transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
 }
 
 .price-amount-mobile {
   font-weight: 900;
-  color: #3730a3;
+  font-size: 15px;
+  color: var(--ek-color-info);
   letter-spacing: -0.2px;
 }
 
 .log-card {
-  background: white;
+  background: var(--ek-color-surface);
   border-radius: var(--ek-radius-lg);
-  border: 1px solid #eef2f7;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--ek-color-border-default);
+  box-shadow: var(--ek-shadow-sm);
   margin-bottom: 4px;
   position: relative;
   overflow: hidden;
@@ -562,40 +561,34 @@ onBeforeUnmount(() => {
 }
 
 .log-success::before {
-  background-color: #10b981;
+  background-color: var(--ek-color-success);
 }
 
 .log-error::before {
-  background-color: #f43f5e;
+  background-color: var(--ek-color-error);
 }
 
 .log-sent::before {
-  background-color: #0ea5e9;
+  background-color: var(--ek-color-info);
 }
 
 .log-card-header {
   padding: 8px 12px;
-  background-color: #fcfdfe;
+  background-color: var(--ek-color-surface-muted);
   border-bottom: 1px solid var(--ek-color-surface-sunken);
 }
 
 .worker-name {
   font-size: 11px;
   font-weight: 800;
-  color: #475569;
+  color: var(--ek-color-neutral);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-.status-chip {
-  font-size: 9px !important;
-  height: 18px !important;
-  font-weight: 900;
-}
-
 .duration-badge {
   background: var(--ek-color-surface-sunken);
-  color: #64748b;
+  color: var(--ek-color-content-muted);
   padding: 2px 8px;
   border-radius: var(--ek-radius-sm);
   font-size: 10px;
@@ -611,13 +604,18 @@ onBeforeUnmount(() => {
 }
 
 .log-error .log-card-body {
-  color: #b91c1c;
-  background-color: #fef2f2;
+  color: var(--ek-color-error);
+  background-color: var(--ek-color-error-subtle);
 }
 
 .log-sent .log-card-body {
-  color: #0c4a6e;
-  background-color: #f0f9ff;
+  color: var(--ek-color-info);
+  background-color: var(--ek-color-info-subtle);
+}
+
+.meta-row-divider {
+  gap: var(--ek-space-10);
+  border-top: 1px solid var(--ek-color-border-default);
 }
 
 .text-tiny {
@@ -625,7 +623,7 @@ onBeforeUnmount(() => {
 }
 
 .text-passiveColor {
-  color: #96a9b7;
+  color: var(--ek-color-content-muted);
 }
 
 .uppercase {
@@ -633,21 +631,22 @@ onBeforeUnmount(() => {
 }
 
 .border-error {
-  border: 1px solid #f43f5e !important;
+  border: 1px solid var(--ek-color-error) !important;
 }
 
 .premium-duration-badge {
   display: flex;
   align-items: center;
-  background: #ffffff;
+  background: var(--ek-color-surface);
   border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-lg);
   padding: 4px 12px 4px 4px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--ek-shadow-sm);
 }
 
 .badge-icon {
-  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  /* Karar 1.1 — dekoratif degrade YASAK; düz `primary` zemine çekildi. */
+  background: var(--ek-color-primary);
   width: 32px;
   height: 32px;
   border-radius: var(--ek-radius-md);
@@ -674,7 +673,7 @@ onBeforeUnmount(() => {
 .badge-content .value {
   font-size: var(--ek-font-size-xs);
   font-weight: 900;
-  color: #1e293b;
+  color: var(--ek-color-content-strong);
   line-height: 1;
 }
 
@@ -691,7 +690,7 @@ onBeforeUnmount(() => {
   left: 10%;
   right: 10%;
   height: 1px;
-  background: #ddd;
+  background: var(--ek-color-border-default);
   z-index: 1;
 }
 
@@ -702,6 +701,23 @@ onBeforeUnmount(() => {
   flex: 1;
   z-index: 2;
   position: relative;
+}
+
+.step-avatar-ring {
+  border: 2px solid var(--ek-color-surface);
+  box-shadow: var(--ek-shadow-sm);
+  position: relative;
+  z-index: 2;
+}
+
+.step-text-container {
+  z-index: 2;
+}
+
+.step-title-text {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
 @media (max-width: 768px) {
@@ -738,25 +754,25 @@ onBeforeUnmount(() => {
 }
 
 .step-title {
-  color: #bbb;
+  color: var(--ek-color-content-subtle);
   text-align: center;
 }
 
 .active-text {
-  color: #333 !important;
+  color: var(--ek-color-content-strong) !important;
   font-weight: 900;
 }
 
 .passed-text {
-  color: #10b981 !important;
+  color: var(--ek-color-success) !important;
 }
 
 @keyframes intense-pulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(var(--v-theme-primary), 0.7);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--ek-color-primary) 70%, transparent);
   }
   100% {
-    box-shadow: 0 0 0 12px rgba(var(--v-theme-primary), 0);
+    box-shadow: 0 0 0 12px transparent;
   }
 }
 
@@ -781,7 +797,7 @@ onBeforeUnmount(() => {
   right: 0;
   bottom: 0;
   border-radius: 50%;
-  border: 2px solid rgba(var(--v-theme-primary), 0.5);
+  border: 2px solid color-mix(in srgb, var(--ek-color-primary) 50%, transparent);
   animation: ripple-effect var(--ek-duration-slow) var(--ek-easing-standard) infinite;
 }
 

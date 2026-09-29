@@ -1,5 +1,5 @@
 <template>
-  <div class="importLogList d-flex flex-column" style="margin-top:55px">
+  <div class="importLogList d-flex flex-column">
     <div id="variant-target-0" v-show="false" style="position:absolute;z-index:-20;left:2000px"></div>
 
     <ActionDialogComponent v-model="reportInfo.isOpen" title="Ürün Çekim İşlemi Detaylı Raporu"
@@ -481,16 +481,25 @@ onBeforeMount(() => { pagination.page = 1; });
 </script>
 
 <style scoped>
+/* ADR-0015 B3 — bkz. ExportLogList.vue AYNI gerekçe (flexbox denemesi yükseklik zincirini
+   çözemedi; kanıtlanmış `position:absolute;inset:0` desenine dönüldü, yalnızca `top` LogListView.vue'nun
+   yeni EkPageHeader+EkPageTabs başlığına göre güncellendi). */
 .importLogList {
   position: absolute;
-  top: 0;
+  top: 148px;
   bottom: 0;
   left: 0;
   right: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background-color: #f5f7f9;
+  background-color: var(--ek-color-background);
+}
+
+@media (max-width: 767px) {
+  .importLogList {
+    top: 220px;
+  }
 }
 
 .search-section {

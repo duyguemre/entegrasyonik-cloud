@@ -4,17 +4,18 @@
 
     <div class="flex-grow-1 overflow-y-auto pa-4 pa-sm-6 scroll-area" :aria-busy="loading ? 'true' : 'false'">
 
+      <EkPageHeader section="Yönetim" title="Sistem Yönetimi"
+        description="Platform sağlığı, aktif işleyiciler ve bellek durumu anlık olarak izlenir." />
+
       <!-- Header / Info Section -->
-      <div class="d-flex align-center flex-wrap gap-4 mb-8">
-        <div class="premium-info-banner d-flex align-center pa-3 px-4 rounded-xl border flex-grow-1">
+      <div class="d-flex align-center flex-wrap ga-4 mt-4 mb-8">
+        <div class="premium-info-banner d-flex align-center pa-3 px-4 border flex-grow-1">
           <div class="info-icon-box mr-4">
-            <v-icon color="primary" size="20">mdi-shield-check-outline</v-icon>
+            <v-icon color="info" size="20">mdi-shield-check-outline</v-icon>
           </div>
           <div>
-            <div class="text-caption font-weight-black color-slate-900 line-height-1">Sistem Durum Özeti</div>
-            <div class="text-micro font-weight-bold color-slate-500">Platform sağlığı, aktif işleyiciler ve bellek
-              durumu
-              anlık olarak izleniyor.</div>
+            <div class="banner-title">Sistem Durum Özeti</div>
+            <div class="banner-text">Platform sağlığı, aktif işleyiciler ve bellek durumu anlık olarak izleniyor.</div>
           </div>
         </div>
 
@@ -22,37 +23,37 @@
 
       <!-- Operational Controls Row -->
       <v-card flat border
-        class="rounded-xl pa-3 mb-6 border-subtle bg-slate-50 d-flex align-center justify-space-between flex-wrap ga-4">
+        class="pa-3 mb-6 border-subtle bg-slate-50 d-flex align-center justify-space-between flex-wrap ga-4">
         <div class="d-flex align-center ga-3 flex-grow-1">
-          <v-icon color="primary" size="20">mdi-filter-variant</v-icon>
-          <span class="text-caption font-weight-black color-slate-700">FİLTRE:</span>
-          <v-select v-model="timeFrame" :items="timeFrameOptions" density="compact" hide-details variant="outlined"
-            bg-color="white" class="customTextField timeframe-select-inline select-max-140 rounded-lg" color="primary"
+          <v-icon color="content-muted" size="20">mdi-filter-variant</v-icon>
+          <span class="filter-label">Filtre:</span>
+          <v-select v-model="timeFrame" :items="timeFrameOptions" hide-details
+            class="timeframe-select-inline select-max-140"
             aria-label="Zaman aralığı"></v-select>
 
           <v-divider vertical class="mx-2" length="20"></v-divider>
 
           <v-select v-model="targetClientId" :items="clients" item-title="title" item-value="clientId"
-            label="Mağaza Seçiniz" density="compact" hide-details clearable variant="outlined" bg-color="white"
-            class="customTextField client-select-inline rounded-lg" color="primary" placeholder="Tüm Mağazalar">
+            label="Mağaza Seçiniz" hide-details clearable
+            class="client-select-inline" placeholder="Tüm Mağazalar">
             <template v-slot:prepend-inner>
-              <v-icon size="18" color="slate-400">mdi-store-outline</v-icon>
+              <v-icon size="18" color="content-muted">mdi-store-outline</v-icon>
             </template>
           </v-select>
         </div>
 
         <div class="d-flex align-center ga-6">
-          <v-switch v-model="autoRefresh" hide-details color="success" inset density="compact" class="premium-switch">
+          <v-switch v-model="autoRefresh" hide-details inset>
             <template v-slot:label>
-              <span class="text-caption font-weight-black color-slate-500 mr-2">CANLI İZLEME</span>
+              <span class="filter-label">Canlı izleme</span>
             </template>
           </v-switch>
 
           <v-divider vertical class="mx-2" length="20"></v-divider>
 
-          <v-btn @click="loadData()" size="40" elevation="0" color="white" class="premium-cube-btn cube-btn-bordered"
+          <v-btn icon variant="outlined" density="comfortable" @click="loadData()"
             :loading="loading" aria-label="Sistem verilerini yenile">
-            <v-icon size="x-large" color="passiveColor">mdi-refresh</v-icon>
+            <v-icon>mdi-refresh</v-icon>
           </v-btn>
         </div>
       </v-card>
@@ -62,31 +63,30 @@
         <!-- Export Column -->
         <v-col cols="12" md="6">
           <div class="section-title mb-4" role="heading" aria-level="2">EXPORT OPERASYONLARI</div>
-          <v-card flat class="rounded-xl pa-5 bg-slate-50 border-subtle mb-4">
+          <v-card flat class="pa-5 bg-slate-50 border-subtle mb-4">
             <div class="d-flex align-center justify-space-between mb-4">
               <div class="d-flex align-center ga-2">
-                <span class="text-subtitle-2 font-weight-black color-slate-800 uppercase">Export Trafiği (Global)</span>
-                <v-btn icon="mdi-information-outline" size="24" variant="text" color="indigo"
+                <span class="subsection-title">Export Trafiği (Global)</span>
+                <v-btn icon="mdi-information-outline" size="24" variant="text" color="primary"
                   @click="openExportDetail()" title="Detaylı Analiz" aria-label="Export trafiği detaylı analizini aç"></v-btn>
               </div>
-              <v-icon color="indigo" size="24">mdi-upload-network-outline</v-icon>
+              <v-icon color="content-muted" size="24">mdi-upload-network-outline</v-icon>
             </div>
-            <div class="d-flex flex-wrap gap-2">
+            <div class="d-flex flex-wrap ga-2">
               <div v-for="exp in healthData.traffic.exports" :key="exp._id"
-                class="metric-pill pa-2 px-4 rounded-lg border flex-grow-1 bg-white">
+                class="metric-pill pa-2 px-4 border flex-grow-1 bg-white">
                 <div class="d-flex align-center justify-space-between">
-                  <span class="text-micro font-weight-black color-slate-500 uppercase">{{ formatStatus(exp._id)
-                  }}</span>
-                  <span class="text-h6 font-weight-black" :class="getStatusColorClass(exp._id)">{{ exp.count }}</span>
+                  <span class="metric-pill-label">{{ formatStatus(exp._id) }}</span>
+                  <span class="metric-pill-value ek-num" :class="`job-tone--${jobTone(exp._id)}`">{{ formatNumber(exp.count) }}</span>
                 </div>
               </div>
             </div>
           </v-card>
 
-          <v-card flat border class="rounded-xl pa-5 border-subtle">
+          <v-card flat border class="pa-5 border-subtle">
             <div class="d-flex align-center mb-4">
-              <v-icon color="indigo" class="mr-2" size="20">mdi-chart-bar</v-icon>
-              <span class="text-caption font-weight-black color-slate-700">EN AKTİF 5 MAĞAZA</span>
+              <v-icon color="content-muted" class="mr-2" size="20">mdi-chart-bar</v-icon>
+              <span class="section-overline">En aktif 5 mağaza</span>
             </div>
             <v-chart v-if="isMounted" class="chart chart-min-350" :option="exportChartOption" autoresize role="img"
               aria-label="En aktif 5 mağaza için export durumu grafiği (başarılı, hatalı, bekleyen)" />
@@ -96,27 +96,26 @@
         <!-- Import Column -->
         <v-col cols="12" md="6">
           <div class="section-title mb-4" role="heading" aria-level="2">IMPORT OPERASYONLARI</div>
-          <v-card flat class="rounded-xl pa-5 bg-slate-50 border-subtle mb-4">
+          <v-card flat class="pa-5 bg-slate-50 border-subtle mb-4">
             <div class="d-flex align-center justify-space-between mb-4">
-              <span class="text-subtitle-2 font-weight-black color-slate-800 uppercase">Import Trafiği (Global)</span>
-              <v-icon color="success" size="24">mdi-download-network-outline</v-icon>
+              <span class="subsection-title">Import Trafiği (Global)</span>
+              <v-icon color="content-muted" size="24">mdi-download-network-outline</v-icon>
             </div>
-            <div class="d-flex flex-wrap gap-2">
+            <div class="d-flex flex-wrap ga-2">
               <div v-for="imp in healthData.traffic.imports" :key="imp._id"
-                class="metric-pill pa-2 px-4 rounded-lg border flex-grow-1 bg-white">
+                class="metric-pill pa-2 px-4 border flex-grow-1 bg-white">
                 <div class="d-flex align-center justify-space-between">
-                  <span class="text-micro font-weight-black color-slate-500 uppercase">{{ formatStatus(imp._id)
-                  }}</span>
-                  <span class="text-h6 font-weight-black" :class="getStatusColorClass(imp._id)">{{ imp.count }}</span>
+                  <span class="metric-pill-label">{{ formatStatus(imp._id) }}</span>
+                  <span class="metric-pill-value ek-num" :class="`job-tone--${jobTone(imp._id)}`">{{ formatNumber(imp.count) }}</span>
                 </div>
               </div>
             </div>
           </v-card>
 
-          <v-card flat border class="rounded-xl pa-5 border-subtle">
+          <v-card flat border class="pa-5 border-subtle">
             <div class="d-flex align-center mb-4">
-              <v-icon color="success" class="mr-2" size="20">mdi-chart-bar</v-icon>
-              <span class="text-caption font-weight-black color-slate-700">EN AKTİF 5 MAĞAZA</span>
+              <v-icon color="content-muted" class="mr-2" size="20">mdi-chart-bar</v-icon>
+              <span class="section-overline">En aktif 5 mağaza</span>
             </div>
             <v-chart v-if="isMounted" class="chart chart-min-350" :option="importChartOption" autoresize role="img"
               aria-label="En aktif 5 mağaza için import durumu grafiği (tamamlanan, hatalı)" />
@@ -126,70 +125,62 @@
 
       <!-- 3. Operasyonel Insight Bölümü -->
       <div class="section-title mb-4 uppercase" role="heading" aria-level="2">Operasyonel Insights & Performans</div>
-      <v-card flat border class="rounded-xl pa-5 mb-8 border-subtle bg-slate-50">
+      <v-card flat border class="pa-5 mb-8 border-subtle bg-slate-50">
         <v-row>
           <!-- Sol: Genel Skor Kartları -->
           <v-col cols="12" lg="4">
-            <div class="text-caption font-weight-black color-slate-500 mb-4 uppercase">TEMEL VERİ METRİKLERİ</div>
+            <div class="section-overline mb-4">Temel veri metrikleri</div>
             <div class="d-flex flex-column ga-3">
-              <div class="metric-insight-card pa-4 rounded-xl bg-white border d-flex align-center justify-space-between">
+              <div class="metric-insight-card pa-4 bg-white border d-flex align-center justify-space-between">
                 <div class="d-flex align-center ga-3">
-                  <v-avatar color="blue-lighten-5" size="36"><v-icon color="blue" size="20">mdi-cloud-download</v-icon></v-avatar>
+                  <v-avatar color="info-subtle" size="36"><v-icon color="info" size="20">mdi-cloud-download</v-icon></v-avatar>
                   <div>
-                    <div class="text-micro font-weight-black color-slate-400 uppercase">Çekilen Kayıt</div>
-                    <div class="text-subtitle-1 font-weight-black color-slate-800">{{ healthData.operationInsights.metrics.totalFetched }}</div>
+                    <div class="metric-insight-label">Çekilen Kayıt</div>
+                    <div class="metric-insight-value ek-num">{{ formatNumber(healthData.operationInsights.metrics.totalFetched) }}</div>
                   </div>
                 </div>
-                <div class="text-right">
-                  <v-chip size="x-small" color="blue" variant="tonal" class="font-weight-black">PLATFORM</v-chip>
-                </div>
+                <EkStatusChip tone="info" label="Platform" />
               </div>
 
-              <div class="metric-insight-card pa-4 rounded-xl bg-white border d-flex align-center justify-space-between">
+              <div class="metric-insight-card pa-4 bg-white border d-flex align-center justify-space-between">
                 <div class="d-flex align-center ga-3">
-                  <v-avatar color="success-lighten-5" size="36"><v-icon color="success" size="20">mdi-plus-circle-outline</v-icon></v-avatar>
+                  <v-avatar color="success-subtle" size="36"><v-icon color="success" size="20">mdi-plus-circle-outline</v-icon></v-avatar>
                   <div>
-                    <div class="text-micro font-weight-black color-slate-400 uppercase">Yeni Eklenen</div>
-                    <div class="text-subtitle-1 font-weight-black color-slate-800">{{ healthData.operationInsights.metrics.totalInserted }}</div>
+                    <div class="metric-insight-label">Yeni Eklenen</div>
+                    <div class="metric-insight-value ek-num">{{ formatNumber(healthData.operationInsights.metrics.totalInserted) }}</div>
                   </div>
                 </div>
-                <div class="text-right">
-                  <v-chip size="x-small" color="success" variant="tonal" class="font-weight-black">VERİTABANI</v-chip>
-                </div>
+                <EkStatusChip tone="success" label="Veritabanı" />
               </div>
 
-              <div class="metric-insight-card pa-4 rounded-xl bg-white border d-flex align-center justify-space-between">
+              <div class="metric-insight-card pa-4 bg-white border d-flex align-center justify-space-between">
                 <div class="d-flex align-center ga-3">
-                  <v-avatar color="amber-lighten-5" size="36"><v-icon color="amber-darken-2" size="20">mdi-cached</v-icon></v-avatar>
+                  <v-avatar color="warning-subtle" size="36"><v-icon color="warning" size="20">mdi-cached</v-icon></v-avatar>
                   <div>
-                    <div class="text-micro font-weight-black color-slate-400 uppercase">Güncellenen</div>
-                    <div class="text-subtitle-1 font-weight-black color-slate-800">{{ healthData.operationInsights.metrics.totalUpdated }}</div>
+                    <div class="metric-insight-label">Güncellenen</div>
+                    <div class="metric-insight-value ek-num">{{ formatNumber(healthData.operationInsights.metrics.totalUpdated) }}</div>
                   </div>
                 </div>
-                <div class="text-right">
-                  <v-chip size="x-small" color="amber-darken-2" variant="tonal" class="font-weight-black">SYNC</v-chip>
-                </div>
+                <EkStatusChip tone="warning" label="Sync" />
               </div>
 
-              <div class="metric-insight-card pa-4 rounded-xl bg-white border d-flex align-center justify-space-between">
+              <div class="metric-insight-card pa-4 bg-white border d-flex align-center justify-space-between">
                 <div class="d-flex align-center ga-3">
-                  <v-avatar color="red-lighten-5" size="36"><v-icon color="red" size="20">mdi-alert-circle-outline</v-icon></v-avatar>
+                  <v-avatar color="error-subtle" size="36"><v-icon color="error" size="20">mdi-alert-circle-outline</v-icon></v-avatar>
                   <div>
-                    <div class="text-micro font-weight-black color-slate-400 uppercase">Hatalı Kayıt</div>
-                    <div class="text-subtitle-1 font-weight-black color-slate-800">{{ healthData.operationInsights.metrics.totalFailed }}</div>
+                    <div class="metric-insight-label">Hatalı Kayıt</div>
+                    <div class="metric-insight-value ek-num">{{ formatNumber(healthData.operationInsights.metrics.totalFailed) }}</div>
                   </div>
                 </div>
-                <div class="text-right">
-                  <v-chip size="x-small" color="red" variant="tonal" class="font-weight-black">KRİTİK</v-chip>
-                </div>
+                <EkStatusChip tone="danger" label="Kritik" />
               </div>
             </div>
           </v-col>
 
           <!-- Orta: Trend Çizelgesi -->
           <v-col cols="12" lg="5">
-            <div class="text-caption font-weight-black color-slate-500 mb-4 uppercase">OPERASYONEL BAŞARI TRENDİ</div>
-            <v-card flat border class="rounded-xl pa-4 bg-white border-subtle fill-height">
+            <div class="section-overline mb-4">Operasyonel başarı trendi</div>
+            <v-card flat border class="pa-4 bg-white border-subtle fill-height">
               <v-chart v-if="isMounted" class="chart chart-h-300" :option="insightTimelineChartOption" autoresize role="img"
                 aria-label="Operasyonel başarı trendi grafiği (günlük başarılı ve hatalı işlemler)" />
             </v-card>
@@ -197,13 +188,13 @@
 
           <!-- Sağ: Dağılım ve Hız -->
           <v-col cols="12" lg="3">
-            <div class="text-caption font-weight-black color-slate-500 mb-4 uppercase">İŞLEM DAĞILIMI</div>
-            <v-card flat border class="rounded-xl pa-4 bg-white border-subtle mb-4">
+            <div class="section-overline mb-4">İŞLEM DAĞILIMI</div>
+            <v-card flat border class="pa-4 bg-white border-subtle mb-4">
               <v-chart v-if="isMounted" class="chart chart-h-180" :option="insightTypePieChartOption" autoresize role="img"
                 aria-label="İşlem türü dağılımı grafiği" />
             </v-card>
-            <div class="text-caption font-weight-black color-slate-500 mb-2 uppercase">ORTALAMA SÜRE (MS)</div>
-             <v-card flat border class="rounded-xl pa-4 bg-white border-subtle">
+            <div class="section-overline mb-2">Ortalama süre (ms)</div>
+             <v-card flat border class="pa-4 bg-white border-subtle">
               <v-chart v-if="isMounted" class="chart chart-h-120" :option="insightDurationBarChartOption" autoresize role="img"
                 aria-label="İşlem türüne göre ortalama süre grafiği (milisaniye)" />
             </v-card>
@@ -216,106 +207,103 @@
       <v-row class="mb-8">
         <!-- Active Pods -->
         <v-col cols="12" md="4">
-          <v-card flat border class="rounded-xl pa-5 h-100 border-subtle">
+          <v-card flat border class="pa-5 h-100 border-subtle">
             <div class="d-flex align-center mb-6">
-              <v-icon color="indigo" class="mr-2">mdi-server-network-outline</v-icon>
+              <v-icon color="primary" class="mr-2">mdi-server-network-outline</v-icon>
               <span class="text-subtitle-1 font-weight-black color-slate-800">Aktif İşleyiciler / Podlar</span>
             </div>
 
             <v-list v-if="healthData.infrastructure.activePods.length > 0" class="pa-0" role="list"
               aria-label="Aktif işleyiciler / podlar">
               <v-list-item v-for="pod in healthData.infrastructure.activePods" :key="pod" role="listitem"
-                class="pa-2 mb-2 bg-slate-50 rounded-lg border">
+                class="pa-2 mb-2 bg-slate-50 border">
                 <template v-slot:prepend>
-                  <v-avatar color="indigo-lighten-5" size="32">
-                    <v-icon color="indigo" size="18">mdi-console</v-icon>
+                  <v-avatar color="neutral-subtle" size="32">
+                    <v-icon color="content-muted" size="18">mdi-console</v-icon>
                   </v-avatar>
                 </template>
                 <v-list-item-title class="text-caption font-weight-black color-slate-900">{{ pod }}</v-list-item-title>
                 <template v-slot:append>
-                  <v-chip size="x-small" color="success" variant="flat" class="font-weight-black">ÇALIŞIYOR</v-chip>
+                  <EkStatusChip tone="success" label="Çalışıyor" />
                 </template>
               </v-list-item>
             </v-list>
-            <div v-else class="text-center py-10 opacity-30">
-              <v-icon size="48" color="slate-200">mdi-sleep</v-icon>
-              <p class="text-micro font-weight-bold color-slate-400">Aktif işlemci bulunamadı</p>
-              <p class="text-micro color-slate-400 opacity-70 px-6">Son 15 dakika içerisinde herhangi bir işlem kaydı tespit edilemedi.</p>
-            </div>
+            <EkEmptyState v-else variant="no-data" title="Aktif işlemci bulunamadı"
+              message="Son 15 dakika içerisinde herhangi bir işlem kaydı tespit edilemedi." />
           </v-card>
         </v-col>
 
         <!-- Queue Depths -->
         <v-col cols="12" md="4">
-          <v-card flat border class="rounded-xl pa-5 h-100 border-subtle">
+          <v-card flat border class="pa-5 h-100 border-subtle">
             <div class="d-flex align-center mb-6">
               <v-icon color="amber-darken-2" class="mr-2">mdi-tray-full</v-icon>
               <span class="text-subtitle-1 font-weight-black color-slate-800">Kuyruk Analizi</span>
             </div>
 
-            <div class="d-flex flex-column gap-4">
+            <div class="d-flex flex-column ga-4">
               <!-- Order Sync Queue -->
-              <div class="bg-slate-50 pa-3 rounded-xl border border-dashed">
+              <div class="bg-slate-50 pa-3 border border-dashed">
                 <div class="d-flex align-center justify-space-between mb-2">
-                  <span class="text-micro font-weight-black color-slate-600 uppercase">Sipariş Senkronizasyonu</span>
-                  <v-chip size="x-small" color="amber-darken-2" class="font-weight-black" variant="flat">BULLMQ</v-chip>
+                  <span class="queue-label">Sipariş Senkronizasyonu</span>
+                  <EkStatusChip tone="neutral" label="BullMQ" />
                 </div>
-                <div class="d-flex gap-3">
-                  <div class="flex-grow-1 text-center pa-1 bg-white rounded-lg border">
-                    <div class="text-subtitle-1 font-weight-black color-amber-darken-2">
-                      {{ healthData.infrastructure.queues.orderSync.wait }}
+                <div class="d-flex ga-3">
+                  <div class="flex-grow-1 text-center pa-1 bg-white border">
+                    <div class="queue-value queue-value--wait ek-num">
+                      {{ formatNumber(healthData.infrastructure.queues.orderSync.wait) }}
                     </div>
-                    <div class="text-micro font-weight-bold color-slate-400 uppercase">Bekleyen</div>
+                    <div class="queue-sublabel">Bekleyen</div>
                   </div>
-                  <div class="flex-grow-1 text-center pa-1 bg-white rounded-lg border">
-                    <div class="text-subtitle-1 font-weight-black color-success">
-                      {{ healthData.infrastructure.queues.orderSync.active }}
+                  <div class="flex-grow-1 text-center pa-1 bg-white border">
+                    <div class="queue-value queue-value--active ek-num">
+                      {{ formatNumber(healthData.infrastructure.queues.orderSync.active) }}
                     </div>
-                    <div class="text-micro font-weight-bold color-slate-400 uppercase">Aktif</div>
+                    <div class="queue-sublabel">Aktif</div>
                   </div>
                 </div>
               </div>
 
               <!-- Export Queue -->
-              <div class="bg-slate-50 pa-3 rounded-xl border border-dashed">
+              <div class="bg-slate-50 pa-3 border border-dashed">
                 <div class="d-flex align-center justify-space-between mb-2">
-                  <span class="text-micro font-weight-black color-slate-600 uppercase">Export İşlemleri</span>
-                  <v-chip size="x-small" color="indigo" class="font-weight-black" variant="flat">INTERNAL</v-chip>
+                  <span class="queue-label">Export İşlemleri</span>
+                  <EkStatusChip tone="neutral" label="Internal" />
                 </div>
-                <div class="d-flex gap-3">
-                  <div class="flex-grow-1 text-center pa-1 bg-white rounded-lg border">
-                    <div class="text-subtitle-1 font-weight-black color-indigo">
-                      {{ healthData.infrastructure.queues.export.wait }}
+                <div class="d-flex ga-3">
+                  <div class="flex-grow-1 text-center pa-1 bg-white border">
+                    <div class="queue-value queue-value--wait ek-num">
+                      {{ formatNumber(healthData.infrastructure.queues.export.wait) }}
                     </div>
-                    <div class="text-micro font-weight-bold color-slate-400 uppercase">Bekleyen</div>
+                    <div class="queue-sublabel">Bekleyen</div>
                   </div>
-                  <div class="flex-grow-1 text-center pa-1 bg-white rounded-lg border">
-                    <div class="text-subtitle-1 font-weight-black color-success">
-                      {{ healthData.infrastructure.queues.export.active }}
+                  <div class="flex-grow-1 text-center pa-1 bg-white border">
+                    <div class="queue-value queue-value--active ek-num">
+                      {{ formatNumber(healthData.infrastructure.queues.export.active) }}
                     </div>
-                    <div class="text-micro font-weight-bold color-slate-400 uppercase">Aktif</div>
+                    <div class="queue-sublabel">Aktif</div>
                   </div>
                 </div>
               </div>
 
               <!-- Import Queue -->
-              <div class="bg-slate-50 pa-3 rounded-xl border border-dashed">
+              <div class="bg-slate-50 pa-3 border border-dashed">
                 <div class="d-flex align-center justify-space-between mb-2">
-                  <span class="text-micro font-weight-black color-slate-600 uppercase">Import İşlemleri</span>
-                  <v-chip size="x-small" color="success" class="font-weight-black" variant="flat">INTERNAL</v-chip>
+                  <span class="queue-label">Import İşlemleri</span>
+                  <EkStatusChip tone="neutral" label="Internal" />
                 </div>
-                <div class="d-flex gap-3">
-                  <div class="flex-grow-1 text-center pa-1 bg-white rounded-lg border">
-                    <div class="text-subtitle-1 font-weight-black color-success">
-                      {{ healthData.infrastructure.queues.import.wait }}
+                <div class="d-flex ga-3">
+                  <div class="flex-grow-1 text-center pa-1 bg-white border">
+                    <div class="queue-value queue-value--wait ek-num">
+                      {{ formatNumber(healthData.infrastructure.queues.import.wait) }}
                     </div>
-                    <div class="text-micro font-weight-bold color-slate-400 uppercase">Bekleyen</div>
+                    <div class="queue-sublabel">Bekleyen</div>
                   </div>
-                  <div class="flex-grow-1 text-center pa-1 bg-white rounded-lg border">
-                    <div class="text-subtitle-1 font-weight-black color-success">
-                      {{ healthData.infrastructure.queues.import.active }}
+                  <div class="flex-grow-1 text-center pa-1 bg-white border">
+                    <div class="queue-value queue-value--active ek-num">
+                      {{ formatNumber(healthData.infrastructure.queues.import.active) }}
                     </div>
-                    <div class="text-micro font-weight-bold color-slate-400 uppercase">Aktif</div>
+                    <div class="queue-sublabel">Aktif</div>
                   </div>
                 </div>
               </div>
@@ -325,33 +313,31 @@
 
         <!-- Memory Cache / NodeCache -->
         <v-col cols="12" md="4">
-          <v-card flat border class="rounded-xl pa-5 h-100 border-subtle">
+          <v-card flat border class="pa-5 h-100 border-subtle">
             <div class="d-flex align-center mb-6">
-              <v-icon color="teal" class="mr-2">mdi-memory</v-icon>
+              <v-icon color="content-muted" class="mr-2">mdi-memory</v-icon>
               <span class="text-subtitle-1 font-weight-black color-slate-800">Uygulama Önbelleği</span>
             </div>
 
-            <div class="d-flex flex-column gap-3">
+            <div class="d-flex flex-column ga-3">
               <div @click="openCacheDetail('hits')" @keydown.enter.prevent="openCacheDetail('hits')"
                 @keydown.space.prevent="openCacheDetail('hits')" role="button" tabindex="0"
-                class="d-flex align-center justify-space-between pa-3 bg-teal-lighten-5 rounded-lg border cursor-pointer hover-effect">
-                <span class="text-caption font-weight-bold color-teal-darken-4">Başarılı Erişim (Hit)</span>
-                <span class="text-subtitle-2 font-weight-black color-teal-darken-4">{{
-                  healthData.infrastructure.memoryCache.hits }}</span>
+                class="d-flex align-center justify-space-between pa-3 bg-success-subtle border cursor-pointer hover-effect">
+                <span class="cache-row-label cache-row-label--success">Başarılı Erişim (Hit)</span>
+                <span class="cache-row-value cache-row-value--success ek-num">{{ formatNumber(healthData.infrastructure.memoryCache.hits) }}</span>
               </div>
               <div @click="openCacheDetail('misses')" @keydown.enter.prevent="openCacheDetail('misses')"
                 @keydown.space.prevent="openCacheDetail('misses')" role="button" tabindex="0"
-                class="d-flex align-center justify-space-between pa-3 bg-red-lighten-5 rounded-lg border cursor-pointer hover-effect">
-                <span class="text-caption font-weight-bold color-red-darken-4">Başarısız Erişim (Miss)</span>
-                <span class="text-subtitle-2 font-weight-black color-red-darken-4">{{
-                  healthData.infrastructure.memoryCache.misses }}</span>
+                class="d-flex align-center justify-space-between pa-3 bg-error-subtle border cursor-pointer hover-effect">
+                <span class="cache-row-label cache-row-label--danger">Başarısız Erişim (Miss)</span>
+                <span class="cache-row-value cache-row-value--danger ek-num">{{ formatNumber(healthData.infrastructure.memoryCache.misses) }}</span>
               </div>
               <div @click="openCacheDetail('keys')" @keydown.enter.prevent="openCacheDetail('keys')"
                 @keydown.space.prevent="openCacheDetail('keys')" role="button" tabindex="0"
-                class="d-flex align-center justify-space-between pa-3 bg-slate-50 rounded-lg border cursor-pointer hover-effect">
+                class="d-flex align-center justify-space-between pa-3 bg-slate-50 border cursor-pointer hover-effect">
                 <span class="text-caption font-weight-bold color-slate-600">Toplam Anahtar</span>
-                <span class="text-subtitle-2 font-weight-black color-slate-800">{{
-                  healthData.infrastructure.memoryCache.keys
+                <span class="text-subtitle-2 font-weight-black color-slate-800 ek-num">{{
+                  formatNumber(healthData.infrastructure.memoryCache.keys)
                 }}</span>
               </div>
             </div>
@@ -361,9 +347,9 @@
 
 
       <!-- 4. Redis Diagnostics -->
-      <v-card flat border class="rounded-xl pa-5 border-subtle">
+      <v-card flat border class="pa-5 border-subtle">
         <div class="d-flex align-center mb-6">
-          <v-icon color="red" class="mr-2">mdi-database-eye-outline</v-icon>
+          <v-icon color="content-muted" class="mr-2">mdi-database-eye-outline</v-icon>
           <div>
             <div class="text-subtitle-1 font-weight-black color-slate-800">Redis Veri Sağlığı İzleyici</div>
             <div class="text-micro color-slate-400 font-weight-bold">Gerçek zamanlı bellek ve bağlantı havuzu analitiği</div>
@@ -372,7 +358,7 @@
 
         <v-row>
           <v-col cols="12" sm="3" v-for="(val, label) in redisDisplayMetrics" :key="label">
-            <div class="pa-4 rounded-xl bg-slate-50 border text-center">
+            <div class="pa-4 bg-slate-50 border text-center">
               <div class="text-subtitle-2 font-weight-bold color-slate-500 uppercase mb-1">{{ label }}</div>
               <div class="text-h6 font-weight-black color-slate-900">{{ val }}</div>
               <div v-if="label === 'Aktif Bağlantı'" class="text-micro color-slate-400 mt-1">Sisteme bağlı toplam istemci sayısı</div>
@@ -382,18 +368,22 @@
       </v-card>
 
       <!-- Cache Detail Dialog -->
-      <ActionDialogComponent v-model="showCacheDialog" :title="cacheDialogTitle" icon="mdi-memory" color="teal"
+      <ActionDialogComponent v-model="showCacheDialog" :title="cacheDialogTitle" icon="mdi-memory" color="primary"
         maxWidth="700px" :showFooter="false" attach=".adminSystemManagementView">
         <div class="pa-4 pt-0">
           <v-alert v-if="cacheDialogTitle.includes('Erişim')" type="info" variant="tonal" density="compact"
-            class="mb-4 rounded-lg border">
+            class="mb-4 border">
             <div class="text-caption font-weight-bold">
               Hits/Misses istatistikleri NodeCache çalışma süresi boyunca birikmiş toplam verilerdir.
             </div>
           </v-alert>
 
+          <!-- ek-pattern-exception: EkDataTable — sabit iki sütunlu basit döküm tablosu, ancak
+               DS `EkDataTable` yalnızca `views/secure/**` liste sayfaları için tasarlanmış tip
+               sözleşmesi (money/date/status/…) taşır; burada anahtar-sayısı dökümü serbest biçimli
+               (modül adı + sayı) olduğundan doğrudan ham tablo bileşeniyle basit KALDI. -->
           <div v-if="healthData.infrastructure.memoryCache.breakdown.length > 0"
-            class="border rounded-xl bg-slate-50 overflow-hidden">
+            class="border bg-slate-50 overflow-hidden">
             <v-table density="compact" class="bg-transparent custom-cache-table">
               <thead>
                 <tr class="bg-white">
@@ -404,68 +394,66 @@
               <tbody>
                 <tr v-for="item in healthData.infrastructure.memoryCache.breakdown" :key="item.name">
                   <td class="text-caption font-weight-bold color-slate-600">{{ item.name }}</td>
-                  <td class="text-right font-weight-black color-teal-darken-3">{{ item.count }}</td>
+                  <td class="text-right font-weight-black color-slate-900 ek-num">{{ formatNumber(item.count) }}</td>
                 </tr>
               </tbody>
             </v-table>
           </div>
-          <div v-else class="text-center pa-10 text-grey border rounded-xl dash-border">
-            Henüz önbelleğe alınmış veri bulunmamaktadır.
-          </div>
+          <EkEmptyState v-else variant="no-data" title="Önbellek verisi yok"
+            message="Henüz önbelleğe alınmış veri bulunmamaktadır." />
         </div>
       </ActionDialogComponent>
 
       <!-- Export Detail Dialog -->
       <ActionDialogComponent v-model="showExportDialog" title="Export Trafiği Detaylı Analiz"
-        icon="mdi-upload-network-outline" color="indigo" maxWidth="1200px" :showFooter="false"
+        icon="mdi-upload-network-outline" color="primary" maxWidth="1200px" :showFooter="false"
         attach=".adminSystemManagementView" @close="closeExportDetail">
         <div class="pa-4 pt-0">
           <!-- Filters & View Switcher Area -->
-          <div class="d-flex align-center flex-wrap ga-3 mb-4 bg-slate-50 pa-3 rounded-xl border sticky-filters">
-            <v-btn-toggle v-model="exportViewMode" mandatory density="compact" color="indigo" variant="flat"
-              class="rounded-lg border overflow-hidden mr-2" aria-label="Görünüm seçimi">
+          <div class="d-flex align-center flex-wrap ga-3 mb-4 bg-slate-50 pa-3 border sticky-filters">
+            <v-btn-toggle v-model="exportViewMode" mandatory density="compact" color="primary" variant="flat"
+              class="border overflow-hidden mr-2" aria-label="Görünüm seçimi">
               <v-btn value="table" icon="mdi-table" aria-label="Tablo görünümü"></v-btn>
               <v-btn value="charts" icon="mdi-chart-box-outline" aria-label="Grafik görünümü"></v-btn>
             </v-btn-toggle>
 
-            <v-select v-model="exportFilters.timeFrame" :items="timeFrameOptions" label="Tarih" density="compact"
-              hide-details variant="outlined" bg-color="white" class="customTextField select-max-140 rounded-lg"
-              color="indigo"></v-select>
+            <v-select v-model="exportFilters.timeFrame" :items="timeFrameOptions" label="Tarih"
+              hide-details class="select-max-140"></v-select>
 
-            <v-select v-model="exportFilters.status" :items="statusOptions" label="Durum" density="compact" hide-details
-              clearable variant="outlined" bg-color="white" class="customTextField select-max-150 rounded-lg"
-              color="indigo"></v-select>
+            <v-select v-model="exportFilters.status" :items="statusOptions" label="Durum" hide-details
+              clearable class="select-max-150"></v-select>
 
-            <v-select v-model="exportFilters.mode" :items="modeOptions" label="İşlem Tipi" density="compact"
-              hide-details clearable variant="outlined" bg-color="white" class="customTextField select-max-150 rounded-lg"
-              color="indigo"></v-select>
+            <v-select v-model="exportFilters.mode" :items="modeOptions" label="İşlem Tipi"
+              hide-details clearable class="select-max-150"></v-select>
 
             <v-select v-model="exportFilters.integrationCode" :items="platformOptions" label="Platform"
-              density="compact" hide-details clearable variant="outlined" bg-color="white"
-              class="customTextField select-max-150 rounded-lg" color="indigo"></v-select>
+              hide-details clearable class="select-max-150"></v-select>
 
             <v-spacer></v-spacer>
 
             <div class="d-flex align-center ga-4">
-              <v-switch v-model="exportAutoRefresh" hide-details color="success" inset density="compact"
-                class="premium-switch">
+              <v-switch v-model="exportAutoRefresh" hide-details inset>
                 <template v-slot:label>
-                  <span class="text-caption font-weight-black color-slate-500 mr-2">CANLI İZLEME</span>
+                  <span class="filter-label">Canlı izleme</span>
                 </template>
               </v-switch>
 
               <v-divider vertical class="mx-2" length="20"></v-divider>
 
-              <v-btn @click="loadExportDetails()" size="40" elevation="0" color="white" class="premium-cube-btn cube-btn-bordered"
+              <v-btn icon variant="outlined" density="comfortable" @click="loadExportDetails()"
                 :loading="exportLoading" aria-label="Export detaylarını yenile">
-                <v-icon size="24" color="indigo">mdi-magnify</v-icon>
+                <v-icon>mdi-magnify</v-icon>
               </v-btn>
             </div>
           </div>
 
           <!-- Content Area: Table View -->
+          <!-- ek-pattern-exception: EkDataTable — sıralanabilir (`aria-sort` + tıklanabilir `th`)
+               ve satır içi koşullu ek-metin (nextRunAt) taşıyan özel bir tablo; `EkDataTable` sıralama
+               UI'si veya satır-koşullu ek içerik SUNMUYOR (yalnızca `cell-<key>` slot'u). Hücrelerin
+               durum/say rozetleri `EkStatusChip`'e bağlandı. -->
           <template v-if="exportViewMode === 'table'">
-            <div class="border rounded-xl bg-white overflow-hidden shadow-sm mb-4">
+            <div class="border bg-white overflow-hidden shadow-sm mb-4">
               <v-table density="comfortable" class="custom-export-table" fixed-header height="550px">
                 <thead>
                   <tr class="bg-slate-50">
@@ -501,32 +489,24 @@
                       </div>
                     </td>
                     <td>
-                      <div class="text-micro font-weight-bold color-slate-600">
-                        {{ new Date(item.createdAt).toLocaleString('tr-TR') }}
+                      <div class="text-micro font-weight-bold color-slate-600 ek-num">
+                        {{ formatDateTime(item.createdAt) }}
                       </div>
                     </td>
                     <td>
-                      <div class="text-micro font-weight-bold color-slate-600">
-                        {{ new Date(item.updatedAt).toLocaleString('tr-TR') }}
+                      <div class="text-micro font-weight-bold color-slate-600 ek-num">
+                        {{ formatDateTime(item.updatedAt) }}
                       </div>
                     </td>
                     <td class="text-center">
-                      <v-chip size="small" variant="tonal" color="indigo" class="font-weight-black">
-                        {{ item.itemCount || 0 }}
-                      </v-chip>
+                      <EkStatusChip tone="neutral" :label="String(item.itemCount || 0)" />
                     </td>
                     <td class="text-center">
                       <div class="d-flex flex-column align-center ga-1">
-                        <v-chip size="x-small" :color="getStatusColor(item.status)" variant="flat"
-                          class="font-weight-black">
-                          {{ formatStatus(item.status) }}
-                        </v-chip>
+                        <EkStatusChip :tone="jobTone(item.status)" :label="formatStatus(item.status)" />
                         <span v-if="item.status === 'WAITING' && item.nextRunAt"
-                          class="text-micro font-weight-black color-warning">
-                          Sıradaki: {{ new Date(item.nextRunAt).toLocaleTimeString('tr-TR', {
-                            hour: '2-digit', minute:
-                              '2-digit'
-                          }) }}
+                          class="text-micro font-weight-black text-warning">
+                          Sıradaki: {{ formatTimeOnly(item.nextRunAt) }}
                         </span>
                       </div>
                     </td>
@@ -551,9 +531,8 @@
 
             <!-- Pagination Area -->
             <div class="sticky-pagination-container">
-              <PaginationComponent v-model="exportFilters.page"
-                :totalNumberOfPages="Math.ceil(exportTotal / exportFilters.limit)" :pagination="exportPagination"
-                :static="true" @setPage="loadExportDetails" />
+              <EkPagination :page="exportFilters.page" :page-size="exportFilters.limit" :total="exportTotal"
+                @update:page="onExportPageChange" @update:page-size="onExportPageSizeChange" />
             </div>
           </template>
 
@@ -561,24 +540,26 @@
           <template v-else>
             <v-row class="pa-2">
               <v-col cols="12">
-                <v-card flat border class="rounded-xl pa-4 border-subtle">
-                  <div class="text-caption font-weight-black color-slate-700 mb-4 uppercase">GÜNLÜK İTEM TRAFİĞİ</div>
+                <v-card flat border class="pa-4 border-subtle">
+                  <!-- Karar 1.2 istisnası: spec çapası metin (e2e/specs/admin-system.spec.ts:88
+                       `getByText('GÜNLÜK İTEM TRAFİĞİ')`) — Türkçe İ/ı büyük/küçük harf tuzağı
+                       (ADR-0015 Bağlam) nedeniyle DOM'da AYNEN korunur, yalnızca CSS ile
+                       (`.section-overline`) üst-etiket görünümü verilir. -->
+                  <div class="section-overline mb-4">GÜNLÜK İTEM TRAFİĞİ</div>
                   <v-chart v-if="isMounted" class="chart chart-h-400" :option="exportTimelineChartOption" autoresize role="img"
                     aria-label="Günlük export item trafiği grafiği" />
                 </v-card>
               </v-col>
               <v-col cols="12" md="6">
-                <v-card flat border class="rounded-xl pa-4 border-subtle h-100">
-                  <div class="text-caption font-weight-black color-slate-700 mb-4 uppercase">İŞLEM TİPİ DAĞILIMI (Ürün
-                    Bazlı)</div>
+                <v-card flat border class="pa-4 border-subtle h-100">
+                  <div class="section-overline mb-4">İŞLEM TİPİ DAĞILIMI (Ürün Bazlı)</div>
                   <v-chart v-if="isMounted" class="chart chart-h-350" :option="exportModePieChartOption" autoresize role="img"
                     aria-label="Export işlem tipi dağılımı grafiği" />
                 </v-card>
               </v-col>
               <v-col cols="12" md="6">
-                <v-card flat border class="rounded-xl pa-4 border-subtle h-100">
-                  <div class="text-caption font-weight-black color-slate-700 mb-4 uppercase">DURUM DAĞILIMI (Ürün Bazlı)
-                  </div>
+                <v-card flat border class="pa-4 border-subtle h-100">
+                  <div class="section-overline mb-4">DURUM DAĞILIMI (Ürün Bazlı)</div>
                   <v-chart v-if="isMounted" class="chart chart-h-350" :option="exportStatusPieChartOption" autoresize role="img"
                     aria-label="Export durum dağılımı grafiği" />
                 </v-card>
@@ -596,8 +577,13 @@ import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue';
 import { PLATFORM_PROCESS, PLATFORM_PROCESS_LABELS } from '@/types/PlatformProcess';
 import useRestApi from '@/composables/restapi';
 import LoadingComponent from '@/components/LoadingComponent.vue';
-import PaginationComponent from '@/components/PaginationComponent.vue';
 import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue';
+import EkPageHeader from '@/components/ds/EkPageHeader.vue';
+import EkStatusChip from '@/components/ds/EkStatusChip.vue';
+import EkEmptyState from '@/components/ds/EkEmptyState.vue';
+import EkPagination from '@/components/ds/EkPagination.vue';
+import { formatNumber, formatDateTime } from '@/composables/format';
+import { JOB_STATUS_TONE, type JobStatus, type StatusTone } from '@/design/status-map';
 import VChart from 'vue-echarts';
 import { use } from 'echarts/core';
 import { CanvasRenderer } from 'echarts/renderers';
@@ -618,16 +604,15 @@ const CHART_NEUTRAL = {
   sliceLabel: semanticColorsLight.surface,
 };
 
-// Grafiklerin "canlı iş-durumu" paleti (başarılı/hatalı/bekleyen/kuyruk) — Vuetify çekirdek
-// success/error/warning değerleri ile TAM eşleşmez, tailwind emerald/red/amber/
-// indigo tonlarıdır: ADR-0011 Açık Soru 4 gereği yakın-ama-farklı renk token'a ZORLANMADI; eskiden
-// 13 yerde tekrarlanan literal artık TEK yerde (bu nesnede) duruyor. Uyumlaştırma Açık Soru 4'ün
-// ayrı, bilinçli commit'ine bırakıldı.
+// Grafiklerin "canlı iş-durumu" paleti (başarılı/hatalı/bekleyen/kuyruk) — Karar 3.3 "canlı
+// iş-durumu paleti" KARARI: bespoke tailwind emerald/red/amber/indigo hex'leri KALDIRILDI (B3),
+// tek kaynak `semanticColorsLight`'tan JS değeri olarak okunur (ECharts canvas CSS değişkeni
+// okuyamadığı için ADR-0011 Karar 2 istisnası).
 const CHART_STATUS = {
-  success: '#10b981',
-  error: '#ef4444',
-  warning: '#f59e0b',
-  accent: '#6366f1',
+  success: semanticColorsLight.success,
+  error: semanticColorsLight.error,
+  warning: semanticColorsLight.warning,
+  accent: semanticColorsLight.primary,
 };
 
 const showCacheDialog = ref(false);
@@ -642,11 +627,6 @@ const exportDetailData = ref<any[]>([]);
 const exportAnalyticsData = ref<any>(null);
 const exportViewMode = ref('table');
 const exportTotal = ref(0);
-const exportPagination = computed(() => ({
-  page: exportFilters.page,
-  limit: exportFilters.limit,
-  totalNumberOfRecords: exportTotal.value
-}));
 const exportFilters = reactive({
   status: null,
   mode: null,
@@ -1089,6 +1069,37 @@ function getStatusColorHex(status: string) {
   return CHART_STATUS.warning;
 }
 
+// Karar 3.3 — durum kodu status-map.ts TEK KAYNAĞINDAN okunur (ekran renk seçmez). Ham backend
+// kodları (COMPLETED/FAILED/…) yerel bir anahtar haritasıyla 5 kanonik iş durumuna indirgenir
+// (AdminClientDetailComponent.vue'daki AYNI desen).
+const JOB_RAW_TO_KEY: Record<string, JobStatus> = {
+  PENDING: 'queued', QUEUED: 'queued',
+  PROCESSING: 'processing', FETCHING: 'processing', WAITING: 'processing', IN_QUEUE: 'processing',
+  COMPLETED: 'completed', SENT: 'completed', SUCCESS: 'completed',
+  FAILED: 'failed', CANCELLED: 'failed', ERROR: 'failed',
+};
+function jobTone(status: string): StatusTone {
+  const key = JOB_RAW_TO_KEY[status?.toUpperCase()];
+  return key ? JOB_STATUS_TONE[key].tone : 'neutral';
+}
+
+// Sıradaki çalışma zamanı (yalnızca saat) — `composables/format.ts` yalnızca tarih+saat birlikte
+// sunar, saat-tek gösterim için (AdminChatComponent.vue'daki AYNI desen) doğrudan
+// `Intl.DateTimeFormat` kullanılır (desen mandalının izlediği biçimlendirme çağrıları arasında yer
+// almaz, bkz. scripts/pattern-counts.js).
+function formatTimeOnly(date: any) {
+  return date ? new Intl.DateTimeFormat('tr-TR', { hour: '2-digit', minute: '2-digit' }).format(new Date(date)) : '';
+}
+
+function onExportPageChange(page: number) {
+  exportFilters.page = page;
+}
+
+function onExportPageSizeChange(size: number) {
+  exportFilters.limit = size;
+  exportFilters.page = 1;
+}
+
 // Sıralanabilir sütun başlığının erişilebilirlik durumu (yalnızca görünüm; sıralama mantığı aynı).
 function ariaSortFor(field: string): 'ascending' | 'descending' | 'none' {
   if (exportFilters.sortField !== field) return 'none';
@@ -1118,13 +1129,6 @@ watch(() => [exportFilters.page, exportFilters.limit], () => {
   loadExportDetails();
 });
 
-function getStatusColor(status: string) {
-  const s = status?.toUpperCase();
-  if (['COMPLETED', 'SENT', 'SUCCESS'].includes(s)) return 'success';
-  if (['FAILED', 'CANCELLED', 'ERROR'].includes(s)) return 'error';
-  return 'warning';
-}
-
 function formatStatus(status: string) {
   const mapping: any = {
     'COMPLETED': 'TAMAMLANDI',
@@ -1141,15 +1145,6 @@ function formatStatus(status: string) {
     'IN_QUEUE': 'SİNYAL KUYRUĞU'
   };
   return mapping[status] || status;
-}
-
-function getStatusColorClass(status: string) {
-  const s = status?.toUpperCase();
-  if (['COMPLETED', 'SENT', 'SUCCESS', 'SUCCESS_LOG'].includes(s)) return 'text-success';
-  if (['FAILED', 'CANCELLED', 'ERROR', 'FAILED_LOG'].includes(s)) return 'text-error';
-  if (['PENDING', 'QUEUED', 'PROCESSING', 'FETCHING', 'WAITING'].includes(s)) return 'text-warning';
-  if (s === 'IN_QUEUE') return 'text-indigo';
-  return 'text-slate-400';
 }
 
 watch([timeFrame, targetClientId], () => {
@@ -1184,10 +1179,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  // Çalışma alanı zemini: token setinde TAM eşleşen değer yok (en yakın `surface-muted` slate-50,
-  // farklı bir ton) — ADR-0011 Açık Soru 4 gereği yakın-ama-farklı renk ZORLANMADI, canlı değer
-  // korundu (mandalda tek literal).
-  background-color: #f5f7f9;
+  background: var(--ek-color-background);
 }
 
 .scroll-area {
@@ -1269,34 +1261,121 @@ onUnmounted(() => {
   color: var(--ek-color-content-muted);
 }
 
+// Karar 1.2 — alt bölüm/kart başlığı "üst etiket" (overline) stilindedir.
+.section-overline,
+.subsection-title {
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-semibold);
+  letter-spacing: 0.04em;
+  color: var(--ek-color-content-muted);
+  text-transform: uppercase;
+}
+
+.filter-label {
+  font-size: var(--ek-font-size-sm);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-muted);
+}
+
+.banner-title {
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-strong);
+  line-height: 1.4;
+}
+
+.banner-text {
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-medium);
+  color: var(--ek-color-content-muted);
+}
+
 .metric-pill {
   min-width: 140px;
   box-shadow: var(--ek-shadow-sm);
 }
 
-.status-dot {
-  width: var(--ek-space-2);
-  height: var(--ek-space-2);
-  border-radius: var(--ek-radius-full);
+.metric-pill-label {
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-muted);
+  text-transform: uppercase;
 }
 
+.metric-pill-value {
+  font-size: var(--ek-font-size-lg);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+// Karar 3.3 "canlı iş-durumu paleti" — status-map.ts StatusTone değerleriyle BİREBİR.
+.job-tone--success { color: var(--ek-color-success); }
+.job-tone--warning { color: var(--ek-color-warning); }
+.job-tone--danger { color: var(--ek-color-error); }
+.job-tone--info { color: var(--ek-color-info); }
+.job-tone--neutral { color: var(--ek-color-neutral); }
+
+.metric-insight-label {
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-muted);
+  text-transform: uppercase;
+}
+
+.metric-insight-value {
+  font-size: var(--ek-font-size-md);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-strong);
+}
+
+.queue-label {
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-default);
+  text-transform: uppercase;
+}
+
+.queue-value {
+  font-size: var(--ek-font-size-md);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.queue-value--wait { color: var(--ek-color-warning); }
+.queue-value--active { color: var(--ek-color-success); }
+
+.queue-sublabel {
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-medium);
+  color: var(--ek-color-content-muted);
+  text-transform: uppercase;
+}
+
+.cache-row-label {
+  font-size: var(--ek-font-size-sm);
+  font-weight: var(--ek-font-weight-medium);
+}
+
+.cache-row-value {
+  font-size: var(--ek-font-size-md);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.cache-row-label--success, .cache-row-value--success { color: var(--ek-color-success); }
+.cache-row-label--danger, .cache-row-value--danger { color: var(--ek-color-error); }
+
 .premium-info-banner {
-  background: linear-gradient(to right, var(--ek-color-surface), var(--ek-color-surface-sunken));
+  background: var(--ek-color-surface);
   border: 1px solid var(--ek-color-border-default) !important;
   box-shadow: var(--ek-shadow-sm);
 }
 
-// Bilgi ikonu kutusu: açık mavi zemin/kenarlık (indigo-50 ailesi) için semantik token yok
-// (`info-subtle` = sky-100, farklı ton) — ADR-0011 Açık Soru 4 gereği zorlanmadı.
 .info-icon-box {
   width: var(--ek-space-8);
   height: var(--ek-space-8);
   border-radius: var(--ek-radius-lg);
-  background: #f0f7ff;
+  background: var(--ek-color-info-subtle);
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #e0e7ff;
+  border: 1px solid var(--ek-color-info-subtle);
 }
 
 .line-height-1 {
@@ -1369,10 +1448,8 @@ onUnmounted(() => {
   color: var(--ek-color-content-strong);
 }
 
-// slate-800 / slate-600 için semantik token yok (content-strong=900, content-default=700,
-// content-muted=500) — yakın-ama-farklı, ADR-0011 Açık Soru 4 gereği zorlanmadı.
 .color-slate-800 {
-  color: #1e293b;
+  color: var(--ek-color-content-strong);
 }
 
 .color-slate-700 {
@@ -1380,10 +1457,14 @@ onUnmounted(() => {
 }
 
 .color-slate-600 {
-  color: #475569;
+  color: var(--ek-color-neutral);
 }
 
 .color-slate-500 {
+  color: var(--ek-color-content-muted);
+}
+
+.color-slate-400 {
   color: var(--ek-color-content-muted);
 }
 

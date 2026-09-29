@@ -7,6 +7,7 @@
  */
 import { PATHS, evidence, type EvidenceRef } from './evidence'
 import { getPublicFaq } from './faq'
+import { getPublicCapabilities } from './capabilities'
 import {
   PLAN_SEED_PATH,
   defaultPlanSource,
@@ -119,4 +120,48 @@ export function getPricingFaqRecords(source: PlanSource = defaultPlanSource): Pr
 
 export function getPricingFaq(source: PlanSource = defaultPlanSource): PricingFaqItem[] {
   return getPricingFaqRecords(source).map(({ id, question, answer }) => ({ id, question, answer }))
+}
+
+// ---------------------------------------------------------------------------- Plan tanıtım kopyası (S12)
+
+/**
+ * Plan kartlarının pazarlama kopyası (ana sayfa + `/fiyatlandirma`). OLGU İÇERMEZ: fiyat/limit/özellik değerleri
+ * kartta `plans.ts` seçicilerinden gösterilir; buradaki cümleler yalnızca planın kime ve hangi aşamaya hitap
+ * ettiğini anlatır. Rakam yazılmaz (sayısal iddia denetimi). Seed'de olup burada olmayan plan kodu derlemeyi
+ * kırmaz (boş kopya -> kart yalnızca veri gösterir).
+ */
+export interface PlanPitch {
+  /** Kartın üstündeki kısa konumlandırma (ör. "Çok kanallı satışa hızlı giriş"). */
+  headline: string
+  /** CTA düğmesinin metni (ücretsiz deneme planları için; teklif planı ayrı etiket kullanır). */
+  ctaLabel: string
+}
+
+const PLAN_PITCH: Record<string, PlanPitch> = {
+  starter: { headline: 'Çok kanallı satışa güçlü bir başlangıç', ctaLabel: 'Ücretsiz deneyin' },
+  growth: { headline: 'Büyüyen omnichannel operasyonlar için', ctaLabel: 'Büyüme ile başlayın' },
+  enterprise: { headline: 'Ölçeğinize göre şekillenen kapasite', ctaLabel: 'Teklif isteyin' },
+}
+
+export function getPlanPitch(code: string): PlanPitch | undefined {
+  return PLAN_PITCH[code]
+}
+
+/**
+ * "Her planda" satırı: tüm planlarda ortak olan çekirdek yetenekler. Seed `features` alanı yalnızca eklentileri
+ * (ERP vb.) plan bazında ayırır; çekirdek yetenekler plan koduna bağlı DEĞİLDİR (seed'de bu yetenekler için
+ * özellik kodu yoktur). Başlıklar `capabilities.ts` kayıtlarından gelir (yalnızca `available`).
+ */
+const PLAN_COMMON_LABELS: Array<{ capabilityId: string; label: string }> = [
+  { capabilityId: 'stock-reservation', label: 'Stok rezervasyonu ile overselling koruması' },
+  { capabilityId: 'multi-channel-products', label: 'Merkezi ürün, fiyat ve stok yönetimi' },
+  { capabilityId: 'unified-orders', label: 'Tüm kanallardan birleşik sipariş akışı' },
+  { capabilityId: 'secrets-encryption', label: 'Şifreli API anahtarı saklama' },
+  { capabilityId: 'role-based-access', label: 'Rol tabanlı ekip yetkilendirmesi' },
+]
+
+/** Yalnızca kayıtta `available` olan yeteneklerin kısa etiketleri (kayıt değişirse satır kendiliğinden daralır). */
+export function getPlanCommonFeatures(): string[] {
+  const live = new Set(getPublicCapabilities().filter((c) => c.status === 'available').map((c) => c.id))
+  return PLAN_COMMON_LABELS.filter((x) => live.has(x.capabilityId)).map((x) => x.label)
 }

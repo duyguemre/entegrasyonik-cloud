@@ -69,7 +69,7 @@ export const KIND_LABELS: Record<IntegrationKind, string> = {
 export const COVERAGE_LABELS: Record<CoverageLevel, string> = {
   broad: 'Geniş kapsam',
   partial: 'Kısmi kapsam',
-  limited: 'Sınırlı kapsam',
+  limited: 'Temel kapsam',
 }
 
 export const CAPABILITY_LABELS: Record<CapabilityKey, string> = {
@@ -87,7 +87,7 @@ export const CAPABILITY_LABELS: Record<CapabilityKey, string> = {
 
 export const CAPABILITY_LEVEL_LABELS: Record<CapabilityLevel, string> = {
   supported: 'Destekleniyor',
-  limited: 'Sınırlı',
+  limited: 'Temel düzeyde',
 }
 
 const M = 'backend/src/integration/modules'
@@ -740,3 +740,100 @@ export function getPublicRoadmap(): Array<Pick<PublicIntegration, 'code' | 'name
 export function collectPublicIntegrationContent(): unknown {
   return { integrations: getPublicIntegrations(), roadmap: getPublicRoadmap() }
 }
+
+// ---------------------------------------------------------------------------- Ana sayfa: entegrasyon vizyonu (S12)
+
+/**
+ * Ana sayfa "entegrasyon ekosistemi" düğümleri — pazarlama/vizyon dili. Kanal ADI içermez (ana mesajda
+ * pazaryeri isimleri öne çıkmaz); kanal ayrımı yalnızca `channelCodes` ile isimsiz renkli noktadır.
+ * Dürüstlük: her düğüm kayıttaki GERÇEK bir yeteneğe dayanır (`kinds` → mevcut entegrasyon türü; `capabilityKeys`
+ * → en az bir mevcut entegrasyonda kayıtlı yetenek). Var olmayan bir bağlantı (kargo firması API'si vb.)
+ * iddia edilmez: "Kargo ve fatura" düğümü yalnızca takip bilgisinin ve fatura bağlantısının pazaryerine
+ * iletilmesini anlatır. tests/claims.test.ts bu bağları denetler.
+ */
+export interface EcosystemNode {
+  id: string
+  icon: 'layers' | 'link' | 'plug' | 'receipt'
+  title: string
+  line: string
+  /** Bu düğümü besleyen mevcut entegrasyon türleri (renkli noktalar buradan türetilir). */
+  kinds: IntegrationKind[]
+  /** Türe bağlı olmayan düğüm için dayanak yetenekler. */
+  capabilityKeys: CapabilityKey[]
+}
+
+export const ecosystemNodes: EcosystemNode[] = [
+  {
+    id: 'marketplaces',
+    icon: 'layers',
+    title: 'Pazaryerleri',
+    line: 'Ürün, stok, sipariş ve satış sonrası süreçler tek akışta.',
+    kinds: ['marketplace'],
+    capabilityKeys: [],
+  },
+  {
+    id: 'ecommerce',
+    icon: 'link',
+    title: 'E-ticaret altyapıları',
+    line: 'Kendi mağazanızın ürün ve siparişleri aynı panelde.',
+    kinds: ['ecommerce'],
+    capabilityKeys: [],
+  },
+  {
+    id: 'erp',
+    icon: 'plug',
+    title: 'ERP ve muhasebe',
+    line: 'Ürün kataloğu ve siparişler iş sisteminizle aynı merkezde.',
+    kinds: ['erp'],
+    capabilityKeys: [],
+  },
+  {
+    id: 'fulfilment',
+    icon: 'receipt',
+    title: 'Kargo ve fatura akışı',
+    line: 'Takip bilgisi ve fatura bağlantısı siparişle birlikte pazaryerine iletilir.',
+    kinds: [],
+    capabilityKeys: ['shippingNotice', 'invoiceNotice'],
+  },
+]
+
+export interface PublicEcosystemNode {
+  id: string
+  icon: EcosystemNode['icon']
+  title: string
+  line: string
+  /** İsimsiz renkli nokta için kanal kodları (ad değil). */
+  channelCodes: string[]
+}
+
+/** Ana sayfa vizyon düğümleri: dayanağı olmayan (mevcut entegrasyonu/yeteneği bulunmayan) düğüm DÖNMEZ. */
+export function getEcosystemNodes(): PublicEcosystemNode[] {
+  const available = integrations.filter((i) => i.status === 'available')
+  return ecosystemNodes
+    .map((n) => {
+      const backing = available.filter(
+        (i) => n.kinds.includes(i.kind) || i.capabilities.some((c) => n.capabilityKeys.includes(c.key)),
+      )
+      return { id: n.id, icon: n.icon, title: n.title, line: n.line, channelCodes: backing.map((i) => i.code) }
+    })
+    .filter((n) => n.channelCodes.length > 0)
+}
+
+/** Ekosistem şemasının altındaki üç vizyon cümlesi (S12). Yeni özellik iddiası yok; mevcut mimarinin özeti. */
+export const ecosystemPromises: Array<{ id: string; title: string; line: string }> = [
+  {
+    id: 'single-source',
+    title: 'Tek doğruluk kaynağı',
+    line: 'Ürün, stok ve fiyat tek merkezde tutulur; kanallar aynı kaynaktan beslenir.',
+  },
+  {
+    id: 'one-flow',
+    title: 'Tek sipariş akışı',
+    line: 'Her kanaldan gelen sipariş aynı listede, aynı iş akışıyla ilerler.',
+  },
+  {
+    id: 'one-standard',
+    title: 'Ortak entegrasyon standardı',
+    line: 'Her kanal aynı merkeze, ortak bir entegrasyon mimarisiyle bağlanır.',
+  },
+]

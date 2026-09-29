@@ -120,8 +120,9 @@
   }
 
   /* ---------------------------------------------------------------------------------------- */
-  /* 2) problem-solution — dağınık panel kartları belirir; tek merkez tarafında akış çizgileri     */
-  /*    merkeze büyür, göbek ve sonuç kartı yerine oturur (akan sinyal noktaları: scenes-loops.css) */
+  /* 2) problem-solution (S12) — kaos panelleri soluk belirir; merkez yerine oturur, tek stok ve     */
+  /*    fayda satırları sırayla yükselir. Kaydırmaya bağlı dönüşüm (--scroll-p) bileşen CSS'indedir:  */
+  /*    orada `transform`, burada bağımsız `translate`/`scale` kullanılır → ikisi birleşir, çakışmaz.  */
   /* ---------------------------------------------------------------------------------------- */
   [data-scene='problem-solution'] [data-part='messy-panel']:nth-child(1) {
     --i: 0;
@@ -135,37 +136,37 @@
   [data-scene='problem-solution'] [data-part='messy-panel']:nth-child(4) {
     --i: 3;
   }
-  [data-scene='problem-solution'] [data-part='tidy-row'] {
+  [data-scene='problem-solution'] [data-part='hub'] {
     --i: 4;
   }
-  [data-scene='problem-solution'] [data-part='bus'] {
-    --i: 5;
-    --grow-from: 0 1;
-    transform-origin: 50% 0;
-  }
-  [data-scene='problem-solution'] [data-part='hub'] {
+  [data-scene='problem-solution'] [data-part='result'] {
     --i: 6;
   }
-  [data-scene='problem-solution'] [data-part='result'] {
+  [data-scene='problem-solution'] [data-part='gain']:nth-child(1) {
+    --i: 5;
+  }
+  [data-scene='problem-solution'] [data-part='gain']:nth-child(2) {
+    --i: 6;
+  }
+  [data-scene='problem-solution'] [data-part='gain']:nth-child(3) {
     --i: 7;
   }
-  html[data-motion='play'] [data-scene='problem-solution'][data-state='ready'] :is([data-part='messy-panel'], [data-part='tidy-row'], [data-part='bus'], [data-part='hub'], [data-part='result']) {
+  [data-scene='problem-solution'] [data-part='gain']:nth-child(n + 4) {
+    --i: 8;
+  }
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='ready'] :is([data-part='messy-panel'], [data-part='hub'], [data-part='result'], [data-part='gain']) {
     opacity: 0;
   }
   html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='messy-panel'] {
     animation: scene-fade var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
     animation-delay: calc(var(--site-motion-stagger) * var(--i));
   }
-  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] :is([data-part='tidy-row'], [data-part='result']) {
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] :is([data-part='result'], [data-part='gain']) {
     animation: scene-rise var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
     animation-delay: calc(var(--site-motion-stagger) * var(--i));
   }
-  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='bus'] {
-    animation: scene-grow var(--site-motion-duration-reveal-sm) var(--site-motion-ease-reveal) backwards;
-    animation-delay: calc(var(--site-motion-stagger) * var(--i));
-  }
   html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='hub'] {
-    animation: scene-zoom var(--site-motion-duration-reveal-sm) var(--site-motion-ease-reveal) backwards;
+    animation: scene-zoom var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
     animation-delay: calc(var(--site-motion-stagger) * var(--i));
   }
 

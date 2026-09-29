@@ -1,5 +1,5 @@
 <template>
-  <div class="exportLogList d-flex flex-column" style="margin-top:55px">
+  <div class="exportLogList d-flex flex-column">
     <ActionDialogComponent v-model="reportInfo.isOpen" title="Pazaryeri Gönderim Detaylı Raporu"
       subtitle="İşlem Günlüğü ve Akış Analizi" icon="mdi-rocket-launch" color="primary" maxWidth="1200"
       :showFooter="false" attach=".exportLogList">
@@ -727,16 +727,30 @@ onMounted(() => getJobs(true));
 </script>
 
 <style scoped>
+/* ADR-0015 B3 — flexbox denemesi (`flex:1 1 auto`) yüksekliği çözemedi (`.logListView`'in
+   `h-100`'ü belirleyici bir üst yükseklik ZİNCİRİNE bağımlı, flex-basis hesaplaması güvenilir
+   sonuç vermedi — tablo 0 yükseklikte kayboluyordu). Diğer TÜM liste ekranlarıyla (AdminTicketList-
+   View, AdminClientListView, …) AYNI KANITLANMIŞ desene dönüldü: `position:absolute;inset:0`,
+   yalnızca `top` değeri LogListView.vue'nun artık daha uzun başlığına (EkPageHeader+EkPageTabs)
+   göre güncellendi (eski sabit 55px yerine). `.logListView` bu yüzden `position:relative` oldu
+   (konumlandırma bağlamı). */
 .exportLogList {
   position: absolute;
-  top: 0;
+  top: 148px;
   bottom: 0;
   left: 0;
   right: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background-color: #f5f7f9;
+  background-color: var(--ek-color-background);
+}
+
+@media (max-width: 767px) {
+  .exportLogList {
+    /* Dar viewport'ta başlık açıklaması ve sekme etiketleri satır kırabilir. */
+    top: 220px;
+  }
 }
 
 .search-section {

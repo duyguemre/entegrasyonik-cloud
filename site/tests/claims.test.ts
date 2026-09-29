@@ -19,9 +19,12 @@ import {
   getPublicIntegrations,
   getPublicRoadmap,
   collectPublicIntegrationContent,
+  ecosystemNodes,
+  ecosystemPromises,
+  getEcosystemNodes,
 } from '../src/data/integrations'
-import { productCapabilities, getPublicCapabilities } from '../src/data/capabilities'
-import { faq, getPublicFaq } from '../src/data/faq'
+import { productCapabilities, getPublicCapabilities, getHomePillars, homePillars } from '../src/data/capabilities'
+import { faq, getPublicFaq, FAQ_CATEGORIES, getFaqPreview } from '../src/data/faq'
 import {
   defaultPlanSource,
   getPublicPlans,
@@ -34,7 +37,7 @@ import {
   PROPOSAL_NOTICE,
   PLAN_SEED_PATH,
 } from '../src/data/plans'
-import { getComparisonRows, getPricingFaq, getPricingFaqRecords } from '../src/data/pricing'
+import { getComparisonRows, getPricingFaq, getPricingFaqRecords, getPlanPitch, getPlanCommonFeatures } from '../src/data/pricing'
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const repoRoot = path.resolve(siteRoot, '..')
@@ -93,6 +96,14 @@ function publicContent() {
     vatNotice: getVatNotice(),
     comparison: getComparisonRows(),
     pricingFaq: getPricingFaq(),
+    // S12 ana sayfa pazarlama metinleri de aynı yasaklı ifade / sayı taramasından geçer
+    homePillars: getHomePillars(),
+    ecosystem: getEcosystemNodes(),
+    ecosystemPromises,
+    // S12: SSS kategorileri ve plan tanıtım kopyası da görünür metindir (aynı yasaklı ifade/sayı denetimi)
+    faqCategories: FAQ_CATEGORIES,
+    planPitch: getPublicPlans().map((p) => getPlanPitch(p.code)),
+    planCommon: getPlanCommonFeatures(),
   }
 }
 
@@ -130,6 +141,40 @@ describe('(1) available entegrasyonlar === IntegrationFactory kodları', () => {
     for (const i of integrations.filter((x) => x.status === 'available')) {
       expect(['marketplace', 'ecommerce', 'erp'], i.code).toContain(i.kind)
     }
+  })
+})
+
+// ------------------------------------------------------------------------------------------ S12 pazarlama metinleri
+
+describe('S12 ana sayfa pazarlama metinleri kayıtlı gerçek yeteneklere dayanır', () => {
+  const live = productCapabilities.filter((c) => c.status !== 'roadmap').map((c) => c.id)
+
+  it('her çekirdek (görünür) yeteneğin ana sayfa başlığı ve tek satırlık fayda cümlesi var', () => {
+    for (const c of getPublicCapabilities('core')) {
+      expect(c.home?.title, c.id).toBeTruthy()
+      expect(c.home?.line, c.id).toBeTruthy()
+    }
+  })
+
+  it('dört değer sütunu yalnızca roadmap OLMAYAN yeteneklere dayanır; en fazla üç kısa madde', () => {
+    expect(homePillars).toHaveLength(4)
+    for (const p of homePillars) {
+      expect(p.basedOn.length, p.id).toBeGreaterThan(0)
+      for (const id of p.basedOn) expect(live, `${p.id} -> ${id}`).toContain(id)
+      expect(p.points.length, p.id).toBeLessThanOrEqual(3)
+    }
+  })
+
+  it('ekosistem düğümleri mevcut bir entegrasyon türüne veya kayıtlı yeteneğe dayanır; ad içermez', () => {
+    const nodes = getEcosystemNodes()
+    expect(nodes).toHaveLength(ecosystemNodes.length)
+    for (const n of nodes) expect(n.channelCodes.length, n.id).toBeGreaterThan(0)
+    const names = integrations.filter((i) => i.status === 'available').map((i) => i.name)
+    for (const n of [...ecosystemNodes, ...ecosystemPromises]) {
+      for (const name of names) expect(phraseRe(name).test(norm(`${n.title} ${n.line}`)), `${n.id}: ${name}`).toBe(false)
+    }
+    // kargo/fatura düğümü yalnızca bildirim yeteneğine dayanır (kargo firması / fatura sağlayıcı iddiası değil)
+    expect(ecosystemNodes.find((n) => n.id === 'fulfilment')!.capabilityKeys).toEqual(['shippingNotice', 'invoiceNotice'])
   })
 })
 
@@ -210,7 +255,8 @@ describe('(2) evidence: dolu, dosya mevcut, atıf metni dosyada geçiyor', () =>
   it('kayıt sayıları beklenen aralıkta (test sessizce boşalmasın)', () => {
     expect(integrations.length).toBeGreaterThanOrEqual(6)
     expect(productCapabilities.length).toBeGreaterThanOrEqual(10)
-    expect(faq.length).toBeGreaterThanOrEqual(6)
+    expect(faq.length).toBeGreaterThanOrEqual(16)
+    expect(faq.length).toBeLessThanOrEqual(24)
     expect(owned.length).toBeGreaterThan(60)
   })
 
@@ -362,7 +408,7 @@ const NUMERIC_ALLOWLIST: Array<{ token: string; why: EvidenceRef }> = [
 ]
 
 /** Sayısal-iddia denetiminden muaf anahtarlar (biçimlenmiş fiyat, kimlik/kod, taslak notu). */
-const NON_PROSE_KEYS = new Set(['priceLabel', 'code', 'id', 'notice', 'periodLabel'])
+const NON_PROSE_KEYS = new Set(['priceLabel', 'code', 'id', 'notice', 'periodLabel', 'channelCodes', 'basedOn', 'icon'])
 
 describe('(3) görünür içerikte yasaklı ifade / mutlak / kanıtsız sayısal iddia yok', () => {
   const content = publicContent()
@@ -652,5 +698,36 @@ describe('(4) gizli roadmap öğeleri hiçbir yerde görünmez', () => {
       for (const p of ABSOLUTE_PREFIXES) if (prefixRe(p).test(text)) hits.push(`${path.relative(siteRoot, f)}: "${p}"`)
     }
     expect(hits).toEqual([])
+  })
+})
+
+// ------------------------------------------------------------------------------------------ SSS yapısı (S12)
+
+describe('SSS yapısı: kategoriler, önizleme, benzersizlik', () => {
+  it('altı kategori; her soru bilinen bir kategoride ve her kategoride en az iki soru', () => {
+    expect(FAQ_CATEGORIES.map((c) => c.id)).toEqual(['baslangic', 'kanallar', 'stok-siparis', 'guvenlik-veri', 'fiyat-plan', 'destek-olcek'])
+    const ids = new Set(FAQ_CATEGORIES.map((c) => c.id))
+    for (const f of faq) expect(ids.has(f.category), f.id).toBe(true)
+    for (const c of FAQ_CATEGORIES) expect(faq.filter((f) => f.category === c.id).length, c.id).toBeGreaterThanOrEqual(2)
+  })
+
+  it('soru kimlikleri ve metinleri benzersiz; yanıtlar kısa (en fazla dört cümle)', () => {
+    expect(new Set(faq.map((f) => f.id)).size).toBe(faq.length)
+    expect(new Set(faq.map((f) => f.question)).size).toBe(faq.length)
+    for (const f of getPublicFaq()) {
+      const sentences = f.answer.split(/(?<=[.!?])\s+/).filter(Boolean)
+      expect(sentences.length, f.id).toBeLessThanOrEqual(4)
+    }
+  })
+
+  it('ana sayfa önizlemesi altı-sekiz soru ve hepsi kayıtta', () => {
+    const preview = getFaqPreview()
+    expect(preview.length).toBeGreaterThanOrEqual(6)
+    expect(preview.length).toBeLessThanOrEqual(8)
+  })
+
+  it('destek yanıtı saat/süre/kanal taahhüdü içermez', () => {
+    const text = norm(getPublicFaq().filter((f) => f.category === 'destek-olcek').map((f) => f.answer).join(' '))
+    for (const w of ['saat icinde', 'dakika icinde', 'canli destek', 'telefon', 'hafta ici', 'mesai']) expect(text, w).not.toContain(w)
   })
 })

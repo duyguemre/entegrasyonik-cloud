@@ -92,24 +92,47 @@
   --site-glass-border: color-mix(in srgb, var(--ek-color-background) 16%, transparent);
   --site-glass-blur: 0.75rem;
 
-  /* Vurgu degradeleri (metin ve kenarlık) */
+  /*
+   * S12 — TEK tipografi/renk hiyerarşisi (kullanıcı geri bildirimi: "başlık, alt başlık ve metindeki üç farklı ton
+   * karışık"). Tüm site üç metin tonu + TEK vurgu rengi (teal) kullanır:
+   *   başlık  -> --site-text-heading (en koyu)      gövde/lead -> --site-text-body      küçük meta -> --site-text-meta
+   *   vurgu   -> --site-accent (açık zeminde koyu teal, AA) / --site-accent-on-dark (koyu zeminde açık teal)
+   * Vurgu degradesi de artık TEK TON ailesidir (teal -> derin teal); mavi/mor karışımı kaldırıldı. Koyu zeminlerde
+   * (`.section--stage`, `[data-surface='dark']`) global.css degradeyi ve vurguyu açık varyanta çevirir.
+   */
+  --site-text-heading: var(--ek-color-content-strong);
+  --site-text-body: var(--ek-color-content-default);
+  --site-text-meta: var(--ek-color-content-muted);
+  --site-accent: var(--ek-color-secondary-darken-1);
+  --site-accent-on-dark: var(--ek-color-secondary);
+  --site-accent-soft: color-mix(in srgb, var(--ek-color-secondary) 12%, transparent);
+  --site-accent-line: color-mix(in srgb, var(--ek-color-secondary) 55%, transparent);
+  --site-text-on-dark-heading: var(--site-color-on-primary);
+  --site-text-on-dark-body: var(--site-color-on-primary-muted);
+  --site-text-on-dark-meta: color-mix(in srgb, var(--ek-color-background) 58%, transparent);
+
+  /* Vurgu degradeleri (metin ve kenarlık) — tek ton ailesi (S12) */
   --site-gradient-accent: linear-gradient(
     100deg,
+    var(--ek-color-secondary-darken-1) 0%,
+    color-mix(in srgb, var(--ek-color-secondary-darken-1) 78%, var(--ek-color-content-strong)) 100%
+  );
+  --site-gradient-accent-on-dark: linear-gradient(
+    100deg,
     var(--ek-color-secondary) 0%,
-    color-mix(in srgb, var(--ek-color-secondary) 55%, var(--ek-color-info)) 55%,
-    color-mix(in srgb, var(--ek-color-primary-darken-1) 40%, var(--ek-color-secondary)) 100%
+    color-mix(in srgb, var(--ek-color-secondary) 62%, var(--ek-color-background)) 100%
   );
   --site-gradient-border: linear-gradient(
     140deg,
     color-mix(in srgb, var(--ek-color-secondary) 70%, var(--ek-color-background)),
     color-mix(in srgb, var(--ek-color-border-default) 90%, transparent) 38%,
-    color-mix(in srgb, var(--ek-color-primary-darken-1) 60%, var(--ek-color-background))
+    color-mix(in srgb, var(--ek-color-secondary-darken-1) 55%, var(--ek-color-background))
   );
   --site-gradient-hairline: linear-gradient(
     90deg,
     transparent,
     color-mix(in srgb, var(--ek-color-secondary) 70%, transparent) 30%,
-    color-mix(in srgb, var(--ek-color-primary-darken-1) 70%, transparent) 70%,
+    color-mix(in srgb, var(--ek-color-secondary-darken-1) 70%, transparent) 70%,
     transparent
   );
   --site-surface-tint: linear-gradient(
@@ -132,12 +155,15 @@
   --site-content-wide: 80rem;
 
   /* Pazarlama hareketi (ADR-0014 Karar 3) — giriş/reveal 400–900 ms, ambient 6–30 sn */
-  /* S9: tüm giriş/sayaç hareketlerinde tutarlı tek eğri (kurumsal ease-out, sıçrama yok). */
-  --site-motion-ease-reveal: cubic-bezier(0.22, 1, 0.36, 1);
-  --site-motion-duration-reveal-sm: 400ms;
-  --site-motion-duration-reveal: 600ms;
+  /*
+   * S9: tüm giriş/sayaç hareketlerinde tutarlı tek eğri. S12 (kullanıcı: "ilk girişteki animasyonlar daha sakin"):
+   * ease-out-cubic (başlangıç ivmesi daha düşük, sıçrama yok), biraz daha uzun süre, daha kısa mesafe, daha az stagger.
+   */
+  --site-motion-ease-reveal: cubic-bezier(0.33, 1, 0.68, 1);
+  --site-motion-duration-reveal-sm: 500ms;
+  --site-motion-duration-reveal: 700ms;
   --site-motion-duration-reveal-lg: 900ms;
-  --site-motion-stagger: 80ms; /* öğe başına ≤ 80 ms; toplam sahne ≤ 1.6 sn */
+  --site-motion-stagger: 60ms; /* öğe başına ≤ 80 ms; toplam sahne ≤ 1.6 sn */
   --site-motion-scene-max: 1600ms;
   --site-motion-ambient-fast: 6s;
   --site-motion-ambient-slow: 30s;
@@ -148,31 +174,35 @@
   --site-motion-ease-loop: cubic-bezier(0.45, 0, 0.55, 1); /* ease-in-out: döngüsel akış */
   --site-motion-ease-linear: linear; /* yalnızca sabit hızlı şerit (marquee) */
   --site-motion-phase: calc(var(--site-motion-ambient-fast) / 6); /* 6 akış noktasının faz aralığı */
-  --site-motion-distance: 0.75rem; /* giriş (rise) kayması; yalnızca translate/opacity */
-  --site-motion-scale-from: 0.94; /* ince vurgu geçişinin başlangıç ölçeği */
+  --site-motion-distance: 0.5rem; /* giriş (rise) kayması; yalnızca translate/opacity (S12: 12 -> 8 px, daha sakin) */
+  --site-motion-scale-from: 0.97; /* ince vurgu geçişinin başlangıç ölçeği (S12: 0.94 -> 0.97) */
   --site-scene-unit: 1px; /* SVG kullanıcı birimi (viewBox koordinatlarını translate'e çevirir) */
 
   /*
-   * Kart içi 4 seviyeli metin hiyerarşisi (S9): eyebrow -> başlık -> değer cümlesi -> soluk açıklama.
-   * Tüm kart tipi bileşenler (bkz. Capabilities.astro `.cap`) aynı token setini kullanır; yalnızca
-   * --ek-* türevi (yeni ölçek eklemez, mevcut tipografi ölçeğine referans verir).
+   * Kart içi metin hiyerarşisi (S9; S12'de sadeleştirildi). Token ADLARI korunur (B/C bileşenleri kullanır);
+   * değerler: eyebrow (küçük, vurgu rengi) -> başlık (tek güçlü seviye) -> değer cümlesi (GÖVDE ağırlığı, başlıkla
+   * yarışmaz) -> açıklama (meta). Renkler: --site-card-*-color (başlık/gövde/meta = --site-text-*; eyebrow = vurgu).
    */
   --site-card-eyebrow-size: var(--ek-font-size-sm);
-  --site-card-eyebrow-weight: var(--ek-font-weight-bold);
-  --site-card-eyebrow-tracking: 0.08em;
+  --site-card-eyebrow-weight: var(--ek-font-weight-semibold);
+  --site-card-eyebrow-tracking: 0.06em;
   --site-card-title-size: var(--ek-font-size-xl);
   --site-card-title-weight: var(--ek-font-weight-bold);
   --site-card-value-size: var(--ek-font-size-lg);
-  --site-card-value-weight: var(--ek-font-weight-semibold);
+  --site-card-value-weight: var(--ek-font-weight-regular);
   --site-card-desc-size: var(--ek-font-size-md);
   --site-card-desc-weight: var(--ek-font-weight-regular);
+  --site-card-eyebrow-color: var(--site-accent);
+  --site-card-title-color: var(--site-text-heading);
+  --site-card-value-color: var(--site-text-body);
+  --site-card-desc-color: var(--site-text-meta);
 
   /*
    * Kart etkileşimi (S8, 2026-09-29): imleç takipli ışık (spotlight) + hafif 3D eğim (tilt).
    * Yalnızca `pointer: fine` + hareket açıkken çalışır (src/scripts/interactions.ts); klavye odağında
    * eşdeğer vurgu `:focus-within` ile sağlanır. Etkileşim geri bildirimi olduğundan --ek-duration-* kullanır.
    */
-  --site-tilt-max: 4deg;
+  --site-tilt-max: 2deg; /* S12: 4 -> 2 derece (daha zarif) */
   --site-spotlight-size: calc(var(--ek-space-16) * 5);
   /*
    * Eğim (tilt) çıkış geçişi (S10): imleç kart üzerindeyken izleme anında geçiş YOK/kısadır (bire bir takip);
@@ -182,7 +212,8 @@
    * özelliğiyle uygular; global.css ve `[data-tilt]` konak bileşenlerinin (`.plan`, `.ig__card`, `.faq__item`)
    * `transition` listesinde kullanılır.
    */
-  --site-tilt-leave-duration: 500ms;
+  --site-tilt-leave-duration: 700ms; /* S12: 500 -> 700 ms, yumuşak ease-out ile */
+  --site-tilt-leave-ease: cubic-bezier(0.22, 0.61, 0.36, 1); /* ease-out (sıçrama/aşma yok) */
 
   /*
    * Kanal (pazaryeri/entegrasyon) marka renkleri (S8 2. tur, 2026-09-29) — İSTİSNAİ HAM HEX:

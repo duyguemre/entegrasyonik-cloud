@@ -28,8 +28,13 @@ export interface ProductCapability {
   group: CapabilityGroup
   title: string
   summary: string
-  /** Görünür, dürüst sınır notu (kanal/kapsam kısıtı). */
+  /** Görünür, dürüst sınır notu (kanal/kapsam kısıtı). Yalnızca alt sayfalarda (/ozellikler, /entegrasyonlar). */
   caveat?: string
+  /**
+   * Ana sayfa pazarlama metni (S12): kısa başlık + tek satır fayda cümlesi. Nihai ürün dilinde, durum/eksik
+   * ifadesi yok; ama `summary` ile aynı olguya dayanır (yeni özellik uydurmaz). Kapsam farkları alt sayfalarda.
+   */
+  home?: { title: string; line: string }
   status: ProductCapabilityStatus
   /** Kanal listesi bu entegrasyon yeteneğinden veya türünden türetilir. */
   channelsFrom?: { key?: CapabilityKey; kind?: IntegrationKind }
@@ -43,6 +48,10 @@ export const productCapabilities: ProductCapability[] = [
   {
     id: 'stock-reservation',
     group: 'core',
+    home: {
+      title: 'Aşırı satışa karşı stok rezervasyonu',
+      line: 'Eşzamanlı siparişlerde stok yalnızca mevcut adet kadar rezerve edilir; stok eksiye düşmez.',
+    },
     title: 'Aşırı satışa karşı stok rezervasyonu',
     summary:
       'Aynı stok için eşzamanlı siparişlerde yalnızca mevcut stok kadar rezervasyon yapılır; stok eksiye düşmez. Stoku aşan sipariş aşırı satış olarak işaretlenir ve telafi akışına alınır.',
@@ -61,6 +70,10 @@ export const productCapabilities: ProductCapability[] = [
   {
     id: 'multi-channel-products',
     group: 'core',
+    home: {
+      title: 'Merkezi ürün ve stok yönetimi',
+      line: 'Ürün, fiyat ve stok değişikliklerini tek yerden bağlı kanallarınıza iletin.',
+    },
     title: 'Çoklu pazaryeri ürün, fiyat ve stok yönetimi',
     summary: 'Ürün, fiyat ve stok değişiklikleri bağlı kanallara tek yerden iletilir.',
     status: 'available',
@@ -70,6 +83,10 @@ export const productCapabilities: ProductCapability[] = [
   {
     id: 'unified-orders',
     group: 'core',
+    home: {
+      title: 'Birleşik sipariş yönetimi',
+      line: 'Pazaryerlerinden gelen siparişler tek listede toplanır; ekibiniz aynı ekrandan çalışır.',
+    },
     title: 'Birleşik sipariş yönetimi',
     summary: 'Farklı kanallardan gelen siparişler düzenli aralıklarla çekilir ve tek listede toplanır.',
     status: 'available',
@@ -82,6 +99,10 @@ export const productCapabilities: ProductCapability[] = [
   {
     id: 'returns',
     group: 'core',
+    home: {
+      title: 'İade ve talep yönetimi',
+      line: 'İade taleplerini tek listede görün; onaylayın ya da gerekçesiyle reddedin.',
+    },
     title: 'İade ve talep yönetimi',
     summary: 'İade talepleri kanal bazında listelenir, onaylanır veya reddedilir.',
     caveat: 'Kapsam kanala göre değişir; ayrıntı için entegrasyon sayfalarına bakın.',
@@ -92,6 +113,10 @@ export const productCapabilities: ProductCapability[] = [
   {
     id: 'questions',
     group: 'core',
+    home: {
+      title: 'Müşteri soruları tek yerde',
+      line: 'Pazaryerlerinden gelen soru ve mesajları aynı ekrandan yanıtlayın.',
+    },
     title: 'Soru-cevap ve mesaj yönetimi',
     summary: 'Müşteri soruları ve mesajları kanal bazında listelenir ve cevaplanır.',
     caveat: 'Kapsam kanala göre değişir; ayrıntı için entegrasyon sayfalarına bakın.',
@@ -102,6 +127,10 @@ export const productCapabilities: ProductCapability[] = [
   {
     id: 'finance',
     group: 'core',
+    home: {
+      title: 'Finans ve hakediş görünümü',
+      line: 'Hakediş ve finansal hareketlerinizi panelden takip edin.',
+    },
     title: 'Finans ve hakediş görünümü',
     summary: 'Pazaryeri hakediş ve finansal hareketleri panelde görüntülenir.',
     caveat: 'Kapsam kanala göre değişir; bazı kanallarda görünüm kısmidir.',
@@ -112,6 +141,10 @@ export const productCapabilities: ProductCapability[] = [
   {
     id: 'shipping-invoice-notice',
     group: 'core',
+    home: {
+      title: 'Kargo ve fatura bildirimi',
+      line: 'Kargo takip bilgisini ve fatura bağlantısını siparişle birlikte pazaryerine iletin.',
+    },
     title: 'Pazaryerine kargo ve fatura bilgisi bildirimi',
     summary: 'Elle girilen kargo takip bilgisi ve fatura bağlantısı pazaryerine iletilir.',
     caveat: 'Kargo takip bilgisi elle girilir; kargo firması ile otomatik etiket veya barkod akışı yoktur.',
@@ -122,6 +155,10 @@ export const productCapabilities: ProductCapability[] = [
   {
     id: 'erp-read',
     group: 'core',
+    home: {
+      title: 'ERP bağlantısı',
+      line: 'ERP\'nizdeki ürün kataloğunu ve siparişleri panelinize alın.',
+    },
     title: 'ERP bağlantısı (yalnızca okuma)',
     summary: 'Bizimhesap ürün kataloğu ve siparişleri okunur; ERP tarafına yazma yapılmaz.',
     caveat: 'Yalnızca okuma; sipariş okuma otomatik zamanlanmış çekime dahil değildir.',
@@ -281,6 +318,7 @@ export interface PublicProductCapability {
   title: string
   summary: string
   caveat?: string
+  home?: { title: string; line: string }
   status: ProductCapabilityStatus
   statusLabel: string
   channels: PublicChannel[]
@@ -310,6 +348,7 @@ const toPublic = (c: ProductCapability): PublicProductCapability => ({
   title: c.title,
   summary: c.summary,
   ...(c.caveat ? { caveat: c.caveat } : {}),
+  ...(c.home ? { home: { ...c.home } } : {}),
   status: c.status,
   statusLabel: STATUS_LABELS[c.status],
   channels: channelsFor(c.channelsFrom),
@@ -333,3 +372,59 @@ export function capabilityState(id: string): FeatureState | undefined {
 }
 
 export { CAPABILITY_LABELS }
+
+// ---------------------------------------------------------------------------- Ana sayfa: dört değer sütunu
+
+/**
+ * Ana sayfa "Yetenekler" koyu bandındaki dört değer sütunu (S12 pazarlama dili). Her sütun `basedOn` ile
+ * kayıtlı (roadmap olmayan) yeteneklere bağlanır — metin yalnızca o yeteneklerin olgularını pazarlama diliyle
+ * anlatır; yeni özellik iddiası yoktur (tests/claims.test.ts `basedOn` bağını ve yasaklı ifadeleri denetler).
+ */
+export interface HomePillar {
+  id: string
+  icon: 'stock' | 'orders' | 'database' | 'users'
+  title: string
+  line: string
+  points: string[]
+  basedOn: string[]
+}
+
+export const homePillars: HomePillar[] = [
+  {
+    id: 'oversell',
+    icon: 'stock',
+    title: 'Overselling kontrol altında',
+    line: 'Merkezi stok rezervasyonu, eşzamanlı siparişlerde bile yalnızca mevcut adet kadar rezervasyon yapar.',
+    points: ['Eşzamanlı sipariş koruması', 'Tek merkezden stok ve fiyat', 'Aşırı satışta telafi akışı'],
+    basedOn: ['stock-reservation', 'multi-channel-products'],
+  },
+  {
+    id: 'ops',
+    icon: 'orders',
+    title: 'Tek ekranda operasyon',
+    line: 'Sipariş, iade ve müşteri soruları tek akışta; ekip aynı ekrandan çalışır.',
+    points: ['Birleşik sipariş listesi', 'İade ve talep yönetimi', 'Soru ve mesaj yanıtlama'],
+    basedOn: ['unified-orders', 'returns', 'questions'],
+  },
+  {
+    id: 'isolation',
+    icon: 'database',
+    title: 'Size özel, şifreli veri',
+    line: 'Her hesap kendi veritabanında; entegrasyon anahtarları şifreli saklanır.',
+    points: ['Hesaba özel veritabanı', 'AES-256-GCM ile şifreleme', 'Maskeli anahtar gösterimi'],
+    basedOn: ['tenant-database', 'secrets-encryption', 'secrets-masked'],
+  },
+  {
+    id: 'rbac',
+    icon: 'users',
+    title: 'Ekibinize doğru yetki',
+    line: 'Kademeli roller ekibinizi yetkilendirir; hassas işlemler üst kademeye ayrılır.',
+    points: ['Üye, yönetici, ana yönetici', 'Yetkisiz işleme varsayılan red', 'Korumalı oturum çerezi'],
+    basedOn: ['role-based-access', 'default-deny', 'session-cookie'],
+  },
+]
+
+/** Sayfaların tek girişi (dört değer sütunu). */
+export function getHomePillars(): HomePillar[] {
+  return homePillars.map((p) => ({ ...p, points: [...p.points], basedOn: [...p.basedOn] }))
+}

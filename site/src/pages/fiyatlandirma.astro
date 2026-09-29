@@ -14,7 +14,7 @@ import PageHero from '../components/pages/PageHero.astro'
 import { siteConfig, appUrls } from '../lib/site-config'
 import { primaryNav, published } from '../data/navigation'
 import { getPublicPlans, getPlanSourceNotice, getVatNotice, getPublicTrial, getTrialPlanCode } from '../data/plans'
-import { getComparisonRows, getPricingFaq } from '../data/pricing'
+import { getComparisonRows, getPricingFaq, getPlanPitch } from '../data/pricing'
 
 const plans = getPublicPlans()
 const rows = getComparisonRows(plans)
@@ -47,7 +47,7 @@ const featuredCode = [...fixedPlans].sort((a, b) => b.features.length - a.featur
 >
   <PageHero
     title="İşinize uygun planı seçin"
-    lead="Planlar kanal, ürün varyantı ve kullanıcı limitine göre ayrılır. Kayıt olduğunuzda deneme sürümüyle başlarsınız; plan seçimini uygulama içinden onaylarsınız."
+    lead="Çok kanallı satış operasyonunuzu ölçeğinize uygun planla yönetin. Ücretsiz denemeyle başlayın; kanal, ürün ve ekip sayınız büyüdükçe planınızı uygulama içinden yükseltin."
     crumbs={crumbs}
   >
     {
@@ -86,7 +86,11 @@ const featuredCode = [...fixedPlans].sort((a, b) => b.features.length - a.featur
             <li class="plan" data-plan={plan.code}>
               <article aria-labelledby={`plan-${plan.code}-name`} class:list={['plan__card', { 'plan__card--featured': isFeatured }]}>
                 <header class="plan__head">
-                  <h3 id={`plan-${plan.code}-name`}>{plan.name}</h3>
+                  <div class="plan__title-row">
+                    <h3 id={`plan-${plan.code}-name`}>{plan.name}</h3>
+                    {isFeatured && <span class="plan__featured">Önerilen</span>}
+                  </div>
+                  {getPlanPitch(plan.code) && <p class="plan__pitch">{getPlanPitch(plan.code)!.headline}</p>}
                   {plan.tagline && <p class="plan__tagline">{plan.tagline}</p>}
                 </header>
 
@@ -204,9 +208,10 @@ const featuredCode = [...fixedPlans].sort((a, b) => b.features.length - a.featur
 
   <Section tone="stage" labelledby="cta-title">
     <div class="cta">
-      <h2 id="cta-title">Denemeye şimdi başlayın</h2>
+      <h2 id="cta-title">Tüm kanallarınızı tek panelde yönetmeye bugün başlayın</h2>
       <p>
-        Hesabınızı oluşturun, pazaryeri anahtarlarınızı bağlayın; ürün, stok ve siparişleri tek panelde yönetin.
+        Ücretsiz denemeyle pazaryeri hesaplarınızı bağlayın; merkezi stok yönetimi, overselling koruması ve birleşik sipariş
+        akışını kendi operasyonunuzda görün.
       </p>
       <div class="cta__actions">
         <Button href={closingHref} variant="inverse" size="lg">Ücretsiz dene</Button>
@@ -225,18 +230,40 @@ const featuredCode = [...fixedPlans].sort((a, b) => b.features.length - a.featur
   .tight-section:global(.section) {
     padding-block: calc(var(--site-section-y) * 0.72);
   }
+  /* Taslak fiyat notu (ürün kararı bekliyor): kaldırılmaz, görsel ağırlığı küçük bir dipnota indirildi (S12). */
   .notice {
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-1);
     max-width: var(--site-measure);
-    padding: var(--ek-space-4) var(--ek-space-5);
-    background: var(--ek-color-warning-subtle);
-    border: var(--site-border-width) solid var(--ek-color-border-strong);
-    border-inline-start-width: var(--ek-space-1);
-    border-radius: var(--ek-radius-md);
+    padding-inline-start: var(--ek-space-3);
+    border-inline-start: var(--site-border-width) solid var(--site-glass-border);
+    color: var(--site-color-on-primary-muted);
+    font-size: var(--ek-font-size-xs);
+  }
+  .notice strong {
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .plan__title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ek-space-3);
+  }
+  .plan__featured {
+    padding: var(--ek-space-1) var(--ek-space-3);
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-secondary) 16%, transparent);
+    color: var(--ek-color-secondary-darken-1);
+    font-size: var(--site-card-eyebrow-size);
+    font-weight: var(--site-card-eyebrow-weight);
+    letter-spacing: var(--site-card-eyebrow-tracking);
+    text-transform: uppercase;
+  }
+  .plan__pitch {
     color: var(--ek-color-content-strong);
-    font-size: var(--ek-font-size-lg);
+    font-size: var(--site-card-value-size);
+    font-weight: var(--site-card-value-weight);
   }
 
   /* --- Hero görsel: fiyat kademesi (gerçek oran) --- */

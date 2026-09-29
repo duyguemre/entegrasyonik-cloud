@@ -1,18 +1,20 @@
 ---
 /**
- * SSS önizleme (ADR-0014 Karar 2, bölüm 8). Kaynak: `getPublicFaq()`. Yerel `<details>` akordeonu (JS'siz çalışır,
- * klavye/odak yerel); yalnızca etkileşim geri bildirimi motion token'ları kullanır. Tam liste `/sss` (S2b).
+ * SSS önizleme (ADR-0014 Karar 2, bölüm 8; S12 PARÇA C). Kaynak: `getFaqPreview()` — satın alma kararında en çok
+ * sorulan sekiz soru (kurulum, overselling, stok senkronu, kanallar, güvenlik, deneme, ölçeklenme). Yerel
+ * `<details>` akordeonu (JS'siz çalışır, klavye/odak yerel); yalnızca etkileşim geri bildirimi motion token'ları
+ * kullanır. Sol sütunda kategori kısayolları (`/sss#<kategori>`) ve iletişim yönlendirmesi. Tam liste `/sss`.
  */
 import Section from '../Section.astro'
 import SectionHeading from './SectionHeading.astro'
 import Icon from './Icon.astro'
-import { getPublicFaq } from '../../data/faq'
+import { getFaqPreview, getPublicFaq, FAQ_CATEGORIES } from '../../data/faq'
 import { pageHref } from './links'
 
-const PREVIEW_IDS = ['hangi-entegrasyonlar', 'kapsam-ayni-mi', 'asiri-satis', 'veri-ayrimi', 'anahtar-saklama']
-const all = getPublicFaq()
-const items = PREVIEW_IDS.map((id) => all.find((f) => f.id === id)).filter((f): f is (typeof all)[number] => Boolean(f))
+const items = getFaqPreview()
+const total = getPublicFaq().length
 const faqHref = pageHref('/sss')
+const contactHref = pageHref('/iletisim')
 ---
 
 <Section tone="muted" id="sss" labelledby="sss-baslik">
@@ -22,9 +24,30 @@ const faqHref = pageHref('/sss')
         id="sss-baslik"
         eyebrow="Sık sorulan sorular"
         title="Aklınıza takılanlar"
-        lead="Entegrasyon kapsamı, stok ve anahtarların saklanması hakkında kısa yanıtlar."
+        lead="Kurulumdan güvenliğe, stok yönetiminden fiyatlandırmaya: karar vermeden önce en çok sorulanlar ve net yanıtları."
       />
-      {faqHref && <a class="faq__more" href={faqHref}>Tüm soruları görün</a>}
+      {
+        faqHref && (
+          <nav class="faq__cats" aria-label="SSS kategorileri">
+            {FAQ_CATEGORIES.map((c) => (
+              <a href={`${faqHref}#${c.id}`}>{c.label}</a>
+            ))}
+          </nav>
+        )
+      }
+      {faqHref && <a class="faq__more" href={faqHref}>Tüm {total} soruyu görün <Icon name="arrow" size="sm" /></a>}
+      {
+        contactHref && (
+          <div class="faq__ask">
+            <span class="faq__ask-icon"><Icon name="chat" size="md" /></span>
+            <p>
+              <strong>Sorunuzun yanıtı burada yok mu?</strong>
+              <span>İşletmenize özel sorularınız için ekibimize yazın.</span>
+            </p>
+            <a href={contactHref}>Bize ulaşın</a>
+          </div>
+        )
+      }
     </div>
 
     <div class="faq__list" data-scene="reveal" data-testid="faq-list">
@@ -58,6 +81,79 @@ const faqHref = pageHref('/sss')
   }
   .faq__more {
     align-self: flex-start;
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .faq__cats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2);
+  }
+  .faq__cats a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--site-tap-target);
+    padding-inline: var(--ek-space-4);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-surface);
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-medium);
+    text-decoration: none;
+    transition:
+      border-color var(--ek-duration-base) var(--ek-easing-standard),
+      color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .faq__cats a:hover {
+    border-color: var(--ek-color-secondary-darken-1);
+    color: var(--ek-color-content-strong);
+  }
+  .faq__more {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+  }
+  .faq__ask {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: var(--ek-space-2) var(--ek-space-4);
+    margin-top: var(--ek-space-2);
+    padding: var(--ek-space-5);
+    border: var(--site-border-width) solid transparent;
+    border-radius: var(--ek-radius-xl);
+    background:
+      linear-gradient(var(--ek-color-surface), var(--ek-color-surface)) padding-box,
+      var(--site-gradient-border) border-box;
+    box-shadow: var(--site-shadow-card);
+  }
+  .faq__ask-icon {
+    display: inline-flex;
+    grid-row: span 2;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
+    border-radius: var(--ek-radius-lg);
+    background: color-mix(in srgb, var(--ek-color-secondary) 16%, transparent);
+    color: var(--ek-color-secondary-darken-1);
+  }
+  .faq__ask p {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+    max-width: none;
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-md);
+  }
+  .faq__ask strong {
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-lg);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .faq__ask a {
+    grid-column: 2;
+    justify-self: start;
     font-weight: var(--ek-font-weight-semibold);
   }
   .faq__list {

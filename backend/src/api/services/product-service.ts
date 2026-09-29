@@ -44,7 +44,11 @@ export default class ProductService extends BaseApi implements IService {
         try {
             const filterQuery = {}
             const projection = { settings: 0 }
-            return await this.applicationDB.getIntegrationModel().find(filterQuery, { projection }).populate('type')
+            // [BULGU DÜZELTMESİ, 2026-09-29] `find(filterQuery, { projection })` YANLIŞ sarmalanmıştı — mongoose'un
+            // ikinci argümanı DOĞRUDAN alan-seçim nesnesi bekler. Gerçek Mongo'da (mongodb-memory-server ile
+            // doğrulandı, bkz. tests/mongo-semantics/integrationProjectionShape.mongoSemantics.test.ts) bu HATA
+            // FIRLATMIYORDU, sessizce TÜM alanları (settings dahil) döndürüyordu — B4 gereksiz alan sızıntısı.
+            return await this.applicationDB.getIntegrationModel().find(filterQuery, projection).populate('type')
         } catch (error) {
             throw error
         }

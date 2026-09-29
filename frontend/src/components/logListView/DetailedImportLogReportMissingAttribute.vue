@@ -1,7 +1,7 @@
 <template>
   <div class="mapping-container">
-    <v-btn icon="mdi-close" variant="text" size="x-small" class="position-absolute"
-      style="right: 8px; top: 8px; z-index: 100;" @click="emit('close')" aria-label="Kapat"></v-btn>
+    <v-btn icon="mdi-close" variant="text" size="x-small" class="close-btn-corner"
+      @click="emit('close')" aria-label="Kapat"></v-btn>
 
     <v-fade-transition hide-on-leave mode="out-in">
 
@@ -9,7 +9,7 @@
         class="mapped-success-state d-flex align-start pa-4 rounded-lg border-success shadow-sm">
         <v-icon color="success" size="28" class="mr-4 mt-1">mdi-check-decagram</v-icon>
         <div class="d-flex flex-column flex-grow-1">
-          <span class="text-subtitle-2 font-weight-black text-success" style="line-height: 1.2;">
+          <span class="text-subtitle-2 font-weight-black text-success tight-line-height">
             Eşleştirme Doğrulandı
           </span>
           <p class="text-caption text-grey-darken-2 mt-1 mb-2">
@@ -20,7 +20,7 @@
           <div class="d-flex align-center">
             <v-btn variant="text" color="success" size="x-small" class="pa-0 font-weight-bold premium-text-btn"
               @click="openCategoryPage" prepend-icon="mdi-arrow-right-circle-outline">
-              KATEGORİ LİSTESİNE GİT VE DÜZENLE
+              Kategori listesine git ve düzenle
             </v-btn>
           </div>
         </div>
@@ -34,7 +34,7 @@
               <span class="context-value">{{ computedPlatformCategoryTitle || '-' }}</span>
             </div>
             <div class="context-divider">
-              <v-icon size="14" color="grey-lighten-1">mdi-arrow-right</v-icon>
+              <v-icon size="14" color="content-muted">mdi-arrow-right</v-icon>
             </div>
             <div class="context-col text-right">
               <span class="context-label">Yerel Kategori</span>
@@ -47,23 +47,23 @@
 
           <div class="context-row bg-orange-lighten-5">
             <div class="context-col">
-              <span class="context-label text-orange-darken-4">Pazaryeri Özelliği</span>
-              <span class="context-value text-orange-darken-4 font-weight-black">{{ attribute.attributeName }}</span>
+              <span class="context-label text-warning">Pazaryeri Özelliği</span>
+              <span class="context-value text-warning font-weight-black">{{ attribute.attributeName }}</span>
             </div>
             <div class="context-divider">
-              <v-icon size="16" color="orange-darken-3">mdi-ray-start-arrow</v-icon>
+              <v-icon size="16" color="warning">mdi-ray-start-arrow</v-icon>
             </div>
             <div class="context-col text-right">
-              <span class="context-label text-orange-darken-4">Yerel Seçenek Grubu</span>
-              <span class="context-value text-orange-darken-2 font-italic">Seçim Bekleniyor...</span>
+              <span class="context-label text-warning">Yerel Seçenek Grubu</span>
+              <span class="context-value text-warning font-italic">Seçim Bekleniyor...</span>
             </div>
           </div>
         </div>
 
         <div class="info-alert pa-3 mb-5 rounded-lg bg-orange-lighten-5 border-orange-subtle">
           <div class="d-flex align-center mb-1">
-            <v-icon size="16" color="orange-darken-3" class="mr-2">mdi-layers-outline</v-icon>
-            <span class="text-caption font-weight-bold text-orange-darken-4 uppercase-track">Özellik Analizi</span>
+            <v-icon size="16" color="warning" class="mr-2">mdi-layers-outline</v-icon>
+            <span class="text-caption font-weight-bold text-warning uppercase-track">Özellik Analizi</span>
           </div>
           <p class="text-caption text-grey-darken-3 mb-1">
             <b>{{ attribute.attributeName }}</b> özelliği henüz sisteminizde bir gruba (Renk, Beden vb.) bağlı değil.
@@ -71,8 +71,8 @@
         </div>
 
         <div class="d-flex align-center mb-4">
-          <v-avatar color="orange-lighten-4" size="32" class="mr-3 border-orange">
-            <span class="text-subtitle-2 font-weight-black text-orange-darken-4">1</span>
+          <v-avatar color="warning-subtle" size="32" class="mr-3 border-orange">
+            <span class="text-subtitle-2 font-weight-black text-warning">1</span>
           </v-avatar>
           <span class="text-subtitle-2 font-weight-black text-grey-darken-3">Seçenek Grubu Tanımlayın</span>
         </div>
@@ -81,25 +81,25 @@
           item-value="_id" placeholder="Seçenek Grubu Seçin (Örn: Renkler)" density="compact" variant="outlined"
           class="customTextField mb-4" hide-details auto-select-first>
           <template v-slot:selection="{ item }: any">
-            <span class="text-subtitle-2 font-weight-bold" style="color: var(--ek-color-passive-color)">
+            <span class="text-subtitle-2 font-weight-bold selection-text">
               {{ item.title }}
             </span>
           </template>
           <template v-slot:item="{ item, props: itemProps }: any">
             <v-list-item v-bind="itemProps" class="custom-category-item is-leaf-row" title="">
               <div class="d-flex align-center w-100 position-relative">
-                <div class="leaf-indicator" style="background-color: #ef6c00;"></div>
-                <v-icon size="18" class="mr-2" color="orange-darken-2">mdi-layers-outline</v-icon>
+                <div class="leaf-indicator leaf-indicator--warning"></div>
+                <v-icon size="18" class="mr-2" color="warning">mdi-layers-outline</v-icon>
                 <span class="category-text text-truncate">{{ item.title }}</span>
               </div>
             </v-list-item>
           </template>
         </v-autocomplete>
 
-        <v-btn block size="large" color="orange-darken-3" elevation="0" :loading="loading"
+        <v-btn block size="large" color="warning" elevation="0" :loading="loading"
           :disabled="!tempChoiceGroupId" class="font-weight-bold premium-btn" @click="handleSaveAttributeMapping">
           <v-icon start>mdi-layers-plus</v-icon>
-          GRUBU BAĞLA VE DEVAM ET
+          Grubu bağla ve devam et
         </v-btn>
       </div>
 
@@ -111,7 +111,7 @@
               <span class="context-value">{{ computedPlatformCategoryTitle }}</span>
             </div>
             <div class="context-divider">
-              <v-icon size="14" color="blue-lighten-3">mdi-swap-horizontal</v-icon>
+              <v-icon size="14" color="info">mdi-swap-horizontal</v-icon>
             </div>
             <div class="context-col text-right">
               <span class="context-label">Yerel Kategori</span>
@@ -126,7 +126,7 @@
               <span class="context-value">{{ mappingDefinition.platformAttributeName }}</span>
             </div>
             <div class="context-divider">
-              <v-icon size="14" color="blue-lighten-3">mdi-check-circle-outline</v-icon>
+              <v-icon size="14" color="info">mdi-check-circle-outline</v-icon>
             </div>
             <div class="context-col text-right">
               <span class="context-label">Yerel Seçenek Grubu</span>
@@ -140,23 +140,23 @@
 
           <div class="context-row bg-blue-lighten-5">
             <div class="context-col">
-              <span class="context-label text-blue-darken-4">Platform Değeri</span>
-              <span class="context-value font-weight-black text-blue-darken-4">{{ attribute.attributeValue }}</span>
+              <span class="context-label text-info">Platform Değeri</span>
+              <span class="context-value font-weight-black text-info">{{ attribute.attributeValue }}</span>
             </div>
             <div class="context-divider">
-              <v-icon size="16" color="blue-darken-2">mdi-ray-start-arrow</v-icon>
+              <v-icon size="16" color="info">mdi-ray-start-arrow</v-icon>
             </div>
             <div class="context-col text-right">
-              <span class="context-label text-blue-darken-4">Yerel Değer</span>
-              <span class="context-value text-blue-darken-3 font-italic">Seçim Bekleniyor...</span>
+              <span class="context-label text-info">Yerel Değer</span>
+              <span class="context-value text-info font-italic">Seçim Bekleniyor...</span>
             </div>
           </div>
         </div>
 
         <div class="info-alert pa-3 mb-5 rounded-lg bg-blue-lighten-5 border-blue-subtle">
           <div class="d-flex align-center mb-1">
-            <v-icon size="16" color="blue-darken-3" class="mr-2">mdi-link-variant-plus</v-icon>
-            <span class="text-caption font-weight-bold text-blue-darken-4 uppercase-track">Eşleştirme Analizi</span>
+            <v-icon size="16" color="info" class="mr-2">mdi-link-variant-plus</v-icon>
+            <span class="text-caption font-weight-bold text-info uppercase-track">Eşleştirme Analizi</span>
           </div>
           <p class="text-caption text-grey-darken-3 mb-1">
             <b>{{ attribute.attributeValue }}</b> değerinin sisteminizdeki karşılığını belirleyin.
@@ -164,8 +164,8 @@
         </div>
 
         <div class="d-flex align-center mb-4">
-          <v-avatar color="blue-lighten-4" size="32" class="mr-3 border-blue">
-            <span class="text-subtitle-2 font-weight-black text-blue-darken-4">2</span>
+          <v-avatar color="info-subtle" size="32" class="mr-3 border-blue">
+            <span class="text-subtitle-2 font-weight-black text-info">2</span>
           </v-avatar>
           <span class="text-subtitle-2 font-weight-black text-grey-darken-3">Değer Eşleştirme</span>
         </div>
@@ -174,26 +174,26 @@
           placeholder="Sistemdeki değer karşılığı..." density="compact" variant="outlined" class="customTextField mb-4"
           hide-details auto-select-first>
           <template v-slot:selection="{ item }: any">
-            <span class="text-subtitle-2 font-weight-bold" style="color: var(--ek-color-passive-color)">
+            <span class="text-subtitle-2 font-weight-bold selection-text">
               {{ item.title }}
             </span>
           </template>
           <template v-slot:item="{ item, props: itemProps }: any">
             <v-list-item v-bind="itemProps" class="custom-category-item is-leaf-row" title="">
               <div class="d-flex align-center w-100 position-relative">
-                <div class="leaf-indicator" style="background-color: #0277bd;"></div>
-                <v-icon size="16" class="mr-2" color="blue-darken-1">mdi-circle-medium</v-icon>
+                <div class="leaf-indicator leaf-indicator--info"></div>
+                <v-icon size="16" class="mr-2" color="info">mdi-circle-medium</v-icon>
                 <span class="category-text text-truncate">{{ item.title }}</span>
               </div>
             </v-list-item>
           </template>
         </v-autocomplete>
 
-        <v-btn block size="large" color="blue-darken-3" elevation="0" :loading="loading"
+        <v-btn block size="large" color="info" elevation="0" :loading="loading"
           :disabled="!selectedChoiceValueId" class="font-weight-bold premium-btn"
           @click="handleSaveAttributeValueMapping">
           <v-icon start>mdi-link-variant</v-icon>
-          EŞLEŞTİRMEYİ KAYDET
+          Eşleştirmeyi kaydet
         </v-btn>
       </div>
 
@@ -422,16 +422,27 @@ const handleSaveAttributeValueMapping = async () => {
   min-width: 360px;
 }
 
+.close-btn-corner {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  z-index: 100;
+}
+
+.tight-line-height {
+  line-height: 1.2;
+}
+
 .mapping-step-box {
-  border: 1px solid #eee;
-  padding: 24px;
-  border-radius: 16px;
-  background: #ffffff;
+  border: 1px solid var(--ek-color-border-default);
+  padding: var(--ek-space-6);
+  border-radius: var(--ek-radius-lg);
+  background: var(--ek-color-surface);
 }
 
 .mapped-success-state {
-  background-color: #f1f8e9;
-  border: 1px solid #c5e1a5;
+  background-color: var(--ek-color-success-subtle);
+  border: 1px solid var(--ek-color-success);
 }
 
 .context-card {
@@ -465,7 +476,7 @@ const handleSaveAttributeValueMapping = async () => {
 .context-value {
   font-size: 11px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--ek-color-content-strong);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -481,29 +492,29 @@ const handleSaveAttributeValueMapping = async () => {
 }
 
 .bg-orange-lighten-5 {
-  border-left-color: #ef6c00 !important;
-  background-color: #fff9f2 !important;
+  border-left-color: var(--ek-color-warning) !important;
+  background-color: var(--ek-color-warning-subtle) !important;
 }
 
 .bg-blue-lighten-5 {
-  border-left-color: #0277bd !important;
-  background-color: #f0f7ff !important;
+  border-left-color: var(--ek-color-info) !important;
+  background-color: var(--ek-color-info-subtle) !important;
 }
 
 .border-orange-subtle {
-  border-color: #ffe0b2 !important;
+  border-color: var(--ek-color-warning-subtle) !important;
 }
 
 .border-blue-subtle {
-  border-color: #bbdefb !important;
+  border-color: var(--ek-color-info-subtle) !important;
 }
 
 .border-orange {
-  border: 2px solid #ffb74d !important;
+  border: 2px solid var(--ek-color-warning) !important;
 }
 
 .border-blue {
-  border: 2px solid #0288d1 !important;
+  border: 2px solid var(--ek-color-info) !important;
 }
 
 .uppercase-track {
@@ -513,7 +524,6 @@ const handleSaveAttributeValueMapping = async () => {
 }
 
 .premium-btn {
-  border-radius: 10px !important;
   letter-spacing: 0.5px;
   text-transform: uppercase;
   height: 44px !important;
@@ -525,7 +535,7 @@ const handleSaveAttributeValueMapping = async () => {
 
 /* Premium List Item Stilleri */
 .custom-category-item {
-  border-bottom: 1px solid #f5f5f5 !important;
+  border-bottom: 1px solid var(--ek-color-border-default) !important;
   min-height: 40px !important;
 }
 
@@ -535,7 +545,17 @@ const handleSaveAttributeValueMapping = async () => {
   height: 60%;
   width: 3px;
   border-radius: 0 4px 4px 0;
-  box-shadow: 1px 0 6px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--ek-shadow-sm);
+}
+
+/* Pazaryeri özelliği (turuncu bağlam) için uyarı tonu, sistemdeki değer (mavi bağlam) için bilgi
+   tonu — durum kodu değil, iki farklı EŞLEŞTİRME ADIMINI ayırt eden sabit bir görsel kategori. */
+.leaf-indicator--warning {
+  background-color: var(--ek-color-warning);
+}
+
+.leaf-indicator--info {
+  background-color: var(--ek-color-info);
 }
 
 .category-text {
@@ -544,16 +564,11 @@ const handleSaveAttributeValueMapping = async () => {
   font-size: 0.85rem;
 }
 
+.selection-text {
+  color: var(--ek-color-passive-color);
+}
+
 .is-leaf-row:hover {
-  background-color: #f5f7f9 !important;
-}
-
-
-.border-top-dashed {
-  border-top: 1px dashed rgba(230, 108, 0, 0.2);
-}
-
-.border-top-dashed-blue {
-  border-top: 1px dashed rgba(2, 119, 189, 0.2);
+  background-color: var(--ek-color-surface-muted) !important;
 }
 </style>

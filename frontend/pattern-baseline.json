@@ -2,15 +2,15 @@
   "_meta": "ADR-0015 Karar 6.4 desen mandalı tabanı. node scripts/check-pattern-baseline.js --write ile üretildi (bkz. scripts/pattern-counts.js). Hiçbir dosyada/kategoride sayı ARTAMAZ; yeni dosyalar 0 ile başlamalı; düşüş serbest ama bu dosyanın güncellenmesi gerekir. patternExceptions BİLGİ AMAÇLIDIR (C'de raporlanır, mandal tarafından zorlanmaz).",
   "date": "2026-09-29",
   "totals": {
-    "total": 185,
+    "total": 147,
     "rawDataTable": 25,
     "rawDialog": 13,
-    "rawChip": 67,
-    "rawFormat": 51,
-    "rawSpinner": 5,
+    "rawChip": 43,
+    "rawFormat": 39,
+    "rawSpinner": 3,
     "iconBtnNoLabel": 24,
-    "patternExceptions": 4,
-    "pageHeaderMissing": 35
+    "patternExceptions": 18,
+    "pageHeaderMissing": 30
   },
   "files": {
     "src/App.vue": {
@@ -266,14 +266,24 @@
     "src/components/adminPanel/AdminChatComponent.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
-      "rawChip": 3,
-      "rawFormat": 1,
+      "rawChip": 0,
+      "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
-      "patternExceptions": 0,
-      "total": 4
+      "patternExceptions": 1,
+      "total": 0
     },
     "src/components/adminPanel/AdminClientCreateComponent.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 1,
+      "total": 0
+    },
+    "src/components/adminPanel/AdminClientDetailComponent.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
       "rawChip": 0,
@@ -283,25 +293,55 @@
       "patternExceptions": 0,
       "total": 0
     },
-    "src/components/adminPanel/AdminClientDetailComponent.vue": {
-      "rawDataTable": 0,
-      "rawDialog": 0,
-      "rawChip": 2,
-      "rawFormat": 2,
-      "rawSpinner": 2,
-      "iconBtnNoLabel": 0,
-      "patternExceptions": 0,
-      "total": 6
-    },
     "src/components/adminPanel/ClientStatsCard.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
       "rawChip": 0,
-      "rawFormat": 2,
+      "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
       "patternExceptions": 0,
-      "total": 2
+      "total": 0
+    },
+    "src/components/adminPanel/integrations/IntegrationConfigSettingsBody.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/components/adminPanel/integrations/PlatformAdminGuard.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/components/adminPanel/integrations/PublishConfirmDialog.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/components/adminPanel/integrations/SettingField.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
     },
     "src/components/claim/ClaimDetailComponent.vue": {
       "rawDataTable": 0,
@@ -836,12 +876,12 @@
     "src/components/logListView/DetailedExportLogReport.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
-      "rawChip": 3,
-      "rawFormat": 3,
+      "rawChip": 0,
+      "rawFormat": 2,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
-      "patternExceptions": 0,
-      "total": 6
+      "patternExceptions": 3,
+      "total": 2
     },
     "src/components/logListView/DetailedImportLogReport.vue": {
       "rawDataTable": 0,
@@ -1506,32 +1546,32 @@
     "src/views/secure/adminPanel/AdminClientListView.vue": {
       "rawDataTable": 1,
       "rawDialog": 0,
-      "rawChip": 1,
+      "rawChip": 0,
       "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
-      "patternExceptions": 0,
-      "total": 2
+      "patternExceptions": 2,
+      "total": 1
     },
     "src/views/secure/adminPanel/AdminSystemManagementView.vue": {
       "rawDataTable": 2,
       "rawDialog": 0,
-      "rawChip": 10,
-      "rawFormat": 2,
+      "rawChip": 0,
+      "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
-      "patternExceptions": 0,
-      "total": 14
+      "patternExceptions": 2,
+      "total": 2
     },
     "src/views/secure/adminPanel/AdminTicketListView.vue": {
       "rawDataTable": 1,
       "rawDialog": 0,
-      "rawChip": 3,
-      "rawFormat": 1,
+      "rawChip": 0,
+      "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
-      "patternExceptions": 0,
-      "total": 5
+      "patternExceptions": 2,
+      "total": 1
     },
     "src/views/secure/adminPanel/AdminView.vue": {
       "rawDataTable": 1,
@@ -1542,6 +1582,46 @@
       "iconBtnNoLabel": 0,
       "patternExceptions": 0,
       "total": 6
+    },
+    "src/views/secure/adminPanel/integrations/EffectiveConfigView.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/views/secure/adminPanel/integrations/EngineSettingsView.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/views/secure/adminPanel/integrations/IntegrationConfigListView.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/views/secure/adminPanel/integrations/IntegrationSettingsView.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
     },
     "src/views/secure/definitions/BrandDefinitionView.vue": {
       "rawDataTable": 1,
@@ -1806,12 +1886,12 @@
     "src/views/secure/user/SubscriptionView.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
-      "rawChip": 2,
-      "rawFormat": 3,
+      "rawChip": 0,
+      "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
-      "patternExceptions": 0,
-      "total": 5
+      "patternExceptions": 3,
+      "total": 0
     },
     "src/views/unsecure/LoginView.vue": {
       "rawDataTable": 0,
@@ -1840,15 +1920,19 @@
     "src/views/secure/DashboardView.vue": 1,
     "src/views/secure/FinancialListView.vue": 1,
     "src/views/secure/InvoiceListView.vue": 1,
-    "src/views/secure/LogListView.vue": 1,
+    "src/views/secure/LogListView.vue": 0,
     "src/views/secure/MessageListView.vue": 1,
     "src/views/secure/OrderListView.vue": 1,
     "src/views/secure/PrintoutListView.vue": 1,
     "src/views/secure/SettingListView.vue": 1,
-    "src/views/secure/adminPanel/AdminClientListView.vue": 1,
-    "src/views/secure/adminPanel/AdminSystemManagementView.vue": 1,
-    "src/views/secure/adminPanel/AdminTicketListView.vue": 1,
+    "src/views/secure/adminPanel/AdminClientListView.vue": 0,
+    "src/views/secure/adminPanel/AdminSystemManagementView.vue": 0,
+    "src/views/secure/adminPanel/AdminTicketListView.vue": 0,
     "src/views/secure/adminPanel/AdminView.vue": 1,
+    "src/views/secure/adminPanel/integrations/EffectiveConfigView.vue": 0,
+    "src/views/secure/adminPanel/integrations/EngineSettingsView.vue": 0,
+    "src/views/secure/adminPanel/integrations/IntegrationConfigListView.vue": 0,
+    "src/views/secure/adminPanel/integrations/IntegrationSettingsView.vue": 0,
     "src/views/secure/definitions/BrandDefinitionView.vue": 1,
     "src/views/secure/definitions/CategoryDefinitionView.vue": 1,
     "src/views/secure/definitions/CustomerDefinitionView.vue": 1,
@@ -1875,6 +1959,6 @@
     "src/views/secure/user/ChangePasswordView.vue": 1,
     "src/views/secure/user/ExitView.vue": 1,
     "src/views/secure/user/InvoiceInfoView.vue": 1,
-    "src/views/secure/user/SubscriptionView.vue": 1
+    "src/views/secure/user/SubscriptionView.vue": 0
   }
 }

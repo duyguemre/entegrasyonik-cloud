@@ -1,0 +1,358 @@
+---
+/**
+ * CoverageMatrix — "Kanal bazında kapsam" (`/entegrasyonlar#kapsam`). S12: ana sayfadaki kapsam matrisi buraya
+ * taşındı; ana sayfada durum/kapsam anlatımı yok, farklar yalnızca bu alt sayfada sakin bir dille yazılır.
+ * Satır = entegrasyon (monogram + ad + detay bağlantısı), sütun = temel işlem (ikon + kısa ad; tam ad ekran
+ * okuyucuya `aria-label`). Hücre durumu metinle de iletilir (sr-only).
+ *
+ * Kaydırma/yapışkanlık düzeltmesi (S12 — önceki sürümde yapışkan başlık, yatay kaydırma kapsayıcısının İÇİNDE
+ * `top: header yüksekliği` kadar aşağı itilip ilk satırları örtüyordu):
+ *  - >=1024px: tablo sığar → kapsayıcı `overflow: clip` (kaydırma kapsayıcısı DEĞİL); başlık satırı sayfaya göre
+ *    site header'ının hemen altına yapışır (`top: --site-header-height`) ve hiçbir satırı örtmez.
+ *  - 768–1023px: kapsayıcı yatay kaydırılır (odaklanabilir bölge, WCAG 2.1.1); başlık yapışkan DEĞİL, yalnızca
+ *    ilk sütun (kanal adı) solda sabit kalır ve kaydırılan hücrelerle arasında ince gölge vardır.
+ *  - <768px: kanal başına kompakt kart (yatay kaydırma yok).
+ */
+import Icon from '../home/Icon.astro'
+import ChannelMono from './ChannelMono.astro'
+import { CAPABILITY_LABELS, type CapabilityKey, type PublicIntegration } from '../../data/integrations'
+
+interface Props {
+  integrations: PublicIntegration[]
+  labelledby: string
+}
+
+const { integrations, labelledby } = Astro.props
+
+const KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders', 'returns', 'questions', 'finance', 'shippingNotice', 'invoiceNotice']
+type IconName = 'stock' | 'orders' | 'returns' | 'chat' | 'finance' | 'notice' | 'receipt' | 'layers'
+const ICON: Record<CapabilityKey, IconName> = {
+  products: 'layers',
+  stockPrice: 'stock',
+  orders: 'orders',
+  returns: 'returns',
+  questions: 'chat',
+  finance: 'finance',
+  shippingNotice: 'notice',
+  invoiceNotice: 'receipt',
+  orderActions: 'orders',
+  categories: 'layers',
+}
+/** Dar sütun için KISA ad — tam ad `CAPABILITY_LABELS`'tan ekran okuyucuya iletilir; kısaltma bilgi eklemez. */
+const SHORT: Record<CapabilityKey, string> = {
+  products: 'Ürün',
+  stockPrice: 'Stok/Fiyat',
+  orders: 'Sipariş',
+  returns: 'İade',
+  questions: 'Soru-cevap',
+  finance: 'Finans',
+  shippingNotice: 'Kargo bilgisi',
+  invoiceNotice: 'Fatura bilgisi',
+  orderActions: 'Sipariş',
+  categories: 'Kategori',
+}
+const COVERAGE_STATE_LABEL = { yes: 'Destekleniyor', limited: 'Temel düzeyde', none: 'Bu kanalda yok' } as const
+type State = keyof typeof COVERAGE_STATE_LABEL
+const stateOf = (i: PublicIntegration, k: CapabilityKey): State => {
+  const level = i.capabilities.find((c) => c.key === k)?.level
+  return level === 'supported' ? 'yes' : level === 'limited' ? 'limited' : 'none'
+}
+---
+
+<div class="cm" data-testid="coverage">
+  <ul class="cm__legend" aria-label="Gösterge">
+    {
+      (Object.keys(COVERAGE_STATE_LABEL) as State[]).map((s) => (
+        <li>
+          <span class="cm__state" data-state={s} aria-hidden="true">
+            {s === 'yes' && <Icon name="check" size="sm" />}
+          </span>
+          {COVERAGE_STATE_LABEL[s]}
+        </li>
+      ))
+    }
+  </ul>
+
+  <div class="cm__scroll" role="region" aria-labelledby={labelledby} tabindex="0" data-testid="coverage-matrix">
+    <table class="cm__table">
+      <caption class="sr-only">Entegrasyonların temel işlemler için kapsamı</caption>
+      <thead>
+        <tr>
+          <th scope="col" class="cm__corner">Kanal</th>
+          {
+            KEYS.map((k) => (
+              <th scope="col" aria-label={CAPABILITY_LABELS[k]}>
+                <span class="cm__col">
+                  <Icon name={ICON[k]} size="sm" />
+                  <span aria-hidden="true">{SHORT[k]}</span>
+                </span>
+              </th>
+            ))
+          }
+        </tr>
+      </thead>
+      <tbody>
+        {
+          integrations.map((i) => (
+            <tr class="cm__row" data-code={i.code}>
+              <th scope="row">
+                <a class="cm__rowhead" href={`/entegrasyonlar/${i.code}`}>
+                  <ChannelMono code={i.code} name={i.name} size="sm" />
+                  <span>{i.name}</span>
+                </a>
+              </th>
+              {KEYS.map((k) => {
+                const s = stateOf(i, k)
+                return (
+                  <td>
+                    <span class="cm__state" data-state={s} aria-hidden="true">
+                      {s === 'yes' && <Icon name="check" size="sm" />}
+                    </span>
+                    <span class="sr-only">
+                      {CAPABILITY_LABELS[k]}: {COVERAGE_STATE_LABEL[s]}
+                    </span>
+                  </td>
+                )
+              })}
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <ul class="cm__cards" aria-label="Entegrasyonların temel işlemler için kapsamı">
+    {
+      integrations.map((i) => (
+        <li class="cm__card" data-code={i.code}>
+          <a class="cm__card-head" href={`/entegrasyonlar/${i.code}`}>
+            <ChannelMono code={i.code} name={i.name} size="sm" />
+            <span>{i.name}</span>
+            <Icon name="chevron" size="sm" />
+          </a>
+          <ul class="cm__card-grid">
+            {KEYS.map((k) => {
+              const s = stateOf(i, k)
+              return (
+                <li class="cm__cell">
+                  <span class="cm__state cm__state--sm" data-state={s} aria-hidden="true">
+                    {s === 'yes' && <Icon name="check" size="sm" />}
+                  </span>
+                  <span class="cm__cell-label" aria-hidden="true">{SHORT[k]}</span>
+                  <span class="sr-only">
+                    {CAPABILITY_LABELS[k]}: {COVERAGE_STATE_LABEL[s]}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+        </li>
+      ))
+    }
+  </ul>
+</div>
+
+<style>
+  .cm__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2) var(--ek-space-6);
+    margin-bottom: var(--ek-space-6);
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-md);
+  }
+  .cm__legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+  }
+
+  /*
+   * Durum ikonu: dolu turkuaz + onay = destekleniyor; yarım dolu halka = temel düzeyde; kısa çizgi = bu kanalda
+   * yok. Uyarı sarısı KULLANILMAZ (sakin dil): fark, doluluk ile anlatılır.
+   */
+  .cm__state {
+    box-sizing: border-box;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-6);
+    height: var(--ek-space-6);
+    border-radius: var(--ek-radius-full);
+    color: var(--site-color-on-primary);
+  }
+  .cm__state[data-state='yes'] {
+    background: var(--ek-color-secondary-darken-1);
+  }
+  .cm__state[data-state='limited'] {
+    border: calc(var(--site-border-width) * 2) solid var(--ek-color-secondary-darken-1);
+    background: conic-gradient(var(--ek-color-secondary-darken-1) 0 50%, transparent 50% 100%);
+  }
+  .cm__state[data-state='none']::before {
+    content: '';
+    width: 45%;
+    height: calc(var(--site-border-width) * 2);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-border-strong);
+  }
+  .cm__state--sm {
+    width: var(--ek-space-5);
+    height: var(--ek-space-5);
+  }
+
+  /* --- Tablo (>=768px) --- */
+  .cm__scroll {
+    display: none;
+  }
+  .cm__table {
+    width: 100%;
+    min-width: 46rem;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: var(--ek-font-size-sm);
+  }
+  .cm__table th,
+  .cm__table td {
+    padding: var(--ek-space-3);
+    border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
+    text-align: center;
+    transition: background-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .cm__table thead th {
+    background: var(--ek-color-surface-muted);
+    color: var(--ek-color-content-strong);
+    font-weight: var(--ek-font-weight-semibold);
+    vertical-align: bottom;
+  }
+  .cm__table .cm__corner {
+    text-align: start;
+  }
+  .cm__col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--ek-space-1);
+    color: var(--ek-color-content-default);
+    line-height: var(--ek-line-height-tight);
+  }
+  .cm__col :global(.icon) {
+    color: var(--ek-color-primary-darken-1);
+  }
+  .cm__table th[scope='row'] {
+    background: var(--ek-color-surface);
+    text-align: start;
+    white-space: nowrap;
+  }
+  .cm__rowhead {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-3);
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+    text-decoration: none;
+  }
+  .cm__rowhead:hover span {
+    text-decoration: underline;
+  }
+  .cm__table tbody tr:last-child > * {
+    border-bottom: 0;
+  }
+  .cm__table td .cm__state {
+    margin-inline: auto;
+  }
+  .cm__table tbody tr:hover > *,
+  .cm__table tbody tr:focus-within > * {
+    background-color: var(--ek-color-surface-muted);
+  }
+
+  /* --- Kompakt kartlar (<768px) --- */
+  .cm__cards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+  }
+  .cm__card {
+    padding: var(--ek-space-4);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-xl);
+    background: var(--ek-color-surface);
+  }
+  .cm__card-head {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-3);
+    min-height: var(--site-tap-target);
+    margin-bottom: var(--ek-space-3);
+    color: var(--ek-color-content-strong);
+    font-weight: var(--ek-font-weight-semibold);
+    text-decoration: none;
+  }
+  .cm__card-head > span:not(.chan-mono) {
+    flex: 1;
+  }
+  .cm__card-head :global(.icon) {
+    rotate: -90deg;
+    color: var(--ek-color-content-muted);
+  }
+  .cm__card-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--ek-space-4) var(--ek-space-2);
+  }
+  .cm__cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--ek-space-1);
+    text-align: center;
+  }
+  .cm__cell-label {
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-xs);
+    line-height: var(--ek-line-height-tight);
+  }
+
+  @media (min-width: 48rem) {
+    .cm__cards {
+      display: none;
+    }
+    .cm__scroll {
+      display: block;
+      position: relative;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      border: var(--site-border-width) solid var(--ek-color-border-default);
+      border-radius: var(--ek-radius-xl);
+      background: var(--ek-color-surface);
+      box-shadow: var(--site-shadow-card);
+    }
+    /* Yalnızca yatay: ilk sütun sabit; kaydırılan hücrelerle arasında ince ayraç gölgesi. */
+    .cm__table th[scope='row'],
+    .cm__table .cm__corner {
+      position: sticky;
+      inset-inline-start: 0;
+      z-index: 1;
+      box-shadow: inset calc(var(--site-border-width) * -1) 0 0 var(--ek-color-border-default);
+    }
+  }
+  @media (min-width: 64rem) {
+    /* Tablo sığar: kaydırma kapsayıcısı yok → başlık satırı sayfaya göre header'ın altına yapışır. */
+    .cm__scroll {
+      overflow: clip;
+    }
+    .cm__table thead th {
+      position: sticky;
+      inset-block-start: var(--site-header-height);
+      z-index: 2;
+      box-shadow: inset 0 calc(var(--site-border-width) * -1) 0 var(--ek-color-border-default);
+    }
+    .cm__table .cm__corner {
+      z-index: 3;
+    }
+    .cm__row {
+      scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-16));
+    }
+  }
+</style>

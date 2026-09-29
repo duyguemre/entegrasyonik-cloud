@@ -145,4 +145,32 @@ export const PLATFORM_CAPABILITIES = [
         effect: 'read', minTier: 'platformAdmin', bindings: [{ rpc: 'IntegrationConfigService/testEndpoint' }],
         ui: noUi('Backend-only: ADR-0020 Aşama C ekranları henüz yok.'), mcp: PA, agent: NO_AGENT,
     }),
+
+    // --- ADR-0018 Karar 2/4 (Aşama B): entegrasyon uyum bulguları (IntegrationComplianceService) ---
+    // FE "Entegrasyon uyum" sekmesi (Karar 2 "Konsol") AYRI görevde (buluta devredilecek); backend hazır,
+    // `ui: noUi(...)` (BACKEND_ONLY_NOT_YET_IN_FE). `FindingService`'i TÜKETİR, yeniden yazmaz.
+    c({
+        // `IntegrationComplianceService.get()` (GET /:service rotası, `RunOperation` operation='get') `list()`e
+        // AYNI davranışla yönlenir (integration-config-service.ts'in `get()`→`getEffectiveConfig()` deseniyle AYNI
+        // fikir); AYRI bir yetenek AÇMADAN aynı bağa eklendi (integrations.ts `IntegrationService/get` +
+        // `integrationTypes` ÖRNEĞİYLE AYNI desen).
+        id: 'platform.integration_compliance.list', domain: 'platform', summary: { tr: 'Entegrasyon uyum bulgularını listele (entegrasyon/kategori/tür/şiddet/durum filtreli)', en: 'List integration compliance findings (filterable by integration/category/kind/severity/status)' },
+        effect: 'read', minTier: 'platformAdmin', bindings: [{ rpc: 'IntegrationComplianceService/list' }, { rpc: 'IntegrationComplianceService/get' }],
+        ui: noUi('Backend-only: ADR-0018 Aşama B admin konsol ekranı ayrı görevde (buluta devredilecek).'), mcp: PA, agent: NO_AGENT,
+    }),
+    c({
+        id: 'platform.integration_compliance.summary', domain: 'platform', summary: { tr: 'Entegrasyon başına uyum özet kartı (adapterVersion, lastVerifiedAt, son probe, açık bulgu sayıları)', en: 'Per-integration compliance summary card (adapterVersion, lastVerifiedAt, last probe, open finding counts)' },
+        effect: 'read', minTier: 'platformAdmin', bindings: [{ rpc: 'IntegrationComplianceService/summary' }],
+        ui: noUi('Backend-only: ADR-0018 Aşama B admin konsol ekranı ayrı görevde (buluta devredilecek).'), mcp: PA, agent: NO_AGENT,
+    }),
+    c({
+        id: 'platform.integration_compliance.get_detail', domain: 'platform', summary: { tr: 'Tek bir uyum bulgusunun tam kaydını getir (kanıt + etkilenen tenant sayısı/listesi dahil)', en: 'Get a single compliance finding\'s full record (incl. evidence + affected tenants)' },
+        effect: 'read', minTier: 'platformAdmin', bindings: [{ rpc: 'IntegrationComplianceService/getDetail' }],
+        ui: noUi('Backend-only: ADR-0018 Aşama B admin konsol ekranı ayrı görevde (buluta devredilecek).'), mcp: PA, agent: NO_AGENT,
+    }),
+    c({
+        id: 'platform.integration_compliance.transition', domain: 'platform', summary: { tr: 'Bulgu durumunu değiştir (triage/accept/wontfix/false_positive/fixed; fixed için fixRef zorunlu)', en: 'Transition a finding\'s status (triage/accept/wontfix/false_positive/fixed; fixRef required for fixed)' },
+        effect: 'write', minTier: 'platformAdmin', bindings: [{ rpc: 'IntegrationComplianceService/transition' }],
+        ui: noUi('Backend-only: ADR-0018 Aşama B admin konsol ekranı ayrı görevde (buluta devredilecek).'), mcp: PA, agent: NO_AGENT,
+    }),
 ];

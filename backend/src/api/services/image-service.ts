@@ -31,7 +31,11 @@ export default class ImageService extends BaseApi implements IService {
         try {
             const filterQuery = {}
             const projection = { settings: 0 }
-            return await this.applicationDB.getIntegrationModel().find(filterQuery, { projection })
+            // [BULGU DÜZELTMESİ, 2026-09-29] `find(filterQuery, { projection })` YANLIŞ sarmalanmıştı — mongoose'un
+            // ikinci argümanı DOĞRUDAN alan-seçim nesnesi bekler. Gerçek Mongo'da (mongodb-memory-server ile
+            // doğrulandı, bkz. tests/mongo-semantics/integrationProjectionShape.mongoSemantics.test.ts) bu HATA
+            // FIRLATMIYORDU, sessizce TÜM alanları (settings dahil) döndürüyordu — B4 gereksiz alan sızıntısı.
+            return await this.applicationDB.getIntegrationModel().find(filterQuery, projection)
         } catch (error) {
             throw error
         }
@@ -42,7 +46,8 @@ export default class ImageService extends BaseApi implements IService {
         try {
             const filterQuery = { _id: new ObjectId(_id) }
             let projection = { title: 1, _id: 0 }
-            return await this.clientDB.getProductModel().find(filterQuery, { projection })
+            // [BULGU DÜZELTMESİ, 2026-09-29] bkz. getIntegrations() üstündeki not — aynı yanlış sarmalama.
+            return await this.clientDB.getProductModel().find(filterQuery, projection)
 
         } catch (error) {
             throw error
