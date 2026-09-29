@@ -14,9 +14,10 @@
   fallback olarak index.html'de KORUNDU, hiçbir ekran bozulmaz.
 -->
 <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-  <rect x="0" y="0" width="32" height="32" rx="8" fill="#13255B"></rect>
-  <circle cx="16" cy="16" r="5" fill="#48A9A6"></circle>
-  <circle cx="16" cy="6.5" r="2.5" fill="#FFFFFF"></circle>
-  <circle cx="24.2" cy="20.8" r="2.5" fill="#FFFFFF"></circle>
-  <circle cx="7.8" cy="20.8" r="2.5" fill="#FFFFFF"></circle>
+  <rect x="0" y="0" width="32" height="32" rx="9" fill="#13255B"></rect>
+  <circle cx="18.5" cy="16" r="5" fill="#48A9A6" fill-opacity="0.22"></circle>
+  <path d="M20 9.5H13C10.8 9.5 9.5 10.8 9.5 13V19C9.5 21.2 10.8 22.5 13 22.5H20M9.5 16H15.5" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path>
+  <circle cx="18.5" cy="16" r="3" fill="#48A9A6"></circle>
+  <circle cx="22" cy="9.5" r="2.25" fill="#FFFFFF"></circle>
+  <circle cx="22" cy="22.5" r="2.25" fill="#FFFFFF"></circle>
 </svg>

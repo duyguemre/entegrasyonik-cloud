@@ -127,6 +127,15 @@ export const SCREENS: readonly ScreenDefinition[] = [
     key: 'adminPanel/EffectiveConfigView', slug: 'admin/effective-config', section: 'admin', order: 6,
     urlParams: [{ name: 'code', kind: 'enum', allowed: ['trendyol', 'hepsiburada', 'n11', 'pazarama', 'ideasoft', 'bizimhesap', '_engine'] }],
   },
+  // ADR-0018 Karar 2 "Konsol" (Aşama B) — "Entegrasyon uyum" (`platformAdmin`; YALNIZCA EKLEME). Menü kaydı
+  // (ApplicationDB `menus`, admin grubu) diğer admin ekranlarıyla AYNI gerekçeyle bu bulut görevinin kapsamı DIŞI;
+  // `menuSource:'registry'` + `minRole` altyapısı henüz UYGULANMADIĞI için kullanılmadı — görünürlük bugün
+  // `MenuService`'ten, erişim sınırı backend `platformAdmin` (OPERATION_POLICY) + `PlatformAdminGuard`'dan gelir.
+  // `urlParams` YOK: filtreler URL'ye yazılmaz (bulgu kimliği/konu anahtarı teknik de olsa derin bağlantı ihtiyacı yok).
+  {
+    key: 'adminPanel/ComplianceView', slug: 'admin/integration-compliance', section: 'admin', order: 7,
+    icon: 'mdi-shield-search', titleKey: 'menu.adminPanel.adminIntegrationCompliance',
+  },
   // ADR-0014 S4b: kayıt sonrası abonelik ekranı derin bağlantısı (`/subscription?plan=<kod>`). `plan` YALNIZCA
   // kapalı, izinli plan kodu kümesidir (registerIntent.ts; seed ile testle eşit) — PII/serbest metin YOK.
   { key: 'user/SubscriptionView', slug: 'subscription', urlParams: [{ name: 'plan', kind: 'enum', allowed: REGISTER_PLAN_CODES }], section: 'finance', order: 1 },
@@ -145,6 +154,13 @@ export const SCREENS: readonly ScreenDefinition[] = [
   // C1.5 (F-06) bildirim merkezi. Filtreler (tür/okunma) sekme içi durumdur, URL'ye yazılmaz → `urlParams` YOK.
   // Gerçek menü kaydı (ApplicationDB `menus`, kod `NotificationCenterView`, başlık `notifications`) yerel iştir.
   { key: 'NotificationCenterView', slug: 'notifications', section: 'general', order: 1, icon: 'mdi-bell-outline', titleKey: 'menu.notifications' },
+  // ADR-0015 B4-P0 (yeni ekranlar; yalnızca EKLEME). Menü görünürlüğü bugünkü gibi `MenuService`'ten gelir
+  // (ApplicationDB `menus` kaydı bu bulut görevinin kapsamı DIŞI — orkestratör/backend işi); `menuSource:'registry'`
+  // + `minRole` altyapısı henüz uygulanmadığı için KULLANILMADI. Bu ekranlar `urlParams` okumaz (PII/serbest metin yok).
+  // `titleKey`/`icon`: menüde henüz karşılığı yokken sunum yüzeylerinin (breadcrumb/palet) yedeği.
+  { key: 'AccountSecurityView', slug: 'account/security', icon: 'mdi-shield-account-outline', titleKey: 'menu.accountSecurity' },
+  { key: 'PrivacyDataView', slug: 'account/privacy', icon: 'mdi-shield-lock-outline', titleKey: 'menu.privacyData' },
+  { key: 'StockPolicyView', slug: 'catalog/stock-policy', section: 'catalog', order: 5, icon: 'mdi-scale-balance', titleKey: 'menu.stockPolicy' },
 ] as const
 
 /** URL'nin ilk segmenti hiçbir zaman bir ekran slug'ı OLAMAZ (ADR-0012 Karar 1 — başka uç noktalar/statikler ile çakışmasın). */

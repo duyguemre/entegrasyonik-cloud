@@ -6,8 +6,8 @@
  * yayılan senkron dalgası, pazaryerine giden kargo paketi, ilerleyen iade adımları. Kanal adı yok (renkli noktalar).
  *
  * Metinler pazarlama dilinde kısaltılmıştır ama her adım yayımlanmış bir yetenek kaydına bağlıdır (`cap`; kayıt yoksa
- * derleme hata verir) ve o kaydın söylediğinin ötesine geçmez (tests/home.test.ts). Sahneler aria-hidden ve
- * "Örnek görünüm" etiketlidir; sayılar örnektir. Adım başına bir sahne (`data-scene="story-step"`): görünür olunca
+ * derleme hata verir) ve o kaydın söylediğinin ötesine geçmez (tests/home.test.ts). Sahneler aria-hidden; sayılar
+ * örnektir — bunu bölüm girişindeki tek cümle söyler (S15-C deseni: sahne başına ayrı "örnek" etiketi yok). Adım başına bir sahne (`data-scene="story-step"`): görünür olunca
  * düğüm, çizgi, kart ve sahne parçaları sırayla belirir (scenes.css); döngüler yalnızca görünürken (scenes-loops.css).
  * Statik hâl (reduced-motion / durdurulmuş / JS'siz): her sahne son durumunu gösterir (sipariş listede, stok 11,
  * tüm kanallar güncel, paket pazaryerinde, iade adımları tamam).
@@ -15,6 +15,10 @@
  * S13-C (kullanıcı geri bildirimi: "beyaz kart ile animasyon arka planı arasında çok fazla kontrast"): bölüm artık
  * tek bir koyu sahnedir (`tone="stage"`). Kartlar koyu cam (yarı saydam yüzey + ince iç kenar ışığı + derin yumuşak
  * gölge), canlı sahne paneli kartın içine GÖMÜLÜ daha derin bir yüzeydir — beyaz/koyu sert geçişi yoktur.
+ *
+ * S15-B (renk uyumu): üç cam katman TEK renk ailesindedir (koyu lacivert + marka ikincil/teal), nötr gri/beyaz pus yok:
+ *   kart (`--story-card-*`: teal'e çalan yarı saydam yüzey, teal kenar ışığı) > sahne (`--story-scene-*`: aynı ailenin
+ *   bir ton daha derini) > öğeler (`--story-item-*`: bir ton açık teal cam, ince teal kenar, üst kenarda ince ışık).
  */
 import Section from '../Section.astro'
 import SectionHeading from './SectionHeading.astro'
@@ -103,8 +107,6 @@ const steps = [
             </div>
 
             <div class="viz" data-surface="dark" data-viz={s.key} aria-hidden="true">
-              <p class="viz__tag">Örnek görünüm</p>
-
               {s.key === 'incoming' && (
                 <div class="vin">
                   <ul class="vin__sources">
@@ -246,6 +248,16 @@ const steps = [
 
 <style>
   .story {
+    /* S15-B cam katman hiyerarşisi — kart > sahne > öğeler, tek renk ailesi (lacivert + teal). */
+    --story-card-tint: color-mix(in srgb, var(--ek-color-secondary) 7%, transparent);
+    --story-card-base: color-mix(in srgb, var(--site-stage-deep) 32%, transparent);
+    --story-card-edge: color-mix(in srgb, var(--ek-color-secondary) 34%, transparent);
+    --story-scene-bg: color-mix(in srgb, var(--site-stage-deep) 58%, transparent);
+    --story-scene-edge: color-mix(in srgb, var(--ek-color-secondary) 16%, transparent);
+    --story-item-bg: color-mix(in srgb, var(--ek-color-secondary) 10%, transparent);
+    --story-item-edge: color-mix(in srgb, var(--ek-color-secondary) 28%, transparent);
+    --story-item-light: color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
+    --story-item-skel: color-mix(in srgb, var(--ek-color-secondary) 24%, transparent);
     display: flex;
     flex-direction: column;
     margin: var(--ek-space-12) 0 0;
@@ -323,22 +335,17 @@ const steps = [
     border-radius: var(--site-radius-panel);
     background:
       radial-gradient(90% 120% at 0% 0%, color-mix(in srgb, var(--ek-color-secondary) 9%, transparent), transparent 60%) padding-box,
-      linear-gradient(
-          180deg,
-          color-mix(in srgb, var(--ek-color-background) 6%, transparent),
-          color-mix(in srgb, var(--site-stage-deep) 24%, transparent)
-        )
-        padding-box,
+      linear-gradient(180deg, var(--story-card-tint), var(--story-card-base)) padding-box,
       linear-gradient(
           160deg,
-          color-mix(in srgb, var(--ek-color-background) 26%, transparent),
-          color-mix(in srgb, var(--ek-color-background) 6%, transparent) 42%,
-          color-mix(in srgb, var(--ek-color-secondary) 30%, transparent)
+          var(--story-card-edge),
+          color-mix(in srgb, var(--ek-color-secondary) 8%, transparent) 42%,
+          color-mix(in srgb, var(--ek-color-secondary) 26%, transparent)
         )
         border-box;
     backdrop-filter: blur(var(--site-glass-blur));
     box-shadow:
-      inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 10%, transparent),
+      inset 0 var(--site-border-width) 0 var(--story-item-light),
       0 var(--ek-space-6) var(--ek-space-12) calc(var(--ek-space-6) * -1) color-mix(in srgb, var(--site-stage-deep) 80%, transparent);
     transition:
       box-shadow var(--ek-duration-base) var(--ek-easing-standard),
@@ -346,7 +353,7 @@ const steps = [
   }
   .story__card:hover {
     box-shadow:
-      inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 14%, transparent),
+      inset 0 var(--site-border-width) 0 var(--story-item-light),
       0 0 0 var(--site-border-width) color-mix(in srgb, var(--ek-color-secondary) 28%, transparent),
       0 var(--ek-space-8) var(--ek-space-16) calc(var(--ek-space-8) * -1) color-mix(in srgb, var(--ek-color-secondary) 26%, transparent);
   }
@@ -390,16 +397,16 @@ const steps = [
     flex-direction: column;
     justify-content: center;
     min-height: 14rem;
-    padding: var(--ek-space-10) var(--ek-space-5) var(--ek-space-6);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-background) 8%, transparent);
+    padding: var(--ek-space-6) var(--ek-space-5);
+    border: var(--site-border-width) solid var(--story-scene-edge);
     border-radius: var(--ek-radius-xl);
     /* Kartın içine gömülü, bir ton daha derin yüzey (ayrı bir "pencere" değil): kenarda sert geçiş yok. */
     background:
-      radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--ek-color-secondary) 14%, transparent), transparent 60%),
-      linear-gradient(180deg, color-mix(in srgb, var(--site-stage-deep) 55%, transparent), color-mix(in srgb, var(--site-stage-deep) 30%, transparent));
+      radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--ek-color-secondary) 12%, transparent), transparent 60%),
+      linear-gradient(180deg, var(--story-scene-bg), color-mix(in srgb, var(--site-stage-deep) 40%, transparent));
     box-shadow:
       inset 0 var(--site-border-width) var(--ek-space-3) color-mix(in srgb, var(--site-stage-deep) 60%, transparent),
-      inset 0 calc(var(--site-border-width) * -1) 0 color-mix(in srgb, var(--ek-color-background) 6%, transparent);
+      inset 0 calc(var(--site-border-width) * -1) 0 var(--story-scene-edge);
     color: var(--site-text-on-dark-body);
     font-size: var(--ek-font-size-sm);
   }
@@ -425,16 +432,6 @@ const steps = [
     border-radius: var(--ek-radius-full);
     background: radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-secondary) 18%, transparent), transparent);
   }
-  .viz__tag {
-    position: absolute;
-    inset-block-start: var(--ek-space-3);
-    inset-inline-start: var(--ek-space-4);
-    color: var(--site-text-on-dark-meta);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
   .vdot {
     flex: none;
     width: var(--ek-space-2);
@@ -443,10 +440,12 @@ const steps = [
     background: var(--chan, var(--site-accent));
     box-shadow: 0 0 var(--ek-space-2) color-mix(in srgb, var(--chan, var(--site-accent)) 70%, transparent);
   }
+  /* Öğe camı: sahneden bir ton açık, aynı teal ailesi; üst kenarda ince ışık. */
   .viz :is(.vin__src, .vin__inbox, .vres__counter, .vres__chip, .vship__checks li, .vret__card, .vret__steps) {
-    border: var(--site-border-width) solid var(--site-glass-border);
+    border: var(--site-border-width) solid var(--story-item-edge);
     border-radius: var(--ek-radius-lg);
-    background: var(--site-glass-bg);
+    background: var(--story-item-bg);
+    box-shadow: inset 0 var(--site-border-width) 0 var(--story-item-light);
   }
 
   /* 1) Sipariş gelir: kaynaklar -> akış -> sipariş merkezi */
@@ -516,7 +515,6 @@ const steps = [
     gap: var(--ek-space-2);
     padding: var(--ek-space-3);
     min-width: 0;
-    background: color-mix(in srgb, var(--ek-color-background) 10%, transparent);
   }
   .vin__inbox-title {
     display: inline-flex;
@@ -540,7 +538,7 @@ const steps = [
     gap: var(--ek-space-2);
     padding: var(--ek-space-1) var(--ek-space-2);
     border-radius: var(--ek-radius-md);
-    background: color-mix(in srgb, var(--ek-color-background) 6%, transparent);
+    background: color-mix(in srgb, var(--ek-color-secondary) 6%, transparent);
   }
   .vin__order:first-child {
     background: color-mix(in srgb, var(--ek-color-secondary) 18%, transparent);
@@ -550,7 +548,7 @@ const steps = [
     flex: 1;
     height: var(--ek-space-1);
     border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-background) 18%, transparent);
+    background: var(--story-item-skel);
   }
   .vin__pill {
     color: var(--site-text-on-dark-meta);
@@ -605,7 +603,7 @@ const steps = [
     overflow: hidden;
     height: calc(var(--ek-space-1) * 1.5);
     border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-background) 14%, transparent);
+    background: var(--story-item-skel);
   }
   .vres__fill {
     display: block;
@@ -747,8 +745,9 @@ const steps = [
     width: var(--ek-space-10);
     height: var(--ek-space-10);
     border-radius: var(--ek-radius-full);
-    border: var(--site-border-width) solid var(--site-glass-border);
-    background: var(--site-glass-bg);
+    border: var(--site-border-width) solid var(--story-item-edge);
+    background: var(--story-item-bg);
+    box-shadow: inset 0 var(--site-border-width) 0 var(--story-item-light);
     color: var(--site-accent);
   }
   .vship__end--to .vdot {
@@ -825,7 +824,7 @@ const steps = [
     flex: 1;
     height: var(--ek-space-1);
     border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-background) 18%, transparent);
+    background: var(--story-item-skel);
   }
   .vret__steps {
     position: relative;
@@ -837,7 +836,7 @@ const steps = [
     inset-inline: 16.6%;
     height: calc(var(--site-border-width) * 2);
     border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-background) 16%, transparent);
+    background: var(--story-item-skel);
   }
   .vret__progress {
     display: block;

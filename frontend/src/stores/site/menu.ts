@@ -26,6 +26,8 @@ export const useMenuStore = defineStore('menu', () => {
     ['adminPanel/IntegrationSettingsView', shallowRef(defineAsyncComponent(() => import('@/views/secure/adminPanel/integrations/IntegrationSettingsView.vue')))],
     ['adminPanel/EngineSettingsView', shallowRef(defineAsyncComponent(() => import('@/views/secure/adminPanel/integrations/EngineSettingsView.vue')))],
     ['adminPanel/EffectiveConfigView', shallowRef(defineAsyncComponent(() => import('@/views/secure/adminPanel/integrations/EffectiveConfigView.vue')))],
+    // ADR-0018 Karar 2 "Konsol" — Entegrasyon uyum (`platformAdmin`); menü kaydı bu görevin kapsamı dışı (bkz. `screens.ts`).
+    ['adminPanel/ComplianceView', shallowRef(defineAsyncComponent(() => import('@/views/secure/adminPanel/integrations/ComplianceView.vue')))],
 
     ['productDefinitions/TEST', shallowRef(defineAsyncComponent(() => import('@/views/secure/productDefinitions/TEST.vue')))],
 
@@ -79,6 +81,12 @@ export const useMenuStore = defineStore('menu', () => {
     // Gerçek menü ağacı kaydı (ApplicationDB `menus`) bu bulut görevinin kapsamı dışı — B4-P0 ile aynı emsal.
     ['integrations/IntegrationHealthView', shallowRef(defineAsyncComponent(() => import('@/views/secure/integrations/IntegrationHealthView.vue')))],
     ['AuditLogView', shallowRef(defineAsyncComponent(() => import('@/views/secure/settings/AuditLogView.vue')))],
+
+    // ADR-0015 B4-P0 — yeni ekranlar (yalnızca EKLEME; `screens.ts` ile birebir anahtar). Gerçek menü ağacı kaydı
+    // (ApplicationDB `menus`) bu bulut görevinin kapsamı dışı — ADR-0020 ekranlarıyla aynı emsal (yukarıda).
+    ['AccountSecurityView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/AccountSecurityView.vue')))],
+    ['PrivacyDataView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/PrivacyDataView.vue')))],
+    ['StockPolicyView', shallowRef(defineAsyncComponent(() => import('@/views/secure/integrations/StockPolicyView.vue')))],
 
   ]);
 
