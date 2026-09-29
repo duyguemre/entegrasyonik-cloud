@@ -29,7 +29,7 @@ test.describe('ADR-0015 B4-P1c — N7 Entegrasyon sağlığı', () => {
     const kpis = root.getByRole('region', { name: 'Özet' })
     await expect(kpis.getByText('1 / 5')).toBeVisible()
     await expect(kpis.getByText('168', { exact: true })).toBeVisible() // 42 + 6 + 120
-    await expect(kpis.getByText('13 hata · başarı %92,3')).toBeVisible()
+    await expect(kpis).toContainText('13 hata · başarı %92,3') // açıklama <480px'te görsel olarak gizli (metin DOM'da)
 
     const titles = root.locator('.ek-health-card h3')
     await expect(titles).toHaveText(['Hepsiburada', 'Trendyol', 'N11', 'Bizimhesap', 'Pazarama'])

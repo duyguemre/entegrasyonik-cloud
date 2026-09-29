@@ -135,6 +135,13 @@ export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'integrations/ShippingView', slug: 'integrations/shipping', section: 'integrations', order: 2 },
   { key: 'integrations/EInvoiceView', slug: 'integrations/einvoice', section: 'integrations', order: 3 },
   { key: 'integrations/ErpView', slug: 'integrations/erp', section: 'integrations', order: 4 },
+  // ADR-0015 B4-P1c (yeni ekranlar; yalnızca EKLEME). Menü görünürlüğü bugünkü gibi `MenuService`'ten gelir (ApplicationDB
+  // `menus` kaydı bu bulut görevinin kapsamı DIŞI — B4-P0 ile aynı emsal); `menuSource:'registry'` + `minRole` altyapısı henüz
+  // uygulanmadığı için KULLANILMADI. İkisi de admin kademesidir (backend `capabilities/domains/*` minTier:'admin'); veri
+  // erişiminin sınırı backend RBAC'tir. `urlParams` YOK: filtreler (kullanıcı kimliği/tarih) URL'ye yazılmaz.
+  // `section:'settings'` henüz `sections.ts`'te tanımlı değil → sunum yüzeyleri "Diğer"e düşürür (gizlemez).
+  { key: 'integrations/IntegrationHealthView', slug: 'integrations/health', section: 'integrations', order: 6, icon: 'mdi-heart-pulse', titleKey: 'menu.integrationHealth' },
+  { key: 'AuditLogView', slug: 'settings/audit-log', section: 'settings', order: 0, icon: 'mdi-clipboard-text-clock-outline', titleKey: 'menu.auditLog' },
 ] as const
 
 /** URL'nin ilk segmenti hiçbir zaman bir ekran slug'ı OLAMAZ (ADR-0012 Karar 1 — başka uç noktalar/statikler ile çakışmasın). */
