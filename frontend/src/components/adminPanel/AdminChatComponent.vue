@@ -3,54 +3,41 @@
     @cancel="close" @close="close" title="Destek Talebi Detayı" :subtitle="ticket ? `TKT-${ticket.ticketNumber}` : 'Detay'"
     icon="mdi-face-agent" :color="getStatusColor(ticket?.status)" cancelText="Kapat" maxWidth="800px" :showFooter="false">
 
-    <div v-if="ticket" class="pa-4 ticket-container">
-      <!-- Ticket Header Info -->
-      <div class="d-flex align-center flex-wrap gap-4 mb-6 border-b pb-4">
-        <div class="flex-grow-1">
-          <div class="d-flex align-center gap-2 mb-2">
-            <v-chip size="small" :color="getStatusColor(ticket.status)" variant="flat" class="font-weight-black">
-              {{ ticket.status }}
-            </v-chip>
-            <v-chip size="small" :color="getPriorityColor(ticket.priority)" variant="tonal" class="font-weight-black">
-              {{ ticket.priority }}
-            </v-chip>
-            <v-chip size="small" color="slate-100" class="font-weight-black color-slate-700">
-              {{ ticket.type }}
-            </v-chip>
-          </div>
-          <h3 class="text-h6 font-weight-black color-slate-900">{{ ticket.subject }}</h3>
-          <div class="text-caption font-weight-medium color-slate-500">
-            Oluşturulma: {{ formatDate(ticket.createdDate) }}
-          </div>
+    <div v-if="ticket" class="ticket-container">
+      <!-- Talep başlığı -->
+      <div class="ticket-header">
+        <div class="ticket-chips">
+          <EkStatusChip :tone="statusTone(ticket.status)" :label="statusLabel(ticket.status)" />
+          <EkStatusChip :tone="priorityTone(ticket.priority)" :label="ticket.priority" />
+          <EkStatusChip tone="neutral" :label="ticket.type" />
         </div>
+        <h3 class="ticket-subject">{{ ticket.subject }}</h3>
+        <div class="ticket-meta">Oluşturulma: {{ formatDate(ticket.createdDate) }}</div>
       </div>
 
-      <!-- Chat History -->
-      <div class="chat-history mb-6 pa-2 bg-slate-50 rounded-lg border" ref="chatBox" role="log" tabindex="0"
-        aria-live="polite" aria-label="Talep mesaj geçmişi">
-        <div v-for="(msg, info) in ticket.messages" :key="info" 
-             :class="['msg-wrapper d-flex mb-4', msg.senderType === 'SUPPORT' ? 'justify-end' : 'justify-start']">
-          
-          <div :class="['msg-bubble pa-3 rounded-lg', msg.senderType === 'SUPPORT' ? 'bg-indigo-lighten-5 border-indigo-soft' : 'bg-white border']">
-            <div class="d-flex align-center justify-space-between gap-4 mb-1">
-              <span class="text-micro font-weight-black" :class="msg.senderType === 'SUPPORT' ? 'text-indigo' : 'text-slate-600'">
-                {{ msg.senderName }}
-              </span>
-              <span class="text-micro color-slate-400">{{ formatTime(msg.date) }}</span>
+      <!-- Mesaj geçmişi -->
+      <div class="chat-history" ref="chatBox" role="log" tabindex="0" aria-live="polite"
+        aria-label="Talep mesaj geçmişi">
+        <div v-for="(msg, info) in ticket.messages" :key="info"
+          :class="['msg-wrapper', msg.senderType === 'SUPPORT' ? 'msg-wrapper--support' : 'msg-wrapper--customer']">
+          <div :class="['msg-bubble', msg.senderType === 'SUPPORT' ? 'msg-bubble--support' : 'msg-bubble--customer']">
+            <div class="msg-head">
+              <span class="msg-sender">{{ msg.senderName }}</span>
+              <span class="msg-time">{{ formatTime(msg.date) }}</span>
             </div>
-            <div class="text-body-2 color-slate-900">{{ msg.content }}</div>
+            <div class="msg-content">{{ msg.content }}</div>
           </div>
         </div>
       </div>
 
-      <!-- Reply Section -->
+      <!-- Yanıt alanı -->
       <div class="reply-section">
         <v-textarea v-model="replyText" label="Cevabınız..." variant="outlined" density="compact"
-          hide-details class="customTextField mb-4" placeholder="Çözüm veya bilgi iletiniz..." 
-          rows="3" bg-color="white"></v-textarea>
+          hide-details class="customTextField" placeholder="Çözüm veya bilgi iletiniz..."
+          rows="3"></v-textarea>
 
-        <div class="d-flex justify-end gap-2">
-          <v-btn flat color="primary" prepend-icon="mdi-send" class="premium-save-btn px-6 font-weight-black"
+        <div class="reply-actions">
+          <v-btn flat color="primary" prepend-icon="mdi-send" class="px-6"
             :disabled="!replyText.trim() || loading" :loading="loading" @click="submitReply">
             CEVAPLA VE GÖNDER
           </v-btn>
@@ -63,6 +50,9 @@
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue';
 import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue';
+import EkStatusChip from '@/components/ds/EkStatusChip.vue';
+import { formatDate, formatDateTime } from '@/composables/format';
+import type { StatusTone } from '@/design/status-map';
 
 const props = defineProps({
   modelValue: { type: Boolean, required: true },
@@ -103,25 +93,43 @@ function submitReply() {
   replyText.value = '';
 }
 
-const formatDate = (date: any) => date ? new Date(date).toLocaleDateString('tr-TR') : '-';
-const formatTime = (date: any) => date ? new Date(date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '';
+// Saat: mesaj balonunda yalnızca gün içi zaman yeterli; tarih+saat biçimlendiricisinden saat kısmı alınır.
+const formatTime = (date: any) => (date ? formatDateTime(date).split(' ')[1] ?? '' : '');
 
+const STATUS_LABELS: Record<string, string> = {
+  OPEN: 'AÇIK',
+  IN_PROGRESS: 'İŞLEMDE',
+  RESOLVED: 'ÇÖZÜLDÜ',
+  CLOSED: 'KAPALI',
+};
+const statusLabel = (status: string) => STATUS_LABELS[status] || status;
+
+const statusTone = (status: string): StatusTone => {
+  switch (status) {
+    case 'OPEN': return 'danger';
+    case 'IN_PROGRESS': return 'warning';
+    case 'RESOLVED': return 'success';
+    case 'CLOSED': return 'neutral';
+    default: return 'info';
+  }
+};
+
+const priorityTone = (priority: string): StatusTone => {
+  switch (priority) {
+    case 'URGENT': return 'danger';
+    case 'HIGH': return 'warning';
+    case 'LOW': return 'neutral';
+    default: return 'info';
+  }
+};
+
+// Diyalog başlık rengi (ActionDialogComponent `color` prop'u Vuetify tema adı bekler).
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'OPEN': return 'error';
     case 'IN_PROGRESS': return 'warning';
     case 'RESOLVED': return 'success';
     case 'CLOSED': return 'passiveColor';
-    default: return 'info';
-  }
-};
-
-const getPriorityColor = (priority: string) => {
-  switch (priority) {
-    case 'URGENT': return 'error';
-    case 'HIGH': return 'orange';
-    case 'MEDIUM': return 'info';
-    case 'LOW': return 'slate-400';
     default: return 'info';
   }
 };
@@ -132,6 +140,35 @@ const getPriorityColor = (priority: string) => {
   max-height: 85vh;
   display: flex;
   flex-direction: column;
+  gap: var(--ek-space-4);
+  padding: var(--ek-space-4);
+}
+
+.ticket-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-2);
+  padding-bottom: var(--ek-space-4);
+  border-bottom: 1px solid var(--ek-color-border-default);
+}
+
+.ticket-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ek-space-2);
+}
+
+.ticket-subject {
+  margin: 0;
+  font-size: var(--ek-font-size-lg);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-strong);
+}
+
+.ticket-meta {
+  font-size: var(--ek-font-size-sm);
+  color: var(--ek-color-content-muted);
 }
 
 .chat-history {
@@ -141,37 +178,78 @@ const getPriorityColor = (priority: string) => {
   max-height: 450px;
   display: flex;
   flex-direction: column;
+  gap: var(--ek-space-3);
+  padding: var(--ek-space-3);
+  background-color: var(--ek-color-surface-muted);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-lg);
+}
+
+.msg-wrapper {
+  display: flex;
+
+  &--support { justify-content: flex-end; }
+  &--customer { justify-content: flex-start; }
 }
 
 .msg-bubble {
   max-width: 80%;
-  box-shadow: var(--ek-shadow-sm);
-  position: relative;
+  padding: var(--ek-space-3);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-lg);
+
+  &--customer { background-color: var(--ek-color-surface); }
+  &--support { background-color: var(--ek-color-info-subtle); }
 }
 
-.bg-slate-50 { background-color: var(--ek-color-surface-muted) !important; }
-/* Destek (SUPPORT) balonu: indigo-50/indigo-200 tonları — token setinde TAM eşleşen karşılığı yok
-   (ADR-0011 Açık Soru 4: yakın-ama-farklı renk ZORLANMADI); canlı değerler korundu. */
-.bg-indigo-lighten-5 { background-color: #eef2ff !important; }
-.border-indigo-soft { border: 1px solid #c7d2fe !important; }
-.color-slate-900 { color: var(--ek-color-content-strong); }
-.color-slate-700 { color: var(--ek-color-content-default); }
-.color-slate-500 { color: var(--ek-color-content-muted); }
-/* Yalnızca METİN (mesaj zamanı) için kullanılıyor: `content-subtle` beyazda 2,56:1 ile AA'yı
-   geçemez ve token belgesi metin için kullanımı yasaklar → `content-muted` (4,76:1). */
-.color-slate-400 { color: var(--ek-color-content-muted); }
-/* Destek balonunun indigo zemininde `content-muted` ~4,25:1'de kalıp AA'yı geçemiyor → `content-default`. */
-.bg-indigo-lighten-5 .color-slate-400 { color: var(--ek-color-content-default); }
-.text-micro { font-size: var(--ek-font-size-xs); }
+.msg-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ek-space-4);
+  margin-bottom: var(--ek-space-1);
+  font-size: var(--ek-font-size-xs);
+}
 
-.gap-2 { gap: var(--ek-space-2); }
-.gap-4 { gap: var(--ek-space-4); }
+.msg-sender {
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-default);
+}
+
+// Yalnızca METİN: `content-subtle` AA'yı geçemez → `content-default` (info-subtle zeminde de okunur).
+.msg-time {
+  color: var(--ek-color-content-default);
+}
+
+.msg-content {
+  font-size: var(--ek-font-size-sm);
+  color: var(--ek-color-content-strong);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.reply-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-4);
+}
+
+.reply-section :deep(.v-field-label) {
+  color: var(--ek-color-content-muted) !important;
+  opacity: 1 !important;
+}
+
+.reply-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ek-space-2);
+}
 
 .chat-history::-webkit-scrollbar {
   width: 6px;
 }
 .chat-history::-webkit-scrollbar-thumb {
   background: var(--ek-color-border-default);
-  border-radius: 10px;
+  border-radius: var(--ek-radius-full);
 }
 </style>
