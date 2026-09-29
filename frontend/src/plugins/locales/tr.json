@@ -1102,5 +1102,42 @@
       "admin": "Yönetim",
       "other": "Diğer"
     }
+  },
+  "definitions": {
+    "product": {
+      "create": {
+        "title": "Yeni Ürün",
+        "description": "Kategori, ürün bilgisi, varyant ve detayları adım adım tamamlayın."
+      },
+      "update": {
+        "title": "Ürünü Düzenle",
+        "description": "Ürün bilgilerini, varyantlarını ve fiyatlarını güncelleyin."
+      }
+    },
+    "category": {
+      "title": "Kategori Tanımları",
+      "description": "Kategorilerinizi pazaryeri kategorileriyle eşleştirin."
+    },
+    "brand": {
+      "title": "Marka Tanımları"
+    },
+    "hashtag": {
+      "title": "Etiket Tanımları"
+    },
+    "option": {
+      "title": "Seçenek Tanımları"
+    },
+    "customer": {
+      "title": "Müşteri Tanımları"
+    },
+    "invoice": {
+      "title": "Fatura Tanımları"
+    },
+    "order": {
+      "title": "Sipariş Tanımları"
+    },
+    "return": {
+      "title": "İade Tanımları"
+    }
   }
 }
