@@ -4,9 +4,10 @@
   ADR-0015 B5-3 — GÖRSEL KATMAN (bkz. e2e/specs/notification-drawer.spec.ts). API sözleşmesi/
   davranış DEĞİŞMEDİ: `NotificationService` (GET), `NotificationService/markAsRead|delete`
   çağrıları, id'siz (toplu) eylemlerin `fetchNotifications()`'ı yan etki olarak tetiklemesi AYNEN
-  korundu. Karakterizasyon notu (şüpheli davranış, DÜZELTİLMEDİ — final rapora yazıldı):
-  `notificationDrawer` store'unun `startPolling()`'i hiçbir yerden çağrılmıyor — çekmece ilk
-  açıldığında veri OTOMATİK YÜKLENMİYOR (yalnızca toplu eylemler tetikliyor).
+  korundu. C1.5 (F-06) bilinçli değişiklik: eski karakterizasyon notundaki "çekmece açılınca veri
+  yüklenmiyor" davranışı DÜZELTİLDİ — tam liste artık çekmece AÇILINCA çekilir (store `drawer`
+  izleyicisi); üst bar rozeti ayrı, hafif `getUnreadCount` yoklamasıyla beslenir. "Detayları Gör"
+  yalnız uygulama içi yolda görünür (dış URL açılmaz); altta "Tümünü gör" → bildirim merkezi.
 
   Renkli ikon kutuları/pastel zeminler (Karar 1.1 "renkli ikon kutuları... yasaktır") tek anlamsal
   palete (success/warning/danger/info/neutral, `EkStatusChip` ile AYNI ton kümesi) taşındı. `mode`
@@ -141,7 +142,7 @@
               </div>
 
               <div class="d-flex align-center mt-4 pt-3 ek-notification-card__footer">
-                <v-btn v-if="item.actionUrl" :to="item.actionUrl" size="small" color="primary" variant="tonal"
+                <v-btn v-if="internalActionPath(item.actionUrl)" :to="internalActionPath(item.actionUrl)" size="small" color="primary" variant="tonal"
                   @click="notificationStore.drawer = false">
                   Detayları Gör
                 </v-btn>
@@ -159,16 +160,32 @@
         </div>
       </v-card>
     </div>
+
+    <div v-if="centerLink" class="ek-notification-drawer__footer flex-shrink-0">
+      <EkButton block tone="secondary" trailing-icon="mdi-arrow-right" @click="openCenter">Tümünü gör</EkButton>
+    </div>
   </v-navigation-drawer>
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue'
+import { computed, inject } from 'vue'
 import { useNotificationDrawerStore } from '@/stores/notificationDrawer'
 import { PLATFORM_PROCESS_LABELS, PLATFORM_PROCESS_COLORS, PLATFORM_PROCESS } from '@/types/PlatformProcess';
 import EkEmptyState from '@/components/ds/EkEmptyState.vue'
 import EkStatusChip from '@/components/ds/EkStatusChip.vue'
+import EkButton from '@/components/ds/EkButton.vue'
+import { formatRelative } from '@/composables/format'
+import { internalActionPath } from '@/types/NotificationTypes'
 const notificationStore = useNotificationDrawerStore()
+const eventBus: any = inject('eventBus', undefined)
+const menuStore: any = inject('useMenuStore', undefined)
+
+// Bildirim merkezi yalnız menüde (MenuService) kayıtlıysa önerilir — erişimi olmayan ekrana bağlantı verilmez.
+const centerLink = computed(() => menuStore?.getMenuLinkWithCode?.('NotificationCenterView'))
+function openCenter() {
+  notificationStore.drawer = false
+  eventBus?.emit('openTab', centerLink.value)
+}
 
 const drawer = computed({
   get: () => notificationStore.drawer,
@@ -205,11 +222,8 @@ const severityTone = (severity: string): SeverityTone => {
   return tones[severity] || 'info'
 }
 
-const formatTime = (dateStr: string) => {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-}
+// C1.5: tarayıcı yereline bağlı "10:29 PM" yerine uygulamanın tek biçimi ("5 dk önce").
+const formatTime = (dateStr: string) => (dateStr ? formatRelative(dateStr) : '')
 </script>
 
 <style scoped>
@@ -232,6 +246,15 @@ const formatTime = (dateStr: string) => {
 .ek-notification-drawer__subtitle {
   font-size: var(--ek-font-size-xs);
   color: var(--ek-color-content-muted);
+}
+
+.ek-notification-drawer__footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  padding: var(--ek-space-3) var(--ek-space-4);
+  border-top: 1px solid var(--ek-color-border-default);
+  background: var(--ek-color-surface);
 }
 
 .ek-notification-drawer__body {

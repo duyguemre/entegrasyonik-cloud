@@ -1,9 +1,21 @@
 {
+  "notificationCenter": {
+    "types": {
+      "STOCK_ALERT": "Stok uyarısı",
+      "SYSTEM": "Sistem",
+      "ORDER": "Sipariş",
+      "BATCH_PROCESS": "Toplu işlem",
+      "IMPORT_READY": "İçe aktarma",
+      "EXPORT_READY": "Dışa aktarma",
+      "INFO": "Bilgi"
+    }
+  },
   "language": {
     "en": "English",
     "tr": "Türkçe"
   },
   "menu": {
+    "notifications": "Bildirimler",
     "test": "Test Sayfası",
     "mainpage": "Anasayfa",
     "system": "Sistem",

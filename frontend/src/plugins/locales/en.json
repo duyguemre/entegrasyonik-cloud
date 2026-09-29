@@ -1,4 +1,15 @@
 {
+  "notificationCenter": {
+    "types": {
+      "STOCK_ALERT": "Stock alert",
+      "SYSTEM": "System",
+      "ORDER": "Order",
+      "BATCH_PROCESS": "Batch process",
+      "IMPORT_READY": "Import",
+      "EXPORT_READY": "Export",
+      "INFO": "Info"
+    }
+  },
   "language": {
     "en": "English",
     "tr": "Türkçe"
@@ -6,6 +17,7 @@
   "menu": {
     "integrationHealth": "Integration Health",
     "auditLog": "Audit Log",
+    "notifications": "Notifications",
     "profile" :"Profile",
     "change_password" :"Change Password",
     "roles" :"Roles",

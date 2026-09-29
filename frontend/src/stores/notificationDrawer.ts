@@ -1,8 +1,21 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
 import useRestApi from '@/composables/restapi'
 import logger from '@/composables/logger'
 import { registerStoreReset } from '@/stores/resetRegistry'
+
+/**
+ * Rozet (okunmamış sayısı) yoklama aralığı.
+ * C1.5 (F-06): eskiden (tasarlanan ama hiç başlatılmayan) 10 sn'lik TAM LİSTE polling'i vardı;
+ * artık yalnız `NotificationService/getUnreadCount` (tek `countDocuments`) yoklanır. Aralık 30 sn:
+ * rozet "yakın gerçek zamanlı" kalır, sekme başına istek sayısı 3'te 1'e iner; sekme görünür hale
+ * geldiğinde ve her okundu/sil eyleminden sonra sayım ANINDA tazelendiği için gecikme yalnız arka
+ * planda yeni bildirim üretildiğinde hissedilir. Belge gizliyken (document.hidden) zamanlayıcı DURUR.
+ */
+export const UNREAD_POLL_MS = 30_000
+
+/** Liste isteği üst sınırı (backend `clampLimit` MAX_PAGE_LIMIT = 200). */
+export const NOTIFICATION_LIST_LIMIT = 200
 
 export const useNotificationDrawerStore = defineStore('notificationDrawer', () => {
   const restApi = useRestApi()
@@ -14,6 +27,7 @@ export const useNotificationDrawerStore = defineStore('notificationDrawer', () =
   const isPollingActive = ref(false)
   const loading = ref(false)
   let pollTimer: ReturnType<typeof setInterval> | undefined
+  let visibilityBound = false
 
   // --- GETTERS ---
   const getDrawer = computed(() => drawer.value)
@@ -28,6 +42,11 @@ export const useNotificationDrawerStore = defineStore('notificationDrawer', () =
   function toggleDrawer() {
     drawer.value = !drawer.value
   }
+
+  // C1.5: tam liste YALNIZ çekmece açıldığında çekilir (rozet sayımı ayrı, hafif uçtan gelir).
+  watch(drawer, (open) => {
+    if (open) fetchNotifications()
+  })
 
   /**
    * Bildirimleri backend'den çeker
@@ -47,29 +66,66 @@ export const useNotificationDrawerStore = defineStore('notificationDrawer', () =
   }
 
   /**
-   * Polling Mekanizması (10 saniyede bir çalışır)
+   * Yalnız okunmamış sayısını çeker (üst bar rozeti). Hata/geçersiz yanıtta mevcut değer korunur.
+   */
+  async function fetchUnreadCount() {
+    try {
+      const response: any = await restApi.post('NotificationService/getUnreadCount', {})
+      if (response?.result && typeof response.unreadCount === 'number') {
+        unreadCount.value = response.unreadCount
+      }
+    } catch (error) {
+      logger.error('Okunmamış bildirim sayısı alınamadı', { module: 'notificationDrawer', op: 'fetchUnreadCount', error })
+    }
+  }
+
+  function clearTimer() {
+    if (pollTimer !== undefined) {
+      clearInterval(pollTimer)
+      pollTimer = undefined
+    }
+  }
+
+  function armTimer() {
+    clearTimer()
+    pollTimer = setInterval(fetchUnreadCount, UNREAD_POLL_MS)
+  }
+
+  function onVisibilityChange() {
+    if (!isPollingActive.value) return
+    if (document.hidden) {
+      clearTimer()
+    } else {
+      fetchUnreadCount()
+      armTimer()
+    }
+  }
+
+  /**
+   * Rozet yoklaması: ilk sayım hemen, sonra `UNREAD_POLL_MS`'de bir; belge gizliyken durur.
    */
   function startPolling() {
     if (isPollingActive.value) return
 
     isPollingActive.value = true
-    fetchNotifications() // İlk yükleme
-
-    pollTimer = setInterval(() => {
-      // Kullanıcı sekmeyi arka plana attıysa boşuna istek atma (Performans)
-      if (document.visibilityState === 'visible') {
-        fetchNotifications()
-      }
-    }, 10000) // 10 saniye polling süresi
+    if (!visibilityBound) {
+      document.addEventListener('visibilitychange', onVisibilityChange)
+      visibilityBound = true
+    }
+    if (!document.hidden) {
+      fetchUnreadCount()
+      armTimer()
+    }
   }
 
   /**
    * Polling'i durdurur (R9b: çıkışta interval sızmasın; eskiden tutamaç saklanmadığı için durdurulamıyordu).
    */
   function stopPolling() {
-    if (pollTimer !== undefined) {
-      clearInterval(pollTimer)
-      pollTimer = undefined
+    clearTimer()
+    if (visibilityBound) {
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      visibilityBound = false
     }
     isPollingActive.value = false
   }
@@ -83,38 +139,51 @@ export const useNotificationDrawerStore = defineStore('notificationDrawer', () =
     loading.value = false
   })
 
+  /** Değişiklik sonrası: çekmece açıksa listesi (sayım dahil), değilse yalnız rozet sayımı tazelenir. */
+  const refreshAfterChange = () => (drawer.value ? fetchNotifications() : fetchUnreadCount())
+
+  /** Tekil kimlik, kimlik listesi ya da (boş) "tümü" → mevcut uç gövdesi. */
+  const idsPayload = (id?: string | string[]) => {
+    const ids = Array.isArray(id) ? id : id ? [id] : []
+    return ids.length ? { notificationIds: ids } : { all: true }
+  }
+
   /**
-   * Okundu İşaretleme (Tekil veya Toplu)
+   * Okundu İşaretleme (Tekil, seçili liste veya Toplu)
    * @param id Gönderilmezse hepsini okundu yapar
+   * @returns istek başarılıysa `true`
    */
-  async function markAsRead(id?: string) {
+  async function markAsRead(id?: string | string[]): Promise<boolean> {
     try {
-      const payload = id ? { notificationIds: [id] } : { all: true }
-      const response = await restApi.post('NotificationService/markAsRead', payload)
+      const response = await restApi.post('NotificationService/markAsRead', idsPayload(id))
 
       if (response?.result) {
-        await fetchNotifications()
+        await refreshAfterChange()
+        return true
       }
     } catch (error) {
       logger.error('Bildirim okundu işaretlenemedi', { module: 'notificationDrawer', op: 'markAsRead', error })
     }
+    return false
   }
 
   /**
-   * Bildirim Silme (Tekil veya Toplu)
+   * Bildirim Silme (Tekil, seçili liste veya Toplu)
    * @param id Gönderilmezse hepsini siler
+   * @returns istek başarılıysa `true`
    */
-  async function deleteNotification(id?: string) {
+  async function deleteNotification(id?: string | string[]): Promise<boolean> {
     try {
-      const payload = id ? { notificationIds: [id] } : { all: true }
-      const response = await restApi.post('NotificationService/delete', payload)
+      const response = await restApi.post('NotificationService/delete', idsPayload(id))
 
       if (response?.result) {
-        await fetchNotifications()
+        await refreshAfterChange()
+        return true
       }
     } catch (error) {
       logger.error('Bildirim silinemedi', { module: 'notificationDrawer', op: 'deleteNotification', error })
     }
+    return false
   }
 
   return {
@@ -129,6 +198,7 @@ export const useNotificationDrawerStore = defineStore('notificationDrawer', () =
     startPolling,
     stopPolling,
     fetchNotifications,
+    fetchUnreadCount,
     markAsRead,
     deleteNotification
   }

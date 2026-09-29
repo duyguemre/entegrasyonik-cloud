@@ -142,6 +142,9 @@ export const SCREENS: readonly ScreenDefinition[] = [
   // `section:'settings'` henüz `sections.ts`'te tanımlı değil → sunum yüzeyleri "Diğer"e düşürür (gizlemez).
   { key: 'integrations/IntegrationHealthView', slug: 'integrations/health', section: 'integrations', order: 6, icon: 'mdi-heart-pulse', titleKey: 'menu.integrationHealth' },
   { key: 'AuditLogView', slug: 'settings/audit-log', section: 'settings', order: 0, icon: 'mdi-clipboard-text-clock-outline', titleKey: 'menu.auditLog' },
+  // C1.5 (F-06) bildirim merkezi. Filtreler (tür/okunma) sekme içi durumdur, URL'ye yazılmaz → `urlParams` YOK.
+  // Gerçek menü kaydı (ApplicationDB `menus`, kod `NotificationCenterView`, başlık `notifications`) yerel iştir.
+  { key: 'NotificationCenterView', slug: 'notifications', section: 'general', order: 1, icon: 'mdi-bell-outline', titleKey: 'menu.notifications' },
 ] as const
 
 /** URL'nin ilk segmenti hiçbir zaman bir ekran slug'ı OLAMAZ (ADR-0012 Karar 1 — başka uç noktalar/statikler ile çakışmasın). */
