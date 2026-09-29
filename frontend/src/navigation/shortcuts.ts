@@ -47,7 +47,8 @@ export const SHORTCUTS: readonly ShortcutDefinition[] = [
   { id: 'tabPrev', keys: ['Ctrl', '←'], label: 'Önceki sekme', group: 'Sekmeler' },
   { id: 'tabGoto', keys: ['Alt', '1…9'], label: 'N. sekmeye git', group: 'Sekmeler' },
   { id: 'tabClose', keys: ['Alt', 'W'], label: 'Etkin sekmeyi kapat', group: 'Sekmeler' },
-  { id: 'sidebarToggle', keys: ['Ctrl', 'B'], label: 'Sol menüyü daralt / genişlet', group: 'Görünüm', allowInEditable: true },
+  // Metin/zengin metin alanında Ctrl+B "kalın" demektir (ör. açıklama editörü) — orada EZİLMEZ.
+  { id: 'sidebarToggle', keys: ['Ctrl', 'B'], label: 'Sol menüyü daralt / genişlet', group: 'Görünüm' },
   { id: 'headerToggle', keys: ['Alt', 'U'], label: 'Üst bölümü daralt / göster', group: 'Görünüm' },
   { id: 'focusMode', keys: ['Ctrl', 'Shift', 'F'], label: 'Odak modu (tam ekran çalışma alanı)', group: 'Görünüm', allowInEditable: true },
 ] as const
@@ -55,6 +56,9 @@ export const SHORTCUTS: readonly ShortcutDefinition[] = [
 export const SHORTCUT_GROUPS: ReadonlyArray<{ label: ShortcutDefinition['group']; items: ShortcutDefinition[] }> = (
   ['Genel', 'Sekmeler', 'Görünüm'] as const
 ).map((label) => ({ label, items: SHORTCUTS.filter((s) => s.group === label) }))
+
+/** Metin alanında yazarken de çalışan kısayollar (kısayol diyaloğundaki not buradan üretilir). */
+export const EDITABLE_SAFE_SHORTCUTS: readonly ShortcutDefinition[] = SHORTCUTS.filter((s) => s.allowInEditable)
 
 export function shortcutKeys(id: ShortcutId): string[] {
   return [...(SHORTCUTS.find((s) => s.id === id)?.keys ?? [])]

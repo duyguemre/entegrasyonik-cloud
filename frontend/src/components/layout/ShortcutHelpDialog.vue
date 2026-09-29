@@ -10,7 +10,7 @@
   <EkDialog
     :model-value="modelValue"
     title="Klavye kısayolları"
-    description="Kabuk genelinde çalışır; metin alanında yazarken yalnızca Ctrl'li kısayollar etkindir."
+    :description="`Kabuk genelinde çalışır; metin alanında yazarken yalnızca ${editableSafe} etkindir.`"
     icon="mdi-keyboard-outline"
     width="md"
     @update:model-value="(v: boolean) => $emit('update:modelValue', v)"
@@ -42,7 +42,9 @@
 import EkDialog from '@/components/ds/EkDialog.vue'
 import EkButton from '@/components/ds/EkButton.vue'
 import EkKbd from '@/components/ds/EkKbd.vue'
-import { SHORTCUT_GROUPS } from '@/navigation/shortcuts'
+import { EDITABLE_SAFE_SHORTCUTS, SHORTCUT_GROUPS } from '@/navigation/shortcuts'
+
+const editableSafe = EDITABLE_SAFE_SHORTCUTS.map((s) => s.keys.join('+')).join(' ve ')
 
 defineProps<{ modelValue: boolean }>()
 defineEmits<{ 'update:modelValue': [value: boolean] }>()

@@ -260,7 +260,7 @@ Global legacy CSS: `public/assets/css/site.css` (hex 83, rgb 68, cubic-bezier 5)
 | Sol menü | `components/layout/NavigationMenu.vue`, `NavigationRail.vue`, `useShellMenu.ts` | `EkSidebarNav` (tam) ve aynı modelin ray sunumu (ikon + sağa açılan ipucu). Favori yıldızı öğenin sağında. Spec çapaları korunur: `.soft-nav`, `.soft-item`, `.v-list-group`/`__header`, `.sub-item-soft`, `.soft-rail`, `.rail-logo-btn`, `.collapse-btn`. |
 | Kısayol kaydı | `navigation/shortcuts.ts` | Kısayolların TEK tanımı; dinleyici, ipuçları (EkKbd) ve `?` diyaloğu (`ShortcutHelpDialog.vue`) buradan okur. |
 
-**Kısayollar** (metin alanında yalnızca Ctrl'li olanlar çalışır; tarayıcının kendi kısayolları ezilmez):
+**Kısayollar** (metin alanında yazarken yalnızca Ctrl+K ve Ctrl+Shift+F çalışır — Ctrl+B orada "kalın" olarak kalır; tarayıcının kendi kısayolları ezilmez):
 
 | Tuş | Eylem |
 |---|---|

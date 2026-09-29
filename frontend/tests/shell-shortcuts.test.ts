@@ -44,6 +44,9 @@ describe('matchShortcut', () => {
     expect(matchShortcut(ev('ArrowRight', { ctrl: true }), input())).toBeUndefined()
     expect(matchShortcut(ev('?', { shift: true }), input())).toBeUndefined()
     expect(matchShortcut(ev('k', { ctrl: true }), input())).toEqual({ id: 'search' })
+    // Ctrl+B metin/zengin metin alanında "kalın" olarak kalır.
+    expect(matchShortcut(ev('b', { ctrl: true }), { tagName: 'DIV', isContentEditable: true } as unknown as EventTarget)).toBeUndefined()
+    expect(matchShortcut(ev('b', { ctrl: true }), input())).toBeUndefined()
     expect(matchShortcut(ev('ArrowRight', { ctrl: true }), input('checkbox'))).toEqual({ id: 'tabNext' })
     expect(matchShortcut(ev('ArrowRight', { ctrl: true }), div)).toEqual({ id: 'tabNext' })
   })
