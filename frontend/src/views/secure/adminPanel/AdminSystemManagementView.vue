@@ -378,77 +378,64 @@
 
           <!-- Tablo görünümü -->
           <template v-if="exportViewMode === 'table'">
-            <div class="export-table-wrap">
-              <!-- ek-pattern-exception: EkDataTable — sunucu-taraflı sıralanabilir başlıklar (aria-sort + klavye), sayfalama ve WAITING "Sıradaki" alt satırı EkDataTable'da yok; sunucu-taraflı varyant gelince (Aşama C) geçilecek. --><v-table density="comfortable" class="custom-export-table" fixed-header height="550px">
-                <thead>
-                  <tr>
-                    <th class="text-left">MÜŞTERİ (ID / AD)</th>
-                    <th class="text-left cursor-pointer" tabindex="0"
-                      :aria-sort="ariaSortFor('createdAt')" @click="toggleExportSort('createdAt')"
-                      @keydown.enter.prevent="toggleExportSort('createdAt')">
-                      OLUŞTURMA
-                      <v-icon size="14" v-if="exportFilters.sortField === 'createdAt'" aria-hidden="true">
-                        {{ exportFilters.sortOrder === 1 ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
-                      </v-icon>
-                    </th>
-                    <th class="text-left cursor-pointer" tabindex="0"
-                      :aria-sort="ariaSortFor('updatedAt')" @click="toggleExportSort('updatedAt')"
-                      @keydown.enter.prevent="toggleExportSort('updatedAt')">
-                      GÜNCELLEME
-                      <v-icon size="14" v-if="exportFilters.sortField === 'updatedAt'" aria-hidden="true">
-                        {{ exportFilters.sortOrder === 1 ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
-                      </v-icon>
-                    </th>
-                    <th class="text-center">TOPLAM İTEM</th>
-                    <th class="text-center">DURUM</th>
-                    <th class="text-center">PLATFORM</th>
-                    <th class="text-left">İŞLEM TİPİ</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="item in exportDetailData" :key="item._id">
-                    <td>
-                      <div class="d-flex flex-column">
-                        <span class="cell-id">#{{ item.clientId }}</span>
-                        <span class="cell-strong">{{ item.clientName }}</span>
-                      </div>
-                    </td>
-                    <td class="cell-muted">{{ formatDateTime(item.createdAt) }}</td>
-                    <td class="cell-muted">{{ formatDateTime(item.updatedAt) }}</td>
-                    <td class="text-center">
-                      <EkStatusChip tone="info" :label="String(item.itemCount || 0)" />
-                    </td>
-                    <td class="text-center">
-                      <div class="d-flex flex-column align-center ga-1">
-                        <EkStatusChip :tone="getStatusTone(item.status)" :label="formatStatus(item.status)" />
-                        <span v-if="item.status === 'WAITING' && item.nextRunAt" class="next-run">
-                          Sıradaki: {{ formatClock(item.nextRunAt) }}
-                        </span>
-                      </div>
-                    </td>
-                    <td class="text-center">
-                      <span class="cell-platform">{{ item.integrationCode }}</span>
-                    </td>
-                    <td>
-                      <span class="cell-muted cell-caps">
-                        {{ PLATFORM_PROCESS_LABELS[item.mode as keyof typeof PLATFORM_PROCESS_LABELS] || item.mode }}
+            <div class="export-grid-host">
+              <EkListFrame label="Export işleri">
+                <EkDataGrid
+                  :columns="exportColumns"
+                  :rows="exportDetailData"
+                  label="Export işleri tablosu"
+                  row-key="_id"
+                  label-key="clientName"
+                  :sort="exportGridSort"
+                  :loading="exportLoading && exportDetailData.length === 0"
+                  :error="exportLoadError"
+                  error-title="Export işleri yüklenemedi"
+                  empty-title="Kayıt bulunamadı"
+                  empty-text="Filtreleri değiştirerek yeniden deneyin."
+                  @update:sort="onExportGridSort"
+                >
+                  <template #cell-client="{ row }">
+                    <div class="d-flex flex-column">
+                      <span class="cell-id">#{{ row.clientId }}</span>
+                      <span class="cell-strong">{{ row.clientName }}</span>
+                    </div>
+                  </template>
+                  <template #cell-createdAt="{ row }"><span class="cell-muted">{{ formatDateTime(row.createdAt) }}</span></template>
+                  <template #cell-updatedAt="{ row }"><span class="cell-muted">{{ formatDateTime(row.updatedAt) }}</span></template>
+                  <template #cell-itemCount="{ row }">
+                    <EkStatusChip tone="info" :label="String(row.itemCount || 0)" />
+                  </template>
+                  <template #cell-status="{ row }">
+                    <div class="d-flex flex-column align-start ga-1">
+                      <EkStatusChip :tone="getStatusTone(row.status)" :label="formatStatus(row.status)" />
+                      <span v-if="row.status === 'WAITING' && row.nextRunAt" class="next-run">
+                        Sıradaki: {{ formatClock(row.nextRunAt) }}
                       </span>
-                    </td>
-                  </tr>
-                  <tr v-if="exportDetailData.length === 0">
-                    <td colspan="7">
-                      <EkEmptyState variant="no-results" title="Kayıt bulunamadı"
-                        message="Filtreleri değiştirerek yeniden deneyin." />
-                    </td>
-                  </tr>
-                </tbody>
-              </v-table>
-            </div>
-
-            <div class="sticky-pagination-container">
-              <PaginationComponent v-model="exportFilters.page"
-                :totalNumberOfPages="Math.ceil(exportTotal / exportFilters.limit)" :pagination="exportPagination"
-                :static="true" @setPage="loadExportDetails" />
+                    </div>
+                  </template>
+                  <template #cell-integrationCode="{ row }">
+                    <span class="cell-platform">{{ row.integrationCode }}</span>
+                  </template>
+                  <template #cell-mode="{ row }">
+                    <span class="cell-muted cell-caps">
+                      {{ PLATFORM_PROCESS_LABELS[row.mode as keyof typeof PLATFORM_PROCESS_LABELS] || row.mode }}
+                    </span>
+                  </template>
+                  <template #error-action>
+                    <EkButton tone="secondary" size="sm" icon="mdi-refresh" @click="loadExportDetails()">Tekrar dene</EkButton>
+                  </template>
+                </EkDataGrid>
+                <template #pager>
+                  <EkPagerBar
+                    :page="exportFilters.page"
+                    :page-size="exportFilters.limit"
+                    :total="exportTotal"
+                    label="Export işleri sayfalama"
+                    @update:page="(p: number) => (exportFilters.page = p)"
+                    @update:page-size="onExportPageSize"
+                  />
+                </template>
+              </EkListFrame>
             </div>
           </template>
 
@@ -489,7 +476,6 @@ import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue';
 import { PLATFORM_PROCESS, PLATFORM_PROCESS_LABELS } from '@/types/PlatformProcess';
 import useRestApi from '@/composables/restapi';
 import LoadingComponent from '@/components/LoadingComponent.vue';
-import PaginationComponent from '@/components/PaginationComponent.vue';
 import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue';
 import EkPageHeader from '@/components/ds/EkPageHeader.vue';
 import EkSection from '@/components/ds/EkSection.vue';
@@ -498,6 +484,11 @@ import EkKpiCard from '@/components/ds/EkKpiCard.vue';
 import EkStatusChip from '@/components/ds/EkStatusChip.vue';
 import EkEmptyState from '@/components/ds/EkEmptyState.vue';
 import EkDataTable, { type EkTableColumn } from '@/components/ds/EkDataTable.vue';
+import EkListFrame from '@/components/ds/EkListFrame.vue';
+import EkDataGrid, { type EkGridColumn, type EkGridSort } from '@/components/ds/EkDataGrid.vue';
+import EkPagerBar from '@/components/ds/EkPagerBar.vue';
+import EkButton from '@/components/ds/EkButton.vue';
+import { isRequestError } from '@/components/ds/listStandard';
 import { formatDateTime } from '@/composables/format';
 import type { StatusTone } from '@/design/status-map';
 import VChart from 'vue-echarts';
@@ -546,11 +537,7 @@ const exportDetailData = ref<any[]>([]);
 const exportAnalyticsData = ref<any>(null);
 const exportViewMode = ref('table');
 const exportTotal = ref(0);
-const exportPagination = computed(() => ({
-  page: exportFilters.page,
-  limit: exportFilters.limit,
-  totalNumberOfRecords: exportTotal.value
-}));
+const exportLoadError = ref(false);
 const exportFilters = reactive({
   status: null,
   mode: null,
@@ -920,6 +907,7 @@ async function loadExportDetails() {
       ...exportFilters,
       targetClientId: targetClientId.value
     });
+    exportLoadError.value = isRequestError(res);
     if (res?.success) {
       exportDetailData.value = res.data;
       exportTotal.value = res.total;
@@ -994,19 +982,33 @@ function getStatusColorHex(status: string) {
 }
 
 // Sıralanabilir sütun başlığının erişilebilirlik durumu (yalnızca görünüm; sıralama mantığı aynı).
-function ariaSortFor(field: string): 'ascending' | 'descending' | 'none' {
-  if (exportFilters.sortField !== field) return 'none';
-  return exportFilters.sortOrder === 1 ? 'ascending' : 'descending';
+// DS-v2 liste standardı — sıralama SUNUCUDA (getExportDetails `sortField`/`sortOrder`: 1 artan, -1 azalan).
+const exportColumns: EkGridColumn[] = [
+  { key: 'client', label: 'Müşteri (ID / Ad)' },
+  { key: 'createdAt', label: 'Oluşturma', sortable: true },
+  { key: 'updatedAt', label: 'Güncelleme', sortable: true },
+  { key: 'itemCount', label: 'Toplam item' },
+  { key: 'status', label: 'Durum' },
+  { key: 'integrationCode', label: 'Platform' },
+  { key: 'mode', label: 'İşlem tipi' },
+];
+
+const exportGridSort = computed<EkGridSort>(() =>
+  exportFilters.sortField
+    ? { key: exportFilters.sortField, dir: exportFilters.sortOrder === 1 ? 'asc' : 'desc' }
+    : null
+);
+
+function onExportGridSort(sort: EkGridSort) {
+  // Sunucuda "sırasız" yok: üçüncü tıklama varsayılana (oluşturma, yeniden eskiye) döner.
+  exportFilters.sortField = sort?.key ?? 'createdAt';
+  exportFilters.sortOrder = sort ? (sort.dir === 'asc' ? 1 : -1) : -1;
+  loadExportDetails();
 }
 
-function toggleExportSort(field: string) {
-  if (exportFilters.sortField === field) {
-    exportFilters.sortOrder = exportFilters.sortOrder === 1 ? -1 : 1;
-  } else {
-    exportFilters.sortField = field;
-    exportFilters.sortOrder = -1;
-  }
-  loadExportDetails();
+function onExportPageSize(size: number) {
+  exportFilters.limit = size;
+  exportFilters.page = 1;
 }
 
 // Auto-refresh on filter change
@@ -1463,28 +1465,10 @@ onUnmounted(() => {
   border-radius: var(--ek-radius-md);
 }
 
-.export-table-wrap {
+.export-grid-host {
+  height: 550px;
   margin-bottom: var(--ek-space-4);
-  overflow: hidden;
-  background: var(--ek-color-surface);
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-lg);
 }
-
-.custom-export-table :deep(th) {
-  background: var(--ek-color-surface-muted) !important;
-  font-size: var(--ek-font-size-xs) !important;
-  font-weight: var(--ek-font-weight-semibold) !important;
-  color: var(--ek-color-content-default) !important;
-}
-
-// Sıralanabilir tablo başlıkları (klavye ile odaklanabilir): görünür odak halkası.
-.custom-export-table th[tabindex]:focus-visible {
-  outline: 2px solid var(--ek-color-primary);
-  outline-offset: -2px;
-}
-
-.cursor-pointer { cursor: pointer; }
 
 .cell-id {
   font-size: var(--ek-font-size-xs);
@@ -1516,16 +1500,5 @@ onUnmounted(() => {
   font-size: var(--ek-font-size-xs);
   font-weight: var(--ek-font-weight-semibold);
   color: var(--ek-color-warning);
-}
-
-.sticky-pagination-container {
-  position: sticky;
-  bottom: calc(-1 * var(--ek-space-4));
-  z-index: 10;
-  margin-left: calc(-1 * var(--ek-space-4));
-  margin-right: calc(-1 * var(--ek-space-4));
-  padding: var(--ek-space-2) var(--ek-space-4);
-  background: var(--ek-color-surface);
-  border-top: 1px solid var(--ek-color-border-default);
 }
 </style>
