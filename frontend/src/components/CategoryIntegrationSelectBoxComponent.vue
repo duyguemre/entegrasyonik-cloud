@@ -21,7 +21,7 @@
         @click:clear.stop="setCategory(undefined)" @click:append-inner="pickerOpen = true" />
 
       <EkCascadeDialog v-model="pickerOpen" :nodes="tree" :path="selectedPath"
-        :title="`${platformTitle} kategorisi seç`" :subtitle="`${leafCount.toLocaleString('tr-TR')} yaprak kategori`"
+        :title="`${platformTitle} kategorisi seç`" :subtitle="`${formatNumber(leafCount)} yaprak kategori`"
         @confirm="(ids) => setCategory(ids[ids.length - 1])" />
     </div>
   </div>
@@ -34,6 +34,7 @@ import useFormRules from '@/composables/formrules';
 import LoadingComponent from './LoadingComponent.vue';
 import EkCascadeDialog from '@/components/ds/EkCascadeDialog.vue'
 import type { EkCascadeNode } from '@/components/ds/EkCascadePicker.vue'
+import { formatNumber } from '@/composables/format'
 
 const integrationStore = useIntegrationStore()
 const integrationCategories = ref<any[]>([])

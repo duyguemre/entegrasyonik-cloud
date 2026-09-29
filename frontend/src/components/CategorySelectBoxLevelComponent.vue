@@ -31,6 +31,7 @@
 import { computed, ref, watch } from 'vue'
 import EkCascadePicker, { type EkCascadeNode } from '@/components/ds/EkCascadePicker.vue'
 import EkEmptyState from '@/components/ds/EkEmptyState.vue'
+import { formatNumber } from '@/composables/format'
 import { useCategoriesStore } from '@/stores/categoriesStore'
 
 const categoryId = defineModel<string | undefined>({ default: undefined })
@@ -69,7 +70,7 @@ const tree = computed<EkCascadeNode[]>(() => {
 
 const subtitle = computed(() => {
   const leaves = countLeaves(tree.value)
-  return `${leaves.toLocaleString('tr-TR')} yaprak kategori · en uçtaki (yaprak) kategoriyi seçin`
+  return `${formatNumber(leaves)} yaprak kategori · en uçtaki (yaprak) kategoriyi seçin`
 })
 
 function findPath(nodes: EkCascadeNode[], id: string, trail: string[] = []): string[] | undefined {
