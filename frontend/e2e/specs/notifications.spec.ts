@@ -151,13 +151,25 @@ test.describe('C1.5 — bildirim merkezi', () => {
     await expect(rows(page).nth(0).getByText('Dikkat')).toBeVisible()
     await expect(rows(page).nth(2)).toContainText('E2E içe aktarma tamamlandı')
 
-    // Tür etiketleri i18n'den; iç yol → Görüntüle var, dış adres → yok.
-    await expect(rows(page).nth(0)).toContainText('Stok uyarısı')
-    await expect(center(page).getByRole('button', { name: 'Görüntüle: E2E içe aktarma tamamlandı' })).toBeVisible()
-    await expect(center(page).getByRole('button', { name: 'Görüntüle: E2E sistem bakımı' })).toHaveCount(0)
-
     // Rozet: hafif sayım ucundan (2 okunmamış).
     await expect(bell(page)).toHaveAttribute('aria-label', 'Bildirimler, 2 okunmamış')
+
+    // Tür etiketleri i18n'den (dar ekranda yalnız ekran okuyucuya).
+    await expect(rows(page).nth(0)).toContainText('Stok uyarısı')
+    // İç yol → Görüntüle var, dış adres → yok. Satır düğmesi yalnız geniş ekranda (dar ekranda ayrıntıda).
+    if ((page.viewportSize()?.width ?? 0) >= 768) {
+      await expect(center(page).getByRole('button', { name: 'Görüntüle: E2E içe aktarma tamamlandı' })).toBeVisible()
+      await expect(center(page).getByRole('button', { name: 'Görüntüle: E2E sistem bakımı' })).toHaveCount(0)
+    }
+    await center(page).getByRole('button', { name: 'E2E sistem bakımı', exact: true }).click()
+    const external = page.getByRole('dialog').filter({ hasText: 'Planlı bakım' })
+    await expect(external).toBeVisible()
+    await expect(external.getByRole('button', { name: 'Görüntüle' })).toHaveCount(0)
+    await page.keyboard.press('Escape')
+    await expect(external).toHaveCount(0)
+    await center(page).getByRole('button', { name: 'E2E içe aktarma tamamlandı', exact: true }).click()
+    await expect(page.getByRole('dialog').filter({ hasText: '42 ürün aktarıldı' }).getByRole('button', { name: 'Görüntüle' })).toBeVisible()
+
   })
 
   test('boş: hiç bildirim yoksa sakin boş durum', async ({ page }) => {

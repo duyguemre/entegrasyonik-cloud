@@ -174,6 +174,7 @@ import { PLATFORM_PROCESS_LABELS, PLATFORM_PROCESS_COLORS, PLATFORM_PROCESS } fr
 import EkEmptyState from '@/components/ds/EkEmptyState.vue'
 import EkStatusChip from '@/components/ds/EkStatusChip.vue'
 import EkButton from '@/components/ds/EkButton.vue'
+import { formatRelative } from '@/composables/format'
 import { internalActionPath } from '@/types/NotificationTypes'
 const notificationStore = useNotificationDrawerStore()
 const eventBus: any = inject('eventBus', undefined)
@@ -221,11 +222,8 @@ const severityTone = (severity: string): SeverityTone => {
   return tones[severity] || 'info'
 }
 
-const formatTime = (dateStr: string) => {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-}
+// C1.5: tarayıcı yereline bağlı "10:29 PM" yerine uygulamanın tek biçimi ("5 dk önce").
+const formatTime = (dateStr: string) => (dateStr ? formatRelative(dateStr) : '')
 </script>
 
 <style scoped>
@@ -251,6 +249,9 @@ const formatTime = (dateStr: string) => {
 }
 
 .ek-notification-drawer__footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
   padding: var(--ek-space-3) var(--ek-space-4);
   border-top: 1px solid var(--ek-color-border-default);
   background: var(--ek-color-surface);

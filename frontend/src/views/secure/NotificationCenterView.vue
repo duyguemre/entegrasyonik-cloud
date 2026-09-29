@@ -30,7 +30,7 @@
         <EkFilterPanel
           :collapsed="filtersCollapsed"
           :active-count="activeChips.length"
-          :columns="2"
+          :columns="4"
           :loading="loading"
           @update:collapsed="filtersCollapsed = $event"
           @submit="applyFilters"
@@ -69,7 +69,7 @@
               <span class="ek-nc-toolbar__stat"><strong class="ek-num">{{ unreadTotal }}</strong> okunmamış</span>
               <span v-if="attentionUnread" class="ek-nc-toolbar__stat ek-nc-toolbar__stat--attention">
                 <v-icon icon="mdi-alert-outline" aria-hidden="true" />
-                <strong class="ek-num">{{ attentionUnread }}</strong> dikkat gerektiren
+                <strong class="ek-num">{{ attentionUnread }}</strong> okunmamış stok/sistem uyarısı
               </span>
             </span>
             <div class="ek-nc-toolbar__end">
@@ -108,7 +108,7 @@
         <template #cell-type="{ row }">
           <span class="ek-nc-type">
             <EkIconTile :icon="notificationTypeIcon(row.type)" :tone="tileTone(row)" size="sm" />
-            <span class="ek-nc-type__label">{{ typeLabel(row.type) }}</span>
+            <span :class="compact ? 'ek-sr-only' : 'ek-nc-type__label'">{{ typeLabel(row.type) }}</span>
           </span>
         </template>
         <template #cell-title="{ row }">
@@ -120,6 +120,10 @@
                 <EkStatusChip v-if="isAttentionType(row.type)" tone="warning" label="Dikkat" dot />
               </span>
               <span class="ek-nc-item__message">{{ row.message }}</span>
+              <span v-if="compact" class="ek-nc-item__meta">
+                <span class="ek-num">{{ formatRelative(row.createdAt, now) }}</span>
+                <span class="ek-sr-only">, {{ row.isRead ? 'okundu' : 'okunmamış' }}</span>
+              </span>
             </div>
           </div>
         </template>
@@ -134,7 +138,7 @@
         </template>
         <template #cell-actions="{ row }">
           <span class="ek-nc-actions" @click.stop>
-            <EkButton v-if="internalActionPath(row.actionUrl)" tone="ghost" size="sm" icon="mdi-arrow-top-right" icon-only :aria-label="`Görüntüle: ${row.title}`" @click="goTo(row)" />
+            <EkButton v-if="!compact && internalActionPath(row.actionUrl)" tone="ghost" size="sm" icon="mdi-arrow-top-right" icon-only :aria-label="`Görüntüle: ${row.title}`" @click="goTo(row)" />
             <EkButton v-if="!row.isRead" tone="ghost" size="sm" icon="mdi-email-open-outline" icon-only :aria-label="`Okundu işaretle: ${row.title}`" @click="markRowRead(row)" />
             <EkButton tone="ghost" size="sm" icon="mdi-delete-outline" icon-only :aria-label="`Sil: ${row.title}`" @click="deleteRow(row)" />
           </span>
@@ -173,6 +177,10 @@
           <EkStatusChip :tone="notificationSeverityTone(detail.severity)" :label="severityLabel(detail.severity)" dot />
           <EkStatusChip v-if="isAttentionType(detail.type)" tone="warning" label="Dikkat" dot />
           <EkStatusChip :tone="detail.isRead ? 'neutral' : 'info'" :label="detail.isRead ? 'Okundu' : 'Okunmamış'" />
+          <span v-if="detailChannel" class="ek-nc-detail__channel">
+            <span class="ek-nc-detail__channel-label">Kanal</span>
+            <EkPlatformMark variant="dot" :code="detailChannel.code" :name="detailChannel.name" />
+          </span>
         </div>
         <p class="ek-nc-detail__message">{{ detail.message }}</p>
         <section v-if="detailSummary.length" class="ek-nc-detail__summary" aria-label="İşlem özeti">
@@ -216,6 +224,7 @@ import { NOTIFICATION_LIST_LIMIT, useNotificationDrawerStore } from '@/stores/no
 import {
   NOTIFICATION_TYPES,
   internalActionPath,
+  isNotificationType,
   isAttentionType,
   notificationSeverityTone,
   notificationTypeIcon,
@@ -232,6 +241,7 @@ import EkIconTile, { type EkTone } from '@/components/ds/EkIconTile.vue'
 import EkStatusChip from '@/components/ds/EkStatusChip.vue'
 import EkErrorState from '@/components/ds/EkErrorState.vue'
 import EkDialog from '@/components/ds/EkDialog.vue'
+import EkPlatformMark from '@/components/ds/EkPlatformMark.vue'
 import EkDescriptionList, { type EkDescriptionListItem } from '@/components/ds/EkDescriptionList.vue'
 
 interface NotificationRow {
@@ -260,7 +270,7 @@ const router = useRouter()
 const restApi = useRestApi()
 const snackbar = useSnackbarStore()
 const notificationStore = useNotificationDrawerStore()
-const { isDesktop } = useShellBreakpoints()
+const { isDesktop, isMobile } = useShellBreakpoints()
 
 const READ_OPTIONS: Array<{ title: string; value: ReadFilter }> = [
   { title: 'Tümü', value: 'all' },
@@ -268,16 +278,25 @@ const READ_OPTIONS: Array<{ title: string; value: ReadFilter }> = [
   { title: 'Okundu', value: 'read' },
 ]
 
-const typeLabel = (type: unknown) => (typeof type === 'string' && type ? t(`notificationCenter.types.${type}`) : '—')
+// Bilinmeyen tür kodu (şemaya sonradan eklenen) olduğu gibi gösterilir; yoksa "—".
+const typeLabel = (type: unknown) => (isNotificationType(type) ? t(`notificationCenter.types.${type}`) : typeof type === 'string' && type ? type : '—')
 const typeOptions = computed(() => NOTIFICATION_TYPES.map((value) => ({ value, title: typeLabel(value) })))
 
-const columns: EkGridColumn[] = [
+const FULL_COLUMNS: EkGridColumn[] = [
   { key: 'type', label: 'Tür', width: '168px' },
   { key: 'title', label: 'Bildirim' },
   { key: 'createdAt', label: 'Zaman', sortable: true, width: '164px' },
   { key: 'status', label: 'Durum', width: '120px' },
   { key: 'actions', label: 'İşlemler', align: 'end', width: '128px' },
 ]
+// Dar ekran: yatay kaydırma yerine üç kolon — tür yalnız ikon, zaman ve okunma bilgisi başlık hücresinde.
+const COMPACT_COLUMNS: EkGridColumn[] = [
+  { key: 'type', label: 'Tür', width: '52px' },
+  { key: 'title', label: 'Bildirim' },
+  { key: 'actions', label: 'İşlemler', align: 'end', width: '84px' },
+]
+const compact = computed(() => isMobile.value)
+const columns = computed(() => (compact.value ? COMPACT_COLUMNS : FULL_COLUMNS))
 
 // --- durum ---
 const items = ref<NotificationRow[]>([])
@@ -343,7 +362,6 @@ const tileTone = (row: GridRow): EkTone => {
 
 // Ayrıntı özeti: yalnız backend'in metaData'da GERÇEKTEN döndürdüğü sayaçlar (uydurma alan yok).
 const SUMMARY_FIELDS: Array<[string, string]> = [
-  ['integrationCode', 'Kanal'],
   ['totalAccepted', 'İşleme alınan'],
   ['totalAlreadyTransfer', 'Zaten eşleşmiş'],
   ['totalNoTransferSkipped', 'Gönderim gereken ürün'],
@@ -357,8 +375,21 @@ const SUMMARY_FIELDS: Array<[string, string]> = [
 const detailSummary = computed<EkDescriptionListItem[]>(() => {
   const meta = detail.value?.metaData
   if (!meta || typeof meta !== 'object') return []
-  return SUMMARY_FIELDS.filter(([key]) => typeof meta[key] === 'number' || (key === 'integrationCode' && typeof meta[key] === 'string'))
-    .map(([key, label]) => ({ label, value: typeof meta[key] === 'number' ? formatNumber(meta[key]) : String(meta[key]) }))
+  return SUMMARY_FIELDS.filter(([key]) => typeof meta[key] === 'number').map(([key, label]) => ({ label, value: formatNumber(meta[key]) }))
+})
+
+const CHANNEL_NAMES: Record<string, string> = {
+  trendyol: 'Trendyol',
+  hepsiburada: 'Hepsiburada',
+  n11: 'N11',
+  pazarama: 'Pazarama',
+  ideasoft: 'Ideasoft',
+  bizimhesap: 'Bizimhesap',
+}
+const detailChannel = computed(() => {
+  const code = detail.value?.metaData?.integrationCode
+  if (typeof code !== 'string' || !code) return null
+  return { code, name: CHANNEL_NAMES[code.toLowerCase()] ?? code }
 })
 
 // --- veri ---
@@ -639,6 +670,8 @@ defineExpose({
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .ek-nc-item__head {
@@ -722,6 +755,28 @@ defineExpose({
   gap: var(--ek-space-2);
 }
 
+.ek-nc-detail__channel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  margin-left: var(--ek-space-2);
+  font-size: var(--ek-type-label-size);
+}
+
+.ek-nc-detail__channel-label {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.ek-nc-item__meta {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+}
+
 .ek-nc-detail__message {
   margin: 0;
   color: var(--ek-color-content-default);
@@ -757,5 +812,14 @@ defineExpose({
     width: 100%;
     justify-content: space-between;
   }
+
+  .ek-nc-toolbar__stamp {
+    display: none;
+  }
+
+  .ek-nc-item {
+    min-width: 0;
+  }
+
 }
 </style>
