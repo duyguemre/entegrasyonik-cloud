@@ -4,6 +4,8 @@
     "tr": "Türkçe"
   },
   "menu": {
+    "integrationHealth": "Integration Health",
+    "auditLog": "Audit Log",
     "profile" :"Profile",
     "change_password" :"Change Password",
     "roles" :"Roles",

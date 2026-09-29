@@ -88,7 +88,8 @@
       "ecommerce": "E-Ticaret",
       "erp": "Erp",
       "shipping": "Kargo",
-      "einvoice": "E-Fatura"
+      "einvoice": "E-Fatura",
+      "integrationHealth": "Entegrasyon Sağlığı"
     },
     "settings": {
       "settings": "Ayarlar",
@@ -96,7 +97,9 @@
       "settingList": "Uygulama Ayarları",
       "printoutList": "Çıktılar",
       "logList": "İşlemler"
-    }
+    },
+    "integrationHealth": "Entegrasyon Sağlığı",
+    "auditLog": "Denetim Günlüğü"
   },
   "batch": {
     "menu": {
@@ -1138,6 +1141,185 @@
     },
     "return": {
       "title": "İade Tanımları"
+    }
+  },
+  "integrationHealth": {
+    "section": "Entegrasyonlar",
+    "title": "Entegrasyon sağlığı",
+    "description": "Bağlı pazaryeri ve sistemlerinizin son 24 saatteki çağrı sonuçları, son hata ve bağlantı durumu.",
+    "generatedAt": "Son güncelleme: {time}",
+    "window": "Son {hours} saatlik pencere",
+    "loading": "Sağlık durumu alınıyor…",
+    "notLoaded": "Sağlık durumu alınamadı",
+    "refresh": "Yenile",
+    "refreshError": "Sağlık durumu yenilenemedi — ekrandaki bilgiler önceki güncellemeye ait.",
+    "loadError": "Entegrasyon sağlığı yüklenemedi — bağlantınızı kontrol edip tekrar deneyin.",
+    "forbidden": {
+      "title": "Bu ekran için yetkiniz yok",
+      "message": "Entegrasyon sağlığını mağaza sahibi veya yöneticisi görüntüleyebilir. Erişim için mağaza yöneticinize başvurun."
+    },
+    "kpi": {
+      "aria": "Özet",
+      "healthy": "Sağlıklı",
+      "healthyHint": "Son çağrıları sorunsuz tamamlanan entegrasyonlar",
+      "attention": "Dikkat gerektiren",
+      "attentionHint": "Son çağrısı hatayla sonuçlananlar",
+      "down": "Erişilemiyor",
+      "downHint": "Devre kesicisi açık olanlar",
+      "calls": "Son {hours} saat çağrı",
+      "callsHint": "{errors} hata · başarı {rate}",
+      "callsNone": "Bu pencerede çağrı yapılmadı"
+    },
+    "empty": {
+      "title": "Henüz entegrasyon yok",
+      "message": "Bir pazaryeri veya sistem bağladığınızda sağlık durumu burada görünür.",
+      "action": "Pazaryeri bağla"
+    },
+    "listAria": "Entegrasyonlar",
+    "listTitle": "Entegrasyonlar",
+    "sourceNote": "Sağlık durumu, entegrasyonların gerçek çağrı ölçümlerinden türetilir; bu ekran pazaryerine test isteği göndermez. Hiç çağrı yapılmamış bir entegrasyon için \"veri yok\" gösterilir.",
+    "status": {
+      "healthy": "Sağlıklı",
+      "degraded": "Sorunlu",
+      "down": "Erişilemiyor",
+      "no_data": "Veri yok",
+      "not_configured": "Yapılandırılmadı"
+    },
+    "type": {
+      "marketplace": "Pazaryeri",
+      "ecommerce": "E-ticaret sitesi",
+      "shipment": "Kargo",
+      "einvoice": "E-fatura",
+      "erp": "ERP / muhasebe",
+      "unknown": "Entegrasyon"
+    },
+    "card": {
+      "disabled": "Pasif",
+      "credentials": "Kimlik bilgisi",
+      "lastSync": "Son başarılı senkron",
+      "neverConnected": "Hiç bağlanmadı",
+      "noSync": "Henüz senkron yok",
+      "webhook": "Webhook",
+      "circuit": "Devre kesici",
+      "windowAria": "Son {hours} saat",
+      "window": "Son {hours} saat",
+      "calls": "{total} çağrı",
+      "successRate": "başarı {rate}",
+      "noCalls": "Çağrı yok",
+      "success": "{n} başarılı",
+      "errors": "{n} hatalı",
+      "byCode": "Hata kodlarına göre",
+      "lastError": "Son hata",
+      "operation": "İşlem",
+      "openSettings": "{name} ayarlarını aç"
+    },
+    "credentials": {
+      "configured": "Girildi",
+      "missing": "Girilmedi",
+      "no_record": "Ayar kaydı yok"
+    },
+    "webhook": {
+      "none": "Kullanılmıyor",
+      "unknown": "Durum bilinmiyor",
+      "healthy": "Sağlıklı",
+      "unhealthy": "Sorunlu"
+    },
+    "circuit": {
+      "closed": "Kapalı (normal)",
+      "open": "Açık",
+      "half_open": "Yarı açık",
+      "none": "Gözlem yok",
+      "stale": "eski gözlem",
+      "openHint": "Çağrılar geçici olarak durduruldu",
+      "half_openHint": "Deneme çağrıları yapılıyor"
+    },
+    "errorCode": {
+      "AUTH": "Kimlik doğrulama",
+      "RATE_LIMITED": "Hız sınırı",
+      "UNAVAILABLE": "Servis erişilemez",
+      "VALIDATION": "Doğrulama hatası",
+      "NOT_FOUND": "Bulunamadı",
+      "NOT_SUPPORTED": "Desteklenmiyor",
+      "UNKNOWN_OUTCOME": "Sonucu belirsiz",
+      "INTERNAL": "İç hata",
+      "UNKNOWN": "Bilinmeyen hata",
+      "OTHER": "Diğer"
+    }
+  },
+  "auditLog": {
+    "section": "Ayarlar",
+    "title": "Denetim günlüğü",
+    "description": "Mağazanızda kimin, ne zaman, hangi işlemi yaptığını inceleyin. Kayıtlar yalnızca okunabilir.",
+    "forbidden": {
+      "title": "Bu ekran için yetkiniz yok",
+      "message": "Denetim günlüğünü mağaza sahibi veya yöneticisi görüntüleyebilir. Erişim için mağaza yöneticinize başvurun."
+    },
+    "frameAria": "Denetim kayıtları",
+    "filters": {
+      "title": "Filtreler",
+      "from": "Başlangıç tarihi",
+      "to": "Bitiş tarihi",
+      "event": "Olay veya olay grubu",
+      "noEvent": "Eşleşen olay yok",
+      "user": "Kullanıcı",
+      "noUser": "Eşleşen kullanıcı yok",
+      "result": "Sonuç",
+      "presetsAria": "Hazır tarih aralıkları",
+      "preset": "Son {days} gün"
+    },
+    "validation": {
+      "date": "GG.AA.YYYY biçiminde geçerli bir tarih girin.",
+      "order": "Bitiş tarihi başlangıçtan önce olamaz.",
+      "span": "Tarih aralığı en fazla {max} gün olabilir.",
+      "event": "Geçersiz olay seçimi.",
+      "user": "Geçersiz kullanıcı seçimi.",
+      "result": "Geçersiz sonuç seçimi.",
+      "blocked": "Filtrelerde düzeltilmesi gereken alanlar var; liste son geçerli filtreyle gösteriliyor."
+    },
+    "summary": "kayıt · {from} – {to}",
+    "loading": "Kayıtlar yükleniyor…",
+    "order": "En yeni kayıt üstte",
+    "loadError": "Denetim kayıtları yüklenemedi — bağlantınızı kontrol edip tekrar deneyin.",
+    "gridAria": "Denetim kayıtları tablosu",
+    "empty": {
+      "title": "Bu aralıkta kayıt yok",
+      "text": "Seçili tarih aralığında mağazanızda kayda geçen bir işlem bulunmuyor.",
+      "filteredTitle": "Bu filtrelerle kayıt yok",
+      "filteredText": "Tarih aralığını genişletin veya filtreleri kaldırın.",
+      "clear": "Filtreleri temizle"
+    },
+    "openDetail": "{event} kaydının ayrıntılarını aç",
+    "userUnknown": "Bilinmeyen kullanıcı",
+    "userSystem": "Sistem",
+    "pagerAria": "Denetim kayıtları sayfalama",
+    "detail": {
+      "event": "Olay",
+      "at": "Zaman",
+      "eventName": "Olay adı",
+      "user": "Kullanıcı",
+      "result": "Sonuç",
+      "id": "Kayıt kimliği",
+      "meta": "Ayrıntılar",
+      "metaHint": "Kayda eklenen yalnızca güvenli, düz değerler gösterilir.",
+      "noMeta": "Bu kayıt için ek ayrıntı yok."
+    },
+    "result": {
+      "ok": "Başarılı",
+      "fail": "Başarısız",
+      "error": "Hata"
+    },
+    "col": {
+      "at": "Zaman",
+      "event": "Olay",
+      "user": "Kullanıcı",
+      "result": "Sonuç",
+      "details": "Ayrıntı"
+    },
+    "chip": {
+      "range": "Tarih",
+      "event": "Olay",
+      "user": "Kullanıcı",
+      "result": "Sonuç"
     }
   }
 }
