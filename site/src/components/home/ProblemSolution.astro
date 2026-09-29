@@ -2,9 +2,11 @@
 /**
  * Sorun → çözüm (ADR-0014 Karar 2, bölüm 2; S8 premium sahne). Sahne: `data-scene="problem-solution"`
  * (scenes.css + scenes-loops.css). Sol taraf ("Dağınık"): her pazaryeri kendi küçük panelinde, stok sayıları
- * birbiriyle çelişir (statik hâlde de böyle görünür — örnek/uydurma değil, senaryoyu anlatan sabit görsel
- * örnektir, "Örnek senaryo" etiketlidir). Sağ taraf ("Tek merkez"): aynı kanallar merkezdeki tek panele akar
- * (döngüsel sinyal — yalnızca oynatma durumunda ve görünürken), tek ve senkron bir stok değeri gösterilir.
+ * birbiriyle çelişir (statik hâlde de böyle görünür — gerçek veri değil, senaryoyu anlatan sabit görseldir;
+ * S15: ayrı "örnek" etiketi kaldırıldı, sahne başlığı ve altyazısı senaryoyu anlatır). Sağ taraf ("Tek merkez"):
+ * aynı kanallar merkezdeki tek panele akar; S15 döngüsü (6 sn, yalnızca oynatma durumunda ve görünürken):
+ * kanallardan göbeğe ışık paketleri → göbekte yumuşak nabız → stok değeri tüm kanallarda senkron → kanallara
+ * geri yayılan dalga. Statik hâl = senkron son durum (tüm senkron noktaları yanık).
  * Renkler yalnızca ayırt edici vurgu (bkz. src/data/channel-colors.ts); metin rengi marka rengi DEĞİLDİR.
  * Altta kısa bir karşılaştırma tablosu: yalnızca kanıtlı yeteneklere dayanır (capabilities.ts).
  */
@@ -29,8 +31,8 @@ const solutions = [
 ]
 
 const marketplaces = getPublicIntegrations('marketplace')
-// Örnek senaryo: her kanalın kendi panelinde farklı (çelişen) stok sayısı görmesi — sabit görsel örnek,
-// gerçek veri değildir ("Örnek senaryo" etiketiyle işaretlenir; bkz. Hero.astro'daki aynı sözleşme).
+// Senaryo: her kanalın kendi panelinde farklı (çelişen) stok sayısı görmesi — sabit görsel anlatım,
+// gerçek veri değildir (sahne başlığı "Dağınık" ve altyazı bunu anlatır).
 const EXAMPLE_STOCK = [14, 9, 21, 6]
 const messy = marketplaces.map((m, i) => ({ ...m, stock: EXAMPLE_STOCK[i % EXAMPLE_STOCK.length] }))
 const SYNCED_STOCK = 6
@@ -78,7 +80,7 @@ const comparison = [
     <article class="ps__card ps__card--before" aria-labelledby="ps-before-title">
       <div class="ps__stage">
         <span class="ps__stage-label">Dağınık</span>
-        <p class="ps__stage-caption">Örnek senaryo: her kanal kendi panelinde, kendi (çelişen) stok sayısını gösterir</p>
+        <p class="ps__stage-caption">Her kanal kendi panelinde, kendi (çelişen) stok sayısını gösterir</p>
         <ul class="ps__messy">
           {
             messy.map((m) => (
@@ -116,30 +118,38 @@ const comparison = [
     <article class="ps__card ps__card--after" aria-labelledby="ps-after-title">
       <div class="ps__stage ps__stage--after">
         <span class="ps__stage-label">Tek merkez</span>
-        <p class="ps__stage-caption">Örnek senaryo: aynı kanallar tek panele akar, tek stok sayısı geçerli olur</p>
-        <ul class="ps__tidy" data-part="tidy-row">
-          {
-            messy.map((m) => (
-              <li class="ps__tpanel" data-code={m.code}>
-                <p class="ps__tpanel-chan">
-                  <span class="ps__mono" aria-hidden="true">{m.name.slice(0, 1)}</span>
-                  {m.name}
-                </p>
-                <span class="ps__flow" aria-hidden="true">
-                  <i class="ps__flow-dot" data-part="packet"></i>
-                </span>
-              </li>
-            ))
-          }
-        </ul>
-        <div class="ps__bus" data-part="bus" aria-hidden="true"></div>
-        <div class="ps__stem" aria-hidden="true"></div>
-        <div class="ps__hub" data-part="hub">
-          <Icon name="stock" size="md" />
+        <p class="ps__stage-caption">Aynı kanallar tek panele akar, tek stok sayısı geçerli olur</p>
+        <div class="ps__net">
+          <ul class="ps__tidy" data-part="tidy-row">
+            {
+              messy.map((m) => (
+                <li class="ps__tpanel" data-code={m.code}>
+                  <p class="ps__tpanel-chan">
+                    <span class="ps__mono" aria-hidden="true">{m.name.slice(0, 1)}</span>
+                    <span class="ps__tpanel-name">{m.name}</span>
+                  </p>
+                  <span class="ps__flow" aria-hidden="true">
+                    <i class="ps__flow-dot" data-part="packet"></i>
+                    <i class="ps__flow-back"></i>
+                  </span>
+                </li>
+              ))
+            }
+          </ul>
+          <div class="ps__bus" data-part="bus" aria-hidden="true"></div>
+          <div class="ps__stem" aria-hidden="true"><i class="ps__stem-dot"></i></div>
+          <div class="ps__hub" data-part="hub">
+            <span class="ps__hub-ring" aria-hidden="true"></span>
+            <span class="ps__hub-ring ps__hub-ring--late" aria-hidden="true"></span>
+            <Icon name="stock" size="md" />
+          </div>
         </div>
         <div class="ps__result" data-part="result">
           <p class="ps__result-label">Kullanılabilir stok · tüm kanallarda</p>
           <p class="ps__result-num">{SYNCED_STOCK}</p>
+          <ul class="ps__sync" aria-hidden="true">
+            {messy.map((m) => <li class="ps__sync-dot" data-code={m.code}></li>)}
+          </ul>
         </div>
       </div>
       <h3 id="ps-after-title" class="ps__title">Entegrasyonik ile</h3>
@@ -232,9 +242,6 @@ const comparison = [
     background-image: var(--site-texture-dots);
     background-size: var(--site-texture-dots-size);
   }
-  .ps__stage--after {
-    background-color: color-mix(in srgb, var(--ek-color-secondary) 9%, var(--ek-color-surface));
-  }
   .ps__stage-label {
     color: var(--ek-color-content-muted);
     font-size: var(--ek-font-size-xs);
@@ -322,106 +329,246 @@ const comparison = [
     font-weight: var(--ek-font-weight-semibold);
   }
 
-  /* --- Tek merkez: kanallar üstte, akış çizgileri ortak hatta birleşip merkeze iner --- */
-  .ps__tidy {
+  /*
+   * --- Tek merkez (S15): kanallar -> ortak hat -> göbek -> senkron stok ---
+   * Dar sahnede (kapsayıcı < 30rem: mobil, tablet ve iki sütunlu dar kart) "yan ray": kanallar alt alta,
+   * ince yatay akış çizgileri dikey ortak hatta birleşir, göbek sağda. Geniş sahnede kanallar üstte yan yana,
+   * dikey çizgiler yatay ortak hatta birleşip göbeğe iner. Eksene bağlı hareket yönleri özel özelliklerle
+   * (`--ps-*`) verilir; animasyonlar aynı keyframes'i iki yerleşimde de kullanır.
+   */
+  .ps__stage--after {
+    container-type: inline-size;
+    background-color: color-mix(in srgb, var(--ek-color-secondary) 5%, var(--ek-color-surface));
+    background-image:
+      radial-gradient(70% 55% at 50% 62%, color-mix(in srgb, var(--ek-color-secondary) 15%, transparent), transparent 72%),
+      linear-gradient(180deg, color-mix(in srgb, var(--ek-color-surface) 75%, transparent), transparent 45%),
+      var(--site-texture-dots);
+    background-size:
+      auto,
+      auto,
+      var(--site-texture-dots-size);
+    box-shadow: inset 0 0 0 var(--site-border-width) color-mix(in srgb, var(--ek-color-secondary) 18%, transparent);
+  }
+  .ps__net {
+    --ps-row: var(--ek-space-8);
+    --ps-line: var(--site-border-width);
+    --ps-comet: calc(var(--site-border-width) * 2);
+    --ps-comet-len: var(--ek-space-8);
+    --ps-hot: color-mix(in srgb, var(--ek-color-secondary) 30%, var(--ek-color-surface));
+    /* Akış yönü (dar: soldan sağa / yukarıdan ortaya; geniş: yukarıdan aşağı / kenarlardan ortaya). */
+    --ps-in-from: -100% 0;
+    --ps-back-from: 100% 0;
+    --ps-bus-from: 1 0;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--ek-space-3) var(--ek-space-2);
+    grid-template-columns: minmax(0, 1fr) var(--ps-line) var(--ek-space-5) auto;
+    align-items: center;
+    padding-block: var(--ek-space-1);
+  }
+  .ps__tidy {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    min-width: 0;
   }
   .ps__tpanel {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 0;
+    height: var(--ps-row);
+    min-width: 0;
   }
   .ps__tpanel-chan {
+    position: relative;
     display: inline-flex;
+    flex: none;
     align-items: center;
-    gap: var(--ek-space-1);
-    padding: var(--ek-space-1) var(--ek-space-2);
-    border: var(--site-border-width) solid var(--chan, var(--ek-color-border-strong));
-    border-radius: var(--ek-radius-md);
-    background: var(--ek-color-surface);
+    gap: var(--ek-space-2);
+    max-width: 75%;
+    padding: var(--ek-space-1) var(--ek-space-3) var(--ek-space-1) var(--ek-space-1);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 38%, var(--ek-color-border-default));
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-surface) 92%, transparent);
+    box-shadow:
+      0 var(--site-border-width) calc(var(--site-border-width) * 2) color-mix(in srgb, var(--ek-color-content-strong) 6%, transparent),
+      0 var(--ek-space-2) var(--ek-space-4) calc(var(--ek-space-2) * -1) color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 40%, transparent);
     color: var(--ek-color-content-strong);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
-    text-align: center;
-    white-space: nowrap;
+  }
+  .ps__tpanel-name {
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 100%;
+    white-space: nowrap;
   }
+  /* Kanala geri yayılan dalga halkası (statik/JS'siz hâlde görünmez). */
+  .ps__tpanel-chan::after {
+    content: '';
+    position: absolute;
+    inset: calc(var(--site-border-width) * -1);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 70%, transparent);
+    border-radius: inherit;
+    opacity: 0;
+    pointer-events: none;
+  }
+  /* İnce akış çizgisi: kanal renginden marka ikincil rengine. */
   .ps__flow {
     position: relative;
-    width: calc(var(--site-border-width) * 2);
-    height: var(--ek-space-10);
-    background: linear-gradient(180deg, var(--chan, var(--ek-color-secondary)), var(--ek-color-secondary));
-    box-shadow: 0 0 var(--ek-space-2) 0 color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 55%, transparent);
-    border-radius: var(--ek-radius-full);
-  }
-  .ps__flow-dot {
-    position: absolute;
-    inset-inline-start: 50%;
-    inset-block-start: 0;
-    width: var(--ek-space-2);
-    height: var(--ek-space-2);
-    translate: -50% 0;
-    border-radius: var(--ek-radius-full);
-    background: var(--chan, var(--ek-color-secondary));
-    box-shadow: 0 0 0 calc(var(--ek-space-1) * 0.9) color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 45%, transparent);
-    opacity: 0;
-  }
-  .ps__bus {
-    height: calc(var(--site-border-width) * 2);
-    border-radius: var(--ek-radius-full);
+    flex: 1;
+    align-self: center;
+    min-width: var(--ek-space-4);
+    height: var(--ps-line);
     background: linear-gradient(
       90deg,
-      transparent,
-      var(--ek-color-secondary) 15%,
-      var(--ek-color-secondary) 85%,
-      transparent
+      color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 70%, transparent),
+      color-mix(in srgb, var(--ek-color-secondary) 80%, transparent)
     );
-    box-shadow: 0 0 var(--ek-space-2) 0 color-mix(in srgb, var(--ek-color-secondary) 45%, transparent);
+  }
+  /* Işık paketi (kuyruklu): sarmalayıcı çizgi boyunda; `translate` ile çizgi boyunca kayar, baş öncü uçta. */
+  .ps__flow-dot,
+  .ps__flow-back {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .ps__flow-dot::before,
+  .ps__flow-back::before {
+    content: '';
+    position: absolute;
+    inset-block-start: 50%;
+    width: var(--ps-comet-len);
+    height: var(--ps-comet);
+    translate: 0 -50%;
+    border-radius: var(--ek-radius-full);
+  }
+  .ps__flow-dot::before {
+    inset-inline-end: 0;
+    background: linear-gradient(90deg, transparent, var(--chan, var(--ek-color-secondary)) 70%, color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 35%, var(--ek-color-surface)));
+    box-shadow: 0 0 var(--ek-space-2) color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 55%, transparent);
+  }
+  .ps__flow-back::before {
+    inset-inline-start: 0;
+    background: linear-gradient(270deg, transparent, var(--ek-color-secondary) 70%, color-mix(in srgb, var(--ek-color-secondary) 35%, var(--ek-color-surface)));
+    box-shadow: 0 0 var(--ek-space-2) color-mix(in srgb, var(--ek-color-secondary) 55%, transparent);
+  }
+  /* Ortak hat: kanalların birleştiği ince çizgi; iki ucundan ortaya dolan ışık (::before / ::after). */
+  .ps__bus {
+    position: relative;
+    align-self: stretch;
+    width: var(--ps-line);
+    margin-block: calc(var(--ps-row) / 2);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ek-color-secondary) 60%, transparent),
+      var(--ek-color-secondary) 50%,
+      color-mix(in srgb, var(--ek-color-secondary) 60%, transparent)
+    );
+  }
+  .ps__bus::before,
+  .ps__bus::after {
+    content: '';
+    position: absolute;
+    inset-inline-start: 50%;
+    width: calc(var(--site-border-width) * 3);
+    height: 50%;
+    translate: -50% 0;
+    border-radius: var(--ek-radius-full);
+    box-shadow: 0 0 var(--ek-space-3) color-mix(in srgb, var(--ek-color-secondary) 75%, transparent);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .ps__bus::before {
+    inset-block-start: 0;
+    transform-origin: 50% 0;
+    background: linear-gradient(180deg, transparent, var(--ek-color-secondary) 70%, var(--ps-hot));
+  }
+  .ps__bus::after {
+    inset-block-end: 0;
+    transform-origin: 50% 100%;
+    background: linear-gradient(0deg, transparent, var(--ek-color-secondary) 70%, var(--ps-hot));
   }
   .ps__stem {
-    align-self: center;
-    width: calc(var(--site-border-width) * 2);
-    height: var(--ek-space-4);
+    position: relative;
+    height: var(--ps-line);
     background: var(--ek-color-secondary);
+  }
+  .ps__stem-dot {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+  }
+  .ps__stem-dot::before {
+    content: '';
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-end: 0;
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    translate: 50% -50%;
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-secondary) 40%, var(--ek-color-surface));
+    box-shadow: 0 0 var(--ek-space-2) var(--ek-color-secondary);
   }
   .ps__hub {
     position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    align-self: center;
+    justify-self: center;
     width: var(--ek-space-12);
     height: var(--ek-space-12);
     border-radius: var(--ek-radius-full);
-    background: linear-gradient(140deg, var(--ek-color-primary-darken-1), var(--ek-color-primary));
+    background:
+      radial-gradient(circle at 32% 26%, color-mix(in srgb, var(--ek-color-secondary) 45%, transparent), transparent 58%),
+      linear-gradient(140deg, var(--ek-color-primary-darken-1), var(--ek-color-primary));
     color: var(--site-color-on-primary);
-    box-shadow: var(--site-glow-ring);
+    box-shadow:
+      var(--site-glow-ring),
+      0 var(--ek-space-3) var(--ek-space-6) calc(var(--ek-space-2) * -1) color-mix(in srgb, var(--ek-color-primary) 55%, transparent);
   }
-  /* Göbekte nabız gibi yayılan ışıma halkası (yalnızca oynatma durumunda ve görünürken: scenes-loops.css). */
+  /* Göbek arkasındaki yumuşak ışıma (nefes: scenes-loops.css `loop-hub-glow`). */
   .ps__hub::after {
     content: '';
     position: absolute;
-    inset: calc(var(--ek-space-2) * -1);
+    inset: calc(var(--ek-space-3) * -1);
     z-index: -1;
     border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-secondary) 40%, transparent);
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-secondary) 45%, transparent), transparent);
     opacity: 0;
   }
+  /* Göbekten dışa açılan iki ince halka (varış anı). */
+  .ps__hub-ring {
+    position: absolute;
+    inset: 0;
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 75%, transparent);
+    border-radius: inherit;
+    opacity: 0;
+    pointer-events: none;
+  }
   .ps__result {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: var(--ek-space-1);
-    padding: var(--ek-space-3) var(--ek-space-4);
-    border: var(--site-border-width) solid var(--ek-color-secondary);
+    padding: var(--ek-space-3) var(--ek-space-4) var(--ek-space-4);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 45%, var(--ek-color-border-default));
     border-radius: var(--ek-radius-lg);
-    background: var(--ek-color-surface);
+    background: linear-gradient(180deg, var(--ek-color-surface), color-mix(in srgb, var(--ek-color-secondary) 6%, var(--ek-color-surface)));
+    box-shadow: 0 var(--ek-space-3) var(--ek-space-6) calc(var(--ek-space-3) * -1) color-mix(in srgb, var(--ek-color-secondary) 45%, transparent);
     text-align: center;
+  }
+  /* Senkron anında kart kenarında beliren ince ışık. */
+  .ps__result::after {
+    content: '';
+    position: absolute;
+    inset: calc(var(--site-border-width) * -1);
+    border-radius: inherit;
+    box-shadow:
+      0 0 0 var(--site-border-width) var(--ek-color-secondary),
+      0 0 var(--ek-space-4) color-mix(in srgb, var(--ek-color-secondary) 45%, transparent);
+    opacity: 0;
+    pointer-events: none;
   }
   .ps__result-label {
     color: var(--ek-color-content-muted);
@@ -435,6 +582,344 @@ const comparison = [
     font-size: var(--site-font-display-sm);
     font-weight: var(--site-font-display-weight);
     line-height: 1;
+  }
+  /* Kanal başına senkron noktası: statik hâlde hepsi yanık (senkron son durum). */
+  .ps__sync {
+    display: flex;
+    gap: var(--ek-space-2);
+    margin-top: var(--ek-space-1);
+  }
+  .ps__sync-dot {
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: var(--chan, var(--ek-color-secondary));
+    box-shadow: 0 0 0 calc(var(--site-border-width) * 2) color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 20%, transparent);
+  }
+
+  @container (min-width: 30rem) {
+    .ps__net {
+      --ps-in-from: 0 -100%;
+      --ps-back-from: 0 100%;
+      --ps-bus-from: 0 1;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .ps__tidy {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0;
+    }
+    .ps__tpanel {
+      flex-direction: column;
+      height: auto;
+      padding-inline: calc(var(--ek-space-1) / 2);
+    }
+    .ps__tpanel-chan {
+      gap: var(--ek-space-1);
+      max-width: 100%;
+      padding-inline-end: var(--ek-space-2);
+    }
+    .ps__flow {
+      flex: none;
+      width: var(--ps-line);
+      min-width: 0;
+      height: var(--ek-space-10);
+      background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 70%, transparent),
+        color-mix(in srgb, var(--ek-color-secondary) 80%, transparent)
+      );
+    }
+    .ps__flow-dot::before,
+    .ps__flow-back::before {
+      inset-block-start: auto;
+      inset-inline: 50% auto;
+      width: var(--ps-comet);
+      height: var(--ps-comet-len);
+      translate: -50% 0;
+    }
+    .ps__flow-dot::before {
+      inset-block-end: 0;
+      background: linear-gradient(180deg, transparent, var(--chan, var(--ek-color-secondary)) 70%, color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 35%, var(--ek-color-surface)));
+    }
+    .ps__flow-back::before {
+      inset-block-start: 0;
+      background: linear-gradient(0deg, transparent, var(--ek-color-secondary) 70%, color-mix(in srgb, var(--ek-color-secondary) 35%, var(--ek-color-surface)));
+    }
+    .ps__bus {
+      width: auto;
+      height: var(--ps-line);
+      margin-block: 0;
+      margin-inline: 12.5%;
+      background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--ek-color-secondary) 60%, transparent),
+        var(--ek-color-secondary) 50%,
+        color-mix(in srgb, var(--ek-color-secondary) 60%, transparent)
+      );
+    }
+    .ps__bus::before,
+    .ps__bus::after {
+      inset-block-start: 50%;
+      width: 50%;
+      height: calc(var(--site-border-width) * 3);
+      translate: 0 -50%;
+    }
+    .ps__bus::before {
+      inset-inline-start: 0;
+      transform-origin: 0 50%;
+      background: linear-gradient(90deg, transparent, var(--ek-color-secondary) 70%, var(--ps-hot));
+    }
+    .ps__bus::after {
+      inset-block-end: auto;
+      inset-inline-start: 50%;
+      transform-origin: 100% 50%;
+      background: linear-gradient(270deg, transparent, var(--ek-color-secondary) 70%, var(--ps-hot));
+    }
+    .ps__stem {
+      align-self: center;
+      width: var(--ps-line);
+      height: var(--ek-space-5);
+    }
+    .ps__stem-dot::before {
+      inset-block: auto 0;
+      inset-inline: 50% auto;
+      translate: -50% 50%;
+    }
+    .ps__hub {
+      align-self: center;
+    }
+  }
+
+  /*
+   * S15 döngüsü (6 sn, `--site-motion-ambient-fast`; göbek ışıması `loop-hub-glow` ile aynı ritim, tepe %50):
+   *   %0–26 kanallardan ışık paketleri akar -> %18–46 ortak hat iki uçtan ortaya dolar -> %34–50 göbeğe iner ->
+   *   %46–80 göbekte iki halka + stok değeri tüm kanallarda senkron (noktalar sırayla yanar, kart kenarı ışır) ->
+   *   %56–80 kanallara geri yayılan paketler -> %76–96 kanal çiplerinde dalga halkası.
+   * Kurallar scenes-loops.css sözleşmesiyle aynıdır: yalnızca reduced-motion "no-preference" + html[data-motion='play']
+   * + sahne `data-state='play'`; `paused` başlar, yalnızca görünürken (`data-visible='true'`) çalışır; yalnızca
+   * opacity/translate/scale. Bileşen seçicileri (sınıf) genel `[data-part='packet']` döngüsünden daha özgüldür.
+   */
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes loop-ps-in {
+      0% {
+        opacity: 0;
+        translate: var(--ps-in-from);
+      }
+      5%,
+      19% {
+        opacity: 1;
+      }
+      26%,
+      100% {
+        opacity: 0;
+        translate: 0 0;
+      }
+    }
+    @keyframes loop-ps-bus {
+      0%,
+      18% {
+        opacity: 0;
+        scale: var(--ps-bus-from);
+      }
+      24% {
+        opacity: 1;
+      }
+      38% {
+        opacity: 1;
+        scale: 1;
+      }
+      48%,
+      100% {
+        opacity: 0;
+        scale: 1;
+      }
+    }
+    @keyframes loop-ps-stem {
+      0%,
+      36% {
+        opacity: 0;
+        translate: var(--ps-in-from);
+      }
+      40% {
+        opacity: 1;
+      }
+      48% {
+        opacity: 1;
+        translate: 0 0;
+      }
+      54%,
+      100% {
+        opacity: 0;
+        translate: 0 0;
+      }
+    }
+    @keyframes loop-ps-ring {
+      0%,
+      47% {
+        opacity: 0;
+        scale: 1;
+      }
+      52% {
+        opacity: 0.8;
+      }
+      80%,
+      100% {
+        opacity: 0;
+        scale: 1.9;
+      }
+    }
+    @keyframes loop-ps-core {
+      0%,
+      46%,
+      64%,
+      100% {
+        scale: 1;
+      }
+      53% {
+        scale: 1.08;
+      }
+    }
+    @keyframes loop-ps-num {
+      0%,
+      50%,
+      62%,
+      100% {
+        opacity: 1;
+        translate: 0 0;
+      }
+      54% {
+        opacity: 0.3;
+        translate: 0 calc(var(--site-motion-distance) * 0.5);
+      }
+    }
+    @keyframes loop-ps-edge {
+      0%,
+      52%,
+      84%,
+      100% {
+        opacity: 0;
+      }
+      60%,
+      72% {
+        opacity: 0.7;
+      }
+    }
+    @keyframes loop-ps-sync {
+      0%,
+      54% {
+        opacity: 0.3;
+        scale: 0.7;
+      }
+      62%,
+      94% {
+        opacity: 1;
+        scale: 1;
+      }
+      100% {
+        opacity: 0.3;
+        scale: 0.7;
+      }
+    }
+    @keyframes loop-ps-back {
+      0%,
+      56% {
+        opacity: 0;
+        translate: var(--ps-back-from);
+      }
+      60%,
+      74% {
+        opacity: 1;
+      }
+      80%,
+      100% {
+        opacity: 0;
+        translate: 0 0;
+      }
+    }
+    @keyframes loop-ps-wave {
+      0%,
+      76% {
+        opacity: 0;
+        scale: 1;
+      }
+      80% {
+        opacity: 0.8;
+      }
+      96%,
+      100% {
+        opacity: 0;
+        scale: 1.14;
+      }
+    }
+
+    :global(html[data-motion='play']) .ps[data-state='play'] .ps__tidy .ps__flow-dot {
+      animation: loop-ps-in var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+    }
+    :global(html[data-motion='play']) .ps[data-state='play'] .ps__tidy .ps__flow-back {
+      animation: loop-ps-back var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+    }
+    :global(html[data-motion='play']) .ps[data-state='play'] .ps__tidy .ps__tpanel-chan::after {
+      animation: loop-ps-wave var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+    }
+    :global(html[data-motion='play']) .ps[data-state='play'] .ps__bus::before {
+      animation: loop-ps-bus var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+    }
+    :global(html[data-motion='play']) .ps[data-state='play'] .ps__bus::after {
+      animation: loop-ps-bus var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+    }
+    :global(html[data-motion='play']) .ps[data-state='play'] .ps__stem-dot {
+      animation: loop-ps-stem var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+    }
+    :global(html[data-motion='play']) .ps[data-state='play'] .ps__hub-ring {
+      animation: loop-ps-ring var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+    }
+    :global(html[data-motion='play']) .ps[data-state='play'] .ps__hub > :global(svg) {
+      animation: loop-ps-core var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+    }
+    :global(html[data-motion='play']) .ps[data-state='play'] .ps__result-num {
+      animation: loop-ps-num var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+    }
+    :global(html[data-motion='play']) .ps[data-state='play'] .ps__result::after {
+      animation: loop-ps-edge var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+    }
+    :global(html[data-motion='play']) .ps[data-state='play'] .ps__sync-dot {
+      animation: loop-ps-sync var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+    }
+    :global(html[data-motion='play']) .ps[data-state='play'][data-visible='true'] .ps__tidy .ps__flow-dot,
+    :global(html[data-motion='play']) .ps[data-state='play'][data-visible='true'] .ps__tidy .ps__flow-back,
+    :global(html[data-motion='play']) .ps[data-state='play'][data-visible='true'] .ps__tidy .ps__tpanel-chan::after,
+    :global(html[data-motion='play']) .ps[data-state='play'][data-visible='true'] .ps__bus::before,
+    :global(html[data-motion='play']) .ps[data-state='play'][data-visible='true'] .ps__bus::after,
+    :global(html[data-motion='play']) .ps[data-state='play'][data-visible='true'] .ps__stem-dot,
+    :global(html[data-motion='play']) .ps[data-state='play'][data-visible='true'] .ps__hub-ring,
+    :global(html[data-motion='play']) .ps[data-state='play'][data-visible='true'] .ps__hub > :global(svg),
+    :global(html[data-motion='play']) .ps[data-state='play'][data-visible='true'] .ps__result-num,
+    :global(html[data-motion='play']) .ps[data-state='play'][data-visible='true'] .ps__result::after,
+    :global(html[data-motion='play']) .ps[data-state='play'][data-visible='true'] .ps__sync-dot {
+      animation-play-state: running;
+    }
+    /* İkinci halka biraz geriden gelir; kanal başına ritim: paket, dönüş ve dalga aynı gecikmeyle kayar. */
+    :global(html[data-motion='play']) .ps[data-state='play'] .ps__hub-ring--late {
+      animation-delay: calc(var(--site-motion-stagger) * 4);
+    }
+    :global(html[data-motion='play']) .ps[data-state='play'] .ps__tidy > .ps__tpanel:nth-child(2) :is(.ps__flow-dot, .ps__flow-back),
+    :global(html[data-motion='play']) .ps[data-state='play'] .ps__tidy > .ps__tpanel:nth-child(2) .ps__tpanel-chan::after,
+    :global(html[data-motion='play']) .ps[data-state='play'] .ps__sync > .ps__sync-dot:nth-child(2) {
+      animation-delay: calc(var(--site-motion-stagger) * 2);
+    }
+    :global(html[data-motion='play']) .ps[data-state='play'] .ps__tidy > .ps__tpanel:nth-child(3) :is(.ps__flow-dot, .ps__flow-back),
+    :global(html[data-motion='play']) .ps[data-state='play'] .ps__tidy > .ps__tpanel:nth-child(3) .ps__tpanel-chan::after,
+    :global(html[data-motion='play']) .ps[data-state='play'] .ps__sync > .ps__sync-dot:nth-child(3) {
+      animation-delay: calc(var(--site-motion-stagger) * 4);
+    }
+    :global(html[data-motion='play']) .ps[data-state='play'] .ps__tidy > .ps__tpanel:nth-child(4) :is(.ps__flow-dot, .ps__flow-back),
+    :global(html[data-motion='play']) .ps[data-state='play'] .ps__tidy > .ps__tpanel:nth-child(4) .ps__tpanel-chan::after,
+    :global(html[data-motion='play']) .ps[data-state='play'] .ps__sync > .ps__sync-dot:nth-child(4) {
+      animation-delay: calc(var(--site-motion-stagger) * 6);
+    }
   }
 
   .ps__title {
@@ -600,8 +1085,7 @@ const comparison = [
   }
 
   @media (min-width: 1024px) {
-    .ps__messy,
-    .ps__tidy {
+    .ps__messy {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }

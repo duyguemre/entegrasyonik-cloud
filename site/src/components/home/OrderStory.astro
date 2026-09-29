@@ -3,7 +3,11 @@
  * Senaryo / kullanım hikâyesi (S7): "Bir sipariş geldiğinde ne olur" — beş adımlık, kaydırmayla adım adım beliren zaman çizgisi.
  * Her adımın metni yetenek kaydındaki cümleden gelir (sipariş çekme, stok rezervasyonu, kanallara iletme, kargo/fatura bildirimi,
  * iade); sınır notları (caveat) görünür. Adım başına bir sahne (`data-scene="story-step"`): görünür olunca düğüm, bağlayıcı
- * çizgi, kart ve mini arayüz sırayla belirir. Mini arayüzler HTML/CSS "Örnek görünüm"dür (aria-hidden); sayılar örnektir.
+ * çizgi, kart ve mini arayüz sırayla belirir. Mini arayüzler HTML/CSS temsildir (aria-hidden); sayılar örnektir — bunu bölüm
+ * girişi ("Gösterilen ekranlar örnektir") söyler, S15'te kutu başına ayrı "örnek" etiketi kaldırıldı.
+ * S15 görsel dil: kart (yüzey) > mini arayüz (aynı renk ailesinde bir ton koyu, ikincil renge çalan cam) > öğeler (bir ton
+ * açık cam, ince kenar ışığı). Döngü (12 sn, yalnızca oynatılırken ve görünürken): düğümde halka -> çizgi boyunca akan ışık
+ * paketi -> mini arayüzde işlenen öğenin üzerinden geçen ince ışık -> durum değişimi (rozet / sayı / kanal noktaları).
  */
 import Section from '../Section.astro'
 import SectionHeading from './SectionHeading.astro'
@@ -67,7 +71,6 @@ const steps = [
             <div class="story__visual" aria-hidden="true">
               {s.key === 'incoming' && (
                 <div class="mini mini--incoming">
-                  <p class="mini__tag">Örnek görünüm</p>
                   <div class="mini__row" data-part="mini-item">
                     <span class="mini__chan">{chanA}</span>
                     <span class="mini__skel"><i></i><i></i></span>
@@ -81,10 +84,9 @@ const steps = [
               )}
               {s.key === 'reserve' && (
                 <div class="mini mini--reserve">
-                  <p class="mini__tag">Örnek görünüm</p>
                   <div class="mini__stock" data-part="mini-item">
                     <span class="mini__label">Kullanılabilir</span>
-                    <span class="mini__big">12<Icon name="arrow" size="sm" />11</span>
+                    <span class="mini__big"><span class="mini__num-old">12</span><span class="mini__arrow"><Icon name="arrow" size="sm" /></span><span class="mini__num-new">11</span></span>
                   </div>
                   <div class="mini__row" data-part="mini-item">
                     <span class="mini__chan">{chanA}</span>
@@ -95,7 +97,6 @@ const steps = [
               )}
               {s.key === 'sync' && (
                 <div class="mini mini--sync">
-                  <p class="mini__tag">Örnek görünüm</p>
                   <ul class="mini__chips">
                     {channels.map((name) => (
                       <li class="mini__chip" data-part="mini-item">
@@ -108,7 +109,6 @@ const steps = [
               )}
               {s.key === 'notice' && (
                 <div class="mini mini--notice">
-                  <p class="mini__tag">Örnek görünüm</p>
                   <div class="mini__flow">
                     <span class="mini__box" data-part="mini-item"><Icon name="notice" size="sm" />Kargo takip bilgisi</span>
                     <span class="mini__box" data-part="mini-item"><Icon name="receipt" size="sm" />Fatura bağlantısı</span>
@@ -118,7 +118,6 @@ const steps = [
               )}
               {s.key === 'returns' && (
                 <div class="mini mini--returns">
-                  <p class="mini__tag">Örnek görünüm</p>
                   <div class="mini__row" data-part="mini-item">
                     <span class="mini__chan">{chanA}</span>
                     <span class="mini__skel"><i></i><i></i></span>
@@ -186,20 +185,44 @@ const steps = [
   .story__step:last-child .story__line {
     background: linear-gradient(180deg, var(--ek-color-secondary), transparent);
   }
-  /* Adımlar arasında akan veri paketi (döngü: scenes-loops.css `loop-story-packet`); statik/JS'siz hâlde görünmez. */
+  /*
+   * Adımlar arasında akan ışık paketi (S15): sarmalayıcı çizgi boyundadır, kuyruklu ışık alt uçtadır; döngüde
+   * sarmalayıcı `translate` ile yukarıdan aşağı kayar → paket çizginin TAMAMI boyunca akar. Statik/JS'siz hâlde görünmez.
+   */
   .story__packet {
     position: absolute;
-    inset-inline-start: 50%;
-    inset-block-start: 0;
-    translate: -50% 0;
-    width: var(--ek-space-2);
-    height: var(--ek-space-2);
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-secondary);
-    box-shadow: var(--site-glow-ring);
+    inset: 0;
     opacity: 0;
     pointer-events: none;
   }
+  .story__packet::before {
+    content: '';
+    position: absolute;
+    inset-block-end: 0;
+    inset-inline-start: 50%;
+    width: calc(var(--site-border-width) * 3);
+    height: var(--ek-space-10);
+    translate: -50% 0;
+    border-radius: var(--ek-radius-full);
+    background: linear-gradient(
+      180deg,
+      transparent,
+      var(--ek-color-secondary) 75%,
+      color-mix(in srgb, var(--ek-color-secondary) 30%, var(--ek-color-surface))
+    );
+    box-shadow: 0 0 var(--ek-space-2) color-mix(in srgb, var(--ek-color-secondary) 60%, transparent);
+  }
+  /* Düğümde adım etkinleşirken açılan ince halka (statik hâlde görünmez). */
+  .story__node::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 75%, transparent);
+    border-radius: inherit;
+    opacity: 0;
+    pointer-events: none;
+  }
+  /* Kart: yüzey + sağ üstte ikincil renge çalan çok hafif ışıma (mini arayüzle aynı renk ailesi). */
   .story__card {
     display: grid;
     gap: var(--ek-space-5);
@@ -207,7 +230,9 @@ const steps = [
     padding: var(--ek-space-5);
     border: var(--site-border-width) solid var(--ek-color-border-default);
     border-radius: var(--site-radius-panel);
-    background: var(--ek-color-surface);
+    background:
+      radial-gradient(60% 80% at 100% 0%, color-mix(in srgb, var(--ek-color-secondary) 7%, transparent), transparent 70%),
+      var(--ek-color-surface);
     box-shadow: var(--site-shadow-card);
   }
   .story__step:last-child .story__card {
@@ -245,40 +270,67 @@ const steps = [
     min-width: 0;
   }
 
-  /* --- Mini arayüzler --- */
+  /*
+   * --- Mini arayüzler (S15) ---
+   * Katmanlar tek renk ailesinde: kart yüzeyi > mini arayüz "cam" (ikincil renge çalan, bir ton koyu; üst kenarda
+   * ince ışık) > öğeler (bir ton açık cam, renkli ince kenar, yumuşak renkli gölge). Gri-mavi "sunken" zemin ve
+   * nokta dokusu kaldırıldı: kutular kartın parçası gibi görünür.
+   */
   .mini {
+    --mini-edge: color-mix(in srgb, var(--ek-color-secondary) 22%, var(--ek-color-border-default));
+    --mini-item-bg: color-mix(in srgb, var(--ek-color-surface) 86%, transparent);
+    --mini-item-edge: color-mix(in srgb, var(--ek-color-secondary) 16%, var(--ek-color-border-default));
+    --mini-light: color-mix(in srgb, var(--ek-color-secondary) 16%, transparent);
     display: flex;
     flex-direction: column;
+    justify-content: center;
     gap: var(--ek-space-3);
     height: 100%;
     padding: var(--ek-space-4);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border: var(--site-border-width) solid var(--mini-edge);
     border-radius: var(--ek-radius-xl);
-    background-color: var(--ek-color-surface-sunken);
-    background-image: var(--site-texture-dots);
-    background-size: var(--site-texture-dots-size);
+    background:
+      radial-gradient(90% 70% at 85% 0%, color-mix(in srgb, var(--ek-color-secondary) 14%, transparent), transparent 70%),
+      linear-gradient(
+        160deg,
+        color-mix(in srgb, var(--ek-color-secondary) 6%, var(--ek-color-surface)),
+        color-mix(in srgb, var(--ek-color-secondary) 9%, var(--ek-color-surface-muted))
+      );
+    box-shadow:
+      inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-surface) 90%, transparent),
+      inset 0 0 0 var(--site-border-width) color-mix(in srgb, var(--ek-color-surface) 35%, transparent);
     font-size: var(--ek-font-size-sm);
-  }
-  .mini__tag {
-    color: var(--ek-color-content-muted);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
   }
   .mini__row,
   .mini__stock,
   .mini__hint,
   .mini__box,
   .mini__to {
+    position: relative;
     display: flex;
     align-items: center;
     gap: var(--ek-space-3);
     padding: var(--ek-space-3);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
+    overflow: hidden;
+    border: var(--site-border-width) solid var(--mini-item-edge);
     border-radius: var(--ek-radius-lg);
-    background: var(--ek-color-surface);
-    box-shadow: var(--ek-shadow-sm);
+    background: var(--mini-item-bg);
+    box-shadow:
+      inset 0 var(--site-border-width) 0 var(--ek-color-surface),
+      0 var(--site-border-width) calc(var(--site-border-width) * 2) color-mix(in srgb, var(--ek-color-content-strong) 4%, transparent),
+      0 var(--ek-space-2) var(--ek-space-4) calc(var(--ek-space-2) * -1) color-mix(in srgb, var(--ek-color-primary-darken-1) 12%, transparent);
+  }
+  /* İşlenen öğenin üzerinden geçen ince ışık (döngüde soldan sağa kayar; statik hâlde görünmez). */
+  .mini__row::after,
+  .mini__stock::after,
+  .mini__box::after,
+  .mini__to::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, transparent 25%, var(--mini-light) 50%, transparent 75%);
+    opacity: 0;
+    pointer-events: none;
   }
   .mini__chan {
     min-width: 4.5rem;
@@ -295,7 +347,7 @@ const steps = [
     display: block;
     height: var(--ek-space-1);
     border-radius: var(--ek-radius-full);
-    background: var(--ek-color-surface-sunken);
+    background: color-mix(in srgb, var(--ek-color-secondary) 14%, var(--ek-color-surface-sunken));
   }
   .mini__skel i:first-child {
     width: 82%;
@@ -317,19 +369,24 @@ const steps = [
   }
   .mini__pill {
     padding: var(--ek-space-1) var(--ek-space-3);
+    border: var(--site-border-width) solid transparent;
     border-radius: var(--ek-radius-full);
     color: var(--ek-color-content-strong);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
+    text-align: center;
     white-space: nowrap;
   }
   .mini__pill--new {
+    border-color: color-mix(in srgb, var(--ek-color-info) 22%, transparent);
     background: var(--ek-color-info-subtle);
   }
   .mini__pill--ok {
+    border-color: color-mix(in srgb, var(--ek-color-success) 22%, transparent);
     background: var(--ek-color-success-subtle);
   }
   .mini__pill--alert {
+    border-color: color-mix(in srgb, var(--ek-color-warning) 28%, transparent);
     background: var(--ek-color-warning-subtle);
   }
   .mini__hint {
@@ -351,6 +408,16 @@ const steps = [
     font-size: var(--ek-font-size-2xl);
     font-weight: var(--site-font-display-weight);
   }
+  .mini__num-old {
+    color: var(--ek-color-content-muted);
+  }
+  .mini__arrow {
+    display: inline-flex;
+    color: var(--ek-color-secondary-darken-1);
+  }
+  .mini__num-new {
+    display: inline-block;
+  }
   .mini__chips {
     display: flex;
     flex-wrap: wrap;
@@ -361,17 +428,30 @@ const steps = [
     align-items: center;
     gap: var(--ek-space-2);
     padding: var(--ek-space-1) var(--ek-space-3);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border: var(--site-border-width) solid var(--mini-item-edge);
     border-radius: var(--ek-radius-full);
-    background: var(--ek-color-surface);
+    background: var(--mini-item-bg);
+    box-shadow:
+      inset 0 var(--site-border-width) 0 var(--ek-color-surface),
+      0 var(--ek-space-1) var(--ek-space-3) calc(var(--ek-space-1) * -1) color-mix(in srgb, var(--ek-color-primary-darken-1) 16%, transparent);
     color: var(--ek-color-content-strong);
     font-weight: var(--ek-font-weight-medium);
   }
   .mini__dot {
+    position: relative;
     width: var(--ek-space-2);
     height: var(--ek-space-2);
     border-radius: var(--ek-radius-full);
     background: var(--ek-color-success);
+  }
+  /* Kanal güncellenince noktadan açılan küçük halka (döngüde sırayla; statik hâlde görünmez). */
+  .mini__dot::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: 0 0 0 var(--site-border-width) var(--ek-color-success);
+    opacity: 0;
   }
   .mini__flow {
     display: flex;
@@ -385,7 +465,8 @@ const steps = [
     font-weight: var(--ek-font-weight-semibold);
   }
   .mini__to {
-    border-color: var(--ek-color-secondary);
+    border-color: color-mix(in srgb, var(--ek-color-secondary) 60%, var(--ek-color-border-default));
+    background: color-mix(in srgb, var(--ek-color-secondary) 8%, var(--mini-item-bg));
   }
   .mini__actions {
     display: flex;
@@ -393,16 +474,164 @@ const steps = [
   }
   .mini__btn {
     padding: var(--ek-space-1) var(--ek-space-4);
-    border: var(--site-border-width) solid var(--ek-color-border-strong);
+    border: var(--site-border-width) solid var(--mini-item-edge);
     border-radius: var(--ek-radius-md);
-    background: var(--ek-color-surface);
+    background: var(--mini-item-bg);
     color: var(--ek-color-content-strong);
     font-weight: var(--ek-font-weight-semibold);
   }
   .mini__btn--primary {
     border-color: var(--ek-color-primary);
-    background: var(--ek-color-primary);
+    background: linear-gradient(140deg, var(--ek-color-primary-darken-1), var(--ek-color-primary));
     color: var(--site-color-on-primary);
+  }
+
+  /*
+   * S15 döngüsü (12 sn `--site-motion-loop-scene`; mevcut `loop-badge-cycle` rozet ritmiyle hizalı, rozet %38–48'de belirir):
+   *   %0–30 düğüm halkası -> %10–80 ışık paketi çizgi boyunca akar -> %30–50 işlenen öğenin üzerinden ışık geçer ->
+   *   %42–60 durum değişimi (yeni stok sayısı, kanal noktaları sırayla). Sözleşme scenes-loops.css ile aynıdır:
+   *   yalnızca reduced-motion "no-preference" + html[data-motion='play'] + sahne `data-state='play'`; `paused` başlar,
+   *   yalnızca görünürken çalışır; yalnızca opacity/translate/scale. Bileşen seçicileri genel `story-packet`
+   *   döngüsünden daha özgüldür (paket artık çizginin tamamında akar).
+   */
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes loop-story-flow {
+      0%,
+      10% {
+        opacity: 0;
+        translate: 0 -100%;
+      }
+      18%,
+      70% {
+        opacity: 1;
+      }
+      80%,
+      100% {
+        opacity: 0;
+        translate: 0 0;
+      }
+    }
+    @keyframes loop-story-ring {
+      0%,
+      100% {
+        opacity: 0;
+        scale: 1;
+      }
+      4% {
+        opacity: 0.8;
+      }
+      26%,
+      99% {
+        opacity: 0;
+        scale: 1.7;
+      }
+    }
+    @keyframes loop-story-sheen {
+      0%,
+      30% {
+        opacity: 0;
+        translate: -100% 0;
+      }
+      34%,
+      44% {
+        opacity: 1;
+      }
+      50%,
+      100% {
+        opacity: 0;
+        translate: 100% 0;
+      }
+    }
+    @keyframes loop-story-count {
+      0%,
+      42%,
+      100% {
+        opacity: 1;
+        translate: 0 0;
+      }
+      45% {
+        opacity: 0;
+        translate: 0 calc(var(--site-motion-distance) * 0.6);
+      }
+    }
+    @keyframes loop-story-nudge {
+      0%,
+      36%,
+      50%,
+      100% {
+        translate: 0 0;
+      }
+      43% {
+        translate: calc(var(--site-motion-distance) * 0.4) 0;
+      }
+    }
+    @keyframes loop-story-dot {
+      0%,
+      44% {
+        opacity: 0;
+        scale: 1;
+      }
+      48% {
+        opacity: 0.7;
+      }
+      62%,
+      100% {
+        opacity: 0;
+        scale: 2.6;
+      }
+    }
+
+    :global(html[data-motion='play']) .story__step[data-state='play'] .story__line .story__packet {
+      animation: loop-story-flow var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
+    }
+    :global(html[data-motion='play']) .story__step[data-state='play'] .story__node::after {
+      animation: loop-story-ring var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
+    }
+    :global(html[data-motion='play']) .story__step[data-state='play'] .mini__row::after,
+    :global(html[data-motion='play']) .story__step[data-state='play'] .mini__stock::after,
+    :global(html[data-motion='play']) .story__step[data-state='play'] .mini__box::after,
+    :global(html[data-motion='play']) .story__step[data-state='play'] .mini__to::after {
+      animation: loop-story-sheen var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
+    }
+    :global(html[data-motion='play']) .story__step[data-state='play'] .mini__num-new {
+      animation: loop-story-count var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
+    }
+    :global(html[data-motion='play']) .story__step[data-state='play'] .mini__arrow {
+      animation: loop-story-nudge var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
+    }
+    :global(html[data-motion='play']) .story__step[data-state='play'] .mini__dot::after {
+      animation: loop-story-dot var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
+    }
+    :global(html[data-motion='play']) .story__step[data-state='play'][data-visible='true'] .story__line .story__packet,
+    :global(html[data-motion='play']) .story__step[data-state='play'][data-visible='true'] .story__node::after,
+    :global(html[data-motion='play']) .story__step[data-state='play'][data-visible='true'] .mini__row::after,
+    :global(html[data-motion='play']) .story__step[data-state='play'][data-visible='true'] .mini__stock::after,
+    :global(html[data-motion='play']) .story__step[data-state='play'][data-visible='true'] .mini__box::after,
+    :global(html[data-motion='play']) .story__step[data-state='play'][data-visible='true'] .mini__to::after,
+    :global(html[data-motion='play']) .story__step[data-state='play'][data-visible='true'] .mini__num-new,
+    :global(html[data-motion='play']) .story__step[data-state='play'][data-visible='true'] .mini__arrow,
+    :global(html[data-motion='play']) .story__step[data-state='play'][data-visible='true'] .mini__dot::after {
+      animation-play-state: running;
+    }
+    /* Ardışık öğeler (ikinci satır, kargo -> fatura -> kanal, kanal noktaları) aynı ışığı sırayla alır. */
+    :global(html[data-motion='play']) .story__step[data-state='play'] .mini > .mini__row:nth-child(2)::after,
+    :global(html[data-motion='play']) .story__step[data-state='play'] .mini__flow > :nth-child(2)::after,
+    :global(html[data-motion='play']) .story__step[data-state='play'] .mini__chip:nth-child(2) .mini__dot::after {
+      animation-delay: calc(var(--site-motion-stagger) * 3);
+    }
+    :global(html[data-motion='play']) .story__step[data-state='play'] .mini__flow > :nth-child(3)::after,
+    :global(html[data-motion='play']) .story__step[data-state='play'] .mini__chip:nth-child(3) .mini__dot::after {
+      animation-delay: calc(var(--site-motion-stagger) * 6);
+    }
+    :global(html[data-motion='play']) .story__step[data-state='play'] .mini__chip:nth-child(4) .mini__dot::after {
+      animation-delay: calc(var(--site-motion-stagger) * 9);
+    }
+    :global(html[data-motion='play']) .story__step[data-state='play'] .mini__chip:nth-child(5) .mini__dot::after {
+      animation-delay: calc(var(--site-motion-stagger) * 12);
+    }
+    :global(html[data-motion='play']) .story__step[data-state='play'] .mini__chip:nth-child(n + 6) .mini__dot::after {
+      animation-delay: calc(var(--site-motion-stagger) * 15);
+    }
   }
 
   @media (min-width: 768px) {

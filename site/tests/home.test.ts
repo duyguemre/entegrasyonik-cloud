@@ -258,7 +258,7 @@ describe('içerik kayıttan gelir', () => {
     expect([...nav.matchAll(/data-spy-link=/g)]).toHaveLength(4)
   })
 
-  it('senaryo (zaman çizgisi): beş adım, her adım kayıttaki yetenek metniyle; örnek görünümler etiketli', () => {
+  it('senaryo (zaman çizgisi): beş adım, her adım kayıttaki yetenek metniyle; mini arayüzler dekoratif, "örnek" beyanı bölüm girişinde', () => {
     const block = html.match(/<ol[^>]*data-testid="story-steps"[\s\S]*?<\/ol>/)![0]
     const steps = [...block.matchAll(/<li[^>]*data-scene="story-step"/g)]
     expect(steps).toHaveLength(5)
@@ -267,8 +267,20 @@ describe('içerik kayıttan gelir', () => {
     for (const id of ['unified-orders', 'stock-reservation', 'multi-channel-products', 'shipping-invoice-notice', 'returns']) {
       expect(t, id).toContain(core.find((c) => c.id === id)!.summary)
     }
-    // her mini arayüz "Örnek görünüm" etiketi taşır (uydurma veri yok)
-    expect([...block.matchAll(/Örnek görünüm/g)].length).toBeGreaterThanOrEqual(5)
+    // S15: kutu başına "Örnek görünüm" etiketi kaldırıldı; mini arayüzler aria-hidden temsildir ve ekranların örnek
+    // olduğu (uydurma veri yok) bölüm girişinde TEK cümleyle söylenir.
+    expect(block).not.toMatch(/Örnek görünüm/i)
+    expect([...block.matchAll(/class="story__visual"[^>]*aria-hidden="true"/g)]).toHaveLength(5)
+    const story = html.match(/<section[^>]*id="senaryo"[\s\S]*?<\/section>/)![0]
+    expect(textOf(story)).toContain('Gösterilen ekranlar örnektir.')
+  })
+
+  it('sorun/çözüm sahnesi: "Örnek senaryo" etiketi yok; senkron noktaları kanal başına bir (aria-hidden)', () => {
+    const ps = html.match(/data-scene="problem-solution"[\s\S]*?<\/section>/)![0]
+    expect(ps).not.toMatch(/Örnek (senaryo|görünüm)/i)
+    const sync = ps.match(/<ul[^>]*class="ps__sync"[^>]*>[\s\S]*?<\/ul>/)![0]
+    expect(sync).toContain('aria-hidden="true"')
+    expect([...sync.matchAll(/class="ps__sync-dot"/g)]).toHaveLength(getPublicIntegrations('marketplace').length)
   })
 
   it('hero mock: "Örnek görünüm" etiketi panelde (rozet yeter, ayrı altyazı yok — S8 2. tur); kanal çipleri seçiciden', () => {
