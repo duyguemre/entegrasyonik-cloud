@@ -135,6 +135,11 @@ export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'integrations/ShippingView', slug: 'integrations/shipping', section: 'integrations', order: 2 },
   { key: 'integrations/EInvoiceView', slug: 'integrations/einvoice', section: 'integrations', order: 3 },
   { key: 'integrations/ErpView', slug: 'integrations/erp', section: 'integrations', order: 4 },
+  // ADR-0015 B4-P0 (yeni ekranlar; yalnızca EKLEME). Menü görünürlüğü bugünkü gibi `MenuService`'ten gelir
+  // (ApplicationDB `menus` kaydı bu bulut görevinin kapsamı DIŞI — orkestratör/backend işi); `menuSource:'registry'`
+  // + `minRole` altyapısı henüz uygulanmadığı için KULLANILMADI. Bu ekranlar `urlParams` okumaz (PII/serbest metin yok).
+  // `titleKey`/`icon`: menüde henüz karşılığı yokken sunum yüzeylerinin (breadcrumb/palet) yedeği.
+  { key: 'AccountSecurityView', slug: 'account/security', icon: 'mdi-shield-account-outline', titleKey: 'menu.accountSecurity' },
 ] as const
 
 /** URL'nin ilk segmenti hiçbir zaman bir ekran slug'ı OLAMAZ (ADR-0012 Karar 1 — başka uç noktalar/statikler ile çakışmasın). */

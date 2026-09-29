@@ -74,6 +74,10 @@ export const useMenuStore = defineStore('menu', () => {
 
     ['AuthorizationListView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/AuthorizationListView.vue')))],
 
+    // ADR-0015 B4-P0 — yeni ekranlar (yalnızca EKLEME; `screens.ts` ile birebir anahtar). Gerçek menü ağacı kaydı
+    // (ApplicationDB `menus`) bu bulut görevinin kapsamı dışı — ADR-0020 ekranlarıyla aynı emsal (yukarıda).
+    ['AccountSecurityView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/AccountSecurityView.vue')))],
+
   ]);
 
   const restApi = useRestApi()

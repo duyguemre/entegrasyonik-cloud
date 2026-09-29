@@ -96,7 +96,10 @@
       "settingList": "Uygulama Ayarları",
       "printoutList": "Çıktılar",
       "logList": "İşlemler"
-    }
+    },
+    "accountSecurity": "Hesabım ve Güvenlik",
+    "privacyData": "Veri ve Gizlilik",
+    "stockPolicy": "Stok Politikası"
   },
   "batch": {
     "menu": {
@@ -1138,6 +1141,68 @@
     },
     "return": {
       "title": "İade Tanımları"
+    }
+  },
+  "accountSecurity": {
+    "title": "Hesabım ve güvenlik",
+    "description": "Hesap bilgileriniz, e-posta doğrulamanız ve parolanız.",
+    "loadError": "Hesap bilgileriniz yüklenemedi — bağlantınızı kontrol edip tekrar deneyin.",
+    "profile": {
+      "title": "Hesap bilgileri",
+      "description": "Oturum açtığınız hesaba ait bilgiler. Ad ve e-posta, yetkili bir yönetici tarafından Yetkilendirme ekranından güncellenir.",
+      "fullName": "Ad soyad",
+      "email": "E-posta",
+      "accountType": "Hesap türü",
+      "owner": "Mağaza sahibi",
+      "member": "Ekip üyesi"
+    },
+    "verify": {
+      "title": "E-posta doğrulaması",
+      "description": "Doğrulanmış e-posta adresi, parola sıfırlama ve güvenlik bildirimlerinin size ulaşmasını sağlar.",
+      "verified": "Doğrulandı",
+      "unverified": "Doğrulanmadı",
+      "verifiedHint": "E-posta adresiniz doğrulanmış. Başka bir işlem gerekmiyor.",
+      "unverifiedHint": "Doğrulama bağlantısı e-posta adresinize gönderilir ve 24 saat geçerlidir.",
+      "send": "Doğrulama bağlantısını gönder",
+      "sent": "Doğrulama bağlantısı e-posta adresinize gönderildi. Gelen kutunuzu ve istenmeyen klasörünü kontrol edin.",
+      "alreadyVerified": "E-posta adresiniz zaten doğrulanmış.",
+      "errors": {
+        "cooldown": "Kısa süre önce bir bağlantı gönderildi — bir dakika bekleyip tekrar deneyin.",
+        "notConfigured": "E-posta gönderimi şu an yapılandırılmamış — lütfen destek ekibiyle iletişime geçin.",
+        "mailFailed": "E-posta gönderilemedi — birkaç dakika sonra tekrar deneyin.",
+        "generic": "Doğrulama bağlantısı gönderilemedi — bağlantınızı kontrol edip tekrar deneyin."
+      }
+    },
+    "password": {
+      "title": "Parola",
+      "description": "Parolanızı değiştirdiğinizde bu cihaz dışındaki tüm oturumlarınız kapatılır ve e-posta adresinize bilgilendirme gönderilir.",
+      "current": "Mevcut parola",
+      "new": "Yeni parola",
+      "confirm": "Yeni parola (tekrar)",
+      "hintsLabel": "Parola kuralları",
+      "hints": {
+        "length": "En az 10 karakter",
+        "classes": "16 karakterden kısaysa en az 3 tür: küçük harf, büyük harf, rakam, sembol",
+        "bytes": "En fazla 72 bayt (Türkçe karakterler 2 bayt sayılır)"
+      },
+      "hintMet": "(sağlandı)",
+      "hintUnmet": "(henüz sağlanmadı)",
+      "submit": "Parolayı değiştir",
+      "changed": "Parolanız değiştirildi. Diğer cihazlardaki oturumlarınız kapatıldı; bu cihazda oturumunuz açık kalır.",
+      "changedToast": "Parolanız değiştirildi."
+    },
+    "errors": {
+      "currentRequired": "Mevcut parolanızı girin.",
+      "newRequired": "Yeni parolayı girin.",
+      "hintsUnmet": "Yeni parola aşağıdaki kuralları karşılamıyor.",
+      "mismatch": "Girdiğiniz parolalar birbiriyle uyuşmuyor.",
+      "invalidCurrent": "Mevcut parolanız doğrulanamadı — kontrol edip tekrar deneyin.",
+      "weak": "Yeni parola güvenlik kurallarını karşılamıyor — daha uzun veya çeşitli bir parola seçin.",
+      "same": "Yeni parola mevcut parolanızla aynı — farklı bir parola seçin.",
+      "invalidRequest": "Parola alanları geçersiz — iki alanı da doldurup tekrar deneyin.",
+      "conflict": "Parolanız aynı anda başka bir yerden değiştirildi — sayfayı yenileyip tekrar deneyin.",
+      "rateLimited": "Çok fazla deneme yapıldı — birkaç dakika sonra tekrar deneyin.",
+      "generic": "Parolanız şu an değiştirilemedi — bağlantınızı kontrol edip tekrar deneyin."
     }
   }
 }
