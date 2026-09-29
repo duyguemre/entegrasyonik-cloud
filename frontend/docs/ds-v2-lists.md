@@ -37,4 +37,31 @@ ekranlarda kullanılıyor; delege etme Aşama 3/diyalog işine bırakıldı).
 
 ## 2. Ekran envanteri
 
-Durum: ✅ göçtü · ⏭ kapsam dışı (neden) — ayrıntılı tablo: teslim raporu.
+Durum: ✅ göçtü · ⏭ kapsam dışı (neden) (teslim raporunda davranış farkları ayrıca listelenir).
+
+| Ekran | Dosya | Durum | Sıralama | Kaldırılan popup / not |
+|---|---|---|---|---|
+| Siparişler | `views/secure/OrderListView.vue` | ✅ | sunucu (izin listesi) | "Sipariş filtreleri" diyaloğu; mobil kart |
+| Ürünler | `productDefinitions/ProductListView.vue` | ✅ | sunucu (ad, stok kodu, barkod, fiyat, stok) | "Detaylı Ürün Arama" diyaloğu; varyant açılımı `#expanded` |
+| İade talepleri | `ClaimListView.vue` | ✅ | sunucu | "Talep filtreleri"; BatchProcessMenu |
+| Müşteriler | `CustomerListView.vue` | ✅ | sunucu (ad, şehir) | "Gelişmiş filtreleme"; BatchProcessMenu |
+| Faturalar | `InvoiceListView.vue` | ✅ | sunucu (izin listesi) | "Gelişmiş filtreleme"; BatchProcessMenu |
+| Mesajlar | `MessageListView.vue` | ✅ | sunucu (tip, durum, tarih) | "Mesaj filtreleme"; BatchProcessMenu |
+| Finansal işlemler | `FinancialListView.vue` | ✅ | sunucu | "Finansal Filtreler" |
+| Destek talepleri | `supports/TicketListView.vue` | ✅ | sunucu | "Destek Filtreleri"; BatchProcessMenu |
+| Personel / yetki | `user/AuthorizationListView.vue` | ✅ | sunucu (ad, e-posta, rol) | "Gelişmiş filtreleme" |
+| İşlem kayıtları — gönderim | `components/logListView/ExportLogList.vue` | ✅ | sunucu | "Gelişmiş Sorgulama Paneli" + satır içi tarih menüleri |
+| İşlem kayıtları — çekim | `components/logListView/ImportLogList.vue` | ✅ | sunucu | mobil sıralama seçicisi |
+| Seçenek grupları | `productDefinitions/ChoiceListView.vue` | ✅ | istemci (liste bellekte) | — |
+| Etiketler | `productDefinitions/HashtagListView.vue` | ✅ | istemci | inline stil / material renkler |
+| Admin — mağazalar | `adminPanel/AdminClientListView.vue` | ✅ | sunucu | — |
+| Admin — talepler | `adminPanel/AdminTicketListView.vue` | ✅ | sunucu | durum seçici panele |
+| Admin — entegrasyon ayarları | `adminPanel/integrations/IntegrationConfigListView.vue` | ✅ | istemci (sayfalamasız) | — |
+| Admin — etkin yapılandırma | `adminPanel/integrations/EffectiveConfigView.vue` | ✅ | istemci | — |
+| Admin — sistem yönetimi (dışa aktarım tablosu) | `adminPanel/AdminSystemManagementView.vue` | ✅ (yalnız tablo) | sunucu | — |
+| Admin — AdminView | `adminPanel/AdminView.vue` | ⏭ | — | MessageListView'ın eski kopyası, hiçbir spec/menü açmıyor (yalnız `menu.ts` lazy kaydı) — silinmesi önerilir |
+| Dökümler / Ayarlar | `PrintoutListView.vue`, `SettingListView.vue` | ⏭ | — | tablo yok (kart/form ekranı) |
+| Tanım ekranları | `views/secure/definitions/*` | ⏭ | — | "tanımlar" paralel oturumun kapsamı |
+| Deneme ekranı | `productDefinitions/TEST.vue` | ⏭ | — | geliştirme artığı |
+| Detay diyaloglarındaki tablolar | `Order/Claim/CustomerDetailComponent`, `PublishConfirmDialog`, `IntegrationConfigSettingsBody` | ⏭ | — | diyalog gövdesi (ds-v2-overlays) |
+| Varyant tabloları | `ProductVariantListComponent`, `ProductVariantsComponent` | ⏭ | — | ürün düzenleme/varyant editörü (liste ekranı değil) |
