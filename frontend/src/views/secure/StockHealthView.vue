@@ -57,8 +57,9 @@
           </section>
 
           <div class="sh-grid">
+            <div class="sh-col sh-col--main">
             <EkCard
-              class="sh-attention"
+              class="sh-attention sh-o-attention"
               :title="$t('stockHealth.attention.title')"
               :subtitle="attentionSubtitle"
               icon="mdi-alert-decagram-outline"
@@ -66,7 +67,7 @@
               :heading-level="2"
               flush
             >
-              <template v-if="canOpenOrders && attentionRows.length > 0" #actions>
+              <template v-if="canOpenOrders && attentionRows.length > 0 && !isMobile" #actions>
                 <EkButton size="sm" icon="mdi-filter-variant" @click="openOrders(ATTENTION_STATES)">
                   {{ $t('stockHealth.attention.openAll') }}
                 </EkButton>
@@ -155,13 +156,35 @@
                 </template>
               </EkDataGrid>
 
-              <template v-if="data && recentLimitReached" #footer>
-                <p class="sh-footnote">{{ $t('stockHealth.attention.limitNote', { n: STOCK_OVERVIEW_LIMIT }) }}</p>
+              <template v-if="data && (recentLimitReached || (isMobile && canOpenOrders && attentionRows.length > 0))" #footer>
+                <div class="sh-footer">
+                  <p v-if="recentLimitReached" class="sh-footnote">{{ $t('stockHealth.attention.limitNote', { n: STOCK_OVERVIEW_LIMIT }) }}</p>
+                  <EkButton v-if="isMobile && canOpenOrders && attentionRows.length > 0" block icon="mdi-filter-variant" @click="openOrders(ATTENTION_STATES)">
+                    {{ $t('stockHealth.attention.openAll') }}
+                  </EkButton>
+                </div>
               </template>
             </EkCard>
 
-            <div class="sh-side">
               <EkCard
+                :title="$t('stockHealth.legend.title')"
+                class="sh-o-legend"
+                icon="mdi-information-outline"
+                icon-tone="info"
+                :heading-level="2"
+              >
+                <dl class="sh-states">
+                  <div v-for="s in ALLOCATION_STATES" :key="s">
+                    <dt><EkStatusChip :tone="stateEntry(s).tone" :label="$t(stateEntry(s).labelKey)" /></dt>
+                    <dd>{{ $t(`stockHealth.legend.${s}`) }}</dd>
+                  </div>
+                </dl>
+              </EkCard>
+            </div>
+
+            <div class="sh-col sh-col--side">
+              <EkCard
+                class="sh-o-balance"
                 :title="$t('stockHealth.balance.title')"
                 :subtitle="$t('stockHealth.balance.subtitle')"
                 icon="mdi-scale-balance"
@@ -214,6 +237,7 @@
               </EkCard>
 
               <EkCard
+                class="sh-o-recon"
                 :title="$t('stockHealth.reconciliation.title')"
                 icon="mdi-sync"
                 icon-tone="neutral"
@@ -234,19 +258,6 @@
                 </div>
               </EkCard>
 
-              <EkCard
-                :title="$t('stockHealth.legend.title')"
-                icon="mdi-information-outline"
-                icon-tone="info"
-                :heading-level="2"
-              >
-                <dl class="sh-states">
-                  <div v-for="s in ALLOCATION_STATES" :key="s">
-                    <dt><EkStatusChip :tone="stateEntry(s).tone" :label="$t(stateEntry(s).labelKey)" /></dt>
-                    <dd>{{ $t(`stockHealth.legend.${s}`) }}</dd>
-                  </div>
-                </dl>
-              </EkCard>
             </div>
           </div>
         </template>
@@ -385,9 +396,9 @@ const reservedGrow = computed(() => String(balance.value.reservedRatio ?? 0))
 const columns = computed<EkGridColumn[]>(() => [
   { key: 'order', label: t('stockHealth.col.order') },
   { key: 'channel', label: t('stockHealth.col.channel') },
-  { key: 'product', label: t('stockHealth.col.product'), wrap: true },
+  { key: 'product', label: t('stockHealth.col.product'), wrap: true, width: '34%' },
   { key: 'quantity', label: t('stockHealth.col.quantity'), type: 'num' },
-  { key: 'state', label: t('stockHealth.col.state') },
+  { key: 'state', label: t('stockHealth.col.state'), wrap: true },
 ])
 
 function orderLabel(row: Pick<AttentionRow, 'orderNumber' | 'externalOrderId'> | Record<string, any>): string {
@@ -481,7 +492,7 @@ defineExpose({ initialize, activate, destroy: () => {} })
   gap: var(--ek-space-5);
 }
 
-.sh-side {
+.sh-col {
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-5);
@@ -762,6 +773,26 @@ defineExpose({ initialize, activate, destroy: () => {} })
   justify-content: flex-start;
 }
 
+/* Geniş ekranda durum rehberi iki sütun (satır ayraçları sütun içinde). */
+@media (min-width: 1100px) {
+  .sh-states {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--ek-space-6);
+  }
+
+  .sh-states > div:nth-last-child(2) {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+}
+
+.sh-footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-3);
+}
+
 .sh-states dt {
   flex: none;
   width: 104px;
@@ -802,6 +833,16 @@ defineExpose({ initialize, activate, destroy: () => {} })
     flex-direction: column;
     align-items: stretch;
   }
+
+  /* Tek kolon: kolon kapları kaybolur, kartlar önem sırasına dizilir (rehber en sonda). */
+  .sh-col {
+    display: contents;
+  }
+
+  .sh-o-attention { order: 1; }
+  .sh-o-balance { order: 2; }
+  .sh-o-recon { order: 3; }
+  .sh-o-legend { order: 4; }
 }
 
 @media (max-width: 599px) {

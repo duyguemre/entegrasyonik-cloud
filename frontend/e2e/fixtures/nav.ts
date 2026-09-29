@@ -86,6 +86,8 @@ export const MENU_SCREENS: Record<string, MenuScreenDef> = {
   ChangePasswordView: { code: 'ChangePasswordView', icon: 'mdi-lock-reset', groupIcon: 'mdi-account-circle-outline', subIndex: 2 },
   ExitView: { code: 'ExitView', icon: 'mdi-logout', groupIcon: 'mdi-account-circle-outline', subIndex: 3 },
   TicketListView: { code: 'TicketListView', icon: 'mdi-lifebuoy', groupIcon: 'mdi-lifebuoy', subIndex: 0 },
+  // C1.1 stok sağlığı — kök seviye (sentetik menü: e2e/fixtures/stockHealth.ts `menuFixtureWithStockHealth`).
+  StockHealthView: { code: 'StockHealthView', icon: 'mdi-scale-unbalanced' },
 }
 
 // e2e/fixtures/menuData.ts ile aynı sırayı/ikonları kullanır (bkz. dosyanın altı).
