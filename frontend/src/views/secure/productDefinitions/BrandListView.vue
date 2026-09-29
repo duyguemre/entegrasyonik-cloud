@@ -3,12 +3,11 @@
 
   <div class="brandDefinition">
     <div class="workarea-scroll">
-
-      <v-row style="height:100%" class="mt-0 mb-0">
-        <v-col style="height:calc(100vh - 110px);position:relative">
+      <v-row class="mt-0 mb-0 bdv-row">
+        <v-col class="bdv-col">
           <BrandListComponent v-model="isBrandsListed" @openBrandSync="openBrandSync($event)" />
         </v-col>
-        <v-col style="height:calc(100vh - 110px);position:relative">
+        <v-col class="bdv-col">
           <BrandSyncComponent v-model="selectedBrand" />
         </v-col>
       </v-row>
@@ -52,21 +51,17 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.navigation-scroll-container1::-webkit-scrollbar {
-  display: none !important
+/* ADR-0015 B5-2 — bu ekran içeriğini kapsam dışı kök bileşenlere (BrandListComponent/
+   BrandSyncComponent) devrediyor; kendi görsel sorumluluğu yalnızca iki panelin tam
+   yükseklikte yan yana yerleşimi. (Önceki `.navigation-scroll-container1` bloğu şablonda
+   HİÇBİR yerde kullanılmıyordu — ölü CSS, literal renk içeriyordu, kaldırıldı; davranış
+   değişmedi.) 110px kabuk sekme/başlık şeridinin yüksekliği — ADR-0015 A3 kabuk sabiti. */
+.bdv-row {
+  height: 100%;
 }
 
-.navigation-scroll-container1 {
-  position: absolute;
-  transition: all .1s ease;
-  border-radius: 0px;
-  border-top: 0px solid #aaa;
-  overflow-y: scroll;
-  overflow-x: hidden;
-  bottom: 20px;
-  top: 10px;
-  left: 0px;
-  right: 50%;
-  width: auto;
+.bdv-col {
+  height: calc(100vh - 110px);
+  position: relative;
 }
 </style>
