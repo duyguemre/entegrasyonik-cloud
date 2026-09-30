@@ -3,7 +3,7 @@
 
   FR2 madde 21 — tek kanalın durum karosu: kısa kanal rozeti (K13, `EkChannelBadge form="short"`) + sağ altta durum işareti.
     yayında ✓ (başarı) · hatalı ! (tehlike) · bekliyor ◷ (bilgi) · satışa kapalı ‖ (uyarı) · yok → pasif (kesik) rozet, işaret yok
-    Yükleme listesinde ama henüz gönderilmedi → aksiyon renginde ↑ işareti.
+    "Gönderime hazır" işaretli ama henüz gönderilmedi → aksiyon renginde ↑ işareti.
   Görsel yalnız; anlam `label` (ebeveynin erişilebilir adı / ipucu) ile taşınır — renk tek başına anlam taşımaz (işaret şekli farklı).
 -->
 <template>

@@ -129,16 +129,17 @@ function onKey(e: KeyboardEvent) {
 
 .pgd__stage {
   position: relative;
-  display: grid;
-  place-items: center;
-  height: min(62vh, 600px);
-  padding: var(--ek-space-4);
+  flex: none;
+  height: min(58vh, 560px);
   background: var(--ek-color-surface);
 }
 
+/* Mutlak yerleşim + contain: görsel sahneyi ASLA taşmaz (dikey/yatay fotoğraf ortalanır). */
 .pgd__img {
-  max-width: 100%;
-  max-height: 100%;
+  position: absolute;
+  inset: var(--ek-space-4) var(--ek-space-16);
+  width: calc(100% - 2 * var(--ek-space-16));
+  height: calc(100% - 2 * var(--ek-space-4));
   object-fit: contain;
   transition: opacity var(--ek-duration-base) var(--ek-easing-enter);
 }
@@ -200,7 +201,8 @@ function onKey(e: KeyboardEvent) {
 .pgd__thumb:focus-visible { outline: none; box-shadow: var(--ek-focus-ring); }
 
 @media (max-width: 599px) {
-  .pgd__stage { height: 56vh; padding: var(--ek-space-2); }
+  .pgd__stage { height: 52vh; }
+  .pgd__img { inset: var(--ek-space-2); width: calc(100% - 2 * var(--ek-space-2)); height: calc(100% - 2 * var(--ek-space-2)); }
   .pgd__nav { width: 36px; height: 36px; }
   .pgd__thumb { width: 52px; height: 52px; }
 }

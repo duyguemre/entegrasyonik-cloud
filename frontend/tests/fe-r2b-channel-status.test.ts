@@ -1,4 +1,4 @@
-// FR2 madde 21 — ürün listesinde kanal başına durum (yayında / hatalı / bekliyor / kapalı / yok) + yükleme listesi bayrağı.
+// FR2 madde 21 — ürün listesinde kanal başına durum (yayında / hatalı / bekliyor / kapalı / yok) + gönderime hazır bayrağı.
 import { describe, expect, it } from 'vitest'
 import { channelStatusOverview, channelStatusText, productChannelStatus } from '@/components/productDefinitions/products/channelStatus'
 
@@ -36,11 +36,11 @@ describe('productChannelStatus', () => {
     expect(channelStatusText(s, 'Hepsiburada')).toBe('Hepsiburada: 1 varyant hatalı · 1/3 yayında')
   })
 
-  it('yükleme listesi bayrağı ve eski isUploaded geri uyumu', () => {
+  it('gönderime hazır bayrağı ve eski isUploaded geri uyumu', () => {
     const p = { variants: [{}], platformUploads: { n11: { isReady: true }, pazarama: { isUploaded: true } } }
     const n11 = productChannelStatus(p, 'n11')
     expect(n11).toMatchObject({ key: 'none', ready: true })
-    expect(channelStatusText(n11, 'N11')).toBe('N11: Gönderilmedi · yükleme listesinde')
+    expect(channelStatusText(n11, 'N11')).toBe('N11: Gönderilmedi · gönderime hazır')
     expect(productChannelStatus(p, 'pazarama').key).toBe('live')
   })
 

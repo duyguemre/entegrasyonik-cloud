@@ -172,7 +172,7 @@
         <span v-else class="plv-muted">—</span>
       </template>
       <template #cell-platforms="{ row }">
-        <!-- FR2 21–22: kanal başına tek bakışta durum + tıklayınca kanal durumu / yükleme listesi paneli. -->
+        <!-- FR2 21–22: kanal başına tek bakışta durum + tıklayınca kanal durumu / gönderime hazır paneli. -->
         <ProductChannelStatus :product="row" :channels="integrationStore.getClientPlatforms()"
           :busy="readyBusy && readyBusy.productId === row._id ? readyBusy.code : null"
           @toggle-ready="(code) => savePlatformUploadIsReadyForProduct(row, code)" />
@@ -464,7 +464,7 @@ const updateProduct = async (product: any, processItem: any = undefined) => {
   }
 }
 
-// FR2 22: yükleme listesi anahtarı (kanal durumu paneli). Kayıt süresince yalnız o anahtar kilitlenir; sonuç satıra
+// FR2 22: "gönderime hazır" anahtarı (kanal durumu paneli; bayrak backend'de yalnız saklanır). Kayıt süresince yalnız o anahtar kilitlenir; sonuç satıra
 // hemen yansır (liste yeniden yüklenmeden — panel açık kalır, kaydırma/açık varyant kaybolmaz). API ve gövde AYNI.
 const readyBusy = ref<{ productId: string; code: string } | null>(null)
 const savePlatformUploadIsReadyForProduct = async (product: any, integrationCode: string) => {
@@ -476,7 +476,7 @@ const savePlatformUploadIsReadyForProduct = async (product: any, integrationCode
     if (response && response.modifiedCount > 0) {
       product.platformUploads = { ...(product.platformUploads ?? {}), [integrationCode]: { ...(product.platformUploads?.[integrationCode] ?? {}), isReady } }
     } else if (!isRequestError(response)) {
-      snackbarStore.addSnackbar({ text: 'Yükleme listesi değişmedi — ürün kaydı güncel olmayabilir, listeyi yenileyin.', color: 'warning' })
+      snackbarStore.addSnackbar({ text: 'Gönderime hazır işareti değişmedi — ürün kaydı güncel olmayabilir, listeyi yenileyin.', color: 'warning' })
     }
   } finally {
     readyBusy.value = null

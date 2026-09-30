@@ -5,7 +5,8 @@
  * Varyant durumları `variantListModel.channelState` ile aynı kuraldan (tek kaynak) toplanır; ürün düzeyinde dört ana durum:
  *   hatalı (en az bir varyant reddedildi) > bekliyor (onay/aktarım sürüyor) > yayında (en az biri yayında) > kapalı (onaylı ama
  *   satışa kapalı) > yok (hiç gönderilmedi).
- * "Yükleme listesinde" (`platformUploads.<kod>.isReady`) ayrı bayraktır: kullanıcı ürünü o kanala GÖNDERİLECEKLER listesine almış.
+ * "Gönderime hazır" (`platformUploads.<kod>.isReady`) ayrı bayraktır: kullanıcı ürünü o kanal için hazır işaretlemiş (planlama
+ * işareti — backend yalnız saklar, aktarım akışı okumaz; gönderim Toplu işlemler → Platformlara Yükle).
  * Varyantta hiç kanal verisi yoksa ürünün eski `platformUploads.<kod>.isUploaded` alanı "yayında" sayılır (geri uyum).
  */
 import type { StatusTone } from '@/design/status-map'
@@ -22,7 +23,7 @@ export interface ProductChannelStatus {
   label: string
   /** Varyant dağılımı (varyantsız üründe toplam 1). */
   counts: { live: number; offsale: number; failed: number; waiting: number; none: number; total: number }
-  /** Ürün bu kanal için yükleme listesinde (bir sonraki aktarımda gönderilecek). */
+  /** Ürün bu kanal için "gönderime hazır" işaretli (planlama işareti). */
   ready: boolean
   /** Hatalı/kapalı ise ilk kısa neden. */
   reason?: string
@@ -67,7 +68,7 @@ export function productChannelStatus(product: any, code: string): ProductChannel
   return { code, key, ...META[key], counts, ready: !!upload?.isReady, ...(reason ? { reason } : {}) }
 }
 
-/** Hücre ipucu / erişilebilir ad: "Trendyol: Yayında (2/3 varyant) · yükleme listesinde". */
+/** Hücre ipucu / erişilebilir ad: "Trendyol: Yayında (2/3 varyant) · gönderime hazır". */
 export function channelStatusText(s: ProductChannelStatus, channelTitle: string): string {
   const { counts } = s
   const multi = counts.total > 1
@@ -77,7 +78,7 @@ export function channelStatusText(s: ProductChannelStatus, channelTitle: string)
   else if (s.key === 'live') parts.push(multi ? `Yayında (${counts.live}/${counts.total} varyant)` : 'Yayında')
   else parts.push(s.label)
   if (s.key !== 'live' && s.key !== 'none' && counts.live) parts.push(`${counts.live}/${counts.total} yayında`)
-  if (s.ready) parts.push('yükleme listesinde')
+  if (s.ready) parts.push('gönderime hazır')
   return `${channelTitle}: ${parts.join(' · ')}`
 }
 
