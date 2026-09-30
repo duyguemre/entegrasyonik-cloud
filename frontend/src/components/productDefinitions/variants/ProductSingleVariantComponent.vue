@@ -24,24 +24,31 @@
           <VCurrencyComponentVue v-model="singleVariant.prices.marketPrice" :rules="formRules.mandatoryRule" :compact="true"
             :label="`${$t('productDefinitions.product.variants.marketPrice')} *`" clearable :isIconExist="false" />
         </template>
-        <button v-else type="button" class="psvc-platform-prices ek-span-2"
+        <!-- FR2-PFORM 25: kanal başına etkin satış fiyatı (özel / ana) tek bakışta; tıklayınca kanal fiyatları. -->
+        <button v-else type="button" class="psvc-platform-prices ek-span-2" data-pf-field="channelPrices"
           @click="isVariantPlatformPricesDialog = true; editingVariant = singleVariant">
-          <span class="psvc-kv">
-            <span class="psvc-kv__label">Satış Fiyatı</span>
-            <span class="psvc-kv__value ek-num">{{ formatCurrency(findMinimumSalePrice(singleVariant.platforms)) }} -
-              {{ formatCurrency(findMaximumSalePrice(singleVariant.platforms)) }}</span>
+          <span class="psvc-cp__head">
+            <span class="psvc-kv__label">Kanal fiyatları</span>
+            <span class="psvc-platform-prices__action"><v-icon icon="mdi-pencil-outline" size="16" aria-hidden="true" /> Düzenle</span>
           </span>
-          <span class="psvc-kv">
-            <span class="psvc-kv__label">Piyasa Fiyatı</span>
-            <span class="psvc-kv__value ek-num">{{ formatCurrency(findMinimumMarketPrice(singleVariant.platforms)) }} -
-              {{ formatCurrency(findMaximumMarketPrice(singleVariant.platforms)) }}</span>
-          </span>
-          <span class="psvc-platform-prices__action">
-            <v-icon icon="mdi-pencil-outline" size="16" aria-hidden="true" /> Platform fiyatlarını düzenle
+          <span class="psvc-cp__list">
+            <span v-for="row in channelPriceRows" :key="row.code" class="psvc-cp__item">
+              <EkPlatformMark :name="row.title" :code="row.code" />
+              <strong class="ek-num">{{ formatCurrency(row.sale) }}</strong>
+              <span class="psvc-cp__src" :class="{ 'is-custom': row.custom }">{{ row.custom ? 'özel' : 'ana fiyat' }}</span>
+              <v-icon v-if="row.issues.some((i) => i.level === 'error')" icon="mdi-alert-circle-outline" class="psvc-cp__err"
+                :aria-label="row.issues[0].message" />
+            </span>
+            <span v-if="!channelPriceRows.length" class="psvc-cp__none">Bağlı kanal yok</span>
           </span>
         </button>
         <v-checkbox class="ek-span-full" :label="$t('productDefinitions.product.platformPrice')" hide-details
-          v-model="singleVariant.prices.isPlatformBasedPrice" @click.stop />
+          v-model="singleVariant.prices.isPlatformBasedPrice" @click.stop>
+          <template #label>
+            <span class="psvc-chk">{{ $t('productDefinitions.product.platformPrice') }}
+              <span class="psvc-chk__hint">Kanallara farklı fiyat verin; girmediğiniz kanal ana fiyatla satılır</span></span>
+          </template>
+        </v-checkbox>
       </EkFormSection>
 
       <EkFormSection title="Stok" icon="mdi-warehouse">
@@ -62,7 +69,7 @@
     <div>
 
       <EkDialogHost :model-value="isVariantPlatformPricesDialog || isVariantAttributesDialog" :attach="dialogAttach"
-        :width="isVariantAttributesDialog ? 'xl' : 'lg'"
+        width="xl"
         @update:model-value="(v) => { if (!v) { isVariantPlatformPricesDialog = false; isVariantAttributesDialog = false } }">
 
         <keep-alive>
@@ -87,8 +94,10 @@
 
 <script setup lang="ts">
 import { formatMoney } from '@entegrasyonik/ui/format'
-import { ref, onBeforeMount, onMounted } from 'vue'
-import { EkFormSection, EkButton, EkDialogHost } from '@entegrasyonik/ui/components'
+import { ref, computed, onBeforeMount, onMounted } from 'vue'
+import { EkFormSection, EkButton, EkDialogHost, EkPlatformMark } from '@entegrasyonik/ui/components'
+import { useIntegrationStore } from '@/stores/integrationStore'
+import { channelRows } from './channelPriceModel'
 import { useI18n } from 'vue-i18n';
 import LoadingComponent from '@/components/LoadingComponent.vue'
 
@@ -131,30 +140,11 @@ const sleep = (ms: number) => {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-const findMinimumSalePrice = (platforms: any) => {
-  if(!platforms) return 0
-  const res = Object.values(platforms).reduce((min: any, platform: any) =>
-    platform.prices.salePrice && platform.prices.salePrice < min ? platform.prices.salePrice : min, Infinity);
-  if (res == Infinity) return 0
-  return Number(res)
-}
-const findMinimumMarketPrice = (platforms: any) => {
-  if(!platforms) return 0
-  const res = Object.values(platforms).reduce((min: any, platform: any) =>
-    platform.prices.marketPrice && platform.prices.marketPrice < min ? platform.prices.marketPrice : min, Infinity);
-  if (res == Infinity) return 0
-  return Number(res)
-}
-const findMaximumSalePrice = (platforms: any) => {
-  if(!platforms) return 0
-  return Number(Object.values(platforms).reduce((max: any, platform: any) =>
-    platform.prices.salePrice && platform.prices.salePrice > max ? platform.prices.salePrice : max, 0))
-}
-const findMaximumMarketPrice = (platforms: any) => {
-  if(!platforms) return 0
-  return Number(Object.values(platforms).reduce((max: any, platform: any) =>
-    platform.prices.marketPrice && platform.prices.marketPrice > max ? platform.prices.marketPrice : max, 0))
-}
+const integrationStore = useIntegrationStore()
+const channelPriceRows = computed(() => channelRows(
+  [...(integrationStore.getClientMarketplaces() ?? []), ...(integrationStore.getClientECommerces() ?? [])].map((c: any) => ({ code: c.code, title: c.title || c.code })),
+  props.singleVariant,
+))
 
 </script>
 
@@ -188,9 +178,9 @@ const findMaximumMarketPrice = (platforms: any) => {
 
 .psvc-platform-prices {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--ek-space-6);
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--ek-space-3);
   padding: var(--ek-space-3) var(--ek-space-4);
   border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-control);
@@ -209,6 +199,53 @@ const findMaximumMarketPrice = (platforms: any) => {
 .psvc-platform-prices:focus-visible {
   outline: none;
   box-shadow: var(--ek-focus-ring);
+}
+
+.psvc-cp__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.psvc-cp__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ek-space-2) var(--ek-space-5);
+}
+
+.psvc-cp__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  color: var(--ek-color-content-strong);
+}
+
+.psvc-cp__src {
+  color: var(--ek-color-content-subtle);
+  font-size: var(--ek-type-caption-size);
+}
+
+.psvc-cp__src.is-custom {
+  color: var(--ek-color-action-emphasis);
+}
+
+.psvc-cp__err {
+  color: var(--ek-color-error);
+  font-size: 16px;
+}
+
+.psvc-cp__none {
+  color: var(--ek-color-content-muted);
+}
+
+.psvc-chk {
+  display: flex;
+  flex-direction: column;
+}
+
+.psvc-chk__hint {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
 }
 
 .psvc-kv {
@@ -233,7 +270,6 @@ const findMaximumMarketPrice = (platforms: any) => {
   display: inline-flex;
   align-items: center;
   gap: var(--ek-space-1);
-  margin-left: auto;
   color: var(--ek-color-action);
   font-size: var(--ek-type-label-size);
   font-weight: var(--ek-type-label-weight);

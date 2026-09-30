@@ -172,3 +172,45 @@ test.describe('FR2-PFORM 24/29 — varyant ızgarası görselleri', () => {
     await expect(thumb).toHaveAttribute('aria-label', /2 görsel/)
   })
 })
+
+test.describe('FR2-PFORM 25 — kanal bazında fiyatlar', () => {
+  test('özel fiyat ana fiyattan kopyalanır, ana fiyata dönülür, toplu % artış önizlenir ve kayda gider', async ({ page }, testInfo) => {
+    const bodies: any[] = []
+    const root = await openProduct(page, JSON.parse(JSON.stringify(r2cSingleProduct)), {
+      'ProductService/updateProduct': (route: Route, h: Record<string, string>) => { bodies.push(route.request().postDataJSON()); return json(route, h, { result: true }) },
+    })
+    await root.getByText('Tekil Ürün Bilgisi').first().click()
+    const summary = root.locator('[data-pf-field="channelPrices"]')
+    await expect(summary).toContainText('Ideasoft')
+    await expect(summary).toContainText('ana fiyat')
+    await summary.click()
+
+    const dialog = page.locator('.v-overlay--active').filter({ hasText: 'Kanal bazında fiyatlar' }).first()
+    await expect(dialog).toBeVisible()
+    await expect(dialog).toContainText('2 kanalda özel fiyat · 1 kanal ana fiyatla')
+    const axe = await new AxeBuilder({ page }).include('.v-overlay--active:not(.v-snackbar)').withTags(AXE_TAGS).analyze()
+    await testInfo.attach('axe-channel-prices.json', { body: JSON.stringify(axe.violations, null, 2), contentType: 'application/json' })
+    expect(axe.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')).toEqual([])
+
+    await dialog.locator('[data-cpe="custom-ideasoft"]').click()
+    await expect(dialog.getByLabel('Ideasoft satış fiyatı')).toHaveValue('349,90')
+    await dialog.locator('[data-cpe="reset-trendyol"]').click()
+    await expect(dialog.locator('[data-channel="trendyol"]')).toContainText('Ana fiyat')
+
+    await dialog.locator('[data-cpe="bulk-toggle"]').click()
+    await dialog.locator('[data-cpe="bulk-value"] input').fill('10')
+    await expect(dialog.locator('.cpe-bulk__preview')).toContainText('3 kanalda satış fiyatı %10 artar')
+    await expect(dialog.locator('.cpe-bulk__preview')).toContainText('1 kanal ana fiyattan özel fiyata geçer')
+    await dialog.locator('[data-cpe="bulk-apply"]').click()
+    await expect(dialog.getByLabel('Trendyol satış fiyatı')).toHaveValue('384,89')
+    await expect(dialog.getByLabel('Hepsiburada satış fiyatı')).toHaveValue('395,89')
+    await dialog.getByRole('button', { name: 'Tamam' }).click()
+
+    await root.getByRole('button', { name: 'Güncelle' }).first().click()
+    await expect.poll(() => bodies.length).toBeGreaterThan(0)
+    const v0 = bodies.at(-1).productInfo.variants[0]
+    expect(v0.platforms.trendyol.prices).toEqual({ salePrice: 384.89, marketPrice: 449.9 })
+    expect(v0.platforms.ideasoft.prices).toEqual({ salePrice: 384.89, marketPrice: 449.9 })
+    expect(v0.prices.salePrice).toBe(349.9)
+  })
+})

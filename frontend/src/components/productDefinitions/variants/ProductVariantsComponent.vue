@@ -205,7 +205,7 @@ watch(isVariants, (on) => { if (on) getVariants() })
 // ── paneller ──
 const isAnyVariantPanelOpen = computed(() => !!(isVariantPlatformPricesMenu.value || isImagesDialog.value ||
   isVariantAttributesDialog.value || isBatchVariantDialog.value || isVariantImagesDialog.value || isBulkEditor.value))
-const variantPanelWidth = computed<'md' | 'lg' | 'xl'>(() => (isVariantPlatformPricesMenu.value ? 'lg' : 'xl'))
+const variantPanelWidth = computed<'md' | 'lg' | 'xl'>(() => 'xl')
 function closeVariantPanels() {
   isVariantPlatformPricesMenu.value = false
   isImagesDialog.value = false

@@ -102,7 +102,7 @@ export const HELP_HINTS = {
   // Yer: components/productDefinitions/crud/PlatformPriceComponent.vue → "Toplu Fiyat Atama" alanının yanı
   'price.rules': {
     title: 'Kanal bazında fiyat',
-    text: '"Platform Bazında Fiyat" açıksa her kanal için ayrı satış ve piyasa fiyatı girilir. Toplu fiyat atama, fiyatı olan tüm kanallarda satış veya piyasa fiyatına sabit değer atar ya da tutar veya yüzde olarak ekler; "Çıkar" seçiliyse düşer. Bu işlem formdaki değerleri değiştirir; ürünü kaydedince geçerli olur.',
+    text: '"Platform Bazında Fiyat" açıksa kanallara farklı fiyat verebilirsiniz. Özel fiyat girmediğiniz kanal ana fiyatla satılır. Toplu değişiklik tüm bağlı kanallarda satış ya da piyasa fiyatına sabit değer atar, yüzde ya da tutar olarak artırır/azaltır; ana fiyatla satılan kanal bu sırada özel fiyata geçer. Değişiklik formdadır; ürünü kaydedince geçerli olur.',
     article: 'cat-products-variants',
   },
 

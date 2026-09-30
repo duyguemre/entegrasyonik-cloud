@@ -82,7 +82,7 @@
                 <button type="button" class="vg-rangebtn" @click="emit('channelPrices', r.variant)"
                   :aria-label="`Kanal fiyatlarını düzenle: ${rowTitle(r.variant)}`">
                   <span class="vg-rangebtn__val ek-num">{{ priceRange(r.variant, 'salePrice') }}</span>
-                  <span class="vg-rangebtn__sub">Kanal bazında · düzenle</span>
+                  <span class="vg-rangebtn__sub">Kanal fiyatları · düzenle</span>
                 </button>
               </td>
             </template>
@@ -140,6 +140,8 @@ import { formatMoney } from '@entegrasyonik/ui/format'
 import { useChoicesStore } from '@/stores/choicesStore'
 import GalleryThumb from '../../images/GalleryThumb.vue'
 import { useProductImageUrl } from '@/composables/useProductImageUrl'
+import { useIntegrationStore } from '@/stores/integrationStore'
+import { channelRows } from '../channelPriceModel'
 import VariantGroupCell from '../VariantGroupCell.vue'
 import { useVariantGrouping } from '../useVariantGrouping'
 import { variantImageIds } from '../../images/galleryModel'
@@ -407,8 +409,12 @@ function setChannelBased(v: any, on: boolean) {
   v.prices = v.prices || {}
   v.prices.isPlatformBasedPrice = on
 }
+// FR2-PFORM 25: özel fiyatı olmayan kanal ana fiyatla gider (dönüştürücü `platforms[kod].prices || prices`) — aralığa dahil.
+const integrationStore = useIntegrationStore()
+const channelList = computed(() => [...(integrationStore.getClientMarketplaces() ?? []), ...(integrationStore.getClientECommerces() ?? [])]
+  .map((c: any) => ({ code: c.code, title: c.title || c.code })))
 function priceRange(v: any, field: 'salePrice' | 'marketPrice') {
-  const vals = Object.values(v.platforms || {}).map((p: any) => Number(p?.prices?.[field])).filter((n) => Number.isFinite(n) && n > 0)
+  const vals = channelRows(channelList.value, v).map((r) => (field === 'salePrice' ? r.sale : r.market)).filter((n) => Number.isFinite(n) && n > 0)
   if (!vals.length) return 'Fiyat girilmedi'
   const lo = Math.min(...vals); const hi = Math.max(...vals)
   return lo === hi ? formatMoney(lo) : `${formatMoney(lo)} – ${formatMoney(hi)}`
