@@ -156,10 +156,7 @@ const previewCapabilities = i.capabilities.slice(0, 4)
   </PageHero>
 
   <Section labelledby="matris-title" class="tight-section">
-    <div class="head">
-      <h2 id="matris-title">Yetenek matrisi</h2>
-      <p>Bu entegrasyonda hangi işlemlerin tam, hangilerinin temel düzeyde desteklendiği.</p>
-    </div>
+    <SectionHead id="matris-title" title="Yetenek matrisi" lead="Bu entegrasyonda hangi işlemlerin tam, hangilerinin temel düzeyde desteklendiği." />
     <div class="matrix-layout matrix-layout--split">
       <div class="matrix">
       <p class="matrix__head" aria-hidden="true"><span>İşlem</span><span>Ne yapılır</span></p>
@@ -331,23 +328,6 @@ const previewCapabilities = i.capabilities.slice(0, 4)
 </script>
 
 <style>
-  .head {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-2);
-    margin-bottom: var(--ek-space-8);
-  }
-  .head h2 {
-    font-size: var(--site-font-display-sm);
-    font-weight: var(--site-font-display-weight);
-    line-height: var(--site-font-display-line-height);
-    letter-spacing: var(--site-font-display-tracking);
-  }
-  .head p {
-    color: var(--ek-color-content-muted);
-    font-size: var(--ek-font-size-lg);
-  }
-
   /* Bölümler arası dikey ritim genel olarak sıkılaştırıldı (S11b). */
   .tight-section:global(.section) {
     padding-block: calc(var(--site-section-y) * 0.72);

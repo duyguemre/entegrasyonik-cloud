@@ -13,6 +13,8 @@ import BaseLayout from '../layouts/BaseLayout.astro'
 import Section from '../components/Section.astro'
 import Badge from '../components/Badge.astro'
 import Icon from '../components/home/Icon.astro'
+import SectionHead from '../components/pages/SectionHead.astro'
+import HeroActions from '../components/pages/HeroActions.astro'
 import PageHero from '../components/pages/PageHero.astro'
 import PageMeta from '../components/pages/PageMeta.astro'
 import CtaBand from '../components/pages/CtaBand.astro'
@@ -60,10 +62,12 @@ const legalCards = [kvkk, privacy, subscription].filter((x): x is NonNullable<ty
     lead="Pazaryeri anahtarlarınızdan operasyon verinize kadar her katman, ürünün yazılımında uygulanmış korumalara dayanır. Aşağıda bunları yönetici düzeyinde özetliyoruz; ayrıntısını merak ettiğiniz her ilkeyi açabilirsiniz."
     crumbs={crumbs}
   >
-    <div class="hero-links">
-      <a class="hero-link" href="#ilkeler">Güvence ilkeleri</a>
-      <a class="hero-link hero-link--ghost" href="#kapsam">Kapsam ve KVKK</a>
-    </div>
+    <HeroActions
+      actions={[
+        { label: 'Güvence ilkeleri', href: '#ilkeler' },
+        { label: 'Kapsam ve KVKK', href: '#kapsam' },
+      ]}
+    />
     <Fragment slot="visual">
       <p class="panel-tag">Güvence ilkeleri</p>
       <ul class="hero-list" role="list">
@@ -80,11 +84,9 @@ const legalCards = [kvkk, privacy, subscription].filter((x): x is NonNullable<ty
   </PageHero>
 
   <Section id="ilkeler" labelledby="ilkeler-title" class="tight-section">
-    <div class="head">
-      <p class="eyebrow">Yönetici özeti</p>
-      <h2 id="ilkeler-title">Güvence ilkelerimiz</h2>
+    <SectionHead id="ilkeler-title" eyebrow="Yönetici özeti" title="Güvence ilkelerimiz">
       <p>Her ilke, ürünün bugün uyguladığı bir korumaya dayanır. Teknik ayrıntılar her kartın "Ayrıntı" bölümündedir.</p>
-    </div>
+    </SectionHead>
 
     <ol class="principles" role="list" data-testid="security-principles">
       {
@@ -233,38 +235,6 @@ const legalCards = [kvkk, privacy, subscription].filter((x): x is NonNullable<ty
   }
 
   /* --- Hero --- */
-  .hero-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ek-space-3);
-  }
-  .hero-link {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--site-tap-target);
-    padding-inline: var(--ek-space-5);
-    border: var(--site-border-width) solid transparent;
-    border-radius: var(--ek-radius-lg);
-    background: var(--ek-color-surface);
-    color: var(--ek-color-primary);
-    font-weight: var(--ek-font-weight-semibold);
-    text-decoration: none;
-    transition: background-color var(--ek-duration-base) var(--ek-easing-standard), border-color var(--ek-duration-base) var(--ek-easing-standard);
-  }
-  .hero-link:hover {
-    background: color-mix(in srgb, var(--ek-color-surface) 88%, var(--ek-color-secondary));
-  }
-  .hero-link--ghost {
-    border-color: var(--site-glass-border);
-    background: var(--site-glass-bg);
-    color: var(--site-color-on-primary);
-  }
-  .hero-link--ghost:hover {
-    border-color: var(--site-color-on-primary-muted);
-  }
-  .hero-link:focus-visible {
-    outline-color: var(--site-color-on-primary);
-  }
   .panel-tag {
     margin: 0 0 var(--ek-space-3);
     color: var(--site-text-on-dark-meta);

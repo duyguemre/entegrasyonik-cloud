@@ -10,13 +10,23 @@ interface Stat {
   label: string
 }
 
+interface Chip {
+  href: string
+  /** Kanal kodu: renk `[data-code]` eşlemesinden (global.css `--chan`). */
+  code: string
+  label: string
+}
+
 interface Props {
   tag: string
   stats: Stat[]
   testid?: string
+  /** Panelin altında kanal çipleri (S16 /entegrasyonlar deseni). */
+  chips?: Chip[]
+  chipsLabel?: string
 }
 
-const { tag, stats, testid } = Astro.props
+const { tag, stats, testid, chips = [], chipsLabel = 'Kullanılabilir kanallar' } = Astro.props
 ---
 
 <p class="stat-panel__tag">{tag}</p>
@@ -32,6 +42,20 @@ const { tag, stats, testid } = Astro.props
     ))
   }
 </dl>
+{
+  chips.length > 0 && (
+    <ul class="hero-chans" role="list" aria-label={chipsLabel}>
+      {chips.map((c) => (
+        <li>
+          <a href={c.href} class="hero-chan" data-code={c.code}>
+            <span class="hero-chan__dot" aria-hidden="true" />
+            {c.label}
+          </a>
+        </li>
+      ))}
+    </ul>
+  )
+}
 <slot />
 
 <style>
@@ -72,5 +96,41 @@ const { tag, stats, testid } = Astro.props
   .stat__label {
     color: var(--site-text-on-dark-body);
     font-size: var(--ek-font-size-sm);
+  }
+  .hero-chans {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2);
+    margin: var(--ek-space-5) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .hero-chan {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    min-height: calc(var(--ek-space-8) + var(--ek-space-1));
+    padding-inline: var(--ek-space-3);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-full);
+    background: var(--site-glass-bg);
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-medium);
+    text-decoration: none;
+    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .hero-chan:hover {
+    border-color: var(--chan);
+  }
+  .hero-chan:focus-visible {
+    outline-color: var(--site-color-on-primary);
+  }
+  .hero-chan__dot {
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: var(--chan);
+    box-shadow: 0 0 0 calc(var(--site-border-width) * 3) color-mix(in srgb, var(--chan) 30%, transparent);
   }
 </style>

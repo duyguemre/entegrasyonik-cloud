@@ -15,6 +15,7 @@ import BaseLayout from '../layouts/BaseLayout.astro'
 import Section from '../components/Section.astro'
 import Button from '../components/Button.astro'
 import Icon from '../components/home/Icon.astro'
+import SectionHead from '../components/pages/SectionHead.astro'
 import PageHero from '../components/pages/PageHero.astro'
 import PageMeta from '../components/pages/PageMeta.astro'
 import ChannelMono from '../components/pages/ChannelMono.astro'
@@ -83,11 +84,7 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
   </PageHero>
 
   <Section labelledby="konu-title" class="tight-section section--topics">
-    <div class="head">
-      <p class="eyebrow">Konuya göre göz atın</p>
-      <h2 id="konu-title">Size nasıl yardımcı olabiliriz?</h2>
-      <p>Bir konu seçin; ilgili sorulara ve rehberlere doğrudan gidin.</p>
-    </div>
+    <SectionHead id="konu-title" eyebrow="Konuya göre göz atın" title="Size nasıl yardımcı olabiliriz?" lead="Bir konu seçin; ilgili sorulara ve rehberlere doğrudan gidin." />
     <ul class="topics" role="list" data-testid="support-topics">
       {
         tocCategories.map((c) => (
@@ -109,11 +106,7 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
   </Section>
 
   <Section id="kanal-rehberleri" tone="muted" labelledby="rehber-title" class="tight-section">
-    <div class="head">
-      <p class="eyebrow">Adım adım</p>
-      <h2 id="rehber-title">Kanal bağlantı rehberleri</h2>
-      <p>Her kanal için gereken bilgi türleri ve bağlantı adımları kendi sayfasında. Kod yazmanız gerekmez.</p>
-    </div>
+    <SectionHead id="rehber-title" eyebrow="Adım adım" title="Kanal bağlantı rehberleri" lead="Her kanal için gereken bilgi türleri ve bağlantı adımları kendi sayfasında. Kod yazmanız gerekmez." />
     <ul class="chan-grid" role="list" data-testid="support-channel-guides">
       {
         channels.map((ch) => (
@@ -136,11 +129,9 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
   </Section>
 
   <Section labelledby="kategori-title" class="tight-section">
-    <div class="head">
-      <p class="eyebrow">Sık sorulan sorular</p>
-      <h2 id="kategori-title">Konulara göre sorular</h2>
+    <SectionHead id="kategori-title" eyebrow="Sık sorulan sorular" title="Konulara göre sorular">
       <p>Her soru, tam cevabın yer aldığı SSS sayfasında açılır. <a href="/sss">Tüm soruları görün</a>.</p>
-    </div>
+    </SectionHead>
     <ul class="support-grid" role="list">
       {
         categories.map((c) => (
@@ -186,11 +177,7 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
   </Section>
 
   <Section tone="muted" labelledby="kanallar-title" class="tight-section">
-    <div class="head">
-      <p class="eyebrow">Destek kanalları</p>
-      <h2 id="kanallar-title">Aradığınızı bulamadınız mı?</h2>
-      {supportAnswer && <p>{supportAnswer}</p>}
-    </div>
+    <SectionHead id="kanallar-title" eyebrow="Destek kanalları" title="Aradığınızı bulamadınız mı?" lead={supportAnswer || undefined} />
     <ul class="channels" role="list" data-testid="support-channels">
       <li class="channel">
         <span class="channel__icon" aria-hidden="true"><Icon name="users" size="md" /></span>
@@ -293,37 +280,7 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
   }
 
   /* --- Kategori ızgarası --- */
-  /* --- S16: başlık, konu kartları, kanal rehberleri, destek kanalları, iletişim bandı --- */
-  .head {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-2);
-    max-width: 46rem;
-    margin-bottom: var(--ek-space-8);
-  }
-  .eyebrow {
-    color: var(--site-link-accent);
-    font-size: var(--site-card-eyebrow-size);
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-  .head h2 {
-    color: var(--site-text-heading);
-    font-size: var(--site-font-display-sm);
-    font-weight: var(--site-font-display-weight);
-    line-height: var(--site-font-display-line-height);
-    letter-spacing: var(--site-font-display-tracking);
-  }
-  .head p:not(.eyebrow) {
-    color: var(--site-text-body);
-    font-size: var(--ek-font-size-lg);
-    line-height: var(--site-font-body-line-height);
-  }
-  .head a {
-    color: var(--site-link-accent);
-    font-weight: var(--ek-font-weight-semibold);
-  }
+  /* --- S16: konu kartları, kanal rehberleri, destek kanalları, iletişim bandı --- */
   .topics {
     display: grid;
     grid-template-columns: 1fr;

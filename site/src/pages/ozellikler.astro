@@ -128,20 +128,7 @@ const LEVEL_STATE: Record<CapabilityLevel, 'yes' | 'limited'> = { supported: 'ye
       ]}
     />
     <Fragment slot="visual">
-      <StatPanel tag="Bir bakışta" stats={stats} testid="feature-stats">
-        <ul class="hero-chans" role="list" aria-label="Kullanılabilir kanallar">
-          {
-            channels.map((c) => (
-              <li>
-                <a href={`/entegrasyonlar/${c.code}`} class="hero-chan" data-code={c.code}>
-                  <span class="hero-chan__dot" aria-hidden="true" />
-                  {c.name}
-                </a>
-              </li>
-            ))
-          }
-        </ul>
-      </StatPanel>
+      <StatPanel tag="Bir bakışta" stats={stats} testid="feature-stats" chips={channels.map((c) => ({ href: `/entegrasyonlar/${c.code}`, code: c.code, label: c.name }))} />
     </Fragment>
   </PageHero>
 
@@ -318,44 +305,6 @@ const LEVEL_STATE: Record<CapabilityLevel, 'yes' | 'limited'> = { supported: 'ye
 <style>
   .tight-section:global(.section) {
     padding-block: calc(var(--site-section-y) * 0.72);
-  }
-
-  /* --- Hero kanal çipleri (S16 /entegrasyonlar ile aynı) --- */
-  .hero-chans {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ek-space-2);
-    margin: var(--ek-space-5) 0 0;
-    padding: 0;
-    list-style: none;
-  }
-  .hero-chan {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-    min-height: calc(var(--ek-space-8) + var(--ek-space-1));
-    padding-inline: var(--ek-space-3);
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-full);
-    background: var(--site-glass-bg);
-    color: var(--site-text-on-dark-heading);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-medium);
-    text-decoration: none;
-    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
-  }
-  .hero-chan:hover {
-    border-color: var(--chan);
-  }
-  .hero-chan:focus-visible {
-    outline-color: var(--site-color-on-primary);
-  }
-  .hero-chan__dot {
-    width: var(--ek-space-2);
-    height: var(--ek-space-2);
-    border-radius: var(--ek-radius-full);
-    background: var(--chan);
-    box-shadow: 0 0 0 calc(var(--site-border-width) * 3) color-mix(in srgb, var(--chan) 30%, transparent);
   }
 
   /* --- İkon karosu (S16 /guvenlik ilke ikonu ile aynı dil) --- */
