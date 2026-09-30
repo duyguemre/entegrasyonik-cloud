@@ -42,7 +42,8 @@
       <v-list-item v-else v-bind="ip" role="option" :title="undefined" class="ek-select-menu__item">
         <template #prepend="{ isSelected }">
           <v-checkbox-btn v-if="multiple" :model-value="isSelected" density="compact" tabindex="-1" class="ek-select-menu__check" />
-          <span v-if="item.raw.channel !== undefined" class="ek-select-menu__dot" :class="channelClass(item.raw.channel)" aria-hidden="true"></span>
+          <EkChannelBadge v-if="item.raw.channel !== undefined" class="ek-select-menu__badge" :code="item.raw.channel" :name="item.raw.title" form="short" size="xs" aria-hidden="true" />
+          <EkChannelBadge v-else-if="item.raw.carrier !== undefined" class="ek-select-menu__badge" kind="carrier" :code="item.raw.carrier" :name="item.raw.title" form="short" size="xs" aria-hidden="true" />
           <span v-else-if="item.raw.tone" class="ek-select-menu__dot" :class="`is-${item.raw.tone}`" aria-hidden="true"></span>
           <v-icon v-else-if="item.raw.icon" class="ek-select-menu__icon" :icon="item.raw.icon" aria-hidden="true" />
         </template>
@@ -53,9 +54,7 @@
       </v-list-item>
     </template>
     <template #chip="{ props: cp, item, index }">
-      <v-chip v-if="index < maxChips" v-bind="cp" :class="['ek-select__chip', item.raw.channel !== undefined ? channelClass(item.raw.channel) : '']">
-        <span v-if="item.raw.channel !== undefined" class="ek-select__chip-dot" aria-hidden="true"></span>{{ item.raw.title }}
-      </v-chip>
+      <v-chip v-if="index < maxChips" v-bind="cp" :class="['ek-select__chip', chipClass(item.raw)]">{{ item.raw.title }}</v-chip>
       <span v-else-if="index === maxChips" class="ek-select__more ek-num">+{{ selectedCount - maxChips }}</span>
     </template>
   </v-autocomplete>
@@ -88,7 +87,8 @@
       <v-list-item v-else v-bind="ip" role="option" :title="undefined" class="ek-select-menu__item">
         <template #prepend="{ isSelected }">
           <v-checkbox-btn v-if="multiple" :model-value="isSelected" density="compact" tabindex="-1" class="ek-select-menu__check" />
-          <span v-if="item.raw.channel !== undefined" class="ek-select-menu__dot" :class="channelClass(item.raw.channel)" aria-hidden="true"></span>
+          <EkChannelBadge v-if="item.raw.channel !== undefined" class="ek-select-menu__badge" :code="item.raw.channel" :name="item.raw.title" form="short" size="xs" aria-hidden="true" />
+          <EkChannelBadge v-else-if="item.raw.carrier !== undefined" class="ek-select-menu__badge" kind="carrier" :code="item.raw.carrier" :name="item.raw.title" form="short" size="xs" aria-hidden="true" />
           <span v-else-if="item.raw.tone" class="ek-select-menu__dot" :class="`is-${item.raw.tone}`" aria-hidden="true"></span>
           <v-icon v-else-if="item.raw.icon" class="ek-select-menu__icon" :icon="item.raw.icon" aria-hidden="true" />
         </template>
@@ -97,9 +97,7 @@
       </v-list-item>
     </template>
     <template #chip="{ props: cp, item, index }">
-      <v-chip v-if="index < maxChips" v-bind="cp" :class="['ek-select__chip', item.raw.channel !== undefined ? channelClass(item.raw.channel) : '']">
-        <span v-if="item.raw.channel !== undefined" class="ek-select__chip-dot" aria-hidden="true"></span>{{ item.raw.title }}
-      </v-chip>
+      <v-chip v-if="index < maxChips" v-bind="cp" :class="['ek-select__chip', chipClass(item.raw)]">{{ item.raw.title }}</v-chip>
       <span v-else-if="index === maxChips" class="ek-select__more ek-num">+{{ selectedCount - maxChips }}</span>
     </template>
   </v-select>
@@ -107,7 +105,8 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { channelClass } from '../tokens/channels'
+import { carrierCode, channelClass } from '../tokens/channels'
+import EkChannelBadge from './EkChannelBadge.vue'
 import { buildMenu, normalizeOptions, pushRecent, readRecent, splitMatch, type EkMenuRow } from './selectOptions'
 
 defineOptions({ inheritAttrs: false })
@@ -118,7 +117,8 @@ const props = withDefaults(
     items: any[]
     itemTitle?: string
     itemValue?: string
-    kind?: 'default' | 'channel' | 'status'
+    /** `channel`/`carrier`: kısa rozet öncülü + rozet çip (K13); `status`: ton noktası + ton çipi. */
+    kind?: 'default' | 'channel' | 'carrier' | 'status'
     multiple?: boolean
     /** Arama kutusu; verilmezse 8+ seçenekte açılır. */
     searchable?: boolean
@@ -137,6 +137,12 @@ const search = ref('')
 const recent = ref(readRecent(props.recentKey))
 const options = computed(() => normalizeOptions(props.items, props.itemTitle, props.itemValue, props.kind))
 const menu = computed(() => buildMenu(options.value, recent.value))
+/** Seçili değer çipi: kanal/kargo → rozet (koyu kenarlık + açık zemin), durum → ton çipi; ikisi de aynı dil. */
+function chipClass(raw: EkMenuRow): string {
+  if (raw.channel !== undefined) return `is-brand ${channelClass(raw.channel)}`
+  if (raw.carrier !== undefined) return `is-brand ${channelClass(carrierCode(raw.carrier) ?? carrierCode(raw.title) ?? '')}`
+  return raw.tone ? `is-tone is-${raw.tone}` : ''
+}
 const isSearchable = computed(() => props.searchable ?? options.value.length >= 8)
 const selectedCount = computed(() => (Array.isArray(props.modelValue) ? props.modelValue.length : props.modelValue != null && props.modelValue !== '' ? 1 : 0))
 
@@ -265,19 +271,25 @@ function clearAll() {
   gap: 6px;
 }
 
-.ek-select .ek-select__chip.v-chip[class*='ek-ch-'] {
-  /* C1: tint yok — nötr çip, kanal rengi yalnız noktada. */
-  background: var(--ek-color-surface);
-  border: 1px solid var(--ek-color-border-default);
-  color: var(--ek-color-content-default);
+/* K13 — kanal/kargo çipi = kanal rozeti (token: `--ek-ch-badge-*`). */
+.ek-select .ek-select__chip.v-chip.is-brand {
+  background: var(--ek-ch-badge-bg);
+  border: 1px solid var(--ek-ch-badge-border);
+  color: var(--ek-ch-badge-fg);
+  font-weight: var(--ek-font-weight-semibold);
 }
 
-.ek-select .ek-select__chip-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: var(--ek-radius-chip);
-  background: var(--ek-ch-brand);
-  box-shadow: inset 0 0 0 1px var(--ek-channel-ring);
+/* Durum çipi: EkStatusChip ile aynı dil (subtle zemin + tonlu kenarlık + emphasis metin). */
+.ek-select .ek-select__chip.v-chip.is-tone { border: 1px solid transparent; font-weight: var(--ek-font-weight-semibold); }
+.ek-select .ek-select__chip.v-chip.is-success { background: var(--ek-color-success-subtle); border-color: var(--ek-color-success-border); color: var(--ek-color-success-emphasis); }
+.ek-select .ek-select__chip.v-chip.is-warning { background: var(--ek-color-warning-subtle); border-color: var(--ek-color-warning-border); color: var(--ek-color-warning-emphasis); }
+.ek-select .ek-select__chip.v-chip.is-danger { background: var(--ek-color-error-subtle); border-color: var(--ek-color-error-border); color: var(--ek-color-error-emphasis); }
+.ek-select .ek-select__chip.v-chip.is-info { background: var(--ek-color-info-subtle); border-color: var(--ek-color-info-border); color: var(--ek-color-info-emphasis); }
+.ek-select .ek-select__chip.v-chip.is-neutral,
+.ek-select .ek-select__chip.v-chip.is-action { background: var(--ek-color-neutral-subtle); border-color: var(--ek-color-neutral-border); color: var(--ek-color-neutral-emphasis); }
+
+.ek-select-menu .ek-select-menu__badge {
+  min-width: 28px;
 }
 
 .ek-select .ek-select__more {
