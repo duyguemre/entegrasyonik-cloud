@@ -71,7 +71,7 @@ const CATEGORY_ICONS: Record<FaqCategoryId, 'bolt' | 'plug' | 'stock' | 'shield'
         id="faq-q"
         class="search__input"
         type="search"
-        placeholder="Sorularda arayın: ör. stok, iade, güvenlik"
+        placeholder="Sorularda arayın"
         autocomplete="off"
         spellcheck="false"
         aria-controls="faq-groups"
@@ -167,7 +167,13 @@ const CATEGORY_ICONS: Record<FaqCategoryId, 'bolt' | 'plug' | 'stock' | 'shield'
     padding-block: calc(var(--site-section-y) * 0.72);
   }
 
-  /* --- Hero cam paneli (S16 /guvenlik listesiyle aynı desen) --- */
+  /* --- Hero cam paneli (S16 /guvenlik listesiyle aynı desen). Dar ekranda sorular hemen aşağıda olduğundan
+     yinelenen panel gizlenir; içerik kaybı yok (aynı sorular listede). --- */
+  @media (max-width: 1023.98px) {
+    :global(.page-hero__visual) {
+      display: none;
+    }
+  }
   .panel-tag {
     margin: 0 0 var(--ek-space-3);
     color: var(--site-text-on-dark-meta);

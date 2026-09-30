@@ -347,7 +347,7 @@ const LEVEL_STATE: Record<CapabilityLevel, 'yes' | 'limited'> = { supported: 'ye
   .featured {
     display: grid;
     gap: var(--ek-space-8);
-    padding: var(--ek-space-8) var(--ek-space-6);
+    padding: var(--ek-space-6) var(--ek-space-5);
     border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 40%, var(--ek-color-border-default));
     border-radius: var(--site-radius-panel);
     background:
@@ -368,6 +368,10 @@ const LEVEL_STATE: Record<CapabilityLevel, 'yes' | 'limited'> = { supported: 'ye
     align-items: center;
     gap: var(--ek-space-3);
     margin-bottom: var(--ek-space-2);
+  }
+  .featured__top > :global(.badge),
+  .cap-card__top > :global(.badge) {
+    align-self: center;
   }
   .featured__eyebrow {
     color: var(--site-link-accent);
@@ -425,7 +429,7 @@ const LEVEL_STATE: Record<CapabilityLevel, 'yes' | 'limited'> = { supported: 'ye
     flex-direction: column;
     gap: var(--ek-space-4);
     min-width: 0;
-    padding: var(--ek-space-6);
+    padding: var(--ek-space-5);
     border: var(--site-border-width) solid var(--ek-color-border-default);
     border-radius: var(--ek-radius-lg);
     background: var(--ek-color-surface-muted);
@@ -721,6 +725,9 @@ const LEVEL_STATE: Record<CapabilityLevel, 'yes' | 'limited'> = { supported: 'ye
   @media (min-width: 768px) {
     .featured {
       padding: var(--ek-space-10);
+    }
+    .featured__aside {
+      padding: var(--ek-space-6);
     }
     .cap-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -20,6 +20,7 @@ import Accordion from '../../components/pages/Accordion.astro'
 import CtaBand from '../../components/pages/CtaBand.astro'
 import SectionHead from '../../components/pages/SectionHead.astro'
 import HeroActions from '../../components/pages/HeroActions.astro'
+import HelpBand from '../../components/pages/HelpBand.astro'
 import { getPublicCapabilities, getStockReservationStory } from '../../data/capabilities'
 import { getFeaturePoints } from '../../data/feature-details'
 import { getPublicFaq } from '../../data/faq'
@@ -266,9 +267,14 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
   <Section labelledby="stok-sss-title" class="tight-section" size="narrow">
     <SectionHead id="stok-sss-title" eyebrow="SSS" title="Stok rezervasyonu hakkında sorular" />
     <Accordion items={faqItems} />
-    <p class="more">
-      Başka bir sorunuz mu var? <a href="/destek">Destek merkezine</a> göz atın ya da <a href="/sss">tüm soruları</a> inceleyin.
-    </p>
+    <HelpBand
+      title="Başka bir sorunuz mu var?"
+      text="Destek merkezine göz atın ya da tüm sık sorulan soruları inceleyin."
+      links={[
+        { label: 'Destek merkezi', href: '/destek' },
+        { label: 'Tüm sorular', href: '/sss' },
+      ]}
+    />
   </Section>
 
   <CtaBand
@@ -966,11 +972,6 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
     font-size: var(--ek-font-size-md);
   }
 
-  .more {
-    margin-top: var(--ek-space-6);
-    color: var(--ek-color-content-muted);
-    font-size: var(--ek-font-size-lg);
-  }
 
   @media (min-width: 768px) {
     .story-rail ol {
