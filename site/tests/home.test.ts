@@ -38,7 +38,7 @@ describe('yapı: bölümler, başlıklar, landmark', () => {
       'senaryo-baslik',
       'yetenek-baslik',
       'entegrasyon-baslik',
-      'asistan-baslik', // S18: "yolda" bandı (UPCOMING yüzeyi)
+      'ajan-bandi-baslik', // S18: "yolda" bandı (UPCOMING yüzeyi; S22 kimliği addan bağımsız)
       'nasil-baslik',
       'fiyat-baslik',
       'guvenlik-baslik',

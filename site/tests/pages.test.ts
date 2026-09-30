@@ -16,7 +16,8 @@ import { getPublicFaq, getPublicFaqByCategory, getSupportCategories } from '../s
 import { connectGuides, getConnectGuide } from '../src/data/connect'
 import { featureDetails } from '../src/data/feature-details'
 import { legalNav, primaryNav, published } from '../src/data/navigation'
-import { UPCOMING_SURFACES, STAGE_LABELS, chatSection, localSection, agentsSection, trustSection } from '../src/data/assistant'
+import { UPCOMING_SURFACES, STAGE_LABELS, chatSection, localSection, agentsSection, trustSection, guardrailsSection, ASSISTANT_PATH } from '../src/data/assistant'
+import { AGENT_BRAND, AGENT_LEGACY_PATHS } from '../src/data/agent-brand'
 import { resolveContactEmail, mailtoHref, DEFAULT_CONTACT_EMAIL } from '../src/lib/contact'
 import { company } from '../src/data/company'
 import { securityPrinciples } from '../src/data/security-principles'
@@ -37,7 +38,7 @@ const INNER_PAGES = [
   '/iletisim',
   '/ozellikler/stok-rezervasyonu',
   '/destek',
-  '/asistan', // S18
+  ASSISTANT_PATH, // S18 (S22: ad sabitinden, varsayılan /otopilot)
 ]
 
 let draftDir = ''
@@ -174,7 +175,7 @@ function withoutVerifiedStats(source: string): string {
 }
 
 /**
- * S18 DAR İSTİSNA: yalnızca UPCOMING sayfalarında (/asistan) ve yalnızca "Örnek senaryo" etiketli sohbet sahnesinin
+ * S18 DAR İSTİSNA: yalnızca UPCOMING sayfalarında (ajan sayfası) ve yalnızca "Örnek senaryo" etiketli sohbet sahnesinin
  * (`<figure data-scene="assistant-chat">`) içindeki örnek veri rakam taramasından çıkarılır. Sahnenin etiketi zorunludur;
  * sahne dışındaki her rakam yine yasaktır (sahne verisinin kendisi: tests/upcoming.test.ts).
  */
@@ -630,14 +631,14 @@ describe('iletişim adresi çözümleyici', () => {
 
 // ------------------------------------------------------------------------------------------ S18 /asistan (derlenmiş)
 
-describe('S18: /asistan derlenmiş sayfa — aşama rozetleri, kanıtlı/planlanan ayrımı, örnek senaryo, form yok', () => {
-  const page = () => html(draftDir, '/asistan')
+describe('S18/S22: ajan sayfası derlenmiş — aşama rozetleri, kanıtlı/planlanan ayrımı, örnek senaryo/görünüm, form yok', () => {
+  const page = () => html(draftDir, ASSISTANT_PATH)
   /** `<li ... data-testid="X" ...>…</li>` bloklarını (iç içe li olmadan) döndürür. */
   const blocks = (src: string, testid: string) => [...src.matchAll(new RegExp(`<li[^>]*data-testid="${testid}"[\\s\\S]*?</li>`, 'g'))].map((m) => m[0])
 
-  it('her yetenek kartında (sohbet/yerel/ajan) tam bir aşama rozeti var ve etiketi kayıttakiyle aynı', () => {
+  it('her yetenek kartında (ajan/sohbet/yerel — S22 sayfa sırası) tam bir aşama rozeti var ve etiketi kayıttakiyle aynı', () => {
     const cards = blocks(page(), 'assistant-card')
-    const all = [...chatSection.cards, ...localSection.cards, ...agentsSection.cards]
+    const all = [...agentsSection.cards, ...chatSection.cards, ...localSection.cards]
     expect(cards).toHaveLength(all.length)
     cards.forEach((c, i) => {
       expect([...c.matchAll(/data-testid="stage-badge"/g)], all[i].id).toHaveLength(1)
@@ -660,10 +661,31 @@ describe('S18: /asistan derlenmiş sayfa — aşama rozetleri, kanıtlı/planlan
     expect(src.indexOf('data-testid="trust-proven-group"')).toBeLessThan(src.indexOf('data-testid="trust-planned-group"'))
   })
 
+  it('S22 sınırlar: her madde aşama rozetli ve "temeli bugün kodda" atfı kanıtlı maddenin başlığını taşır', () => {
+    const src = page()
+    const guards = blocks(src, 'guardrail')
+    expect(guards).toHaveLength(guardrailsSection.items.length)
+    guards.forEach((g, i) => {
+      const item = guardrailsSection.items[i]
+      expect([...g.matchAll(/data-testid="stage-badge"/g)], item.id).toHaveLength(1)
+      const base = trustSection.proven.find((t) => t.id === item.foundation)!
+      expect(g).toContain(`data-foundation="${base.id}"`)
+      expect(g).toContain(base.title)
+    })
+    // ajan döngüsü: beş adım, tek insan adımı; onay kapısı akışı sayfada
+    expect([...src.matchAll(/data-testid="loop-step"/g)]).toHaveLength(5)
+    expect([...src.matchAll(/data-testid="loop-step" data-actor="you"/g)]).toHaveLength(1)
+    expect(src).toContain('data-testid="gate-flow"')
+  })
+
   it('hero: tek h1, "Erken erişim" rozeti, durum notu; sahne "Örnek senaryo" etiketli ve onay kartı içeriyor', () => {
     const src = page()
     expect(src).toMatch(/data-testid="early-access-badge"[^>]*>Erken erişim</)
     expect(src).toContain('data-testid="assistant-status-note"')
+    // S22 hero görseli: ajan konsolu "Örnek görünüm" etiketli; sahte düğmeler gerçek düğme değil
+    expect(src).toMatch(/data-testid="console-label"[^>]*>Örnek görünüm</)
+    const consoleFig = src.match(/data-scene="agent-console"[\s\S]*?<\/figure>/)![0]
+    expect(consoleFig).not.toMatch(/<button\b|<a\b/)
     expect(src).toMatch(/data-scene="assistant-chat"/)
     expect(src).toMatch(/data-testid="scenario-label"[^>]*>Örnek senaryo</)
     expect(src).toContain('data-testid="scenario-approval"')
@@ -672,21 +694,35 @@ describe('S18: /asistan derlenmiş sayfa — aşama rozetleri, kanıtlı/planlan
     expect(scene).not.toMatch(/<button\b|<a\b/)
   })
 
-  it('erken erişim: form yok, mailto konusu "Asistan erken erişim"', () => {
+  it('erken erişim: form yok, mailto konusu "<ad> erken erişim"', () => {
     const src = page()
     expect(src).not.toMatch(/<form\b/)
-    expect(src).toContain(`subject=${encodeURIComponent('Asistan erken erişim')}`)
+    expect(src).toContain(`subject=${encodeURIComponent(`${AGENT_BRAND} erken erişim`)}`)
   })
 
-  it('ana sayfa bandı /asistan\'a bağlanır ve Erken erişim rozeti taşır; Özellikler köprüsü /asistan\'a bağlanır', () => {
+  it('ana sayfa bandı ve hero girişi ajan sayfasına bağlanır, Erken erişim etiketi taşır; Özellikler köprüsü de bağlanır', () => {
     const home = readFileSync(path.join(draftDir, 'index.html'), 'utf8')
     const band = home.match(/data-testid="assistant-teaser"[\s\S]*?<\/section>/)![0]
-    expect(band).toContain('href="/asistan"')
+    expect(band).toContain(`href="${ASSISTANT_PATH}"`)
     expect(band).toContain('data-testid="stage-badge"')
-    expect(html(draftDir, '/ozellikler')).toMatch(/<a[^>]*href="\/asistan"[^>]*data-testid="assistant-bridge"/)
+    // S22 (SR2-HOME): hero'nun İLK bölümünde ad + değer cümlesi + sayfa bağlantısı
+    const hero = home.match(/data-testid="hero"[\s\S]*?data-testid="hero-visual"/)![0]
+    expect(hero).toMatch(new RegExp(`<a[^>]*href="${ASSISTANT_PATH}"[^>]*data-testid="hero-agent-entry"`))
+    expect(hero).toContain(`Entegrasyonik ${AGENT_BRAND}`)
+    expect(hero).toContain('Erken erişim')
+    expect(html(draftDir, '/ozellikler')).toMatch(new RegExp(`<a[^>]*href="${ASSISTANT_PATH}"[^>]*data-testid="assistant-bridge"`))
   })
 
-  it('header: Asistan bağlantısı "Yeni" rozetli ve /asistan\'da aria-current="page"', () => {
-    expect(page()).toMatch(/<a class="nav-link"[^>]*href="\/asistan"[^>]*aria-current="page"[^>]*>\s*Asistan\s*<span class="nav-badge"[^>]*>Yeni<\/span>/)
+  it('header: ajan bağlantısı (etiket = ad sabiti) "Yeni" rozetli ve sayfasında aria-current="page"', () => {
+    expect(page()).toMatch(new RegExp(`<a class="nav-link"[^>]*href="${ASSISTANT_PATH}"[^>]*aria-current="page"[^>]*>\\s*${AGENT_BRAND}\\s*<span class="nav-badge"[^>]*>Yeni</span>`))
+  })
+
+  it('S22: eski adresler için dist/_redirects 301 kuralları yazılır; eski rota sayfa olarak derlenmez', () => {
+    const rules = readFileSync(path.join(draftDir, '_redirects'), 'utf8')
+    for (const old of AGENT_LEGACY_PATHS) {
+      expect(rules).toContain(`${old} ${ASSISTANT_PATH} 301`)
+      expect(rules).toContain(`${old}/ ${ASSISTANT_PATH} 301`)
+      expect(existsSync(htmlPath(draftDir, old)), old).toBe(false)
+    }
   })
 })

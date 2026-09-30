@@ -1,9 +1,10 @@
 /**
- * "Yolda" (upcoming) yüzeylerinin koruma testi (S18 — Entegrasyonik Asistan).
+ * "Yolda" (upcoming) yüzeylerinin koruma testi (S18 — Entegrasyonik Asistan; S22 — ad sabiti `AGENT_BRAND`, varsayılan
+ * "Otopilot", rota `AGENT_PATH`, eski `/asistan` → 301).
  *
  * Sohbetle yönetim, yerel uygulama ve ajanlar ürünün bugünkü sürümünde YOK. claims.test.ts'in "yakında/yol haritası"
  * ve kanıtsız-iddia korumaları GEVŞETİLMEZ; bunun yerine DAR ve gerekçeli bir istisna tanımlanır:
- *   - İstisna yüzeyleri yalnızca `UPCOMING_SURFACES`: /asistan sayfası + ana sayfa bandı (AssistantTeaser.astro).
+ *   - İstisna yüzeyleri yalnızca `UPCOMING_SURFACES`: ajan sayfası (`AGENT_PATH`) + ana sayfa bandı (AssistantTeaser.astro).
  *   - İstisna yalnızca iki şeydir: "yol haritası dili" (yakında, planlanan...) ve /asistan'da "MCP" adı
  *     (Model Context Protocol'ü sade dille anlatmak için). Diğer TÜM yasaklar (roadmap kanal adları, e-fatura/kargo
  *     API'si, "masaüstü uygulaması", mutlak/garanti iddiaları, sertifika/SLA, kanıtsız rakam) bu yüzeylerde de geçerli.
@@ -27,6 +28,10 @@ import {
   ASSISTANT_PATH,
   assistantHero,
   assistantScenario,
+  agentConsole,
+  loopSection,
+  guardrailsSection,
+  heroAgentEntry,
   chatSection,
   localSection,
   agentsSection,
@@ -39,6 +44,8 @@ import {
   type AssistantStage,
 } from '../src/data/assistant'
 import { primaryNav } from '../src/data/navigation'
+import { AGENT_BRAND, AGENT_NAME, AGENT_PATH, AGENT_SLUG, AGENT_LEGACY_PATHS, slugify } from '../src/data/agent-brand'
+import { buildRedirectRules, buildRedirectsFile, parseRedirectsFile } from '../src/lib/redirects.mjs'
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const repoRoot = path.resolve(siteRoot, '..')
@@ -98,7 +105,7 @@ const STILL_FORBIDDEN_PATTERNS: Array<[string, RegExp]> = [
 ]
 const ROADMAP_LANGUAGE = /(?<![\p{L}\d])(yakinda|cok yakinda|planlaniyor|yol haritasi|roadmap|beta)(?![\p{L}\d])/u
 
-/** İstisna: yalnızca /asistan sayfasında ve yalnızca bu ad. */
+/** İstisna: yalnızca ajan sayfasında (`AGENT_PATH`) ve yalnızca bu ad. */
 const PAGE_ONLY_ALLOWED_NAMES = ['MCP']
 
 /** Kesin kip (bugün yapıyormuş gibi): 3. tekil/çoğul şimdiki zaman, -mektedir, sık geniş zaman fiilleri. */
@@ -132,9 +139,13 @@ const HYPE = ['her seyi', 'her sey', 'sihir', 'kendi kendine', 'insan mudahalesi
 
 // ------------------------------------------------------------------------------------------ içerik kümeleri
 
-/** /asistan sayfasının tüm görünür metni (sahne hariç — sahne ayrı, rakama izinli küme). */
+/** Ajan sayfasının tüm görünür metni (sohbet sahnesi hariç — sahne ayrı, rakama izinli küme). S22: konsol (örnek
+ * görünüm, rakamsız), ajan döngüsü ve sınırlar da aynı taramadan geçer. */
 const pageContent = {
   hero: assistantHero,
+  console: agentConsole,
+  loop: loopSection,
+  guardrails: guardrailsSection,
   chat: chatSection,
   local: localSection,
   agents: agentsSection,
@@ -154,7 +165,11 @@ const futureTexts: Array<[string, string]> = [
   ['chat.lead', chatSection.lead],
   ['local.lead', localSection.lead],
   ['agents.lead', agentsSection.lead],
-  ['agents.principle', agentsSection.principle],
+  ['loop.lead', loopSection.lead],
+  ['loop.principle', loopSection.principle],
+  ['guardrails.lead', guardrailsSection.lead],
+  ...loopSection.steps.map((st): [string, string] => [`loop-step:${st.id}`, st.text]),
+  ...guardrailsSection.items.map((g): [string, string] => [`guardrail:${g.id}`, g.text]),
   ['teaser.lead', assistantTeaser.lead],
   ['cta.text', assistantCta.text],
   ...plannedCards.map((c): [string, string] => [`card:${c.id}`, c.text]),
@@ -162,15 +177,91 @@ const futureTexts: Array<[string, string]> = [
   ...localSection.protocol.points.map((p, i): [string, string] => [`protocol.points[${i}]`, p]),
 ]
 
+/** Ajan sayfasının görsel bileşenleri (S22: konsol + döngü eklendi). */
+const ASSISTANT_COMPONENTS = [
+  'components/assistant/ChatScene.astro',
+  'components/assistant/StageBadge.astro',
+  'components/assistant/AgentConsole.astro',
+  'components/assistant/AgentLoop.astro',
+]
+
 // ------------------------------------------------------------------------------------------ testler
 
+describe('S22 ad sabiti: ad tek yerden, rota türetilir, eski adres 301', () => {
+  it('ad boş değil; slug addan türer; rota = /<slug>; tam ad "Entegrasyonik <ad>"', () => {
+    expect(AGENT_BRAND.trim().length).toBeGreaterThan(2)
+    expect(AGENT_SLUG).toBe(slugify(AGENT_BRAND))
+    expect(AGENT_SLUG).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+    expect(AGENT_PATH).toBe(`/${AGENT_SLUG}`)
+    expect(AGENT_NAME).toBe(`Entegrasyonik ${AGENT_BRAND}`)
+    expect(slugify('Kontrol Kulesi')).toBe('kontrol-kulesi')
+    expect(slugify('Operasyon Ajanları')).toBe('operasyon-ajanlari')
+  })
+
+  it('"Asistan" adı kullanılmaz; üçüncü taraf/rakip ürün adı (Copilot vb.) ad olarak seçilemez', () => {
+    const n = norm(AGENT_BRAND)
+    for (const bad of ['asistan', 'copilot', 'co-pilot', 'gemini', 'chatgpt', 'siri', 'alexa', 'cortana']) expect(n, bad).not.toContain(bad)
+    expect(AGENT_PATH).not.toBe('/asistan')
+  })
+
+  it('eski /asistan adresi (ve markdown sürümü) yeni rotaya 301 ile yönlenir', () => {
+    expect(AGENT_LEGACY_PATHS).toContain('/asistan')
+    expect(AGENT_LEGACY_PATHS).not.toContain(AGENT_PATH)
+    const rules = parseRedirectsFile(buildRedirectsFile(buildRedirectRules(AGENT_LEGACY_PATHS, AGENT_PATH)))
+    expect(rules).toContainEqual({ from: '/asistan', to: AGENT_PATH, status: 301 })
+    expect(rules).toContainEqual({ from: '/asistan/', to: AGENT_PATH, status: 301 })
+    expect(rules).toContainEqual({ from: '/asistan.md', to: `${AGENT_PATH}.md`, status: 301 })
+    expect(() => buildRedirectRules(['/x y'], AGENT_PATH)).toThrow()
+  })
+
+  it('ad metin olarak yalnızca ad sabitinde yazılır (kaynakta sabit kopya yok → değiştirmek tek satır)', () => {
+    const hits = walk(srcDir, ['.astro', '.ts', '.mjs'])
+      .filter((f) => !f.endsWith(`${path.sep}agent-brand.ts`))
+      .filter((f) => phraseRe(AGENT_BRAND).test(norm(readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*(\/\/|\*).*$/gm, ''))))
+      .map((f) => path.relative(srcDir, f))
+    expect(hits).toEqual([])
+    // eski ad (S18 "Asistan") görünür kopyada kalmadı (yorum satırları hariç)
+    const legacy = walk(srcDir, ['.astro', '.ts'])
+      .filter((f) => /(pages|components|data)/.test(f) && !f.includes(`${path.sep}kb${path.sep}`))
+      .filter((f) => /['">]\s*[^'"<]*\bAsistan\b/.test(readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*(\/\/|\*).*$/gm, '')))
+      .map((f) => path.relative(srcDir, f))
+    expect(legacy).toEqual([])
+  })
+
+  it('ana sayfa hero girişi istisna DEĞİL: yol haritası dili/MCP/rakam yok; aşama etiketi ve ad var', () => {
+    const t = norm(Object.values(heroAgentEntry).join(' '))
+    expect(ROADMAP_LANGUAGE.test(t)).toBe(false)
+    expect(phraseRe('MCP').test(t)).toBe(false)
+    expect(/\d/.test(t)).toBe(false)
+    expect(heroAgentEntry.badge).toBe(STAGE_LABELS['early-access'])
+    expect(heroAgentEntry.name).toBe(AGENT_NAME)
+    expect(FUTURE_MARKER.test(norm(heroAgentEntry.value))).toBe(true)
+    expect(DEFINITE_PRESENT.exec(norm(heroAgentEntry.value))?.[0] ?? null).toBeNull()
+    expect(claimsSrc).toMatch(/heroAgent:\s*heroAgentEntry/)
+  })
+
+  it('ajan konsolu örnek görünüm olarak etiketli, canlı ürün olmadığını söyler; ajan döngüsünde tek insan adımı', () => {
+    expect(agentConsole.label).toBe('Örnek görünüm')
+    expect(norm(agentConsole.caption)).toMatch(/canli urun ekrani degildir/)
+    expect(loopSection.steps.map((st) => st.id)).toEqual(['gozle', 'oner', 'onayla', 'uygula', 'raporla'])
+    expect(loopSection.steps.filter((st) => st.actor === 'you').map((st) => st.id)).toEqual(['onayla'])
+    expect(guardrailsSection.flow.filter((f) => f.actor === 'you')).toHaveLength(1)
+  })
+
+  it('sınır maddelerinin "temeli bugün kodda" atfı gerçek bir kanıtlı güven maddesine işaret eder', () => {
+    const proven = new Set(trustSection.proven.map((t) => t.id))
+    expect(guardrailsSection.items.map((g) => g.id)).toEqual(['onay-kapisi', 'salt-okuma', 'denetim-kaydi'])
+    for (const g of guardrailsSection.items) expect(proven.has(g.foundation), g.id).toBe(true)
+  })
+})
+
 describe('istisna kapsamı DAR ve sabit', () => {
-  it('UPCOMING_SURFACES yalnızca /asistan ve ana sayfa bandı', () => {
-    expect(UPCOMING_SURFACES.pages).toEqual(['/asistan'])
+  it('UPCOMING_SURFACES yalnızca ajan sayfası (AGENT_PATH) ve ana sayfa bandı', () => {
+    expect(UPCOMING_SURFACES.pages).toEqual([AGENT_PATH])
     expect(UPCOMING_SURFACES.components).toEqual(['components/home/AssistantTeaser.astro'])
-    expect(ASSISTANT_PATH).toBe('/asistan')
+    expect(ASSISTANT_PATH).toBe(AGENT_PATH)
     for (const c of UPCOMING_SURFACES.components) expect(existsSync(path.join(srcDir, c)), c).toBe(true)
-    expect(existsSync(path.join(srcDir, 'pages', 'asistan.astro'))).toBe(true)
+    expect(existsSync(path.join(srcDir, 'pages', '[ajan].astro'))).toBe(true)
   })
 
   it('claims.test.ts listeleri kaynaktan okunur (ayrıştırma boşalmaz) ve "MCP" orada YASAK kalır', () => {
@@ -181,7 +272,7 @@ describe('istisna kapsamı DAR ve sabit', () => {
     expect(ABSOLUTE_PREFIXES).toContain('garanti')
     expect(UNPROVEN_INFRA.length).toBeGreaterThan(10)
     // claims.test.ts dist istisnası bu dosyadaki izinle aynı ve yalnızca asistan sayfası için
-    expect(claimsSrc).toMatch(/UPCOMING_DIST_NAME_EXCEPTIONS[^=]*=\s*\{\s*'asistan\/index\.html':\s*\['MCP'\]\s*,?\s*\}/)
+    expect(claimsSrc).toMatch(/UPCOMING_DIST_NAME_EXCEPTIONS[^=]*=\s*\{\s*\[`\$\{AGENT_PATH\.slice\(1\)\}\/index\.html`\]:\s*\['MCP'\]\s*,?\s*\}/)
   })
 
   it('assistant verisini yalnızca izinli kaynaklar içe aktarır; Özellikler ve llms* yalnızca istisna-dışı alanları kullanır', () => {
@@ -192,25 +283,30 @@ describe('istisna kapsamı DAR ve sabit', () => {
       .sort()
     expect(importers).toEqual(
       [
+        'components/assistant/AgentConsole.astro', // S22
+        'components/assistant/AgentLoop.astro', // S22
         'components/assistant/ChatScene.astro',
         'components/assistant/StageBadge.astro',
         'components/home/AssistantTeaser.astro',
-        'pages/asistan.astro',
+        // S22: ana sayfa hero girişi — istisna DEĞİL; yalnızca güvenli alanlar (aşağıdaki SAFE denetimi)
+        'components/home/Hero.astro',
+        'pages/[ajan].astro',
         'pages/llms-full.txt.ts',
         // S19: llms.txt artık asistan verisini içe aktarmaz; satırı SEO kaydından (src/data/seo.ts → assistantLlms.short) gelir
         'pages/ozellikler.astro',
       ].sort(),
     )
-    const SAFE = new Set(['ASSISTANT_PATH', 'ASSISTANT_NAME', 'featuresBridge', 'assistantLlms'])
-    for (const f of ['pages/ozellikler.astro', 'pages/llms-full.txt.ts']) {
+    const SAFE = new Set(['ASSISTANT_PATH', 'ASSISTANT_NAME', 'featuresBridge', 'assistantLlms', 'heroAgentEntry'])
+    for (const f of ['pages/ozellikler.astro', 'pages/llms-full.txt.ts', 'components/home/Hero.astro']) {
       const m = readFileSync(path.join(srcDir, f), 'utf8').match(/import\s*\{([^}]*)\}\s*from\s*'[^']*data\/assistant'/)!
-      const names = m[1].split(',').map((x) => x.trim()).filter(Boolean)
+      const names = m[1].split(',').map((x) => x.trim().split(/\s+as\s+/)[0]).filter(Boolean)
       for (const n of names) expect(SAFE.has(n), `${f}: ${n}`).toBe(true)
     }
   })
 
-  it('gezinmede Asistan bağlantısı "Yeni" rozetli; yalnızca bu öğe rozet taşır', () => {
+  it('gezinmede ajan bağlantısı (etiket = ad sabiti) "Yeni" rozetli; yalnızca bu öğe rozet taşır', () => {
     const item = primaryNav.find((i) => i.href === ASSISTANT_PATH)!
+    expect(item.label).toBe(AGENT_BRAND)
     expect(item.published).toBe(true)
     expect(item.badge).toBe('Yeni')
     expect(primaryNav.filter((i) => i.badge).map((i) => i.href)).toEqual([ASSISTANT_PATH])
@@ -230,6 +326,7 @@ describe('(1) aşama etiketi: her planlanan kart ve güven maddesi', () => {
       for (const c of s.cards) expect(stages, c.id).toContain(c.stage)
     }
     for (const t of trustSection.planned) expect(stages, t.id).toContain(t.stage)
+    for (const g of guardrailsSection.items) expect(stages, g.id).toContain(g.stage)
     expect(new Set(plannedCards.map((c) => c.id)).size).toBe(plannedCards.length)
   })
 
@@ -409,16 +506,16 @@ describe('(4) kanıtlı güven maddeleri: evidence yoluna bağlı; planlananlarl
 })
 
 describe('(5) erken erişim: form yok, mailto deseni', () => {
-  it('CTA konusu "Asistan erken erişim"; sayfa ve bant kaynağında <form> yok', () => {
-    expect(assistantCta.subject).toBe('Asistan erken erişim')
-    for (const f of ['pages/asistan.astro', ...UPCOMING_SURFACES.components, 'components/assistant/ChatScene.astro']) {
+  it('CTA konusu "<ad> erken erişim"; sayfa, bant ve görsel kaynaklarında <form> yok', () => {
+    expect(assistantCta.subject).toBe(`${AGENT_BRAND} erken erişim`)
+    for (const f of ['pages/[ajan].astro', ...UPCOMING_SURFACES.components, ...ASSISTANT_COMPONENTS]) {
       expect(readFileSync(path.join(srcDir, f), 'utf8'), f).not.toMatch(/<form\b/)
     }
-    expect(readFileSync(path.join(srcDir, 'pages', 'asistan.astro'), 'utf8')).toMatch(/<EmailActions[^>]*subject=\{assistantCta\.subject\}/)
+    expect(readFileSync(path.join(srcDir, 'pages', '[ajan].astro'), 'utf8')).toMatch(/<EmailActions[^>]*subject=\{assistantCta\.subject\}/)
   })
 
   it('satır içi style özniteliği yok (CSP style-src \'self\'; stagger sırası CSS nth-child ile)', () => {
-    for (const f of ['pages/asistan.astro', ...UPCOMING_SURFACES.components, 'components/assistant/ChatScene.astro', 'components/assistant/StageBadge.astro']) {
+    for (const f of ['pages/[ajan].astro', ...UPCOMING_SURFACES.components, ...ASSISTANT_COMPONENTS, 'components/home/Hero.astro']) {
       expect(readFileSync(path.join(srcDir, f), 'utf8'), f).not.toMatch(/\sstyle=/)
     }
   })

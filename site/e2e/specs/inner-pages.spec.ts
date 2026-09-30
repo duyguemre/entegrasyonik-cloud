@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { APP_URL, collectProblems, isDesktop, waitForFonts } from '../helpers'
 import { company } from '../../src/data/company'
+import { AGENT_PATH, AGENT_LEGACY_PATHS } from '../../src/data/agent-brand'
 
 // ADR-0014 S2b — iç sayfalar: smoke + etkileşim + axe (WCAG 2.1 AA) + 3 viewport ekran görüntüsü.
 const CODES = ['trendyol', 'hepsiburada', 'n11', 'pazarama', 'ideasoft', 'bizimhesap'] as const
@@ -14,14 +15,14 @@ const PAGES = [
   ['iletisim', '/iletisim'],
   ['stok-rezervasyonu', '/ozellikler/stok-rezervasyonu'],
   ['destek', '/destek'],
-  ['asistan', '/asistan'], // S18
+  ['otopilot', AGENT_PATH], // S18 (S22: rota ad sabitinden)
 ] as const
 
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
 
 async function expectNoViolations(page: Page) {
   await waitForFonts(page)
-  // S18: /asistan döngüsel sohbet sahnesi taşır — axe statik son kare üzerinde çalışsın (a11y.spec.ts ile aynı desen).
+  // S18: ajan sayfası döngüsel sohbet sahnesi taşır — axe statik son kare üzerinde çalışsın (a11y.spec.ts ile aynı desen).
   await page.evaluate(() => document.getAnimations().forEach((a) => a instanceof CSSAnimation && a.cancel()))
   const results = await new AxeBuilder({ page }).withTags(TAGS).analyze()
   expect(results.violations.map((v) => ({ id: v.id, impact: v.impact, nodes: v.nodes.map((n) => n.target.join(' ')) }))).toEqual([])
@@ -279,7 +280,7 @@ test.describe('iç sayfalar — ekran görüntüleri (3 viewport)', () => {
     ['iletisim', '/iletisim'],
     ['stok-rezervasyonu', '/ozellikler/stok-rezervasyonu'],
     ['destek', '/destek'],
-    ['asistan', '/asistan'], // S18
+    ['otopilot', AGENT_PATH], // S18 (S22: yeni tasarım → yeni taban; eski inner-asistan tabanı artık kullanılmaz)
   ] as const) {
     test(name, async ({ page }) => {
       await page.goto(route)
@@ -291,10 +292,10 @@ test.describe('iç sayfalar — ekran görüntüleri (3 viewport)', () => {
 
 // S18 — /asistan: örnek senaryo sahnesi (döngüsel). Hareket azaltılmışken statik SON KARE: tüm diyalog ve onay kartı
 // görünür, "yazıyor" göstergesi gizli. Hareket açıkken kontrol header'da; kullanıcı durdurabilir (WCAG 2.2.2).
-test.describe('asistan — sohbet sahnesi', () => {
+test.describe('ajan sayfası — sohbet sahnesi', () => {
   test('reduced-motion: statik son kare (soru, sonuç, ikinci istek, onay kartı görünür; yazıyor gizli)', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
-    await page.goto('/asistan')
+    await page.goto(AGENT_PATH)
     const scene = page.getByTestId('assistant-scene')
     await expect(scene.getByTestId('scenario-label')).toHaveText('Örnek senaryo')
     for (const part of ['ai-ask1', 'ai-result', 'ai-ask2', 'ai-approve']) {
@@ -306,7 +307,7 @@ test.describe('asistan — sohbet sahnesi', () => {
 
   test('hareket açık: durdurma kontrolü görünür; durdurunca sahne statik son kareye döner', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'no-preference' })
-    await page.goto('/asistan')
+    await page.goto(AGENT_PATH)
     const toggle = page.getByTestId('motion-toggle')
     await expect(toggle).toBeVisible()
     await toggle.click()
@@ -316,8 +317,43 @@ test.describe('asistan — sohbet sahnesi', () => {
 
   test('axe (hareket azaltılmış, SSS açık)', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
-    await page.goto('/asistan')
+    await page.goto(AGENT_PATH)
     for (const d of await page.locator('details.acc__item').all()) await d.locator('summary').click()
     await expectNoViolations(page)
   })
 })
+
+// S22 — ajan sayfası: eski adres kalıcı yönlendirme, hero boşluğu, ajan konsolu/döngü statik hâli.
+test.describe('ajan sayfası — S22', () => {
+  test('eski adres(ler) 301 ile yeni rotaya yönlenir (dist/_redirects, serve-dist uygular)', async ({ request, page }) => {
+    for (const old of AGENT_LEGACY_PATHS) {
+      const res = await request.get(old, { maxRedirects: 0 })
+      expect(res.status(), old).toBe(301)
+      expect(res.headers()['location']).toBe(AGENT_PATH)
+    }
+    await page.goto(AGENT_LEGACY_PATHS[0])
+    await expect(page).toHaveURL(new RegExp(`${AGENT_PATH}$`))
+    await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1)
+  })
+
+  test('hero: header ile içerik arasında boş bant yok (ekmek kırıntısı header altına yakın)', async ({ page }) => {
+    await page.goto(AGENT_PATH)
+    const header = await page.locator('header').first().boundingBox()
+    const crumb = await page.locator('main nav[aria-label="Sayfa yolu"]').boundingBox()
+    // S22 öncesi: ~126 px (bölüm varsayılan boşluğu); hedef: <= 64 px
+    expect(crumb!.y - (header!.y + header!.height)).toBeLessThanOrEqual(64)
+  })
+
+  test('reduced-motion: konsol ve döngü statik (tarama/iz ışığı görünmez, durum noktaları dolu)', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.goto(AGENT_PATH)
+    const consoleFig = page.getByTestId('agent-console')
+    await expect(consoleFig.getByTestId('console-label')).toHaveText('Örnek görünüm')
+    await expect(consoleFig.locator('[data-part="agent-scan"]')).toHaveCSS('opacity', '0')
+    for (const dot of await consoleFig.locator('[data-part="agent-live"]').all()) await expect(dot).toHaveCSS('opacity', '1')
+    await expect(page.getByTestId('loop-step')).toHaveCount(5)
+    const trace = page.locator('[data-part="loop-trace"]')
+    expect(await trace.evaluate((el) => getComputedStyle(el).animationName)).toBe('none')
+  })
+})
+

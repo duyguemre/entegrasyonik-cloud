@@ -38,7 +38,8 @@ import {
   PLAN_SEED_PATH,
 } from '../src/data/plans'
 import { getComparisonRows, getPricingFaq, getPricingFaqRecords, getPlanPitch, getPlanCommonFeatures } from '../src/data/pricing'
-import { featuresBridge, UPCOMING_SURFACES } from '../src/data/assistant'
+import { featuresBridge, heroAgentEntry, UPCOMING_SURFACES } from '../src/data/assistant'
+import { AGENT_PATH } from '../src/data/agent-brand'
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const repoRoot = path.resolve(siteRoot, '..')
@@ -110,6 +111,8 @@ function publicContent() {
     support: getSupportCategories().map(({ label, lead, links }) => ({ label, lead, links: links.map((l) => l.label) })),
     // S18: Özellikler sayfasındaki "Yolda" köprüsü UPCOMING istisnası DEĞİLDİR — katı taramadan geçer
     assistantBridge: featuresBridge,
+    // S22: ana sayfa hero'sundaki ajan girişi de istisna DEĞİLDİR — katı taramadan geçer
+    heroAgent: heroAgentEntry,
   }
 }
 
@@ -691,10 +694,10 @@ describe('(4) gizli roadmap öğeleri hiçbir yerde görünmez', () => {
   // ("e-fatura mükellefiyeti") içerir; bunlar pazarlama iddiası değildir. Kaynak taramasının `src/data/**`'i
   // dışlamasıyla aynı gerekçe. Yasal sayfalar kendi yasaklı-ifade taramasından geçer: tests/legal.test.ts.
   const distHtml = walk(distDir, ['.html']).filter((f) => !f.includes(`${path.sep}yasal${path.sep}`))
-  // S18 DAR İSTİSNA: /asistan (UPCOMING yüzeyi) Model Context Protocol'ü sade dille anlatır; YALNIZCA bu sayfada ve
+  // S18 DAR İSTİSNA: ajan sayfası (UPCOMING yüzeyi; S22: rota ad sabitinden, varsayılan /otopilot) Model Context Protocol'ü sade dille anlatır; YALNIZCA bu sayfada ve
   // YALNIZCA "MCP" adı serbesttir. Diğer tüm ad/mutlak iddia yasakları orada da geçerlidir; ayrıntılı kurallar
   // (aşama etiketi, kip, rakam/tarih/müşteri) tests/upcoming.test.ts'tedir. Listeye ekleme = bilinçli ürün kararı.
-  const UPCOMING_DIST_NAME_EXCEPTIONS: Record<string, string[]> = { 'asistan/index.html': ['MCP'] }
+  const UPCOMING_DIST_NAME_EXCEPTIONS: Record<string, string[]> = { [`${AGENT_PATH.slice(1)}/index.html`]: ['MCP'] }
 
   it('UPCOMING dist istisnası yalnızca UPCOMING_SURFACES sayfaları için ve yalnızca MCP adı', () => {
     expect(Object.keys(UPCOMING_DIST_NAME_EXCEPTIONS)).toEqual(UPCOMING_SURFACES.pages.map((p) => `${p.slice(1)}/index.html`))

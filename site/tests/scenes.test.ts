@@ -54,6 +54,9 @@ const LOOP_SCENES: Record<string, string> = {
   marquee: 'components/home/Proof.astro',
   // S18: /asistan hero'su — örnek senaryo sohbeti (30 sn tek zaman çizelgesi; statik hâl = tüm diyalog + onay bekliyor)
   'assistant-chat': 'components/assistant/ChatScene.astro',
+  // S22: ajan sayfası — konsol durum ışıması + tarama ışığı; ajan döngüsü iz ışığı + düğüm vurgusu
+  'agent-console': 'components/assistant/AgentConsole.astro',
+  'agent-loop': 'components/assistant/AgentLoop.astro',
 }
 const ALL_SCENES = { ...ENTER_SCENES, ...GENERIC_SCENES, ...LOOP_SCENES }
 
