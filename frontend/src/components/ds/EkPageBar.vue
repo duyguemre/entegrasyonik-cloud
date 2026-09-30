@@ -109,8 +109,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, useId, watch } from 'vue'
-import { useElementSize } from '@vueuse/core'
+import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from 'vue'
+import { useResizeObserver } from '@vueuse/core'
 import EkCollapse from './EkCollapse.vue'
 import EkContextMenu from './EkContextMenu.vue'
 import EkKbd from './EkKbd.vue'
@@ -169,7 +169,17 @@ function openShortcutHelp() {
 /** Kap genişliği (görünüm alanı değil — sekme/yan panel içinde de doğru). */
 const NARROW_MAX = 560
 const rootRef = ref<HTMLElement | null>(null)
-const { width } = useElementSize(rootRef)
+const width = ref(0)
+// Yalnız GENİŞLİK izlenir ve bir sonraki kareye ertelenir: gözlemci geri çağrısında düzen değiştirmek
+// ("ResizeObserver loop completed…" genel hatası) ve yükseklik değişiminin (dar kapta iki satır) döngüsü önlenir.
+let raf = 0
+useResizeObserver(rootRef, (entries) => {
+  const w = Math.round(entries[0]?.contentRect.width ?? 0)
+  if (w === width.value) return
+  cancelAnimationFrame(raf)
+  raf = requestAnimationFrame(() => (width.value = w))
+})
+onBeforeUnmount(() => cancelAnimationFrame(raf))
 const narrow = computed(() => width.value > 0 && width.value < NARROW_MAX)
 
 const page = usePageContext()
