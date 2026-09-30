@@ -34,6 +34,8 @@
         <v-window-item value="login" transition="fade-transition" reverse-transition="fade-transition">
           <div class="form-pane">
             <LoadingComponent attach=".LoginView" ref="loadingLogin" />
+            <!-- Faz 3 / C2a: davet kabulü / sahiplik devri oturum açmaz → buraya bilgi notuyla gelinir. -->
+            <EkAlert v-if="reasonNoticeKey && !errorMessage" tone="success" dense class="mb-3" :text="$t(reasonNoticeKey)" />
             <v-form @submit.prevent="handleLogin">
               <v-text-field v-model="authData.email" :label="$t('login.email')" autocomplete="username"
                 class="mb-3"></v-text-field>
@@ -242,6 +244,14 @@ const resolveRedirectTarget = (): string => {
   }
   return '/dashboard'
 }
+const LOGIN_REASON_NOTICES: Record<string, string> = {
+  'invitation-accepted': 'loginNotice.invitationAccepted',
+  'ownership-transferred': 'loginNotice.ownershipTransferred',
+}
+const reasonNoticeKey = computed(() => {
+  const reason = Array.isArray(route.query.reason) ? route.query.reason[0] : route.query.reason
+  return typeof reason === 'string' ? LOGIN_REASON_NOTICES[reason] ?? '' : ''
+})
 const loadingLogin = ref()
 const errorMessage = ref('')
 const isStoreSelectionPhase = ref(false)

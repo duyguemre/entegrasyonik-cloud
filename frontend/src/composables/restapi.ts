@@ -62,7 +62,8 @@ export function newIdempotencyKey(): string {
   if (c && typeof c.randomUUID === 'function') return c.randomUUID()
   // Eski ortam yedeği (güvenli bağlam dışı http): yine 128 bit rastgele, UUID v4 biçiminde.
   const b = new Uint8Array(16)
-  c?.getRandomValues ? c.getRandomValues(b) : b.forEach((_, i) => (b[i] = Math.floor(Math.random() * 256)))
+  if (c?.getRandomValues) c.getRandomValues(b)
+  else b.forEach((_, i) => (b[i] = Math.floor(Math.random() * 256)))
   b[6] = (b[6] & 0x0f) | 0x40
   b[8] = (b[8] & 0x3f) | 0x80
   const h = [...b].map((x) => x.toString(16).padStart(2, '0')).join('')

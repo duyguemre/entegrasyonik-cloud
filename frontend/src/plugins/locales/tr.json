@@ -1897,6 +1897,7 @@
       "step2Text": "Bağlantı 72 saat geçerlidir. Kabul edilene kadar sahip sizsiniz ve devri iptal edebilirsiniz.",
       "target": "Yeni sahip",
       "targetHint": "Yalnız aktif ve e-postası doğrulanmış üyeler seçilebilir.",
+      "targetRequired": "Yeni sahibi seçin.",
       "noTargets": "Devredilebilecek aktif üye yok. Önce ekibe bir yönetici davet edin.",
       "consequence": "Devir kabul edildiğinde rolünüz Yönetici olur ve ikinizin de oturumu kapanır; yeniden giriş yapmanız gerekir.",
       "confirm": "Devri başlat",

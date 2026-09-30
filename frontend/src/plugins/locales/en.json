@@ -675,6 +675,7 @@
       "step2Text": "The link is valid for 72 hours. Until it's accepted you remain the owner and can cancel.",
       "target": "New owner",
       "targetHint": "Only active members with a verified e-mail can be chosen.",
+      "targetRequired": "Choose the new owner.",
       "noTargets": "No active member to transfer to. Invite an admin first.",
       "consequence": "When accepted, your role becomes Admin and both of you are signed out.",
       "confirm": "Start transfer",

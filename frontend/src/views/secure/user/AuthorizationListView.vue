@@ -5,6 +5,12 @@
   getRoles|createUser|updateUser|deleteUser`, sayfalama alanları, `checkAuthorization` kapısı,
   mağaza yöneticisi (`item.owner`) silme kısıtı AYNEN korundu. Sıralama SUNUCUDA (name, email, roleCode).
   Karakterizasyon (DÜZELTİLMEDİ): rol rozeti ham `roleCode` değerini gösterir (rol adına çevrilmez).
+
+  Faz 3 / C2a — ekip yönetimi (docs/cloud-contracts/API_ACCOUNT_LIFECYCLE.md §6-9) bu ekrana EKLENDİ:
+  davet (e-posta + rol, rol tavanı UI'da da) · bekleyen davetler (#summary; yeniden gönder / iptal) · Durum kolonu
+  (Aktif/Askıda) · askıya al / yeniden etkinleştir (onay diyaloğu; kendine ve son sahibe kapalı, sunucu hatası da okunur
+  iletiye döner) · sahiplik devri (yalnız sahip; başlat → hedef e-postadaki bağlantıyla kabul eder; iptal). Kurallar
+  `components/user/team/teamModel.ts`, RPC'ler `composables/useTeamApi.ts`, iletiler `composables/errorCodes.ts`.
 -->
 <template>
   <div class="authorizationListView">
@@ -22,6 +28,43 @@
         confirm-label="Personeli Sil"
         danger
         @confirm="actionDialog.onConfirm"
+      />
+
+      <!-- C2a — ekip yönetimi diyalogları (sekme kabına bağlı; EkDialog varsayılanı). -->
+      <InviteUserDialog v-model="inviteOpen" :roles="myInvitableRoles" @invited="loadInvitations" />
+      <OwnershipTransferDialog v-model="transferOpen" :members="users" :me="me" :initial-target="transferTarget"
+        @started="transferOpen = false" @cancel-pending="askCancelTransfer" />
+
+      <EkDialog
+        v-model="memberDialog.open"
+        :title="memberDialog.title"
+        :description="memberDialog.text"
+        :tone="memberDialog.mode === 'suspend' ? 'danger' : 'default'"
+        :icon="memberDialog.mode === 'suspend' ? 'mdi-account-cancel-outline' : 'mdi-account-check-outline'"
+        :icon-tone="memberDialog.mode === 'suspend' ? 'error' : 'success'"
+        width="sm"
+        :as-form="memberDialog.mode === 'suspend'"
+        :confirm-label="memberDialog.mode === 'suspend' ? $t('team.suspend.confirm') : $t('team.reactivate.confirm')"
+        :confirm-icon="memberDialog.mode === 'suspend' ? 'mdi-account-cancel-outline' : 'mdi-account-check-outline'"
+        :confirm-loading="memberDialog.busy"
+        data-testid="member-status-dialog"
+        @confirm="confirmMemberStatus"
+      >
+        <div class="ek-member-dialog">
+          <v-textarea v-if="memberDialog.mode === 'suspend'" v-model="memberDialog.reason" :label="$t('team.suspend.reason')"
+            :hint="$t('team.suspend.reasonHint')" persistent-hint rows="2" auto-grow maxlength="200" counter="200" />
+          <EkAlert v-if="memberDialog.errorKey" tone="error" dense live :text="$t(memberDialog.errorKey)" />
+        </div>
+      </EkDialog>
+
+      <EkConfirmDialog
+        v-model="confirmState.open"
+        :title="confirmState.title"
+        :description="confirmState.text"
+        :confirm-label="confirmState.confirmLabel"
+        danger
+        :loading="confirmState.busy"
+        @confirm="confirmState.onConfirm"
       />
 
       <UserAddComponent v-if="addUserFormMenu" :editUser="selectedUser" @close="addUserFormMenu = false"
@@ -61,10 +104,26 @@
         @filter-reset="resetFilters"
         @remove-chip="removeChip"
         @clear-filters="clearSearch"
-        @refresh="getUsers(true)"
+        @refresh="refreshAll"
       >
         <template #header-actions>
-          <EkButton icon="mdi-plus" @click="openAddUser()">Yeni personel</EkButton>
+          <EkButton :tone="myInvitableRoles.length ? 'secondary' : 'primary'" icon="mdi-plus" @click="openAddUser()">Yeni personel</EkButton>
+          <EkButton v-if="myInvitableRoles.length" icon="mdi-account-plus-outline" data-testid="invite-open" @click="inviteOpen = true">
+            {{ $t('team.invite.open') }}
+          </EkButton>
+        </template>
+
+        <template v-if="teamManager && (transferState.pending || invitationsLoading || invitationsError || invitations.length)" #summary>
+          <div class="ek-team-summary">
+            <EkAlert v-if="transferState.pending" tone="warning" :title="$t('team.transfer.pendingTitle')" data-testid="transfer-pending"
+              :text="`${$t('team.transfer.pendingText', { name: transferState.pending.targetName })}${transferState.pending.expiresAt ? ' ' + $t('team.transfer.pendingUntil', { date: formatDateTime(transferState.pending.expiresAt) }) : ''}`">
+              <template #actions>
+                <EkButton tone="secondary" size="sm" icon="mdi-cancel" @click="askCancelTransfer">{{ $t('team.transfer.cancel') }}</EkButton>
+              </template>
+            </EkAlert>
+            <PendingInvitationsCard :invitations="invitations" :loading="invitationsLoading" :error="invitationsError"
+              :busy-id="invitationBusyId" @resend="resendInvitation" @revoke="askRevokeInvitation" @retry="loadInvitations" />
+          </div>
         </template>
 
         <template #filters>
@@ -74,18 +133,21 @@
 
         <template #cell-name="{ row }">
           <span class="ek-auth-person">
-            <span class="ek-auth-person__name">{{ row.name }} {{ row.surname }}</span>
+            <span class="ek-auth-person__name">{{ row.name }} {{ row.surname }}
+              <EkBadge v-if="isSelf(row, me)" variant="label" tone="action" :text="$t('team.you')" class="ek-auth-person__you" />
+            </span>
             <span class="ek-auth-person__meta ek-num">Eklenme: {{ formatDate(row.createdAt) }}</span>
           </span>
         </template>
         <template #cell-roleCode="{ row }">
           <EkStatusChip :tone="roleTone(row)" :label="roleLabel(row)" />
         </template>
+        <template #cell-status="{ row }">
+          <EkStatusChip :tone="memberStatus(row) === 'active' ? 'success' : 'warning'" :label="$t(`team.status.${memberStatus(row)}`)"
+            :icon="memberStatus(row) === 'active' ? 'mdi-check-circle-outline' : 'mdi-pause-circle-outline'" />
+        </template>
         <template #cell-actions="{ row }">
-          <EkRowActions :label="`${row.name ?? row.email} işlemleri`" :items="[
-            { key: 'edit', action: 'edit', label: 'Düzenle', onClick: () => openAddUser(row) },
-            { key: 'delete', action: 'delete', label: row.owner ? 'Mağaza yöneticisi silinemez' : 'Sil', disabled: row.owner, onClick: () => triggerDelete(row) },
-          ]" />
+          <EkRowActions :label="`${row.name ?? row.email} işlemleri`" :items="rowActions(row)" />
         </template>
       </EkListScreen>
     </template>
@@ -113,6 +175,23 @@ import EkStatusChip from '@/components/ds/EkStatusChip.vue'
 import EkConfirmDialog from '@/components/ds/EkConfirmDialog.vue'
 import { isRequestError } from '@/components/ds/listStandard'
 import type { StatusTone } from '@/design/status-map'
+import type { EkRowAction } from '@/components/ds/EkRowActions.vue'
+import EkDialog from '@/components/ds/EkDialog.vue'
+import EkAlert from '@/components/ds/EkAlert.vue'
+import EkBadge from '@/components/ds/EkBadge.vue'
+import InviteUserDialog from '@/components/user/team/InviteUserDialog.vue'
+import OwnershipTransferDialog from '@/components/user/team/OwnershipTransferDialog.vue'
+import PendingInvitationsCard from '@/components/user/team/PendingInvitationsCard.vue'
+import {
+  activeOwnerCount, displayName, invitableRoles, isSelf, memberRole, memberStatus, normalizeInvitations, reactivateGate,
+  suspendGate, transferTargetGate, type CurrentUser, type Invitation, type MemberRow,
+} from '@/components/user/team/teamModel'
+import { useTeamApi } from '@/composables/useTeamApi'
+import { createIdempotentAction } from '@/composables/restapi'
+import { isApiError } from '@/composables/apiErrors'
+import { errorMessageKey } from '@/composables/errorCodes'
+import { useToast } from '@/composables/useToast'
+import { formatDateTime } from '@/composables/format'
 const userApi = useUser()
 
 const selectedUser = ref()
@@ -171,8 +250,180 @@ const columns: EkGridColumn[] = [
   { key: 'name', label: 'Personel', sortable: true },
   { key: 'email', label: 'E-posta', sortable: true },
   { key: 'roleCode', label: 'Yetki grubu', sortable: true },
+  { key: 'status', label: 'Durum' },
   { key: 'actions', label: 'İşlemler', align: 'end', hideLabel: true, pin: 'end' },
 ]
+
+// ── C2a — ekip yönetimi ────────────────────────────────────────────────────────────────────────────────────────
+const teamApi = useTeamApi()
+const { transferState } = teamApi
+const { showToast } = useToast()
+
+// Oturumdaki kullanıcı (profil DTO'sunun görünür alanları; liste `_id`'si tenant kopyası olabilir → e-posta da kullanılır).
+const me = computed<CurrentUser>(() => ({
+  _id: userApi.getSessionScope.value.userId,
+  username: userApi.getUsername.value,
+  owner: userApi.isOwner?.() === true,
+  isGlobalAdmin: userApi.isPlatformAdmin(),
+  roleCode: userApi.isTenantAdmin() && userApi.isOwner?.() !== true ? 'ROLE_ADMIN' : undefined,
+}))
+const teamManager = computed(() => userApi.isTenantAdmin())
+const myInvitableRoles = computed(() => (teamManager.value ? invitableRoles(me.value) : []))
+
+const inviteOpen = ref(false)
+const transferOpen = ref(false)
+const transferTarget = ref<string | null>(null)
+
+const invitations = ref<Invitation[]>([])
+const invitationsLoading = ref(false)
+const invitationsError = ref(false)
+const invitationBusyId = ref<string | null>(null)
+const resendActions = new Map<string, ReturnType<typeof createIdempotentAction>>()
+
+async function loadInvitations() {
+  if (!teamManager.value) return
+  invitationsLoading.value = true
+  invitationsError.value = false
+  const resp: any = await teamApi.listInvitations('pending')
+  invitationsLoading.value = false
+  if (isApiError(resp)) {
+    invitationsError.value = true
+    return
+  }
+  invitations.value = normalizeInvitations(resp)
+}
+
+function refreshAll() {
+  getUsers(true)
+  loadInvitations()
+}
+
+function toastError(resp: unknown, overrides: Parameters<typeof errorMessageKey>[1] = {}) {
+  const key = errorMessageKey(resp, overrides)
+  if (key) showToast({ tone: 'error', message: t(key) })
+}
+
+async function resendInvitation(inv: Invitation) {
+  if (invitationBusyId.value) return
+  const action = resendActions.get(inv.id) ?? createIdempotentAction()
+  resendActions.set(inv.id, action)
+  invitationBusyId.value = inv.id
+  const resp: any = await teamApi.resendInvitation(inv.id, action.keyFor({ invitationId: inv.id }))
+  invitationBusyId.value = null
+  if (!isApiError(resp)) {
+    resendActions.delete(inv.id)
+    showToast({ tone: 'success', message: t('team.invitations.resent', { email: inv.email }) })
+    loadInvitations()
+    return
+  }
+  toastError(resp, { HTTP_404: 'team.invitations.notPending', NOT_FOUND: 'team.invitations.notPending' })
+  if ((resp as any)?.response?.status === 404) loadInvitations()
+}
+
+const confirmState = ref<{ open: boolean; busy: boolean; title: string; text: string; confirmLabel: string; onConfirm: () => void }>({
+  open: false, busy: false, title: '', text: '', confirmLabel: '', onConfirm: () => {},
+})
+
+function askRevokeInvitation(inv: Invitation) {
+  confirmState.value = {
+    open: true,
+    busy: false,
+    title: t('team.invitations.revokeTitle'),
+    text: t('team.invitations.revokeText', { email: inv.email }),
+    confirmLabel: t('team.invitations.revoke'),
+    onConfirm: async () => {
+      confirmState.value.busy = true
+      const resp: any = await teamApi.revokeInvitation(inv.id)
+      confirmState.value.busy = false
+      confirmState.value.open = false
+      if (!isApiError(resp)) showToast({ tone: 'success', message: t('team.invitations.revoked') })
+      else toastError(resp, { HTTP_404: 'team.invitations.notPending', NOT_FOUND: 'team.invitations.notPending' })
+      loadInvitations()
+    },
+  }
+}
+
+function askCancelTransfer() {
+  confirmState.value = {
+    open: true,
+    busy: false,
+    title: t('team.transfer.cancelTitle'),
+    text: t('team.transfer.cancelText'),
+    confirmLabel: t('team.transfer.cancel'),
+    onConfirm: async () => {
+      confirmState.value.busy = true
+      const resp: any = await teamApi.cancelOwnershipTransfer()
+      confirmState.value.busy = false
+      confirmState.value.open = false
+      if (!isApiError(resp)) {
+        transferOpen.value = false
+        showToast({ tone: 'success', message: t('team.transfer.cancelled') })
+      } else toastError(resp, { HTTP_404: 'team.transfer.noPending', NOT_FOUND: 'team.transfer.noPending' })
+    },
+  }
+}
+
+const memberDialog = ref<{ open: boolean; busy: boolean; mode: 'suspend' | 'reactivate'; row: MemberRow | null; title: string; text: string; reason: string; errorKey: string }>({
+  open: false, busy: false, mode: 'suspend', row: null, title: '', text: '', reason: '', errorKey: '',
+})
+
+function openMemberStatus(row: MemberRow, mode: 'suspend' | 'reactivate') {
+  const name = displayName(row)
+  memberDialog.value = {
+    open: true,
+    busy: false,
+    mode,
+    row,
+    title: t(`team.${mode}.title`, { name }),
+    text: t(`team.${mode}.text`),
+    reason: '',
+    errorKey: '',
+  }
+}
+
+async function confirmMemberStatus() {
+  const d = memberDialog.value
+  if (!d.row?._id || d.busy) return
+  d.busy = true
+  d.errorKey = ''
+  const resp: any = d.mode === 'suspend'
+    ? await teamApi.suspendUser(String(d.row._id), d.reason.trim() || undefined)
+    : await teamApi.reactivateUser(String(d.row._id))
+  d.busy = false
+  if (!isApiError(resp)) {
+    d.open = false
+    showToast({ tone: 'success', message: t(`team.${d.mode}.done`, { name: displayName(d.row) }) })
+    getUsers()
+    return
+  }
+  const key = errorMessageKey(resp, { FORBIDDEN: 'team.suspend.forbidden', HTTP_403: 'team.suspend.forbidden' })
+  if (key) d.errorKey = key
+}
+
+function openTransfer(row?: MemberRow) {
+  transferTarget.value = row?._id ? String(row._id) : null
+  transferOpen.value = true
+}
+
+function rowActions(row: MemberRow): EkRowAction[] {
+  const items: EkRowAction[] = [{ key: 'edit', action: 'edit', label: 'Düzenle', onClick: () => openAddUser(row) }]
+  if (teamManager.value) {
+    const owners = activeOwnerCount(users.value)
+    if (memberStatus(row) === 'active') {
+      const gate = suspendGate(row, me.value, owners)
+      items.push({ key: 'suspend', action: 'cancel', icon: 'mdi-account-cancel-outline', label: gate.allowed ? t('team.suspend.action') : `${t('team.suspend.action')} — ${t(gate.reasonKey!)}`, disabled: !gate.allowed, group: 'Üyelik', onClick: () => openMemberStatus(row, 'suspend') })
+    } else {
+      const gate = reactivateGate(row, me.value)
+      items.push({ key: 'reactivate', action: 'approve', icon: 'mdi-account-check-outline', label: gate.allowed ? t('team.reactivate.action') : `${t('team.reactivate.action')} — ${t(gate.reasonKey!)}`, disabled: !gate.allowed, group: 'Üyelik', onClick: () => openMemberStatus(row, 'reactivate') })
+    }
+    if (memberRole(me.value) === 'owner' && !isSelf(row, me.value) && memberRole(row) !== 'owner') {
+      const gate = transferTargetGate(row, me.value)
+      items.push({ key: 'transfer', action: 'send', icon: 'mdi-crown-outline', label: gate.allowed ? t('team.transfer.action') : `${t('team.transfer.action')} — ${t(gate.reasonKey!)}`, disabled: !gate.allowed, group: 'Üyelik', onClick: () => openTransfer(row) })
+    }
+  }
+  items.push({ key: 'delete', action: 'delete', label: row.owner ? 'Mağaza yöneticisi silinemez' : 'Sil', disabled: !!row.owner, onClick: () => triggerDelete(row) })
+  return items
+}
 
 const gridSort = computed<EkGridSort>(() => {
   const current = sortBy.value?.[0]
@@ -377,6 +628,7 @@ onMounted(() => {
   isMounted.value = true
   dialogAttach.value = '.authorizationListView'
   getUsers(true)
+  loadInvitations()
 
 });
 
@@ -437,5 +689,26 @@ const reset = () => {
 
 .ek-auth-danger {
   color: var(--ek-color-error);
+}
+
+.ek-auth-person__you {
+  margin-left: var(--ek-space-1);
+  vertical-align: middle;
+}
+
+.ek-team-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-3);
+}
+
+.ek-member-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-3);
+}
+
+.ek-member-dialog:empty {
+  display: none;
 }
 </style>
