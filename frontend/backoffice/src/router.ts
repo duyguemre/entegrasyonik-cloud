@@ -10,6 +10,8 @@ export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/giris', name: 'login', component: () => import('./views/LoginView.vue'), meta: { public: true, title: 'Giriş' } },
+    // Davet kabulü (B12): kimliksiz, kabuksuz; bilet `#t=` parçasında (sunucu günlüğü/Referer görmez).
+    { path: '/accept-invite', name: 'accept-invite', component: () => import('./views/admins/AcceptInviteView.vue'), meta: { public: true, title: 'Daveti kabul et' } },
     {
       path: '/',
       component: () => import('./layouts/ShellLayout.vue'),
@@ -58,7 +60,8 @@ watch(
   () => session.state.status,
   (status, previous) => {
     const current = router.currentRoute.value
-    if (status === 'signedOut' && previous && previous !== 'signedOut' && !current.meta.public) {
+    // Açılış (booting → signedOut) ilk gezinme bitmeden gelir: o an `current` henüz hedef rota değildir; korumayı beforeEach yapar.
+    if (status === 'signedOut' && previous && previous !== 'signedOut' && previous !== 'booting' && !current.meta.public) {
       router.replace({ name: 'login', query: { r: current.fullPath } })
     }
     if (status === 'signedIn' && current.name === 'login') {

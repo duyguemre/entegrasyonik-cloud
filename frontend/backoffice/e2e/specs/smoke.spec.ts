@@ -84,11 +84,10 @@ test.describe('kabuk ve ekranlar', () => {
     test.skip(info.project.name === 'chromium-mobile')
     const nav = page.getByRole('navigation', { name: 'Yönetim ekranları' })
     for (const [menu, heading, path] of [
-      [['Abonelikler'], 'Abonelikler', '/abonelikler'],
-      [['Motor ve kuyruklar'], 'Motor ve kuyruklar', '/motor'],
-      [['Altyapı', 'Redis ve MongoDB'], 'Redis ve MongoDB', '/altyapi'],
+      // bo-p2 sonrası hâlâ planlı olanlar (Abonelik, Motor, Altyapı, Yöneticiler, Platform ayarları hazır).
+      [['Müşteriler', 'Yaşam döngüsü'], 'Yaşam döngüsü', '/musteriler/yasam-dongusu'],
+      [['Destek talepleri'], 'Destek talepleri', '/musteriler/destek'],
       [['Sistem ayarları', 'Bildirimler ve duyurular'], 'Bildirimler ve duyurular', '/sistem/duyurular'],
-      [['Yöneticiler'], 'Yöneticiler', '/yoneticiler'],
     ] as const) {
       for (const label of menu) {
         const btn = nav.getByRole('button', { name: new RegExp(`^${label}(\\s|$)`) })
@@ -151,10 +150,10 @@ test.describe('kabuk ve ekranlar', () => {
     await page.evaluate(() => (window as unknown as { __boMock: { expireReauth(): void } }).__boMock.expireReauth())
 
     await page.getByTestId('impersonate').click()
-    const dialog = page.getByRole('dialog', { name: 'Hesaba geçici erişim' })
+    const dialog = page.getByRole('dialog', { name: 'Müşterinin gözünden açılsın mı?' })
     await expect(dialog.getByText('Geri alınabilir', { exact: true })).toBeVisible()
     await expect(dialog.getByText('Onayladığınızda parola ve doğrulama kodu istenecek', { exact: false })).toBeVisible()
-    const start = dialog.getByRole('button', { name: 'Gerekçeyle başlat' })
+    const start = dialog.getByRole('button', { name: 'Gerekçeyle aç' })
     await dialog.getByLabel('Gerekçe').fill('kısa')
     await expect(start).toBeDisabled()
     await dialog.getByLabel('Gerekçe').fill('Destek talebi: eşleme ekranı hatası')

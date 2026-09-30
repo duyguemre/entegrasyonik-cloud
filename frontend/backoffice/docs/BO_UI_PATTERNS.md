@@ -145,6 +145,10 @@ geri al, yönetici ekle/kaldır, önbellek boşalt) bu tek diyalogla onaylanır.
   bir şey yapmaz. Vazgeçilirse `AdminApiError.cancelled` → "Kimlik doğrulanmadığı için işlem yapılmadı."
 - Başarı: `notifyAudited('…yapıldı.', () => router.push({ path: '/denetim', query: { tid, event } }))` → toast +
   **Denetim kaydını aç** bağlantısı. Hata: diyalog açık kalır, `error` metni alanın altında.
+- **Ekranlarda önerilen kullanım (bo-p2 ile birleşti):** `useGuardedAction` + `components/kit/GuardedDialog.vue` —
+  gerekçe denetimi, step-up ve hata metnini tek akışta toplar; görünüm her zaman `DangerActionDialog`. İşleme özgü ek
+  alanlar varsayılan slota (gerekçenin üstü), geçersizken `blocked`. Pakette `EkReasonDialog` da var (bo-p2); backoffice
+  ekranlarında KULLANILMAZ — tek görünüm `DangerActionDialog`.
 - `/denetim` şu sorgu parametrelerini okur: `tid`, `event`, `reqId`, `surface`, `range`.
 
 ## 7. Zaman, kimlik, kopyalama (ortak paket)

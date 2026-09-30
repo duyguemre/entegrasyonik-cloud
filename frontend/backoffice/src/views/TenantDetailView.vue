@@ -2,79 +2,113 @@
   <div class="bo-page">
     <EkEmptyState v-if="notFound" variant="no-results" title="Müşteri bulunamadı" :message="`#${tid} numaralı kayıt yok ya da kaldırılmış.`" />
     <template v-else>
-      <BoPageHeader :title="client?.title ?? '…'" lede="" :extra-crumbs="[{ label: client?.title ?? `#${tid}` }]">
+      <BoPageHeader :title="title" lede="" :extra-crumbs="[{ label: title }]" :updated-at="life.loadedAt.value ?? undefined">
         <template #status>
-          <EkStatusChip v-if="lifecycle" :tone="LIFECYCLE[lifecycle.status].tone" :label="LIFECYCLE[lifecycle.status].label" dot />
-          <EkStatusChip v-if="lifecycle" tone="info" :label="`Plan: ${PLAN[lifecycle.planCode]}`" />
+          <EkStatusChip v-if="life.data.value" :tone="TENANT_STATUS[life.data.value.status].tone" :label="TENANT_STATUS[life.data.value.status].label" dot />
+          <EkStatusChip v-if="life.data.value?.trial" :tone="SUB_STATUS[life.data.value.trial.subscriptionStatus].tone" :label="`${planLabel(life.data.value.trial.planCode)} · ${SUB_STATUS[life.data.value.trial.subscriptionStatus].label}`" />
+          <EkStatusChip v-if="life.data.value?.trial?.billingExempt" tone="neutral" label="Faturalamadan muaf" />
         </template>
         <template #meta>
-          <span class="bo-tenant__tid">Mağaza no <span class="bo-mono ek-num">#{{ tid }}</span><EkCopyButton :value="tid" label="Mağaza numarası" /></span>
+          <span class="bo-tenant__tid ek-num">#{{ tid }}</span>
+          <EkCopyButton :value="String(tid)" label="Mağaza numarası" />
         </template>
         <template #actions>
-          <EkButton tone="secondary" icon="mdi-shield-search" @click="router.push({ path: '/denetim', query: { tid: String(tid) } })">Denetim kayıtları</EkButton>
-          <EkButton tone="primary" icon="mdi-account-switch-outline" :disabled="!client" data-testid="impersonate" @click="openImpersonation">Hesaba geçici erişim</EkButton>
+          <EkButton tone="secondary" icon="mdi-shield-search" @click="router.push({ path: '/denetim', query: { tid: String(tid) } })">Denetim kaydı</EkButton>
+          <EkButton tone="secondary" icon="mdi-card-account-details-outline" :disabled="!life.data.value?.trial" @click="router.push(`/abonelikler/${tid}`)">Abonelik</EkButton>
+          <EkButton tone="primary" icon="mdi-account-eye-outline" :disabled="!canImpersonate" data-testid="impersonate" @click="imp.open(tid)">Müşterinin gözünden aç</EkButton>
         </template>
       </BoPageHeader>
+      <p v-if="life.data.value && !canImpersonate" class="bo-tenant__why bo-muted">
+        <v-icon icon="mdi-information-outline" aria-hidden="true" />Destek oturumu yalnız aktif mağazada açılabilir (şu an: {{ TENANT_STATUS[life.data.value.status].label.toLocaleLowerCase('tr') }}).
+      </p>
 
-      <div class="bo-grid bo-tenant__grid">
-        <EkCard title="Hesap" icon="mdi-storefront-outline">
-          <EkDescriptionList v-if="client && lifecycle" :items="accountItems" />
-          <EkSkeleton v-else type="detail" :rows="3" />
-        </EkCard>
+      <EkAlert
+        v-if="life.data.value?.deletion?.canCancel"
+        tone="warning"
+        title="Silme talebi bekliyor"
+        :text="deletionText"
+      >
+        <template #actions>
+          <EkButton tone="secondary" size="sm" icon="mdi-undo-variant" data-testid="cancel-deletion" @click="undo.open(tid)">Silme talebini geri al</EkButton>
+        </template>
+      </EkAlert>
 
-        <EkCard title="Kullanım" subtitle="Yalnız sayılar — iş verisi gösterilmez" icon="mdi-chart-box-outline" icon-tone="info">
-          <div v-if="lifecycle" class="bo-tenant__usage">
-            <div><strong class="ek-num">{{ formatNumber(lifecycle.usage.users) }}</strong><span>kullanıcı</span></div>
-            <div><strong class="ek-num">{{ formatNumber(lifecycle.usage.products) }}</strong><span>ürün</span></div>
-            <div><strong class="ek-num">{{ formatNumber(lifecycle.usage.ordersLast30d) }}</strong><span>sipariş (30 gün)</span></div>
+      <EkPageTabs v-model="tab" :tabs="TABS" label="Müşteri bölümleri" />
+
+      <template v-if="tab === 'ozet'">
+        <div class="bo-grid bo-tenant__grid">
+          <EkCard title="Hesap" icon="mdi-storefront-outline">
+            <EkDescriptionList v-if="client && life.data.value" :items="accountItems" />
+            <StateBlock v-else :phase="life.phase.value === 'ready' ? 'loading' : life.phase.value" :error="life.error.value" skeleton="detail" :rows="3" @retry="life.load()" />
+          </EkCard>
+
+          <EkCard title="Kanallar" icon="mdi-transit-connection-variant">
+            <ul v-if="client?.integrations?.length" class="bo-tenant__channels">
+              <li v-for="i in client.integrations" :key="i.integrationCode">
+                <EkChannelDot :code="i.integrationCode" :name="CHANNEL[i.integrationCode] ?? i.integrationCode" variant="plain" />
+                <span class="bo-muted">{{ i.type }}</span>
+              </li>
+            </ul>
+            <p v-else-if="client" class="bo-muted">Bağlı kanal yok.</p>
+            <EkSkeleton v-else type="detail" :rows="2" />
+          </EkCard>
+        </div>
+      </template>
+
+      <template v-else>
+        <StateBlock :phase="life.phase.value" :error="life.error.value" skeleton="cards" :rows="3" @retry="life.load()">
+          <div v-if="life.data.value" class="bo-grid bo-tenant__grid">
+            <EkCard title="Kurulum" :subtitle="provisionSubtitle" icon="mdi-format-list-checks" :icon-tone="life.data.value.provisioning.failedStep ? 'error' : 'success'">
+              <EkStatusTimeline :steps="timeline" label="Kurulum adımları" />
+            </EkCard>
+
+            <EkCard title="Deneme ve abonelik" icon="mdi-timer-sand" icon-tone="info">
+              <EkDescriptionList v-if="life.data.value.trial" :items="trialItems" />
+              <p v-else class="bo-muted">Abonelik kaydı yok.</p>
+            </EkCard>
+
+            <EkCard title="Silme süreci" icon="mdi-delete-clock-outline" :icon-tone="life.data.value.deletion ? 'warning' : 'neutral'">
+              <EkDescriptionList v-if="life.data.value.deletion" :items="deletionItems" />
+              <p v-else class="bo-muted">Silme talebi yok.</p>
+            </EkCard>
+
+            <EkCard title="Son olaylar" subtitle="Yalnız olay adı, zaman ve sonuç (ayrıntı denetim kaydında)" icon="mdi-history" flush>
+              <EkEmptyState v-if="!life.data.value.recentEvents.length" variant="no-data" title="Olay yok" message="Bu mağaza için denetim kaydı bulunmuyor." />
+              <ul v-else class="bo-tenant__events">
+                <li v-for="(e, i) in life.data.value.recentEvents" :key="i">
+                  <code class="bo-code">{{ e.event }}</code>
+                  <EkStatusChip v-if="e.imp" tone="warning" label="Destek oturumu" />
+                  <EkStatusChip :tone="RESULT[e.result].tone" :label="RESULT[e.result].label" dot />
+                  <span class="bo-muted bo-tenant__events-meta">{{ e.surface ?? '—' }} · <time :datetime="e.at">{{ formatRelative(e.at) }}</time></span>
+                </li>
+              </ul>
+              <template #footer>
+                <RouterLink :to="{ path: '/denetim', query: { tid: String(tid) } }" class="bo-tenant__more">Denetim kayıtlarında aç <v-icon icon="mdi-arrow-right" aria-hidden="true" /></RouterLink>
+              </template>
+            </EkCard>
           </div>
-          <EkSkeleton v-else type="cards" :rows="1" />
-        </EkCard>
-
-        <EkCard title="Kanallar" icon="mdi-transit-connection-variant">
-          <ul v-if="client?.integrations?.length" class="bo-tenant__channels">
-            <li v-for="i in client.integrations" :key="i.integrationCode">
-              <EkChannelDot :code="i.integrationCode" :name="CHANNEL[i.integrationCode] ?? i.integrationCode" variant="plain" />
-              <span class="bo-muted">{{ i.type }}</span>
-            </li>
-          </ul>
-          <p v-else-if="client" class="bo-muted">Bağlı kanal yok.</p>
-          <EkSkeleton v-else type="detail" :rows="2" />
-        </EkCard>
-
-        <EkCard title="Kurulum adımları" icon="mdi-format-list-checks">
-          <ol v-if="lifecycle" class="bo-tenant__steps">
-            <li v-for="s in lifecycle.provisioning" :key="s.step" :class="`is-${s.status}`">
-              <v-icon :icon="s.status === 'done' ? 'mdi-check-circle' : s.status === 'failed' ? 'mdi-close-circle' : 'mdi-clock-outline'" aria-hidden="true" />
-              <span>{{ s.step }}</span>
-              <span class="bo-muted">{{ s.status === 'failed' ? 'başarısız' : s.status === 'pending' ? 'bekliyor' : 'tamam' }}</span>
-            </li>
-          </ol>
-          <EkSkeleton v-else type="detail" :rows="3" />
-        </EkCard>
-      </div>
-      <p class="bo-muted bo-tenant__src">Kaynak: AdminService/getClients · BackofficeTenantService/getLifecycle (planlanan uç, B2 — hassas okuma olarak denetime yazılır)</p>
+        </StateBlock>
+      </template>
+      <p class="bo-muted bo-tenant__src">Yaşam döngüsü okuması hassas okuma olarak denetime yazılır (BackofficeTenantService/getLifecycle).</p>
     </template>
 
-    <DangerActionDialog
-      v-model="impOpen"
-      title="Hesaba geçici erişim"
-      icon="mdi-account-switch-outline"
-      :action="`${client?.title ?? 'Müşteri'} hesabı yeni sekmede, yönetici olarak açılır.`"
-      :details="[
-        'Bağlantı 60 saniye içinde, bir kez kullanılabilir; oturum 60 dakika sürer ve uzatılmaz.',
-        'Silme, ödeme ve kullanıcı yönetimi işlemleri bu oturumda kapalıdır.',
-        'Oturumdaki her yazma işlemi denetime “yönetici adına” olarak yazılır.',
-      ]"
-      :reversible="true"
-      reversible-note="Oturumu müşteri uygulamasındaki “Çık” bandından ya da 60 dk dolunca kapanır."
-      :tenant="client ? { tid, name: client.title } : undefined"
-      confirm-label="Gerekçeyle başlat"
+    <GuardedDialog
+      :action="imp"
+      title="Müşterinin gözünden açılsın mı?"
+      :description="`${title} hesabı yeni sekmede destek oturumuyla açılır.`"
+      icon="mdi-account-eye-outline"
+      :items="IMP_RULES"
+      confirm-label="Gerekçeyle aç"
       confirm-icon="mdi-open-in-new"
-      reason-placeholder="ör. Destek talebi: sipariş eşleme ekranında hata"
-      :busy="impBusy"
-      :error="impError"
-      @confirm="startImpersonation"
+    />
+    <GuardedDialog
+      :action="undo"
+      title="Silme talebi geri alınsın mı?"
+      :description="`${title} yeniden aktif olur; planlanan kalıcı silme iptal edilir.`"
+      icon="mdi-undo-variant"
+      :items="['Mağaza DELETION_PENDING → ACTIVE durumuna geçer.', 'Müşteri uygulamasına erişim ve eşitlemeler normal akışa döner.', 'Gerekçe denetim kaydına yazılır.']"
+      confirm-label="Silmeyi geri al"
+      confirm-icon="mdi-undo-variant"
     />
   </div>
 </template>
@@ -83,128 +117,165 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
+  EkAlert,
   EkButton,
   EkCard,
-  EkChannelDot,
   EkCopyButton,
+  EkChannelDot,
   EkDescriptionList,
   EkEmptyState,
+  EkPageTabs,
   EkSkeleton,
   EkStatusChip,
+  EkStatusTimeline,
+  type EkTimelineStep,
+  type StatusTone,
 } from '@entegrasyonik/ui/components'
-import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
-import DangerActionDialog from '@bo/components/shell/DangerActionDialog.vue'
 import { api } from '@bo/api'
-import { AdminApiError } from '@bo/api/client'
 import type { ClientDto, TenantLifecycle } from '@bo/api/contract'
-import { CHANNEL, LIFECYCLE, PLAN } from '@bo/utils/labels'
-import { formatDate, formatDateTime, formatNumber, formatRelative } from '@bo/utils/format'
+import { useResource } from '@bo/composables/useResource'
+import { useGuardedAction } from '@bo/composables/useGuardedAction'
+import { useTabQuery } from '@bo/composables/useTabQuery'
+import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import StateBlock from '@bo/components/kit/StateBlock.vue'
+import GuardedDialog from '@bo/components/kit/GuardedDialog.vue'
+import { CHANNEL, SUB_STATUS, TENANT_STATUS, planLabel } from '@bo/utils/labels'
+import { formatDate, formatDateTime, formatRelative } from '@bo/utils/format'
 import { notifyAudited } from '@bo/utils/toast'
+import '@bo/styles/kit.css'
 
 const route = useRoute()
 const router = useRouter()
 const tid = Number(route.params.tid)
 const client = ref<ClientDto | null>(null)
-const lifecycle = ref<TenantLifecycle | null>(null)
-const notFound = ref(false)
+const clientLoaded = ref(false)
+const tab = useTabQuery(['ozet', 'yasam-dongusu'] as const, 'ozet')
+const TABS = [
+  { value: 'ozet', label: 'Özet', icon: 'mdi-view-grid-outline' },
+  { value: 'yasam-dongusu', label: 'Yaşam döngüsü', icon: 'mdi-timeline-clock-outline' },
+]
+const STEP_LABEL: Record<string, string> = {
+  client: 'Mağaza kaydı',
+  'order-limit': 'Sipariş limiti',
+  'central-user': 'Merkezi kullanıcı',
+  'tenant-seed': 'Tenant veritabanı',
+  'tenant-user': 'Tenant kullanıcısı',
+  subscription: 'Abonelik',
+  activate: 'Etkinleştirme',
+}
+const RESULT: Record<'ok' | 'fail' | 'error', { label: string; tone: StatusTone }> = {
+  ok: { label: 'Başarılı', tone: 'success' },
+  fail: { label: 'Reddedildi', tone: 'warning' },
+  error: { label: 'Hata', tone: 'danger' },
+}
+const IMP_RULES = [
+  'Tek kullanımlık bağlantı 60 saniye geçerlidir; oturum 60 dakika sürer ve uzatılmaz.',
+  'Hesap silme, faturalama, kullanıcı ve entegrasyon ayarı yazma işlemleri bu oturumda kapalıdır.',
+  'Müşteri denetim kaydında oturum "Entegrasyonik Destek" olarak ve gerekçesiyle görünür.',
+  'Bağlantı yeni sekmede açılır; kopyalanmaz, saklanmaz.',
+]
+
+const life = useResource<TenantLifecycle>(() => api.call('BackofficeTenantService/getLifecycle', { tid }))
+const notFound = computed(() => life.phase.value === 'notFound' || (clientLoaded.value && !client.value && life.phase.value !== 'loading' && life.phase.value !== 'ready'))
+const title = computed(() => client.value?.title ?? life.data.value?.name ?? `#${tid}`)
+const canImpersonate = computed(() => life.data.value?.status === 'ACTIVE')
 
 onMounted(async () => {
-  const [list, life] = await Promise.allSettled([
-    api.call('AdminService/getClients', { search: String(tid), limit: 50 }),
-    api.call('BackofficeTenantService/getLifecycle', { tid }),
-  ])
+  const [list] = await Promise.allSettled([api.call('AdminService/getClients', { search: String(tid), limit: 50 }), life.load()])
   client.value = list.status === 'fulfilled' ? (list.value.clients.find((c) => c.clientId === tid) ?? null) : null
-  lifecycle.value = life.status === 'fulfilled' ? life.value : null
-  notFound.value = !client.value
+  clientLoaded.value = true
 })
 
 const accountItems = computed(() => {
   const c = client.value!
-  const l = lifecycle.value!
+  const l = life.data.value!
   return [
     { label: 'Mağaza numarası (tid)', value: `#${c.clientId}` },
-    { label: 'Yaşam döngüsü', value: LIFECYCLE[l.status].label },
-    { label: 'Plan', value: PLAN[l.planCode] },
-    { label: 'Deneme bitişi', value: l.trialEndsAt ? formatDate(l.trialEndsAt) : '—' },
-    { label: 'Silme tarihi', value: l.deletionScheduledAt ? formatDate(l.deletionScheduledAt) : '—' },
+    { label: 'Durum', value: TENANT_STATUS[l.status].label },
+    { label: 'Plan', value: planLabel(l.trial?.planCode) },
+    { label: 'Deneme bitişi', value: l.trial?.trialEndsAt ? formatDate(l.trial.trialEndsAt) : '—' },
     { label: 'Kayıt', value: formatDate(c.createdAt) },
-    { label: 'Son etkinlik', value: l.lastActivityAt ? formatRelative(l.lastActivityAt) : '—' },
-    { label: 'Son sipariş eşitleme', value: c.lastSuccessfulOrderSync ? formatDateTime(c.lastSuccessfulOrderSync) : '—' },
+    { label: 'Son sipariş eşitleme', value: l.lastSuccessfulOrderSync ? formatDateTime(l.lastSuccessfulOrderSync) : '—' },
   ]
 })
 
-const impOpen = ref(false)
-const impBusy = ref(false)
-const impError = ref('')
+const timeline = computed<EkTimelineStep[]>(() =>
+  (life.data.value?.provisioning.steps ?? []).map((s) => ({
+    key: s.step,
+    label: STEP_LABEL[s.step] ?? s.step,
+    state: s.state === 'done' ? 'done' : s.state === 'failed' ? 'failed' : 'upcoming',
+  })),
+)
+const provisionSubtitle = computed(() => {
+  const p = life.data.value?.provisioning
+  if (!p) return ''
+  if (p.failedStep) return `"${STEP_LABEL[p.failedStep] ?? p.failedStep}" adımında durdu${p.failedAt ? ` · ${formatDateTime(p.failedAt)}` : ''}`
+  if (p.steps.every((s) => s.state === 'done')) return 'Tüm adımlar tamamlandı'
+  return 'Kurulum sürüyor'
+})
+const trialItems = computed(() => {
+  const t = life.data.value!.trial!
+  return [
+    { label: 'Abonelik durumu', value: SUB_STATUS[t.subscriptionStatus].label },
+    { label: 'Plan', value: planLabel(t.planCode) },
+    { label: 'Deneme bitişi', value: t.trialEndsAt ? formatDateTime(t.trialEndsAt) : '—' },
+    { label: 'Kalan gün', value: t.daysLeft === null ? '—' : `${t.daysLeft} gün` },
+    { label: 'Faturalama', value: t.billingExempt ? 'Muaf' : 'Ücretli' },
+  ]
+})
+const deletionItems = computed(() => {
+  const d = life.data.value!.deletion!
+  return [
+    { label: 'Talep', value: d.requestedAt ? formatDateTime(d.requestedAt) : '—' },
+    { label: 'Planlanan silme', value: d.scheduledAt ? formatDateTime(d.scheduledAt) : '—' },
+    { label: 'Kalan', value: d.daysUntilPurge === null ? '—' : `${d.daysUntilPurge} gün` },
+    { label: 'Silindi', value: d.purgedAt ? formatDateTime(d.purgedAt) : '—' },
+    ...(d.purgeFailedStep ? [{ label: 'Silme hatası', value: d.purgeFailedStep }] : []),
+  ]
+})
+const deletionText = computed(() => {
+  const d = life.data.value?.deletion
+  if (!d) return ''
+  const when = d.scheduledAt ? formatDate(d.scheduledAt) : '—'
+  return `Mağaza verileri ${when} tarihinde kalıcı olarak silinecek${d.daysUntilPurge !== null ? ` (${d.daysUntilPurge} gün kaldı)` : ''}. Müşteri vazgeçtiyse talebi geri alabilirsiniz.`
+})
 
-function openImpersonation() {
-  impError.value = ''
-  impOpen.value = true
-}
-
-async function startImpersonation(reason: string) {
-  if (impBusy.value) return
-  impBusy.value = true
-  impError.value = ''
-  try {
-    // Step-up (REAUTH_REQUIRED) istemcide yakalanır: diyalog açılır, doğrulanınca istek yenilenir.
-    const { url } = await api.call('BackofficeTenantService/startImpersonation', { tid, reason })
-    // Bilet URL'i yalnız yeni sekmeye verilir: saklanmaz, loglanmaz; noopener/noreferrer ile opener ve Referer yok.
+const imp = useGuardedAction(
+  (id: number, reason) => api.call('BackofficeTenantService/startImpersonation', { tid: id, reason }),
+  ({ url }) => {
+    // Bilet URL'i yalnız yeni sekmeye verilir: saklanmaz, loglanmaz, kopyalanmaz; noopener/noreferrer ile opener ve Referer yok.
     window.open(url, '_blank', 'noopener,noreferrer')
-    impOpen.value = false
-    notifyAudited('Müşteri hesabı yeni sekmede açıldı. Oturum 60 dakika sürer.', () =>
-      router.push({ path: '/denetim', query: { tid: String(tid), event: 'impersonation.start' } }),
-    )
-  } catch (e) {
-    const err = e instanceof AdminApiError ? e : null
-    if (err?.cancelled) impError.value = 'Yeniden doğrulama yapılmadığı için erişim başlatılmadı.'
-    else if (err?.code === 'VALIDATION') impError.value = 'Gerekçe en az 10 karakter olmalı.'
-    else impError.value = err?.message ?? 'Erişim başlatılamadı.'
-  } finally {
-    impBusy.value = false
-  }
-}
+    notifyAudited('Müşteri hesabı yeni sekmede açıldı. Destek oturumu 60 dakika sürer.', () => router.push({ path: '/denetim', query: { event: 'impersonation.start' } }))
+  },
+)
+const undo = useGuardedAction(
+  (id: number, reason) => api.call('BackofficeTenantService/cancelDeletion', { tid: id, reason }),
+  () => {
+    notifyAudited('Silme talebi geri alındı; mağaza aktif.', () => router.push({ path: '/denetim', query: { event: 'backoffice.write' } }))
+    life.load()
+  },
+)
 </script>
 
 <style scoped>
 .bo-tenant__tid {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ek-space-1);
+  color: var(--ek-color-content-muted);
+  font-family: var(--ek-font-mono);
+  font-size: var(--ek-type-label-size);
 }
-
+.bo-tenant__why {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  margin: calc(var(--ek-space-3) * -1) 0 0;
+  font-size: var(--ek-type-label-size);
+}
 .bo-tenant__grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
 }
-
-.bo-tenant__usage {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--ek-space-3);
-}
-
-.bo-tenant__usage div {
-  display: flex;
-  flex-direction: column;
-  padding: var(--ek-space-3);
-  border-radius: var(--ek-radius-lg);
-  background: var(--ek-color-surface-muted);
-}
-
-.bo-tenant__usage strong {
-  color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-heading-size);
-  font-weight: var(--ek-font-weight-semibold);
-}
-
-.bo-tenant__usage span {
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
-}
-
 .bo-tenant__channels,
-.bo-tenant__steps {
+.bo-tenant__events {
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-2);
@@ -212,42 +283,48 @@ async function startImpersonation(reason: string) {
   padding: 0;
   list-style: none;
 }
-
-.bo-tenant__channels li,
-.bo-tenant__steps li {
+.bo-tenant__channels li {
   display: flex;
   align-items: center;
   gap: var(--ek-space-3);
-  font-size: var(--ek-type-body-size);
 }
-
-.bo-tenant__channels li .bo-muted,
-.bo-tenant__steps li .bo-muted {
+.bo-tenant__channels li .bo-muted {
   margin-left: auto;
   font-size: var(--ek-type-caption-size);
 }
-
-.bo-tenant__steps .is-done :deep(.v-icon) {
-  color: var(--ek-color-success);
+.bo-tenant__events {
+  gap: 0;
 }
-
-.bo-tenant__steps .is-failed :deep(.v-icon) {
-  color: var(--ek-color-error);
+.bo-tenant__events li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ek-space-2);
+  padding: var(--ek-space-2) var(--ek-space-4);
+  border-top: 1px solid var(--ek-color-border-subtle);
 }
-
-.bo-tenant__steps .is-pending :deep(.v-icon) {
-  color: var(--ek-color-content-subtle);
+.bo-tenant__events li:first-child {
+  border-top: 0;
 }
-
+.bo-tenant__events-meta {
+  margin-left: auto;
+  font-size: var(--ek-type-caption-size);
+}
+.bo-tenant__more {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ek-color-action);
+  font-size: var(--ek-type-label-size);
+  text-decoration: none;
+}
+.bo-tenant__more:hover {
+  text-decoration: underline;
+}
 .bo-tenant__src {
   margin: 0;
   font-size: var(--ek-type-caption-size);
 }
-
-
-
-
-
 @media (max-width: 1023px) {
   .bo-tenant__grid {
     grid-template-columns: 1fr;
