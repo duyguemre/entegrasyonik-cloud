@@ -101,7 +101,7 @@ export function entityDefinition(integrations: PublicIntegration[] = getPublicIn
   for (const i of integrations) if (!kinds.includes(i.kind)) kinds.push(i.kind)
   const groups = kinds.map((k) => `${listTr(integrations.filter((i) => i.kind === k).map((i) => i.name))} ${KIND_PHRASE[k]}`)
   return (
-    `${SITE_NAME}, çok kanallı satış yapan işletmeler için web tabanlı pazaryeri entegrasyonu ve stok yönetimi yazılımıdır. ` +
+    `${SITE_NAME}, çok kanallı satış yapan işletmeler için web tabanlı pazaryeri entegrasyonu ve stok yönetimi platformudur. ` +
     `${listTr(groups)} tek panelde buluşturur; ürün, stok, sipariş ve iade süreçlerini tek yerden yönetmenizi sağlar ve ` +
     `stok rezervasyonuyla aşırı satış riskini azaltır.`
   )

@@ -242,6 +242,18 @@
   --channel-bizimhesap-on: #FFFFFF;
   --channel-neutral: var(--ek-color-neutral);
   --channel-neutral-on: var(--ek-color-background);
+
+  /*
+   * S23 — KANAL ROZETİ biçimi (FR2 madde 11/15, kullanıcı kararı 2026-09-30): kenarlık = marka renginin KOYUSU,
+   * iç zemin = AÇIĞI, harf = koyu marka tonu. Marka token'ı (`--channel-<kod>`) DEĞİŞMEZ; rozet tonları yalnızca
+   * bu üç oranla `color-mix` ile türetilir (formül: src/styles/global.css `[data-code]` bloğu; tek bileşen
+   * `components/pages/ChannelMono.astro`). Oranlar tests/channel-colors.test.ts'te her kanal için hesaplanıp
+   * AA'ya karşı doğrulanır: harf/zemin ≥ 4.5:1, kenarlık/sayfa zemini ≥ 3:1 (WCAG 1.4.11).
+   */
+  --channel-badge-tint: 14%; /* iç zemin: marka %14 + sayfa zemini */
+  --channel-badge-shade: 78%; /* kenarlık: marka %78 + mürekkep */
+  --channel-badge-ink: 58%; /* harf: marka %58 + mürekkep */
+  --channel-badge-mix-ink: var(--ek-color-content-strong);
 }
 
 /*

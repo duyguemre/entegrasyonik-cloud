@@ -1,24 +1,34 @@
 ---
 /**
- * Footer — yasal bağlantılar (yayımlanmış sayfalar) + künye YER TUTUCULARI (`{{…}}`).
+ * Footer — marka + "Entegrasyonik nedir?" varlık tanımı (geniş alan) + gruplanmış bağlantı sütunları + iletişim/künye.
  * Künye değerleri (unvan, MERSİS/vergi no, adres) insan tarafından verilir — ADR-0014 Karar 5 / Açık Soru 4;
- * doğrulanmamış unvan asla yazılmaz.
- * S7: gradient üst çizgi, koyu zemin, dört sütun (marka + Ürün + Entegrasyonlar + Yasal) ve hesap bağlantıları.
- * Entegrasyon sütunu yalnızca `getPublicIntegrations()` (mevcut entegrasyonlar).
- * S19: alt çizgide her sayfada AYNI "Entegrasyonik nedir?" varlık tanımı (src/data/seo.ts `entityDefinition`; llms*,
- *   markdown alternatifleri ve Organization/SoftwareApplication JSON-LD açıklamasıyla birebir) — arama/LLM tutarlılığı.
+ * doğrulanmamış unvan asla yazılmaz (yer tutucular `{{…}}`).
+ * S7: gradient üst çizgi, koyu zemin. Entegrasyon sütunu yalnızca `getPublicIntegrations()` (mevcut entegrasyonlar).
+ * S19: her sayfada AYNI "Entegrasyonik nedir?" varlık tanımı (src/data/seo.ts `entityDefinition`; llms*, markdown
+ *   alternatifleri ve Organization/SoftwareApplication JSON-LD açıklamasıyla birebir) — arama/LLM tutarlılığı.
  * S16: iletişim e-postası + (girildiyse) adres/telefon `src/data/company.ts`'ten; boş alan satırı gizlenir.
+ * S23 (SR2-ENTITY 7): tanım metni dar sütunda kalmaz — üst bantta markanın yanında kalan genişliğin TAMAMINA yayılır;
+ *   bağlantı sütunları (header ile aynı model: `src/data/nav-menu.ts` → Ürün / Çözümler / Kaynaklar + Entegrasyonlar
+ *   + Yasal) altında. Mobilde tek sütun: marka → tanım → iki sütunlu bağlantı ızgarası → iletişim.
  */
 import Container from './Container.astro'
 import Logo from './Logo.astro'
-import { primaryNav, featureNav, legalNav, published } from '../data/navigation'
+import { legalNav, published } from '../data/navigation'
+import { menuDirect, menuGroups } from '../data/nav-menu'
 import { getPublicIntegrations } from '../data/integrations'
 import { appUrls } from '../lib/site-config'
 import { contactEmail, mailtoHref } from '../lib/contact'
 import { company, hasValue } from '../data/company'
 import { entityDefinition } from '../data/seo'
 
-const productLinks = [...published(primaryNav), ...published(featureNav)]
+const groups = menuGroups()
+  .map((g) => ({
+    id: g.id,
+    label: g.label,
+    // Ürün sütunu doğrudan bağlantıları (Fiyatlandırma) da taşır; header'daki sıra korunur.
+    links: g.id === 'product' ? [...g.links, ...menuDirect()] : g.links,
+  }))
+  .filter((g) => g.links.length > 0)
 const legalLinks = published(legalNav)
 const integrationLinks = getPublicIntegrations()
 const year = new Date().getFullYear()
@@ -26,7 +36,7 @@ const year = new Date().getFullYear()
 
 <footer class="site-footer">
   <Container>
-    <div class="footer-grid">
+    <div class="footer-top">
       <div class="footer-brand">
         <a href="/" class="footer-logo" aria-label="Entegrasyonik — ana sayfa"><Logo tone="inverse" /></a>
         <p class="footer-tagline">Pazaryeri entegrasyon ve stok yönetimi: tek stok, tek panel.</p>
@@ -34,38 +44,30 @@ const year = new Date().getFullYear()
           <a class="footer-btn footer-btn--primary" href={appUrls.register()} data-testid="footer-register">Ücretsiz dene</a>
           <a class="footer-btn" href={appUrls.login()} data-testid="footer-login">Giriş yap</a>
         </div>
-        <ul class="footer-contact" role="list" data-testid="footer-contact">
-          <li><a href={mailtoHref(contactEmail)}>{contactEmail}</a></li>
-          {hasValue(company.address) && <li data-testid="footer-address">{company.address}</li>}
-          {hasValue(company.phone) && <li>{company.phone}</li>}
-        </ul>
-        {
-          hasValue(company.legalName) ? (
-            <p class="footer-kunye" data-testid="kunye-line">
-              {company.legalName}{hasValue(company.mersisNo) && <> · MERSİS {company.mersisNo}</>}
-            </p>
-          ) : (
-            <p class="footer-kunye" data-testid="kunye-placeholder">
-              Şirket bilgileri yayın öncesinde eklenecektir.
-              <span class="sr-only">{'{{ŞİRKET_UNVANI}}'} · {'{{MERSİS_NO}}'} · {'{{ADRES}}'}</span>
-            </p>
-          )
-        }
       </div>
 
+      <div class="footer-about" data-testid="entity-definition">
+        <h2 class="footer-heading">Entegrasyonik nedir?</h2>
+        <p>{entityDefinition()}</p>
+      </div>
+    </div>
+
+    <div class="footer-grid">
       {
-        productLinks.length > 0 && (
-          <nav aria-labelledby="footer-product-heading">
-            <h2 id="footer-product-heading" class="footer-heading">Ürün</h2>
+        groups.map((g) => (
+          <nav aria-labelledby={`footer-${g.id}-heading`}>
+            <h2 id={`footer-${g.id}-heading`} class="footer-heading">
+              {g.label}
+            </h2>
             <ul class="footer-list">
-              {productLinks.map((item) => (
+              {g.links.map((item) => (
                 <li>
                   <a href={item.href}>{item.label}</a>
                 </li>
               ))}
             </ul>
           </nav>
-        )
+        ))
       }
 
       {
@@ -99,12 +101,26 @@ const year = new Date().getFullYear()
       }
     </div>
 
-    <div class="footer-about" data-testid="entity-definition">
-      <h2 class="footer-heading">Entegrasyonik nedir?</h2>
-      <p>{entityDefinition()}</p>
+    <div class="footer-bottom">
+      <ul class="footer-contact" role="list" data-testid="footer-contact">
+        <li><a href={mailtoHref(contactEmail)}>{contactEmail}</a></li>
+        {hasValue(company.address) && <li data-testid="footer-address">{company.address}</li>}
+        {hasValue(company.phone) && <li>{company.phone}</li>}
+      </ul>
+      {
+        hasValue(company.legalName) ? (
+          <p class="footer-kunye" data-testid="kunye-line">
+            {company.legalName}{hasValue(company.mersisNo) && <> · MERSİS {company.mersisNo}</>}
+          </p>
+        ) : (
+          <p class="footer-kunye" data-testid="kunye-placeholder">
+            Şirket bilgileri yayın öncesinde eklenecektir.
+            <span class="sr-only">{'{{ŞİRKET_UNVANI}}'} · {'{{MERSİS_NO}}'} · {'{{ADRES}}'}</span>
+          </p>
+        )
+      }
+      <p class="footer-copy">© {year} Entegrasyonik. Tüm hakları saklıdır.</p>
     </div>
-
-    <p class="footer-copy">© {year} Entegrasyonik. Tüm hakları saklıdır.</p>
   </Container>
 </footer>
 
@@ -139,10 +155,13 @@ const year = new Date().getFullYear()
     mask-image: linear-gradient(180deg, var(--ek-color-content-strong), transparent 70%);
     pointer-events: none;
   }
-  .footer-grid {
+  /* --- üst bant: marka + varlık tanımı (tanım kalan genişliğin tamamına yayılır) --- */
+  .footer-top {
     display: grid;
-    gap: var(--ek-space-10);
+    gap: var(--ek-space-8);
     grid-template-columns: minmax(0, 1fr);
+    padding-bottom: var(--ek-space-10);
+    border-bottom: var(--site-border-width) solid var(--site-glass-border);
   }
   .footer-brand {
     display: flex;
@@ -199,28 +218,24 @@ const year = new Date().getFullYear()
   .footer-btn:focus-visible {
     outline-color: var(--site-color-on-primary);
   }
-  .footer-contact {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-1);
+  .footer-about {
+    min-width: 0;
+  }
+  .footer-about p {
+    max-width: none;
     margin: 0;
-    padding: 0;
-    list-style: none;
-    color: var(--site-color-on-primary-muted);
-    font-size: var(--ek-font-size-md);
-    overflow-wrap: anywhere;
-  }
-  .footer-contact a {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--site-tap-target);
     color: var(--site-color-on-primary);
-    font-weight: var(--ek-font-weight-semibold);
+    font-size: var(--ek-font-size-lg);
+    line-height: var(--site-font-body-line-height);
+    text-wrap: pretty;
   }
-  .footer-kunye {
-    max-width: 22rem;
-    font-size: var(--ek-font-size-md);
-    overflow-wrap: anywhere;
+
+  /* --- bağlantı sütunları --- */
+  .footer-grid {
+    display: grid;
+    gap: var(--ek-space-8) var(--ek-space-6);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding-block: var(--ek-space-10);
   }
   .footer-heading {
     margin-bottom: var(--ek-space-3);
@@ -233,7 +248,7 @@ const year = new Date().getFullYear()
   .footer-list {
     display: flex;
     flex-direction: column;
-    gap: var(--ek-space-1);
+    gap: 0;
   }
   .footer-list a {
     display: inline-flex;
@@ -248,39 +263,62 @@ const year = new Date().getFullYear()
   .site-footer :global(a:focus-visible) {
     outline-color: var(--site-color-on-primary);
   }
-  .footer-about {
-    margin-top: var(--ek-space-12);
+
+  /* --- alt çizgi: iletişim + künye + telif --- */
+  .footer-bottom {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ek-space-2) var(--ek-space-8);
     padding-top: var(--ek-space-6);
     border-top: var(--site-border-width) solid var(--site-glass-border);
-  }
-  .footer-about p {
-    max-width: var(--site-measure);
-    margin: 0;
     font-size: var(--ek-font-size-md);
-    line-height: var(--ek-line-height-normal);
+  }
+  .footer-contact {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 var(--ek-space-6);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--site-color-on-primary-muted);
+    overflow-wrap: anywhere;
+  }
+  .footer-contact a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--site-tap-target);
+    color: var(--site-color-on-primary);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .footer-kunye {
+    max-width: none;
+    margin: 0;
+    overflow-wrap: anywhere;
   }
   .footer-copy {
     max-width: none;
-    margin-top: var(--ek-space-6);
-    padding-top: var(--ek-space-6);
-    border-top: var(--site-border-width) solid var(--site-glass-border);
-    font-size: var(--ek-font-size-md);
+    margin: 0 0 0 auto;
   }
 
   @media (min-width: 640px) {
     .footer-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .footer-brand {
-      grid-column: 1 / -1;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
   @media (min-width: 1024px) {
-    .footer-grid {
-      grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr));
+    .footer-top {
+      grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);
+      gap: var(--ek-space-12);
+      align-items: start;
     }
-    .footer-brand {
-      grid-column: auto;
+    .footer-about {
+      padding-inline-start: var(--ek-space-12);
+      border-inline-start: var(--site-border-width) solid var(--site-glass-border);
+    }
+    .footer-grid {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
     }
   }
 </style>

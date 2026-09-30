@@ -124,10 +124,60 @@ describe('kanal renkleri — tüm kullanımlar token\'a bağlı', () => {
     expect(offenders).toEqual([])
   })
 
-  it('monogram rozeti resmi rengi olduğu gibi kullanır (gradyan yok), harf rengi --chan-on', () => {
+  /*
+   * S23 (FR2 madde 11/15, kullanıcı kararı 2026-09-30): kanal ROZETİ biçimi = kenarlık marka renginin KOYUSU, iç zemin
+   * AÇIĞI. Önceki "dolgulu resmi renk" beklentisinin yerini alır; marka token'ı yine değişmez (yukarıdaki testler),
+   * rozet tonları yalnız `--channel-badge-*` oranlarıyla türetilir ve her kanal için AA'ya karşı HESAPLANIR.
+   */
+  it('rozet bileşeni yalnız rozet token\'larını kullanır (gradyan / ham renk / doğrudan marka dolgusu yok)', () => {
     const mono = stripComments(read(path.join(src, 'components/pages/ChannelMono.astro')))
-    expect(mono).toContain('background: var(--chan, var(--channel-neutral));')
-    expect(mono).toContain('color: var(--chan-on, var(--channel-neutral-on));')
+    expect(mono).toMatch(/border: [^;]*solid var\(--chan-badge-border\);/)
+    expect(mono).toContain('background: var(--chan-badge-bg);')
+    expect(mono).toContain('color: var(--chan-badge-fg);')
     expect(mono).not.toMatch(/gradient/)
+    expect(mono).not.toMatch(/background:\s*var\(--chan[,)]/)
+    expect(mono).not.toMatch(/#[0-9a-fA-F]{3,8}\b|\b(rgb|hsl)a?\(/)
+  })
+
+  it('rozet formülü [data-code] bloğunda tek yerde: açık zemin, koyu kenarlık, koyu harf', () => {
+    const block = globalCss.match(/:where\(\[data-code\]:not\(\[data-part='plan'\]\)\)\s*\{([^}]*)\}/)![1]
+    expect(block).toContain('--chan-badge-bg: color-mix(in srgb, var(--chan) var(--channel-badge-tint), var(--ek-color-background));')
+    expect(block).toContain('--chan-badge-border: color-mix(in srgb, var(--chan) var(--channel-badge-shade), var(--channel-badge-mix-ink));')
+    expect(block).toContain('--chan-badge-fg: color-mix(in srgb, var(--chan) var(--channel-badge-ink), var(--channel-badge-mix-ink));')
+    expect(token('--channel-badge-mix-ink')).toBe('var(--ek-color-content-strong)')
+    // Kanal rozeti tonu başka dosyada yeniden tanımlanmaz (tek kaynak).
+    for (const file of sourceFiles) {
+      if (file.endsWith(path.join('styles', 'global.css'))) continue
+      expect(stripComments(read(file)), path.relative(siteRoot, file)).not.toMatch(/--chan-badge-(bg|border|fg)\s*:/)
+    }
+  })
+
+  it('her kanal (ve nötr) için rozet kontrastı AA: harf/zemin ≥ 4.5:1, kenarlık/sayfa zemini ≥ 3:1, zemin açık', () => {
+    const staticCss = read(path.resolve(siteRoot, '../frontend/src/design/tokens/dist/tokens.static.css'))
+    const rootBlock = staticCss.match(/:root\s*\{([^}]*)\}/)![1]
+    const ek = (name: string) => rootBlock.match(new RegExp(`${name}:\\s*(#[0-9a-fA-F]{6})`))![1]
+    const bg = ek('--ek-color-background')
+    const ink = ek('--ek-color-content-strong')
+    const pct = (name: string) => Number(token(name)!.replace('%', '')) / 100
+    const [tint, shade, inkPct] = ['--channel-badge-tint', '--channel-badge-shade', '--channel-badge-ink'].map(pct)
+    // color-mix(in srgb, A p, B): gama kodlu sRGB'de doğrusal karışım
+    const mix = (a: string, p: number, b: string) =>
+      '#' +
+      [1, 3, 5]
+        .map((i) => Math.round(parseInt(a.slice(i, i + 2), 16) * p + parseInt(b.slice(i, i + 2), 16) * (1 - p)))
+        .map((v) => v.toString(16).padStart(2, '0'))
+        .join('')
+    const neutral = ek('--ek-color-neutral')
+    const brands: [string, string][] = [...Object.entries(DOC_BRAND_COLORS).filter(([c]) => !UI_ONLY.includes(c)).map(([c, h]) => [c, h] as [string, string]), ['neutral', neutral]]
+    for (const [code, brand] of brands) {
+      const fill = mix(brand, tint, bg)
+      const border = mix(brand, shade, ink)
+      const fg = mix(brand, inkPct, ink)
+      expect(contrast(fg, fill), `${code} harf/zemin`).toBeGreaterThanOrEqual(4.5)
+      expect(contrast(border, bg), `${code} kenarlık/sayfa`).toBeGreaterThanOrEqual(3)
+      expect(contrast(border, fill), `${code} kenarlık/iç zemin`).toBeGreaterThanOrEqual(3)
+      expect(lum(fill), `${code} iç zemin açık`).toBeGreaterThan(lum(brand))
+      expect(lum(border), `${code} kenarlık koyu`).toBeLessThan(lum(brand))
+    }
   })
 })

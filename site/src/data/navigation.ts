@@ -3,30 +3,65 @@
  * sayfa yazıldığında (S2b/S5) yalnızca bayrak çevrilir; böylece S0'da kırık bağlantı üretilmez.
  * Bu dosya iddia içermez (yalnızca yol + etiket).
  */
+/**
+ * S23 (SR2-NAV): üst bar gruplanmış menüdür — Ürün / Çözümler / Kaynaklar açılır paneldir, Fiyatlandırma doğrudan
+ * bağlantıdır. Grup kimliği ve başlığı `navGroups`'ta; her öğe `group` ile bağlanır. `primaryNav` DÜZ liste olarak
+ * kalır (yayım bayrağı, kırık bağlantı ve rozet testleri bu listeyi okur); header ve footer grupları buradan türetir.
+ */
+export type NavGroupId = 'product' | 'solutions' | 'resources'
+
 export interface NavItem {
   label: string
   href: string
   published: boolean
   /** Küçük vurgu rozeti (ör. "Yeni") — yalnızca metin; iddia taşımaz. */
   badge?: string
+  /** Menü grubu; verilmezse üst barda doğrudan bağlantıdır (ör. Fiyatlandırma). */
+  group?: NavGroupId
+  /** Açılır paneldeki tek satırlık açıklama (yalnızca yönlendirme; olgusal iddia yok). */
+  description?: string
+  /** Paneldeki ikon adı (`components/home/Icon.astro`). */
+  icon?: NavIcon
 }
 
-export const primaryNav: NavItem[] = [
-  { label: 'Özellikler', href: '/ozellikler', published: true }, // S2b
-  { label: 'Entegrasyonlar', href: '/entegrasyonlar', published: true }, // S2b
-  { label: 'Asistan', href: '/asistan', published: true, badge: 'Yeni' }, // S18 (UPCOMING yüzeyi — src/data/assistant.ts)
-  { label: 'Fiyatlandırma', href: '/fiyatlandirma', published: true }, // S4b
-  { label: 'Güvenlik', href: '/guvenlik', published: true }, // S2b
-  { label: 'SSS', href: '/sss', published: true }, // S2b
-  { label: 'Destek', href: '/destek', published: true }, // S14
-  { label: 'Rehber', href: '/rehber', published: true }, // S20 (bilgi merkezi — src/data/kb/**)
-  { label: 'İletişim', href: '/iletisim', published: true }, // S2b
+export type NavIcon = 'layers' | 'plug' | 'sparkle' | 'shield' | 'book' | 'help' | 'chat' | 'mail' | 'stock' | 'orders' | 'returns'
+
+export interface NavGroup {
+  id: NavGroupId
+  label: string
+  /** Panelin üst satırı (erişilebilir ad değil; görsel başlık). */
+  lead: string
+}
+
+export const navGroups: NavGroup[] = [
+  { id: 'product', label: 'Ürün', lead: 'Platformun yetenekleri ve kanal bağlantıları' },
+  { id: 'solutions', label: 'Çözümler', lead: 'İhtiyacınıza ve satış kanalınıza göre' },
+  { id: 'resources', label: 'Kaynaklar', lead: 'Rehberler, yanıtlar ve destek' },
 ]
 
-/** Özellik derin sayfaları (S14): footer "Ürün" sütununa eklenir; ana gezinmede yer almaz. */
-export const featureNav: NavItem[] = [
-  { label: 'Stok rezervasyonu', href: '/ozellikler/stok-rezervasyonu', published: true }, // S14
+export const primaryNav: NavItem[] = [
+  { label: 'Özellikler', href: '/ozellikler', published: true, group: 'product', icon: 'layers', description: 'Stok, sipariş, iade ve mesajlar tek panelde' }, // S2b
+  { label: 'Entegrasyonlar', href: '/entegrasyonlar', published: true, group: 'product', icon: 'plug', description: 'Bağlanabilen kanallar ve kapsamları' }, // S2b
+  { label: 'Asistan', href: '/asistan', published: true, badge: 'Yeni', group: 'product', icon: 'sparkle' }, // S18 (UPCOMING yüzeyi — src/data/assistant.ts; ad/hedef site-s22'de)
+  { label: 'Güvenlik', href: '/guvenlik', published: true, group: 'product', icon: 'shield', description: 'Verinizi ve anahtarlarınızı nasıl koruyoruz' }, // S2b
+  { label: 'Fiyatlandırma', href: '/fiyatlandirma', published: true }, // S4b — üst barda doğrudan bağlantı
+  { label: 'Rehber', href: '/rehber', published: true, group: 'resources', icon: 'book', description: 'Pazaryeri, mevzuat ve operasyon rehberleri' }, // S20 (bilgi merkezi — src/data/kb/**)
+  { label: 'SSS', href: '/sss', published: true, group: 'resources', icon: 'help', description: 'Sık sorulan sorular' }, // S2b
+  { label: 'Destek', href: '/destek', published: true, group: 'resources', icon: 'chat', description: 'Kurulum ve kanal bağlantı yardımı' }, // S14
+  { label: 'İletişim', href: '/iletisim', published: true, group: 'resources', icon: 'mail', description: 'Bize yazın' }, // S2b
 ]
+
+/** Özellik derin sayfaları (S14): "Çözümler" grubunda (header paneli + footer sütunu). */
+export const featureNav: NavItem[] = [
+  { label: 'Stok rezervasyonu', href: '/ozellikler/stok-rezervasyonu', published: true, group: 'solutions', icon: 'stock', description: 'Aşırı satış nasıl önlenir' }, // S14
+]
+
+/** Grubun yayımlanmış öğeleri (sıra `primaryNav` + `featureNav` sırasıdır). */
+export const navItemsOf = (group: NavGroupId): NavItem[] =>
+  published([...primaryNav, ...featureNav]).filter((i) => i.group === group)
+
+/** Üst barda doğrudan (grupsuz) bağlantılar. */
+export const directNav = (): NavItem[] => published(primaryNav).filter((i) => !i.group)
 
 /** Yasal sayfalar (Karar 5) — S5: 8 sayfa yazıldı (TASLAK, hukuki inceleme bekliyor; içerik src/data/legal/*). */
 export const legalNav: NavItem[] = [

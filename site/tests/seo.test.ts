@@ -157,8 +157,9 @@ describe('varlık tanımı ("Entegrasyonik nedir?")', () => {
     }
   })
 
-  it('kategori ifadesi net: pazaryeri entegrasyonu ve stok yönetimi yazılımı', () => {
-    expect(def).toMatch(/^Entegrasyonik, .*pazaryeri entegrasyonu ve stok yönetimi yazılımıdır\./)
+  // S23 (SR2-ENTITY 8): Entegrasyonik bir yazılım değil PLATFORMDUR (kategori terimi korunur, öz-tanım "platform").
+  it('kategori ifadesi net: pazaryeri entegrasyonu ve stok yönetimi platformu', () => {
+    expect(def).toMatch(/^Entegrasyonik, .*pazaryeri entegrasyonu ve stok yönetimi platformudur\./)
   })
 })
 

@@ -1,19 +1,26 @@
 ---
 /**
- * Header — logotip, birincil gezinme, "Giriş yap" ve "Ücretsiz dene" (uygulamaya bağlantı; ADR-0014 Karar 2).
- * Masaüstü (>=1024): satır içi gezinme. Altında: yerel <details> ile açılan mobil menü — JS kapalıyken de
- * çalışır; `src/scripts/menu.ts` yalnızca Esc / dışarı tıklama / yeniden boyutlandırmada kapanmayı ekler.
- * Menüde henüz yayımlanmış sayfa yoksa (S0) yalnızca uygulama bağlantıları görünür.
- * S17: aktif sayfa göstergesi — tam eşleşmede `aria-current="page"`, alt sayfada (ör. /entegrasyonlar/trendyol)
- * `aria-current="true"`; masaüstünde vurgu alt çizgisi, mobil menüde sol vurgu çubuğu + zemin. Mobil menü satırları
- * ayırıcılı ve ok işaretli; açıkken sayfa hafifçe karartılır (dekoratif; dışarı tıklama betikle kapatır).
+ * Header — logotip, gruplanmış birincil gezinme, "Giriş yap" ve birincil CTA "Ücretsiz dene" (uygulamaya bağlantı;
+ * ADR-0014 Karar 2).
+ *
+ * S23 (SR2-NAV): bağlantı kalabalığı yerine gruplanmış menü — Ürün / Çözümler / Kaynaklar açılır panel (mega-menü),
+ * Fiyatlandırma doğrudan bağlantı; CTA'lar ayrı blokta. Model tek kaynaktan: `src/data/nav-menu.ts` (footer da aynı).
+ *  - Masaüstü (>= 64rem): grup düğmeleri `aria-expanded` + `aria-controls` (WAI-ARIA disclosure navigation deseni).
+ *    Klavye (`src/scripts/menu.ts`): Enter/Space aç-kapa, ↓/↑ paneli açıp ilk/son bağlantıya odak, paneldeki ↓/↑
+ *    bağlantılar arası, ←/→ üst düzey öğeler arası, Home/End, Esc kapatır ve odağı düğmeye döndürür. Odak tuzağı
+ *    YOK: Tab panelden çıkınca panel kapanır. JS yoksa panel üzerine gelince / odak içindeyken görünür.
+ *  - Mobil/tablet (< 64rem): yerel <details> çekmece (JS'siz çalışır); içinde grup başına akordeon (<details
+ *    name>): bulunulan sayfanın grubu açık gelir. Çözümler grubunda kanal rozetleri (ChannelMono) yer alır.
+ * Aktif sayfa: bağlantıda tam eşleşme `aria-current="page"`, alt sayfa `aria-current="true"`; içinde aktif bağlantı
+ * olan grup düğmesi `data-active` ile alt çizgi alır (renk tek başına değil — çizgi + kalınlık).
  */
 import Icon from './home/Icon.astro'
 import Container from './Container.astro'
 import Button from './Button.astro'
 import Logo from './Logo.astro'
 import MotionToggle from './MotionToggle.astro'
-import { primaryNav, published } from '../data/navigation'
+import ChannelMono from './pages/ChannelMono.astro'
+import { menuDirect, menuGroups, type MenuLink } from '../data/nav-menu'
 import { appUrls } from '../lib/site-config'
 
 interface Props {
@@ -22,11 +29,14 @@ interface Props {
 }
 const { motionControl = false } = Astro.props
 
-const links = published(primaryNav)
+const groups = menuGroups().filter((g) => g.links.length > 0)
+const direct = menuDirect()
 const norm = (p: string) => (p.length > 1 ? p.replace(/\/+$/, '') : p)
 const here = norm(Astro.url.pathname)
 const currentOf = (href: string): 'page' | 'true' | undefined =>
   here === norm(href) ? 'page' : here.startsWith(`${norm(href)}/`) ? 'true' : undefined
+const groupActive = (links: MenuLink[]) => links.some((l) => currentOf(l.href))
+const descId = (group: string, i: number) => `nav-desc-${group}-${i}`
 const loginHref = appUrls.login()
 const registerHref = appUrls.register()
 ---
@@ -37,15 +47,86 @@ const registerHref = appUrls.register()
       <Logo />
     </a>
 
-    <nav class="nav-desktop" aria-label="Ana gezinme">
+    <nav class="nav-desktop" aria-label="Ana gezinme" data-nav>
       {
-        links.length > 0 && (
+        (groups.length > 0 || direct.length > 0) && (
           <ul class="nav-desktop__links">
-            {links.map((item) => (
+            {groups.map((g) => (
+              <li class="nav-group" data-nav-group>
+                <button
+                  type="button"
+                  class="nav-trigger"
+                  aria-expanded="false"
+                  aria-controls={`mega-${g.id}`}
+                  data-nav-trigger={g.id}
+                  data-nav-top
+                  data-active={groupActive(g.links) ? 'true' : undefined}
+                >
+                  {g.label}
+                  <Icon name="chevron" size="sm" />
+                </button>
+                <div class:list={['mega', `mega--${g.id}`, { 'mega--aside': !!g.aside }]} id={`mega-${g.id}`} data-nav-panel>
+                  <div class="mega__main">
+                    <p class="mega__lead">{g.lead}</p>
+                    <ul class="mega__list" role="list">
+                      {g.links.map((l, i) => (
+                        <li class="mega-item">
+                          {l.icon && (
+                            <span class="mega-item__icon">
+                              <Icon name={l.icon} size="sm" />
+                            </span>
+                          )}
+                          <a class="nav-link" href={l.href} aria-current={currentOf(l.href)} aria-describedby={l.description ? descId(g.id, i) : undefined}>{l.label}{l.badge && <span class="nav-badge" data-testid="nav-badge">{l.badge}</span>}</a>
+                          {l.description && (
+                            <span class="mega-item__desc" id={descId(g.id, i)}>
+                              {l.description}
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  {g.aside && (
+                    <div class="mega__aside">
+                      <p class="mega__lead">{g.aside.title}</p>
+                      {g.aside.channels && (
+                        <ul class="mega-chans" role="list" data-testid="nav-channels">
+                          {g.aside.channels.map((c) => (
+                            <li>
+                              <a class="mega-chan" href={`/entegrasyonlar/${c.code}`} aria-current={currentOf(`/entegrasyonlar/${c.code}`)}>
+                                <ChannelMono code={c.code} name={c.name} size="xs" />
+                                {c.name}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {g.aside.links.length > 0 && (
+                        <ul class="mega-aside-list" role="list">
+                          {g.aside.links.map((l) => (
+                            <li>
+                              <a class="mega-aside-link" href={l.href} aria-current={currentOf(l.href)}>
+                                {l.label}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {g.aside.more && (
+                        <a class="mega-more" href={g.aside.more.href}>
+                          {g.aside.more.label}
+                          <Icon name="arrow" size="sm" />
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </li>
+            ))}
+            {direct.map((l) => (
               <li>
-                <a class="nav-link" href={item.href} aria-current={currentOf(item.href)}>
-                  {item.label}
-                  {item.badge && <span class="nav-badge" data-testid="nav-badge">{item.badge}</span>}
+                <a class="nav-link nav-top" href={l.href} aria-current={currentOf(l.href)} data-nav-top>
+                  {l.label}
                 </a>
               </li>
             ))}
@@ -71,23 +152,51 @@ const registerHref = appUrls.register()
         </svg>
       </summary>
       <nav class="nav-mobile__panel" aria-label="Ana gezinme">
-        {
-          links.length > 0 && (
-            <ul class="nav-mobile__links">
-              {links.map((item) => (
-                <li>
-                  <a class="nav-link nav-link--block" href={item.href} aria-current={currentOf(item.href)}>
-                    <span>
-                      {item.label}
-                      {item.badge && <span class="nav-badge">{item.badge}</span>}
-                    </span>
-                    <Icon name="chevron" size="sm" />
-                  </a>
-                </li>
-              ))}
-            </ul>
-          )
-        }
+        <div class="drawer">
+          {
+            groups.map((g) => (
+              <details class="drawer-group" name="nav-drawer" open={groupActive(g.links) || undefined} data-drawer-group={g.id}>
+                <summary class="drawer-group__summary" data-active={groupActive(g.links) ? 'true' : undefined}>
+                  <span>{g.label}</span>
+                  <Icon name="chevron" size="sm" />
+                </summary>
+                <ul class="drawer-group__links" role="list">
+                  {g.links.map((l) => (
+                    <li>
+                      <a class="nav-link nav-link--block" href={l.href} aria-current={currentOf(l.href)}>
+                        <span>
+                          {l.label}
+                          {l.badge && <span class="nav-badge">{l.badge}</span>}
+                        </span>
+                        <Icon name="chevron" size="sm" />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+                {g.aside?.channels && (
+                  <ul class="drawer-chans" role="list" aria-label={g.aside.title}>
+                    {g.aside.channels.map((c) => (
+                      <li>
+                        <a class="mega-chan" href={`/entegrasyonlar/${c.code}`} aria-current={currentOf(`/entegrasyonlar/${c.code}`)}>
+                          <ChannelMono code={c.code} name={c.name} size="xs" />
+                          {c.name}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </details>
+            ))
+          }
+          {
+            direct.map((l) => (
+              <a class="nav-link nav-link--block drawer-direct" href={l.href} aria-current={currentOf(l.href)}>
+                <span>{l.label}</span>
+                <Icon name="chevron" size="sm" />
+              </a>
+            ))
+          }
+        </div>
         <div class="nav-mobile__actions">
           <Button href={loginHref} variant="secondary" size="lg" data-testid="login-link-mobile">Giriş yap</Button>
           <Button href={registerHref} variant="primary" size="lg" data-testid="register-link-mobile">Ücretsiz dene</Button>
@@ -130,25 +239,34 @@ const registerHref = appUrls.register()
   }
   .brand {
     display: inline-flex;
+    flex: none;
     align-items: center;
     min-height: var(--site-tap-target);
     text-decoration: none;
   }
 
-  .nav-link {
+  .nav-link,
+  .nav-trigger {
     display: inline-flex;
     align-items: center;
     min-height: var(--site-tap-target);
     padding-inline: var(--ek-space-3);
+    border: 0;
     border-radius: var(--ek-radius-md);
+    background: transparent;
     color: var(--ek-color-content-default);
+    font-family: inherit;
     font-size: var(--ek-font-size-lg);
     font-weight: var(--ek-font-weight-medium);
     text-decoration: none;
-    transition: color var(--ek-duration-base) var(--ek-easing-standard),
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      color var(--ek-duration-base) var(--ek-easing-standard),
       background-color var(--ek-duration-base) var(--ek-easing-standard);
   }
-  .nav-link:hover {
+  .nav-link:hover,
+  .nav-trigger:hover {
     color: var(--ek-color-content-strong);
     background: var(--ek-color-surface-sunken);
   }
@@ -159,7 +277,7 @@ const registerHref = appUrls.register()
   .nav-badge {
     display: inline-flex;
     align-items: center;
-    margin-inline-start: var(--ek-space-1);
+    margin-inline-start: var(--ek-space-2);
     padding: 0 var(--ek-space-1);
     border-radius: var(--ek-radius-sm);
     background: var(--ek-color-primary);
@@ -169,36 +287,30 @@ const registerHref = appUrls.register()
     letter-spacing: 0.02em;
     line-height: var(--ek-line-height-normal);
   }
-  .nav-link--block {
-    position: relative;
+
+  /* ------------------------------------------------------------------ kanal rozeti bağlantısı (panel + çekmece) */
+  .mega-chan {
     display: flex;
-    justify-content: space-between;
-    min-height: calc(var(--site-tap-target) + var(--ek-space-1));
-    padding-inline: var(--ek-space-3);
-    font-size: var(--ek-font-size-lg);
+    align-items: center;
+    gap: var(--ek-space-2);
+    min-height: var(--site-tap-target);
+    padding: var(--ek-space-1) var(--ek-space-2);
+    border-radius: var(--ek-radius-md);
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-medium);
+    text-decoration: none;
+    transition: background-color var(--ek-duration-base) var(--ek-easing-standard);
   }
-  .nav-link--block :global(.icon) {
-    color: var(--ek-color-content-muted);
-    transform: rotate(-90deg);
+  .mega-chan:hover {
+    background: var(--ek-color-surface-sunken);
   }
-  .nav-link--block[aria-current] {
+  .mega-chan[aria-current] {
     background: color-mix(in srgb, var(--ek-color-secondary) 10%, var(--ek-color-background));
     font-weight: var(--ek-font-weight-semibold);
   }
-  .nav-link--block[aria-current]::before {
-    content: '';
-    position: absolute;
-    inset-block: var(--ek-space-2);
-    inset-inline-start: 0;
-    width: calc(var(--site-border-width) * 3);
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-secondary-darken-1);
-  }
-  .nav-link--block[aria-current] :global(.icon) {
-    color: var(--site-link-accent);
-  }
 
-  /* --- Mobil / tablet (< 1024): <details> menü --- */
+  /* ------------------------------------------------------------------ mobil / tablet (< 64rem): çekmece */
   .nav-desktop {
     display: none;
   }
@@ -247,7 +359,8 @@ const registerHref = appUrls.register()
     top: 100%;
     max-height: calc(100dvh - var(--site-header-height));
     overflow-y: auto;
-    padding: var(--ek-space-4) var(--site-gutter) var(--ek-space-6);
+    overscroll-behavior: contain;
+    padding: var(--ek-space-3) var(--site-gutter) var(--ek-space-6);
     background: var(--ek-color-background);
     border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
     /* Sayfa karartması: panelin altına doğru yayılan gölge (yalnızca aşağıda; üst çubuk kararmaz). */
@@ -257,17 +370,102 @@ const registerHref = appUrls.register()
     clip-path: inset(0 0 -100vmax 0);
     animation: menu-in var(--ek-duration-base) var(--ek-easing-enter);
   }
-  .nav-mobile__links {
+  .drawer {
     display: flex;
     flex-direction: column;
     margin-bottom: var(--ek-space-5);
   }
-  .nav-mobile__links li + li {
+  .drawer > * + * {
     border-top: var(--site-border-width) solid var(--ek-color-border-default);
   }
-  .nav-mobile__actions {
+  .drawer-group__summary {
+    position: relative;
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    min-height: calc(var(--site-tap-target) + var(--ek-space-2));
+    padding-inline: var(--ek-space-3);
+    border-radius: var(--ek-radius-md);
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-lg);
+    font-weight: var(--ek-font-weight-semibold);
+    list-style: none;
+    cursor: pointer;
+  }
+  .drawer-group__summary::-webkit-details-marker {
+    display: none;
+  }
+  .drawer-group__summary:hover {
+    background: var(--ek-color-surface-sunken);
+  }
+  .drawer-group__summary :global(.icon) {
+    color: var(--ek-color-content-muted);
+    transition: transform var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .drawer-group[open] > .drawer-group__summary :global(.icon) {
+    transform: rotate(180deg);
+  }
+  .drawer-group__summary[data-active]::before {
+    content: '';
+    position: absolute;
+    inset-block: var(--ek-space-3);
+    inset-inline-start: 0;
+    width: calc(var(--site-border-width) * 3);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-secondary-darken-1);
+  }
+  .drawer-group__links {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
+    gap: 0 var(--ek-space-2);
+    padding: 0 0 var(--ek-space-3) var(--ek-space-3);
+  }
+  .drawer-chans {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 9.5rem), 1fr));
+    gap: var(--ek-space-1) var(--ek-space-2);
+    margin: 0 0 var(--ek-space-4) var(--ek-space-3);
+    padding-top: var(--ek-space-3);
+    border-top: var(--site-border-width) dashed var(--ek-color-border-default);
+  }
+  .nav-link--block {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    min-height: var(--site-tap-target);
+    padding-inline: var(--ek-space-3);
+    font-size: var(--ek-font-size-md);
+    white-space: normal;
+  }
+  .drawer-direct {
+    min-height: calc(var(--site-tap-target) + var(--ek-space-2));
+    font-size: var(--ek-font-size-lg);
+    font-weight: var(--ek-font-weight-semibold);
+    color: var(--ek-color-content-strong);
+  }
+  .nav-link--block :global(.icon) {
+    color: var(--ek-color-content-muted);
+    transform: rotate(-90deg);
+  }
+  .nav-link--block[aria-current] {
+    background: color-mix(in srgb, var(--ek-color-secondary) 10%, var(--ek-color-background));
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .nav-link--block[aria-current]::before {
+    content: '';
+    position: absolute;
+    inset-block: var(--ek-space-2);
+    inset-inline-start: 0;
+    width: calc(var(--site-border-width) * 3);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-secondary-darken-1);
+  }
+  .nav-link--block[aria-current] :global(.icon) {
+    color: var(--site-link-accent);
+  }
+  .nav-mobile__actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
     gap: var(--ek-space-3);
   }
   .nav-mobile__actions :global(.btn) {
@@ -281,48 +479,72 @@ const registerHref = appUrls.register()
       opacity: 1;
     }
   }
+  @keyframes mega-in {
+    from {
+      opacity: 0;
+      transform: translateY(calc(var(--ek-space-1) * -1));
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
 
-  /* --- Masaüstü (>= 1024): satır içi gezinme --- */
-  /* 80rem (1280 px): gezinme + eylemler + hareket kontrolü 1280–1440 arasında taşmadan sığar; altında menü düğmesi. */
-  @media (min-width: 80rem) {
+  /* ------------------------------------------------------------------ masaüstü (>= 64rem): gruplanmış menü */
+  /* S23: dört üst düzey öğe (3 grup + Fiyatlandırma) + CTA'lar + hareket kontrolü 1024'ten itibaren sığar. */
+  @media (min-width: 64rem) {
     .nav-mobile {
       display: none;
     }
     .nav-desktop {
       display: flex;
       flex: 1;
+      align-self: stretch;
       align-items: center;
       justify-content: space-between;
-      gap: var(--ek-space-2);
-      margin-inline-start: var(--ek-space-1);
+      gap: var(--ek-space-4);
+      min-width: 0;
+      margin-inline-start: var(--ek-space-2);
     }
     .nav-desktop__links {
-      display: flex;
-      align-items: center;
-      gap: 0;
-    }
-    /* S14: yedinci bağlantı ("Destek") + hareket kontrolü etiketi 1440'ta da sığsın: bağlantı iç boşluğu bir kademe dar. */
-    .nav-desktop__links .nav-link {
       position: relative;
-      padding-inline: var(--ek-space-2);
+      display: flex;
+      align-self: stretch;
+      align-items: center;
+      gap: var(--ek-space-1);
     }
-    /* S18: rozet satır genişliği eklemesin diye üst simge gibi durur (sekiz bağlantı + hareket kontrolü sığar). */
-    .nav-desktop__links .nav-badge {
-      position: absolute;
-      inset-block-start: calc(var(--ek-space-1) * -0.25);
-      inset-inline-end: 0;
-      margin: 0;
-      font-size: 0.625rem;
-      line-height: var(--ek-line-height-normal);
+    .nav-group {
+      display: flex;
+      align-self: stretch;
+      align-items: center;
     }
-    /* Aktif sayfa: vurgu alt çizgisi (renk tek başına değil — kalınlık ve çizgi de değişir). */
-    .nav-desktop__links .nav-link[aria-current] {
+    .nav-trigger {
+      position: relative;
+      gap: var(--ek-space-1);
+    }
+    .nav-trigger :global(.icon) {
+      color: var(--ek-color-content-muted);
+      transition: transform var(--ek-duration-base) var(--ek-easing-standard);
+    }
+    .nav-trigger[aria-expanded='true'] {
+      color: var(--ek-color-content-strong);
+      background: var(--ek-color-surface-sunken);
+    }
+    .nav-trigger[aria-expanded='true'] :global(.icon) {
+      transform: rotate(180deg);
+    }
+    /* Aktif grup / sayfa: vurgu alt çizgisi (renk tek başına değil — kalınlık ve çizgi de değişir). */
+    .nav-trigger[data-active],
+    .nav-top[aria-current] {
+      position: relative;
+      color: var(--ek-color-content-strong);
       font-weight: var(--ek-font-weight-semibold);
     }
-    .nav-desktop__links .nav-link[aria-current]::after {
+    .nav-trigger[data-active]::after,
+    .nav-top[aria-current]::after {
       content: '';
       position: absolute;
-      inset-inline: var(--ek-space-2);
+      inset-inline: var(--ek-space-3);
       inset-block-end: calc(var(--ek-space-1) * 0.5);
       height: calc(var(--site-border-width) * 2);
       border-radius: var(--ek-radius-full);
@@ -330,34 +552,188 @@ const registerHref = appUrls.register()
     }
     .nav-desktop__actions {
       display: flex;
+      flex: none;
       align-items: center;
       gap: var(--ek-space-2);
       margin-inline-start: auto;
+      padding-inline-start: var(--ek-space-4);
+      border-inline-start: var(--site-border-width) solid var(--ek-color-border-default);
     }
-  }
 
-  /* S18: sekizinci bağlantı ("Asistan") + hareket kontrolü etiketi geniş ekranda sığsın: header çubuğu (yalnızca
-     header) geniş içerik genişliğini kullanır; sayfa içeriği 1200 px'te kalır. */
-  @media (min-width: 90rem) {
-    .site-header :global(.bar) {
-      max-width: calc(var(--site-content-wide) + 2 * var(--site-gutter));
+    /* --- açılır panel --- */
+    .mega {
+      position: absolute;
+      top: calc(100% - var(--ek-space-2));
+      inset-inline-start: 0;
+      z-index: 1;
+      display: none;
+      width: min(30rem, calc(100vw - 2 * var(--site-gutter)));
+      padding: var(--ek-space-5);
+      border: var(--site-border-width) solid var(--ek-color-border-default);
+      border-radius: var(--site-radius-panel);
+      background: var(--ek-color-background);
+      box-shadow: var(--site-shadow-card-hover), var(--ek-shadow-md);
     }
-  }
-
-  /* S20b: dokuz bağlantı (S18 "Asistan" + S20 "Rehber") + hareket kontrolü sığsın — ölçüm (S20b): eski boşlukla 1280'de
-     hareket kontrolü sağ kenar boşluğuna ~33 px, ≥1440'ta çubuk dışına 12 px taşıyordu. Bağlantı iç boşluğu ≥1280'de bir
-     kademe, 1280–1440 arasında iki kademe dar. */
-  @media (min-width: 80rem) {
-    .nav-desktop__links .nav-link {
-      padding-inline: calc(var(--ek-space-2) * 0.75);
+    .mega--aside {
+      grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+      gap: var(--ek-space-5);
+      width: min(46rem, calc(100vw - 2 * var(--site-gutter)));
     }
-  }
-  @media (min-width: 80rem) and (max-width: 89.99rem) {
-    .nav-desktop__links .nav-link {
-      padding-inline: calc(var(--ek-space-2) * 0.5);
+    /* JS yok: üzerine gelince / odak içindeyken görünür (klavye ile de erişilir). */
+    .nav-desktop:not([data-js]) .nav-group:hover .mega,
+    .nav-desktop:not([data-js]) .nav-group:focus-within .mega,
+    .nav-desktop[data-js] .nav-trigger[aria-expanded='true'] + .mega {
+      display: grid;
+      animation: mega-in var(--ek-duration-base) var(--ek-easing-enter);
     }
-    .nav-desktop {
+    .mega__lead {
+      margin: 0 0 var(--ek-space-3);
+      color: var(--ek-color-content-muted);
+      font-size: var(--ek-font-size-sm);
+      font-weight: var(--ek-font-weight-semibold);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .mega__list {
+      display: grid;
       gap: var(--ek-space-1);
+    }
+    .mega-item {
+      position: relative;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      column-gap: var(--ek-space-3);
+      align-items: center;
+      padding: var(--ek-space-2);
+      border-radius: var(--ek-radius-lg);
+      transition: background-color var(--ek-duration-base) var(--ek-easing-standard);
+    }
+    /* Açıklama metni (muted) AA'da kalsın: vurgu zemini çok açık (sunken'in yarısı). */
+    .mega-item:hover,
+    .mega-item:focus-within {
+      background: color-mix(in srgb, var(--ek-color-surface-sunken) 55%, var(--ek-color-background));
+    }
+    .mega-item__icon {
+      grid-row: span 2;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: var(--ek-space-10);
+      height: var(--ek-space-10);
+      border: var(--site-border-width) solid var(--ek-color-border-default);
+      border-radius: var(--ek-radius-md);
+      background: var(--ek-color-background);
+      color: var(--site-link-accent);
+    }
+    .mega-item .nav-link {
+      grid-column: 2;
+      min-height: 0;
+      padding: 0;
+      background: transparent;
+      color: var(--ek-color-content-strong);
+      font-size: var(--ek-font-size-md);
+      font-weight: var(--ek-font-weight-semibold);
+      white-space: normal;
+    }
+    /* Tüm satır tıklanabilir (bağlantının alanı satırı kaplar; açıklama aria-describedby ile bağlıdır). */
+    .mega-item .nav-link::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+    }
+    .mega-item .nav-link:focus-visible {
+      outline: none;
+    }
+    .mega-item:has(.nav-link:focus-visible) {
+      outline: var(--site-focus-ring-width) solid var(--site-color-focus-ring);
+      outline-offset: calc(var(--site-focus-ring-width) * -1);
+    }
+    .mega-item .nav-link[aria-current] {
+      color: var(--site-link-accent);
+    }
+    .mega-item:has(.nav-link[aria-current]) {
+      background: color-mix(in srgb, var(--ek-color-secondary) 5%, var(--ek-color-background));
+    }
+    .mega-item__desc {
+      grid-column: 2;
+      color: var(--ek-color-content-muted);
+      font-size: var(--ek-font-size-sm);
+      line-height: var(--ek-line-height-normal);
+    }
+    .mega--product .mega__list,
+    .mega--resources .mega__list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .mega--product {
+      width: min(40rem, calc(100vw - 2 * var(--site-gutter)));
+    }
+    .mega__aside .mega__lead {
+      color: var(--ek-color-content-default);
+    }
+    .mega__aside {
+      display: flex;
+      flex-direction: column;
+      padding: var(--ek-space-4);
+      border-radius: var(--ek-radius-lg);
+      background: var(--ek-color-surface-sunken);
+    }
+    .mega-chans {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--ek-space-1);
+    }
+    .mega-chan:hover {
+      background: var(--ek-color-background);
+    }
+    .mega-aside-list {
+      display: grid;
+      gap: var(--ek-space-1);
+    }
+    .mega-aside-link {
+      display: flex;
+      align-items: center;
+      min-height: var(--site-tap-target);
+      padding-inline: var(--ek-space-2);
+      border-radius: var(--ek-radius-md);
+      color: var(--ek-color-content-strong);
+      font-size: var(--ek-font-size-md);
+      font-weight: var(--ek-font-weight-medium);
+      text-decoration: none;
+    }
+    .mega-aside-link:hover {
+      background: var(--ek-color-background);
+    }
+    .mega-aside-link[aria-current] {
+      color: var(--site-link-accent);
+      font-weight: var(--ek-font-weight-semibold);
+    }
+    .mega-more {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--ek-space-1);
+      min-height: var(--site-tap-target);
+      margin-top: auto;
+      padding-inline: var(--ek-space-2);
+      color: var(--site-link-accent);
+      font-size: var(--ek-font-size-md);
+      font-weight: var(--ek-font-weight-semibold);
+      text-decoration: none;
+    }
+    .mega-more:hover {
+      text-decoration: underline;
+      text-underline-offset: 0.2em;
+    }
+  }
+
+  /* 64–80rem: CTA ve bağlantı boşlukları bir kademe dar (1024'te hareket kontrolüyle birlikte sığar). */
+  @media (min-width: 64rem) and (max-width: 79.99rem) {
+    .nav-link,
+    .nav-trigger {
+      padding-inline: var(--ek-space-2);
+    }
+    .nav-desktop__actions {
+      padding-inline-start: var(--ek-space-2);
     }
   }
 </style>

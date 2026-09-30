@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
-import { APP_URL, collectProblems, isDesktop, waitForFonts } from '../helpers'
+import { APP_URL, collectProblems, isDesktop, revealNavLink, waitForFonts } from '../helpers'
 import { company } from '../../src/data/company'
 
 // ADR-0014 S2b — iç sayfalar: smoke + etkileşim + axe (WCAG 2.1 AA) + 3 viewport ekran görüntüsü.
@@ -63,11 +63,18 @@ test.describe('gezinme', () => {
   test('ana gezinmede iç sayfa bağlantıları görünür ve çalışır', async ({ page }) => {
     await page.goto('/')
     if (!isDesktop(page)) await page.getByTestId('menu-toggle').click()
-    const nav = isDesktop(page) ? page.locator('.nav-desktop') : page.locator('.nav-mobile__panel')
-    for (const label of ['Özellikler', 'Entegrasyonlar', 'Güvenlik', 'SSS', 'İletişim']) {
-      await expect(nav.getByRole('link', { name: label, exact: true })).toBeVisible()
+    // S23: gruplanmış menü — bağlantılar grubu açılınca görünür (Ürün / Kaynaklar), Fiyatlandırma doğrudan.
+    for (const [group, label] of [
+      ['Ürün', 'Özellikler'],
+      ['Ürün', 'Entegrasyonlar'],
+      ['Ürün', 'Güvenlik'],
+      ['Kaynaklar', 'SSS'],
+      ['Kaynaklar', 'İletişim'],
+      [null, 'Fiyatlandırma'],
+    ] as const) {
+      await expect(await revealNavLink(page, group, label), `${group} → ${label}`).toBeVisible()
     }
-    await nav.getByRole('link', { name: 'Entegrasyonlar', exact: true }).click()
+    await (await revealNavLink(page, 'Ürün', 'Entegrasyonlar')).click()
     await expect(page).toHaveURL(/\/entegrasyonlar\/?$/)
     await expect(page.getByRole('heading', { level: 1, name: 'Entegrasyonlar' })).toBeVisible()
   })
