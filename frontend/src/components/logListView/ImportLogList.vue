@@ -120,6 +120,7 @@ import { formatDateTime, formatNumber } from '@/composables/format'
 import type { StatusTone } from '@/design/status-map'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import { useIntegrationStore } from '@/stores/integrationStore'
+import { defaultListPageSize } from '@/stores/publicConfig'
 const restApi = useRestApi()
 const snackbarStore = useSnackbarStore()
 const loadingComponentRef: any = ref(null)
@@ -151,7 +152,7 @@ const copyToClipboard = (text: string) => {
 
 
 const confirmationDelete = reactive<any>({ isDialogOpen: false, activator: undefined, mode: 'single', job: null })
-const pagination = reactive({ limit: 25, page: 1, totalNumberOfPages: 1, totalNumberOfRecords: 0 });
+const pagination = reactive({ limit: defaultListPageSize(), page: 1, totalNumberOfPages: 1, totalNumberOfRecords: 0 });
 
 // DS-v2 liste standardı. Sıralama SUNUCUDA (getImportJobs `sortBy`/`sortOrder`).
 const columns: EkGridColumn[] = [

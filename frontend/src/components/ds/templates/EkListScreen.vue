@@ -164,6 +164,7 @@ import EkSavedViews, { type EkSavedViewsConfig } from '../EkSavedViews.vue'
 import EkRefreshButton from '../EkRefreshButton.vue'
 import EkPageBar from '../EkPageBar.vue'
 import type { EkCrumb, EkRecordRef } from '../pageTrail'
+import { defaultListPageSize } from '@/stores/publicConfig'
 
 const props = withDefaults(
   defineProps<{
@@ -239,7 +240,8 @@ const props = withDefaults(
     selected: () => [],
     sort: null,
     page: 1,
-    pageSize: 25,
+    // FE-CFG-1: varsayılan boyut backoffice ayarı (`ui.listPageSize`); ekran kendi değerini verirse o geçer.
+    pageSize: () => defaultListPageSize(),
     pageSizeOptions: () => [10, 25, 50, 100],
     skeletonRows: 8,
     emptyTitle: 'Henüz kayıt yok',

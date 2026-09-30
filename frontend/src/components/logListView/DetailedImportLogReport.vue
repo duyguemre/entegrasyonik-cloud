@@ -257,6 +257,7 @@ import EkSkeleton from '@/components/ds/EkSkeleton.vue'
 import { formatDateTime } from '@/composables/format'
 import { semanticColorsLight } from '@/design/tokens'
 import type { StatusTone } from '@/design/status-map'
+import { reportPollInterval } from '@/stores/publicConfig'
 
 use([CanvasRenderer, BarChart, TooltipComponent, GridComponent, LegacyGridContainLabel])
 const activeMenuCatId = ref<string | null>(null);
@@ -409,7 +410,7 @@ const getReport = async (isSilent = false) => {
   }
 };
 
-const startPolling = () => { stopPolling(); pollTimer = setTimeout(() => { getReport(true) }, 5000); };
+const startPolling = () => { stopPolling(); pollTimer = setTimeout(() => { getReport(true) }, reportPollInterval()); };
 const stopPolling = () => { if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; } };
 
 const resolveCategoryNames = async () => {

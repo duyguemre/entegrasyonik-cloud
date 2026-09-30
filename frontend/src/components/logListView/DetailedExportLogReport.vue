@@ -168,6 +168,7 @@ import { semanticColorsLight } from '@/design/tokens'
 import type { StatusTone } from '@/design/status-map'
 import { escapeHtml } from '@/utils/escapeHtml'
 import { PLATFORM_PROCESS_LABELS, PLATFORM_PROCESS } from '@/types/PlatformProcess'
+import { reportPollInterval } from '@/stores/publicConfig'
 
 use([CanvasRenderer, BarChart, TooltipComponent, GridComponent, LegacyGridContainLabel])
 
@@ -324,7 +325,7 @@ const getReport = async (isSilent = false) => {
   }
 };
 
-const startPolling = () => { stopPolling(); pollTimer = setTimeout(() => { getReport(true) }, 5000); };
+const startPolling = () => { stopPolling(); pollTimer = setTimeout(() => { getReport(true) }, reportPollInterval()); };
 const stopPolling = () => { if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; } };
 
 const calculateDuration = (start: any, end: any) => {

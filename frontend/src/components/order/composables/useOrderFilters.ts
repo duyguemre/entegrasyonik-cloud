@@ -1,5 +1,6 @@
 import { ref, reactive, computed } from 'vue';
 import { OrderInternalStatusEnum, ORDER_INTERNAL_STATUS_LABELS, ORDER_INTERNAL_STATUS_COLORS } from '@/types/OrderTypes';
+import { defaultListPageSize } from '@/stores/publicConfig'
 
 export function useOrderFilters(getOrders: Function) {
     // --- 1. SEARCH FORM STATE ---
@@ -18,7 +19,7 @@ export function useOrderFilters(getOrders: Function) {
 
     // --- 2. PAGINATION & SORT STATE ---
     const pagination = reactive({
-        limit: 25,
+        limit: defaultListPageSize(),
         page: 1,
         totalNumberOfPages: 1,
         totalNumberOfRecords: 0

@@ -290,3 +290,13 @@ export function currentPublicConfig(): PublicConfigValues {
     return { ...PUBLIC_CONFIG_DEFAULTS }
   }
 }
+
+/** Liste sayfa boyutu varsayılanı (`ui.listPageSize`; 10/25/50/100, alınamazsa 25). Liste durumu kurulurken okunur. */
+export function defaultListPageSize(): number {
+  return currentPublicConfig().listPageSize
+}
+
+/** Rapor yoklama aralığı (`ui.reportPollMs`; 3000–60000, alınamazsa 5000). Her zamanlayıcı kurulurken okunur. */
+export function reportPollInterval(): number {
+  return currentPublicConfig().reportPollMs
+}

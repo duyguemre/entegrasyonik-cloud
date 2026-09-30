@@ -1,5 +1,6 @@
 import { ref, reactive, computed } from 'vue';
 import { ClaimInternalStatusEnum, CLAIM_INTERNAL_STATUS_LABELS, CLAIM_INTERNAL_STATUS_COLORS } from '@/types/ClaimTypes';
+import { defaultListPageSize } from '@/stores/publicConfig'
 
 export function useClaimFilters(getClaims: Function) {
     // --- 1. SEARCH FORM STATE ---
@@ -17,7 +18,7 @@ export function useClaimFilters(getClaims: Function) {
 
     // --- 2. PAGINATION & SORT STATE ---
     const pagination = reactive({
-        limit: 25,
+        limit: defaultListPageSize(),
         page: 1,
         totalNumberOfPages: 1,
         totalNumberOfRecords: 0

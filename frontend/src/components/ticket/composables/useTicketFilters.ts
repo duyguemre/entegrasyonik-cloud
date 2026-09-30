@@ -4,6 +4,7 @@ import {
     TicketTypeEnum, TICKET_TYPE_LABELS,
     TicketPriorityEnum, TICKET_PRIORITY_LABELS, TICKET_PRIORITY_COLORS
 } from '@/types/TicketTypes';
+import { defaultListPageSize } from '@/stores/publicConfig'
 
 export function useTicketFilters(getTickets: Function) {
     // --- 1. SEARCH FORM STATE ---
@@ -21,7 +22,7 @@ export function useTicketFilters(getTickets: Function) {
 
     // --- 2. PAGINATION & SORT STATE ---
     const pagination = reactive({
-        limit: 25,
+        limit: defaultListPageSize(),
         page: 1,
         totalNumberOfPages: 1,
         totalNumberOfRecords: 0

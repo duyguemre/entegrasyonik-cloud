@@ -145,6 +145,7 @@ import EkStatusChip from '@/components/ds/EkStatusChip.vue'
 import { formatDate, formatDateTime, formatMoney, formatNumber } from '@/composables/format'
 import type { StatusTone } from '@/design/status-map'
 import { PLATFORM_PROCESS, PLATFORM_PROCESS_LABELS } from '@/types/PlatformProcess';
+import { defaultListPageSize } from '@/stores/publicConfig'
 const restApi = useRestApi()
 const snackbarStore = useSnackbarStore()
 const integrationStore = useIntegrationStore()
@@ -280,7 +281,7 @@ const handlePageChange = () => {
 };
 
 
-const pagination = reactive({ limit: 25, page: 1, totalNumberOfPages: 1, totalNumberOfRecords: 0 });
+const pagination = reactive({ limit: defaultListPageSize(), page: 1, totalNumberOfPages: 1, totalNumberOfRecords: 0 });
 const reportInfo = reactive({ isOpen: false, jobId: null })
 const openDetailedReport = (item: any) => { reportInfo.jobId = item._id; reportInfo.isOpen = true; }
 
