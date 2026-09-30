@@ -558,3 +558,34 @@ bölümü; ortak ds bileşenlerine dokunulmadı, token değişikliği yok. Önce
 | Çok varyant | > 8: kompakt ızgara + "Tümünü gör" (iç kaydırma, yapışık başlık) |
 | Dar kap | < 600px kart (A6b) |
 | Mantık | `variants/variantListModel.ts` (saf, `tests/variant-list-model.test.ts`) |
+
+## 19. Liste sorgu durumu — `useListQuery` (X-01, `cloud/fe-c3b`)
+
+Sunucu sayfalamalı liste ekranı (`EkListScreen`) için tek sorgu durumu. Kapsam dar: kolon/çip/kayıtlı görünüm/eylem mantığı
+ekranda kalır; istek gövdesini ve yanıt eşlemesini ekran kurar (servis sözleşmeleri farklı).
+
+```ts
+const { filters, applied, sortBy, page, limit, total, items, loading, error,
+        load, search, submitSearch, setPage, setPageSize, setSort, resetFilters, cancel } = useListQuery({
+  filters: () => ({ globalSearch: '', statuses: [] as string[] }),   // boş form (sıfırlamada da)
+  sortBy: [{ key: 'createdAt', order: 'desc' }], limit: 25,          // isteğe bağlı; debounceMs varsayılan 350
+  fetch: async (q) => {                                               // q = { filters, page, limit, sortBy }
+    const res = await restApi.post('XService/getX', { searchXForm: listPayload(q) })
+    if (isRequestError(res)) throw res                                // hata → error (satırlar korunur)
+    return res?.rows ? { items: res.rows, total: res.totalNumberOfRecords || 0 } : null   // null → satırlar korunur
+  },
+})
+```
+
+| Kural | Ayrıntı |
+|---|---|
+| Arama | `@update:search="search"` → 350 ms debounce, ilk sayfa; `@search-submit="submitSearch"` (Enter / temizle) hemen. Başka bir `load` bekleyen aramayı karşılar (çift istek yok) |
+| Bayat yanıt | istek sıra numarası: yalnız son isteğin yanıtı/hatası yazılır, `loading` son isteğe aittir; `cancel()` ve kapsam kapanışı (`onScopeDispose`) uçuştaki yanıtı yok sayar |
+| Çipler | `applied` = son SORGULANAN filtrelerin kopyası (panelde düzenlenen değer çip olmaz) |
+| Sayfa/sıralama | `setPage(n)` sayfayı korur; `setPageSize`, `setSort`, `resetFilters` ilk sayfaya döner (sıralama sıfırlamada korunur) |
+| Hata | `error` ham hata; ekran `problemFromError(error, 'XService/getX')` ile hata desenine çevirir (boş ≠ hata) |
+| Gövde | `listPayload(q)` = `{ pagination:{page,limit}, sort:{field,direction}, filter }` (Sipariş/İade, bayt-özdeş); farklı sözleşme ekranda kurulur (Destek: `{pagination, sortBy, searchTicketForm:{data,form}}`) |
+
+Kullananlar: Sipariş, İade, Destek listeleri. Sonraki dalga (F-CL3b): Müşteri (`useCustomerFilters`), Mesaj, Fatura, Yetki.
+**Testler:** `tests/use-list-query.test.ts` (debounce, bayat yanıt, sayfa/sıralama/sıfırlama, hata, gövde), `tests/order-rules.test.ts`
+(F-CL3c: `components/order/orderRules.ts` — kilit, toplu uygunluk/sayaç/hedef; tekil↔toplu fatura farkı bilinçli, ayrı adla).
