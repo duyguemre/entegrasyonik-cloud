@@ -287,7 +287,7 @@ const rowHandlers = {
   focusin: (n: CatNode) => (focusId.value = n.id),
   menu: (n: CatNode, a: RowMenuAction) => runAction(n, a),
   rename: (n: CatNode, title: string) => emit('rename', n, title),
-  'cancel-rename': () => cancelEdit(),
+  cancelRename: () => cancelEdit(),
   dragstart: (n: CatNode, e: DragEvent) => onDragStart(n, e),
   dragover: (n: CatNode, e: DragEvent) => onDragOver(n, e),
   drop: (n: CatNode, e: DragEvent) => onDrop(n, e),
