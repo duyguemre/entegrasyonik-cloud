@@ -1,0 +1,183 @@
+---
+/**
+ * EmailActions (S16) — e-posta adresi + "E-posta gönder" (`mailto:`) + "Adresi kopyala" (Clipboard API).
+ * Form YOK, backend YOK (ADR-0014 Karar 2). Kopyalama sonucu `aria-live="polite"` durum satırıyla duyurulur;
+ * betik: src/scripts/copy-email.ts (CSP uyumlu, harici modül). JS'siz hâlde kopyala düğmesi görünmez
+ * (`hidden` → betik kaldırır), mailto bağlantısı ve seçilebilir adres metni her zaman çalışır.
+ */
+import Icon from '../home/Icon.astro'
+import { mailtoHref } from '../../lib/contact'
+
+interface Props {
+  email: string
+  /** Sayfada benzersiz önek (adres metninin kimliği). */
+  id: string
+  subject?: string
+  tone?: 'light' | 'dark'
+  sendLabel?: string
+}
+
+const { email, id, subject, tone = 'light', sendLabel = 'E-posta gönder' } = Astro.props
+const addrId = `${id}-address`
+---
+
+<div class:list={['ea', `ea--${tone}`]} data-testid="email-actions">
+  <p class="ea__address">
+    <Icon name="mail" size="md" />
+    <a id={addrId} href={mailtoHref(email)} data-testid="contact-address-link">{email}</a>
+  </p>
+  <div class="ea__row">
+    <a class="ea__btn ea__btn--primary" href={mailtoHref(email, subject)} data-testid="contact-send">
+      <span>{sendLabel}</span>
+      <Icon name="arrow" size="sm" />
+    </a>
+    <button type="button" class="ea__btn ea__btn--ghost" data-copy={email} data-copy-target={`#${addrId}`} data-testid="contact-copy">
+      <span class="ea__icon ea__icon--idle"><Icon name="copy" size="sm" /></span>
+      <span class="ea__icon ea__icon--done"><Icon name="check" size="sm" /></span>
+      <span data-copy-label>Adresi kopyala</span>
+    </button>
+    <span class="ea__status" data-copy-status role="status" aria-live="polite" data-testid="contact-copy-status"></span>
+  </div>
+</div>
+
+<script>
+  import '../../scripts/copy-email'
+</script>
+
+<style>
+  .ea {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-4);
+    min-width: 0;
+  }
+  .ea__address {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    min-width: 0;
+    margin: 0;
+    font-size: var(--ek-font-size-xl);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: -0.01em;
+  }
+  .ea__address a {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    color: inherit;
+    text-decoration: none;
+    border-bottom: var(--site-border-width) solid transparent;
+    transition: border-color var(--ek-duration-fast) var(--ek-easing-standard);
+  }
+  .ea__address a:hover {
+    border-bottom-color: currentColor;
+  }
+  .ea--light .ea__address {
+    color: var(--site-text-heading);
+  }
+  .ea--light .ea__address :global(.icon) {
+    color: var(--site-accent);
+  }
+  .ea--dark .ea__address {
+    color: var(--site-text-on-dark-heading);
+  }
+  @media (min-width: 480px) {
+    .ea--dark .ea__address {
+      font-size: var(--ek-font-size-2xl);
+    }
+  }
+  .ea--dark .ea__address :global(.icon) {
+    color: var(--site-accent-on-dark);
+  }
+  .ea__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ek-space-2) var(--ek-space-3);
+  }
+  .ea__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ek-space-2);
+    min-height: var(--site-tap-target);
+    padding: 0 var(--ek-space-5);
+    border: var(--site-border-width) solid transparent;
+    border-radius: var(--ek-radius-lg);
+    font: inherit;
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+      background-color var(--ek-duration-fast) var(--ek-easing-standard),
+      border-color var(--ek-duration-fast) var(--ek-easing-standard),
+      color var(--ek-duration-fast) var(--ek-easing-standard);
+  }
+  .ea__btn:focus-visible {
+    outline: var(--site-focus-ring-width) solid var(--site-color-focus-ring);
+    outline-offset: var(--site-focus-ring-offset);
+  }
+  .ea--dark .ea__btn:focus-visible {
+    outline-color: var(--site-accent-on-dark);
+  }
+  .ea--light .ea__btn--primary {
+    background: var(--ek-color-primary);
+    color: var(--site-color-on-primary);
+  }
+  .ea--light .ea__btn--primary:hover {
+    background: var(--ek-color-primary-darken-1);
+  }
+  .ea--light .ea__btn--ghost {
+    border-color: var(--ek-color-border-strong);
+    background: var(--ek-color-surface);
+    color: var(--site-text-heading);
+  }
+  .ea--light .ea__btn--ghost:hover {
+    border-color: var(--site-accent);
+    color: var(--site-link-accent);
+  }
+  .ea--dark .ea__btn--primary {
+    background: var(--ek-color-surface);
+    color: var(--ek-color-primary);
+  }
+  .ea--dark .ea__btn--primary:hover {
+    background: color-mix(in srgb, var(--ek-color-surface) 88%, var(--ek-color-secondary));
+  }
+  .ea--dark .ea__btn--ghost {
+    border-color: var(--site-glass-border);
+    background: var(--site-glass-bg);
+    color: var(--site-text-on-dark-heading);
+  }
+  .ea--dark .ea__btn--ghost:hover {
+    border-color: color-mix(in srgb, var(--ek-color-secondary) 70%, transparent);
+  }
+  .ea__icon {
+    display: inline-flex;
+  }
+  .ea__icon--done,
+  .ea__btn[data-state='copied'] .ea__icon--idle {
+    display: none;
+  }
+  .ea__btn[data-state='copied'] .ea__icon--done {
+    display: inline-flex;
+  }
+  .ea--light .ea__btn[data-state='copied'] {
+    border-color: var(--ek-color-success);
+    color: var(--ek-color-success);
+  }
+  .ea--dark .ea__btn[data-state='copied'] {
+    border-color: var(--site-accent-on-dark);
+  }
+  .ea__status {
+    flex-basis: 100%;
+    min-height: 1lh;
+    font-size: var(--ek-font-size-sm);
+  }
+  .ea--light .ea__status {
+    color: var(--site-text-meta);
+  }
+  .ea--dark .ea__status {
+    color: var(--site-text-on-dark-body);
+  }
+</style>

@@ -8,7 +8,9 @@ import { buildSite } from '../scripts/lib/build.mjs'
 import { legalNav } from '../src/data/navigation'
 import { legalDocs, LEGAL_DRAFT_BANNER, LEGAL_REVIEWED } from '../src/data/legal'
 import { placeholders, placeholderKeys } from '../src/data/legal/placeholders'
-import { renderInline, usedPlaceholderKeys, internalLinks, collectTexts } from '../src/lib/legal-render'
+import { renderInline, usedPlaceholderKeys, pendingPlaceholderKeys, internalLinks, collectTexts } from '../src/lib/legal-render'
+import { placeholderValues } from '../src/data/legal/placeholders'
+import { company } from '../src/data/company'
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const repoRoot = path.resolve(siteRoot, '..')
@@ -46,6 +48,8 @@ const FORBIDDEN: Array<[string, RegExp]> = [
   ['veri konumu iddiası', /Türkiye['’]?de\s+(saklan|tutul|barın)/i],
   ['doğrulanmamış e-posta adresi', /@entegrasyonik\.com/i],
 ]
+/** S16: kullanıcının verdiği genel adres doğrulanmıştır; yasaklı-ifade taramasından önce yalnızca O adres çıkarılır. */
+const withoutVerified = (text: string) => text.split(company.email).join('')
 
 describe('kayıt ve gezinme tutarlılığı (derleme gerektirmez)', () => {
   it('8 yasal belge var; slug/başlık/sıra navigation.ts legalNav ile birebir', () => {
@@ -182,8 +186,19 @@ describe('satır içi işleyici (renderInline)', () => {
     expect(renderInline('<script>alert(1)</script>')).toBe('&lt;script&gt;alert(1)&lt;/script&gt;')
     expect(renderInline('**a**')).toBe('<strong>a</strong>')
     expect(renderInline('[K](/yasal/kunye)')).toBe('<a href="/yasal/kunye">K</a>')
-    expect(renderInline('{{ADRES}}')).toBe('<mark class="ph" data-ph="ADRES">{{ADRES}}</mark>')
-    expect(renderInline('{{ŞİRKET_UNVANI}}')).toContain('data-ph="ŞİRKET_UNVANI"')
+    expect(renderInline('{{KEP_ADRESİ}}')).toBe('<mark class="ph" data-ph="KEP_ADRESİ">{{KEP_ADRESİ}}</mark>')
+    expect(renderInline('{{KVKK_BAŞVURU_EPOSTA}}')).toContain('data-ph="KVKK_BAŞVURU_EPOSTA"')
+  })
+
+  it('S16: değeri verilen yer tutucu değerle (kaçırılmış) değiştirilir; yalnızca company.ts alanları çözülür', () => {
+    expect(placeholderValues.İLETİŞİM_EPOSTA).toBe('bilgi@entegrasyonik.com.tr')
+    expect(Object.keys(placeholderValues).every((k) => ['İLETİŞİM_EPOSTA', 'ADRES', 'ŞİRKET_UNVANI', 'MERSİS_NO'].includes(k))).toBe(true)
+    expect('ADRES' in placeholderValues).toBe(company.address.trim().length > 0)
+    expect('ŞİRKET_UNVANI' in placeholderValues).toBe(company.legalName.trim().length > 0)
+    expect('MERSİS_NO' in placeholderValues).toBe(company.mersisNo.trim().length > 0)
+    expect(renderInline('{{İLETİŞİM_EPOSTA}}')).toBe('<span class="ph-value" data-ph-value="İLETİŞİM_EPOSTA">bilgi@entegrasyonik.com.tr</span>')
+    expect(renderInline('{{KVKK_BAŞVURU_EPOSTA}}')).toContain('<mark class="ph" data-ph="KVKK_BAŞVURU_EPOSTA">')
+    expect(renderInline('{{ADRES}}', { ADRES: '<b>X</b>' })).toContain('&lt;b&gt;X&lt;/b&gt;')
   })
 
   it('dış bağlantı ve javascript: bağlantısı DÖNÜŞMEZ (düz metin kalır)', () => {
@@ -232,7 +247,8 @@ describe('derlenmiş çıktı (taslak build)', () => {
       const inList = new Set([...fields.matchAll(/data-ph="([^"]+)"/g)].map((m) => m[1]))
       expect(inBody.size, d.slug).toBeGreaterThanOrEqual(1)
       expect([...inBody].sort(), d.slug).toEqual([...inList].sort())
-      expect([...inList].sort(), d.slug).toEqual([...usedPlaceholderKeys(d)].sort())
+      // S16: değeri verilmiş (çözülmüş) anahtarlar listeden düşer
+      expect([...inList].sort(), d.slug).toEqual([...pendingPlaceholderKeys(d)].sort())
     }
   })
 
@@ -249,7 +265,7 @@ describe('derlenmiş çıktı (taslak build)', () => {
 
   it('yasaklı/doğrulanamayan ifadeler derlenmiş sayfalarda yok (notlar ve alan listesi dahil)', () => {
     for (const d of legalDocs) {
-      const text = textOf(pageHtml(DRAFT_DIR, d.slug))
+      const text = withoutVerified(textOf(pageHtml(DRAFT_DIR, d.slug)))
       for (const [label, re] of FORBIDDEN) expect(text, `${d.slug}: ${label}`).not.toMatch(re)
     }
   })
@@ -271,6 +287,7 @@ describe('derlenmiş çıktı (taslak build)', () => {
       for (const href of hrefs) {
         if (href.startsWith('https://app.example.test/')) continue // uygulamaya giriş/kayıt (başlık)
         if (href.startsWith('#')) continue // sayfa içi: önceki testte doğrulandı
+        if (href === `mailto:${company.email}`) continue // S16: altbilgideki doğrulanmış genel iletişim adresi
         expect(href.startsWith('/'), `${d.slug}: beklenmeyen dış bağlantı ${href}`).toBe(true)
         expect(resolves(href), `${d.slug}: kırık bağlantı ${href}`).toBe(true)
       }

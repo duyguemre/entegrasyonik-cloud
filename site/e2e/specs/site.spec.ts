@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { APP_URL, collectProblems, isDesktop, waitForFonts } from '../helpers'
+import { company } from '../../src/data/company'
 
 test.describe('Ana sayfa', () => {
   test('render, bant yok, noindex, uygulama bağlantıları', async ({ page }) => {
@@ -24,9 +25,11 @@ test.describe('Ana sayfa', () => {
     expect(problems).toEqual([])
   })
 
-  test('footer künye yer tutucuları görünür (doğrulanmamış unvan yazılmaz)', async ({ page }) => {
+  test('footer künye company.ts değerlerini gösterir (ham yer tutucu görünmez)', async ({ page }) => {
     await page.goto('/')
-    await expect(page.getByTestId('kunye-placeholder')).toContainText('{{ŞİRKET_UNVANI}}')
+    await expect(page.getByTestId('kunye-line')).toContainText(company.legalName)
+    await expect(page.getByTestId('footer-contact').getByRole('link', { name: 'bilgi@entegrasyonik.com.tr' })).toHaveAttribute('href', 'mailto:bilgi@entegrasyonik.com.tr')
+    await expect(page.getByTestId('footer-address')).toContainText(company.address)
   })
 
   test('Inter self-host yüklenir, yatay taşma yok', async ({ page }) => {

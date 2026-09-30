@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { APP_URL, collectProblems, isDesktop, waitForFonts } from '../helpers'
+import { company } from '../../src/data/company'
 
 // ADR-0014 S2b — iç sayfalar: smoke + etkileşim + axe (WCAG 2.1 AA) + 3 viewport ekran görüntüsü.
 const CODES = ['trendyol', 'hepsiburada', 'n11', 'pazarama', 'ideasoft', 'bizimhesap'] as const
@@ -78,6 +79,23 @@ test.describe('gezinme', () => {
     await expect(page.getByTestId('credential-types')).toBeVisible()
     await page.getByRole('navigation', { name: 'Sayfa yolu' }).getByRole('link', { name: 'Entegrasyonlar' }).click()
     await expect(page).toHaveURL(/\/entegrasyonlar\/?$/)
+  })
+
+  test('entegrasyonlar: kategori süzgeci (aria-pressed) kartları süzer, klavyeyle çalışır ve sonucu duyurur', async ({ page }) => {
+    await page.goto('/entegrasyonlar')
+    const filter = page.getByTestId('integration-filter')
+    const cards = page.getByTestId('integration-card')
+    await expect(filter.locator('[data-filter="all"]')).toHaveAttribute('aria-pressed', 'true')
+    await filter.locator('[data-filter="erp"]').click()
+    await expect(filter.locator('[data-filter="erp"]')).toHaveAttribute('aria-pressed', 'true')
+    await expect(page.locator('#int-grid > li:not([hidden])')).toHaveCount(1)
+    await expect(cards.filter({ visible: true })).toHaveCount(1)
+    await expect(page.locator('[data-int-filter-status]')).toContainText('entegrasyon gösteriliyor')
+    const all = filter.locator('[data-filter="all"]')
+    await all.focus()
+    await page.keyboard.press('Enter')
+    await expect(page.locator('#int-grid > li:not([hidden])')).toHaveCount(6)
+    for (const s of await page.getByTestId('integration-status').all()) await expect(s).toHaveText('Kullanılabilir')
   })
 
   test('yol haritası öğesi için detay sayfası yok (404)', async ({ page }) => {
@@ -180,25 +198,70 @@ test.describe('S14 — destek merkezi ve bağlantı rehberi', () => {
 })
 
 test.describe('iletisim', () => {
-  test('form yok; adres yer tutucusu (mailto yalnızca adres verilince) ve künye yer tutucuları', async ({ page }) => {
+  const EMAIL = 'bilgi@entegrasyonik.com.tr'
+
+  test('form yok; "Bize yazın" konu düğmeleri görünür ve doğru mailto; künye yer tutucuları (adres gizli)', async ({ page }) => {
     await page.goto('/iletisim')
     await expect(page.locator('form')).toHaveCount(0)
-    await expect(page.getByTestId('contact-placeholder')).toContainText('{{İLETİŞİM_E_POSTA}}')
-    await expect(page.locator('a[href^="mailto:"]')).toHaveCount(0)
-    await expect(page.getByTestId('kunye-details')).toContainText('{{ŞİRKET_UNVANI}}')
+    await expect(page.getByTestId('contact-placeholder')).toHaveCount(0)
+    const topics = page.getByTestId('contact-mailto')
+    await expect(topics).toHaveCount(4)
+    for (const t of await topics.all()) {
+      await expect(t).toBeVisible()
+      await expect(t).toHaveAttribute('href', new RegExp(`^mailto:${EMAIL.replace(/\./g, '\\.')}\\?subject=.+`))
+    }
+    await expect(topics.first()).toHaveAttribute('href', `mailto:${EMAIL}?subject=Kurumsal%20teklif%20talebi`)
+    await expect(page.getByTestId('contact-send').first()).toBeVisible()
+    await expect(page.getByTestId('contact-send').first()).toHaveAttribute('href', /^mailto:bilgi@entegrasyonik\.com\.tr/)
+    await expect(page.getByTestId('kunye-details')).toContainText(company.legalName)
+    await expect(page.getByTestId('kunye-details')).not.toContainText('{{ŞİRKET_UNVANI}}')
+    await expect(page.getByTestId('kunye-details')).toContainText(EMAIL)
+    await expect(page.getByTestId('kunye-details')).not.toContainText('{{ADRES}}')
     await expect(page.getByRole('link', { name: 'Giriş yap' }).last()).toHaveAttribute('href', `${APP_URL}/login`)
+  })
+
+  test('"Adresi kopyala": panoya yazar ve aria-live ile duyurur', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+    await page.goto('/iletisim')
+    const copy = page.getByTestId('contact-copy').first()
+    await expect(copy).toBeVisible()
+    await copy.click()
+    await expect(copy).toHaveAttribute('data-state', 'copied')
+    await expect(copy).toContainText('Kopyalandı')
+    const status = page.getByTestId('contact-copy-status').first()
+    await expect(status).toHaveAttribute('aria-live', 'polite')
+    await expect(status).toContainText('panoya kopyalandı')
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(EMAIL)
+  })
+
+  test('"Adresi kopyala" klavyeyle de çalışır (odak halkası + Enter)', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+    await page.goto('/iletisim')
+    const copy = page.getByTestId('contact-copy').first()
+    await copy.focus()
+    await expect(copy).toBeFocused()
+    const outline = await copy.evaluate((el) => getComputedStyle(el).outlineStyle)
+    expect(outline).not.toBe('none')
+    await page.keyboard.press('Enter')
+    await expect(copy).toHaveAttribute('data-state', 'copied')
   })
 })
 
 test.describe('guvenlik', () => {
   test('güvenlik iddiaları ve kapsam sınırı görünür; sertifika iddiası yok', async ({ page }) => {
     await page.goto('/guvenlik')
+    // S16: ilkeler yönetici düzeyinde; teknik kayıtlar JS'siz <details> "Ayrıntı" içinde (klavyeyle açılır)
+    await expect(page.locator('[data-principle]')).toHaveCount(6)
+    await expect(page.getByTestId('security-claim').first()).toBeHidden()
+    const summary = page.locator('[data-principle="izolasyon"] summary')
+    await summary.focus()
+    await page.keyboard.press('Enter')
     await expect(page.getByTestId('security-claim').first()).toBeVisible()
     await expect(page.getByText('AES-256-GCM').first()).toBeVisible()
     await expect(page.getByText('sertifikasyon veya bağımsız denetim belgesi değildir')).toBeVisible()
     // S5 yasal sayfaları yayımlandı (legalNav published): bekleyen-not yerine gerçek bağlantı.
     await expect(page.getByTestId('kvkk-pending')).toHaveCount(0)
-    await expect(page.locator('main a[href="/yasal/kvkk-aydinlatma"]')).toBeVisible()
+    await expect(page.locator('main a[href="/yasal/kvkk-aydinlatma"]').first()).toBeVisible()
   })
 })
 

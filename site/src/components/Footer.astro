@@ -5,12 +5,15 @@
  * doğrulanmamış unvan asla yazılmaz.
  * S7: gradient üst çizgi, koyu zemin, dört sütun (marka + Ürün + Entegrasyonlar + Yasal) ve hesap bağlantıları.
  * Entegrasyon sütunu yalnızca `getPublicIntegrations()` (mevcut entegrasyonlar).
+ * S16: iletişim e-postası + (girildiyse) adres/telefon `src/data/company.ts`'ten; boş alan satırı gizlenir.
  */
 import Container from './Container.astro'
 import Logo from './Logo.astro'
 import { primaryNav, featureNav, legalNav, published } from '../data/navigation'
 import { getPublicIntegrations } from '../data/integrations'
 import { appUrls } from '../lib/site-config'
+import { contactEmail, mailtoHref } from '../lib/contact'
+import { company, hasValue } from '../data/company'
 
 const productLinks = [...published(primaryNav), ...published(featureNav)]
 const legalLinks = published(legalNav)
@@ -28,10 +31,23 @@ const year = new Date().getFullYear()
           <a class="footer-btn footer-btn--primary" href={appUrls.register()} data-testid="footer-register">Ücretsiz dene</a>
           <a class="footer-btn" href={appUrls.login()} data-testid="footer-login">Giriş yap</a>
         </div>
-        <p class="footer-kunye" data-testid="kunye-placeholder">
-          Şirket bilgileri yayın öncesinde eklenecektir.
-          <span class="sr-only">{'{{ŞİRKET_UNVANI}}'} · {'{{MERSİS_NO}}'} · {'{{ADRES}}'}</span>
-        </p>
+        <ul class="footer-contact" role="list" data-testid="footer-contact">
+          <li><a href={mailtoHref(contactEmail)}>{contactEmail}</a></li>
+          {hasValue(company.address) && <li data-testid="footer-address">{company.address}</li>}
+          {hasValue(company.phone) && <li>{company.phone}</li>}
+        </ul>
+        {
+          hasValue(company.legalName) ? (
+            <p class="footer-kunye" data-testid="kunye-line">
+              {company.legalName}{hasValue(company.mersisNo) && <> · MERSİS {company.mersisNo}</>}
+            </p>
+          ) : (
+            <p class="footer-kunye" data-testid="kunye-placeholder">
+              Şirket bilgileri yayın öncesinde eklenecektir.
+              <span class="sr-only">{'{{ŞİRKET_UNVANI}}'} · {'{{MERSİS_NO}}'} · {'{{ADRES}}'}</span>
+            </p>
+          )
+        }
       </div>
 
       {
@@ -174,6 +190,24 @@ const year = new Date().getFullYear()
   }
   .footer-btn:focus-visible {
     outline-color: var(--site-color-on-primary);
+  }
+  .footer-contact {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--site-color-on-primary-muted);
+    font-size: var(--ek-font-size-md);
+    overflow-wrap: anywhere;
+  }
+  .footer-contact a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--site-tap-target);
+    color: var(--site-color-on-primary);
+    font-weight: var(--ek-font-weight-semibold);
   }
   .footer-kunye {
     max-width: 22rem;

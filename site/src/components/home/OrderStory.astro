@@ -19,6 +19,12 @@
  * S15-B (renk uyumu): üç cam katman TEK renk ailesindedir (koyu lacivert + marka ikincil/teal), nötr gri/beyaz pus yok:
  *   kart (`--story-card-*`: teal'e çalan yarı saydam yüzey, teal kenar ışığı) > sahne (`--story-scene-*`: aynı ailenin
  *   bir ton daha derini) > öğeler (`--story-item-*`: bir ton açık teal cam, ince teal kenar, üst kenarda ince ışık).
+ *
+ * S16 (kullanıcı geri bildirimi: "kutular çok koyu, ağır duruyor"): koyu tek sahne kurgusu bırakıldı. Bölüm açık
+ * (`tone="muted"`) zemindedir; kartlar beyaz yüzey + ince kenarlık + yumuşak gölge (`--site-shadow-card`), adım
+ * numarası (01–05) + ikonlu düğüm net hiyerarşi kurar. Sahne paneli kartın içinde çok hafif teal tonlu bir yüzey,
+ * öğeler beyaz; tüm iç metinler açık zemin metin tonlarını (`--site-text-*`) kullanır (AA). Katman token adları ve
+ * tek renk ailesi (teal) korunur; hareket/döngü/reduced-motion davranışı değişmedi (scenes*.css).
  */
 import Section from '../Section.astro'
 import SectionHeading from './SectionHeading.astro'
@@ -78,10 +84,9 @@ const steps = [
 ]
 ---
 
-<Section tone="stage" id="senaryo" labelledby="senaryo-baslik" class="story-section">
+<Section tone="muted" id="senaryo" labelledby="senaryo-baslik" class="story-section">
   <SectionHeading
     id="senaryo-baslik"
-    tone="dark"
     eyebrow="Senaryo"
     title="Bir sipariş geldiğinde ne olur?"
     lead="Siparişin düştüğü andan iadeye kadar her adım tek merkezde ilerler. Aşağıdaki sahneler örnek görünümdür."
@@ -101,12 +106,15 @@ const steps = [
           </div>
           <div class="story__card" data-part="story-card" data-tilt>
             <div class="story__copy">
-              <p class="story__index">Adım {i + 1}</p>
+              <p class="story__index">
+                <span class="story__num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+                <span class="sr-only">Adım {i + 1}</span>
+              </p>
               <h3 class="story__title">{s.title}</h3>
               <p class="story__text">{s.text}</p>
             </div>
 
-            <div class="viz" data-surface="dark" data-viz={s.key} aria-hidden="true">
+            <div class="viz" data-viz={s.key} aria-hidden="true">
               {s.key === 'incoming' && (
                 <div class="vin">
                   <ul class="vin__sources">
@@ -248,16 +256,19 @@ const steps = [
 
 <style>
   .story {
-    /* S15-B cam katman hiyerarşisi — kart > sahne > öğeler, tek renk ailesi (lacivert + teal). */
-    --story-card-tint: color-mix(in srgb, var(--ek-color-secondary) 7%, transparent);
-    --story-card-base: color-mix(in srgb, var(--site-stage-deep) 32%, transparent);
-    --story-card-edge: color-mix(in srgb, var(--ek-color-secondary) 34%, transparent);
-    --story-scene-bg: color-mix(in srgb, var(--site-stage-deep) 58%, transparent);
-    --story-scene-edge: color-mix(in srgb, var(--ek-color-secondary) 16%, transparent);
-    --story-item-bg: color-mix(in srgb, var(--ek-color-secondary) 10%, transparent);
-    --story-item-edge: color-mix(in srgb, var(--ek-color-secondary) 28%, transparent);
-    --story-item-light: color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
-    --story-item-skel: color-mix(in srgb, var(--ek-color-secondary) 24%, transparent);
+    /*
+     * Katman hiyerarşisi — kart > sahne > öğeler, tek renk ailesi (teal). S16: açık zemin; kart beyaz, sahne çok
+     * hafif teal tonlu, öğeler beyaz + ince teal kenar. Token adları S15-B'den korunur (tests/home-demos.test.ts).
+     */
+    --story-card-tint: color-mix(in srgb, var(--ek-color-secondary) 3%, var(--ek-color-surface));
+    --story-card-base: var(--ek-color-surface);
+    --story-card-edge: var(--ek-color-border-default);
+    --story-scene-bg: color-mix(in srgb, var(--ek-color-secondary) 6%, var(--ek-color-surface-muted));
+    --story-scene-edge: color-mix(in srgb, var(--ek-color-secondary) 14%, var(--ek-color-border-default));
+    --story-item-bg: color-mix(in srgb, var(--ek-color-secondary) 2%, var(--ek-color-surface));
+    --story-item-edge: color-mix(in srgb, var(--ek-color-secondary) 24%, var(--ek-color-border-default));
+    --story-item-light: color-mix(in srgb, var(--ek-color-content-strong) 6%, transparent);
+    --story-item-skel: color-mix(in srgb, var(--ek-color-secondary) 16%, var(--ek-color-surface-sunken));
     display: flex;
     flex-direction: column;
     margin: var(--ek-space-12) 0 0;
@@ -275,7 +286,9 @@ const steps = [
     display: flex;
     flex-direction: column;
     align-items: center;
+    padding-block-start: var(--ek-space-5);
   }
+  /* Düğüm: beyaz disk + ince teal halka + teal ikon (açık zeminde net, ağır değil). */
   .story__node {
     position: relative;
     z-index: 1;
@@ -286,23 +299,20 @@ const steps = [
     width: var(--ek-space-10);
     height: var(--ek-space-10);
     border-radius: var(--ek-radius-full);
-    background:
-      radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--ek-color-secondary) 34%, transparent), transparent 70%),
-      color-mix(in srgb, var(--site-stage-deep) 82%, var(--ek-color-secondary));
+    background: var(--ek-color-surface);
     box-shadow:
-      inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 22%, transparent),
-      0 0 0 var(--site-border-width) color-mix(in srgb, var(--site-accent) 55%, transparent),
-      0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-secondary) 12%, transparent),
-      0 0 var(--ek-space-6) color-mix(in srgb, var(--ek-color-secondary) 30%, transparent);
+      0 0 0 var(--site-border-width) var(--story-item-edge),
+      0 0 0 var(--ek-space-1) var(--site-accent-soft),
+      var(--site-shadow-card);
     color: var(--site-accent);
   }
   .story__line {
     position: relative;
     flex: 1;
     width: calc(var(--site-border-width) * 2);
-    margin-block: var(--ek-space-1);
+    margin-block: var(--ek-space-2);
     border-radius: var(--ek-radius-full);
-    background: linear-gradient(180deg, var(--site-accent-line), var(--site-glass-border));
+    background: linear-gradient(180deg, var(--site-accent-line), var(--ek-color-border-default));
     transform-origin: 50% 0;
   }
   .story__step:last-child .story__line {
@@ -318,44 +328,48 @@ const steps = [
     height: var(--ek-space-2);
     border-radius: var(--ek-radius-full);
     background: var(--site-accent);
-    box-shadow: var(--site-glow-ring), 0 0 var(--ek-space-3) var(--site-accent);
+    box-shadow: var(--site-glow-ring);
     opacity: 0;
     pointer-events: none;
   }
   /*
-   * Koyu cam kart: yarı saydam, üstten hafif aydınlanan yüzey + ince degrade kenar ışığı (padding-box/border-box)
-   * + üst iç kenarda tek piksellik ışık + derin, yumuşak gölge. Sahnenin mesh zemini kartın içinden sezilir.
+   * Açık kart: beyaz yüzey (üst sol köşede çok hafif teal ışıma) + ince kenarlık + yumuşak iki katmanlı gölge.
+   * Üst kenarda ince vurgu çizgisi yalnızca hover/odakta belirir (sakin hiyerarşi).
    */
   .story__card {
+    position: relative;
     display: grid;
     gap: var(--ek-space-5);
     margin-bottom: var(--ek-space-6);
     padding: var(--ek-space-5);
-    border: var(--site-border-width) solid transparent;
+    border: var(--site-border-width) solid var(--story-card-edge);
     border-radius: var(--site-radius-panel);
     background:
-      radial-gradient(90% 120% at 0% 0%, color-mix(in srgb, var(--ek-color-secondary) 9%, transparent), transparent 60%) padding-box,
-      linear-gradient(180deg, var(--story-card-tint), var(--story-card-base)) padding-box,
-      linear-gradient(
-          160deg,
-          var(--story-card-edge),
-          color-mix(in srgb, var(--ek-color-secondary) 8%, transparent) 42%,
-          color-mix(in srgb, var(--ek-color-secondary) 26%, transparent)
-        )
-        border-box;
-    backdrop-filter: blur(var(--site-glass-blur));
-    box-shadow:
-      inset 0 var(--site-border-width) 0 var(--story-item-light),
-      0 var(--ek-space-6) var(--ek-space-12) calc(var(--ek-space-6) * -1) color-mix(in srgb, var(--site-stage-deep) 80%, transparent);
+      radial-gradient(70% 90% at 0% 0%, var(--story-card-tint), transparent 70%),
+      var(--story-card-base);
+    box-shadow: var(--site-shadow-card);
     transition:
       box-shadow var(--ek-duration-base) var(--ek-easing-standard),
+      border-color var(--ek-duration-base) var(--ek-easing-standard),
       transform var(--tilt-transition-duration, var(--ek-duration-fast)) var(--ek-easing-standard);
   }
+  .story__card::before {
+    content: '';
+    position: absolute;
+    inset-block-start: calc(var(--site-border-width) * -1);
+    inset-inline: var(--ek-space-6);
+    height: calc(var(--site-border-width) * 2);
+    border-radius: var(--ek-radius-full);
+    background: var(--site-gradient-hairline);
+    opacity: 0;
+    transition: opacity var(--ek-duration-base) var(--ek-easing-standard);
+  }
   .story__card:hover {
-    box-shadow:
-      inset 0 var(--site-border-width) 0 var(--story-item-light),
-      0 0 0 var(--site-border-width) color-mix(in srgb, var(--ek-color-secondary) 28%, transparent),
-      0 var(--ek-space-8) var(--ek-space-16) calc(var(--ek-space-8) * -1) color-mix(in srgb, var(--ek-color-secondary) 26%, transparent);
+    border-color: var(--story-item-edge);
+    box-shadow: var(--site-shadow-card-hover);
+  }
+  .story__card:hover::before {
+    opacity: 1;
   }
   .story__step:last-child .story__card {
     margin-bottom: 0;
@@ -366,13 +380,28 @@ const steps = [
     gap: var(--ek-space-2);
     min-width: 0;
   }
-  /* Kart hiyerarşisi: site-tokens.css `--site-card-*` (eyebrow -> başlık -> gövde). */
+  /* Kart hiyerarşisi: adım numarası (büyük, vurgu) -> eyebrow -> başlık -> gövde (site-tokens.css `--site-card-*`). */
   .story .story__index {
-    color: var(--site-accent);
-    font-size: var(--site-card-eyebrow-size);
-    font-weight: var(--site-card-eyebrow-weight);
-    letter-spacing: var(--site-card-eyebrow-tracking);
-    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-3);
+    margin-bottom: var(--ek-space-1);
+  }
+  .story__num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--ek-space-10);
+    height: var(--ek-space-8);
+    padding-inline: var(--ek-space-2);
+    border-radius: var(--ek-radius-md);
+    background: var(--site-accent-soft);
+    box-shadow: inset 0 0 0 var(--site-border-width) color-mix(in srgb, var(--ek-color-secondary) 30%, transparent);
+    color: var(--site-link-accent);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-bold);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
   }
   .story__title {
     color: var(--site-card-title-color);
@@ -387,7 +416,7 @@ const steps = [
     line-height: var(--site-font-body-line-height);
   }
 
-  /* ------------------------------------------------------------ Canlı sahne yüzeyi (koyu marka) */
+  /* ------------------------------------------------------------ Canlı sahne yüzeyi (açık, hafif teal tonlu) */
   .viz {
     container-type: inline-size;
     position: relative;
@@ -400,14 +429,12 @@ const steps = [
     padding: var(--ek-space-6) var(--ek-space-5);
     border: var(--site-border-width) solid var(--story-scene-edge);
     border-radius: var(--ek-radius-xl);
-    /* Kartın içine gömülü, bir ton daha derin yüzey (ayrı bir "pencere" değil): kenarda sert geçiş yok. */
+    /* Kartın içine gömülü, bir ton tonlu yüzey: üst sağda çok hafif teal ışıma, altta düz. */
     background:
-      radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--ek-color-secondary) 12%, transparent), transparent 60%),
-      linear-gradient(180deg, var(--story-scene-bg), color-mix(in srgb, var(--site-stage-deep) 40%, transparent));
-    box-shadow:
-      inset 0 var(--site-border-width) var(--ek-space-3) color-mix(in srgb, var(--site-stage-deep) 60%, transparent),
-      inset 0 calc(var(--site-border-width) * -1) 0 var(--story-scene-edge);
-    color: var(--site-text-on-dark-body);
+      radial-gradient(90% 80% at 100% 0%, color-mix(in srgb, var(--ek-color-secondary) 10%, transparent), transparent 65%),
+      var(--story-scene-bg);
+    box-shadow: inset 0 var(--site-border-width) var(--ek-space-1) var(--story-item-light);
+    color: var(--site-text-body);
     font-size: var(--ek-font-size-sm);
   }
   .viz::before {
@@ -415,22 +442,11 @@ const steps = [
     position: absolute;
     inset: 0;
     z-index: -1;
-    background-image: var(--site-texture-grid);
-    background-size: var(--site-texture-grid-size);
+    background-image: var(--site-texture-dots);
+    background-size: var(--site-texture-dots-size);
     -webkit-mask-image: var(--site-texture-fade);
     mask-image: var(--site-texture-fade);
-    opacity: 0.7;
-  }
-  .viz::after {
-    content: '';
-    position: absolute;
-    z-index: -1;
-    inset-block-start: -50%;
-    inset-inline-end: -30%;
-    width: 80%;
-    aspect-ratio: 1;
-    border-radius: var(--ek-radius-full);
-    background: radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-secondary) 18%, transparent), transparent);
+    opacity: 0.55;
   }
   .vdot {
     flex: none;
@@ -438,14 +454,14 @@ const steps = [
     height: var(--ek-space-2);
     border-radius: var(--ek-radius-full);
     background: var(--chan, var(--site-accent));
-    box-shadow: 0 0 var(--ek-space-2) color-mix(in srgb, var(--chan, var(--site-accent)) 70%, transparent);
+    box-shadow: 0 0 0 calc(var(--site-border-width) * 3) color-mix(in srgb, var(--chan, var(--site-accent)) 18%, transparent);
   }
   /* Öğe camı: sahneden bir ton açık, aynı teal ailesi; üst kenarda ince ışık. */
   .viz :is(.vin__src, .vin__inbox, .vres__counter, .vres__chip, .vship__checks li, .vret__card, .vret__steps) {
     border: var(--site-border-width) solid var(--story-item-edge);
     border-radius: var(--ek-radius-lg);
     background: var(--story-item-bg);
-    box-shadow: inset 0 var(--site-border-width) 0 var(--story-item-light);
+    box-shadow: 0 var(--site-border-width) calc(var(--site-border-width) * 2) var(--story-item-light);
   }
 
   /* 1) Sipariş gelir: kaynaklar -> akış -> sipariş merkezi */
@@ -480,7 +496,7 @@ const steps = [
     align-items: center;
     gap: var(--ek-space-2);
     padding: var(--ek-space-1) var(--ek-space-3) var(--ek-space-1) var(--ek-space-2);
-    color: var(--site-text-on-dark-heading);
+    color: var(--site-text-heading);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
     white-space: nowrap;
@@ -506,8 +522,8 @@ const steps = [
     height: var(--ek-space-2);
     translate: -50% -50%;
     border-radius: var(--ek-radius-full);
-    background: var(--ek-color-background);
-    box-shadow: 0 0 var(--ek-space-3) var(--site-accent);
+    background: var(--site-accent);
+    box-shadow: var(--site-glow-ring);
   }
   .vin__inbox {
     display: flex;
@@ -520,7 +536,7 @@ const steps = [
     display: inline-flex;
     align-items: center;
     gap: var(--ek-space-2);
-    color: var(--site-text-on-dark-heading);
+    color: var(--site-text-heading);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
   }
@@ -538,11 +554,11 @@ const steps = [
     gap: var(--ek-space-2);
     padding: var(--ek-space-1) var(--ek-space-2);
     border-radius: var(--ek-radius-md);
-    background: color-mix(in srgb, var(--ek-color-secondary) 6%, transparent);
+    background: var(--ek-color-surface-muted);
   }
   .vin__order:first-child {
-    background: color-mix(in srgb, var(--ek-color-secondary) 18%, transparent);
-    box-shadow: inset 0 0 0 var(--site-border-width) color-mix(in srgb, var(--ek-color-secondary) 45%, transparent);
+    background: var(--site-accent-soft);
+    box-shadow: inset 0 0 0 var(--site-border-width) color-mix(in srgb, var(--ek-color-secondary) 40%, transparent);
   }
   .vin__bar {
     flex: 1;
@@ -551,12 +567,12 @@ const steps = [
     background: var(--story-item-skel);
   }
   .vin__pill {
-    color: var(--site-text-on-dark-meta);
+    color: var(--site-text-meta);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
   }
   .vin__order:first-child .vin__pill {
-    color: var(--site-accent);
+    color: var(--site-link-accent);
   }
 
   /* 2) Stok rezerve edilir: akan sayaç + ölçer + rezerve çipi */
@@ -578,7 +594,7 @@ const steps = [
     padding: var(--ek-space-4);
   }
   .vres__label {
-    color: var(--site-text-on-dark-meta);
+    color: var(--site-text-meta);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
     letter-spacing: 0.06em;
@@ -587,7 +603,7 @@ const steps = [
   .vres__num {
     display: grid;
     overflow: hidden;
-    color: var(--site-text-on-dark-heading);
+    color: var(--site-text-heading);
     font-size: var(--site-font-display-md);
     font-weight: var(--site-font-display-weight);
     letter-spacing: var(--site-font-display-tracking);
@@ -618,19 +634,19 @@ const steps = [
     align-items: center;
     gap: var(--ek-space-3);
     padding: var(--ek-space-3) var(--ek-space-4) var(--ek-space-3) var(--ek-space-3);
-    background: color-mix(in srgb, var(--ek-color-secondary) 16%, transparent);
-    border-color: color-mix(in srgb, var(--ek-color-secondary) 45%, transparent);
+    background: color-mix(in srgb, var(--ek-color-secondary) 8%, var(--ek-color-surface));
+    border-color: color-mix(in srgb, var(--ek-color-secondary) 40%, transparent);
   }
   .vres__chip b,
   .vres__chip small {
     display: block;
   }
   .vres__chip b {
-    color: var(--site-text-on-dark-heading);
+    color: var(--site-text-heading);
     font-size: var(--ek-font-size-md);
   }
   .vres__chip small {
-    color: var(--site-text-on-dark-meta);
+    color: var(--site-text-meta);
     font-size: var(--ek-font-size-xs);
   }
   .vres__lock {
@@ -641,7 +657,7 @@ const steps = [
     height: var(--ek-space-8);
     border-radius: var(--ek-radius-full);
     background: var(--site-accent);
-    color: var(--ek-color-primary);
+    color: var(--site-color-on-primary);
   }
 
   /* 3) Kanallar güncellenir: merkez + yayılan dalga + çevredeki kanal noktaları */
@@ -663,7 +679,9 @@ const steps = [
     translate: -50% -50%;
     border-radius: var(--ek-radius-full);
     background: linear-gradient(140deg, var(--ek-color-secondary), var(--ek-color-secondary-darken-1));
-    box-shadow: 0 0 var(--ek-space-8) color-mix(in srgb, var(--ek-color-secondary) 60%, transparent);
+    box-shadow:
+      0 0 0 var(--ek-space-2) color-mix(in srgb, var(--ek-color-secondary) 14%, transparent),
+      0 var(--ek-space-2) var(--ek-space-5) calc(var(--ek-space-1) * -1) color-mix(in srgb, var(--ek-color-secondary-darken-1) 45%, transparent);
     color: var(--site-color-on-primary);
   }
   .vsync__wave {
@@ -694,8 +712,10 @@ const steps = [
     height: var(--ek-space-6);
     translate: -50% -50%;
     border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--chan, var(--site-accent)) 22%, transparent);
-    box-shadow: inset 0 0 0 var(--site-border-width) color-mix(in srgb, var(--chan, var(--site-accent)) 60%, transparent);
+    background: var(--ek-color-surface);
+    box-shadow:
+      inset 0 0 0 var(--site-border-width) color-mix(in srgb, var(--chan, var(--site-accent)) 45%, transparent),
+      0 var(--site-border-width) calc(var(--site-border-width) * 3) var(--story-item-light);
   }
   .vsync__chan .vdot {
     width: var(--ek-space-3);
@@ -747,7 +767,7 @@ const steps = [
     border-radius: var(--ek-radius-full);
     border: var(--site-border-width) solid var(--story-item-edge);
     background: var(--story-item-bg);
-    box-shadow: inset 0 var(--site-border-width) 0 var(--story-item-light);
+    box-shadow: 0 var(--site-border-width) calc(var(--site-border-width) * 2) var(--story-item-light);
     color: var(--site-accent);
   }
   .vship__end--to .vdot {
@@ -782,8 +802,8 @@ const steps = [
     translate: -100% -50%;
     border-radius: var(--ek-radius-md);
     background: var(--site-accent);
-    box-shadow: 0 0 var(--ek-space-4) color-mix(in srgb, var(--ek-color-secondary) 60%, transparent);
-    color: var(--ek-color-primary);
+    box-shadow: 0 var(--ek-space-1) var(--ek-space-3) calc(var(--ek-space-1) * -1) color-mix(in srgb, var(--ek-color-secondary-darken-1) 60%, transparent);
+    color: var(--site-color-on-primary);
   }
   .vship__checks {
     display: flex;
@@ -795,7 +815,7 @@ const steps = [
     align-items: center;
     gap: var(--ek-space-2);
     padding: var(--ek-space-1) var(--ek-space-3);
-    color: var(--site-text-on-dark-heading);
+    color: var(--site-text-heading);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
   }
@@ -816,7 +836,7 @@ const steps = [
     padding: var(--ek-space-2) var(--ek-space-3);
   }
   .vret__title {
-    color: var(--site-text-on-dark-heading);
+    color: var(--site-text-heading);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
   }
@@ -843,7 +863,6 @@ const steps = [
     height: 100%;
     border-radius: inherit;
     background: var(--site-accent);
-    box-shadow: 0 0 var(--ek-space-2) var(--site-accent);
     transform-origin: 0 50%;
   }
   .vret__labels {
@@ -859,7 +878,7 @@ const steps = [
     flex-direction: column;
     align-items: center;
     gap: var(--ek-space-2);
-    color: var(--site-text-on-dark-body);
+    color: var(--site-text-body);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
     text-align: center;
@@ -869,7 +888,7 @@ const steps = [
     height: var(--ek-space-3);
     border-radius: var(--ek-radius-full);
     background: var(--site-accent);
-    box-shadow: 0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
+    box-shadow: 0 0 0 var(--ek-space-1) var(--site-accent-soft), 0 0 0 calc(var(--ek-space-1) + var(--site-border-width)) var(--ek-color-surface);
   }
 
   @media (min-width: 768px) {

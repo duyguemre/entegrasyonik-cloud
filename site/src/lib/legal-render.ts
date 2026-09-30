@@ -4,6 +4,7 @@
  * üç işaretleme dönüştürülür: **kalın**, [etiket](iç-yol), {{YER_TUTUCU}}.
  */
 import type { LegalDoc } from '../data/legal/types'
+import { placeholderValues } from '../data/legal/placeholders'
 
 const ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }
 
@@ -16,11 +17,18 @@ export const PLACEHOLDER_PATTERN = /\{\{([A-ZÇĞİÖŞÜ0-9_]+)\}\}/g
 /** Yalnızca site içi mutlak yol veya sayfa içi bağlantı — dış bağlantı yasal metinde yok. */
 const LINK_PATTERN = /\[([^\]]+)\]\((\/[a-z0-9\-/]*(?:#[a-z0-9-]+)?)\)/g
 
-export function renderInline(text: string): string {
+/**
+ * S16: değeri verilmiş yer tutucular (`placeholderValues`) değerle değiştirilir (`data-ph-value`, HTML'e kaçırılmış);
+ * diğerleri vurgulu `<mark>` olarak kalır.
+ */
+export function renderInline(text: string, values: Partial<Record<string, string>> = placeholderValues): string {
   return escapeHtml(text)
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(LINK_PATTERN, '<a href="$2">$1</a>')
-    .replace(PLACEHOLDER_PATTERN, '<mark class="ph" data-ph="$1">{{$1}}</mark>')
+    .replace(PLACEHOLDER_PATTERN, (_m, key: string) => {
+      const value = values[key]
+      return value ? `<span class="ph-value" data-ph-value="${key}">${escapeHtml(value)}</span>` : `<mark class="ph" data-ph="${key}">{{${key}}}</mark>`
+    })
 }
 
 /** Belgenin tüm metin alanları (notlar dahil) — yer tutucu/bağlantı taraması için. */
@@ -55,6 +63,11 @@ export function usedPlaceholderKeys(doc: LegalDoc): string[] {
     for (const m of text.matchAll(PLACEHOLDER_PATTERN)) keys.add(m[1])
   }
   return [...keys]
+}
+
+/** Hâlâ değer bekleyen yer tutucular (çözülmüşler hariç) — sayfa sonundaki alan listesi bunları gösterir. */
+export function pendingPlaceholderKeys(doc: LegalDoc, values: Partial<Record<string, string>> = placeholderValues): string[] {
+  return usedPlaceholderKeys(doc).filter((k) => !values[k])
 }
 
 /** Belgedeki iç bağlantı hedefleri (`/yasal/...`) — bağlantı bütünlüğü testi için. */

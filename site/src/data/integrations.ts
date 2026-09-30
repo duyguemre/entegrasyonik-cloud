@@ -66,6 +66,15 @@ export const KIND_LABELS: Record<IntegrationKind, string> = {
   einvoice: 'Fatura',
 }
 
+/**
+ * Durum rozeti (S16). YALNIZCA kayıttaki `status` alanından türetilir: `available` = IntegrationFactory'de gerçekten
+ * uygulanmış kod. "Canlı" yerine "Kullanılabilir" denir — hiçbir entegrasyon canlı pazaryeri API'siyle doğrulanmış
+ * sayılmaz (`verification.liveApi=false`). Yol haritası öğeleri gizli olduğu için onlara rozet metni tanımlanmaz.
+ */
+export const STATUS_LABELS: Record<Extract<IntegrationStatus, 'available'>, string> = {
+  available: 'Kullanılabilir',
+}
+
 export const COVERAGE_LABELS: Record<CoverageLevel, string> = {
   broad: 'Geniş kapsam',
   partial: 'Kısmi kapsam',
@@ -685,6 +694,7 @@ export interface PublicIntegration {
   name: string
   kind: IntegrationKind
   kindLabel: string
+  statusLabel: string
   summary: string
   coverage: CoverageLevel
   coverageLabel: string
@@ -698,6 +708,7 @@ const toPublic = (i: Integration): PublicIntegration => ({
   name: i.name,
   kind: i.kind,
   kindLabel: KIND_LABELS[i.kind],
+  statusLabel: STATUS_LABELS.available,
   summary: i.summary,
   coverage: i.coverage,
   coverageLabel: COVERAGE_LABELS[i.coverage],

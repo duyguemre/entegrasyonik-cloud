@@ -1,30 +1,48 @@
 ---
 /**
  * /iletisim — `mailto:` tabanlı iletişim (ADR-0014 Karar 2). Form YOK, backend YOK, site kişisel veri toplamaz.
- * Adres `PUBLIC_CONTACT_EMAIL` env'inden gelir; verilmemişse `{{İLETİŞİM_E_POSTA}}` yer tutucusu gösterilir ve
- * bağlantı üretilmez. Yanıt süresi/destek saati iddiası YOK. Şirket künyesi Footer ile aynı yer tutuculardır.
+ *
+ * S16 (kullanıcı: "profesyonel ve premium düzen"; hata: "Bize yazın çalışmıyor"):
+ * - Adres `src/lib/contact.ts` → `PUBLIC_CONTACT_EMAIL` env'i, yoksa `src/data/company.ts` (bilgi@entegrasyonik.com.tr).
+ *   Önceki kök neden: env boşken adres yoktu ve konu bazlı mailto düğmeleri hiç render edilmiyordu.
+ * - Hero'da adres + "E-posta gönder" + "Adresi kopyala" (Clipboard API, aria-live geri bildirim).
+ * - Konu kartları: her biri konu satırı ön dolgulu `mailto:`. Yanıt süresi/destek saati iddiası YOK.
+ * - Künye bloğu: şirket kaydındaki dolu alanlar gösterilir; adres/telefon boşsa satır GİZLENİR (ham yer tutucu yok).
+ *   Unvan/MERSİS insan kararı bekler — yasal metinlerle aynı `{{…}}` anahtarlarıyla dürüstçe işaretlenir.
  */
 import BaseLayout from '../layouts/BaseLayout.astro'
 import Section from '../components/Section.astro'
-import Card from '../components/Card.astro'
-import Button from '../components/Button.astro'
 import Icon from '../components/home/Icon.astro'
 import PageHero from '../components/pages/PageHero.astro'
 import PageMeta from '../components/pages/PageMeta.astro'
-import { contactEmail, mailtoHref, CONTACT_EMAIL_PLACEHOLDER } from '../lib/contact'
+import EmailActions from '../components/pages/EmailActions.astro'
+import CtaBand from '../components/pages/CtaBand.astro'
+import { contactEmail, mailtoHref } from '../lib/contact'
+import { company, hasValue } from '../data/company'
 import { breadcrumbJsonLd } from '../lib/seo'
 import { appUrls } from '../lib/site-config'
 
 const title = 'İletişim'
 const description =
-  'Entegrasyonik ile iletişime geçin: kurumsal teklif, genel sorular ve mevcut müşteri destek talepleri için e-posta.'
+  'Entegrasyonik ile iletişime geçin: kurumsal teklif, genel sorular, kanal talepleri ve mevcut müşteri destek talepleri için e-posta.'
 const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'İletişim' }]
 
-const topics: Array<{ id: string; label: string; text: string; subject: string; icon: 'layers' | 'chat' | 'users' }> = [
+type TopicIcon = 'layers' | 'chat' | 'users' | 'plug'
+const topics: Array<{ id: string; label: string; text: string; subject: string; icon: TopicIcon }> = [
   { id: 'teklif', label: 'Kurumsal teklif', text: 'Özel gereksinimleriniz veya birden fazla hesap için teklif isteyin.', subject: 'Kurumsal teklif talebi', icon: 'layers' },
   { id: 'soru', label: 'Genel soru', text: 'Ürün, kapsam veya entegrasyonlar hakkında bir sorunuz mu var?', subject: 'Genel soru', icon: 'chat' },
+  { id: 'kanal', label: 'Kanal talebi', text: 'Listede yer almayan bir satış kanalı için ihtiyacınızı bize iletin.', subject: 'Kanal talebi', icon: 'plug' },
   { id: 'destek', label: 'Mevcut müşteri', text: 'Hesabınızla ilgili bir konuda yardım isteyin.', subject: 'Destek talebi', icon: 'users' },
 ]
+
+const notes: Array<{ icon: 'mail' | 'lock' | 'help'; title: string; text: string }> = [
+  { icon: 'mail', title: 'Form yok', text: 'Mesajınız kendi e-posta uygulamanızda hazırlanır; konu satırı seçtiğiniz başlığa göre dolar.' },
+  { icon: 'lock', title: 'Veri toplanmaz', text: 'Bu site ziyaretçiden kişisel veri toplamaz; yalnızca size yazdığınız e-posta ulaşır.' },
+  { icon: 'help', title: 'Mevcut müşteriler', text: 'Hesabınızdaki destek ekranından talep açıp süreci aynı yerden takip edebilirsiniz.' },
+]
+
+const showAddress = hasValue(company.address)
+const showPhone = hasValue(company.phone)
 ---
 
 <BaseLayout title={title} description={description}>
@@ -37,75 +55,129 @@ const topics: Array<{ id: string; label: string; text: string; subject: string; 
 
   <PageHero
     title="İletişim"
-    lead="Bize e-posta ile ulaşın. Bu sayfada form yoktur; mesajınız kendi e-posta uygulamanızda hazırlanır ve site kişisel veri toplamaz."
+    eyebrow="Bize ulaşın"
+    lead="Sorularınız, teklif talepleriniz ve kanal ihtiyaçlarınız için e-posta ile yazın. Bu sayfada form yoktur; site kişisel veri toplamaz."
     crumbs={crumbs}
   >
     <Fragment slot="visual">
-      <div class="hero-visual">
-        <span class="hero-visual__icon"><Icon name="chat" size="lg" /></span>
+      <div class="hero-contact" data-testid="contact-address">
+        <p class="hero-contact__label">Genel iletişim</p>
+        <EmailActions email={contactEmail} id="hero-mail" tone="dark" subject="Entegrasyonik hakkında" />
       </div>
-      <p class="address address--hero" data-testid="contact-address">
-        {
-          contactEmail ? (
-            <a href={mailtoHref(contactEmail)}>{contactEmail}</a>
-          ) : (
-            <span class="placeholder" data-testid="contact-placeholder">{CONTACT_EMAIL_PLACEHOLDER}</span>
-          )
-        }
-      </p>
     </Fragment>
   </PageHero>
 
   <Section labelledby="konu-title" class="tight-section">
     <div class="head">
+      <p class="eyebrow">Konu seçin</p>
       <h2 id="konu-title">Bize yazın</h2>
       <p>Konunuza uygun başlığı seçin; e-posta uygulamanız konu satırı doldurulmuş olarak açılır.</p>
     </div>
 
-    <ul class="topics" role="list">
+    <ul class="topics" role="list" data-testid="contact-topics">
       {
         topics.map((t) => (
           <li>
-            <Card as="article" class="topic" aria-labelledby={`topic-${t.id}`}>
-              <span class="topic__icon"><Icon name={t.icon} size="md" /></span>
-              <h3 id={`topic-${t.id}`}>{t.label}</h3>
-              <p>{t.text}</p>
-              {contactEmail ? (
-                <Button href={mailtoHref(contactEmail, t.subject)} variant="secondary" data-testid="contact-mailto">
-                  E-posta oluştur
-                </Button>
-              ) : null}
-            </Card>
+            <a class="topic" href={mailtoHref(contactEmail, t.subject)} data-testid="contact-mailto" aria-describedby={`topic-${t.id}-text`}>
+              <span class="topic__icon">
+                <Icon name={t.icon} size="md" />
+              </span>
+              <span class="topic__body">
+                <span class="topic__title">{t.label}</span>
+                <span class="topic__text" id={`topic-${t.id}-text`}>
+                  {t.text}
+                </span>
+                <span class="topic__meta">
+                  Konu: <span>{t.subject}</span>
+                </span>
+              </span>
+              <span class="topic__cta">
+                E-posta oluştur <Icon name="arrow" size="sm" />
+              </span>
+            </a>
           </li>
         ))
       }
     </ul>
-    {!contactEmail && <p class="pending">İletişim adresi yayın öncesinde eklenecektir.</p>}
+
+    <ul class="notes" role="list">
+      {
+        notes.map((n) => (
+          <li class="note">
+            <span class="note__icon">
+              <Icon name={n.icon} size="sm" />
+            </span>
+            <span>
+              <strong>{n.title}</strong>
+              <span>{n.text}</span>
+            </span>
+          </li>
+        ))
+      }
+    </ul>
   </Section>
 
-  <Section labelledby="kunye-title" tone="muted" size="narrow" class="tight-section">
-    <div class="head">
-      <h2 id="kunye-title">Şirket bilgileri</h2>
-      <p>Hizmet sağlayıcıya ilişkin bilgiler yayın öncesinde eklenecektir.</p>
+  <Section labelledby="kunye-title" tone="muted" class="tight-section">
+    <div class="kunye-grid">
+      <div class="head head--compact">
+        <p class="eyebrow">Künye</p>
+        <h2 id="kunye-title">Şirket bilgileri</h2>
+        <p>Hizmet sağlayıcıya ilişkin resmî bilgiler. Tüm yasal belgelere aşağıdaki bağlantılardan ulaşabilirsiniz.</p>
+        <p class="kunye-links">
+          <a class="link" href="/yasal/kunye">Künye <Icon name="arrow" size="sm" /></a>
+          <a class="link" href="/yasal/kvkk-aydinlatma">KVKK Aydınlatma Metni <Icon name="arrow" size="sm" /></a>
+        </p>
+      </div>
+      <div class="kunye">
+        <dl class="kunye__list" data-testid="kunye-details">
+          <div class="kunye__row">
+            <dt><Icon name="mail" size="sm" /> E-posta</dt>
+            <dd><a href={mailtoHref(contactEmail)}>{contactEmail}</a></dd>
+          </div>
+          {
+            showAddress && (
+              <div class="kunye__row" data-testid="kunye-address">
+                <dt><Icon name="pin" size="sm" /> Adres</dt>
+                <dd>{company.address}</dd>
+              </div>
+            )
+          }
+          {
+            showPhone && (
+              <div class="kunye__row" data-testid="kunye-phone">
+                <dt><Icon name="chat" size="sm" /> Telefon</dt>
+                <dd>{company.phone}</dd>
+              </div>
+            )
+          }
+          {
+            hasValue(company.legalName) && (
+              <div class="kunye__row" data-testid="kunye-legal-name">
+                <dt><Icon name="layers" size="sm" /> Unvan</dt>
+                <dd>{company.legalName}</dd>
+              </div>
+            )
+          }
+          {
+            hasValue(company.mersisNo) && (
+              <div class="kunye__row" data-testid="kunye-mersis">
+                <dt><Icon name="receipt" size="sm" /> MERSİS no</dt>
+                <dd>{company.mersisNo}</dd>
+              </div>
+            )
+          }
+        </dl>
+      </div>
     </div>
-    <Card as="div" class="kunye">
-      <dl class="kunye__list" data-testid="kunye-details">
-        <div><dt>Unvan</dt><dd>{'{{ŞİRKET_UNVANI}}'}</dd></div>
-        <div><dt>MERSİS no</dt><dd>{'{{MERSİS_NO}}'}</dd></div>
-        <div><dt>Adres</dt><dd>{'{{ADRES}}'}</dd></div>
-        <div><dt>Telefon</dt><dd>{'{{TELEFON}}'}</dd></div>
-      </dl>
-    </Card>
   </Section>
 
-  <Section labelledby="giris-title" class="tight-section">
-    <h2 id="giris-title" class="giris__title">Zaten müşteri misiniz?</h2>
-    <p class="giris__text">Hesabınıza giriş yaparak panelinize erişebilirsiniz.</p>
-    <div class="giris__actions">
-      <Button href={appUrls.login()} variant="primary" size="lg">Giriş yap</Button>
-      <Button href="/sss" variant="secondary" size="lg">Sık sorulan sorular</Button>
-    </div>
-  </Section>
+  <CtaBand
+    id="giris-title"
+    title="Zaten müşteri misiniz?"
+    text="Hesabınıza giriş yaparak panelinize ve destek ekranına erişebilirsiniz."
+    primary={{ label: 'Giriş yap', href: appUrls.login() }}
+    secondary={{ label: 'Destek merkezi', href: '/destek' }}
+  />
 </BaseLayout>
 
 <script>
@@ -113,7 +185,6 @@ const topics: Array<{ id: string; label: string; text: string; subject: string; 
 </script>
 
 <style>
-  /* Bölümler arası dikey ritim genel olarak sıkılaştırıldı (S11b). */
   .tight-section:global(.section) {
     padding-block: calc(var(--site-section-y) * 0.72);
   }
@@ -121,113 +192,268 @@ const topics: Array<{ id: string; label: string; text: string; subject: string; 
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-2);
-    margin-bottom: var(--ek-space-8);
+    max-width: 44rem;
+    margin-bottom: var(--ek-space-10);
   }
-  .head h2,
-  .giris__title {
+  .head--compact {
+    margin-bottom: 0;
+  }
+  .eyebrow {
+    color: var(--site-link-accent);
+    font-size: var(--site-card-eyebrow-size);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .head h2 {
+    color: var(--site-text-heading);
     font-size: var(--site-font-display-sm);
     font-weight: var(--site-font-display-weight);
     line-height: var(--site-font-display-line-height);
     letter-spacing: var(--site-font-display-tracking);
   }
-  .head p,
-  .giris__text {
-    color: var(--ek-color-content-muted);
+  .head p:not(.eyebrow) {
+    color: var(--site-text-body);
     font-size: var(--ek-font-size-lg);
+    line-height: var(--site-font-body-line-height);
   }
 
-  /* --- Hero görsel: e-posta adresi ön plana çıkar --- */
-  .hero-visual {
+  /* --- Hero: adres kartı (koyu cam panelin içinde) --- */
+  .hero-contact {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    gap: var(--ek-space-3);
   }
-  .hero-visual__icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: calc(var(--ek-space-16) * 0.9);
-    height: calc(var(--ek-space-16) * 0.9);
-    border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-secondary) 20%, transparent);
-    color: var(--site-color-on-primary);
-  }
-  .address--hero {
-    margin: var(--ek-space-5) 0 0;
-    color: var(--site-color-on-primary);
-    font-size: var(--ek-font-size-lg);
+  .hero-contact__label {
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-sm);
     font-weight: var(--ek-font-weight-semibold);
-    text-align: center;
-    overflow-wrap: anywhere;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
-  .placeholder {
-    padding: var(--ek-space-1) var(--ek-space-3);
-    border: var(--site-border-width) dashed var(--site-color-on-primary-muted);
-    border-radius: var(--ek-radius-md);
-    color: var(--site-color-on-primary-muted);
-    font-family: var(--ek-font-mono);
-    font-size: var(--ek-font-size-md);
-    font-weight: var(--ek-font-weight-regular);
-  }
+
+  /* --- Konu kartları: kartın tamamı tıklanabilir mailto bağlantısı --- */
   .topics {
     display: grid;
-    gap: var(--ek-space-6);
+    gap: var(--ek-space-4);
     grid-template-columns: 1fr;
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
   .topic {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--ek-space-4);
     height: 100%;
-    align-items: flex-start;
+    padding: var(--ek-space-6);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--site-radius-panel);
+    background: var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
+    color: inherit;
+    text-decoration: none;
+    transition:
+      border-color var(--ek-duration-base) var(--ek-easing-standard),
+      box-shadow var(--ek-duration-base) var(--ek-easing-standard),
+      transform var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .topic:hover {
+    border-color: color-mix(in srgb, var(--ek-color-secondary) 45%, var(--ek-color-border-default));
+    box-shadow: var(--site-shadow-card-hover);
+    transform: translateY(calc(var(--ek-space-1) * -0.5));
+  }
+  .topic:focus-visible {
+    outline: var(--site-focus-ring-width) solid var(--site-color-focus-ring);
+    outline-offset: var(--site-focus-ring-offset);
   }
   .topic__icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: var(--ek-space-10);
-    height: var(--ek-space-10);
+    width: var(--ek-space-12);
+    height: var(--ek-space-12);
     border-radius: var(--ek-radius-lg);
-    background: var(--ek-color-surface-sunken);
-    color: var(--ek-color-primary);
+    background: var(--site-accent-soft);
+    box-shadow: inset 0 0 0 var(--site-border-width) color-mix(in srgb, var(--ek-color-secondary) 28%, transparent);
+    color: var(--site-link-accent);
   }
-  .topic :global(.btn) {
-    margin-top: auto;
-  }
-  .pending {
-    margin-top: var(--ek-space-6);
-    color: var(--ek-color-content-muted);
-    font-size: var(--ek-font-size-md);
-  }
-  .kunye {
-    max-width: 28rem;
-  }
-  .kunye__list {
+  .topic__body {
     display: flex;
     flex-direction: column;
-    gap: var(--ek-space-4);
-    margin: 0;
+    gap: var(--ek-space-2);
+    min-width: 0;
   }
-  .kunye__list dt {
-    color: var(--ek-color-content-muted);
+  .topic__title {
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-xl);
+    font-weight: var(--ek-font-weight-bold);
+    letter-spacing: -0.01em;
+  }
+  .topic__text {
+    color: var(--site-text-body);
     font-size: var(--ek-font-size-md);
+    line-height: var(--site-font-body-line-height);
   }
-  .kunye__list dd {
+  .topic__meta {
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-sm);
+  }
+  .topic__meta span {
+    color: var(--site-text-body);
+    font-weight: var(--ek-font-weight-medium);
+  }
+  .topic__cta {
+    grid-column: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    margin-top: var(--ek-space-1);
+    color: var(--site-link-accent);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .topic__cta :global(.icon) {
+    transition: transform var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .topic:hover .topic__cta :global(.icon) {
+    transform: translateX(var(--ek-space-1));
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .topic:hover,
+    .topic:hover .topic__cta :global(.icon) {
+      transform: none;
+    }
+  }
+
+  /* --- Nasıl ilerler: sade not satırı --- */
+  .notes {
+    display: grid;
+    gap: var(--ek-space-4);
+    margin: var(--ek-space-10) 0 0;
+    padding: var(--ek-space-6) 0 0;
+    border-top: var(--site-border-width) solid var(--ek-color-border-default);
+    list-style: none;
+  }
+  .note {
+    display: flex;
+    gap: var(--ek-space-3);
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-md);
+    line-height: var(--site-font-body-line-height);
+  }
+  .note strong {
+    display: block;
+    color: var(--site-text-heading);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .note__icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-8);
+    height: var(--ek-space-8);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-surface-sunken);
+    color: var(--site-text-heading);
+  }
+
+  /* --- Künye --- */
+  .kunye-grid {
+    display: grid;
+    gap: var(--ek-space-8);
+  }
+  .kunye-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2) var(--ek-space-6);
+    margin-top: var(--ek-space-2);
+  }
+  .kunye-links .link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-1);
+    color: var(--site-link-accent);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+    text-decoration: none;
+  }
+  .kunye-links .link:hover {
+    text-decoration: underline;
+  }
+  .kunye {
+    padding: var(--ek-space-2) var(--ek-space-6);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--site-radius-panel);
+    background: var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
+  }
+  .kunye__list {
     margin: 0;
-    color: var(--ek-color-content-strong);
+  }
+  .kunye__row {
+    display: grid;
+    gap: var(--ek-space-1);
+    padding-block: var(--ek-space-4);
+  }
+  .kunye__row + .kunye__row {
+    border-top: var(--site-border-width) solid var(--ek-color-border-default);
+  }
+  .kunye__row dt {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-medium);
+  }
+  .kunye__row dd {
+    margin: 0;
+    color: var(--site-text-heading);
     font-size: var(--ek-font-size-lg);
     font-weight: var(--ek-font-weight-medium);
     overflow-wrap: anywhere;
   }
-  .giris__actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ek-space-3);
-    margin-top: var(--ek-space-6);
+  .kunye__row dd a {
+    color: var(--site-link-accent);
+    text-decoration: none;
   }
-  .giris__title {
-    margin-bottom: var(--ek-space-3);
+  .kunye__row dd a:hover {
+    text-decoration: underline;
+  }
+  .pending {
+    display: inline-block;
+    padding: 0 var(--ek-space-2);
+    border: var(--site-border-width) dashed var(--ek-color-border-strong);
+    border-radius: var(--ek-radius-sm);
+    color: var(--site-text-meta);
+    font-family: var(--ek-font-mono);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-regular);
   }
 
   @media (min-width: 768px) {
     .topics {
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--ek-space-5);
+    }
+    .notes {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--ek-space-6);
+    }
+    .kunye__row {
+      grid-template-columns: 11rem minmax(0, 1fr);
+      align-items: baseline;
+      gap: var(--ek-space-4);
+    }
+  }
+  @media (min-width: 1024px) {
+    .kunye-grid {
+      grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+      align-items: start;
+      gap: var(--ek-space-12);
     }
   }
 </style>

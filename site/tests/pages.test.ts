@@ -16,7 +16,9 @@ import { getPublicFaq, getSupportCategories } from '../src/data/faq'
 import { connectGuides, getConnectGuide } from '../src/data/connect'
 import { featureDetails } from '../src/data/feature-details'
 import { legalNav, primaryNav, published } from '../src/data/navigation'
-import { resolveContactEmail, mailtoHref } from '../src/lib/contact'
+import { resolveContactEmail, mailtoHref, DEFAULT_CONTACT_EMAIL } from '../src/lib/contact'
+import { company } from '../src/data/company'
+import { securityPrinciples } from '../src/data/security-principles'
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const repoRoot = path.resolve(siteRoot, '..')
@@ -140,6 +142,28 @@ describe('her sayfa: tek h1, başlık, meta, breadcrumb', () => {
   })
 })
 
+/**
+ * S16 kapsam özeti sayaçları (`data-stat`): kayıttan HESAPLANAN sayılar. Her değer burada aynı kayıttan yeniden
+ * hesaplanıp birebir karşılaştırılır (uyuşmazsa hata); doğrulananlar "sabit rakam yok" taramasından çıkarılır.
+ * Başka hiçbir rakam serbest değildir.
+ */
+const EXPECTED_STATS: Record<string, number> = {
+  integrations: getPublicIntegrations().length,
+  marketplaces: getPublicIntegrations('marketplace').length,
+  kinds: new Set(getPublicIntegrations().map((i) => i.kind)).size,
+  capabilities: new Set(getPublicIntegrations().flatMap((i) => i.capabilities.map((c) => c.key))).size,
+  'kind-marketplace': getPublicIntegrations('marketplace').length,
+  'kind-ecommerce': getPublicIntegrations('ecommerce').length,
+  'kind-erp': getPublicIntegrations('erp').length,
+}
+function withoutVerifiedStats(source: string): string {
+  return source.replace(/<(dd|span)([^>]*)\sdata-stat="([^"]+)"([^>]*)>\s*(\d+)\s*<\/\1>/g, (_m, _tag, _a, id: string, _b, value: string) => {
+    expect(EXPECTED_STATS[id], `bilinmeyen sayaç: ${id}`).toBeDefined()
+    expect(Number(value), `sayaç ${id}`).toBe(EXPECTED_STATS[id])
+    return ''
+  })
+}
+
 describe('gizli öğe yok (roadmap, evidence, dahili notlar)', () => {
   const roadmap = integrations.filter((i) => i.status === 'roadmap').flatMap((i) => [i.name, ...i.aliases])
   const internal = integrations.flatMap((i) => i.internalNotes.slice(0, 2).map((n) => n.slice(0, 30)))
@@ -167,11 +191,13 @@ describe('gizli öğe yok (roadmap, evidence, dahili notlar)', () => {
   it('doğrulanamaz mutlak/sertifika iddiası ve sabit rakam yok', () => {
     const banned = ['%100', 'kesintisiz', 'sınırsız', 'garanti', '7/24', 'iso 27001', 'soc 2', 'veri merkezi', 'uptime', 'sertifikalı', 'en iyi', 'binlerce']
     for (const route of INNER_PAGES) {
-      const text = visibleText(html(draftDir, route))
+      const text = visibleText(withoutVerifiedStats(html(draftDir, route)))
       const lower = text.toLocaleLowerCase('tr-TR')
       for (const b of banned) expect(lower, `${route}: ${b}`).not.toContain(b)
       // rakam yalnızca kanıtlı belirteçlerde (claims.test.ts NUMERIC_ALLOWLIST ile aynı)
-      const stripped = text.split('N11').join('').split('AES-256-GCM').join('')
+      // künye alanları (src/data/company.ts: adres, telefon, MERSİS) iddia değil, iletişim bilgisidir
+      const kunye = [company.address, company.phone, company.mersisNo].filter((v) => v.trim().length > 0)
+      const stripped = kunye.reduce((t, v) => t.split(v).join(''), text).split('N11').join('').split('AES-256-GCM').join('')
       expect(/\d/.test(stripped), `${route}: rakam -> ${stripped.match(/.{0,30}\d.{0,30}/)?.[0]}`).toBe(false)
     }
   })
@@ -209,6 +235,19 @@ describe('/entegrasyonlar', () => {
     expect([...cards.matchAll(/<li class="cm__card"/g)]).toHaveLength(AVAILABLE_INTEGRATION_CODES.length)
     // kapsam verisi kayıtla birebir: Bizimhesap stok/fiyat yazmaz -> "Bu kanalda yok"
     expect(visibleText(cards)).toMatch(/Stok ve fiyat güncelleme: Bu kanalda yok/)
+  })
+
+  it('S16: kapsam özeti sayaçları kayıttan; süzgeç yalnızca kayıttaki türler; her kartta kayıttan türeyen durum rozeti', () => {
+    const p = page()
+    const stats = [...p.matchAll(/data-stat="([^"]+)"[^>]*>\s*(\d+)\s*</g)].map((m) => [m[1], Number(m[2])] as const)
+    expect(stats.length).toBeGreaterThanOrEqual(4)
+    for (const [id, v] of stats) expect(v, id).toBe(EXPECTED_STATS[id])
+    const filters = [...p.matchAll(/data-filter="([a-z]+)"/g)].map((m) => m[1])
+    expect(filters).toEqual(['all', ...new Set(getPublicIntegrations().map((i) => i.kind))])
+    const statuses = [...p.matchAll(/data-testid="integration-status"[^>]*>([\s\S]*?)<\/span>\s*<\/div>|data-testid="integration-status"/g)]
+    expect(statuses.length).toBe(AVAILABLE_INTEGRATION_CODES.length)
+    expect(visibleText(p)).toContain('Kullanılabilir')
+    expect(visibleText(p)).not.toMatch(/Canlı|Yakında/)
   })
 
   it('her kart kendi detay sayfasına bağlanır', () => {
@@ -283,6 +322,30 @@ describe('/guvenlik', () => {
     }
   })
 
+  it('S16: dört-altı güvence ilkesi; her güvenlik kaydı tam bir ilkede; her ilke maddesi repoda kanıtlı', () => {
+    expect(securityPrinciples.length).toBeGreaterThanOrEqual(4)
+    expect(securityPrinciples.length).toBeLessThanOrEqual(6)
+    const ids = getPublicCapabilities('security').map((c) => c.id)
+    const assigned = securityPrinciples.flatMap((p) => p.capabilityIds)
+    expect([...assigned].sort()).toEqual([...ids].sort())
+    for (const pr of securityPrinciples) {
+      expect(pr.capabilityIds.length + pr.points.length, pr.id).toBeGreaterThan(0)
+      for (const pt of pr.points) {
+        expect(pt.evidence.length, pt.text).toBeGreaterThan(0)
+        for (const e of pt.evidence) {
+          const file = path.join(repoRoot, e.path)
+          expect(existsSync(file), e.path).toBe(true)
+          if (e.contains) expect(readFileSync(file, 'utf8').includes(e.contains), `${e.path}: ${e.contains}`).toBe(true)
+        }
+      }
+    }
+    const p = page()
+    expect([...p.matchAll(/data-principle="([a-z]+)"/g)].map((m) => m[1])).toEqual(securityPrinciples.map((x) => x.id))
+    // ayrıntılar JS'siz <details>; değer cümlesi her zaman görünür
+    expect((p.match(/<details class="principle__more/g) ?? []).length).toBe(securityPrinciples.length)
+    for (const pr of securityPrinciples) expect(visibleText(p)).toContain(pr.value)
+  })
+
   it('AES-256-GCM, HTTP-only, dayanıklılık ifadeleri kayıttan gelir', () => {
     const text = visibleText(page())
     expect(text).toContain('AES-256-GCM')
@@ -320,29 +383,51 @@ describe('/sss', () => {
 })
 
 describe('/iletisim', () => {
-  it('TASLAK: adres yer tutucu, mailto ve form YOK', () => {
+  // S16 (kasıtlı davranış değişikliği): env boşken önceden yer tutucu gösteriliyor ve "Bize yazın" mailto düğmeleri
+  // HİÇ üretilmiyordu (kullanıcının bildirdiği hata). Artık şirket kaydındaki genel adres varsayılandır.
+  it('env boş: varsayılan şirket adresiyle konu bazlı mailto düğmeleri + kopyala düğmesi; yer tutucu ve form YOK', () => {
     const p = html(draftDir, '/iletisim')
-    expect(p).toContain('data-testid="contact-placeholder"')
-    expect(visibleText(p)).toContain('{{İLETİŞİM_E_POSTA}}')
-    expect(p).not.toContain('mailto:')
+    expect(DEFAULT_CONTACT_EMAIL).toBe('bilgi@entegrasyonik.com.tr')
+    expect(p).toContain(`href="mailto:${DEFAULT_CONTACT_EMAIL}"`)
+    expect((p.match(/data-testid="contact-mailto"/g) ?? []).length).toBe(4)
+    expect(p).toMatch(new RegExp(`href="mailto:${escapeRe(DEFAULT_CONTACT_EMAIL)}\\?subject=Kurumsal%20teklif%20talebi"`))
+    expect(p).toMatch(new RegExp(`data-copy="${escapeRe(DEFAULT_CONTACT_EMAIL)}"`))
+    expect(p).toMatch(/data-copy-status[^>]*aria-live="polite"|aria-live="polite"[^>]*data-copy-status/)
+    expect(p).not.toContain('contact-placeholder')
+    expect(visibleText(p)).not.toContain('{{İLETİŞİM_E_POSTA}}')
+    expect(visibleText(p)).not.toContain('yayın öncesinde eklenecektir')
     expect(p).not.toMatch(/<form\b/)
     expect(p).not.toMatch(/<input\b|<textarea\b/)
   })
 
-  it('adres verilince mailto bağlantıları üretilir (konu ön dolgulu), yine form YOK', () => {
+  it('env verilince o adres kullanılır (konu ön dolgulu), yine form YOK', () => {
     const p = html(finalDir, '/iletisim')
     expect(p).toContain(`href="mailto:${EMAIL}"`)
-    expect((p.match(/data-testid="contact-mailto"/g) ?? []).length).toBe(3)
+    expect((p.match(/data-testid="contact-mailto"/g) ?? []).length).toBe(4)
     expect(p).toMatch(new RegExp(`mailto:${escapeRe(EMAIL)}\\?subject=`))
+    expect(p).not.toContain(`mailto:${DEFAULT_CONTACT_EMAIL}`)
     expect(p).not.toMatch(/<form\b/)
     expect(p).not.toContain('contact-placeholder')
   })
 
-  it('yanıt süresi/destek saati iddiası yok; künye yer tutucuları var', () => {
+  it('künye alanları company.ts dosyasından gelir: doluysa satır görünür, boşsa gizlenir; ham {{…}} görünmez', () => {
+    const p = html(draftDir, '/iletisim')
+    const v = visibleText(p)
+    expect(p.includes('data-testid="kunye-address"')).toBe(company.address.trim().length > 0)
+    expect(p.includes('data-testid="kunye-legal-name"')).toBe(company.legalName.trim().length > 0)
+    expect(p.includes('data-testid="kunye-mersis"')).toBe(company.mersisNo.trim().length > 0)
+    if (company.address) expect(v).toContain(company.address)
+    if (company.legalName) expect(v).toContain(company.legalName)
+    expect(v).not.toContain('{{ADRES}}')
+  })
+
+  it('yanıt süresi/destek saati iddiası yok; boş künye alanları ham {{…}} olarak görünmez', () => {
     const t = visibleText(html(draftDir, '/iletisim')).toLocaleLowerCase('tr-TR')
     expect(t).not.toMatch(/yanıt süresi|saat içinde|iş günü|7\/24|hızlıca dönüş/)
     expect(html(draftDir, '/iletisim')).toContain('data-testid="kunye-details"')
-    expect(visibleText(html(draftDir, '/iletisim'))).toContain('{{ŞİRKET_UNVANI}}')
+    const v = visibleText(html(draftDir, '/iletisim'))
+    expect(v).not.toContain('{{ŞİRKET_UNVANI}}')
+    expect(v).not.toContain('{{MERSİS_NO}}')
   })
 })
 
@@ -504,9 +589,9 @@ describe('veri kayıtları (yeni: connect, feature-details)', () => {
 })
 
 describe('iletişim adresi çözümleyici', () => {
-  it('boş -> yer tutucu (undefined); geçerli -> adres; biçimsiz -> fail-fast', () => {
-    expect(resolveContactEmail({})).toBeUndefined()
-    expect(resolveContactEmail({ PUBLIC_CONTACT_EMAIL: '  ' })).toBeUndefined()
+  it('boş -> şirket varsayılanı (S16); geçerli -> adres; biçimsiz -> fail-fast', () => {
+    expect(resolveContactEmail({})).toBe('bilgi@entegrasyonik.com.tr')
+    expect(resolveContactEmail({ PUBLIC_CONTACT_EMAIL: '  ' })).toBe('bilgi@entegrasyonik.com.tr')
     expect(resolveContactEmail({ PUBLIC_CONTACT_EMAIL: EMAIL })).toBe(EMAIL)
     for (const bad of ['yok', 'a@b', 'a b@c.d', '<x>@y.z', 'a@b.c,d@e.f']) {
       expect(() => resolveContactEmail({ PUBLIC_CONTACT_EMAIL: bad }), bad).toThrow()
