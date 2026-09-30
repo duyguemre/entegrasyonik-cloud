@@ -66,7 +66,7 @@
       :error-cause="loadProblem?.cause"
       :error-details="loadProblem?.details"
       error-title="Siparişler yüklenemedi"
-      :search="searchOrderForm.data.globalSearch"
+      :search="filters.globalSearch"
       search-placeholder="Sipariş No, Müşteri Adı veya Telefon Ara"
       :chips="activeChips"
       :filter-count="panelFilterCount"
@@ -74,18 +74,19 @@
       selectable
       v-model:selected="selectedOrders"
       :sort="gridSort"
-      :page="pagination.page"
-      :page-size="pagination.limit"
-      :total="pagination.totalNumberOfRecords"
+      :page="page"
+      :page-size="limit"
+      :total="total"
       empty-title="Sipariş bulunamadı"
       empty-text="Pazaryerlerinden sipariş geldikçe burada listelenir."
       empty-icon="mdi-cart-outline"
       filtered-empty-title="Sipariş bulunamadı"
       filtered-empty-text="Arama kriterlerinize uygun herhangi bir sipariş kaydı bulunamadı."
-      @update:search="onSearchInput"
+      @update:search="search"
+      @search-submit="submitSearch"
       @update:sort="onGridSort"
-      @update:page="onPageChange"
-      @update:page-size="onPageSizeChange"
+      @update:page="setPage"
+      @update:page-size="setPageSize"
       @filter-submit="getOrders(true)"
       @filter-reset="resetFilters"
       @remove-chip="removeChip"
@@ -94,9 +95,9 @@
       @refresh="getOrders(true)"
     >
       <template #filters>
-        <EkSelect v-model="searchOrderForm.data.integrationCodes" kind="channel" :items="channelSelectOptions" label="Kanal" multiple clearable />
-        <EkSelect v-model="searchOrderForm.data.internalStatuses" kind="status" :items="statusSelectOptions" label="Sipariş durumu" multiple clearable recent-key="orders.status" />
-        <EkSelect v-model="searchOrderForm.data.allocationStates" kind="status" :items="allocationSelectOptions" label="Stok durumu" multiple clearable />
+        <EkSelect v-model="filters.integrationCodes" kind="channel" :items="channelSelectOptions" label="Kanal" multiple clearable />
+        <EkSelect v-model="filters.internalStatuses" kind="status" :items="statusSelectOptions" label="Sipariş durumu" multiple clearable recent-key="orders.status" />
+        <EkSelect v-model="filters.allocationStates" kind="status" :items="allocationSelectOptions" label="Stok durumu" multiple clearable />
       </template>
 
       <template #bulk-actions>
@@ -171,13 +172,14 @@ import { channelOptionsFrom, toneOptionsFrom } from '@/components/ds/selectOptio
 import EkAlert from '@/components/ds/EkAlert.vue'
 import { problemFromError, type ProblemCopy } from '@/composables/useProblem'
 import EkRowActions, { type EkRowAction } from '@/components/ds/EkRowActions.vue'
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 
 // Composables
 import useRestApi from '@/composables/restapi'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import { useIntegrationStore } from '@/stores/integrationStore'
-import { useOrderFilters } from '@/components/order/composables/useOrderFilters'
+import { useListQuery, listPayload } from '@/composables/useListQuery'
+import { isOrderLocked, countBulkEligible, bulkTargetIds } from '@/components/order/orderRules'
 import { useOrderActions } from '@/components/order/composables/useOrderActions'
 import { useOrderCancel } from '@/components/order/composables/useOrderCancel'
 import { useLifecycle } from '@/composables/useLifecycle'
@@ -187,7 +189,7 @@ import { useI18n } from 'vue-i18n'
 import { isAllocationState, summarizeOrderAllocation } from '@/composables/useStockHealthApi'
 
 // Types & Enums
-import { OrderInternalStatusEnum } from '@/types/OrderTypes'
+import { OrderInternalStatusEnum, ORDER_INTERNAL_STATUS_LABELS } from '@/types/OrderTypes'
 
 // Components
 import LoadingComponent from '@/components/LoadingComponent.vue'
@@ -251,11 +253,6 @@ const barcodePrintComponentRef = ref()
 const manualInvoiceComponentRef = ref()
 const manualShipmentComponentRef = ref()
 const dialogAttach = ref(".orderListView")
-const loading = ref(false)
-const loadError = ref(false)
-/** Aşama 6b (Standart 1): hata desenindeki neden + teknik ayrıntı. */
-const loadProblem = ref<ProblemCopy | null>(null)
-const orders = ref<any[]>([])
 const selectedOrders = ref<string[]>([]) // Sadece ID'leri tutar (UI seçimi için)
 
 // Detail & Context
@@ -297,11 +294,40 @@ const askForBarcode = (isBulkPrint: boolean = false, count: number = 1): Promise
 
 // --- COMPOSABLES ---
 
+// X-01: filtre/sayfa/sıralama/yükleme + debounce'lu arama + bayat yanıt koruması.
 const {
-  searchOrderForm, pagination, statusOptions, sortBy,
-  resetFilters, onSortUpdate,
-  handlePageChange, prepareFilterPayload
-} = useOrderFilters(getOrders);
+  filters, applied, sortBy, page, limit, total, items: orders, loading, error,
+  load, search, submitSearch, setPage, setPageSize, setSort, resetFilters
+} = useListQuery({
+  filters: () => ({
+    globalSearch: '',
+    startDate: undefined as any,
+    endDate: undefined as any,
+    integrationCodes: [] as string[],
+    internalStatuses: [] as string[],
+    // C1.1: kalem stok tahsis durumu (OrderService/getOrders `filter.allocationStates`, API_TENANT_SURFACE §2.2)
+    allocationStates: [] as string[]
+  }),
+  sortBy: [{ key: 'dates.orderDate', order: 'desc' }],
+  fetch: async (q) => {
+    const res = await restApi.post('OrderService/getOrders', { searchOrderForm: listPayload(q) });
+    if (isRequestError(res)) throw res;
+    return res?.orders ? { items: res.orders, total: res.totalNumberOfRecords || 0 } : null;
+  }
+});
+const loadError = computed(() => error.value !== null)
+/** Aşama 6b (Standart 1): hata desenindeki neden + teknik ayrıntı. */
+const loadProblem = computed<ProblemCopy | null>(() => error.value ? problemFromError(error.value, 'OrderService/getOrders') : null)
+const getOrders = load
+
+const statusOptions = computed(() => Object.values(OrderInternalStatusEnum).map((id) => ({ id, title: ORDER_INTERNAL_STATUS_LABELS[id] })))
+
+// Açık detay, yenilenen listedeki güncel kaydı gösterir.
+watch(orders, (rows) => {
+  if (!isDetailOpen.value || !selectedOrderForDetail.value) return
+  const updated = rows.find((o: any) => o._id === selectedOrderForDetail.value._id)
+  if (updated) selectedOrderForDetail.value = updated
+})
 
 const {
   processPlatformAction, processBulkAction, printShippingLabel, handleResolveDiscrepancy
@@ -329,11 +355,10 @@ const gridSort = computed<EkGridSort>(() => {
 
 function onGridSort(sort: EkGridSort) {
   // Üçüncü tık (sıralama kaldır) → backend varsayılanı: en yeni sipariş üstte.
-  onSortUpdate(sort ? [{ key: SORT_FIELD[sort.key], order: sort.dir }] : [{ key: 'dates.orderDate', order: 'desc' }])
+  setSort(sort ? [{ key: SORT_FIELD[sort.key], order: sort.dir }] : [{ key: 'dates.orderDate', order: 'desc' }])
 }
 
-// Aktif filtre çipleri — SON SORGULANAN değerlerden (panelde düzenlenip henüz sorgulanmamış değer çip olmaz).
-const applied = ref({ globalSearch: '', integrationCodes: [] as string[], internalStatuses: [] as string[], allocationStates: [] as string[] })
+// Aktif filtre çipleri — SON SORGULANAN değerlerden (`applied`; panelde düzenlenip henüz sorgulanmamış değer çip olmaz).
 
 // "Stok durumu" filtresi — kapalı küme (status-map ALLOCATION_STATES), etiketler status.allocation.*
 const allocationOptions = computed(() => ALLOCATION_STATES.map(id => ({ id, title: allocationTitle(id) })))
@@ -383,7 +408,7 @@ const savedViews = computed<EkSavedViewsConfig>(() => ({
 
 /** Görünüm = filtrelerin TAMAMI: görünümde olmayan alanlar (arama, kanal) temizlenir. */
 function applySavedView(params: Record<string, any>) {
-  const data = searchOrderForm.value.data
+  const data = filters.value
   data.globalSearch = ''
   data.integrationCodes = []
   data.internalStatuses = Array.isArray(params.internalStatuses) ? [...params.internalStatuses] : []
@@ -392,7 +417,7 @@ function applySavedView(params: Record<string, any>) {
 }
 
 function removeChip(key: string) {
-  const data = searchOrderForm.value.data
+  const data = filters.value
   if (key === 'globalSearch') data.globalSearch = ''
   if (key === 'integrationCodes') data.integrationCodes = []
   if (key === 'internalStatuses') data.internalStatuses = []
@@ -441,71 +466,12 @@ const selectedOrderObjects = computed(() => {
   return orders.value.filter(order => selectedOrders.value.includes(order._id));
 });
 
-const bulkActionCounts = computed(() => {
-  const objects = selectedOrderObjects.value.filter(o => !isOrderLocked(o));
-  return {
-    APPROVE: objects.filter(o => o.internalStatus === OrderInternalStatusEnum.AWAITING_APPROVAL).length,
-    CANCEL: objects.filter(o => [OrderInternalStatusEnum.UNAPPROVED, OrderInternalStatusEnum.AWAITING_APPROVAL, OrderInternalStatusEnum.APPROVED].includes(o.internalStatus)).length,
-    INVOICE: objects.filter(o => [OrderInternalStatusEnum.APPROVED, OrderInternalStatusEnum.SHIPPED].includes(o.internalStatus) && !o.invoice?.invoiceNumber).length,
-    SHIP: objects.filter(o => [OrderInternalStatusEnum.APPROVED].includes(o.internalStatus)).length
-  };
-});
+const bulkActionCounts = computed(() => countBulkEligible(selectedOrderObjects.value));
 
 // --- METHODS ---
 
-async function getOrders(resetPage: boolean = false) {
-  if (resetPage) pagination.page = 1;
-  loading.value = true;
-  loadError.value = false;
-  const d = searchOrderForm.value.data;
-  applied.value = {
-    globalSearch: d.globalSearch || '', integrationCodes: [...(d.integrationCodes || [])], internalStatuses: [...(d.internalStatuses || [])],
-    allocationStates: [...(d.allocationStates || [])],
-  };
-
-  try {
-    const res = await restApi.post('OrderService/getOrders', {
-      searchOrderForm: prepareFilterPayload()
-    });
-    if (isRequestError(res)) {
-      loadError.value = true;
-      loadProblem.value = problemFromError(res, 'OrderService/getOrders');
-    } else if (res?.orders) {
-      orders.value = res.orders;
-
-      if (isDetailOpen.value && selectedOrderForDetail.value) {
-        const updated = res.orders.find((o: any) => o._id === selectedOrderForDetail.value._id);
-        if (updated) selectedOrderForDetail.value = updated;
-      }
-
-      pagination.totalNumberOfRecords = res.totalNumberOfRecords || 0;
-      pagination.totalNumberOfPages = Math.ceil(pagination.totalNumberOfRecords / pagination.limit) || 1;
-    }
-  } catch (e) {
-    loadError.value = true;
-    loadProblem.value = problemFromError(e, 'OrderService/getOrders');
-  } finally {
-    loading.value = false;
-  }
-}
-
 async function executeOrderAction(endpoint: string, payload: any) {
   return await restApi.post(endpoint, payload);
-}
-
-function onSearchInput(value: string) {
-  searchOrderForm.value.data.globalSearch = value;
-  getOrders(true);
-}
-
-function onPageChange(newPage: number) {
-  pagination.page = newPage;
-  handlePageChange();
-}
-
-function onPageSizeChange(size: number) {
-  pagination.limit = size;
-  onPageChange(1);
 }
 
 function statusEntry(status: OrderInternalStatusEnum) {
@@ -527,12 +493,6 @@ function hasAnyRowAction(item: any): boolean {
 const handlePlatformAction = (id: string, type: 'INVOICE' | 'SHIP' | 'APPROVE') => {
   const refs = { manualInvoiceComponentRef, manualShipmentComponentRef, barcodePrintComponentRef };
   processPlatformAction(id, type, null, refs);
-};
-
-const isOrderLocked = (order: any) => {
-  if (!order?.platformOperation?.lockedUntil) return false;
-  const lockedUntil = new Date(order.platformOperation.lockedUntil);
-  return lockedUntil > new Date();
 };
 
 const handleDetailStatusChange = async (p: any) => {
@@ -586,16 +546,7 @@ const processBulkCancel = async (payload: any) => {
 };
 
 const triggerBulkAction = (type: 'INVOICE' | 'SHIP' | 'APPROVE') => {
-  const targetIds = selectedOrderObjects.value
-    .filter(o => {
-      if (type === 'APPROVE') return o.internalStatus === OrderInternalStatusEnum.AWAITING_APPROVAL;
-      if (type === 'INVOICE') {
-        return [OrderInternalStatusEnum.APPROVED, OrderInternalStatusEnum.SHIPPED].includes(o.internalStatus) && !o.invoice?.invoiceNumber;
-      } else {
-        return [OrderInternalStatusEnum.APPROVED].includes(o.internalStatus);
-      }
-    })
-    .map(o => o._id);
+  const targetIds = bulkTargetIds(selectedOrderObjects.value, type);
 
   if (targetIds.length === 0) {
     snackbarStore.addSnackbar({ text: 'İşlem yapılacak sipariş bulunamadı.', color: 'warning' });
@@ -639,14 +590,14 @@ const getCancelSourceLabel = (source: string) => {
 
 const initialize = async (parameters: any) => {
   if (parameters?.internalStatuses) {
-    searchOrderForm.value.data.internalStatuses = parameters.internalStatuses;
+    filters.value.internalStatuses = parameters.internalStatuses;
   }
   if (parameters?.globalSearch) {
-    searchOrderForm.value.data.globalSearch = parameters.globalSearch;
+    filters.value.globalSearch = parameters.globalSearch;
   }
   const allocationStates = allocationParam(parameters?.allocationStates);
   if (allocationStates) {
-    searchOrderForm.value.data.allocationStates = allocationStates;
+    filters.value.allocationStates = allocationStates;
   }
   await getOrders(true);
   emits('clear')
@@ -655,16 +606,16 @@ const initialize = async (parameters: any) => {
 const activate = async (parameters: any) => {
   let flag = false
   if (parameters?.globalSearch) {
-    searchOrderForm.value.data.globalSearch = parameters.globalSearch;
+    filters.value.globalSearch = parameters.globalSearch;
     flag = true
   }
   if (parameters?.internalStatuses) {
-    searchOrderForm.value.data.internalStatuses = parameters.internalStatuses;
+    filters.value.internalStatuses = parameters.internalStatuses;
     flag = true
   }
   const allocationStates = allocationParam(parameters?.allocationStates);
   if (allocationStates) {
-    searchOrderForm.value.data.allocationStates = allocationStates;
+    filters.value.allocationStates = allocationStates;
     flag = true
   }
   if (flag) {
