@@ -555,3 +555,29 @@ bölümü; ortak ds bileşenlerine dokunulmadı, token değişikliği yok. Önce
 | Çok varyant | > 8: kompakt ızgara + "Tümünü gör" (iç kaydırma, yapışık başlık) |
 | Dar kap | < 600px kart (A6b) |
 | Mantık | `variants/variantListModel.ts` (saf, `tests/variant-list-model.test.ts`) |
+
+## 19. B4 — sol menü (yalnız etkin sayfa vurgulu, koreografili daralma) + breadcrumb çipleri (`cloud/fe-b4`)
+
+Taban `cloud/ds-v2-a6b` + A7/A9/A10/A11. İnceleme ve eleştiri→karar tablosu: `docs/b4-review/README.md`. Token (palet) değişikliği YOK;
+`app.css`'e hareket türevleri eklendi: `--ek-app-nav-fade` (= fast), `--ek-app-nav-move` (= slow), `--ek-app-nav-lag` (fast/2),
+`--ek-app-nav-reveal` (slow/2) — reduced-motion ve `data-motion="reduced"` altında hepsi 0.
+
+- **Renk:** vurgu yalnız etkin öğede (`sidebar-active` zemin + 3px `action` çizgisi + `action-emphasis` metin). Bölüm başlığı
+  `content-muted` (A10 §18.1'deki `sidebar-text` kararı kullanıcı geri bildirimiyle değişti); etkin öğenin grubu nötr; favori yıldızı nötr.
+  Alternatif "dolgulu hap" elendi.
+- **Geometri sabit:** ağırlık durumlarda değişmez; zemin/odak halkası `::after` sahte öğede → hover/odak/etkinleşme layout shift 0.
+- **Tam ↔ ray tek çekmece** (`NavigationMenu` `rail`; `NavigationRail.vue` kaldırıldı, spec çapaları `.soft-nav`/`.soft-rail`/
+  `.collapse-btn`/`.rail-logo-btn` korunur): içerik opaklıkla solar → genişlik ease-out daralır (içerik kabuğu `SecureLayout` aynı
+  süre/gecikmeyle kayar); açılışta ters. Etiketler DOM'da, sabit genişlikte (kırpılmaz, yeniden sarılmaz); ikon x ekseni sabit.
+  Rayda gizli içerik odaklanamaz (alt liste `inert`, favori `visibility`). Genişlet/daralt düğmesi altta, aynı yer.
+- **Alt liste:** yükseklik 0fr↔1fr + opaklık (base), kırpıcı katmanla kapalıyken 0px.
+- **Breadcrumb:** kök + ara öğeler nötr çip (28px, `border-default`, `surface-muted`, `content-muted`; hover `surface` +
+  `border-strong`); ayraç ince chevron; son öğe H1. Karma alternatif elendi. Kök çip de kısalır; yol en kısa hâlinde sığmazsa eylemler
+  alt satıra iner (`is-stacked`).
+- **Yardım tetikleyicisi** (`.ek-page-bar__info`): 24px yuvarlak nötr düğme, ince `?`, `EkTooltip`, token odak halkası; açık/hover'da
+  yalnız kenarlık+metin koyulaşır. Davranış/API (aria-expanded/controls, "Sayfa hakkında: <başlık>") aynı — fe-help tarafına bırakıldı.
+- **Bekçiler:** `tests/b4-sidebar-breadcrumb.test.ts` (vurgu yalnız `.is-active`, durum kurallarında geometri yok, token'lı koreografi,
+  reduced-motion 0, çip/yardım tokenları), `e2e/specs/b4-sidebar.spec.ts` (aktif renk yalnız aktif öğede, layout shift 0, ikon ekseni
+  sabit + ray 64px, reduced-motion'da süre 0, yardım düğmesi). Güncellenen: `a10-shell-nav-tabs` (bölüm başlığı rengi, kasıtlı),
+  `a7-breadcrumb` (geri/"…" düğmelerine eklenen çip sınıfı; iddia aynı).
+

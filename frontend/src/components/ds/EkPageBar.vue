@@ -13,7 +13,7 @@
   - Kısayollar kabuk kaydından (`navigation/shortcuts.ts`); "Tüm kısayollar" `ek:shortcut-help` olayıyla diyaloğu açar.
 -->
 <template>
-  <div ref="rootRef" class="ek-page-bar" :class="{ 'is-open': about.open.value, 'is-narrow': narrow }">
+  <div ref="rootRef" class="ek-page-bar" :class="{ 'is-open': about.open.value, 'is-narrow': narrow, 'is-stacked': stacked }">
     <div class="ek-page-bar__row">
       <div class="ek-page-bar__titles">
         <!-- A7: tek breadcrumb deseni — kök (modül ikonu + bölüm) / ara ekranlar / SON = sayfa başlığı (H1). -->
@@ -199,13 +199,21 @@ function crumbsClipped(): boolean {
   return Array.from(root.querySelectorAll<HTMLElement>('.ek-crumbs__item:not(.ek-crumbs__item--current) > .ek-crumbs__link, .ek-crumbs__item:not(.ek-crumbs__item--current):not(.ek-crumbs__item--root) > .ek-crumbs__text'))
     .some((el) => el.scrollWidth > el.clientWidth + 1)
 }
+/** B4: yol en kısa hâlinde bile başlık sütununa sığmıyorsa eylemler (arama vb.) alt satıra iner — üst üste binmez. */
+const stacked = ref(false)
+function titlesOverflow(): boolean {
+  const titles = rootRef.value?.querySelector<HTMLElement>('.ek-page-bar__titles')
+  return !!titles && titles.scrollWidth > titles.clientWidth + 1
+}
 async function fit() {
   keep.value = 2
+  stacked.value = false
   await nextTick()
   while (keep.value > 0 && crumbsClipped()) {
     keep.value -= 1
     await nextTick()
   }
+  if (!narrow.value && titlesOverflow()) stacked.value = true
 }
 watch([width, () => props.trail, () => props.title, () => props.record?.code], () => { if (width.value > 0) void fit() }, { flush: 'post' })
 const foldedGroups = computed<EkMenuGroup[]>(() => [
@@ -344,7 +352,16 @@ async function copyRecord() {
 }
 
 .ek-crumbs__chip--static {
+  min-width: 0;
+  max-width: 100%;
   padding-left: var(--ek-space-2);
+}
+
+/* Kök çip de kısalabilir (en son ara öğelerden sonra): dar satırda metin üç noktaya, en kötü ikon çipine iner —
+   başlık ve eylemler üst üste binmez (800px'te arama alanı H1'in üstüne biniyordu). */
+.ek-crumbs__item--root {
+  flex: 0 100 auto;
+  min-width: calc(var(--ek-app-chip-h-md) + var(--ek-space-2));
 }
 
 .ek-crumbs__chip-icon {
@@ -555,6 +572,18 @@ async function copyRecord() {
   justify-content: flex-end;
   gap: var(--ek-space-2);
   margin-left: auto;
+}
+
+/* B4: yığılı düzen — başlık satırı tek başına, eylemler alt satırda sola yaslı (yenile başlık satırında kalır). */
+.is-stacked .ek-page-bar__row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: 'titles refresh' 'actions actions';
+}
+
+.is-stacked .ek-page-bar__actions {
+  width: 100%;
+  justify-content: flex-start;
+  margin-left: 0;
 }
 
 /* Panel: başlık satırının hemen altında, sayfa zemininde ince çerçeveli bilgi yüzeyi (kart değil — içerikle yarışmaz). */
