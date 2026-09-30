@@ -112,7 +112,9 @@ function listVueFiles(srcDir) {
 
 function buildCounts(repoRoot) {
   const srcDir = path.join(repoRoot, 'src');
-  const files = listVueFiles(srcDir);
+  // ADR-0034 / CHAT_UI_CONTRACT §9: sohbet paketi (packages/chat/src) de taranır; taban 0.
+  const chatDir = path.join(repoRoot, 'packages', 'chat', 'src');
+  const files = [...listVueFiles(srcDir), ...(fs.existsSync(chatDir) ? listVueFiles(chatDir) : [])];
   const map = {};
   for (const absPath of files) {
     const relPath = path.relative(repoRoot, absPath).split(path.sep).join('/');

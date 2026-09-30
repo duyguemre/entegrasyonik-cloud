@@ -105,6 +105,13 @@ if (import.meta.env.DEV) {
     component: () => import('@/views/dev/DesignSystemView.vue'),
     meta: { requiresAuth: false },
   })
+  // ADR-0034 — Otopilot inceleme tezgâhı (mock taşıyıcı, açık/koyu tema; packages/chat/docs/review görselleri + axe).
+  routes.unshift({
+    path: '/dev/otopilot',
+    name: 'OtopilotHarness',
+    component: () => import('@/views/dev/OtopilotHarnessView.vue'),
+    meta: { requiresAuth: false },
+  })
 }
 
 const router = createRouter({

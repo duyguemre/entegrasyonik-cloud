@@ -105,7 +105,12 @@ function listStyleFiles(srcDir) {
 /** `repoRoot`'a göre `src/**` (+ ADR-0015 A1b: seçili `public/assets/css/*`) içindeki her dosya için sayım map'i üretir. */
 function buildCounts(repoRoot) {
   // ADR-0026: ortak DS kaynağı (packages/ui/src) artık src/ dışında — mandal kapsamı AYNI kalır.
-  const files = [...listStyleFiles(path.join(repoRoot, 'src')), ...listStyleFiles(path.join(repoRoot, 'packages/ui/src'))];
+  // ADR-0034 / CHAT_UI_CONTRACT §1: sohbet paketi (packages/chat/src) de taranır; taban 0 (yeni dosyalar 0 ile başlar).
+  const files = [
+    ...listStyleFiles(path.join(repoRoot, 'src')),
+    ...listStyleFiles(path.join(repoRoot, 'packages/ui/src')),
+    ...listStyleFiles(path.join(repoRoot, 'packages/chat/src')),
+  ];
   const map = {};
   for (const absPath of files) {
     const relPath = path.relative(repoRoot, absPath).split(path.sep).join('/');

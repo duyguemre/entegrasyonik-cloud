@@ -91,6 +91,9 @@ export const useMenuStore = defineStore('menu', () => {
     ['StockHealthView', shallowRef(defineAsyncComponent(() => import('@/views/secure/StockHealthView.vue')))],
     // Yardım merkezi (statik içerik; menü ağacına bağlı değil — bağlantı `help/helpLink.ts`).
     ['HelpCenterView', shallowRef(defineAsyncComponent(() => import('@/views/secure/HelpCenterView.vue')))],
+    // ADR-0034 — Otopilot tam sayfa + ayarlar (menü ağacına bağlı değil — bağlantı `chat/chatLinks.ts`).
+    ['chat', shallowRef(defineAsyncComponent(() => import('@/views/secure/OtopilotView.vue')))],
+    ['OtopilotSettingsView', shallowRef(defineAsyncComponent(() => import('@/views/secure/settings/OtopilotSettingsView.vue')))],
 
   ]);
 
