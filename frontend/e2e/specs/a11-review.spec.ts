@@ -92,9 +92,11 @@ async function openList(page: Page, product: any) {
 /** Ürün satırı + açılan varyant alanı (yakın çekim kırpması). */
 async function closeUp(page: Page, product: any, name: string) {
   const target = page.locator(`#variant-target-${product._id}`)
-  // Dar ekranda liste kendi içinde kayar: ürün satırı görünür alanın başına gelsin.
-  await page.locator('.productListView .ek-grid__row').filter({ hasText: product.title }).first().evaluate((el) => el.scrollIntoView({ block: 'start' }))
-  await settle(page, 300)
+  // Dar ekranda liste kendi içinde kayar: ürün satırı görünür alanın başına gelsin (masaüstünde yapışık başlığın altına girmesin).
+  if (page.viewportSize()!.width <= 480) {
+    await page.locator('.productListView .ek-grid__row').filter({ hasText: product.title }).first().evaluate((el) => el.scrollIntoView({ block: 'start' }))
+    await settle(page, 300)
+  }
   const productRow = page.locator('.productListView tr.ek-grid__row, .productListView .ek-grid__row').filter({ hasText: product.title }).first()
   const a = await productRow.boundingBox().catch(() => null)
   const b = await target.boundingBox().catch(() => null)
@@ -126,6 +128,17 @@ const SCENARIOS: { name: string; run: (p: Page) => Promise<void> }[] = [
       await openList(p, MANY)
       await p.screenshot({ path: file('v2-cok-varyant') })
       await closeUp(p, MANY, 'v2-cok-varyant')
+      // "Tümünü gör" (kapalı → açık, iç kaydırma) — kartın alt kısmı.
+      const target = p.locator(`#variant-target-${MANY._id}`)
+      const more = target.locator('.pvl-more')
+      await more.evaluate((el) => el.scrollIntoView({ block: 'end' }))
+      await settle(p, 300)
+      await p.screenshot({ path: file('v2-cok-varyant-tumunu-gor') })
+      await more.getByRole('button').click()
+      await settle(p, 500)
+      await more.evaluate((el) => el.scrollIntoView({ block: 'end' }))
+      await settle(p, 300)
+      await p.screenshot({ path: file('v2-cok-varyant-tumu-acik') })
     },
   },
   {

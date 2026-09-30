@@ -450,3 +450,19 @@ primary, `#item` şablonlarında `role=option`, kanal filtresi `EkSelect`. `test
 
 **Bilinçli e2e seçici güncellemeleri (iddia aynı):** yeni gliflere seçiciler (`.mdi-eye` → `.mdi-eye-outline` vb.), hata deseninin
 "ne oldu / ne yapmalı" iki satırı (7 iddia), `EkProblemState` sınıfı (kategori eşleme), mağaza detayı sekme adı cümle düzeni.
+
+## 18. A11 — ürün listesi satır altı varyant gösterimi (`cloud/fe-a11`)
+
+Taban `cloud/ds-v2-a6b`. Kapsam yalnız `ProductVariantListComponent`, `ProductVariantListTooltipComponent`, ürün listesi satır genişletme
+bölümü; ortak ds bileşenlerine dokunulmadı, token değişikliği yok. Önce/sonra + gerekçeler: `docs/a11-review/README.md`.
+
+| Konu | Karar |
+|---|---|
+| Hiyerarşi | açık ürün satırı + varyant alanı tek `surface-sunken` blok, sol şerit satırda başlar, kap girintili ve üstü satıra birleşik |
+| Hareket | yükseklik (grid 0fr→1fr) + opaklık `--ek-duration-base`; reduced-motion 0 |
+| Özet şeridi | sayı · grup · toplam stok · tükendi/az · seçili; kanal kapsamı (x/n yayında, hata/bekliyor), gönderilmeyenler tek çip |
+| Satır | görsel/yer tutucu · seçenek çipleri · mono stok kodu/barkod + kopyala · tabular fiyat · stok tonu (≤5 az) + raf · kanal çipleri · `EkRowActions` |
+| Kanal | gönderilmiş kanal = adlı çip + durum ikonu (hata tonu), ipucunda kısa neden, tıklayınca durum kartı; gönderilmemiş "+n" |
+| Çok varyant | > 8: kompakt ızgara + "Tümünü gör" (iç kaydırma, yapışık başlık) |
+| Dar kap | < 600px kart (A6b) |
+| Mantık | `variants/variantListModel.ts` (saf, `tests/variant-list-model.test.ts`) |

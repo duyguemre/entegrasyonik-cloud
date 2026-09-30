@@ -509,6 +509,10 @@ const rowActions = (v: any): EkRowAction[] => [
 }
 
 /* Tablo */
+.pvl-scroll {
+  overflow-x: auto;
+}
+
 .pvl-scroll.is-scrolling {
   max-height: 520px;
   overflow-y: auto;
@@ -636,8 +640,17 @@ const rowActions = (v: any): EkRowAction[] => [
 .pvl-row.is-selected > .pvl-td { background: var(--ek-color-selection); }
 .pvl-row.is-selected > .pvl-td--select { box-shadow: inset 3px 0 0 var(--ek-color-action); }
 
-.is-compact .pvl-td { padding-top: 6px; padding-bottom: 6px; }
-.is-compact .pvl-thumb { width: 32px; height: 32px; }
+/* Kompakt ızgara (> 8 varyant): her hücre tek satır — seçenek + stok kodu, satış + piyasa fiyatı, stok + raf yan yana. */
+.is-compact .pvl-td { padding: 6px var(--ek-space-2); }
+.is-compact .pvl-ident { min-width: 0; }
+.is-compact .pvl-td--select { padding-left: var(--ek-space-4); }
+.is-compact .pvl-thumb { width: 28px; height: 28px; }
+.is-compact .pvl-thumb .v-icon { font-size: var(--ek-icon-sm); }
+.is-compact .pvl-ident__text { flex-direction: row; align-items: center; gap: var(--ek-space-2); }
+.is-compact .pvl-price { flex-direction: row; align-items: baseline; gap: var(--ek-space-2); }
+.is-compact .pvl-channels { flex-wrap: nowrap; max-width: none; }
+.is-compact .pvl-stock { grid-template-columns: auto auto auto; }
+.is-compact .pvl-stock__shelf { grid-column: auto; order: -1; margin-right: var(--ek-space-1); }
 
 .pvl-ident {
   display: flex;
@@ -977,7 +990,8 @@ const rowActions = (v: any): EkRowAction[] => [
   .pvl-stock__shelf { grid-column: auto; }
 
   .pvl-ident { min-width: 0; }
-  .pvl-channels { max-width: none; }
+  .pvl-channels,
+  .is-compact .pvl-channels { flex-wrap: wrap; max-width: none; }
   .pvl-copy { opacity: 1; }
   .pvl-summary { padding: var(--ek-space-2) var(--ek-space-3); }
 }
