@@ -1,8 +1,9 @@
 ---
 /**
  * ChannelMono — kanal (pazaryeri/entegrasyon) monogram rozeti (S11). Logo YOK (marka izni açık soru,
- * ADR-0014 Açık Soru 3): yalnızca ilk harf + marka rengi zemini. Renk `[data-code]` eşlemesi ile
- * `src/styles/global.css`'ten gelir (`--chan`/`--chan-fill`); burada yeni renk tanımlanmaz.
+ * ADR-0014 Açık Soru 3): yalnızca ilk harf + RESMİ marka rengi zemini (C1S: gradyan/karartma yok, renk
+ * değiştirilmez). Zemin `--chan`, harf `--chan-on` (siyah/beyaz, ≥4.5:1) — ikisi de `[data-code]` eşlemesiyle
+ * `src/styles/global.css`'ten gelir; bilinmeyen kanal nötr (`--channel-neutral`). Burada yeni renk tanımlanmaz.
  * Anlam metinle taşınır (`aria-hidden`, yanında her zaman kanal adı görünür).
  */
 interface Props {
@@ -26,9 +27,9 @@ const { code, name, size = 'md', class: className } = Astro.props
     align-items: center;
     justify-content: center;
     border-radius: var(--ek-radius-lg);
-    background: linear-gradient(140deg, var(--chan, var(--ek-color-primary)), var(--chan-fill, var(--ek-color-primary-darken-1)));
+    background: var(--chan, var(--channel-neutral));
     box-shadow: var(--ek-shadow-md);
-    color: var(--site-color-on-primary);
+    color: var(--chan-on, var(--channel-neutral-on));
     font-weight: var(--ek-font-weight-bold);
     line-height: 1;
   }
