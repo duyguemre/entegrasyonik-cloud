@@ -9,8 +9,10 @@
        └ düğme: aria-expanded / aria-controls, Enter/Space      └ `chips` verilirse (kapalıyken de görünür)
       Başlığın boş alanına tıklamak da aç/kapar (fare kolaylığı; klavye yolu düğme). Chevron yumuşak döner.
       < 600px kapta çip özeti ikinci satıra iner (başlık çubuğunun içinde kalır).
-    gövde (`surface-sunken`): EkFormGrid (varsayılan 4 kolon) — slot
-    eylem çubuğu: [#extra-actions] ........ Temizle (ikincil) · Sorgula (birincil)
+    gövde (`surface-muted`): EkFormGrid (varsayılan 4 kolon) — slot
+    eylem çubuğu (`surface` + ince üst ayraç): [#extra-actions | "Enter ile sorgula"] ..... Temizle (ghost) · Sorgula (birincil)
+  FR2-SHELL madde 9 (fe-r2a): başlık çubuğu beyaz yüzey, gövde hafif tonlu, eylemler ayrı ayraçlı çubukta — üç katman
+  (ne süzülüyor / alanlar / işlem) göz yormadan ayrışır. frontend/docs/FR2_PATTERNS.md §4.
 
   Enter bir alandayken Sorgula'yı tetikler (native form submit).
   `chips` (A8): etkin filtre çipleri başlıktaki `EkActiveFilters variant="compact"` ile gösterilir (`remove-chip`,
@@ -57,8 +59,11 @@
         </EkFormGrid>
       </div>
       <div class="ek-filter__actions">
-        <div class="ek-filter__extra"><slot name="extra-actions" /></div>
-        <EkButton type="reset" tone="secondary" :icon="icons.clearFilters" :disabled="!activeCount">Temizle</EkButton>
+        <div class="ek-filter__extra">
+          <slot name="extra-actions" />
+          <span v-if="!$slots['extra-actions']" class="ek-filter__enter-hint" aria-hidden="true"><kbd>Enter</kbd> ile sorgula</span>
+        </div>
+        <EkButton type="reset" tone="ghost" :icon="icons.clearFilters" :disabled="!activeCount">Temizle</EkButton>
         <EkButton type="submit" tone="primary" :icon="icons.search" :loading="loading">Sorgula</EkButton>
       </div>
     </form>
@@ -123,9 +128,9 @@ function onHeadClick(e: MouseEvent) {
   display: flex;
   align-items: center;
   gap: var(--ek-space-3);
-  min-height: 48px;
-  padding: var(--ek-space-1) var(--ek-space-2) var(--ek-space-1) var(--ek-space-2);
-  background: var(--ek-color-surface-muted);
+  min-height: 52px;
+  padding: var(--ek-space-2) var(--ek-space-3) var(--ek-space-2) var(--ek-space-2);
+  background: var(--ek-color-surface);
   border-bottom: 1px solid var(--ek-color-border-subtle);
   cursor: pointer;
   transition: var(--ek-transition-colors);
@@ -136,7 +141,7 @@ function onHeadClick(e: MouseEvent) {
 }
 
 .ek-filter__head:hover {
-  background: var(--ek-color-surface-sunken);
+  background: var(--ek-color-surface-muted);
 }
 
 .ek-filter__heading {
@@ -170,12 +175,12 @@ function onHeadClick(e: MouseEvent) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--ek-radius-control);
-  background: var(--ek-color-surface);
-  box-shadow: inset 0 0 0 1px var(--ek-color-border-default);
-  color: var(--ek-color-content-muted);
+  width: 32px;
+  height: 32px;
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface-muted);
+  box-shadow: inset 0 0 0 1px var(--ek-color-border-subtle);
+  color: var(--ek-color-content-default);
   font-size: var(--ek-icon-sm);
   transition: var(--ek-transition-colors);
 }
@@ -311,8 +316,8 @@ function onHeadClick(e: MouseEvent) {
 
 /* ── Gövde ─────────────────────────────────────────────────────────────────── */
 .ek-filter__body {
-  padding: var(--ek-space-4);
-  background: var(--ek-color-surface-sunken);
+  padding: var(--ek-space-5) var(--ek-space-4) var(--ek-space-4);
+  background: var(--ek-color-surface-muted);
 }
 
 /* Aşama 4: eylem çubuğu gövdenin DEVAMI (aynı sunken yüzey, ayraç yok) — alanlar ile Sorgula tek blok okunur. */
@@ -322,8 +327,37 @@ function onHeadClick(e: MouseEvent) {
   align-items: center;
   justify-content: flex-end;
   gap: var(--ek-space-2);
-  padding: 0 var(--ek-space-4) var(--ek-space-4);
-  background: var(--ek-color-surface-sunken);
+  padding: var(--ek-space-3) var(--ek-space-4);
+  background: var(--ek-color-surface);
+  border-top: 1px solid var(--ek-color-border-subtle);
+}
+
+/* FR2 madde 9: eylem çubuğunun solunda sessiz klavye ipucu (ekran kendi ek eylemini vermediyse). */
+.ek-filter__enter-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  color: var(--ek-color-content-subtle);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+}
+
+.ek-filter__enter-hint kbd {
+  padding: 0 var(--ek-space-1);
+  border: 1px solid var(--ek-color-border-default);
+  border-bottom-width: 2px;
+  border-radius: var(--ek-radius-sm);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-muted);
+  font-family: inherit;
+  font-size: var(--ek-type-micro-size);
+  line-height: 16px;
+}
+
+@container (max-width: 599px) {
+  .ek-filter__enter-hint {
+    display: none;
+  }
 }
 
 .ek-filter__extra {

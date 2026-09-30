@@ -6,10 +6,11 @@
         max-width="600px">
         <v-form ref="formRef" @submit.prevent="handleSubmit">
             <EkFormGrid :columns="1">
-                    <v-select v-model="form.carrierName"
-                        :items="['Aras Kargo', 'Yurtiçi Kargo', 'MNG Kargo', 'Sürat Kargo', 'Trendyol Express', 'PTT Kargo', 'Diğer']"
+                    <!-- FR2 madde 13 (K13): kargo firmaları kanal rozetiyle aynı biçim; liste tek kayıttan (`carrierOptions`),
+                         değer = firma adı (backend `carrierName` serbest metin — eski değerler aynen). -->
+                    <EkSelect v-model="form.carrierName" kind="carrier" :items="CARRIER_ITEMS"
                         label="Kargo Firması"
-                        :rules="[v => !!v || 'Kargo firması seçilmelidir']"></v-select>
+                        :rules="[(v: string) => !!v || 'Kargo firması seçilmelidir']" />
                     <v-text-field v-model="form.trackingCode" label="Takip Numarası" placeholder="Kargo takip numarasını giriniz"
                         :rules="[v => !!v || 'Takip numarası zorunludur']" autofocus></v-text-field>
                     <v-text-field v-model="form.trackingUrl" label="Takip Linki (Opsiyonel)" placeholder="https://..."
@@ -21,7 +22,10 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
-import { EkFormGrid } from '@entegrasyonik/ui/components'
+import { EkFormGrid, EkSelect } from '@entegrasyonik/ui/components'
+import { carrierOptions } from '@entegrasyonik/ui/tokens'
+
+const CARRIER_ITEMS = carrierOptions()
 import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue';
 
 // State yönetimi

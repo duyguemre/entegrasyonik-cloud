@@ -25,18 +25,17 @@ withDefaults(defineProps<{
 </script>
 
 <style scoped>
-/* C1: logo zemini = kanal token'ı (tek kaynak `channelClass` → `--ek-ch-logo-{bg,fg,accent}`); backend `color` alanı kullanılmaz. */
+/* K13: kanal rozeti biçimi (koyu kenarlık + açık zemin + koyu metin) — `channelClass` → `--ek-ch-badge-*`; backend `color` alanı kullanılmaz. */
 .integration-avatar {
-    border-radius: var(--ek-radius-none) !important;
-    border: 0;
-    background: var(--ek-ch-logo-bg);
-    color: var(--ek-ch-logo-fg);
-    box-shadow: inset 0 -3px 0 var(--ek-ch-logo-accent);
+    border-radius: var(--ek-radius-tile) !important;
+    border: 1px solid var(--ek-ch-badge-border);
+    background: var(--ek-ch-badge-bg);
+    color: var(--ek-ch-badge-fg);
 }
 
 .integration-avatar__title {
     user-select: none;
     letter-spacing: -0.4px !important;
-    color: var(--ek-ch-logo-fg);
+    color: var(--ek-ch-badge-fg);
 }
 </style>

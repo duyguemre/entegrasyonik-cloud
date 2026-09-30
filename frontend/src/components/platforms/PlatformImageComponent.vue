@@ -10,14 +10,10 @@
                 class="platform-logo"></v-img>
  -->
 
-            <div class="d-flex align-center ma-2">
-                <v-avatar :size="Number(height) * 0.6" class="platform-avatar">
-                    <span class="font-weight-black text-h6 platform-avatar__letter"
-                        :style="{ fontSize: 'calc(' + height + 'px / 2.5)!important' }">{{
-                            integrationCode?.charAt(0) }}</span>
-                </v-avatar> <span class="platform-name">{{
-                        integrationCode?.charAt(0).toUpperCase() + integrationCode?.slice(1)
-                    }}</span>
+            <!-- K13: kanal kimliği = kanal rozetinin kısa formu (koyu kenarlık + açık zemin) + uzun ad (tek kayıt). -->
+            <div class="d-flex align-center ma-2 platform-mark">
+                <EkChannelBadge :code="integrationCode" form="short" size="md" aria-hidden="true" />
+                <span class="platform-name">{{ channelName(integrationCode) }}</span>
             </div>
         </div>
     </div>
@@ -27,7 +23,8 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
 import { useIntegrationStore } from '@/stores/integrationStore'
-import { channelClass } from '@entegrasyonik/ui/tokens'
+import { channelClass, channelName } from '@entegrasyonik/ui/tokens'
+import { EkChannelBadge } from '@entegrasyonik/ui/components'
 
 const integrationStore = useIntegrationStore()
 const src = ref('')
@@ -111,7 +108,7 @@ watch(() => props.integrationCode, loadIntegrationData)
 
 /* --- AKTİF DURUM --- */
 .premium-platform-card.is-active {
-    border-color: var(--ek-ch-brand);
+    border-color: var(--ek-ch-badge-border);
 }
 
 /* Seçili durum: kenarlık + alt vurgu çizgisi (zıplama/kayma yok — premium görsel dil). */
@@ -125,7 +122,7 @@ watch(() => props.integrationCode, loadIntegrationData)
     transform: translateX(-50%);
     width: 30%;
     height: 3px;
-    background: var(--ek-ch-brand);
+    background: var(--ek-ch-badge-border);
     border-radius: var(--ek-radius-md) var(--ek-radius-md) 0 0;
 }
 
@@ -134,16 +131,8 @@ watch(() => props.integrationCode, loadIntegrationData)
     filter: grayscale(0);
 }
 
-.platform-avatar {
-    margin-right: var(--ek-space-1);
-    background: var(--ek-ch-logo-bg);
-    box-shadow: inset 0 0 0 1px var(--ek-channel-ring), inset 0 -3px 0 var(--ek-ch-logo-accent);
-}
-
-.platform-avatar__letter {
-    color: var(--ek-ch-logo-fg);
-    line-height: 1;
-    text-transform: capitalize;
+.platform-mark {
+    gap: var(--ek-space-2);
 }
 
 .platform-name {

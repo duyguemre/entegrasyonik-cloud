@@ -7,6 +7,9 @@
     <ProductDeleteConfirmDialog v-model="confirmationDelete.isDialogOpen" :product="confirmationDelete.product"
       @confirm="deleteProduct()" @cancel="cancelDeleteProduct()" />
     <LoadingComponent :attach="dialogAttach" ref="loadingComponentRef"></LoadingComponent>
+    <ProductGalleryDialog :open="!!galleryProduct" :images="galleryProduct ? productImageSrcs(galleryProduct) : []"
+      :title="galleryProduct?.title ?? ''" :attach="dialogAttach"
+      @close="galleryProduct = null" @edit="editFromGallery" />
     <EkDialogHost :model-value="!!(transferProductForm.transferProductFormMenu || batchProcessFormMenu)"
       :attach="dialogAttach" placement="end" width="lg"
       @update:model-value="(v) => { if (!v) { transferProductForm.transferProductFormMenu = false; batchProcessFormMenu = false } }">
@@ -123,9 +126,10 @@
 
       <template #cell-title="{ row }">
         <div class="plv-product" @click="selectProduct(row)">
-          <!-- B1: resim adedi rozeti kaldırıldı; çoklu görsel sessiz "yığın" kenarıyla, büyük önizleme gecikmeli (ProductThumb). -->
+          <!-- FR2 18–19: büyük kare (56 px, `contain` → fotoğraf kırpılmaz); hover = tek büyük görsel + adet, tıklama = galeri. -->
           <ProductThumb interactive size="md" class="plv-thumb" :src="productImageSrcs(row)[0]" :gallery="productImageSrcs(row)"
-            :label="`${row.title} ürününü düzenle`" :caption="row.title" @click.stop="openEditProduct(row)" />
+            :label="productImageSrcs(row).length ? `${row.title} görsellerini aç` : `${row.title} — görsel yok, ürünü düzenle`"
+            :caption="row.title" @click.stop="openGallery(row)" />
           <span class="plv-product__text">
             <span class="plv-product__title">{{ row.title }}</span>
             <button v-if="row.hasVariant" type="button" class="plv-variants-toggle" :aria-expanded="productIdForVariantList == row._id"
@@ -144,12 +148,15 @@
         </div>
       </template>
       <template #cell-stockcode="{ row }">
-        <span v-if="!row.hasVariant" class="ek-num">{{ row.variants[0]?.stockcode || '—' }}</span>
-        <span v-else class="plv-muted">Varyantlı</span>
-      </template>
-      <template #cell-barcode="{ row }">
-        <span v-if="!row.hasVariant" class="ek-num">{{ row.variants[0]?.barcode || '—' }}</span>
-        <span v-else class="plv-muted">—</span>
+        <!-- FR2 22: stok kodu + barkod tek sütunda (iki satır) — kanal sütununa yer açılır, tablo 1440'ta yatay taşmaz. -->
+        <span v-if="!row.hasVariant" class="plv-two-line">
+          <span class="ek-num">{{ row.variants[0]?.stockcode || '—' }}</span>
+          <span class="plv-muted ek-num">{{ row.variants[0]?.barcode || 'Barkod yok' }}</span>
+        </span>
+        <span v-else class="plv-two-line">
+          <span>Varyantlı</span>
+          <span class="plv-muted"><span class="ek-num">{{ row.variants.length }}</span> stok kodu</span>
+        </span>
       </template>
       <template #cell-price="{ row }">
         <span class="ek-num">{{ priceText(row) }}</span>
@@ -165,24 +172,10 @@
         <span v-else class="plv-muted">—</span>
       </template>
       <template #cell-platforms="{ row }">
-        <span v-if="!row.hasVariant" class="plv-platforms">
-          <button v-for="integration of integrationStore.getClientPlatforms()" :key="integration.code" type="button"
-            class="plv-platform" :class="{ 'is-ready': isReady(row, integration.code) }"
-            :aria-label="platformAriaLabel(row, integration)"
-            :title="platformAriaLabel(row, integration)"
-            @click.stop="savePlatformUploadIsReadyForProduct(row, integration.code)">
-            <EkChannelDot :code="integration.code" :name="integration.title" :show-name="false" />
-            <v-icon size="14" :icon="isUploaded(row, integration.code) ? 'mdi-check-circle-outline' : 'mdi-close-circle-outline'"
-              :class="isUploaded(row, integration.code) ? 'plv-ok' : 'plv-no'" aria-hidden="true" />
-          </button>
-        </span>
-        <span v-else class="plv-summary">
-          <span v-for="summary of getCountSummary(row.variants)" :key="summary.type" class="plv-summary__item" :title="getStatusLabel(summary.type)">
-            <span class="plv-summary__dot" :class="`is-${summary.type.toLowerCase()}`" aria-hidden="true"></span>
-            <span class="ek-sr-only">{{ getStatusLabel(summary.type) }}:</span>
-            <span class="ek-num">{{ summary.count }}<template v-if="summary.type === 'COMPLETED'">/{{ summary.onSaleCount }}</template></span>
-          </span>
-        </span>
+        <!-- FR2 21–22: kanal başına tek bakışta durum + tıklayınca kanal durumu / gönderime hazır paneli. -->
+        <ProductChannelStatus :product="row" :channels="integrationStore.getClientPlatforms()"
+          :busy="readyBusy && readyBusy.productId === row._id ? readyBusy.code : null"
+          @toggle-ready="(code) => savePlatformUploadIsReadyForProduct(row, code)" />
       </template>
       <template #cell-actions="{ row }">
         <EkRowActions :label="`${row.title} işlemleri`" :items="[
@@ -209,12 +202,14 @@
 
 <script setup lang="ts">
 import HelpStartLink from '@/components/help/HelpStartLink.vue'
-import { EkSelect, EkRowActions, EkButton, EkChannelDot, EkDialogHost } from '@entegrasyonik/ui/components'
+import { EkSelect, EkRowActions, EkButton, EkDialogHost } from '@entegrasyonik/ui/components'
 import type { EkGridColumn, EkGridSort, EkActiveFilterChip } from '@entegrasyonik/ui/components'
 import { useI18n } from 'vue-i18n';
 import { ref, onMounted, onBeforeMount, onActivated, watch, computed, nextTick, getCurrentInstance, inject, onDeactivated, onUnmounted, reactive } from 'vue'
 import LoadingComponent from '@/components/LoadingComponent.vue'
 import ProductThumb from '@/components/productDefinitions/products/ProductThumb.vue'
+import ProductGalleryDialog from '@/components/productDefinitions/products/ProductGalleryDialog.vue'
+import ProductChannelStatus from '@/components/productDefinitions/products/ProductChannelStatus.vue'
 import { productImageSrcs } from '@/components/productDefinitions/products/productImage'
 import { formatMoney } from '@entegrasyonik/ui/format'
 import EkListScreen from '@/components/page/templates/EkListScreen.vue'
@@ -342,34 +337,6 @@ const sleep = (ms: number) => {
 
 
 
-const getCountSummary = (variants: any) => {
-  const summary = []
-  let completedCount = 0,
-    waitingCount = 0,
-    pendingCount = 0,
-    failedCount = 0,
-    onSaleCount = 0;
-
-  const integrations = integrationStore.getClientPlatforms()
-  for (const variant of variants) {
-    for (const integration of integrations) {
-      const status = variant.platforms?.[integration.code]?.upload?.TRANSFER?.status
-      const onSale = variant.platforms?.[integration.code]?.upload?.onSale
-
-      if (status === 'COMPLETED') completedCount++
-      else if (!status || status === 'PENDING') pendingCount++
-      else if (status === 'FAILED') failedCount++
-      else if (status === 'WAITING' || status === 'SENT') waitingCount++
-
-      if (onSale === true) onSaleCount++
-    }
-  }
-  summary.push({ type: 'PENDING', count: pendingCount })
-  summary.push({ type: 'WAITING', count: waitingCount })
-  summary.push({ type: 'FAILED', count: failedCount })
-  summary.push({ type: 'COMPLETED', count: completedCount, onSaleCount })
-  return summary
-}
 
 
 const selectProduct = async (product: any) => {
@@ -497,18 +464,35 @@ const updateProduct = async (product: any, processItem: any = undefined) => {
   }
 }
 
+// FR2 22: "gönderime hazır" anahtarı (kanal durumu paneli; bayrak backend'de yalnız saklanır). Kayıt süresince yalnız o anahtar kilitlenir; sonuç satıra
+// hemen yansır (liste yeniden yüklenmeden — panel açık kalır, kaydırma/açık varyant kaybolmaz). API ve gövde AYNI.
+const readyBusy = ref<{ productId: string; code: string } | null>(null)
 const savePlatformUploadIsReadyForProduct = async (product: any, integrationCode: string) => {
-  var isReady = true
-  if (product.platformUploads && product.platformUploads[integrationCode] && product.platformUploads[integrationCode].isReady) {
-    isReady = !product.platformUploads[integrationCode].isReady
+  if (readyBusy.value) return
+  const isReady = !product.platformUploads?.[integrationCode]?.isReady
+  readyBusy.value = { productId: product._id, code: integrationCode }
+  try {
+    const response = await restApi.post("IntegrationService/savePlatformUploadIsReadyForProduct", { productId: product._id, integrationCode: integrationCode, isReady: isReady })
+    if (response && response.modifiedCount > 0) {
+      product.platformUploads = { ...(product.platformUploads ?? {}), [integrationCode]: { ...(product.platformUploads?.[integrationCode] ?? {}), isReady } }
+    } else if (!isRequestError(response)) {
+      snackbarStore.addSnackbar({ text: 'Gönderime hazır işareti değişmedi — ürün kaydı güncel olmayabilir, listeyi yenileyin.', color: 'warning' })
+    }
+  } finally {
+    readyBusy.value = null
   }
-  let guid = loadingComponentRef.value.info("")
-  let response = await restApi.post("IntegrationService/savePlatformUploadIsReadyForProduct", { productId: product._id, integrationCode: integrationCode, isReady: isReady })
-  loadingComponentRef.value.remove(guid)
-  if (response && response.modifiedCount > 0) {
-    getProducts()
-  }
+}
 
+// FR2 19: hover önizlemesinin devamı — tıklayınca salt-okunur galeri; görsel yoksa doğrudan düzenleme.
+const galleryProduct = ref<any>(null)
+function openGallery(product: any) {
+  if (!productImageSrcs(product).length) return openEditProduct(product)
+  galleryProduct.value = product
+}
+function editFromGallery() {
+  const product = galleryProduct.value
+  galleryProduct.value = null
+  if (product) openEditProduct(product)
 }
 
 const updateOnsale = async (product: any) => {
@@ -623,13 +607,12 @@ const TRANSFER_STATUS_TITLES: Record<string, string> = { PENDING: 'Hazırlanan',
 
 // Sıralama: ProductService.getProducts `sort.field` izin listesi (SUNUCU tarafı). Kolon anahtarı = alan.
 const columns: EkGridColumn[] = [
-  { key: 'title', label: 'Ürün', sortable: true },
-  { key: 'stockcode', label: 'Stok kodu', sortable: true },
-  { key: 'barcode', label: 'Barkod', sortable: true },
+  { key: 'title', label: 'Ürün', sortable: true, wrap: true, width: '320px' },
+  { key: 'stockcode', label: 'Stok kodu / barkod', sortable: true },
   { key: 'price', label: 'Fiyat', type: 'num', sortable: true },
   { key: 'stock', label: 'Stok', type: 'num', sortable: true },
   { key: 'brandCategory', label: 'Marka / kategori' },
-  { key: 'platforms', label: 'Platform durumu' },
+  { key: 'platforms', label: 'Kanallar', width: '200px' },
   { key: 'actions', label: 'İşlemler', align: 'end', hideLabel: true, pin: 'end' },
 ]
 
@@ -715,10 +698,6 @@ function priceText(item: any): string {
   return min === max || max === undefined ? formatMoney(min) : `${formatMoney(min)} – ${formatMoney(max)}`
 }
 
-const isUploaded = (item: any, code: string) => !!item.platformUploads?.[code]?.isUploaded
-const isReady = (item: any, code: string) => !!item.platformUploads?.[code]?.isReady
-const platformAriaLabel = (item: any, integration: any) =>
-  `${integration.title}: ${isUploaded(item, integration.code) ? 'yüklendi' : 'yüklenmedi'}, ${isReady(item, integration.code) ? 'gönderime hazır' : 'gönderime hazır değil'} — değiştirmek için tıklayın`
 
 const isObject = (value: any) => {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -939,16 +918,6 @@ const resetSearchProductForm = () => {
     }
   }
 }
-// Statü isimlerini tooltip için map'liyoruz
-const getStatusLabel = (type: string) => {
-  const labels: Record<string, string> = {
-    'PENDING': 'Hazırlanan Ürünler',
-    'WAITING': 'Onay Bekleyenler',
-    'FAILED': 'Hatalı Gönderimler',
-    'COMPLETED': 'Onaylanan / Satışta Olanlar'
-  };
-  return labels[type] || type;
-};
 
 
 </script>
@@ -1238,80 +1207,6 @@ const getStatusLabel = (type: string) => {
 .plv-two-line .plv-muted {
   font-size: var(--ek-type-caption-size);
 }
-
-.plv-platforms {
-  display: inline-flex;
-  gap: var(--ek-space-1);
-}
-
-.plv-platform {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ek-space-1);
-  height: 24px;
-  padding: 0 var(--ek-space-1) 0 var(--ek-space-2);
-  border: 1px dashed var(--ek-color-border-strong);
-  border-radius: var(--ek-radius-chip);
-  background: var(--ek-color-surface);
-  color: var(--ek-color-content-muted);
-  font: inherit;
-  font-size: var(--ek-type-caption-size);
-  cursor: pointer;
-  transition: var(--ek-transition-colors);
-}
-
-.plv-platform.is-ready {
-  border-style: solid;
-  border-color: var(--ek-color-action-border);
-  background: var(--ek-color-action-subtle);
-  color: var(--ek-color-action-emphasis);
-}
-
-.plv-platform:hover {
-  border-color: var(--ek-color-border-input);
-}
-
-.plv-platform:focus-visible {
-  outline: none;
-  box-shadow: var(--ek-focus-ring);
-}
-
-.plv-ok {
-  color: var(--ek-color-success);
-}
-
-.plv-no {
-  color: var(--ek-color-content-muted);
-}
-
-.plv-summary {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ek-space-3);
-  height: 24px;
-  padding: 0 var(--ek-space-2);
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-chip);
-  font-size: var(--ek-type-caption-size);
-  font-weight: var(--ek-font-weight-semibold);
-}
-
-.plv-summary__item {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.plv-summary__dot {
-  width: 6px;
-  height: 6px;
-  border-radius: var(--ek-radius-chip);
-}
-
-.plv-summary__dot.is-pending { background: var(--ek-color-info); }
-.plv-summary__dot.is-waiting { background: var(--ek-color-warning); }
-.plv-summary__dot.is-failed { background: var(--ek-color-error); }
-.plv-summary__dot.is-completed { background: var(--ek-color-success); }
 
 .plv-row-actions {
   display: inline-flex;

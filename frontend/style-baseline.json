@@ -2,10 +2,10 @@
   "_meta": "ADR-0011 Karar 2 / Aşama 1 literal-stil mandalı tabanı. node scripts/check-style-baseline.js --write ile üretildi (bkz. scripts/style-literal-counts.js). Hiçbir dosyada/kategoride sayı ARTAMAZ; yeni dosyalar 0 ile başlamalı; düşüş serbest ama bu dosyanın güncellenmesi gerekir (check-style-baseline.js OK dönene kadar).",
   "date": "2026-09-30",
   "totals": {
-    "total": 14,
+    "total": 13,
     "hex": 0,
     "rgb": 0,
-    "inlineStyle": 14,
+    "inlineStyle": 13,
     "cubicBezier": 0,
     "motion": 0
   },
@@ -99,6 +99,14 @@
       "total": 0
     },
     "packages/ui/src/components/EkCascadePicker.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "packages/ui/src/components/EkChannelBadge.vue": {
       "hex": 0,
       "rgb": 0,
       "inlineStyle": 0,
@@ -2029,10 +2037,10 @@
     "src/components/platforms/PlatformImageComponent.vue": {
       "hex": 0,
       "rgb": 0,
-      "inlineStyle": 3,
+      "inlineStyle": 2,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 3
+      "total": 2
     },
     "src/components/privacy/AccountDeletionPanel.vue": {
       "hex": 0,

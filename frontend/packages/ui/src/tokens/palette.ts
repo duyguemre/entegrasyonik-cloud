@@ -103,6 +103,22 @@ export const channelPalette = {
 export type ChannelCode = keyof typeof channelPalette
 
 /**
+ * K13 (USER_DECISIONS, 2026-09-30; FR2 madde 11–15) — KANAL ROZETİ biçimi: kenarlık = marka renginin KOYUSU, iç zemin =
+ * AÇIĞI, harf = koyu marka tonu. Marka rengi (`channelPalette.brand`) DEĞİŞMEZ; rozet tonları yalnız bu oranlarla
+ * `color-mix(in srgb, …)` ile türetilir (formül tek yerde: `render.ts` `renderChannelBadgeRules`):
+ *   zemin    = marka %tint  + yüzey (`--ek-color-surface`)
+ *   kenarlık = marka %shade + mürekkep (`--ek-color-content-strong`)
+ *   harf     = marka %ink   + mürekkep
+ * `light` oranları tanıtım sitesinin `--channel-badge-{tint,shade,ink}` değerleriyle BİREBİR (cloud/site-s23) → iki yüzeyde
+ * aynı rozet. `dark` oranları koyu yüzey + açık mürekkep için ayrı hesaplandı. Her kanal (ve nötr) için AA birim testle
+ * korunur: harf/zemin ≥ 4.5:1, kenarlık/yüzey ≥ 3:1 (`tests/theme/channel-badge.test.ts`).
+ */
+export const channelBadgeMix = {
+  light: { tint: 14, shade: 78, ink: 58 },
+  dark: { tint: 18, shade: 70, ink: 45 },
+} as const
+
+/**
  * Pazaryeri/entegrasyon marka vurgu rengi (ADR-0015 Karar 3.11) — `channelPalette.brand`'in
  * geri uyumlu görünümü (mağaza kayıtları `color` alanı). METİN rengi DEĞİLDİR.
  */
