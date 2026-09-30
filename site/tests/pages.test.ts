@@ -16,7 +16,8 @@ import { getPublicFaq, getSupportCategories } from '../src/data/faq'
 import { connectGuides, getConnectGuide } from '../src/data/connect'
 import { featureDetails } from '../src/data/feature-details'
 import { legalNav, primaryNav, published } from '../src/data/navigation'
-import { resolveContactEmail, mailtoHref } from '../src/lib/contact'
+import { resolveContactEmail, mailtoHref, DEFAULT_CONTACT_EMAIL } from '../src/lib/contact'
+import { company } from '../src/data/company'
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const repoRoot = path.resolve(siteRoot, '..')
@@ -320,22 +321,38 @@ describe('/sss', () => {
 })
 
 describe('/iletisim', () => {
-  it('TASLAK: adres yer tutucu, mailto ve form YOK', () => {
+  // S16 (kasıtlı davranış değişikliği): env boşken önceden yer tutucu gösteriliyor ve "Bize yazın" mailto düğmeleri
+  // HİÇ üretilmiyordu (kullanıcının bildirdiği hata). Artık şirket kaydındaki genel adres varsayılandır.
+  it('env boş: varsayılan şirket adresiyle konu bazlı mailto düğmeleri + kopyala düğmesi; yer tutucu ve form YOK', () => {
     const p = html(draftDir, '/iletisim')
-    expect(p).toContain('data-testid="contact-placeholder"')
-    expect(visibleText(p)).toContain('{{İLETİŞİM_E_POSTA}}')
-    expect(p).not.toContain('mailto:')
+    expect(DEFAULT_CONTACT_EMAIL).toBe('bilgi@entegrasyonik.com.tr')
+    expect(p).toContain(`href="mailto:${DEFAULT_CONTACT_EMAIL}"`)
+    expect((p.match(/data-testid="contact-mailto"/g) ?? []).length).toBe(4)
+    expect(p).toMatch(new RegExp(`href="mailto:${escapeRe(DEFAULT_CONTACT_EMAIL)}\\?subject=Kurumsal%20teklif%20talebi"`))
+    expect(p).toMatch(new RegExp(`data-copy="${escapeRe(DEFAULT_CONTACT_EMAIL)}"`))
+    expect(p).toMatch(/data-copy-status[^>]*aria-live="polite"|aria-live="polite"[^>]*data-copy-status/)
+    expect(p).not.toContain('contact-placeholder')
+    expect(visibleText(p)).not.toContain('{{İLETİŞİM_E_POSTA}}')
+    expect(visibleText(p)).not.toContain('yayın öncesinde eklenecektir')
     expect(p).not.toMatch(/<form\b/)
     expect(p).not.toMatch(/<input\b|<textarea\b/)
   })
 
-  it('adres verilince mailto bağlantıları üretilir (konu ön dolgulu), yine form YOK', () => {
+  it('env verilince o adres kullanılır (konu ön dolgulu), yine form YOK', () => {
     const p = html(finalDir, '/iletisim')
     expect(p).toContain(`href="mailto:${EMAIL}"`)
-    expect((p.match(/data-testid="contact-mailto"/g) ?? []).length).toBe(3)
+    expect((p.match(/data-testid="contact-mailto"/g) ?? []).length).toBe(4)
     expect(p).toMatch(new RegExp(`mailto:${escapeRe(EMAIL)}\\?subject=`))
+    expect(p).not.toContain(`mailto:${DEFAULT_CONTACT_EMAIL}`)
     expect(p).not.toMatch(/<form\b/)
     expect(p).not.toContain('contact-placeholder')
+  })
+
+  it('adres henüz verilmedi: adres satırı gizli, ham {{ADRES}} görünmez (company.address boş)', () => {
+    expect(company.address).toBe('')
+    const p = html(draftDir, '/iletisim')
+    expect(p).not.toContain('data-testid="kunye-address"')
+    expect(visibleText(p)).not.toContain('{{ADRES}}')
   })
 
   it('yanıt süresi/destek saati iddiası yok; künye yer tutucuları var', () => {
@@ -504,9 +521,9 @@ describe('veri kayıtları (yeni: connect, feature-details)', () => {
 })
 
 describe('iletişim adresi çözümleyici', () => {
-  it('boş -> yer tutucu (undefined); geçerli -> adres; biçimsiz -> fail-fast', () => {
-    expect(resolveContactEmail({})).toBeUndefined()
-    expect(resolveContactEmail({ PUBLIC_CONTACT_EMAIL: '  ' })).toBeUndefined()
+  it('boş -> şirket varsayılanı (S16); geçerli -> adres; biçimsiz -> fail-fast', () => {
+    expect(resolveContactEmail({})).toBe('bilgi@entegrasyonik.com.tr')
+    expect(resolveContactEmail({ PUBLIC_CONTACT_EMAIL: '  ' })).toBe('bilgi@entegrasyonik.com.tr')
     expect(resolveContactEmail({ PUBLIC_CONTACT_EMAIL: EMAIL })).toBe(EMAIL)
     for (const bad of ['yok', 'a@b', 'a b@c.d', '<x>@y.z', 'a@b.c,d@e.f']) {
       expect(() => resolveContactEmail({ PUBLIC_CONTACT_EMAIL: bad }), bad).toThrow()

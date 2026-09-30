@@ -4,6 +4,7 @@
  * Değerleri insan (işletme/hukuk/mali müşavir) verir; ajan uydurma değer YAZMAZ (Protokol 12).
  */
 import type { PlaceholderSpec } from './types'
+import { company, hasValue } from '../company'
 
 export const placeholders: Record<string, PlaceholderSpec> = {
   // --- Künye / kimlik (ADR-0014 Açık Soru 4) ---
@@ -147,3 +148,15 @@ export const placeholders: Record<string, PlaceholderSpec> = {
 }
 
 export const placeholderKeys = Object.keys(placeholders)
+
+/**
+ * Çözülmüş yer tutucular (S16) — değeri işletme tarafından VERİLMİŞ anahtarlar. Tek kaynak `src/data/company.ts`.
+ * Metinde `{{ANAHTAR}}` olarak kalırlar (kayıt ve yasaklı-ifade denetimi değişmez); görüntülenirken değerle
+ * değiştirilir ve "Doldurulması gereken alanlar" listesinden düşer (`pendingPlaceholderKeys`).
+ * Yalnızca İLETİŞİM_EPOSTA (kullanıcı kararı, 2026-09-30) ve — girildiğinde — ADRES çözülür; KVKK_BAŞVURU_EPOSTA
+ * vb. diğer anahtarlar ayrı insan/hukuk kararıdır ve DOKUNULMAZ.
+ */
+export const placeholderValues: Readonly<Partial<Record<string, string>>> = {
+  İLETİŞİM_EPOSTA: company.email,
+  ...(hasValue(company.address) ? { ADRES: company.address.trim() } : {}),
+}

@@ -37,6 +37,11 @@ interface Props {
     | 'search'
     | 'arrowUpRight'
     | 'sparkle'
+    | 'mail'
+    | 'copy'
+    | 'pin'
+    | 'book'
+    | 'help'
   size?: 'sm' | 'md' | 'lg'
   class?: string
 }
@@ -74,6 +79,11 @@ const PATHS: Record<Props['name'], string> = {
   server: 'M4 5h16v6H4z M4 13h16v6H4z M8 8h.01 M8 16h.01',
   search: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14z M20 20l-4-4',
   arrowUpRight: 'M7 17 17 7 M8 7h9v9',
+  mail: 'M3 6h18v12H3z M3 7l9 6 9-6',
+  copy: 'M9 9h11v11H9z M5 15H4V4h11v1',
+  pin: 'M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z M12 12a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z',
+  book: 'M4 5a2 2 0 0 1 2-2h14v15H6a2 2 0 0 0-2 2V5z M4 20a2 2 0 0 0 2 2h14v-4 M9 7h7',
+  help: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6 M12 17h.01',
   sparkle: 'M12 3v4 M12 17v4 M3 12h4 M17 12h4 M6 6l2.5 2.5 M15.5 15.5 18 18 M18 6l-2.5 2.5 M8.5 15.5 6 18',
 }
 

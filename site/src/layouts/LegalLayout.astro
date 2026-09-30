@@ -3,7 +3,7 @@
  * LegalLayout — yasal sayfaların ortak iskeleti (ADR-0014 Karar 5, S5). BaseLayout'u sarar; BaseLayout'a dokunmaz.
  * - Belirgin "TASLAK — hukuki inceleme bekliyor (Protokol 12)" bandı (LEGAL_REVIEWED=false iken; insan onayı ile kapanır)
  * - Sürüm + güncelleme tarihi, içindekiler (yalnızca sayfa içi bağlantı, JS yok), okunabilir ölçü (--site-measure)
- * - Belgede geçen HER `{{YER_TUTUCU}}` için sayfa sonunda "Doldurulması gereken alanlar" listesi (kayıttan üretilir)
+ * - Belgede geçen ve henüz değeri verilmemiş HER `{{YER_TUTUCU}}` için (S16: çözülmüşler `placeholderValues`) sayfa sonunda "Doldurulması gereken alanlar" listesi (kayıttan üretilir)
  * - İnceleme notları (`note` blokları) yalnızca SITE_DRAFT=true iken görünür
  * - Yazdırma stili: üst/alt bilgi ve gezinme gizlenir, metin sayfa genişliğine yayılır
  * Girdi yalnızca repodaki veri dosyalarıdır (src/data/legal/*); satır içi işaretleme src/lib/legal-render.ts'te kaçırılarak dönüştürülür.
@@ -11,7 +11,7 @@
 import BaseLayout from './BaseLayout.astro'
 import Container from '../components/Container.astro'
 import { siteConfig } from '../lib/site-config'
-import { renderInline, usedPlaceholderKeys } from '../lib/legal-render'
+import { renderInline, pendingPlaceholderKeys } from '../lib/legal-render'
 import { placeholders } from '../data/legal/placeholders'
 import { legalDocs, legalHref, LEGAL_DRAFT_BANNER, LEGAL_REVIEWED } from '../data/legal'
 import type { LegalDoc } from '../data/legal/types'
@@ -23,7 +23,7 @@ interface Props {
 const { doc } = Astro.props
 const showBanner = !LEGAL_REVIEWED
 const showNotes = siteConfig.draft
-const keys = usedPlaceholderKeys(doc)
+const keys = pendingPlaceholderKeys(doc)
 const related = legalDocs.filter((d) => d.slug !== doc.slug)
 const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR', {
   timeZone: 'UTC',

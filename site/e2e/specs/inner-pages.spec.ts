@@ -180,13 +180,51 @@ test.describe('S14 — destek merkezi ve bağlantı rehberi', () => {
 })
 
 test.describe('iletisim', () => {
-  test('form yok; adres yer tutucusu (mailto yalnızca adres verilince) ve künye yer tutucuları', async ({ page }) => {
+  const EMAIL = 'bilgi@entegrasyonik.com.tr'
+
+  test('form yok; "Bize yazın" konu düğmeleri görünür ve doğru mailto; künye yer tutucuları (adres gizli)', async ({ page }) => {
     await page.goto('/iletisim')
     await expect(page.locator('form')).toHaveCount(0)
-    await expect(page.getByTestId('contact-placeholder')).toContainText('{{İLETİŞİM_E_POSTA}}')
-    await expect(page.locator('a[href^="mailto:"]')).toHaveCount(0)
+    await expect(page.getByTestId('contact-placeholder')).toHaveCount(0)
+    const topics = page.getByTestId('contact-mailto')
+    await expect(topics).toHaveCount(4)
+    for (const t of await topics.all()) {
+      await expect(t).toBeVisible()
+      await expect(t).toHaveAttribute('href', new RegExp(`^mailto:${EMAIL.replace(/\./g, '\\.')}\\?subject=.+`))
+    }
+    await expect(topics.first()).toHaveAttribute('href', `mailto:${EMAIL}?subject=Kurumsal%20teklif%20talebi`)
+    await expect(page.getByTestId('contact-send').first()).toBeVisible()
+    await expect(page.getByTestId('contact-send').first()).toHaveAttribute('href', /^mailto:bilgi@entegrasyonik\.com\.tr/)
     await expect(page.getByTestId('kunye-details')).toContainText('{{ŞİRKET_UNVANI}}')
+    await expect(page.getByTestId('kunye-details')).toContainText(EMAIL)
+    await expect(page.getByTestId('kunye-details')).not.toContainText('{{ADRES}}')
     await expect(page.getByRole('link', { name: 'Giriş yap' }).last()).toHaveAttribute('href', `${APP_URL}/login`)
+  })
+
+  test('"Adresi kopyala": panoya yazar ve aria-live ile duyurur', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+    await page.goto('/iletisim')
+    const copy = page.getByTestId('contact-copy').first()
+    await expect(copy).toBeVisible()
+    await copy.click()
+    await expect(copy).toHaveAttribute('data-state', 'copied')
+    await expect(copy).toContainText('Kopyalandı')
+    const status = page.getByTestId('contact-copy-status').first()
+    await expect(status).toHaveAttribute('aria-live', 'polite')
+    await expect(status).toContainText('panoya kopyalandı')
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(EMAIL)
+  })
+
+  test('"Adresi kopyala" klavyeyle de çalışır (odak halkası + Enter)', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+    await page.goto('/iletisim')
+    const copy = page.getByTestId('contact-copy').first()
+    await copy.focus()
+    await expect(copy).toBeFocused()
+    const outline = await copy.evaluate((el) => getComputedStyle(el).outlineStyle)
+    expect(outline).not.toBe('none')
+    await page.keyboard.press('Enter')
+    await expect(copy).toHaveAttribute('data-state', 'copied')
   })
 })
 

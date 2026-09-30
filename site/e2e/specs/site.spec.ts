@@ -27,6 +27,9 @@ test.describe('Ana sayfa', () => {
   test('footer künye yer tutucuları görünür (doğrulanmamış unvan yazılmaz)', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByTestId('kunye-placeholder')).toContainText('{{ŞİRKET_UNVANI}}')
+    // S16: genel iletişim adresi footer'da; adres henüz verilmediği için satırı yok
+    await expect(page.getByTestId('footer-contact').getByRole('link', { name: 'bilgi@entegrasyonik.com.tr' })).toHaveAttribute('href', 'mailto:bilgi@entegrasyonik.com.tr')
+    await expect(page.getByTestId('footer-address')).toHaveCount(0)
   })
 
   test('Inter self-host yüklenir, yatay taşma yok', async ({ page }) => {
