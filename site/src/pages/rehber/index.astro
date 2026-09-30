@@ -291,6 +291,7 @@ const jsonLd = [
   }
   .hub-principles {
     display: grid;
+    align-content: start;
     gap: var(--ek-space-4);
     margin: 0;
     padding: 0;
@@ -596,11 +597,22 @@ const jsonLd = [
     .featured {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
+  }
+  @media (min-width: 768px) and (max-width: 1023.98px) {
     .hub-principles {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
   @media (min-width: 1024px) {
+    .hub-intro__grid {
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      gap: var(--ek-space-16);
+      align-items: start;
+    }
+    .hub-principles {
+      padding-inline-start: var(--ek-space-8);
+      border-inline-start: var(--site-border-width) solid var(--ek-color-border-default);
+    }
     .clusters {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }

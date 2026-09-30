@@ -70,7 +70,11 @@ export const clusters: Cluster[] = [
   },
 ]
 
-export const guidesIn = (cluster: ClusterId): Guide[] => guides.filter((g) => g.cluster === cluster)
+/** Küme listesi: genel bakış sayfaları (tek parçalı slug, ör. `pazaryerleri`) başta, sonra öncelik sırası. */
+export const guidesIn = (cluster: ClusterId): Guide[] => {
+  const inCluster = guides.filter((g) => g.cluster === cluster)
+  return [...inCluster.filter((g) => !g.slug.includes('/')), ...inCluster.filter((g) => g.slug.includes('/'))]
+}
 export const clusterOf = (g: Guide): Cluster => clusters.find((c) => c.id === g.cluster)!
 
 export const sourcesOf = (g: Pick<Guide, 'sources'>): Source[] => g.sources.map((id: SourceId) => sources[id])
@@ -162,7 +166,7 @@ export function getGuideCta(kind: CtaKind, channel?: string): GuideCta {
       if (!i || !g) throw new Error(`rehber: mevcut olmayan entegrasyon kodu: ${channel}`)
       return {
         title: `${i.name} bağlantısı`,
-        text: `${i.summary} Bağlantı için gereken bilgiler: ${g.credentials.join(', ').toLocaleLowerCase('tr-TR')}.`,
+        text: `${i.summary} Bağlantı için gereken bilgiler: ${g.credentials.map((c) => (/^[A-ZÇĞİÖŞÜ]{2}/.test(c) ? c : c.charAt(0).toLocaleLowerCase('tr-TR') + c.slice(1))).join(', ')}.`,
         note: g.note ?? (i.coverage !== 'broad' ? i.limitations[0] : undefined),
         link: { label: `${i.name} bağlantı rehberi ve kapsamı`, href: `/entegrasyonlar/${i.code}` },
       }

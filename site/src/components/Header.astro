@@ -308,4 +308,10 @@ const registerHref = appUrls.register()
       margin-inline-start: auto;
     }
   }
+  /* S20: sekizinci bağlantı ("Rehber") + hareket kontrolü 1280–1440 arasında sığsın: bağlantı iç boşluğu bir kademe dar. */
+  @media (min-width: 80rem) and (max-width: 89.99rem) {
+    .nav-desktop__links .nav-link {
+      padding-inline: calc(var(--ek-space-2) * 0.75);
+    }
+  }
 </style>

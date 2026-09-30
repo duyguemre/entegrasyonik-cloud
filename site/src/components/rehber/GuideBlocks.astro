@@ -385,5 +385,20 @@ const { blocks } = Astro.props
     .g-steps__item {
       padding-inline-start: var(--ek-space-12);
     }
+    .g-flow__list {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--ek-space-5);
+    }
+    .g-flow__list li + li {
+      margin-inline-start: 0;
+    }
+    .g-flow__list li + li::before {
+      content: '↓';
+      inset-inline-start: var(--ek-space-4);
+      inset-block-start: calc(var(--ek-space-5) * -1);
+      width: auto;
+      line-height: var(--ek-space-5);
+    }
   }
 </style>
