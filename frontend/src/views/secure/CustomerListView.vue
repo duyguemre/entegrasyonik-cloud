@@ -66,7 +66,7 @@
       </template>
 
       <template #bulk-actions>
-        <EkButton size="sm" icon="mdi-delete-sweep-outline" class="ek-bulk-danger" @click="onBulkDelete">
+        <EkButton size="sm" icon="mdi-trash-can-outline" class="ek-bulk-danger" @click="onBulkDelete">
           Toplu sil ({{ selectedCustomers.length }})
         </EkButton>
       </template>
@@ -93,16 +93,17 @@
         <EkStatusChip :tone="returnRateTone(row.returnRate)" :label="formatPercent((row.returnRate || 0) / 100)" />
       </template>
       <template #cell-actions="{ row }">
-        <span class="ek-row-actions">
-          <EkButton tone="ghost" size="sm" icon="mdi-eye" icon-only aria-label="Müşteri karnesini görüntüle" @click="openDetailedReport(row)" />
-          <EkButton tone="ghost" size="sm" icon="mdi-delete-sweep-outline" icon-only aria-label="Müşteriyi sil" @click="triggerDelete(row)" />
-        </span>
+        <EkRowActions :label="`${row.firstName ?? ''} ${row.lastName ?? ''} işlemleri`" :items="[
+          { key: 'view', action: 'view', label: 'Müşteri karnesini görüntüle', onClick: () => openDetailedReport(row) },
+          { key: 'delete', action: 'delete', label: 'Müşteriyi sil', onClick: () => triggerDelete(row) },
+        ]" />
       </template>
     </EkListScreen>
   </div>
 </template>
 
 <script setup lang="ts">
+import EkRowActions from '@/components/ds/EkRowActions.vue'
 import { ref, onMounted, computed } from 'vue';
 import useRestApi from '@/composables/restapi';
 import { useSnackbarStore } from '@/stores/snackbarStore';

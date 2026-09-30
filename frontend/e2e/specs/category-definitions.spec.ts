@@ -148,7 +148,8 @@ test.describe('A6a — kategori/özellik eşleme hata durumları', () => {
     // Teknik ayrıntı varsayılan KAPALI; açılınca servis/HTTP/zaman görünür, gövde metninde ham kod yok.
     const details = panel.locator('details')
     await expect(details).not.toHaveAttribute('open', '')
-    await expect(panel.locator('.ek-int-err__body > .ek-int-err__line').first()).not.toContainText('500')
+    // Aşama 6b (Standart 1): panel görünümü ds EkProblemState'e taşındı — seçici bilinçli güncellendi, iddia aynı.
+    await expect(panel.locator('.ek-problem__body > .ek-problem__line').first()).not.toContainText('500')
     await panel.locator('summary').click()
     await expect(details).toContainText('IntegrationService/retrieveCategoriesFromIntegration')
     await expect(details).toContainText('500')

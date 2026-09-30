@@ -65,12 +65,12 @@
       <div class="ek-category-sync__or" aria-hidden="true"><span>veya</span></div>
       <p class="ek-category-sync__manual">
         Soldaki kategori ağacından bir kategori seçip
-        <v-icon icon="mdi-cog" size="16" aria-hidden="true" /> <strong>ayar</strong> düğmesiyle manuel ilerleyebilirsiniz.
+        <v-icon icon="mdi-cog-outline" size="16" aria-hidden="true" /> <strong>ayar</strong> düğmesiyle manuel ilerleyebilirsiniz.
       </p>
     </section>
 
     <div v-else class="ek-category-sync__panels">
-      <CardComponent icon="mdi-cog" :title="selectedCategory.title + ' Kategorisini Düzenle'" :isHovered="false">
+      <CardComponent icon="mdi-cog-outline" :title="selectedCategory.title + ' Kategorisini Düzenle'" :isHovered="false">
         <v-form v-model="editingCategory.form" @keydown.enter.prevent @submit.prevent>
           <EkFormGrid :columns="1">
             <v-text-field @click.stop maxlength="160" clearable counter v-model="editingCategory.title"

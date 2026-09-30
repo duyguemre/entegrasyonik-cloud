@@ -33,10 +33,10 @@
                         @click.stop="toggleSelectedImagesForId(element._id)" :class="{ 'pim-unselected': selectedImages.length > 0 && isSelectionExist(element._id) == -1 }">
                         <v-btn class="hovered pim-s8"
                           @click.stop="deleteImage(element)" elevation="0" min-width="0" color="transparent"><v-icon
-                            size="large" color="error">mdi-delete</v-icon></v-btn>
+                            size="large" color="error">mdi-trash-can-outline</v-icon></v-btn>
                         <v-btn class="hovered pim-s9"
                           @click.stop="downloadImage(element._id)" elevation="0" min-width="0"
-                          color="transparent"><v-icon size="large" color="primary">mdi-download</v-icon></v-btn>
+                          color="transparent"><v-icon size="large" color="primary">mdi-download-outline</v-icon></v-btn>
 
                         <v-card outlined
                           elevation="1" min-width="0" color="info" class="drag-handle hovered pim-s10">

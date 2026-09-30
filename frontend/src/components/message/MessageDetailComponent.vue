@@ -30,11 +30,10 @@
         </div>
       </div>
 
-      <v-alert v-if="message.isRejected" type="error" icon="mdi-alert-octagon-outline">
-        <div class="text-caption font-weight-semibold">Pazaryeri red sebebi</div>
+      <EkAlert v-if="message.isRejected" tone="error" title="Pazaryeri red sebebi">
         <div class="text-body-2">{{ message.rejectionReason || 'Belirtilmemiş bir hata nedeniyle reddedildi.' }}</div>
         <div v-if="message.rejectedAt" class="text-caption ek-muted mt-1">Tarih: {{ formatDateTime(message.rejectedAt) }}</div>
-      </v-alert>
+      </EkAlert>
 
       <EkSection title="Mesaj">
         <div class="message-bubble pa-4 rounded-lg border-subtle">
@@ -84,7 +83,7 @@
             @blur="answerTouched = true" />
 
           <div class="d-flex justify-end mt-4">
-            <EkButton tone="primary" icon="mdi-send" :disabled="!canSend" :loading="loading" @click="submitReply">
+            <EkButton tone="primary" icon="mdi-send-outline" :disabled="!canSend" :loading="loading" @click="submitReply">
               {{ message.isRejected ? 'Güncelle ve gönder' : 'Cevabı gönder' }}
             </EkButton>
           </div>
@@ -97,6 +96,7 @@
 </template>
 
 <script setup lang="ts">
+import EkAlert from '@/components/ds/EkAlert.vue'
 import { ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import EkDetailSheet from '@/components/ds/EkDetailSheet.vue';

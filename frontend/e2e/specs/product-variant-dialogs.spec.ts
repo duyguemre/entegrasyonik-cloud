@@ -47,7 +47,7 @@ const shot = (page: Page, name: string) =>
 test.describe('P3 (B5-2) — Varyant diyalogları (ProductVariantsComponent alt bileşenleri)', () => {
   test('varyant özellikleri: kalem butonu "Varyant Bilgileri" kartını ("Varyanta Ata") açar', async ({ page }, testInfo) => {
     const root = await openVariantStep(page)
-    await root.locator('tbody tr').filter({ hasText: 'SK-E2E-SIYAH' }).getByRole('button').filter({ has: page.locator('.mdi-pencil') }).click()
+    await root.locator('tbody tr').filter({ hasText: 'SK-E2E-SIYAH' }).getByRole('button').filter({ has: page.locator('.mdi-pencil-outline') }).click()
 
     const card = page.locator('.v-overlay--active').filter({ hasText: 'Platform Bazında Bilgiler' }).first()
     await expect(card).toBeVisible()

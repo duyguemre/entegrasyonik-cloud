@@ -24,11 +24,11 @@ const groups: EkMenuGroup[] = [
   {
     label: 'Platform',
     items: [
-      { key: PLATFORM_PROCESS.TRANSFER, label: 'Platformlara Yükle', icon: 'mdi-cloud-upload-outline' },
+      { key: PLATFORM_PROCESS.TRANSFER, label: 'Platformlara Yükle', icon: 'mdi-upload-outline' },
       { key: PLATFORM_PROCESS.UPDATE, label: 'Platformlarda Güncelle', icon: 'mdi-sync' },
       { key: PLATFORM_PROCESS.UPDATE_PRICE, label: 'Platform Fiyatlarını Güncelle', icon: 'mdi-currency-try' },
       { key: PLATFORM_PROCESS.UPDATE_STOCK, label: 'Platform Stoklarını Güncelle', icon: 'mdi-counter' },
-      { key: 'FETCH_PRODUCT', label: 'Platformdan Ürün Yükle', icon: 'mdi-cloud-download-outline' },
+      { key: 'FETCH_PRODUCT', label: 'Platformdan Ürün Yükle', icon: 'mdi-download-outline' },
     ],
   },
   {

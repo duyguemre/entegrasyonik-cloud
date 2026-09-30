@@ -74,11 +74,11 @@
       <tbody v-else-if="error" role="rowgroup">
         <tr role="row">
           <td role="cell" class="ek-grid__empty-cell" :colspan="columns.length + (selectable ? 1 : 0)">
-            <div class="ek-grid__empty" role="alert">
-              <EkIconTile icon="mdi-alert-circle-outline" tone="error" size="lg" />
-              <p class="ek-grid__empty-title">{{ errorTitle }}</p>
-              <p class="ek-grid__empty-text">{{ errorText }}</p>
-              <slot name="error-action" />
+            <!-- Aşama 6b (Standart 1): liste gövdesindeki hata = tek hata deseni (EkProblemState). -->
+            <div class="ek-grid__problem" role="alert">
+              <EkProblemState :title="errorTitle" :cause="errorCause" :action="errorText" :details="errorDetails" :retryable="false" size="page">
+                <template #actions><slot name="error-action" /></template>
+              </EkProblemState>
             </div>
           </td>
         </tr>
@@ -141,6 +141,7 @@
 import { channelClass } from '@/design/channels'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, watchEffect } from 'vue'
 import EkIconTile from './EkIconTile.vue'
+import EkProblemState from './EkProblemState.vue'
 
 export interface EkGridColumn {
   key: string
@@ -180,6 +181,9 @@ const props = withDefaults(
     error?: boolean
     errorTitle?: string
     errorText?: string
+    /** Olası neden (biliniyorsa) ve katlanır teknik ayrıntı (Aşama 6b). */
+    errorCause?: string
+    errorDetails?: Array<{ label: string; value: string }>
     rowClass?: (row: Row) => string | Record<string, boolean> | undefined
     /** Aşama 5: satırın kanal kodu alanı (ör. `integrationCode`) — satır/kart solunda 3px kanal şeridi. */
     channelKey?: string

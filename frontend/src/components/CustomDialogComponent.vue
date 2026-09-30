@@ -11,7 +11,7 @@
         <v-card class="d-flex ma-4 custom-dialog-workplace" variant="outlined" elevated=2>
             <div class="mt-0 mr-0 close-button" v-if="showComponent">
                 <v-btn size="30" class="mb-0" block flat color="neutral" aria-label="Kapat" @click="close"><v-icon
-                        size="25">mdi-window-close</v-icon></v-btn>
+                        size="25">mdi-close</v-icon></v-btn>
             </div>
             <div class="pa-2 pt-0 pr-5 popup-scroll flex-1-0" variant="flat">
                 <v-card variant="text">

@@ -22,7 +22,7 @@
               { label: 'Kesen sistem', value: INVOICE_METHOD_LABELS[invoice.invoiceMethod as InvoiceMethodEnum] || invoice.invoiceMethod },
               { label: 'ETTN', value: invoice.ettn || '—' },
             ]" />
-            <v-btn v-if="invoice.pdfUrl" block color="primary" prepend-icon="mdi-printer" class="mt-4" :href="invoice.pdfUrl" target="_blank">
+            <v-btn v-if="invoice.pdfUrl" block color="primary" prepend-icon="mdi-printer-outline" class="mt-4" :href="invoice.pdfUrl" target="_blank">
               Arşiv görüntüle
             </v-btn>
             <v-btn v-else block variant="outlined" prepend-icon="mdi-printer-off" class="mt-4" disabled>

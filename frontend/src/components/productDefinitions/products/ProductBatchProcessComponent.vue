@@ -98,7 +98,7 @@
               <v-btn density="compact" block class="fill-height" color="error"
                 @click="validateAndBatchProcessDelete">
                 <span class="">
-                  <v-icon>mdi-delete</v-icon> {{ $t('common.batchDelete') }}
+                  <v-icon>mdi-trash-can-outline</v-icon> {{ $t('common.batchDelete') }}
                 </span></v-btn>
             </v-btn-group>
           </v-col>

@@ -81,10 +81,10 @@
         </span>
       </template>
       <template #cell-actions="{ row }">
-        <span class="ek-row-actions" @click.stop>
-          <EkButton tone="ghost" size="sm" icon="mdi-message-reply-text-outline" icon-only :aria-label="`TKT-${row.ticketNumber} talebini yanıtla`" @click="openTicket(row)" />
-          <EkButton tone="ghost" size="sm" icon="mdi-delete-sweep-outline" icon-only :aria-label="`TKT-${row.ticketNumber} talebini sil`" @click="confirmDelete(row)" />
-        </span>
+        <EkRowActions :label="`TKT-${row.ticketNumber} işlemleri`" :items="[
+          { key: 'reply', action: 'send', icon: 'mdi-message-reply-text-outline', label: `TKT-${row.ticketNumber} talebini yanıtla`, inline: true, onClick: () => openTicket(row) },
+          { key: 'delete', action: 'delete', label: `TKT-${row.ticketNumber} talebini sil`, inline: true, onClick: () => confirmDelete(row) },
+        ]" />
       </template>
     </EkListScreen>
 
@@ -110,6 +110,7 @@
 </template>
 
 <script setup lang="ts">
+import EkRowActions from '@/components/ds/EkRowActions.vue'
 import { ref, reactive, computed, onMounted } from 'vue';
 import useRestApi from '@/composables/restapi';
 import AdminChatComponent from '@/components/adminPanel/AdminChatComponent.vue';
@@ -329,7 +330,7 @@ async function doDelete(ticket: any) {
 function confirmDelete(ticket: any) {
   confirmDialog.title = 'Talebi Sil';
   confirmDialog.message = `TKT-${ticket.ticketNumber} numaralı talebi silmek istediğinizden emin misiniz?`;
-  confirmDialog.icon = 'mdi-delete-alert';
+  confirmDialog.icon = 'mdi-trash-can-outline';
   confirmDialog.color = 'error';
   confirmDialog.onConfirm = () => doDelete(ticket);
   confirmDialog.show = true;

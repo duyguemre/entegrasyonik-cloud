@@ -76,11 +76,11 @@ const view = (p: Page, cls: string) => p.locator(`.${cls}`).first()
 const firstRow = (p: Page, cls: string) => view(p, cls).locator('tbody tr').first()
 
 async function openOrderDetail(p: Page) {
-  await firstRow(p, 'orderListView').locator('button:has(.mdi-eye), button:has(.mdi-eye-outline)').first().click()
+  await firstRow(p, 'orderListView').locator('button:has(.mdi-eye-outline)').first().click()
   await settle(p, 900)
 }
 async function openClaimDetail(p: Page) {
-  await firstRow(p, 'claimListView').locator('button:has(.mdi-eye), button:has(.mdi-eye-outline)').first().click({ timeout: 4000 })
+  await firstRow(p, 'claimListView').locator('button:has(.mdi-eye-outline)').first().click({ timeout: 4000 })
   await settle(p, 900)
 }
 async function selectRows(p: Page, cls: string, n = 2) {
@@ -110,7 +110,7 @@ const cases: Array<{ name: string; run: (page: Page) => Promise<void> }> = [
   // 3 — toplu + bağlam
   { name: 's03-toplu-siparis', run: async (p) => { await open(p, 'OrderListView'); await selectRows(p, 'orderListView'); await p.screenshot({ path: file('s03-toplu-siparis') }) } },
   { name: 's03-toplu-bildirim', run: async (p) => { await open(p, 'NotificationCenterView'); await selectRows(p, 'workplace-area'); await p.screenshot({ path: file('s03-toplu-bildirim') }) } },
-  { name: 's03-baglam-siparis', run: async (p) => { await open(p, 'OrderListView'); await firstRow(p, 'orderListView').locator('button:has(.mdi-dots-horizontal), button:has(.mdi-dots-vertical)').first().click().catch(() => undefined); await settle(p, 500); await p.screenshot({ path: file('s03-baglam-siparis') }) } },
+  { name: 's03-baglam-siparis', run: async (p) => { await open(p, 'OrderListView'); await firstRow(p, 'orderListView').locator('button:has(.mdi-dots-horizontal), button:has(.mdi-dots-horizontal)').first().click().catch(() => undefined); await settle(p, 500); await p.screenshot({ path: file('s03-baglam-siparis') }) } },
   { name: 's03-baglam-urun', run: async (p) => { await open(p, 'productDefinitions/ProductListView'); await p.screenshot({ path: file('s03-baglam-urun') }) } },
   // 4 — ana sekmeler dar ekranda
   {

@@ -60,7 +60,7 @@
               <EkButton size="sm" icon="mdi-email-open-outline" :disabled="!selectedUnreadIds.length" :loading="busy === 'read-selected'" @click="markSelectedRead">
                 Okundu işaretle
               </EkButton>
-              <EkButton size="sm" icon="mdi-delete-outline" class="ek-nc-danger-text" @click="confirmOpen = true">Sil</EkButton>
+              <EkButton size="sm" icon="mdi-trash-can-outline" class="ek-nc-danger-text" @click="confirmOpen = true">Sil</EkButton>
             </div>
             <EkButton tone="ghost" size="sm" icon="mdi-close" @click="selected = []">Seçimi kaldır</EkButton>
           </template>
@@ -142,12 +142,12 @@
           <EkStatusChip :tone="row.isRead ? 'neutral' : 'info'" :label="row.isRead ? 'Okundu' : 'Okunmamış'" />
         </template>
         <template #cell-actions="{ row }">
-          <span class="ek-nc-actions" @click.stop>
-            <EkButton v-if="!compact && internalActionPath(row.actionUrl)" tone="ghost" size="sm" icon="mdi-arrow-top-right" icon-only :aria-label="`Görüntüle: ${row.title}`" @click="goTo(row)" />
-            <EkButton v-if="!row.isRead" tone="ghost" size="sm" icon="mdi-email-open-outline" icon-only :aria-label="`Okundu işaretle: ${row.title}`" @click="markRowRead(row)" />
-            <EkButton tone="ghost" size="sm" icon="mdi-delete-outline" icon-only :aria-label="`Sil: ${row.title}`" @click="deleteRow(row)" />
-          </span>
-        </template>
+            <EkRowActions :label="`${row.title} işlemleri`" :items="[
+              ...(!compact && internalActionPath(row.actionUrl) ? [{ key: 'go', action: 'openExternal' as const, icon: 'mdi-arrow-top-right', label: `Görüntüle: ${row.title}`, onClick: () => goTo(row) }] : []),
+              ...(!row.isRead ? [{ key: 'read', action: 'approve' as const, icon: 'mdi-email-open-outline', label: `Okundu işaretle: ${row.title}`, onClick: () => markRowRead(row) }] : []),
+              { key: 'delete', action: 'delete', label: `Sil: ${row.title}`, onClick: () => deleteRow(row) },
+            ]" />
+          </template>
         <template #empty-action>
           <EkButton v-if="isFiltered" size="sm" icon="mdi-filter-remove-outline" @click="resetFilters">Filtreleri temizle</EkButton>
         </template>
@@ -193,7 +193,7 @@
         </section>
       </div>
       <template #actions-start>
-        <EkButton v-if="detail" tone="ghost" icon="mdi-delete-outline" class="ek-nc-danger-text" @click="deleteRow(detail)">Sil</EkButton>
+        <EkButton v-if="detail" tone="ghost" icon="mdi-trash-can-outline" class="ek-nc-danger-text" @click="deleteRow(detail)">Sil</EkButton>
       </template>
       <template #actions>
         <EkButton tone="secondary" @click="detailOpen = false">Kapat</EkButton>
@@ -205,7 +205,7 @@
       v-model="confirmOpen"
       tone="danger"
       width="sm"
-      icon="mdi-delete-outline"
+      icon="mdi-trash-can-outline"
       :title="`${selected.length} bildirim silinsin mi?`"
       description="Seçili bildirimler listenizden kaldırılır; bu işlem geri alınamaz."
       confirm-label="Sil"
@@ -216,6 +216,7 @@
 </template>
 
 <script setup lang="ts">
+import EkRowActions, { type EkRowAction } from '@/components/ds/EkRowActions.vue'
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'

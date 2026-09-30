@@ -65,7 +65,7 @@
           :message="t('integrationCompliance.emptyFiltered.message')"
           show-action
           :action-text="t('integrationCompliance.emptyFiltered.action')"
-          action-icon="mdi-filter-off-outline"
+          action-icon="mdi-filter-remove-outline"
           @action="clearFilters"
         />
       </template>
@@ -106,7 +106,7 @@
             </span>
           </template>
           <template #cell-actions="{ item }">
-            <v-btn icon="mdi-eye-outline" variant="text" density="comfortable" :aria-label="t('integrationCompliance.table.openDetail', { subject: item.subjectKey })" @click="openDetail(item as FindingListItem)" />
+            <EkRowActions :label="t('integrationCompliance.table.openDetail', { subject: item.subjectKey })" :items="[{ key: 'view', action: 'view', label: t('integrationCompliance.table.openDetail', { subject: item.subjectKey }), onClick: () => openDetail(item as FindingListItem) }]" />
           </template>
         </EkDataTable>
       </section>
@@ -123,6 +123,7 @@
 </template>
 
 <script setup lang="ts">
+import EkRowActions from '@/components/ds/EkRowActions.vue'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import EkListPage from '@/components/ds/templates/EkListPage.vue'

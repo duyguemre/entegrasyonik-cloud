@@ -39,10 +39,10 @@
                         <v-btn aria-label="Resmi kaldır" class="hovered pvi-s8"
                           @click.stop="deleteImageForVariant(element)" elevation="0" min-width="0"
                           color="transparent"><v-icon size="large"
-                            color="error">mdi-close-thick</v-icon></v-btn>
+                            color="error">mdi-close</v-icon></v-btn>
                         <v-btn class="hovered pvi-s9"
                           @click.stop="downloadImage(element)" elevation="0" min-width="0" color="transparent"><v-icon
-                            size="large" color="primary">mdi-download</v-icon></v-btn>
+                            size="large" color="primary">mdi-download-outline</v-icon></v-btn>
                         <v-card outlined class="drag-handle hovered pvi-s10"
                           elevation="1" min-width="0" color="info">
                           <div class="d-flex justify-center text-center">

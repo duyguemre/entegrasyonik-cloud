@@ -32,7 +32,7 @@ export const TICKET_TYPE_META: Record<TicketTypeEnum, ChoiceMeta> = {
   [TicketTypeEnum.BILLING]: { icon: 'mdi-receipt-text-outline', description: 'Fatura, ödeme ve abonelik konuları' },
   [TicketTypeEnum.FEATURE_REQUEST]: { icon: 'mdi-lightbulb-on-outline', description: 'Yeni özellik veya iyileştirme önerisi' },
   [TicketTypeEnum.BUG]: { icon: 'mdi-bug-outline', description: 'Beklenmedik davranış veya hata bildirimi' },
-  [TicketTypeEnum.OTHER]: { icon: 'mdi-dots-horizontal-circle-outline', description: 'Diğer başlıklara uymayan konular' },
+  [TicketTypeEnum.OTHER]: { icon: 'mdi-dots-horizontal', description: 'Diğer başlıklara uymayan konular' },
 }
 
 /** Öncelik seçenekleri — yalnızca `TicketPriorityEnum`'un gerçek değerleri. */

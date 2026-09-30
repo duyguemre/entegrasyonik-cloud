@@ -44,7 +44,7 @@
               {{ $t('privacyData.export.readyText', { expiresAt: expiresAtText }) }}
             </p>
             <div class="privacyDataView__actions">
-              <v-btn color="primary" class="text-none" prepend-icon="mdi-download" :loading="phase === 'downloading'" @click="download">
+              <v-btn color="primary" class="text-none" prepend-icon="mdi-download-outline" :loading="phase === 'downloading'" @click="download">
                 {{ $t('privacyData.download.action') }}
               </v-btn>
             </div>
@@ -64,7 +64,7 @@
           </div>
 
           <div v-else class="privacyDataView__actions privacyDataView__actions--start">
-            <v-btn color="primary" class="text-none" prepend-icon="mdi-database-export-outline" :loading="phase === 'preparing'" @click="prepare">
+            <v-btn color="primary" class="text-none" prepend-icon="mdi-file-export-outline" :loading="phase === 'preparing'" @click="prepare">
               {{ $t('privacyData.export.action') }}
             </v-btn>
             <span v-if="phase === 'preparing'" class="privacyDataView__muted" role="status">{{ $t('privacyData.export.preparing') }}</span>

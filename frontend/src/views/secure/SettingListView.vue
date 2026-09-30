@@ -30,7 +30,7 @@
           <span>Mağaza Kimliği</span>
         </v-tab>
         <v-tab :value="2" class="text-none">
-          <v-icon start size="18">mdi-file-document-edit-outline</v-icon>
+          <v-icon start size="18">mdi-pencil-outline</v-icon>
           <span>Fatura & Yasal Bilgiler</span>
         </v-tab>
         <v-tab :value="3" class="text-none">
@@ -113,7 +113,7 @@
                       <p class="settingListView__help">Resmi mağaza logonuzu buradan yükleyebilirsiniz.</p>
                       <v-btn color="primary" variant="outlined" size="small" class="text-none"
                         @click="logoInput?.click()">
-                        <v-icon start size="16">mdi-cloud-upload-outline</v-icon>
+                        <v-icon start size="16">mdi-upload-outline</v-icon>
                         {{ settings.logo ? 'Logoyu Değiştir' : 'Logo Seç' }}
                       </v-btn>
                     </div>
@@ -317,12 +317,11 @@
               </v-col>
 
               <v-col cols="12">
-                <v-alert type="info" variant="tonal" density="compact" border="start"
-                  title="Entegrasyon Sağlık Durumu">
+                <EkAlert tone="info" title="Entegrasyon sağlık durumu">
                   Bu bölümdeki iletişim bilgileri, sistem mimarinizin bir parçası olarak entegrasyonlarınızın
                   sürekliliğini sağlamak için kullanılır.
                   Kritik bir hata oluştuğunda belirtilen kanallar üzerinden otomatik bilgilendirme yapılır.
-                </v-alert>
+                </EkAlert>
               </v-col>
             </v-row>
           </v-window-item>
@@ -340,6 +339,7 @@
 </template>
 
 <script setup lang="ts">
+import EkAlert from '@/components/ds/EkAlert.vue'
 import { ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n';
 import LoadingComponent from '@/components/LoadingComponent.vue'

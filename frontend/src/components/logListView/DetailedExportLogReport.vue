@@ -186,7 +186,7 @@ const exportSteps = [
   { title: 'Kuyrukta', status: 'QUEUED', icon: 'mdi-queue' },
   { title: 'Ürün Doğrulanıyor', status: 'PREPARING', icon: 'mdi-cog-outline' },
   { title: 'İşlem Pazaryerine Gönderiliyor', status: 'PENDING', icon: 'mdi-tray-arrow-up' },
-  { title: 'Gönderim Sorgulanıyor', status: 'SENT', icon: 'mdi-cloud-upload' },
+  { title: 'Gönderim Sorgulanıyor', status: 'SENT', icon: 'mdi-upload-outline' },
   { title: 'Ürün Onayı Bekleniyor', status: 'WAITING', icon: 'mdi-file-clock' },
   { title: 'Tamamlandı', status: 'COMPLETED', icon: 'mdi-check-all' }
 ]

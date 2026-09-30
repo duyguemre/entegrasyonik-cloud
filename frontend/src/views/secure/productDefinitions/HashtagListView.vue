@@ -4,7 +4,7 @@
     <LoadingComponent attach=".hashtagListView" ref="loadingComponentRef" />
     <ConfirmationDialogComponent v-model="confirmationDelete.isDialogOpen" title="Grubu Sil?"
       :message="`'${confirmationDelete.item?.title}' grubu kalıcı olarak silinecektir. Emin misiniz?`"
-      icon="mdi-delete-alert-outline" color="error" confirmText="Sil" cancelText="İptal" @confirm="removeHashtag()"
+      icon="mdi-trash-can-outline" color="error" confirmText="Sil" cancelText="İptal" @confirm="removeHashtag()"
       @cancel="confirmationDelete.isDialogOpen = false" />
 
     <EkListScreen
@@ -111,7 +111,7 @@
                 <div class="d-flex justify-space-between align-center">
                   <v-menu v-model="val.showValueDeleteConfirm" :close-on-content-click="false" location="top center">
                     <template v-slot:activator="{ props }">
-                      <v-btn v-bind="props" icon="mdi-delete" size="30" color="error" variant="flat"
+                      <v-btn v-bind="props" icon="mdi-trash-can-outline" size="30" color="error" variant="flat"
                         class="premium-cube-btn" aria-label="Etiketi sil"></v-btn>
                     </template>
                     <v-card class="pa-3 border shadow-xl rounded-lg" min-width="200">
@@ -136,7 +136,7 @@
             @blur="!item.tempValueTitle ? item.showAddInput = false : null">
             <template v-slot:append-inner>
               <v-icon color="success" size="22" class="opacity-100 font-weight-black mr-1" aria-label="Etiket ekle"
-                @click="item.editingHashtagValue = { title: item.tempValueTitle }; addHashtagValue(item); item.showAddInput = false; item.tempValueTitle = ''">mdi-plus-circle</v-icon>
+                @click="item.editingHashtagValue = { title: item.tempValueTitle }; addHashtagValue(item); item.showAddInput = false; item.tempValueTitle = ''">mdi-plus</v-icon>
             </template>
           </v-text-field>
 
@@ -146,14 +146,14 @@
       </template>
 
       <template #cell-actions="{ row }">
-        <EkButton tone="ghost" size="sm" icon="mdi-delete" icon-only class="hashtag-danger" aria-label="Grubu sil"
-          @click="openDeleteConfirm(row)" />
+        <EkRowActions :label="`${row.title} işlemleri`" :items="[{ key: 'delete', action: 'delete', label: 'Grubu sil', onClick: () => openDeleteConfirm(row) }]" />
       </template>
     </EkListScreen>
   </div>
 </template>
 
 <script setup lang="ts">
+import EkRowActions from '@/components/ds/EkRowActions.vue'
 import { ref, computed, onBeforeMount, reactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n';
 import { useHashtagsStore } from '@/stores/hashtagsStore';

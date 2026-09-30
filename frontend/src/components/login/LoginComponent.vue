@@ -46,10 +46,7 @@
               </div>
 
               <v-expand-transition>
-                <v-alert v-if="errorMessage" type="error" variant="tonal" density="compact" role="alert"
-                  aria-live="assertive" class="mb-3 text-caption">
-                  {{ errorMessage }}
-                </v-alert>
+                <EkAlert v-if="errorMessage" tone="error" dense live class="mb-3" :text="errorMessage" />
               </v-expand-transition>
 
               <div v-if="!isStoreSelectionPhase">
@@ -166,10 +163,7 @@
                 class="mb-2"></v-text-field>
 
               <v-expand-transition>
-                <v-alert v-if="forgotError" type="error" variant="tonal" density="compact" role="alert"
-                  aria-live="assertive" class="mb-3 text-caption">
-                  {{ forgotError }}
-                </v-alert>
+                <EkAlert v-if="forgotError" tone="error" dense live class="mb-3" :text="forgotError" />
               </v-expand-transition>
 
               <v-btn block color="primary" height="40" class="ek-login-submit" type="submit"
@@ -199,6 +193,7 @@
 </template>
 
 <script setup lang="ts">
+import EkAlert from '@/components/ds/EkAlert.vue'
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import useUser from '@/composables/user'

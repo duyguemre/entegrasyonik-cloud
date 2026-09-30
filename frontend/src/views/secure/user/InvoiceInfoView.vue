@@ -68,7 +68,7 @@ const { t } = useI18n()
 var buttons = [
 {
   title: t("user.invoiceInfo.save"),
-  icon: 'mdi-note-edit-outline',
+  icon: 'mdi-pencil-outline',
   color: 'primary',
   to: '',
 },

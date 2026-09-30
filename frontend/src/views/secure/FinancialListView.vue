@@ -255,7 +255,7 @@
         </span>
       </template>
       <template #cell-actions="{ row }">
-        <EkButton tone="ghost" size="sm" icon="mdi-eye" icon-only aria-label="Detayı görüntüle" @click="openDetail(row)" />
+        <EkRowActions label="İşlem eylemleri" :items="[{ key: 'view', action: 'view', label: 'Detayı görüntüle', onClick: () => openDetail(row) }]" />
       </template>
     </EkListScreen>
     </div>
@@ -271,6 +271,7 @@
 </template>
 
 <script setup lang="ts">
+import EkRowActions from '@/components/ds/EkRowActions.vue'
 import { ref, reactive, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';

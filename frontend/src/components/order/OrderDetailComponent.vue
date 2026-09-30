@@ -4,7 +4,7 @@
       <EkStatusChip v-if="order" :tone="statusEntry.tone" :label="$t(statusEntry.labelKey)" />
     </template>
     <template #actions>
-      <v-btn v-if="order && isOrderActionAllowed(order, 'CANCEL')" variant="outlined" :disabled="isLocked" prepend-icon="mdi-delete-sweep-outline" @click="emit('cancel', order)">
+      <v-btn v-if="order && isOrderActionAllowed(order, 'CANCEL')" variant="outlined" :disabled="isLocked" prepend-icon="mdi-cancel" @click="emit('cancel', order)">
         İptal et
       </v-btn>
       <v-btn v-if="order && isOrderActionAllowed(order, 'APPROVE')" color="primary" :disabled="isLocked" prepend-icon="mdi-check-circle-outline" @click="emitAction('APPROVE')">

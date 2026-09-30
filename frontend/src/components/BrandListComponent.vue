@@ -34,7 +34,7 @@
               <span class="ek-brand-list__index ek-num" aria-hidden="true">{{ index }}</span>
               <v-icon icon="mdi-folder-outline" size="18" class="ek-brand-list__icon" aria-hidden="true" />
               <span class="ek-brand-list__title">{{ brand.title }}</span>
-              <EkButton tone="ghost" size="sm" icon="mdi-cog" icon-only :aria-label="`${brand.title} ayarları`"
+              <EkButton tone="ghost" size="sm" icon="mdi-cog-outline" icon-only :aria-label="`${brand.title} ayarları`"
                 @click.stop="openBrandSync(brand)" />
             </li>
           </template>

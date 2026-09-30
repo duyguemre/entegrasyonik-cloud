@@ -57,17 +57,7 @@
             ></v-text-field>
 
             <v-expand-transition>
-              <v-alert
-                v-if="errorMessage"
-                type="error"
-                variant="tonal"
-                density="compact"
-                role="alert"
-                aria-live="assertive"
-                class="mb-3 text-caption"
-              >
-                {{ errorMessage }}
-              </v-alert>
+              <EkAlert v-if="errorMessage" tone="error" dense live class="mb-3" :text="errorMessage" />
             </v-expand-transition>
 
             <v-btn block color="primary" height="40" type="submit" :loading="loading">
@@ -87,6 +77,7 @@
 </template>
 
 <script setup lang="ts">
+import EkAlert from '@/components/ds/EkAlert.vue'
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AuthShell from '@/components/login/AuthShell.vue'

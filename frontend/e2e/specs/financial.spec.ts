@@ -201,7 +201,7 @@ test.describe('ADR-0015 B5-3 — FinancialListView (finans)', () => {
     await open(page, { [ENDPOINT]: financialDoluFixture })
     await expect(page.getByText('SIP-E2E-1001')).toBeVisible()
 
-    await page.locator('.financialListView button:has(.mdi-eye)').first().click()
+    await page.locator('.financialListView button:has(.mdi-eye-outline)').first().click()
     const dialog = page.getByRole('dialog').filter({ hasText: 'Finansal işlem detayı' })
     await expect(dialog).toBeVisible()
     await expect(dialog.getByText('TRX-E2E-0001')).toBeVisible()
@@ -222,7 +222,7 @@ test.describe('ADR-0015 B5-3 — FinancialListView (finans)', () => {
     await open(page, { [ENDPOINT]: financialDoluFixture })
     await expect(page.getByText('TRX-E2E-0002')).toBeVisible()
 
-    await page.locator('.financialListView tbody button:has(.mdi-eye)').nth(1).click()
+    await page.locator('.financialListView tbody button:has(.mdi-eye-outline)').nth(1).click()
     const dialog = page.getByRole('dialog').filter({ hasText: 'Finansal işlem detayı' })
     await expect(dialog).toBeVisible()
     await expect(dialog.getByText('MANUEL İŞLEM')).toBeVisible()

@@ -34,7 +34,7 @@ export const useStaticsStore = defineStore('staticsStore', () => {
 
   const STATUS_META: Record<PRODUCT_INTEGRATION_STATUS, { icon: string; order: number; message: string }> = {
     [PRODUCT_INTEGRATION_STATUS.PENDING]: {
-      icon: 'mdi-pencil-box',
+      icon: 'mdi-pencil-outline',
       order: 1,
       message: "Hazırlanıyor"
     },

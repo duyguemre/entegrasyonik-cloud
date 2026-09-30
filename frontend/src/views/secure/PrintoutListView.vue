@@ -48,7 +48,7 @@
         hide-details class="ek-printout__select"></v-select>
 
       <div class="ek-printout__actions">
-        <v-btn prepend-icon="mdi-printer" color="primary" variant="flat">{{ $t("printouts.printout.test") }}</v-btn>
+        <v-btn prepend-icon="mdi-printer-outline" color="primary" variant="flat">{{ $t("printouts.printout.test") }}</v-btn>
         <v-btn prepend-icon="mdi-cancel" variant="outlined">{{ $t("printouts.printout.clear") }}</v-btn>
       </div>
     </div>
@@ -70,7 +70,7 @@
             <v-text-field clearable density="comfortable" :label="$t('printouts.printout.height')"
               variant="outlined" hide-details></v-text-field>
           </div>
-          <v-btn prepend-icon="mdi-delete-outline" @click="selectedDragElement.target.remove()" variant="outlined"
+          <v-btn prepend-icon="mdi-trash-can-outline" @click="selectedDragElement.target.remove()" variant="outlined"
             color="error" class="ek-printout__delete">{{ $t("printouts.printout.delete") }}</v-btn>
         </div>
 
@@ -252,7 +252,7 @@ var a = () => {
 var buttons = [
   {
     title: t("printouts.printout.save"),
-    icon: 'mdi-note-edit-outline',
+    icon: 'mdi-pencil-outline',
     color: 'primary',
     to: '',
     click: a

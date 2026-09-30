@@ -32,6 +32,8 @@
       :rows="claims"
       :loading="loading"
       :error="loadError"
+      :error-cause="loadProblem?.cause"
+      :error-details="loadProblem?.details"
       error-title="İade talepleri yüklenemedi"
       :search="searchClaimForm.data.globalSearch"
       search-placeholder="İade No, Sipariş No veya Takip Ara"
@@ -89,17 +91,19 @@
       </template>
       <template #cell-claimedAt="{ row }"><span class="ek-num">{{ formatDateTime(row.claimedAt) }}</span></template>
       <template #cell-actions="{ row }">
-        <span class="ek-row-actions">
-          <EkButton tone="ghost" size="sm" icon="mdi-eye" icon-only aria-label="Talep detayını görüntüle" @click="openDetailedReport(row)" />
-          <EkButton tone="ghost" size="sm" icon="mdi-package-variant-closed-check" icon-only :disabled="!isClaimActionAllowed(row, 'APPROVE')" aria-label="Talebi onayla" @click="triggerSingleApprove(row)" />
-          <EkButton tone="ghost" size="sm" icon="mdi-package-variant-remove" icon-only :disabled="!isClaimActionAllowed(row, 'REJECT')" aria-label="Talebi reddet" @click="openRejectAction(row)" />
-        </span>
+        <EkRowActions :label="`${row.externalClaimId} işlemleri`" :items="[
+          { key: 'view', action: 'view', label: 'Talep detayını görüntüle', onClick: () => openDetailedReport(row) },
+          { key: 'approve', action: 'approve', icon: 'mdi-package-variant-closed-check', label: 'Talebi onayla', group: 'Karar', disabled: !isClaimActionAllowed(row, 'APPROVE'), onClick: () => triggerSingleApprove(row) },
+          { key: 'reject', action: 'reject', icon: 'mdi-package-variant-remove', label: 'Talebi reddet', group: 'Karar', disabled: !isClaimActionAllowed(row, 'REJECT'), onClick: () => openRejectAction(row) },
+        ]" />
       </template>
     </EkListScreen>
   </div>
 </template>
 
 <script setup lang="ts">
+import { problemFromError, type ProblemCopy } from '@/composables/useProblem'
+import EkRowActions from '@/components/ds/EkRowActions.vue'
 import { ref, computed, reactive } from 'vue'
 
 // Composables & Stores
@@ -139,6 +143,8 @@ const loadingComponentRef = ref<any>(null)
 const dialogAttach = ref(".claimListView")
 const loading = ref(false)
 const loadError = ref(false)
+/** Aşama 6b (Standart 1): hata desenindeki neden + teknik ayrıntı. */
+const loadProblem = ref<ProblemCopy | null>(null)
 const claims = ref<any[]>([])
 const selectedClaims = ref<Array<string | number>>([])
 const isDetailOpen = ref(false)
@@ -237,6 +243,7 @@ const getClaimsInternal = async (resetPage: boolean = false) => {
     });
     if (isRequestError(res)) {
       loadError.value = true;
+      loadProblem.value = problemFromError(res, 'ClaimService/getClaims');
     } else if (res?.claims) {
       claims.value = res.claims;
       pagination.totalNumberOfRecords = res.totalNumberOfRecords || 0;
@@ -244,6 +251,7 @@ const getClaimsInternal = async (resetPage: boolean = false) => {
     }
   } catch (e) {
     loadError.value = true;
+    loadProblem.value = problemFromError(e, 'ClaimService/getClaims');
   } finally {
     loading.value = false;
   }

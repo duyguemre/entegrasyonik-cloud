@@ -97,15 +97,13 @@
       </section>
 
       <!-- Checkout sonucu (ADR-0008 §1: MockPaymentProvider -- gerçek hosted checkout sayfası YOK, bilgilendirme amaçlı) -->
-      <v-alert v-if="checkoutInfo" type="info" variant="tonal" density="comfortable" closable
-        class="checkout-alert" role="status" @click:close="checkoutInfo = null">
-        <div class="font-weight-bold">Ödeme adımına yönlendiriliyorsunuz (test ortamı)</div>
+      <EkAlert v-if="checkoutInfo" tone="info" class="checkout-alert" live dismissible title="Ödeme adımına yönlendiriliyorsunuz (test ortamı)" @dismiss="checkoutInfo = null">
         <div class="text-body-2 mt-1">
           <strong>{{ checkoutInfo.planName }}</strong> planı için işlem başlatıldı. Bu bir MOCK (test) bağlantısıdır,
           gerçek bir ödeme sağlayıcısına yönlendirmez; abonelik durumunuz ödeme sağlayıcısından onay geldiğinde otomatik güncellenir.
         </div>
         <div v-if="checkoutInfo.checkoutUrl" class="checkout-url text-body-2 mt-1">{{ checkoutInfo.checkoutUrl }}</div>
-      </v-alert>
+      </EkAlert>
     </div>
 
     <ConfirmationDialogComponent v-model="confirmDialog.show" :title="confirmDialog.title" attach=".subscriptionView"
@@ -117,6 +115,7 @@
 </template>
 
 <script setup lang="ts">
+import EkAlert from '@/components/ds/EkAlert.vue'
 // ADR-0008 (ödeme sağlayıcısı/abonelik modeli) + ADR-0011 Karar 2 "P1-yeni": bu ekran
 // `SubscriptionView.vue`'nun ürünle ilgisiz yer tutucu içeriğinin (bkz. git geçmişi) YERİNE
 // sıfırdan, token'larla yazıldı -- characterization testi YAZILMADI (sabitlenecek gerçek bir iş

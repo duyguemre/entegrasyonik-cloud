@@ -69,7 +69,7 @@
         <span v-else class="integrationConfigListView__muted">—</span>
       </template>
       <template #cell-actions="{ row }">
-        <EkButton tone="ghost" size="sm" icon="mdi-eye-outline" icon-only :aria-label="`${row.displayName} detayını aç`" @click="openDetail(row as TargetSummary)" />
+        <EkRowActions :label="`${row.displayName} işlemleri`" :items="[{ key: 'view', action: 'view', label: `${row.displayName} detayını aç`, onClick: () => openDetail(row as TargetSummary) }]" />
       </template>
     </EkListScreen>
 
@@ -79,7 +79,7 @@
       </template>
       <template #actions>
         <v-btn variant="outlined" prepend-icon="mdi-tune" @click="goSettings(selected)">Ayarları düzenle</v-btn>
-        <v-btn variant="outlined" prepend-icon="mdi-table-eye" @click="goEffective(selected)">Etkin yapılandırmayı gör</v-btn>
+        <v-btn variant="outlined" prepend-icon="mdi-eye-outline" @click="goEffective(selected)">Etkin yapılandırmayı gör</v-btn>
       </template>
 
       <EkSection title="Özet">
@@ -102,6 +102,7 @@
 </template>
 
 <script setup lang="ts">
+import EkRowActions from '@/components/ds/EkRowActions.vue'
 import { computed, onMounted, ref } from 'vue'
 import EkListScreen from '@/components/ds/templates/EkListScreen.vue'
 import EkButton from '@/components/ds/EkButton.vue'

@@ -79,7 +79,7 @@ const viewTabs = computed<EkWorkspaceTab[]>(() =>
     id: String(tab.id),
     title: titleOf(tab.link),
     // Menüde ikonu olmayan kayıt sekmeleri (ör. ürün düzenleme) için tutarlı bir varsayılan.
-    icon: tab.link?.icon ?? (tab.link?.singleton === false ? 'mdi-file-document-edit-outline' : 'mdi-application-outline'),
+    icon: tab.link?.icon ?? (tab.link?.singleton === false ? 'mdi-pencil-outline' : 'mdi-application-outline'),
     closable: !isPinnedLink(tab.link),
   })),
 )

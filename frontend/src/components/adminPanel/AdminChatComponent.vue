@@ -37,7 +37,7 @@
           rows="3"></v-textarea>
 
         <div class="reply-actions">
-          <v-btn flat color="primary" prepend-icon="mdi-send" class="px-6"
+          <v-btn flat color="primary" prepend-icon="mdi-send-outline" class="px-6"
             :disabled="!replyText.trim() || loading" :loading="loading" @click="submitReply">
             CEVAPLA VE GÖNDER
           </v-btn>

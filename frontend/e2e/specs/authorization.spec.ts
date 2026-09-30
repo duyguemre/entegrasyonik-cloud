@@ -58,9 +58,9 @@ test.describe('ADR-0015 B5-3 — AuthorizationListView + UserAddComponent', () =
     await openScreen(page, 'AuthorizationListView')
 
     const denizRow = page.locator('.authorizationListView tbody tr', { hasText: 'Deniz Kaya' })
-    await expect(denizRow.locator('button:has(.mdi-delete)')).toBeDisabled()
+    await expect(denizRow.locator('button:has(.mdi-trash-can-outline)')).toBeDisabled()
     const elifRow = page.locator('.authorizationListView tbody tr', { hasText: 'Elif Yıldız' })
-    await expect(elifRow.locator('button:has(.mdi-delete)')).toBeEnabled()
+    await expect(elifRow.locator('button:has(.mdi-trash-can-outline)')).toBeEnabled()
   })
 
   test('boş durum: "Personel bulunamadı" mesajı gösterilir', async ({ page }) => {
@@ -114,7 +114,7 @@ test.describe('ADR-0015 B5-3 — AuthorizationListView + UserAddComponent', () =
     await openScreen(page, 'AuthorizationListView')
 
     const elifRow = page.locator('.authorizationListView tbody tr', { hasText: 'Elif Yıldız' })
-    await elifRow.locator('button:has(.mdi-pencil)').click()
+    await elifRow.locator('button:has(.mdi-pencil-outline)').click()
 
     const dialog = page.getByRole('dialog').filter({ hasText: 'Kullanıcı Düzenle' })
     await expect(dialog).toBeVisible()

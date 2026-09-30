@@ -213,7 +213,7 @@ enum PRODUCT_INTEGRATION_STATUS {
 
 const STATUS_META: Record<PRODUCT_INTEGRATION_STATUS, { icon: string; order: number; message: string }> = {
   [PRODUCT_INTEGRATION_STATUS.PENDING]: {
-    icon: 'mdi-pencil-box',
+    icon: 'mdi-pencil-outline',
     order: 2,
     message: "Hazırlanıyor"
   },
@@ -277,7 +277,7 @@ const platformState = (integration: any, item: any): { tone: StatusTone; icon: s
   }
   if (status === PRODUCT_INTEGRATION_STATUS.FAILED) return { tone: 'danger', icon: 'mdi-alert-circle', label: 'Reddedildi' }
   if (status === PRODUCT_INTEGRATION_STATUS.SENT || status === PRODUCT_INTEGRATION_STATUS.WAITING) return { tone: 'info', icon: 'mdi-clock-outline', label: 'Onay bekliyor' }
-  if (status === PRODUCT_INTEGRATION_STATUS.PENDING) return { tone: 'info', icon: 'mdi-progress-upload', label: 'Hazırlanıyor' }
+  if (status === PRODUCT_INTEGRATION_STATUS.PENDING) return { tone: 'info', icon: 'mdi-upload-outline', label: 'Hazırlanıyor' }
   return { tone: 'neutral', icon: 'mdi-circle-outline', label: 'Gönderilmedi' }
 }
 

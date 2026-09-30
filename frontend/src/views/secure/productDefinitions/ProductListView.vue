@@ -90,7 +90,7 @@
       <template #bulk-actions>
         <v-menu scroll-strategy="close" v-model="headerMenu" :close-on-content-click="false" location="bottom end">
           <template v-slot:activator="{ props: menuProps }">
-            <EkButton v-bind="menuProps" size="sm" icon="mdi-dots-vertical">Toplu işlemler</EkButton>
+            <EkButton v-bind="menuProps" size="sm" icon="mdi-dots-horizontal">Toplu işlemler</EkButton>
           </template>
           <v-card class="plv-menu-card">
             <keep-alive>
@@ -107,7 +107,7 @@
       <template #toolbar-end>
         <v-menu scroll-strategy="close" v-model="headerMenu" :close-on-content-click="false" location="bottom end">
           <template v-slot:activator="{ props: menuProps }">
-            <EkButton v-bind="menuProps" size="sm" icon="mdi-dots-vertical">Toplu işlemler</EkButton>
+            <EkButton v-bind="menuProps" size="sm" icon="mdi-dots-horizontal">Toplu işlemler</EkButton>
           </template>
           <v-card class="plv-menu-card">
             <keep-alive>
@@ -183,10 +183,10 @@
         </span>
       </template>
       <template #cell-actions="{ row }">
-        <span class="plv-row-actions">
-          <EkButton tone="ghost" size="sm" icon="mdi-tag-edit" icon-only aria-label="Ürünü düzenle" @click="openEditProduct(row)" />
-          <EkButton tone="ghost" size="sm" icon="mdi-delete" icon-only aria-label="Ürünü sil" class="plv-danger" @click="deleteConfirmation(row, $event)" />
-        </span>
+        <EkRowActions :label="`${row.title} işlemleri`" :items="[
+          { key: 'edit', action: 'edit', label: 'Ürünü düzenle', onClick: () => openEditProduct(row) },
+          { key: 'delete', action: 'delete', label: 'Ürünü sil', onClick: () => deleteConfirmation(row, focusedTarget()) },
+        ]" />
       </template>
 
       <template #expanded="{ row }">
@@ -205,6 +205,7 @@
 </template>
 
 <script setup lang="ts">
+import EkRowActions from '@/components/ds/EkRowActions.vue'
 import { useI18n } from 'vue-i18n';
 import { ref, onMounted, onBeforeMount, onActivated, watch, computed, nextTick, getCurrentInstance, inject, onDeactivated, onUnmounted, reactive } from 'vue'
 import LoadingComponent from '@/components/LoadingComponent.vue'
@@ -728,6 +729,9 @@ const cancelDeleteProduct = async () => {
   confirmationDelete.activator = undefined
 }
 
+/** Satır eylem menüsünden gelen silmede diyaloğun odak dönüş hedefi: o an odaktaki düğme. */
+const focusedTarget = () => ({ currentTarget: document.activeElement })
+
 const deleteConfirmation = async (product: any, event: any) => {
   confirmationDelete.activator = event.currentTarget
   confirmationDelete.isDialogOpen = true
@@ -743,8 +747,6 @@ const deleteProduct = async () => {
   const response = await restApi.post("ProductService/deleteProduct", { _id: confirmationDelete.product._id })
   loadingComponentRef.value.remove(guid)
   if (response && response.deletedCount == 1 && response.acknowledged == true) {
-    guid = loadingComponentRef.value.success(t('loading.success.deleteProduct'))
-    loadingComponentRef.value.remove(guid)
     getProducts()
 
     snackbarStore.addSnackbar({
@@ -754,8 +756,6 @@ const deleteProduct = async () => {
       color: 'success'
     })
   } else {
-    guid = loadingComponentRef.value.error(t('loading.error.deleteProduct'))
-    loadingComponentRef.value.remove(guid)
     snackbarStore.addSnackbar({
       show: true,
       text: 'Ürün silinemedi',
@@ -903,7 +903,7 @@ const initTransferStatusItems = () => {
   }
 
   transferStatusItems.value = [
-    { id: "PENDING", icon: 'mdi-pencil-box', color: 'var(--ek-color-info)', title: "Hazırlanan (Pending)", children: pendingItems },
+    { id: "PENDING", icon: 'mdi-pencil-outline', color: 'var(--ek-color-info)', title: "Hazırlanan (Pending)", children: pendingItems },
     { id: "WAITING", icon: 'mdi-clock', color: 'var(--ek-color-secondary)', title: "Onay Bekleyen (Waiting)", children: waitingItems },
     { id: "FAILED", icon: 'mdi-close-box', color: 'var(--ek-color-danger)', title: "Hatalı (Failed)", children: failedItems },
     { id: "COMPLETED", icon: 'mdi-checkbox-marked', color: 'var(--ek-color-success)', title: "Onaylanan (Completed)", children: completedItems },

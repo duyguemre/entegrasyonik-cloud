@@ -58,7 +58,7 @@
             </div>
             <template v-slot:append="{ isSelected, isActive }">
               <v-list-item-action end>
-                <EkButton tone="ghost" size="sm" icon="mdi-cog" icon-only :aria-label="`${category.title} ayarları`"
+                <EkButton tone="ghost" size="sm" icon="mdi-cog-outline" icon-only :aria-label="`${category.title} ayarları`"
                   @click.stop="openCategorySync(category)" />
 
               </v-list-item-action>

@@ -2,12 +2,12 @@
   "_meta": "ADR-0015 Karar 6.4 desen mandalı tabanı. node scripts/check-pattern-baseline.js --write ile üretildi (bkz. scripts/pattern-counts.js). Hiçbir dosyada/kategoride sayı ARTAMAZ; yeni dosyalar 0 ile başlamalı; düşüş serbest ama bu dosyanın güncellenmesi gerekir. patternExceptions BİLGİ AMAÇLIDIR (C'de raporlanır, mandal tarafından zorlanmaz).",
   "date": "2026-09-30",
   "totals": {
-    "total": 17,
+    "total": 15,
     "rawDataTable": 10,
     "rawDialog": 0,
     "rawChip": 1,
     "rawFormat": 3,
-    "rawSpinner": 2,
+    "rawSpinner": 0,
     "iconBtnNoLabel": 1,
     "patternExceptions": 2,
     "pageHeaderMissing": 4
@@ -198,10 +198,10 @@
       "rawDialog": 0,
       "rawChip": 0,
       "rawFormat": 0,
-      "rawSpinner": 2,
+      "rawSpinner": 0,
       "iconBtnNoLabel": 0,
       "patternExceptions": 0,
-      "total": 2
+      "total": 0
     },
     "src/components/NoAuthorizationComponent.vue": {
       "rawDataTable": 0,
@@ -224,16 +224,6 @@
       "total": 0
     },
     "src/components/ScrollComponent.vue": {
-      "rawDataTable": 0,
-      "rawDialog": 0,
-      "rawChip": 0,
-      "rawFormat": 0,
-      "rawSpinner": 0,
-      "iconBtnNoLabel": 0,
-      "patternExceptions": 0,
-      "total": 0
-    },
-    "src/components/SnackbarComponent.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
       "rawChip": 0,
@@ -1044,6 +1034,16 @@
       "total": 0
     },
     "src/components/layout/StoreLogoAvatar.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/components/layout/WorkspaceTabHost.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
       "rawChip": 0,

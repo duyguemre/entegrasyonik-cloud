@@ -171,7 +171,7 @@
                   @click="openDetail(item)">
                   <v-icon size="large"
                     :color="(item.status === 'WAITING_SELLER' || item.isRejected) ? 'warning' : 'content-muted'">
-                    {{ (item.status === 'WAITING_SELLER' || item.isRejected) ? 'mdi-message-reply-text' : 'mdi-eye' }}
+                    {{ (item.status === 'WAITING_SELLER' || item.isRejected) ? 'mdi-message-reply-text' : 'mdi-eye-outline' }}
                   </v-icon>
                   <v-tooltip activator="parent" location="top">{{ (item.status === 'WAITING_SELLER' || item.isRejected)
                     ? 'Cevapla / Düzenle' : 'Görüntüle' }}</v-tooltip>
@@ -179,7 +179,7 @@
 
                 <v-btn flat size="35" variant="flat" color="error" class="premium-cube-btn ml-2" aria-label="Mesajı sil"
                   @click="triggerDelete(item)">
-                  <v-icon size="large" color="error-contrast">mdi-delete-sweep-outline</v-icon>
+                  <v-icon size="large" color="error-contrast">mdi-trash-can-outline</v-icon>
                 </v-btn>
               </div>
             </td>
@@ -219,10 +219,7 @@
                 {{ item.text }}
               </div>
 
-              <v-alert v-if="(item.isRejected || item.status === 'REJECTED') && item.rejectionReason" type="error"
-                density="compact" variant="tonal" class="text-micro pa-1 mb-2">
-                Red: {{ item.rejectionReason }}
-              </v-alert>
+              <EkAlert v-if="(item.isRejected || item.status === 'REJECTED') && item.rejectionReason" tone="error" dense class="mb-2" :text="`Red: ${item.rejectionReason}`" />
 
               <div class="d-flex justify-space-between align-end">
                 <div class="d-flex flex-column">
@@ -246,12 +243,13 @@
       </div>
     </div>
     <BatchProcessMenu :model-value="selectedMessages" title="Mesaj Seçildi" :actions="[
-      { id: 'DELETE', label: 'Toplu Sil', icon: 'mdi-delete-sweep-outline', color: 'error', badgeCount: bulkActionCounts.DELETE }
+      { id: 'DELETE', label: 'Toplu Sil', icon: 'mdi-trash-can-outline', color: 'error', badgeCount: bulkActionCounts.DELETE }
     ]" @action="triggerBulkDelete" @clear="selectedMessages = []" />
   </div>
 </template>
 
 <script setup lang="ts">
+import EkAlert from '@/components/ds/EkAlert.vue'
 import { ref, onMounted, reactive, computed } from 'vue';
 import useRestApi from '@/composables/restapi';
 import { useSnackbarStore } from '@/stores/snackbarStore';
@@ -422,7 +420,7 @@ const triggerDelete = (item: any) => {
     title: "Mesajı Sil",
     subtitle: "Bu işlem geri alınamaz",
     message: "Seçili mesajı sistemden silmek istediğinize emin misiniz?",
-    icon: "mdi-delete-alert",
+    icon: "mdi-trash-can-outline",
     color: "error",
     confirmText: "EVET, SİL",
     onConfirm: async () => {
@@ -447,7 +445,7 @@ const triggerBulkDelete = () => {
     title: "Mesajları Toplu Sil",
     subtitle: "Seçilen tüm mesajlar kalıcı olarak silinecektir.",
     message: [text('Seçili olan '), emphasis(selectedMessages.value.length), text(' mesajı silmek istediğinize emin misiniz?')],
-    icon: "mdi-delete-sweep",
+    icon: "mdi-trash-can-outline",
     color: "error",
     confirmText: "EVET, TOPLU SİL",
     onConfirm: async () => {

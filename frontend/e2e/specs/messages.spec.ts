@@ -53,7 +53,7 @@ test.describe('P2 — Mesajlar (MessageListView)', () => {
     // İkinci satır (message-e2e-0002, status READ) 'mdi-eye' gösterir; ilk satır (WAITING_SELLER)
     // 'mdi-message-reply-text' gösterir (bkz. template `:icon` koşulu) — 'mdi-eye' seçici READ olanı
     // hedefler (davranış AYNI, yalnızca deterministik bir satır seçiyoruz).
-    await page.locator('.messageListView tbody tr').nth(1).locator('button:has(.mdi-eye)').click()
+    await page.locator('.messageListView tbody tr').nth(1).locator('button:has(.mdi-eye-outline)').click()
 
     const dialog = page.getByRole('dialog').filter({ hasText: 'Sipariş Sorusu' })
     await expect(dialog).toBeVisible()

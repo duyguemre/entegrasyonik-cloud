@@ -126,7 +126,7 @@
                 <v-icon>mdi-update</v-icon>
               </v-btn>
               <v-btn class="" min-width=0 elevation="2" color="error" aria-label="Sil">
-                <v-icon>mdi-delete</v-icon>
+                <v-icon>mdi-trash-can-outline</v-icon>
               </v-btn>
             </v-btn-group>
           </div>
@@ -222,35 +222,35 @@ var reportsMenu = {
 var buttons = [
   {
     title: t("productDefinitions.product.define.title"),
-    icon: 'mdi-note-edit-outline',
+    icon: 'mdi-pencil-outline',
     color: 'primary',
     to: '',
     click: a
   },
 /*   {
     title: t("productDefinitions.product.update"),
-    icon: 'mdi-note-edit-outline',
+    icon: 'mdi-pencil-outline',
     color: 'primary',
     to: '',
     click: a
   },
  */  {
     title: t("productDefinitions.product.save"),
-    icon: 'mdi-note-edit-outline',
+    icon: 'mdi-pencil-outline',
     color: 'primary',
     to: '',
     click: a
   },
   {
     title: t("productDefinitions.product.copy"),
-    icon: 'mdi-note-edit-outline',
+    icon: 'mdi-pencil-outline',
     color: 'neutral',
     to: '',
     click: a
   },
   {
     title: t("productDefinitions.product.delete"),
-    icon: 'mdi-note-edit-outline',
+    icon: 'mdi-pencil-outline',
     color: 'error',
     to: '',
     click: a

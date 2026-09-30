@@ -174,7 +174,7 @@ export function useClaimActions(executeClaimAction: Function, snackbarStore: any
             note('Bu işlem geri alınamaz.'),
         ];
         confirmDialogObj.confirmText = 'EVET, TOPLU SİL';
-        confirmDialogObj.confirmIcon = 'mdi-delete-sweep';
+        confirmDialogObj.confirmIcon = 'mdi-trash-can-outline';
         confirmDialogObj.icon = 'mdi-alert-decagram';
         confirmDialogObj.color = 'error';
         confirmDialogObj.show = true;

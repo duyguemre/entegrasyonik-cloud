@@ -277,9 +277,9 @@ const isMounted = ref(false)
 
 const steps = [
   { title: 'Sırada', status: 'WAITING_FOR_FETCH', icon: 'mdi-clock-outline' },
-  { title: 'Ürünler Çekiliyor', status: 'FETCHING', icon: 'mdi-cloud-download-outline' },
+  { title: 'Ürünler Çekiliyor', status: 'FETCHING', icon: 'mdi-download-outline' },
   { title: 'Analiz Ediliyor', status: 'READY_TO_SYNC', icon: 'mdi-file-find-outline' },
-  { title: 'Ürünler Aktarılıyor', status: 'PROCESSING', icon: 'mdi-cached' },
+  { title: 'Ürünler Aktarılıyor', status: 'PROCESSING', icon: 'mdi-refresh' },
   { title: 'Tamamlandı', status: 'COMPLETED', icon: 'mdi-check-decagram' }
 ]
 

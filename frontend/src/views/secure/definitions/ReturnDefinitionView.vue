@@ -81,10 +81,10 @@
         <div class="text-center justify-center align-center">
           <v-btn-group class="pa-0" density="comfortable">
             <v-btn class="" min-width=0 variant="text" aria-label="Düzenle">
-              <v-icon>mdi-pencil</v-icon>
+              <v-icon>mdi-pencil-outline</v-icon>
             </v-btn>
             <v-btn class="" min-width=0 variant="text" color="error" aria-label="Sil">
-              <v-icon>mdi-delete</v-icon>
+              <v-icon>mdi-trash-can-outline</v-icon>
             </v-btn>
           </v-btn-group>
         </div>

@@ -64,7 +64,7 @@
         <EkEmptyState variant="first-run" title="Henüz kayıt yok" message="İlk kaydınızı oluşturarak başlayın." />
       </slot>
       <slot v-else-if="state === 'empty-filtered'" name="empty-filtered">
-        <EkEmptyState variant="no-results" title="Sonuç yok" message="Farklı bir arama veya filtre deneyin." show-action action-text="Filtreleri temizle" action-icon="mdi-filter-off-outline" @action="emit('clear-filters')" />
+        <EkEmptyState variant="no-results" title="Sonuç yok" message="Farklı bir arama veya filtre deneyin." show-action action-text="Filtreleri temizle" action-icon="mdi-filter-remove-outline" @action="emit('clear-filters')" />
       </slot>
       <slot v-else-if="state === 'error'" name="error">
         <EkErrorState message="Kayıtlar yüklenemedi — bağlantınızı kontrol edip tekrar deneyin." @retry="emit('refresh')" />

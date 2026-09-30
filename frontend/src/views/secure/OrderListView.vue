@@ -22,12 +22,9 @@
 
     <EkFormDialog v-model="actionDialog.show" :title="isBulk ? 'Toplu sipariş iptali' : 'Sipariş iptali'" :loading="actionDialog.loading"
       @submit="onActionDialogConfirm" @cancel="closeActionDialog">
-      <v-alert v-if="hasInvoicedOrder" type="warning" variant="tonal" icon="mdi-file-document-remove-outline">
-        <div class="text-caption font-weight-semibold">Fatura iptali gereklidir</div>
-        <div class="text-caption">
+      <EkAlert v-if="hasInvoicedOrder" tone="warning" title="Fatura iptali gereklidir">
           Seçtiğiniz {{ isBulk ? invoicedCount + ' adet' : '' }} siparişin faturası kesilmiştir. Siparişi buradan iptal etmeniz faturayı yasal olarak yok etmez — lütfen e-Fatura portalınızdan iptal/iade işlemlerini de yapın.
-        </div>
-      </v-alert>
+        </EkAlert>
 
       <div v-if="!isBulk">
         <div class="text-caption ek-muted mb-2">
@@ -38,9 +35,9 @@
       </div>
 
       <div v-else>
-        <v-alert type="info" variant="tonal" density="compact" class="mb-2 text-caption">
+        <EkAlert tone="info" dense class="mb-2">
           Farklı pazar yerlerine ait siparişler gruplandırılmıştır. Her grup için ayrı neden seçmelisiniz.
-        </v-alert>
+        </EkAlert>
 
         <div v-for="(data, platform) in bulkCancelData" :key="platform" class="pa-3 border-subtle rounded-lg mb-3">
           <div class="d-flex align-center justify-space-between mb-2">
@@ -65,6 +62,8 @@
       :rows="orders"
       :loading="loading"
       :error="loadError"
+      :error-cause="loadProblem?.cause"
+      :error-details="loadProblem?.details"
       error-title="Siparişler yüklenemedi"
       :search="searchOrderForm.data.globalSearch"
       search-placeholder="Sipariş No, Müşteri Adı veya Telefon Ara"
@@ -106,13 +105,13 @@
         <EkButton size="sm" icon="mdi-check-circle-outline" :disabled="bulkActionCounts.APPROVE === 0" @click="triggerBulkAction('APPROVE')">
           Onayla ({{ bulkActionCounts.APPROVE }})
         </EkButton>
-        <EkButton size="sm" icon="mdi-file-document-edit-outline" :disabled="bulkActionCounts.INVOICE === 0" @click="triggerBulkAction('INVOICE')">
+        <EkButton size="sm" icon="mdi-pencil-outline" :disabled="bulkActionCounts.INVOICE === 0" @click="triggerBulkAction('INVOICE')">
           Fatura kes ({{ bulkActionCounts.INVOICE }})
         </EkButton>
         <EkButton size="sm" icon="mdi-truck-delivery-outline" :disabled="bulkActionCounts.SHIP === 0" @click="triggerBulkAction('SHIP')">
           Kargoya ver ({{ bulkActionCounts.SHIP }})
         </EkButton>
-        <EkButton size="sm" icon="mdi-delete-sweep-outline" class="ek-bulk-danger" :disabled="bulkActionCounts.CANCEL === 0" @click="handleCancelRequest()">
+        <EkButton size="sm" icon="mdi-cancel" class="ek-bulk-danger" :disabled="bulkActionCounts.CANCEL === 0" @click="handleCancelRequest()">
           İptal et ({{ bulkActionCounts.CANCEL }})
         </EkButton>
       </template>
@@ -162,21 +161,16 @@
         </span>
       </template>
       <template #cell-actions="{ row }">
-        <span class="ek-row-actions">
-          <EkButton tone="ghost" size="sm" icon="mdi-eye" icon-only aria-label="Sipariş detayını görüntüle" @click="openDetailedReport(row)" />
-          <span v-if="!hasAnyRowAction(row)" class="ek-row-actions__spacer" aria-hidden="true"></span>
-          <EkContextMenu v-else :groups="rowMenu(row)" :label="`${row.orderNumber} işlemleri`" @select="(it) => onRowMenu(row, it.key)">
-            <template #activator="{ props: menuProps }">
-              <EkButton v-bind="menuProps" tone="ghost" size="sm" icon="mdi-dots-horizontal" icon-only :aria-label="`${row.orderNumber} için diğer eylemler`" />
-            </template>
-          </EkContextMenu>
-        </span>
+        <EkRowActions :label="`${row.orderNumber} için diğer eylemler`" :items="rowActions(row)" />
       </template>
     </EkListScreen>
   </div>
 </template>
 
 <script setup lang="ts">
+import EkAlert from '@/components/ds/EkAlert.vue'
+import { problemFromError, type ProblemCopy } from '@/composables/useProblem'
+import EkRowActions, { type EkRowAction } from '@/components/ds/EkRowActions.vue'
 import { ref, reactive, computed } from 'vue'
 
 // Composables
@@ -259,6 +253,8 @@ const manualShipmentComponentRef = ref()
 const dialogAttach = ref(".orderListView")
 const loading = ref(false)
 const loadError = ref(false)
+/** Aşama 6b (Standart 1): hata desenindeki neden + teknik ayrıntı. */
+const loadProblem = ref<ProblemCopy | null>(null)
 const orders = ref<any[]>([])
 const selectedOrders = ref<string[]>([]) // Sadece ID'leri tutar (UI seçimi için)
 
@@ -410,9 +406,20 @@ function rowMenu(item: any): EkMenuGroup[] {
   ].filter(o => isOrderActionAllowed(item, o.key as any)).map(o => ({ ...o, disabled: locked }))
   const groups: EkMenuGroup[] = ops.length ? [{ items: ops }] : []
   if (isOrderActionAllowed(item, 'CANCEL')) {
-    groups.push({ items: [{ key: 'CANCEL', label: 'Siparişi iptal et', icon: 'mdi-delete-sweep-outline', danger: true, disabled: locked }] })
+    groups.push({ items: [{ key: 'CANCEL', label: 'Siparişi iptal et', icon: 'mdi-cancel', danger: true, disabled: locked }] })
   }
   return groups
+}
+
+/** Aşama 6b (Standart 3): satır eylemleri tek desende — görüntüle görünür, platform işlemleri + iptal `⋯` menüsünde. */
+function rowActions(item: any): EkRowAction[] {
+  const actions: EkRowAction[] = [{ key: 'view', action: 'view', label: 'Sipariş detayını görüntüle', inline: true, onClick: () => openDetailedReport(item) }]
+  for (const group of rowMenu(item)) {
+    for (const it of group.items) {
+      actions.push({ key: it.key, action: it.key === 'CANCEL' ? 'cancel' : it.key === 'PRINT_LABEL' ? 'print' : 'approve', icon: it.icon, label: it.label, disabled: it.disabled, onClick: () => onRowMenu(item, it.key) })
+    }
+  }
+  return actions
 }
 
 function onRowMenu(item: any, key: string) {
@@ -458,6 +465,7 @@ async function getOrders(resetPage: boolean = false) {
     });
     if (isRequestError(res)) {
       loadError.value = true;
+      loadProblem.value = problemFromError(res, 'OrderService/getOrders');
     } else if (res?.orders) {
       orders.value = res.orders;
 
@@ -471,6 +479,7 @@ async function getOrders(resetPage: boolean = false) {
     }
   } catch (e) {
     loadError.value = true;
+    loadProblem.value = problemFromError(e, 'OrderService/getOrders');
   } finally {
     loading.value = false;
   }

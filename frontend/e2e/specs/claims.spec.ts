@@ -51,7 +51,7 @@ test.describe('P2 — İade Talepleri (ClaimListView)', () => {
     await gotoAuthed(page)
     await openScreen(page, 'ClaimListView')
 
-    await page.locator('.claimListView tbody tr').first().locator('button:has(.mdi-eye)').click()
+    await page.locator('.claimListView tbody tr').first().locator('button:has(.mdi-eye-outline)').click()
 
     const dialog = page.getByRole('dialog').filter({ hasText: 'CLM-E2E-0001' })
     await expect(dialog).toBeVisible()
@@ -100,7 +100,7 @@ test.describe('P2 — İade Talebi Detayı (ClaimDetailComponent)', () => {
     await installApiMocks(page, { 'ClaimService/getClaims': claimsDoluFixture })
     await gotoAuthed(page)
     await openScreen(page, 'ClaimListView')
-    await page.locator('.claimListView tbody tr').first().locator('button:has(.mdi-eye)').click()
+    await page.locator('.claimListView tbody tr').first().locator('button:has(.mdi-eye-outline)').click()
     await expect(page.getByRole('dialog').filter({ hasText: 'CLM-E2E-0001' })).toBeVisible()
   })
 

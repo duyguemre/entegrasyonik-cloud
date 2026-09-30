@@ -114,6 +114,8 @@
         :error="error"
         :error-title="errorTitle"
         :error-text="errorText"
+        :error-cause="errorCause"
+        :error-details="errorDetails"
         :empty-title="isFiltered ? filteredEmptyTitle : emptyTitle"
         :empty-text="isFiltered ? filteredEmptyText : emptyText"
         :empty-icon="isFiltered ? 'mdi-filter-remove-outline' : emptyIcon"
@@ -188,6 +190,9 @@ const props = withDefaults(
     error?: boolean
     errorTitle?: string
     errorText?: string
+    /** Aşama 6b: olası neden + katlanır teknik ayrıntı (bkz. `problemFromError`). */
+    errorCause?: string
+    errorDetails?: Array<{ label: string; value: string }>
     search?: string
     searchPlaceholder?: string
     chips?: EkActiveFilterChip[]

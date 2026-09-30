@@ -18,9 +18,9 @@
         width="sm"
         title="'Pamuklu Oversize Tişört' silinsin mi?"
         description="Ürün 3 pazaryerindeki listelemelerden de kaldırılır. Bu işlem geri alınamaz."
-        icon="mdi-delete-alert-outline"
+        icon="mdi-trash-can-outline"
         confirm-label="Ürünü sil"
-        confirm-icon="mdi-delete-outline"
+        confirm-icon="mdi-trash-can-outline"
       >
         <p class="ds-danger-note"><v-icon icon="mdi-information-outline" aria-hidden="true" /> Stok ve sipariş geçmişi raporlarda kalır.</p>
       </EkDialog>
@@ -40,7 +40,7 @@
             <EkButton v-bind="props" tone="secondary" icon="mdi-dots-horizontal">Satır menüsü</EkButton>
           </template>
         </EkContextMenu>
-        <EkButton tone="secondary" icon="mdi-open-in-app" @click="formOpen = true">Form diyaloğu aç</EkButton>
+        <EkButton tone="secondary" icon="mdi-open-in-new" @click="formOpen = true">Form diyaloğu aç</EkButton>
         <EkButton tone="secondary" icon="mdi-alert-outline" @click="dangerOpen = true">Tehlikeli diyalog aç</EkButton>
         <p class="ds-live__last" role="status">Son seçim: {{ last || '—' }}</p>
       </div>
@@ -56,7 +56,7 @@
         width="sm"
         title="'Pamuklu Oversize Tişört' silinsin mi?"
         description="Bu işlem geri alınamaz."
-        icon="mdi-delete-alert-outline"
+        icon="mdi-trash-can-outline"
         confirm-label="Ürünü sil"
         @confirm="dangerOpen = false"
       />

@@ -80,7 +80,7 @@ const scopes = [
 const platformName = (code: string) => integrationStore.getIntegrationTitle(code) || (code ? code.charAt(0).toUpperCase() + code.slice(1) : '')
 
 const getScopeIcon = (val: number) => {
-    return ['mdi-checkbox-marked-circle-outline', 'mdi-filter-outline', 'mdi-database-outline'][val]
+    return ['mdi-checkbox-marked-circle-outline', 'mdi-filter-variant', 'mdi-database-outline'][val]
 }
 </script>
 

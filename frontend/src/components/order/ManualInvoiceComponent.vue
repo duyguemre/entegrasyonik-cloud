@@ -1,6 +1,6 @@
 <template>
     <ActionDialogComponent v-model="show" title="Manuel Fatura Girişi"
-        subtitle="E-Fatura entegrasyonu bulunmayan siparişler için belge kaydı" icon="mdi-file-document-edit-outline"
+        subtitle="E-Fatura entegrasyonu bulunmayan siparişler için belge kaydı" icon="mdi-pencil-outline"
         color="primary" confirm-buttom-color="primary" confirm-text="Faturayı Kaydet" cancel-text="Vazgeç"
         hint="Girilen bilgiler sipariş detayına işlenecek ve pazar yerine iletilecektir." max-width="600px"
         :is-confirm-disabled="isFormInvalid" @confirm="handleSubmit" @close="handleClose" attach="orderListView">

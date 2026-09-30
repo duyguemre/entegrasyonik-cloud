@@ -60,7 +60,7 @@ test.describe('P2 — Faturalar (InvoiceListView)', () => {
     await gotoAuthed(page)
     await openScreen(page, 'InvoiceListView')
 
-    await page.locator('.invoiceListView tbody tr').first().locator('button:has(.mdi-eye)').click()
+    await page.locator('.invoiceListView tbody tr').first().locator('button:has(.mdi-eye-outline)').click()
 
     const dialog = page.getByRole('dialog').filter({ hasText: 'INV-E2E-0001' })
     await expect(dialog).toBeVisible()

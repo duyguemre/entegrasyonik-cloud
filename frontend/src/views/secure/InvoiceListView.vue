@@ -65,7 +65,7 @@
       </template>
 
       <template #bulk-actions>
-        <EkButton size="sm" icon="mdi-delete-sweep-outline" class="ek-bulk-danger" @click="triggerBulkDelete">
+        <EkButton size="sm" icon="mdi-trash-can-outline" class="ek-bulk-danger" @click="triggerBulkDelete">
           Toplu sil ({{ selectedInvoices.length }})
         </EkButton>
       </template>
@@ -90,17 +90,18 @@
         <span v-if="row.invoiceMethod" class="ek-muted ek-invoice-kind">{{ INVOICE_METHOD_LABELS[row.invoiceMethod as InvoiceMethodEnum] || row.invoiceMethod }}</span>
       </template>
       <template #cell-actions="{ row }">
-        <span class="ek-row-actions">
-          <EkButton tone="ghost" size="sm" icon="mdi-eye" icon-only aria-label="Fatura detaylarını görüntüle" @click="openDetailedReport(row)" />
-          <EkButton tone="ghost" size="sm" icon="mdi-printer" icon-only :disabled="!row.pdfUrl" aria-label="Faturayı görüntüle/yazdır" @click="openPdf(row)" />
-          <EkButton tone="ghost" size="sm" icon="mdi-delete-sweep-outline" icon-only aria-label="Faturayı sil" @click="triggerDelete(row)" />
-        </span>
+        <EkRowActions :label="`${row.invoiceNumber ?? 'Fatura'} işlemleri`" :items="[
+          { key: 'view', action: 'view', label: 'Fatura detaylarını görüntüle', onClick: () => openDetailedReport(row) },
+          { key: 'print', action: 'print', label: 'Faturayı görüntüle/yazdır', disabled: !row.pdfUrl, onClick: () => openPdf(row) },
+          { key: 'delete', action: 'delete', label: 'Faturayı sil', onClick: () => triggerDelete(row) },
+        ]" />
       </template>
     </EkListScreen>
   </div>
 </template>
 
 <script setup lang="ts">
+import EkRowActions from '@/components/ds/EkRowActions.vue'
 import { ref, onMounted, computed } from 'vue';
 import useRestApi from '@/composables/restapi';
 import { useSnackbarStore } from '@/stores/snackbarStore';

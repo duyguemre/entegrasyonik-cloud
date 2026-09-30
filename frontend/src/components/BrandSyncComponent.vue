@@ -19,13 +19,13 @@
       <EkIconTile icon="mdi-cog-outline" tone="neutral" size="lg" />
       <h2 id="ek-brand-sync-empty-title" class="ek-brand-sync__empty-title">{{ $t('productDefinitions.brand.brandWarning') }}</h2>
       <p class="ek-brand-sync__empty-text">
-        Soldaki listeden bir markanın <v-icon icon="mdi-cog" size="16" aria-hidden="true" /> ayar düğmesine basarak
+        Soldaki listeden bir markanın <v-icon icon="mdi-cog-outline" size="16" aria-hidden="true" /> ayar düğmesine basarak
         marka adını düzenleyebilir ve platform markalarıyla eşleştirebilirsiniz.
       </p>
     </section>
 
     <div v-else class="ek-brand-sync__panels">
-      <CardComponent icon="mdi-cog" :title="`${selectedBrand.title} Markasını Düzenle`" :isHovered="false">
+      <CardComponent icon="mdi-cog-outline" :title="`${selectedBrand.title} Markasını Düzenle`" :isHovered="false">
         <v-form v-model="editingBrand.form" @keydown.enter.prevent @submit.prevent>
           <EkFormGrid :columns="1">
             <v-text-field @click.stop type="tel" maxlength="160" clearable

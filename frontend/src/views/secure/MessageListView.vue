@@ -82,7 +82,7 @@
       </template>
 
       <template #bulk-actions>
-        <EkButton size="sm" icon="mdi-delete-sweep-outline" class="ek-bulk-danger" @click="triggerBulkDelete">
+        <EkButton size="sm" icon="mdi-trash-can-outline" class="ek-bulk-danger" @click="triggerBulkDelete">
           Toplu sil ({{ selectedMessages.length }})
         </EkButton>
       </template>
@@ -116,16 +116,19 @@
       </template>
       <template #cell-date="{ row }"><span class="ek-num">{{ formatDateTime(row.date) }}</span></template>
       <template #cell-actions="{ row }">
-        <span class="ek-row-actions">
-          <EkButton tone="ghost" size="sm" :icon="needsReply(row) ? 'mdi-message-reply-text' : 'mdi-eye'" icon-only :aria-label="needsReply(row) ? 'Mesajı cevapla' : 'Mesajı görüntüle'" @click="openDetail(row)" />
-          <EkButton tone="ghost" size="sm" icon="mdi-delete-sweep-outline" icon-only aria-label="Mesajı sil" @click="triggerDelete(row)" />
-        </span>
+        <EkRowActions :label="`${row.subject ?? 'Mesaj'} işlemleri`" :items="[
+          needsReply(row)
+            ? { key: 'reply', action: 'send', icon: 'mdi-message-reply-text-outline', label: 'Mesajı cevapla', onClick: () => openDetail(row) }
+            : { key: 'view', action: 'view', label: 'Mesajı görüntüle', onClick: () => openDetail(row) },
+          { key: 'delete', action: 'delete', label: 'Mesajı sil', onClick: () => triggerDelete(row) },
+        ]" />
       </template>
     </EkListScreen>
   </div>
 </template>
 
 <script setup lang="ts">
+import EkRowActions, { type EkRowAction } from '@/components/ds/EkRowActions.vue'
 import { ref, reactive, computed, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import useRestApi from '@/composables/restapi';
@@ -381,7 +384,7 @@ const triggerDelete = (item: any) => {
     title: "Mesajı Sil",
     subtitle: "Bu işlem geri alınamaz",
     message: "Seçili mesajı sistemden silmek istediğinize emin misiniz?",
-    icon: "mdi-delete-alert",
+    icon: "mdi-trash-can-outline",
     color: "error",
     confirmText: "EVET, SİL",
     onConfirm: async () => {
@@ -406,7 +409,7 @@ const triggerBulkDelete = () => {
     title: "Mesajları Toplu Sil",
     subtitle: "Seçilen tüm mesajlar kalıcı olarak silinecektir.",
     message: [text('Seçili olan '), emphasis(selectedMessages.value.length), text(' mesajı silmek istediğinize emin misiniz?')],
-    icon: "mdi-delete-sweep",
+    icon: "mdi-trash-can-outline",
     color: "error",
     confirmText: "EVET, TOPLU SİL",
     onConfirm: async () => {

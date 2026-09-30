@@ -104,7 +104,7 @@ test.describe('P2 — Admin / Mağaza Yönetimi (AdminClientListView)', () => {
     await gotoAuthed(page)
     await openScreen(page, 'AdminClientListView')
 
-    await page.locator('.adminClientListView tbody tr').first().locator('button:has(.mdi-delete-sweep-outline)').click()
+    await page.locator('.adminClientListView tbody tr').first().locator('button:has(.mdi-trash-can-outline)').click()
     const dialog = page.getByRole('dialog').filter({ hasText: 'Müşteri Sil' })
     await expect(dialog).toBeVisible()
     await expect(dialog).toContainText('Bu işlem geri alınamaz')

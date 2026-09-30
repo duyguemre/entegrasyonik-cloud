@@ -87,7 +87,7 @@
                   </div>
 
                   <div v-if="item.metaData.totalAlreadyTransfer" class="ek-notification-summary__row">
-                    <span class="label"><v-icon size="14" color="info" class="mr-1">mdi-information</v-icon> Zaten
+                    <span class="label"><v-icon size="14" color="info" class="mr-1">mdi-information-outline</v-icon> Zaten
                       Eşleşmiş</span>
                     <span class="value text-info">{{ item.metaData.totalAlreadyTransfer }}</span>
                   </div>
@@ -152,7 +152,7 @@
                 <v-btn v-if="!item.isRead" icon="mdi-check" size="small" variant="text" color="success"
                   aria-label="Okundu işaretle" @click="notificationStore.markAsRead(item._id)" />
 
-                <v-btn icon="mdi-delete-outline" size="small" variant="text" aria-label="Sil"
+                <v-btn icon="mdi-trash-can-outline" size="small" variant="text" aria-label="Sil"
                   @click="notificationStore.deleteNotification(item._id)" />
               </div>
             </div>

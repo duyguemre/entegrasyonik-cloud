@@ -60,10 +60,10 @@
         <EkStatusChip :tone="row.status === 'ACTIVE' ? 'success' : 'neutral'" :label="row.status === 'ACTIVE' ? 'Aktif' : 'Pasif'" />
       </template>
       <template #cell-actions="{ row }">
-        <span class="ek-row-actions" @click.stop>
-          <EkButton tone="ghost" size="sm" icon="mdi-eye-outline" icon-only :aria-label="`${row.name} mağaza detaylarını görüntüle`" @click="viewDetail(row)" />
-          <EkButton tone="ghost" size="sm" icon="mdi-delete-sweep-outline" icon-only :aria-label="`${row.name} mağazasını sil`" @click="confirmDelete(row)" />
-        </span>
+        <EkRowActions :label="`${row.name} işlemleri`" :items="[
+          { key: 'view', action: 'view', label: `${row.name} mağaza detaylarını görüntüle`, onClick: () => viewDetail(row) },
+          { key: 'delete', action: 'delete', label: `${row.name} mağazasını sil`, onClick: () => confirmDelete(row) },
+        ]" />
       </template>
     </EkListScreen>
 
@@ -75,11 +75,12 @@
 
     <ConfirmationDialogComponent v-model="deleteDialog" title="Müşteri Sil"
       message="Bu müşteriyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz." confirmText="Evet, Sil"
-      color="error" icon="mdi-delete-alert" @confirm="doDelete" />
+      color="error" icon="mdi-trash-can-outline" @confirm="doDelete" />
   </div>
 </template>
 
 <script setup lang="ts">
+import EkRowActions from '@/components/ds/EkRowActions.vue'
 import { ref, reactive, computed, onMounted } from 'vue';
 import useRestApi from '@/composables/restapi';
 import { useSnackbarStore } from '@/stores/snackbarStore';

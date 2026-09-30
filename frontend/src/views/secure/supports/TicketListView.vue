@@ -104,16 +104,17 @@
         </span>
       </template>
       <template #cell-actions="{ row }">
-        <span class="ek-row-actions">
-          <EkButton tone="ghost" size="sm" icon="mdi-message-text-outline" icon-only aria-label="Görüntüle / Yanıtla" @click="openTicketDetail(row)" />
-          <EkButton v-if="row.status !== TicketStatusEnum.CLOSED" tone="ghost" size="sm" icon="mdi-check-circle-outline" icon-only aria-label="Kapat" @click="confirmCloseTicket(row)" />
-        </span>
+        <EkRowActions :label="`${row.subject ?? 'Talep'} işlemleri`" :items="[
+          { key: 'open', action: 'view', icon: 'mdi-message-text-outline', label: 'Görüntüle / Yanıtla', onClick: () => openTicketDetail(row) },
+          ...(row.status !== TicketStatusEnum.CLOSED ? [{ key: 'close', action: 'approve' as const, icon: 'mdi-check-circle-outline', label: 'Kapat', onClick: () => confirmCloseTicket(row) }] : []),
+        ]" />
       </template>
     </EkListScreen>
   </div>
 </template>
 
 <script setup lang="ts">
+import EkRowActions, { type EkRowAction } from '@/components/ds/EkRowActions.vue'
 import { ref, onMounted, reactive, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 

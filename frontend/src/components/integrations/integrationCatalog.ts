@@ -152,7 +152,7 @@ export interface LevelPresentation {
 export const LEVEL_PRESENTATION: Record<CapabilityLevel, LevelPresentation> = {
   supported: { tone: 'success', icon: 'mdi-check-circle-outline', labelKey: 'integrationCoverage.level.supported' },
   limited: { tone: 'warning', icon: 'mdi-alert-circle-outline', labelKey: 'integrationCoverage.level.limited' },
-  platform_auto: { tone: 'info', icon: 'mdi-autorenew', labelKey: 'integrationCoverage.level.platform_auto' },
+  platform_auto: { tone: 'info', icon: 'mdi-refresh', labelKey: 'integrationCoverage.level.platform_auto' },
   not_supported: { tone: 'neutral', icon: 'mdi-minus-circle-outline', labelKey: 'integrationCoverage.level.not_supported' },
 }
 

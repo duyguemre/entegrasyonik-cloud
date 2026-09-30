@@ -131,7 +131,7 @@
         :skeleton-rows="8"
         :empty-title="activeChips.length ? t('auditLog.empty.filteredTitle') : t('auditLog.empty.title')"
         :empty-text="activeChips.length ? t('auditLog.empty.filteredText') : t('auditLog.empty.text')"
-        :empty-icon="activeChips.length ? 'mdi-filter-off-outline' : 'mdi-clipboard-text-clock-outline'"
+        :empty-icon="activeChips.length ? 'mdi-filter-remove-outline' : 'mdi-clipboard-text-clock-outline'"
         @row-click="openDetail"
       >
         <template #cell-at="{ row }">

@@ -30,8 +30,8 @@ export const NOTIFICATION_TYPE_ICONS: Record<NotificationType, string> = {
   SYSTEM: 'mdi-shield-alert-outline',
   ORDER: 'mdi-cart-outline',
   BATCH_PROCESS: 'mdi-layers-triple-outline',
-  IMPORT_READY: 'mdi-database-import-outline',
-  EXPORT_READY: 'mdi-database-export-outline',
+  IMPORT_READY: 'mdi-file-import-outline',
+  EXPORT_READY: 'mdi-file-export-outline',
   INFO: 'mdi-information-outline',
 }
 

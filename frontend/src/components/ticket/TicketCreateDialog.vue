@@ -13,7 +13,7 @@
     :model-value="modelValue"
     title="Yeni destek talebi"
     :description="phase === 'success' ? undefined : 'Size nasıl yardımcı olabiliriz? Lütfen detayları paylaşın.'"
-    icon="mdi-plus-circle-outline"
+    icon="mdi-plus"
     width="lg"
     attach="ticketListView"
     class="ek-ticket-dialog"

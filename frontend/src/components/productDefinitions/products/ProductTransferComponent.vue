@@ -142,7 +142,7 @@
               <v-btn density="compact" block class="fill-height" color="primary"
                 @click="validateAndSearchProducts">
                 <span class="">
-                  <v-icon size="30">mdi-content-save</v-icon> {{ $t('common.save') }}
+                  <v-icon size="30">mdi-content-save-outline</v-icon> {{ $t('common.save') }}
                 </span></v-btn>
             </v-btn-group>
           </v-col>

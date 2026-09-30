@@ -119,11 +119,11 @@
             <td class="vg-td vg-sticky-end vg-actions" aria-colindex="11">
               <EkTooltip text="Özellikler ve kanal bilgileri">
                 <v-btn icon variant="text" size="small" density="comfortable" class="vg-act"
-                    aria-label="Varyantı düzenle" @click="emit('edit', r.variant)"><v-icon icon="mdi-pencil" size="18" /></v-btn>
+                    aria-label="Varyantı düzenle" @click="emit('edit', r.variant)"><v-icon icon="mdi-pencil-outline" size="18" /></v-btn>
               </EkTooltip>
               <EkTooltip text="Varyantı sil">
                 <v-btn icon variant="text" size="small" density="comfortable" class="vg-act vg-act--danger"
-                    aria-label="Varyantı sil" @click="emit('delete', r.variant)"><v-icon icon="mdi-delete" size="18" /></v-btn>
+                    aria-label="Varyantı sil" @click="emit('delete', r.variant)"><v-icon icon="mdi-trash-can-outline" size="18" /></v-btn>
               </EkTooltip>
             </td>
           </tr>

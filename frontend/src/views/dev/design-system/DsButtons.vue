@@ -66,7 +66,7 @@ const tones = [
   { tone: 'primary' as const, label: 'Sorgula', icon: 'mdi-magnify', use: 'ana iş' },
   { tone: 'secondary' as const, label: 'Temizle', icon: 'mdi-filter-remove-outline', use: 'ikincil' },
   { tone: 'ghost' as const, label: 'Önizle', icon: 'mdi-eye-outline', use: 'üçüncül' },
-  { tone: 'danger' as const, label: 'Sil', icon: 'mdi-delete-outline', use: 'yıkıcı' },
+  { tone: 'danger' as const, label: 'Sil', icon: 'mdi-trash-can-outline', use: 'yıkıcı' },
 ]
 </script>
 

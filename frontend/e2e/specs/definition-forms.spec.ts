@@ -31,7 +31,7 @@ async function openBrandPanel(page: Page, overrides: Record<string, any> = {}) {
   await subItem.click()
   await expectScreenOpen(page, '.brandDefinition')
   // Listedeki ilk markanın ayar (⚙) düğmesi eşitleme/düzenleme panelini açar.
-  await page.locator('.brandDefinition .mdi-cog').first().click()
+  await page.locator('.brandDefinition .mdi-cog-outline').first().click()
   const panel = page.locator('.brandDefinition .brandListComponentView').last()
   await expect(panel.getByLabel('Marka Adı', { exact: false }).first()).toBeVisible()
   return panel
@@ -66,14 +66,14 @@ test.describe('DS-v2 A2 — marka tanımı paneli (karakterizasyon)', () => {
         return route.fulfill({ status: 200, contentType: 'application/json', headers, body: JSON.stringify({ acknowledged: true, deletedCount: 1 }) })
       },
     })
-    await panel.locator('button:has(.mdi-delete-outline), button:has(.mdi-trash-can-outline)').first().click()
+    await panel.locator('button:has(.mdi-trash-can-outline)').first().click()
     const dialog = page.getByRole('dialog').filter({ hasText: 'E2E Marka Bir' })
     await expect(dialog).toBeVisible()
     await dialog.getByRole('button', { name: /Vazgeç|İptal/i }).click()
     await expect(dialog).toBeHidden()
     expect(calls).toBe(0)
 
-    await panel.locator('button:has(.mdi-delete-outline), button:has(.mdi-trash-can-outline)').first().click()
+    await panel.locator('button:has(.mdi-trash-can-outline)').first().click()
     await expect(dialog).toBeVisible()
     if (testInfo.project.name === 'chromium-desktop') {
       // [Test ortamı sağlamlaştırması — Windows'ta kırmızı, Linux'ta yeşil] `toBeVisible` opaklığa bakmaz; yavaş

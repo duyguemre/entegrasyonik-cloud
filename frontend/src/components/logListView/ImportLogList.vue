@@ -10,7 +10,7 @@
     <ConfirmationDialogComponent v-model="confirmationDelete.isDialogOpen"
       :title="confirmationDelete.mode === 'single' ? 'KAYIT SİLİNECEK' : 'SEÇİLİLER SİLİNECEK'"
       :message="confirmationDelete.mode === 'single' ? 'Bu işlem kaydını silmek istediğinizden emin misiniz?' : `${validSelectedJobsCount} adet silinebilir kayıt silinecek. Emin misiniz?`"
-      icon="mdi-delete-alert-outline" color="error" confirmText="Sil" cancelText="İptal" attach=".importLogList"
+      icon="mdi-trash-can-outline" color="error" confirmText="Sil" cancelText="İptal" attach=".importLogList"
       @confirm="confirmDelete()" @cancel="cancelDelete()" />
     <LoadingComponent :attach="dialogAttach" ref="loadingComponentRef"></LoadingComponent>
 
@@ -35,7 +35,7 @@
       :total="pagination.totalNumberOfRecords"
       empty-title="Aktarım kaydı bulunamadı"
       empty-text="Pazaryerlerinden ürün çekim işlemleri burada listelenir."
-      empty-icon="mdi-cloud-download-outline"
+      empty-icon="mdi-download-outline"
       filtered-empty-title="Aktarım kaydı bulunamadı"
       filtered-empty-text="Arama kriterlerinize uygun herhangi bir aktarım kaydı bulunamadı."
       refresh-label="Listeyi yenile"
@@ -49,7 +49,7 @@
       @refresh="getJobs(true)"
     >
       <template #bulk-actions>
-        <EkButton size="sm" icon="mdi-delete" class="ek-log-danger" :disabled="validSelectedJobsCount === 0"
+        <EkButton size="sm" icon="mdi-trash-can-outline" class="ek-log-danger" :disabled="validSelectedJobsCount === 0"
           aria-label="Seçili kayıtları sil" @click="openDeleteConfirm($event, 'batch')">
           Sil ({{ validSelectedJobsCount }})
         </EkButton>
@@ -92,17 +92,17 @@
         </span>
       </template>
       <template #cell-actions="{ row }">
-        <span class="ek-log-actions">
-          <EkButton tone="ghost" size="sm" icon="mdi-eye-outline" icon-only aria-label="Aktarım detaylarını görüntüle" @click="openDetailedReport(row)" />
-          <EkButton tone="ghost" size="sm" icon="mdi-delete" icon-only class="ek-log-danger" :disabled="!isDeletable(row)"
-            aria-label="Aktarım kaydını sil" @click="openDeleteConfirm($event, 'single', row)" />
-        </span>
+        <EkRowActions :label="`${row.jobId ?? 'Aktarım'} işlemleri`" :items="[
+          { key: 'view', action: 'view', label: 'Aktarım detaylarını görüntüle', onClick: () => openDetailedReport(row) },
+          { key: 'delete', action: 'delete', label: 'Aktarım kaydını sil', disabled: !isDeletable(row), onClick: () => openDeleteConfirm(undefined, 'single', row) },
+        ]" />
       </template>
     </EkListScreen>
   </div>
 </template>
 
 <script setup lang="ts">
+import EkRowActions from '@/components/ds/EkRowActions.vue'
 import { ref, onMounted, onBeforeMount, reactive, computed } from 'vue'
 import useRestApi from '@/composables/restapi'
 import LoadingComponent from '@/components/LoadingComponent.vue'

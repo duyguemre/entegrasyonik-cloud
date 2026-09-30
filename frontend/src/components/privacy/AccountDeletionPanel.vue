@@ -52,7 +52,7 @@
           <span class="accountDeletion__sr">{{ $t('privacyData.legal.newTab') }}</span>
         </a>
         <!-- Sayfada tek birincil eylem dışa aktarmadır; yıkıcı giriş ikincil tondadır, `danger` dolgu son onaydadır. -->
-        <EkButton tone="secondary" icon="mdi-delete-outline" class="accountDeletion__start" @click="openVerify">
+        <EkButton tone="secondary" icon="mdi-trash-can-outline" class="accountDeletion__start" @click="openVerify">
           {{ $t('privacyData.deletion.action') }}
         </EkButton>
       </div>
@@ -72,7 +72,7 @@
       :title="$t('privacyData.deletion.verify.title')"
       :description="$t('privacyData.deletion.verify.description')"
       :confirm-label="$t('privacyData.deletion.verify.confirm')"
-      confirm-icon="mdi-delete-outline"
+      confirm-icon="mdi-trash-can-outline"
       :confirm-disabled="!canContinue"
       @confirm="toFinalStep"
       @cancel="reset"
@@ -116,11 +116,11 @@
       v-model="finalOpen"
       tone="danger"
       width="sm"
-      icon="mdi-delete-alert-outline"
+      icon="mdi-trash-can-outline"
       :title="$t('privacyData.deletion.confirm.title', { name: expectedName || typedName.trim() })"
       :description="$t('privacyData.deletion.confirm.description')"
       :confirm-label="$t('privacyData.deletion.confirm.action')"
-      confirm-icon="mdi-delete-outline"
+      confirm-icon="mdi-trash-can-outline"
       :confirm-loading="submitting"
       @confirm="submit"
       @cancel="reset"
@@ -152,7 +152,7 @@ const { t } = useI18n()
 const facts = [
   { key: 'privacyData.deletion.facts.suspend', icon: 'mdi-pause-circle-outline' },
   { key: 'privacyData.deletion.facts.restore', icon: 'mdi-lifebuoy' },
-  { key: 'privacyData.deletion.facts.export', icon: 'mdi-database-export-outline' },
+  { key: 'privacyData.deletion.facts.export', icon: 'mdi-file-export-outline' },
 ]
 const legalHref = siteUrl(SITE_LEGAL_PATHS.kvkk)
 

@@ -91,8 +91,8 @@ test.describe('P3 (B5-2) — Ürün varyantları (ProductVariantsComponent)', ()
     await expect(root.getByRole('columnheader', { name: 'Satış fiyatı' })).toBeVisible()
     await expect(root.getByRole('columnheader', { name: 'E2E Renk Grubu' })).toBeVisible()
     // Her satırda düzenle (kalem) + sil butonu vardır (hasVariant).
-    await expect(root.locator('tbody tr').filter({ hasText: 'SK-E2E-SIYAH' }).locator('.mdi-pencil')).toHaveCount(1)
-    await expect(root.locator('tbody tr').filter({ hasText: 'SK-E2E-SIYAH' }).locator('.mdi-delete')).toHaveCount(1)
+    await expect(root.locator('tbody tr').filter({ hasText: 'SK-E2E-SIYAH' }).locator('.mdi-pencil-outline')).toHaveCount(1)
+    await expect(root.locator('tbody tr').filter({ hasText: 'SK-E2E-SIYAH' }).locator('.mdi-trash-can-outline')).toHaveCount(1)
   })
 
   // DS-v2 A6a (kasten): hücre içi düzenleme hücre bazında — tık seçer, çift tık/Enter/yazmaya başlamak düzenler

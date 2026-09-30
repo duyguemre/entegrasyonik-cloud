@@ -82,11 +82,10 @@
           <EkStatusChip :tone="roleTone(row)" :label="roleLabel(row)" />
         </template>
         <template #cell-actions="{ row }">
-          <span class="ek-row-actions">
-            <EkButton tone="ghost" size="sm" icon="mdi-pencil" icon-only aria-label="Düzenle" @click="openAddUser(row)" />
-            <EkButton tone="ghost" size="sm" icon="mdi-delete" icon-only class="ek-auth-danger" :disabled="row.owner"
-              :aria-label="row.owner ? 'Mağaza yöneticisi silinemez' : 'Sil'" @click="triggerDelete(row)" />
-          </span>
+          <EkRowActions :label="`${row.name ?? row.email} işlemleri`" :items="[
+            { key: 'edit', action: 'edit', label: 'Düzenle', onClick: () => openAddUser(row) },
+            { key: 'delete', action: 'delete', label: row.owner ? 'Mağaza yöneticisi silinemez' : 'Sil', disabled: row.owner, onClick: () => triggerDelete(row) },
+          ]" />
         </template>
       </EkListScreen>
     </template>
@@ -94,6 +93,7 @@
 </template>
 
 <script setup lang="ts">
+import EkRowActions from '@/components/ds/EkRowActions.vue'
 import { useI18n } from 'vue-i18n';
 import { ref, onMounted, onBeforeMount, onActivated, computed, onDeactivated } from 'vue'
 import LoadingComponent from '@/components/LoadingComponent.vue'

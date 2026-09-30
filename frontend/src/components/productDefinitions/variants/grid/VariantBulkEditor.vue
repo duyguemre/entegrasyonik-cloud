@@ -125,7 +125,7 @@
           <v-icon icon="mdi-alert" aria-hidden="true" />
           <span><strong>{{ changes.length }} değişiklik uygulanmadı.</strong> Çıkarsanız bu değişiklikler kaybolur.</span>
           <EkButton size="sm" @click="confirmDiscard = false">Düzenlemeye dön</EkButton>
-          <EkButton size="sm" tone="danger" icon="mdi-delete-outline" @click="emit('close')">Değişiklikleri at</EkButton>
+          <EkButton size="sm" tone="danger" icon="mdi-trash-can-outline" @click="emit('close')">Değişiklikleri at</EkButton>
         </div>
         <div v-else class="vbe-foot__actions">
           <EkButton @click="requestClose">Vazgeç</EkButton>

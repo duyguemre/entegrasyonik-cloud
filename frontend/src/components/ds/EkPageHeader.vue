@@ -11,8 +11,8 @@
       title="Ürünler"
       description="Tüm kanallardaki ürünlerinizi buradan yönetin."
       :primary-action="{ label: 'Yeni ürün', icon: 'mdi-plus', onClick: openCreate }"
-      :secondary-actions="[{ label: 'Dışa aktar', icon: 'mdi-download', onClick: exportProducts }]"
-      :overflow-actions="[{ label: 'Toplu sil', icon: 'mdi-delete-sweep-outline', onClick: bulkDelete, danger: true }]"
+      :secondary-actions="[{ label: 'Dışa aktar', icon: 'mdi-download-outline', onClick: exportProducts }]"
+      :overflow-actions="[{ label: 'Toplu sil', icon: 'mdi-trash-can-outline', onClick: bulkDelete, danger: true }]"
     />
 -->
 <template>

@@ -10,7 +10,7 @@
     <ConfirmationDialogComponent v-model="confirmationDelete.isDialogOpen"
       :title="confirmationDelete.mode === 'single' ? 'KAYIT SİLİNECEK' : 'SEÇİLENLER SİLİNECEK'"
       :message="confirmationDelete.mode === 'single' ? 'Bu işlem kaydını silmek istediğinizden emin misiniz?' : `${validSelectedJobsCount} adet kayıt silinecek. Emin misiniz?`"
-      icon="mdi-delete-alert-outline" color="error" confirmText="Sil" cancelText="İptal" attach=".exportLogList"
+      icon="mdi-trash-can-outline" color="error" confirmText="Sil" cancelText="İptal" attach=".exportLogList"
       @confirm="confirmDelete()" @cancel="cancelDelete()" />
     <LoadingComponent :attach="dialogAttach" ref="loadingComponentRef"></LoadingComponent>
 
@@ -72,7 +72,7 @@
       </template>
 
       <template #bulk-actions>
-        <EkButton size="sm" icon="mdi-delete" class="ek-log-danger" :disabled="validSelectedJobsCount === 0"
+        <EkButton size="sm" icon="mdi-trash-can-outline" class="ek-log-danger" :disabled="validSelectedJobsCount === 0"
           aria-label="Seçili kayıtları sil" @click="openDeleteConfirm($event, 'batch')">
           Sil ({{ validSelectedJobsCount }})
         </EkButton>
@@ -110,17 +110,17 @@
         <span v-else class="ek-muted">Devam ediyor</span>
       </template>
       <template #cell-actions="{ row }">
-        <span class="ek-log-actions">
-          <EkButton tone="ghost" size="sm" icon="mdi-eye-outline" icon-only aria-label="Gönderim detaylarını görüntüle" @click="openDetailedReport(row)" />
-          <EkButton tone="ghost" size="sm" icon="mdi-delete" icon-only class="ek-log-danger" :disabled="!isDeletable(row)"
-            aria-label="Gönderim kaydını sil" @click="openDeleteConfirm($event, 'single', row)" />
-        </span>
+        <EkRowActions :label="`${row.jobId ?? 'Gönderim'} işlemleri`" :items="[
+          { key: 'view', action: 'view', label: 'Gönderim detaylarını görüntüle', onClick: () => openDetailedReport(row) },
+          { key: 'delete', action: 'delete', label: 'Gönderim kaydını sil', disabled: !isDeletable(row), onClick: () => openDeleteConfirm(undefined, 'single', row) },
+        ]" />
       </template>
     </EkListScreen>
   </div>
 </template>
 
 <script setup lang="ts">
+import EkRowActions from '@/components/ds/EkRowActions.vue'
 import { ref, onMounted, reactive, computed } from 'vue'
 import useRestApi from '@/composables/restapi'
 import LoadingComponent from '@/components/LoadingComponent.vue'

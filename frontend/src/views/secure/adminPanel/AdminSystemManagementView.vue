@@ -114,7 +114,7 @@
             <div class="insight-list">
               <div class="metric-insight-card">
                 <div class="insight-left">
-                  <span class="insight-icon insight-icon--info"><v-icon size="20" aria-hidden="true">mdi-cloud-download</v-icon></span>
+                  <span class="insight-icon insight-icon--info"><v-icon size="20" aria-hidden="true">mdi-download-outline</v-icon></span>
                   <div>
                     <div class="insight-label">Çekilen Kayıt</div>
                     <div class="insight-value">{{ healthData.operationInsights.metrics.totalFetched }}</div>
@@ -136,7 +136,7 @@
 
               <div class="metric-insight-card">
                 <div class="insight-left">
-                  <span class="insight-icon insight-icon--warning"><v-icon size="20" aria-hidden="true">mdi-cached</v-icon></span>
+                  <span class="insight-icon insight-icon--warning"><v-icon size="20" aria-hidden="true">mdi-refresh</v-icon></span>
                   <div>
                     <div class="insight-label">Güncellenen</div>
                     <div class="insight-value">{{ healthData.operationInsights.metrics.totalUpdated }}</div>
@@ -315,12 +315,7 @@
       <ActionDialogComponent v-model="showCacheDialog" :title="cacheDialogTitle" icon="mdi-memory" color="info"
         maxWidth="700px" :showFooter="false" attach=".adminSystemManagementView">
         <div class="dialog-body">
-          <v-alert v-if="cacheDialogTitle.includes('Erişim')" type="info" variant="tonal" density="compact"
-            class="mb-4 rounded-lg border">
-            <div class="text-caption font-weight-bold">
-              Hits/Misses istatistikleri NodeCache çalışma süresi boyunca birikmiş toplam verilerdir.
-            </div>
-          </v-alert>
+          <EkAlert v-if="cacheDialogTitle.includes('Erişim')" tone="info" dense class="mb-4" text="Hits/Misses istatistikleri NodeCache çalışma süresi boyunca birikmiş toplam verilerdir." />
 
           <EkDataTable v-if="healthData.infrastructure.memoryCache.breakdown.length > 0"
             :items="healthData.infrastructure.memoryCache.breakdown" :columns="cacheColumns" row-key="name"
@@ -470,6 +465,7 @@
 </template>
 
 <script setup lang="ts">
+import EkAlert from '@/components/ds/EkAlert.vue'
 import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue';
 import { PLATFORM_PROCESS, PLATFORM_PROCESS_LABELS } from '@/types/PlatformProcess';
 import useRestApi from '@/composables/restapi';
