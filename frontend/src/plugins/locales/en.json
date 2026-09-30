@@ -358,5 +358,38 @@
       "emptyText": "Line items appear once the payment order is imported from the marketplace.",
       "errorSubject": "Payout details"
     }
+  },
+  "subscriptionBanner": {
+    "regionLabel": "Subscription status",
+    "manage": "Manage subscription",
+    "manageShort": "Manage",
+    "minimize": "Minimize notice",
+    "expand": "Expand notice",
+    "trialEndsSoon": "Your trial ends in {days} days ({date}). Choose a plan to continue without interruption.",
+    "trialEndsToday": "Your trial ends today ({date}). Choose a plan to continue without interruption.",
+    "trialEnded": "Your trial ended on {date}. Without a plan the account will be suspended and stock sync will stop.",
+    "pastDueGrace": "Your last payment failed. If it is not completed by {date}, the account will be suspended and stock sync will stop.",
+    "pastDue": "Your last payment failed. If it is not completed, the account will be suspended and stock sync will stop.",
+    "pastDueStopped": "Stock sync stopped — risk of overselling on your channels. Complete the payment.",
+    "suspended": "Stock sync stopped — risk of overselling on your channels. Complete the payment.",
+    "canceledUntil": "Your subscription was canceled. All features stay available until {date}; after that the account becomes read-only and stock sync stops.",
+    "canceled": "Your subscription was canceled. At the end of the period the account becomes read-only and stock sync stops.",
+    "canceledEnded": "The subscription period ended on {date}: the account is read-only and stock sync stopped. Choose a plan to continue.",
+    "canceledStopped": "The subscription period ended: the account is read-only and stock sync stopped. Choose a plan to continue.",
+    "expired": "Your subscription expired: stock sync and editing are off. Choose a plan to continue.",
+    "compact": {
+      "trialEndsSoon": "Trial ends in {days} days",
+      "trialEndsToday": "Trial ends today",
+      "trialEnded": "Trial ended",
+      "pastDueGrace": "Payment due · last day {date}",
+      "pastDue": "Payment due",
+      "pastDueStopped": "Stock sync stopped",
+      "suspended": "Stock sync stopped",
+      "canceledUntil": "Canceled · available until {date}",
+      "canceled": "Canceled",
+      "canceledEnded": "Read-only · stock sync stopped",
+      "canceledStopped": "Read-only · stock sync stopped",
+      "expired": "Subscription expired"
+    }
   }
 }

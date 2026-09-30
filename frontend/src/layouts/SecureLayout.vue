@@ -5,7 +5,8 @@
     1. `ApplicationBar` (tam genişlik kimlik bandı; daraltılınca yukarı kayar)
     2. sol menü: `NavigationRail` (ray) VEYA `NavigationMenu` (tam/geçici) — aynı anda TEK biri
        (`.v-navigation-drawer.soft-nav` seçicisi tekil kalsın — Ek A kancası)
-    3. `v-main`: `ShellTabStrip` (sekmeler) + çalışma alanı (etkin sekmenin ekranı)
+    3. `v-main`: abonelik durum bandı (C2.2; yalnız bir durum varsa) + `ShellTabStrip` (sekmeler) +
+       çalışma alanı (etkin sekmenin ekranı). Bant yüksekliği `--ek-shell-banner-h` ile alttakilere eklenir.
   Görünüm durumları: üst bölüm daraltılmış (Alt+U) · odak modu (Ctrl+Shift+F: üst bar + sol
   menü gizlenir, tarayıcı destekliyorsa tam ekran). Tüm kısayollar `navigation/shortcuts.ts`
   kaydından; bu dosya yalnızca olayı eyleme bağlar.
@@ -13,7 +14,7 @@
   `stores/sidebar.ts`'te (ADR-0015 Karar 2.1/2.2).
 -->
 <template>
-  <v-layout class="ek-shell" :class="{ 'ek-shell--focus': focusMode }">
+  <v-layout ref="shellRef" class="ek-shell" :class="{ 'ek-shell--focus': focusMode }">
     <ApplicationBar
       ref="appBarRef"
       :visible="headerShown"
@@ -30,6 +31,16 @@
     <NotificationDrawerComponent />
 
     <v-main class="ek-shell__main">
+      <div v-if="subscriptionBanner" ref="bannerRef" class="ek-shell__banner">
+        <ShellSubscriptionBanner
+          :model="subscriptionBanner"
+          :minimized="subscriptionStore.minimized"
+          :force-compact="focusMode"
+          :can-manage="!!subscriptionLink"
+          @update:minimized="subscriptionStore.setMinimized"
+          @manage="openSubscription"
+        />
+      </div>
       <ShellTabStrip
         v-if="tabs"
         id="tour-homepage-tabs"
@@ -66,6 +77,8 @@ import NotificationDrawerComponent from '@/components/user/NotificationDrawerCom
 import ApplicationBar from '@/components/layout/ApplicationBar.vue'
 import ShellTabStrip from '@/components/layout/ShellTabStrip.vue'
 import ShortcutHelpDialog from '@/components/layout/ShortcutHelpDialog.vue'
+import ShellSubscriptionBanner from '@/components/layout/ShellSubscriptionBanner.vue'
+import { useSubscriptionBannerStore } from '@/stores/subscriptionBanner'
 import { useMenuStore } from '@/stores/site/menu'
 import { useSidebarStore } from '@/stores/sidebar'
 import mitt from 'mitt'
@@ -253,6 +266,48 @@ function onGlobalKeydown(event: KeyboardEvent) {
   runShortcut(match)
 }
 
+// ---- Abonelik durum bandı (C2.2) ----
+
+const SUBSCRIPTION_SCREEN_CODE = 'SubscriptionView'
+const subscriptionStore = useSubscriptionBannerStore()
+const shellRef = ref<any>(null)
+const bannerRef = ref<HTMLElement | null>(null)
+const onSubscriptionScreen = computed(() => mySelectedTab.value?.link?.code === SUBSCRIPTION_SCREEN_CODE)
+/** Abonelik ekranı açıkken bant gizlenir: ekranın kendi durum bölümü aynı bilgiyi (daha ayrıntılı) verir. */
+const subscriptionBanner = computed(() => (onSubscriptionScreen.value ? null : subscriptionStore.banner))
+/** Menüde abonelik ekranı yoksa (yetki) "Aboneliği yönet" gösterilmez; bant yine görünür. */
+const subscriptionLink = computed(() => menuStore.getMenuLinkWithCode(SUBSCRIPTION_SCREEN_CODE))
+
+function openSubscription() {
+  const link = subscriptionLink.value
+  if (link) workspace.openTab(link)
+}
+
+// Abonelik ekranından çıkınca durum yeniden okunur (plan seçimi/ödeme sonrası bant hemen güncellensin).
+watch(onSubscriptionScreen, (now, before) => {
+  if (before && !now) void subscriptionStore.refresh()
+})
+
+// Bant yüksekliği (sarma/küçültme ile değişir) → `--ek-shell-banner-h`; sekme şeridi ve çalışma alanı
+// bu kadar aşağı iner. Satır içi stil bağlama yerine özellik doğrudan kabuk kökünde ayarlanır.
+let bannerObserver: ResizeObserver | undefined
+
+function setBannerHeight(px: number) {
+  const el: HTMLElement | undefined = shellRef.value?.$el
+  el?.style.setProperty('--ek-shell-banner-h', `${Math.round(px)}px`)
+}
+
+watch(bannerRef, (el) => {
+  bannerObserver?.disconnect()
+  bannerObserver = undefined
+  if (!el) return setBannerHeight(0)
+  setBannerHeight(el.getBoundingClientRect().height)
+  if (typeof ResizeObserver !== 'undefined') {
+    bannerObserver = new ResizeObserver((entries) => setBannerHeight(entries[0]?.borderBoxSize?.[0]?.blockSize ?? el.getBoundingClientRect().height))
+    bannerObserver.observe(el)
+  }
+}, { flush: 'post' })
+
 // ---- Sekme geçişi: kısa fade + hafif kayma (DS hareket token'ları; reduced-motion'da yok) ----
 
 function cssMs(name: string, fallback: number) {
@@ -279,6 +334,7 @@ onMounted(async () => {
   workspace.attachRouter(router)
   window.addEventListener('keydown', onGlobalKeydown)
   document.addEventListener('fullscreenchange', onFullscreenChange)
+  subscriptionStore.start()
   await workspace.init()
 })
 
@@ -301,6 +357,8 @@ onBeforeUnmount(() => {
   eventBus.off('openTab', workspace.openTab)
   window.removeEventListener('keydown', onGlobalKeydown)
   document.removeEventListener('fullscreenchange', onFullscreenChange)
+  subscriptionStore.stop()
+  bannerObserver?.disconnect()
 })
 
 // ADR-0015 Karar 2.1 — Escape yalnızca GEÇİCİ sunumları (mobil çekmece / tablet üst katmanı) kapatır.
@@ -336,13 +394,24 @@ const closeTemporaryMenu = () => {
     left var(--ek-duration-base) var(--ek-easing-standard);
 }
 
-.ek-shell__tabs {
+.ek-shell__banner {
+  position: absolute;
   top: var(--v-layout-top, 0px);
+  left: var(--v-layout-left, 0px);
+  right: var(--v-layout-right, 0px);
+  z-index: var(--ek-z-sticky);
+  transition:
+    top var(--ek-duration-base) var(--ek-easing-standard),
+    left var(--ek-duration-base) var(--ek-easing-standard);
+}
+
+.ek-shell__tabs {
+  top: calc(var(--v-layout-top, 0px) + var(--ek-shell-banner-h, 0px));
   z-index: var(--ek-z-sticky);
 }
 
 .workplace-area {
-  top: calc(var(--v-layout-top, 0px) + var(--ek-app-tabstrip-height));
+  top: calc(var(--v-layout-top, 0px) + var(--ek-shell-banner-h, 0px) + var(--ek-app-tabstrip-height));
   bottom: 0;
   border: none;
   border-radius: 0;

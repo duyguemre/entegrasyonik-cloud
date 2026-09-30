@@ -1974,5 +1974,38 @@
       "emptyText": "Kalemler, ödeme emri pazaryerinden aktarıldığında görünür.",
       "errorSubject": "Ödeme dökümü"
     }
+  },
+  "subscriptionBanner": {
+    "regionLabel": "Abonelik durumu",
+    "manage": "Aboneliği yönet",
+    "manageShort": "Yönet",
+    "minimize": "Bildirimi küçült",
+    "expand": "Bildirimi genişlet",
+    "trialEndsSoon": "Deneme sürenizin bitmesine {days} gün kaldı ({date}). Kesintisiz devam etmek için bir plan seçin.",
+    "trialEndsToday": "Deneme süreniz bugün ({date}) sona eriyor. Kesintisiz devam etmek için bir plan seçin.",
+    "trialEnded": "Deneme süreniz {date} tarihinde sona erdi. Plan seçilmezse hesap askıya alınır ve stok senkronu durur.",
+    "pastDueGrace": "Son ödemeniz alınamadı. {date} tarihine kadar ödeme tamamlanmazsa hesap askıya alınır ve stok senkronu durur.",
+    "pastDue": "Son ödemeniz alınamadı. Ödeme tamamlanmazsa hesap askıya alınır ve stok senkronu durur.",
+    "pastDueStopped": "Stok senkronu durdu — kanallarda aşırı satış riski. Ödemeyi tamamlayın.",
+    "suspended": "Stok senkronu durdu — kanallarda aşırı satış riski. Ödemeyi tamamlayın.",
+    "canceledUntil": "Aboneliğiniz iptal edildi. {date} tarihine kadar tüm özellikler açık; sonrasında hesap salt okunur olur ve stok senkronu durur.",
+    "canceled": "Aboneliğiniz iptal edildi. Dönem sonunda hesap salt okunur olur ve stok senkronu durur.",
+    "canceledEnded": "Abonelik dönemi {date} tarihinde bitti: hesap salt okunur, stok senkronu durdu. Devam etmek için bir plan seçin.",
+    "canceledStopped": "Abonelik dönemi bitti: hesap salt okunur, stok senkronu durdu. Devam etmek için bir plan seçin.",
+    "expired": "Aboneliğiniz sona erdi: stok senkronu ve düzenleme kapalı. Devam etmek için bir plan seçin.",
+    "compact": {
+      "trialEndsSoon": "Denemenin bitmesine {days} gün",
+      "trialEndsToday": "Deneme bugün bitiyor",
+      "trialEnded": "Deneme süresi bitti",
+      "pastDueGrace": "Ödeme bekleniyor · son gün {date}",
+      "pastDue": "Ödeme bekleniyor",
+      "pastDueStopped": "Stok senkronu durdu",
+      "suspended": "Stok senkronu durdu",
+      "canceledUntil": "İptal edildi · {date} tarihine kadar açık",
+      "canceled": "İptal edildi",
+      "canceledEnded": "Salt okunur · stok senkronu durdu",
+      "canceledStopped": "Salt okunur · stok senkronu durdu",
+      "expired": "Abonelik sona erdi"
+    }
   }
 }
