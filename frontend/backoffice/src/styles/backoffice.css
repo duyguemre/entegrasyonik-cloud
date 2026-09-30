@@ -1,0 +1,73 @@
+/* Backoffice genel katmanı — yalnız token (ham renk yok; tests/static.test.ts). */
+html,
+body {
+  background: var(--ek-color-app-bg);
+  color: var(--ek-color-content-default);
+  font-family: var(--ek-font-sans);
+}
+
+/* Tema geçişinde bir kare renk animasyonu yok (ADR-0026 Karar 3.4). */
+html.ek-theme-switching *,
+html.ek-theme-switching *::before,
+html.ek-theme-switching *::after {
+  transition: none !important;
+}
+
+.bo-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-5);
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: var(--ek-space-6) var(--ek-space-6) var(--ek-space-8);
+}
+
+.bo-page__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--ek-space-3);
+}
+
+.bo-page__title {
+  margin: 0;
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-title-size);
+  line-height: var(--ek-type-title-line);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.bo-page__lede {
+  margin: var(--ek-space-1) 0 0;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-font-size-md);
+}
+
+.bo-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ek-space-2);
+}
+
+.bo-mono {
+  font-family: var(--ek-font-mono);
+  font-size: 0.92em;
+}
+
+.bo-muted {
+  color: var(--ek-color-content-muted);
+}
+
+.bo-grid {
+  display: grid;
+  gap: var(--ek-space-4);
+}
+
+@media (max-width: 767px) {
+  .bo-page {
+    padding: var(--ek-space-4) var(--ek-space-4) var(--ek-space-6);
+    gap: var(--ek-space-4);
+  }
+}

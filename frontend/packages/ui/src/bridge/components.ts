@@ -23,3 +23,4 @@ export { default as EkDataTable } from '../../../../src/components/ds/EkDataTabl
 export { default as EkStatusChip } from '../../../../src/components/ds/EkStatusChip.vue'
 export type { EkTableColumn } from '../../../../src/components/ds/EkDataTable.vue'
 export type { StatusTone } from '../../../../src/design/status-map'
+export { default as EkChannelDot } from '../../../../src/components/ds/EkChannelDot.vue'
