@@ -4,8 +4,8 @@
   DS-v2 Aşama 2 — liste standardı (EkListScreen). API sözleşmesi DEĞİŞMEDİ: `TicketService/getTickets`
   gövdesi (pagination/sortBy/searchTicketForm), useTicketActions, detay diyaloğunun satır nesnesini
   DOĞRUDAN kullanması, CLOSED talepte "Kapat" eyleminin olmaması, toplu kapatma akışı AYNEN korundu.
-  Sıralama SUNUCUDA (ticketNumber, subject, priority, status, lastMessageAt). useTicketFilters
-  yalnız durum kaynağı olarak kullanılır (sıfırlama/sıralama yerelde `getTickets(true)` ile).
+  Sıralama SUNUCUDA (ticketNumber, subject, priority, status, lastMessageAt). Liste sorgu durumu
+  `useListQuery` (X-01): debounce'lu arama + bayat yanıt koruması; istek gövdesi bayt-özdeş.
 -->
 <template>
   <div class="ticketListView">
@@ -33,25 +33,26 @@
       :loading="loading"
       :error="loadError"
       error-title="Destek talepleri yüklenemedi"
-      :search="searchTicketForm.data.globalSearch"
+      :search="filters.globalSearch"
       search-placeholder="Destek No veya Konu Ara"
       :chips="activeChips"
       :filter-count="panelFilterCount"
       selectable
       v-model:selected="selectedTickets"
       :sort="gridSort"
-      :page="pagination.page"
-      :page-size="pagination.limit"
-      :total="pagination.totalNumberOfRecords"
+      :page="page"
+      :page-size="limit"
+      :total="total"
       empty-title="Destek talebi bulunamadı"
       empty-text="Destek ekibiyle yazışmalarınız burada listelenir."
       empty-icon="mdi-lifebuoy"
       filtered-empty-title="Destek talebi bulunamadı"
       filtered-empty-text="Arama kriterlerinize uygun herhangi bir destek talebi kaydı bulunamadı."
-      @update:search="onSearchInput"
+      @update:search="search"
+      @search-submit="submitSearch"
       @update:sort="onGridSort"
-      @update:page="onPageChange"
-      @update:page-size="onPageSizeChange"
+      @update:page="setPage"
+      @update:page-size="setPageSize"
       @filter-submit="getTickets(true)"
       @filter-reset="resetFilters"
       @remove-chip="removeChip"
@@ -63,14 +64,14 @@
       </template>
 
       <template #filters>
-        <EkSelect v-model="searchTicketForm.data.statuses" :items="statusOptions" item-title="title" item-value="id"
+        <EkSelect v-model="filters.statuses" :items="statusOptions" item-title="title" item-value="id"
           label="Durumlar" multiple clearable />
-        <EkSelect v-model="searchTicketForm.data.priorities" :items="priorityOptions" item-title="title"
+        <EkSelect v-model="filters.priorities" :items="priorityOptions" item-title="title"
           item-value="id" label="Öncelik Seviyesi" multiple clearable />
-        <EkSelect v-model="searchTicketForm.data.types" :items="typeOptions" item-title="title" item-value="id"
+        <EkSelect v-model="filters.types" :items="typeOptions" item-title="title" item-value="id"
           label="Talep Tipleri" multiple clearable />
-        <EkDateField v-model="searchTicketForm.data.startDate" label="Başlangıç" :max="searchTicketForm.data.endDate" />
-        <EkDateField v-model="searchTicketForm.data.endDate" label="Bitiş" :min="searchTicketForm.data.startDate" />
+        <EkDateField v-model="filters.startDate" label="Başlangıç" :max="filters.endDate" />
+        <EkDateField v-model="filters.endDate" label="Bitiş" :min="filters.startDate" />
       </template>
 
       <template #bulk-actions>
@@ -121,13 +122,13 @@ import { useI18n } from 'vue-i18n'
 
 // Composables & Stores
 import useRestApi from '@/composables/restapi'
-import { useTicketFilters } from '@/components/ticket/composables/useTicketFilters'
+import { useListQuery } from '@/composables/useListQuery'
 import { useTicketActions } from '@/components/ticket/composables/useTicketActions'
 
 // Types & Enums
 import {
   TicketStatusEnum, TicketPriorityEnum, TicketTypeEnum,
-  TICKET_STATUS_LABELS,
+  TICKET_STATUS_LABELS, TICKET_STATUS_COLORS, TICKET_PRIORITY_COLORS,
   TICKET_PRIORITY_LABELS,
   TICKET_TYPE_LABELS
 } from '@/types/TicketTypes'
@@ -150,9 +151,6 @@ import { formatDate as formatDay, formatDateTime } from '@/composables/format'
 // --- INITIALIZATION ---
 const restApi = useRestApi()
 const { t } = useI18n()
-const loading = ref(false)
-const loadError = ref(false)
-const tickets = ref<any[]>([])
 const selectedTickets = ref<Array<string | number>>([])
 
 // UI
@@ -161,10 +159,35 @@ const isDetailOpen = ref(false)
 const selectedTicketForDetail = ref<any>(null)
 
 // Composables
+// X-01: filtre/sayfa/sıralama/yükleme + debounce'lu arama + bayat yanıt koruması.
 const {
-  searchTicketForm, pagination, sortBy,
-  statusOptions, typeOptions, priorityOptions
-} = useTicketFilters(() => getTickets())
+  filters, applied, sortBy, page, limit, total, items: tickets, loading, error,
+  load: getTickets, search, submitSearch, setPage, setPageSize, setSort, resetFilters
+} = useListQuery({
+  filters: () => ({
+    globalSearch: '',
+    startDate: null as string | null,
+    endDate: null as string | null,
+    statuses: [] as TicketStatusEnum[],
+    types: [] as TicketTypeEnum[],
+    priorities: [] as TicketPriorityEnum[]
+  }),
+  sortBy: [{ key: 'lastMessageAt', order: 'desc' }],
+  fetch: async (q) => {
+    const res = await restApi.post('TicketService/getTickets', {
+      pagination: { page: q.page, limit: q.limit },
+      sortBy: q.sortBy[0],
+      searchTicketForm: { data: q.filters, form: { menu: false } }
+    });
+    if (isRequestError(res)) throw res;
+    return res.tickets ? { items: res.tickets, total: res.totalNumberOfRecords || 0 } : null;
+  }
+})
+const loadError = computed(() => error.value !== null)
+
+const statusOptions = Object.values(TicketStatusEnum).map(s => ({ id: s, title: TICKET_STATUS_LABELS[s], color: TICKET_STATUS_COLORS[s] }))
+const typeOptions = Object.values(TicketTypeEnum).map(t => ({ id: t, title: TICKET_TYPE_LABELS[t] }))
+const priorityOptions = Object.values(TicketPriorityEnum).map(p => ({ id: p, title: TICKET_PRIORITY_LABELS[p], color: TICKET_PRIORITY_COLORS[p] }))
 
 const { createTicket, sendMessage, closeTicket } = useTicketActions(() => getTickets())
 
@@ -191,13 +214,10 @@ const gridSort = computed<EkGridSort>(() => {
 })
 
 const onGridSort = (sort: EkGridSort) => {
-  sortBy.value = sort ? [{ key: sort.key, order: sort.dir }] : []
-  getTickets(true)
+  setSort(sort ? [{ key: sort.key, order: sort.dir }] : [])
 }
 
-// Aktif filtre çipleri — SON SORGULANAN değerlerden.
-type TicketFilterData = typeof searchTicketForm.value.data
-const applied = ref<TicketFilterData>({ ...searchTicketForm.value.data })
+// Aktif filtre çipleri — SON SORGULANAN değerlerden (`applied`).
 
 const activeChips = computed<EkActiveFilterChip[]>(() => {
   const a = applied.value
@@ -214,51 +234,13 @@ const activeChips = computed<EkActiveFilterChip[]>(() => {
 const panelFilterCount = computed(() => activeChips.value.filter(c => c.key !== 'globalSearch').length)
 
 const removeChip = (key: string) => {
-  const d = searchTicketForm.value.data as Record<string, any>
+  const d = filters.value as Record<string, any>
   d[key] = Array.isArray(d[key]) ? [] : key === 'globalSearch' ? '' : null
   getTickets(true)
 }
 
-const resetFilters = () => {
-  searchTicketForm.value.data = {
-    globalSearch: '', startDate: null, endDate: null, statuses: [], types: [], priorities: []
-  }
-  getTickets(true)
-}
 
 // --- CORE ACTIONS ---
-
-const getTickets = async (resetPage: boolean = false) => {
-  if (resetPage) pagination.page = 1;
-  loading.value = true;
-  loadError.value = false;
-  const d = searchTicketForm.value.data;
-  applied.value = { ...d, statuses: [...d.statuses], types: [...d.types], priorities: [...d.priorities] };
-
-  try {
-    const res = await restApi.post('TicketService/getTickets', {
-      pagination: {
-        page: pagination.page,
-        limit: pagination.limit
-      },
-      sortBy: sortBy.value[0],
-      searchTicketForm: searchTicketForm.value
-    });
-
-    if (isRequestError(res)) {
-      loadError.value = true;
-    } else if (res.tickets) {
-      tickets.value = res.tickets;
-      pagination.totalNumberOfRecords = res.totalNumberOfRecords || 0;
-      pagination.totalNumberOfPages = Math.ceil(pagination.totalNumberOfRecords / pagination.limit) || 1;
-    }
-  } catch (error) {
-    loadError.value = true;
-    console.error('Biletler getirilirken hata:', error);
-  } finally {
-    loading.value = false;
-  }
-};
 
 const openTicketDetail = (item: any) => {
   selectedTicketForDetail.value = item;
@@ -303,21 +285,6 @@ const handleBulkAction = (actionId: string) => {
     };
     confirmDialog.show = true;
   }
-};
-
-const onSearchInput = (value: string) => {
-  searchTicketForm.value.data.globalSearch = value;
-  getTickets(true);
-};
-
-const onPageChange = (page: number) => {
-  pagination.page = page;
-  getTickets();
-};
-
-const onPageSizeChange = (size: number) => {
-  pagination.limit = size;
-  getTickets(true);
 };
 
 // --- UTILS ---

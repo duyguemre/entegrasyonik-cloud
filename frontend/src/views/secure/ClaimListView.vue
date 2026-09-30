@@ -36,7 +36,7 @@
       :error-cause="loadProblem?.cause"
       :error-details="loadProblem?.details"
       error-title="İade talepleri yüklenemedi"
-      :search="searchClaimForm.data.globalSearch"
+      :search="filters.globalSearch"
       search-placeholder="İade No, Sipariş No veya Takip Ara"
       :chips="activeChips"
       :filter-count="panelFilterCount"
@@ -44,18 +44,19 @@
       selectable
       v-model:selected="selectedClaims"
       :sort="gridSort"
-      :page="pagination.page"
-      :page-size="pagination.limit"
-      :total="pagination.totalNumberOfRecords"
+      :page="page"
+      :page-size="limit"
+      :total="total"
       empty-title="Talep bulunamadı"
       empty-text="Pazaryerlerinden iade talebi geldikçe burada listelenir."
       empty-icon="mdi-undo-variant"
       filtered-empty-title="Talep bulunamadı"
       filtered-empty-text="Arama kriterlerinize uygun herhangi bir iade talebi bulunamadı."
-      @update:search="onSearchInput"
+      @update:search="search"
+      @search-submit="submitSearch"
       @update:sort="onGridSort"
-      @update:page="onPageChange"
-      @update:page-size="onPageSizeChange"
+      @update:page="setPage"
+      @update:page-size="setPageSize"
       @filter-submit="getClaims(true)"
       @filter-reset="resetFilters"
       @remove-chip="removeChip"
@@ -64,8 +65,8 @@
       @refresh="getClaims(true)"
     >
       <template #filters>
-        <EkSelect kind="channel" v-model="searchClaimForm.data.integrationCodes" :items="channelOptionsFrom(integrationStore.getClientPlatforms())" label="Kanal" multiple clearable />
-        <EkSelect v-model="searchClaimForm.data.internalStatuses" kind="status" :items="toneOptionsFrom(statusOptions, (id) => CLAIM_STATUS_TONE[id as ClaimInternalStatusEnum]?.tone)" item-title="title"
+        <EkSelect kind="channel" v-model="filters.integrationCodes" :items="channelOptionsFrom(integrationStore.getClientPlatforms())" label="Kanal" multiple clearable />
+        <EkSelect v-model="filters.internalStatuses" kind="status" :items="toneOptionsFrom(statusOptions, (id) => CLAIM_STATUS_TONE[id as ClaimInternalStatusEnum]?.tone)" item-title="title"
           item-value="id" label="Talep durumu" multiple clearable />
       </template>
 
@@ -112,14 +113,14 @@ import { ref, computed, reactive } from 'vue'
 import useRestApi from '@/composables/restapi'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import { useIntegrationStore } from '@/stores/integrationStore'
-import { useClaimFilters } from '@/components/claim/composables/useClaimFilters'
+import { useListQuery, listPayload } from '@/composables/useListQuery'
 import { useClaimActions } from '@/components/claim/composables/useClaimActions'
 import { useLifecycle } from '@/composables/useLifecycle'
 import { formatMoney, formatDateTime } from '@/composables/format'
 import { CLAIM_STATUS_TONE } from '@/design/status-map'
 
 // Enums & Types
-import { ClaimInternalStatusEnum } from '@/types/ClaimTypes'
+import { ClaimInternalStatusEnum, CLAIM_INTERNAL_STATUS_LABELS } from '@/types/ClaimTypes'
 
 // Components
 import LoadingComponent from '@/components/LoadingComponent.vue'
@@ -143,11 +144,6 @@ const integrationStore = useIntegrationStore()
 
 const loadingComponentRef = ref<any>(null)
 const dialogAttach = ref(".claimListView")
-const loading = ref(false)
-const loadError = ref(false)
-/** Aşama 6b (Standart 1): hata desenindeki neden + teknik ayrıntı. */
-const loadProblem = ref<ProblemCopy | null>(null)
-const claims = ref<any[]>([])
 const selectedClaims = ref<Array<string | number>>([])
 const isDetailOpen = ref(false)
 const selectedClaimForDetail = ref<any>(null)
@@ -178,12 +174,10 @@ const gridSort = computed<EkGridSort>(() => {
 })
 
 function onGridSort(sort: EkGridSort) {
-  sortBy.value = sort ? [{ key: sort.key, order: sort.dir }] : [{ key: 'claimedAt', order: 'desc' }]
-  getClaims(true)
+  setSort(sort ? [{ key: sort.key, order: sort.dir }] : [{ key: 'claimedAt', order: 'desc' }])
 }
 
-// Aktif filtre çipleri — SON SORGULANAN değerlerden.
-const applied = ref({ globalSearch: '', integrationCodes: [] as string[], internalStatuses: [] as string[] })
+// Aktif filtre çipleri — SON SORGULANAN değerlerden (`applied`).
 
 const activeChips = computed<EkActiveFilterChip[]>(() => {
   const chips: EkActiveFilterChip[] = []
@@ -207,7 +201,7 @@ const savedViews = computed<EkSavedViewsConfig>(() => ({
 
 /** Görünüm = filtrelerin TAMAMI: görünümde olmayan alanlar (arama, kanal) temizlenir. */
 function applySavedView(params: Record<string, any>) {
-  const data = searchClaimForm.value.data
+  const data = filters.value
   data.globalSearch = ''
   data.integrationCodes = []
   data.internalStatuses = Array.isArray(params.internalStatuses) ? [...params.internalStatuses] : []
@@ -215,7 +209,7 @@ function applySavedView(params: Record<string, any>) {
 }
 
 function removeChip(key: string) {
-  const data = searchClaimForm.value.data
+  const data = filters.value
   if (key === 'globalSearch') data.globalSearch = ''
   if (key === 'integrationCodes') data.integrationCodes = []
   if (key === 'internalStatuses') data.internalStatuses = []
@@ -232,64 +226,41 @@ function platformName(code: string): string {
 }
 
 // --- API & FILTERS ---
-const getClaimsInternal = async (resetPage: boolean = false) => {
-  if (resetPage) pagination.page = 1;
-  loading.value = true;
-  loadError.value = false;
-  const d = searchClaimForm.value.data;
-  applied.value = { globalSearch: d.globalSearch || '', integrationCodes: [...(d.integrationCodes || [])], internalStatuses: [...(d.internalStatuses || [])] };
-
-  try {
-    const res = await restApi.post('ClaimService/getClaims', {
-      searchClaimForm: prepareFilterPayload()
-    });
-    if (isRequestError(res)) {
-      loadError.value = true;
-      loadProblem.value = problemFromError(res, 'ClaimService/getClaims');
-    } else if (res?.claims) {
-      claims.value = res.claims;
-      pagination.totalNumberOfRecords = res.totalNumberOfRecords || 0;
-      pagination.totalNumberOfPages = Math.ceil(pagination.totalNumberOfRecords / pagination.limit) || 1;
-    }
-  } catch (e) {
-    loadError.value = true;
-    loadProblem.value = problemFromError(e, 'ClaimService/getClaims');
-  } finally {
-    loading.value = false;
-  }
-};
-
+// X-01: filtre/sayfa/sıralama/yükleme + debounce'lu arama + bayat yanıt koruması.
 const {
-  searchClaimForm, pagination, sortBy, statusOptions,
-  resetFilters,
-  handlePageChange, prepareFilterPayload
-} = useClaimFilters(getClaimsInternal);
+  filters, applied, sortBy, page, limit, total, items: claims, loading, error,
+  load, search, submitSearch, setPage, setPageSize, setSort, resetFilters
+} = useListQuery({
+  filters: () => ({
+    globalSearch: '',
+    startDate: undefined as any,
+    endDate: undefined as any,
+    integrationCodes: [] as string[],
+    internalStatuses: [] as string[],
+    types: [] as string[]
+  }),
+  sortBy: [{ key: 'claimedAt', order: 'desc' }],
+  fetch: async (q) => {
+    const res = await restApi.post('ClaimService/getClaims', { searchClaimForm: listPayload(q) });
+    if (isRequestError(res)) throw res;
+    return res?.claims ? { items: res.claims, total: res.totalNumberOfRecords || 0 } : null;
+  }
+});
+const loadError = computed(() => error.value !== null)
+/** Aşama 6b (Standart 1): hata desenindeki neden + teknik ayrıntı. */
+const loadProblem = computed<ProblemCopy | null>(() => error.value ? problemFromError(error.value, 'ClaimService/getClaims') : null)
+const getClaims = load
+const statusOptions = computed(() => Object.values(ClaimInternalStatusEnum).map((id) => ({ id, title: CLAIM_INTERNAL_STATUS_LABELS[id] })))
 
 const executeClaimAction = async (endpoint: string, payload: any) => await restApi.post(endpoint, payload);
 
 const {
   actionDialog, openRejectAction, handleRejectConfirm, processBulkApprove, handleApproveRequest
-} = useClaimActions(executeClaimAction, snackbarStore, getClaimsInternal);
+} = useClaimActions(executeClaimAction, snackbarStore, getClaims);
 
 const { isClaimActionAllowed } = useLifecycle();
 
 // --- METHODS ---
-async function getClaims(resetPage: boolean = false) { await getClaimsInternal(resetPage); }
-
-function onSearchInput(value: string) {
-  searchClaimForm.value.data.globalSearch = value;
-  getClaims(true);
-}
-
-function onPageChange(newPage: number) {
-  pagination.page = newPage;
-  handlePageChange();
-}
-
-function onPageSizeChange(size: number) {
-  pagination.limit = size;
-  onPageChange(1);
-}
 
 const openDetailedReport = (item: any) => { selectedClaimForDetail.value = item; isDetailOpen.value = true; };
 const triggerSingleApprove = (item: any) => handleApproveRequest(item, confirmDialog);
@@ -320,7 +291,7 @@ const triggerBulkAction = (action: string) => {
 
 const initialize = async (parameters: any) => {
   if (parameters?.internalStatuses) {
-    searchClaimForm.value.data.internalStatuses = parameters.internalStatuses;
+    filters.value.internalStatuses = parameters.internalStatuses;
   }
   await getClaims(true);
   emits('clear')
@@ -329,7 +300,7 @@ const initialize = async (parameters: any) => {
 
 const activate = async (parameters: any) => {
   if (parameters?.internalStatuses) {
-    searchClaimForm.value.data.internalStatuses = parameters.internalStatuses;
+    filters.value.internalStatuses = parameters.internalStatuses;
     await getClaims(true);
   }
   emits('clear')
