@@ -1,11 +1,6 @@
 <template>
   <div class="bo-page">
-    <div class="bo-page__head">
-      <div>
-        <h1 class="bo-page__title">Motor ve kuyruklar</h1>
-        <p class="bo-page__lede">Sipariş kuyruğu (BullMQ), başarısız işler, katalog durum makinesi kiraları ve zamanlanmış görev geçmişi. İş yükü ve hata metni gösterilmez; yalnız kimlik, kod ve sayaçlar.</p>
-      </div>
-    </div>
+    <BoPageHeader />
 
     <EkPageTabs v-model="tab" :tabs="tabs" label="Motor bölümleri" />
 
@@ -17,6 +12,7 @@
 </template>
 
 <script setup lang="ts">
+import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
 import { computed, ref } from 'vue'
 import { EkPageTabs, type EkPageTab } from '@entegrasyonik/ui/components'
 import { useTabQuery } from '@bo/composables/useTabQuery'

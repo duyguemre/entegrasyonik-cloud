@@ -1,11 +1,6 @@
 <template>
   <div class="bo-page">
-    <div class="bo-page__head">
-      <div>
-        <h1 class="bo-page__title">Üyelik ve abonelikler</h1>
-        <p class="bo-page__lede">Müşteri abonelikleri, deneme ve ödeme durumları ile liste fiyatından tahmini gelir. Kart bilgisi yalnızca maskeli görünür.</p>
-      </div>
-    </div>
+    <BoPageHeader />
 
     <EkPageTabs v-model="tab" :tabs="TABS" label="Abonelik bölümleri" />
 
@@ -15,6 +10,7 @@
 </template>
 
 <script setup lang="ts">
+import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
 import { EkPageTabs } from '@entegrasyonik/ui/components'
 import { useTabQuery } from '@bo/composables/useTabQuery'
 import SubscriptionsPanel from './SubscriptionsPanel.vue'

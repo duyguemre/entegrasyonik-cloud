@@ -1,11 +1,6 @@
 <template>
   <div class="bo-page">
-    <div class="bo-page__head">
-      <div>
-        <h1 class="bo-page__title">Entegrasyonlar</h1>
-        <p class="bo-page__lede">Pazaryeri ve ERP çağrılarının sağlığı, devre kesici ile hız bütçesinin pod bazında durumu ve ayar kataloğu. Bu ekran salt okunurdur; müşteri verisi ve ham istek içeriği gösterilmez.</p>
-      </div>
-    </div>
+    <BoPageHeader />
 
     <EkPageTabs v-model="tab" :tabs="tabs" label="Entegrasyon bölümleri" />
 
@@ -16,6 +11,7 @@
 </template>
 
 <script setup lang="ts">
+import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
 import { EkPageTabs, type EkPageTab } from '@entegrasyonik/ui/components'
 import { useTabQuery } from '@bo/composables/useTabQuery'
 import ApiHealthPanel from './ApiHealthPanel.vue'

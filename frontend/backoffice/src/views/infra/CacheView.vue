@@ -1,14 +1,10 @@
 <template>
   <div class="bo-page">
-    <div class="bo-page__head">
-      <div>
-        <h1 class="bo-page__title">Cache</h1>
-        <p class="bo-page__lede">Uygulama içi bellek önbelleğinin isabet oranı ve aile bazında durumu. Ham anahtar ve müşteri numarası gösterilmez.</p>
-      </div>
-      <div class="bo-page__actions">
+    <BoPageHeader>
+      <template #actions>
         <EkRefreshButton :loading="res.refreshing.value || res.phase.value === 'loading'" :last-updated="res.loadedAt.value" :error="res.stale.value ? res.error.value?.title : null" @refresh="res.load()" />
-      </div>
-    </div>
+      </template>
+    </BoPageHeader>
 
     <StateBlock :phase="res.phase.value" :error="res.error.value" skeleton="cards" :rows="3" error-title="Önbellek metrikleri okunamadı" degraded-title="Önbellek metrikleri okunamıyor" @retry="res.load()">
       <div v-if="res.data.value" class="bo-stack">
@@ -62,6 +58,7 @@
 </template>
 
 <script setup lang="ts">
+import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
 import { computed, onMounted } from 'vue'
 import { EkAlert, EkButton, EkCard, EkDataTable, EkEmptyState, EkMetricCard, EkRefreshButton, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'

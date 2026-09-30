@@ -1,15 +1,11 @@
 <template>
   <div class="bo-page">
-    <div class="bo-page__head">
-      <div>
-        <h1 class="bo-page__title">Yöneticiler</h1>
-        <p class="bo-page__lede">Platform yöneticisi hesapları. Her işlem gerekçe ve yeniden doğrulama ister, denetim kaydına yazılır; yönetici silinmez, yalnız devre dışı bırakılır.</p>
-      </div>
-      <div class="bo-page__actions">
+    <BoPageHeader>
+      <template #actions>
         <EkRefreshButton :loading="res.refreshing.value || res.phase.value === 'loading'" @refresh="res.load()" />
         <EkButton tone="primary" icon="mdi-account-plus-outline" data-testid="invite" @click="openInvite">Davet et</EkButton>
-      </div>
-    </div>
+      </template>
+    </BoPageHeader>
 
     <EkCard flush>
       <StateBlock :phase="phase" :error="res.error.value" :rows="4" empty-title="Yönetici yok" empty-message="Listelenecek platform yöneticisi bulunamadı." error-title="Yönetici listesi yüklenemedi" degraded-title="Yönetici servisi şu an kullanılamıyor" @retry="res.load()">
@@ -91,6 +87,7 @@
 </template>
 
 <script setup lang="ts">
+import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
 import { computed, onMounted, ref } from 'vue'
 import { EkButton, EkCard, EkDataTable, EkRefreshButton, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'

@@ -141,7 +141,7 @@ import StateBlock from '@bo/components/kit/StateBlock.vue'
 import GuardedDialog from '@bo/components/kit/GuardedDialog.vue'
 import { CHANNEL, SUB_STATUS, TENANT_STATUS, planLabel } from '@bo/utils/labels'
 import { formatDate, formatDateTime, formatRelative } from '@bo/utils/format'
-import { notify } from '@bo/utils/toast'
+import { notifyAudited } from '@bo/utils/toast'
 import '@bo/styles/kit.css'
 
 const route = useRoute()
@@ -245,13 +245,13 @@ const imp = useGuardedAction(
   ({ url }) => {
     // Bilet URL'i yalnız yeni sekmeye verilir: saklanmaz, loglanmaz, kopyalanmaz; noopener/noreferrer ile opener ve Referer yok.
     window.open(url, '_blank', 'noopener,noreferrer')
-    notify('success', 'Müşteri hesabı yeni sekmede açıldı. Destek oturumu 60 dakika sürer.')
+    notifyAudited('Müşteri hesabı yeni sekmede açıldı. Destek oturumu 60 dakika sürer.', () => router.push({ path: '/denetim', query: { event: 'impersonation.start' } }))
   },
 )
 const undo = useGuardedAction(
   (id: number, reason) => api.call('BackofficeTenantService/cancelDeletion', { tid: id, reason }),
   () => {
-    notify('success', 'Silme talebi geri alındı; mağaza aktif.')
+    notifyAudited('Silme talebi geri alındı; mağaza aktif.', () => router.push({ path: '/denetim', query: { event: 'backoffice.write' } }))
     life.load()
   },
 )

@@ -3,6 +3,8 @@
   <GuardedDialog
     :action="publish"
     title="Değişiklikler yayınlansın mı?"
+    reversible
+    reversible-note="Yayın geçmişinden önceki sürüme geri alınabilir."
     :description="cfg.preview ? `Taslak sürüm ${cfg.preview.draftVersion}` : ''"
     :items="publishItems"
     confirm-label="Yayınla"
@@ -15,6 +17,8 @@
   <GuardedDialog
     :action="rollback"
     :title="rollback.context.value ? `Sürüm ${rollback.context.value.version} geri alınsın mı?` : 'Geri alma'"
+    reversible
+    reversible-note="Geri alma da yeni bir sürümdür; geçmişten tekrar geri alınabilir."
     description="Seçilen sürümün içeriği yeni bir sürüm olarak yayınlanır; mevcut geçmiş silinmez."
     :items="['Şu an yayındaki değerler bu sürümdeki değerlerle değiştirilir.', 'Değer ~15 sn içinde tüm sunucularda etkinleşir (+ en çok 30 sn önbellek).']"
     confirm-label="Geri al"

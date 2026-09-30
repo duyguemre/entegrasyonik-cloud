@@ -80,8 +80,8 @@ test.describe('entegrasyonlar ve altyapı', () => {
   })
 
   test('cache: pod bandı, aile boşaltma (step-up + gerekçe) → toast', async ({ page }) => {
-    await page.goto('/onbellek')
-    await expect(page.getByRole('heading', { level: 1, name: 'Cache' })).toBeVisible()
+    await page.goto('/altyapi/onbellek')
+    await expect(page.getByRole('heading', { level: 1, name: 'Önbellek' })).toBeVisible()
     await settle(page)
     await expect(page.getByTestId('pod-band')).toContainText('api-1')
     await expectNoA11yViolations(page)

@@ -5,9 +5,14 @@ type Mock = { expireReauth(): void; setFeatureFlags(on: boolean): void; setDegra
 const call = (page: Page, src: string) => page.evaluate(`(${src})(window.__boMock)`)
 
 /** Sahte API her tam yüklemede sıfırlanır: bayraklar/kollar için uygulama İÇİNDEN (menüden) git. */
-async function openFromMenu(page: Page, label: string) {
+/** Menüden aç: `labels` grup → ekran sırası (grup açıksa yeniden tıklanmaz; kapanırdı). */
+async function openFromMenu(page: Page, ...labels: string[]) {
   if (page.viewportSize()!.width < 768) await page.getByRole('button', { name: 'Menüyü aç' }).click()
-  await page.getByRole('navigation', { name: 'Yönetim ekranları' }).getByRole('button', { name: label }).click()
+  const nav = page.getByRole('navigation', { name: 'Yönetim ekranları' })
+  for (const label of labels) {
+    const btn = nav.getByRole('button', { name: new RegExp(`^${label}(\\s|$)`) })
+    if ((await btn.getAttribute('aria-expanded')) !== 'true') await btn.click()
+  }
 }
 
 async function reauth(page: Page) {
@@ -22,8 +27,8 @@ test.describe('sistem ayarları', () => {
   test.beforeEach(async ({ page }) => signInFully(page))
 
   test('açılır, h1 + axe 0; bayrak boş durumu; ortam salt okunur', async ({ page }) => {
-    await page.goto('/sistem-ayarlari')
-    await expect(page.getByRole('heading', { level: 1, name: 'Sistem ayarları' })).toBeVisible()
+    await page.goto('/sistem/bayraklar')
+    await expect(page.getByRole('heading', { level: 1, name: 'Platform ayarları' })).toBeVisible()
     await settle(page)
     await expect(page.getByTestId('flags-empty')).toContainText('FEATURE_FLAGS')
     await expect(page.locator('[data-env="upload-max"]')).toContainText('10 MB')
@@ -33,14 +38,14 @@ test.describe('sistem ayarları', () => {
 
   test('bayraklar doluyken liste görünür', async ({ page }) => {
     await call(page, '(m) => m.setFeatureFlags(true)')
-    await openFromMenu(page, 'Sistem ayarları')
+    await openFromMenu(page, 'Sistem ayarları', 'Platform ayarları')
     await settle(page)
     await expect(page.getByText('features.aiListing', { exact: true })).toBeVisible()
     await expect(page.getByText('Yalnız yönetici')).toBeVisible()
   })
 
   test('bakım modu: taslak → fark → gerekçe + step-up → yayın; geçmişte yeni sürüm', async ({ page }) => {
-    await page.goto('/sistem-ayarlari')
+    await page.goto('/sistem/bayraklar')
     await settle(page)
     await call(page, '(m) => m.expireReauth()')
     const card = page.getByTestId('maintenance-card')
@@ -61,7 +66,7 @@ test.describe('sistem ayarları', () => {
   })
 
   test('geçersiz değer alanın altında; vazgeç taslağı atar', async ({ page }) => {
-    await page.goto('/sistem-ayarlari')
+    await page.goto('/sistem/bayraklar')
     await settle(page)
     await page.locator('[data-setting="support.email"] input').fill('gecersiz')
     await page.getByTestId('settings-save').click()
@@ -99,7 +104,7 @@ test.describe('yöneticiler', () => {
     await dlg.getByLabel('Gerekçe').fill('Yeni operasyon sorumlusu')
     await dlg.getByRole('button', { name: 'Davet gönder' }).click()
     await reauth(page)
-    await expect(dlg.locator('.ek-reason__error')).toContainText('zaten bir kullanıcıya ait')
+    await expect(dlg.locator('.v-input__details')).toContainText('zaten bir kullanıcıya ait')
     await dlg.getByTestId('invite-email').locator('input').fill('yeni.kisi@ornek.test')
     await dlg.getByRole('button', { name: 'Davet gönder' }).click()
     await expect(page.getByText('Davet gönderildi')).toBeVisible()

@@ -79,6 +79,7 @@
     <GuardedDialog
       :action="retry"
       title="İş yeniden denensin mi?"
+      irreversible
       :description="retry.context.value ? `${retry.context.value.id} · ${retry.context.value.operation}` : ''"
       :items="['İş başarısız kümeden kuyruğa geri alınır ve sıradaki işçi tarafından yeniden çalıştırılır.', 'İş pazaryerine yazabilir; canlı salt-okuma kipinde bu işlem kapalıdır.', 'Gerekçe ve sonuç denetim kaydına yazılır.']"
       confirm-label="Yeniden dene"

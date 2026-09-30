@@ -1,11 +1,6 @@
 <template>
   <div class="bo-page">
-    <div class="bo-page__head">
-      <div>
-        <h1 class="bo-page__title">Redis ve MongoDB</h1>
-        <p class="bo-page__lede">Redis ve MongoDB'nin sağlığı, kaynak kullanımı ve yavaş sorgular. Yalnız sayaç ve boyut gösterilir; belge içeriği, ham anahtar ve sorgu değeri hiçbir zaman görünmez.</p>
-      </div>
-    </div>
+    <BoPageHeader />
 
     <EkPageTabs v-model="tab" :tabs="tabs" label="Altyapı bölümleri" />
 
@@ -16,6 +11,7 @@
 </template>
 
 <script setup lang="ts">
+import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
 import { EkPageTabs, type EkPageTab } from '@entegrasyonik/ui/components'
 import { useTabQuery } from '@bo/composables/useTabQuery'
 import RedisPanel from './RedisPanel.vue'

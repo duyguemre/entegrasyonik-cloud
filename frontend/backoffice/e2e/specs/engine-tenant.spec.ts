@@ -61,7 +61,7 @@ test.describe('motor ve kuyruklar', () => {
     await expect(confirm).toBeDisabled()
     await dialog.getByLabel('Gerekçe').fill(REASON)
     await confirm.click()
-    await expect(dialog.locator('.ek-reason__error')).toContainText('Canlı salt-okuma kipinde bu işlem kapalı')
+    await expect(dialog.locator('.v-input__details')).toContainText('Canlı salt-okuma kipinde bu işlem kapalı')
     await mock(page, (m) => {
       m.setLiveReadonly(false)
       m.expireReauth()

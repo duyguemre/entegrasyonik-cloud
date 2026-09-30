@@ -54,6 +54,7 @@
     <GuardedDialog
       :action="release"
       title="Kira serbest bırakılsın mı?"
+      irreversible
       :description="release.context.value ? `${release.context.value.kind === 'export' ? 'Gönderim sinyali' : 'İçe aktarma işi'} · sahip ${release.context.value.lockedBy}` : ''"
       :items="releaseItems"
       confirm-label="Serbest bırak"

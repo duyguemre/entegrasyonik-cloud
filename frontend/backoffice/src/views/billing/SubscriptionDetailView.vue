@@ -1,26 +1,21 @@
 <template>
   <div class="bo-page">
-    <nav class="bo-crumbs" aria-label="Konum">
-      <RouterLink to="/abonelikler">Abonelikler</RouterLink>
-      <span aria-hidden="true">/</span>
-      <span aria-current="page">{{ title }}</span>
-    </nav>
-
     <EkEmptyState v-if="res.phase.value === 'notFound'" variant="no-results" title="Abonelik bulunamadı" :message="`#${tid} numaralı müşterinin aboneliği yok ya da kaldırılmış.`" />
     <StateBlock v-else-if="!sub" :phase="res.phase.value" :error="res.error.value" skeleton="detail" :rows="4" degraded-title="Abonelik şu an okunamıyor" @retry="res.load()" />
     <template v-else>
-      <div class="bo-page__head">
-        <div class="bo-sd__title">
-          <h1 class="bo-page__title">{{ title }}</h1>
-          <div class="bo-sd__chips">
-            <RouterLink :to="`/musteriler/${tid}`" class="bo-sd__tid ek-num" data-testid="tenant-link">#{{ tid }}</RouterLink>
-            <EkStatusChip :tone="SUB_STATUS[sub.status].tone" :label="SUB_STATUS[sub.status].label" dot />
-            <EkStatusChip v-if="sub.billingExempt" tone="neutral" label="Faturalamadan muaf" />
-            <EkStatusChip v-if="sub.cancelAtPeriodEnd" tone="warning" label="Dönem sonunda iptal" />
-          </div>
-        </div>
-        <EkRefreshButton :loading="res.refreshing.value" @refresh="res.load()" />
-      </div>
+      <BoPageHeader :title="title" lede="" :extra-crumbs="[{ label: title }]" :updated-at="res.loadedAt.value ?? undefined">
+        <template #status>
+          <EkStatusChip :tone="SUB_STATUS[sub.status].tone" :label="SUB_STATUS[sub.status].label" dot />
+          <EkStatusChip v-if="sub.billingExempt" tone="neutral" label="Faturalamadan muaf" />
+          <EkStatusChip v-if="sub.cancelAtPeriodEnd" tone="warning" label="Dönem sonunda iptal" />
+        </template>
+        <template #meta>
+          <RouterLink :to="`/musteriler/${tid}`" class="bo-sd__tid ek-num" data-testid="tenant-link">Müşteri #{{ tid }}</RouterLink>
+        </template>
+        <template #actions>
+          <EkRefreshButton :loading="res.refreshing.value" @refresh="res.load()" />
+        </template>
+      </BoPageHeader>
 
       <EkAlert v-if="res.stale.value && res.error.value" tone="warning" title="Güncel veri alınamadı" :text="res.error.value.message" />
 
@@ -76,6 +71,7 @@
     <GuardedDialog
       :action="extend"
       title="Deneme süresi uzatılsın mı?"
+      irreversible
       :description="`${title} · mevcut bitiş: ${sub?.trialEndsAt ? formatDateTime(sub.trialEndsAt) : '—'}`"
       icon="mdi-timer-plus-outline"
       :items="['Yeni bitiş = mevcut bitiş ile şimdi arasından geç olan + seçilen gün.', 'Sağlayıcıdan bağımsızdır; kartsız denemede de çalışır.', 'Gerekçe denetim kaydına yazılır.']"
@@ -120,6 +116,7 @@
 </template>
 
 <script setup lang="ts">
+import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { EkAlert, EkButton, EkCard, EkEmptyState, EkRefreshButton, EkStatusChip } from '@entegrasyonik/ui/components'
@@ -246,24 +243,6 @@ onMounted(() => res.load())
 </script>
 
 <style scoped>
-.bo-crumbs {
-  display: flex;
-  align-items: center;
-  gap: var(--ek-space-2);
-  color: var(--ek-color-content-subtle);
-  font-size: var(--ek-type-label-size);
-}
-.bo-crumbs a {
-  color: var(--ek-color-content-muted);
-  text-decoration: none;
-}
-.bo-crumbs a:hover {
-  color: var(--ek-color-content-strong);
-  text-decoration: underline;
-}
-.bo-crumbs [aria-current] {
-  color: var(--ek-color-content-default);
-}
 .bo-sd__title {
   display: flex;
   flex-direction: column;

@@ -1,12 +1,10 @@
 <template>
   <div class="bo-page">
-    <div class="bo-page__head">
-      <div>
-        <h1 class="bo-page__title">Sistem ayarları</h1>
-        <p class="bo-page__lede">Bakım modu, destek ve duyuru ayarları, özellik bayrakları ve ortam bilgisi. Ayarlar taslak → önizleme → gerekçeli yayın sırasıyla değişir; her yayın geri alınabilir.</p>
-      </div>
-      <EkRefreshButton :loading="cfg.refreshing || cfg.phase === 'loading'" @refresh="cfg.load()" />
-    </div>
+    <BoPageHeader>
+      <template #actions>
+        <EkRefreshButton :loading="cfg.refreshing || cfg.phase === 'loading'" @refresh="cfg.load()" />
+      </template>
+    </BoPageHeader>
 
     <StateBlock :phase="cfg.phase" :error="cfg.error" skeleton="form" :rows="6" error-title="Sistem ayarları yüklenemedi" degraded-title="Ayar servisi şu an kullanılamıyor" @retry="cfg.load()">
       <EkAlert v-if="cfg.stale" tone="warning" dense title="Gösterilen veri eski olabilir" text="Son yenileme başarısız oldu; yenilemeyi yeniden deneyin." />
@@ -32,6 +30,7 @@
 </template>
 
 <script setup lang="ts">
+import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
 import { onMounted, reactive } from 'vue'
 import { EkAlert, EkButton, EkRefreshButton } from '@entegrasyonik/ui/components'
 import StateBlock from '@bo/components/kit/StateBlock.vue'

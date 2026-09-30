@@ -9,7 +9,7 @@ test.describe('abonelikler', () => {
 
   test('liste: h1, axe 0, filtre ve boş durum', async ({ page }) => {
     await page.goto('/abonelikler')
-    await expect(page.getByRole('heading', { level: 1, name: 'Üyelik ve abonelikler' })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: 'Abonelikler' })).toBeVisible()
     await settle(page)
     await expect(page.getByTestId('sub-101')).toBeVisible()
     await expect(page.getByText('kartsız').first()).toBeVisible()
@@ -72,10 +72,10 @@ test.describe('abonelikler', () => {
     const dialog = page.getByRole('dialog', { name: 'Abonelik iptal edilsin mi?' })
     await dialog.getByLabel('Gerekçe').fill('Test: kartsız deneme iptali')
     await dialog.getByRole('button', { name: 'Aboneliği iptal et' }).click()
-    await expect(dialog.locator('.ek-reason__error')).toContainText('sağlayıcı kaydı yok')
+    await expect(dialog.locator('.v-input__details')).toContainText('sağlayıcı kaydı yok')
     await mock(page, (m) => m.setLiveReadonly(true))
     await dialog.getByRole('button', { name: 'Aboneliği iptal et' }).click()
-    await expect(dialog.locator('.ek-reason__error')).toContainText('salt-okuma')
+    await expect(dialog.locator('.v-input__details')).toContainText('salt-okuma')
   })
 
   test('plan değiştir: aynı plan seçilemez, başarıda toast', async ({ page }) => {
