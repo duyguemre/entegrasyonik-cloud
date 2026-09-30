@@ -587,7 +587,8 @@
       [data-part='sec-wave'],
       [data-part='sec-scan'],
       [data-part='sec-lock'],
-      [data-part='sec-item']
+      [data-part='sec-item'],
+      [data-part='frame-sheen']
     ),
   html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] :is([data-part='row'], [data-part='chan'], [data-part='hub-core'])::before,
   html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] :is([data-part='row'], [data-part='chan'], [data-part='hub-core'])::after {
@@ -621,7 +622,8 @@
       [data-part='sec-wave'],
       [data-part='sec-scan'],
       [data-part='sec-lock'],
-      [data-part='sec-item']
+      [data-part='sec-item'],
+      [data-part='frame-sheen']
     ),
   html[data-motion='play'] [data-scene='hero-mock'][data-state='play'][data-visible='true'] :is([data-part='row'], [data-part='chan'], [data-part='hub-core'])::before,
   html[data-motion='play'] [data-scene='hero-mock'][data-state='play'][data-visible='true'] :is([data-part='row'], [data-part='chan'], [data-part='hub-core'])::after {
@@ -651,11 +653,46 @@
       [data-part='sec-wave'],
       [data-part='sec-scan'],
       [data-part='sec-lock'],
-      [data-part='sec-item']
+      [data-part='sec-item'],
+      [data-part='frame-sheen']
     ),
   html[data-motion='play'] [data-scene='hero-mock'][data-state='play'][data-visible='true']:hover :is([data-part='row'], [data-part='chan'], [data-part='hub-core'])::before,
   html[data-motion='play'] [data-scene='hero-mock'][data-state='play'][data-visible='true']:hover :is([data-part='row'], [data-part='chan'], [data-part='hub-core'])::after {
     animation-play-state: paused;
+  }
+
+  /* S21 çerçeve: üst kenar ışığında her sahne geçişinde bir kez sakin parıltı (4 x 7,5 sn; yalnızca translate/opacity). */
+  @keyframes loop-frame-sheen {
+    0%,
+    25%,
+    50%,
+    75%,
+    100% {
+      opacity: 0;
+      translate: -100% 0;
+    }
+    1.5%,
+    26.5%,
+    51.5%,
+    76.5% {
+      opacity: 0.9;
+    }
+    6%,
+    24.9%,
+    31%,
+    49.9%,
+    56%,
+    74.9%,
+    81%,
+    99.9% {
+      opacity: 0;
+      translate: 350% 0;
+    }
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='frame-sheen'] {
+    animation-name: loop-frame-sheen;
+    animation-timing-function: var(--site-motion-ease-loop);
+    /* Gecikme: parıltı hiçbir sahnenin içinde değil → `--show-delay` tanımsız, gecikme 0 (döngü başıyla eş). */
   }
 
   /* Sahne kapsayıcıları ve gösterge */
