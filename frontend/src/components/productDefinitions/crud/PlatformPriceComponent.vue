@@ -47,14 +47,14 @@
       <!-- 3) toplu değişiklik -->
       <div v-if="bulkOpen" id="cpe-bulk" class="cpe-bulk" role="group" aria-label="Tüm kanallara toplu değişiklik">
         <div class="cpe-bulk__fields">
-          <v-btn-toggle v-model="bulk.field" mandatory density="comfortable" variant="outlined" divided class="cpe-seg" aria-label="Değişecek fiyat">
+          <v-btn-toggle v-model="bulk.field" mandatory variant="outlined" divided class="cpe-seg" aria-label="Değişecek fiyat">
             <v-btn value="salePrice" size="small">Satış</v-btn>
             <v-btn value="marketPrice" size="small">Piyasa</v-btn>
           </v-btn-toggle>
-          <v-select v-model="bulk.op" :items="BULK_OPS" item-title="title" item-value="value" label="İşlem" density="compact"
+          <v-select v-model="bulk.op" :items="BULK_OPS" item-title="title" item-value="value" label="İşlem"
             hide-details class="cpe-bulk__op" />
           <v-text-field v-model.number="bulk.value" type="number" min="0" step="0.01" :label="opUnit === '%' ? 'Oran' : 'Tutar'"
-            :prefix="opUnit === '₺' ? '₺' : undefined" :suffix="opUnit === '%' ? '%' : undefined" density="compact" hide-details
+            :prefix="opUnit === '₺' ? '₺' : undefined" :suffix="opUnit === '%' ? '%' : undefined" hide-details
             class="cpe-bulk__val" data-cpe="bulk-value" @keydown.enter.prevent="applyBulkNow" />
           <EkButton tone="primary" size="sm" icon="mdi-check" :disabled="!bulkValid" data-cpe="bulk-apply" @click="applyBulkNow">Uygula</EkButton>
           <EkHelpHint hint="price.rules" class="cpe-help" />
@@ -444,7 +444,7 @@ defineExpose({ init })
 }
 
 .cpe-seg {
-  height: 36px;
+  height: var(--ek-control-h-field);
   background: var(--ek-color-surface);
 }
 
