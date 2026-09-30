@@ -66,7 +66,7 @@ const provenById = new Map(trustSection.proven.map((t) => [t.id, t]))
           <span class="ai-hero__chip-icon" aria-hidden="true"><Icon name="sparkle" size="sm" /></span>
           <span data-testid="early-access-badge">{hero.badge}</span>
           <span class="ai-hero__chip-sep" aria-hidden="true"></span>
-          <span class="ai-hero__chip-meta">{hero.eyebrow} · {hero.descriptor}</span>
+          <span class="ai-hero__chip-meta">{hero.eyebrow}<span class="ai-hero__chip-desc"> · {hero.descriptor}</span></span>
         </p>
         <h1 id="page-title">{titleBefore}<span class="ai-accent">{hero.accent}</span>{titleAfter}</h1>
         <p class="ai-hero__lead">{hero.lead}</p>
@@ -390,6 +390,12 @@ const provenById = new Map(trustSection.proven.map((t) => [t.id, t]))
   .ai-hero__chip-meta {
     color: var(--site-text-on-dark-body);
     font-weight: var(--ek-font-weight-medium);
+  }
+  /* Dar ekranda hap tek satırda kalsın: betimleyici (başlık ve girişte de geçer) gizlenir. */
+  @media (max-width: 479.98px) {
+    .ai-hero__chip-desc {
+      display: none;
+    }
   }
   .ai-hero__body h1 {
     max-width: 18ch;

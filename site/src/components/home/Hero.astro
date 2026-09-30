@@ -99,7 +99,7 @@ const secureItems = [
         <span class="hero__agent-row">
           <span class="hero__agent-badge"><i class="hero__agent-live" aria-hidden="true"></i>{agent.badge}</span>
           <strong class="hero__agent-name">{agent.name}</strong>
-          <span class="hero__agent-cta">{agent.cta}<Icon name="arrow" size="sm" /></span>
+          <span class="hero__agent-cta"><span class="hero__agent-cta-label">{agent.cta}</span><Icon name="arrow" size="sm" /></span>
         </span>
         <span class="hero__agent-value">{agent.value}</span>
       </a>
@@ -454,6 +454,17 @@ const secureItems = [
   .hero__agent-value {
     color: var(--site-text-on-dark-body);
     line-height: var(--ek-line-height-normal);
+  }
+  /* Dar ekran: kart zaten bağlantı; "Keşfedin" etiketi tek başına alt satıra düşmesin — yalnızca ok kalır. */
+  @media (max-width: 479.98px) {
+    .hero__agent-cta-label {
+      position: absolute;
+      width: var(--site-border-width);
+      height: var(--site-border-width);
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
   }
   .hero__eyebrow {
     display: inline-flex;
