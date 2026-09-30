@@ -137,6 +137,10 @@ const isOpen = computed({
 }
 
 .ek-detail-sheet__title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: var(--ek-font-size-lg);
   font-weight: var(--ek-font-weight-semibold);
   color: var(--ek-color-content-strong);

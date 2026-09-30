@@ -190,12 +190,20 @@ withDefaults(
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 
+  /* Dar ekran: etiket + ipucu solda iki satır, tutar sağda (fe-r2d: tek satırda sıkışıyordu). */
   .ek-summary__amount {
-    flex-direction: row;
-    align-items: baseline;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: 'label value' 'hint value';
+    align-items: center;
+    column-gap: var(--ek-space-3);
+    text-align: left;
     padding-top: var(--ek-space-2);
     border-top: 1px dashed var(--ek-color-border-default);
   }
+
+  .ek-summary__amount-label { grid-area: label; }
+  .ek-summary__amount-value { grid-area: value; }
+  .ek-summary__amount-hint { grid-area: hint; }
 }
 </style>

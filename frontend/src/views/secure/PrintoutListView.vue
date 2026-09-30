@@ -31,13 +31,17 @@
         class="ek-printout__select ek-printout__select--type"></v-select>
 
       <div class="ek-printout__papers" role="group" aria-label="Kâğıt boyutu">
-        <v-btn v-for="paperSize in paperSizes" :key="paperSize.id" elevation="0" class="ek-printout__paper"
+        <!-- FR2-SCREENS 37 (fe-r2d): kâğıt = segment düğmesi; minyatür sayfa (oran gerçek ölçüden) + "A4 · Dikey". -->
+        <button v-for="paperSize in paperSizes" :key="paperSize.id" type="button" class="ek-printout__paper"
           :class="{ 'ek-printout__paper--active': selectedPaperSize.id == paperSize.id }"
-          :aria-pressed="selectedPaperSize.id == paperSize.id" @click="selectedPaperSize = paperSize"
-          :color="selectedPaperSize.id == paperSize.id ? 'primary' : ''"
-          :style="{ width: paperSize.width / 12 + 'px', height: paperSize.height / 12 + 'px' }">
-          {{ paperSize.name }}
-        </v-btn>
+          :aria-pressed="selectedPaperSize.id == paperSize.id" :aria-label="paperLabel(paperSize)" @click="selectedPaperSize = paperSize">
+          <span class="ek-printout__paper-thumb" aria-hidden="true"
+            :style="{ width: paperSize.width / 36 + 'px', height: paperSize.height / 36 + 'px' }" />
+          <span class="ek-printout__paper-text">
+            <span class="ek-printout__paper-name">{{ paperSize.name.toUpperCase() }}</span>
+            <span class="ek-printout__paper-orient">{{ paperSize.width < paperSize.height ? 'Dikey' : 'Yatay' }}</span>
+          </span>
+        </button>
       </div>
 
       <v-select clearable :label="$t('printouts.printout.fontsize')" variant="outlined"
@@ -48,10 +52,14 @@
         hide-details class="ek-printout__select"></v-select>
 
       <div class="ek-printout__actions">
-        <v-btn prepend-icon="mdi-printer-outline" color="primary" variant="flat">{{ $t("printouts.printout.test") }}</v-btn>
-        <v-btn prepend-icon="mdi-cancel" variant="outlined">{{ $t("printouts.printout.clear") }}</v-btn>
+        <!-- Dürüst durum: şablon kaydı/test çıktısı backend'e bağlı değil (API yok) → düğmeler devre dışı + açıklama. -->
+        <EkButton tone="primary" icon="mdi-printer-outline" disabled :title="NOT_CONNECTED">{{ $t("printouts.printout.test") }}</EkButton>
+        <EkButton tone="secondary" icon="mdi-cancel" disabled :title="NOT_CONNECTED">{{ $t("printouts.printout.clear") }}</EkButton>
       </div>
     </div>
+
+    <EkAlert tone="info" dense icon="mdi-flask-outline" title="Şablon tasarımcısı önizlemede"
+      text="Alanları soldaki listeden kâğıda sürükleyip yerleşimi deneyebilirsiniz. Şablonu kaydetme ve test çıktısı alma henüz bağlı değil; tasarımınız sayfadan çıkınca saklanmaz." />
 
     <div class="ek-printout__workspace">
       <div class="ek-printout__palette" @dragstart="dragStart">
@@ -87,6 +95,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import { ref, reactive, onMounted, watch } from 'vue'
+import { EkAlert, EkButton } from '@entegrasyonik/ui/components'
 import EkPageHeader from '@/components/page/EkPageHeader.vue'
 
 
@@ -143,6 +152,8 @@ var paperSizes = [
   },
 ]
 var selectedPaperSize: any = ref(paperSizes[0])
+const paperLabel = (p: any) => `${String(p.name).toUpperCase()} ${p.width < p.height ? 'dikey' : 'yatay'}`
+const NOT_CONNECTED = 'Şablon kaydı ve test çıktısı henüz bağlı değil'
 
 // Sürüklenebilir alan paleti (görsel katman — önceki statik şablonla AYNI metinler/sıra/gruplar).
 const paletteGroups = [
@@ -610,18 +621,57 @@ var openUpdate = (id: number) => {
 }
 
 .ek-printout__paper {
-  min-width: 0;
-  padding: 0;
-  font-weight: var(--ek-font-weight-semibold);
-  text-transform: lowercase;
-  border: 1px solid var(--ek-color-border-strong);
-  border-radius: var(--ek-radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  min-height: 44px;
+  padding: var(--ek-space-1) var(--ek-space-3);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-control, var(--ek-radius-sm));
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-default);
+  cursor: pointer;
   transition: background-color var(--ek-duration-fast) var(--ek-easing-standard),
     border-color var(--ek-duration-fast) var(--ek-easing-standard);
 }
 
+.ek-printout__paper:hover {
+  border-color: var(--ek-color-border-strong);
+}
+
+.ek-printout__paper:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+}
+
 .ek-printout__paper--active {
-  border-color: var(--ek-color-primary);
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.ek-printout__paper-thumb {
+  flex: none;
+  border: 1.5px solid currentColor;
+  border-radius: 2px;
+  background: var(--ek-color-surface);
+}
+
+.ek-printout__paper-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.15;
+}
+
+.ek-printout__paper-name {
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.ek-printout__paper-orient {
+  font-size: var(--ek-type-micro-size);
+  color: var(--ek-color-content-muted);
 }
 
 .ek-printout__actions {
