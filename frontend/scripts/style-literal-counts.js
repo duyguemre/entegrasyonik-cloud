@@ -42,7 +42,9 @@ const PATTERNS = {
   namedColor: new RegExp(
     `(?:(?<![\\w-])(?:color|background(?:-color)?|border(?:-(?:top|right|bottom|left))?(?:-color)?|outline(?:-color)?|fill|stroke|box-shadow|text-shadow|caret-color)\\s*:[^;{}\\n]*?(?<![\\w-])(?:${NAMED_COLORS})(?![\\w-]))` +
       `|(?:\\b(?:bg|text|border)-${VUETIFY_PALETTE}\\b(?!-))` +
-      `|(?:\\b(?:color|bg-color|base-color|icon-color)="${VUETIFY_PALETTE}")`,
+      `|(?:\\b(?:color|bg-color|base-color|icon-color)="${VUETIFY_PALETTE}")` +
+      // JS ile atanan adlı renk: `el.style.color = "black"`, `style.backgroundColor = 'red'`
+      `|(?:\\.style\\.(?:color|background(?:Color)?|border(?:Color)?|outlineColor|fill|stroke)\\s*=\\s*['"\`](?:${NAMED_COLORS})['"\`])`,
     'gi',
   ),
 };
