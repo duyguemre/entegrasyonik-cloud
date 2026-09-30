@@ -293,7 +293,7 @@ describe('içerik kayıttan gelir', () => {
     expect([...nav.matchAll(/data-spy-link=/g)]).toHaveLength(4)
   })
 
-  it('senaryo (zaman çizgisi): beş adım, her adım yayımlanmış bir yetenek kaydına bağlı; kanal adı yok; örnek beyanı bölüm girişinde (S12 + S15-B)', () => {
+  it('senaryo (zaman çizgisi): beş adım, her adım yayımlanmış bir yetenek kaydına bağlı; kanal adı yok; örnek etiketi yok (S12 + S24)', () => {
     const block = html.match(/<ol[^>]*data-testid="story-steps"[\s\S]*?<\/ol>/)![0]
     const steps = [...block.matchAll(/<li[^>]*data-scene="story-step"[^>]*>/g)].map((m) => m[0])
     expect(steps).toHaveLength(5)
@@ -309,12 +309,12 @@ describe('içerik kayıttan gelir', () => {
     expect(t).toContain('yalnızca mevcut stok kadar rezervasyon yapılır')
     expect(t).toContain('onaylanır veya reddedilir')
     for (const i of getPublicIntegrations()) expect(t, i.name).not.toContain(i.name)
-    // S15-B (S15-C deseniyle uyum): sahne başına görünür "Örnek görünüm" etiketi YOK; sayıların örnek olduğunu
-    // bölüm girişindeki tek cümle beyan eder (uydurma veri iddiası yok). Sahneler aria-hidden kalır.
+    // S15-B → S24 (K44): sahne başına ve bölüm girişinde "örnek görünüm" beyanı YOK (kullanıcı kararı). Sahneler
+    // dekoratiftir (aria-hidden) ve sahnelerde kanal adı/uydurma ölçüm yoktur (yukarıdaki denetim).
     expect(block).not.toMatch(/Örnek görünüm/)
     expect([...block.matchAll(/<div class="viz"[^>]*>/g)].every((m) => m[0].includes('aria-hidden="true"'))).toBe(true)
     const section = html.match(/<section[^>]*id="senaryo"[\s\S]*?<\/section>/)![0]
-    expect(textOf(section.split('data-testid="story-steps"')[0])).toContain('Aşağıdaki sahneler örnek görünümdür.')
+    expect(textOf(section).toLocaleLowerCase('tr-TR')).not.toMatch(/örnek görünüm/)
   })
 
   it('sorun -> çözüm: tek kurgu (kaos + marka kartı); alttaki karşılaştırma tablosu yok; faydalar kanıtlı (S12)', () => {
