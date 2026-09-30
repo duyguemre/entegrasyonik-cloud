@@ -21,7 +21,6 @@
 
 <script setup lang="ts">
 import { ref, inject, computed, onBeforeMount, onBeforeUnmount, onMounted, onActivated, onDeactivated } from 'vue'
-import useIntegrations from '@/composables/integrations';
 import { useI18n } from 'vue-i18n';
 import useFormRules from '@/composables/formrules';
 import usePriceCalculator from '@/composables/priceCalculator';

@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import useRestApi from '@/composables/restapi'
 import { registerStoreReset } from '@/stores/resetRegistry'
@@ -251,44 +251,42 @@ export const useIntegrationStore = defineStore('integrationStore', () => {
     return integrationList.value
   }
 
-  const getClientPlatforms = () => {
-    /*     return integrationList.value.filter((item: any) => item.type.code == 'marketplace') */
-    return [...getClientMarketplaces(), ...getClientECommerces(), ...getClientErps()]
-  }
-
-  const getClientMarketplaces = () => {
-    if (integrationList.value) {
-      const temp = integrationList.value.filter((item: any) => item.type.code == 'marketplace' && isClientHasIntegration(item))
-      if (temp) temp.sort((a: any, b: any) => a.order - b.order);
-      return temp
+  // Kiracının entegrasyonları türe göre bir kez süzülüp sıralanır (FRONTEND_CLEANUP_PLAN V-03): `getClient*()` şablonlarda ve
+  // ürün listesinde satır başına çağrılıyordu, her çağrı filter+sort yapıyordu. İmzalar aynı; katalog yüklenmemişse
+  // tür getirileri eskisi gibi `undefined` döner. Dönen diziler paylaşılır — çağıran değiştirmemeli (bugün hiçbiri değiştirmiyor).
+  const clientIntegrationsByType = computed(() => {
+    const byType = new Map<string, any[]>()
+    if (!integrationList.value) return byType
+    const orderByCode = new Map<string, any>()
+    for (const items of Object.values(clientIntegrations.value ?? {})) {
+      if (!Array.isArray(items)) continue
+      for (const item of items as any[]) if (!orderByCode.has(item.code)) orderByCode.set(item.code, item)
     }
-  }
-
-  const getClientErps = () => {
-    if (integrationList.value) {
-      const temp = integrationList.value.filter((item: any) => item.type.code == 'erp' && isClientHasIntegration(item))
-      if (temp) temp.sort((a: any, b: any) => a.order - b.order);
-      return temp
+    for (const item of integrationList.value) {
+      const clientIntegration = orderByCode.get(item.code)
+      if (!clientIntegration) continue
+      item.order = clientIntegration.order
+      const code = item.type?.code
+      if (!byType.has(code)) byType.set(code, [])
+      byType.get(code)!.push(item)
     }
-  }
+    for (const items of byType.values()) items.sort((a: any, b: any) => orderByCode.get(a.code).order - orderByCode.get(b.code).order)
+    return byType
+  })
+  const clientIntegrationsOfType = (typeCode: string): any =>
+    integrationList.value ? clientIntegrationsByType.value.get(typeCode) ?? [] : undefined
 
+  const clientPlatforms = computed(() => [
+    ...(clientIntegrationsOfType('marketplace') ?? []),
+    ...(clientIntegrationsOfType('ecommerce') ?? []),
+    ...(clientIntegrationsOfType('erp') ?? []),
+  ])
 
-
-  const getClientShipments = () => {
-    if (integrationList.value) {
-      const temp = integrationList.value.filter((item: any) => item.type.code == 'shipment' && isClientHasIntegration(item))
-      if (temp) temp.sort((a: any, b: any) => a.order - b.order);
-      return temp
-    }
-  }
-
-  const getClientECommerces = () => {
-    if (integrationList.value) {
-      const temp = integrationList.value.filter((item: any) => item.type.code == 'ecommerce' && isClientHasIntegration(item))
-      if (temp) temp.sort((a: any, b: any) => a.order - b.order);
-      return temp
-    }
-  }
+  const getClientPlatforms = () => clientPlatforms.value
+  const getClientMarketplaces = () => clientIntegrationsOfType('marketplace')
+  const getClientErps = () => clientIntegrationsOfType('erp')
+  const getClientShipments = () => clientIntegrationsOfType('shipment')
+  const getClientECommerces = () => clientIntegrationsOfType('ecommerce')
 
   const isIntegrationType = (code: any, typeId: string) => {
     const integrationType = integrationTypes.value.find((item: any) => item._id == typeId)

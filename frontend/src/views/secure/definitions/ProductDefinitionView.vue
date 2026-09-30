@@ -91,7 +91,6 @@ import LoadingComponent from '@/components/LoadingComponent.vue'
 import { useChoicesStore } from '@/stores/choicesStore';
 
 
-import useIntegrations from '@/composables/integrations';
 import usePriceCalculator from '@/composables/priceCalculator';
 import useFormRules from '@/composables/formrules';
 import useRestApi from '@/composables/restapi'

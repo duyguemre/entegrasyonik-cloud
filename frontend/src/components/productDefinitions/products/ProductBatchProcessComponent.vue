@@ -122,7 +122,6 @@ import { ref, inject, nextTick, watch, computed, onActivated, onBeforeMount, onM
 import { useI18n } from 'vue-i18n';
 import LoadingComponent from '@/components/LoadingComponent.vue'
 import useFormRules from '@/composables/formrules';
-import useIntegrations from '@/composables/integrations';
 import CategorySelectBoxComponent from '@/components/common/CategorySelectBoxComponent.vue'
 import BrandSelectBoxComponent from '@/components/common/BrandSelectBoxComponent.vue'
 import useRestApi from '@/composables/restapi'
@@ -134,7 +133,6 @@ const integrationStore = useIntegrationStore()
 const restApi = useRestApi()
 
 const formRules = useFormRules()
-const integrations: any = useIntegrations()
 const isUpdatesProductFormValid = ref(false)
 const batchProcessFormsFormRef: any = ref(null)
 const marketPrice: any = ref()
