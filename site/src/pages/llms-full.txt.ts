@@ -11,6 +11,7 @@ import { getPublicFaq, getSupportCategories } from '../data/faq'
 import { getConnectGuide } from '../data/connect'
 import { getPublicPlans, getPlanSourceNotice, getVatNotice, getPublicTrial } from '../data/plans'
 import { primaryNav, featureNav, legalNav, published } from '../data/navigation'
+import { ASSISTANT_PATH, ASSISTANT_NAME, assistantLlms } from '../data/assistant'
 
 const base = siteConfig.siteUrl ?? ''
 const url = (path: string) => `${base}${path}`
@@ -38,7 +39,10 @@ export const GET: APIRoute = () => {
   lines.push('## Sayfalar')
   lines.push('')
   lines.push(`- [Ana sayfa](${url('/')})`)
-  for (const p of published(primaryNav)) lines.push(`- [${p.label}](${url(p.href)})`)
+  for (const p of published(primaryNav)) {
+    if (p.href === ASSISTANT_PATH) lines.push(`- [${ASSISTANT_NAME}](${url(p.href)}): ${assistantLlms.short}`)
+    else lines.push(`- [${p.label}](${url(p.href)})`)
+  }
   for (const p of published(featureNav)) lines.push(`- [${p.label}](${url(p.href)})`)
   lines.push('')
 
@@ -120,6 +124,14 @@ export const GET: APIRoute = () => {
     const guides = c.channelGuides ? ' Kanal bağlantı rehberleri her entegrasyonun sayfasındadır.' : ''
     lines.push(`- **${c.label}**: ${c.lead}${guides} Sorular: ${c.items.map((q) => q.question).join(' / ')}`)
   }
+  lines.push('')
+
+  // S18: vizyon sayfası — "upcoming"; bugünkü yeteneklerden AYRI bölüm, kesin kip yok (tests/upcoming.test.ts).
+  lines.push(`## ${ASSISTANT_NAME} (upcoming)`)
+  lines.push('')
+  lines.push(`Sayfa: ${url(ASSISTANT_PATH)}`)
+  lines.push('')
+  for (const l of assistantLlms.full) lines.push(`- ${l}`)
   lines.push('')
 
   lines.push('## Optional')

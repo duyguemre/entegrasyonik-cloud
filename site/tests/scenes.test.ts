@@ -52,6 +52,8 @@ const GENERIC_SCENES: Record<string, string> = {
 const LOOP_SCENES: Record<string, string> = {
   'hero-bg': 'components/home/Hero.astro',
   marquee: 'components/home/Proof.astro',
+  // S18: /asistan hero'su — örnek senaryo sohbeti (30 sn tek zaman çizelgesi; statik hâl = tüm diyalog + onay bekliyor)
+  'assistant-chat': 'components/assistant/ChatScene.astro',
 }
 const ALL_SCENES = { ...ENTER_SCENES, ...GENERIC_SCENES, ...LOOP_SCENES }
 

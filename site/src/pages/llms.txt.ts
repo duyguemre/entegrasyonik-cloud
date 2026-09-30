@@ -10,6 +10,7 @@ import type { APIRoute } from 'astro'
 import { siteConfig } from '../lib/site-config'
 import { primaryNav, featureNav, legalNav, published } from '../data/navigation'
 import { getPublicIntegrations } from '../data/integrations'
+import { ASSISTANT_PATH, ASSISTANT_NAME, assistantLlms } from '../data/assistant'
 
 const base = siteConfig.siteUrl ?? ''
 const url = (path: string) => `${base}${path}`
@@ -34,7 +35,11 @@ export const GET: APIRoute = () => {
   lines.push('## Sayfalar')
   lines.push('')
   lines.push(`- [Ana sayfa](${url('/')}): Ürün özeti, yetenekler, entegrasyonlar ve fiyatlandırma.`)
-  for (const p of pages) lines.push(`- [${p.label}](${url(p.href)})`)
+  for (const p of pages) {
+    // S18: Asistan sayfası "upcoming" notuyla listelenir (ürünün bugünkü sürümünde yok).
+    if (p.href === ASSISTANT_PATH) lines.push(`- [${ASSISTANT_NAME}](${url(p.href)}): ${assistantLlms.short}`)
+    else lines.push(`- [${p.label}](${url(p.href)})`)
+  }
   for (const p of published(featureNav)) lines.push(`- [${p.label}](${url(p.href)}): Aşırı satış (overselling) nasıl önlenir; eşzamanlı siparişte stok rezervasyonu.`)
   lines.push('')
 
