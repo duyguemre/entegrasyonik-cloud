@@ -22,7 +22,7 @@
   <div class="ek-list-screen">
     <!-- Aşama 5: başlık = EkPageBar (bölüm › H1 (i) … arama + eylemler tek satırda; açıklama "Sayfa hakkında" panelinde). -->
     <header v-if="title" class="ek-list-screen__head">
-      <EkPageBar :section="section" :title="title" :description="description" :tips="tips ?? autoTips"
+      <EkPageBar :section="section" :section-icon="sectionIcon" :trail="trail" :record="record" :title="title" :description="description" :tips="tips ?? autoTips"
         :refreshable="refreshable" :refreshing="loading" :refresh-label="refreshLabel" @refresh="emit('refresh')">
         <template #actions>
           <div class="ek-list-screen__head-actions">
@@ -163,6 +163,7 @@ import EkButton from '../EkButton.vue'
 import EkSavedViews, { type EkSavedViewsConfig } from '../EkSavedViews.vue'
 import EkRefreshButton from '../EkRefreshButton.vue'
 import EkPageBar from '../EkPageBar.vue'
+import type { EkCrumb, EkRecordRef } from '../pageTrail'
 
 const props = withDefaults(
   defineProps<{
@@ -170,6 +171,10 @@ const props = withDefaults(
     title?: string
     /** Bölüm yolu (breadcrumb) — sol menüdeki bölüm adı (ör. "Satış"); EkPageHeader ile aynı ritim. */
     section?: string
+    /** A7: breadcrumb (EkPageBar) — kök ikonu, üst ekranlar, kayıt kimliği. */
+    sectionIcon?: string
+    trail?: EkCrumb[]
+    record?: EkRecordRef | null
     /** Sayfanın amacı — Aşama 5: "Sayfa hakkında" (i) panelinde. */
     description?: string
     /** Panel ipuçları; verilmezse listenin yeteneklerinden (arama, filtre, seçim, sıralama, görünümler) üretilir. */
