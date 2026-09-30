@@ -1,35 +1,64 @@
 <!--
   frontend/src/components/ds/EkRefreshButton.vue
 
-  DS-v2 Aşama 6b — Standart 9: TEK SAYFA YENİLEME DÜĞMESİ. Konum sabit: sayfa başlık satırının (EkPageBar) EN SAĞI —
-  "Sayfa hakkında" (i) ile aynı dilde 32px çerçeveli ikon düğme; ekran kendi yerine ayrı "Yenile" koymaz.
-  • yüklenirken ikon döner (reduced-motion'da dönmez, düğme `aria-busy`), tekrar tıklanamaz;
-  • ipucu: "Yenile · Alt+R" + "Son güncelleme 14:02" (ya da "az önce"); aynı metin aria-label'da;
-  • kısayol: Alt+R (kabuk `pageRefresh` → etkin sekmedeki `[data-page-refresh]`).
-  `lastUpdated` verilmezse düğme kendisi tutar: ilk görünüm ve her yükleme bitişi (`loading` true → false).
+  DS-v2 Aşama 6b — Standart 9: TEK SAYFA YENİLEME DÜĞMESİ (konum: başlık satırının en sağı — satır düzeni EkPageBar'ın).
+  A8 yeniden tasarım (kullanıcı geri bildirimi "pek güzel olmadı"): SAKİN ikon düğmesi —
+  • ghost: çerçeve/gölge/metin yok; 36px kutu (`control-h-md`, başlık eylemleriyle aynı), `radius-control`, 20px glif (üst bar standardı);
+    hover'da yüzey tonu + ince kenar, odakta `focus-ring`.
+  • 4 durum (`data-state`):
+      idle     — `refresh` glifi, `content-muted`;
+      loading  — glif yumuşak döner (0,9 s, ease-in-out), `action` tonu, `aria-busy`, tekrar tıklanamaz;
+                 reduced-motion'da dönmez, yanında "Yenileniyor…" metni görünür;
+      success  — yükleme hatasız bitince ~1,2 s yeşil tik (`success`), sonra sessizce idle'a döner;
+      error    — glifin sağ üstünde 8px `error` noktası; ipucu "Yenilenemedi — tekrar denemek için tıklayın".
+  • İpucu (400 ms): "Yenile  [Alt R]" + "Son güncelleme 2 dk önce" (göreli; 30 sn'de bir tazelenir).
+  • Ekran okuyucu: aria-label adı + son güncelleme; durum değişimi `aria-live=polite` ile duyurulur.
+  Hata bilgisi: `error` prop'u ya da atadan `provideRefreshState` (bkz. refreshState.ts).
+  `lastUpdated` verilmezse düğme kendisi tutar: ilk görünüm ve her BAŞARILI yükleme bitişi.
+  Kısayol: Alt+R (kabuk `pageRefresh` → etkin sekmedeki `[data-page-refresh]`).
 -->
 <template>
-  <EkTooltip :text="tooltip" :shortcut="keys" :open-delay="300">
-    <button
-      type="button"
-      class="ek-refresh"
-      :class="{ 'is-loading': loading }"
-      :aria-label="ariaLabel"
-      :aria-busy="loading || undefined"
-      :disabled="disabled"
-      data-page-refresh
-      @click="onClick"
-    >
-      <v-icon :icon="icons.refresh" class="ek-refresh__icon" aria-hidden="true" />
-    </button>
-  </EkTooltip>
+  <span class="ek-refresh-wrap">
+  <v-tooltip :eager="false" transition="fade-transition" location="bottom" :open-delay="400">
+    <template #activator="{ props: tip }">
+      <button
+        v-bind="tip"
+        type="button"
+        class="ek-refresh"
+        :class="[`is-${state}`, { 'is-reduced': reducedMotion }]"
+        :data-state="state"
+        :aria-label="ariaLabel"
+        :aria-busy="loading || undefined"
+        :disabled="disabled"
+        data-page-refresh
+        @click="onClick"
+      >
+        <span class="ek-refresh__glyph" aria-hidden="true">
+          <v-icon v-if="state === 'success'" key="ok" :icon="icons.approve" class="ek-refresh__icon ek-refresh__icon--ok" />
+          <v-icon v-else key="rf" :icon="icons.refresh" class="ek-refresh__icon" />
+          <span v-if="state === 'error'" class="ek-refresh__dot" />
+        </span>
+        <span v-if="state === 'loading' && reducedMotion" class="ek-refresh__text">Yenileniyor…</span>
+      </button>
+    </template>
+    <span class="ek-refresh__tip">
+      <span class="ek-refresh__tip-row">
+        <span class="ek-refresh__tip-title">{{ tipTitle }}</span>
+        <EkKbd v-if="state !== 'loading'" :keys="keys" tone="inverse" />
+      </span>
+      <span v-if="tipMeta" class="ek-refresh__tip-meta">{{ tipMeta }}</span>
+    </span>
+  </v-tooltip>
+  <span class="ek-sr-only" aria-live="polite">{{ announce }}</span>
+  </span>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import EkTooltip from './EkTooltip.vue'
+import EkKbd from './EkKbd.vue'
 import { icons } from '@/design/icons'
 import { shortcutKeys } from '@/navigation/shortcuts'
+import { formatRelativeTime, injectRefreshState } from './refreshState'
 
 const props = withDefaults(
   defineProps<{
@@ -38,27 +67,77 @@ const props = withDefaults(
     label?: string
     /** Verinin en son alındığı an (verilmezse düğme kendisi izler). */
     lastUpdated?: Date | string | number | null
+    /** Son yenileme başarısız (true ya da kısa metin). Verilmezse atadaki `provideRefreshState`. */
+    error?: boolean | string | null
   }>(),
-  { loading: false, disabled: false, label: 'Yenile' },
+  { loading: false, disabled: false, label: 'Yenile', lastUpdated: undefined, error: undefined },
 )
 const emit = defineEmits<{ refresh: [] }>()
 
+/** Başarı onayının süresi (ms). */
+const SUCCESS_MS = 1200
+
 const keys = shortcutKeys('pageRefresh')
+const injected = injectRefreshState()
 const tracked = ref<Date | null>(null)
 const now = ref(Date.now())
+const flash = ref(false)
+const announce = ref('')
+const reducedMotion = ref(false)
 let tick: ReturnType<typeof setInterval> | undefined
+let flashTimer: ReturnType<typeof setTimeout> | undefined
+let mq: MediaQueryList | undefined
+const onMq = () => (reducedMotion.value = !!mq?.matches)
+
+const errorValue = computed(() => (props.error !== undefined ? props.error : injected?.().error ?? null))
+const hasError = computed(() => !!errorValue.value)
 
 onMounted(() => {
-  if (!props.loading) tracked.value = new Date()
+  if (!props.loading && !hasError.value) tracked.value = new Date()
   tick = setInterval(() => (now.value = Date.now()), 30_000)
+  mq = typeof window !== 'undefined' ? window.matchMedia?.('(prefers-reduced-motion: reduce)') : undefined
+  onMq()
+  mq?.addEventListener?.('change', onMq)
 })
-onBeforeUnmount(() => clearInterval(tick))
+onBeforeUnmount(() => {
+  clearInterval(tick)
+  clearTimeout(flashTimer)
+  mq?.removeEventListener?.('change', onMq)
+})
+
 watch(
   () => props.loading,
   (v, before) => {
-    if (before && !v) tracked.value = new Date()
+    now.value = Date.now()
+    if (v) {
+      clearTimeout(flashTimer)
+      flash.value = false
+      announce.value = 'Yenileniyor'
+      return
+    }
+    if (!before) return
+    // Hata bilgisi ata tarafında aynı tick'te güncellenir → bir sonraki mikro görevde karar ver.
+    queueMicrotask(() => {
+      if (hasError.value) {
+        announce.value = 'Yenilenemedi'
+        return
+      }
+      tracked.value = new Date()
+      now.value = Date.now()
+      announce.value = 'Güncellendi'
+      flash.value = true
+      clearTimeout(flashTimer)
+      flashTimer = setTimeout(() => (flash.value = false), SUCCESS_MS)
+    })
   },
 )
+
+const state = computed<'idle' | 'loading' | 'success' | 'error'>(() => {
+  if (props.loading) return 'loading'
+  if (hasError.value) return 'error'
+  if (flash.value) return 'success'
+  return 'idle'
+})
 
 const updatedAt = computed(() => {
   const v = props.lastUpdated ?? tracked.value
@@ -67,16 +146,24 @@ const updatedAt = computed(() => {
   return Number.isNaN(d.getTime()) ? null : d
 })
 
-const updatedText = computed(() => {
-  const d = updatedAt.value
-  if (!d) return ''
-  const diff = Math.max(0, now.value - d.getTime())
-  if (diff < 60_000) return 'az önce'
-  return d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+const updatedText = computed(() => (updatedAt.value ? formatRelativeTime(updatedAt.value, now.value) : ''))
+
+const tipTitle = computed(() => {
+  if (state.value === 'loading') return 'Yenileniyor…'
+  if (state.value === 'error') return 'Yenilenemedi — tekrar denemek için tıklayın'
+  return props.label
+})
+const tipMeta = computed(() => {
+  if (!updatedText.value) return ''
+  return state.value === 'error' ? `Son başarılı güncelleme ${updatedText.value}` : `Son güncelleme ${updatedText.value}`
 })
 
-const tooltip = computed(() => (props.loading ? 'Yenileniyor…' : updatedText.value ? `${props.label} · Son güncelleme ${updatedText.value}` : props.label))
-const ariaLabel = computed(() => `${props.label} (${keys.join('+')})${updatedText.value && !props.loading ? `, son güncelleme ${updatedText.value}` : ''}`)
+const ariaLabel = computed(() => {
+  const base = `${props.label} (${keys.join('+')})`
+  if (props.loading) return `${base}, yenileniyor`
+  if (hasError.value) return `${base}, son yenileme başarısız${updatedText.value ? `; son başarılı güncelleme ${updatedText.value}` : ''}`
+  return updatedText.value ? `${base}, son güncelleme ${updatedText.value}` : base
+})
 
 function onClick() {
   if (!props.loading && !props.disabled) emit('refresh')
@@ -84,26 +171,36 @@ function onClick() {
 </script>
 
 <style scoped>
+.ek-refresh-wrap {
+  display: inline-flex;
+}
+
 .ek-refresh {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--ek-control-h-sm);
-  height: var(--ek-control-h-sm);
-  border: 1px solid var(--ek-color-border-default);
+  gap: var(--ek-space-2);
+  min-width: var(--ek-control-h-md);
+  height: var(--ek-control-h-md);
+  padding: 0;
+  border: 0;
   border-radius: var(--ek-radius-control);
-  background: var(--ek-color-surface);
-  color: var(--ek-color-content-default);
-  font-size: var(--ek-icon-md);
+  background: transparent;
+  color: var(--ek-color-content-muted);
+  font-family: inherit;
   cursor: pointer;
-  box-shadow: var(--ek-shadow-card);
   transition: var(--ek-transition-colors);
 }
 
 .ek-refresh:hover:not(:disabled) {
-  border-color: var(--ek-color-action-border);
-  background: var(--ek-color-action-subtle);
-  color: var(--ek-color-action-emphasis);
+  background: var(--ek-color-surface);
+  box-shadow: inset 0 0 0 1px var(--ek-color-border-default);
+  color: var(--ek-color-content-strong);
+}
+
+.ek-refresh:active:not(:disabled) {
+  background: var(--ek-color-surface-muted);
 }
 
 .ek-refresh:focus-visible {
@@ -113,25 +210,94 @@ function onClick() {
 
 .ek-refresh:disabled {
   cursor: default;
-  opacity: 0.6;
+  opacity: 0.5;
+}
+
+.ek-refresh__glyph {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--ek-icon-lg);
+  height: var(--ek-icon-lg);
+}
+
+.ek-refresh__icon {
+  font-size: var(--ek-icon-lg);
 }
 
 .ek-refresh.is-loading {
   cursor: progress;
-  opacity: 1;
   color: var(--ek-color-action);
 }
 
 .ek-refresh.is-loading .ek-refresh__icon {
-  animation: ek-refresh-spin 1s linear infinite;
+  animation: ek-refresh-spin 0.9s var(--ek-easing-standard) infinite;
+}
+
+.ek-refresh.is-success {
+  color: var(--ek-color-success);
+}
+
+.ek-refresh__icon--ok {
+  animation: ek-refresh-pop var(--ek-duration-base) var(--ek-easing-enter);
+}
+
+.ek-refresh__dot {
+  position: absolute;
+  top: -3px;
+  right: -4px;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--ek-radius-full);
+  background: var(--ek-color-error);
+  box-shadow: 0 0 0 2px var(--ek-color-background);
+}
+
+.ek-refresh.is-error:hover .ek-refresh__dot {
+  box-shadow: 0 0 0 2px var(--ek-color-surface);
+}
+
+/* Reduced-motion: dönme yok, metin görünür ("Yenileniyor…"). */
+.ek-refresh.is-reduced.is-loading {
+  padding: 0 var(--ek-space-3) 0 var(--ek-space-2);
+}
+
+.ek-refresh__text {
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+  font-weight: var(--ek-font-weight-medium);
+  white-space: nowrap;
+}
+
+.ek-refresh__tip {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ek-refresh__tip-row {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+}
+
+.ek-refresh__tip-meta {
+  opacity: 0.8;
 }
 
 @keyframes ek-refresh-spin {
   to { transform: rotate(360deg); }
 }
 
+@keyframes ek-refresh-pop {
+  from { opacity: 0; transform: scale(0.6); }
+  to { opacity: 1; transform: scale(1); }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .ek-refresh.is-loading .ek-refresh__icon {
+  .ek-refresh.is-loading .ek-refresh__icon,
+  .ek-refresh__icon--ok {
     animation: none;
   }
 }

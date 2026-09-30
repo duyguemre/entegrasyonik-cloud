@@ -218,6 +218,7 @@
 </template>
 
 <script setup lang="ts">
+import { provideRefreshState } from '@/components/ds/refreshState'
 import EkBulkBar from '@/components/ds/EkBulkBar.vue'
 import EkActionButton from '@/components/ds/EkActionButton.vue'
 import EkRowActions, { type EkRowAction } from '@/components/ds/EkRowActions.vue'
@@ -310,6 +311,8 @@ const columns = computed(() => (compact.value ? COMPACT_COLUMNS : FULL_COLUMNS))
 const items = ref<NotificationRow[]>([])
 const loading = ref(false)
 const loadError = ref(false)
+// A8: yenile düğmesi son yükleme hatasını gösterir (kırmızı nokta + ipucu).
+provideRefreshState(() => ({ error: loadError.value }))
 const loadedAt = ref<Date | null>(null)
 const now = ref(new Date())
 const selected = ref<Array<string | number>>([])

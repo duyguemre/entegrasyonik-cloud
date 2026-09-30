@@ -168,6 +168,7 @@ import EkButton from '../EkButton.vue'
 import EkSavedViews, { type EkSavedViewsConfig } from '../EkSavedViews.vue'
 import EkRefreshButton from '../EkRefreshButton.vue'
 import EkPageBar from '../EkPageBar.vue'
+import { provideRefreshState } from '../refreshState'
 
 const props = withDefaults(
   defineProps<{
@@ -287,6 +288,9 @@ const autoTips = computed(() => {
   if (props.selectable) tips.push(`Toplu işlem için ${props.noun} satırlarını seçin; eylemler tablonun üstünde belirir.`)
   return tips
 })
+
+// A8: başlıktaki yenile düğmesi liste hatasını gösterir (kırmızı nokta + ipucu) — EkPageBar'a prop taşımadan.
+provideRefreshState(() => ({ error: props.error }))
 
 // Panel açık/kapalı durumu: v-model verilmişse dışarıdan, yoksa bu örnekte (sekmeye yerel) tutulur.
 // Dar ekranda (<768px) panel kapalı başlar: tablo ilk ekranda görünür kalsın.

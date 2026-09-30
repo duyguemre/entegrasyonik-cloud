@@ -270,6 +270,7 @@
 </template>
 
 <script setup lang="ts">
+import { provideRefreshState } from '@/components/ds/refreshState'
 import { computed, inject, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import EkPageHeader from '@/components/ds/EkPageHeader.vue'
@@ -312,6 +313,8 @@ const eventBus = inject<any>('eventBus')
 const { isMobile } = useShellBreakpoints()
 
 const state = ref<'loading' | 'ready' | 'error' | 'forbidden'>('loading')
+// A8: yenile düğmesi son yükleme hatasını gösterir (kırmızı nokta + ipucu).
+provideRefreshState(() => ({ error: state.value === 'error' }))
 const data = ref<StockOverview | null>(null)
 
 async function load() {

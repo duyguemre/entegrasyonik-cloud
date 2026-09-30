@@ -135,6 +135,7 @@
 </template>
 
 <script setup lang="ts">
+import { provideRefreshState } from '@/components/ds/refreshState'
 import { computed, inject, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import EkPageHeader from '@/components/ds/EkPageHeader.vue'
@@ -160,6 +161,9 @@ const eventBus: any = inject('eventBus', null)
 const { showToast } = useToast()
 
 const state = ref<'loading' | 'ready' | 'error' | 'forbidden'>('loading')
+// A8: yenile düğmesi son yükleme hatasını gösterir (kırmızı nokta + ipucu).
+const refreshFailed = ref(false)
+provideRefreshState(() => ({ error: state.value === 'error' || refreshFailed.value }))
 const refreshing = ref(false)
 const data = ref<IntegrationHealthResponse | null>(null)
 const now = ref(new Date())
@@ -180,6 +184,7 @@ async function load(refresh = false) {
   else state.value = 'loading'
   const res = await api.getIntegrationHealth()
   refreshing.value = false
+  refreshFailed.value = !res.ok && res.status !== 403
   if (res.ok) {
     data.value = res.data
     now.value = new Date(res.data.generatedAt || Date.now())
