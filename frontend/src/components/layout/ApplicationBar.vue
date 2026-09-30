@@ -32,7 +32,8 @@
       <EkMenuPanel autofocus ref="helpPanelRef" :groups="helpGroups" label="Yardım" @select="onHelpSelect" @close="helpOpen = false" />
     </v-menu>
 
-    <v-menu v-model="accountOpen" activator="[data-header-action=account]" location="bottom end" :offset="8">
+    <!-- FR2-DARK: içerik tıklaması menüyü kapatmaz (tema seçimi yerinde görülür); öğeler onAccountSelect ile kapatır. -->
+    <v-menu v-model="accountOpen" activator="[data-header-action=account]" location="bottom end" :offset="8" :close-on-content-click="false">
       <div class="ek-shell-account">
         <div class="ek-shell-account__head">
           <StoreLogoAvatar :size="36" :store-name="storeName" :logo="userApi.getStoreLogo()" />

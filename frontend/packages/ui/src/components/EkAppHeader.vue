@@ -233,7 +233,8 @@ const initials = computed(() =>
   height: 28px;
   border-radius: var(--ek-radius-md);
   background: var(--ek-color-action);
-  color: var(--ek-color-chrome-text);
+  /* FR2-DARK: aksiyon zemininin eşleşik metni (light'ta aynı beyaz; dark'ta koyu mürekkep, AA). */
+  color: var(--ek-color-action-contrast);
   font-size: var(--ek-type-caption-size);
   font-weight: var(--ek-font-weight-bold);
 }
