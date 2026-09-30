@@ -134,7 +134,7 @@
         </template>
       </EkDataGrid>
 
-      <template v-if="total !== undefined && !error" #pager>
+      <template v-if="total !== undefined && !error && !(loading && !rows.length)" #pager>
         <EkPagerBar
           :page="page"
           :page-size="pageSize"

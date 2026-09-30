@@ -158,7 +158,9 @@ export function useTabOverlay(opts: TabOverlayOptions): TabOverlay {
   watch(scope.active, (v) => {
     if (!v || !opts.open.value) return
     requestAnimationFrame(() => {
-      if (document.activeElement?.closest?.('[role="tablist"]')) return
+      // Şeritte KLAVYEYLE geziniliyorsa (odak görünür) odak orada kalır; fareyle seçildiyse diyaloğa geçer.
+      const a = document.activeElement as HTMLElement | null
+      if (a?.closest?.('[role="tablist"]') && a.matches?.(':focus-visible')) return
       const c = content()
       if (c && isTop() && !c.contains(document.activeElement)) focusInto(c)
     })

@@ -97,6 +97,23 @@ async function openFilters(p: Page, cls: string) {
 const never = () => new Promise<void>(() => undefined)
 
 const cases: Array<{ name: string; run: (page: Page) => Promise<void> }> = [
+  // Vitrin §13 — geri bildirim, yükleme, eylem ikonları, satır eylemleri (Standart 1/3/8/10 tek bakışta).
+  {
+    name: 's00-vitrin',
+    run: async (p) => {
+      await installApiMocks(p, reviewMocks())
+      await p.goto('/design-system#geri-bildirim')
+      const sec = p.locator('#geri-bildirim')
+      await sec.waitFor({ timeout: 15000 })
+      await sec.scrollIntoViewIfNeeded()
+      await settle(p, 900)
+      await sec.screenshot({ path: file('s00-vitrin-geri-bildirim') })
+      await p.locator('[data-ds="toast-error"]').click()
+      await p.getByRole('button', { name: 'Başarı' }).click()
+      await settle(p, 500)
+      await p.screenshot({ path: file('s00-vitrin-toast') })
+    },
+  },
   // 1 — hata / uyarı / bilgi / boş
   { name: 's01-hata-liste', run: async (p) => { await open(p, 'OrderListView', { 'OrderService/getOrders': mockError(500, { error: 'Beklenmeyen bir hata oluştu.', requestId: 'req-e2e-a6b' }) }); await p.screenshot({ path: file('s01-hata-liste') }) } },
   { name: 's01-bos-liste', run: async (p) => { await open(p, 'OrderListView', { 'OrderService/getOrders': ordersBosFixture }); await p.screenshot({ path: file('s01-bos-liste') }) } },

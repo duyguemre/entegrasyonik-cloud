@@ -6,7 +6,7 @@ import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { installApiMocks } from '../fixtures/mockApi'
 
-const SECTIONS = ['renk', 'yuzey', 'tipografi', 'olcek', 'buton', 'form', 'kart', 'rozet', 'diyalog', 'kabuk', 'liste', 'kademeli']
+const SECTIONS = ['renk', 'yuzey', 'tipografi', 'olcek', 'buton', 'form', 'kart', 'rozet', 'diyalog', 'kabuk', 'liste', 'kademeli', 'geri-bildirim']
 
 async function openVitrine(page: import('@playwright/test').Page) {
   await installApiMocks(page)

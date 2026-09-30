@@ -73,6 +73,9 @@
         <DsSection id="kademeli" index="12" title="Kademeli çok kolonlu seçici" description="Ürün kategori ağacı ve ekran başlatıcı için.">
           <DsCascade />
         </DsSection>
+        <DsSection id="geri-bildirim" index="13" title="Geri bildirim, yükleme ve eylemler" description="Aşama 6b tutarlılık standartları: tek uyarı/hata/boş/toast deseni, marka yükleme işareti, eylem ikonu kayıt defteri, satır eylemleri.">
+          <DsFeedback />
+        </DsSection>
         <footer class="dsv-foot">
           Aşama 2 göç sırası: kabuk → liste standardı → diyalog/menü/form → dashboard. Ayrıntı ve eski renk envanteri:
           <code>frontend/DESIGN_SYSTEM.md</code>.
@@ -98,6 +101,7 @@ import DsOverlays from './design-system/DsOverlays.vue'
 import DsShell from './design-system/DsShell.vue'
 import DsList from './design-system/DsList.vue'
 import DsCascade from './design-system/DsCascade.vue'
+import DsFeedback from './design-system/DsFeedback.vue'
 
 const sections = [
   { id: 'renk', index: '01', title: 'Renk paleti' },
@@ -112,6 +116,7 @@ const sections = [
   { id: 'kabuk', index: '10', title: 'Kabuk' },
   { id: 'liste', index: '11', title: 'Liste standardı' },
   { id: 'kademeli', index: '12', title: 'Kademeli seçici' },
+  { id: 'geri-bildirim', index: '13', title: 'Geri bildirim · yükleme · eylem' },
 ]
 const active = ref('renk')
 </script>

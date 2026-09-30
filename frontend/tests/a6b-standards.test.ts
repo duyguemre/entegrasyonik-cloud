@@ -64,3 +64,34 @@ describe('Standart 3 — satır / kart eylemleri tek desen', () => {
     expect(offenders).toEqual([])
   })
 })
+
+describe('Standart 7 — sekme sınırında kalan örtüler', () => {
+  const read = (p: string) => files.find((f) => f.path === p)?.text ?? ''
+
+  it('her çalışma alanı sekmesi kendi kabında çizilir (WorkspaceTabHost)', () => {
+    expect(read('src/components/WrapperComponent.vue')).toMatch(/<WorkspaceTabHost\b/)
+    expect(read('src/components/layout/WorkspaceTabHost.vue')).toMatch(/provideTabScope\(/)
+    // Ham v-dialog / v-bottom-sheet de kaba bağlanır (Vuetify varsayılanları).
+    expect(read('src/components/layout/WorkspaceTabHost.vue')).toMatch(/VDialog:[\s\S]*VBottomSheet:/)
+  })
+
+  it('ds örtüleri sekme kapsamını kullanır', () => {
+    for (const p of ['EkDialog', 'EkDialogHost', 'EkCascadeDialog', 'EkDetailSheet']) {
+      expect(read(`src/components/ds/${p}.vue`), p).toMatch(/useTabOverlay\(/)
+    }
+    expect(read('src/components/ds/EkLoadingOverlay.vue')).toMatch(/resolveOverlayAttach\(/)
+  })
+
+  it('hiçbir örtü kendini gövdeye zorlamaz (attach="body" / :attach="true|false") — uygulama geneli liste hariç', () => {
+    // Uygulama geneli (tam ekran) kalanlar: kısayol listesi (SecureLayout), bildirim çekmecesi, toast (App.vue),
+    // üst çubuğun uygulama yükleme örtüsü (ApplicationBar → `.AppView`). Bunlar sekme ağacının DIŞINDA bağlanır.
+    const offenders = files
+      .filter((f) => f.path.endsWith('.vue') && !f.path.startsWith('src/views/dev/'))
+      .flatMap((f) => [...f.text.matchAll(/<(v-dialog|v-bottom-sheet|v-overlay|EkDialog|EkDialogHost|EkDetailSheet|EkConfirmDialog|EkFormDialog)\b[^>]*?\s(attach="body"|:attach="(true|false)")/g)].map((m) => `${f.path}: ${m[0].slice(0, 80)}`))
+    expect(offenders).toEqual([])
+  })
+
+  it('kabuk kısayol bekçisi yalnız uygulama geneli örtülerde durur', () => {
+    expect(read('src/layouts/SecureLayout.vue')).toMatch(/closest\('\.ek-tab-host'\)/)
+  })
+})

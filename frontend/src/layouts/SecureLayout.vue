@@ -263,8 +263,10 @@ function runShortcut(match: ShortcutMatch) {
 
 function onGlobalKeydown(event: KeyboardEvent) {
   if (event.defaultPrevented || event.isComposing) return
-  // Açık bir diyalog/menü varken (Vuetify overlay) sekme/görünüm kısayolları arka planı değiştirmesin.
-  const overlayOpen = !!document.querySelector('.v-overlay--active.v-dialog, .v-overlay--active.v-menu')
+  // Açık bir UYGULAMA GENELİ diyalog/menü varken (Vuetify overlay) sekme/görünüm kısayolları arka planı değiştirmesin.
+  // Aşama 6b (Standart 7): sekme kabına bağlı örtüler (`.ek-tab-host` içi) yalnız o sekmeyi örter — sekmeler arası
+  // geçiş, üst bölüm ve arama kısayolları çalışmaya devam eder.
+  const overlayOpen = [...document.querySelectorAll('.v-overlay--active.v-dialog, .v-overlay--active.v-menu')].some((el) => !el.closest('.ek-tab-host'))
   const match = matchShortcut(event, event.target)
   if (!match) return
   if (overlayOpen && match.id !== 'search') return

@@ -32,6 +32,7 @@
       :rows="claims"
       :loading="loading"
       :error="loadError"
+      :error-text="loadProblem?.action ?? undefined"
       :error-cause="loadProblem?.cause"
       :error-details="loadProblem?.details"
       error-title="İade talepleri yüklenemedi"

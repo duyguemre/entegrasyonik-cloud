@@ -62,6 +62,7 @@
       :rows="orders"
       :loading="loading"
       :error="loadError"
+      :error-text="loadProblem?.action ?? undefined"
       :error-cause="loadProblem?.cause"
       :error-details="loadProblem?.details"
       error-title="Siparişler yüklenemedi"
