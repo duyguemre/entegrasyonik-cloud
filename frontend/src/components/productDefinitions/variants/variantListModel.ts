@@ -43,7 +43,8 @@ export function channelState(variant: any, code: string): ChannelState {
   const upload = platform?.upload
   const status = upload?.TRANSFER?.status
   let key: ChannelStateKey = 'none'
-  if (status === 'COMPLETED') key = upload?.onSale === true ? 'live' : 'offsale'
+  // Ayrıntı kartıyla aynı kural: aktarım tamam + `onSale` açıkça false değilse yayında.
+  if (status === 'COMPLETED') key = upload?.onSale === false ? 'offsale' : 'live'
   else if (status === 'FAILED') key = 'failed'
   else if (status === 'SENT' || status === 'WAITING') key = 'waiting'
   else if (status === 'PENDING') key = 'preparing'

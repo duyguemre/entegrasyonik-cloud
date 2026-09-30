@@ -92,6 +92,9 @@ async function openList(page: Page, product: any) {
 /** Ürün satırı + açılan varyant alanı (yakın çekim kırpması). */
 async function closeUp(page: Page, product: any, name: string) {
   const target = page.locator(`#variant-target-${product._id}`)
+  // Dar ekranda liste kendi içinde kayar: ürün satırı görünür alanın başına gelsin.
+  await page.locator('.productListView .ek-grid__row').filter({ hasText: product.title }).first().evaluate((el) => el.scrollIntoView({ block: 'start' }))
+  await settle(page, 300)
   const productRow = page.locator('.productListView tr.ek-grid__row, .productListView .ek-grid__row').filter({ hasText: product.title }).first()
   const a = await productRow.boundingBox().catch(() => null)
   const b = await target.boundingBox().catch(() => null)
@@ -100,6 +103,12 @@ async function closeUp(page: Page, product: any, name: string) {
   const y = Math.max(0, a.y - 4)
   const h = Math.min(b.y + b.height + 8, vw.height) - y
   await page.screenshot({ path: file(name, '-yakin'), clip: { x: 0, y, width: vw.width, height: Math.max(40, h) } })
+  if (vw.width <= 480) {
+    // Kart listesinin devamı (kap içinde kaydırarak).
+    await target.evaluate((el) => el.scrollIntoView({ block: 'start' }))
+    await settle(page, 300)
+    await page.screenshot({ path: file(name, '-yakin-2') })
+  }
 }
 
 const SCENARIOS: { name: string; run: (p: Page) => Promise<void> }[] = [

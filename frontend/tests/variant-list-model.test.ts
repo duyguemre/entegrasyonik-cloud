@@ -7,9 +7,10 @@ import {
 const v = (o: Record<string, any> = {}) => ({ stock: 10, choices: [{ choiceId: 'renk', choiceValueId: 'siyah', slicer: true }, { choiceId: 'beden', choiceValueId: 'm' }], platforms: {}, ...o })
 
 describe('channelState', () => {
-  it('COMPLETED + onSale → yayında (success); onSale yoksa satışa kapalı (warning)', () => {
+  it('COMPLETED → yayında (success); yalnız onSale:false satışa kapalı (warning) — ayrıntı kartıyla aynı kural', () => {
     expect(channelState(v({ platforms: { ty: { upload: { TRANSFER: { status: 'COMPLETED' }, onSale: true } } } }), 'ty')).toMatchObject({ key: 'live', tone: 'success' })
-    expect(channelState(v({ platforms: { ty: { upload: { TRANSFER: { status: 'COMPLETED' } } } } }), 'ty')).toMatchObject({ key: 'offsale', tone: 'warning' })
+    expect(channelState(v({ platforms: { ty: { upload: { TRANSFER: { status: 'COMPLETED' } } } } }), 'ty')).toMatchObject({ key: 'live' })
+    expect(channelState(v({ platforms: { ty: { upload: { TRANSFER: { status: 'COMPLETED' }, onSale: false } } } }), 'ty')).toMatchObject({ key: 'offsale', tone: 'warning' })
   })
   it('FAILED → reddedildi + ilk iletiden kısa neden', () => {
     const s = channelState(v({ platforms: { hb: { upload: { TRANSFER: { status: 'FAILED', messages: ['Kategori eksik\nayrıntı'] } } } } }), 'hb')
