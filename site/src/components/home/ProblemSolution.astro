@@ -550,22 +550,18 @@ const gains = [
     align-items: center;
     min-width: 0;
   }
-  /* Sipariş etiketi yuvası: tüm kanallarda aynı yükseklik (etiket perdeye göre farklı kanalda belirir). */
+  /* Sipariş etiketi yuvası: tüm kanallarda aynı yükseklik (etiket perdeye göre farklı kanalda belirir). Etiket sütundan
+     geniş olabilir: ortalanır, kenardaki kanallarda içe hizalanır (dar ekranda kart dışına taşmaz). */
   .ps__order-slot {
-    display: grid;
-    place-items: end center;
+    position: relative;
     width: 100%;
     height: var(--ek-space-8);
   }
-  /* Kenardaki kanallarda etiket içe hizalanır (dar ekranda kart dışına taşmaz). */
-  .ps__node:first-child .ps__order-slot {
-    justify-items: start;
-  }
-  .ps__node:last-child .ps__order-slot {
-    justify-items: end;
-  }
   .ps__order {
-    grid-area: 1 / 1;
+    position: absolute;
+    inset-block-end: 0;
+    inset-inline-start: 50%;
+    transform: translateX(-50%);
     display: inline-flex;
     align-items: center;
     gap: var(--ek-space-1);
@@ -579,6 +575,14 @@ const gains = [
     line-height: var(--ek-line-height-tight);
     white-space: nowrap;
     box-shadow: 0 var(--ek-space-1) var(--ek-space-3) color-mix(in srgb, var(--site-stage-deep) 60%, transparent);
+  }
+  .ps__node:first-child .ps__order {
+    inset-inline-start: 0;
+    transform: none;
+  }
+  .ps__node:last-child .ps__order {
+    inset-inline: auto 0;
+    transform: none;
   }
   /*
    * Kanal çipi: sitenin kanal rozeti (ChannelMono) + o kanaldaki stok. OPAK yüzey ve `z-index: 1`: ışık paketi çipin
