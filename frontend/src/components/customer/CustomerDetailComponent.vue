@@ -37,7 +37,7 @@
                     <CustomerIdentity size="lg" as="h2" :first-name="customer.firstName" :last-name="customer.lastName"
                         :company-name="customer.companyName" :is-corporate="customer.isCorporate" :channel="originChannel"
                         :created-at="customer.createdAt">
-                        <template #badges>
+                        <template #tags>
                             <EkBadge v-if="isVip" tone="warning">VIP</EkBadge>
                         </template>
                     </CustomerIdentity>

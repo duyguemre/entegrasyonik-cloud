@@ -12,7 +12,7 @@
           <v-icon :icon="kind.icon" size="12" aria-hidden="true" />{{ kind.label }}
         </EkBadge>
         <EkBadge v-if="anonymized" tone="neutral">Anonimleştirildi</EkBadge>
-        <slot name="badges" />
+        <slot name="tags" />
       </div>
       <span v-if="company" class="ek-cust-id__company">{{ company }}</span>
       <div class="ek-cust-id__meta">

@@ -47,3 +47,19 @@ Linux Chromium ile bulutta alındı — görsel onay yerelde.
 - **Eylemler:** başlıkta ikincil **Düzenle** (form yalnız düzenlemede açılır — form açık alanları maskeyi deliyordu) + `⋯` →
   "Kişisel verileri anonimleştir" (tehlikeli, en sonda, onay; yalnız yönetici).
 - **Durumlar:** yan sayfa hemen açılır → iskelet; hata → `EkProblemState` + Tekrar dene; boş metrik → açıklayıcı boş metin.
+
+## 3. İterasyonlar (SONRA)
+
+| Tur | Gözle bulunan | Düzeltme |
+|---|---|---|
+| 1 | İletişim satırında değer/Platform no hane hane kırılıyor; kopya düğmeleri hizasız (EkActionButton kökü parça → kapsamlı sınıf düşüyor); "Göster" belirsiz; 390'da başlık "Müşteri / kartı" iki satır | 3 kolon ızgara (etiket · değer · kopya), değer tek satır + üç nokta; platform kimlikleri ayrı grup (kanal noktası etiket); kopya sarmalayıcıda; "Kişisel verileri göster/gizle"; dar ekranda Düzenle yalnız ikon |
+| 2 | Satır ayraçları kolon boşluğunda kesiliyor; detayda adresler dar kolonda üst üste; iki kart yan yana 720px'te sıkışık | boşluk hücre dolgusuna taşındı; İletişim ve Adresler tam genişlik tek kolon, adresler kendi içinde 2 kolon (kap sorgusu) |
+| 3 | Durum ekranları (hata / yeni müşteri / kurumsal / 390 sipariş) ve liste satırı yakın çekimleri | kusur yok — maskeli liste, nötr avatar, fatura=teslimat "Fatura adresiyle aynı", boş metrik durumu |
+
+Dosyalar: `after/01…08-*-{1440,390}.png`, yakın çekim `after/z01…z06-*`. E1–E12'nin tümü kapandı (E12: tek formüllü skor
+kaldırıldı; metrik/adres blokları projeksiyonda veri gelirse kendiliğinden çizilir).
+
+## 4. Testler
+- Yeni vitest `tests/customer-card.test.ts` (21): maskeleme, göster/kopya, pazaryeri/anonim gizleme, boş metrik (uydurma 0 yok), adres ayrımı, statik sözleşme.
+- Yeni Playwright `customers.spec.ts` › A13 (2): maskeli açılış + göster anahtarı `aria-pressed` + kopya + axe; hata → EkProblemState.
+- Mevcut spec'ler değişmedi (customers/orders/claims/tab-overlays 62/62). Bilinçli davranış değişiklikleri: kart kimliği "Müşteri kartı" (spec filtresi büyük/küçük harf duyarsız), listede iletişim maskeli, detay hemen açılıp iskelet gösterir.

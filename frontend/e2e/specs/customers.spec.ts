@@ -147,3 +147,44 @@ test.describe('C1.6 — Müşteri anonimleştirme', () => {
     await expect(dialog.getByRole('button', { name: 'Müşteri işlemleri' })).toHaveCount(0)
   })
 })
+
+// A13 — müşteri kartı: KVKK maskeli varsayılan, "Kişisel verileri göster" anahtarı, hata ≠ boş kayıt, axe.
+test.describe('A13 — Müşteri kartı', () => {
+  test.beforeEach(async ({}, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium-desktop', 'Masaüstü tablo (mdAndUp/>=960px) gerektiriyor')
+  })
+
+  const detail = buildCustomerDetail({ phone: '5551112233', email: 'ayse.yilmaz@e2e.invalid', metrics: { totalOrderCount: 8, totalSpent: 4250.4, totalClaimCount: 1, lastOrderDate: '2026-09-25T08:15:00.000Z' } })
+
+  test('iletişim maskeli açılır; göster anahtarı açar/gizler; metrikler backend alanlarından', async ({ page }) => {
+    await installApiMocks(page, { 'CustomerService/getCustomers': customersDoluFixture, 'CustomerService/getCustomerDetail': detail })
+    await gotoAuthed(page)
+    await openScreen(page, 'CustomerListView')
+    await page.locator('.customerListView tbody tr').first().locator('button:has(.mdi-eye-outline)').click()
+    const dialog = page.getByRole('dialog').filter({ hasText: 'Müşteri kartı' })
+    await expect(dialog).toContainText('+90 (555) ••• •• 33')
+    await expect(dialog).toContainText('ay•••@e2e.invalid')
+    await expect(dialog).not.toContainText('111 22 33')
+    await expect(dialog).toContainText('Toplam sipariş')
+    const reveal = dialog.getByRole('button', { name: 'Kişisel verileri göster' })
+    await expect(reveal).toHaveAttribute('aria-pressed', 'false')
+    await reveal.click()
+    await expect(dialog).toContainText('+90 (555) 111 22 33')
+    await expect(dialog.getByRole('button', { name: 'Kişisel verileri gizle' })).toHaveAttribute('aria-pressed', 'true')
+    await expect(dialog.getByRole('button', { name: 'Telefon numarasını kopyala' })).toBeVisible()
+    const results = await new AxeBuilder({ page }).include('.ek-detail-sheet').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
+    const own = results.violations.filter((v) => !['aria-required-children', 'scrollable-region-focusable'].includes(v.id))
+    expect(own, JSON.stringify(own, null, 2)).toEqual([])
+  })
+
+  test('hata: detay alınamazsa boş kart değil EkProblemState + Tekrar dene', async ({ page }) => {
+    await installApiMocks(page, { 'CustomerService/getCustomers': customersDoluFixture, 'CustomerService/getCustomerDetail': mockError(500) })
+    await gotoAuthed(page)
+    await openScreen(page, 'CustomerListView')
+    await page.locator('.customerListView tbody tr').first().locator('button:has(.mdi-eye-outline)').click()
+    const dialog = page.getByRole('dialog').filter({ hasText: 'Müşteri kartı' })
+    await expect(dialog).toContainText('Müşteri kartı açılamadı')
+    await expect(dialog.getByRole('button', { name: 'Tekrar dene' })).toBeVisible()
+    await expect(dialog).not.toContainText('₺0,00')
+  })
+})

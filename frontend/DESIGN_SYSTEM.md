@@ -450,3 +450,15 @@ primary, `#item` şablonlarında `role=option`, kanal filtresi `EkSelect`. `test
 
 **Bilinçli e2e seçici güncellemeleri (iddia aynı):** yeni gliflere seçiciler (`.mdi-eye` → `.mdi-eye-outline` vb.), hata deseninin
 "ne oldu / ne yapmalı" iki satırı (7 iddia), `EkProblemState` sınıfı (kategori eşleme), mağaza detayı sekme adı cümle düzeni.
+
+## 18. A13 — müşteri kartı (`cloud/fe-a13`)
+
+Tek kaynak `src/components/customer/customerCard.ts` (saf: maske, kimlik, metrik, adres) + `customer/card/*`
+(`CustomerAvatar`, `CustomerIdentity`, `CustomerContactList`, `CustomerAddresses`, `CustomerMetrics`, `CustomerRevealToggle`,
+`CustomerBuyerCard`). Kullanan: müşteri listesi (avatar/rozet/maskeli iletişim), müşteri detayı (profil kartı + metrik bandı +
+İletişim/Adresler), sipariş "Alıcı" (tam satır; Alıcı + Teslimat kartları birleşti, fatura adresi eklendi), iade "Müşteri".
+Kurallar: KVKK maskeli varsayılan (telefon `+90 (555) ••• •• 33`, e-posta `ay•••@alan`, vergi no son 3, açık adres gizli) — tek
+"Kişisel verileri göster" anahtarı (`aria-pressed`, kayıt değişince yeniden maskeli); kopya = kayıt defteri `copy` + toast;
+pazaryeri maskeli/anonim değer gösterilmez. Metrikler yalnız `updateOrderMetrics`/`updateClaimMetrics` alanları, nötr ton; yoksa
+şerit yok ya da "Henüz sipariş yok". Avatar nötr token (foto yok). Ds bileşenlerine dokunulmadı. Test: `tests/customer-card.test.ts`;
+görüntüler `docs/a13-review/{before,after}` (araç `e2e/specs/a13-review.spec.ts`).
