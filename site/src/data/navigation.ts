@@ -16,6 +16,7 @@ export const primaryNav: NavItem[] = [
   { label: 'Güvenlik', href: '/guvenlik', published: true }, // S2b
   { label: 'SSS', href: '/sss', published: true }, // S2b
   { label: 'Destek', href: '/destek', published: true }, // S14
+  { label: 'Rehber', href: '/rehber', published: true }, // S20 (bilgi merkezi — src/data/kb/**)
   { label: 'İletişim', href: '/iletisim', published: true }, // S2b
 ]
 
