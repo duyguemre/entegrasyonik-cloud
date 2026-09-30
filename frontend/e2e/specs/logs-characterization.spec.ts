@@ -24,6 +24,23 @@ function recorder(response: any, bodies: any[]) {
   }
 }
 
+// [DS-v2 A3, KASITLI] Pano (ilk açılan sekme) artık "Son işlemler" kartını gösteriyor (RecentJobsCard,
+// DashboardView: `IntegrationService/getExportJobs` {page:1, limit:5}, yalnız mount'ta). Bu yüzden:
+// (1) aynı RPC'ye kaydedilen İLK gövde panonundur — liste gövdeleri pano çağrısı görüldükten sonra
+// sayılmaya başlanır; (2) aynı ürün adı gizli pano sekmesinde de DOM'da — metin liste köküne kapsanır.
+// Liste sözleşmesi (gövde alanları/değerleri) DEĞİŞMEDİ.
+const EXPORT_ROW = 'E2E Test Ürünü - Gönderim'
+async function openExportList(page: Page, bodies?: any[]) {
+  await gotoAuthed(page)
+  if (bodies) {
+    await expect.poll(() => bodies.length).toBeGreaterThanOrEqual(1)
+    expect(bodies[0]).toEqual({ page: 1, limit: 5 })
+    bodies.length = 0
+  }
+  await openScreen(page, 'LogListView')
+  await expect(page.locator('.exportLogList').getByText(EXPORT_ROW)).toBeVisible()
+}
+
 async function openImportTab(page: Page) {
   await page.getByRole('tab', { name: 'Ürün Çekim İşlemleri' }).click()
   await expect(page.locator('.importLogList')).toBeVisible()
@@ -34,12 +51,10 @@ test.describe('B3 karakterizasyon — log listeleri istek gövdeleri', () => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'İstek gövdeleri viewport bağımsız; tek viewport yeterli (token tasarrufu)')
   })
 
-  test('gönderim listesi: ilk yüklemede getExportJobs sayfa 1 / limit 13 / createdAt desc ile istenir', async ({ page }) => {
+  test('gönderim listesi: ilk yüklemede getExportJobs sayfa 1 / limit 25 / createdAt desc ile istenir', async ({ page }) => {
     const bodies: any[] = []
     await installApiMocks(page, { MenuService: menuFixtureWithLogs, 'IntegrationService/getExportJobs': recorder(exportJobsDoluFixture, bodies) })
-    await gotoAuthed(page)
-    await openScreen(page, 'LogListView')
-    await expect(page.getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
+    await openExportList(page, bodies)
 
     expect(bodies[0]).toEqual({ page: 1, limit: 25, sortBy: 'createdAt', sortOrder: 'desc' })
   })
@@ -47,9 +62,7 @@ test.describe('B3 karakterizasyon — log listeleri istek gövdeleri', () => {
   test('gönderim listesi: arama kutusunda Enter → globalSearch (kırpılmış) ile sayfa 1 yeniden istenir', async ({ page }) => {
     const bodies: any[] = []
     await installApiMocks(page, { MenuService: menuFixtureWithLogs, 'IntegrationService/getExportJobs': recorder(exportJobsDoluFixture, bodies) })
-    await gotoAuthed(page)
-    await openScreen(page, 'LogListView')
-    await expect(page.getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
+    await openExportList(page, bodies)
 
     const search = page.getByLabel('Ürün Adı, Barkod, Stok Kodu veya Platform Ara').first()
     await search.fill('  E2E-BARKOD  ')
@@ -61,9 +74,7 @@ test.describe('B3 karakterizasyon — log listeleri istek gövdeleri', () => {
   test('gönderim listesi: yenile düğmesi aynı gövdeyle yeniden ister', async ({ page }) => {
     const bodies: any[] = []
     await installApiMocks(page, { MenuService: menuFixtureWithLogs, 'IntegrationService/getExportJobs': recorder(exportJobsDoluFixture, bodies) })
-    await gotoAuthed(page)
-    await openScreen(page, 'LogListView')
-    await expect(page.getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
+    await openExportList(page, bodies)
 
     await page.getByRole('button', { name: 'Listeyi yenile' }).click()
     await expect.poll(() => bodies.length).toBe(2)
@@ -78,9 +89,7 @@ test.describe('B3 karakterizasyon — log listeleri istek gövdeleri', () => {
       MenuService: menuFixtureWithLogs,
       'IntegrationService/advancedSearchExportJobs': recorder(exportJobsDoluFixture, advBodies),
     })
-    await gotoAuthed(page)
-    await openScreen(page, 'LogListView')
-    await expect(page.getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
+    await openExportList(page)
 
     const view = page.locator('.exportLogList')
     await view.getByRole('button', { name: /Filtreler/ }).click()
@@ -91,7 +100,7 @@ test.describe('B3 karakterizasyon — log listeleri istek gövdeleri', () => {
     expect(advBodies[0]).toMatchObject({ page: 1, limit: 25, sortBy: 'createdAt', sortOrder: 'desc', title: 'Elbise', integrationCode: [], statuses: [] })
   })
 
-  test('aktarım listesi: ilk yüklemede getImportJobs sayfa 1 / limit 13 ile istenir', async ({ page }) => {
+  test('aktarım listesi: ilk yüklemede getImportJobs sayfa 1 / limit 25 ile istenir', async ({ page }) => {
     const bodies: any[] = []
     await installApiMocks(page, { MenuService: menuFixtureWithLogs, 'IntegrationService/getImportJobs': recorder(importJobsDoluFixture, bodies) })
     await gotoAuthed(page)

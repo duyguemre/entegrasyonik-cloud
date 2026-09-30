@@ -15,6 +15,8 @@ import { gotoAuthed, menuFixtureWithLogs, openScreen } from '../fixtures/nav'
 
 // `LogListView` bağlantısı YALNIZCA bu spec'in menüsünde var (bkz. nav.ts `menuFixtureWithLogs`
 // notu) — paylaşılan `menuFixture`'a eklemek dashboard/shell ekran görüntülerini kaydırıyordu.
+// [DS-v2 A3, KASITLI] Pano "Son işlemler" kartı (RecentJobsCard) aynı `getExportJobs` fixture'ını okuyor;
+// gizli pano sekmesi DOM'da kaldığı için gönderim satırı metinleri `.exportLogList` köküne kapsanır.
 function withLogsMenu(overrides: Record<string, any> = {}) {
   return { MenuService: menuFixtureWithLogs, ...overrides }
 }
@@ -32,8 +34,8 @@ test.describe('P2 — Ürün Gönderim İşlemleri (ExportLogList)', () => {
 
     await expect(page.locator('.exportLogList')).toBeVisible()
     await expect(page.getByLabel('Ürün Adı, Barkod, Stok Kodu veya Platform Ara').first()).toBeVisible()
-    await expect(page.getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
-    await expect(page.getByText('E2E Test Ürünü 2 - Fiyat Güncelleme')).toBeVisible()
+    await expect(page.locator('.exportLogList').getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
+    await expect(page.locator('.exportLogList').getByText('E2E Test Ürünü 2 - Fiyat Güncelleme')).toBeVisible()
   })
 
   test('boş durum: sonuç yoksa "Gönderim kaydı bulunamadı" kartı gösterilir (BİLİNÇLİ TAMAMLAMA — bkz. BACKLOG.md)', async ({ page }, testInfo) => {
@@ -87,7 +89,7 @@ test.describe('P2 — Ürün Gönderim İşlemleri (ExportLogList)', () => {
     await openScreen(page, 'LogListView')
     // bkz. claims.spec.ts aynı yorumu — ekran görüntüsü öncesi içeriğin GERÇEKTEN göründüğü
     // bekleniyor (test determinizmi, kod DEĞİŞMEDİ).
-    await expect(page.getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
+    await expect(page.locator('.exportLogList').getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
     await page.waitForTimeout(300)
     await expect(page).toHaveScreenshot('logs-export-list.png', { fullPage: false })
   })
