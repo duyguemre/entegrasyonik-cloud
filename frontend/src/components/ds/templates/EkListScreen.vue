@@ -103,6 +103,7 @@
         :row-key="rowKey"
         :label-key="labelKey ?? rowKey"
         :row-class="rowClass"
+        :channel-key="channelKey"
         :expanded-keys="expandedKeys"
         :indeterminate-keys="indeterminateKeys"
         :selectable="selectable"
@@ -179,6 +180,8 @@ const props = withDefaults(
     rowKey?: string
     labelKey?: string
     rowClass?: (row: Record<string, any>) => string | Record<string, boolean> | undefined
+    /** Satırın kanal kodu alanı → satır solunda kanal şeridi (EkDataGrid `channelKey`). */
+    channelKey?: string
     expandedKeys?: Array<string | number>
     indeterminateKeys?: Array<string | number>
     loading?: boolean

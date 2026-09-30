@@ -20,7 +20,7 @@
         label="Red gerekçesi" return-object prepend-inner-icon="mdi-comment-question-outline" />
     </EkFormDialog>
 
-    <EkListScreen
+    <EkListScreen channel-key="integrationCode"
       section="Satış"
       title="İade talepleri"
       description="Pazaryerlerinden gelen iade/talep süreçlerini buradan yönetin."

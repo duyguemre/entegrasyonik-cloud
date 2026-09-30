@@ -22,6 +22,11 @@
   /* DS-v2 Aşama 2: gerçek sekme şeridi (EkWorkspaceTabs) 40px — etkin sekme 36px + üst boşluk. */
   --ek-app-tabstrip-height: 40px;
 
+  /* Aşama 5 — çip ölçüleri (TÜM çipler iki boyuttan biri): sm = tablo/satır içi durum, kanal; md = etkileşimli
+   * (aktif filtre, filtre seçimi). Yarıçap her zaman `radius-chip` (hap), kenarlık 1px ton-border. */
+  --ek-app-chip-h-sm: 22px;
+  --ek-app-chip-h-md: 28px;
+
   /* ---- Yoğunluk (Karar 1.1 — varsayılan "rahat") ----
    * `<html data-density="compact">` ile kompakt moda geçilir (localStorage
    * `ek.ui.v1.density`, A3'ün işi — bu dosya yalnızca DEĞİŞKENİ tanımlar). */

@@ -50,29 +50,44 @@ const emit = defineEmits<{ remove: [key: string]; clear: [] }>()
   display: inline-flex;
   align-items: center;
   gap: var(--ek-space-1);
-  height: 28px;
-  padding: 0 var(--ek-space-1) 0 var(--ek-space-3);
+  max-width: 100%;
+  height: var(--ek-app-chip-h-md);
+  padding: 0 3px 0 var(--ek-space-3);
   border: 1px solid var(--ek-color-action-border);
   border-radius: var(--ek-radius-chip);
   background: var(--ek-color-action-subtle);
   color: var(--ek-color-action-emphasis);
   font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+  transition: var(--ek-transition-colors);
+}
+
+/* Aşama 5: çip bütünü hover'da belirginleşir (kaldırılabilir olduğu hissi); kaldırma düğmesi dairesel, çipe ortalı. */
+.ek-active-filters__chip:hover,
+.ek-active-filters__chip:focus-within {
+  border-color: var(--ek-color-action);
 }
 
 .ek-active-filters__chip-label {
-  font-weight: var(--ek-font-weight-regular);
+  color: var(--ek-color-content-muted);
+  font-weight: var(--ek-font-weight-medium);
 }
 
 .ek-active-filters__chip-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-weight: var(--ek-font-weight-semibold);
 }
 
 .ek-active-filters__remove {
   display: inline-flex;
+  flex: none;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
+  margin-left: 2px;
   border: 0;
   border-radius: var(--ek-radius-chip);
   background: transparent;
@@ -83,7 +98,8 @@ const emit = defineEmits<{ remove: [key: string]; clear: [] }>()
 }
 
 .ek-active-filters__remove:hover {
-  background: var(--ek-color-action-border);
+  background: var(--ek-color-action);
+  color: var(--ek-color-action-contrast);
 }
 
 .ek-active-filters__remove:focus-visible,
@@ -93,7 +109,7 @@ const emit = defineEmits<{ remove: [key: string]; clear: [] }>()
 }
 
 .ek-active-filters__clear {
-  height: 28px;
+  height: var(--ek-app-chip-h-md);
   padding: 0 var(--ek-space-2);
   border: 0;
   border-radius: var(--ek-radius-md);

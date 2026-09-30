@@ -7,8 +7,9 @@
   biridir; `label` çağıran tarafından `$t(entry.labelKey)` ile çözülür (bu
   bileşen i18n'i KENDİSİ yapmaz — saf sunum bileşeni, test edilebilirlik).
 
-  Görünüm: `subtle` zemin + ton metni, 20px yükseklik, xs 12/500, radius-full,
-  isteğe bağlı 6px nokta. **Dolgu (solid) rozet yalnızca "yeni/okunmamış"
+  Görünüm (Aşama 5 — premium çip dili, TÜM çiplerle ortak): `subtle` zemin + 1px `*-border` kenarlık +
+  `*-emphasis` metin (AA), `--ek-app-chip-h-sm` (22px) yükseklik, caption 12/16 yarı kalın, hap yarıçap,
+  isteğe bağlı 6px nokta veya 14px ikon (optik ortalı). **Dolgu (solid) rozet yalnızca "yeni/okunmamış"
   sayaçlarında** kullanılır (`variant="solid"`). Renk tek başına anlam
   taşımaz; `label` HER ZAMAN metin olarak görünür (WCAG 1.4.1).
 
@@ -27,8 +28,9 @@
     class="ek-status-chip"
     :class="[`ek-status-chip--${tone}`, `ek-status-chip--${variant}`]"
   >
-    <span v-if="dot" class="ek-status-chip__dot" aria-hidden="true"></span>
-    {{ label }}
+    <v-icon v-if="icon" class="ek-status-chip__icon" :icon="icon" aria-hidden="true" />
+    <span v-else-if="dot" class="ek-status-chip__dot" aria-hidden="true"></span>
+    <span class="ek-status-chip__label">{{ label }}</span>
   </span>
 </template>
 
@@ -42,6 +44,8 @@ withDefaults(
     /** Dolgu (solid) yalnızca "yeni/okunmamış" sayaçları içindir (Karar 3.3). */
     variant?: 'subtle' | 'solid'
     dot?: boolean
+    /** Başta 14px ikon (MDI); verilirse nokta yerine çizilir. */
+    icon?: string
   }>(),
   {
     variant: 'subtle',
@@ -54,14 +58,22 @@ withDefaults(
 .ek-status-chip {
   display: inline-flex;
   align-items: center;
-  gap: var(--ek-space-1);
-  height: 20px;
+  gap: 5px;
+  max-width: 100%;
+  height: var(--ek-app-chip-h-sm);
   padding: 0 var(--ek-space-2);
-  border-radius: var(--ek-radius-full);
-  font-size: var(--ek-font-size-xs);
-  font-weight: var(--ek-font-weight-medium);
+  border: 1px solid transparent;
+  border-radius: var(--ek-radius-chip);
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-semibold);
   line-height: 1;
   white-space: nowrap;
+  vertical-align: middle;
+}
+
+.ek-status-chip__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .ek-status-chip__dot {
@@ -72,45 +84,63 @@ withDefaults(
   flex: none;
 }
 
-/* ---- subtle (varsayılan): zemin = *-subtle token, metin = çekirdek ton ---- */
+.ek-status-chip__icon {
+  flex: none;
+  margin-left: -2px;
+  font-size: var(--ek-icon-xs);
+}
+
+/* ---- subtle (varsayılan): zemin *-subtle, kenarlık *-border, metin *-emphasis (AA) ---- */
 .ek-status-chip--subtle.ek-status-chip--success {
   background-color: var(--ek-color-success-subtle);
-  color: var(--ek-color-success);
+  border-color: var(--ek-color-success-border);
+  color: var(--ek-color-success-emphasis);
 }
 .ek-status-chip--subtle.ek-status-chip--warning {
   background-color: var(--ek-color-warning-subtle);
-  color: var(--ek-color-warning);
+  border-color: var(--ek-color-warning-border);
+  color: var(--ek-color-warning-emphasis);
 }
 .ek-status-chip--subtle.ek-status-chip--danger {
   background-color: var(--ek-color-error-subtle);
-  color: var(--ek-color-error);
+  border-color: var(--ek-color-error-border);
+  color: var(--ek-color-error-emphasis);
 }
 .ek-status-chip--subtle.ek-status-chip--info {
   background-color: var(--ek-color-info-subtle);
-  color: var(--ek-color-info);
+  border-color: var(--ek-color-info-border);
+  color: var(--ek-color-info-emphasis);
 }
 .ek-status-chip--subtle.ek-status-chip--neutral {
   background-color: var(--ek-color-neutral-subtle);
-  color: var(--ek-color-neutral);
+  border-color: var(--ek-color-neutral-border);
+  color: var(--ek-color-neutral-emphasis);
 }
 
 /* ---- solid: yalnızca "yeni/okunmamış" sayaçları (Karar 3.3) ---- */
-.ek-status-chip--solid {
-  color: var(--ek-color-background);
-}
 .ek-status-chip--solid.ek-status-chip--success {
   background-color: var(--ek-color-success);
+  border-color: var(--ek-color-success);
+  color: var(--ek-color-success-contrast);
 }
 .ek-status-chip--solid.ek-status-chip--warning {
   background-color: var(--ek-color-warning);
+  border-color: var(--ek-color-warning);
+  color: var(--ek-color-warning-contrast);
 }
 .ek-status-chip--solid.ek-status-chip--danger {
   background-color: var(--ek-color-error);
+  border-color: var(--ek-color-error);
+  color: var(--ek-color-error-contrast);
 }
 .ek-status-chip--solid.ek-status-chip--info {
   background-color: var(--ek-color-info);
+  border-color: var(--ek-color-info);
+  color: var(--ek-color-info-contrast);
 }
 .ek-status-chip--solid.ek-status-chip--neutral {
   background-color: var(--ek-color-neutral);
+  border-color: var(--ek-color-neutral);
+  color: var(--ek-color-neutral-contrast);
 }
 </style>

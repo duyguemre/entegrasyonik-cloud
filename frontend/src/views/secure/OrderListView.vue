@@ -53,7 +53,7 @@
       </div>
     </EkFormDialog>
 
-    <EkListScreen
+    <EkListScreen channel-key="integrationCode"
       section="Satış"
       title="Siparişler"
       description="Tüm pazaryeri siparişlerinizi buradan yönetin."

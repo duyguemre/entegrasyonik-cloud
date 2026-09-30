@@ -15,7 +15,7 @@
     <InvoiceDetailComponent v-model="detailDialog.show" :invoice="selectedInvoiceForDetail" />
     <CreateInvoiceComponent v-model="createDialog" @saved="getInvoices(true)" />
 
-    <EkListScreen
+    <EkListScreen channel-key="integrationCode"
       section="Satış"
       title="Faturalar"
       description="Sipariş ve manuel faturalarınızı buradan yönetin."

@@ -1,60 +1,44 @@
 <!--
   frontend/src/components/ds/EkChannelDot.vue
 
-  DS-v2 — liste hücresinde satış kanalı / entegrasyon göstergesi: 8px marka
-  rengi nokta + kanal adı. Nokta rengi YALNIZCA `integrationAccent`
-  (palette.ts) — 6 canlı entegrasyon; tanımsız kod nötr noktaya düşer.
-  Renk tek başına anlam taşımaz: ad her zaman yazılır (`showName=false`
-  ise nokta `title` + ekran okuyucu adıyla gelir).
+  DS-v2 — satış kanalı / entegrasyon göstergesi. Aşama 5 (kullanıcı geri bildirimi madde 3): kanal rengi
+  AKTİF kullanılır — varsayılan görünüm KANAL ÇİPİ: kanalın açık tonu zemin + ince kanal kenarlığı + kanal
+  noktası + kanal tonunda ad (AA). Renkler `.ek-ch-<kod>` kapsamından (`design/channels.ts`, tek kaynak
+  `palette.ts` `channelPalette`); tanımsız kod nötr çipe düşer. Renk tek başına anlam taşımaz: ad her zaman
+  yazılır (`showName=false` ise yalnız nokta + `title` + ekran okuyucu adı).
 
   Kullanım:
-    <EkChannelDot code="trendyol" />               → ● Trendyol
-    <EkChannelDot code="xyz" name="Özel kanal" />   → ● Özel kanal (nötr)
+    <EkChannelDot code="trendyol" />                 → (● Trendyol) çip
+    <EkChannelDot code="trendyol" variant="plain" /> → ● Trendyol (zeminsiz, yoğun metin içi)
+    <EkChannelDot code="xyz" name="Özel kanal" />     → nötr çip
 -->
 <template>
-  <span class="ek-channel" :title="showName ? undefined : label">
-    <span class="ek-channel__dot" :class="{ 'is-neutral': !accent }" aria-hidden="true"></span>
+  <span class="ek-channel" :class="[channelClass(code), `ek-channel--${showName ? variant : 'dot'}`]" :title="showName ? undefined : label">
+    <span class="ek-channel__dot" aria-hidden="true"></span>
     <span :class="showName ? 'ek-channel__name' : 'ek-sr-only'">{{ label }}</span>
   </span>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { integrationAccent } from '@/design/tokens/palette'
+import { channelClass, channelName } from '@/design/channels'
 
-const props = withDefaults(defineProps<{ code?: string | null; name?: string | null; showName?: boolean }>(), {
-  code: '',
-  name: '',
-  showName: true,
-})
+const props = withDefaults(
+  defineProps<{ code?: string | null; name?: string | null; showName?: boolean; variant?: 'chip' | 'plain' }>(),
+  { code: '', name: '', showName: true, variant: 'chip' },
+)
 
-const KNOWN_NAMES: Record<string, string> = {
-  trendyol: 'Trendyol',
-  hepsiburada: 'Hepsiburada',
-  n11: 'N11',
-  pazarama: 'Pazarama',
-  ideasoft: 'Ideasoft',
-  bizimhesap: 'Bizimhesap',
-}
-
-const key = computed(() => String(props.code ?? '').toLowerCase())
-const accent = computed(() => (integrationAccent as Record<string, string>)[key.value])
-const label = computed(() => {
-  if (props.name) return props.name
-  if (KNOWN_NAMES[key.value]) return KNOWN_NAMES[key.value]
-  const c = String(props.code ?? '')
-  return c ? c.charAt(0).toUpperCase() + c.slice(1) : 'Bilinmeyen'
-})
-// `v-bind()` ile CSS değişkenine bağlanır — şablonda dinamik stil YAZILMAZ (literal-stil mandalı).
-const dotColor = computed(() => accent.value ?? 'var(--ek-color-neutral)')
+const label = computed(() => channelName(props.code, props.name))
 </script>
 
 <style scoped>
 .ek-channel {
   display: inline-flex;
   align-items: center;
-  gap: var(--ek-space-2);
+  gap: 6px;
   min-width: 0;
+  max-width: 100%;
+  vertical-align: middle;
 }
 
 .ek-channel__dot {
@@ -62,12 +46,35 @@ const dotColor = computed(() => accent.value ?? 'var(--ek-color-neutral)')
   width: 8px;
   height: 8px;
   border-radius: var(--ek-radius-chip);
-  background: v-bind(dotColor);
+  background: var(--ek-ch-solid);
 }
 
 .ek-channel__name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.ek-channel--chip {
+  height: var(--ek-app-chip-h-sm);
+  padding: 0 var(--ek-space-2) 0 7px;
+  border: 1px solid var(--ek-ch-border);
+  border-radius: var(--ek-radius-chip);
+  background: var(--ek-ch-subtle);
+  color: var(--ek-ch-text);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.ek-channel--plain .ek-channel__name {
+  color: inherit;
+}
+
+/* Yalnız nokta: beyaz halka + kanal kenarı — küçük ama zeminden ayrışır. */
+.ek-channel--dot .ek-channel__dot {
+  width: 10px;
+  height: 10px;
+  box-shadow: 0 0 0 2px var(--ek-color-surface), 0 0 0 3px var(--ek-ch-border);
 }
 </style>

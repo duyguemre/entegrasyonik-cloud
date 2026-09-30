@@ -40,6 +40,7 @@ import {
   motionDistance,
   zIndex,
 } from './scale'
+import { channelPalette } from './palette'
 
 export type RenderTarget = 'app' | 'static'
 
@@ -167,6 +168,40 @@ function renderEffectLines(): string[] {
   ]
 }
 
+/**
+ * Aşama 5 — kanal renkleri (`palette.ts` `channelPalette` TEK kaynak):
+ *   `--ek-channel-<kod>-{solid,subtle,border,text}` + tanımsız kanal için `neutral` (nötr durum rollerine bağlı).
+ * Tema bağımsız (kanal kimliği dark'ta da aynı) → yalnız `:root`.
+ */
+function renderChannelLines(): string[] {
+  const lines: string[] = []
+  for (const [code, tones] of Object.entries(channelPalette)) {
+    for (const [tone, value] of Object.entries(tones)) lines.push(cssVarLine(`channel-${code}-${tone}`, value))
+  }
+  lines.push(
+    cssVarLine('channel-neutral-solid', 'var(--ek-color-border-strong)'),
+    cssVarLine('channel-neutral-subtle', 'var(--ek-color-neutral-subtle)'),
+    cssVarLine('channel-neutral-border', 'var(--ek-color-neutral-border)'),
+    cssVarLine('channel-neutral-text', 'var(--ek-color-content-default)'),
+  )
+  return lines
+}
+
+/**
+ * Kanal kapsam sınıfları: `.ek-ch-<kod>` öğeye `--ek-ch-{solid,subtle,border,text}` verir. Bileşenler kanal
+ * rengini satır içi stil/`v-bind` OLMADAN, yalnız sınıf + `var(--ek-ch-*)` ile kullanır (`design/channels.ts`).
+ */
+function renderChannelScopes(): string[] {
+  const codes = [...Object.keys(channelPalette), 'neutral']
+  return codes.map((code) =>
+    [
+      `.ek-ch-${code} {`,
+      ...['solid', 'subtle', 'border', 'text'].map((tone) => `  --ek-ch-${tone}: var(--ek-channel-${code}-${tone});`),
+      '}',
+    ].join('\n'),
+  )
+}
+
 function renderShadowLines(light: boolean): string[] {
   const source = light ? shadow.light : shadow.dark
   return Object.entries(source).map(([key, value]) => cssVarLine(`shadow-${key}`, value))
@@ -189,7 +224,10 @@ export function renderTokenCss(target: RenderTarget): string {
       scaleLines.join('\n'),
       shadowLightLines.join('\n'),
       renderEffectLines().join('\n'),
+      renderChannelLines().join('\n'),
       '}',
+      '',
+      renderChannelScopes().join('\n\n'),
       '',
     ].join('\n')
   }

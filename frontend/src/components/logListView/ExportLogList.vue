@@ -14,7 +14,7 @@
       @confirm="confirmDelete()" @cancel="cancelDelete()" />
     <LoadingComponent :attach="dialogAttach" ref="loadingComponentRef"></LoadingComponent>
 
-    <EkListScreen
+    <EkListScreen channel-key="integrationCode"
       label="Gönderim işlemleri tablosu"
       noun="kayıt"
       row-key="_id"

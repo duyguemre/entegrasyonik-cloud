@@ -13,7 +13,7 @@
 
     <MessageDetailComponent v-model="detailDialog.show" :message="selectedMessage" @reply="handleReply" />
 
-    <EkListScreen
+    <EkListScreen channel-key="integrationCode"
       section="Satış"
       title="Mesajlar"
       description="Pazaryerlerinden gelen müşteri mesajlarını buradan yönetin."

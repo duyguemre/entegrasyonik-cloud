@@ -10,7 +10,7 @@
 -->
 <template>
   <div class="ek-fin-payouts">
-    <EkListScreen
+    <EkListScreen channel-key="integrationCode"
       class="ek-fin-payouts__screen"
       :label="t('finance.payouts.label')"
       :noun="t('finance.payouts.noun')"

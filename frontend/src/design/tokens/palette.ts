@@ -76,19 +76,35 @@ export const statusDark = {
 } as const
 
 /**
- * Pazaryeri/entegrasyon marka vurgu rengi (ADR-0015 Karar 3.11) — yalnızca
- * 3px şerit/nokta olarak kullanılır, METİN/İKON rengi DEĞİLDİR. Yalnızca
- * bugün gerçekten entegre olan 6 sağlayıcı (INTEGRATIONS_REGISTRY.md,
- * CLAUDE.md) için tanımlı; resmi logo KULLANILMAZ (Açık Soru 2 varsayılanı).
+ * Kanal (pazaryeri/entegrasyon) renk ailesi — TEK KAYNAK (Aşama 5, kullanıcı geri bildirimi madde 3).
+ * Her kanalın 4 tonu: `solid` (nokta, sol şerit, avatar halkası — dekoratif, adı her zaman yanında),
+ * `subtle` (çip/avatar zemini), `border` (çip kenarlığı), `text` (subtle ve beyaz zeminde metin, ≥ 5:1 AA).
+ * Kanallar birbirinden AYRIŞSIN diye tonlar markaya yakın ama ayrı renk açılarında seçildi: marka
+ * renkleri çakışan çiftler (Trendyol/Hepsiburada turuncu, N11/Pazarama mor) ayrıldı — Hepsiburada gül
+ * kırmızısına (≠ hata kırmızısı: daha pembe, açık zemin), Pazarama macentaya kaydı. Durum renkleriyle
+ * (başarı yeşili, uyarı kehribarı, bilgi mavisi, aksiyon kobaltı) aynı açıda kanal YOKTUR.
+ * Yalnızca bugün gerçekten entegre olan 6 sağlayıcı; resmi logo KULLANILMAZ (Açık Soru 2 varsayılanı).
+ * Kontrast çiftleri `tests/theme/channel-tokens.test.ts` ile korunur.
  */
-export const integrationAccent = {
-  trendyol: '#F27A1A',
-  hepsiburada: '#FF6000',
-  n11: '#5B2D8E',
-  pazarama: '#6A1B9A',
-  ideasoft: '#0E4C92',
-  bizimhesap: '#1B998B',
+export const channelPalette = {
+  trendyol: { solid: '#F27A1A', subtle: '#FEF2E8', border: '#FACCA8', text: '#9B4E11' },
+  hepsiburada: { solid: '#E0284F', subtle: '#FCEAED', border: '#F3ADBC', text: '#B01F3E' },
+  n11: { solid: '#7C3AED', subtle: '#F2EBFD', border: '#CDB4F8', text: '#6A2FD0' },
+  pazarama: { solid: '#C0268F', subtle: '#F9E9F4', border: '#E7ADD4', text: '#A2207A' },
+  ideasoft: { solid: '#0E4C92', subtle: '#E7EDF4', border: '#A3BBD6', text: '#0E4C92' },
+  bizimhesap: { solid: '#0F9488', subtle: '#E7F4F3', border: '#A4D6D2', text: '#0B7067' },
 } as const
+
+export type ChannelCode = keyof typeof channelPalette
+export type ChannelTone = keyof (typeof channelPalette)[ChannelCode]
+
+/**
+ * Pazaryeri/entegrasyon marka vurgu rengi (ADR-0015 Karar 3.11) — `channelPalette.solid`'in
+ * geri uyumlu görünümü (mağaza kayıtları `color` alanı). METİN rengi DEĞİLDİR.
+ */
+export const integrationAccent = Object.fromEntries(
+  Object.entries(channelPalette).map(([code, tones]) => [code, tones.solid]),
+) as { readonly [K in ChannelCode]: (typeof channelPalette)[K]['solid'] }
 
 /**
  * `plugins/vuetify.ts`'teki tarihsel `baseColor`/`shadeColor(color, percent)`

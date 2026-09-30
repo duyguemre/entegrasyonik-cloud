@@ -6,10 +6,9 @@
   `PlatformImageComponent` kullanımlarının buna taşınması A3/A5/B'nin işi —
   "bu ekranların İÇERİĞİNE dokunma" kısıtı).
 
-  Varsayılan: MONOGRAM rozeti (24/32px yuvarlak kare, `surface-sunken`
-  zemin, `content-strong` baş harf) + platform adı (sm 500). Marka rengi
-  YALNIZCA 6 canlı entegrasyon için 3px sol şerit/nokta (`integrationAccent`,
-  `palette.ts`). Veri eksikliğinde (bugünkü soluk gri renge düşen davranış)
+  Varsayılan: MONOGRAM rozeti (24/32px yuvarlak kare) + platform adı (sm 500). Aşama 5: kanal tonlu
+  avatar (açık kanal zemini, kanal halkası + alt şerit, kanal tonunda harf) — renkler `.ek-ch-<kod>`
+  kapsamından (`design/channels.ts`; tek kaynak `palette.ts` `channelPalette`). Veri eksikliğinde (bugünkü soluk gri renge düşen davranış)
   NÖTR monogram gösterilir — asla soluk/boş kutu YOK. Resmî logo görseli
   KULLANILMAZ (Açık Soru 2 varsayılanı).
 
@@ -19,7 +18,7 @@
     <EkPlatformMark name="Bilinmeyen Kanal" size="lg" />
 -->
 <template>
-  <span class="ek-platform-mark" :class="{ 'ek-platform-mark--dot': variant === 'dot' }">
+  <span class="ek-platform-mark" :class="[channelClass(code), { 'ek-platform-mark--dot': variant === 'dot', 'is-known': !!channelCode(code) }]">
     <span v-if="variant === 'dot'" class="ek-platform-mark__dot" aria-hidden="true"></span>
     <span
       v-else
@@ -34,16 +33,16 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { integrationAccent } from '@/design/tokens/palette'
+import { channelClass, channelCode } from '@/design/channels'
 
 const props = withDefaults(
   defineProps<{
     name: string
-    /** `integrationAccent` anahtarı (trendyol/hepsiburada/n11/pazarama/ideasoft/bizimhesap); tanımsızsa nötr monogram. */
+    /** Kanal kodu (trendyol/hepsiburada/n11/pazarama/ideasoft/bizimhesap); tanımsızsa nötr monogram. */
     code?: string
     size?: 'sm' | 'lg'
     showName?: boolean
-    /** `badge` (varsayılan): monogram + sol şerit. `dot`: tablo/arama satırı için 8px marka renkli nokta + ad. */
+    /** `badge` (varsayılan): kanal tonlu avatar. `dot`: tablo/arama satırı için 8px kanal noktası + ad. */
     variant?: 'badge' | 'dot'
   }>(),
   {
@@ -54,15 +53,6 @@ const props = withDefaults(
 )
 
 const initial = computed(() => props.name?.trim().charAt(0).toUpperCase() || '?')
-// `v-bind()` (aşağıdaki <style>) ile CSS değişkenine bağlanır — şablonda
-// dinamik bir stil bağlaması YAZILMAZ (literal-stil mandalı bu deseni de sayıyor).
-const accentHex = computed(() => {
-  const key = (props.code ?? '').toLowerCase()
-  return key ? (integrationAccent as Record<string, string>)[key] : undefined
-})
-const accentBorderColor = computed(() => accentHex.value ?? 'transparent')
-// Nokta varyantı: bilinmeyen kanalda nötr (kenarlık tonu) — renk tek başına anlam taşımaz, ad yanında durur.
-const accentDotColor = computed(() => accentHex.value ?? 'var(--ek-color-border-strong)')
 </script>
 
 <style scoped>
@@ -79,13 +69,17 @@ const accentDotColor = computed(() => accentHex.value ?? 'var(--ek-color-border-
   justify-content: center;
   flex: none;
   border-radius: var(--ek-radius-tile);
-  /* Aşama 3: ikon kapsülü motifi (EkIconTile ile aynı dil) — marka tonlu açık zemin + ince marka halkası.
-     Eskiden yalnız sol kenarda 3px çizgi vardı ve harfle birlikte "( T" gibi kırık görünüyordu.
-     Harf `content-strong` (marka rengi metinde AA vermez). */
-  background: color-mix(in srgb, v-bind(accentBorderColor) 14%, var(--ek-color-surface));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, v-bind(accentBorderColor) 45%, var(--ek-color-border-default));
-  color: var(--ek-color-content-strong);
+  /* Aşama 5: kanal rengi AKTİF — avatar zemini kanalın açık tonu, ince kanal halkası, baş harf kanal tonunda (AA).
+     Tanımsız kanal `.ek-ch-neutral` (nötr zemin, `content-default` harf). */
+  background: var(--ek-ch-subtle);
+  box-shadow: inset 0 0 0 1px var(--ek-ch-border);
+  color: var(--ek-ch-text);
   font-weight: var(--ek-font-weight-bold);
+}
+
+/* Bilinen kanalda alt kenarda 3px kanal şeridi — avatar küçükken bile rengi taşır. */
+.ek-platform-mark.is-known .ek-platform-mark__badge {
+  box-shadow: inset 0 0 0 1px var(--ek-ch-border), inset 0 -3px 0 var(--ek-ch-solid);
 }
 
 .ek-platform-mark__badge--sm {
@@ -105,7 +99,7 @@ const accentDotColor = computed(() => accentHex.value ?? 'var(--ek-color-border-
   width: 8px;
   height: 8px;
   border-radius: var(--ek-radius-chip);
-  background: v-bind(accentDotColor);
+  background: var(--ek-ch-solid);
 }
 
 .ek-platform-mark--dot {

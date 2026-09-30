@@ -9,7 +9,7 @@
   "desteklenmiyor" durumudur (0 DEĞİL) — bkz. financeSupport.ts.
 -->
 <template>
-  <EkListScreen
+  <EkListScreen channel-key="integrationCode"
     class="ek-fin-cargo"
     :label="t('finance.cargo.label')"
     :noun="t('finance.cargo.noun')"

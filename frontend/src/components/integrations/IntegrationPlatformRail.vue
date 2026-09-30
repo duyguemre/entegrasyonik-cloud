@@ -29,7 +29,7 @@
       :key="item.code"
       type="button"
       class="ek-integration-rail__item nav-item-wrapper"
-      :class="{ 'is-selected': modelValue === item.code }"
+      :class="[channelClass(isLive(item.code) ? item.code : undefined), { 'is-selected': modelValue === item.code }]"
       role="tab"
       :aria-selected="modelValue === item.code"
       :tabindex="modelValue === item.code ? 0 : -1"
@@ -50,6 +50,7 @@
 <script setup lang="ts">
 import EkPlatformMark from '@/components/ds/EkPlatformMark.vue'
 import EkStatusChip from '@/components/ds/EkStatusChip.vue'
+import { channelClass } from '@/design/channels'
 
 export interface IntegrationRailItem {
   code: string
@@ -133,31 +134,42 @@ function onKeydown(event: KeyboardEvent) {
   gap: var(--ek-space-3);
 }
 
+/* Aşama 5: kanal kartı kendi rengini taşır — solda 3px kanal şeridi; seçili kart kanalın açık tonunda,
+   kanal kenarlığı + kanal halkası (seçim yalnız renkle değil, kalın çerçeve + aria-selected ile). */
 .ek-integration-rail__item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--ek-space-2);
-  height: 40px;
-  padding: 0 var(--ek-space-3);
-  background: var(--ek-color-surface-muted);
+  height: 44px;
+  padding: 0 var(--ek-space-4) 0 var(--ek-space-3);
+  background: var(--ek-color-surface);
   border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-md);
+  border-radius: var(--ek-radius-control);
+  box-shadow: inset 3px 0 0 var(--ek-ch-solid), var(--ek-shadow-card);
   cursor: pointer;
-  transition: border-color var(--ek-duration-fast) var(--ek-easing-enter), background-color var(--ek-duration-fast) var(--ek-easing-enter);
+  transition: var(--ek-transition-colors);
 }
 
 .ek-integration-rail__item:hover {
-  border-color: var(--ek-color-border-strong);
+  border-color: var(--ek-ch-border);
+  background: color-mix(in srgb, var(--ek-ch-subtle) 55%, var(--ek-color-surface));
 }
 
 .ek-integration-rail__item:focus-visible {
-  outline: 2px solid var(--ek-color-primary);
+  outline: 2px solid var(--ek-color-border-focus);
   outline-offset: 2px;
 }
 
 .ek-integration-rail__item.is-selected {
-  background: var(--ek-color-surface);
-  border-color: var(--ek-color-primary);
+  background: var(--ek-ch-subtle);
+  border-color: var(--ek-ch-solid);
+  box-shadow: inset 3px 0 0 var(--ek-ch-solid), 0 0 0 1px var(--ek-ch-solid);
+}
+
+.ek-integration-rail__item.is-selected :deep(.ek-platform-mark__name) {
+  color: var(--ek-ch-text);
+  font-weight: var(--ek-font-weight-semibold);
 }
 
 .ek-integration-rail__badge {

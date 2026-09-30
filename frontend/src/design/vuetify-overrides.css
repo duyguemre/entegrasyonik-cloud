@@ -78,6 +78,31 @@
   border-radius: var(--ek-radius-full) !important;
 }
 
+/* Aşama 5 — ham `v-chip` de DS çip dilinde: iki boyut (`--ek-app-chip-h-sm/md`), caption yarı kalın, tonlu
+ * çiplerde kendi renginden türetilen ince kenarlık (yumuşak zemin + kenar), ikon metinle optik ortalı.
+ * `!important` gerekmez: Vuetify yüksekliği `--v-chip-height` değişkeniyle verir. */
+.v-chip.v-chip--size-small,
+.v-chip.v-chip--size-x-small {
+  --v-chip-height: var(--ek-app-chip-h-sm);
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.v-chip.v-chip--size-default {
+  --v-chip-height: var(--ek-app-chip-h-md);
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.v-chip.v-chip--variant-tonal {
+  border: 1px solid color-mix(in srgb, currentColor 26%, transparent);
+}
+
+.v-chip .v-chip__prepend .v-icon,
+.v-chip > .v-icon--start {
+  font-size: var(--ek-icon-xs);
+}
+
 /* ---- Düğme metni: cümle düzeni (Karar 1.2) ----
  * Vuetify `VBtn` varsayılanı `text-transform: uppercase`; ADR-0015 Karar 1.2
  * bunu kapatır ("Düğmelerde de Vuetify'ın uppercase davranışı kapatılır").

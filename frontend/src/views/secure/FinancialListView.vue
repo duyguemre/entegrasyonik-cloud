@@ -177,7 +177,7 @@
     <FinancialSummaryBar class="ek-fin-summary-slot" :summary="summary" :loading="summary.loading"
       :compact="!$vuetify.display.mdAndUp" :format-currency="formatCurrency" />
 
-    <EkListScreen
+    <EkListScreen channel-key="integrationCode"
       class="ek-fin-screen"
       label="Finansal işlemler tablosu"
       noun="işlem"

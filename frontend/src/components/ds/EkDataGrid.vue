@@ -88,7 +88,7 @@
         <tr
           class="ek-grid__row"
           role="row"
-          :class="[{ 'is-selected': isSelected(row), 'is-hover': forceHoverIndex === ri }, rowClass?.(row)]"
+          :class="[{ 'is-selected': isSelected(row), 'is-hover': forceHoverIndex === ri }, channelKey ? ['has-channel', channelClass(row[channelKey])] : undefined, rowClass?.(row)]"
           @click="emit('row-click', row)"
         >
           <td v-if="selectable" class="ek-grid__td ek-grid__td--select" role="cell" @click.stop>
@@ -136,6 +136,7 @@
 </template>
 
 <script setup lang="ts">
+import { channelClass } from '@/design/channels'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, watchEffect } from 'vue'
 import EkIconTile from './EkIconTile.vue'
 
@@ -178,6 +179,8 @@ const props = withDefaults(
     errorTitle?: string
     errorText?: string
     rowClass?: (row: Row) => string | Record<string, boolean> | undefined
+    /** Aşama 5: satırın kanal kodu alanı (ör. `integrationCode`) — satır/kart solunda 3px kanal şeridi. */
+    channelKey?: string
     /** Satırın altında tam genişlik `#expanded` satırı açık olan anahtarlar. */
     expandedKeys?: Array<string | number>
     /** Kısmi seçili (ör. varyantlarının bir kısmı seçili ürün) satır anahtarları — onay kutusu belirsiz. */
@@ -496,6 +499,11 @@ function toggleSort(key: string) {
   background: var(--ek-color-selection);
 }
 
+/* Aşama 5: kanal şeridi (`channelKey`) — seçili satırın aksiyon şeridi bunun üstüne yazar (sonra gelir). */
+.ek-grid__row.has-channel > .ek-grid__td:first-child {
+  box-shadow: inset 3px 0 0 var(--ek-ch-solid);
+}
+
 .ek-grid__row.is-selected > .ek-grid__td:first-child {
   box-shadow: inset 3px 0 0 var(--ek-color-action);
 }
@@ -767,6 +775,14 @@ function toggleSort(key: string) {
   .ek-grid__row:not(.ek-grid__row--skeleton):hover,
   .ek-grid__row.is-hover {
     background: var(--ek-color-surface-muted);
+  }
+
+  .ek-grid__row.has-channel {
+    box-shadow: inset 3px 0 0 var(--ek-ch-solid);
+  }
+
+  .ek-grid__row.has-channel > .ek-grid__td:first-child {
+    box-shadow: none;
   }
 
   .ek-grid__row.is-selected {
