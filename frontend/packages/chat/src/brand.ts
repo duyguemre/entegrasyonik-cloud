@@ -5,3 +5,6 @@
 export const CHAT_PRODUCT = { name: 'Otopilot', slug: 'otopilot' } as const
 
 export type ChatProduct = typeof CHAT_PRODUCT
+
+/** Ürün işareti (MDI) — panel başlığı, üst bar düğmesi, palet satırı ve sekme ikonu aynı simgeyi kullanır. */
+export const CHAT_ICON = 'mdi-star-four-points-outline'

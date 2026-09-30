@@ -244,7 +244,8 @@ defineExpose({ start })
 <style scoped>
 .ek-tour-offer {
   position: fixed;
-  right: var(--ek-space-6);
+  /* ADR-0034: Otopilot yan paneli açıkken teklif kartı panelin soluna kayar (`--ek-otopilot-offset`, OtopilotDock yazar). */
+  right: calc(var(--ek-otopilot-offset, 0px) + var(--ek-space-6));
   bottom: var(--ek-space-6);
   z-index: var(--ek-z-toast);
   display: grid;

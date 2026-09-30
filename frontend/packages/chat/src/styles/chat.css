@@ -452,7 +452,8 @@
 
 .ek-chat-grid {
   max-width: 100%;
-  overflow-x: auto;
+  max-height: 22rem;
+  overflow: auto;
   border: 1px solid var(--ek-color-border-subtle);
   border-radius: var(--ek-radius-md);
   background: var(--ek-color-surface);
@@ -510,6 +511,7 @@
 
 .ek-chat-grid__clamp {
   display: -webkit-box;
+  min-width: 10ch;
   max-width: 24ch;
   overflow: hidden;
   white-space: normal;
@@ -539,6 +541,10 @@
 
 .ek-chat-table__note.is-error {
   color: var(--ek-color-error-emphasis);
+}
+
+.ek-dialog-content .ek-chat-grid {
+  max-height: none;
 }
 
 .ek-chat-table-dialog__tools {
@@ -583,7 +589,7 @@
 
 .ek-chat-kpi__delta {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--ek-space-1);
   margin: 0;
   font-size: var(--ek-type-caption-size);
@@ -607,11 +613,12 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--ek-space-2);
+  gap: var(--ek-space-1) var(--ek-space-2);
   align-self: flex-start;
+  max-width: 100%;
   padding: var(--ek-space-1) var(--ek-space-3);
   border: 1px solid var(--ek-color-border-subtle);
-  border-radius: var(--ek-radius-full);
+  border-radius: var(--ek-radius-lg);
   background: var(--ek-color-surface-muted);
   color: var(--ek-color-content-default);
   font-size: var(--ek-type-caption-size);
@@ -1132,7 +1139,7 @@
 }
 
 .ek-chat-composer__input::placeholder {
-  color: var(--ek-color-content-subtle);
+  color: var(--ek-color-content-muted);
 }
 
 .ek-chat-composer__input:disabled {
@@ -1147,7 +1154,7 @@
 
 .ek-chat-composer__hint,
 .ek-chat-composer__count {
-  color: var(--ek-color-content-subtle);
+  color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
 }
 
@@ -1346,12 +1353,10 @@
   border-radius: var(--ek-radius-control);
   background: var(--ek-color-surface-muted);
   color: var(--ek-color-content-default);
-  font-family: var(--ek-font-mono);
 }
 
 .ek-chat-setup__saved-key > :last-child {
   margin-left: auto;
-  font-family: var(--ek-font-sans);
 }
 
 .ek-chat-setup__help {

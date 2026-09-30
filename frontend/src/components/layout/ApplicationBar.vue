@@ -26,6 +26,10 @@
       <template #search>
         <ShellSearch id="tour-homepage-smartsearch" ref="searchRef" @dismiss="$emit('search-dismiss')" @focusout="$emit('search-blur')" />
       </template>
+      <!-- ADR-0034: Otopilot girişi (DISABLED iken çizilmez). -->
+      <template #end-start>
+        <OtopilotLauncher :compact="!isDesktop" />
+      </template>
     </EkAppHeader>
 
     <v-menu v-model="helpOpen" activator="[data-header-action=help]" location="bottom end" :offset="8">
@@ -57,6 +61,7 @@ import useUser from '@/composables/user'
 import LoadingComponent from '../LoadingComponent.vue'
 import StoreLogoAvatar from './StoreLogoAvatar.vue'
 import ShellSearch from './ShellSearch.vue'
+import OtopilotLauncher from '@/chat/OtopilotLauncher.vue'
 import { EkAppHeader, EkMenuPanel, type EkMenuGroup, type EkMenuItem } from '@entegrasyonik/ui/components'
 import { useWorkspaceStore } from '@/stores/workspace'
 import { useShellBreakpoints } from '@/composables/useShellBreakpoints'

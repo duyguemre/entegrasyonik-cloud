@@ -3,6 +3,16 @@
  * Host `t` verirse aynı anahtar için host metni önceliklidir (CHAT_UI_CONTRACT.md §2).
  */
 export const tr = {
+  // Uygulama giriş noktaları (host metinleri; ad tek sabitten)
+  'entry.open': '{name}',
+  'entry.openHint': '{name} panelini aç',
+  'entry.closeHint': '{name} panelini kapat',
+  'entry.ask': "{name}'a sor: «{query}»",
+  'entry.askGroup': '{name}',
+  'entry.askContext': "Bu sayfa hakkında {name}'a sor",
+  'entry.pageTitle': '{name}',
+  'entry.settingsTitle': '{name} ayarları',
+  'entry.settingsDescription': "{name}'un kullanacağı yapay zekâ sağlayıcısını, modeli ve API anahtarını yönetin; veri aktarım onayını ve bilgi amaçlı kullanım sayılarını görün.",
   // Panel / kabuk
   'panel.title': '{name}',
   'panel.region': '{name} sohbeti',
@@ -98,6 +108,7 @@ export const tr = {
   'confirm.affected': 'Etkilenen kayıtlar ({count})',
   'confirm.affectedMore': 've {count} kayıt daha',
   'confirm.changes': 'Değişiklikler',
+  'confirm.field': 'Alan',
   'confirm.from': 'Önce',
   'confirm.to': 'Sonra',
   'confirm.typedLabel': 'Onaylamak için «{phrase}» yazın',

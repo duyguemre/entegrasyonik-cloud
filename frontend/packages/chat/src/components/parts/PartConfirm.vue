@@ -47,7 +47,7 @@
         <caption class="ek-chat-confirm__label">{{ t('confirm.changes') }}</caption>
         <thead class="ek-chat-sr-only">
           <tr>
-            <th scope="col">{{ t('confirm.changes') }}</th>
+            <th scope="col">{{ t('confirm.field') }}</th>
             <th scope="col">{{ t('confirm.from') }}</th>
             <th scope="col">{{ t('confirm.to') }}</th>
           </tr>

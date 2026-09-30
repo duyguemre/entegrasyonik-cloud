@@ -1,7 +1,7 @@
 /** Sohbet paketinin ikon kümesi (MDI). Ürün işareti tek yerde; varlık türü → ikon. */
 import type { EntityType } from '../protocol/v1'
 
-export const CHAT_ICON = 'mdi-star-four-points-outline'
+export { CHAT_ICON } from '../brand'
 
 export const ENTITY_ICON: Record<EntityType, string> = {
   product: 'mdi-tag-outline',

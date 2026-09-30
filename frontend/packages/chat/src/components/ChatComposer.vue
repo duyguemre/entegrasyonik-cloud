@@ -23,7 +23,8 @@
     />
     <div class="ek-chat-composer__bar">
       <span :id="`${inputId}-hint`" class="ek-chat-composer__hint">{{ tooLong ? t('composer.tooLong', { max }) : t('composer.hint') }}</span>
-      <span :id="`${inputId}-count`" class="ek-chat-composer__count" :class="{ 'is-over': tooLong, 'is-near': near }">{{ t('composer.counter', { count: text.length, max }) }}</span>
+      <span class="ek-chat-composer__count" :class="{ 'is-over': tooLong, 'is-near': near }" aria-hidden="true">{{ text.length }}/{{ max }}</span>
+      <span :id="`${inputId}-count`" class="ek-chat-sr-only">{{ t('composer.counter', { count: text.length, max }) }}</span>
       <EkButton
         v-if="busy"
         class="ek-chat-composer__action"

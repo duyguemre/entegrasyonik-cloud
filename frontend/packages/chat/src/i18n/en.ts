@@ -2,6 +2,15 @@
 import type { ChatMessageKey } from './tr'
 
 export const en: Record<ChatMessageKey, string> = {
+  'entry.open': '{name}',
+  'entry.openHint': 'Open {name} panel',
+  'entry.closeHint': 'Close {name} panel',
+  'entry.ask': 'Ask {name}: «{query}»',
+  'entry.askGroup': '{name}',
+  'entry.askContext': 'Ask {name} about this page',
+  'entry.pageTitle': '{name}',
+  'entry.settingsTitle': '{name} settings',
+  'entry.settingsDescription': 'Manage the AI provider, model and API key {name} uses; see the data transfer approval and usage counts (for information).',
   'panel.title': '{name}',
   'panel.region': '{name} chat',
   'panel.close': 'Close panel',
@@ -89,6 +98,7 @@ export const en: Record<ChatMessageKey, string> = {
   'confirm.affected': 'Affected records ({count})',
   'confirm.affectedMore': 'and {count} more',
   'confirm.changes': 'Changes',
+  'confirm.field': 'Field',
   'confirm.from': 'Before',
   'confirm.to': 'After',
   'confirm.typedLabel': 'Type «{phrase}» to confirm',

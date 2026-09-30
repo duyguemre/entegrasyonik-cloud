@@ -14,6 +14,7 @@ import {
 } from '@entegrasyonik/ui/shortcuts'
 import {
   SHORTCUT_CATALOG,
+  APP_SHORTCUTS,
   buildShortcutCatalog,
   detectPlatform,
   featuredShortcuts,
@@ -29,8 +30,8 @@ const read = (p: string) => readFileSync(resolve(__dirname, '..', p), 'utf8')
 const ids = (list: { item: { id: string } }[]) => list.map((r) => r.item.id)
 
 describe('kayıt defterinden türetme', () => {
-  it('katalog = kabuk kaydı + bileşen başvuru kaydı; eksik/fazla yok, kimlikler tekil', () => {
-    const expected = [...SHORTCUTS.map((s) => s.id), ...CONTEXT_SHORTCUTS.map((s) => s.id)]
+  it('katalog = kabuk kaydı + uygulama kısayolları (APP_SHORTCUTS) + bileşen başvuru kaydı; eksik/fazla yok, kimlikler tekil', () => {
+    const expected = [...SHORTCUTS.map((s) => s.id), ...APP_SHORTCUTS.map((s) => s.id), ...CONTEXT_SHORTCUTS.map((s) => s.id)]
     expect(new Set(expected).size).toBe(expected.length)
     expect(SHORTCUT_CATALOG.map((s) => s.id).sort()).toEqual([...expected].sort())
   })

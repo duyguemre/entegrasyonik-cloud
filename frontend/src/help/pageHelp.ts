@@ -11,6 +11,7 @@
  * `pageRefresh` (Alt+R) yalnızca ekranda `EkRefreshButton` (EkPageHeader/EkPageBar/EkListScreen `refreshable`)
  * olduğunda listelenir — EkListScreen'de `refreshable` varsayılan olarak açıktır.
  */
+import { CHAT_PRODUCT } from '@entegrasyonik/chat/brand'
 import type { PageHelp } from './types'
 
 export const PAGE_HELP: Record<string, PageHelp> = {
@@ -752,6 +753,33 @@ export const PAGE_HELP: Record<string, PageHelp> = {
       'Yanıt bulamazsanız Destek Talepleri ekranından destek ekibine talep açın.',
     ],
     shortcuts: ['search', 'shortcutHelp', 'tabClose'],
+    article: 'app-page-help',
+  },
+
+  // ADR-0034 / CHAT_UI_CONTRACT §7.1 — tam sayfa sohbet ve ayarları (ad tek sabitten, K39).
+  // Kanıt: views/secure/OtopilotView.vue, packages/chat/src/components/{ChatComposer,parts/PartConfirm,parts/PartTable}.vue
+  chat: {
+    purpose: `${CHAT_PRODUCT.name} ile siparişleri, stokları ve satışları sorarak işinizi yürütün; yapılacak her değişiklik önce onayınıza gelir.`,
+    tips: [
+      'Enter mesajı gönderir, Shift+Enter yeni satır açar; yanıt sürerken Durdur ile kesebilirsiniz.',
+      'Onay kartında ne olacağı, etkilenen kayıtlar ve risk yazar; Onayla ya da Reddet seçmeden hiçbir değişiklik yapılmaz.',
+      'Tablolarda Daha fazla göster ile satır ekleyin, Ekranda aç ile ilgili listeye geçin.',
+      'Sohbetler kaydedilmez; oturum kapanınca silinir. Yeni sohbet düğmesi konuşmayı sıfırlar.',
+    ],
+    shortcuts: ['search', 'tabClose'],
+    article: 'app-page-help',
+  },
+  // Kanıt: views/secure/settings/OtopilotSettingsView.vue (description = paket i18n `entry.settingsDescription`),
+  // packages/chat/src/components/ChatProviderSetup.vue
+  OtopilotSettingsView: {
+    purpose: `${CHAT_PRODUCT.name}'un kullanacağı yapay zekâ sağlayıcısını, modeli ve API anahtarını yönetin; veri aktarım onayını ve bilgi amaçlı kullanım sayılarını görün.`,
+    tips: [
+      'Bağlantıyı test et ile anahtarı kaydetmeden önce sınayın; kayıtta anahtar yeniden sınanır.',
+      'Kayıtlı anahtar hiçbir yerde geri gösterilmez; değiştirmek için Değiştir ile yenisini girin.',
+      'Sohbetin açılması için hesap sahibinin veri aktarım bilgilendirmesini onaylaması gerekir.',
+      'Kullanım sayıları yalnız bilgi amaçlıdır; ücret sağlayıcınızın hesabına yansır.',
+    ],
+    shortcuts: ['tabClose'],
     article: 'app-page-help',
   },
 }

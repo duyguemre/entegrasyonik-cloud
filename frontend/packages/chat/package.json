@@ -7,6 +7,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./brand": "./src/brand.ts",
+    "./controller": "./src/state/useChat.ts",
     "./protocol": "./src/protocol/index.ts",
     "./transports/sse": "./src/transport/sse.ts",
     "./transports/mock": "./src/transport/mock/index.ts",
