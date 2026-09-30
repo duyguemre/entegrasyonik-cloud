@@ -23,6 +23,8 @@ export function helpCenterLink(menuStore: { getViewComponent?: (key: string) => 
       singleton: false,
       status: true,
       inMenu: true,
+      // Menü ağacında olmadığı için favorilere eklenemez (`MenuService/addFavorite` bu kodu tanımaz) → yıldız gösterilmez.
+      isConstant: true,
     }
   }
   if (!link.component) link.component = menuStore?.getViewComponent?.(HELP_LINK_CODE)

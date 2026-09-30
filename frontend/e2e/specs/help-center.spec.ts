@@ -23,6 +23,17 @@ async function openHelp(page: Page, query = '', extra: Record<string, unknown> =
 
 const center = (page: Page) => page.locator('.workplace-area .helpCenterView')
 
+/** Üst bardaki (?) dar ekranda gizlidir; yardım girişleri orada hesap menüsündedir. */
+async function openHelpMenu(page: Page) {
+  const help = page.locator('[data-header-action=help]')
+  if (await help.isVisible()) {
+    await help.click()
+    return page.getByRole('menu', { name: 'Yardım' })
+  }
+  await page.locator('[data-header-action=account]').click()
+  return page.getByRole('menu', { name: 'Hesap' })
+}
+
 test.describe('Yardım merkezi', () => {
   test('ana sayfa: arama, kategoriler, Başlarken; axe 0', async ({ page }) => {
     await openHelp(page)
@@ -30,7 +41,9 @@ test.describe('Yardım merkezi', () => {
     await expect(c.getByRole('heading', { level: 1, name: 'Yardım merkezi' })).toBeVisible()
     await expect(c.getByRole('heading', { name: 'Size nasıl yardımcı olabiliriz?' })).toBeVisible()
     await expect(c.getByRole('heading', { name: 'Başlarken' })).toBeVisible()
-    await expect(c.locator('[data-category]')).toHaveCount(11)
+    // Başlarken (üstte yol), SSS ve Destek (alt bant) ızgarada tekrarlanmaz → 8 konu kartı.
+    await expect(c.locator('[data-category]')).toHaveCount(8)
+    await expect(c.getByRole('heading', { name: 'Sık sorulan sorular' })).toBeVisible()
     await expect(page).toHaveURL(/\/help$/)
     const axe = await new AxeBuilder({ page }).withTags(AA).include('.workplace-area .helpCenterView').analyze()
     expect(axe.violations).toEqual([])
@@ -95,8 +108,7 @@ test.describe('Yardım girişleri (kabuk)', () => {
     await waitForWorkplaceReady(page)
 
     // Üst bar yardım menüsü
-    await page.locator('[data-header-action=help]').click()
-    const menu = page.getByRole('menu', { name: 'Yardım' })
+    const menu = await openHelpMenu(page)
     await expect(menu.getByRole('menuitem', { name: /Yardım merkezi/ })).toBeVisible()
     await expect(menu.getByRole('menuitem', { name: /Uygulama turunu başlat/ })).toBeVisible()
     await menu.getByRole('menuitem', { name: /Yardım merkezi/ }).click()
@@ -105,7 +117,9 @@ test.describe('Yardım girişleri (kabuk)', () => {
 
     // Ctrl+K → yardım makaleleri grubu
     await page.keyboard.press('Control+k')
-    await page.keyboard.type('iade')
+    const combo = page.getByRole('combobox', { name: 'Akıllı arama' })
+    await expect(combo).toBeFocused()
+    await combo.fill('iade')
     const listbox = page.getByRole('listbox')
     await expect(listbox.getByText('Yardım makaleleri')).toBeVisible()
     await listbox.getByRole('option').filter({ hasText: 'YARDIM' }).first().click()
@@ -117,8 +131,9 @@ test.describe('Yardım girişleri (kabuk)', () => {
     await installApiMocks(page, reviewMocks())
     await page.goto('/dashboard')
     await waitForWorkplaceReady(page)
-    const nav = page.locator('.soft-nav')
-    await nav.getByRole('button', { name: 'Yardım merkezi' }).click()
+    const item = page.locator('.soft-nav [data-key="HelpCenterView"]')
+    await expect(page.getByRole('button', { name: /Favorilere ekle: Yardım merkezi/ })).toHaveCount(0)
+    await item.click()
     await expect(page).toHaveURL(/\/help$/)
   })
 })
@@ -201,8 +216,7 @@ test.describe('Uygulama turu', () => {
     await page.waitForTimeout(1500)
     await expect(offer).toBeHidden()
 
-    await page.locator('[data-header-action=help]').click()
-    await page.getByRole('menu', { name: 'Yardım' }).getByRole('menuitem', { name: /Uygulama turunu başlat/ }).click()
+    await (await openHelpMenu(page)).getByRole('menuitem', { name: /Uygulama turunu başlat/ }).click()
     await expect(card).toBeVisible()
     // Son adıma kadar ilerle → Bitti
     for (let i = 0; i < 8; i++) {

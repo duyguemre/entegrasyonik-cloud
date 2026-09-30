@@ -187,7 +187,7 @@
             <p class="ek-help-center__lead">{{ article.summary }}</p>
             <div v-if="article.goTo?.length" class="ek-help-center__goto" aria-label="İlgili ekranlar">
               <template v-for="g in article.goTo" :key="g.screen">
-                <EkButton v-if="nav.canOpenScreen(g.screen)" tone="secondary" size="sm" icon="mdi-open-in-app" data-help-goto :data-screen="g.screen" @click="nav.openScreen(g.screen)">{{ g.label }}</EkButton>
+                <EkButton v-if="nav.canOpenScreen(g.screen)" tone="secondary" size="sm" icon="mdi-open-in-new" data-help-goto :data-screen="g.screen" @click="nav.openScreen(g.screen)">{{ g.label }}</EkButton>
                 <span v-else class="ek-help-center__goto-off" data-help-goto-off :data-screen="g.screen">
                   <v-icon icon="mdi-lock-outline" aria-hidden="true" />{{ g.label }} — bu ekran menünüzde yok
                 </span>
@@ -671,7 +671,7 @@ defineExpose({ initialize, activate: initialize })
 
 .ek-help-center__cat-count {
   grid-area: count;
-  color: var(--ek-color-content-subtle);
+  color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
 }
 
