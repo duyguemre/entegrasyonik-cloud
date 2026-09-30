@@ -121,10 +121,9 @@
 
       <template #cell-title="{ row }">
         <div class="plv-product" @click="selectProduct(row)">
-          <button type="button" class="plv-thumb" :aria-label="`${row.title} ürününü düzenle`" @click.stop="openEditProduct(row)">
-            <ProductImageComponent :productId="row._id" v-model="row.images[0]" />
-            <span v-if="row.images?.length" class="plv-thumb__count ek-num" aria-hidden="true">{{ row.images.length }}</span>
-          </button>
+          <!-- B1: resim adedi rozeti kaldırıldı; çoklu görsel sessiz "yığın" kenarıyla, büyük önizleme gecikmeli (ProductThumb). -->
+          <ProductThumb interactive size="md" class="plv-thumb" :src="productImageSrcs(row)[0]" :gallery="productImageSrcs(row)"
+            :label="`${row.title} ürününü düzenle`" :caption="row.title" @click.stop="openEditProduct(row)" />
           <span class="plv-product__text">
             <span class="plv-product__title">{{ row.title }}</span>
             <button v-if="row.hasVariant" type="button" class="plv-variants-toggle" :aria-expanded="productIdForVariantList == row._id"
@@ -212,7 +211,8 @@ import EkRowActions from '@/components/ds/EkRowActions.vue'
 import { useI18n } from 'vue-i18n';
 import { ref, onMounted, onBeforeMount, onActivated, watch, computed, nextTick, getCurrentInstance, inject, onDeactivated, onUnmounted, reactive } from 'vue'
 import LoadingComponent from '@/components/LoadingComponent.vue'
-import ProductImageComponent from '@/components/productDefinitions/products/ProductImageComponent.vue'
+import ProductThumb from '@/components/productDefinitions/products/ProductThumb.vue'
+import { productImageSrcs } from '@/components/productDefinitions/products/productImage'
 import { formatMoney } from '@/composables/format'
 import EkListScreen from '@/components/ds/templates/EkListScreen.vue'
 import EkButton from '@/components/ds/EkButton.vue'
@@ -1143,45 +1143,6 @@ const getStatusLabel = (type: string) => {
   max-width: 380px;
   padding: var(--ek-space-1) 0;
   cursor: pointer;
-}
-
-.plv-thumb {
-  position: relative;
-  flex: none;
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  overflow: hidden;
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-tile);
-  background: var(--ek-color-surface-sunken);
-  cursor: pointer;
-}
-
-.plv-thumb:focus-visible {
-  outline: none;
-  box-shadow: var(--ek-focus-ring);
-}
-
-.plv-thumb :deep(img),
-.plv-thumb :deep(.v-img) {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.plv-thumb__count {
-  position: absolute;
-  right: 2px;
-  bottom: 2px;
-  min-width: 16px;
-  padding: 0 3px;
-  border-radius: var(--ek-radius-chip);
-  background: var(--ek-color-surface);
-  color: var(--ek-color-content-default);
-  font-size: 10px;
-  line-height: 14px;
-  text-align: center;
 }
 
 .plv-product__text {

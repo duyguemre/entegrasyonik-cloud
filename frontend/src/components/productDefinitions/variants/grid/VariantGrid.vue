@@ -49,13 +49,8 @@
                 :aria-label="`Varyantı seç: ${r.variant.stockcode || rowTitle(r.variant)}`"
                 @update:model-value="(on: boolean | null) => pick(r.variant, !!on)" />
             </td>
-            <td v-if="spans.has(r.index)" :rowspan="spans.get(r.index)" role="rowheader" aria-colindex="2"
-              class="vg-td vg-sticky vg-s-group vg-group">
-              <div class="vg-group__label">
-                <span class="vg-group__title">{{ r.groupTitle }}</span>
-                <span class="vg-group__count">{{ r.groupSize }} varyant</span>
-              </div>
-            </td>
+            <VariantGroupCell v-if="spans.has(r.index)" :rowspan="spans.get(r.index)" role="rowheader" aria-colindex="2"
+              class="vg-td vg-sticky vg-s-group vg-group" :title="r.groupTitle" :count="r.groupSize" :alt="r.groupIndex % 2 === 1" />
 
             <!-- stok kodu (+ küçük resim) -->
             <td v-bind="cellAttrs(r, 0)" class="vg-td vg-sticky vg-s-code vg-cell" :class="cellClass(r, 0)">
@@ -144,8 +139,10 @@ import EkTooltip from '@/components/ds/EkTooltip.vue'
 import { formatMoney } from '@/composables/format'
 import { useChoicesStore } from '@/stores/choicesStore'
 import ProductVariantImageComponent from '../ProductVariantImageComponent.vue'
+import VariantGroupCell from '../VariantGroupCell.vue'
+import { useVariantGrouping } from '../useVariantGrouping'
 import {
-  BASE_COLUMNS, choiceOrderComparator, diff, duplicateIndex, getCell, groupRows, rowId, validateCell, visibleWindow,
+  BASE_COLUMNS, diff, duplicateIndex, getCell, rowId, validateCell, visibleWindow,
   windowRowspans, type CellChange, type CellIssue, type ColumnKey, type GroupedRow, type Snapshot,
 } from './variantSheet'
 import { useVariantSheet, type VariantSheet } from './useVariantSheet'
@@ -167,14 +164,9 @@ const emit = defineEmits<{
 
 const choicesStore = useChoicesStore()
 
-// ── sıra: grup (ilk seçenek) tanım sırası → kolon sıralaması → kalan seçeneklerin tanım sırası ──
-const valueOrder = (choiceId: string, valueId: string) => {
-  const values = choicesStore.getChoiceValues(choiceId as any) as any[] | undefined
-  const i = values ? values.findIndex((x: any) => x._id === valueId) : -1
-  return i < 0 ? 9999 : i
-}
-const valueTitle = (valueId: string) => choicesStore.getDirectChoiceValueTitle(valueId) || ''
-const byChoices = choiceOrderComparator(valueOrder, valueTitle)
+// ── sıra: grup (ilk seçenek) tanım sırası → kolon sıralaması → kalan seçeneklerin tanım sırası (ortak: useVariantGrouping) ──
+const grouping = useVariantGrouping()
+const { valueTitle } = grouping
 
 type SortKey = 'stockcode' | 'barcode' | 'salePrice' | 'marketPrice' | 'stock'
 const sortKey = ref<SortKey | null>(null)
@@ -196,39 +188,25 @@ const matches = (v: any, q: string) => {
 const ordered = computed(() => {
   const q = (props.filter || '').trim().toLocaleLowerCase('tr')
   const list = (props.variants || []).filter((v) => matches(v, q))
-  const groupCmp = (a: any, b: any) => {
-    const x = a.choices?.[0]; const y = b.choices?.[0]
-    if (!x || !y) return 0
-    return valueOrder(x.choiceId, x.choiceValueId) - valueOrder(y.choiceId, y.choiceValueId)
-      || valueTitle(x.choiceValueId).localeCompare(valueTitle(y.choiceValueId), 'tr')
-  }
-  return [...list].sort((a, b) => {
-    const g = groupCmp(a, b)
-    if (g) return g
-    if (sortKey.value) {
-      const av = getCell(a, sortKey.value); const bv = getCell(b, sortKey.value)
+  const key = sortKey.value
+  const byColumn = key
+    ? (a: any, b: any) => {
+      const av = getCell(a, key); const bv = getCell(b, key)
       const d = typeof av === 'number' || typeof bv === 'number'
         ? Number(av ?? 0) - Number(bv ?? 0)
         : String(av ?? '').localeCompare(String(bv ?? ''), 'tr', { numeric: true })
-      if (d) return sortDir.value === 'asc' ? d : -d
+      return sortDir.value === 'asc' ? d : -d
     }
-    return byChoices(a, b)
-  })
+    : null
+  return grouping.order(list, byColumn)
 })
 
 interface ViewRow extends GroupedRow { key: string; groupTitle: string }
-const rows = computed<ViewRow[]>(() => groupRows(ordered.value, (v: any) => v.choices?.[0]?.choiceValueId ?? '')
-  .map((r) => ({ ...r, key: rowId(r.variant) || String(r.index), groupTitle: groupLabel(r.variant) })))
+const rows = computed<ViewRow[]>(() => grouping.group(ordered.value)
+  .map((r) => ({ ...r, key: rowId(r.variant) || String(r.index), groupTitle: grouping.groupLabel(r.variant) })))
 const rowVariants = computed(() => ordered.value)
 
-const groupTitle = computed(() => {
-  const first = props.variants?.find((v) => v.choices?.[0])
-  return (first && choicesStore.getChoiceTitle(first.choices[0].choiceId)) || 'Grup'
-})
-function groupLabel(v: any) {
-  const c = v.choices?.[0]
-  return c ? (choicesStore.getChoiceValueName(c.choiceId, c.choiceValueId) || '—') : '—'
-}
+const groupTitle = computed(() => grouping.groupTitle(props.variants))
 const rowTitle = (v: any) => (v.choices || []).map((c: any) => valueTitle(c.choiceValueId)).filter(Boolean).join(' / ') || v.stockcode || 'varyant'
 function optionChips(v: any) {
   return (v.choices || []).slice(1).map((c: any) => ({
@@ -588,32 +566,9 @@ const CellBody = defineComponent({
 .vg-th.vg-sticky-end { z-index: 4; }
 .vg--narrow .vg-sticky-end { position: static; box-shadow: none; }
 
-/* grup (rowspan) */
-.vg-group {
-  vertical-align: top;
-  padding: 0;
-  background: var(--ek-color-surface-sunken);
-  border-right: 1px solid var(--ek-color-border-default);
-  border-top: 1px solid var(--ek-color-border-strong);
-}
+/* grup (rowspan) — görünüm ortak `VariantGroupCell`; burada yalnız ızgaraya özgü konum/zemin önceliği */
+.vg-group { --ek-vgroup-top: var(--vg-head); padding: 0; background: var(--ek-color-surface-sunken); }
 .vg-row.is-group-odd .vg-group { background: var(--ek-color-surface-muted); }
-.vg-group__label {
-  position: sticky;
-  top: var(--vg-head);
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: var(--ek-space-3);
-  white-space: normal;
-}
-.vg-group__title {
-  color: var(--ek-color-content-strong);
-  font-weight: 600;
-  font-size: var(--ek-type-subheading-size);
-  line-height: var(--ek-type-subheading-line);
-  overflow-wrap: anywhere;
-}
-.vg-group__count { color: var(--ek-color-content-muted); font-size: var(--ek-type-caption-size); line-height: var(--ek-type-caption-line); }
 
 /* düzenlenebilir hücre */
 .vg-cell { position: relative; cursor: cell; outline: none; }

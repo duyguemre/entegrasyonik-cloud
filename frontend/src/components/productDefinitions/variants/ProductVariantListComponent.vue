@@ -1,27 +1,30 @@
 <!--
   frontend/src/components/productDefinitions/variants/ProductVariantListComponent.vue
 
-  Ürün listesinde varyantlı ürünün SEÇENEKLER bölümü (ürün satırının altında açılır). A11 — premium varyant gösterimi:
+  Ürün listesinde varyantlı ürünün SEÇENEKLER bölümü (ürün satırının altında açılır). A11 + B1:
     • Açılış: yükseklik + opaklık (grid satırı 0fr→1fr, `--ek-duration-base`; reduced-motion'da süre 0).
     • Özet şeridi: varyant sayısı, grup sayısı, toplam stok, tükenen/az stok, kanal kapsamı (yayında/gönderilen, hata sayısı).
-    • Gruplar: ayırıcı seçenek (ör. Renk) başlık satırı — değer + varyant sayısı + grup stoğu; satırda kalan seçenekler çip.
-    • Satır: görsel küçük resmi (yoksa nötr yer tutucu) · seçenek çipleri + stok kodu (mono) · barkod (mono + kopyala) ·
-      fiyat (sağa hizalı, tabular) · stok (tükendi/az tonu + raf) · kanal durumları · satır eylemleri (`EkRowActions`).
+    • B1 — Gruplar ürün güncelle varyant ızgarasıyla AYNI desen: ayırıcı seçenek (ör. Renk) ilk kolonda rowspan'lı birleşik
+      hücre (`VariantGroupCell`, değer + varyant sayısı + grup stoğu); sıra seçenek TANIM sırası (`useVariantGrouping`);
+      rowspan hesabı `variantSheet.windowRowspans` ("Tümünü gör" kırpmasında grup hücresi kalan kısım kadar).
+    • Satır: küçük görsel (`ProductThumb`: kare, iskelet, yer tutucu, çoklu görselde yığın kenarı, gecikmeli önizleme) ·
+      kalan seçenek çipleri + stok kodu (mono) · barkod (mono + kopyala) · fiyat (sağa hizalı, tabular) ·
+      stok (tükendi/az tonu + raf) · kanal durumları · satır eylemleri (`EkRowActions`).
     • Kanal durumu: gönderilmiş kanal = kanal rengi nokta + ad + durum ikonu; ipucunda durum + kısa neden; tıklayınca ayrıntı kartı
       (`ProductVariantListTooltipComponent`). Hiç gönderilmemiş kanallar tek soluk çipte toplanır (gürültü azaltma).
-    • Çok varyant (> 8): ilk 8 satır + "Tümünü gör"; açıkken liste kendi içinde kayar (yapışık başlık).
-    • Dar kap (< 600px): satırlar KART (A6b mobil kart deseni).
+    • Çok varyant (> 8): ilk 8 satır + "Tümünü gör"; açıkken liste kendi içinde kayar (yapışık başlık + yapışık grup adı).
+    • Dar kap (< 600px): satırlar KART (A6b mobil kart deseni); grup hücresi grubun ilk kartının üstünde tam genişlik başlık.
   Veri yalnız backend varyant projeksiyonundan (bkz. `variantListModel.ts`). Kanala gönder / durum sorgula satır eylemleri
   YOK: `IntegrationService/processPlatformProduct` ve `checkProductStatus` backend'de tanımsız (FE_CALLS_WITHOUT_BACKEND).
 -->
 <template>
   <div class="pvl-reveal" :class="{ 'is-open': revealed }">
     <div class="pvl-reveal__inner">
-      <section ref="rootRef" class="pvl" :class="{ 'is-compact': summary.count > COMPACT_LIMIT }" :aria-label="`${productInfoForm.title ?? 'Ürün'} varyantları`">
+      <section ref="rootRef" class="pvl" :class="{ 'is-compact': isCompact }" :aria-label="`${productInfoForm.title ?? 'Ürün'} varyantları`">
         <header class="pvl-summary">
           <div class="pvl-summary__facts">
             <span class="pvl-fact pvl-fact--lead"><span class="ek-num">{{ summary.count }}</span> varyant</span>
-            <span v-if="grouped" class="pvl-fact"><span class="ek-num">{{ groups.length }}</span> {{ slicerTitle }}</span>
+            <span v-if="grouped" class="pvl-fact"><span class="ek-num">{{ groupCount }}</span> {{ slicerTitle }}</span>
             <span class="pvl-fact">Toplam stok <strong class="ek-num">{{ summary.totalStock }}</strong></span>
             <span v-if="summary.outOfStock" class="pvl-flag is-out"><span class="ek-num">{{ summary.outOfStock }}</span> tükendi</span>
             <span v-if="summary.lowStock" class="pvl-flag is-low" :title="`${LOW_STOCK_THRESHOLD} adet ve altı`"><span class="ek-num">{{ summary.lowStock }}</span> az stok</span>
@@ -43,15 +46,16 @@
         </header>
 
         <div :id="scrollId" class="pvl-scroll" :class="{ 'is-scrolling': showAll && summary.count > COMPACT_LIMIT }">
-          <table class="pvl-table" :aria-label="`${productInfoForm.title ?? 'Ürün'} varyant listesi`" :aria-rowcount="summary.count + 1">
+          <table class="pvl-table" :class="{ 'is-grouped': grouped }" :aria-label="`${productInfoForm.title ?? 'Ürün'} varyant listesi`" :aria-rowcount="summary.count + 1">
             <thead>
               <tr>
                 <th class="pvl-th pvl-th--select" scope="col">
                   <input ref="allRef" type="checkbox" class="pvl-check" :checked="allSelected" aria-label="Tüm varyantları seç" @change="toggleAll" />
                 </th>
+                <th v-if="grouped" class="pvl-th pvl-th--group" scope="col">{{ slicerTitle }}</th>
                 <th class="pvl-th" scope="col" :aria-sort="ariaSort('choices')">
                   <button type="button" class="pvl-sort" :class="{ 'is-on': sortBy === 'choices' }" @click="toggleSort('choices')">
-                    Varyant<v-icon class="pvl-sort__icon" :icon="sortIconFor('choices')" aria-hidden="true" />
+                    {{ grouped ? otherChoicesTitle : 'Varyant' }}<v-icon class="pvl-sort__icon" :icon="sortIconFor('choices')" aria-hidden="true" />
                   </button>
                 </th>
                 <th class="pvl-th" scope="col" :aria-sort="ariaSort('barcode')">
@@ -73,72 +77,65 @@
                 <th class="pvl-th pvl-th--actions" scope="col"><span class="ek-sr-only">İşlemler</span></th>
               </tr>
             </thead>
-            <tbody v-for="group in visibleGroups" :key="group.key" class="pvl-group">
-              <tr v-if="grouped" class="pvl-group__head">
-                <th colspan="7" scope="rowgroup">
-                  <span class="pvl-group__title">
-                    <span class="pvl-group__dot" aria-hidden="true"></span>
-                    <span class="pvl-group__label">{{ slicerTitle }}</span>
-                    <span class="pvl-group__name">{{ choiceValueName(group.choiceId, group.choiceValueId) ?? '—' }}</span>
-                  </span>
-                  <span class="pvl-group__meta">
-                    <span class="ek-num">{{ groupSize(group.key) }}</span> varyant · stok <span class="ek-num">{{ groupStock(group.key) }}</span>
-                  </span>
-                </th>
-              </tr>
-              <tr v-for="item in group.variants" :key="item._id ?? item.barcode" class="pvl-row"
-                :class="{ 'is-selected': isSelected(item), 'is-out': stockTone(item.stock) === 'out' }">
+            <tbody>
+              <tr v-for="r in visibleRows" :key="r.variant._id ?? r.variant.barcode ?? r.index" class="pvl-row"
+                :class="{
+                  'is-selected': isSelected(r.variant), 'is-out': stockTone(r.variant.stock) === 'out',
+                  'is-group-start': grouped && r.groupStart, 'has-group-cell': grouped && spans.has(r.index),
+                }">
                 <td class="pvl-td pvl-td--select">
-                  <input type="checkbox" class="pvl-check" :checked="isSelected(item)" :aria-label="`${item.stockcode} varyantını seç`" @change="toggleRow(item)" />
+                  <input type="checkbox" class="pvl-check" :checked="isSelected(r.variant)" :aria-label="`${r.variant.stockcode} varyantını seç`" @change="toggleRow(r.variant)" />
                 </td>
+                <VariantGroupCell v-if="grouped && spans.has(r.index)" :rowspan="spans.get(r.index)" role="rowheader"
+                  class="pvl-vgroup" :title="grouping.groupLabel(r.variant)" :count="r.groupSize" :alt="r.groupIndex % 2 === 1">
+                  <template #meta> · stok <span class="ek-num">{{ groupStock.get(r.groupKey) ?? 0 }}</span></template>
+                </VariantGroupCell>
                 <td class="pvl-td pvl-td--variant">
                   <div class="pvl-ident">
-                    <span class="pvl-thumb" :class="{ 'is-empty': !hasImage(item) }">
-                      <ProductVariantImageComponent v-if="hasImage(item)" :productInfoForm="productInfoForm" :imageId="item.images[0]" :height="40" />
-                      <v-icon v-else icon="mdi-image-outline" aria-hidden="true" />
-                    </span>
+                    <ProductThumb class="pvl-thumb" :src="imagesOf(r.variant)[0]" :gallery="imagesOf(r.variant)"
+                      :size="isCompact ? 'xs' : 'sm'" :label="rowTitle(r.variant)" />
                     <span class="pvl-ident__text">
                       <span class="pvl-choices">
-                        <span v-for="choice of rowChoices(item.choices, grouped)" :key="choice.choiceId" class="pvl-choice" :class="{ 'is-slicer': choice.slicer === true || choice === slicerChoice(item.choices) }">
-                          <span class="pvl-choice__label">{{ choiceTitle(choice.choiceId) }}</span>
+                        <span v-for="choice of rowChoices(r.variant.choices, grouped)" :key="choice.choiceId" class="pvl-choice">
+                          <span v-if="!choiceInHeader" class="pvl-choice__label">{{ choiceTitle(choice.choiceId) }}</span>
                           <span class="pvl-choice__value">{{ choiceValueName(choice.choiceId, choice.choiceValueId) ?? '—' }}</span>
                         </span>
-                        <span v-if="!item.choices?.length" class="pvl-muted">Seçenek yok</span>
+                        <span v-if="!r.variant.choices?.length" class="pvl-muted">Seçenek yok</span>
                       </span>
-                      <span class="pvl-code">{{ item.stockcode }}</span>
+                      <span class="pvl-code">{{ r.variant.stockcode }}</span>
                     </span>
                   </div>
                 </td>
                 <td class="pvl-td pvl-td--barcode" data-label="Barkod">
-                  <span v-if="item.barcode" class="pvl-barcode">
-                    <span class="pvl-mono">{{ item.barcode }}</span>
-                    <button type="button" class="pvl-copy" :aria-label="`${item.barcode} barkodunu kopyala`" @click="copy(item.barcode, 'Barkod')">
+                  <span v-if="r.variant.barcode" class="pvl-barcode">
+                    <span class="pvl-mono">{{ r.variant.barcode }}</span>
+                    <button type="button" class="pvl-copy" :aria-label="`${r.variant.barcode} barkodunu kopyala`" @click="copy(r.variant.barcode, 'Barkod')">
                       <v-icon :icon="icons.copy" aria-hidden="true" />
                     </button>
                   </span>
                   <span v-else class="pvl-muted">—</span>
                 </td>
                 <td class="pvl-td pvl-td--end" data-label="Fiyat">
-                  <span v-if="item.prices?.isPlatformBasedPrice === true" class="pvl-price">
-                    <span class="pvl-price__sale ek-num">{{ money(minOf(item, 'salePrice')) }} – {{ money(maxOf(item, 'salePrice')) }}</span>
+                  <span v-if="r.variant.prices?.isPlatformBasedPrice === true" class="pvl-price">
+                    <span class="pvl-price__sale ek-num">{{ money(minOf(r.variant, 'salePrice')) }} – {{ money(maxOf(r.variant, 'salePrice')) }}</span>
                     <span class="pvl-price__note">Kanala göre</span>
                   </span>
                   <span v-else class="pvl-price">
-                    <span class="pvl-price__sale ek-num">{{ money(item.prices?.salePrice) }}</span>
-                    <span v-if="Number(item.prices?.marketPrice) > 0" class="pvl-price__market ek-num">Piyasa {{ money(item.prices.marketPrice) }}</span>
+                    <span class="pvl-price__sale ek-num">{{ money(r.variant.prices?.salePrice) }}</span>
+                    <span v-if="Number(r.variant.prices?.marketPrice) > 0" class="pvl-price__market ek-num">Piyasa {{ money(r.variant.prices.marketPrice) }}</span>
                   </span>
                 </td>
                 <td class="pvl-td pvl-td--end" data-label="Stok">
-                  <span class="pvl-stock" :class="`is-${stockTone(item.stock)}`">
-                    <span class="pvl-stock__qty ek-num">{{ Math.max(0, Number(item.stock) || 0) }}</span>
-                    <span v-if="stockTone(item.stock) === 'out'" class="pvl-stock__tag">Tükendi</span>
-                    <span v-else-if="stockTone(item.stock) === 'low'" class="pvl-stock__tag" :title="`${LOW_STOCK_THRESHOLD} adet ve altı`">Az</span>
-                    <span v-if="item.shelf" class="pvl-stock__shelf"><v-icon icon="mdi-map-marker-outline" aria-hidden="true" />Raf {{ item.shelf }}</span>
+                  <span class="pvl-stock" :class="`is-${stockTone(r.variant.stock)}`">
+                    <span class="pvl-stock__qty ek-num">{{ Math.max(0, Number(r.variant.stock) || 0) }}</span>
+                    <span v-if="stockTone(r.variant.stock) === 'out'" class="pvl-stock__tag">Tükendi</span>
+                    <span v-else-if="stockTone(r.variant.stock) === 'low'" class="pvl-stock__tag" :title="`${LOW_STOCK_THRESHOLD} adet ve altı`">Az</span>
+                    <span v-if="r.variant.shelf" class="pvl-stock__shelf"><v-icon icon="mdi-map-marker-outline" aria-hidden="true" />Raf {{ r.variant.shelf }}</span>
                   </span>
                 </td>
                 <td class="pvl-td pvl-td--channels" data-label="Kanallar">
                   <span class="pvl-channels">
-                    <template v-for="ch in rowChannels(item).sent" :key="ch.code">
+                    <template v-for="ch in rowChannels(r.variant).sent" :key="ch.code">
                       <v-menu :close-on-content-click="false" location="bottom center" transition="fade-transition" offset="8">
                         <template #activator="{ props: menuProps }">
                           <v-tooltip location="top" :open-delay="300" :eager="false" transition="fade-transition" max-width="320">
@@ -158,18 +155,18 @@
                             </span>
                           </v-tooltip>
                         </template>
-                        <ProductVariantListTooltipComponent :data="item.platforms?.[ch.code]" :channel-code="ch.code" :channel-name="channelTitle(ch.code)" />
+                        <ProductVariantListTooltipComponent :data="r.variant.platforms?.[ch.code]" :channel-code="ch.code" :channel-name="channelTitle(ch.code)" />
                       </v-menu>
                     </template>
-                    <span v-if="rowChannels(item).unsent.length" class="pvl-ch is-unsent"
-                      :title="rowChannels(item).unsent.map(channelTitle).join(', ') + ': gönderilmedi'">
-                      <template v-if="rowChannels(item).sent.length"><span aria-hidden="true">+{{ rowChannels(item).unsent.length }}</span><span class="ek-sr-only">{{ rowChannels(item).unsent.map(channelTitle).join(', ') }}: gönderilmedi</span></template>
+                    <span v-if="rowChannels(r.variant).unsent.length" class="pvl-ch is-unsent"
+                      :title="rowChannels(r.variant).unsent.map(channelTitle).join(', ') + ': gönderilmedi'">
+                      <template v-if="rowChannels(r.variant).sent.length"><span aria-hidden="true">+{{ rowChannels(r.variant).unsent.length }}</span><span class="ek-sr-only">{{ rowChannels(r.variant).unsent.map(channelTitle).join(', ') }}: gönderilmedi</span></template>
                       <template v-else>Kanala gönderilmedi</template>
                     </span>
                   </span>
                 </td>
                 <td class="pvl-td pvl-td--actions">
-                  <EkRowActions :label="`${item.stockcode} işlemleri`" :items="rowActions(item)" />
+                  <EkRowActions :label="`${r.variant.stockcode} işlemleri`" :items="rowActions(r.variant)" />
                 </td>
               </tr>
             </tbody>
@@ -198,10 +195,14 @@ import { channelClass, channelName } from '@/design/channels'
 import { icons } from '@/design/icons'
 import EkRowActions from '@/components/ds/EkRowActions.vue'
 import type { EkRowAction } from '@/components/ds/EkRowActions.vue'
-import ProductVariantImageComponent from './ProductVariantImageComponent.vue'
+import ProductThumb from '../products/ProductThumb.vue'
+import { variantImageSrcs } from '../products/productImage'
 import ProductVariantListTooltipComponent from './ProductVariantListTooltipComponent.vue'
+import VariantGroupCell from './VariantGroupCell.vue'
+import { sortGrouped, useVariantGrouping } from './useVariantGrouping'
+import { windowRowspans } from './grid/variantSheet'
 import {
-  COMPACT_LIMIT, LOW_STOCK_THRESHOLD, channelState, groupVariants, rowChoices, slicerChoice, stockTone, summarizeVariants,
+  COMPACT_LIMIT, LOW_STOCK_THRESHOLD, channelState, isGroupable, rowChoices, slicerChoice, stockTone, summarizeVariants,
   type ChannelState,
 } from './variantListModel'
 
@@ -242,41 +243,47 @@ const summary = computed(() => summarizeVariants(variants.value, channelCodes.va
 const sentChannels = computed(() => summary.value.channels.filter((c) => c.sent > 0))
 const unsentChannels = computed(() => summary.value.channels.filter((c) => c.sent === 0))
 
-/** Gruplu görünüm: varyantlarda ayırıcı + en az bir başka seçenek varsa ve gruplar tekil değilse. */
-const grouped = computed(() => {
-  if (!props.productInfoForm?.hasVariant) return false
-  if (!variants.value.some((v) => (v.choices?.length ?? 0) >= 2)) return false
-  return groupVariants(variants.value).length < variants.value.length
-})
+/** Gruplu görünüm: varyantlarda ayırıcı + en az bir başka seçenek varsa ve gruplar tekil değilse (`isGroupable`). */
+const grouped = computed(() => isGroupable(variants.value, !!props.productInfoForm?.hasVariant))
 const slicerTitle = computed(() => choiceTitle(slicerChoice(variants.value[0]?.choices).choiceId))
+/** Gruplu görünümde varyant kolonu başlığı: kalan seçeneklerin adı (ör. "Beden"); karışıksa "Varyant". */
+const otherChoicesTitle = computed(() => {
+  const ids = new Set<string>()
+  for (const v of variants.value) for (const c of rowChoices(v.choices, true)) ids.add(c.choiceId)
+  return ids.size === 1 ? choiceTitle([...ids][0]) : 'Varyant'
+})
+/** Kolon başlığı seçeneği adlandırıyorsa (ör. "Beden") çipte ad tekrarlanmaz — yalnız değer ("M"). */
+const choiceInHeader = computed(() => grouped.value && otherChoicesTitle.value !== 'Varyant')
+const isCompact = computed(() => summary.value.count > COMPACT_LIMIT)
+
+// Ürün güncelle varyant ızgarasıyla ortak sıra + gruplama (grup = ayırıcı seçenek; tanım sırası).
+const grouping = useVariantGrouping((v) => slicerChoice(v?.choices))
 
 const collator = new Intl.Collator('tr', { sensitivity: 'base', numeric: true })
-const sorted = computed(() => {
+const rows = computed(() => {
   const dir = sortDir.value === 'asc' ? 1 : -1
   const key = sortBy.value
-  const byKey = (a: any, b: any) => {
-    if (key === 'salePrice') return (Number(a.prices?.salePrice) - Number(b.prices?.salePrice)) * dir
-    if (key === 'stock') return ((Number(a.stock) || 0) - (Number(b.stock) || 0)) * dir
-    if (key === 'barcode') return collator.compare(String(a.barcode ?? ''), String(b.barcode ?? '')) * dir
-    const at = rowChoices(a.choices, grouped.value).map(valueTitle).join(' ')
-    const bt = rowChoices(b.choices, grouped.value).map(valueTitle).join(' ')
-    return collator.compare(at, bt) * dir || collator.compare(String(a.stockcode ?? ''), String(b.stockcode ?? ''))
-  }
-  const list = [...variants.value]
-  if (!grouped.value) return list.sort(byKey)
-  // Gruplar ayırıcı değere göre (seçenek sıralamasında yönü izler), grup içi seçili anahtara göre.
-  const groupDir = key === 'choices' ? dir : 1
-  return list.sort((a, b) => collator.compare(valueTitle(slicerChoice(a.choices)), valueTitle(slicerChoice(b.choices))) * groupDir || byKey(a, b))
+  const cmp = key === 'choices' ? null
+    : key === 'salePrice' ? (a: any, b: any) => (Number(a.prices?.salePrice) - Number(b.prices?.salePrice)) * dir
+    : key === 'stock' ? (a: any, b: any) => ((Number(a.stock) || 0) - (Number(b.stock) || 0)) * dir
+    : (a: any, b: any) => collator.compare(String(a.barcode ?? ''), String(b.barcode ?? '')) * dir
+  const ordered = sortGrouped(variants.value, {
+    groupCmp: grouped.value ? grouping.groupCmp : () => 0,
+    cmp,
+    fallback: (a: any, b: any) => grouping.byChoices(a, b) || collator.compare(String(a.stockcode ?? ''), String(b.stockcode ?? '')),
+    reverse: key === 'choices' && dir < 0,
+  })
+  return grouping.group(ordered)
 })
-
-const allGroups = computed(() => groupVariants(sorted.value))
-const groups = computed(() => (grouped.value ? allGroups.value : []))
-const groupSize = (key: string) => allGroups.value.find((g) => g.key === key)?.variants.length ?? 0
-const groupStock = (key: string) => allGroups.value.find((g) => g.key === key)?.totalStock ?? 0
-const visibleGroups = computed(() => {
-  const rows = showAll.value || sorted.value.length <= COMPACT_LIMIT ? sorted.value : sorted.value.slice(0, COMPACT_LIMIT)
-  return grouped.value ? groupVariants(rows) : [{ key: 'all', variants: rows, totalStock: 0 }]
+const groupCount = computed(() => new Set(rows.value.map((r) => r.groupKey)).size)
+const groupStock = computed(() => {
+  const m = new Map<string, number>()
+  for (const r of rows.value) m.set(r.groupKey, (m.get(r.groupKey) ?? 0) + Math.max(0, Number(r.variant.stock) || 0))
+  return m
 })
+const visibleRows = computed(() => (showAll.value || rows.value.length <= COMPACT_LIMIT ? rows.value : rows.value.slice(0, COMPACT_LIMIT)))
+/** Grup hücresi rowspan'ları (ızgarayla aynı hesap): kırpılan grupta hücre görünen kısım kadar. */
+const spans = computed(() => windowRowspans(rows.value, 0, visibleRows.value.length))
 
 const toggleSort = (key: typeof sortBy.value) => {
   if (sortBy.value === key) sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
@@ -299,11 +306,10 @@ const toggleAll = () => {
   selectedVariants.value = allSelected.value ? [] : variants.value.map((v) => v.barcode)
 }
 
-const hasImage = (v: any) => {
-  const id = v.images?.[0]
-  if (!id) return false
-  if (typeof id === 'string' && id.startsWith('http')) return true
-  return !!props.productInfoForm?.images?.some((img: any) => img?._id === id)
+const imagesOf = (v: any) => variantImageSrcs(v, props.productInfoForm)
+const rowTitle = (v: any) => {
+  const opts = (v.choices ?? []).map(valueTitle).filter(Boolean).join(' / ')
+  return [opts, v.stockcode].filter(Boolean).join(' · ') || 'Varyant'
 }
 
 const money = (n: unknown) => formatMoney(Number(n) || 0)
@@ -461,8 +467,7 @@ const rowActions = (v: any): EkRowAction[] => [
 }
 
 .pvl-cov__dot,
-.pvl-ch__dot,
-.pvl-group__dot {
+.pvl-ch__dot {
   flex: none;
   width: 7px;
   height: 7px;
@@ -583,48 +588,6 @@ const rowActions = (v: any): EkRowAction[] => [
   vertical-align: middle;
 }
 
-/* Grup başlığı */
-.pvl-group__head > th {
-  padding: var(--ek-space-2) var(--ek-space-4) 6px;
-  border-bottom: 1px solid var(--ek-color-border-subtle);
-  background: var(--ek-color-surface-sunken);
-  text-align: left;
-  font-weight: inherit;
-}
-
-.pvl-group + .pvl-group .pvl-group__head > th {
-  border-top: 1px solid var(--ek-color-border-default);
-}
-
-.pvl-group__title {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ek-space-2);
-}
-
-.pvl-group__dot {
-  --ek-ch-solid: var(--ek-color-action);
-}
-
-.pvl-group__label {
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-micro-size);
-  font-weight: var(--ek-type-micro-weight);
-  letter-spacing: var(--ek-type-micro-tracking);
-  text-transform: uppercase;
-}
-
-.pvl-group__name {
-  color: var(--ek-color-content-strong);
-  font-weight: var(--ek-font-weight-semibold);
-}
-
-.pvl-group__meta {
-  margin-left: var(--ek-space-3);
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
-}
-
 /* Satır */
 .pvl-td {
   padding: var(--ek-space-2) var(--ek-space-3);
@@ -634,18 +597,32 @@ const rowActions = (v: any): EkRowAction[] => [
   transition: background-color var(--ek-duration-fast) var(--ek-easing-standard);
 }
 
-.pvl-group:last-child .pvl-row:last-child > .pvl-td { border-bottom: 0; }
+.pvl-row:last-child > .pvl-td { border-bottom: 0; }
 .pvl-td--end { text-align: right; }
 .pvl-row:hover > .pvl-td { background: var(--ek-color-surface-muted); }
 .pvl-row.is-selected > .pvl-td { background: var(--ek-color-selection); }
 .pvl-row.is-selected > .pvl-td--select { box-shadow: inset 3px 0 0 var(--ek-color-action); }
 
+/* B1 — rowspan'lı grup kolonu (ürün güncelle varyant ızgarasıyla aynı desen; görünüm `VariantGroupCell`). */
+.pvl-th--group { width: 136px; }
+.pvl-vgroup :deep(.ek-vgroup__label) { position: static; }
+/* "Tümünü gör" iç kaydırmasında grup adı yapışık başlığın altında kalır. */
+.is-scrolling .pvl-vgroup { --ek-vgroup-top: 34px; /* yapışık tablo başlığı yüksekliği */ }
+.is-scrolling .pvl-vgroup :deep(.ek-vgroup__label) { position: sticky; }
+/* Grup ayırıcı çizgi mevcut alt kenarlıkta (ek kenarlık yok → satır yüksekliği A11 ile aynı: 58 px). */
+.pvl-vgroup { border-top: 0; border-bottom: 1px solid var(--ek-color-border-strong); }
+.pvl-row:last-child > .pvl-vgroup { border-bottom: 0; }
+.pvl-row:has(+ .pvl-row.is-group-start) > .pvl-td { border-bottom-color: var(--ek-color-border-strong); }
+/* Tek varyantlı grupta etiket satıra sığar (ızgaradaki 56 px satırdan dar liste satırı için sıkı ölçü). */
+.pvl-vgroup :deep(.ek-vgroup__label) { padding: var(--ek-space-2) var(--ek-space-3); }
+.pvl-vgroup :deep(.ek-vgroup__title) { font-size: var(--ek-type-label-size); line-height: var(--ek-type-label-line); }
+.pvl-vgroup :deep(.ek-vgroup__meta) { white-space: nowrap; }
+.is-grouped .pvl-ident { min-width: 164px; } /* grup adı kendi kolonunda; varyant hücresinde yalnız değer + kod */
+
 /* Kompakt ızgara (> 8 varyant): her hücre tek satır — seçenek + stok kodu, satış + piyasa fiyatı, stok + raf yan yana. */
 .is-compact .pvl-td { padding: 6px var(--ek-space-2); }
 .is-compact .pvl-ident { min-width: 0; }
 .is-compact .pvl-td--select { padding-left: var(--ek-space-4); }
-.is-compact .pvl-thumb { width: 28px; height: 28px; }
-.is-compact .pvl-thumb .v-icon { font-size: var(--ek-icon-sm); }
 .is-compact .pvl-ident__text { flex-direction: row; align-items: center; gap: var(--ek-space-2); }
 .is-compact .pvl-price { flex-direction: row; align-items: baseline; gap: var(--ek-space-2); }
 .is-compact .pvl-channels { flex-wrap: nowrap; max-width: none; }
@@ -657,29 +634,6 @@ const rowActions = (v: any): EkRowAction[] => [
   align-items: center;
   gap: var(--ek-space-3);
   min-width: 220px;
-}
-
-.pvl-thumb {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  overflow: hidden;
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-tile);
-  background: var(--ek-color-surface-sunken);
-  color: var(--ek-color-content-subtle);
-}
-
-.pvl-thumb .v-icon { font-size: var(--ek-icon-md); }
-
-.pvl-thumb :deep(img),
-.pvl-thumb :deep(.v-img) {
-  width: 100% !important; /* görsel bileşeni satır içi ölçü taşır */
-  height: 100% !important;
-  object-fit: cover;
 }
 
 .pvl-ident__text {
@@ -813,7 +767,7 @@ const rowActions = (v: any): EkRowAction[] => [
 /* Kanal durumu */
 .pvl-channels {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap; /* B1: satır yüksekliği sabit — çipler tek satır */
   gap: var(--ek-space-1);
   max-width: 360px;
 }
@@ -921,11 +875,7 @@ const rowActions = (v: any): EkRowAction[] => [
 @container (max-width: 599px) {
   .pvl-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
   .pvl-table,
-  .pvl-table tbody,
-  .pvl-group__head,
-  .pvl-group__head > th { display: block; }
-
-  .pvl-group__head > th { padding: var(--ek-space-2) var(--ek-space-3); }
+  .pvl-table tbody { display: block; }
 
   .pvl-row {
     display: grid;
@@ -943,7 +893,38 @@ const rowActions = (v: any): EkRowAction[] => [
     border-bottom: 1px solid var(--ek-color-border-subtle);
   }
 
-  .pvl-group:last-child .pvl-row:last-child { border-bottom: 0; }
+  .pvl-row:last-child { border-bottom: 0; }
+
+  /* Grup hücresi: grubun ilk kartının üstünde tam genişlik başlık (kart kenarına taşar). */
+  .pvl-row.has-group-cell {
+    grid-template-areas:
+      'grp grp grp'
+      'sel main act'
+      '. barcode barcode'
+      '. price price'
+      '. stock stock'
+      '. ch ch';
+    padding-top: 0;
+  }
+  .pvl-row.is-group-start:not(:first-child) { border-top: 1px solid var(--ek-color-border-strong); }
+  .pvl-row.is-group-start > .pvl-td { border-top: 0 !important; /* çizgi kartın kendisinde */ }
+  .pvl-vgroup {
+    grid-area: grp;
+    display: block;
+    margin: 0 calc(-1 * var(--ek-space-3)) var(--ek-space-2);
+    border-top: 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--ek-color-border-subtle);
+  }
+  .pvl-vgroup :deep(.ek-vgroup__label),
+  .is-compact .pvl-vgroup :deep(.ek-vgroup__label) {
+    position: static;
+    flex-direction: row;
+    align-items: baseline;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-2) var(--ek-space-3);
+  }
+  .pvl-vgroup :deep(.ek-vgroup__title) { font-size: var(--ek-type-label-size); line-height: var(--ek-type-label-line); }
 
   .pvl-row > .pvl-td {
     padding: 0;

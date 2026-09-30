@@ -1,7 +1,7 @@
 // A11 — ürün listesi satır altı varyant gösterimi: saf mantık (kanal durumu + kısa neden, stok tonu, gruplama, özet).
 import { describe, it, expect } from 'vitest'
 import {
-  channelState, channelReason, stockTone, LOW_STOCK_THRESHOLD, groupVariants, rowChoices, slicerChoice, summarizeVariants,
+  channelState, channelReason, stockTone, LOW_STOCK_THRESHOLD, isGroupable, rowChoices, slicerChoice, summarizeVariants,
 } from '@/components/productDefinitions/variants/variantListModel'
 
 const v = (o: Record<string, any> = {}) => ({ stock: 10, choices: [{ choiceId: 'renk', choiceValueId: 'siyah', slicer: true }, { choiceId: 'beden', choiceValueId: 'm' }], platforms: {}, ...o })
@@ -42,12 +42,14 @@ describe('stockTone', () => {
 })
 
 describe('gruplama ve seçenekler', () => {
-  it('ardışık aynı ayırıcı değerler tek grup; grup stoğu toplanır', () => {
-    const groups = groupVariants([
-      v({ stock: 3 }), v({ stock: 4 }),
-      v({ stock: 0, choices: [{ choiceId: 'renk', choiceValueId: 'beyaz', slicer: true }] }),
-    ])
-    expect(groups.map((g) => [g.key, g.variants.length, g.totalStock])).toEqual([['siyah', 2, 7], ['beyaz', 1, 0]])
+  // B1: A11'deki `groupVariants` (listeye özgü gruplama) kaldırıldı — gruplama/rowspan artık ürün güncelle ızgarasıyla ortak
+  // (`useVariantGrouping` + `variantSheet.groupRows`, bkz. tests/b1-variant-grouping.test.ts). Burada yalnız "gruplanabilir mi" kuralı.
+  it('gruplanabilir: varyantlı + ikinci seçenek var + ayırıcı değerleri tekil değil', () => {
+    const beyaz = { choices: [{ choiceId: 'renk', choiceValueId: 'beyaz', slicer: true }, { choiceId: 'beden', choiceValueId: 'm' }] }
+    expect(isGroupable([v(), v(), v(beyaz)], true)).toBe(true)
+    expect(isGroupable([v(), v(beyaz)], true)).toBe(false) // her grup tek varyant
+    expect(isGroupable([v(), v()], false)).toBe(false) // varyantsız ürün
+    expect(isGroupable([v({ choices: [{ choiceId: 'renk', choiceValueId: 'siyah' }] }), v({ choices: [{ choiceId: 'renk', choiceValueId: 'siyah' }] })], true)).toBe(false) // tek seçenek
   })
   it('ayırıcı yoksa ilk seçenek; gruplu satırda ayırıcı gösterilmez, tek seçenekse kendisi gösterilir', () => {
     expect(slicerChoice([{ choiceId: 'a', choiceValueId: '1' }])).toMatchObject({ choiceId: 'a' })

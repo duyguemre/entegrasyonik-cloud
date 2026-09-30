@@ -77,30 +77,16 @@ export function rowChoices(choices: any[] | undefined, grouped: boolean): any[] 
   return rest.length ? rest : [s]
 }
 
-export interface VariantGroup<T = any> {
-  key: string
-  /** Ayırıcı seçeneğin choiceId / choiceValueId'si (başlık metni bileşende çözülür). */
-  choiceId?: string
-  choiceValueId?: string
-  variants: T[]
-  totalStock: number
-}
-
-/** Ardışık varyantları ayırıcı seçenek değerine göre gruplar (sıralama önceden yapılmış olmalı). */
-export function groupVariants<T extends { choices?: any[]; stock?: unknown }>(variants: T[]): VariantGroup<T>[] {
-  const groups: VariantGroup<T>[] = []
-  for (const v of variants) {
-    const s = slicerChoice(v.choices)
-    const key = String(s.choiceValueId ?? '—')
-    let g = groups[groups.length - 1]
-    if (!g || g.key !== key) {
-      g = { key, choiceId: s.choiceId, choiceValueId: s.choiceValueId, variants: [], totalStock: 0 }
-      groups.push(g)
-    }
-    g.variants.push(v)
-    g.totalStock += Math.max(0, Number(v.stock) || 0)
-  }
-  return groups
+/**
+ * Gruplu görünüm (rowspan'lı grup kolonu) uygun mu: varyantlı ürün, en az bir varyantta ayırıcı + başka seçenek var
+ * ve ayırıcı değerleri tekil değil (her grup tek varyantsa grup kolonu bilgi taşımaz).
+ * Sıra/gruplama/rowspan hesabı ortak: `useVariantGrouping.ts` + `grid/variantSheet.ts`.
+ */
+export function isGroupable(variants: any[], hasVariant: boolean): boolean {
+  if (!hasVariant || !variants?.length) return false
+  if (!variants.some((v) => (v?.choices?.length ?? 0) >= 2)) return false
+  const keys = new Set(variants.map((v) => String(slicerChoice(v?.choices).choiceValueId ?? '—')))
+  return keys.size < variants.length
 }
 
 export interface ChannelCoverage {
