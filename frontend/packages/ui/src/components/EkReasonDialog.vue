@@ -98,7 +98,7 @@ const props = withDefaults(
     error: null,
     confirmDisabled: false,
     reasonLabel: 'Gerekçe',
-    placeholder: 'ör. Destek kaydı #1234: müşteri talebi',
+    placeholder: 'ör. Destek kaydı DK-1234: müşteri talebi',
     minLength: 10,
     maxLength: 500,
     width: 'md',
