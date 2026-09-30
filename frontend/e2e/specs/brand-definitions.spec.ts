@@ -44,30 +44,35 @@ async function openBrandListView(page: Page) {
 }
 
 test.describe('P3 (B5-2) — Markalar (BrandListView)', () => {
-  test('smoke: iki panel (marka listesi | senkron) yan yana render olur', async ({ page }) => {
+  // B7 (cloud/fe-b7) — BİLİNÇLİ güncelleme: sayfa yeniden tasarlandı (başlık satırı + koleksiyon | detay). Eski iki kök
+  // bileşen (`.brandListComponentView` ×2) yerine sol bölme koleksiyon; sağda seçim yokken "Marka özeti", seçimde mevcut
+  // BrandSyncComponent. İddia aynı: iki bölme render olur, marka görünür, seçim yokken yönlendirme var.
+  test('smoke: iki bölme (markalar | detay) render olur; seçimde mevcut eşitleme paneli açılır', async ({ page }, testInfo) => {
     await installApiMocks(page, { MenuService: menuFixtureWithBrand, BrandService: brandsDoluFixture })
     await gotoAuthed(page)
     await openBrandListView(page)
 
     await expectScreenOpen(page, '.brandDefinition')
-    // NOT (nav.ts dosya başı notuyla AYNI kök neden — 0-yükseklik zinciri): `.brandListComponentView`
-    // kök `<div>`'i `getBoundingClientRect()` yüksekliği 0 ölçülüyor (Transition/KeepAlive
-    // sarmalayıcısı boyut almıyor), bu yüzden kutu-tabanlı `.toBeVisible()` GÜVENİLMEZ — gerçekte
-    // boyutu olan bir metin düğümü bekleniyor. `BrandListComponent.vue`/`BrandSyncComponent.vue`
-    // (ikisi de kapsam dışı kök bileşen) AYNI `.brandListComponentView` sınıfını taşıyor da
-    // (karakterizasyon, düzeltilmedi) — bu yüzden sayım/varlık kontrolü yerine metin kullanılıyor.
-    await expect(page.locator('.brandDefinition .brandListComponentView')).toHaveCount(2)
-    await expect(page.getByText('E2E Marka Bir')).toBeVisible()
-    await expect(page.getByText('Eşitleme için önce Marka seçmelisiniz')).toBeVisible()
+    await expect(page.getByRole('option', { name: /^E2E Marka Bir/ })).toBeVisible()
+    // Dar kapta (< 920px) tek bölme: seçim yokken yalnız liste.
+    const wide = testInfo.project.name === 'chromium-desktop'
+    await expect(page.getByRole('heading', { name: 'Marka özeti' })).toBeVisible({ visible: wide })
+    await page.getByRole('option', { name: /^E2E Marka Bir/ }).click()
+    await expect(page.locator('.brandDefinition .brandListComponentView')).toHaveCount(1)
+    await expect(page.getByText('E2E Marka Bir Markasını Düzenle')).toBeVisible()
+    if (!wide) {
+      await page.getByRole('button', { name: 'Tüm markalar' }).click()
+      await expect(page.getByRole('option', { name: /^E2E Marka Bir/ })).toBeFocused()
+    }
   })
 
-  test('boş durum: marka yoksa liste paneli boş açılır (ham hata sızmaz)', async ({ page }) => {
+  test('boş durum: marka yoksa ilk marka yönlendirmesi açılır (ham hata sızmaz)', async ({ page }) => {
     await installApiMocks(page, { MenuService: menuFixtureWithBrand, BrandService: [] })
     await gotoAuthed(page)
     await openBrandListView(page)
 
     await expectScreenOpen(page, '.brandDefinition')
-    await expect(page.getByText('Marka Listesi')).toBeVisible()
+    await expect(page.getByText('Henüz marka yok', { exact: true })).toBeVisible()
     await expect(page.locator('body')).not.toContainText('500')
   })
 

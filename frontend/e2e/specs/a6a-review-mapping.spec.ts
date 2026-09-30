@@ -73,7 +73,8 @@ async function setup(page: Page, overrides: Record<string, MockValue>) {
   })
   await gotoAuthed(page)
   await openCategoryListView(page)
-  await page.getByRole('button', { name: 'Tişört ayarları' }).click()
+  // B7: seçim ⚙ "… ayarları" düğmesinden ağaç satırına taşındı (bilinçli; panel aynı).
+  await page.getByRole('treeitem', { name: /^Tişört/ }).click()
   await page.locator('.categorySyncComponent .ek-platform-choice').first().click()
 }
 

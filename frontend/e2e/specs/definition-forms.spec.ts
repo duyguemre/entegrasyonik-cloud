@@ -30,8 +30,8 @@ async function openBrandPanel(page: Page, overrides: Record<string, any> = {}) {
   if (!(await subItem.isVisible().catch(() => false))) await group.locator('.v-list-group__header').click()
   await subItem.click()
   await expectScreenOpen(page, '.brandDefinition')
-  // Listedeki ilk markanın ayar (⚙) düğmesi eşitleme/düzenleme panelini açar.
-  await page.locator('.brandDefinition .mdi-cog-outline').first().click()
+  // B7: panel artık marka kartına/satırına tıklayınca açılır (⚙ düğmesi kaldırıldı — bilinçli; gövde iddiaları aynı).
+  await page.locator('.brandDefinition [role="option"]').first().click()
   const panel = page.locator('.brandDefinition .brandListComponentView').last()
   await expect(panel.getByLabel('Marka Adı', { exact: false }).first()).toBeVisible()
   return panel

@@ -48,24 +48,40 @@ async function openCategoryListView(page: Page) {
 }
 
 test.describe('P3 (B5-2) — Kategoriler (CategoryListView)', () => {
-  test('smoke: iki panel (kategori | senkron) yan yana render olur, kök kategori ekleme formu görünür', async ({ page }) => {
+  // B7 (cloud/fe-b7) — BİLİNÇLİ güncelleme: sayfa yeniden tasarlandı (başlık satırı + ağaç | detay). Eski yüzey metinleri
+  // ("Kategori Listesi" kartı, "Alt Kategori İsmi" kök ekleme alanı, "Eşitleme için önce…" boş paneli) yerine: ağaç bölmesi
+  // başlığı, başlık satırındaki "Kategori ekle" birincil eylemi ve seçim yokken "Kategori özeti". İddia aynı: iki bölme
+  // render olur, kök ekleme yolu görünür, seçim yokken yönlendirme var. (Karakterizasyondaki "ağaç DOM'da görünmüyor"
+  // bulgusu artık geçerli değil: ağaç öğeleri görünür.)
+  test('smoke: iki bölme (ağaç | detay) render olur, kök kategori ekleme yolu görünür', async ({ page }, testInfo) => {
     await installApiMocks(page, { MenuService: menuFixtureWithCategory, CategoryService: categoriesDoluFixture })
     await gotoAuthed(page)
     await openCategoryListView(page)
 
     await expectScreenOpen(page, '.categoryListView')
-    await expect(page.getByText('Kategori Listesi')).toBeVisible()
-    await expect(page.getByLabel('Alt Kategori İsmi')).toBeVisible()
-    await expect(page.getByText('Eşitleme için önce Kategori seçmelisiniz')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Kategori ağacı' })).toBeVisible()
+    await expect(page.getByRole('treeitem', { name: /^E2E Kategori Bir/ })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Kategori ekle' })).toBeVisible()
+    if (testInfo.project.name === 'chromium-desktop') {
+      await expect(page.getByRole('heading', { name: 'Kategori özeti' })).toBeVisible()
+    } else {
+      // Dar kap (< 920px): tek bölme — seçim yokken ağaç, yaprak seçilince detay + "← Tüm kategoriler".
+      await expect(page.getByRole('heading', { name: 'Kategori özeti' })).toBeHidden()
+      await page.getByRole('treeitem', { name: /^E2E Kategori Bir/ }).click()
+      await page.getByRole('treeitem', { name: /^E2E Alt Kategori/ }).click()
+      await expect(page.getByRole('heading', { name: 'E2E Alt Kategori' })).toBeVisible()
+      await page.getByRole('button', { name: 'Tüm kategoriler' }).click()
+      await expect(page.getByRole('treeitem', { name: /^E2E Alt Kategori/ })).toBeFocused()
+    }
   })
 
-  test('boş durum: kategori yoksa da form/arama yüzeyi bozulmadan açılır (ham hata sızmaz)', async ({ page }) => {
+  test('boş durum: kategori yoksa ilk kategori yönlendirmesi açılır (ham hata sızmaz)', async ({ page }) => {
     await installApiMocks(page, { MenuService: menuFixtureWithCategory, CategoryService: [] })
     await gotoAuthed(page)
     await openCategoryListView(page)
 
     await expectScreenOpen(page, '.categoryListView')
-    await expect(page.getByText('Kategori Listesi')).toBeVisible()
+    await expect(page.getByText('Henüz kategori yok')).toBeVisible()
     await expect(page.locator('body')).not.toContainText('500')
   })
 
@@ -81,7 +97,7 @@ test.describe('P3 (B5-2) — Kategoriler (CategoryListView)', () => {
     await installApiMocks(page, { MenuService: menuFixtureWithCategory, CategoryService: categoriesDoluFixture })
     await gotoAuthed(page)
     await openCategoryListView(page)
-    await expect(page.getByText('Kategori Listesi')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Kategori ağacı' })).toBeVisible()
     const results = await new AxeBuilder({ page }).include('.categoryListView').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
     await testInfo.attach('axe-CategoryListView-sonuclari.json', { body: JSON.stringify(results.violations, null, 2), contentType: 'application/json' })
     console.log(`[axe] CategoryListView: ${results.violations.length} WCAG 2.1 AA ihlali`)
@@ -120,7 +136,8 @@ async function openMappingPanel(page: Page, overrides: Record<string, MockValue>
   })
   await gotoAuthed(page)
   await openCategoryListView(page)
-  await page.getByRole('button', { name: 'Tişört ayarları' }).click()
+  // B7: seçim ⚙ "… ayarları" düğmesinden ağaç satırının kendisine taşındı (bilinçli; panel ve iddialar aynı).
+  await page.getByRole('treeitem', { name: /^Tişört/ }).click()
   await page.locator('.categorySyncComponent .ek-platform-choice').first().click()
 }
 
