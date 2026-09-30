@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- ADR-0026 Karar 4.1: arama motoru dışı, referrer yok (sunucu başlıkları da aynısını söyler). -->
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Entegrasyonik Yönetim</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- ADR-0026 Karar 3.4: eşzamanlı tema önyüklemesi, CSS'ten ÖNCE (ilk kare doğru tema). -->
+    <script src="/theme-boot.js" data-storage-key="ek-bo-theme"></script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

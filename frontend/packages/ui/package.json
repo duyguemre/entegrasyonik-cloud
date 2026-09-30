@@ -1,0 +1,17 @@
+{
+  "name": "@entegrasyonik/ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Entegrasyonik ortak tasarım sistemi paylaşım noktası (ADR-0026 Karar 2): token'lar, tema (light/dark), DS-v2 bileşenleri. Derleme adımı yok — kaynak olarak tüketilir.",
+  "exports": {
+    "./tokens": "./src/tokens.ts",
+    "./theme": "./src/theme/index.ts",
+    "./components": "./src/components.ts",
+    "./styles": "./src/bridge/styles.ts",
+    "./format": "./src/format.ts"
+  },
+  "scripts": {
+    "test": "vitest run"
+  }
+}
