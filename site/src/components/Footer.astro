@@ -14,7 +14,7 @@
 import Container from './Container.astro'
 import Logo from './Logo.astro'
 import { legalNav, published } from '../data/navigation'
-import { menuDirect, menuGroups } from '../data/nav-menu'
+import { flatLinks, menuDirect, menuGroups } from '../data/nav-menu'
 import { getPublicIntegrations } from '../data/integrations'
 import { appUrls } from '../lib/site-config'
 import { contactEmail, mailtoHref } from '../lib/contact'
@@ -26,7 +26,7 @@ const groups = menuGroups()
     id: g.id,
     label: g.label,
     // Ürün sütunu doğrudan bağlantıları (Fiyatlandırma) da taşır; header'daki sıra korunur.
-    links: g.id === 'product' ? [...g.links, ...menuDirect()] : g.links,
+    links: g.id === 'product' ? [...flatLinks(g), ...menuDirect()] : flatLinks(g),
   }))
   .filter((g) => g.links.length > 0)
 const legalLinks = published(legalNav)

@@ -12,7 +12,14 @@
  *  - ← / →: üst düzey öğeler (grup düğmeleri + doğrudan bağlantılar) arasında; Home / End: ilk / son öğe
  *  - Esc: açık paneli kapatır, odağı düğmesine döndürür; Tab ile gruptan çıkınca ve dışarı tıklayınca kapanır
  * `data-js` işareti, JS'siz yedek (üzerine gelince / odak içindeyken görünme) CSS kuralını devre dışı bırakır.
+ *
+ * S25 — hover niyeti (yalnızca fare; dokunmatik/kalem tıklamayla çalışır): imleç düğmede HOVER_OPEN_MS durursa açılır,
+ * grup dışına çıkınca HOVER_CLOSE_MS sonra kapanır (geri dönülürse iptal) — çapraz geçişte panel yanıp sönmez
+ * (WCAG 1.4.13: üzerine gelinebilir, kalıcı, Esc ile kapatılabilir). Bir panel açıkken diğerine geçiş anında ve
+ * animasyonsuzdur (`data-switching`). Tıklama/klavye her zaman beklemesizdir.
  */
+const HOVER_OPEN_MS = 120
+const HOVER_CLOSE_MS = 240
 const menu = document.querySelector<HTMLDetailsElement>('[data-mobile-menu]')
 
 if (menu) {
@@ -47,8 +54,18 @@ if (nav) {
   const isOpen = (t: HTMLElement) => t.getAttribute('aria-expanded') === 'true'
   const close = (t: HTMLElement) => t.setAttribute('aria-expanded', 'false')
   const open = (t: HTMLElement) => {
+    const switching = triggers.some((o) => o !== t && isOpen(o))
+    if (switching) {
+      nav.dataset.switching = ''
+      requestAnimationFrame(() => requestAnimationFrame(() => delete nav.dataset.switching))
+    }
     for (const other of triggers) if (other !== t) close(other)
     t.setAttribute('aria-expanded', 'true')
+  }
+  let hoverTimer: number | undefined
+  const later = (ms: number, fn: () => void) => {
+    window.clearTimeout(hoverTimer)
+    hoverTimer = window.setTimeout(fn, ms)
   }
   const openTrigger = () => triggers.find(isOpen)
   const focusTop = (i: number) => tops[(i + tops.length) % tops.length]?.focus()
@@ -56,7 +73,29 @@ if (nav) {
   for (const t of triggers) {
     const group = t.closest<HTMLElement>('[data-nav-group]')!
 
-    t.addEventListener('click', () => (isOpen(t) ? close(t) : open(t)))
+    t.addEventListener('click', () => {
+      window.clearTimeout(hoverTimer)
+      if (isOpen(t)) close(t)
+      else open(t)
+    })
+
+    // Hover niyeti (yalnızca fare). Açık bir panel varken komşu gruba geçiş beklemesizdir.
+    t.addEventListener('pointerenter', (event) => {
+      if (event.pointerType !== 'mouse') return
+      if (openTrigger()) {
+        window.clearTimeout(hoverTimer)
+        if (!isOpen(t)) open(t)
+      } else later(HOVER_OPEN_MS, () => open(t))
+    })
+    group.addEventListener('pointerenter', (event) => {
+      if (event.pointerType === 'mouse' && isOpen(t)) window.clearTimeout(hoverTimer)
+    })
+    group.addEventListener('pointerleave', (event) => {
+      if (event.pointerType !== 'mouse') return
+      later(isOpen(t) ? HOVER_CLOSE_MS : 0, () => {
+        if (!group.contains(document.activeElement) || document.activeElement === t) close(t)
+      })
+    })
 
     group.addEventListener('keydown', (event) => {
       const onTrigger = event.target === t
