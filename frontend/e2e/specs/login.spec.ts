@@ -25,24 +25,26 @@ test.describe('P1 — Giriş', () => {
     await expect(page.getByRole('button', { name: 'Giriş' })).toBeVisible()
   })
 
-  test('gizli iş kuralı: güvenlik kodu (CAPTCHA) gerektiğinde cevap ekranda AÇIK METİN gösteriliyor (bkz. BACKLOG.md)', async ({ page }) => {
-    // GİZLİ DAVRANIŞ (characterization, düzeltilmedi — BACKLOG.md'ye "incelenmesi gereken davranış" eklendi):
-    // requireCaptcha=true döndüğünde LoginComponent captcha metnini {{ captchaSecret }} ile DOĞRUDAN
-    // render ediyor (bkz. LoginComponent.vue satır ~50) — yani "güvenlik kodu" kullanıcının kendisine
-    // sunuluyor, bir insan/bot ayrımı sağlamıyor. Şüpheli ama bu görevde DÜZELTİLMEDİ, yalnızca sabitlendi.
+  // BİLİNÇLİ DEĞİŞİKLİK (faz3-fe-c2a): eski karakterizasyon "captcha metni ekranda açık gösteriliyor" davranışını
+  // sabitliyordu. Faz 4 hesap sözleşmesiyle backend captcha'yı kaldırdı (`requireCaptcha` dönmez, `getCaptcha` yok);
+  // FE'deki ölü kod silindi. Yeni iddia: eski biçimde bir yanıt gelse bile captcha paneli çizilmez, `getCaptcha`
+  // çağrılmaz ve kullanıcı genel "bilgiler hatalı" mesajını görür.
+  test('captcha kaldırıldı: eski `requireCaptcha` yanıtı güvenlik kodu paneli açmaz, getCaptcha çağrılmaz', async ({ page }) => {
+    const captchaCalls: string[] = []
+    page.on('request', r => { if (r.url().includes('getCaptcha')) captchaCalls.push(r.url()) })
     await installApiMocks(page, {
       checkAuthentication: false,
       userContext: mockError(401, {}),
       'SecurityService/login': { requireCaptcha: true, message: 'Güvenlik kodu gereklidir.' },
-      'SecurityService/getCaptcha': { captcha: 'AB12' },
     })
     await page.goto('/login')
     await page.getByLabel('E-posta').fill('e2e@example.invalid')
     await page.getByLabel('Şifre', { exact: true }).fill('e2e-pass')
     await page.getByRole('button', { name: 'Giriş' }).click()
 
-    await expect(page.getByText('Güvenlik kodu gereklidir.')).toBeVisible()
-    await expect(page.locator('.captcha-box')).toHaveText('AB12')
+    await expect(page.getByText('Bilgiler hatalı, lütfen kontrol ediniz.')).toBeVisible()
+    await expect(page.locator('.captcha-box')).toHaveCount(0)
+    expect(captchaCalls).toHaveLength(0)
   })
 
   test('hata durumu: hatalı bilgilerde Türkçe hata mesajı gösterilir, ham hata sızmaz', async ({ page }) => {

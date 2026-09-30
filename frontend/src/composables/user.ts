@@ -35,8 +35,8 @@ export default function useUser() {
   const integrationStore: any = useIntegrationStore()
 
   const restApi = useRestApi()
-  const login = async (username: string, password: string, captcha?: string) => {
-    const resp: any = await restApi.post('SecurityService/login', { username, password, captcha })
+  const login = async (username: string, password: string) => {
+    const resp: any = await restApi.post('SecurityService/login', { username, password })
 
     if (resp?.requireStoreSelection) {
       stores.value = resp.clients
@@ -155,10 +155,6 @@ export default function useUser() {
     productStatistics.value = await restApi.post("ProductService/getProductStatistics", {})
   }
 
-
-  const getCaptcha = async () => {
-    return await restApi.post('SecurityService/getCaptcha', {})
-  }
 
   const getRoles = async () => {
     return await restApi.post('UserService/getRoles', {})
@@ -290,7 +286,6 @@ export default function useUser() {
     selectStore,
     stores,
     activeClientId,
-    getCaptcha,
     isOwner,
     isPlatformAdmin,
     isTenantAdmin,

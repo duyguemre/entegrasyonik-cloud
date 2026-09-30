@@ -36,8 +36,8 @@ function logApiError(action: 'get' | 'post', service: string, error: any) {
 }
 
 // ADR-0001 adım 8: oturum süresi dolduğunda / iptal edildiğinde (401) kullanıcıyı giriş sayfasına yönlendir.
-// Giriş/kayıt/captcha/çıkış/kimlik-kontrol uçları 401'i normal akışın parçası olarak döndürür; bunlar hariç tutulur.
-const AUTH_FLOW_PATHS = ['SecurityService/login', 'SecurityService/register', 'SecurityService/getCaptcha', 'SecurityService/logout', 'checkAuthentication']
+// Giriş/kayıt/çıkış/kimlik-kontrol uçları 401'i normal akışın parçası olarak döndürür; bunlar hariç tutulur.
+const AUTH_FLOW_PATHS = ['SecurityService/login', 'SecurityService/register', 'SecurityService/logout', 'checkAuthentication']
 let redirectingToLogin = false
 axios.interceptors.response.use(
   response => response,
