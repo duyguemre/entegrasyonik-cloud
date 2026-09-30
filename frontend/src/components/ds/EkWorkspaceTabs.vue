@@ -220,6 +220,10 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   min-width: 0;
   height: 100%;
   overflow-x: auto;
+  /* overflow-x:auto tek başına overflow-y'yi de auto yapar; sekmenin -1px alt payı (şerit kenarlığının
+     üstüne binme) 1px dikey taşma üretir → klasik (yer kaplayan) kaydırma çubuklu sistemlerde (Windows)
+     şeritte dikey kaydırma çubuğu çıkıyordu. Kaydırma kabı zaten kırptığı için görünüm değişmez. */
+  overflow-y: hidden;
   scrollbar-width: thin;
 }
 
