@@ -6,7 +6,9 @@
   `PlatformImageComponent` kullanımlarının buna taşınması A3/A5/B'nin işi —
   "bu ekranların İÇERİĞİNE dokunma" kısıtı).
 
-  Varsayılan: MONOGRAM rozeti (24/32px yuvarlak kare) + platform adı (sm 500). C1: logo zemini = kanalın RESMİ
+  K13 (FR2 madde 11–12): monogram artık TEK kanal rozetinin kısa formu (`EkChannelBadge form="short"`: koyu kenarlık + açık
+  zemin + kısa ad, ör. TY/HB) + platform adı (sm 500). Aşağıdaki C1 "logo zemini" notu tarihseldir (yerini K13 aldı).
+  Eski: MONOGRAM rozeti (24/32px yuvarlak kare) + platform adı (sm 500). C1: logo zemini = kanalın RESMİ
   marka rengi (tint yok), harf `onBrand` (siyah/beyaz, ≥ 4.5:1) — `--ek-ch-logo-{bg,fg,accent}`. İkincil renk YALNIZ
   burada: N11 resmi ikonu gibi siyah zemin + pembe harf; Pazarama mavi zemin + alt kenarda 3px pembe şerit. Nötr kıl halka
   (`--ek-channel-ring`) koyu marka renklerini dark zeminden ayırır. Renkler `.ek-ch-<kod>` kapsamından
@@ -22,29 +24,24 @@
 <template>
   <span class="ek-platform-mark" :class="[channelClass(code), { 'ek-platform-mark--dot': variant === 'dot', 'is-known': !!channelCode(code) }]">
     <span v-if="variant === 'dot'" class="ek-platform-mark__dot" aria-hidden="true"></span>
-    <span
-      v-else
-      class="ek-platform-mark__badge"
-      :class="`ek-platform-mark__badge--${size}`"
-    >
-      {{ initial }}
-    </span>
+    <EkChannelBadge v-else class="ek-platform-mark__badge" :class="`ek-platform-mark__badge--${size}`" :code="code" :name="name"
+      form="short" :size="size === 'lg' ? 'md' : 'sm'" :aria-hidden="showName ? 'true' : undefined" />
     <span v-if="showName" class="ek-platform-mark__name">{{ name }}</span>
   </span>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { channelClass, channelCode } from '../tokens/channels'
+import EkChannelBadge from './EkChannelBadge.vue'
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     name: string
-    /** Kanal kodu (`channelPalette` anahtarları); tanımsızsa nötr monogram. */
+    /** Kanal kodu (`channelPalette` anahtarları); tanımsızsa nötr rozet. */
     code?: string
     size?: 'sm' | 'lg'
     showName?: boolean
-    /** `badge` (varsayılan): kanal tonlu avatar. `dot`: tablo/arama satırı için 8px kanal noktası + ad. */
+    /** `badge` (varsayılan): kısa kanal rozeti. `dot`: tablo/arama satırı için 8px kanal noktası + ad. */
     variant?: 'badge' | 'dot'
   }>(),
   {
@@ -53,8 +50,6 @@ const props = withDefaults(
     variant: 'badge',
   },
 )
-
-const initial = computed(() => props.name?.trim().charAt(0).toUpperCase() || '?')
 </script>
 
 <style scoped>
@@ -63,38 +58,6 @@ const initial = computed(() => props.name?.trim().charAt(0).toUpperCase() || '?'
   align-items: center;
   gap: var(--ek-space-2);
   min-width: 0;
-}
-
-.ek-platform-mark__badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  border-radius: var(--ek-radius-tile);
-  /* Tanımsız kanal: nötr açık zemin + nötr kenar, `content-default` harf. */
-  background: var(--ek-color-neutral-subtle);
-  box-shadow: inset 0 0 0 1px var(--ek-color-neutral-border);
-  color: var(--ek-color-content-default);
-  font-weight: var(--ek-font-weight-bold);
-}
-
-/* Bilinen kanal: logo zemini + harf token'dan; alt şerit ikincil renk (yoksa zeminle aynı → görünmez). */
-.ek-platform-mark.is-known .ek-platform-mark__badge {
-  background: var(--ek-ch-logo-bg);
-  color: var(--ek-ch-logo-fg);
-  box-shadow: inset 0 0 0 1px var(--ek-channel-ring), inset 0 -3px 0 var(--ek-ch-logo-accent);
-}
-
-.ek-platform-mark__badge--sm {
-  width: 24px;
-  height: 24px;
-  font-size: var(--ek-font-size-xs);
-}
-
-.ek-platform-mark__badge--lg {
-  width: 32px;
-  height: 32px;
-  font-size: var(--ek-font-size-sm);
 }
 
 .ek-platform-mark__dot {

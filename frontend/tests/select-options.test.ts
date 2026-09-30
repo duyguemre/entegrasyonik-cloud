@@ -17,6 +17,14 @@ describe('selectOptions', () => {
     expect(normalizeOptions(['A', 'B'])[1]).toMatchObject({ value: 'B', title: 'B' })
   })
 
+  it('normalizeOptions: kargo türü (K13) — kayıtlı firma rozet kodu, "Diğer" rozet değil nötr ikon', async () => {
+    const { carrierOptions } = await import('@entegrasyonik/ui/tokens')
+    const o = normalizeOptions(carrierOptions(), 'title', 'value', 'carrier')
+    expect(o[0]).toMatchObject({ value: 'Yurtiçi Kargo', carrier: 'yurtici' })
+    expect(o.at(-1)).toMatchObject({ value: 'Diğer', icon: 'mdi-truck-outline' })
+    expect(o.at(-1)!.carrier).toBeUndefined()
+  })
+
   it('channelOptionsFrom: tür alt satırı; toneOptionsFrom: ton', () => {
     expect(channelOptionsFrom([{ code: 'n11', title: 'N11', type: { code: 'marketplace' } }])[0]).toMatchObject({ channel: 'n11', subtitle: 'Pazaryeri' })
     expect(toneOptionsFrom([{ id: 'X', title: 'x' }], () => 'danger')[0]).toMatchObject({ value: 'X', tone: 'danger' })
