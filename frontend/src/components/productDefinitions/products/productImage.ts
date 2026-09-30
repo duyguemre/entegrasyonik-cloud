@@ -10,9 +10,6 @@
 import { DEFAULT_PRODUCT_IMAGE_BASE_URL } from '@/config/imageUrl'
 export const PRODUCT_IMAGE_BASE = DEFAULT_PRODUCT_IMAGE_BASE_URL
 
-/** Önizleme şeridinde gösterilen en fazla görsel (fazlası sessizce kırpılır — sayı yazılmaz). */
-export const PREVIEW_STRIP_LIMIT = 5
-
 const isHttp = (x: unknown): x is string => typeof x === 'string' && /^https?:\/\//.test(x)
 
 /** Ürün satırı görselleri (sıra `order` alanıyla; yalnız `url` taşıyanlar). */
