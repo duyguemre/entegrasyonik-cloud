@@ -147,6 +147,8 @@ const CASES: Array<{ name: string; run: (p: Page) => Promise<void> }> = [
       await expect(p.getByTestId('transfer-pending')).toBeVisible()
       await p.mouse.move(0, 0)
       await p.waitForTimeout(4500) // başarı toast'ı kapanır
+      await p.getByTestId('transfer-pending').scrollIntoViewIfNeeded()
+      await p.evaluate(() => document.querySelectorAll('.authorizationListView, .authorizationListView *').forEach((el) => { if ((el as HTMLElement).scrollTop) (el as HTMLElement).scrollTop = 0 }))
       await shoot(p, 'h-devir-bekliyor')
     },
   },
