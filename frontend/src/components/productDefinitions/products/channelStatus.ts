@@ -30,10 +30,10 @@ export interface ProductChannelStatus {
 }
 
 const META: Record<ProductChannelKey, { tone: StatusTone; icon: string; label: string }> = {
-  failed: { tone: 'danger', icon: 'mdi-alert-circle', label: 'Hatalı' },
+  failed: { tone: 'danger', icon: 'mdi-alert-circle-outline', label: 'Hatalı' },
   waiting: { tone: 'info', icon: 'mdi-clock-outline', label: 'Onay bekliyor' },
-  live: { tone: 'success', icon: 'mdi-check-circle', label: 'Yayında' },
-  offsale: { tone: 'warning', icon: 'mdi-pause-circle', label: 'Satışa kapalı' },
+  live: { tone: 'success', icon: 'mdi-check-circle-outline', label: 'Yayında' },
+  offsale: { tone: 'warning', icon: 'mdi-pause-circle-outline', label: 'Satışa kapalı' },
   none: { tone: 'neutral', icon: 'mdi-circle-outline', label: 'Gönderilmedi' },
 }
 

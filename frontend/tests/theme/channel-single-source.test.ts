@@ -72,7 +72,6 @@ describe('kanal rengi tek kaynak (statik)', () => {
   it('geri uyum takma adları (`--ek-ch-subtle|text|border`) yalnız bilinen dosyalarda ve azalan sayıda', () => {
     // Ratchet: sayı yalnız AZALABİLİR; yeni kodda `--ek-ch-brand|on-brand|secondary` kullan.
     const ALLOWED: Record<string, number> = {
-      'src/components/productDefinitions/variants/ProductVariantListTooltipComponent.vue': 1,
       'packages/ui/src/components/EkRecordSummary.vue': 1,
     }
     const found: Record<string, number> = {}

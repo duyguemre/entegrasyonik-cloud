@@ -27,7 +27,7 @@ const MARKS: Record<string, { tone: string; icon: string }> = {
   offsale: { tone: 'warning', icon: 'mdi-pause' },
 }
 
-const marker = computed(() => MARKS[props.status.key] ?? (props.status.ready ? { tone: 'action', icon: 'mdi-arrow-up-bold' } : null))
+const marker = computed(() => MARKS[props.status.key] ?? (props.status.ready ? { tone: 'action', icon: 'mdi-arrow-up' } : null))
 </script>
 
 <style scoped>
