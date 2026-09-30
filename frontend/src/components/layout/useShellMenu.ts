@@ -14,6 +14,7 @@ import { useMenuStore } from '@/stores/site/menu'
 import { useWorkspaceStore } from '@/stores/workspace'
 import { screenKeyForLink } from '@/navigation/screens'
 import { SECTIONS } from '@/navigation/sections'
+import { firstMessage, humanizeKey, resolveMenuTitle } from '@/navigation/menuTitle'
 import type { EkSideSection, EkSideItem } from '@/components/ds/EkSidebarNav.vue'
 
 /** Sidebar'ın sağında favori yıldızı taşıyabilen öğe (menü `isConstant` değilse). */
@@ -35,7 +36,7 @@ export function useShellMenu() {
   const eventBus: any = inject('eventBus', undefined)
   const { t, te } = useI18n({ useScope: 'global' })
 
-  const titleOf = (link: any) => (link?.singleton === false && link?.title ? link.title : t(link?.fullPath ?? ''))
+  const titleOf = (link: any) => resolveMenuTitle(link, t, te)
 
   const groups = computed<any[]>(() => {
     const menu = menuStore?.getMenu?.()
@@ -45,12 +46,10 @@ export function useShellMenu() {
   const sectionLabel = (group: any) => {
     if (group.group === 'dashboard') return t('shell.section.general')
     if (group.group === 'userManagement' || group.edit === false) return ''
-    const key = `menu.${group.group}`
-    const label = te(key) ? t(key) : key
-    if (label !== key && typeof label === 'string' && label.trim()) return label
-    // Menü grubu i18n'de bir alt ağaçsa (ör. `menu.integrations`), kabuğun bölüm etiketi kullanılır.
+    // Menü grubu i18n'de bir alt ağaçsa (ör. `menu.integrations`), kabuğun bölüm etiketi kullanılır;
+    // hiçbiri yoksa grup adı okunur metne çevrilir (ham anahtar ASLA gösterilmez).
     const section = SECTIONS.find((s) => s.id === group.group)
-    return section ? t(section.labelKey) : ''
+    return firstMessage([`menu.${group.group}`, section?.labelKey, `shell.section.${group.group}`], t, te) ?? humanizeKey(group.group)
   }
 
   /** Sidebar bölümleri (EkSidebarNav modeli) + anahtar → menü düğümü eşlemesi. */

@@ -116,7 +116,15 @@
     "accountSecurity": "Hesabım ve Güvenlik",
     "privacyData": "Veri ve Gizlilik",
     "stockPolicy": "Stok Politikası",
-    "stockHealth": "Stok Sağlığı"
+    "stockHealth": "Stok Sağlığı",
+    "user": {
+      "user": "Hesabım",
+      "subscription": "Abonelik İşlemleri",
+      "invoiceInfo": "Fatura Bilgileri",
+      "changePassword": "Şifre Değiştir",
+      "exit": "Çıkış"
+    },
+    "account": "Hesabım"
   },
   "batch": {
     "menu": {
@@ -1321,7 +1329,9 @@
       "integrations": "Entegrasyonlar",
       "finance": "Finans ve Raporlar",
       "admin": "Yönetim",
-      "other": "Diğer"
+      "other": "Diğer",
+      "settings": "Ayarlar",
+      "account": "Hesabım"
     }
   },
   "definitions": {

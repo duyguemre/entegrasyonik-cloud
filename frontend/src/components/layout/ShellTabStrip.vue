@@ -91,6 +91,7 @@ import EkMenuPanel, { type EkMenuGroup, type EkMenuItem } from '@/components/ds/
 import EkKbd from '@/components/ds/EkKbd.vue'
 import { isPinnedLink, useWorkspaceStore } from '@/stores/workspace'
 import { shortcutKeys, withShortcut } from '@/navigation/shortcuts'
+import { resolveMenuTitle } from '@/navigation/menuTitle'
 
 withDefaults(defineProps<{ headerCollapsed?: boolean; focusMode?: boolean; compact?: boolean }>(), {
   headerCollapsed: false,
@@ -99,7 +100,7 @@ withDefaults(defineProps<{ headerCollapsed?: boolean; focusMode?: boolean; compa
 })
 defineEmits<{ 'toggle-header': []; 'toggle-focus': [] }>()
 
-const { t } = useI18n({ useScope: 'global' })
+const { t, te } = useI18n({ useScope: 'global' })
 const workspace = useWorkspaceStore()
 
 const tabsRef = ref<InstanceType<typeof EkWorkspaceTabs> | null>(null)
@@ -110,7 +111,7 @@ const ctxOpen = ref(false)
 const ctxPoint = ref<[number, number]>([0, 0])
 const ctxTabId = ref<string>()
 
-const titleOf = (link: any) => (link?.singleton === false ? String(link?.title ?? '') : t(link?.fullPath ?? ''))
+const titleOf = (link: any) => resolveMenuTitle(link, t, te)
 
 const viewTabs = computed<EkWorkspaceTab[]>(() =>
   workspace.tabs.map((tab: any) => ({

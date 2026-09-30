@@ -18,10 +18,10 @@
     "integrationHealth": "Integration Health",
     "auditLog": "Audit Log",
     "notifications": "Notifications",
-    "profile" :"Profile",
-    "change_password" :"Change Password",
-    "roles" :"Roles",
-    "exit" :"Exit",
+    "profile": "Profile",
+    "change_password": "Change Password",
+    "roles": "Roles",
+    "exit": "Exit",
     "support_ticket": "Open Ticket",
     "support_ticket_list": "Ticket List",
     "support_school": "Documentation",
@@ -41,7 +41,15 @@
     "logs": "Logs",
     "add_product": "Add Product",
     "add_customer": "Add Customer",
-    "stockHealth": "Stock Health"
+    "stockHealth": "Stock Health",
+    "user": {
+      "user": "My Account",
+      "subscription": "Subscription",
+      "invoiceInfo": "Billing Details",
+      "changePassword": "Change Password",
+      "exit": "Sign Out"
+    },
+    "account": "My Account"
   },
   "title": {
     "config": "Configuration"
@@ -226,7 +234,9 @@
       "integrations": "Integrations",
       "finance": "Finance & Reports",
       "admin": "Administration",
-      "other": "Other"
+      "other": "Other",
+      "settings": "Settings",
+      "account": "My Account"
     }
   },
   "finance": {
