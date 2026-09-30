@@ -54,7 +54,8 @@ test.describe('C1.1 — Stok sağlığı (StockHealthView)', () => {
     await expect(recon).not.toContainText(/\d{2}\.\d{2}\.\d{4}/)
 
     // Sözleşme: { limit } (1..50), tenant kimliği gövdede YOK.
-    expect(bodies[0]).toEqual({ limit: 20 })
+    // Birleştirme (Aşama 3): pano kartının `{ limit: 5 }` çağrısı da aynı uca gider; ekranın gövdesi ayrıca aranır.
+    expect(bodies).toContainEqual({ limit: 20 })
   })
 
   test('boş: açık aşırı satış/eşleşmeyen kalem yoksa sakin metin (sahte "mükemmel" yok, 0 ≠ —)', async ({ page }) => {
@@ -85,6 +86,8 @@ test.describe('C1.1 — Stok sağlığı (StockHealthView)', () => {
     let calls = 0
     const view = await openStockHealth(page, {
       'StockService/getStockOverview': async (route: any, headers: any) => {
+        // Birleştirme (Aşama 3): pano kartı da aynı ucu `{ limit: 5 }` ile çağırır — yalnız ekranın çağrıları sayılır.
+        if (route.request().postDataJSON?.()?.limit !== 20) return route.fulfill({ status: 200, headers, contentType: 'application/json', body: JSON.stringify(stockOverviewDoluFixture) })
         calls += 1
         if (calls === 1) return route.fulfill({ status: 200, headers, contentType: 'application/json', body: JSON.stringify(stockOverviewDoluFixture) })
         return route.fulfill({ status: 500, headers, contentType: 'application/json', body: '{"error":"x"}' })

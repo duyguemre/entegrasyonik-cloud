@@ -36,8 +36,9 @@ test.describe('ADR-0015 B5-3 — Hesap ekranları (ExitView / ChangePasswordView
 
     await expect(page.getByLabel('Yeni Şifre', { exact: true })).toBeVisible()
     await expect(page.getByLabel('Yeni Şifre (Tekrar)', { exact: true })).toBeVisible()
-    // Karakterizasyon: script bloğu boş, hiçbir "Değiştir/Kaydet" düğmesi DOM'da yok.
-    await expect(page.getByRole('button', { name: /değiştir|kaydet/i })).toHaveCount(0)
+    // Karakterizasyon: script bloğu boş, ekranda hiçbir "Değiştir/Kaydet" düğmesi yok. (Aşama 3: sol menü artık
+    // "Şifre Değiştir" öğesini ham anahtar yerine okunur adla gösterdiği için arama çalışma alanına kapsandı.)
+    await expect(page.locator('.workplace-area').getByRole('button', { name: /değiştir|kaydet/i })).toHaveCount(0)
   })
 
   test('InvoiceInfoView: fatura bilgisi alanları render olur, kaydet düğmesi YOK (karakterizasyon)', async ({ page }) => {

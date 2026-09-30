@@ -130,19 +130,17 @@ test.describe('ADR-0015 B4-P1c — N7 Entegrasyon sağlığı', () => {
   })
 
   test('rol (olumsuz): ekran menüde yoksa menüde görünmez ve derin bağlantı panoya döner', async ({ page }) => {
-    let called = false
     await installApiMocks(page, {
       MenuService: menuFixtureWithB4P1c(['AuditLogView']),
-      [OP]: async (route: any, headers: Record<string, string>) => {
-        called = true
-        return route.fulfill({ status: 403, contentType: 'application/json', headers, body: '{"error":"Forbidden"}' })
-      },
+      [OP]: async (route: any, headers: Record<string, string>) =>
+        route.fulfill({ status: 403, contentType: 'application/json', headers, body: '{"error":"Forbidden"}' }),
     })
     await page.goto(`/${B4P1C_SCREENS.IntegrationHealthView.slug}`)
     await expect(page).toHaveURL(/\/dashboard$/, { timeout: 20000 })
     await expect(page.locator(ROOT)).toHaveCount(0)
     await expect(page.locator(`.mdi-heart-pulse`)).toHaveCount(0)
-    expect(called).toBe(false)
+    // Birleştirme (Aşama 3): "uç hiç çağrılmaz" iddiası kalktı — pano (dashboard dalı) kendi sağlık kartı için aynı
+    // ucu çağırır ve 403'ü kart içinde karşılar. Ekranın açılmadığı (kök yok, panoya dönüş) iddiaları korunur.
   })
 
   test('ekran görüntüsü tabanı (entegrasyon sağlığı)', async ({ page }) => {
