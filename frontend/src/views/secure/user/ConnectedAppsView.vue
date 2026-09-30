@@ -60,7 +60,7 @@
             <div class="ek-apps-pending__text">
               <span class="ek-apps-pending__title">{{ p.preview.title }}</span>
               <span class="ek-apps-pending__meta">
-                {{ p.client.name }} · {{ $t('mcp.connections.pendingExpires', { time: formatCountdown(remainingSeconds(p.expiresAt, now)) }) }}
+                {{ p.client.name }} · {{ $t('mcp.connections.pendingExpires', { min: minutesLeft(remainingSeconds(p.expiresAt, now)) }) }}
               </span>
             </div>
             <router-link v-slot="{ navigate }" :to="`/approve/${encodeURIComponent(p.id)}`" custom>
@@ -122,7 +122,9 @@
               <span class="ek-apps-app__host">{{ item.conn.redirectHost }}</span>
             </span>
           </template>
-          <template #cell-user="{ item }">{{ item.conn.user?.email ?? '—' }}</template>
+          <template #cell-user="{ item }">
+            <span class="ek-apps-user" :title="item.conn.user?.email">{{ item.conn.user?.email ?? '—' }}</span>
+          </template>
           <template #cell-scopes="{ item }">
             <span class="ek-apps-chips">
               <EkStatusChip v-for="c in scopeChips(item.conn.scopes)" :key="c.key" :tone="c.tone" :label="$t(c.key)" />
@@ -131,6 +133,12 @@
           <template #cell-lastUsed="{ item }">
             <span :title="item.conn.lastUsedAt ? formatDateTime(item.conn.lastUsedAt) : undefined">
               {{ item.conn.lastUsedAt ? formatRelative(item.conn.lastUsedAt) : $t('mcp.common.never') }}
+            </span>
+          </template>
+          <template #cell-dates="{ item }">
+            <span class="ek-apps-dates">
+              <span>{{ formatDate(item.conn.createdAt) }}</span>
+              <span class="ek-apps-dates__end">{{ $t('mcp.connections.expiresOn', { date: formatDate(item.conn.expiresAt) }) }}</span>
             </span>
           </template>
           <template #cell-actions="{ item }">
@@ -193,13 +201,13 @@ import {
   type EkPageTab,
   type EkTableColumn,
 } from '@entegrasyonik/ui/components'
-import { formatDateTime, formatNumber, formatRelative } from '@entegrasyonik/ui/format'
+import { formatDate, formatDateTime, formatNumber, formatRelative } from '@entegrasyonik/ui/format'
 import { useToast } from '@entegrasyonik/ui/composables/useToast'
 import EkSettingsTemplate from '@/components/page/templates/EkSettingsTemplate.vue'
 import McpConnectGuide from '@/components/mcp/McpConnectGuide.vue'
 import useUser from '@/composables/user'
 import { useMcpApi } from '@/composables/useMcpApi'
-import { formatCountdown, mcpErrorKey, mcpVisibility, remainingSeconds, scopeChips } from '@/components/mcp/mcpModel'
+import { mcpErrorKey, mcpVisibility, minutesLeft, remainingSeconds, scopeChips } from '@/components/mcp/mcpModel'
 import type { ApprovalView, McpConnection, McpConnectionScope, McpSettings } from '@/types/McpTypes'
 
 const { t } = useI18n()
@@ -264,12 +272,12 @@ const tabs = computed<EkPageTab[]>(() => [
 
 const columns = computed<EkTableColumn[]>(() => [
   { key: 'app', label: t('mcp.connections.colApp') },
-  ...(tab.value === 'tenant' ? [{ key: 'user', label: t('mcp.connections.colUser') }] : []),
-  { key: 'store', label: t('mcp.connections.colStore') },
+  // Mağaza sekmesinde tüm satırlar aynı mağazadır: mağaza sütununun yerini kullanıcı alır (960px'e sığar).
+  tab.value === 'tenant' ? { key: 'user', label: t('mcp.connections.colUser') } : { key: 'store', label: t('mcp.connections.colStore') },
   { key: 'scopes', label: t('mcp.connections.colScopes') },
-  { key: 'created', label: t('mcp.connections.colCreated'), type: 'date' as const },
   { key: 'lastUsed', label: t('mcp.connections.colLastUsed') },
-  { key: 'expires', label: t('mcp.connections.colExpires'), type: 'date' as const },
+  // Bağlandı + bitiş tek sütunda iki satır: tenant sekmesindeki kullanıcı sütunuyla 960px okuma genişliğine sığar.
+  { key: 'dates', label: t('mcp.connections.colDates') },
   { key: 'actions', label: t('mcp.connections.colActions'), type: 'actions' as const },
 ])
 
@@ -278,8 +286,6 @@ const rows = computed(() =>
     id: conn.id,
     conn,
     store: conn.tenant.name,
-    created: conn.createdAt,
-    expires: conn.expiresAt,
   })),
 )
 
@@ -516,6 +522,24 @@ onBeforeUnmount(() => {
   font-size: var(--ek-font-size-xs);
   color: var(--ek-color-content-muted);
   overflow-wrap: anywhere;
+}
+.ek-apps-user {
+  display: block;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ek-apps-dates {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ek-apps-dates__end {
+  font-size: var(--ek-font-size-xs);
+  color: var(--ek-color-content-muted);
 }
 .ek-apps-chips {
   display: inline-flex;

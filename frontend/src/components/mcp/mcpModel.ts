@@ -178,6 +178,11 @@ export function formatCountdown(totalSec: number): string {
   return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${sec}` : `${m}:${sec}`
 }
 
+/** Liste özetleri için kalan süre, yukarı yuvarlanmış tam dakika (en az 1; süresi dolmuşsa 0). */
+export function minutesLeft(totalSec: number): number {
+  return totalSec <= 0 ? 0 : Math.max(1, Math.ceil(totalSec / 60))
+}
+
 /**
  * Ekran okuyucu duyurusu (§3): yalnız son 60 sn'ye GİRİLDİĞİ anda bir kez. `announced` çağıranın bayrağıdır;
  * sayfa zaten ≤60 sn ile açıldıysa da bir kez duyurulur.

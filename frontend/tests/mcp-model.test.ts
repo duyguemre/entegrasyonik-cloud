@@ -17,6 +17,7 @@ import {
   mcpErrorKey,
   mcpRole,
   mcpVisibility,
+  minutesLeft,
   needsLogin,
   noEligibleTenant,
   openInLocation,
@@ -141,6 +142,7 @@ describe('S2 — işlem onayı durum eşlemesi', () => {
     expect(formatCountdown(605)).toBe('10:05')
     expect(formatCountdown(3723)).toBe('1:02:03')
     expect(formatCountdown(-3)).toBe('0:00')
+    expect([minutesLeft(0), minutesLeft(1), minutesLeft(60), minutesLeft(61), minutesLeft(481)]).toEqual([0, 1, 1, 2, 9])
     expect(shouldAnnounceCountdown(61, false)).toBe(false)
     expect(shouldAnnounceCountdown(60, false)).toBe(true)
     expect(shouldAnnounceCountdown(30, true)).toBe(false)

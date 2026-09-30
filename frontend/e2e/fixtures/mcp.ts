@@ -121,14 +121,20 @@ export async function openBarePage(page: Page, path: string, root: string) {
  * çalışma anında `darkTheme`'e alınır + `html[data-theme=dark]` (statik token katmanı). Uygulama kodu değişmez.
  */
 export async function forceDarkTheme(page: Page) {
-  await page.evaluate(() => {
+  const switched = await page.evaluate(() => {
     const app = (document.querySelector('#app') as any)?.__vue_app__
-    const theme = app?.config?.globalProperties?.$vuetify?.theme
-    if (theme?.global?.name) theme.global.name.value = 'darkTheme'
+    // Vuetify 3 tema örneği `provide(Symbol.for('vuetify:theme'))` ile sağlanır (backoffice `bindTheme` ile aynı alan).
+    const theme = app?._context?.provides?.[Symbol.for('vuetify:theme')] ?? app?.config?.globalProperties?.$vuetify?.theme
+    if (!theme?.global?.name) return false
+    theme.global.name.value = 'darkTheme'
     document.documentElement.dataset.theme = 'dark'
     document.documentElement.classList.add('ek-dark')
     document.documentElement.style.colorScheme = 'dark'
+    return true
   })
+  expect(switched, 'Vuetify tema örneği bulunamadı — koyu tema uygulanamadı').toBe(true)
+  // Kanıt: tema sınıfı gerçekten koyu (aksi hâlde "dark axe" sahte yeşil olurdu).
+  await expect(page.locator('.v-theme--darkTheme').first()).toBeAttached({ timeout: 5000 })
   await page.waitForTimeout(300)
 }
 
