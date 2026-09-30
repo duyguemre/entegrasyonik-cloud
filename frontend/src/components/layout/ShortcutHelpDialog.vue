@@ -826,6 +826,10 @@ function openHelpCenter() {
     gap: var(--ek-space-3);
   }
 
+  .ek-sc__side {
+    flex: none;
+  }
+
   .ek-sc__cats {
     flex: none;
     flex-direction: row;
@@ -877,7 +881,8 @@ function openHelpCenter() {
 
   .ek-sc__tip {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
+    /* Sabit tuş sütunu: üç ipucunun adları aynı hizadan başlar. */
+    grid-template-columns: 96px minmax(0, 1fr);
     align-items: center;
     column-gap: var(--ek-space-3);
     padding: var(--ek-space-2) var(--ek-space-3);
