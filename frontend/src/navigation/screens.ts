@@ -177,6 +177,17 @@ export const SCREENS: readonly ScreenDefinition[] = [
   // C1.1 (F-01) stok sağlığı (StockService/getStockOverview, member). Ekran filtre/parametre okumaz → `urlParams` YOK.
   // Gerçek menü kaydı (ApplicationDB `menus`, kod `StockHealthView`, başlık `stockHealth`) yerel iştir.
   { key: 'StockHealthView', slug: 'catalog/stock-health', section: 'catalog', order: 6, icon: 'mdi-scale-unbalanced', titleKey: 'menu.stockHealth' },
+  // Yardım merkezi (faz3-fe-help): statik içerik, veri erişimi yok → `MenuService` ağacına bağlı DEĞİL; bağlantı istemcide
+  // kurulur (`help/helpLink.ts`) ve kabuk onu "Yardım" bölümünde, yardım menüsünde ve Ctrl+K'da gösterir. `article`:
+  // makale kimliği (kebab-case teknik kimlik; PII/serbest metin DEĞİL) — makaleye derin bağlantı + tarayıcı geri/ileri.
+  {
+    key: 'HelpCenterView', slug: 'help', section: 'help', order: 0, icon: 'mdi-lifebuoy', titleKey: 'help.center.title',
+    urlParams: [
+      { name: 'article', kind: 'id' },
+      // `help/categories.ts` kimlikleri (eşliği tests/help-content.test.ts korur).
+      { name: 'category', kind: 'enum', allowed: ['getting-started', 'using-the-app', 'catalog', 'stock', 'orders', 'integrations', 'finance', 'account', 'troubleshooting', 'faq', 'support'] },
+    ],
+  },
 ] as const
 
 /** URL'nin ilk segmenti hiçbir zaman bir ekran slug'ı OLAMAZ (ADR-0012 Karar 1 — başka uç noktalar/statikler ile çakışmasın). */

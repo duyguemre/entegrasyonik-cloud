@@ -355,7 +355,8 @@
       "admin": "Administration",
       "other": "Other",
       "settings": "Settings",
-      "account": "My Account"
+      "account": "My Account",
+      "help": "Help"
     }
   },
   "finance": {
@@ -529,6 +530,11 @@
         "count": "{n} characters",
         "countOf": "{n} / {max}"
       }
+    }
+  },
+  "help": {
+    "center": {
+      "title": "Help center"
     }
   }
 }

@@ -1359,7 +1359,8 @@
       "admin": "Yönetim",
       "other": "Diğer",
       "settings": "Ayarlar",
-      "account": "Hesabım"
+      "account": "Hesabım",
+      "help": "Yardım"
     }
   },
   "definitions": {
@@ -2143,6 +2144,11 @@
       "canceledEnded": "Salt okunur · stok senkronu durdu",
       "canceledStopped": "Salt okunur · stok senkronu durdu",
       "expired": "Abonelik sona erdi · stok senkronu kapalı"
+    }
+  },
+  "help": {
+    "center": {
+      "title": "Yardım merkezi"
     }
   }
 }
