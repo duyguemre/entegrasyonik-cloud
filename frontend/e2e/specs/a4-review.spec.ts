@@ -10,7 +10,7 @@ import { test, type Page, type Route } from '@playwright/test'
 import { SCREENS } from '../../src/navigation/screens'
 import { installApiMocks, mockError } from '../fixtures/mockApi'
 import { openReviewScreen, reviewMocks, reviewPath } from '../fixtures/reviewScreens'
-import { buildMessage, buildSubscription, ordersBosFixture } from '../fixtures/apiData'
+import { buildMessage, buildOrder, buildSubscription, ordersBosFixture } from '../fixtures/apiData'
 import { waitForWorkplaceReady } from '../fixtures/nav'
 
 const ENABLED = process.env.A4_REVIEW === '1'
@@ -36,6 +36,23 @@ const MESSAGES = {
   ],
   totalNumberOfRecords: 4,
   totalNumberOfPages: 1,
+}
+
+// Stres: uzun ad/ürün metni, çok kalem, çok satır, büyük tutar (sentetik; `.invalid`, PII yok).
+const STRESS_ORDERS = {
+  orders: Array.from({ length: 18 }, (_, i) =>
+    buildOrder({
+      _id: `rv-stress-${i}`,
+      orderNumber: `E2E-STRES-${String(900001 + i)}`,
+      integrationCode: ['trendyol', 'hepsiburada', 'n11', 'pazarama'][i % 4],
+      internalStatus: ['AWAITING_APPROVAL', 'APPROVED', 'SHIPPED', 'CANCELLED'][i % 4],
+      billingAddress: { firstName: i % 3 ? 'Ayşegül Nur' : 'Muhammed Mustafa Kemal', lastName: i % 2 ? 'Karaosmanoğlu-Yılmazer' : 'Demir' },
+      items: Array.from({ length: (i % 4) + 1 }, (_, k) => ({ productName: `Organik pamuklu oversize kapüşonlu sweatshirt — ${k + 1}. renk seçeneği, XL beden`, quantity: k + 1 })),
+      financials: { grandTotal: 1_234_567.89 / (i + 1), currencyCode: 'TRY' },
+    }),
+  ),
+  totalNumberOfRecords: 12_480,
+  totalNumberOfPages: 694,
 }
 
 async function settle(page: Page, ms = 700) {
@@ -213,6 +230,23 @@ test.describe('A4 inceleme görüntüleri', () => {
         for (let i = 0; i < 8; i++) { await page.keyboard.press('Tab'); await page.waitForTimeout(120) }
         await settle(page, 500)
         await page.screenshot({ path: fileName('durum-odak-2') })
+      },
+    },
+    {
+      name: 'durum-yakin-baslik',
+      run: async (page) => {
+        // Yapışık seçim + kimlik kolonu başlık birleşimi (yakın çekim, 3x büyütme için CSS zoom).
+        await openWith(page, 'OrderListView')
+        const head = page.locator('.orderListView .ek-grid thead').first()
+        const box = (await head.boundingBox())!
+        await page.screenshot({ path: fileName('durum-yakin-baslik'), clip: { x: box.x, y: box.y - 4, width: Math.min(360, box.width), height: box.height + 100 } })
+      },
+    },
+    {
+      name: 'durum-stres',
+      run: async (page) => {
+        await openWith(page, 'OrderListView', { 'OrderService/getOrders': STRESS_ORDERS })
+        await shoot(page, 'durum-stres')
       },
     },
     {

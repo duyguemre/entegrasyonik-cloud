@@ -1,7 +1,8 @@
 # Entegrasyonik Tasarım Sistemi — DS-v2
 
 > **Durum:** Aşama 1 (tasarım sistemi + vitrin), Aşama 2 (kabuk, liste standardı, diyalog/menü/form, dashboard) ve
-> **Aşama 3 (entegrasyon + premium eleştiri turları)** `cloud/ds-v2-int` dalında birleşik (§14). Görsel taban onayı yerelde (Windows) yapılır.
+> **Aşama 3 (entegrasyon + premium eleştiri turları)** `cloud/ds-v2-int` dalında birleşik (§14); **Aşama 4** (W1/W2 birleştirmesi +
+> ikinci bağımsız premium tur) `cloud/ds-v2-int2` (§15). Görsel taban onayı yerelde (Windows) yapılır.
 > **Vitrin:** `npm run dev` → `http://localhost:3000/design-system` (yalnızca geliştirme; üretim derlemesinde yok, menüde yok).
 > **İnceleme görselleri:** `frontend/docs/design-system-review/` (liste §12).
 > **Kaynaklar:** kullanıcı brifi `docs/design-reference/README.md` (görsel yön), ADR-0011 (token mimarisi), ADR-0015 (süreç/test/desen kataloğu; görsel yönü bu brifle geçersiz kılındı).
@@ -144,6 +145,8 @@ Aile **Inter** (kendi barındırılan). CSS: `--ek-type-<rol>-{size,line,weight,
 - `vuetify-overrides.css` (rol token'ları): kontrol radius 8, kart 12, diyalog 16; kart = kenarlık + `shadow-card`; menü = `shadow-popover` + ince kenarlık; tooltip = ters yüzey + caption; tablo başlığı `surface-muted`/`content-muted`/600;
   **outlined alan zemini `surface` + kenarlık `border-input`**; alan etiketi ve yardım/hata metni opaklığı 1 (AA); yüzen etiket sonrası asıl `<label>` erişilebilir kalır (axe "label" düzeltmesi — tüm uygulamaya yansır).
   **Aşama 3:** ekran içi `v-tab` cümle düzeni + `tab` rolü (13/18/500, düz aralık); alan yardım/hata metni `caption` rolü (12/16, düz aralık, üstte 4px).
+  **Aşama 4:** ham `v-btn` metni boyut → rol (default/large `label` 13 yarı kalın, small `caption`, x-small `micro` boyutu); ikon düğmesi tabanı
+  `caption` (glif 1.5em = 18px). Eski `site.css` `12px !important` düğme kuralı kaldırıldı; yüzen alan etiketi `micro` boyutu (10px ölçek dışıydı).
 
 ## 6. Bileşen kataloğu ve kullanım kuralları (`src/components/ds/`)
 
@@ -154,7 +157,7 @@ Mevcut ds bileşenlerinin (EkStatusChip, EkDataTable, EkKpiCard, EkFilterBar, Ek
 | `EkButton` | tüm düğmeler | `primary` (ana iş, tek) · `secondary` · `ghost` · `danger` (yalnız onay adımı); sıra sağa yaslı `⋯ → ikincil → birincil`; yalnız-ikon → `aria-label` + tooltip zorunlu |
 | `EkIconTile` | kart/KPI/menü/sonuç ikonları | ton = anlam; dekoratif (`aria-hidden`) |
 | `EkCard` | tüm kartlar | başlık motifi sabit: kapsül + başlık/alt başlık + `#actions` + yuvarlak ok (`to-label`) |
-| `EkMetricCard` | KPI | MİKRO ETİKET → değer (metric) + trend (renkli METİN) → açıklama; `loading` iskelet |
+| `EkMetricCard` | KPI | MİKRO ETİKET → değer (metric) + trend (renkli METİN) → açıklama; `loading` iskelet; **< 600px** ikon üstte (sütun düzeni) — KPI ızgaraları dar ekranda 2 sütun |
 | `EkBadge` | sayaç / tür etiketi | durum için DEĞİL (durum = `EkStatusChip`) |
 | `EkKbd` | kısayol gösterimi | menü, tooltip, arama alt şeridi |
 | `EkTooltip` | ipucu | ters yüzey, kısayol içinde; aria-label'ın yerine geçmez |
@@ -165,8 +168,8 @@ Mevcut ds bileşenlerinin (EkStatusChip, EkDataTable, EkKpiCard, EkFilterBar, Ek
 | `EkWorkspaceTabs` | çalışma alanı sekmeleri | etkin sekme içerikle birleşir + 2px aksiyon çizgisi; kapatma hover/etkin'de; uzun başlık … + tooltip; ←/→ Home End Enter Delete; soldaki boşluk yok |
 | `EkSidebarNav` | sol menü | etiket 2 satıra sarılır (kesilmez); etkin = `sidebar-active` + 3px gösterge; ray modunda tooltip |
 | `EkFormGrid` | TÜM formlar ve filtreler | eşit kolon + 16px boşluk; `ek-span-2`/`ek-span-full`; tablet ≤2, mobil 1 → alanlar üst üste binmez |
-| `EkFilterPanel` + `EkActiveFilters` | liste filtreleri | sayfa İÇİ, katlanabilir; Temizle · Sorgula; aktif filtreler çip, tek tıkla kaldır |
-| `EkDataGrid` | TÜM liste tabloları | yapışkan mikro başlık, `aria-sort`, seçim + tri-state, hover/selected, tipli kolon (id/num/muted), iskelet, boş durum; **yatay taşma (Aşama 3):** seçim + ilk (kimlik) kolonu sola yapışık (kap ≥600px; `pin:'none'` kapatır), `pin:'end'` eylem kolonu sağa yapışık, altında içerik kalan kenar `shadow-scroll-*` gölgesi, yapışık kolonsuz dar görünümde CSS kaydırma gölgesi |
+| `EkFilterPanel` + `EkActiveFilters` | liste filtreleri | sayfa İÇİ, katlanabilir; Temizle · Sorgula (Aşama 4: eylem çubuğu gövdeyle aynı `surface-sunken` blok, ayraçsız); aktif filtreler çip, tek tıkla kaldır |
+| `EkDataGrid` | TÜM liste tabloları | yapışkan mikro başlık, `aria-sort`, seçim + tri-state, hover/selected, tipli kolon (id/num/muted), iskelet, boş durum; **yatay taşma (Aşama 3):** seçim + ilk (kimlik) kolonu sola yapışık (kap ≥600px; `pin:'none'` kapatır), `pin:'end'` eylem kolonu sağa yapışık, altında içerik kalan kenar `shadow-scroll-*` gölgesi, yapışık kolonsuz dar görünümde CSS kaydırma gölgesi; **dar kap (< 600px, Aşama 4): satır = KART** (☐ · kimlik başlığı · eylemler; altında ETİKET–değer; `label` kart etiketi, `hideLabel` etiketsiz), başlık satırı sıralama çubuğu (sıralanabilir kolon yoksa gizli), açık ARIA tablo rolleri; seçim kolonu tam 44px; tek satır metin kolonu ≤ 240px (üç nokta) |
 | `EkPagerBar` | sayfalama | çerçevenin ALTINA SABİT; sol boyut+toplam, orta sayfalar, sağ `#trailing` |
 | `EkListFrame` | liste ekranı iskeleti | filtreler → kart (toolbar → grid [yalnız burası kayar] → pager) |
 | `EkCascadePicker` | kategori ağacı, ekran başlatıcı | Miller kolonları, seçili yol vurgusu, arama tam yol, ←→↑↓ Enter |
@@ -323,3 +326,29 @@ yalnız görünürlük ipucu).
 `A3_REVIEW=1 A3_REVIEW_WIDTH=1440|390 A3_REVIEW_OUT=<klasör> npx playwright test e2e/specs/a3-review.spec.ts --project=chromium-desktop`
 (`e2e/fixtures/reviewScreens.ts`: `screens.ts`'teki tüm ekranları kapsayan sentetik menü + dolu durum fixture'ları).
 Son görüntüler: `docs/design-system-review/a3-final/*.png` (1440 ve 390; Linux Chromium — görsel onay yerelde).
+
+## 15. Aşama 4 — W1/W2 birleştirmesi ve ikinci bağımsız premium tur (`cloud/ds-v2-int2`)
+
+**Birleştirme** (sırayla, `--no-ff`, taban `cloud/ds-v2-int-fix`): `ds-v2-int` (a3-final) → `w1-integration-coverage` →
+`w2-subscription-banner` → `w2-saved-views` → `w2-message-sla`. Çakışmalar: 7 spec (int-fix'in Windows'ta doğrulanmış sürümü alındı —
+pano kartıyla çift RPC ayrımı, diyalog axe geçiş zamanlaması, dar ekran imleç), marka/kategori panelleri (< 960px üst üste; iki
+düzeltmenin birleşimi), `en.json` (abonelik bandı + mesaj bekleme anahtarları birlikte). W2 ekranlarında int-fix sınıfı sorunlar
+(diyalog axe zamanlaması, < 600px iki panel, pano kartıyla çift RPC) yeniden kontrol edildi: webhook onay diyaloğu axe = 0, abonelik
+bandı ekranın kendi okumasıyla çakışmıyor (ekranda bant gizli, dönüşte yeniden okunur), kayıtlı görünümler paneli `role=dialog` axe = 0.
+
+**Sistem düzeyi değişiklikler:**
+
+| Konu | Değişiklik |
+|---|---|
+| Mobil liste | `EkDataGrid` dar kap kart düzeni (§6) — 390px'te durum/tutar/mesaj metni/bekleme rozeti görünür. |
+| Düğme tipografisi | Ham `v-btn` = `EkButton` dili (§5); eski `site.css` kuralı kalktı. |
+| Sayfa ızgarası | `EkSettingsTemplate` ve abonelik içeriği sola hizalı (liste/pano ile aynı sol kenar), `section` → bölüm yolu; sekmeli sayfalarda (İşlem kayıtları, Finans) bölüm yolu. |
+| Liste başlığı | ≥ 1024px'te arama + eylemler her zaman sağ üstte; mobilde arama + yenile ilk satır, metinli eylemler alt satıra. |
+| Durum dili | Hata durumunda sayfalama gizli (hata ≠ "0 kayıt"); destek durumu tek kaynak (`TicketTypes`); BÜYÜK HARF düğme/rozet/diyalog metinleri cümle düzeni. |
+| KPI | Finans özet şeridi değerleri nötr (renk anlamı: başarı/aksiyon ≠ tutar vurgusu); mobilde 2 sütun. |
+| Menü | Menü ikonu yoksa `screens.ts` ikonu (belgelenmiş yedek niyeti). |
+
+Token değişikliği YOK (yalnız mevcut rol token'larına bağlama). **Eleştiri turları:** `docs/design-system-review/a4-critique-{1,2,3}.md`.
+Araç: `A4_REVIEW=1 A4_REVIEW_WIDTH=1440|800|390 A4_REVIEW_OUT=<klasör> npx playwright test e2e/specs/a4-review.spec.ts --project=chromium-desktop`
+(ekranlar + W1/W2 durumları + boş/hata/yükleniyor/stres + klavye odağı; saat sabit). Son görüntüler: `docs/design-system-review/a4-final/*.png`
+(1440 ve 390; Linux Chromium — görsel onay yerelde).

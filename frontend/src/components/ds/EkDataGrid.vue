@@ -344,9 +344,14 @@ function toggleSort(key: string) {
   color: var(--ek-color-action-emphasis);
 }
 
+/* Aşama 4: seçim kolonu TAM 44px (kimlik kolonu `left: 44px` yapışık). Kolon daha dar çizildiğinde yapışık kimlik
+   kolonu 4px sağa itiliyor, başlıkta ızgara zemini (beyaz şerit) görünüyordu. */
 .ek-grid__th--select,
 .ek-grid__td--select {
+  box-sizing: border-box;
   width: 44px;
+  min-width: 44px;
+  max-width: 44px;
   padding: 0 0 0 var(--ek-space-4);
 }
 
@@ -449,6 +454,14 @@ function toggleSort(key: string) {
 .ek-grid__td--wrap {
   white-space: normal;
   min-width: 160px;
+}
+
+/* Aşama 4 (stres): tek satırlık metin kolonu en fazla 240px, taşan kısım üç nokta — uzun müşteri/ürün adı tutar ve
+   durum kolonlarını görünür alanın dışına itmesin. Sarılan (`wrap`) ve tipli kolonlar etkilenmez. */
+.ek-grid__td--text:not(.ek-grid__td--wrap) {
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .ek-grid__td--end {
@@ -738,6 +751,11 @@ function toggleSort(key: string) {
 
   .ek-grid__td--wrap {
     min-width: 0;
+  }
+
+  .ek-grid__td--text:not(.ek-grid__td--wrap) {
+    max-width: none;
+    overflow: visible;
   }
 
   .ek-grid__row:not(.ek-grid__row--skeleton):hover > .ek-grid__td,
