@@ -273,7 +273,7 @@ function onGlobalKeydown(event: KeyboardEvent) {
   // Açık bir UYGULAMA GENELİ diyalog/menü varken (Vuetify overlay) sekme/görünüm kısayolları arka planı değiştirmesin.
   // Aşama 6b (Standart 7): sekme kabına bağlı örtüler (`.ek-tab-host` içi) yalnız o sekmeyi örter — sekmeler arası
   // geçiş, üst bölüm ve arama kısayolları çalışmaya devam eder.
-  const overlayOpen = [...document.querySelectorAll('.v-overlay--active.v-dialog, .v-overlay--active.v-menu')].some((el) => !el.closest('.ek-tab-host'))
+  const overlayOpen = Array.from(document.querySelectorAll('.v-overlay--active.v-dialog, .v-overlay--active.v-menu')).some((el) => !el.closest('.ek-tab-host'))
   const match = matchShortcut(event, event.target)
   if (!match) return
   if (overlayOpen && match.id !== 'search') return
