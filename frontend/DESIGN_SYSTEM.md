@@ -450,6 +450,32 @@ primary, `#item` şablonlarında `role=option`, kanal filtresi `EkSelect`. `test
 
 **Bilinçli e2e seçici güncellemeleri (iddia aynı):** yeni gliflere seçiciler (`.mdi-eye` → `.mdi-eye-outline` vb.), hata deseninin
 "ne oldu / ne yapmalı" iki satırı (7 iddia), `EkProblemState` sınıfı (kategori eşleme), mağaza detayı sekme adı cümle düzeni.
+## 17b. A7 — breadcrumb + sayfa başlığı satırı (`cloud/fe-breadcrumb`)
+
+Kullanıcı: "breadcrumb gösterimi çok amatör". Tek kaynak `EkPageBar` (tüm sayfalar `EkPageHeader` / `EkListScreen` /
+`EkSettingsTemplate` üzerinden aynı bileşeni kullanır; statik test ekranların kendi breadcrumb'ını yazmasını engeller).
+
+    [▣ Bölüm] / Üst ekran / Üst ekran / H1 Başlık [● kod ⧉] (i) · meta ........ eylemler [↻]
+
+| Karar | Gerekçe |
+|---|---|
+| Kök = modül ikonu kapsülü (24px, `tile` radius, `sidebar-section` lacivert ikon) + bölüm adı; tıklanmaz | Nerede olduğunu sol menüyle aynı ikonla söyler; bölüm bir ekran değildir (ADR-0015 Karar 2.3). İkon menü kaydından (`usePageContext`, `WorkspaceTabHost` sağlar; alt öğede üst öğenin ikonu; klon sekmede ilk üst ekranın ikonu) |
+| Ayraç tipografik `/`, `content-subtle`, `aria-hidden` | chevron ikonu yerine daha sakin; ekran okuyucu okumaz |
+| Ara öğe = gerçek üst ekran (`trail: EkCrumb[]`, `onSelect` → bağlantı): `content-muted`, hover'da metin koyulaşır + `tab-hover` zemin + ince alt çizgi | ölü bağlantı yok; hizayı bozmayan negatif kenar payı |
+| Son öğe = tek H1, `title` rolü (22/30/600), `aria-current="page"` | hiyerarşinin tek güçlü noktası; 40px satır ritmine sığar |
+| Uzun yol: > 2 ara öğe '…' menüsüne (`EkContextMenu`); satıra sığmazsa önce 1 sonra 0 ara öğe kalır | kısaltılmış anlamsız "E…" yerine katlama; başlık en son kısalır |
+| Kayıt kimliği (`record: { code, channel?, label? }`): hap, kanal noktası (`.ek-ch-*`), eş aralıklı kod, kopyala (toast + ✓) | kayıt detayında "hangi kayıt" sorusu başlık satırında cevaplanır |
+| (i) 28px hayalet düğme, ikon 18 — A6b yenile (32px) ile aynı dikey eksen | satır tek ritim; panel içeriği/API'si değişmedi (fe-help) |
+| Dar kap (< 560px, kap genişliği): iki satır — `[←] ebeveyn` (ya da kök) üstte, H1 + (i) altta, kayıt hapı sığmazsa alta; '…' yok | "son iki öğe + geri oku"; başlık asla kaybolmaz |
+| Genişlik ölçümü yalnız genişlik + sonraki kare | ResizeObserver döngü hatası yok |
+
+Yalnız semantik token (ham renk yok → dark hazır). Bağlananlar: Etkin yapılandırma (Yönetim / Entegrasyonlar / <hedef> ayarları / Etkin
+yapılandırma + ● kod), Entegrasyon/Motor ayarları (Yönetim / Entegrasyonlar / <hedef>), Ürün düzenle (Katalog / Ürünler / Ürünü Düzenle +
+stok kodu; varyantlı üründe kod gösterilmez). **Testler:** `tests/a7-breadcrumb.test.ts` (model, modül ikonu, aria/token/tek bileşen),
+`e2e/specs/breadcrumb.spec.ts` (3 viewport). **Görseller:** `docs/a7-review/{before,after}/` (`a-liste`, `b-liste-hakkinda`, `c-derin-rota`,
+`d-kayit-detayi`, `e-odak`; 1440 + 390, `-yakin` 2x yakın çekim) — araç `A7_REVIEW=1 A7_REVIEW_WIDTH=1440|390 A7_REVIEW_OUT=<klasör> npx playwright test e2e/specs/a7-review.spec.ts --project=chromium-desktop`.
+Görsel tabanlar (`admin-effective-config`, `admin-integration-settings` ve başlık satırı içeren tüm ekranlar) Windows'ta bilinçli yeniden tabanlanmalı.
+
 
 ## 18. A8 — kullanıcı geri bildirimi: filtre başlığı, yenile düğmesi, ikon standardı (`cloud/fe-a8`)
 
