@@ -567,7 +567,7 @@ const CellBody = defineComponent({
 .vg--narrow .vg-sticky-end { position: static; box-shadow: none; }
 
 /* grup (rowspan) — görünüm ortak `VariantGroupCell`; burada yalnız ızgaraya özgü konum/zemin önceliği */
-.vg-group { --ek-vgroup-top: var(--vg-head); padding: 0; background: var(--ek-color-surface-sunken); }
+.vg-group { --ek-vgroup-top: var(--vg-head); vertical-align: top; padding: 0; background: var(--ek-color-surface-sunken); }
 .vg-row.is-group-odd .vg-group { background: var(--ek-color-surface-muted); }
 
 /* düzenlenebilir hücre */

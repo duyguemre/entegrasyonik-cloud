@@ -28,7 +28,8 @@ defineProps<{
 </script>
 
 <style scoped>
-.ek-vgroup {
+/* `td.` öneki: çağıranın genel hücre kuralından (ör. `.vg-td { vertical-align: middle }`) sıra bağımsız önde. */
+td.ek-vgroup {
   vertical-align: top;
   padding: 0;
   background: var(--ek-color-surface-sunken);
@@ -36,7 +37,7 @@ defineProps<{
   border-top: 1px solid var(--ek-color-border-strong);
 }
 
-.ek-vgroup.is-alt { background: var(--ek-color-surface-muted); }
+td.ek-vgroup.is-alt { background: var(--ek-color-surface-muted); }
 
 .ek-vgroup__label {
   position: sticky;

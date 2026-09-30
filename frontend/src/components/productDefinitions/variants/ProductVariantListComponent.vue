@@ -46,7 +46,7 @@
         </header>
 
         <div :id="scrollId" class="pvl-scroll" :class="{ 'is-scrolling': showAll && summary.count > COMPACT_LIMIT }">
-          <table class="pvl-table" :class="{ 'is-grouped': grouped }" :aria-label="`${productInfoForm.title ?? 'Ürün'} varyant listesi`" :aria-rowcount="summary.count + 1">
+          <table class="pvl-table" :class="{ 'is-grouped': grouped, 'is-header-named': choiceInHeader }" :aria-label="`${productInfoForm.title ?? 'Ürün'} varyant listesi`" :aria-rowcount="summary.count + 1">
             <thead>
               <tr>
                 <th class="pvl-th pvl-th--select" scope="col">
@@ -97,7 +97,7 @@
                     <span class="pvl-ident__text">
                       <span class="pvl-choices">
                         <span v-for="choice of rowChoices(r.variant.choices, grouped)" :key="choice.choiceId" class="pvl-choice">
-                          <span v-if="!choiceInHeader" class="pvl-choice__label">{{ choiceTitle(choice.choiceId) }}</span>
+                          <span class="pvl-choice__label">{{ choiceTitle(choice.choiceId) }}</span>
                           <span class="pvl-choice__value">{{ choiceValueName(choice.choiceId, choice.choiceValueId) ?? '—' }}</span>
                         </span>
                         <span v-if="!r.variant.choices?.length" class="pvl-muted">Seçenek yok</span>
@@ -610,13 +610,17 @@ const rowActions = (v: any): EkRowAction[] => [
 .is-scrolling .pvl-vgroup { --ek-vgroup-top: 34px; /* yapışık tablo başlığı yüksekliği */ }
 .is-scrolling .pvl-vgroup :deep(.ek-vgroup__label) { position: sticky; }
 /* Grup ayırıcı çizgi mevcut alt kenarlıkta (ek kenarlık yok → satır yüksekliği A11 ile aynı: 58 px). */
-.pvl-vgroup { border-top: 0; border-bottom: 1px solid var(--ek-color-border-strong); }
-.pvl-row:last-child > .pvl-vgroup { border-bottom: 0; }
+td.pvl-vgroup { border-top: 0; border-bottom: 1px solid var(--ek-color-border-strong); }
+.pvl-row:last-child > td.pvl-vgroup { border-bottom: 0; }
 .pvl-row:has(+ .pvl-row.is-group-start) > .pvl-td { border-bottom-color: var(--ek-color-border-strong); }
 /* Tek varyantlı grupta etiket satıra sığar (ızgaradaki 56 px satırdan dar liste satırı için sıkı ölçü). */
 .pvl-vgroup :deep(.ek-vgroup__label) { padding: var(--ek-space-2) var(--ek-space-3); }
 .pvl-vgroup :deep(.ek-vgroup__title) { font-size: var(--ek-type-label-size); line-height: var(--ek-type-label-line); }
 .pvl-vgroup :deep(.ek-vgroup__meta) { white-space: nowrap; }
+/* Kolon başlığı seçeneği adlandırıyor ("Beden") → tabloda çipte yalnız değer; kartta (başlık gizli) ad geri gelir. */
+.is-header-named .pvl-choice__label { display: none; }
+.is-header-named .pvl-choice { min-width: 32px; justify-content: center; }
+.is-compact .is-header-named .pvl-choices { flex: none; min-width: 44px; } /* kompakt: stok kodları hizalı */
 .is-grouped .pvl-ident { min-width: 164px; } /* grup adı kendi kolonunda; varyant hücresinde yalnız değer + kod */
 
 /* Kompakt ızgara (> 8 varyant): her hücre tek satır — seçenek + stok kodu, satış + piyasa fiyatı, stok + raf yan yana. */
@@ -908,7 +912,7 @@ const rowActions = (v: any): EkRowAction[] => [
   }
   .pvl-row.is-group-start:not(:first-child) { border-top: 1px solid var(--ek-color-border-strong); }
   .pvl-row.is-group-start > .pvl-td { border-top: 0 !important; /* çizgi kartın kendisinde */ }
-  .pvl-vgroup {
+  td.pvl-vgroup {
     grid-area: grp;
     display: block;
     margin: 0 calc(-1 * var(--ek-space-3)) var(--ek-space-2);
@@ -971,6 +975,7 @@ const rowActions = (v: any): EkRowAction[] => [
   .pvl-stock__shelf { grid-column: auto; }
 
   .pvl-ident { min-width: 0; }
+  .is-header-named .pvl-choice__label { display: inline; }
   .pvl-channels,
   .is-compact .pvl-channels { flex-wrap: wrap; max-width: none; }
   .pvl-copy { opacity: 1; }
