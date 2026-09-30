@@ -1,16 +1,15 @@
 /**
- * Pazaryeri/entegrasyon marka rengi eşlemesi (S8, 2026-09-29 — 2. tur: gerçek yaklaşık marka tonları).
+ * Pazaryeri/entegrasyon marka rengi eşlemesi (C1S, 2026-09-30 — resmi, ölçülmüş marka renkleri).
  *
- * Gerçek renk DEĞERLERİ `src/styles/site-tokens.css` içindeki `--site-channel-*` token'larındadır. Bu
- * ALTI değişken, projenin "ham hex yasak" kuralının açıkça belgelenmiş TEK istisnasıdır (bkz. site-tokens.css
- * başındaki not + tests/tokens.test.ts `CHANNEL_HEX_EXCEPTIONS`); dosyanın geri kalanı hâlâ yalnızca
- * `--ek-color-*` türevi kullanır. Bileşenler yalnızca entegrasyon kodunu `data-code={code}` olarak DOM'a
- * yazar; rengi `src/styles/global.css` içindeki `[data-code='…']` eşlemesi çözer (`--chan` ham ton,
- * `--chan-fill` beyaz harfli dolu rozetler için karartılmış AA-güvenli ton). Bu üç dosya (burası +
- * site-tokens.css + global.css) TEK doğruluk kaynağıdır — yeni bir kanal eklenirse üçü birden güncellenir.
+ * TEK KAYNAK: docs/cloud-contracts/CHANNEL_BRAND_COLORS.md (kullanıcı onaylı). Değerler
+ * `src/styles/site-tokens.css` içindeki `--channel-<kod>` (marka) + `--channel-<kod>-on` (zemindeki metin:
+ * siyah/beyaz, ≥4.5:1) token'larındadır; frontend aynı değerleri `channel.<kod>.brand/onBrand` olarak taşır.
+ * Bu değişkenler projenin "ham hex yasak" kuralının belgelenmiş TEK istisnasıdır (tests/tokens.test.ts).
+ * Bileşenler yalnızca entegrasyon kodunu `data-code={code}` olarak DOM'a yazar; rengi `src/styles/global.css`
+ * içindeki `[data-code='…']` eşlemesi çözer (`--chan` marka rengi, `--chan-on` metin rengi). Marka rengi
+ * değiştirilmez (tint/karartma yok). Listede olmayan (yalnız-UI/ölçülmemiş) kodlar nötr gri alır.
  *
- * Yaklaşık marka tonu, LOGO DEĞİL: değerler resmî marka kılavuzundan doğrulanmadı (araştırılıp en yakın
- * tahminle girildi), gerçek pazaryeri logoları kullanılmaz (marka izni açık soru, ADR-0014 Açık Soru 3).
+ * LOGO DEĞİL: gerçek pazaryeri logoları kullanılmaz (marka izni açık soru, ADR-0014 Açık Soru 3).
  * Trendyol ve Hepsiburada ikisi de turuncu olduğundan ayırt edici monogram harfiyle (T/H) birlikte kullanılır.
  */
 export const CHANNEL_ACCENT_CODES = ['trendyol', 'hepsiburada', 'n11', 'pazarama', 'ideasoft', 'bizimhesap'] as const
