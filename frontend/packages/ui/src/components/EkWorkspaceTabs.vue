@@ -137,7 +137,8 @@ const canRight = ref(false)
 /** Şeritte TAM görünmeyen sekmelerin kimlikleri ("daha fazla" listesi). */
 const hiddenIds = ref<string[]>([])
 const moreOpen = ref(false)
-const hiddenTabs = computed(() => props.tabs.filter((t) => hiddenIds.value.includes(t.id)))
+// Etkin sekme listede yer almaz: her zaman şeritte görünür alana getirilir (revealActive).
+const hiddenTabs = computed(() => props.tabs.filter((t) => t.id !== props.modelValue && hiddenIds.value.includes(t.id)))
 const moreGroups = computed<EkMenuGroup[]>(() => [
   { items: hiddenTabs.value.map((t) => ({ key: t.id, label: t.title, icon: t.icon ? outlineIcon(t.icon) : undefined })) },
 ])
@@ -187,6 +188,12 @@ function revealActive() {
 
 watch(
   () => [props.modelValue, props.tabs.length],
+  () => nextTick(revealActive),
+)
+
+// "Daha fazla" düğmesi belirince/kaybolunca şerit genişliği değişir → etkin sekme yeniden görünür alana alınır.
+watch(
+  () => hiddenTabs.value.length > 0,
   () => nextTick(revealActive),
 )
 
