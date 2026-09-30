@@ -39,15 +39,15 @@
                         <v-btn aria-label="Resmi kaldır" class="hovered pvi-s8"
                           @click.stop="deleteImageForVariant(element)" elevation="0" min-width="0"
                           color="transparent"><v-icon size="large"
-                            color="deleteButtonColor">mdi-close-thick</v-icon></v-btn>
+                            color="error">mdi-close-thick</v-icon></v-btn>
                         <v-btn class="hovered pvi-s9"
                           @click.stop="downloadImage(element)" elevation="0" min-width="0" color="transparent"><v-icon
                             size="large" color="primary">mdi-download</v-icon></v-btn>
                         <v-card outlined class="drag-handle hovered pvi-s10"
-                          elevation="1" min-width="0" color="infoButtonColor">
+                          elevation="1" min-width="0" color="info">
                           <div class="d-flex justify-center text-center">
                             <div class="text-caption pvi-s11">
-                              <v-icon size="25" color="processButtonColor">mdi-drag</v-icon>
+                              <v-icon size="25" color="content-muted">mdi-drag</v-icon>
                             </div>
                           </div>
                         </v-card>
@@ -103,12 +103,12 @@
                   :class="{ 'pvi-unselected': selectedImages.length > 0 && isSelectionExist(element._id) == -1 }">
                   <div class="hovered pvi-s18">
                     <v-btn
-                      @click.stop="assignImage(element)" elevation="0" min-width="0" color="#ffffff99" class="pvi-s19"><v-icon size="70"
-                        color="processButtonColor" class="pvi-s20">mdi-plus</v-icon></v-btn>
+                      @click.stop="assignImage(element)" elevation="0" min-width="0" class="pvi-s19"><v-icon size="70"
+                        color="content-muted" class="pvi-s20">mdi-plus</v-icon></v-btn>
                   </div>
 
                   <v-card outlined
-                    elevation="1" min-width="0" color="infoButtonColor" class="pvi-s10">
+                    elevation="1" min-width="0" color="info" class="pvi-s10">
                     <div class="d-flex justify-center text-center">
                     </div>
                   </v-card>
@@ -139,7 +139,7 @@
 
           <v-btn-group v-if="selectedImagesForVariant.length > 0" elevation="0" class="ml-1  mt-1 mb-2"
             density="compact">
-            <v-btn density="compact" block class="fill-height pvi-s22" color="saveButtonColor"
+            <v-btn density="compact" block class="fill-height pvi-s22" color="primary"
               :disabled="selectedImagesForVariant.length <= 0" @click="deleteImageSelectedForVariant">
               <div v-if="selectedImagesForVariant.length > 0">
                 Seçili <span class="font-weight-bold pvi-s23">{{ selectedImagesForVariant.length
@@ -159,6 +159,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatNumber } from '@/composables/format'
 import { Sortable } from "sortablejs-vue3";
 import EkButton from '@/components/ds/EkButton.vue'
 
@@ -359,7 +360,7 @@ var getFileSizeOld = (id: number) => {
         conversion = 1000
         suffix = "KB"
       }
-      return parseFloat("" + image.file.size / conversion).toFixed(1) + suffix
+      return formatNumber(Math.round(image.file.size / conversion * 10) / 10) + suffix
 
     }
   }
@@ -373,7 +374,7 @@ var getFileSize = (size: number) => {
     conversion = 1000
     suffix = "KB"
   }
-  return parseFloat("" + size / conversion).toFixed(1) + suffix
+  return formatNumber(Math.round(size / conversion * 10) / 10) + suffix
 }
 
 var files = ref([])
@@ -828,6 +829,7 @@ const imageSrc = computed(() => {
 }
 
 .pvi-s19 {
+  background-color: color-mix(in srgb, var(--ek-color-surface) 60%, transparent) !important;
   height: 100% !important;
   width: 100% !important;
   border-radius: 5px !important;

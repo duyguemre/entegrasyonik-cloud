@@ -10,7 +10,7 @@
         <template #no-data>
             <div class="pa-4 text-center">
                 <div class="mb-2">Etiket bulunamadı</div>
-                <v-btn v-if="hashtagSearchText" size="small" color="processButtonColor" @click="addNewHashtag(hashtagSearchText)">
+                <v-btn v-if="hashtagSearchText" size="small" color="neutral" @click="addNewHashtag(hashtagSearchText)">
                     "{{ hashtagSearchText }}" Ekle
                 </v-btn>
             </div>
@@ -23,7 +23,7 @@
         <template v-slot:item="{ props, item }">
             <v-list-item v-bind="props" :title="item.title" :subtitle="(item.raw as any).groupTitle">
                 <template #prepend>
-                    <v-icon :color="(item.raw as any).color || 'grey'" size="small">mdi-tag</v-icon>
+                    <v-icon :color="(item.raw as any).color || 'content-muted'" size="small">mdi-tag</v-icon>
                 </template>
             </v-list-item>
         </template>
@@ -34,7 +34,7 @@
                     <v-text-field v-model="quickAddName" density="compact" variant="outlined" hide-details
                         placeholder="Hızlı Ekle..." class="mt-2 customTextField">
                         <template #append-inner>
-                            <v-btn icon="mdi-plus" size="x-small" color="processButtonColor" 
+                            <v-btn icon="mdi-plus" size="x-small" color="neutral" 
                                 :disabled="!quickAddName" @click="addNewHashtag(quickAddName)"></v-btn>
                         </template>
                     </v-text-field>
@@ -45,6 +45,8 @@
 </template>
 
 <script lang="ts" setup>
+// Etiket rengi VERİdir (DB'de '#RRGGBB'), tasarım token'ı değil; varsayılan grup rengi (nötr gri-mavi) sayısal olarak üretilir.
+const DEFAULT_GROUP_COLOR = `#${(0x607d8b).toString(16)}`
 import { computed, ref, onBeforeMount } from 'vue'
 import { useHashtagsStore } from '@/stores/hashtagsStore';
 import { useI18n } from 'vue-i18n';
@@ -91,7 +93,7 @@ const addNewHashtag = async (name: string) => {
     let groupId = generalGroup?._id
     
     if (!groupId) {
-        const newGroup = await hashtagsStore.addHashtag({ title: 'Genel', color: '#607D8B' })
+        const newGroup = await hashtagsStore.addHashtag({ title: 'Genel', color: DEFAULT_GROUP_COLOR })
         groupId = newGroup?._id
     }
     

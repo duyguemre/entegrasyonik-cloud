@@ -11,27 +11,27 @@ var init = () => {
 
     einvoices.push({
         code: 'trendyolefaturam',
-        color: '#69b6ff',
+        color: 'var(--ek-color-info)',
         logo: '/assets/images/integrations/einvoice/trendyolefaturam.svg',
         width: 120
     })
     einvoices.push({
         code: 'turkcellesirket',
-        color: '#69b6ff',
+        color: 'var(--ek-color-info)',
         logo: '/assets/images/integrations/einvoice/turkcellesirket.svg',
         width: 200
     }
     )
     einvoices.push({
         code: 'elogo',
-        color: '#69b6ff',
+        color: 'var(--ek-color-info)',
         logo: '/assets/images/integrations/einvoice/elogo.svg',
         width: 100
     }
     )
     einvoices.push({
         code: 'geliridaresi',
-        color: '#69b6ff',
+        color: 'var(--ek-color-info)',
         logo: '/assets/images/integrations/einvoice/geliridaresi.svg',
         width: 100
     }

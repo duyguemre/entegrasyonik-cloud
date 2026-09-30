@@ -4,16 +4,15 @@
       <v-row>
         <v-col class="pb-0" cols="4">
           <v-text-field clearable prepend-inner-icon="mdi-form-textbox" density="comfortable"
-            :label="$t('productDefinitions.product.searchlabel')" variant="outlined"
-            bg-color="textfieldColor"></v-text-field>
+            :label="$t('productDefinitions.product.searchlabel')" variant="outlined"></v-text-field>
         </v-col>
         <v-col class="pb-0 flex-grow-1 flow-shrink-0">
           <v-btn-group class="pa-0" elevation="2">
-            <v-btn prepend-icon="mdi-magnify" to="/orderList" elevation=0 color="actionButtonColor" min-width="200px">
+            <v-btn prepend-icon="mdi-magnify" to="/orderList" elevation=0 color="primary" min-width="200px">
               {{ $t("productDefinitions.product.search") }}</v-btn>
 
             <CustomDialogComponent title="Detaylı Arama" :component="PaginationComponent">
-              <v-btn class="ml-0 fill-height" block color="processButtonColor" elevation=0>
+              <v-btn class="ml-0 fill-height" block color="neutral" elevation=0 aria-label="Detaylı arama">
                 <v-icon class="advanced-search-button-background1" size="x-large">mdi-text-search
                   text-center</v-icon><v-icon class="ml-1" size="15">mdi-arrow-expand</v-icon>
               </v-btn>
@@ -56,10 +55,9 @@
         <template v-slot:header.platform>
           <HorizontalScrollComponent id=".scroll-element .v-table__wrapper" class="special-table-width" />
           <div class="d-flex content-scroll-container special-table-width header-scroll-container">
-            <div v-for="currentMarketplace in marketplace.getMarketplaces()" style=""
-              :style="{ 'min-height': '60px', 'min-width': contentWidth + 'px!important' }">
+            <div v-for="currentMarketplace in marketplace.getMarketplaces()" class="test-mp-head">
               <v-btn variant="text" class="mr-1 mt-1" width="140px" height="40"
-                :style="{ 'background-color': currentMarketplace.color }">
+                :style="{ 'background-color': currentMarketplace.color }" :aria-label="currentMarketplace.name">
                 <v-img :width="currentMarketplace.width" :src="currentMarketplace.logo"></v-img>
               </v-btn>
             </div>
@@ -70,7 +68,7 @@
             <v-tooltip :text="$t('productDefinitions.product.define.title')">
               <template v-slot:activator="{ props }">
                 <v-btn v-bind="props" @click="communication.openLink(menuStore.getMenuLinkWithTitle('productDefinition'))"
-                  class="mb-1 flex-grow-1" min-width=0 elevation="2" color="actionButtonColor">
+                  class="mb-1 flex-grow-1" min-width=0 elevation="2" color="primary" aria-label="Yeni ürün tanımla">
                   <v-icon size="30">mdi-plus</v-icon>
                 </v-btn>
               </template>
@@ -79,24 +77,24 @@
         </template>
         <template v-slot:item.image="{ item, index }">
           <v-avatar size="x-large">
-            <v-img class="ml-2 mt-1 " style="wi1dth:30px" :src="'/src/assets/logo.png'"></v-img>
+            <v-img class="ml-2 mt-1" :src="'/src/assets/logo.png'"></v-img>
           </v-avatar>
 
         </template>
         <template v-slot:item.name="{ item, index }">
-          <div class="ma-0 pa-0 mb-0" style="cursor:pointer">
-            <div class="text-truncate" :style="{ 'width': contentWidth + 'px!important' }">
+          <div class="ma-0 pa-0 mb-0 test-clickable">
+            <div class="text-truncate test-cw">
               {{ item.name }}
             </div>
             <CategoryNameComponent />
           </div>
-          <div class="text-truncate" :style="{ 'width': contentWidth + 'px!important' }"><span class="text-caption">Stok
+          <div class="text-truncate test-cw"><span class="text-caption">Stok
               Kodu
               :</span> <span class="font-weight-medium">ER44678</span></div>
-          <div class="text-truncate text-caption" :style="{ 'width': contentWidth + 'px!important' }">Kaynak: Entegrator
+          <div class="text-truncate text-caption test-cw">Kaynak: Entegrator
           </div>
-          <div class="text-truncate" :style="{ 'width': contentWidth + 'px!important' }"><v-switch label="Satışa Açık"
-              color="updateButtonColor" density="compact" class="ma-0 pa-0 ml-4" hide-details></v-switch></div>
+          <div class="text-truncate test-cw"><v-switch label="Satışa Açık"
+              color="primary" density="compact" class="ma-0 pa-0 ml-4" hide-details></v-switch></div>
         </template>
         <template v-slot:item.price="{ item, index }">
           <div><span class="font-weight-medium">{{ item.price }}</span> <v-icon class="mb-2">mdi-currency-try</v-icon>
@@ -106,18 +104,17 @@
           <div><span class="font-weight-medium">{{ item.stock }}</span></div>
         </template>
         <template v-slot:item.platform="{ item, index }">
-          <div class="d-flex content-scroll-container special-table-width align-center" ref="content"
-            style="height:120px">
+          <div class="d-flex content-scroll-container special-table-width align-center test-platform-row" ref="content">
             <div v-for="currentMarketplace in marketplace.getMarketplaces()">
-              <div :style="{ 'width': contentWidth + 'px!important' }">
+              <div class="test-cw">
                 <span class="text-caption">id:</span><span class="ml-2 font-weight-medium">{{ (<any>
                   item)[currentMarketplace.code]?.id
                 }}</span>
               </div>
 
-              <div :style="{ 'width': contentWidth + 'px!important' }">
-                <div class="text-truncate" :style="{ 'width': contentWidth + 'px!important' }"><v-switch label="Satışta"
-                    color="updateButtonColor" density="compact" class="ma-0 pa-0  ml-4" hide-details></v-switch></div>
+              <div class="test-cw">
+                <div class="text-truncate test-cw"><v-switch label="Satışta"
+                    color="primary" density="compact" class="ma-0 pa-0  ml-4" hide-details></v-switch></div>
               </div>
             </div>
           </div>
@@ -125,10 +122,10 @@
         <template v-slot:item.actions="{ item, index }">
           <div class="text-center justify-center align-center">
             <v-btn-group elevation=0 class="pa-1" density="compact">
-              <v-btn class="" min-width=0 elevation="2" color="updateButtonColor">
+              <v-btn class="" min-width=0 elevation="2" color="primary" aria-label="Güncelle">
                 <v-icon>mdi-update</v-icon>
               </v-btn>
-              <v-btn class="" min-width=0 elevation="2" color="deleteButtonColor">
+              <v-btn class="" min-width=0 elevation="2" color="error" aria-label="Sil">
                 <v-icon>mdi-delete</v-icon>
               </v-btn>
             </v-btn-group>
@@ -226,35 +223,35 @@ var buttons = [
   {
     title: t("productDefinitions.product.define.title"),
     icon: 'mdi-note-edit-outline',
-    color: 'newButtonColor',
+    color: 'primary',
     to: '',
     click: a
   },
 /*   {
     title: t("productDefinitions.product.update"),
     icon: 'mdi-note-edit-outline',
-    color: 'updateButtonColor',
+    color: 'primary',
     to: '',
     click: a
   },
  */  {
     title: t("productDefinitions.product.save"),
     icon: 'mdi-note-edit-outline',
-    color: 'saveButtonColor',
+    color: 'primary',
     to: '',
     click: a
   },
   {
     title: t("productDefinitions.product.copy"),
     icon: 'mdi-note-edit-outline',
-    color: 'copyButtonColor',
+    color: 'neutral',
     to: '',
     click: a
   },
   {
     title: t("productDefinitions.product.delete"),
     icon: 'mdi-note-edit-outline',
-    color: 'deleteButtonColor',
+    color: 'error',
     to: '',
     click: a
   },
@@ -509,3 +506,23 @@ var handleScroll = (event: any) => {
 </script>
 
 <style></style>
+
+<style scoped>
+/* Sütun genişliği tek sabit (170px) — eskiden her hücrede satır içi `:style` ile veriliyordu. */
+.test-cw {
+  width: 170px !important;
+}
+
+.test-mp-head {
+  min-height: 60px;
+  min-width: 170px !important;
+}
+
+.test-platform-row {
+  height: 120px;
+}
+
+.test-clickable {
+  cursor: pointer;
+}
+</style>

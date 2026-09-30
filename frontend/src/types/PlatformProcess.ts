@@ -21,13 +21,17 @@ export const PLATFORM_PROCESS_LABELS: Record<PLATFORM_PROCESS, string> = {
 
 
 
+/**
+ * Süreç türü → renk (CSS değeri; DS-v2 rol token'ı). Yalnızca ayırt edici aksan; anlam
+ * metin etiketiyle (`PLATFORM_PROCESS_LABELS`) taşınır (WCAG 1.4.1).
+ */
 export const PLATFORM_PROCESS_COLORS: Record<string, string> = {
-    [PLATFORM_PROCESS.TRANSFER]: '#6200ea',        // Mor (Deep Purple)
-    [PLATFORM_PROCESS.UPDATE_PRICE]: '#2962ff',    // Mavi (Accent Blue)
-    [PLATFORM_PROCESS.UPDATE_STOCK]: '#00c853',    // Yeşil (Accent Green)
-    [PLATFORM_PROCESS.UPDATE]: '#ff6d00',          // Turuncu (Deep Orange)
-    [PLATFORM_PROCESS.UPDATE_VARIANT]: '#00b8d4',  // Turkuaz/Cyan (Yeni)
-    [PLATFORM_PROCESS.UPDATE_DELIVERY]: '#d500f9', // Pembe/Magenta (Yeni)
+    [PLATFORM_PROCESS.TRANSFER]: 'var(--ek-color-action)',
+    [PLATFORM_PROCESS.UPDATE_PRICE]: 'var(--ek-color-info)',
+    [PLATFORM_PROCESS.UPDATE_STOCK]: 'var(--ek-color-success)',
+    [PLATFORM_PROCESS.UPDATE]: 'var(--ek-color-warning)',
+    [PLATFORM_PROCESS.UPDATE_VARIANT]: 'var(--ek-color-content-muted)',
+    [PLATFORM_PROCESS.UPDATE_DELIVERY]: 'var(--ek-color-content-strong)',
 };
 
 

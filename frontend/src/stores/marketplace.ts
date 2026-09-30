@@ -1,6 +1,10 @@
 
 import { defineStore } from 'pinia'
 import { ref, readonly, reactive } from 'vue';
+import { integrationAccent } from '@/design/tokens/palette';
+
+/** Canlı entegrasyon olmayan pazaryerleri için marka aksanı yok → nötr rol (EkChannelDot kuralı). */
+const NEUTRAL_MARK = 'var(--ek-color-neutral)'
 
 
 
@@ -16,7 +20,7 @@ const marketplaces = reactive([
     products: '200',
     returns: '20',
     orders: '30',
-    color: '#ff963f'
+    color: integrationAccent.hepsiburada
   },
   {
     id: 2,
@@ -27,7 +31,7 @@ const marketplaces = reactive([
     products: '530',
     returns: '10',
     orders: '50',
-    color: '#f26725'
+    color: integrationAccent.trendyol
   },
   {
     id: 3,
@@ -38,7 +42,7 @@ const marketplaces = reactive([
     products: '130',
     returns: '5',
     orders: '20',
-    color: '#17629e'
+    color: NEUTRAL_MARK
   },
 
   {
@@ -50,7 +54,7 @@ const marketplaces = reactive([
     products: '130',
     returns: '5',
     orders: '20',
-    color: '#51B449',
+    color: NEUTRAL_MARK,
 },
 
   {
@@ -62,7 +66,7 @@ const marketplaces = reactive([
     products: '130',
     returns: '5',
     orders: '20',
-    color: '#ff9900',
+    color: NEUTRAL_MARK,
 },
 
   {
@@ -74,7 +78,7 @@ const marketplaces = reactive([
     products: '130',
     returns: '5',
     orders: '20',
-    color: '#6849c5',
+    color: integrationAccent.n11,
 },
 
   {
@@ -86,7 +90,7 @@ const marketplaces = reactive([
     products: '130',
     returns: '5',
     orders: '20',
-    color: '#0136F4',
+    color: integrationAccent.pazarama,
 },
 
   {
@@ -98,7 +102,7 @@ const marketplaces = reactive([
     products: '130',
     returns: '5',
     orders: '20',
-    color: '#00A7CF',
+    color: NEUTRAL_MARK,
 }
 ])
 

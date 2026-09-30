@@ -26,6 +26,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatNumber } from '@/composables/format'
 
 import { ref, computed, onMounted, onBeforeMount, nextTick, reactive } from 'vue'
 import EkDialogCard from '@/components/ds/EkDialogCard.vue'
@@ -206,7 +207,7 @@ var getFileSizeOld = (id: number) => {
         conversion = 1000
         suffix = "KB"
       }
-      return parseFloat("" + image.file.size / conversion).toFixed(1) + suffix
+      return formatNumber(Math.round(image.file.size / conversion * 10) / 10) + suffix
 
     }
   }
@@ -220,7 +221,7 @@ var getFileSize = (size: number) => {
     conversion = 1000
     suffix = "KB"
   }
-  return parseFloat("" + size / conversion).toFixed(1) + suffix
+  return formatNumber(Math.round(size / conversion * 10) / 10) + suffix
 }
 
 var files = ref([])

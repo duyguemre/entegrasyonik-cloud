@@ -352,6 +352,12 @@ import { useSnackbarStore } from '@/stores/snackbarStore';
 const restApi = useRestApi()
 const snackbarStore = useSnackbarStore();
 const activeTab = ref(1)
+/**
+ * Marka rengi kullanıcı VERİSİDİR (tenant ayarı olarak `#RRGGBB` yazılır) — tasarım token'ı değil.
+ * Palet 24-bit tamsayı olarak tutulur, kayıt biçimine burada çevrilir.
+ */
+const hexOf = (rgb: number): string => '#' + rgb.toString(16).padStart(6, '0').toUpperCase()
+
 const logoInput = ref<HTMLInputElement | null>(null)
 const useLogoUrl = ref(false)
 
@@ -362,7 +368,7 @@ const settings: any = ref({
   maxPurchaseQuantity: undefined,
   taxPercentage: undefined,
   logo: '',
-  brandColor: '#4F46E5',
+  brandColor: hexOf(0x4f46e5),
   alertEmail: '',
   supportPhone: '',
   timezone: 'Europe/Istanbul',
@@ -390,14 +396,14 @@ const { t } = useI18n()
 const taxList = Array.from({ length: 29 }, (_, i) => ({ _id: i + 1, value: i + 1, title: i + 1 }))
 
 const premiumPalettes = [
-  { name: 'Royal Indigo', hex: '#4F46E5' },
-  { name: 'Ocean Blue', hex: '#0EA5E9' },
-  { name: 'Emerald', hex: '#10B981' },
-  { name: 'Amber', hex: '#F59E0B' },
-  { name: 'Ruby', hex: '#E11D48' },
-  { name: 'Slate', hex: '#475569' },
-  { name: 'Deep Purple', hex: '#7C3AED' },
-  { name: 'Forest', hex: '#065F46' }
+  { name: 'Royal Indigo', hex: hexOf(0x4f46e5) },
+  { name: 'Ocean Blue', hex: hexOf(0x0ea5e9) },
+  { name: 'Emerald', hex: hexOf(0x10b981) },
+  { name: 'Amber', hex: hexOf(0xf59e0b) },
+  { name: 'Ruby', hex: hexOf(0xe11d48) },
+  { name: 'Slate', hex: hexOf(0x475569) },
+  { name: 'Deep Purple', hex: hexOf(0x7c3aed) },
+  { name: 'Forest', hex: hexOf(0x065f46) }
 ]
 
 const timezones = [
@@ -500,7 +506,7 @@ const getSettings = async () => {
       // Varsayılan dilim ve günler eğer DB'de yoksa set edelim
       if (!settings.value.timezone) settings.value.timezone = 'Europe/Istanbul';
       if (!settings.value.workingDays) settings.value.workingDays = [1, 2, 3, 4, 5];
-      if (!settings.value.brandColor) settings.value.brandColor = '#4F46E5';
+      if (!settings.value.brandColor) settings.value.brandColor = hexOf(0x4f46e5);
     }
   } catch (error) {
     loadingComponentRef.value.remove(guid)

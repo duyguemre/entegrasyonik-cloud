@@ -4,7 +4,7 @@
     <div v-if="category.isMain == true" class="mt-1">
       <div class="d-flex">
 
- <v-form v-model="topLevelCategoryForm" style="display:contents" @keydown.enter.prevent @submit.prevent>
+ <v-form v-model="topLevelCategoryForm" class="category-tree__form" @keydown.enter.prevent @submit.prevent>
           <v-text-field type="tel" maxlength="160" counter clearable
             :hint="$t('productDefinitions.category.subcategoryDesc')" class="ek-cat-add"
             v-model="topLevelCategoryName" :rules="titleRules"
@@ -73,7 +73,7 @@
             :draggingCategory="draggingCategory" />
           <div class="ml-12">
             <div class="d-flex">
-              <v-form v-model="category.form" style="display:contents" @keydown.enter.prevent @submit.prevent>
+              <v-form v-model="category.form" class="category-tree__form" @keydown.enter.prevent @submit.prevent>
                 <v-text-field type="tel" maxlength="160" counter clearable
                   :hint="$t('productDefinitions.category.subcategoryDesc')" class="mr-2 ek-cat-add"
                   v-model="category.newTitle" :rules="titleRules"
@@ -247,6 +247,10 @@ const dropForOrder = (draggingCategory: any, category: any) => {
 </script>
 
 <style scoped>
+.category-tree__form {
+  display: contents;
+}
+
 .ek-cat-row {
   position: relative;
   border: 1px solid var(--ek-color-border-default);

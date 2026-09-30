@@ -75,18 +75,20 @@ const printBulk = async (dataArray: any[]) => {
           <head>
             <title>Kargo Etiketleri</title>
             <style>
+              /* Ayrı yazdırma penceresi: uygulama token'ları yüklü değil; termal etiket her zaman siyah/beyaz. */
+              :root { --label-ink: black; --label-paper: white; }
               /* Termal Yazıcı Sayfa Boyutu */
               @page { size: 100mm 100mm; margin: 0; }
               
               /* DİKKAT: overflow: hidden ve sabit height KALDIRILDI. 
                  Çünkü birden fazla sayfanın aşağıya doğru akması gerekiyor. */
-              html, body { margin: 0; padding: 0; background: #fff; }
+              html, body { margin: 0; padding: 0; background: var(--label-paper); }
               body { font-family: 'Courier New', Courier, monospace; box-sizing: border-box; }
               
               .label-wrapper { 
                   width: 100mm; 
                   height: 100mm; 
-                  border: 2px solid #000; 
+                  border: 2px solid var(--label-ink); 
                   padding: 5mm; 
                   display: flex; 
                   flex-direction: column; 
@@ -105,15 +107,15 @@ const printBulk = async (dataArray: any[]) => {
                   break-after: auto;
               }
               
-              .label-header { border-bottom: 2px solid #000; padding-bottom: 2mm; margin-bottom: 3mm; display: flex; justify-content: space-between; align-items: center; }
+              .label-header { border-bottom: 2px solid var(--label-ink); padding-bottom: 2mm; margin-bottom: 3mm; display: flex; justify-content: space-between; align-items: center; }
               .brand { font-weight: bold; font-size: 14pt; }
-              .carrier-name { border: 1px solid #000; padding: 1mm 2mm; font-size: 10pt; font-weight: bold; }
+              .carrier-name { border: 1px solid var(--label-ink); padding: 1mm 2mm; font-size: 10pt; font-weight: bold; }
               
               .barcode-section { text-align: center; margin-bottom: 2mm; }
               .barcode-section svg { width: 90mm; max-height: 25mm; }
               .tracking-text { font-size: 16pt; font-weight: bold; margin-top: 1mm; letter-spacing: 2px; }
               
-              .info-section { flex-grow: 1; border-top: 1px dashed #000; padding-top: 2mm; overflow: hidden; }
+              .info-section { flex-grow: 1; border-top: 1px dashed var(--label-ink); padding-top: 2mm; overflow: hidden; }
               .section-title { font-size: 8pt; text-decoration: underline; margin-bottom: 1mm; }
               .customer-name { font-size: 12pt; font-weight: bold; margin-bottom: 1mm; }
               .customer-address { font-size: 10pt; line-height: 1.2; }
@@ -124,7 +126,7 @@ const printBulk = async (dataArray: any[]) => {
                   bottom: 5mm; 
                   left: 5mm; 
                   right: 5mm; 
-                  border-top: 1px solid #000; 
+                  border-top: 1px solid var(--label-ink); 
                   padding-top: 1mm; 
                   font-size: 8pt; 
                   display: flex; 

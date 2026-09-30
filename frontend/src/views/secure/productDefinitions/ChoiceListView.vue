@@ -39,12 +39,12 @@
       <template #header-actions>
         <v-form v-model="newChoiceForm" @submit.prevent="addChoice" class="new-choice-form">
           <v-text-field v-model="newChoiceTitle" variant="outlined" density="compact" hide-details :rules="newChoiceRules"
-            bg-color="textfieldColor" class="customTextField" :placeholder="$t('productDefinitions.choice.name')">
+            class="customTextField" :placeholder="$t('productDefinitions.choice.name')">
             <template v-slot:label>
               <span class="font-weight-light new-field-label">{{ $t('productDefinitions.choice.name') }}</span>
             </template>
             <template v-slot:append-inner>
-              <v-btn icon="mdi-plus" size="x-small" color="processButtonColor" variant="tonal" class="rounded-lg"
+              <v-btn icon="mdi-plus" size="x-small" color="neutral" variant="tonal" class="rounded-lg"
                 :aria-label="$t('productDefinitions.choice.new.title')" :disabled="!newChoiceForm || !newChoiceTitle"
                 @click="addChoice">
               </v-btn>
@@ -91,21 +91,20 @@
 
           <v-spacer></v-spacer>
 
-          <v-chip size="x-small" :color="item.isSlicer ? 'green-darken-1' : 'grey-lighten-2'" variant="flat"
-            class="mr-2 font-weight-bold rounded-xl" @click="item.isSlicer = !item.isSlicer; updateChoice(item)">
-            <v-icon start size="12">mdi-filter-variant</v-icon> GRUP (SLICER)
-          </v-chip>
-          <v-chip size="x-small" :color="item.isVarianter ? 'passiveColor' : 'grey-lighten-2'" variant="flat"
-            class="font-weight-bold rounded-xl" @click="item.isVarianter = !item.isVarianter; updateChoice(item)">
-            <v-icon start size="12">mdi-layers-triple</v-icon> VARYANT
-          </v-chip>
+          <button type="button" class="choice-flag mr-2" :class="{ 'choice-flag--on-success': item.isSlicer }"
+            :aria-pressed="!!item.isSlicer" @click="item.isSlicer = !item.isSlicer; updateChoice(item)">
+            <v-icon size="12" class="choice-flag__icon">mdi-filter-variant</v-icon> GRUP (SLICER)
+          </button>
+          <button type="button" class="choice-flag" :class="{ 'choice-flag--on-neutral': item.isVarianter }"
+            :aria-pressed="!!item.isVarianter" @click="item.isVarianter = !item.isVarianter; updateChoice(item)">
+            <v-icon size="12" class="choice-flag__icon">mdi-layers-triple</v-icon> VARYANT
+          </button>
         </div>
       </template>
 
       <template #cell-choices="{ row: item }">
           <div class="d-flex flex-wrap gap-2 py-2 align-center min-h-60">
-            <v-chip v-for="val in item.values" :key="val._id" size="small" variant="outlined" class="choice-chip-item"
-              role="button" tabindex="0">
+            <button v-for="val in item.values" :key="val._id" type="button" class="choice-chip-item">
               <span class="mr-2 font-weight-medium choice-chip-item__text">{{ val.title }}</span>
               <v-menu v-model="val.showValueMenu" activator="parent" :close-on-content-click="false"
                 transition="fade-transition"
@@ -116,17 +115,15 @@
                   <div class="d-flex justify-space-between align-center">
                     <v-menu v-model="val.showValueDeleteConfirm" :close-on-content-click="false" location="top center">
                       <template v-slot:activator="{ props }">
-                        <v-btn v-bind="props" icon="mdi-delete" size="30" color="danger" variant="flat"
+                        <v-btn v-bind="props" icon="mdi-delete" size="30" color="error" variant="flat"
                           class="premium-cube-btn" aria-label="Değeri sil"></v-btn>
                       </template>
-                      <v-card class="pa-3 border shadow-xl rounded-lg bg-danger" min-width="200">
-                        <div class="text-caption mb-2 text-center text-white font-weight-bold">Değeri Sil?</div>
+                      <v-card class="pa-3 border shadow-xl rounded-lg" min-width="200">
+                        <div class="text-caption mb-2 text-center font-weight-bold confirm-title">Değeri Sil?</div>
                         <div class="d-flex justify-center gap-2">
-                          <v-btn width="60" size="x-small" variant="flat" color="red-lighten-1"
-                            class="rounded-sm text-white confirm-btn" @click="val.showValueDeleteConfirm = false">İPTAL</v-btn>
-                          <v-btn width="60" size="x-small" color="red-darken-4" variant="flat"
-                            class="rounded-sm text-white confirm-btn"
-                            @click="deleteChoiceValue(item._id, val._id); val.showValueDeleteConfirm = false;">SİL</v-btn>
+                          <EkButton tone="secondary" size="sm" @click="val.showValueDeleteConfirm = false">İPTAL</EkButton>
+                          <EkButton tone="danger" size="sm"
+                            @click="deleteChoiceValue(item._id, val._id); val.showValueDeleteConfirm = false;">SİL</EkButton>
                         </div>
                       </v-card>
                     </v-menu>
@@ -135,7 +132,7 @@
                   </div>
                 </v-card>
               </v-menu>
-            </v-chip>
+            </button>
 
             <v-text-field v-if="item.showAddInput" v-model="item.tempValueTitle" density="compact" variant="outlined"
               hide-details autofocus class="add-val-input customTextField" aria-label="Yeni değer"
@@ -147,7 +144,7 @@
               </template>
             </v-text-field>
 
-            <v-btn v-else icon="mdi-plus" size="x-small" color="processButtonColor" variant="tonal" class="rounded-lg"
+            <v-btn v-else icon="mdi-plus" size="x-small" color="neutral" variant="tonal" class="rounded-lg"
               :aria-label="$t('productDefinitions.choice.newChoiceValue')" @click="item.showAddInput = true"></v-btn>
           </div>
       </template>
@@ -258,7 +255,7 @@ const addChoice = async () => {
   if (res?.result) {
     newChoiceTitle.value = ''
     retrieveChoices()
-    snackbarStore.addSnackbar({ show: true, text: 'Grup Eklendi', color: 'processButtonColor' });
+    snackbarStore.addSnackbar({ show: true, text: 'Grup Eklendi', color: 'neutral' });
   }
   loadingComponentRef.value.remove(guid)
 }
@@ -389,6 +386,10 @@ const columns: EkGridColumn[] = [
 }
 
 .choice-chip-item {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 var(--ek-space-3);
   transition: border-color var(--ek-duration-fast) var(--ek-easing-standard);
   cursor: pointer;
   border: 1px solid var(--ek-color-border-strong);
@@ -405,8 +406,42 @@ const columns: EkGridColumn[] = [
   font-size: var(--ek-font-size-xs);
 }
 
-.confirm-btn {
-  border: 1px solid var(--ek-color-surface);
+.confirm-title {
+  color: var(--ek-color-content-strong);
+}
+
+/* Aç/kapa bayrakları (slicer/varyant): eski `v-chip` yerine erişilebilir `aria-pressed` düğmesi. */
+.choice-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  height: 22px;
+  padding: 0 var(--ek-space-3);
+  border-radius: var(--ek-radius-full);
+  border: 1px solid var(--ek-color-border-default);
+  background: var(--ek-color-neutral-subtle);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  font-weight: var(--ek-font-weight-bold);
+  cursor: pointer;
+  transition: var(--ek-transition-colors);
+}
+
+.choice-flag--on-success {
+  background: var(--ek-color-success-subtle);
+  border-color: var(--ek-color-success-border);
+  color: var(--ek-color-success-emphasis);
+}
+
+.choice-flag--on-neutral {
+  background: var(--ek-color-neutral);
+  border-color: var(--ek-color-neutral);
+  color: var(--ek-color-neutral-contrast);
+}
+
+.choice-flag:focus-visible {
+  outline: 2px solid var(--ek-color-primary);
+  outline-offset: 2px;
 }
 
 .add-val-input {

@@ -86,7 +86,7 @@
 
             <div v-if="checkCategoryPlatformMappingResult.code == 'PLATFORM'">
 
-              <div class="d-flex justify-center mt-4 text-danger font-weight-medium">
+              <div class="d-flex justify-center mt-4 text-error font-weight-medium">
                 Kategorisi Eşleştirmesi Yapılmalı.
               </div>
               <div class="d-flex justify-center mt-1 mb-4">
@@ -114,7 +114,7 @@
             </div>
             <div v-else-if="checkCategoryPlatformMappingResult.code == 'CHOICE'">
 
-              <div class="d-flex justify-center mt-4 text-danger font-weight-medium">
+              <div class="d-flex justify-center mt-4 text-error font-weight-medium">
                 Seçenek Eşleştirmesi Yapılmalı.
               </div>
               <div class="d-flex justify-center mt-1 mb-4">
@@ -157,8 +157,7 @@
                     <v-col cols="12" md="4" sm="6" lg="3" xl="2"
                       v-for="attribute of platformAttributes.get(selectedIntegrationCode).filter((item: any) => item.required && item.varianter == false && item.slicer == false)">
                       <v-combobox v-if="attribute.allowCustom" @click.stop="1" v-ripple.stop auto-select-first="exact"
-                        clearable variant="outlined" density="compact" type="tel" maxlength="160" min-width="170"
-                        bg-color="textfieldColor" item-value="id" class="customTextField"
+                        clearable variant="outlined" density="compact" type="tel" maxlength="160" min-width="170" item-value="id" class="customTextField"
                         :items="getLimitedAttributeValues(attribute, selectedIntegrationCode)"
                         :hint="$t('productDefinitions.category.platformChoiceDesc')" persistent-hint hide-details
                         :model-value="getComboboxDisplayValue(attribute, selectedIntegrationCode)"
@@ -173,7 +172,7 @@
                           <v-list-item class="customTextField pbva-s12">
                             <v-text-field append-inner-icon="mdi-magnify" @click.stop="1" v-ripple.stop
                               variant="outlined" @keydown.stop @mousedown.stop="1" density="compact" type="tel"
-                              maxlength="160" class="mt-2" clearable counter bg-color="textfieldColor"
+                              maxlength="160" class="mt-2" clearable counter
                               v-model="attributeSearchText[selectedIntegrationCode + '_' + attribute._id]"
                               :hint="$t('productDefinitions.category.searchDesc')">
                               <template v-slot:label>
@@ -199,7 +198,7 @@
                       </v-combobox>
 
                       <v-select v-else @click.stop="1" v-ripple.stop variant="outlined" density="compact" type="tel"
-                        clearable maxlength="160" min-width="170" bg-color="textfieldColor" item-value="id"
+                        clearable maxlength="160" min-width="170" item-value="id"
                         class="customTextField" :items="getLimitedAttributeValues(attribute, selectedIntegrationCode)"
                         :hint="$t('productDefinitions.category.platformChoiceDesc')" persistent-hint hide-details
                         :model-value="getSelectDisplayValue(attribute, selectedIntegrationCode)"
@@ -215,7 +214,7 @@
                           <v-list-item class="customTextField pbva-s12">
                             <v-text-field append-inner-icon="mdi-magnify" @click.stop="1" v-ripple.stop
                               variant="outlined" @keydown.stop @mousedown.stop="1" density="compact" type="tel"
-                              maxlength="160" class="mt-2" clearable counter bg-color="textfieldColor"
+                              maxlength="160" class="mt-2" clearable counter
                               v-model="attributeSearchText[selectedIntegrationCode + '_' + attribute._id]"
                               :hint="$t('productDefinitions.category.searchDesc')">
                               <template v-slot:label>
@@ -256,8 +255,7 @@
                     <v-col cols="12" md="4" sm="6" lg="3" xl="2"
                       v-for="attribute of platformAttributes.get(selectedIntegrationCode).filter((item: any) => item.required == false && item.varianter == false)">
                       <v-combobox v-if="attribute.allowCustom" @click.stop="1" v-ripple.stop auto-select-first="exact"
-                        clearable variant="outlined" density="compact" type="tel" maxlength="160" min-width="170"
-                        bg-color="textfieldColor" item-value="id" class="customTextField"
+                        clearable variant="outlined" density="compact" type="tel" maxlength="160" min-width="170" item-value="id" class="customTextField"
                         :items="getLimitedAttributeValues(attribute, selectedIntegrationCode)"
                         :hint="$t('productDefinitions.category.platformChoiceDesc')" persistent-hint hide-details
                         :model-value="getComboboxDisplayValue(attribute, selectedIntegrationCode)"
@@ -272,7 +270,7 @@
                           <v-list-item class="customTextField pbva-s12">
                             <v-text-field append-inner-icon="mdi-magnify" @click.stop="1" v-ripple.stop
                               variant="outlined" @keydown.stop @mousedown.stop="1" density="compact" type="tel"
-                              maxlength="160" class="mt-2" clearable counter bg-color="textfieldColor"
+                              maxlength="160" class="mt-2" clearable counter
                               v-model="attributeSearchText[selectedIntegrationCode + '_' + attribute._id]"
                               :hint="$t('productDefinitions.category.searchDesc')">
                               <template v-slot:label>
@@ -298,7 +296,7 @@
                       </v-combobox>
 
                       <v-select v-else @click.stop="1" v-ripple.stop variant="outlined" density="compact" type="tel"
-                        clearable maxlength="160" min-width="170" bg-color="textfieldColor" item-value="id"
+                        clearable maxlength="160" min-width="170" item-value="id"
                         class="customTextField" :items="getLimitedAttributeValues(attribute, selectedIntegrationCode)"
                         :hint="$t('productDefinitions.category.platformChoiceDesc')" persistent-hint hide-details
                         :model-value="getSelectDisplayValue(attribute, selectedIntegrationCode)"
@@ -313,7 +311,7 @@
                           <v-list-item class="customTextField pbva-s12">
                             <v-text-field append-inner-icon="mdi-magnify" @click.stop="1" v-ripple.stop
                               variant="outlined" @keydown.stop @mousedown.stop="1" density="compact" type="tel"
-                              maxlength="160" class="mt-2" clearable counter bg-color="textfieldColor"
+                              maxlength="160" class="mt-2" clearable counter
                               v-model="attributeSearchText[selectedIntegrationCode + '_' + attribute._id]"
                               :hint="$t('productDefinitions.category.searchDesc')">
                               <template v-slot:label>
@@ -364,6 +362,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatNumber } from '@/composables/format'
 import { Sortable } from "sortablejs-vue3";
 import EkButton from '@/components/ds/EkButton.vue'
 
@@ -736,7 +735,7 @@ var getFileSizeOld = (id: number) => {
         conversion = 1000
         suffix = "KB"
       }
-      return parseFloat("" + image.file.size / conversion).toFixed(1) + suffix
+      return formatNumber(Math.round(image.file.size / conversion * 10) / 10) + suffix
 
     }
   }
@@ -750,7 +749,7 @@ var getFileSize = (size: number) => {
     conversion = 1000
     suffix = "KB"
   }
-  return parseFloat("" + size / conversion).toFixed(1) + suffix
+  return formatNumber(Math.round(size / conversion * 10) / 10) + suffix
 }
 
 var files = ref([])

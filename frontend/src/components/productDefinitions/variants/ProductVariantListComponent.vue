@@ -5,7 +5,7 @@
 
     <template v-slot:header.data-table-select="{ allSelected, selectAll, someSelected }">
       <div class="d-flex align-center justify-center fill-height vl-head-sep">
-        <v-checkbox-btn :model-value="allSelected" :indeterminate="someSelected && !allSelected" color="primaryLighten"
+        <v-checkbox-btn :model-value="allSelected" :indeterminate="someSelected && !allSelected" color="content-muted"
           aria-label="Tüm varyantları seç"
           @update:model-value="selectAll(!allSelected)"></v-checkbox-btn>
       </div>
@@ -176,7 +176,7 @@
         <td class="pa-0 ma-0 vl-cell-sep">
           <div class="d-flex align-center justify-center fill-height w-100">
             <v-checkbox-btn :model-value="selectedVariants.includes(item.barcode)" aria-label="Varyantı seç"
-              color="primaryLighten" @update:model-value="val => {
+              color="content-muted" @update:model-value="val => {
                 if (val) selectedVariants.push(item.barcode)
                 else selectedVariants = selectedVariants.filter((id: any) => id !== item.barcode)
               }" class="vl-cb-fixed" />
@@ -209,17 +209,7 @@
                   </div>
                   <span class="font-weight-medium">{{ item.barcode }}</span>
 
-                  <!--                   <v-switch v-model="item.onsale" class="ma-0 pa-0 text-caption" color="processButtonColor" hide-details
-                    density="compact">
-                    <template #label>
-                      <div class="font-weight-normal text-caption mt-0"
-                        style="line-height: .8;font-size:11px!important">
-                        Satışa <span v-if="item.onsale == true">Açık</span><span v-else
-                          class="font-weight-bold text-red">Kapalı</span>
-                      </div>
-                    </template>
-                  </v-switch>
- -->
+                  
                 </div>
               </div>
             </div>
@@ -355,73 +345,7 @@
 
 
         </td>
-        <!--         <td>
-          <div class="d-flex justify-end align-center">
-            <v-menu scroll-strategy="close" v-model="menuVariant[item._id]">
-              <template v-slot:activator="{ props }">
-                <v-btn flat size="30" v-bind="props" style="border:1px solid  rgb(var(--v-theme-borderColor));"
-                  elevation=0 color="white">
-                  <v-icon color="processButtonColor" v-bind="props" size="20" class=""
-                    style="opacity: 1;">mdi-menu</v-icon>
-                </v-btn>
-              </template>
-              <v-card style="border-radius:5px" v-if="menuVariant[item._id]">
-                <v-list class="pt-0 pb-0" density="compact" style="background-color:rgb(var(--v-theme-loginForm))">
-                  <v-divider color="passiveColor" class="ml-5 mr-5" />
-                  <v-list-subheader
-                    class="mt-0 d-flex align-center justify-start bg-primaryLightenMore text-white font-weight-bold">
-                    <v-tooltip location="top" :open-delay="700">
-                      <template #activator="{ props }">
-                        <div v-bind="props">
-                          <v-icon size="small" class="">mdi-information-outline</v-icon>
-                          Varyant Platform İşlemleri
-                        </div>
-                      </template>
-                      <span>İşlem, sadece bu varyant için bütün platformlarda uygulanacaktır.</span>
-                    </v-tooltip>
-                  </v-list-subheader>
-                  <v-divider color="passiveColor" class="ml-5 mr-5" />
-                  <v-list-item @click="transferVariant(item._id)" class="font-weight-medium">
-                    <template #prepend>
-                      <v-icon color="saveButtonColor" size="25" class="" style="opacity: 1;">mdi-cloud-upload</v-icon>
-                    </template>
-                    Yükle
-                  </v-list-item>
-                  <v-divider color="passiveColor" class="ml-5 mr-5" />
-                  <v-list-item @click="checkVariantStatus(item._id)" class="font-weight-medium">
-                    <template #prepend>
-                      <v-icon color="success" size="25" class=""
-                        style="opacity: 1;">mdi-cloud-check-variant-outline</v-icon>
-                    </template>
-                    Durum Güncelle
-                  </v-list-item>
-                  <v-divider color="passiveColor" class="ml-5 mr-5" />
-                  <v-list-item @click="updateVariant(item._id)" class="font-weight-medium">
-                    <template #prepend>
-                      <v-icon color="success" size="25" class="" style="opacity: 1;">mdi-sync</v-icon>
-                    </template>
-                    Bilgileri Güncelle
-                  </v-list-item>
-                  <v-divider color="passiveColor" class="ml-5 mr-5" />
-                  <v-list-item @click="updatePriceVariant(item._id)" class="font-weight-medium">
-                    <template #prepend>
-                      <v-icon color="success" size="25" class="" style="opacity: 1;">mdi-currency-try</v-icon>
-                    </template>
-                    Fiyatları Güncelle
-                  </v-list-item>
-                  <v-divider color="passiveColor" class="ml-5 mr-5" />
-                  <v-list-item @click="updateStockVariant(item._id)" class="font-weight-medium">
-                    <template #prepend>
-                      <v-icon color="success" size="25" class="" style="opacity: 1;">mdi-counter</v-icon>
-                    </template>
-                    Stokları Güncelle
-                  </v-list-item>
-                </v-list>
-              </v-card>
-            </v-menu>
-
-          </div>
-        </td> -->
+        
       </tr>
     </template>
     <template v-slot:bottom="{ }">
@@ -430,6 +354,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatMoney } from '@/composables/format'
 import { ref, nextTick, watch, computed, onBeforeMount, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n';
 import { useChoicesStore } from '@/stores/choicesStore';
@@ -503,7 +428,7 @@ const getBadgeColor = (integration: any, item: any) => {
   const hasMessage: any = item.platforms[integration.code]?.upload?.TRANSFER?.messages?.length > 0
   const onSale = item.platforms[integration.code]?.upload?.onSale
   if (onSale != true && itemStatus == PRODUCT_INTEGRATION_STATUS.COMPLETED) {
-    return 'danger'
+    return 'error'
   }
   if (hasMessage)
     return 'success'
@@ -597,7 +522,7 @@ const props = defineProps<{
 }>()
 
 const formatCurrency = (number: number) => {
-  return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(Number(number))
+  return formatMoney(Number(number))
 }
 
 
@@ -975,7 +900,7 @@ const search = async () => {
   z-index: 2;
   /* Beyaz çerçeve ile logonun üzerinden ayrılmasını sağlar */
   border: 2px solid var(--ek-color-surface);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--ek-shadow-sm);
 }
 
 /* Badge Renklerinin Anlamları (Görsel Netlik İçin) */

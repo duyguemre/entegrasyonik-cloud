@@ -12,16 +12,11 @@
  -->
 
             <div class="d-flex align-center ma-2">
-                <v-avatar :color="brandColor" :size="Number(height) * 0.6" class="" style="margin-right:6px">
-                    <span class="text-white font-weight-black text-h6" style="text-transform: capitalize!important;"
-                        :style="{
-                            fontSize: 'calc(' + height + 'px / 2.5)!important',
-                            lineHeight: 1,
-                            textTransform: 'capitalize!important'
-                        }">{{
+                <v-avatar :color="brandColor" :size="Number(height) * 0.6" class="platform-avatar">
+                    <span class="font-weight-black text-h6 platform-avatar__letter"
+                        :style="{ fontSize: 'calc(' + height + 'px / 2.5)!important' }">{{
                             integrationCode?.charAt(0) }}</span>
-                </v-avatar> <span class="" :style="{ color: brandColor }"
-                    style="font-weight:600;letter-spacing: -0.03em;">{{
+                </v-avatar> <span class="platform-name" :style="{ color: brandColor }">{{
                         integrationCode?.charAt(0).toUpperCase() + integrationCode?.slice(1)
                     }}</span>
             </div>
@@ -36,7 +31,7 @@ import { useIntegrationStore } from '@/stores/integrationStore'
 
 const integrationStore = useIntegrationStore()
 const src = ref('')
-const brandColor = ref('#eee')
+const brandColor = ref('var(--ek-color-border-strong)')
 
 const emit = defineEmits(['select', 'click'])
 
@@ -60,7 +55,7 @@ const loadIntegrationData = () => {
     const integration = integrationStore.getIntegration(props.integrationCode)
     if (integration) {
         src.value = integrationStore.getIntegrationImagePathByCode(props.integrationCode) ?? ''
-        brandColor.value = integration.color || '#eee'
+        brandColor.value = integration.color || 'var(--ek-color-border-strong)'
     }
 }
 
@@ -78,16 +73,16 @@ watch(() => props.integrationCode, loadIntegrationData)
 <style scoped>
 .premium-platform-card {
     position: relative;
-    background: #ffffff;
-    border: 1px solid rgb(var(--v-theme-borderColorLight));
-    border-radius: 12px;
+    background: var(--ek-color-surface);
+    border: 1px solid var(--ek-color-border-subtle);
+    border-radius: var(--ek-radius-lg);
     padding: 0px;
     min-height: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     cursor: default;
-    transition: all 0.25s ease-out;
+    transition: border-color var(--ek-duration-base) var(--ek-easing-standard), background-color var(--ek-duration-base) var(--ek-easing-standard);
     vertical-align: middle;
     /* td içinde dikey hizalama garantisi */
 }
@@ -101,13 +96,13 @@ watch(() => props.integrationCode, loadIntegrationData)
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
+    border-radius: var(--ek-radius-sm);
     padding: 4px;
     padding-right: 12px;
     padding-left: 12px;
     filter: grayscale(0.8);
     opacity: 0.9;
-    transition: all 0.3s ease;
+    transition: opacity var(--ek-duration-base) var(--ek-easing-standard), filter var(--ek-duration-base) var(--ek-easing-standard);
 }
 
 .platform-logo {
@@ -118,14 +113,10 @@ watch(() => props.integrationCode, loadIntegrationData)
 /* --- AKTİF DURUM --- */
 .premium-platform-card.is-active {
     border-color: var(--brand-color);
-    background: rgb(from var(--brand-color) r g b / 0.08);
+    background: color-mix(in srgb, var(--brand-color) 8%, transparent);
 }
 
-/* --- KAYDIRMA EFEKTİ: SADECE SEÇİLEBİLİRSE --- */
-.premium-platform-card.is-selectable.is-active {
-    transform: translateY(-6px);
-    /* Sadece selectable olduğunda yukarı kayar */
-}
+/* Seçili durum: kenarlık + alt vurgu çizgisi (zıplama/kayma yok — premium görsel dil). */
 
 
 .premium-platform-card.is-active:after {
@@ -137,11 +128,26 @@ watch(() => props.integrationCode, loadIntegrationData)
     width: 30%;
     height: 3px;
     background: var(--brand-color);
-    border-radius: 10px 10px 0 0;
+    border-radius: var(--ek-radius-md) var(--ek-radius-md) 0 0;
 }
 
 .is-active .logo-box {
     opacity: 1;
     filter: grayscale(0);
+}
+
+.platform-avatar {
+    margin-right: var(--ek-space-1);
+}
+
+.platform-avatar__letter {
+    color: var(--ek-color-action-contrast);
+    line-height: 1;
+    text-transform: capitalize;
+}
+
+.platform-name {
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: -0.03em;
 }
 </style>

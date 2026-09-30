@@ -1,9 +1,8 @@
 <template>
 
-  <v-card variant="elevated" elevation="0" class="ma-0 pa-0" color="transparent"
-    style="transition: none!important; box-shadow: none; transform: none!important;right:0;">
+  <v-card variant="elevated" elevation="0" class="vinfo-card ma-0 pa-0" color="transparent">
 
-    <v-card-title class="d-flex" style="display:block!important">
+    <v-card-title class="vinfo-title d-flex">
       <v-row>
         <v-col cols="2">
         </v-col>
@@ -21,6 +20,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatMoney } from '@/composables/format'
 import { ref, onBeforeMount, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n';
 import { useStaticsStore } from '@/stores/staticsStore';
@@ -48,7 +48,7 @@ const props = defineProps<{
 }>()
 
 const formatCurrency = (number: number) => {
-  return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(Number(number))
+  return formatMoney(Number(number))
 }
 
 
@@ -124,4 +124,15 @@ const findMaximumMarketPrice = (platforms: any) => {
 </script>
 
 
-<style scoped></style>
+<style scoped>
+.vinfo-card {
+  transition: none !important;
+  box-shadow: none;
+  transform: none !important;
+  right: 0;
+}
+
+.vinfo-title {
+  display: block !important;
+}
+</style>

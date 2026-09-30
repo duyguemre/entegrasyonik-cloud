@@ -6,19 +6,19 @@
         }">
         <div class="d-flex align-center w-100">
             <div class="mr-3 flex-shrink-0">
-                <v-icon size="24" color="white">{{ getIconByColor(snackbar.color) }}</v-icon>
+                <v-icon size="24" color="action-contrast">{{ getIconByColor(snackbar.color) }}</v-icon>
             </div>
 
-            <div class="font-weight-bold text-body-2" style="line-height: 1.3; overflow: hidden;">
+            <div class="font-weight-bold text-body-2 snackbar-text">
                 {{ snackbar.text }}
             </div>
         </div>
 
-        <v-progress-linear height="6" color="rgba(255,255,255,0.9)" absolute bottom class="snackbar-progress"
+        <v-progress-linear height="6" color="action-contrast" absolute bottom class="snackbar-progress"
             :style="{ animationDuration: snackbar.timeout + 'ms' }" />
 
         <template #actions>
-            <v-btn icon variant="text" size="small" @click="snackbarStore.removeSnackbar(snackbar.id)">
+            <v-btn icon variant="text" size="small" aria-label="Bildirimi kapat" @click="snackbarStore.removeSnackbar(snackbar.id)">
                 <v-icon size="18">mdi-close</v-icon>
             </v-btn>
         </template>
@@ -42,7 +42,7 @@ const getIconByColor = (color: string) => {
 
 <style scoped>
 .custom-snackbar {
-    transition: bottom 0.4s ease !important;
+    transition: bottom var(--ek-duration-base) var(--ek-easing-standard) !important;
     /* TAŞMA ÇÖZÜMÜ: Kapsayıcıyı sağa sabitliyoruz */
     position: fixed !important;
     left: auto !important;
@@ -66,11 +66,11 @@ const getIconByColor = (color: string) => {
     max-width: 450px !important;
     height: 88px !important;
     min-height: 88px !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+    border: 1px solid color-mix(in srgb, var(--ek-color-action-contrast) 10%, transparent) !important;
+    box-shadow: var(--ek-shadow-popover) !important;
     display: flex !important;
     align-items: center !important;
-    border-radius: 8px !important;
+    border-radius: var(--ek-radius-control) !important;
 }
 
 :deep(.v-snackbar__content) {
@@ -79,9 +79,15 @@ const getIconByColor = (color: string) => {
     width: 100%;
 }
 
+.snackbar-text {
+    line-height: var(--ek-line-height-tight);
+    overflow: hidden;
+}
+
+
 .snackbar-progress {
     width: 100%;
-    background-color: rgba(255, 255, 255, 0.2) !important;
+    background-color: color-mix(in srgb, var(--ek-color-action-contrast) 20%, transparent) !important;
     animation-name: shrink-progress;
     animation-timing-function: linear;
     animation-fill-mode: forwards;

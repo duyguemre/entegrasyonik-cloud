@@ -1,15 +1,14 @@
 <template>
 
-  <v-card variant="elevated" elevation="0" class="ma-0 pa-0 mt-2" color="transparent"
-    style="transition: none!important; box-shadow: none; transform: none!important;right:0;">
+  <v-card variant="elevated" elevation="0" class="vinfo-card ma-0 pa-0 mt-2" color="transparent">
 
 
-    <v-card-title class="d-flex" style="display:block!important">
+    <v-card-title class="vinfo-title d-flex">
 
       <v-row>
         <v-col cols="12" md="4" sm="6" lg="3" xl="2">
           <v-select density="compact" class="" :items="shipments" item-title="name" item-value="id"
-            v-model="variantPlatformInfo.shippingId" variant="outlined" bg-color="textfieldColor" clearable>
+            v-model="variantPlatformInfo.shippingId" variant="outlined" clearable>
             <template #label>
               Kargo Firması (Varsayılan <span class="font-weight-medium">{{ computedDefaultShipment }}</span>)
             </template>
@@ -18,7 +17,7 @@
         </v-col>
         <v-col cols="12" md="4" sm="6" lg="3" xl="2">
           <v-select density="compact" class="" :items="staticsStore.fastDeliveryTypes" item-title="name" item-value="id"
-            v-model="variantPlatformInfo.fastDeliveryType" variant="outlined" bg-color="textfieldColor" clearable>
+            v-model="variantPlatformInfo.fastDeliveryType" variant="outlined" clearable>
             <template #label>
               Teslimat Seçeneği (Varsayılan <span class="font-weight-medium">{{ computedDefaultFastDeliveryType
               }}</span>)
@@ -33,6 +32,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatMoney } from '@/composables/format'
 import { ref, onBeforeMount, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n';
 import { useStaticsStore } from '@/stores/staticsStore';
@@ -60,7 +60,7 @@ const props = defineProps<{
 }>()
 
 const formatCurrency = (number: number) => {
-  return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(Number(number))
+  return formatMoney(Number(number))
 }
 
 
@@ -135,4 +135,15 @@ const findMaximumMarketPrice = (platforms: any) => {
 </script>
 
 
-<style scoped></style>
+<style scoped>
+.vinfo-card {
+  transition: none !important;
+  box-shadow: none;
+  transform: none !important;
+  right: 0;
+}
+
+.vinfo-title {
+  display: block !important;
+}
+</style>

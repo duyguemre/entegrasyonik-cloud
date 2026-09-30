@@ -25,6 +25,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatMoney } from '@/composables/format'
 import { ref, onBeforeMount, onMounted, computed } from 'vue'
 import EkFormSection from '@/components/ds/EkFormSection.vue'
 import { useI18n } from 'vue-i18n';
@@ -78,7 +79,7 @@ const computedDefaultMaxPurchaseQuantity = computed(() => {
 
 
 const formatCurrency = (number: number) => {
-  return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(Number(number))
+  return formatMoney(Number(number))
 }
 
 

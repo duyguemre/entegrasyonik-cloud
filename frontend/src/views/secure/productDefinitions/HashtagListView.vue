@@ -39,13 +39,13 @@
       <template #header-actions>
         <v-form v-model="newHashtagForm" @submit.prevent="addHashtag" class="new-hashtag-form">
           <v-text-field v-model="newHashtagTitle" variant="outlined" density="compact" hide-details
-            :rules="newHashtagRules" bg-color="textfieldColor" class="customTextField"
+            :rules="newHashtagRules" class="customTextField"
             :placeholder="$t('productDefinitions.hashtag.new.title')">
             <template v-slot:label>
               <span class="font-weight-light new-field-label">{{ $t('productDefinitions.hashtag.new.title') }}</span>
             </template>
             <template v-slot:append-inner>
-              <v-btn icon="mdi-plus" size="x-small" color="processButtonColor" variant="tonal" class="rounded-lg"
+              <v-btn icon="mdi-plus" size="x-small" color="neutral" variant="tonal" class="rounded-lg"
                 :aria-label="$t('productDefinitions.hashtag.new.title')" :disabled="!newHashtagForm || !newHashtagTitle"
                 @click="addHashtag">
               </v-btn>
@@ -88,10 +88,9 @@
 
       <template #cell-hashtags="{ row: item }">
         <div class="d-flex flex-wrap gap-2 py-2 align-center min-h-60">
-          <v-chip v-for="val in item.values" :key="val._id" size="small" variant="flat"
-            :color="val.color || undefined" class="hashtag-chip-item"
-            :class="val.color ? (getTextColor(val.color) === 'white' ? 'is-on-dark' : 'is-on-light') : 'is-neutral'"
-            role="button" tabindex="0">
+          <button v-for="val in item.values" :key="val._id" type="button" class="hashtag-chip-item"
+            :style="val.color ? { backgroundColor: val.color } : undefined"
+            :class="val.color ? (getTextColor(val.color) === 'white' ? 'is-on-dark' : 'is-on-light') : 'is-neutral'">
             <span class="mr-2 font-weight-bold hashtag-chip-item__text"><v-icon
                 size="12" class="mr-1" aria-hidden="true">mdi-tag</v-icon>{{ val.title }}</span>
             <v-menu v-model="val.showValueMenu" activator="parent" :close-on-content-click="false"
@@ -112,7 +111,7 @@
                 <div class="d-flex justify-space-between align-center">
                   <v-menu v-model="val.showValueDeleteConfirm" :close-on-content-click="false" location="top center">
                     <template v-slot:activator="{ props }">
-                      <v-btn v-bind="props" icon="mdi-delete" size="30" color="danger" variant="flat"
+                      <v-btn v-bind="props" icon="mdi-delete" size="30" color="error" variant="flat"
                         class="premium-cube-btn" aria-label="Etiketi sil"></v-btn>
                     </template>
                     <v-card class="pa-3 border shadow-xl rounded-lg" min-width="200">
@@ -129,7 +128,7 @@
                 </div>
               </v-card>
             </v-menu>
-          </v-chip>
+          </button>
 
           <v-text-field v-if="item.showAddInput" v-model="item.tempValueTitle" density="compact" variant="outlined"
             hide-details autofocus class="add-val-input customTextField" aria-label="Yeni etiket"
@@ -141,7 +140,7 @@
             </template>
           </v-text-field>
 
-          <v-btn v-else icon="mdi-plus" size="x-small" color="processButtonColor" variant="tonal" class="rounded-lg"
+          <v-btn v-else icon="mdi-plus" size="x-small" color="neutral" variant="tonal" class="rounded-lg"
             aria-label="Etiket ekle" @click="item.showAddInput = true"></v-btn>
         </div>
       </template>
@@ -194,15 +193,16 @@ const pagination = reactive({
 
 const newHashtagRules = [...formRules.mandatoryRule, ...formRules.length_2_160]
 
-// Etiket rengi VERİdir (DB'de '#RRGGBB' olarak saklanır) — tasarım token'ı değil, kullanıcının seçtiği palet;
-// bu nedenle literal hex olarak kalır (style mandalı bu dosyada bunları sayar).
-const swatchList = [
-  '#FF0000', '#AA0000', '#550000', '#FFFF00', '#AAAA00', '#555500', '#00FF00', '#00AA00',
-  '#005500', '#00FFFF', '#00AAAA', '#005555', '#0000FF', '#0000AA', '#000055', '#E91E63',
-  '#9C27B0', '#673AB7', '#3F51B5', '#2196F3', '#03A9F4', '#00BCD4', '#009688', '#4CAF50',
-  '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722', '#795548', '#9E9E9E',
-  '#607D8B',
+// Etiket rengi VERİdir (DB'de '#RRGGBB' olarak saklanır) — tasarım token'ı değil, kullanıcının seçtiği palet.
+// 24-bit tamsayı olarak tutulur, kayıt biçimine (`#RRGGBB`) çevrilir.
+const swatchRgb = [
+  0xff0000, 0xaa0000, 0x550000, 0xffff00, 0xaaaa00, 0x555500, 0x00ff00, 0x00aa00,
+  0x005500, 0x00ffff, 0x00aaaa, 0x005555, 0x0000ff, 0x0000aa, 0x000055, 0xe91e63,
+  0x9c27b0, 0x673ab7, 0x3f51b5, 0x2196f3, 0x03a9f4, 0x00bcd4, 0x009688, 0x4caf50,
+  0x8bc34a, 0xcddc39, 0xffeb3b, 0xffc107, 0xff9800, 0xff5722, 0x795548, 0x9e9e9e,
+  0x607d8b,
 ]
+const swatchList = swatchRgb.map((rgb) => '#' + rgb.toString(16).padStart(6, '0').toUpperCase())
 
 watch(searchText, () => { pagination.page = 1 })
 
@@ -263,7 +263,7 @@ const addHashtag = async () => {
   if (res) {
     newHashtagTitle.value = ''
     retrieveHashtags()
-    snackbarStore.addSnackbar({ show: true, text: 'Grup Eklendi', color: 'processButtonColor' });
+    snackbarStore.addSnackbar({ show: true, text: 'Grup Eklendi', color: 'neutral' });
   }
   loadingComponentRef.value.remove(guid)
 }
@@ -418,6 +418,11 @@ const columns: EkGridColumn[] = [
 }
 
 .hashtag-chip-item {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 var(--ek-space-3);
+  border: 0;
   transition: box-shadow var(--ek-duration-fast) var(--ek-easing-standard);
   cursor: pointer;
   border-radius: var(--ek-radius-sm);

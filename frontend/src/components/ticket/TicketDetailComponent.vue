@@ -10,7 +10,7 @@
 <template>
   <ActionDialogComponent :model-value="modelValue" @update:model-value="val => $emit('update:modelValue', val)"
     :title="`DESTEK TALEBİ: ${ticket?.ticketNumber || ''}`" :subtitle="ticket?.subject"
-    icon="mdi-message-text-clock-outline" color="passiveColor" attach="ticketListView" cancel-text="Kapat"
+    icon="mdi-message-text-clock-outline" color="content-muted" attach="ticketListView" cancel-text="Kapat"
     show-confirm="false" maxWidth="1000px" @cancel="$emit('update:modelValue', false)" :showFooter="false">
     <div v-if="ticket" class="ticket-detail-container d-flex flex-column h-100">
       <!-- Ticket Meta Info Header -->

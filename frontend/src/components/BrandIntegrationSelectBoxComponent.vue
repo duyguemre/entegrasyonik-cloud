@@ -14,9 +14,9 @@
         </div>
       </template>
       <template #no-data>
-        <div class="ma-6 mt-6 dialog-info1 fill-height align-center justify-center text-center" style="max-width:600px">
-          <div class="d-flex align-center text-center justify-center " style="font-size:.8em">
-            <v-icon class="mr-0" color="processButtonColor">mdi-lightbulb-outline</v-icon>
+        <div class="ma-6 mt-6 dialog-info1 brand-select__empty fill-height align-center justify-center text-center">
+          <div class="brand-select__empty-row d-flex align-center text-center justify-center">
+            <v-icon class="mr-0" color="content-muted">mdi-lightbulb-outline</v-icon>
             <span v-if="!brandSearchText || brandSearchText?.length < 2">Marka Araması Yapınız</span>
             <span v-else>Marka Bulunamadı</span>
           </div>
@@ -26,10 +26,10 @@
         {{ item.title }}
       </template>
       <template v-slot:prepend-item>
-        <v-list-item class="" style="border:1px solid #ddd;border-top:none">
+        <v-list-item class="brand-select__item">
           <v-text-field append-inner-icon="mdi-magnify" @click.stop="1" v-ripple.stop variant="outlined" @mousedown.stop
             @keydown.stop density="compact" type="tel" maxlength="160" class="mt-2" clearable counter
-            bg-color="textfieldColor" :rules="formRules.searchRules" @update:model-value="checkAndStartSearch"
+            :rules="formRules.searchRules" @update:model-value="checkAndStartSearch"
             v-model="brandSearchText" :hint="$t('productDefinitions.brand.searchDesc')">
             <template v-slot:label>
               <span class="font-weight-light">
@@ -40,7 +40,7 @@
         </v-list-item>
       </template>
       <template v-slot:item="{ item, index, props }: any">
-        <v-list-item v-bind="props" class="" style="border:1px solid #ddd;border-top:none">
+        <v-list-item v-bind="props" class="brand-select__item">
           <template #title>
           </template>
           <div class="d-flex justify-start align-center ml-6">
@@ -108,4 +108,17 @@ const checkAndStartSearch = async () => {
 
 </script>
 
-<style scoped></style>
+<style scoped>
+.brand-select__empty {
+  max-width: 600px;
+}
+
+.brand-select__empty-row {
+  font-size: var(--ek-type-caption-size);
+}
+
+.brand-select__item {
+  border: 1px solid var(--ek-color-border-default);
+  border-top: none;
+}
+</style>

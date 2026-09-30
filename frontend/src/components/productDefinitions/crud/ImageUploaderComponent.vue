@@ -7,7 +7,7 @@
         <v-btn :style="{ height: height ? height+'px' : '100%' + '!important' }"
           class="pt-15 pb-15 iuc-s3" block elevation=2 aria-label="Resim yükle" @click="openFilePicker">
           <div class="iuc-s4">
-            <v-icon size="60" color="processButtonColor">mdi-plus</v-icon>
+            <v-icon size="60" color="content-muted">mdi-plus</v-icon>
             <template v-if="!width || width > 200">
               Resimleri bu alana sürükleyebilirsiniz
             </template>

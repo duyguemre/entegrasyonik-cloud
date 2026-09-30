@@ -51,7 +51,7 @@
 
           <div class="indicator-wrapper">
             <div class="status-circle" :style="{ backgroundColor: getIntegrationColor(data?.upload?.[item.id]?.status) }">
-              <v-icon size="14" color="white">
+              <v-icon size="14" color="content-inverse">
                 {{ getStatusMeta(data?.upload?.[item.id]?.status)?.icon || 'mdi-circle' }}
               </v-icon>
             </div>
@@ -83,6 +83,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatDateTime, formatMoney } from '@/composables/format'
 import { computed } from 'vue';
 import { useStaticsStore } from '@/stores/staticsStore';
 import { PLATFORM_PROCESS, PLATFORM_PROCESS_LABELS, PLATFORM_PROCESS_COLORS } from '@/types/PlatformProcess';
@@ -166,13 +167,12 @@ const getStatusMeta = (status: any) => {
 
 const formatDate = (date: any) => {
   if (!date) return 'İşlem Yok';
-  const d = new Date(date);
-  return d.toLocaleString('tr-TR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  return formatDateTime(date);
 };
 
 const formatCurrency = (number: number) => {
   if (!number) return '0,00 TL';
-  return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(Number(number));
+  return formatMoney(Number(number));
 };
 </script>
 
@@ -206,7 +206,7 @@ const formatCurrency = (number: number) => {
   padding: 6px;
   border-radius: var(--ek-radius-lg);
   display: flex;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+  box-shadow: var(--ek-shadow-sm);
 }
 
 .status-main-text {
@@ -288,7 +288,7 @@ const formatCurrency = (number: number) => {
   align-items: center;
   justify-content: center;
   z-index: 2;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--ek-shadow-sm);
 }
 
 .connector-line {

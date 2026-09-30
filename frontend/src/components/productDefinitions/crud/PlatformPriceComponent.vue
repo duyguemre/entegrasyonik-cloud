@@ -12,7 +12,7 @@
                 <template v-slot:activator="{ props }">
                   <v-menu>
                     <template v-slot:activator="{ props }">
-                      <v-btn v-bind="props" elevation=0 color="processButtonColor">
+                      <v-btn v-bind="props" elevation=0 color="neutral">
                         Uygula <v-icon size="large">mdi-menu-down</v-icon>
                       </v-btn>
                     </template>
@@ -41,21 +41,21 @@
                         <v-divider thickness="2" />
                         <v-list-item @click="applyPrices('CONSTANT')">
                           <template #prepend>
-                            <v-icon color="updateButtonColor" class="ppc-s4">mdi-currency-try</v-icon>
+                            <v-icon color="primary" class="ppc-s4">mdi-currency-try</v-icon>
                           </template>
                           {{ batch.isSalePrice ? 'Satış' : 'Piyasa' }} Fiyatlarına Ata
                         </v-list-item>
                         <v-divider />
                         <v-list-item @click="applyPrices('PERCENTAGE')">
                           <template #prepend>
-                            <v-icon color="processButtonColor" class="ppc-s4">mdi-percent</v-icon>
+                            <v-icon color="content-muted" class="ppc-s4">mdi-percent</v-icon>
                           </template>
                           Yüzdelik Olarak {{ batch.isSalePrice ? 'Satış' : 'Piyasa' }} {{ !batch.isDecrease ? 'Fiyatlarına Ekle':'Fiyatlarından Çıkar'}}
                         </v-list-item>
                         <v-divider />
                         <v-list-item @click="applyPrices('VALUE')">
                           <template #prepend>
-                            <v-icon color="updateButtonColor" class="ppc-s4">{{ !batch.isDecrease ? 'mdi-plus' : 'mdi-minus' }}</v-icon>
+                            <v-icon color="primary" class="ppc-s4">{{ !batch.isDecrease ? 'mdi-plus' : 'mdi-minus' }}</v-icon>
                           </template>
                           {{ batch.isSalePrice ? 'Satış' : 'Piyasa' }} {{ !batch.isDecrease ? 'Fiyatlarına Ekle' : 'Fiyatlarından Çıkar'}}
                         </v-list-item>
@@ -79,7 +79,7 @@
                   <template v-slot:activator="{ props }">
                     <v-list-item v-bind="props" class="pl-1 pr-2 ppc-s6" title="Toplu İşlemler">
                       <template #prepend>
-                        <v-icon color="processButtonColor">mdi-card-multiple-outline</v-icon>
+                        <v-icon color="content-muted">mdi-card-multiple-outline</v-icon>
                       </template>
                       <template #title>
                         <span class="font-weight-medium ppc-s7">
@@ -104,7 +104,7 @@
                               <template v-slot:activator="{ props }">
                                 <v-menu>
                                   <template v-slot:activator="{ props }">
-                                    <v-btn v-bind="props" elevation=0 color="processButtonColor">
+                                    <v-btn v-bind="props" elevation=0 color="neutral">
                                       Uygula <v-icon size="large">mdi-menu-down</v-icon>
                                     </v-btn>
                                   </template>
@@ -134,14 +134,14 @@
                                       <v-divider thickness="2" />
                                       <v-list-item @click="">
                                         <template #prepend>
-                                          <v-icon color="updateButtonColor" class="ppc-s4">mdi-currency-try</v-icon>
+                                          <v-icon color="primary" class="ppc-s4">mdi-currency-try</v-icon>
                                         </template>
                                         {{ batch.isSalePrice ? 'Satış' : 'Piyasa' }} Fiyatlarına Ata
                                       </v-list-item>
                                       <v-divider />
                                       <v-list-item @click="">
                                         <template #prepend>
-                                          <v-icon color="processButtonColor" class="ppc-s4">mdi-percent</v-icon>
+                                          <v-icon color="content-muted" class="ppc-s4">mdi-percent</v-icon>
                                         </template>
                                         Yüzdelik Olarak {{ batch.isSalePrice ? 'Satış' : 'Piyasa' }}
                                         {{ !batch.isDecrease ? 'Fiyatlarına Ekle':'Fiyatlarından Çıkar'}}
@@ -149,7 +149,7 @@
                                       <v-divider />
                                       <v-list-item @click="">
                                         <template #prepend>
-                                          <v-icon color="updateButtonColor" class="ppc-s4">{{ !batch.isDecrease ? 'mdi-plus' : 'mdi-minus' }}</v-icon>
+                                          <v-icon color="primary" class="ppc-s4">{{ !batch.isDecrease ? 'mdi-plus' : 'mdi-minus' }}</v-icon>
                                         </template>
                                         {{ batch.isSalePrice ? 'Satış' : 'Piyasa' }} {{ !batch.isDecrease ? 'Fiyatlarına Ekle':'Fiyatlarından Çıkar'}}
                                       </v-list-item>
@@ -199,7 +199,7 @@
                               :text="$t('productDefinitions.product.define.applyIncreaseDecreasePricesDesc')">
                               <template v-slot:activator="{ props }">
                                 <v-btn-group elevation="1" class="d-block" v-bind="props" density="compact">
-                                  <v-btn density="compact" block class="fill-height" color="processButtonColor"
+                                  <v-btn density="compact" block class="fill-height" color="neutral"
                                     @click="applyIncreaseDecreasePrices">
                                     <span class="">
                                       {{ $t('common.apply') }}

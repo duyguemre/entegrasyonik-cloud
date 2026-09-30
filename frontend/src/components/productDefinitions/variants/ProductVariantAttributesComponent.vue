@@ -91,7 +91,7 @@
 
             <div v-if="checkCategoryPlatformMappingResult.code == 'PLATFORM'">
 
-              <div class="d-flex justify-center mt-4 text-danger font-weight-medium">
+              <div class="d-flex justify-center mt-4 text-error font-weight-medium">
                 Kategorisi Eşleştirmesi Yapılmalı.
               </div>
               <div class="d-flex justify-center mt-1 mb-4">
@@ -119,7 +119,7 @@
             </div>
             <div v-else-if="checkCategoryPlatformMappingResult.code == 'CHOICE'">
 
-              <div class="d-flex justify-center mt-4 text-danger font-weight-medium">
+              <div class="d-flex justify-center mt-4 text-error font-weight-medium">
                 Seçenek Eşleştirmesi Yapılmalı.
               </div>
               <div class="d-flex justify-center mt-1 mb-4">
@@ -484,6 +484,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatNumber } from '@/composables/format'
 import { Sortable } from "sortablejs-vue3";
 import EkButton from '@/components/ds/EkButton.vue'
 
@@ -935,7 +936,7 @@ var getFileSizeOld = (id: number) => {
         conversion = 1000
         suffix = "KB"
       }
-      return parseFloat("" + image.file.size / conversion).toFixed(1) + suffix
+      return formatNumber(Math.round(image.file.size / conversion * 10) / 10) + suffix
 
     }
   }
@@ -949,7 +950,7 @@ var getFileSize = (size: number) => {
     conversion = 1000
     suffix = "KB"
   }
-  return parseFloat("" + size / conversion).toFixed(1) + suffix
+  return formatNumber(Math.round(size / conversion * 10) / 10) + suffix
 }
 
 var files = ref([])

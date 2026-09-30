@@ -11,25 +11,24 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 24px 0;
+    padding: var(--ek-space-6) 0;
     /* Bölümler arası boşluk */
-    gap: 16px;
+    gap: var(--ek-space-4);
     width: 100%;
 }
 
 .divider-line {
     height: 1px;
     flex: 1;
-    background: linear-gradient(90deg, transparent, rgb(var(--v-theme-borderColorLight)) 50%, transparent);
+    background: linear-gradient(90deg, transparent, var(--ek-color-border-subtle) 50%, transparent);
 }
 
 .divider-dot {
     width: 6px;
     height: 6px;
-    background: rgb(var(--v-theme-passiveColor));
+    background: var(--ek-color-content-muted);
     /* Dashboard ana rengin */
     border-radius: 50%;
     opacity: 0.4;
-    box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
 }
 </style>

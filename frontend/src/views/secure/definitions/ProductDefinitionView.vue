@@ -26,10 +26,10 @@
     <v-form @keydown.enter.prevent @submit.prevent ref="productInfoFormRef" v-model="isProductInfoFormValid">
 
       <div class="mt-2">
-        <v-stepper bg-color="transparent" style="border:none!important"
+        <v-stepper bg-color="transparent"
           class="custom-stepper ml-1 mr-0 flex-grow-1 productDefinition-stepper" elevation="0" v-model="stepper">
 
-          <v-stepper-header style="height:40px!important" class="">
+          <v-stepper-header>
             <v-stepper-item @click="stepper = 0" title="Kategori Seçimi" value="1" :complete="stepper > 0" editable
               color="primary">
             </v-stepper-item>
@@ -48,10 +48,8 @@
             <v-stepper-item @click="stepper = 3" title="Detay Bilgiler" value="4" :complete="stepper > 3"
               :editable="productInfoForm.title?.length > 2" color="primary"></v-stepper-item>
             <v-divider class="mr-1 ml-1" color="border-default" opacity="1"></v-divider>
-            <v-btn-group elevation="0" class="ma-0 mr-4"
-              style="height:40px;border:0px solid white;min-width:113px!important;margin-top:0px" density="compact">
-              <v-btn class="fill-height" color="primary" @click="saveProduct" :disabled="isSaveDisabled()"
-                style="height:40px;min-width:0;padding:0;width:100%">
+            <v-btn-group elevation="0" class="ma-0 mr-4 pdv-save-group" density="compact">
+              <v-btn class="fill-height pdv-save-btn" color="primary" @click="saveProduct" :disabled="isSaveDisabled()">
                 <span class="">
                   Kaydet
                 </span></v-btn>
@@ -59,7 +57,7 @@
           </v-stepper-header>
         </v-stepper>
 
-        <div style="height:30px"></div>
+        <div class="pdv-spacer"></div>
 
         <div v-if="stepper == 0" class="pdv-category-step">
           <v-form ref="formStep0Ref" @submit.stop>
@@ -81,16 +79,14 @@
           <v-form ref="formStep2Ref" @submit.stop>
             <temnplate v-if="productInfoForm.hasVariant">
               <ProductVariantsComponent v-model="isVariantsDialog1" :productInfoForm="productInfoForm"
-                style="transition: opacity .2s ease-in!important"
-                :style="!isVariantsDialog1 ? { 'opacity': '.2!important' } : {}" key="ProductVariantsComponent"
+                class="pdv-variants" :class="{ 'pdv-variants--dim': !isVariantsDialog1 }" key="ProductVariantsComponent"
                 @close="isVariantsDialog1 = false" v-if="isVariantsDialog1 == true" @refresh-images="refreshImages"
                 :dialogAttach="'.productDefinitionView'" @refresh-variants="refreshVariants" />
             </temnplate>
             <temnplate v-else>
 
               <ProductSingleVariantComponent v-model="isVariantsDialog1" :productInfoForm="productInfoForm"
-                :single-variant="productInfoForm.variants[0]" style="transition: opacity .2s ease-in!important"
-                :style="!isVariantsDialog1 ? { 'opacity': '.2!important' } : {}" key="ProductVariantsComponent"
+                :single-variant="productInfoForm.variants[0]" class="pdv-variants" :class="{ 'pdv-variants--dim': !isVariantsDialog1 }" key="ProductVariantsComponent"
                 @close="isVariantsDialog1 = false" v-if="isVariantsDialog1 == true" @refresh-images="refreshImages"
                 :dialogAttach="'.productDefinitionView'" @refresh-variants="refreshVariants" />
             </temnplate>
@@ -652,8 +648,39 @@ defineExpose({
   overflow-y: auto;
 }
 
+.productDefinition-stepper {
+  border: none !important;
+}
+
 .productDefinition-stepper .v-stepper-header {
   box-shadow: none;
+  height: 40px !important;
+}
+
+.productDefinition-stepper .pdv-save-group {
+  height: 40px;
+  border: 0;
+  min-width: 113px !important;
+  margin-top: 0;
+}
+
+.productDefinition-stepper .pdv-save-btn {
+  height: 40px;
+  min-width: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.pdv-spacer {
+  height: var(--ek-space-8);
+}
+
+.pdv-variants {
+  transition: opacity var(--ek-duration-base) var(--ek-easing-enter) !important;
+}
+
+.pdv-variants--dim {
+  opacity: 0.2 !important;
 }
 
 /* .productDefinitionView .v-overlay__content {

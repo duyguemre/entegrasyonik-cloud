@@ -4,21 +4,21 @@
       class="align-center justify-center fill-height" :attach="attach" :contained="true" location="left">
 
 
-      <div style="height:100%" class="align-center justify-center d-flex">
-        <v-progress-linear class="elevation-3 mb-16" opacity="1"
-          style="border-radius:5px;border:1px solid #ccc ;opacity:1;width:300px" bg-opacity="1" bg-color="white"
-          v-model="progressPower" v-if="showProgressBar" color="processButtonColor" height="35">
-          <template #default>
+      <div class="align-center justify-center d-flex loading-stage">
+        <v-progress-linear class="elevation-3 mb-16 loading-progress" opacity="1"
+          bg-opacity="1" bg-color="surface"
+          v-model="progressPower" v-if="showProgressBar" color="neutral" height="35">
+          <template v-slot:default>
             <span class="font-weight-bold">%{{ progressPower }}</span>
           </template>
         </v-progress-linear>
 
 
         <v-progress-circular v-else width="8" size="100"
-          v-if="messages.filter((item: any) => item.type == 'info').length > 0" color="white"
+          v-if="messages.filter((item: any) => item.type == 'info').length > 0" color="action-contrast"
           indeterminate></v-progress-circular>
       </div>
-      <v-alert color="processButtonColor" border="top" style="border:1px solid #bbb" density="default" elevation="22"
+      <v-alert color="neutral" border="top" class="loading-alert" density="default" elevation="22"
         v-if="messages.filter((item: any) => item.type == 'info').length > 10000" rounded prominent
         title="Lütfen Bekleyiniz" type="info">
 
@@ -28,16 +28,16 @@
         </template>
 
         <template #title>
-          <div class="d-flex justify-center align-center text-center" style="width:100%">
+          <div class="d-flex justify-center align-center text-center loading-alert__title">
 
-            <v-progress-circular color="white" indeterminate></v-progress-circular>
+            <v-progress-circular color="action-contrast" indeterminate></v-progress-circular>
           </div>
         </template>
         <div class="mt-2">
           <p v-for="message of messages.filter((item: any) => item.type == 'info')">{{ message.text }}</p>
         </div>
       </v-alert>
-      <v-alert border="top" style="border:1px solid #bbb" density="default" elevation="22"
+      <v-alert border="top" class="loading-alert" density="default" elevation="22"
         v-if="messages.filter((item: any) => item.type == 'success').length > 0" icon="mdi-check" title="İşlem Başarılı"
         type="success">
         <template #title>
@@ -46,14 +46,14 @@
           </div>
         </template>
       </v-alert>
-      <v-alert border="top" style="border:1px solid #bbb" density="default" elevation="22"
+      <v-alert border="top" class="loading-alert" density="default" elevation="22"
         v-if="messages.filter((item: any) => item.type == 'warning').length > 0" icon="mdi-exclamation" title="Uyarı"
         type="warning">
         <div class="mt-2">
           <p v-for="message of messages.filter((item: any) => item.type == 'warning')">{{ message.text }}</p>
         </div>
       </v-alert>
-      <v-alert border="top" style="border:1px solid #bbb" density="default" elevation="22"
+      <v-alert border="top" class="loading-alert" density="default" elevation="22"
         v-if="messages.filter((item: any) => item.type == 'error').length > 0" icon="mdi-close" title="İşlem Başarısız"
         type="error">
         <div class="mt-2">
@@ -156,4 +156,23 @@ defineExpose({
 
 </script>
 
-<style scoped></style>
+<style scoped>
+.loading-stage {
+  height: 100%;
+}
+
+.loading-progress {
+  border-radius: var(--ek-radius-sm);
+  border: 1px solid var(--ek-color-border-strong);
+  opacity: 1;
+  width: 300px;
+}
+
+.loading-alert {
+  border: 1px solid var(--ek-color-border-strong);
+}
+
+.loading-alert__title {
+  width: 100%;
+}
+</style>

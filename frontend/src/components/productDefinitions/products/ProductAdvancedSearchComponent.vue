@@ -1,9 +1,9 @@
 <template>
     <v-tooltip open-delay="1000" text="Ürünlerde gelişmiş arama yapmak için burayı kullanabilirsiniz">
         <template v-slot:activator="{ props: tooltipProps }">
-            <v-btn v-bind="tooltipProps" size="40" color="white" class="premium-cube-btn ml-2" elevation="0"
+            <v-btn v-bind="tooltipProps" size="40" color="surface" class="premium-cube-btn ml-2" elevation="0"
                 @click="dialog = true">
-                <v-icon size="x-large" :color="isDirty ? 'success' : 'processButtonColor'">
+                <v-icon size="x-large" :color="isDirty ? 'success' : 'content-muted'">
                     mdi-filter-variant
                 </v-icon>
             </v-btn>

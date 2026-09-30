@@ -3,40 +3,7 @@
     icon="mdi-shape-plus-outline" width="md" hide-cancel confirm-label="Kapat" @confirm="dialog = false">
     <v-text-field clearable :label="$t('productDefinitions.category.new.title')" />
   </EkDialog>
-
-<!--   <div class="d-flex  align-center">
-    <div>
-      <div class="text-truncate mb-2" :style="{ 'width': contentWidth + 'px!important' }">
-
-        <v-select clearable density="compact" class="mr-4 pt-2" hide-details
-          :label="$t('productDefinitions.category.new.title')" variant="outlined" bg-color="textfieldColor">
-        </v-select>
-
-
-      </div>
-      <div class="text-truncate" :style="{ 'width': contentWidth + 'px!important' }">
-        <v-select clearable density="compact" class="mr-4 pt-1" hide-details
-          :label="$t('productDefinitions.category.new.title')" variant="outlined" bg-color="textfieldColor">
-        </v-select>
-
-      </div>
-      <v-divider class="mb-3 mr-3" />
-      <div class="text-truncate" :style="{ 'width': contentWidth + 'px!important' }">
-        <v-select clearable density="compact" class="mr-4 pt-1" hide-details
-          :label="$t('productDefinitions.category.new.title')" variant="outlined" bg-color="textfieldColor">
-        </v-select>
-
-      </div>
-      <v-divider class="mb-3  mr-3" />
-      <div class="text-truncate" :style="{ 'width': contentWidth + 'px!important' }">
-        <v-select clearable density="compact" class="mr-4 pt-1" hide-details
-          :label="$t('productDefinitions.category.new.title')" variant="outlined" bg-color="textfieldColor">
-        </v-select>
-
-      </div>
-    </div>
-  </div>
- --></template>
+</template>
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';

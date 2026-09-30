@@ -1,17 +1,16 @@
 <template>
 
-  <v-card variant="elevated" elevation="0" class="ma-0 mt-2 pa-0" color="transparent"
-    style="transition: none!important; box-shadow: none; transform: none!important;right:0;">
+  <v-card variant="elevated" elevation="0" class="vinfo-card ma-0 mt-2 pa-0" color="transparent">
 
 
-    <v-card-title class="d-flex" style="display:block!important">
+    <v-card-title class="vinfo-title d-flex">
 
       <v-row>
 
         <v-col cols="12" md="4" sm="6" lg="3" xl="2">
-          <v-select item-value="id" item-title="name" @click.stop style="min-width:200px" v-if="shipments"
+          <v-select item-value="id" item-title="name" @click.stop v-if="shipments"
             v-model="variantPlatformInfo.shippingId" label="Teslimat Şekli" :items="computedDeliveryOptions"
-            density="compact" class="" variant="outlined" bg-color="textfieldColor" clearable>
+            density="compact" class="vinfo-field" variant="outlined" clearable>
             <template #label>
               Teslimat Şekli (Varsayılan <span class="font-weight-medium">{{ computedDefaultShipment }}</span>)
             </template>
@@ -19,9 +18,9 @@
         </v-col>
 
         <v-col cols="12" md="4" sm="6" lg="3" xl="2">
-          <v-select multiple item-value="id" item-title="name" @click.stop style="min-width:200px" v-if="shipments"
+          <v-select multiple item-value="id" item-title="name" @click.stop v-if="shipments"
             v-model="variantPlatformInfo.cities" label="Teslimat Şehirleri" :items="shipments.cities" density="compact"
-            class="" variant="outlined" bg-color="textfieldColor" clearable>
+            class="vinfo-field" variant="outlined" clearable>
             <template #label>
               Teslimat Şehirleri (Varsayılan <span class="font-weight-medium">{{ computedDefaultCities }}</span>)
             </template>
@@ -123,4 +122,19 @@ const retrieveShipments = async () => {
 </script>
 
 
-<style scoped></style>
+<style scoped>
+.vinfo-card {
+  transition: none !important;
+  box-shadow: none;
+  transform: none !important;
+  right: 0;
+}
+
+.vinfo-title {
+  display: block !important;
+}
+
+.vinfo-field {
+  min-width: 200px;
+}
+</style>

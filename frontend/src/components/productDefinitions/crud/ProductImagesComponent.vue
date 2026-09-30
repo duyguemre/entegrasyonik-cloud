@@ -33,17 +33,17 @@
                         @click.stop="toggleSelectedImagesForId(element._id)" :class="{ 'pim-unselected': selectedImages.length > 0 && isSelectionExist(element._id) == -1 }">
                         <v-btn class="hovered pim-s8"
                           @click.stop="deleteImage(element)" elevation="0" min-width="0" color="transparent"><v-icon
-                            size="large" color="deleteButtonColor">mdi-delete</v-icon></v-btn>
+                            size="large" color="error">mdi-delete</v-icon></v-btn>
                         <v-btn class="hovered pim-s9"
                           @click.stop="downloadImage(element._id)" elevation="0" min-width="0"
                           color="transparent"><v-icon size="large" color="primary">mdi-download</v-icon></v-btn>
 
                         <v-card outlined
-                          elevation="1" min-width="0" color="infoButtonColor" class="drag-handle hovered pim-s10">
+                          elevation="1" min-width="0" color="info" class="drag-handle hovered pim-s10">
                           <div class="d-flex justify-center text-center ">
                             <div class="text-caption pim-s11">
 
-                              <v-icon color="processButtonColor" size="25">mdi-drag</v-icon>
+                              <v-icon color="content-muted" size="25">mdi-drag</v-icon>
 
                             </div>
                             <div class="pim-s12">
@@ -82,11 +82,11 @@
               <template v-for="(choice, index) of computedChoices">
                 <v-select multiple item-value="_id" item-title="title"
                   v-model="selectedChoices[choice._id]" :label="choice.title" :items="choice.values" density="compact"
-                  class="mb-2 pim-s17" variant="outlined" bg-color="textfieldColor" hide-details>
+                  class="mb-2 pim-s17" variant="outlined" hide-details>
                 </v-select>
               </template>
               <v-btn-group elevation="0" class="d-block mt-6" density="compact">
-                <v-btn density="compact" block class="fill-height pim-s18" color="processButtonColor"
+                <v-btn density="compact" block class="fill-height pim-s18" color="neutral"
                   :disabled="!Object.values(selectedChoices).some(arr => Array.isArray(arr) && arr.length > 0) || selectedImages.length <= 0"
                   @click="assignImages">
                   <span class="">
@@ -107,7 +107,7 @@
               </v-checkbox>
 
               <v-btn-group v-if="selectedImages.length > 0" elevation="0" class="ml-1  mt-1 mb-2" density="compact">
-                <v-btn density="compact" block class="fill-height pim-s18" color="saveButtonColor" :disabled="selectedImages.length <= 0" @click="deleteImageSelected">
+                <v-btn density="compact" block class="fill-height pim-s18" color="primary" :disabled="selectedImages.length <= 0" @click="deleteImageSelected">
                   <div v-if="selectedImages.length > 0">
                     Seçili <span class="font-weight-bold pim-s20">{{ selectedImages.length }}</span>
                     Resmi
@@ -125,6 +125,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatNumber } from '@/composables/format'
 import { Sortable } from "sortablejs-vue3";
 import EkButton from '@/components/ds/EkButton.vue'
 
@@ -425,7 +426,7 @@ var getFileSizeOld = (id: number) => {
         conversion = 1000
         suffix = "KB"
       }
-      return parseFloat("" + image.file.size / conversion).toFixed(1) + suffix
+      return formatNumber(Math.round(image.file.size / conversion * 10) / 10) + suffix
 
     }
   }
@@ -439,7 +440,7 @@ var getFileSize = (size: number) => {
     conversion = 1000
     suffix = "KB"
   }
-  return parseFloat("" + size / conversion).toFixed(1) + suffix
+  return formatNumber(Math.round(size / conversion * 10) / 10) + suffix
 }
 
 var files = ref([])

@@ -3,16 +3,16 @@
 
   ADR-0015 B5-3 — GÖRSEL KATMAN (bkz. e2e/specs/printouts.spec.ts). Davranış DEĞİŞMEDİ: ekran bir
   liste değil, backend'e HİÇ istek atmayan bir şablon tasarımcısı taslağıdır; sürükle-bırak (dragstart/
-  drop/dragend), tuvale `<p type="move">` ekleme, tıklayınca seçme (seçili öğe #00f), ayar paneli,
+  drop/dragend), tuvale `<p type="move">` ekleme, tıklayınca seçme (seçili öğe mavi), ayar paneli,
   "Sil", kâğıt boyutu düğmeleri (tuval `:width/:height` inline style), ölü "Test Çıktısı"/"Temizle"
   düğmeleri ve `#a4` kimliği AYNEN korundu. Görünen metinler/etiketler değişmedi.
 
-  - Başlık `EkPageHeader`'a; token'sız hex/inline style, `bg-color="textfieldColor"`, eski
+  - Başlık `EkPageHeader`'a; token'sız renk/inline style, `bg-color="textfieldColor"`, eski
     `scroll-element`/`expand-background-patch`/`ScrollComponent` (özel kaydırma çubuğu) kaldırıldı;
     kaydırma yerel `overflow:auto`. Palet metinleri `paletteGroups` verisinden render edilir.
   - Yerleşim: araç çubuğu sarılır (mobil/tabletteki üst üste binme giderildi), tuval küçülmez
     (`flex:none`, kap içinde kaydırılır).
-  - Karakterizasyon (DÜZELTİLMEDİ): seçim rengi "#00f" ve sürükleme opaklığı script'te DOM'a
+  - Karakterizasyon (DÜZELTİLMEDİ): seçim rengi (saf mavi, `blue`) ve sürükleme opaklığı script'te DOM'a
     doğrudan yazılır (spec bunu mavi olarak bekler); Genişlik/Yükseklik/Çıktı Tipi/Yazı Tipi/Yazı
     Büyüklüğü/Kopya Sayısı alanları hiçbir state'e bağlı değil; "Sil" sonrası seçim temizlenmez;
     paletteki alanlar klavyeyle sürüklenemez (yalnızca HTML5 fare DnD).
@@ -154,13 +154,13 @@ const paletteGroups = [
 
 
 var selectDragElement = (event: any) => {
-  if (selectedDragElement.value && selectedDragElement.value.target) selectedDragElement.value.target.style.color = "#000"
+  if (selectedDragElement.value && selectedDragElement.value.target) selectedDragElement.value.target.style.color = "black"
   if (selectedDragElement.value && selectedDragElement.value.target && selectedDragElement.value.target.innerHTML == event.target.innerHTML) {
     selectedDragElement.value = undefined
   }
   else {
     selectedDragElement.value = event
-    selectedDragElement.value.target.style.color = "#00f"
+    selectedDragElement.value.target.style.color = "blue"
   }
 
 }

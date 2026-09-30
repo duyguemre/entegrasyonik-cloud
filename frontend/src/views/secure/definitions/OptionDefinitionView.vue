@@ -13,7 +13,7 @@
   <div class="legacy-definition-body">
   <div class="search-section" >
     <div class="d-flex">
-      <div style="width:48%">
+      <div class="legacy-definition-search">
         <div class="d-flex">
           <v-text-field clearable prepend-icon="mdi-form-textbox" density="comfortable"
             :label="$t('customers.customer.searchlabel')" variant="outlined"></v-text-field>
@@ -126,7 +126,7 @@ var buttons: any = [
   {
     title: t("customers.customer.new.title"),
     icon: 'mdi-plus',
-    color: 'newButtonColor',
+    color: 'primary',
     to: '',
     click: showNewCustomerPopup,
   },
@@ -303,6 +303,10 @@ var openUpdate = (id: number) => {
   inset: 0;
   display: flex;
   flex-direction: column;
+}
+
+.legacy-definition-search {
+  width: 48%;
 }
 
 .legacy-definition-body {

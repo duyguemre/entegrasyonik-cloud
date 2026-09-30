@@ -78,7 +78,7 @@
                   <v-tooltip location="top">
                     <template v-slot:activator="{ props: tooltip }">
                       <v-icon v-bind="mergeProps(menu, tooltip)" class="mr-1" aria-label="Toplu stok kodu oluştur"
-                        color="processButtonColor">mdi-card-multiple</v-icon>
+                        color="content-muted">mdi-card-multiple</v-icon>
                     </template>
                     <span>Toplu stok kodu oluştur.</span>
                   </v-tooltip>
@@ -86,7 +86,7 @@
                 <v-card min-width="240px">
                   <v-card-text>
                     <v-btn-group elevation="1" class="d-block pv-btn-group" density="compact">
-                      <v-btn density="compact" block class="fill-height" color="processButtonColor"
+                      <v-btn density="compact" block class="fill-height" color="neutral"
                         @click.stop="stockcodeBatchProcess">
                         <span class="">
                           <v-icon>mdi-plus-box-multiple-outline</v-icon> Toplu Oluştur
@@ -119,7 +119,7 @@
                   <v-tooltip location="top">
                     <template v-slot:activator="{ props: tooltip }">
                       <v-icon v-bind="mergeProps(menu, tooltip)" class="mr-1" aria-label="Toplu barkod oluştur"
-                        color="processButtonColor">mdi-card-multiple</v-icon>
+                        color="content-muted">mdi-card-multiple</v-icon>
                     </template>
                     <span>Toplu barkod oluştur.</span>
                   </v-tooltip>
@@ -127,7 +127,7 @@
                 <v-card min-width="240px">
                   <v-card-text>
                     <v-btn-group elevation="1" class="d-block pv-btn-group" density="compact">
-                      <v-btn density="compact" block class="fill-height" color="processButtonColor"
+                      <v-btn density="compact" block class="fill-height" color="neutral"
                         @click.stop="barcodeBatchProcess">
                         <span class="">
                           <v-icon>mdi-plus-box-multiple-outline</v-icon> Toplu Oluştur
@@ -189,7 +189,7 @@
                 <v-tooltip location="top">
                   <template v-slot:activator="{ props: tooltip }">
                     <v-icon v-bind="mergeProps(menu, tooltip)" class="mr-1" aria-label="Toplu satış fiyatı değiştir"
-                      color="processButtonColor">mdi-card-multiple</v-icon>
+                      color="content-muted">mdi-card-multiple</v-icon>
                   </template>
                   <span>Toplu piyasa fiyatı değiştir</span>
                 </v-tooltip>
@@ -228,7 +228,7 @@
                   </div>
 
                   <v-btn-group elevation="1" class="d-block pv-btn-group" density="compact">
-                    <v-btn density="compact" block class="fill-height" color="processButtonColor"
+                    <v-btn density="compact" block class="fill-height" color="neutral"
                       @click.stop="salePriceBatchProcess">
                       <span class="">
                         <v-icon>mdi-plus-box-multiple-outline</v-icon> Toplu Güncelle
@@ -259,7 +259,7 @@
                 <v-tooltip location="top">
                   <template v-slot:activator="{ props: tooltip }">
                     <v-icon v-bind="mergeProps(menu, tooltip)" class="mr-1" aria-label="Toplu piyasa fiyatı değiştir"
-                      color="processButtonColor">mdi-card-multiple</v-icon>
+                      color="content-muted">mdi-card-multiple</v-icon>
                   </template>
                   <span>Toplu piyasa fiyatı değiştir</span>
                 </v-tooltip>
@@ -298,7 +298,7 @@
                   </div>
 
                   <v-btn-group elevation="1" class="d-block pv-btn-group" density="compact">
-                    <v-btn density="compact" block class="fill-height" color="processButtonColor"
+                    <v-btn density="compact" block class="fill-height" color="neutral"
                       @click.stop="marketPriceBatchProcess">
                       <span class="">
                         <v-icon>mdi-plus-box-multiple-outline</v-icon> Toplu Güncelle
@@ -331,7 +331,7 @@
                 <v-tooltip location="top">
                   <template v-slot:activator="{ props: tooltip }">
                     <v-icon v-bind="mergeProps(menu, tooltip)" class="mr-1" aria-label="Toplu platform bazında fiyat değiştir"
-                      color="processButtonColor">mdi-card-multiple</v-icon>
+                      color="content-muted">mdi-card-multiple</v-icon>
                   </template>
                   <span>Toplu platform bazında fiyat değiştir</span>
                 </v-tooltip>
@@ -343,7 +343,7 @@
                     v-model="batchProcesses.isPlatformBasedPrice.value" @click.stop />
 
                   <v-btn-group elevation="1" class="d-block pv-btn-group" density="compact">
-                    <v-btn density="compact" block class="fill-height" color="processButtonColor"
+                    <v-btn density="compact" block class="fill-height" color="neutral"
                       @click.stop="isPlatformBasedPriceBatchProcess">
                       <span class="">
                         <v-icon>mdi-plus-box-multiple-outline</v-icon> Toplu Güncelle
@@ -374,19 +374,18 @@
                   <v-tooltip location="top">
                     <template v-slot:activator="{ props: tooltip }">
                       <v-icon v-bind="mergeProps(menu, tooltip)" class="mr-1" aria-label="Toplu stok değiştir"
-                        color="processButtonColor">mdi-card-multiple</v-icon>
+                        color="content-muted">mdi-card-multiple</v-icon>
                     </template>
                     <span>Toplu stok değiştir</span>
                   </v-tooltip>
                 </template>
                 <v-card width="240px">
                   <v-card-text>
-                    <v-text-field label="Stok Adedi" prepend-icon="mdi-counter" density="compact" variant="outlined"
-                      bg-color="textfieldColor" class="pv-mw-300" v-model="batchProcesses.stock.value"
+                    <v-text-field label="Stok Adedi" prepend-icon="mdi-counter" density="compact" variant="outlined" class="pv-mw-300" v-model="batchProcesses.stock.value"
                       @click.stop clearable>
                     </v-text-field>
                     <v-btn-group elevation="1" class="d-block pv-btn-group" density="compact">
-                      <v-btn density="compact" block class="fill-height" color="processButtonColor"
+                      <v-btn density="compact" block class="fill-height" color="neutral"
                         @click.stop="stockBatchProcess">
                         <span class="">
                           <v-icon>mdi-plus-box-multiple-outline</v-icon> Toplu Güncelle
@@ -422,19 +421,18 @@
                   <v-tooltip location="top">
                     <template v-slot:activator="{ props: tooltip }">
                       <v-icon v-bind="mergeProps(menu, tooltip)" class="mr-1" aria-label="Toplu raf değiştir"
-                        color="processButtonColor">mdi-card-multiple</v-icon>
+                        color="content-muted">mdi-card-multiple</v-icon>
                     </template>
                     <span>Toplu raf değiştir</span>
                   </v-tooltip>
                 </template>
                 <v-card width="240px">
                   <v-card-text>
-                    <v-text-field label="Raf" prepend-icon="mdi-counter" density="compact" variant="outlined"
-                      bg-color="textfieldColor" class="pv-mw-300" v-model="batchProcesses.shelf.value"
+                    <v-text-field label="Raf" prepend-icon="mdi-counter" density="compact" variant="outlined" class="pv-mw-300" v-model="batchProcesses.shelf.value"
                       @click.stop clearable>
                     </v-text-field>
                     <v-btn-group elevation="1" class="d-block pv-btn-group" density="compact">
-                      <v-btn density="compact" block class="fill-height" color="processButtonColor"
+                      <v-btn density="compact" block class="fill-height" color="neutral"
                         @click.stop="shelfBatchProcess">
                         <span class="">
                           <v-icon>mdi-plus-box-multiple-outline</v-icon> Toplu Güncelle
@@ -522,7 +520,7 @@
             <template #activator="{ props }">
               <v-btn flat size="35" v-bind="props" elevation=0
                 color="transparent" class="pv-head-btn pv-head-btn--surface" aria-label="Varyant işlemleri">
-                <v-icon color="processButtonColor" size="x-large" class="">mdi-menu</v-icon>
+                <v-icon color="content-muted" size="x-large" class="">mdi-menu</v-icon>
               </v-btn>
             </template>
           </EkContextMenu>
@@ -559,9 +557,9 @@
                 </v-tooltip>
               </div>
               <div v-if="editingVariantId == item.tempId && editingHeaderValue == 'stockcode'" class="pr-4 pv-w-full">
-                <v-text-field density="compact" variant="outlined" bg-color="textfieldColor" class=""
+                <v-text-field density="compact" variant="outlined" class=""
                   label="Stok Kodu" v-model="item.stockcode" @click.stop hide-details></v-text-field>
-                <v-text-field density="compact" variant="outlined" bg-color="textfieldColor" class="mt-2"
+                <v-text-field density="compact" variant="outlined" class="mt-2"
                   label="Barkod" v-model="item.barcode" @click.stop hide-details></v-text-field>
               </div>
               <div v-else class="d-flex align-center fill-height pv-w-full">
@@ -665,7 +663,7 @@
                 <div>
                   <v-checkbox :class="isDisplayMd() ? [''] : ['ml-12']"
                     :label="$t('productDefinitions.product.platformPrice')" @update:modelValue="" density="compact"
-                    hide-details v-model="item.prices.isPlatformBasedPrice" @click.stop class="ma-0  pa-0 pv-minw-180" color="processButtonColor" />
+                    hide-details v-model="item.prices.isPlatformBasedPrice" @click.stop class="ma-0  pa-0 pv-minw-180" color="content-muted" />
                 </div>
 
               </div>
@@ -682,7 +680,7 @@
                 @click="setEditingField({ value: 'stock' }, item.tempId)">
 
                 <v-text-field v-if="editingVariantId == item.tempId && editingHeaderValue == 'stock'" label="Stok"
-                  type="number" density="compact" variant="outlined" bg-color="textfieldColor" class="pv-w-90" v-model.number="item.stock" @click.stop hide-details></v-text-field>
+                  type="number" density="compact" variant="outlined" class="pv-w-90" v-model.number="item.stock" @click.stop hide-details></v-text-field>
 
                 <div v-else :class="isDisplayMd() ? [''] : ['pr-6']">
                   <div class="font-weight-light text-caption mt-1 pv-field-caption">
@@ -698,7 +696,7 @@
               <div class="d-flex align-center d-block pv-clickable"
                 @click="setEditingField({ value: 'shelf' }, item.tempId)">
                 <v-text-field v-if="editingVariantId == item.tempId && editingHeaderValue == 'shelf'" label="Raf"
-                  density="compact" variant="outlined" bg-color="textfieldColor" class="pv-minw-90"
+                  density="compact" variant="outlined" class="pv-minw-90"
                   v-model="item.shelf" @click.stop hide-details></v-text-field>
 
                 <div v-else :class="isDisplayMd() ? [''] : ['pl-6']">
@@ -720,12 +718,12 @@
 
                   <v-btn v-bind="{ ...tooltipProps }" elevation="0" size="35" class="mr-2 pv-row-btn"
                     @click.stop="isVariantAttributesDialog = !isVariantAttributesDialog; editingVariant = item"
-                    color="processButtonColor" aria-label="Varyantı düzenle"><v-icon size="large">mdi-pencil</v-icon></v-btn>
+                    color="neutral" aria-label="Varyantı düzenle"><v-icon size="large">mdi-pencil</v-icon></v-btn>
                 </template>
               </v-tooltip>
 
               <v-btn v-if="productInfoForm.hasVariant" elevation="0" size="35" class="pv-row-btn"
-                @click.stop="deleteVariant(item)" color="danger" aria-label="Varyantı sil"><v-icon
+                @click.stop="deleteVariant(item)" color="error" aria-label="Varyantı sil"><v-icon
                   size="large">mdi-delete</v-icon></v-btn>
             </div>
           </td>
@@ -743,6 +741,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatMoney } from '@/composables/format'
 import { ref, mergeProps, inject, nextTick, watch, computed, onBeforeMount, onMounted } from 'vue'
 import EkDialogHost from '@/components/ds/EkDialogHost.vue'
 import EkContextMenu from '@/components/ds/EkContextMenu.vue'
@@ -884,7 +883,7 @@ const props = defineProps<{
 }>()
 
 const formatCurrency = (number: number) => {
-  return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(Number(number))
+  return formatMoney(Number(number))
 }
 
 
