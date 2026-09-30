@@ -6,7 +6,7 @@
       @update:model-value="(v) => { if (!v) closeVariantPanels() }">
       <keep-alive>
         <ProductImagesComponent v-model="isImagesDialog" key="ProductImagesComponent"
-          @close="isImagesDialog = false" v-if="isImagesDialog == true" :productInfoForm="productInfoForm" />
+          @close="isImagesDialog = false" v-if="isImagesDialog == true" :productInfoForm="productInfoForm" initial-tab="variants" />
       </keep-alive>
       <keep-alive>
         <ProductVariantImagesComponent v-model="isVariantImagesDialog" :variant="selectedVariantForEdit" key="ProductVariantImagesComponent"
@@ -62,6 +62,9 @@
               <EkButton size="sm" tone="ghost" icon="mdi-redo" icon-only aria-label="Yinele"
                   :disabled="!gridRef?.sheet.canRedo" @click="gridRef?.sheet.redo()" />
               </EkTooltip>
+            <!-- Faz 3 B2: varyant görsellerini seçenek grubu seviyesinde atama (galeri paneli, Varyantlar sekmesi). -->
+            <EkButton size="sm" icon="mdi-image-multiple-outline" class="pv-bulk-btn" :disabled="!variantList.length" aria-label="Varyant görselleri"
+              @click="isImagesDialog = true"><span class="pv-bulk-btn__label">Görseller</span></EkButton>
             <EkButton size="sm" icon="mdi-table-edit" class="pv-bulk-btn" :disabled="!variantList.length" aria-label="Toplu düzenle"
               @click="openBulkEditor('all')"><span class="pv-bulk-btn__label">Toplu düzenle</span></EkButton>
             <v-menu :close-on-content-click="false" v-model="isVariantGeneratorMenu" location="bottom end">

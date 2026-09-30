@@ -26,11 +26,11 @@
 
       <!-- ============================================================ GALERİ -->
       <section v-show="tab === 'gallery'" class="pig-gallery" aria-label="Galeri">
-        <EkBulkBar class="pig-bar" :count="selected.length" noun="görsel" @clear="selected = []">
+        <EkBulkBar v-if="visible.length || uploadItems.length" class="pig-bar" :count="selected.length" noun="görsel" @clear="selected = []">
           <template #start>
             <span class="pig-bar__hint">
               <v-icon icon="mdi-gesture-tap-hold" aria-hidden="true" />
-              Sürükleyerek sıralayın — ilk görsel <strong>kapak</strong> olur
+              <span class="pig-wide">Sürükleyerek sıralayın — </span>ilk görsel <strong>kapak</strong> olur
             </span>
           </template>
           <template #end>
@@ -126,12 +126,15 @@
                   <span class="pig-badge" :class="`pig-badge--${worstLevel(qualityOf(img))}`" tabindex="0"
                     :aria-label="qualityOf(img).map((h) => h.short).join(', ')">
                     <v-icon :icon="worstLevel(qualityOf(img)) === 'warning' ? 'mdi-alert-outline' : 'mdi-information-outline'" aria-hidden="true" />
-                    <span v-if="i === 0 || worstLevel(qualityOf(img)) === 'warning'" class="pig-badge__txt">{{ qualityOf(img)[0].short }}</span>
+                    <span v-if="i === 0" class="pig-badge__txt">{{ qualityOf(img)[0].short }}</span>
                   </span>
                 </EkTooltip>
-                <span v-if="hasVariants" class="pig-badge pig-badge--usage ek-num" :class="{ 'is-zero': !usageCount(img._id) }">
-                  <v-icon icon="mdi-palette-swatch-outline" aria-hidden="true" />{{ usageCount(img._id) }}<span class="ek-sr-only"> varyantta kullanılıyor</span>
-                </span>
+                <EkTooltip v-if="hasVariants" :text="usageCount(img._id) ? `${usageCount(img._id)} varyantta kullanılıyor` : 'Hiçbir varyanta atanmadı'">
+                  <span class="pig-badge pig-badge--usage ek-num" :class="{ 'is-zero': !usageCount(img._id) }" tabindex="0"
+                    :aria-label="usageCount(img._id) ? `${usageCount(img._id)} varyantta kullanılıyor` : 'Hiçbir varyanta atanmadı'">
+                    <v-icon icon="mdi-palette-swatch-outline" aria-hidden="true" />{{ usageCount(img._id) }}
+                  </span>
+                </EkTooltip>
               </span>
             </div>
           </li>
@@ -149,7 +152,7 @@
                 </span>
               </template>
               <template v-else>
-                <span class="pig-up__title ek-num">{{ up.status === 'queued' ? 'Sırada' : `Yükleniyor %${up.progress}` }}</span>
+                <span class="pig-up__title ek-num">{{ up.status === 'queued' ? 'Sırada' : up.progress ? `Yükleniyor %${up.progress}` : 'Yükleniyor…' }}</span>
                 <v-progress-linear :model-value="up.progress" :indeterminate="up.status === 'uploading' && up.progress === 0" height="4" rounded
                   color="primary" bg-color="neutral" :aria-label="`${up.name} yükleniyor`" />
               </template>
@@ -193,7 +196,7 @@
       <span class="pig-save" role="status">
         <template v-if="saving"><v-icon icon="mdi-cloud-sync-outline" aria-hidden="true" />Kaydediliyor…</template>
         <template v-else-if="uploadItems.length"><v-icon :icon="icons.upload" aria-hidden="true" />{{ uploadLine }}</template>
-        <template v-else><v-icon icon="mdi-cloud-check-outline" aria-hidden="true" />Sıra ve silme anında kaydedilir{{ hasVariants ? ' · varyant atamaları ürünle kaydedilir' : '' }}</template>
+        <template v-else><v-icon icon="mdi-cloud-check-outline" aria-hidden="true" />Sıra ve silme anında kaydedilir<span v-if="hasVariants" class="pig-wide"> · varyant atamaları ürünle kaydedilir</span></template>
       </span>
     </template>
   </EkDialogCard>
@@ -233,14 +236,14 @@ import {
 // Çağıranlar `v-model` bağlıyor (açık/kapalı); panel kendisi kullanmaz, `close` yayar.
 defineModel({ default: false })
 const emits = defineEmits(['refreshImages', 'close'])
-const props = defineProps<{ productInfoForm: any }>()
+const props = defineProps<{ productInfoForm: any; /** Açılış sekmesi (varyant adımından 'variants'). */ initialTab?: 'gallery' | 'variants' }>()
 
 const restApi = useRestApi() as any
 const { showToast, toasts, dismissToast } = useToast()
 const choicesStore = useChoicesStore()
 
 // ---------------------------------------------------------------- durum
-const tab = ref<'gallery' | 'variants'>('gallery')
+const tab = ref<'gallery' | 'variants'>(props.initialTab ?? 'gallery')
 const bodyRef = ref<HTMLElement | null>(null)
 const gridRef = ref<HTMLElement | null>(null)
 const fileInputRef = ref<HTMLInputElement | null>(null)
@@ -252,6 +255,7 @@ const rejected = ref<{ name: string; reason: string }[]>([])
 const images = computed<GalleryImage[]>(() => props.productInfoForm.images ?? [])
 const variants = computed<any[]>(() => props.productInfoForm.variants ?? [])
 const hasVariants = computed(() => !!props.productInfoForm.hasVariant && variants.value.some((v) => v.choices?.length))
+if (!hasVariants.value) tab.value = 'gallery'
 
 /** Silinmek üzere bekleyen (geri alınabilir) görseller — ızgarada gösterilmez. */
 const pending = ref(new Map<string, { toastId: number; ids: string[] }>())
@@ -273,7 +277,7 @@ const usageNames = (id: string) => {
 const missingCount = computed(() => (hasVariants.value ? unassignedVariants(variants.value, visible.value).length : 0))
 const tabs = computed(() => [
   { value: 'gallery', label: 'Galeri', icon: 'mdi-image-multiple-outline', count: visible.value.length },
-  { value: 'variants', label: missingCount.value ? `Varyant görselleri · ${missingCount.value} eksik` : 'Varyant görselleri', icon: 'mdi-palette-swatch-outline' },
+  { value: 'variants', label: missingCount.value ? `Varyantlar · ${missingCount.value} eksik` : 'Varyantlar', icon: 'mdi-palette-swatch-outline' },
 ])
 
 const qualityCache = new WeakMap<object, ReturnType<typeof imageQuality>>()
@@ -607,7 +611,7 @@ const failedCount = computed(() => uploadSummary(uploadItems.value).failed)
 const uploadLine = computed(() => {
   const s = uploadSummary(uploadItems.value)
   const parts = []
-  if (s.active) parts.push(`${s.active} görsel yükleniyor (%${s.progress})`)
+  if (s.active) parts.push(`${s.active} görsel yükleniyor${s.progress ? ` (%${s.progress})` : ''}`)
   if (s.failed) parts.push(`${s.failed} hata`)
   return parts.join(' · ')
 })
@@ -1203,7 +1207,15 @@ kbd {
   font-size: 16px;
 }
 
-.pig-up__sub,
+.pig-up__sub {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+}
+
 .pig-up__name {
   font-size: var(--ek-type-caption-size);
   line-height: var(--ek-type-caption-line);
@@ -1388,7 +1400,8 @@ kbd {
     display: none;
   }
 
-  .pig-badge__txt {
+  .pig-badge__txt,
+  .pig-wide {
     display: none;
   }
 }

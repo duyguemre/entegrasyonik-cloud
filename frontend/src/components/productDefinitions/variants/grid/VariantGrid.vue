@@ -60,10 +60,14 @@
             <!-- stok kodu (+ küçük resim) -->
             <td v-bind="cellAttrs(r, 0)" class="vg-td vg-sticky vg-s-code vg-cell" :class="cellClass(r, 0)">
               <div class="vg-code">
-                <button type="button" class="vg-thumb" :aria-label="`Varyant resimleri: ${r.variant.stockcode || rowTitle(r.variant)}`"
+                <!-- Faz 3 B2: görselsiz varyant belirgin (uyarı tonu + ekle ikonu), birden çok görselde sayı rozeti. -->
+                <button type="button" class="vg-thumb" :class="{ 'is-empty': !imageCount(r.variant) }"
+                  :aria-label="`Varyant resimleri: ${r.variant.stockcode || rowTitle(r.variant)} — ${imageCount(r.variant) ? `${imageCount(r.variant)} görsel` : 'görsel yok'}`"
                   tabindex="-1" @mousedown.stop @click.stop="emit('images', r.variant)">
-                  <ProductVariantImageComponent :productInfoForm="productInfoForm" :height="36"
-                    :imageId="r.variant.images ? r.variant.images[0] : undefined" />
+                  <ProductVariantImageComponent v-if="imageCount(r.variant)" :productInfoForm="productInfoForm" :height="36"
+                    :imageId="r.variant.images[0]" />
+                  <v-icon v-else icon="mdi-image-plus-outline" aria-hidden="true" />
+                  <span v-if="imageCount(r.variant) > 1" class="vg-thumb__n ek-num" aria-hidden="true">{{ imageCount(r.variant) }}</span>
                 </button>
                 <CellBody :sheet="sheet" :r="r.index" :c="0" :value="r.variant.stockcode" kind="text" strong
                   :issue="issueOf(r, 0)" :label="`Stok kodu, ${rowTitle(r.variant)}`" />
@@ -144,6 +148,7 @@ import EkTooltip from '@/components/ds/EkTooltip.vue'
 import { formatMoney } from '@/composables/format'
 import { useChoicesStore } from '@/stores/choicesStore'
 import ProductVariantImageComponent from '../ProductVariantImageComponent.vue'
+import { variantImageIds } from '../../images/galleryModel'
 import {
   BASE_COLUMNS, choiceOrderComparator, diff, duplicateIndex, getCell, groupRows, rowId, validateCell, visibleWindow,
   windowRowspans, type CellChange, type CellIssue, type ColumnKey, type GroupedRow, type Snapshot,
@@ -164,6 +169,8 @@ const selected = defineModel<string[]>('selected', { default: () => [] })
 const emit = defineEmits<{
   edit: [v: any]; images: [v: any]; delete: [v: any]; channelPrices: [v: any]; changed: [changes: CellChange[]]
 }>()
+/** Galeride karşılığı olan görsel sayısı (Faz 3 B2 — silinmiş görsele işaret eden referans sayılmaz). */
+const imageCount = (v: any) => (v?.images?.length ? variantImageIds(v, props.productInfoForm?.images ?? []).length : 0)
 
 const choicesStore = useChoicesStore()
 
@@ -655,6 +662,28 @@ const CellBody = defineComponent({
 .vg-thumb:hover { border-color: var(--ek-color-action-border); }
 .vg-thumb:focus-visible { outline: none; box-shadow: var(--ek-focus-ring); }
 .vg-thumb :deep(.v-icon) { font-size: 22px !important; }
+.vg-thumb { position: relative; }
+.vg-thumb.is-empty {
+  border-style: dashed;
+  border-color: var(--ek-color-warning-border);
+  background: var(--ek-color-warning-subtle);
+  color: var(--ek-color-warning-emphasis);
+}
+.vg-thumb.is-empty :deep(.v-icon) { font-size: 18px !important; }
+.vg-thumb__n {
+  position: absolute;
+  right: 1px;
+  bottom: 1px;
+  min-width: 16px;
+  padding: 0 3px;
+  border-radius: var(--ek-radius-chip);
+  background: var(--ek-color-surface-inverse);
+  color: var(--ek-color-content-inverse);
+  font-size: var(--ek-type-micro-size);
+  line-height: 14px;
+  font-weight: 600;
+  text-align: center;
+}
 
 :deep(.vg-val) { display: inline-flex; align-items: center; gap: var(--ek-space-1); max-width: 100%; }
 :deep(.vg-val.is-strong) { color: var(--ek-color-content-strong); font-weight: 600; }

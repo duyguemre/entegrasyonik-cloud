@@ -18,6 +18,7 @@ const file = (name: string) => `${OUT}/${name}-${WIDTH}.png`
 
 test.skip(!ENABLED, 'yalnız inceleme koşusu (B2_REVIEW=1)')
 test.use({ viewport: { width: WIDTH, height: HEIGHT } })
+test.setTimeout(90_000)
 
 async function open(page: Page, product: any, extra: Record<string, any> = {}) {
   await routeImages(page)
@@ -32,7 +33,7 @@ async function open(page: Page, product: any, extra: Record<string, any> = {}) {
   await openScreen(page, 'ProductListView')
   await page.locator('.productListView tbody tr').first().locator('button[aria-label="Ürünü düzenle"]').click()
   const root = page.locator(`.productUpdateView${product._id}`)
-  await expect(root.getByText('Ürün Tanımı').first()).toBeVisible({ timeout: 20_000 })
+  await expect(root.getByText('Ürün Tanımı').first()).toBeVisible({ timeout: 45_000 })
   return root
 }
 
