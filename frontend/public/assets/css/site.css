@@ -70,9 +70,11 @@ a:link {
   font-size: var(--ek-type-body-size) !important;
 }
 
-/* Aşama 4: yüzen etiket DS ölçeğinde (10px ölçek dışıydı) — `micro` boyutu, büyük harf değil. */
+/* Aşama 4: yüzen etiket DS ölçeğinde (10px ölçek dışıydı) — `micro` boyutu, büyük harf değil.
+   Aşama 5: boyut Vuetify'ın ölçek değişkeninden (`--v-field-label-scale` = micro/body, vuetify-overrides.css) —
+   sabit px yazılırsa odak animasyonunun varış boyutuyla çelişip etiketi titretiyordu. */
 .entegrasyonik-application .v-field-label--floating {
-  font-size: var(--ek-type-micro-size) !important;
+  font-size: var(--v-field-label-scale) !important;
 }
 
 

@@ -278,10 +278,34 @@
  * yapar ve yerine `aria-hidden` bir kopya gösterir → giriş alanının erişilebilir
  * adı kaybolur (axe "label": explicit label is hidden). Asıl etiket görsel
  * olarak gizli ama erişilebilir kalır (opacity 0). */
-.v-field--active .v-field__field > .v-field-label:not(.v-field-label--floating),
-.v-field--focused .v-field__field > .v-field-label:not(.v-field-label--floating) {
+.v-field--active .v-field__field > .v-field-label:not(.v-field-label--floating):not([style*='visibility']),
+.v-field--focused .v-field__field > .v-field-label:not(.v-field-label--floating):not([style*='visibility']) {
   visibility: visible !important;
   opacity: 0 !important;
+}
+
+/* ---- Aşama 5: yüzen etiket TİTREMESİ (kullanıcı geri bildirimi madde 8) — tüm alan türleri (text, select,
+ * autocomplete, combobox, textarea, EkDateField) aynı VField'ı kullanır, düzeltme tek yerde.
+ * Vuetify odakta DİNLENEN etiketi `translate + scale(--v-field-label-scale)` ile yüzen etiketin yerine taşır
+ * (FLIP), bitince yüzen kopyaya geçer. Titremenin üç nedeni vardı:
+ *  1) yukarıdaki erişilebilirlik kuralı hareket eden etiketi `opacity:0` yapıyordu → geçiş boyunca GÖRÜNMEZ
+ *     etiket, sonunda yüzen kopya "patlayarak" beliriyordu. Vuetify geçiş süresince etikete satır içi
+ *     `visibility` yazar → `:not([style*='visibility'])` ile hareket sırasında görünür kalır.
+ *  2) yüzen etiket `site.css`'te 11px'e zorlanıyor ama ölçek 0.75 (10.5px) okunuyordu → varışta boyut sıçraması.
+ *     Ölçek artık `micro/body` oranı (11/14): hareket eden etiketin son boyutu = yüzen kopyanın boyutu.
+ *  3) iki kopyanın ağırlık/aralık/aile farkı → ikisi de aynı tipografi; hareket yalnız transform. */
+.v-field .v-label.v-field-label {
+  font-family: var(--ek-font-sans);
+  font-weight: var(--ek-font-weight-regular);
+  letter-spacing: 0;
+  transform-origin: left center;
+  will-change: transform;
+}
+
+.v-field .v-label.v-field-label--floating {
+  --v-field-label-scale: 0.7857em; /* = --ek-type-micro-size (11) / --ek-type-body-size (14) */
+  font-size: var(--v-field-label-scale);
+  will-change: auto;
 }
 
 /* Devre dışı alanın yardım metni okunur kalır (NEDEN devre dışı olduğunu anlatır);

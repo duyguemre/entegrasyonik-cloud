@@ -32,7 +32,9 @@
       </component>
       <div v-if="$slots['head-actions']" class="ek-filter__head-actions"><slot name="head-actions" /></div>
     </header>
-    <form v-show="!collapsed" :id="bodyId" class="ek-filter__form" @submit.prevent="emit('submit')" @reset.prevent="emit('reset')">
+    <!-- Aşama 5: aç/kapa `EkCollapse` (yükseklik + opaklık, 200ms; reduced-motion'da anında; içerik zıplamaz). -->
+    <EkCollapse :open="!collapsed">
+    <form :id="bodyId" class="ek-filter__form" @submit.prevent="emit('submit')" @reset.prevent="emit('reset')">
       <div class="ek-filter__body">
         <EkFormGrid :columns="columns">
           <slot />
@@ -44,6 +46,7 @@
         <EkButton type="submit" tone="primary" icon="mdi-magnify" :loading="loading">Sorgula</EkButton>
       </div>
     </form>
+    </EkCollapse>
   </section>
 </template>
 
@@ -52,6 +55,7 @@ import { useId } from 'vue'
 import EkBadge from './EkBadge.vue'
 import EkButton from './EkButton.vue'
 import EkFormGrid from './EkFormGrid.vue'
+import EkCollapse from './EkCollapse.vue'
 
 withDefaults(
   defineProps<{

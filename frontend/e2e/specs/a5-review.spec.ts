@@ -129,8 +129,10 @@ const cases: Array<{ name: string; run: (page: Page) => Promise<void> }> = [
       const clip = { x: Math.max(0, box.x - 8), y: Math.max(0, box.y - 14), width: Math.min(360, box.width + 16), height: box.height + 24 }
       await p.screenshot({ path: file('m08-etiket-1-bos'), clip })
       await field.click()
-      await p.waitForTimeout(60)
-      await p.screenshot({ path: file('m08-etiket-2-gecis'), clip })
+      for (const ms of [30, 60, 90, 120]) {
+        await p.waitForTimeout(30)
+        await p.screenshot({ path: file(`m08-etiket-2-gecis-${ms}`), clip })
+      }
       await settle(p, 400)
       await p.screenshot({ path: file('m08-etiket-3-odak'), clip })
     },
