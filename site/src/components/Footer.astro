@@ -298,8 +298,9 @@ const year = new Date().getFullYear()
     overflow-wrap: anywhere;
   }
   .footer-copy {
+    flex-basis: 100%;
     max-width: none;
-    margin: 0 0 0 auto;
+    margin: 0;
   }
 
   @media (min-width: 640px) {
@@ -319,6 +320,10 @@ const year = new Date().getFullYear()
     }
     .footer-grid {
       grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+    .footer-copy {
+      flex-basis: auto;
+      margin-inline-start: auto;
     }
   }
 </style>

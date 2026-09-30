@@ -598,12 +598,18 @@ const registerHref = appUrls.register()
       display: grid;
       gap: var(--ek-space-1);
     }
+    /* İkon iki satırı kaplar ve dikeyde ortalanır; başlık + açıklama üst üste sıkı durur (açıklamasız öğede başlık
+       ikonla ortalanır). */
     .mega-item {
       position: relative;
       display: grid;
       grid-template-columns: auto minmax(0, 1fr);
+      grid-template-rows: auto auto;
+      align-content: center;
+      align-items: start;
       column-gap: var(--ek-space-3);
-      align-items: center;
+      row-gap: calc(var(--ek-space-1) * 0.5);
+      min-height: calc(var(--ek-space-10) + var(--ek-space-4));
       padding: var(--ek-space-2);
       border-radius: var(--ek-radius-lg);
       transition: background-color var(--ek-duration-base) var(--ek-easing-standard);
@@ -614,7 +620,8 @@ const registerHref = appUrls.register()
       background: color-mix(in srgb, var(--ek-color-surface-sunken) 55%, var(--ek-color-background));
     }
     .mega-item__icon {
-      grid-row: span 2;
+      grid-row: 1 / span 2;
+      align-self: center;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -627,6 +634,7 @@ const registerHref = appUrls.register()
     }
     .mega-item .nav-link {
       grid-column: 2;
+      align-self: end;
       min-height: 0;
       padding: 0;
       background: transparent;
@@ -655,18 +663,26 @@ const registerHref = appUrls.register()
     .mega-item:has(.nav-link[aria-current]) {
       background: color-mix(in srgb, var(--ek-color-secondary) 5%, var(--ek-color-background));
     }
+    .mega-item:not(:has(.mega-item__desc)) .nav-link {
+      grid-row: 1 / span 2;
+      align-self: center;
+    }
     .mega-item__desc {
       grid-column: 2;
+      grid-row: 2;
       color: var(--ek-color-content-muted);
       font-size: var(--ek-font-size-sm);
       line-height: var(--ek-line-height-normal);
     }
-    .mega--product .mega__list,
-    .mega--resources .mega__list {
+    .mega--product .mega__list {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+    /* Yan sütunlu panelde ana sütun üst boşluğu yan sütunla hizalı (başlıklar aynı çizgide). */
+    .mega--aside .mega__main {
+      padding-top: var(--ek-space-4);
+    }
     .mega--product {
-      width: min(40rem, calc(100vw - 2 * var(--site-gutter)));
+      width: min(46rem, calc(100vw - 2 * var(--site-gutter)));
     }
     .mega__aside .mega__lead {
       color: var(--ek-color-content-default);

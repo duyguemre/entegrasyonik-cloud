@@ -180,7 +180,7 @@ export const faq: FaqItem[] = [
     question: 'Satış yaptığım bir kanal listede yoksa ne yapabilirim?',
     answer:
       'İhtiyacınızı iletişim sayfasından bize iletin; talebinizi ekibimizle birlikte değerlendirelim. Güncel olarak desteklenen tüm kanallar ve her birinin kapsamı entegrasyonlar sayfasında yer alır.',
-    evidence: [evidence('site/src/data/navigation.ts', 'İletişim sayfası yayımlı', "{ label: 'İletişim', href: '/iletisim', published: true }")],
+    evidence: [evidence('site/src/data/navigation.ts', 'İletişim sayfası yayımlı', "{ label: 'İletişim', href: '/iletisim', published: true, group: 'resources'")],
     internalNotes: ['Yeni kanal için süre/taahhüt VERİLMEZ (yol haritası gizli, ADR-0014 Açık Soru 5).'],
   },
 
