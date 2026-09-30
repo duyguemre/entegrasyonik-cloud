@@ -105,7 +105,6 @@
 import EkRowActions from '@/components/ds/EkRowActions.vue'
 import { computed, onMounted, ref } from 'vue'
 import EkListScreen from '@/components/ds/templates/EkListScreen.vue'
-import EkButton from '@/components/ds/EkButton.vue'
 import type { EkGridColumn, EkGridSort } from '@/components/ds/EkDataGrid.vue'
 import type { EkActiveFilterChip } from '@/components/ds/EkActiveFilters.vue'
 import { sortRows } from '@/components/ds/listStandard'
