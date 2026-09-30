@@ -6,7 +6,10 @@
     - ETKİN sekme `tab-active` (= içerik zemini) ile altındaki içerikle TEK PARÇA birleşir: arada çizgi
       YOK (şeridin alt çizgisi etkin sekmenin altında kesilir), alt köşelerde içbükey geçiş (klasör sekmesi),
       yukarı doğru yumuşak gölge, üst kenarda 2px aksiyon çizgisi, yarı-kalın başlık (Aşama 5)
-    - kapatma düğmesi küçük (20px) ve zarif: etkin sekmede ve hover/odakta görünür
+    - kapatma düğmesi küçük (20px) ve zarif: etkin sekmede ve hover/odakta görünür (yeri HER ZAMAN ayrılı)
+    - A12 pasif sekme: şerit zemininde sakin, ikincil ton (`content-muted`); hover = ayrı bir ışıma katmanı
+      (`__wash`: `tab-hover` zemin + üstte `action-border` saç çizgisi) YALNIZ opaklıkla girer/çıkar — boyut,
+      dolgu, kalınlık, kenarlık değişmez (layout shift 0); başlık kalın genişliğini hayalet metinle ayırır
     - uzun başlık tek satırda kesilir (…), tam başlık tooltip'te
   Soldaki anlamsız boşluk YOK: ilk sekme şeridin başından başlar (#leading
   slot'u isteğe bağlı sabit öğe içindir, ör. modül başlatıcı).
@@ -36,6 +39,7 @@
       >
         <span class="ek-tab__flare ek-tab__flare--start" aria-hidden="true"></span>
         <span class="ek-tab__flare ek-tab__flare--end" aria-hidden="true"></span>
+        <span class="ek-tab__wash" aria-hidden="true"></span>
         <v-tooltip :eager="false" transition="fade-transition" :disabled="!truncated.has(tab.id)" location="bottom" :open-delay="500" :text="tab.title">
           <template #activator="{ props: tipProps }">
             <button
@@ -52,7 +56,7 @@
               @click="activate(tab.id)"
             >
               <v-icon v-if="tab.icon" class="ek-tab__icon" :icon="tab.icon" aria-hidden="true" />
-              <span class="ek-tab__title" :data-title-id="tab.id">{{ tab.title }}</span>
+              <span class="ek-tab__title" :data-title-id="tab.id" :data-text="tab.title">{{ tab.title }}</span>
               <span v-if="tab.dirty" class="ek-tab__dirty" aria-label="Kaydedilmemiş değişiklik var"></span>
             </button>
           </template>
@@ -388,6 +392,41 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   transition: opacity var(--ek-duration-fast) var(--ek-easing-standard);
 }
 
+/* A12 — pasif hover ışıması: ayrı katman, YALNIZ opaklık geçişi (giriş + çıkış simetrik, motion token'ları). Zemin
+   `tab-hover` (şeritten bir kademe açık, etkinden koyu) + üst kenarda etkin göstergeyle aynı geometride 2px
+   `action-border` saç çizgisi — "buraya gelirse etkin olur" ipucu. Boyut/dolgu/kalınlık/kenarlık değişmez. */
+.ek-tab__wash {
+  position: absolute;
+  inset: -1px -1px 0;
+  border-radius: inherit;
+  background: var(--ek-color-tab-hover);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--ek-duration-fast) var(--ek-easing-standard);
+}
+
+.ek-tab__wash::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: var(--ek-radius-tab);
+  right: var(--ek-radius-tab);
+  height: 2px;
+  border-radius: 0 0 2px 2px;
+  background: var(--ek-color-action-border);
+}
+
+.ek-tab:not(.is-active):hover .ek-tab__wash,
+.ek-tab.is-hover:not(.is-active) .ek-tab__wash {
+  opacity: 1;
+}
+
+/* Etkinleşince ışıma ANINDA kalkar (A10: zemin/kenarlık/köşeler aynı karede değişir). */
+.ek-tab.is-active .ek-tab__wash {
+  opacity: 0;
+  transition: none;
+}
+
 .ek-tab.is-active::before,
 .ek-tab.is-active + .ek-tab::before,
 .ek-tab:hover::before,
@@ -397,14 +436,10 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   opacity: 0;
 }
 
-.ek-tab:not(.is-active):hover {
-  transition: var(--ek-transition-colors);
-}
-
-.ek-tab:hover,
-.ek-tab.is-hover {
-  background: var(--ek-color-tab-hover);
-  color: var(--ek-color-content-strong);
+/* Hover metni bir kademe öne gelir (muted → default); `content-strong` + yarı kalın yalnız ETKİN sekmenindir. */
+.ek-tab:not(.is-active):hover,
+.ek-tab.is-hover:not(.is-active) {
+  color: var(--ek-color-content-default);
 }
 
 /* ETKİN (A10 — klasör sekmesi): zemin = içerik zemini (`tab-active` ≡ `background`), şeridin önüne çıkar.
@@ -478,6 +513,7 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
 }
 
 .ek-tab__button {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--ek-space-2);
@@ -506,10 +542,32 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   box-shadow: inset 0 0 0 2px var(--ek-color-border-focus);
 }
 
+/* A12 — klavye odağı TÜM sekmeyi (kapatma dahil) çevreler; halka sekmenin köşe yarıçapını izler. */
+@supports selector(:has(*)) {
+  .ek-tab__button:focus-visible {
+    box-shadow: none;
+  }
+
+  .ek-tab:not(.is-active):has(.ek-tab__button:focus-visible)::after {
+    content: '';
+    position: absolute;
+    inset: -1px -1px 0;
+    z-index: 1;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 2px var(--ek-color-border-focus);
+    pointer-events: none;
+  }
+
+  /* Etkin sekmede ::after göstergedir; halka üstüne ayrı gölgeyle biner. */
+  .ek-tab.is-active:has(.ek-tab__button:focus-visible) {
+    box-shadow: var(--ek-shadow-tab-active), inset 0 0 0 2px var(--ek-color-border-focus);
+  }
+}
+
 .ek-tab__icon {
   flex: none;
   font-size: var(--ek-type-tab-icon);
-  color: var(--ek-color-content-muted);
+  color: inherit;
 }
 
 .ek-tab.is-active .ek-tab__icon {
@@ -522,6 +580,21 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   white-space: nowrap;
 }
 
+/* Hayalet kalın başlık: yüksekliği 0, görünmez; başlık kutusu HER durumda yarı kalın genişliği ayırır → etkin ↔ pasif
+   geçişinde kirli nokta/kapatma kaymaz. */
+.ek-tab__title::after {
+  /* Boş alternatif metin: ekran okuyucu başlığı iki kez okumaz. */
+  content: attr(data-text);
+  content: attr(data-text) / '';
+  display: block;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  font-weight: var(--ek-font-weight-semibold);
+  pointer-events: none;
+  user-select: none;
+}
+
 .ek-tab__dirty {
   flex: none;
   width: 6px;
@@ -531,6 +604,7 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
 }
 
 .ek-tab__close {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -560,9 +634,16 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   color: var(--ek-color-content-strong);
 }
 
+/* Pasif hover sekmesinin zemini zaten `tab-hover` — kapatmanın kendi hover'ı bir kademe koyu (şerit tonu) olmalı. */
+.ek-tab:not(.is-active) .ek-tab__close:hover {
+  background: var(--ek-color-tabstrip-bg);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ek-tab,
-  .ek-tab:not(.is-active):hover {
+  .ek-tab + .ek-tab::before,
+  .ek-tab__wash,
+  .ek-tab__close {
     transition: none;
   }
 
