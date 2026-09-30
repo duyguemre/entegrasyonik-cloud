@@ -44,6 +44,8 @@ test.describe('giriş', () => {
 
   test('çıkış → giriş ekranı; oturum düşerse (401) giriş ekranına bildirimle döner', async ({ page }, info) => {
     await signInFully(page)
+    // Genel bakışın açılış istekleri bitsin: yoksa bunlardan biri 401 alıp tıklamadan önce girişe döndürür (doğru davranış, yarış).
+    await settle(page)
     if (info.project.name === 'chromium-mobile') await page.getByRole('button', { name: 'Menüyü aç' }).click()
     await page.evaluate(() => (window as unknown as { __boMock: { expireSession(): void } }).__boMock.expireSession())
     await page.getByRole('navigation', { name: 'Yönetim ekranları' }).getByRole('button', { name: 'Müşteriler' }).click()

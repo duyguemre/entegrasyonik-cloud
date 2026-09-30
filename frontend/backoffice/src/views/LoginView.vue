@@ -47,9 +47,7 @@
           </v-text-field>
           <p v-if="error" class="bo-login__error" role="alert">{{ error }}</p>
           <EkButton tone="primary" type="submit" block :loading="busy" :disabled="!email || !password">Devam et</EkButton>
-          <EkAlert v-if="USE_MOCK" tone="info" dense title="Örnek ortam (sahte API)" class="bo-login__hint">
-            <span>Kayıtlı: <code>yonetici@ornek.test</code> · İlk giriş: <code>yeni.yonetici@ornek.test</code> · parola <code>ornek-parola</code> · kod: herhangi 6 hane</span>
-          </EkAlert>
+          <MockHint v-if="MockHint && USE_MOCK" class="bo-login__hint" />
         </form>
 
         <!-- 2a) TOTP doğrulama -->
@@ -123,9 +121,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, ref, watch } from 'vue'
 import { EkAlert, EkBrandLogo, EkButton, EkSkeleton } from '@entegrasyonik/ui/components'
 import QrCode from '@bo/components/QrCode.vue'
+// Örnek hesap ipucu yalnız dev paketinde (üretim derlemesinde import.meta.env.DEV=false → kod atılır).
+const MockHint = import.meta.env.DEV ? defineAsyncComponent(() => import('@bo/components/MockHint.vue')) : null
 import { USE_MOCK } from '@bo/api'
 import { AdminApiError } from '@bo/api/client'
 import { NOTICE_TEXT } from '@bo/auth/machine'
@@ -435,7 +435,6 @@ function download() {
   margin-top: var(--ek-space-3);
 }
 
-.bo-login__hint code,
 .bo-codes code,
 .bo-enroll__secret {
   font-family: var(--ek-font-mono);

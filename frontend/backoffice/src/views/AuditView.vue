@@ -402,4 +402,90 @@ const changes = (a: AuditRecord) => auditChanges(a.meta)
   padding: var(--ek-space-3);
   border-top: 1px solid var(--ek-color-border-subtle);
 }
+
+/* Dar ekran: satır = kart (tablo semantiği korunur, yatay kaydırma yok). */
+@media (max-width: 767px) {
+  .bo-audit > table,
+  .bo-audit > table > tbody {
+    display: block;
+  }
+
+  .bo-audit > table > thead {
+    display: none;
+  }
+
+  .bo-audit__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ek-space-1) var(--ek-space-3);
+    padding: var(--ek-space-3) var(--ek-space-3) var(--ek-space-3) var(--ek-space-2);
+    border-top: 1px solid var(--ek-color-border-subtle);
+  }
+
+  .bo-audit__row > td {
+    padding: 0;
+    border-top: 0;
+    background: transparent !important;
+  }
+
+  .bo-audit__row > td:nth-child(2) {
+    flex: 1;
+  }
+
+  .bo-audit__row > td:nth-child(3),
+  .bo-audit__row > td:nth-child(4) {
+    flex-basis: calc(100% - 44px);
+    margin-left: 40px;
+  }
+
+  .bo-audit__row > td:nth-child(5) {
+    margin-left: 40px;
+  }
+
+  .bo-audit__row > td:nth-child(6) {
+    order: -1;
+    margin-left: auto;
+  }
+
+  .bo-audit__row > td:nth-child(2) {
+    order: -2;
+  }
+
+  .bo-audit__row > td:first-child {
+    order: -3;
+  }
+
+  .bo-audit__time,
+  .bo-audit__actor {
+    white-space: normal;
+  }
+
+  .bo-audit__actor span {
+    display: inline !important;
+  }
+
+  .bo-audit__actor span:last-child::before {
+    content: ' · ';
+  }
+
+  .bo-audit__detail {
+    display: block;
+    background: var(--ek-color-surface-muted);
+  }
+
+  .bo-audit__detail > td:first-child {
+    display: none;
+  }
+
+  .bo-audit__detail > td {
+    display: block;
+    padding: 0 var(--ek-space-3) var(--ek-space-4) 48px;
+  }
+
+  .bo-diff {
+    width: 100%;
+    min-width: 0;
+  }
+}
 </style>
