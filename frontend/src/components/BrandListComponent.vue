@@ -5,7 +5,7 @@
   gerçek düğme + erişilebilir ad. Ekleme/arama/seçim davranışı DEĞİŞMEDİ.
 -->
 <template>
-  <div class="brandListComponentView">
+  <div class="brandListComponentView ek-brand-list-root">
     <LoadingComponent attach=".brandDefinition" ref="loadingComponentRef"></LoadingComponent>
 
     <div class="workarea-scroll ek-brand-list">
@@ -154,6 +154,12 @@ const update = () => {
 </script>
 
 <style scoped>
+.ek-brand-list-root {
+  /* Yan yana iki panel (liste | eşitleme) `v-row` içinde: sütun tabanı 0 olduğundan dar ekranda
+     liste paneli şeride sıkışıyordu. Asgari genişlik (akıştaki köke; `.workarea-scroll` mutlak konumlu olduğundan sütuna yansımaz) → telefonda sütunlar alt alta sarılır. */
+  min-width: 280px;
+}
+
 .ek-brand-list {
   padding: var(--ek-space-4) var(--ek-space-2) 0 var(--ek-space-6);
 }
