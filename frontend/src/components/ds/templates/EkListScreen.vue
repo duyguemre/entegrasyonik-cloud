@@ -8,7 +8,8 @@
     başlık  : H1 + açıklama ................. [hızlı arama] [#header-actions] [yenile]
     filtre  : sayfa İÇİ katlanır panel (#filters dolu ise) — popup/overlay DEĞİL,
               yalnız bu sekmenin bileşen örneğinde yaşar → filtre yalnız bu sekmeyi etkiler
-    çipler  : aktif filtreler (`chips`), tek tıkla kaldır + Tümünü temizle
+    çipler  : aktif filtreler (`chips`) — A8: filtre panelinin BAŞLIĞINDA kompakt özet (kapalıyken de görünür),
+              tek tıkla kaldır + Temizle; panelsiz listede ayrı satır (`EkActiveFilters`)
     kart    : EkBulkBar (seçim → #bulk-actions; yoksa #toolbar-start/#toolbar-end)
               → EkDataGrid (YALNIZ satırlar kayar, başlık yapışkan)
               → EkPagerBar (kartın ALTINA SABİT; sol boyut+toplam, orta sayfalar, sağ #pager-trailing)
@@ -75,9 +76,12 @@
           :active-count="filterCount ?? chips.length"
           :columns="filterColumns"
           :loading="loading"
+          :chips="chips"
           @update:collapsed="setCollapsed"
           @submit="emit('filter-submit')"
           @reset="emit('filter-reset')"
+          @remove-chip="(k: string) => emit('remove-chip', k)"
+          @clear="emit('clear-filters')"
         >
           <slot name="filters" />
           <template v-if="savedViews" #head-actions>
@@ -85,7 +89,8 @@
           </template>
           <template v-if="$slots['filter-extra-actions']" #extra-actions><slot name="filter-extra-actions" /></template>
         </EkFilterPanel>
-        <EkActiveFilters :filters="chips" @remove="(k: string) => emit('remove-chip', k)" @clear="emit('clear-filters')" />
+        <!-- A8: çipler filtre panelinin BAŞLIĞINDA (kompakt özet); panelsiz listede ayrı satır. -->
+        <EkActiveFilters v-else :filters="chips" @remove="(k: string) => emit('remove-chip', k)" @clear="emit('clear-filters')" />
       </template>
 
       <template v-if="selectable || $slots['toolbar-start'] || $slots['toolbar-end']" #toolbar>

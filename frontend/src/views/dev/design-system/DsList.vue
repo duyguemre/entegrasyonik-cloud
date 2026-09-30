@@ -4,7 +4,7 @@
     <div class="ds-list">
       <EkListFrame label="Siparişler (örnek)">
         <template #filters>
-          <EkFilterPanel v-model:collapsed="collapsed" :active-count="filters.length" :heading-level="3" @submit="noop" @reset="filters = []">
+          <EkFilterPanel v-model:collapsed="collapsed" :active-count="filters.length" :chips="filters" :heading-level="3" @submit="noop" @reset="filters = []" @remove-chip="(k) => (filters = filters.filter((f) => f.key !== k))" @clear="filters = []">
             <v-text-field label="Sipariş no" model-value="TY-1023" />
             <v-select label="Kanal" :items="['Tümü', 'Trendyol', 'Hepsiburada', 'N11']" model-value="Trendyol" />
             <v-select label="Durum" :items="['Tümü', 'Kargo bekliyor', 'Hazırlanıyor']" model-value="Kargo bekliyor" />
@@ -17,7 +17,6 @@
               <EkButton tone="ghost" size="sm" icon="mdi-content-save-outline">Filtreyi kaydet</EkButton>
             </template>
           </EkFilterPanel>
-          <EkActiveFilters :filters="filters" @remove="(k) => (filters = filters.filter((f) => f.key !== k))" @clear="filters = []" />
         </template>
 
         <template #toolbar>
@@ -103,7 +102,7 @@ import { computed, ref } from 'vue'
 import DsSpecimen from './DsSpecimen.vue'
 import EkListFrame from '@/components/ds/EkListFrame.vue'
 import EkFilterPanel from '@/components/ds/EkFilterPanel.vue'
-import EkActiveFilters, { type EkActiveFilterChip } from '@/components/ds/EkActiveFilters.vue'
+import type { EkActiveFilterChip } from '@/components/ds/EkActiveFilters.vue'
 import EkDataGrid, { type EkGridSort } from '@/components/ds/EkDataGrid.vue'
 import EkPagerBar from '@/components/ds/EkPagerBar.vue'
 import EkButton from '@/components/ds/EkButton.vue'

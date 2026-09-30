@@ -39,6 +39,9 @@
           @update:collapsed="filtersCollapsed = $event"
           @submit="applyFilters"
           @reset="resetFilters"
+          :chips="activeChips"
+          @remove-chip="removeChip"
+          @clear="resetFilters"
         >
           <v-select
             v-model="draft.types"
@@ -53,7 +56,6 @@
           />
           <v-select v-model="draft.read" :items="READ_OPTIONS" item-title="title" item-value="value" label="Okunma durumu" />
         </EkFilterPanel>
-        <EkActiveFilters :filters="activeChips" @remove="removeChip" @clear="resetFilters" />
       </template>
 
       <template #toolbar>
@@ -240,7 +242,7 @@ import {
 import EkPageHeader from '@/components/ds/EkPageHeader.vue'
 import EkListFrame from '@/components/ds/EkListFrame.vue'
 import EkFilterPanel from '@/components/ds/EkFilterPanel.vue'
-import EkActiveFilters, { type EkActiveFilterChip } from '@/components/ds/EkActiveFilters.vue'
+import type { EkActiveFilterChip } from '@/components/ds/EkActiveFilters.vue'
 import EkDataGrid, { type EkGridColumn, type EkGridSort } from '@/components/ds/EkDataGrid.vue'
 import EkPagerBar from '@/components/ds/EkPagerBar.vue'
 import EkButton from '@/components/ds/EkButton.vue'

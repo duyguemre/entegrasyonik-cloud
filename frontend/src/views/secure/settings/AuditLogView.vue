@@ -30,6 +30,9 @@
           :columns="4"
           @submit="applyFilters"
           @reset="resetFilters"
+          :chips="activeChips"
+          @remove-chip="removeChip"
+          @clear="resetFilters"
         >
           <v-text-field
             v-model="draft.from"
@@ -100,7 +103,6 @@
           <v-icon icon="mdi-alert-circle-outline" size="16" aria-hidden="true" />
           {{ t('auditLog.validation.blocked') }}
         </p>
-        <EkActiveFilters :filters="activeChips" @remove="removeChip" @clear="resetFilters" />
       </template>
 
       <template #toolbar>
@@ -219,7 +221,7 @@ import { useI18n } from 'vue-i18n'
 import EkPageHeader from '@/components/ds/EkPageHeader.vue'
 import EkListFrame from '@/components/ds/EkListFrame.vue'
 import EkFilterPanel from '@/components/ds/EkFilterPanel.vue'
-import EkActiveFilters, { type EkActiveFilterChip } from '@/components/ds/EkActiveFilters.vue'
+import type { EkActiveFilterChip } from '@/components/ds/EkActiveFilters.vue'
 import EkDataGrid, { type EkGridColumn } from '@/components/ds/EkDataGrid.vue'
 import EkPagerBar from '@/components/ds/EkPagerBar.vue'
 import EkDetailSheet from '@/components/ds/EkDetailSheet.vue'

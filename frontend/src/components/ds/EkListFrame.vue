@@ -3,7 +3,7 @@
 
   DS-v2 — liste ekranı çerçevesi (filtre + veri + sayfalama standardı).
   Dikey sıra SABİTTİR:
-    #filters  (EkFilterPanel + EkActiveFilters) — kaymaz
+    #filters  (EkFilterPanel — etkin çipler başlığında, A8) — kaymaz
     kart: #toolbar (seçim çubuğu / başlık) → varsayılan slot (EkDataGrid, YALNIZ
           BURASI kayar) → #pager (EkPagerBar, kartın altına sabit)
   Çerçeve kapsayıcısının yüksekliğini doldurur (sekme içerik alanı); <768px'te

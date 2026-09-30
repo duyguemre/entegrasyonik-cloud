@@ -20,6 +20,9 @@
         @update:collapsed="(v: boolean) => (collapsed = v)"
         @submit="load"
         @reset="reset"
+        :chips="chips"
+        @remove-chip="removeChip"
+        @clear="reset"
       >
         <EkSelect kind="channel"
           v-model="form.integrationCodes"
@@ -31,7 +34,6 @@
         <EkDateField v-model="form.startDate" :label="t('finance.filters.startDate')" :max="form.endDate" />
         <EkDateField v-model="form.endDate" :label="t('finance.filters.endDate')" :min="form.startDate" />
       </EkFilterPanel>
-      <EkActiveFilters :filters="chips" @remove="removeChip" @clear="reset" />
 
       <section class="ek-fin-kpis" :aria-label="t('finance.summary.kpiLabel')" :aria-busy="loading || undefined">
         <EkKpiRow v-if="loading">
@@ -103,7 +105,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import EkListFrame from '@/components/ds/EkListFrame.vue'
 import EkFilterPanel from '@/components/ds/EkFilterPanel.vue'
-import EkActiveFilters, { type EkActiveFilterChip } from '@/components/ds/EkActiveFilters.vue'
+import type { EkActiveFilterChip } from '@/components/ds/EkActiveFilters.vue'
 import EkDateField from '@/components/ds/EkDateField.vue'
 import EkKpiRow from '@/components/ds/EkKpiRow.vue'
 import EkKpiCard from '@/components/ds/EkKpiCard.vue'
