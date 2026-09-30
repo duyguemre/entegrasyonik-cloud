@@ -3,8 +3,8 @@
 
   DS-v2 Aşama 2 — uygulama kabuğu. Yerleşim (Vuetify layout sırası = şablon sırası):
     1. `ApplicationBar` (tam genişlik kimlik bandı; daraltılınca yukarı kayar)
-    2. sol menü: `NavigationRail` (ray) VEYA `NavigationMenu` (tam/geçici) — aynı anda TEK biri
-       (`.v-navigation-drawer.soft-nav` seçicisi tekil kalsın — Ek A kancası)
+    2. sol menü: `NavigationMenu` — kalıcı (masaüstü tam↔ray AYNI çekmecede, B4 geçişli; tablette ray) VEYA
+       geçici (tablet üst katmanı / mobil çekmece); `.soft-nav`/`.soft-rail` aynı anda tek (Ek A kancası)
     3. `v-main`: abonelik durum bandı (C2.2; yalnız bir durum varsa) + `ShellTabStrip` (sekmeler) +
        çalışma alanı (etkin sekmenin ekranı). Bant yüksekliği `--ek-shell-banner-h` ile alttakilere eklenir.
   Görünüm durumları: üst bölüm daraltılmış (Ctrl+Shift+H, eski Alt+U) · odak modu (Ctrl+Shift+F: üst bar +
@@ -15,7 +15,7 @@
   `stores/sidebar.ts`'te (ADR-0015 Karar 2.1/2.2).
 -->
 <template>
-  <v-layout ref="shellRef" class="ek-shell" :class="{ 'ek-shell--focus': focusMode }">
+  <v-layout ref="shellRef" class="ek-shell" :class="{ 'ek-shell--focus': focusMode, 'ek-shell--rail': showRail }">
     <ApplicationBar
       ref="appBarRef"
       :visible="headerShown"
@@ -26,8 +26,15 @@
       @search-blur="searchPeek = false"
     />
     <template v-if="!focusMode">
-      <NavigationRail v-if="showRail" @expand-request="onRailExpandRequest" />
-      <NavigationMenu v-else v-model="menuTemporaryOpen" :temporary="menuTemporary" @collapse-request="sidebar.toggleDesktopRail()" />
+      <NavigationMenu
+        v-if="menuPermanent"
+        key="nav-permanent"
+        :temporary="false"
+        :rail="showRail"
+        @collapse-request="sidebar.toggleDesktopRail()"
+        @expand-request="onRailExpandRequest"
+      />
+      <NavigationMenu v-else key="nav-temporary" v-model="menuTemporaryOpen" temporary />
     </template>
     <NotificationDrawerComponent />
 
@@ -75,7 +82,6 @@
 import { provide, computed, watch, ref, nextTick, onMounted, onBeforeMount, onBeforeUnmount } from 'vue'
 import { storeToRefs } from 'pinia'
 import NavigationMenu from '@/components/layout/NavigationMenu.vue'
-import NavigationRail from '@/components/layout/NavigationRail.vue'
 import NotificationDrawerComponent from '@/components/user/NotificationDrawerComponent.vue'
 import ApplicationBar from '@/components/layout/ApplicationBar.vue'
 import ShellTabStrip from '@/components/layout/ShellTabStrip.vue'
@@ -133,6 +139,9 @@ const showRail = computed(() => {
   if (isTablet.value) return !sidebar.tabletOverlayOpen
   return sidebar.desktopRail
 })
+
+/** Kalıcı çekmece: masaüstü (tam↔ray) ve tablette ray; tablet üst katmanı / mobil = geçici. */
+const menuPermanent = computed(() => !isMobile.value && !(isTablet.value && sidebar.tabletOverlayOpen))
 
 /** `NavigationMenu` (tam, 248px) `temporary` modda mı (mobil çekmece / tablet üst katmanı)? */
 const menuTemporary = computed(() => isMobile.value || isTablet.value)
@@ -394,7 +403,14 @@ const closeTemporaryMenu = () => {
 
 <style scoped>
 .ek-shell {
+  /* B4: içerik sol menüyle AYNI süre/eğri/gecikmeyle kayar (app.css --ek-app-nav-*): ray'a giderken menü içeriği
+     solduktan sonra, genişlerken hemen. */
+  --ek-shell-left: left var(--ek-app-nav-move) var(--ek-easing-enter) 0ms;
   background: var(--ek-color-background);
+}
+
+.ek-shell--rail {
+  --ek-shell-left: left var(--ek-app-nav-move) var(--ek-easing-enter) var(--ek-app-nav-lag);
 }
 
 /* ÖNEMLİ (mühendislik notu — kalıcı kenar menü): `v-main` kalıcı drawer/app-bar için
@@ -408,7 +424,7 @@ const closeTemporaryMenu = () => {
   right: var(--v-layout-right, 0px);
   transition:
     top var(--ek-duration-base) var(--ek-easing-standard),
-    left var(--ek-duration-base) var(--ek-easing-standard);
+    var(--ek-shell-left);
 }
 
 .ek-shell__banner {
@@ -419,7 +435,7 @@ const closeTemporaryMenu = () => {
   z-index: var(--ek-z-sticky);
   transition:
     top var(--ek-duration-base) var(--ek-easing-standard),
-    left var(--ek-duration-base) var(--ek-easing-standard);
+    var(--ek-shell-left);
 }
 
 .ek-shell__tabs {

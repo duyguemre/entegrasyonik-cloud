@@ -3,7 +3,7 @@
  *
  * DS-v2 Aşama 2 (kabuk) — `MenuService` menü ağacını (menuStore) kabuğun üç
  * yüzeyinin ortak modeline çevirir: tam sol menü (`NavigationMenu`), ray
- * (`NavigationRail`) ve akıllı aramanın "Ekranlar" grubu (`ShellSearch`).
+ * (`NavigationMenu` ray sunumu) ve akıllı aramanın "Ekranlar" grubu (`ShellSearch`).
  * Erişilebilirliğin KAYNAĞI değişmez (ADR-0015 Karar 2.4): yalnızca menüde
  * zaten olan (status/inMenu) öğeler listelenir; bu dosya hiçbir ekranı
  * gizlemez/eklemez, yalnızca sunum modelini üretir.

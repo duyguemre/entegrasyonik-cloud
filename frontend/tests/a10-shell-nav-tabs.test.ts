@@ -16,9 +16,11 @@ const tabs = read('src/components/ds/EkWorkspaceTabs.vue')
 describe('A10 — sol menü bölümleri', () => {
   const css = style(nav)
 
-  it('bölüm başlığı öğe renginde (soluk/devre dışı tonu değil) ve mikro etiket biçiminde', () => {
+  // [B4, KASITLI] Kullanıcı geri bildirimi: "gruplar renkli/açık olmasın, yalnız seçili sayfa renkli olsun" →
+  // bölüm başlığı artık ikincil metin tonu (`content-muted`, tüm yüzeylerde AA) — vurgu yalnız etkin öğede.
+  it('bölüm başlığı nötr ikincil metin tonunda (vurgu/soluk ton değil) ve mikro etiket biçiminde', () => {
     const label = rule(css, '.ek-side__section-label')
-    expect(label).toContain('color: var(--ek-color-sidebar-text)')
+    expect(label).toContain('color: var(--ek-color-content-muted)')
     expect(label).toContain('text-transform: uppercase')
     expect(label).toContain('letter-spacing: var(--ek-type-micro-tracking)')
     expect(label).not.toMatch(/content-subtle|opacity/)

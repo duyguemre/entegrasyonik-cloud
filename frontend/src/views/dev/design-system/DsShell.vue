@@ -193,6 +193,16 @@ function closeTab(id: string) {
   width: 264px;
 }
 
+/* B4: ray içeriği tam genişlikte kalır (etiketler yalnız solar, yeniden sarılmaz); kap ray genişliğinde kırpar. */
+.ds-side-pair__rail {
+  flex: none;
+  width: var(--ek-app-sidebar-rail-width);
+}
+
+.ds-side-pair__rail > :deep(.ek-side) {
+  width: var(--ek-app-sidebar-width);
+}
+
 @media (max-width: 1023px) {
   .ds-shell__side {
     display: none;

@@ -1,28 +1,32 @@
 <!--
   frontend/src/components/layout/NavigationMenu.vue
 
-  DS-v2 Aşama 2 — tam sol menü (248px). İçerik `EkSidebarNav`: bölüm başlığı
-  (lacivert mikro etiket) → öğeler → alt öğeler; etiketler KESİLMEZ (sarılır),
-  etkin ekran `sidebar-active` + 3px aksiyon göstergesi, etkin öğenin grubu
-  kendiliğinden açık. Favori yıldızı öğenin sağında (düğmenin kardeşi).
+  DS-v2 — sol menü (248px tam / 64px ray). İçerik `EkSidebarNav`: bölüm başlığı (nötr mikro etiket) → öğeler →
+  alt öğeler; etiketler KESİLMEZ (sarılır); YALNIZ etkin ekran vurgu renginde (`sidebar-active` + 3px aksiyon
+  göstergesi), etkin öğenin grubu kendiliğinden açık. Favori yıldızı öğenin sağında (düğmenin kardeşi).
 
-  İki sunum (ADR-0015 Karar 2.1/2.2 — `SecureLayout` karar verir):
-   - `temporary=false`: masaüstü kalıcı menü; altta "Daralt" (Ctrl+B) → ray.
-   - `temporary=true`: tablet üst katmanı / mobil çekmece; seçimden sonra kapanır.
+  Sunumlar (ADR-0015 Karar 2.1/2.2 — `SecureLayout` karar verir):
+   - kalıcı (`temporary=false`): masaüstünde tam ↔ ray AYNI çekmecede (`rail`), B4: geçiş koreografili — içerik
+     önce opaklıkla solar, sonra genişlik yavaşlayarak daralır (açılışta ters); ikonlar yerinden oynamaz. Tablette
+     varsayılan ray. Alttaki düğme "Daralt" (Ctrl+B) ↔ "Menüyü genişlet" (aynı yer — ray/tam arasında zıplamaz).
+   - geçici (`temporary=true`): tablet üst katmanı / mobil çekmece; seçimden sonra kapanır.
 
-  Spec çapaları (Ek A / Karar 5.1 — ekran spec'leri bu sınıflarla menüden gezinir,
-  bu yüzden KORUNUR): `.v-navigation-drawer.soft-nav`, öğe `.soft-item`, grup
-  `.v-list-group` > `.v-list-group__header`, alt öğe `.sub-item-soft`, `.collapse-btn`.
+  Spec çapaları (Ek A / Karar 5.1 — ekran spec'leri bu sınıflarla menüden gezinir, bu yüzden KORUNUR):
+  tam `.v-navigation-drawer.soft-nav` / ray `.soft-rail` (aynı anda yalnız biri), öğe `.soft-item`, grup
+  `.v-list-group` > `.v-list-group__header`, alt öğe `.sub-item-soft`, `.collapse-btn` (tam) / `.rail-logo-btn` (ray).
 -->
 <template>
   <v-navigation-drawer
     v-model="drawerVisible"
     :permanent="!temporary"
     :temporary="temporary"
+    :rail="isRail"
+    :rail-width="64"
     :width="248"
     id="tour-homepage-menu"
-    class="soft-nav ek-shell-nav"
-    aria-label="Ana gezinme menüsü"
+    class="ek-shell-nav"
+    :class="isRail ? 'soft-rail is-rail' : 'soft-nav'"
+    :aria-label="isRail ? 'Daraltılmış gezinme menüsü' : 'Ana gezinme menüsü'"
   >
     <div class="ek-shell-nav__wrap">
       <div class="ek-shell-nav__scroll">
@@ -30,8 +34,10 @@
           :sections="model.sections"
           :active-key="activeKey"
           label="Ekranlar"
+          :collapsed="isRail"
           :hook-classes="HOOK_CLASSES"
           @select="onSelect"
+          @expand-request="$emit('expand-request')"
         >
           <template #item-trailing="{ item }">
             <button
@@ -50,16 +56,28 @@
       </div>
 
       <div v-if="!temporary" class="ek-shell-nav__footer">
-        <button type="button" class="collapse-btn" :aria-label="withShortcut('Kenar menüyü daralt', 'sidebarToggle')" @click="$emit('collapse-request')">
-          <v-icon icon="mdi-chevron-double-left" aria-hidden="true" />
-          <span class="collapse-btn__label">Daralt</span>
-          <EkKbd :keys="shortcutKeys('sidebarToggle')" />
-        </button>
+        <v-tooltip :eager="false" transition="fade-transition" location="end" :open-delay="300" :disabled="!isRail">
+          <template #activator="{ props: tip }">
+            <button
+              v-bind="tip"
+              type="button"
+              class="ek-shell-nav__toggle"
+              :class="isRail ? 'rail-logo-btn' : 'collapse-btn'"
+              :aria-label="isRail ? withShortcut('Gezinme menüsünü genişlet', 'sidebarToggle') : withShortcut('Kenar menüyü daralt', 'sidebarToggle')"
+              :aria-expanded="!isRail"
+              @click="isRail ? $emit('expand-request') : $emit('collapse-request')"
+            >
+              <v-icon class="ek-shell-nav__toggle-icon" icon="mdi-chevron-double-left" aria-hidden="true" />
+              <span class="ek-shell-nav__toggle-label ek-shell-nav__fade">Daralt</span>
+              <EkKbd class="ek-shell-nav__fade" :keys="shortcutKeys('sidebarToggle')" />
+            </button>
+          </template>
+          <span class="ek-shell-nav__tip">Menüyü genişlet <EkKbd :keys="shortcutKeys('sidebarToggle')" tone="inverse" /></span>
+        </v-tooltip>
       </div>
     </div>
   </v-navigation-drawer>
 </template>
-
 <script lang="ts" setup>
 import { computed } from 'vue'
 import useUser from '@/composables/user'
@@ -70,8 +88,11 @@ import { useShellMenu } from './useShellMenu'
 
 const HOOK_CLASSES = { item: 'soft-item', group: 'v-list-group', groupHeader: 'v-list-group__header', subItem: 'sub-item-soft' }
 
-const props = defineProps<{ temporary: boolean; modelValue: boolean }>()
-const emit = defineEmits<{ 'update:modelValue': [boolean]; 'collapse-request': [] }>()
+const props = withDefaults(defineProps<{ temporary: boolean; modelValue?: boolean; rail?: boolean }>(), { modelValue: true, rail: false })
+const emit = defineEmits<{ 'update:modelValue': [boolean]; 'collapse-request': []; 'expand-request': [] }>()
+
+/** Ray yalnız kalıcı sunumda (geçici çekmece her zaman tam). */
+const isRail = computed(() => !props.temporary && props.rail)
 
 const userApi = useUser()
 const { model, activeKey, linkFor, openKey, menuStore } = useShellMenu()
@@ -112,23 +133,40 @@ function toggleFavorite(key: string) {
 </script>
 
 <style scoped>
+/* Çekmece genişliği Vuetify'dan (rail ↔ width); süre/eğri/gecikme B4 koreografisinden (app.css --ek-app-nav-*):
+   ray'a giderken içerik solduktan sonra (`lag`) daralır, açılırken hemen genişler. */
 .ek-shell-nav {
   background: var(--ek-color-sidebar-bg) !important;
   border-right: 1px solid var(--ek-color-sidebar-border) !important;
+  transition-duration: var(--ek-app-nav-move) !important;
+  transition-timing-function: var(--ek-easing-enter) !important;
+  transition-delay: 0ms;
 }
 
+.ek-shell-nav.is-rail {
+  transition-delay: var(--ek-app-nav-lag);
+}
+
+/* İçerik HER İKİ durumda tam genişlikte (etiket yeniden sarılmaz, ikonlar kıpırdamaz); çekmece kırpar. */
 .ek-shell-nav__wrap {
   display: flex;
   flex-direction: column;
+  width: var(--ek-app-sidebar-width);
   height: 100%;
 }
 
 .ek-shell-nav__scroll {
   flex: 1;
   min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
+  scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: var(--ek-color-border-strong) transparent;
+}
+
+.is-rail .ek-shell-nav__scroll {
+  scrollbar-color: transparent transparent;
 }
 
 .ek-shell-nav__scroll :deep(.ek-side) {
@@ -151,8 +189,9 @@ function toggleFavorite(key: string) {
   transition: var(--ek-transition-colors), opacity var(--ek-duration-fast) var(--ek-easing-standard);
 }
 
+/* Favori: vurgu rengi DEĞİL (tek vurgu = etkin sayfa) — nötr koyu dolu yıldız. */
 .ek-shell-nav__fav.is-on {
-  color: var(--ek-color-warning);
+  color: var(--ek-color-content-default);
   opacity: 1;
 }
 
@@ -166,8 +205,9 @@ function toggleFavorite(key: string) {
   color: var(--ek-color-content-strong);
 }
 
-.ek-shell-nav__fav.is-on:hover {
-  color: var(--ek-color-warning-emphasis);
+.ek-shell-nav__fav:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--ek-color-border-focus);
 }
 
 .ek-shell-nav__footer {
@@ -176,13 +216,16 @@ function toggleFavorite(key: string) {
   border-top: 1px solid var(--ek-color-sidebar-border);
 }
 
-.collapse-btn {
+/* Daralt ↔ genişlet: AYNI düğme, aynı yer; ok 180° döner, metin/kısayol solar, zemin ikon sütununa daralır. */
+.ek-shell-nav__toggle {
+  position: relative;
+  isolation: isolate;
   display: flex;
   align-items: center;
   gap: var(--ek-space-2);
   width: 100%;
   min-height: var(--ek-control-h-md);
-  padding: 0 var(--ek-space-3);
+  padding: 0 var(--ek-space-3) 0 calc((var(--ek-control-h-lg) - var(--ek-icon-md)) / 2);
   border: 0;
   border-radius: var(--ek-radius-control);
   background: transparent;
@@ -191,26 +234,77 @@ function toggleFavorite(key: string) {
   font-size: var(--ek-type-label-size);
   font-weight: var(--ek-type-label-weight);
   cursor: pointer;
-  transition: var(--ek-transition-colors);
+  transition: color var(--ek-duration-fast) var(--ek-easing-enter);
 }
 
-.collapse-btn :deep(.v-icon) {
-  font-size: var(--ek-icon-md);
+.ek-shell-nav__toggle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: transparent;
+  transition:
+    background-color var(--ek-duration-fast) var(--ek-easing-enter),
+    box-shadow var(--ek-duration-fast) var(--ek-easing-enter),
+    right var(--ek-app-nav-move) var(--ek-easing-enter) 0ms;
 }
 
-.collapse-btn__label {
-  flex: 1;
-  text-align: left;
+.is-rail .ek-shell-nav__toggle::after {
+  right: calc(100% - var(--ek-control-h-lg));
+  transition:
+    background-color var(--ek-duration-fast) var(--ek-easing-enter),
+    box-shadow var(--ek-duration-fast) var(--ek-easing-enter),
+    right var(--ek-app-nav-move) var(--ek-easing-enter) var(--ek-app-nav-lag);
 }
 
-.collapse-btn:hover {
-  background: var(--ek-color-sidebar-hover);
+.ek-shell-nav__toggle:hover {
   color: var(--ek-color-content-strong);
 }
 
-.collapse-btn:focus-visible {
+.ek-shell-nav__toggle:hover::after {
+  background: var(--ek-color-sidebar-hover);
+}
+
+.ek-shell-nav__toggle:focus-visible {
   outline: none;
+}
+
+.ek-shell-nav__toggle:focus-visible::after {
   box-shadow: inset 0 0 0 2px var(--ek-color-border-focus);
+}
+
+.ek-shell-nav__toggle-icon {
+  flex: none;
+  font-size: var(--ek-icon-md);
+  transition: transform var(--ek-app-nav-move) var(--ek-easing-enter) 0ms;
+}
+
+/* Ok, genişlikle birlikte (aynı gecikme) döner — solma sırasında yarı dönük kalmaz. */
+.is-rail .ek-shell-nav__toggle-icon {
+  transform: rotate(180deg);
+  transition: transform var(--ek-app-nav-move) var(--ek-easing-enter) var(--ek-app-nav-lag);
+}
+
+.ek-shell-nav__toggle-label {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.ek-shell-nav__fade {
+  transition: opacity var(--ek-duration-base) var(--ek-easing-enter) var(--ek-app-nav-reveal);
+}
+
+.is-rail .ek-shell-nav__fade {
+  opacity: 0;
+  transition: opacity var(--ek-app-nav-fade) var(--ek-easing-standard) 0ms;
+}
+
+.ek-shell-nav__tip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
 }
 
 /* Dokunmatik: favori yıldızı hover'a bağlı değildir. */
