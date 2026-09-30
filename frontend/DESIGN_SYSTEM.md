@@ -541,3 +541,20 @@ Geri bildirim: "gruplar hafif grimsi, diğerlerinden farklı, karışık". Denen
   hareketi gösterge + mevcut içerik girişi (opaklık + 4px) taşır; renk geçişi yalnız pasif sekmede hover'a girerken. reduced-motion: hepsi anında.
 - İlk sekme şerit başında yarıçap kadar pay (sol köşe kırpılmıyor, sol menü kenarına yapışmıyor). 390px'te A6b yatay kaydırma/ok/solma aynen.
 - Bekçi: `tests/a10-shell-nav-tabs.test.ts`.
+
+
+## 18. A11 — ürün listesi satır altı varyant gösterimi (`cloud/fe-a11`)
+
+Taban `cloud/ds-v2-a6b`. Kapsam yalnız `ProductVariantListComponent`, `ProductVariantListTooltipComponent`, ürün listesi satır genişletme
+bölümü; ortak ds bileşenlerine dokunulmadı, token değişikliği yok. Önce/sonra + gerekçeler: `docs/a11-review/README.md`.
+
+| Konu | Karar |
+|---|---|
+| Hiyerarşi | açık ürün satırı + varyant alanı tek `surface-sunken` blok, sol şerit satırda başlar, kap girintili ve üstü satıra birleşik |
+| Hareket | yükseklik (grid 0fr→1fr) + opaklık `--ek-duration-base`; reduced-motion 0 |
+| Özet şeridi | sayı · grup · toplam stok · tükendi/az · seçili; kanal kapsamı (x/n yayında, hata/bekliyor), gönderilmeyenler tek çip |
+| Satır | görsel/yer tutucu · seçenek çipleri · mono stok kodu/barkod + kopyala · tabular fiyat · stok tonu (≤5 az) + raf · kanal çipleri · `EkRowActions` |
+| Kanal | gönderilmiş kanal = adlı çip + durum ikonu (hata tonu), ipucunda kısa neden, tıklayınca durum kartı; gönderilmemiş "+n" |
+| Çok varyant | > 8: kompakt ızgara + "Tümünü gör" (iç kaydırma, yapışık başlık) |
+| Dar kap | < 600px kart (A6b) |
+| Mantık | `variants/variantListModel.ts` (saf, `tests/variant-list-model.test.ts`) |
