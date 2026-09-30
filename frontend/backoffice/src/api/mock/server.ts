@@ -104,13 +104,18 @@ export class MockAdminServer {
   setDegraded(value: boolean) {
     this.degraded = value
   }
-  /** LIVE_READONLY=1: dış sisteme yazan yetenekler (retryJob, cancelSubscription, changePlan) 423. */
+  /** LIVE_READONLY=1: dış sisteme yazan yetenekler (retryJob, cancelSubscription sağlayıcı yolu, changePlan, scheduleAnnouncement, retryDelivery, sendTestEmail) 423. */
   setLiveReadonly(value: boolean) {
     this.liveReadonly = value
   }
   /** Örnek özellik bayrakları (backend kataloğu başlangıçta boştur). */
   setFeatureFlags(value: boolean) {
     setMockFeatureFlags(value)
+  }
+
+  /** NOTIFY_EMAIL_ENABLED=false: sendTestEmail 503 NOTIFY_EMAIL_UNAVAILABLE. */
+  setNotifyEmail(value: boolean) {
+    this.p2.notifications.setEmailEnabled(value)
   }
 
   /** Hata durumu denemesi: öneki eşleşen operasyonlar 500 INTERNAL döner (ör. `failOps('BackofficeBillingService/')`); null kapatır. */

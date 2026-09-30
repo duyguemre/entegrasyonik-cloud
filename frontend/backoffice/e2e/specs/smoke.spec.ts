@@ -84,10 +84,9 @@ test.describe('kabuk ve ekranlar', () => {
     test.skip(info.project.name === 'chromium-mobile')
     const nav = page.getByRole('navigation', { name: 'Yönetim ekranları' })
     for (const [menu, heading, path] of [
-      // bo-p2 sonrası hâlâ planlı olanlar (Abonelik, Motor, Altyapı, Yöneticiler, Platform ayarları hazır).
+      // bo-next sonrası hâlâ planlı olanlar (Abonelik, Motor, Altyapı, Yöneticiler, Platform ayarları, Bildirimler hazır).
       [['Müşteriler', 'Yaşam döngüsü'], 'Yaşam döngüsü', '/musteriler/yasam-dongusu'],
       [['Destek talepleri'], 'Destek talepleri', '/musteriler/destek'],
-      [['Sistem ayarları', 'Bildirimler ve duyurular'], 'Bildirimler ve duyurular', '/sistem/duyurular'],
     ] as const) {
       for (const label of menu) {
         const btn = nav.getByRole('button', { name: new RegExp(`^${label}(\\s|$)`) })

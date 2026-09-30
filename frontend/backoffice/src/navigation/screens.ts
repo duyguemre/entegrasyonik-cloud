@@ -8,7 +8,7 @@
  *      `plan` alanını silin. Yol (path) DEĞİŞMEZ — yer imleri ve komut paleti bozulmaz.
  *   3. Görünüm `BoPageHeader` kullanır; başlık, açıklama ve breadcrumb bu kayıttan otomatik gelir.
  *
- * Bilgi mimarisi: 5 bölüm → 10 grup → ekranlar. Grubun tek ekranı varsa menüde yaprak, birden fazlaysa açılır grup.
+ * Bilgi mimarisi: 5 bölüm → 11 grup → ekranlar. Grubun tek ekranı varsa menüde yaprak, birden fazlaysa açılır grup.
  */
 export type ScreenStatus = 'ready' | 'draft' | 'planned'
 
@@ -25,6 +25,7 @@ export type GroupKey =
   | 'audit'
   | 'admins'
   | 'settings'
+  | 'notifications'
 
 export interface BoGroup {
   key: GroupKey
@@ -79,6 +80,7 @@ export const GROUPS: BoGroup[] = [
   { key: 'audit', label: 'Denetim', icon: 'mdi-shield-search', section: 'observe' },
   { key: 'admins', label: 'Yöneticiler', icon: 'mdi-account-key-outline', section: 'govern' },
   { key: 'settings', label: 'Sistem ayarları', icon: 'mdi-tune-variant', section: 'govern' },
+  { key: 'notifications', label: 'Bildirimler ve duyurular', icon: 'mdi-bullhorn-outline', section: 'govern' },
 ]
 
 type PlannedInput = Omit<BoScreen, 'status' | 'view'> & { plan: NonNullable<BoScreen['plan']> }
@@ -240,24 +242,71 @@ export const SCREENS: BoScreen[] = [
     status: 'ready',
     view: () => import('../views/settings/SettingsView.vue'),
   },
-  planned({
-    key: 'notifications',
-    label: 'Bildirimler ve duyurular',
-    lede: 'Hedefli ve zamanlı duyurular, teslim günlüğü ve şablon önizleme.',
+
+  // ---------------------------------------------------------------- Bildirimler ve duyurular (ADR-0029 NB7/NB8)
+  {
+    key: 'announcements',
+    label: 'Duyurular',
+    lede: 'Müşterilere bant, uygulama içi bildirim ve e-postayla giden hedefli ve zamanlı duyurular.',
     icon: 'mdi-bullhorn-outline',
-    group: 'settings',
+    group: 'notifications',
     path: '/sistem/duyurular',
-    keywords: ['duyuru', 'e-posta', 'şablon'],
-    plan: {
-      items: ['Duyurular (hedefli, zamanlı)', 'Teslim günlüğü ve başarısızlıklar', 'Olay kataloğu ve şablon önizleme', 'Müşteri bildirim geçmişi (yalnız meta veri)'],
-      endpoints: 'ADR-0029 NB7 · BO-N1..BO-N3',
-    },
-  }),
+    keywords: ['duyuru', 'bakım', 'olay', 'bant', 'banner', 'announcement', 'e-posta'],
+    status: 'ready',
+    view: () => import('../views/notifications/AnnouncementsView.vue'),
+  },
+  {
+    key: 'deliveries',
+    label: 'Teslim günlüğü',
+    lede: 'E-posta teslimlerinin durumu, başarısızlıklar ve elle yeniden deneme ya da atma. Adres ve ileti metni gösterilmez.',
+    icon: 'mdi-email-fast-outline',
+    group: 'notifications',
+    path: '/bildirimler/teslimler',
+    keywords: ['teslim', 'e-posta', 'smtp', 'outbox', 'dead', 'delivery'],
+    status: 'ready',
+    view: () => import('../views/notifications/DeliveriesView.vue'),
+  },
+  {
+    key: 'tenant-notifications',
+    label: 'Müşteri bildirim geçmişi',
+    lede: 'Bir müşteriye giden bildirimlerin yalnız meta verisi: kod, zaman, alıcı ve teslim sayıları. Son 30 gün.',
+    icon: 'mdi-bell-badge-outline',
+    group: 'notifications',
+    path: '/bildirimler/musteri-gecmisi',
+    keywords: ['bildirim geçmişi', 'tenant', 'müşteri bildirimi'],
+    status: 'ready',
+    view: () => import('../views/notifications/TenantHistoryView.vue'),
+  },
+  {
+    key: 'notification-catalog',
+    label: 'Olay kataloğu',
+    lede: 'Bildirim kodları, varsayılan kanallar ve şablon önizleme; e-posta ayarını kendinize test iletisiyle doğrulayın.',
+    icon: 'mdi-book-open-page-variant-outline',
+    group: 'notifications',
+    path: '/bildirimler/katalog',
+    keywords: ['şablon', 'template', 'katalog', 'test e-postası', 'smtp'],
+    status: 'ready',
+    view: () => import('../views/notifications/CatalogView.vue'),
+  },
+  {
+    key: 'alerts',
+    label: 'Platform uyarıları',
+    lede: 'Hata oranı, kimlik hatası, kuyruk birikimi ve teslim sorunları için tetiklenen uyarılar; süreli susturma.',
+    icon: 'mdi-alarm-light-outline',
+    group: 'notifications',
+    path: '/bildirimler/uyarilar',
+    keywords: ['alarm', 'uyarı', 'alert', 'sustur', 'mute'],
+    status: 'ready',
+    view: () => import('../views/notifications/AlertsView.vue'),
+  },
 ]
 
 export const DETAIL_ROUTES: BoDetailRoute[] = [
   { name: 'tenant', path: '/musteriler/:tid(\\d+)', parent: 'tenants', title: 'Müşteri', view: () => import('../views/TenantDetailView.vue') },
   { name: 'subscription', path: '/abonelikler/:tid(\\d+)', parent: 'subscriptions', title: 'Abonelik', view: () => import('../views/billing/SubscriptionDetailView.vue') },
+  { name: 'announcement-new', path: '/sistem/duyurular/yeni', parent: 'announcements', title: 'Yeni duyuru', view: () => import('../views/notifications/AnnouncementEditorView.vue') },
+  { name: 'announcement', path: '/sistem/duyurular/:id([a-f0-9]{24})', parent: 'announcements', title: 'Duyuru', view: () => import('../views/notifications/AnnouncementDetailView.vue') },
+  { name: 'announcement-edit', path: '/sistem/duyurular/:id([a-f0-9]{24})/duzenle', parent: 'announcements', title: 'Duyuruyu düzenle', view: () => import('../views/notifications/AnnouncementEditorView.vue') },
 ]
 
 export const DEFAULT_PATH = '/genel-bakis'

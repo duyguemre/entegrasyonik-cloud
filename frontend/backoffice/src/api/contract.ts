@@ -419,6 +419,15 @@ export const REAUTH_OPS: readonly AdminOp[] = [
   'BackofficeEngineService/retryJob',
   'BackofficeEngineService/discardJob',
   'BackofficeEngineService/releaseStuckLease',
+  // ADR-0029 NB7/NB8: yazan bildirim/duyuru/uyarı uçları (toplu e-posta dahil)
+  'BackofficeNotificationService/createAnnouncement',
+  'BackofficeNotificationService/updateAnnouncement',
+  'BackofficeNotificationService/scheduleAnnouncement',
+  'BackofficeNotificationService/cancelAnnouncement',
+  'BackofficeNotificationService/retryDelivery',
+  'BackofficeNotificationService/discardDelivery',
+  'BackofficeNotificationService/sendTestEmail',
+  'BackofficeNotificationService/muteAlert',
 ]
 /** Gerekçe alt/üst sınırı (backend REASON_MIN_LENGTH / REASON_MAX_LENGTH). */
 export const REASON_MIN = 10
@@ -442,3 +451,4 @@ export * from './contracts/engine'
 export * from './contracts/billing'
 export * from './contracts/infra'
 export * from './contracts/platform'
+export * from './contracts/notifications'

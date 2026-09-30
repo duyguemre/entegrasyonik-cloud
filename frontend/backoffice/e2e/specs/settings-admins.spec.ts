@@ -38,7 +38,7 @@ test.describe('sistem ayarları', () => {
 
   test('bayraklar doluyken liste görünür', async ({ page }) => {
     await call(page, '(m) => m.setFeatureFlags(true)')
-    await openFromMenu(page, 'Sistem ayarları', 'Platform ayarları')
+    await openFromMenu(page, 'Sistem ayarları') // tek ekranlı grup: menüde yaprak (bildirimler ayrı gruba taşındı)
     await settle(page)
     await expect(page.getByText('features.aiListing', { exact: true })).toBeVisible()
     await expect(page.getByText('Yalnız yönetici')).toBeVisible()

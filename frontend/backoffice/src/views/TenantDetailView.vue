@@ -93,6 +93,7 @@
               </ul>
               <template #footer>
                 <RouterLink :to="{ path: '/denetim', query: { tid: String(tid) } }" class="bo-tenant__more">Denetim kayıtlarında aç <v-icon icon="mdi-arrow-right" aria-hidden="true" /></RouterLink>
+                <RouterLink :to="{ path: '/bildirimler/musteri-gecmisi', query: { tid: String(tid) } }" class="bo-tenant__more" data-testid="notification-history">Bildirim geçmişi <v-icon icon="mdi-arrow-right" aria-hidden="true" /></RouterLink>
               </template>
             </EkCard>
           </div>
@@ -341,6 +342,9 @@ const undo = useGuardedAction(
   color: var(--ek-color-action);
   font-size: var(--ek-type-label-size);
   text-decoration: none;
+}
+.bo-tenant__more + .bo-tenant__more {
+  margin-left: var(--ek-space-4);
 }
 .bo-tenant__more:hover {
   text-decoration: underline;
