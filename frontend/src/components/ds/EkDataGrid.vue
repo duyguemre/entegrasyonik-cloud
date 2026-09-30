@@ -14,12 +14,21 @@
     - Kolon `hideLabel`: başlık görsel olarak boş (eylem kolonu), ekran okuyucu adı korunur
     - Genişletme: `expandedKeys` + `#expanded="{ row }"` → satırın altında tam genişlik satır
     - Kolon `pin: 'end'`: yatay kaydırmada sağa yapışık (satır eylemleri hep görünür)
+    - Yatay taşma (Aşama 3): seçim kolonu + İLK veri kolonu (kimlik) sola yapışık (kap ≥ 600px);
+      altında içerik kalan yapışık kenar `shadow-scroll-start/end` gölgesi alır → kolon "kesik"
+      görünmez, kaydırılabildiği anlaşılır. Kolon `pin: 'none'` ilk kolonu serbest bırakır.
     - Hücre slot kapsamı: `{ row, item, value, index }` (`item` = `row`, göç kolaylığı)
   Yükseklik: kapsayıcısını doldurur (`EkListFrame` içinde kullanılır);
   sayfalama bu bileşenin DIŞINDA, çerçevenin altına sabittir.
 -->
 <template>
-  <div class="ek-grid" :aria-busy="loading || undefined">
+  <div
+    ref="rootRef"
+    class="ek-grid"
+    :class="{ 'is-overflow-start': overflowStart, 'is-overflow-end': overflowEnd }"
+    :aria-busy="loading || undefined"
+    @scroll.passive="measure"
+  >
     <table class="ek-grid__table" :aria-label="label" :aria-rowcount="loading ? undefined : rows.length + 1">
       <thead>
         <tr>
@@ -35,10 +44,10 @@
             />
           </th>
           <th
-            v-for="col in columns"
+            v-for="(col, ci) in columns"
             :key="col.key"
             class="ek-grid__th"
-            :class="[`ek-grid__th--${col.align ?? alignFor(col)}`, { 'is-sorted': sort?.key === col.key, 'ek-grid__pin-end': col.pin === 'end' }]"
+            :class="[`ek-grid__th--${col.align ?? alignFor(col)}`, { 'is-sorted': sort?.key === col.key }, pinClass(col, ci)]"
             scope="col"
             :aria-sort="col.sortable ? ariaSort(col.key) : undefined"
             v-bind="col.width ? { width: col.width } : {}"
@@ -89,10 +98,10 @@
             />
           </td>
           <td
-            v-for="col in columns"
+            v-for="(col, ci) in columns"
             :key="col.key"
             class="ek-grid__td"
-            :class="[`ek-grid__td--${col.type ?? 'text'}`, `ek-grid__td--${col.align ?? alignFor(col)}`, { 'ek-grid__td--wrap': col.wrap, 'ek-grid__pin-end': col.pin === 'end' }]"
+            :class="[`ek-grid__td--${col.type ?? 'text'}`, `ek-grid__td--${col.align ?? alignFor(col)}`, { 'ek-grid__td--wrap': col.wrap }, pinClass(col, ci)]"
           >
             <slot :name="`cell-${col.key}`" :row="row" :item="row" :value="row[col.key]" :index="ri">{{ row[col.key] ?? '—' }}</slot>
           </td>
@@ -121,7 +130,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watchEffect } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, watchEffect } from 'vue'
 import EkIconTile from './EkIconTile.vue'
 
 export interface EkGridColumn {
@@ -135,8 +144,9 @@ export interface EkGridColumn {
   hideLabel?: boolean
   /** Hücre metni satır kırabilir (varsayılan tek satır). */
   wrap?: boolean
-  /** `end`: kolon sağa yapışık kalır (yatay kaydırmada satır eylemleri görünür). */
-  pin?: 'end'
+  /** `end`: kolon sağa yapışık kalır (yatay kaydırmada satır eylemleri görünür). İlk kolon varsayılan
+   *  olarak sola yapışıktır; `none` bunu kapatır. */
+  pin?: 'end' | 'none'
 }
 
 export type EkGridSort = { key: string; dir: 'asc' | 'desc' } | null
@@ -193,6 +203,36 @@ const emit = defineEmits<{
 }>()
 
 const allRef = ref<HTMLInputElement | null>(null)
+const rootRef = ref<HTMLElement | null>(null)
+const overflowStart = ref(false)
+const overflowEnd = ref(false)
+
+/** Yatay kaydırma durumu: solda/sağda gizli içerik var mı (yapışık kenar gölgeleri). */
+function measure() {
+  const el = rootRef.value
+  if (!el) return
+  overflowStart.value = el.scrollLeft > 1
+  overflowEnd.value = el.scrollLeft + el.clientWidth < el.scrollWidth - 1
+}
+
+let resizeObserver: ResizeObserver | undefined
+onMounted(() => {
+  measure()
+  if (typeof ResizeObserver !== 'undefined' && rootRef.value) {
+    resizeObserver = new ResizeObserver(() => measure())
+    resizeObserver.observe(rootRef.value)
+    const table = rootRef.value.querySelector('table')
+    if (table) resizeObserver.observe(table)
+  }
+})
+onBeforeUnmount(() => resizeObserver?.disconnect())
+watch(() => [props.rows, props.columns, props.loading], () => nextTick(measure))
+
+function pinClass(col: EkGridColumn, index: number) {
+  if (col.pin === 'end') return 'ek-grid__pin-end'
+  if (index === 0 && col.pin !== 'none') return props.selectable ? 'ek-grid__pin-start ek-grid__pin-start--after-select' : 'ek-grid__pin-start'
+  return undefined
+}
 const selectedSet = computed(() => new Set(props.selected))
 const expandedSet = computed(() => new Set(props.expandedKeys))
 const indeterminateSet = computed(() => new Set(props.indeterminateKeys))
@@ -340,13 +380,44 @@ function toggleSort(key: string) {
 .ek-grid__pin-end {
   position: sticky;
   right: 0;
+  z-index: 1;
   background: var(--ek-color-surface);
   box-shadow: inset 1px 0 0 var(--ek-color-border-subtle);
 }
 
-.ek-grid__th.ek-grid__pin-end {
+.ek-grid.is-overflow-end .ek-grid__pin-end {
+  box-shadow: var(--ek-shadow-scroll-end), inset 1px 0 0 var(--ek-color-border-default);
+}
+
+.ek-grid__th.ek-grid__pin-end,
+.ek-grid__th.ek-grid__pin-start,
+.ek-grid__th--select {
   z-index: calc(var(--ek-z-sticky) + 1);
   background: var(--ek-color-surface-muted);
+}
+
+/* Seçim + ilk (kimlik) kolonu sola yapışık — yalnız tablo yeterince genişken (mobilde alan yemez). */
+@container (min-width: 600px) {
+  .ek-grid__th--select,
+  .ek-grid__td--select,
+  .ek-grid__pin-start {
+    position: sticky;
+    left: 0;
+  }
+
+  .ek-grid__td--select,
+  .ek-grid__td.ek-grid__pin-start {
+    z-index: 1;
+    background: var(--ek-color-surface);
+  }
+
+  .ek-grid__pin-start--after-select {
+    left: 44px;
+  }
+
+  .ek-grid.is-overflow-start .ek-grid__pin-start {
+    box-shadow: var(--ek-shadow-scroll-start), inset -1px 0 0 var(--ek-color-border-default);
+  }
 }
 
 .ek-grid__expanded-cell {

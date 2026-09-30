@@ -148,6 +148,9 @@ export const shadow = {
     popover: '0 12px 28px rgba(18, 26, 43, 0.14), 0 2px 6px rgba(18, 26, 43, 0.08)',
     dialog: '0 24px 48px rgba(18, 26, 43, 0.20), 0 4px 12px rgba(18, 26, 43, 0.10)',
     chrome: '0 1px 0 rgba(10, 15, 26, 0.16), 0 2px 8px rgba(10, 15, 26, 0.10)',
+    // Aşama 3: yatay kaydırılan tabloda sabit kolonun kenar gölgesi (altında içerik olduğunu söyler)
+    'scroll-start': '8px 0 8px -8px rgba(18, 26, 43, 0.22)',
+    'scroll-end': '-8px 0 8px -8px rgba(18, 26, 43, 0.22)',
   },
   dark: {
     none: 'none',
@@ -159,6 +162,8 @@ export const shadow = {
     popover: '0 12px 28px rgba(0, 0, 0, 0.56)',
     dialog: '0 24px 48px rgba(0, 0, 0, 0.64)',
     chrome: '0 1px 0 rgba(0, 0, 0, 0.50)',
+    'scroll-start': '8px 0 8px -8px rgba(0, 0, 0, 0.56)',
+    'scroll-end': '-8px 0 8px -8px rgba(0, 0, 0, 0.56)',
   },
 } as const
 

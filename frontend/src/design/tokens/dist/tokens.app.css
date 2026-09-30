@@ -256,6 +256,8 @@
   --ek-shadow-popover: 0 12px 28px rgba(18, 26, 43, 0.14), 0 2px 6px rgba(18, 26, 43, 0.08);
   --ek-shadow-dialog: 0 24px 48px rgba(18, 26, 43, 0.20), 0 4px 12px rgba(18, 26, 43, 0.10);
   --ek-shadow-chrome: 0 1px 0 rgba(10, 15, 26, 0.16), 0 2px 8px rgba(10, 15, 26, 0.10);
+  --ek-shadow-scroll-start: 8px 0 8px -8px rgba(18, 26, 43, 0.22);
+  --ek-shadow-scroll-end: -8px 0 8px -8px rgba(18, 26, 43, 0.22);
   --ek-gradient-chrome: linear-gradient(100deg, var(--ek-color-chrome) 0%, var(--ek-color-chrome-end) 100%);
   --ek-color-scrim-veil: color-mix(in srgb, var(--ek-color-scrim) 44%, transparent);
   --ek-focus-ring: 0 0 0 2px var(--ek-color-surface), 0 0 0 4px var(--ek-color-border-focus);
