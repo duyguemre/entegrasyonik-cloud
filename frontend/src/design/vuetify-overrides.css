@@ -206,7 +206,8 @@
   padding-top: var(--ek-space-1);
 }
 
-.v-messages__message {
+/* `.v-input` öneki: Vuetify'ın bileşen CSS'i (aynı özgüllük, `line-height: 12px`) tembel yüklenip sonra geldiği için. */
+.v-input .v-messages__message {
   font-size: var(--ek-type-caption-size);
   line-height: var(--ek-type-caption-line);
   letter-spacing: 0;
