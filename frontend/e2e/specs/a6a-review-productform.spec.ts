@@ -130,6 +130,32 @@ test.describe('A6a ürün formu inceleme görüntüleri', () => {
     await shoot(page, 'ekle-eksikler')
   })
 
+  test('düzenleme: platform bazında fiyat kartı (kanal bölümleri)', async ({ page }) => {
+    const channelProduct = buildProduct({
+      ...editProduct,
+      _id: 'product-a6a-channels',
+      variants: [{ ...editProduct.variants[0], tempId: 'single-a6a-ch', prices: { salePrice: 249.9, marketPrice: 299.9, isPlatformBasedPrice: true }, platforms: { trendyol: { attributes: {}, prices: { salePrice: 249.9, marketPrice: 299.9 } } } }],
+    })
+    await installApiMocks(page, {
+      MenuService: menu,
+      CategoryService: categoriesDoluFixture,
+      BrandService: brandsDoluFixture,
+      ChoiceService: choicesDoluFixture,
+      'ProductService/retrieveProduct': { product: channelProduct },
+      getImages: { images: [] },
+    })
+    await gotoAuthed(page)
+    await openScreen(page, 'ProductListView')
+    await page.locator('.productListView tbody tr').first().locator('button[aria-label="Ürünü düzenle"]').click()
+    const root = page.locator(`.productUpdateView${channelProduct._id}`)
+    await expect(root.getByText('Tekil Ürün Bilgisi')).toBeVisible({ timeout: 20_000 })
+    await root.getByText('Tekil Ürün Bilgisi', { exact: true }).click()
+    await root.getByRole('button', { name: /Platform fiyatlarını düzenle/ }).click()
+    await expect(page.locator('.v-overlay--active').filter({ hasText: 'Platform Bazında Varyant Fiyatları' }).first()).toBeVisible()
+    await settle(page, 600)
+    await shoot(page, 'kanal-fiyatlari')
+  })
+
   test('düzenleme: ürün tanımı adımı', async ({ page }) => {
     await mocks(page)
     await gotoAuthed(page)

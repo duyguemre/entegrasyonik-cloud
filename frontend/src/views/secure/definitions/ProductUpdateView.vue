@@ -1,9 +1,5 @@
 <template>
-  <div class="pdv-root" :class="[dialogAttach.substring(1)]">
-    <!-- ek-pattern-exception: EkWizardTemplate — bu ekran çok adımlı bir sihirbaz değil,
-         kendi adım/gezinme+Güncelle şeridini taşıyan mevcut bir `v-stepper`dir (ADR-0015
-         Karar 6, B5-1); yapısal göç ayrı ve daha riskli bir iş olduğu için bu turda
-         yalnızca EkPageHeader eklenip mevcut stepper token'larla yenilendi. -->
+  <div class="pdv-root" :class="[dialogAttach.substring(1)]" ref="rootRef">
     <EkPageHeader
       section="Katalog"
       :title="$t('definitions.product.update.title')"
@@ -26,41 +22,14 @@
     <v-form @keydown.enter.prevent @submit.prevent ref="productInfoFormRef" v-model="isProductInfoFormValid"
       v-if="initialized">
 
-      <div class="mt-2">
-        <v-stepper bg-color="transparent"
-          class="custom-stepper ml-1 mr-0 flex-grow-1 productDefinition-stepper" elevation="0" v-model="stepper">
-          <v-stepper-header>
-            <v-stepper-item @click="stepper = 0" title="Kategori Seçimi" value="1" :complete="stepper > 0" editable
-              color="primary">
-            </v-stepper-item>
-            <v-divider class="mr-1 ml-1" color="border-default" opacity="1"></v-divider>
-            <v-stepper-item @click="stepper = 1" title="Ürün Tanımı" value="2" :complete="stepper > 1"
-              :editable="productInfoForm.category != undefined" color="primary"></v-stepper-item>
-            <v-divider class="mr-1 ml-1" color="border-default" opacity="1"></v-divider>
-            <v-stepper-item @click="stepper = 2; checkSingleVariant()" value="3" :complete="stepper > 2"
-              :editable="isVariantInfoEditable()" color="primary">
-              <template v-slot:title>
-                <span v-if="productInfoForm.hasVariant">Varyant Bilgileri</span>
-                <span v-else>Tekil Ürün Bilgisi</span>
-              </template>
-            </v-stepper-item>
-            <v-divider class="mr-2 ml-1" color="border-default" opacity="1"></v-divider>
-            <v-stepper-item @click="stepper = 3" title="Detay Bilgiler" value="4" :complete="stepper > 3"
-              :editable="productInfoForm.title?.length > 2" color="primary"></v-stepper-item>
-            <v-divider class="mr-1 ml-1" color="border-default" opacity="1"></v-divider>
-            <v-btn-group elevation="0" class="ma-0 mr-4 pdv-save-group" density="compact">
-              <v-btn class="fill-height pdv-save-btn" color="primary" @click="updateProduct" :disabled="isUpdateDisabled()">
-                <span class="">
-                  Güncelle
-                </span></v-btn>
-            </v-btn-group>
-          </v-stepper-header>
-        </v-stepper>
+      <div class="pdv-flow">
+        <ProductFormWizardBar class="pdv-wizard" :form="productInfoForm" :current="stepper" save-label="Güncelle"
+          :saving="isSaving" :category-title="categoriesStore.getCategoryTitle(productInfoForm.category)"
+          :brand-title="brandsStore.getBrandTitle(productInfoForm.brand)" @navigate="onNavigate" @save="updateProduct" />
 
         <div class="pdv-spacer"></div>
 
-
-        <div v-if="stepper == 0" class="pdv-category-step">
+        <div v-if="stepper == 0" class="pdv-category-step" data-pf-field="category">
           <v-form ref="formStep0Ref" @submit.stop>
             <CategorySelectBoxLevelComponent v-model="productInfoForm.category" />
           </v-form>
@@ -77,29 +46,31 @@
         </div>
 
 
-        <temnplate v-if="stepper == 2">
+        <div v-if="stepper == 2" class="pdv-step-variants">
           <v-form ref="formStep2Ref" @submit.stop>
-            <temnplate v-if="productInfoForm.hasVariant">
+            <template v-if="productInfoForm.hasVariant">
               <ProductVariantsComponent v-model="isVariantsDialog1" :productInfoForm="productInfoForm"
                 class="pdv-variants" :class="{ 'pdv-variants--dim': !isVariantsDialog1 }" key="ProductVariantsComponent"
                 @close="isVariantsDialog1 = false" v-if="isVariantsDialog1 == true" @refresh-images="refreshImages"
                 :dialogAttach="dialogAttach" @refresh-variants="refreshVariants" />
-            </temnplate>
-            <temnplate v-else>
+            </template>
+            <template v-else>
 
               <ProductSingleVariantComponent v-model="isVariantsDialog1" :productInfoForm="productInfoForm"
                 :single-variant="productInfoForm.variants[0]" class="pdv-variants" :class="{ 'pdv-variants--dim': !isVariantsDialog1 }" key="ProductVariantsComponent"
                 @close="isVariantsDialog1 = false" v-if="isVariantsDialog1 == true" @refresh-images="refreshImages"
                 :dialogAttach="dialogAttach" @refresh-variants="refreshVariants" />
-            </temnplate>
+            </template>
           </v-form>
-        </temnplate>
+        </div>
 
         <div v-if="stepper == 3" class="pdv-step">
-          <v-form ref="formStep0Ref" @submit.stop>
+          <v-form ref="formStep3Ref" @submit.stop>
             <ProductDetailsComponent :productInfoForm="productInfoForm" />
           </v-form>
         </div>
+
+        <ProductFormStepFooter :form="productInfoForm" :current="stepper" @navigate="onNavigate" />
       </div>
 
     </v-form>
@@ -117,6 +88,10 @@ import { useI18n } from 'vue-i18n';
 import { useDisplay } from 'vuetify'
 
 import EkPageHeader from '@/components/ds/EkPageHeader.vue'
+import ProductFormWizardBar from '@/components/productDefinitions/crud/ProductFormWizardBar.vue'
+import ProductFormStepFooter from '@/components/productDefinitions/crud/ProductFormStepFooter.vue'
+import { focusProductField } from '@/composables/productFormFocus'
+import type { StepIndex } from '@/composables/useProductFormProgress'
 import EkSkeleton from '@/components/ds/EkSkeleton.vue'
 import ProductCompetitivePricesComponent from '@/components/productDefinitions/crud/ProductCompetitivePricesComponent.vue'
 import ProductVariantsComponent from '@/components/productDefinitions/variants/ProductVariantsComponent.vue'
@@ -148,6 +123,7 @@ const stepper = ref(0)
 const formStep0Ref: any = ref(null)
 const formStep1Ref: any = ref(null)
 const formStep2Ref: any = ref(null)
+const formStep3Ref: any = ref(null)
 
 const { t } = useI18n()
 const { name } = useDisplay()
@@ -200,26 +176,15 @@ const checkSingleVariant = () => {
   }
 }
 
-const isVariantInfoEditable = () => {
-  if (productInfoForm.value.title?.length > 3 && productInfoForm.value.hasVariant == false)
-    return true
-  else if (productInfoForm.value.title?.length > 3 && productInfoForm.value.maincode)
-    return true
-  return false
-}
+const rootRef = ref<HTMLElement | null>(null)
+const isSaving = ref(false)
 
-const isUpdateDisabled = () => {
-  if (productInfoForm.value.category && productInfoForm.value.brand) {
-    if (productInfoForm.value.variants?.length > 0) {
-      const unFinishedVariant = productInfoForm.value.variants.find((variant: any) => !variant.barcode || !variant.stockcode)
-      if (!unFinishedVariant) {
-        return false
-      }
-    }
-  }
-  return true
+// Sihirbaz şeridi/altbilgi/eksikler paneli ortak gezinti noktası: adım değişir, isteniyorsa alana odaklanılır.
+const onNavigate = async ({ step, field }: { step: StepIndex; field?: string }) => {
+  if (step === 2) checkSingleVariant()
+  stepper.value = step
+  await focusProductField(rootRef.value, field)
 }
-
 
 
 const getCombinations = (data: any): any[] => {
@@ -370,6 +335,8 @@ const checkVariantAttributes = async () => {
 
 
 const updateProduct = async () => {
+  if (isSaving.value) return
+  isSaving.value = true
   /*   await productInfoFormRef.value?.validate()
     if (isProductInfoFormValid.value == false) return
    */
@@ -379,8 +346,13 @@ const updateProduct = async () => {
    */
   let guid = loadingComponentRef.value.info(t('loading.info.updateProduct'))
   checkVariantAttributes()
-  const response = await restApi.post("ProductService/updateProduct", { productInfo: productInfoForm.value })
-  loadingComponentRef.value.remove(guid)
+  let response: any
+  try {
+    response = await restApi.post("ProductService/updateProduct", { productInfo: productInfoForm.value })
+  } finally {
+    loadingComponentRef.value.remove(guid)
+    isSaving.value = false
+  }
   if (response && response.product && response.product._id) {
     productInfoForm.value = response.product
     snackbarStore.addSnackbar({
@@ -579,29 +551,6 @@ const headers = [
   overflow-y: auto;
 }
 
-.productDefinition-stepper {
-  border: none !important;
-}
-
-.productDefinition-stepper .v-stepper-header {
-  box-shadow: none;
-  height: 40px !important;
-}
-
-.productDefinition-stepper .pdv-save-group {
-  height: 40px;
-  border: 0;
-  min-width: 113px !important;
-  margin-top: 0;
-}
-
-.productDefinition-stepper .pdv-save-btn {
-  height: 40px;
-  min-width: 0;
-  padding: 0;
-  width: 100%;
-}
-
 .pdv-spacer {
   height: var(--ek-space-8);
 }
@@ -634,8 +583,19 @@ const headers = [
 }
 
 .pdv-category-step,
-.pdv-step {
+.pdv-step,
+.pdv-wizard {
   max-width: 1200px;
   margin: 0 auto;
+}
+
+/* Başlık açıklaması ile adım şeridi arasında nefes payı. */
+.pdv-flow {
+  margin-top: var(--ek-space-4);
+}
+
+/* Varyant adımı sarmalayıcısı normal akışta blok kapsayıcıdır; konum/yükseklik dayatılmaz (içindeki bileşen yönetir). */
+.pdv-step-variants {
+  display: block;
 }
 </style>

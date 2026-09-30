@@ -13,7 +13,7 @@
 <template>
   <div class="pif-layout">
     <div class="pif-gallery">
-      <button type="button" class="pif-gallery__tile" :disabled="galleryDisabled" @click="emit('openGallery')">
+      <button type="button" class="pif-gallery__tile" data-pf-field="gallery" :disabled="galleryDisabled" @click="emit('openGallery')">
         <span v-if="!productInfoForm.images || !productInfoForm.images[0]" class="pif-gallery__empty">
           <v-icon icon="mdi-image-outline" size="96" aria-hidden="true" />
         </span>
@@ -34,16 +34,19 @@
           <v-radio :value="false" :label="$t('productDefinitions.product.define.withoutVariant')" />
           <v-radio :value="true" :label="$t('productDefinitions.product.define.withVariant')" />
         </v-radio-group>
-        <v-text-field v-if="productInfoForm.hasVariant" clearable maxlength="32" type="tel" counter
+        <v-text-field v-if="productInfoForm.hasVariant" clearable maxlength="32" counter data-pf-field="maincode"
           :rules="formRules.stockcodeRules" v-model="productInfoForm.maincode"
           :label="`${$t('productDefinitions.product.define.maincode')} *`"
           :hint="$t('productDefinitions.product.define.maincodeDesc')" persistent-hint />
       </EkFormSection>
 
-      <EkFormSection title="Temel bilgiler" icon="mdi-text-box-outline">
-        <BrandSelectBoxComponent class="ek-span-full" v-model="productInfoForm.brand" :mandatory="true" />
-        <v-text-field class="ek-span-full" clearable :rules="formRules.titleRules" maxlength="160" type="tel" counter
-          v-model="productInfoForm.title" :label="`${$t('productDefinitions.product.define.productTitle')} *`"
+      <EkFormSection title="Temel bilgiler" icon="mdi-text-box-outline"
+        description="Marka, listenizdeki ana marka (yoksa ilk marka) olarak önceden seçilir; ürününüz başka bir markaya aitse değiştirin.">
+        <div class="ek-span-full" data-pf-field="brand">
+          <BrandSelectBoxComponent v-model="productInfoForm.brand" :mandatory="true" />
+        </div>
+        <v-text-field class="ek-span-full" clearable :rules="formRules.titleRules" maxlength="160" counter
+          data-pf-field="title" v-model="productInfoForm.title" :label="`${$t('productDefinitions.product.define.productTitle')} *`"
           :hint="$t('productDefinitions.product.define.productTitleDesc')" persistent-hint />
       </EkFormSection>
 
