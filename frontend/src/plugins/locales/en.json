@@ -378,18 +378,18 @@
     "canceledStopped": "The subscription period ended: the account is read-only and stock sync stopped. Choose a plan to continue.",
     "expired": "Your subscription expired: stock sync and editing are off. Choose a plan to continue.",
     "compact": {
-      "trialEndsSoon": "Trial ends in {days} days",
-      "trialEndsToday": "Trial ends today",
-      "trialEnded": "Trial ended",
+      "trialEndsSoon": "Trial ending: {days} days left ({date})",
+      "trialEndsToday": "Trial ends today ({date})",
+      "trialEnded": "Trial ended ({date})",
       "pastDueGrace": "Payment due · last day {date}",
       "pastDue": "Payment due",
-      "pastDueStopped": "Stock sync stopped",
-      "suspended": "Stock sync stopped",
+      "pastDueStopped": "Payment failed · stock sync stopped",
+      "suspended": "Suspended · stock sync stopped",
       "canceledUntil": "Canceled · available until {date}",
-      "canceled": "Canceled",
+      "canceled": "Canceled · read-only at period end",
       "canceledEnded": "Read-only · stock sync stopped",
       "canceledStopped": "Read-only · stock sync stopped",
-      "expired": "Subscription expired"
+      "expired": "Subscription expired · stock sync off"
     }
   }
 }

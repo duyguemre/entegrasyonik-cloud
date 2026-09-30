@@ -170,8 +170,10 @@ const toggleLabel = computed(() => t(props.minimized ? 'subscriptionBanner.expan
   color: var(--ek-sub-ink);
 }
 
-/* Tek satır: küçültülmüş deneme bandı / odak modu. Metin taşarsa … ile kesilir (tam metin ekranda). */
+/* Tek satır: küçültülmüş deneme bandı / odak modu. Tek satır metni kendi başına anlamlıdır ("Deneme bitiyor: …");
+   durum başlığı görsel tekrar olmasın diye yalnız ekran okuyucuya kalır. Taşarsa … ile kesilir. */
 .ek-sub-banner.is-compact {
+  position: relative;
   min-height: var(--ek-control-h-sm);
   padding-top: 0;
   padding-bottom: 0;
@@ -186,30 +188,52 @@ const toggleLabel = computed(() => t(props.minimized ? 'subscriptionBanner.expan
   text-overflow: ellipsis;
 }
 
+.ek-sub-banner.is-compact .ek-sub-banner__title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.ek-sub-banner.is-compact .ek-sub-banner__sep {
+  display: none;
+}
+
 .ek-sub-banner.is-compact .ek-sub-banner__manage {
   color: var(--ek-sub-ink);
 }
 
-/* Dar ekran: ikon + metin üstte (sarar), eylemler metnin altında sağa yaslı değil — metinle aynı hizada
-   akar; düğme kısa etiket ("Yönet"). Tek satırlık kip dar ekranda da tek satır kalır. */
+/* Dar ekran (iterasyon 2): başlık satırının sağına "Yönet" düğmesi oturur, metin altta tam genişlikte akar
+   (ayrı düğme satırı yok → bant bir satır kısa). */
 @media (max-width: 767px) {
   .ek-sub-banner:not(.is-compact) {
-    flex-wrap: wrap;
+    position: relative;
     align-items: flex-start;
-    row-gap: var(--ek-space-2);
     padding-top: var(--ek-space-2);
     padding-bottom: var(--ek-space-2);
   }
 
-  .ek-sub-banner:not(.is-compact) .ek-sub-banner__text {
-    flex-basis: calc(100% - var(--ek-space-10));
+  .ek-sub-banner:not(.is-compact) .ek-sub-banner__title {
+    display: flex;
+    align-items: center;
+    min-height: var(--ek-control-h-sm);
+    padding-right: calc(var(--ek-space-16) + var(--ek-space-4));
+  }
+
+  .ek-sub-banner:not(.is-compact) .ek-sub-banner__tile {
+    margin-top: var(--ek-space-1);
   }
 
   .ek-sub-banner:not(.is-compact) .ek-sub-banner__actions {
-    margin-left: calc(var(--ek-space-3) + var(--ek-space-8) - var(--ek-space-1));
+    position: absolute;
+    top: var(--ek-space-2);
+    right: var(--ek-space-3);
   }
 
-  .ek-sub-banner__manage-long {
+  .ek-sub-banner__manage-long,
+  .ek-sub-banner__sep {
     display: none;
   }
 
@@ -217,12 +241,5 @@ const toggleLabel = computed(() => t(props.minimized ? 'subscriptionBanner.expan
     display: inline;
   }
 
-  .ek-sub-banner__sep {
-    display: none;
   }
-
-  .ek-sub-banner:not(.is-compact) .ek-sub-banner__title {
-    display: block;
-  }
-}
 </style>
