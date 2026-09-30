@@ -555,3 +555,34 @@ bölümü; ortak ds bileşenlerine dokunulmadı, token değişikliği yok. Önce
 | Çok varyant | > 8: kompakt ızgara + "Tümünü gör" (iç kaydırma, yapışık başlık) |
 | Dar kap | < 600px kart (A6b) |
 | Mantık | `variants/variantListModel.ts` (saf, `tests/variant-list-model.test.ts`) |
+
+## 19. B7 — Kategoriler / Markalar sayfaları (`cloud/fe-b7`)
+
+Kullanıcı isteği: iki sayfa daha premium, kullanıcı dostu, sakin ("hoplayıp zıplamayan") ve siteyle uyumlu; beğenilmezse geri alınacak →
+değişiklik yalnız `CategoryListView` / `BrandListView` + yalnız onların kullandığı `src/components/catalogPages/` (ortak bileşen değişmedi).
+Ayrıntı, alternatifler, iterasyonlar ve geri alma listesi: `docs/b7-review/README.md`.
+
+    [▣ Katalog] / Kategoriler (i) ........................ [+ Kategori ekle] [↻]
+    ┌ Kategori ağacı · 46 kategori · 32 yaprak ─ [⇕][⇳] ┐ ┌ özet / seçili kategori ───────────────┐
+    │ [🔍 ara]            [Tümü | Eşlemesi eksik 26]      │ │ Giyim › Kadın › Üst Giyim        ×  │
+    │ ▾ 📂 Giyim 3                        🔗̸ 12 eksik    │ │ 🏷 Tişört — Yaprak kategori          │
+    │ │ ▸ 📁 Kadın 3                       🔗̸ 5 eksik     │ │ ● Trendyol ✓ Eşli · ● Hepsiburada …  │
+    │   🏷 Kozmetik                        ●●● 3/3   ⋯   │ ├ (mevcut) CategorySyncComponent ─────┤
+    └────────────────────────────────────────────────────┘ └──────────────────────────────────────┘
+
+| Karar | Gerekçe |
+|---|---|
+| Başlık satırı `EkPageHeader` (bölüm Katalog, tek birincil eylem, `EkRefreshButton`) | uygulama geneliyle aynı sıra (A6b Standart 9, A7) |
+| Ana-detay `CatalogSplit`: kap ≥ 920px iki bölme (kendi içinde kayar), altında tek bölme + "← Tüm …" | 390'da detay sayfanın altında kaybolmaz; geri dönüşte odak seçili öğeye |
+| Kategori: düzleştirilmiş ARIA ağacı, 40px satır, 20px girinti + rehber çizgisi, seçim satırın kendisi (⚙ yok) | derin seviyede ad alanı ezilmez; tek sekme durağı; > 300 satırda `v-virtual-scroll` |
+| Eşleme göstergesi: platform noktası (dolu/boş halka) + "2/3"; grupta link-off ikonu + "n eksik" | veri `AttributeMappingService` kategori düzeyi kayıtları / `brand.platforms.<kod>.id`; renk tek başına anlam taşımaz |
+| Arama: aksan katlama (Türkçe harf yazılmadıysa), `<mark>`, atalar açılır; "Eşlemesi eksik" süzgeci | derin ağaçta bulma + iş listesi |
+| Satır içi ekle/yeniden adlandır (F2), ⋯ menüsü (EkContextMenu), Alt+↑/↓ sıra, sürükle-bırak | mevcut uç noktalar aynı gövdeyle; kural eski formlarla aynı (2–160) |
+| Marka: ızgara/liste (`listbox`), nötr baş harf avatarı (logo alanı yok), kısa eşleme özeti | ürün sayısı ve logo backend yanıtında yok → uydurulmadı |
+| Detayda mevcut `CategorySyncComponent` / `BrandSyncComponent` aynen | kaydet/sil standart düğmeleri + A6a hata desenleri korunur |
+| Hareket: opaklık + `distance-sm`, `--ek-duration/easing` token'ları; ölçek/zıplama yok | A9 envanteri ile aynı dil; reduced-motion 0 |
+
+Yalnız semantik token (ham renk yok → dark hazır). **Testler:** `tests/b7-catalog-pages.test.ts` (model + statik sözleşme),
+`e2e/specs/b7-catalog-pages.spec.ts` (klavye, arama, süzgeç, istek gövdeleri, hata/tekrar dene, büyük ağaç, axe 0, 390 yatay kaydırma yok).
+**Görseller:** `docs/b7-review/{before,after}/` (1440 + 390, `-yakin` 2x). Görsel tabanlar `category-definitions` / `brand-definitions`
+Windows'ta bilinçli yeniden tabanlanmalı.
