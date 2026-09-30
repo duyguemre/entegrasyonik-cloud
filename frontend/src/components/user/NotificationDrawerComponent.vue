@@ -40,7 +40,7 @@
 
         <v-btn icon="mdi-trash-can-outline" variant="text" density="comfortable" aria-label="Tümünü sil"
           @click="notificationStore.deleteNotification()" />
-        <v-tooltip :eager="false" activator="parent" location="bottom">Tümünü Sil</v-tooltip>
+        <v-tooltip :eager="false" activator="parent" location="bottom">Tümünü sil</v-tooltip>
 
         <v-btn icon="mdi-close" variant="text" density="comfortable" class="ml-1" aria-label="Kapat"
           @click="notificationStore.drawer = false" />
@@ -63,7 +63,7 @@
               <div class="d-flex justify-space-between align-start mb-1">
                 <div class="d-flex flex-column">
                   <span class="ek-notification-card__title">{{ item.title }}</span>
-                  <EkStatusChip v-if="item.mode" class="mt-1" tone="neutral" :label="getModeInfo(item.mode).label" />
+                  <EkStatusChip v-if="item.mode" class="mt-1 align-self-start" tone="neutral" :label="getModeInfo(item.mode).label" />
                 </div>
                 <span class="ek-notification-card__time ek-num">{{ formatTime(item.createdAt) }}</span>
               </div>
@@ -76,7 +76,7 @@
               <div v-if="item.type === 'BATCH_PROCESS' && item.metaData" class="ek-notification-summary pa-3">
                 <div class="d-flex align-center justify-space-between mb-2">
                   <span class="ek-notification-summary__title">İşlem Özeti</span>
-                  <span class="ek-notification-summary__badge">{{ item.metaData.integrationCode }}</span>
+                  <EkChannelDot class="ek-notification-summary__channel" :code="item.metaData.integrationCode" />
                 </div>
 
                 <div class="ek-notification-summary__list">
@@ -103,7 +103,7 @@
               <div v-if="item.type === 'IMPORT_READY' && item.metaData" class="ek-notification-summary pa-3">
                 <div class="d-flex align-center justify-space-between mb-2">
                   <span class="ek-notification-summary__title">İşlem Özeti</span>
-                  <span class="ek-notification-summary__badge">{{ item.metaData.integrationCode }}</span>
+                  <EkChannelDot class="ek-notification-summary__channel" :code="item.metaData.integrationCode" />
                 </div>
 
                 <div class="ek-notification-summary__list">
@@ -173,6 +173,7 @@ import { useNotificationDrawerStore } from '@/stores/notificationDrawer'
 import { PLATFORM_PROCESS_LABELS, PLATFORM_PROCESS_COLORS, PLATFORM_PROCESS } from '@/types/PlatformProcess';
 import EkEmptyState from '@/components/ds/EkEmptyState.vue'
 import EkStatusChip from '@/components/ds/EkStatusChip.vue'
+import EkChannelDot from '@/components/ds/EkChannelDot.vue'
 import EkButton from '@/components/ds/EkButton.vue'
 import { formatRelative } from '@/composables/format'
 import { internalActionPath } from '@/types/NotificationTypes'
@@ -337,11 +338,8 @@ const formatTime = (dateStr: string) => (dateStr ? formatRelative(dateStr) : '')
   letter-spacing: 0.04em;
 }
 
-.ek-notification-summary__badge {
-  font-size: var(--ek-font-size-xs);
-  font-weight: var(--ek-font-weight-semibold);
-  color: var(--ek-color-content-muted);
-  text-transform: uppercase;
+.ek-notification-summary__channel {
+  font-size: var(--ek-type-caption-size);
 }
 
 .ek-notification-summary__list {

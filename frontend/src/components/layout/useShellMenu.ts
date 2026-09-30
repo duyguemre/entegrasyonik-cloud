@@ -12,7 +12,7 @@ import { computed, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useMenuStore } from '@/stores/site/menu'
 import { useWorkspaceStore } from '@/stores/workspace'
-import { screenKeyForLink } from '@/navigation/screens'
+import { resolveScreenByKey, screenKeyForLink } from '@/navigation/screens'
 import { SECTIONS } from '@/navigation/sections'
 import { firstMessage, humanizeKey, resolveMenuTitle } from '@/navigation/menuTitle'
 import type { EkSideSection, EkSideItem } from '@/components/ds/EkSidebarNav.vue'
@@ -79,7 +79,7 @@ export function useShellMenu() {
             }),
           })
         } else {
-          items.push({ key, label: title, icon: link.icon })
+          items.push({ key, label: title, icon: link.icon ?? resolveScreenByKey(key)?.icon })
           if (link.code !== 'ExitView') entries.push({ key, link, title, icon: link.icon, sectionLabel: label })
         }
       }

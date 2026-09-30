@@ -329,6 +329,12 @@ defineExpose({
   min-width: 140px;
 }
 
+@media (max-width: 767px) {
+  .complianceView__filter {
+    flex: 1 1 calc(50% - var(--ek-space-2));
+  }
+}
+
 .complianceView {
   min-width: 0;
   /* Aşama 3: diğer ekranlarla aynı sayfa kenar boşluğu (içerik sol menüye yapışıyordu). */

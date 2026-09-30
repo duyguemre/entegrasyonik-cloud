@@ -95,7 +95,8 @@ const revenueTrend = computed(() => trendOf(props.data?.trend.revenueChange, yes
 
 @media (max-width: 599px) {
   .dash-kpis {
-    grid-template-columns: minmax(0, 1fr);
+    /* Aşama 4: 2 sütun (kart dar ekranda sütun düzenine geçer). */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--ek-space-3);
   }
 }

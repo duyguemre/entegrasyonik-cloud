@@ -53,7 +53,7 @@
               <div class="panel-head__left">
                 <span class="panel-title">Gönderim trafiği (tüm mağazalar)</span>
                 <v-btn icon="mdi-information-outline" size="28" variant="text" color="primary"
-                  @click="openExportDetail()" title="Detaylı Analiz" aria-label="Gönderim trafiği detaylı analizini aç"></v-btn>
+                  @click="openExportDetail()" title="Ayrıntılı analiz" aria-label="Gönderim trafiği detaylı analizini aç"></v-btn>
               </div>
               <v-icon color="primary" size="24" aria-hidden="true">mdi-upload-network-outline</v-icon>
             </div>
@@ -331,7 +331,7 @@
       </ActionDialogComponent>
 
       <!-- Export detay analizi -->
-      <ActionDialogComponent v-model="showExportDialog" title="Export Trafiği Detaylı Analiz"
+      <ActionDialogComponent v-model="showExportDialog" title="Gönderim trafiği — ayrıntılı analiz"
         icon="mdi-upload-network-outline" color="primary" maxWidth="1200px" :showFooter="false"
         attach=".adminSystemManagementView" @close="closeExportDetail">
         <div class="dialog-body">

@@ -592,6 +592,15 @@ function toggleSort(key: string) {
     background: var(--ek-color-surface-muted);
   }
 
+  /* Sıralanabilir kolon ve seçim yoksa sıralama çubuğu boş kalırdı (gri şerit) — görsel olarak gizli. */
+  .ek-grid__table > thead:not(:has(.is-sortable, .ek-grid__th--select)) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
   .ek-grid__th {
     position: static;
     height: auto;

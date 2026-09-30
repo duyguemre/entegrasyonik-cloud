@@ -11,7 +11,7 @@ import { auditLogsFixture, auditUsersFixture, integrationHealthFixture } from '.
 import { LIST_FIXTURE as COMPLIANCE_LIST, SUMMARY_FIXTURE as COMPLIANCE_SUMMARY } from './complianceConsole'
 import { stockOverviewDoluFixture } from './stockHealth'
 import { installApiMocks } from './mockApi'
-import { waitForWorkplaceReady } from './nav'
+import { MENU_SCREENS, waitForWorkplaceReady } from './nav'
 
 /** Ekran anahtarı → menüdeki `title` (i18n `menu.*` karşılığı). */
 const TITLES: Record<string, string> = {
@@ -63,7 +63,8 @@ const PARENT_TITLE: Record<string, string> = { productDefinitions: 'productDefin
 const PARENT_ICON: Record<string, string> = { productDefinitions: 'mdi-tag-outline', integrations: 'mdi-connection', adminPanel: 'mdi-shield-account-outline', user: 'mdi-account-circle-outline' }
 
 function iconFor(key: string): string {
-  return SCREENS.find((s) => s.key === key)?.icon ?? 'mdi-circle-small'
+  const code = key.includes('/') ? key.split('/')[1] : key
+  return SCREENS.find((s) => s.key === key)?.icon ?? MENU_SCREENS[code]?.icon ?? 'mdi-circle-small'
 }
 
 export function reviewMenuFixture() {

@@ -127,7 +127,7 @@ test.describe('P2 — Admin / Destek Yönetimi (AdminTicketListView)', () => {
     const dialog = page.getByRole('dialog').filter({ hasText: 'Yeni Destek Talebi Başlat' })
     await expect(dialog).toBeVisible()
 
-    await dialog.getByRole('button', { name: /TALEBİ OLUŞTUR/ }).click()
+    await dialog.getByRole('button', { name: 'Talebi oluştur' }).click()
     await expect(page.getByText('Lütfen tüm alanları doldurunuz.')).toBeVisible()
     expect(createCalls).toBe(0)
   })

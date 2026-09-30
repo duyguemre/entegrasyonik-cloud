@@ -852,7 +852,8 @@ defineExpose({ initialize, activate, destroy: () => {} })
   }
 
   .sh-kpis {
-    grid-template-columns: minmax(0, 1fr);
+    /* Aşama 4: 2 sütun (EkMetricCard dar ekranda sütun düzeni). */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--ek-space-3);
   }
 }

@@ -55,29 +55,26 @@ a:link {
 }
 
 .entegrasyonik-application .v-input input {
-  font-size: 14px !important;
+  font-size: var(--ek-type-body-size) !important;
 }
 
 .entegrasyonik-application .v-field {
-  font-size: 14px !important;
+  font-size: var(--ek-type-body-size) !important;
 }
 
 .entegrasyonik-application .v-field-label {
-  font-size: 14px !important;
+  font-size: var(--ek-type-body-size) !important;
 }
 
 .entegrasyonik-application .v-label {
-  font-size: 14px !important;
+  font-size: var(--ek-type-body-size) !important;
 }
 
+/* Aşama 4: yüzen etiket DS ölçeğinde (10px ölçek dışıydı) — `micro` boyutu, büyük harf değil. */
 .entegrasyonik-application .v-field-label--floating {
-  font-size: 10px !important;
+  font-size: var(--ek-type-micro-size) !important;
 }
 
-.entegrasyonik-application .v-btn {
-  font-size: 12px !important;
-  letter-spacing: normal !important;
-}
 
 /* Ürün görseli kartı: üzerine gelince kenarlık / eylem düğmeleri */
 .hoveredContainer .hovered {

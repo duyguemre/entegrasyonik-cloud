@@ -44,8 +44,8 @@
           @keyup.enter="emit('search-submit')"
           @click:clear="emit('search-submit')"
         />
-        <slot name="header-actions" />
-        <EkButton v-if="refreshable" tone="ghost" icon="mdi-refresh" icon-only :aria-label="refreshLabel" :loading="loading" @click="emit('refresh')" />
+        <span v-if="$slots['header-actions']" class="ek-list-screen__extra"><slot name="header-actions" /></span>
+        <EkButton v-if="refreshable" class="ek-list-screen__refresh" tone="ghost" icon="mdi-refresh" icon-only :aria-label="refreshLabel" :loading="loading" @click="emit('refresh')" />
       </div>
     </header>
 
@@ -116,7 +116,7 @@
         </template>
       </EkDataGrid>
 
-      <template v-if="total !== undefined" #pager>
+      <template v-if="total !== undefined && !error" #pager>
         <EkPagerBar
           :page="page"
           :page-size="pageSize"
@@ -330,6 +330,13 @@ function setCollapsed(v: boolean) {
   max-width: 100%;
 }
 
+.ek-list-screen__extra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ek-space-2);
+}
+
 .ek-list-screen__frame {
   flex: 1;
   min-height: 0;
@@ -366,6 +373,11 @@ function setCollapsed(v: boolean) {
 
   .ek-list-screen__head-actions {
     width: 100%;
+  }
+
+  /* Aşama 4: arama + yenile ilk satırda; metinli eylemler sığmazsa alt satıra (yenile tek başına kalmaz). */
+  .ek-list-screen__extra {
+    order: 2;
   }
 
   /* Aşama 3: mobilde arama geniş tabanlı (220px); yalnız "yenile" varsa aynı satırda kalır, metinli birincil

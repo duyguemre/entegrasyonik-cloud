@@ -117,6 +117,12 @@
   font-size: var(--ek-type-micro-size);
 }
 
+/* İkon düğmesi: v-icon glifi düğmenin yazı boyutunun 1.5 katıdır — taban `caption` (12px) → 18px glif (eski site.css
+   kuralının verdiği ölçü korunur). */
+.v-btn.v-btn--icon:not(.v-tab) {
+  font-size: var(--ek-type-caption-size);
+}
+
 /* ---- Aşama 3: ekran içi sekmeler (v-tabs) — cümle düzeni, `tab` tipografi rolü ----
  * Kabuk sekme şeridi artık `EkWorkspaceTabs` (v-tab DEĞİL); `'ANASAYFA'` iddiası metin
  * karşılaştırmasına taşındı (DESIGN_SYSTEM §13). Böylece Vuetify'ın BÜYÜK HARF + geniş aralıklı

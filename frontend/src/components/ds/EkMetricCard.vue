@@ -72,6 +72,15 @@ const trendTone = computed(() => {
   transition: var(--ek-transition-colors);
 }
 
+/* Aşama 4: dar ekranda (2 sütunlu KPI ızgarası) ikon kapsülü etiketin ÜSTÜNDE — değer tam genişlik kullanır. */
+@media (max-width: 599px) {
+  .ek-metric {
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-4);
+  }
+}
+
 .ek-metric--interactive {
   cursor: pointer;
 }
