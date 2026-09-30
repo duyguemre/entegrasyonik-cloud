@@ -37,7 +37,7 @@ describe('_headers dosyası', () => {
   const blocks = parseHeadersFile(text)
 
   it('gidiş-dönüş ayrıştırılır', () => {
-    expect(blocks.map((b) => b.path)).toEqual(['/*', '/_astro/*'])
+    expect(blocks.map((b) => b.path)).toEqual(['/*', '/*.md', '/_astro/*'])
     expect(blocks[0].headers['Content-Security-Policy']).toBe(buildCsp('https://app.example.test'))
     expect(blocks[0].headers['Referrer-Policy']).toBe('strict-origin-when-cross-origin')
     expect(blocks[0].headers['X-Content-Type-Options']).toBe('nosniff')
@@ -45,7 +45,14 @@ describe('_headers dosyası', () => {
   })
 
   it('hash-li varlıklar değişmez önbellek alır', () => {
-    expect(blocks[1].headers['Cache-Control']).toContain('immutable')
+    expect(blocks[2].headers['Cache-Control']).toContain('immutable')
+  })
+
+  it('S19: markdown alternatifleri doğru türle ve arama dizini dışında sunulur', () => {
+    expect(blocks[1].headers['Content-Type']).toBe('text/markdown; charset=utf-8')
+    expect(blocks[1].headers['X-Robots-Tag']).toBe('noindex')
+    expect(pathMatches('/*.md', '/entegrasyonlar/trendyol.md')).toBe(true)
+    expect(pathMatches('/*.md', '/entegrasyonlar/trendyol/')).toBe(false)
   })
 
   it('pathMatches joker karakter', () => {

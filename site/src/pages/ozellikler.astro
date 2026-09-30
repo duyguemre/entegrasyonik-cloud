@@ -14,11 +14,11 @@
  * bir yetenek "Diğer" kümesine düşer, böylece kayıttaki hiçbir yetenek kaybolmaz.
  */
 import BaseLayout from '../layouts/BaseLayout.astro'
+import { crumbsFor } from '../data/seo'
 import Section from '../components/Section.astro'
 import Badge from '../components/Badge.astro'
 import Icon from '../components/home/Icon.astro'
 import PageHero from '../components/pages/PageHero.astro'
-import PageMeta from '../components/pages/PageMeta.astro'
 import HeroActions from '../components/pages/HeroActions.astro'
 import StatPanel from '../components/pages/StatPanel.astro'
 import SectionHead from '../components/pages/SectionHead.astro'
@@ -29,13 +29,9 @@ import CtaBand from '../components/pages/CtaBand.astro'
 import { getPublicCapabilities, type ProductCapabilityStatus, type PublicProductCapability } from '../data/capabilities'
 import { CAPABILITY_LEVEL_LABELS, getPublicIntegrations, type CapabilityLevel } from '../data/integrations'
 import { getFeaturePoints } from '../data/feature-details'
-import { breadcrumbJsonLd } from '../lib/seo'
 import { appUrls } from '../lib/site-config'
 
-const title = 'Özellikler'
-const description =
-  'Eşzamanlı siparişte stok rezervasyonu, tek listede siparişler, iade onayı ve reddi, müşteri sorularını yanıtlama, hakediş takibi: Entegrasyonik özellikleri ve kanal bazında kapsamları.'
-const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Özellikler' }]
+const crumbs = crumbsFor('/ozellikler')
 
 const capabilities = getPublicCapabilities('core')
 const channels = getPublicIntegrations()
@@ -107,13 +103,7 @@ const stats = [
 const LEVEL_STATE: Record<CapabilityLevel, 'yes' | 'limited'> = { supported: 'yes', limited: 'limited' }
 ---
 
-<BaseLayout title={title} description={description}>
-  <PageMeta
-    slot="head"
-    title={title}
-    description={description}
-    jsonLd={[breadcrumbJsonLd([{ label: 'Ana sayfa', path: '/' }, { label: title, path: '/ozellikler' }])]}
-  />
+<BaseLayout>
 
   <PageHero
     title="Özellikler"

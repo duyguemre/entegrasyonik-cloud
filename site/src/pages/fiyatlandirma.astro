@@ -14,26 +14,22 @@
  * ilk sütun sabit kalır. SSS ortak `Accordion`, kapanış ortak `CtaBand` + `HelpBand`.
  */
 import BaseLayout from '../layouts/BaseLayout.astro'
+import { crumbsFor } from '../data/seo'
 import Section from '../components/Section.astro'
 import Button from '../components/Button.astro'
 import Badge from '../components/Badge.astro'
 import Icon from '../components/home/Icon.astro'
 import PageHero from '../components/pages/PageHero.astro'
-import PageMeta from '../components/pages/PageMeta.astro'
 import HeroActions from '../components/pages/HeroActions.astro'
 import SectionHead from '../components/pages/SectionHead.astro'
 import Accordion from '../components/pages/Accordion.astro'
 import HelpBand from '../components/pages/HelpBand.astro'
 import CtaBand from '../components/pages/CtaBand.astro'
 import { appUrls } from '../lib/site-config'
-import { breadcrumbJsonLd } from '../lib/seo'
 import { primaryNav, published } from '../data/navigation'
 import { getPublicPlans, getPlanSourceNotice, getVatNotice, getPublicTrial, getTrialPlanCode } from '../data/plans'
 import { getComparisonRows, getPricingFaq, getPlanPitch, getPlanCommonFeatures } from '../data/pricing'
 
-const title = 'Fiyatlandırma'
-const description =
-  'Entegrasyonik planlarını karşılaştırın: kanal, ürün varyantı ve kullanıcı limitleri, deneme sürümü ve sık sorulan sorular.'
 
 const plans = getPublicPlans()
 const rows = getComparisonRows(plans)
@@ -43,7 +39,7 @@ const trialPlanCode = getTrialPlanCode()
 const proposalNotice = getPlanSourceNotice()
 const vatNotice = getVatNotice()
 const commonFeatures = getPlanCommonFeatures()
-const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Fiyatlandırma' }]
+const crumbs = crumbsFor('/fiyatlandirma')
 
 const isPublished = (href: string) => published(primaryNav).some((i) => i.href === href)
 const contactHref = isPublished('/iletisim') ? '/iletisim' : undefined
@@ -69,13 +65,7 @@ const planFeatureRows = [...new Map(plans.flatMap((p) => p.features.map((f) => [
 const trialDaysLabel = `${fmt(trial.days)} gün`
 ---
 
-<BaseLayout title={title} description={description}>
-  <PageMeta
-    slot="head"
-    title={title}
-    description={description}
-    jsonLd={[breadcrumbJsonLd([{ label: 'Ana sayfa', path: '/' }, { label: title, path: '/fiyatlandirma' }])]}
-  />
+<BaseLayout>
 
   <PageHero
     title="İşinize uygun planı seçin"

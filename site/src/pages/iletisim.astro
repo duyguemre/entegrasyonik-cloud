@@ -11,22 +11,18 @@
  *   Unvan/MERSİS insan kararı bekler — yasal metinlerle aynı `{{…}}` anahtarlarıyla dürüstçe işaretlenir.
  */
 import BaseLayout from '../layouts/BaseLayout.astro'
+import { crumbsFor } from '../data/seo'
 import Section from '../components/Section.astro'
 import Icon from '../components/home/Icon.astro'
 import SectionHead from '../components/pages/SectionHead.astro'
 import PageHero from '../components/pages/PageHero.astro'
-import PageMeta from '../components/pages/PageMeta.astro'
 import EmailActions from '../components/pages/EmailActions.astro'
 import CtaBand from '../components/pages/CtaBand.astro'
 import { contactEmail, mailtoHref } from '../lib/contact'
 import { company, hasValue } from '../data/company'
-import { breadcrumbJsonLd } from '../lib/seo'
 import { appUrls } from '../lib/site-config'
 
-const title = 'İletişim'
-const description =
-  'Entegrasyonik ile iletişime geçin: kurumsal teklif, genel sorular, kanal talepleri ve mevcut müşteri destek talepleri için e-posta.'
-const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'İletişim' }]
+const crumbs = crumbsFor('/iletisim')
 
 type TopicIcon = 'layers' | 'chat' | 'users' | 'plug'
 const topics: Array<{ id: string; label: string; text: string; subject: string; icon: TopicIcon }> = [
@@ -46,13 +42,7 @@ const showAddress = hasValue(company.address)
 const showPhone = hasValue(company.phone)
 ---
 
-<BaseLayout title={title} description={description}>
-  <PageMeta
-    slot="head"
-    title={title}
-    description={description}
-    jsonLd={[breadcrumbJsonLd([{ label: 'Ana sayfa', path: '/' }, { label: title, path: '/iletisim' }])]}
-  />
+<BaseLayout>
 
   <PageHero
     title="İletişim"

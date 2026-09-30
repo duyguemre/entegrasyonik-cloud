@@ -10,23 +10,19 @@
  * KVKK bağlantısı yalnızca ilgili yasal sayfa `published` ise verilir (S5).
  */
 import BaseLayout from '../layouts/BaseLayout.astro'
+import { crumbsFor } from '../data/seo'
 import Section from '../components/Section.astro'
 import Badge from '../components/Badge.astro'
 import Icon from '../components/home/Icon.astro'
 import SectionHead from '../components/pages/SectionHead.astro'
 import HeroActions from '../components/pages/HeroActions.astro'
 import PageHero from '../components/pages/PageHero.astro'
-import PageMeta from '../components/pages/PageMeta.astro'
 import CtaBand from '../components/pages/CtaBand.astro'
 import { getPublicCapabilities, type PublicProductCapability } from '../data/capabilities'
 import { securityPrinciples } from '../data/security-principles'
 import { legalNav, published } from '../data/navigation'
-import { breadcrumbJsonLd } from '../lib/seo'
 
-const title = 'Güvenlik'
-const description =
-  'Entegrasyonik güvence ilkeleri: veri izolasyonu, şifreli saklanan entegrasyon sırları, rol tabanlı erişim ve oturum güvenliği, denetim izi, KVKK kapsamında veri işleme, yedekleme ve süreklilik.'
-const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Güvenlik' }]
+const crumbs = crumbsFor('/guvenlik')
 
 const security = getPublicCapabilities('security')
 const byId = new Map(security.map((c) => [c.id, c]))
@@ -48,13 +44,7 @@ const subscription = legal.find((i) => i.href === '/yasal/abonelik-sozlesmesi')
 const legalCards = [kvkk, privacy, subscription].filter((x): x is NonNullable<typeof x> => !!x)
 ---
 
-<BaseLayout title={title} description={description}>
-  <PageMeta
-    slot="head"
-    title={title}
-    description={description}
-    jsonLd={[breadcrumbJsonLd([{ label: 'Ana sayfa', path: '/' }, { label: title, path: '/guvenlik' }])]}
-  />
+<BaseLayout>
 
   <PageHero
     title="Güvenlik"

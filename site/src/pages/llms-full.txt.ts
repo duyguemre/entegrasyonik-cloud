@@ -10,7 +10,7 @@ import { getPublicCapabilities, getStockReservationStory } from '../data/capabil
 import { getPublicFaq, getSupportCategories } from '../data/faq'
 import { getConnectGuide } from '../data/connect'
 import { getPublicPlans, getPlanSourceNotice, getVatNotice, getPublicTrial } from '../data/plans'
-import { primaryNav, featureNav, legalNav, published } from '../data/navigation'
+import { TAGLINE, UPCOMING_NOTE, canonicalPath, entityDefinition, markdownPath, seoEntries } from '../data/seo'
 
 const base = siteConfig.siteUrl ?? ''
 const url = (path: string) => `${base}${path}`
@@ -28,18 +28,22 @@ export const GET: APIRoute = () => {
   const lines: string[] = []
   lines.push('# Entegrasyonik — kapsamlı özet')
   lines.push('')
-  lines.push(
-    '> Entegrasyonik, pazaryerlerindeki ürün, stok, sipariş ve iade süreçlerinizi tek panelde toplar; stok rezervasyonuyla aşırı satış riskini azaltır.',
-  )
+  lines.push(`> ${TAGLINE}`)
+  lines.push('')
+  lines.push('## Entegrasyonik nedir?')
+  lines.push('')
+  lines.push(entityDefinition(integrations))
   lines.push('')
   lines.push(`Kısa dizin: ${url('/llms.txt')}. Ücretsiz deneme: ${trial.days} gün${trial.cardRequired ? '' : ', kart bilgisi gerekmez'}.`)
   lines.push('')
 
+  // S19: sayfa listesi SEO kaydından (indekslenen her sayfa + kısa açıklama + markdown sürümü).
   lines.push('## Sayfalar')
   lines.push('')
-  lines.push(`- [Ana sayfa](${url('/')})`)
-  for (const p of published(primaryNav)) lines.push(`- [${p.label}](${url(p.href)})`)
-  for (const p of published(featureNav)) lines.push(`- [${p.label}](${url(p.href)})`)
+  for (const e of seoEntries.filter((x) => x.index)) {
+    const note = e.upcoming ? ` (${UPCOMING_NOTE})` : ''
+    lines.push(`- [${e.title}](${url(canonicalPath(e.path))}): ${e.llmsSummary}${note} Markdown: ${url(markdownPath(e.path))}`)
+  }
   lines.push('')
 
   lines.push('## Entegrasyonlar')
@@ -55,7 +59,7 @@ export const GET: APIRoute = () => {
     const guide = getConnectGuide(i.code, i.kind)
     if (guide) {
       lines.push(`- Gerekli bilgiler: ${guide.credentials.join(', ')}`)
-      lines.push(`- Nasıl bağlanır: ${guide.steps.join(' ')}${guide.note ? ` ${guide.note}` : ''} Rehber: ${url(`/entegrasyonlar/${i.code}`)}`)
+      lines.push(`- Nasıl bağlanır: ${guide.steps.join(' ')}${guide.note ? ` ${guide.note}` : ''} Rehber: ${url(canonicalPath(`/entegrasyonlar/${i.code}`))}`)
     }
     lines.push('')
   }
@@ -72,7 +76,7 @@ export const GET: APIRoute = () => {
   const story = getStockReservationStory()
   lines.push('## Stok rezervasyonu: aşırı satış nasıl önlenir')
   lines.push('')
-  lines.push(`Ayrıntı: ${url('/ozellikler/stok-rezervasyonu')}`)
+  lines.push(`Ayrıntı: ${url(canonicalPath('/ozellikler/stok-rezervasyonu'))}`)
   lines.push('')
   lines.push('Sorun:')
   for (const x of story.problems) lines.push(`- **${x.title}**: ${x.text}`)
@@ -114,7 +118,7 @@ export const GET: APIRoute = () => {
 
   lines.push('## Destek merkezi')
   lines.push('')
-  lines.push(`Kategorili destek sayfası: ${url('/destek')}`)
+  lines.push(`Kategorili destek sayfası: ${url(canonicalPath('/destek'))}`)
   lines.push('')
   for (const c of getSupportCategories()) {
     const guides = c.channelGuides ? ' Kanal bağlantı rehberleri her entegrasyonun sayfasındadır.' : ''
@@ -124,7 +128,7 @@ export const GET: APIRoute = () => {
 
   lines.push('## Optional')
   lines.push('')
-  for (const p of published(legalNav)) lines.push(`- [${p.label}](${url(p.href)}): taslak, hukuki incelemeyi bekliyor.`)
+  for (const e of seoEntries.filter((x) => x.section === 'legal')) lines.push(`- [${e.title}](${url(canonicalPath(e.path))}): ${e.llmsSummary}`)
   lines.push('')
 
   return new Response(lines.join('\n'), { headers: { 'Content-Type': 'text/plain; charset=utf-8' } })

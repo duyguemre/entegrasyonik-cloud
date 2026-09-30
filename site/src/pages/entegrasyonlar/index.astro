@@ -6,22 +6,18 @@
  * kapsam matrisi buraya taşındı; `CoverageMatrix`) ve kartlarda eksiksiz gösterilir.
  */
 import BaseLayout from '../../layouts/BaseLayout.astro'
+import { crumbsFor } from '../../data/seo'
 import Section from '../../components/Section.astro'
 import PageHero from '../../components/pages/PageHero.astro'
-import PageMeta from '../../components/pages/PageMeta.astro'
 import IntegrationCard from '../../components/pages/IntegrationCard.astro'
 import CoverageMatrix from '../../components/pages/CoverageMatrix.astro'
 import CtaBand from '../../components/pages/CtaBand.astro'
 import HeroActions from '../../components/pages/HeroActions.astro'
 import StatPanel from '../../components/pages/StatPanel.astro'
 import { getPublicIntegrations, COVERAGE_LABELS, type CoverageLevel, type IntegrationKind } from '../../data/integrations'
-import { breadcrumbJsonLd } from '../../lib/seo'
 import { appUrls } from '../../lib/site-config'
 
-const title = 'Entegrasyonlar'
-const description =
-  'Entegrasyonik pazaryerlerini, e-ticaret altyapınızı ve ERP sisteminizi tek panelde buluşturur; her entegrasyonun kapsamı kanal bazında açıkça yazılıdır.'
-const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Entegrasyonlar' }]
+const crumbs = crumbsFor('/entegrasyonlar')
 
 const all = getPublicIntegrations()
 const groups: Array<{ kind: IntegrationKind; id: string; heading: string; note: string }> = [
@@ -50,13 +46,7 @@ const COVERAGE_METER: Record<CoverageLevel, number> = { broad: 3, partial: 2, li
 const coverageLevels = Object.keys(COVERAGE_LABELS) as CoverageLevel[]
 ---
 
-<BaseLayout title={title} description={description}>
-  <PageMeta
-    slot="head"
-    title={title}
-    description={description}
-    jsonLd={[breadcrumbJsonLd([{ label: 'Ana sayfa', path: '/' }, { label: title, path: '/entegrasyonlar' }])]}
-  />
+<BaseLayout>
 
   <PageHero
     title="Entegrasyonlar"

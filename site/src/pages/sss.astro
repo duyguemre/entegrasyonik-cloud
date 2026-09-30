@@ -17,21 +17,17 @@
  *  - Sekme sayaçları YALNIZCA kayıttan hesaplanır (`data-stat`; tests/pages.test.ts yeniden hesaplar).
  */
 import BaseLayout from '../layouts/BaseLayout.astro'
+import { crumbsFor } from '../data/seo'
 import Section from '../components/Section.astro'
 import PageHero from '../components/pages/PageHero.astro'
-import PageMeta from '../components/pages/PageMeta.astro'
 import Accordion from '../components/pages/Accordion.astro'
 import HelpBand from '../components/pages/HelpBand.astro'
 import CtaBand from '../components/pages/CtaBand.astro'
 import Icon from '../components/home/Icon.astro'
 import { getPublicFaq, getPublicFaqByCategory, getFaqPreview, type FaqCategoryId } from '../data/faq'
-import { breadcrumbJsonLd, faqJsonLd } from '../lib/seo'
 import { appUrls } from '../lib/site-config'
 
-const title = 'Sık sorulan sorular'
-const description =
-  'Entegrasyonik hakkında sık sorulan sorular: kurulum, pazaryeri uyumu, merkezi stok ve overselling koruması, güvenlik, fiyatlandırma, destek ve ölçeklenme.'
-const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Sık sorulan sorular' }]
+const crumbs = crumbsFor('/sss')
 const items = getPublicFaq()
 const categories = getPublicFaqByCategory()
 /** Hero cam paneli: ana sayfa SSS önizlemesiyle aynı küratörlü seçki (popülerlik iddiası yok). */
@@ -47,16 +43,7 @@ const CATEGORY_ICONS: Record<FaqCategoryId, 'bolt' | 'plug' | 'stock' | 'shield'
 }
 ---
 
-<BaseLayout title={title} description={description}>
-  <PageMeta
-    slot="head"
-    title={title}
-    description={description}
-    jsonLd={[
-      breadcrumbJsonLd([{ label: 'Ana sayfa', path: '/' }, { label: title, path: '/sss' }]),
-      faqJsonLd(items),
-    ]}
-  />
+<BaseLayout>
 
   <PageHero
     title="Sık sorulan sorular"

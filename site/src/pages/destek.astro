@@ -12,25 +12,21 @@
  * (adres + e-posta gönder + adresi kopyala). Yeni olgu üretilmez; metinler SSS/iletişim kayıtlarından gelir.
  */
 import BaseLayout from '../layouts/BaseLayout.astro'
+import { crumbsFor } from '../data/seo'
 import Section from '../components/Section.astro'
 import Button from '../components/Button.astro'
 import Icon from '../components/home/Icon.astro'
 import SectionHead from '../components/pages/SectionHead.astro'
 import PageHero from '../components/pages/PageHero.astro'
-import PageMeta from '../components/pages/PageMeta.astro'
 import ChannelMono from '../components/pages/ChannelMono.astro'
 import EmailActions from '../components/pages/EmailActions.astro'
 import { contactEmail } from '../lib/contact'
 import { getPublicFaq, getSupportCategories } from '../data/faq'
 import { getPublicIntegrations } from '../data/integrations'
 import { connectGuides } from '../data/connect'
-import { breadcrumbJsonLd } from '../lib/seo'
 import { appUrls } from '../lib/site-config'
 
-const title = 'Destek merkezi'
-const description =
-  'Entegrasyonik destek merkezi: başlangıç ve kurulum, kanal bağlama rehberleri, stok ve sipariş, hesap ve güvenlik, fiyat ve fatura soruları tek yerde.'
-const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Destek merkezi' }]
+const crumbs = crumbsFor('/destek')
 
 // Kanal bağlama (rehberli, geniş kart) ızgaranın başında; diğerleri kayıt sırasıyla 2x2.
 const all = getSupportCategories()
@@ -41,13 +37,7 @@ const channels = getPublicIntegrations().filter((i) => guideCodes.has(i.code))
 const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
 ---
 
-<BaseLayout title={title} description={description}>
-  <PageMeta
-    slot="head"
-    title={title}
-    description={description}
-    jsonLd={[breadcrumbJsonLd([{ label: 'Ana sayfa', path: '/' }, { label: title, path: '/destek' }])]}
-  />
+<BaseLayout>
 
   <PageHero
     title="Destek merkezi"

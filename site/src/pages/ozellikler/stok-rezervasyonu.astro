@@ -12,10 +12,10 @@
  * Görünür metinde rakam yok (tests/pages.test.ts); adım numaraları CSS sayacıyla çizilir.
  */
 import BaseLayout from '../../layouts/BaseLayout.astro'
+import { crumbsFor } from '../../data/seo'
 import Section from '../../components/Section.astro'
 import Icon from '../../components/home/Icon.astro'
 import PageHero from '../../components/pages/PageHero.astro'
-import PageMeta from '../../components/pages/PageMeta.astro'
 import Accordion from '../../components/pages/Accordion.astro'
 import CtaBand from '../../components/pages/CtaBand.astro'
 import SectionHead from '../../components/pages/SectionHead.astro'
@@ -24,13 +24,9 @@ import HelpBand from '../../components/pages/HelpBand.astro'
 import { getPublicCapabilities, getStockReservationStory } from '../../data/capabilities'
 import { getFeaturePoints } from '../../data/feature-details'
 import { getPublicFaq } from '../../data/faq'
-import { breadcrumbJsonLd } from '../../lib/seo'
 import { appUrls } from '../../lib/site-config'
 
-const title = 'Stok rezervasyonu: aşırı satış (overselling) nasıl önlenir?'
-const description =
-  'Eşzamanlı siparişlerde stok yalnızca mevcut adet kadar rezerve edilir; stok eksiye düşmez, aşırı satış işaretlenip telafi akışına alınır. Entegrasyonik stok rezervasyonu nasıl çalışır?'
-const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Özellikler', href: '/ozellikler' }, { label: 'Stok rezervasyonu' }]
+const crumbs = crumbsFor('/ozellikler/stok-rezervasyonu')
 
 const capability = getPublicCapabilities('core').find((c) => c.id === 'stock-reservation')
 if (!capability) throw new Error('stok rezervasyonu sayfası: yetenek kaydı yok')
@@ -52,19 +48,7 @@ const STORY_RAIL = [
 const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
 ---
 
-<BaseLayout title={title} description={description} scenes>
-  <PageMeta
-    slot="head"
-    title={title}
-    description={description}
-    jsonLd={[
-      breadcrumbJsonLd([
-        { label: 'Ana sayfa', path: '/' },
-        { label: 'Özellikler', path: '/ozellikler' },
-        { label: 'Stok rezervasyonu', path: '/ozellikler/stok-rezervasyonu' },
-      ]),
-    ]}
-  />
+<BaseLayout scenes>
 
   <PageHero title="Aşırı satış (overselling) nasıl önlenir?" lead={capability.summary} crumbs={crumbs} eyebrow="Stok rezervasyonu">
     <HeroActions

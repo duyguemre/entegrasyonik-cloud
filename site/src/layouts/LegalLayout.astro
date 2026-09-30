@@ -17,6 +17,7 @@
  * - Yazdırma: hero sade siyah-beyaz, gezinme/içindekiler/ilgili belgeler gizli, bağlantı adresleri yazılır.
  */
 import BaseLayout from './BaseLayout.astro'
+import { crumbsFor } from '../data/seo'
 import Container from '../components/Container.astro'
 import PageHero from '../components/pages/PageHero.astro'
 import Icon from '../components/home/Icon.astro'
@@ -35,7 +36,7 @@ const showBanner = !LEGAL_REVIEWED
 const showNotes = siteConfig.draft
 const keys = pendingPlaceholderKeys(doc)
 const related = legalDocs.filter((d) => d.slug !== doc.slug)
-const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: doc.title }]
+const crumbs = crumbsFor(legalHref(doc.slug))
 /** "3. Başlık" -> { num: '3', text: 'Başlık' } — numara yoksa yalnızca metin. */
 const splitNum = (title: string) => {
   const m = title.match(/^(\d+)\.\s+(.*)$/)
@@ -49,7 +50,7 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
 })
 ---
 
-<BaseLayout title={doc.title} description={doc.description} noindex={!LEGAL_REVIEWED}>
+<BaseLayout path={legalHref(doc.slug)}>
   <article class="legal" data-testid="legal-page" data-slug={doc.slug} aria-labelledby="page-title">
     <PageHero title={doc.title} eyebrow="Yasal" lead={doc.summary} crumbs={crumbs}>
       <button type="button" class="legal-print" data-legal-print hidden>

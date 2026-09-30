@@ -109,7 +109,7 @@ describe('her sayfa: tek h1, başlık, meta, breadcrumb', () => {
       expect(meta(draft, 'property', 'og:title')).toMatch(/· Entegrasyonik$/)
       expect(meta(draft, 'property', 'og:description')).toBe(description)
       expect(meta(draft, 'property', 'og:locale')).toBe('tr_TR')
-      expect(meta(draft, 'name', 'twitter:card')).toBe('summary')
+      expect(meta(draft, 'name', 'twitter:card')).toBe('summary_large_image') // S19: sayfa başına OG görseli
       expect(meta(draft, 'property', 'og:url')).toBeUndefined()
       // breadcrumb: nav + geçerli sayfa + JSON-LD
       expect(draft).toMatch(/<nav class="[^"]*breadcrumb[^"]*" aria-label="Sayfa yolu"/)
@@ -501,7 +501,8 @@ describe('S14: kanal bağlantı rehberi', () => {
     it(`${i.code}: numaralı rehber, HowTo şeması adımlarla birebir, SEO başlığı`, () => {
       const page = html(draftDir, `/entegrasyonlar/${i.code}`)
       expect(page).toMatch(/<section[^>]*id="baglanti-rehberi"/)
-      expect(page).toMatch(new RegExp(`<title>${escapeRe(i.name)} entegrasyonu: bağlantı rehberi ve kapsam · Entegrasyonik</title>`))
+      // S19: başlık ≤ 60 karakter şablonu (src/data/seo.ts)
+      expect(page).toMatch(new RegExp(`<title>${escapeRe(i.name)} entegrasyonu: kurulum ve kapsam · Entegrasyonik</title>`))
       const ld = [...page.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => JSON.parse(m[1]))
       const howTo = ld.find((x) => x['@type'] === 'HowTo')
       expect(howTo, 'HowTo').toBeTruthy()
