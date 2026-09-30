@@ -59,6 +59,8 @@ const cases: Array<{ name: string; run: (page: Page) => Promise<void> }> = [
       await openMany(p, ['OrderListView'])
       if (WIDTH <= 480) {
         await p.getByRole('button', { name: 'Menüyü aç' }).click()
+        await p.mouse.move(WIDTH - 10, HEIGHT - 10)
+        await p.locator('.v-tooltip .v-overlay__content').first().waitFor({ state: 'hidden', timeout: 3000 }).catch(() => undefined)
         await settle(p, 600)
         await p.screenshot({ path: file('menu-acik') })
       } else {
