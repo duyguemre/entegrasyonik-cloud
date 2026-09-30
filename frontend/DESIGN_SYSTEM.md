@@ -173,7 +173,7 @@ Mevcut ds bileşenlerinin (EkStatusChip, EkDataTable, EkKpiCard, EkFilterBar, Ek
 | `EkDataGrid` | TÜM liste tabloları | yapışkan mikro başlık, `aria-sort`, seçim + tri-state, hover/selected, tipli kolon (id/num/muted), iskelet, boş durum; **yatay taşma (Aşama 3):** seçim + ilk (kimlik) kolonu sola yapışık (kap ≥600px; `pin:'none'` kapatır), `pin:'end'` eylem kolonu sağa yapışık, altında içerik kalan kenar `shadow-scroll-*` gölgesi, yapışık kolonsuz dar görünümde CSS kaydırma gölgesi; **dar kap (< 600px, Aşama 4): satır = KART** (☐ · kimlik başlığı · eylemler; altında ETİKET–değer; `label` kart etiketi, `hideLabel` etiketsiz), başlık satırı sıralama çubuğu (sıralanabilir kolon yoksa gizli), açık ARIA tablo rolleri; seçim kolonu tam 44px; tek satır metin kolonu ≤ 240px (üç nokta) |
 | `EkPagerBar` | sayfalama | çerçevenin ALTINA SABİT; sol boyut+toplam, orta sayfalar, sağ `#trailing` |
 | `EkListFrame` | liste ekranı iskeleti | filtreler → kart (toolbar → grid [yalnız burası kayar] → pager) |
-| `EkCascadePicker` | kategori ağacı, ekran başlatıcı | Miller kolonları, seçili yol vurgusu, arama tam yol, ←→↑↓ Enter |
+| `EkCascadePicker` | kategori ağacı, ekran başlatıcı | Miller kolonları, seçili yol vurgusu, arama tam yol, ←→↑↓ Home/End Enter Backspace; A9: seviye geçişleri (§18), < 640px tek panel + seviye yolu, `loadChildren` iskeleti |
 | `EkDateField` | TÜM tarih alanları | her zaman **GG.AA.YYYY** (tarayıcının yerel `type="date"`'i kullanılmaz); yazarken nokta otomatik; geçersiz tarihte hata metni; takvim Türkçe, pazartesi başlar, sayfa içi küçük menü; `label`/`min`/`max`/temizlenebilir; model `valueFormat` `iso-date` (metin) \| `date` (`Date`), verilmezse gelen türü korur (Aşama 3 birleşimi: iki dalın ayrı yazdığı sürümler tek bileşen) |
 | `EkListScreen` | TÜM liste ekranları | başlık = `EkPageBar` (Aşama 5: bölüm › H1 (i) … arama + eylemler tek satır; açıklama + yeteneklerden üretilen ipuçları "Sayfa hakkında" panelinde); `channelKey` → satır kanal şeridi; `#summary` yuvası başlık ile liste arasında (KPI satırı); sayfa boyutu 10/25/50/100, varsayılan 25 (`tests/page-size-standard.test.ts`) |
 | `EkSavedViews` | kişisel kayıtlı filtre görünümleri (C2.4) | `EkListScreen` `saved-views` ile filtre başlığının sağında (`EkFilterPanel` `#head-actions`, daraltılmışken de görünür); uygula · sil (toast'ta Geri al) · kaydet; görünüm YALNIZ `screens.ts` `urlParams` alanlarını taşır (`useSavedViews` → `pickUrlParams`; arama metni saklanmaz), yerel depo `ek.views.v1.<userId>.<tenantId>`, erişilemezse gizli; ekran başına ≤20; uygulanınca adres `replace` ile kurulur |
@@ -475,3 +475,33 @@ stok kodu; varyantlı üründe kod gösterilmez). **Testler:** `tests/a7-breadcr
 `e2e/specs/breadcrumb.spec.ts` (3 viewport). **Görseller:** `docs/a7-review/{before,after}/` (`a-liste`, `b-liste-hakkinda`, `c-derin-rota`,
 `d-kayit-detayi`, `e-odak`; 1440 + 390, `-yakin` 2x yakın çekim) — araç `A7_REVIEW=1 A7_REVIEW_WIDTH=1440|390 A7_REVIEW_OUT=<klasör> npx playwright test e2e/specs/a7-review.spec.ts --project=chromium-desktop`.
 Görsel tabanlar (`admin-effective-config`, `admin-integration-settings` ve başlık satırı içeren tüm ekranlar) Windows'ta bilinçli yeniden tabanlanmalı.
+
+
+## 18. A9 — kademeli seçici seviye geçişleri (`cloud/fe-a9`)
+
+Kullanıcı isteği: ürün ekle/güncelle kategori seçiminde bir seviyede seçim yapınca sağdaki seviye uygulamanın diğer geçişleriyle AYNI dilde açılıp kapanmalı. Mantık `src/components/ds/cascadeMotion.ts` (saf, vitest), sunum `EkCascadePicker`.
+
+**Uygulama geneli geçiş envanteri (bu turda tespit edilen, hepsi §4 token'larıyla):**
+
+| Geçiş | Yer | Süre / eğri | Hareket |
+|---|---|---|---|
+| Filtre paneli, "sayfa hakkında" aç/kapa | `EkCollapse` | base 200 / standard | yükseklik (grid 0fr↔1fr) + opaklık |
+| Filtre/menü chevron dönüşü | `EkFilterPanel`, `EkSidebarNav` | base / standard | transform |
+| Sekme (çalışma alanı) girişi | `SecureLayout.playTabEnter` | base / enter | opaklık + `distance-sm` Y |
+| Bildirim (toast) | `EkToastHost` | base / standard | opaklık + `distance-md` Y |
+| Tablo satırı genişleme | `EkDataGrid` | giriş base / enter, çıkış fast / standard | opaklık + `-distance-sm` Y |
+| Kabuk tutamağı | `ShellChromeHandle` | base | transform |
+| Hover/odak/seçim rengi | `--ek-transition-colors` | fast / enter | renk, gölge, opaklık |
+| Tooltip | DS tooltip'leri | Vuetify `fade-transition` | opaklık (ölçek yok) |
+| Dialog / drawer / menü | Vuetify varsayılanları | Vuetify | — (A9 kapsamı dışı) |
+
+**Kademeli seçici kararları:**
+- Yeni seviye: opaklık + `distance-md` yatay (sağdan) · base / enter — toast ile aynı mesafe, sekme ile aynı süre/eğri. Çıkış: fast / standard (grid satırı gibi).
+- Üst seviye değişimi: eski alt seviyeler DERİNDEN SIĞA sırayla söner (adım = fast/3, en fazla 2 adım), yeni seviye kapanışlar bitince açılır; en kötü toplam = 2·fast/3 + base = slow (300). Geri gidişte (alt seviyeler kapanır) ters yön: kapanan seviye geldiği yöne (sağa) çekilir.
+- Genişlik: kolonlar sabit 260px; kapanan kolon yama ÖNCESİ toplu ölçülüp yerinde `position:absolute` sabitlenir (sırayla sabitleme kalanları kaydırıyordu). Sağdaki "kuyruk" (ipucu / onay kartı) hareket etmez, yalnız içeriği yeniden anahtarlanır — FLIP denendi, kuyruğun transform'u geçici yatay taşma + yanlış otomatik kaydırma üretti (2. iterasyonda kaldırıldı). Otomatik kaydırma son kolonun `offsetLeft`'ine göre.
+- Yaprak seçimi: son seviyenin başlığında "✓ Seçildi" (success-subtle zemin), kuyrukta onay kartı (yol + ad), seçili satırda onay ikonu opaklıkla gelir.
+- Dar alan (bileşen genişliği < 640px, ör. 390px telefon): tek panel + "Seviye yolu" breadcrumb'ı (geri düğmesi, bağlantılı üst seviyeler, sağda sayı / "Seçildi"). İleri = sağdan, geri = soldan; eski panel ease-out ile önce söner, yeni panel 2 adım sonra girer (iki yarı saydam liste üst üste binmez).
+- İskelet: `loadChildren` + `node.lazy` → kolon 6 sabit iskelet satırı (sonsuz animasyon yok), liste gelince aynı çapraz geçiş (opaklık + `distance-sm`).
+- Reduced-motion: sistem ayarı token'ları 0'a indirir (app.css). Uygulama tercihi `<html data-motion="reduced">` (şimdilik ayar ekranı yok; kanca hazır) bileşende `is-static` → geçiş/animasyon yok. Kaydırma da `auto`.
+- Klavye: ↑/↓ Home/End (seçim odağı izler), → / Enter klasörü açar ve odağı yeni seviyenin İLK öğesine taşır (açık seviyeye dönüşte seçili öğeye), ← / Backspace üst seviye; tek panelde ← paneli de geri kaydırır. `aria-live="polite"`: "2. seviye: Moda, 3 öğe", "Moda alt kategorileri yükleniyor…", "Seçildi: Moda › Kadın › Tişört".
+- Bekçiler: `tests/cascade-motion.test.ts` (plan/sıra/adım ≤ slow, reduced-motion, klavye, duyuru, statik: yalnız transform/opacity, ham ms/px yok), `e2e/specs/a9-cascade-motion.spec.ts` (canlı animasyon özellikleri, kapanış adımları, reduced-motion + data-motion, klavye/odak/aria-live, 390 tek panel). İnceleme kareleri: `docs/a9-review/` (`A9_REVIEW=1 A9_WIDTH=1440|390 npx playwright test e2e/specs/a9-review.spec.ts --project=chromium-desktop`).
