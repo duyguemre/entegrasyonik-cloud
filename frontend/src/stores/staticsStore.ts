@@ -109,10 +109,10 @@ export const useStaticsStore = defineStore('staticsStore', () => {
 
 
   const TICKET_STATUS_DESCRIPTIONS: any = {
-    [TICKET_STATUS.CREATED]: { text: "İNCELENİYOR", color: "orange" },
-    [TICKET_STATUS.PROCESSING]: { text: "ÇALIŞILIYOR", color: "blue" },
-    [TICKET_STATUS.CLOSED]: { text: "KAPANDI", color: "green" },
-    [TICKET_STATUS.WAITING]: { text: "İŞLEM BEKLENİYOR", color: "red" }
+    [TICKET_STATUS.CREATED]: { text: "İNCELENİYOR", color: "warning" },
+    [TICKET_STATUS.PROCESSING]: { text: "ÇALIŞILIYOR", color: "info" },
+    [TICKET_STATUS.CLOSED]: { text: "KAPANDI", color: "success" },
+    [TICKET_STATUS.WAITING]: { text: "İŞLEM BEKLENİYOR", color: "error" }
   }
 
 

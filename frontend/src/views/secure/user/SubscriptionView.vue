@@ -59,8 +59,8 @@
         <div v-else class="plans-grid" role="list" aria-label="Abonelik planları">
           <article v-for="plan in plans" :key="plan.code" class="plan-card" role="listitem"
             :class="{ 'plan-card--current': isCurrentPlan(plan), 'plan-card--suggested': !isCurrentPlan(plan) && suggestedPlan?.code === plan.code }">
-            <div v-if="isCurrentPlan(plan)" class="plan-card-ribbon text-white">Mevcut Planınız</div>
-            <div v-else-if="suggestedPlan?.code === plan.code" class="plan-card-ribbon text-white">Seçtiğiniz Plan</div>
+            <div v-if="isCurrentPlan(plan)" class="plan-card-ribbon">Mevcut Planınız</div>
+            <div v-else-if="suggestedPlan?.code === plan.code" class="plan-card-ribbon">Seçtiğiniz Plan</div>
 
             <h4 class="plan-card-name">{{ plan.name }}</h4>
 
@@ -410,7 +410,9 @@ onMounted(() => {
   position: absolute;
   top: var(--ek-space-3);
   right: var(--ek-space-3);
-  background: var(--ek-color-primary);
+  /* FR2-DARK: aksiyon zemini + eşleşik kontrast metni (iki temada AA). */
+  background: var(--ek-color-action);
+  color: var(--ek-color-action-contrast);
   padding: 2px var(--ek-space-2);
   border-radius: var(--ek-radius-full);
   font-size: var(--ek-font-size-xs);
