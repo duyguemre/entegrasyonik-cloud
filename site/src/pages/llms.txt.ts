@@ -23,7 +23,8 @@ const line = (e: SeoEntry): string => {
 export const GET: APIRoute = () => {
   const integrations = getPublicIntegrations()
   const indexed = seoEntries.filter((e) => e.index)
-  const pages = indexed.filter((e) => !e.integrationCode && e.section !== 'legal')
+  const pages = indexed.filter((e) => !e.integrationCode && e.section !== 'legal' && e.section !== 'rehber')
+  const rehber = indexed.filter((e) => e.section === 'rehber')
   const integrationPages = indexed.filter((e) => e.integrationCode)
   const legal = seoEntries.filter((e) => e.section === 'legal')
 
@@ -54,6 +55,14 @@ export const GET: APIRoute = () => {
     const guide = e ? ` Bağlantı rehberi: ${url(canonicalPath(e.path))} (Markdown: ${url(markdownPath(e.path))})` : ''
     lines.push(`- **${i.name}** (${i.kindLabel}, ${i.coverageLabel}): ${i.summary}${limits}${guide}`)
   }
+  lines.push('')
+
+  // S20b: rehber / bilgi merkezi — pazarı ve mevzuatı anlatan kaynaklı içerik (ürün iddiası değil; kurallar tests/rehber.test.ts).
+  lines.push('## Rehber')
+  lines.push('')
+  lines.push('Pazaryerinde satış, mevzuat ve stok operasyonu üzerine kaynaklı ve tarihli bilgi sayfaları. Bu sayfalar Entegrasyonik ürün kapsamını değil pazarın genel işleyişini anlatır; her sayfa kaynak listesi ve son güncelleme tarihi taşır.')
+  lines.push('')
+  for (const e of rehber) lines.push(line(e))
   lines.push('')
 
   lines.push('## Optional')

@@ -199,7 +199,7 @@ describe('her sayfa: başlık hiyerarşisi, meta, OG, JSON-LD', () => {
       })
 
       it('title/description/robots/canonical/hreflang kayıttan', () => {
-        expect(html).toContain(`<title>${fullTitle(e).replace(/&/g, '&amp;')}</title>`)
+        expect(html).toContain(`<title>${fullTitle(e).replace(/&/g, '&amp;').replace(/'/g, '&#39;')}</title>`)
         expect(meta(html, 'name', 'description')).toBe(e.description)
         expect(meta(html, 'name', 'robots')).toBe(e.index ? 'index,follow' : 'noindex,nofollow')
         expect(linkHref(html, 'canonical')).toBe(canonicalUrl(e.path))
@@ -311,9 +311,19 @@ describe('JSON-LD türleri ve içerik tutarlılığı', () => {
     }
   })
 
-  it('FAQPage yalnızca /sss; soru ve cevaplar kayıtla ve görünür metinle birebir', () => {
+  it('FAQPage yalnızca /sss ve kayıtta FAQPage taşıyan rehber sayfaları; soru ve cevaplar görünür metinle birebir', () => {
     for (const e of builtEntries().filter((x) => x.path !== '/sss')) {
-      expect(jsonLd(read(e.path)).some((n) => n['@type'] === 'FAQPage'), e.path).toBe(false)
+      const faqLd = jsonLd(read(e.path)).find((n) => n['@type'] === 'FAQPage') as
+        | { mainEntity: Array<{ name: string; acceptedAnswer: { text: string } }> }
+        | undefined
+      // S20b: rehber (hub + rehber sayfaları) kendi görünür SSS'sini taşır; başka hiçbir sayfada FAQPage yok.
+      expect(!!faqLd, e.path).toBe(e.schema.includes('FAQPage') && e.section === 'rehber')
+      if (!faqLd) continue
+      const text = squash(visibleText(read(e.path)))
+      for (const q of faqLd.mainEntity) {
+        expect(text, `${e.path}: ${q.name}`).toContain(squash(q.name))
+        expect(text, `${e.path}: ${q.name}`).toContain(squash(q.acceptedAnswer.text))
+      }
     }
     const html = read('/sss')
     const text = squash(visibleText(html))
@@ -483,12 +493,16 @@ describe('LLM görünürlüğü: llms.txt, llms-full.txt, markdown alternatifler
         ? htmlToMarkdown(withoutUpcomingBand(html))
         : readFileSync(path.join(dir, markdownPath(e.path)), 'utf8')
       ).toLocaleLowerCase('tr-TR')
+      // S20b DAR İSTİSNA: rehber sayfaları pazarı anlatır (ör. pazaryerleri genel bakışı kayıtta "roadmap" olan
+      // kanalları KONU olarak adlandırabilir) → YALNIZCA kanal adı taramasından muaf; yol haritası dili yasağı sürer.
+      // Rehber metninin ad/rakip korumaları tests/rehber.test.ts'te.
+      const names = e.section === 'rehber' ? [] : roadmap
       if (upcomingPages.has(e.path)) {
         expect(e.upcoming, e.path).toBe(true)
         expect(md, e.path).toContain(UPCOMING_NOTE)
         continue
       }
-      for (const n of roadmap) if (new RegExp(`(?<![\\p{L}\\d])${n.toLocaleLowerCase('tr-TR').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\p{L}\\d])`, 'u').test(md)) hits.push(`${e.path}: ${n}`)
+      for (const n of names) if (new RegExp(`(?<![\\p{L}\\d])${n.toLocaleLowerCase('tr-TR').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\p{L}\\d])`, 'u').test(md)) hits.push(`${e.path}: ${n}`)
       if (/(?<![\p{L}\d])(yakında|çok yakında|planlanıyor|yol haritası|roadmap|beta)(?![\p{L}\d])/u.test(md)) hits.push(`${e.path}: yol haritası dili`)
     }
     expect(hits).toEqual([])

@@ -12,6 +12,8 @@ import { getConnectGuide } from '../data/connect'
 import { getPublicPlans, getPlanSourceNotice, getVatNotice, getPublicTrial } from '../data/plans'
 import { TAGLINE, UPCOMING_NOTE, canonicalPath, entityDefinition, markdownPath, seoEntries } from '../data/seo'
 import { ASSISTANT_PATH, ASSISTANT_NAME, assistantLlms } from '../data/assistant'
+import { guideHref, guides, sourcesOf } from '../data/kb'
+import { plainKb } from '../lib/kb-render'
 
 const base = siteConfig.siteUrl ?? ''
 const url = (path: string) => `${base}${path}`
@@ -41,7 +43,7 @@ export const GET: APIRoute = () => {
   // S19: sayfa listesi SEO kaydından (indekslenen her sayfa + kısa açıklama + markdown sürümü).
   lines.push('## Sayfalar')
   lines.push('')
-  for (const e of seoEntries.filter((x) => x.index)) {
+  for (const e of seoEntries.filter((x) => x.index && x.section !== 'rehber')) {
     const note = e.upcoming && !e.llmsSummary.includes(UPCOMING_NOTE) ? ` (${UPCOMING_NOTE})` : ''
     lines.push(`- [${e.title}](${url(canonicalPath(e.path))}): ${e.llmsSummary}${note} Markdown: ${url(markdownPath(e.path))}`)
   }
@@ -134,6 +136,27 @@ export const GET: APIRoute = () => {
   lines.push('')
   for (const l of assistantLlms.full) lines.push(`- ${l}`)
   lines.push('')
+
+  // S20b: rehber / bilgi merkezi — her sayfanın kısa yanıtı, son güncelleme tarihi ve kaynak yayıncıları (kayıttan).
+  // Bu içerik pazarı/mevzuatı anlatır; Entegrasyonik ürün kapsamı değildir (ürün kapsamı yukarıdaki bölümlerde).
+  lines.push('## Rehber')
+  lines.push('')
+  for (const e of seoEntries.filter((x) => x.index && x.section === 'rehber')) {
+    lines.push(`- [${e.title}](${url(canonicalPath(e.path))}): ${e.llmsSummary} Markdown: ${url(markdownPath(e.path))}`)
+  }
+  lines.push('')
+  for (const g of guides) {
+    lines.push(`### ${g.title}`)
+    lines.push('')
+    lines.push(`Sayfa: ${url(canonicalPath(guideHref(g.slug)))} · Son güncelleme: ${g.dateModified}`)
+    lines.push('')
+    lines.push(plainKb(g.answer))
+    lines.push('')
+    for (const k of g.keyPoints) lines.push(`- ${plainKb(k)}`)
+    if (g.keyPoints.length > 0) lines.push('')
+    lines.push(`Kaynaklar: ${[...new Set(sourcesOf(g).map((s) => s.publisher))].join('; ')}`)
+    lines.push('')
+  }
 
   lines.push('## Optional')
   lines.push('')
