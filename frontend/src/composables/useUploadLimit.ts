@@ -2,7 +2,7 @@
  * frontend/src/composables/useUploadLimit.ts
  *
  * FE-CFG-1 — görsel yükleme bayt tavanı tek kaynaktan: `env.images.uploadMaxBytes` (backend `IMAGE_UPLOAD_MAX_BYTES`,
- * `stores/publicConfig`). Önceden üç bileşende kullanılmayan `maxSize: 2000000` sabiti vardı ve yükleme yolları
+ * `stores/publicConfig`). Önceden üç bileşende kullanılmayan 2 MB `maxSize` sabiti vardı ve yükleme yolları
  * boyutu HİÇ denetlemiyordu (büyük dosya sunucuda reddedilince kullanıcı nedenini göremiyordu). Artık sınırı aşan
  * dosya seçiminde yükleme başlamaz, hangi dosyanın aştığı ve sınır bildirilir.
  */

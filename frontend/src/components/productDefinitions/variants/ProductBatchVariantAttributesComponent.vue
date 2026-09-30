@@ -860,7 +860,7 @@ const form = ref<HTMLFormElement>();
 var thumbnailUrl = ref("")
 
 import { useUploadLimit } from '@/composables/useUploadLimit'
-// FE-CFG-1: yükleme tavanı backend ortam değeri (`env.images.uploadMaxBytes`); eski kullanılmayan `maxSize: 2000000` kaldırıldı.
+// FE-CFG-1: yükleme tavanı backend ortam değeri (`env.images.uploadMaxBytes`); eski kullanılmayan 2 MB `maxSize` sabiti kaldırıldı.
 const uploadLimit = useUploadLimit()
 /* function onFileChanged($event: Event) {
   const target = $event.target as HTMLInputElement;
