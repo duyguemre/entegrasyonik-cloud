@@ -29,7 +29,7 @@
           @click="emit('retry')">
           {{ info.empty ? 'Yeniden kontrol et' : 'Tekrar dene' }}
         </EkButton>
-        <EkButton v-if="showSettings" tone="ghost" size="sm" icon="mdi-cog-outline" trailing-icon="mdi-arrow-right"
+        <EkButton v-if="showSettings" tone="secondary" size="sm" icon="mdi-cog-outline" trailing-icon="mdi-arrow-right"
           @click="openSettings.open(info.integrationCode)">
           Entegrasyon ayarına git
         </EkButton>

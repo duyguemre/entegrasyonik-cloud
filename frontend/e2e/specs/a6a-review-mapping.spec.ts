@@ -113,6 +113,17 @@ for (const vp of [{ w: 1440, h: 900 }, { w: 390, h: 844 }]) {
       })
     }
 
+    test('yükleniyor (kategori + özellik)', async ({ page }) => {
+      const never = () => new Promise<void>(() => {})
+      await setup(page, { 'IntegrationService/retrieveCategoriesFromIntegration': never })
+      await shot(page, 'category-loading', vp.w)
+    })
+    test('yükleniyor (özellik)', async ({ page }) => {
+      const never = () => new Promise<void>(() => {})
+      await setup(page, { 'IntegrationService/retrieveCategoryAttributesFromIntegration': never })
+      await shot(page, 'choices-loading', vp.w)
+    })
+
     if (PHASE === 'after') {
       test('teknik ayrıntı açık (kategori + özellik)', async ({ page }) => {
         await setup(page, { 'IntegrationService/retrieveCategoriesFromIntegration': FAILS['5xx'] })
