@@ -17,7 +17,7 @@
   <div class="financialListView">
     <div class="ek-fin-head">
       <EkPageHeader section="Finans ve raporlar" :title="t('finance.title')" :description="t('finance.description')" />
-      <EkPageTabs v-model="activeTab" :tabs="tabs" :aria-label="t('finance.tabs.label')" />
+      <EkPageTabs v-model="activeTab" :tabs="tabs" :label="t('finance.tabs.label')" />
     </div>
 
     <!-- İşlem Detay Diyaloğu -->

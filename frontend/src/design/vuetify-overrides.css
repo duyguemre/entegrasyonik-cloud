@@ -313,3 +313,36 @@
 .v-input--disabled .v-input__details {
   opacity: 1 !important;
 }
+
+/* ---- Aşama 6b (Standart 2): ham v-data-table mobil satırı = ds kart dili (EkDataGrid/EkDataTable ile aynı) ----
+ * Vuetify dar görünümde her satırı "başlık: değer" satırlarına çevirir; burada kart iç boşluğu, satır ayracı ve
+ * mikro etiket tipografisi uygulanır (yalnız görünüm — işaretleme/davranış Vuetify'ın). */
+.v-data-table .v-data-table__tr--mobile {
+  border-bottom: 1px solid var(--ek-color-border-default);
+}
+
+.v-data-table .v-data-table__tr--mobile > td {
+  padding: var(--ek-space-1) var(--ek-space-4) !important;
+  height: auto !important;
+  min-height: 32px;
+  border-bottom: none !important;
+  font-size: var(--ek-type-table-size);
+  line-height: var(--ek-type-table-line);
+}
+
+.v-data-table .v-data-table__tr--mobile > td:first-child {
+  padding-top: var(--ek-space-3) !important;
+}
+
+.v-data-table .v-data-table__tr--mobile > td:last-child {
+  padding-bottom: var(--ek-space-3) !important;
+}
+
+.v-data-table .v-data-table__tr--mobile .v-data-table__td-title {
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+  color: var(--ek-color-content-muted);
+}

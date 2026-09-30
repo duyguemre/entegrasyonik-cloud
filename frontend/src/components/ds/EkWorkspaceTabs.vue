@@ -517,10 +517,17 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   }
 }
 
+/* Aşama 6b (Standart 4): dar ekranda sekmeler okunamayacak kadar sıkışmaz — en az 136px, taşan kısım yatay kayar
+   (gizli çubuk + solma + ok; dokunmatikte kaydırma). Kapatma yalnız etkin sekmede (dar alanda yanlış dokunma yok). */
 @media (max-width: 767px) {
   .ek-tab {
-    flex-basis: 160px;
-    min-width: 96px;
+    flex: 0 0 auto;
+    width: 152px;
+    min-width: 136px;
+  }
+
+  .ek-tab:not(.is-active) .ek-tab__close {
+    display: none;
   }
 }
 </style>

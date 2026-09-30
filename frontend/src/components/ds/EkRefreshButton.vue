@@ -123,7 +123,7 @@ function onClick() {
 }
 
 .ek-refresh.is-loading .ek-refresh__icon {
-  animation: ek-refresh-spin 0.8s linear infinite;
+  animation: ek-refresh-spin 1s linear infinite;
 }
 
 @keyframes ek-refresh-spin {

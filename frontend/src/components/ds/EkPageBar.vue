@@ -35,11 +35,11 @@
         </button>
         <span v-if="meta" class="ek-page-bar__meta ek-page-header__description">{{ meta }}</span>
       </div>
-      <div v-if="$slots.actions || refreshable" class="ek-page-bar__actions">
-        <slot name="actions" />
-        <!-- Aşama 6b (Standart 9): tek yenile düğmesi — satırın EN SAĞI, her sayfada aynı yer. -->
-        <EkRefreshButton v-if="refreshable" class="ek-page-bar__refresh" :loading="refreshing" :label="refreshLabel" :last-updated="lastUpdated" @refresh="emit('refresh')" />
-      </div>
+      <div v-if="$slots.actions" class="ek-page-bar__actions"><slot name="actions" /></div>
+      <!-- Aşama 6b (Standart 9): tek yenile düğmesi — satırın EN SAĞI, her sayfada aynı yer (dar ekranda başlık satırında). -->
+      <span v-if="refreshable" class="ek-page-bar__refresh">
+        <EkRefreshButton :loading="refreshing" :label="refreshLabel" :last-updated="lastUpdated" @refresh="emit('refresh')" />
+      </span>
     </div>
 
     <EkCollapse :id="panelId" :open="about.open.value" role="region" :aria-label="`${title} sayfası hakkında`">
@@ -116,16 +116,23 @@ function openShortcutHelp() {
 .ek-page-bar {
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
+/* Izgara: [başlıklar] [eylemler] [yenile]. Dar ekranda eylemler alt satıra iner, yenile başlık satırında kalır. */
 .ek-page-bar__row {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto;
+  grid-template-areas: 'titles actions refresh';
+  width: 100%;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--ek-space-2) var(--ek-space-4);
+  gap: var(--ek-space-2) var(--ek-space-3);
   min-height: 40px;
 }
+
+.ek-page-bar__titles { grid-area: titles; }
+.ek-page-bar__actions { grid-area: actions; }
+.ek-page-bar__refresh { grid-area: refresh; display: inline-flex; justify-self: end; }
 
 .ek-page-bar__titles {
   display: flex;
@@ -305,15 +312,15 @@ function openShortcutHelp() {
     padding: var(--ek-space-3) var(--ek-space-4);
   }
 
+  .ek-page-bar__row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: 'titles refresh' 'actions actions';
+  }
+
   .ek-page-bar__actions {
     width: 100%;
     justify-content: flex-start;
     margin-left: 0;
-  }
-
-  /* Dar ekranda da yenile satırın sağında kalır (konum sabit). */
-  .ek-page-bar__refresh {
-    margin-left: auto;
   }
 }
 </style>

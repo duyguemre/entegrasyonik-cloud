@@ -74,7 +74,8 @@ test.describe('P2 — Admin / Mağaza Yönetimi (AdminClientListView)', () => {
     await expect(dialog.getByText('Toplam Ürün')).toBeVisible()
     await expect(dialog.getByText('Aktif Entegrasyonlar')).toBeVisible()
 
-    await dialog.getByRole('tab', { name: /OPERASYONEL İZLEME/ }).click()
+    // Aşama 6b: EkPageTabs cümle düzeni (iddia aynı).
+    await dialog.getByRole('tab', { name: /Operasyonel izleme/i }).click()
     await expect(dialog.getByText('EXPORT DURUMU')).toBeVisible()
     await expect(dialog.getByText('IMPORT DURUMU')).toBeVisible()
   })

@@ -5,17 +5,11 @@
     attach="adminClientListView">
 
     <div class="pa-0">
-      <v-tabs v-model="activeTab" color="primary" class="admin-tabs px-4 border-b">
-        <v-tab value="overview" class="font-weight-black">
-          <v-icon start size="18">mdi-view-dashboard-outline</v-icon> GENEL BAKIŞ
-        </v-tab>
-        <v-tab value="operations" class="font-weight-black">
-          <v-icon start size="18">mdi-buffer</v-icon> OPERASYONEL İZLEME
-        </v-tab>
-        <v-tab value="settings" class="font-weight-black">
-          <v-icon start size="18">mdi-cog-outline</v-icon> MAĞAZA AYARLARI
-        </v-tab>
-      </v-tabs>
+      <EkPageTabs v-model="activeTab" class="px-4" label="Mağaza ayrıntıları" :tabs="[
+        { value: 'overview', label: 'Genel bakış', icon: 'mdi-view-dashboard-outline' },
+        { value: 'operations', label: 'Operasyonel izleme', icon: 'mdi-buffer' },
+        { value: 'settings', label: 'Mağaza ayarları', icon: 'mdi-cog-outline' },
+      ]" />
 
       <v-window v-model="activeTab" class="pa-4">
         <!-- Overview Tab -->
@@ -310,6 +304,7 @@
 </template>
 
 <script setup lang="ts">
+import EkPageTabs from '@/components/ds/EkPageTabs.vue'
 import { ref, reactive, computed, watch } from 'vue';
 import useRestApi from '@/composables/restapi';
 import { useSnackbarStore } from '@/stores/snackbarStore';

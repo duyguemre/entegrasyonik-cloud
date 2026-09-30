@@ -24,24 +24,12 @@
     <LoadingComponent attach=".settingListView" ref="loadingComponentRef"></LoadingComponent>
 
     <div v-if="settings" class="settingListView__body">
-      <v-tabs v-model="activeTab" color="primary" align-tabs="start" class="settingListView__tabs" show-arrows>
-        <v-tab :value="1" class="text-none">
-          <v-icon start size="18">mdi-store-cog-outline</v-icon>
-          <span>Mağaza Kimliği</span>
-        </v-tab>
-        <v-tab :value="2" class="text-none">
-          <v-icon start size="18">mdi-pencil-outline</v-icon>
-          <span>Fatura & Yasal Bilgiler</span>
-        </v-tab>
-        <v-tab :value="3" class="text-none">
-          <v-icon start size="18">mdi-truck-delivery-outline</v-icon>
-          <span>Lojistik & Operasyon</span>
-        </v-tab>
-        <v-tab :value="4" class="text-none">
-          <v-icon start size="18">mdi-bell-ring-outline</v-icon>
-          <span>İletişim & Bildirimler</span>
-        </v-tab>
-      </v-tabs>
+      <EkPageTabs v-model="activeTab" class="settingListView__tabs" label="Ayar bölümleri" :tabs="[
+        { value: 1, label: 'Mağaza Kimliği', icon: 'mdi-store-cog-outline' },
+        { value: 2, label: 'Fatura & Yasal Bilgiler', icon: 'mdi-pencil-outline' },
+        { value: 3, label: 'Lojistik & Operasyon', icon: 'mdi-truck-delivery-outline' },
+        { value: 4, label: 'İletişim & Bildirimler', icon: 'mdi-bell-ring-outline' },
+      ]" />
 
       <div class="settingListView__panel">
         <v-window v-model="activeTab" class="settingListView__window">
@@ -339,6 +327,7 @@
 </template>
 
 <script setup lang="ts">
+import EkPageTabs from '@/components/ds/EkPageTabs.vue'
 import EkAlert from '@/components/ds/EkAlert.vue'
 import { ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n';

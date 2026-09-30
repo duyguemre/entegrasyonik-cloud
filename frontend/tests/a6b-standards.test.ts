@@ -125,3 +125,28 @@ describe('Standart 9 — tek sayfa yenileme düğmesi', async () => {
     expect(offenders).toEqual([])
   })
 })
+
+describe('Standart 2 / 3 / 5 — kart, toplu işlem çubuğu, sayfa içi sekme', () => {
+  const read = (p: string) => files.find((f) => f.path === p)?.text ?? ''
+
+  it('liste tabloları dar kapta karta döner (EkDataGrid + EkDataTable kap sorgusu)', () => {
+    expect(read('src/components/ds/EkDataGrid.vue')).toMatch(/@container \(max-width: 599\.98px\)/)
+    expect(read('src/components/ds/EkDataTable.vue')).toMatch(/@container \(max-width: 599\.98px\)/)
+  })
+
+  it('"n … seçildi" toplu işlem çubuğu yalnız EkBulkBar\'da (ekran kopyası yok)', () => {
+    const offenders = files
+      .filter((f) => f.path.endsWith('.vue') && f.path !== 'src/components/ds/EkBulkBar.vue' && !f.path.startsWith('src/views/dev/'))
+      .filter((f) => /<\/strong>\s*[\p{L} ]+ seçildi<\/span>/u.test(f.text))
+      .map((f) => f.path)
+    expect(offenders).toEqual([])
+  })
+
+  it('sayfa içi sekmeler EkPageTabs (ham v-tabs yalnız giriş ekranının segment anahtarında)', () => {
+    const offenders = files
+      .filter((f) => f.path.endsWith('.vue') && /<v-tabs\b/.test(f.text))
+      .map((f) => f.path)
+      .filter((p) => !['src/components/ds/EkPageTabs.vue', 'src/components/login/LoginComponent.vue'].includes(p))
+    expect(offenders).toEqual([])
+  })
+})

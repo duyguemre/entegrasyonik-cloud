@@ -137,6 +137,7 @@ const listGroups = computed<EkMenuGroup[]>(() => [
       key: tab.id,
       label: tab.title,
       icon: tab.id === activeId.value ? 'mdi-check' : tab.icon,
+      description: tab.id === activeId.value ? 'Etkin sekme' : undefined,
       shortcut: index < 9 ? ['Alt', String(index + 1)] : undefined,
     })),
   },

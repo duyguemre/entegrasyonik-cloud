@@ -57,18 +57,15 @@
       </template>
 
       <template #toolbar>
-        <div class="ek-nc-toolbar" :class="{ 'is-on': selected.length > 0 }" role="region" :aria-label="selected.length ? 'Toplu işlemler' : 'Liste araç çubuğu'">
-          <template v-if="selected.length">
-            <span class="ek-nc-toolbar__count" aria-live="polite"><strong class="ek-num">{{ selected.length }}</strong> bildirim seçildi</span>
-            <div class="ek-nc-toolbar__actions">
-              <EkButton size="sm" icon="mdi-email-open-outline" :disabled="!selectedUnreadIds.length" :loading="busy === 'read-selected'" @click="markSelectedRead">
-                Okundu işaretle
-              </EkButton>
-              <EkButton size="sm" icon="mdi-trash-can-outline" class="ek-nc-danger-text" @click="confirmOpen = true">Sil</EkButton>
-            </div>
-            <EkButton tone="ghost" size="sm" icon="mdi-close" @click="selected = []">Seçimi kaldır</EkButton>
+        <!-- Aşama 6b (Standart 3): tek toplu işlem çubuğu (EkBulkBar) — seçim sayısı · eylemler · Seçimi kaldır. -->
+        <EkBulkBar :count="selected.length" noun="bildirim" @clear="selected = []">
+          <template #actions>
+            <EkButton size="sm" icon="mdi-email-open-outline" :disabled="!selectedUnreadIds.length" :loading="busy === 'read-selected'" @click="markSelectedRead">
+              Okundu işaretle
+            </EkButton>
+            <EkActionButton action="delete" show-label label="Sil" @click="confirmOpen = true" />
           </template>
-          <template v-else>
+          <template #start>
             <span class="ek-nc-toolbar__summary">
               <span class="ek-nc-toolbar__stat"><strong class="ek-num">{{ unreadTotal }}</strong> okunmamış</span>
               <span v-if="attentionUnread" class="ek-nc-toolbar__stat ek-nc-toolbar__stat--attention">
@@ -76,14 +73,14 @@
                 <strong class="ek-num">{{ attentionUnread }}</strong> okunmamış stok/sistem uyarısı
               </span>
             </span>
-            <div class="ek-nc-toolbar__end">
-              <span v-if="loadedAt" class="ek-nc-toolbar__stamp">Güncellendi {{ formatRelative(loadedAt, now) }}</span>
-              <EkButton size="sm" icon="mdi-check-all" :disabled="!unreadTotal" :loading="busy === 'read-all'" @click="markAllRead">
-                Tümünü okundu işaretle
-              </EkButton>
-            </div>
           </template>
-        </div>
+          <template #end>
+            <span v-if="loadedAt" class="ek-nc-toolbar__stamp">Güncellendi {{ formatRelative(loadedAt, now) }}</span>
+            <EkButton size="sm" icon="mdi-check-all" :disabled="!unreadTotal" :loading="busy === 'read-all'" @click="markAllRead">
+              Tümünü okundu işaretle
+            </EkButton>
+          </template>
+        </EkBulkBar>
       </template>
 
       <div v-if="loadError" class="ek-notification-center__error">
@@ -219,6 +216,8 @@
 </template>
 
 <script setup lang="ts">
+import EkBulkBar from '@/components/ds/EkBulkBar.vue'
+import EkActionButton from '@/components/ds/EkActionButton.vue'
 import EkRowActions, { type EkRowAction } from '@/components/ds/EkRowActions.vue'
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'

@@ -33,7 +33,9 @@
     </EkDataTable>
 -->
 <template>
-  <div class="ek-data-table" role="table">
+  <!-- Aşama 6b (Standart 2): dar kapta (< 600px, kap sorgusu) satır = KART — ilk kolon başlık, `actions` sağ üstte,
+       diğer hücreler "ETİKET değer" satırı (EkDataGrid kart düzeniyle aynı dil). Tablo semantiği korunur. -->
+  <div class="ek-data-table">
     <table class="ek-data-table__table">
       <thead class="ek-data-table__head">
         <tr>
@@ -54,7 +56,13 @@
           class="ek-data-table__row"
           :class="{ 'ek-data-table__row--selected': selectedKeys?.includes(item[rowKey]) }"
         >
-          <td v-for="column in columns" :key="column.key" class="ek-data-table__td" :class="alignClass(column)">
+          <td
+            v-for="(column, ci) in columns"
+            :key="column.key"
+            class="ek-data-table__td"
+            :class="[alignClass(column), { 'is-lead': ci === 0, 'is-actions': column.type === 'actions' || column.key === 'actions' }]"
+            :data-label="column.label || undefined"
+          >
             <slot :name="`cell-${column.key}`" :item="item" :column="column">
               <span :class="{ 'ek-num': isNumericType(column.type) }">{{ renderCell(item, column) }}</span>
             </slot>
@@ -121,6 +129,7 @@ function renderCell(item: Record<string, any>, column: EkTableColumn): string {
 .ek-data-table {
   width: 100%;
   overflow-x: auto;
+  container-type: inline-size;
   border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-lg);
 }
@@ -140,8 +149,11 @@ function renderCell(item: Record<string, any>, column: EkTableColumn): string {
 .ek-data-table__th {
   padding: 0 var(--ek-space-4);
   height: var(--ek-app-row-h);
-  font-size: var(--ek-font-size-sm);
-  font-weight: var(--ek-font-weight-medium);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
   color: var(--ek-color-content-muted);
   text-align: left;
   white-space: nowrap;
@@ -170,5 +182,78 @@ function renderCell(item: Record<string, any>, column: EkTableColumn): string {
 .ek-data-table__td--end,
 .ek-data-table__th--end {
   text-align: right;
+}
+
+.ek-data-table__row:last-child {
+  border-bottom: none;
+}
+
+/* ---- Dar kap: satır = kart ---- */
+@container (max-width: 599.98px) {
+  .ek-data-table__head {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .ek-data-table__table,
+  .ek-data-table__table tbody {
+    display: block;
+  }
+
+  .ek-data-table__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--ek-space-1) var(--ek-space-3);
+    padding: var(--ek-space-3) var(--ek-space-4);
+  }
+
+  .ek-data-table__td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--ek-space-3);
+    grid-column: 1 / -1;
+    height: auto;
+    padding: 0;
+    text-align: right;
+    font-size: var(--ek-type-table-size);
+    line-height: var(--ek-type-table-line);
+  }
+
+  .ek-data-table__td[data-label]::before {
+    content: attr(data-label);
+    flex: none;
+    font-size: var(--ek-type-micro-size);
+    line-height: var(--ek-type-micro-line);
+    font-weight: var(--ek-type-micro-weight);
+    letter-spacing: var(--ek-type-micro-tracking);
+    text-transform: uppercase;
+    color: var(--ek-color-content-muted);
+    text-align: left;
+  }
+
+  .ek-data-table__td.is-lead {
+    grid-column: 1;
+    grid-row: 1;
+    display: block;
+    text-align: left;
+    font-weight: var(--ek-font-weight-semibold);
+    color: var(--ek-color-content-strong);
+    margin-bottom: var(--ek-space-1);
+  }
+
+  .ek-data-table__td.is-lead::before,
+  .ek-data-table__td.is-actions::before {
+    content: none;
+  }
+
+  .ek-data-table__td.is-actions {
+    grid-column: 2;
+    grid-row: 1;
+    justify-content: flex-end;
+  }
 }
 </style>

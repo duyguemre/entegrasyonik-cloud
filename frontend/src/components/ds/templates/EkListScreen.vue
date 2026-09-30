@@ -60,7 +60,7 @@
           @click:clear="emit('search-submit')"
         />
         <span v-if="$slots['header-actions']" class="ek-list-screen__extra"><slot name="header-actions" /></span>
-        <EkRefreshButton v-if="refreshable" class="ek-list-screen__refresh" :loading="loading" :label="refreshLabel" @refresh="emit('refresh')" />
+        <span v-if="refreshable" class="ek-list-screen__refresh"><EkRefreshButton :loading="loading" :label="refreshLabel" @refresh="emit('refresh')" /></span>
       </div>
     </header>
 

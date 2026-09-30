@@ -77,11 +77,11 @@
                 </v-row>
             </EkSection>
 
-            <v-tabs v-model="tab" class="border-bottom-subtle">
-                <v-tab value="general" class="text-none">Genel bilgiler</v-tab>
-                <v-tab value="orders" class="text-none">Sipariş geçmişi ({{ customer.recentOrders?.length || 0 }})</v-tab>
-                <v-tab value="claims" class="text-none">İade talepleri ({{ customer.recentClaims?.length || 0 }})</v-tab>
-            </v-tabs>
+            <EkPageTabs v-model="tab" label="Müşteri ayrıntıları" :tabs="[
+                { value: 'general', label: 'Genel bilgiler', icon: 'mdi-account-outline' },
+                { value: 'orders', label: 'Sipariş geçmişi', icon: 'mdi-cart-outline', count: customer.recentOrders?.length || 0 },
+                { value: 'claims', label: 'İade talepleri', icon: 'mdi-undo-variant', count: customer.recentClaims?.length || 0 },
+            ]" />
 
             <v-window v-model="tab">
                 <v-window-item value="general">
@@ -141,6 +141,7 @@
 </template>
 
 <script setup lang="ts">
+import EkPageTabs from '@/components/ds/EkPageTabs.vue'
 import { ref, computed, watch } from 'vue';
 import EkDetailSheet from '@/components/ds/EkDetailSheet.vue';
 import EkSection from '@/components/ds/EkSection.vue';

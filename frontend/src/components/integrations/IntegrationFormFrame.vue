@@ -32,7 +32,7 @@
         :model-value="String(modelValue)"
         :tabs="tabs.map(tab => ({ value: String(tab.value), label: tab.label }))"
         class="ek-integration-frame__tabs"
-        @update:model-value="(v) => emit('update:modelValue', castBack(v))"
+        @update:model-value="(v) => emit('update:modelValue', castBack(String(v)))"
       />
       <div class="ek-integration-frame__body">
         <v-window :model-value="modelValue">

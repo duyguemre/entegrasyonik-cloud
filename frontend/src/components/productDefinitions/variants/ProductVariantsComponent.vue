@@ -34,16 +34,13 @@
 
     <section class="pv-frame" aria-labelledby="pv-title">
       <!-- araç çubuğu -->
-      <div class="pv-bar" :class="{ 'is-on': selectedVariants.length > 0 }" role="toolbar" aria-label="Varyant araç çubuğu">
-        <template v-if="selectedVariants.length > 0">
-          <span class="pv-bar__count" aria-live="polite"><strong class="ek-num">{{ selectedVariants.length }}</strong> varyant seçildi</span>
-          <div class="pv-bar__actions">
-            <EkButton size="sm" icon="mdi-table-edit" @click="openBulkEditor('selected')">Seçilenleri toplu düzenle</EkButton>
-            <EkButton size="sm" tone="ghost" icon="mdi-trash-can-outline" class="pv-danger-text" @click="askDelete('selected')">Seçilenleri sil</EkButton>
-          </div>
-          <EkButton size="sm" tone="ghost" icon="mdi-close" class="pv-bar__end" @click="selectedVariants = []">Seçimi kaldır</EkButton>
+      <!-- Aşama 6b (Standart 3): tek toplu işlem çubuğu (EkBulkBar) — seçim yokken başlık + araçlar. -->
+      <EkBulkBar class="pv-bar" :count="selectedVariants.length" noun="varyant" @clear="selectedVariants = []">
+        <template #actions>
+          <EkButton size="sm" icon="mdi-table-edit" @click="openBulkEditor('selected')">Seçilenleri toplu düzenle</EkButton>
+          <EkActionButton action="delete" show-label label="Seçilenleri sil" @click="askDelete('selected')" />
         </template>
-        <template v-else>
+        <template #start>
           <div class="pv-bar__start">
             <h2 id="pv-title" class="pv-title">Varyantlar</h2>
             <span class="pv-meta ek-num">{{ variantList.length }} varyant<template v-if="groupCount > 1"> · {{ groupCount }} {{ groupNoun }}</template></span>
@@ -51,6 +48,8 @@
               <v-icon icon="mdi-circle-medium" aria-hidden="true" />{{ changedCount }} hücre değişti · kaydedilmedi
             </span>
           </div>
+        </template>
+        <template #end>
           <div class="pv-bar__tools">
             <v-text-field v-model="filterText" class="pv-search" density="compact" variant="outlined" hide-details
               prepend-inner-icon="mdi-magnify" placeholder="Stok kodu, barkod, seçenek" aria-label="Varyantlarda ara"
@@ -80,7 +79,7 @@
             </EkContextMenu>
           </div>
         </template>
-      </div>
+      </EkBulkBar>
 
       <VariantGrid ref="gridRef" :variants="variantList" :product-info-form="productInfoForm" :baseline="baseline"
         :filter="filterText || ''" v-model:selected="selectedVariants" aria-label="Varyantlar"
@@ -116,6 +115,8 @@
 </template>
 
 <script setup lang="ts">
+import EkBulkBar from '@/components/ds/EkBulkBar.vue'
+import EkActionButton from '@/components/ds/EkActionButton.vue'
 import { ref, inject, watch, computed, onMounted } from 'vue'
 import EkDialogHost from '@/components/ds/EkDialogHost.vue'
 import EkContextMenu from '@/components/ds/EkContextMenu.vue'
@@ -469,11 +470,10 @@ void eventBus
   border-bottom: 1px solid var(--ek-color-border-default);
   background: var(--ek-color-surface);
 }
-.pv-bar.is-on { background: var(--ek-color-selection); box-shadow: inset 3px 0 0 var(--ek-color-action); }
+.pv-bar.is-on { background: var(--ek-color-selection); }
+.pv-bar :deep(.ek-bulk__end) { flex: 0 1 auto; justify-content: flex-end; flex-wrap: wrap; }
 .pv-bar__start { display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--ek-space-1) var(--ek-space-3); flex: 1 1 auto; min-width: 0; }
 .pv-bar__tools { display: flex; align-items: center; flex-wrap: wrap; gap: var(--ek-space-2); }
-.pv-bar__count { color: var(--ek-color-content-strong); }
-.pv-bar__actions { display: flex; flex-wrap: wrap; gap: var(--ek-space-2); flex: 1 1 auto; }
 .pv-title {
   margin: 0;
   color: var(--ek-color-content-strong);
@@ -533,6 +533,7 @@ void eventBus
 @media (max-width: 760px) {
   .pv-bar { padding: var(--ek-space-2) var(--ek-space-3); }
   .pv-bar__tools { width: 100%; gap: var(--ek-space-1); }
+  .pv-bar :deep(.ek-bulk__end) { width: 100%; }
   .pv-search { flex: 1 1 100%; width: auto; margin-bottom: var(--ek-space-1); }
   .pv-foot__keys { display: none; }
 }

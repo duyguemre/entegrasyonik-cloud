@@ -6,13 +6,19 @@
     seçim VAR : "n <nesne> seçildi" · [#actions] ........ Seçimi kaldır
   Seçim hâlinde `selection` zemin + solda 3px aksiyon göstergesi (satır seçimiyle aynı dil).
   Yalnız ekranda GERÇEKTEN olan toplu eylemler `#actions`'a konur.
+  Aşama 6b (Standart 3): TÜM ekranlarda tek toplu işlem çubuğu (liste çerçevesinin üstü, aynı konum/görünüm).
+  Tehlikeli toplu eylem `EkActionButton action="delete|cancel" show-label` (kırmızı metin + onay diyaloğu).
 -->
 <template>
   <div class="ek-bulk" :class="{ 'is-on': count > 0 }" role="region" :aria-label="count > 0 ? 'Toplu işlemler' : 'Liste araç çubuğu'">
     <template v-if="count > 0">
-      <span class="ek-bulk__count" aria-live="polite"><strong>{{ count }}</strong> {{ noun }} seçildi</span>
+      <span class="ek-bulk__count" aria-live="polite">
+        <v-icon class="ek-bulk__check" icon="mdi-checkbox-marked" aria-hidden="true" />
+        <strong class="ek-num">{{ count }}</strong> {{ noun }} seçildi
+      </span>
       <div class="ek-bulk__actions"><slot name="actions" /></div>
-      <EkButton tone="ghost" size="sm" icon="mdi-close" @click="emit('clear')">Seçimi kaldır</EkButton>
+      <span class="ek-bulk__sep" aria-hidden="true"></span>
+      <EkButton tone="ghost" size="sm" :icon="icons.close" @click="emit('clear')">Seçimi kaldır</EkButton>
     </template>
     <template v-else>
       <div class="ek-bulk__start">
@@ -25,6 +31,7 @@
 
 <script setup lang="ts">
 import EkButton from './EkButton.vue'
+import { icons } from '@/design/icons'
 
 withDefaults(defineProps<{ count?: number; noun?: string; hint?: string }>(), {
   count: 0,
@@ -50,9 +57,23 @@ const emit = defineEmits<{ clear: [] }>()
 }
 
 .ek-bulk__count {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-1);
   color: var(--ek-color-action-emphasis);
   font-size: var(--ek-type-label-size);
   white-space: nowrap;
+}
+
+.ek-bulk__check {
+  font-size: var(--ek-icon-md);
+  color: var(--ek-color-action);
+}
+
+.ek-bulk__sep {
+  width: 1px;
+  height: 20px;
+  background: var(--ek-color-action-border);
 }
 
 .ek-bulk__actions {
