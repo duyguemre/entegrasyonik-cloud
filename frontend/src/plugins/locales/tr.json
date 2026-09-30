@@ -281,6 +281,33 @@
         "status": "Durum",
         "subject": "Konu"
       }
+    },
+    "sla": {
+      "column": "Bekleme",
+      "waiting": "Bekliyor: {duration}",
+      "waitingLong": "Uzun bekliyor: {duration}",
+      "noWait": "Bekleyen yanıt yok",
+      "thresholdHint": "Müşteri {duration} önce yazdı. Eşikler öneridir (ayarlanabilir): {warning} sa uyarı, {danger} sa üstü kritik.",
+      "duration": {
+        "lessThanMinute": "1 dk'dan az",
+        "minutes": "{m} dk",
+        "hours": "{h} sa",
+        "hoursMinutes": "{h} sa {m} dk",
+        "daysHours": "{d} gün {h} sa",
+        "days": "{d} gün"
+      },
+      "awaitingFirst": "Bekleyenler önce",
+      "thisPage": "bu sayfada",
+      "awaitingFirstHint": "Yalnız bu sayfadaki mesajları en uzun bekleyenden başlayarak sıralar; sunucu sıralamasını değiştirmez.",
+      "awaitingCount": "Bu sayfada {n} bekleyen",
+      "answer": {
+        "rule": "{channel} kuralı: {min}–{max} karakter",
+        "noRule": "Bu kanal için karakter sınırı tanımlı değil; sayaç bilgi amaçlıdır.",
+        "tooShort": "En az {min} karakter gerekli ({channel} kuralı).",
+        "tooLong": "En fazla {max} karakter gönderilebilir ({channel} kuralı).",
+        "count": "{n} karakter",
+        "countOf": "{n} / {max}"
+      }
     }
   },
   "invoices": {

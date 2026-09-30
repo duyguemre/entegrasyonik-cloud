@@ -358,5 +358,34 @@
       "emptyText": "Line items appear once the payment order is imported from the marketplace.",
       "errorSubject": "Payout details"
     }
+  },
+  "messages": {
+    "sla": {
+      "column": "Waiting",
+      "waiting": "Waiting: {duration}",
+      "waitingLong": "Long wait: {duration}",
+      "noWait": "No reply pending",
+      "thresholdHint": "Customer wrote {duration} ago. Thresholds are suggestions (adjustable): {warning} h warning, over {danger} h critical.",
+      "duration": {
+        "lessThanMinute": "under 1 min",
+        "minutes": "{m} min",
+        "hours": "{h} h",
+        "hoursMinutes": "{h} h {m} min",
+        "daysHours": "{d} d {h} h",
+        "days": "{d} d"
+      },
+      "awaitingFirst": "Waiting first",
+      "thisPage": "this page",
+      "awaitingFirstHint": "Sorts only the messages on this page, longest wait first; server order is unchanged.",
+      "awaitingCount": "{n} waiting on this page",
+      "answer": {
+        "rule": "{channel} rule: {min}–{max} characters",
+        "noRule": "No character limit is defined for this channel; the counter is informational.",
+        "tooShort": "At least {min} characters required ({channel} rule).",
+        "tooLong": "At most {max} characters can be sent ({channel} rule).",
+        "count": "{n} characters",
+        "countOf": "{n} / {max}"
+      }
+    }
   }
 }

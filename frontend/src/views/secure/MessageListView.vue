@@ -61,6 +61,24 @@
         <EkDateField v-model="searchForm.data.endDate" label="Bitiş tarihi" value-format="iso-date" :min="searchForm.data.startDate" />
       </template>
 
+      <template #toolbar-end>
+        <span v-if="awaitingOnPage > 0" class="ek-message-awaiting-count" aria-live="polite">{{ t('messages.sla.awaitingCount', { n: awaitingOnPage }) }}</span>
+        <EkTooltip :text="t('messages.sla.awaitingFirstHint')">
+          <EkButton
+            tone="secondary"
+            size="sm"
+            :icon="awaitingFirst ? 'mdi-check' : 'mdi-sort-clock-descending-outline'"
+            class="ek-message-awaiting-toggle"
+            :class="{ 'is-active': awaitingFirst }"
+            :aria-pressed="awaitingFirst ? 'true' : 'false'"
+            :disabled="loading || !rows.length"
+            @click="awaitingFirst = !awaitingFirst"
+          >
+            {{ t('messages.sla.awaitingFirst') }}<span class="ek-message-awaiting-toggle__scope"> · {{ t('messages.sla.thisPage') }}</span>
+          </EkButton>
+        </EkTooltip>
+      </template>
+
       <template #bulk-actions>
         <EkButton size="sm" icon="mdi-delete-sweep-outline" class="ek-bulk-danger" @click="triggerBulkDelete">
           Toplu sil ({{ selectedMessages.length }})
@@ -92,6 +110,7 @@
         <EkStatusChip :tone="effectiveTone(row)" :label="effectiveLabel(row)" />
       </template>
       <template #cell-date="{ row }"><span class="ek-num">{{ formatDateTime(row.date) }}</span></template>
+      <template #cell-waiting="{ row }"><MessageWaitChip :message="row" :now="now" placeholder tooltip /></template>
       <template #cell-actions="{ row }">
         <span class="ek-row-actions">
           <EkButton tone="ghost" size="sm" :icon="needsReply(row) ? 'mdi-message-reply-text' : 'mdi-eye'" icon-only :aria-label="needsReply(row) ? 'Mesajı cevapla' : 'Mesajı görüntüle'" @click="openDetail(row)" />
@@ -103,7 +122,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, onBeforeUnmount } from 'vue';
+import { useI18n } from 'vue-i18n';
 import useRestApi from '@/composables/restapi';
 import { useSnackbarStore } from '@/stores/snackbarStore';
 import {
@@ -120,6 +140,8 @@ import { text, emphasis } from '@/components/layout/messageParts';
 import LoadingComponent from '@/components/LoadingComponent.vue';
 import ConfirmationDialogComponent from '@/components/layout/ConfirmationDialogComponent.vue';
 import MessageDetailComponent from '@/components/message/MessageDetailComponent.vue';
+import MessageWaitChip from '@/components/message/MessageWaitChip.vue';
+import { isAwaitingReply, sortAwaitingFirst } from '@/components/message/messageSla';
 import EkListScreen from '@/components/ds/templates/EkListScreen.vue';
 import type { EkGridColumn, EkGridSort } from '@/components/ds/EkDataGrid.vue';
 import type { EkActiveFilterChip } from '@/components/ds/EkActiveFilters.vue';
@@ -127,11 +149,13 @@ import EkButton from '@/components/ds/EkButton.vue';
 import EkDateField from '@/components/ds/EkDateField.vue';
 import EkChannelDot from '@/components/ds/EkChannelDot.vue';
 import EkStatusChip from '@/components/ds/EkStatusChip.vue';
+import EkTooltip from '@/components/ds/EkTooltip.vue';
 import { isRequestError } from '@/components/ds/listStandard';
 
 const emits = defineEmits(['clear'])
 
 const restApi = useRestApi();
+const { t } = useI18n();
 const snackbarStore = useSnackbarStore();
 
 const loadingComponentRef = ref<any>(null);
@@ -181,11 +205,25 @@ const columns: EkGridColumn[] = [
   { key: 'text', label: 'Mesaj' },
   { key: 'customer', label: 'Müşteri' },
   { key: 'date', label: 'Tarih', sortable: true },
+  // C2.5 — bekleme süresi (saklanan alan değil, `date`'ten türetilir → sunucuda sıralanamaz).
+  { key: 'waiting', label: t('messages.sla.column') },
   { key: 'status', label: 'Durum', sortable: true },
   { key: 'actions', label: 'İşlemler', align: 'end', hideLabel: true, pin: 'end' },
 ];
 
-const rows = computed(() => messages.value.map((m: any) => ({ ...m, shortText: `Mesaj: ${String(m.text ?? '').slice(0, 30)}` })));
+// Bekleme süresi dakikada bir tazelenir (sekme açık kaldıkça rozetler eskimesin).
+const now = ref(new Date());
+const nowTimer = window.setInterval(() => { now.value = new Date(); }, 60_000);
+onBeforeUnmount(() => window.clearInterval(nowTimer));
+
+// "Bekleyenler önce" YALNIZ istemci tarafı ve yalnız bu sayfa (backend'de bu sıralama yok).
+const awaitingFirst = ref(false);
+const awaitingOnPage = computed(() => messages.value.filter(isAwaitingReply).length);
+
+const rows = computed(() => {
+  const mapped = messages.value.map((m: any) => ({ ...m, shortText: `Mesaj: ${String(m.text ?? '').slice(0, 30)}` }));
+  return awaitingFirst.value ? sortAwaitingFirst(mapped, now.value) : mapped;
+});
 
 const gridSort = computed<EkGridSort>(() => {
   const current = sortBy.value[0] ?? { key: 'date', order: 'desc' };
@@ -193,6 +231,7 @@ const gridSort = computed<EkGridSort>(() => {
 });
 
 function onGridSort(sort: EkGridSort) {
+  awaitingFirst.value = false;
   sortBy.value = sort ? [{ key: sort.key, order: sort.dir }] : [];
   getMessages(true);
 }
@@ -474,6 +513,34 @@ defineExpose({
 .ek-row-actions {
   display: inline-flex;
   gap: var(--ek-space-1);
+}
+
+.ek-message-awaiting-count {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ek-message-awaiting-toggle.is-active {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.ek-message-awaiting-toggle__scope {
+  color: var(--ek-color-content-muted);
+  font-weight: var(--ek-font-weight-regular);
+}
+
+.ek-message-awaiting-toggle.is-active .ek-message-awaiting-toggle__scope {
+  color: inherit;
+}
+
+@media (max-width: 599px) {
+  .ek-message-awaiting-count {
+    display: none;
+  }
 }
 
 .ek-bulk-danger {
