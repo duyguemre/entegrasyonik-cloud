@@ -81,7 +81,7 @@ const trustItems = [
   background: var(--ek-color-background);
 }
 
-/* ---- Marka paneli ---- */
+/* ---- Marka paneli ---- (yazı/çizim mürekkebi `--ek-app-login-ink`: app.css, light/dark) */
 .ek-auth-shell__brand {
   display: none;
 }
@@ -94,7 +94,7 @@ const trustItems = [
     height: 160px;
     flex: none;
     background: var(--ek-app-login-gradient);
-    color: var(--ek-color-background);
+    color: var(--ek-app-login-ink);
     padding: 0 var(--ek-space-8);
     overflow: hidden;
   }
@@ -158,7 +158,7 @@ const trustItems = [
     align-items: center;
     gap: var(--ek-space-2);
     font-size: var(--ek-font-size-sm);
-    color: color-mix(in srgb, var(--ek-color-background) 92%, transparent);
+    color: color-mix(in srgb, var(--ek-app-login-ink) 92%, transparent);
   }
 
   .ek-auth-shell__illustration {
@@ -169,7 +169,7 @@ const trustItems = [
   }
 
   .ek-auth-shell__illu-hub {
-    fill: color-mix(in srgb, var(--ek-color-background) 12%, transparent);
+    fill: color-mix(in srgb, var(--ek-app-login-ink) 12%, transparent);
   }
 
   .ek-auth-shell__illu-core {
@@ -177,11 +177,11 @@ const trustItems = [
   }
 
   .ek-auth-shell__illu-node circle {
-    fill: color-mix(in srgb, var(--ek-color-background) 22%, transparent);
+    fill: color-mix(in srgb, var(--ek-app-login-ink) 22%, transparent);
   }
 
   .ek-auth-shell__illu-line line {
-    stroke: color-mix(in srgb, var(--ek-color-background) 30%, transparent);
+    stroke: color-mix(in srgb, var(--ek-app-login-ink) 30%, transparent);
     stroke-width: 2;
   }
 }

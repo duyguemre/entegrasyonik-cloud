@@ -49,6 +49,19 @@
     var(--ek-color-brand) 0%,
     color-mix(in srgb, var(--ek-color-brand) 62%, var(--ek-color-chrome-end)) 100%
   );
+  /* Giriş paneli üzerindeki yazı/çizim mürekkebi (FR2-DARK: dark'ta krom metni). */
+  --ek-app-login-ink: var(--ek-color-background);
+}
+
+/* FR2-DARK: koyu temada `brand` açık (logo işareti koyu zeminde görünsün diye); giriş paneli ise koyu marka
+ * kromunda kalır — degrade krom tonlarından (light değer DEĞİŞMEDİ). */
+:root[data-theme='dark'] {
+  --ek-app-login-gradient: linear-gradient(
+    160deg,
+    var(--ek-color-chrome) 0%,
+    color-mix(in srgb, var(--ek-color-chrome) 40%, var(--ek-color-chrome-end)) 100%
+  );
+  --ek-app-login-ink: var(--ek-color-chrome-text);
 }
 
 [data-density='compact'] {
