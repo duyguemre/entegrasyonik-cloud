@@ -1,25 +1,39 @@
 ---
 /**
- * Hareket durdurma kontrolü (WCAG 2.2.2 — 5 sn'den uzun süren otomatik hareket için durdur/oynat).
- * - Yalnızca animasyon sahnesi olan sayfalarda, Header içinde (klavye sırasında `main`'den ÖNCE) render edilir.
- * - Erişilebilir ad sabit ("Hareketi durdur"); durum `aria-pressed` ile bildirilir (basılı = hareket durdu).
- *   Görünür etiket ("Hareket") adın içinde geçer (WCAG 2.5.3) ve yalnızca geniş üstlükte gösterilir; dar alanda yalnızca simge.
- * - S7: header'a SIĞAR — 320–1440 px arasında taşmaz (kontrol simge boyutunda, etiket >= 90rem'de eklenir).
- * - Davranış src/scripts/scenes.ts'te: tercih localStorage'da (çerez YOK); JS yoksa kontrol gizlidir (hareket de yoktur).
- * - `prefers-reduced-motion: reduce` altında hareket zaten kapalıdır → kontrol gösterilmez.
- * - Dokunma hedefi >= 44 px; odak halkası global :focus-visible; yalnızca renk geçişi (200 ms).
+ * Animasyon anahtarı (WCAG 2.2.2 — 5 sn'den uzun süren otomatik hareket için durdur/oynat). S26 (SR3 madde 13):
+ * düz simge düğmesinden marka diline uygun, zarif bir ANAHTARA (switch) yükseltildi.
+ * - `<button role="switch" aria-checked>`: açık = animasyonlar oynuyor. Erişilebilir ad görünür etiketten gelir
+ *   (`aria-labelledby`, WCAG 2.5.3); durum ekran okuyucuda "açık/kapalı" olarak okunur.
+ * - Görsel: sol simge + "Animasyon" etiketi + kayan topuzlu ray. Açıkta ray marka rengiyle dolar ve topuz sağa kayar;
+ *   geçiş YALNIZCA transform/renk (--ek-duration-base). Odak halkası rayın çevresinde (global :focus-visible yerine
+ *   bileşene özel, açık/koyu zeminde görünür). Açık/koyu zemin: renkler yerel `--mt-*` değişkenleridir; koyu yüzey
+ *   (`[data-surface='dark']`, `.section--stage`) içinde açık tonlara döner.
+ * - Tercih kalıcıdır: src/scripts/scenes.ts localStorage'a yazar (çerez YOK); JS yoksa kontrol görünmez ama yer tutar.
+ * - Sistem ayarı `prefers-reduced-motion: reduce` İSE: anahtar KAPALI görünür, `aria-disabled` olur ve nedenini söyler
+ *   (ipucu + `aria-describedby`); sistem ayarı her zaman önceliklidir, site onu geçersiz kılmaz.
+ * - Dokunma hedefi >= 44 px. Dar alanda etiket gizlenir (ad yine etiketten okunur), ray + simge kalır.
  */
 ---
 
-<button type="button" class="motion-toggle" data-motion-toggle data-testid="motion-toggle" aria-pressed="false" title="Hareketi durdur">
-  <svg class="motion-toggle__icon motion-toggle__icon--pause" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-    <path d="M9 6v12M15 6v12"></path>
+<button
+  type="button"
+  role="switch"
+  aria-checked="true"
+  class="motion-toggle"
+  data-motion-toggle
+  data-testid="motion-toggle"
+  aria-labelledby="motion-toggle-label"
+  aria-describedby="motion-toggle-hint"
+  title="Animasyonları kapat"
+>
+  <svg class="motion-toggle__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path d="M4 8.5c2.7-2.2 5.3-2.2 8 0s5.3 2.2 8 0 M4 15.5c2.7-2.2 5.3-2.2 8 0s5.3 2.2 8 0"></path>
   </svg>
-  <svg class="motion-toggle__icon motion-toggle__icon--play" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-    <path d="M8 5.5v13l10-6.5z"></path>
-  </svg>
-  <span class="sr-only">Hareketi durdur</span>
-  <span class="motion-toggle__label" aria-hidden="true">Hareket</span>
+  <span class="motion-toggle__label" id="motion-toggle-label">Animasyon</span>
+  <span class="motion-toggle__track" aria-hidden="true">
+    <span class="motion-toggle__thumb"></span>
+  </span>
+  <span class="sr-only" id="motion-toggle-hint" data-motion-hint>Tercihiniz bu cihazda hatırlanır.</span>
 </button>
 
 <script>
@@ -28,49 +42,55 @@
 
 <style>
   .motion-toggle {
+    /* Açık zemin (header, sayfa) */
+    --mt-fg: var(--ek-color-content-strong);
+    --mt-track-off: var(--ek-color-surface-sunken);
+    --mt-track-edge: var(--ek-color-border-strong);
+    --mt-track-on: var(--ek-color-secondary-darken-1);
+    --mt-thumb: var(--ek-color-background);
+    --mt-ring: var(--site-color-focus-ring);
     display: inline-flex;
     flex: none;
     align-items: center;
-    justify-content: center;
     gap: var(--ek-space-2);
     min-width: var(--site-tap-target);
     min-height: var(--site-tap-target);
     margin-inline-start: auto;
-    padding: var(--ek-space-2);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
+    padding: var(--ek-space-1) var(--ek-space-2);
+    border: 0;
     border-radius: var(--ek-radius-full);
-    background: var(--ek-color-surface);
-    color: var(--ek-color-primary);
+    background: transparent;
+    color: var(--mt-fg);
     font-family: inherit;
-    font-size: var(--ek-font-size-md);
+    font-size: var(--ek-font-size-sm);
     font-weight: var(--ek-font-weight-semibold);
     line-height: var(--ek-line-height-tight);
     white-space: nowrap;
     cursor: pointer;
-    transition:
-      background-color var(--ek-duration-base) var(--ek-easing-standard),
-      border-color var(--ek-duration-base) var(--ek-easing-standard);
+    transition: background-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  /* Koyu zemin (footer, koyu bölüm): aynı biçim, açık tonlar. */
+  :global(:is([data-surface='dark'], .section--stage)) .motion-toggle {
+    --mt-fg: var(--site-text-on-dark-heading);
+    --mt-track-off: color-mix(in srgb, var(--ek-color-background) 12%, transparent);
+    --mt-track-edge: color-mix(in srgb, var(--ek-color-background) 45%, transparent);
+    --mt-track-on: var(--ek-color-secondary);
+    --mt-ring: var(--site-accent-on-dark);
   }
   .motion-toggle:hover {
-    background: var(--ek-color-surface-sunken);
-    border-color: var(--ek-color-border-strong);
+    background: color-mix(in srgb, var(--mt-fg) 6%, transparent);
   }
-  .motion-toggle[aria-pressed='true'] {
-    background: var(--ek-color-surface-sunken);
-    border-color: var(--ek-color-primary);
+  /* Odak: halka rayı çevreler (düğmenin tamamı yerine anahtarın kendisi vurgulanır). */
+  .motion-toggle:focus-visible {
+    outline: none;
   }
-
-  /* JS çalışmadan kontrol görünmez ama yer tutar (düzen kayması yok); reduced-motion'da hiç gösterilmez. */
-  :global(html:not([data-motion])) .motion-toggle {
-    visibility: hidden;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .motion-toggle {
-      display: none;
-    }
+  .motion-toggle:focus-visible .motion-toggle__track {
+    outline: var(--site-focus-ring-width) solid var(--mt-ring);
+    outline-offset: var(--site-focus-ring-offset);
   }
 
   .motion-toggle__icon {
+    flex: none;
     width: var(--ek-space-5);
     height: var(--ek-space-5);
     fill: none;
@@ -78,26 +98,70 @@
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
+    opacity: 0.85;
   }
-  .motion-toggle__icon--play {
-    display: none;
-    fill: currentColor;
+  .motion-toggle__track {
+    position: relative;
+    display: inline-block;
+    flex: none;
+    width: calc(var(--ek-space-10) + var(--ek-space-1));
+    height: var(--ek-space-6);
+    border-radius: var(--ek-radius-full);
+    background: var(--mt-track-off);
+    box-shadow: inset 0 0 0 var(--site-border-width) var(--mt-track-edge);
+    transition:
+      background-color var(--ek-duration-base) var(--ek-easing-standard),
+      box-shadow var(--ek-duration-base) var(--ek-easing-standard);
   }
-  .motion-toggle[aria-pressed='true'] .motion-toggle__icon--pause {
-    display: none;
+  .motion-toggle__thumb {
+    position: absolute;
+    inset-block-start: calc(var(--ek-space-1) * 0.75);
+    inset-inline-start: calc(var(--ek-space-1) * 0.75);
+    width: calc(var(--ek-space-6) - var(--ek-space-1) * 1.5);
+    height: calc(var(--ek-space-6) - var(--ek-space-1) * 1.5);
+    border-radius: var(--ek-radius-full);
+    background: var(--mt-thumb);
+    box-shadow:
+      0 0 0 var(--site-border-width) color-mix(in srgb, var(--ek-color-content-strong) 18%, transparent),
+      0 var(--site-border-width) var(--ek-space-1) color-mix(in srgb, var(--ek-color-content-strong) 25%, transparent);
+    transition: transform var(--ek-duration-base) var(--ek-easing-standard);
   }
-  .motion-toggle[aria-pressed='true'] .motion-toggle__icon--play {
-    display: block;
+  /* Açık: ray marka rengiyle dolar, topuz sağa kayar. */
+  .motion-toggle[aria-checked='true'] .motion-toggle__track {
+    background: var(--mt-track-on);
+    box-shadow: inset 0 0 0 var(--site-border-width) var(--mt-track-on);
+  }
+  .motion-toggle[aria-checked='true'] .motion-toggle__thumb {
+    transform: translateX(calc(var(--ek-space-10) + var(--ek-space-1) - var(--ek-space-6)));
+  }
+  .motion-toggle[aria-checked='false'] .motion-toggle__icon {
+    opacity: 0.6;
+  }
+  /* Sistem hareket azaltma ayarı: kapalı ve devre dışı görünür (neden: ipucu + aria-describedby). */
+  .motion-toggle[aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+  .motion-toggle[aria-disabled='true'] :is(.motion-toggle__track, .motion-toggle__label, .motion-toggle__icon) {
+    opacity: 0.55;
   }
 
-  /* Dar ekranda yalnızca simge (ad ekran okuyucuya ve title ipucunda); geniş ekranda kısa etiket. */
+  /* JS çalışmadan kontrol görünmez ama yer tutar (düzen kayması yok). */
+  :global(html:not([data-motion])) .motion-toggle {
+    visibility: hidden;
+  }
+  /* Sistem ayarı hareketi azaltıyorsa topuz kaymaz (geçiş yok). */
+  @media (prefers-reduced-motion: reduce) {
+    .motion-toggle__thumb,
+    .motion-toggle__track {
+      transition: none;
+    }
+  }
+
+  /* Dar alanda etiket gizlenir (erişilebilir ad yine etiketten okunur); geniş üstlükte görünür. */
   .motion-toggle__label {
     display: none;
   }
   @media (min-width: 90rem) {
-    .motion-toggle {
-      padding-inline: var(--ek-space-3);
-    }
     .motion-toggle__label {
       display: inline;
     }

@@ -283,23 +283,30 @@ describe('sahne süreleri bağlayıcı sınırlar içinde (ADR-0014 Karar 3)', (
 })
 
 describe('durdurma kontrolü ve yürütücü (WCAG 2.2.2)', () => {
-  it('kontrol: <button type="button">, aria-pressed, sabit ad, 44 px hedef, JS\'siz gizli, reduced-motion\'da gösterilmez', () => {
-    expect(toggle).toMatch(/<button[^>]*type="button"[^>]*data-motion-toggle|<button[^>]*data-motion-toggle[^>]*type="button"/)
-    expect(toggle).toContain('aria-pressed="false"')
-    expect(toggle).toContain('Hareketi durdur')
+  it('anahtar (S26): <button role="switch" aria-checked>, ad görünür etiketten, 44 px hedef, odak halkası, JS\'siz gizli', () => {
+    expect(toggle).toMatch(/<button[\s\S]*?type="button"[\s\S]*?role="switch"[\s\S]*?data-motion-toggle/)
+    expect(toggle).toContain('aria-checked="true"')
+    expect(toggle).not.toContain('aria-pressed')
+    expect(toggle).toMatch(/aria-labelledby="motion-toggle-label"/)
+    expect(toggle).toMatch(/id="motion-toggle-label">Animasyon</)
+    expect(toggle).toMatch(/aria-describedby="motion-toggle-hint"/)
     expect(toggle).toMatch(/min-height:\s*var\(--site-tap-target\)/)
     expect(toggle).toMatch(/min-width:\s*var\(--site-tap-target\)/)
     expect(toggle).toMatch(/html:not\(\[data-motion\]\)[^{]*\{\s*visibility:\s*hidden/)
-    expect(toggle).toMatch(/prefers-reduced-motion:\s*reduce\)\s*\{\s*\.motion-toggle\s*\{\s*display:\s*none/)
+    // odak halkası rayın çevresinde, yerel (açık/koyu zemine göre) halka rengiyle
+    expect(toggle).toMatch(/:focus-visible \.motion-toggle__track\s*\{\s*outline:\s*var\(--site-focus-ring-width\) solid var\(--mt-ring\)/)
   })
 
-  it('kontrol header\'a SIĞAR: simge boyutunda; kısa etiket yalnızca >= 90rem\'de; etiket erişilebilir adın içinde geçer', () => {
-    expect(toggle).toMatch(/@media \(min-width: 90rem\)[\s\S]*motion-toggle__label\s*\{\s*display:\s*inline/)
+  it('anahtar görünümü: yumuşak durum geçişi yalnızca transform/renk; açık/koyu zemin tonları; reduced-motion\'da geçiş yok', () => {
+    expect(toggle).toMatch(/\.motion-toggle__thumb\s*\{[^}]*transition:\s*transform var\(--ek-duration-base\)/)
+    expect(toggle).toMatch(/\[aria-checked='true'\] \.motion-toggle__thumb\s*\{\s*transform:\s*translateX\(/)
+    expect(toggle).toMatch(/:global\(:is\(\[data-surface='dark'\], \.section--stage\)\) \.motion-toggle\s*\{[^}]*--mt-track-on/)
+    expect(toggle).toMatch(/prefers-reduced-motion:\s*reduce\)\s*\{\s*\.motion-toggle__thumb,\s*\.motion-toggle__track\s*\{\s*transition:\s*none/)
+    // sistem ayarı: kapalı + devre dışı görünüm (gizlenmez; neden ipucunda)
+    expect(toggle).toMatch(/\[aria-disabled='true'\]/)
+    // dar alanda etiket gizli, >= 90rem'de görünür (ad yine etiketten okunur)
     expect(toggle).toMatch(/\.motion-toggle__label\s*\{\s*display:\s*none/)
-    expect(toggle).not.toMatch(/margin-inline-start:\s*auto[\s\S]*flex:\s*1/)
-    // görünür etiket ("Hareket") erişilebilir adın ("Hareketi durdur") içinde geçer (WCAG 2.5.3)
-    expect('Hareketi durdur').toContain('Hareket')
-    expect(toggle).toMatch(/motion-toggle__label" aria-hidden="true">Hareket</)
+    expect(toggle).toMatch(/@media \(min-width: 90rem\)[\s\S]*motion-toggle__label\s*\{\s*display:\s*inline/)
   })
 
   it("yürütücü: IntersectionObserver, localStorage yalnızca try/catch içinde, çerez yok, data-motion durumları", () => {
@@ -309,7 +316,10 @@ describe('durdurma kontrolü ve yürütücü (WCAG 2.2.2)', () => {
       const before = scenesTs.slice(0, m.index!)
       expect(before.lastIndexOf('try {'), 'localStorage try içinde').toBeGreaterThan(before.lastIndexOf('}\n\n'))
     }
-    expect(scenesTs).toContain("'aria-pressed'")
+    expect(scenesTs).toContain("'aria-checked'")
+    // sistem hareket azaltma: anahtar kapalı + devre dışı; tıklama tercihi değiştirmez
+    expect(scenesTs).toMatch(/setAttribute\('aria-disabled', 'true'\)/)
+    expect(scenesTs).toMatch(/addEventListener\('click', \(\) => \{\s*if \(reduceQuery\.matches\) return/)
     for (const state of ["'play'", "'paused'", "'reduced'"]) expect(scenesTs).toContain(state)
     expect(scenesTs).toContain('prefers-reduced-motion: reduce')
     expect(scenesTs).toMatch(/dataset\.visible/)

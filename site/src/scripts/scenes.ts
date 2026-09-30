@@ -25,6 +25,7 @@ const REVEAL_RATIO = 0.15
 const root = document.documentElement
 const scenes = Array.from(document.querySelectorAll<HTMLElement>('[data-scene]'))
 const toggle = document.querySelector<HTMLButtonElement>('[data-motion-toggle]')
+const toggleHint = toggle?.querySelector<HTMLElement>('[data-motion-hint]')
 const reduceQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
 const spySteps = Array.from(document.querySelectorAll<HTMLElement>('[data-spy]'))
 const spyLinks = Array.from(document.querySelectorAll<HTMLElement>('[data-spy-link]'))
@@ -97,9 +98,21 @@ if (scenes.length > 0 && 'IntersectionObserver' in window) {
     for (const el of scene.querySelectorAll<HTMLElement>('[data-count]')) startCount(el)
   }
 
+  /** Anahtar durumu (role="switch"): açık = hareket oynuyor. Sistem ayarı hareketi azaltıyorsa kapalı + devre dışı. */
+  const syncToggle = () => {
+    if (!toggle) return
+    const reduced = reduceQuery.matches
+    toggle.setAttribute('aria-checked', String(motionOn()))
+    if (reduced) toggle.setAttribute('aria-disabled', 'true')
+    else toggle.removeAttribute('aria-disabled')
+    const hint = reduced ? 'Cihazınızda hareket azaltma açık; animasyonlar kapalı kalır.' : 'Tercihiniz bu cihazda hatırlanır.'
+    if (toggleHint) toggleHint.textContent = hint
+    toggle.title = reduced ? hint : motionOn() ? 'Animasyonları kapat' : 'Animasyonları aç'
+  }
+
   const render = () => {
     root.dataset.motion = reduceQuery.matches ? 'reduced' : paused ? 'paused' : 'play'
-    toggle?.setAttribute('aria-pressed', String(paused))
+    syncToggle()
     for (const scene of scenes) {
       if (motionOn()) scene.dataset.state = revealed.has(scene) ? 'play' : 'ready'
       else {
@@ -138,6 +151,7 @@ if (scenes.length > 0 && 'IntersectionObserver' in window) {
   }
 
   toggle?.addEventListener('click', () => {
+    if (reduceQuery.matches) return
     paused = !paused
     writePaused(paused)
     if (paused) render()
