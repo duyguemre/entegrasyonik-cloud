@@ -235,6 +235,8 @@ const { blocks } = Astro.props
     text-transform: uppercase;
   }
   .g-table tbody th {
+    min-width: calc(var(--ek-space-16) * 1.75);
+    overflow-wrap: normal;
     color: var(--site-text-heading);
     font-weight: var(--ek-font-weight-semibold);
   }
@@ -346,6 +348,9 @@ const { blocks } = Astro.props
       clip-path: inset(50%);
       white-space: nowrap;
     }
+    .g-table caption {
+      display: block;
+    }
     .g-table,
     .g-table tbody,
     .g-table tr,
@@ -365,6 +370,7 @@ const { blocks } = Astro.props
     }
     .g-table tbody th,
     .g-table tbody td {
+      min-width: 0;
       padding: var(--ek-space-1) 0;
     }
     .g-table tbody td::before {

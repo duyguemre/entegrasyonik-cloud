@@ -688,6 +688,10 @@ describe('(4) gizli roadmap öğeleri hiçbir yerde görünmez', () => {
   // ("e-fatura mükellefiyeti") içerir; bunlar pazarlama iddiası değildir. Kaynak taramasının `src/data/**`'i
   // dışlamasıyla aynı gerekçe. Yasal sayfalar kendi yasaklı-ifade taramasından geçer: tests/legal.test.ts.
   const distHtml = walk(distDir, ['.html']).filter((f) => !f.includes(`${path.sep}yasal${path.sep}`))
+  // dist/rehber/** (S20 bilgi merkezi): e-Fatura, GİB, Amazon SP-API gibi adlar burada ÜRÜN İDDİASI değil, pazarı anlatan
+  // kaynaklı bilgi konusudur. Bu sayfalar YALNIZCA ad taramasından muaftır (mutlak iddia taraması sürer); ürün bağlamı
+  // (Entegrasyonik cümleleri + bağlam kutusu) tests/rehber.test.ts'te aynı ad/kalıp listeleriyle ayrıca taranır.
+  const isRehber = (f: string) => f.includes(`${path.sep}rehber${path.sep}`)
   it.skipIf(distHtml.length === 0)('derleme çıktısında (dist/**/*.html) roadmap adı ve yasaklı ifade yok', () => {
     const hits: string[] = []
     const names = [...new Set([...STATIC_FORBIDDEN_NAMES, ...integrations.filter((i) => i.status === 'roadmap').flatMap((i) => [i.name, ...i.aliases])])]
@@ -697,7 +701,7 @@ describe('(4) gizli roadmap öğeleri hiçbir yerde görünmez', () => {
         .replace(/<style[\s\S]*?<\/style>/g, '')
         .replace(/<[^>]+>/g, ' ')
       const text = norm(html)
-      for (const n of names) if (phraseRe(n).test(text)) hits.push(`${path.relative(siteRoot, f)}: "${n}"`)
+      if (!isRehber(f)) for (const n of names) if (phraseRe(n).test(text)) hits.push(`${path.relative(siteRoot, f)}: "${n}"`)
       for (const p of ABSOLUTE_PREFIXES) if (prefixRe(p).test(text)) hits.push(`${path.relative(siteRoot, f)}: "${p}"`)
     }
     expect(hits).toEqual([])

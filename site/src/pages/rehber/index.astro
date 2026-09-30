@@ -16,7 +16,7 @@ import Icon from '../../components/home/Icon.astro'
 import { clusters, getGuide, getGuideCta, guideHref, guides, guidesIn, GLOSSARY_PATH, REHBER_PATH } from '../../data/kb'
 import { glossary } from '../../data/kb/glossary'
 import { sources } from '../../data/kb/sources'
-import { HUB, HUB_FAQ, MARKET_HIGHLIGHT, PRINCIPLES } from '../../data/kb/hub'
+import { GLOSSARY_PREVIEW, HUB, HUB_FAQ, MARKET_HIGHLIGHT, PRINCIPLES } from '../../data/kb/hub'
 import { breadcrumbJsonLd, faqJsonLd } from '../../lib/seo'
 import { collectionJsonLd } from '../../lib/kb-jsonld'
 import { formatTrDate } from '../../lib/kb-render'
@@ -28,8 +28,7 @@ const officialCount = [...usedSources].filter((id) => sources[id].trust === 'R')
 const featured = guides.slice(0, 3)
 const market = getGuide(MARKET_HIGHLIGHT.guide)!
 const marketSource = sources[MARKET_HIGHLIGHT.source]
-const glossaryPreview = ['tek-stok', 'asiri-satis', 'stok-rezervasyonu', 'hakedis', 'buybox', 'rate-limit', 'webhook', 'e-arsiv', 'ozel-entegrator', 'verbis', 'iys', 'etbis']
-  .map((id) => glossary.find((t) => t.id === id)!)
+const glossaryPreview = GLOSSARY_PREVIEW.map((id) => glossary.find((t) => t.id === id)!)
 const cta = getGuideCta('channels')
 
 const jsonLd = [
@@ -181,7 +180,7 @@ const jsonLd = [
           }
         </dl>
         <figcaption>
-          Kaynak: <a href={marketSource.url} rel="noopener noreferrer">{marketSource.publisher}</a> · Erişim:
+          Kaynak: <a href={marketSource.url} rel="noopener noreferrer">{marketSource.publisher}</a> · Erişim:{' '}
           <time datetime={marketSource.accessed}>{formatTrDate(marketSource.accessed)}</time>
         </figcaption>
       </figure>
@@ -519,6 +518,9 @@ const jsonLd = [
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--ek-space-6) var(--ek-space-4);
     margin: 0;
+  }
+  .market__stats div:first-child {
+    grid-column: 1 / -1;
   }
   .market__stats div {
     display: flex;

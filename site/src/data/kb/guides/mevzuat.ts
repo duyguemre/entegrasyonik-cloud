@@ -620,6 +620,6 @@ export const mevzuatGuides: Guide[] = [
     volatile: true,
     datePublished: D,
     dateModified: D,
-    reviewBy: '2027-03-29',
+    reviewBy: '2026-12-29',
   },
 ]

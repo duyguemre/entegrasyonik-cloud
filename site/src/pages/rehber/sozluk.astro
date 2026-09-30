@@ -19,11 +19,7 @@ import { definedTermSetJsonLd } from '../../lib/kb-jsonld'
 import { formatTrDate } from '../../lib/kb-render'
 import { appUrls } from '../../lib/site-config'
 
-const title = 'E-ticaret entegrasyon sözlüğü'
-const seoTitle = 'E-ticaret entegrasyon sözlüğü'
-const description =
-  'Tek stok, aşırı satış, hakediş, rate limit, e-Arşiv, VERBİS ve İYS gibi pazaryeri ve e-ticaret entegrasyonu terimlerinin kısa, sade tanımları.'
-const lead = `Pazaryeri, stok, API ve mevzuat terimlerinin kısa tanımları. Her terimin kalıcı bir bağlantısı vardır; ayrıntısı olan terimler ilgili rehbere bağlanır.`
+const { title, seoTitle, description, lead } = GLOSSARY_META
 const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Rehber', href: REHBER_PATH }, { label: 'Sözlük' }]
 
 const collator = new Intl.Collator('tr-TR', { sensitivity: 'base' })

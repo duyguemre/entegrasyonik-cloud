@@ -73,3 +73,6 @@ export const HUB_FAQ = [
       'Rehber belirli ürünleri karşılaştırmaz ve başka firmaların adını vermez. Seçim rehberi, herhangi bir yazılıma sorabileceğiniz tarafsız ölçütleri listeler.',
   },
 ]
+
+/** Hub sözlük bandında gösterilen terimler (sözlük kimlikleri). */
+export const GLOSSARY_PREVIEW = ['tek-stok', 'asiri-satis', 'stok-rezervasyonu', 'hakedis', 'buybox', 'rate-limit', 'webhook', 'e-arsiv', 'ozel-entegrator', 'verbis', 'iys', 'etbis']

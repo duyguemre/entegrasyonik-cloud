@@ -77,6 +77,11 @@ export const glossary: GlossaryTerm[] = [
 
 /** Sözlük sayfası sürüm bilgisi (KB §11: yılda bir gözden geçirme). */
 export const GLOSSARY_META = {
+  title: 'E-ticaret entegrasyon sözlüğü',
+  seoTitle: 'E-ticaret entegrasyon sözlüğü',
+  description:
+    'Tek stok, aşırı satış, hakediş, rate limit, e-Arşiv, VERBİS ve İYS gibi pazaryeri ve e-ticaret entegrasyonu terimlerinin kısa, sade tanımları.',
+  lead: 'Pazaryeri, stok, API ve mevzuat terimlerinin kısa tanımları. Her terimin kalıcı bir bağlantısı vardır; ayrıntısı olan terimler ilgili rehbere bağlanır.',
   datePublished: '2026-09-30',
   dateModified: '2026-09-30',
   reviewBy: '2027-09-30',
