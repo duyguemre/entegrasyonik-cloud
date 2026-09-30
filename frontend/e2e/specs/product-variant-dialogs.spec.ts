@@ -4,17 +4,17 @@
 // Kapsanan bileşenler (hepsi `components/productDefinitions/variants/**`):
 //  - ProductVariantAttributesComponent (+ platformInfos/*)   — satırdaki kalem butonu
 //  - ProductBatchVariantAttributesComponent                  — "Varyant İşlemleri" > "Toplu Özellik Düzenleme"
-//  - ProductBatchVariantPlatformPricesComponent               — "Varyant İşlemleri" > "Toplu Fiyat Düzenleme"
+//  - grid/VariantBulkEditor (DS-v2 A6a; eski ProductBatchVariantPlatformPricesComponent'in yerine)
+//                                                             — "Varyant İşlemleri" > "Toplu Fiyat Düzenleme"
 //  - ProductVariantPlatformPricesComponent (+ crud/PlatformPriceComponent) — "Platform Bazında Fiyat"
 //    işaretliyken fiyat hücresine tıklama
-//  - ProductSearchVariantComponent                            — "Varyant İşlemleri" > "Ara"
+//  - araç çubuğu süzme alanı (DS-v2 A6a; eski ProductSearchVariantComponent'in yerine) — "Varyant İşlemleri" > "Ara"
 //  - ProductVariantGeneratorComponent                         — başlıktaki yeşil "+" menüsü
 //  - ProductVariantImagesComponent (+ crud/ImageUploaderComponent, ProductVariantImageEditComponent)
 //    — satırdaki varyant resmi
 //
-// GİZLİ DAVRANIŞ (not): ProductBatchProcessVariantComponent `batchProcessFormMenu` ile açılır, ama
-// bu ref ProductVariantsComponent'te HİÇBİR YERDE `true` yapılmaz (grep ile doğrulandı) — bileşen
-// arayüzden erişilemez, bu yüzden burada karakterize EDİLMEZ.
+// DS-v2 A6a: arayüzden erişilemeyen ProductBatchProcessVariantComponent ve yerini alan iki panel
+// (ProductBatchVariantPlatformPricesComponent, ProductSearchVariantComponent) silindi.
 //
 // Ekran görüntüsü tabanları: view'ın (B5-1, kapsam dışı) kategori adımından gelen hata bildirimi
 // rastgele bir destek kodu içerir — maskelenir.
