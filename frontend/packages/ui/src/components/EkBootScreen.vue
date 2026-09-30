@@ -69,8 +69,8 @@ onBeforeUnmount(() => clearTimeout(timer))
   position: absolute;
   inset: -20%;
   background:
-    radial-gradient(38% 32% at 50% 46%, color-mix(in srgb, var(--ek-color-brand) 14%, transparent), transparent 70%),
-    radial-gradient(22% 18% at 56% 52%, color-mix(in srgb, var(--ek-color-secondary) 10%, transparent), transparent 72%);
+    radial-gradient(38% 32% at 50% 46%, color-mix(in srgb, var(--ek-color-brand) 8%, transparent), transparent 70%),
+    radial-gradient(22% 18% at 56% 52%, color-mix(in srgb, var(--ek-color-secondary) 9%, transparent), transparent 72%);
   opacity: 0;
   transition: opacity var(--ek-duration-slow) var(--ek-easing-enter);
   pointer-events: none;

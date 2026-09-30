@@ -35,7 +35,7 @@
         </template>
       </BoPanelState>
     </div>
-    <div v-else class="bo-audit">
+    <div v-else class="bo-audit" tabindex="0" role="region" aria-label="Denetim kayıtları tablosu">
       <table>
         <caption class="ek-sr-only">Denetim kayıtları</caption>
         <thead>
@@ -310,6 +310,11 @@ const changes = (a: AuditRecord) => auditChanges(a.meta)
   border-radius: var(--ek-radius-card);
   background: var(--ek-color-surface);
   box-shadow: var(--ek-shadow-card);
+}
+
+.bo-audit:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
 }
 
 .bo-audit > table {

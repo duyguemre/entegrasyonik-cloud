@@ -15,7 +15,7 @@ export async function initApi(): Promise<void> {
   if (!USE_MOCK) return
   const [mock, { createMockAdapter }] = await Promise.all([import('./mock/server'), import('./mock/adapter')])
   const server = new mock.MockAdminServer({ persist: sessionStorage })
-  api = createAdminApi({ baseURL: ADMIN_API_BASE, adapter: createMockAdapter({ server, latency: [120, 380] }) })
-  // Playwright ve el ile deneme için: __boMock.expireReauth() → step-up diyaloğu, setDegraded(true) → Redis düşük.
+  api = createAdminApi({ baseURL: ADMIN_API_BASE, adapter: createMockAdapter({ server, latency: (window as unknown as { __boMockLatency?: [number, number] }).__boMockLatency ?? [120, 380] }) })
+  // Playwright ve el ile deneme için: window.__boMockLatency=[ms,ms] (addInitScript) → gecikme (açılış ekranı karesi); __boMock.expireReauth() → step-up diyaloğu, setDegraded(true) → Redis düşük.
   ;(window as unknown as { __boMock: MockAdminServer }).__boMock = server
 }
