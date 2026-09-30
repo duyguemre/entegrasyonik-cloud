@@ -17,7 +17,6 @@ import {
   type ProviderStatus,
   type ProviderTestResult,
   type ServerEvent,
-  type TableRow,
   type TurnRequest,
 } from '../../protocol/v1'
 import { ChatTransportError, type ChatSetupApi, type ChatTransport } from '../types'

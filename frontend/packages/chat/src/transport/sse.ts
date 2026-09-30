@@ -158,6 +158,11 @@ export function createSseTransport(options: SseTransportOptions): ChatTransport 
     const decoder = new TextDecoder()
     const parser = createSseParser()
     let finished = false
+    // Abort okuyucuyu da iptal eder: bekleyen `read()` hemen döner (gövde sinyale bağlı olmasa bile takılmaz).
+    const onAbort = () => {
+      reader.cancel().catch(() => undefined)
+    }
+    signal.addEventListener('abort', onAbort, { once: true })
     try {
       while (!finished) {
         let chunk: ReadableStreamReadResult<Uint8Array>
@@ -167,7 +172,7 @@ export function createSseTransport(options: SseTransportOptions): ChatTransport 
           if (isAbort(error, signal)) return
           break // bağlantı koptu → aşağıda STREAM_INTERRUPTED
         }
-        if (chunk.done) break
+        if (chunk.done || signal.aborted) break
         let frames
         try {
           frames = parser.push(decoder.decode(chunk.value, { stream: true }))
@@ -199,6 +204,7 @@ export function createSseTransport(options: SseTransportOptions): ChatTransport 
         }
       }
     } finally {
+      signal.removeEventListener('abort', onAbort)
       if (!finished || signal.aborted) {
         try {
           await reader.cancel()

@@ -21,25 +21,19 @@
       <p v-if="capped" class="ek-chat-table__note">{{ t('table.limit', { max: TABLE_ROW_CAP }) }}</p>
     </footer>
 
-    <v-dialog v-model="fullscreen" fullscreen :scrim="false" transition="fade-transition">
-      <section class="ek-chat-table-dialog" :aria-labelledby="`${titleId}-dlg`">
-        <header class="ek-chat-table-dialog__head">
-          <p :id="`${titleId}-dlg`" class="ek-chat-table-dialog__title">{{ title }} <span class="ek-chat-part-head__meta">{{ countText }}</span></p>
-          <EkButton v-if="canLoadMore" size="sm" tone="secondary" icon="mdi-chevron-down" :loading="loading" @click="loadMore">{{ t('table.more') }}</EkButton>
-          <EkButton v-if="openTarget" size="sm" tone="ghost" trailing-icon="mdi-arrow-right" @click="open">{{ t('table.openIn') }}</EkButton>
-          <EkButton size="sm" tone="ghost" icon="mdi-close" icon-only :aria-label="t('table.closeFullscreen')" @click="fullscreen = false" />
-        </header>
-        <div class="ek-chat-table-dialog__body">
-          <ChatTableGrid :columns="part.columns" :rows="part.rows" :row-key="part.rowKey" :caption="caption" :region-label="t('table.scrollRegion', { title })" />
-        </div>
-      </section>
-    </v-dialog>
+    <EkDialog v-model="fullscreen" :title="title" :description="countText" icon="mdi-table" width="xl" hide-actions>
+      <div class="ek-chat-table-dialog__tools">
+        <EkButton v-if="canLoadMore" size="sm" tone="secondary" icon="mdi-chevron-down" :loading="loading" @click="loadMore">{{ t('table.more') }}</EkButton>
+        <EkButton v-if="openTarget" size="sm" tone="ghost" trailing-icon="mdi-arrow-right" @click="open">{{ t('table.openIn') }}</EkButton>
+      </div>
+      <ChatTableGrid :columns="part.columns" :rows="part.rows" :row-key="part.rowKey" :caption="caption" :region-label="t('table.scrollRegion', { title })" />
+    </EkDialog>
   </section>
 </template>
 
 <script setup lang="ts">
 import { computed, nextTick, ref, useId } from 'vue'
-import { EkButton } from '@entegrasyonik/ui/components'
+import { EkButton, EkDialog } from '@entegrasyonik/ui/components'
 import { formatNumber } from '@entegrasyonik/ui/format'
 import type { TablePart } from '../../protocol/v1'
 import { useChat } from '../../state/useChat'

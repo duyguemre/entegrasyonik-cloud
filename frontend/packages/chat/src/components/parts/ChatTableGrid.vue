@@ -19,7 +19,7 @@
               <span v-else>{{ (row[col.key] as EntityRef).label }}</span>
             </template>
             <EkStatusChip v-else-if="col.type === 'status' && row[col.key] != null" v-bind="statusOf(col, row[col.key])" />
-            <EkChannelDot v-else-if="col.type === 'channel' && row[col.key]" :code="String(row[col.key])" :name="channelName(row[col.key])" show-name variant="plain" />
+            <EkChannelDot v-else-if="col.type === 'channel' && row[col.key]" :code="String(row[col.key])" show-name variant="plain" />
             <span v-else-if="col.untrusted" class="ek-chat-grid__clamp" :title="text(row[col.key], col)">{{ text(row[col.key], col) }}</span>
             <template v-else>{{ text(row[col.key], col) }}</template>
           </td>
@@ -61,11 +61,6 @@ function statusOf(col: TableColumn, value: CellValue) {
   const raw = String(value)
   const mapped = col.statusDomain ? chat.host.status?.(col.statusDomain, raw) : null
   return mapped ?? { tone: 'neutral' as const, label: raw }
-}
-
-function channelName(value: CellValue) {
-  const code = String(value)
-  return code.charAt(0).toLocaleUpperCase('tr-TR') + code.slice(1)
 }
 
 function entityTarget(value: CellValue) {

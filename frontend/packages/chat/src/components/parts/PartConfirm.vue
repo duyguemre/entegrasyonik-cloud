@@ -101,7 +101,7 @@
     </template>
 
     <div v-else class="ek-chat-confirm__outcome" :class="`is-${part.state}`" role="status">
-      <v-progress-circular v-if="part.state === 'executing'" indeterminate :size="14" :width="2" aria-hidden="true" />
+      <ChatSpinner v-if="part.state === 'executing'" />
       <v-icon v-else :icon="outcomeIcon" size="small" aria-hidden="true" />
       <div>
         <p class="ek-chat-confirm__outcome-title">{{ t(`confirm.state.${part.state}`) }}</p>
@@ -120,6 +120,7 @@ import type { ConfirmPart } from '../../protocol/v1'
 import { useChat } from '../../state/useChat'
 import { formatCountdown } from '../cellFormat'
 import { ENTITY_ICON } from '../icons'
+import ChatSpinner from '../ChatSpinner.vue'
 
 const props = defineProps<{ part: ConfirmPart; messageId?: string }>()
 const chat = useChat()

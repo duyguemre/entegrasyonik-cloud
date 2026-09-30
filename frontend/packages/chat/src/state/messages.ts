@@ -23,7 +23,7 @@ export function noticeMessage(id: string, text: string, createdAt: string): Chat
   return { id, role: 'notice', createdAt, status: 'complete', parts: [{ id: `${id}-t`, type: 'text', format: 'plain', text }] }
 }
 
-export function ensureAssistant(messages: ChatMessage[], messageId: string, createdAt: string): ChatMessage[] {
+export function ensureReplyMessage(messages: ChatMessage[], messageId: string, createdAt: string): ChatMessage[] {
   if (messages.some((m) => m.id === messageId)) return messages
   return [...messages, { id: messageId, role: 'assistant', createdAt, status: 'streaming', parts: [] }]
 }
@@ -39,7 +39,7 @@ function replaceMessage(messages: ChatMessage[], id: string, fn: (m: ChatMessage
 }
 
 export function upsertPart(messages: ChatMessage[], messageId: string, part: AnyPart, createdAt: string): ChatMessage[] {
-  const base = ensureAssistant(messages, messageId, createdAt)
+  const base = ensureReplyMessage(messages, messageId, createdAt)
   return replaceMessage(base, messageId, (m) => {
     const index = m.parts.findIndex((p) => p.id === part.id)
     const parts = index === -1 ? [...m.parts, part] : m.parts.map((p, i) => (i === index ? part : p))
@@ -78,7 +78,7 @@ export function finishMessage(messages: ChatMessage[], messageId: string | null,
   }))
 }
 
-/** Tur hatası → hata parçası (mesaj yoksa — ör. HTTP 429, `turn.start` gelmeden — yeni asistan mesajı açılır). */
+/** Tur hatası → hata parçası (mesaj yoksa — ör. HTTP 429, `turn.start` gelmeden — yeni yanıt mesajı açılır). */
 export function addErrorPart(messages: ChatMessage[], messageId: string, error: TurnError, createdAt: string, partId: string): ChatMessage[] {
   const part: ErrorPart = { id: partId, type: 'error', ...error }
   return finishMessage(upsertPart(messages, messageId, part, createdAt), messageId, 'error')

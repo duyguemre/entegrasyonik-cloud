@@ -30,7 +30,7 @@ import {
   addErrorPart,
   appendDelta,
   cancelOpenForms,
-  ensureAssistant,
+  ensureReplyMessage,
   findPendingConfirm,
   finishMessage,
   noticeMessage,
@@ -298,7 +298,7 @@ export function createChatController(options: ChatControllerOptions): ChatContro
       case 'turn.start':
         conversationId = event.conversationId
         currentMessageId = event.messageId
-        messages.value = ensureAssistant(messages.value, event.messageId, nowIso(now()))
+        messages.value = ensureReplyMessage(messages.value, event.messageId, nowIso(now()))
         dispatch({ type: 'TURN_START' })
         return
       case 'part':

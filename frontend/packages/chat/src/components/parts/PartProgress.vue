@@ -2,10 +2,7 @@
 <template>
   <div class="ek-chat-progress" :class="`is-${part.state}`">
     <span class="ek-chat-progress__icon" aria-hidden="true">
-      <template v-if="part.state === 'running'">
-        <v-progress-circular class="ek-chat-progress__spinner" indeterminate :size="14" :width="2" />
-        <v-icon class="ek-chat-progress__static" icon="mdi-timer-sand" size="small" />
-      </template>
+      <ChatSpinner v-if="part.state === 'running'" />
       <v-icon v-else :icon="icon" size="small" />
     </span>
     <span class="ek-chat-progress__label">{{ part.label }}</span>
@@ -17,6 +14,7 @@
 import { computed } from 'vue'
 import type { ProgressPart } from '../../protocol/v1'
 import { useChat } from '../../state/useChat'
+import ChatSpinner from '../ChatSpinner.vue'
 
 const props = defineProps<{ part: ProgressPart; messageId?: string }>()
 const { t } = useChat()

@@ -39,7 +39,7 @@
 
     <div class="ek-chat__body">
       <div v-if="chat.status.value === 'loading'" class="ek-chat-state" role="status">
-        <v-progress-circular indeterminate :size="20" :width="2" aria-hidden="true" />
+        <ChatSpinner :size="20" />
         <p class="ek-chat-state__body">{{ t('panel.loading') }}</p>
       </div>
       <div v-else-if="chat.status.value === 'setup-required'" class="ek-chat__scroll">
@@ -49,7 +49,7 @@
         <ChatUnavailable />
       </div>
       <ChatThread v-else ref="threadRef">
-        <template #before>
+        <template v-slot:before>
           <ChatEmptyState v-if="!chat.messages.value.length" />
         </template>
       </ChatThread>
@@ -79,6 +79,7 @@ import ChatComposer from './ChatComposer.vue'
 import ChatContextChip from './ChatContextChip.vue'
 import ChatEmptyState from './ChatEmptyState.vue'
 import ChatProviderSetup from './ChatProviderSetup.vue'
+import ChatSpinner from './ChatSpinner.vue'
 import ChatThread from './ChatThread.vue'
 import ChatUnavailable from './ChatUnavailable.vue'
 import { CHAT_ICON } from './icons'

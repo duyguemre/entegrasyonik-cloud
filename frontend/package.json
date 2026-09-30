@@ -13,7 +13,7 @@
     "test:style-ratchet": "node scripts/check-style-baseline.js",
     "test:pattern-ratchet": "node scripts/check-pattern-baseline.js",
     "test:no-console-ratchet": "node scripts/check-no-console-baseline.js",
-    "lint": "eslint src packages/ui/src",
+    "lint": "eslint src packages/ui/src packages/chat/src",
     "tokens": "vite-node scripts/build-tokens.ts",
     "test:e2e": "playwright test",
     "test:contract-paths": "node scripts/check-contract-paths.js",
@@ -28,6 +28,7 @@
     "dev:backoffice": "npm run dev -w @entegrasyonik/backoffice",
     "build:backoffice": "npm run build -w @entegrasyonik/backoffice",
     "test:backoffice": "npm run test -w @entegrasyonik/backoffice && npm run test -w @entegrasyonik/ui",
+    "test:chat": "npm run test -w @entegrasyonik/chat",
     "test:e2e:backoffice": "npm run test:e2e -w @entegrasyonik/backoffice"
   },
   "dependencies": {
