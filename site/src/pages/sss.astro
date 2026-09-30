@@ -63,6 +63,7 @@ const CATEGORY_ICONS: Record<FaqCategoryId, 'bolt' | 'plug' | 'stock' | 'shield'
     eyebrow="Yardım"
     lead="Kurulumdan güvenliğe, stok yönetiminden fiyatlandırmaya: çok kanallı satış operasyonunuzu Entegrasyonik'e taşımadan önce merak ettiğiniz her şey."
     crumbs={crumbs}
+    visualDesktopOnly
   >
     <div class="search" data-faq-search hidden>
       <label class="sr-only" for="faq-q">Sorularda ara</label>
@@ -168,12 +169,7 @@ const CATEGORY_ICONS: Record<FaqCategoryId, 'bolt' | 'plug' | 'stock' | 'shield'
   }
 
   /* --- Hero cam paneli (S16 /guvenlik listesiyle aynı desen). Dar ekranda sorular hemen aşağıda olduğundan
-     yinelenen panel gizlenir; içerik kaybı yok (aynı sorular listede). --- */
-  @media (max-width: 1023.98px) {
-    :global(.page-hero__visual) {
-      display: none;
-    }
-  }
+     yinelenen panel gizlenir (PageHero `visualDesktopOnly`); içerik kaybı yok. --- */
   .panel-tag {
     margin: 0 0 var(--ek-space-3);
     color: var(--site-text-on-dark-meta);
