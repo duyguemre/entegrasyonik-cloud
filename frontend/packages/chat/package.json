@@ -1,0 +1,27 @@
+{
+  "name": "@entegrasyonik/chat",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Otopilot sohbet arayüzü (ADR-0034, docs/cloud-contracts/CHAT_UI_CONTRACT.md): protokol chat/v1, taşıyıcılar (sse, mock), durum makinesi, parça bileşenleri. Web, backoffice ve Electron masaüstü aynı paketi kullanır. Derleme adımı yok — kaynak olarak tüketilir.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./brand": "./src/brand.ts",
+    "./protocol": "./src/protocol/index.ts",
+    "./transports/sse": "./src/transport/sse.ts",
+    "./transports/mock": "./src/transport/mock/index.ts",
+    "./testing": "./src/testing.ts"
+  },
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@entegrasyonik/ui": "*",
+    "markdown-it": "14.3.2",
+    "zod": "3.25.76"
+  },
+  "peerDependencies": {
+    "vue": "^3.4.15",
+    "vuetify": "^3.8.11"
+  }
+}
