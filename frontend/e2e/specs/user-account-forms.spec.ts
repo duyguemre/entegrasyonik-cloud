@@ -41,7 +41,9 @@ test.describe('ADR-0015 B5-3 — Hesap ekranları (ExitView / ChangePasswordView
     // anahtarı yerine): sol menüdeki "Şifre Değiştir" öğesi de bir düğme — iddia ekranın köküne kapsanır.
     const screen = page.locator('.changePasswordView:not(.hide-tab-component)')
     await expect(screen).toHaveCount(1)
-    await expect(screen.getByRole('button', { name: /değiştir|kaydet/i })).toHaveCount(0)
+    // [DS-v2 A5, KASITLI] Başlık satırındaki "Sayfa hakkında: <sayfa adı>" (i) düğmesi sayfa adını taşır ("Şifre
+    // Değiştir") — bir kaydetme eylemi değil; iddia (kaydet/değiştir EYLEMİ yok) aynı.
+    await expect(screen.getByRole('button', { name: /^(?!Sayfa hakkında).*(değiştir|kaydet)/i })).toHaveCount(0)
   })
 
   test('InvoiceInfoView: fatura bilgisi alanları render olur, kaydet düğmesi YOK (karakterizasyon)', async ({ page }) => {
