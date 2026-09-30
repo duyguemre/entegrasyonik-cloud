@@ -16,6 +16,8 @@ export interface SheetOptions {
   onActivate?: (cell: CellRef) => void
   /** Ekran okuyucu duyurusu (aria-live). */
   announce?: (message: string) => void
+  /** Salt okunur hücre (ör. kanal bazında fiyatlı satırda genel fiyat). Düzenleme/toplu yazma atlar. */
+  readonly?: (row: any, column: SheetColumn) => boolean
 }
 
 export function useVariantSheet(opts: SheetOptions) {
@@ -76,7 +78,7 @@ export function useVariantSheet(opts: SheetOptions) {
     for (const t of targets) {
       const v = rows.value[t.row]
       const column = columns.value[t.col]
-      if (!v || !column) continue
+      if (!v || !column || opts.readonly?.(v, column)) continue
       const before = getCell(v, column.key)
       setCell(v, column.key, t.value)
       step.push({ id: rowId(v), key: column.key, before, after: t.value })
@@ -111,6 +113,7 @@ export function useVariantSheet(opts: SheetOptions) {
     const v = rows.value[row]
     const column = columns.value[col]
     if (!v || !column) return
+    if (opts.readonly?.(v, column)) { opts.announce?.(`${column.label} bu satırda kanal bazında düzenlenir`); return }
     const cur = getCell(v, column.key)
     const text = initial ?? (cur === null || cur === undefined ? '' : column.kind === 'text' ? String(cur) : String(cur).replace('.', ','))
     editing.value = { row, col, draft: text }
@@ -142,7 +145,7 @@ export function useVariantSheet(opts: SheetOptions) {
     for (let r = g.r1; r <= g.r2; r++) {
       for (let c = g.c1; c <= g.c2; c++) {
         const column = columns.value[c]
-        if (onlyKinds && !onlyKinds.includes(column.kind)) { skipped++; continue }
+        if ((onlyKinds && !onlyKinds.includes(column.kind)) || opts.readonly?.(rows.value[r], column)) { skipped++; continue }
         const res = applyBulk(column.kind, getCell(rows.value[r], column.key), op)
         if ('error' in res) { skipped++; continue }
         targets.push({ row: r, col: c, value: res.value })
