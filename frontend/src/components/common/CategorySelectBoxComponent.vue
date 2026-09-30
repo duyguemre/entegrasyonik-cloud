@@ -2,9 +2,10 @@
   <div class="category-select-wrapper">
     <LoadingComponent v-if="loading" ref="loadingComponentRef" attach=".category-select-wrapper"></LoadingComponent>
 
-    <v-autocomplete v-model="categoryId" v-model:search="categorySearchText" :items="computedCategories"
-      item-value="_id" item-title="title" :rules="mandatory ? formRules.mandatoryRule : []"
-      :placeholder="$t('productDefinitions.category.search')" no-data-text="Kategori bulunamadı" auto-select-first
+    <v-autocomplete v-model="categoryId" v-model:search="categorySearchText" v-model:menu="menuOpen" :items="computedCategories"
+      item-value="_id" item-title="title" :rules="mandatory ? formRules.mandatoryRule : []" :custom-filter="categoryFilter"
+      :placeholder="$t('productDefinitions.category.search')" auto-select-first @keydown.enter="onEnter"
+      :no-data-text="createQuery ? `“${createQuery}” ile eşleşen kategori yok` : 'Kategori bulunamadı'"
       clearable persistent-hint :menu-props="{
         contentClass: 'category-autocomplete-menu',
         maxHeight: '400',
@@ -31,7 +32,7 @@
           <div class="d-flex align-center w-100 position-relative">
             <div v-if="!item.raw.isParent" class="leaf-indicator"></div>
 
-            <div v-if="!categorySearchText" :style="{ width: (item.raw.displayLevel * 20) + 'px' }"
+            <div v-if="!isSearching" :style="{ width: (item.raw.displayLevel * 20) + 'px' }"
               class="flex-shrink-0">
             </div>
 
@@ -43,7 +44,7 @@
             <div class="category-title-wrapper d-flex align-center flex-grow-1 overflow-hidden">
               <span class="category-text text-truncate">{{ item.title }}</span>
 
-              <span v-if="categorySearchText && item.raw.breadcrumb" class="breadcrumb-text text-truncate ml-2">
+              <span v-if="isSearching && item.raw.breadcrumb" class="breadcrumb-text text-truncate ml-2">
                 {{ item.raw.breadcrumb }}
               </span>
 
@@ -56,32 +57,24 @@
       </template>
 
       <template v-slot:append-item>
-        <v-divider></v-divider>
-        <div class="pa-4 bg-surface-muted">
-          <v-form v-model="isNewCategoryValid" @submit.prevent="addNewCategory">
-            <v-text-field v-model="newCategoryName" variant="outlined" density="compact" hide-details="auto"
-              :placeholder="$t('productDefinitions.category.title')" :rules="titleRules">
-              <template v-slot:append-inner>
-                <v-btn color="primary" variant="flat" size="small" :disabled="!isNewCategoryValid || !newCategoryName"
-                  @click="addNewCategory">
-                  <v-icon>mdi-plus</v-icon>
-                </v-btn>
-              </template>
-            </v-text-field>
-          </v-form>
-        </div>
+        <QuickCreateRow noun="kategori" :query="createQuery" :has-results="hasResults" @create="openCreate" />
       </template>
     </v-autocomplete>
+
+    <QuickCreateCategoryDialog v-model="createOpen" :initial-name="createQuery" @created="onCreated"
+      @picked="onPicked" />
   </div>
 </template>
 
 <script lang="ts" setup>
 import { ref, computed, onMounted } from 'vue'
 import { useCategoriesStore } from '@/stores/categoriesStore'
-import { useI18n } from 'vue-i18n'
 import useFormRules from '@/composables/formrules'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useToast } from '@entegrasyonik/ui/composables/useToast'
 import LoadingComponent from '@/components/LoadingComponent.vue'
+import QuickCreateRow from './QuickCreateRow.vue'
+import QuickCreateCategoryDialog from './QuickCreateCategoryDialog.vue'
+import { findDuplicate, normalizeTitle, trIncludes } from './quickCreate'
 
 const props = defineProps<{
   noInit?: boolean
@@ -91,27 +84,20 @@ const props = defineProps<{
 const emits = defineEmits(['change'])
 
 const categoriesStore = useCategoriesStore()
-const { t } = useI18n()
 const formRules: any = useFormRules()
-const snackbarStore = useSnackbarStore()
+const { showToast } = useToast()
 
 const categoryId = defineModel({ default: undefined })
 const categorySearchText = ref("")
-const newCategoryName = ref("")
-const isNewCategoryValid = ref(false)
+const menuOpen = ref(false)
 const loading = ref(false)
-
-const titleRules = [
-  (v: any) => !!v || t("rules.mandatory"),
-  (v: string) => (v && v.length >= 2 && v.length <= 160) || t("rules.2_160characters"),
-]
 
 const computedCategories = computed(() => {
   const rawList: any = categoriesStore.getSelectCategories()?.value || []
   const catMap = new Map()
   rawList.forEach((c: any) => catMap.set(c._id, c))
 
-  let processedList = rawList.map((cat: any) => {
+  const processedList = rawList.map((cat: any) => {
     const path: string[] = []
     let currentLevel = 0
     let parent = catMap.get(cat.parentId)
@@ -136,30 +122,42 @@ const computedCategories = computed(() => {
     }
   })
 
-  // 1. ANA KATEGORİLERİ FİLTRELE
-  processedList = processedList.filter((cat: any) => !cat.isMain)
-
-  // 2. ARAMA FİLTRESİ
-  if (categorySearchText.value && categorySearchText.value.length >= 2) {
-    processedList = processedList.filter((cat: any) =>
-      !cat.isParent &&
-      cat.title.toLocaleUpperCase('tr-TR').includes(categorySearchText.value.toLocaleUpperCase('tr-TR'))
-    )
-  }
-
-  return processedList
+  // ANA KATEGORİLERİ FİLTRELE
+  return processedList.filter((cat: any) => !cat.isMain)
 })
 
-const addNewCategory = async () => {
-  if (!newCategoryName.value || !isNewCategoryValid.value) return
-  loading.value = true
-  try {
-    await categoriesStore.addCategory({ parentId: 0, title: newCategoryName.value })
-    newCategoryName.value = ""
-    snackbarStore.addSnackbar({ text: t('common.success'), color: 'success' })
-  } finally {
-    loading.value = false
-  }
+// FR2-PFORM 23: arama Vuetify filtresiyle (Türkçe harf duyarsız; aramada klasörler gizlenir). Eskiden liste arama
+// metniyle önceden süzülüyor, seçili kategori listeden düşünce kutu ham kimliği gösteriyordu.
+const isSearching = computed(() => normalizeTitle(categorySearchText.value).length >= 2 && normalizeTitle(categorySearchText.value) !== selectedTitle.value)
+const categoryFilter = (_value: string, query: string, item?: any) =>
+  !isSearching.value || (!item?.raw?.isParent && trIncludes(item?.raw?.title, query))
+
+// ---- yeni kategori (QuickCreateCategoryDialog) ----
+const selectedTitle = computed(() => computedCategories.value.find((c: any) => c._id === categoryId.value)?.title)
+const createQuery = computed(() => {
+  const q = normalizeTitle(categorySearchText.value)
+  return q && q !== selectedTitle.value ? q : ''
+})
+const hasResults = computed(() => !createQuery.value || computedCategories.value.some((c: any) => !c.isParent && trIncludes(c.title, createQuery.value)))
+const createOpen = ref(false)
+
+function openCreate() {
+  menuOpen.value = false
+  createOpen.value = true
+}
+
+function onEnter() {
+  if (createQuery.value && !hasResults.value && !findDuplicate(computedCategories.value, createQuery.value)) openCreate()
+}
+
+function onCreated(id: string, title: string) {
+  categoryId.value = id as any
+  categorySearchText.value = ''
+  showToast({ tone: 'success', message: `“${title}” kategorisi eklendi ve seçildi.` })
+}
+
+function onPicked(id: string) {
+  categoryId.value = id as any
 }
 
 onMounted(() => {

@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import useRestApi from '@/composables/restapi'
 import { registerStoreReset } from '@/stores/resetRegistry'
+import type { CreateResult } from '@/components/common/quickCreate'
 export const useBrandsStore = defineStore('brandsStore', () => {
   const brands = ref()
   const restApi = useRestApi()
@@ -29,12 +30,14 @@ export const useBrandsStore = defineStore('brandsStore', () => {
     })
     return brands.value
   }
-  const addBrand = (newBrand: any) => {
-    restApi.post("BrandService/addBrand", { title: newBrand.title }).then((response: any) => {
-      if (response && response._id) {
-        retrieve()
-      }
-    })
+  /** FR2-PFORM 23: istek beklenir; başarıda liste yenilenir ve yeni kimlik döner (çağıran seçebilsin), hata yutulmaz. */
+  const addBrand = async (newBrand: any): Promise<CreateResult> => {
+    const response: any = await restApi.post("BrandService/addBrand", { title: newBrand.title })
+    if (response && response._id) {
+      await retrieve()
+      return { id: String(response._id) }
+    }
+    return { error: response }
   }
   
   const countOfBrands = ()=> {
