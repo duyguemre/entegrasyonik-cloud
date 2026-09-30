@@ -17,8 +17,8 @@
 
   Faz 3 A9 — seviye geçişleri (mantık: `cascadeMotion.ts`, DS §4 hareket token'ları; yalnız transform + opacity):
     - Klasör seçilince sağdaki yeni seviye opaklık + `--ek-motion-distance-md` yatay kayma ile açılır
-      (`--ek-duration-base`, `--ek-easing-enter`). Kolonlar SABİT 260px; sağdaki "kuyruk" paneli yeni kolonun
-      yerini FLIP ile (yalnız transform) boşaltır → genişlik zıplaması / layout thrash yok.
+      (`--ek-duration-base`, `--ek-easing-enter`). Kolonlar SABİT 260px; kapanan kolonlar akıştan çıkarılıp
+      yerinde söner (pinLeaving); sağdaki "kuyruk" yalnız içeriğini yeniler → genişlik zıplaması / layout thrash yok.
     - Üst seviye değişince alt seviyeler derinden sığa SIRAYLA kapanır (`--ek-duration-fast`, adım fast/3,
       en fazla 2 adım), yeni seviye kapanışlar bitince açılır; toplam ≤ slow token. Geri gidişte ters yön.
     - Yaprak seçilince son seviye "Seçildi" onay durumu (kolon başlığı rozeti + kuyrukta onay kartı).
@@ -84,6 +84,7 @@
             class="ek-cascade__col"
             :class="{ 'is-last': col.index === columns.length - 1, 'is-complete': col.complete }"
             :data-level="col.index + 1"
+            :data-key="col.key"
           >
             <div class="ek-cascade__col-head">
               <v-icon :icon="col.index === 0 ? 'mdi-sitemap-outline' : 'mdi-folder-open-outline'" aria-hidden="true" />
@@ -137,21 +138,21 @@
               </Transition>
             </div>
           </div>
-          <div v-if="!compact" key="__tail" class="ek-cascade__tail">
-            <Transition name="ek-cascade-swap">
-              <div v-if="leafChosen" :key="`done-${path.join('/')}`" class="ek-cascade__tail-card is-done">
-                <span class="ek-cascade__tail-icon"><v-icon icon="mdi-check-circle" aria-hidden="true" /></span>
-                <span class="ek-cascade__tail-micro">Seçildi</span>
-                <strong class="ek-cascade__tail-title">{{ pathLabels[pathLabels.length - 1] }}</strong>
-                <span v-if="pathLabels.length > 1" class="ek-cascade__tail-path">{{ pathLabels.slice(0, -1).join(' › ') }}</span>
-              </div>
-              <div v-else :key="`hint-${columns.length}`" class="ek-cascade__tail-card">
-                <span class="ek-cascade__tail-icon"><v-icon icon="mdi-arrow-left" aria-hidden="true" /></span>
-                <span class="ek-cascade__tail-text">{{ tailHint }}</span>
-              </div>
-            </Transition>
-          </div>
         </TransitionGroup>
+        <div v-if="!compact" class="ek-cascade__tail">
+          <Transition name="ek-cascade-tail">
+            <div v-if="leafChosen" :key="`done-${path.join('/')}`" class="ek-cascade__tail-card is-done">
+              <span class="ek-cascade__tail-icon"><v-icon icon="mdi-check-circle" aria-hidden="true" /></span>
+              <span class="ek-cascade__tail-micro">Seçildi</span>
+              <strong class="ek-cascade__tail-title">{{ pathLabels[pathLabels.length - 1] }}</strong>
+              <span v-if="pathLabels.length > 1" class="ek-cascade__tail-path">{{ pathLabels.slice(0, -1).join(' › ') }}</span>
+            </div>
+            <div v-else :key="`hint-${columns.length}`" class="ek-cascade__tail-card">
+              <span class="ek-cascade__tail-icon"><v-icon icon="mdi-arrow-left" aria-hidden="true" /></span>
+              <span class="ek-cascade__tail-text">{{ tailHint }}</span>
+            </div>
+          </Transition>
+        </div>
       </div>
     </div>
 
@@ -208,6 +209,7 @@ import {
   columnKeys,
   isBranch,
   levelAnnouncement,
+  MAX_STAGGER_STEPS,
   motionEnabled,
   openingStep,
   panelDirection,
@@ -276,7 +278,11 @@ const compact = ref(false)
 const viewCol = ref(0)
 const direction = ref<CascadeDirection>('none')
 const plan = ref<CascadeLevelPlan>(planLevels([], []))
-const openStep = computed(() => (direction.value === 'replace' ? openingStep(plan.value) : 0))
+// Tek panelde eski panel önce söner, yeni panel iki adım (≤ slow toplam) sonra girer (üst üste binen iki yarı saydam liste yok).
+const openStep = computed(() => {
+  if (compact.value) return direction.value === 'none' ? 0 : MAX_STAGGER_STEPS
+  return direction.value === 'replace' ? openingStep(plan.value) : 0
+})
 const motionOn = ref(true)
 const announcement = ref('')
 /** Yüklenmesi beklenen seviyeye odak taşınacak mı (klavye ile açıldıysa). */
@@ -355,6 +361,7 @@ function motionNow(): boolean {
 
 /** Yol değişimini uygular: önce geçiş planı/yönü (DOM yaması aynı tick'te bu sınıflarla yapılır), sonra yol. */
 function applyPath(next: string[]) {
+  measureColumns()
   const prevKeys = columns.value.map((c) => c.key)
   const nextKeys = columnKeys(props.nodes, next, loaded)
   motionOn.value = motionNow()
@@ -369,6 +376,7 @@ function applyPath(next: string[]) {
 
 function goToLevel(index: number, focus = false) {
   const target = Math.max(0, Math.min(index, columns.value.length - 1))
+  measureColumns()
   motionOn.value = motionNow()
   direction.value = panelDirection(viewCol.value, target)
   viewCol.value = target
@@ -382,20 +390,30 @@ watch(
   },
 )
 
-/** Kapanan kolonu bulunduğu yerde sabitler (akıştan çıkar) → kalanlar/kuyruk FLIP ile kayar, genişlik zıplamaz. */
+/** Kolonların yerleşim kutuları — DOM yaması ÖNCESİ toplu okunur (kapanan kolonlar sırayla akıştan çıkınca
+ *  kalanların konumu kaymasın; tek okuma, yazma yok → layout thrash yok). */
+const preRects = new Map<string, { left: number; top: number; width: number; height: number }>()
+
+function measureColumns() {
+  preRects.clear()
+  trackRef.value?.querySelectorAll<HTMLElement>('.ek-cascade__col').forEach((el) => {
+    if (el.dataset.key) preRects.set(el.dataset.key, { left: el.offsetLeft, top: el.offsetTop, width: el.offsetWidth, height: el.offsetHeight })
+  })
+}
+
+/** Kapanan kolonu ÖNCEKİ yerinde sabitler (akıştan çıkar) → yerinde söner, genişlik zıplamaz. */
 function pinLeaving(el: Element) {
   const node = el as HTMLElement
   if (!node.classList?.contains('ek-cascade__col')) return
-  const { offsetLeft, offsetTop, offsetWidth, offsetHeight } = node
+  const key = node.dataset.key ?? ''
+  const r = preRects.get(key) ?? { left: node.offsetLeft, top: node.offsetTop, width: node.offsetWidth, height: node.offsetHeight }
   node.style.position = 'absolute'
-  node.style.left = `${offsetLeft}px`
-  node.style.top = `${offsetTop}px`
-  node.style.width = `${offsetWidth}px`
-  node.style.height = `${offsetHeight}px`
-  // Derindeki önce kapanır: kolonun ÖNCEKİ listedeki anahtarı → plandaki kapanış adımı (tek panelde adım yok).
-  const previous = [...plan.value.kept, ...[...plan.value.closing].reverse()]
-  const key = previous[Number(node.dataset.level) - 1]
-  node.dataset.closeStep = String(!compact.value && key ? closingStep(plan.value, key) : 0)
+  node.style.left = `${r.left}px`
+  node.style.top = `${r.top}px`
+  node.style.width = `${r.width}px`
+  node.style.height = `${r.height}px`
+  // Derindeki önce kapanır (tek panelde adım yok).
+  node.dataset.closeStep = String(!compact.value ? closingStep(plan.value, key) : 0)
 }
 
 async function ensureChildren(node: EkCascadeNode) {
@@ -443,10 +461,19 @@ function choose(ci: number, node: EkCascadeNode, opts: { announce?: boolean } = 
     else announce(levelAnnouncement({ depth: ci + 2, label: node.label, count: childrenOf(node).length }))
   }
   // yeni açılan kolon görünür olsun (masaüstünde şerit taşarsa yatay kayar)
-  nextTick(() => {
-    const el = trackRef.value
-    if (el && !compact.value) el.scrollTo?.({ left: el.scrollWidth, behavior: motionOn.value ? 'smooth' : 'auto' })
-  })
+  nextTick(() => revealLastColumn())
+}
+
+/** Son (kapanmayan) kolonun sağ kenarı görünür olacak kadar kaydırır. Yerleşim konumu (`offsetLeft`) kullanılır:
+ *  geçiş transform'ları ve akıştan çıkmış kapanan kolonlar hedefi saptırmaz. */
+function revealLastColumn() {
+  const el = trackRef.value
+  if (!el || compact.value) return
+  const cols = el.querySelectorAll<HTMLElement>('.ek-cascade__col:not(.ek-cascade-col-leave-active)')
+  const last = cols[cols.length - 1]
+  if (!last) return
+  const left = Math.max(0, last.offsetLeft + last.offsetWidth - el.clientWidth)
+  if (Math.abs(left - el.scrollLeft) > 1) el.scrollTo?.({ left, behavior: motionOn.value ? 'smooth' : 'auto' })
 }
 
 function onItemClick(ci: number, node: EkCascadeNode) {
@@ -753,8 +780,8 @@ onBeforeUnmount(() => {
   min-height: 0;
 }
 
-/* Kuyruk: son kolonun sağındaki boşluk (ipucu / onay kartı). Genişliği esner; yeni kolon eklenince
-   FLIP (`ek-cascade-col-move`, yalnız transform) ile kayar → hiçbir kolonun genişliği değişmez. */
+/* Kuyruk: son kolonun sağındaki boşluk (ipucu / onay kartı). Genişliği esner; kolonların genişliği SABİT
+   (yeni kolon kuyruğun yerini alır, hiçbir kolon genişlemez/daralmaz). */
 .ek-cascade__tail {
   position: relative;
   flex: 1 1 0;
@@ -1079,6 +1106,11 @@ onBeforeUnmount(() => {
   --ek-cascade-leave-x: calc(-1 * var(--ek-motion-distance-md));
 }
 
+/* Tek panelde eski panel giriş eğrisiyle (hızlı başlar) söner; yeni panel `data-open-step=2` ile iki adım sonra gelir. */
+.is-compact .ek-cascade-col-leave-active {
+  transition-timing-function: var(--ek-easing-enter);
+}
+
 /* Sıralı adım = fast / 3; en fazla 2 adım (cascadeMotion.MAX_STAGGER_STEPS) → toplam ≤ --ek-duration-slow. */
 .ek-cascade__columns[data-open-step='1'] {
   --ek-cascade-open-step: 1;
@@ -1122,9 +1154,18 @@ onBeforeUnmount(() => {
   transform: translateX(var(--ek-cascade-leave-x));
 }
 
-/* Kuyruk ve kalan kolonlar yeni yerlerine FLIP ile kayar (genişlik/sol animasyonu yok). */
-.ek-cascade-col-move {
-  transition: transform var(--ek-duration-base) var(--ek-easing-standard);
+/* Kuyruk hareket etmez (arka planı şeritle aynı): yalnız İÇERİĞİ yeniden anahtarlanır — eski ipucu anında
+   kalkar, yenisi aynı giriş diliyle (opaklık + sm) gelir → iki metin üst üste binmez, taşma/kaydırma çubuğu oluşmaz. */
+.ek-cascade-tail-enter-active {
+  transition:
+    opacity var(--ek-duration-base) var(--ek-easing-enter),
+    transform var(--ek-duration-base) var(--ek-easing-enter);
+  transition-delay: calc(var(--ek-cascade-open-step, 0) * var(--ek-duration-fast) / 3);
+}
+
+.ek-cascade-tail-enter-from {
+  opacity: 0;
+  transform: translateY(var(--ek-motion-distance-sm));
 }
 
 /* İçerik değişimi (iskelet → liste, ipucu → onay kartı): çapraz geçiş, eski katman akıştan çıkar. */

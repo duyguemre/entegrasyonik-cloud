@@ -185,8 +185,8 @@ describe('statik bekçi — EkCascadePicker hareket sözleşmesi', () => {
     expect(css).not.toMatch(/translate[XY]?\(\s*-?\d/)
   })
 
-  it('FLIP (move) + sıralı adım + reduced-motion kapısı + aria-live + tek panel breadcrumb mevcut', () => {
-    expect(css).toMatch(/\.ek-cascade-col-move\s*\{\s*transition: transform/)
+  it('kapananlar akıştan çıkar (move/FLIP yok) + sıralı adım + reduced-motion kapısı + aria-live + tek panel breadcrumb mevcut', () => {
+    expect(css).not.toMatch(/-move\s*\{/)
     expect(css).toMatch(/data-close-step='2'/)
     expect(css).toMatch(/\.is-static/)
     expect(src).toMatch(/aria-live="polite"/)
