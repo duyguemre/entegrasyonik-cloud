@@ -47,7 +47,13 @@
         </div>
       </EkFormSection>
 
-      <EkFormSection v-if="choice" title="Değer eşleştirme" icon="mdi-link-variant" :columns="3"
+      <!-- Pazaryeri özellik değerleri alınamadı / boş geldi: eşleştirme alanı yerine anlaşılır durum (useIntegrationError). -->
+      <EkFormSection v-if="choice && valuesError && !computedAllowCustom" title="Değer eşleştirme" icon="mdi-link-variant"
+        :columns="1">
+        <IntegrationErrorPanel :info="valuesError" :retrying="valuesLoading" @retry="emits('retryValues')" />
+      </EkFormSection>
+
+      <EkFormSection v-else-if="choice" title="Değer eşleştirme" icon="mdi-link-variant" :columns="3"
         :description="`${integrationStore.getIntegrationTitle(integrationCode)} değerleri Entegrasyonik değerleriyle eşleştirilir.`">
         <template v-for="choiceValue of choice?.values" :key="choiceValue._id">
           <v-text-field v-if="computedAllowCustom" v-model="mapping[choiceValue._id]" :label="choiceValue.title" />
@@ -81,6 +87,8 @@ import { ref, computed, watch, onActivated, nextTick } from 'vue'
 import EkDialogCard from '@/components/ds/EkDialogCard.vue'
 import EkFormSection from '@/components/ds/EkFormSection.vue'
 import EkButton from '@/components/ds/EkButton.vue'
+import IntegrationErrorPanel from '@/components/integrations/IntegrationErrorPanel.vue'
+import type { IntegrationErrorInfo } from '@/composables/useIntegrationError'
 import { storeToRefs } from 'pinia'
 import LoadingComponent from '@/components/LoadingComponent.vue'
 import { useIntegrationStore } from '@/stores/integrationStore'
@@ -102,10 +110,13 @@ const props = defineProps<{
   integrationCode: any,
   integrationCategoryId: any,
   integrationChoice: any,
-  localCategoryId: any
+  localCategoryId: any,
+  /** Pazaryeri özellik değerleri alınamadı/boş (CategorySyncComponent yükler); doluysa panel gösterilir. */
+  valuesError?: IntegrationErrorInfo,
+  valuesLoading?: boolean
 }>()
 
-const emits = defineEmits(['close'])
+const emits = defineEmits(['close', 'retryValues'])
 
 const choice = ref()
 const mapping = ref<any>({})
