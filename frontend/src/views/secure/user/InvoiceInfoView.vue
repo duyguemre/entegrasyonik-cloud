@@ -69,7 +69,7 @@ var buttons = [
 {
   title: t("user.invoiceInfo.save"),
   icon: 'mdi-note-edit-outline',
-  color: 'saveButtonColor',
+  color: 'primary',
   to: '',
 },
 ]

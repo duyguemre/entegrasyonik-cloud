@@ -253,7 +253,7 @@ var buttons = [
   {
     title: t("printouts.printout.save"),
     icon: 'mdi-note-edit-outline',
-    color: 'saveButtonColor',
+    color: 'primary',
     to: '',
     click: a
   },

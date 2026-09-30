@@ -57,10 +57,10 @@
 
       <template v-slot:append-item>
         <v-divider></v-divider>
-        <div class="pa-4 bg-grey-lighten-5">
+        <div class="pa-4 bg-surface-muted">
           <v-form v-model="isNewCategoryValid" @submit.prevent="addNewCategory">
             <v-text-field v-model="newCategoryName" variant="outlined" density="compact" hide-details="auto"
-              class="bg-white" :placeholder="$t('productDefinitions.category.title')" :rules="titleRules">
+              :placeholder="$t('productDefinitions.category.title')" :rules="titleRules">
               <template v-slot:append-inner>
                 <v-btn color="primary" variant="flat" size="small" :disabled="!isNewCategoryValid || !newCategoryName"
                   @click="addNewCategory">

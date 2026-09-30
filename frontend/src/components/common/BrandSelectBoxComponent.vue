@@ -39,10 +39,10 @@
 
       <template v-slot:append-item>
         <v-divider></v-divider>
-        <div class="pa-4 bg-grey-lighten-5">
+        <div class="pa-4 bg-surface-muted">
           <v-form v-model="isNewBrandValid" @submit.prevent="addNewBrand">
             <v-text-field v-model="newBrandName" variant="outlined" density="compact" hide-details="auto"
-              class="bg-white" :placeholder="$t('productDefinitions.brand.title')" :rules="titleRules">
+              :placeholder="$t('productDefinitions.brand.title')" :rules="titleRules">
               <template v-slot:append-inner>
                 <v-btn color="primary" variant="flat" size="small" :disabled="!isNewBrandValid || !newBrandName"
                   @click="addNewBrand">
