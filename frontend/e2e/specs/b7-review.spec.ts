@@ -87,6 +87,7 @@ async function closeUp(page: Page, target: Locator, name: string) {
 /** Kategori seçimi — yeni tasarımda satır, eskide ⚙ "… ayarları" düğmesi (üst düğümleri açarak). */
 async function selectCategory(page: Page, path: string[]) {
   const r = root(page, 'Kategoriler')
+  await r.locator('[data-cat-path], .ek-category-list .v-list-item').first().waitFor({ timeout: 15000 })
   const rowNew = r.locator('[data-cat-path]').first()
   if (await rowNew.count()) {
     for (const [i, t] of path.entries()) {
@@ -169,6 +170,36 @@ const SCENARIOS: { name: string; run: (p: Page) => Promise<void> }[] = [
     },
   },
   {
+    name: 'k5-kategori-eksik-suzgeci',
+    run: async (p) => {
+      await open(p, 'Kategoriler')
+      const radio = p.getByRole('radio', { name: /Eşlemesi eksik/ })
+      if (await radio.count()) await radio.click()
+      await settle(p, 600)
+      await shot(p, file('k5-kategori-eksik-suzgeci'))
+      await closeUp(p, root(p, 'Kategoriler').locator('.cat-pane').first(), 'k5-kategori-eksik-suzgeci')
+    },
+  },
+  {
+    name: 'k6-kategori-satir-ici',
+    run: async (p) => {
+      await open(p, 'Kategoriler')
+      const r = root(p, 'Kategoriler')
+      const ayak = r.locator('[data-cat-path="Ayakkabı"]').first()
+      if (!(await ayak.count())) return
+      await ayak.click()
+      await settle(p, 400)
+      await r.locator('[data-cat-path="Ayakkabı/Bot"]').first().focus()
+      await p.keyboard.press('F2')
+      await settle(p, 300)
+      await r.locator('[data-cat-path="Ayakkabı"]').first().hover()
+      await r.getByRole('button', { name: 'Ayakkabı işlemleri', exact: true }).click()
+      await settle(p, 400)
+      await shot(p, file('k6-kategori-satir-ici'))
+      await closeUp(p, r.locator('.cat-pane').first(), 'k6-kategori-satir-ici')
+    },
+  },
+  {
     name: 'm1-marka-liste',
     run: async (p) => {
       await open(p, 'Markalar')
@@ -182,6 +213,18 @@ const SCENARIOS: { name: string; run: (p: Page) => Promise<void> }[] = [
       await open(p, 'Markalar')
       await search(p, 'Markalar', 'ça')
       await shot(p, file('m2-marka-arama'))
+    },
+  },
+  {
+    name: 'm5-marka-liste-gorunumu',
+    run: async (p) => {
+      await open(p, 'Markalar')
+      const radio = p.getByRole('radio', { name: 'Liste görünümü' })
+      if (!(await radio.count())) return
+      await radio.click()
+      await settle(p, 500)
+      await shot(p, file('m5-marka-liste-gorunumu'))
+      await closeUp(p, root(p, 'Markalar').locator('.brand-pane').first(), 'm5-marka-liste-gorunumu')
     },
   },
   {
