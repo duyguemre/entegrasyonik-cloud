@@ -1,4 +1,4 @@
-import type { IssueStatus, LifecycleStatus, LogCategory, LogLevel, LogSource } from '@bo/api/contract'
+import type { IssueStatus, LogCategory, LogLevel, LogSource, SubscriptionStatus, TenantStatus } from '@bo/api/contract'
 import type { StatusTone } from '@entegrasyonik/ui/components'
 
 export const CATEGORY: Record<LogCategory, { label: string; icon: string }> = {
@@ -36,15 +36,30 @@ export const ISSUE_STATUS: Record<IssueStatus, { label: string; tone: StatusTone
   muted: { label: 'Susturuldu', tone: 'neutral' },
 }
 
-export const LIFECYCLE: Record<LifecycleStatus, { label: string; tone: StatusTone }> = {
+/** Clients.status (B2 yaşam döngüsü). */
+export const TENANT_STATUS: Record<TenantStatus, { label: string; tone: StatusTone }> = {
+  PROVISIONING: { label: 'Kuruluyor', tone: 'info' },
+  PROVISIONING_FAILED: { label: 'Kurulum başarısız', tone: 'danger' },
+  ACTIVE: { label: 'Aktif', tone: 'success' },
+  DELETION_PENDING: { label: 'Silme bekliyor', tone: 'warning' },
+  PURGING: { label: 'Siliniyor', tone: 'warning' },
+  PURGE_FAILED: { label: 'Silme başarısız', tone: 'danger' },
+  PURGED: { label: 'Silindi', tone: 'neutral' },
+}
+
+/** Subscriptions.status (ADR-0008 durum makinesi). */
+export const SUB_STATUS: Record<SubscriptionStatus, { label: string; tone: StatusTone }> = {
   trialing: { label: 'Deneme', tone: 'info' },
   active: { label: 'Aktif', tone: 'success' },
   past_due: { label: 'Ödeme gecikti', tone: 'warning' },
   suspended: { label: 'Askıda', tone: 'danger' },
-  pending_deletion: { label: 'Silme bekliyor', tone: 'neutral' },
+  canceled: { label: 'İptal edildi', tone: 'neutral' },
+  expired: { label: 'Süresi doldu', tone: 'neutral' },
 }
 
-export const PLAN: Record<string, string> = { baslangic: 'Başlangıç', profesyonel: 'Profesyonel', kurumsal: 'Kurumsal' }
+/** Plan kodu → ad (plans.seed.json). Bilinmeyen kod olduğu gibi gösterilir. */
+export const PLAN: Record<string, string> = { starter: 'Başlangıç', growth: 'Büyüme', enterprise: 'Kurumsal' }
+export const planLabel = (code: string | null | undefined) => (code ? (PLAN[code] ?? code) : '—')
 
 export const CHANNEL: Record<string, string> = {
   trendyol: 'Trendyol',

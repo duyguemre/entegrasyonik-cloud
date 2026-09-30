@@ -63,8 +63,8 @@ describe('sahte API ↔ sözleşme', () => {
   it('getLifecycle / getSystemHealth', async () => {
     const api = await signedIn()
     conforms(await api.call('BackofficeTenantService/getLifecycle', { tid: 103 }) as unknown as Record<string, unknown>, {
-      tid: 'number', status: 'string', planCode: 'string', 'trialEndsAt?': 'string', 'deletionScheduledAt?': 'string', provisioning: 'array', 'lastActivityAt?': 'string', usage: 'object',
-    }, 'getLifecycle')
+      tid: 'number', status: 'string', name: 'string', lastSuccessfulOrderSync: 'string', trial: 'object', deletion: 'object', provisioning: 'object', recentEvents: 'array',
+    }, 'getLifecycle (B2)')
     const h = await api.call('AdminService/getSystemHealth', { timeFrame: 'DAY' })
     expect(Object.keys(h.infrastructure.queues).sort()).toEqual(['export', 'import', 'orderSync'])
     conforms(h.infrastructure.redis, { usedMemory: 'string', connectedClients: 'string', uptime: 'string', version: 'string' }, 'redis')

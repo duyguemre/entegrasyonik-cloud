@@ -21,6 +21,10 @@ export type ApiErrorCode =
   | 'REAUTH_REQUIRED'
   | 'MFA_REQUIRED'
   | 'IMPERSONATION_UNAVAILABLE'
+  | 'LIVE_READONLY'
+  | 'QUEUE_UNAVAILABLE'
+  | 'INFRA_UNAVAILABLE'
+  | 'QUERY_TIMEOUT'
   | 'INTERNAL'
 
 export interface ApiErrorBody {
@@ -102,26 +106,17 @@ export interface GetClientsResponse {
   limit: number
 }
 
-export type LifecycleStatus = 'trialing' | 'active' | 'past_due' | 'suspended' | 'pending_deletion'
-/** [PLAN B2] BackofficeTenantService/getLifecycle {tid}. */
-export interface TenantLifecycle {
-  tid: number
-  status: LifecycleStatus
-  planCode: 'baslangic' | 'profesyonel' | 'kurumsal'
-  trialEndsAt?: string
-  deletionScheduledAt?: string
-  provisioning: Array<{ step: string; status: 'done' | 'failed' | 'pending'; at?: string }>
-  lastActivityAt?: string
-  /** Kullanım istatistikleri — sayı, iş verisi DEĞİL. */
-  usage: { users: number; products: number; ordersLast30d: number }
-}
+/** B2 yaşam döngüsü tipleri: ./contracts/billing.ts (TenantLifecycle). */
 /** [2-BE] BackofficeTenantService/startImpersonation — step-up + gerekçe; tek kullanımlık 60 sn bilet URL'i. */
 export interface StartImpersonationRequest {
   tid: number
   reason: string
 }
 export interface StartImpersonationResponse {
+  /** `<PUBLIC_APP_URL>/impersonate#t=<bilet>` — yalnız window.open'a verilir; saklanmaz/loglanmaz/kopyalanmaz. */
   url: string
+  /** Bilet ömrü (60 sn, tek kullanımlık). */
+  expiresInSeconds: number
 }
 
 // ---------------------------------------------------------------- Sistem durumu
@@ -315,7 +310,6 @@ export interface AdminRpc {
   'BackofficeAuthService/me': [Record<string, never>, BackofficeMe]
   'AdminService/getClients': [GetClientsRequest, GetClientsResponse]
   'AdminService/getSystemHealth': [{ timeFrame?: 'DAY' | 'WEEK' | 'MONTH' | 'ALL' }, SystemHealthResponse]
-  'BackofficeTenantService/getLifecycle': [{ tid: number }, TenantLifecycle]
   'BackofficeTenantService/startImpersonation': [StartImpersonationRequest, StartImpersonationResponse]
   'LogCenterService/listLogs': [ListLogsRequest, ListLogsResponse]
   'LogCenterService/getIssueGroups': [GetIssueGroupsRequest, GetIssueGroupsResponse]
@@ -328,8 +322,30 @@ export type AdminOp = keyof AdminRpc
 export type ReqOf<K extends AdminOp> = AdminRpc[K][0]
 export type ResOf<K extends AdminOp> = AdminRpc[K][1]
 
-/** Adım-yükseltmesi isteyen operasyonlar (ADR-0026 Karar 4.6; 2-BE `admin/stepUp.ts` REAUTH_RPCS). */
-export const REAUTH_OPS: readonly AdminOp[] = ['BackofficeTenantService/startImpersonation']
+/**
+ * Adım-yükseltmesi (son 5 dk parola + TOTP) + gerekçe (≥10) isteyen operasyonlar — backend `admin/stepUp.ts` REAUTH_RPCS ile
+ * birebir (tests/contract-ops.test.ts korur). İstemci bunları özel ele almaz (REAUTH_REQUIRED → diyalog); sahte API zorlar.
+ */
+export const REAUTH_OPS: readonly AdminOp[] = [
+  'IntegrationConfigService/publish',
+  'IntegrationConfigService/rollback',
+  'BackofficeTenantService/startImpersonation',
+  'BackofficeTenantService/cancelDeletion',
+  'BackofficeBillingService/extendTrial',
+  'BackofficeBillingService/cancelSubscription',
+  'BackofficeBillingService/changePlan',
+  'BackofficeAdminUserService/invite',
+  'BackofficeAdminUserService/disable',
+  'BackofficeAdminUserService/enable',
+  'BackofficeAdminUserService/resetMfa',
+  'BackofficeInfraService/flushCacheFamily',
+  'BackofficeEngineService/retryJob',
+  'BackofficeEngineService/discardJob',
+  'BackofficeEngineService/releaseStuckLease',
+]
+/** Gerekçe alt/üst sınırı (backend REASON_MIN_LENGTH / REASON_MAX_LENGTH). */
+export const REASON_MIN = 10
+export const REASON_MAX = 500
 /** Oturum gerektirmeyen / yarım oturumla çağrılan kimlik operasyonları. */
 export const AUTH_FLOW_OPS: readonly AdminOp[] = [
   'BackofficeAuthService/login',
@@ -338,6 +354,14 @@ export const AUTH_FLOW_OPS: readonly AdminOp[] = [
   'BackofficeAuthService/verifyTotp',
   'BackofficeAuthService/logout',
   'BackofficeAuthService/me',
+  // Kimliksiz davet kabulü (oturum açmaz; 401/403 oturum akışını tetiklemez).
+  'BackofficeAuthService/acceptInvite',
   // Yanlış parola/kod oturumu düşürmez; diyalog kendi hatasını gösterir.
   'BackofficeAuthService/reauth',
 ]
+
+// ---------------------------------------------------------------- Aşama 4 uç grupları (BE HAZIR; alan adları sözleşmeden birebir)
+export * from './contracts/engine'
+export * from './contracts/billing'
+export * from './contracts/infra'
+export * from './contracts/platform'

@@ -8,18 +8,28 @@ const views: Record<string, () => Promise<unknown>> = {
   logs: () => import('./views/LogCenterView.vue'),
   audit: () => import('./views/AuditView.vue'),
   tenants: () => import('./views/TenantsView.vue'),
+  subscriptions: () => import('./views/billing/SubscriptionsView.vue'),
+  integrations: () => import('./views/integrations/IntegrationsView.vue'),
+  engine: () => import('./views/engine/EngineView.vue'),
+  infra: () => import('./views/infra/InfraView.vue'),
+  cache: () => import('./views/infra/CacheView.vue'),
+  settings: () => import('./views/settings/SettingsView.vue'),
+  admins: () => import('./views/admins/AdminsView.vue'),
 }
 
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/giris', name: 'login', component: () => import('./views/LoginView.vue'), meta: { public: true, title: 'Giriş' } },
+    // Davet kabulü (B12): kimliksiz; bilet `#t=` parçasında (sunucu günlüğü/Referer görmez).
+    { path: '/accept-invite', name: 'accept-invite', component: () => import('./views/admins/AcceptInviteView.vue'), meta: { public: true, title: 'Daveti kabul et' } },
     {
       path: '/',
       component: () => import('./layouts/ShellLayout.vue'),
       children: [
         { path: '', redirect: '/genel-bakis' },
         ...SCREENS.filter((s) => s.status !== 'planned').map((s) => ({ path: s.path.slice(1), name: s.key, component: views[s.key], meta: { title: s.label } })),
+        { path: 'abonelikler/:tid(\\d+)', name: 'subscription', component: () => import('./views/billing/SubscriptionDetailView.vue'), meta: { title: 'Abonelik' } },
         { path: 'musteriler/:tid(\\d+)', name: 'tenant', component: () => import('./views/TenantDetailView.vue'), meta: { title: 'Müşteri' } },
         { path: 'plan/:key', name: 'planned', component: () => import('./views/PlannedView.vue'), meta: { title: 'Planlanan ekran' } },
         { path: ':rest(.*)*', redirect: '/genel-bakis' },
