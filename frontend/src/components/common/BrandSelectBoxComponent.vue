@@ -24,7 +24,7 @@
       </template>
 
       <template v-slot:item="{ item, props: itemProps }: any">
-        <v-list-item v-bind="itemProps" class="custom-brand-item" title="">
+        <v-list-item v-bind="itemProps" role="option" class="custom-brand-item" title="">
           <div class="d-flex align-center w-100 position-relative">
             <div class="leaf-indicator"></div>
             <v-icon size="16" class="mr-2" color="content-muted">

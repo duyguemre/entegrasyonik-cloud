@@ -24,7 +24,7 @@
       </template>
 
       <template v-slot:item="{ item, props: itemProps }: any">
-        <v-list-item v-bind="itemProps"
+        <v-list-item v-bind="itemProps" role="option"
           :class="['custom-category-item', item.raw.isParent ? 'is-parent-row' : 'is-leaf-row']"
           :disabled="item.raw.isParent" title="">
 

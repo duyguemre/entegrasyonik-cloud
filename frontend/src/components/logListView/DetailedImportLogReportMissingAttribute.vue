@@ -86,7 +86,7 @@
             </span>
           </template>
           <template v-slot:item="{ item, props: itemProps }: any">
-            <v-list-item v-bind="itemProps" class="custom-category-item is-leaf-row" title="">
+            <v-list-item role="option" v-bind="itemProps" class="custom-category-item is-leaf-row" title="">
               <div class="d-flex align-center w-100 position-relative">
                 <div class="leaf-indicator leaf-indicator--warning"></div>
                 <v-icon size="18" class="mr-2" color="warning">mdi-layers-outline</v-icon>
@@ -179,7 +179,7 @@
             </span>
           </template>
           <template v-slot:item="{ item, props: itemProps }: any">
-            <v-list-item v-bind="itemProps" class="custom-category-item is-leaf-row" title="">
+            <v-list-item role="option" v-bind="itemProps" class="custom-category-item is-leaf-row" title="">
               <div class="d-flex align-center w-100 position-relative">
                 <div class="leaf-indicator leaf-indicator--info"></div>
                 <v-icon size="16" class="mr-2" color="info">mdi-circle-medium</v-icon>

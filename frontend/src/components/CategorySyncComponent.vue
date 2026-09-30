@@ -132,7 +132,7 @@
                 <span>{{ item.title }}</span>
               </template>
               <template v-slot:item="{ item, props: itemProps }: any">
-                <v-list-item v-bind="itemProps" :title="undefined">
+                <v-list-item role="option" v-bind="itemProps" :title="undefined">
                   <div class="ek-category-sync__choice">
                     <span class="ek-category-sync__choice-index ek-num">
                       {{ integrationChoices.findIndex((x: any) => x._id === item.raw._id) + 1 }}

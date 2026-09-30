@@ -632,9 +632,12 @@ function toggleSort(key: string) {
     z-index: var(--ek-z-sticky);
   }
 
+  /* Aşama 6b (Standart 2): kart görünümünde sıralama çubuğu TEK satır, yatay kayar (gizli çubuk). */
   .ek-grid__table > thead > tr {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
     align-items: center;
     gap: var(--ek-space-1) var(--ek-space-2);
     min-height: 40px;
@@ -652,7 +655,12 @@ function toggleSort(key: string) {
     clip-path: inset(50%);
   }
 
+  .ek-grid__table > thead > tr::-webkit-scrollbar {
+    display: none;
+  }
+
   .ek-grid__th {
+    flex: none;
     position: static;
     height: auto;
     padding: 0;

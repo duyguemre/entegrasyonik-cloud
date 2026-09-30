@@ -65,7 +65,7 @@
             :error-messages="fieldError('eventKey')"
           >
             <template #item="{ props: itemProps, item }">
-              <v-list-item v-bind="itemProps" :prepend-icon="item.raw.kind === 'prefix' ? 'mdi-folder-outline' : 'mdi-circle-small'" />
+              <v-list-item role="option" v-bind="itemProps" :prepend-icon="item.raw.kind === 'prefix' ? 'mdi-folder-outline' : 'mdi-circle-small'" />
             </template>
           </v-autocomplete>
           <v-autocomplete
