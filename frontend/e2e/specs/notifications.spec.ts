@@ -12,6 +12,13 @@ import { iso, menuWithNotifications, sseBody, statefulMocks } from '../fixtures/
 
 const AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
 
+/** Test kontrollü kapı: mock yanıtı test açana dek bekletir (sabit uyku yerine — yük altında yarış yok). */
+function gate() {
+  let open!: () => void
+  const wait = new Promise<void>((resolve) => (open = resolve))
+  return { wait, open }
+}
+
 async function gotoCenter(page: Page) {
   await page.goto('/notifications')
   await waitForWorkplaceReady(page)
@@ -239,11 +246,12 @@ test.describe('C1.5 + C2b — bildirim merkezi', () => {
       createdAt: iso(0),
     }
     let streamCalls = 0
+    const loaded = gate()
     routes['notifications/stream'] = async (route: Route, headers: Record<string, string>) => {
       streamCalls += 1
       if (streamCalls === 1) {
-        // İlk bağlantı: merkez yüklenene dek bekletilir, sonra yeni bildirim yayınlanır.
-        await new Promise((r) => setTimeout(r, 2500))
+        // İlk bağlantı: merkez yüklenene dek (test kapıyı açana dek) bekletilir, sonra yeni bildirim yayınlanır.
+        await loaded.wait
         h.add(fresh)
         return route.fulfill({
           status: 200,
@@ -256,6 +264,7 @@ test.describe('C1.5 + C2b — bildirim merkezi', () => {
     await installApiMocks(page, routes)
     await gotoCenter(page)
     await expect(rows(page)).toHaveCount(6)
+    loaded.open()
 
     await expect(rows(page).first()).toContainText('E2E canlı', { timeout: 15000 })
     await expect(bell(page)).toHaveAttribute('aria-label', 'Bildirimler, 4 okunmamış')
@@ -275,18 +284,30 @@ test.describe('C1.5 + C2b — bildirim merkezi', () => {
       return baseCount(route, headers)
     }
     let streamCalls = 0
+    // Kapılar: ilk sayım RPC'si bitmeden olay yayınlanmaz (yoksa geç gelen RPC olayın sayısını ezer — yarış), ikinci
+    // bağlantı da 7 görüldükten sonra açılır.
+    const firstCounted = gate()
+    const sevenSeen = gate()
     routes['notifications/stream'] = async (route: Route, headers: Record<string, string>) => {
       streamCalls += 1
-      await new Promise((r) => setTimeout(r, 1500))
       const sse = { ...headers, 'content-type': 'text/event-stream', 'cache-control': 'no-cache' }
-      if (streamCalls === 1) return route.fulfill({ status: 200, headers: sse, body: sseBody([{ event: 'notification', id: '1', data: { id: 'x1', unreadCount: 7 } }], 500) })
-      if (streamCalls === 2) return route.fulfill({ status: 200, headers: sse, body: sseBody([], 60_000) })
+      if (streamCalls === 1) {
+        await firstCounted.wait
+        return route.fulfill({ status: 200, headers: sse, body: sseBody([{ event: 'notification', id: '1', data: { id: 'x1', unreadCount: 7 } }], 500) })
+      }
+      if (streamCalls === 2) {
+        await sevenSeen.wait
+        return route.fulfill({ status: 200, headers: sse, body: sseBody([], 60_000) })
+      }
       return route.fulfill({ status: 503, headers, body: '' })
     }
     await installApiMocks(page, routes)
     await gotoAuthed(page)
+    await expect(bell(page)).toHaveAttribute('aria-label', 'Bildirimler, 3 okunmamış', { timeout: 15000 })
+    firstCounted.open()
     await expect(bell(page)).toHaveAttribute('aria-label', 'Bildirimler, 7 okunmamış', { timeout: 15000 })
     const before = counts
+    sevenSeen.open()
     // Gövde bitti → tarayıcı `retry` (500 ms) sonra yeniden bağlanır → açılışta resync: sayım RPC'si gerçek sayıyı (3) döner.
     await expect(bell(page)).toHaveAttribute('aria-label', 'Bildirimler, 3 okunmamış', { timeout: 15000 })
     expect(counts).toBeGreaterThan(before)

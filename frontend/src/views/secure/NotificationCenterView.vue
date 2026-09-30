@@ -427,9 +427,13 @@ function baseQuery(): NotificationListQuery {
   }
 }
 
+/** Yükleme sürerken gelen SSE sinyali düşürülmez: yükleme bitince yenileri ayrıca çeker (istek olaydan önce gitmiş olabilir). */
+let pendingNew = false
+
 async function load() {
   loading.value = true
   loadError.value = false
+  pendingNew = false
   catalog.ensureLoaded()
   const page = await notificationStore.fetchPage(baseQuery())
   if (page) {
@@ -444,6 +448,10 @@ async function load() {
     loadError.value = true
   }
   loading.value = false
+  if (pendingNew && !loadError.value) {
+    pendingNew = false
+    fetchNew()
+  }
 }
 
 async function loadMore() {
@@ -463,7 +471,10 @@ async function loadMore() {
 
 /** SSE yeni bildirim: yalnız yenileri (`afterId` = listedeki en yeni) başa ekler; liste boşsa tam yükler. */
 async function fetchNew() {
-  if (loading.value) return
+  if (loading.value) {
+    pendingNew = true
+    return
+  }
   const newest = items.value[0]?._id
   if (!newest) return load()
   const page = await notificationStore.fetchPage({ ...baseQuery(), afterId: newest })

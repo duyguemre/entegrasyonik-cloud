@@ -555,3 +555,21 @@ bölümü; ortak ds bileşenlerine dokunulmadı, token değişikliği yok. Önce
 | Çok varyant | > 8: kompakt ızgara + "Tümünü gör" (iç kaydırma, yapışık başlık) |
 | Dar kap | < 600px kart (A6b) |
 | Mantık | `variants/variantListModel.ts` (saf, `tests/variant-list-model.test.ts`) |
+
+## 21. C2b — bildirim merkezi v2, çekmece, tercihler, SSE zili (`cloud/fe-c2b`)
+
+Sözleşme: `docs/cloud-contracts/{NOTIFICATION_PLAN,README}.md` (NB6 gerçekleşen SSE sözleşmesi). İnceleme: `docs/c2b-review/`.
+Token değişikliği YOK; yalnız semantik token (dark hazır).
+
+| Parça | Dosya | Karar |
+|---|---|---|
+| SSE istemcisi | `composables/useNotificationStream.ts` | `EventSource(withCredentials)`, taban `config/env` (restapi ile aynı). Saf `handleStreamEvent` (notification → rozet / null ise RPC sayım / açık listeye `afterId`; resync → tam tazele; shutdown/reconnect → normal; unauthorized → kapat, yeniden bağlanma). CLOSED (401/403/503) → polling + 5→60 sn geri çekilme; CONNECTING 15 sn içinde açılmazsa polling. Gizli sekme 60 sn → kapat (kullanıcı başına 5 bağlantı tavanı), görünürken aç + sayım. Kapsam kapanınca temizlik. |
+| Rozet | `stores/notificationDrawer.ts` | Polling (30 sn) YALNIZ `polling` modunda; `live` iken yok. Kopmadan dönüşte sayım + açık liste tazelenir. Kritik yeni bildirimde tek uyarı toast'ı. İstek gövdesi tek kaynak `listBody`/`idsPayload`. |
+| Katalog | `stores/notificationCatalog.ts` | `getCatalog` oturumda bir kez; yoksa plan §2.1 v1 yedeği. Kod → kategori/önem/zorunlu; kategori → ikon (`CATEGORY_ICONS`, kodda ince ayar `CODE_ICONS`), önem → ton (`critical` = error tonu + "Kritik" çipi + sol şerit). Etiketler tr/en sözlük (paylaşılan locale JSON'u değişmedi). |
+| Merkez | `views/secure/NotificationCenterView.vue` | Sunucu sayfalaması (25 + imleç, "Daha fazla göster"), kategori filtresi sunucuda, önem filtresi istemcide (alt çubukta belirtilir), grup ×n + "son:", zorunlu kilit (a11y "Zorunlu bildirim"), bağlantı durumu, yeni satır 4 sn vurgu. "Dikkat türü üstte sabit" kuralı kalktı (sunucu sırası). |
+| Çekmece | `components/user/NotificationDrawerComponent.vue` | Gün grupları, Tümü/Okunmamış, satır eylemleri üzerine gelince (dokunmatikte hep), "Tümünü sil" ⋯ menüsünde en sonda + onay, Bildirim tercihleri bağlantısı (menüde kayıtlıysa). Zil GÖRSELİ üst barın (fe-a8) işi. |
+| Tercihler | `views/secure/settings/NotificationPreferencesView.vue`, `stores/notificationPreferences.ts` | Kategori × (uygulama içi anahtar, e-posta Kapalı/Anında/Özet radyo grubu); tümü zorunlu kategori kilitli, kısmen zorunluda "Her zaman gönderilir: …"; özet (günlük saat/saatlik), sessiz saatler, e-posta dili; `EkSettingsTemplate` kirli durum çubuğu. Ekran kaydı `settings/notifications`. |
+
+**Testler:** `tests/notification-stream.test.ts` (olay türleri, fallback, geri çekilme, gizli sekme, temizlik), `tests/notification-model.test.ts`,
+`tests/notification-preferences.test.ts`; e2e `notifications.spec.ts` (text/event-stream taklidi dahil), `notification-preferences.spec.ts`,
+`notification-drawer.spec.ts` (onaylı "Tümünü sil" — gövde aynı).
