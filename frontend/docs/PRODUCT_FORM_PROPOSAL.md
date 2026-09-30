@@ -55,15 +55,19 @@ Kısaltmalar: **Form** = arayüzdeki doğrulama kuralı (`composables/formrules.
 | 19 | Raf | `variants[0].shelf` | genel | isteğe bağlı (**eski kural zorunluydu**) | varyant şemasında yok (`strict:false`) | `Variants.shelf` |
 | 20 | Ürün Özellikleri (düğme) | `variants[i].platforms[kod].attributes[özellikId] = { attributeName, attributeValue, attributeValueId }` | kanal-özel (Trendyol · Hepsiburada · N11 · Pazarama · Ideasoft) | kanal API'sinden gelen "Zorunlu" işareti; kaydı engellemez. Kayıtta `checkVariantAttributes` geçersiz değerleri siler | eksik zorunlu özellik kanal gönderiminde reddedilir (kanal API'si) | `Variants.platforms.<kod>.attributes` |
 
-### 2.3 Varyantlı ürün (`ProductVariantsComponent` — okundu, dokunulmadı)
+### 2.3 Varyantlı ürün (`ProductVariantsComponent` + `grid/*` — A6a'da yeniden yazıldı)
 
 | # | Alan / işlem | Model yolu | Not |
 |---|---|---|---|
 | 21 | Varyant üretici | `variants[i].choices = [{ choiceId, choiceValueId }]` | kombinasyonlar kartezyen çarpımla; `variantHash` sunucuda (`maincode + choices`) — `unique` |
-| 22 | Izgara satırı | `stockcode`, `barcode`, `prices.salePrice/marketPrice/isPlatformBasedPrice`, `stock`, `shelf`, `images` | Kaydet koşulu her satırda stok kodu + barkod ister |
-| 23 | Toplu düzenleme | stok kodu/barkod üret; satış/piyasa fiyatı; platform bazlı fiyat; stok; raf; özellik; seçenek eşleştir; silme | `VariantService/batchProcessUpdate`, `batchProcessDelete` |
-| 24 | Varyant resimleri | `variants[i].images` (URL listesi) | `ProductVariantImagesComponent` |
-| 25 | Satır/ızgara kayıtları | `VariantService/updateVariants`, `addVariant`, `addVariants`, `deleteVariant` | Bu uçlar `Products` belgesindeki **gömülü `variants` dizisine** yazıyor; `ProductService` ise `Variants` koleksiyonuna yazıyor. Hangisinin canlı yol olduğu doğrulanmadı (bkz. B9) |
+| 22 | Izgara hücreleri | `stockcode`, `barcode`, `prices.salePrice/marketPrice`, `prices.isPlatformBasedPrice`, `stock`, `shelf`, `images` | Hücre içi düzenleme formdaki nesneye yazar; kayıt ürün kaydet/güncelle ile. Kaydet koşulu her satırda stok kodu + barkod ister; ızgara boş barkodu uyarı, tekrarlayan barkod/stok kodunu hata olarak hücrede gösterir |
+| 23 | Kanal fiyatı | `variants[i].platforms[kod].prices.salePrice/marketPrice` | yalnız `isPlatformBasedPrice` işaretliyse kullanılır; ızgarada aralık (en düşük – en yüksek) |
+| 24 | Toplu düzenleyici | yukarıdaki alanlar + kanal fiyatları | taslak üzerinde; seçime değer / ± yüzde / ± tutar-adet, aşağı doldur, Excel'den yapıştır, geri al; önizleme sonrası forma yazar — **yeni uç yok** |
+| 25 | Kod üretimi | `stockcode`, `barcode` | "Varyant işlemleri" menüsünden; eski başlık menülerindeki algoritma aynen (barkod `Date.now()` — gerçek barkod değildir, bkz. B10) |
+| 26 | Kanal özellikleri | `variants[i].platforms[kod].attributes`, `.mapping` | tekil/toplu özellik panelleri; pazaryeri listesi alınamazsa `useIntegrationError` paneli |
+| 27 | Varyant resimleri | `variants[i].images` | `ProductVariantImagesComponent` |
+| 28 | Kayıtlı varyant silme | `VariantService/deleteVariant` | onay diyaloğuyla; `_id` yoksa yalnız formdan kalkar |
+| 29 | Ölü uçlar | `VariantService/updateVariants`, `addVariant`, `addVariants`, `batchProcessUpdate`, `batchProcessDelete` | ızgaradan erişilen yol yoktu/yok; bu uçlar `Products` belgesindeki **gömülü `variants` dizisine** yazıyor, `ProductService` ise `Variants` koleksiyonuna (bkz. B9) |
 
 ### 2.4 Kanal-özel varyant bilgileri (`platforms[kod].mapping.*`, "Ürün Özellikleri" penceresi — `platformInfos/**`, okundu, dokunulmadı)
 
@@ -144,6 +148,10 @@ Kanal alanları (fiyat, özellik, kanal bilgisi) tek desen: `EkPlatformMark` ba�
 | A9 | Engellemeyen uyarılar: satış fiyatı 0 · satış > piyasa (Trendyol doğrulaması reddeder) · resim yok | **Uygulandı** |
 | A10 | Taslak koruma (form verisini tarayıcıda tutma) | **Uygulanmadı — karar gerekli** (ürün verisi ticari veridir; ADR-0012 "form verisi yazılmaz" ilkesiyle çelişir). İstenirse: oturum başına, tenant+kullanıcı kapsamlı `sessionStorage`, kayıtta silinir |
 | A11 | `platformInfos/**` düzeltmeleri: genel panelin yalnız kanala özel alanları göstermesi; KDV'nin kanal panelinden çıkarılması ya da `mapping.taxPercentage`'e yazması; kanal başlığı sınırının 16/20'den kalkması; "Variant Başlık" yazımı; Hepsiburada boş panelin kaldırılması; Trendyol için `origin` ve `deliveryDuration` alanları, eski `fastDeliveryType`'ın kaldırılması (backend zaten okuyor) | **Uygulanmadı — dosyalar bu görevin kapsamı dışı** (ana oturum) |
+| A13 | Varyant ızgarası: rowspan gruplama tek yerde (`grid/variantSheet.ts`), sayfalama yerine sanal kaydırma, yapışkan başlık + seçim/grup/stok kodu kolonları, seçenek çipleri, seçenek tanım sırası (S, M, L, XL), hücre içi düzenleme (klavye), değişen hücre vurgusu, hücrede doğrulama, sorun özeti ("İlk hataya git") | **Uygulandı** |
+| A14 | Toplu düzenleyici (`grid/VariantBulkEditor.vue`): hücre/satır/kolon seçimi, toplu uygula, aşağı doldur, Excel yapıştırma, geri al/yinele, kanal fiyat kolonları kanal adı + rengiyle, değişiklik özeti + önizleme | **Uygulandı** |
+| A15 | Varyant özellik panelleri: adlı kanal sekmeleri (klavye), pazaryeri hatası/boş liste paneli, erişilebilir akordeon | **Uygulandı** |
+| A16 | Varyant silme onayı; kaydedilmemiş varyant gerçekten kalkar; "Toplu Silme" çalışır (eskiden hiçbir şey yapmıyordu) | **Uygulandı** |
 | A12 | Kanal başına "N zorunlu özellik eksik" göstergesi (mevcut `retrieveIntegrationCategoryChoices` verisiyle) ve sihirbazda Kanallar adımı | **Uygulanmadı** — `ProductVariantAttributesComponent` ve kategori-kanal eşleşme akışına bağlı |
 
 ### 4.4 (B) Backend GEREKTİREN (yalnız öneri)
@@ -158,6 +166,8 @@ Kanal alanları (fiyat, özellik, kanal bilgisi) tek desen: `EkPlatformMark` ba�
 | B6 | Kanal alanlarının gerçek kullanımı: `shippingId`/`cities` (Trendyol, N11, Pazarama), `hasGift`, `customShippingCost`, `stockTypeLabel` (Ideasoft `mapping` altında değil `variant/product` düzeyinde okunuyor), N11 `shipmentTemplate: 'Default'` sabit, `shippingDuration`/`maxPurchaseQuantity` | Her alan için: dönüştürücü okusun mu, yoksa arayüzden kaldırılsın mı |
 | B7 | Kategori × kanal hazırlığı tek çağrıda: `CategoryService/getChannelReadiness { categoryId }` → kanal başına eşleşme durumu + zorunlu özellik sayısı (bugün kanal başına ayrı ayrı çekiliyor) | Kanallar adımı için gerekli mi |
 | B8 | `saveProduct` atomikliği: ürün `upsert` sonra varyant `insertMany` ayrı adımlar; ikincisi başarısızsa yarım kayıt kalabilir (koddan çıkarım, doğrulanmadı) → işlem/transaction veya geri alma | Yarım kayıt politikası |
+| B10 | Barkod üretimi: bugün `Date.now()` (GTIN/EAN değildir, pazaryerlerinde reddedilebilir). Firma GS1 önekiyle kontrol haneli EAN-13 üretimi veya barkod havuzu | Barkod kaynağı (GS1 öneki / havuz / elle) |
+| B11 | Çok büyük varyant setlerinde (yüzlerce) toplu işlemin sunucuda yapılması: bugün tüm varyantlar formda tutulur ve kayıtta tek gövdede gider | Eşik ve toplu uç ihtiyacı |
 | B9 | `VariantService.updateVariants/addVariant` gömülü `variants` dizisine, `ProductService` `Variants` koleksiyonuna yazıyor; canlı yolun netleştirilmesi/eski yolun kaldırılması | Hangisi kalıcı |
 
 ---
