@@ -109,6 +109,12 @@ test.describe('B7 — Kategoriler', () => {
     await page.getByRole('button', { name: 'Aramayı temizle' }).click()
     await expect(row(page, 'Ayakkabı')).toBeVisible()
     await expect(row(page, 'Giyim')).toHaveAttribute('aria-expanded', 'false')
+    // Alanın kendi temizle simgesi (model null olur) de güvenli.
+    await search.fill('bot')
+    await expect(row(page, 'Ayakkabı')).toHaveAttribute('aria-expanded', 'true')
+    await page.locator('.cat-pane__search .v-field__clearable .v-icon').click()
+    await expect(search).toHaveValue('')
+    await expect(row(page, 'Aksesuar')).toBeVisible()
   })
 
   test('"Eşlemesi eksik" süzgeci: yalnız eksik yapraklar ve ataları; tam eşli yaprak gizlenir', async ({ page }) => {

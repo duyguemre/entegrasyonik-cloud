@@ -198,7 +198,7 @@ const missingCount = computed(() => all.value.filter((b) => b.mapping.length && 
 const coverage = computed(() => brandCoverage(all.value, platforms.value))
 
 // ------------------------------------------------------------------ arama / süzgeç / görünüm
-const query = ref('')
+const query = ref<string | null>('')
 const filterMode = ref<'all' | 'missing'>('all')
 const shown = computed(() => filterBrands(all.value, query.value ?? '', filterMode.value === 'missing'))
 const filterOptions = computed(() => [

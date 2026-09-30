@@ -107,7 +107,7 @@
                 :platforms="platforms"
                 :stats="stats"
                 :selected-id="selectedId"
-                :query="query"
+                :query="query ?? ''"
                 :only-missing="filterMode === 'missing'"
                 :busy="busy"
                 label="Kategori ağacı"
@@ -273,7 +273,7 @@ const coverage = computed(() => platformCoverage(tree.value, mappingIndex.value,
 const missingLeaves = computed(() => tree.value.roots.reduce((n, r) => n + (stats.value.get(r.id)?.missing ?? 0), 0))
 
 // ------------------------------------------------------------------ arama / süzgeç
-const query = ref('')
+const query = ref<string | null>('')
 const filterMode = ref<'all' | 'missing'>('all')
 const filterOptions = computed(() => [
   { value: 'all', label: 'Tümü' },
