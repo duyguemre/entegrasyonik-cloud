@@ -96,9 +96,10 @@ withDefaults(
   --ek-tile-border: var(--ek-color-neutral-border);
 }
 
+/* Light'ta brand = chrome (aynı lacivert, değişmedi); dark'ta brand açık tondur → marka karosu krom zeminde kalır (AA). */
 .ek-icon-tile--brand {
-  --ek-tile-bg: var(--ek-color-brand);
+  --ek-tile-bg: var(--ek-color-chrome);
   --ek-tile-fg: var(--ek-color-chrome-text);
-  --ek-tile-border: var(--ek-color-brand);
+  --ek-tile-border: var(--ek-color-chrome);
 }
 </style>
