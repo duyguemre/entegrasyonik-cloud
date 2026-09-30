@@ -5,7 +5,6 @@
  */
 
 import '../public/assets/css/site.css'
-import '../public/assets/css/integrations.css'
 // ADR-0011 Karar 1 — token omurgası (`--ek-*` CSS değişkenleri, Vuetify'a bağlı).
 import '@/design/tokens/dist/tokens.app.css'
 // ADR-0015 Karar 1.3/3.1 (A1) — uygulamaya özgü türev değişkenler
