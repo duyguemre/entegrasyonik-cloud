@@ -505,13 +505,13 @@ Kullanıcı isteği: ürün ekle/güncelle kategori seçiminde bir seviyede seç
 - Klavye: ↑/↓ Home/End (seçim odağı izler), → / Enter klasörü açar ve odağı yeni seviyenin İLK öğesine taşır (açık seviyeye dönüşte seçili öğeye), ← / Backspace üst seviye; tek panelde ← paneli de geri kaydırır. `aria-live="polite"`: "2. seviye: Moda, 3 öğe", "Moda alt kategorileri yükleniyor…", "Seçildi: Moda › Kadın › Tişört".
 - Bekçiler: `tests/cascade-motion.test.ts` (plan/sıra/adım ≤ slow, reduced-motion, klavye, duyuru, statik: yalnız transform/opacity, ham ms/px yok), `e2e/specs/a9-cascade-motion.spec.ts` (canlı animasyon özellikleri, kapanış adımları, reduced-motion + data-motion, klavye/odak/aria-live, 390 tek panel). İnceleme kareleri: `docs/a9-review/` (`A9_REVIEW=1 A9_WIDTH=1440|390 npx playwright test e2e/specs/a9-review.spec.ts --project=chromium-desktop`).
 
-## 18. A10 — sol menü bölüm deseni + ana sekme ↔ içerik birleşmesi (`cloud/fe-a10`)
+## 19. A10 — sol menü bölüm deseni + ana sekme ↔ içerik birleşmesi (`cloud/fe-a10`)
 
 Taban `cloud/ds-v2-a6b`. İnceleme: `docs/a10-review/*.png` (2x yakın çekim); araç
 `A10_REVIEW=1 A10_REVIEW_WIDTH=1440|800|390 A10_REVIEW_OUT=docs/a10-review npx playwright test e2e/specs/a10-review.spec.ts --project=chromium-desktop`.
 Token değişikliği YOK.
 
-### 18.1 Sol menü bölümleri (`EkSidebarNav`)
+### 19.1 Sol menü bölümleri (`EkSidebarNav`)
 
 Geri bildirim: "gruplar hafif grimsi, diğerlerinden farklı, karışık". Denenen üç alternatif (`alt-*-1440.png`):
 
@@ -527,7 +527,7 @@ Geri bildirim: "gruplar hafif grimsi, diğerlerinden farklı, karışık". Denen
 - Başlıklı liste `aria-labelledby` ile başlığa bağlı (ekran okuyucu grup adını okur).
 - Ray (daraltılmış): başlık yok, bölüm = 24px ayırıcı. Etkin/hover/odak durumları değişmedi (etkin: `sidebar-active` + 3px aksiyon; odak: 2px `border-focus` halka).
 
-### 18.2 Etkin sekme ↔ içerik (`EkWorkspaceTabs`)
+### 19.2 Etkin sekme ↔ içerik (`EkWorkspaceTabs`)
 
 - **Tek dış hat token'ı** `--ek-tab-line` (= `border-strong`): şeridin alt çizgisi → etkin sekmenin içbükey köşe halkası →
   yan/üst kenar kesintisiz aynı çizgi. Sekmenin alt kenarı yok; zemin `tab-active` ≡ içerik zemini → çizgisiz tek parça (A5 kuralı).
@@ -539,3 +539,19 @@ Geri bildirim: "gruplar hafif grimsi, diğerlerinden farklı, karışık". Denen
   hareketi gösterge + mevcut içerik girişi (opaklık + 4px) taşır; renk geçişi yalnız pasif sekmede hover'a girerken. reduced-motion: hepsi anında.
 - İlk sekme şerit başında yarıçap kadar pay (sol köşe kırpılmıyor, sol menü kenarına yapışmıyor). 390px'te A6b yatay kaydırma/ok/solma aynen.
 - Bekçi: `tests/a10-shell-nav-tabs.test.ts`.
+
+## 20. A11 — ürün listesi satır altı varyant gösterimi (`cloud/fe-a11`)
+
+Taban `cloud/ds-v2-a6b`. Kapsam yalnız `ProductVariantListComponent`, `ProductVariantListTooltipComponent`, ürün listesi satır genişletme
+bölümü; ortak ds bileşenlerine dokunulmadı, token değişikliği yok. Önce/sonra + gerekçeler: `docs/a11-review/README.md`.
+
+| Konu | Karar |
+|---|---|
+| Hiyerarşi | açık ürün satırı + varyant alanı tek `surface-sunken` blok, sol şerit satırda başlar, kap girintili ve üstü satıra birleşik |
+| Hareket | yükseklik (grid 0fr→1fr) + opaklık `--ek-duration-base`; reduced-motion 0 |
+| Özet şeridi | sayı · grup · toplam stok · tükendi/az · seçili; kanal kapsamı (x/n yayında, hata/bekliyor), gönderilmeyenler tek çip |
+| Satır | görsel/yer tutucu · seçenek çipleri · mono stok kodu/barkod + kopyala · tabular fiyat · stok tonu (≤5 az) + raf · kanal çipleri · `EkRowActions` |
+| Kanal | gönderilmiş kanal = adlı çip + durum ikonu (hata tonu), ipucunda kısa neden, tıklayınca durum kartı; gönderilmemiş "+n" |
+| Çok varyant | > 8: kompakt ızgara + "Tümünü gör" (iç kaydırma, yapışık başlık) |
+| Dar kap | < 600px kart (A6b) |
+| Mantık | `variants/variantListModel.ts` (saf, `tests/variant-list-model.test.ts`) |
