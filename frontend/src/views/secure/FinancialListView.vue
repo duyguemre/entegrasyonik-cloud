@@ -196,7 +196,6 @@
       :page="pagination.page"
       :page-size="pagination.limit"
       :total="pagination.totalNumberOfRecords"
-      :page-size-options="[10, 20, 50, 100]"
       empty-title="Finansal Kayıt Bulunamadı"
       empty-text="Arama kriterlerinize uygun herhangi bir finansal işlem kaydı bulunamadı."
       empty-icon="mdi-cash-multiple"
@@ -332,7 +331,7 @@ const searchForm = reactive({
 
 const pagination = reactive({
   page: 1,
-  limit: 20,
+  limit: 25,
   totalPages: 1,
   totalNumberOfRecords: 0,
   totalNumberOfPages: 1,

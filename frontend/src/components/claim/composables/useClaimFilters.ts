@@ -17,7 +17,7 @@ export function useClaimFilters(getClaims: Function) {
 
     // --- 2. PAGINATION & SORT STATE ---
     const pagination = reactive({
-        limit: 15,
+        limit: 25,
         page: 1,
         totalNumberOfPages: 1,
         totalNumberOfRecords: 0

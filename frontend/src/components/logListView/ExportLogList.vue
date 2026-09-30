@@ -35,7 +35,6 @@
       :page="pagination.page"
       :page-size="pagination.limit"
       :total="pagination.totalNumberOfRecords"
-      :page-size-options="[13, 25, 50, 100]"
       empty-title="Gönderim Kaydı Bulunamadı"
       empty-text="Pazaryerlerine gönderilen ürün işlemleri burada listelenir."
       empty-icon="mdi-rocket-launch-outline"
@@ -279,7 +278,7 @@ const handlePageChange = () => {
 };
 
 
-const pagination = reactive({ limit: 13, page: 1, totalNumberOfPages: 1, totalNumberOfRecords: 0 });
+const pagination = reactive({ limit: 25, page: 1, totalNumberOfPages: 1, totalNumberOfRecords: 0 });
 const reportInfo = reactive({ isOpen: false, jobId: null })
 const openDetailedReport = (item: any) => { reportInfo.jobId = item._id; reportInfo.isOpen = true; }
 

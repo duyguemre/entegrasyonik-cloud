@@ -42,7 +42,6 @@
       :page="pagination.page"
       :page-size="pagination.limit"
       :total="pagination.totalNumberOfRecords"
-      :page-size-options="[15, 25, 50, 100]"
       empty-title="Talep Bulunamadı"
       empty-text="Pazaryerlerinden iade talebi geldikçe burada listelenir."
       empty-icon="mdi-undo-variant"

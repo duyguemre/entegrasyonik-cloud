@@ -147,7 +147,7 @@ const searchInvoiceForm = ref<any>({
 });
 
 const sortBy = ref<any>([]);
-const pagination = ref({ page: 1, limit: 20, totalNumberOfPages: 1, totalNumberOfRecords: 0 });
+const pagination = ref({ page: 1, limit: 25, totalNumberOfPages: 1, totalNumberOfRecords: 0 });
 
 // DS-v2 liste standardı. Sıralanabilir kolonlar InvoiceService.getInvoices `sortBy.key`
 // izin listesindeki alanlardır (SUNUCU tarafı sıralama).

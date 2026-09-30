@@ -33,7 +33,6 @@
       :page="pagination.page"
       :page-size="pagination.limit"
       :total="pagination.totalNumberOfRecords"
-      :page-size-options="[13, 25, 50, 100]"
       empty-title="Aktarım Kaydı Bulunamadı"
       empty-text="Pazaryerlerinden ürün çekim işlemleri burada listelenir."
       empty-icon="mdi-cloud-download-outline"
@@ -152,7 +151,7 @@ const copyToClipboard = (text: string) => {
 
 
 const confirmationDelete = reactive<any>({ isDialogOpen: false, activator: undefined, mode: 'single', job: null })
-const pagination = reactive({ limit: 13, page: 1, totalNumberOfPages: 1, totalNumberOfRecords: 0 });
+const pagination = reactive({ limit: 25, page: 1, totalNumberOfPages: 1, totalNumberOfRecords: 0 });
 
 // DS-v2 liste standardı. Sıralama SUNUCUDA (getImportJobs `sortBy`/`sortOrder`).
 const columns: EkGridColumn[] = [

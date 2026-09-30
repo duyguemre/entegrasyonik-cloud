@@ -65,7 +65,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{ 'update:page': [page: number]; 'update:pageSize': [size: number] }>()
 
-/** Mevcut sayfa boyutu listede yoksa (ör. ekranın varsayılanı 15) seçeneklere eklenir — seçici boş görünmez. */
+/** Standart boyutlar 10/25/50/100 (tüm listeler). Dışarıdan standart dışı bir boyut gelirse seçici boş görünmesin diye eklenir (tests/page-size-standard.test.ts ekranların standart dışı değer kullanmasını engeller). */
 const sizeOptions = computed(() => [...new Set([...props.pageSizeOptions, props.pageSize])].sort((a, b) => a - b))
 
 const pageCount = computed(() => Math.max(1, Math.ceil(props.total / props.pageSize)))

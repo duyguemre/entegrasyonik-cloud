@@ -28,7 +28,7 @@
       :page="page"
       :page-size="pageSize"
       :total="total"
-      :page-size-options="[10, 20, 50]"
+
       :empty-title="t('finance.payouts.emptyTitle')"
       :empty-text="t('finance.payouts.emptyText')"
       empty-icon="mdi-bank-transfer"
@@ -159,7 +159,7 @@ const errorStatus = ref<number | null | undefined>(undefined)
 const rows = ref<FinancialTransactionRow[]>([])
 const total = ref(0)
 const page = ref(1)
-const pageSize = ref(20)
+const pageSize = ref(25)
 const sort = ref<EkGridSort>({ key: 'transactionDate', dir: 'desc' })
 
 const lookupId = ref('')

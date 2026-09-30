@@ -153,7 +153,6 @@
           :page="page"
           :page-size="pageSize"
           :total="visibleRows.length"
-          :page-size-options="[25, 50, 100]"
           label="Bildirim sayfaları"
           @update:page="page = $event"
           @update:page-size="onPageSize"

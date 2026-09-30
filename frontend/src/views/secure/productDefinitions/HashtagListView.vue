@@ -24,7 +24,6 @@
       :page="pagination.page"
       :page-size="pagination.limit"
       :total="pagination.totalNumberOfRecords"
-      :page-size-options="[10, 15, 25, 50, 100]"
       empty-title="Etiket Bulunamadı"
       empty-text="Arama kriterlerinize uygun herhangi bir etiket grubu bulunamadı."
       filtered-empty-title="Etiket Bulunamadı"
@@ -187,7 +186,7 @@ const gridSort = ref<EkGridSort>(null)
 
 const pagination = reactive({
   page: 1,
-  limit: 15,
+  limit: 25,
   totalNumberOfPages: 1,
   totalNumberOfRecords: 0
 })

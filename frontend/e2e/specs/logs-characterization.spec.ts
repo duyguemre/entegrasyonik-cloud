@@ -41,7 +41,7 @@ test.describe('B3 karakterizasyon — log listeleri istek gövdeleri', () => {
     await openScreen(page, 'LogListView')
     await expect(page.getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
 
-    expect(bodies[0]).toEqual({ page: 1, limit: 13, sortBy: 'createdAt', sortOrder: 'desc' })
+    expect(bodies[0]).toEqual({ page: 1, limit: 25, sortBy: 'createdAt', sortOrder: 'desc' })
   })
 
   test('gönderim listesi: arama kutusunda Enter → globalSearch (kırpılmış) ile sayfa 1 yeniden istenir', async ({ page }) => {
@@ -55,7 +55,7 @@ test.describe('B3 karakterizasyon — log listeleri istek gövdeleri', () => {
     await search.fill('  E2E-BARKOD  ')
     await search.press('Enter')
     await expect.poll(() => bodies.length).toBeGreaterThanOrEqual(2)
-    expect(bodies.at(-1)).toEqual({ page: 1, limit: 13, sortBy: 'createdAt', sortOrder: 'desc', globalSearch: 'E2E-BARKOD' })
+    expect(bodies.at(-1)).toEqual({ page: 1, limit: 25, sortBy: 'createdAt', sortOrder: 'desc', globalSearch: 'E2E-BARKOD' })
   })
 
   test('gönderim listesi: yenile düğmesi aynı gövdeyle yeniden ister', async ({ page }) => {
@@ -88,7 +88,7 @@ test.describe('B3 karakterizasyon — log listeleri istek gövdeleri', () => {
     await panel.getByRole('textbox', { name: /Ürün adı/ }).fill('Elbise')
     await panel.getByRole('button', { name: 'Sorgula' }).click()
     await expect.poll(() => advBodies.length).toBe(1)
-    expect(advBodies[0]).toMatchObject({ page: 1, limit: 13, sortBy: 'createdAt', sortOrder: 'desc', title: 'Elbise', integrationCode: [], statuses: [] })
+    expect(advBodies[0]).toMatchObject({ page: 1, limit: 25, sortBy: 'createdAt', sortOrder: 'desc', title: 'Elbise', integrationCode: [], statuses: [] })
   })
 
   test('aktarım listesi: ilk yüklemede getImportJobs sayfa 1 / limit 13 ile istenir', async ({ page }) => {
@@ -99,7 +99,7 @@ test.describe('B3 karakterizasyon — log listeleri istek gövdeleri', () => {
     await openImportTab(page)
     await expect(page.locator('.importLogList').getByText('Trendyol')).toBeVisible()
 
-    expect(bodies[0]).toMatchObject({ page: 1, limit: 13 })
+    expect(bodies[0]).toMatchObject({ page: 1, limit: 25 })
   })
 
   test('aktarım listesi: iş numarasıyla Enter → getImportJobByJobId çağrılır, dönen tek kayıt listelenir', async ({ page }) => {

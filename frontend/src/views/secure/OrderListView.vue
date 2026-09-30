@@ -75,7 +75,6 @@
       :page="pagination.page"
       :page-size="pagination.limit"
       :total="pagination.totalNumberOfRecords"
-      :page-size-options="[15, 25, 50, 100]"
       empty-title="Sipariş Bulunamadı"
       empty-text="Pazaryerlerinden sipariş geldikçe burada listelenir."
       empty-icon="mdi-cart-outline"

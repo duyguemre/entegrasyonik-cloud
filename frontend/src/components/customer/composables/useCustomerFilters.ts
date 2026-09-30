@@ -19,7 +19,7 @@ export const useCustomerFilters = (fetchCallback: Function) => {
     // 2. SAYFALAMA STATE
     const pagination = reactive({
         page: 1,
-        limit: 15,
+        limit: 25,
         totalNumberOfRecords: 0,
         totalNumberOfPages: 1
     });

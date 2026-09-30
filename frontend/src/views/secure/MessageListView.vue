@@ -36,7 +36,6 @@
       :page="pagination.page"
       :page-size="pagination.limit"
       :total="pagination.totalNumberOfRecords"
-      :page-size-options="[15, 25, 50, 100]"
       empty-title="Mesaj Bulunamadı"
       empty-text="Pazaryerlerinden gelen müşteri soruları burada listelenir."
       empty-icon="mdi-message-text-outline"
@@ -147,7 +146,7 @@ const actionDialog = ref<any>({ show: false });
 
 const pagination = reactive({
   page: 1,
-  limit: 15,
+  limit: 25,
   totalNumberOfRecords: 0,
   totalNumberOfPages: 1
 });

@@ -121,7 +121,7 @@ test.describe('ADR-0015 B5-3 — FinancialListView (finans)', () => {
     expect(bodies.length).toBeGreaterThanOrEqual(1)
     expect(bodies[0]).toEqual({
       externalIdSearch: '', startDate: null, endDate: null, integrationCodes: [], transactionTypes: [],
-      page: 1, limit: 20, sortBy: [{ key: 'transactionDate', order: 'desc' }],
+      page: 1, limit: 25, sortBy: [{ key: 'transactionDate', order: 'desc' }],
     })
   })
 
@@ -137,7 +137,7 @@ test.describe('ADR-0015 B5-3 — FinancialListView (finans)', () => {
     await expect.poll(() => bodies[bodies.length - 1]?.externalIdSearch).toBe('TRX-E2E-0002')
     const last = bodies[bodies.length - 1]
     expect(last.page).toBe(1)
-    expect(last.limit).toBe(20)
+    expect(last.limit).toBe(25)
     expect(last.sortBy).toEqual([{ key: 'transactionDate', order: 'desc' }])
   })
 
@@ -500,7 +500,7 @@ test.describe('C1.4 — Finans sekmeleri', () => {
     await openTab(page, { [ENDPOINT]: transactionsMock(listBodies), [PAYOUT_DETAIL_ENDPOINT]: payoutDetailMock(detailBodies) }, 'Ödeme dökümü')
     const view = page.locator('.financialListView')
     await expect(view.getByText('4829301')).toBeVisible()
-    expect(listBodies[0]).toEqual({ transactionTypes: ['PAYOUT'], page: 1, limit: 20, sortBy: [{ key: 'transactionDate', order: 'desc' }] })
+    expect(listBodies[0]).toEqual({ transactionTypes: ['PAYOUT'], page: 1, limit: 25, sortBy: [{ key: 'transactionDate', order: 'desc' }] })
     await expect(view.getByText('₺38.420,75')).toBeVisible()
 
     await view.getByRole('row').filter({ hasText: '4829301' }).getByRole('button', { name: 'Dökümü aç' }).click()

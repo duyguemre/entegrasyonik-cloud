@@ -29,7 +29,6 @@
     :page="page"
     :page-size="pageSize"
     :total="rows.length"
-    :page-size-options="[25, 50, 100]"
     :empty-title="t('finance.cargo.emptyTitle')"
     :empty-text="t('finance.cargo.emptyText')"
     empty-icon="mdi-truck-outline"
