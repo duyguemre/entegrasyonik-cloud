@@ -5,6 +5,11 @@
  * (`/entegrasyonlar/[kod]#baglanti-rehberi`, `connect.ts` verisi) bağlanır. Soru bağlantıları `/sss#<id>` hedefler
  * (SSS sayfası hedeflenen soruyu açar). Arama kutusu bilinçli olarak YOK (statik site; arama altyapısı yok).
  * Destek kanalı/süre taahhüdü yazılmaz: "Hâlâ yardım" kutusu SSS `destek` kaydının cevabını aynen kullanır.
+ *
+ * S16 (kullanıcı: "daha profesyonel, premium"): yardım merkezi girişi → konu kartları (beş kategoriye kısa yol) →
+ * ayrı "Kanal bağlantı rehberleri" bandı (kanal rengi vurgulu kartlar) → kategori kartları (sorular) → destek
+ * kanalları (uygulama içi talep, konu bazlı e-posta, SSS; YANIT SÜRESİ İDDİASI YOK) → altta iletişim bandı
+ * (adres + e-posta gönder + adresi kopyala). Yeni olgu üretilmez; metinler SSS/iletişim kayıtlarından gelir.
  */
 import BaseLayout from '../layouts/BaseLayout.astro'
 import Section from '../components/Section.astro'
@@ -13,7 +18,8 @@ import Icon from '../components/home/Icon.astro'
 import PageHero from '../components/pages/PageHero.astro'
 import PageMeta from '../components/pages/PageMeta.astro'
 import ChannelMono from '../components/pages/ChannelMono.astro'
-import CtaBand from '../components/pages/CtaBand.astro'
+import EmailActions from '../components/pages/EmailActions.astro'
+import { contactEmail } from '../lib/contact'
 import { getPublicFaq, getSupportCategories } from '../data/faq'
 import { getPublicIntegrations } from '../data/integrations'
 import { connectGuides } from '../data/connect'
@@ -44,17 +50,15 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
 
   <PageHero
     title="Destek merkezi"
+    eyebrow="Yardım merkezi"
     lead="Kurulumdan plan seçimine kadar sık sorulan sorular ve kanal bağlantı rehberleri, konularına göre ayrılmış hâlde. Aradığınız cevaba kısa yoldan ulaşın."
     crumbs={crumbs}
   >
-    <nav class="toc" aria-label="Destek kategorileri">
-      {tocCategories.map((c) => <a href={`#${c.id}`}>{c.label}</a>)}
-    </nav>
     <Fragment slot="visual">
       <p class="quick__tag">Hızlı başlangıç</p>
       <ul class="quick" role="list">
         <li>
-          <a class="quick__link" href="#kanal-baglama">
+          <a class="quick__link" href="#kanal-rehberleri">
             <span class="quick__icon" aria-hidden="true"><Icon name="plug" size="sm" /></span>
             <span>Kanal bağlantı rehberleri</span>
             <span class="quick__arrow" aria-hidden="true"><Icon name="arrow" size="sm" /></span>
@@ -78,8 +82,65 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
     </Fragment>
   </PageHero>
 
+  <Section labelledby="konu-title" class="tight-section section--topics">
+    <div class="head">
+      <p class="eyebrow">Konuya göre göz atın</p>
+      <h2 id="konu-title">Size nasıl yardımcı olabiliriz?</h2>
+      <p>Bir konu seçin; ilgili sorulara ve rehberlere doğrudan gidin.</p>
+    </div>
+    <ul class="topics" role="list" data-testid="support-topics">
+      {
+        tocCategories.map((c) => (
+          <li>
+            <a class="topic" href={`#${c.id}`}>
+              <span class="topic__icon" aria-hidden="true">
+                <Icon name={c.icon} size="md" />
+              </span>
+              <span class="topic__label">{c.label}</span>
+              <span class="topic__lead">{c.lead}</span>
+              <span class="topic__cta">
+                Soruları görün <Icon name="arrow" size="sm" />
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section id="kanal-rehberleri" tone="muted" labelledby="rehber-title" class="tight-section">
+    <div class="head">
+      <p class="eyebrow">Adım adım</p>
+      <h2 id="rehber-title">Kanal bağlantı rehberleri</h2>
+      <p>Her kanal için gereken bilgi türleri ve bağlantı adımları kendi sayfasında. Kod yazmanız gerekmez.</p>
+    </div>
+    <ul class="chan-grid" role="list" data-testid="support-channel-guides">
+      {
+        channels.map((ch) => (
+          <li>
+            <a class="chan" href={`/entegrasyonlar/${ch.code}#baglanti-rehberi`} data-code={ch.code}>
+              <span class="chan__strip" aria-hidden="true" />
+              <ChannelMono code={ch.code} name={ch.name} size="md" />
+              <span class="chan__text">
+                <span class="chan__name">{ch.name} rehberi</span>
+                <span class="chan__kind">{ch.kindLabel}</span>
+              </span>
+              <span class="chan__arrow" aria-hidden="true">
+                <Icon name="arrow" size="sm" />
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
   <Section labelledby="kategori-title" class="tight-section">
-    <h2 id="kategori-title" class="sr-only">Destek kategorileri</h2>
+    <div class="head">
+      <p class="eyebrow">Sık sorulan sorular</p>
+      <h2 id="kategori-title">Konulara göre sorular</h2>
+      <p>Her soru, tam cevabın yer aldığı SSS sayfasında açılır. <a href="/sss">Tüm soruları görün</a>.</p>
+    </div>
     <ul class="support-grid" role="list">
       {
         categories.map((c) => (
@@ -96,22 +157,6 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
               </div>
 
               <div class="support-card__body">
-              {c.channelGuides && (
-                <div class="guides">
-                  <p class="guides__label">Adım adım bağlantı rehberleri</p>
-                  <ul class="guides__list" role="list" data-testid="support-channel-guides">
-                    {channels.map((ch) => (
-                      <li>
-                        <a class="guides__link" href={`/entegrasyonlar/${ch.code}#baglanti-rehberi`} data-code={ch.code}>
-                          <ChannelMono code={ch.code} name={ch.name} size="sm" />
-                          <span>{ch.name} rehberi</span>
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
               <ul class="questions" role="list">
                 {c.items.map((q) => (
                   <li>
@@ -140,29 +185,46 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
     </ul>
   </Section>
 
-  <Section tone="muted" labelledby="yardim-title" class="tight-section">
-    <div class="help">
-      <div class="help__copy">
-        <span class="help__icon" aria-hidden="true"><Icon name="chat" size="md" /></span>
-        <div>
-          <h2 id="yardim-title">Aradığınızı bulamadınız mı?</h2>
-          {supportAnswer && <p>{supportAnswer}</p>}
-        </div>
+  <Section tone="muted" labelledby="kanallar-title" class="tight-section">
+    <div class="head">
+      <p class="eyebrow">Destek kanalları</p>
+      <h2 id="kanallar-title">Aradığınızı bulamadınız mı?</h2>
+      {supportAnswer && <p>{supportAnswer}</p>}
+    </div>
+    <ul class="channels" role="list" data-testid="support-channels">
+      <li class="channel">
+        <span class="channel__icon" aria-hidden="true"><Icon name="users" size="md" /></span>
+        <h3>Uygulama içi destek</h3>
+        <p>Mevcut müşteriler için: destek ekranından talep oluşturun, süreci aynı ekranda mesajlaşarak takip edin.</p>
+        <Button href={appUrls.login()} variant="primary">Uygulamaya giriş yapın</Button>
+      </li>
+      <li class="channel">
+        <span class="channel__icon" aria-hidden="true"><Icon name="mail" size="md" /></span>
+        <h3>E-posta ile yazın</h3>
+        <p>Satış öncesi sorular, teklif ve kanal talepleri için konunuzu seçip e-posta gönderin.</p>
+        <Button href="/iletisim" variant="secondary">Konu seçerek yazın</Button>
+      </li>
+      <li class="channel">
+        <span class="channel__icon" aria-hidden="true"><Icon name="help" size="md" /></span>
+        <h3>Sık sorulan sorular</h3>
+        <p>Başlangıçtan fiyatlandırmaya, en sık sorulan soruların cevapları tek sayfada.</p>
+        <Button href="/sss" variant="secondary">Tüm sorular</Button>
+      </li>
+    </ul>
+  </Section>
+
+  <Section tone="stage" labelledby="iletisim-bandi-title" class="contact-band">
+    <div class="band">
+      <div class="band__copy">
+        <p class="band__eyebrow">İletişim</p>
+        <h2 id="iletisim-bandi-title">Bize doğrudan yazın</h2>
+        <p>Genel iletişim adresimize e-posta gönderebilir veya adresi kopyalayıp dilediğiniz uygulamadan yazabilirsiniz.</p>
       </div>
-      <div class="help__actions">
-        <Button href={appUrls.login()} variant="primary" size="lg">Uygulamaya giriş yapın</Button>
-        <Button href="/iletisim" variant="secondary" size="lg">İletişim sayfası</Button>
+      <div class="band__actions">
+        <EmailActions email={contactEmail} id="destek-mail" tone="dark" subject="Destek talebi" />
       </div>
     </div>
   </Section>
-
-  <CtaBand
-    id="destek-cta"
-    title="Kanallarınızı bugün bağlayın"
-    text="Ücretsiz denemeyle hesabınızı açın; bağlantı rehberini izleyerek ilk kanalınızı kod yazmadan ekleyin."
-    primary={{ label: 'Ücretsiz dene', href: appUrls.register() }}
-    secondary={{ label: 'Entegrasyonlar', href: '/entegrasyonlar' }}
-  />
 </BaseLayout>
 
 <script>
@@ -172,33 +234,6 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
 <style>
   .tight-section:global(.section) {
     padding-block: calc(var(--site-section-y) * 0.72);
-  }
-  .toc {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ek-space-2) var(--ek-space-3);
-  }
-  .toc a {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--site-tap-target);
-    padding-inline: var(--ek-space-4);
-    border: var(--site-border-width) solid var(--site-color-on-primary-muted);
-    border-radius: var(--ek-radius-full);
-    color: var(--site-color-on-primary);
-    font-size: var(--ek-font-size-md);
-    font-weight: var(--ek-font-weight-medium);
-    text-decoration: none;
-    transition:
-      background-color var(--ek-duration-base) var(--ek-easing-standard),
-      border-color var(--ek-duration-base) var(--ek-easing-standard);
-  }
-  .toc a:hover {
-    background: color-mix(in srgb, var(--ek-color-background) 12%, transparent);
-    border-color: var(--site-color-on-primary);
-  }
-  .toc a:focus-visible {
-    outline-color: var(--site-color-on-primary);
   }
 
   /* --- Hero görsel: hızlı başlangıç bağlantıları --- */
@@ -258,6 +293,271 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
   }
 
   /* --- Kategori ızgarası --- */
+  /* --- S16: başlık, konu kartları, kanal rehberleri, destek kanalları, iletişim bandı --- */
+  .head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    max-width: 46rem;
+    margin-bottom: var(--ek-space-8);
+  }
+  .eyebrow {
+    color: var(--site-link-accent);
+    font-size: var(--site-card-eyebrow-size);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .head h2 {
+    color: var(--site-text-heading);
+    font-size: var(--site-font-display-sm);
+    font-weight: var(--site-font-display-weight);
+    line-height: var(--site-font-display-line-height);
+    letter-spacing: var(--site-font-display-tracking);
+  }
+  .head p:not(.eyebrow) {
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-lg);
+    line-height: var(--site-font-body-line-height);
+  }
+  .head a {
+    color: var(--site-link-accent);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .topics {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--ek-space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .topic {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    height: 100%;
+    padding: var(--ek-space-5);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--site-radius-panel);
+    background:
+      radial-gradient(90% 70% at 0% 0%, color-mix(in srgb, var(--ek-color-secondary) 6%, transparent), transparent 70%),
+      var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
+    color: inherit;
+    text-decoration: none;
+    transition:
+      border-color var(--ek-duration-base) var(--ek-easing-standard),
+      box-shadow var(--ek-duration-base) var(--ek-easing-standard),
+      transform var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .topic:hover {
+    border-color: color-mix(in srgb, var(--ek-color-secondary) 45%, var(--ek-color-border-default));
+    box-shadow: var(--site-shadow-card-hover);
+    transform: translateY(calc(var(--ek-space-1) * -0.5));
+  }
+  .topic:focus-visible,
+  .chan:focus-visible {
+    outline: var(--site-focus-ring-width) solid var(--site-color-focus-ring);
+    outline-offset: var(--site-focus-ring-offset);
+  }
+  .topic__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
+    margin-bottom: var(--ek-space-2);
+    border-radius: var(--ek-radius-lg);
+    background: linear-gradient(140deg, var(--ek-color-primary), var(--ek-color-primary-darken-1));
+    color: var(--site-color-on-primary);
+  }
+  .topic__label {
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-lg);
+    font-weight: var(--ek-font-weight-bold);
+  }
+  .topic__lead {
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-sm);
+    line-height: var(--site-font-body-line-height);
+  }
+  .topic__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-1);
+    margin-top: auto;
+    padding-top: var(--ek-space-2);
+    color: var(--site-link-accent);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .chan-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--ek-space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .chan {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-4);
+    overflow: hidden;
+    padding: var(--ek-space-4) var(--ek-space-5);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-xl);
+    background:
+      radial-gradient(70% 120% at 0% 50%, color-mix(in srgb, var(--chan) 8%, transparent), transparent 70%),
+      var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
+    color: inherit;
+    text-decoration: none;
+    transition:
+      border-color var(--ek-duration-base) var(--ek-easing-standard),
+      box-shadow var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .chan:hover {
+    border-color: color-mix(in srgb, var(--chan) 45%, var(--ek-color-border-default));
+    box-shadow: var(--site-shadow-card-hover);
+  }
+  .chan__strip {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: calc(var(--site-border-width) * 3);
+    background: var(--chan);
+  }
+  .chan__text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .chan__name {
+    color: var(--site-text-heading);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .chan__kind {
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-sm);
+  }
+  .chan__arrow {
+    display: inline-flex;
+    color: var(--site-link-accent);
+    transition: transform var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .chan:hover .chan__arrow {
+    transform: translateX(var(--ek-space-1));
+  }
+  .channels {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--ek-space-5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .channel {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-6);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--site-radius-panel);
+    background: var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
+  }
+  .channel__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
+    border-radius: var(--ek-radius-lg);
+    background: var(--site-accent-soft);
+    box-shadow: inset 0 0 0 var(--site-border-width) color-mix(in srgb, var(--ek-color-secondary) 28%, transparent);
+    color: var(--site-link-accent);
+  }
+  .channel h3 {
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-xl);
+    font-weight: var(--ek-font-weight-bold);
+  }
+  .channel p {
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-md);
+    line-height: var(--site-font-body-line-height);
+  }
+  .channel :global(.btn) {
+    margin-top: auto;
+  }
+  .contact-band:global(.section) {
+    padding-block: calc(var(--site-section-y) * 0.6);
+  }
+  .band {
+    display: grid;
+    gap: var(--ek-space-8);
+    align-items: center;
+  }
+  .band__copy {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+  }
+  .band__eyebrow {
+    color: var(--site-accent-on-dark);
+    font-size: var(--site-card-eyebrow-size);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .band h2 {
+    font-size: var(--site-font-display-sm);
+    font-weight: var(--site-font-display-weight);
+    line-height: var(--site-font-display-line-height);
+    letter-spacing: var(--site-font-display-tracking);
+  }
+  .band__copy p:not(.band__eyebrow) {
+    color: var(--site-text-on-dark-body);
+    font-size: var(--ek-font-size-lg);
+  }
+  .band__actions {
+    padding: var(--ek-space-6);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--site-radius-panel);
+    background: var(--site-glass-bg);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .topic:hover,
+    .chan:hover .chan__arrow {
+      transform: none;
+    }
+  }
+  @media (min-width: 640px) {
+    .topics,
+    .chan-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 900px) {
+    .chan-grid,
+    .channels {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1100px) {
+    .topics {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+    .band {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: var(--ek-space-12);
+    }
+  }
   .support-grid {
     display: grid;
     gap: var(--ek-space-6);
@@ -318,42 +618,6 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
     flex-direction: column;
     gap: var(--ek-space-5);
   }
-  .guides {
-    padding: var(--ek-space-4);
-    border-radius: var(--ek-radius-lg);
-    background: var(--ek-color-surface-muted);
-  }
-  .guides__label {
-    margin: 0 0 var(--ek-space-3);
-    color: var(--ek-color-content-muted);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-  .guides__list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 9.5rem), 1fr));
-    gap: var(--ek-space-2);
-  }
-  .guides__link {
-    display: flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-    min-height: var(--site-tap-target);
-    padding: var(--ek-space-1) var(--ek-space-3) var(--ek-space-1) var(--ek-space-1);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-surface);
-    color: var(--ek-color-content-strong);
-    font-size: var(--ek-font-size-md);
-    font-weight: var(--ek-font-weight-medium);
-    text-decoration: none;
-    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
-  }
-  .guides__link:hover {
-    border-color: color-mix(in srgb, var(--chan, var(--ek-color-primary)) 60%, transparent);
-  }
 
   .questions {
     display: flex;
@@ -401,46 +665,6 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
   }
 
   /* --- Hâlâ yardım --- */
-  .help {
-    display: grid;
-    gap: var(--ek-space-6);
-    align-items: center;
-    padding: var(--ek-space-8);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--site-radius-panel);
-    background: var(--ek-color-surface);
-    box-shadow: var(--site-shadow-card);
-  }
-  .help__copy {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--ek-space-4);
-  }
-  .help__icon {
-    display: inline-flex;
-    flex: none;
-    align-items: center;
-    justify-content: center;
-    width: var(--ek-space-12);
-    height: var(--ek-space-12);
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-info-subtle);
-    color: var(--ek-color-info);
-  }
-  .help h2 {
-    margin-bottom: var(--ek-space-2);
-    font-size: var(--ek-font-size-2xl);
-    line-height: var(--ek-line-height-tight);
-  }
-  .help p {
-    color: var(--ek-color-content-default);
-    font-size: var(--ek-font-size-lg);
-  }
-  .help__actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ek-space-3);
-  }
 
   @media (min-width: 768px) {
     .support-grid {
@@ -451,16 +675,10 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
     }
   }
   @media (min-width: 1024px) {
-    .support-cell--wide .support-card__body {
+    .support-cell--wide .questions {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      gap: var(--ek-space-8);
-      align-items: start;
-    }
-  }
-  @media (min-width: 1200px) {
-    .help {
-      grid-template-columns: minmax(0, 3fr) auto;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: var(--ek-space-8);
     }
   }
 </style>
