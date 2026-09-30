@@ -10,7 +10,7 @@
 <template>
   <EkDialogCard class="vbe-root" title="Toplu düzenle" icon="mdi-table-edit" width="custom" hide-actions
     :description="`${variants.length === allCount ? 'Tüm' : 'Seçili'} ${variants.length} varyant · değişiklikler önce önizlenir, sonra forma yazılır`"
-    @close="emit('close')">
+    @close="requestClose">
     <template v-if="step === 'edit'">
       <!-- işlem çubuğu -->
       <div class="vbe-ops" role="toolbar" aria-label="Toplu işlem">
@@ -121,8 +121,14 @@
             <EkKbd :keys="['Ctrl', 'V']" /> Excel'den yapıştır · <EkKbd :keys="['Ctrl', 'C']" /> kopyala · <EkKbd keys="Del" /> temizle
           </span>
         </div>
-        <div class="vbe-foot__actions">
-          <EkButton @click="emit('close')">Vazgeç</EkButton>
+        <div v-if="confirmDiscard" class="vbe-discard" role="alert">
+          <v-icon icon="mdi-alert" aria-hidden="true" />
+          <span><strong>{{ changes.length }} değişiklik uygulanmadı.</strong> Çıkarsanız bu değişiklikler kaybolur.</span>
+          <EkButton size="sm" @click="confirmDiscard = false">Düzenlemeye dön</EkButton>
+          <EkButton size="sm" tone="danger" icon="mdi-delete-outline" @click="emit('close')">Değişiklikleri at</EkButton>
+        </div>
+        <div v-else class="vbe-foot__actions">
+          <EkButton @click="requestClose">Vazgeç</EkButton>
           <EkButton tone="primary" icon="mdi-eye-outline" :disabled="!changes.length" @click="step = 'preview'">
             Değişiklikleri gözden geçir ({{ changes.length }})
           </EkButton>
@@ -380,6 +386,13 @@ const channelChangedIds = computed(() => new Set(changes.value.filter((c) => c.k
 const channelChangedVariants = computed(() => [...channelChangedIds.value].filter((id) => !sources.get(id)?.prices?.isPlatformBasedPrice).length)
 const markChannelBased = ref(true)
 const step = ref<'edit' | 'preview'>('edit')
+const confirmDiscard = ref(false)
+/** Uygulanmamış değişiklik varsa kapatmadan önce satır içi onay (kazara kayıp olmasın). */
+function requestClose() {
+  if (step.value === 'edit' && changes.value.length && !confirmDiscard.value) { confirmDiscard.value = true; return }
+  if (step.value === 'preview') { step.value = 'edit'; confirmDiscard.value = true; return }
+  emit('close')
+}
 
 function apply() {
   if (issueTotals.value.errors) return
@@ -469,7 +482,7 @@ function onPaste(e: ClipboardEvent) {
   live.value = `${r.changed} hücre yapıştırıldı${r.invalid ? `, ${r.invalid} geçersiz hücre atlandı` : ''}`
 }
 
-defineExpose({ sheet, changes, apply })
+defineExpose({ sheet, changes, apply, requestClose })
 </script>
 
 <style scoped>
@@ -692,6 +705,22 @@ tr.is-group-start > th, tr.is-group-start > td { border-top: 1px solid var(--ek-
 .vbe-sum--error .v-icon { color: var(--ek-color-error); }
 .vbe-sum--warning { color: var(--ek-color-warning-emphasis); font-weight: 600; }
 .vbe-sum--warning .v-icon { color: var(--ek-color-warning); }
+
+.vbe-discard {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ek-space-2) var(--ek-space-3);
+  margin-left: auto;
+  padding: var(--ek-space-2) var(--ek-space-3);
+  border: 1px solid var(--ek-color-warning-border);
+  border-radius: var(--ek-radius-control);
+  background: var(--ek-color-warning-subtle);
+  color: var(--ek-color-warning-emphasis);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+}
+.vbe-discard .v-icon { color: var(--ek-color-warning); font-size: var(--ek-icon-sm); }
 
 /* önizleme */
 .vbe-preview { display: flex; flex-direction: column; gap: var(--ek-space-3); }

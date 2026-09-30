@@ -265,9 +265,15 @@ const onScroll = () => { scrollTop.value = scrollRef.value?.scrollTop || 0 }
 let ro: ResizeObserver | null = null
 onMounted(() => {
   if (typeof ResizeObserver !== 'undefined' && scrollRef.value) {
+    // Ölçüm bir sonraki kareye ertelenir: gözlem içinde düzeni değiştirmek (dar kip) tarayıcının
+    // "ResizeObserver loop" uyarısını tetikler; genel hata dinleyicisi bunu kullanıcıya hata olarak gösteriyordu.
+    let frame = 0
     ro = new ResizeObserver(() => {
-      viewport.value = scrollRef.value?.clientHeight || 600
-      narrow.value = (rootRef.value?.clientWidth || 1000) < 720
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        viewport.value = scrollRef.value?.clientHeight || 600
+        narrow.value = (rootRef.value?.clientWidth || 1000) < 720
+      })
     })
     ro.observe(scrollRef.value)
   }

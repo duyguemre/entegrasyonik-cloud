@@ -152,6 +152,32 @@ test.describe('P3 (B5-2) — Ürün varyantları (ProductVariantsComponent)', ()
     expect(deleteCalled).toBe(false)
   })
 
+  // DS-v2 A6a — toplu düzenleyici uçtan uca: kolon seç → +%10 → önizleme → Uygula → ızgarada yeni değer + değişti işareti.
+  // Uygulanmamış değişiklikle kapatma satır içi onay ister. Yeni backend ucu YOK (kayıt ürün güncelle ile).
+  test('toplu düzenleyici: kolon seç, +%10 uygula, önizle, forma yaz; uygulanmadan kapatma onay ister', async ({ page }) => {
+    const root = await openVariantStep(page)
+    await root.getByRole('button', { name: 'Toplu düzenle' }).click()
+    const editor = page.locator('.v-overlay--active .vbe-root')
+    await expect(editor).toBeVisible()
+    await editor.getByRole('button', { name: 'Satış fiyatı kolonunu seç' }).click()
+    await editor.getByRole('radio', { name: 'Yüzde' }).click()
+    await editor.getByLabel('Değer').fill('10')
+    await editor.getByRole('button', { name: 'Seçime uygula' }).click()
+    await expect(editor.getByText('₺274,89').first()).toBeVisible()
+    // uygulanmadan kapatma → onay
+    await editor.getByRole('button', { name: 'Vazgeç' }).click()
+    await expect(editor.getByRole('alert')).toContainText('2 değişiklik uygulanmadı')
+    await editor.getByRole('button', { name: 'Düzenlemeye dön' }).click()
+    await editor.getByRole('button', { name: /Değişiklikleri gözden geçir \(2\)/ }).click()
+    await expect(editor.getByText('2 hücre, 2 varyantta değişecek')).toBeVisible()
+    await editor.getByRole('button', { name: 'Uygula (2)' }).click()
+    await expect(editor).toHaveCount(0)
+    const cell = root.locator('td[data-cell="salePrice"]').filter({ hasText: '₺274,89' })
+    await expect(cell).toHaveCount(2)
+    await expect(cell.first()).toHaveClass(/is-changed/)
+    await expect(root.getByText('2 hücre değişti')).toBeVisible()
+  })
+
   test('ekran görüntüsü tabanı (ürün varyantları)', async ({ page }) => {
     await openVariantStep(page)
     await page.waitForTimeout(300)

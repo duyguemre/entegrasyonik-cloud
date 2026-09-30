@@ -29,6 +29,7 @@ const json = (body: unknown, status = 200) => async (route: any, headers: any) =
   route.fulfill({ status, contentType: 'application/json', headers, body: JSON.stringify(body) })
 
 async function axe(page: Page) {
+  await page.waitForTimeout(400) // diyalog geçişi bitsin (ara opaklık kontrastı bozar — product-variant-dialogs ile aynı)
   const results = await new AxeBuilder({ page }).include('.v-overlay--active').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
   return results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`)
 }
