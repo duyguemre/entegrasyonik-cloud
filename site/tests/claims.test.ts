@@ -701,6 +701,10 @@ describe('(4) gizli roadmap öğeleri hiçbir yerde görünmez', () => {
     for (const names of Object.values(UPCOMING_DIST_NAME_EXCEPTIONS)) expect(names).toEqual(['MCP'])
     expect(ROADMAP_VISIBLE).toBe(false)
   })
+  // dist/rehber/** (S20 bilgi merkezi): e-Fatura, GİB, Amazon SP-API gibi adlar burada ÜRÜN İDDİASI değil, pazarı anlatan
+  // kaynaklı bilgi konusudur. Bu sayfalar YALNIZCA ad taramasından muaftır (mutlak iddia taraması sürer); ürün bağlamı
+  // (Entegrasyonik cümleleri + bağlam kutusu) tests/rehber.test.ts'te aynı ad/kalıp listeleriyle ayrıca taranır.
+  const isRehber = (f: string) => f.includes(`${path.sep}rehber${path.sep}`)
   it.skipIf(distHtml.length === 0)('derleme çıktısında (dist/**/*.html) roadmap adı ve yasaklı ifade yok', () => {
     const hits: string[] = []
     const names = [...new Set([...STATIC_FORBIDDEN_NAMES, ...integrations.filter((i) => i.status === 'roadmap').flatMap((i) => [i.name, ...i.aliases])])]
@@ -712,7 +716,7 @@ describe('(4) gizli roadmap öğeleri hiçbir yerde görünmez', () => {
       const text = norm(html)
       const rel = path.relative(distDir, f).split(path.sep).join('/')
       const allowed = UPCOMING_DIST_NAME_EXCEPTIONS[rel] ?? []
-      for (const n of names) if (!allowed.includes(n) && phraseRe(n).test(text)) hits.push(`${path.relative(siteRoot, f)}: "${n}"`)
+      if (!isRehber(f)) for (const n of names) if (!allowed.includes(n) && phraseRe(n).test(text)) hits.push(`${path.relative(siteRoot, f)}: "${n}"`)
       for (const p of ABSOLUTE_PREFIXES) if (prefixRe(p).test(text)) hits.push(`${path.relative(siteRoot, f)}: "${p}"`)
     }
     expect(hits).toEqual([])

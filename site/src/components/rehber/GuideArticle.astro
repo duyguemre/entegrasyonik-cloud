@@ -1,0 +1,640 @@
+---
+/**
+ * GuideArticle — rehber sayfası iskeleti (S20). BaseLayout/PageMeta/PageHero/Accordion ortak bileşenlerini kullanır;
+ * layout ve SEO altyapısına (S19 alanı) dokunmaz: JSON-LD `PageMeta` `jsonLd` prop'u ile verilir.
+ *
+ * Düzen: koyu kompakt hero (ekmek kırıntısı + tek h1 + cam "Rehber bilgileri" paneli) → iki sütun: yapışkan
+ * içindekiler (≥1024) + okuma sütunu (ölçülü satır uzunluğu `--site-measure`). Okuma sütunu sırası:
+ *   Kısa yanıt kutusu (LLM'lerin alıntılayacağı 2–3 cümle + ana maddeler) → [hukuki/mali tavsiye notu] →
+ *   bölümler → SSS (JS'siz akordeon) → Kaynaklar (URL + erişim tarihi + güven etiketi) → Entegrasyonik bağlamı →
+ *   ilgili rehberler.
+ * İçindekiler vurgusu `src/scripts/legal-toc.ts` (genel `data-toc-link` betiği; JS'siz hâlde düz bağlantı listesi).
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import Container from '../Container.astro'
+import PageHero from '../pages/PageHero.astro'
+import PageMeta from '../pages/PageMeta.astro'
+import Accordion from '../pages/Accordion.astro'
+import Icon from '../home/Icon.astro'
+import GuideBlocks from './GuideBlocks.astro'
+import SourceList from './SourceList.astro'
+import { clusterOf, getGuideCta, guideHref, readingMinutes, relatedOf, sourcesOf, REHBER_PATH } from '../../data/kb'
+import type { Guide } from '../../data/kb/types'
+import { breadcrumbJsonLd, faqJsonLd } from '../../lib/seo'
+import { articleJsonLd, howToJsonLd } from '../../lib/kb-jsonld'
+import { formatTrDate, plainKb, renderKbInline } from '../../lib/kb-render'
+import { appUrls } from '../../lib/site-config'
+
+interface Props {
+  guide: Guide
+}
+
+const { guide: g } = Astro.props
+const path = guideHref(g.slug)
+const cluster = clusterOf(g)
+const srcs = sourcesOf(g)
+const official = srcs.filter((s) => s.trust === 'R').length
+const related = relatedOf(g)
+const cta = getGuideCta(g.cta, g.ctaChannel)
+const minutes = readingMinutes(g)
+const faqItems = g.faq.map((f) => ({ id: `sss-${f.id}`, question: f.question, answer: f.answer }))
+
+const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Rehber', href: REHBER_PATH }, { label: g.title }]
+const jsonLd = [
+  breadcrumbJsonLd([
+    { label: 'Ana sayfa', path: '/' },
+    { label: 'Rehber', path: REHBER_PATH },
+    { label: g.title, path },
+  ]),
+  articleJsonLd(g, path, srcs),
+  faqJsonLd(g.faq.map((f) => ({ question: f.question, answer: plainKb(f.answer) }))),
+  howToJsonLd(g),
+].filter((x): x is Record<string, unknown> => Boolean(x))
+
+const toc = [
+  { id: 'kisa-yanit', label: 'Kısa yanıt' },
+  ...g.sections.map((s) => ({ id: s.id, label: s.title })),
+  { id: 'sss', label: 'Sık sorulan sorular' },
+  { id: 'kaynaklar', label: 'Kaynaklar' },
+]
+---
+
+<BaseLayout title={g.seoTitle} description={g.description}>
+  <PageMeta slot="head" title={g.seoTitle} description={g.description} jsonLd={jsonLd} />
+
+  <article class="guide" data-testid="guide-page" data-slug={g.slug} aria-labelledby="page-title">
+    <PageHero title={g.title} eyebrow={cluster.title} lead={g.description} crumbs={crumbs} visualDesktopOnly>
+      <p class="guide-hero-meta">
+        <span>Son güncelleme: <time datetime={g.dateModified}>{formatTrDate(g.dateModified)}</time></span>
+        <span aria-hidden="true">·</span>
+        <span>{minutes} dk okuma</span>
+      </p>
+      <Fragment slot="visual">
+        <p class="guide-panel__tag">Rehber bilgileri</p>
+        <dl class="guide-meta">
+          <div>
+            <dt>Konu</dt>
+            <dd>{cluster.title}</dd>
+          </div>
+          <div>
+            <dt>Son güncelleme</dt>
+            <dd><time datetime={g.dateModified}>{formatTrDate(g.dateModified)}</time></dd>
+          </div>
+          <div>
+            <dt>Sonraki gözden geçirme</dt>
+            <dd><time datetime={g.reviewBy}>{formatTrDate(g.reviewBy)}</time></dd>
+          </div>
+          <div>
+            <dt>Kaynaklar</dt>
+            <dd>{srcs.length} kaynak{official > 0 && <>, {official} resmi</>}</dd>
+          </div>
+        </dl>
+      </Fragment>
+    </PageHero>
+
+    <Container>
+      <div class="guide-grid">
+        <nav class="guide-toc" aria-labelledby="guide-toc-title" data-testid="guide-toc">
+          <details class="guide-toc__details" data-guide-toc>
+          <summary class="guide-toc__summary">
+            <h2 id="guide-toc-title" class="guide-toc__title">İçindekiler</h2>
+            <Icon name="chevron" size="sm" />
+          </summary>
+          <ol class="guide-toc__list">
+            {
+              toc.map((t) => (
+                <li>
+                  <a href={`#${t.id}`} data-toc-link={t.id}>
+                    {t.label}
+                  </a>
+                </li>
+              ))
+            }
+          </ol>
+          </details>
+        </nav>
+
+        <div class="guide-main">
+          <section id="kisa-yanit" class="answer" aria-labelledby="kisa-yanit-title" data-testid="guide-answer">
+            <h2 id="kisa-yanit-title" class="answer__tag">
+              <Icon name="sparkle" size="sm" />
+              Kısa yanıt
+            </h2>
+            <p class="answer__text" set:html={renderKbInline(g.answer)} />
+            {
+              g.keyPoints.length > 0 && (
+                <ul class="answer__points" role="list">
+                  {g.keyPoints.map((p) => (
+                    <li>
+                      <Icon name="check" size="sm" />
+                      <span set:html={renderKbInline(p)} />
+                    </li>
+                  ))}
+                </ul>
+              )
+            }
+            <p class="answer__meta">
+              <time datetime={g.dateModified}>{formatTrDate(g.dateModified)}</time> itibarıyla · Kaynaklar sayfanın sonunda
+            </p>
+          </section>
+
+          {
+            (g.legal || g.volatile) && (
+              <aside class="guide-notice" role="note" data-testid="guide-disclaimer">
+                <Icon name="info" size="md" />
+                <p>
+                  {g.legal && <>Bu sayfa genel bilgilendirme amaçlıdır; hukuki veya mali tavsiye değildir. Kendi durumunuz için bir hukukçuya veya mali müşavirinize danışın. </>}
+                  {g.volatile && <>Eşik, tarih ve süre gibi bilgiler değişebilir; son doğrulama tarihi {formatTrDate(g.dateModified)}.</>}
+                </p>
+              </aside>
+            )
+          }
+
+          <div class="guide-body" data-testid="guide-body">
+            {
+              g.sections.map((s) => (
+                <section id={s.id} class="guide-section" aria-labelledby={`${s.id}-title`}>
+                  <h2 id={`${s.id}-title`}>{s.title}</h2>
+                  <GuideBlocks blocks={s.blocks} />
+                </section>
+              ))
+            }
+          </div>
+
+          <section id="sss" class="guide-section guide-faq" aria-labelledby="sss-title">
+            <h2 id="sss-title">Sık sorulan sorular</h2>
+            <Accordion items={faqItems} />
+          </section>
+
+          <section id="kaynaklar" class="guide-section" aria-labelledby="kaynaklar-title" data-testid="guide-sources">
+            <h2 id="kaynaklar-title">Kaynaklar</h2>
+            <SourceList sources={srcs} updated={g.dateModified} reviewBy={g.reviewBy} />
+          </section>
+
+          <aside class="guide-cta" aria-labelledby="guide-cta-title" data-testid="guide-cta">
+            <p class="guide-cta__eyebrow">Entegrasyonik ile</p>
+            <h2 id="guide-cta-title">{cta.title}</h2>
+            <p class="guide-cta__text">{cta.text}</p>
+            {cta.note && <p class="guide-cta__note">{cta.note}</p>}
+            <div class="guide-cta__actions">
+              <a class="guide-cta__btn guide-cta__btn--primary" href={appUrls.register()}>Ücretsiz dene</a>
+              <a class="guide-cta__btn" href={cta.link.href}>
+                {cta.link.label}
+                <Icon name="arrow" size="sm" />
+              </a>
+            </div>
+          </aside>
+
+          {
+            related.length > 0 && (
+              <nav class="guide-related" aria-labelledby="guide-related-title" data-testid="guide-related">
+                <h2 id="guide-related-title">İlgili rehberler</h2>
+                <ul role="list">
+                  {related.map((r) => (
+                    <li>
+                      <a href={guideHref(r.slug)}>
+                        <span class="guide-related__cluster">{clusterOf(r).title}</span>
+                        <span class="guide-related__title">{r.title}</span>
+                        <span class="guide-related__summary">{r.summary}</span>
+                        <Icon name="arrow" size="sm" />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+                <a class="guide-top" href="#page-title">Başa dön</a>
+              </nav>
+            )
+          }
+        </div>
+      </div>
+    </Container>
+  </article>
+</BaseLayout>
+
+<script>
+  import '../../scripts/guide-toc'
+</script>
+
+<style>
+  .guide > :global(.container) {
+    padding-block: var(--ek-space-10) var(--site-section-y);
+  }
+
+  /* --- Hero --- */
+  .guide-hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2);
+    margin: 0;
+    color: var(--site-text-on-dark-body);
+    font-size: var(--ek-font-size-sm);
+    font-variant-numeric: tabular-nums;
+  }
+  .guide-panel__tag {
+    margin: 0 0 var(--ek-space-3);
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .guide-meta {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+  }
+  .guide-meta div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--ek-space-4);
+    padding-block: var(--ek-space-3);
+  }
+  .guide-meta div + div {
+    border-top: var(--site-border-width) solid var(--site-glass-border);
+  }
+  .guide-meta dt {
+    color: var(--site-text-on-dark-body);
+    font-size: var(--ek-font-size-sm);
+  }
+  .guide-meta dd {
+    margin: 0;
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+  }
+
+  /* --- Izgara --- */
+  .guide-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ek-space-8);
+  }
+  .guide-toc {
+    padding: var(--ek-space-2) var(--ek-space-5);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--site-radius-panel);
+    background: var(--ek-color-surface);
+  }
+  .guide-toc__summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ek-space-3);
+    min-height: var(--site-tap-target);
+    cursor: pointer;
+    list-style: none;
+  }
+  .guide-toc__summary::-webkit-details-marker {
+    display: none;
+  }
+  .guide-toc__summary :global(.icon) {
+    color: var(--site-text-meta);
+    transition: transform var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .guide-toc__details[open] .guide-toc__summary :global(.icon) {
+    transform: rotate(180deg);
+  }
+  .guide-toc__details[open] .guide-toc__list {
+    margin-top: var(--ek-space-2);
+  }
+  .guide-toc__title {
+    margin: 0;
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .guide-toc__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .guide-toc__list a {
+    display: flex;
+    align-items: center;
+    min-height: var(--site-tap-target);
+    padding: var(--ek-space-2) var(--ek-space-3);
+    border-inline-start: var(--ek-space-1) solid transparent;
+    border-radius: var(--ek-radius-sm);
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-sm);
+    line-height: var(--ek-line-height-tight);
+    text-decoration: none;
+    transition:
+      background-color var(--ek-duration-fast) var(--ek-easing-standard),
+      color var(--ek-duration-fast) var(--ek-easing-standard),
+      border-color var(--ek-duration-fast) var(--ek-easing-standard);
+  }
+  .guide-toc__list a:hover {
+    background: var(--ek-color-surface-muted);
+    color: var(--site-text-heading);
+  }
+  .guide-toc__list a[aria-current='true'] {
+    border-inline-start-color: var(--ek-color-secondary-darken-1);
+    background: color-mix(in srgb, var(--ek-color-secondary) 8%, var(--ek-color-surface));
+    color: var(--site-text-heading);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+
+  .guide-main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-12);
+    min-width: 0;
+    max-width: calc(var(--site-measure) + var(--ek-space-16));
+  }
+
+  /* --- Kısa yanıt --- */
+  .answer {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-4);
+    padding: var(--ek-space-6);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 35%, var(--ek-color-border-default));
+    border-radius: var(--site-radius-panel);
+    background: color-mix(in srgb, var(--ek-color-secondary) 6%, var(--ek-color-surface));
+    box-shadow: var(--site-shadow-card);
+    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
+  }
+  .answer::before {
+    content: '';
+    position: absolute;
+    inset-block: var(--ek-space-6);
+    inset-inline-start: 0;
+    width: var(--ek-space-1);
+    border-radius: var(--ek-radius-sm);
+    background: var(--site-gradient-accent);
+  }
+  .answer__tag {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    margin: 0;
+    color: var(--site-link-accent);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-bold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .answer__text {
+    margin: 0;
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-lg);
+    line-height: var(--site-font-body-line-height);
+  }
+  .answer__points {
+    display: grid;
+    gap: var(--ek-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .answer__points li {
+    display: flex;
+    gap: var(--ek-space-2);
+    align-items: flex-start;
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-md);
+    line-height: var(--site-font-body-line-height);
+  }
+  .answer__points li :global(.icon) {
+    margin-top: calc(var(--ek-space-1) * 1.25);
+    color: var(--site-link-accent);
+  }
+  .answer__meta {
+    margin: 0;
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-sm);
+  }
+
+  /* --- Uyarı notu --- */
+  .guide-notice {
+    display: flex;
+    gap: var(--ek-space-3);
+    align-items: flex-start;
+    margin-top: calc(var(--ek-space-8) * -1);
+    padding: var(--ek-space-4) var(--ek-space-5);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface-muted);
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-sm);
+    line-height: var(--site-font-body-line-height);
+  }
+  .guide-notice :global(.icon) {
+    flex: none;
+    color: var(--site-text-meta);
+  }
+  .guide-notice p {
+    margin: 0;
+  }
+
+  /* --- Gövde tipografisi --- */
+  .guide-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-12);
+  }
+  .guide-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-4);
+    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
+  }
+  .guide-section > h2,
+  .guide-cta h2,
+  .guide-related h2 {
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-2xl);
+    font-weight: var(--ek-font-weight-bold);
+    letter-spacing: -0.01em;
+    line-height: var(--ek-line-height-tight);
+    text-wrap: balance;
+  }
+
+  /* --- Entegrasyonik bağlamı --- */
+  .guide-cta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-8);
+    border-radius: var(--site-radius-panel);
+    background: var(--site-gradient-stage);
+    box-shadow: var(--site-shadow-panel);
+    color: var(--site-text-on-dark-body);
+  }
+  .guide-cta__eyebrow {
+    margin: 0;
+    color: var(--site-accent-on-dark);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-bold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .guide-cta h2 {
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-xl);
+  }
+  .guide-cta__text,
+  .guide-cta__note {
+    max-width: var(--site-measure);
+    margin: 0;
+    line-height: var(--site-font-body-line-height);
+  }
+  .guide-cta__note {
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-sm);
+  }
+  .guide-cta__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-3);
+    margin-top: var(--ek-space-2);
+  }
+  .guide-cta__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    min-height: var(--site-tap-target);
+    padding-inline: var(--ek-space-5);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-lg);
+    background: var(--site-glass-bg);
+    color: var(--site-text-on-dark-heading);
+    font-weight: var(--ek-font-weight-semibold);
+    text-decoration: none;
+    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .guide-cta__btn:hover {
+    border-color: var(--site-color-on-primary-muted);
+  }
+  .guide-cta__btn:focus-visible {
+    outline-color: var(--site-color-on-primary);
+  }
+  .guide-cta__btn--primary {
+    border-color: transparent;
+    background: var(--site-color-on-primary);
+    color: var(--ek-color-primary);
+  }
+  .guide-cta__btn--primary:hover {
+    border-color: transparent;
+    background: color-mix(in srgb, var(--site-color-on-primary) 90%, var(--ek-color-secondary));
+  }
+
+  /* --- İlgili rehberler --- */
+  .guide-related {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-4);
+  }
+  .guide-related h2 {
+    font-size: var(--ek-font-size-xl);
+  }
+  .guide-related ul {
+    display: grid;
+    gap: var(--ek-space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .guide-related li a {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+    height: 100%;
+    padding: var(--ek-space-4) var(--ek-space-10) var(--ek-space-4) var(--ek-space-4);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface);
+    color: var(--site-text-body);
+    text-decoration: none;
+    transition:
+      border-color var(--ek-duration-base) var(--ek-easing-standard),
+      box-shadow var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .guide-related li a:hover {
+    border-color: var(--ek-color-secondary-darken-1);
+    box-shadow: var(--site-shadow-card-hover);
+  }
+  .guide-related li a > :global(.icon) {
+    position: absolute;
+    inset-inline-end: var(--ek-space-4);
+    inset-block-start: var(--ek-space-4);
+    color: var(--site-link-accent);
+  }
+  .guide-related__cluster {
+    color: var(--site-link-accent);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .guide-related__title {
+    color: var(--site-text-heading);
+    font-weight: var(--ek-font-weight-semibold);
+    line-height: var(--ek-line-height-tight);
+  }
+  .guide-related__summary {
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-sm);
+  }
+  .guide-top {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--site-tap-target);
+    color: var(--site-link-accent);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+
+  @media (min-width: 768px) {
+    .guide-related ul {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1024px) {
+    .guide-grid {
+      grid-template-columns: minmax(0, 16rem) minmax(0, 1fr);
+      gap: var(--ek-space-16);
+      align-items: start;
+    }
+    .guide-toc__summary {
+      min-height: 0;
+      margin-bottom: var(--ek-space-2);
+      cursor: default;
+      pointer-events: none;
+    }
+    .guide-toc__summary :global(.icon) {
+      display: none;
+    }
+    .guide-toc {
+      position: sticky;
+      top: calc(var(--site-header-height) + var(--ek-space-6));
+      max-height: calc(100vh - var(--site-header-height) - var(--ek-space-12));
+      overflow-y: auto;
+      padding: var(--ek-space-1) var(--ek-space-2);
+      border: 0;
+      background: none;
+    }
+  }
+  @media (max-width: 1023.98px) {
+    .guide-notice {
+      margin-top: calc(var(--ek-space-6) * -1);
+    }
+  }
+  @media print {
+    .guide-toc,
+    .guide-cta,
+    .guide-related {
+      display: none;
+    }
+  }
+</style>

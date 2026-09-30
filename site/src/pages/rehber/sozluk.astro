@@ -1,0 +1,306 @@
+---
+/**
+ * /rehber/sozluk — E-ticaret entegrasyon sözlüğü (S20, KB §9, R26). DefinedTermSet + her terim DefinedTerm
+ * (`@id` = sayfa#terim, `inDefinedTermSet`). Harf dizini yalnızca terimi olan harfleri gösterir (Türkçe sıralama).
+ * Her terimin çapası kalıcıdır; rehber sayfaları ilk geçişte buraya bağlanır.
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import Container from '../../components/Container.astro'
+import PageHero from '../../components/pages/PageHero.astro'
+import PageMeta from '../../components/pages/PageMeta.astro'
+import CtaBand from '../../components/pages/CtaBand.astro'
+import Icon from '../../components/home/Icon.astro'
+import SourceList from '../../components/rehber/SourceList.astro'
+import { getGuide, getGuideCta, guideHref, GLOSSARY_PATH, REHBER_PATH } from '../../data/kb'
+import { glossary, GLOSSARY_META } from '../../data/kb/glossary'
+import { sources } from '../../data/kb/sources'
+import { breadcrumbJsonLd } from '../../lib/seo'
+import { definedTermSetJsonLd } from '../../lib/kb-jsonld'
+import { formatTrDate } from '../../lib/kb-render'
+import { appUrls } from '../../lib/site-config'
+
+const { title, seoTitle, description, lead } = GLOSSARY_META
+const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Rehber', href: REHBER_PATH }, { label: 'Sözlük' }]
+
+const collator = new Intl.Collator('tr-TR', { sensitivity: 'base' })
+const sorted = [...glossary].sort((a, b) => collator.compare(a.term, b.term))
+const letterOf = (term: string) => term.charAt(0).toLocaleUpperCase('tr-TR')
+const groups: Array<{ letter: string; id: string; terms: typeof glossary }> = []
+for (const t of sorted) {
+  const letter = letterOf(t.term)
+  let g = groups.find((x) => x.letter === letter)
+  if (!g) {
+    g = { letter, id: `harf-${groups.length + 1}`, terms: [] }
+    groups.push(g)
+  }
+  g.terms.push(t)
+}
+const srcs = GLOSSARY_META.sources.map((id) => sources[id])
+const cta = getGuideCta('stock')
+
+const jsonLd = [
+  breadcrumbJsonLd([
+    { label: 'Ana sayfa', path: '/' },
+    { label: 'Rehber', path: REHBER_PATH },
+    { label: 'Sözlük', path: GLOSSARY_PATH },
+  ]),
+  definedTermSetJsonLd(title, description, GLOSSARY_PATH, sorted, guideHref),
+]
+---
+
+<BaseLayout title={seoTitle} description={description}>
+  <PageMeta slot="head" title={seoTitle} description={description} jsonLd={jsonLd} />
+
+  <article class="gloss" data-testid="glossary-page" aria-labelledby="page-title">
+    <PageHero title={title} eyebrow="Rehber · Sözlük" lead={lead} crumbs={crumbs}>
+      <p class="gloss-hero-meta">
+        <span>{glossary.length} terim</span>
+        <span aria-hidden="true">·</span>
+        <span>Son güncelleme: <time datetime={GLOSSARY_META.dateModified}>{formatTrDate(GLOSSARY_META.dateModified)}</time></span>
+      </p>
+    </PageHero>
+
+    <nav class="gloss-index" aria-label="Harf dizini" data-testid="glossary-index">
+      <Container>
+        <ul role="list">
+          {
+            groups.map((g) => (
+              <li>
+                <a href={`#${g.id}`}>{g.letter}</a>
+              </li>
+            ))
+          }
+        </ul>
+      </Container>
+    </nav>
+
+    <Container>
+      <div class="gloss-body">
+        {
+          groups.map((g) => (
+            <section class="gloss-group" id={g.id} aria-labelledby={`${g.id}-title`}>
+              <h2 id={`${g.id}-title`} class="gloss-group__letter">{g.letter}</h2>
+              <dl class="gloss-list">
+                {g.terms.map((t) => {
+                  const guide = t.guide ? getGuide(t.guide) : undefined
+                  return (
+                    <div class="gloss-term" id={t.id} data-testid="glossary-term">
+                      <dt>
+                        <dfn>{t.term}</dfn>
+                        {t.alternate && <span class="gloss-term__alt">{t.alternate}</span>}
+                      </dt>
+                      <dd>
+                        <p>{t.definition}</p>
+                        {guide && (
+                          <a class="gloss-term__link" href={guideHref(guide.slug)}>
+                            Rehber: {guide.title}
+                            <Icon name="arrow" size="sm" />
+                          </a>
+                        )}
+                      </dd>
+                    </div>
+                  )
+                })}
+              </dl>
+            </section>
+          ))
+        }
+
+        <aside class="gloss-note" role="note">
+          <Icon name="info" size="md" />
+          <p>{GLOSSARY_META.note}</p>
+        </aside>
+
+        <section class="gloss-sources" id="kaynaklar" aria-labelledby="kaynaklar-title" data-testid="guide-sources">
+          <h2 id="kaynaklar-title">Kaynaklar</h2>
+          <SourceList sources={srcs} updated={GLOSSARY_META.dateModified} reviewBy={GLOSSARY_META.reviewBy} />
+        </section>
+      </div>
+    </Container>
+  </article>
+
+  <CtaBand
+    id="sozluk-cta"
+    title={cta.title}
+    text={cta.text}
+    primary={{ label: 'Ücretsiz dene', href: appUrls.register() }}
+    secondary={{ label: 'Rehbere dönün', href: REHBER_PATH }}
+  />
+</BaseLayout>
+
+<style>
+  .gloss-hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2);
+    margin: 0;
+    color: var(--site-text-on-dark-body);
+    font-size: var(--ek-font-size-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* --- Harf dizini (yapışkan şerit) --- */
+  .gloss-index {
+    position: sticky;
+    top: var(--site-header-height);
+    z-index: 5;
+    border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
+    background: color-mix(in srgb, var(--ek-color-background) 92%, transparent);
+    backdrop-filter: blur(var(--site-glass-blur));
+  }
+  .gloss-index ul {
+    max-width: calc(var(--site-measure) + var(--ek-space-16));
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-1);
+    margin: 0 auto;
+    padding: var(--ek-space-2) 0;
+    list-style: none;
+  }
+  .gloss-index a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--site-tap-target);
+    min-height: var(--site-tap-target);
+    border-radius: var(--ek-radius-md);
+    color: var(--site-text-heading);
+    font-weight: var(--ek-font-weight-semibold);
+    text-decoration: none;
+    transition: background-color var(--ek-duration-fast) var(--ek-easing-standard);
+  }
+  .gloss-index a:hover {
+    background: var(--ek-color-surface-muted);
+    color: var(--site-color-link);
+  }
+
+  /* --- Terimler --- */
+  .gloss-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-10);
+    max-width: calc(var(--site-measure) + var(--ek-space-16));
+    margin-inline: auto;
+    padding-block: var(--ek-space-10) var(--site-section-y);
+  }
+  .gloss-group {
+    display: grid;
+    gap: var(--ek-space-4);
+    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-16) + var(--ek-space-4));
+  }
+  .gloss-group__letter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-12);
+    height: var(--ek-space-12);
+    border-radius: var(--ek-radius-lg);
+    background: linear-gradient(140deg, var(--ek-color-primary), var(--ek-color-primary-darken-1));
+    color: var(--site-color-on-primary);
+    font-size: var(--ek-font-size-xl);
+    font-weight: var(--ek-font-weight-bold);
+  }
+  .gloss-list {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--site-radius-panel);
+    background: var(--ek-color-surface);
+  }
+  .gloss-term {
+    display: grid;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-5);
+    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-16) + var(--ek-space-4));
+  }
+  .gloss-term + .gloss-term {
+    border-top: var(--site-border-width) solid var(--ek-color-border-default);
+  }
+  .gloss-term:target {
+    border-radius: var(--site-radius-panel);
+    background: color-mix(in srgb, var(--ek-color-secondary) 8%, var(--ek-color-surface));
+    box-shadow: inset var(--ek-space-1) 0 0 var(--ek-color-secondary-darken-1);
+  }
+  .gloss-term dt {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--ek-space-2);
+  }
+  .gloss-term dfn {
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-lg);
+    font-style: normal;
+    font-weight: var(--ek-font-weight-bold);
+  }
+  .gloss-term__alt {
+    padding: 0 var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-surface-muted);
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .gloss-term dd {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    margin: 0;
+  }
+  .gloss-term dd p {
+    margin: 0;
+    color: var(--site-text-body);
+    font-size: var(--site-font-body);
+    line-height: var(--site-font-body-line-height);
+  }
+  .gloss-term__link {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    color: var(--site-link-accent);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .gloss-note {
+    display: flex;
+    gap: var(--ek-space-3);
+    align-items: flex-start;
+    padding: var(--ek-space-4) var(--ek-space-5);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface-muted);
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-sm);
+    line-height: var(--site-font-body-line-height);
+  }
+  .gloss-note :global(.icon) {
+    flex: none;
+    color: var(--site-text-meta);
+  }
+  .gloss-note p {
+    margin: 0;
+  }
+  .gloss-sources {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-4);
+  }
+  .gloss-sources h2 {
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-2xl);
+    font-weight: var(--ek-font-weight-bold);
+  }
+
+  @media (min-width: 768px) {
+    .gloss-group {
+      grid-template-columns: var(--ek-space-16) minmax(0, 1fr);
+      align-items: start;
+    }
+    .gloss-group__letter {
+      position: sticky;
+      top: calc(var(--site-header-height) + var(--ek-space-16) + var(--ek-space-6));
+    }
+  }
+</style>

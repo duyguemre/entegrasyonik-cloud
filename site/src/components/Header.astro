@@ -343,4 +343,11 @@ const registerHref = appUrls.register()
       max-width: calc(var(--site-content-wide) + 2 * var(--site-gutter));
     }
   }
+
+  /* S20 (S20b: dokuzuncu, S18 "Asistan" ile birlikte): "Rehber" bağlantısı + hareket kontrolü 1280–1440 arasında sığsın: bağlantı iç boşluğu bir kademe dar. */
+  @media (min-width: 80rem) and (max-width: 89.99rem) {
+    .nav-desktop__links .nav-link {
+      padding-inline: calc(var(--ek-space-2) * 0.75);
+    }
+  }
 </style>
