@@ -555,3 +555,26 @@ bölümü; ortak ds bileşenlerine dokunulmadı, token değişikliği yok. Önce
 | Çok varyant | > 8: kompakt ızgara + "Tümünü gör" (iç kaydırma, yapışık başlık) |
 | Dar kap | < 600px kart (A6b) |
 | Mantık | `variants/variantListModel.ts` (saf, `tests/variant-list-model.test.ts`) |
+
+## 21. FE-CFG — backoffice'ten yönetilen açılış yapılandırması (`cloud/fe-cfg`, ADR-0031)
+
+Kullanıcı: "`BASE_IMAGE_URL = 'https://images…/products/'` gibi hardcoded bölümleri backoffice üzerinden yönetilir hale getirelim."
+Karar (ADR-0031): görsel tabanı = ORTAM değeri, tek kaynak backend; FE açılışta `GET /api/public-config`'ten alır
+(sözleşme `docs/cloud-contracts/API_PUBLIC_CONFIG.md`); iş ayarları (destek, duyuru, bakım, liste boyutu, rapor yoklaması) backoffice'ten.
+
+| Parça | Yer | Kural |
+|---|---|---|
+| Store | `stores/publicConfig.ts` | `main.ts`'te montajdan ÖNCE bir kez (3 sn zaman aşımı); hata/çevrimdışı → güvenli varsayılanlar = bugünkü sabitler (taban `images.…/products/`, 2 MB, 25, 5000 ms; destek/duyuru/bakım boş); iyi değer hata ile silinmez. Tazeleme 5 dk'da bir (yalnız sekme görünürken) + sekme görünür olunca / rota değişiminde 5 dk'dan eskiyse. `ETag` okunabiliyorsa `If-None-Match` (304 → aynı değer), okunamıyorsa `cache: 'no-cache'` (tarayıcı doğrular). `restapi.ts` üzerinden geçmez (kimliksiz, çerezsiz). Her alan ayrı doğrulanır (geçersiz alan → varsayılan). |
+| Görsel URL | `config/imageUrl.ts` + `composables/useProductImageUrl.ts` | ÖNCE DB kaydının `url`'i; yoksa `productBaseUrl + <clientId>/<productId>/<imageId>[_t].<ext>` (backend yolu; taslakta `productId` = `tempId`, ayrı `temp/` dizini YOK). Eksik parça → yer tutucu. `images.entegrasyonik.com` `src/`'de YALNIZ bu dosyada (statik test). |
+| Yükleme tavanı | `composables/useUploadLimit.ts` | `env.images.uploadMaxBytes`; 4 yükleme yolu (uploader + 3 varyant görsel diyaloğu) aşan dosyada yüklemeyi başlatmaz, uyarı bildirimi dosya adı + sınırla |
+| Liste boyutu / yoklama | `defaultListPageSize()` / `reportPollInterval()` | `EkListScreen` varsayılanı + 4 filtre composable'ı + 2 log listesi; 2 ayrıntılı rapor yoklaması |
+| Duyuru şeridi | `ShellNoticeBanner` + `shellNotice.ts` | abonelik bandıyla aynı dil (ton zemini + 3px ton çizgisi, ikon kapsülü + başlık · metin); info → `info`, warning → `warning`, critical → `error`; kapatılabilir — kapatma METİN+SEVİYE özetine göre yerel depoda (sekme başına değil; aynı metin tekrar gelmez, metin değişince yeniden görünür; diğer sekmeler `storage` olayıyla eşlenir); düz metin (`v-html` yok); bölge `aria-label` + `role=status` |
+| Bakım şeridi | aynı bileşen | `warning`, kapatılamaz, uygulamayı KİLİTLEMEZ; ileti boşsa sakin yedek metin; giriş/şifre ekranlarında da (`UnsecureLayout`) |
+| Şerit yığını | `SecureLayout` `.ek-shell__banner` | bakım → duyuru → abonelik; yükseklik `--ek-shell-banner-h` (sekme şeridi/çalışma alanı altına iner); odak modunda tek satır |
+| Destek iletişimi | `ApplicationBar` yardım menüsü ("Yardım merkezi") + `supportContact.ts` | "Destek iletişimi" grubu: e-posta (`mailto:`), telefon (`tel:`); boş olan öğe yok, ikisi boşsa grup yok; < 768px'te yardım düğmesi gizli olduğundan grup hesap menüsünde |
+
+Yalnız semantik token (ham renk yok → dark hazır). **Testler:** `tests/public-config.test.ts` (varsayılanlar, doğrulama, ETag/304,
+hata/zaman aşımı, tek istek, tazelik; duyuru kapatma hatırlama; görsel URL kuralları; yükleme tavanı; destek; statik bekçiler),
+`e2e/specs/public-config.spec.ts` (3 viewport; axe AA). **Görseller:** `docs/cfg-review/` (duyuru info/warning/critical, bakım,
+bakım+duyuru, destek; light + dark; 1440 + 390) — `CFG_REVIEW=1 CFG_REVIEW_WIDTH=1440|390 [CFG_REVIEW_DARK=1] npx playwright test e2e/specs/cfg-review.spec.ts --project=chromium-desktop`.
+Görsel taban değişikliği YOK (varsayılan yapılandırmada şerit çıkmaz).
