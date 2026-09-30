@@ -7,6 +7,7 @@
           <EkStatusChip v-if="life.data.value" :tone="TENANT_STATUS[life.data.value.status].tone" :label="TENANT_STATUS[life.data.value.status].label" dot />
           <EkStatusChip v-if="life.data.value?.trial" :tone="SUB_STATUS[life.data.value.trial.subscriptionStatus].tone" :label="`${planLabel(life.data.value.trial.planCode)} · ${SUB_STATUS[life.data.value.trial.subscriptionStatus].label}`" />
           <EkStatusChip v-if="life.data.value?.trial?.billingExempt" tone="neutral" label="Faturalamadan muaf" />
+          <EkStatusChip v-if="session.active.value" tone="warning" icon="mdi-account-eye-outline" :label="`Destek oturumu açık · ~${session.text.value}`" data-testid="imp-session-chip" />
         </template>
         <template #meta>
           <span class="bo-tenant__tid ek-num">#{{ tid }}</span>
@@ -21,6 +22,14 @@
       <p v-if="life.data.value && !canImpersonate" class="bo-tenant__why bo-muted">
         <v-icon icon="mdi-information-outline" aria-hidden="true" />Destek oturumu yalnız aktif mağazada açılabilir (şu an: {{ TENANT_STATUS[life.data.value.status].label.toLocaleLowerCase('tr') }}).
       </p>
+
+      <EkAlert
+        v-if="ticket.active.value"
+        tone="info"
+        title="Destek oturumu bağlantısı yeni sekmede açıldı"
+        :text="`Tek kullanımlık bağlantı ${ticket.text.value} içinde kullanılmazsa geçersiz olur. Oturum açıldığında ${IMPERSONATION_SESSION_MINUTES} dakika sürer ve uzatılamaz; kalan süre müşteri uygulamasındaki bantta gösterilir.`"
+        data-testid="imp-ticket"
+      />
 
       <EkAlert
         v-if="life.data.value?.deletion?.canCancel"
@@ -132,7 +141,8 @@ import {
   type StatusTone,
 } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
-import type { ClientDto, TenantLifecycle } from '@bo/api/contract'
+import { IMPERSONATION_SESSION_MINUTES, type ClientDto, type TenantLifecycle } from '@bo/api/contract'
+import { useCountdown } from '@bo/composables/useCountdown'
 import { useResource } from '@bo/composables/useResource'
 import { useGuardedAction } from '@bo/composables/useGuardedAction'
 import { useTabQuery } from '@bo/composables/useTabQuery'
@@ -169,7 +179,7 @@ const RESULT: Record<'ok' | 'fail' | 'error', { label: string; tone: StatusTone 
   error: { label: 'Hata', tone: 'danger' },
 }
 const IMP_RULES = [
-  'Tek kullanımlık bağlantı 60 saniye geçerlidir; oturum 60 dakika sürer ve uzatılmaz.',
+  `Tek kullanımlık bağlantı 60 saniye geçerlidir; oturum ${IMPERSONATION_SESSION_MINUTES} dakika sürer ve uzatılamaz.`,
   'Hesap silme, faturalama, kullanıcı ve entegrasyon ayarı yazma işlemleri bu oturumda kapalıdır.',
   'Müşteri denetim kaydında oturum "Entegrasyonik Destek" olarak ve gerekçesiyle görünür.',
   'Bağlantı yeni sekmede açılır; kopyalanmaz, saklanmaz.',
@@ -179,6 +189,19 @@ const life = useResource<TenantLifecycle>(() => api.call('BackofficeTenantServic
 const notFound = computed(() => life.phase.value === 'notFound' || (clientLoaded.value && !client.value && life.phase.value !== 'loading' && life.phase.value !== 'ready'))
 const title = computed(() => client.value?.title ?? life.data.value?.name ?? `#${tid}`)
 const canImpersonate = computed(() => life.data.value?.status === 'ACTIVE')
+
+// K41: bilet ömrü sunucu yanıtından (expiresInSeconds); oturum bitişi = başlangıç (impersonation.redeem) + 30 dk (sözleşme §5).
+// Backoffice'e oturum `expiresAt` alanı gelmez; son olaylardan türetilen değer "yaklaşık" (~) gösterilir.
+const ticketExpiresAt = ref<number | null>(null)
+const ticket = useCountdown(ticketExpiresAt)
+const sessionExpiresAt = computed(() => {
+  const events = life.data.value?.recentEvents ?? []
+  const start = events.find((e) => e.event === 'impersonation.redeem' && e.result === 'ok')
+  if (!start) return null
+  const ended = events.some((e) => e.event === 'impersonation.end' && Date.parse(e.at) >= Date.parse(start.at))
+  return ended ? null : Date.parse(start.at) + IMPERSONATION_SESSION_MINUTES * 60_000
+})
+const session = useCountdown(sessionExpiresAt)
 
 onMounted(async () => {
   const [list] = await Promise.allSettled([api.call('AdminService/getClients', { search: String(tid), limit: 50 }), life.load()])
@@ -242,10 +265,11 @@ const deletionText = computed(() => {
 
 const imp = useGuardedAction(
   (id: number, reason) => api.call('BackofficeTenantService/startImpersonation', { tid: id, reason }),
-  ({ url }) => {
+  ({ url, expiresInSeconds }) => {
     // Bilet URL'i yalnız yeni sekmeye verilir: saklanmaz, loglanmaz, kopyalanmaz; noopener/noreferrer ile opener ve Referer yok.
     window.open(url, '_blank', 'noopener,noreferrer')
-    notifyAudited('Müşteri hesabı yeni sekmede açıldı. Destek oturumu 60 dakika sürer.', () => router.push({ path: '/denetim', query: { event: 'impersonation.start' } }))
+    ticketExpiresAt.value = Date.now() + Math.max(0, expiresInSeconds) * 1000
+    notifyAudited(`Müşteri hesabı yeni sekmede açıldı. Destek oturumu ${IMPERSONATION_SESSION_MINUTES} dakika sürer.`, () => router.push({ path: '/denetim', query: { event: 'impersonation.start' } }))
   },
 )
 const undo = useGuardedAction(

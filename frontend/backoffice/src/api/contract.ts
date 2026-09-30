@@ -34,6 +34,8 @@ export interface ApiErrorBody {
   service?: string
   operation?: string
   fields?: Array<{ path: string; message: string }>
+  /** Koda özgü sayısal ayrıntı (ör. TRIAL_EXTENSION_LIMIT → remainingDays/usedDays/maxTotalDays). Değer/sır taşımaz. */
+  details?: Record<string, unknown>
 }
 
 // ---------------------------------------------------------------- BackofficeAuthService [2-BE]
@@ -112,6 +114,8 @@ export interface StartImpersonationRequest {
   tid: number
   reason: string
 }
+/** K41: destek oturumu sabit 30 dk, uzatılamaz (ADR-0026 §4.9). Geri sayım müşteri uygulamasında `userContext.impersonation.expiresAt`'ten. */
+export const IMPERSONATION_SESSION_MINUTES = 30
 export interface StartImpersonationResponse {
   /** `<PUBLIC_APP_URL>/impersonate#t=<bilet>` — yalnız window.open'a verilir; saklanmaz/loglanmaz/kopyalanmaz. */
   url: string

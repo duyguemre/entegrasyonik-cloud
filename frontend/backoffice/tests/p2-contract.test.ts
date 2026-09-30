@@ -152,12 +152,13 @@ describe('B4 abonelikler + B2 yaşam döngüsü', () => {
     expect(d.subscription.plan).toMatchObject({ code: 'starter', currency: 'TRY' })
     for (const e of d.events) conforms(e, { id: 'string', at: 'string', provider: 'string', type: 'string', status: 'string', failureReason: 'string|null', payload: 'object|null' }, 'event')
     const ext = await api.call('BackofficeBillingService/extendTrial', { tid: 103, days: 7, reason: REASON })
-    conforms(ext, { tid: 'number', status: 'string', trialEndsAt: 'string', previousTrialEndsAt: 'string|null', extendedDays: 'number' }, 'extendTrial')
+    conforms(ext, { tid: 'number', status: 'string', trialEndsAt: 'string', previousTrialEndsAt: 'string|null', extendedDays: 'number', totalExtensionDays: 'number', remainingExtensionDays: 'number', reopened: 'boolean' }, 'extendTrial')
+    // 103 örnekte 45 gün kullanmış: 7 gün sonra toplam 52, kalan 8.
+    expect(ext).toMatchObject({ totalExtensionDays: 52, remainingExtensionDays: 8, reopened: false })
     expect(Date.parse(ext.trialEndsAt) - Date.parse(ext.previousTrialEndsAt!)).toBe(7 * 86_400_000)
     expect((await api.call('BackofficeBillingService/getSubscription', { tid: 103 })).events[0].type).toBe('subscription.trial_extended')
     await expect(api.call('BackofficeBillingService/extendTrial', { tid: 101, days: 7, reason: REASON })).rejects.toMatchObject({ status: 409, code: 'TRIAL_NOT_ACTIVE' })
     await expect(api.call('BackofficeBillingService/extendTrial', { tid: 103, days: 31, reason: REASON })).rejects.toMatchObject({ status: 400 })
-    await expect(api.call('BackofficeBillingService/cancelSubscription', { tid: 103, atPeriodEnd: true, reason: REASON })).rejects.toMatchObject({ status: 409, code: 'NO_PROVIDER_SUBSCRIPTION' })
     await expect(api.call('BackofficeBillingService/changePlan', { tid: 101, planCode: 'growth', reason: REASON })).rejects.toMatchObject({ code: 'SAME_PLAN' })
     await expect(api.call('BackofficeBillingService/changePlan', { tid: 101, planCode: 'enterprise', reason: REASON })).rejects.toMatchObject({ code: 'PLAN_REQUIRES_QUOTE' })
     server.setLiveReadonly(true)
@@ -165,8 +166,40 @@ describe('B4 abonelikler + B2 yaşam döngüsü', () => {
     server.setLiveReadonly(false)
     expect(await api.call('BackofficeBillingService/changePlan', { tid: 101, planCode: 'starter', reason: REASON })).toEqual({ tid: 101, status: 'active', planCode: 'starter', planVersion: 1 })
     const c = await api.call('BackofficeBillingService/cancelSubscription', { tid: 101, atPeriodEnd: true, reason: REASON })
-    expect(c).toMatchObject({ tid: 101, status: 'active', cancelAtPeriodEnd: true })
+    conforms(c, { tid: 'number', status: 'string', cancelAtPeriodEnd: 'boolean', currentPeriodEnd: 'string|null', external: 'boolean' }, 'cancelSubscription')
+    expect(c).toMatchObject({ tid: 101, status: 'active', cancelAtPeriodEnd: true, external: true })
     await expect(api.call('BackofficeBillingService/getSubscription', { tid: 999 })).rejects.toMatchObject({ status: 404, code: 'SUBSCRIPTION_NOT_FOUND' })
+  })
+
+  it('K40: toplam uzatma ≤60 gün (409 TRIAL_EXTENSION_LIMIT + details), askıdaki kartsız deneme yeniden açılır', async () => {
+    const { api } = await signedIn()
+    // 103: 45 gün kullanılmış → 16 gün reddedilir, ayrıntı sayısal.
+    const err = await api.call('BackofficeBillingService/extendTrial', { tid: 103, days: 16, reason: REASON }).catch((e) => e)
+    expect(err).toMatchObject({ status: 409, code: 'TRIAL_EXTENSION_LIMIT', details: { remainingDays: 15, usedDays: 45, maxTotalDays: 60 } })
+    expect(await api.call('BackofficeBillingService/extendTrial', { tid: 103, days: 15, reason: REASON })).toMatchObject({ totalExtensionDays: 60, remainingExtensionDays: 0 })
+    await expect(api.call('BackofficeBillingService/extendTrial', { tid: 103, days: 1, reason: REASON })).rejects.toMatchObject({ code: 'TRIAL_EXTENSION_LIMIT', details: { remainingDays: 0 } })
+    // 109: denemesi bitmiş, askıda, kartsız → uzatma yeniden `trialing` yapar; yeni bitiş şimdi + gün.
+    const before = await api.call('BackofficeBillingService/getSubscription', { tid: 109 })
+    expect(before.subscription).toMatchObject({ status: 'suspended', hasProviderRef: false })
+    const r = await api.call('BackofficeBillingService/extendTrial', { tid: 109, days: 10, reason: REASON })
+    expect(r).toMatchObject({ status: 'trialing', reopened: true, extendedDays: 10, totalExtensionDays: 10, remainingExtensionDays: 50 })
+    expect(Date.parse(r.trialEndsAt)).toBeGreaterThan(Date.now() + 9 * 86_400_000)
+    const after = await api.call('BackofficeBillingService/getSubscription', { tid: 109 })
+    expect(after.subscription.status).toBe('trialing')
+    expect(after.events[0]).toMatchObject({ type: 'subscription.trial_extended', payload: { reopened: true, totalExtensionDays: 10 } })
+    // Muaf ve kartlı-aktif abonelik uzatılamaz.
+    await expect(api.call('BackofficeBillingService/extendTrial', { tid: 104, days: 1, reason: REASON })).rejects.toMatchObject({ code: 'SUBSCRIPTION_EXEMPT' })
+  })
+
+  it('K40: kartsız abonelikte iptal yerel ve doğrudan (external:false, LIVE_READONLY etkilemez); kartlıda 423', async () => {
+    const { api, server } = await signedIn()
+    server.setLiveReadonly(true)
+    const local = await api.call('BackofficeBillingService/cancelSubscription', { tid: 103, atPeriodEnd: true, reason: REASON })
+    expect(local).toMatchObject({ tid: 103, status: 'canceled', cancelAtPeriodEnd: false, external: false })
+    await expect(api.call('BackofficeBillingService/cancelSubscription', { tid: 101, atPeriodEnd: false, reason: REASON })).rejects.toMatchObject({ status: 423 })
+    server.setLiveReadonly(false)
+    expect(await api.call('BackofficeBillingService/cancelSubscription', { tid: 101, atPeriodEnd: false, reason: REASON })).toMatchObject({ status: 'canceled', external: true })
+    await expect(api.call('BackofficeBillingService/cancelSubscription', { tid: 103, atPeriodEnd: false, reason: REASON })).rejects.toMatchObject({ code: 'SUBSCRIPTION_NOT_CANCELABLE' })
   })
 
   it('getRevenueMetrics şekli; oranlar null olabilir; tutarlar kuruş', async () => {

@@ -8,8 +8,9 @@ export class MockHttpError extends Error {
     code: string,
     message: string,
     fields?: ApiErrorBody['fields'],
+    details?: ApiErrorBody['details'],
   ) {
     super(message)
-    this.body = { error: message, code, ...(fields ? { fields } : {}) }
+    this.body = { error: message, code, ...(fields ? { fields } : {}), ...(details ? { details } : {}) }
   }
 }

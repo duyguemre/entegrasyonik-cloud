@@ -30,6 +30,8 @@ export interface DescribedError {
   message: string
   requestId?: string
   fields?: Array<{ path: string; message: string }>
+  /** Sunucunun koda özgü sayısal ayrıntısı (yalnız bilinen kodlarda okunur). */
+  details?: Record<string, unknown>
   retryable: boolean
 }
 
@@ -69,6 +71,18 @@ const TITLES: Partial<Record<ErrorKind, string>> = {
   network: 'Sunucuya ulaşılamadı',
 }
 
+/** Koda özgü eylem (sözleşmedeki `details` ile). Bilinmeyen kod → tür eylemi. */
+function codeAction(e: AdminApiError): string | null {
+  if (e.code === 'TRIAL_EXTENSION_LIMIT') {
+    const left = Number(e.details?.remainingDays)
+    const max = Number(e.details?.maxTotalDays) || 60
+    if (!Number.isFinite(left)) return `Toplam uzatma ${max} günü aşamaz; gün sayısını düşürüp yeniden deneyin.`
+    return left > 0 ? `En fazla ${left} gün daha uzatabilirsiniz; gün sayısını düşürün.` : `Toplam ${max} günlük uzatma hakkı doldu; müşteriye ücretli plana geçişi önerin.`
+  }
+  if (e.code === 'TRIAL_NOT_ACTIVE') return 'Yalnız süren deneme ya da denemesi bitip askıya alınmış kartsız abonelik uzatılabilir; sayfayı yenileyin.'
+  return null
+}
+
 function trimDot(s: string) {
   return s.trim().replace(/[.。]+$/, '')
 }
@@ -78,7 +92,7 @@ export function describeError(error: unknown, overrides: Partial<Record<string, 
   const kind = error instanceof AdminApiError ? errorKind(e) : 'generic'
   const server = error instanceof AdminApiError ? e.message : ''
   const title = trimDot(overrides[e.code] ?? TITLES[kind] ?? (server || 'Beklenmeyen bir hata oluştu'))
-  const action = ACTIONS[kind]
+  const action = (error instanceof AdminApiError ? codeAction(e) : null) ?? ACTIONS[kind]
   return {
     kind,
     code: e.code,
@@ -88,6 +102,7 @@ export function describeError(error: unknown, overrides: Partial<Record<string, 
     message: `${title} — ${action}`,
     requestId: e.requestId,
     fields: e.fields,
+    details: e.details,
     retryable: kind === 'unavailable' || kind === 'timeout' || kind === 'network' || kind === 'generic' || kind === 'rateLimited',
   }
 }

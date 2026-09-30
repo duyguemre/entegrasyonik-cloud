@@ -26,6 +26,12 @@
             <div><dt>Liste fiyatı</dt><dd class="ek-num">{{ priceText }}</dd></div>
             <div><dt>Dönem</dt><dd class="ek-num">{{ periodText }}</dd></div>
             <div><dt>Deneme bitişi</dt><dd class="ek-num">{{ sub.trialEndsAt ? formatDateTime(sub.trialEndsAt) : '—' }}</dd></div>
+            <div v-if="trialRelevant">
+              <dt>Deneme uzatma</dt>
+              <dd class="ek-num" data-testid="extension-usage">
+                {{ extension.used }} / {{ TRIAL_EXTENSION_MAX_TOTAL_DAYS }} gün kullanıldı <span class="bo-muted">· kalan {{ extension.remaining }} gün</span>
+              </dd>
+            </div>
             <div v-if="sub.graceUntil"><dt>Ödeme toleransı</dt><dd class="ek-num">{{ formatDateTime(sub.graceUntil) }}</dd></div>
             <div><dt>Ödeme sağlayıcı</dt><dd>{{ sub.provider }} <span class="bo-muted">· {{ sub.hasProviderRef ? 'sağlayıcı kaydı var' : 'sağlayıcı kaydı yok' }}</span></dd></div>
             <div><dt>Kart</dt><dd class="ek-num">{{ card || 'kartsız' }}</dd></div>
@@ -50,7 +56,8 @@
       <EkCard title="Yönetim eylemleri" subtitle="Her eylem gerekçe ve kimlik doğrulaması ister; denetim kaydına yazılır." icon="mdi-shield-edit-outline">
         <ul class="bo-sd__actions">
           <li>
-            <EkButton tone="secondary" icon="mdi-timer-plus-outline" :disabled="!!extendWhy" data-testid="extend-trial" @click="openExtend">Denemeyi uzat</EkButton>
+            <EkButton tone="secondary" :icon="reopen ? 'mdi-restore' : 'mdi-timer-plus-outline'" :disabled="!!extendWhy" data-testid="extend-trial" @click="openExtend">{{ reopen ? 'Denemeyi yeniden aç' : 'Denemeyi uzat' }}</EkButton>
+            <p v-if="!extendWhy && reopen" class="bo-muted bo-sd__why">Deneme süresi bitmiş, abonelik askıda. Uzatma aboneliği yeniden deneme durumuna alır.</p>
             <p v-if="extendWhy" class="bo-muted bo-sd__why">{{ extendWhy }}</p>
           </li>
           <li>
@@ -70,16 +77,28 @@
 
     <GuardedDialog
       :action="extend"
-      title="Deneme süresi uzatılsın mı?"
+      :title="reopen ? 'Deneme yeniden açılsın mı?' : 'Deneme süresi uzatılsın mı?'"
       irreversible
       :description="`${title} · mevcut bitiş: ${sub?.trialEndsAt ? formatDateTime(sub.trialEndsAt) : '—'}`"
-      icon="mdi-timer-plus-outline"
-      :items="['Yeni bitiş = mevcut bitiş ile şimdi arasından geç olan + seçilen gün.', 'Sağlayıcıdan bağımsızdır; kartsız denemede de çalışır.', 'Gerekçe denetim kaydına yazılır.']"
-      confirm-label="Denemeyi uzat"
-      confirm-icon="mdi-timer-plus-outline"
+      :icon="reopen ? 'mdi-restore' : 'mdi-timer-plus-outline'"
+      :items="extendItems"
+      :confirm-label="reopen ? 'Denemeyi yeniden aç' : 'Denemeyi uzat'"
+      :confirm-icon="reopen ? 'mdi-restore' : 'mdi-timer-plus-outline'"
       :confirm-disabled="!daysValid"
     >
-      <v-text-field v-model.number="days" type="number" min="1" max="30" step="1" label="Uzatılacak gün (1–30)" density="compact" :error-messages="daysValid ? undefined : 'Gün 1 ile 30 arasında tam sayı olmalı.'" data-testid="extend-days" />
+      <v-text-field
+        v-model.number="days"
+        type="number"
+        min="1"
+        :max="maxDays"
+        step="1"
+        :label="`Uzatılacak gün (1–${maxDays})`"
+        density="compact"
+        :hint="`Toplam hak ${TRIAL_EXTENSION_MAX_TOTAL_DAYS} gün: ${extension.used} gün kullanıldı, ${extension.remaining} gün kaldı. Tek seferde en çok ${TRIAL_EXTENSION_MAX_DAYS} gün.`"
+        persistent-hint
+        :error-messages="daysValid ? undefined : `Gün 1 ile ${maxDays} arasında tam sayı olmalı.`"
+        data-testid="extend-days"
+      />
       <p class="bo-sd__preview" aria-live="polite">Yeni bitiş: <strong class="ek-num">{{ daysValid ? formatDateTime(newTrialEnd) : '—' }}</strong></p>
     </GuardedDialog>
 
@@ -107,7 +126,8 @@
       confirm-label="Aboneliği iptal et"
       confirm-icon="mdi-cancel"
     >
-      <div class="bo-seg" role="radiogroup" aria-label="İptal zamanı">
+      <p v-if="cancelLocal" class="bo-sd__preview" data-testid="cancel-local">Sağlayıcı kaydı olmadığı için iptal doğrudan ve hemen uygulanır; dönem sonu seçeneği yoktur.</p>
+      <div v-else class="bo-seg" role="radiogroup" aria-label="İptal zamanı">
         <button type="button" role="radio" class="bo-seg__opt" :aria-checked="atPeriodEnd" data-testid="cancel-at-end" @click="atPeriodEnd = true">Dönem sonunda</button>
         <button type="button" role="radio" class="bo-seg__opt" :aria-checked="!atPeriodEnd" data-testid="cancel-now" @click="atPeriodEnd = false">Hemen</button>
       </div>
@@ -127,6 +147,7 @@ import { useGuardedAction } from '@bo/composables/useGuardedAction'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import GuardedDialog from '@bo/components/kit/GuardedDialog.vue'
 import SubscriptionEvents from './SubscriptionEvents.vue'
+import { TRIAL_EXTENSION_MAX_DAYS, TRIAL_EXTENSION_MAX_TOTAL_DAYS } from '@bo/api/contracts/billing'
 import { PLAN, SUB_STATUS, planLabel } from '@bo/utils/labels'
 import { formatCount, formatMinor } from '@bo/utils/units'
 import { formatDate, formatDateTime } from '@bo/utils/format'
@@ -160,12 +181,33 @@ const card = computed(() => {
   return s?.cardLast4 ? `${(s.cardBrand ?? 'kart').toLocaleUpperCase('tr')} •••• ${s.cardLast4}` : ''
 })
 
+// K40: denemesi bitip askıya alınmış kartsız abonelik uzatmayla yeniden açılır.
+const reopen = computed(() => {
+  const s = sub.value
+  return !!s && s.status === 'suspended' && !s.hasProviderRef && !!s.trialEndsAt && !s.billingExempt
+})
+const trialRelevant = computed(() => !!sub.value && !sub.value.billingExempt && (sub.value.status === 'trialing' || reopen.value))
+/**
+ * K40 toplam uzatma: abonelik yanıtında sayaç alanı yok (SÖZLEŞME EKSİĞİ, backend'e iletildi); en yeni
+ * `subscription.trial_extended` olayının `payload.totalExtensionDays` değeri okunur. Olay yoksa 0 kabul edilir; sunucu
+ * yine de TRIAL_EXTENSION_LIMIT ile korur.
+ */
+const extension = computed(() => {
+  const ev = res.data.value?.events.find((e) => e.type === 'subscription.trial_extended' && Number.isFinite(Number(e.payload?.totalExtensionDays)))
+  const used = Math.min(TRIAL_EXTENSION_MAX_TOTAL_DAYS, Math.max(0, Number(ev?.payload?.totalExtensionDays ?? 0)))
+  return { used, remaining: TRIAL_EXTENSION_MAX_TOTAL_DAYS - used }
+})
+const maxDays = computed(() => Math.max(1, Math.min(TRIAL_EXTENSION_MAX_DAYS, extension.value.remaining)))
+
 // Uygun olmayan eylemler: neden metni (düğme devre dışı).
 const extendWhy = computed(() => {
   const s = sub.value
   if (!s) return ''
   if (s.billingExempt) return 'Muaf abonelikte deneme uzatılamaz.'
-  if (s.status !== 'trialing') return 'Yalnız deneme sürecindeki abonelikte uzatılabilir.'
+  if (s.status !== 'trialing' && !reopen.value) {
+    return s.status === 'suspended' ? 'Kartlı abonelik askıda: ödeme sağlayıcısında çözülmeli.' : 'Yalnız deneme sürecindeki ya da denemesi bitmiş (askıdaki, kartsız) abonelik uzatılabilir.'
+  }
+  if (extension.value.remaining <= 0) return `Toplam ${TRIAL_EXTENSION_MAX_TOTAL_DAYS} günlük uzatma hakkı doldu.`
   return ''
 })
 const changeWhy = computed(() => {
@@ -181,7 +223,14 @@ const cancelWhy = computed(() => {
 
 // --- Denemeyi uzat
 const days = ref(7)
-const daysValid = computed(() => Number.isInteger(days.value) && days.value >= 1 && days.value <= 30)
+const daysValid = computed(() => Number.isInteger(days.value) && days.value >= 1 && days.value <= maxDays.value)
+const extendItems = computed(() => [
+  reopen.value
+    ? 'Askıdaki abonelik yeniden deneme durumuna alınır; müşteri erişimi açılır. Yeni bitiş = şimdi + seçilen gün.'
+    : 'Yeni bitiş = mevcut bitiş ile şimdi arasından geç olan + seçilen gün.',
+  `Tek seferde en çok ${TRIAL_EXTENSION_MAX_DAYS}, abonelik başına toplam ${TRIAL_EXTENSION_MAX_TOTAL_DAYS} gün (kalan ${extension.value.remaining} gün).`,
+  'Sağlayıcıdan bağımsızdır; kartsız denemede de çalışır. Gerekçe denetim kaydına yazılır.',
+])
 const newTrialEnd = computed(() => {
   const cur = sub.value?.trialEndsAt ? Date.parse(sub.value.trialEndsAt) : 0
   return Math.max(cur, Date.now()) + days.value * DAY_MS
@@ -189,12 +238,13 @@ const newTrialEnd = computed(() => {
 const extend = useGuardedAction(
   (id: number, reason) => api.call('BackofficeBillingService/extendTrial', { tid: id, days: days.value, reason }),
   (r) => {
-    notify('success', `Deneme ${r.extendedDays} gün uzatıldı; yeni bitiş ${formatDateTime(r.trialEndsAt)}.`)
+    const head = r.reopened ? `Deneme yeniden açıldı (${r.extendedDays} gün)` : `Deneme ${r.extendedDays} gün uzatıldı`
+    notify('success', `${head}; yeni bitiş ${formatDateTime(r.trialEndsAt)}. Kalan uzatma hakkı ${r.remainingExtensionDays} gün.`)
     res.load()
   },
 )
 function openExtend() {
-  days.value = 7
+  days.value = Math.min(7, maxDays.value)
   extend.open(tid)
 }
 
@@ -220,22 +270,32 @@ function openChange() {
   change.open(tid)
 }
 
-// --- İptal
+// --- İptal (K40: sağlayıcı kaydı yoksa yerel ve doğrudan)
+const cancelLocal = computed(() => !!sub.value && !sub.value.billingExempt && !sub.value.hasProviderRef)
 const atPeriodEnd = ref(true)
-const cancelItems = computed(() => [
-  atPeriodEnd.value ? 'Abonelik dönem sonuna kadar sürer; sonra yenilenmez.' : 'Abonelik hemen iptal edilir; müşteri erişimi etkilenebilir.',
-  'İptal ödeme sağlayıcısında uygulanır; kartsız denemede sağlayıcı kaydı olmadığı için reddedilir.',
-  'Gerekçe denetim kaydına yazılır.',
-])
+const cancelItems = computed(() =>
+  cancelLocal.value
+    ? [
+        'Abonelik hemen iptal edilir; müşteri erişimi kapanır.',
+        'Kartsız abonelikte ödeme sağlayıcısı çağrılmaz; iptal yalnız Entegrasyonik kaydında uygulanır.',
+        'Gerekçe denetim kaydına yazılır.',
+      ]
+    : [
+        atPeriodEnd.value ? 'Abonelik dönem sonuna kadar sürer; sonra yenilenmez.' : 'Abonelik hemen iptal edilir; müşteri erişimi etkilenebilir.',
+        'İptal ödeme sağlayıcısında uygulanır (canlı salt-okuma kipinde kapalıdır).',
+        'Gerekçe denetim kaydına yazılır.',
+      ],
+)
 const cancel = useGuardedAction(
-  (id: number, reason) => api.call('BackofficeBillingService/cancelSubscription', { tid: id, atPeriodEnd: atPeriodEnd.value, reason }),
+  (id: number, reason) => api.call('BackofficeBillingService/cancelSubscription', { tid: id, atPeriodEnd: cancelLocal.value ? false : atPeriodEnd.value, reason }),
   (r) => {
-    notify('success', r.status === 'canceled' ? 'Abonelik iptal edildi.' : 'Abonelik dönem sonunda iptal edilecek.')
+    const where = r.external ? 'ödeme sağlayıcısında' : 'doğrudan (sağlayıcı kaydı yok)'
+    notify('success', r.status === 'canceled' ? `Abonelik ${where} iptal edildi.` : `Abonelik dönem sonunda iptal edilecek (${where}).`)
     res.load()
   },
 )
 function openCancel() {
-  atPeriodEnd.value = true
+  atPeriodEnd.value = !cancelLocal.value
   cancel.open(tid)
 }
 

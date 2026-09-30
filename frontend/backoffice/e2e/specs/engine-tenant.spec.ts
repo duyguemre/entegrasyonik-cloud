@@ -123,12 +123,23 @@ test.describe('müşteri yaşam döngüsü ve destek girişi', () => {
     await page.getByTestId('impersonate').click()
     const dialog = page.getByRole('dialog', { name: 'Müşterinin gözünden açılsın mı?' })
     await expect(dialog.getByText(/60 saniye/)).toBeVisible()
+    await expect(dialog.getByText(/oturum 30 dakika sürer ve uzatılamaz/)).toBeVisible()
     await dialog.getByLabel('Gerekçe').fill(REASON)
     const popup = context.waitForEvent('page')
     await dialog.getByRole('button', { name: 'Gerekçeyle aç' }).click()
     const tab = await popup
     expect(tab.url()).toMatch(/\/impersonate#t=/)
     expect(await tab.evaluate(() => window.opener)).toBeNull()
-    await expect(page.getByText(/yeni sekmede açıldı/)).toBeVisible()
+    await expect(page.getByText(/Destek oturumu 30 dakika sürer/)).toBeVisible()
+    // Bilet geri sayımı sunucunun expiresInSeconds değerinden (60 sn) gelir.
+    await expect(page.getByTestId('imp-ticket')).toContainText(/0[01]:\d\d içinde kullanılmazsa/)
+  })
+
+  test('K41: süren destek oturumu başlıkta yaklaşık kalan süreyle (başlangıç + 30 dk)', async ({ page }) => {
+    await page.goto('/musteriler/101')
+    await expect(page.getByTestId('imp-session-chip')).toContainText(/Destek oturumu açık · ~1\d:\d\d/)
+    await page.goto('/musteriler/102')
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    await expect(page.getByTestId('imp-session-chip')).toHaveCount(0)
   })
 })

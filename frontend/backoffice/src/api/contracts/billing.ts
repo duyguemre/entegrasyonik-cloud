@@ -72,7 +72,16 @@ export interface ExtendTrialResponse {
   trialEndsAt: string
   previousTrialEndsAt: string | null
   extendedDays: number
+  /** K40: bu abonelikte bugüne dek toplam uzatma (gün, bu işlem dahil); üst sınır TRIAL_EXTENSION_MAX_TOTAL_DAYS. */
+  totalExtensionDays: number
+  /** K40: kalan uzatma hakkı (gün). */
+  remainingExtensionDays: number
+  /** K40: denemesi bitip askıya alınmış kartsız abonelik bu uzatmayla yeniden `trialing` oldu. */
+  reopened: boolean
 }
+/** K40 (ADR-0008): tek seferde ≤30 gün, bir abonelikte toplam ≤60 gün. Aşımda 409 TRIAL_EXTENSION_LIMIT + details.{remainingDays,usedDays,maxTotalDays}. */
+export const TRIAL_EXTENSION_MAX_DAYS = 30
+export const TRIAL_EXTENSION_MAX_TOTAL_DAYS = 60
 export interface CancelSubscriptionRequest {
   tid: number
   atPeriodEnd: boolean
@@ -83,6 +92,8 @@ export interface CancelSubscriptionResponse {
   status: SubscriptionStatus
   cancelAtPeriodEnd: boolean
   currentPeriodEnd: string | null
+  /** K40: true = ödeme sağlayıcısında uygulandı (LIVE_READONLY'de 423); false = sağlayıcı kaydı yok, yerel ve doğrudan `canceled` (atPeriodEnd yok sayılır). */
+  external: boolean
 }
 export interface ChangePlanRequest {
   tid: number

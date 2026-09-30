@@ -1,4 +1,5 @@
 /** Sahte BackofficeBillingService (B4a/b/c) + BackofficeTenantService yaşam döngüsü (B2). Tutarlar kuruş; kart yalnız maskeli. */
+import { TRIAL_EXTENSION_MAX_DAYS, TRIAL_EXTENSION_MAX_TOTAL_DAYS } from '../../contracts/billing'
 import type { BillingEventRow, PlanSummary, SubscriptionRow, SubscriptionStatus, TenantLifecycle, TenantStatus } from '../../contract'
 import { MockHttpError } from '../errors'
 import { DAY, HOUR, MIN, UNHANDLED, conflict, hex24, iso, liveReadonly, notFound, page, strict, tenantName, validation, type MockCtx, type MockDomain } from './context'
@@ -78,6 +79,12 @@ export function createBillingMock(t0: number): MockDomain {
     events.set(s.tid, list)
   }
 
+  // K40: bir abonelikte toplam deneme uzatması (Subscriptions.trialExtensionDays). 103 (süren deneme) 45 gün kullanmış → kalan 15 (sınır senaryosu).
+  const extensionUsed = new Map<number, number>([[103, 45]])
+  for (const [tid, used] of extensionUsed) {
+    events.get(tid)?.unshift({ id: hex24(tid * 100 + 90), at: iso(t0 - 2 * DAY), provider: 'system', type: 'subscription.trial_extended', status: 'processed', failureReason: null, payload: { days: 15, totalExtensionDays: used, reopened: false, actor: hex24(5001), reason: 'Entegrasyon kurulumu için ek süre (örnek)' } })
+  }
+
   const deletion = new Map<number, { requestedAt: number; scheduledAt: number }>([[111, { requestedAt: t0 - 9 * DAY, scheduledAt: t0 + 5 * DAY }]])
   const tenantStatus = new Map<number, TenantStatus>(SEEDS.map((s, i) => [101 + i, s.tenant]))
 
@@ -149,6 +156,8 @@ export function createBillingMock(t0: number): MockDomain {
     const recent = [
       ...(d && status === 'DELETION_PENDING' ? [ev(9 * 24 * 60, 'tenant.deletion.requested', 'ok', 'user', 'app')] : []),
       ev(75 + tid, 'app.write', 'ok', 'user', 'app'),
+      // K41 örneği: 101'de 12 dk önce açılmış, süren bir destek oturumu (30 dk → ~18 dk kaldı).
+      ...(tid === 101 ? [ev(12, 'impersonation.redeem', 'ok', 'impersonator', 'app', true), ev(9, 'impersonation.request', 'ok', 'impersonator', 'app', true)] : []),
       ev(140 + tid, 'impersonation.redeem', 'ok', 'impersonator', 'app', true),
       ev(141 + tid, 'impersonation.request', 'ok', 'impersonator', 'app', true),
       ev(600 + tid * 3, 'login', 'ok', 'user', 'app'),
@@ -203,26 +212,49 @@ export function createBillingMock(t0: number): MockDomain {
         case 'BackofficeBillingService/extendTrial': {
           strict(body, ['tid', 'days', 'reason'])
           const days = Number(body.days)
-          if (!Number.isInteger(days) || days < 1 || days > 30) throw validation('days', '1..30')
+          if (!Number.isInteger(days) || days < 1 || days > TRIAL_EXTENSION_MAX_DAYS) throw validation('days', `1..${TRIAL_EXTENSION_MAX_DAYS}`)
           const s = sub(body.tid)
-          if (s.billingExempt) throw conflict('SUBSCRIPTION_EXEMPT', 'Muaf abonelik bu işleme uygun değil.')
-          if (s.status !== 'trialing') throw conflict('TRIAL_NOT_ACTIVE', 'Deneme süresi uzatılamaz.')
+          if (s.billingExempt) throw conflict('SUBSCRIPTION_EXEMPT', 'Muaf (legacy) abonelikte deneme uzatılamaz.')
+          // K40: denemesi bitip askıya alınmış kartsız abonelik uzatmayla yeniden `trialing` olur.
+          const reopen = s.status === 'suspended' && !s.hasProviderRef && !!s.trialEndsAt
+          if ((s.status !== 'trialing' && !reopen) || !s.trialEndsAt) throw conflict('TRIAL_NOT_ACTIVE', 'Yalnızca süren (trialing) ya da denemesi bitip askıya alınmış (kartsız) abonelik uzatılabilir.')
+          const used = extensionUsed.get(s.tid) ?? 0
+          const remaining = Math.max(0, TRIAL_EXTENSION_MAX_TOTAL_DAYS - used)
+          if (days > remaining) {
+            throw new MockHttpError(409, 'TRIAL_EXTENSION_LIMIT', `Toplam deneme uzatma sınırı ${TRIAL_EXTENSION_MAX_TOTAL_DAYS} gün; kalan ${remaining} gün.`, undefined, {
+              remainingDays: remaining,
+              usedDays: used,
+              maxTotalDays: TRIAL_EXTENSION_MAX_TOTAL_DAYS,
+            })
+          }
           const prev = s.trialEndsAt
-          s.trialEndsAt = iso(Math.max(prev ? Date.parse(prev) : 0, ctx.now) + days * DAY)
-          systemEvent(s, 'subscription.trial_extended', { days }, ctx, String(body.reason))
-          return { tid: s.tid, status: 'trialing', trialEndsAt: s.trialEndsAt, previousTrialEndsAt: prev, extendedDays: days }
+          s.trialEndsAt = iso(Math.max(Date.parse(prev), ctx.now) + days * DAY)
+          s.status = 'trialing'
+          extensionUsed.set(s.tid, used + days)
+          systemEvent(s, 'subscription.trial_extended', { days, reopened: reopen, totalExtensionDays: used + days }, ctx, String(body.reason))
+          return {
+            tid: s.tid, status: 'trialing', trialEndsAt: s.trialEndsAt, previousTrialEndsAt: prev, extendedDays: days,
+            totalExtensionDays: used + days, remainingExtensionDays: remaining - days, reopened: reopen,
+          }
         }
         case 'BackofficeBillingService/cancelSubscription': {
           strict(body, ['tid', 'atPeriodEnd', 'reason'])
           if (typeof body.atPeriodEnd !== 'boolean') throw validation('atPeriodEnd', 'boolean')
-          if (ctx.liveReadonly) throw liveReadonly()
           const s = sub(body.tid)
-          if (s.status === 'canceled' || s.status === 'expired') throw conflict('SUBSCRIPTION_NOT_CANCELABLE', 'Abonelik bu durumda iptal edilemez.')
+          if (s.status === 'canceled' || s.status === 'expired') throw conflict('SUBSCRIPTION_NOT_CANCELABLE', `Abonelik '${s.status}' durumunda; iptal edilemez.`)
+          // K40: sağlayıcı kaydı olmayan (kartsız deneme/askı) abonelik → sağlayıcı çağrılmadan YEREL ve doğrudan iptal; LIVE_READONLY etkilemez.
+          if (!s.billingExempt && !s.hasProviderRef) {
+            s.status = 'canceled'
+            s.cancelAtPeriodEnd = false
+            systemEvent(s, 'subscription.admin_canceled', { atPeriodEnd: false, local: true }, ctx, String(body.reason))
+            return { tid: s.tid, status: s.status, cancelAtPeriodEnd: false, currentPeriodEnd: s.currentPeriodEnd, external: false }
+          }
+          if (ctx.liveReadonly) throw liveReadonly()
           if (!s.hasProviderRef) throw conflict('NO_PROVIDER_SUBSCRIPTION', 'Abonelikte sağlayıcı kaydı yok.')
           if (body.atPeriodEnd) s.cancelAtPeriodEnd = true
           else s.status = 'canceled'
           systemEvent(s, 'subscription.admin_canceled', { atPeriodEnd: body.atPeriodEnd }, ctx, String(body.reason))
-          return { tid: s.tid, status: s.status, cancelAtPeriodEnd: s.cancelAtPeriodEnd, currentPeriodEnd: s.currentPeriodEnd }
+          return { tid: s.tid, status: s.status, cancelAtPeriodEnd: s.cancelAtPeriodEnd, currentPeriodEnd: s.currentPeriodEnd, external: true }
         }
         case 'BackofficeBillingService/changePlan': {
           strict(body, ['tid', 'planCode', 'reason'])

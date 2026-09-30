@@ -100,7 +100,8 @@ describe('describeError — "<ne oldu> — <ne yapılmalı>"', () => {
   it.each([
     [err(423, 'LIVE_READONLY', 'Canlı salt-okuma kipinde bu işlem kapalı.'), 'readonly', 'Canlı salt-okuma kipinde bu işlem kapalı — Canlı salt-okuma kipi kapatıldığında yeniden deneyin.'],
     [err(504, 'QUERY_TIMEOUT', 'Sorgu süre sınırını aştı.'), 'timeout', 'Sorgu süre sınırını aştı — Daha dar bir zaman aralığı seçip yeniden deneyin.'],
-    [err(409, 'TRIAL_NOT_ACTIVE', 'Deneme süresi uzatılamaz.'), 'conflict', 'Deneme süresi uzatılamaz — Güncel durumu görmek için listeyi yenileyin.'],
+    [err(409, 'SUBSCRIPTION_CHANGED', 'Abonelik eş zamanlı değişti.'), 'conflict', 'Abonelik eş zamanlı değişti — Güncel durumu görmek için listeyi yenileyin.'],
+    [err(409, 'TRIAL_NOT_ACTIVE', 'Deneme süresi uzatılamaz.'), 'conflict', 'Deneme süresi uzatılamaz — Yalnız süren deneme ya da denemesi bitip askıya alınmış kartsız abonelik uzatılabilir; sayfayı yenileyin.'],
     [err(404, 'JOB_NOT_FOUND', 'İş bulunamadı.'), 'notFound', 'İş bulunamadı — Kayıt başka bir işlemle kaldırılmış olabilir; listeyi yenileyin.'],
   ])('%#', (e, kind, message) => {
     const d = describeError(e)
