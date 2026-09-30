@@ -127,6 +127,21 @@ test.describe('A12 — pasif sekmeler', () => {
     expect(ring.shadow).toMatch(/0px 0px 0px 2px inset/)
     expect(ring.w).toBeCloseTo(ring.tabW, 0)
     await expect(tab.locator('.ek-tab__close')).toHaveCSS('opacity', '1')
+    await expect(tab.locator('.ek-tab__wash')).toHaveCSS('opacity', '1') // odak = hover ile aynı ışıma
+  })
+
+  test('basılıyken yalnız saç çizgisinin rengi değişir (layout shift 0)', async ({ page }) => {
+    await openTabs(page)
+    const tab = page.locator('.ek-tabs .ek-tab').nth(2)
+    await tab.hover()
+    await page.waitForTimeout(250)
+    const before = await snapshot(page)
+    const line = () => tab.locator('.ek-tab__wash').evaluate((el) => getComputedStyle(el, '::after').backgroundColor)
+    const idle = await line()
+    await page.mouse.down()
+    expect(await line()).not.toBe(idle)
+    expect(await snapshot(page)).toEqual(before)
+    await page.mouse.up()
   })
 
   test('reduced-motion: ışıma/kapatma/renk geçişleri kapalı', async ({ page }) => {

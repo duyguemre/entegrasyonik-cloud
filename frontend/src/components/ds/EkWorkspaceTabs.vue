@@ -419,8 +419,14 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
 }
 
 .ek-tab:not(.is-active):hover .ek-tab__wash,
-.ek-tab.is-hover:not(.is-active) .ek-tab__wash {
+.ek-tab.is-hover:not(.is-active) .ek-tab__wash,
+.ek-tab:not(.is-active):has(.ek-tab__button:focus-visible) .ek-tab__wash {
   opacity: 1;
+}
+
+/* Basılıyken saç çizgisi aksiyon rengine döner (yalnız renk): bırakınca gelecek etkin göstergenin önizlemesi. */
+.ek-tab:not(.is-active):active .ek-tab__wash::after {
+  background: var(--ek-color-action);
 }
 
 /* Etkinleşince ışıma ANINDA kalkar (A10: zemin/kenarlık/köşeler aynı karede değişir). */

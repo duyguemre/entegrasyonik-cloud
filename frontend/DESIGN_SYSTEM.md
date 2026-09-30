@@ -485,3 +485,49 @@ Geri bildirim: "gruplar hafif grimsi, diğerlerinden farklı, karışık". Denen
   hareketi gösterge + mevcut içerik girişi (opaklık + 4px) taşır; renk geçişi yalnız pasif sekmede hover'a girerken. reduced-motion: hepsi anında.
 - İlk sekme şerit başında yarıçap kadar pay (sol köşe kırpılmıyor, sol menü kenarına yapışmıyor). 390px'te A6b yatay kaydırma/ok/solma aynen.
 - Bekçi: `tests/a10-shell-nav-tabs.test.ts`.
+
+## 19. A12 — ana sekme şeridinde pasif sekmeler (`cloud/fe-a12`)
+
+Taban `cloud/fe-a10` (§18 birleşme çözümü aynen korunur). İnceleme: `docs/a12-review/{once,sonra}-*.png` (2x yakın çekim: pasif,
+hover, odak, etkin komşuluğu, etkin+odak, kapat-hover; 1440 + 390); araç
+`A12_REVIEW=1 A12_REVIEW_WIDTH=1440|390 A12_REVIEW_TAG=sonra npx playwright test e2e/specs/a12-review.spec.ts --project=chromium-desktop`.
+Token değişikliği YOK.
+
+Geri bildirim: "pasif tablara biraz çalış; hoplayıp zıplamasın ama bir tık daha premium his versin".
+
+### 19.1 Önceki hâlin eleştirisi
+
+1. Hover zemini (`tab-hover` düz plaka) + `content-strong` metin → hover'daki sekme etkin sekmeyi taklit ediyordu (fark yalnız dış hat).
+2. Hover zemini yalnız `:hover` kuralında geçiş alıyordu → girişte yumuşak, çıkışta ANINDA sönüyordu (asimetrik "titreme").
+3. Kapatmanın kendi hover zemini (`tab-hover`) hover sekmenin zeminiyle aynıydı → pasifte görünmüyordu.
+4. Klavye odak halkası yalnız düğmeyi sarıyordu; kapatma halkanın dışında kalıyordu (kopuk dikdörtgen).
+5. Etkin ↔ pasif geçişte başlık 500 ↔ 600 kalınlık değiştiriyor, başlık kutusu daralıp genişliyordu (kirli noktası kayar).
+
+### 19.2 Alternatifler
+
+| Seçenek | Gözlem | Karar |
+|---|---|---|
+| (B) plaka: pasif sekme `surface-muted` + kenarlık + 2px aralık | pasifler etkinden AÇIK okunuyor, etkinle yarışıyor; aralık sekme ritmini bozuyor | elendi |
+| (C) çizgisiz ritim: ayraç yok, aralık + hover düz zemin | aralık (margin) genişlik değiştiriyor; düz hover yine etkin taklidi | elendi |
+| (D1) ayrı ışıma katmanı, düz `tab-hover` + saç çizgisi | geçiş simetrik, layout shift 0; ama düz plaka hâlâ ağır | 1. iterasyon |
+| (D2) ışıma üstten şerit tonuna söner + üstte 2px `action-border` saç çizgisi | yumuşak, "ışık" hissi; etkin (düz + dış hat + aksiyon çubuğu + kalın) ile karışmaz | **SEÇİLDİ** |
+
+### 19.3 Kurallar
+
+- **Pasif**: şerit zemini (`tabstrip-bg`), metin/ikon `content-muted` (**5.04:1**), aralarında 1px `border-strong` ayraç (hover/etkin komşusunda gizli).
+- **Hover** (fare) ve **klavye odağı**: ayrı `__wash` katmanı YALNIZ opaklıkla girer/çıkar (`duration-fast` / `easing-standard`) — zemin
+  `tab-hover` → %35'e sönen gradyan (`color-mix`, token), üstte etkin göstergeyle aynı geometride 2px `action-border` çizgi; metin
+  bir kademe öne (`content-default`: ışıma üstünde **9.45:1**, şerit ucunda **8.67:1**). `content-strong` + yarı kalın yalnız ETKİN sekmenindir.
+- Işıma şeridin alt çizgisini ÖRTMEZ (alt 1px pay) → hover plakası içerikle birleşmez; birleşme yalnız etkin sekmenin (§18.2).
+- **Basılı**: yalnız saç çizgisi `action` rengine döner (etkin göstergenin önizlemesi).
+- YÜKSEKLİK, DOLGU, FONT-WEIGHT, KENARLIK KALINLIĞI, TRANSFORM hover/odak/basılı durumunda DEĞİŞMEZ (layout shift = 0).
+- **Hayalet kalın başlık**: `.ek-tab__title::after` = `attr(data-text) / ''` (yarı kalın, yükseklik 0, görünmez, ekran okuyucuya boş) →
+  başlık kutusu her durumda kalın genişliği ayırır. Yan etki: yalnız kalın hâli sığmayan başlıkta tooltip biraz erken açılır (kabul).
+- **Kapatma**: pasifte opaklık 0 ama 20px yeri HEP ayrılı; hover/odakta 1. Pasifte kendi hover zemini şerit tonu (`tabstrip-bg`).
+- **Odak halkası**: `:has(.ek-tab__button:focus-visible)` ile TÜM sekme (kapatma dahil), köşe yarıçapını izleyen 2px `border-focus`;
+  etkin sekmede gölgeye eklenir (gösterge korunur). `:has` desteklemeyen motorda eski düğme halkası kalır (`@supports`).
+- **Etkinleşme** §18.2 gibi ANINDA: ışıma `transition: none` ile kalkar. reduced-motion: sekme/ayraç/ışıma/kapatma geçişleri kapalı.
+- 390px: A6b davranışı aynen (152px sabit sekme, yatay kaydırma + ok + solma, pasif kapatma gizli).
+- Dark: yalnız semantik token (dark kapısı kapalı; `tab-hover`/`action-border`/`tabstrip-bg` dark değerleri token katmanında tanımlı).
+- Bekçiler: `tests/a12-workspace-tabs-passive.test.ts` (statik), `e2e/specs/workspace-tabs-passive.spec.ts` (hover/basılı/etkinleşme
+  öncesi-sonrası `getBoundingClientRect` + yerleşim stilleri eşit, AA, odak halkası genişliği = sekme, reduced-motion, 390px, alt çizgi payı).
