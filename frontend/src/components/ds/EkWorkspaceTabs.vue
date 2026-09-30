@@ -262,8 +262,11 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   /* Kap hiçbir yönde kaydırılmaz (dikey kaydırma çubuğu hatası — Aşama 5); taşma yalnız listede, yatay. */
   overflow: hidden;
   background: var(--ek-color-tabstrip-bg);
-  /* Alt çizgi kenarlık değil iç gölge: etkin sekme üstüne biner ve çizgiyi KESER (tek parça geçiş). */
-  box-shadow: inset 0 -1px 0 var(--ek-color-border-default);
+  /* A10 — sekme dış hattı tek token: şeridin alt çizgisi → etkin sekmenin içbükey köşesi → yan/üst kenarı
+     KESİNTİSİZ aynı çizgi (renk sıçraması yok). Alt çizgi kenarlık değil iç gölge: etkin sekme üstüne biner ve
+     çizgiyi KESER — sekme ile içerik arasında çizgi YOK (A5, tek parça). */
+  --ek-tab-line: var(--ek-color-border-strong);
+  box-shadow: inset 0 -1px 0 var(--ek-tab-line);
 }
 
 .ek-tabs__leading,
@@ -295,6 +298,9 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   overflow-x: auto;
   overflow-y: hidden;
   overscroll-behavior-x: contain;
+  /* İlk sekmenin sol içbükey köşesi kırpılmasın ve sekme sol menünün kenarına yapışmasın (köşe payı = sekme yarıçapı). */
+  padding-left: var(--ek-radius-tab);
+  scroll-padding-inline: var(--ek-space-8);
   /* Kaydırma çubuğu hiç yer kaplamaz (klasik çubuklu sistemlerde şeridi daraltıp dikey çubuk üretiyordu);
      taşma solma + ok düğmeleriyle anlatılır. */
   scrollbar-width: none;
@@ -359,9 +365,15 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   flex: 0 1 220px;
   min-width: 120px;
   height: 34px;
+  /* Tüm sekmelerde aynı (saydam) kenarlık → etkinleşince içerik 1px kaymaz. */
+  border: 1px solid transparent;
+  border-bottom: 0;
   border-radius: var(--ek-radius-tab) var(--ek-radius-tab) 0 0;
   color: var(--ek-color-content-muted);
-  transition: var(--ek-transition-colors);
+  /* Etkinleşme/pasifleşme ANINDA: zemin + kenarlık + içbükey köşeler aynı karede değişir (zemin solarken köşelerin
+     anında belirmesi renk sıçraması üretiyordu). Sakin geçişi gösterge çubuğu ve içerik girişi taşır; renk geçişi
+     yalnız hover'a girerken. */
+  transition: color var(--ek-duration-fast) var(--ek-easing-standard);
 }
 
 /* Pasif sekmeler arasındaki ince ayraç (etkin sekmenin iki yanında gizlenir). */
@@ -385,29 +397,68 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   opacity: 0;
 }
 
+.ek-tab:not(.is-active):hover {
+  transition: var(--ek-transition-colors);
+}
+
 .ek-tab:hover,
 .ek-tab.is-hover {
   background: var(--ek-color-tab-hover);
   color: var(--ek-color-content-strong);
 }
 
-/* ETKİN: içerik zemini tonunda, şeridin önüne çıkar (yüksek, gölgeli), alt kenarı içerikle birleşir. */
+/* ETKİN (A10 — klasör sekmesi): zemin = içerik zemini (`tab-active` ≡ `background`), şeridin önüne çıkar.
+   Dış hat 1px `--ek-tab-line` YALNIZ üst + yanlarda (alt kenar yok → içerikle tek parça); hat alt köşelerde
+   içbükey eğriyle şeridin alt çizgisine bağlanır. Gölge yalnız yukarı (şeride), içeriğe düşmez. */
 .ek-tab.is-active {
   height: 36px;
+  border-color: var(--ek-tab-line);
   background: var(--ek-color-tab-active);
+  background-clip: padding-box;
   color: var(--ek-color-content-strong);
-  box-shadow: inset 0 2px 0 var(--ek-color-action), var(--ek-shadow-tab-active);
+  box-shadow: var(--ek-shadow-tab-active);
   z-index: 1;
 }
 
-/* Klasör sekmesi: alt köşelerde içbükey geçiş — sekme zemini şeride yumuşakça "akar" (çizgi yok). */
+/* Etkin gösterge: üst kenarda 2px aksiyon çubuğu, yuvarlak köşelere KIVRILMAZ (köşelerden yarıçap kadar içeride)
+   — önceki iç gölge köşede kalınlaşan bir "şapka" çiziyordu. Etkinleşirken kısa, sakin açılış (motion token'ları). */
+.ek-tab.is-active::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: var(--ek-radius-tab);
+  right: var(--ek-radius-tab);
+  height: 2px;
+  border-radius: 0 0 2px 2px;
+  background: var(--ek-color-action);
+  animation: ek-tab-indicator var(--ek-duration-base) var(--ek-easing-enter) both;
+}
+
+@keyframes ek-tab-indicator {
+  from {
+    opacity: 0;
+    transform: scaleX(0.6);
+  }
+}
+
+/* Klasör sekmesi: alt köşelerde içbükey geçiş. Her köşe (R+1)² bir kare; merkezi dış üst köşede, yarıçapı R+1 olan
+   çemberin İÇİ şerit (saydam), 1px halkası = dış hat (sekmenin yan kenarıyla aynı piksel sütununda başlar, şeridin
+   alt çizgisiyle aynı piksel satırında biter), DIŞI = sekme zemini. Kenarlık kutusunun dışına 1px taşar (border). */
 .ek-tab__flare {
   display: none;
   position: absolute;
   bottom: 0;
-  width: var(--ek-radius-tab);
-  height: var(--ek-radius-tab);
+  width: calc(var(--ek-radius-tab) + 1px);
+  height: calc(var(--ek-radius-tab) + 1px);
   pointer-events: none;
+  --ek-flare-r: var(--ek-radius-tab);
+  --ek-flare-bg: radial-gradient(
+    circle at var(--ek-flare-x) 0,
+    transparent calc(var(--ek-flare-r) - 0.35px),
+    var(--ek-tab-line) calc(var(--ek-flare-r) + 0.25px),
+    var(--ek-tab-line) calc(var(--ek-flare-r) + 0.75px),
+    var(--ek-color-tab-active) calc(var(--ek-flare-r) + 1.35px)
+  );
 }
 
 .ek-tab.is-active .ek-tab__flare {
@@ -415,13 +466,15 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
 }
 
 .ek-tab__flare--start {
-  left: calc(-1 * var(--ek-radius-tab));
-  background: radial-gradient(circle at 0 0, transparent calc(var(--ek-radius-tab) - 0.5px), var(--ek-color-tab-active) var(--ek-radius-tab));
+  --ek-flare-x: 0;
+  left: calc(-1 * var(--ek-radius-tab) - 1px);
+  background: var(--ek-flare-bg);
 }
 
 .ek-tab__flare--end {
-  right: calc(-1 * var(--ek-radius-tab));
-  background: radial-gradient(circle at 100% 0, transparent calc(var(--ek-radius-tab) - 0.5px), var(--ek-color-tab-active) var(--ek-radius-tab));
+  --ek-flare-x: 100%;
+  right: calc(-1 * var(--ek-radius-tab) - 1px);
+  background: var(--ek-flare-bg);
 }
 
 .ek-tab__button {
@@ -505,6 +558,17 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
 .ek-tab__close:hover {
   background: var(--ek-color-tab-hover);
   color: var(--ek-color-content-strong);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ek-tab,
+  .ek-tab:not(.is-active):hover {
+    transition: none;
+  }
+
+  .ek-tab.is-active::after {
+    animation: none;
+  }
 }
 
 @media (hover: none) {
