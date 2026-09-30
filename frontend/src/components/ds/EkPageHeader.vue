@@ -17,7 +17,7 @@
 -->
 <template>
   <header class="ek-page-header">
-    <EkPageBar :section="section" :title="title" :description="description" :tips="tips" :meta="meta"
+    <EkPageBar :section="section" :section-icon="sectionIcon" :trail="trail" :record="record" :title="title" :description="description" :tips="tips" :meta="meta"
       :refreshable="refreshable" :refreshing="refreshing" :last-updated="lastUpdated" @refresh="emit('refresh')">
       <template v-if="primaryAction || secondaryActions?.length || overflowActions?.length" #actions>
         <v-btn
@@ -65,6 +65,7 @@
 
 <script setup lang="ts">
 import EkPageBar from './EkPageBar.vue'
+import type { EkCrumb, EkRecordRef } from './pageTrail'
 
 export interface EkPageHeaderAction {
   label: string
@@ -76,6 +77,12 @@ export interface EkPageHeaderAction {
 defineProps<{
   /** Kayıt defterindeki bölüm adı (tıklanabilir DEĞİL — Karar 2.3). */
   section?: string
+  /** A7: breadcrumb kök ikonu (verilmezse sekmenin menü kaydından). */
+  sectionIcon?: string
+  /** A7: kök ile başlık arasındaki üst ekranlar (`onSelect` → bağlantı). */
+  trail?: EkCrumb[]
+  /** A7: kayıt detayında başlığın yanında kayıt kimliği (kanal noktası + kısa kod + kopyala). */
+  record?: EkRecordRef | null
   title: string
   /** Sayfanın amacı — Aşama 5: sayfada değil "Sayfa hakkında" (i) panelinde. */
   description?: string
