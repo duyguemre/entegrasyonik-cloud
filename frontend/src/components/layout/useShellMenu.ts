@@ -6,7 +6,8 @@
  * (`NavigationRail`) ve akıllı aramanın "Ekranlar" grubu (`ShellSearch`).
  * Erişilebilirliğin KAYNAĞI değişmez (ADR-0015 Karar 2.4): yalnızca menüde
  * zaten olan (status/inMenu) öğeler listelenir; bu dosya hiçbir ekranı
- * gizlemez/eklemez, yalnızca sunum modelini üretir.
+ * gizlemez/eklemez, yalnızca sunum modelini üretir. TEK istisna: statik içerikli
+ * Yardım merkezi (veri erişimi yok) kabuğun "Yardım" bölümüne istemcide eklenir.
  */
 import { computed, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -16,6 +17,7 @@ import { resolveScreenByKey, screenKeyForLink } from '@/navigation/screens'
 import { SECTIONS } from '@/navigation/sections'
 import { firstMessage, humanizeKey, resolveMenuTitle } from '@/navigation/menuTitle'
 import type { EkSideSection, EkSideItem } from '@/components/ds/EkSidebarNav.vue'
+import { HELP_SCREEN_KEY, helpCenterLink } from '@/help/helpLink'
 
 /** Sidebar'ın sağında favori yıldızı taşıyabilen öğe (menü `isConstant` değilse). */
 export interface ShellMenuEntry {
@@ -84,6 +86,20 @@ export function useShellMenu() {
         }
       }
       if (items.length) sections.push({ label, items })
+    }
+    // Yardım merkezi (faz3-fe-help): statik içerik, veri erişimi yok → her kullanıcıya açık; `MenuService` ağacında
+    // DEĞİL, istemci bağlantısıyla (`help/helpLink.ts`) kabuğun kendi "Yardım" bölümüne eklenir (sol menü, ray, Ctrl+K).
+    const helpLink = helpCenterLink(menuStore)
+    // Menü yüklenmeden (boş/hatalı menü — T1b karakterizasyonu) kabuk boş kalır; yardım yalnız menüyle birlikte eklenir.
+    if (groups.value.length > 0 && !byKey.has(HELP_SCREEN_KEY)) {
+      const helpTitle = t('help.center.title')
+      const helpSection = t('shell.section.help')
+      byKey.set(HELP_SCREEN_KEY, helpLink)
+      const item: EkSideItem = { key: HELP_SCREEN_KEY, label: helpTitle, icon: 'mdi-lifebuoy' }
+      const existing = sections.find((sec) => sec.label === helpSection)
+      if (existing) existing.items.push(item)
+      else sections.push({ label: helpSection, items: [item] })
+      entries.push({ key: HELP_SCREEN_KEY, link: helpLink, title: helpTitle, icon: 'mdi-lifebuoy', sectionLabel: helpSection })
     }
     return { sections, byKey, entries }
   })

@@ -8,7 +8,8 @@
       (`workspace.recentLinks`, yalnızca bellekte).
     - Sorgu: "Ekranlar" — menüde erişilebilir ekranlar (istemci filtresi, anında);
       ≥2 karakterde `SmartService/unifiedSearch` → Siparişler / Ürünler /
-      Müşteriler / İadeler ve talepler (sunucu en çok 10'ar kayıt döndürür).
+      Müşteriler / İadeler ve talepler (sunucu en çok 10'ar kayıt döndürür) +
+      "Yardım makaleleri" (istemcide, `help/` kaydı; ilk aramada tembel yüklenir).
   Seçim davranışı eski `ApplicationBar.handleSearchSelect` ile AYNI: ilgili liste
   sekmesi açılır, arama değeri sekme PARAMETRESİ olarak geçer (URL'ye YAZILMAZ —
   ADR-0012 Karar 2 PII kuralı; screens.ts urlParams'ta yok).
@@ -30,7 +31,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, inject, ref, watch } from 'vue'
+import { computed, inject, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDebounceFn } from '@vueuse/core'
 import EkSmartSearch, { type EkSearchGroup, type EkSearchItem } from '@/components/ds/EkSmartSearch.vue'
@@ -40,6 +41,7 @@ import { formatDate, formatMoney, formatNumber } from '@/composables/format'
 import { useWorkspaceStore } from '@/stores/workspace'
 import { screenKeyForLink } from '@/navigation/screens'
 import { useShellMenu } from './useShellMenu'
+import { useHelpNavigation } from '@/help/useHelpNavigation'
 
 defineEmits<{ dismiss: [] }>()
 
@@ -47,7 +49,7 @@ const MIN_REMOTE_LENGTH = 2
 const SCREEN_LIMIT = 6
 const RECENT_LIMIT = 6
 
-const { t } = useI18n({ useScope: 'global' })
+const { t, locale } = useI18n({ useScope: 'global' })
 const eventBus: any = inject('eventBus')
 const restApi = useRestApi()
 const workspace = useWorkspaceStore()
@@ -100,6 +102,26 @@ const screenGroup = computed<EkSearchGroup>(() => {
       __ref: e.link,
     }))
   return { key: 'screens', label: 'Ekranlar', icon: 'mdi-compass-outline', items }
+})
+
+// --- Kaynak 2b: yardım makaleleri (istemci, ≥2 karakter). İçerik ilk aramada tembel yüklenir (ana paketi büyütmez). ---
+const HELP_LIMIT = 4
+const helpNav = useHelpNavigation()
+const helpModule = shallowRef<typeof import('@/help') | null>(null)
+const helpGroup = computed<EkSearchGroup>(() => {
+  const mod = helpModule.value
+  if (!mod || q.value.length < MIN_REMOTE_LENGTH) return { key: 'help', label: 'Yardım', icon: 'mdi-book-open-page-variant-outline', items: [] }
+  const items = mod.searchHelpArticles(q.value, String(locale.value), HELP_LIMIT).map((r) => ({
+    id: `help:${r.article.id}`,
+    title: r.article.title,
+    icon: 'mdi-book-open-page-variant-outline',
+    tone: 'info' as const,
+    typeLabel: 'YARDIM',
+    meta: [{ label: 'Konu', value: mod.helpCategory(r.article.category)?.title[mod.normalizeLocale(String(locale.value))] ?? '' }],
+    __kind: 'help',
+    __ref: r.article.id,
+  }))
+  return { key: 'help', label: 'Yardım makaleleri', icon: 'mdi-book-open-page-variant-outline', items }
 })
 
 // --- Kaynak 3: kayıtlar (SmartService/unifiedSearch) ---
@@ -162,7 +184,7 @@ const recordGroups = computed<EkSearchGroup[]>(() => {
 
 const groups = computed<EkSearchGroup[]>(() => {
   if (!q.value) return recentGroup.value.items.length ? [recentGroup.value] : []
-  return [screenGroup.value, ...(q.value.length >= MIN_REMOTE_LENGTH ? recordGroups.value : [])]
+  return [screenGroup.value, ...(q.value.length >= MIN_REMOTE_LENGTH ? [...recordGroups.value, helpGroup.value] : [])]
 })
 
 /** İskelet yalnızca GÖSTERİLECEK hiçbir şey yokken (ekran eşleşmesi varsa önce onlar görünür, kayıtlar gelince eklenir). */
@@ -197,6 +219,9 @@ const runRemote = useDebounceFn(async (text: string) => {
 }, 250)
 
 watch(q, (text) => {
+  if (text.length >= MIN_REMOTE_LENGTH && !helpModule.value) {
+    import('@/help').then((m) => (helpModule.value = m)).catch((error) => logger.warn('Yardım araması yüklenemedi', { error: String(error) }))
+  }
   remote.value = { orders: [], products: [], customers: [], claims: [] }
   remoteFailed.value = false
   if (text.length < MIN_REMOTE_LENGTH) {
@@ -219,6 +244,7 @@ function onSelect(item: EkSearchItem) {
   const { __kind: kind, __ref: ref } = item as EkSearchItem & { __kind: string; __ref: any }
   query.value = ''
   if (kind === 'screen' || kind === 'recent') eventBus?.emit('openTab', ref)
+  else if (kind === 'help') helpNav.openHelp(ref)
   else if (kind === 'order') openWith('orderList', { globalSearch: ref.orderNumber })
   else if (kind === 'product') openWith('productUpdate', { productId: ref._id })
   else if (kind === 'customer') openWith('customerList', { globalSearch: fullName(ref.firstName, ref.lastName) })

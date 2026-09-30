@@ -9,6 +9,7 @@
       <v-window-item :value="1">
         <EkFormSection title="Bağlantı bilgileri" icon="mdi-key-outline"
           description="Hepsiburada satıcı panelindeki &quot;Entegrasyon&quot; bölümünden alınır.">
+          <template #legend-extra><EkHelpHint hint="integration.credentials.hepsiburada" /></template>
           <v-text-field clearable v-model="editingClientIntegration.settings.storename"
             :label="$t('integrations.storename')" />
           <v-text-field clearable v-model="editingClientIntegration.settings.SELLERID"
@@ -57,6 +58,7 @@
 </template>
 
 <script setup lang="ts">
+import EkHelpHint from '@/components/ds/EkHelpHint.vue'
 import { ref, computed, onMounted } from 'vue'
 import { useStaticsStore } from '@/stores/staticsStore';
 import { useIntegrationStore } from '@/stores/integrationStore';

@@ -4,6 +4,7 @@
         :hint="config.hint" :attach="'.productListView'" :is-confirm-disabled="isConfirmDisabled"
         @confirm="$emit('confirmSelection')" @cancel="$emit('clearForm')" @close="$emit('close')" max-width="1000px">
         <EkFormSection v-if="mode !== 'FETCH_PRODUCT'" title="Kapsam" icon="mdi-target" :columns="1">
+          <template #legend-extra><EkHelpHint hint="bulk.confirm" /></template>
             <div class="bpd-segmented" role="radiogroup" aria-label="İşlem kapsamı">
                 <button v-for="scope in scopes" :key="scope.value" type="button" class="bpd-segmented__item"
                     :class="{ 'is-active': form.scope === scope.value }" role="radio"
@@ -51,6 +52,7 @@
 </template>
 
 <script setup lang="ts">
+import EkHelpHint from '@/components/ds/EkHelpHint.vue'
 import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue'; // Yolun doğruluğunu teyit edin
 import EkFormSection from '@/components/ds/EkFormSection.vue';
 import PlatformChoiceChip from '@/components/platforms/PlatformChoiceChip.vue';

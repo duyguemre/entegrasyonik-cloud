@@ -50,11 +50,13 @@
       <!-- Pazaryeri özellik değerleri alınamadı / boş geldi: eşleştirme alanı yerine anlaşılır durum (useIntegrationError). -->
       <EkFormSection v-if="choice && valuesError && !computedAllowCustom" title="Değer eşleştirme" icon="mdi-link-variant"
         :columns="1">
+        <template #legend-extra><EkHelpHint hint="mapping.attribute" /></template>
         <IntegrationErrorPanel :info="valuesError" :retrying="valuesLoading" @retry="emits('retryValues')" />
       </EkFormSection>
 
       <EkFormSection v-else-if="choice" title="Değer eşleştirme" icon="mdi-link-variant" :columns="3"
         :description="`${integrationStore.getIntegrationTitle(integrationCode)} değerleri Entegrasyonik değerleriyle eşleştirilir.`">
+        <template #legend-extra><EkHelpHint hint="mapping.attribute" /></template>
         <template v-for="choiceValue of choice?.values" :key="choiceValue._id">
           <v-text-field v-if="computedAllowCustom" v-model="mapping[choiceValue._id]" :label="choiceValue.title" />
           <v-autocomplete v-else item-value="id" item-title="title" :label="choiceValue.title"
@@ -83,6 +85,7 @@
 </template>
 
 <script setup lang="ts">
+import EkHelpHint from '@/components/ds/EkHelpHint.vue'
 import { ref, computed, watch, onActivated, nextTick } from 'vue'
 import EkDialogCard from '@/components/ds/EkDialogCard.vue'
 import EkFormSection from '@/components/ds/EkFormSection.vue'

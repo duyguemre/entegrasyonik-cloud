@@ -32,6 +32,7 @@ import {
   resolveScreenPath,
   screenKeyForLink,
 } from '@/navigation/screens'
+import { HELP_SCREEN_KEY, helpCenterLink } from '@/help/helpLink'
 
 const PERSIST_VERSION = 1
 
@@ -336,6 +337,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
   /** `menuStore` ağacında `screens.ts` anahtarıyla eşleşen menü düğümünü bulur (kod+parent birleşimiyle — `menuStore.getMenuLinkWithCode` yalnızca `code` alanına bakar, bileşik anahtarı ÇÖZEMEZ). */
   function findLinkByScreenKey(key: string): any {
+    // Yardım merkezi menü ağacında değildir (statik içerik, herkese açık) — istemci bağlantısı (`help/helpLink.ts`).
+    if (key === HELP_SCREEN_KEY) return helpCenterLink(menuStore)
     const menu = menuStore.getMenu()
     if (!Array.isArray(menu)) return undefined // menü hiç yüklenmedi VEYA hata gövdesi döndü (dizi DEĞİL) — bkz. resolveActiveFromRoute.
     const search = (links: any[]): any => {

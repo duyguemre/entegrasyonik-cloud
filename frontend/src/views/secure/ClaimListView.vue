@@ -17,7 +17,9 @@
 
     <EkFormDialog v-model="actionDialog.show" title="İade/talep reddi" :loading="actionDialog.loading" @submit="handleRejectConfirm(confirmDialog)" @cancel="actionDialog.show = false">
       <v-select v-model="actionDialog.selectedReason" :items="actionDialog.reasons" item-title="title" item-value="id"
-        label="Red gerekçesi" return-object prepend-inner-icon="mdi-comment-question-outline" />
+        label="Red gerekçesi" return-object prepend-inner-icon="mdi-comment-question-outline">
+        <template #append><EkHelpHint hint="claim.decision" /></template>
+      </v-select>
     </EkFormDialog>
 
     <EkListScreen channel-key="integrationCode"
@@ -63,6 +65,8 @@
       @apply-view="applySavedView"
       @refresh="getClaims(true)"
     >
+      <!-- faz3-fe-help: ilk kullanım — hiç kayıt yokken "Nasıl başlanır?" (filtreli boş sonuçta gösterilmez). -->
+      <template #empty-action><HelpStartLink article="ord-returns" /></template>
       <template #filters>
         <EkSelect kind="channel" v-model="searchClaimForm.data.integrationCodes" :items="channelOptionsFrom(integrationStore.getClientPlatforms())" label="Kanal" multiple clearable />
         <EkSelect v-model="searchClaimForm.data.internalStatuses" kind="status" :items="toneOptionsFrom(statusOptions, (id) => CLAIM_STATUS_TONE[id as ClaimInternalStatusEnum]?.tone)" item-title="title"
@@ -102,6 +106,8 @@
 </template>
 
 <script setup lang="ts">
+import HelpStartLink from '@/components/help/HelpStartLink.vue'
+import EkHelpHint from '@/components/ds/EkHelpHint.vue'
 import EkSelect from '@/components/ds/EkSelect.vue'
 import { channelOptionsFrom, toneOptionsFrom } from '@/components/ds/selectOptions'
 import { problemFromError, type ProblemCopy } from '@/composables/useProblem'

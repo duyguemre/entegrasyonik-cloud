@@ -20,6 +20,8 @@
     <legend v-if="title" class="ek-form-section__legend">
       <v-icon v-if="icon" :icon="icon" class="ek-form-section__icon" aria-hidden="true" />
       <span>{{ title }}</span>
+      <!-- Bağlamsal yardım (faz3-fe-help): başlığın yanında (?) — `EkHelpHint`. -->
+      <slot name="legend-extra" />
     </legend>
     <p v-if="description" class="ek-form-section__help">{{ description }}</p>
     <EkFormGrid :columns="columns" class="ek-form-section__grid">

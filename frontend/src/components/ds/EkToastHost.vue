@@ -5,7 +5,7 @@
   çalışma alanı sekmesinin DIŞINDA). `useToast()` durumunu çizer; eski snackbar çağrıları da buraya düşer.
   Görünüm: yüzey kart + 3px ton şeridi + ton ikon kapsülü · [başlık] ileti · [eylem] · × · alt kenarda süre çizgisi.
   Tonlar EkAlert/EkProblemState ile AYNI (info/success/warning/error). Üzerine gelince/odakta süre durur.
-  Konum: sağ alt (mobilde alt, tam genişlik). Erişilebilirlik: kap `aria-live=polite`; hata toast'ı `role=alert`.
+  Konum: sağ alt (telefonda üst kenar, tam genişlik — içerik düğmelerini örtmez). Erişilebilirlik: kap `aria-live=polite`; hata toast'ı `role=alert`.
   Hareket: opaklık + 8px kayma (`--ek-duration-base`); `prefers-reduced-motion` → yok.
 -->
 <template>
@@ -89,13 +89,17 @@ function onAction(toast: Toast) {
   pointer-events: none;
 }
 
+/* Telefonda üst kenarda (üst barın üzerinde): içerikteki eylem düğmelerini ve alt sayfalamayı ÖRTMEZ
+   (kalıcı hata toast'ı alttaki düğmeye dokunmayı engelliyordu). */
 @media (max-width: 599px) {
   .ek-toast-host {
+    top: var(--ek-space-2);
     right: var(--ek-space-3);
     left: var(--ek-space-3);
-    bottom: var(--ek-space-3);
+    bottom: auto;
     width: auto;
     max-width: none;
+    flex-direction: column-reverse;
   }
 }
 
@@ -222,6 +226,13 @@ function onAction(toast: Toast) {
 .ek-toast-leave-to {
   opacity: 0;
   transform: translateY(var(--ek-motion-distance-md, 8px));
+}
+
+@media (max-width: 599px) {
+  .ek-toast-enter-from,
+  .ek-toast-leave-to {
+    transform: translateY(calc(-1 * var(--ek-motion-distance-md, 8px)));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

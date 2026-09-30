@@ -25,7 +25,7 @@
     <div class="ek-loading-overlay__card">
       <EkBrandLoader :label="label" :size="44" />
       <div v-if="progress !== undefined" class="ek-loading-overlay__progress" role="progressbar" :aria-valuenow="Math.round(progress)" aria-valuemin="0" aria-valuemax="100" :aria-label="label">
-        <v-progress-linear :model-value="progress" height="4" rounded color="primary" bg-color="surface-sunken" bg-opacity="1" />
+        <v-progress-linear :model-value="progress" height="4" rounded color="primary" bg-color="surface-sunken" bg-opacity="1" aria-hidden="true" />
         <span class="ek-loading-overlay__pct ek-num">%{{ Math.round(progress) }}</span>
       </div>
       <p v-if="hint" class="ek-loading-overlay__hint">{{ hint }}</p>

@@ -9,7 +9,12 @@
 <template>
   <section class="ek-settings-section">
     <div class="ek-settings-section__intro">
-      <h2 class="ek-settings-section__title">{{ title }}</h2>
+      <!-- Bağlamsal yardım (faz3-fe-help): başlığın yanında (?) — başlığın erişilebilir adına karışmaz (kardeş öğe). -->
+      <div v-if="$slots['title-extra']" class="ek-settings-section__title-row">
+        <h2 class="ek-settings-section__title">{{ title }}</h2>
+        <slot name="title-extra" />
+      </div>
+      <h2 v-else class="ek-settings-section__title">{{ title }}</h2>
       <p v-if="description" class="ek-settings-section__description">{{ description }}</p>
     </div>
     <div class="ek-settings-section__fields">
@@ -78,5 +83,10 @@ defineProps<{
    yüksekliğine UZUYORDU (tek seçim alanı ~88px). Alanlar kendi yüksekliğinde kalır. */
 .ek-settings-section__fields > :deep(*) {
   flex: 0 0 auto;
+}
+.ek-settings-section__title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-1);
 }
 </style>

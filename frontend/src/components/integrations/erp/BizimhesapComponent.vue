@@ -9,6 +9,7 @@
       <v-window-item :value="1">
         <EkFormSection title="Bağlantı bilgileri" icon="mdi-key-outline"
           description="Bizimhesap panelindeki API erişim bilgilerinden alınır.">
+          <template #legend-extra><EkHelpHint hint="integration.credentials.bizimhesap" /></template>
           <v-text-field clearable v-model="editingClientIntegration.settings.key" label="Bizimhesap ID" />
           <v-text-field clearable v-model="editingClientIntegration.settings.secret" label="Api Key" />
           <v-switch class="ek-span-full" hide-details color="primary"
@@ -47,6 +48,7 @@
 </template>
 
 <script setup lang="ts">
+import EkHelpHint from '@/components/ds/EkHelpHint.vue'
 import { ref, onBeforeMount } from 'vue'
 import { useStaticsStore } from '@/stores/staticsStore'
 import { useIntegrationStore } from '@/stores/integrationStore'

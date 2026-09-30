@@ -493,3 +493,34 @@ araç `A8_REVIEW=1 A8_REVIEW_WIDTH=1440|390 A8_REVIEW_SCALE=1|2 A8_REVIEW_OUT=<k
 
 **Testler:** `tests/a8-filter-refresh-icons.test.ts` (filtre başlığı sayı/özet/sığma/aria + tek bileşen bekçisi + e2e ad sözleşmesi; yenile 4 durum + göreli zaman; ikon karışımı 0, eşleme hedefleri `@mdi/font`'ta, üst bar standardı). e2e ad sözleşmeleri değişmedi (grup "Aktif filtreler", "<Etiket> filtresini kaldır", "Tümünü temizle", başlık düğmesi `/Filtreler/`). Token değişikliği YOK.
 **Açık (kapsam dışı, not):** `EkSelect` çoklu seçimde çipler alan sınırından taşıyor (sipariş filtresi "Sipariş durumu", tabanda da var — `f4-filtre-etkin-acik`).
+
+
+## 19. Yardım merkezi ve bağlamsal yardım (`cloud/fe-help`)
+
+**İçerik tek kayıtta, veri dosyalarında** (`src/help/`, SAF TS): yalnız uygulamada gerçekten var olan özellik anlatılır (her kaydın
+üstünde `// Kanıt:` — kod + `backend/src/capabilities/**`); olmayan özellik, rakip adı, uydurma sayı yok. Test korur (`tests/help-content.test.ts`).
+
+| Parça | Dosya | Kural |
+|---|---|---|
+| Makaleler | `help/content/tr/articles.ts` (41, TR tam) · `help/content/en/articles.ts` (başlık + özet; Başlarken gövdeleri) | 11 kategori (`help/categories.ts`); EN gövdesi yoksa TR gövde + "yalnız Türkçe" notu |
+| Otomatik bloklar | `help/autoBlocks.ts` | kısayol tablosu ← `navigation/shortcuts.ts`; entegrasyon hata tablosu ← `useIntegrationError` sınıflandırıcısı; kanal rehberi ← `help/channels.ts` (site `connect.ts` ile eş — test) |
+| Sayfa yardımı | `help/pageHelp.ts` | `stores/site/menu.ts` views anahtarı → amaç, 3–5 ipucu, ilgili kısayollar, makale; HER ekran için dolu (test) |
+| Alan ipuçları | `help/hints.ts` + `EkHelpHint` | kimlik → başlık/metin/makale; kayıttaki her ipucu bir ekranda kullanılır (test) |
+| Arama | `help/search.ts` | Türkçe katlama (karakter başına 1:1 → vurgu kaymaz), VE eşleşmesi, başlık > anahtar sözcük > özet > gövde; `<mark>` (v-html yok) |
+
+**Yüzeyler:** Yardım merkezi (`/help`, `?article=` / `?category=` adres kaynağı → tarayıcı geri/ileri) — ana sayfa (arama, Başlarken yolu,
+8 konu kartı, SSS hızlı yanıtlar + destek), kategori, arama (sonuç sayısı canlı bölge, ↓ ile sonuçlara, Enter ilk sonuç), makale (sol konu
+ağacı; dar ekranda "Tüm konular"; "Buraya git" menüde varsa sekmeyi açar, yoksa kilitli açıklama — yetki aşımı yok; "Faydalı mıydı?" yalnız
+yerel `ek.help.v1.feedback`; ilgili makaleler; destek diyaloğu = mevcut `TicketCreateDialog`). Girişler: sol menü "Yardım" bölümü (istemci
+bağlantısı `help/helpLink.ts`, favori yıldızı yok), üst bar (?) menüsü (dar ekranda hesap menüsü), Ctrl+K "Yardım makaleleri" (tembel yükleme).
+
+**Bağlamsal:** `EkPageBar` (i) paneli içeriği sekme kodundan kayda bakar (+ "Yardım merkezinde oku"); `EkHelpHint` (?) toggletip
+(24px hedef, `aria-expanded`/`aria-controls`, `role=dialog`, Esc → odak düğmeye); yerleşim yuvaları `EkFormSection #legend-extra`,
+`EkSettingsSection #title-extra` (başlığın kardeşi — erişilebilir ada karışmaz); boş listede `HelpStartLink` ("Nasıl başlanır?",
+`EkListScreen #empty-action`, filtreli boşta yok). **Tur** (`HelpTour`, `help/tour.ts`): ilk girişte sağ altta engellemeyen teklif;
+perde `scrim-veil` + odak halkası; ←/→, Esc, odak kartta; tercih `ek.help.v1.tour`; Yardım menüsünden yeniden başlar; görünmeyen adım atlanır.
+e2e'de teklif varsayılan kapalı (`mockApi` init betiği; turu sınayan spec açar).
+
+**Testler:** `tests/help-content.test.ts`, `tests/help-search.test.ts`, `e2e/specs/help-center.spec.ts` (3 viewport, axe AA = 0).
+**İnceleme:** `HELP_REVIEW=1 HELP_REVIEW_WIDTH=1440|390 npx playwright test e2e/specs/help-center.spec.ts -g inceleme --project=chromium-desktop`
+→ `docs/help-review/` (Linux Chromium; görsel onay yerelde).

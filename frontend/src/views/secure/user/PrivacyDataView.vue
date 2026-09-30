@@ -22,6 +22,7 @@
   <div class="privacyDataView">
     <EkSettingsTemplate section="Hesap" :title="$t('privacyData.title')" :description="$t('privacyData.description')">
       <EkSettingsSection :title="$t('privacyData.export.title')" :description="$t('privacyData.export.description')">
+        <template #title-extra><EkHelpHint hint="privacy.export" /></template>
         <ul class="privacyDataView__facts">
           <li v-for="fact in facts" :key="fact.key" class="privacyDataView__fact">
             <v-icon size="18" aria-hidden="true">{{ fact.icon }}</v-icon>
@@ -83,6 +84,7 @@
         :description="$t('privacyData.deletion.description')"
         class="privacyDataView__deletion"
       >
+        <template #title-extra><EkHelpHint hint="privacy.delete" /></template>
         <AccountDeletionPanel :store-name="storeName" />
       </EkSettingsSection>
 
@@ -103,6 +105,7 @@
 </template>
 
 <script setup lang="ts">
+import EkHelpHint from '@/components/ds/EkHelpHint.vue'
 import { computed, ref } from 'vue'
 import EkSettingsTemplate from '@/components/ds/templates/EkSettingsTemplate.vue'
 import EkSettingsSection from '@/components/ds/templates/EkSettingsSection.vue'
