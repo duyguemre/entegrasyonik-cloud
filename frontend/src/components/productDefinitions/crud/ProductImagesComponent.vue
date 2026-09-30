@@ -30,7 +30,7 @@
           <template #start>
             <span class="pig-bar__hint">
               <v-icon icon="mdi-gesture-tap-hold" aria-hidden="true" />
-              <span class="pig-wide">Sürükleyerek sıralayın — </span>ilk görsel <strong>kapak</strong> olur
+              <span><span class="pig-wide">Sürükleyerek sıralayın — </span>ilk görsel <strong>kapak</strong> olur</span>
             </span>
           </template>
           <template #end>
@@ -106,6 +106,7 @@
               <span class="pig-tile__spacer" />
               <button type="button" class="pig-handle" :aria-label="`Görsel ${i + 1} sırasını değiştir`" aria-roledescription="sıralama tutamağı"
                 :aria-pressed="grabbed === img._id" aria-describedby="pig-kbd-help" :data-handle="img._id"
+                :data-ek-esc-local="grabbed === img._id ? '' : undefined"
                 @keydown="onHandleKey($event, img._id)" @blur="onHandleBlur(img._id)">
                 <v-icon icon="mdi-drag" aria-hidden="true" />
               </button>
@@ -123,14 +124,14 @@
               <span v-else class="pig-badge pig-badge--pos ek-num" aria-hidden="true">{{ i + 1 }}</span>
               <span class="pig-tile__meta">
                 <EkTooltip v-if="qualityOf(img).length" :text="qualityOf(img).map((h) => h.text).join(' ')">
-                  <span class="pig-badge" :class="`pig-badge--${worstLevel(qualityOf(img))}`" tabindex="0"
+                  <span class="pig-badge" :class="`pig-badge--${worstLevel(qualityOf(img))}`" tabindex="0" role="img"
                     :aria-label="qualityOf(img).map((h) => h.short).join(', ')">
                     <v-icon :icon="worstLevel(qualityOf(img)) === 'warning' ? 'mdi-alert-outline' : 'mdi-information-outline'" aria-hidden="true" />
                     <span v-if="i === 0" class="pig-badge__txt">{{ qualityOf(img)[0].short }}</span>
                   </span>
                 </EkTooltip>
                 <EkTooltip v-if="hasVariants" :text="usageCount(img._id) ? `${usageCount(img._id)} varyantta kullanılıyor` : 'Hiçbir varyanta atanmadı'">
-                  <span class="pig-badge pig-badge--usage ek-num" :class="{ 'is-zero': !usageCount(img._id) }" tabindex="0"
+                  <span class="pig-badge pig-badge--usage ek-num" :class="{ 'is-zero': !usageCount(img._id) }" tabindex="0" role="img"
                     :aria-label="usageCount(img._id) ? `${usageCount(img._id)} varyantta kullanılıyor` : 'Hiçbir varyanta atanmadı'">
                     <v-icon icon="mdi-palette-swatch-outline" aria-hidden="true" />{{ usageCount(img._id) }}
                   </span>

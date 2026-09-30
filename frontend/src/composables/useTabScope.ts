@@ -113,6 +113,8 @@ export function useTabOverlay(opts: TabOverlayOptions): TabOverlay {
 
   function onKeydown(e: KeyboardEvent) {
     if (e.key !== 'Escape' || e.defaultPrevented || !scope!.active.value) return
+    // Faz 3 B2: Esc'yi kendisi kullanan yerel etkileşim (ör. klavyeyle sürükleme sırasında "vazgeç") örtüyü kapatmaz.
+    if ((e.target as Element | null)?.closest?.('[data-ek-esc-local]')) return
     const c = content()
     const target = e.target as Node | null
     // Yalnız odak bu örtünün içindeyse ya da odak sekmenin içerik alanındaysa (örtü en üstteyken).

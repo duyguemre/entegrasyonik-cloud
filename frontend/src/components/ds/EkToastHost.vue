@@ -80,7 +80,9 @@ function onAction(toast: Toast) {
   position: fixed;
   right: var(--ek-space-6);
   bottom: var(--ek-space-6);
-  z-index: var(--ek-z-toast);
+  /* Faz 3 B2: Vuetify örtü yığını her açık örtüde z-index'i artırır (sekme kapsamlı diyalogda 2400'e ulaştı →
+     --ek-z-toast ile eşit, DOM'da sonra gelen diyalog "Geri al"ı örtüyordu). Toast her örtünün üstünde kalmalı. */
+  z-index: calc(var(--ek-z-toast) + var(--ek-z-overlay));
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-2);
