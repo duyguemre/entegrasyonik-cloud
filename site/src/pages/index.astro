@@ -15,6 +15,8 @@
  * hemen sonraya alınmıştır (Nasıl-çalışır ve Güvenlik ikisi de --site-glass-* / stage'e derinden bağlı olduğundan
  * tonlarını değiştirmek yerine ARALARINA açık bir bölüm --Fiyat-- girmesi tercih edildi).
  *
+ * S24 (kullanıcı madde 5): Hero + fayda şeridi + kayan şerit TEK koyu sahnede (`.stage-top` ortak zemini) — şerit artık
+ * hero'nun altına "sonradan yerleştirilmiş" ayrı bir bant değil; hero'nun alt kenarında ince, kompakt bir güven rayıdır.
  * Hero'da ürün paneli (S15: "Örnek görünüm" rozeti kaldırıldı), kanıt şeridi + kayan entegrasyon şeridi, bento yetenekler (beş
  * animasyonlu UI parçası), "Bir sipariş geldiğinde ne olur" zaman çizgisi, yapışkan "nasıl çalışır", güvenlik
  * istek yolu. Animasyon sahneleri `data-scene="…"` ile (src/styles/scenes.css + scenes-loops.css +
@@ -36,8 +38,10 @@ import AssistantTeaser from '../components/home/AssistantTeaser.astro'
 ---
 
 <BaseLayout scenes>
-  <Hero />
-  <Proof />
+  <div class="stage-top">
+    <Hero />
+    <Proof />
+  </div>
   <ProblemSolution />
   <OrderStory />
   <Capabilities />
@@ -53,3 +57,12 @@ import AssistantTeaser from '../components/home/AssistantTeaser.astro'
 <script>
   import '../scripts/interactions'
 </script>
+
+<style>
+  /* S24: hero ve fayda şeridi aynı zemini paylaşır (iki bölüm arasında renk/ışıma kesiti yok). */
+  .stage-top {
+    position: relative;
+    isolation: isolate;
+    background: var(--site-stage-mesh);
+  }
+</style>

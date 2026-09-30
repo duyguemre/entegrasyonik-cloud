@@ -3,8 +3,9 @@
  * Hareket durdurma kontrolü (WCAG 2.2.2 — 5 sn'den uzun süren otomatik hareket için durdur/oynat).
  * - Yalnızca animasyon sahnesi olan sayfalarda, Header içinde (klavye sırasında `main`'den ÖNCE) render edilir.
  * - Erişilebilir ad sabit ("Hareketi durdur"); durum `aria-pressed` ile bildirilir (basılı = hareket durdu).
- *   Görünür etiket ("Hareket") adın içinde geçer (WCAG 2.5.3) ve yalnızca geniş üstlükte gösterilir; dar alanda yalnızca simge.
- * - S7: header'a SIĞAR — 320–1440 px arasında taşmaz (kontrol simge boyutunda, etiket >= 90rem'de eklenir).
+ *   S24 (kullanıcı madde 8: üst bar sadeliği): her genişlikte YALNIZCA SİMGE — görünür etiket yok (ad ekran okuyucuda
+ *   ve `title` ipucunda); çerçevesiz, sakin bir düğme. Etiket öğesi erişilebilirlik ağacından gizli olarak kalır.
+ * - S7: header'a SIĞAR — 320–1440 px arasında taşmaz.
  * - Davranış src/scripts/scenes.ts'te: tercih localStorage'da (çerez YOK); JS yoksa kontrol gizlidir (hareket de yoktur).
  * - `prefers-reduced-motion: reduce` altında hareket zaten kapalıdır → kontrol gösterilmez.
  * - Dokunma hedefi >= 44 px; odak halkası global :focus-visible; yalnızca renk geçişi (200 ms).
@@ -37,10 +38,10 @@
     min-height: var(--site-tap-target);
     margin-inline-start: auto;
     padding: var(--ek-space-2);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border: var(--site-border-width) solid transparent;
     border-radius: var(--ek-radius-full);
-    background: var(--ek-color-surface);
-    color: var(--ek-color-primary);
+    background: transparent;
+    color: var(--ek-color-content-muted);
     font-family: inherit;
     font-size: var(--ek-font-size-md);
     font-weight: var(--ek-font-weight-semibold);
@@ -53,7 +54,7 @@
   }
   .motion-toggle:hover {
     background: var(--ek-color-surface-sunken);
-    border-color: var(--ek-color-border-strong);
+    color: var(--ek-color-primary);
   }
   .motion-toggle[aria-pressed='true'] {
     background: var(--ek-color-surface-sunken);
@@ -90,16 +91,8 @@
     display: block;
   }
 
-  /* Dar ekranda yalnızca simge (ad ekran okuyucuya ve title ipucunda); geniş ekranda kısa etiket. */
+  /* S24: her genişlikte yalnızca simge (ad ekran okuyucuya ve title ipucunda). */
   .motion-toggle__label {
     display: none;
-  }
-  @media (min-width: 90rem) {
-    .motion-toggle {
-      padding-inline: var(--ek-space-3);
-    }
-    .motion-toggle__label {
-      display: inline;
-    }
   }
 </style>

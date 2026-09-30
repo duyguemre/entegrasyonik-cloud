@@ -71,7 +71,7 @@ test.describe('gezinme', () => {
       ['Ürün', 'Güvenlik'],
       ['Kaynaklar', 'SSS'],
       ['Kaynaklar', 'İletişim'],
-      [null, 'Fiyatlandırma'],
+      [null, 'Fiyatlar'],
     ] as const) {
       await expect(await revealNavLink(page, group, label), `${group} → ${label}`).toBeVisible()
     }

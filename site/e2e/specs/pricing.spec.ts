@@ -122,10 +122,10 @@ test.describe('Fiyatlandırma', () => {
   test('üst gezinmede "Fiyatlandırma" yayımlanmış ve çalışır', async ({ page }) => {
     await page.goto('/fiyatlandirma')
     if (isDesktop(page)) {
-      await expect(page.getByRole('navigation', { name: 'Ana gezinme' }).first().getByRole('link', { name: 'Fiyatlandırma' })).toBeVisible()
+      await expect(page.getByRole('navigation', { name: 'Ana gezinme' }).first().getByRole('link', { name: 'Fiyatlar', exact: true })).toBeVisible()
     } else {
       await page.getByTestId('menu-toggle').click()
-      await expect(page.locator('.nav-mobile__panel').getByRole('link', { name: 'Fiyatlandırma' })).toBeVisible()
+      await expect(page.locator('.nav-mobile__panel').getByRole('link', { name: 'Fiyatlar', exact: true })).toBeVisible()
     }
   })
 

@@ -5,7 +5,7 @@
  */
 import { AGENT_BRAND, AGENT_PATH } from './agent-brand'
 /**
- * S23 (SR2-NAV): üst bar gruplanmış menüdür — Ürün / Çözümler / Kaynaklar açılır paneldir, Fiyatlandırma doğrudan
+ * S23 (SR2-NAV): üst bar gruplanmış menüdür — Ürün / Çözümler / Kaynaklar açılır paneldir, Fiyatlar doğrudan
  * bağlantıdır. Grup kimliği ve başlığı `navGroups`'ta; her öğe `group` ile bağlanır. `primaryNav` DÜZ liste olarak
  * kalır (yayım bayrağı, kırık bağlantı ve rozet testleri bu listeyi okur); header ve footer grupları buradan türetir.
  */
@@ -23,6 +23,8 @@ export interface NavItem {
   description?: string
   /** Paneldeki ikon adı (`components/home/Icon.astro`). */
   icon?: NavIcon
+  /** S24: masaüstü açılır panelinde öne çıkan kart olarak gösterilir (grup başına en fazla bir; çekmece/footer'da normal bağlantı). */
+  feature?: boolean
 }
 
 export type NavIcon = 'layers' | 'plug' | 'sparkle' | 'shield' | 'book' | 'help' | 'chat' | 'mail' | 'stock' | 'orders' | 'returns'
@@ -43,9 +45,9 @@ export const navGroups: NavGroup[] = [
 export const primaryNav: NavItem[] = [
   { label: 'Özellikler', href: '/ozellikler', published: true, group: 'product', icon: 'layers', description: 'Stok, sipariş, iade ve mesajlar tek panelde' }, // S2b
   { label: 'Entegrasyonlar', href: '/entegrasyonlar', published: true, group: 'product', icon: 'plug', description: 'Bağlanabilen kanallar ve kapsamları' }, // S2b
-  { label: AGENT_BRAND, href: AGENT_PATH, published: true, badge: 'Yeni', group: 'product', icon: 'sparkle' }, // S18 → S22: etiket ve hedef ad sabitinden (src/data/agent-brand.ts)
+  { label: AGENT_BRAND, href: AGENT_PATH, published: true, badge: 'Yeni', group: 'product', icon: 'sparkle', description: 'Operasyon ajanları', feature: true }, // S18 → S22: etiket ve hedef ad sabitinden (src/data/agent-brand.ts); S24: Ürün panelinde öne çıkan kart
   { label: 'Güvenlik', href: '/guvenlik', published: true, group: 'product', icon: 'shield', description: 'Verinizi ve anahtarlarınızı nasıl koruyoruz' }, // S2b
-  { label: 'Fiyatlandırma', href: '/fiyatlandirma', published: true }, // S4b — üst barda doğrudan bağlantı
+  { label: 'Fiyatlar', href: '/fiyatlandirma', published: true }, // S4b — üst barda doğrudan bağlantı (S24: kısa etiket "Fiyatlar")
   { label: 'Rehber', href: '/rehber', published: true, group: 'resources', icon: 'book', description: 'Pazaryeri, mevzuat ve operasyon rehberleri' }, // S20 (bilgi merkezi — src/data/kb/**)
   { label: 'SSS', href: '/sss', published: true, group: 'resources', icon: 'help', description: 'Sık sorulan sorular' }, // S2b
   { label: 'Destek', href: '/destek', published: true, group: 'resources', icon: 'chat', description: 'Kurulum ve kanal bağlantı yardımı' }, // S14

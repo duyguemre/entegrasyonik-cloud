@@ -293,8 +293,8 @@ describe('durdurma kontrolü ve yürütücü (WCAG 2.2.2)', () => {
     expect(toggle).toMatch(/prefers-reduced-motion:\s*reduce\)\s*\{\s*\.motion-toggle\s*\{\s*display:\s*none/)
   })
 
-  it('kontrol header\'a SIĞAR: simge boyutunda; kısa etiket yalnızca >= 90rem\'de; etiket erişilebilir adın içinde geçer', () => {
-    expect(toggle).toMatch(/@media \(min-width: 90rem\)[\s\S]*motion-toggle__label\s*\{\s*display:\s*inline/)
+  it('kontrol header\'a SIĞAR: S24\'ten beri her genişlikte yalnızca simge (görünür etiket yok); ad sabit', () => {
+    expect(toggle).not.toMatch(/motion-toggle__label\s*\{\s*display:\s*inline/)
     expect(toggle).toMatch(/\.motion-toggle__label\s*\{\s*display:\s*none/)
     expect(toggle).not.toMatch(/margin-inline-start:\s*auto[\s\S]*flex:\s*1/)
     // görünür etiket ("Hareket") erişilebilir adın ("Hareketi durdur") içinde geçer (WCAG 2.5.3)

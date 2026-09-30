@@ -41,13 +41,8 @@ const channels = getPublicIntegrations().map((c) => ({ code: c.code }))
 const marketplaces = getPublicIntegrations('marketplace')
 const storefront = getPublicIntegrations('ecommerce')[0]
 
-// Üst seviye faydalar — her biri kanıtlı bir yetenek kaydına dayanır (capabilities.ts); kayıt yoksa gösterilmez.
+// S24: üst seviye faydalar hero'da ayrı liste olarak TEKRARLANMAZ — fayda rayı (Proof.astro) hero'nun alt kenarındadır.
 const capIds = new Set(getPublicCapabilities().map((c) => c.id))
-const benefits = [
-  { icon: 'stock' as const, label: 'Merkezi stok yönetimi', requires: ['stock-reservation', 'multi-channel-products'] },
-  { icon: 'orders' as const, label: 'Tüm siparişler tek ekranda', requires: ['unified-orders'] },
-  { icon: 'shield' as const, label: 'Kurumsal düzeyde güvenlik', requires: ['secrets-encryption', 'tenant-database', 'role-based-access'] },
-].filter((b) => b.requires.every((id) => capIds.has(id)))
 
 // Show sahneleri: her biri bir yetenek kaydına dayanır. Zamanlama 4 sahneye göre kuruludur (scenes-loops.css) →
 // kayıt eksikse sahneyi sessizce düşürmek yerine derleme durur (kanıtsız gösterim yok, zamanlama bozulmaz).
@@ -116,18 +111,6 @@ const secureItems = [
         <Button href="#nasil-calisir" variant="inverse-outline" size="lg" data-testid="hero-cta-secondary">Nasıl çalışır</Button>
       </div>
       <p class="hero__note">{trial.days} gün ücretsiz deneme{!trial.cardRequired && ', kart bilgisi gerekmez'}.</p>
-      <ul class="hero__trust" aria-label="Öne çıkan faydalar" data-testid="hero-benefits">
-        {
-          benefits.map((b) => (
-            <li>
-              <span class="hero__trust-icon" aria-hidden="true">
-                <Icon name={b.icon} size="sm" />
-              </span>
-              <span>{b.label}</span>
-            </li>
-          ))
-        }
-      </ul>
     </div>
 
 
@@ -332,8 +315,9 @@ const secureItems = [
     position: relative;
     overflow: hidden;
     isolation: isolate;
-    padding-block: var(--ek-space-12) var(--ek-space-16);
-    background: var(--site-stage-mesh);
+    padding-block: var(--ek-space-12) var(--ek-space-10);
+    /* S24: zemin `index.astro` → `.stage-top` (hero + fayda rayı tek sahne). */
+    background: transparent;
     color: var(--site-text-on-dark-heading);
   }
 
@@ -516,32 +500,6 @@ const secureItems = [
     color: var(--site-text-on-dark-meta);
     font-size: var(--ek-font-size-md);
   }
-  .hero__trust {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ek-space-3) var(--ek-space-6);
-    padding-top: var(--ek-space-5);
-    border-top: var(--site-border-width) solid var(--site-glass-border);
-    color: var(--site-text-on-dark-heading);
-    font-size: var(--ek-font-size-md);
-    font-weight: var(--ek-font-weight-medium);
-  }
-  .hero__trust li {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-  }
-  .hero__trust-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--ek-space-6);
-    height: var(--ek-space-6);
-    border-radius: var(--ek-radius-md);
-    background: color-mix(in srgb, var(--site-accent) 16%, transparent);
-    color: var(--site-accent);
-  }
-
 
   /* --- Show sahnesi (S13): koyu, derinlikli sahne; 4 dönen sahne (döngü: scenes-loops.css) --- */
   /*

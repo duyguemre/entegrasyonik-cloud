@@ -56,9 +56,8 @@ test.describe('MotionToggle header\'a sığar (320–1600 px)', () => {
       })
       expect(overflow.doc, `${width} doküman`).toBeLessThanOrEqual(0)
       expect(overflow.bar, `${width} header`).toBeLessThanOrEqual(0)
-      // geniş üstlükte kısa etiket görünür ve yine sığar
-      if (width >= 1440) await expect(page.locator('.motion-toggle__label')).toBeVisible()
-      else await expect(page.locator('.motion-toggle__label')).toBeHidden()
+      // S24: üst bar sadeliği — her genişlikte yalnızca simge (ad ekran okuyucuda)
+      await expect(page.locator('.motion-toggle__label')).toBeHidden()
     }
   })
 

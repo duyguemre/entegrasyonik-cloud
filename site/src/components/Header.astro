@@ -11,6 +11,9 @@
  *    YOK: Tab panelden çıkınca panel kapanır. JS yoksa panel üzerine gelince / odak içindeyken görünür.
  *  - Mobil/tablet (< 64rem): yerel <details> çekmece (JS'siz çalışır); içinde grup başına akordeon (<details
  *    name>): bulunulan sayfanın grubu açık gelir. Çözümler grubunda kanal rozetleri (ChannelMono) yer alır.
+ * S24 (kullanıcı madde 8: "kalabalık sürüyor" → daha radikal sadelik): üç grup + "Fiyatlar" ORTADA, sağda yalnızca
+ * metin bağlantısı "Giriş" ve tek birincil CTA; ayraç çizgisi kalktı, hareket kontrolü yalnızca simge. Ürün panelinde
+ * Otopilot öne çıkan koyu kart olarak gösterilir (`MenuGroup.feature`; çekmece ve footer'da normal bağlantı).
  * Aktif sayfa: bağlantıda tam eşleşme `aria-current="page"`, alt sayfa `aria-current="true"`; içinde aktif bağlantı
  * olan grup düğmesi `data-active` ile alt çizgi alır (renk tek başına değil — çizgi + kalınlık).
  */
@@ -37,6 +40,8 @@ const currentOf = (href: string): 'page' | 'true' | undefined =>
   here === norm(href) ? 'page' : here.startsWith(`${norm(href)}/`) ? 'true' : undefined
 const groupActive = (links: MenuLink[]) => links.some((l) => currentOf(l.href))
 const descId = (group: string, i: number) => `nav-desc-${group}-${i}`
+/** Masaüstü panelinin ana listesi: öne çıkan kart ayrıca gösterildiği için listeden çıkarılır. */
+const mainLinks = (g: (typeof groups)[number]) => (g.feature ? g.links.filter((l) => l.href !== g.feature!.href) : g.links)
 const loginHref = appUrls.login()
 const registerHref = appUrls.register()
 ---
@@ -65,11 +70,11 @@ const registerHref = appUrls.register()
                   {g.label}
                   <Icon name="chevron" size="sm" />
                 </button>
-                <div class:list={['mega', `mega--${g.id}`, { 'mega--aside': !!g.aside }]} id={`mega-${g.id}`} data-nav-panel>
+                <div class:list={['mega', `mega--${g.id}`, { 'mega--aside': !!g.aside, 'mega--feature': !!g.feature }]} id={`mega-${g.id}`} data-nav-panel>
                   <div class="mega__main">
                     <p class="mega__lead">{g.lead}</p>
                     <ul class="mega__list" role="list">
-                      {g.links.map((l, i) => (
+                      {mainLinks(g).map((l, i) => (
                         <li class="mega-item">
                           {l.icon && (
                             <span class="mega-item__icon">
@@ -86,6 +91,24 @@ const registerHref = appUrls.register()
                       ))}
                     </ul>
                   </div>
+                  {g.feature && (
+                    <div class="mega-feature">
+                      <span class="mega-feature__glow" aria-hidden="true"></span>
+                      <span class="mega-feature__icon" aria-hidden="true">
+                        <Icon name={g.feature.icon ?? 'sparkle'} size="md" />
+                      </span>
+                      {g.feature.description && (
+                        <span class="mega-feature__desc" id={`nav-feature-${g.id}`}>
+                          {g.feature.description}
+                        </span>
+                      )}
+                      <a class="nav-link" href={g.feature.href} aria-current={currentOf(g.feature.href)} aria-describedby={g.feature.description ? `nav-feature-${g.id}` : undefined}>{g.feature.label}{g.feature.badge && <span class="nav-badge" data-testid="nav-badge">{g.feature.badge}</span>}</a>
+                      <span class="mega-feature__cta" aria-hidden="true">
+                        Keşfedin
+                        <Icon name="arrow" size="sm" />
+                      </span>
+                    </div>
+                  )}
                   {g.aside && (
                     <div class="mega__aside">
                       <p class="mega__lead">{g.aside.title}</p>
@@ -134,7 +157,7 @@ const registerHref = appUrls.register()
         )
       }
       <div class="nav-desktop__actions">
-        <Button href={loginHref} variant="ghost" data-testid="login-link">Giriş yap</Button>
+        <a class="nav-link nav-login" href={loginHref} data-testid="login-link" aria-label="Giriş yap">Giriş</a>
         <Button href={registerHref} variant="primary" data-testid="register-link">Ücretsiz dene</Button>
       </div>
     </nav>
@@ -256,7 +279,7 @@ const registerHref = appUrls.register()
     background: transparent;
     color: var(--ek-color-content-default);
     font-family: inherit;
-    font-size: var(--ek-font-size-lg);
+    font-size: var(--ek-font-size-md);
     font-weight: var(--ek-font-weight-medium);
     text-decoration: none;
     white-space: nowrap;
@@ -491,7 +514,7 @@ const registerHref = appUrls.register()
   }
 
   /* ------------------------------------------------------------------ masaüstü (>= 64rem): gruplanmış menü */
-  /* S23: dört üst düzey öğe (3 grup + Fiyatlandırma) + CTA'lar + hareket kontrolü 1024'ten itibaren sığar. */
+  /* S23 → S24: dört üst düzey öğe (3 grup + Fiyatlar) ortada; sağda "Giriş" + tek CTA (+ simge hareket kontrolü). */
   @media (min-width: 64rem) {
     .nav-mobile {
       display: none;
@@ -511,7 +534,8 @@ const registerHref = appUrls.register()
       display: flex;
       align-self: stretch;
       align-items: center;
-      gap: var(--ek-space-1);
+      gap: var(--ek-space-2);
+      margin-inline: auto;
     }
     .nav-group {
       display: flex;
@@ -554,10 +578,11 @@ const registerHref = appUrls.register()
       display: flex;
       flex: none;
       align-items: center;
-      gap: var(--ek-space-2);
-      margin-inline-start: auto;
-      padding-inline-start: var(--ek-space-4);
-      border-inline-start: var(--site-border-width) solid var(--ek-color-border-default);
+      gap: var(--ek-space-3);
+    }
+    .nav-login {
+      font-weight: var(--ek-font-weight-semibold);
+      color: var(--ek-color-content-strong);
     }
 
     /* --- açılır panel --- */
@@ -674,8 +699,102 @@ const registerHref = appUrls.register()
       font-size: var(--ek-font-size-sm);
       line-height: var(--ek-line-height-normal);
     }
-    .mega--product .mega__list {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+    /* S24: öne çıkan kartlı panel (Ürün): solda ikonlu bağlantılar, sağda koyu Otopilot kartı. */
+    .mega--feature {
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+      gap: var(--ek-space-5);
+      width: min(44rem, calc(100vw - 2 * var(--site-gutter)));
+    }
+    .mega-feature {
+      position: relative;
+      isolation: isolate;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--ek-space-2);
+      overflow: hidden;
+      padding: var(--ek-space-5);
+      border-radius: var(--ek-radius-lg);
+      background:
+        radial-gradient(90% 70% at 100% 0%, color-mix(in srgb, var(--ek-color-secondary) 30%, transparent), transparent 70%),
+        linear-gradient(160deg, var(--site-stage-base), var(--site-stage-deep));
+      color: var(--site-text-on-dark-body);
+      transition: transform var(--ek-duration-base) var(--ek-easing-standard);
+    }
+    .mega-feature__glow {
+      position: absolute;
+      inset: auto -30% -40% auto;
+      z-index: -1;
+      width: 70%;
+      aspect-ratio: 1 / 1;
+      border-radius: 50%;
+      background: radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-secondary) 24%, transparent), transparent);
+      pointer-events: none;
+    }
+    .mega-feature__icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: var(--ek-space-10);
+      height: var(--ek-space-10);
+      margin-bottom: var(--ek-space-2);
+      border-radius: var(--ek-radius-md);
+      background: var(--site-gradient-accent-on-dark);
+      color: var(--site-stage-deep);
+    }
+    .mega-feature__desc {
+      order: 2;
+      color: var(--site-text-on-dark-body);
+      font-size: var(--ek-font-size-sm);
+    }
+    .mega-feature .nav-link {
+      order: 1;
+      min-height: 0;
+      padding: 0;
+      background: transparent;
+      color: var(--site-text-on-dark-heading);
+      font-size: var(--ek-font-size-xl);
+      font-weight: var(--ek-font-weight-bold);
+      letter-spacing: -0.01em;
+    }
+    .mega-feature .nav-link:hover {
+      background: transparent;
+      color: var(--site-text-on-dark-heading);
+    }
+    /* Tüm kart tıklanabilir (bağlantının alanı kartı kaplar). */
+    .mega-feature .nav-link::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+    }
+    .mega-feature .nav-link:focus-visible {
+      outline: none;
+    }
+    .mega-feature:has(.nav-link:focus-visible) {
+      outline: var(--site-focus-ring-width) solid var(--site-color-focus-ring);
+      outline-offset: var(--site-focus-ring-offset);
+    }
+    .mega-feature .nav-badge {
+      background: var(--site-gradient-accent-on-dark);
+      color: var(--site-stage-deep);
+    }
+    .mega-feature__cta {
+      order: 3;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--ek-space-1);
+      margin-top: auto;
+      padding-top: var(--ek-space-4);
+      color: var(--site-accent-on-dark);
+      font-size: var(--ek-font-size-sm);
+      font-weight: var(--ek-font-weight-semibold);
+    }
+    .mega-feature:hover .mega-feature__cta :global(.icon) {
+      translate: calc(var(--ek-space-1) * 0.5) 0;
+    }
+    .mega-feature:has(.nav-link[aria-current]) {
+      box-shadow: inset 0 0 0 var(--site-border-width) var(--site-accent-on-dark);
     }
     /* Yan sütunlu panelde ana sütun üst boşluğu yan sütunla hizalı (başlıklar aynı çizgide). */
     .mega--aside .mega__main {
@@ -747,9 +866,6 @@ const registerHref = appUrls.register()
     .nav-link,
     .nav-trigger {
       padding-inline: var(--ek-space-2);
-    }
-    .nav-desktop__actions {
-      padding-inline-start: var(--ek-space-2);
     }
   }
 </style>

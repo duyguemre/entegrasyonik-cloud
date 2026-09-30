@@ -14,6 +14,8 @@ export interface MenuLink {
   description?: string
   icon?: NavIcon
   badge?: string
+  /** S24: masaüstü panelinde öne çıkan kart (bkz. `MenuGroup.feature`). */
+  feature?: boolean
 }
 
 export interface MenuGroup extends NavGroup {
@@ -21,9 +23,14 @@ export interface MenuGroup extends NavGroup {
   links: MenuLink[]
   /** İkincil sütun: başlık + bağlantılar (Çözümler: kanallar; Kaynaklar: rehber kümeleri). */
   aside?: { title: string; links: MenuLink[]; channels?: PublicIntegration[]; more?: MenuLink }
+  /**
+   * S24: masaüstü panelinin öne çıkan kartı (ör. Ürün → Otopilot). Bağlantı `links` içinde DE kalır (mobil çekmece ve
+   * footer tek listeyi okur); masaüstü paneli onu ana listeden çıkarıp kart olarak gösterir.
+   */
+  feature?: MenuLink
 }
 
-const fromNav = (i: NavItem): MenuLink => ({ label: i.label, href: i.href, description: i.description, icon: i.icon, badge: i.badge })
+const fromNav = (i: NavItem): MenuLink => ({ label: i.label, href: i.href, description: i.description, icon: i.icon, badge: i.badge, feature: i.feature })
 
 /** "İhtiyaca göre" çözüm bağlantıları: /ozellikler'deki yetenek kartlarına (çapa) gider. */
 const NEED_CAPABILITIES: { id: string; icon: NavIcon }[] = [
@@ -67,9 +74,9 @@ export function menuGroups(): MenuGroup[] {
         },
       }
     }
-    return { ...g, links: items }
+    return { ...g, links: items, feature: items.find((l) => l.feature) }
   })
 }
 
-/** Üst barda doğrudan bağlantılar (Fiyatlandırma). */
+/** Üst barda doğrudan bağlantılar (Fiyatlar). */
 export const menuDirect = (): MenuLink[] => directNav().map(fromNav)

@@ -362,10 +362,13 @@ describe('içerik kayıttan gelir', () => {
     expect(heroText.toLocaleLowerCase('tr-TR')).not.toMatch(/uygulanan|bugün bağlanabilen/)
   })
 
-  it('hero fayda maddeleri üst seviye ve her biri kanıtlı bir yetenek kaydına dayanır (S12)', () => {
-    const list = html.match(/<ul[^>]*data-testid="hero-benefits"[\s\S]*?<\/ul>/)![0]
-    const items = [...list.matchAll(/<li\b[\s\S]*?<\/li>/g)].map((m) => textOf(m[0]))
-    expect(items).toEqual(['Merkezi stok yönetimi', 'Tüm siparişler tek ekranda', 'Kurumsal düzeyde güvenlik'])
+  it('fayda rayı (S24: hero\'daki ayrı liste yerine hero\'nun alt kenarındaki tek ray) üst seviye ve kayıtlara dayanır', () => {
+    expect(html).not.toContain('data-testid="hero-benefits"')
+    const list = html.match(/<ul[^>]*data-testid="stat-list"[\s\S]*?<\/ul>/)![0]
+    const labels = [...list.matchAll(/<p class="stat__label"[^>]*>([\s\S]*?)<\/p>/g)].map((m) => textOf(m[1]))
+    expect(labels).toEqual(['Tek merkez', 'Eşzamanlı stok', `${getPublicTrial().days} gün ücretsiz`, 'Kurumsal güvenlik'])
+    // hero ve ray tek koyu sahnede (ortak zemin); ray ayrı bir zemin bandı değil
+    expect(html).toMatch(/<div class="stage-top"[^>]*>\s*<section class="hero"[\s\S]*?<\/section>\s*<section class="proof"/)
     const ids = getPublicCapabilities().map((c) => c.id)
     for (const id of ['stock-reservation', 'multi-channel-products', 'unified-orders', 'secrets-encryption', 'tenant-database', 'role-based-access']) {
       expect(ids, id).toContain(id)
