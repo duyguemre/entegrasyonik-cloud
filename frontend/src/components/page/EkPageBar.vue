@@ -407,18 +407,6 @@ async function copyRecord() {
   padding-left: 0;
 }
 
-/* Kök: modül ikonu küçük tonlu karoda (menüdeki ikonla aynı glif) — konumu tek bakışta söyler, çip/kenarlık yok. */
-.ek-crumbs__chip--static .ek-crumbs__chip-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: var(--ek-radius-sm);
-  background: var(--ek-color-surface-sunken);
-  color: var(--ek-color-content-default);
-}
-
 /* Kök çip de kısalabilir (en son ara öğelerden sonra): dar satırda metin üç noktaya, en kötü ikon çipine iner —
    başlık ve eylemler üst üste binmez (800px'te arama alanı H1'in üstüne biniyordu). */
 .ek-crumbs__item--root {
