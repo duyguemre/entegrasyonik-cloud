@@ -138,7 +138,7 @@ export const ARTICLES_EN: Record<string, HelpArticleTranslation> = {
   },
   'app-theme': {
     title: 'Light and dark appearance',
-    summary: 'The app currently runs in light appearance only; options you can use to make the screen more comfortable.',
+    summary: 'Use the app in light, dark or your operating system’s appearance.',
   },
   'app-notifications': {
     title: 'Notification center',
