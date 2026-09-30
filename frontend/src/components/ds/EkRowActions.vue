@@ -26,10 +26,9 @@
       @click="item.onClick()"
     />
     <EkContextMenu v-if="menuGroups.length" :groups="menuGroups" :label="label" @select="onSelect">
+      <!-- ⋯ ipucu yok: menü açılınca ipucu menünün üstüne binerdi; ad aria-label'da. -->
       <template #activator="{ props: act }">
-        <EkTooltip :text="label" :open-delay="500">
-          <EkButton v-bind="act" tone="ghost" size="sm" :icon="icons.more" icon-only :aria-label="label" data-action="more" />
-        </EkTooltip>
+        <EkButton v-bind="act" tone="ghost" size="sm" :icon="icons.more" icon-only :aria-label="label" data-action="more" />
       </template>
     </EkContextMenu>
   </div>
@@ -40,7 +39,6 @@ import { computed } from 'vue'
 import EkActionButton from './EkActionButton.vue'
 import EkButton from './EkButton.vue'
 import EkContextMenu from './EkContextMenu.vue'
-import EkTooltip from './EkTooltip.vue'
 import type { EkMenuGroup, EkMenuItem } from './EkMenuPanel.vue'
 import { ACTION_ICONS, icons, type ActionKey } from '@/design/icons'
 
@@ -99,10 +97,11 @@ function onSelect(item: EkMenuItem) {
 </script>
 
 <style scoped>
+/* Sola yaslı: ⋯ olmayan satırda ana eylem (göz) aynı kolonda kalır — satırlar arası hizalı. */
 .ek-row-actions {
   display: inline-flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: var(--ek-space-1);
   white-space: nowrap;
 }
