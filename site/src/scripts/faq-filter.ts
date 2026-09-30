@@ -91,6 +91,14 @@ if (input && searchBox && entries.length > 0) {
     })
   }
 
+  // 404 sayfasındaki arama formu `/sss?q=…` ile gelir: sorgu kutuya yazılıp süzgeç uygulanır.
+  const initial = new URLSearchParams(window.location.search).get('q')?.trim()
+  if (initial) {
+    input.value = initial
+    query = initial
+    apply(true)
+  }
+
   reset?.addEventListener('click', () => {
     input.value = ''
     query = ''
