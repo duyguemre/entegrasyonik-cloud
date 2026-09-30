@@ -3,8 +3,9 @@
 
   DS-v2 Aşama 6b — Standart 9: TEK SAYFA YENİLEME DÜĞMESİ (konum: başlık satırının en sağı — satır düzeni EkPageBar'ın).
   A8 yeniden tasarım (kullanıcı geri bildirimi "pek güzel olmadı"): SAKİN ikon düğmesi —
-  • ghost: çerçeve/gölge/metin yok; 36px kutu (`control-h-md`, başlık eylemleriyle aynı), `radius-control`, 20px glif (üst bar standardı);
-    hover'da yüzey tonu + ince kenar, odakta `focus-ring`.
+  • FR2-SHELL madde 9 (fe-r2a): başlık satırının SAĞ ÜSTÜNDE ikincil düğme dilinde kare kontrol — yüzey zemin, ince
+    kenarlık, kart gölgesi; 36px (`control-h-md`, yanındaki "Yeni …" düğmesiyle aynı yükseklik/yarıçap), 18px glif.
+    Çıplak ikon başlık satırında "yarım kalmış" görünüyordu. Hover'da zemin tonu + koyu kenar, odakta `focus-ring`.
   • 4 durum (`data-state`):
       idle     — `refresh` glifi, `content-muted`;
       loading  — glif yumuşak döner (3 × duration-slow, standart eğri), `action` tonu, `aria-busy`, tekrar tıklanamaz;
@@ -168,18 +169,19 @@ function onClick() {
   min-width: var(--ek-control-h-md);
   height: var(--ek-control-h-md);
   padding: 0;
-  border: 0;
+  border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-control);
-  background: transparent;
-  color: var(--ek-color-content-muted);
+  background: var(--ek-color-surface);
+  box-shadow: var(--ek-shadow-card);
+  color: var(--ek-color-content-default);
   font-family: inherit;
   cursor: pointer;
   transition: var(--ek-transition-colors);
 }
 
 .ek-refresh:hover:not(:disabled) {
-  background: var(--ek-color-surface);
-  box-shadow: inset 0 0 0 1px var(--ek-color-border-default);
+  border-color: var(--ek-color-border-input);
+  background: var(--ek-color-surface-muted);
   color: var(--ek-color-content-strong);
 }
 
@@ -202,12 +204,12 @@ function onClick() {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--ek-icon-lg);
-  height: var(--ek-icon-lg);
+  width: var(--ek-icon-md);
+  height: var(--ek-icon-md);
 }
 
 .ek-refresh__icon {
-  font-size: var(--ek-icon-lg);
+  font-size: var(--ek-icon-md);
 }
 
 .ek-refresh.is-loading {
@@ -220,7 +222,13 @@ function onClick() {
 }
 
 .ek-refresh.is-success {
+  border-color: var(--ek-color-success-border);
+  background: var(--ek-color-success-subtle);
   color: var(--ek-color-success);
+}
+
+.ek-refresh.is-error {
+  border-color: var(--ek-color-error-border);
 }
 
 .ek-refresh__icon--ok {
