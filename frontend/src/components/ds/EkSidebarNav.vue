@@ -1,7 +1,7 @@
 <!--
   frontend/src/components/ds/EkSidebarNav.vue
 
-  DS-v2 — sol menü. Bölüm başlığı (mikro etiket, kimlik laciverti) → öğeler
+  DS-v2 — sol menü. Bölüm (ayırıcı + mikro etiket, öğe renginde — A10) → öğeler
   → alt öğeler. Durumlar: hover (`sidebar-hover`), ETKİN ekran
   (`sidebar-active` zemin + `action-emphasis` metin + solda 3px aksiyon
   göstergesi), açık grup (ok döner, alt öğeler girintili ve dikey kılavuz
@@ -17,10 +17,15 @@
 -->
 <template>
   <nav class="ek-side" :class="{ 'ek-side--collapsed': collapsed }" :aria-label="label">
-    <div v-for="section in sections" :key="section.label" class="ek-side__section">
-      <p v-if="!collapsed && section.label" class="ek-side__section-label">{{ section.label }}</p>
-      <div v-else-if="collapsed" class="ek-side__section-rule" aria-hidden="true"></div>
-      <ul class="ek-side__list">
+    <div
+      v-for="(section, sIndex) in sections"
+      :key="section.label || `s${sIndex}`"
+      class="ek-side__section"
+      :class="{ 'is-first': sIndex === 0, 'has-label': !collapsed && showLabel(section) }"
+    >
+      <div v-if="sIndex > 0" class="ek-side__section-rule" aria-hidden="true"></div>
+      <p v-if="!collapsed && showLabel(section)" :id="`${uid}-s${sIndex}`" class="ek-side__section-label">{{ section.label }}</p>
+      <ul class="ek-side__list" :aria-labelledby="!collapsed && showLabel(section) ? `${uid}-s${sIndex}` : undefined">
         <li
           v-for="item in section.items"
           :key="item.key"
@@ -86,7 +91,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, useId, watch } from 'vue'
 import EkBadge from './EkBadge.vue'
 
 export interface EkSideItem {
@@ -135,6 +140,16 @@ watch(
   { immediate: true },
 )
 
+const uid = `ek-side-${useId()}`
+
+/** Tek öğeli bölümde başlık öğenin adını tekrar ediyorsa (ör. "ENTEGRASYONLAR › Entegrasyonlar") gösterilmez —
+ *  yalnız ayırıcı kalır; tekrar eden etiket gürültüdür ve grubu "ayrı bir şey" gibi gösterir (A10). */
+const norm = (text: string) => text.trim().toLocaleLowerCase('tr')
+function showLabel(section: EkSideSection) {
+  if (!section.label) return false
+  return !(section.items.length === 1 && norm(section.items[0].label) === norm(section.label))
+}
+
 const isOpen = (key: string) => open.value.has(key)
 const isAncestor = (item: EkSideItem) => !!item.children?.some((c) => c.key === props.activeKey)
 const isActive = (item: EkSideItem) => item.key === props.activeKey || (props.collapsed && isAncestor(item))
@@ -153,27 +168,39 @@ function onItem(item: EkSideItem) {
 .ek-side {
   display: flex;
   flex-direction: column;
-  gap: var(--ek-space-4);
   padding: var(--ek-space-3) var(--ek-space-3) var(--ek-space-4);
   background: var(--ek-color-sidebar-bg);
   color: var(--ek-color-sidebar-text);
 }
 
-.ek-side__section-label {
-  margin: 0;
-  padding: 0 var(--ek-space-3) var(--ek-space-2);
-  color: var(--ek-color-sidebar-section);
-  font-size: var(--ek-type-micro-size);
-  line-height: var(--ek-type-micro-line);
-  font-weight: var(--ek-font-weight-bold);
-  letter-spacing: var(--ek-type-micro-tracking);
-  text-transform: uppercase;
+/* A10 — bölüm deseni (seçenek a, öğe rengiyle): bölümü ince AYIRICI + boşluk taşır; başlık mikro etiket (BÜYÜK
+   HARF, harf aralığı, 11px) ama rengi öğelerle AYNI (`sidebar-text`) — gri/lacivert ton "soluk/devre dışı" ya da
+   "başka bir şey" gibi okunuyordu (kullanıcı geri bildirimi). Ayrım renkten değil biçimden gelir: küçük boyut, büyük
+   harf, aralık, ikon sütununa yaslı, üstünde ayırıcı. Katlanabilir başlık (öğe grubu chevron'uyla çakışıyordu) ve
+   başlıksız gruplama (taranabilirlik kaybı) denendi, elendi — docs/a10-review. */
+.ek-side__section + .ek-side__section {
+  margin-top: var(--ek-space-3);
 }
 
 .ek-side__section-rule {
   height: 1px;
-  margin: 0 var(--ek-space-2) var(--ek-space-2);
+  margin: 0 var(--ek-space-3) var(--ek-space-3);
   background: var(--ek-color-sidebar-border);
+}
+
+.ek-side__section-label {
+  margin: 0;
+  padding: 0 var(--ek-space-3) var(--ek-space-2);
+  color: var(--ek-color-sidebar-text);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.ek-side__section.is-first.has-label .ek-side__section-label {
+  padding-top: var(--ek-space-1);
 }
 
 .ek-side__list,
@@ -309,6 +336,19 @@ function onItem(item: EkSideItem) {
   padding: var(--ek-space-3) var(--ek-space-2);
 }
 
+.ek-side--collapsed .ek-side__section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+/* Ray: başlık yok, bölüm = kısa ayırıcı (ikon sütunu genişliğinde). */
+.ek-side--collapsed .ek-side__section-rule {
+  width: var(--ek-space-6);
+  margin: 0 0 var(--ek-space-3);
+}
+
 .ek-side--collapsed .ek-side__item {
   justify-content: center;
   width: var(--ek-control-h-lg);
@@ -316,24 +356,7 @@ function onItem(item: EkSideItem) {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ek-side__entry {
-  position: relative;
-}
-
-.ek-side__entry.has-trailing > .ek-side__item {
-  padding-right: calc(var(--ek-space-3) + 24px);
-}
-
-.ek-side__trailing {
-  position: absolute;
-  top: 0;
-  right: var(--ek-space-2);
-  display: flex;
-  align-items: center;
-  height: var(--ek-control-h-md);
-}
-
-.ek-side__chevron {
+  .ek-side__chevron {
     transition: none;
   }
 }
