@@ -61,6 +61,26 @@
         <EkDateField v-model="searchForm.data.endDate" label="Bitiş tarihi" value-format="iso-date" :min="searchForm.data.startDate" />
       </template>
 
+      <template #toolbar-end>
+        <span class="ek-message-awaiting">
+          <span v-if="awaitingOnPage > 0" class="ek-message-awaiting-count" aria-live="polite">{{ t('messages.sla.awaitingCount', { n: awaitingOnPage }) }}</span>
+          <EkTooltip :text="t('messages.sla.awaitingFirstHint')">
+            <EkButton
+              tone="secondary"
+              size="sm"
+              :icon="awaitingFirst ? 'mdi-check' : 'mdi-sort-clock-descending-outline'"
+              class="ek-message-awaiting-toggle"
+              :class="{ 'is-active': awaitingFirst }"
+              :aria-pressed="awaitingFirst ? 'true' : 'false'"
+              :disabled="loading || !rows.length"
+              @click="awaitingFirst = !awaitingFirst"
+            >
+              {{ t('messages.sla.awaitingFirst') }}<span class="ek-message-awaiting-toggle__scope"> · {{ t('messages.sla.thisPage') }}</span>
+            </EkButton>
+          </EkTooltip>
+        </span>
+      </template>
+
       <template #bulk-actions>
         <EkButton size="sm" icon="mdi-delete-sweep-outline" class="ek-bulk-danger" @click="triggerBulkDelete">
           Toplu sil ({{ selectedMessages.length }})
@@ -77,10 +97,13 @@
       <template #cell-text="{ row }">
         <span class="ek-message-text">
           <span class="ek-message-text__body">{{ row.text }}</span>
-          <span v-if="row.context?.productName || row.context?.orderNumber" class="ek-message-text__ctx">
-            <template v-if="row.context?.productName">Ürün: {{ row.context.productName }}</template>
-            <template v-if="row.context?.productName && row.context?.orderNumber"> · </template>
-            <span v-if="row.context?.orderNumber" class="ek-num">Sipariş: {{ row.context.orderNumber }}</span>
+          <span v-if="row.context?.productName || row.context?.orderNumber || isAwaitingReply(row)" class="ek-message-text__meta">
+            <MessageWaitChip :message="row" :now="now" tooltip />
+            <span v-if="row.context?.productName || row.context?.orderNumber" class="ek-message-text__ctx">
+              <template v-if="row.context?.productName">Ürün: {{ row.context.productName }}</template>
+              <template v-if="row.context?.productName && row.context?.orderNumber"> · </template>
+              <span v-if="row.context?.orderNumber" class="ek-num">Sipariş: {{ row.context.orderNumber }}</span>
+            </span>
           </span>
         </span>
       </template>
@@ -103,7 +126,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, onBeforeUnmount } from 'vue';
+import { useI18n } from 'vue-i18n';
 import useRestApi from '@/composables/restapi';
 import { useSnackbarStore } from '@/stores/snackbarStore';
 import {
@@ -120,6 +144,8 @@ import { text, emphasis } from '@/components/layout/messageParts';
 import LoadingComponent from '@/components/LoadingComponent.vue';
 import ConfirmationDialogComponent from '@/components/layout/ConfirmationDialogComponent.vue';
 import MessageDetailComponent from '@/components/message/MessageDetailComponent.vue';
+import MessageWaitChip from '@/components/message/MessageWaitChip.vue';
+import { isAwaitingReply, sortAwaitingFirst } from '@/components/message/messageSla';
 import EkListScreen from '@/components/ds/templates/EkListScreen.vue';
 import type { EkGridColumn, EkGridSort } from '@/components/ds/EkDataGrid.vue';
 import type { EkActiveFilterChip } from '@/components/ds/EkActiveFilters.vue';
@@ -127,11 +153,13 @@ import EkButton from '@/components/ds/EkButton.vue';
 import EkDateField from '@/components/ds/EkDateField.vue';
 import EkChannelDot from '@/components/ds/EkChannelDot.vue';
 import EkStatusChip from '@/components/ds/EkStatusChip.vue';
+import EkTooltip from '@/components/ds/EkTooltip.vue';
 import { isRequestError } from '@/components/ds/listStandard';
 
 const emits = defineEmits(['clear'])
 
 const restApi = useRestApi();
+const { t } = useI18n();
 const snackbarStore = useSnackbarStore();
 
 const loadingComponentRef = ref<any>(null);
@@ -180,12 +208,25 @@ const columns: EkGridColumn[] = [
   { key: 'channel', label: 'Kanal' },
   { key: 'text', label: 'Mesaj' },
   { key: 'customer', label: 'Müşteri' },
+  // C2.5 — bekleme süresi rozeti Mesaj hücresinde: ayrı kolon/tarih hücresi dar ekranda yatay kaydırmanın dışında kalıyordu.
   { key: 'date', label: 'Tarih', sortable: true },
   { key: 'status', label: 'Durum', sortable: true },
   { key: 'actions', label: 'İşlemler', align: 'end', hideLabel: true, pin: 'end' },
 ];
 
-const rows = computed(() => messages.value.map((m: any) => ({ ...m, shortText: `Mesaj: ${String(m.text ?? '').slice(0, 30)}` })));
+// Bekleme süresi dakikada bir tazelenir (sekme açık kaldıkça rozetler eskimesin).
+const now = ref(new Date());
+const nowTimer = window.setInterval(() => { now.value = new Date(); }, 60_000);
+onBeforeUnmount(() => window.clearInterval(nowTimer));
+
+// "Bekleyenler önce" YALNIZ istemci tarafı ve yalnız bu sayfa (backend'de bu sıralama yok).
+const awaitingFirst = ref(false);
+const awaitingOnPage = computed(() => messages.value.filter(isAwaitingReply).length);
+
+const rows = computed(() => {
+  const mapped = messages.value.map((m: any) => ({ ...m, shortText: `Mesaj: ${String(m.text ?? '').slice(0, 30)}` }));
+  return awaitingFirst.value ? sortAwaitingFirst(mapped, now.value) : mapped;
+});
 
 const gridSort = computed<EkGridSort>(() => {
   const current = sortBy.value[0] ?? { key: 'date', order: 'desc' };
@@ -193,6 +234,7 @@ const gridSort = computed<EkGridSort>(() => {
 });
 
 function onGridSort(sort: EkGridSort) {
+  awaitingFirst.value = false;
   sortBy.value = sort ? [{ key: sort.key, order: sort.dir }] : [];
   getMessages(true);
 }
@@ -459,6 +501,7 @@ defineExpose({
 .ek-message-text__ctx {
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ek-message-text__ctx {
@@ -474,6 +517,43 @@ defineExpose({
 .ek-row-actions {
   display: inline-flex;
   gap: var(--ek-space-1);
+}
+
+.ek-message-text__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  min-width: 0;
+}
+
+.ek-message-awaiting {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ek-space-2);
+}
+
+.ek-message-awaiting-count {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ek-message-awaiting-toggle.is-active {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.ek-message-awaiting-toggle__scope {
+  color: var(--ek-color-content-muted);
+  font-weight: var(--ek-font-weight-regular);
+}
+
+.ek-message-awaiting-toggle.is-active .ek-message-awaiting-toggle__scope {
+  color: inherit;
 }
 
 .ek-bulk-danger {

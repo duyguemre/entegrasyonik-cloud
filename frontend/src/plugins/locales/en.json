@@ -504,5 +504,31 @@
       "canceledStopped": "Read-only · stock sync stopped",
       "expired": "Subscription expired · stock sync off"
     }
+  },
+  "messages": {
+    "sla": {
+      "waiting": "Waiting: {duration}",
+      "waitingLong": "Long wait: {duration}",
+      "thresholdHint": "Customer wrote {duration} ago. Thresholds are suggestions, not a marketplace deadline: {warning} h warning, over {danger} h critical.",
+      "duration": {
+        "lessThanMinute": "under 1 min",
+        "minutes": "{m} min",
+        "hours": "{h} h",
+        "daysHours": "{d} d {h} h",
+        "days": "{d} d"
+      },
+      "awaitingFirst": "Waiting first",
+      "thisPage": "this page",
+      "awaitingFirstHint": "Sorts only the messages on this page, longest wait first; server order is unchanged.",
+      "awaitingCount": "{n} waiting on this page",
+      "answer": {
+        "rule": "{channel} rule: {min}–{max} characters",
+        "noRule": "No character limit is defined for this channel; the counter is informational.",
+        "tooShort": "At least {min} characters required ({channel} rule).",
+        "tooLong": "At most {max} characters can be sent ({channel} rule).",
+        "count": "{n} characters",
+        "countOf": "{n} / {max}"
+      }
+    }
   }
 }
