@@ -12,8 +12,10 @@
         <div class="ek-integration-layout__main">
           <div>
             <IntegrationPlatformRail :items="clientErps" :model-value="editingClientIntegration.code"
-              :live-codes="LIVE_CODES" ariaLabel="ERP platformu seçimi" @select="setAndRetrieveEditingClientErp" />
+              :live-codes="liveCodes" ariaLabel="ERP platformu seçimi" @select="setAndRetrieveEditingClientErp" />
           </div>
+          <IntegrationCapabilityChips v-if="isLive(editingClientIntegration.code)" :code="editingClientIntegration.code"
+            category="erp" :show-health-link="!!healthLink" @open-health="openHealth" />
           <v-form ref="newVariantFormRef" v-model="isFormValid">
             <v-card-text class="pa-0 px-0" role="tabpanel"
               :aria-label="editingClientIntegration.code ? `${editingClientIntegration.code} ayarları` : 'Seçim bekleniyor'">
@@ -34,7 +36,9 @@
         </div>
 
         <aside class="ek-integration-layout__aside">
-          <IntegrationGuideCard :steps="guideSteps" />
+          <!-- C1.2: kodu olmayan sağlayıcı seçiliyken "API anahtarını girin" adımları gösterilmez. -->
+          <IntegrationGuideCard v-if="!editingClientIntegration.code || isLive(editingClientIntegration.code)" :steps="guideSteps" />
+          <IntegrationGuideCard v-else :steps="comingSoonGuide" note="" />
         </aside>
       </div>
     </div>
@@ -53,10 +57,11 @@ import EkPageHeader from '@/components/ds/EkPageHeader.vue'
 import EkEmptyState from '@/components/ds/EkEmptyState.vue'
 import IntegrationPlatformRail from '@/components/integrations/IntegrationPlatformRail.vue'
 import IntegrationComingSoonPanel from '@/components/integrations/IntegrationComingSoonPanel.vue'
+import IntegrationCapabilityChips from '@/components/integrations/IntegrationCapabilityChips.vue'
+import { useIntegrationScreen } from '@/components/integrations/useIntegrationScreen'
 
-// `docs/INTEGRATIONS_REGISTRY.md` §4.1 — yalnızca Bizimhesap'ın gerçek backend bağlantısı var
-// (Paraşüt/Logo/Dia/Eta/Sysmond yalnızca UI şablonu, bu ekran onları hiç yönlendirmiyor).
-const LIVE_CODES = ['bizimhesap']
+// C1.2 — canlı küme `getCatalog` manifestosundan (yedek: `FALLBACK_LIVE_CODES`, bkz. `integrationCatalog.ts`).
+const { liveCodes, isLive, healthLink, openHealth, comingSoonGuide } = useIntegrationScreen('erp')
 
 const integrationStore: any = useIntegrationStore()
 const { t } = useI18n()

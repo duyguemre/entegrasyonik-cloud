@@ -94,16 +94,19 @@ for (const s of screens) {
 }
 
 // Shipping: CLAUDE.md'ye göre gerçek backend entegrasyonu YOK — clientIntegrations.shipment DOLU
-// fixture'da da her zaman [] (bkz. apiData.ts). Bu yüzden ekran, gerçek uygulamada da, DAİMA
-// boş-durum kartını gösterir; ayrı bir "dolu" senaryosu yoktur (bu, sabitlenen gerçek davranıştır).
+// fixture'da da her zaman [] (bkz. apiData.ts); ayrı bir "dolu" senaryosu yoktur.
+// C1.2 (bilinçli davranış değişikliği, ayrı commit): kayıt yokken eskiden "Başlamak için seçim yapın —
+// yukarıdaki listeden seçin" boş-durum kartı gösteriliyordu (seçilecek liste yoktu); artık kategori düzeyi
+// dürüst "Yakında" paneli gösterilir (ayrıntı: integration-coverage.spec.ts).
 test.describe('P1 — integrations/ShippingView', () => {
-  test('smoke + boş durum: kargo entegrasyonu backend’de yok, ekran daima boş-durum kartı gösterir', async ({ page }) => {
+  test('smoke + boş durum: kargo entegrasyonu backend’de yok, ekran kategori düzeyi "Yakında" panelini gösterir', async ({ page }) => {
     await installApiMocks(page)
     await gotoAuthed(page)
     await openScreen(page, 'ShippingView')
 
     await expectScreenOpen(page, '.shippingView')
-    await expect(page.locator('.shippingView').getByText('Başlamak için seçim yapın')).toBeVisible()
+    await expect(page.locator('.shippingView').getByRole('heading', { name: 'Kargo entegrasyonu henüz yok' })).toBeVisible()
+    await expect(page.locator('.shippingView').getByText('Başlamak için seçim yapın')).toHaveCount(0)
   })
 
   test('hata durumu: IntegrationService/getClientIntegrations 500 dönse bile ham hata sızmaz', async ({ page }) => {

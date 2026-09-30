@@ -17,7 +17,7 @@
         </div>
       </li>
     </ol>
-    <p class="ek-guide__note">
+    <p v-if="note" class="ek-guide__note">
       <v-icon icon="mdi-information-outline" size="16" aria-hidden="true" />
       <span>{{ note }}</span>
     </p>
