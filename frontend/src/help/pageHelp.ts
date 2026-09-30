@@ -587,19 +587,6 @@ export const PAGE_HELP: Record<string, PageHelp> = {
     article: 'acc-subscription',
   },
 
-  // Kanıt: stores/site/menu.ts ('user/EducationView' → views/secure/user/SubscriptionView.vue), composables/subscriptionStatus.ts
-  'user/EducationView': {
-    purpose:
-      'Bu menü öğesi şu an Abonelik ve Planlar ekranını açar. İşletmenize uygun planı seçin, mevcut aboneliğinizin durumunu buradan izleyin.',
-    tips: [
-      'Üstteki durum bandı aboneliğinizin güncel durumunu ve ne anlama geldiğini açıklar.',
-      'Plan kartlarında kanal, varyant (SKU), kullanıcı ve günlük MCP çağrısı limitleri yer alır.',
-      'Uygulamayı öğrenmek için yardım merkezindeki Başlarken makalelerine göz atın.',
-    ],
-    shortcuts: ['search', 'tabClose'],
-    article: 'gs-account',
-  },
-
   // Kanıt: views/secure/user/ExitView.vue (işlevsiz ekran), components/layout/ApplicationBar.vue (hesap menüsü → Çıkış)
   'user/ExitView': {
     purpose:

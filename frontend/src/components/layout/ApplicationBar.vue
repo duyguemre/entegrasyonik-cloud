@@ -125,7 +125,9 @@ const themePreference = appTheme.preference
 const accountGroups = computed<EkMenuGroup[]>(() => [
   {
     items: [
-      { key: 'settings', label: 'Ayarlar', icon: 'mdi-cog-outline' },
+      // FR2-SHELL madde 8: menü ağacındaki Uygulama Ayarları'nı (kod ile; iç içe kayıt da bulunur) açar. Kullanıcının
+      // menüsünde ekran yoksa (yetki) giriş gösterilmez — önce ölü "Ayarlar" girişi boş sekme/beyaz ekran açıyordu.
+      ...(settingsLink.value ? [{ key: 'settings', label: 'Uygulama ayarları', description: 'Mağaza, fatura, lojistik ve iletişim', icon: 'mdi-cog-outline' }] : []),
       { key: 'shortcuts', label: 'Klavye kısayolları', icon: 'mdi-keyboard-outline', shortcut: shortcutKeys('shortcutHelp') },
     ],
   },
@@ -143,6 +145,10 @@ const accountGroups = computed<EkMenuGroup[]>(() => [
 
 
 const openByTitle = (title: string) => eventBus.emit('openTab', menuStore.getMenuLinkWithTitle(title))
+const settingsLink = computed(() => (menuStore.getMenu?.() ? menuStore.getMenuLinkWithCode?.('SettingListView') : undefined))
+const openSettings = () => {
+  if (settingsLink.value) eventBus.emit('openTab', settingsLink.value)
+}
 
 function onHelpSelect(item: EkMenuItem) {
   helpOpen.value = false
@@ -161,7 +167,7 @@ function openSupportContact(key: string) {
 
 function onAccountSelect(item: EkMenuItem) {
   accountOpen.value = false
-  if (item.key === 'settings') openByTitle('settingList')
+  if (item.key === 'settings') openSettings()
   else if (item.key === 'shortcuts') emit('open-shortcuts')
   else if (item.key === 'helpCenter') helpNav.openHelp()
   else if (item.key === 'tour') window.dispatchEvent(new CustomEvent('ek:help-tour'))

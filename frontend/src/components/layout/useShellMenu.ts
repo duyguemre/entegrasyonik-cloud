@@ -8,6 +8,7 @@
  * zaten olan (status/inMenu) öğeler listelenir; bu dosya hiçbir ekranı
  * gizlemez/eklemez, yalnızca sunum modelini üretir. TEK istisna: statik içerikli
  * Yardım merkezi (veri erişimi yok) kabuğun "Yardım" bölümüne istemcide eklenir.
+ * FR2 (fe-r2a): emekli "Eğitim Merkezi" düşer, "Uygulama Ayarları" üst seviyeye çıkar (`navigation/menuShape.ts`).
  */
 import { computed, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -18,6 +19,7 @@ import { SECTIONS } from '@/navigation/sections'
 import { firstMessage, humanizeKey, resolveMenuTitle } from '@/navigation/menuTitle'
 import type { EkSideSection, EkSideItem } from '@entegrasyonik/ui/components'
 import { HELP_SCREEN_KEY, helpCenterLink } from '@/help/helpLink'
+import { shapeGroupLinks } from '@/navigation/menuShape'
 
 /** Sidebar'ın sağında favori yıldızı taşıyabilen öğe (menü `isConstant` değilse). */
 export interface ShellMenuEntry {
@@ -62,7 +64,8 @@ export function useShellMenu() {
     for (const group of groups.value) {
       const label = sectionLabel(group)
       const items: EkSideItem[] = []
-      for (const link of group.links || []) {
+      // FR2-SHELL madde 7/8: Eğitim Merkezi gösterilmez; Uygulama Ayarları "Ayarlar" grubundan üst seviyeye çıkar.
+      for (const link of shapeGroupLinks<any>(group.links)) {
         if (!isVisible(link)) continue
         const key = screenKeyForLink(link)
         byKey.set(key, link)
