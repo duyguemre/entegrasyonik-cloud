@@ -23,7 +23,9 @@
       <EkListScreen
         section="Yönetim"
         class="effectiveConfigView__screen"
-        :title="`Etkin Yapılandırma — ${targetLabel}`"
+        title="Etkin yapılandırma"
+        :trail="trail"
+        :record="target && target !== ENGINE_TARGET ? { code: target, channel: target, label: 'Entegrasyon kodu' } : null"
         :description="description"
         label="Etkin yapılandırma tablosu"
         noun="ayar"
@@ -100,6 +102,8 @@ import PlatformAdminGuard from '@/components/adminPanel/integrations/PlatformAdm
 import useUser from '@/composables/user'
 import { formatDateTime, formatDuration, formatNumber } from '@/composables/format'
 import { getSettingMeta, resolveDefault, ENGINE_TARGET } from '@/components/adminPanel/integrations/settingsCatalogMirror'
+import { useOpenIntegrationConfigTab } from '@/components/adminPanel/integrations/useOpenIntegrationConfigTab'
+import type { EkCrumb } from '@/components/ds/pageTrail'
 import { useIntegrationConfigApi, isErrorShapedResponse, serverErrorMessage, type EffectiveConfigResponse, type ValueSource } from '@/components/adminPanel/integrations/useIntegrationConfigApi'
 
 const KNOWN_CODES = ['trendyol', 'hepsiburada', 'n11', 'pazarama', 'ideasoft', 'bizimhesap']
@@ -111,6 +115,15 @@ const targetLabel = computed(() => {
   if (!target.value) return ''
   if (target.value === ENGINE_TARGET) return 'Motor Ayarları'
   return target.value.charAt(0).toUpperCase() + target.value.slice(1)
+})
+
+// A7 breadcrumb: Yönetim / Entegrasyonlar / <hedef> ayarları / Etkin yapılandırma (üst ekranlar bağlantı).
+const openConfigTab = useOpenIntegrationConfigTab()
+const trail = computed<EkCrumb[]>(() => {
+  const list: EkCrumb = { label: 'Entegrasyonlar', icon: 'mdi-connection', onSelect: () => openConfigTab('IntegrationConfigListView') }
+  if (!target.value) return [list]
+  if (target.value === ENGINE_TARGET) return [list, { label: 'Motor ayarları', icon: 'mdi-engine-outline', onSelect: () => openConfigTab('EngineSettingsView') }]
+  return [list, { label: `${targetLabel.value} ayarları`, icon: 'mdi-tune', onSelect: () => openConfigTab('IntegrationSettingsView', { code: target.value }) }]
 })
 
 function applyParameters(parameters: any) {
