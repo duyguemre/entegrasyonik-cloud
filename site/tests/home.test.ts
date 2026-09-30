@@ -293,7 +293,7 @@ describe('içerik kayıttan gelir', () => {
     expect([...nav.matchAll(/data-spy-link=/g)]).toHaveLength(4)
   })
 
-  it('senaryo (zaman çizgisi): beş adım, her adım yayımlanmış bir yetenek kaydına bağlı; kanal adı yok; örnek beyanı bölüm girişinde (S12 + S15-B)', () => {
+  it('senaryo (zaman çizgisi): beş adım, her adım yayımlanmış bir yetenek kaydına bağlı; kanal adı yok; örnek etiketi yok (S12 + S24)', () => {
     const block = html.match(/<ol[^>]*data-testid="story-steps"[\s\S]*?<\/ol>/)![0]
     const steps = [...block.matchAll(/<li[^>]*data-scene="story-step"[^>]*>/g)].map((m) => m[0])
     expect(steps).toHaveLength(5)
@@ -309,12 +309,12 @@ describe('içerik kayıttan gelir', () => {
     expect(t).toContain('yalnızca mevcut stok kadar rezervasyon yapılır')
     expect(t).toContain('onaylanır veya reddedilir')
     for (const i of getPublicIntegrations()) expect(t, i.name).not.toContain(i.name)
-    // S15-B (S15-C deseniyle uyum): sahne başına görünür "Örnek görünüm" etiketi YOK; sayıların örnek olduğunu
-    // bölüm girişindeki tek cümle beyan eder (uydurma veri iddiası yok). Sahneler aria-hidden kalır.
+    // S15-B → S24 (K44): sahne başına ve bölüm girişinde "örnek görünüm" beyanı YOK (kullanıcı kararı). Sahneler
+    // dekoratiftir (aria-hidden) ve sahnelerde kanal adı/uydurma ölçüm yoktur (yukarıdaki denetim).
     expect(block).not.toMatch(/Örnek görünüm/)
     expect([...block.matchAll(/<div class="viz"[^>]*>/g)].every((m) => m[0].includes('aria-hidden="true"'))).toBe(true)
     const section = html.match(/<section[^>]*id="senaryo"[\s\S]*?<\/section>/)![0]
-    expect(textOf(section.split('data-testid="story-steps"')[0])).toContain('Aşağıdaki sahneler örnek görünümdür.')
+    expect(textOf(section).toLocaleLowerCase('tr-TR')).not.toMatch(/örnek görünüm/)
   })
 
   it('sorun -> çözüm: tek kurgu (kaos + marka kartı); alttaki karşılaştırma tablosu yok; faydalar kanıtlı (S12)', () => {
@@ -376,10 +376,13 @@ describe('içerik kayıttan gelir', () => {
     expect(heroText.toLocaleLowerCase('tr-TR')).not.toMatch(/uygulanan|bugün bağlanabilen/)
   })
 
-  it('hero fayda maddeleri üst seviye ve her biri kanıtlı bir yetenek kaydına dayanır (S12)', () => {
-    const list = html.match(/<ul[^>]*data-testid="hero-benefits"[\s\S]*?<\/ul>/)![0]
-    const items = [...list.matchAll(/<li\b[\s\S]*?<\/li>/g)].map((m) => textOf(m[0]))
-    expect(items).toEqual(['Merkezi stok yönetimi', 'Tüm siparişler tek ekranda', 'Kurumsal düzeyde güvenlik'])
+  it('fayda rayı (S24: hero\'daki ayrı liste yerine hero\'nun alt kenarındaki tek ray) üst seviye ve kayıtlara dayanır', () => {
+    expect(html).not.toContain('data-testid="hero-benefits"')
+    const list = html.match(/<ul[^>]*data-testid="stat-list"[\s\S]*?<\/ul>/)![0]
+    const labels = [...list.matchAll(/<p class="stat__label"[^>]*>([\s\S]*?)<\/p>/g)].map((m) => textOf(m[1]))
+    expect(labels).toEqual(['Tek merkez', 'Eşzamanlı stok', `${getPublicTrial().days} gün ücretsiz`, 'Kurumsal güvenlik'])
+    // hero ve ray tek koyu sahnede (ortak zemin); ray ayrı bir zemin bandı değil
+    expect(html).toMatch(/<div class="stage-top"[^>]*>\s*<section class="hero"[\s\S]*?<\/section>\s*<section class="proof"/)
     const ids = getPublicCapabilities().map((c) => c.id)
     for (const id of ['stock-reservation', 'multi-channel-products', 'unified-orders', 'secrets-encryption', 'tenant-database', 'role-based-access']) {
       expect(ids, id).toContain(id)

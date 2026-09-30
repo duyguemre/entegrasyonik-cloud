@@ -295,13 +295,11 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
   .ai-hero__visual {
     min-width: 0;
   }
+  /* S24: kopya artık kısa (tek başlık + tek cümle + tek CTA) → sütunlar dikeyde ortalanır. */
   @media (min-width: 1024px) {
     .ai-hero__grid {
       grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
-      align-items: start;
-    }
-    .ai-hero__visual {
-      padding-top: var(--ek-space-10);
+      align-items: center;
     }
   }
   /* ------------------------------------------------------------------ ortak kart */

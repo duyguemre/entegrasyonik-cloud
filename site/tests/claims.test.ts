@@ -37,9 +37,9 @@ import {
   PROPOSAL_NOTICE,
   PLAN_SEED_PATH,
 } from '../src/data/plans'
-import { getComparisonRows, getPricingFaq, getPricingFaqRecords, getPlanPitch, getPlanCommonFeatures } from '../src/data/pricing'
-import { featuresBridge, heroAgentEntry, UPCOMING_SURFACES } from '../src/data/assistant'
-import { AGENT_PATH } from '../src/data/agent-brand'
+import { getComparisonRows, getPricingFaq, getPricingFaqRecords, getPlanPitch, getPlanCommonFeatures, getPlanAgentRows, getPlanAgentSummary, planAgentIntro } from '../src/data/pricing'
+import { menuGroups } from '../src/data/nav-menu'
+import { featuresBridge, heroAgentEntry } from '../src/data/assistant'
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const repoRoot = path.resolve(siteRoot, '..')
@@ -109,10 +109,15 @@ function publicContent() {
     // S14: stok rezervasyonu anlatısı (sahne etiketleri dahil) ve destek merkezi kategorileri de görünür metindir
     stockStory: getStockReservationStory(),
     support: getSupportCategories().map(({ label, lead, links }) => ({ label, lead, links: links.map((l) => l.label) })),
-    // S18: Özellikler sayfasındaki "Yolda" köprüsü UPCOMING istisnası DEĞİLDİR — katı taramadan geçer
+    // S18/S24: Özellikler sayfasındaki Otopilot köprüsü katı taramadan geçer (S24: Otopilot'a hiçbir istisna yok)
     assistantBridge: featuresBridge,
-    // S22: ana sayfa hero'sundaki ajan girişi de istisna DEĞİLDİR — katı taramadan geçer
+    // S22: ana sayfa hero'sundaki ajan girişi de katı taramadan geçer
     heroAgent: heroAgentEntry,
+    // S25: üst menü kopyası (panel başlıkları, fayda satırları, öne çıkan kartlar, alt şeritler) ve K46 fiyat metinleri
+    // de katı taramadan geçer. Rakamlı alanlar (deneme süresi, okuma süresi) `meta` anahtarındadır → sayı denetiminden
+    // muaf (değer kayıttan: plan seed / rehber metni).
+    nav: menuGroups().map((g) => ({ label: g.label, lead: g.lead, links: g.links.map((l) => [l.label, l.description ?? '']), footer: g.footer, feature: g.feature })),
+    planAgent: { intro: planAgentIntro, rows: getPlanAgentRows(), summary: getPublicPlans().map((p) => getPlanAgentSummary(p.code)) },
   }
 }
 
@@ -417,7 +422,7 @@ const NUMERIC_ALLOWLIST: Array<{ token: string; why: EvidenceRef }> = [
 ]
 
 /** Sayısal-iddia denetiminden muaf anahtarlar (biçimlenmiş fiyat, kimlik/kod, taslak notu). */
-const NON_PROSE_KEYS = new Set(['priceLabel', 'code', 'id', 'notice', 'periodLabel', 'channelCodes', 'basedOn', 'icon'])
+const NON_PROSE_KEYS = new Set(['priceLabel', 'code', 'id', 'notice', 'periodLabel', 'channelCodes', 'basedOn', 'icon', 'meta', 'href'])
 
 describe('(3) görünür içerikte yasaklı ifade / mutlak / kanıtsız sayısal iddia yok', () => {
   const content = publicContent()
@@ -694,16 +699,8 @@ describe('(4) gizli roadmap öğeleri hiçbir yerde görünmez', () => {
   // ("e-fatura mükellefiyeti") içerir; bunlar pazarlama iddiası değildir. Kaynak taramasının `src/data/**`'i
   // dışlamasıyla aynı gerekçe. Yasal sayfalar kendi yasaklı-ifade taramasından geçer: tests/legal.test.ts.
   const distHtml = walk(distDir, ['.html']).filter((f) => !f.includes(`${path.sep}yasal${path.sep}`))
-  // S18 DAR İSTİSNA: ajan sayfası (UPCOMING yüzeyi; S22: rota ad sabitinden, varsayılan /otopilot) Model Context Protocol'ü sade dille anlatır; YALNIZCA bu sayfada ve
-  // YALNIZCA "MCP" adı serbesttir. Diğer tüm ad/mutlak iddia yasakları orada da geçerlidir; ayrıntılı kurallar
-  // (aşama etiketi, kip, rakam/tarih/müşteri) tests/upcoming.test.ts'tedir. Listeye ekleme = bilinçli ürün kararı.
-  const UPCOMING_DIST_NAME_EXCEPTIONS: Record<string, string[]> = { [`${AGENT_PATH.slice(1)}/index.html`]: ['MCP'] }
-
-  it('UPCOMING dist istisnası yalnızca UPCOMING_SURFACES sayfaları için ve yalnızca MCP adı', () => {
-    expect(Object.keys(UPCOMING_DIST_NAME_EXCEPTIONS)).toEqual(UPCOMING_SURFACES.pages.map((p) => `${p.slice(1)}/index.html`))
-    for (const names of Object.values(UPCOMING_DIST_NAME_EXCEPTIONS)) expect(names).toEqual(['MCP'])
-    expect(ROADMAP_VISIBLE).toBe(false)
-  })
+  // S24 (K45): S18'deki dar istisna (Otopilot sayfasında "MCP" adı) KALDIRILDI — ajan sayfası da tüm ad yasaklarına tabidir.
+  // Otopilot'a özgü ek kurallar (vaat kaydı, aşama/örnek etiketi yok, teknik terim yok): tests/agent-claims.test.ts.
   // dist/rehber/** (S20 bilgi merkezi): e-Fatura, GİB, Amazon SP-API gibi adlar burada ÜRÜN İDDİASI değil, pazarı anlatan
   // kaynaklı bilgi konusudur. Bu sayfalar YALNIZCA ad taramasından muaftır (mutlak iddia taraması sürer); ürün bağlamı
   // (Entegrasyonik cümleleri + bağlam kutusu) tests/rehber.test.ts'te aynı ad/kalıp listeleriyle ayrıca taranır.
@@ -717,9 +714,7 @@ describe('(4) gizli roadmap öğeleri hiçbir yerde görünmez', () => {
         .replace(/<style[\s\S]*?<\/style>/g, '')
         .replace(/<[^>]+>/g, ' ')
       const text = norm(html)
-      const rel = path.relative(distDir, f).split(path.sep).join('/')
-      const allowed = UPCOMING_DIST_NAME_EXCEPTIONS[rel] ?? []
-      if (!isRehber(f)) for (const n of names) if (!allowed.includes(n) && phraseRe(n).test(text)) hits.push(`${path.relative(siteRoot, f)}: "${n}"`)
+      if (!isRehber(f)) for (const n of names) if (phraseRe(n).test(text)) hits.push(`${path.relative(siteRoot, f)}: "${n}"`)
       for (const p of ABSOLUTE_PREFIXES) if (prefixRe(p).test(text)) hits.push(`${path.relative(siteRoot, f)}: "${p}"`)
     }
     expect(hits).toEqual([])
@@ -807,6 +802,7 @@ describe('S14: stok rezervasyonu anlatısı, somut akış cümleleri ve destek m
     expect(item).toBeTruthy()
     const t = norm(item.answer)
     for (const w of ['entegra', 'sopyo', 'yengec']) expect(phraseRe(w).test(t), w).toBe(false)
-    for (const w of ['veritabani', 'sifrel', 'stok rezervasyonu', 'varsayilan olarak']) expect(t, w).toContain(w)
+    // S24 (K46): "ayrı veritabanı" yapı anlatımı yerine üst seviye güven mesajı ("izole") — ölçüt aynı kayıtlı yetenek
+    for (const w of ['izole', 'sifrel', 'stok rezervasyonu', 'varsayilan olarak']) expect(t, w).toContain(w)
   })
 })

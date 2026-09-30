@@ -56,9 +56,8 @@ test.describe('MotionToggle header\'a sığar (320–1600 px)', () => {
       })
       expect(overflow.doc, `${width} doküman`).toBeLessThanOrEqual(0)
       expect(overflow.bar, `${width} header`).toBeLessThanOrEqual(0)
-      // geniş üstlükte kısa etiket görünür ve yine sığar
-      if (width >= 1440) await expect(page.locator('.motion-toggle__label')).toBeVisible()
-      else await expect(page.locator('.motion-toggle__label')).toBeHidden()
+      // S24: üst bar sadeliği — her genişlikte yalnızca simge (ad ekran okuyucuda)
+      await expect(page.locator('.motion-toggle__label')).toBeHidden()
     }
   })
 
@@ -242,10 +241,13 @@ test.describe('Kayan şerit, sayaçlar, yapışkan öğeler', () => {
   test('sticky header: kaydırınca data-scrolled=true, gölge gelir', async ({ page }) => {
     await page.goto('/')
     await expect(page.locator('html')).not.toHaveAttribute('data-scrolled', 'true')
+    // S25: cam zemin ve gölge header'ın ::before katmanında (kaydırınca katman kısalır; header akış yüksekliği sabit)
+    const shadowOf = () => page.locator('.site-header').evaluate((el) => getComputedStyle(el, '::before').boxShadow)
+    const before = await shadowOf()
     await page.evaluate(() => window.scrollTo(0, 600))
     await expect(page.locator('html')).toHaveAttribute('data-scrolled', 'true')
-    const shadow = await page.locator('.site-header').evaluate((el) => getComputedStyle(el).boxShadow)
-    expect(shadow).not.toBe('none')
+    await expect.poll(shadowOf).not.toBe(before)
+    expect(await shadowOf()).not.toBe('none')
   })
 
   test('nasıl çalışır: sol sütun yapışkan kalır ve etkin adım kaydırmayla değişir (masaüstü)', async ({ page }) => {

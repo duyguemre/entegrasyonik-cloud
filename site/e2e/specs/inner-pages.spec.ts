@@ -64,18 +64,20 @@ test.describe('gezinme', () => {
   test('ana gezinmede iç sayfa bağlantıları görünür ve çalışır', async ({ page }) => {
     await page.goto('/')
     if (!isDesktop(page)) await page.getByTestId('menu-toggle').click()
-    // S23: gruplanmış menü — bağlantılar grubu açılınca görünür (Ürün / Kaynaklar), Fiyatlandırma doğrudan.
+    // S23: gruplanmış menü — bağlantılar grubu açılınca görünür (Ürün / Kaynaklar), Fiyatlar doğrudan.
+    // S25: sayfa bağlantıları kartlarda ve alt şeritte ("Tüm özellikler", "Tüm entegrasyonlar").
     for (const [group, label] of [
-      ['Ürün', 'Özellikler'],
-      ['Ürün', 'Entegrasyonlar'],
+      ['Ürün', 'Katalog yönetimi'],
+      ['Ürün', 'Tüm özellikler'],
       ['Ürün', 'Güvenlik'],
+      ['Çözümler', 'Tüm entegrasyonlar'],
       ['Kaynaklar', 'SSS'],
       ['Kaynaklar', 'İletişim'],
-      [null, 'Fiyatlandırma'],
+      [null, 'Fiyatlar'],
     ] as const) {
       await expect(await revealNavLink(page, group, label), `${group} → ${label}`).toBeVisible()
     }
-    await (await revealNavLink(page, 'Ürün', 'Entegrasyonlar')).click()
+    await (await revealNavLink(page, 'Çözümler', 'Tüm entegrasyonlar')).click()
     await expect(page).toHaveURL(/\/entegrasyonlar\/?$/)
     await expect(page.getByRole('heading', { level: 1, name: 'Entegrasyonlar' })).toBeVisible()
   })
@@ -139,11 +141,20 @@ test.describe('gezinme', () => {
     const top = await row.evaluate((e) => e.getBoundingClientRect().top + window.scrollY)
     await page.evaluate((y) => window.scrollTo(0, y - 200), top)
     await page.waitForTimeout(100)
-    const header = await page.locator('.site-header').boundingBox()
+    await page.waitForTimeout(500) // S25: kaydırınca header'ın cam zemini kısalır (geçiş)
     const head = await page.locator('.cm__table thead th').first().boundingBox()
     const rowBox = await row.boundingBox()
-    // başlık satırı sayfaya yapıştı: header'ın hemen altında (üst üste binmez)
-    expect(Math.abs(head!.y - (header!.y + header!.height))).toBeLessThanOrEqual(2)
+    // S25: header'ın GÖRÜNEN alt kenarı (--site-header-visible; kaydırınca 72 → 60)
+    const visibleBottom = await page.evaluate(() => {
+      const probe = document.createElement('div')
+      probe.style.cssText = 'position:absolute;height:var(--site-header-visible)'
+      document.body.append(probe)
+      const h = probe.getBoundingClientRect().height
+      probe.remove()
+      return h
+    })
+    // başlık satırı sayfaya yapıştı: header'ın görünen alt kenarının hemen altında (üst üste binmez, boşluk yok)
+    expect(Math.abs(head!.y - visibleBottom)).toBeLessThanOrEqual(2)
     // ve kaydırılan satırı örtmez
     expect(head!.y + head!.height).toBeLessThanOrEqual(rowBox!.y + 1)
   })
@@ -297,14 +308,14 @@ test.describe('iç sayfalar — ekran görüntüleri (3 viewport)', () => {
   }
 })
 
-// S18 — /asistan: örnek senaryo sahnesi (döngüsel). Hareket azaltılmışken statik SON KARE: tüm diyalog ve onay kartı
+// S18 — /asistan: sohbet sahnesi (döngüsel; S24: görünür "Örnek senaryo" etiketi kaldırıldı — K44). Hareket azaltılmışken statik SON KARE: tüm diyalog ve onay kartı
 // görünür, "yazıyor" göstergesi gizli. Hareket açıkken kontrol header'da; kullanıcı durdurabilir (WCAG 2.2.2).
 test.describe('ajan sayfası — sohbet sahnesi', () => {
   test('reduced-motion: statik son kare (soru, sonuç, ikinci istek, onay kartı görünür; yazıyor gizli)', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await page.goto(AGENT_PATH)
     const scene = page.getByTestId('assistant-scene')
-    await expect(scene.getByTestId('scenario-label')).toHaveText('Örnek senaryo')
+    await expect(scene.getByTestId('scenario-label')).toHaveCount(0)
     for (const part of ['ai-ask1', 'ai-result', 'ai-ask2', 'ai-approve']) {
       await expect(scene.locator(`[data-part="${part}"]`)).toHaveCSS('opacity', '1')
     }
@@ -355,7 +366,7 @@ test.describe('ajan sayfası — S22', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await page.goto(AGENT_PATH)
     const consoleFig = page.getByTestId('agent-console')
-    await expect(consoleFig.getByTestId('console-label')).toHaveText('Örnek görünüm')
+    await expect(consoleFig.getByTestId('console-label')).toHaveCount(0) // S24 (K44): etiket yok
     await expect(consoleFig.locator('[data-part="agent-scan"]')).toHaveCSS('opacity', '0')
     for (const dot of await consoleFig.locator('[data-part="agent-live"]').all()) await expect(dot).toHaveCSS('opacity', '1')
     await expect(page.getByTestId('loop-step')).toHaveCount(5)

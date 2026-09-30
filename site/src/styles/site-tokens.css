@@ -38,6 +38,9 @@
   --site-container-max: 75rem; /* 1200 px @ 16px kök */
   --site-container-narrow: 48rem;
   --site-header-height: calc(var(--ek-space-16) + var(--ek-space-2)); /* 72 */
+  /* S25: header'ın GÖRÜNEN yüksekliği — masaüstünde kaydırınca 60'a iner (Header.astro); başlığa yaslanan yapışkan
+     öğeler (karşılaştırma tablosu, kapsam matrisi, sözlük harf çubuğu) bunu kullanır → arada boşluk kalmaz. */
+  --site-header-visible: var(--site-header-height);
 
   /* Çizgi/odak ölçüleri (ölçek dışı ince değerler) */
   --site-border-width: 1px;

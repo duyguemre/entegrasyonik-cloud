@@ -4,14 +4,16 @@
  * düz simge düğmesinden marka diline uygun, zarif bir ANAHTARA (switch) yükseltildi.
  * - `<button role="switch" aria-checked>`: açık = animasyonlar oynuyor. Erişilebilir ad görünür etiketten gelir
  *   (`aria-labelledby`, WCAG 2.5.3); durum ekran okuyucuda "açık/kapalı" olarak okunur.
- * - Görsel: sol simge + "Animasyon" etiketi + kayan topuzlu ray. Açıkta ray marka rengiyle dolar ve topuz sağa kayar;
+ * - Görsel: sol dalga simgesi + kayan topuzlu ray. Açıkta ray marka rengiyle dolar ve topuz sağa kayar;
  *   geçiş YALNIZCA transform/renk (--ek-duration-base). Odak halkası rayın çevresinde (global :focus-visible yerine
  *   bileşene özel, açık/koyu zeminde görünür). Açık/koyu zemin: renkler yerel `--mt-*` değişkenleridir; koyu yüzey
  *   (`[data-surface='dark']`, `.section--stage`) içinde açık tonlara döner.
  * - Tercih kalıcıdır: src/scripts/scenes.ts localStorage'a yazar (çerez YOK); JS yoksa kontrol görünmez ama yer tutar.
  * - Sistem ayarı `prefers-reduced-motion: reduce` İSE: anahtar KAPALI görünür, `aria-disabled` olur ve nedenini söyler
  *   (ipucu + `aria-describedby`); sistem ayarı her zaman önceliklidir, site onu geçersiz kılmaz.
- * - Dokunma hedefi >= 44 px. Dar alanda etiket gizlenir (ad yine etiketten okunur), ray + simge kalır.
+ * - Yer (S25 NAV_DECISION + S24 üst bar sadeliği): üst barda, CTA'lardan sonra; görünür metin etiketi YOK — simge + ray
+ *   kendini anlatır, "Animasyon" etiketi görsel olarak gizli ama erişilebilir adın kaynağıdır; `title` ipucu durumu söyler.
+ * - Dokunma hedefi >= 44 px.
  */
 ---
 
@@ -157,13 +159,13 @@
     }
   }
 
-  /* Dar alanda etiket gizlenir (erişilebilir ad yine etiketten okunur); geniş üstlükte görünür. */
+  /* S24/S25 üst bar sadeliği: etiket görsel olarak gizli (her genişlikte), erişilebilir ad yine buradan okunur. */
   .motion-toggle__label {
-    display: none;
-  }
-  @media (min-width: 90rem) {
-    .motion-toggle__label {
-      display: inline;
-    }
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 </style>

@@ -304,9 +304,9 @@ describe('durdurma kontrolü ve yürütücü (WCAG 2.2.2)', () => {
     expect(toggle).toMatch(/prefers-reduced-motion:\s*reduce\)\s*\{\s*\.motion-toggle__thumb,\s*\.motion-toggle__track\s*\{\s*transition:\s*none/)
     // sistem ayarı: kapalı + devre dışı görünüm (gizlenmez; neden ipucunda)
     expect(toggle).toMatch(/\[aria-disabled='true'\]/)
-    // dar alanda etiket gizli, >= 90rem'de görünür (ad yine etiketten okunur)
-    expect(toggle).toMatch(/\.motion-toggle__label\s*\{\s*display:\s*none/)
-    expect(toggle).toMatch(/@media \(min-width: 90rem\)[\s\S]*motion-toggle__label\s*\{\s*display:\s*inline/)
+    // S24/S25 üst bar sadeliği: görünür etiket yok (her genişlikte görsel olarak gizli), ad yine etiketten okunur
+    expect(toggle).toMatch(/\.motion-toggle__label\s*\{[^}]*clip-path:\s*inset\(50%\)/)
+    expect(toggle).not.toMatch(/motion-toggle__label\s*\{\s*display:\s*inline/)
   })
 
   it("yürütücü: IntersectionObserver, localStorage yalnızca try/catch içinde, çerez yok, data-motion durumları", () => {
