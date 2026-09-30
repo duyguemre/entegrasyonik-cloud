@@ -505,3 +505,39 @@ Kullanıcı isteği: ürün ekle/güncelle kategori seçiminde bir seviyede seç
 - Reduced-motion: sistem ayarı token'ları 0'a indirir (app.css). Uygulama tercihi `<html data-motion="reduced">` (şimdilik ayar ekranı yok; kanca hazır) bileşende `is-static` → geçiş/animasyon yok. Kaydırma da `auto`.
 - Klavye: ↑/↓ Home/End (seçim odağı izler), → / Enter klasörü açar ve odağı yeni seviyenin İLK öğesine taşır (açık seviyeye dönüşte seçili öğeye), ← / Backspace üst seviye; tek panelde ← paneli de geri kaydırır. `aria-live="polite"`: "2. seviye: Moda, 3 öğe", "Moda alt kategorileri yükleniyor…", "Seçildi: Moda › Kadın › Tişört".
 - Bekçiler: `tests/cascade-motion.test.ts` (plan/sıra/adım ≤ slow, reduced-motion, klavye, duyuru, statik: yalnız transform/opacity, ham ms/px yok), `e2e/specs/a9-cascade-motion.spec.ts` (canlı animasyon özellikleri, kapanış adımları, reduced-motion + data-motion, klavye/odak/aria-live, 390 tek panel). İnceleme kareleri: `docs/a9-review/` (`A9_REVIEW=1 A9_WIDTH=1440|390 npx playwright test e2e/specs/a9-review.spec.ts --project=chromium-desktop`).
+
+
+## 18. A10 — sol menü bölüm deseni + ana sekme ↔ içerik birleşmesi (`cloud/fe-a10`)
+
+Taban `cloud/ds-v2-a6b`. İnceleme: `docs/a10-review/*.png` (2x yakın çekim); araç
+`A10_REVIEW=1 A10_REVIEW_WIDTH=1440|800|390 A10_REVIEW_OUT=docs/a10-review npx playwright test e2e/specs/a10-review.spec.ts --project=chromium-desktop`.
+Token değişikliği YOK.
+
+### 18.1 Sol menü bölümleri (`EkSidebarNav`)
+
+Geri bildirim: "gruplar hafif grimsi, diğerlerinden farklı, karışık". Denenen üç alternatif (`alt-*-1440.png`):
+
+| Seçenek | Gözlem | Karar |
+|---|---|---|
+| (a) mikro BÜYÜK HARF + aralık + `content-muted` + ayırıcı | hiyerarşi net ama gri etiket yine "soluk" okunuyor | biçimi alındı |
+| (a2) aynı biçim, **öğe rengi** (`sidebar-text`) | soluk/devre dışı hissi yok; ayrım boyut + büyük harf + aralık + ayırıcıdan | **SEÇİLDİ** |
+| (b) katlanabilir başlık (chevron, öğe rengi, yarı kalın) | başlık öğe gibi okunuyor; iki seviyede aynı chevron (Satış ▾ / Ürün Kataloğu ▾) karışıyor; ek tıklama | elendi |
+| (c) başlıksız (boşluk + ayırıcı) | en sade; 20+ öğede taranabilirlik ve ilk kullanıcı yönü kayboluyor | elendi |
+
+- Bölüm = üstte 1px `sidebar-border` ayırıcı (ilk bölüm hariç) + 12px ritim; başlık 11/16 · 600 · `micro-tracking` · BÜYÜK HARF, ikon sütununa yaslı.
+- Tek öğeli bölümde başlık öğenin adını tekrar ediyorsa (ENTEGRASYONLAR › Entegrasyonlar) başlık gizlenir, yalnız ayırıcı kalır.
+- Başlıklı liste `aria-labelledby` ile başlığa bağlı (ekran okuyucu grup adını okur).
+- Ray (daraltılmış): başlık yok, bölüm = 24px ayırıcı. Etkin/hover/odak durumları değişmedi (etkin: `sidebar-active` + 3px aksiyon; odak: 2px `border-focus` halka).
+
+### 18.2 Etkin sekme ↔ içerik (`EkWorkspaceTabs`)
+
+- **Tek dış hat token'ı** `--ek-tab-line` (= `border-strong`): şeridin alt çizgisi → etkin sekmenin içbükey köşe halkası →
+  yan/üst kenar kesintisiz aynı çizgi. Sekmenin alt kenarı yok; zemin `tab-active` ≡ içerik zemini → çizgisiz tek parça (A5 kuralı).
+- **İçbükey köşe**: (R+1)² kare, merkezi dış üst köşede R+1 yarıçaplı halka — halka sekmenin yan kenarıyla aynı piksel sütununda
+  başlar, şeridin alt çizgisiyle aynı piksel satırında biter (1px kayma yok; yakın çekimle doğrulandı).
+- **Gösterge**: 2px aksiyon çubuğu köşelerden yarıçap kadar içeride (eski iç gölge köşede kalınlaşan "şapka" çiziyordu); etkinleşirken
+  `duration-base` / `easing-enter` ile açılır. Tüm sekmelerde saydam 1px kenarlık → etkinleşince metin kaymaz.
+- **Geçiş**: zemin/kenarlık/köşeler ANINDA değişir (zemin solarken köşelerin anında belirmesi renk sıçraması üretiyordu); sakin
+  hareketi gösterge + mevcut içerik girişi (opaklık + 4px) taşır; renk geçişi yalnız pasif sekmede hover'a girerken. reduced-motion: hepsi anında.
+- İlk sekme şerit başında yarıçap kadar pay (sol köşe kırpılmıyor, sol menü kenarına yapışmıyor). 390px'te A6b yatay kaydırma/ok/solma aynen.
+- Bekçi: `tests/a10-shell-nav-tabs.test.ts`.
