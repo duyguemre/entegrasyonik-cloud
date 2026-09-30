@@ -8,6 +8,7 @@
       @cancel="confirmationDelete.isDialogOpen = false" />
 
     <EkListScreen
+      section="Katalog"
       :title="$t('menu.productDefinitions.hashtagList')"
       label="Etiket grupları tablosu"
       noun="grup"

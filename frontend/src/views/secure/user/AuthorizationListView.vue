@@ -28,6 +28,7 @@
         @refreshUsers="getUsers(true)" @onSave="createOrUpdateUser" />
 
       <EkListScreen
+        section="Ayarlar"
         :title="$t('menu.authorization')"
         description="Mağazanıza erişimi olan personeli ve yetki gruplarını yönetin."
         label="Personel tablosu"

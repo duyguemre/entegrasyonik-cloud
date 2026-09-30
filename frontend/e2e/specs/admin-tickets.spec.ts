@@ -15,13 +15,14 @@ function withAdminMenu(overrides: Record<string, any> = {}) {
 }
 
 test.describe('P2 — Admin / Destek Yönetimi (AdminTicketListView)', () => {
-  test('smoke: banner + arama kutusu + talep satırları render olur', async ({ page }) => {
+  test('smoke: başlık + arama kutusu + talep satırları render olur', async ({ page }) => {
     await installApiMocks(page, withAdminMenu())
     await gotoAuthed(page)
     await openScreen(page, 'AdminTicketListView')
 
     await expect(page.locator('.ticket-list-view')).toBeVisible()
-    await expect(page.getByText('DESTEK MERKEZİ ANALİZİ')).toBeVisible()
+    // Aşama 3: dekoratif "DESTEK MERKEZİ ANALİZİ" bandı kalktı (warning tonu yanlış anlamdaydı); başlık iddiası yerine geçer.
+    await expect(page.getByRole('heading', { name: 'Destek Yönetimi' })).toBeVisible()
     await expect(page.getByLabel('Talep No, Konu veya Mesaj Ara').first()).toBeVisible()
     await expect(page.getByText('TKT-100001')).toBeVisible()
     await expect(page.getByText('E2E Sipariş senkronizasyonu gecikiyor')).toBeVisible()

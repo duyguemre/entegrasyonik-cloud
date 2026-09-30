@@ -21,6 +21,7 @@
     </EkFormDialog>
 
     <EkListScreen
+      section="Satış"
       title="İade talepleri"
       description="Pazaryerlerinden gelen iade/talep süreçlerini buradan yönetin."
       label="İade talepleri tablosu"

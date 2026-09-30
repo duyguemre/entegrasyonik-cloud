@@ -223,7 +223,7 @@
 
       <template #cell-externalId="{ row }">
         <span class="ek-fin-id">
-          <span class="ek-num">ID: {{ row.externalId }}</span>
+          <span class="ek-num">{{ row.externalId }}</span>
           <span class="ek-fin-id__sub">Sipariş: {{ row.orderNumber || 'Manuel' }}</span>
         </span>
       </template>
@@ -288,7 +288,7 @@ import EkDateField from '@/components/ds/EkDateField.vue';
 import EkChannelDot from '@/components/ds/EkChannelDot.vue';
 import EkStatusChip from '@/components/ds/EkStatusChip.vue';
 import { isRequestError } from '@/components/ds/listStandard';
-import { formatDate as formatDay } from '@/composables/format';
+import { formatDate as formatDay, formatDateTime } from '@/composables/format';
 import FinancialSummaryBar from '@/components/financial/FinancialSummaryBar.vue';
 import FinancialSummaryTab from '@/components/financial/FinancialSummaryTab.vue';
 import FinancialCargoInvoicesTab from '@/components/financial/FinancialCargoInvoicesTab.vue';
@@ -472,21 +472,23 @@ const TYPE_TONE: Record<string, StatusTone> = {
 const typeTone = (type: string): StatusTone => TYPE_TONE[type] || 'neutral';
 
 const formatCurrency = (val: any) => parseFloat(val || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 });
-const formatDate = (d: any) => d ? new Date(d).toLocaleString('tr-TR') : '-';
+// Aşama 3: diğer listelerle aynı biçim (GG.AA.YYYY SS:dd — saniye yok), `composables/format`.
+const formatDate = (d: any) => d ? formatDateTime(d) : '—';
 
 const translateTransactionType = (type: string) => {
+  // Aşama 3: durum çipleri cümle düzeninde (diğer tüm listelerle aynı çip dili).
   const translations: any = {
-    'SALE': 'SATIŞ',
-    'RETURN': 'İADE',
-    'PAYOUT': 'ÖDEME',
-    'DEDUCTION': 'KESİNTİ',
-    'COMMISSION': 'KOMİSYON',
-    'CARGO': 'KARGO',
-    'CANCEL': 'İPTAL',
-    'DISCOUNT': 'İNDİRİM',
-    'COUPON': 'KUPON',
-    'PROVISION': 'PROVİZYON',
-    'CORRECTION': 'DÜZELTME'
+    'SALE': 'Satış',
+    'RETURN': 'İade',
+    'PAYOUT': 'Ödeme',
+    'DEDUCTION': 'Kesinti',
+    'COMMISSION': 'Komisyon',
+    'CARGO': 'Kargo',
+    'CANCEL': 'İptal',
+    'DISCOUNT': 'İndirim',
+    'COUPON': 'Kupon',
+    'PROVISION': 'Provizyon',
+    'CORRECTION': 'Düzeltme'
   };
   return translations[type] || type;
 };

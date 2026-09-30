@@ -23,6 +23,7 @@
       @confirm="anonymizeCustomer" @cancel="anonymizeDialog.show = false" />
 
     <EkListScreen
+      section="Satış"
       title="Müşteriler"
       description="Tüm platformlardaki müşteri kayıtlarınızı buradan yönetin."
       label="Müşteriler tablosu"

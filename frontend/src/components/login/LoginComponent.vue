@@ -18,13 +18,13 @@
 
     <v-tabs v-model="tab" grow hide-slider class="ek-login-tabs" height="44">
       <v-tab value="login" :ripple="false" class="ek-login-tab">
-        <v-icon start size="16">mdi-login</v-icon>GİRİŞ
+        <v-icon start size="16">mdi-login</v-icon>Giriş
       </v-tab>
       <v-tab value="register" :ripple="false" class="ek-login-tab">
-        <v-icon start size="16">mdi-account-plus-outline</v-icon>KAYIT
+        <v-icon start size="16">mdi-account-plus-outline</v-icon>Kayıt
       </v-tab>
       <v-tab value="forgot" :ripple="false" class="ek-login-tab">
-        <v-icon start size="16">mdi-key-alert-outline</v-icon>ŞİFREMİ UNUTTUM
+        <v-icon start size="16">mdi-key-alert-outline</v-icon>Şifremi unuttum
       </v-tab>
     </v-tabs>
 
@@ -120,20 +120,15 @@
                   <span>Deneme sürümüyle başlarsınız; kart bilgisi istenmez. Planı, kayıttan sonra abonelik ekranında onaylarsınız.</span>
                 </div>
               </div>
-              <v-row dense>
-                <v-col cols="12" sm="6"><v-text-field v-model="regData.name" :label="$t('login.register.name')"
-                    autocomplete="given-name"></v-text-field></v-col>
-                <v-col cols="12" sm="6"><v-text-field v-model="regData.surname" :label="$t('login.register.surname')"
-                    autocomplete="family-name"></v-text-field></v-col>
-              </v-row>
-              <v-text-field v-model="regData.email" :label="$t('login.email')" autocomplete="email"></v-text-field>
-              <v-row dense>
-                <v-col cols="12" sm="6"><v-text-field v-model="regData.password" :label="$t('login.password')"
-                    type="password" autocomplete="new-password"></v-text-field></v-col>
-                <v-col cols="12" sm="6"><v-text-field v-model="regData.password2"
-                    :label="$t('login.register.repassword')" type="password"
-                    autocomplete="new-password"></v-text-field></v-col>
-              </v-row>
+              <!-- Aşama 3: tek form ızgarası (EkFormGrid) — alanlar arası boşluk sabit, üst üste binme yok. -->
+              <EkFormGrid :columns="2" class="ek-login-register-grid">
+                <v-text-field v-model="regData.name" :label="$t('login.register.name')" autocomplete="given-name" />
+                <v-text-field v-model="regData.surname" :label="$t('login.register.surname')" autocomplete="family-name" />
+                <v-text-field v-model="regData.email" :label="$t('login.email')" autocomplete="email" class="ek-span-full" />
+                <v-text-field v-model="regData.password" :label="$t('login.password')" type="password" autocomplete="new-password" />
+                <v-text-field v-model="regData.password2" :label="$t('login.register.repassword')" type="password"
+                  autocomplete="new-password" />
+              </EkFormGrid>
               <!-- ADR-0014 S4b: yasal onay. İşaretlenmeden kayıt GÖNDERİLMEZ (handleRegister). Metinler sitede (kanonik kaynak). -->
               <div class="consent-block">
                 <v-checkbox v-model="consent" class="consent-checkbox" data-testid="register-consent"
@@ -211,6 +206,7 @@ import LoadingComponent from '../LoadingComponent.vue'
 import { parseRegisterIntent, REGISTER_PLAN_NAMES } from '@/navigation/registerIntent'
 import { SITE_LEGAL_PATHS, siteUrl } from '@/config/siteLinks'
 import { resetAllStores } from '@/stores/resetRegistry'
+import EkFormGrid from '@/components/ds/EkFormGrid.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -393,9 +389,9 @@ const handleForgotPassword = async () => {
 }
 
 .ek-login-tab {
-  font-weight: var(--ek-font-weight-semibold) !important;
-  font-size: 11px !important;
-  letter-spacing: 0.03em;
+  font-weight: var(--ek-type-tab-weight) !important;
+  font-size: var(--ek-type-tab-size) !important;
+  letter-spacing: 0;
   color: var(--ek-color-content-muted) !important;
   border-radius: var(--ek-radius-md);
   transition: color var(--ek-duration-fast) var(--ek-easing-standard);
@@ -409,23 +405,16 @@ const handleForgotPassword = async () => {
 
 .login-content-wrapper {
   position: relative;
-  height: 372px;
 }
 
-.login-window {
-  height: 100% !important;
-}
-
-/* ADR-0014 S4b: kayıt sekmesi plan bandı + yasal onay içerir; sabit yükseklik yetmez. */
-.login-content-wrapper--register {
-  height: calc(var(--ek-space-16) * 9);
-}
-
+/* Aşama 3: sabit yükseklik (372px / 576px) kalktı — sekme içeriği kendi yüksekliğinde; alt bilgi
+   düğmenin hemen altında durur, başlık sekmeler arasında yerinden oynamaz (form üste yaslı). */
 .form-pane {
   width: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
+}
+
+.ek-login-register-grid {
+  margin-bottom: var(--ek-space-2);
 }
 
 .ek-login-submit {
@@ -588,7 +577,13 @@ const handleForgotPassword = async () => {
 }
 
 .consent-links .legal-link {
+  color: var(--ek-color-action);
   text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.consent-links .legal-link:hover {
+  color: var(--ek-color-action-hover);
 }
 
 .ek-login-footer {

@@ -183,7 +183,7 @@
       "new": {
         "title": "Yeni Müşteri",
         "customer": "Müşteri Adı",
-        "email": "EPosta",
+        "email": "E-posta",
         "phone": "Telefon",
         "real": "Gerçek Kişi",
         "corporate": "Tüzel Kişi",
@@ -198,7 +198,7 @@
         "save": "Kaydet",
         "clear": "Temizle"
       },
-      "email": "EPosta",
+      "email": "E-posta",
       "search": "Müşteri Ara",
       "searchlabel": "Müşteri Adı, Adresi, Eposta vb...",
       "phone": "Telefon",
@@ -289,7 +289,7 @@
         "customer": "Müşteri",
         "tckn": "TC Kimlik No",
         "vkn": "Vergi Numarası",
-        "email": "EPosta",
+        "email": "E-posta",
         "customerName": "Müşteri Adı",
         "phone": "Telefon",
         "taxissuer": "Vergi Dairesi",
@@ -319,7 +319,7 @@
       "countTotal": "Toplam Adet",
       "orderId": "Sipariş Numarası",
       "all": "Tüm Faturalar",
-      "email": "EPosta",
+      "email": "E-posta",
       "phone": "Telefon",
       "unapproved": "Arşivlenmemiş",
       "canceled": "İptal Faturalar",
@@ -453,7 +453,7 @@
       "surname": "Soyisim"
     },
     "username": "Kullanıcı Adı",
-    "email": "EPosta",
+    "email": "E-posta",
     "password": "Şifre",
     "title": "Giriş",
     "google": "Google İle Giriş Yap"
@@ -466,7 +466,7 @@
   "logs": {
     "log": {
       "new": "Yeni Müşteri Oluştur",
-      "email": "EPosta",
+      "email": "E-posta",
       "search": "İşlem Ara",
       "searchlabel": "İşlem Adı",
       "phone": "Telefon",

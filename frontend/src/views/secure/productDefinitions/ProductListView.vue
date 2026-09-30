@@ -25,6 +25,7 @@
     </EkDialogHost>
 
     <EkListScreen
+      section="Katalog"
       title="Ürünler"
       description="Tüm kanallardaki ürünlerinizi buradan yönetin."
       label="Ürün listesi"

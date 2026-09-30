@@ -16,8 +16,6 @@
       <EkSection title="Sistem Durum Özeti" class="block">
         <div class="panel controls-bar">
           <div class="controls-group">
-            <v-icon size="20" aria-hidden="true">mdi-filter-variant</v-icon>
-            <span class="label-caps">FİLTRE:</span>
             <v-select v-model="timeFrame" :items="timeFrameOptions" density="compact" hide-details variant="outlined"
               class="customTextField timeframe-select-inline select-max-140" color="primary"
               aria-label="Zaman aralığı"></v-select>
@@ -34,7 +32,7 @@
           <div class="controls-group">
             <v-switch v-model="autoRefresh" hide-details color="success" inset density="compact">
               <template v-slot:label>
-                <span class="label-caps">CANLI İZLEME</span>
+                <span class="controls-label">Canlı izleme</span>
               </template>
             </v-switch>
 
@@ -49,11 +47,11 @@
       <!-- Export / Import -->
       <v-row class="block">
         <v-col cols="12" md="6">
-          <h2 class="section-title">EXPORT OPERASYONLARI</h2>
+          <h2 class="section-title">Export operasyonları</h2>
           <div class="panel panel--muted stack-gap">
             <div class="panel-head">
               <div class="panel-head__left">
-                <span class="panel-title panel-title--caps">Export Trafiği (Global)</span>
+                <span class="panel-title">Export trafiği (global)</span>
                 <v-btn icon="mdi-information-outline" size="28" variant="text" color="primary"
                   @click="openExportDetail()" title="Detaylı Analiz" aria-label="Export trafiği detaylı analizini aç"></v-btn>
               </div>
@@ -71,7 +69,7 @@
             <div class="panel-head">
               <div class="panel-head__left">
                 <v-icon color="primary" size="20" aria-hidden="true">mdi-chart-bar</v-icon>
-                <span class="label-caps">EN AKTİF 5 MAĞAZA</span>
+                <span class="panel-title">En aktif 5 mağaza</span>
               </div>
             </div>
             <v-chart v-if="isMounted" theme="entegrasyonik" class="chart chart-min-350" :option="exportChartOption" autoresize role="img"
@@ -80,10 +78,10 @@
         </v-col>
 
         <v-col cols="12" md="6">
-          <h2 class="section-title">IMPORT OPERASYONLARI</h2>
+          <h2 class="section-title">Import operasyonları</h2>
           <div class="panel panel--muted stack-gap">
             <div class="panel-head">
-              <span class="panel-title panel-title--caps">Import Trafiği (Global)</span>
+              <span class="panel-title">Import trafiği (global)</span>
               <v-icon color="success" size="24" aria-hidden="true">mdi-download-network-outline</v-icon>
             </div>
             <div class="metric-pills">
@@ -98,7 +96,7 @@
             <div class="panel-head">
               <div class="panel-head__left">
                 <v-icon color="success" size="20" aria-hidden="true">mdi-chart-bar</v-icon>
-                <span class="label-caps">EN AKTİF 5 MAĞAZA</span>
+                <span class="panel-title">En aktif 5 mağaza</span>
               </div>
             </div>
             <v-chart v-if="isMounted" theme="entegrasyonik" class="chart chart-min-350" :option="importChartOption" autoresize role="img"
@@ -108,7 +106,7 @@
       </v-row>
 
       <!-- Operasyonel içgörüler -->
-      <h2 class="section-title">Operasyonel Insights & Performans</h2>
+      <h2 class="section-title">Operasyonel içgörüler ve performans</h2>
       <div class="panel panel--muted block">
         <v-row>
           <v-col cols="12" lg="4">
@@ -184,7 +182,7 @@
       </div>
 
       <!-- Altyapı -->
-      <h2 class="section-title">ALTYAPI VE SAĞLIK</h2>
+      <h2 class="section-title">Altyapı ve sağlık</h2>
       <v-row class="block">
         <v-col cols="12" md="4">
           <div class="panel h-100">
@@ -365,7 +363,7 @@
             <div class="controls-group">
               <v-switch v-model="exportAutoRefresh" hide-details color="success" inset density="compact">
                 <template v-slot:label>
-                  <span class="label-caps">CANLI İZLEME</span>
+                  <span class="controls-label">Canlı izleme</span>
                 </template>
               </v-switch>
 
@@ -1139,31 +1137,36 @@ onUnmounted(() => {
   }
 }
 
+// Aşama 3: başlık hiyerarşisi DS rollerine bağlandı — bölüm başlığı `heading` (16/24/600, cümle düzeni),
+// kart başlığı `subheading`, mikro etiket `micro`. Eskiden bölüm başlıkları 11px BÜYÜK HARF, kart başlıkları
+// BÜYÜK HARF'ti ve hiyerarşi tersine dönüyordu.
 .panel-title {
-  font-size: var(--ek-font-size-md);
-  font-weight: var(--ek-font-weight-semibold);
+  font-size: var(--ek-type-subheading-size);
+  line-height: var(--ek-type-subheading-line);
+  font-weight: var(--ek-type-subheading-weight);
   color: var(--ek-color-content-strong);
-
-  &--caps {
-    font-size: var(--ek-font-size-sm);
-    text-transform: uppercase;
-  }
 }
 
 .section-title {
   margin: 0 0 var(--ek-space-4);
-  font-size: var(--ek-font-size-xs);
-  font-weight: var(--ek-font-weight-semibold);
-  letter-spacing: 0.08em;
+  font-size: var(--ek-type-heading-size);
+  line-height: var(--ek-type-heading-line);
+  font-weight: var(--ek-type-heading-weight);
+  color: var(--ek-color-content-strong);
+}
+
+.label-caps {
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
   text-transform: uppercase;
   color: var(--ek-color-content-muted);
 }
 
-.label-caps {
-  font-size: var(--ek-font-size-xs);
-  font-weight: var(--ek-font-weight-semibold);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+.controls-label {
+  font-size: var(--ek-type-label-size);
+  font-weight: var(--ek-type-label-weight);
   color: var(--ek-color-content-default);
 }
 

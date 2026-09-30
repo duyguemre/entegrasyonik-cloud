@@ -3,6 +3,7 @@
     <LoadingComponent :attach="dialogAttach" ref="loadingComponentRef" />
 
     <EkListScreen
+      section="Yönetim"
       title="Mağaza Yönetimi"
       description="Platformdaki tüm mağaza kayıtlarını görüntüleyin, oluşturun ve yönetin."
       label="Mağazalar tablosu"

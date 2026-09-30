@@ -98,6 +98,18 @@
   font-weight: var(--ek-font-weight-medium);
 }
 
+/* ---- Aşama 3: ekran içi sekmeler (v-tabs) — cümle düzeni, `tab` tipografi rolü ----
+ * Kabuk sekme şeridi artık `EkWorkspaceTabs` (v-tab DEĞİL); `'ANASAYFA'` iddiası metin
+ * karşılaştırmasına taşındı (DESIGN_SYSTEM §13). Böylece Vuetify'ın BÜYÜK HARF + geniş aralıklı
+ * sekme başlığı (finans, işlem kayıtları, entegrasyon formları, müşteri kartı) DS diline döner. */
+.v-tab.v-btn {
+  text-transform: none !important;
+  letter-spacing: var(--ek-type-tab-tracking) !important;
+  font-size: var(--ek-type-tab-size);
+  line-height: var(--ek-type-tab-line);
+  font-weight: var(--ek-type-tab-weight);
+}
+
 /* ---- Odak göstergesi (Karar 3.1 — WCAG 2.4.7) ----
  * Tüm etkileşimli öğelerde tutarlı, görünür `:focus-visible` halkası.
  * `outline` kutu-modelini etkilemediği için `!important` GEREKMEZ; yalnızca
@@ -187,6 +199,18 @@
 .v-input__details .v-messages {
   opacity: 1 !important;
   color: var(--ek-color-content-muted);
+}
+
+/* Aşama 3: yardım/hata metni `caption` rolü (Vuetify 12px/geniş aralık/sıkışık satır yerine 12/16, düz aralık). */
+.v-input__details {
+  padding-top: var(--ek-space-1);
+}
+
+.v-messages__message {
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+  letter-spacing: 0;
+  hyphens: none;
 }
 
 .v-input--error .v-input__details .v-messages {

@@ -16,6 +16,7 @@
     <CreateInvoiceComponent v-model="createDialog" @saved="getInvoices(true)" />
 
     <EkListScreen
+      section="Satış"
       title="Faturalar"
       description="Sipariş ve manuel faturalarınızı buradan yönetin."
       label="Faturalar tablosu"

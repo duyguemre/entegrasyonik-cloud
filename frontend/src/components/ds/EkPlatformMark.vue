@@ -78,11 +78,14 @@ const accentDotColor = computed(() => accentHex.value ?? 'var(--ek-color-border-
   align-items: center;
   justify-content: center;
   flex: none;
-  border-radius: var(--ek-radius-md);
-  background: var(--ek-color-surface-sunken);
+  border-radius: var(--ek-radius-tile);
+  /* Aşama 3: ikon kapsülü motifi (EkIconTile ile aynı dil) — marka tonlu açık zemin + ince marka halkası.
+     Eskiden yalnız sol kenarda 3px çizgi vardı ve harfle birlikte "( T" gibi kırık görünüyordu.
+     Harf `content-strong` (marka rengi metinde AA vermez). */
+  background: color-mix(in srgb, v-bind(accentBorderColor) 14%, var(--ek-color-surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, v-bind(accentBorderColor) 45%, var(--ek-color-border-default));
   color: var(--ek-color-content-strong);
-  font-weight: var(--ek-font-weight-semibold);
-  border-left: 3px solid v-bind(accentBorderColor);
+  font-weight: var(--ek-font-weight-bold);
 }
 
 .ek-platform-mark__badge--sm {

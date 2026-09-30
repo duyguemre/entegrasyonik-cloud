@@ -68,8 +68,9 @@ test.describe('ADR-0015 B5-3 — FinancialListView (finans)', () => {
     // Sipariş no'su olmayan satır: mobil kartta "İşlem No: <externalId>", masaüstünde "ID: <externalId>"
     await expect(page.getByText('TRX-E2E-0002')).toBeVisible()
     await expect(page.getByText('SIP-E2E-1003')).toBeVisible()
-    await expect(page.getByText('SATIŞ', { exact: true })).toBeVisible()
-    await expect(page.getByText('KESİNTİ', { exact: true })).toBeVisible()
+    // Aşama 3: tür çipleri cümle düzeninde (tüm listelerle aynı çip dili; eskiden 'SATIŞ'/'KESİNTİ').
+    await expect(page.locator('.financialListView tbody').getByText('Satış', { exact: true }).first()).toBeVisible()
+    await expect(page.locator('.financialListView tbody').getByText('Kesinti', { exact: true })).toBeVisible()
     // Karakterizasyon: bilinmeyen tür çevrilmeden ham haliyle gösterilir (translations[type] || type).
     await expect(page.getByText('UNKNOWN_TYPE', { exact: true })).toBeVisible()
   })

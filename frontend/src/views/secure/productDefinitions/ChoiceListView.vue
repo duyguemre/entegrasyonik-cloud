@@ -8,6 +8,7 @@
       @cancel="confirmationDelete.isDialogOpen = false" />
 
     <EkListScreen
+      section="Katalog"
       :title="$t('menu.productDefinitions.choiceList')"
       label="Varyant grupları tablosu"
       noun="grup"

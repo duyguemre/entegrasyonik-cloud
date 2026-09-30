@@ -36,13 +36,13 @@ const items = computed(() => {
   return props.compact
     ? [
         { label: 'Satış', value: fc(s.totalCredit), tone: 'success' },
-        { label: 'Komisyon', value: fc(s.totalDebt), tone: 'danger' },
+        { label: 'Komisyon', value: fc(s.totalDebt), tone: '' },
         { label: 'Net', value: fc(s.netAmount), tone: 'strong' },
         { label: 'İşlem', value: `${s.transactionCount}`, tone: '' },
       ]
     : [
         { label: 'Toplam Satış', value: fc(s.totalCredit), tone: 'success' },
-        { label: 'Komisyon', value: fc(s.totalDebt), tone: 'danger' },
+        { label: 'Komisyon', value: fc(s.totalDebt), tone: '' },
         { label: 'Net Hakediş', value: fc(s.netAmount), tone: 'strong' },
         { label: 'Kargo', value: fc(s.totalCargo), tone: '' },
         { label: 'İşlem', value: `${s.transactionCount} adet`, tone: '' },
@@ -51,19 +51,17 @@ const items = computed(() => {
 </script>
 
 <style scoped>
+/* Aşama 3: KPI dili — mikro etiket (BÜYÜK HARF) üstte, değer altta kalın ve tabular; hücreler ince ayraçlı
+   ızgara (dar ekranda satıra sarılır, yatay taşma yok). Komisyon kırmızı DEĞİL: gider bir hata değildir
+   (renk anlamı: error = hata/tehlike); gelir yeşil, net vurgu, diğerleri nötr. */
 .ek-fin-summary {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ek-space-2) var(--ek-space-8);
-  padding: var(--ek-space-3) var(--ek-space-4);
-  background: var(--ek-color-surface-muted);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  background: var(--ek-color-surface);
   border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-md);
-}
-
-.ek-fin-summary--compact {
-  justify-content: space-between;
-  gap: var(--ek-space-3);
+  border-radius: var(--ek-radius-card);
+  box-shadow: var(--ek-shadow-card);
+  overflow: hidden;
 }
 
 .ek-fin-summary__loading {
@@ -71,6 +69,7 @@ const items = computed(() => {
   flex-wrap: wrap;
   gap: var(--ek-space-3);
   width: 100%;
+  padding: var(--ek-space-3) var(--ek-space-4);
 }
 
 .ek-fin-summary__skeleton {
@@ -81,21 +80,31 @@ const items = computed(() => {
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-1);
-  white-space: nowrap;
+  min-width: 0;
+  padding: var(--ek-space-3) var(--ek-space-4);
+  box-shadow: inset -1px 0 0 var(--ek-color-border-subtle), inset 0 -1px 0 var(--ek-color-border-subtle);
 }
 
 .ek-fin-summary__label {
-  font-size: var(--ek-font-size-xs);
-  font-weight: var(--ek-font-weight-medium);
   color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .ek-fin-summary__value {
-  font-size: var(--ek-font-size-md);
-  font-weight: var(--ek-font-weight-semibold);
   color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-heading-size);
+  line-height: var(--ek-type-heading-line);
+  font-weight: var(--ek-font-weight-semibold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.ek-fin-summary__value--success { color: var(--ek-color-success); }
-.ek-fin-summary__value--danger { color: var(--ek-color-danger); }
+.ek-fin-summary__value--success { color: var(--ek-color-success-emphasis); }
+.ek-fin-summary__value--strong { color: var(--ek-color-action-emphasis); }
 </style>

@@ -7,17 +7,10 @@
       :color="confirmDialog.color" :confirm-text="confirmDialog.confirmText" @confirm="confirmDialog.onConfirm"
       maxWidth="400px" />
 
-    <!-- Bilgi bandı -->
-    <div class="info-banner" role="note">
-      <v-icon size="20" class="info-banner__icon" aria-hidden="true">mdi-information-outline</v-icon>
-      <div class="info-banner__text">
-        <span class="info-banner__title">DESTEK MERKEZİ ANALİZİ</span>
-        <span class="info-banner__body">Müşteri talepleri ve teknik destek biletlerini buradan
-          yönetebilir ve cevaplayabilirsiniz.</span>
-      </div>
-    </div>
-
+    <!-- Aşama 3: "DESTEK MERKEZİ ANALİZİ" bilgi bandı kalktı — açıklamayı sayfa başlığı zaten taşıyor ve bant
+         `warning` tonunu dekoratif amaçla kullanıyordu (renk anlamı kuralı: warning = dikkat/bekliyor). -->
     <EkListScreen
+      section="Yönetim"
       class="ticket-list-view__screen"
       title="Destek Yönetimi"
       description="Talepleri filtreleyin, yanıtlayın veya yeni bir destek süreci başlatın."
@@ -69,14 +62,14 @@
       <template #cell-subject="{ row }">
         <span class="ek-ticket-subject">
           <span class="ek-ticket-subject__title">{{ row.subject }}</span>
-          <span class="ek-muted ek-ticket-subject__type">{{ row.type }}</span>
+          <span class="ek-muted ek-ticket-subject__type">{{ TICKET_TYPE_LABELS[row.type as TicketTypeEnum] ?? row.type }}</span>
         </span>
       </template>
       <template #cell-clientId="{ row }">
         <EkStatusChip tone="neutral" :label="`ID: ${row.clientId}`" />
       </template>
       <template #cell-priority="{ row }">
-        <EkStatusChip :tone="getPriorityTone(row.priority)" :label="row.priority" />
+        <EkStatusChip :tone="getPriorityTone(row.priority)" :label="TICKET_PRIORITY_LABELS[row.priority as TicketPriorityEnum] ?? row.priority" />
       </template>
       <template #cell-status="{ row }">
         <EkStatusChip :tone="getStatusTone(row.status)" :label="formatStatus(row.status)" />
@@ -132,6 +125,7 @@ import { isRequestError } from '@/components/ds/listStandard';
 import EkStatusChip from '@/components/ds/EkStatusChip.vue';
 import { formatDateTime } from '@/composables/format';
 import type { StatusTone } from '@/design/status-map';
+import { TICKET_PRIORITY_LABELS, TICKET_TYPE_LABELS, type TicketPriorityEnum, type TicketTypeEnum } from '@/types/TicketTypes';
 
 const restApi = useRestApi();
 const snackbarStore = useSnackbarStore();
@@ -397,37 +391,10 @@ onMounted(() => {
   min-height: 0;
 }
 
-.info-banner {
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: var(--ek-space-3);
-  padding: var(--ek-space-3) var(--ek-space-4);
-  background: var(--ek-color-warning-subtle);
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-lg);
-}
 
-.info-banner__icon {
-  color: var(--ek-color-warning);
-}
 
-.info-banner__text {
-  display: flex;
-  flex-direction: column;
-}
 
-.info-banner__title {
-  font-size: var(--ek-font-size-xs);
-  font-weight: var(--ek-font-weight-semibold);
-  letter-spacing: 0.04em;
-  color: var(--ek-color-content-strong);
-}
 
-.info-banner__body {
-  font-size: var(--ek-font-size-xs);
-  color: var(--ek-color-content-default);
-}
 
 .ek-muted {
   color: var(--ek-color-content-muted);

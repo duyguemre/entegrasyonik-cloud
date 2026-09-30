@@ -54,14 +54,16 @@ defineProps<{
 }
 
 .ek-settings-section__title {
-  font-size: var(--ek-font-size-lg);
-  font-weight: var(--ek-font-weight-semibold);
+  font-size: var(--ek-type-heading-size);
+  line-height: var(--ek-type-heading-line);
+  font-weight: var(--ek-type-heading-weight);
   color: var(--ek-color-content-strong);
   margin: 0 0 var(--ek-space-1) 0;
 }
 
 .ek-settings-section__description {
-  font-size: var(--ek-font-size-md);
+  font-size: var(--ek-type-body-size);
+  line-height: var(--ek-type-body-line);
   color: var(--ek-color-content-muted);
   margin: 0;
 }
@@ -70,5 +72,11 @@ defineProps<{
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-4);
+}
+
+/* Aşama 3: Vuetify alanları (`.v-input` → `flex: 1 1 auto`) dikey flex'te boş alanı doldurup satır
+   yüksekliğine UZUYORDU (tek seçim alanı ~88px). Alanlar kendi yüksekliğinde kalır. */
+.ek-settings-section__fields > :deep(*) {
+  flex: 0 0 auto;
 }
 </style>

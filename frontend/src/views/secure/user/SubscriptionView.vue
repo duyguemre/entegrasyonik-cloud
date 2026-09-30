@@ -46,7 +46,7 @@
         </div>
 
         <EkEmptyState v-else-if="plansError" variant="error" title="Planlar Yüklenemedi"
-          message="Plan bilgileri şu anda getirilemedi -- bağlantınızı kontrol edip tekrar deneyin."
+          message="Plan bilgileri şu anda getirilemedi. Bağlantınızı kontrol edip tekrar deneyin."
           show-action action-text="Tekrar Dene" action-icon="mdi-refresh"
           @action="fetchPlans" />
 
@@ -188,10 +188,10 @@ const statusMessage = computed(() => {
   switch (subscriptionStatus.value) {
     case 'trialing':
       return sub?.trialEndsAt
-        ? `Deneme sürümündesiniz -- ${formatDate(sub.trialEndsAt)} tarihine kadar tüm özellikler açık. Devam etmek için bir plan seçin.`
+        ? `Deneme sürümündesiniz; ${formatDate(sub.trialEndsAt)} tarihine kadar tüm özellikler açık. Devam etmek için bir plan seçin.`
         : 'Deneme sürümündesiniz. Deneme bitiminde devam etmek için bir plan seçmeniz gerekir.';
     case 'active':
-      return 'Aboneliğiniz aktif -- tüm özellikler ve pazaryeri senkronizasyonu çalışıyor.';
+      return 'Aboneliğiniz aktif; tüm özellikler ve pazaryeri senkronizasyonu çalışıyor.';
     case 'past_due':
       return accessReason.value || 'Son ödemeniz alınamadı. Lütfen kart bilgilerinizi güncelleyin, aksi halde erişiminiz kısıtlanacak.';
     case 'suspended':
@@ -488,7 +488,10 @@ onMounted(() => {
 }
 
 .plan-card-action {
-  margin-top: var(--ek-space-2);
+  /* Vuetify `.v-btn--block` `flex: 1 0 auto` taşır; dikey flex kartta düğmeyi boş alan kadar UZATIYORDU
+     (kısa içerikli kartta ~80px düğme). Düğme kendi yüksekliğinde, kartın dibine yaslı. */
+  flex: 0 0 auto;
+  height: var(--ek-control-h-lg);
 }
 
 .checkout-url {

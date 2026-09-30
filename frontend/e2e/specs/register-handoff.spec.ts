@@ -24,7 +24,7 @@ const consent = (page: Page) => page.getByRole('checkbox', { name: /okudum, kabu
 async function fillRegisterForm(page: Page) {
   await page.getByLabel('İsim').fill('Deneme')
   await page.getByLabel('Soyisim').fill('Kullanici')
-  await page.getByLabel('EPosta').last().fill('yeni@example.invalid')
+  await page.getByLabel('E-posta').last().fill('yeni@example.invalid')
   await page.getByLabel('Şifre', { exact: true }).last().fill('e2e-pass-1234')
   await page.getByLabel('Şifre (Tekrar)').fill('e2e-pass-1234')
 }
@@ -60,7 +60,7 @@ test.describe('ADR-0014 S4b — site -> kayıt devri', () => {
     await installApiMocks(page, { checkAuthentication: false, userContext: mockError(401, {}) })
     await page.goto(CTA('growth'))
 
-    await expect(page.getByRole('tab', { name: 'KAYIT' })).toHaveAttribute('aria-selected', 'true')
+    await expect(page.getByRole('tab', { name: 'Kayıt' })).toHaveAttribute('aria-selected', 'true')
     const band = page.getByTestId('register-plan-band')
     await expect(band).toBeVisible()
     await expect(band).toContainText('Seçtiğiniz plan: Büyüme')
@@ -70,21 +70,21 @@ test.describe('ADR-0014 S4b — site -> kayıt devri', () => {
   test('mode=register plansız: kayıt sekmesi açılır, bilgi bandı yok', async ({ page }) => {
     await installApiMocks(page, { checkAuthentication: false, userContext: mockError(401, {}) })
     await page.goto('/login?mode=register')
-    await expect(page.getByRole('tab', { name: 'KAYIT' })).toHaveAttribute('aria-selected', 'true')
+    await expect(page.getByRole('tab', { name: 'Kayıt' })).toHaveAttribute('aria-selected', 'true')
     await expect(page.getByTestId('register-plan-band')).toHaveCount(0)
   })
 
   test('mode yok: giriş sekmesi açık kalır (mevcut davranış), plan tek başına sekmeyi değiştirmez', async ({ page }) => {
     await installApiMocks(page, { checkAuthentication: false, userContext: mockError(401, {}) })
     await page.goto('/login?plan=starter')
-    await expect(page.getByRole('tab', { name: 'GİRİŞ' })).toHaveAttribute('aria-selected', 'true')
+    await expect(page.getByRole('tab', { name: 'Giriş' })).toHaveAttribute('aria-selected', 'true')
   })
 
   for (const bad of ['enterprise', 'STARTER', '%3Cscript%3Ealert(1)%3C%2Fscript%3E', 'javascript%3Aalert(1)', '%2F%2Fevil.com', 'x'.repeat(40)]) {
     test(`geçersiz plan "${bad.slice(0, 24)}" sessizce yok sayılır (enjeksiyon/kurumsal yok)`, async ({ page }) => {
       await installApiMocks(page, { checkAuthentication: false, userContext: mockError(401, {}) })
       await page.goto(`/login?mode=register&plan=${bad}&interval=zzz`)
-      await expect(page.getByRole('tab', { name: 'KAYIT' })).toHaveAttribute('aria-selected', 'true')
+      await expect(page.getByRole('tab', { name: 'Kayıt' })).toHaveAttribute('aria-selected', 'true')
       await expect(page.getByTestId('register-plan-band')).toHaveCount(0)
       await expect(page.locator('body')).not.toContainText('alert(1)')
     })

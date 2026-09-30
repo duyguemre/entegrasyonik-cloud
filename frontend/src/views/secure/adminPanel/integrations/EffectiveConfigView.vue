@@ -27,6 +27,7 @@
       </EkKpiRow>
 
       <EkListScreen
+        section="Yönetim"
         class="effectiveConfigView__screen"
         :title="`Etkin Yapılandırma — ${targetLabel}`"
         :description="description"

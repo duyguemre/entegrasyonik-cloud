@@ -104,7 +104,8 @@ defineProps<{
   display: flex;
   align-items: center;
   gap: var(--ek-space-1);
-  font-size: var(--ek-font-size-xs);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
   color: var(--ek-color-content-muted);
 }
 
@@ -128,15 +129,17 @@ defineProps<{
 }
 
 .ek-page-header__title {
-  font-size: var(--ek-font-size-2xl);
-  font-weight: var(--ek-font-weight-semibold);
+  font-size: var(--ek-type-title-size);
+  line-height: var(--ek-type-title-line);
+  font-weight: var(--ek-type-title-weight);
   letter-spacing: -0.01em;
   color: var(--ek-color-content-strong);
   margin: 0;
 }
 
 .ek-page-header__description {
-  font-size: var(--ek-font-size-md);
+  font-size: var(--ek-type-body-size);
+  line-height: var(--ek-type-body-line);
   color: var(--ek-color-content-muted);
   margin: 0;
 }

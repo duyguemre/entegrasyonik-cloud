@@ -20,6 +20,11 @@
   <div class="ek-list-screen">
     <header class="ek-list-screen__head" :class="{ 'is-headless': !title }">
       <div v-if="title" class="ek-list-screen__titles">
+        <nav v-if="section" class="ek-list-screen__breadcrumb" aria-label="Breadcrumb">
+          <span>{{ section }}</span>
+          <v-icon icon="mdi-chevron-right" size="14" aria-hidden="true" />
+          <span class="ek-list-screen__breadcrumb-current">{{ title }}</span>
+        </nav>
         <h1 class="ek-list-screen__title">{{ title }}</h1>
         <p v-if="description" class="ek-list-screen__desc">{{ description }}</p>
       </div>
@@ -134,6 +139,8 @@ const props = withDefaults(
   defineProps<{
     /** Boşsa başlık bloğu çizilmez (ör. sekmeli bir sayfanın içindeki liste — başlığı taşıyan sayfadır). */
     title?: string
+    /** Bölüm yolu (breadcrumb) — sol menüdeki bölüm adı (ör. "Satış"); EkPageHeader ile aynı ritim. */
+    section?: string
     description?: string
     /** Tablo ve çerçevenin erişilebilir adı. */
     label: string
@@ -199,6 +206,7 @@ const props = withDefaults(
     refreshable: true,
     refreshLabel: 'Yenile',
     title: '',
+    section: undefined,
   },
 )
 
@@ -261,7 +269,24 @@ function setCollapsed(v: boolean) {
 }
 
 .ek-list-screen__titles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-1);
   min-width: 0;
+}
+
+/* Aşama 3: EkPageHeader ile AYNI başlık ritmi (bölüm yolu → H1 → açıklama). */
+.ek-list-screen__breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+}
+
+.ek-list-screen__breadcrumb-current {
+  color: var(--ek-color-content-default);
 }
 
 .ek-list-screen__title {
@@ -275,8 +300,8 @@ function setCollapsed(v: boolean) {
 .ek-list-screen__desc {
   margin: 0;
   color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
-  line-height: var(--ek-type-caption-line);
+  font-size: var(--ek-type-body-size);
+  line-height: var(--ek-type-body-line);
 }
 
 .ek-list-screen__head-actions {

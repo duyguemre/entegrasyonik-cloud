@@ -13,6 +13,7 @@
   <div class="integrationConfigListView">
    <PlatformAdminGuard :allowed="isPlatformAdmin()">
     <EkListScreen
+      section="Yönetim"
       class="integrationConfigListView__screen"
       title="Entegrasyonlar"
       description="Her entegrasyonun ve motorun yayındaki ayar sürümünü, kabul durumunu ve açık taslağını buradan görüp yönetebilirsiniz."

@@ -51,7 +51,7 @@ test.describe('ADR-0012 — Derin bağlantı', () => {
     await page.goto('/orders?internalStatuses=APPROVED')
     await expect(page).toHaveURL(/\/login\?redirect=(%2F|\/)orders/)
 
-    await page.getByLabel('EPosta').fill('e2e@example.invalid')
+    await page.getByLabel('E-posta').fill('e2e@example.invalid')
     await page.getByLabel('Şifre', { exact: true }).fill('e2e-pass-1234')
     await page.getByRole('button', { name: 'Giriş' }).click()
 
@@ -62,7 +62,7 @@ test.describe('ADR-0012 — Derin bağlantı', () => {
   test('açık yönlendirme önlemi: //evil.com gibi bir redirect kabul edilmez, /dashboard\'a düşer', async ({ page }) => {
     await installApiMocks(page, { checkAuthentication: false, userContext: mockError(401, {}) })
     await page.goto('/login?redirect=%2F%2Fevil.com')
-    await page.getByLabel('EPosta').fill('e2e@example.invalid')
+    await page.getByLabel('E-posta').fill('e2e@example.invalid')
     await page.getByLabel('Şifre', { exact: true }).fill('e2e-pass-1234')
     await installApiMocks(page, {
       'SecurityService/login': userContextFixture,

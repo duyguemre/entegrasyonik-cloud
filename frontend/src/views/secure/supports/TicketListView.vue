@@ -20,6 +20,7 @@
     <TicketDetailComponent v-model="isDetailOpen" :ticket="selectedTicketForDetail" @reply="handleSendReply" />
 
     <EkListScreen
+      section="Destek"
       title="Destek Talepleri"
       description="Destek ekibiyle yazışmalarınızı buradan takip edin ve yeni talep açın."
       label="Destek talepleri tablosu"

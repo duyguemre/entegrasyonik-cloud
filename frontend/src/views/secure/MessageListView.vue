@@ -14,6 +14,7 @@
     <MessageDetailComponent v-model="detailDialog.show" :message="selectedMessage" @reply="handleReply" />
 
     <EkListScreen
+      section="Satış"
       title="Mesajlar"
       description="Pazaryerlerinden gelen müşteri mesajlarını buradan yönetin."
       label="Mesajlar tablosu"

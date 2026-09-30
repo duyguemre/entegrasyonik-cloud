@@ -54,6 +54,7 @@
     </EkFormDialog>
 
     <EkListScreen
+      section="Satış"
       title="Siparişler"
       description="Tüm pazaryeri siparişlerinizi buradan yönetin."
       label="Siparişler tablosu"
