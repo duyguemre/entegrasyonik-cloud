@@ -21,10 +21,11 @@ describe('A12 — pasif sekme hover yalnız renk/opaklık', () => {
     }
   })
 
-  it('ışıma ayrı katmanda (tab-hover + action-border saç çizgisi), yalnız opaklıkla ve motion token’larıyla geçer', () => {
+  it('ışıma ayrı katmanda (tab-hover → şerit sönen gradyan + action-border saç çizgisi), yalnız opaklıkla ve motion token’larıyla geçer', () => {
     expect(tabs).toContain('<span class="ek-tab__wash" aria-hidden="true"></span>')
     const wash = rule('.ek-tab__wash')
-    expect(wash).toContain('background: var(--ek-color-tab-hover)')
+    expect(wash).toMatch(/background: linear-gradient\(to bottom, var\(--ek-color-tab-hover\), color-mix\(in srgb, var\(--ek-color-tab-hover\) \d+%, transparent\)\)/)
+    expect(wash).toContain('inset: -1px -1px 1px') // alt çizgi hover altında görünür
     expect(wash).toContain('opacity: 0')
     expect(wash).toMatch(/transition: opacity var\(--ek-duration-fast\) var\(--ek-easing-standard\)/)
     expect(rule('.ek-tab__wash::after')).toContain('background: var(--ek-color-action-border)')

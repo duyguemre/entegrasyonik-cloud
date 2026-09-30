@@ -104,9 +104,11 @@ test.describe('A12 — pasif sekmeler', () => {
     expect(contrast(icon, strip)).toBeGreaterThanOrEqual(4.5)
     await tab.hover()
     await page.waitForTimeout(250)
-    const hoverBg = await tab.locator('.ek-tab__wash').evaluate((el) => getComputedStyle(el).backgroundColor)
+    // Işıma üstte `tab-hover`, altta şerit tonuna söner → metin iki uca karşı da AA.
+    const hoverBg = await tab.evaluate((el) => getComputedStyle(el).getPropertyValue('--ek-color-tab-hover'))
     const hoverText = await tab.evaluate((el) => getComputedStyle(el).color)
     expect(contrast(hoverText, hoverBg)).toBeGreaterThanOrEqual(4.5)
+    expect(contrast(hoverText, strip)).toBeGreaterThanOrEqual(4.5)
   })
 
   test('klavye odağı: halka tüm sekmeyi (kapatma dahil) sarar, kapatma belirginleşir', async ({ page }) => {
@@ -152,5 +154,20 @@ test.describe('A12 — pasif sekmeler 390px', () => {
     await page.locator('.ek-tabs .ek-tab').nth(1).hover()
     await page.waitForTimeout(250)
     expect(await snapshot(page)).toEqual(before)
+  })
+})
+
+test.describe('A12 — hover plakası içerikle birleşmez', () => {
+  test.skip(({ viewport }) => (viewport?.width ?? 0) < 1000, 'masaüstü')
+
+  test('ışıma katmanı şeridin alt çizgisinin ÜSTÜNDE biter (çizgi hover sekmesinin altında görünür kalır)', async ({ page }) => {
+    await openTabs(page)
+    const tab = page.locator('.ek-tabs .ek-tab').nth(2)
+    await tab.hover()
+    const [wash, strip] = await Promise.all([
+      tab.locator('.ek-tab__wash').evaluate((el) => el.getBoundingClientRect().bottom),
+      page.locator('.ek-tabs').evaluate((el) => el.getBoundingClientRect().bottom),
+    ])
+    expect(strip - wash).toBe(1)
   })
 })

@@ -57,6 +57,8 @@ const passive = WIDTH <= 480 ? 1 : ACTIVE + 1
 // plaka aydınlanır + üst saç çizgisi; (C) "çizgisiz ritim": ayraç yok, boşluk + hover'da yalnız zemin ışıması.
 const ALTS: Record<string, string> = {
   'alt-b-plaka': `.ek-tab:not(.is-active){background:var(--ek-color-surface-muted)!important;border-color:var(--ek-color-border-default)!important;margin:0 2px}.ek-tab+.ek-tab::before{display:none}`,
+  // (D1) düz ışıma plakası — 1. iterasyonda denendi; seçilen (D2) üstten sönen ışıma ürün kodunda.
+  'alt-d1-duz-plaka': `.ek-tab__wash{background:var(--ek-color-tab-hover)!important}`,
   'alt-c-ritim': `.ek-tab+.ek-tab::before{display:none}.ek-tab:not(.is-active){margin:0 3px}.ek-tab:not(.is-active):hover{background:var(--ek-color-tab-hover)!important}`,
 }
 
@@ -101,6 +103,28 @@ const cases: Array<{ name: string; run: (page: Page) => Promise<void> }> = [
       await p.keyboard.press('ArrowRight')
       await settle(p, 300)
       await p.screenshot({ path: file('odak-yakin'), clip: await tabsClip(p, passive, passive + 2) })
+    },
+  },
+  {
+    name: 'odak-etkin-yakin',
+    run: async (p) => {
+      await setup(p)
+      await p.locator('.ek-tabs [role=tab][aria-selected=true]').focus()
+      await p.keyboard.press('ArrowRight')
+      await p.keyboard.press('ArrowLeft')
+      await settle(p, 300)
+      const a = WIDTH <= 480 ? 0 : ACTIVE
+      await p.screenshot({ path: file('odak-etkin-yakin'), clip: await tabsClip(p, a - 1, a + 1) })
+    },
+  },
+  {
+    name: 'kapat-hover-yakin',
+    run: async (p) => {
+      await setup(p)
+      if (WIDTH <= 480) return
+      await p.locator('.ek-tabs .ek-tab').nth(passive + 1).locator('.ek-tab__close').hover()
+      await settle(p, 400)
+      await p.screenshot({ path: file('kapat-hover-yakin'), clip: await tabsClip(p, passive, passive + 2) })
     },
   },
   ...Object.entries(ALTS).map(([name, css]) => ({

@@ -393,13 +393,15 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
 }
 
 /* A12 — pasif hover ışıması: ayrı katman, YALNIZ opaklık geçişi (giriş + çıkış simetrik, motion token'ları). Zemin
-   `tab-hover` (şeritten bir kademe açık, etkinden koyu) + üst kenarda etkin göstergeyle aynı geometride 2px
-   `action-border` saç çizgisi — "buraya gelirse etkin olur" ipucu. Boyut/dolgu/kalınlık/kenarlık değişmez. */
+   üstten aşağı `tab-hover` → şerit tonuna sönen ışıma (düz plaka etkin sekmeyi taklit ediyordu) + üst kenarda etkin
+   göstergeyle aynı geometride 2px `action-border` saç çizgisi — "buraya gelirse etkin olur" ipucu.
+   Boyut/dolgu/kalınlık/kenarlık değişmez. */
 .ek-tab__wash {
   position: absolute;
-  inset: -1px -1px 0;
+  /* Alt 1px şeridin alt çizgisine ayrılır: hover plakası içerikle BİRLEŞMEZ (birleşme yalnız etkin sekmenin). */
+  inset: -1px -1px 1px;
   border-radius: inherit;
-  background: var(--ek-color-tab-hover);
+  background: linear-gradient(to bottom, var(--ek-color-tab-hover), color-mix(in srgb, var(--ek-color-tab-hover) 35%, transparent));
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--ek-duration-fast) var(--ek-easing-standard);
