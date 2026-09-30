@@ -94,7 +94,7 @@ test.describe('DS-v2 vitrini (/design-system)', () => {
 
   test('kademeli seçici: → alt kolona geçer, arama yaprak yollarını listeler', async ({ page }) => {
     await openVitrine(page)
-    const picker = page.locator('#kademeli')
+    const picker = page.locator('#kademeli .ek-cascade').first() // A9: bölümde ikinci (lazy/iskelet) örnek de var
     await picker.getByRole('option', { name: /Elektronik/ }).click()
     await expect(picker.getByRole('listbox', { name: 'Elektronik' })).toBeVisible()
     await picker.getByRole('searchbox', { name: 'Kategori ara…' }).fill('kılıf')
