@@ -33,7 +33,7 @@
       <v-menu v-model="open" :close-on-content-click="false" location="bottom start" :offset="8">
         <template #activator="{ props: menuProps }">
           <button v-bind="menuProps" type="button" class="ek-date__btn" :aria-label="`Takvimi aç${labelSuffix}`">
-            <v-icon icon="mdi-calendar-outline" aria-hidden="true" />
+            <v-icon icon="mdi-calendar-outline" size="18" aria-hidden="true" />
           </button>
         </template>
         <v-date-picker

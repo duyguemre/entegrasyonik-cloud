@@ -42,6 +42,9 @@ const TITLES: Record<string, string> = {
   'adminPanel/AdminSystemManagementView': 'adminSystemManagement',
   'adminPanel/IntegrationConfigListView': 'adminOperations',
   'adminPanel/ComplianceView': 'adminIntegrationCompliance',
+  'adminPanel/IntegrationSettingsView': 'integrationSettings',
+  'adminPanel/EngineSettingsView': 'engineSettings',
+  'adminPanel/EffectiveConfigView': 'effectiveConfig',
 }
 
 /** Menü grubu → üyeler (sıra = sidebar sırası). Alt öğeler `parent/Code` anahtarıyla gelir. */
@@ -53,7 +56,7 @@ const GROUPS: Array<{ group: string; keys: string[] }> = [
   { group: 'finance', keys: ['FinancialListView'] },
   { group: 'settings', keys: ['LogListView', 'AuditLogView'] },
   { group: 'account', keys: ['user/SubscriptionView', 'AccountSecurityView', 'PrivacyDataView'] },
-  { group: 'applicationAdministration', keys: ['adminPanel/AdminClientListView', 'adminPanel/AdminTicketListView', 'adminPanel/AdminSystemManagementView', 'adminPanel/IntegrationConfigListView', 'adminPanel/ComplianceView'] },
+  { group: 'applicationAdministration', keys: ['adminPanel/AdminClientListView', 'adminPanel/AdminTicketListView', 'adminPanel/AdminSystemManagementView', 'adminPanel/IntegrationConfigListView', 'adminPanel/IntegrationSettingsView', 'adminPanel/EngineSettingsView', 'adminPanel/EffectiveConfigView', 'adminPanel/ComplianceView'] },
 ]
 
 const PARENT_TITLE: Record<string, string> = { productDefinitions: 'productDefinitions', integrations: 'integrations', adminPanel: 'adminPanel', user: 'user' }

@@ -336,9 +336,11 @@ function setCollapsed(v: boolean) {
     width: 100%;
   }
 
+  /* Aşama 3: mobilde arama tam satır; eylemler (birincil + yenile) altında sağa yaslı tek satır —
+     yenile düğmesi tek başına alt satıra düşmez. */
   .ek-list-screen__search,
   .ek-list-screen__head.is-headless .ek-list-screen__search {
-    flex: 1 1 180px;
+    flex: 1 1 100%;
     width: auto;
   }
 }

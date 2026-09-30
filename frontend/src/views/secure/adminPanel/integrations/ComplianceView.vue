@@ -331,6 +331,8 @@ defineExpose({
 
 .complianceView {
   min-width: 0;
+  /* Aşama 3: diğer ekranlarla aynı sayfa kenar boşluğu (içerik sol menüye yapışıyordu). */
+  padding: var(--ek-space-6);
 }
 
 .complianceView__findings {
