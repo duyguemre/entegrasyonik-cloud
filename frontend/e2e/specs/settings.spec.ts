@@ -244,7 +244,12 @@ test.describe('ADR-0015 B5-3 — SettingListView', () => {
     await expect(page.getByRole('button', { name: 'Logo Seç' })).toBeVisible()
     await expect(page.getByPlaceholder('https://example.com/logo.png')).toHaveCount(0)
 
-    await page.getByLabel('URL kullan', { exact: true }).check({ force: true })
+    // [Test ortamı sağlamlaştırması — Windows mobilde kırmızı, Linux'ta yeşil] `check({ force: true })` kararlılık
+    // (stable) beklemesini atlar: yavaş makinede ekran/sekme geçişi sürerken hesaplanan noktaya tıklayıp anahtarı
+    // ıskalayabiliyor. Anahtar, görünür etiketine normal (kararlılık bekleyen) tıklamayla açılır; durum ayrıca doğrulanır.
+    const urlSwitch = page.getByLabel('URL kullan', { exact: true })
+    await page.locator('.settingListView').getByText('URL kullan', { exact: true }).click()
+    await expect(urlSwitch).toBeChecked()
     await expect(page.getByRole('button', { name: 'Logo Seç' })).toHaveCount(0)
     await page.getByPlaceholder('https://example.com/logo.png').fill('https://example.com/e2e-logo.png')
     await page.getByRole('button', { name: 'Ayarları Kaydet' }).click()

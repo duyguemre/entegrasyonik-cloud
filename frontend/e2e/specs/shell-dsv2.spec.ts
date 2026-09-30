@@ -137,6 +137,13 @@ test.describe('DS-v2 kabuk — kısayollar', () => {
     for (const text of ['Akıllı aramaya git', 'Sonraki sekme', 'Etkin sekmeyi kapat', 'Sol menüyü daralt', 'Üst bölümü daralt', 'Odak modu']) {
       await expect(dialog.getByText(text, { exact: false })).toBeVisible()
     }
+    // [Test ortamı sağlamlaştırması — Windows mobilde kırmızı, Linux'ta yeşil] `toBeVisible` opaklığa bakmaz; yavaş
+    // makinede axe diyalogun açılış geçişi (fade) sürerken çalışıp yarı saydam metni kontrast ihlali sayabiliyor
+    // (mekanizma definition-forms marka silme diyalogunda geçiş yapay uzatılarak Linux'ta yeniden üretildi).
+    // Tarama, etkin kaplamaların CSS geçişleri bittikten sonra — iddia aynı: 0 ihlal.
+    await expect.poll(() => page.locator('.v-overlay--active').evaluateAll(
+      (els) => els.flatMap((el) => el.getAnimations({ subtree: true })).filter((a) => a.playState === 'running').length,
+    ), { timeout: 10000 }).toBe(0)
     const results = await new AxeBuilder({ page }).withTags(AA).include('.v-overlay--active').analyze()
     expect(results.violations).toEqual([])
     await page.keyboard.press('Escape')
