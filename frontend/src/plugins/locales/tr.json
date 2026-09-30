@@ -16,6 +16,7 @@
   },
   "menu": {
     "notifications": "Bildirimler",
+    "notificationPreferences": "Bildirim tercihleri",
     "test": "Test Sayfası",
     "mainpage": "Anasayfa",
     "system": "Sistem",

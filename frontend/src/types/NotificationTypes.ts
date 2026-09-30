@@ -233,3 +233,36 @@ export function interpolate(template: string, params?: Record<string, unknown>):
     return value === undefined || value === null ? whole : String(value)
   })
 }
+
+/** Gün grubu (çekmece başlıkları): bugün / dün / bu hafta (7 gün) / daha eski. Geçersiz tarih → `earlier`. */
+export type NotificationDayGroup = 'today' | 'yesterday' | 'week' | 'earlier'
+
+export function notificationDayGroup(value: string | undefined, now: Date = new Date()): NotificationDayGroup {
+  const time = value ? new Date(value).getTime() : NaN
+  if (!Number.isFinite(time)) return 'earlier'
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const day = 86_400_000
+  if (time >= startOfToday) return 'today'
+  if (time >= startOfToday - day) return 'yesterday'
+  if (time >= startOfToday - 6 * day) return 'week'
+  return 'earlier'
+}
+
+export const DAY_GROUP_LABELS: Record<NotificationDayGroup, string> = {
+  today: 'Bugün',
+  yesterday: 'Dün',
+  week: 'Bu hafta',
+  earlier: 'Daha eski',
+}
+
+/** Sıralı listeyi (en yeni önce) gün gruplarına böler; sıra korunur. */
+export function groupByDay<T extends { createdAt?: string }>(items: T[], now: Date = new Date()): Array<{ key: NotificationDayGroup; items: T[] }> {
+  const out: Array<{ key: NotificationDayGroup; items: T[] }> = []
+  for (const item of items) {
+    const key = notificationDayGroup(item.createdAt, now)
+    const last = out[out.length - 1]
+    if (last && last.key === key) last.items.push(item)
+    else out.push({ key, items: [item] })
+  }
+  return out
+}

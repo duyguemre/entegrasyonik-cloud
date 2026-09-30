@@ -1,28 +1,27 @@
 <!--
   frontend/src/views/secure/NotificationCenterView.vue
 
-  C1.5 (F-06) — Bildirim merkezi (uygulama içi gelen kutusu, birincil kanal).
-  DS-v2 liste standardı: EkPageHeader → EkListFrame [EkFilterPanel (sayfa içi) + EkActiveFilters
-  (son SORGULANAN değerler)] → kart [araç/seçim çubuğu → EkDataGrid (yalnız satırlar kayar) →
-  EkPagerBar (alta sabit)].
+  C1.5 (F-06) — Bildirim merkezi (uygulama içi gelen kutusu, birincil kanal). DS-v2 liste standardı:
+  EkPageHeader → EkListFrame [EkFilterPanel + EkActiveFilters] → kart [EkBulkBar → EkDataGrid → alt çubuk].
 
-  Sözleşme (backend/src/api/services/notification-service.ts, SALT OKU):
-    NotificationService/get { onlyUnread?, limit? (≤200) } → { result, data[], unreadCount }
-      — sunucu sayfalaması YOK: en yeni 200 kayıt alınır, tür filtresi + sayfalama istemcidedir.
-    NotificationService/markAsRead { notificationIds[] } | { all:true }
-    NotificationService/delete     { notificationIds[] }   (bu ekranda "tümünü sil" SUNULMAZ)
-  İstek gövdeleri `stores/notificationDrawer.ts` ile ORTAK (tek kaynak).
-
-  Kurallar: STOCK_ALERT ve SYSTEM ("dikkat") her zaman üstte sabit; tercih/susturma YOK (B-07).
-  `actionUrl` yalnız uygulama içi yol ise "Görüntüle" gösterilir (dış URL açılmaz).
-  Hata ≠ boş: istek başarısızsa ham hata değil, "yüklenemedi — tekrar deneyin" durumu.
+  C2b (ADR-0029, NOTIFICATION_PLAN F-N1 + NB4) — sözleşme v2:
+    NotificationService/get { limit, cursor?, afterId?, category?, onlyUnread? } → { result, data[], nextCursor?, hasMore?, unreadCount }
+      — SUNUCU sayfalaması: "Daha fazla göster" imleçle sonraki sayfayı ekler; kategori ve okunmamış filtresi sunucuda.
+      — Önem filtresi sözleşmede YOK → yüklenen kayıtlar üzerinde istemcide (alt çubukta açıkça belirtilir).
+    NotificationService/markAsRead { notificationIds[] } | { all:true } · NotificationService/delete { notificationIds[] }
+  İstek gövdeleri `stores/notificationDrawer.ts` (`listBody`, `idsPayload`) ile ORTAK (tek kaynak).
+  Kategori/önem seçenekleri ve zorunluluk `stores/notificationCatalog.ts` (getCatalog; yoksa plan v1 yedeği).
+  Canlı: SSE `notification` → ilk sayfadaysak yalnız yenileri (`afterId`) başa ekler; `resync` → tam tazele.
+  `actionUrl` yalnız uygulama içi yol ise "Görüntüle" (dış URL açılmaz). Hata ≠ boş.
 -->
 <template>
   <div class="ek-notification-center">
     <EkPageHeader
       section="Genel"
       title="Bildirimler"
-      description="Toplu işlem, aktarım, sipariş ve stok bildirimleriniz. Bildirimler oluşturulduktan 3 gün sonra otomatik silinir."
+      description="Sipariş, stok, entegrasyon, katalog, abonelik ve güvenlik bildirimleriniz. Bildirimler öneme göre 14–90 gün saklanır."
+      :tips="['Zorunlu bildirimler (kilit simgesi) tercihlerden kapatılamaz.', 'Yeni bildirimler bu sayfa açıkken kendiliğinden listeye eklenir.']"
+      :secondary-actions="headerActions"
       refreshable
       :refreshing="loading"
       :last-updated="loadedAt"
@@ -34,30 +33,20 @@
         <EkFilterPanel
           :collapsed="filtersCollapsed"
           :active-count="activeChips.length"
-          :columns="4"
+          :columns="3"
           :loading="loading"
           @update:collapsed="filtersCollapsed = $event"
           @submit="applyFilters"
           @reset="resetFilters"
         >
-          <v-select
-            v-model="draft.types"
-            :items="typeOptions"
-            item-title="title"
-            item-value="value"
-            label="Tür"
-            multiple
-            chips
-            closable-chips
-            clearable
-          />
-          <v-select v-model="draft.read" :items="READ_OPTIONS" item-title="title" item-value="value" label="Okunma durumu" />
+          <EkSelect v-model="draft.category" :items="categoryOptions" label="Kategori" clearable />
+          <EkSelect v-model="draft.severities" :items="severityOptions" kind="status" label="Önem" multiple clearable />
+          <EkSelect v-model="draft.read" :items="READ_OPTIONS" label="Okunma durumu" />
         </EkFilterPanel>
         <EkActiveFilters :filters="activeChips" @remove="removeChip" @clear="resetFilters" />
       </template>
 
       <template #toolbar>
-        <!-- Aşama 6b (Standart 3): tek toplu işlem çubuğu (EkBulkBar) — seçim sayısı · eylemler · Seçimi kaldır. -->
         <EkBulkBar :count="selected.length" noun="bildirim" @clear="selected = []">
           <template #actions>
             <EkButton size="sm" icon="mdi-email-open-outline" :disabled="!selectedUnreadIds.length" :loading="busy === 'read-selected'" @click="markSelectedRead">
@@ -68,14 +57,16 @@
           <template #start>
             <span class="ek-nc-toolbar__summary">
               <span class="ek-nc-toolbar__stat"><strong class="ek-num">{{ unreadTotal }}</strong> okunmamış</span>
-              <span v-if="attentionUnread" class="ek-nc-toolbar__stat ek-nc-toolbar__stat--attention">
-                <v-icon icon="mdi-alert-outline" aria-hidden="true" />
-                <strong class="ek-num">{{ attentionUnread }}</strong> okunmamış stok/sistem uyarısı
+              <span v-if="criticalUnread" class="ek-nc-toolbar__stat ek-nc-toolbar__stat--attention">
+                <v-icon icon="mdi-alert-octagon-outline" aria-hidden="true" />
+                <strong class="ek-num">{{ criticalUnread }}</strong> okunmamış kritik
+              </span>
+              <span class="ek-nc-live" :class="`is-${liveState.tone}`" role="status">
+                <span class="ek-nc-live__dot" aria-hidden="true"></span>{{ liveState.label }}
               </span>
             </span>
           </template>
           <template #end>
-            <span v-if="loadedAt" class="ek-nc-toolbar__stamp">Güncellendi {{ formatRelative(loadedAt, now) }}</span>
             <EkButton size="sm" icon="mdi-check-all" :disabled="!unreadTotal" :loading="busy === 'read-all'" @click="markAllRead">
               Tümünü okundu işaretle
             </EkButton>
@@ -84,49 +75,52 @@
       </template>
 
       <div v-if="loadError" class="ek-notification-center__error">
-        <EkErrorState message="Bildirimler yüklenemedi — bağlantınızı kontrol edip tekrar deneyin." @retry="load()" />
+        <EkProblemState title="Bildirimler yüklenemedi" cause="Sunucuya ulaşılamadı ya da yanıt geçersizdi."
+          action="Bağlantınızı kontrol edip tekrar deneyin." :retrying="loading" @retry="load()" />
       </div>
       <EkDataGrid
         v-else
         :columns="columns"
-        :rows="pageRows"
+        :rows="visibleRows"
         label="Bildirim listesi"
         row-key="_id"
-        label-key="title"
+        label-key="displayTitle"
         selectable
         :selected="selected"
-        :sort="sort"
         :loading="loading && !items.length"
         :skeleton-rows="6"
         :empty-title="isFiltered ? 'Filtreye uyan bildirim yok' : 'Henüz bildiriminiz yok'"
-        :empty-text="isFiltered ? 'Filtreleri değiştirin ya da temizleyin.' : 'Toplu işlem, içe/dışa aktarma, sipariş ve stok bildirimleri burada görünür.'"
-        :empty-icon="isFiltered ? 'mdi-filter-remove-outline' : 'mdi-bell-outline'"
+        :empty-text="emptyText"
+        :empty-icon="isFiltered ? 'mdi-filter-remove-outline' : 'mdi-bell-check-outline'"
         @update:selected="selected = $event"
-        @update:sort="sort = $event"
         @row-click="openDetail"
       >
-        <template #cell-type="{ row }">
+        <template #cell-category="{ row }">
           <span class="ek-nc-type">
-            <EkIconTile :icon="notificationTypeIcon(row.type)" :tone="tileTone(row)" size="sm" />
-            <span :class="compact ? 'ek-sr-only' : 'ek-nc-type__label'">{{ typeLabel(row.type) }}</span>
+            <EkIconTile :icon="row.visual.icon" :tone="row.visual.tone" size="sm" />
+            <span :class="compact ? 'ek-sr-only' : 'ek-nc-type__label'">{{ row.categoryLabel || '—' }}</span>
           </span>
         </template>
         <template #cell-title="{ row }">
-          <div class="ek-nc-item" :class="{ 'is-unread': !row.isRead }">
+          <div class="ek-nc-item" :class="{ 'is-unread': !row.isRead, 'is-critical': row.visual.critical, 'is-fresh': fresh.has(row._id) }">
             <span v-if="!row.isRead" class="ek-nc-item__dot" aria-hidden="true"></span>
-            <!-- Dar ekran: tür kolonu yok — tür ikonu bildirimin yanında (kart başlığı = bildirim). -->
             <span v-if="compact" class="ek-nc-type">
-              <EkIconTile :icon="notificationTypeIcon(row.type)" :tone="tileTone(row)" size="sm" />
-              <span class="ek-sr-only">{{ typeLabel(row.type) }}</span>
+              <EkIconTile :icon="row.visual.icon" :tone="row.visual.tone" size="sm" />
+              <span class="ek-sr-only">{{ row.categoryLabel }}</span>
             </span>
             <div class="ek-nc-item__text">
               <span class="ek-nc-item__head">
-                <button type="button" class="ek-nc-item__title" @click.stop="openDetail(row)">{{ row.title }}</button>
-                <EkStatusChip v-if="isAttentionType(row.type)" tone="warning" label="Dikkat" dot />
+                <button type="button" class="ek-nc-item__title" @click.stop="openDetail(row)">{{ row.displayTitle }}</button>
+                <EkStatusChip v-if="row.visual.critical" tone="danger" label="Kritik" dot />
+                <EkBadge v-if="row.groupCount > 1" variant="label" tone="neutral" :text="`×${row.groupCount}`" :aria-label="`${row.groupCount} kez`" />
+                <span v-if="row.mandatory" class="ek-nc-item__lock" role="img" aria-label="Zorunlu bildirim" title="Zorunlu bildirim">
+                  <v-icon icon="mdi-lock-outline" aria-hidden="true" />
+                </span>
               </span>
-              <span class="ek-nc-item__message">{{ row.message }}</span>
-              <span v-if="compact" class="ek-nc-item__meta">
-                <span class="ek-num">{{ formatRelative(row.createdAt, now) }}</span>
+              <span v-if="row.message" class="ek-nc-item__message">{{ row.message }}</span>
+              <span v-if="compact || (row.groupCount > 1 && row.lastOccurredAt)" class="ek-nc-item__meta">
+                <span v-if="compact" class="ek-num">{{ formatRelative(row.createdAt, now) }}</span>
+                <span v-if="row.groupCount > 1 && row.lastOccurredAt" class="ek-num">son: {{ formatRelative(row.lastOccurredAt, now) }}</span>
                 <span class="ek-sr-only">, {{ row.isRead ? 'okundu' : 'okunmamış' }}</span>
               </span>
             </div>
@@ -142,45 +136,40 @@
           <EkStatusChip :tone="row.isRead ? 'neutral' : 'info'" :label="row.isRead ? 'Okundu' : 'Okunmamış'" />
         </template>
         <template #cell-actions="{ row }">
-            <EkRowActions :label="`${row.title} işlemleri`" :items="[
-              ...(!compact && internalActionPath(row.actionUrl) ? [{ key: 'go', action: 'openExternal' as const, icon: 'mdi-arrow-top-right', label: `Görüntüle: ${row.title}`, onClick: () => goTo(row) }] : []),
-              ...(!row.isRead ? [{ key: 'read', action: 'approve' as const, icon: 'mdi-email-open-outline', label: `Okundu işaretle: ${row.title}`, onClick: () => markRowRead(row) }] : []),
-              { key: 'delete', action: 'delete', label: `Sil: ${row.title}`, onClick: () => deleteRow(row) },
-            ]" />
-          </template>
+          <EkRowActions :label="`${row.displayTitle} işlemleri`" :items="rowActions(row)" />
+        </template>
         <template #empty-action>
           <EkButton v-if="isFiltered" size="sm" icon="mdi-filter-remove-outline" @click="resetFilters">Filtreleri temizle</EkButton>
         </template>
       </EkDataGrid>
 
       <template #pager>
-        <EkPagerBar
-          :page="page"
-          :page-size="pageSize"
-          :total="visibleRows.length"
-          label="Bildirim sayfaları"
-          @update:page="page = $event"
-          @update:page-size="onPageSize"
-        >
-          <template #trailing>
-            <span v-if="truncated" class="ek-nc-pager-note">Son {{ NOTIFICATION_LIST_LIMIT }} bildirim gösteriliyor</span>
-          </template>
-        </EkPagerBar>
+        <div class="ek-nc-pager" role="group" aria-label="Bildirim sayfalama">
+          <span class="ek-nc-pager__count">
+            <strong class="ek-num">{{ visibleRows.length }}</strong> bildirim gösteriliyor
+            <span v-if="applied.severities.length" class="ek-nc-pager__note">· önem filtresi yüklenen kayıtlara uygulanır</span>
+          </span>
+          <EkButton v-if="hasMore" size="sm" tone="secondary" icon="mdi-chevron-down" :loading="loadingMore" @click="loadMore">
+            Daha fazla göster
+          </EkButton>
+          <span v-else-if="items.length" class="ek-nc-pager__end">Hepsi bu kadar</span>
+        </div>
       </template>
     </EkListFrame>
 
     <EkDialog
       v-model="detailOpen"
-      :title="detail?.title ?? 'Bildirim'"
-      :description="detail ? `${typeLabel(detail.type)} · ${formatDateTime(detail.createdAt)} (${formatRelative(detail.createdAt, now)})` : undefined"
-      :icon="detail ? notificationTypeIcon(detail.type) : undefined"
+      :title="detail?.displayTitle ?? 'Bildirim'"
+      :description="detail ? `${detail.categoryLabel || 'Bildirim'} · ${formatDateTime(detail.createdAt)} (${formatRelative(detail.createdAt, now)})` : undefined"
+      :icon="detail?.visual.icon"
       width="md"
     >
       <div v-if="detail" class="ek-nc-detail">
         <div class="ek-nc-detail__chips">
           <EkStatusChip :tone="notificationSeverityTone(detail.severity)" :label="severityLabel(detail.severity)" dot />
-          <EkStatusChip v-if="isAttentionType(detail.type)" tone="warning" label="Dikkat" dot />
+          <EkStatusChip v-if="detail.mandatory" tone="neutral" icon="mdi-lock-outline" label="Zorunlu" />
           <EkStatusChip :tone="detail.isRead ? 'neutral' : 'info'" :label="detail.isRead ? 'Okundu' : 'Okunmamış'" />
+          <EkStatusChip v-if="detail.groupCount > 1" tone="neutral" :label="`${detail.groupCount} kez`" />
           <span v-if="detailChannel" class="ek-nc-detail__channel">
             <span class="ek-nc-detail__channel-label">Kanal</span>
             <EkPlatformMark variant="dot" :code="detailChannel.code" :name="detailChannel.name" />
@@ -216,87 +205,88 @@
 </template>
 
 <script setup lang="ts">
-import EkBulkBar from '@/components/ds/EkBulkBar.vue'
-import EkActionButton from '@/components/ds/EkActionButton.vue'
-import EkRowActions, { type EkRowAction } from '@/components/ds/EkRowActions.vue'
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, inject, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import useRestApi from '@/composables/restapi'
-import logger from '@/composables/logger'
 import { formatDateTime, formatNumber, formatRelative } from '@/composables/format'
 import { useShellBreakpoints } from '@/composables/useShellBreakpoints'
 import { useSnackbarStore } from '@/stores/snackbarStore'
-import { NOTIFICATION_LIST_LIMIT, useNotificationDrawerStore } from '@/stores/notificationDrawer'
+import { NOTIFICATION_PAGE_SIZE, mergeNewest, useNotificationDrawerStore, type NotificationListQuery } from '@/stores/notificationDrawer'
+import { labelsFor, notificationTitle, useNotificationCatalogStore } from '@/stores/notificationCatalog'
 import {
-  NOTIFICATION_TYPES,
+  NOTIFICATION_SEVERITIES,
   internalActionPath,
-  isNotificationType,
-  isAttentionType,
+  normalizeSeverity,
   notificationSeverityTone,
-  notificationTypeIcon,
-  type NotificationType,
+  notificationVisual,
+  type NotificationCategory,
+  type NotificationItem,
+  type NotificationSeverity,
 } from '@/types/NotificationTypes'
-import EkPageHeader from '@/components/ds/EkPageHeader.vue'
+import EkPageHeader, { type EkPageHeaderAction } from '@/components/ds/EkPageHeader.vue'
 import EkListFrame from '@/components/ds/EkListFrame.vue'
 import EkFilterPanel from '@/components/ds/EkFilterPanel.vue'
 import EkActiveFilters, { type EkActiveFilterChip } from '@/components/ds/EkActiveFilters.vue'
-import EkDataGrid, { type EkGridColumn, type EkGridSort } from '@/components/ds/EkDataGrid.vue'
-import EkPagerBar from '@/components/ds/EkPagerBar.vue'
+import EkDataGrid, { type EkGridColumn } from '@/components/ds/EkDataGrid.vue'
 import EkButton from '@/components/ds/EkButton.vue'
-import EkIconTile, { type EkTone } from '@/components/ds/EkIconTile.vue'
+import EkBadge from '@/components/ds/EkBadge.vue'
+import EkIconTile from '@/components/ds/EkIconTile.vue'
 import EkStatusChip from '@/components/ds/EkStatusChip.vue'
-import EkErrorState from '@/components/ds/EkErrorState.vue'
+import EkProblemState from '@/components/ds/EkProblemState.vue'
 import EkDialog from '@/components/ds/EkDialog.vue'
+import EkSelect from '@/components/ds/EkSelect.vue'
+import EkBulkBar from '@/components/ds/EkBulkBar.vue'
+import EkActionButton from '@/components/ds/EkActionButton.vue'
+import EkRowActions, { type EkRowAction } from '@/components/ds/EkRowActions.vue'
 import EkPlatformMark from '@/components/ds/EkPlatformMark.vue'
 import EkDescriptionList, { type EkDescriptionListItem } from '@/components/ds/EkDescriptionList.vue'
 
-interface NotificationRow {
-  _id: string
-  type?: string
-  severity?: string
-  title: string
-  message?: string
-  actionUrl?: string | null
-  metaData?: Record<string, any>
-  isRead: boolean
-  createdAt?: string
+/** Satır = sunucu kaydı + türetilmiş sunum alanları (katalogdan). */
+interface NotificationRow extends NotificationItem {
+  displayTitle: string
+  categoryLabel: string
+  category?: NotificationCategory
+  mandatory: boolean
+  groupCount: number
+  visual: ReturnType<typeof notificationVisual>
 }
-
-/** EkDataGrid satır tipi (genel kayıt); alanlar `NotificationRow` ile aynıdır. */
 type GridRow = Record<string, any>
 
 type ReadFilter = 'all' | 'unread' | 'read'
 interface FilterState {
-  types: NotificationType[]
+  category: NotificationCategory | null
+  severities: NotificationSeverity[]
   read: ReadFilter
 }
 
-const { t } = useI18n({ useScope: 'global' })
+const { locale } = useI18n({ useScope: 'global' })
 const router = useRouter()
-const restApi = useRestApi()
 const snackbar = useSnackbarStore()
 const notificationStore = useNotificationDrawerStore()
+const catalog = useNotificationCatalogStore()
 const { isDesktop, isMobile } = useShellBreakpoints()
+const eventBus: any = inject('eventBus', undefined)
+const menuStore: any = inject('useMenuStore', undefined)
+
+const labels = computed(() => labelsFor(locale.value))
 
 const READ_OPTIONS: Array<{ title: string; value: ReadFilter }> = [
   { title: 'Tümü', value: 'all' },
   { title: 'Okunmamış', value: 'unread' },
   { title: 'Okundu', value: 'read' },
 ]
-
-// Bilinmeyen tür kodu (şemaya sonradan eklenen) olduğu gibi gösterilir; yoksa "—".
-const typeLabel = (type: unknown) => (isNotificationType(type) ? t(`notificationCenter.types.${type}`) : typeof type === 'string' && type ? type : '—')
-const typeOptions = computed(() => NOTIFICATION_TYPES.map((value) => ({ value, title: typeLabel(value) })))
+const SEVERITY_TONE: Record<NotificationSeverity, string> = { critical: 'danger', error: 'danger', warning: 'warning', info: 'info', success: 'success' }
+const categoryOptions = computed(() => catalog.categories.filter((c) => c.codes.length).map((c) => ({ value: c.key, title: labels.value.categories[c.key] })))
+const severityOptions = computed(() => NOTIFICATION_SEVERITIES.map((s) => ({ value: s, title: labels.value.severities[s], tone: SEVERITY_TONE[s] })))
+const severityLabel = (severity: unknown) => labels.value.severities[normalizeSeverity(severity)]
 
 const FULL_COLUMNS: EkGridColumn[] = [
-  { key: 'type', label: 'Tür', width: '168px' },
+  { key: 'category', label: 'Kategori', width: '184px' },
   { key: 'title', label: 'Bildirim' },
-  { key: 'createdAt', label: 'Zaman', sortable: true, width: '164px' },
+  { key: 'createdAt', label: 'Zaman', width: '164px' },
   { key: 'status', label: 'Durum', width: '120px' },
   { key: 'actions', label: 'İşlemler', align: 'end', width: '128px', hideLabel: true, pin: 'end' },
 ]
-// Dar ekran (kart düzeni, Aşama 4): kart başlığı bildirimin kendisi — tür ikonu, zaman ve okunma bilgisi başlık hücresinde.
 const COMPACT_COLUMNS: EkGridColumn[] = [
   { key: 'title', label: 'Bildirim' },
   { key: 'actions', label: 'İşlemler', align: 'end', width: '84px', hideLabel: true, pin: 'end' },
@@ -304,69 +294,88 @@ const COMPACT_COLUMNS: EkGridColumn[] = [
 const compact = computed(() => isMobile.value)
 const columns = computed(() => (compact.value ? COMPACT_COLUMNS : FULL_COLUMNS))
 
+// Tercihler ekranı menüde kayıtlıysa başlıkta ikincil eylem.
+const prefsLink = computed(() => menuStore?.getMenuLinkWithCode?.('NotificationPreferencesView'))
+const headerActions = computed<EkPageHeaderAction[]>(() =>
+  prefsLink.value ? [{ label: 'Tercihler', icon: 'mdi-tune-variant', onClick: () => eventBus?.emit('openTab', prefsLink.value) }] : [],
+)
+
 // --- durum ---
-const items = ref<NotificationRow[]>([])
+const items = ref<NotificationItem[]>([])
+const nextCursor = ref<string | undefined>()
+const hasMore = ref(false)
 const loading = ref(false)
+const loadingMore = ref(false)
 const loadError = ref(false)
 const loadedAt = ref<Date | null>(null)
 const now = ref(new Date())
 const selected = ref<Array<string | number>>([])
-const sort = ref<EkGridSort>({ key: 'createdAt', dir: 'desc' })
-const page = ref(1)
-const pageSize = ref(25)
 const busy = ref<'' | 'read-all' | 'read-selected' | 'delete-selected'>('')
 const confirmOpen = ref(false)
 const detailOpen = ref(false)
 const detail = ref<NotificationRow | null>(null)
 const filtersCollapsed = ref(!isDesktop.value)
+/** SSE ile yeni eklenen satırlar kısa süre vurgulanır (hareket azaltmada yalnız renk). */
+const fresh = ref(new Set<string>())
 
-const emptyFilters = (): FilterState => ({ types: [], read: 'all' })
+const emptyFilters = (): FilterState => ({ category: null, severities: [], read: 'all' })
 const draft = reactive<FilterState>(emptyFilters())
-/** Son SORGULANAN filtre (çipler ve liste buna göre). */
 const applied = ref<FilterState>(emptyFilters())
 
 // --- türetilmiş ---
-const isFiltered = computed(() => applied.value.types.length > 0 || applied.value.read !== 'all')
-const truncated = computed(() => items.value.length >= NOTIFICATION_LIST_LIMIT)
+const isFiltered = computed(() => !!applied.value.category || applied.value.severities.length > 0 || applied.value.read !== 'all')
 const unreadTotal = computed(() => notificationStore.unreadCount)
-const attentionUnread = computed(() => items.value.filter((n) => !n.isRead && isAttentionType(n.type)).length)
 
+function toRow(item: NotificationItem): NotificationRow {
+  const visual = notificationVisual(item, catalog.codeCategory)
+  return {
+    ...item,
+    visual,
+    category: visual.category,
+    categoryLabel: visual.category ? labels.value.categories[visual.category] : '',
+    displayTitle: notificationTitle(item, labels.value, visual.category),
+    mandatory: item.mandatory === true || catalog.isMandatory(item.code),
+    groupCount: typeof item.count === 'number' && item.count > 1 ? Math.floor(item.count) : 1,
+  }
+}
+
+const rows = computed(() => items.value.map(toRow))
 const visibleRows = computed(() => {
-  const { types, read } = applied.value
-  const dir = sort.value?.dir === 'asc' ? 1 : -1
-  const time = (n: NotificationRow) => (n.createdAt ? new Date(n.createdAt).getTime() : 0)
-  return items.value
-    .filter((n) => (types.length ? types.includes(n.type as NotificationType) : true))
-    .filter((n) => (read === 'unread' ? !n.isRead : read === 'read' ? n.isRead : true))
-    .slice()
-    .sort((a, b) => {
-      // "Dikkat" türleri her sıralamada üstte sabit.
-      const pin = Number(isAttentionType(b.type)) - Number(isAttentionType(a.type))
-      return pin !== 0 ? pin : (time(a) - time(b)) * dir
-    })
+  const { severities, read } = applied.value
+  return rows.value
+    .filter((n) => (severities.length ? severities.includes(normalizeSeverity(n.severity)) : true))
+    .filter((n) => (read === 'read' ? n.isRead : true))
 })
-
-const pageRows = computed(() => visibleRows.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value))
-const selectedRows = computed(() => items.value.filter((n) => selected.value.includes(n._id)))
+const criticalUnread = computed(() => rows.value.filter((n) => !n.isRead && n.visual.critical).length)
+const selectedRows = computed(() => rows.value.filter((n) => selected.value.includes(n._id)))
 const selectedUnreadIds = computed(() => selectedRows.value.filter((n) => !n.isRead).map((n) => n._id))
+const emptyText = computed(() =>
+  isFiltered.value
+    ? 'Filtreleri değiştirin ya da temizleyin.'
+    : 'Sipariş, stok, entegrasyon ve abonelik bildirimleri burada görünür. Yeni bir bildirim geldiğinde bu liste kendiliğinden güncellenir.',
+)
+
+const liveState = computed(() => {
+  switch (notificationStore.streamMode) {
+    case 'live':
+      return { tone: 'live', label: 'Canlı' }
+    case 'connecting':
+    case 'reconnecting':
+      return { tone: 'wait', label: 'Bağlanıyor' }
+    default:
+      return { tone: 'poll', label: 'Otomatik yenileme' }
+  }
+})
 
 const activeChips = computed<EkActiveFilterChip[]>(() => {
   const chips: EkActiveFilterChip[] = []
   const a = applied.value
-  if (a.types.length) chips.push({ key: 'types', label: 'Tür', value: a.types.map(typeLabel).join(', ') })
+  if (a.category) chips.push({ key: 'category', label: 'Kategori', value: labels.value.categories[a.category] })
+  if (a.severities.length) chips.push({ key: 'severities', label: 'Önem', value: a.severities.map((s) => labels.value.severities[s]).join(', ') })
   if (a.read !== 'all') chips.push({ key: 'read', label: 'Okunma', value: READ_OPTIONS.find((o) => o.value === a.read)?.title ?? a.read })
   return chips
 })
 
-const SEVERITY_LABELS: Record<string, string> = { success: 'Başarılı', info: 'Bilgi', primary: 'Bilgi', warning: 'Uyarı', error: 'Hata', danger: 'Hata' }
-const severityLabel = (severity: unknown) => (typeof severity === 'string' && SEVERITY_LABELS[severity]) || 'Bilgi'
-
-const tileTone = (row: GridRow): EkTone => {
-  const tone = notificationSeverityTone(row.severity)
-  return tone === 'danger' ? 'error' : tone
-}
-
-// Ayrıntı özeti: yalnız backend'in metaData'da GERÇEKTEN döndürdüğü sayaçlar (uydurma alan yok).
 const SUMMARY_FIELDS: Array<[string, string]> = [
   ['totalAccepted', 'İşleme alınan'],
   ['totalAlreadyTransfer', 'Zaten eşleşmiş'],
@@ -393,44 +402,90 @@ const CHANNEL_NAMES: Record<string, string> = {
   bizimhesap: 'Bizimhesap',
 }
 const detailChannel = computed(() => {
-  const code = detail.value?.metaData?.integrationCode
+  const code = detail.value?.metaData?.integrationCode ?? detail.value?.params?.integ
   if (typeof code !== 'string' || !code) return null
   return { code, name: CHANNEL_NAMES[code.toLowerCase()] ?? code }
 })
 
-// --- veri ---
+function rowActions(row: GridRow): EkRowAction[] {
+  return [
+    ...(!compact.value && internalActionPath(row.actionUrl)
+      ? [{ key: 'go', action: 'openExternal' as const, icon: 'mdi-arrow-top-right', label: `Görüntüle: ${row.displayTitle}`, onClick: () => goTo(row) }]
+      : []),
+    ...(!row.isRead ? [{ key: 'read', action: 'approve' as const, icon: 'mdi-email-open-outline', label: `Okundu işaretle: ${row.displayTitle}`, onClick: () => markRowRead(row) }] : []),
+    { key: 'delete', action: 'delete', label: `Sil: ${row.displayTitle}`, onClick: () => deleteRow(row) },
+  ]
+}
+
+// --- veri (sunucu sayfalaması) ---
+function baseQuery(): NotificationListQuery {
+  const a = applied.value
+  return {
+    limit: NOTIFICATION_PAGE_SIZE,
+    ...(a.category ? { category: a.category } : {}),
+    onlyUnread: a.read === 'unread',
+  }
+}
+
 async function load() {
   loading.value = true
   loadError.value = false
-  const onlyUnread = applied.value.read === 'unread'
-  try {
-    const response: any = await restApi.post('NotificationService/get', { limit: NOTIFICATION_LIST_LIMIT, onlyUnread })
-    if (response?.result && Array.isArray(response.data)) {
-      items.value = response.data
-      if (typeof response.unreadCount === 'number') notificationStore.unreadCount = response.unreadCount
-      loadedAt.value = new Date()
-      now.value = new Date()
-      const ids = new Set(items.value.map((n) => n._id))
-      selected.value = selected.value.filter((id) => ids.has(String(id)))
-      const lastPage = Math.max(1, Math.ceil(visibleRows.value.length / pageSize.value))
-      if (page.value > lastPage) page.value = lastPage
-    } else {
-      loadError.value = true
-    }
-  } catch (error) {
-    logger.error('Bildirim merkezi listesi alınamadı', { module: 'NotificationCenterView', op: 'load', error })
+  catalog.ensureLoaded()
+  const page = await notificationStore.fetchPage(baseQuery())
+  if (page) {
+    items.value = page.items
+    nextCursor.value = page.nextCursor
+    hasMore.value = page.hasMore
+    loadedAt.value = new Date()
+    now.value = new Date()
+    const ids = new Set(items.value.map((n) => n._id))
+    selected.value = selected.value.filter((id) => ids.has(String(id)))
+  } else {
     loadError.value = true
-  } finally {
-    loading.value = false
+  }
+  loading.value = false
+}
+
+async function loadMore() {
+  if (!hasMore.value || !nextCursor.value || loadingMore.value) return
+  loadingMore.value = true
+  const page = await notificationStore.fetchPage({ ...baseQuery(), cursor: nextCursor.value })
+  loadingMore.value = false
+  if (!page) {
+    report(false, '', 'Sonraki bildirimler yüklenemedi — tekrar deneyin.')
+    return
+  }
+  const known = new Set(items.value.map((n) => n._id))
+  items.value = [...items.value, ...page.items.filter((n) => !known.has(n._id))]
+  nextCursor.value = page.nextCursor
+  hasMore.value = page.hasMore
+}
+
+/** SSE yeni bildirim: yalnız yenileri (`afterId` = listedeki en yeni) başa ekler; liste boşsa tam yükler. */
+async function fetchNew() {
+  if (loading.value) return
+  const newest = items.value[0]?._id
+  if (!newest) return load()
+  const page = await notificationStore.fetchPage({ ...baseQuery(), afterId: newest })
+  if (!page) return
+  const known = new Set(items.value.map((n) => n._id))
+  const added = page.items.filter((n) => !known.has(n._id)).map((n) => n._id)
+  items.value = mergeNewest(items.value, page.items)
+  now.value = new Date()
+  if (added.length) {
+    fresh.value = new Set([...fresh.value, ...added])
+    setTimeout(() => {
+      const next = new Set(fresh.value)
+      added.forEach((id) => next.delete(id))
+      fresh.value = next
+    }, 4000)
   }
 }
 
 function applyFilters() {
-  const needsReload = (draft.read === 'unread') !== (applied.value.read === 'unread')
-  applied.value = { types: [...draft.types], read: draft.read }
-  page.value = 1
+  applied.value = { category: draft.category, severities: [...draft.severities], read: draft.read }
   selected.value = []
-  if (needsReload) load()
+  load()
 }
 
 function resetFilters() {
@@ -439,14 +494,10 @@ function resetFilters() {
 }
 
 function removeChip(key: string) {
-  if (key === 'types') draft.types = []
+  if (key === 'category') draft.category = null
+  if (key === 'severities') draft.severities = []
   if (key === 'read') draft.read = 'all'
   applyFilters()
-}
-
-function onPageSize(size: number) {
-  pageSize.value = size
-  page.value = 1
 }
 
 // --- eylemler (istek gövdeleri store ile ortak) ---
@@ -471,14 +522,16 @@ async function markSelectedRead() {
   report(ok, `${ids.length} bildirim okundu olarak işaretlendi.`, 'Bildirimler işaretlenemedi — tekrar deneyin.')
   if (ok) {
     selected.value = []
-    await load()
+    items.value = items.value.map((n) => (ids.includes(n._id) ? { ...n, isRead: true } : n))
   }
 }
 
 async function markRowRead(row: GridRow) {
   const ok = await notificationStore.markAsRead(row._id)
-  if (ok) row.isRead = true
-  else report(false, '', 'Bildirim işaretlenemedi — tekrar deneyin.')
+  if (ok) {
+    items.value = items.value.map((n) => (n._id === row._id ? { ...n, isRead: true } : n))
+    if (detail.value && detail.value._id === row._id) detail.value = { ...detail.value, isRead: true }
+  } else report(false, '', 'Bildirim işaretlenemedi — tekrar deneyin.')
 }
 
 async function deleteSelected() {
@@ -491,7 +544,7 @@ async function deleteSelected() {
   report(ok, `${ids.length} bildirim silindi.`, 'Bildirimler silinemedi — tekrar deneyin.')
   if (ok) {
     selected.value = []
-    await load()
+    items.value = items.value.filter((n) => !ids.includes(n._id))
   }
 }
 
@@ -500,7 +553,7 @@ async function deleteRow(row: GridRow) {
   report(ok, 'Bildirim silindi.', 'Bildirim silinemedi — tekrar deneyin.')
   if (ok) {
     if (detail.value?._id === row._id) detailOpen.value = false
-    await load()
+    items.value = items.value.filter((n) => n._id !== row._id)
   }
 }
 
@@ -515,23 +568,21 @@ function goTo(row: GridRow) {
   const path = internalActionPath(row.actionUrl)
   if (!path) return
   detailOpen.value = false
+  if (!row.isRead) markRowRead(row)
   router.push(path).catch(() => {})
 }
 
-// "x dk önce" metinleri canlı kalsın (istek atmaz).
+// "x dk önce" metinleri canlı kalsın (istek atmaz) + SSE canlı sinyali (onUnmounted'da bırakılır).
 let clock: ReturnType<typeof setInterval> | undefined
+let unsubscribe: (() => void) | undefined
 onMounted(() => {
   clock = setInterval(() => (now.value = new Date()), 60_000)
+  unsubscribe = notificationStore.onLive((signal) => (signal === 'resync' ? load() : fetchNew()))
 })
-onBeforeUnmount(() => clearInterval(clock))
-
-// Rozet sayımı değişirse (arka planda yeni bildirim) ve ekran açıksa liste tazelenir.
-watch(
-  () => notificationStore.unreadCount,
-  (next, prev) => {
-    if (next > prev && !loading.value && !busy.value) load()
-  },
-)
+onBeforeUnmount(() => {
+  clearInterval(clock)
+  unsubscribe?.()
+})
 
 defineExpose({
   initialize: () => load(),
@@ -562,36 +613,6 @@ defineExpose({
   padding: var(--ek-space-8) var(--ek-space-4);
 }
 
-/* Araç / seçim çubuğu (liste standardı: seçim yokken özet + eylemler, seçimde toplu eylemler). */
-.ek-nc-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--ek-space-2) var(--ek-space-3);
-  min-height: 52px;
-  padding: var(--ek-space-2) var(--ek-space-4);
-  background: var(--ek-color-surface);
-  transition: var(--ek-transition-colors);
-}
-
-.ek-nc-toolbar.is-on {
-  background: var(--ek-color-selection);
-  box-shadow: inset 3px 0 0 var(--ek-color-action);
-}
-
-.ek-nc-toolbar__count {
-  color: var(--ek-color-action-emphasis);
-  font-size: var(--ek-type-label-size);
-  font-weight: var(--ek-font-weight-semibold);
-}
-
-.ek-nc-toolbar__actions {
-  display: flex;
-  flex: 1;
-  flex-wrap: wrap;
-  gap: var(--ek-space-2);
-}
-
 .ek-nc-danger-text {
   color: var(--ek-color-error);
 }
@@ -601,7 +622,7 @@ defineExpose({
   flex: 1;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--ek-space-4);
+  gap: var(--ek-space-2) var(--ek-space-4);
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-label-size);
 }
@@ -615,7 +636,7 @@ defineExpose({
   display: inline-flex;
   align-items: center;
   gap: var(--ek-space-1);
-  color: var(--ek-color-warning-emphasis);
+  color: var(--ek-color-error-emphasis);
 }
 
 .ek-nc-toolbar__stat--attention strong {
@@ -626,19 +647,29 @@ defineExpose({
   font-size: var(--ek-icon-sm);
 }
 
-.ek-nc-toolbar__end {
-  display: flex;
-  flex-wrap: wrap;
+.ek-nc-live {
+  display: inline-flex;
   align-items: center;
-  gap: var(--ek-space-2);
-}
-
-.ek-nc-toolbar__stamp {
-  color: var(--ek-color-content-muted);
+  gap: 6px;
   font-size: var(--ek-type-caption-size);
 }
 
-/* Hücreler */
+.ek-nc-live__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ek-color-content-subtle);
+}
+
+.ek-nc-live.is-live .ek-nc-live__dot {
+  background: var(--ek-color-success);
+  box-shadow: 0 0 0 3px var(--ek-color-success-subtle);
+}
+
+.ek-nc-live.is-wait .ek-nc-live__dot {
+  background: var(--ek-color-warning);
+}
+
 .ek-nc-type {
   display: inline-flex;
   align-items: center;
@@ -656,6 +687,13 @@ defineExpose({
   gap: var(--ek-space-2);
   min-width: 260px;
   padding: var(--ek-space-2) 0;
+  border-radius: var(--ek-radius-tile);
+  transition: var(--ek-transition-colors);
+}
+
+.ek-nc-item.is-fresh {
+  background: var(--ek-color-action-subtle);
+  box-shadow: 0 0 0 var(--ek-space-1) var(--ek-color-action-subtle);
 }
 
 .ek-nc-item__dot {
@@ -665,6 +703,10 @@ defineExpose({
   margin-top: 6px;
   border-radius: 50%;
   background: var(--ek-color-action);
+}
+
+.ek-nc-item.is-critical .ek-nc-item__dot {
+  background: var(--ek-color-error);
 }
 
 .ek-nc-item:not(.is-unread) {
@@ -714,12 +756,30 @@ defineExpose({
   box-shadow: var(--ek-focus-ring);
 }
 
+.ek-nc-item__lock {
+  display: inline-flex;
+  color: var(--ek-color-content-muted);
+}
+
+.ek-nc-item__lock :deep(.v-icon) {
+  font-size: var(--ek-icon-xs);
+}
+
 .ek-nc-item__message {
   display: -webkit-box;
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   line-clamp: 2;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+}
+
+.ek-nc-item__meta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--ek-space-2);
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
   line-height: var(--ek-type-caption-line);
@@ -737,18 +797,30 @@ defineExpose({
   line-height: var(--ek-type-caption-line);
 }
 
-.ek-nc-actions {
-  display: inline-flex;
-  justify-content: flex-end;
-  gap: var(--ek-space-1);
+.ek-nc-pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ek-space-2) var(--ek-space-4);
+  min-height: 52px;
+  padding: var(--ek-space-2) var(--ek-space-4);
+  border-top: 1px solid var(--ek-color-border-subtle);
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-label-size);
 }
 
-.ek-nc-pager-note {
-  color: var(--ek-color-content-muted);
+.ek-nc-pager__count strong {
+  color: var(--ek-color-content-strong);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.ek-nc-pager__note,
+.ek-nc-pager__end {
   font-size: var(--ek-type-caption-size);
 }
 
-/* Ayrıntı */
 .ek-nc-detail {
   display: flex;
   flex-direction: column;
@@ -777,12 +849,6 @@ defineExpose({
   text-transform: uppercase;
 }
 
-.ek-nc-item__meta {
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
-  line-height: var(--ek-type-caption-line);
-}
-
 .ek-nc-detail__message {
   margin: 0;
   color: var(--ek-color-content-default);
@@ -808,24 +874,20 @@ defineExpose({
   text-transform: uppercase;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .ek-nc-item {
+    transition: none;
+  }
+}
+
 @media (max-width: 767px) {
   .ek-notification-center {
     height: auto;
     padding: var(--ek-space-4);
   }
 
-  .ek-nc-toolbar__end {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .ek-nc-toolbar__stamp {
-    display: none;
-  }
-
   .ek-nc-item {
     min-width: 0;
   }
-
 }
 </style>

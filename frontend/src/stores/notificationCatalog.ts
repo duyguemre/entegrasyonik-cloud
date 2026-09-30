@@ -320,3 +320,15 @@ export const useNotificationCatalogStore = defineStore('notificationCatalog', ()
 
   return { entries, source, categories, ensureLoaded, entry, codeCategory, isMandatory }
 })
+
+/** Görünen başlık: sunucu `title` (yerelleştirilmiş şablon) → katalog kısa adı → kategori adı → "Bildirim". */
+export function notificationTitle(
+  item: { title?: string; code?: string },
+  labels: ReturnType<typeof labelsFor>,
+  category?: NotificationCategory,
+): string {
+  if (item.title && item.title.trim()) return item.title
+  if (item.code && labels.events[item.code]) return labels.events[item.code]
+  if (category) return labels.categories[category]
+  return 'Bildirim'
+}

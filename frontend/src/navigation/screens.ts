@@ -167,6 +167,9 @@ export const SCREENS: readonly ScreenDefinition[] = [
   // C1.5 (F-06) bildirim merkezi. Filtreler (tür/okunma) sekme içi durumdur, URL'ye yazılmaz → `urlParams` YOK.
   // Gerçek menü kaydı (ApplicationDB `menus`, kod `NotificationCenterView`, başlık `notifications`) yerel iştir.
   { key: 'NotificationCenterView', slug: 'notifications', section: 'general', order: 1, icon: 'mdi-bell-outline', titleKey: 'menu.notifications' },
+  // C2b (ADR-0029 F-N2) kişisel bildirim tercihleri. Ekran parametre okumaz → `urlParams` YOK. Menü kaydı (ApplicationDB `menus`,
+  // kod `NotificationPreferencesView`) yerel iştir; menüde yoksa çekmece/merkez bağlantısı gösterilmez.
+  { key: 'NotificationPreferencesView', slug: 'settings/notifications', section: 'settings', order: 1, icon: 'mdi-bell-cog-outline', titleKey: 'menu.notificationPreferences' },
   // ADR-0015 B4-P0 (yeni ekranlar; yalnızca EKLEME). Menü görünürlüğü bugünkü gibi `MenuService`'ten gelir
   // (ApplicationDB `menus` kaydı bu bulut görevinin kapsamı DIŞI — orkestratör/backend işi); `menuSource:'registry'`
   // + `minRole` altyapısı henüz uygulanmadığı için KULLANILMADI. Bu ekranlar `urlParams` okumaz (PII/serbest metin yok).
