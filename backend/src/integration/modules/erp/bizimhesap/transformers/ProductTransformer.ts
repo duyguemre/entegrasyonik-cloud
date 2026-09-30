@@ -1,6 +1,6 @@
 import { ICategory, ICategoryAttribute, IBrand, IInternalResult } from '@interfaces/index';
 import { integrationCode } from '../constants';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID as uuidv4 } from 'crypto';
 
 export class ProductTransformer {
     private toUrlFriendly(text: string): string {

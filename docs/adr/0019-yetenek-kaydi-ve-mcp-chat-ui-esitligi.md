@@ -3,6 +3,8 @@
 ## Durum
 Kabul edildi (2026-09-28).
 
+> **K36 notu (2026-10-01; `docs/adr/USER_DECISIONS.md` K36, ADR-0034):** Ayrı yerel uygulama (Tauri) planı İPTAL edildi. Masaüstü = mevcut Electron kabuğu, aynı web derlemesi ve aynı sohbet paketi (`@entegrasyonik/chat`); sohbet web ile aynı backend aracına (broker, ADR-0034) gider. Bu nedenle bu ADR'deki şu varsayımlar **K36 ile değişti** (metin tarihsel kayıt olarak korunur, silinmedi): §5.1 masaüstü agent döngüsü ve kullanıcının modeli (döngü backend'dedir), §5.3 onayın `EkConfirmDialog` ile masaüstünde gösterilmesi (onay kartı `@entegrasyonik/chat` içindedir, kanal broker'ın onay ucudur), §5.5 masaüstünün OAuth ile `/mcp` istemcisi olması ve yerel yeteneklerin masaüstü araç listesine eklenmesi (yerel yetenekler Electron köprüsünde istemci tarafı araçtır, onay kartı + denetimle; BACKLOG DESK-04, ADR-0034 Karar 8), §5.7 masaüstü keychain'i, BYO model ve "sohbet geçmişi yalnızca yerelde" (kalıcı geçmiş yok, ADR-0034 Karar 5; model = kullanıcının kendi sağlayıcı anahtarı (BYOK, K37), sunucuda şifreli, ADR-0034 Karar 9), `packages/ui-kit`/`desktop/` yolları ve §10-S2 Tauri imzalama (Electron imzalama BACKLOG DESK-05). `/mcp` artık yalnız **dış yapay zekâ istemcileri** için uzak MCP sunucusudur (OAuth, ADR-0009/0010); yerel MCP yoktur. Yetenek kaydı, `mcp` kararı, parite kapısı, `invokeCapability`, `PendingAction` ve güvenlik katmanı kuralları aynen geçerlidir; `mcp.exposed` "LLM yüzeylerine (uzak MCP + sohbet) açık" anlamını taşır.
+
 **Tetikleyen:** Proje sahibinin 2026-09-28 yönergesi. Chat-as-UI için hazırlanacak MCP sürdürülebilir olmalı. Önyüze eklenen her yetenek MCP tarafına da yansımalı; karmaşa ve eksik kalma olmamalı.
 
 **Bu ADR'nin diğer ADR'lerle ilişkisi:**
