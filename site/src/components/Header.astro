@@ -344,10 +344,20 @@ const registerHref = appUrls.register()
     }
   }
 
-  /* S20 (S20b: dokuzuncu, S18 "Asistan" ile birlikte): "Rehber" bağlantısı + hareket kontrolü 1280–1440 arasında sığsın: bağlantı iç boşluğu bir kademe dar. */
-  @media (min-width: 80rem) and (max-width: 89.99rem) {
+  /* S20b: dokuz bağlantı (S18 "Asistan" + S20 "Rehber") + hareket kontrolü sığsın — ölçüm (S20b): eski boşlukla 1280'de
+     hareket kontrolü sağ kenar boşluğuna ~33 px, ≥1440'ta çubuk dışına 12 px taşıyordu. Bağlantı iç boşluğu ≥1280'de bir
+     kademe, 1280–1440 arasında iki kademe dar. */
+  @media (min-width: 80rem) {
     .nav-desktop__links .nav-link {
       padding-inline: calc(var(--ek-space-2) * 0.75);
+    }
+  }
+  @media (min-width: 80rem) and (max-width: 89.99rem) {
+    .nav-desktop__links .nav-link {
+      padding-inline: calc(var(--ek-space-2) * 0.5);
+    }
+    .nav-desktop {
+      gap: var(--ek-space-1);
     }
   }
 </style>
