@@ -1,5 +1,5 @@
 <template>
-  <div class="d-flex flex-column align-center justify-center px-4 text-center w-100 h-100 fill-height flex-grow-1" style="min-height: 300px;">
+  <div class="d-flex flex-column align-center justify-center px-4 text-center w-100 h-100 fill-height flex-grow-1 ek-empty-legacy">
     <v-icon :icon="icon" :size="iconSize" color="content-subtle" class="mb-4"></v-icon>
     <div class="text-h6 text-content-strong font-weight-bold mb-1">{{ title }}</div>
     <div class="text-body-2 text-content-muted mb-6 max-width-400">
@@ -62,6 +62,10 @@ defineEmits(['action'])
 </script>
 
 <style scoped>
+.ek-empty-legacy {
+  min-height: 300px;
+}
+
 .max-width-400 {
   max-width: 400px;
   margin-left: auto;

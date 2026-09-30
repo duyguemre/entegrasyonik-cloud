@@ -1,7 +1,7 @@
 # Entegrasyonik Tasarım Sistemi — DS-v2
 
-> **Durum:** Aşama 1 (tasarım sistemi + vitrin) tamam. **Aşama 2 / adım 1 — kabuk göçü uygulandı** (`cloud/ds-v2-shell`, §13);
-> liste / diyalog-form / dashboard adımları paralel dallarda. Görsel taban onayı yerelde (Windows) yapılır.
+> **Durum:** Aşama 1 (tasarım sistemi + vitrin), Aşama 2 (kabuk, liste standardı, diyalog/menü/form, dashboard) ve
+> **Aşama 3 (entegrasyon + premium eleştiri turları)** `cloud/ds-v2-int` dalında birleşik (§14). Görsel taban onayı yerelde (Windows) yapılır.
 > **Vitrin:** `npm run dev` → `http://localhost:3000/design-system` (yalnızca geliştirme; üretim derlemesinde yok, menüde yok).
 > **İnceleme görselleri:** `frontend/docs/design-system-review/` (liste §12).
 > **Kaynaklar:** kullanıcı brifi `docs/design-reference/README.md` (görsel yön), ADR-0011 (token mimarisi), ADR-0015 (süreç/test/desen kataloğu; görsel yönü bu brifle geçersiz kılındı).
@@ -132,7 +132,7 @@ Aile **Inter** (kendi barındırılan). CSS: `--ek-type-<rol>-{size,line,weight,
 
 - **Boşluk** (4 px taban): `--ek-space-{0,1,2,3,4,5,6,8,10,12,16}` = 0…64. Sayfa 24 · bölüm 32 · kart içi 20 · form alanı 16 · satır içi 8.
 - **Radius rolleri:** `control 8` (düğme, input, sayfa düğmesi) · `tile 8` · `tab 8` · `card 12` · `popover 12` · `dialog 16` · `chip hap`. Bileşenler ölçeği değil **rolü** kullanır.
-- **Gölge** (lacivert-mürekkep tonlu): `card` (kart), `raised` (hover/tooltip), `popover` (menü/açılır), `dialog`, `chrome` (üst bar). Eski `sm/md/lg` korunur.
+- **Gölge** (lacivert-mürekkep tonlu): `card` (kart), `raised` (hover/tooltip), `popover` (menü/açılır), `dialog`, `chrome` (üst bar), **`scroll-start` / `scroll-end`** (Aşama 3: yatay kaydırılan tabloda yapışık kolonun kenar gölgesi — altında içerik kaldığını söyler; yalnız `EkDataGrid`). Eski `sm/md/lg` korunur.
 - **Kontrol yüksekliği:** `sm 32 · md 36 · lg 40`.
 - **Hareket:** süre `150/200/300 ms`, eğri `ease-out/ease-in-out`, mesafe `4/8 px`; yalnızca opaklık + kısa slide + renk geçişleri (`--ek-transition-colors`). Hover'da kayma/ölçek, bounce, ripple YOK. `prefers-reduced-motion` → süreler 0.
 - **z-index:** `sticky 10 · sidebar 900 · header 1000 · dropdown 1100 · overlay 2000 · toast 2400 · tooltip 2500`.
@@ -143,6 +143,7 @@ Aile **Inter** (kendi barındırılan). CSS: `--ek-type-<rol>-{size,line,weight,
 - `vuetify-defaults.ts`: ripple kapalı; VBtn flat; alanlar outlined/compact/`hideDetails:auto`; VCard flat+border; VDataTable hover/fixedHeader/compact; VChip small tonal; VTabs compact primary; VDialog fade+scrollable; **VMenu offset 6**; VTooltip 400 ms altta; VList compact.
 - `vuetify-overrides.css` (rol token'ları): kontrol radius 8, kart 12, diyalog 16; kart = kenarlık + `shadow-card`; menü = `shadow-popover` + ince kenarlık; tooltip = ters yüzey + caption; tablo başlığı `surface-muted`/`content-muted`/600;
   **outlined alan zemini `surface` + kenarlık `border-input`**; alan etiketi ve yardım/hata metni opaklığı 1 (AA); yüzen etiket sonrası asıl `<label>` erişilebilir kalır (axe "label" düzeltmesi — tüm uygulamaya yansır).
+  **Aşama 3:** ekran içi `v-tab` cümle düzeni + `tab` rolü (13/18/500, düz aralık); alan yardım/hata metni `caption` rolü (12/16, düz aralık, üstte 4px).
 
 ## 6. Bileşen kataloğu ve kullanım kuralları (`src/components/ds/`)
 
@@ -165,11 +166,12 @@ Mevcut ds bileşenlerinin (EkStatusChip, EkDataTable, EkKpiCard, EkFilterBar, Ek
 | `EkSidebarNav` | sol menü | etiket 2 satıra sarılır (kesilmez); etkin = `sidebar-active` + 3px gösterge; ray modunda tooltip |
 | `EkFormGrid` | TÜM formlar ve filtreler | eşit kolon + 16px boşluk; `ek-span-2`/`ek-span-full`; tablet ≤2, mobil 1 → alanlar üst üste binmez |
 | `EkFilterPanel` + `EkActiveFilters` | liste filtreleri | sayfa İÇİ, katlanabilir; Temizle · Sorgula; aktif filtreler çip, tek tıkla kaldır |
-| `EkDataGrid` | TÜM liste tabloları | yapışkan mikro başlık, `aria-sort`, seçim + tri-state, hover/selected, tipli kolon (id/num/muted), iskelet, boş durum |
+| `EkDataGrid` | TÜM liste tabloları | yapışkan mikro başlık, `aria-sort`, seçim + tri-state, hover/selected, tipli kolon (id/num/muted), iskelet, boş durum; **yatay taşma (Aşama 3):** seçim + ilk (kimlik) kolonu sola yapışık (kap ≥600px; `pin:'none'` kapatır), `pin:'end'` eylem kolonu sağa yapışık, altında içerik kalan kenar `shadow-scroll-*` gölgesi, yapışık kolonsuz dar görünümde CSS kaydırma gölgesi |
 | `EkPagerBar` | sayfalama | çerçevenin ALTINA SABİT; sol boyut+toplam, orta sayfalar, sağ `#trailing` |
 | `EkListFrame` | liste ekranı iskeleti | filtreler → kart (toolbar → grid [yalnız burası kayar] → pager) |
 | `EkCascadePicker` | kategori ağacı, ekran başlatıcı | Miller kolonları, seçili yol vurgusu, arama tam yol, ←→↑↓ Enter |
-| `EkDateField` | TÜM tarih alanları | her zaman **GG.AA.YYYY** (tarayıcının yerel `type="date"`'i kullanılmaz); yazarken nokta otomatik; geçersiz tarihte hata metni; takvim Türkçe, pazartesi başlar; v-model ISO `YYYY-MM-DD` |
+| `EkDateField` | TÜM tarih alanları | her zaman **GG.AA.YYYY** (tarayıcının yerel `type="date"`'i kullanılmaz); yazarken nokta otomatik; geçersiz tarihte hata metni; takvim Türkçe, pazartesi başlar, sayfa içi küçük menü; `label`/`min`/`max`/temizlenebilir; model `valueFormat` `iso-date` (metin) \| `date` (`Date`), verilmezse gelen türü korur (Aşama 3 birleşimi: iki dalın ayrı yazdığı sürümler tek bileşen) |
+| `EkListScreen` | TÜM liste ekranları | başlık = bölüm yolu (`section`) → H1 → açıklama (EkPageHeader ile aynı ritim); `#summary` yuvası başlık ile liste arasında (KPI satırı); sayfa boyutu 10/25/50/100, varsayılan 25 (`tests/page-size-standard.test.ts`) |
 | `EkFormSection` | form bölümleri (entegrasyon, ürün, diyalog gövdeleri) | `fieldset` + `legend` (ikon + başlık) + isteğe bağlı yardım; içi `EkFormGrid` (varsayılan 2 kolon); hata metni alanın altında `error` tonunda, `aria-describedby` ile bağlı |
 | `EkDialogHost` | sekme içinden açılan panel/çekmece gövdeleri (varyant, eşitleme, galeri) | `EkDialog` kabuğu olmadan yalnız overlay; `attach` ile sekme kapsayıcısına bağlanır (sol menünün altında kalmaz); `placement` center/end |
 | `EkCascadeDialog` | form içinde kademeli seçim (pazaryeri kategori eşleştirme) | salt-okunur alan + modal `EkCascadePicker`; taslak yol, Onayla ile yaprak kimliği döner; Esc/Vazgeç değişiklik yapmaz |
@@ -215,29 +217,24 @@ Her adım ADR-0015 süreçleriyle: spec önce yeşil → göç → ekran görün
 - **Testler:** `integration-forms.spec.ts`, `definition-forms.spec.ts`, `product-form-bodies.spec.ts` (gönderilen gövdeleri göçten ÖNCE sabitledi, sonra da yeşil), `ds-overlays.spec.ts` (seçici klavye/arama, tehlikeli diyalog, form hata metni, axe AA = 0).
 - **Kapsam dışı kalan (paralel oturumlar):** ListView içi filtre diyalogları, log listesi filtre formları, sipariş satır menüsü, komut paleti.
 
-## 9. Eski / tutarsız renk envanteri (Aşama 2 temizlik listesi)
+## 9. Eski / tutarsız renk envanteri — SIFIRLANDI (Aşama 3)
 
-Ölçüm 2026-09-29 (`style-baseline.json` + hedefli grep; `src/design/tokens` hariç).
+Ölçüm 2026-09-30 (`scripts/style-literal-counts.js`; `src/**` + `public/assets/css/site.css`, `src/design/tokens` hariç, 386 dosya):
 
-**Toplam literal (style mandalı tabanı, 294 dosya):** hex 383 · `rgb(a)(` 168 · inline `style="` 380 · `cubic-bezier(` 8 · >300ms hareket 5.
-Global legacy CSS: `public/assets/css/site.css` (hex 83, rgb 68, cubic-bezier 5) · `integrations.css` (hex 61).
+| Kategori | Aşama 1 tabanı (2026-09-29) | Aşama 3 sonu |
+|---|---|---|
+| hex | 383 | **0** |
+| `rgb(a)(` | 168 | **0** |
+| `cubic-bezier(` | 8 | **0** |
+| >300 ms hareket | 5 | **0** |
+| inline `style="` | 380 | 37 — hepsi veri güdümlü `:style` (kullanıcının seçtiği etiket/marka rengi, platform rengi, kâğıt/çerçeve ölçüsü, konum, girinti) |
+| eski tema anahtarı çağrı yeri (`danger` renk olarak, `textfieldColor`, `processButtonColor`, `passiveColor`, `save/new/deleteButtonColor`, `loginColor`, `slate-*`, `color="tonal"` …) | ~250 | **0** (uyum adaptörleri `workspace.ts` `LEGACY_TO_WORKSPACE_MAP` ve `layout/dialogTone.ts` eski çağıranlar için duruyor) |
+| Material palet adları (`white`, `red`, `grey*`, `blue-grey*`, `indigo*`, `orange*`, `text-red`, `bg-grey-lighten-5` …) | ~90 | **0** |
 
-**En yoğun dosyalar (hex+rgb):** `HashtagListView` 33 · `CategorySelectBoxLevelComponent` 22 · `AdminView` 16 · `ActionDialogComponent` 15 · `BrandListComponent` 14 · `CardComponent` 14 · `ApplicationBar` 14 · `ChoicesMappingComponent` 13 · `ChoicesSyncComponent` 12 · `BatchProcessMenu` 11 · `ProductTransferComponent` 10 · `SettingListView` 10 · `Category*` (Integration/List/Sync/Tree) 9'ar · `stores/ecommerce.ts`, `stores/marketplace.ts` 8'er.
-**En sık literal değerler:** `#DDD` 23 · `#EEE` 14 · `#FFF` 11 · `#BBB` 8 · `#F3F3F3` 7 · `#FAFAFF` 6 · `#E2E8F0` 6 · `#000` 6 · `#E53935FF` 4 · `#69B6FF` 4 · `#1867C0` 3 · `#3B82F6` 3 · `#4F46E5` 3 → hepsi `ink`/rol token'larına.
-
-**Tanımsız tema anahtarları (kırık):**
-- `loginColor` — `AdminView.vue` (+ ADR-0011'de kayıtlı 9 dosya ailesi) → `surface`
-- `infoButtonColor` — `ProductImagesComponent.vue`, `ProductVariantImagesComponent.vue` → `action`/`info`
-- `slate-100/200/300` (Vuetify tema anahtarı olarak) — `ApplicationBar.vue`, `AdminView.vue` → `surface-sunken`/`border-*`
-- `color="tonal"` (renk değil varyant adı) — `CategoryListComponent`, `CategorySyncComponent`, `ProductListView`
-- `workspaceColor` ve benzeri tanımsız adlar grep'te bu turda bulunmadı (önceden temizlenmiş).
-
-**Legacy anahtar kullanımı (dosya sayısı) — uygulamada değerleri DS-v2'ye eşlendi, Aşama 2'de adlar da göçer:**
-`danger` 53 → `error` · `textfieldColor` 41 → `surface` · `processButtonColor` 38 → `neutral` · `passiveColor` 34 → `content-muted` · `saveButtonColor` 14 (eskiden kırmızı!) → `action` · `newButtonColor` 8 → `action` · `borderColor` 6 · `deleteButtonColor` 6 → `error` · `borderColorLight` 5 · `primaryLighten(More)` 3 · diğerleri ≤2. Tam eşleme: `workspace.ts` `LEGACY_TO_WORKSPACE_MAP`.
-
-**Material palet adları (ton dışı renk):** `color="white"` 39 · `bg-color="white"` 19 · `color="red"` 12 · `color="grey"` 7 · `red-lighten-1/darken-4`, `grey-lighten-*`, `blue-grey-*`, `indigo(-accent-2)`, `orange-darken-2` ve `text-red`/`bg-grey-lighten-5`/`bg-green` sınıfları → semantik tonlar.
-
-**Global kural çakışmaları:** ~~`site.css` `.v-dialog .v-overlay__content {…}`~~ (Aşama 2 / Adım 3'te kaldırıldı), `.v-overlay__scrim { top:1px }`, drawer z-index `!important`'ları.
+- `public/assets/css/integrations.css` tamamen ölüydü → silindi. `site.css` ~1000 satır ölü kural silindi; kalanlar rol token'ı.
+- Global kural çakışmaları kalktı: `.v-overlay__scrim { top:1px }`, drawer `z-index … !important`, eski `EkDetailSheet` yaması.
+- Kullanıcı verisi olan renkler (etiket paleti, marka paleti) kayıtlı değerleri değişmesin diye sayısal (`0xRRGGBB`) tutulup çalışma anında `#RRGGBB`'ye çevrilir; baskı penceresi (`BarcodePrintComponent`) uygulama token'ı taşımadığı için `black`/`white` anahtar sözcükleri kullanır.
+- Desen mandalı (19): `definitions/*` 7 eski prototip ekranı + `TEST.vue` ham `v-data-table` (karakterizasyon spec'i sabitliyor), `LoadingComponent` `v-progress-circular` (DS'de spinner bileşeni yok, bilinçli).
 
 ## 10. Tasarım kararları ve gerekçeleri
 
@@ -294,5 +291,34 @@ Global legacy CSS: `public/assets/css/site.css` (hex 83, rgb 68, cubic-bezier 5)
 komut paleti iddiaları birleşik aramaya taşındı; sekme başlıkları artık cümle düzeninde, `'ANASAYFA'` karşılaştırması büyük harfe çevrilerek).
 **İnceleme görselleri:** `a2-shell-1440-{kabuk,arama,sekme-menusu,kisayollar,ray,ust-daraltilmis}.png`, `a2-shell-390-{kabuk,arama,sekme-menusu,kisayollar,menu}.png`
 (`SHELL_REVIEW_CAPTURE=1 SHELL_REVIEW_WIDTH=1440|390 npx playwright test e2e/specs/shell-dsv2.spec.ts -g inceleme`).
-**Açık:** görsel tabanlar (`shell-dashboard` vb.) Windows'ta bilinçli yeniden tabanlanmalı; `menu.user.user` gibi eksik i18n anahtarları test menü verisindendir.
+**Açık:** görsel tabanlar (`shell-dashboard` vb.) Windows'ta bilinçli yeniden tabanlanmalı; ~~`menu.user.user` gibi ham anahtarlar~~ → Aşama 3'te `navigation/menuTitle.ts` ile kapatıldı (§14).
 **Aşama 2 / Adım 3 (diyalog/menü/form):** `a2-overlays-trendyol-api-{before,after}-1440`, `a2-overlays-trendyol-varsayilan-{before,after}-{1440,800,390}`, `a2-overlays-dialog-danger-{1440,390}`, `a2-overlays-category-picker-{1440,800}`, `a2-overlays-category-picker-search-1440`, `a2-overlays-product-info-form-1440` (bulutta Linux Chromium ile e2e sahte verisinden alındı; görsel onay yerelde).
+
+## 14. Aşama 3 — entegrasyon ve premium eleştiri turları (`cloud/ds-v2-int`)
+
+**Birleştirme** (sırayla, `--no-ff`): shell → lists → overlays → dashboard → b4p1c-dsv2 → w1-notifications → w1-privacy-complete →
+w1-stock-health → w1-finance. Çakışma notları dal commit mesajlarında; özet: `EkDateField` iki dalda ayrı yazılmıştı (tek API'de
+birleştirildi), `ProductListView` (liste gövdesi + overlays diyalogları), `EkMenuPanel` (autofocus + başlık), `screens.ts`/`menu.ts`/
+`status-map.ts` (tüm eklemeler korundu), `tr.json`/`en.json` (yapısal 3 yollu JSON birleştirme; değer çakışması yok).
+
+**Tamamlanan bağlantılar:** stok tahsis zaman çizgisi sipariş detayında (`OrderDetailComponent`, yalnız tahsis durumu olan kalem
+varsa); müşteri anonimleştirme (`CustomerService/anonymizeCustomer`, müşteri kartı ⋯ menüsü → tehlikeli onay; `useUser.isTenantAdmin`
+yalnız görünürlük ipucu).
+
+**Sistem düzeyi değişiklikler (tüm ekranlara yansır):**
+
+| Konu | Değişiklik |
+|---|---|
+| Menü başlıkları | `navigation/menuTitle.ts` tek çözümleyici: menü anahtarı → üst/başlık varyantı → `screens.ts` `titleKey` → okunur yedek. Ham i18n anahtarı ekrana düşmez (sol menü, ray, arama, sekme şeridi). `sections.ts`'e `settings`, `account`. |
+| Sayfa boyutu | Tek standart 10/25/50/100, varsayılan 25; statik test standart dışını engeller. |
+| Tablo taşması | `EkDataGrid` yapışık ilk/seçim/eylem kolonu + kenar gölgesi (yeni `shadow-scroll-start/end` token'ı — gerekçe: kesik kolon yerine "kaydırılabilir" ipucu; mevcut gölgeler yöne bağlı değildi). |
+| Başlık ritmi | `EkListScreen` bölüm yolu + `#summary`; `EkPageHeader`, `EkSettingsSection` tip rollerine bağlandı. |
+| KPI dili | `EkKpiCard` = `EkMetricCard` dili (mikro etiket, `metric` değer); finans özeti, sistem yönetimi metrikleri aynı dile taşındı. |
+| Sekmeler/alanlar | `v-tab` cümle düzeni; alan yardım/hata metni `caption` rolü; giriş sekmeleri cümle düzeni. |
+| Metin | Boş/hata durum ve diyalog başlıkları cümle düzeni; `formatPhone` tek telefon biçimi. |
+| Renk envanteri | §9 — sıfırlandı. |
+
+**Eleştiri turları:** `docs/design-system-review/a3-critique-{1,2,3}.md` (ekran başına kusur listesi + durum). Araç:
+`A3_REVIEW=1 A3_REVIEW_WIDTH=1440|390 A3_REVIEW_OUT=<klasör> npx playwright test e2e/specs/a3-review.spec.ts --project=chromium-desktop`
+(`e2e/fixtures/reviewScreens.ts`: `screens.ts`'teki tüm ekranları kapsayan sentetik menü + dolu durum fixture'ları).
+Son görüntüler: `docs/design-system-review/a3-final/*.png` (1440 ve 390; Linux Chromium — görsel onay yerelde).

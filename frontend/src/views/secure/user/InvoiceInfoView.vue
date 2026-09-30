@@ -4,7 +4,7 @@
   ADR-0015 B5-3 — GÖRSEL KATMAN, mantık DEĞİŞMEDİ (bkz. e2e/specs/user-account-forms.spec.ts).
   Karakterizasyon: hiçbir alanda `v-model` YOKTU (tamamen durumsuz/inert form), `buttons` script'te
   tanımlı ama template'te HİÇ KULLANILMIYORDU (kaydet düğmesi render edilmiyor) — AYNEN korunuyor,
-  YENİ bir v-model/kaydet düğmesi EKLENMEDİ. Eski `style="width:48%"` / `style="width:4%"` inline
+  YENİ bir v-model/kaydet düğmesi EKLENMEDİ. Eski `width:48%` / `width:4%` inline
   2-sütun hack'i DS grid'iyle değiştirildi. `.invoiceInfoView` kök sınıfı yeni eklendi (kardeş
   ekranlarla aynı isimlendirme kuralı; davranışı ETKİLEMEZ).
 

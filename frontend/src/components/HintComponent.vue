@@ -1,5 +1,5 @@
 <template>
-  <div class="mt-2 align-center" style="font-size:.9em">
+  <div class="mt-2 align-center ek-hint">
     <div class="d-flex align-center font-italic">
       <v-icon class="mr-2 " color="info">mdi-lightbulb-outline</v-icon>
       {{ hintText }}
@@ -13,4 +13,9 @@ const props = defineProps<{
   hintText?: string
 }>()
 </script>
-<style scoped></style>
+<style scoped>
+.ek-hint {
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+}
+</style>
