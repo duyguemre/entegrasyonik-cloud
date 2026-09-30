@@ -129,7 +129,7 @@ const getStatusColor = (status: string) => {
     case 'OPEN': return 'error';
     case 'IN_PROGRESS': return 'warning';
     case 'RESOLVED': return 'success';
-    case 'CLOSED': return 'passiveColor';
+    case 'CLOSED': return 'neutral';
     default: return 'info';
   }
 };

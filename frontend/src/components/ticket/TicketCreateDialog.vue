@@ -7,8 +7,8 @@
 -->
 <template>
   <ActionDialogComponent :model-value="modelValue" @update:model-value="val => $emit('update:modelValue', val)"
-    title="YENİ DESTEK TALEBİ" subtitle="Size nasıl yardımcı olabiliriz? Lütfen detayları paylaşın."
-    icon="mdi-plus-circle-outline" color="passiveColor" confirm-text="Talebi Gönder" :loading="loading"
+    title="Yeni destek talebi" subtitle="Size nasıl yardımcı olabiliriz? Lütfen detayları paylaşın."
+    icon="mdi-plus-circle-outline" color="primary" confirm-text="Talebi Gönder" :loading="loading"
     attach="ticketListView" @confirm="handleConfirm" @cancel="$emit('update:modelValue', false)" maxWidth="600px">
     <v-form ref="formRef">
       <EkFormGrid :columns="2">

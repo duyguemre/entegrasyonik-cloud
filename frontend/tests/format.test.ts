@@ -7,6 +7,7 @@ import {
   formatDateTime,
   formatRelative,
   formatDuration,
+  formatPhone,
 } from '../src/composables/format'
 
 /** ADR-0015 Karar 6.3 — tek biçimlendirici birim testleri (tr-TR sabit, PLATFORM_BASELINE.md C5). */
@@ -136,5 +137,19 @@ describe('formatDuration', () => {
     expect(formatDuration(null, 'ms')).toBe('—')
     expect(formatDuration(undefined, 'min')).toBe('—')
     expect(formatDuration('abc', 's')).toBe('—')
+  })
+})
+
+describe('formatPhone (DS-v2 Aşama 3)', () => {
+  it('TR numarasını tek biçime getirir', () => {
+    expect(formatPhone('5551112233')).toBe('+90 (555) 111 22 33')
+    expect(formatPhone('05551112233')).toBe('+90 (555) 111 22 33')
+    expect(formatPhone('+90 555 111 22 33')).toBe('+90 (555) 111 22 33')
+    expect(formatPhone(5551112233)).toBe('+90 (555) 111 22 33')
+  })
+  it('biçimlenemeyen değer olduğu gibi, boş değer "—"', () => {
+    expect(formatPhone('+44 20 7946 0958')).toBe('+44 20 7946 0958')
+    expect(formatPhone('')).toBe('—')
+    expect(formatPhone(null)).toBe('—')
   })
 })

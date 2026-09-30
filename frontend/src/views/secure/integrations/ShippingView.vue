@@ -60,7 +60,7 @@
                     category="kargo" />
                 </template>
               </div>
-              <EkEmptyState v-else variant="not-connected" title="Başlamak İçin Seçim Yapın"
+              <EkEmptyState v-else variant="not-connected" title="Başlamak için seçim yapın"
                 message="Yukarıdaki listeden bir kargo firması seçerek ayarları yönetmeye başlayabilirsiniz." />
             </v-card-text>
           </v-form>

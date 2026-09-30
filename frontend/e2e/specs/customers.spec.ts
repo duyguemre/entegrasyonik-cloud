@@ -21,12 +21,12 @@ test.describe('P2 — Müşteriler (CustomerListView)', () => {
     await expect(page.getByText('Mehmet Demir')).toBeVisible()
   })
 
-  test('boş durum: sonuç yoksa "Müşteri Bulunamadı" kartı gösterilir', async ({ page }) => {
+  test('boş durum: sonuç yoksa "Müşteri bulunamadı" kartı gösterilir', async ({ page }) => {
     await installApiMocks(page, { 'CustomerService/getCustomers': customersBosFixture })
     await gotoAuthed(page)
     await openScreen(page, 'CustomerListView')
 
-    await expect(page.getByText('Müşteri Bulunamadı')).toBeVisible()
+    await expect(page.getByText('Müşteri bulunamadı')).toBeVisible()
   })
 
   test('hata durumu: 500 alındığında "Müşteriler yüklenemedi" + Tekrar dene gösterilir (boştan AYRI), ham hata sızmaz', async ({ page }) => {

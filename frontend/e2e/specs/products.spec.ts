@@ -17,16 +17,16 @@ test.describe('P1 — Ürünler (ProductListView)', () => {
     await expect(page.getByText('E2E İkinci Ürün')).toBeVisible()
   })
 
-  test('boş durum: sonuç yoksa "Ürün Bulunamadı" kartı gösterilir', async ({ page }) => {
+  test('boş durum: sonuç yoksa "Ürün bulunamadı" kartı gösterilir', async ({ page }) => {
     await installApiMocks(page, { 'ProductService/getProducts': productsBosFixture })
     await gotoAuthed(page)
     await openScreen(page, 'ProductListView')
 
-    await expect(page.getByText('Ürün Bulunamadı')).toBeVisible()
+    await expect(page.getByText('Ürün bulunamadı')).toBeVisible()
   })
 
   test('hata durumu: 500 alındığında "Ürünler yüklenemedi" + Tekrar dene gösterilir (boştan AYRI), ham hata sızmaz', async ({ page }) => {
-    // DS-v2 Aşama 2 — BİLİNÇLİ DAVRANIŞ DEĞİŞİKLİĞİ: eskiden hata "Ürün Bulunamadı" boş durumuna düşüyordu
+    // DS-v2 Aşama 2 — BİLİNÇLİ DAVRANIŞ DEĞİŞİKLİĞİ: eskiden hata "Ürün bulunamadı" boş durumuna düşüyordu
     // (ve `loading` başarısızlıkta false olmuyordu). Artık `isRequestError` ile hata ayrı gösterilir; API çağrısı AYNI.
     await installApiMocks(page, { 'ProductService/getProducts': mockError(500) })
     await gotoAuthed(page)

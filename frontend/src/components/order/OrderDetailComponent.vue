@@ -207,7 +207,7 @@ import EkDescriptionList, { type EkDescriptionListItem } from '@/components/ds/E
 import EkDataTable, { type EkTableColumn } from '@/components/ds/EkDataTable.vue';
 import EkEmptyState from '@/components/ds/EkEmptyState.vue';
 import EkSkeleton from '@/components/ds/EkSkeleton.vue';
-import { formatMoney, formatDateTime } from '@/composables/format';
+import { formatMoney, formatDateTime, formatPhone } from '@/composables/format';
 import { ORDER_STATUS_TONE, type StatusTone } from '@/design/status-map';
 import { OrderInternalStatusEnum } from '@/types/OrderTypes';
 import { useLifecycle } from '@/composables/useLifecycle';
@@ -309,15 +309,7 @@ const timelineEvents = computed(() => {
 });
 
 /** Türkiye telefon formatlayıcı: +90 (5XX) XXX XX XX */
-const formatPhoneNumber = (phone: string | number): string => {
-    if (!phone) return '—';
-    let cleaned = ('' + phone).replace(/\D/g, '');
-    if (cleaned.startsWith('90')) cleaned = cleaned.substring(2);
-    if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
-    if (cleaned.length !== 10) return String(phone);
-    const match = cleaned.match(/^(\d{3})(\d{3})(\d{2})(\d{2})$/);
-    return match ? `+90 (${match[1]}) ${match[2]} ${match[3]} ${match[4]}` : String(phone);
-};
+const formatPhoneNumber = (phone: string | number): string => formatPhone(phone);
 
 const openLink = (url: string) => { if (url) window.open(url, '_blank'); };
 

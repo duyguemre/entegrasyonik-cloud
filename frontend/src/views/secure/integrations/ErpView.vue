@@ -27,7 +27,7 @@
                     category="ERP" />
                 </template>
               </div>
-              <EkEmptyState v-else variant="not-connected" title="Başlamak İçin Seçim Yapın"
+              <EkEmptyState v-else variant="not-connected" title="Başlamak için seçim yapın"
                 message="Yukarıdaki listeden bir ERP platformu seçerek ayarları yönetmeye başlayabilirsiniz." />
             </v-card-text>
           </v-form>

@@ -35,7 +35,7 @@
               class="flex-shrink-0">
             </div>
 
-            <v-icon v-if="item.raw.isParent" size="16" class="mr-2" color="grey">
+            <v-icon v-if="item.raw.isParent" size="16" class="mr-2" color="content-muted">
               mdi-folder-network-outline
             </v-icon>
             <div v-else class="csb-icon-gap"></div>

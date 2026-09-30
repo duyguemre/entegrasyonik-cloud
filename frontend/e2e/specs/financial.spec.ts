@@ -101,9 +101,9 @@ test.describe('ADR-0015 B5-3 — FinancialListView (finans)', () => {
     }
   })
 
-  test('boş durum: "Finansal Kayıt Bulunamadı" gösterilir', async ({ page }) => {
+  test('boş durum: "Finansal kayıt bulunamadı" gösterilir', async ({ page }) => {
     await open(page, { [ENDPOINT]: financialBosFixture })
-    await expect(page.getByText('Finansal Kayıt Bulunamadı')).toBeVisible()
+    await expect(page.getByText('Finansal kayıt bulunamadı')).toBeVisible()
     await expect(page.getByText('Arama kriterlerinize uygun herhangi bir finansal işlem kaydı bulunamadı.')).toBeVisible()
   })
 
@@ -199,7 +199,7 @@ test.describe('ADR-0015 B5-3 — FinancialListView (finans)', () => {
     await expect(page.getByText('SIP-E2E-1001')).toBeVisible()
 
     await page.locator('.financialListView button:has(.mdi-eye)').first().click()
-    const dialog = page.getByRole('dialog').filter({ hasText: 'FİNANSAL İŞLEM DETAYI' })
+    const dialog = page.getByRole('dialog').filter({ hasText: 'Finansal işlem detayı' })
     await expect(dialog).toBeVisible()
     await expect(dialog.getByText('TRX-E2E-0001')).toBeVisible()
     await expect(dialog.getByText('SIP-E2E-1001')).toBeVisible()
@@ -220,7 +220,7 @@ test.describe('ADR-0015 B5-3 — FinancialListView (finans)', () => {
     await expect(page.getByText('TRX-E2E-0002')).toBeVisible()
 
     await page.locator('.financialListView tbody button:has(.mdi-eye)').nth(1).click()
-    const dialog = page.getByRole('dialog').filter({ hasText: 'FİNANSAL İŞLEM DETAYI' })
+    const dialog = page.getByRole('dialog').filter({ hasText: 'Finansal işlem detayı' })
     await expect(dialog).toBeVisible()
     await expect(dialog.getByText('MANUEL İŞLEM')).toBeVisible()
     await expect(dialog.getByText('Bu işlem için ek açıklama bulunmuyor.')).toBeVisible()

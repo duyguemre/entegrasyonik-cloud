@@ -45,10 +45,10 @@
       :page="pagination.page"
       :page-size="pagination.limit"
       :total="pagination.totalNumberOfRecords"
-      empty-title="Müşteri Bulunamadı"
+      empty-title="Müşteri bulunamadı"
       empty-text="Siparişlerle gelen müşteriler burada listelenir."
       empty-icon="mdi-account-group-outline"
-      filtered-empty-title="Müşteri Bulunamadı"
+      filtered-empty-title="Müşteri bulunamadı"
       filtered-empty-text="Arama kriterlerinize uygun herhangi bir müşteri kaydı bulunamadı."
       @update:search="onSearchInput"
       @update:sort="onGridSort"
@@ -82,7 +82,7 @@
         <EkChannelDot v-if="row.externalIdentities?.[0]?.integrationCode" :code="row.externalIdentities[0].integrationCode" />
         <span v-else class="ek-muted">Sistem</span>
       </template>
-      <template #cell-phone="{ row }"><span class="ek-num">{{ row.phone || '—' }}</span></template>
+      <template #cell-phone="{ row }"><span class="ek-num">{{ formatPhone(row.phone) }}</span></template>
       <template #cell-email="{ row }">{{ row.email || '—' }}</template>
       <template #cell-region="{ row }">
         {{ row.addresses?.[0]?.city || '—' }}<span v-if="row.addresses?.[0]?.state" class="ek-muted"> · {{ row.addresses[0].state }}</span>
@@ -108,7 +108,7 @@ import useRestApi from '@/composables/restapi';
 import { useSnackbarStore } from '@/stores/snackbarStore';
 import { useCustomerFilters } from '@/components/customer/composables/useCustomerFilters';
 import { useCustomerActions } from '@/components/customer/composables/useCustomerActions';
-import { formatMoney, formatPercent } from '@/composables/format';
+import { formatMoney, formatPercent, formatPhone } from '@/composables/format';
 
 import LoadingComponent from '@/components/LoadingComponent.vue';
 import ConfirmationDialogComponent from '@/components/layout/ConfirmationDialogComponent.vue';

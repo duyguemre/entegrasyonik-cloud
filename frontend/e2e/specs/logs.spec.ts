@@ -36,7 +36,7 @@ test.describe('P2 — Ürün Gönderim İşlemleri (ExportLogList)', () => {
     await expect(page.getByText('E2E Test Ürünü 2 - Fiyat Güncelleme')).toBeVisible()
   })
 
-  test('boş durum: sonuç yoksa "Gönderim Kaydı Bulunamadı" kartı gösterilir (BİLİNÇLİ TAMAMLAMA — bkz. BACKLOG.md)', async ({ page }, testInfo) => {
+  test('boş durum: sonuç yoksa "Gönderim kaydı bulunamadı" kartı gösterilir (BİLİNÇLİ TAMAMLAMA — bkz. BACKLOG.md)', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'Masaüstü tablo (mdAndUp/>=960px) gerektiriyor — bkz. dosya başı NOT')
     // BİLİNÇLİ TAMAMLAMA (characterization AŞAMASINDA bugünkü davranış Vuetify'ın kendi `tr`
     // locale varsayılanıydı — "Bu görünümde veri yok." — ExportLogList.vue'nin masaüstü
@@ -48,7 +48,7 @@ test.describe('P2 — Ürün Gönderim İşlemleri (ExportLogList)', () => {
     await gotoAuthed(page)
     await openScreen(page, 'LogListView')
 
-    await expect(page.getByText('Gönderim Kaydı Bulunamadı', { exact: true })).toBeVisible()
+    await expect(page.getByText('Gönderim kaydı bulunamadı', { exact: true })).toBeVisible()
   })
 
   test('hata durumu: 500 alındığında "Gönderim kayıtları yüklenemedi" + Tekrar dene gösterilir (boştan AYRI), ham hata sızmaz', async ({ page }, testInfo) => {
@@ -114,14 +114,14 @@ test.describe('P2 — Ürün Çekim İşlemleri (ImportLogList)', () => {
     await expect(page.locator('.importLogList').getByText('Hepsiburada')).toBeVisible()
   })
 
-  test('boş durum: sonuç yoksa "Aktarım Kaydı Bulunamadı" kartı gösterilir (BİLİNÇLİ TAMAMLAMA — bkz. BACKLOG.md)', async ({ page }, testInfo) => {
+  test('boş durum: sonuç yoksa "Aktarım kaydı bulunamadı" kartı gösterilir (BİLİNÇLİ TAMAMLAMA — bkz. BACKLOG.md)', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'Masaüstü tablo (mdAndUp/>=960px) gerektiriyor — bkz. dosya başı NOT')
     await installApiMocks(page, withLogsMenu({ 'IntegrationService/getImportJobs': importJobsBosFixture }))
     await gotoAuthed(page)
     await openScreen(page, 'LogListView')
     await openImportTab(page)
 
-    await expect(page.getByText('Aktarım Kaydı Bulunamadı', { exact: true })).toBeVisible()
+    await expect(page.getByText('Aktarım kaydı bulunamadı', { exact: true })).toBeVisible()
   })
 
   test('hata durumu: 500 alındığında "Aktarım kayıtları yüklenemedi" + Tekrar dene gösterilir (boştan AYRI), ham hata sızmaz', async ({ page }, testInfo) => {

@@ -6,7 +6,7 @@
 
     <!-- `localItem` boş kaldığında (rapor bulunamadı/servis hatası) aksiyon alınabilir boş/hata durumu.
          İş mantığı (veri çekme/`getReport()` yeniden deneme) DEĞİŞMEDİ. -->
-    <EkEmptyState v-if="!localItem && !loading" variant="error" title="Rapor Verilerine Ulaşılamadı"
+    <EkEmptyState v-if="!localItem && !loading" variant="error" title="Rapor verilerine ulaşılamadı"
       message="İşlem raporu henüz hazırlanmamış olabilir veya sunucuyla olan bağlantıda bir sorun yaşanıyor."
       showAction actionText="Yeniden dene" actionIcon="mdi-refresh" @action="getReport()" />
 

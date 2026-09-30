@@ -1,7 +1,7 @@
 <template>
     <ActionDialogComponent v-model="show" title="Manuel Kargo Girişi"
         subtitle="Kargo entegrasyonu dışındaki gönderiler için bilgi kaydı" icon="mdi-truck-delivery-outline"
-        color="passiveColor" confirm-text="Kargoya Ver" cancel-text="Vazgeç" confirm-buttom-color="passiveColor"
+        color="primary" confirm-text="Kargoya Ver" cancel-text="Vazgeç" confirm-buttom-color="primary"
         :is-confirm-disabled="isFormInvalid" @confirm="handleSubmit" @cancel="handleClose" attach="orderListView"
         max-width="600px">
         <v-form ref="formRef" @submit.prevent="handleSubmit">

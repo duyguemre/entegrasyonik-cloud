@@ -24,17 +24,17 @@ test.describe('P1 — Siparişler (OrderListView)', () => {
     await expect(page.getByText('E2E-100002')).toBeVisible()
   })
 
-  test('boş durum: sonuç yoksa "Sipariş Bulunamadı" kartı gösterilir', async ({ page }) => {
+  test('boş durum: sonuç yoksa "Sipariş bulunamadı" kartı gösterilir', async ({ page }) => {
     await installApiMocks(page, { 'OrderService/getOrders': ordersBosFixture })
     await gotoAuthed(page)
     await openScreen(page, 'OrderListView')
 
-    await expect(page.getByText('Sipariş Bulunamadı')).toBeVisible()
+    await expect(page.getByText('Sipariş bulunamadı')).toBeVisible()
   })
 
   test('hata durumu: 500 alındığında "Siparişler yüklenemedi" + Tekrar dene gösterilir (boştan AYRI), ham hata sızmaz', async ({ page }) => {
     // DS-v2 Aşama 2 (liste standardı) — BİLİNÇLİ DAVRANIŞ DEĞİŞİKLİĞİ: eskiden `restApi.post` hatayı
-    // axios hata nesnesiyle ÇÖZDÜĞÜ için liste "Sipariş Bulunamadı" boş durumuna düşüyordu (hata ≠ boş
+    // axios hata nesnesiyle ÇÖZDÜĞÜ için liste "Sipariş bulunamadı" boş durumuna düşüyordu (hata ≠ boş
     // ayırt edilemiyordu, BACKLOG). Artık `isRequestError` ile hata ayrı gösterilir; API çağrısı AYNI.
     await installApiMocks(page, { 'OrderService/getOrders': mockError(500) })
     await gotoAuthed(page)

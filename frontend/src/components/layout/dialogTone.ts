@@ -12,6 +12,8 @@ const TONES: Record<string, EkTone> = {
   orange: 'warning',
   'orange-darken-2': 'warning',
   info: 'info',
+  neutral: 'neutral',
+  primary: 'action',
   passiveColor: 'neutral',
   processButtonColor: 'neutral',
   grey: 'neutral',

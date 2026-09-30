@@ -18,7 +18,7 @@
             :aria-label="selectedPlatform ? `${selectedPlatform} ayarları` : 'Seçim bekleniyor'">
             <component v-if="selectedPlatform" :is="getActiveComponent()" :properties="getActiveProperties()"
               @update="onUpdate" />
-            <EkEmptyState v-else variant="not-connected" title="Başlamak İçin Seçim Yapın"
+            <EkEmptyState v-else variant="not-connected" title="Başlamak için seçim yapın"
               message="Yukarıdaki listeden bir e-fatura sağlayıcısı seçerek ayarları yönetmeye başlayabilirsiniz." />
           </v-card-text>
         </div>

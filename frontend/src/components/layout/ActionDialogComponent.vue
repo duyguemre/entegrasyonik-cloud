@@ -59,7 +59,7 @@ const props = defineProps({
   subtitle: { type: String, default: 'Toplu İşlem Merkezi' },
   icon: { type: String, default: 'mdi-view-dashboard-outline' },
   color: { type: String, default: 'primary' },
-  confirmButtomColor: { type: String, default: 'passiveColor' },
+  confirmButtomColor: { type: String, default: 'primary' },
   hint: { type: String, default: '' },
   maxWidth: { type: [String, Number], default: 580 },
   attach: { type: String, default: '' },

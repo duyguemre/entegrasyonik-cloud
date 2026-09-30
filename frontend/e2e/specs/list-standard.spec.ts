@@ -132,7 +132,7 @@ test.describe('DS-v2 liste standardı — sipariş listesi', () => {
   test('boş durumlar ayrışır: hiç veri yok ≠ filtre sonucu yok', async ({ page }) => {
     await openList(page, 'OrderListView', { 'OrderService/getOrders': ordersBosFixture })
     const view = page.locator('.orderListView')
-    await expect(view.getByText('Sipariş Bulunamadı')).toBeVisible()
+    await expect(view.getByText('Sipariş bulunamadı')).toBeVisible()
     await expect(view.getByRole('button', { name: 'Filtreleri temizle' })).toHaveCount(0)
     await view.getByLabel('Sipariş No, Müşteri Adı veya Telefon Ara').first().fill('yok-boyle-siparis')
     await expect(view.getByText('Arama kriterlerinize uygun herhangi bir sipariş kaydı bulunamadı.')).toBeVisible()
@@ -199,7 +199,7 @@ test.describe('DS-v2 liste standardı — sipariş listesi', () => {
     })
     const view = page.locator('.orderListView')
     await expect(view.getByText('Siparişler yüklenemedi')).toBeVisible()
-    await expect(view.getByText('Sipariş Bulunamadı')).toHaveCount(0)
+    await expect(view.getByText('Sipariş bulunamadı')).toHaveCount(0)
     await expect(view).not.toContainText('500')
     await view.getByRole('button', { name: 'Tekrar dene' }).click()
     await expect(view.getByText('E2E-100001')).toBeVisible()

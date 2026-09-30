@@ -230,7 +230,7 @@
       </div>
     </div>
 
-    <EkEmptyState v-else-if="!loading" variant="error" title="Rapor Verilerine Ulaşılamadı"
+    <EkEmptyState v-else-if="!loading" variant="error" title="Rapor verilerine ulaşılamadı"
       message="İşlem raporu henüz hazırlanmamış olabilir veya sunucuyla olan bağlantıda bir sorun yaşanıyor."
       showAction actionText="Yeniden dene" actionIcon="mdi-refresh" @action="getReport()" />
   </div>

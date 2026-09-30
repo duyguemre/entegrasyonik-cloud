@@ -1228,27 +1228,32 @@ onUnmounted(() => {
   gap: var(--ek-space-2);
 }
 
+// Aşama 3: anahtar-değer bloğu dili — mikro etiket ÜSTTE, değer ALTTA kalın/tabular (brif "Uygulama kimliği").
 .metric-pill {
   flex: 1 1 140px;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--ek-space-2);
-  padding: var(--ek-space-2) var(--ek-space-4);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ek-space-1);
+  padding: var(--ek-space-3) var(--ek-space-4);
   background: var(--ek-color-surface);
   border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-md);
+  border-radius: var(--ek-radius-tile);
 
   &__label {
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-semibold);
+    font-size: var(--ek-type-micro-size);
+    line-height: var(--ek-type-micro-line);
+    font-weight: var(--ek-type-micro-weight);
+    letter-spacing: var(--ek-type-micro-tracking);
     text-transform: uppercase;
     color: var(--ek-color-content-muted);
   }
 
   &__value {
-    font-size: var(--ek-font-size-lg);
-    font-weight: var(--ek-font-weight-semibold);
+    font-size: var(--ek-type-metric-size);
+    line-height: var(--ek-type-metric-line);
+    font-weight: var(--ek-type-metric-weight);
+    font-variant-numeric: tabular-nums;
   }
 }
 

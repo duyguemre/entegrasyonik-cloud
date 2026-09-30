@@ -214,11 +214,11 @@ test.describe('B3 karakterizasyon — aktarım detay raporu (DetailedImportLogRe
     await expect(page.getByText('Platform Seçenek Eşleştirme')).toBeVisible()
   })
 
-  test('veri alınamadı: iş kaydı boş dönerse "Rapor Verilerine Ulaşılamadı" + yeniden dene gösterilir, ham hata sızmaz', async ({ page }) => {
+  test('veri alınamadı: iş kaydı boş dönerse "Rapor verilerine ulaşılamadı" + yeniden dene gösterilir, ham hata sızmaz', async ({ page }) => {
     await installApiMocks(page, { MenuService: menuFixtureWithLogs, 'IntegrationService/getImportJobByJobId': {} })
     const dialog = await openImportDetail(page)
 
-    await expect(dialog).toContainText('Rapor Verilerine Ulaşılamadı')
+    await expect(dialog).toContainText('Rapor verilerine ulaşılamadı')
     await expect(dialog.locator('button', { hasText: trLabel('Yeniden dene') })).toBeVisible()
     await expect(dialog).not.toContainText('Veri boş')
   })

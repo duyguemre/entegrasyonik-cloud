@@ -15,7 +15,7 @@ test.describe('P1 — integrations/EInvoiceView', () => {
     await expect(page.locator('.einvoiceView').getByText('Hızlı Başlangıç Rehberi')).toBeVisible()
     // einvoiceStore statik olduğu için bu ekranda gerçek bir "boş durum" senaryosu yoktur
     // (liste her zaman dolu) — bu, sabitlenen gerçek davranıştır.
-    await expect(page.locator('.einvoiceView').getByText('Başlamak İçin Seçim Yapın')).toHaveCount(0)
+    await expect(page.locator('.einvoiceView').getByText('Başlamak için seçim yapın')).toHaveCount(0)
   })
 
   test('hata durumu: ilişkisiz API çağrıları 500 dönse bile statik ekran etkilenmez, ham hata sızmaz', async ({ page }) => {

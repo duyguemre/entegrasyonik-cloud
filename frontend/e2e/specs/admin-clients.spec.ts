@@ -32,7 +32,7 @@ test.describe('P2 — Admin / Mağaza Yönetimi (AdminClientListView)', () => {
     await expect(page.locator('.adminClientListView tbody tr')).toHaveCount(2)
   })
 
-  test('boş durum: sonuç yoksa "Mağaza Bulunamadı" kartı gösterilir (BİLİNÇLİ TAMAMLAMA — bkz. BACKLOG.md)', async ({ page }) => {
+  test('boş durum: sonuç yoksa "Mağaza bulunamadı" kartı gösterilir (BİLİNÇLİ TAMAMLAMA — bkz. BACKLOG.md)', async ({ page }) => {
     // BİLİNÇLİ TAMAMLAMA (characterization AŞAMASINDA bugünkü davranış Vuetify'ın kendi `tr` locale
     // varsayılanıydı — "Bu görünümde veri yok." — `v-slot:no-data` YOKTU; diğer P2 ekranlarındaki
     // (Customer/Claim/Invoice/Message/Log) aynı eksiklik). Token+a11y göçünde `EmptyState` ile
@@ -41,7 +41,7 @@ test.describe('P2 — Admin / Mağaza Yönetimi (AdminClientListView)', () => {
     await gotoAuthed(page)
     await openScreen(page, 'AdminClientListView')
 
-    await expect(page.getByText('Mağaza Bulunamadı', { exact: true })).toBeVisible()
+    await expect(page.getByText('Mağaza bulunamadı', { exact: true })).toBeVisible()
   })
 
   test('hata durumu: 500 alındığında "Mağazalar yüklenemedi" + Tekrar dene gösterilir, ham hata sızmaz', async ({ page }) => {

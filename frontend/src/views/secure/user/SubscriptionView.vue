@@ -45,12 +45,12 @@
           <EkSkeleton v-for="n in 3" :key="n" type="cards" :rows="1" class="plan-card-skeleton" />
         </div>
 
-        <EkEmptyState v-else-if="plansError" variant="error" title="Planlar Yüklenemedi"
+        <EkEmptyState v-else-if="plansError" variant="error" title="Planlar yüklenemedi"
           message="Plan bilgileri şu anda getirilemedi. Bağlantınızı kontrol edip tekrar deneyin."
           show-action action-text="Tekrar Dene" action-icon="mdi-refresh"
           @action="fetchPlans" />
 
-        <EkEmptyState v-else-if="!plans.length" variant="no-data" title="Plan Tanımları Henüz Yayınlanmadı"
+        <EkEmptyState v-else-if="!plans.length" variant="no-data" title="Plan tanımları henüz yayınlanmadı"
           message="Şu anda satışa açık bir plan bulunmuyor. Lütfen daha sonra tekrar kontrol edin veya destek ekibimizle iletişime geçin." />
 
         <div v-else class="plans-grid" role="list" aria-label="Abonelik planları">

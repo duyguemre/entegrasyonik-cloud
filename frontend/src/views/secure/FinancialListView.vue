@@ -21,7 +21,7 @@
     </div>
 
     <!-- İşlem Detay Diyaloğu -->
-    <ActionDialogComponent v-model="isDetailOpen" title="FİNANSAL İŞLEM DETAYI" attach=".financialListView"
+    <ActionDialogComponent v-model="isDetailOpen" title="Finansal işlem detayı" attach=".financialListView"
       subtitle="Pazaryeri mutabakat ve hakediş ayrıntıları" icon="mdi-shield-check-outline" color="primary"
       maxWidth="850px" confirmText="KAPAT" @confirm="isDetailOpen = false" hide-cancel>
 
@@ -196,10 +196,10 @@
       :page="pagination.page"
       :page-size="pagination.limit"
       :total="pagination.totalNumberOfRecords"
-      empty-title="Finansal Kayıt Bulunamadı"
+      empty-title="Finansal kayıt bulunamadı"
       empty-text="Arama kriterlerinize uygun herhangi bir finansal işlem kaydı bulunamadı."
       empty-icon="mdi-cash-multiple"
-      filtered-empty-title="Finansal Kayıt Bulunamadı"
+      filtered-empty-title="Finansal kayıt bulunamadı"
       filtered-empty-text="Arama kriterlerinize uygun herhangi bir finansal işlem kaydı bulunamadı."
       @update:search="(v: string) => (searchForm.externalIdSearch = v)"
       @search-submit="getFinancials(true)"

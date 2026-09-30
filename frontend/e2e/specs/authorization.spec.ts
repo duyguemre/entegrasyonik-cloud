@@ -63,12 +63,12 @@ test.describe('ADR-0015 B5-3 — AuthorizationListView + UserAddComponent', () =
     await expect(elifRow.locator('button:has(.mdi-delete)')).toBeEnabled()
   })
 
-  test('boş durum: "Personel Bulunamadı" mesajı gösterilir', async ({ page }) => {
+  test('boş durum: "Personel bulunamadı" mesajı gösterilir', async ({ page }) => {
     await installApiMocks(page, withAccountMenu({ 'UserService/getUsers': usersBosFixture, 'UserService/getRoles': rolesFixture }))
     await gotoAuthed(page)
     await openScreen(page, 'AuthorizationListView')
 
-    await expect(page.getByText('Personel Bulunamadı')).toBeVisible()
+    await expect(page.getByText('Personel bulunamadı')).toBeVisible()
   })
 
   // DS-v2 Aşama 2 — BİLİNÇLİ DEĞİŞİKLİK: 500 artık boş duruma DÜŞMEZ; "Personel listesi yüklenemedi" + "Tekrar dene" gösterilir.

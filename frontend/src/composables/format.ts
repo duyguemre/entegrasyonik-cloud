@@ -130,3 +130,16 @@ export function formatRelative(value: Date | string | number | null | undefined,
   const diffDay = Math.floor(diffHour / 24)
   return `${diffDay} gün önce`
 }
+
+/**
+ * DS-v2 Aşama 3 — TR telefon biçimi (liste ve detaylarda tek biçim). `5551112233` / `05551112233` /
+ * `905551112233` → `"+90 (555) 111 22 33"`. 10 haneye inmeyen değer (yabancı numara vb.) OLDUĞU GİBİ döner.
+ */
+export function formatPhone(value: string | number | null | undefined): string {
+  if (value === null || value === undefined || value === '') return EMPTY
+  let digits = String(value).replace(/\D/g, '')
+  if (digits.startsWith('90') && digits.length === 12) digits = digits.substring(2)
+  if (digits.startsWith('0') && digits.length === 11) digits = digits.substring(1)
+  const m = /^(\d{3})(\d{3})(\d{2})(\d{2})$/.exec(digits)
+  return m ? `+90 (${m[1]}) ${m[2]} ${m[3]} ${m[4]}` : String(value)
+}

@@ -21,12 +21,12 @@ test.describe('P2 — Mesajlar (MessageListView)', () => {
     await expect(page.getByText('Sipariş Sorusu')).toBeVisible()
   })
 
-  test('boş durum: sonuç yoksa "Mesaj Bulunamadı" kartı gösterilir', async ({ page }) => {
+  test('boş durum: sonuç yoksa "Mesaj bulunamadı" kartı gösterilir', async ({ page }) => {
     await installApiMocks(page, { 'MessageService/getMessages': messagesBosFixture })
     await gotoAuthed(page)
     await openScreen(page, 'MessageListView')
 
-    await expect(page.getByText('Mesaj Bulunamadı', { exact: true })).toBeVisible()
+    await expect(page.getByText('Mesaj bulunamadı', { exact: true })).toBeVisible()
   })
 
   test('hata durumu: 500 alındığında "Mesajlar yüklenemedi" + Tekrar dene gösterilir (boştan AYRI), ham hata sızmaz', async ({ page }) => {

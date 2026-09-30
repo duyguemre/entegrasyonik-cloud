@@ -33,9 +33,9 @@ export const TICKET_STATUS_LABELS: Record<TicketStatusEnum, string> = {
 export const TICKET_STATUS_COLORS: Record<TicketStatusEnum, string> = {
     [TicketStatusEnum.OPEN]: 'info',
     [TicketStatusEnum.IN_PROGRESS]: 'warning',
-    [TicketStatusEnum.WAITING_CLIENT]: 'orange',
+    [TicketStatusEnum.WAITING_CLIENT]: 'warning',
     [TicketStatusEnum.RESOLVED]: 'success',
-    [TicketStatusEnum.CLOSED]: 'passiveColor',
+    [TicketStatusEnum.CLOSED]: 'neutral',
 };
 
 export const TICKET_TYPE_LABELS: Record<TicketTypeEnum, string> = {
