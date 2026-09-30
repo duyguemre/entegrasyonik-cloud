@@ -1,18 +1,16 @@
 <template>
   <div class="bo-page">
-    <div class="bo-page__head">
-      <div>
-        <h1 class="bo-page__title">Log kontrol merkezi</h1>
-        <p class="bo-page__lede">Olaylar kategoriye ve parmak izine göre gruplu: önce “ne bozuk”, sonra “hangi istekte”.</p>
-      </div>
-      <div class="bo-page__actions">
-        <EkStatusChip tone="info" label="Taslak · uçlar henüz yok (L6–L8)" icon="mdi-flask-outline" />
+    <BoPageHeader>
+      <template #meta>
+        <span class="bo-inline-note"><v-icon icon="mdi-flask-outline" aria-hidden="true" />Örnek veriyle taslak — uçlar (L6–L8) henüz yok</span>
+      </template>
+      <template #actions>
         <div class="bo-seg" role="radiogroup" aria-label="Zaman aralığı">
           <button v-for="r in RANGES" :key="r.value" type="button" role="radio" class="bo-seg__opt" :aria-checked="range === r.value" @click="range = r.value">{{ r.label }}</button>
         </div>
         <EkButton tone="secondary" icon="mdi-refresh" icon-only aria-label="Yenile" :loading="loading" @click="loadAll" />
-      </div>
-    </div>
+      </template>
+    </BoPageHeader>
 
     <!-- Kategori şeridi: kontrol merkezinin ana ekseni -->
     <section class="bo-cats" aria-label="Kategoriler">
@@ -219,6 +217,7 @@ import { EkBadge, EkButton, EkChannelDot, EkDescriptionList, EkDetailSheet, EkEm
 import BarTrend from '@bo/components/BarTrend.vue'
 import Sparkline from '@bo/components/Sparkline.vue'
 import TraceDialog from '@bo/components/TraceDialog.vue'
+import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
 import { api } from '@bo/api'
 import type {
   GetIssueTrendResponse,

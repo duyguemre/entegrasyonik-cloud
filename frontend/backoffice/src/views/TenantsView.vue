@@ -1,11 +1,6 @@
 <template>
   <div class="bo-page">
-    <div class="bo-page__head">
-      <div>
-        <h1 class="bo-page__title">Müşteriler</h1>
-        <p class="bo-page__lede">Mağaza hesapları. İş verisi (ürün, sipariş, müşteri kişisel verisi) burada gösterilmez — gerekirse denetimli geçici erişim kullanılır.</p>
-      </div>
-    </div>
+    <BoPageHeader />
 
     <div class="bo-tenants__bar">
       <v-text-field
@@ -63,6 +58,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { EkChannelDot, EkDataTable, EkEmptyState, EkSkeleton, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
+import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
 import { api } from '@bo/api'
 import { AdminApiError } from '@bo/api/client'
 import type { ClientDto } from '@bo/api/contract'

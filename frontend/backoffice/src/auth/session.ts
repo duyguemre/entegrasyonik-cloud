@@ -25,6 +25,8 @@ export const session = {
   state: readonly(state),
   dispatch,
   boot: refreshMe,
+  /** Profili (ör. adım-yükseltmesi zamanı `reauthAt`) sunucudan tazele. */
+  refresh: refreshMe,
   async login(credentials: LoginRequest) {
     dispatch({ type: 'LOGIN_OK', result: await api.call('BackofficeAuthService/login', credentials) })
   },

@@ -1,11 +1,6 @@
 <template>
   <div class="bo-page">
-    <div class="bo-page__head">
-      <div>
-        <h1 class="bo-page__title">Denetim kayıtları</h1>
-        <p class="bo-page__lede">Müşteri uygulaması (app.*) ve yönetim (backoffice.*) yazmaları, hassas okumalar ve geçici erişimler. Kayıtlar değiştirilemez, 365 gün saklanır.</p>
-      </div>
-    </div>
+    <BoPageHeader />
 
     <div class="bo-audit__bar">
       <div class="bo-seg" role="radiogroup" aria-label="Yüzey">
@@ -96,6 +91,7 @@
 import { onMounted, reactive, ref, watch } from 'vue'
 import { EkButton, EkEmptyState, EkSkeleton, EkStatusChip, type StatusTone } from '@entegrasyonik/ui/components'
 import TraceDialog from '@bo/components/TraceDialog.vue'
+import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
 import { api } from '@bo/api'
 import type { AuditRecord, LogRange } from '@bo/api/contract'
 import { formatDateTime, formatRelative } from '@bo/utils/format'
