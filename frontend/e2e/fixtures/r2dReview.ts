@@ -105,7 +105,7 @@ export const r2dInvoices = {
   invoices: [
     buildInvoice(),
     buildInvoice({ _id: 'invoice-e2e-0002', invoiceNumber: 'INV-E2E-0002', integrationCode: 'hepsiburada', status: 'PROCESSING', documentType: 'E_ARSIV', totalAmount: 129.5 }),
-    buildInvoice({ _id: 'invoice-e2e-0003', invoiceNumber: 'INV-E2E-0003', integrationCode: 'n11', status: 'REJECTED', documentType: 'E_ARSIV', totalAmount: 2349, type: 'RETURN' }),
+    buildInvoice({ _id: 'invoice-e2e-0003', invoiceNumber: 'INV-E2E-0003', integrationCode: 'n11', status: 'FAILED', documentType: 'E_ARSIV', totalAmount: 2349, type: 'RETURN', statusMessage: 'Alıcı VKN doğrulanamadı — fatura bilgilerini kontrol edin.' }),
   ],
   totalNumberOfRecords: 3,
 }
@@ -125,7 +125,7 @@ export const r2dTickets = {
     { _id: 'ticket-e2e-0001', ticketNumber: 'DSK-100001', subject: 'Fatura kesim sorunu', type: 'BILLING', priority: 'HIGH', status: 'OPEN', lastMessageSnippet: 'Fatura oluşturulamıyor', lastMessageAt: '2026-09-29T09:00:00.000Z', createdDate: '2026-09-28T10:00:00.000Z',
       messages: [
         { senderType: 'CLIENT', senderName: 'Deniz Örnek', content: 'E-arşiv faturası oluşturamıyorum, hata alıyorum.', date: '2026-09-28T10:05:00.000Z' },
-        { senderType: 'ADMIN', senderName: 'Destek ekibi', content: 'Merhaba, entegratör ayarlarınızı kontrol ediyoruz.', date: '2026-09-28T11:20:00.000Z' },
+        { senderType: 'SUPPORT', senderName: 'Destek ekibi', content: 'Merhaba, entegratör ayarlarınızı kontrol ediyoruz.', date: '2026-09-28T11:20:00.000Z' },
       ] },
     { _id: 'ticket-e2e-0002', ticketNumber: 'DSK-100002', subject: 'Entegrasyon sorusu', type: 'TECHNICAL', priority: 'LOW', status: 'CLOSED', lastMessageAt: '2026-09-20T09:00:00.000Z', createdDate: '2026-09-19T10:00:00.000Z' },
   ],

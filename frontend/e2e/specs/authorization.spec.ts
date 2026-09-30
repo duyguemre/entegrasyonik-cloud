@@ -39,17 +39,18 @@ test.describe('ADR-0015 B5-3 — AuthorizationListView + UserAddComponent', () =
     await expect(page.locator('.authorizationListView tbody tr')).toHaveCount(3)
   })
 
-  test('karakterizasyon: rol rozeti ham `roleCode` metnini gösterir (rol adına ÇEVRİLMİYOR)', async ({ page }) => {
+  test('rol rozeti rol adını gösterir (getRoles), ham kod görünmez', async ({ page }) => {
     await installApiMocks(page, withAccountMenu({ 'UserService/getUsers': usersDoluFixture, 'UserService/getRoles': rolesFixture }))
     await gotoAuthed(page)
     await openScreen(page, 'AuthorizationListView')
 
-    // Elif: roleCode='MANAGER', owner=false, isGlobalAdmin=false -> rozet ham kodu gösterir ("Yönetici" DEĞİL).
-    await expect(page.getByText('MANAGER', { exact: true })).toBeVisible()
-    // Deniz: owner=true -> "MAĞAZA YÖNETİCİSİ".
-    await expect(page.getByText('MAĞAZA YÖNETİCİSİ')).toBeVisible()
-    // Aylin: isGlobalAdmin=true -> "SÜPER YÖNETİCİ".
-    await expect(page.getByText('SÜPER YÖNETİCİ')).toBeVisible()
+    // fe-r2d (FR2-SCREENS 36) — BİLİNÇLİ DEĞİŞİKLİK: rozet rol ADINI gösterir (getRoles: MANAGER → "Yönetici").
+    await expect(page.locator('.v-table, table').getByText('Yönetici', { exact: true }).first()).toBeVisible()
+    await expect(page.getByText('MANAGER', { exact: true })).toHaveCount(0)
+    // Deniz: owner=true -> "Mağaza sahibi".
+    await expect(page.getByText('Mağaza sahibi', { exact: true })).toBeVisible()
+    // Aylin: isGlobalAdmin=true -> "Süper yönetici".
+    await expect(page.getByText('Süper yönetici', { exact: true })).toBeVisible()
   })
 
   test('karakterizasyon: mağaza yöneticisinin (owner) silme düğmesi devre dışıdır', async ({ page }) => {

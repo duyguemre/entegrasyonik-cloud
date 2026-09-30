@@ -27,9 +27,10 @@ const shot = async (page: Page, name: string, opts: { full?: boolean; locator?: 
 
 /** Liste satırındaki "detay" (göz) eylemi; dar ekranda kart düzeninde de aynı buton bulunur. */
 async function openFirstDetail(page: Page, root: string, nth = 0) {
-  const rows = page.locator(`${root} tbody tr`).filter({ has: page.locator('button:has([class*="mdi-eye"])') })
+  const OPEN = 'button:has([class*="mdi-eye"]), button:has(.mdi-message-text-outline)'
+  const rows = page.locator(`${root} tbody tr`).filter({ has: page.locator(OPEN) })
   const scope = (await rows.count()) ? rows.nth(nth) : page.locator(`${root} :is(.ek-grid-card, article, li):visible`).nth(nth)
-  await scope.locator('button:has([class*="mdi-eye"]), button:has(.mdi-message-text-outline)').first().click()
+  await scope.locator(OPEN).first().click()
   await page.locator('.ek-detail-sheet, .v-overlay--active .v-card').first().waitFor({ timeout: 5000 }).catch(() => undefined)
   await page.waitForTimeout(600)
 }
@@ -92,11 +93,11 @@ const CASES: Case[] = [
   { name: 'mesaj-detay', run: async (p) => { await openScreen(p, 'MessageListView'); await p.getByText('Ürün Sorusu').first().waitFor(); await openFirstDetail(p, '.messageListView'); await shotSheet(p, 'mesaj-detay') } },
   { name: 'destek-liste', run: async (p) => { await openScreen(p, 'TicketListView'); await p.getByText('DSK-100001').first().waitFor(); await shot(p, 'destek-liste') } },
   { name: 'destek-detay', run: async (p) => { await openScreen(p, 'TicketListView'); await p.getByText('DSK-100001').first().waitFor(); await openFirstDetail(p, '.ticketListView'); await shot(p, 'destek-detay') } },
-  { name: 'ayarlar', run: async (p) => { await openScreen(p, 'SettingListView'); await p.waitForTimeout(800); await shot(p, 'ayarlar', { full: true }) } },
+  { name: 'ayarlar', run: async (p) => { await openScreen(p, 'SettingListView'); await p.locator('.settingListView').first().waitFor({ timeout: 10000 }).catch(() => undefined); await p.waitForTimeout(800); await shot(p, 'ayarlar') } },
   { name: 'yetkilendirme', run: async (p) => { await openScreen(p, 'AuthorizationListView'); await p.getByText('Elif').first().waitFor(); await shot(p, 'yetkilendirme') } },
-  { name: 'ciktilar', run: async (p) => { await openScreen(p, 'PrintoutListView'); await p.waitForTimeout(800); await shot(p, 'ciktilar') } },
-  { name: 'islemler', run: async (p) => { await openScreen(p, 'LogListView'); await p.waitForTimeout(800); await shot(p, 'islemler') } },
-  { name: 'finans', run: async (p) => { await openScreen(p, 'FinancialListView'); await p.waitForTimeout(1000); await shot(p, 'finans', { full: true }) } },
+  { name: 'ciktilar', run: async (p) => { await openScreen(p, 'PrintoutListView'); await p.locator('#a4').waitFor({ state: 'attached', timeout: 10000 }).catch(() => undefined); await p.waitForTimeout(800); await shot(p, 'ciktilar') } },
+  { name: 'islemler', run: async (p) => { await openScreen(p, 'LogListView'); await p.locator('.exportLogList').first().waitFor({ timeout: 10000 }).catch(() => undefined); await p.waitForTimeout(800); await shot(p, 'islemler') } },
+  { name: 'finans', run: async (p) => { await openScreen(p, 'FinancialListView'); await p.locator('.financialListView').first().waitFor({ timeout: 10000 }).catch(() => undefined); await p.waitForTimeout(1000); await shot(p, 'finans') } },
   { name: 'finans-hareketler', run: async (p) => {
     await openScreen(p, 'FinancialListView'); await p.waitForTimeout(800)
     const tab = p.getByRole('tab', { name: /Hareket|İşlem/ }).first()
@@ -109,6 +110,7 @@ const CASES: Case[] = [
 test.describe('fe-r2d inceleme görüntüleri', () => {
   test.skip(!ENABLED, 'Yalnızca R2D_REVIEW=1 ile')
   test.use({ viewport: { width: WIDTH, height: HEIGHT } })
+  test.setTimeout(90_000)
   for (const c of CASES) {
     if (ONLY.length && !ONLY.some((o) => c.name.includes(o))) continue
     test(c.name, async ({ page }) => {
