@@ -34,7 +34,7 @@
       label-key="title"
       :columns="columns"
       :rows="products"
-      :row-class="(r) => (r.onsale === false ? 'plv-row-offsale' : undefined)"
+      :row-class="(r) => [r.onsale === false ? 'plv-row-offsale' : '', productIdForVariantList == r._id ? 'plv-row-open' : ''].filter(Boolean).join(' ') || undefined"
       :expanded-keys="productIdForVariantList ? [productIdForVariantList] : []"
       :indeterminate-keys="indeterminateKeys"
       :loading="loading"
@@ -128,6 +128,7 @@
           <span class="plv-product__text">
             <span class="plv-product__title">{{ row.title }}</span>
             <button v-if="row.hasVariant" type="button" class="plv-variants-toggle" :aria-expanded="productIdForVariantList == row._id"
+              :aria-controls="`variant-target-${row._id}`" :aria-label="`${row.variants.length} seçenek — varyantları ${productIdForVariantList == row._id ? 'gizle' : 'göster'}`"
               @click.stop="selectProduct(row)">
               <v-icon class="plv-variants-toggle__icon" icon="mdi-view-grid-outline" aria-hidden="true" />
               <span class="ek-num">{{ row.variants.length }}</span> seçenek
@@ -197,7 +198,8 @@
             @updatePriceVariant="(processItem) => updatePriceProduct(selectedProduct, processItem)"
             @updateStockVariant="(processItem) => updateStockProduct(selectedProduct, processItem)"
             @updateVariant="(processItem) => updateProduct(selectedProduct, processItem)"
-            @checkVariantStatus="(processItem) => checkProductStatus(selectedProduct, processItem)" />
+            @checkVariantStatus="(processItem) => checkProductStatus(selectedProduct, processItem)"
+            @editProduct="openEditProduct(selectedProduct)" />
         </div>
       </template>
     </EkListScreen>
@@ -1360,8 +1362,19 @@ const getStatusLabel = (type: string) => {
   color: var(--ek-color-error);
 }
 
+/* A11 — açık ürün satırı ile varyant alanı tek parça: satırın alt çizgisi kalkar, zemin varyant alanıyla aynı ton. */
 .plv-variants {
-  padding: var(--ek-space-3) var(--ek-space-4) var(--ek-space-4);
+  padding: 0;
+}
+
+:deep(.plv-row-open) > td {
+  border-bottom-color: transparent !important; /* ızgara satır çizgisi — açık satır varyant alanına bağlanır */
+  background: var(--ek-color-surface-sunken) !important; /* yapışık kolonun kendi yüzeyi de aynı tona */
+}
+
+/* Varyant alanının sol şeridi (EkDataGrid genişleme hücresi) ürün satırında başlar → satır + alan tek blok. */
+:deep(.plv-row-open) > td:first-child {
+  box-shadow: inset 3px 0 0 var(--ek-color-action-border) !important; /* yapışık seçim hücresi gölgesinin yerine */
 }
 
 :deep(.plv-row-offsale) .plv-product__title {
