@@ -170,7 +170,6 @@ var props = defineProps<{
 
 
 watch(() => productInfoForm.value?.hasVariant, (newValue) => {
-  console.log("hasVariant changed", newValue)
   productInfoForm.value.variants = []
 })
 
@@ -258,12 +257,10 @@ const createVariant = (choices: any) => {
   return { tempId: generateUUID(), choices: choices, platforms: platforms, images: [], stockcode: '', barcode: '', stock: 0, prices: { isPlatformBasedPrice: false, marketPrice: 100, salePrice: 0 }, shelf: '' }
 }
 const generateVariants = (newVariants: any) => {
-  console.log("newVariants", newVariants)
   const combinations = getCombinations(newVariants)
   for (const combination of combinations) {
     var flag = false
     for (const variant of productInfoForm.value.variants) {
-      console.log(variant.choices, combination, areArraysEqual(variant.choices, combination))
       if (areArraysEqual(variant.choices, combination)) {
         flag = true
         break
@@ -450,7 +447,6 @@ const updateProduct = async () => {
   const response = await restApi.post("ProductService/updateProduct", { productInfo: productInfoForm.value })
   loadingComponentRef.value.remove(guid)
   if (response && response._id) {
-    console.log("updated")
     productInfoForm.value = response
   }
 }
@@ -561,7 +557,6 @@ const initialize = async (parameters: any) => {
 }
 
 const activate = async (parameters: any) => {
-  console.log("ProductDefinitionView Activated", parameters)
   if (parameters) {
     if (parameters.productId && parameters.productId != productInfoForm.value._id) {
       productInfoForm.value._id = parameters.productId
@@ -574,7 +569,6 @@ const activate = async (parameters: any) => {
 }
 
 const destroy = async () => {
-  console.log("ProductDefinitionView Destroyed")
   await sleep(20)
   reset()
 }

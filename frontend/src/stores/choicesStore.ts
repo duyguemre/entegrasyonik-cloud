@@ -16,10 +16,6 @@ export const useChoicesStore = defineStore('choicesStore', () => {
     return choices.value
   }
 
-  const getChoicesNameFromIds = (ids: string) => {
-    console.log(ids, choices.value)
-  }
-
   const getChoiceTitle = (choiceId: number) => {
     for (let choice of choices.value) {
       if (choice._id == choiceId) return choice.title
@@ -57,12 +53,9 @@ export const useChoicesStore = defineStore('choicesStore', () => {
   }
 
   const getChoiceValueName = (_id: any, id: any) => {
-    //console.log("choices:", choices.value,"choiceId:", _id, "choiceValueId:", id)
     for (let choice of choices?.value ?? []) {
       if (choice._id == _id) {
-        //  console.log("Title:", choice.title)
         for (let value of choice.values ?? []) {
-          //  console.log("ValueId/choiceValueId:", value._id,id)
           if (value._id == id) return value.title
         }
       }
@@ -98,9 +91,7 @@ export const useChoicesStore = defineStore('choicesStore', () => {
 
 
   const addChoiceValue = async (choiceId: any, title: any) => {
-    console.log("addChoiceValue called with choiceId:", choiceId, "and title:", title)
     const response = await restApi.post("ChoiceService/addChoiceValue", { _id: choiceId, title })
-    console.log("addChoiceValue response:", response)
     if (response == true) {
       retrieve()
     }
@@ -110,5 +101,5 @@ export const useChoicesStore = defineStore('choicesStore', () => {
   // R9b: çıkış sonrası önceki kiracının seçenek önbelleği kalmasın.
   registerStoreReset('choicesStore', () => { choices.value = undefined })
 
-  return { retrieve, addChoiceValue, getChoices, getChoiceValues, getChoiceValueName, getChoicesNameFromIds, getChoiceTitle, getChoiceValueTitle, countOfChoices, addChoice, choices, getDirectChoiceValueTitle }
+  return { retrieve, addChoiceValue, getChoices, getChoiceValues, getChoiceValueName, getChoiceTitle, getChoiceValueTitle, countOfChoices, addChoice, choices, getDirectChoiceValueTitle }
 })

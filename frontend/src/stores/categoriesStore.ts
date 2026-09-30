@@ -69,7 +69,6 @@ export const useCategoriesStore = defineStore('categoriesStore', () => {
 
 
   const getCategoryPlatformMapping = (integrationCode: any, integrationCategoryId: any, integrationCategoryChoiceId: any) => {
-    console.log(integrationCode, integrationCategoryId, integrationCategoryChoiceId)
     for (var category of (selectCategories.value || [])) {
       if (category.platforms && Array.isArray(category.platforms)) {
         const platform = category.platforms.find((platform: any) => platform.integrationCode == integrationCode && platform.integrationCategoryId == integrationCategoryId)

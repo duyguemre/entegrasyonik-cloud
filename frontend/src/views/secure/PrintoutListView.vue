@@ -166,14 +166,12 @@ var selectDragElement = (event: any) => {
 }
 
 var dragStart = (event: any) => {
-  console.log("drag start")
   globalDragEvent = event
   if (event.target.getAttribute("type") == "move")
     event.target.style.opacity = ".5"
 }
 
 var dragLeave = (event: any) => {
-  console.log("drag leave")
   // globalDragEvent = event
   globalDragEvent.target.style.opacity = "1"
 }
@@ -211,9 +209,6 @@ var drop = (event: any) => {
 
 }
 
-var hebele = () => {
-  console.log("34343")
-}
 var reportsMenu = {
   title: t('printouts.printout.reports.title'),
   desc: t('printouts.printout.reports.desc'),

@@ -290,7 +290,6 @@ export const useIntegrationStore = defineStore('integrationStore', () => {
 
   const isIntegrationType = (code: any, typeId: string) => {
     const integrationType = integrationTypes.value.find((item: any) => item._id == typeId)
-    console.log(typeId)
     return integrationType?.code == code
   }
 

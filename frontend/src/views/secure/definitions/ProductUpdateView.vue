@@ -301,7 +301,6 @@ const retrieveProduct = async () => {
     productInfoForm.value = response.product
     checkSingleVariant()
 
-    console.log("productInfoForm.value", productInfoForm.value, productInfoForm.value.variants)
     if (productInfoForm.value.prices == undefined) productInfoForm.value.prices = {}
     setTabTitle()
   }
@@ -381,7 +380,6 @@ const updateProduct = async () => {
 }
 
 onMounted(() => {
-  console.log("PRODUCTUPDATEMOUNTED")
   choicesStoreChoices.value = choicesStore.getChoices()
 })
 
@@ -485,7 +483,6 @@ const initialize = async (parameters: any) => {
 }
 
 const activate = async (parameters: any) => {
-  console.log(dialogAttach.value + " Activated", parameters)
   if (parameters) {
     if (parameters.productId && parameters.productId != productInfoForm.value._id) {
       productInfoForm.value._id = parameters.productId
@@ -498,7 +495,6 @@ const activate = async (parameters: any) => {
 }
 
 const destroy = async () => {
-  console.log(dialogAttach.value + " Destroyed")
   await sleep(20)
   reset()
 }
