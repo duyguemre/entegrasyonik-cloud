@@ -1,7 +1,7 @@
 <template>
   <section class="pdc-card" aria-labelledby="pdc-title">
     <h2 id="pdc-title" class="pdc-title">Detay bilgiler</h2>
-    <p class="pdc-desc">Boş bırakılan alanlarda pazaryeri ayarlarındaki varsayılan değerler kullanılır.</p>
+    <p class="pdc-desc">Bu adımdaki tüm alanlar isteğe bağlıdır. Boş bırakılan alanlarda pazaryeri ayarlarındaki varsayılan değerler kullanılır.</p>
     <EkFormSection title="Satış ve kargo" icon="mdi-truck-fast-outline">
       <v-text-field clearable :rules="formRules.length_0_16" maxlength="20" type="tel" counter
         v-model="productInfoForm.maxPurchaseQuantity" label="Maksimum Satış Adedi"

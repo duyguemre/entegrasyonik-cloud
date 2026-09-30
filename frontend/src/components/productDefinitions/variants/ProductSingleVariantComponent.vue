@@ -9,16 +9,18 @@
       <p class="psvc-desc">Varyantsız ürünün stok, barkod ve fiyat bilgileri.</p>
 
       <EkFormSection title="Kod bilgileri" icon="mdi-barcode">
-        <v-text-field clearable :rules="formRules.titleRules" maxlength="160" type="tel" counter
+        <v-text-field clearable :rules="formRules.titleRules" maxlength="160" counter data-pf-field="stockcode"
           v-model="singleVariant.stockcode" label="Stok Kodu *" hint="Mağazanızdaki benzersiz ürün kodu" persistent-hint />
-        <v-text-field clearable :rules="formRules.titleRules" maxlength="160" type="tel" counter
+        <v-text-field clearable :rules="formRules.titleRules" maxlength="160" counter data-pf-field="barcode"
           v-model="singleVariant.barcode" label="Barkod *" hint="Pazaryerlerine gönderilen barkod" persistent-hint />
       </EkFormSection>
 
       <EkFormSection title="Fiyat" icon="mdi-currency-try">
         <template v-if="singleVariant?.prices?.isPlatformBasedPrice == false">
-          <VCurrencyComponentVue v-model="singleVariant.prices.salePrice" :rules="formRules.mandatoryRule" :compact="true"
-            :label="`${$t('productDefinitions.product.variants.salePrice')} *`" clearable :isIconExist="false" />
+          <div data-pf-field="salePrice">
+            <VCurrencyComponentVue v-model="singleVariant.prices.salePrice" :rules="formRules.mandatoryRule" :compact="true"
+              :label="`${$t('productDefinitions.product.variants.salePrice')} *`" clearable :isIconExist="false" />
+          </div>
           <VCurrencyComponentVue v-model="singleVariant.prices.marketPrice" :rules="formRules.mandatoryRule" :compact="true"
             :label="`${$t('productDefinitions.product.variants.marketPrice')} *`" clearable :isIconExist="false" />
         </template>
@@ -43,9 +45,9 @@
       </EkFormSection>
 
       <EkFormSection title="Stok" icon="mdi-warehouse">
-        <v-text-field clearable :rules="formRules.titleRules" maxlength="160" type="tel" counter
+        <v-text-field clearable :rules="stockRules" maxlength="160" type="tel" inputmode="numeric" counter
           v-model="singleVariant.stock" label="Stok Adedi *" hint="Satışa açık stok miktarı" persistent-hint />
-        <v-text-field clearable :rules="formRules.titleRules" maxlength="160" type="tel" counter
+        <v-text-field clearable :rules="formRules.subTitleRules" maxlength="160" counter
           v-model="singleVariant.shelf" label="Raf" hint="Depodaki raf/konum bilgisi (isteğe bağlı)" persistent-hint />
       </EkFormSection>
 
@@ -100,6 +102,8 @@ import ProductVariantPlatformPricesComponent from './ProductVariantPlatformPrice
 const emits = defineEmits(['refreshImages', 'refreshVariants', 'refreshTotalVariantsStockCount', 'close'])
 
 const formRules = useFormRules()
+// Stok adedi sayıdır: zorunlu + yalnız rakam (önceki 2–160 karakter kuralı "5" gibi tek haneli stoku hatalı gösteriyordu).
+const stockRules = [...formRules.mandatoryRule, ...formRules.numberRulesWithoutZero]
 
 var choicesStoreChoices: any = undefined
 const loadingComponentRef: any = ref(null)
