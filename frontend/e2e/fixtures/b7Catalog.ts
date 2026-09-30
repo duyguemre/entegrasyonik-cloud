@@ -121,7 +121,8 @@ export function b7Brands() {
     const p: Record<string, any> = {}
     if (i % 3 !== 2) p.trendyol = { id: 5000 + i, title: BRAND_NAMES[i] }
     if (i % 4 === 0 || i % 4 === 1) p.hepsiburada = { id: `hb-${i}`, title: BRAND_NAMES[i] }
-    if (i % 5 === 0) p.ideasoft = { id: 700 + i, title: BRAND_NAMES[i] }
+    if (i % 5 === 0 || i % 7 === 1) p.ideasoft = { id: 700 + i, title: BRAND_NAMES[i] }
+    if (i % 2 === 0 || i === 1) p.bizimhesap = { id: `bh-${i}`, title: BRAND_NAMES[i] }
     return p
   }
   return [
