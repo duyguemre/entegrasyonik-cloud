@@ -3,7 +3,6 @@ import { defineStore } from 'pinia'
 import useRestApi from '@/composables/restapi'
 import { registerStoreReset } from '@/stores/resetRegistry'
 import { toFetchResult, type IntegrationFetchResult, type IntegrationSubject } from '@/composables/useIntegrationError'
-import { get } from 'sortablejs'
 export const useIntegrationStore = defineStore('integrationStore', () => {
   const restApi = useRestApi()
   const integrationImageBase = '/assets/images/integrations/'

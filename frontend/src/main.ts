@@ -38,12 +38,8 @@ import CustomDialogComponent from '@/components/CustomDialogComponent.vue';
 import logger from '@/composables/logger'
 import { isBenignBrowserNotice, reportUnexpectedError } from '@/composables/errorReporting'
 
-// ADR-0015 Karar 3.6 (A5) — ECharts tema adaptörü tek noktadan kaydedilir;
-// tüketiciler (`StatisticsComponent` vb.) `theme="entegrasyonik"` ile bağlanır.
-import * as echarts from 'echarts/core'
-import { buildEchartsTheme } from '@/design/echarts-theme'
-import { semanticColorsLight } from '@/design/tokens'
-echarts.registerTheme('entegrasyonik', buildEchartsTheme(semanticColorsLight))
+// ADR-0015 Karar 3.6 (A5) — `entegrasyonik` ECharts teması burada DEĞİL, tembel tüketicilerde
+// `ensureSiteChartTheme()` ile kaydedilir (`components/charts/siteChartTheme.ts`; açılış paketi).
 
 const pinia = createPinia()
 const app = createApp(App)

@@ -13,11 +13,9 @@
  * BAĞLAMAZ, çünkü bunlar dashboard/B3 kapsamındadır):
  *
  * ```ts
- * // main.ts (A5/B3'te eklenecek):
- * import * as echarts from 'echarts/core'
- * import { buildEchartsTheme } from '@/design/echarts-theme'
- * import { semanticColorsLight } from '@/design/tokens/semantic'
- * echarts.registerTheme('entegrasyonik', buildEchartsTheme(semanticColorsLight))
+ * // Tembel tüketicinin modül kapsamında (main.ts'te DEĞİL — açılış paketi, V-01):
+ * import { ensureSiteChartTheme } from '@/components/charts/siteChartTheme'
+ * ensureSiteChartTheme()
  *
  * // Bileşende:
  * // <v-chart theme="entegrasyonik" ... />

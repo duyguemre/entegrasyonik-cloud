@@ -154,6 +154,7 @@ import { useCategoriesStore } from '@/stores/categoriesStore'
 import { useBrandsStore } from '@/stores/brandsStore'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
+import { ensureSiteChartTheme } from '@/components/charts/siteChartTheme'
 import { CanvasRenderer } from 'echarts/renderers'
 import { BarChart } from 'echarts/charts'
 import { TooltipComponent, GridComponent } from 'echarts/components'
@@ -170,6 +171,7 @@ import { escapeHtml } from '@/utils/escapeHtml'
 import { PLATFORM_PROCESS_LABELS, PLATFORM_PROCESS } from '@/types/PlatformProcess'
 
 use([CanvasRenderer, BarChart, TooltipComponent, GridComponent, LegacyGridContainLabel])
+ensureSiteChartTheme()
 
 const props = defineProps<{ jobId: string }>()
 const emits = defineEmits(['close'])

@@ -483,6 +483,7 @@ import { formatDateTime } from '@/composables/format';
 import type { StatusTone } from '@/design/status-map';
 import VChart from 'vue-echarts';
 import { use } from 'echarts/core';
+import { ensureSiteChartTheme } from '@/components/charts/siteChartTheme';
 import { CanvasRenderer } from 'echarts/renderers';
 import { BarChart, PieChart } from 'echarts/charts';
 import { TooltipComponent, GridComponent, LegendComponent } from 'echarts/components';
@@ -491,6 +492,7 @@ import { semanticColorsLight } from '@/design/tokens';
 import { escapeHtml } from '@/utils/escapeHtml';
 
 use([CanvasRenderer, BarChart, PieChart, TooltipComponent, GridComponent, LegendComponent, LegacyGridContainLabel]);
+ensureSiteChartTheme();
 
 // ECharts canvas renkleri CSS değişkeni okuyamaz (ADR-0011 Karar 2 Aşama 1 istisnası) — nötr
 // (eksen etiketi / dilim kenarlığı / dilim içi yazı) renkler token kaynağından JS değeri olarak

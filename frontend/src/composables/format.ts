@@ -23,6 +23,23 @@ const LOCALE = 'tr-TR' as const
 const CURRENCY_DEFAULT = 'TRY' as const
 const EMPTY = '—' as const
 
+// `Intl` biçimleyicileri pahalıdır; tablo hücrelerinde satır×sütun çağrıldığı için modül düzeyinde bir kez
+// kurulur (FRONTEND_CLEANUP_PLAN V-07). Para biçimleyicisi para birimi başına önbellekte.
+const NUMBER_FORMAT = new Intl.NumberFormat(LOCALE)
+const PERCENT_FORMAT = new Intl.NumberFormat(LOCALE, { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 })
+const DATE_FORMAT = new Intl.DateTimeFormat(LOCALE, { day: '2-digit', month: '2-digit', year: 'numeric' })
+const TIME_FORMAT = new Intl.DateTimeFormat(LOCALE, { hour: '2-digit', minute: '2-digit' })
+const moneyFormats = new Map<string, Intl.NumberFormat>()
+
+function moneyFormat(currency: string): Intl.NumberFormat {
+  let format = moneyFormats.get(currency)
+  if (!format) {
+    format = new Intl.NumberFormat(LOCALE, { style: 'currency', currency })
+    moneyFormats.set(currency, format)
+  }
+  return format
+}
+
 function toDate(value: Date | string | number | null | undefined): Date | null {
   if (value === null || value === undefined || value === '') return null
   const date = value instanceof Date ? value : new Date(value)
@@ -39,28 +56,28 @@ function toFiniteNumber(value: number | string | null | undefined): number | nul
 export function formatMoney(amount: number | string | null | undefined, currency: string = CURRENCY_DEFAULT): string {
   const num = toFiniteNumber(amount)
   if (num === null) return EMPTY
-  return new Intl.NumberFormat(LOCALE, { style: 'currency', currency }).format(num)
+  return moneyFormat(currency).format(num)
 }
 
 /** `formatNumber(12345)` → `"12.345"`. */
 export function formatNumber(value: number | string | null | undefined): string {
   const num = toFiniteNumber(value)
   if (num === null) return EMPTY
-  return new Intl.NumberFormat(LOCALE).format(num)
+  return NUMBER_FORMAT.format(num)
 }
 
 /** `formatPercent(0.05)` → `"%5,0"` (Türkçe yazımda yüzde işareti önde). `ratio` 0..1 aralığındadır (ör. 0.05 = %5). */
 export function formatPercent(ratio: number | string | null | undefined): string {
   const num = toFiniteNumber(ratio)
   if (num === null) return EMPTY
-  return new Intl.NumberFormat(LOCALE, { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(num)
+  return PERCENT_FORMAT.format(num)
 }
 
 /** `formatDate(...)` → `"20.09.2026"`. */
 export function formatDate(value: Date | string | number | null | undefined): string {
   const date = toDate(value)
   if (!date) return EMPTY
-  return new Intl.DateTimeFormat(LOCALE, { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date)
+  return DATE_FORMAT.format(date)
 }
 
 /** `formatDateTime(...)` → `"20.09.2026 13:15"`. */
@@ -68,7 +85,7 @@ export function formatDateTime(value: Date | string | number | null | undefined)
   const date = toDate(value)
   if (!date) return EMPTY
   const datePart = formatDate(date)
-  const timePart = new Intl.DateTimeFormat(LOCALE, { hour: '2-digit', minute: '2-digit' }).format(date)
+  const timePart = TIME_FORMAT.format(date)
   return `${datePart} ${timePart}`
 }
 

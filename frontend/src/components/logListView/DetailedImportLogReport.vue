@@ -244,6 +244,7 @@ import { useIntegrationStore } from '@/stores/integrationStore'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
+import { ensureSiteChartTheme } from '@/components/charts/siteChartTheme'
 import { CanvasRenderer } from 'echarts/renderers'
 import { BarChart } from 'echarts/charts'
 import { TooltipComponent, GridComponent } from 'echarts/components'
@@ -259,6 +260,7 @@ import { semanticColorsLight } from '@/design/tokens'
 import type { StatusTone } from '@/design/status-map'
 
 use([CanvasRenderer, BarChart, TooltipComponent, GridComponent, LegacyGridContainLabel])
+ensureSiteChartTheme()
 const activeMenuCatId = ref<string | null>(null);
 const props = defineProps<{ jobId: any }>()
 const emits = defineEmits(['close'])
