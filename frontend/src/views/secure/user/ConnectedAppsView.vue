@@ -73,7 +73,7 @@
       </section>
 
       <!-- 3. Bağlantılar -->
-      <section class="ek-apps-block" :aria-labelledby="listHeadingId">
+      <section ref="listRef" class="ek-apps-block" :aria-labelledby="listHeadingId" tabindex="-1">
         <header class="ek-apps-block__bar">
           <h2 :id="listHeadingId" class="ek-sr-only">{{ $t('mcp.connections.tabsLabel') }}</h2>
           <EkPageTabs v-if="visibility.tenantTab" v-model="tab" :tabs="tabs" :label="$t('mcp.connections.tabsLabel')" data-testid="mcp-tabs" />
@@ -114,8 +114,10 @@
           <template #cell-app="{ item }">
             <span class="ek-apps-app">
               <span class="ek-apps-app__name">
-                {{ item.conn.clientName }}
-                <EkStatusChip v-if="item.conn.known" tone="success" icon="mdi-check-decagram-outline" :label="$t('mcp.consent.known')" />
+                <span>{{ item.conn.clientName }}</span>
+                <span v-if="item.conn.known" class="ek-apps-app__known" role="img" :aria-label="$t('mcp.consent.known')" :title="$t('mcp.consent.known')" data-testid="mcp-known">
+                  <v-icon icon="mdi-check-decagram" size="16" aria-hidden="true" />
+                </span>
               </span>
               <span class="ek-apps-app__host">{{ item.conn.redirectHost }}</span>
             </span>
@@ -233,6 +235,25 @@ const revokeTarget = ref<McpConnection | null>(null)
 const revoking = ref(false)
 const revokeErrorKey = ref('')
 
+const listRef = ref<HTMLElement | null>(null)
+/** Diyalog kapanınca odak açan öğeye döner (§8 "diyalog odak tuzağı ve dönüşü"); öğe listeden düştüyse liste bölümüne. */
+let returnFocusTo: HTMLElement | null = null
+
+function rememberFocus() {
+  returnFocusTo = document.activeElement instanceof HTMLElement ? document.activeElement : null
+}
+
+function restoreFocus() {
+  const target = returnFocusTo && returnFocusTo.isConnected ? returnFocusTo : listRef.value
+  returnFocusTo = null
+  // Vuetify katmanı kapanış geçişinde odağı bir kare daha tutar; sonraki karede geri ver.
+  requestAnimationFrame(() => requestAnimationFrame(() => target?.focus()))
+}
+
+watch([revokeOpen, revokeAllOpen], ([a, b], [pa, pb]) => {
+  if ((pa && !a) || (pb && !b)) nextTick(restoreFocus)
+})
+
 const now = ref(Date.now())
 let ticker: ReturnType<typeof setInterval> | null = null
 
@@ -308,12 +329,14 @@ function openSettings() {
 }
 
 function askRevoke(conn: McpConnection) {
+  rememberFocus()
   revokeTarget.value = conn
   revokeErrorKey.value = ''
   revokeOpen.value = true
 }
 
 function askRevokeAll() {
+  rememberFocus()
   revokeErrorKey.value = ''
   revokeAllOpen.value = true
 }
@@ -404,6 +427,9 @@ onBeforeUnmount(() => {
 .ek-apps-guide__body {
   padding: var(--ek-space-2) var(--ek-space-4) var(--ek-space-4);
 }
+.ek-apps-block:focus {
+  outline: none;
+}
 .ek-apps-block {
   display: flex;
   flex-direction: column;
@@ -477,9 +503,13 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: var(--ek-space-2);
+  gap: var(--ek-space-1);
   font-weight: var(--ek-font-weight-medium);
   color: var(--ek-color-content-strong);
+}
+.ek-apps-app__known {
+  display: inline-flex;
+  color: var(--ek-color-success-emphasis);
 }
 .ek-apps-app__host {
   font-family: var(--ek-font-mono);

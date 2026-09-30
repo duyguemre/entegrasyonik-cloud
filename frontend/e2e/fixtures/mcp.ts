@@ -101,6 +101,8 @@ export async function openMcpScreen(page: Page, which: 'apps' | 'settings') {
   await waitForWorkplaceReady(page)
   const root = page.locator(`${def.root}:not(.hide-tab-component)`)
   await expect(root).toBeVisible({ timeout: 20000 })
+  // Yardım turu teklifi (ilk açılış kartı) ekranı örter; inceleme/görsel taban için gizlenir (fe-r2d emsali).
+  await page.addStyleTag({ content: '[data-help-tour-offer]{display:none!important}' })
   await page.evaluate(() => document.fonts.ready)
   return root
 }

@@ -83,12 +83,14 @@ onBeforeUnmount(() => {
 }
 .ek-mcp-copy__row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--ek-space-2);
   min-width: 0;
 }
+/* Dar ekranda adres tam görünsün: alan satırı doldurur, düğme alta iner. */
 .ek-mcp-copy__value {
-  flex: 1 1 auto;
+  flex: 1 1 260px;
   min-width: 0;
   height: var(--ek-control-h-sm);
   padding: 0 var(--ek-space-3);
