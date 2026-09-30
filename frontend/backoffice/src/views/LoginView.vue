@@ -180,8 +180,13 @@ watch(status, async (s) => {
   error.value = ''
   if (s !== 'signedOut') password.value = ''
   if (s === 'enroll') {
+    // `run` KULLANILMAZ: geçiş, parola isteği hâlâ `busy` iken gelir (koruma bu çağrıyı atlardı).
     otpauthUri.value = ''
-    await run(async () => (otpauthUri.value = (await session.enrollStart()).otpauthUri))
+    try {
+      otpauthUri.value = (await session.enrollStart()).otpauthUri
+    } catch (e) {
+      fail(e)
+    }
   }
 })
 

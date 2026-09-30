@@ -162,7 +162,7 @@ const countOf = (value: string) => (value === 'all' ? clients.value.length : cli
 }
 
 .bo-seg__count {
-  color: var(--ek-color-content-subtle);
+  color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
 }
 

@@ -28,13 +28,14 @@
               <span class="bo-trace__kind">{{ KIND[e.kind].label }}</span>
               <EkStatusChip v-if="e.level && e.level !== 'info'" :tone="LEVEL[e.level].tone" :label="LEVEL[e.level].label" />
               <span v-if="e.status" class="bo-trace__status" :class="{ 'is-bad': isBad(e.status) }">{{ e.status }}</span>
+              <span v-if="e.durationMs" class="bo-trace__dur ek-num">{{ e.durationMs }} ms</span>
             </p>
             <p class="bo-trace__msg">{{ e.title }}</p>
-            <div v-if="e.durationMs" class="bo-trace__bar" :aria-label="`${e.durationMs} ms`">
+            <div v-if="e.durationMs" class="bo-trace__bar" aria-hidden="true">
               <span :style="barStyle(e)" />
             </div>
           </div>
-          <span class="bo-trace__meta">{{ e.src ? SOURCE[e.src] : e.integ ? CHANNEL[e.integ] ?? e.integ : '' }}<template v-if="e.durationMs"> · <span class="ek-num">{{ e.durationMs }} ms</span></template></span>
+          <span class="bo-trace__meta">{{ e.src ? SOURCE[e.src] : e.integ ? CHANNEL[e.integ] ?? e.integ : '' }}</span>
         </li>
       </ol>
     </div>
@@ -203,6 +204,11 @@ function barStyle(e: TraceEvent) {
   border-color: var(--ek-color-error-border);
   background: var(--ek-color-error-subtle);
   color: var(--ek-color-error-emphasis);
+}
+
+.bo-trace__dur {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
 }
 
 .bo-trace__msg {

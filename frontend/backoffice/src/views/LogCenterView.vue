@@ -68,13 +68,15 @@
       </aside>
 
       <section class="bo-logs__main">
-        <div class="bo-tabs" role="tablist" aria-label="Görünüm">
+        <div class="bo-tabs">
+          <div class="bo-tabs__list" role="tablist" aria-label="Görünüm">
           <button id="tab-issues" type="button" role="tab" class="bo-tab" :aria-selected="tab === 'issues'" aria-controls="panel-issues" @click="tab = 'issues'">
             Sorun grupları <span class="bo-tab__n ek-num">{{ issues?.length ?? '…' }}</span>
           </button>
           <button id="tab-stream" type="button" role="tab" class="bo-tab" :aria-selected="tab === 'stream'" aria-controls="panel-stream" @click="tab = 'stream'">
             Olay akışı <span class="bo-tab__n ek-num">{{ stream?.items.length ?? '…' }}{{ stream?.nextCursor ? '+' : '' }}</span>
           </button>
+          </div>
           <span class="bo-tabs__spacer" />
           <v-select
             v-if="tab === 'issues'"
@@ -157,14 +159,11 @@
     </div>
 
     <!-- Sorun detayı -->
-    <v-navigation-drawer :model-value="!!selected" location="end" temporary :width="560" class="bo-issue-drawer" aria-label="Sorun detayı" @update:model-value="(v: boolean) => !v && closeIssue()">
+    <EkDetailSheet :model-value="!!selected" :identity="selected ? `Sorun · ${CATEGORY[selected.category].label}` : 'Sorun'" @update:model-value="(v: boolean) => !v && closeIssue()">
       <div v-if="selected" class="bo-drawer">
         <header class="bo-drawer__head">
-          <div>
-            <p class="bo-drawer__kicker">{{ CATEGORY[selected.category].label }} · {{ SOURCE[selected.src] }}</p>
-            <h2 class="bo-drawer__title">{{ selected.title }}</h2>
-          </div>
-          <EkButton tone="ghost" icon="mdi-close" icon-only aria-label="Kapat" @click="closeIssue" />
+          <p class="bo-drawer__kicker">{{ SOURCE[selected.src] }}<template v-if="selected.integ"> · {{ CHANNEL[selected.integ] ?? selected.integ }}</template></p>
+          <h2 class="bo-drawer__title">{{ selected.title }}</h2>
         </header>
         <div class="bo-drawer__chips">
           <EkStatusChip :tone="LEVEL[selected.level].tone" :label="LEVEL[selected.level].label" :icon="LEVEL[selected.level].icon" />
@@ -207,7 +206,7 @@
           </ul>
         </section>
       </div>
-    </v-navigation-drawer>
+    </EkDetailSheet>
 
     <TraceDialog :req-id="traceId" @close="traceId = null" />
   </div>
@@ -216,7 +215,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { EkBadge, EkButton, EkChannelDot, EkDescriptionList, EkEmptyState, EkSkeleton, EkStatusChip } from '@entegrasyonik/ui/components'
+import { EkBadge, EkButton, EkChannelDot, EkDescriptionList, EkDetailSheet, EkEmptyState, EkSkeleton, EkStatusChip } from '@entegrasyonik/ui/components'
 import BarTrend from '@bo/components/BarTrend.vue'
 import Sparkline from '@bo/components/Sparkline.vue'
 import TraceDialog from '@bo/components/TraceDialog.vue'
@@ -472,7 +471,7 @@ onMounted(async () => {
   display: flex;
   flex-wrap: wrap;
   gap: var(--ek-space-3);
-  color: var(--ek-color-content-subtle);
+  color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
 }
 
@@ -598,6 +597,11 @@ onMounted(async () => {
   gap: var(--ek-space-1);
   padding: var(--ek-space-2) var(--ek-space-3) 0;
   border-bottom: 1px solid var(--ek-color-border-default);
+}
+
+.bo-tabs__list {
+  display: flex;
+  gap: var(--ek-space-1);
 }
 
 .bo-tabs__spacer {
@@ -839,22 +843,10 @@ onMounted(async () => {
 }
 
 /* ---- çekmece ---- */
-.bo-issue-drawer {
-  background: var(--ek-color-surface) !important;
-}
-
 .bo-drawer {
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-4);
-  padding: var(--ek-space-5);
-}
-
-.bo-drawer__head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--ek-space-3);
 }
 
 .bo-drawer__kicker {
