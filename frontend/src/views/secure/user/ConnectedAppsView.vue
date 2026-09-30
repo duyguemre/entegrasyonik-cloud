@@ -116,7 +116,7 @@
               <span class="ek-apps-app__name">
                 <span>{{ item.conn.clientName }}</span>
                 <span v-if="item.conn.known" class="ek-apps-app__known" role="img" :aria-label="$t('mcp.consent.known')" :title="$t('mcp.consent.known')" data-testid="mcp-known">
-                  <v-icon icon="mdi-check-decagram" size="16" aria-hidden="true" />
+                  <v-icon icon="mdi-check-decagram-outline" size="16" aria-hidden="true" />
                 </span>
               </span>
               <span class="ek-apps-app__host">{{ item.conn.redirectHost }}</span>
