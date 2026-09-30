@@ -24,7 +24,7 @@
       @retry="res.load()"
     >
       <EkCard v-if="res.data.value" flush>
-        <EkDataTable :items="rows" :columns="COLUMNS" row-key="k">
+        <EkDataTable tabindex="0" :items="rows" :columns="COLUMNS" row-key="k">
           <template #cell-db="{ item }"><EkStatusChip tone="neutral" :label="item.db === 'app' ? 'Uygulama' : 'Müşteri'" /></template>
           <template #cell-collection="{ item }"><code class="bo-code">{{ item.collection }}</code></template>
           <template #cell-op="{ item }"><code class="bo-code">{{ item.op }}</code></template>
@@ -65,7 +65,8 @@ const range = ref<SlowQueryRange>('24h')
 const res = useResource(() => api.call('BackofficeInfraService/getSlowQueries', { range: range.value }))
 watch(range, () => res.load(), { immediate: true })
 
-const phase = computed(() => (res.phase.value === 'ready' && !res.data.value?.items.length ? 'empty' : res.phase.value))
+// Seçim (aralık/filtre) değişip okuma başarısız olursa eski seçimin verisini göstermeyiz.
+const phase = computed(() => (res.stale.value ? (res.error.value?.kind === 'unavailable' ? 'degraded' : 'error') : res.phase.value === 'ready' && !res.data.value?.items.length ? 'empty' : res.phase.value))
 const rows = computed(() => (res.data.value?.items ?? []).map((i) => ({ ...i, k: `${i.db}/${i.collection}/${i.op}` })) as unknown as Array<Record<string, unknown>>)
 </script>
 

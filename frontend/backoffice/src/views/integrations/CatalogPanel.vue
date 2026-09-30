@@ -15,7 +15,7 @@
     </div>
 
     <StateBlock
-      :phase="res.phase.value"
+      :phase="phase"
       :error="res.error.value"
       :rows="8"
       error-title="Katalog yüklenemedi"
@@ -38,7 +38,7 @@
         </dl>
 
         <EkCard flush>
-          <EkDataTable v-if="filtered.length" :items="filtered as unknown as Array<Record<string, unknown>>" :columns="COLUMNS" row-key="key">
+          <EkDataTable tabindex="0" v-if="filtered.length" :items="filtered as unknown as Array<Record<string, unknown>>" :columns="COLUMNS" row-key="key">
             <template #cell-key="{ item }">
               <span class="bo-cell-stack bo-cat__key">
                 <span class="bo-cat__label">{{ (item as unknown as Row).label.tr }}</span>
@@ -132,6 +132,7 @@ watch(
   { immediate: true },
 )
 
+const phase = computed(() => (res.stale.value ? 'error' : res.phase.value))
 const effectiveMap = computed(() => new Map((res.data.value?.effective.values ?? []).map((v) => [v.key, v])))
 const effectiveOf = (key: string): EffectiveValue | undefined => effectiveMap.value.get(key)
 const groupItems = computed(() => ['Tümü', ...new Set((res.data.value?.catalog.items ?? []).map((i) => i.group))])

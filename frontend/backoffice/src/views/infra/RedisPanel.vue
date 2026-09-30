@@ -44,7 +44,7 @@
 
         <EkCard title="Yavaş komutlar (slowlog)" subtitle="Yalnız komut adı ve süre; argüman kaydedilmez" icon="mdi-timer-alert-outline" flush>
           <EkEmptyState v-if="!d.slowlog.length" title="Yavaş komut yok" message="Slowlog eşiğini aşan komut kaydı bulunmuyor." />
-          <EkDataTable v-else :items="slowRows" :columns="SLOW_COLUMNS" row-key="i">
+          <EkDataTable tabindex="0" v-else :items="slowRows" :columns="SLOW_COLUMNS" row-key="i">
             <template #cell-command="{ item }"><code class="bo-code">{{ item.command }}</code></template>
             <template #cell-duration="{ item }"><span class="ek-num">{{ micros(item.durationMicros as number) }}</span></template>
             <template #cell-at="{ item }"><span class="bo-cell-stack"><span>{{ formatRelative(item.at as string) }}</span><span class="ek-num">{{ formatDateTime(item.at as string) }}</span></span></template>

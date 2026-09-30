@@ -34,7 +34,7 @@
         </template>
 
         <EkCard title="Veritabanları" subtitle="Koleksiyonları görmek için bir satır seçin" icon="mdi-database-outline" flush>
-          <EkDataTable :items="dbRows" :columns="DB_COLUMNS" row-key="key">
+          <EkDataTable tabindex="0" :items="dbRows" :columns="DB_COLUMNS" row-key="key">
             <template #cell-label="{ item }">
               <button v-if="item.available" type="button" class="bo-link-btn bo-mongo__pick" :aria-pressed="selectedKey === item.key" :data-db="item.key" @click="pick(item as unknown as DbRow)">{{ item.label }}</button>
               <span v-else class="bo-cell-stack"><span>{{ item.label }}</span><EkStatusChip tone="warning" label="Okunamadı" title="Bu veritabanının istatistiği alınamadı" /></span>

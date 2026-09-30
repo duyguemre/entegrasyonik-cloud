@@ -33,7 +33,7 @@
         </div>
 
         <EkCard flush>
-          <EkDataTable :items="rows" :columns="COLUMNS" row-key="integrationCode">
+          <EkDataTable tabindex="0" :items="rows" :columns="COLUMNS" row-key="integrationCode">
             <template #cell-integrationCode="{ item }">
               <EkChannelDot :code="String(item.integrationCode)" :name="CHANNEL[String(item.integrationCode)] ?? String(item.integrationCode)" variant="plain" />
             </template>
@@ -95,7 +95,8 @@ const codeItems = [{ title: 'Tüm entegrasyonlar', value: '' }, ...Object.entrie
 const res = useResource(() => api.call('BackofficeIntegrationService/getApiHealth', { range: range.value, ...(code.value ? { integrationCode: code.value } : {}) }))
 watch([range, code], () => res.load(), { immediate: true })
 
-const phase = computed(() => (res.phase.value === 'ready' && !res.data.value?.items.length ? 'empty' : res.phase.value))
+// Seçim (aralık/filtre) değişip okuma başarısız olursa eski seçimin verisini göstermeyiz.
+const phase = computed(() => (res.stale.value ? (res.error.value?.kind === 'unavailable' ? 'degraded' : 'error') : res.phase.value === 'ready' && !res.data.value?.items.length ? 'empty' : res.phase.value))
 const rows = computed(() => (res.data.value?.items ?? []) as unknown as Array<Record<string, unknown>>)
 const totals = computed(() => {
   const items = res.data.value?.items ?? []

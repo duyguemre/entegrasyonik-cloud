@@ -30,7 +30,7 @@
 
         <EkCard title="Önbellek aileleri" :subtitle="`Pod ${d.pod}`" icon="mdi-lightning-bolt-outline" flush>
           <EkEmptyState v-if="!d.breakdown.length" title="Önbellekte aile yok" message="Bu pod'un önbelleğinde henüz kayıt bulunmuyor." />
-          <EkDataTable v-else :items="rows" :columns="COLUMNS" row-key="name">
+          <EkDataTable tabindex="0" v-else :items="rows" :columns="COLUMNS" row-key="name">
             <template #cell-name="{ item }"><code class="bo-code">{{ item.name }}</code></template>
             <template #cell-count="{ item }"><span class="ek-num">{{ formatCount(item.count as number) }}</span></template>
             <template #cell-hit="{ item }"><span class="ek-num">{{ formatCount(item.hit as number) }}</span></template>

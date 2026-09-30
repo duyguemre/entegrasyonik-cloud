@@ -56,7 +56,7 @@
                         <EkStatusChip v-if="i.unique" tone="info" label="benzersiz" />
                         <EkStatusChip v-if="i.sparse" tone="neutral" label="seyrek" />
                         <EkStatusChip v-if="i.partial" tone="neutral" label="kısmi" title="Kısmi indeks; filtre değeri gösterilmez" />
-                        <EkStatusChip v-if="i.ttlSeconds !== null" tone="neutral" :label="`TTL ${formatDuration(i.ttlSeconds * 1000)}`" />
+                        <EkStatusChip v-if="i.ttlSeconds !== null" tone="neutral" :label="`TTL ${i.ttlSeconds === 0 ? '0 sn' : formatDuration(i.ttlSeconds * 1000)}`" />
                       </span>
                       <span class="bo-coll__usage">
                         <template v-if="i.usage === null">Kullanım: —</template>
