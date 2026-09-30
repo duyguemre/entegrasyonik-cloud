@@ -80,7 +80,11 @@ const addrId = `${id}-address`
   }
   .ea--dark .ea__address {
     color: var(--site-text-on-dark-heading);
-    font-size: var(--ek-font-size-2xl);
+  }
+  @media (min-width: 480px) {
+    .ea--dark .ea__address {
+      font-size: var(--ek-font-size-2xl);
+    }
   }
   .ea--dark .ea__address :global(.icon) {
     color: var(--site-accent-on-dark);
