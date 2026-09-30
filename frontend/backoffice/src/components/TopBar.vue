@@ -84,7 +84,7 @@ import { computed } from 'vue'
 import { EkBrandLogo, EkKbd } from '@entegrasyonik/ui/components'
 import StepUpIndicator from '@bo/components/shell/StepUpIndicator.vue'
 import type { ThemePreference } from '@entegrasyonik/ui/theme'
-import { USE_MOCK } from '@bo/api'
+import { currentEnv } from '@bo/utils/env'
 import { session } from '@bo/auth/session'
 import { setThemePreference, themeMode, themePreference } from '@bo/theme'
 import { formatDateTime, formatRelative } from '@bo/utils/format'
@@ -112,18 +112,7 @@ const initials = computed(() =>
 const themeLabel = computed(() => THEME_OPTIONS.find((o) => o.value === themePreference.value)?.label ?? '')
 const themeIcon = computed(() => (themeMode.value === 'dark' ? 'mdi-weather-night' : 'mdi-white-balance-sunny'))
 
-// Ortam rozeti (BO_UI_PATTERNS §1.2): üretim ve staging DOLU renk + üst barda renk şeridi — yanlış ortamda işlem yapma riski.
-type EnvKey = 'mock' | 'local' | 'staging' | 'production'
-const ENV: Record<EnvKey, { key: EnvKey; label: string; icon: string; hint: string }> = {
-  mock: { key: 'mock', label: 'Örnek veri', icon: 'mdi-flask-outline', hint: 'Sahte /admin-api — gerçek müşteri verisi yok' },
-  local: { key: 'local', label: 'Yerel', icon: 'mdi-laptop', hint: 'Yerel backend' },
-  staging: { key: 'staging', label: 'Staging', icon: 'mdi-test-tube', hint: 'Test ortamı — gerçek müşteri yok, veriler sıfırlanabilir' },
-  production: { key: 'production', label: 'Üretim', icon: 'mdi-alert-octagon-outline', hint: 'Canlı ortam — işlemler gerçek müşterileri etkiler' },
-}
-// Yalnız geliştirmede: ?env=staging|production ile rozet önizlenir (inceleme kareleri).
-const devOverride = import.meta.env.DEV && typeof location !== 'undefined' ? new URLSearchParams(location.search).get('env') : null
-const envKey = (devOverride ?? (USE_MOCK ? 'mock' : (import.meta.env.VITE_ADMIN_ENV ?? 'local'))) as EnvKey
-const env = ENV[envKey] ?? ENV.local
+const env = currentEnv
 </script>
 
 <style scoped>
