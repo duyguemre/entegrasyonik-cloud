@@ -36,8 +36,12 @@ test.describe('ADR-0015 B5-3 — Hesap ekranları (ExitView / ChangePasswordView
 
     await expect(page.getByLabel('Yeni Şifre', { exact: true })).toBeVisible()
     await expect(page.getByLabel('Yeni Şifre (Tekrar)', { exact: true })).toBeVisible()
-    // Karakterizasyon: script bloğu boş, hiçbir "Değiştir/Kaydet" düğmesi DOM'da yok.
-    await expect(page.getByRole('button', { name: /değiştir|kaydet/i })).toHaveCount(0)
+    // Karakterizasyon: script bloğu boş, ekranda hiçbir "Değiştir/Kaydet" düğmesi yok.
+    // [DS-v2 A3, KASITLI] Menü başlıkları artık `navigation/menuTitle.ts` ile okunur ad gösteriyor (ham i18n
+    // anahtarı yerine): sol menüdeki "Şifre Değiştir" öğesi de bir düğme — iddia ekranın köküne kapsanır.
+    const screen = page.locator('.changePasswordView:not(.hide-tab-component)')
+    await expect(screen).toHaveCount(1)
+    await expect(screen.getByRole('button', { name: /değiştir|kaydet/i })).toHaveCount(0)
   })
 
   test('InvoiceInfoView: fatura bilgisi alanları render olur, kaydet düğmesi YOK (karakterizasyon)', async ({ page }) => {
