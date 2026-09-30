@@ -263,7 +263,7 @@ export default function useUser() {
   }
 
   const isOwner = () => {
-    return userContext.value.owner
+    return userContext.value?.owner
   }
 
   // ADR-0020 Aşama C — admin panel (Entegrasyon Ayarları) ekranları, `platformAdmin`

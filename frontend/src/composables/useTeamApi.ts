@@ -10,6 +10,7 @@
 import { reactive } from 'vue'
 import useRestApi from '@/composables/restapi'
 import { isApiError } from '@/composables/apiErrors'
+import { registerStoreReset } from '@/stores/resetRegistry'
 import type { InvitableRole } from '@/components/user/team/teamModel'
 
 export interface PendingTransfer {
@@ -20,6 +21,10 @@ export interface PendingTransfer {
 
 // Sunucu bekleyen devri listelemez (bkz. rapor "backend eksikleri") → yalnız bu oturumda başlatılan devir bilinir.
 const transferState = reactive<{ pending: PendingTransfer | null }>({ pending: null })
+// Oturuma bağlı: giriş ekranında (çıkış / oturum düşmesi) başka bir hesaba sızmasın.
+registerStoreReset('teamTransfer', () => {
+  transferState.pending = null
+})
 
 export function useTeamApi() {
   const restApi = useRestApi()

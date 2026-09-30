@@ -187,6 +187,10 @@ describe('davet / devir bağlantısı token\'ı adrese ve loga yazılmaz', () =>
     expect(router).toMatch(/path: 'accept-ownership'[\s\S]*?requiresAuth: false/)
   })
 
+  it('statik: bekleyen devir bilgisi oturuma bağlı — giriş ekranında sıfırlanır (başka hesaba sızmaz)', () => {
+    expect(read('src/composables/useTeamApi.ts')).toContain(`registerStoreReset('teamTransfer'`)
+  })
+
   it('statik: uygulama genelinde TEK reauth diyaloğu (App.vue) ve Idempotency-Key yalnız restapi.ts\'te üretilir', () => {
     expect(read('src/App.vue')).toContain('<ReauthDialog')
     const offenders: string[] = []
