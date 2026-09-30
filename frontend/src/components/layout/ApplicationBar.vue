@@ -62,6 +62,8 @@ import EkMenuPanel, { type EkMenuGroup, type EkMenuItem } from '@/components/ds/
 import { useWorkspaceStore } from '@/stores/workspace'
 import { useShellBreakpoints } from '@/composables/useShellBreakpoints'
 import { shortcutKeys } from '@/navigation/shortcuts'
+import { usePublicConfigStore } from '@/stores/publicConfig'
+import { supportContactGroups, supportContactHref } from './supportContact'
 
 withDefaults(defineProps<{ visible?: boolean; menuExpanded?: boolean }>(), { visible: true, menuExpanded: undefined })
 const emit = defineEmits<{ 'toggle-menu': []; 'open-shortcuts': []; 'search-dismiss': []; 'search-blur': [] }>()
@@ -87,7 +89,9 @@ const storeName = computed(() => userApi.getStoreName() || '')
 const identityName = computed(() => storeName.value || userApi.getUsername.value || 'Mağaza paneli')
 const identityMeta = computed(() => (storeName.value ? userApi.getUsername.value ?? '' : 'Mağaza paneli'))
 
-const helpGroups: EkMenuGroup[] = [
+// FE-CFG-2: destek iletişimi backoffice ayarından (`support.email` / `support.phone`); boş olan gösterilmez.
+const publicConfig = usePublicConfigStore()
+const helpGroups = computed<EkMenuGroup[]>(() => [
   {
     label: 'Yardım',
     items: [
@@ -95,7 +99,8 @@ const helpGroups: EkMenuGroup[] = [
       { key: 'tickets', label: 'Destek kayıtları', description: 'Talep oluşturun, yanıtları izleyin', icon: 'mdi-lifebuoy' },
     ],
   },
-]
+  ...supportContactGroups(publicConfig.supportEmail, publicConfig.supportPhone),
+])
 
 const accountGroups: EkMenuGroup[] = [
   {
@@ -114,6 +119,10 @@ function onHelpSelect(item: EkMenuItem) {
   helpOpen.value = false
   if (item.key === 'shortcuts') emit('open-shortcuts')
   else if (item.key === 'tickets') openByTitle('ticketList')
+  else {
+    const href = supportContactHref(item.key, publicConfig.supportEmail, publicConfig.supportPhone)
+    if (href) window.location.href = href
+  }
 }
 
 function onAccountSelect(item: EkMenuItem) {

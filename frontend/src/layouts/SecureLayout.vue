@@ -5,7 +5,7 @@
     1. `ApplicationBar` (tam genişlik kimlik bandı; daraltılınca yukarı kayar)
     2. sol menü: `NavigationRail` (ray) VEYA `NavigationMenu` (tam/geçici) — aynı anda TEK biri
        (`.v-navigation-drawer.soft-nav` seçicisi tekil kalsın — Ek A kancası)
-    3. `v-main`: abonelik durum bandı (C2.2; yalnız bir durum varsa) + `ShellTabStrip` (sekmeler) +
+    3. `v-main`: şerit yığını — bakım + duyuru (FE-CFG-2) + abonelik durum bandı (C2.2); yalnız biri varsa — + `ShellTabStrip` (sekmeler) +
        çalışma alanı (etkin sekmenin ekranı). Bant yüksekliği `--ek-shell-banner-h` ile alttakilere eklenir.
   Görünüm durumları: üst bölüm daraltılmış (Ctrl+Shift+H, eski Alt+U) · odak modu (Ctrl+Shift+F: üst bar +
   sol menü gizlenir, tarayıcı destekliyorsa tam ekran). İkisinin düğmeleri üst barın alt kenarındaki yüzen
@@ -32,8 +32,17 @@
     <NotificationDrawerComponent />
 
     <v-main class="ek-shell__main">
-      <div v-if="subscriptionBanner" ref="bannerRef" class="ek-shell__banner">
+      <div v-if="hasBanner" ref="bannerRef" class="ek-shell__banner">
+        <!-- FE-CFG-2: backoffice şeritleri — bakım (kapatılamaz) en üstte, duyuru (kapatılabilir) altında. -->
+        <ShellNoticeBanner v-if="maintenanceNoticeModel" :model="maintenanceNoticeModel" :compact="focusMode" />
+        <ShellNoticeBanner
+          v-if="announcementNoticeModel"
+          :model="announcementNoticeModel"
+          :compact="focusMode"
+          @dismiss="publicConfig.dismissAnnouncement()"
+        />
         <ShellSubscriptionBanner
+          v-if="subscriptionBanner"
           :model="subscriptionBanner"
           :minimized="subscriptionStore.minimized"
           :force-compact="focusMode"
@@ -83,6 +92,9 @@ import ShellChromeHandle from '@/components/layout/ShellChromeHandle.vue'
 import ShortcutHelpDialog from '@/components/layout/ShortcutHelpDialog.vue'
 import ShellSubscriptionBanner from '@/components/layout/ShellSubscriptionBanner.vue'
 import { useSubscriptionBannerStore } from '@/stores/subscriptionBanner'
+import ShellNoticeBanner from '@/components/layout/ShellNoticeBanner.vue'
+import { announcementNotice, maintenanceNotice } from '@/components/layout/shellNotice'
+import { usePublicConfigStore } from '@/stores/publicConfig'
 import { useMenuStore } from '@/stores/site/menu'
 import { useSidebarStore } from '@/stores/sidebar'
 import mitt from 'mitt'
@@ -290,6 +302,13 @@ const bannerRef = ref<HTMLElement | null>(null)
 const onSubscriptionScreen = computed(() => mySelectedTab.value?.link?.code === SUBSCRIPTION_SCREEN_CODE)
 /** Abonelik ekranı açıkken bant gizlenir: ekranın kendi durum bölümü aynı bilgiyi (daha ayrıntılı) verir. */
 const subscriptionBanner = computed(() => (onSubscriptionScreen.value ? null : subscriptionStore.banner))
+// FE-CFG-2 — platform duyurusu / bakım şeridi (`GET /api/public-config`, backoffice'ten yönetilir).
+const publicConfig = usePublicConfigStore()
+const maintenanceNoticeModel = computed(() => (publicConfig.maintenance ? maintenanceNotice(publicConfig.maintenance.message) : null))
+const announcementNoticeModel = computed(() =>
+  publicConfig.announcementVisible && publicConfig.announcement ? announcementNotice(publicConfig.announcement.level, publicConfig.announcement.text) : null,
+)
+const hasBanner = computed(() => !!(subscriptionBanner.value || maintenanceNoticeModel.value || announcementNoticeModel.value))
 /** Menüde abonelik ekranı yoksa (yetki) "Aboneliği yönet" gösterilmez; bant yine görünür. */
 const subscriptionLink = computed(() => menuStore.getMenuLinkWithCode(SUBSCRIPTION_SCREEN_CODE))
 
