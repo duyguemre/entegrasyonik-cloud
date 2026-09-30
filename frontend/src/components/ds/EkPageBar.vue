@@ -13,17 +13,17 @@
   - Kısayollar kabuk kaydından (`navigation/shortcuts.ts`); "Tüm kısayollar" `ek:shortcut-help` olayıyla diyaloğu açar.
 -->
 <template>
-  <div ref="rootRef" class="ek-page-bar" :class="{ 'is-open': about.open.value, 'is-narrow': narrow }">
+  <div ref="rootRef" class="ek-page-bar" :class="{ 'is-open': about.open.value }">
     <div class="ek-page-bar__row">
       <div class="ek-page-bar__titles">
         <!-- A7: tek breadcrumb deseni — kök (modül ikonu + bölüm) / ara ekranlar / SON = sayfa başlığı (H1). -->
         <nav class="ek-crumbs" aria-label="Sayfa konumu">
-          <ol class="ek-crumbs__list">
+          <ol class="ek-crumbs__list" :class="{ 'has-parent': view.middle.length }">
             <li v-if="section && view.showRoot" class="ek-crumbs__item ek-crumbs__item--root">
               <span v-if="rootIcon" class="ek-crumbs__tile" aria-hidden="true"><v-icon :icon="rootIcon" size="14" /></span>
               <span class="ek-crumbs__text">{{ section }}</span>
             </li>
-            <li v-if="view.folded.length" class="ek-crumbs__item">
+            <li v-if="view.folded.length" class="ek-crumbs__item ek-crumbs__item--folded">
               <span v-if="section && view.showRoot" class="ek-crumbs__sep" aria-hidden="true">/</span>
               <EkContextMenu :groups="foldedGroups" label="Üst sayfalar" location="bottom start" @select="onFolded">
                 <template #activator="{ props: menuProps }">
@@ -34,9 +34,10 @@
                 </template>
               </EkContextMenu>
             </li>
-            <li v-for="(crumb, i) in view.middle" :key="`${i}-${crumb.label}`" class="ek-crumbs__item">
+            <li v-for="(crumb, i) in view.middle" :key="`${i}-${crumb.label}`" class="ek-crumbs__item ek-crumbs__item--mid"
+              :class="{ 'is-parent': i === view.middle.length - 1 }">
               <span v-if="(section && view.showRoot) || view.folded.length || i > 0" class="ek-crumbs__sep" aria-hidden="true">/</span>
-              <button v-if="narrow && i === 0 && view.back" type="button" class="ek-crumbs__back" :aria-label="`Geri: ${view.back.label}`"
+              <button v-if="i === view.middle.length - 1 && view.back" type="button" class="ek-crumbs__back" :aria-label="`Geri: ${view.back.label}`"
                 :title="`Geri: ${view.back.label}`" @click="view.back.onSelect?.()">
                 <v-icon :icon="icons.back" size="18" aria-hidden="true" />
               </button>
@@ -180,6 +181,7 @@ useResizeObserver(rootRef, (entries) => {
   raf = requestAnimationFrame(() => (width.value = w))
 })
 onBeforeUnmount(() => cancelAnimationFrame(raf))
+/** Dar görünüm DÜZENİ CSS kap sorgusundan gelir (ilk karede doğru, kayma yok); JS yalnız geniş yoldaki katlama için. */
 const narrow = computed(() => width.value > 0 && width.value < NARROW_MAX)
 
 const page = usePageContext()
@@ -187,7 +189,7 @@ const page = usePageContext()
 const rootIcon = computed(() => props.sectionIcon || page?.moduleIcon.value || props.trail?.[0]?.icon)
 // Sığdırma: ara öğe kısalmak zorunda kalırsa bir kademe daha katla (2 → 1 → 0). Genişlik/yol değişince baştan ölç.
 const keep = ref(2)
-const view = computed(() => buildTrail(props.trail, { narrow: narrow.value, hasRoot: !!props.section, keep: keep.value }))
+const view = computed(() => buildTrail(props.trail, { hasRoot: !!props.section, keep: narrow.value ? 2 : keep.value }))
 function crumbsClipped(): boolean {
   const root = rootRef.value
   if (!root) return false
@@ -196,6 +198,7 @@ function crumbsClipped(): boolean {
 }
 async function fit() {
   keep.value = 2
+  if (narrow.value) return
   await nextTick()
   while (keep.value > 0 && crumbsClipped()) {
     keep.value -= 1
@@ -233,6 +236,8 @@ async function copyRecord() {
   display: flex;
   flex-direction: column;
   width: 100%;
+  /* A7: dar düzen kap sorgusuyla (görünüm alanı değil) — bkz. aşağıdaki @container. */
+  container: ek-page-bar / inline-size;
 }
 
 /* Izgara: [başlıklar] [eylemler] [yenile]. Dar ekranda eylemler alt satıra iner, yenile başlık satırında kalır. */
@@ -503,132 +508,56 @@ async function copyRecord() {
   line-height: var(--ek-type-caption-line);
 }
 
-/* Dar kap: iki satır — üstte [← ebeveyn] (ya da kök), altta başlık + kayıt + (i). Başlık her zaman görünür. */
-.is-narrow .ek-crumbs__list {
-  flex-wrap: wrap;
-  row-gap: var(--ek-space-1);
-}
-
-.is-narrow .ek-crumbs__item--current {
-  flex: 1 1 100%;
-}
-
-.is-narrow .ek-crumbs__item--current > .ek-crumbs__sep {
+/* Dar kap (< 560px, KAP genişliği — sekme/yan panel içinde de doğru; ilk karede uygulanır): iki satır —
+   üstte [← ebeveyn] (ya da kök), altta başlık + (i); kayıt hapı sığmazsa alta. Kök (ebeveyn varken), '…' ve
+   ebeveyn dışı ara öğeler gizlenir: "son iki öğe + geri oku". */
+.ek-crumbs__back {
   display: none;
 }
 
-/* Dar: başlık + (i) önce; kayıt kimliği sığmazsa alt satıra iner (başlığı kesmez). */
-.is-narrow .ek-crumbs__item--current {
-  flex-wrap: wrap;
-  row-gap: var(--ek-space-2);
-}
+@container ek-page-bar (max-width: 559px) {
+  .ek-crumbs__list {
+    flex-wrap: wrap;
+    row-gap: var(--ek-space-1);
+  }
 
-.is-narrow .ek-page-bar__info {
-  order: 1;
-}
+  .ek-crumbs__list.has-parent > .ek-crumbs__item--root,
+  .ek-crumbs__item--folded,
+  .ek-crumbs__item--mid:not(.is-parent) {
+    display: none;
+  }
 
-.is-narrow .ek-record-id {
-  order: 2;
-}
+  .ek-crumbs__item--mid.is-parent > .ek-crumbs__sep,
+  .ek-crumbs__item--current > .ek-crumbs__sep {
+    display: none;
+  }
 
-.is-narrow .ek-page-bar__title {
-  max-width: calc(100% - 36px);
-}
+  .ek-crumbs__back {
+    display: inline-flex;
+  }
 
-/* Yenile düğmesi başlık satırıyla (alt satır) aynı hizada. */
-.is-narrow .ek-page-bar__refresh {
-  align-self: end;
-}
+  .ek-crumbs__item--current {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    row-gap: var(--ek-space-2);
+  }
 
-.ek-page-bar__actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--ek-space-2);
-  margin-left: auto;
-}
+  .ek-page-bar__info {
+    order: 1;
+  }
 
-/* Panel: başlık satırının hemen altında, sayfa zemininde ince çerçeveli bilgi yüzeyi (kart değil — içerikle yarışmaz). */
-.ek-page-bar__about {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.4fr) minmax(0, 1fr);
-  gap: var(--ek-space-3) var(--ek-space-6);
-  margin-top: var(--ek-space-2);
-  padding: var(--ek-space-3) var(--ek-space-4);
-  border: 1px solid var(--ek-color-action-border);
-  border-radius: var(--ek-radius-card);
-  background: var(--ek-color-action-subtle);
-}
+  .ek-record-id {
+    order: 2;
+  }
 
-.ek-page-bar__block {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ek-space-2);
-  min-width: 0;
-}
+  .ek-page-bar__title {
+    max-width: calc(100% - 36px);
+  }
 
-.ek-page-bar__label {
-  margin: 0;
-  color: var(--ek-color-action-emphasis);
-  font-size: var(--ek-type-micro-size);
-  line-height: var(--ek-type-micro-line);
-  font-weight: var(--ek-type-micro-weight);
-  letter-spacing: var(--ek-type-micro-tracking);
-  text-transform: uppercase;
-}
-
-.ek-page-bar__text,
-.ek-page-bar__tips {
-  margin: 0;
-  color: var(--ek-color-content-default);
-  font-size: var(--ek-type-table-size);
-  line-height: var(--ek-type-table-line);
-}
-
-.ek-page-bar__tips {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding-left: var(--ek-space-4);
-}
-
-.ek-page-bar__keys {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ek-space-1);
-  margin: 0;
-}
-
-.ek-page-bar__key {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--ek-space-3);
-  color: var(--ek-color-content-default);
-  font-size: var(--ek-type-caption-size);
-  line-height: var(--ek-type-caption-line);
-}
-
-.ek-page-bar__key dd {
-  margin: 0;
-}
-
-.ek-page-bar__all {
-  align-self: flex-start;
-  padding: 0;
-  border: 0;
-  border-radius: var(--ek-radius-sm);
-  background: transparent;
-  color: var(--ek-color-action);
-  font-family: inherit;
-  font-size: var(--ek-type-caption-size);
-  font-weight: var(--ek-font-weight-semibold);
-  cursor: pointer;
-}
-
-.ek-page-bar__all:hover {
-  text-decoration: underline;
+  /* Yenile düğmesi başlık satırıyla (alt satır) aynı hizada. */
+  .ek-page-bar__refresh {
+    align-self: end;
+  }
 }
 
 @media (max-width: 1023px) {

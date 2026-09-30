@@ -86,8 +86,12 @@ test.describe('A7 — breadcrumb', () => {
     })
     await gotoAuthed(page)
     await openScreen(page, 'ProductListView')
-    await page.locator('.productListView tbody tr').first().locator('button[aria-label="Ürünü düzenle"]').click()
     const root = page.locator(`.productUpdateView${product._id}`)
+    // Yük altında ilk tıklama liste çizimi bitmeden yutulabiliyor — sekme açılana dek tekrar dene.
+    await expect(async () => {
+      if (!(await root.isVisible())) await page.locator('.productListView tbody tr').first().locator('button[aria-label="Ürünü düzenle"]').click()
+      await expect(root).toBeVisible({ timeout: 3000 })
+    }).toPass({ timeout: 20_000 })
     const nav = root.getByRole('navigation', { name: 'Sayfa konumu' })
     await expect(nav.getByRole('button', { name: 'Ürünler', exact: true })).toBeVisible({ timeout: 20_000 })
     await expect(root.locator('.ek-record-id')).toContainText('SK-A7-001')

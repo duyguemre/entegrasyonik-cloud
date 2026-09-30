@@ -14,44 +14,35 @@ const labels = (c: EkCrumb[]) => c.map((x) => x.label)
 
 describe('A7 — yol modeli (buildTrail)', () => {
   it('kısa yol: kök + tüm ara öğeler, katlama yok', () => {
-    const v = buildTrail([A], { narrow: false, hasRoot: true })
+    const v = buildTrail([A], { hasRoot: true })
     expect(v.showRoot).toBe(true)
     expect(labels(v.middle)).toEqual(['Entegrasyonlar'])
     expect(v.folded).toEqual([])
   })
 
   it(`uzun yol: ${MAX_VISIBLE_MIDDLE}'den fazla ara öğede ÖNCEKİLER '…' menüsüne katlanır, son ikisi kalır`, () => {
-    const v = buildTrail([A, B, C], { narrow: false, hasRoot: true })
+    const v = buildTrail([A, B, C], { hasRoot: true })
     expect(labels(v.folded)).toEqual(['Entegrasyonlar'])
     expect(labels(v.middle)).toEqual(['Trendyol ayarları', 'Uç noktalar'])
   })
 
   it('sığmadığında (keep) önce 1, sonra 0 ara öğe kalır — sıra korunur', () => {
-    expect(labels(buildTrail([A, B], { narrow: false, hasRoot: true, keep: 1 }).folded)).toEqual(['Entegrasyonlar'])
-    const none = buildTrail([A, B], { narrow: false, hasRoot: true, keep: 0 })
+    expect(labels(buildTrail([A, B], { hasRoot: true, keep: 1 }).folded)).toEqual(['Entegrasyonlar'])
+    const none = buildTrail([A, B], { hasRoot: true, keep: 0 })
     expect(none.middle).toEqual([])
     expect(labels(none.folded)).toEqual(['Entegrasyonlar', 'Trendyol ayarları'])
     // keep üst sınırı aşamaz
-    expect(buildTrail([A, B, C], { narrow: false, hasRoot: true, keep: 9 }).middle).toHaveLength(MAX_VISIBLE_MIDDLE)
+    expect(buildTrail([A, B, C], { hasRoot: true, keep: 9 }).middle).toHaveLength(MAX_VISIBLE_MIDDLE)
   })
 
-  it('dar: kök gizli, yalnız ebeveyn + başlık (son iki öğe), "…" yok; geri oku en yakın bağlantılı ata', () => {
-    const v = buildTrail([A, B, C], { narrow: true, hasRoot: true })
-    expect(v.showRoot).toBe(false)
-    expect(labels(v.middle)).toEqual(['Uç noktalar'])
-    expect(v.folded).toEqual([])
-    expect(v.back?.label).toBe('Trendyol ayarları')
-  })
-
-  it('dar + ara öğe yok: kök görünür (kök / başlık), geri oku yok (ölü düğme yok)', () => {
-    const v = buildTrail(undefined, { narrow: true, hasRoot: true })
-    expect(v.showRoot).toBe(true)
-    expect(v.middle).toEqual([])
-    expect(v.back).toBeNull()
+  it('geri oku hedefi: en yakın BAĞLANTILI ata (bağlantısız son öğe atlanır); hiç yoksa null (ölü düğme yok)', () => {
+    expect(buildTrail([A, B, C], { hasRoot: true }).back?.label).toBe('Trendyol ayarları')
+    expect(buildTrail([C], { hasRoot: true }).back).toBeNull()
+    expect(buildTrail(undefined, { hasRoot: true }).back).toBeNull()
   })
 
   it('bölüm yoksa kök çizilmez; boş etiketli öğe atılır', () => {
-    const v = buildTrail([{ label: '' }, A], { narrow: false, hasRoot: false })
+    const v = buildTrail([{ label: '' }, A], { hasRoot: false })
     expect(v.showRoot).toBe(false)
     expect(labels(v.middle)).toEqual(['Entegrasyonlar'])
   })
@@ -85,7 +76,7 @@ describe('A7 — EkPageBar sözleşmesi', () => {
 
   it('nav landmark + sıralı liste; SON öğe tek H1 ve aria-current="page"', () => {
     expect(template).toMatch(/<nav class="ek-crumbs" aria-label="Sayfa konumu">/)
-    expect(template).toMatch(/<ol class="ek-crumbs__list">/)
+    expect(template).toMatch(/<ol class="ek-crumbs__list"/)
     expect(template.match(/<h1\b/g)).toHaveLength(1)
     expect(template).toMatch(/<h1[^>]*aria-current="page"/)
   })
@@ -101,6 +92,14 @@ describe('A7 — EkPageBar sözleşmesi', () => {
   it('yalnız semantik token (ham renk yok — dark mode hazır), başlık tipografi rolünden', () => {
     expect(style).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/)
     expect(style).toMatch(/\.ek-page-bar__title \{[\s\S]*?font-size: var\(--ek-type-title-size\)/)
+  })
+
+  it('dar düzen KAP sorgusunda (ilk karede doğru): kök/…/diğer ara öğeler gizli, geri oku görünür, başlık tam satır', () => {
+    expect(style).toMatch(/container: ek-page-bar \/ inline-size/)
+    const cq = style.slice(style.indexOf('@container ek-page-bar (max-width: 559px)'))
+    expect(cq).toMatch(/\.ek-crumbs__list\.has-parent > \.ek-crumbs__item--root,\s*\.ek-crumbs__item--folded,\s*\.ek-crumbs__item--mid:not\(\.is-parent\) \{\s*display: none/)
+    expect(cq).toMatch(/\.ek-crumbs__back \{\s*display: inline-flex/)
+    expect(cq).toMatch(/\.ek-crumbs__item--current \{\s*flex: 1 1 100%/)
   })
 
   it('A6b yenile düğmesi ve A5 "Sayfa hakkında" paneli satırda korunur', () => {
