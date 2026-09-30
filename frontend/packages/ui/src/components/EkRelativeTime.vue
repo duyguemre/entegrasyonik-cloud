@@ -47,6 +47,8 @@ const relative = computed(() => formatRelative(date.value, new Date(now.value)))
 
 <style scoped>
 .ek-reltime {
+  /* Ekran okuyucu metni (ek-sr-only, mutlak konumlu) kaydırılabilir tablo dışına taşmasın. */
+  position: relative;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }

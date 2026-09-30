@@ -90,6 +90,7 @@ html.ek-theme-switching *::after {
    - Tıklanabilir satır: <tr class="is-link" tabindex="0"> + Enter → açılır; odak halkası satırın tamamında.
    ---------------------------------------------------------------------------------------------------------------- */
 .bo-table-wrap {
+  position: relative;
   overflow: auto;
   max-height: var(--bo-table-max-h, none);
   border: 1px solid var(--ek-color-border-default);
