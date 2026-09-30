@@ -91,7 +91,11 @@ test.describe('ADR-0015 B5-3 — NotificationDrawerComponent', () => {
     await openNotificationDrawer(page)
 
     // Aşama 6b (Standart 10): satır silme ikonları da kayıt defteri glifini kullanır — düğme adıyla seçilir (iddia aynı).
-    await page.getByRole('button', { name: 'Tümünü sil' }).click()
+    // C2b BİLİNÇLİ DEĞİŞİKLİK: geri alınamaz "Tümünü sil" başlıkta çıplak ikon değil; ⋯ menüsünde EN SONDA (tehlikeli)
+    // ve onay diyaloğu ister. Gönderilen gövde (iddia) AYNI: {all:true}.
+    await page.getByRole('button', { name: 'Bildirim işlemleri' }).click()
+    await page.getByRole('menuitem', { name: 'Tümünü sil' }).click()
+    await page.getByRole('dialog').filter({ hasText: 'Tüm bildirimler silinsin mi?' }).getByRole('button', { name: 'Tümünü sil' }).click()
 
     await expect.poll(() => deletePayload).not.toBeNull()
     expect(deletePayload.all).toBe(true)

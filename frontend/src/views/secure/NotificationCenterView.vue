@@ -673,6 +673,7 @@ defineExpose({
 .ek-nc-type {
   display: inline-flex;
   align-items: center;
+  align-self: flex-start;
   gap: var(--ek-space-2);
   white-space: nowrap;
 }

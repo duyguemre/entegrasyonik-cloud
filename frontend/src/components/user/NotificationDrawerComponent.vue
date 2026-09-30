@@ -70,28 +70,34 @@
                 </div>
                 <p v-if="item.message" class="ek-nd-item__message">{{ item.message }}</p>
 
-                <dl v-if="summary(item).length" class="ek-nd-item__summary" aria-label="İşlem özeti">
-                  <span class="ek-nd-item__summary-title">İşlem özeti</span>
-                  <div v-for="row in summary(item)" :key="row.label" class="ek-nd-item__summary-row">
-                    <dt>{{ row.label }}</dt>
-                    <dd class="ek-num">{{ row.value }}</dd>
-                  </div>
-                </dl>
-
-                <div class="ek-nd-item__meta">
-                  <span v-if="view(item).categoryLabel">{{ view(item).categoryLabel }}</span>
-                  <EkChannelDot v-if="item.metaData?.integrationCode" class="ek-nd-item__channel" :code="item.metaData.integrationCode" />
-                  <span v-if="item.mode" class="ek-nd-item__mode">{{ modeLabel(item.mode) }}</span>
-                  <time class="ek-num" :datetime="item.createdAt">{{ formatTime(item.createdAt) }}</time>
-                  <span v-if="(item.count ?? 1) > 1 && item.lastOccurredAt" class="ek-num">son: {{ formatTime(item.lastOccurredAt) }}</span>
+                <div v-if="summary(item).length" class="ek-nd-item__summary">
+                  <span :id="`ek-nd-s-${item._id}`" class="ek-nd-item__summary-title">İşlem özeti</span>
+                  <dl class="ek-nd-item__summary-list" :aria-labelledby="`ek-nd-s-${item._id}`">
+                    <div v-for="row in summary(item)" :key="row.label" class="ek-nd-item__summary-row">
+                      <dt>{{ row.label }}</dt>
+                      <dd class="ek-num">{{ row.value }}</dd>
+                    </div>
+                  </dl>
                 </div>
 
-                <div class="ek-nd-item__actions">
-                  <EkButton v-if="internalActionPath(item.actionUrl)" size="sm" tone="secondary" trailing-icon="mdi-arrow-right"
+                <!-- Meta: kanal (varsa) · kategori · zaman · son. Ayraçlar ayrı öğe değil metin — satır başına "·" düşmez. -->
+                <div class="ek-nd-item__meta">
+                  <template v-if="channelCode(item)">
+                    <EkPlatformMark variant="dot" :code="channelCode(item)" :name="channelName(item)" class="ek-nd-item__channel" />
+                    <span class="ek-nd-item__sep" aria-hidden="true">·</span>
+                  </template>
+                  <span>{{ metaText(item) }}</span>
+                </div>
+
+                <div v-if="internalActionPath(item.actionUrl)" class="ek-nd-item__go">
+                  <EkButton size="sm" tone="ghost" trailing-icon="mdi-arrow-right" class="ek-nd-item__go-btn"
                     :aria-label="`Detayları gör: ${view(item).title}`" @click="openAction(item)">
                     Detayları gör
                   </EkButton>
-                  <span class="ek-nd-item__spacer"></span>
+                </div>
+              </div>
+              <!-- Satır eylemleri: işaretçili cihazda sağ üstte, üzerine gelince/odakta görünür (liste sakin); dokunmatikte hep görünür. -->
+              <div class="ek-nd-item__actions">
                   <EkTooltip v-if="!item.isRead" text="Okundu işaretle">
                     <EkButton tone="ghost" size="sm" icon="mdi-check" icon-only :aria-label="`Okundu işaretle: ${view(item).title}`"
                       @click="notificationStore.markAsRead(item._id)" />
@@ -100,7 +106,6 @@
                     <EkButton tone="ghost" size="sm" icon="mdi-trash-can-outline" icon-only :aria-label="`Sil: ${view(item).title}`"
                       @click="notificationStore.deleteNotification(item._id)" />
                   </EkTooltip>
-                </div>
               </div>
               <span v-if="!item.isRead" class="ek-nd-item__dot" aria-hidden="true"></span>
               <span v-if="!item.isRead" class="ek-sr-only">Okunmamış</span>
@@ -129,7 +134,7 @@ import { labelsFor, notificationTitle, useNotificationCatalogStore } from '@/sto
 import { PLATFORM_PROCESS_LABELS, PLATFORM_PROCESS } from '@/types/PlatformProcess'
 import EkEmptyState from '@/components/ds/EkEmptyState.vue'
 import EkStatusChip from '@/components/ds/EkStatusChip.vue'
-import EkChannelDot from '@/components/ds/EkChannelDot.vue'
+import EkPlatformMark from '@/components/ds/EkPlatformMark.vue'
 import EkButton from '@/components/ds/EkButton.vue'
 import EkBadge from '@/components/ds/EkBadge.vue'
 import EkIconTile from '@/components/ds/EkIconTile.vue'
@@ -208,7 +213,33 @@ function view(item: NotificationItem) {
   }
 }
 
-const modeLabel = (mode: string) => PLATFORM_PROCESS_LABELS[mode as PLATFORM_PROCESS] || mode
+const CHANNEL_NAMES: Record<string, string> = {
+  trendyol: 'Trendyol',
+  hepsiburada: 'Hepsiburada',
+  n11: 'N11',
+  pazarama: 'Pazarama',
+  ideasoft: 'Ideasoft',
+  bizimhesap: 'Bizimhesap',
+}
+/** Kanal kodu: eski kayıtta `metaData.integrationCode`, v2'de `params.integ`. */
+function channelCode(item: NotificationItem): string | undefined {
+  const code = item.metaData?.integrationCode ?? item.params?.integ
+  return typeof code === 'string' && code ? code : undefined
+}
+const channelName = (item: NotificationItem) => {
+  const code = channelCode(item) ?? ''
+  return CHANNEL_NAMES[code.toLowerCase()] ?? code
+}
+/** Kategori (yoksa eski işlem türü) · göreli zaman · grup son olay. */
+function metaText(item: NotificationItem): string {
+  const v = view(item)
+  const parts = [
+    v.categoryLabel || (item.mode ? PLATFORM_PROCESS_LABELS[item.mode as PLATFORM_PROCESS] || item.mode : ''),
+    formatTime(item.createdAt),
+    (item.count ?? 1) > 1 && item.lastOccurredAt ? `son: ${formatTime(item.lastOccurredAt)}` : '',
+  ]
+  return parts.filter(Boolean).join(' · ')
+}
 
 // Eski toplu işlem / içe aktarma kayıtlarının özeti: yalnız backend'in metaData'da GERÇEKTEN döndürdüğü sayaçlar.
 const SUMMARY_FIELDS: Array<[string, string]> = [
@@ -442,11 +473,17 @@ const formatTime = (dateStr?: string) => (dateStr ? formatRelative(dateStr) : ''
   overflow-wrap: anywhere;
 }
 
-.ek-nd-item__summary {
+.ek-nd-item__summary-list {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
   gap: var(--ek-space-1) var(--ek-space-3);
+  margin: 0;
+}
+
+.ek-nd-item__summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-1);
   margin: var(--ek-space-1) 0 0;
   padding: var(--ek-space-2) var(--ek-space-3);
   border-radius: var(--ek-radius-tile);
@@ -456,7 +493,6 @@ const formatTime = (dateStr?: string) => (dateStr ? formatRelative(dateStr) : ''
 }
 
 .ek-nd-item__summary-title {
-  flex-basis: 100%;
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-micro-size);
   font-weight: var(--ek-type-micro-weight);
@@ -483,45 +519,67 @@ const formatTime = (dateStr?: string) => (dateStr ? formatRelative(dateStr) : ''
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--ek-space-1) var(--ek-space-2);
+  gap: var(--ek-space-1) 6px;
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
   line-height: var(--ek-type-caption-line);
-}
-
-.ek-nd-item__meta > * + *::before {
-  content: '·';
-  margin-right: var(--ek-space-2);
-  color: var(--ek-color-content-subtle);
 }
 
 .ek-nd-item__channel {
   font-size: var(--ek-type-caption-size);
 }
 
+.ek-nd-item__sep {
+  color: var(--ek-color-content-subtle);
+}
+
+/* Hayalet düğme: metin, başlıkla aynı sol hizada (iç boşluk kadar negatif pay). */
+.ek-nd-item__go {
+  margin: var(--ek-space-1) 0 0 calc(var(--ek-space-3) * -1);
+}
+
+.ek-nd-item__go-btn {
+  color: var(--ek-color-action-emphasis);
+}
+
+/* Satır düğmeleri (okundu/sil): dokunmatikte meta altında hep görünür; işaretçili cihazda sağ üstte, yalnız
+   üzerine gelince/odakta (liste sakin kalır, satır yüksekliği değişmez). */
 .ek-nd-item__actions {
   display: flex;
   align-items: center;
   gap: var(--ek-space-1);
-  min-height: 32px;
-  margin-top: var(--ek-space-1);
+  flex: none;
+  align-self: flex-start;
 }
 
-.ek-nd-item__spacer {
-  flex: 1;
-}
-
-/* Satır düğmeleri (okundu/sil) yalnız üzerine gelince/odakta belirginleşir — liste sakin kalır. İşaretçisiz
-   cihazda (dokunmatik) her zaman görünür. */
 @media (hover: hover) {
-  .ek-nd-item__actions :deep(.ek-tooltip__anchor) {
+  .ek-nd-item__actions {
+    position: absolute;
+    top: var(--ek-space-2);
+    right: var(--ek-space-3);
+    padding: 2px;
+    border-radius: var(--ek-radius-control);
+    background: var(--ek-color-surface);
+    box-shadow: var(--ek-shadow-raised);
     opacity: 0;
+    pointer-events: none;
     transition: opacity var(--ek-duration-fast) var(--ek-easing-standard);
   }
 
-  .ek-nd-item:hover .ek-nd-item__actions :deep(.ek-tooltip__anchor),
-  .ek-nd-item:focus-within .ek-nd-item__actions :deep(.ek-tooltip__anchor) {
+  .ek-nd-item:hover .ek-nd-item__actions,
+  .ek-nd-item:focus-within .ek-nd-item__actions {
     opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+@media (hover: none) {
+  .ek-nd-item {
+    flex-wrap: wrap;
+  }
+
+  .ek-nd-item__actions {
+    margin-left: auto;
   }
 }
 

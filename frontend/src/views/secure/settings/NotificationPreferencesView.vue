@@ -34,7 +34,12 @@
       <template v-else-if="form">
         <EkAlert v-if="saveError" tone="error" :text="saveError" live dense />
 
-        <EkSettingsSection title="Kategoriler ve kanallar" description="Her kategori için uygulama içi bildirimi ve e-posta sıklığını seçin. Özet, seçtiğiniz saatte tek e-postada toplanır.">
+        <!-- Matris tam genişlik: 3 sütunlu tablo 2/3 kolona sığmıyor (1. iterasyon: ipuçları 4 satıra sarılıyordu). -->
+        <section class="ek-np-block" aria-labelledby="np-matrix-title">
+          <header class="ek-np-block__intro">
+            <h2 id="np-matrix-title" class="ek-np-block__title">Kategoriler ve kanallar</h2>
+            <p class="ek-np-block__desc">Her kategori için uygulama içi bildirimi ve e-posta sıklığını seçin. “Özet” seçilen bildirimler, aşağıda belirlediğiniz saatte tek e-postada toplanır.</p>
+          </header>
           <div class="ek-np-matrix" role="group" aria-label="Kategori ve kanal tercihleri">
             <div class="ek-np-matrix__head" aria-hidden="true">
               <span>Kategori</span>
@@ -64,10 +69,10 @@
               <div class="ek-np-row__cell" data-col="inApp">
                 <span class="ek-np-row__cell-label" aria-hidden="true">Uygulama içi</span>
                 <v-switch
+                  role="switch"
                   v-model="form.categories[cat.key].inApp"
                   :disabled="cat.locked"
                   color="primary"
-                  inset
                   hide-details
                   density="compact"
                   :aria-label="`${cat.label}: uygulama içi bildirim`"
@@ -93,7 +98,7 @@
             <v-icon icon="mdi-information-outline" aria-hidden="true" />
             Kategori listesi sunucudan alınamadı; varsayılan katalog gösteriliyor.
           </p>
-        </EkSettingsSection>
+        </section>
 
         <EkSettingsSection title="E-posta özeti" description="“Özet” seçili kategorilerdeki bildirimler tek e-postada toplanır. Saat dilimi: Türkiye (GMT+3).">
           <div class="ek-np-fields" :class="{ 'is-muted': !digestActive }">
@@ -113,7 +118,7 @@
 
         <EkSettingsSection title="Sessiz saatler" description="Bu aralıkta anında e-postalar gönderilmez; aralığın sonunda iletilir. Uygulama içi bildirimler etkilenmez.">
           <div class="ek-np-fields">
-            <v-switch v-model="form.quietHours.enabled" color="primary" inset hide-details density="compact" label="Sessiz saatleri kullan" />
+            <v-switch v-model="form.quietHours.enabled" role="switch" color="primary" hide-details density="compact" label="Sessiz saatleri kullan" />
             <div v-if="form.quietHours.enabled" class="ek-np-time">
               <EkSelect v-model="form.quietHours.start" :items="TIME_OPTIONS" label="Başlangıç" class="ek-np-field" hide-details="auto" />
               <EkSelect v-model="form.quietHours.end" :items="TIME_OPTIONS" label="Bitiş" class="ek-np-field" hide-details="auto"
@@ -258,8 +263,40 @@ defineExpose({
 </script>
 
 <style scoped>
+/* Kendi kaydırıcısı (DashboardView emsali): sekme kabı `h-100` verir; içerik taşınca pencere kayıyor ve zemin
+   görünüm yüksekliğinde bitiyordu (2. iterasyon). Yapışkan kaydet çubuğu bu kaydırıcıya göre durur. */
 .ek-notification-prefs {
+  height: 100%;
+  overflow-y: auto;
   padding: var(--ek-space-6);
+  background: var(--ek-color-app-bg);
+}
+
+.ek-np-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-4);
+  padding-bottom: var(--ek-space-8);
+  border-bottom: 1px solid var(--ek-color-border-default);
+}
+
+.ek-np-block__intro {
+  max-width: 640px;
+}
+
+.ek-np-block__title {
+  margin: 0 0 var(--ek-space-1);
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-heading-size);
+  line-height: var(--ek-type-heading-line);
+  font-weight: var(--ek-type-heading-weight);
+}
+
+.ek-np-block__desc {
+  margin: 0;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-body-size);
+  line-height: var(--ek-type-body-line);
 }
 
 .ek-np-matrix {
@@ -275,7 +312,7 @@ defineExpose({
 .ek-np-matrix__head,
 .ek-np-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 112px 228px;
+  grid-template-columns: minmax(0, 1fr) 120px 232px;
   align-items: center;
   gap: var(--ek-space-4);
   padding: var(--ek-space-3) var(--ek-space-4);
@@ -419,6 +456,10 @@ defineExpose({
   background: var(--ek-color-surface-muted);
   color: var(--ek-color-content-default);
   box-shadow: inset 0 0 0 1px var(--ek-color-border-default);
+}
+
+.ek-np-seg--wide {
+  align-self: flex-start;
 }
 
 .ek-np-seg--wide .ek-np-seg__opt {
