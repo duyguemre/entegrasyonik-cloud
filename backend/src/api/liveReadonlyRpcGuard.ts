@@ -7,8 +7,8 @@ import { CAPABILITY_BY_RPC } from '../capabilities';
 import { ApplicationError } from '@platform/core/errors/ApplicationError';
 import { config } from '@config';
 
-/** external+write görünse de OKUMA olanlar. */
-export const LIVE_READONLY_ALLOWED_RPCS: ReadonlySet<string> = new Set(['IntegrationService/requestFetchFromPlatform']);
+/** external+write görünse de OKUMA olanlar. `cancelSubscription` (K40): kartsız denemede yerel; sağlayıcı yolunda 423'ü operasyonun kendisi verir (subscriptionAdmin). */
+export const LIVE_READONLY_ALLOWED_RPCS: ReadonlySet<string> = new Set(['IntegrationService/requestFetchFromPlatform', 'BackofficeBillingService/cancelSubscription']);
 /** Kayıtta external görünmeyen ama dış yazma/token değişimi tetikleyenler. */
 export const LIVE_READONLY_DENIED_RPCS: ReadonlySet<string> = new Set(['IntegrationService/batchCreator', 'IntegrationService/retrieveAndSetExternalToken', 'EcommerceService/retrieveAndSetExternalToken']);
 

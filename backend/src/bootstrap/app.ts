@@ -8,6 +8,10 @@ import { NotificationService } from '@services/notification/NotificationService'
 import { storageService } from '@services/storage/StorageService';
 import { ClientOperations } from '@operations/client/ClientOperations';
 import { createNotifier } from '@operations/notifications/createNotifier';
+import { createPlatformNotifier } from '@operations/notifications/createPlatformNotifier';
+import { createFindingAlertHook } from '@operations/alerts/findingAlertHook';
+import { parseShadowUntil } from '@operations/alerts/createAlertEvaluator';
+import { FindingService } from '@integration/compliance/FindingService';
 import { RedisService } from '@services/redis';
 import { config } from '@config';
 import { eventLog } from '@platform/core/logger';
@@ -78,6 +82,12 @@ export async function bootApplication(): Promise<void> {
     const clientOperations = new ClientOperations();
     NotificationService.init(clientOperations, createNotifier()); // ADR-0029: notify çekirdeği sink'i (NOTIFY_V2_ENABLED=false iken köprü eski yolu kullanır)
     storageService.initialize(clientOperations);
+    // ADR-0029 NB8: R12 uyum bulgusu -> platform bildirimi (NOTIFY_V2_ENABLED=false iken platformNotify hicbir sey yazmaz)
+    const platformNotifier = createPlatformNotifier();
+    FindingService.setAlertHook(createFindingAlertHook({
+      platformNotify: (code, params, opts) => platformNotifier.notify(code, params, opts),
+      shadow: () => { const u = parseShadowUntil(config.notify.alertShadowUntil); return !!u && Date.now() < u.getTime(); },
+    }));
 
     // ADR-0006 Karar 3: web/all -> tam API; worker -> yalniz /health,/ready
     await startHttp(role, http);

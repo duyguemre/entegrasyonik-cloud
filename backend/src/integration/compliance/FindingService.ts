@@ -69,6 +69,9 @@ export type FindingReader = (dedupKey: string) => Promise<IntegrationFindingReco
 
 let customSink: FindingSink | undefined;
 let customReader: FindingReader | undefined;
+export interface AlertContext { integrationCode: string; kind: string; severity: string; findingId: string }
+export type AlertHook = (ctx: AlertContext) => void | Promise<unknown>;
+let customAlertHook: AlertHook | undefined;
 
 async function getModel() {
     // eslint-disable-next-line @typescript-eslint/no-require-imports -- TS6-01: node16 CJS, tembel yukleme (dinamik import yerine)
@@ -223,10 +226,9 @@ export class FindingService {
             await sink('upsert', record);
 
             // ADR-0018 Karar 2 "Alarm": confirmed && severity>=high olan bulgu new'e geçtiğinde R12 çağırır.
-            // ADR-0017'nin raiseAlert/MetricsRegistry arayüzleri henüz kodda YOK (bu görevde doğrulandı) —
-            // no-op adaptör arkasında durur (ADR-0018 "ADR-0017 bağımlılığı" notu). Gerçek bağlantı ayrı görev.
+            // ADR-0029 NB8: kanca (`setAlertHook`) bootstrap'ta `platformNotify('PLATFORM_COMPLIANCE_FINDING')`e bağlanır; kanca yoksa no-op. Hata YUTULUR.
             if (confirmed && (severity === 'high' || severity === 'critical') && status === 'new' && (!existing || existing.status !== 'new')) {
-                FindingService.noopRaiseAlert({ integrationCode: input.integrationCode, kind: input.kind, severity });
+                FindingService.raiseAlert({ integrationCode: input.integrationCode, kind: input.kind, severity, findingId: dedupKey.slice(0, 16) });
             }
         } catch (e: any) {
             // eslint-disable-next-line no-console
@@ -234,9 +236,11 @@ export class FindingService {
         }
     }
 
-    /** ADR-0017 `raiseAlert` bağlanana dek yer tutucu; hiçbir yan etkisi yoktur, yalnız TEST/gelecek bağlantı için ayrılmış nokta. */
-    private static noopRaiseAlert(_ctx: { integrationCode: string; kind: string; severity: string }): void {
-        // Bilinçli no-op (bkz. yorum yukarıda).
+    /** ADR-0029 NB8: R12 alarm kancası (bootstrap `platformNotify`a bağlar). `undefined` => no-op. Kanca hatası/promise reddi bulgu kaydını ETKİLEMEZ. */
+    public static setAlertHook(hook: AlertHook | undefined): void { customAlertHook = hook; }
+
+    private static raiseAlert(ctx: AlertContext): void {
+        try { void Promise.resolve(customAlertHook?.(ctx)).catch(() => undefined); } catch { /* en iyi caba */ }
     }
 
     /** Basit liste (Aşama B `IntegrationComplianceService`'in temel taşı; bugün yalnız iç/test kullanımı). */

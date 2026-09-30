@@ -15,8 +15,12 @@ export interface FeatureFlagDef {
     tenantScoped?: boolean;
 }
 
-/** Başlangıçta boş: ilk gerçek bayrak geldiğinde buraya eklenir. */
-export const FEATURE_FLAGS: readonly FeatureFlagDef[] = [];
+/** Yeni bayrak: bir satır. */
+export const FEATURE_FLAGS: readonly FeatureFlagDef[] = [
+    // ADR-0034 Karar 4.9 (BR-1): sohbet aracısı kill-switch'i (`agent.enabled`). Üretimde varsayılan KAPALI; GET /api/agent/info bunu okur.
+    { name: 'agent', label: { tr: 'Sohbet aracısı', en: 'Chat agent' },
+        help: { tr: 'Açıkken uygulama içi sohbet (broker) etkinleşir; kapalıyken /api/agent/info DISABLED döner ve istemci girişleri gizlenir.', en: 'When on, the in-app chat (broker) is enabled; when off, /api/agent/info returns DISABLED and client entry points are hidden.' } },
+];
 
 const NAME = /^[a-z][a-zA-Z0-9]{1,39}$/;
 

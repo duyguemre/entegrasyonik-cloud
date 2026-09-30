@@ -7,7 +7,9 @@ import { ApplicationError } from '@api/Security';
 import { RedisService } from '@services/redis';
 
 export const IMPERSONATION_TICKET_TTL_SECONDS = 60;
-export const IMPERSONATION_SESSION_SECONDS = 60 * 60; // 60 dk, UZATILMAZ
+// K41 (2026-10-01): 60 dk -> 30 dk, UZATILMAZ. Tek kaynak (oturum claim'i, çerez ömrü, yanıttaki expiresAt buradan türer).
+export const IMPERSONATION_SESSION_MINUTES = 30;
+export const IMPERSONATION_SESSION_SECONDS = IMPERSONATION_SESSION_MINUTES * 60;
 const KEY_PREFIX = 'imp:';
 const TICKET_RE = /^[A-Za-z0-9_-]{43}$/;
 

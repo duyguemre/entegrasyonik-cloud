@@ -189,7 +189,7 @@ export default class SecurityService extends BaseApi implements IService {
 
     /**
      * [ADR-0026 Karar 4.9] AÇIK operasyon: tek geçerli kimlik, backoffice'in ürettiği 60 sn'lik TEK KULLANIMLIK bilettir (`GETDEL`; Redis yoksa reddedilir).
-     * Başarıda `{sub: yönetici, tid, ga:true, imp:true}` oturumu basılır; ömür 60 dk ve UZATILMAZ (`fixedTtlSeconds` -> token `fx:true`).
+     * Başarıda `{sub: yönetici, tid, ga:true, imp:true}` oturumu basılır; ömür 30 dk (K41) ve UZATILMAZ (`fixedTtlSeconds` -> token `fx:true`).
      * Bilet tüketildikten sonra yönetici hesabı hâlâ geçerli olmalı (aktif, `isGlobalAdmin`, tokenVersion aynı) ve hedef tenant ACTIVE olmalı.
      * Geçersiz/kullanılmış/süresi dolmuş bilet için tek genel hata (ayrım yok).
      */

@@ -42,6 +42,13 @@ export const ERROR_CODES = {
     INFRA_UNAVAILABLE: { status: 503, group: 'genel', message: 'Altyapı şu an okunamıyor.', description: 'Backoffice altyapı/entegrasyon gözlem uçları (B5/B6/B8): Redis hazır değil ya da Mongo/Redis okuması başarısız; ham hata yanıta konmaz, ayrıntı sunucu logundadır.' },
     MAINTENANCE: { status: 503, group: 'genel', message: 'Sistem bakımda. Lütfen daha sonra tekrar deneyin.', description: 'Bakım modu (BACKOFFICE_PLAN B11): `maintenance.enabled` açıkken tenant `/api` yazma istekleri reddedilir; `error` alanı `maintenance.message` ayarıdır (doluysa). Okuma, /health, /admin-api, public-config ve giriş/çıkış serbesttir; `Retry-After` başlığı yeniden deneme saniyesidir.' },
     QUERY_TIMEOUT: { status: 504, group: 'genel', message: 'Sorgu süre sınırını aştı.', description: 'Backoffice gözlem sorguları (B5/B8): sorgu maxTimeMS (5 sn) bütçesini aştı; aralık daraltılıp yeniden denenmeli.' },
+    // --- Backoffice bildirim/duyuru/alarm (ADR-0029 NB7/NB8; docs/API_BACKOFFICE_NOTIFICATIONS.md) ---
+    ANNOUNCEMENT_NOT_FOUND: { status: 404, group: 'genel', message: 'Duyuru bulunamadı.', description: 'Backoffice duyuru uçları (NB7): bu kimlikle duyuru kaydı yok.' },
+    ANNOUNCEMENT_STATE: { status: 409, group: 'genel', message: 'Duyuru bu durumda bu işleme uygun değil.', description: 'Backoffice duyuru uçları (NB7): yalnız taslak düzenlenir/zamanlanır; sona ermiş ya da iptal edilmiş duyuru iptal edilemez. Detay yenilenip yeniden denenmeli.' },
+    DELIVERY_NOT_FOUND: { status: 404, group: 'genel', message: 'Teslim kaydı bulunamadı.', description: 'Backoffice retryDelivery/discardDelivery (NB7): kayıt yok ya da TTL ile silinmiş.' },
+    DELIVERY_STATE: { status: 409, group: 'genel', message: 'Teslim kaydı bu durumda bu işleme uygun değil.', description: 'Backoffice retryDelivery/discardDelivery (NB7): yeniden deneme yalnız dead/failed, atma yalnız pending/dead/failed/skipped kayıtlarda yapılır; gönderilmekte olan kayıt değiştirilmez.' },
+    ALERT_NOT_FOUND: { status: 404, group: 'genel', message: 'Uyarı bulunamadı.', description: 'Backoffice muteAlert (NB8): (ruleId, scopeKey) için uyarı kaydı yok.' },
+    NOTIFY_EMAIL_UNAVAILABLE: { status: 503, group: 'genel', message: 'E-posta şu an gönderilemiyor.', description: 'Backoffice sendTestEmail (NB7): NOTIFY_EMAIL_ENABLED kapalı ya da taşıyıcı hata verdi; ham hata yanıta konmaz.' },
     // --- Backoffice abonelik yonetimi (B4; docs/API_BACKOFFICE_BILLING_TENANTS.md) ---
     SUBSCRIPTION_NOT_FOUND: { status: 404, group: 'genel', message: 'Abonelik bulunamadı.', description: 'Backoffice abonelik uçları (B4): tenant için Subscriptions kaydı yok.' },
     PLAN_NOT_FOUND: { status: 404, group: 'genel', message: 'Plan bulunamadı.', description: 'Backoffice changePlan (B4): plan kodu yok ya da satışa kapalı.' },
@@ -49,8 +56,9 @@ export const ERROR_CODES = {
     SUBSCRIPTION_EXEMPT: { status: 409, group: 'genel', message: 'Muaf abonelik bu işleme uygun değil.', description: 'Backoffice abonelik yazması (B4): billingExempt (legacy) abonelik deneme uzatma/sağlayıcı işlemi kapsamı dışındadır.' },
     SUBSCRIPTION_NOT_CANCELABLE: { status: 409, group: 'genel', message: 'Abonelik bu durumda iptal edilemez.', description: 'Backoffice cancelSubscription (B4): abonelik zaten canceled/expired.' },
     SUBSCRIPTION_NOT_CHANGEABLE: { status: 409, group: 'genel', message: 'Abonelik bu durumda plan değiştiremez.', description: 'Backoffice changePlan (B4): abonelik trialing/active/past_due dışında.' },
-    TRIAL_NOT_ACTIVE: { status: 409, group: 'genel', message: 'Deneme süresi uzatılamaz.', description: 'Backoffice extendTrial (B4): yalnız süren (trialing) deneme uzatılır; suspended/ödeme yapan abonelikte reddedilir (durum makinesi ADR-0008 §3 korunur).' },
-    NO_PROVIDER_SUBSCRIPTION: { status: 409, group: 'genel', message: 'Abonelikte sağlayıcı kaydı yok.', description: 'Backoffice cancel/changePlan (B4): kartsız denemede sağlayıcı aboneliği yoktur; sağlayıcı işlemi uygulanamaz.' },
+    TRIAL_NOT_ACTIVE: { status: 409, group: 'genel', message: 'Deneme süresi uzatılamaz.', description: 'Backoffice extendTrial (B4): yalnız süren (trialing) ya da denemesi bitip askıya alınmış kartsız (suspended, sağlayıcı kaydı yok) abonelik uzatılır (K40); ödeme yapan/sağlayıcı kayıtlı abonelikte reddedilir.' },
+    TRIAL_EXTENSION_LIMIT: { status: 409, group: 'genel', message: 'Toplam deneme uzatma sınırı aşıldı.', description: 'Backoffice extendTrial (K40): tek seferde ≤30, bir abonelikte TOPLAM ≤60 gün; aşımda details.remainingDays/usedDays/maxTotalDays döner.' },
+    NO_PROVIDER_SUBSCRIPTION: { status: 409, group: 'genel', message: 'Abonelikte sağlayıcı kaydı yok.', description: 'Backoffice changePlan (B4): kartsız denemede sağlayıcı aboneliği yoktur; plan değişimi uygulanamaz (K40: cancelSubscription bu durumda yerel iptal yapar, bu kodu VERMEZ).' },
     PROVIDER_MISMATCH: { status: 409, group: 'genel', message: 'Abonelik başka bir sağlayıcıya ait.', description: 'Backoffice cancel/changePlan (B4): Subscriptions.provider yapılandırılmış PAYMENT_PROVIDER ile eşleşmiyor.' },
     PROVIDER_SUBSCRIPTION_MISSING: { status: 409, group: 'genel', message: 'Sağlayıcıda abonelik kaydı bulunamadı.', description: 'Backoffice cancel/changePlan (B4): sağlayıcı (mock: süreç yeniden başlamış) verilen referansı tanımıyor; mutabakat gerekir.' },
     PROVIDER_ERROR: { status: 502, group: 'genel', message: 'Sağlayıcı işlemi başarısız.', description: 'Backoffice cancel/changePlan (B4): ödeme sağlayıcısı hata döndü; abonelik değiştirilmedi.' },
@@ -90,6 +98,16 @@ export const ERROR_CODES = {
     ALREADY_OWNER: { status: 409, group: 'hesap', message: 'Kullanıcı zaten mağaza sahibi.', description: 'Sahiplik devri hedefi zaten sahip.' },
     TARGET_NOT_ACTIVE: { status: 409, group: 'hesap', message: 'Devir hedefi aktif bir üye olmalıdır.', description: 'Sahiplik devri hedefi askıda/aktif değil.' },
     TARGET_EMAIL_UNVERIFIED: { status: 409, group: 'hesap', message: 'Devir hedefinin e-postası doğrulanmış olmalıdır.', description: 'Sahiplik devri hedefinin e-posta adresi doğrulanmamış.' },
+    // --- Sohbet aracisi (ADR-0034 / AGENT_BROKER_PLAN BR-1; protokol chat/v1) ---
+    TURN_IN_PROGRESS: { status: 409, group: 'genel', message: 'Devam eden bir yanıtınız var. Bitmesini bekleyin.', description: 'Sohbet turu (BR-1): kullanıcı başına eşzamanlı yalnız 1 tur açıktır (Redis SET NX kilidi, TTL 90 sn); önceki tur bitmeden yeni tur başlatıldı.' },
+    TURN_DUPLICATE: { status: 409, group: 'genel', message: 'Bu istek zaten işlendi.', description: 'Sohbet turu (BR-1): aynı `clientTurnId` 10 dk içinde yeniden gönderildi; tur tekrarlanmaz. İstemci yeniden denemede YENİ `clientTurnId` üretir.' },
+    SETUP_REQUIRED: { status: 403, group: 'genel', message: 'Sohbet için kurulum gerekli.', description: 'Sohbet turu/bilgi (BR-1/BR-5): tenant için yapay zekâ sağlayıcı anahtarı (ya da sahip onayı) tanımlı değil. `GET /api/agent/info` aynı durumu `reason: SETUP_REQUIRED` ile bildirir.' },
+    PROTOCOL: { status: 400, group: 'genel', message: 'Sohbet protokol sürümü uyuşmuyor. Sayfayı yenileyin.', description: 'Sohbet isteği (chat/v1): istek gövdesi `v: 1` ile uyuşmuyor ya da protokol şemasına uymuyor (ayrıntı `fields` alanında yalnız alan yolları).' },
+    LLM_KEY_INVALID: { status: 422, group: 'genel', message: 'Yapay zekâ sağlayıcı anahtarı geçersiz.', description: 'LLM sağlayıcı hata sınıfı (ADR-0034 Karar 9): anahtar geçersiz/iptal (401/403). Ham sağlayıcı yanıtı istemciye ve loga gitmez.' },
+    LLM_QUOTA: { status: 402, group: 'genel', message: 'Sağlayıcı hesabındaki kredi/kota tükendi.', description: 'LLM sağlayıcı hata sınıfı: kredi/fatura/kota bitti (maliyet kullanıcının kendi sağlayıcı hesabındadır, K37).' },
+    LLM_RATE_LIMITED: { status: 429, group: 'genel', message: 'Sağlayıcı hız sınırına ulaşıldı.', description: 'LLM sağlayıcı hata sınıfı: sağlayıcı 429; `retry-after` varsa `retryAfterSec`.' },
+    LLM_MODEL_UNAVAILABLE: { status: 422, group: 'genel', message: 'Seçili model kullanılamıyor.', description: 'LLM sağlayıcı hata sınıfı: model yok ya da bu anahtarla erişilemiyor (404).' },
+    LLM_UNAVAILABLE: { status: 503, group: 'genel', message: 'Yapay zekâ sağlayıcısına ulaşılamıyor.', description: 'LLM sağlayıcı hata sınıfı: sağlayıcı 5xx, zaman aşımı ya da ağ hatası.' },
 } as const satisfies Record<string, ErrorCodeDef>;
 
 export type ErrorCode = keyof typeof ERROR_CODES;

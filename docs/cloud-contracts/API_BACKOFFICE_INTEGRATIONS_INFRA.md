@@ -33,7 +33,7 @@ Her pod metrik flush'ında (≈60 sn) `resilience:<pod>` Redis anahtarına 60 sn
 ## B6b `IntegrationConfigService/getCatalog { target? }`
 `settingsCatalogMirror.ts` geçici kopyasının kalıcı karşılığı (ADR-0020 C açık işi). `target` (entegrasyon kodu, `_engine`, `_platform`) verilirse yalnız o hedefte uygulanabilir anahtarlar; bilinmeyen hedef `404 NOT_FOUND`.
 ```json
-{ "catalogVersion": "2026-09-30.b3",
+{ "catalogVersion": "2026-10-01.b4",
   "items": [ { "key": "export.publisher.chunkSize", "group": "export.product", "scope": "engine", "type": "int", "unit": "count", "default": 100,
                "safeRange": { "min": 1, "max": 500 }, "danger": "safe", "applies": "next_cycle", "label": { "tr": "…", "en": "…" }, "help": { "tr": "…", "en": "…" },
                "impact": { "tr": "…", "en": "…" }, "advanced": false, "overridable": true, "envLock": null, "tenantOverridable": null, "since": "2026-09-29", "deprecated": null, "exposure": null } ] }

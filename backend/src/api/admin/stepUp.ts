@@ -31,6 +31,15 @@ export const REAUTH_RPCS: ReadonlySet<string> = new Set([
     'BackofficeEngineService/retryJob',
     'BackofficeEngineService/discardJob',
     'BackofficeEngineService/releaseStuckLease',
+    // ADR-0029 NB7/NB8: yazan bildirim/duyuru/uyari uclari (toplu e-posta dahil) step-up + gerekce
+    'BackofficeNotificationService/createAnnouncement',
+    'BackofficeNotificationService/updateAnnouncement',
+    'BackofficeNotificationService/scheduleAnnouncement',
+    'BackofficeNotificationService/cancelAnnouncement',
+    'BackofficeNotificationService/retryDelivery',
+    'BackofficeNotificationService/discardDelivery',
+    'BackofficeNotificationService/sendTestEmail',
+    'BackofficeNotificationService/muteAlert',
 ]);
 
 /** Tenant PII'sine dokunan okumalar (`backoffice.sensitive_read` audit). Yetenekte `pii !== 'none'` olanlar da eklenir. */
