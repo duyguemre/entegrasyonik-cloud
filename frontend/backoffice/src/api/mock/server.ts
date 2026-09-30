@@ -72,6 +72,7 @@ export class MockAdminServer {
   private state: SessionState
   private degraded = false
   private liveReadonly = false
+  private failPrefix: string | null = null
   private readonly p2: ReturnType<typeof createP2Domains>
   private readonly degradedSections = new Map<OverviewSectionKey, 'timeout' | 'error'>()
   private readonly t0: number
@@ -110,6 +111,11 @@ export class MockAdminServer {
   /** Örnek özellik bayrakları (backend kataloğu başlangıçta boştur). */
   setFeatureFlags(value: boolean) {
     setMockFeatureFlags(value)
+  }
+
+  /** Hata durumu denemesi: öneki eşleşen operasyonlar 500 INTERNAL döner (ör. `failOps('BackofficeBillingService/')`); null kapatır. */
+  failOps(prefix: string | null) {
+    this.failPrefix = prefix
   }
 
   private ctx(): MockCtx {
@@ -239,6 +245,7 @@ export class MockAdminServer {
       case 'BackofficeAuditService/search':
         return this.searchAudit(body as unknown as SearchAuditRequest)
     }
+    if (this.failPrefix && op.startsWith(this.failPrefix)) throw new MockHttpError(500, 'INTERNAL', 'Beklenmeyen bir hata oluştu.')
     const handled = this.p2.handle(op, body, this.ctx())
     if (handled !== UNHANDLED) return handled
     throw new MockHttpError(404, 'NOT_FOUND', `Bilinmeyen operasyon: ${op}`)

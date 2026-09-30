@@ -167,3 +167,24 @@ geri al, yönetici ekle/kaldır, önbellek boşalt) bu tek diyalogla onaylanır.
 Türkçe, net, profesyonel; "siz" dili. Etiket kısa isim ("Bekleyen iş"), açıklama tek cümle. Teknik terim gerekiyorsa
 kısa açıklamayla: "p95 (isteklerin %95'i bu sürenin altında)", "DLQ (elle inceleme bekleyen işler)". Hata:
 "<ne oldu> — <ne yapılmalı>". Sahte/taslak veri her zaman görünür biçimde belirtilir.
+
+---
+
+## Ek — bo-p2 (Aşama 4 ekranları) yapı taşları
+Bu ek bo-p1 desenlerinin ÜZERİNE kuruludur; çelişki yoksa yukarıdaki kurallar geçerlidir.
+
+| Yapı taşı | Yer | Ne zaman |
+|---|---|---|
+| `useResource(fetcher)` | `src/composables/useResource.ts` | Tek okuma (pano, detay). Durum: loading → ready / error / degraded (503) / notFound (404); yenilemede veri korunur (`refreshing`), hatada son iyi veri kalır (`stale`). |
+| `useCursorList(fetchPage)` | `src/composables/useCursorList.ts` | İmleçli liste. İlk istek imleçsiz; `nextCursor` aynı filtrelerle geri gönderilir; filtre değişince `reload()`; eski yanıt yok sayılır. "Daha fazla" hatası listeyi silmez. `LoadMore` bileşeniyle. |
+| `useGuardedAction(run, onDone)` + `GuardedDialog` | `src/composables/useGuardedAction.ts`, `src/components/kit/GuardedDialog.vue` | Step-up + gerekçe isteyen HER yazma. `GuardedDialog` = `DangerActionDialog` (items[0] → "Ne olacak", kalanlar ayrıntı; `danger` → yıkıcı; `irreversible`/`reversible` açıkça). Varsayılan slot: işleme özgü alan (gün, plan, e-posta). |
+| `StateBlock` | `src/components/kit/StateBlock.vue` | Panel gövdesinin dört durumu; hata metni `describeError` ile koda özgü eylem taşır (504 → "daha dar aralık", 423 → "salt-okuma kapanınca", 409 → "listeyi yenileyin"). `BoPanelState` ile aynı görsel dil (EkProblemState). |
+| `describeError` | `src/utils/errors.ts` | Sunucu iletisi + koda göre eylem: "<ne oldu> — <ne yapılmalı>". Ham istisna asla. |
+| `MeterList`, `SeriesBars` | `src/components/kit/` | Sade, erişilebilir grafik: oran çubukları (değer metin olarak) ve yığılmış zaman serisi ("Tablo olarak göster"). |
+| `useTabQuery` | `src/composables/useTabQuery.ts` | Sekme ↔ `?sekme=`; paylaşılan bağlantı aynı sekmeyi açar. |
+| `units.ts`, `codes.ts` | `src/utils/` | Yüzde/kuruş/bayt/süre/yaklaşık ms biçimi; hata kodu → ERROR_CODES.md iletisi + ton. |
+| `kit.css` | `src/styles/kit.css` | `bo-panel*`, `bo-toolbar*`, `bo-kv`, `bo-code`, `bo-cell-stack`, `bo-approx` ("yaklaşık" etiketi), `bo-grid-2/3`. |
+
+**Paket ve kabuk dokunuşları (ekleyici):** `@entegrasyonik/ui` → `EkReasonDialog` (sunumsal gerekçe diyaloğu; backoffice'te artık `DangerActionDialog` kullanılır, paket bileşeni diğer yüzeyler için duruyor). `DangerActionDialog` → varsayılan slot + `blocked` prop'u (ek alan geçersizken onay kapalı). Davranış değişmedi.
+
+**Sahte API test kolları** (tarayıcı konsolu / e2e): `__boMock.setDegraded(true)` (Redis düşük → kuyruk/dayanıklılık/Redis 503; B7a `available:false`), `setLiveReadonly(true)` (retryJob/cancelSubscription/changePlan 423), `setFeatureFlags(true)` (örnek bayraklar), `failOps('<Servis>/')` (500), `expireReauth()` (sonraki hassas işlemde step-up). Sahte durum sayfa yenilemesinde sıfırlanır: e2e'de kol, SPA içi gezinmeden önce çekilir.

@@ -94,7 +94,7 @@ export function createPlatformMock(t0: number, selfEmail: string): MockDomain {
     { sub: hex24(5002), email: 'operasyon@ornek.test', name: 'Örnek', surname: 'Operasyon', status: 'active', mfaEnabled: true, lastLoginAt: iso(t0 - 26 * HOUR), locked: false, createdAt: iso(t0 - 220 * DAY) },
     { sub: hex24(5003), email: 'destek@ornek.test', name: 'Örnek', surname: 'Destek', status: 'active', mfaEnabled: true, lastLoginAt: iso(t0 - 9 * DAY), locked: true, createdAt: iso(t0 - 120 * DAY) },
     { sub: hex24(5004), email: 'eski.yonetici@ornek.test', name: 'Örnek', surname: 'Eski', status: 'disabled', mfaEnabled: true, lastLoginAt: null, locked: false, createdAt: iso(t0 - 400 * DAY) },
-    { sub: hex24(5005), email: 'yeni.yonetici@ornek.test', name: 'Davet', surname: 'Bekliyor', status: 'active', mfaEnabled: false, lastLoginAt: null, locked: false, createdAt: iso(t0 - 3 * DAY) },
+    { sub: hex24(5005), email: 'yeni.yonetici@ornek.test', name: 'Yeni', surname: 'Örnek', status: 'active', mfaEnabled: false, lastLoginAt: null, locked: false, createdAt: iso(t0 - 3 * DAY) },
     { sub: hex24(5006), email: 'aday@ornek.test', name: 'Davetli', surname: 'Yönetici', status: 'invited', mfaEnabled: false, lastLoginAt: null, locked: false, createdAt: iso(t0 - 1 * DAY) },
   ]
   let inviteUsed = false

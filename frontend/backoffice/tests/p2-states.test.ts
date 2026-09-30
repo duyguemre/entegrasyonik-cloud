@@ -191,3 +191,20 @@ describe('REAUTH_OPS ↔ backend REAUTH_RPCS', () => {
     expect(unused.sort()).toEqual(['IntegrationConfigService/setIntake', 'TenantDataService/cancelDeletion'])
   })
 })
+
+describe('sahte API hata kolu', () => {
+  it('failOps(önek) → 500 INTERNAL; null ile kapanır', async () => {
+    const server = new MockAdminServer()
+    const api = createAdminApi({ baseURL: '/admin-api', adapter: createMockAdapter({ server }) })
+    await api.call('BackofficeAuthService/login', { email: MOCK_ACCOUNTS.enrolled.email, password: MOCK_ACCOUNTS.password })
+    await api.call('BackofficeAuthService/verifyTotp', { code: '123456' })
+    server.failOps('BackofficeBillingService/')
+    const list = useCursorList((cursor) => api.call('BackofficeBillingService/listSubscriptions', { cursor }))
+    await list.reload()
+    expect(list.phase.value).toBe('error')
+    expect(list.error.value?.message).toBe('Beklenmeyen bir hata oluştu — Yeniden deneyin; sürerse istek kimliğiyle bildirin.')
+    server.failOps(null)
+    await list.reload()
+    expect(list.phase.value).toBe('ready')
+  })
+})
