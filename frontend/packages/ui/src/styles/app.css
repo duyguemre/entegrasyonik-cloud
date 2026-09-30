@@ -67,6 +67,9 @@
   );
   --ek-app-login-ink: var(--ek-color-chrome-text);
   --ek-app-media-plate: color-mix(in srgb, var(--ek-color-content-strong) 94%, var(--ek-color-surface));
+  /* K13 + FR2-DARK: marka hex'i değişmez; koyu kanal tonları (Pazarama/Ideasoft/Bizimhesap) koyu zeminde kaybolmasın
+   * diye kanal noktası/dolgulu çipin iç halkası açık mürekkepten (koyu yüzeyde ≥3:1 — tests/theme/channel-dark.test.ts). */
+  --ek-channel-ring: color-mix(in srgb, var(--ek-color-content-strong) 60%, transparent);
 }
 
 [data-density='compact'] {
