@@ -243,6 +243,13 @@ export default function useUser() {
     return undefined
   })
 
+  // C2.4: kullanıcı/mağaza kapsamlı yerel kayıtlar için KİMLİK (e-posta/ad değil). Mağaza: süper-yönetici
+  // seçimi (`activeClientId`) öncelikli, yoksa oturumun kendi `clientId`'si (profileDto beyaz listesi).
+  const getSessionScope = computed(() => ({
+    userId: userContext.value?._id as string | undefined,
+    tenantId: (activeClientId.value || userContext.value?.clientId) as string | number | undefined,
+  }))
+
 
   const checkAuthorization = (resource: string) => {
     if (userContext.value.owner == true) return false
@@ -299,6 +306,7 @@ export default function useUser() {
     confirmPasswordReset,
     isAuthenticated,
     getUsername,
+    getSessionScope,
     getProductStatistics,
     retrieveProductStatistics
   }

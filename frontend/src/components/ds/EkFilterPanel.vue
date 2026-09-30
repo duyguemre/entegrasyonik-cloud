@@ -9,6 +9,8 @@
   Enter bir alandayken Sorgula'yı tetikler (native form submit).
   Daraltılınca yalnız başlık kalır; aktif filtreler `EkActiveFilters` ile
   panelin altında görünür kalır.
+  C2.4 (geri uyumlu): `#head-actions` — başlığın sağında, panel daraltılmışken de
+  görünen küçük eylemler (ör. `EkSavedViews` "Görünümler" menüsü).
 -->
 <template>
   <section class="ek-filter" :class="{ 'is-collapsed': collapsed }" :aria-labelledby="titleId">
@@ -28,6 +30,7 @@
           <v-icon class="ek-filter__chevron" :class="{ 'is-collapsed': collapsed }" icon="mdi-chevron-up" aria-hidden="true" />
         </button>
       </component>
+      <div v-if="$slots['head-actions']" class="ek-filter__head-actions"><slot name="head-actions" /></div>
     </header>
     <form v-show="!collapsed" :id="bodyId" class="ek-filter__form" @submit.prevent="emit('submit')" @reset.prevent="emit('reset')">
       <div class="ek-filter__body">
@@ -85,6 +88,7 @@ const bodyId = `ek-filter-body-${uid}`
 
 .ek-filter__heading {
   flex: 1;
+  min-width: 0;
   margin: 0;
   font-size: inherit;
 }
@@ -103,6 +107,13 @@ const bodyId = `ek-filter-body-${uid}`
   font-family: inherit;
   text-align: left;
   cursor: pointer;
+}
+
+.ek-filter__head-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--ek-space-2);
 }
 
 .ek-filter__toggle:focus-visible {

@@ -15,6 +15,8 @@
   Durumlar AYRI: yükleniyor (iskelet) · hata (`error`, Tekrar dene) ·
   filtre sonucu boş (`chips` dolu → Filtreleri temizle) · hiç veri yok (`emptyTitle`).
   Hücreler: `#cell-<key>="{ row, item, value }"` doğrudan EkDataGrid'e iletilir.
+  C2.4 (geri uyumlu): `saved-views` verilirse filtre başlığında "Görünümler" menüsü
+  (EkSavedViews) açılır; uygulanan görünüm `apply-view` ile ekrana döner.
 -->
 <template>
   <div class="ek-list-screen">
@@ -63,6 +65,9 @@
           @reset="emit('filter-reset')"
         >
           <slot name="filters" />
+          <template v-if="savedViews" #head-actions>
+            <EkSavedViews v-bind="savedViews" @apply="(p: Record<string, any>) => emit('apply-view', p)" />
+          </template>
           <template v-if="$slots['filter-extra-actions']" #extra-actions><slot name="filter-extra-actions" /></template>
         </EkFilterPanel>
         <EkActiveFilters :filters="chips" @remove="(k: string) => emit('remove-chip', k)" @clear="emit('clear-filters')" />
@@ -137,6 +142,7 @@ import EkBulkBar from '../EkBulkBar.vue'
 import EkDataGrid, { type EkGridColumn, type EkGridSort } from '../EkDataGrid.vue'
 import EkPagerBar from '../EkPagerBar.vue'
 import EkButton from '../EkButton.vue'
+import EkSavedViews, { type EkSavedViewsConfig } from '../EkSavedViews.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -183,6 +189,8 @@ const props = withDefaults(
     filteredEmptyText?: string
     refreshable?: boolean
     refreshLabel?: string
+    /** C2.4 kayıtlı görünümler — verilmezse menü yok (geri uyumlu). */
+    savedViews?: EkSavedViewsConfig
   }>(),
   {
     noun: 'kayıt',
@@ -228,6 +236,8 @@ const emit = defineEmits<{
   'clear-filters': []
   refresh: []
   'row-click': [row: Record<string, any>]
+  /** Seçilen görünümün filtreleri (ekranın okuduğu şekilde; çoklu alanlar dizi). */
+  'apply-view': [params: Record<string, any>]
 }>()
 
 const slots = useSlots()

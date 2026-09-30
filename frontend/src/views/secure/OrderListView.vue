@@ -70,6 +70,7 @@
       search-placeholder="Sipariş No, Müşteri Adı veya Telefon Ara"
       :chips="activeChips"
       :filter-count="panelFilterCount"
+      :saved-views="savedViews"
       selectable
       v-model:selected="selectedOrders"
       :sort="gridSort"
@@ -89,6 +90,7 @@
       @filter-reset="resetFilters"
       @remove-chip="removeChip"
       @clear-filters="resetFilters"
+      @apply-view="applySavedView"
       @refresh="getOrders(true)"
     >
       <template #filters>
@@ -203,6 +205,7 @@ import EkListScreen from '@/components/ds/templates/EkListScreen.vue'
 import type { EkGridColumn, EkGridSort } from '@/components/ds/EkDataGrid.vue'
 import type { EkActiveFilterChip } from '@/components/ds/EkActiveFilters.vue'
 import type { EkMenuGroup } from '@/components/ds/EkMenuPanel.vue'
+import type { EkSavedViewsConfig } from '@/components/ds/EkSavedViews.vue'
 import EkButton from '@/components/ds/EkButton.vue'
 import EkContextMenu from '@/components/ds/EkContextMenu.vue'
 import EkChannelDot from '@/components/ds/EkChannelDot.vue'
@@ -366,6 +369,27 @@ const activeChips = computed<EkActiveFilterChip[]>(() => {
 
 const panelFilterCount = computed(() => (applied.value.integrationCodes.length ? 1 : 0) + (applied.value.internalStatuses.length ? 1 : 0)
   + (applied.value.allocationStates.length ? 1 : 0))
+
+// C2.4 kayıtlı görünümler: son sorgulanan filtreler verilir; görünüme YALNIZ screens.ts `urlParams`
+// alanları (durum, stok durumu) girer — arama metni/kanal süzülür (useSavedViews → pickUrlParams).
+const savedViews = computed<EkSavedViewsConfig>(() => ({
+  screenKey: 'OrderListView',
+  params: applied.value,
+  fields: [
+    { name: 'internalStatuses', label: 'Durum', format: (id) => statusOptions.value.find(o => o.id === id)?.title ?? id },
+    { name: 'allocationStates', label: 'Stok durumu', format: allocationTitle },
+  ],
+}))
+
+/** Görünüm = filtrelerin TAMAMI: görünümde olmayan alanlar (arama, kanal) temizlenir. */
+function applySavedView(params: Record<string, any>) {
+  const data = searchOrderForm.value.data
+  data.globalSearch = ''
+  data.integrationCodes = []
+  data.internalStatuses = Array.isArray(params.internalStatuses) ? [...params.internalStatuses] : []
+  data.allocationStates = allocationParam(params.allocationStates) ?? []
+  getOrders(true)
+}
 
 function removeChip(key: string) {
   const data = searchOrderForm.value.data
