@@ -231,11 +231,11 @@ const columns: EkGridColumn[] = [
   { key: 'customer', label: 'Müşteri' },
   // FR2-ORDERS 31: durum, kaydırmadan görünsün diye kimlik bilgisinin hemen ardında (chip + sade ipucu satırı).
   { key: 'internalStatus', label: 'Durum', sortable: true },
+  { key: 'total', label: 'Tutar', type: 'num', sortable: true },
   { key: 'items', label: 'İçerik' },
   // C1.1: kalem stok tahsis durumu (en önemli kalem durumu; getOrders items[].allocationState)
   { key: 'allocation', label: 'Stok' },
   { key: 'orderDate', label: 'Tarih', sortable: true },
-  { key: 'total', label: 'Tutar', type: 'num', sortable: true },
   { key: 'actions', label: 'İşlemler', align: 'end', hideLabel: true, pin: 'end' },
 ]
 

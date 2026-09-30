@@ -164,6 +164,26 @@ const isOpen = computed({
 </style>
 
 <style scoped>
+/* Dar ekran (fe-r2d): kimlik satırı tam genişlik; eylemler alt satıra sarılır (kimlik gizlenmez). */
+@media (max-width: 599px) {
+  .ek-detail-sheet__header {
+    flex-wrap: wrap;
+    row-gap: var(--ek-space-2);
+    padding: var(--ek-space-3) var(--ek-space-4);
+  }
+
+  .ek-detail-sheet__identity {
+    flex: 1 1 100%;
+    order: -1;
+  }
+
+  .ek-detail-sheet__header-actions {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
+
 /* Kaydırılan gövde klavyeyle odaklanabilir (axe scrollable-region-focusable); odak halkası iç kenarda. */
 .ek-detail-sheet__body:focus-visible {
   outline: none;
