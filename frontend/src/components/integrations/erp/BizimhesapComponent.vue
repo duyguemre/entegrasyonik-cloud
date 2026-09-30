@@ -11,7 +11,7 @@
           description="Bizimhesap panelindeki API erişim bilgilerinden alınır.">
           <v-text-field clearable v-model="editingClientIntegration.settings.key" label="Bizimhesap ID" />
           <v-text-field clearable v-model="editingClientIntegration.settings.secret" label="Api Key" />
-          <v-switch class="ek-span-full" hide-details inset color="primary"
+          <v-switch class="ek-span-full" hide-details color="primary"
             v-model="editingClientIntegration.settings.status" :label="$t('integrations.status')" />
         </EkFormSection>
 
@@ -36,9 +36,9 @@
         </EkFormSection>
 
         <EkFormSection title="Otomasyon ayarları" icon="mdi-cog-sync-outline">
-          <v-switch hide-details inset color="primary" v-model="editingClientIntegration.settings.isAutoBarcode"
+          <v-switch hide-details color="primary" v-model="editingClientIntegration.settings.isAutoBarcode"
             label="Gelen sipariş barkodu otomatik oluşturulsun" />
-          <v-switch hide-details inset color="primary" v-model="editingClientIntegration.settings.isAutoShipment"
+          <v-switch hide-details color="primary" v-model="editingClientIntegration.settings.isAutoShipment"
             label="Gelen sipariş otomatik kargoya gönderilsin" />
         </EkFormSection>
       </v-window-item>

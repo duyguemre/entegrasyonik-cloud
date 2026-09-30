@@ -31,7 +31,7 @@
           </div>
 
           <div class="controls-group">
-            <v-switch v-model="autoRefresh" hide-details color="success" inset density="compact">
+            <v-switch v-model="autoRefresh" hide-details density="compact">
               <template v-slot:label>
                 <span class="controls-label">Canlı izleme</span>
               </template>
@@ -352,7 +352,7 @@
             <v-spacer></v-spacer>
 
             <div class="controls-group">
-              <v-switch v-model="exportAutoRefresh" hide-details color="success" inset density="compact">
+              <v-switch v-model="exportAutoRefresh" hide-details density="compact">
                 <template v-slot:label>
                   <span class="controls-label">Canlı izleme</span>
                 </template>

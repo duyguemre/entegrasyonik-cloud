@@ -69,6 +69,8 @@ export const vuetifyDefaults = {
     color: 'primary',
     density: 'compact',
     hideDetails: 'auto',
+    // Aşama 6b (Standart 11): tek anahtar görünümü (hap/inset) — ekran başına `inset`/renk seçimi yok.
+    inset: true,
   },
   VRadioGroup: {
     color: 'primary',

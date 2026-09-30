@@ -51,7 +51,6 @@
             item-title="title"
             item-value="value"
             :label="$t('stockPolicy.primary.label')"
-            density="comfortable"
             :hint="primaryHint"
             persistent-hint
           />
@@ -85,7 +84,6 @@
                 v-model="drafts[channel.integrationCode].bufferUnits"
                 :label="$t('stockPolicy.fields.bufferUnits')"
                 inputmode="numeric"
-                density="comfortable"
                 :placeholder="$t('stockPolicy.fields.defaultPlaceholder', { value: bufferUnitsDefault(channel.integrationCode) })"
                 persistent-placeholder
                 :hint="isPrimaryDraft(channel.integrationCode) ? $t('stockPolicy.fields.bufferUnitsPrimaryHint') : $t('stockPolicy.fields.bufferUnitsHint')"
@@ -96,7 +94,6 @@
                 v-model="drafts[channel.integrationCode].bufferPercent"
                 :label="$t('stockPolicy.fields.bufferPercent')"
                 inputmode="decimal"
-                density="comfortable"
                 prefix="%"
                 :placeholder="$t('stockPolicy.fields.defaultPlaceholder', { value: policy.defaults.bufferPercent })"
                 persistent-placeholder
@@ -108,7 +105,6 @@
                 v-model="drafts[channel.integrationCode].graceMinutes"
                 :label="$t('stockPolicy.fields.graceMinutes')"
                 inputmode="numeric"
-                density="comfortable"
                 :suffix="$t('stockPolicy.fields.minutes')"
                 :placeholder="$t('stockPolicy.fields.defaultPlaceholder', { value: policy.defaults.graceMinutes })"
                 persistent-placeholder
@@ -123,7 +119,6 @@
                 item-title="title"
                 item-value="value"
                 :label="$t('stockPolicy.fields.autoCancel')"
-                density="comfortable"
                 :hint="$t('stockPolicy.fields.autoCancelHint')"
                 persistent-hint
               />

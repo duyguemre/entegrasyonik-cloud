@@ -15,7 +15,7 @@
     <div class="d-flex">
       <div class="legacy-definition-search">
         <div class="d-flex">
-          <v-text-field clearable prepend-icon="mdi-form-textbox" density="comfortable"
+          <v-text-field clearable prepend-icon="mdi-form-textbox"
             :label="$t('customers.customer.searchlabel')" variant="outlined"></v-text-field>
           <v-bottom-sheet>
             <template v-slot:activator="{ props }">
@@ -47,16 +47,16 @@
       <template v-slot:item.customer="{ item, index }">
         <div class="mt-2 mb-2">
           <div class="font-weight-medium">{{ item.customer.name.toLocaleUpperCase() }}</div>
-          <v-text-field class="mt-3" readonly :label="$t('customers.customer.email')" variant="plain" density="compact"
+          <v-text-field class="mt-3" readonly :label="$t('customers.customer.email')" density="compact"
             hide-details v-model="item.customer.email">
           </v-text-field>
-          <v-text-field class="mt-3" readonly :label="$t('customers.customer.phone')" variant="plain" density="compact"
+          <v-text-field class="mt-3" readonly :label="$t('customers.customer.phone')" density="compact"
             hide-details v-model="item.customer.phone">
           </v-text-field>
         </div>
       </template>
       <template v-slot:item.address="{ item, index }">
-        <v-text-field class="mt-3" readonly variant="plain" density="compact" hide-details v-model="item.address.desc">
+        <v-text-field class="mt-3" readonly density="compact" hide-details v-model="item.address.desc">
         </v-text-field>
         {{ item.address.county }} / {{ item.address.state }} / {{ item.address.country }}
         <div class="d-flex">
@@ -64,14 +64,14 @@
       </template>
       <template v-slot:item.customerType="{ item, index }">
         <div v-if="item.customerType.isCompany">
-          <v-text-field class="mt-3" readonly :label="$t('customers.customer.customerType.taxId')" variant="plain"
+          <v-text-field class="mt-3" readonly :label="$t('customers.customer.customerType.taxId')"
             density="compact" hide-details v-model="item.customerType.taxId">
           </v-text-field>
-          <v-text-field class="mt-3" readonly :label="$t('customers.customer.customerType.taxIssuer')" variant="plain"
+          <v-text-field class="mt-3" readonly :label="$t('customers.customer.customerType.taxIssuer')"
             density="compact" hide-details v-model="item.customerType.taxIssuer">
           </v-text-field>
         </div>
-        <v-text-field v-else class="mt-3" readonly :label="$t('customers.customer.customerType.tc')" variant="plain"
+        <v-text-field v-else class="mt-3" readonly :label="$t('customers.customer.customerType.tc')"
           density="compact" hide-details v-model="item.customerType.tc">
         </v-text-field>
 

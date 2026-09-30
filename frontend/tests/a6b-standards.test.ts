@@ -150,3 +150,24 @@ describe('Standart 2 / 3 / 5 — kart, toplu işlem çubuğu, sayfa içi sekme',
     expect(offenders).toEqual([])
   })
 })
+
+describe('Standart 11 — form elemanları tek ızgara', () => {
+  it('alanlarda yoğunluk/varyant sapması yok (comfortable, plain/underlined/filled/solo) ve anahtar tek görünüm', () => {
+    const offenders: string[] = []
+    for (const f of files.filter((x) => x.path.endsWith('.vue') && !x.path.startsWith('src/views/dev/'))) {
+      for (const m of f.text.matchAll(/<(v-text-field|v-select|v-autocomplete|v-combobox|v-textarea|EkDateField)\b[^>]*>/g)) {
+        if (/density="comfortable"|variant="(plain|underlined|filled|solo[\w-]*)"/.test(m[0])) offenders.push(`${f.path}: ${m[1]}`)
+      }
+      for (const m of f.text.matchAll(/<v-switch\b[^>]*>/g)) {
+        if (/\scolor="(?!primary")/.test(m[0])) offenders.push(`${f.path}: v-switch rengi`)
+      }
+    }
+    expect(offenders).toEqual([])
+  })
+
+  it('tek yükseklik ve ızgara hizası kuralları vuetify-overrides.css içinde', () => {
+    const css = readFileSync(join(SRC, 'design/vuetify-overrides.css'), 'utf8')
+    expect(css).toMatch(/--v-field-input-min-height: var\(--ek-control-h-lg\)/)
+    expect(css).toMatch(/grid-template-rows: auto auto;/)
+  })
+})

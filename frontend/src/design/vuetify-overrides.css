@@ -346,3 +346,53 @@
   text-transform: uppercase;
   color: var(--ek-color-content-muted);
 }
+
+/* ---- Aşama 6b (Standart 11): form elemanları — makine gibi tutarlı ızgara ----
+ * Tek yükseklik: tüm metin/seçim/tarih alanları `--ek-control-h-lg` (40px, compact); çok satırlı çip seçimi büyür
+ * ama tek satırda aynı hizada. Seçim denetimleri (checkbox/switch/radio) aynı 40px satır yüksekliğinde, dikey
+ * ortalı → form ızgarasında alanlarla aynı taban çizgisi. Yardım/hata metni alanın altında aynı girintiyle (caption). */
+.v-field.v-field--variant-outlined {
+  --v-field-input-min-height: var(--ek-control-h-lg);
+}
+
+.v-input--density-compact .v-field--variant-outlined .v-field__input {
+  min-height: var(--ek-control-h-lg);
+}
+
+.v-selection-control.v-selection-control--density-compact {
+  min-height: var(--ek-control-h-lg);
+}
+
+.v-switch.v-input--density-compact .v-input__control,
+.v-checkbox.v-input--density-compact .v-input__control {
+  min-height: var(--ek-control-h-lg);
+}
+
+.v-selection-control .v-label {
+  font-size: var(--ek-type-body-size);
+  line-height: var(--ek-type-body-line);
+  color: var(--ek-color-content-default);
+  opacity: 1;
+}
+
+.ek-form-grid > .v-switch,
+.ek-form-grid > .v-checkbox,
+.ek-form-grid > .v-radio-group {
+  align-self: start;
+}
+
+/* Tek satırlı metin alanı: önek/sonek + yer tutucu dar kolonda alt satıra kaymaz (alan yüksekliği sabit kalır). */
+.v-text-field:not(.v-textarea) .v-field__input {
+  flex-wrap: nowrap;
+}
+
+.v-text-field:not(.v-textarea) .v-field__input input {
+  min-width: 0;
+}
+
+/* Izgarada komşu alanın iki satırlık yardım metni bu alanı UZATMAZ: dış yerleşim `stretch` etse de v-input'un kendi
+ * ızgara satırları üste paketlenir (alan yüksekliği sabit, fazlalık altta boş kalır; genişlik/yerleşim değişmez). */
+.v-input.v-text-field:not(.v-textarea) {
+  grid-template-rows: auto auto;
+  align-content: start;
+}

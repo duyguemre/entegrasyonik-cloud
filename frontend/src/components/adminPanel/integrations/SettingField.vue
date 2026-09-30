@@ -42,7 +42,6 @@
       <v-text-field
         v-else-if="meta.type === 'int' || meta.type === 'duration'"
         type="number"
-        density="comfortable"
         hide-details="auto"
         :model-value="modelValue"
         :disabled="readonly"
@@ -53,7 +52,6 @@
       <v-textarea
         v-else-if="meta.type === 'stringList'"
         :model-value="stringListDisplay"
-        density="comfortable"
         hide-details="auto"
         readonly
         :aria-label="meta.label.tr"
@@ -61,7 +59,6 @@
       />
       <v-text-field
         v-else
-        density="comfortable"
         hide-details="auto"
         :model-value="modelValue"
         :disabled="readonly"

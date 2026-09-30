@@ -19,9 +19,9 @@
 
     <div class="ek-static-screen__form">
       <!-- Karakterizasyon: orijinalde `type` YOK (düz metin girişi) — DEĞİŞTİRİLMEDİ, bkz. dosya başı notu. -->
-      <v-text-field clearable prepend-inner-icon="mdi-lock-outline" density="comfortable"
+      <v-text-field clearable prepend-inner-icon="mdi-lock-outline"
         :label="$t('user.changePassword.password')" variant="outlined"></v-text-field>
-      <v-text-field clearable prepend-inner-icon="mdi-lock-check-outline" density="comfortable"
+      <v-text-field clearable prepend-inner-icon="mdi-lock-check-outline"
         :label="$t('user.changePassword.repassword')" variant="outlined"></v-text-field>
     </div>
   </div>

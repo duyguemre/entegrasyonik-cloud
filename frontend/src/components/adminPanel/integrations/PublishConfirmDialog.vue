@@ -64,7 +64,6 @@
       <v-text-field
         v-model="typedConfirmation"
         :label="`Hedef kodu: ${target}`"
-        density="comfortable"
         :disabled="loading"
       />
     </EkSection>

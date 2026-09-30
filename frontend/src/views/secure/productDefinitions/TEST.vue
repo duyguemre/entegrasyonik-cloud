@@ -3,7 +3,7 @@
     <div class="search-section">
       <v-row>
         <v-col class="pb-0" cols="4">
-          <v-text-field clearable prepend-inner-icon="mdi-form-textbox" density="comfortable"
+          <v-text-field clearable prepend-inner-icon="mdi-form-textbox"
             :label="$t('productDefinitions.product.searchlabel')" variant="outlined"></v-text-field>
         </v-col>
         <v-col class="pb-0 flex-grow-1 flow-shrink-0">

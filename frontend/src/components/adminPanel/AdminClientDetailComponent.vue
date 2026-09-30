@@ -205,7 +205,7 @@
                 <v-card flat border class="rounded-xl pa-5 border-subtle h-100">
                   <div class="d-flex align-center justify-space-between mb-4">
                     <div class="text-subtitle-2 font-weight-black color-slate-800 uppercase">ARŞİV DEPOLAMA (R2)</div>
-                    <v-switch v-model="form.archive.isActive" hide-details color="success" inset density="compact"
+                    <v-switch v-model="form.archive.isActive" hide-details density="compact"
                       class="premium-switch">
                       <template v-slot:label>
                         <span class="text-caption font-weight-black color-slate-500 mr-2">DURUM</span>
@@ -232,7 +232,7 @@
                 <v-card flat border class="rounded-xl pa-5 border-subtle h-100">
                   <div class="d-flex align-center justify-space-between mb-4">
                     <div class="text-subtitle-2 font-weight-black color-slate-800 uppercase">RESİM DEPOLAMA (R2)</div>
-                    <v-switch v-model="form.image.isActive" hide-details color="success" inset density="compact"
+                    <v-switch v-model="form.image.isActive" hide-details density="compact"
                       class="premium-switch">
                       <template v-slot:label>
                         <span class="text-caption font-weight-black color-slate-500 mr-2">DURUM</span>
@@ -272,7 +272,7 @@
                             <div class="text-micro font-weight-black color-slate-700 uppercase">{{ item.integrationCode }}</div>
                             <div class="text-micro font-weight-bold color-slate-400 uppercase">{{ item.type }}</div>
                           </div>
-                          <v-switch v-model="item.status" hide-details color="success" inset density="compact" class="premium-switch"
+                          <v-switch v-model="item.status" hide-details density="compact" class="premium-switch"
                             :aria-label="`${item.integrationCode} entegrasyonu etkin`"></v-switch>
                         </v-card>
                       </v-col>

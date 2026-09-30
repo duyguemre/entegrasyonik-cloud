@@ -17,7 +17,7 @@
             :label="$t('integrations.apikey')" />
           <v-text-field clearable v-model="editingClientIntegration.settings.APISECRET"
             :label="$t('integrations.apisecret')" />
-          <v-switch class="ek-span-full" hide-details inset color="primary"
+          <v-switch class="ek-span-full" hide-details color="primary"
             v-model="editingClientIntegration.settings.status" :label="$t('integrations.status')" />
         </EkFormSection>
       </v-window-item>
@@ -46,9 +46,9 @@
         </EkFormSection>
 
         <EkFormSection title="Otomasyon ve ek bilgiler" icon="mdi-cog-sync-outline">
-          <v-switch hide-details inset color="primary"
+          <v-switch hide-details color="primary"
             v-model="editingClientIntegration.settings.autoProcessOrders" :label="$t('integrations.autoProcessOrders')" />
-          <v-switch hide-details inset color="primary"
+          <v-switch hide-details color="primary"
             v-model="editingClientIntegration.settings.barcodeIntegration" :label="$t('integrations.barcodeIntegration')" />
           <v-textarea class="ek-span-full" rows="3" auto-grow
             v-model="editingClientIntegration.settings.constantProductDesc"

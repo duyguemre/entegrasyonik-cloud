@@ -37,7 +37,7 @@
           <v-window-item :value="1">
             <v-row>
               <v-col cols="12" md="7">
-                <v-text-field clearable maxlength="128" density="comfortable" v-model="settings.storeName"
+                <v-text-field clearable maxlength="128" v-model="settings.storeName"
                   variant="outlined" label="Mağaza Adı"
                   hint="Müşterilere ve e-postalarda görünecek resmi mağaza adınız" persistent-hint counter />
 
@@ -73,7 +73,7 @@
                     </v-menu>
                   </div>
 
-                  <v-text-field v-model="settings.brandColor" variant="outlined" density="comfortable"
+                  <v-text-field v-model="settings.brandColor" variant="outlined"
                     label="Seçili Renk Kodu" class="settingListView__color-code" prepend-inner-icon="mdi-pound">
                   </v-text-field>
                 </div>
@@ -81,8 +81,7 @@
                 <div class="settingListView__block">
                   <div class="settingListView__logo-head">
                     <p class="settingListView__block-title">Mağaza Logosu</p>
-                    <v-switch v-model="useLogoUrl" label="URL kullan" color="primary" density="compact" hide-details
-                      inset></v-switch>
+                    <v-switch v-model="useLogoUrl" label="URL kullan" color="primary" density="compact" hide-details></v-switch>
                   </div>
 
                   <!-- Upload Mode -->
@@ -111,7 +110,7 @@
 
                   <!-- URL Mode -->
                   <div v-else>
-                    <v-text-field clearable maxlength="512" density="comfortable" v-model="settings.logo"
+                    <v-text-field clearable maxlength="512" v-model="settings.logo"
                       variant="outlined" placeholder="https://example.com/logo.png"
                       prepend-inner-icon="mdi-link-variant"
                       hint="Doğrudan bir görsel bağlantısı yapıştırmak için kullanın." persistent-hint />
@@ -165,60 +164,60 @@
               </v-col>
 
               <v-col cols="12" sm="6">
-                <v-text-field clearable density="comfortable" v-model="settings.invoice.firstname" label="İsim"
+                <v-text-field clearable v-model="settings.invoice.firstname" label="İsim"
                   variant="outlined" />
               </v-col>
               <v-col cols="12" sm="6">
-                <v-text-field clearable density="comfortable" v-model="settings.invoice.lastname" label="Soyisim"
+                <v-text-field clearable v-model="settings.invoice.lastname" label="Soyisim"
                   variant="outlined" />
               </v-col>
 
               <v-col cols="12" sm="6">
-                <v-text-field clearable density="comfortable" v-model="settings.invoice.tckn" label="T.C. Kimlik No"
+                <v-text-field clearable v-model="settings.invoice.tckn" label="T.C. Kimlik No"
                   variant="outlined" maxlength="11" />
               </v-col>
               <v-col cols="12" sm="6">
-                <v-text-field clearable density="comfortable" v-model="settings.invoice.phone" label="Fatura Telefon"
+                <v-text-field clearable v-model="settings.invoice.phone" label="Fatura Telefon"
                   variant="outlined" />
               </v-col>
 
               <template v-if="settings.invoice.type === 1">
                 <v-col cols="12">
-                  <v-text-field clearable density="comfortable" v-model="settings.invoice.companyName"
+                  <v-text-field clearable v-model="settings.invoice.companyName"
                     label="Firma Ünvanı" variant="outlined" />
                 </v-col>
                 <v-col cols="12" sm="6">
-                  <v-text-field clearable density="comfortable" v-model="settings.invoice.taxOffice"
+                  <v-text-field clearable v-model="settings.invoice.taxOffice"
                     label="Vergi Dairesi" variant="outlined" />
                 </v-col>
                 <v-col cols="12" sm="6">
-                  <v-text-field clearable density="comfortable" v-model="settings.invoice.taxNumber" label="Vergi No"
+                  <v-text-field clearable v-model="settings.invoice.taxNumber" label="Vergi No"
                     variant="outlined" />
                 </v-col>
 
                 <!-- Yeni Yasal Alanlar -->
                 <v-col cols="12" sm="6">
-                  <v-text-field clearable density="comfortable" v-model="settings.mersisNo" label="MERSIS No"
+                  <v-text-field clearable v-model="settings.mersisNo" label="MERSIS No"
                     variant="outlined" hint="Hukuki belgelerde basılacaktır" persistent-hint />
                 </v-col>
                 <v-col cols="12" sm="6">
-                  <v-text-field clearable density="comfortable" v-model="settings.ticaretSicilNo"
+                  <v-text-field clearable v-model="settings.ticaretSicilNo"
                     label="Ticaret Sicil No" variant="outlined" hint="Hukuki belgelerde basılacaktır"
                     persistent-hint />
                 </v-col>
               </template>
 
               <v-col cols="12">
-                <v-textarea clearable density="comfortable" v-model="settings.invoice.address" label="Fatura Adresi"
+                <v-textarea clearable v-model="settings.invoice.address" label="Fatura Adresi"
                   variant="outlined" rows="3" />
               </v-col>
 
               <v-col cols="12" sm="6">
-                <v-select clearable :items="staticsStore.cities" density="comfortable" v-model="settings.invoice.city"
+                <v-select clearable :items="staticsStore.cities" v-model="settings.invoice.city"
                   label="İl" variant="outlined" />
               </v-col>
               <v-col cols="12" sm="6">
-                <v-text-field clearable density="comfortable" v-model="settings.invoice.district" label="İlçe"
+                <v-text-field clearable v-model="settings.invoice.district" label="İlçe"
                   variant="outlined" />
               </v-col>
             </v-row>
@@ -228,7 +227,7 @@
           <v-window-item :value="3">
             <v-row>
               <v-col cols="12" sm="6">
-                <v-text-field clearable density="comfortable" v-model.number="settings.shippingDuration"
+                <v-text-field clearable v-model.number="settings.shippingDuration"
                   variant="outlined" type="number">
                   <template #label>
                     Kargo Süresi (Gün) <span class="settingListView__label-hint">(Varsayılan: {{
@@ -238,7 +237,7 @@
               </v-col>
 
               <v-col cols="12" sm="6">
-                <v-text-field clearable density="comfortable" v-model.number="settings.desi" variant="outlined"
+                <v-text-field clearable v-model.number="settings.desi" variant="outlined"
                   type="number">
                   <template #label>
                     Varsayılan Desi (dm³) <span class="settingListView__label-hint">(Varsayılan: {{
@@ -248,12 +247,12 @@
               </v-col>
 
               <v-col cols="12" sm="6">
-                <v-select density="comfortable" v-model.number="settings.taxPercentage" item-value="_id"
+                <v-select v-model.number="settings.taxPercentage" item-value="_id"
                   :items="taxList" variant="outlined" label="Varsayılan KDV Oranı" />
               </v-col>
 
               <v-col cols="12" sm="6">
-                <v-text-field clearable density="comfortable" v-model.number="settings.warranty" variant="outlined"
+                <v-text-field clearable v-model.number="settings.warranty" variant="outlined"
                   type="number">
                   <template #label>
                     Garanti Süresi (Ay) <span class="settingListView__label-hint">(Varsayılan: {{
@@ -263,7 +262,7 @@
               </v-col>
 
               <v-col cols="12" sm="6">
-                <v-text-field clearable density="comfortable" v-model.number="settings.maxPurchaseQuantity"
+                <v-text-field clearable v-model.number="settings.maxPurchaseQuantity"
                   variant="outlined" type="number">
                   <template #label>
                     Maksimum Satış Adedi <span class="settingListView__label-hint">(Varsayılan: {{
@@ -273,7 +272,7 @@
               </v-col>
 
               <v-col cols="12" sm="6">
-                <v-select density="comfortable" v-model="settings.timezone" :items="timezones" variant="outlined"
+                <v-select v-model="settings.timezone" :items="timezones" variant="outlined"
                   label="Zaman Dilimi" hint="Sipariş senkronizasyonu bu zaman dilimine göre yapılacaktır"
                   persistent-hint />
               </v-col>
@@ -294,12 +293,12 @@
           <v-window-item :value="4">
             <v-row>
               <v-col cols="12" sm="6">
-                <v-text-field clearable density="comfortable" v-model="settings.alertEmail"
+                <v-text-field clearable v-model="settings.alertEmail"
                   label="Hata Bildirim E-postası" variant="outlined" prepend-inner-icon="mdi-email-alert-outline"
                   hint="Entegrasyon hataları bu adrese gönderilecektir" persistent-hint />
               </v-col>
               <v-col cols="12" sm="6">
-                <v-text-field clearable density="comfortable" v-model="settings.supportPhone"
+                <v-text-field clearable v-model="settings.supportPhone"
                   label="Müşteri Destek Telefonu" variant="outlined" prepend-inner-icon="mdi-headphones"
                   hint="Müşterilerinizin göreceği iletişim numarası" persistent-hint />
               </v-col>

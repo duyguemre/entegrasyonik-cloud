@@ -84,7 +84,6 @@
               :label="$t('accountSecurity.password.current')"
               type="password"
               autocomplete="current-password"
-              density="comfortable"
               :error-messages="fieldErrors.current"
               @update:model-value="fieldErrors.current = ''"
             />
@@ -93,7 +92,6 @@
               :label="$t('accountSecurity.password.new')"
               type="password"
               autocomplete="new-password"
-              density="comfortable"
               aria-describedby="account-security-password-hints"
               :error-messages="fieldErrors.new"
               @update:model-value="fieldErrors.new = ''"
@@ -115,7 +113,6 @@
               :label="$t('accountSecurity.password.confirm')"
               type="password"
               autocomplete="new-password"
-              density="comfortable"
               :error-messages="fieldErrors.confirm"
               @update:model-value="fieldErrors.confirm = ''"
             />

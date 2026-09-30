@@ -33,11 +33,11 @@
       @refresh="refreshAll"
     >
       <template #filters-extra>
-        <v-select v-model="filters.integrationCode" :items="integrationOptions" :label="t('integrationCompliance.filters.integration')" clearable density="comfortable" hide-details class="complianceView__filter" />
-        <v-select v-model="filters.category" :items="categoryOptions" :label="t('integrationCompliance.filters.category')" clearable density="comfortable" hide-details class="complianceView__filter" />
-        <v-select v-model="filters.kind" :items="kindOptions" :label="t('integrationCompliance.filters.kind')" clearable density="comfortable" hide-details class="complianceView__filter" />
-        <v-select v-model="filters.severity" :items="severityOptions" :label="t('integrationCompliance.filters.severity')" clearable density="comfortable" hide-details class="complianceView__filter" />
-        <v-select v-model="filters.status" :items="statusOptions" :label="t('integrationCompliance.filters.status')" clearable density="comfortable" hide-details class="complianceView__filter" />
+        <v-select v-model="filters.integrationCode" :items="integrationOptions" :label="t('integrationCompliance.filters.integration')" clearable hide-details class="complianceView__filter" />
+        <v-select v-model="filters.category" :items="categoryOptions" :label="t('integrationCompliance.filters.category')" clearable hide-details class="complianceView__filter" />
+        <v-select v-model="filters.kind" :items="kindOptions" :label="t('integrationCompliance.filters.kind')" clearable hide-details class="complianceView__filter" />
+        <v-select v-model="filters.severity" :items="severityOptions" :label="t('integrationCompliance.filters.severity')" clearable hide-details class="complianceView__filter" />
+        <v-select v-model="filters.status" :items="statusOptions" :label="t('integrationCompliance.filters.status')" clearable hide-details class="complianceView__filter" />
       </template>
 
       <template #loading>

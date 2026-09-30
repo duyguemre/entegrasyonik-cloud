@@ -27,29 +27,29 @@
 
       <div class="ek-static-screen__grid">
         <div class="ek-static-screen__col">
-          <v-text-field clearable prepend-inner-icon="mdi-account-outline" density="comfortable"
+          <v-text-field clearable prepend-inner-icon="mdi-account-outline"
             :label="$t('user.invoiceInfo.name')" variant="outlined"></v-text-field>
-          <v-text-field clearable prepend-inner-icon="mdi-account-outline" density="comfortable"
+          <v-text-field clearable prepend-inner-icon="mdi-account-outline"
             :label="$t('user.invoiceInfo.surname')" variant="outlined"></v-text-field>
-          <v-text-field clearable prepend-inner-icon="mdi-card-account-details-outline" density="comfortable"
+          <v-text-field clearable prepend-inner-icon="mdi-card-account-details-outline"
             :label="$t('user.invoiceInfo.tc')" variant="outlined"></v-text-field>
-          <v-text-field clearable prepend-inner-icon="mdi-domain" density="comfortable"
+          <v-text-field clearable prepend-inner-icon="mdi-domain"
             :label="$t('user.invoiceInfo.company')" variant="outlined"></v-text-field>
           <div class="ek-static-screen__row">
-            <v-text-field clearable prepend-inner-icon="mdi-bank-outline" density="comfortable"
+            <v-text-field clearable prepend-inner-icon="mdi-bank-outline"
               :label="$t('user.invoiceInfo.taxissuer')" variant="outlined"></v-text-field>
-            <v-text-field clearable prepend-inner-icon="mdi-pound" density="comfortable"
+            <v-text-field clearable prepend-inner-icon="mdi-pound"
               :label="$t('user.invoiceInfo.taxid')" variant="outlined"></v-text-field>
           </div>
         </div>
 
         <div class="ek-static-screen__col">
-          <v-textarea rows="3" clearable prepend-inner-icon="mdi-map-marker-outline" density="comfortable"
+          <v-textarea rows="3" clearable prepend-inner-icon="mdi-map-marker-outline"
             :label="$t('user.invoiceInfo.address')" variant="outlined"></v-textarea>
           <div class="ek-static-screen__row">
-            <v-select clearable prepend-inner-icon="mdi-city-variant-outline" density="comfortable"
+            <v-select clearable prepend-inner-icon="mdi-city-variant-outline"
               :label="$t('user.invoiceInfo.state')" variant="outlined"></v-select>
-            <v-select clearable prepend-inner-icon="mdi-map-marker-radius-outline" density="comfortable"
+            <v-select clearable prepend-inner-icon="mdi-map-marker-radius-outline"
               :label="$t('user.invoiceInfo.district')" variant="outlined"></v-select>
           </div>
         </div>

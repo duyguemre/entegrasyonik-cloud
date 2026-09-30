@@ -41,7 +41,7 @@
                     <v-checkbox v-model="batchProcessForm.saleStatus" label="Satış Durumu" class="ml-8"></v-checkbox>
 
                     <v-switch :disabled="!batchProcessForm.saleStatus" v-model="batchProcessForm.onsale"
-                      class="ml-0 mb-6" color="content-muted" hide-details density="compact">
+                      class="ml-0 mb-6" hide-details density="compact">
                       <template #label>
                         <div class="bp-panel__switch-label font-weight-normal mt-0">
                           Satışa

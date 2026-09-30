@@ -26,7 +26,7 @@
     />
 
     <div class="ek-printout__toolbar">
-      <v-select clearable prepend-icon="mdi-form-textbox" density="comfortable"
+      <v-select clearable prepend-icon="mdi-form-textbox"
         :label="$t('printouts.printout.searchlabel')" variant="outlined" hide-details
         class="ek-printout__select ek-printout__select--type"></v-select>
 
@@ -40,11 +40,11 @@
         </v-btn>
       </div>
 
-      <v-select clearable density="comfortable" :label="$t('printouts.printout.fontsize')" variant="outlined"
+      <v-select clearable :label="$t('printouts.printout.fontsize')" variant="outlined"
         hide-details class="ek-printout__select"></v-select>
-      <v-select clearable density="comfortable" :label="$t('printouts.printout.fontfamily')" variant="outlined"
+      <v-select clearable :label="$t('printouts.printout.fontfamily')" variant="outlined"
         hide-details class="ek-printout__select"></v-select>
-      <v-select clearable density="comfortable" :label="$t('printouts.printout.copy')" variant="outlined"
+      <v-select clearable :label="$t('printouts.printout.copy')" variant="outlined"
         hide-details class="ek-printout__select"></v-select>
 
       <div class="ek-printout__actions">
@@ -65,9 +65,9 @@
         <div v-if="selectedDragElement" class="ek-printout__panel">
           <div class="ek-printout__panel-title">{{ selectedDragElement.target.innerHTML }}</div>
           <div class="ek-printout__panel-fields">
-            <v-text-field clearable density="comfortable" :label="$t('printouts.printout.width')"
+            <v-text-field clearable :label="$t('printouts.printout.width')"
               variant="outlined" hide-details></v-text-field>
-            <v-text-field clearable density="comfortable" :label="$t('printouts.printout.height')"
+            <v-text-field clearable :label="$t('printouts.printout.height')"
               variant="outlined" hide-details></v-text-field>
           </div>
           <v-btn prepend-icon="mdi-trash-can-outline" @click="selectedDragElement.target.remove()" variant="outlined"

@@ -32,7 +32,6 @@
       <div class="settings-body__toolbar">
         <v-text-field
           v-model="searchQuery"
-          density="comfortable"
           hide-details
           clearable
           prepend-inner-icon="mdi-magnify"
@@ -119,7 +118,7 @@
           <p class="settings-body__rollback-title">Sürüm {{ rollbackTarget }}'e dönülecek</p>
           <p class="settings-body__rollback-note">Bu, seçilen sürümün ayar görüntüsünü YENİ bir sürüm olarak yayınlar (geçmiş silinmez). Gerekçe ve hedef kodu onayı zorunludur.</p>
           <v-textarea v-model="rollbackReason" label="Gerekçe" rows="2" counter="500" maxlength="500" />
-          <v-text-field v-model="rollbackTypedConfirmation" :label="`Hedef kodu: ${target}`" density="comfortable" />
+          <v-text-field v-model="rollbackTypedConfirmation" :label="`Hedef kodu: ${target}`" />
           <p v-if="rollbackError" class="settings-body__conflict" role="alert">{{ rollbackError }}</p>
           <div class="settings-body__rollback-actions">
             <v-btn variant="outlined" :disabled="rollbackLoading" @click="rollbackTarget = null">Vazgeç</v-btn>
