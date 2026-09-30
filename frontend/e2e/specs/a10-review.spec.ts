@@ -99,7 +99,8 @@ const cases: Array<{ name: string; run: (page: Page) => Promise<void> }> = [
     run: async (p) => {
       if (WIDTH <= 480) return
       await openMany(p, ['OrderListView'])
-      await p.locator('.collapse-btn').click()
+      // Tablet (< 1280) zaten ray ile açılır; masaüstünde "Daralt".
+      if (!(await p.locator('.soft-rail').isVisible().catch(() => false))) await p.locator('.collapse-btn').click()
       await settle(p, 700)
       await p.screenshot({ path: file('menu-dar'), clip: { x: 0, y: 0, width: 360, height: HEIGHT } })
     },

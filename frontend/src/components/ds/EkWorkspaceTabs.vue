@@ -370,7 +370,10 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   border-bottom: 0;
   border-radius: var(--ek-radius-tab) var(--ek-radius-tab) 0 0;
   color: var(--ek-color-content-muted);
-  transition: var(--ek-transition-colors);
+  /* Etkinleşme/pasifleşme ANINDA: zemin + kenarlık + içbükey köşeler aynı karede değişir (zemin solarken köşelerin
+     anında belirmesi renk sıçraması üretiyordu). Sakin geçişi gösterge çubuğu ve içerik girişi taşır; renk geçişi
+     yalnız hover'a girerken. */
+  transition: color var(--ek-duration-fast) var(--ek-easing-standard);
 }
 
 /* Pasif sekmeler arasındaki ince ayraç (etkin sekmenin iki yanında gizlenir). */
@@ -392,6 +395,10 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
 .ek-tab:hover + .ek-tab::before,
 .ek-tab.is-hover + .ek-tab::before {
   opacity: 0;
+}
+
+.ek-tab:not(.is-active):hover {
+  transition: var(--ek-transition-colors);
 }
 
 .ek-tab:hover,
@@ -554,6 +561,11 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .ek-tab,
+  .ek-tab:not(.is-active):hover {
+    transition: none;
+  }
+
   .ek-tab.is-active::after {
     animation: none;
   }
