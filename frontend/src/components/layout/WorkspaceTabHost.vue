@@ -17,9 +17,14 @@
 <script setup lang="ts">
 import { computed, toRef } from 'vue'
 import { provideTabScope } from '@/composables/useTabScope'
+import { providePageContext, resolveModuleIcon } from '@/composables/usePageContext'
+import { useMenuStore } from '@/stores/site/menu'
 
 const props = defineProps<{ code: string; active: boolean }>()
 const scope = provideTabScope(props.code, toRef(props, 'active'))
+// A7: breadcrumb kökünün modül ikonu menü kaydından (EkPageBar mağazaya bağlanmaz).
+const menuStore: any = useMenuStore()
+providePageContext(() => resolveModuleIcon(menuStore?.getMenu?.(), props.code))
 
 // Ham (ds dışı) overlay'ler de sekme sınırında kalır; odak tuzağını Vuetify'ın GENEL tuzağı değil kap sağlar.
 const contained = computed(() => ({ attach: scope.hostSelector, contained: true, retainFocus: false, scrollStrategy: 'none' }))
