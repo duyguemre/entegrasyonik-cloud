@@ -54,3 +54,12 @@ export const CHANNEL: Record<string, string> = {
   ideasoft: 'Ideasoft',
   bizimhesap: 'Bizimhesap',
 }
+
+/** Sağlık durumu → rozet (genel bakış kartları ve bölümler; BO_UI_PATTERNS §5). */
+export type HealthState = 'ok' | 'degraded' | 'fail' | 'unknown'
+export const HEALTH: Record<HealthState, { label: string; tone: StatusTone; icon: string }> = {
+  ok: { label: 'Sağlıklı', tone: 'success', icon: 'mdi-check-circle' },
+  degraded: { label: 'Kısmi bozulma', tone: 'warning', icon: 'mdi-alert' },
+  fail: { label: 'Erişilemiyor', tone: 'danger', icon: 'mdi-close-circle' },
+  unknown: { label: 'Bilinmiyor', tone: 'neutral', icon: 'mdi-help-circle-outline' },
+}

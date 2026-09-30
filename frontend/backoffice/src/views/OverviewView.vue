@@ -1,376 +1,791 @@
 <template>
   <div class="bo-page">
-    <div class="bo-page__head">
-      <div>
-        <h1 class="bo-page__title">Genel bakış</h1>
-        <p class="bo-page__lede">
-          Sistem durumu ve dikkat isteyen işler.
-          <span v-if="checkedAt" class="bo-muted">Son kontrol {{ formatClock(checkedAt) }}.</span>
-        </p>
-      </div>
-      <div class="bo-page__actions">
+    <BoPageHeader :updated-at="checkedAt">
+      <template #meta>
+        <span class="bo-inline-note"><v-icon icon="mdi-autorenew" aria-hidden="true" />Sekme açıkken 30 sn'de bir yenilenir</span>
+      </template>
+      <template #actions>
         <EkButton tone="secondary" icon="mdi-refresh" :loading="loading" @click="load">Yenile</EkButton>
+      </template>
+    </BoPageHeader>
+
+    <!-- Genel durum şeridi: tek bakışta "her şey yolunda mı?" -->
+    <div v-if="health" class="bo-ov-status" :class="`is-${overall.tone}`" role="status" data-testid="overall-status">
+      <v-icon :icon="overall.icon" aria-hidden="true" />
+      <div class="bo-ov-status__text">
+        <strong>{{ overall.title }}</strong>
+        <span v-if="overall.items.length">{{ overall.items.join(' · ') }}</span>
       </div>
     </div>
+    <BoPanelState v-else-if="healthError" state="error" :error="healthError" error-text="Sistem durumu okunamadı" :retrying="loading" @retry="load" />
 
-    <EkAlert v-if="degradedCount" tone="warning" live :title="`${degradedCount} bağımlılık sorunlu`" text="Etkilenen bileşen kırmızı çerçeveyle işaretli. Ayrıntı için Log kontrol merkezinde 'Platform' kategorisine bakın." />
-
-    <section class="bo-grid bo-overview__tiles" aria-label="Sistem durumu">
-      <StatusTile label="API" icon="mdi-api" :state="apiState" :value="apiState === 'ok' ? 'Yanıt veriyor' : '—'" :detail="apiDetail" source="GET /health" />
-      <StatusTile label="MongoDB" icon="mdi-database-outline" :state="mongoState" :value="mongoState === 'ok' ? 'Bağlı' : mongoState === 'fail' ? 'Bağlantı yok' : '—'" detail="Uygulama veritabanı ping ≤ 1 sn" source="GET /ready · mongo" />
-      <StatusTile label="Redis" icon="mdi-memory" :state="redisState" :value="redisValue" :detail="redisDetail" source="GET /ready · redis" />
-      <StatusTile label="Kuyruklar" icon="mdi-tray-full" :state="queueState" :value="queueValue" :detail="queueDetail" source="AdminService/getSystemHealth" />
+    <section class="bo-ov-kpis" aria-label="Temel göstergeler">
+      <HealthKpi
+        label="Bağımlılıklar"
+        icon="mdi-connection"
+        :state="kpi.dependencies.state"
+        :value="kpi.dependencies.value"
+        :detail="kpi.dependencies.detail"
+        :degraded-reason="degradedReason('dependencies')"
+        @retry="load"
+      />
+      <HealthKpi
+        label="İstek hızı"
+        icon="mdi-speedometer"
+        :state="kpi.rate.state"
+        :value="kpi.rate.value"
+        unit="/dk"
+        :detail="kpi.rate.detail"
+        :degraded-reason="degradedReason('red')"
+        @retry="load"
+      />
+      <HealthKpi
+        label="Hata oranı (5xx)"
+        icon="mdi-alert-octagon-outline"
+        :state="kpi.errors.state"
+        :value="kpi.errors.value"
+        :detail="kpi.errors.detail"
+        :chip-label="kpi.errors.chip"
+        help="Sunucu hatası dönen isteklerin tüm isteklere oranı. %1 altı olağan."
+        :degraded-reason="degradedReason('red')"
+        @retry="load"
+      />
+      <HealthKpi
+        label="Yanıt süresi (p95)"
+        icon="mdi-timer-outline"
+        :state="kpi.latency.state"
+        :value="kpi.latency.value"
+        :unit="kpi.latency.unit"
+        :detail="kpi.latency.detail"
+        :chip-label="kpi.latency.chip"
+        help="p95: isteklerin %95'i bu sürenin altında tamamlandı."
+        :degraded-reason="degradedReason('red')"
+        @retry="load"
+      />
+      <HealthKpi
+        label="Kuyruk birikimi"
+        icon="mdi-tray-full"
+        :state="kpi.queues.state"
+        :value="kpi.queues.value"
+        :detail="kpi.queues.detail"
+        :chip-label="kpi.queues.chip"
+        :degraded-reason="degradedReason('queues')"
+        @retry="load"
+      />
+      <HealthKpi
+        label="Açık sorunlar"
+        icon="mdi-alert-decagram-outline"
+        :state="kpi.issues.state"
+        :value="kpi.issues.value"
+        :detail="kpi.issues.detail"
+        :chip-label="kpi.issues.chip"
+        :degraded-reason="degradedReason('issues')"
+        @retry="load"
+      />
     </section>
 
-    <div class="bo-grid bo-overview__row">
-      <EkCard title="Açık sorunlar" subtitle="Son 24 saat · parmak izine göre gruplu" icon="mdi-alert-decagram-outline" icon-tone="error">
-        <template v-if="issues">
-          <div class="bo-overview__kpis">
-            <div><strong class="ek-num">{{ openIssues.length }}</strong><span>açık grup</span></div>
-            <div><strong class="ek-num">{{ newIssues }}</strong><span>yeni (24 sa)</span></div>
-            <div><strong class="ek-num">{{ affectedTenants }}</strong><span>müşteri · en geniş sorun</span></div>
-          </div>
-          <ul class="bo-overview__issues">
-            <li v-for="issue in openIssues.slice(0, 5)" :key="issue.fp">
-              <RouterLink :to="{ path: '/loglar', query: { fp: issue.fp } }" class="bo-overview__issue">
-                <EkStatusChip :tone="LEVEL[issue.level].tone" :label="LEVEL[issue.level].label" :icon="LEVEL[issue.level].icon" />
-                <span class="bo-overview__issue-title">{{ issue.title }}</span>
-                <span class="bo-overview__issue-meta ek-num">{{ issue.count }} · {{ formatRelative(issue.lastSeen) }}</span>
-              </RouterLink>
-            </li>
-          </ul>
-          <RouterLink to="/loglar" class="bo-overview__more">Log kontrol merkezine git <v-icon icon="mdi-arrow-right" aria-hidden="true" /></RouterLink>
-        </template>
-        <EkSkeleton v-else type="detail" :rows="4" />
+    <div class="bo-ov-row">
+      <EkCard title="Dikkat isteyen sorunlar" subtitle="Açık ve incelenen gruplar · önce ciddiyet, sonra son görülme" icon="mdi-alert-decagram-outline" icon-tone="error" :heading-level="2">
+        <BoPanelState v-if="issuesState !== 'ready'" :state="issuesState" :rows="5" empty-title="Açık sorun yok" empty-text="Son 24 saatte açık ya da incelenen hata grubu bulunmuyor." empty-icon="mdi-check-circle-outline" @retry="load" />
+        <ul v-else class="bo-ov-issues">
+          <li v-for="issue in openIssues.slice(0, 6)" :key="issue.fp">
+            <RouterLink :to="{ path: '/loglar', query: { fp: issue.fp } }" class="bo-ov-issue">
+              <EkStatusChip :tone="LEVEL[issue.level].tone" :label="LEVEL[issue.level].label" :icon="LEVEL[issue.level].icon" />
+              <span class="bo-ov-issue__main">
+                <span class="bo-ov-issue__title">{{ issue.title }}</span>
+                <span class="bo-ov-issue__meta">
+                  {{ CATEGORY[issue.category].label }}<template v-if="issue.integ"> · {{ CHANNEL[issue.integ] ?? issue.integ }}</template>
+                  · <span class="ek-num">{{ formatNumber(issue.count) }}</span> olay
+                  · <span class="ek-num">{{ issue.tenantCount }}</span> müşteri
+                </span>
+              </span>
+              <span class="bo-ov-issue__time"><EkRelativeTime :value="issue.lastSeen" /></span>
+            </RouterLink>
+          </li>
+        </ul>
+        <RouterLink to="/loglar" class="bo-link-more">Tüm sorunlar <v-icon icon="mdi-arrow-right" aria-hidden="true" /></RouterLink>
       </EkCard>
 
-      <EkCard title="Altyapı" subtitle="Kuyruk birikimi ve çalışan podlar" icon="mdi-server-network" icon-tone="info">
-        <template v-if="system">
-          <table class="bo-overview__queues">
-            <caption class="ek-sr-only">Kuyruk sayımları</caption>
-            <thead><tr><th scope="col">Kuyruk</th><th scope="col">Bekleyen</th><th scope="col">İşlenen</th></tr></thead>
+      <EkCard title="Bağımlılıklar ve podlar" subtitle="Hazırlık denetimi ve son 15 dk içinde iş yapan podlar" icon="mdi-server-network" icon-tone="info" :heading-level="2">
+        <BoPanelState v-if="!health" :state="healthError ? 'error' : 'loading'" :error="healthError" :rows="4" @retry="load" />
+        <template v-else>
+          <BoPanelState v-if="health.dependencies.status === 'degraded'" state="degraded" degraded-title="Bağımlılık durumu okunamadı" :degraded-reason="health.dependencies.error" @retry="load" />
+          <ul v-else class="bo-ov-deps">
+            <li v-for="d in deps" :key="d.label">
+              <span class="bo-ov-deps__label">{{ d.label }}</span>
+              <span class="bo-ov-deps__hint">{{ d.hint }}</span>
+              <EkStatusChip :tone="HEALTH[d.state].tone" :label="d.stateLabel ?? HEALTH[d.state].label" dot />
+            </li>
+          </ul>
+          <h3 class="bo-ov-sub">Podlar</h3>
+          <BoPanelState v-if="health.pods.status === 'degraded'" state="degraded" degraded-title="Pod listesi okunamadı" :degraded-reason="health.pods.error" @retry="load" />
+          <BoPanelState v-else-if="!health.pods.items.length" state="empty" empty-title="İş yapan pod yok" empty-text="Son 15 dakikada kira tutan ya da zamanlayıcı çalıştıran pod görülmedi." />
+          <div v-else class="bo-table-wrap bo-table-wrap--flat" tabindex="0" role="region" aria-label="Podlar tablosu">
+            <table class="bo-table" data-density="compact">
+              <caption class="ek-sr-only">Podlar</caption>
+              <thead>
+                <tr><th scope="col">Pod</th><th scope="col" class="is-num">Kira</th><th scope="col" class="is-num">Çalışan iş</th><th scope="col" class="is-num">Görüldü</th></tr>
+              </thead>
+              <tbody>
+                <tr v-for="p in health.pods.items" :key="p.pod">
+                  <th scope="row" class="is-id">
+                    <span class="bo-ov-pod"><span class="bo-ov-pod__dot" aria-hidden="true"></span>{{ p.pod }}</span>
+                    <span v-if="p.self" class="bo-ov-pod__self">bu pod</span>
+                  </th>
+                  <td class="is-num ek-num">{{ p.activeLeases }}</td>
+                  <td class="is-num ek-num">{{ p.runningJobs }}</td>
+                  <td class="is-num is-muted"><EkRelativeTime :value="p.lastSeenAt" /></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </template>
+      </EkCard>
+    </div>
+
+    <div class="bo-ov-row bo-ov-row--even">
+      <EkCard title="Kuyruklar" subtitle="BullMQ kuyrukları · DLQ: elle inceleme bekleyen kalıcı hatalar" icon="mdi-tray-full" :heading-level="2">
+        <BoPanelState v-if="!health" :state="healthError ? 'error' : 'loading'" :error="healthError" skeleton="table" :rows="2" @retry="load" />
+        <BoPanelState v-else-if="health.queues.status === 'degraded'" state="degraded" degraded-title="Kuyruk sayaçları okunamadı" :degraded-reason="health.queues.error" @retry="load" />
+        <div v-else class="bo-table-wrap bo-table-wrap--flat" tabindex="0" role="region" aria-label="Kuyruk sayaçları tablosu">
+          <table class="bo-table" data-density="compact">
+            <caption class="ek-sr-only">Kuyruk sayaçları</caption>
+            <thead>
+              <tr>
+                <th scope="col">Kuyruk</th><th scope="col" class="is-num">Bekleyen</th><th scope="col" class="is-num">İşleniyor</th>
+                <th scope="col" class="is-num">Başarısız</th><th scope="col" class="is-num">DLQ</th>
+              </tr>
+            </thead>
             <tbody>
-              <tr v-for="(q, key) in system.infrastructure.queues" :key="key">
-                <th scope="row">{{ QUEUE_LABEL[key] }}</th>
-                <td class="ek-num">{{ q.wait }}</td>
-                <td class="ek-num">{{ q.active }}</td>
+              <tr v-for="q in health.queues.items" :key="q.name">
+                <th scope="row">
+                  <span class="bo-ov-queue">{{ QUEUE_LABEL[q.name] ?? q.name }}</span>
+                  <span class="bo-ov-queue__code is-id">{{ q.name }}</span>
+                </th>
+                <template v-if="q.available">
+                  <td class="is-num ek-num">{{ formatNumber(q.backlog) }}</td>
+                  <td class="is-num ek-num">{{ formatNumber(q.active) }}</td>
+                  <td class="is-num ek-num" :class="{ 'bo-ov-bad': (q.failed ?? 0) > 0 }">{{ formatNumber(q.failed) }}</td>
+                </template>
+                <td v-else colspan="3" class="is-muted"><v-icon icon="mdi-lan-disconnect" size="14" aria-hidden="true" /> Redis hazır değil — sayaçlar okunamıyor</td>
+                <td class="is-num ek-num" :class="{ 'bo-ov-bad': (q.dlqPending ?? 0) > 0 }">{{ formatNumber(q.dlqPending) }}</td>
               </tr>
             </tbody>
           </table>
-          <p class="bo-overview__pods-label">Aktif podlar ({{ system.infrastructure.activePods.length }})</p>
-          <ul class="bo-overview__pods">
-            <li v-for="pod in system.infrastructure.activePods" :key="pod"><span class="bo-overview__pod-dot" aria-hidden="true"></span><code>{{ pod }}</code></li>
-          </ul>
-        </template>
-        <EkSkeleton v-else type="detail" :rows="4" />
+        </div>
+        <RouterLink to="/motor" class="bo-link-more">Motor ve kuyruklar <v-icon icon="mdi-arrow-right" aria-hidden="true" /></RouterLink>
+      </EkCard>
+
+      <EkCard title="Veri alımı" subtitle="Kanal başına yeni iş kabulü (intake) — süreç anlık görüntüsü" icon="mdi-valve" :heading-level="2">
+        <BoPanelState v-if="!health" :state="healthError ? 'error' : 'loading'" :error="healthError" :rows="2" @retry="load" />
+        <BoPanelState v-else-if="health.intake.status === 'degraded'" state="degraded" degraded-title="Alım durumu okunamadı" :degraded-reason="health.intake.error" @retry="load" />
+        <div v-else-if="health.intake.allOpen" class="bo-ov-intake-ok">
+          <v-icon icon="mdi-check-circle" aria-hidden="true" />
+          <span>Tüm kanallar yeni iş kabul ediyor.</span>
+        </div>
+        <ul v-else class="bo-ov-deps">
+          <li v-for="r in health.intake.restricted" :key="r.target">
+            <span class="bo-ov-deps__label">{{ intakeTarget(r.target) }}</span>
+            <span class="bo-ov-deps__hint">{{ INTAKE[r.intake]?.hint ?? r.intake }}</span>
+            <EkStatusChip :tone="INTAKE[r.intake]?.tone ?? 'neutral'" :label="INTAKE[r.intake]?.label ?? r.intake" dot />
+          </li>
+        </ul>
+        <p class="bo-ov-foot">Kısıtlı olmayan kanallar normal çalışır. Değişiklik: Entegrasyonlar › dayanıklılık (gerekçe + kimlik doğrulama).</p>
       </EkCard>
     </div>
 
-    <EkCard title="Son yönetim işlemleri" subtitle="backoffice.* ve impersonation olayları" icon="mdi-clipboard-text-clock-outline">
-      <ul v-if="audit" class="bo-overview__audit">
+    <EkCard title="Son yönetim işlemleri" subtitle="Yönetim yazmaları ve geçici erişimler · son 7 gün" icon="mdi-clipboard-text-clock-outline" :heading-level="2">
+      <BoPanelState v-if="auditState !== 'ready'" :state="auditState" skeleton="table" :rows="4" empty-title="Son 7 günde yönetim işlemi yok" @retry="load" />
+      <ul v-else class="bo-ov-audit">
         <li v-for="a in audit" :key="a.id">
-          <span class="bo-overview__audit-time ek-num">{{ formatRelative(a.at) }}</span>
-          <code class="bo-overview__audit-event">{{ a.event }}</code>
-          <span class="bo-overview__audit-op">{{ a.meta?.op }}</span>
-          <span v-if="a.meta?.reason" class="bo-overview__audit-reason">“{{ a.meta.reason }}”</span>
+          <span class="bo-ov-audit__time"><EkRelativeTime :value="a.at" /></span>
+          <span class="bo-ov-audit__main">
+            <span class="bo-ov-audit__op">{{ a.meta?.op ?? a.event }}</span>
+            <span v-if="a.meta?.reason" class="bo-ov-audit__reason">“{{ a.meta.reason }}”</span>
+          </span>
+          <code class="bo-ov-audit__event">{{ a.event }}</code>
+          <RouterLink v-if="a.reqId" class="bo-ov-audit__open" :to="{ path: '/denetim', query: { reqId: a.reqId } }" :aria-label="`Denetim kaydını aç: ${a.meta?.op ?? a.event}`">
+            <v-icon icon="mdi-arrow-top-right" aria-hidden="true" />
+          </RouterLink>
         </li>
       </ul>
-      <EkSkeleton v-else type="table" :rows="4" />
-      <RouterLink to="/denetim" class="bo-overview__more">Tüm denetim kayıtları <v-icon icon="mdi-arrow-right" aria-hidden="true" /></RouterLink>
+      <RouterLink to="/denetim" class="bo-link-more">Tüm denetim kayıtları <v-icon icon="mdi-arrow-right" aria-hidden="true" /></RouterLink>
     </EkCard>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { EkAlert, EkButton, EkCard, EkSkeleton, EkStatusChip } from '@entegrasyonik/ui/components'
-import StatusTile, { type TileState } from '@bo/components/StatusTile.vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { EkButton, EkCard, EkRelativeTime, EkStatusChip, type StatusTone } from '@entegrasyonik/ui/components'
+import { formatNumber, formatPercent } from '@entegrasyonik/ui/format'
+import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import BoPanelState, { type PanelState } from '@bo/components/shell/BoPanelState.vue'
+import HealthKpi, { type KpiState } from '@bo/components/HealthKpi.vue'
 import { api } from '@bo/api'
-import type { AuditRecord, HealthResponse, IssueGroup, ReadyResponse, SystemHealthResponse } from '@bo/api/contract'
-import type { ProbeResult } from '@bo/api/client'
-import { LEVEL } from '@bo/utils/labels'
-import { formatClock, formatRelative } from '@bo/utils/format'
+import type { AuditRecord, IssueGroup, OverviewHealthResponse, OverviewSectionKey } from '@bo/api/contract'
+import { CATEGORY, CHANNEL, HEALTH, LEVEL, type HealthState } from '@bo/utils/labels'
 
-const QUEUE_LABEL: Record<string, string> = { orderSync: 'Sipariş eşitleme (BullMQ)', export: 'Dışa aktarım', import: 'İçe aktarım' }
+const QUEUE_LABEL: Record<string, string> = { 'order-sync-queue': 'Sipariş eşitleme' }
+const INTAKE: Record<string, { label: string; tone: StatusTone; hint: string }> = {
+  open: { label: 'Açık', tone: 'success', hint: 'Yeni iş kabul ediliyor' },
+  drain: { label: 'Boşaltılıyor', tone: 'warning', hint: 'Yeni iş alınmıyor, kuyruktakiler bitiriliyor' },
+  closed: { label: 'Kapalı', tone: 'danger', hint: 'Yeni iş alınmıyor' },
+  paused: { label: 'Duraklatıldı', tone: 'danger', hint: 'İşler bekletiliyor' },
+}
+const REFRESH_MS = 30_000
 
 const loading = ref(false)
 const checkedAt = ref<number>()
-const health = ref<ProbeResult<HealthResponse>>()
-const ready = ref<ProbeResult<ReadyResponse>>()
-const system = ref<SystemHealthResponse | null>(null)
-const systemFailed = ref(false)
+const health = ref<OverviewHealthResponse | null>(null)
+const healthError = ref<unknown>(null)
 const issues = ref<IssueGroup[] | null>(null)
+const issuesFailed = ref(false)
 const audit = ref<AuditRecord[] | null>(null)
+const auditFailed = ref(false)
 
 async function load() {
+  if (loading.value) return
   loading.value = true
-  const [h, r, s, i, a] = await Promise.allSettled([
-    api.probe<HealthResponse>('/health'),
-    api.probe<ReadyResponse>('/ready'),
-    api.call('AdminService/getSystemHealth', { timeFrame: 'DAY' }),
+  const [h, i, a] = await Promise.allSettled([
+    api.call('BackofficeOverviewService/getHealth'),
     api.call('LogCenterService/getIssueGroups', { range: '24h', sort: 'lastSeen' }),
     api.call('BackofficeAuditService/search', { range: '7d', surface: 'backoffice', limit: 50 }),
   ])
-  health.value = h.status === 'fulfilled' ? h.value : undefined
-  ready.value = r.status === 'fulfilled' ? r.value : undefined
-  system.value = s.status === 'fulfilled' ? s.value : null
-  systemFailed.value = s.status === 'rejected'
-  issues.value = i.status === 'fulfilled' ? i.value.items : []
-  audit.value = a.status === 'fulfilled' ? a.value.items.filter((x) => /^(backoffice\.|impersonation\.)/.test(x.event)).slice(0, 6) : []
+  // Yenileme başarısızsa son iyi görüntü korunur; ilk yüklemede hata durumu gösterilir.
+  if (h.status === 'fulfilled') {
+    health.value = h.value
+    healthError.value = null
+  } else if (!health.value) healthError.value = h.reason
+  issuesFailed.value = i.status === 'rejected'
+  if (i.status === 'fulfilled') issues.value = i.value.items
+  auditFailed.value = a.status === 'rejected'
+  if (a.status === 'fulfilled') audit.value = a.value.items.filter((x) => /^(backoffice\.|impersonation\.)/.test(x.event) && x.event !== 'backoffice.reauth').slice(0, 6)
   checkedAt.value = Date.now()
   loading.value = false
 }
-onMounted(load)
 
-const readyBody = computed(() => (ready.value?.ok ? ready.value.data : undefined))
-const apiState = computed<TileState>(() => (!health.value ? 'loading' : health.value.ok ? 'ok' : 'fail'))
-const apiDetail = computed(() => (health.value && !health.value.ok ? health.value.error.message : 'Canlılık denetimi (bağımlılıklardan bağımsız)'))
-const mongoState = computed<TileState>(() => (!ready.value ? 'loading' : !readyBody.value ? 'unknown' : readyBody.value.mongo === 'ok' ? 'ok' : 'fail'))
-const redisState = computed<TileState>(() => {
-  if (!ready.value) return 'loading'
-  const r = readyBody.value?.redis
-  return r === 'ok' ? 'ok' : r === 'fail' ? 'fail' : 'unknown'
+let timer: ReturnType<typeof setInterval> | undefined
+onMounted(() => {
+  void load()
+  timer = setInterval(() => {
+    if (document.visibilityState === 'visible') void load()
+  }, REFRESH_MS)
 })
-const redisValue = computed(() => {
-  const info = system.value?.infrastructure.redis
-  if (redisState.value !== 'ok' || !info) return redisState.value === 'fail' ? 'Bağlantı yok' : '—'
-  return `${info.usedMemory} bellek`
+onBeforeUnmount(() => clearInterval(timer))
+
+function degradedReason(key: OverviewSectionKey) {
+  const s = health.value?.[key]
+  return s && s.status === 'degraded' ? s.error : undefined
+}
+
+type Kpi = { state: KpiState; value?: string; unit?: string; detail?: string; chip?: string }
+const LOADING: Kpi = { state: 'loading' }
+
+const kpi = computed(() => {
+  const h = health.value
+  if (!h) {
+    const s: Kpi = healthError.value ? { state: 'unknown', value: '—', detail: 'Okunamadı' } : LOADING
+    return { dependencies: s, rate: s, errors: s, latency: s, queues: s, issues: s }
+  }
+  const deg: Kpi = { state: 'section-degraded' }
+
+  const d = h.dependencies
+  const dependencies: Kpi =
+    d.status === 'degraded'
+      ? deg
+      : {
+          state: d.mongo === 'fail' || d.redis === 'fail' ? 'fail' : d.ready ? 'ok' : 'degraded',
+          value: d.ready ? 'Hazır' : 'Hazır değil',
+          detail: `MongoDB ${d.mongo === 'ok' ? 'bağlı' : 'bağlantı yok'} · Redis ${d.redis === 'ok' ? 'bağlı' : d.redis === 'n/a' ? 'denetlenmiyor' : 'bağlantı yok'}`,
+        }
+
+  const r = h.red
+  let rate: Kpi = deg
+  let errors: Kpi = deg
+  let latency: Kpi = deg
+  if (r.status === 'ok') {
+    rate = { state: 'ok', value: formatNumber(Math.round(r.requestsPerMinute)), detail: `Son ${r.windowMinutes} dk · ${formatNumber(r.requests)} istek` }
+    const er = r.errorRate
+    errors = {
+      state: er === null ? 'unknown' : er < 0.01 ? 'ok' : er < 0.05 ? 'degraded' : 'fail',
+      value: er === null ? '—' : formatPercent(er),
+      detail: `${formatNumber(r.errors5xx)} hata · ${formatNumber(r.byStatusClass['4xx'] ?? 0)} istemci hatası (4xx)`,
+      chip: er === null ? undefined : er < 0.01 ? 'Olağan' : er < 0.05 ? 'Eşik üstü' : 'Kritik',
+    }
+    const p95 = r.durationP95Ms
+    latency = r.durationP95Overflow
+      ? { state: 'fail', value: '> 60', unit: 'sn', detail: 'Histogram üst sınırı aşıldı' }
+      : {
+          state: p95 === null ? 'unknown' : p95 < 1000 ? 'ok' : p95 < 3000 ? 'degraded' : 'fail',
+          value: p95 === null ? '—' : formatNumber(p95),
+          unit: p95 === null ? undefined : 'ms',
+          detail: r.durationAvgMs === null ? 'Henüz ölçüm yok' : `Ortalama ${formatNumber(r.durationAvgMs)} ms`,
+          chip: p95 === null ? undefined : p95 < 1000 ? 'Olağan' : p95 < 3000 ? 'Yavaş' : 'Kritik',
+        }
+  }
+
+  const q = h.queues
+  let queues: Kpi = deg
+  if (q.status === 'ok') {
+    const down = q.items.filter((x) => !x.available)
+    const backlog = q.items.reduce((n, x) => n + (x.backlog ?? 0), 0)
+    const failed = q.items.reduce((n, x) => n + (x.failed ?? 0), 0)
+    const dlq = q.items.reduce((n, x) => n + (x.dlqPending ?? 0), 0)
+    queues = down.length
+      ? { state: 'fail', value: '—', detail: 'Redis hazır değil — sayaçlar okunamıyor', chip: 'Erişilemiyor' }
+      : {
+          state: backlog > 100 ? 'degraded' : 'ok',
+          value: formatNumber(backlog),
+          detail: `${formatNumber(failed)} başarısız · ${formatNumber(dlq)} DLQ bekliyor`,
+          chip: backlog > 100 ? 'Eşik üstü' : undefined,
+        }
+  }
+
+  const i = h.issues
+  const issuesKpi: Kpi =
+    i.status === 'degraded'
+      ? deg
+      : {
+          state: i.newLast24h > 0 ? 'degraded' : 'ok',
+          value: formatNumber(i.open),
+          detail: i.newLast24h ? `${i.newLast24h} yeni sorun (son 24 sa)` : 'Son 24 saatte yeni sorun yok',
+          chip: i.newLast24h ? 'Yeni sorun' : 'Yeni yok',
+        }
+
+  return { dependencies, rate, errors, latency, queues, issues: issuesKpi }
 })
-const redisDetail = computed(() => {
-  if (readyBody.value?.redis === 'n/a') return 'Web rolünde Redis denetlenmez'
-  const info = system.value?.infrastructure.redis
-  return info && redisState.value === 'ok' ? `Sürüm ${info.version} · ${info.connectedClients} istemci · ${Math.round(Number(info.uptime) / 86400)} gün açık` : 'Sipariş kuyruğu ve kilitler Redis gerektirir'
+
+const SECTION_LABEL: Record<OverviewSectionKey, string> = {
+  dependencies: 'Bağımlılıklar',
+  pods: 'Podlar',
+  red: 'İstek sağlığı',
+  queues: 'Kuyruklar',
+  intake: 'Veri alımı',
+  issues: 'Sorun sayıları',
+}
+
+const overall = computed(() => {
+  const h = health.value!
+  const items: string[] = []
+  if (h.dependencies.status === 'ok') {
+    if (h.dependencies.mongo === 'fail') items.push('MongoDB erişilemiyor')
+    if (h.dependencies.redis === 'fail') items.push('Redis erişilemiyor — sipariş kuyruğu durdu')
+  }
+  for (const k of h.degradedSections) items.push(`${SECTION_LABEL[k]} okunamadı`)
+  for (const [key, label] of [['errors', 'Hata oranı yüksek'], ['latency', 'Yanıt süresi yavaş']] as const) {
+    const s = kpi.value[key].state
+    if (s === 'degraded' || s === 'fail') items.push(label)
+  }
+  const bad = h.status === 'degraded' || items.length > 0
+  return bad
+    ? { tone: 'warning', icon: 'mdi-alert', title: h.dependencies.status === 'ok' && !h.dependencies.ready ? 'Kısmi bozulma' : 'Dikkat gerektiren durum var', items }
+    : { tone: 'success', icon: 'mdi-check-circle', title: 'Tüm sistemler çalışıyor', items: ['Bağımlılıklar hazır, hata oranı ve yanıt süresi olağan'] }
 })
-const queueTotals = computed(() => {
-  const q = system.value?.infrastructure.queues
-  if (!q) return null
-  return Object.values(q).reduce((acc, v) => ({ wait: acc.wait + v.wait, active: acc.active + v.active }), { wait: 0, active: 0 })
+
+const deps = computed<Array<{ label: string; hint: string; state: HealthState; stateLabel?: string }>>(() => {
+  const d = health.value?.dependencies
+  if (!d || d.status !== 'ok') return []
+  return [
+    { label: 'MongoDB', hint: 'Uygulama veritabanı', state: d.mongo === 'ok' ? 'ok' : 'fail' },
+    { label: 'Redis', hint: 'Sipariş kuyruğu ve kilitler', state: d.redis === 'ok' ? 'ok' : d.redis === 'n/a' ? 'unknown' : 'fail', stateLabel: d.redis === 'n/a' ? 'Web rolünde yok' : undefined },
+    { label: 'Hazırlık (/ready)', hint: `Süreç rolü: ${d.role === 'all' ? 'web + işçi' : d.role === 'web' ? 'web' : 'işçi'}`, state: d.ready ? 'ok' : 'degraded', stateLabel: d.ready ? 'Hazır' : 'Hazır değil' },
+  ]
 })
-const queueState = computed<TileState>(() => (systemFailed.value ? 'unknown' : !queueTotals.value ? 'loading' : queueTotals.value.wait > 100 ? 'degraded' : 'ok'))
-const queueValue = computed(() => (queueTotals.value ? `${queueTotals.value.wait} bekleyen` : '—'))
-const queueDetail = computed(() => (queueTotals.value ? `${queueTotals.value.active} iş işleniyor · eşik 100 bekleyen` : systemFailed.value ? 'Sistem sağlığı okunamadı' : ''))
-const degradedCount = computed(() => [apiState.value, mongoState.value, redisState.value, queueState.value].filter((s) => s === 'fail' || s === 'degraded').length)
+
+function intakeTarget(target: string) {
+  const [kind, code] = target.split(':')
+  return kind === 'platform' ? (CHANNEL[code] ?? code) : target
+}
 
 const SEVERITY = { fatal: 0, error: 1, warn: 2, info: 3 } as const
-// Önce ciddiyet, sonra son görülme: panoda ilk satır her zaman en ağır sorun.
 const openIssues = computed(() =>
   (issues.value ?? [])
     .filter((i) => i.status === 'open' || i.status === 'acknowledged')
     .sort((a, b) => SEVERITY[a.level] - SEVERITY[b.level] || Date.parse(b.lastSeen) - Date.parse(a.lastSeen)),
 )
-const newIssues = computed(() => openIssues.value.filter((i) => i.isNew).length)
-const affectedTenants = computed(() => Math.max(0, ...openIssues.value.map((i) => i.tenantCount)))
+const issuesState = computed<PanelState>(() => (issues.value === null ? (issuesFailed.value ? 'error' : 'loading') : openIssues.value.length ? 'ready' : 'empty'))
+const auditState = computed<PanelState>(() => (audit.value === null ? (auditFailed.value ? 'error' : 'loading') : audit.value.length ? 'ready' : 'empty'))
 </script>
 
 <style scoped>
-.bo-overview__tiles {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+.bo-ov-status {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-3);
+  padding: var(--ek-space-3) var(--ek-space-4);
+  border: 1px solid var(--ek-color-success-border);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-success-subtle);
+  color: var(--ek-color-success-emphasis);
 }
 
-.bo-overview__row {
+.bo-ov-status.is-warning {
+  border-color: var(--ek-color-warning-border);
+  background: var(--ek-color-warning-subtle);
+  color: var(--ek-color-warning-emphasis);
+}
+
+.bo-ov-status > .v-icon {
+  font-size: var(--ek-icon-lg);
+}
+
+.bo-ov-status__text {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--ek-space-1) var(--ek-space-3);
+  min-width: 0;
+  font-size: var(--ek-type-body-size);
+}
+
+.bo-ov-status__text strong {
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.bo-ov-status__text span {
+  color: var(--ek-color-content-default);
+  font-size: var(--ek-type-label-size);
+}
+
+
+.bo-ov-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ek-space-4);
+}
+
+.bo-ov-row {
+  display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--ek-space-4);
   align-items: start;
 }
 
-.bo-overview__kpis {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--ek-space-3);
-  margin-bottom: var(--ek-space-4);
+.bo-ov-row--even {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
 }
 
-.bo-overview__kpis div {
-  display: flex;
-  flex-direction: column;
-  padding: var(--ek-space-3);
-  border-radius: var(--ek-radius-lg);
-  background: var(--ek-color-surface-muted);
-}
-
-.bo-overview__kpis strong {
-  color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-metric-size);
-  line-height: 1.1;
-  font-weight: var(--ek-type-metric-weight);
-}
-
-.bo-overview__kpis span {
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
-}
-
-.bo-overview__issues,
-.bo-overview__pods,
-.bo-overview__audit {
+.bo-ov-issues,
+.bo-ov-deps,
+.bo-ov-audit {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.bo-overview__issue {
+.bo-ov-issue {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: 76px minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--ek-space-3);
-  padding: var(--ek-space-2) var(--ek-space-2);
+  padding: var(--ek-space-2);
   border-radius: var(--ek-radius-md);
   color: var(--ek-color-content-default);
   text-decoration: none;
+  transition: var(--ek-transition-colors);
 }
 
-.bo-overview__issue:hover,
-.bo-overview__issue:focus-visible {
+.bo-ov-issues li + li {
+  border-top: 1px solid var(--ek-color-border-subtle);
+}
+
+.bo-ov-issue:hover,
+.bo-ov-issue:focus-visible {
   background: var(--ek-color-surface-muted);
   outline: none;
 }
 
-.bo-overview__issue:focus-visible {
+.bo-ov-issue:focus-visible {
   box-shadow: inset 0 0 0 2px var(--ek-color-border-focus);
 }
 
-.bo-overview__issue-title {
+.bo-ov-issue__main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.bo-ov-issue__title {
   overflow: hidden;
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-body-size);
+  font-weight: var(--ek-font-weight-medium);
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: var(--ek-type-body-size);
 }
 
-.bo-overview__issue-meta {
+.bo-ov-issue__meta,
+.bo-ov-issue__time {
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
+}
+
+.bo-ov-issue__time {
   white-space: nowrap;
 }
 
-.bo-overview__more {
+.bo-link-more {
   display: inline-flex;
   align-items: center;
   gap: var(--ek-space-1);
   margin-top: var(--ek-space-3);
+  border-radius: var(--ek-radius-sm);
   color: var(--ek-color-action-emphasis);
   font-size: var(--ek-type-label-size);
-  font-weight: var(--ek-font-weight-medium);
+  font-weight: var(--ek-font-weight-semibold);
   text-decoration: none;
 }
 
-.bo-overview__more:hover {
-  text-decoration: underline;
+.bo-link-more .v-icon {
+  font-size: var(--ek-icon-sm);
+  transition: transform var(--ek-duration-fast) var(--ek-easing-standard);
 }
 
-.bo-overview__queues {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--ek-type-body-size);
+.bo-link-more:hover .v-icon {
+  transform: translateX(2px);
 }
 
-.bo-overview__queues th,
-.bo-overview__queues td {
+.bo-link-more:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+}
+
+.bo-ov-deps li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: 'label chip' 'hint chip';
+  align-items: center;
+  column-gap: var(--ek-space-3);
   padding: var(--ek-space-2) 0;
-  border-bottom: 1px solid var(--ek-color-border-subtle);
-  text-align: right;
 }
 
-.bo-overview__queues th[scope='row'],
-.bo-overview__queues thead th:first-child {
-  text-align: left;
-  font-weight: var(--ek-font-weight-regular);
+.bo-ov-deps li + li {
+  border-top: 1px solid var(--ek-color-border-subtle);
 }
 
-.bo-overview__queues thead th {
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
+.bo-ov-deps__label {
+  grid-area: label;
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-body-size);
   font-weight: var(--ek-font-weight-medium);
 }
 
-.bo-overview__pods-label {
+.bo-ov-deps__hint {
+  grid-area: hint;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+}
+
+.bo-ov-deps .ek-status-chip {
+  grid-area: chip;
+}
+
+.bo-ov-sub {
   margin: var(--ek-space-4) 0 var(--ek-space-2);
   color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
-  font-weight: var(--ek-font-weight-medium);
+  font-size: var(--ek-type-micro-size);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
 }
 
-.bo-overview__pods {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ek-space-2);
+.bo-table-wrap--flat {
+  border-radius: var(--ek-radius-lg);
+  box-shadow: none;
 }
 
-.bo-overview__pods li {
+.bo-table-wrap--flat .bo-table thead th,
+.bo-table-wrap--flat .bo-table tbody td,
+.bo-table-wrap--flat .bo-table tbody th {
+  padding-inline: var(--ek-space-3);
+}
+
+.bo-ov-pod {
   display: inline-flex;
   align-items: center;
   gap: var(--ek-space-2);
-  padding: var(--ek-space-1) var(--ek-space-2);
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-md);
-  font-size: var(--ek-type-caption-size);
 }
 
-.bo-overview__pod-dot {
+.bo-ov-pod__dot {
   width: 8px;
   height: 8px;
   border-radius: var(--ek-radius-full);
   background: var(--ek-color-success);
 }
 
-.bo-overview__audit li {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--ek-space-1) var(--ek-space-3);
-  padding: var(--ek-space-2) 0;
-  border-bottom: 1px solid var(--ek-color-border-subtle);
-  font-size: var(--ek-type-body-size);
+.bo-ov-pod__self {
+  margin-left: var(--ek-space-2);
+  color: var(--ek-color-content-muted);
+  font-family: var(--ek-font-sans);
+  font-size: var(--ek-type-caption-size);
 }
 
-.bo-overview__audit-time {
-  min-width: 88px;
+.bo-ov-queue {
+  display: block;
+  color: var(--ek-color-content-strong);
+  font-weight: var(--ek-font-weight-medium);
+}
+
+.bo-ov-queue__code {
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
 }
 
-.bo-overview__audit-event {
-  color: var(--ek-color-content-strong);
-  font-family: var(--ek-font-mono);
-  font-size: var(--ek-type-label-size);
+.bo-ov-bad {
+  color: var(--ek-color-error-emphasis);
+  font-weight: var(--ek-font-weight-semibold);
 }
 
-.bo-overview__audit-op {
-  color: var(--ek-color-content-default);
+.bo-ov-intake-ok {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  color: var(--ek-color-success-emphasis);
+  font-size: var(--ek-type-body-size);
 }
 
-.bo-overview__audit-reason {
+.bo-ov-foot {
+  margin: var(--ek-space-3) 0 0;
   color: var(--ek-color-content-muted);
-  font-style: italic;
+  font-size: var(--ek-type-caption-size);
 }
 
-@media (max-width: 1279px) {
-  .bo-overview__tiles {
+.bo-ov-audit li {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) auto 28px;
+  align-items: center;
+  gap: var(--ek-space-3);
+  min-height: 44px;
+  padding: var(--ek-space-1) 0;
+  border-bottom: 1px solid var(--ek-color-border-subtle);
+  font-size: var(--ek-type-body-size);
+}
+
+.bo-ov-audit__time {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+}
+
+.bo-ov-audit__main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--ek-space-3);
+  min-width: 0;
+}
+
+.bo-ov-audit__op {
+  color: var(--ek-color-content-strong);
+  font-weight: var(--ek-font-weight-medium);
+}
+
+.bo-ov-audit__reason {
+  overflow: hidden;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-label-size);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bo-ov-audit__event {
+  padding: 2px var(--ek-space-2);
+  border-radius: var(--ek-radius-sm);
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-content-default);
+  font-family: var(--ek-font-mono);
+  font-size: var(--ek-type-caption-size);
+}
+
+.bo-ov-audit__open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--ek-radius-md);
+  color: var(--ek-color-content-muted);
+}
+
+.bo-ov-audit__open:hover {
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-content-strong);
+}
+
+.bo-ov-audit__open:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+}
+
+@media (min-width: 1680px) {
+  .bo-ov-kpis {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1099px) {
+  .bo-ov-row,
+  .bo-ov-row--even {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767px) {
+  .bo-ov-kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--ek-space-3);
   }
 
-  .bo-overview__row {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 599px) {
-  .bo-overview__tiles {
-    grid-template-columns: 1fr;
+  .bo-ov-status {
+    align-items: flex-start;
   }
 
-  .bo-overview__issue {
-    grid-template-columns: auto minmax(0, 1fr);
+
+  .bo-ov-issue {
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
-  .bo-overview__issue-title {
+  .bo-ov-issue > .ek-status-chip {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .bo-ov-issue__title {
     white-space: normal;
   }
 
-  .bo-overview__issue-meta {
-    grid-column: 2;
+  .bo-ov-audit li {
+    grid-template-columns: minmax(0, 1fr) 28px;
+    grid-template-areas: 'time open' 'main open' 'event open';
+    gap: var(--ek-space-1) var(--ek-space-3);
+    padding: var(--ek-space-2) 0;
   }
 
-  .bo-overview__kpis {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .bo-ov-audit__time {
+    grid-area: time;
+  }
+
+  .bo-ov-audit__main {
+    grid-area: main;
+  }
+
+  .bo-ov-audit__event {
+    grid-area: event;
+    justify-self: start;
+  }
+
+  .bo-ov-audit__open {
+    grid-area: open;
+  }
+
+  .bo-ov-audit__reason {
+    white-space: normal;
+  }
+}
+
+@media (max-width: 420px) {
+  .bo-ov-kpis {
+    grid-template-columns: 1fr;
   }
 }
 </style>

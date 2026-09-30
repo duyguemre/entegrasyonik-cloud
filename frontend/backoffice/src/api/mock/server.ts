@@ -17,6 +17,8 @@ import type {
   LogLevel,
   LogRange,
   LogSource,
+  OverviewHealthResponse,
+  OverviewSectionKey,
   SearchAuditRequest,
   TraceEvent,
 } from '../contract'
@@ -67,6 +69,7 @@ export class MockAdminServer {
   private readonly appOrigin: string
   private state: SessionState
   private degraded = false
+  private readonly degradedSections = new Map<OverviewSectionKey, 'timeout' | 'error'>()
   private readonly t0: number
   private readonly clients
   private readonly logs
@@ -94,6 +97,11 @@ export class MockAdminServer {
   }
   setDegraded(value: boolean) {
     this.degraded = value
+  }
+  /** Genel bakışta tek bölümü düşür (ör. `degradeSection('red')`); `degradeSection(null)` hepsini düzeltir. */
+  degradeSection(key: OverviewSectionKey | null, error: 'timeout' | 'error' = 'timeout') {
+    if (key === null) this.degradedSections.clear()
+    else this.degradedSections.set(key, error)
   }
 
   // ------------------------------------------------------------ giriş noktası
@@ -180,6 +188,8 @@ export class MockAdminServer {
             queues: { orderSync: { wait: 3, active: 1 }, export: { wait: 42, active: 2 }, import: { wait: 0, active: 1 } },
           },
         }
+      case 'BackofficeOverviewService/getHealth':
+        return this.getHealth()
       case 'BackofficeTenantService/getLifecycle': {
         const index = this.clients.findIndex((c) => c.clientId === Number(body.tid))
         if (index < 0) throw new MockHttpError(404, 'NOT_FOUND', 'Kayıt bulunamadı.')
@@ -209,6 +219,56 @@ export class MockAdminServer {
         return this.searchAudit(body as unknown as SearchAuditRequest)
     }
     throw new MockHttpError(404, 'NOT_FOUND', `Bilinmeyen operasyon: ${op}`)
+  }
+
+  // ------------------------------------------------------------ genel bakış (B1)
+  private getHealth(): OverviewHealthResponse {
+    const now = this.now()
+    const iso = (ms: number) => new Date(ms).toISOString()
+    const redisUp = !this.degraded
+    const open = this.logs.issues.filter((i) => i.status === 'open' || i.status === 'acknowledged')
+    const sections = {
+      dependencies: { status: 'ok' as const, ready: redisUp, role: 'all' as const, mongo: 'ok' as const, redis: redisUp ? ('ok' as const) : ('fail' as const) },
+      pods: {
+        status: 'ok' as const,
+        self: 'web-7d9f-2x',
+        windowMinutes: 15,
+        items: [
+          { pod: 'web-7d9f-2x', activeLeases: 3, runningJobs: 1, lastSeenAt: iso(now - 20_000), self: true },
+          { pod: 'web-7d9f-8q', activeLeases: 2, runningJobs: 0, lastSeenAt: iso(now - 45_000), self: false },
+          { pod: 'worker-5c1b-9k', activeLeases: 7, runningJobs: 4, lastSeenAt: iso(now - 12_000), self: false },
+        ],
+      },
+      red: {
+        status: 'ok' as const,
+        windowMinutes: 60,
+        from: iso(now - HOUR),
+        requests: 1284,
+        byStatusClass: { '2xx': 1221, '4xx': 41, '5xx': 22 },
+        errors5xx: 22,
+        errorRate: 22 / 1284,
+        requestsPerMinute: 21.4,
+        durationAvgMs: 142,
+        durationP95Ms: 500,
+        durationP95Overflow: false,
+        scope: 'platform' as const,
+        note: 'Pod flush aralığı (60 sn) kadar gecikmeli; tüm podlar toplanır.',
+      },
+      queues: {
+        status: 'ok' as const,
+        items: [
+          redisUp
+            ? { name: 'order-sync-queue', available: true, backlog: 5, active: 2, failed: 3, dlqPending: 1 }
+            : { name: 'order-sync-queue', available: false, backlog: null, active: null, failed: null, dlqPending: 1 },
+        ],
+      },
+      intake: { status: 'ok' as const, allOpen: false, scope: 'process' as const, restricted: [{ target: 'platform:n11', intake: 'drain' }] },
+      issues: { status: 'ok' as const, open: open.length, newLast24h: open.filter((i) => now - Date.parse(i.firstSeen) < DAY).length },
+    }
+    const out = { ...sections } as unknown as OverviewHealthResponse
+    for (const [key, error] of this.degradedSections) (out as unknown as Record<string, unknown>)[key] = { status: 'degraded', error }
+    const degradedSections = [...this.degradedSections.keys()]
+    return { ...out, generatedAt: iso(now), status: degradedSections.length || !redisUp ? 'degraded' : 'ok', degradedSections }
   }
 
   // ------------------------------------------------------------ oturum

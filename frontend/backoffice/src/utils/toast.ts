@@ -1,20 +1,16 @@
-import { reactive } from 'vue'
+/**
+ * Backoffice bildirimleri — ortak paketin TEK toast kaynağı (`useToast` + `EkToastHost`, App.vue).
+ * Tehlikeli işlem sonrası: `notifyAudited` başarı metni + "Denetim kaydını aç" bağlantısı (BO_UI_PATTERNS §6).
+ */
+import { useToast, type ToastTone } from '@entegrasyonik/ui/composables/useToast'
 
-export interface Toast {
-  id: number
-  tone: 'success' | 'info' | 'warning' | 'error'
-  text: string
-}
-export const toasts = reactive<Toast[]>([])
-let seq = 0
+const { showToast } = useToast()
 
-export function notify(tone: Toast['tone'], text: string, ms = 5000) {
-  const id = ++seq
-  toasts.push({ id, tone, text })
-  setTimeout(() => dismiss(id), ms)
+export function notify(tone: ToastTone, text: string, ms?: number) {
+  showToast({ tone, message: text, duration: ms })
 }
 
-export function dismiss(id: number) {
-  const i = toasts.findIndex((t) => t.id === id)
-  if (i >= 0) toasts.splice(i, 1)
+/** Denetime yazılan bir işlemin sonucu: denetim ekranında o kayda (istek kimliği / müşteri) süzülmüş bağlantı. */
+export function notifyAudited(text: string, open: () => void, title = 'İşlem tamamlandı') {
+  showToast({ tone: 'success', title, message: text, actionLabel: 'Denetim kaydını aç', onAction: open, duration: 8000 })
 }

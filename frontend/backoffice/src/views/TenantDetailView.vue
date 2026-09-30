@@ -1,26 +1,20 @@
 <template>
   <div class="bo-page">
-    <nav class="bo-crumbs" aria-label="Konum">
-      <RouterLink to="/musteriler">Müşteriler</RouterLink>
-      <span aria-hidden="true">/</span>
-      <span aria-current="page">{{ client?.title ?? `#${tid}` }}</span>
-    </nav>
-
     <EkEmptyState v-if="notFound" variant="no-results" title="Müşteri bulunamadı" :message="`#${tid} numaralı kayıt yok ya da kaldırılmış.`" />
     <template v-else>
-      <div class="bo-page__head">
-        <div class="bo-tenant__title">
-          <h1 class="bo-page__title">{{ client?.title ?? '…' }}</h1>
-          <div class="bo-tenant__chips">
-            <span class="bo-tenant__tid ek-num">#{{ tid }}</span>
-            <EkStatusChip v-if="lifecycle" :tone="LIFECYCLE[lifecycle.status].tone" :label="LIFECYCLE[lifecycle.status].label" dot />
-            <EkStatusChip v-if="lifecycle" tone="info" :label="`Plan: ${PLAN[lifecycle.planCode]}`" />
-          </div>
-        </div>
-        <div class="bo-page__actions">
+      <BoPageHeader :title="client?.title ?? '…'" lede="" :extra-crumbs="[{ label: client?.title ?? `#${tid}` }]">
+        <template #status>
+          <EkStatusChip v-if="lifecycle" :tone="LIFECYCLE[lifecycle.status].tone" :label="LIFECYCLE[lifecycle.status].label" dot />
+          <EkStatusChip v-if="lifecycle" tone="info" :label="`Plan: ${PLAN[lifecycle.planCode]}`" />
+        </template>
+        <template #meta>
+          <span class="bo-tenant__tid">Mağaza no <span class="bo-mono ek-num">#{{ tid }}</span><EkCopyButton :value="tid" label="Mağaza numarası" /></span>
+        </template>
+        <template #actions>
+          <EkButton tone="secondary" icon="mdi-shield-search" @click="router.push({ path: '/denetim', query: { tid: String(tid) } })">Denetim kayıtları</EkButton>
           <EkButton tone="primary" icon="mdi-account-switch-outline" :disabled="!client" data-testid="impersonate" @click="openImpersonation">Hesaba geçici erişim</EkButton>
-        </div>
-      </div>
+        </template>
+      </BoPageHeader>
 
       <div class="bo-grid bo-tenant__grid">
         <EkCard title="Hesap" icon="mdi-storefront-outline">
@@ -62,63 +56,53 @@
       <p class="bo-muted bo-tenant__src">Kaynak: AdminService/getClients · BackofficeTenantService/getLifecycle (planlanan uç, B2 — hassas okuma olarak denetime yazılır)</p>
     </template>
 
-    <EkDialog
+    <DangerActionDialog
       v-model="impOpen"
       title="Hesaba geçici erişim"
-      :description="`${client?.title ?? ''} hesabı yeni sekmede, yönetici olarak açılır.`"
       icon="mdi-account-switch-outline"
-      width="md"
-      as-form
+      :action="`${client?.title ?? 'Müşteri'} hesabı yeni sekmede, yönetici olarak açılır.`"
+      :details="[
+        'Bağlantı 60 saniye içinde, bir kez kullanılabilir; oturum 60 dakika sürer ve uzatılmaz.',
+        'Silme, ödeme ve kullanıcı yönetimi işlemleri bu oturumda kapalıdır.',
+        'Oturumdaki her yazma işlemi denetime “yönetici adına” olarak yazılır.',
+      ]"
+      :reversible="true"
+      reversible-note="Oturumu müşteri uygulamasındaki “Çık” bandından ya da 60 dk dolunca kapanır."
+      :tenant="client ? { tid, name: client.title } : undefined"
       confirm-label="Gerekçeyle başlat"
       confirm-icon="mdi-open-in-new"
-      :confirm-loading="impBusy"
-      :confirm-disabled="reason.trim().length < 10"
+      reason-placeholder="ör. Destek talebi: sipariş eşleme ekranında hata"
+      :busy="impBusy"
+      :error="impError"
       @confirm="startImpersonation"
-    >
-      <div class="bo-imp">
-        <ul class="bo-imp__rules">
-          <li><v-icon icon="mdi-timer-outline" aria-hidden="true" />Bağlantı 60 saniye içinde, bir kez kullanılabilir; oturum 60 dakika sürer ve uzatılmaz.</li>
-          <li><v-icon icon="mdi-cancel" aria-hidden="true" />Silme, ödeme ve kullanıcı yönetimi işlemleri bu oturumda kapalıdır.</li>
-          <li><v-icon icon="mdi-clipboard-text-outline" aria-hidden="true" />Başlatma ve oturumdaki her yazma işlemi gerekçeyle denetime yazılır.</li>
-        </ul>
-        <v-textarea
-          v-model="reason"
-          label="Gerekçe"
-          placeholder="ör. Destek talebi: sipariş eşleme ekranında hata"
-          rows="3"
-          auto-grow
-          counter
-          :hint="reason.trim().length < 10 ? `En az 10 karakter (${reason.trim().length}/10)` : 'Denetim kaydına bu metin yazılır.'"
-          persistent-hint
-          :error-messages="impError || undefined"
-          autofocus
-        />
-      </div>
-    </EkDialog>
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import {
   EkButton,
   EkCard,
   EkChannelDot,
+  EkCopyButton,
   EkDescriptionList,
-  EkDialog,
   EkEmptyState,
   EkSkeleton,
   EkStatusChip,
 } from '@entegrasyonik/ui/components'
+import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import DangerActionDialog from '@bo/components/shell/DangerActionDialog.vue'
 import { api } from '@bo/api'
 import { AdminApiError } from '@bo/api/client'
 import type { ClientDto, TenantLifecycle } from '@bo/api/contract'
 import { CHANNEL, LIFECYCLE, PLAN } from '@bo/utils/labels'
 import { formatDate, formatDateTime, formatNumber, formatRelative } from '@bo/utils/format'
-import { notify } from '@bo/utils/toast'
+import { notifyAudited } from '@bo/utils/toast'
 
 const route = useRoute()
+const router = useRouter()
 const tid = Number(route.params.tid)
 const client = ref<ClientDto | null>(null)
 const lifecycle = ref<TenantLifecycle | null>(null)
@@ -152,25 +136,25 @@ const accountItems = computed(() => {
 const impOpen = ref(false)
 const impBusy = ref(false)
 const impError = ref('')
-const reason = ref('')
 
 function openImpersonation() {
-  reason.value = ''
   impError.value = ''
   impOpen.value = true
 }
 
-async function startImpersonation() {
-  if (impBusy.value || reason.value.trim().length < 10) return
+async function startImpersonation(reason: string) {
+  if (impBusy.value) return
   impBusy.value = true
   impError.value = ''
   try {
     // Step-up (REAUTH_REQUIRED) istemcide yakalanır: diyalog açılır, doğrulanınca istek yenilenir.
-    const { url } = await api.call('BackofficeTenantService/startImpersonation', { tid, reason: reason.value.trim() })
+    const { url } = await api.call('BackofficeTenantService/startImpersonation', { tid, reason })
     // Bilet URL'i yalnız yeni sekmeye verilir: saklanmaz, loglanmaz; noopener/noreferrer ile opener ve Referer yok.
     window.open(url, '_blank', 'noopener,noreferrer')
     impOpen.value = false
-    notify('success', 'Müşteri hesabı yeni sekmede açıldı. Oturum 60 dakika sürer.')
+    notifyAudited('Müşteri hesabı yeni sekmede açıldı. Oturum 60 dakika sürer.', () =>
+      router.push({ path: '/denetim', query: { tid: String(tid), event: 'impersonation.start' } }),
+    )
   } catch (e) {
     const err = e instanceof AdminApiError ? e : null
     if (err?.cancelled) impError.value = 'Yeniden doğrulama yapılmadığı için erişim başlatılmadı.'
@@ -183,45 +167,10 @@ async function startImpersonation() {
 </script>
 
 <style scoped>
-.bo-crumbs {
-  display: flex;
-  align-items: center;
-  gap: var(--ek-space-2);
-  color: var(--ek-color-content-subtle);
-  font-size: var(--ek-type-label-size);
-}
-
-.bo-crumbs a {
-  color: var(--ek-color-content-muted);
-  text-decoration: none;
-}
-
-.bo-crumbs a:hover {
-  color: var(--ek-color-content-strong);
-  text-decoration: underline;
-}
-
-.bo-crumbs [aria-current] {
-  color: var(--ek-color-content-default);
-}
-
-.bo-tenant__title {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ek-space-2);
-}
-
-.bo-tenant__chips {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--ek-space-2);
-}
-
 .bo-tenant__tid {
-  color: var(--ek-color-content-muted);
-  font-family: var(--ek-font-mono);
-  font-size: var(--ek-type-label-size);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-1);
 }
 
 .bo-tenant__grid {
@@ -295,36 +244,9 @@ async function startImpersonation() {
   font-size: var(--ek-type-caption-size);
 }
 
-.bo-imp {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ek-space-4);
-}
 
-.bo-imp__rules {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ek-space-2);
-  margin: 0;
-  padding: var(--ek-space-3) var(--ek-space-4);
-  border: 1px solid var(--ek-color-warning-border);
-  border-radius: var(--ek-radius-lg);
-  background: var(--ek-color-warning-subtle);
-  color: var(--ek-color-warning-emphasis);
-  font-size: var(--ek-type-label-size);
-  list-style: none;
-}
 
-.bo-imp__rules li {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--ek-space-2);
-}
 
-.bo-imp__rules :deep(.v-icon) {
-  margin-top: 1px;
-  font-size: var(--ek-icon-sm);
-}
 
 @media (max-width: 1023px) {
   .bo-tenant__grid {

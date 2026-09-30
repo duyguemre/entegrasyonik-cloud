@@ -1,25 +1,41 @@
 <template>
   <div class="bo-page">
-    <div class="bo-page__head">
-      <div>
-        <h1 class="bo-page__title">Denetim kayıtları</h1>
-        <p class="bo-page__lede">Müşteri uygulaması (app.*) ve yönetim (backoffice.*) yazmaları, hassas okumalar ve geçici erişimler. Kayıtlar değiştirilemez, 365 gün saklanır.</p>
-      </div>
-    </div>
+    <BoPageHeader />
 
-    <div class="bo-audit__bar">
+    <div class="bo-toolbar">
       <div class="bo-seg" role="radiogroup" aria-label="Yüzey">
-        <button v-for="o in SURFACES" :key="o.value" type="button" role="radio" class="bo-seg__opt" :aria-checked="surface === o.value" @click="surface = o.value">{{ o.label }}</button>
+        <button v-for="o in SURFACES" :key="o.label" type="button" role="radio" class="bo-seg__opt" :aria-checked="surface === o.value" @click="surface = o.value">{{ o.label }}</button>
       </div>
-      <v-select v-model="event" :items="EVENTS" label="Olay" density="compact" hide-details clearable class="bo-audit__field" />
+      <v-select v-model="event" :items="eventItems" label="Olay" density="compact" hide-details clearable class="bo-audit__field" />
       <v-select v-model="result" :items="RESULTS" label="Sonuç" density="compact" hide-details clearable class="bo-audit__field bo-audit__field--sm" />
       <v-text-field v-model="tid" label="Müşteri no" density="compact" hide-details clearable inputmode="numeric" class="bo-audit__field bo-audit__field--sm" @update:model-value="debounced" />
       <v-select v-model="range" :items="RANGES" label="Aralık" density="compact" hide-details class="bo-audit__field bo-audit__field--sm" />
+      <EkButton v-if="filtered" tone="ghost" size="sm" icon="mdi-filter-remove-outline" @click="clearFilters">Filtreleri temizle</EkButton>
     </div>
+    <p v-if="reqId" class="bo-audit__req-filter">
+      <v-icon icon="mdi-transit-connection-horizontal" aria-hidden="true" />
+      İstek kimliğine göre süzülüyor: <code class="bo-mono">{{ reqId }}</code><EkCopyButton :value="reqId" label="İstek kimliği" />
+      <button type="button" class="bo-audit__req-clear" @click="reqId = ''">Kaldır</button>
+    </p>
 
-    <EkSkeleton v-if="!items" type="table" :rows="8" />
-    <EkEmptyState v-else-if="!items.length" variant="no-results" title="Kayıt yok" message="Filtreleri genişletin." />
-    <div v-else class="bo-audit">
+    <div v-if="state !== 'ready'" class="bo-audit__panel">
+      <BoPanelState
+        :state="state"
+        skeleton="table"
+        :rows="8"
+        :error="error"
+        error-text="Denetim kayıtları yüklenemedi"
+        empty-icon="mdi-shield-search"
+        empty-title="Bu süzgeçlerle kayıt yok"
+        empty-text="Aralığı genişletin ya da filtreleri temizleyin. Kayıtlar 365 gün saklanır."
+        @retry="load()"
+      >
+        <template #empty-action>
+          <EkButton v-if="filtered" tone="secondary" size="sm" icon="mdi-filter-remove-outline" class="bo-audit__empty-btn" @click="clearFilters">Filtreleri temizle</EkButton>
+        </template>
+      </BoPanelState>
+    </div>
+    <div v-else class="bo-audit" tabindex="0" role="region" aria-label="Denetim kayıtları tablosu">
       <table>
         <caption class="ek-sr-only">Denetim kayıtları</caption>
         <thead>
@@ -41,7 +57,7 @@
                   <v-icon :icon="open.has(a.id) ? 'mdi-chevron-down' : 'mdi-chevron-right'" aria-hidden="true" />
                 </button>
               </td>
-              <td class="ek-num bo-audit__time">{{ formatDateTime(a.at) }}<span>{{ formatRelative(a.at) }}</span></td>
+              <td class="ek-num bo-audit__time">{{ formatDateTime(a.at) }}<span><EkRelativeTime :value="a.at" /></span></td>
               <td>
                 <code class="bo-audit__event">{{ a.event }}</code>
                 <span class="bo-audit__op">{{ a.meta?.op }}</span>
@@ -57,7 +73,11 @@
                 <span v-else class="bo-muted">platform</span>
               </td>
               <td><EkStatusChip :tone="RESULT[a.result].tone" :label="RESULT[a.result].label" dot /></td>
-              <td><button v-if="a.reqId" type="button" class="bo-audit__req bo-mono" @click="traceId = a.reqId">{{ a.reqId.slice(4, 12) }}</button></td>
+              <td class="bo-audit__req-cell">
+                <template v-if="a.reqId">
+                  <button type="button" class="bo-audit__req bo-mono" :aria-label="`İstek zincirini aç: ${a.reqId}`" @click="traceId = a.reqId">{{ a.reqId.slice(4, 12) }}</button><EkCopyButton :value="a.reqId" label="İstek kimliği" />
+                </template>
+              </td>
             </tr>
             <tr v-if="open.has(a.id)" :id="`aud-${a.id}`" class="bo-audit__detail">
               <td></td>
@@ -79,7 +99,7 @@
                   <div><dt>Yüzey</dt><dd>{{ a.surface ?? '—' }}</dd></div>
                   <div><dt>IP</dt><dd class="bo-mono">{{ a.ip ?? '—' }}</dd></div>
                   <div><dt>Kayıt</dt><dd class="bo-mono">{{ a.id }}</dd></div>
-                  <div v-if="a.reqId"><dt>reqId</dt><dd class="bo-mono">{{ a.reqId }}</dd></div>
+                  <div v-if="a.reqId"><dt>İstek kimliği</dt><dd class="bo-mono">{{ a.reqId }}<EkCopyButton :value="a.reqId" label="İstek kimliği" /></dd></div>
                 </dl>
               </td>
             </tr>
@@ -93,12 +113,15 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref, watch } from 'vue'
-import { EkButton, EkEmptyState, EkSkeleton, EkStatusChip, type StatusTone } from '@entegrasyonik/ui/components'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { EkButton, EkCopyButton, EkRelativeTime, EkStatusChip, type StatusTone } from '@entegrasyonik/ui/components'
+import BoPanelState, { type PanelState } from '@bo/components/shell/BoPanelState.vue'
 import TraceDialog from '@bo/components/TraceDialog.vue'
+import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
 import { api } from '@bo/api'
 import type { AuditRecord, LogRange } from '@bo/api/contract'
-import { formatDateTime, formatRelative } from '@bo/utils/format'
+import { formatDateTime } from '@bo/utils/format'
 import { auditChanges } from '@bo/utils/audit'
 
 const SURFACES = [
@@ -123,29 +146,69 @@ const RESULT: Record<AuditRecord['result'], { label: string; tone: StatusTone }>
 }
 const ACTOR = { user: 'Müşteri kullanıcısı', platform: 'Platform yöneticisi', system: 'Sistem' } as const
 
-const surface = ref<'backoffice' | 'app' | undefined>(undefined)
-const event = ref<string | null>(null)
-const result = ref<AuditRecord['result'] | null>(null)
-const tid = ref('')
-const range = ref<LogRange>('7d')
+// Süzgeçler URL'den başlar ve URL'e yazılır: denetim bağlantıları (toast "Denetim kaydını aç", komut paleti, genel bakış)
+// ve paylaşılan adresler aynı görünümü açar. Okunan: surface, event, result, tid, reqId, range.
+const route = useRoute()
+const router = useRouter()
+const q = (k: string) => (typeof route.query[k] === 'string' ? (route.query[k] as string) : '')
+const surface = ref<'backoffice' | 'app' | undefined>(q('surface') === 'backoffice' || q('surface') === 'app' ? (q('surface') as 'backoffice' | 'app') : undefined)
+const event = ref<string | null>(q('event') || null)
+const result = ref<AuditRecord['result'] | null>(['ok', 'fail', 'error'].includes(q('result')) ? (q('result') as AuditRecord['result']) : null)
+const tid = ref(q('tid'))
+const reqId = ref(q('reqId'))
+const range = ref<LogRange>(q('range') === '24h' ? '24h' : '7d')
 const items = ref<AuditRecord[] | null>(null)
+const error = ref<unknown>(null)
+const eventItems = computed(() => (event.value && !EVENTS.includes(event.value) ? [event.value, ...EVENTS] : EVENTS))
+const filtered = computed(() => !!(surface.value || event.value || result.value || tid.value || reqId.value || range.value !== '7d'))
+const state = computed<PanelState>(() => (items.value === null ? (error.value ? 'error' : 'loading') : items.value.length ? 'ready' : 'empty'))
 const cursor = ref<string | undefined>()
 const open = reactive(new Set<string>())
 const traceId = ref<string | null>(null)
 
 async function load(more = false) {
-  if (!more) items.value = null
-  const res = await api.call('BackofficeAuditService/search', {
-    range: range.value,
-    surface: surface.value,
-    event: event.value ?? undefined,
-    result: result.value ?? undefined,
-    tid: /^\d+$/.test(tid.value ?? '') ? Number(tid.value) : undefined,
-    cursor: more ? cursor.value : undefined,
-    limit: 50,
-  })
-  items.value = more ? [...(items.value ?? []), ...res.items] : res.items
-  cursor.value = res.nextCursor
+  if (!more) {
+    items.value = null
+    syncUrl()
+  }
+  error.value = null
+  try {
+    const res = await api.call('BackofficeAuditService/search', {
+      range: range.value,
+      surface: surface.value,
+      event: event.value ?? undefined,
+      result: result.value ?? undefined,
+      tid: /^\d+$/.test(tid.value ?? '') ? Number(tid.value) : undefined,
+      reqId: reqId.value || undefined,
+      cursor: more ? cursor.value : undefined,
+      limit: 50,
+    })
+    items.value = more ? [...(items.value ?? []), ...res.items] : res.items
+    cursor.value = res.nextCursor
+  } catch (e) {
+    error.value = e
+    if (!more) items.value = null
+  }
+}
+
+function syncUrl() {
+  const query: Record<string, string> = {}
+  if (surface.value) query.surface = surface.value
+  if (event.value) query.event = event.value
+  if (result.value) query.result = result.value
+  if (tid.value) query.tid = tid.value
+  if (reqId.value) query.reqId = reqId.value
+  if (range.value !== '7d') query.range = range.value
+  void router.replace({ query })
+}
+
+function clearFilters() {
+  surface.value = undefined
+  event.value = null
+  result.value = null
+  tid.value = ''
+  reqId.value = ''
+  range.value = '7d'
 }
 
 let timer: ReturnType<typeof setTimeout> | undefined
@@ -154,7 +217,10 @@ function debounced() {
   timer = setTimeout(() => load(), 300)
 }
 
-watch([surface, event, result, range], () => load())
+watch([surface, event, result, range, reqId], () => load())
+watch(tid, (v) => {
+  if (!v) void load()
+})
 onMounted(() => load())
 
 function toggle(id: string) {
@@ -172,6 +238,52 @@ const changes = (a: AuditRecord) => auditChanges(a.meta)
   gap: var(--ek-space-3);
 }
 
+.bo-audit__panel {
+  padding: var(--ek-space-4);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface);
+}
+
+.bo-audit__empty-btn {
+  margin-top: var(--ek-space-3);
+}
+
+.bo-audit__req-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ek-space-2);
+  margin: 0;
+  padding: var(--ek-space-2) var(--ek-space-3);
+  border: 1px solid var(--ek-color-info-border);
+  border-radius: var(--ek-radius-control);
+  background: var(--ek-color-info-subtle);
+  color: var(--ek-color-content-default);
+  font-size: var(--ek-type-label-size);
+}
+
+.bo-audit__req-clear {
+  margin-left: auto;
+  padding: 0 var(--ek-space-2);
+  border: 0;
+  border-radius: var(--ek-radius-sm);
+  background: none;
+  color: var(--ek-color-action-emphasis);
+  font: inherit;
+  font-weight: var(--ek-font-weight-semibold);
+  cursor: pointer;
+}
+
+.bo-audit__req-clear:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+}
+
+.bo-audit__req-cell {
+  white-space: nowrap;
+}
+
 .bo-audit__field {
   flex: 0 1 240px;
 }
@@ -180,34 +292,9 @@ const changes = (a: AuditRecord) => auditChanges(a.meta)
   flex-basis: 160px;
 }
 
-.bo-seg {
-  display: inline-flex;
-  padding: 3px;
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-control);
-  background: var(--ek-color-surface-muted);
-}
 
-.bo-seg__opt {
-  height: 30px;
-  padding: 0 var(--ek-space-3);
-  border: 0;
-  border-radius: var(--ek-radius-md);
-  background: transparent;
-  color: var(--ek-color-content-muted);
-  font: inherit;
-  font-size: var(--ek-type-label-size);
-  font-weight: var(--ek-font-weight-medium);
-  cursor: pointer;
-}
 
-.bo-seg__opt[aria-checked='true'] {
-  background: var(--ek-color-surface);
-  color: var(--ek-color-content-strong);
-  box-shadow: var(--ek-shadow-sm);
-}
 
-.bo-seg__opt:focus-visible,
 .bo-audit__toggle:focus-visible,
 .bo-audit__req:focus-visible {
   outline: 2px solid var(--ek-color-border-focus);
@@ -215,11 +302,19 @@ const changes = (a: AuditRecord) => auditChanges(a.meta)
 }
 
 .bo-audit {
-  overflow-x: auto;
+  position: relative;
+  overflow: auto;
+  /* Uzun listede başlık görünür kalsın: tablo kendi içinde kayar (masaüstü). */
+  max-height: calc(100vh - var(--ek-app-topbar-height) - 220px);
   border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-card);
   background: var(--ek-color-surface);
   box-shadow: var(--ek-shadow-card);
+}
+
+.bo-audit:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
 }
 
 .bo-audit > table {
@@ -229,6 +324,9 @@ const changes = (a: AuditRecord) => auditChanges(a.meta)
 }
 
 .bo-audit > table > thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   padding: var(--ek-space-3);
   background: var(--ek-color-surface-muted);
   color: var(--ek-color-content-muted);
@@ -486,6 +584,12 @@ const changes = (a: AuditRecord) => auditChanges(a.meta)
   .bo-diff {
     width: 100%;
     min-width: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .bo-audit {
+    max-height: none;
   }
 }
 </style>
