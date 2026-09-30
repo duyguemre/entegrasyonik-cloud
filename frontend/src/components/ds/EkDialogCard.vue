@@ -10,8 +10,8 @@
     class="ek-dialog"
     :class="[`ek-dialog--${tone}`, `ek-dialog--${width}`, { 'ek-dialog--inline': inline }]"
     :role="inline ? 'group' : undefined"
-    :aria-labelledby="resolvedTitleId"
-    :aria-describedby="description || $slots.description ? descId : undefined"
+    :aria-labelledby="inline ? resolvedTitleId : undefined"
+    :aria-describedby="inline && (description || $slots.description) ? resolvedDescId : undefined"
     :novalidate="asForm || undefined"
     @submit.prevent="onSubmit"
   >
@@ -19,7 +19,7 @@
       <EkIconTile v-if="icon" :icon="icon" :tone="iconTone ?? (tone === 'danger' ? 'error' : 'action')" size="md" />
       <div class="ek-dialog__titles">
         <h2 :id="resolvedTitleId" class="ek-dialog__title">{{ title }}</h2>
-        <p v-if="description || $slots.description" :id="descId" class="ek-dialog__desc">
+        <p v-if="description || $slots.description" :id="resolvedDescId" class="ek-dialog__desc">
           <slot name="description">{{ description }}</slot>
         </p>
       </div>
@@ -58,6 +58,8 @@ const props = withDefaults(
     title: string
     /** EkDialog'un overlay'e verdiği başlık kimliği (aria-labelledby) — yoksa yerel üretilir. */
     titleId?: string
+    /** EkDialog'un overlay'e verdiği açıklama kimliği (aria-describedby) — yoksa yerel üretilir. */
+    descId?: string
     hideActions?: boolean
     hideCancel?: boolean
     hideClose?: boolean
@@ -81,7 +83,10 @@ const emit = defineEmits<{ close: []; cancel: []; confirm: [] }>()
 
 const uid = useId()
 const resolvedTitleId = computed(() => props.titleId ?? `ek-dialog-title-${uid}`)
-const descId = `ek-dialog-desc-${uid}`
+// Ad/açıklama ilişkisi YALNIZ rolü olan öğede: overlay sunumunda `role="dialog"` taşıyan Vuetify içerik
+// kabı (EkDialog aria-labelledby/-describedby'ı oraya verir); rolsüz bu kökte aria-labelledby geçersizdir
+// (axe aria-prohibited-attr — başlık görünür değilken, ör. açılış geçişinde, ihlal olarak raporlanıyordu).
+const resolvedDescId = computed(() => props.descId ?? `ek-dialog-desc-${uid}`)
 const cancelRef = ref<InstanceType<typeof EkButton> | null>(null)
 
 function close() {

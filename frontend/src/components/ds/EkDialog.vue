@@ -28,6 +28,7 @@
     :contained="!!resolvedAttach"
     :retain-focus="retainFocus"
     :aria-labelledby="titleId"
+    :aria-describedby="description || $slots.description ? descId : undefined"
     :activator="activator"
     class="ek-dialog-overlay"
     :content-class="`ek-dialog-content ek-dialog-content--${maxWidth ? 'custom' : width}`"
@@ -111,7 +112,9 @@ const emit = defineEmits<{
 
 const cardRef = ref<InstanceType<typeof EkDialogCard> | null>(null)
 const PRESET: Record<string, number> = { sm: 440, md: 560, lg: 760, xl: 1040 }
-const titleId = `ek-dialog-title-${useId()}`
+const dialogUid = useId()
+const titleId = `ek-dialog-title-${dialogUid}`
+const descId = `ek-dialog-desc-${dialogUid}`
 const cssWidth = (v: number | string) => (typeof v === 'number' || /^\d+$/.test(v) ? `${v}px` : v)
 const resolvedMaxWidth = computed(() => (props.maxWidth ? cssWidth(props.maxWidth) : PRESET[props.width]))
 // Eski çağıranlar sekme kabını noktasız verebiliyor ("orderListView") — sınıf seçicisine çevrilir.
@@ -125,6 +128,7 @@ const resolvedAttach = computed(() => {
 const contentProps = computed(() => (props.maxWidth ? { style: { maxWidth: `${cssWidth(props.maxWidth)} !important` } } : {}))
 const cardProps = computed(() => ({
   titleId,
+  descId,
   hideActions: props.hideActions,
   hideCancel: props.hideCancel,
   hideClose: props.hideClose,
