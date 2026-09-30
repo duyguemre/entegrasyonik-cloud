@@ -274,6 +274,9 @@ test.describe('C1.2 — Trendyol webhook adresi (sağlık ekranı)', () => {
       await page.getByRole('alertdialog').getByRole('button', { name: 'Yeni adres üret' }).click()
       await expect(page.getByText(expected)).toBeVisible()
       await expect(p.getByLabel('Webhook adresi')).toHaveCount(0)
+      // A7 (bilinçli, iddia aynı): dar ekranda başlık iki satır oldu → düğme hata bildiriminin altına denk gelebiliyor;
+      // kullanıcı gibi bildirim kapatılıp ikinci deneme yapılır.
+      await page.getByRole('button', { name: 'Bildirimi kapat' }).first().click().catch(() => undefined)
     }
     await expect(page.locator('body')).not.toContainText('stack')
   })

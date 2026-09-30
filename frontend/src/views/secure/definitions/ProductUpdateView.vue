@@ -2,6 +2,8 @@
   <div class="pdv-root" :class="[dialogAttach.substring(1)]" ref="rootRef">
     <EkPageHeader
       section="Katalog"
+      :trail="productTrail"
+      :record="productRecord"
       :title="$t('definitions.product.update.title')"
       :description="$t('definitions.product.update.description')"
     />
@@ -117,6 +119,7 @@ import ProductInfoFormComponent from '@/components/productDefinitions/crud/Produ
 const snackbarStore = useSnackbarStore();
 
 const menuStore: any = inject('useMenuStore')
+const eventBus: any = inject('eventBus', undefined)
 const choicesStore = useChoicesStore()
 var choicesStoreChoices: any = ref()
 const stepper = ref(0)
@@ -138,6 +141,18 @@ const initialized = ref(false)
 const productInfoFormRef = ref()
 const isProductInfoFormValid = ref(false)
 const productInfoForm = ref()
+
+// A7 breadcrumb: Katalog / Ürünler (bağlantı) / Ürünü düzenle · [stok kodu ⧉].
+const productTrail = [{ label: 'Ürünler', icon: 'mdi-tag-outline', onSelect: () => {
+  const link = menuStore?.getMenuLinkWithCode?.('ProductListView')
+  if (link) eventBus?.emit('openTab', link)
+} }]
+const productRecord = computed(() => {
+  // Tekil ürünün stok kodu = kaydın kısa kimliği; varyantlı üründe tek bir kod yok (uydurma kimlik gösterilmez).
+  const form = productInfoForm.value
+  const code = form && !form.hasVariant ? form.variants?.[0]?.stockcode : undefined
+  return code ? { code: String(code), label: 'Stok kodu' } : null
+})
 const isCompetitivePricesDialog = ref(false)
 const isVariantsDialog = ref(false)
 const isVariantsDialog1 = ref(true)
