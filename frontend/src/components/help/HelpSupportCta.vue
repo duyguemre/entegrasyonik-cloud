@@ -4,7 +4,7 @@
   "Destek kayıtlarım" mevcut destek ekranına gider (menüde varsa); "Klavye kısayolları" kabuğun `?` diyaloğunu açar.
 -->
 <template>
-  <section class="ek-help-cta" :class="{ 'is-compact': compact }" aria-labelledby="help-cta-title">
+  <section class="ek-help-cta" :class="{ 'is-compact': compact, 'is-stacked': stacked }" aria-labelledby="help-cta-title">
     <EkIconTile icon="mdi-lifebuoy" tone="action" :size="compact ? 'md' : 'lg'" />
     <div class="ek-help-cta__text">
       <h3 :id="`help-cta-title`" class="ek-help-cta__title">{{ compact ? 'Hâlâ yardıma mı ihtiyacınız var?' : 'Aradığınızı bulamadınız mı?' }}</h3>
@@ -13,7 +13,7 @@
     <div class="ek-help-cta__actions">
       <EkButton v-if="!compact" tone="ghost" icon="mdi-keyboard-outline" @click="openShortcuts">Klavye kısayolları</EkButton>
       <EkButton v-if="nav.canOpenScreen(TICKETS)" tone="secondary" icon="mdi-format-list-bulleted" @click="nav.openScreen(TICKETS)">Destek kayıtlarım</EkButton>
-      <EkButton icon="mdi-message-plus-outline" data-help-ticket @click="emit('ticket')">Destek talebi aç</EkButton>
+      <EkButton tone="primary" icon="mdi-message-plus-outline" data-help-ticket @click="emit('ticket')">Destek talebi aç</EkButton>
     </div>
   </section>
 </template>
@@ -23,7 +23,7 @@ import EkButton from '@/components/ds/EkButton.vue'
 import EkIconTile from '@/components/ds/EkIconTile.vue'
 import { useHelpNavigation } from '@/help/useHelpNavigation'
 
-withDefaults(defineProps<{ compact?: boolean }>(), { compact: false })
+withDefaults(defineProps<{ compact?: boolean; stacked?: boolean }>(), { compact: false, stacked: false })
 const emit = defineEmits<{ ticket: [] }>()
 const nav = useHelpNavigation()
 const TICKETS = 'supports/TicketListView'
@@ -34,6 +34,16 @@ function openShortcuts() {
 </script>
 
 <style scoped>
+/* Dikey yerleşim (ana sayfa alt bandında SSS'nin yanında): ikon, metin, eylemler alt alta. */
+.ek-help-cta.is-stacked {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.ek-help-cta.is-stacked .ek-help-cta__text {
+  flex: none;
+}
+
 .ek-help-cta {
   display: flex;
   flex-wrap: wrap;

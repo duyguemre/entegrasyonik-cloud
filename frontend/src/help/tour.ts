@@ -35,6 +35,8 @@ export interface TourStep {
   targets: string[]
   title: string
   text: string
+  /** Bu genişliğin altında adım atlanır (ör. dar ekranda sol menü kapalı çekmecedir). */
+  minWidth?: number
 }
 
 const keys = (id: Parameters<typeof shortcutKeys>[0]) => shortcutKeys(id).join('+')
@@ -43,6 +45,7 @@ export const TOUR_STEPS: readonly TourStep[] = [
   {
     id: 'menu',
     targets: ['#tour-homepage-menu'],
+    minWidth: 1024,
     title: 'Menü',
     text: `Tüm ekranlar bölümlere ayrılmış olarak burada. ${keys('sidebarToggle')} ile menüyü daraltıp genişletin.`,
   },

@@ -118,6 +118,14 @@ const accountGroups: EkMenuGroup[] = [
       { key: 'shortcuts', label: 'Klavye kısayolları', icon: 'mdi-keyboard-outline', shortcut: shortcutKeys('shortcutHelp') },
     ],
   },
+  // Dar ekranda üst bardaki (?) düğmesi gizlidir → yardım girişleri hesap menüsünde de bulunur.
+  {
+    label: 'Yardım',
+    items: [
+      { key: 'helpCenter', label: 'Yardım merkezi', icon: 'mdi-book-open-page-variant-outline' },
+      { key: 'tour', label: 'Uygulama turunu başlat', icon: 'mdi-map-marker-path' },
+    ],
+  },
   { items: [{ key: 'logout', label: 'Çıkış', icon: 'mdi-logout', danger: true }] },
 ]
 
@@ -137,6 +145,8 @@ function onAccountSelect(item: EkMenuItem) {
   accountOpen.value = false
   if (item.key === 'settings') openByTitle('settingList')
   else if (item.key === 'shortcuts') emit('open-shortcuts')
+  else if (item.key === 'helpCenter') helpNav.openHelp()
+  else if (item.key === 'tour') window.dispatchEvent(new CustomEvent('ek:help-tour'))
   else if (item.key === 'logout') logout()
 }
 

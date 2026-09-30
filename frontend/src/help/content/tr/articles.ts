@@ -898,7 +898,7 @@ export const ARTICLES_TR: HelpArticle[] = [
     summary: 'Her kanal için hangi kimlik bilgilerinin gerektiği ve bağlantının genel adımları.',
     keywords: ['bağlantı', 'api bilgileri', 'kimlik bilgisi', 'satıcı kimliği', 'api anahtarı', 'gizli anahtar', 'key', 'secret'],
     body: [
-      { type: 'p', text: 'Bir kanalı bağlamak için o kanalın size verdiği API kimlik bilgilerini Entegrasyonik’e girmeniz yeterlidir. Aşağıdaki tablo, bugün bağlanabilen her kanal için gereken bilgi türlerini ve bağlantı adımlarını gösterir.' },
+      { type: 'p', text: 'Bir kanalı bağlamak için o kanalın size verdiği API kimlik bilgilerini Entegrasyonik’e girmeniz yeterlidir. Aşağıdaki kartlar, bugün bağlanabilen her kanal için gereken bilgi türlerini ve bu bilgilerin nereden alınacağını gösterir; ortak adımlar kartların altındadır.' },
       { type: 'channelGuides' },
       { type: 'h', text: 'Genel adımlar' },
       {
@@ -910,7 +910,6 @@ export const ARTICLES_TR: HelpArticle[] = [
         ],
       },
       { type: 'note', tone: 'warning', text: 'Kimlik bilgilerinizi kimseyle paylaşmayın ve destek taleplerine yazmayın. Entegrasyonik bu bilgileri şifreli saklar ve ekranda yeniden göstermez.' },
-      { type: 'note', tone: 'info', text: 'Ideasoft bağlantısında gerçek mağaza için yetkilendirme (OAuth) adımı bu sürümde tamamlanmamıştır; entegrasyon şu an test ortamında çalışır.' },
     ],
     goTo: [
       { screen: 'integrations/MarketplaceView', label: 'Pazaryeri entegrasyonlarını aç' },

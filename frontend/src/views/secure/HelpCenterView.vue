@@ -63,7 +63,7 @@
         <p class="ek-help-center__muted">Farklı bir sözcük deneyin ya da konulara göz atın. Aradığınızı bulamazsanız destek ekibine yazın.</p>
         <div class="ek-help-center__row-actions">
           <EkButton tone="secondary" icon="mdi-view-grid-outline" @click="clearSearch">Konulara göz at</EkButton>
-          <EkButton icon="mdi-lifebuoy" @click="ticketOpen = true">Destek talebi aç</EkButton>
+          <EkButton tone="primary" icon="mdi-lifebuoy" @click="ticketOpen = true">Destek talebi aç</EkButton>
         </div>
       </div>
     </section>
@@ -92,7 +92,7 @@
           <h2 id="help-topics-title" class="ek-help-center__h2">Konular</h2>
         </div>
         <ul class="ek-help-center__grid">
-          <li v-for="c in categoryCards" :key="c.id" class="ek-help-center__cat" :data-category="c.id">
+          <li v-for="c in topicCards" :key="c.id" class="ek-help-center__cat" :data-category="c.id">
             <button type="button" class="ek-help-center__cat-head" @click="goCategory(c.id)">
               <EkIconTile :icon="c.icon" tone="action" size="md" />
               <span class="ek-help-center__cat-text">
@@ -110,7 +110,16 @@
         </ul>
       </section>
 
-      <HelpSupportCta @ticket="ticketOpen = true" />
+      <div class="ek-help-center__bottom">
+        <section v-if="faqItems.length" class="ek-help-center__faq" aria-labelledby="help-faq-title">
+          <div class="ek-help-center__section-head">
+            <h2 id="help-faq-title" class="ek-help-center__h2">Sık sorulan sorular</h2>
+            <button type="button" class="ek-help-center__link" @click="goArticle('faq-general')">Tümünü gör</button>
+          </div>
+          <HelpArticleBody :blocks="[{ type: 'faq', items: faqItems }]" />
+        </section>
+        <HelpSupportCta stacked @ticket="ticketOpen = true" />
+      </div>
     </div>
 
     <!-- KATEGORİ / MAKALE: sol konu ağacı + içerik -->
@@ -338,6 +347,14 @@ const categoryCards = computed(() =>
     .filter((c) => c.articles.length > 0),
 )
 
+// Ana sayfa ızgarası: "Başlarken" (üstte yol olarak), SSS ve Destek (altta) ayrı gösterildiği için ızgarada tekrar edilmez.
+const HOME_SEPARATE = ['getting-started', 'faq', 'support']
+const topicCards = computed(() => categoryCards.value.filter((c) => !HOME_SEPARATE.includes(c.id)))
+const faqItems = computed(() => {
+  const block = getHelpArticle('faq-general', locale.value)?.body.find((b) => b.type === 'faq')
+  return block && block.type === 'faq' ? block.items.slice(0, 5) : []
+})
+
 const startArticles = computed(() => articles.value.filter((a) => a.category === 'getting-started').slice(0, 3))
 const POPULAR_IDS = ['ts-product-not-sent', 'ts-order-missing', 'stock-channel-policy', 'int-errors', 'app-shortcuts']
 const popular = computed(() => POPULAR_IDS.map((id) => getHelpArticle(id, locale.value)).filter((a): a is NonNullable<typeof a> => !!a))
@@ -408,7 +425,20 @@ defineExpose({ initialize, activate: initialize })
   flex-direction: column;
   gap: var(--ek-space-4);
   min-height: 100%;
-  padding-bottom: var(--ek-space-8);
+  /* ADR-0015 Karar 6.2 — sayfa iç boşluğu: masaüstü 6, tablet 4, mobil 3. */
+  padding: var(--ek-space-6) var(--ek-space-6) var(--ek-space-10);
+}
+
+@media (max-width: 1023px) {
+  .ek-help-center {
+    padding: var(--ek-space-4) var(--ek-space-4) var(--ek-space-8);
+  }
+}
+
+@media (max-width: 599px) {
+  .ek-help-center {
+    padding: var(--ek-space-3) var(--ek-space-3) var(--ek-space-8);
+  }
 }
 
 .ek-help-center__muted {
@@ -596,7 +626,7 @@ defineExpose({ initialize, activate: initialize })
 /* ---- Kategori ızgarası ---- */
 .ek-help-center__grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
   gap: var(--ek-space-3);
   margin: 0;
   padding: 0;
@@ -1090,10 +1120,22 @@ defineExpose({ initialize, activate: initialize })
   transition: var(--ek-transition-colors);
 }
 
+/* ---- Alt bant: SSS + destek ---- */
+.ek-help-center__bottom {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+  gap: var(--ek-space-4);
+  align-items: start;
+}
+
+.ek-help-center__faq .ek-help-center__section-head {
+  justify-content: space-between;
+}
+
 /* ---- Duyarlı ---- */
-@media (max-width: 1199px) {
-  .ek-help-center__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+@media (max-width: 1099px) {
+  .ek-help-center__bottom {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -1127,7 +1169,6 @@ defineExpose({ initialize, activate: initialize })
 }
 
 @media (max-width: 599px) {
-  .ek-help-center__grid,
   .ek-help-center__related ul {
     grid-template-columns: minmax(0, 1fr);
   }

@@ -23,7 +23,7 @@
           <p id="ek-tour-offer-title" class="ek-tour-offer__title">Uygulamayı 1 dakikada tanıyın</p>
           <p id="ek-tour-offer-text" class="ek-tour-offer__text">Menü, arama, sekmeler ve yardım — kısa bir turla gösterelim. Sonra da Yardım menüsünden başlatabilirsiniz.</p>
           <div class="ek-tour-offer__actions">
-            <EkButton size="sm" icon="mdi-play-outline" @click="start">Turu başlat</EkButton>
+            <EkButton tone="primary" size="sm" icon="mdi-play-outline" @click="start">Turu başlat</EkButton>
             <EkButton size="sm" tone="ghost" @click="dismissOffer">Şimdi değil</EkButton>
           </div>
         </div>
@@ -52,8 +52,8 @@
         <div class="ek-tour__actions">
           <EkButton v-if="index > 0" size="sm" tone="ghost" icon="mdi-arrow-left" @click="go(index - 1)">Geri</EkButton>
           <span class="ek-tour__spacer" />
-          <EkButton v-if="index < steps.length - 1" size="sm" trailing-icon="mdi-arrow-right" data-tour-next @click="go(index + 1)">İleri</EkButton>
-          <EkButton v-else size="sm" icon="mdi-check" data-tour-done @click="finish('done')">Bitti</EkButton>
+          <EkButton v-if="index < steps.length - 1" tone="primary" size="sm" trailing-icon="mdi-arrow-right" data-tour-next @click="go(index + 1)">İleri</EkButton>
+          <EkButton v-else tone="primary" size="sm" icon="mdi-check" data-tour-done @click="finish('done')">Bitti</EkButton>
         </div>
         <button type="button" class="ek-tour__close" aria-label="Turu kapat" @click="finish('dismissed')">
           <v-icon icon="mdi-close" aria-hidden="true" />
@@ -85,6 +85,7 @@ const step = computed(() => steps.value[index.value])
 const rectKey = computed(() => (rect.value ? `${Math.round(rect.value.left)},${Math.round(rect.value.top)}` : 'none'))
 
 function visibleTarget(s: TourStep): HTMLElement | null {
+  if (s.minWidth && window.innerWidth < s.minWidth) return null
   for (const sel of s.targets) {
     for (const el of Array.from(document.querySelectorAll<HTMLElement>(sel))) {
       const r = el.getBoundingClientRect()
@@ -130,9 +131,9 @@ function layout() {
   const h = card.offsetHeight
   let top: number
   // Uzun, dikey hedefte (sol menü) kart hedefin YANINA konur.
-  if (r.height > vh * 0.5 && r.right + GAP + width <= vw - MARGIN) {
+  if (r.height > vh * 0.5 && r.right + GAP + 4 + width <= vw - MARGIN) {
     placement.value = 'center'
-    card.style.left = `${Math.round(r.right + GAP)}px`
+    card.style.left = `${Math.round(r.right + GAP + 4)}px`
     card.style.top = `${Math.round(Math.min(Math.max(r.top + 24, MARGIN), vh - h - MARGIN))}px`
     return
   }

@@ -83,10 +83,8 @@
           <ul class="ek-help-body__creds">
             <li v-for="c in ch.credentials" :key="c"><v-icon icon="mdi-key-variant" aria-hidden="true" />{{ c }}</li>
           </ul>
-          <p class="ek-help-body__micro">Adımlar</p>
-          <ol class="ek-help-body__mini-steps">
-            <li v-for="(s, j) in ch.steps" :key="j">{{ s }}</li>
-          </ol>
+          <p class="ek-help-body__micro">Nereden alınır</p>
+          <p class="ek-help-body__where">{{ ch.steps[0] }}</p>
           <p v-if="ch.note" class="ek-help-body__channel-note"><v-icon icon="mdi-information-outline" aria-hidden="true" />{{ ch.note }}</p>
           <EkButton
             v-if="nav.canOpenScreen(HELP_CHANNEL_SCREEN[ch.kind])"
@@ -478,9 +476,7 @@ const channelRows = channelGuideRows()
   color: var(--ek-color-content-muted);
 }
 
-.ek-help-body__mini-steps {
-  margin: 0;
-  padding-left: var(--ek-space-5);
+.ek-help-body__where {
   font-size: var(--ek-type-table-size);
   line-height: 1.5;
 }
