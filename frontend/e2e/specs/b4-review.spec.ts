@@ -220,14 +220,22 @@ const cases: Array<{ name: string; run: (page: Page) => Promise<void> }> = [
       await barShot(p, 'crumb-derin-yardim-odak-yakin')
     },
   },
-  ...Object.entries(CRUMB_ALTS).map(([name, css]) => ({
+  // A/B: ara öğelerin satırda göründüğü geniş kap (2200px) — A = tüm ara öğeler çip (seçilen), B = karma.
+  ...[['crumb-a-cip', ''], ...Object.entries(CRUMB_ALTS)].map(([name, css]) => ({
     name,
     run: async (p: Page) => {
-      if (MOBILE) return
+      if (!DESKTOP) return
+      await p.setViewportSize({ width: 2200, height: HEIGHT })
       await openDeep(p)
-      await p.addStyleTag({ content: css })
+      if (css) await p.addStyleTag({ content: css })
       await settle(p, 300)
-      await barShot(p, name)
+      const bar = p.locator('.workplace-area .ek-page-bar:visible .ek-page-bar__titles').first()
+      const box = (await bar.boundingBox())!
+      await p.screenshot({ path: file(name), clip: { x: box.x - 12, y: box.y - 12, width: box.width + 24, height: box.height + 24 } })
+      const link = p.locator('.workplace-area .ek-page-bar:visible .ek-crumbs__link').first()
+      await link.hover()
+      await settle(p, 300)
+      await p.screenshot({ path: file(`${name}-hover`), clip: { x: box.x - 12, y: box.y - 12, width: box.width + 24, height: box.height + 24 } })
     },
   })),
   {

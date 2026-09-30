@@ -20,31 +20,33 @@
         <nav class="ek-crumbs" aria-label="Sayfa konumu">
           <ol class="ek-crumbs__list">
             <li v-if="section && view.showRoot" class="ek-crumbs__item ek-crumbs__item--root">
-              <span v-if="rootIcon" class="ek-crumbs__tile" aria-hidden="true"><v-icon :icon="rootIcon" size="14" /></span>
-              <span class="ek-crumbs__text">{{ section }}</span>
+              <span class="ek-crumbs__chip ek-crumbs__chip--static">
+                <v-icon v-if="rootIcon" class="ek-crumbs__chip-icon" :icon="rootIcon" size="14" aria-hidden="true" />
+                <span class="ek-crumbs__text">{{ section }}</span>
+              </span>
             </li>
             <li v-if="view.folded.length" class="ek-crumbs__item">
-              <span v-if="section && view.showRoot" class="ek-crumbs__sep" aria-hidden="true">/</span>
+              <span v-if="section && view.showRoot" class="ek-crumbs__sep" aria-hidden="true"><v-icon icon="mdi-chevron-right" size="16" /></span>
               <EkContextMenu :groups="foldedGroups" label="Üst sayfalar" location="bottom start" @select="onFolded">
                 <template #activator="{ props: menuProps }">
-                  <button type="button" class="ek-crumbs__more" v-bind="menuProps"
+                  <button type="button" class="ek-crumbs__more ek-crumbs__chip" v-bind="menuProps"
                     :aria-label="`${view.folded.length} üst sayfa daha`" :title="view.folded.map((c) => c.label).join(' / ')">
-                    <v-icon icon="mdi-dots-horizontal" size="18" aria-hidden="true" />
+                    <v-icon icon="mdi-dots-horizontal" size="16" aria-hidden="true" />
                   </button>
                 </template>
               </EkContextMenu>
             </li>
             <li v-for="(crumb, i) in view.middle" :key="`${i}-${crumb.label}`" class="ek-crumbs__item">
-              <span v-if="(section && view.showRoot) || view.folded.length || i > 0" class="ek-crumbs__sep" aria-hidden="true">/</span>
-              <button v-if="narrow && i === 0 && view.back" type="button" class="ek-crumbs__back" :aria-label="`Geri: ${view.back.label}`"
+              <span v-if="(section && view.showRoot) || view.folded.length || i > 0" class="ek-crumbs__sep" aria-hidden="true"><v-icon icon="mdi-chevron-right" size="16" /></span>
+              <button v-if="narrow && i === 0 && view.back" type="button" class="ek-crumbs__back ek-crumbs__chip" :aria-label="`Geri: ${view.back.label}`"
                 :title="`Geri: ${view.back.label}`" @click="view.back.onSelect?.()">
-                <v-icon :icon="icons.back" size="18" aria-hidden="true" />
+                <v-icon :icon="icons.back" size="16" aria-hidden="true" />
               </button>
-              <button v-if="crumb.onSelect" type="button" class="ek-crumbs__link" :title="crumb.label" @click="crumb.onSelect()">{{ crumb.label }}</button>
+              <button v-if="crumb.onSelect" type="button" class="ek-crumbs__link ek-crumbs__chip" :title="crumb.label" @click="crumb.onSelect()">{{ crumb.label }}</button>
               <span v-else class="ek-crumbs__text" :title="crumb.label">{{ crumb.label }}</span>
             </li>
             <li class="ek-crumbs__item ek-crumbs__item--current">
-              <span v-if="(section && view.showRoot) || view.folded.length || view.middle.length" class="ek-crumbs__sep" aria-hidden="true">/</span>
+              <span v-if="(section && view.showRoot) || view.folded.length || view.middle.length" class="ek-crumbs__sep" aria-hidden="true"><v-icon icon="mdi-chevron-right" size="16" /></span>
               <h1 class="ek-page-bar__title" aria-current="page" :title="title">{{ title }}</h1>
               <span v-if="record?.code" class="ek-record-id" :class="channelClass(record.channel)">
                 <span v-if="record.channel" class="ek-record-id__dot" aria-hidden="true"></span>
@@ -57,18 +59,21 @@
                   </button>
                 </EkTooltip>
               </span>
-              <button
-                type="button"
-                class="ek-page-bar__info"
-                :class="{ 'is-on': about.open.value }"
-                :aria-expanded="about.open.value"
-                :aria-controls="panelId"
-                :aria-label="`Sayfa hakkında: ${title}`"
-                :title="about.open.value ? 'Sayfa hakkında bilgiyi gizle' : 'Sayfa hakkında'"
-                @click="about.toggle()"
-              >
-                <v-icon :icon="icons.info" size="18" aria-hidden="true" />
-              </button>
+              <!-- B4: zarif yardım tetikleyicisi — küçük yuvarlak nötr düğme, ince çizgili soru işareti; ipucu +
+                   odak halkası. Davranış/API aynı (aria-expanded/controls, "Sayfa hakkında" paneli). -->
+              <EkTooltip :text="about.open.value ? 'Sayfa hakkında bilgiyi gizle' : 'Sayfa hakkında'" :open-delay="300">
+                <button
+                  type="button"
+                  class="ek-page-bar__info"
+                  :class="{ 'is-on': about.open.value }"
+                  :aria-expanded="about.open.value"
+                  :aria-controls="panelId"
+                  :aria-label="`Sayfa hakkında: ${title}`"
+                  @click="about.toggle()"
+                >
+                  <v-icon icon="mdi-help" size="14" aria-hidden="true" />
+                </button>
+              </EkTooltip>
             </li>
           </ol>
         </nav>
@@ -258,7 +263,11 @@ async function copyRecord() {
   min-width: 0;
 }
 
-/* ---- A7 breadcrumb: kök (modül) / ara ekranlar / H1 — tek satır, sakin; ayraç tipografik '/' düşük kontrast ---- */
+/* ---- A7 → B4 breadcrumb: [kök çip] › [ara çip] › H1 — nötr, ince kenarlı küçük çipler; ayraç sade chevron ----
+   Çip = 28px (`chip-h-md`, etkileşimli), `radius-chip`, 1px `border-default`, çok hafif zemin (`surface-muted`), metin
+   `content-muted`; bağlantı çipinde hover → zemin `surface` + kenarlık `border-strong` + metin `content-strong`.
+   Kök (bölüm) aynı çip ama statik (tıklanmaz — Karar 2.3), modül ikonu çipin içinde nötr tonda. Vurgu rengi YOK:
+   hiyerarşinin tek güçlü noktası H1. Durumlar geometri değiştirmez (layout shift 0). */
 .ek-crumbs {
   display: flex;
   align-items: center;
@@ -319,82 +328,72 @@ async function copyRecord() {
   text-overflow: ellipsis;
 }
 
-.ek-crumbs__item--root {
-  gap: var(--ek-space-2);
-}
-
-.ek-crumbs__tile {
+.ek-crumbs__chip {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
+  gap: var(--ek-space-1);
+  height: var(--ek-app-chip-h-md);
+  padding: 0 var(--ek-space-3);
   border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-tile);
-  background: var(--ek-color-surface);
-  color: var(--ek-color-sidebar-section);
-  font-size: var(--ek-icon-xs);
+  border-radius: var(--ek-radius-chip);
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-content-muted);
+  font: inherit;
+  white-space: nowrap;
+  transition: var(--ek-transition-colors);
+}
+
+.ek-crumbs__chip--static {
+  padding-left: var(--ek-space-2);
+}
+
+.ek-crumbs__chip-icon {
+  flex: none;
+  color: var(--ek-color-content-muted);
+}
+
+.ek-crumbs__chip--static .ek-crumbs__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .ek-crumbs__sep {
-  margin: 0 var(--ek-space-3);
+  display: inline-flex;
+  align-items: center;
+  margin: 0 var(--ek-space-1);
   color: var(--ek-color-content-subtle);
-  font-weight: var(--ek-font-weight-regular);
   user-select: none;
 }
 
 .ek-crumbs__link,
 .ek-crumbs__more,
 .ek-crumbs__back {
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
   cursor: pointer;
-  transition: var(--ek-transition-colors);
 }
 
-/* Ara öğe: dinlenirken ikincil metin; hover'da metin koyulaşır + ince alt çizgi + yumuşak zemin. Hizayı bozmamak için
-   iç boşluk negatif kenar boşluğuyla dengelenir. */
 .ek-crumbs__link {
-  margin: 0 calc(-1 * var(--ek-space-1));
-  padding: 2px var(--ek-space-1);
-  border-radius: var(--ek-radius-sm);
-  text-decoration: underline;
-  text-decoration-color: transparent;
-  text-underline-offset: 3px;
-}
-
-.ek-crumbs__link:hover {
-  background: var(--ek-color-tab-hover);
-  color: var(--ek-color-content-strong);
-  text-decoration-color: var(--ek-color-border-strong);
+  display: inline-block;
+  line-height: calc(var(--ek-app-chip-h-md) - 2px);
 }
 
 .ek-crumbs__more,
 .ek-crumbs__back {
-  display: inline-flex;
-  align-items: center;
   justify-content: center;
-  border-radius: var(--ek-radius-control);
-}
-
-.ek-crumbs__more {
-  width: 24px;
-  height: 24px;
-  font-size: var(--ek-icon-sm);
+  width: var(--ek-app-chip-h-md);
+  padding: 0;
 }
 
 .ek-crumbs__back {
-  width: 24px;
-  height: 24px;
-  margin: 0 var(--ek-space-1) 0 calc(-1 * var(--ek-space-1));
+  margin-right: var(--ek-space-2);
   color: var(--ek-color-content-default);
 }
 
+.ek-crumbs__link:hover,
 .ek-crumbs__more:hover,
-.ek-crumbs__back:hover {
-  background: var(--ek-color-tab-hover);
+.ek-crumbs__back:hover,
+.ek-crumbs__more[aria-expanded='true'] {
+  border-color: var(--ek-color-border-strong);
+  background: var(--ek-color-surface);
   color: var(--ek-color-content-strong);
 }
 
@@ -460,31 +459,40 @@ async function copyRecord() {
   color: var(--ek-color-action);
 }
 
+/* B4 — yardım tetikleyicisi: 24px yuvarlak NÖTR düğme, ince kenarlık, ince çizgili "?" (dolgu/renk yok). Açıkken
+   yalnız kenarlık + metin koyulaşır ve zemin hafifçe dolar (seçili ama sakin). İpucu `EkTooltip`; odak halkası token. */
 .ek-page-bar__info {
   display: inline-flex;
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border: 1px solid transparent;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-chip);
-  background: transparent;
+  background: var(--ek-color-surface);
   color: var(--ek-color-content-muted);
-  font-size: var(--ek-icon-sm);
+  font-size: var(--ek-icon-xs);
   cursor: pointer;
   transition: var(--ek-transition-colors);
 }
 
 .ek-page-bar__info:hover {
-  background: var(--ek-color-tab-hover);
+  border-color: var(--ek-color-border-strong);
   color: var(--ek-color-content-strong);
 }
 
 .ek-page-bar__info.is-on {
-  background: var(--ek-color-action-subtle);
-  border-color: var(--ek-color-action-border);
-  color: var(--ek-color-action-emphasis);
+  border-color: var(--ek-color-border-strong);
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-content-strong);
+}
+
+/* EkTooltip çapası satırın hizasını bozmasın. */
+.ek-crumbs__item--current :deep(.ek-tooltip__anchor) {
+  display: inline-flex;
+  flex: none;
 }
 
 .ek-crumbs__link:focus-visible,
@@ -523,7 +531,7 @@ async function copyRecord() {
   row-gap: var(--ek-space-2);
 }
 
-.is-narrow .ek-page-bar__info {
+.is-narrow .ek-crumbs__item--current > :deep(.ek-tooltip__anchor) {
   order: 1;
 }
 
@@ -532,7 +540,7 @@ async function copyRecord() {
 }
 
 .is-narrow .ek-page-bar__title {
-  max-width: calc(100% - 36px);
+  max-width: calc(100% - 32px);
 }
 
 /* Yenile düğmesi başlık satırıyla (alt satır) aynı hizada. */

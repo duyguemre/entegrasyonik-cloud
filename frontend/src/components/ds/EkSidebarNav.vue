@@ -82,21 +82,23 @@
             :class="{ 'is-open': isOpen(item.key) && !collapsed }"
             :inert="!(isOpen(item.key) && !collapsed) || undefined"
           >
-            <ul class="ek-side__sublist">
-              <li v-for="child in item.children" :key="child.key">
-                <button
-                  type="button"
-                  class="ek-side__subitem"
-                  :class="[hookClasses?.subItem, { 'is-active': child.key === activeKey, 'is-hover': forceHoverKey === child.key }]"
-                  :data-key="child.key"
-                  :aria-current="child.key === activeKey ? 'page' : undefined"
-                  @click="emit('select', child.key)"
-                >
-                  <span class="ek-side__label">{{ child.label }}</span>
-                  <EkBadge v-if="child.badge" variant="count" :tone="child.badgeTone ?? 'neutral'" :text="child.badge" />
-                </button>
-              </li>
-            </ul>
+            <div class="ek-side__subclip">
+              <ul class="ek-side__sublist">
+                <li v-for="child in item.children" :key="child.key">
+                  <button
+                    type="button"
+                    class="ek-side__subitem"
+                    :class="[hookClasses?.subItem, { 'is-active': child.key === activeKey, 'is-hover': forceHoverKey === child.key }]"
+                    :data-key="child.key"
+                    :aria-current="child.key === activeKey ? 'page' : undefined"
+                    @click="emit('select', child.key)"
+                  >
+                    <span class="ek-side__label">{{ child.label }}</span>
+                    <EkBadge v-if="child.badge" variant="count" :tone="child.badgeTone ?? 'neutral'" :text="child.badge" />
+                  </button>
+                </li>
+              </ul>
+            </div>
           </div>
         </li>
       </ul>
@@ -465,7 +467,8 @@ function onItem(item: EkSideItem) {
     visibility 0ms linear var(--ek-app-nav-fade, 0ms);
 }
 
-.ek-side__subwrap > .ek-side__sublist {
+/* Kırpıcı ayrı katman: alt listenin dolgu/kenar boşluğu 0fr'de yükseklik bırakmaz (kapalı grup = 0px). */
+.ek-side__subclip {
   min-height: 0;
   overflow: hidden;
 }

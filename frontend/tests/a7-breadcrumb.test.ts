@@ -92,8 +92,9 @@ describe('A7 — EkPageBar sözleşmesi', () => {
 
   it('ayraç dekoratif (aria-hidden), düğmelerin erişilebilir adı var, odak halkası token', () => {
     for (const m of template.matchAll(/class="ek-crumbs__sep"[^>]*>/g)) expect(m[0]).toMatch(/aria-hidden="true"/)
-    expect(template).toMatch(/ek-crumbs__back"[^>]*:aria-label="`Geri: /)
-    expect(template).toMatch(/ek-crumbs__more"[^>]*\n?[^>]*:aria-label=/)
+    // [B4] geri/"…" düğmeleri ayrıca `ek-crumbs__chip` sınıfını taşır (nötr çip görünümü) — iddia aynı: erişilebilir ad var.
+    expect(template).toMatch(/ek-crumbs__back[^"]*"[^>]*:aria-label="`Geri: /)
+    expect(template).toMatch(/ek-crumbs__more[^"]*"[^>]*\n?[^>]*:aria-label=/)
     expect(template).toMatch(/ek-record-id__copy"[^>]*\n?[^>]*:aria-label=/)
     expect(style).toMatch(/\.ek-crumbs__link:focus-visible[\s\S]*?box-shadow: var\(--ek-focus-ring\)/)
   })
