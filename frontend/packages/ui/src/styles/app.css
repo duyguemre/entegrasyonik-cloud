@@ -72,6 +72,18 @@
   --ek-channel-ring: color-mix(in srgb, var(--ek-color-content-strong) 60%, transparent);
 }
 
+/* Tema geçişinde bir kare renk animasyonu yok (ADR-0026 Karar 3.4) — iki uygulama için tek kural. */
+html.ek-theme-switching *,
+html.ek-theme-switching *::before,
+html.ek-theme-switching *::after {
+  transition: none !important;
+}
+
+/* Tarayıcının kendi yüzeyleri (kaydırma çubuğu, form denetimleri) etkin temayı izler; ilk kareyi theme-boot.js yazar. */
+html[data-theme='dark'] {
+  color-scheme: dark;
+}
+
 [data-density='compact'] {
   --ek-app-row-h: 36px;
   --ek-app-control-h: 36px;

@@ -6,12 +6,7 @@ body {
   font-family: var(--ek-font-sans);
 }
 
-/* Tema geçişinde bir kare renk animasyonu yok (ADR-0026 Karar 3.4). */
-html.ek-theme-switching *,
-html.ek-theme-switching *::before,
-html.ek-theme-switching *::after {
-  transition: none !important;
-}
+/* Tema geçişi kuralı (ek-theme-switching) ortak pakette: @entegrasyonik/ui/styles app.css. */
 
 .bo-page {
   display: flex;
