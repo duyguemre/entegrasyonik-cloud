@@ -10,7 +10,7 @@
     <header class="ek-info-card__head">
       <EkIconTile :icon="icon" :tone="tone" size="sm" />
       <h3 :id="titleId" class="ek-info-card__title">{{ title }}</h3>
-      <div v-if="$slots.badge" class="ek-info-card__badge"><slot name="badge" /></div>
+      <div v-if="$slots.aside" class="ek-info-card__aside"><slot name="aside" /></div>
     </header>
     <div class="ek-info-card__body">
       <slot>

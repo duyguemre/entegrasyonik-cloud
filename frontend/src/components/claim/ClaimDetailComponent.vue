@@ -78,7 +78,7 @@
         <EkInfoCard v-if="claim.meta?.rejectedInfo?.trackingCode" title="Reddedilen paket (geri gönderilen)" icon="mdi-package-variant-remove" tone="error"
           :rows="[{ label: 'Kargo firması', value: claim.meta.rejectedInfo.carrierName }, { label: 'Takip kodu', value: claim.meta.rejectedInfo.trackingCode, numeric: true }]" />
         <EkInfoCard title="Müşteri" icon="mdi-account-outline" :rows="customerItems" empty-text="Bu talep için müşteri kaydı bulunamadı.">
-          <template v-if="claim.customer && hasMetrics" #badge>
+          <template v-if="claim.customer && hasMetrics" #aside>
             <EkStatusChip :tone="scoreTone" :label="`Skor: ${customerScore}`" />
           </template>
         </EkInfoCard>
