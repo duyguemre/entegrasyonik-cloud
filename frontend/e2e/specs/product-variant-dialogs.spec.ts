@@ -4,17 +4,17 @@
 // Kapsanan bileşenler (hepsi `components/productDefinitions/variants/**`):
 //  - ProductVariantAttributesComponent (+ platformInfos/*)   — satırdaki kalem butonu
 //  - ProductBatchVariantAttributesComponent                  — "Varyant İşlemleri" > "Toplu Özellik Düzenleme"
-//  - ProductBatchVariantPlatformPricesComponent               — "Varyant İşlemleri" > "Toplu Fiyat Düzenleme"
+//  - grid/VariantBulkEditor (DS-v2 A6a; eski ProductBatchVariantPlatformPricesComponent'in yerine)
+//                                                             — "Varyant İşlemleri" > "Toplu Fiyat Düzenleme"
 //  - ProductVariantPlatformPricesComponent (+ crud/PlatformPriceComponent) — "Platform Bazında Fiyat"
 //    işaretliyken fiyat hücresine tıklama
-//  - ProductSearchVariantComponent                            — "Varyant İşlemleri" > "Ara"
+//  - araç çubuğu süzme alanı (DS-v2 A6a; eski ProductSearchVariantComponent'in yerine) — "Varyant İşlemleri" > "Ara"
 //  - ProductVariantGeneratorComponent                         — başlıktaki yeşil "+" menüsü
 //  - ProductVariantImagesComponent (+ crud/ImageUploaderComponent, ProductVariantImageEditComponent)
 //    — satırdaki varyant resmi
 //
-// GİZLİ DAVRANIŞ (not): ProductBatchProcessVariantComponent `batchProcessFormMenu` ile açılır, ama
-// bu ref ProductVariantsComponent'te HİÇBİR YERDE `true` yapılmaz (grep ile doğrulandı) — bileşen
-// arayüzden erişilemez, bu yüzden burada karakterize EDİLMEZ.
+// DS-v2 A6a: arayüzden erişilemeyen ProductBatchProcessVariantComponent ve yerini alan iki panel
+// (ProductBatchVariantPlatformPricesComponent, ProductSearchVariantComponent) silindi.
 //
 // Ekran görüntüsü tabanları: view'ın (B5-1, kapsam dışı) kategori adımından gelen hata bildirimi
 // rastgele bir destek kodu içerir — maskelenir.
@@ -31,12 +31,12 @@ async function axeReport(page: Page, testInfo: any, name: string, include: strin
   // diyaloğun kendi ihlallerini ölçmek için hariç tutulur.
   const results = await new AxeBuilder({ page }).include(include).withTags(AXE_TAGS).analyze()
   await testInfo.attach(`axe-${name}-sonuclari.json`, { body: JSON.stringify(results.violations, null, 2), contentType: 'application/json' })
-  console.log(`[axe] ${name}: ${results.violations.length} WCAG 2.1 AA ihlali`)
+  console.log(`[axe] ${name}: ${results.violations.length} WCAG 2.1 AA ihlali`, results.violations.map((v) => v.id + ':' + v.nodes.map((n) => n.target.join(' ')).join(' / ')).join(' | '))
 }
 
 async function openOpsMenuItem(page: Page, root: Locator, label: string) {
-  await root.locator('thead').getByRole('button').filter({ has: page.locator('.mdi-menu') }).click()
-  // DS-v2 A2: EkContextMenu (role=menu) — eski .v-list seçicisi bilinçli güncellendi.
+  // DS-v2 A6a (kasten): "Varyant işlemleri" düğmesi tablo başlığından araç çubuğuna taşındı.
+  await root.getByRole('button', { name: 'Varyant işlemleri' }).click()
   const menu = page.locator('.v-overlay--active [role="menu"]').filter({ hasText: 'Varyant İşlemleri' })
   await menu.getByText(label, { exact: true }).click()
 }
@@ -67,23 +67,27 @@ test.describe('P3 (B5-2) — Varyant diyalogları (ProductVariantsComponent alt 
     await axeReport(page, testInfo, 'ProductBatchVariantAttributesComponent', '.v-overlay--active:not(.v-snackbar)')
   })
 
-  test('toplu fiyat düzenleme: satış/piyasa fiyatı alanları ve platform bazında fiyat seçeneği görünür', async ({ page }, testInfo) => {
+  // DS-v2 A6a (kasten): "Toplu Fiyat Düzenleme" artık toplu düzenleyiciyi kanal fiyatları görünümünde açar
+  // (eski tek-değer kartı yerine hücre seçimi + toplu uygula + önizleme). Kanal kolonları kanal adıyla gruplu.
+  test('toplu fiyat düzenleme: toplu düzenleyici kanal fiyatları görünümünde açılır', async ({ page }, testInfo) => {
     const root = await openVariantStep(page)
     await openOpsMenuItem(page, root, 'Toplu Fiyat Düzenleme')
 
-    const card = page.locator('.v-overlay--active').filter({ has: page.getByLabel('Satış Fiyatı', { exact: true }) }).first()
+    const card = page.locator('.v-overlay--active .vbe-root')
     await expect(card).toBeVisible()
-    await expect(card.getByLabel('Piyasa Fiyatı', { exact: true })).toBeVisible()
-    await expect(card.getByText('Platform Bazında Fiyat').first()).toBeVisible()
+    await expect(card.getByRole('radio', { name: 'Kanal fiyatları' })).toHaveAttribute('aria-checked', 'true')
+    await expect(card.getByRole('button', { name: 'Trendyol Satış fiyatı kolonunu seç' })).toBeVisible()
+    await expect(card.getByRole('button', { name: 'Seçime uygula' })).toBeVisible()
     await shot(page, 'variant-batch-prices.png')
-    await axeReport(page, testInfo, 'ProductBatchVariantPlatformPricesComponent', '.v-overlay--active:not(.v-snackbar)')
+    await axeReport(page, testInfo, 'VariantBulkEditor', '.v-overlay--active:not(.v-snackbar)')
   })
 
   test('platform bazında varyant fiyatı: işaretlenip fiyat hücresine tıklanınca platform fiyat kartı açılır', async ({ page }, testInfo) => {
     const root = await openVariantStep(page)
     const row = root.locator('tbody tr').filter({ hasText: 'SK-E2E-SIYAH' })
     await row.getByLabel('Platform Bazında Fiyat').check()
-    await row.getByText('Satış Fiyatı').first().click()
+    // DS-v2 A6a (kasten): kanal bazında satırda fiyat hücresi "Kanal fiyatlarını düzenle" düğmesine dönüşür.
+    await row.getByRole('button', { name: /Kanal fiyatlarını düzenle/ }).click()
 
     const card = page.locator('.v-overlay--active').filter({ hasText: 'Platform Bazında Varyant Fiyatları' }).first()
     await expect(card).toBeVisible()
@@ -91,19 +95,25 @@ test.describe('P3 (B5-2) — Varyant diyalogları (ProductVariantsComponent alt 
     await axeReport(page, testInfo, 'ProductVariantPlatformPricesComponent', '.v-overlay--active:not(.v-snackbar)')
   })
 
-  test('varyant arama: "Ara" arama formunu (stok kodu/barkod/stok/raf) açar', async ({ page }, testInfo) => {
+  // DS-v2 A6a (kasten): "Ara" artık araç çubuğundaki anlık süzme alanına odaklanır (eski arama kartının
+  // süzgeci kodda devre dışıydı — hiçbir şeyi süzmüyordu). Süzme stok kodu/barkod/raf/seçenek adında çalışır.
+  test('varyant arama: "Ara" süzme alanına odaklanır, yazınca satırlar süzülür', async ({ page }) => {
     const root = await openVariantStep(page)
     await openOpsMenuItem(page, root, 'Ara')
 
-    const card = page.locator('.v-overlay--active').filter({ has: page.locator('.mdi-magnify') }).last()
-    await expect(card).toBeVisible()
-    await shot(page, 'variant-search.png')
-    await axeReport(page, testInfo, 'ProductSearchVariantComponent', '.v-overlay--active:not(.v-snackbar)')
+    const search = root.getByRole('textbox', { name: 'Varyantlarda ara' })
+    await expect(search).toBeFocused()
+    await search.fill('beyaz')
+    await expect(root.getByText('SK-E2E-BEYAZ')).toBeVisible()
+    await expect(root.getByText('SK-E2E-SIYAH')).toHaveCount(0)
+    await search.fill('yok-boyle-bir-sey')
+    await expect(root.getByText('Aramaya uyan varyant yok')).toBeVisible()
   })
 
   test('varyant oluşturucu: yeşil "+" menüsü seçenek gruplarını listeler', async ({ page }, testInfo) => {
     const root = await openVariantStep(page)
-    await root.locator('thead').getByRole('button').filter({ has: page.locator('.mdi-plus') }).first().click()
+    // DS-v2 A6a (kasten): başlıktaki yeşil "+" → araç çubuğunda "Varyant oluştur".
+    await root.getByRole('button', { name: 'Varyant oluştur' }).first().click()
 
     const menu = page.locator('.v-overlay--active').last()
     await expect(menu).toBeVisible()
@@ -116,11 +126,46 @@ test.describe('P3 (B5-2) — Varyant diyalogları (ProductVariantsComponent alt 
     const root = await openVariantStep(page, variantProduct, {
       getImages: { images: [] },
     })
-    await root.locator('tbody tr').filter({ hasText: 'SK-E2E-SIYAH' }).locator('td').nth(1).locator('.elevation-1 > *').first().click()
+    // DS-v2 A6a (kasten): resim küçük görseli stok kodu hücresinde, adlandırılmış düğme.
+    await root.locator('tbody tr').filter({ hasText: 'SK-E2E-SIYAH' }).getByRole('button', { name: /^Varyant resimleri/ }).click()
 
     const card = page.locator('.v-overlay--active').filter({ hasText: 'Varyant Resimleri' }).first()
     await expect(card).toBeVisible()
     await shot(page, 'variant-images.png')
     await axeReport(page, testInfo, 'ProductVariantImagesComponent', '.v-overlay--active:not(.v-snackbar)')
+  })
+})
+
+// DS-v2 A6a — pazaryeri özellik listesi alınamazsa toplu özellik panelinde anlaşılır hata + Tekrar dene
+// (eskiden sonsuz "yükleniyor" ve genel "Bir şeyler ters gitti" bildirimleri). Eşleme ekranlarıyla aynı
+// `useIntegrationError` eşlemesi. Kanal seçimi artık adlı sekmeler (role=tab).
+test.describe('A6a — varyant özellik panelinde pazaryeri hatası', () => {
+  test('500 → hata paneli; Tekrar dene başarılı olunca özellikler gelir; kanal sekmeleri klavyeyle gezilir', async ({ page }, testInfo) => {
+    let fail = true
+    const root = await openVariantStep(page, variantProduct, {
+      'IntegrationService/retrieveCategoryAttributesFromIntegration': async (route: any, headers: any) => {
+        if (fail) return route.fulfill({ status: 500, contentType: 'application/json', headers, body: JSON.stringify({ error: 'Beklenmeyen bir hata oluştu.', code: 'INTERNAL' }) })
+        return route.fulfill({ status: 200, contentType: 'application/json', headers, body: JSON.stringify([{ _id: 'attr-1', title: 'Kumaş', required: true, varianter: false, slicer: false, allowCustom: true, values: [] }]) })
+      },
+    })
+    await openOpsMenuItem(page, root, 'Toplu Özellik Düzenleme')
+    const card = page.locator('.v-overlay--active').filter({ hasText: 'Toplu Varyant Bilgileri' }).first()
+    const trendyol = card.getByRole('tab', { name: /Trendyol/ })
+    // Mobilde menü açılışı tarayıcının zararsız "ResizeObserver loop" bildirimini genel hata bildirimine çeviriyor
+    // (main.ts, ortak — raporlandı); burada yalnız özellik hatasının YENİ bir genel bildirim eklemediği doğrulanır.
+    const toasts = page.locator('.v-snackbar__wrapper').filter({ hasText: 'Bir şeyler ters gitti' })
+    const toastsBefore = await toasts.count()
+    await trendyol.click()
+    await expect(trendyol).toHaveAttribute('aria-selected', 'true')
+    await expect(card.getByText('Trendyol kategori özellikleri şu an alınamadı')).toBeVisible()
+    await expect(toasts).toHaveCount(toastsBefore)
+    await axeReport(page, testInfo, 'ProductBatchVariantAttributes-hata', '.v-overlay--active:not(.v-snackbar)')
+    await trendyol.press('ArrowDown')
+    await expect(card.getByRole('tab', { name: /Hepsiburada/ })).toBeFocused()
+    await card.getByRole('tab', { name: /Trendyol/ }).click()
+    fail = false
+    await card.getByRole('button', { name: 'Tekrar dene' }).click()
+    await expect(card.getByText('Zorunlu Özellikleri (*)')).toBeVisible()
+    await expect(card.getByText('Trendyol kategori özellikleri şu an alınamadı')).toHaveCount(0)
   })
 })

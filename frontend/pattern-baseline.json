@@ -2,14 +2,14 @@
   "_meta": "ADR-0015 Karar 6.4 desen mandalı tabanı. node scripts/check-pattern-baseline.js --write ile üretildi (bkz. scripts/pattern-counts.js). Hiçbir dosyada/kategoride sayı ARTAMAZ; yeni dosyalar 0 ile başlamalı; düşüş serbest ama bu dosyanın güncellenmesi gerekir. patternExceptions BİLGİ AMAÇLIDIR (C'de raporlanır, mandal tarafından zorlanmaz).",
   "date": "2026-09-30",
   "totals": {
-    "total": 19,
-    "rawDataTable": 11,
+    "total": 17,
+    "rawDataTable": 10,
     "rawDialog": 0,
     "rawChip": 1,
-    "rawFormat": 4,
+    "rawFormat": 3,
     "rawSpinner": 2,
     "iconBtnNoLabel": 1,
-    "patternExceptions": 4,
+    "patternExceptions": 2,
     "pageHeaderMissing": 4
   },
   "files": {
@@ -573,6 +573,16 @@
       "patternExceptions": 0,
       "total": 0
     },
+    "src/components/integrations/IntegrationErrorPanel.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
     "src/components/integrations/IntegrationFormFrame.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
@@ -584,6 +594,16 @@
       "total": 0
     },
     "src/components/integrations/IntegrationGuideCard.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/components/integrations/IntegrationLoadingBlock.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
       "rawChip": 0,
@@ -1253,6 +1273,26 @@
       "patternExceptions": 0,
       "total": 0
     },
+    "src/components/productDefinitions/crud/ProductFormStepFooter.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/components/productDefinitions/crud/ProductFormWizardBar.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
     "src/components/productDefinitions/crud/ProductImagesComponent.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
@@ -1363,7 +1403,7 @@
       "patternExceptions": 0,
       "total": 0
     },
-    "src/components/productDefinitions/variants/ProductBatchProcessVariantComponent.vue": {
+    "src/components/productDefinitions/variants/ChannelTabList.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
       "rawChip": 0,
@@ -1383,27 +1423,7 @@
       "patternExceptions": 0,
       "total": 0
     },
-    "src/components/productDefinitions/variants/ProductBatchVariantPlatformPricesComponent.vue": {
-      "rawDataTable": 0,
-      "rawDialog": 0,
-      "rawChip": 0,
-      "rawFormat": 0,
-      "rawSpinner": 0,
-      "iconBtnNoLabel": 0,
-      "patternExceptions": 0,
-      "total": 0
-    },
     "src/components/productDefinitions/variants/ProductDetailsComponent.vue": {
-      "rawDataTable": 0,
-      "rawDialog": 0,
-      "rawChip": 0,
-      "rawFormat": 0,
-      "rawSpinner": 0,
-      "iconBtnNoLabel": 0,
-      "patternExceptions": 0,
-      "total": 0
-    },
-    "src/components/productDefinitions/variants/ProductSearchVariantComponent.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
       "rawChip": 0,
@@ -1504,14 +1524,34 @@
       "total": 0
     },
     "src/components/productDefinitions/variants/ProductVariantsComponent.vue": {
-      "rawDataTable": 1,
+      "rawDataTable": 0,
       "rawDialog": 0,
       "rawChip": 0,
       "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
       "patternExceptions": 0,
-      "total": 1
+      "total": 0
+    },
+    "src/components/productDefinitions/variants/grid/VariantBulkEditor.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/components/productDefinitions/variants/grid/VariantGrid.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
     },
     "src/components/productDefinitions/variants/platformInfos/HepsiburadaVariantInfoComponent.vue": {
       "rawDataTable": 0,
@@ -1573,6 +1613,16 @@
       "patternExceptions": 0,
       "total": 0
     },
+    "src/components/ticket/TicketChoiceGroup.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
     "src/components/ticket/TicketCreateDialog.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
@@ -1587,11 +1637,11 @@
       "rawDataTable": 0,
       "rawDialog": 0,
       "rawChip": 0,
-      "rawFormat": 1,
+      "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
       "patternExceptions": 0,
-      "total": 1
+      "total": 0
     },
     "src/components/user/NotificationDrawerComponent.vue": {
       "rawDataTable": 0,
@@ -2100,7 +2150,7 @@
       "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
-      "patternExceptions": 1,
+      "patternExceptions": 0,
       "total": 0
     },
     "src/views/secure/definitions/ProductUpdateView.vue": {
@@ -2110,7 +2160,7 @@
       "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
-      "patternExceptions": 1,
+      "patternExceptions": 0,
       "total": 0
     },
     "src/views/secure/definitions/ReturnDefinitionView.vue": {

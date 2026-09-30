@@ -103,7 +103,8 @@ const sleep = (ms: number) => {
 
 
 const retrieveShipments = async () => {
-  shipments.value = await integrationStore.retrievePlatformInfos('trendyol')
+  // DS-v2 A6a: yanıt dizi değilse (hata/boş) liste boş kalır — eskiden .find patlıyor, genel hata bildirimi çıkıyordu.
+  { const r = await integrationStore.retrievePlatformInfos('trendyol'); shipments.value = Array.isArray(r) ? r : [] }
 }
 
 

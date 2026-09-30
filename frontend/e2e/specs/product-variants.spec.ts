@@ -87,40 +87,52 @@ test.describe('P3 (B5-2) — Ürün varyantları (ProductVariantsComponent)', ()
     await expect(root.getByText('₺249,90').first()).toBeVisible()
     await expect(root.getByText('₺299,90').first()).toBeVisible()
     await expect(root.getByText('A-01')).toBeVisible()
-    // Başlık sütunları (multipleVariantHeaders) — "Grup" başlığı header.choiceTitle slot'undan gelir.
-    await expect(root.getByText('Satış Fiyatı').first()).toBeVisible()
-    await expect(root.getByText('Grup', { exact: true })).toBeVisible()
+    // DS-v2 A6a (kasten): başlıklar cümle düzeni; grup kolonu başlığı ilk seçeneğin adı (eski sabit "Grup").
+    await expect(root.getByRole('columnheader', { name: 'Satış fiyatı' })).toBeVisible()
+    await expect(root.getByRole('columnheader', { name: 'E2E Renk Grubu' })).toBeVisible()
     // Her satırda düzenle (kalem) + sil butonu vardır (hasVariant).
     await expect(root.locator('tbody tr').filter({ hasText: 'SK-E2E-SIYAH' }).locator('.mdi-pencil')).toHaveCount(1)
     await expect(root.locator('tbody tr').filter({ hasText: 'SK-E2E-SIYAH' }).locator('.mdi-delete')).toHaveCount(1)
   })
 
-  test('satır içi düzenleme: stok kodu hücresine tıklayınca Stok Kodu/Barkod alanları açılır', async ({ page }) => {
+  // DS-v2 A6a (kasten): hücre içi düzenleme hücre bazında — tık seçer, çift tık/Enter/yazmaya başlamak düzenler
+  // (eski: satır hücresine tık iki alanı birden açıyordu). Değişen hücre işaretlenir; Ctrl+Z geri alır.
+  test('satır içi düzenleme: çift tık hücreyi düzenler, Enter kaydeder, değişen hücre işaretlenir, Ctrl+Z geri alır', async ({ page }) => {
     const root = await openVariantStep(page)
 
-    await root.getByText('SK-E2E-SIYAH').click()
-    await expect(root.getByLabel('Stok Kodu', { exact: true })).toHaveValue('SK-E2E-SIYAH')
-    await expect(root.getByLabel('Barkod', { exact: true })).toHaveValue('8690000000101')
+    await root.getByText('SK-E2E-SIYAH').dblclick()
+    const input = root.getByRole('textbox', { name: /^Stok kodu,/ })
+    await expect(input).toHaveValue('SK-E2E-SIYAH')
+    await input.fill('SK-E2E-YENI')
+    await input.press('Enter')
+    const cell = root.locator('td[data-cell="stockcode"]').filter({ hasText: 'SK-E2E-YENI' })
+    await expect(cell).toHaveClass(/is-changed/)
+    // Enter bir alt satıra iner; barkod hücresinde yazmaya başlamak düzenlemeyi açar.
+    await root.locator('td[data-cell="barcode"]').filter({ hasText: '8690000000101' }).click()
+    await page.keyboard.type('1')
+    await expect(root.getByRole('textbox', { name: /^Barkod,/ })).toHaveValue('1')
+    await page.keyboard.press('Escape')
+    await expect(root.getByText('8690000000101')).toBeVisible()
+    await root.locator('td[data-cell="barcode"]').first().click()
+    await page.keyboard.press('Control+z')
+    await expect(root.getByText('SK-E2E-SIYAH')).toBeVisible()
   })
 
   test('varyant işlemleri menüsü: menü butonu "Varyant İşlemleri" listesini açar', async ({ page }) => {
     const root = await openVariantStep(page)
 
-    await root.locator('thead').getByRole('button').filter({ has: page.locator('.mdi-menu') }).click()
-    // DS-v2 A2: EkContextMenu (role=menu) — eski .v-list seçicisi bilinçli güncellendi.
+    // DS-v2 A6a (kasten): menü düğmesi tablo başlığından araç çubuğuna taşındı; "Toplu düzenle" + kod üretimi eklendi.
+    await root.getByRole('button', { name: 'Varyant işlemleri' }).click()
     const menu = page.locator('.v-overlay--active [role="menu"]').filter({ hasText: 'Varyant İşlemleri' })
     await expect(menu).toBeVisible()
-    for (const label of ['Ara', 'Toplu Özellik Düzenleme', 'Toplu Fiyat Düzenleme', 'Toplu Seçenek Eşleştir', 'Toplu Silme']) {
+    for (const label of ['Ara', 'Toplu düzenle', 'Toplu Özellik Düzenleme', 'Toplu Fiyat Düzenleme', 'Toplu Seçenek Eşleştir', 'Stok kodlarını oluştur', 'Barkodları oluştur', 'Toplu Silme']) {
       await expect(menu.getByText(label, { exact: true })).toBeVisible()
     }
   })
 
-  test('silme (GİZLİ DAVRANIŞ): kaydedilmemiş (_id yok) varyantın sil butonu API çağırmaz ve satır tabloda KALIR', async ({ page }) => {
-    // GİZLİ DAVRANIŞ (karakterizasyon, DÜZELTİLMEDİ — BACKLOG önerisi): `deleteVariant()` varyantı
-    // `productInfoForm.variants`'tan splice etmeye çalışır, `_id` yoksa API çağırmadan döner; ancak
-    // tablo (`originalVariants`, değişmeyen `watch(variants)` yalnızca referans değişiminde tetiklenir)
-    // güncellenmez — satır, başka bir satıra tıklanıp yeniden çizildikten SONRA da görünür kalır
-    // (bu oturumda Playwright ile gözlendi). Kullanıcı açısından sil butonu "hiçbir şey yapmıyor".
+  // DS-v2 A6a (kasten, BACKLOG önerisi kapatıldı): eskiden kaydedilmemiş varyantın sil düğmesi "hiçbir şey yapmıyordu"
+  // (tablo kopyası güncellenmiyordu). Şimdi onay diyaloğu → satır formdan kalkar; `_id` yoksa API ÇAĞRILMAZ (aynı).
+  test('silme: kaydedilmemiş (_id yok) varyant onaydan sonra satırdan kalkar, API çağrılmaz', async ({ page }) => {
     let deleteCalled = false
     const root = await openVariantStep(page, variantProduct, {
       'VariantService/deleteVariant': async (route: any, headers: any) => {
@@ -130,11 +142,40 @@ test.describe('P3 (B5-2) — Ürün varyantları (ProductVariantsComponent)', ()
     })
 
     const row = root.locator('tbody tr').filter({ hasText: 'SK-E2E-BEYAZ' })
-    await row.getByRole('button').filter({ has: page.locator('.mdi-delete') }).click()
-    await page.waitForTimeout(500)
-    await expect(root.getByText('SK-E2E-BEYAZ')).toHaveCount(1)
+    await row.getByRole('button', { name: 'Varyantı sil' }).click()
+    const dialog = page.getByRole('alertdialog').filter({ hasText: 'silinsin mi?' })
+    await expect(dialog).toBeVisible()
+    await expect(dialog).toContainText('ürünü kaydedene kadar kalıcı olmaz')
+    await dialog.getByRole('button', { name: 'Sil' }).click()
+    await expect(root.getByText('SK-E2E-BEYAZ')).toHaveCount(0)
     await expect(root.getByText('SK-E2E-SIYAH')).toBeVisible()
     expect(deleteCalled).toBe(false)
+  })
+
+  // DS-v2 A6a — toplu düzenleyici uçtan uca: kolon seç → +%10 → önizleme → Uygula → ızgarada yeni değer + değişti işareti.
+  // Uygulanmamış değişiklikle kapatma satır içi onay ister. Yeni backend ucu YOK (kayıt ürün güncelle ile).
+  test('toplu düzenleyici: kolon seç, +%10 uygula, önizle, forma yaz; uygulanmadan kapatma onay ister', async ({ page }) => {
+    const root = await openVariantStep(page)
+    await root.getByRole('button', { name: 'Toplu düzenle' }).click()
+    const editor = page.locator('.v-overlay--active .vbe-root')
+    await expect(editor).toBeVisible()
+    await editor.getByRole('button', { name: 'Satış fiyatı kolonunu seç' }).click()
+    await editor.getByRole('radio', { name: 'Yüzde' }).click()
+    await editor.getByLabel('Değer').fill('10')
+    await editor.getByRole('button', { name: 'Seçime uygula' }).click()
+    await expect(editor.getByText('₺274,89').first()).toBeVisible()
+    // uygulanmadan kapatma → onay
+    await editor.getByRole('button', { name: 'Vazgeç' }).click()
+    await expect(editor.getByRole('alert')).toContainText('2 değişiklik uygulanmadı')
+    await editor.getByRole('button', { name: 'Düzenlemeye dön' }).click()
+    await editor.getByRole('button', { name: /Değişiklikleri gözden geçir \(2\)/ }).click()
+    await expect(editor.getByText('2 hücre, 2 varyantta değişecek')).toBeVisible()
+    await editor.getByRole('button', { name: 'Uygula (2)' }).click()
+    await expect(editor).toHaveCount(0)
+    const cell = root.locator('td[data-cell="salePrice"]').filter({ hasText: '₺274,89' })
+    await expect(cell).toHaveCount(2)
+    await expect(cell.first()).toHaveClass(/is-changed/)
+    await expect(root.getByText('2 hücre değişti')).toBeVisible()
   })
 
   test('ekran görüntüsü tabanı (ürün varyantları)', async ({ page }) => {
@@ -149,7 +190,7 @@ test.describe('P3 (B5-2) — Ürün varyantları (ProductVariantsComponent)', ()
     const root = await openVariantStep(page)
     await expect(root.getByText('SK-E2E-SIYAH')).toBeVisible()
     const results = await new AxeBuilder({ page })
-      .include(`.productUpdateView${variantProduct._id} .v-data-table`)
+      .include(`.productUpdateView${variantProduct._id} .pv-frame`)
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
       .analyze()
     await testInfo.attach('axe-ProductVariantsComponent-sonuclari.json', { body: JSON.stringify(results.violations, null, 2), contentType: 'application/json' })

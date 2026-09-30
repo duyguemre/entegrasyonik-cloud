@@ -15,9 +15,9 @@
       :color="confirmDialog.color" :confirm-text="confirmDialog.confirmText" :confirm-icon="confirmDialog.confirmIcon"
       @confirm="confirmDialog.onConfirm" @cancel="confirmDialog.onCancel" maxWidth="400px" />
 
-    <TicketCreateDialog v-model="isCreateDialogOpen" :loading="actionLoading" @confirm="handleCreateTicket" />
+    <TicketCreateDialog v-model="isCreateDialogOpen" :submit-ticket="createTicket" @view="openTicketDetail" />
 
-    <TicketDetailComponent v-model="isDetailOpen" :ticket="selectedTicketForDetail" @reply="handleSendReply" />
+    <TicketDetailComponent v-model="isDetailOpen" :ticket="selectedTicketForDetail" :send-reply="handleSendReply" />
 
     <EkListScreen
       section="Destek"
@@ -152,7 +152,6 @@ const loading = ref(false)
 const loadError = ref(false)
 const tickets = ref<any[]>([])
 const selectedTickets = ref<Array<string | number>>([])
-const actionLoading = ref(false)
 
 // UI
 const isCreateDialogOpen = ref(false)
@@ -259,29 +258,22 @@ const getTickets = async (resetPage: boolean = false) => {
   }
 };
 
-const handleCreateTicket = async (formData: any) => {
-  actionLoading.value = true;
-  const res = await createTicket(formData);
-  if (res) isCreateDialogOpen.value = false;
-  actionLoading.value = false;
-};
-
 const openTicketDetail = (item: any) => {
   selectedTicketForDetail.value = item;
   isDetailOpen.value = true;
 };
 
 const handleSendReply = async (payload: { ticketId: string, content: string }) => {
-  const res = await sendMessage(payload.ticketId, payload.content);
-  if (res) {
+  const result = await sendMessage(payload.ticketId, payload.content);
+  if (result.ok && selectedTicketForDetail.value) {
     // Local update to avoid full reload
-    if (selectedTicketForDetail.value) {
-      selectedTicketForDetail.value.messages = res.messages;
-      selectedTicketForDetail.value.status = res.status;
-      selectedTicketForDetail.value.lastMessageAt = res.lastMessageAt;
-    }
+    const res = result.ticket;
+    selectedTicketForDetail.value.messages = res.messages;
+    selectedTicketForDetail.value.status = res.status;
+    selectedTicketForDetail.value.lastMessageAt = res.lastMessageAt;
     getTickets();
   }
+  return result;
 };
 
 const confirmCloseTicket = (item: any) => {

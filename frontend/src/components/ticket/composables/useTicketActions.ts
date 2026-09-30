@@ -1,6 +1,10 @@
 import { ref } from 'vue';
 import useRestApi from '@/composables/restapi';
 import { useSnackbarStore } from '@/stores/snackbarStore';
+import { isRequestError } from '@/components/ds/listStandard';
+import { classifyFailure, type FailureKind, type buildOpenTicketPayload } from './ticketRules';
+
+export type TicketActionResult = { ok: true; ticket: any } | { ok: false; failure: FailureKind };
 
 export function useTicketActions(getTickets: Function) {
     const restApi = useRestApi();
@@ -8,51 +12,36 @@ export function useTicketActions(getTickets: Function) {
     const loading = ref(false);
 
     /**
-     * Yeni bilet oluşturur
+     * Yeni bilet oluşturur. Sonuç DİYALOGDA satır içi gösterilir (snackbar YOK); hata durumunda
+     * girilen içerik diyalogda korunur. Gövde AYNEN `{ ticket: { subject, type, priority, message } }`.
      */
-    const createTicket = async (ticketData: any) => {
+    const createTicket = async (ticketData: ReturnType<typeof buildOpenTicketPayload>): Promise<TicketActionResult> => {
         loading.value = true;
         try {
             const response = await restApi.post('TicketService/openTicket', { ticket: ticketData });
-            if (response?._id) {
-                snackbarStore.addSnackbar({
-                    text: 'Destek talebiniz başarıyla oluşturuldu.',
-                    color: 'success'
-                });
+            if (response?._id && !isRequestError(response)) {
                 getTickets(true);
-                return response;
+                return { ok: true, ticket: response };
             }
-        } catch (error) {
-            console.error('Bilet oluşturma hatası:', error);
-            snackbarStore.addSnackbar({
-                text: 'Bilet oluşturulurken bir hata oluştu.',
-                color: 'error'
-            });
+            return { ok: false, failure: classifyFailure(response) };
         } finally {
             loading.value = false;
         }
     };
 
     /**
-     * Bilete mesaj gönderir
+     * Bilete mesaj gönderir. Gövde AYNEN `{ ticketId, content, senderType: 'CLIENT' }`.
      */
-    const sendMessage = async (ticketId: string, content: string) => {
-        try {
-            const response = await restApi.post('TicketService/sendTicketMessage', {
-                ticketId,
-                content,
-                senderType: 'CLIENT'
-            });
-            if (response?._id) {
-                return response;
-            }
-        } catch (error) {
-            console.error('Mesaj gönderme hatası:', error);
-            snackbarStore.addSnackbar({
-                text: 'Mesaj gönderilirken bir hata oluştu.',
-                color: 'error'
-            });
+    const sendMessage = async (ticketId: string, content: string): Promise<TicketActionResult> => {
+        const response = await restApi.post('TicketService/sendTicketMessage', {
+            ticketId,
+            content,
+            senderType: 'CLIENT'
+        });
+        if (response?._id && !isRequestError(response)) {
+            return { ok: true, ticket: response };
         }
+        return { ok: false, failure: classifyFailure(response) };
     };
 
     /**
