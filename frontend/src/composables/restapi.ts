@@ -169,13 +169,16 @@ const postImageServiceIdentityUpload = async (data: any) => {
   });
 }
 
-const postImageServiceUpload = async (data: any) => {
+// Faz 3 B2: isteğe bağlı `onProgress` (0–100) — galeri kart başına yükleme ilerlemesi gösterir.
+// Uç nokta, gövde ve başlıklar DEĞİŞMEDİ; ikinci argüman verilmezse davranış aynıdır.
+const postImageServiceUpload = async (data: any, onProgress?: (percent: number) => void) => {
   return new Promise((resolve: any) => {
     axios.post(baseImageUrl + 'upload', data, {
       headers: {
         "Content-Type": "multipart/form-data"
       },
-      withCredentials: true // Include cookies and other credentials
+      withCredentials: true, // Include cookies and other credentials
+      ...(onProgress ? { onUploadProgress: (e: any) => onProgress(e.total ? Math.round((e.loaded / e.total) * 100) : 0) } : {}),
     })
       .then(response => {
         resolve(response.data)

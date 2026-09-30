@@ -10,7 +10,7 @@
 //    işaretliyken fiyat hücresine tıklama
 //  - araç çubuğu süzme alanı (DS-v2 A6a; eski ProductSearchVariantComponent'in yerine) — "Varyant İşlemleri" > "Ara"
 //  - ProductVariantGeneratorComponent                         — başlıktaki yeşil "+" menüsü
-//  - ProductVariantImagesComponent (+ crud/ImageUploaderComponent, ProductVariantImageEditComponent)
+//  - ProductVariantImagesComponent (Faz 3 B2: eski ImageUploaderComponent/ProductVariantImageEditComponent kaldırıldı)
 //    — satırdaki varyant resmi
 //
 // DS-v2 A6a: arayüzden erişilemeyen ProductBatchProcessVariantComponent ve yerini alan iki panel

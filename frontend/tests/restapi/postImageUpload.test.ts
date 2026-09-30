@@ -45,3 +45,24 @@ describe('restApi.postImageUpload (T-01)', () => {
     expect(resp).toBeInstanceOf(Error)
   })
 })
+
+// Faz 3 B2 — galeri kart başına ilerleme: isteğe bağlı ikinci argüman axios `onUploadProgress`'e yüzde olarak bağlanır.
+describe('restApi.postImageUpload ilerleme (B2)', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+  afterEach(() => vi.restoreAllMocks())
+
+  it('onProgress verilirse yüzde bildirir; verilmezse yapılandırmada onUploadProgress yok', async () => {
+    const postSpy = vi.spyOn(axios, 'post').mockResolvedValue({ data: { result: [] } } as any)
+    const restApi = useRestApi() as any
+    await restApi.postImageUpload(new FormData())
+    expect((postSpy.mock.calls[0][2] as any).onUploadProgress).toBeUndefined()
+
+    const seen: number[] = []
+    await restApi.postImageUpload(new FormData(), (p: number) => seen.push(p))
+    const cfg = postSpy.mock.calls[1][2] as any
+    cfg.onUploadProgress({ loaded: 25, total: 100 })
+    cfg.onUploadProgress({ loaded: 5, total: 0 })
+    expect(seen).toEqual([25, 0])
+    expect(cfg.headers['Content-Type']).toBe('multipart/form-data')
+  })
+})
