@@ -16,15 +16,11 @@
         <!-- Bağlantı yok / geçersiz / süresi dolmuş / iptal / kullanılmış / okunamadı -->
         <template v-if="phase === 'problem'">
           <p class="ek-invite__eyebrow">{{ $t('invitation.pageTitle') }}</p>
-          <EkEmptyState
-            variant="error"
-            :title="$t(problem.titleKey)"
-            :message="problem.messageKey ? $t(problem.messageKey) : ''"
-            show-action
-            :action-text="problem.retry ? $t('team.invitations.retry') : $t('invitation.toLogin')"
-            :action-icon="problem.retry ? 'mdi-refresh' : 'mdi-login'"
-            @action="problem.retry ? load() : goToLogin()"
-          />
+          <AuthResultBlock :icon="problem.icon" :tone="problem.tone" :title="$t(problem.titleKey)"
+            :text="problem.messageKey ? $t(problem.messageKey) : ''" alert data-testid="invite-problem">
+            <EkButton v-if="problem.retry" tone="primary" block icon="mdi-refresh" @click="load">{{ $t('team.invitations.retry') }}</EkButton>
+            <EkButton :tone="problem.loginPrimary ? 'primary' : 'secondary'" block icon="mdi-login" @click="goToLogin()">{{ $t('invitation.toLogin') }}</EkButton>
+          </AuthResultBlock>
         </template>
 
         <template v-else-if="phase === 'loading'">
@@ -36,14 +32,11 @@
         </template>
 
         <template v-else-if="phase === 'success'">
-          <div class="ek-invite__done" role="status">
-            <EkIconTile icon="mdi-account-check-outline" tone="success" size="lg" />
-            <h1 class="ek-invite__title">{{ $t('invitation.successTitle') }}</h1>
-            <p class="ek-invite__lead">{{ $t('invitation.successText') }}</p>
-            <EkButton block icon="mdi-login" data-testid="invite-to-login" @click="goToLogin('invitation-accepted')">
+          <AuthResultBlock icon="mdi-account-check-outline" tone="success" :title="$t('invitation.successTitle')" :text="$t('invitation.successText')">
+            <EkButton tone="primary" block icon="mdi-login" data-testid="invite-to-login" @click="goToLogin('invitation-accepted')">
               {{ $t('invitation.toLogin') }}
             </EkButton>
-          </div>
+          </AuthResultBlock>
         </template>
 
         <template v-else>
@@ -120,7 +113,7 @@
 
             <EkAlert v-if="submitErrorKey" tone="error" dense live class="ek-invite__error" :text="$t(submitErrorKey)" />
 
-            <EkButton type="submit" block :loading="submitting" icon="mdi-account-plus-outline" data-testid="invite-submit">
+            <EkButton tone="primary" type="submit" block :loading="submitting" icon="mdi-account-plus-outline" data-testid="invite-submit">
               {{ $t('invitation.submit') }}
             </EkButton>
           </v-form>
@@ -137,9 +130,9 @@ import { useI18n } from 'vue-i18n'
 import AuthShell from '@/components/login/AuthShell.vue'
 import EkAlert from '@/components/ds/EkAlert.vue'
 import EkButton from '@/components/ds/EkButton.vue'
-import EkEmptyState from '@/components/ds/EkEmptyState.vue'
 import EkFormGrid from '@/components/ds/EkFormGrid.vue'
-import EkIconTile from '@/components/ds/EkIconTile.vue'
+import type { EkTone } from '@/components/ds/EkIconTile.vue'
+import AuthResultBlock from '@/components/user/team/AuthResultBlock.vue'
 import EkSkeleton from '@/components/ds/EkSkeleton.vue'
 import EkStatusChip from '@/components/ds/EkStatusChip.vue'
 import { consumeFragmentToken } from '@/composables/fragmentToken'
@@ -159,10 +152,13 @@ const token = consumeFragmentToken()
 
 type Phase = 'loading' | 'ready' | 'problem' | 'success'
 const phase = ref<Phase>(token ? 'loading' : 'problem')
-const problem = reactive<{ titleKey: string; messageKey: string; retry: boolean }>({
+const problem = reactive<{ titleKey: string; messageKey: string; retry: boolean; loginPrimary: boolean; icon: string; tone: EkTone }>({
   titleKey: 'invitation.noTokenTitle',
   messageKey: 'invitation.noTokenText',
   retry: false,
+  loginPrimary: false,
+  icon: 'mdi-link-variant-off',
+  tone: 'neutral',
 })
 const summary = reactive<{ tenantTitle: string; role: string; email: string; expiresAt: string }>({ tenantTitle: '', role: '', email: '', expiresAt: '' })
 
@@ -181,12 +177,29 @@ const TOKEN_STATE_TITLES: Record<string, string> = {
   INVITATION_ACCEPTED: 'invitation.acceptedTitle',
   INVITATION_INVALID: 'invitation.invalidTitle',
 }
+// Başlık durumu söyler; gövde "ne yapmalı"yı (başlığı tekrar etmez).
+const TOKEN_STATE_TEXTS: Record<string, string> = {
+  INVITATION_EXPIRED: 'invitation.expiredText',
+  INVITATION_REVOKED: 'invitation.revokedText',
+  INVITATION_ACCEPTED: 'invitation.acceptedText',
+  INVITATION_INVALID: 'invitation.invalidText',
+}
+// Durumun anlamı ikonda ve tonda: süresi dolmuş = saat (uyarı), iptal = yasak (hata), kullanılmış = onay (bilgi).
+const TOKEN_STATE_LOOK: Record<string, { icon: string; tone: EkTone }> = {
+  INVITATION_EXPIRED: { icon: 'mdi-clock-alert-outline', tone: 'warning' },
+  INVITATION_REVOKED: { icon: 'mdi-email-remove-outline', tone: 'error' },
+  INVITATION_ACCEPTED: { icon: 'mdi-account-check-outline', tone: 'info' },
+  INVITATION_INVALID: { icon: 'mdi-link-variant-off', tone: 'error' },
+}
 
 function showProblem(resp: unknown) {
   const { code } = describeFailure(resp)
   const known = code ? TOKEN_STATE_TITLES[code] : undefined
   problem.titleKey = known ?? 'invitation.errorTitle'
-  problem.messageKey = errorMessageKey(resp) ?? 'apiErrors.GENERIC'
+  Object.assign(problem, (code && TOKEN_STATE_LOOK[code]) || { icon: 'mdi-cloud-alert-outline', tone: 'error' })
+  problem.messageKey = (code && TOKEN_STATE_TEXTS[code]) || errorMessageKey(resp) || 'apiErrors.GENERIC'
+  // Hesabı olan (kabul edilmiş) kişi için ana iş giriş; diğerlerinde giriş ikincil (henüz hesabı yok).
+  problem.loginPrimary = code === 'INVITATION_ACCEPTED'
   // Belirteç durumu kesinse yeniden deneme anlamsız; ağ/sunucu hatasında "Tekrar dene".
   problem.retry = !known && code !== 'TOKEN_INVALID'
   phase.value = 'problem'
@@ -370,17 +383,6 @@ onMounted(load)
   margin-top: 1px;
 }
 
-.ek-invite__done {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--ek-space-3);
-  text-align: center;
-}
-
-.ek-invite__done .ek-invite__lead {
-  margin-bottom: var(--ek-space-3);
-}
 
 .ek-invite__loading {
   padding-top: var(--ek-space-2);

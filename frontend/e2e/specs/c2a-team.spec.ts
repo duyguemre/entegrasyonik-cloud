@@ -181,7 +181,7 @@ test.describe('C2a — ekip yönetimi', () => {
     await page.keyboard.press('Escape')
 
     await openRowMenu(page, 'Mert Aydın')
-    await page.getByRole('menuitem', { name: 'Askıya al' }).click()
+    await page.getByRole('menuitem', { name: 'Askıya al', exact: true }).click()
     const dialog = page.getByRole('dialog', { name: 'Mert Aydın askıya alınsın mı?' })
     await expect(dialog).toBeVisible()
     await expect(dialog.getByRole('button', { name: 'Vazgeç' })).toBeFocused() // tehlikeli: varsayılan odak Vazgeç
@@ -193,7 +193,7 @@ test.describe('C2a — ekip yönetimi', () => {
     expect(captures[0].body).toEqual({ userId: 'user-e2e-0102', reason: 'Sözleşme bitti' })
 
     await openRowMenu(page, 'Selin Koç')
-    await page.getByRole('menuitem', { name: 'Yeniden etkinleştir' }).click()
+    await page.getByRole('menuitem', { name: 'Yeniden etkinleştir', exact: true }).click()
     const re = page.getByRole('dialog', { name: 'Selin Koç yeniden etkinleştirilsin mi?' })
     await re.getByRole('button', { name: 'Yeniden etkinleştir' }).click()
     await expect(page.getByText('Selin Koç yeniden etkinleştirildi.')).toBeVisible()
@@ -217,7 +217,7 @@ test.describe('C2a — ekip yönetimi', () => {
       'UserService/cancelOwnershipTransfer': sequence(captures, 'cancel', [{ status: 200, body: { success: true } }]),
     })
     await openRowMenu(page, 'Elif Yıldız')
-    await page.getByRole('menuitem', { name: 'Sahipliği devret' }).click()
+    await page.getByRole('menuitem', { name: 'Sahipliği devret', exact: true }).click()
     const dialog = page.getByRole('dialog', { name: 'Mağaza sahipliğini devret' })
     await expect(dialog).toContainText('Devri başlatın')
     await expect(dialog).toContainText('Yeni sahip kabul eder')
@@ -258,7 +258,7 @@ test.describe('C2a — ekip yönetimi', () => {
       'UserService/initiateOwnershipTransfer': sequence(captures, 'initiate', [{ status: 401, body: { code: 'REAUTH_REQUIRED' } }]),
     })
     await openRowMenu(page, 'Elif Yıldız')
-    await page.getByRole('menuitem', { name: 'Sahipliği devret' }).click()
+    await page.getByRole('menuitem', { name: 'Sahipliği devret', exact: true }).click()
     const dialog = page.getByRole('dialog', { name: 'Mağaza sahipliğini devret' })
     await dialog.getByRole('button', { name: 'Devri başlat' }).click()
     const reauth = page.getByRole('dialog', { name: 'Kimliğinizi doğrulayın' })

@@ -156,11 +156,11 @@ export function invitationExpired(inv: Invitation, now: number = Date.now()): bo
   return Number.isFinite(t) && t <= now
 }
 
-/** Kalan gün (yukarı yuvarlanır; ≤0 → 0). */
+/** Kalan TAM gün (aşağı yuvarlanır): 0 = bir günden az kaldı (UI "Bir günden az kaldı" der, "1 gün" demez). */
 export function daysLeft(expiresAt: string | undefined, now: number = Date.now()): number | null {
   const t = expiresAt ? Date.parse(expiresAt) : NaN
   if (!Number.isFinite(t)) return null
-  return Math.max(0, Math.ceil((t - now) / 86_400_000))
+  return Math.max(0, Math.floor((t - now) / 86_400_000))
 }
 
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/

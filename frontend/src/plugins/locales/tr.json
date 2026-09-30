@@ -1854,7 +1854,7 @@
       "count": "{n} davet",
       "expires": "{date} tarihine kadar",
       "daysLeft": "{n} gün kaldı",
-      "lastDay": "Bugün sona eriyor",
+      "lastDay": "Bir günden az kaldı",
       "expiredAt": "{date} tarihinde sona erdi",
       "resend": "Yeniden gönder",
       "resendExpired": "Yeni bağlantı gönder",
@@ -1910,7 +1910,8 @@
       "cancelText": "Gönderilen bağlantı geçersiz olur. Devri daha sonra yeniden başlatabilirsiniz.",
       "cancelPrevious": "Bekleyen bir devri iptal et",
       "cancelled": "Sahiplik devri iptal edildi.",
-      "noPending": "İptal edilecek bekleyen bir devir yok."
+      "noPending": "İptal edilecek bekleyen bir devir yok.",
+      "pendingQuestion": "Daha önce başlattığınız bir devir mi var?"
     },
     "gates": {
       "self": "Kendi hesabınızda yapılamaz",
@@ -1952,7 +1953,11 @@
       "surnameRequired": "Soyadınızı girin.",
       "passwordShort": "Parola en az 10 karakter olmalı.",
       "passwordMismatch": "Parolalar birbiriyle eşleşmiyor."
-    }
+    },
+    "expiredText": "Davet bağlantıları 7 gün geçerlidir. Mağaza yöneticisinden daveti yeniden göndermesini isteyin; yeni bağlantı e-postanıza gelir.",
+    "revokedText": "Mağaza yöneticisi bu daveti geri çekti. Bir yanlışlık olduğunu düşünüyorsanız yöneticiyle iletişime geçin.",
+    "acceptedText": "Bu davetle hesabınız zaten oluşturulmuş. E-posta adresiniz ve parolanızla giriş yapın; parolanızı hatırlamıyorsanız \"Şifremi unuttum\"u kullanın.",
+    "invalidText": "Bağlantı eksik ya da bozuk kopyalanmış olabilir. Davet e-postasındaki bağlantıyı yeniden açın."
   },
   "ownership": {
     "pageTitle": "Sahiplik devri",
@@ -1970,7 +1975,8 @@
     "noTokenTitle": "Devir bağlantısı bulunamadı",
     "noTokenText": "Bu sayfa yalnız e-postadaki devir bağlantısıyla açılır. Bağlantıyı e-postadan yeniden açın.",
     "invalidTitle": "Devir bağlantısı geçersiz",
-    "invalidText": "Bağlantının süresi dolmuş, iptal edilmiş, kullanılmış ya da başka bir hesaba ait olabilir. Mağaza sahibinden devri yeniden başlatmasını isteyin."
+    "invalidText": "Bağlantının süresi dolmuş, iptal edilmiş, kullanılmış ya da başka bir hesaba ait olabilir. Mağaza sahibinden devri yeniden başlatmasını isteyin.",
+    "toApp": "Uygulamaya dön"
   },
   "loginNotice": {
     "invitationAccepted": "Hesabınız oluşturuldu. E-posta adresiniz ve yeni parolanızla giriş yapın.",

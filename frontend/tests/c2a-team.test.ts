@@ -136,6 +136,7 @@ describe('ekip kuralları (UI ipucu; asıl sınır sunucuda)', () => {
     expect(list).toHaveLength(1)
     expect(list[0].id).toBe('i1')
     expect(daysLeft(list[0].expiresAt, now)).toBe(3)
+    expect(daysLeft('2026-09-30T20:00:00Z', now)).toBe(0) // 8 saat: "bir günden az", "1 gün" değil
     expect(invitationExpired(list[0], now)).toBe(false)
     expect(invitationExpired({ ...list[0], expired: true }, now)).toBe(true)
     expect(invitationExpired({ ...list[0], expiresAt: '2026-09-29T00:00:00Z' }, now)).toBe(true)

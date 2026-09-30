@@ -632,7 +632,7 @@
       "count": "{n} invitations",
       "expires": "until {date}",
       "daysLeft": "{n} days left",
-      "lastDay": "Expires today",
+      "lastDay": "Less than a day left",
       "expiredAt": "expired on {date}",
       "resend": "Resend",
       "resendExpired": "Send a new link",
@@ -688,7 +688,8 @@
       "cancelText": "The link sent will stop working. You can start a new transfer later.",
       "cancelPrevious": "Cancel a pending transfer",
       "cancelled": "Ownership transfer cancelled.",
-      "noPending": "There is no pending transfer to cancel."
+      "noPending": "There is no pending transfer to cancel.",
+      "pendingQuestion": "Started a transfer earlier?"
     },
     "gates": {
       "self": "Not available for your own account",
@@ -730,7 +731,11 @@
       "surnameRequired": "Enter your last name.",
       "passwordShort": "The password must be at least 10 characters.",
       "passwordMismatch": "Passwords don't match."
-    }
+    },
+    "expiredText": "Invitation links are valid for 7 days. Ask the store admin to resend it; the new link will arrive by e-mail.",
+    "revokedText": "The store admin withdrew this invitation. Contact them if you think this is a mistake.",
+    "acceptedText": "An account was already created with this invitation. Sign in with your e-mail and password; use \"Forgot password\" if needed.",
+    "invalidText": "The link may be incomplete or copied incorrectly. Open the link in the invitation e-mail again."
   },
   "ownership": {
     "pageTitle": "Ownership transfer",
@@ -748,7 +753,8 @@
     "noTokenTitle": "Transfer link not found",
     "noTokenText": "This page only opens from the transfer link in the e-mail. Open the link again.",
     "invalidTitle": "Invalid transfer link",
-    "invalidText": "The link may have expired, been cancelled, used, or belong to another account. Ask the owner to start the transfer again."
+    "invalidText": "The link may have expired, been cancelled, used, or belong to another account. Ask the owner to start the transfer again.",
+    "toApp": "Back to the app"
   },
   "loginNotice": {
     "invitationAccepted": "Your account was created. Sign in with your e-mail and new password.",

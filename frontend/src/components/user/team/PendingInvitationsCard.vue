@@ -4,7 +4,8 @@
   Faz 3 / C2a — bekleyen davetler (API_ACCOUNT_LIFECYCLE.md §6 `listInvitations {status:'pending'}`). Sunumsal: veri,
   yükleniyor/hata durumu ve eylemler üst ekrandan (AuthorizationListView `#summary`). Satır: e-posta · rol çipi ·
   süre (kalan gün / süresi doldu) · eylemler (EkRowActions: Yeniden gönder, tehlikeli "Daveti iptal et" en sağda).
-  Liste boşsa ve hata yoksa kart hiç çizilmez (boş kart gürültüsü yok). > 5 davette "Tümünü göster".
+  Liste boşsa ve hata yoksa kart hiç çizilmez (boş kart gürültüsü yok). > 3 davette "Tümünü göster" (liste ekranı
+  aşağı itilmesin). Geniş kapta (≥ 720px) satır tek çizgi: e-posta · rol · süre · eylemler (44px).
 -->
 <template>
   <EkCard
@@ -85,7 +86,7 @@ const props = defineProps<{ invitations: Invitation[]; loading?: boolean; error?
 const emit = defineEmits<{ resend: [inv: Invitation]; revoke: [inv: Invitation]; retry: [] }>()
 
 const { t, te } = useI18n()
-const LIMIT = 5
+const LIMIT = 3
 const expanded = ref(false)
 const visible = computed(() => (expanded.value ? props.invitations : props.invitations.slice(0, LIMIT)))
 
@@ -103,6 +104,10 @@ function timeText(inv: Invitation): string {
 </script>
 
 <style scoped>
+.ek-invitations {
+  container-type: inline-size;
+}
+
 .ek-invitations__state {
   padding: var(--ek-space-4) var(--ek-space-5);
 }
@@ -201,6 +206,26 @@ function timeText(inv: Invitation): string {
 .ek-invitations__more:focus-visible {
   outline: none;
   box-shadow: var(--ek-focus-ring);
+}
+
+@container (min-width: 720px) {
+  .ek-invitation {
+    min-height: 48px;
+    padding-top: var(--ek-space-1);
+    padding-bottom: var(--ek-space-1);
+  }
+  .ek-invitation__avatar {
+    width: 28px;
+    height: 28px;
+  }
+  .ek-invitation__main {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--ek-space-4);
+  }
+  .ek-invitation__email {
+    flex: 0 1 340px;
+  }
 }
 
 @media (max-width: 599px) {

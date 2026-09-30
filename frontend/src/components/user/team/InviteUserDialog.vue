@@ -65,7 +65,7 @@
         </p>
       </fieldset>
 
-      <EkAlert v-if="errorKey" :tone="planLimit ? 'warning' : 'error'" live :text="$t(errorKey)" data-testid="invite-error">
+      <EkAlert v-if="errorKey" ref="errorRef" :tone="planLimit ? 'warning' : 'error'" live :text="$t(errorKey)" data-testid="invite-error">
         <template v-if="planLimit" #actions>
           <EkButton tone="secondary" size="sm" icon="mdi-arrow-right" @click="openSubscription">{{ $t('team.invite.upgrade') }}</EkButton>
         </template>
@@ -104,6 +104,14 @@ const emailErrorKey = ref('')
 const errorKey = ref('')
 const planLimit = ref(false)
 const emailRef = ref<{ focus: () => void } | null>(null)
+const errorRef = ref<{ $el?: Element } | null>(null)
+
+// Dar ekranda diyalog gövdesi kayar: hata altta kalıp görünmezdi → görünür alana getir.
+watch(errorKey, async (key) => {
+  if (!key) return
+  await nextTick()
+  errorRef.value?.$el?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' })
+})
 
 // Varsayılan rol en düşük yetki (operatör): en az yetki ilkesi.
 const defaultRole = computed<InvitableRole | ''>(() => (props.roles.includes('operator') ? 'operator' : props.roles[0] ?? ''))

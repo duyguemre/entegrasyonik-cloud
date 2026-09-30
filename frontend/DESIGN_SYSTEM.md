@@ -427,7 +427,7 @@ listesi yoktu; a6a'nın ekrana özel ortak parçaları bu standartlara bağland�
   için kapanış `useTabOverlay`'de). Kabuk kısayol bekçisi yalnız uygulama geneli örtülerde durur → diyalog açıkken Ctrl+←/→ çalışır.
 - **Tam ekran kalan (uygulama geneli) örtüler:** kısayol listesi (`ShortcutHelpDialog`, SecureLayout), bildirim çekmecesi
   (`NotificationDrawerComponent`), toast (`EkToastHost`, App.vue), üst çubuğun uygulama yükleme örtüsü (ApplicationBar → `.AppView`),
-  akıllı arama sonuçları ve kabuk menüleri (sekme/hesap/yardım). Oturum süresi dolunca diyalog değil `/login?reason=session-expired`
+  akıllı arama sonuçları ve kabuk menüleri (sekme/hesap/yardım), **adım-yükseltme parola diyaloğu** (`ReauthDialog`, App.vue — C2a §19). Oturum süresi dolunca diyalog değil `/login?reason=session-expired`
   yönlendirmesi var; genel onay servisi yok.
 - Test: `e2e/specs/tab-overlays.spec.ts` (iki sekmede ayrı diyalog, geçiş, diğer sekmede işlem, Esc yalnız odaktaki sekme, şerit/arama
   örtü altında değil, Ctrl+←/→ diyalog açıkken).
@@ -555,3 +555,29 @@ bölümü; ortak ds bileşenlerine dokunulmadı, token değişikliği yok. Önce
 | Çok varyant | > 8: kompakt ızgara + "Tümünü gör" (iç kaydırma, yapışık başlık) |
 | Dar kap | < 600px kart (A6b) |
 | Mantık | `variants/variantListModel.ts` (saf, `tests/variant-list-model.test.ts`) |
+
+## 19. C2a — ekip yönetimi, davet kabulü, reauth, Idempotency-Key (`cloud/fe-c2a`)
+
+Taban `cloud/ds-v2-a6b` + `fe-breadcrumb`, `fe-a9`, `fe-a10`, `fe-a11`. Sözleşme: `docs/cloud-contracts/API_ACCOUNT_LIFECYCLE.md`
+§6-9, `API_IDEMPOTENCY.md`, `ERROR_CODES.md` (origin/main). Token değişikliği YOK; yeni ds bileşeni YOK (mevcut `EkDialog`,
+`EkListScreen #summary`, `EkCard`, `EkRowActions`, `EkSelect`, `EkAlert`, `EkStatusChip`, `EkBadge`). İnceleme: `docs/c2a-review/`
+(`C2A_REVIEW=1 C2A_REVIEW_WIDTH=1440|390 npx playwright test e2e/specs/c2a-review.spec.ts --project=chromium-desktop`).
+
+| Konu | Karar | Tek kaynak |
+|---|---|---|
+| Idempotency-Key | Yalnız `restapi.ts`: sözleşmedeki 22 RPC (`IDEMPOTENT_RPCS`) veya `{ idempotent: true }` → her çağrıda `crypto.randomUUID()`; aynı KULLANICI EYLEMİNİN yeniden denemesi `createIdempotentAction().keyFor(body)` ile aynı anahtar (gövde değişince yeni). 409 `IDEMPOTENCY_IN_PROGRESS` kullanıcıya gösterilmez: aynı yapılandırmayla 600/1200/2400 ms sonra yeniden sorulur | `composables/restapi.ts` |
+| REAUTH_REQUIRED | 401 + `code: REAUTH_REQUIRED` oturum düşmesi DEĞİL: girişe yönlendirilmez, uygulama genelinde TEK `ReauthDialog` açılır (eşzamanlı istekler aynı diyaloğu bekler); `AccountService/reauthenticate` sonrası istek AYNI yapılandırma (aynı Idempotency-Key) ile bir kez yinelenir; iptal → `reauthCancelled`, ileti yok | `composables/reauth.ts`, `components/user/ReauthDialog.vue` (App.vue) |
+| Hata iletisi | `code` → `apiErrors.<KOD>` (37 sözleşme kodu + NETWORK/GENERIC); ekran bağlamı kod/HTTP geçersiz kılar (ör. davet 404 → "artık beklemede değil"); `error` metni yalnız yedek; plan sınırı uyarı tonu + "Aboneliği görüntüle" | `composables/errorCodes.ts` |
+| Ekip ekranı | Mevcut `AuthorizationListView` genişletildi (karakterizasyon korunur): başlıkta "Kişi davet et"; `#summary`'de devir bandı (`EkAlert` uyarı + iptal) ve "Bekleyen davetler" kartı (≤3 satır + "Tümünü göster"; ≥720px kapta tek çizgi satır; boşsa çizilmez); "Durum" kolonu (Aktif/Askıda çipi); satır: Düzenle + `⋯` (ÜYELİK: Sahipliği devret · Askıya al/Yeniden etkinleştir · Sil) | `views/secure/user/AuthorizationListView.vue`, `components/user/team/*` |
+| Kapalı eylemler | Gizlenmez, menüde devre dışı + neden etiketi ("Askıya al — Kendi hesabınızda yapılamaz"); kurallar saf model (`suspendGate`, `reactivateGate`, `transferTargetGate`, `invitableRoles`); sunucu 403/409 da aynı iletiye çevrilir | `components/user/team/teamModel.ts` |
+| Davet diyaloğu | e-posta + rol kartı (radyo; ok tuşları), varsayılan en az yetki (Operatör), rol tavanı notu; hata altta kalırsa görünür alana kaydırılır; 502 MAIL_FAILED → davet kayıtlı, uyarı toast'ı + liste | `InviteUserDialog.vue` |
+| Devir diyaloğu | İki adım kartı (1 başlat → 2 hedef kabul eder), hedef `EkSelect` (uygun olmayan üye devre dışı + neden), sonuç uyarısı; "Bekleyen bir devri iptal et" gövdenin sonunda bağlantı (eylem çubuğunda 390px'te taşıyordu) | `OwnershipTransferDialog.vue` |
+| Açık sayfalar | `/invite`, `/accept-ownership` (`AuthShell`, `requiresAuth:false`): token yalnız `#t=` parçasından, okunur okunmaz `history.replaceState` ile silinir; router/sorgu/log/depoya yazılmaz (statik test). Sonuç/sorun bloğu sola yaslı (`AuthResultBlock`: ikon kapsülü + H1 + "ne yapmalı" + eylem); kabul oturum açmaz → `/login?reason=invitation-accepted` (giriş formunda başarı notu) | `views/unsecure/*AcceptView.vue`, `composables/fragmentToken.ts` |
+| Captcha | Ölü kod silindi (backend `requireCaptcha` dönmez) | `LoginComponent.vue`, `user.ts` |
+
+**Testler:** `tests/c2a-idempotency-reauth.test.ts` (liste birebir, anahtar biçimi, eylem anahtarı, IN_PROGRESS yeniden deneme, reauth
+yineleme aynı anahtar / yanlış parola / iptal / eşzamanlı / döngü yok / kodsuz 401 hâlâ girişe), `tests/c2a-team.test.ts` (kod → ileti
+tr+en, kurallar, token adrese/loga yazılmaz, tek diyalog + tek anahtar üretimi statik bekçileri), `e2e/specs/c2a-team.spec.ts`
+(uçtan uca + axe 0). **Bilinçli test güncellemeleri:** `login.spec` captcha karakterizasyonu → "captcha kaldırıldı"; `authorization.spec`
+sahibin Sil düğmesi artık `⋯` menüsünde (iddia aynı); `mockApi` CORS preflight `idempotency-key` izni.
+

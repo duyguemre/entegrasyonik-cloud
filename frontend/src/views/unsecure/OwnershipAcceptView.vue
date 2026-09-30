@@ -15,15 +15,9 @@
         <p v-if="phase !== 'success'" class="ek-own__eyebrow">{{ $t('ownership.pageTitle') }}</p>
 
         <template v-if="phase === 'problem'">
-          <EkEmptyState
-            variant="error"
-            :title="$t(problem.titleKey)"
-            :message="$t(problem.messageKey)"
-            show-action
-            :action-text="problem.retry ? $t('team.invitations.retry') : $t('invitation.toLogin')"
-            :action-icon="problem.retry ? 'mdi-refresh' : 'mdi-login'"
-            @action="problem.retry ? accept() : goToLogin()"
-          />
+          <AuthResultBlock icon="mdi-link-variant-off" :tone="problem.tone" :title="$t(problem.titleKey)" :text="$t(problem.messageKey)" alert>
+            <EkButton tone="primary" block icon="mdi-view-dashboard-outline" @click="decline">{{ $t('ownership.toApp') }}</EkButton>
+          </AuthResultBlock>
         </template>
 
         <div v-else-if="phase === 'checking'" role="status" aria-live="polite">
@@ -34,7 +28,7 @@
         <template v-else-if="phase === 'login'">
           <h1 class="ek-own__title">{{ $t('ownership.loginTitle') }}</h1>
           <p class="ek-own__lead">{{ $t('ownership.loginText') }}</p>
-          <EkButton block icon="mdi-login" data-testid="ownership-login" @click="goToLoginAndReturn">{{ $t('ownership.login') }}</EkButton>
+          <EkButton tone="primary" block icon="mdi-login" data-testid="ownership-login" @click="goToLoginAndReturn">{{ $t('ownership.login') }}</EkButton>
         </template>
 
         <template v-else-if="phase === 'confirm'">
@@ -48,16 +42,13 @@
           <EkAlert v-if="errorKey" tone="error" dense live class="ek-own__alert" :text="$t(errorKey)" />
           <div class="ek-own__actions">
             <EkButton tone="secondary" :disabled="busy" @click="decline">{{ $t('ownership.decline') }}</EkButton>
-            <EkButton icon="mdi-crown-outline" :loading="busy" data-testid="ownership-accept" @click="accept">{{ $t('ownership.accept') }}</EkButton>
+            <EkButton tone="primary" icon="mdi-crown-outline" :loading="busy" data-testid="ownership-accept" @click="accept">{{ $t('ownership.accept') }}</EkButton>
           </div>
         </template>
 
-        <div v-else class="ek-own__done" role="status">
-          <EkIconTile icon="mdi-crown-outline" tone="success" size="lg" />
-          <h1 class="ek-own__title">{{ $t('ownership.successTitle') }}</h1>
-          <p class="ek-own__lead">{{ $t('ownership.successText') }}</p>
-          <EkButton block icon="mdi-login" @click="goToLogin('ownership-transferred')">{{ $t('invitation.toLogin') }}</EkButton>
-        </div>
+        <AuthResultBlock v-else icon="mdi-crown-outline" tone="success" :title="$t('ownership.successTitle')" :text="$t('ownership.successText')">
+          <EkButton tone="primary" block icon="mdi-login" @click="goToLogin('ownership-transferred')">{{ $t('invitation.toLogin') }}</EkButton>
+        </AuthResultBlock>
       </div>
     </AuthShell>
   </div>
@@ -69,8 +60,8 @@ import { useRouter } from 'vue-router'
 import AuthShell from '@/components/login/AuthShell.vue'
 import EkAlert from '@/components/ds/EkAlert.vue'
 import EkButton from '@/components/ds/EkButton.vue'
-import EkEmptyState from '@/components/ds/EkEmptyState.vue'
-import EkIconTile from '@/components/ds/EkIconTile.vue'
+import type { EkTone } from '@/components/ds/EkIconTile.vue'
+import AuthResultBlock from '@/components/user/team/AuthResultBlock.vue'
 import EkSkeleton from '@/components/ds/EkSkeleton.vue'
 import useUser from '@/composables/user'
 import { consumeFragmentToken, holdToken, takeHeldToken } from '@/composables/fragmentToken'
@@ -89,7 +80,7 @@ const token = fresh || held
 
 type Phase = 'checking' | 'login' | 'confirm' | 'problem' | 'success'
 const phase = ref<Phase>(token ? 'checking' : 'problem')
-const problem = reactive({ titleKey: 'ownership.noTokenTitle', messageKey: 'ownership.noTokenText', retry: false })
+const problem = reactive<{ titleKey: string; messageKey: string; tone: EkTone }>({ titleKey: 'ownership.noTokenTitle', messageKey: 'ownership.noTokenText', tone: 'neutral' })
 const busy = ref(false)
 const errorKey = ref('')
 const username = computed(() => userApi.getUsername.value as string | undefined)
@@ -118,14 +109,13 @@ async function accept() {
   }
   const { code, status } = describeFailure(resp)
   if (code === 'TOKEN_INVALID') {
-    Object.assign(problem, { titleKey: 'ownership.invalidTitle', messageKey: 'ownership.invalidText', retry: false })
+    Object.assign(problem, { titleKey: 'ownership.invalidTitle', messageKey: 'ownership.invalidText', tone: 'error' })
     phase.value = 'problem'
   } else if (status === 401 && code !== 'REAUTH_REQUIRED') {
     phase.value = 'login'
   } else {
     const key = errorMessageKey(resp)
     if (key) errorKey.value = key
-    if (phase.value === 'problem') phase.value = 'confirm'
   }
 }
 
@@ -200,13 +190,6 @@ onMounted(checkSession)
   gap: var(--ek-space-2);
 }
 
-.ek-own__done {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--ek-space-3);
-  text-align: center;
-}
 
 @media (max-width: 420px) {
   .ek-own__actions {
