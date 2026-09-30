@@ -1061,7 +1061,8 @@ watch([timeFrame, targetClientId], () => {
 
 watch(autoRefresh, (val: any) => {
   if (val) {
-    refreshTimer = setInterval(loadData, 10000); // 10 saniyede bir güncelle
+    // 10 saniyede bir güncelle; sekme/pencere gizliyken istek atılmaz (FRONTEND_CLEANUP_PLAN V-06).
+    refreshTimer = setInterval(() => { if (!document.hidden) loadData(); }, 10000);
   } else if (refreshTimer) {
     clearInterval(refreshTimer);
   }

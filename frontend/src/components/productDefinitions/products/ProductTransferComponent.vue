@@ -118,7 +118,7 @@
 
 
           <div class="pt-panel__platforms pt-2 d-flex flex-wrap">
-            <div v-for="platform of platforms" class="pa-2">
+            <div v-for="platform of platforms" :key="platform.code" class="pa-2">
               <IntegrationAvatarComponent :platform="platform" :width="'100px'" :height="'100px'" @click=""
                 class="pt-panel__clickable" />
             </div>
