@@ -170,7 +170,7 @@
             :title="platformAriaLabel(row, integration)"
             @click.stop="savePlatformUploadIsReadyForProduct(row, integration.code)">
             <EkChannelDot :code="integration.code" :name="integration.title" :show-name="false" />
-            <v-icon size="14" :icon="isUploaded(row, integration.code) ? 'mdi-check-circle' : 'mdi-close-circle-outline'"
+            <v-icon size="14" :icon="isUploaded(row, integration.code) ? 'mdi-check-circle-outline' : 'mdi-close-circle-outline'"
               :class="isUploaded(row, integration.code) ? 'plv-ok' : 'plv-no'" aria-hidden="true" />
           </button>
         </span>
@@ -905,8 +905,8 @@ const initTransferStatusItems = () => {
 
   transferStatusItems.value = [
     { id: "PENDING", icon: 'mdi-pencil-outline', color: 'var(--ek-color-info)', title: "Hazırlanan (Pending)", children: pendingItems },
-    { id: "WAITING", icon: 'mdi-clock', color: 'var(--ek-color-secondary)', title: "Onay Bekleyen (Waiting)", children: waitingItems },
-    { id: "FAILED", icon: 'mdi-close-box', color: 'var(--ek-color-danger)', title: "Hatalı (Failed)", children: failedItems },
+    { id: "WAITING", icon: 'mdi-clock-outline', color: 'var(--ek-color-secondary)', title: "Onay Bekleyen (Waiting)", children: waitingItems },
+    { id: "FAILED", icon: 'mdi-close-box-outline', color: 'var(--ek-color-danger)', title: "Hatalı (Failed)", children: failedItems },
     { id: "COMPLETED", icon: 'mdi-checkbox-marked', color: 'var(--ek-color-success)', title: "Onaylanan (Completed)", children: completedItems },
   ]
 }

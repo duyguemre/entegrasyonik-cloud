@@ -34,7 +34,7 @@
         <span class="tk-choice__label">{{ opt.label }}</span>
         <span class="tk-choice__desc">{{ opt.description }}</span>
       </span>
-      <v-icon v-if="opt.value === modelValue" icon="mdi-check-circle" class="tk-choice__check" aria-hidden="true" />
+      <v-icon v-if="opt.value === modelValue" icon="mdi-check-circle-outline" class="tk-choice__check" aria-hidden="true" />
     </button>
   </div>
 </template>

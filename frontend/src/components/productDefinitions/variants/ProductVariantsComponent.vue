@@ -97,8 +97,8 @@
       <footer class="pv-foot">
         <div class="pv-foot__issues" role="status">
           <template v-if="issues.errors || issues.warnings">
-            <span v-if="issues.errors" class="pv-issue pv-issue--error"><v-icon icon="mdi-alert-circle" aria-hidden="true" />{{ issues.errors }} hata</span>
-            <span v-if="issues.warnings" class="pv-issue pv-issue--warning"><v-icon icon="mdi-alert" aria-hidden="true" />{{ issues.warnings }} uyarı</span>
+            <span v-if="issues.errors" class="pv-issue pv-issue--error"><v-icon icon="mdi-alert-circle-outline" aria-hidden="true" />{{ issues.errors }} hata</span>
+            <span v-if="issues.warnings" class="pv-issue pv-issue--warning"><v-icon icon="mdi-alert-outline" aria-hidden="true" />{{ issues.warnings }} uyarı</span>
             <button v-if="issues.errors" type="button" class="pv-link" @click="gridRef?.goToFirstIssue()">İlk hataya git</button>
           </template>
           <span v-else-if="variantList.length" class="pv-issue pv-issue--ok"><v-icon icon="mdi-check-circle-outline" aria-hidden="true" />Hücrelerde sorun yok</span>

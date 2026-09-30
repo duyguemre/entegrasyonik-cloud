@@ -36,12 +36,12 @@
             <span class="meta-item__value">{{ formatDateTime(localItem.createdAt) }}</span>
           </div>
           <div class="meta-item">
-            <v-icon size="16" aria-hidden="true">mdi-clock-check</v-icon>
+            <v-icon size="16" aria-hidden="true">mdi-clock-check-outline</v-icon>
             <span class="meta-item__label">Bitiş:</span>
             <span class="meta-item__value">{{ localItem.completedAt ? formatDateTime(localItem.completedAt) : '-' }}</span>
           </div>
           <div v-if="localItem.nextRunAt && !localItem.completedAt" class="meta-item">
-            <v-icon size="16" aria-hidden="true">mdi-calendar-clock</v-icon>
+            <v-icon size="16" aria-hidden="true">mdi-calendar-clock-outline</v-icon>
             <span class="meta-item__label">Sonraki İşlem:</span>
             <span class="meta-item__value">{{ formatDateTime(localItem.nextRunAt) }}</span>
           </div>
@@ -66,7 +66,7 @@
         <v-img v-if="localItem.image" :src="localItem.image" width="175" height="175" cover
           class="product-card__image" :alt="localItem.title"></v-img>
         <div v-else class="product-card__image product-card__image--empty">
-          <v-icon size="40" aria-hidden="true">mdi-image-off</v-icon>
+          <v-icon size="40" aria-hidden="true">mdi-image-off-outline</v-icon>
         </div>
         <div class="product-card__body">
           <div class="product-card__title">{{ localItem.title }}</div>
@@ -187,7 +187,7 @@ const exportSteps = [
   { title: 'Ürün Doğrulanıyor', status: 'PREPARING', icon: 'mdi-cog-outline' },
   { title: 'İşlem Pazaryerine Gönderiliyor', status: 'PENDING', icon: 'mdi-tray-arrow-up' },
   { title: 'Gönderim Sorgulanıyor', status: 'SENT', icon: 'mdi-upload-outline' },
-  { title: 'Ürün Onayı Bekleniyor', status: 'WAITING', icon: 'mdi-file-clock' },
+  { title: 'Ürün Onayı Bekleniyor', status: 'WAITING', icon: 'mdi-file-clock-outline' },
   { title: 'Tamamlandı', status: 'COMPLETED', icon: 'mdi-check-all' }
 ]
 

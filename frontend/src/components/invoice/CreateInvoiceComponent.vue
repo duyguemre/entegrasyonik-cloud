@@ -1,7 +1,7 @@
 <template>
   <ActionDialogComponent :modelValue="modelValue" @update:modelValue="$emit('update:modelValue', $event)"
     @cancel="close" @close="close" title="Yeni Fatura Ekle" subtitle="Manuel fatura veya dış evrak girişi"
-    icon="mdi-receipt-text-plus" color="success" confirmText="Faturayı Kaydet" cancelText="Vazgeç"
+    icon="mdi-receipt-text-plus-outline" color="success" confirmText="Faturayı Kaydet" cancelText="Vazgeç"
     attach=".invoiceListView" maxWidth="700px" @confirm="promptConfirmation" :isConfirmDisabled="!isFormValid || loading">
 
       <v-form ref="formRef" v-model="isFormValid">

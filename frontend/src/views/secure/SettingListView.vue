@@ -43,7 +43,7 @@
 
                 <div class="settingListView__block">
                   <p class="settingListView__block-title">
-                    <v-icon start size="20" color="primary">mdi-palette-swatch</v-icon>
+                    <v-icon start size="20" color="primary">mdi-palette-swatch-outline</v-icon>
                     Mağaza Renk Paleti
                   </p>
 
@@ -143,7 +143,7 @@
                     <div class="settingListView__preview-text">
                       <h4 class="settingListView__preview-name">{{ settings.storeName || 'Mağaza Adı' }}</h4>
                       <div class="settingListView__verified">
-                        <v-icon size="14" color="success">mdi-check-decagram</v-icon>
+                        <v-icon size="14" color="success">mdi-check-decagram-outline</v-icon>
                         <span>Doğrulanmış Mağaza</span>
                       </div>
                     </div>

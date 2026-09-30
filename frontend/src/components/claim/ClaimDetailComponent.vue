@@ -232,9 +232,9 @@ const statusInformation = computed(() => {
     const descriptions: Record<string, { desc: string; icon: string }> = {
         [ClaimInternalStatusEnum.WAITING]: { desc: 'Müşteri iade talebini oluşturdu. Lojistik süreci bekleniyor.', icon: 'mdi-clock-outline' },
         [ClaimInternalStatusEnum.UNDER_REVIEW]: { desc: 'Ürün şu an kalite kontrol veya iade şartlarına uygunluk açısından incelenmektedir.', icon: 'mdi-magnify-scan' },
-        [ClaimInternalStatusEnum.APPROVED]: { desc: 'İade talebi onaylandı. Ödeme iadesi süreçleri tamamlanmak üzere.', icon: 'mdi-check-circle' },
-        [ClaimInternalStatusEnum.REJECTED]: { desc: 'İade şartlara uymadığı için reddedildi.', icon: 'mdi-close-circle' },
-        [ClaimInternalStatusEnum.DISPUTED]: { desc: 'Red kararına itiraz edildi. Pazar yeri yetkilileri inceleme yapacak.', icon: 'mdi-alert-decagram' },
+        [ClaimInternalStatusEnum.APPROVED]: { desc: 'İade talebi onaylandı. Ödeme iadesi süreçleri tamamlanmak üzere.', icon: 'mdi-check-circle-outline' },
+        [ClaimInternalStatusEnum.REJECTED]: { desc: 'İade şartlara uymadığı için reddedildi.', icon: 'mdi-close-circle-outline' },
+        [ClaimInternalStatusEnum.DISPUTED]: { desc: 'Red kararına itiraz edildi. Pazar yeri yetkilileri inceleme yapacak.', icon: 'mdi-alert-decagram-outline' },
         [ClaimInternalStatusEnum.CANCELLED]: { desc: 'İade talebi iptal edildi.', icon: 'mdi-cancel' },
         [ClaimInternalStatusEnum.COMPLETED]: { desc: 'İade dosyası başarıyla sonuçlandırıldı ve kapatıldı.', icon: 'mdi-check-all' },
     };

@@ -108,7 +108,7 @@
 
     <ConfirmationDialogComponent v-model="confirmDialog.show" :title="confirmDialog.title" attach=".subscriptionView"
       :subtitle="confirmDialog.subtitle" :message="confirmDialog.message" icon="mdi-credit-card-check-outline"
-      color="primary" confirm-text="Devam Et" confirm-icon="mdi-arrow-right-circle"
+      color="primary" confirm-text="Devam Et" confirm-icon="mdi-arrow-right-circle-outline"
       :loading="checkingOutCode === confirmDialog.planCode"
       @confirm="confirmCheckout" @cancel="confirmDialog.show = false" maxWidth="420px" />
   </div>

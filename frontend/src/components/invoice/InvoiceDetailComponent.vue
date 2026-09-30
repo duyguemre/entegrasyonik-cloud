@@ -25,7 +25,7 @@
             <v-btn v-if="invoice.pdfUrl" block color="primary" prepend-icon="mdi-printer-outline" class="mt-4" :href="invoice.pdfUrl" target="_blank">
               Arşiv görüntüle
             </v-btn>
-            <v-btn v-else block variant="outlined" prepend-icon="mdi-printer-off" class="mt-4" disabled>
+            <v-btn v-else block variant="outlined" prepend-icon="mdi-printer-off-outline" class="mt-4" disabled>
               PDF dosyası yok
             </v-btn>
           </EkSection>

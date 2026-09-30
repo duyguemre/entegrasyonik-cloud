@@ -1,5 +1,5 @@
 <template>
-  <CardComponent icon="mdi-checkbox-multiple-marked" title="Toplu Varyant Bilgileri" :isHovered="false" class="pbva-s1">
+  <CardComponent icon="mdi-checkbox-multiple-marked-outline" title="Toplu Varyant Bilgileri" :isHovered="false" class="pbva-s1">
     <LoadingComponent attach=".productDefinitionView" ref="loadingComponentRef"></LoadingComponent>
     <template #header>
       <EkButton tone="primary" size="sm" icon="mdi-check" @click="batchVariantAttributesUpdate(); emits('close')">Bütün Varyantlara Ata</EkButton>

@@ -81,7 +81,7 @@
 
                 <div class="ek-notification-summary__list">
                   <div class="ek-notification-summary__row">
-                    <span class="label"><v-icon size="14" color="success" class="mr-1">mdi-check-circle</v-icon> İşleme
+                    <span class="label"><v-icon size="14" color="success" class="mr-1">mdi-check-circle-outline</v-icon> İşleme
                       Alınan</span>
                     <span class="value text-success">{{ item.metaData.totalAccepted || 0 }}</span>
                   </div>
@@ -93,7 +93,7 @@
                   </div>
 
                   <div v-if="item.metaData.totalNoTransferSkipped" class="ek-notification-summary__row">
-                    <span class="label"><v-icon size="14" color="warning" class="mr-1">mdi-alert</v-icon>Gönderim
+                    <span class="label"><v-icon size="14" color="warning" class="mr-1">mdi-alert-outline</v-icon>Gönderim
                       Gereken Ürünler</span>
                     <span class="value text-warning">{{ item.metaData.totalNoTransferSkipped }}</span>
                   </div>
@@ -108,7 +108,7 @@
 
                 <div class="ek-notification-summary__list">
                   <div class="ek-notification-summary__row">
-                    <span class="label"><v-icon size="14" color="primary" class="mr-1">mdi-database-import</v-icon>
+                    <span class="label"><v-icon size="14" color="primary" class="mr-1">mdi-file-import-outline</v-icon>
                       Toplam Çekilen Ürün</span>
                     <span class="value text-primary">{{ item.metaData.totalCount || 0 }}</span>
                   </div>

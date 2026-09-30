@@ -89,7 +89,7 @@ export function useCustomerActions(executeAction: Function, snackbarStore: any, 
         ];
         confirmDialogObj.confirmText = 'EVET, SİL';
         confirmDialogObj.confirmIcon = 'mdi-trash-can-outline';
-        confirmDialogObj.icon = 'mdi-alert-octagon';
+        confirmDialogObj.icon = 'mdi-alert-octagon-outline';
         confirmDialogObj.color = 'error';
         confirmDialogObj.show = true;
 
@@ -130,7 +130,7 @@ export function useCustomerActions(executeAction: Function, snackbarStore: any, 
         ];
         confirmDialogObj.confirmText = 'EVET, TOPLU SİL';
         confirmDialogObj.confirmIcon = 'mdi-trash-can-outline';
-        confirmDialogObj.icon = 'mdi-alert-decagram';
+        confirmDialogObj.icon = 'mdi-alert-decagram-outline';
         confirmDialogObj.color = 'error';
         confirmDialogObj.show = true;
 

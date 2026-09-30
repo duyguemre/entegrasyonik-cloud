@@ -127,10 +127,10 @@ const getSaleStatusColor = computed(() => {
 });
 
 const getSaleStatusIcon = computed(() => {
-  if (isActuallyOnSale.value) return 'mdi-store-check';
+  if (isActuallyOnSale.value) return 'mdi-store-check-outline';
   const transferStatus = props.data?.upload?.TRANSFER?.status;
-  if (transferStatus === 'WAITING' || transferStatus === 'SENT') return 'mdi-store-clock';
-  return 'mdi-store-remove';
+  if (transferStatus === 'WAITING' || transferStatus === 'SENT') return 'mdi-store-clock-outline';
+  return 'mdi-store-remove-outline';
 });
 
 const filteredIntegrationSteps = computed(() => {

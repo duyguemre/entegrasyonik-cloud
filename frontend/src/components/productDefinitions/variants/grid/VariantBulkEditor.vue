@@ -101,7 +101,7 @@
                 <span v-else class="vbe-val" :class="{ 'ek-num': c.kind !== 'text', 'is-empty': isEmpty(v, c.key) }">
                   {{ display(v, c) }}
                   <span v-if="issueOf(v, ci)" class="vbe-issue" :class="`vbe-issue--${issueOf(v, ci)!.level}`" :title="issueOf(v, ci)!.message">
-                    <v-icon :icon="issueOf(v, ci)!.level === 'error' ? 'mdi-alert-circle' : 'mdi-alert'" aria-hidden="true" />
+                    <v-icon :icon="issueOf(v, ci)!.level === 'error' ? 'mdi-alert-circle-outline' : 'mdi-alert-outline'" aria-hidden="true" />
                     <span class="ek-sr-only">{{ issueOf(v, ci)!.message }}</span>
                   </span>
                 </span>
@@ -115,14 +115,14 @@
       <div class="vbe-foot">
         <div class="vbe-foot__summary" role="status">
           <span class="vbe-sum" :class="{ 'is-on': changes.length > 0 }"><strong class="ek-num">{{ changes.length }}</strong> değişiklik</span>
-          <span v-if="issueTotals.errors" class="vbe-sum vbe-sum--error"><v-icon icon="mdi-alert-circle" aria-hidden="true" />{{ issueTotals.errors }} hata</span>
-          <span v-if="issueTotals.warnings" class="vbe-sum vbe-sum--warning"><v-icon icon="mdi-alert" aria-hidden="true" />{{ issueTotals.warnings }} uyarı</span>
+          <span v-if="issueTotals.errors" class="vbe-sum vbe-sum--error"><v-icon icon="mdi-alert-circle-outline" aria-hidden="true" />{{ issueTotals.errors }} hata</span>
+          <span v-if="issueTotals.warnings" class="vbe-sum vbe-sum--warning"><v-icon icon="mdi-alert-outline" aria-hidden="true" />{{ issueTotals.warnings }} uyarı</span>
           <span class="vbe-foot__keys" aria-hidden="true">
             <EkKbd :keys="['Ctrl', 'V']" /> Excel'den yapıştır · <EkKbd :keys="['Ctrl', 'C']" /> kopyala · <EkKbd keys="Del" /> temizle
           </span>
         </div>
         <div v-if="confirmDiscard" class="vbe-discard" role="alert">
-          <v-icon icon="mdi-alert" aria-hidden="true" />
+          <v-icon icon="mdi-alert-outline" aria-hidden="true" />
           <span><strong>{{ changes.length }} değişiklik uygulanmadı.</strong> Çıkarsanız bu değişiklikler kaybolur.</span>
           <EkButton size="sm" @click="confirmDiscard = false">Düzenlemeye dön</EkButton>
           <EkButton size="sm" tone="danger" icon="mdi-trash-can-outline" @click="emit('close')">Değişiklikleri at</EkButton>
@@ -148,7 +148,7 @@
           </div>
         </div>
         <div v-if="issueTotals.errors" class="vbe-alert" role="alert">
-          <v-icon icon="mdi-alert-circle" aria-hidden="true" />
+          <v-icon icon="mdi-alert-circle-outline" aria-hidden="true" />
           <span><strong>{{ issueTotals.errors }} hücrede hata var.</strong> Düzenlemeye dönüp işaretli hücreleri düzeltin; hata varken uygulanmaz.</span>
         </div>
         <ul class="vbe-colsum" aria-label="Kolona göre özet">

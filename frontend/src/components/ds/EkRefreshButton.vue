@@ -7,7 +7,7 @@
     hover'da yüzey tonu + ince kenar, odakta `focus-ring`.
   • 4 durum (`data-state`):
       idle     — `refresh` glifi, `content-muted`;
-      loading  — glif yumuşak döner (0,9 s, ease-in-out), `action` tonu, `aria-busy`, tekrar tıklanamaz;
+      loading  — glif yumuşak döner (3 × duration-slow, standart eğri), `action` tonu, `aria-busy`, tekrar tıklanamaz;
                  reduced-motion'da dönmez, yanında "Yenileniyor…" metni görünür;
       success  — yükleme hatasız bitince ~1,2 s yeşil tik (`success`), sonra sessizce idle'a döner;
       error    — glifin sağ üstünde 8px `error` noktası; ipucu "Yenilenemedi — tekrar denemek için tıklayın".
@@ -232,7 +232,7 @@ function onClick() {
 }
 
 .ek-refresh.is-loading .ek-refresh__icon {
-  animation: ek-refresh-spin 0.9s var(--ek-easing-standard) infinite;
+  animation: ek-refresh-spin calc(var(--ek-duration-slow) * 3) var(--ek-easing-standard) infinite;
 }
 
 .ek-refresh.is-success {

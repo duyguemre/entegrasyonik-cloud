@@ -468,7 +468,7 @@ const CellBody = defineComponent({
       return h('span', { class: ['vg-val', { 'is-strong': p.strong, 'is-empty': empty, 'ek-num': p.kind !== 'text' }] }, [
         text,
         p.issue ? h('span', { class: ['vg-issue', `vg-issue--${p.issue.level}`], title: p.issue.message }, [
-          h('i', { class: ['mdi', p.issue.level === 'error' ? 'mdi-alert-circle' : 'mdi-alert', 'vg-issue__icon'], 'aria-hidden': 'true' }),
+          h('i', { class: ['mdi', p.issue.level === 'error' ? 'mdi-alert-circle-outline' : 'mdi-alert-outline', 'vg-issue__icon'], 'aria-hidden': 'true' }),
           h('span', { class: 'ek-sr-only' }, p.issue.message),
         ]) : null,
       ])

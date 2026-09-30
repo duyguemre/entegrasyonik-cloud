@@ -25,7 +25,7 @@
         <v-menu v-model="startDateMenuInline" :close-on-content-click="false">
           <template v-slot:activator="{ props }">
             <v-text-field :model-value="formattedStartDate" label="Başlangıç" variant="outlined" density="compact"
-              prepend-inner-icon="mdi-calendar-start" hide-details readonly clearable
+              prepend-inner-icon="mdi-calendar-start-outline" hide-details readonly clearable
               @click:clear="searchForm.data.startDate = null" v-bind="props" class="customTextField date-input"></v-text-field>
           </template>
           <v-card class="rounded-lg">
@@ -38,7 +38,7 @@
         <v-menu v-model="endDateMenuInline" :close-on-content-click="false">
           <template v-slot:activator="{ props }">
             <v-text-field :model-value="formattedEndDate" label="Bitiş" variant="outlined" density="compact"
-              prepend-inner-icon="mdi-calendar-end" hide-details readonly clearable
+              prepend-inner-icon="mdi-calendar-end-outline" hide-details readonly clearable
               @click:clear="searchForm.data.endDate = null" v-bind="props" class="customTextField date-input"></v-text-field>
           </template>
           <v-card class="rounded-lg">
@@ -60,7 +60,7 @@
     </div>
 
     <ActionDialogComponent v-model="searchForm.form.menu" title="Mesaj filtreleme" attach=".messageListView"
-      subtitle="Kategori ve durum bazlı filtreleme" icon="mdi-filter-cog" color="content-muted" maxWidth="600px"
+      subtitle="Kategori ve durum bazlı filtreleme" icon="mdi-filter-cog-outline" color="content-muted" maxWidth="600px"
       confirmText="Filtreleri uygula" @confirm="getMessages(true); searchForm.form.menu = false"
       @cancel="resetFilters()">
       <v-row dense>
@@ -171,7 +171,7 @@
                   @click="openDetail(item)">
                   <v-icon size="large"
                     :color="(item.status === 'WAITING_SELLER' || item.isRejected) ? 'warning' : 'content-muted'">
-                    {{ (item.status === 'WAITING_SELLER' || item.isRejected) ? 'mdi-message-reply-text' : 'mdi-eye-outline' }}
+                    {{ (item.status === 'WAITING_SELLER' || item.isRejected) ? 'mdi-message-reply-text-outline' : 'mdi-eye-outline' }}
                   </v-icon>
                   <v-tooltip activator="parent" location="top">{{ (item.status === 'WAITING_SELLER' || item.isRejected)
                     ? 'Cevapla / Düzenle' : 'Görüntüle' }}</v-tooltip>

@@ -103,7 +103,7 @@
                 class="accountSecurityView__hint"
                 :class="{ 'accountSecurityView__hint--met': hint.met }"
               >
-                <v-icon size="16" aria-hidden="true">{{ hint.met ? 'mdi-check-circle' : 'mdi-circle-outline' }}</v-icon>
+                <v-icon size="16" aria-hidden="true">{{ hint.met ? 'mdi-check-circle-outline' : 'mdi-circle-outline' }}</v-icon>
                 <span>{{ $t(hint.labelKey) }}</span>
                 <span class="accountSecurityView__sr">{{ hint.met ? $t('accountSecurity.password.hintMet') : $t('accountSecurity.password.hintUnmet') }}</span>
               </li>

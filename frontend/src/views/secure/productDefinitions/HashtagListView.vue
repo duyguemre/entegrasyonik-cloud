@@ -61,7 +61,7 @@
             <template v-slot:activator="{ props }">
               <button v-bind="props" type="button" class="cursor-pointer font-weight-bold d-flex align-center group-title"
                 @click="item.tempTitle = item.title">
-                <v-icon size="18" :color="item.color || undefined" class="mr-2 group-title__tag" aria-hidden="true">mdi-label-variant</v-icon>
+                <v-icon size="18" :color="item.color || undefined" class="mr-2 group-title__tag" aria-hidden="true">mdi-label-variant-outline</v-icon>
                 {{ item.title }}
                 <v-icon size="14" class="ml-2 group-title__icon" aria-hidden="true">mdi-pencil-outline</v-icon>
               </button>
@@ -92,7 +92,7 @@
             :style="val.color ? { backgroundColor: val.color } : undefined"
             :class="val.color ? (getTextColor(val.color) === 'white' ? 'is-on-dark' : 'is-on-light') : 'is-neutral'">
             <span class="mr-2 font-weight-bold hashtag-chip-item__text"><v-icon
-                size="12" class="mr-1" aria-hidden="true">mdi-tag</v-icon>{{ val.title }}</span>
+                size="12" class="mr-1" aria-hidden="true">mdi-tag-outline</v-icon>{{ val.title }}</span>
             <v-menu v-model="val.showValueMenu" activator="parent" :close-on-content-click="false"
               transition="fade-transition"
               @update:model-value="(state) => state ? item.editingHashtagValue = copy(val) : null">

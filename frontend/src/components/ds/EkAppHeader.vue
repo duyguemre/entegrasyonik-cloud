@@ -5,6 +5,7 @@
   (`--ek-gradient-chrome`), üzerindeki tüm kontroller `chrome-raised`
   zeminli ve `chrome-border` çerçeveli — aynı dil.
     [☰] [logo]   [#search ...........]   [🔔 n] [?] [profil]
+  A8: ikonlar tek standart (`SHELL_ICONS`, 20px / 36px, `chrome-text-muted` → hover `chrome-text`), küçük sayaç (16px, 99+).
   Aşama 5: "Genel | Seçili kayıt" çalışma alanı anahtarı KALDIRILDI (kullanıcı geri bildirimi: anlamı
   anlaşılmıyordu; kayıt bağlamına sekme şeridinden zaten erişilir).
   Ek (geri uyumlu): menü düğmesinde kısayollu ipucu; `data-header-action`
@@ -24,7 +25,7 @@
             :aria-expanded="menuExpanded"
             @click="emit('toggle-menu')"
           >
-            <v-icon icon="mdi-menu" aria-hidden="true" />
+            <v-icon :icon="SHELL_ICONS.menu" aria-hidden="true" />
           </button>
         </template>
         <span class="ek-header__tip">Menüyü aç/kapat <EkKbd :keys="menuShortcut" tone="inverse" /></span>
@@ -39,11 +40,11 @@
     <div class="ek-header__end">
       <slot name="end-start" />
       <button type="button" class="ek-header__icon-btn" data-header-action="notifications" :aria-label="`Bildirimler, ${notificationCount} okunmamış`" @click="emit('notifications')">
-        <v-icon icon="mdi-bell-outline" aria-hidden="true" />
-        <EkBadge v-if="notificationCount" class="ek-header__count" variant="count" tone="error" :text="notificationCount" />
+        <v-icon :icon="SHELL_ICONS.notifications" aria-hidden="true" />
+        <span v-if="notificationCount" class="ek-header__count ek-num" aria-hidden="true">{{ countText }}</span>
       </button>
       <button type="button" class="ek-header__icon-btn ek-header__help" data-header-action="help" aria-label="Yardım merkezi" aria-haspopup="menu" @click="emit('help')">
-        <v-icon icon="mdi-help-circle-outline" aria-hidden="true" />
+        <v-icon :icon="SHELL_ICONS.help" aria-hidden="true" />
       </button>
       <button type="button" class="ek-header__user" data-header-action="account" :aria-label="`Hesap menüsü: ${userName}`" aria-haspopup="menu" @click="emit('account')">
         <span class="ek-header__avatar" aria-hidden="true">{{ initials }}</span>
@@ -51,7 +52,7 @@
           <span class="ek-header__user-name">{{ userName }}</span>
           <span class="ek-header__user-meta">{{ storeName }}</span>
         </span>
-        <v-icon v-if="!compact" class="ek-header__user-chevron" icon="mdi-chevron-down" aria-hidden="true" />
+        <v-icon v-if="!compact" class="ek-header__user-chevron" :icon="SHELL_ICONS.accountChevron" aria-hidden="true" />
       </button>
     </div>
   </header>
@@ -60,7 +61,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import EkBrandLogo from './EkBrandLogo.vue'
-import EkBadge from './EkBadge.vue'
+import { SHELL_ICONS } from '@/design/icons'
 import EkKbd from './EkKbd.vue'
 
 const props = withDefaults(
@@ -88,6 +89,9 @@ const emit = defineEmits<{
   help: []
   account: []
 }>()
+
+/** Rozet: en çok iki hane ("99+"); tam sayı erişilebilir adda. */
+const countText = computed(() => (props.notificationCount > 99 ? '99+' : String(props.notificationCount)))
 
 const initials = computed(() =>
   props.userName
@@ -134,6 +138,9 @@ const initials = computed(() =>
   margin: 0 var(--ek-space-2) 0 var(--ek-space-1);
 }
 
+/* A8 — üst bar ikon STANDARDI (menü, bildirim, yardım): tek set/ağırlık (MDI çizgi), 20px glif (`icon-lg`),
+   36px dokunma alanı (`control-h-md`), dinlenirken `chrome-text-muted` (degrade üzerinde ≥ 5:1), hover/odakta
+   `chrome-text` + `chrome-raised` zemin. Çerçeve yok — ikonlar poster gibi değil, sakin ve eşit ağırlıkta. */
 .ek-header__icon-btn {
   position: relative;
   display: inline-flex;
@@ -142,16 +149,26 @@ const initials = computed(() =>
   flex: none;
   width: var(--ek-control-h-md);
   height: var(--ek-control-h-md);
-  border: 1px solid transparent;
+  border: 0;
   border-radius: var(--ek-radius-control);
   background: transparent;
-  color: var(--ek-color-chrome-text);
+  color: var(--ek-color-chrome-text-muted);
   font-size: var(--ek-icon-lg);
   cursor: pointer;
   transition: var(--ek-transition-colors);
 }
 
-.ek-header__icon-btn:hover,
+.ek-header__icon-btn :deep(.v-icon) {
+  font-size: var(--ek-icon-lg);
+  width: var(--ek-icon-lg);
+  height: var(--ek-icon-lg);
+}
+
+.ek-header__icon-btn:hover {
+  background: var(--ek-color-chrome-raised);
+  color: var(--ek-color-chrome-text);
+}
+
 .ek-header__user:hover {
   background: var(--ek-color-chrome-raised);
   border-color: var(--ek-color-chrome-border);
@@ -161,6 +178,7 @@ const initials = computed(() =>
 .ek-header__user:focus-visible {
   outline: 2px solid var(--ek-color-chrome-text);
   outline-offset: 1px;
+  color: var(--ek-color-chrome-text);
 }
 
 .ek-header__tip {
@@ -169,18 +187,33 @@ const initials = computed(() =>
   gap: var(--ek-space-2);
 }
 
+/* Bildirim sayacı: küçük (16px), zilin sağ üst omzuna oturur, glifi örtmez; degradeden 2px halka ile ayrılır. */
 .ek-header__count {
   position: absolute;
-  top: 2px;
-  right: 2px;
+  top: 3px;
+  left: 19px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: var(--ek-radius-chip);
+  background: var(--ek-color-error);
+  color: var(--ek-color-error-contrast);
   box-shadow: 0 0 0 2px var(--ek-color-chrome);
+  font-size: 10px;
+  font-weight: var(--ek-font-weight-bold);
+  line-height: 1;
+  letter-spacing: 0;
+  pointer-events: none;
 }
 
 .ek-header__user {
   display: inline-flex;
   align-items: center;
   gap: var(--ek-space-2);
-  height: 40px;
+  height: var(--ek-control-h-md);
   padding: 0 var(--ek-space-2) 0 var(--ek-space-1);
   border: 1px solid var(--ek-color-chrome-border);
   border-radius: var(--ek-radius-control);
@@ -196,8 +229,8 @@ const initials = computed(() =>
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border-radius: var(--ek-radius-md);
   background: var(--ek-color-action);
   color: var(--ek-color-chrome-text);
@@ -232,7 +265,7 @@ const initials = computed(() =>
 
 .ek-header__user-chevron {
   color: var(--ek-color-chrome-text-muted);
-  font-size: var(--ek-icon-sm);
+  font-size: var(--ek-icon-md);
 }
 
 @media (max-width: 767px) {

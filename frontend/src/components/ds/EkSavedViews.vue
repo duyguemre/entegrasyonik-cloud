@@ -32,7 +32,7 @@
         aria-haspopup="dialog"
         :aria-label="triggerLabel"
       >
-        <v-icon class="ek-views__trigger-icon" :icon="activeView ? 'mdi-bookmark-check' : 'mdi-bookmark-outline'" aria-hidden="true" />
+        <v-icon class="ek-views__trigger-icon" :icon="activeView ? 'mdi-bookmark-check-outline' : 'mdi-bookmark-outline'" aria-hidden="true" />
         <span class="ek-views__trigger-text">{{ activeView ? activeView.name : 'Görünümler' }}</span>
         <EkBadge v-if="views.length && !activeView" variant="count" tone="neutral" :text="views.length" aria-hidden="true" />
         <v-icon class="ek-views__trigger-chevron" icon="mdi-chevron-down" aria-hidden="true" />
@@ -59,7 +59,7 @@
           >
             <v-icon
               class="ek-views__item-icon"
-              :icon="view.id === activeView?.id ? 'mdi-check-circle' : 'mdi-bookmark-outline'"
+              :icon="view.id === activeView?.id ? 'mdi-check-circle-outline' : 'mdi-bookmark-outline'"
               aria-hidden="true"
             />
             <span class="ek-views__item-text">

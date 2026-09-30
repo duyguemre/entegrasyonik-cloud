@@ -54,10 +54,10 @@
 
         <v-menu offset="5">
           <template v-slot:activator="{ props }">
-            <EkButton v-bind="props" tone="secondary" icon="mdi-folder-multiple-plus">Şablonlar</EkButton>
+            <EkButton v-bind="props" tone="secondary" icon="mdi-folder-multiple-plus-outline">Şablonlar</EkButton>
           </template>
           <v-list density="compact" nav width="240">
-            <v-list-item prepend-icon="mdi-palette" title="Renk Şablonu"
+            <v-list-item prepend-icon="mdi-palette-outline" title="Renk Şablonu"
               @click="addPreparedChoice('color')"></v-list-item>
             <v-list-item prepend-icon="mdi-format-size" title="Beden (XXS-5XL) Şablonu"
               @click="addPreparedChoice('size')"></v-list-item>
@@ -97,7 +97,7 @@
           </button>
           <button type="button" class="choice-flag" :class="{ 'choice-flag--on-neutral': item.isVarianter }"
             :aria-pressed="!!item.isVarianter" @click="item.isVarianter = !item.isVarianter; updateChoice(item)">
-            <v-icon size="12" class="choice-flag__icon">mdi-layers-triple</v-icon> VARYANT
+            <v-icon size="12" class="choice-flag__icon">mdi-layers-triple-outline</v-icon> VARYANT
           </button>
         </div>
       </template>

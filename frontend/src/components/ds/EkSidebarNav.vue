@@ -48,7 +48,7 @@
                 :aria-label="collapsed ? item.label : undefined"
                 @click="onItem(item)"
               >
-                <v-icon class="ek-side__icon" :icon="item.icon ?? 'mdi-circle-small'" aria-hidden="true" />
+                <v-icon class="ek-side__icon" :icon="outlineIcon(item.icon) ?? 'mdi-circle-small'" aria-hidden="true" />
                 <span v-if="!collapsed" class="ek-side__label">{{ item.label }}</span>
                 <EkBadge v-if="item.badge && !collapsed" variant="count" :tone="item.badgeTone ?? 'action'" :text="item.badge" />
                 <v-icon
@@ -86,6 +86,7 @@
 </template>
 
 <script setup lang="ts">
+import { outlineIcon } from '@/design/icons'
 import { ref, watch } from 'vue'
 import EkBadge from './EkBadge.vue'
 

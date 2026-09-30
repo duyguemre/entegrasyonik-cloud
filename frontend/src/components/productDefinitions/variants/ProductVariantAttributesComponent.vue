@@ -1,6 +1,6 @@
 <template>
 
-  <CardComponent icon="mdi-checkbox-multiple-marked" title="Varyant Bilgileri" :isHovered="false" class="pva-s1">
+  <CardComponent icon="mdi-checkbox-multiple-marked-outline" title="Varyant Bilgileri" :isHovered="false" class="pva-s1">
     <LoadingComponent attach=".productDefinitionView" ref="loadingComponentRef"></LoadingComponent>
 
     <template #header>

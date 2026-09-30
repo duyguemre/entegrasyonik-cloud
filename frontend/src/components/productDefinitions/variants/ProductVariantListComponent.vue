@@ -218,17 +218,17 @@ const STATUS_META: Record<PRODUCT_INTEGRATION_STATUS, { icon: string; order: num
     message: "Hazırlanıyor"
   },
   [PRODUCT_INTEGRATION_STATUS.SENT]: {
-    icon: 'mdi-clock',
+    icon: 'mdi-clock-outline',
     order: 3,
     message: "Bekliyor"
   },
   [PRODUCT_INTEGRATION_STATUS.WAITING]: {
-    icon: 'mdi-clock',
+    icon: 'mdi-clock-outline',
     order: 4,
     message: "Bekliyor"
   },
   [PRODUCT_INTEGRATION_STATUS.FAILED]: {
-    icon: 'mdi-close-box',
+    icon: 'mdi-close-box-outline',
     order: 5,
     message: "Reddedildi"
   },
@@ -272,10 +272,10 @@ const platformState = (integration: any, item: any): { tone: StatusTone; icon: s
   const status = upload?.TRANSFER?.status
   if (status === PRODUCT_INTEGRATION_STATUS.COMPLETED) {
     return upload?.onSale === true
-      ? { tone: 'success', icon: 'mdi-check-circle', label: 'Yayında' }
-      : { tone: 'warning', icon: 'mdi-pause-circle', label: 'Onaylandı, satışa kapalı' }
+      ? { tone: 'success', icon: 'mdi-check-circle-outline', label: 'Yayında' }
+      : { tone: 'warning', icon: 'mdi-pause-circle-outline', label: 'Onaylandı, satışa kapalı' }
   }
-  if (status === PRODUCT_INTEGRATION_STATUS.FAILED) return { tone: 'danger', icon: 'mdi-alert-circle', label: 'Reddedildi' }
+  if (status === PRODUCT_INTEGRATION_STATUS.FAILED) return { tone: 'danger', icon: 'mdi-alert-circle-outline', label: 'Reddedildi' }
   if (status === PRODUCT_INTEGRATION_STATUS.SENT || status === PRODUCT_INTEGRATION_STATUS.WAITING) return { tone: 'info', icon: 'mdi-clock-outline', label: 'Onay bekliyor' }
   if (status === PRODUCT_INTEGRATION_STATUS.PENDING) return { tone: 'info', icon: 'mdi-upload-outline', label: 'Hazırlanıyor' }
   return { tone: 'neutral', icon: 'mdi-circle-outline', label: 'Gönderilmedi' }

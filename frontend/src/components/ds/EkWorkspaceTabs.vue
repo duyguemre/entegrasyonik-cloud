@@ -51,7 +51,7 @@
               :aria-describedby="describedBy(tipProps, tab)"
               @click="activate(tab.id)"
             >
-              <v-icon v-if="tab.icon" class="ek-tab__icon" :icon="tab.icon" aria-hidden="true" />
+              <v-icon v-if="tab.icon" class="ek-tab__icon" :icon="outlineIcon(tab.icon)" aria-hidden="true" />
               <span class="ek-tab__title" :data-title-id="tab.id">{{ tab.title }}</span>
               <span v-if="tab.dirty" class="ek-tab__dirty" aria-label="Kaydedilmemiş değişiklik var"></span>
             </button>
@@ -81,6 +81,7 @@
 </template>
 
 <script setup lang="ts">
+import { outlineIcon } from '@/design/icons'
 import { nextTick, onBeforeUnmount, onMounted, onUpdated, ref, useId, watch } from 'vue'
 
 export interface EkWorkspaceTab {

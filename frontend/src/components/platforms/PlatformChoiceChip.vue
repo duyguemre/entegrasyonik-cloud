@@ -8,7 +8,7 @@
   <button type="button" class="ek-platform-choice" :class="{ 'is-active': active }" :aria-pressed="active"
     @click="emit('select', code)">
     <EkPlatformMark :name="name" :code="code" size="sm" />
-    <v-icon class="ek-platform-choice__check" :icon="active ? 'mdi-check-circle' : 'mdi-circle-outline'"
+    <v-icon class="ek-platform-choice__check" :icon="active ? 'mdi-check-circle-outline' : 'mdi-circle-outline'"
       aria-hidden="true" />
   </button>
 </template>

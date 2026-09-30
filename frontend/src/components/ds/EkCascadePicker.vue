@@ -66,7 +66,7 @@
             <span class="ek-cascade__item-label">{{ node.label }}</span>
             <span v-if="node.count !== undefined" class="ek-cascade__item-count">{{ node.count }}</span>
             <v-icon v-if="node.children?.length" class="ek-cascade__item-end" icon="mdi-chevron-right" aria-hidden="true" />
-            <v-icon v-else-if="path[ci] === node.id" class="ek-cascade__item-end is-check" icon="mdi-check-circle" aria-hidden="true" />
+            <v-icon v-else-if="path[ci] === node.id" class="ek-cascade__item-end is-check" icon="mdi-check-circle-outline" aria-hidden="true" />
             <span v-else class="ek-cascade__leaf-dot" aria-hidden="true"></span>
           </li>
         </ul>

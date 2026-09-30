@@ -50,7 +50,7 @@
       <EkAlert v-if="order.internalStatus === OrderInternalStatusEnum.RETURNED" tone="error" title="İade talebi / süreci" text="Bu sipariş için pazaryeri üzerinde bir iade süreci başlatılmıştır. Ayrıntılar İade Yönetimi ekranında." />
       <EkAlert
         v-if="(order.internalStatus === OrderInternalStatusEnum.CANCELLED || order.internalStatus === OrderInternalStatusEnum.RETURNED) && order.flags?.isInvoiceGenerated"
-        tone="warning" icon="mdi-file-cancel" title="Faturalandırılmış iptal/iade"
+        tone="warning" icon="mdi-file-cancel-outline" title="Faturalandırılmış iptal/iade"
         text="Bu siparişin faturası sistem tarafından kesilmiştir. Faturayı iptal etmeyi veya iade faturası düzenlemeyi unutmayın."
       />
 
@@ -310,9 +310,9 @@ const statusInformation = computed(() => {
         case OrderInternalStatusEnum.SHIPPED:
             return { title: 'Teslimat yolunda', desc: 'Sipariş kargoya verildi. Bu aşamada yalnızca teslimat takibi yapılabilir.', icon: 'mdi-truck-fast-outline' };
         case OrderInternalStatusEnum.DELIVERED:
-            return { title: 'Sipariş tamamlandı', desc: 'Sipariş müşteriye ulaştı. Tüm operasyonel süreçler tamamlandı.', icon: 'mdi-check-circle' };
+            return { title: 'Sipariş tamamlandı', desc: 'Sipariş müşteriye ulaştı. Tüm operasyonel süreçler tamamlandı.', icon: 'mdi-check-circle-outline' };
         case OrderInternalStatusEnum.CANCELLED:
-            return { title: 'Sipariş iptal edildi', desc: 'Bu sipariş iptal edildi, üzerinde işlem yapılamaz.', icon: 'mdi-close-circle' };
+            return { title: 'Sipariş iptal edildi', desc: 'Bu sipariş iptal edildi, üzerinde işlem yapılamaz.', icon: 'mdi-close-circle-outline' };
         case OrderInternalStatusEnum.RETURNED:
             return { title: 'Sipariş iade edildi', desc: 'Müşteri bu siparişi iade etti. Detayları İadeler bölümünden takip edebilirsiniz.', icon: 'mdi-keyboard-return' };
         default:

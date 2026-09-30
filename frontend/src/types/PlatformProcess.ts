@@ -51,6 +51,6 @@ export const PLATFORM_PROCESS_ICONS: Record<PLATFORM_PROCESS, string> = {
     [PLATFORM_PROCESS.UPDATE_STOCK]: 'mdi-counter',
     [PLATFORM_PROCESS.UPDATE]: 'mdi-sync',
     [PLATFORM_PROCESS.UPDATE_VARIANT]: 'mdi-vector-difference', // Yeni
-    [PLATFORM_PROCESS.UPDATE_DELIVERY]: 'mdi-truck-delivery',   // Yeni
+    [PLATFORM_PROCESS.UPDATE_DELIVERY]: 'mdi-truck-delivery-outline',   // Yeni
     [PLATFORM_PROCESS.IMPORT]: 'mdi-download-outline',            // Yeni
 };

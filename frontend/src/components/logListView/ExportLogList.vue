@@ -1,7 +1,7 @@
 <template>
   <div class="exportLogList">
     <ActionDialogComponent v-model="reportInfo.isOpen" title="Pazaryeri Gönderim Detaylı Raporu"
-      subtitle="İşlem Günlüğü ve Akış Analizi" icon="mdi-rocket-launch" color="primary" maxWidth="1200"
+      subtitle="İşlem Günlüğü ve Akış Analizi" icon="mdi-rocket-launch-outline" color="primary" maxWidth="1200"
       :showFooter="false" attach=".exportLogList">
       <keep-alive>
         <DetailedExportLogReport :jobId="reportInfo.jobId || ''" @close="reportInfo.isOpen = false" />

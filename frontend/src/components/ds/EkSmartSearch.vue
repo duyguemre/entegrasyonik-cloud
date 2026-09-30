@@ -70,7 +70,7 @@
             @click="choose(item)"
           >
             <span class="ek-search__avatar" :class="`ek-search__avatar--${item.tone ?? 'action'}`" aria-hidden="true">
-              <v-icon v-if="item.icon" :icon="item.icon" />
+              <v-icon v-if="item.icon" :icon="outlineIcon(item.icon)" />
               <template v-else>{{ monogram(item.title) }}</template>
             </span>
             <span class="ek-search__option-main">
@@ -106,6 +106,7 @@
 </template>
 
 <script setup lang="ts">
+import { outlineIcon } from '@/design/icons'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
 import EkBadge from './EkBadge.vue'
 import EkKbd from './EkKbd.vue'

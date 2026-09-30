@@ -39,17 +39,17 @@ export const useStaticsStore = defineStore('staticsStore', () => {
       message: "Hazırlanıyor"
     },
     [PRODUCT_INTEGRATION_STATUS.SENT]: {
-      icon: 'mdi-play',
+      icon: 'mdi-play-outline',
       order: 2,
       message: "Gönderildi"
     },
     [PRODUCT_INTEGRATION_STATUS.WAITING]: {
-      icon: 'mdi-clock',
+      icon: 'mdi-clock-outline',
       order: 3,
       message: "Bekliyor"
     },
     [PRODUCT_INTEGRATION_STATUS.FAILED]: {
-      icon: 'mdi-close-box',
+      icon: 'mdi-close-box-outline',
       order: 4,
       message: "Reddedildi"
     },

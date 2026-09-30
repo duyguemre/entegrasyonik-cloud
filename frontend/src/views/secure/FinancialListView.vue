@@ -70,7 +70,7 @@
                   <div v-if="selectedTransaction.payoutDate" class="ek-fin-info-item">
                     <span class="ek-fin-label">VADE (ÖDEME) TARİHİ</span>
                     <span class="ek-fin-info-value ek-num">
-                      <v-icon size="14" class="mr-1" aria-hidden="true">mdi-calendar-clock</v-icon>{{
+                      <v-icon size="14" class="mr-1" aria-hidden="true">mdi-calendar-clock-outline</v-icon>{{
                         formatDate(selectedTransaction.payoutDate) }}
                     </span>
                   </div>

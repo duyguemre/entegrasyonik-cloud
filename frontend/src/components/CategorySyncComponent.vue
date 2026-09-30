@@ -48,7 +48,7 @@
           Sisteminizdeki eşleşmemiş tüm <strong>uç (leaf)</strong> kategorileri, yapay zeka desteğiyle saniyeler
           içinde otomatik olarak eşleştirebilirsiniz.
         </p>
-        <EkButton tone="primary" icon="mdi-flash" :loading="isAutoMatching" @click="startAutoMatch">
+        <EkButton tone="primary" icon="mdi-flash-outline" :loading="isAutoMatching" @click="startAutoMatch">
           Otomatik eşleştirmeyi başlat
         </EkButton>
         <p class="ek-category-sync__note ek-category-sync__note--info">

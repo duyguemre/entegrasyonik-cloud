@@ -41,7 +41,7 @@
                 <v-row dense>
                     <v-col cols="12" sm="3">
                         <div class="insight-card pa-4 h-100 border-subtle">
-                            <v-icon color="content-muted" size="22" class="mb-1">mdi-basket-check</v-icon>
+                            <v-icon color="content-muted" size="22" class="mb-1">mdi-basket-check-outline</v-icon>
                             <div class="text-h6 font-weight-bold ek-num leading-none">{{ formatMoney(customer.metrics?.totalSpent || 0) }}</div>
                             <div class="text-caption ek-muted mt-1">Brüt ciro</div>
                         </div>
@@ -67,7 +67,7 @@
 
                     <v-col cols="12" sm="3">
                         <div class="insight-card pa-4 h-100 border-subtle">
-                            <v-icon color="content-muted" size="22" class="mb-1">mdi-calendar-clock</v-icon>
+                            <v-icon color="content-muted" size="22" class="mb-1">mdi-calendar-clock-outline</v-icon>
                             <div class="text-body-1 font-weight-semibold leading-tight">
                                 {{ customer.metrics?.lastOrderDate ? formatDate(customer.metrics.lastOrderDate) : 'Sipariş yok' }}
                             </div>

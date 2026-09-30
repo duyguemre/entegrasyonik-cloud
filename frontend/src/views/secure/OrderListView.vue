@@ -117,7 +117,7 @@
       <template #cell-orderNumber="{ row }">
         <span class="ek-order-no">
           {{ row.orderNumber }}
-          <v-icon v-if="row.flags?.isInvoiceGenerated" size="14" icon="mdi-receipt-text-check" class="ek-order-no__icon" aria-label="Fatura kesildi" />
+          <v-icon v-if="row.flags?.isInvoiceGenerated" size="14" icon="mdi-receipt-text-check-outline" class="ek-order-no__icon" aria-label="Fatura kesildi" />
         </span>
       </template>
       <template #cell-integrationCode="{ row }">

@@ -22,7 +22,7 @@
 
 
         <span class="ml-8"></span> <span class="font-weight-medium  text-h6">
-          <v-icon class="choices-sync__title-icon mr-0" size="20">mdi-checkbox-multiple-marked</v-icon>
+          <v-icon class="choices-sync__title-icon mr-0" size="20">mdi-checkbox-multiple-marked-outline</v-icon>
           Platform Seçenek Eşleştirme</span>
 
       </v-card-title>

@@ -17,8 +17,8 @@
                     <v-menu v-model="invoiceDateMenuInline" :close-on-content-click="false">
                         <template v-slot:activator="{ props }">
                             <v-text-field :model-value="formatDisplayDate(form.issueDate)" label="Fatura Tarihi"
-                                prepend-inner-icon="mdi-calendar" readonly v-bind="props"
-                                append-inner-icon="mdi-close-circle"
+                                prepend-inner-icon="mdi-calendar-outline" readonly v-bind="props"
+                                append-inner-icon="mdi-close-circle-outline"
                                 @click:append-inner.stop="resetDateToToday"></v-text-field>
                         </template>
                         <v-card class="rounded-lg">

@@ -68,3 +68,106 @@ export function actionLabel(action: ActionKey, object?: string): string {
   const verb = ACTION_ICONS[action].label
   return object ? `${object} ${verb.charAt(0).toLocaleLowerCase('tr-TR')}${verb.slice(1)}` : verb
 }
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// A8 — İKON STİLİ STANDARDI (tüm uygulama)
+//   • Set: YALNIZ MDI (`@mdi/font`), tek ağırlık (MDI 24px ızgarada 2px çizgi). Başka set (FA, Material Icons, SVG
+//     çizim) yok — envanter: `scripts/icon-inventory.js`.
+//   • Stil: ÇİZGİ (outline). Aynı glifin `-outline` sürümü varsa dolgu sürümü KULLANILMAZ; tek istisna
+//     `STATE_FILLED` (dolgunun kendisi durum bildirir: favori yıldızı, işaretli kutu, nokta) ve çizgi
+//     ilkelleri (`check`, `close`, `plus`, `menu`, `chevron-*`, `arrow-*` … — dolgusu olmayan şekiller).
+//     Bekçi: `tests/icon-style.test.ts` (kaynakta dolgu+çizgi karışımı 0).
+//   • Boyut: yazıyla orantılı rol ölçeği (`--ek-icon-xs…2xl`, DESIGN_SYSTEM §3). Üst bar: 20px glif / 36px dokunma
+//     alanı (`SHELL_ICON_SIZE`), satır/araç çubuğu eylemleri 16px / 32px (`EkActionButton`).
+//   • Renk: bulunduğu yüzeyin ikincil metin tonu (`content-muted`; üst barda `chrome-text-muted`); hover/etkin →
+//     birincil metin tonu. Dolgu renkli ikon yalnız `EkIconTile` kapsülünde.
+//   • Arka uçtan gelen menü ikonları (menü kaydı DB'de) görüntülenirken `outlineIcon()` ile normalize edilir.
+
+/** Dolgu glif → aynı şeklin çizgi sürümü (kaynakta ve menü kaydında görülenler; hepsi @mdi/font'ta mevcut — test). */
+export const FILLED_TO_OUTLINE: Readonly<Record<string, string>> = Object.freeze({
+  'mdi-home': 'mdi-home-outline',
+  'mdi-alert': 'mdi-alert-outline',
+  'mdi-alert-circle': 'mdi-alert-circle-outline',
+  'mdi-alert-decagram': 'mdi-alert-decagram-outline',
+  'mdi-alert-octagon': 'mdi-alert-octagon-outline',
+  'mdi-arrow-right-circle': 'mdi-arrow-right-circle-outline',
+  'mdi-basket-check': 'mdi-basket-check-outline',
+  'mdi-bell': 'mdi-bell-outline',
+  'mdi-bookmark-check': 'mdi-bookmark-check-outline',
+  'mdi-calendar': 'mdi-calendar-outline',
+  'mdi-calendar-clock': 'mdi-calendar-clock-outline',
+  'mdi-calendar-end': 'mdi-calendar-end-outline',
+  'mdi-calendar-start': 'mdi-calendar-start-outline',
+  'mdi-account': 'mdi-account-outline',
+  'mdi-account-circle': 'mdi-account-circle-outline',
+  'mdi-account-group': 'mdi-account-group-outline',
+  'mdi-account-multiple': 'mdi-account-multiple-outline',
+  'mdi-cart': 'mdi-cart-outline',
+  'mdi-cart-variant': 'mdi-cart-outline',
+  'mdi-check-circle': 'mdi-check-circle-outline',
+  'mdi-check-decagram': 'mdi-check-decagram-outline',
+  'mdi-checkbox-multiple-marked': 'mdi-checkbox-multiple-marked-outline',
+  'mdi-clock': 'mdi-clock-outline',
+  'mdi-clock-check': 'mdi-clock-check-outline',
+  'mdi-close-box': 'mdi-close-box-outline',
+  'mdi-close-circle': 'mdi-close-circle-outline',
+  'mdi-close-octagon': 'mdi-close-octagon-outline',
+  'mdi-database-import': 'mdi-file-import-outline',
+  'mdi-email': 'mdi-email-outline',
+  'mdi-file-cancel': 'mdi-file-cancel-outline',
+  'mdi-file-clock': 'mdi-file-clock-outline',
+  'mdi-file-document': 'mdi-file-document-outline',
+  'mdi-file-excel-box': 'mdi-file-excel-box-outline',
+  'mdi-filter-cog': 'mdi-filter-cog-outline',
+  'mdi-flash': 'mdi-flash-outline',
+  'mdi-folder-multiple-plus': 'mdi-folder-multiple-plus-outline',
+  'mdi-heart': 'mdi-heart-outline',
+  'mdi-image-off': 'mdi-image-off-outline',
+  'mdi-label-variant': 'mdi-label-variant-outline',
+  'mdi-layers-triple': 'mdi-layers-triple-outline',
+  'mdi-message-reply-text': 'mdi-message-reply-text-outline',
+  'mdi-message-text': 'mdi-message-text-outline',
+  'mdi-palette': 'mdi-palette-outline',
+  'mdi-palette-swatch': 'mdi-palette-swatch-outline',
+  'mdi-pause-circle': 'mdi-pause-circle-outline',
+  'mdi-play': 'mdi-play-outline',
+  'mdi-printer-off': 'mdi-printer-off-outline',
+  'mdi-receipt-text': 'mdi-receipt-text-outline',
+  'mdi-receipt-text-check': 'mdi-receipt-text-check-outline',
+  'mdi-receipt-text-plus': 'mdi-receipt-text-plus-outline',
+  'mdi-rocket-launch': 'mdi-rocket-launch-outline',
+  'mdi-shape': 'mdi-shape-outline',
+  'mdi-shield-account': 'mdi-shield-account-outline',
+  'mdi-store': 'mdi-store-outline',
+  'mdi-store-check': 'mdi-store-check-outline',
+  'mdi-store-clock': 'mdi-store-clock-outline',
+  'mdi-store-remove': 'mdi-store-remove-outline',
+  'mdi-storefront': 'mdi-storefront-outline',
+  'mdi-tag': 'mdi-tag-outline',
+  'mdi-tag-multiple': 'mdi-tag-multiple-outline',
+  'mdi-tag-off': 'mdi-tag-off-outline',
+  'mdi-toggle-switch': 'mdi-toggle-switch-outline',
+  'mdi-truck': 'mdi-truck-outline',
+  'mdi-truck-delivery': 'mdi-truck-delivery-outline',
+  ...Object.fromEntries(Object.entries(ICON_ALIAS_MAP)),
+})
+
+/** Dolgunun kendisi DURUM bildirdiği için bilinçli dolgu kalan glifler (favori açık, işaretli kutu, durum noktası). */
+export const STATE_FILLED: readonly string[] = ['mdi-star', 'mdi-checkbox-marked', 'mdi-circle', 'mdi-radiobox-marked', 'mdi-checkbox-blank-circle']
+
+/** Görüntüleme normalizasyonu: bilinen dolgu glif → çizgi sürümü; bilinmeyen/boş aynen döner. */
+export function outlineIcon<T extends string | undefined | null>(name: T): T {
+  if (!name) return name
+  return ((FILLED_TO_OUTLINE[name as string] ?? name) as T)
+}
+
+/** Üst bar (kabuk) ikonları — TEK standart: aynı set/ağırlık, 20px glif, 36px dokunma alanı, `chrome-text-muted` → hover `chrome-text`. */
+export const SHELL_ICONS = {
+  menu: 'mdi-menu',
+  search: 'mdi-magnify',
+  notifications: 'mdi-bell-outline',
+  help: 'mdi-help-circle-outline',
+  accountChevron: 'mdi-chevron-down',
+} as const
+
+export const SHELL_ICON_SIZE = { glyph: 20, hit: 36 } as const
