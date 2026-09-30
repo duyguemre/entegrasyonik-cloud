@@ -19,7 +19,7 @@ for (const [w, h] of [[1440, 900], [1920, 1080], [390, 844]].filter(([w]) => !on
   if (frame) await page.evaluate((f) => document.querySelector('[data-testid=hero-visual]').setAttribute('data-frame', f), frame)
   const hero = page.getByTestId('hero')
   // Döngü sahnesinin kararlı bir anı: 1. sahnenin sonu (≈6,5 sn) — reduced'da zaten statik.
-  if (!reduced) await page.waitForTimeout(6500)
+  if (!reduced) await page.waitForTimeout(Number(process.env.WAIT_MS ?? 6500))
   if (w === 390) {
     await page.getByTestId('hero-mock').scrollIntoViewIfNeeded()
     await page.waitForTimeout(400)
@@ -33,7 +33,7 @@ for (const [w, h] of [[1440, 900], [1920, 1080], [390, 844]].filter(([w]) => !on
     await p2.goto(base, { waitUntil: 'networkidle' })
     await p2.evaluate(() => document.fonts.ready)
     if (frame) await p2.evaluate((f) => document.querySelector('[data-testid=hero-visual]').setAttribute('data-frame', f), frame)
-    if (!reduced) await p2.waitForTimeout(6500)
+    if (!reduced) await p2.waitForTimeout(Number(process.env.WAIT_MS ?? 6500))
     const box = await p2.getByTestId('hero-visual').boundingBox()
     await p2.screenshot({ path: `${out}${prefix}-yakin.png`, clip: { x: box.x - 40, y: box.y - 40, width: Math.min(560, box.width + 80), height: 300 } })
     await p2.close()
