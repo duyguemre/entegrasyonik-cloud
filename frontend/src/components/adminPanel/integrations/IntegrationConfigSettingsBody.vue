@@ -18,6 +18,8 @@
 -->
 <template>
   <EkSettingsTemplate
+    section="Yönetim"
+    :trail="trail"
     :title="targetLabel"
     :description="mode === 'engine' ? 'Tüm entegrasyonlar için geçerli motor parametreleri.' : 'Bu entegrasyona özgü ayarlar.'"
     :dirty="isDirty"
@@ -161,6 +163,8 @@ import EkDataTable, { type EkTableColumn } from '@/components/ds/EkDataTable.vue
 import EkStatusChip from '@/components/ds/EkStatusChip.vue'
 import { CONFIG_REVISION_STATUS_TONE, type ConfigRevisionStatus } from '@/design/status-map'
 import SettingField from './SettingField.vue'
+import { useOpenIntegrationConfigTab } from './useOpenIntegrationConfigTab'
+import type { EkCrumb } from '@/components/ds/pageTrail'
 import PublishConfirmDialog from './PublishConfirmDialog.vue'
 import {
   applicableSettings, resolveDefault, ENGINE_TARGET, GROUP_LABELS, GROUP_DESCRIPTIONS, type SettingGroup, type SettingMeta,
@@ -171,6 +175,10 @@ import {
 } from './useIntegrationConfigApi'
 
 const props = defineProps<{ target: string; targetLabel: string; mode: 'integration' | 'engine' }>()
+
+// A7 breadcrumb: Yönetim / Entegrasyonlar (bağlantı) / <hedef>.
+const openConfigTab = useOpenIntegrationConfigTab()
+const trail: EkCrumb[] = [{ label: 'Entegrasyonlar', icon: 'mdi-connection', onSelect: () => openConfigTab('IntegrationConfigListView') }]
 
 const api = useIntegrationConfigApi()
 

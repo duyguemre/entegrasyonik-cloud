@@ -17,7 +17,7 @@
 -->
 <template>
   <div class="ek-settings-template">
-    <EkPageHeader :section="section" :title="title" :description="description" />
+    <EkPageHeader :section="section" :trail="trail" :record="record" :title="title" :description="description" />
 
     <div class="ek-settings-template__content">
       <slot />
@@ -34,6 +34,7 @@
 
 <script setup lang="ts">
 import EkPageHeader from '../EkPageHeader.vue'
+import type { EkCrumb, EkRecordRef } from '../pageTrail'
 
 withDefaults(
   defineProps<{
@@ -41,6 +42,9 @@ withDefaults(
     description?: string
     /** Bölüm yolu (breadcrumb) — diğer ekranlarla aynı başlık ritmi. */
     section?: string
+    /** A7: üst ekranlar ve kayıt kimliği (EkPageBar breadcrumb). */
+    trail?: EkCrumb[]
+    record?: EkRecordRef | null
     dirty?: boolean
     saving?: boolean
     unsavedHint?: string
