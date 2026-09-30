@@ -45,6 +45,7 @@ const registerHref = appUrls.register()
               <li>
                 <a class="nav-link" href={item.href} aria-current={currentOf(item.href)}>
                   {item.label}
+                  {item.badge && <span class="nav-badge" data-testid="nav-badge">{item.badge}</span>}
                 </a>
               </li>
             ))}
@@ -76,7 +77,10 @@ const registerHref = appUrls.register()
               {links.map((item) => (
                 <li>
                   <a class="nav-link nav-link--block" href={item.href} aria-current={currentOf(item.href)}>
-                    <span>{item.label}</span>
+                    <span>
+                      {item.label}
+                      {item.badge && <span class="nav-badge">{item.badge}</span>}
+                    </span>
                     <Icon name="chevron" size="sm" />
                   </a>
                 </li>
@@ -150,6 +154,20 @@ const registerHref = appUrls.register()
   }
   .nav-link[aria-current] {
     color: var(--ek-color-content-strong);
+  }
+  /* S18: "Yeni" rozeti — küçük, metinli (renk tek başına anlam taşımaz); bağlantı adının parçasıdır. */
+  .nav-badge {
+    display: inline-flex;
+    align-items: center;
+    margin-inline-start: var(--ek-space-1);
+    padding: 0 var(--ek-space-1);
+    border-radius: var(--ek-radius-sm);
+    background: var(--ek-color-primary);
+    color: var(--ek-color-background);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-bold);
+    letter-spacing: 0.02em;
+    line-height: var(--ek-line-height-normal);
   }
   .nav-link--block {
     position: relative;
@@ -275,18 +293,27 @@ const registerHref = appUrls.register()
       flex: 1;
       align-items: center;
       justify-content: space-between;
-      gap: var(--ek-space-4);
-      margin-inline-start: var(--ek-space-4);
+      gap: var(--ek-space-2);
+      margin-inline-start: var(--ek-space-1);
     }
     .nav-desktop__links {
       display: flex;
       align-items: center;
-      gap: var(--ek-space-1);
+      gap: 0;
     }
     /* S14: yedinci bağlantı ("Destek") + hareket kontrolü etiketi 1440'ta da sığsın: bağlantı iç boşluğu bir kademe dar. */
     .nav-desktop__links .nav-link {
       position: relative;
       padding-inline: var(--ek-space-2);
+    }
+    /* S18: rozet satır genişliği eklemesin diye üst simge gibi durur (sekiz bağlantı + hareket kontrolü sığar). */
+    .nav-desktop__links .nav-badge {
+      position: absolute;
+      inset-block-start: calc(var(--ek-space-1) * -0.25);
+      inset-inline-end: 0;
+      margin: 0;
+      font-size: 0.625rem;
+      line-height: var(--ek-line-height-normal);
     }
     /* Aktif sayfa: vurgu alt çizgisi (renk tek başına değil — kalınlık ve çizgi de değişir). */
     .nav-desktop__links .nav-link[aria-current] {
@@ -306,6 +333,14 @@ const registerHref = appUrls.register()
       align-items: center;
       gap: var(--ek-space-2);
       margin-inline-start: auto;
+    }
+  }
+
+  /* S18: sekizinci bağlantı ("Asistan") + hareket kontrolü etiketi geniş ekranda sığsın: header çubuğu (yalnızca
+     header) geniş içerik genişliğini kullanır; sayfa içeriği 1200 px'te kalır. */
+  @media (min-width: 90rem) {
+    .site-header :global(.bar) {
+      max-width: calc(var(--site-content-wide) + 2 * var(--site-gutter));
     }
   }
 </style>

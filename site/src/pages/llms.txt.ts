@@ -14,7 +14,8 @@ const base = siteConfig.siteUrl ?? ''
 const url = (path: string) => `${base}${path}`
 
 const line = (e: SeoEntry): string => {
-  const note = e.upcoming ? ` (${UPCOMING_NOTE})` : ''
+  // Geliştirme aşamasındaki sayfa: özet notu zaten taşımıyorsa eklenir (S18 `assistantLlms.short` taşır).
+  const note = e.upcoming && !e.llmsSummary.includes(UPCOMING_NOTE) ? ` (${UPCOMING_NOTE})` : ''
   const md = e.index ? ` Markdown: ${url(markdownPath(e.path))}` : ''
   return `- [${e.title}](${url(canonicalPath(e.path))}): ${e.llmsSummary}${note}${md}`
 }

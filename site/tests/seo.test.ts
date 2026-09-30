@@ -36,6 +36,7 @@ import { defaultPlanSource } from '../src/data/plans'
 import { getPublicFaq } from '../src/data/faq'
 import { integrations, getPublicIntegrations } from '../src/data/integrations'
 import { LEGAL_REVIEWED } from '../src/data/legal'
+import { UPCOMING_SURFACES } from '../src/data/assistant'
 
 const APP = 'https://app.example.test'
 const SITE = 'https://entegrasyonik.example.test'
@@ -470,8 +471,23 @@ describe('LLM görünürlüğü: llms.txt, llms-full.txt, markdown alternatifler
   it('markdown: roadmap/mevcut olmayan kanal adı ve yol haritası dili geçmez', () => {
     const roadmap = integrations.filter((i) => i.status === 'roadmap').flatMap((i) => [i.name, ...i.aliases])
     const hits: string[] = []
+    // S18 dar istisnası: "yolda" dili yalnızca UPCOMING_SURFACES sayfalarında serbest (tests/upcoming.test.ts); o sayfaların
+    // markdown'ı yerine "geliştirme aşamasında" notunun varlığı zorunlu.
+    const upcomingPages = new Set<string>(UPCOMING_SURFACES.pages)
+    // UPCOMING bileşeni (ana sayfa Asistan bandı, `UPCOMING_SURFACES.components`) aynı istisnayı taşır: denetim, o bant
+    // çıkarılmış HTML'in markdown'ı üzerinde yapılır (bandın dışında "yolda" dili yine yasak).
+    const withoutUpcomingBand = (html: string) => html.replace(/<section\b[^>]*\bid="asistan"[\s\S]*?<\/section>/g, '')
     for (const e of indexableEntries()) {
-      const md = readFileSync(path.join(dir, markdownPath(e.path)), 'utf8').toLocaleLowerCase('tr-TR')
+      const html = read(e.path)
+      const md = (html.includes('data-testid="assistant-teaser"')
+        ? htmlToMarkdown(withoutUpcomingBand(html))
+        : readFileSync(path.join(dir, markdownPath(e.path)), 'utf8')
+      ).toLocaleLowerCase('tr-TR')
+      if (upcomingPages.has(e.path)) {
+        expect(e.upcoming, e.path).toBe(true)
+        expect(md, e.path).toContain(UPCOMING_NOTE)
+        continue
+      }
       for (const n of roadmap) if (new RegExp(`(?<![\\p{L}\\d])${n.toLocaleLowerCase('tr-TR').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\p{L}\\d])`, 'u').test(md)) hits.push(`${e.path}: ${n}`)
       if (/(?<![\p{L}\d])(yakında|çok yakında|planlanıyor|yol haritası|roadmap|beta)(?![\p{L}\d])/u.test(md)) hits.push(`${e.path}: yol haritası dili`)
     }

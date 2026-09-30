@@ -145,7 +145,8 @@ export function webPageJsonLd(entry: SeoEntry): Node {
     primaryImageOfPage: { '@type': 'ImageObject', url: abs(ogImageFor(entry)) },
   }
   if (entry.path !== '/' && entry.crumb) node.breadcrumb = { '@id': `${pageUrl(entry.path)}#breadcrumb` }
-  if (entry.section === 'product' || entry.section === 'integrations') node.about = { '@id': SOFTWARE_ID() }
+  // Geliştirme aşamasındaki (upcoming) sayfa bugünkü yazılımın parçası gibi işaretlenmez.
+  if ((entry.section === 'product' || entry.section === 'integrations') && !entry.upcoming) node.about = { '@id': SOFTWARE_ID() }
   if (type === 'FAQPage') {
     node.mainEntity = getPublicFaq().map((i) => ({
       '@type': 'Question',

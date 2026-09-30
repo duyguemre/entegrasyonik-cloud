@@ -11,6 +11,7 @@ import { getPublicFaq, getSupportCategories } from '../data/faq'
 import { getConnectGuide } from '../data/connect'
 import { getPublicPlans, getPlanSourceNotice, getVatNotice, getPublicTrial } from '../data/plans'
 import { TAGLINE, UPCOMING_NOTE, canonicalPath, entityDefinition, markdownPath, seoEntries } from '../data/seo'
+import { ASSISTANT_PATH, ASSISTANT_NAME, assistantLlms } from '../data/assistant'
 
 const base = siteConfig.siteUrl ?? ''
 const url = (path: string) => `${base}${path}`
@@ -41,7 +42,7 @@ export const GET: APIRoute = () => {
   lines.push('## Sayfalar')
   lines.push('')
   for (const e of seoEntries.filter((x) => x.index)) {
-    const note = e.upcoming ? ` (${UPCOMING_NOTE})` : ''
+    const note = e.upcoming && !e.llmsSummary.includes(UPCOMING_NOTE) ? ` (${UPCOMING_NOTE})` : ''
     lines.push(`- [${e.title}](${url(canonicalPath(e.path))}): ${e.llmsSummary}${note} Markdown: ${url(markdownPath(e.path))}`)
   }
   lines.push('')
@@ -124,6 +125,14 @@ export const GET: APIRoute = () => {
     const guides = c.channelGuides ? ' Kanal bağlantı rehberleri her entegrasyonun sayfasındadır.' : ''
     lines.push(`- **${c.label}**: ${c.lead}${guides} Sorular: ${c.items.map((q) => q.question).join(' / ')}`)
   }
+  lines.push('')
+
+  // S18: vizyon sayfası — "upcoming"; bugünkü yeteneklerden AYRI bölüm, kesin kip yok (tests/upcoming.test.ts).
+  lines.push(`## ${ASSISTANT_NAME} (upcoming)`)
+  lines.push('')
+  lines.push(`Sayfa: ${url(canonicalPath(ASSISTANT_PATH))}`)
+  lines.push('')
+  for (const l of assistantLlms.full) lines.push(`- ${l}`)
   lines.push('')
 
   lines.push('## Optional')

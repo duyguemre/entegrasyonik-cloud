@@ -7,11 +7,14 @@ export interface NavItem {
   label: string
   href: string
   published: boolean
+  /** Küçük vurgu rozeti (ör. "Yeni") — yalnızca metin; iddia taşımaz. */
+  badge?: string
 }
 
 export const primaryNav: NavItem[] = [
   { label: 'Özellikler', href: '/ozellikler', published: true }, // S2b
   { label: 'Entegrasyonlar', href: '/entegrasyonlar', published: true }, // S2b
+  { label: 'Asistan', href: '/asistan', published: true, badge: 'Yeni' }, // S18 (UPCOMING yüzeyi — src/data/assistant.ts)
   { label: 'Fiyatlandırma', href: '/fiyatlandirma', published: true }, // S4b
   { label: 'Güvenlik', href: '/guvenlik', published: true }, // S2b
   { label: 'SSS', href: '/sss', published: true }, // S2b

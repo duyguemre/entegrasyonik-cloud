@@ -17,6 +17,7 @@
 import { getPublicIntegrations, type IntegrationKind, type PublicIntegration } from './integrations'
 import { getConnectGuide } from './connect'
 import { legalDocs, legalHref, LEGAL_REVIEWED } from './legal'
+import { ASSISTANT_NAME, ASSISTANT_PATH, assistantLlms } from './assistant'
 
 export const SITE_NAME = 'Entegrasyonik'
 export const TITLE_SEPARATOR = ' · '
@@ -218,6 +219,22 @@ const STATIC_ENTRIES: SeoEntry[] = [
     sources: ['src/pages/iletisim.astro', 'src/data/company.ts'],
   },
   {
+    // S18 (içerik kararları S18'e ait): vizyon sayfası — ürünün bugünkü sürümünde YOK; LLM metinlerinde S18'in
+    // `assistantLlms.short` satırıyla ("geliştirme aşamasında") geçer. Açıklama 155 sınırı için S18 metninden kısaltıldı.
+    path: ASSISTANT_PATH,
+    title: ASSISTANT_NAME,
+    description:
+      'Stok, sipariş ve fiyat işlerinizi sohbetle yöneteceğiniz, kritik işlemleri onayınıza sunacak asistan. Geliştirme aşamasında; erken erişim listesi açık.',
+    index: true,
+    upcoming: true,
+    crumb: 'Asistan',
+    schema: ['WebPage'],
+    ogEyebrow: 'Geliştirme aşamasında',
+    section: 'product',
+    llmsSummary: assistantLlms.short,
+    sources: ['src/pages/asistan.astro', 'src/data/assistant.ts', 'src/components/assistant'],
+  },
+  {
     path: '/404',
     title: 'Sayfa bulunamadı',
     description:
@@ -361,7 +378,7 @@ export function crumbsFor(pathname: string): Array<{ label: string; href?: strin
 }
 
 /** LLM metinlerinde geliştirme aşamasındaki sayfalara eklenen not. */
-export const UPCOMING_NOTE = 'geliştirme aşamasında; henüz kullanıma açık değil'
+export const UPCOMING_NOTE = 'geliştirme aşamasında'
 
 export const indexableEntries = (): SeoEntry[] => seoEntries.filter((e) => e.index)
 export const previewOnlyPaths = (): string[] => seoEntries.filter((e) => e.previewOnly).map((e) => e.path)

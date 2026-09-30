@@ -29,6 +29,7 @@ import CtaBand from '../components/pages/CtaBand.astro'
 import { getPublicCapabilities, type ProductCapabilityStatus, type PublicProductCapability } from '../data/capabilities'
 import { CAPABILITY_LEVEL_LABELS, getPublicIntegrations, type CapabilityLevel } from '../data/integrations'
 import { getFeaturePoints } from '../data/feature-details'
+import { ASSISTANT_PATH, featuresBridge } from '../data/assistant'
 import { appUrls } from '../lib/site-config'
 
 const crumbs = crumbsFor('/ozellikler')
@@ -281,6 +282,15 @@ const LEVEL_STATE: Record<CapabilityLevel, 'yes' | 'limited'> = { supported: 'ye
         { href: '/fiyatlandirma', icon: 'card', title: 'Fiyatlandırma', text: 'Planlar, ücretsiz deneme ve plan karşılaştırması.' },
       ]}
     />
+    <!-- S18: "Yolda" köprüsü — bugünkü yeteneklerden AYRI tutulur; metin katı iddia taramasından geçer (istisna değil). -->
+    <a class="bridge" href={ASSISTANT_PATH} data-testid="assistant-bridge">
+      <span class="bridge__tag"><Icon name="sparkle" size="sm" />{featuresBridge.eyebrow}</span>
+      <span class="bridge__body">
+        <span class="bridge__title">{featuresBridge.title}</span>
+        <span class="bridge__text">{featuresBridge.text}</span>
+      </span>
+      <span class="bridge__cta">{featuresBridge.cta}<Icon name="arrow" size="sm" /></span>
+    </a>
   </Section>
 
   <CtaBand
@@ -295,6 +305,72 @@ const LEVEL_STATE: Record<CapabilityLevel, 'yes' | 'limited'> = { supported: 'ye
 <style>
   .tight-section:global(.section) {
     padding-block: calc(var(--site-section-y) * 0.72);
+  }
+
+  /* --- S18 "Yolda" köprüsü: sakin, kesikli çerçeveli tek satır (bugünkü yeteneklerle karışmaz) --- */
+  .bridge {
+    display: grid;
+    gap: var(--ek-space-3);
+    margin-top: var(--ek-space-8);
+    padding: var(--ek-space-5) var(--ek-space-6);
+    border: var(--site-border-width) dashed var(--ek-color-border-strong);
+    border-radius: var(--site-radius-panel);
+    background:
+      radial-gradient(60% 120% at 100% 50%, color-mix(in srgb, var(--ek-color-secondary) 9%, transparent), transparent 70%),
+      var(--ek-color-surface-sunken);
+    color: inherit;
+    text-decoration: none;
+    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .bridge:hover {
+    border-color: var(--site-link-accent);
+  }
+  .bridge__tag {
+    display: inline-flex;
+    align-items: center;
+    align-self: start;
+    justify-self: start;
+    gap: var(--ek-space-1);
+    padding: var(--ek-space-1) var(--ek-space-3);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-info-subtle);
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .bridge__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+    min-width: 0;
+  }
+  .bridge__title {
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-xl);
+    font-weight: var(--ek-font-weight-bold);
+  }
+  .bridge__text {
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-md);
+    line-height: var(--site-font-body-line-height);
+  }
+  .bridge__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-1);
+    color: var(--site-link-accent);
+    font-weight: var(--ek-font-weight-semibold);
+    white-space: nowrap;
+  }
+  @media (min-width: 900px) {
+    .bridge {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: var(--ek-space-6);
+    }
+    .bridge__tag {
+      align-self: center;
+    }
   }
 
   /* --- İkon karosu (S16 /guvenlik ilke ikonu ile aynı dil) --- */
