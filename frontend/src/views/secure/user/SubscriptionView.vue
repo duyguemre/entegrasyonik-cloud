@@ -128,7 +128,8 @@ import EkEmptyState from '@/components/ds/EkEmptyState.vue';
 import EkPageHeader from '@/components/ds/EkPageHeader.vue';
 import EkSkeleton from '@/components/ds/EkSkeleton.vue';
 import EkStatusChip from '@/components/ds/EkStatusChip.vue';
-import { formatDate as formatDateDs, formatNumber } from '@/composables/format';
+import { formatNumber } from '@/composables/format';
+import { subscriptionStatusMeta, subscriptionStatusMessage, type SubscriptionSummary } from '@/composables/subscriptionStatus';
 import ConfirmationDialogComponent from '@/components/layout/ConfirmationDialogComponent.vue';
 import { text, emphasis, type MessagePart } from '@/components/layout/messageParts';
 import { isRegisterPlanCode } from '@/navigation/registerIntent';
@@ -137,10 +138,6 @@ interface PlanLimits { channels?: number; skus?: number; users?: number; mcpCall
 interface Plan {
   code: string; name: string; priceMinor: number; currency?: string; interval?: 'month' | 'year';
   vatIncluded?: boolean; limits?: PlanLimits; features?: string[];
-}
-interface SubscriptionSummary {
-  planCode?: string; status?: string; trialEndsAt?: string; currentPeriodEnd?: string;
-  graceUntil?: string; cancelAtPeriodEnd?: boolean; billingExempt?: boolean;
 }
 
 const restApi = useRestApi();
@@ -162,50 +159,16 @@ const confirmDialog = ref<{ show: boolean; planCode: string; title: string; subt
   show: false, planCode: '', title: '', subtitle: '', message: '',
 });
 
-// ADR-0008 §3 durum makinesi -- Türkçe, insan-okunur karşılıklar (ham durum kodu kullanıcıya gösterilmez).
-const STATUS_META: Record<string, { label: string; tone: 'success' | 'info' | 'warning' | 'error' | 'grey'; icon: string }> = {
-  trialing: { label: 'Deneme Sürümü', tone: 'info', icon: 'mdi-timer-sand' },
-  active: { label: 'Aktif', tone: 'success', icon: 'mdi-check-circle-outline' },
-  past_due: { label: 'Ödeme Bekliyor', tone: 'warning', icon: 'mdi-alert-circle-outline' },
-  suspended: { label: 'Askıya Alındı', tone: 'error', icon: 'mdi-pause-circle-outline' },
-  canceled: { label: 'İptal Edildi', tone: 'error', icon: 'mdi-close-circle-outline' },
-  expired: { label: 'Sona Erdi', tone: 'error', icon: 'mdi-calendar-remove-outline' },
-  no_subscription: { label: 'Abonelik Yok', tone: 'grey', icon: 'mdi-help-circle-outline' },
-};
-
 const FEATURE_LABELS: Record<string, string> = {
   einvoice: 'E-Fatura', erp: 'ERP Entegrasyonu', shipping: 'Kargo Entegrasyonu',
   mcp: 'MCP / AI Asistan', desktopApp: 'Masaüstü Uygulaması',
 };
 
-const statusMeta = computed(() => STATUS_META[subscriptionStatus.value] || STATUS_META.no_subscription);
+const statusMeta = computed(() => subscriptionStatusMeta(subscriptionStatus.value));
 const isActiveLike = computed(() => subscriptionStatus.value === 'trialing' || subscriptionStatus.value === 'active');
 
-const formatDate = (val?: string) => val ? formatDateDs(val) : '';
-
-const statusMessage = computed(() => {
-  const sub = subscriptionData.value;
-  switch (subscriptionStatus.value) {
-    case 'trialing':
-      return sub?.trialEndsAt
-        ? `Deneme sürümündesiniz; ${formatDate(sub.trialEndsAt)} tarihine kadar tüm özellikler açık. Devam etmek için bir plan seçin.`
-        : 'Deneme sürümündesiniz. Deneme bitiminde devam etmek için bir plan seçmeniz gerekir.';
-    case 'active':
-      return 'Aboneliğiniz aktif; tüm özellikler ve pazaryeri senkronizasyonu çalışıyor.';
-    case 'past_due':
-      return accessReason.value || 'Son ödemeniz alınamadı. Lütfen kart bilgilerinizi güncelleyin, aksi halde erişiminiz kısıtlanacak.';
-    case 'suspended':
-      return accessReason.value || 'Aboneliğiniz askıya alındı: verileriniz görüntülenebilir/dışa aktarılabilir ama düzenleme ve pazaryeri senkronizasyonu durduruldu.';
-    case 'canceled':
-      return sub?.currentPeriodEnd
-        ? `Aboneliğiniz iptal edildi -- ${formatDate(sub.currentPeriodEnd)} tarihine kadar tüm özellikler kullanılabilir, sonrasında salt-okunur erişime geçilecek.`
-        : 'Aboneliğiniz iptal edildi.';
-    case 'expired':
-      return accessReason.value || 'Aboneliğiniz sona erdi. Devam etmek için bir plan seçin.';
-    default:
-      return 'Henüz aktif bir aboneliğiniz yok. Aşağıdan bir plan seçerek başlayabilirsiniz.';
-  }
-});
+// Durum → metin eşlemesi `composables/subscriptionStatus.ts`'te (kabuk bandıyla ORTAK kaynak, C2.2).
+const statusMessage = computed(() => subscriptionStatusMessage(subscriptionStatus.value, subscriptionData.value, accessReason.value));
 
 function isCurrentPlan(plan: Plan): boolean {
   return !!subscriptionData.value?.planCode && subscriptionData.value.planCode === plan.code;
