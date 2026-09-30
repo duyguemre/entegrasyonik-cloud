@@ -127,7 +127,7 @@ const STATIC_ENTRIES: SeoEntry[] = [
   },
   {
     path: '/ozellikler/stok-rezervasyonu',
-    title: 'Stok rezervasyonu: aşırı satış nasıl önlenir?',
+    title: 'Aşırı satış (overselling) nasıl önlenir?',
     description:
       'Eşzamanlı siparişlerde stok yalnızca mevcut adet kadar rezerve edilir, eksiye düşmez; aşırı satış işaretlenip telafi akışına alınır.',
     index: true,
@@ -277,7 +277,10 @@ function integrationEntries(): SeoEntry[] {
  * Yasal sayfalar: hukuki onay (`LEGAL_REVIEWED`) gelene kadar `noindex` (taslak metin arama sonuçlarında görünmesin);
  * onaydan sonra kendiliğinden indekslenir, sitemap/llms'e girer. Açıklama belge kaydından; uzunsa kısaltılmış özel metin.
  */
-const LEGAL_DESCRIPTION_OVERRIDES: Record<string, string> = {}
+const LEGAL_DESCRIPTION_OVERRIDES: Record<string, string> = {
+  'abonelik-sozlesmesi':
+    'Entegrasyonik abonelik şartları: ücretsiz deneme, ücretli plana geçiş, yenileme, ödeme sorunu, askı, iptal, fiyat değişikliği ve veri işleme (taslak).',
+}
 
 function legalEntries(): SeoEntry[] {
   return legalDocs.map((d) => ({

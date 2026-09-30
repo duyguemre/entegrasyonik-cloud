@@ -376,7 +376,8 @@ describe('CSP ve erişilebilirlik ön koşulları', () => {
   it('satır içi stil/betik yok; harici betikler yalnızca aynı origin', () => {
     expect(html).not.toMatch(/\sstyle="/)
     expect(html).not.toMatch(/<style\b/)
-    const inline = [...html.matchAll(/<script\b(?![^>]*\bsrc=)[^>]*>/g)]
+    // S19: yalnızca `application/ld+json` VERİ blokları (çalıştırılmaz; CSP script-src 'self' ile uyumlu — pages.test ile aynı kural)
+    const inline = [...html.matchAll(/<script\b(?![^>]*\bsrc=)[^>]*>/g)].filter((m) => !/type="application\/ld\+json"/.test(m[0]))
     expect(inline).toEqual([])
     for (const src of attrValues(/<script[^>]*\bsrc="([^"]+)"/g)) expect(src.startsWith('/'), src).toBe(true)
   })
@@ -429,7 +430,7 @@ describe('animasyon sahneleri: betik, durdurma kontrolü, CSP (ADR-0014 S3)', ()
       expect(code, f).not.toMatch(/gsap|lottie|WebGLRenderingContext|three\.js/i)
       expect(code, f).not.toContain('document.cookie')
     }
-    expect(html).not.toMatch(/<script\b(?![^>]*\bsrc=)[^>]*>/)
+    expect(html).not.toMatch(/<script\b(?![^>]*\bsrc=)(?![^>]*type="application\/ld\+json")[^>]*>/)
   })
 
   it('derlenmiş CSS: sahne animasyonları reduced-motion: no-preference altında ve data-motion=play ister', () => {
