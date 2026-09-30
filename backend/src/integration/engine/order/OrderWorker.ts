@@ -8,26 +8,49 @@ import {
     IOrderJobData,
     IOrchestratorResult,
     IOrder,
-    IClaim
+    IClaim,
+    IOrderPackage
 } from '@interfaces/index';
 import IntegrationFactory from '@integration/modules/IntegrationFactory';
-import { LoggerType, getLogPrefix } from '@utils/Logger';
 import { Types } from 'mongoose';
 import { StatisticsTracker, IOperationLogInput } from '@services/statistics/StatisticsTracker';
 import orderConfig from './order.config.json';
 import { DatabaseManagerInstance } from '@database/index';
 import { PostOrderOperations } from '@operations/integration/PostOrderOperations';
+import { getIncomplete, IncompleteInfo, isWindowOverflowError } from '@integration/contracts/IncompleteFetch';
+import { NotificationService } from '@services/notification/NotificationService';
+import { eventLog } from '@platform/core/logger';
+import { getRequestId } from '@platform/core/context/requestContext';
+
+const log = eventLog('worker', 'OrderWorker');
+
+/**
+ * [faz4-int-qa1] Kalici pencere tasmasina karsi koruma (surec ici durum):
+ * - Bildirim [ADR-0029 NB3]: kisma artik `notify` katalog grubunda (ORDER_SYNC_WINDOW_OVERFLOW, `integ:reason`, 1 sa; defter,
+ *   surecler arasi). Yalniz NOTIFY_V2_ENABLED=false iken eski davranis cephe icinde ayni aralikla (OVERFLOW_NOTIFY_INTERVAL_MS) korunur.
+ * - Geri cekilme: daraltmayla cozulemeyen art arda OVERFLOW_BACKOFF_AFTER turdan sonra daraltma denemeleri
+ *   ustel seyrelir (OVERFLOW_BACKOFF_BASE_MS .. OVERFLOW_BACKOFF_MAX_MS); arada tur basi yalniz temel cagri yapilir.
+ *   Tam donen (veya tasmasiz) tur durumu sifirlar. Imlec davranisi degismez (eksikte ilerlemez).
+ */
+export const OVERFLOW_NOTIFY_INTERVAL_MS = 60 * 60 * 1000;
+export const OVERFLOW_BACKOFF_AFTER = 3;
+export const OVERFLOW_BACKOFF_BASE_MS = 5 * 60 * 1000;
+export const OVERFLOW_BACKOFF_MAX_MS = 60 * 60 * 1000;
+
+const overflowState = new Map<string, { consecutive: number; nextNarrowAt: number }>();
+
+/** Test yardimcisi: surec ici tasma durumunu sifirlar. */
+export function resetOrderWindowOverflowState(): void {
+    NotificationService.resetLegacyThrottleForTests();
+    overflowState.clear();
+}
 
 export class OrderWorker {
-    private workerName: LoggerType = "Order Fetcher"
-    private logPrefix!: string;
-
     public async process(jobData: IOrderJobData): Promise<IOrchestratorResult> {
         const { integrationCode, lastSyncTimestamp } = jobData;
         const clientId = Number(jobData.clientId);
-        this.logPrefix = getLogPrefix(this.workerName, clientId, integrationCode);
 
-        console.log(`${this.logPrefix} Senkronizasyon başladı...`);
+        log.info('ORDERWORKER_SENKRONIZASYON_BASLADI', 'Senkronizasyon başladı...');
 
         const syncStartAt = new Date();
 
@@ -45,7 +68,7 @@ export class OrderWorker {
             const integration = await factory.getInstance(integrationCode);
 
             const [ordersResult, claimsResult, messagesResult, financialsResult] = await Promise.allSettled([
-                integration.retrieveOrders({ lastSyncTimestamp }),
+                this.fetchOrdersAdaptive(integration, lastSyncTimestamp, clientId, integrationCode),
                 claimAttempted
                     ? integration.retrieveClaims({ startDate: jobData.claimSync!.startDate, endDate: jobData.claimSync!.endDate! })
                     : Promise.resolve([]),
@@ -63,23 +86,25 @@ export class OrderWorker {
             // FAIL EDER (dış catch bloğuna düşer -> FAILED izlenir, hata yeniden fırlatılır -> BullMQ retry;
             // tükenirse veya IntegrationError.retryable===false ise DLQ/UnrecoverableError -- bkz. worker-runner.ts).
             if (ordersResult.status === 'rejected') {
-                console.error(`${this.logPrefix} Sipariş çekme hatası (iş FAIL ETTİRİLİYOR, ADR-0005 adım 2):`, ordersResult.reason);
+                log.error('ORDERWORKER_SIPARIS_CEKME_HATASI_FAIL', 'Sipariş çekme hatası (iş FAIL ETTİRİLİYOR, ADR-0005 adım 2):', { err: ordersResult.reason });
                 throw ordersResult.reason instanceof Error ? ordersResult.reason : new Error(String(ordersResult.reason));
             }
             if (claimsResult.status === 'rejected') {
-                console.error(`${this.logPrefix} İade çekme hatası:`, claimsResult.reason);
+                log.error('ORDERWORKER_IADE_CEKME_HATASI', 'İade çekme hatası:', { err: claimsResult.reason });
             }
             if (messagesResult.status === 'rejected') {
-                console.error(`${this.logPrefix} Mesaj çekme hatası:`, messagesResult.reason);
+                log.error('ORDERWORKER_MESAJ_CEKME_HATASI', 'Mesaj çekme hatası:', { err: messagesResult.reason });
             }
             if (financialsResult.status === 'rejected') {
-                console.error(`${this.logPrefix} Finans çekme hatası:`, financialsResult.reason);
+                log.error('ORDERWORKER_FINANS_CEKME_HATASI', 'Finans çekme hatası:', { err: financialsResult.reason });
             }
 
-            const packages = ordersResult.value; // yukarıda 'rejected' ise zaten throw edildi -> TS burada 'fulfilled' olarak daraltır
+            const { packages, incomplete: orderIncomplete, windowEnd } = ordersResult.value; // yukarıda 'rejected' ise zaten throw edildi -> TS burada 'fulfilled' olarak daraltır
             const rawClaimPackages = claimsResult.status === 'fulfilled' ? claimsResult.value : [];
+            const claimIncomplete = claimsResult.status === 'fulfilled' ? getIncomplete(claimsResult.value) : undefined;
             const messages = messagesResult.status === 'fulfilled' ? messagesResult.value : [];
             const financials = financialsResult.status === 'fulfilled' ? financialsResult.value : [];
+            const financeIncomplete = financialsResult.status === 'fulfilled' ? getIncomplete(financialsResult.value) : undefined; // [COM-03]
 
             // [ADR-0005 adım 3] ÖNCEKİ DAVRANIŞ: dört kaynak da boşsa erken dönülür ve `updateLastSyncTimestamp`
             // HİÇ ÇAĞRILMAZDI (gerçekten "bu turda yeni veri yok" durumunda imleç ilerlemezdi -> bir sonraki
@@ -107,9 +132,8 @@ export class OrderWorker {
             if (packages && packages.length > 0) {
                 for (const pkg of packages) {
                     const customerId = await customerRepo.saveCustomer(clientId, pkg.customer, integrationCode);
-                    const custIdStr = customerId.toString();
-
-                    pkg.order.customerId = custIdStr;
+                    // [DB-01] Kimlik anahtarı yoksa müşteri açılmaz (null): sipariş ad/soyad anlık görüntüsünü taşır.
+                    if (customerId) pkg.order.customerId = customerId.toString();
                     pkg.order.customerFirstName = pkg.customer.firstName;
                     pkg.order.customerLastName = pkg.customer.lastName;
                     pkg.order.fulfillment = pkg.order.fulfillment || [];
@@ -138,7 +162,7 @@ export class OrderWorker {
                     // Sipariş içindeki iptalleri (Claims) de dahil et
                     if (pkg.claims && pkg.claims.length > 0) {
                         pkg.claims.forEach(claim => {
-                            claim.customerId = customerId;
+                            if (customerId) claim.customerId = customerId;
                             claimsToSave.push(claim);
                         });
                     }
@@ -146,7 +170,7 @@ export class OrderWorker {
                     // Sipariş içindeki faturaları (Invoices) dahil et
                     if (pkg.invoices && pkg.invoices.length > 0) {
                         pkg.invoices.forEach(invoice => {
-                            invoice.customerId = customerId;
+                            if (customerId) invoice.customerId = customerId;
                             invoicesToSave.push(invoice);
                         });
                     }
@@ -169,7 +193,7 @@ export class OrderWorker {
                         await new PostOrderOperations(clientDb).processOrdersByExternalIds(clientId, integrationCode, allocationTargetIds);
                     }
                 } catch (allocationError) {
-                    console.error(`${this.logPrefix} Stok tahsis sürücüsü hatası (ADR-0004 Aşama B, izole edildi):`, allocationError);
+                    log.error('ORDERWORKER_STOK_TAHSIS_SURUCUSU_HATASI', 'Stok tahsis sürücüsü hatası (ADR-0004 Aşama B, izole edildi):', { err: allocationError });
                 }
             }
 
@@ -178,13 +202,14 @@ export class OrderWorker {
             if (invoicesToSave.length > 0) {
                 const res = await invoiceRepo.saveInvoices(clientId, invoicesToSave);
                 insertedInvoiceExternalIds = res.insertedExternalIds || [];
-                console.log(`${this.logPrefix} Invoice Persistence Sonucu: ${insertedInvoiceExternalIds.length} yeni fatura.`);
+                log.info('ORDERWORKER_INVOICE_PERSISTENCE_SONUCU_YENI', `Invoice Persistence Sonucu: ${insertedInvoiceExternalIds.length} yeni fatura.`);
             }
 
             // 5. CRM LTV HESAPLAMA (Sadece Gerçekten Yeni Olan Siparişler İçin)
             // Bu döngü müşterinin ciro (metrics.totalSpent) bilgisini sadece ilk kez ekler
             for (const pkg of packages) {
-                const custIdStr = pkg.order.customerId!.toString();
+                if (!pkg.order.customerId) continue; // [DB-01] müşterisiz sipariş: CRM metriği yok
+                const custIdStr = pkg.order.customerId.toString();
 
                 // Eğer bu sipariş pazar yerinden ilk kez çekildiyse (inserted) metrik ekle
                 if (insertedExternalIds.includes(pkg.order.externalOrderId)) {
@@ -202,10 +227,8 @@ export class OrderWorker {
             if (rawClaimPackages && rawClaimPackages.length > 0) {
                 for (const claimPkg of rawClaimPackages) {
                     const claimCustomerId = await customerRepo.saveCustomer(clientId, claimPkg.customer, integrationCode);
-                    const claimCustIdStr = claimCustomerId.toString();
-
                     const claim = claimPkg.claim;
-                    claim.customerId = claimCustomerId;
+                    if (claimCustomerId) claim.customerId = claimCustomerId;
                     claimsToSave.push(claim);
                 }
             }
@@ -261,18 +284,38 @@ export class OrderWorker {
             // yazılır -- `Date.now()`/`new Date()` DEĞİL. Bu noktaya kadar geldiysek sipariş çekimi zaten
             // BAŞARILIYDI (aksi halde yukarıda throw edilmişti). Upsert idempotent olduğu için örtüşme çift
             // kayıt üretmez.
-            await orderRepo.updateLastSyncTimestamp(clientId, integrationCode, new Date(syncStartAt.getTime() - orderConfig.orderSync.cursorOverlapMs));
+            // [faz4-int-wp7] EKSIK CEKIM: baglayici tavana/tekrar eden sayfaya takildiysa ve daraltmalarla da
+            // tam cekilemediyse imec ILERLETILMEZ (kismi veri upsert edildi -- idempotent; kalan siparisler bir
+            // sonraki turda yeniden taranir, sessiz kayip yok) ve kullaniciya uyari gider. Daraltilmis pencere
+            // tam cekildiyse imec `windowEnd - ortusme`ye ilerler (kalan kuyruk sonraki turda cekilir; her tur
+            // baslangic imleci ileri gittigi icin dongu ilerler, tur basi daraltma tavani config'te).
+            const overlap = orderConfig.orderSync.cursorOverlapMs;
+            if (orderIncomplete) {
+                log.warn('ORDER_SYNC_INCOMPLETE', 'Siparis cekimi eksik kaldi; lastSuccessfulOrderSync ILERLETILMEDI.', { tenantId: clientId, integrationCode, reason: orderIncomplete.reason, collected: orderIncomplete.collected });
+                this.notifyWindowOverflow(clientId, integrationCode, orderIncomplete.reason, orderIncomplete.collected, false);
+            } else {
+                const cursorTime = windowEnd ? windowEnd.getTime() : syncStartAt.getTime();
+                await orderRepo.updateLastSyncTimestamp(clientId, integrationCode, new Date(cursorTime - overlap));
+            }
 
             // İade/finans/mesaj imleçleri YALNIZCA bu turda DENENDİYSE ve BAŞARILIYSA ilerletilir (aksi halde
             // dokunulmaz -- bir sonraki turda hâlâ "due" sayılır, tekrar denenir).
             const cursorUpdates: Promise<void>[] = [];
-            if (claimAttempted && claimsResult.status === 'fulfilled') {
+            // [faz4-int-wp7] Iade cekimi eksikse (tavan) lastClaimSync ilerletilmez.
+            if (claimIncomplete) {
+                log.warn('CLAIM_SYNC_INCOMPLETE', 'Iade cekimi eksik kaldi; lastClaimSync ILERLETILMEDI.', { tenantId: clientId, integrationCode, reason: claimIncomplete.reason, collected: claimIncomplete.collected });
+            }
+            if (claimAttempted && claimsResult.status === 'fulfilled' && !claimIncomplete) {
                 cursorUpdates.push(orderRepo.updateSourceSyncCursor(clientId, integrationCode, 'lastClaimSync', syncStartAt));
                 if (jobData.claimSync!.isFullSweep) {
                     cursorUpdates.push(orderRepo.updateSourceSyncCursor(clientId, integrationCode, 'lastClaimFullSweepAt', syncStartAt));
                 }
             }
-            if (financeAttempted && financialsResult.status === 'fulfilled') {
+            // [COM-03] Finans sayfalama tavana takildiysa imlec ilerlemez (kalan hakedis satirlari bir sonraki turda/gunluk taramada gelir).
+            if (financeIncomplete) {
+                log.warn('FINANCE_SYNC_INCOMPLETE', 'Finans cekimi eksik kaldi; lastFinanceSync ILERLETILMEDI.', { tenantId: clientId, integrationCode, reason: financeIncomplete.reason, collected: financeIncomplete.collected });
+            }
+            if (financeAttempted && financialsResult.status === 'fulfilled' && !financeIncomplete) {
                 cursorUpdates.push(orderRepo.updateSourceSyncCursor(clientId, integrationCode, 'lastFinanceSync', syncStartAt));
                 if (jobData.financeSync!.isFullSweep) {
                     cursorUpdates.push(orderRepo.updateSourceSyncCursor(clientId, integrationCode, 'lastFinanceFullSweepAt', syncStartAt));
@@ -290,7 +333,7 @@ export class OrderWorker {
             }
             await Promise.all(cursorUpdates);
 
-            console.log(`${this.logPrefix} Senkronizasyon tamamlandı. ` +
+            log.info('ORDERWORKER_SENKRONIZASYON_TAMAMLANDI_SIPARIS_IADE', `Senkronizasyon tamamlandı. ` +
                 `Sipariş (Y/G): ${insertedExternalIds.length}/${updatedExternalIds.length}, ` +
                 `İade (Y/G): ${insertedClaimExternalIds.length}/${updatedClaimExternalIds.length}, ` +
                 `Mesaj: ${messages.length}`);
@@ -317,9 +360,90 @@ export class OrderWorker {
                 durationMs: Date.now() - syncStartAt.getTime(),
                 startedAt: syncStartAt,
             });
-            console.error(`${this.logPrefix} KRİTİK HATA:`, error);
+            log.error('ORDERWORKER_KRITIK_HATA', 'KRİTİK HATA:', { err: error });
             throw error;
         }
+    }
+
+    /**
+     * [faz4-int-wp7] Siparis cekimi + eksik cekimde pencere daraltma. Ilk deneme pencere sonu `now` (eski
+     * davranis, `endDate` verilmez). `incomplete` donerse pencere ikiye bolunur (`start..mid`), en fazla
+     * `maxNarrowings` kez ve pencere `minWindowMs` altina inmeden. Tam donen daraltilmis pencerenin sonu
+     * `windowEnd` olarak doner (imec buna gore ilerler). Trendyol ORDER_WINDOW_OVERFLOW firlatir: mevcut
+     * davranis korunur (hata -> is FAIL, imec ilerlemez); yalnizca kullaniciya bildirim eklenir.
+     */
+    private async fetchOrdersAdaptive(integration: any, lastSyncTimestamp: any, clientId: number, integrationCode: string):
+        Promise<{ packages: IOrderPackage[]; incomplete?: IncompleteInfo; windowEnd?: Date }> {
+        const cfg = orderConfig.orderSync;
+        let packages: IOrderPackage[];
+        try {
+            packages = await integration.retrieveOrders({ lastSyncTimestamp });
+        } catch (e) {
+            if (isWindowOverflowError(e)) this.notifyWindowOverflow(clientId, integrationCode, 'ORDER_WINDOW_OVERFLOW', 0, true);
+            throw e;
+        }
+        let info = getIncomplete(packages);
+        const stateKey = `${clientId}:${integrationCode}`;
+        if (!info) {
+            overflowState.delete(stateKey);
+            return { packages };
+        }
+        const start = lastSyncTimestamp ? new Date(lastSyncTimestamp).getTime() : NaN;
+        if (!Number.isFinite(start)) return { packages, incomplete: info };
+
+        // Kalici tasmada geri cekilme: bekleme suresi dolmadiysa daraltma denenmez (tur basi yalniz temel cagri).
+        const state = overflowState.get(stateKey);
+        if (state && state.consecutive >= OVERFLOW_BACKOFF_AFTER && Date.now() < state.nextNarrowAt) {
+            return { packages, incomplete: info };
+        }
+
+        let end = Date.now();
+        for (let i = 0; i < cfg.maxNarrowings && info; i++) {
+            const half = Math.floor((end - start) / 2);
+            if (half < cfg.minWindowMs) break;
+            end = start + half;
+            packages = await integration.retrieveOrders({ lastSyncTimestamp, endDate: new Date(end).toISOString() });
+            info = getIncomplete(packages);
+        }
+        if (info) {
+            const consecutive = (state?.consecutive ?? 0) + 1;
+            const exponent = Math.max(0, consecutive - OVERFLOW_BACKOFF_AFTER);
+            const delay = Math.min(OVERFLOW_BACKOFF_BASE_MS * 2 ** exponent, OVERFLOW_BACKOFF_MAX_MS);
+            overflowState.set(stateKey, {
+                consecutive,
+                nextNarrowAt: consecutive >= OVERFLOW_BACKOFF_AFTER ? Date.now() + delay : 0,
+            });
+            return { packages, incomplete: info };
+        }
+        overflowState.delete(stateKey);
+        this.notifyWindowOverflow(clientId, integrationCode, 'PAGINATION_WINDOW_NARROWED', packages.length, false, true);
+        return { packages, windowEnd: new Date(end) };
+    }
+
+    private notifyWindowOverflow(clientId: number, integrationCode: string, reason: string, collected: number, failed: boolean, resolved = false): void {
+        const throttleKey = `${clientId}:${integrationCode}:${reason}`;
+        // Bayrak KAPALI: bugunku olay birebir + saatte bir kisma (cephe, surec ici). Bayrak ACIK: katalog grubu (defter) kisar.
+        void NotificationService.notify('ORDER_SYNC_WINDOW_OVERFLOW', clientId, { integ: integrationCode, reason }, {
+            corrId: getRequestId(),
+            module: 'OrderWorker',
+            legacy: {
+                throttle: { key: throttleKey, ms: OVERFLOW_NOTIFY_INTERVAL_MS },
+                event: {
+                    clientId: String(clientId),
+                    notificationData: {
+                        type: 'SYSTEM',
+                        severity: 'warning',
+                        title: 'Sipariş penceresi taştı',
+                        message: resolved
+                            ? `${integrationCode.toUpperCase()} sipariş penceresi çok büyüktü; daraltılarak parça parça çekiliyor.`
+                            : `${integrationCode.toUpperCase()} sipariş çekimi eksik kaldı (${reason}); kalan siparişler sonraki turlarda yeniden denenecek.`,
+                        metaData: { integrationCode, reason, collected, failed, code: 'ORDER_WINDOW_OVERFLOW' },
+                    },
+                } as any,
+            },
+        }).catch((e) => {
+            log.error('ORDERWORKER_PENCERE_TASMA_BILDIRIMI_GONDERILEMEDI', 'Pencere taşma bildirimi gönderilemedi:', { err: e });
+        });
     }
 
     private buildLog(

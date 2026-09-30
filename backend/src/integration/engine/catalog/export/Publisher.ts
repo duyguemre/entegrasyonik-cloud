@@ -9,6 +9,9 @@ import { PLATFORM_PROCESS } from '../../../../interfaces';
 import { IIntegrationEngineProvider } from '../provider/IIntegrationEngineProvider';
 import { IPlatform, IExportStagedProduct } from '@interfaces/index';
 import { getSetting } from '@integration/config/ConfigResolver';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('worker', 'Publisher');
 
 export default class Publisher extends BaseWorker {
     protected readonly workerName = 'Catalog Publisher';
@@ -37,7 +40,6 @@ export default class Publisher extends BaseWorker {
         this.integrationCode = integrationCode;
         this.clientId = clientId;
 
-        const clientLogPrefix = this.getLogPrefix(clientId, this.integrationCode);
         const podName = process.env.POD_NAME || os.hostname();
 
         try {
@@ -45,17 +47,17 @@ export default class Publisher extends BaseWorker {
             const instance = await factory.getInstance(this.integrationCode);
             const matchKey = (instance.getMatchKey() || 'barcode').toLowerCase();
 
-            console.log(`${clientLogPrefix} Publisher started for Batch: ${batchId} on ${podName}`);
+            log.info('PUBLISHER_STARTED_BATCH', `Publisher started for Batch: ${batchId} on ${podName}`);
 
             const allEntries = await this.engineProvider.getExportStagedProductModel()
                 .find({ batchId: batchId, status: 'PENDING' })
                 .select('_id barcode stockcode productId')
                 .lean();
 
-            console.log(`${clientLogPrefix} Found ${allEntries.length} PENDING entries for Batch: ${batchId}`);
+            log.debug('PUBLISHER_FOUND_PENDING_ENTRIES_BATCH', `Found ${allEntries.length} PENDING entries for Batch: ${batchId}`);
 
             if (!allEntries || allEntries.length === 0) {
-                console.log(`${clientLogPrefix} No PENDING items in Batch: ${batchId}`);
+                log.info('PUBLISHER_NO_PENDING_ITEMS', `No PENDING items in Batch: ${batchId}`);
                 await this.updateSignalStatus(batchId, 'SENT');
                 return;
             }
@@ -80,7 +82,7 @@ export default class Publisher extends BaseWorker {
                     lastTrackingId = result.trackingId || undefined || lastTrackingId;
                     await this.handleResults(mode, stagingEntries, result);
                 } catch (batchErr: any) {
-                    console.error(`${clientLogPrefix} Batch Execution Error:`, batchErr.message);
+                    log.error('PUBLISHER_BATCH_EXECUTION_ERROR', 'Batch Execution Error:', { err: batchErr });
                     const { isRetryable } = await this.handleBatchFailure(mode, stagingEntries, batchErr, matchKey);
                     if (isRetryable) {
                         hadRetryableFailure = true;
@@ -102,16 +104,16 @@ export default class Publisher extends BaseWorker {
                 // "Sync/Dispatcher" değil, Publisher'ın kendisi -- signal.status PENDING olduğu sürece
                 // ExportOrchestrator.getWorkerTypeByStatus 'Publisher' işçisini seçer).
                 await this.deferSignal(batchId, signalRetryDelayMs, 'Geçici hata(lar) nedeniyle bir sonraki turda tekrar denenecek.');
-                console.log(`${clientLogPrefix} Publisher deferred Batch: ${batchId} (retryable failure) by ${signalRetryDelayMs}ms.`);
+                log.info('PUBLISHER_DEFERRED_BATCH_RETRYABLE', `Publisher deferred Batch: ${batchId} (retryable failure) by ${signalRetryDelayMs}ms.`);
             } else {
                 // İş bittiğinde statüyü SENT yap ve Sentinel'in vaktinden önce dalmaması için mühürle
                 await this.updateSignalStatus(batchId, 'SENT', undefined, lastTrackingId);
             }
 
-            console.log(`${clientLogPrefix} Publisher finished Batch: ${batchId}. Total processed: ${totalProcessedInThisRun}`);
+            log.info('PUBLISHER_FINISHED_BATCH_TOTAL', `Publisher finished Batch: ${batchId}. Total processed: ${totalProcessedInThisRun}`);
 
         } catch (err: any) {
-            console.error(`${clientLogPrefix} Publisher Critical Error for Batch ${batchId}:`, err.message);
+            log.error('PUBLISHER_CRITICAL_ERROR_BATCH', `Publisher Critical Error for Batch ${batchId}:`, { err });
             await this.updateSignalStatus(batchId, 'FAILED', err.message);
         }
     }
@@ -146,9 +148,9 @@ export default class Publisher extends BaseWorker {
             return acc;
         }, {});
 
-        console.log(`[Publisher][handleResults] MatchKey: ${matchKey}, MapKeys: ${Object.keys(stagingMap).join(', ')}`);
+        log.debug('PUBLISHER_MATCHKEY_MAPKEYS', `MatchKey: ${matchKey}, MapKeys: ${Object.keys(stagingMap).join(', ')}`);
         if (result.variantList) {
-            console.log(`[Publisher][handleResults] VariantList Identifiers: ${result.variantList.map((v: any) => v.barcode || v.stockCode || v.stockcode).join(', ')}`);
+            log.debug('PUBLISHER_VARIANTLIST_IDENTIFIERS', `VariantList Identifiers: ${result.variantList.map((v: any) => v.barcode || v.stockCode || v.stockcode).join(', ')}`);
         }
 
         if (result.failedVariants && result.failedVariants.length > 0) {
@@ -181,13 +183,13 @@ export default class Publisher extends BaseWorker {
         if (result.variantList && result.variantList.length > 0) {
             result.variantList.forEach((v: any) => {
                 // Teşhis için her öğeyi logla
-                console.log(`[Publisher][handleResults] Processing result item: barcode=${v.barcode}, stockCode=${v.stockCode}, matchValueCandidate=${v[matchKey]}`);
+                log.debug('PUBLISHER_PROCESSING_RESULT_ITEM_BARCODE', `Processing result item: barcode=${v.barcode}, stockCode=${v.stockCode}, matchValueCandidate=${v[matchKey]}`);
 
                 // Eşleşme değerini bul: matchKey'in kendisi, barcode, stockCode veya sku olabilir
                 const matchValue = String(v[matchKey] || v.stockCode || v.stockcode || v.barcode || v.sku || v.productSellerCode || "");
                 const entry = stagingMap[matchValue.toLowerCase()] || stagingMap[matchValue];
                 
-                console.log(`[Publisher][handleResults] Match result for ${matchValue}: ${entry ? 'FOUND' : 'NOT FOUND'}`);
+                log.debug('PUBLISHER_MATCH_RESULT', `Match result for ${matchValue}: ${entry ? 'FOUND' : 'NOT FOUND'}`);
 
                 // [C22] Bir işlem birden çok pazaryeri isteğine bölünmüşse (ör. Trendyol onaylı/onaysız güncelleme) varyantın
                 // kendi takip ID'si (`v.trackingId`) önceliklidir; yoksa parçanın ortak takip ID'si.
@@ -227,7 +229,7 @@ export default class Publisher extends BaseWorker {
             });
         }
 
-        console.log(`[Publisher][handleResults] Finalizing: variantBulkOps=${variantBulkOps.length}, stagingBulkOps=${stagingBulkOps.length}`);
+        log.debug('PUBLISHER_FINALIZING_VARIANTBULKOPS_STAGINGBULKOPS', `Finalizing: variantBulkOps=${variantBulkOps.length}, stagingBulkOps=${stagingBulkOps.length}`);
         if (variantBulkOps.length > 0) {
             await this.engineProvider.getVariantModel().bulkWrite(variantBulkOps);
             await this.engineProvider.markStatsAsDirty();

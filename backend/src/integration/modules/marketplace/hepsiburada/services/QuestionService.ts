@@ -1,6 +1,8 @@
 import { Service } from './Service';
 import { QuestionMapper } from '../transformers/QuestionTransformer';
 import { IMessage } from '@interfaces/index';
+import { carryIncomplete } from '@integration/contracts/IncompleteFetch';
+import { paginateOffset, readTotal } from '../api/paginateOffset';
 
 export class QuestionService {
     private mapper: QuestionMapper;
@@ -15,8 +17,14 @@ export class QuestionService {
     public async fetchQuestions(query?: any): Promise<IMessage[]> {
         const merchantId = this.params.integrationSettings.settings.SELLERID;
         // Hepsiburada hem ürün soruları hem sipariş mesajları için aynı endpoint'i kullanıyor olabilir mock tarafında
-        const response = await this.service.get(`questions/merchantid/${merchantId}`, query);
-        return this.mapper.toInternalMessages(response?.data || {});
+        // [INT-05 / F-02] ILK istek eskisiyle BIREBIR (sorgu aynen); yanit dolu/kesik gorunuyorsa sonraki sayfalar offset+limit ile (bkz. FinancialConnector).
+        const raw = await paginateOffset(async (offset, limit) => {
+            const response = await this.service.get(`questions/merchantid/${merchantId}`, offset === 0 ? query : { ...query, limit, offset });
+            const data = response?.data;
+            const items = Array.isArray(data) ? data : (Array.isArray(data?.items) ? data.items : []);
+            return { items, total: Array.isArray(data) ? undefined : readTotal(data) };
+        }, { operation: 'fetchQuestions', clientId: this.params.clientId });
+        return carryIncomplete(raw, this.mapper.toInternalMessages(raw));
     }
 
     public async answerMessage(questionId: string, answerText: string): Promise<boolean> {

@@ -21,6 +21,7 @@
 import type { Page } from '@playwright/test'
 import { expect } from '@playwright/test'
 import { menuFixture, openDrawer } from './nav'
+import { humanizeKey } from '../../src/navigation/menuTitle'
 
 export interface HiddenDefinitionScreenDef {
   code: string
@@ -63,9 +64,9 @@ export async function openHiddenDefinitionScreen(page: Page, screen: HiddenDefin
   const drawer = page.locator('.v-navigation-drawer.soft-nav')
   // Ikona gore secim YETERSIZ: `mdi-receipt-text-outline`/`mdi-undo-variant` gercek "Faturalar"/
   // "Iade Yonetimi" ogeleriyle cakisiyor (bulut kosusu 2026-09-29, `.first()` yanlis ekrani acti).
-  // Sentetik `title` (`b5_1_<code>`) benzersizdir; i18n anahtari cevrilmedigi icin DOM metninde
-  // `menu.b5_1_<code>` olarak gorunur.
-  const item = drawer.locator('.soft-item').filter({ hasText: `b5_1_${screen.code}` })
+  // Sentetik `title` (`b5_1_<code>`) benzersizdir. i18n karşılığı olmadığı için DS-v2 Aşama 3'ten beri
+  // ham anahtar (`menu.b5_1_<code>`) DEĞİL, okunur yedeği (`navigation/menuTitle.ts` humanizeKey) görünür.
+  const item = drawer.locator('.soft-item').filter({ hasText: humanizeKey(`b5_1_${screen.code}`) })
   await expect(item).toBeVisible()
   await item.click()
 }

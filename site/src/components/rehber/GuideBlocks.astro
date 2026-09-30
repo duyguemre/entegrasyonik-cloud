@@ -1,0 +1,404 @@
+---
+/**
+ * GuideBlocks — rehber içerik bloklarını çizer (S20): paragraf, madde listesi, numaralı adımlar (CSS sayacı; görünür
+ * metinde rakam yok), tablo (≥640 px tablo; dar ekranda satır başına kart, yatay kaydırma YOK), not kutusu ve yatay
+ * akış şeması. Satır içi işaretleme `renderKbInline` ile kaçırılarak dönüştürülür.
+ */
+import Icon from '../home/Icon.astro'
+import { renderKbInline } from '../../lib/kb-render'
+import type { Block } from '../../data/kb/types'
+
+interface Props {
+  blocks: Block[]
+}
+
+const { blocks } = Astro.props
+---
+
+{
+  blocks.map((b) => {
+    switch (b.type) {
+      case 'p':
+        return <p class="g-p" set:html={renderKbInline(b.text)} />
+      case 'ul':
+        return (
+          <ul class="g-list">
+            {b.items.map((i) => (
+              <li set:html={renderKbInline(i)} />
+            ))}
+          </ul>
+        )
+      case 'steps':
+        return (
+          <ol class="g-steps" data-testid="guide-steps">
+            {b.items.map((s) => (
+              <li class="g-steps__item">
+                <span class="g-steps__name">{s.name}</span>
+                <span class="g-steps__text" set:html={renderKbInline(s.text)} />
+              </li>
+            ))}
+          </ol>
+        )
+      case 'table':
+        return (
+          <div class="g-table-wrap">
+            <table class="g-table">
+              <caption>{b.caption}</caption>
+              <thead>
+                <tr>
+                  {b.head.map((h) => (
+                    <th scope="col">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {b.rows.map((row) => (
+                  <tr>
+                    {row.map((cell, i) =>
+                      i === 0 ? <th scope="row" data-label={b.head[i]} set:html={renderKbInline(cell)} /> : <td data-label={b.head[i]} set:html={renderKbInline(cell)} />,
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+      case 'callout':
+        return (
+          <aside class:list={['g-callout', `g-callout--${b.tone}`]} role="note">
+            <span class="g-callout__icon" aria-hidden="true">
+              <Icon name={b.tone === 'caution' ? 'clock' : 'info'} size="md" />
+            </span>
+            <div>
+              <p class="g-callout__title">{b.title}</p>
+              <p class="g-callout__text" set:html={renderKbInline(b.text)} />
+            </div>
+          </aside>
+        )
+      case 'flow':
+        return (
+          <figure class="g-flow">
+            <figcaption>{b.caption}</figcaption>
+            <ol class="g-flow__list">
+              {b.items.map((i) => (
+                <li>{i}</li>
+              ))}
+            </ol>
+          </figure>
+        )
+    }
+  })
+}
+
+<style>
+  .g-p,
+  .g-list,
+  .g-steps,
+  .g-callout,
+  .g-flow {
+    max-width: var(--site-measure);
+  }
+  .g-p {
+    margin: 0;
+    color: var(--site-text-body);
+    font-size: var(--site-font-body);
+    line-height: var(--site-font-body-line-height);
+  }
+  .g-p :global(a),
+  .g-list :global(a),
+  .g-steps :global(a),
+  .g-table :global(a),
+  .g-callout :global(a) {
+    color: var(--site-color-link);
+    font-weight: var(--ek-font-weight-medium);
+    text-underline-offset: 0.2em;
+  }
+  .g-p :global(strong),
+  .g-list :global(strong) {
+    color: var(--ek-color-content-strong);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+
+  /* --- Madde listesi --- */
+  .g-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    margin: 0;
+    padding-inline-start: var(--ek-space-6);
+    color: var(--site-text-body);
+    font-size: var(--site-font-body);
+    line-height: var(--site-font-body-line-height);
+  }
+  .g-list > li {
+    list-style: disc;
+    padding-inline-start: var(--ek-space-1);
+  }
+  .g-list > li::marker {
+    color: var(--ek-color-secondary-darken-1);
+  }
+
+  /* --- Numaralı adımlar (CSS sayacı) --- */
+  .g-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: gstep;
+  }
+  .g-steps__item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+    padding: 0 0 var(--ek-space-6) calc(var(--ek-space-10) + var(--ek-space-2));
+    counter-increment: gstep;
+  }
+  .g-steps__item::before {
+    content: counter(gstep);
+    position: absolute;
+    inset-inline-start: 0;
+    inset-block-start: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-8);
+    height: var(--ek-space-8);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-surface);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 45%, var(--ek-color-border-default));
+    color: var(--site-link-accent);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-bold);
+    font-variant-numeric: tabular-nums;
+  }
+  .g-steps__item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    inset-inline-start: calc(var(--ek-space-4) - var(--site-border-width) / 2);
+    inset-block: var(--ek-space-8) 0;
+    width: var(--site-border-width);
+    background: var(--ek-color-border-default);
+  }
+  .g-steps__item:last-child {
+    padding-bottom: 0;
+  }
+  .g-steps__name {
+    padding-top: var(--ek-space-1);
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-lg);
+    font-weight: var(--ek-font-weight-semibold);
+    line-height: var(--ek-line-height-tight);
+  }
+  .g-steps__text {
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-md);
+    line-height: var(--site-font-body-line-height);
+  }
+
+  /* --- Tablo --- */
+  .g-table-wrap {
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface);
+    overflow: hidden;
+  }
+  .g-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--ek-font-size-md);
+    line-height: var(--site-font-body-line-height);
+  }
+  .g-table caption {
+    padding: var(--ek-space-3) var(--ek-space-4);
+    border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+    text-align: start;
+  }
+  .g-table th,
+  .g-table td {
+    padding: var(--ek-space-3) var(--ek-space-4);
+    text-align: start;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+  }
+  .g-table thead th {
+    background: var(--ek-color-surface-muted);
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .g-table tbody th {
+    min-width: calc(var(--ek-space-16) * 1.75);
+    overflow-wrap: normal;
+    color: var(--site-text-heading);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .g-table tbody td {
+    color: var(--site-text-body);
+  }
+  .g-table tbody tr + tr > * {
+    border-top: var(--site-border-width) solid var(--ek-color-border-default);
+  }
+
+  /* --- Not kutusu --- */
+  .g-callout {
+    display: flex;
+    gap: var(--ek-space-3);
+    align-items: flex-start;
+    padding: var(--ek-space-4) var(--ek-space-5);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-inline-start: var(--ek-space-1) solid var(--ek-color-info);
+    border-radius: var(--ek-radius-md);
+    background: var(--ek-color-info-subtle);
+    color: var(--ek-color-content-strong);
+  }
+  .g-callout--caution {
+    border-inline-start-color: var(--ek-color-warning);
+    background: var(--ek-color-warning-subtle);
+  }
+  .g-callout__icon {
+    display: inline-flex;
+    flex: none;
+    color: var(--ek-color-info);
+  }
+  .g-callout--caution .g-callout__icon {
+    color: var(--ek-color-warning);
+  }
+  .g-callout__title {
+    margin: 0 0 var(--ek-space-1);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .g-callout__text {
+    margin: 0;
+    font-size: var(--ek-font-size-md);
+    line-height: var(--site-font-body-line-height);
+  }
+
+  /* --- Akış şeması --- */
+  .g-flow {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    margin: 0;
+    padding: var(--ek-space-5);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-lg);
+    background: var(--site-surface-tint), var(--ek-color-surface);
+  }
+  .g-flow figcaption {
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .g-flow__list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ek-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .g-flow__list li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-medium);
+  }
+  .g-flow__list li::before {
+    content: '';
+    display: none;
+  }
+  .g-flow__list li {
+    padding: var(--ek-space-2) var(--ek-space-3);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-surface);
+  }
+  .g-flow__list li + li {
+    position: relative;
+    margin-inline-start: var(--ek-space-5);
+  }
+  .g-flow__list li + li::before {
+    content: '→';
+    display: block;
+    position: absolute;
+    inset-inline-start: calc(var(--ek-space-5) * -1);
+    width: var(--ek-space-5);
+    color: var(--site-link-accent);
+    text-align: center;
+  }
+
+  /* Dar ekran: tablo satırları karta dönüşür (yatay kaydırma yok). */
+  @media (max-width: 639.98px) {
+    .g-table thead {
+      position: absolute;
+      width: var(--site-border-width);
+      height: var(--site-border-width);
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+    .g-table caption {
+      display: block;
+    }
+    .g-table,
+    .g-table tbody,
+    .g-table tr,
+    .g-table th,
+    .g-table td {
+      display: block;
+      width: 100%;
+    }
+    .g-table tbody tr {
+      padding: var(--ek-space-3) var(--ek-space-4);
+    }
+    .g-table tbody tr + tr > * {
+      border-top: 0;
+    }
+    .g-table tbody tr + tr {
+      border-top: var(--site-border-width) solid var(--ek-color-border-default);
+    }
+    .g-table tbody th,
+    .g-table tbody td {
+      min-width: 0;
+      padding: var(--ek-space-1) 0;
+    }
+    .g-table tbody td::before {
+      content: attr(data-label);
+      display: block;
+      color: var(--site-text-meta);
+      font-size: var(--ek-font-size-xs);
+      font-weight: var(--ek-font-weight-semibold);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .g-steps__item {
+      padding-inline-start: var(--ek-space-12);
+    }
+    .g-flow__list {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--ek-space-5);
+    }
+    .g-flow__list li + li {
+      margin-inline-start: 0;
+    }
+    .g-flow__list li + li::before {
+      content: '↓';
+      inset-inline-start: var(--ek-space-4);
+      inset-block-start: calc(var(--ek-space-5) * -1);
+      width: auto;
+      line-height: var(--ek-space-5);
+    }
+  }
+</style>

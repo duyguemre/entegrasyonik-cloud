@@ -11,6 +11,8 @@ export interface IIntegrationEngineProvider {
     getVariantModel(): any
     getProductModel(): any
     getAttributeMappingModel(): any
+    /** [WP12] Tenant kapsamlı, önbellekli eşleme sağlayıcısı (export özellik çözümleyicisi için). */
+    getPlatformMappingProvider?(clientId: any, integrationCode: string): any
 
 
     prepareVariantPlatformUpdateOp(barcode: string, mapping: Record<string, any> | undefined, integrationCode: string, mode: string, status: string, data?: { messages?: string | string[], batchProcessId?: string | null, updatedAt?: Date, matchKey?: string }): any;

@@ -9,10 +9,10 @@
          konumlu bir ata olmadan sekme kabine yayilip EkPageHeader'in USTUNU ortuyordu. Kardes ekran
          productDefinitions/CategoryListView.vue ile AYNI desen: sutunlar position:relative + yukseklik (asagidaki scoped stil). -->
     <v-row class="mt-0 mb-0">
-      <v-col class="category-definition__col">
+      <v-col cols="12" sm="6" class="category-definition__col">
         <CategoryListComponent v-model="isCategoriesListed" @openCategorySync="openCategorySync($event)" />
       </v-col>
-      <v-col class="category-definition__col">
+      <v-col cols="12" sm="6" class="category-definition__col">
         <CategorySyncComponent v-model="selectedCategory" />
       </v-col>
     </v-row>
@@ -22,7 +22,7 @@
 <script setup lang="ts">
 import { computed, inject, ref, onMounted, onBeforeMount } from 'vue'
 import { useMenuStore } from '@/stores/site/menu'
-import EkPageHeader from '@/components/ds/EkPageHeader.vue'
+import EkPageHeader from '@/components/page/EkPageHeader.vue'
 import CategoryListComponent from '@/components/CategoryListComponent.vue';
 import CategorySyncComponent from '@/components/CategorySyncComponent.vue';
 import useIntegrations from '@/composables/integrations';
@@ -109,6 +109,8 @@ const drawer = computed({
 </script>
 
 <style scoped>
+/* Faz3 DS-v2 int düzeltme: <600px'te (xs) iki panel alt alta (cols=12, sm=6). Yan yana 375px'te
+   liste paneli ~140px'e sıkışıp marka/kategori adları 0 genişliğe düşüyordu (satır başlığı ellipsis). */
 .category-definition__col {
   position: relative;
   height: calc(100vh - 200px);

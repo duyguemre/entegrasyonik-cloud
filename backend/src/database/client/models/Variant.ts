@@ -82,6 +82,10 @@ export const VariantSchema = new mongoose.Schema({
 // ADR-0004 Karar 1: allocations.key üzerinde multikey indeks (idempotency lookup + $ne guard hızlı olsun).
 VariantSchema.index({ 'allocations.key': 1 });
 
+// DB-11 / DBR-04: StockPublishTrigger `Variants.find({stockDirty:true})` (30 sn x tenant) icin kismi indeks (yalniz kirli belgeler).
+// Uygulama: backend/migrations/0008-variants-stockdirty-partial-tenant.js (onayli goc). Ad ve tanim goc ile BIREBIR.
+VariantSchema.index({ stockDirty: 1 }, { name: 'stockDirty_true', partialFilterExpression: { stockDirty: true } });
+
 VariantSchema.pre('insertMany', function (next, docs) {
     for (const doc of docs) {
         // choices veya maincode eksik gelirse hatayı önlemek için kontrol

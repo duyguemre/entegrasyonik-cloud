@@ -10,14 +10,6 @@ import mongoose from "mongoose";
 export const METRIC_ROLLUP_5M_TTL_SECONDS = 7 * 24 * 60 * 60;   // 7 gün
 export const METRIC_ROLLUP_1H_TTL_SECONDS = 90 * 24 * 60 * 60;  // 90 gün
 
-const SeriesEntrySchema = new mongoose.Schema({
-    // Okunabilirlik/hata ayıklama için etiketler AYNEN de tutulur (seri anahtarını Mongo'da tekrar parse etmeye gerek kalmaz).
-    labels: { type: mongoose.Schema.Types.Mixed, default: {} },
-    c:      { type: Number, default: 0 }, // count (sayaç artışı ya da histogram gözlem sayısı)
-    sum:    { type: Number, default: 0 }, // yalnız histogram: gözlemlenen değerlerin toplamı
-    h:      { type: [Number], default: undefined }, // yalnız histogram: HISTOGRAM_BUCKETS_MS + 1 (+Inf) uzunluğunda, kovaya özgü sayım
-}, { _id: false, strict: false });
-
 export const MetricRollupSchema = new mongoose.Schema({
     metric:      { type: String, required: true },
     resolution:  { type: String, enum: ['5m', '1h'], required: true },
@@ -30,9 +22,9 @@ export const MetricRollupSchema = new mongoose.Schema({
     versionKey: false,
 });
 
-MetricRollupSchema.index({ metric: 1, resolution: 1, bucketStart: 1 }, { unique: true });
-MetricRollupSchema.index({ bucketStart: 1 }, { expireAfterSeconds: METRIC_ROLLUP_5M_TTL_SECONDS, partialFilterExpression: { resolution: '5m' } });
-MetricRollupSchema.index({ bucketStart: 1 }, { expireAfterSeconds: METRIC_ROLLUP_1H_TTL_SECONDS, partialFilterExpression: { resolution: '1h' } });
-
-// yalnızca dokümantasyon amaçlı: SeriesEntrySchema doğrudan kullanılmıyor (Mixed + $inc ile yazılıyor) ama şekli sabitler.
-export const __SeriesEntryShape = SeriesEntrySchema;
+// DB-05/DB-10 (DBR-02): iki TTL indeksi AYNI anahtarda; acik ad olmadan ikisi de varsayilan 'bucketStart_1' adini alir ve ikincisi
+// IndexOptionsConflict ile SESSIZCE kurulamaz (1sa kovalari hic silinmezdi). Adlar sabit; goc: migrations/0009-notifications-metricrollups-indexes-app.js.
+const METRIC_ROLLUP_INDEX_NAMES = { unique: 'metric_1_resolution_1_bucketStart_1', ttl5m: 'ttl_bucket_5m', ttl1h: 'ttl_bucket_1h' } as const;
+MetricRollupSchema.index({ metric: 1, resolution: 1, bucketStart: 1 }, { unique: true, name: METRIC_ROLLUP_INDEX_NAMES.unique });
+MetricRollupSchema.index({ bucketStart: 1 }, { name: METRIC_ROLLUP_INDEX_NAMES.ttl5m, expireAfterSeconds: METRIC_ROLLUP_5M_TTL_SECONDS, partialFilterExpression: { resolution: '5m' } });
+MetricRollupSchema.index({ bucketStart: 1 }, { name: METRIC_ROLLUP_INDEX_NAMES.ttl1h, expireAfterSeconds: METRIC_ROLLUP_1H_TTL_SECONDS, partialFilterExpression: { resolution: '1h' } });

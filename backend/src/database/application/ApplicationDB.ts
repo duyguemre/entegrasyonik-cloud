@@ -10,6 +10,14 @@ export default class ApplicationDB implements IApplicationDB {
 
     private constructor() { }
 
+    /** ADR-0024 D2: kapanışta YENİ bağlantı açmadan mevcut örneği/başlatma sözünü döner (yoksa undefined). */
+    public static peek(): ApplicationDB | Promise<ApplicationDB> | undefined {
+        return ApplicationDB.instance ?? ApplicationDB.initPromise ?? undefined;
+    }
+
+    /** ADR-0024 D2: süreçteki TEK kök bağlantı (uygulama DB'si); ClientDB tenant tutamaklarını `useDb` ile bundan türetir. */
+    public getRootDatabase(): Database { return this.database as Database; }
+
     public static async getInstance(config: DBConfig): Promise<ApplicationDB> {
         if (ApplicationDB.instance) {
             return ApplicationDB.instance;
@@ -49,8 +57,8 @@ export default class ApplicationDB implements IApplicationDB {
     public async close(): Promise<void> {
         if (this.database) {
             // Database.ts içindeki close() metodunu çağırır
-            await (this.database as any).close();
             ApplicationDB.instance = null;
+            await (this.database as any).close();
             console.log("[ApplicationDB] >>> Ana veritabanı bağlantısı kapatıldı.");
         }
     }
@@ -88,6 +96,14 @@ export default class ApplicationDB implements IApplicationDB {
     public getBillingEventModel() { return this.database.getModel('billing_event'); }
     // Hesap yaşam döngüsü token'ları (parola sıfırlama / e-posta doğrulama) -- ApplicationDB'de.
     public getAccountTokenModel() { return this.database.getModel('account_token'); }
+    // [ADR-0028] üyelik + davet.
+    public getMembershipModel() { return this.database.getModel('membership'); }
+    public getAdminMfaModel() { return this.database.getModel('admin_mfa'); }
+    public getInvitationModel() { return this.database.getModel('invitation'); }
+    // [ADR-0029] bildirim olay defteri + e-posta outbox.
+    public getNotificationEventModel() { return this.database.getModel('notification_event'); }
+    public getNotificationDeliveryModel() { return this.database.getModel('notification_delivery'); }
+    public getNotificationPreferencesModel() { return this.database.getModel('notification_preferences'); }
     // [ADR-0016 §2 / ADR-0017 Karar 3] `platform/runtime/scheduler`: iş başına Mongo lease + JobRunRegistry.
     public getJobLeaseModel() { return this.database.getModel('job_lease'); }
     public getJobStateModel() { return this.database.getModel('job_state'); }
@@ -98,6 +114,7 @@ export default class ApplicationDB implements IApplicationDB {
     public getMetricRollupModel() { return this.database.getModel('metric_rollup'); }
     // ADR-0017 Aşama B (Karar 2.4): hata olayı ("mini-Sentry", parmak izi başına tek doküman).
     public getErrorEventModel() { return this.database.getModel('error_event'); }
+    public getLogEventModel() { return this.database.getModel('log_event'); }
     // ADR-0018 Karar 2c (Aşama B): kaynak izleyici (SourceMonitor) bu model üzerinden okur/yazar.
     public getSourceSnapshotModel() { return this.database.getModel('source_snapshot'); }
     // ADR-0020 Karar 3.1 (Aşama B): sürümlü platform geçersiz kılmaları + yayın başlığı.

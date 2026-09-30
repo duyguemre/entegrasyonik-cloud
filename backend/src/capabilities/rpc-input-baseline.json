@@ -1,0 +1,25 @@
+{
+  "unschematizedWriteRpcs": [
+    "AccountService/changePassword",
+    "HashtagService/addHashtag",
+    "HashtagService/addHashtagValue",
+    "HashtagService/removeHashtag",
+    "HashtagService/removeHashtagValue",
+    "HashtagService/updateHashtag",
+    "HashtagService/updateHashtagValue",
+    "ImageApi/deleteImage",
+    "ImageApi/deleteImageSelected",
+    "ImageApi/sortImages",
+    "ImageApi/upload",
+    "ImageApi/uploadIdentity",
+    "ImageService/assignImages",
+    "IntegrationConfigService/previewPublish",
+    "IntegrationConfigService/proposeFromFinding",
+    "IntegrationConfigService/takeOverLock",
+    "MenuService/addFavorite",
+    "MenuService/deleteFavorite",
+    "MenuService/sortFavorites",
+    "OrderService/markAsPrinted",
+    "TenantDataService/cancelDeletion"
+  ]
+}

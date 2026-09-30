@@ -5,6 +5,9 @@ import { PLATFORM_PROCESS } from '@interfaces/index';
 import { IIntegrationEngineProvider } from "../provider/IIntegrationEngineProvider";
 import { getPodIdentity } from '@utils/podIdentity';
 import { getSetting } from '@integration/config/ConfigResolver';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('worker', 'Sync');
 
 export default class Sync extends BaseWorker {
     protected readonly workerName = 'Catalog Synchronizer';
@@ -36,7 +39,6 @@ export default class Sync extends BaseWorker {
 
         const podName = getPodIdentity();
         const factory = new IntegrationFactory(Number(clientId));
-        const clientLogPrefix = this.getLogPrefix(clientId, this.integrationCode);
 
         // 1. ADIM: AYNI PLATFORMDAKİ TÜM BEKLEYEN SİNYALLERİ BUL VE (TEK TEK) KİLİTLE
         // Sadece nextRunAt süresi gelmiş olanları değil, WAITING olanların tamamını kapıyoruz (Aggregation için)
@@ -65,11 +67,11 @@ export default class Sync extends BaseWorker {
         }
 
         if (allBatchIds.length === 0) {
-            console.log(`${clientLogPrefix} Synchronizer: no batches claimable this pass (lease held by another pod).`);
+            log.info('SYNC_NO_BATCHES_CLAIMABLE', 'Synchronizer: no batches claimable this pass (lease held by another pod).');
             return;
         }
 
-        console.log(`${clientLogPrefix} Synchronizer aggregated ${allBatchIds.length} batches on ${podName}`);
+        log.info('SYNC_SYNCHRONIZER_AGGREGATED_BATCHES', `Synchronizer aggregated ${allBatchIds.length} batches on ${podName}`);
 
         try {
             // 2. ADIM: Bayatlamış kayıtları temizle (Toplu batch listesi üzerinden)
@@ -86,7 +88,7 @@ export default class Sync extends BaseWorker {
             }).select(`_id ${matchKey} batchId mode`).lean();
 
             if (!allWaitingEntries || allWaitingEntries.length === 0) {
-                console.log(`${clientLogPrefix} No items ready for sync in aggregated batches.`);
+                log.info('SYNC_NO_ITEMS_READY', 'No items ready for sync in aggregated batches.');
                 for (const bId of allBatchIds) await this.finalizeSignal(bId);
                 return;
             }
@@ -103,10 +105,10 @@ export default class Sync extends BaseWorker {
                 await this.finalizeSignal(bId);
             }
 
-            console.log(`${clientLogPrefix} Aggregated Synchronizer finished for ${allBatchIds.length} batches.`);
+            log.info('SYNC_AGGREGATED_SYNCHRONIZER_FINISHED_BATCHES', `Aggregated Synchronizer finished for ${allBatchIds.length} batches.`);
 
         } catch (err: any) {
-            console.error(`${clientLogPrefix} Synchronizer Aggregation Error:`, err.message);
+            log.error('SYNC_SYNCHRONIZER_AGGREGATION_ERROR', 'Synchronizer Aggregation Error:', { err });
             // Hata durumunda kilitleri serbest bırak ve 5 dakika "Cooldown" (soğuma) süresi ver
             const cooldownDate = new Date(Date.now() + 5 * 60 * 1000); // 5 dakika sonra
             await this.engineProvider.getExportSignalModel().updateMany(
@@ -119,7 +121,7 @@ export default class Sync extends BaseWorker {
                     }
                 }
             );
-            console.log(`${clientLogPrefix} Synchronizer Error: Cooldown applied until ${cooldownDate.toLocaleTimeString()}`);
+            log.info('SYNC_SYNCHRONIZER_ERROR_COOLDOWN_APPLIED', `Synchronizer Error: Cooldown applied until ${cooldownDate.toLocaleTimeString()}`);
         }
     }
 

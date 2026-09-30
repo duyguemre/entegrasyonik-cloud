@@ -21,15 +21,15 @@ test.describe('P2 — Mesajlar (MessageListView)', () => {
     await expect(page.getByText('Sipariş Sorusu')).toBeVisible()
   })
 
-  test('boş durum: sonuç yoksa "Mesaj Bulunamadı" kartı gösterilir', async ({ page }) => {
+  test('boş durum: sonuç yoksa "Mesaj bulunamadı" kartı gösterilir', async ({ page }) => {
     await installApiMocks(page, { 'MessageService/getMessages': messagesBosFixture })
     await gotoAuthed(page)
     await openScreen(page, 'MessageListView')
 
-    await expect(page.getByText('Mesaj Bulunamadı', { exact: true })).toBeVisible()
+    await expect(page.getByText('Mesaj bulunamadı', { exact: true })).toBeVisible()
   })
 
-  test('hata durumu: 500 alındığında da aynı "Mesaj Bulunamadı" boş-durumuna düşülür, ham hata sızmaz (gizli davranış — bkz. BACKLOG.md)', async ({ page }) => {
+  test('hata durumu: 500 alındığında "Mesajlar yüklenemedi" + Tekrar dene gösterilir (boştan AYRI), ham hata sızmaz', async ({ page }) => {
     // GİZLİ DAVRANIŞ (characterization, düzeltilmedi — BACKLOG.md): `restApi.post` HİÇBİR ZAMAN
     // reddetmiyor (bkz. restapi.ts `postService`); bu yüzden `getMessagesInternal`'daki `catch`
     // bloğu (snackbar) da HİÇ TETİKLENMİYOR, `res.messages` undefined kalıp liste güncellenmiyor —
@@ -38,7 +38,9 @@ test.describe('P2 — Mesajlar (MessageListView)', () => {
     await gotoAuthed(page)
     await openScreen(page, 'MessageListView')
 
-    await expect(page.getByText('Mesaj Bulunamadı', { exact: true })).toBeVisible()
+    // DS-v2 Aşama 2 — BİLİNÇLİ DAVRANIŞ DEĞİŞİKLİĞİ: hata artık boş durumdan ayrı (isRequestError); API çağrısı AYNI.
+    await expect(page.getByText('Mesajlar yüklenemedi')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Tekrar dene' })).toBeVisible()
     await expect(page.locator('body')).not.toContainText('500')
   })
 

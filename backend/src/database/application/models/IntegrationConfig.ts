@@ -9,7 +9,8 @@ import mongoose from 'mongoose';
 
 // NOT (knip/D3 modülerlik): bu sabitler/tipler yalnız AŞAĞIDAKİ şema tanımları içinde kullanılır (dışarıdan
 // içe aktarılmaz) — bilerek dışa AÇILMAZ. Hedef adı sabiti (`_engine`) ayrıca `integration/config/targets.ts`'te
-// GERÇEK tüketiciler için durur (`targets.ts` dosya başı notu: database katmanı integration'ı içe aktaramaz).
+// GERÇEK tüketiciler için durur; ADR-0031 `_platform` hedefi (platform ayarları) AYNI şekilde `targets.ts` `PLATFORM_TARGET`
+// ile tanımlıdır (bu şema hedef adını kısıtlamaz: `target` serbest dizgidir, geçerlilik `assertKnownTarget`te) (`targets.ts` dosya başı notu: database katmanı integration'ı içe aktaramaz).
 const INTEGRATION_CONFIG_REVISION_STATUSES = ['draft', 'published', 'superseded', 'discarded'] as const;
 const INTEGRATION_CONFIG_ORIGIN_KINDS = ['manual', 'rollback', 'finding', 'migration', 'agent'] as const;
 const INTEGRATION_CONFIG_DANGER_LEVELS = ['safe', 'caution', 'dangerous'] as const;

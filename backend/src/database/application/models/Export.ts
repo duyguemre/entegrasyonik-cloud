@@ -65,10 +65,12 @@ ExportSignalSchema.index({ lockedBy: 1, status: 1, nextRunAt: 1, createdAt: 1 })
 
 
 export const ExportFlagSchema = new Schema({
+    // DB-14 / ADR-0021 D12: tenant anahtari Number (Clients.order ile ayni). Eski String tipi goc 0013 ile Number'a cevrilir;
+    // sorgulardaki String(order) degerleri Mongoose sema tipiyle Number'a cast edilir. `index:true` KALDIRILDI:
+    // {clientId,integrationCode} unique bileşiginin oneki oldugu icin clientId_1 gereksiz (goc 0013 dusurur).
     clientId: {
-        type: String,
-        required: true,
-        index: true
+        type: Number,
+        required: true
     },
     integrationCode: {
         type: String,

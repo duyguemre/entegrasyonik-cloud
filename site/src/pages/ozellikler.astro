@@ -2,219 +2,650 @@
 /**
  * /ozellikler — yetenek anlatımı (ADR-0014 Karar 2, S2b; premium kart ızgarası S11). Yalnızca
  * `getPublicCapabilities('core')` (kayıtlı ve gösterilebilir yetenekler; yol haritası öğeleri gelmez).
- * Kanal listeleri entegrasyon kaydından türetilir. Kısmi yeteneklerde kapsam notu ve kanal bazında düzey
- * (Destekleniyor / Sınırlı) görünür.
+ * Kanal listeleri entegrasyon kaydından türetilir. Kısmi yeteneklerde kapsam notu ve kanal bazında düzey görünür.
  *
- * S11: önceki sürüm her yeteneği kendi tam genişlikte bölümünde art arda diziyordu (aşırı boşluk). Artık tek
- * bölümde 4 seviyeli hiyerarşili (`--site-card-*`) kart ızgarası + kanal kapsamı yatay rozet şeridi olarak
- * özetleniyor; imleç takipli ışık/eğim (`data-tilt`, S8) eklendi. Sayı uydurulmaz: hero'daki özet, dizideki
- * gerçek yetenek/kapsam sayılarından hesaplanır.
+ * S14: kart değer satırı kayıttaki somut akış cümlesidir (`action`, capabilities.ts); `summary` ikincil metin.
  *
- * S14: kart değer satırı soyut "tek panel" dili yerine kayıttaki somut akış cümlesidir (`action`, capabilities.ts);
- * `summary` altında ikincil metin olarak kalır. Stok rezervasyonu kartı derin sayfaya bağlanır.
+ * S17 (S16 tasarım dili): koyu hero + "Bir bakışta" sayaçları (YALNIZCA kayıttan hesaplanır; tests/pages.test.ts
+ * her `data-stat` değerini yeniden hesaplar), öne çıkan stok rezervasyonu kartı (derin sayfaya net geçiş), ardından
+ * yetenek KÜMELERİ: solda yapışkan küme başlığı, sağda eşit yükseklikli kart ızgarası. Kanal kapsamı kartta
+ * kompakt monogram şeridi (düzey şekille + metinle: dolu = destekleniyor, yarım = temel düzeyde), tam ayrıntı
+ * yerel <details> içinde (JS gerekmez). Kümeler yalnızca SAYFA DÜZENİDİR (yeni iddia yok); kümeye atanmamış
+ * bir yetenek "Diğer" kümesine düşer, böylece kayıttaki hiçbir yetenek kaybolmaz.
  */
 import BaseLayout from '../layouts/BaseLayout.astro'
+import { crumbsFor } from '../data/seo'
 import Section from '../components/Section.astro'
 import Badge from '../components/Badge.astro'
+import Icon from '../components/home/Icon.astro'
 import PageHero from '../components/pages/PageHero.astro'
-import PageMeta from '../components/pages/PageMeta.astro'
+import HeroActions from '../components/pages/HeroActions.astro'
+import StatPanel from '../components/pages/StatPanel.astro'
+import SectionHead from '../components/pages/SectionHead.astro'
 import LevelBadge from '../components/pages/LevelBadge.astro'
 import ChannelMono from '../components/pages/ChannelMono.astro'
+import NextLinks from '../components/pages/NextLinks.astro'
 import CtaBand from '../components/pages/CtaBand.astro'
-import { getPublicCapabilities, type ProductCapabilityStatus } from '../data/capabilities'
-import { CAPABILITY_LEVEL_LABELS, getPublicIntegrations } from '../data/integrations'
+import { getPublicCapabilities, type ProductCapabilityStatus, type PublicProductCapability } from '../data/capabilities'
+import { CAPABILITY_LEVEL_LABELS, getPublicIntegrations, type CapabilityLevel } from '../data/integrations'
 import { getFeaturePoints } from '../data/feature-details'
-import { breadcrumbJsonLd } from '../lib/seo'
+import { ASSISTANT_PATH, featuresBridge } from '../data/assistant'
 import { appUrls } from '../lib/site-config'
 
-const title = 'Özellikler'
-const description =
-  'Eşzamanlı siparişte stok rezervasyonu, tek listede siparişler, iade onayı ve reddi, müşteri sorularını yanıtlama, hakediş takibi: Entegrasyonik özellikleri ve kanal bazında kapsamları.'
-const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Özellikler' }]
+const crumbs = crumbsFor('/ozellikler')
 
 const capabilities = getPublicCapabilities('core')
-// Gösterilebilir durumlar yalnızca mevcut/kısmi'dir; diğerleri nötr rozete düşer.
+const channels = getPublicIntegrations()
+
 const statusTone = (status: ProductCapabilityStatus): 'success' | 'warning' | 'neutral' =>
   status === 'available' ? 'success' : status === 'partial' ? 'warning' : 'neutral'
 
-// Hero görseli: hiçbir uydurma/sabit rakam yok (tests/pages.test.ts) — yalnızca kanal adları.
-const channels = getPublicIntegrations()
+type IconName = 'stock' | 'layers' | 'orders' | 'returns' | 'chat' | 'finance' | 'notice' | 'database' | 'sparkle'
+const ICON: Record<string, IconName> = {
+  'stock-reservation': 'stock',
+  'multi-channel-products': 'layers',
+  'unified-orders': 'orders',
+  returns: 'returns',
+  questions: 'chat',
+  finance: 'finance',
+  'shipping-invoice-notice': 'notice',
+  'erp-read': 'database',
+}
+
+/** Öne çıkan yetenek: derin sayfası olan stok rezervasyonu. */
+const FEATURED_ID = 'stock-reservation'
+const featured = capabilities.find((c) => c.id === FEATURED_ID)
+const featuredPoints = getFeaturePoints(FEATURED_ID)
+
+/** Sayfa düzeni kümeleri (iddia değil; yalnızca gruplama). */
+const CLUSTERS: Array<{ id: string; title: string; lead: string; ids: string[] }> = [
+  {
+    id: 'stok-katalog',
+    title: 'Ürün, stok ve katalog',
+    lead: 'Fiyat ve stok değişikliklerini tek yerden kanallarınıza iletin; ERP kataloğunuzu panele alın.',
+    ids: ['multi-channel-products', 'erp-read'],
+  },
+  {
+    id: 'siparis',
+    title: 'Sipariş ve gönderim',
+    lead: 'Siparişleri tek listede toplayın; kargo ve fatura bilgisini ilgili pazaryerine iletin.',
+    ids: ['unified-orders', 'shipping-invoice-notice'],
+  },
+  {
+    id: 'satis-sonrasi',
+    title: 'Satış sonrası ve müşteri',
+    lead: 'İade taleplerini ve müşteri sorularını her pazaryeri paneline ayrı ayrı girmeden yanıtlayın.',
+    ids: ['returns', 'questions'],
+  },
+  {
+    id: 'finans',
+    title: 'Finans',
+    lead: 'Hakediş ve finansal hareketlerinizi satış verisiyle aynı yerde izleyin.',
+    ids: ['finance'],
+  },
+]
+const assigned = new Set([FEATURED_ID, ...CLUSTERS.flatMap((c) => c.ids)])
+const leftovers = capabilities.filter((c) => !assigned.has(c.id))
+const clusters = [
+  ...CLUSTERS.map((cl) => ({ ...cl, items: cl.ids.map((id) => capabilities.find((c) => c.id === id)).filter((c): c is PublicProductCapability => !!c) })),
+  ...(leftovers.length > 0 ? [{ id: 'diger', title: 'Diğer', lead: '', ids: [], items: leftovers }] : []),
+].filter((cl) => cl.items.length > 0)
+
+/*
+ * "Bir bakışta" sayaçları — YALNIZCA kayıttan hesaplanır (tests/pages.test.ts EXPECTED_STATS aynı hesabı yapar).
+ */
+const stats = [
+  { id: 'features', value: capabilities.length, label: 'temel özellik' },
+  { id: 'features-available', value: capabilities.filter((c) => c.status === 'available').length, label: 'mevcut özellik' },
+  { id: 'features-partial', value: capabilities.filter((c) => c.status === 'partial').length, label: 'kısmi, kanala göre değişen' },
+  { id: 'integrations', value: channels.length, label: 'kullanılabilir entegrasyon' },
+]
+
+const LEVEL_STATE: Record<CapabilityLevel, 'yes' | 'limited'> = { supported: 'yes', limited: 'limited' }
 ---
 
-<BaseLayout title={title} description={description}>
-  <PageMeta
-    slot="head"
-    title={title}
-    description={description}
-    jsonLd={[breadcrumbJsonLd([{ label: 'Ana sayfa', path: '/' }, { label: title, path: '/ozellikler' }])]}
-  />
+<BaseLayout>
 
   <PageHero
     title="Özellikler"
+    eyebrow="Ürün"
     lead="Eşzamanlı siparişte stok rezerve edilir; siz iadeyi onaylar, müşteri sorusunu yanıtlar, fiyat ve stoğu tek yerden güncellersiniz. Her özelliğin hangi kanallarda ve hangi kapsamda çalıştığı yazılıdır."
     crumbs={crumbs}
   >
-    <nav class="toc" aria-label="Bu sayfadaki özellikler">
-      {capabilities.map((c) => <a href={`#${c.id}`}>{c.title}</a>)}
-    </nav>
+    <HeroActions
+      actions={[
+        { label: 'Özellikleri inceleyin', href: '#kumeler' },
+        { label: 'Aşırı satış nasıl önlenir', href: '/ozellikler/stok-rezervasyonu' },
+      ]}
+    />
     <Fragment slot="visual">
-      <p class="stat-panel__tag">Tüm kanallarda geçerli</p>
-      <ul class="chan-cluster" role="list">
+      <StatPanel tag="Bir bakışta" stats={stats} testid="feature-stats" chips={channels.map((c) => ({ href: `/entegrasyonlar/${c.code}`, code: c.code, label: c.name }))} />
+    </Fragment>
+  </PageHero>
+
+  {
+    featured && (
+      <Section labelledby="one-cikan-title" class="tight-section featured-section">
+        <h2 id="one-cikan-title" class="sr-only">Öne çıkan özellik</h2>
+        <article id={featured.id} class="featured" aria-labelledby={`${featured.id}-title`} data-testid="feature">
+          <div class="featured__body">
+            <div class="featured__top">
+              <span class="cap-icon cap-icon--lg" aria-hidden="true">
+                <Icon name={ICON[featured.id] ?? 'sparkle'} size="md" />
+              </span>
+              <p class="featured__eyebrow">Öne çıkan</p>
+              <Badge tone={statusTone(featured.status)}>{featured.statusLabel}</Badge>
+            </div>
+            <h3 id={`${featured.id}-title`} class="featured__title">{featured.title}</h3>
+            <p class="featured__value">{featured.action ?? featured.summary}</p>
+            {featured.action && <p class="featured__desc">{featured.summary}</p>}
+            <a class="featured__link" href="/ozellikler/stok-rezervasyonu" data-testid="feature-deep-link">
+              Aşırı satış nasıl önlenir
+              <Icon name="arrow" size="sm" />
+            </a>
+          </div>
+          <div class="featured__aside">
+            <p class="featured__aside-tag">Arka planda ne olur</p>
+            {featuredPoints.length > 0 && (
+              <ol class="featured__points" role="list">
+                {featuredPoints.map((p) => (
+                  <li>
+                    <span class="featured__check" aria-hidden="true"><Icon name="check" size="sm" /></span>
+                    <span>{p}</span>
+                  </li>
+                ))}
+              </ol>
+            )}
+            {featured.caveat && (
+              <p class="caveat">
+                <Icon name="info" size="sm" />
+                <span><strong>Kapsam notu:</strong> {featured.caveat}</span>
+              </p>
+            )}
+          </div>
+        </article>
+      </Section>
+    )
+  }
+
+  <Section id="kumeler" labelledby="kumeler-title" tone="muted" class="tight-section">
+    <div class="clusters-head">
+      <SectionHead
+        id="kumeler-title"
+        eyebrow="Yetenek kümeleri"
+        title="Günlük operasyonunuzun her adımı"
+        lead="Her kartta ne yaptığınız, arka planda ne olduğu ve hangi kanalda hangi düzeyde çalıştığı yer alır."
+        compact
+      />
+      <ul class="legend" aria-label="Kanal kapsamı göstergesi">
         {
-          channels.map((c) => (
+          (Object.keys(LEVEL_STATE) as CapabilityLevel[]).map((l) => (
             <li>
-              <ChannelMono code={c.code} name={c.name} size="md" />
-              <span class="chan-cluster__name">{c.name}</span>
+              <span class="lvl" data-state={LEVEL_STATE[l]} aria-hidden="true">
+                {l === 'supported' && <Icon name="check" size="sm" />}
+              </span>
+              {CAPABILITY_LEVEL_LABELS[l]}
             </li>
           ))
         }
       </ul>
-      <p class="stat-panel__caption">Kapsam kanala göre değişir; her kartın altında ayrıntı var.</p>
-    </Fragment>
-  </PageHero>
+    </div>
 
-  <Section labelledby="cap-grid-title">
-    <h2 id="cap-grid-title" class="sr-only">Temel özellikler</h2>
-    <ul class="cap-grid" role="list">
+    <nav class="cluster-nav" aria-label="Yetenek kümeleri">
       {
-        capabilities.map((c) => {
-          const points = getFeaturePoints(c.id)
-          return (
-            <li>
-              <article id={c.id} class="cap-card" aria-labelledby={`${c.id}-title`} data-tilt data-testid="feature">
-                <div class="cap-card__head">
-                  <Badge tone={statusTone(c.status)} class="cap-card__eyebrow">{c.statusLabel}</Badge>
-                </div>
-                <h3 id={`${c.id}-title`} class="cap-card__title">{c.title}</h3>
-                <p class="cap-card__value">{c.action ?? c.summary}</p>
-                {c.action && <p class="cap-card__desc">{c.summary}</p>}
-                {points.length > 0 && (
-                  <ul class="cap-card__points" role="list">
-                    {points.map((p) => (
-                      <li>{p}</li>
-                    ))}
-                  </ul>
-                )}
-                {c.id === 'stock-reservation' && (
-                  <a class="cap-card__more" href="/ozellikler/stok-rezervasyonu">
-                    Aşırı satış nasıl önlenir <span aria-hidden="true">→</span>
-                  </a>
-                )}
-                {c.caveat && (
-                  <p class="cap-card__caveat">
-                    <strong>Kapsam notu:</strong> {c.caveat}
-                  </p>
-                )}
-                {c.channels.length > 0 && (
-                  <div class="cap-card__channels">
-                    <p class="cap-card__channels-label">Kanallara göre kapsam</p>
-                    <ul class="chan-row" role="list">
-                      {c.channels.map((ch) => (
-                        <li>
-                          <a class="chan-chip" href={`/entegrasyonlar/${ch.code}`} data-code={ch.code}>
-                            <ChannelMono code={ch.code} name={ch.name} size="sm" />
-                            <span class="chan-chip__name">{ch.name}</span>
-                            <LevelBadge level={ch.level} label={CAPABILITY_LEVEL_LABELS[ch.level]} />
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </article>
-            </li>
-          )
-        })
+        clusters.map((cl) => (
+          <a href={`#${cl.id}`}>
+            {cl.title}
+          </a>
+        ))
       }
-    </ul>
+    </nav>
+
+    <div class="clusters">
+      {
+        clusters.map((cl) => (
+          <section class="cluster" id={cl.id} aria-labelledby={`${cl.id}-title`}>
+            <div class="cluster__head">
+              <h3 id={`${cl.id}-title`} class="cluster__title">{cl.title}</h3>
+              {cl.lead && <p class="cluster__lead">{cl.lead}</p>}
+            </div>
+            <ul class="cap-grid" role="list">
+              {cl.items.map((c) => (
+                <li>
+                  <article id={c.id} class="cap-card" aria-labelledby={`${c.id}-title`} data-testid="feature">
+                    <div class="cap-card__top">
+                      <span class="cap-icon" aria-hidden="true">
+                        <Icon name={ICON[c.id] ?? 'sparkle'} size="sm" />
+                      </span>
+                      <Badge tone={statusTone(c.status)}>{c.statusLabel}</Badge>
+                    </div>
+                    <h4 id={`${c.id}-title`} class="cap-card__title">{c.title}</h4>
+                    <p class="cap-card__value">{c.action ?? c.summary}</p>
+                    {c.action && <p class="cap-card__desc">{c.summary}</p>}
+                    {c.caveat && (
+                      <p class="caveat">
+                        <Icon name="info" size="sm" />
+                        <span><strong>Kapsam notu:</strong> {c.caveat}</span>
+                      </p>
+                    )}
+                    {c.channels.length > 0 && (
+                      <div class="cap-card__channels">
+                        <p class="cap-card__channels-label">Kanal kapsamı</p>
+                        <ul class="chan-strip" role="list" aria-label={`${c.title}: kanal kapsamı`}>
+                          {c.channels.map((ch) => (
+                            <li class="chan-strip__item" data-code={ch.code} title={`${ch.name}: ${CAPABILITY_LEVEL_LABELS[ch.level]}`}>
+                              <ChannelMono code={ch.code} name={ch.name} size="sm" />
+                              <span class="lvl lvl--badge" data-state={LEVEL_STATE[ch.level]} aria-hidden="true">
+                                {ch.level === 'supported' && <Icon name="check" size="sm" />}
+                              </span>
+                              <span class="sr-only">
+                                {ch.name}: {CAPABILITY_LEVEL_LABELS[ch.level]}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                        <details class="cap-card__more">
+                          <summary>
+                            <span>Kanal ayrıntısı</span>
+                            <Icon name="chevron" size="sm" />
+                          </summary>
+                          <ul class="chan-list" role="list">
+                            {c.channels.map((ch) => (
+                              <li>
+                                <a class="chan-list__link" href={`/entegrasyonlar/${ch.code}`} data-code={ch.code}>
+                                  <ChannelMono code={ch.code} name={ch.name} size="sm" />
+                                  <span class="chan-list__name">{ch.name}</span>
+                                  <LevelBadge level={ch.level} label={CAPABILITY_LEVEL_LABELS[ch.level]} />
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        </details>
+                      </div>
+                    )}
+                  </article>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))
+      }
+    </div>
+  </Section>
+
+  <Section labelledby="sonraki-title" class="tight-section">
+    <SectionHead id="sonraki-title" eyebrow="Sonraki adım" title="Ayrıntısına inin" />
+    <NextLinks
+      links={[
+        { href: '/entegrasyonlar', icon: 'plug', title: 'Entegrasyonlar', text: 'Her kanalın hangi işlemleri hangi düzeyde desteklediği.' },
+        { href: '/guvenlik', icon: 'shield', title: 'Güvenlik', text: 'Pazaryeri anahtarlarınızın ve verinizin nasıl korunduğu.' },
+        { href: '/fiyatlandirma', icon: 'card', title: 'Fiyatlandırma', text: 'Planlar, ücretsiz deneme ve plan karşılaştırması.' },
+      ]}
+    />
+    <!-- S18: "Yolda" köprüsü — bugünkü yeteneklerden AYRI tutulur; metin katı iddia taramasından geçer (istisna değil). -->
+    <a class="bridge" href={ASSISTANT_PATH} data-testid="assistant-bridge">
+      <span class="bridge__tag"><Icon name="sparkle" size="sm" />{featuresBridge.eyebrow}</span>
+      <span class="bridge__body">
+        <span class="bridge__title">{featuresBridge.title}</span>
+        <span class="bridge__text">{featuresBridge.text}</span>
+      </span>
+      <span class="bridge__cta">{featuresBridge.cta}<Icon name="arrow" size="sm" /></span>
+    </a>
   </Section>
 
   <CtaBand
     id="ozellik-cta"
     title="Özellikleri kendi hesabınızda deneyin"
-    text="Kanal kapsamının ayrıntısı için entegrasyon sayfalarına, veri ve anahtar güvenliği için güvenlik sayfasına bakabilirsiniz."
+    text="Kanallarınızı bağlayın; siparişleriniz rezervasyondan geçsin, iade ve sorular tek ekranda toplansın."
     primary={{ label: 'Ücretsiz dene', href: appUrls.register() }}
     secondary={{ label: 'Entegrasyonlar', href: '/entegrasyonlar' }}
   />
 </BaseLayout>
 
-<script>
-  import '../scripts/interactions'
-</script>
-
 <style>
-  .toc {
+  .tight-section:global(.section) {
+    padding-block: calc(var(--site-section-y) * 0.72);
+  }
+
+  /* --- S18 "Yolda" köprüsü: sakin, kesikli çerçeveli tek satır (bugünkü yeteneklerle karışmaz) --- */
+  .bridge {
+    display: grid;
+    gap: var(--ek-space-3);
+    margin-top: var(--ek-space-8);
+    padding: var(--ek-space-5) var(--ek-space-6);
+    border: var(--site-border-width) dashed var(--ek-color-border-strong);
+    border-radius: var(--site-radius-panel);
+    background:
+      radial-gradient(60% 120% at 100% 50%, color-mix(in srgb, var(--ek-color-secondary) 9%, transparent), transparent 70%),
+      var(--ek-color-surface-sunken);
+    color: inherit;
+    text-decoration: none;
+    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .bridge:hover {
+    border-color: var(--site-link-accent);
+  }
+  .bridge__tag {
+    display: inline-flex;
+    align-items: center;
+    align-self: start;
+    justify-self: start;
+    gap: var(--ek-space-1);
+    padding: var(--ek-space-1) var(--ek-space-3);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-info-subtle);
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .bridge__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+    min-width: 0;
+  }
+  .bridge__title {
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-xl);
+    font-weight: var(--ek-font-weight-bold);
+  }
+  .bridge__text {
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-md);
+    line-height: var(--site-font-body-line-height);
+  }
+  .bridge__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-1);
+    color: var(--site-link-accent);
+    font-weight: var(--ek-font-weight-semibold);
+    white-space: nowrap;
+  }
+  @media (min-width: 900px) {
+    .bridge {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: var(--ek-space-6);
+    }
+    .bridge__tag {
+      align-self: center;
+    }
+  }
+
+  /* --- İkon karosu (S16 /guvenlik ilke ikonu ile aynı dil) --- */
+  .cap-icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
+    border-radius: var(--ek-radius-lg);
+    background: linear-gradient(140deg, var(--ek-color-primary), var(--ek-color-primary-darken-1));
+    box-shadow: 0 var(--ek-space-2) var(--ek-space-4) calc(var(--ek-space-2) * -1) color-mix(in srgb, var(--ek-color-primary) 70%, transparent);
+    color: var(--site-color-on-primary);
+  }
+  .cap-icon--lg {
+    width: var(--ek-space-12);
+    height: var(--ek-space-12);
+  }
+
+  /* --- Kapsam notu --- */
+  .caveat {
+    display: flex;
+    gap: var(--ek-space-2);
+    align-items: flex-start;
+    padding: var(--ek-space-3) var(--ek-space-4);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-warning) 45%, transparent);
+    border-radius: var(--ek-radius-md);
+    background: var(--ek-color-warning-subtle);
+    color: var(--site-text-heading);
+    font-size: var(--site-card-desc-size);
+    line-height: var(--site-font-body-line-height);
+  }
+  .caveat :global(.icon) {
+    flex: none;
+    margin-top: 0.15em;
+  }
+
+  /* --- Öne çıkan kart --- */
+  .featured {
+    display: grid;
+    gap: var(--ek-space-8);
+    padding: var(--ek-space-6) var(--ek-space-5);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 40%, var(--ek-color-border-default));
+    border-radius: var(--site-radius-panel);
+    background:
+      radial-gradient(70% 90% at 0% 0%, color-mix(in srgb, var(--ek-color-secondary) 10%, transparent), transparent 70%),
+      var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card-hover);
+    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
+  }
+  .featured__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    min-width: 0;
+  }
+  .featured__top {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--ek-space-2) var(--ek-space-3);
+    align-items: center;
+    gap: var(--ek-space-3);
+    margin-bottom: var(--ek-space-2);
   }
-  .toc a {
+  .featured__top > :global(.badge),
+  .cap-card__top > :global(.badge) {
+    align-self: center;
+  }
+  .featured__eyebrow {
+    color: var(--site-link-accent);
+    font-size: var(--site-card-eyebrow-size);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .featured__title {
+    color: var(--site-text-heading);
+    font-size: var(--site-font-display-sm);
+    font-weight: var(--site-font-display-weight);
+    line-height: var(--site-font-display-line-height);
+    letter-spacing: var(--site-font-display-tracking);
+  }
+  .featured__value {
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-xl);
+    line-height: var(--site-font-body-line-height);
+  }
+  .featured__desc {
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-md);
+    line-height: var(--site-font-body-line-height);
+  }
+  .featured__link {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: center;
+    gap: var(--ek-space-2);
+    min-height: var(--site-tap-target);
+    margin-top: var(--ek-space-2);
+    padding-inline: var(--ek-space-5);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-primary);
+    color: var(--site-color-on-primary);
+    font-weight: var(--ek-font-weight-semibold);
+    text-decoration: none;
+    transition: background-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .featured__link:hover {
+    background: var(--ek-color-primary-darken-1);
+  }
+  .featured__link :global(.icon) {
+    transition: transform var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .featured__link:hover :global(.icon) {
+    transform: translateX(var(--ek-space-1));
+  }
+  :global(html:is([data-motion='paused'], [data-motion='reduced'])) .featured__link:hover :global(.icon) {
+    transform: none;
+  }
+  .featured__aside {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-4);
+    min-width: 0;
+    padding: var(--ek-space-5);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface-muted);
+  }
+  .featured__aside-tag {
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .featured__points {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .featured__points li {
+    display: flex;
+    gap: var(--ek-space-3);
+    align-items: flex-start;
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-md);
+    line-height: var(--site-font-body-line-height);
+  }
+  .featured__check {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-6);
+    height: var(--ek-space-6);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-secondary-darken-1);
+    color: var(--site-color-on-primary);
+  }
+
+  /* --- Kümeler --- */
+  .clusters-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--ek-space-6);
+    margin-bottom: var(--ek-space-6);
+  }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2) var(--ek-space-5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-sm);
+  }
+  .legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+  }
+  /* Düzey göstergesi — S16 kapsam matrisiyle aynı şekil dili (dolu + onay = destekleniyor, yarım = temel düzey). */
+  .lvl {
+    box-sizing: border-box;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-5);
+    height: var(--ek-space-5);
+    border-radius: var(--ek-radius-full);
+    color: var(--site-color-on-primary);
+  }
+  .lvl :global(.icon) {
+    width: var(--ek-space-3);
+    height: var(--ek-space-3);
+  }
+  .lvl[data-state='yes'] {
+    background: var(--ek-color-secondary-darken-1);
+  }
+  .lvl[data-state='limited'] {
+    border: calc(var(--site-border-width) * 2) solid var(--ek-color-secondary-darken-1);
+    background: conic-gradient(var(--ek-color-secondary-darken-1) 0 50%, var(--ek-color-surface) 50% 100%);
+  }
+
+  .cluster-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2);
+    margin-bottom: var(--ek-space-8);
+  }
+  .cluster-nav a {
     display: inline-flex;
     align-items: center;
     min-height: var(--site-tap-target);
     padding-inline: var(--ek-space-4);
-    border: var(--site-border-width) solid var(--site-color-on-primary-muted);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
     border-radius: var(--ek-radius-full);
-    color: var(--site-color-on-primary);
+    background: var(--ek-color-surface);
+    color: var(--site-text-heading);
     font-size: var(--ek-font-size-md);
     font-weight: var(--ek-font-weight-medium);
     text-decoration: none;
-    transition:
-      background-color var(--ek-duration-base) var(--ek-easing-standard),
-      border-color var(--ek-duration-base) var(--ek-easing-standard);
+    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
   }
-  .toc a:hover {
-    background: color-mix(in srgb, var(--ek-color-background) 12%, transparent);
-    border-color: var(--site-color-on-primary);
-  }
-  .toc a:focus-visible {
-    outline-color: var(--site-color-on-primary);
+  .cluster-nav a:hover {
+    border-color: var(--ek-color-secondary-darken-1);
   }
 
-  /* --- Hero görsel: sayfa özeti (gerçek sayılar) --- */
-  .stat-panel__tag {
-    margin: 0 0 var(--ek-space-4);
-    color: var(--site-color-on-primary-muted);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-  .stat-panel__caption {
-    margin: var(--ek-space-5) 0 0;
-    color: var(--site-color-on-primary-muted);
-    font-size: var(--ek-font-size-sm);
-  }
-  .chan-cluster {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--ek-space-4);
-  }
-  .chan-cluster li {
+  .clusters {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: var(--ek-space-2);
-    text-align: center;
+    gap: var(--ek-space-12);
   }
-  .chan-cluster__name {
-    color: var(--site-color-on-primary-muted);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-medium);
+  .cluster {
+    display: grid;
+    gap: var(--ek-space-5);
+    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
+  }
+  .cluster__head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    max-width: 40rem;
+  }
+  .cluster__title {
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-2xl);
+    font-weight: var(--ek-font-weight-bold);
+    letter-spacing: -0.01em;
+    line-height: var(--ek-line-height-tight);
+  }
+  .cluster__lead {
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-md);
+    line-height: var(--site-font-body-line-height);
   }
 
-  /* --- Yetenek kart ızgarası ---
-     CSS çoklu sütun (masonry benzeri, S11b): kartlar farklı yükseklikte (bazılarında kapsam notu/madde
-     listesi var, bazılarında yok) — satır bazlı grid bunu eşit hücrelere sığdırıp ya boş hücre ya da göze
-     batan yükseklik farkı bırakıyordu. Sütun düzeninde her kart kendi yüksekliğinde akar, sütun aşağı doğru
-     doldurulur; son satırda yapay boşluk kalmaz, yükseklik farkı da satır hizası olmadığı için batmaz. DOM
-     sırası (okuma/erişilebilirlik sırası) değişmez, yalnızca görsel yerleşim değişir. */
   .cap-grid {
-    column-gap: var(--ek-space-6);
+    display: grid;
+    gap: var(--ek-space-5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
   .cap-grid > li {
-    break-inside: avoid;
-    margin-bottom: var(--ek-space-6);
+    display: flex;
+    min-width: 0;
   }
   .cap-card {
     display: flex;
@@ -222,79 +653,47 @@ const channels = getPublicIntegrations()
     gap: var(--ek-space-3);
     width: 100%;
     padding: var(--ek-space-6);
-    background: var(--ek-color-surface);
     border: var(--site-border-width) solid var(--ek-color-border-default);
     border-radius: var(--site-radius-panel);
+    background:
+      radial-gradient(80% 60% at 0% 0%, color-mix(in srgb, var(--ek-color-secondary) 6%, transparent), transparent 70%),
+      var(--ek-color-surface);
     box-shadow: var(--site-shadow-card);
-    scroll-margin-top: var(--ek-space-16);
+    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
     transition:
       border-color var(--ek-duration-base) var(--ek-easing-standard),
       box-shadow var(--ek-duration-base) var(--ek-easing-standard);
   }
   .cap-card:hover,
-  .cap-card:focus-within {
-    border-color: var(--ek-color-border-strong);
+  .cap-card:focus-within,
+  .cap-card:has(details[open]) {
+    border-color: color-mix(in srgb, var(--ek-color-secondary) 40%, var(--ek-color-border-default));
     box-shadow: var(--site-shadow-card-hover);
   }
-  .cap-card__head {
+  .cap-card__top {
     display: flex;
-  }
-  .cap-card__eyebrow {
-    font-size: var(--site-card-eyebrow-size);
-    font-weight: var(--site-card-eyebrow-weight);
-    letter-spacing: var(--site-card-eyebrow-tracking);
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ek-space-3);
+    margin-bottom: var(--ek-space-1);
   }
   .cap-card__title {
-    font-size: var(--site-card-title-size);
-    font-weight: var(--site-card-title-weight);
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-xl);
+    font-weight: var(--ek-font-weight-bold);
+    letter-spacing: -0.01em;
     line-height: var(--ek-line-height-tight);
   }
   .cap-card__value {
-    color: var(--ek-color-content-default);
-    font-size: var(--site-card-value-size);
-    font-weight: var(--site-card-value-weight);
-    line-height: var(--ek-line-height-normal);
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-medium);
+    line-height: var(--site-font-body-line-height);
   }
   .cap-card__desc {
-    color: var(--ek-color-content-muted);
+    color: var(--site-text-meta);
     font-size: var(--site-card-desc-size);
-    font-weight: var(--site-card-desc-weight);
-  }
-  .cap-card__more {
-    align-self: flex-start;
-    color: var(--site-color-link);
-    font-size: var(--ek-font-size-md);
-    font-weight: var(--ek-font-weight-semibold);
-    text-underline-offset: 0.2em;
-  }
-  .cap-card__points {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-2);
-    color: var(--ek-color-content-muted);
-    font-size: var(--site-card-desc-size);
-    font-weight: var(--site-card-desc-weight);
-  }
-  .cap-card__points li {
-    position: relative;
-    padding-inline-start: var(--ek-space-5);
-  }
-  .cap-card__points li::before {
-    content: '';
-    position: absolute;
-    inset-inline-start: 0;
-    top: 0.6em;
-    width: var(--ek-space-2);
-    height: var(--site-border-width);
-    background: var(--ek-color-secondary-darken-1);
-  }
-  .cap-card__caveat {
-    padding: var(--ek-space-3) var(--ek-space-4);
-    border-inline-start: var(--ek-space-1) solid var(--ek-color-warning);
-    border-radius: var(--ek-radius-md);
-    background: var(--ek-color-warning-subtle);
-    color: var(--ek-color-content-strong);
-    font-size: var(--site-card-desc-size);
+    line-height: var(--site-font-body-line-height);
   }
   .cap-card__channels {
     margin-top: auto;
@@ -303,44 +702,121 @@ const channels = getPublicIntegrations()
   }
   .cap-card__channels-label {
     margin: 0 0 var(--ek-space-3);
-    color: var(--ek-color-content-muted);
+    color: var(--site-text-meta);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
   }
-  .chan-row {
+  .chan-strip {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--ek-space-2);
+    gap: var(--ek-space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
-  .chan-chip {
+  .chan-strip__item {
+    position: relative;
     display: inline-flex;
+  }
+  .lvl--badge {
+    position: absolute;
+    inset-block-end: calc(var(--ek-space-1) * -1.5);
+    inset-inline-end: calc(var(--ek-space-1) * -1.5);
+    width: var(--ek-space-4);
+    height: var(--ek-space-4);
+    box-shadow: 0 0 0 calc(var(--site-border-width) * 2) var(--ek-color-surface);
+  }
+  .lvl--badge :global(.icon) {
+    width: calc(var(--ek-space-2) + var(--ek-space-1) * 0.5);
+    height: calc(var(--ek-space-2) + var(--ek-space-1) * 0.5);
+  }
+  .cap-card__more {
+    margin-top: var(--ek-space-3);
+  }
+  .cap-card__more summary {
+    display: flex;
     align-items: center;
-    gap: var(--ek-space-2);
-    padding: var(--ek-space-1) var(--ek-space-3) var(--ek-space-1) var(--ek-space-1);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-full);
-    color: var(--ek-color-content-strong);
+    justify-content: space-between;
+    min-height: var(--site-tap-target);
+    color: var(--site-link-accent);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+    list-style: none;
+    cursor: pointer;
+  }
+  .cap-card__more summary::-webkit-details-marker {
+    display: none;
+  }
+  .cap-card__more summary:focus-visible {
+    outline: var(--site-focus-ring-width) solid var(--site-color-focus-ring);
+    outline-offset: var(--site-focus-ring-offset);
+    border-radius: var(--ek-radius-sm);
+  }
+  .cap-card__more summary :global(.icon) {
+    transition: transform var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .cap-card__more[open] summary :global(.icon) {
+    transform: rotate(180deg);
+  }
+  .chan-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+    margin: var(--ek-space-2) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .chan-list__link {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-3);
+    min-height: var(--site-tap-target);
+    padding: var(--ek-space-1) var(--ek-space-2);
+    border-radius: var(--ek-radius-md);
+    color: var(--site-text-heading);
     text-decoration: none;
-    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
+    transition: background-color var(--ek-duration-base) var(--ek-easing-standard);
   }
-  .chan-chip:hover {
-    border-color: color-mix(in srgb, var(--chan, var(--ek-color-primary)) 60%, transparent);
+  .chan-list__link:hover {
+    background: var(--ek-color-surface-sunken);
   }
-  .chan-chip__name {
-    font-size: var(--ek-font-size-sm);
+  .chan-list__name {
+    flex: 1;
+    font-size: var(--ek-font-size-md);
     font-weight: var(--ek-font-weight-medium);
   }
 
   @media (min-width: 768px) {
+    .featured {
+      padding: var(--ek-space-10);
+    }
+    .featured__aside {
+      padding: var(--ek-space-6);
+    }
     .cap-grid {
-      columns: 2;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    /* Tek kalan kart satırı boş bırakmaz: tam genişliğe yayılır. */
+    .cap-grid > li:last-child:nth-child(odd) {
+      grid-column: 1 / -1;
     }
   }
-  @media (min-width: 1200px) {
-    .cap-grid {
-      columns: 3;
+  @media (min-width: 1024px) {
+    .featured {
+      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      align-items: center;
+    }
+    .cluster {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 2.6fr);
+      gap: var(--ek-space-10);
+      align-items: start;
+    }
+    .cluster__head {
+      position: sticky;
+      top: calc(var(--site-header-height) + var(--ek-space-6));
+      padding-top: var(--ek-space-2);
     }
   }
 </style>

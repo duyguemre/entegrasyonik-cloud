@@ -13,7 +13,7 @@
     "test:style-ratchet": "node scripts/check-style-baseline.js",
     "test:pattern-ratchet": "node scripts/check-pattern-baseline.js",
     "test:no-console-ratchet": "node scripts/check-no-console-baseline.js",
-    "lint": "eslint src",
+    "lint": "eslint src packages/ui/src",
     "tokens": "vite-node scripts/build-tokens.ts",
     "test:e2e": "playwright test",
     "test:contract-paths": "node scripts/check-contract-paths.js",
@@ -24,7 +24,11 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
-    "license-check": "npx --yes license-checker --production --summary --excludePrivatePackages"
+    "license-check": "npx --yes license-checker --production --summary --excludePrivatePackages",
+    "dev:backoffice": "npm run dev -w @entegrasyonik/backoffice",
+    "build:backoffice": "npm run build -w @entegrasyonik/backoffice",
+    "test:backoffice": "npm run test -w @entegrasyonik/backoffice && npm run test -w @entegrasyonik/ui",
+    "test:e2e:backoffice": "npm run test:e2e -w @entegrasyonik/backoffice"
   },
   "dependencies": {
     "@fontsource/inter": "^5.3.0",
@@ -75,5 +79,9 @@
     "vite-plugin-vuetify": "^2.0.1",
     "vitest": "^2.1.9",
     "vue-tsc": "^1.2.0"
-  }
+  },
+  "workspaces": [
+    "packages/*",
+    "backoffice"
+  ]
 }

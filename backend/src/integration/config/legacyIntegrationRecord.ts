@@ -6,8 +6,9 @@
 // dokunulmaması ZORUNLU olduğundan (yalnız oku/referans ver), bu ayrışma bu turda YAPILMADI. Bunun yerine bu fonksiyon
 // BUGÜNKÜ davranışı (platform `Integrations` kaydı + tenant ayarının K7 filtrelenmiş birleşimi) AYNEN korur; yalnız
 // KOD YOLU `IntegrationFactory`'den buraya taşınır (davranış-aynı refactor, Protokol 13).
-import { decryptSecrets } from '@api/integrationSecrets';
-import { stripTenantUrlFields } from '@api/tenantSettingsGuard';
+import { CLIENT_INTEGRATION_HOT_PROJECTION } from '@database/projections';
+import { decryptSecrets } from '@platform/core/security/integrationSecrets';
+import { stripTenantUrlFields } from '@platform/core/security/tenantSettingsGuard';
 
 export interface LegacyIntegrationRecordResult {
     /** `{ ...integration, settings: <tenant ayarı, K7 süzülmüş> }` — bugünkü `IntegrationFactory` çıktısıyla BİREBİR AYNI şekil. */
@@ -30,7 +31,7 @@ export interface ResolveLegacyIntegrationRecordDeps {
 export async function resolveLegacyIntegrationRecord(deps: ResolveLegacyIntegrationRecordDeps): Promise<LegacyIntegrationRecordResult | null> {
     const { applicationDB, clientDB, integrationCode } = deps;
     const integrations = await applicationDB.getIntegrationModel().find().lean();
-    const clientIntegrations = await clientDB.getClientIntegrationModel().findOne().lean();
+    const clientIntegrations = await clientDB.getClientIntegrationModel().findOne({}, CLIENT_INTEGRATION_HOT_PROJECTION).lean(); // [DB-03]
 
     for (const integration of integrations) {
         if ((integration.code || '').trim() !== integrationCode) continue;

@@ -1,13 +1,13 @@
 <template>
         <v-menu>
             <template v-slot:activator="{ props }">
-                <v-btn v-bind="props" style="width:190px" elevation=2 class="text-capitalize" color="processButtonColor">
+                <v-btn v-bind="props" variant="outlined" class="ek-menu-trigger">
                     <v-icon class="mr-1">mdi-card-multiple-outline</v-icon> {{ reportsMenu.title }}<v-icon class="ml-1"
               size="20">mdi-menu-down</v-icon>
                 </v-btn>
             </template>
             <v-card width="300">
-                <div class="ma-4 mb-1 text-caption font-weight-tiny text-center"><v-icon color="grey"
+                <div class="ma-4 mb-1 text-caption font-weight-tiny text-center"><v-icon color="content-muted"
                         class="mr-1 font-weigth-small">mdi-lightbulb-outline</v-icon>{{ reportsMenu.desc }}</div>
                 <v-divider />
                 <v-list density="compact" nav>

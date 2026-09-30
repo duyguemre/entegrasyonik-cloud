@@ -2,6 +2,7 @@ import { ICategoryAttribute, IExportStagedProduct, IInternalAddress, IVariant, P
 import { integrationCode } from '../constants';
 import { randomUUID } from 'crypto';
 import { IInternalResult } from '@interfaces/index';
+import { normalizeAttrValue } from '@integration/catalog/attributePayload';
 
 export class ProductMapper {
     public validate(variant: IVariant, mode: PLATFORM_PROCESS) {
@@ -50,10 +51,10 @@ export class ProductMapper {
         const vAttrs: Record<string, any> = variant.platforms?.[integrationCode]?.attributes || {};
         const attributes: Record<string, any> = {};
         Object.entries(vAttrs).forEach(([attrId, attrData]) => {
-            if (attrData) {
-                // If it's an object with id/title, take the title or id as per old code's logic
-                attributes[attrId] = attrData.attributeValueId || attrData.id || attrData;
-            }
+            // [WP9] Kimlik (attributeValueId|id) öncelikli; kimlik yoksa serbest metin (attributeValue). Eskiden kimliksiz nesne
+            // (allowCustom/serbest değer) NESNENİN KENDİSİ olarak gönderiliyordu. Boş/'undefined' değer gönderilmez.
+            const norm = normalizeAttrValue(attrData);
+            if (norm) attributes[attrId] = norm.valueId ?? norm.text;
         });
 
         const taxPercentage = Number(vMapping?.taxPercentage || variant.product?.taxPercentage || mapping.settings?.taxPercentage || 20);
@@ -84,7 +85,7 @@ export class ProductMapper {
         return item;
     }
 
-    public toInternalVariant(p: any, choicesResult: any, commission: number): IVariant {
+    public toInternalVariant(p: any, choicesResult: any): IVariant {
         const vat = p.vatRate || 0;
         const salePrice = p.price || 0;
         return {
@@ -98,7 +99,7 @@ export class ProductMapper {
             prices: {
                 isPlatformBasedPrice: false,
                 price: salePrice * (100 / (100 + vat)),
-                salePrice: salePrice * (100 / (100 + commission)),
+                salePrice, // COM-10: ic fiyat = pazaryeri brut satis fiyati; komisyon dusulmez (net fiyat COM-07 modeliyle okuma aninda)
                 marketPrice: p.listPrice || salePrice,
             },
             images: p.images || [],

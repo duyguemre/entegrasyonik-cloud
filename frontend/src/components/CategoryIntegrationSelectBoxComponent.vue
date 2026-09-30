@@ -1,130 +1,170 @@
+<!--
+  frontend/src/components/CategoryIntegrationSelectBoxComponent.vue
+
+  Pazaryeri kategori eşleştirme alanı (Kategori tanımları › Senkron). DS-v2
+  Aşama 2: binlerce satırlık düz açılır liste yerine salt-okunur alan +
+  `EkCascadeDialog` (kademeli kolonlar, tam yol araması, seçili yol vurgusu).
+  Sözleşme DEĞİŞMEDİ: `v-model` = seçilen YAPRAK platform kategorisinin
+  `_id`'si; her değişimde `change` yayar; `mandatory` → zorunluluk kuralı;
+  seçimden sonra komisyon oranı yardım metninde gösterilir.
+-->
 <template>
   <div class="categorySyncComponent">
     <LoadingComponent ref="loadingComponentRef" attach=".categorySyncComponent"></LoadingComponent>
 
-    <div v-if="integrationCategories.length > 0">
-      <v-autocomplete v-model="categoryId" v-model:search="searchText" :items="computedIntegrationCategories"
-        item-value="_id" item-title="title" variant="outlined" density="compact" bg-color="textfieldColor"
-        class="customTextField" :rules="mandatory == true ? formRules.mandatoryRule : []"
-        :hint="integrationStore.getIntegrationTitle(integrationCode) + ' kategorisini buradan seçebilirsiniz.'"
-        persistent-hint no-data-text="Kategori bulunamadı" :placeholder="$t('productDefinitions.category.search')"
-        @update:modelValue="emits('change', '')" auto-select-first clearable :menu-props="{
-          contentClass: 'category-autocomplete-menu',
-          maxHeight: '400',
-          transition: false
-        }">
+    <IntegrationLoadingBlock v-if="status === 'loading' && !loadError" :label="`${platformTitle} kategorileri alınıyor…`" />
+    <IntegrationErrorPanel v-else-if="loadError" :info="loadError" :retrying="loading" @retry="retryLoad" />
+    <div v-else-if="integrationCategories.length > 0">
+      <v-text-field ref="fieldRef" :model-value="selectedLabel" readonly clearable
+        :label="`${platformTitle} kategorisi`" :placeholder="$t('productDefinitions.category.search')"
+        :rules="mandatory == true ? formRules.mandatoryRule : []" :hint="hintText" persistent-hint
+        append-inner-icon="mdi-file-tree-outline" class="ek-integration-category-field"
+        @click="pickerOpen = true" @keydown.enter.prevent="pickerOpen = true" @keydown.space.prevent="pickerOpen = true"
+        @click:clear.stop="setCategory(undefined)" @click:append-inner="pickerOpen = true" />
 
-        <template v-slot:selection="{ item }: any">
-          <div class="d-flex align-center">
-            <span class="text-subtitle-2 font-weight-bold" style="color: rgb(var(--v-theme-passiveColor))">{{ item.title
-            }}</span>
-            <div class="ml-6 d-flex align-center" v-if="integrationCategoryCommissionRate">
-              <v-divider vertical class="mx-2" height="15"></v-divider>
-              <span class="text-caption font-weight-bold" style="color: #78909C">
-                %{{ integrationCategoryCommissionRate?.commission }} Komisyon
-              </span>
-            </div>
-          </div>
-        </template>
-
-        <template v-slot:item="{ item, props: itemProps }: any">
-          <v-list-item v-bind="itemProps"
-            :class="['custom-category-item', item.raw.isParent ? 'is-parent-row' : 'is-leaf-row']"
-            :disabled="item.raw.isParent" title="" :style="{ '--p-color': brandColor }">
-
-            <div class="d-flex align-center w-100 position-relative">
-              <div v-if="!item.raw.isParent" class="leaf-indicator"></div>
-
-              <div v-if="!searchText && item.raw.level" :style="{ width: (item.raw.level * 22) + 'px' }"
-                class="flex-shrink-0"></div>
-
-              <v-icon v-if="item.raw.isParent" size="16" class="mr-2" color="grey">
-                mdi-folder-network-outline
-              </v-icon>
-              <div v-else style="width: 24px;"></div>
-
-              <div class="index-column mr-2">
-                {{ item.raw.originalIndex }}
-              </div>
-
-              <div class="category-title-wrapper d-flex align-center flex-grow-1 overflow-hidden">
-                <span class="category-text text-truncate">{{ item.title }}</span>
-
-                <span v-if="searchText && item.raw.breadcrumb" class="breadcrumb-text text-truncate ml-2">
-                  {{ item.raw.breadcrumb }}
-                </span>
-
-
-                <span v-if="item.raw.isParent" class="child-count ml-2">
-                  {{ item.raw.childrenCount }} Alt Kategori
-                </span>
-              </div>
-            </div>
-          </v-list-item>
-        </template>
-      </v-autocomplete>
+      <EkCascadeDialog v-model="pickerOpen" :nodes="tree" :path="selectedPath" :attach="attach"
+        :title="`${platformTitle} kategorisi seç`" :subtitle="`${formatNumber(leafCount)} yaprak kategori`"
+        @confirm="(ids) => setCategory(ids[ids.length - 1])" />
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, watch, ref } from 'vue'
+import { computed, nextTick, watch, ref } from 'vue'
 import { useIntegrationStore } from '@/stores/integrationStore';
 import useFormRules from '@/composables/formrules';
 import LoadingComponent from './LoadingComponent.vue';
+import { EkCascadeDialog } from '@entegrasyonik/ui/components'
+import type { EkCascadeNode } from '@entegrasyonik/ui/components'
+import { formatNumber } from '@entegrasyonik/ui/format'
+import IntegrationErrorPanel from '@/components/integrations/IntegrationErrorPanel.vue'
+import IntegrationLoadingBlock from '@/components/integrations/IntegrationLoadingBlock.vue'
+import { useIntegrationLoad } from '@/composables/useIntegrationError'
 
 const integrationStore = useIntegrationStore()
 const integrationCategories = ref<any[]>([])
 const emits = defineEmits(['change'])
 const integrationCategoryCommissionRate: any = ref(0)
 const loadingComponentRef: any = ref(null)
-const searchText = ref("")
+const pickerOpen = ref(false)
 
 const categoryId = defineModel({ default: undefined })
-const props = defineProps<{ mandatory?: boolean, integrationCode: string }>()
+const props = withDefaults(defineProps<{ mandatory?: boolean, integrationCode: string, attach?: string }>(), {
+  // Seçici diyalog çalışma alanı sekmesini örter (sol menünün ALTINDA kalmaz).
+  attach: '.categoryListView',
+})
 const formRules: any = useFormRules()
 
-const brandColor = computed(() => {
-  return integrationStore.getClientMarketplaces().find((x: any) => x.code === props.integrationCode)?.color || '#1867C0'
-})
+// Pazaryeri kategori ağacı: yükleniyor (iskelet) · hata / boş liste (IntegrationErrorPanel: neden + ne yapmalı +
+// Tekrar dene + teknik ayrıntı) · hazır. Hata artık sessiz bir boşluk DEĞİL (bkz. useIntegrationError.ts).
+const fieldRef = ref<any>(null)
+const { status, error: loadError, loading, run, reset: resetLoad } = useIntegrationLoad(
+  () => integrationStore.loadIntegrationCategories(props.integrationCode),
+)
 
-const computedIntegrationCategories = computed(() => {
-  if (!integrationCategories.value.length) return [];
-  if (searchText.value && searchText.value.length > 0) {
-    return integrationCategories.value.filter(cat => !cat.isParent);
+function applyCategories(resp: any[]) {
+  const catMap = new Map();
+  resp.forEach((c: any) => catMap.set(c._id, c));
+
+  integrationCategories.value = resp.map((cat: any, idx: number) => {
+    const path = [];
+    let parent = catMap.get(cat.parentId);
+    while (parent) {
+      path.unshift(parent.title);
+      parent = catMap.get(parent.parentId);
+    }
+    return {
+      ...cat,
+      originalIndex: idx + 1,
+      isParent: cat.children?.length > 0,
+      childrenCount: cat.children?.length || 0,
+      breadcrumb: path.join(' > ')
+    }
+  });
+}
+
+async function loadCategories(focusOnRecover = false) {
+  const hadError = !!loadError.value
+  const result = await run()
+  if (result.ok) {
+    applyCategories(result.data)
+    // Hata panelinden "Tekrar dene" ile kurtarıldıysa odak, yeni görünen alana taşınır.
+    if (focusOnRecover && hadError) { await nextTick(); fieldRef.value?.focus?.() }
+  } else {
+    integrationCategories.value = []
   }
-  return integrationCategories.value;
-})
+}
+
+const retryLoad = () => loadCategories(true)
 
 watch(() => props.integrationCode, async (newCode) => {
+  integrationCategories.value = []
+  resetLoad()
   if (!newCode) return
-  let guid = loadingComponentRef.value?.info("")
-  try {
-    const resp = await integrationStore.getIntegrationCategories(newCode)
-    const catMap = new Map();
-    resp.forEach((c: any) => catMap.set(c._id, c));
-
-    integrationCategories.value = resp.map((cat: any, idx: number) => {
-      const path = [];
-      let parent = catMap.get(cat.parentId);
-      while (parent) {
-        path.unshift(parent.title);
-        parent = catMap.get(parent.parentId);
-      }
-      return {
-        ...cat,
-        originalIndex: idx + 1,
-        isParent: cat.children?.length > 0,
-        childrenCount: cat.children?.length || 0,
-        breadcrumb: path.join(' > ')
-      }
-    });
-  } catch (e) {
-    integrationCategories.value = []
-  } finally {
-    loadingComponentRef.value?.remove(guid)
-  }
+  await loadCategories()
 }, { immediate: true })
+
+const platformTitle = computed(() => integrationStore.getIntegrationTitle(props.integrationCode) || props.integrationCode)
+
+// Platform kategori listesi → kademeli seçici ağacı. Mağaza verisi iç içe ağacın düzleştirilmiş
+// hâlidir (`children` nesne ya da kimlik); ebeveyn ilişkisi `children`'dan, yoksa `parentId`'den kurulur.
+const byId = computed(() => new Map(integrationCategories.value.map((c: any) => [String(c._id), c])))
+const childrenOf = (c: any): any[] =>
+  (c.children ?? []).map((ch: any) => (ch && typeof ch === 'object' ? byId.value.get(String(ch._id)) ?? ch : byId.value.get(String(ch)))).filter(Boolean)
+const parentOf = computed(() => {
+  const map = new Map<string, string>()
+  for (const c of integrationCategories.value) for (const ch of childrenOf(c)) map.set(String(ch._id), String(c._id))
+  for (const c of integrationCategories.value)
+    if (!map.has(String(c._id)) && c.parentId != null && byId.value.has(String(c.parentId))) map.set(String(c._id), String(c.parentId))
+  return map
+})
+
+const tree = computed<EkCascadeNode[]>(() => {
+  const kids = new Map<string, any[]>()
+  const roots: any[] = []
+  for (const c of integrationCategories.value) {
+    const parent = parentOf.value.get(String(c._id))
+    if (parent == undefined) roots.push(c)
+    else {
+      if (!kids.has(parent)) kids.set(parent, [])
+      kids.get(parent)!.push(c)
+    }
+  }
+  const build = (list: any[]): EkCascadeNode[] =>
+    list.map((c: any) => {
+      const children = build(kids.get(String(c._id)) ?? [])
+      return { id: String(c._id), label: c.title, children, count: children.length ? children.length : undefined }
+    })
+  return build(roots)
+})
+
+const leafCount = computed(() => integrationCategories.value.filter((c: any) => !c.isParent).length)
+
+const selectedPath = computed<string[]>(() => {
+  if (categoryId.value == undefined || !byId.value.has(String(categoryId.value))) return []
+  const out: string[] = []
+  let cur: string | undefined = String(categoryId.value)
+  while (cur != undefined && !out.includes(cur)) {
+    out.unshift(cur)
+    cur = parentOf.value.get(cur)
+  }
+  return out
+})
+
+const selectedLabel = computed(() => selectedPath.value.map((id) => byId.value.get(id)?.title).filter(Boolean).join(' › '))
+
+const hintText = computed(() => {
+  const base = `${platformTitle.value} kategorisini buradan seçebilirsiniz.`
+  const rate = integrationCategoryCommissionRate.value?.commission
+  return categoryId.value != undefined && rate != undefined ? `%${rate} komisyon · ${base}` : base
+})
+
+function setCategory(id: string | undefined) {
+  // Platform kimlikleri sayısal olabilir: seçilen yol string'dir, orijinal tipe geri çevrilir.
+  const original = id == undefined ? undefined : byId.value.get(id)?._id
+  categoryId.value = original
+  emits('change', '')
+}
 
 watch(() => categoryId.value, async (newId) => {
   if (newId) {
@@ -134,61 +174,7 @@ watch(() => categoryId.value, async (newId) => {
 </script>
 
 <style scoped>
-.index-column {
-  min-width: 30px;
-  opacity: 0.5;
-  font-size: 0.7rem;
-}
-
-.breadcrumb-text {
-  font-size: 0.75rem;
-  color: black;
-  font-style: italic;
-  opacity: .5;
-  /* Daha görünür yapıldı */
-  font-weight: 400;
-}
-
-.custom-category-item {
-  border-bottom: 1px solid #f5f5f5 !important;
-  min-height: 40px !important;
-}
-
-.leaf-indicator {
-  position: absolute;
-  left: -16px;
-  height: 60%;
-  width: 3px;
-  background-color: var(--p-color);
-  border-radius: 0 4px 4px 0;
-  box-shadow: 1px 0 6px var(--p-color);
-}
-
-.is-parent-row {
-  background-color: #fcfcfc !important;
-}
-
-.is-parent-row .category-text {
-  text-transform: uppercase;
-  color: rgb(var(--v-theme-error));
-  font-weight: 600;
-  font-size: 0.8rem;
-}
-
-/* Passive Color Ayarı (#455A64) */
-.is-leaf-row .category-text {
-  font-weight: 500;
-  color: rgb(var(--v-theme-passiveColor));
-  font-size: 0.85rem;
-}
-
-.is-leaf-row:hover {
-  background-color: #f5f7f9 !important;
-}
-
-.child-count {
-  font-size: 0.65rem;
-  color: black;
-  opacity: .5
+.ek-integration-category-field :deep(input) {
+  cursor: pointer;
 }
 </style>

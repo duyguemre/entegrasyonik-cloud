@@ -1,11 +1,16 @@
 import { IService } from '@interfaces/index'
+import { getIdentityCache } from '@platform/core/security/identityCache'
 import { BaseApi } from '../BaseApi'
 import Security, { ApplicationError, SessionClaimsInput } from '../Security'
 import { toProfileDto } from '../profileDto'
+import { resolveProfileSource } from '../membershipAuthz'
 import type { SessionResult } from '../sessionResult'
 import { AuditLogger } from '@services/audit/AuditLogger'
 import { TenantProvisioningService } from '@operations/tenant/TenantProvisioningService'
 import { AccountLifecycleService, runInBackground } from '@operations/account/AccountLifecycleService'
+import { config } from '@config'
+import { buildUserContext } from '../authenticate'
+import { defaultTicketRedis, IMPERSONATION_SESSION_SECONDS, redeemImpersonationTicket } from '../admin/impersonationTicket'
 
 /** ADR-0001 Karar 10: kullanıcı-yok / yanlış-parola / kilitli / pasif için AYNI mesaj (kullanıcı enumeration yok). */
 export const GENERIC_LOGIN_ERROR = 'E-posta veya parola hatalı'
@@ -13,14 +18,6 @@ export const GENERIC_LOGIN_ERROR = 'E-posta veya parola hatalı'
 export default class SecurityService extends BaseApi implements IService {
 
     async get(): Promise<any> {
-    }
-
-    async getCaptcha() {
-        // Rastgele 4 karakterlik bir captcha üret (Basitlik için)
-        const captcha = Math.random().toString(36).substring(2, 6).toUpperCase();
-        // Captcha'yı session'da sakla (Bu örnekte request context kullanıyoruz)
-        // Not: Gerçek senaryoda bu session'a yazılmalıdır.
-        return { captcha };
     }
 
     /**
@@ -60,7 +57,7 @@ export default class SecurityService extends BaseApi implements IService {
 
     async login() {
         try {
-            const { username, password, captcha } = this.request;
+            const { username, password } = this.request;
             const security = Security.getInstance();
 
             // ADR-0001 Karar 10: yalnızca string (NoSQL operatör enjeksiyonu: { "$ne": null } vb. reddedilir)
@@ -82,13 +79,8 @@ export default class SecurityService extends BaseApi implements IService {
                 throw new ApplicationError(GENERIC_LOGIN_ERROR, 401);
             }
 
-            // 3. Captcha Kontrolü (Eğer 3'ten fazla başarısız deneme varsa) — captcha akışı bu aşamada DEĞİŞMEZ (BACKLOG: captcha sahte)
-            if (user.failedLoginAttempts >= 3) {
-                if (!captcha) {
-                    return { requireCaptcha: true, message: "Lütfen güvenlik kodunu giriniz." };
-                }
-                // Captcha doğrulaması... (Gerçekte session ile karşılaştırılmalı)
-            }
+            // [ADR-0028 WP-A5] Sahte captcha KALDIRILDI (istemcide görünen, doğrulanmayan kod bot koruması değildi). Gerçek koruma: IP hız sınırlayıcı
+            // (loginLimiter) + 5 hatalı denemede 15 dk hesap kilidi. `captcha` gövde alanı yok sayılır (eski istemciler zarar görmez).
 
             // 4. Şifre Doğrulama (Bcrypt)
             const isMatch = await security.comparePassword(password, typeof user.password === 'string' ? user.password : await security.getDummyHash());
@@ -101,8 +93,13 @@ export default class SecurityService extends BaseApi implements IService {
                 });
 
                 const userObj = user.toObject();
+                // [ADR-0026 Aşama 3, BAYRAK: ADMIN_API_ONLY; varsayılan false] platform yöneticisi girişi `/api` üzerinde kapalı; yönetim uygulamasından.
+                if (userObj.isGlobalAdmin && config.admin.apiOnly) {
+                    throw new ApplicationError("Yönetim girişi yönetim uygulamasından yapılır.", 403, 'ADMIN_API_ONLY');
+                }
                 const sessionClaims = Security.claimsFromUser(userObj);
-                const profile = toProfileDto(userObj);
+                // ADR-0028 WP-A3: `membership` modunda profil (permissions[]) üyelik rolünden; üyelik yok/askıda -> 403. legacy/dual: aynen.
+                const profile = toProfileDto(await resolveProfileSource(this.applicationDB, userObj));
 
                 // SÜPER YÖNETİCİ: Giriş sonrası mağaza seçimi zorunlu
                 if (userObj.isGlobalAdmin) {
@@ -125,6 +122,7 @@ export default class SecurityService extends BaseApi implements IService {
                 }
 
                 await userModel.updateOne({ _id: user._id }, update);
+                if (attempts >= 5) getIdentityCache().invalidateUser(user._id); // ADR-0024 P1-CORE: kilit, açık oturumlara anında yansır
 
                 throw new ApplicationError(GENERIC_LOGIN_ERROR, 401);
             }
@@ -185,6 +183,48 @@ export default class SecurityService extends BaseApi implements IService {
             body: {
                 store: { clientId: client.clientId ?? tid, title: client.title },
                 user: toProfileDto({ ...userContext, order: tid, clientId: tid }),
+            },
+        };
+    }
+
+    /**
+     * [ADR-0026 Karar 4.9] AÇIK operasyon: tek geçerli kimlik, backoffice'in ürettiği 60 sn'lik TEK KULLANIMLIK bilettir (`GETDEL`; Redis yoksa reddedilir).
+     * Başarıda `{sub: yönetici, tid, ga:true, imp:true}` oturumu basılır; ömür 60 dk ve UZATILMAZ (`fixedTtlSeconds` -> token `fx:true`).
+     * Bilet tüketildikten sonra yönetici hesabı hâlâ geçerli olmalı (aktif, `isGlobalAdmin`, tokenVersion aynı) ve hedef tenant ACTIVE olmalı.
+     * Geçersiz/kullanılmış/süresi dolmuş bilet için tek genel hata (ayrım yok).
+     */
+    async redeemImpersonation(): Promise<SessionResult> {
+        const ip = this.request.requestMeta?.ip;
+        const deny = (reason: string, extra: Partial<Parameters<typeof AuditLogger.log>[0]> = {}) => {
+            void AuditLogger.log({ event: 'impersonation.redeem', result: 'fail', ip, surface: 'app', meta: { reason }, ...extra });
+            return new ApplicationError('Geçersiz veya süresi dolmuş bilet.', 401);
+        };
+        const payload = await redeemImpersonationTicket(defaultTicketRedis(), this.request.ticket);
+        if (!payload) throw deny('ticket_invalid');
+
+        const user: any = await this.applicationDB.getUserModel().findById(payload.sub).lean();
+        const tvNow = Number.isInteger(user?.tokenVersion) ? user.tokenVersion : 0;
+        if (!user || user.isGlobalAdmin !== true || user.isActive === false || tvNow !== payload.tv
+            || (user.lockUntil && new Date(user.lockUntil) > new Date())) {
+            throw deny('admin_invalid', { sub: payload.sub, tid: payload.tid });
+        }
+        const client: any = await this.applicationDB.getClientModel().findOne({ order: payload.tid }, 'order clientId title status').lean();
+        if (!client || client.status !== 'ACTIVE') throw deny('store_not_active', { sub: payload.sub, tid: payload.tid });
+
+        const sessionClaims: SessionClaimsInput = {
+            sub: String(user._id), tid: payload.tid, role: user.roleCode, ga: true, tv: tvNow, imp: true,
+            fixedTtlSeconds: IMPERSONATION_SESSION_SECONDS, impReason: payload.reason,
+        };
+        void AuditLogger.log({
+            event: 'impersonation.redeem', result: 'ok', sub: String(user._id), tid: payload.tid, ip,
+            actorType: 'impersonator', onBehalfOf: payload.tid, surface: 'app', imp: true, meta: { reason: payload.reason },
+        });
+        return {
+            sessionClaims,
+            body: {
+                store: { clientId: client.clientId ?? payload.tid, title: client.title },
+                user: toProfileDto(buildUserContext({ ...user, order: payload.tid, clientId: payload.tid }, { tid: payload.tid, ga: true })),
+                impersonation: { expiresAt: new Date(Date.now() + IMPERSONATION_SESSION_SECONDS * 1000).toISOString() },
             },
         };
     }

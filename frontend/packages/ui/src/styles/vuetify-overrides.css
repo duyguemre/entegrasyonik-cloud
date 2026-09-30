@@ -1,0 +1,398 @@
+/**
+ * frontend/src/design/vuetify-overrides.css
+ *
+ * ADR-0015 Karar 3.1 — "Radius, düğme harf dönüşümü, odak halkası... Vuetify
+ * `rounded` değerleriyle ayarlanmaz [...] `--ek-*` token'larıyla uygulanır."
+ * `main.ts` bu dosyayı `tokens.app.css`'ten SONRA import eder (kademe sırası:
+ * Vuetify çekirdek stilleri → token CSS değişkenleri → bu override katmanı).
+ *
+ * Emsal: `vuetify-font-overrides.css` (T5, ADR-0011 Açık Soru 1) — aynı
+ * "küçük, gerekçeli `!important` katmanı" deseni.
+ *
+ * HER `!important` kuralı yanında gerekçesini taşır (Karar 3.1 zorunluluğu).
+ */
+
+/* ---- Radius (kontrol/düğme = radius-md) ----
+ * Vuetify'ın `rounded` prop'u SASS `$border-radius-root` ölçeğine bağlıdır;
+ * bu proje SASS `configFile`'ı KAPALI tutuyor (ADR-0011), bu yüzden radius
+ * doğrudan CSS ile, `--ek-radius-*` token'larından uygulanır. `!important`
+ * gerekçesi: Vuetify'ın kendi `.rounded-*` yardımcı sınıfları ve bileşen içi
+ * inline `border-radius` stilleri aksi halde önceliği alır. */
+.v-btn,
+.v-field,
+.v-field__outline,
+.v-text-field .v-field,
+.v-select .v-field,
+.v-autocomplete .v-field,
+.v-combobox .v-field,
+.v-textarea .v-field {
+  /* DS-v2: ölçek adı yerine ROL (`--ek-radius-control` = 8). */
+  border-radius: var(--ek-radius-control) !important;
+}
+
+/* ---- Radius (kart/diyalog = radius-lg) ---- */
+.v-card,
+.v-dialog > .v-overlay__content,
+.v-dialog > .v-overlay__content > .v-card {
+  border-radius: var(--ek-radius-card) !important;
+}
+
+/* DS-v2: diyalog bir kademe daha yuvarlak (`--ek-radius-dialog` = 16). */
+.v-dialog > .v-overlay__content,
+.v-dialog > .v-overlay__content > .v-card {
+  border-radius: var(--ek-radius-dialog) !important;
+}
+
+/* ---- Radius (komut paleti/menü = radius-lg) ---- */
+.v-menu > .v-overlay__content,
+.v-overlay__content .v-list {
+  border-radius: var(--ek-radius-popover) !important;
+}
+
+/* ---- DS-v2: yükselen katmanlar (menü/açılır liste) ----
+ * Ayrım gölge + ince kenarlıkla (`surface-raised` tonu kartla aynı). */
+.v-menu > .v-overlay__content {
+  box-shadow: var(--ek-shadow-popover) !important; /* Vuetify elevation sınıfları aksi halde önceliği alır */
+  border: 1px solid var(--ek-color-border-subtle);
+}
+
+/* ---- DS-v2: tooltip = ters yüzey, etiket tipografisi ----
+ * `!important` gerekçesi: Vuetify `.v-tooltip > .v-overlay__content` kendi
+ * zemin/yazı boyutunu aynı özgüllükte tanımlıyor. */
+.v-tooltip > .v-overlay__content {
+  background: var(--ek-color-surface-inverse) !important;
+  color: var(--ek-color-content-inverse) !important;
+  font-size: var(--ek-type-caption-size) !important;
+  line-height: var(--ek-type-caption-line);
+  font-weight: var(--ek-font-weight-medium);
+  border-radius: var(--ek-radius-md) !important;
+  padding: var(--ek-space-1) var(--ek-space-2) !important;
+  box-shadow: var(--ek-shadow-raised);
+}
+
+/* ---- Radius (rozet = radius-full) ----
+ * Durum rozeti için `EkStatusChip` kullanılır (çıplak `v-chip` DEĞİL,
+ * Karar 3.3); bu kural, filtre/etiket gibi MEŞRU çıplak `v-chip`
+ * kullanımlarının da aynı "hap" (pill) biçimini almasını sağlar. */
+.v-chip {
+  border-radius: var(--ek-radius-full) !important;
+}
+
+/* Aşama 5 — ham `v-chip` de DS çip dilinde: iki boyut (`--ek-app-chip-h-sm/md`), caption yarı kalın, tonlu
+ * çiplerde kendi renginden türetilen ince kenarlık (yumuşak zemin + kenar), ikon metinle optik ortalı.
+ * `!important` gerekmez: Vuetify yüksekliği `--v-chip-height` değişkeniyle verir. */
+.v-chip.v-chip--size-small,
+.v-chip.v-chip--size-x-small {
+  --v-chip-height: var(--ek-app-chip-h-sm);
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.v-chip.v-chip--size-default {
+  --v-chip-height: var(--ek-app-chip-h-md);
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.v-chip.v-chip--variant-tonal {
+  border: 1px solid color-mix(in srgb, currentColor 26%, transparent);
+}
+
+.v-chip .v-chip__prepend .v-icon,
+.v-chip > .v-icon--start {
+  font-size: var(--ek-icon-xs);
+}
+
+/* ---- Düğme metni: cümle düzeni (Karar 1.2) ----
+ * Vuetify `VBtn` varsayılanı `text-transform: uppercase`; ADR-0015 Karar 1.2
+ * bunu kapatır ("Düğmelerde de Vuetify'ın uppercase davranışı kapatılır").
+ * `!important` gerekçesi: Vuetify'ın `.v-btn` temel stili aynı özgüllükte
+ * `text-transform` tanımlıyor.
+ * `:not(.v-tab)` İSTİSNASI (bilinçli, bu görevde bulundu): Vuetify'ın
+ * `VTab` bileşeni kökte `v-btn` sınıfını DA taşıyor (dahili uygulama
+ * detayı) — bu yüzden bu kural istisnasız yazılırsa bugünkü kabuk sekme
+ * şeridindeki (`SecureLayout.vue` `.workplace-tab`) BÜYÜK HARF render'ını
+ * da kapatır ve `session-isolation.spec.ts`'in `'ANASAYFA'` metin iddiasını
+ * KIRAR (Ek A / Karar 5.1 kapalı liste DIŞI bir davranış değişikliği).
+ * Kabuk sekmelerinin büyük/küçük harf stili A3'ün kapsamıdır (ADR Karar 1.2
+ * "üst etiket" — overline — istisnası zaten `.v-tab`/sekme başlıkları için
+ * öngörülüyor); A1 yalnızca GERÇEK düğmeleri (`.v-btn:not(.v-tab)`) kapsar. */
+.v-btn:not(.v-tab) {
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  font-weight: var(--ek-font-weight-medium);
+}
+
+/* ---- Aşama 4: ham `v-btn` metin boyutu = DS düğme tipografisi ----
+ * Kök yazı boyutu 14px; Vuetify düğme boyutlarını rem ile verdiği için `v-btn` metni 12.25px (small 10.5px,
+ * x-small 8.75px) çiziliyordu — aynı ekranda EkButton (13px, yarı kalın) ile yan yana iki farklı düğme dili.
+ * Boyut → rol: default/large = `label`, small = `caption`, x-small = `micro` boyutu. İkon düğmeleri hariç. */
+.v-btn.v-btn--size-default:not(.v-tab):not(.v-btn--icon),
+.v-btn.v-btn--size-large:not(.v-tab):not(.v-btn--icon) {
+  font-size: var(--ek-type-label-size);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.v-btn.v-btn--size-small:not(.v-tab):not(.v-btn--icon) {
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.v-btn.v-btn--size-x-small:not(.v-tab):not(.v-btn--icon) {
+  font-size: var(--ek-type-micro-size);
+}
+
+/* İkon düğmesi: v-icon glifi düğmenin yazı boyutunun 1.5 katıdır — taban `caption` (12px) → 18px glif (eski site.css
+   kuralının verdiği ölçü korunur). */
+.v-btn.v-btn--icon:not(.v-tab) {
+  font-size: var(--ek-type-caption-size);
+}
+
+/* ---- Aşama 3: ekran içi sekmeler (v-tabs) — cümle düzeni, `tab` tipografi rolü ----
+ * Kabuk sekme şeridi artık `EkWorkspaceTabs` (v-tab DEĞİL); `'ANASAYFA'` iddiası metin
+ * karşılaştırmasına taşındı (DESIGN_SYSTEM §13). Böylece Vuetify'ın BÜYÜK HARF + geniş aralıklı
+ * sekme başlığı (finans, işlem kayıtları, entegrasyon formları, müşteri kartı) DS diline döner. */
+.v-tab.v-btn {
+  text-transform: none !important;
+  letter-spacing: var(--ek-type-tab-tracking) !important;
+  font-size: var(--ek-type-tab-size);
+  line-height: var(--ek-type-tab-line);
+  font-weight: var(--ek-type-tab-weight);
+}
+
+/* ---- Odak göstergesi (Karar 3.1 — WCAG 2.4.7) ----
+ * Tüm etkileşimli öğelerde tutarlı, görünür `:focus-visible` halkası.
+ * `outline` kutu-modelini etkilemediği için `!important` GEREKMEZ; yalnızca
+ * Vuetify'ın kendi (görünmez/eksik) focus stilini ezmek için yeterli
+ * özgüllük sağlanır. `--ek-color-primary` (`tokens.app.css`) zaten Vuetify
+ * tema değişkenine sarılı biçimde tanımlıdır — burada ikinci kez ham renk
+ * fonksiyonu YAZILMAZ (literal-stil mandalı bu deseni de sayıyor; token'a
+ * dolaylı referans mandal-temiz kalır). */
+:focus-visible {
+  outline: 2px solid var(--ek-color-primary);
+  outline-offset: 2px;
+}
+
+/* ---- Yoğunluk: tablo satır yüksekliği (Karar 1.1/6.2 — --ek-app-row-h) ----
+ * `app.css`'teki `--ek-app-row-h` (varsayılan 44, kompakt 36) buradan
+ * tüketilir. `!important` gerekçesi: Vuetify `density="compact"` kendi sabit
+ * satır yüksekliğini (`--v-table-row-height`) zaten `!important` OLMADAN
+ * ama yüksek özgüllükle tanımlıyor; token'ın kazanması için gerekli. */
+.v-data-table .v-data-table__tr {
+  --v-table-row-height: var(--ek-app-row-h) !important;
+}
+
+/* ---- Kart derinliği: kenarlıkla, gölgeyle DEĞİL (Karar 1.1) ----
+ * `VCard` varsayılanı `border:true` (bkz. vuetify-defaults.ts); bu kural
+ * kenarlık rengini token'a bağlar. `!important` gerekçesi: Vuetify'ın
+ * `.v-card` temel stili aynı özgüllükte `border-color` yazıyor. */
+.v-card {
+  border-color: var(--ek-color-border-default) !important;
+}
+
+/* DS-v2: kart zeminden bir kademe açık + ince kenarlık + YUMUŞAK gölge
+ * (brif: "kartlar ... ince kenarlık + yumuşak gölgeyle ayrışır"). Yalnızca
+ * düz (flat) kartlar; Vuetify `elevation-*` verilen kartlar kendi gölgesini
+ * korur. Diyalog içindeki kart gölgeyi diyalogdan alır. */
+.v-card.v-card--variant-flat:not(.v-dialog .v-card) {
+  box-shadow: var(--ek-shadow-card);
+}
+
+/* ---- DS-v2: tablo başlığı (sunucu/istemci v-data-table) ----
+ * `surface-muted` zemin + `content-muted` 12/600. Metin DÖNÜŞÜMÜ (büyük harf)
+ * burada UYGULANMAZ — spec'ler görünen metne bağlı; yeni `EkDataGrid`
+ * mikro etiket stilini kendisi taşır. */
+.v-data-table .v-data-table__th,
+.v-table > .v-table__wrapper > table > thead > tr > th {
+  background: var(--ek-color-surface-muted) !important; /* fixed-header zemini Vuetify'da inline değişkenle gelir */
+  color: var(--ek-color-content-muted);
+  font-weight: var(--ek-font-weight-semibold) !important;
+}
+
+/* ---- DS-v2: outlined form alanı ----
+ * Zemin her zaman `surface` (tonlu panel/filtre gövdesinde de alan "beyaz
+ * kutu" olarak ayrışır) ve kenarlık `border-input` (yüzeyde ≥3:1, WCAG
+ * 1.4.11). Odak/hata/devre dışı durumlarında Vuetify'ın kendi rengi kalır.
+ * `!important` gerekmez: Vuetify opaklığı değişkenle (`--v-field-border-opacity`) verir. */
+.v-field--variant-outlined {
+  background: var(--ek-color-surface);
+}
+
+.v-field--variant-outlined:not(.v-field--focused):not(.v-field--error):not(.v-field--disabled) .v-field__outline {
+  --v-field-border-opacity: 1;
+  color: var(--ek-color-border-input);
+}
+
+.v-field--variant-outlined:hover:not(.v-field--focused):not(.v-field--error):not(.v-field--disabled) .v-field__outline {
+  color: var(--ek-color-content-muted);
+}
+
+/* ---- DS-v2: alan etiketi ve yardım/hata metni kontrastı (WCAG 1.4.3) ----
+ * Vuetify etiket ve mesajları `--v-medium-emphasis-opacity` ile soluklaştırır;
+ * yüzen etiket ayrıca çerçeve (outline) rengini miras alır → AA altı (axe:
+ * 2,04:1 / 3,56:1). Opaklık 1'e sabitlenir, renk token'dan verilir.
+ * `!important` gerekçesi: Vuetify opaklığı aynı özgüllükte, bazı durumlarda
+ * satır içi değişkenle yazıyor. */
+.v-field .v-field-label {
+  opacity: 1 !important;
+  color: var(--ek-color-content-muted);
+}
+
+.v-field--focused .v-field-label {
+  color: var(--ek-color-action);
+}
+
+.v-field--error .v-field-label {
+  color: var(--ek-color-error);
+}
+
+.v-input__details .v-messages {
+  opacity: 1 !important;
+  color: var(--ek-color-content-muted);
+}
+
+/* Aşama 3: yardım/hata metni `caption` rolü (Vuetify 12px/geniş aralık/sıkışık satır yerine 12/16, düz aralık). */
+.v-input__details {
+  padding-top: var(--ek-space-1);
+}
+
+/* `.v-input` öneki: Vuetify'ın bileşen CSS'i (aynı özgüllük, `line-height: 12px`) tembel yüklenip sonra geldiği için. */
+.v-input .v-messages__message {
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+  letter-spacing: 0;
+  hyphens: none;
+}
+
+.v-input--error .v-input__details .v-messages {
+  color: var(--ek-color-error);
+}
+
+.v-selection-control .v-label {
+  opacity: 1 !important;
+  color: var(--ek-color-content-default);
+}
+
+/* ---- DS-v2: yüzen etiket erişilebilirliği (WCAG 1.3.1 / 4.1.2) ----
+ * Etiket yüzünce Vuetify alanın ASIL `<label for>`'ını `visibility:hidden`
+ * yapar ve yerine `aria-hidden` bir kopya gösterir → giriş alanının erişilebilir
+ * adı kaybolur (axe "label": explicit label is hidden). Asıl etiket görsel
+ * olarak gizli ama erişilebilir kalır (opacity 0). */
+.v-field--active .v-field__field > .v-field-label:not(.v-field-label--floating):not([style*='visibility']),
+.v-field--focused .v-field__field > .v-field-label:not(.v-field-label--floating):not([style*='visibility']) {
+  visibility: visible !important;
+  opacity: 0 !important;
+}
+
+/* ---- Aşama 5: yüzen etiket TİTREMESİ (kullanıcı geri bildirimi madde 8) — tüm alan türleri (text, select,
+ * autocomplete, combobox, textarea, EkDateField) aynı VField'ı kullanır, düzeltme tek yerde.
+ * Vuetify odakta DİNLENEN etiketi `translate + scale(--v-field-label-scale)` ile yüzen etiketin yerine taşır
+ * (FLIP), bitince yüzen kopyaya geçer. Titremenin üç nedeni vardı:
+ *  1) yukarıdaki erişilebilirlik kuralı hareket eden etiketi `opacity:0` yapıyordu → geçiş boyunca GÖRÜNMEZ
+ *     etiket, sonunda yüzen kopya "patlayarak" beliriyordu. Vuetify geçiş süresince etikete satır içi
+ *     `visibility` yazar → `:not([style*='visibility'])` ile hareket sırasında görünür kalır.
+ *  2) yüzen etiket `site.css`'te 11px'e zorlanıyor ama ölçek 0.75 (10.5px) okunuyordu → varışta boyut sıçraması.
+ *     Ölçek artık `micro/body` oranı (11/14): hareket eden etiketin son boyutu = yüzen kopyanın boyutu.
+ *  3) iki kopyanın ağırlık/aralık/aile farkı → ikisi de aynı tipografi; hareket yalnız transform. */
+.v-field .v-label.v-field-label {
+  font-family: var(--ek-font-sans);
+  font-weight: var(--ek-font-weight-regular);
+  letter-spacing: 0;
+  transform-origin: left center;
+  will-change: transform;
+}
+
+.v-field .v-label.v-field-label--floating {
+  --v-field-label-scale: 0.7857em; /* = --ek-type-micro-size (11) / --ek-type-body-size (14) */
+  font-size: var(--v-field-label-scale);
+  will-change: auto;
+}
+
+/* Devre dışı alanın yardım metni okunur kalır (NEDEN devre dışı olduğunu anlatır);
+ * Vuetify tüm ayrıntı bölgesini soluklaştırıyor. */
+.v-input--disabled .v-input__details {
+  opacity: 1 !important;
+}
+
+/* ---- Aşama 6b (Standart 2): ham v-data-table mobil satırı = ds kart dili (EkDataGrid/EkDataTable ile aynı) ----
+ * Vuetify dar görünümde her satırı "başlık: değer" satırlarına çevirir; burada kart iç boşluğu, satır ayracı ve
+ * mikro etiket tipografisi uygulanır (yalnız görünüm — işaretleme/davranış Vuetify'ın). */
+.v-data-table .v-data-table__tr--mobile {
+  border-bottom: 1px solid var(--ek-color-border-default);
+}
+
+.v-data-table .v-data-table__tr--mobile > td {
+  padding: var(--ek-space-1) var(--ek-space-4) !important;
+  height: auto !important;
+  min-height: 32px;
+  border-bottom: none !important;
+  font-size: var(--ek-type-table-size);
+  line-height: var(--ek-type-table-line);
+}
+
+.v-data-table .v-data-table__tr--mobile > td:first-child {
+  padding-top: var(--ek-space-3) !important;
+}
+
+.v-data-table .v-data-table__tr--mobile > td:last-child {
+  padding-bottom: var(--ek-space-3) !important;
+}
+
+.v-data-table .v-data-table__tr--mobile .v-data-table__td-title {
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+  color: var(--ek-color-content-muted);
+}
+
+/* ---- Aşama 6b (Standart 11): form elemanları — makine gibi tutarlı ızgara ----
+ * Tek yükseklik: tüm metin/seçim/tarih alanları `--ek-control-h-lg` (40px, compact); çok satırlı çip seçimi büyür
+ * ama tek satırda aynı hizada. Seçim denetimleri (checkbox/switch/radio) aynı 40px satır yüksekliğinde, dikey
+ * ortalı → form ızgarasında alanlarla aynı taban çizgisi. Yardım/hata metni alanın altında aynı girintiyle (caption). */
+.v-field.v-field--variant-outlined {
+  --v-field-input-min-height: var(--ek-control-h-lg);
+}
+
+.v-input--density-compact .v-field--variant-outlined .v-field__input {
+  min-height: var(--ek-control-h-lg);
+}
+
+.v-selection-control.v-selection-control--density-compact {
+  min-height: var(--ek-control-h-lg);
+}
+
+.v-switch.v-input--density-compact .v-input__control,
+.v-checkbox.v-input--density-compact .v-input__control {
+  min-height: var(--ek-control-h-lg);
+}
+
+.v-selection-control .v-label {
+  font-size: var(--ek-type-body-size);
+  line-height: var(--ek-type-body-line);
+  color: var(--ek-color-content-default);
+  opacity: 1;
+}
+
+.ek-form-grid > .v-switch,
+.ek-form-grid > .v-checkbox,
+.ek-form-grid > .v-radio-group {
+  align-self: start;
+}
+
+/* Tek satırlı metin alanı: önek/sonek + yer tutucu dar kolonda alt satıra kaymaz (alan yüksekliği sabit kalır). */
+.v-text-field:not(.v-textarea) .v-field__input {
+  flex-wrap: nowrap;
+}
+
+.v-text-field:not(.v-textarea) .v-field__input input {
+  min-width: 0;
+}
+
+/* Izgarada komşu alanın iki satırlık yardım metni bu alanı UZATMAZ: dış yerleşim `stretch` etse de v-input'un kendi
+ * ızgara satırları üste paketlenir (alan yüksekliği sabit, fazlalık altta boş kalır; genişlik/yerleşim değişmez). */
+.v-input.v-text-field:not(.v-textarea) {
+  grid-template-rows: auto auto;
+  align-content: start;
+}

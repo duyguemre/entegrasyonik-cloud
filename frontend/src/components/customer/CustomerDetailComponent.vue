@@ -1,115 +1,93 @@
+<!--
+  frontend/src/components/customer/CustomerDetailComponent.vue
+
+  A13 — müşteri kartı (yan sayfa). Hiyerarşi: PROFİL KARTI (kimlik: avatar · ad · tür · kanal kökeni · müşteri olma; KVKK
+  göster/gizle) + aynı kartın alt bandında özet metrikler → sekmeler (Genel bakış · Siparişler · İadeler) → Genel bakışta
+  İletişim (ikonlu, maskeli, kopyalanabilir; platform kimlikleri) ve Adresler (fatura / teslimat ayrımı) kartları.
+  Eylemler başlıkta: ikincil "Düzenle" (form yalnız düzenlemede açılır) + `⋯` → anonimleştir (tehlikeli, en sonda, onay; yönetici).
+  Durumlar: `loading` → iskelet, `error` → EkProblemState + Tekrar dene (hata boş kayıt gibi çizilmez), metrik yok → boş durum.
+  Uydurma veri yok: metrikler yalnız backend alanları (customerCard.ts).
+-->
 <template>
-    <EkDetailSheet v-model="isOpen" :identity="dialogTitle">
-        <template #status>
+    <EkDetailSheet v-model="isOpen" identity="Müşteri kartı">
+        <template v-if="customer" #status>
             <EkStatusChip :tone="entry.tone" :label="$t(entry.labelKey)" />
         </template>
+        <template v-if="customer" #actions>
+            <span v-if="!anonymized" class="ek-cust-editbtn">
+                <EkButton tone="secondary" :icon="icons.edit" aria-label="Profili düzenle" :aria-pressed="editing ? 'true' : 'false'" @click="toggleEdit">Düzenle</EkButton>
+            </span>
+            <!-- C1.6: yıkıcı eylem ⋯ menüsünde, en sonda (admin; asıl sınır backend `customers.anonymize` minTier admin). -->
+            <EkContextMenu v-if="canAnonymize && !anonymized" :groups="actionMenu" label="Müşteri işlemleri" @select="onMenuSelect">
+                <template #activator="{ props: menuProps }">
+                    <EkButton v-bind="menuProps" tone="ghost" :icon="icons.more" icon-only aria-label="Müşteri işlemleri" />
+                </template>
+            </EkContextMenu>
+        </template>
 
-        <div v-if="customer" class="d-flex flex-column ek-gap-8">
-            <div class="d-flex align-center flex-wrap ek-gap-4">
-                <v-avatar color="surface-muted" size="72" class="avatar-ring flex-shrink-0">
-                    <span class="text-h5 font-weight-bold ek-avatar-initials">
-                        {{ customer.firstName?.[0] }}{{ customer.lastName?.[0] }}
-                    </span>
-                </v-avatar>
+        <EkProblemState v-if="error && !loading" size="inline" title="Müşteri kartı açılamadı"
+            cause="Müşteri kaydı şu anda getirilemedi; bağlantı ya da sunucu kaynaklı geçici bir sorun olabilir."
+            action="Birkaç saniye sonra yeniden deneyin. Sorun sürerse listeyi yenileyin." retryable autofocus @retry="emit('retry')" />
 
-                <div class="d-flex flex-column justify-center flex-grow-1">
-                    <div class="d-flex align-center ek-gap-2">
-                        <span class="text-h6 font-weight-semibold">
-                            {{ customer.firstName }} {{ customer.lastName }}
-                        </span>
-                        <EkStatusChip v-if="customer.isCorporate" tone="info" label="Kurumsal" />
-                        <EkStatusChip v-if="customer.insights?.isVip" tone="warning" label="VIP" dot />
-                    </div>
-                    <span class="text-caption ek-muted mt-1">Kayıt: {{ formatDate(customer.createdAt) }}</span>
+        <EkSkeleton v-else-if="loading || !customer" type="detail" />
+
+        <div v-else class="ek-cust-detail">
+            <section class="ek-cust-profile" aria-label="Müşteri profili">
+                <div class="ek-cust-profile__head">
+                    <CustomerIdentity size="lg" as="h2" :first-name="customer.firstName" :last-name="customer.lastName"
+                        :company-name="customer.companyName" :is-corporate="customer.isCorporate" :channel="originChannel"
+                        :created-at="customer.createdAt">
+                        <template #tags>
+                            <EkBadge v-if="isVip" tone="warning">VIP</EkBadge>
+                        </template>
+                    </CustomerIdentity>
+                    <CustomerRevealToggle v-if="hasPersonal" v-model="revealed" class="ek-cust-profile__reveal" />
                 </div>
+                <CustomerMetrics v-if="metrics" :summary="metrics" class="ek-cust-profile__metrics" />
+            </section>
 
-                <div class="score-widget pa-3 rounded-lg border-subtle d-flex flex-column align-center justify-center">
-                    <span class="text-caption font-weight-medium ek-muted">SADAKAT SKORU</span>
-                    <span class="text-h5 font-weight-bold ek-num" :class="scoreToneClass">{{ customer.insights?.customerScore || 0 }}</span>
-                </div>
-            </div>
-
-            <EkSection title="Finansal analiz ve risk durumu">
-                <v-row dense>
-                    <v-col cols="12" sm="3">
-                        <div class="insight-card pa-4 h-100 border-subtle">
-                            <v-icon color="content-muted" size="22" class="mb-1">mdi-basket-check</v-icon>
-                            <div class="text-h6 font-weight-bold ek-num leading-none">{{ formatMoney(customer.metrics?.totalSpent || 0) }}</div>
-                            <div class="text-caption ek-muted mt-1">Brüt ciro</div>
-                        </div>
-                    </v-col>
-
-                    <v-col cols="12" sm="3">
-                        <div class="insight-card pa-4 h-100 border-subtle">
-                            <v-icon color="success" size="22" class="mb-1">mdi-safe-square-outline</v-icon>
-                            <div class="text-h6 font-weight-bold ek-num leading-none ek-text-success">{{ formatMoney(customer.insights?.netRevenue || 0) }}</div>
-                            <div class="text-caption ek-text-success mt-1">Net kazanç</div>
-                        </div>
-                    </v-col>
-
-                    <v-col cols="12" sm="3">
-                        <div class="insight-card pa-4 h-100 border-subtle">
-                            <v-icon :color="isHighRisk ? 'error' : 'content-muted'" size="22" class="mb-1">mdi-trending-down</v-icon>
-                            <div class="text-h6 font-weight-bold ek-num leading-none" :class="{ 'ek-text-danger': isHighRisk }">
-                                {{ formatPercent((customer.insights?.returnRate || 0) / 100) }}
-                            </div>
-                            <div class="text-caption mt-1" :class="isHighRisk ? 'ek-text-danger' : 'ek-muted'">İade oranı</div>
-                        </div>
-                    </v-col>
-
-                    <v-col cols="12" sm="3">
-                        <div class="insight-card pa-4 h-100 border-subtle">
-                            <v-icon color="content-muted" size="22" class="mb-1">mdi-calendar-clock</v-icon>
-                            <div class="text-body-1 font-weight-semibold leading-tight">
-                                {{ customer.metrics?.lastOrderDate ? formatDate(customer.metrics.lastOrderDate) : 'Sipariş yok' }}
-                            </div>
-                            <div class="text-caption ek-muted mt-1">Son alışveriş</div>
-                        </div>
-                    </v-col>
-                </v-row>
-            </EkSection>
-
-            <v-tabs v-model="tab" class="border-bottom-subtle">
-                <v-tab value="general" class="text-none">Genel bilgiler</v-tab>
-                <v-tab value="orders" class="text-none">Sipariş geçmişi ({{ customer.recentOrders?.length || 0 }})</v-tab>
-                <v-tab value="claims" class="text-none">İade talepleri ({{ customer.recentClaims?.length || 0 }})</v-tab>
-            </v-tabs>
+            <EkPageTabs v-model="tab" label="Müşteri ayrıntıları" :tabs="[
+                { value: 'general', label: 'Genel bakış', icon: 'mdi-account-details-outline' },
+                { value: 'orders', label: 'Siparişler', icon: 'mdi-cart-outline', count: customer.recentOrders?.length || 0 },
+                { value: 'claims', label: 'İadeler', icon: 'mdi-undo-variant', count: customer.recentClaims?.length || 0 },
+            ]" />
 
             <v-window v-model="tab">
                 <v-window-item value="general">
-                    <v-row dense>
-                        <v-col cols="12" md="7">
-                            <EkSection title="İletişim ve kimlik">
-                                <v-row dense>
-                                    <v-col cols="12" sm="6"><v-text-field v-model="editData.firstName" label="Ad" /></v-col>
-                                    <v-col cols="12" sm="6"><v-text-field v-model="editData.lastName" label="Soyad" /></v-col>
-                                    <v-col cols="12" sm="6"><v-text-field v-model="editData.phone" label="Telefon" /></v-col>
-                                    <v-col cols="12" sm="6"><v-text-field v-model="editData.email" label="E-posta" /></v-col>
-                                </v-row>
-                                <div class="d-flex justify-end mt-2">
-                                    <v-btn color="primary" prepend-icon="mdi-content-save-outline" @click="saveCustomer">Profili güncelle</v-btn>
-                                </div>
-                            </EkSection>
-                        </v-col>
-                        <v-col cols="12" md="5">
-                            <EkSection title="Platform kimlikleri">
-                                <div v-for="identity in customer.externalIdentities" :key="identity.externalCustomerId"
-                                    class="d-flex align-center justify-space-between mb-2 pa-2 border-subtle rounded">
-                                    <PlatformImageComponent :integrationCode="identity.integrationCode" :height="32" :width="32" />
-                                    <span class="text-caption ek-muted">{{ identity.externalCustomerId }}</span>
-                                </div>
-                                <EkEmptyState v-if="!customer.externalIdentities?.length" variant="not-connected"
-                                    title="Bağlı platform yok" message="Bu müşteri henüz hiçbir pazaryeri hesabıyla eşleşmedi." />
-                            </EkSection>
-                        </v-col>
-                    </v-row>
+                    <div class="ek-cust-detail__general">
+                        <form v-if="editing" class="ek-cust-edit" aria-label="Müşteri profilini düzenle" @submit.prevent="saveCustomer">
+                            <EkFormSection title="Profili düzenle" icon="mdi-account-edit-outline"
+                                description="Kaydedilen bilgiler yalnız Entegrasyonik'te güncellenir; pazaryerindeki kayıt değişmez.">
+                                <v-text-field v-model="editData.firstName" label="Ad" autocomplete="off" />
+                                <v-text-field v-model="editData.lastName" label="Soyad" autocomplete="off" />
+                                <v-text-field v-model="editData.phone" label="Telefon" autocomplete="off" inputmode="tel" />
+                                <v-text-field v-model="editData.email" label="E-posta" autocomplete="off" type="email" />
+                            </EkFormSection>
+                            <div class="ek-cust-edit__bar">
+                                <EkButton tone="secondary" @click="cancelEdit">Vazgeç</EkButton>
+                                <EkButton tone="primary" type="submit" :icon="icons.save">Kaydet</EkButton>
+                            </div>
+                        </form>
+                        <div class="ek-cust-detail__cards">
+                            <EkInfoCard title="İletişim" icon="mdi-card-account-phone-outline">
+                                <CustomerContactList :phone="customer.phone" :email="customer.email" :tax-number="customer.taxNumber"
+                                    :tax-office="customer.taxOffice" :show-tax="!!customer.isCorporate" :is-phone-masked="customer.isPhoneMasked"
+                                    :is-email-masked="customer.isEmailMasked" :identities="customer.externalIdentities" :revealed="revealed" />
+                            </EkInfoCard>
+                            <EkInfoCard title="Adresler" icon="mdi-map-marker-outline">
+                                <CustomerAddresses v-if="addresses.billing || addresses.shipping" :billing="addresses.billing"
+                                    :shipping="addresses.shipping" :revealed="revealed" />
+                                <p v-else class="ek-cust-detail__muted">Kayıtlı adres yok. Adresler siparişlerle birlikte pazaryerinden gelir.</p>
+                            </EkInfoCard>
+                        </div>
+                    </div>
                 </v-window-item>
 
                 <v-window-item value="orders">
                     <EkDataTable v-if="customer.recentOrders?.length" :items="customer.recentOrders" row-key="_id" :columns="orderColumns">
-                        <template #cell-platform="{ item }"><PlatformImageComponent :integrationCode="item.integrationCode" :height="28" :width="28" /></template>
-                        <template #cell-date="{ item }">{{ formatDate(item.dates?.orderDate || item.createdAt) }}</template>
-                        <template #cell-total="{ item }">{{ formatMoney(item.totalPrice || item.financials?.grandTotal) }}</template>
+                        <template #cell-platform="{ item }"><EkChannelDot :code="item.integrationCode" variant="plain" /></template>
+                        <template #cell-date="{ item }"><span class="ek-num">{{ formatDate(item.dates?.orderDate || item.createdAt) }}</span></template>
+                        <template #cell-total="{ item }"><span class="ek-num">{{ formatMoney(item.totalPrice || item.financials?.grandTotal) }}</span></template>
                         <template #cell-status="{ item }"><EkStatusChip :tone="orderStatusEntry(item.internalStatus).tone" :label="$t(orderStatusEntry(item.internalStatus).labelKey)" /></template>
                     </EkDataTable>
                     <EkEmptyState v-else variant="no-data" title="Sipariş kaydı yok" message="Bu müşteriye ait henüz bir sipariş bulunmuyor." />
@@ -117,41 +95,68 @@
 
                 <v-window-item value="claims">
                     <EkDataTable v-if="customer.recentClaims?.length" :items="customer.recentClaims" row-key="_id" :columns="claimColumns">
-                        <template #cell-platform="{ item }"><PlatformImageComponent :integrationCode="item.integrationCode" :height="28" :width="28" /></template>
-                        <template #cell-date="{ item }">{{ formatDate(item.externalCreatedAt || item.createdAt) }}</template>
+                        <template #cell-platform="{ item }"><EkChannelDot :code="item.integrationCode" variant="plain" /></template>
+                        <template #cell-date="{ item }"><span class="ek-num">{{ formatDate(item.externalCreatedAt || item.createdAt) }}</span></template>
                         <template #cell-reason="{ item }">{{ item.items?.[0]?.reason || 'Belirtilmedi' }}</template>
-                        <template #cell-amount="{ item }"><span class="ek-text-danger">-{{ formatMoney(item.totalRefundAmount) }}</span></template>
+                        <template #cell-amount="{ item }"><span class="ek-num">−{{ formatMoney(item.totalRefundAmount) }}</span></template>
                         <template #cell-status="{ item }"><EkStatusChip :tone="claimStatusEntry(item.internalStatus).tone" :label="$t(claimStatusEntry(item.internalStatus).labelKey)" /></template>
                     </EkDataTable>
                     <EkEmptyState v-else variant="no-data" title="İade kaydı yok" message="Bu müşteriye ait henüz bir iade talebi bulunmuyor." />
                 </v-window-item>
             </v-window>
         </div>
-
-        <EkSkeleton v-else type="detail" />
     </EkDetailSheet>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import EkDetailSheet from '@/components/ds/EkDetailSheet.vue';
-import EkSection from '@/components/ds/EkSection.vue';
-import EkStatusChip from '@/components/ds/EkStatusChip.vue';
-import EkEmptyState from '@/components/ds/EkEmptyState.vue';
-import EkSkeleton from '@/components/ds/EkSkeleton.vue';
-import EkDataTable, { type EkTableColumn } from '@/components/ds/EkDataTable.vue';
-import { formatMoney, formatDate, formatPercent } from '@/composables/format';
+import { EkPageTabs, EkDetailSheet, EkStatusChip, EkEmptyState, EkSkeleton, EkProblemState, EkInfoCard, EkFormSection, EkBadge, EkChannelDot, EkDataTable, type EkTableColumn, EkContextMenu, EkButton } from '@entegrasyonik/ui/components'
+import type { EkMenuGroup, EkMenuItem } from '@entegrasyonik/ui/components';
+;
+;
+;
+;
+;
+;
+;
+;
+;
+;
+;
+;
+;
+import CustomerIdentity from './card/CustomerIdentity.vue';
+import CustomerMetrics from './card/CustomerMetrics.vue';
+import CustomerContactList from './card/CustomerContactList.vue';
+import CustomerAddresses from './card/CustomerAddresses.vue';
+import CustomerRevealToggle from './card/CustomerRevealToggle.vue';
+import { isAnonymized, metricSummary, splitCustomerAddresses } from './customerCard';
+import { formatMoney, formatDate } from '@entegrasyonik/ui/format';
 import { ORDER_STATUS_TONE, CLAIM_STATUS_TONE, storeStatusTone } from '@/design/status-map';
+import { icons } from '@entegrasyonik/ui/icons';
 import { OrderInternalStatusEnum } from '@/types/OrderTypes';
 import { ClaimInternalStatusEnum } from '@/types/ClaimTypes';
-import PlatformImageComponent from '../platforms/PlatformImageComponent.vue';
 
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
-    customer: { type: Object, default: () => null }
+    customer: { type: Object, default: () => null },
+    /** Yönetici kademesi: "Kişisel verileri anonimleştir" menü öğesi görünür. */
+    canAnonymize: { type: Boolean, default: false },
+    /** Kart verisi yükleniyor (yan sayfa hemen açılır, iskelet görünür). */
+    loading: { type: Boolean, default: false },
+    /** Kart verisi alınamadı → EkProblemState + Tekrar dene. */
+    error: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(['update:modelValue', 'save']);
+const emit = defineEmits(['update:modelValue', 'save', 'anonymize', 'retry']);
+
+const actionMenu: EkMenuGroup[] = [
+    { label: 'Kişisel veriler', items: [{ key: 'anonymize', label: 'Kişisel verileri anonimleştir', icon: 'mdi-account-cancel-outline', description: 'Geri alınamaz', danger: true }] },
+];
+
+function onMenuSelect(item: EkMenuItem) {
+    if (item.key === 'anonymize') emit('anonymize', props.customer);
+}
 
 const isOpen = computed({
     get: () => props.modelValue,
@@ -159,34 +164,45 @@ const isOpen = computed({
 });
 
 const tab = ref('general');
+const editing = ref(false);
+// KVKK: kişisel veriler varsayılan maskeli; kayıt değişince/kart kapanınca yeniden maskelenir.
+const revealed = ref(false);
 const editData = ref({ firstName: '', lastName: '', phone: '', email: '' });
 
 const orderColumns: EkTableColumn[] = [
-    { key: 'platform', label: 'Platform' },
+    { key: 'platform', label: 'Kanal' },
     { key: 'orderNumber', label: 'Sipariş No', type: 'id' },
     { key: 'date', label: 'Tarih' },
     { key: 'total', label: 'Tutar', align: 'end' },
-    { key: 'status', label: 'Statü' },
+    { key: 'status', label: 'Durum' },
 ];
 
 const claimColumns: EkTableColumn[] = [
-    { key: 'platform', label: 'Platform' },
+    { key: 'platform', label: 'Kanal' },
     { key: 'externalClaimId', label: 'Talep No', type: 'id' },
     { key: 'date', label: 'Tarih' },
-    { key: 'reason', label: 'Sebep' },
+    { key: 'reason', label: 'Neden' },
     { key: 'amount', label: 'İade tutarı', align: 'end' },
-    { key: 'status', label: 'Statü' },
+    { key: 'status', label: 'Durum' },
 ];
 
-// Prop değişimini izleyerek edit formunu doldur
-watch(() => props.customer, (newVal) => {
-    if (newVal) {
-        editData.value.firstName = newVal.firstName || '';
-        editData.value.lastName = newVal.lastName || '';
-        editData.value.phone = newVal.phone || '';
-        editData.value.email = newVal.email || '';
-    }
+function fillForm(c: any) {
+    editData.value = { firstName: c?.firstName || '', lastName: c?.lastName || '', phone: c?.phone || '', email: c?.email || '' };
+}
+
+watch(() => props.customer?._id, () => {
+    fillForm(props.customer);
+    revealed.value = false;
+    editing.value = false;
+    tab.value = 'general';
 }, { immediate: true });
+watch(isOpen, (open) => { if (!open) { revealed.value = false; editing.value = false; } });
+
+function toggleEdit() {
+    editing.value = !editing.value;
+    if (editing.value) { fillForm(props.customer); tab.value = 'general'; }
+}
+function cancelEdit() { editing.value = false; fillForm(props.customer); }
 
 const saveCustomer = () => {
     emit('save', {
@@ -195,60 +211,110 @@ const saveCustomer = () => {
     });
 };
 
-/* --- TON/DURUM MANTIĞI (ADR-0015 Karar 3.3, status-map.ts) --- */
-const scoreToneClass = computed(() => {
-    const score = props.customer?.insights?.customerScore || 0;
-    if (score > 15) return 'ek-text-success';
-    if (score > 5) return 'ek-text-warning';
-    return 'ek-text-danger';
+const anonymized = computed(() => isAnonymized(props.customer?.firstName));
+const isVip = computed(() => !!props.customer?.insights?.isVip || (props.customer?.tags ?? []).includes('VIP'));
+// Kanal kökeni: ilk eşleşen platform kimliği; yoksa "Sistem" (manuel kayıt).
+const originChannel = computed(() => props.customer?.externalIdentities?.[0]?.integrationCode ?? null);
+const metrics = computed(() => metricSummary(props.customer?.metrics, props.customer?.insights?.returnRate));
+const addresses = computed(() => splitCustomerAddresses(props.customer?.addresses));
+const hasPersonal = computed(() => {
+    const c = props.customer;
+    if (!c || anonymized.value) return false;
+    const values = [c.phone, c.email, c.taxNumber, addresses.value.billing?.line, addresses.value.shipping?.line];
+    return values.some((v) => typeof v === 'string' && v.trim() !== '' && !isAnonymized(v));
 });
-
-const isHighRisk = computed(() => (props.customer?.insights?.returnRate || 0) > 20);
 
 const entry = computed(() => storeStatusTone(props.customer?.status === 'ACTIVE'));
 
 const orderStatusEntry = (status: OrderInternalStatusEnum) => ORDER_STATUS_TONE[status] ?? { tone: 'neutral' as const, labelKey: 'status.order.unapproved' };
 const claimStatusEntry = (status: ClaimInternalStatusEnum) => CLAIM_STATUS_TONE[status] ?? { tone: 'neutral' as const, labelKey: 'status.claim.waiting' };
-
-/* --- DIALOG BAŞLIĞI --- */
-const dialogTitle = computed(() => `Müşteri Kartı — ${props.customer?.firstName || ''} ${props.customer?.lastName || ''}`);
 </script>
 
 <style scoped>
-.ek-gap-2 { gap: var(--ek-space-2); }
-.ek-gap-4 { gap: var(--ek-space-4); }
-.ek-gap-8 { gap: var(--ek-space-8); }
+.ek-cust-detail {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-5);
+}
 
-.border-subtle {
+/* Profil kartı: tek çerçeve (ince kenarlık + yumuşak gölge), alt bantta metrikler — kart içinde kart yok. */
+.ek-cust-profile {
     border: 1px solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-card);
+    background: var(--ek-color-surface);
+    box-shadow: var(--ek-shadow-card);
+    overflow: hidden;
 }
 
-.avatar-ring {
-    border: 1px solid var(--ek-color-border-default);
+.ek-cust-profile__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-5);
 }
 
-.ek-avatar-initials {
-    color: var(--ek-color-content-strong);
+.ek-cust-profile__reveal {
+    flex: none;
 }
 
-.ek-muted {
+.ek-cust-profile__metrics {
+    border-top: 1px solid var(--ek-color-border-subtle);
+    background: var(--ek-color-surface-muted);
+}
+
+.ek-cust-detail__general {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-4);
+    padding-top: var(--ek-space-1);
+}
+
+.ek-cust-detail__cards {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ek-space-3);
+    align-items: start;
+}
+
+.ek-cust-detail__muted {
+    margin: 0;
+    font-size: var(--ek-type-body-size);
+    line-height: var(--ek-type-body-line);
     color: var(--ek-color-content-muted);
 }
 
-.ek-text-success { color: var(--ek-color-success); }
-.ek-text-warning { color: var(--ek-color-warning); }
-.ek-text-danger { color: var(--ek-color-error); }
-
-.score-widget {
-    min-width: 96px;
-    height: 76px;
+.ek-cust-edit {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-4);
+    border: 1px solid var(--ek-color-action-border);
+    border-radius: var(--ek-radius-card);
+    background: var(--ek-color-surface);
 }
 
-.insight-card {
-    border-radius: var(--ek-radius-lg);
+.ek-cust-edit__bar {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--ek-space-2);
 }
 
-.border-bottom-subtle {
-    border-bottom: 1px solid var(--ek-color-border-default);
+@media (max-width: 599px) {
+    .ek-cust-profile__head {
+        flex-wrap: wrap;
+        padding: var(--ek-space-4);
+    }
+
+    /* Dar ekranda başlık tek satırda kalsın: Düzenle yalnız ikon (aria-label + ipucu korunur). */
+    .ek-cust-editbtn :deep(.ek-btn__label) {
+        display: none;
+    }
+
+    .ek-cust-editbtn :deep(.ek-btn) {
+        width: 36px;
+        padding: 0;
+        justify-content: center;
+    }
 }
 </style>

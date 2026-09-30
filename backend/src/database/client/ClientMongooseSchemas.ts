@@ -20,6 +20,9 @@ import { ExportStagedProductSchema } from './models/Export';
 import { ImportJobReportSchema, ImportStagedProductSchema, ImportStagedProductSummarySchema } from './models/Import';
 import { InvoiceSchema } from './models/Invoice';
 import { MessageSchema } from './models/Message';
+import { IdempotencyKeySchema } from './models/IdempotencyKey';
+import { StockMovementSchema } from './models/StockMovement';
+import { CommissionOverrideSchema } from './models/CommissionOverride';
 import { UserSchema } from './models/User';
 import { FinancialTransactionSchema, CargoInvoiceSchema } from './models/Financial';
 
@@ -50,6 +53,9 @@ export default (mongooseConnection: Connection): Record<string, Model<any>> => {
         import_job_report: mongooseConnection.model('import_job_report', ImportJobReportSchema),
         message: mongooseConnection.model('message', MessageSchema),
         financial_transaction: mongooseConnection.model('financial_transaction', FinancialTransactionSchema),
-        cargo_invoice: mongooseConnection.model('cargo_invoice', CargoInvoiceSchema)
+        cargo_invoice: mongooseConnection.model('cargo_invoice', CargoInvoiceSchema),
+        idempotency_key: mongooseConnection.model('idempotency_key', IdempotencyKeySchema),
+        stock_movement: mongooseConnection.model('stock_movement', StockMovementSchema),
+        commission_override: mongooseConnection.model('commission_override', CommissionOverrideSchema)
     }
 }

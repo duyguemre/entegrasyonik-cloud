@@ -1,12 +1,18 @@
+import { InvalidatesTenantCache } from '@utils/decorator/cache'
 import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import { ObjectId } from 'mongodb'
+import { detachChoiceFromMappings, pullValueFromMappings } from '@operations/catalog/mapping/mappingCleanup'
 
 export default class ChoiceService extends BaseApi implements IService {
     async get(): Promise<any> {
         try {
             const filterQuery = {}
-            const choices = await this.clientDB.getChoiceModel().find(filterQuery).sort({ order: 1 }).lean()
+            // Opsiyonel sayfalama (yanıt şekli aynı: dizi). Verilmezse tümü döner (FE sözleşmesi).
+            let query = this.clientDB.getChoiceModel().find(filterQuery).sort({ order: 1 })
+            if (this.request?.skip) query = query.skip(Number(this.request.skip))
+            if (this.request?.limit) query = query.limit(Number(this.request.limit))
+            const choices = await query.lean()
             for (const choice of choices) {
                 choice.values.sort((a: any, b: any) => {
                     const aNum = Number(a.title);
@@ -23,19 +29,9 @@ export default class ChoiceService extends BaseApi implements IService {
         }
     }
 
-    async saveIntegration(): Promise<any> {
-        try {
-            const filter = { _id: new ObjectId(this.request.choiceId) }
-            const key = this.request.integrationCategoryId + '_' + this.request.integrationChoiceId
-            const path = 'platforms.' + this.request.integrationCode + '.' + key
-            const updateSet = { $set: { [path]: this.request.mapping } }
-            const resp = await this.clientDB.getChoiceModel().updateOne(filter, updateSet)
-            return { result: resp }
-        } catch (error) {
-            throw error
-        }
-    }
+    @InvalidatesTenantCache('PlatformMappingProvider')
 
+    @InvalidatesTenantCache('PlatformMappingProvider')
     async addChoice(): Promise<any> {
         try {
             const document = {
@@ -50,6 +46,7 @@ export default class ChoiceService extends BaseApi implements IService {
         }
     }
 
+    @InvalidatesTenantCache('PlatformMappingProvider')
     async addPreparedChoice(): Promise<any> {
         try {
             const document = this.request.choice
@@ -60,6 +57,7 @@ export default class ChoiceService extends BaseApi implements IService {
         }
     }
 
+    @InvalidatesTenantCache('PlatformMappingProvider')
     async updateChoice(): Promise<any> {
         try {
             const updateQuery = { _id: new ObjectId(this.request._id as string) }
@@ -77,16 +75,20 @@ export default class ChoiceService extends BaseApi implements IService {
         }
     }
 
+    @InvalidatesTenantCache('PlatformMappingProvider')
     async removeChoice(): Promise<any> {
         try {
             const deleteQuery = { _id: new ObjectId(this.request._id as string) }
             const resp = await this.clientDB.getChoiceModel().deleteOne(deleteQuery)
-            return { result: resp }
+            // Yetim referans temizliği (P1-5): silme sonucundan BAĞIMSIZ çalışır (idempotent; yarım kalan silme tekrarında iyileşir).
+            const detachedMappings = await detachChoiceFromMappings(this.clientDB.getAttributeMappingModel(), String(this.request._id))
+            return { result: resp, detachedMappings }
         } catch (error) {
             throw error
         }
     }
 
+    @InvalidatesTenantCache('PlatformMappingProvider')
     async addChoiceValue(): Promise<any> {
         try {
             const filterQuery = {
@@ -120,6 +122,7 @@ export default class ChoiceService extends BaseApi implements IService {
         }
     }
 
+    @InvalidatesTenantCache('PlatformMappingProvider')
     async updateChoiceValue(): Promise<any> {
         try {
             const choiceId = new ObjectId(this.request._id as string);
@@ -160,12 +163,14 @@ export default class ChoiceService extends BaseApi implements IService {
         }
     }
 
+    @InvalidatesTenantCache('PlatformMappingProvider')
     async removeChoiceValue(): Promise<any> {
         try {
             const filterQuery = { _id: new ObjectId(this.request._id as string) }
             const updateQuery = { "$pull": { "values": { _id: new ObjectId(this.request.id as string) } } }
             const resp = await this.clientDB.getChoiceModel().updateOne(filterQuery, updateQuery)
-            return { result: resp }
+            const cleanedMappings = await pullValueFromMappings(this.clientDB.getAttributeMappingModel(), String(this.request.id))
+            return { result: resp, cleanedMappings }
         } catch (error) {
             throw error
         }

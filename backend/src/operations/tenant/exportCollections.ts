@@ -1,6 +1,6 @@
 import type { IClientDB } from '@interfaces/index';
-import { maskClientIntegrationsDoc } from '../../api/integrationSecrets';
-import { sanitizeResponse } from '../../api/responseSanitizer';
+import { maskClientIntegrationsDoc } from '../../platform/core/security/integrationSecrets';
+import { sanitizeResponse } from '../../platform/core/security/responseSanitizer';
 
 /**
  * ADR-0003 adım 8 (Karar F.22): tenant DB dışa aktarma koleksiyon envanteri. Her koleksiyon NDJSON dosyasına döner.
@@ -42,6 +42,8 @@ export const EXPORT_COLLECTIONS: ReadonlyArray<ExportCollectionSpec> = [
     { file: 'images.ndjson', getModel: (db) => db.getImageModel() },
     { file: 'notifications.ndjson', getModel: (db) => db.getNotificationModel() },
     { file: 'favorites.ndjson', getModel: (db) => db.getFavoriteModel() },
+    { file: 'commission_overrides.ndjson', getModel: (db) => db.getCommissionOverrideModel() }, // [COM-04] tenant komisyon override'lari (PII yok)
+    { file: 'stock_movements.ndjson', getModel: (db) => db.getStockMovementModel() }, // [Faz-3 / ADR-0021 D14] stok hareket defteri (PII yok)
 ];
 
 /** Test yardımcısı: EXPORT_COLLECTIONS'ın kullandığı IClientDB getter metot adları (sahte clientDB üretmek için). */
@@ -49,7 +51,7 @@ export const GETTER_NAMES_FOR_TEST: ReadonlyArray<string> = [
     'getClientIntegrationModel', 'getProductModel', 'getVariantModel', 'getCategoryModel', 'getBrandModel',
     'getChoiceModel', 'getHashtagModel', 'getOrderModel', 'getCustomerModel', 'getClaimModel', 'getInvoiceModel',
     'getMessageModel', 'getSettingModel', 'getFinancialTransactionModel', 'getCargoInvoiceModel', 'getUserModel',
-    'getAttributeMappingModel', 'getStatisticsModel', 'getImageModel', 'getNotificationModel', 'getFavoriteModel',
+    'getAttributeMappingModel', 'getStatisticsModel', 'getImageModel', 'getNotificationModel', 'getFavoriteModel', 'getStockMovementModel', 'getCommissionOverrideModel',
 ];
 
 /** Tek bir dokümanı export için güvenli hâle getirir: özel maske (varsa) + genel sır temizleyici (son savunma). */

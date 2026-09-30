@@ -10,6 +10,8 @@
 // Sırlar (JWT_SECRET, DB_PASSWORD, R2_SECRET..., FIELD_ENCRYPTION_KEYS, ZOHO_SMTP_PASS ...) burada yalnızca TİPLENİR; hiçbir
 // yerde loglanmaz. Bu modül log/redaksiyon katmanına bağımlı DEĞİLDİR (Sv 1: yalnızca `interfaces`/`utils` alt katmanı).
 import { z } from 'zod';
+import { ADAPTER_KEYS } from '../integration/modules/adapterKeys';
+import type { MockPrefixName } from '../integration/modules/adapterKeys';
 
 export const APP_ENVS = ['local', 'staging', 'production'] as const;
 export type AppEnv = typeof APP_ENVS[number];
@@ -19,10 +21,23 @@ export const LOG_LEVELS = ['trace', 'debug', 'info', 'warn', 'error', 'fatal', '
 export type LogLevelName = typeof LOG_LEVELS[number];
 export const LOG_FORMATS = ['json', 'legacy'] as const;
 export type LogFormatName = typeof LOG_FORMATS[number];
-export const MOCK_PREFIXES = ['TY', 'PAZARAMA', 'N11', 'HEPSIBURADA', 'IDEASOFT', 'BIZIMHESAP'] as const;
-export type MockPrefixName = typeof MOCK_PREFIXES[number];
+// ADR-0033 INT-02: kod/önek listesi tek tablodan (`integration/modules/adapterKeys.ts`, saf veri) türetilir.
+export const MOCK_PREFIXES = ADAPTER_KEYS.map(k => k.mockPrefix) as unknown as readonly MockPrefixName[];
+export type { MockPrefixName };
 
 const JWT_SECRET_MIN_BYTES = 32;
+
+/**
+ * ADR-0031 Karar 3 / BE-CFG-1: eski (yerleşik) görsel kökü. Kod tabanında `images.entegrasyonik.com` YALNIZ burada geçer
+ * (statik test: tests/static/imageBaseUrl.static.test.ts). `R2_PUBLIC_URL_IMAGE` tanımlıysa o kullanılır; bu değer ADR-0027
+ * `images.` alan adı kaldırma eşiği gerçekleşince silinir.
+ */
+export const LEGACY_IMAGE_PUBLIC_ROOT = 'https://images.entegrasyonik.com';
+
+/** Sonda `/` olsun olmasın tek `/` ile biten kök + yol birleşimi. */
+function joinImageBase(root: string, path: string): string {
+    return root.replace(/\/+$/, '') + '/' + path.replace(/^\/+/, '').replace(/\/*$/, '') + '/';
+}
 
 export class ConfigError extends Error {
     public readonly issues: string[];
@@ -70,6 +85,10 @@ function f(m: Mode) {
         bool: (def: boolean) => z.preprocess(blank, m.strict
             ? z.enum(['true', 'false'], { errorMap: () => ({ message: "'true' veya 'false' olmalı" }) }).optional()
             : z.any()).transform(v => (v === undefined ? def : v === 'true')),
+        /** 'true' | 'false'; tanımsız/boş -> undefined (varsayılanı çağıran ortama göre belirler). Lenient: eski `=== 'true'` semantiği. */
+        boolOpt: () => z.preprocess(blank, m.strict
+            ? z.enum(['true', 'false'], { errorMap: () => ({ message: "'true' veya 'false' olmalı" }) }).optional()
+            : z.any()).transform(v => (v === undefined ? undefined : v === 'true')),
         /** Sabit küme; lenient: geçersiz -> varsayılan. */
         enumOf: <V extends readonly [string, ...string[]]>(values: V, def: V[number] | undefined) => {
             const base = z.enum(values, { errorMap: () => ({ message: `izinli değerler: ${values.join('|')}` }) });
@@ -95,6 +114,10 @@ function buildShape(m: Mode) {
         RAILWAY_GIT_COMMIT_SHA: t.str(),
         LOG_LEVEL: t.enumOf(LOG_LEVELS, undefined),
         LOG_FORMAT: t.enumOf(LOG_FORMATS, 'json'),
+        // --- ADR-0026 WP-LOG L1: kalici log deposu (LogEvents). Varsayilan KAPALI = sifir maliyet (kanca kurulmaz). ---
+        LOG_PERSIST_ENABLED: t.bool(false),
+        LOG_PERSIST_LEVEL: t.enumOf(['debug', 'info', 'warn', 'error'] as const, 'warn'),
+        LOG_PERSIST_SAMPLE_INFO: t.int(5, { min: 0, max: 100 }), // yuzde: kalici seviyenin ALTINDAKI info/debug kayitlarinin ornekleme orani
 
         // --- HTTP sunucusu / CORS ---
         SERVER_NAME: t.strDef('EntegrasyonikApiServer'),
@@ -107,6 +130,14 @@ function buildShape(m: Mode) {
         CORS_METHODS: t.strDef('GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS'),
         CORS_CREDENTIALS: t.bool(false),
         TRUSTED_PROXY_HOPS: t.int(0, { min: 0 }),
+        // ADR-0027: oturum çerezi SameSite; tanımsız = eski davranış (development: lax, diğer: none).
+        SESSION_COOKIE_SAMESITE: t.enumOf(['lax', 'strict', 'none'] as const, undefined),
+
+        // --- ADR-0026 Karar 4 (backoffice `/admin-api`): AYRI CORS listesi (musteri CORS_ORIGINS ile KESISMEZ; kesisirse surec baslamaz),
+        // opsiyonel IP allowlist (CIDR/IP listesi; bos = kapali), Asama 3 sonunda true yapilacak `/api` platformAdmin kapatma bayragi. ---
+        ADMIN_CORS_ORIGINS: t.str(),
+        ADMIN_IP_ALLOWLIST: t.list(),
+        ADMIN_API_ONLY: t.bool(false),
 
         // --- Rate limit (süreç-içi, tek replika varsayımı: ADR-0017 §10 — web pod >= 2 iken Redis tabanlıya geçilir) ---
         GLOBAL_RATE_LIMIT_ENABLED: t.bool(true),
@@ -150,6 +181,9 @@ function buildShape(m: Mode) {
         DB_PASSWORD: t.str(),
         DB_NAME: t.str(),
         DB_POOL_SIZE: t.looseNum(20),
+        // ADR-0021 D8 / DB-08: mongoose autoIndex. Tanımsız -> ortama göre (local: açık = mevcut davranış; staging/production: kapalı,
+        // indeksler yalnız onaylı göçle + yeni tenant provizyonunda createIndexes). Açık değer her ortamda önceliklidir.
+        DB_AUTO_INDEX: t.boolOpt(),
         TENANT_DB_ROLE_MAX: t.str(), // biçimi TenantProvisioningService'te (geçersiz -> uyarı + sınır yok)
 
         // --- Redis ---
@@ -176,6 +210,10 @@ function buildShape(m: Mode) {
         R2_BUCKET_ARCHIVE: t.str(),
         R2_PUBLIC_URL_IMAGE: t.str(),
         R2_PUBLIC_URL_ARCHIVE: t.str(),
+        // ADR-0027: doğrudan (imzalı PUT) görsel yükleme; okuma `services/storage/imagePolicy.ts` (üst sınırlar orada).
+        IMAGE_UPLOAD_MAX_BYTES: t.str(),
+        IMAGE_UPLOAD_URL_TTL_SEC: t.str(),
+        IMAGE_TRANSFORMATIONS_ENABLED: t.bool(false),
 
         // --- Ödeme (ADR-0008) ---
         PAYMENT_PROVIDER: t.lower(),
@@ -189,6 +227,12 @@ function buildShape(m: Mode) {
         // Varsayılan `false` (KAPALI): production'da legacy migration (npm run migrate:legacy-subscriptions) çalışıp
         // insan onayı olmadan otomatik AÇILMAZ (BACKLOG C16 uyarısı). Kapalıyken mevcut davranış birebir korunur.
         ENTITLEMENT_GUARD_ENABLED: t.bool(false),
+        // [ADR-0028 WP-A3] authenticate'in yetki kaynağı: legacy (Users alanları) | dual (legacy karar + Memberships ölçümü) | membership.
+        MEMBERSHIP_SOURCE: t.enumOf(['legacy', 'dual', 'membership'] as const, 'legacy'),
+        // [ADR-0030 X3] Idempotency-Key kipi: observe (varsayılan; yalnız ölç/logla) | enforce (tekrar/yeniden kullanım/eşzamanlılık zorlanır).
+        IDEMPOTENCY_ENFORCE: t.enumOf(['observe', 'enforce'] as const, 'observe'),
+        // [F-12] ProductService.exportExcel satır (varyant) tavanı; aşılırsa üretim durur ve anlamlı hata döner.
+        EXPORT_EXCEL_MAX_ROWS: t.int(20000, { min: 1, max: 500000 }),
 
         // --- Entegrasyon adaptörleri ---
         TY_HTTP_TIMEOUT_MS: t.int(undefined),
@@ -222,10 +266,31 @@ function buildShape(m: Mode) {
         // Kaynak izleyicinin User-Agent'i (ADR-0018 Karar 2c "kimliği belli bir User-Agent, ürün adı + iletişim").
         SOURCE_MONITOR_USER_AGENT: t.strDef('Entegrasyonik-SourceMonitor/1.0 (+https://entegrasyonik.com; kaynak-izleme, robots.txt uyumlu)'),
 
+        // --- ADR-0029: bildirim sistemi kapı bayrakları (varsayılan KAPALI; DB kapısı S1 + canlı SMTP S2 insan kararı) ---
+        // NOTIFY_V2_ENABLED=false: `sendClientNotification` bugünkü yazımı yapar, yeni koleksiyonlara DOKUNULMAZ.
+        NOTIFY_V2_ENABLED: t.bool(false),
+        // NOTIFY_EMAIL_ENABLED=false: e-posta teslim kayıtları `skipped:disabled` olur, gönderim yok.
+        NOTIFY_EMAIL_ENABLED: t.bool(false),
+        // NOTIFY_STREAM_ENABLED=false: SSE bildirim zili kapatilir (varsayilan acik). Basina limitler: kullanici / toplam.
+        NOTIFY_STREAM_ENABLED: t.bool(true),
+        NOTIFY_STREAM_MAX_PER_USER: t.int(5),
+        NOTIFY_STREAM_MAX_TOTAL: t.int(2000),
+        // 'redis' -> Redis pub/sub RealtimeBus (coklu pod); bos -> yerel bus.
+        REALTIME_BUS: t.str(),
+        // Abonelik baglantisi API origin'i (bos -> PUBLIC_APP_URL). Abonelikten cikma belirteci HMAC sirri (SIR; yalniz .env).
+        PUBLIC_API_URL: t.str(),
+        NOTIFY_UNSUB_SECRET: t.str(),
+
         // --- ADR-0020 Karar 3.2/9.1 (Aşama B): iki kişi kuralı iskeleti ---
         // Varsayılan `false` (KAPALI): bugün tek platformAdmin var; açılırsa hiçbir `dangerous` yayın yapılamaz
         // (Karar 9.1). Açılma eşiği insan kararıdır (aktif platformAdmin ≥2 ve ekip dışı erişim ya da bir olay).
         TWO_PERSON_RULE_ENABLED: t.bool(false),
+
+        // --- LIVE-RO (canlı salt-okuma kipi, docs/LIVE_READONLY.md): `npm run start:live-readonly` kurar; elle açmak için egress guard ŞARTTIR ---
+        // LIVE_READONLY=true: yazan işçiler/zamanlayıcılar başlatılmaz, dış-etkili yazma RPC'leri 423 LIVE_READONLY döner, DB_URL yerel değilse süreç başlamaz.
+        LIVE_READONLY: t.bool(false),
+        // Virgüllü adaptör kodları (ör. `ideasoft`): bu kipte token YENİLEMESİNE izin verir (Ideasoft refresh_token döndürür; üretimle paylaşılan bağlantıyı bozabilir). Varsayılan: hiçbiri.
+        LIVE_READONLY_ALLOW_TOKEN_REFRESH: t.list(),
 
         // --- Yalnız geliştirme araçları (dev-tools/*, backup/): uygulama süreci okumaz, .env.example tutarlılığı için tanımlı ---
         LOCAL_DB_URL: t.str(),
@@ -247,6 +312,12 @@ function buildShape(m: Mode) {
 // ---------------------------------------------------------------------------------------------------------------------
 type RL = { max: number; windowMs: number };
 
+const normOrigin = (o: string) => o.trim().replace(/\/+$/, '').toLowerCase();
+/** ADMIN_CORS_ORIGINS -> temiz liste ('*' ve bos girdiler atilir; karsilastirma icin normalize). */
+function adminOrigins(raw: string | undefined): string[] {
+    return (raw || '').split(',').map(normOrigin).filter(o => o.length > 0 && o !== '*');
+}
+
 function nest(e: Record<string, any>) {
     const nodeEnv: string | undefined = e.NODE_ENV;
     const warnings: string[] = [];
@@ -261,6 +332,13 @@ function nest(e: Record<string, any>) {
         mock[p] = { enabled: e[`${p}_MOCK_MODE`], baseUrl: e[`${p}_MOCK_BASE_URL`], mockableEndpoints: e[`${p}_MOCKABLE_ENDPOINTS`] };
     }
     const rl = (max: string, win: string): RL => ({ max: e[max], windowMs: e[win] });
+    // ADR-0031 BE-CFG-1: görsel tabanı tek çözümleyici.
+    const configuredImageRoot = ((e.R2_PUBLIC_URL_IMAGE as string | undefined) ?? '').trim().replace(/\/+$/, '');
+    const usingLegacyImageRoot = configuredImageRoot === '';
+    const imagePublicRoot = usingLegacyImageRoot ? LEGACY_IMAGE_PUBLIC_ROOT : configuredImageRoot;
+    if (usingLegacyImageRoot && appEnv !== 'local') {
+        warnings.push('R2_PUBLIC_URL_IMAGE tanımsız; eski görsel kökü (images.) kullanılıyor (ADR-0031/ADR-0027: cdn. alan adını tanımlayın).');
+    }
     return {
         nodeEnv,
         appEnv,
@@ -269,7 +347,10 @@ function nest(e: Record<string, any>) {
         podName: e.POD_NAME as string | undefined,
         version: sha ? String(sha).slice(0, 7) : 'dev',
         warnings,
-        log: { level: e.LOG_LEVEL as LogLevelName | undefined, format: e.LOG_FORMAT as LogFormatName },
+        log: {
+            level: e.LOG_LEVEL as LogLevelName | undefined, format: e.LOG_FORMAT as LogFormatName,
+            persist: { enabled: e.LOG_PERSIST_ENABLED as boolean, level: (e.LOG_PERSIST_LEVEL ?? 'warn') as 'debug' | 'info' | 'warn' | 'error', sampleInfoPct: e.LOG_PERSIST_SAMPLE_INFO as number },
+        },
         server: {
             name: e.SERVER_NAME as string,
             context: e.SERVER_CONTEXT as string,
@@ -278,6 +359,12 @@ function nest(e: Record<string, any>) {
             timeoutSec: e.SERVER_TIMEOUT_SEC as number | undefined,
             imageFilesPath: e.IMAGE_FILES_PATH as string,
             cors: { origins: e.CORS_ORIGINS as string | undefined, methods: e.CORS_METHODS as string, credentials: e.CORS_CREDENTIALS as boolean },
+        },
+        images: {
+            publicRoot: imagePublicRoot,
+            productBaseUrl: joinImageBase(imagePublicRoot, (e.IMAGE_FILES_PATH as string) || 'products/'),
+            clientBaseUrl: joinImageBase(imagePublicRoot, 'clients'),
+            usingLegacyRoot: usingLegacyImageRoot,
         },
         rateLimit: {
             trustedProxyHops: e.TRUSTED_PROXY_HOPS as number,
@@ -292,11 +379,19 @@ function nest(e: Record<string, any>) {
             exportDownload: rl('EXPORT_DOWNLOAD_RATE_LIMIT_MAX', 'EXPORT_DOWNLOAD_RATE_LIMIT_WINDOW_MS'),
             clientLog: rl('CLIENT_LOG_RATE_LIMIT_MAX', 'CLIENT_LOG_RATE_LIMIT_WINDOW_MS'),
         },
+        session: { sameSite: e.SESSION_COOKIE_SAMESITE as 'lax' | 'strict' | 'none' | undefined },
+        // ADR-0026 Karar 4 (backoffice `/admin-api`)
+        admin: {
+            corsOrigins: adminOrigins(e.ADMIN_CORS_ORIGINS as string | undefined),
+            ipAllowlist: e.ADMIN_IP_ALLOWLIST as string[],
+            apiOnly: e.ADMIN_API_ONLY as boolean,
+        },
         auth: { jwtSecret: e.JWT_SECRET as string | undefined, jwtSecretPrevious: e.JWT_SECRET_PREVIOUS as string | undefined, jwtIssuer: e.JWT_ISSUER as string },
         fieldEncryption: { keys: e.FIELD_ENCRYPTION_KEYS as string | undefined, activeKid: e.FIELD_ENCRYPTION_ACTIVE_KID as string | undefined },
         db: {
             url: e.DB_URL as string | undefined, user: e.DB_USER as string | undefined, password: e.DB_PASSWORD as string | undefined,
-            name: e.DB_NAME as string | undefined, poolSize: e.DB_POOL_SIZE as number, tenantRoleMax: e.TENANT_DB_ROLE_MAX as string | undefined,
+            name: e.DB_NAME as string | undefined, poolSize: e.DB_POOL_SIZE as number,
+            autoIndex: ((e.DB_AUTO_INDEX as boolean | undefined) ?? (appEnv === 'local')) as boolean, tenantRoleMax: e.TENANT_DB_ROLE_MAX as string | undefined,
         },
         redis: { host: e.REDIS_HOST as string | undefined, port: e.REDIS_PORT as number, password: e.REDIS_PASSWORD as string | undefined, tls: e.REDIS_TLS as boolean },
         mail: {
@@ -319,7 +414,10 @@ function nest(e: Record<string, any>) {
         flags: {
             integrationMetricsDisabled: e.INTEGRATION_METRICS_DISABLED as boolean, auditLogDisabled: e.AUDIT_LOG_DISABLED as boolean,
             entitlementGuardEnabled: e.ENTITLEMENT_GUARD_ENABLED as boolean,
+            membershipSource: e.MEMBERSHIP_SOURCE as 'legacy' | 'dual' | 'membership',
+            idempotencyEnforce: e.IDEMPOTENCY_ENFORCE as 'observe' | 'enforce',
         },
+        exports: { excelMaxRows: e.EXPORT_EXCEL_MAX_ROWS as number },
         scheduler: {
             leaseEnabled: (e.SCHEDULER_LEASE as 'on' | 'off') !== 'off',
             exportIdlePollMs: e.EXPORT_IDLE_POLL_MS as number,
@@ -330,6 +428,12 @@ function nest(e: Record<string, any>) {
             sourceMonitorEnabled: e.SOURCE_MONITOR_ENABLED as boolean,
             sourceMonitorUserAgent: e.SOURCE_MONITOR_USER_AGENT as string,
         },
+        // ADR-0029 (bildirim sistemi; varsayılan kapalı)
+        notify: { v2Enabled: e.NOTIFY_V2_ENABLED as boolean, emailEnabled: e.NOTIFY_EMAIL_ENABLED as boolean,
+            streamEnabled: e.NOTIFY_STREAM_ENABLED as boolean, streamMaxPerUser: e.NOTIFY_STREAM_MAX_PER_USER as number, streamMaxTotal: e.NOTIFY_STREAM_MAX_TOTAL as number,
+            realtimeBus: e.REALTIME_BUS as string | undefined, publicApiUrl: e.PUBLIC_API_URL as string | undefined, unsubSecret: e.NOTIFY_UNSUB_SECRET as string | undefined },
+        // LIVE-RO: canlı salt-okuma kipi
+        liveReadonly: { enabled: e.LIVE_READONLY as boolean, allowTokenRefresh: (e.LIVE_READONLY_ALLOW_TOKEN_REFRESH as string[]).map(s => s.toLowerCase()) },
         // ADR-0020 Karar 3.2/9.1 (Aşama B)
         integrationConfig: {
             twoPersonRuleEnabled: e.TWO_PERSON_RULE_ENABLED as boolean,
@@ -365,11 +469,28 @@ function reasonOf(issue: z.ZodIssue): string {
     }
 }
 
+/**
+ * ADR-0026 Karar 4.3: `ADMIN_CORS_ORIGINS` ile `CORS_ORIGINS` KESISMEZ (admin origin'i musteri listesine girerse EK_ADMIN/`aud`
+ * ayrimi anlamsizlasir); '*' admin listesinde kabul edilmez. Ihlal -> ConfigError (surec baslamaz; yalniz degisken ADLARI, deger yok).
+ */
+function assertAdminCorsDisjoint(raw: NodeJS.ProcessEnv): void {
+    const admin = (raw.ADMIN_CORS_ORIGINS || '').split(',').map(normOrigin).filter(Boolean);
+    if (admin.length === 0) return;
+    const issues: string[] = [];
+    if (admin.includes('*')) issues.push("ADMIN_CORS_ORIGINS: '*' kabul edilmez (açık origin listesi gerekir)");
+    const customer = new Set((raw.CORS_ORIGINS || '').split(',').map(normOrigin).filter(Boolean));
+    if (admin.some(o => customer.has(o))) issues.push('ADMIN_CORS_ORIGINS: CORS_ORIGINS ile kesişemez (ADR-0026 Karar 4.3)');
+    if (issues.length) throw new ConfigError(issues);
+}
+
 /** Ham ortamı (varsayılan process.env) doğrular. Strict: hata listesi + ConfigError; lenient: hep tipli sonuç. */
 export function parseEnv(raw: NodeJS.ProcessEnv, opts: { strict: boolean }): AppConfig {
     const { schema } = getSchema(opts.strict);
     const res = schema.safeParse(raw);
-    if (res.success) return res.data;
+    if (res.success) {
+        if (opts.strict) assertAdminCorsDisjoint(raw);
+        return res.data;
+    }
     const issues = res.error.issues.map(i => `${String(i.path[0] ?? '(env)')}: ${reasonOf(i)}`);
     throw new ConfigError(issues);
 }

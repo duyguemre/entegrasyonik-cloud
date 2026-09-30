@@ -49,35 +49,35 @@ describe('token kaynağı ve katman ayrımı (ADR-0014 Karar 1)', () => {
     expect(tokensCss.indexOf('tokens.static.css')).toBeLessThan(tokensCss.indexOf('site-tokens.css'))
   })
 
-  it('site-tokens.css hiçbir --ek-* tanımlamaz; yalnızca --site-* ekler', () => {
+  it('site-tokens.css hiçbir --ek-* tanımlamaz; yalnızca --site-* (ve kanal paleti --channel-*) ekler', () => {
     const names = declared(siteTokensCss)
     expect(names.length).toBeGreaterThan(20)
     expect(names.filter((n) => n.startsWith('--ek-'))).toEqual([])
-    expect(names.filter((n) => !n.startsWith('--site-'))).toEqual([])
+    expect(names.filter((n) => !n.startsWith('--site-') && !n.startsWith('--channel-'))).toEqual([])
   })
 
-  it('site-tokens.css ham renk içermez; renkler --ek-color-* üzerinden (istisna: --site-channel-* kanal paleti)', () => {
-    // Kanal (pazaryeri) marka renkleri: TEK belgelenmiş istisna (S8 2. tur — gerçek yaklaşık marka tonu,
-    // logo değil; bkz. site-tokens.css içindeki not + src/data/channel-colors.ts). Bu satırlar hariç
-    // dosyanın geri kalanında hâlâ ham hex/rgb yasak.
-    const CHANNEL_HEX_EXCEPTION = /^\s*--site-channel-[\w-]+:\s*#[0-9a-fA-F]{3,8}\s*;.*$/m
+  it('site-tokens.css ham renk içermez; renkler --ek-color-* üzerinden (istisna: --channel-* kanal paleti)', () => {
+    // Kanal (pazaryeri) resmi marka renkleri: TEK belgelenmiş istisna (C1S — docs/cloud-contracts/
+    // CHANNEL_BRAND_COLORS.md, logo değil; bkz. site-tokens.css notu + tests/channel-colors.test.ts). Bu satırlar
+    // hariç dosyanın geri kalanında hâlâ ham hex/rgb yasak.
+    const CHANNEL_HEX_EXCEPTION = /^\s*--channel-[\w-]+:\s*#[0-9a-fA-F]{3,8}\s*;.*$/m
     const css = stripComments(siteTokensCss)
       .split('\n')
       .filter((line) => !CHANNEL_HEX_EXCEPTION.test(line))
       .join('\n')
     expect(css).not.toMatch(/#[0-9a-fA-F]{3,8}\b/)
     expect(css).not.toMatch(/\b(rgb|rgba|hsl|hsla|hwb|oklch|lab)\(/)
-    // İstisna gerçekten var mı ve tam olarak 6 kanal için mi (yeni kanal eklenirse bu sayı bilinçli güncellenir)
+    // İstisna tam olarak uygulanmış 6 kanal × (marka + on) için mi (yeni kanal eklenirse bilinçli güncellenir)
     const exceptionLines = stripComments(siteTokensCss)
       .split('\n')
       .filter((line) => CHANNEL_HEX_EXCEPTION.test(line))
-    expect(exceptionLines).toHaveLength(6)
+    expect(exceptionLines).toHaveLength(12)
   })
 
   it('kodda kullanılan her var(--ek-*/--site-*) bir yerde tanımlı', () => {
     const missing: string[] = []
     for (const file of styleFiles) {
-      for (const m of stripComments(read(file)).matchAll(/var\((--(?:ek|site)-[\w-]+)/g)) {
+      for (const m of stripComments(read(file)).matchAll(/var\((--(?:ek|site|channel)-[\w-]+)/g)) {
         const ok = m[1].startsWith('--ek-') ? ekDefined.has(m[1]) : siteDefined.has(m[1])
         if (!ok) missing.push(`${path.relative(siteRoot, file)}: ${m[1]}`)
       }

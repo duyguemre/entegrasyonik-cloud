@@ -1,79 +1,78 @@
-import { LRUCache } from 'lru-cache';
-import { DBConfig, IClientDB } from "@interfaces/index";
+import { IClientDB } from "@interfaces/index";
 import getModels from './ClientMongooseSchemas';
 import { IDatabase } from "../Database";
-import Database from "../Database";
-import { buildTenantDbConfig, TenantDbRecord } from "../tenantConnection";
+import { isAllowedTenantDbName, TenantDbRecord } from "../tenantConnection";
+import { getRootDatabase } from "../rootConnection";
+import { getTenantRegistry } from "../TenantRegistry";
+
+/**
+ * ADR-0024 D2 (ADR-0016 §5.2'nin ClientDB kısmının yerine): tenant tutamakları TEK kök bağlantıdan `useDb` ile türetilir.
+ * `Map<dbname, ClientDB>`: LRU/dispose/initPromises yok — tahliye edilecek bağlantı yok, uçuştaki sorgu asla kopmaz.
+ * `Clients.dbConfig.poolsize` OKUNMAZ (bilgi amaçlı; havuz tek yerde: DB_POOL_SIZE). Anahtar dbname (izinli ad kapısından geçer).
+ */
+export class TenantDbClosingError extends Error {
+    constructor() { super('[ClientDB] Kapanış başladı: yeni tenant bağlantısı açılamaz.'); this.name = 'TenantDbClosingError'; }
+}
 
 export default class ClientDB implements IClientDB {
-    // 1. KURAL: Canlı bağlantıları burada tutmalıyız
-    private static instances: Record<string, ClientDB> = {};
+    private static handles = new Map<string, ClientDB>();
+    private static idToDbname = new Map<string, string>(); // invalidate(_id) için
+    private static pending = new Map<string, Promise<ClientDB>>();
+    private static closing = false;
 
-    public static cache = new LRUCache<string, ClientDB>({
-        max: 100,
-        dispose: (value: ClientDB, key: string) => {
-            if (value && value.database) {
-                // Bellekten atılırken hem DB'yi kapat hem de instances'tan sil
-                value.database.close().catch(() => { });
-                delete ClientDB.instances[key]; // <--- KRİTİK
-                console.log(`[LRU] Evicted: ${key}`);
-            }
-        }
-    });
-
-    private static initPromises: Record<string, Promise<ClientDB> | undefined> = {};
     private database!: IDatabase;
 
     private constructor() { }
 
-    // ADR-0003 adım 5: `client.dbConfig` yalnızca dbname/poolsize taşır; bağlantı bilgisi env'den kurulur (tenantConnection.ts).
+    /** Kapanış bayrağı: true iken `getInstance` reddeder. */
+    public static beginShutdown(): void { ClientDB.closing = true; }
+    public static isClosing(): boolean { return ClientDB.closing; }
+
+    /** Açık tenant tutamağı sayısı (gözlem/test). */
+    public static get size(): number { return ClientDB.handles.size; }
+
+    /** Tutamakları bırakır: uçuş içi açılışları bekler, bağlantıyı KAPATMAZ (kök bağlantıyı DatabaseManager.close kapatır). */
+    public static async closeAll(): Promise<void> {
+        ClientDB.closing = true;
+        await Promise.allSettled([...ClientDB.pending.values()]);
+        ClientDB.handles.clear();
+        ClientDB.idToDbname.clear();
+    }
+
+    /** Yalnız test: kapanış durumunu ve önbelleği sıfırlar. */
+    public static resetForTests(): void {
+        ClientDB.closing = false;
+        ClientDB.handles.clear(); ClientDB.idToDbname.clear(); ClientDB.pending.clear();
+    }
+
+    // ADR-0003: `client.dbConfig` yalnızca dbname taşır (poolsize okunmaz); bağlantı bilgisi env'den (kök bağlantı).
     public static async getInstance(client: TenantDbRecord & { _id: string }): Promise<ClientDB> {
-        const clientId = client._id;
+        if (ClientDB.closing) throw new TenantDbClosingError();
+        const dbname = client?.dbConfig?.dbname;
+        if (!isAllowedTenantDbName(dbname)) throw new Error('[TenantDb] Tenant kaydında geçerli ve izinli bir dbConfig.dbname yok.');
 
-        // A. ÖNCE CANLI INSTANCE KONTROLÜ (En hızlı yol)
-        if (ClientDB.instances[clientId]) {
-            // LRU'da yerini güncelle (en yeniye taşı)
-            ClientDB.cache.get(clientId);
-            return ClientDB.instances[clientId];
-        }
+        const live = ClientDB.handles.get(dbname);
+        if (live) { ClientDB.idToDbname.set(String(client._id), dbname); return live; }
+        const inflight = ClientDB.pending.get(dbname);
+        if (inflight) return inflight;
 
-        // B. DEVAM EDEN PROMISE KONTROLÜ (Yarış engelleme)
-        if (ClientDB.initPromises[clientId]) {
-            return ClientDB.initPromises[clientId]!;
-        }
-
-        // C. SIFIRDAN BAĞLANTI
-        const initPromise = (async () => {
-            try {
-                const instance = new ClientDB();
-                await instance.init(buildTenantDbConfig(client));
-
-                // Hem cache'e hem de instances'a ekle
-                ClientDB.instances[clientId] = instance;
-                ClientDB.cache.set(clientId, instance);
-
-                return instance;
-            } catch (error) {
-                delete ClientDB.initPromises[clientId];
-                throw error;
-            } finally {
-                delete ClientDB.initPromises[clientId];
-            }
+        const p = (async () => {
+            const root = await getRootDatabase();
+            if (ClientDB.closing) throw new TenantDbClosingError();
+            const instance = new ClientDB();
+            instance.database = root.useDb(dbname, getModels);
+            ClientDB.handles.set(dbname, instance);
+            ClientDB.idToDbname.set(String(client._id), dbname);
+            return instance;
         })();
-
-        ClientDB.initPromises[clientId] = initPromise;
-        // ADR-0003 adım 5: yapılandırma hatası (ör. DB_URL yok) IIFE içinde SENKRON fırlar; IIFE'nin finally'si bu satırdan ÖNCE çalıştığından
-        // reddedilmiş söz initPromises'te takılı kalırdı (sonraki tüm çağrılar aynı hatayı alırdı). Temizlik atamadan SONRA da yapılır.
-        const cleanup = () => { if (ClientDB.initPromises[clientId] === initPromise) delete ClientDB.initPromises[clientId]; };
-        initPromise.then(cleanup, cleanup);
-        return initPromise;
+        ClientDB.pending.set(dbname, p);
+        const cleanup = () => { if (ClientDB.pending.get(dbname) === p) ClientDB.pending.delete(dbname); };
+        p.then(cleanup, cleanup);
+        return p;
     }
 
-    private async init(config: DBConfig) {
-        if (!this.database) {
-            this.database = await Database.getInstance(config, getModels);
-        }
-    }
+    /** ADR-0021 D8 / DB-08: yeni tenant provizyonu adımı — tüm tenant modellerinin şema indeksleri (autoIndex kapalıyken de) kurulur. Idempotent. */
+    public async ensureIndexes(): Promise<void> { await this.database.ensureIndexes?.(); }
 
     // --- Model Erişim Metotları ---
 
@@ -107,6 +106,9 @@ export default class ClientDB implements IClientDB {
     public getMessageModel() { return this.database.getModel('message'); }
     public getUserModel() { return this.database.getModel('user'); }
     public getFinancialTransactionModel() { return this.database.getModel('financial_transaction'); }
+    public getIdempotencyKeyModel() { return this.database.getModel('idempotency_key'); }
+    public getStockMovementModel() { return this.database.getModel('stock_movement'); }
+    public getCommissionOverrideModel() { return this.database.getModel('commission_override'); }
     public getCargoInvoiceModel() { return this.database.getModel('cargo_invoice'); }
 
     /** ADR-0003 adım 8 (purge): tenant veritabanını KALICI olarak siler (geri dönüşsüz). Yalnızca purge işinden çağrılır. */
@@ -115,14 +117,15 @@ export default class ClientDB implements IClientDB {
     }
 
     /**
-     * ADR-0003 adım 8 (purge): LRU önbelleğinden ve canlı-instance haritasından tenant'ı KESİN olarak kaldırır
-     * (bağlantıyı da kapatır). `cache.delete` zaten `dispose` tetikler (close + instances temizliği) ama purge
-     * sonrası tutarlılık için burada da açıkça kapatılır/silinir (idempotent — instance yoksa no-op).
+     * ADR-0003 adım 8 (purge) / askı: tenant tutamağını `Map`'ten ve TenantRegistry'den kaldırır (idempotent). Bağlantı KAPANMAZ
+     * (paylaşılan istemci); uçuştaki sorgular etkilenmez. `clientId` = `Clients._id`.
      */
     public static async invalidate(clientId: string): Promise<void> {
-        // cache.delete tetiklediği `dispose` zaten bağlantıyı kapatır (best-effort, hatayı yutar) ve instances'tan siler.
-        ClientDB.cache.delete(clientId);
-        delete ClientDB.instances[clientId]; // dispose koşulu (value.database) sağlanmazsa (ör. init edilmemiş) da temiz kalsın
+        const id = String(clientId);
+        const dbname = ClientDB.idToDbname.get(id);
+        if (dbname) ClientDB.handles.delete(dbname);
+        ClientDB.idToDbname.delete(id);
+        getTenantRegistry().invalidateById(id);
     }
 
 }

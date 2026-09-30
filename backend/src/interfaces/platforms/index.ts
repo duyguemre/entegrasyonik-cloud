@@ -223,6 +223,9 @@ export interface IPlatform {
     /** Entegrasyonu hazır hale getirir (Token alma, bağlantı testi vb.) */
     init(): Promise<boolean>
 
+    /** [ADR-0033] Opsiyonel: yan etkisiz bağlantı/kimlik doğrulama denemesi (yeni adaptörlerde zorunlu, playbook §2). Asla fırlatmaz. */
+    testConnection?(): Promise<{ ok: boolean; code?: string; detail?: string }>
+
     /** Tanım Verileri: Kategori, Nitelik, Marka ve Komisyon çekme işlemleri */
     retrieveCategories(): Promise<ICategory[]>
     retrieveCategoryAttributes(categoryId: string): Promise<ICategoryAttribute[]>,

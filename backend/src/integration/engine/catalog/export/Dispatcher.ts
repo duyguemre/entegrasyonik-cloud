@@ -5,11 +5,17 @@ import { ObjectId } from 'mongodb';
 import _ from 'lodash';
 import { EVENTS, integrationEventBus } from '../../IntegrationEventBus';
 import { IntegrationEngineProvider } from '../provider/IntegrationEngineProvider';
-import { IApplicationDB } from 'src/interfaces/common';
+import { IApplicationDB } from '@interfaces/common';
 import { getPodIdentity } from '@utils/podIdentity';
+import { stagedLogPush } from '@operations/integration/stagedLogs';
 import { acquireLease, releaseLease } from '@utils/mongoLease';
 import { config } from '@config';
 import { EntitlementService } from '@services/billing/EntitlementService';
+import { eventLog } from '@platform/core/logger';
+import { enrichContext } from '@platform/core/context';
+import { allowNewWork, recordIntakeSkip } from '@integration/config/intakeGate';
+
+const log = eventLog('worker', 'Dispatcher');
 
 export default class Dispatcher extends BaseWorker {
     protected readonly workerName = 'Catalog Dispatcher';
@@ -50,11 +56,11 @@ export default class Dispatcher extends BaseWorker {
             let shouldSendWakeUpEvent = false
             for (const flag of pendingFlags) {
                 const { clientId, integrationCode } = flag;
-                const clientLogPrefix = this.getLogPrefix(clientId, integrationCode);
+                enrichContext({ tenantId: Number(clientId), integrationCode }); // [F-06] sonraki loglar bu tenant/entegrasyonla etiketlenir
 
                 if (!activeOrderSet.has(Number(clientId))) {
                     // Tenant askıda/silinmiş/bulunamıyor: SADECE bu bayrak atlanır, döngü ve diğer tenant'lar için devam eder.
-                    console.error(`${clientLogPrefix} Tenant is not ACTIVE or not found (order: ${clientId}); skipping flag.`);
+                    log.error('DISPATCHER_TENANT_NOT_ACTIVE', `Tenant is not ACTIVE or not found (order: ${clientId}); skipping flag.`);
                     continue;
                 }
 
@@ -75,11 +81,15 @@ export default class Dispatcher extends BaseWorker {
                     }
                 }
 
+                // [ADR-0030 X6] Kill-switch: drain/off iken bu bayraktan YENİ sinyal üretilmez; queuedCount korunur,
+                // açılınca sonraki turda işlenir (iş düşmez).
+                if (!allowNewWork(integrationCode)) { recordIntakeSkip('Dispatcher', integrationCode, 'new'); continue; }
+
                 const clientDB = await DatabaseManagerInstance.getClientDB(clientId);
                 if (!clientDB) {
                     // [ADR-0003 adım 8 / L-08 düzeltmesi] Eskiden buradaki `return` run() metodunu TAMAMEN durdurup
                     // kalan tüm bayrakları (ve PROCESS_NEXT_SIGNAL olayını) atlıyordu. Artık yalnızca bu bayrak atlanır.
-                    console.error(`[ExportOrchestrator] Client DB not found for Client ID: ${clientId}`);
+                    log.error('DISPATCHER_CLIENT_DB_NOT_FOUND', `Client DB not found for Client ID: ${clientId}`);
                     continue;
                 }
 
@@ -94,7 +104,7 @@ export default class Dispatcher extends BaseWorker {
                     { ttlMs: this.LEASE_TTL_MS },
                 );
                 if (!leasedFlag) {
-                    console.log(`${clientLogPrefix} Flag lease held by another pod; skipping this pass.`);
+                    log.info('DISPATCHER_FLAG_LEASE_HELD_ANOTHER', 'Flag lease held by another pod; skipping this pass.');
                     continue;
                 }
 
@@ -146,12 +156,12 @@ export default class Dispatcher extends BaseWorker {
                         .select('mode') // Sadece mode alanını çek, tüm dökümanı değil!
                         .lean();
 
-                    console.log(`[${clientId}][Dispatcher] LeadItem search finished. Result: ${leadItem ? 'Found' : 'Not Found'} (Integration: ${integrationCode}, MatchKey: ${matchKey})`);
+                    log.debug('DISPATCHER_LEADITEM_SEARCH_FINISHED_RESULT', `LeadItem search finished. Result: ${leadItem ? 'Found' : 'Not Found'} (Integration: ${integrationCode}, MatchKey: ${matchKey})`);
 
 
                     // EĞER İŞLENECEK ÜRÜN YOKSA (Hepsi yoldaysa)
                     if (!leadItem) {
-                        console.log(`${clientLogPrefix} Items in queue are already being processed. Skipping signal creation.`);
+                        log.info('DISPATCHER_ITEMS_QUEUE_ALREADY_BEING', 'Items in queue are already being processed. Skipping signal creation.');
 
                         // 1. Veritabanındaki GERÇEK QUEUED sayısını al (Yoldakiler dahil tüm bekleyenler)
                         const realQueuedCount = await clientDB.getExportStagedProductModel().countDocuments({
@@ -203,7 +213,7 @@ export default class Dispatcher extends BaseWorker {
                     const now = new Date();
                     const mode = (queuedItems[0] as any).mode;
 
-                    console.log(`${clientLogPrefix} Dispatcher creating next batch for ${queuedItems.length} items. Batch: ${batchId}`);
+                    log.info('DISPATCHER_CREATING_NEXT_BATCH', `Dispatcher creating next batch for ${queuedItems.length} items. Batch: ${batchId}`);
 
                     // StagedProduct Güncelleme
                     await clientDB.getExportStagedProductModel().updateMany(
@@ -211,12 +221,12 @@ export default class Dispatcher extends BaseWorker {
                         {
                             $set: { status: 'PREPARING', batchId: batchId, updatedAt: now },
                             $push: {
-                                logs: {
+                                logs: stagedLogPush({ // [DB-04] son 20 giriş
                                     status: 'PREPARING',
                                     worker: this.workerName,
                                     message: `Kuyruktan çıkartıldı, yeni vagona (${batchId}) yüklendi.`,
                                     timestamp: now
-                                }
+                                })
                             }
                         }
                     );
@@ -250,7 +260,7 @@ export default class Dispatcher extends BaseWorker {
                     await this.decrementQueuedCount(applicationDB, clientId, integrationCode, queuedItems.length);
 
                 } catch (clientErr: any) {
-                    console.error(`${clientLogPrefix} Dispatcher Client Error:`, clientErr.message);
+                    log.error('DISPATCHER_CLIENT_ERROR', 'Dispatcher Client Error:', { err: clientErr });
                 } finally {
                     // [ADR-0006 Karar 4] İş (başarılı/başarısız) bitince lease hemen bırakılır; bırakılamazsa
                     // (ör. süreç çökerse) `LEASE_TTL_MS` (5 dk) sonunda kendiliğinden düşer.
@@ -262,7 +272,7 @@ export default class Dispatcher extends BaseWorker {
             if (shouldSendWakeUpEvent) integrationEventBus.emit(EVENTS.PROCESS_NEXT_SIGNAL);
 
         } catch (err: any) {
-            console.error(`[${this.workerName}] Critical Error on ${podName}:`, err.message);
+            log.error('DISPATCHER_CRITICAL_ERROR', `Critical Error on ${podName}:`, { err });
         }
     }
 

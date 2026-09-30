@@ -5,11 +5,6 @@ import { addToQueue, IBaseMarketIntegration, QueueName } from 'utility'
 
 
 export default class ECommerceService extends BaseApi implements IService {
-    currentClientId!: any
-    constructor(clientId: number, protected request: any) {
-        super(clientId, request)
-        this.currentClientId = clientId
-    }
 
     async get(): Promise<any> {
         try {

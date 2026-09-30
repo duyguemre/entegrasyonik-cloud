@@ -2,10 +2,10 @@
   <div class="categoryListView">
     <div class="workarea-scroll">
       <v-row class="mt-0 mb-0 cdv-row">
-        <v-col class="cdv-col">
+        <v-col cols="12" md="6" class="cdv-col">
           <CategoryListComponent v-model="isCategoriesListed" @openCategorySync="openCategorySync($event)" />
         </v-col>
-        <v-col class="cdv-col">
+        <v-col cols="12" md="6" class="cdv-col">
           <CategorySyncComponent v-model="selectedCategory" />
         </v-col>
       </v-row>
@@ -112,8 +112,16 @@ const drawer = computed({
   height: 100%;
 }
 
+/* Aşama 3 + int düzeltme: dar ekranda (<960px) iki panel ÜST ÜSTE (yan yana 375px'te liste adları sıfır
+   genişliğe eziliyordu; 800px'te de iki panel ~330px'e sıkışıyordu); tam ekran yükseklik yalnız yan yana düzende. */
+.cdv-col {
+  position: relative;
+  min-height: 520px;
+}
+
+@media (min-width: 960px) {
 .cdv-col {
   height: calc(100vh - 110px);
-  position: relative;
+}
 }
 </style>

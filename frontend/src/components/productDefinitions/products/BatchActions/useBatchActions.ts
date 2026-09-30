@@ -213,18 +213,18 @@ export function useBatchActions(props: any, emits: any, loadingComponentRef: any
     // Orijinal Helper'lar
     const getConfig = (mode: string) => {
         const config: any = {
-            TRANSFER: { title: 'Platformlara Ürün Yükleme', icon: 'mdi-cloud-upload', color: 'saveButtonColor', hint: 'Seçili ürünleri belirlediğiniz platformlara yeni ürün olarak gönderir.' },
+            TRANSFER: { title: 'Platformlara Ürün Yükleme', icon: 'mdi-upload-outline', color: 'primary', hint: 'Seçili ürünleri belirlediğiniz platformlara yeni ürün olarak gönderir.' },
             UPDATE: { title: 'Platformlarda Ürünleri Güncelleme', icon: 'mdi-sync', color: 'success', hint: 'Ürün bilgilerini (başlık, açıklama vb.) platformlarda senkronize eder.' },
             UPDATE_PRICE: { title: 'Platform Fiyatlarını Güncelleme', icon: 'mdi-currency-try', color: 'success', hint: 'Sadece fiyat bilgilerini seçili platformlarda günceller.' },
             UPDATE_STOCK: { title: 'Platform Stoklarını Güncelleme', icon: 'mdi-counter', color: 'success', hint: 'Stok adetlerini seçili platformlarda günceller.' },
-            FETCH_PRODUCT: { title: 'Platformdan Ürün Yükleme', icon: 'mdi-cloud-download', color: 'saveButtonColor', hint: 'Platformda mevcut olan ürünleri çekerek sisteminize kaydeder.' },
-            SET_CATEGORY: { title: 'Kategori Ata / Değiştir', icon: 'mdi-shape', color: 'info', hint: 'Seçili ürünlerin sistem kategorisini toplu olarak değiştirir.' },
+            FETCH_PRODUCT: { title: 'Platformdan Ürün Yükleme', icon: 'mdi-download-outline', color: 'primary', hint: 'Platformda mevcut olan ürünleri çekerek sisteminize kaydeder.' },
+            SET_CATEGORY: { title: 'Kategori Ata / Değiştir', icon: 'mdi-shape-outline', color: 'info', hint: 'Seçili ürünlerin sistem kategorisini toplu olarak değiştirir.' },
             SET_BRAND: { title: 'Marka Ata / Değiştir', icon: 'mdi-watermark', color: 'info', hint: 'Seçili ürünlere toplu marka ataması yapar.' },
-            SET_TAGS: { title: 'Etiket Ata / Değiştir', icon: 'mdi-tag-multiple', color: 'info', hint: 'Ürünlere arama etiketleri ekler veya mevcutları değiştirir.' },
-            CHANGE_STATUS: { title: 'Satış Durumunu Değiştir', icon: 'mdi-toggle-switch', color: 'warning', hint: 'Ürünlerin genel satışa açık/kapalı durumunu değiştirir.' },
-            DELETE: { title: 'Toplu Ürün Silme', icon: 'mdi-delete', color: 'error', hint: 'Ürünleri sistemden kalıcı olarak siler.' },
+            SET_TAGS: { title: 'Etiket Ata / Değiştir', icon: 'mdi-tag-multiple-outline', color: 'info', hint: 'Ürünlere arama etiketleri ekler veya mevcutları değiştirir.' },
+            CHANGE_STATUS: { title: 'Satış Durumunu Değiştir', icon: 'mdi-toggle-switch-outline', color: 'warning', hint: 'Ürünlerin genel satışa açık/kapalı durumunu değiştirir.' },
+            DELETE: { title: 'Toplu Ürün Silme', icon: 'mdi-trash-can-outline', color: 'error', hint: 'Ürünleri sistemden kalıcı olarak siler.' },
             EXPORT_EXCEL: { title: 'Excel formatında Dışa Aktar', icon: 'mdi-microsoft-excel', color: 'success', hint: 'Filtrelere uygun ürünleri Excel dosyası olarak indirmenizi sağlar.' },
-            IMPORT_EXCEL: { title: 'Excel den Toplu Güncelleme', icon: 'mdi-file-excel-box', color: 'saveButtonColor', hint: 'Dosya yükleyerek ürün bilgilerini toplu güncelleyebilirsiniz.' }
+            IMPORT_EXCEL: { title: 'Excel den Toplu Güncelleme', icon: 'mdi-file-excel-box-outline', color: 'primary', hint: 'Dosya yükleyerek ürün bilgilerini toplu güncelleyebilirsiniz.' }
         }
         return config[mode] || { title: '', icon: '', color: 'primary', hint: 'Lütfen kriterleri belirleyerek işlemi başlatın.' }
     }

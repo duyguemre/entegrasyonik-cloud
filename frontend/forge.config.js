@@ -6,6 +6,8 @@ module.exports = {
 /*     ignore:['client_frontend','server_frontend','.gitignore','forge.config.js','tsconfig.json','webpack.config.js'],
     extraResource: ["dist"],
  */  
+    // ADR-0026 Karar 1: workspace kökündeki ortak paket, backoffice ve e2e masaüstü paketine girmez.
+    ignore: [/^\/packages($|\/)/, /^\/backoffice($|\/)/, /^\/e2e($|\/)/],
     asar: true,
   },
 

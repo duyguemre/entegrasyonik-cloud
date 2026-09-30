@@ -5,7 +5,7 @@
  * kararı, Vuetify `display.thresholds`'a DEĞİL, ADR-0011/ADR-0012 token
  * sabitlerine (`breakpoint.tablet=768`, `breakpoint.desktop=1024`) bağlıdır.
  *
- * `SecureLayout`/`NavigationMenu`/`ApplicationBar`/`NavigationRail` aynı üç
+ * `SecureLayout`/`NavigationMenu`/`ApplicationBar` aynı üç
  * kırılım hesabını AYRI AYRI (kopyalanmış) yazıyordu (ADR-0012 T4a mirası,
  * `useDisplay().width` + yerel `computed`); bu composable TEK kaynağa
  * indirger — davranış AYNIdır (aynı eşikler, aynı formül), yalnızca
@@ -13,7 +13,7 @@
  */
 import { computed } from 'vue'
 import { useDisplay } from 'vuetify'
-import { breakpoint } from '@/design/tokens'
+import { breakpoint } from '@entegrasyonik/ui/tokens'
 
 export function useShellBreakpoints() {
   const { width } = useDisplay()

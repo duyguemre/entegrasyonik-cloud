@@ -1,1 +1,0 @@
-export const BASE_IMAGE_URL = "https://images.entegrasyonik.com/products/"

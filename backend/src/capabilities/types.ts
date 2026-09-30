@@ -9,6 +9,7 @@
 //  - `exposed` ise `llm` (açıklama + örnekler), `output` (≠ 'legacy') ve `pii` (≠ 'raw') zorunludur.
 //  - `ui` ve `agent` kararları da zorunludur (unutulmuş karar = derleme hatası).
 import type { ZodType } from 'zod';
+import type { CapabilityPermission } from './permissions';
 
 export type Effect = 'read' | 'propose' | 'write' | 'destructive';
 
@@ -91,7 +92,17 @@ export type Undo =
 /** RPC operasyon bağı: `'Servis/operasyon'` (ImageApi sözde-servisi dahil). */
 export type RpcRef = `${string}/${string}`;
 
-export interface Binding<I = any> { rpc: RpcRef; map?: (input: I) => unknown }
+export interface Binding<I = any> {
+    rpc: RpcRef;
+    map?: (input: I) => unknown;
+    /**
+     * [ADR-0023] Bu RPC'nin TEL (wire) istek gövdesi için OPSİYONEL zod şeması. `capability.input` (MCP/yetenek düzeyi girdi)
+     * ile KARIŞTIRILMAZ: burada FE'nin bugün gönderdiği gövde biçimi doğrulanır. Şeması olmayan bağ eskisi gibi çalışır;
+     * yazma etkili şemasız bağların sayısı mandallıdır (`rpc-input-baseline.json`). Şemalar `capabilities/rpc-input/**`
+     * altında tutulur ve `capabilities/index.ts` tarafından bağlara iliştirilir.
+     */
+    input?: ZodType<any>;
+}
 
 export interface Llm {
     /** EN, 3–6 cümle: ne yapar, ne zaman kullanılır, ne zaman KULLANILMAZ, sınırlar. */
@@ -113,6 +124,8 @@ interface CapabilityBase<I> {
     effect: Effect;
     /** OPERATION_POLICY bundan türetilir. Bir yeteneğin TÜM bağları aynı kademeyi paylaşır. */
     minTier: Tier;
+    /** [ADR-0028 WP-A1] ZORUNLU: bu yeteneği yetkilendiren tek izin (`kaynak:eylem`) ya da platform işareti. minTier ile tutarlı olmalı (kayıt değişmezi). */
+    permission: CapabilityPermission;
     entitlement?: { feature?: PlanFeature; access: 'read' | 'write' };
     scope: 'tenant' | 'user' | 'platform';
     idempotency: 'natural' | 'key' | 'n/a';

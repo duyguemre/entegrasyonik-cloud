@@ -1,4 +1,5 @@
 import bodyParser from 'body-parser';
+import { errorHandler, notFoundHandler } from './api/http/errorEnvelope';
 import { Server } from 'http';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
@@ -6,17 +7,23 @@ import compression from 'compression'
 import express, { Express, Request, Response } from 'express';
 
 import { configureApis } from '@api/ApiManager';
+import { configureAdminApi } from '@api/admin';
 import { configureImageServices } from '@api/ImageApiManager';
 import { configureExportDownloadRoutes } from '@api/ExportDownloadApiManager';
 import { configureWebhookRoutes } from '@api/WebhookApiManager';
 import { configureBillingWebhookRoutes } from '@api/BillingWebhookApiManager';
 import { configureMockCheckoutRoutes } from '@api/MockCheckoutApiManager';
+import { configureNotificationUnsubscribeRoutes } from '@api/http/notificationUnsubscribe';
+import { configurePublicConfigRoute } from '@api/http/publicConfig';
+import { createMaintenanceMiddleware } from '@api/http/maintenanceGuard';
+import { DatabaseManagerInstance } from '@database/DatabaseManager';
 import Security from '@api/Security';
 import { createAuthenticateMiddleware } from '@api/authenticate';
+import { configureNotificationStreamRoutes, getNotificationStreamHub } from '@api/http/notificationStream';
 import { createOriginCheckMiddleware, parseCorsOrigins } from '@api/originCheck';
 import { checkReadiness, AppRole } from '@health/HealthCheck';
 import { RedisService } from '@services/redis';
-import { config } from '@config';
+import { config, config as appCfg } from '@config';
 import { createRequestIdMiddleware, REQUEST_ID_HEADER } from '@api/http/requestId';
 import { createSecurityHeadersMiddleware } from '@api/http/securityHeaders';
 import { createGlobalRateLimitMiddleware } from '@platform/rateLimit/globalRateLimit';
@@ -80,10 +87,24 @@ export default class Webserver {
         // dışındadır (configureHealthRoutes/configureWebhookRoutes daha erken, authenticate'ten önce tanımlı).
         this.app.use(createGlobalRateLimitMiddleware());
 
+        // ADR-0031 BE-CFG-3: kimliksiz `GET /api/public-config` (OPEN_ROUTES kamu istisnası; genel hız sınırından SONRA, jenerik `/:service` rotasından ÖNCE).
+        configurePublicConfigRoute(this.app, config.context);
+        // BACKOFFICE_PLAN B11: bakım modu (`maintenance.enabled`) -> tenant `/api` yazmaları 503 MAINTENANCE; authenticate'ten SONRA (küresel yönetici muaf), rotalardan ÖNCE.
+        this.app.use(config.context, createMaintenanceMiddleware());
+
+        // ADR-0029 NB6: SSE zili (authenticate + rate limit'ten SONRA; cerez oturumu). Kapanista bootstrap akislari kapatir.
+        configureNotificationStreamRoutes(this.app, config.context, {
+            hub: getNotificationStreamHub,
+            allowedOrigins: config.corsOptions.origin,
+            enabled: () => appCfg.notify.streamEnabled,
+        });
         configureApis(this.app, config.context)
         configureImageServices(this.app, config.context, config.imageFilesPath)
         // KVKK dışa aktarma indirme rotası (owner, oturumlu, tek kullanımlık token; docs/API_TENANT_SURFACE.md §5)
         configureExportDownloadRoutes(this.app, config.context)
+        // [ADR-0030 X5] TÜM rotalardan (SSE/webhook/abonelik-iptal/admin dahil) SONRA: JSON 404 + son hata işleyici (bozuk JSON/10 MB aşımı dahil).
+        this.app.use(notFoundHandler)
+        this.app.use(errorHandler)
         await this.start(config)
     }
 
@@ -118,10 +139,21 @@ export default class Webserver {
         // NODE_ENV!=='production' iken yanıt verir (aksi 404 -- kapı her istekte değerlendirilir), imzalı tek kullanımlık token ister.
         configureMockCheckoutRoutes(this.app);
 
+        // ADR-0029 NB5: kimliksiz abonelikten cikma (RFC 8058); yetki = imzali sureli belirtec; authenticate'ten ONCE.
+        configureNotificationUnsubscribeRoutes(this.app, {
+            secret: () => appCfg.notify.unsubSecret,
+            prefs: async () => (await DatabaseManagerInstance.getApplicationDB()).getNotificationPreferencesModel() as any,
+        });
+
         this.app.use(cookieParser());
         this.app.use(compression())
         this.app.use(bodyParser.json({ limit: '10mb' }));
         this.app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
+
+        // ADR-0026 Karar 2B/4: backoffice `/admin-api` — ayrı CORS listesi, `EK_ADMIN` çerezi, ayrı kimlik/audit. Müşteri `cors` (aşağıda) ve
+        // `originCheck`/`authenticate`'ten ÖNCE bağlanır: müşteri CORS listesi bu yolda devreye girmez (preflight dahil) ve
+        // `JWT_TOKEN` çerezi hiç okunmaz. Bilinmeyen `/admin-api/*` yolu router içinde 404 ile biter (müşteri zincirine düşmez).
+        configureAdminApi(this.app);
 
         // .env'den gelen CORS ayarları uygulanıyor
         this.app.use(cors(config.corsOptions));

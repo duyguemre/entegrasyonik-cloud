@@ -8,6 +8,8 @@ import {
 } from '@interfaces/index';
 import { IOrderRejectParams, IClaimRejectParams, IFinancialTransaction, ICargoInvoice } from '@interfaces/platforms';
 import Service from './services/Service';
+import { runConnectionProbe, type TestConnectionResult } from '@integration/modules/common/adapter/testConnection';
+import { integrationCode } from './constants';
 import { CategoryService } from './services/CategoryService';
 import { BrandService } from './services/BrandService';
 import { ProductService } from './services/ProductService';
@@ -38,6 +40,20 @@ export default class Bizimhesap implements IPlatform {
         } catch {
             return false;
         }
+    }
+
+    /**
+     * [INT-01 testConnection] Yan etkisiz tek okuma: sipariş listesinin TEK kaydı (`size=1`; orderListUrl yoksa ürün listesi).
+     * Kimlik doğrulaması zorunlu (key/token başlıkları); gövde atılır (PII saklanmaz/loglanmaz). Asla fırlatmaz.
+     */
+    public async testConnection(): Promise<TestConnectionResult> {
+        return runConnectionProbe(integrationCode, async () => {
+            const urls = this.params.integrationSettings?.urls || {};
+            const sellerId = this.params.integrationSettings?.settings?.sellerId || '';
+            const orderUrl: string | undefined = urls.orderListUrl;
+            if (orderUrl) await this.service.get(`${orderUrl.replace('<SELLERID>', sellerId)}?page=0&size=1`, undefined, { operation: 'testConnection' });
+            else await this.service.get(urls.productListUrl || 'products', undefined, { operation: 'testConnection' });
+        });
     }
 
     public getMatchKey(): MappingKey {

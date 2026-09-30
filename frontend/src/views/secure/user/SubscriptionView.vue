@@ -33,7 +33,10 @@
 
       <!-- Planlar -->
       <section class="plans-section">
-        <h3 class="section-title">Planlar</h3>
+        <div class="section-title-row">
+          <h3 class="section-title">Planlar</h3>
+          <EkHelpHint hint="subscription.plan" />
+        </div>
 
         <!-- ADR-0014 S4b: kayıt sırasında (tanıtım sitesinden) seçilen plan önerisi. Yalnızca izinli plan kodu + listede var olan plan. -->
         <div v-if="suggestedPlan" class="suggested-plan-note" role="status" data-testid="suggested-plan-note">
@@ -45,12 +48,12 @@
           <EkSkeleton v-for="n in 3" :key="n" type="cards" :rows="1" class="plan-card-skeleton" />
         </div>
 
-        <EkEmptyState v-else-if="plansError" variant="error" title="Planlar Yüklenemedi"
-          message="Plan bilgileri şu anda getirilemedi -- bağlantınızı kontrol edip tekrar deneyin."
+        <EkEmptyState v-else-if="plansError" variant="error" title="Planlar yüklenemedi"
+          message="Plan bilgileri şu anda getirilemedi. Bağlantınızı kontrol edip tekrar deneyin."
           show-action action-text="Tekrar Dene" action-icon="mdi-refresh"
           @action="fetchPlans" />
 
-        <EkEmptyState v-else-if="!plans.length" variant="no-data" title="Plan Tanımları Henüz Yayınlanmadı"
+        <EkEmptyState v-else-if="!plans.length" variant="no-data" title="Plan tanımları henüz yayınlanmadı"
           message="Şu anda satışa açık bir plan bulunmuyor. Lütfen daha sonra tekrar kontrol edin veya destek ekibimizle iletişime geçin." />
 
         <div v-else class="plans-grid" role="list" aria-label="Abonelik planları">
@@ -97,26 +100,26 @@
       </section>
 
       <!-- Checkout sonucu (ADR-0008 §1: MockPaymentProvider -- gerçek hosted checkout sayfası YOK, bilgilendirme amaçlı) -->
-      <v-alert v-if="checkoutInfo" type="info" variant="tonal" density="comfortable" closable
-        class="checkout-alert" role="status" @click:close="checkoutInfo = null">
-        <div class="font-weight-bold">Ödeme adımına yönlendiriliyorsunuz (test ortamı)</div>
+      <EkAlert v-if="checkoutInfo" tone="info" class="checkout-alert" live dismissible title="Ödeme adımına yönlendiriliyorsunuz (test ortamı)" @dismiss="checkoutInfo = null">
         <div class="text-body-2 mt-1">
           <strong>{{ checkoutInfo.planName }}</strong> planı için işlem başlatıldı. Bu bir MOCK (test) bağlantısıdır,
           gerçek bir ödeme sağlayıcısına yönlendirmez; abonelik durumunuz ödeme sağlayıcısından onay geldiğinde otomatik güncellenir.
         </div>
         <div v-if="checkoutInfo.checkoutUrl" class="checkout-url text-body-2 mt-1">{{ checkoutInfo.checkoutUrl }}</div>
-      </v-alert>
+      </EkAlert>
     </div>
 
     <ConfirmationDialogComponent v-model="confirmDialog.show" :title="confirmDialog.title" attach=".subscriptionView"
       :subtitle="confirmDialog.subtitle" :message="confirmDialog.message" icon="mdi-credit-card-check-outline"
-      color="primary" confirm-text="Devam Et" confirm-icon="mdi-arrow-right-circle"
+      color="primary" confirm-text="Devam Et" confirm-icon="mdi-arrow-right-circle-outline"
       :loading="checkingOutCode === confirmDialog.planCode"
       @confirm="confirmCheckout" @cancel="confirmDialog.show = false" maxWidth="420px" />
   </div>
 </template>
 
 <script setup lang="ts">
+import EkHelpHint from '@/components/page/EkHelpHint.vue'
+import { EkAlert, EkEmptyState, EkSkeleton, EkStatusChip } from '@entegrasyonik/ui/components'
 // ADR-0008 (ödeme sağlayıcısı/abonelik modeli) + ADR-0011 Karar 2 "P1-yeni": bu ekran
 // `SubscriptionView.vue`'nun ürünle ilgisiz yer tutucu içeriğinin (bkz. git geçmişi) YERİNE
 // sıfırdan, token'larla yazıldı -- characterization testi YAZILMADI (sabitlenecek gerçek bir iş
@@ -124,11 +127,12 @@
 import { ref, computed, onMounted } from 'vue';
 import useRestApi from '@/composables/restapi';
 import { useSnackbarStore } from '@/stores/snackbarStore';
-import EkEmptyState from '@/components/ds/EkEmptyState.vue';
-import EkPageHeader from '@/components/ds/EkPageHeader.vue';
-import EkSkeleton from '@/components/ds/EkSkeleton.vue';
-import EkStatusChip from '@/components/ds/EkStatusChip.vue';
-import { formatDate as formatDateDs, formatNumber } from '@/composables/format';
+;
+import EkPageHeader from '@/components/page/EkPageHeader.vue';
+;
+;
+import { formatNumber } from '@entegrasyonik/ui/format';
+import { subscriptionStatusMeta, subscriptionStatusMessage, type SubscriptionSummary } from '@/composables/subscriptionStatus';
 import ConfirmationDialogComponent from '@/components/layout/ConfirmationDialogComponent.vue';
 import { text, emphasis, type MessagePart } from '@/components/layout/messageParts';
 import { isRegisterPlanCode } from '@/navigation/registerIntent';
@@ -137,10 +141,6 @@ interface PlanLimits { channels?: number; skus?: number; users?: number; mcpCall
 interface Plan {
   code: string; name: string; priceMinor: number; currency?: string; interval?: 'month' | 'year';
   vatIncluded?: boolean; limits?: PlanLimits; features?: string[];
-}
-interface SubscriptionSummary {
-  planCode?: string; status?: string; trialEndsAt?: string; currentPeriodEnd?: string;
-  graceUntil?: string; cancelAtPeriodEnd?: boolean; billingExempt?: boolean;
 }
 
 const restApi = useRestApi();
@@ -162,50 +162,16 @@ const confirmDialog = ref<{ show: boolean; planCode: string; title: string; subt
   show: false, planCode: '', title: '', subtitle: '', message: '',
 });
 
-// ADR-0008 §3 durum makinesi -- Türkçe, insan-okunur karşılıklar (ham durum kodu kullanıcıya gösterilmez).
-const STATUS_META: Record<string, { label: string; tone: 'success' | 'info' | 'warning' | 'error' | 'grey'; icon: string }> = {
-  trialing: { label: 'Deneme Sürümü', tone: 'info', icon: 'mdi-timer-sand' },
-  active: { label: 'Aktif', tone: 'success', icon: 'mdi-check-circle-outline' },
-  past_due: { label: 'Ödeme Bekliyor', tone: 'warning', icon: 'mdi-alert-circle-outline' },
-  suspended: { label: 'Askıya Alındı', tone: 'error', icon: 'mdi-pause-circle-outline' },
-  canceled: { label: 'İptal Edildi', tone: 'error', icon: 'mdi-close-circle-outline' },
-  expired: { label: 'Sona Erdi', tone: 'error', icon: 'mdi-calendar-remove-outline' },
-  no_subscription: { label: 'Abonelik Yok', tone: 'grey', icon: 'mdi-help-circle-outline' },
-};
-
 const FEATURE_LABELS: Record<string, string> = {
   einvoice: 'E-Fatura', erp: 'ERP Entegrasyonu', shipping: 'Kargo Entegrasyonu',
   mcp: 'MCP / AI Asistan', desktopApp: 'Masaüstü Uygulaması',
 };
 
-const statusMeta = computed(() => STATUS_META[subscriptionStatus.value] || STATUS_META.no_subscription);
+const statusMeta = computed(() => subscriptionStatusMeta(subscriptionStatus.value));
 const isActiveLike = computed(() => subscriptionStatus.value === 'trialing' || subscriptionStatus.value === 'active');
 
-const formatDate = (val?: string) => val ? formatDateDs(val) : '';
-
-const statusMessage = computed(() => {
-  const sub = subscriptionData.value;
-  switch (subscriptionStatus.value) {
-    case 'trialing':
-      return sub?.trialEndsAt
-        ? `Deneme sürümündesiniz -- ${formatDate(sub.trialEndsAt)} tarihine kadar tüm özellikler açık. Devam etmek için bir plan seçin.`
-        : 'Deneme sürümündesiniz. Deneme bitiminde devam etmek için bir plan seçmeniz gerekir.';
-    case 'active':
-      return 'Aboneliğiniz aktif -- tüm özellikler ve pazaryeri senkronizasyonu çalışıyor.';
-    case 'past_due':
-      return accessReason.value || 'Son ödemeniz alınamadı. Lütfen kart bilgilerinizi güncelleyin, aksi halde erişiminiz kısıtlanacak.';
-    case 'suspended':
-      return accessReason.value || 'Aboneliğiniz askıya alındı: verileriniz görüntülenebilir/dışa aktarılabilir ama düzenleme ve pazaryeri senkronizasyonu durduruldu.';
-    case 'canceled':
-      return sub?.currentPeriodEnd
-        ? `Aboneliğiniz iptal edildi -- ${formatDate(sub.currentPeriodEnd)} tarihine kadar tüm özellikler kullanılabilir, sonrasında salt-okunur erişime geçilecek.`
-        : 'Aboneliğiniz iptal edildi.';
-    case 'expired':
-      return accessReason.value || 'Aboneliğiniz sona erdi. Devam etmek için bir plan seçin.';
-    default:
-      return 'Henüz aktif bir aboneliğiniz yok. Aşağıdan bir plan seçerek başlayabilirsiniz.';
-  }
-});
+// Durum → metin eşlemesi `composables/subscriptionStatus.ts`'te (kabuk bandıyla ORTAK kaynak, C2.2).
+const statusMessage = computed(() => subscriptionStatusMessage(subscriptionStatus.value, subscriptionData.value, accessReason.value));
 
 function isCurrentPlan(plan: Plan): boolean {
   return !!subscriptionData.value?.planCode && subscriptionData.value.planCode === plan.code;
@@ -332,11 +298,22 @@ onMounted(() => {
 
 .subscription-inner {
   max-width: 1100px;
-  margin: 0 auto;
+  margin: 0; /* Aşama 4: sayfa ızgarasına sola hizalı */
   padding: var(--ek-space-6);
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-6);
+}
+
+.section-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  margin: 0 0 var(--ek-space-4) 0;
+}
+
+.section-title-row .section-title {
+  margin: 0;
 }
 
 .section-title {
@@ -488,7 +465,10 @@ onMounted(() => {
 }
 
 .plan-card-action {
-  margin-top: var(--ek-space-2);
+  /* Vuetify `.v-btn--block` `flex: 1 0 auto` taşır; dikey flex kartta düğmeyi boş alan kadar UZATIYORDU
+     (kısa içerikli kartta ~80px düğme). Düğme kendi yüksekliğinde, kartın dibine yaslı. */
+  flex: 0 0 auto;
+  height: var(--ek-control-h-lg);
 }
 
 .checkout-url {

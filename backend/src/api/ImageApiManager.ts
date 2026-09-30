@@ -2,12 +2,20 @@ import { Express, NextFunction, Request, Response } from 'express';
 import multer from 'multer';
 import { runImageApi } from "./RunOperation";
 import { sanitizeResponse } from "./responseSanitizer";
+import { sendHttpError } from './http/errorEnvelope';
+import { logger } from '@platform/core/logger';
+
+function sendImageError(res: Response, error: any) {
+    const status = error?.statusCode || 500;
+    if (status >= 500) logger.child({ module: 'ImageApi' }).error({ err: error }, 'Beklenmeyen hata');
+    return sendHttpError(res, status, status >= 500 ? undefined : error.message);
+}
 
 // ADR-0001: görsel rotaları da aynı authenticate middleware'inden geçer (açık rota YOK); res.locals.userContext/principal
 // yalnızca doğrulanmış principal'dan dolar. Fail-closed: principal yoksa (middleware takılmamışsa) 401.
 function requireAuthenticated(req: Request, res: Response, next: NextFunction) {
     if (!res.locals || !res.locals.principal) {
-        res.status(401).send({ error: "Token is undefined" });
+        sendHttpError(res, 401, 'Token is undefined', 'UNAUTHENTICATED');
         return;
     }
     next();
@@ -40,7 +48,7 @@ export function configureImageServices(
                 return res.status(200).send(sanitizeResponse({ result }, { service: 'ImageApi', operation: 'upload' }));
 
             } catch (error: any) {
-                return res.status(error.statusCode || 500).send({ error: error.message });
+                return sendImageError(res, error);
             }
         })
     })
@@ -55,7 +63,7 @@ export function configureImageServices(
                 const result = await runImageApi("uploadIdentity", res.locals.userContext, { files }, res.locals.principal)
                 return res.status(200).send(sanitizeResponse(result, { service: 'ImageApi', operation: 'uploadIdentity' }));
             } catch (error: any) {
-                return res.status(error.statusCode || 500).send({ error: error.message });
+                return sendImageError(res, error);
             }
         })
     })

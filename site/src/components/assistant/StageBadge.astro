@@ -1,0 +1,58 @@
+---
+/**
+ * StageBadge (S18) — Asistan sayfasındaki planlanan her kartın ZORUNLU aşama rozeti
+ * ("Geliştirme aşamasında" / "Erken erişim" / "Planlanan"). Etiket metni `STAGE_LABELS` kaydından gelir;
+ * tests/upcoming.test.ts her `assistant-card` içinde bu rozetin bulunduğunu derlenmiş HTML'de doğrular.
+ * Renk tek başına anlam taşımaz: simge + metin. `inverse`: koyu zemin.
+ */
+import Icon from '../home/Icon.astro'
+import { STAGE_LABELS, type AssistantStage } from '../../data/assistant'
+
+interface Props {
+  stage: AssistantStage
+  inverse?: boolean
+}
+
+const { stage, inverse = false } = Astro.props
+---
+
+<span class:list={['stage', `stage--${stage}`, { 'stage--inverse': inverse }]} data-testid="stage-badge" data-stage={stage}>
+  <Icon name={stage === 'planned' ? 'clock' : 'sparkle'} size="sm" />
+  {STAGE_LABELS[stage]}
+</span>
+
+<style>
+  .stage {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: var(--ek-space-1);
+    padding: var(--ek-space-1) var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    line-height: var(--ek-line-height-tight);
+    white-space: nowrap;
+    color: var(--ek-color-content-strong);
+  }
+  .stage--development,
+  .stage--early-access {
+    background: var(--ek-color-info-subtle);
+  }
+  .stage--planned {
+    border: var(--site-border-width) dashed var(--ek-color-border-strong);
+    background: var(--ek-color-surface);
+  }
+  .stage--inverse {
+    border: var(--site-border-width) solid var(--site-glass-border);
+    background: var(--site-glass-bg);
+    color: var(--site-text-on-dark-heading);
+  }
+  .stage--inverse.stage--planned {
+    border-style: dashed;
+  }
+  .stage--inverse:not(.stage--planned) {
+    border-color: color-mix(in srgb, var(--ek-color-secondary) 50%, transparent);
+    color: var(--site-accent-on-dark);
+  }
+</style>

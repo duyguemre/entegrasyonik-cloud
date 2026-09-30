@@ -51,6 +51,18 @@ export function fingerprintOfErrorEvent(input: Pick<ErrorEventInput, 'source' | 
     return `${input.source}::${fingerprintOf(input.module, input.code, input.message)}`;
 }
 
+/**
+ * ADR-0026 WP-LOG L1: etkilenen tenant SAYISI, tenant kimliği SAKLANMADAN (lineer sayım / "HyperLogLog benzeri"):
+ * tenantId -> {0..255} kovası; kova KÜMESİ (`tenantBuckets`, <=256 tam sayı) saklanır. Tahmin: n ~= -m*ln(1 - k/m) (m=256, k=dolu kova).
+ * Tenant kimliği kovadan geri çıkarılamaz (çok-a-bir). ~250 tenant'a kadar %5 içinde doğrudur; üstünde doyar (tavan ~1419).
+ */
+export const TENANT_BUCKETS = 256;
+export const DAILY_TREND_DAYS = 30;
+export function tenantBucketOf(tenantId: number): number {
+    return (Math.imul(Math.trunc(tenantId) | 0, 2654435761) >>> 24) % TENANT_BUCKETS;
+}
+const utcDayKey = (d: Date): string => d.toISOString().slice(0, 10);
+
 export interface ErrorEventUpsertOp {
     filter: { fp: string };
     pipeline: Record<string, unknown>[];
@@ -62,7 +74,9 @@ export interface ErrorEventUpsertOp {
  * Regresyon kuralı (Karar 2.4): önceki `status==='resolved'` ise YENİDEN `'open'`a döner; aksi halde MEVCUT
  * durum korunur (`acknowledged`/`muted` bilinçli admin kararlarını EZMEZ).
  */
-export function buildErrorEventUpsertOp(fp: string, input: ErrorEventInput, incCount: number, now: Date): ErrorEventUpsertOp {
+export function buildErrorEventUpsertOp(fp: string, input: ErrorEventInput, incCount: number, now: Date, tenantBuckets: number[] = input.tenantId !== undefined ? [tenantBucketOf(input.tenantId)] : []): ErrorEventUpsertOp {
+    const dayKey = utcDayKey(now);
+    const cutoffKey = utcDayKey(new Date(now.getTime() - (DAILY_TREND_DAYS - 1) * 24 * 60 * 60 * 1000));
     const sample: ErrorEventSample = {
         message: truncateMessage(input.message),
         stack: truncateStack(input.stack),
@@ -86,6 +100,27 @@ export function buildErrorEventUpsertOp(fp: string, input: ErrorEventInput, incC
                     lastSeen: now,
                     sample,
                     status: { $cond: [{ $eq: ['$status', 'resolved'] }, 'open', { $ifNull: ['$status', 'open'] }] },
+                    // ADR-0026 L1: etkilenen tenant kovaları (kimlik SAKLANMAZ) + günlük trend kovaları (son 30 gün).
+                    tenantBuckets: { $setUnion: [{ $ifNull: ['$tenantBuckets', []] }, tenantBuckets] },
+                    daily: {
+                        $let: {
+                            vars: { arr: { $filter: { input: { $ifNull: ['$daily', []] }, as: 'x', cond: { $gte: ['$$x.d', cutoffKey] } } } },
+                            in: {
+                                $cond: [
+                                    { $in: [dayKey, '$$arr.d'] },
+                                    { $map: { input: '$$arr', as: 'x', in: { $cond: [{ $eq: ['$$x.d', dayKey] }, { d: '$$x.d', n: { $add: ['$$x.n', incCount] } }, '$$x'] } } },
+                                    { $concatArrays: ['$$arr', [{ d: dayKey, n: incCount }]] },
+                                ],
+                            },
+                        },
+                    },
+                },
+            },
+            {
+                $set: {
+                    tenantCount: {
+                        $abs: { $round: [{ $multiply: [-TENANT_BUCKETS, { $ln: { $subtract: [1, { $divide: [{ $min: [{ $size: '$tenantBuckets' }, TENANT_BUCKETS - 1] }, TENANT_BUCKETS] }] } }] }, 0] }, // $abs: -0 -> 0
+                    },
                 },
             },
         ],
@@ -99,13 +134,14 @@ export interface ErrorEventModel {
 interface BufferEntry {
     count: number;
     latest: ErrorEventInput;
+    buckets: Set<number>;
     timer: ReturnType<typeof setTimeout>;
 }
 
 const buffers = new Map<string, BufferEntry>();
 
 async function writeToModel(model: ErrorEventModel, fp: string, entry: BufferEntry): Promise<void> {
-    const op = buildErrorEventUpsertOp(fp, entry.latest, entry.count, new Date());
+    const op = buildErrorEventUpsertOp(fp, entry.latest, entry.count, new Date(), Array.from(entry.buckets));
     await model.findOneAndUpdate(op.filter, op.pipeline, { upsert: true });
 }
 
@@ -126,11 +162,13 @@ export function recordErrorEvent(input: ErrorEventInput, deps?: { model?: ErrorE
         if (existing) {
             existing.count += 1;
             existing.latest = input;
+            if (input.tenantId !== undefined) existing.buckets.add(tenantBucketOf(input.tenantId));
             return;
         }
         const entry: BufferEntry = {
             count: 1,
             latest: input,
+            buckets: new Set(input.tenantId !== undefined ? [tenantBucketOf(input.tenantId)] : []),
             timer: setTimeout(() => {
                 buffers.delete(fp);
                 resolveModel(deps)

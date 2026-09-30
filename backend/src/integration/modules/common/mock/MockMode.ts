@@ -10,8 +10,10 @@
 // çalışan uygulama-seviyesi ikinci savunma hattıdır.
 import { IntegrationError } from '../IntegrationError';
 import { getConfig } from '@config';
+import type { MockPrefixName } from '../../adapterKeys';
 
-export type MockPrefix = 'TY' | 'PAZARAMA' | 'N11' | 'HEPSIBURADA' | 'IDEASOFT' | 'BIZIMHESAP';
+// ADR-0033 INT-02: tek kod tablosundan türer.
+export type MockPrefix = MockPrefixName;
 
 export const MOCK_ENDPOINT_NOT_MOCKED = 'MOCK_ENDPOINT_NOT_MOCKED';
 
@@ -25,14 +27,27 @@ export interface MockConfig {
     mockableEndpoints: string[];
 }
 
+/**
+ * C10c: mock uç listesi = kod içi varsayılan (adapterKeys.mockDefaultEndpoints) BİRLEŞİM env (env varsayılanı GENİŞLETİR; yerel `.env`
+ * eski/eksik olsa da mock çalışır, fail-closed korunur: liste dışı uç yine reddedilir). Varsayılan yoksa (TY/Pazarama/N11) yalnız env (BOŞ => hiçbiri).
+ * Kaçış: env listesinde tek başına `!` girişi varsa varsayılanlar YOK SAYILIR (yalnız env; daraltma/test için, ör. kit C10b/C10c `!,/mockable-yok`).
+ * `+` önekli girişler de kabul edilir (`+uc` == `uc`).
+ */
+export function resolveMockableEndpoints(envList: string[], defaults: readonly string[]): string[] {
+    const exclusive = envList.includes('!');
+    const own = envList.filter(e => e !== '!').map(e => (e.startsWith('+') ? e.slice(1).trim() : e)).filter(e => e.length > 0);
+    if (exclusive || !defaults.length) return own;
+    return [...new Set([...defaults, ...own])];
+}
+
 /** Ortam değişkenlerini ÇAĞRI ANINDA okur (`@config` her erişimde ham ortamı parmak iziyle denetler; testler env'i değiştirince otomatik yenilenir, süreç-ömürlü cache YOK). */
-export function readMockConfig(prefix: MockPrefix, defaultBaseUrl: string): MockConfig {
+export function readMockConfig(prefix: MockPrefix, defaultBaseUrl: string, defaultEndpoints: readonly string[] = []): MockConfig {
     const m = getConfig().mock[prefix];
     return {
         prefix,
         enabled: m.enabled,
         baseUrl: m.baseUrl || defaultBaseUrl,
-        mockableEndpoints: m.mockableEndpoints,
+        mockableEndpoints: resolveMockableEndpoints(m.mockableEndpoints, defaultEndpoints),
     };
 }
 

@@ -16,11 +16,18 @@ import { PlanSchema } from './models/Plan';
 import { SubscriptionSchema } from './models/Subscription';
 import { BillingEventSchema } from './models/BillingEvent';
 import { AccountTokenSchema } from './models/AccountToken';
+import { MembershipSchema } from './models/Membership';
+import { InvitationSchema } from './models/Invitation';
+import { AdminMfaSchema } from './models/AdminMfa';
+import { NotificationEventSchema } from './models/NotificationEvent';
+import { NotificationDeliverySchema } from './models/NotificationDelivery';
+import { NotificationPreferencesSchema } from './models/NotificationPreferences';
 import { JobLeaseSchema } from './models/JobLease';
 import { JobStateSchema, JobRunSchema } from './models/JobRunRegistry';
 import { IntegrationFindingSchema } from './models/IntegrationFinding';
 import { MetricRollupSchema } from './models/MetricRollup';
 import { ErrorEventSchema } from './models/ErrorEvent';
+import { LogEventSchema } from './models/LogEvent';
 import { SourceSnapshotSchema } from './models/SourceSnapshot';
 import { IntegrationConfigRevisionSchema, IntegrationConfigHeadSchema } from './models/IntegrationConfig';
 import { SchemaMigrationSchema } from './models/SchemaMigration';
@@ -51,6 +58,15 @@ export default (mongooseConnection: Connection): Record<string, Model<any>> => {
         billing_event: mongooseConnection.model('billing_event', BillingEventSchema),
         // Hesap yaşam döngüsü: parola sıfırlama / e-posta doğrulama token'ları (yalnızca HASH; TTL)
         account_token: mongooseConnection.model('account_token', AccountTokenSchema),
+        // ADR-0028 Karar 1/5: üyelik + davet (autoIndex kapalı; indeksler yalnız onaylı göçle: migrations/0003)
+        membership: mongooseConnection.model('membership', MembershipSchema),
+        invitation: mongooseConnection.model('invitation', InvitationSchema),
+        // ADR-0026 Karar 4.5: backoffice TOTP 2FA kaydi (autoIndex kapali; koleksiyon/indeks yalniz onayli goc)
+        admin_mfa: mongooseConnection.model('admin_mfa', AdminMfaSchema),
+        // ADR-0029 Karar 3: bildirim olay defteri + e-posta outbox (autoIndex kapalı; indeksler yalnız onaylı göçle, S1)
+        notification_event: mongooseConnection.model('notification_event', NotificationEventSchema),
+        notification_delivery: mongooseConnection.model('notification_delivery', NotificationDeliverySchema),
+        notification_preferences: mongooseConnection.model('notification_preferences', NotificationPreferencesSchema),
         // ADR-0016 §2 / ADR-0017 Karar 3: zamanlayıcı lease + JobRunRegistry (JobState/JobRuns)
         job_lease: mongooseConnection.model('job_lease', JobLeaseSchema),
         job_state: mongooseConnection.model('job_state', JobStateSchema),
@@ -60,6 +76,8 @@ export default (mongooseConnection: Connection): Record<string, Model<any>> => {
         // ADR-0017 Aşama B (Karar 2.1/2.4): metrik kovaları + hata olayları ("mini-Sentry").
         metric_rollup: mongooseConnection.model('metric_rollup', MetricRollupSchema),
         error_event: mongooseConnection.model('error_event', ErrorEventSchema),
+        // ADR-0026 WP-LOG L1: kalici log deposu (autoIndex kapali; TTL + sorgu indeksleri yalniz onayli goc: migrations/0005)
+        log_event: mongooseConnection.model('log_event', LogEventSchema),
         // ADR-0018 Karar 2c (Aşama B): haftalık kaynak izleyici -- URL başına tek doküman (hash/diff, içerik YOK).
         source_snapshot: mongooseConnection.model('source_snapshot', SourceSnapshotSchema),
         // ADR-0020 Karar 3.1 (Aşama B): sürümlü platform geçersiz kılmaları + yayın başlığı (poll edilen küçük belge).

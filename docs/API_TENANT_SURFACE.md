@@ -74,7 +74,7 @@ Denetim: `stock.policy.primary` (`meta.primaryChannel`).
 
 - `OrderService/getOrders` siparişleri **projeksiyonsuz** döndürür: `orders[].items[].allocationState` (`RESERVED|COMMITTED|RELEASED|OVERSOLD|RESTOCKED|UNMAPPED`), `lastAllocationAppliedAt`, `oversoldEscalatedAt` FE'ye ulaşır (test ile sabit).
 - `ProductService/retrieveProduct` (`{ _id }`): `product.variants[]` `Variants` koleksiyonundan **projeksiyonsuz** `$lookup` ile gelir → `stock`, `reserved`, `stockDirty`, `stockVersion`, `allocations[]` (`{key, qty, state, at}`) mevcut. **`available` saklanmaz, TÜRETİLİR:** `available = stock - reserved` (FE hesaplar). Not: `allocations` sınırsız büyüyebilir ve `key` dış sipariş kimliği içerir (PII değil, tenant'ın kendi verisi); liste ekranları için `getStockOverview` özetini kullanın, `retrieveProduct`'ı yalnızca ürün detayında.
-- `VariantService/getVariants` **eski/ölü yol** (`Product.variants` gömülü dizisini okur; şemada yok) — kullanmayın.
+- `VariantService/*` (DB-07, 2026-09-30) artık kanonik `Variants` koleksiyonunu okur/yazar (eski gömülü `Product.variants` yolu kaldırıldı); `getVariantsList` eklendi.
 
 ### 2.2 YENİ: `OrderService/getOrders` → `searchOrderForm.filter.allocationStates`
 
@@ -201,3 +201,72 @@ Akış: (1) `POST /api/TenantDataService/exportTenantData` (owner) → `{ succes
 - **`AuditLogs` `tid` indeksi** önerisi insan onayında (§4).
 - **`getOrders`/`getClaims` `globalSearch`** kullanıcı girdisini `$regex` olarak kullanır (ReDoS/regex enjeksiyonu; aynı tenant içinde) — bu görevin kapsamı dışı, mevcut bulgu.
 - `exportTenantData` senkron/bellek-içi zip ve 7 gün temizleme zamanlayıcısı yok (§5 sınırlama 2).
+
+## 8. Komisyon "bilinmiyor" semantiği (COM-02, 2026-09-30)
+
+`PlatformMappingProvider.getCategoryCommission` artık bulunamayan/tanımsız komisyon için `null` döner (eskiden `0`); gerçek `0` korunur. Varyanta komisyon alanı yazılmıyor; içe aktarımda komisyon `null` ise `prices.salePrice` komisyon düşülmeden (platform fiyatı) yazılır. FE sözleşmesi değişmedi; ileride komisyon gösteren ekranlar `null`'ı "bilinmiyor" diye göstermelidir (%0 değil). Trendyol `retrieveCategoryCommision` sonucuna `tiers:{KA1?,KA2?}` ve `maturity` eklendi (geriye uyumlu).
+
+## 9. Acil durdurma: `INTEGRATION_PAUSED` (X6-b, 2026-09-30)
+
+Kill-switch (`intake`) artık kullanıcı tetiklemeli dış çağrı RPC'lerini de durdurur. Yanıt: HTTP 503, `{ error: "Bu entegrasyon geçici olarak durduruldu.", code: "INTEGRATION_PAUSED", requestId }`; `Retry-After` YOK, otomatik yeniden deneme YAPILMAZ.
+
+| Durum | Okuma (external, effect read) | Yazma (external, effect write/destructive) |
+|---|---|---|
+| on | geçer | geçer |
+| drain | geçer | 503 INTEGRATION_PAUSED |
+| off | 503 INTEGRATION_PAUSED | 503 INTEGRATION_PAUSED |
+
+Kapsam (yetenek kaydında `external:true`; etki alanı integrations/orders/claims/invoices/shipments/messages): `IntegrationService/{retrievePlatformInfos, retrieveCommisionForCategoryFromIntegration, retrieveCategoriesFromIntegration, retrieveBrandsFromIntegration, retrieveCategoryAttributesFromIntegration, retrieveCategoryAttributeValuesFromIntegration, retrieveAndSetExternalToken, batchCreator, requestFetchFromPlatform}`, `OrderService/{approveOrder, bulkApproveOrder, cancelOrder, bulkCancelOrder, getOrderRejectionReasons}`, `ClaimService/{approveClaim, bulkApproveClaim, rejectClaim}`, `InvoiceService/{createInvoice, bulkCreateInvoice, createManualInvoice, resolveAndReissueInvoice}`, `ShipmentService/{createShipment, bulkCreateShipment}`, `MessageService/{getMessages, replyMessage}`. Granülerlik: `integrationCode`/`selectedIntegrations` girdide varsa o entegrasyon + global; sipariş/iade/fatura/sevk/mesaj RPC'lerinde (X6-c) girdide yalnız kayıt kimliği (`orderId(s)`/`claimId(s)`/`invoiceId`/`messageId(s)`) vardır: önce `_engine`, ardından YALNIZ en az bir entegrasyon kısıtlıyken (`off`/`drain`; okuma+yalnız drain hariç) kayıttan `integrationCode` tek hafif sorguyla (`_id $in`, projeksiyon `integrationCode`; yalnız string/ObjectId kimlik) çözülür ve en kısıtlayıcı durum uygulanır; hiçbir entegrasyon kısıtlı değilse DB'ye gidilmez. Çözüm DB hatasıyla başarısızsa fail-open DEĞİL fail-soft: yalnız `_engine` uygulanır ve `INTAKE_RESOLVE_FAILED` uyarısı yazılır (kesinti yüzünden kullanıcıyı kilitlememek için; hata kalıcıysa zaten RPC'nin kendisi de DB'ye erişemez).
+
+FE: `code === 'INTEGRATION_PAUSED'` için sayfa hatası yerine satır içi bilgi ("Bu entegrasyon geçici olarak durduruldu"), eylem düğmesi yeniden denemeye yönlendirmez. Bulut FE görevi bu kodu ileti eşlemesine ekleyecek.
+
+## 10. Komisyon oranı geçersiz kılma — `FinancialService` (COM-04, 2026-09-30)
+
+Tenant, kanal bazında varsayılan ya da kategori bazında kendi komisyon oranını tanımlar (örn. özel sözleşme). FE: entegrasyon ayarlarında "Komisyon oranları" tablosu (kanal satırı = varsayılan; kategori satırları eklenebilir).
+
+**Öncelik (komisyon okuma RPC'lerinde `commission.source`):** `override` (kategori > kanal varsayılan) > `actual` (hakediş) > `estimated` (kanal tablosu) > `unknown`. Kategori eşleşmesi: yerel kategori -> `AttributeMappings` -> **platform kategori kimliği**; override `platformCategoryId` ile eşlenir. FE `source==='override'` için "Özel oran" etiketi göstermeli; `actual` ayrıntısı (`commission.actual`) override olsa da dönmeye devam eder.
+
+| RPC | Kademe / izin | Girdi | Çıktı |
+|---|---|---|---|
+| `FinancialService/listCommissionOverrides` | member / `finance:read` | `{ integrationCode? }` | `[{ id, integrationCode, scope, platformCategoryId\|null, rate, note\|null, updatedBy, updatedAt }]` |
+| `FinancialService/setCommissionOverride` (upsert) | admin / `integrations:manage` | `{ integrationCode, scope: 'category'\|'default', platformCategoryId?, rate, note? }` | yukarıdaki satır |
+| `FinancialService/deleteCommissionOverride` | admin / `integrations:manage` | `{ id }` (24 hex) | `{ deleted: true }` |
+
+Kurallar: `rate` 0–100, en çok 2 ondalık (gerçek `0` geçerlidir ve "bilinmiyor" değildir); `scope:'category'` için `platformCategoryId` zorunlu, `'default'` için verilmez (400). Tekil anahtar `{integrationCode (küçük harf), scope, platformCategoryId}`: aynı anahtarla tekrar `set` günceller. Silinecek kayıt yoksa 404. Bilinmeyen alan 400 VALIDATION. `updatedBy` sunucuda doğrulanmış kullanıcıdan yazılır (gövdeden alınmaz). Yazmalar X4 denetim kaydına `a_rate/b_rate` (önce/sonra), `a_scope`, hedef (`integrationCode`, `platformCategoryId`) ile düşer; `note` denetime yazılmaz. Okuma yolu tenant kapsamlı 10 dk önbellekli; yazma tenant önbelleğini düşürür (pod-yerel; çok pod'da en çok 10 dk gecikme). Depolama: tenant DB `CommissionOverrides` (göç `0016-commission-overrides-tenant`, çalıştırılmadı; yerel/Atlas uygulaması ayrı onay). Göç uygulanmadan `set` tekil indeks olmadan çalışır ama yarış durumunda mükerrer satır riski vardır: göç önce uygulanmalıdır.
+
+## 11. Bağlantıyı test et — `IntegrationService/testConnection` (INT-01, 2026-09-30) — **admin** (`integrations:manage`)
+
+Entegrasyon ayar formundaki "Bağlantıyı test et" düğmesinin sözleşmesi. **Kayıtlı (kaydedilmiş) ayarları** sınar: form alanları gövdeyle gönderilmez; kullanıcı önce kaydeder, sonra test eder (RPC her çağrıda tenant+entegrasyon için adaptör önbelleğini atar, yani az önce kaydedilen kimlik bilgisi sınanır). Yan etkisiz tek okuma yapar (kimlik doğrulamalı en hafif liste ucu, tek kayıt); sipariş/ürün verisi yazılmaz, yanıta hiçbir pazaryeri verisi girmez.
+
+| Alan | Değer |
+|---|---|
+| Çağrı | `POST /api/IntegrationService/testConnection` (jenerik RPC, bkz. §0) |
+| Girdi | `{ integrationCode: string }` (yalnız bu alan; ek alan 400) |
+| Çıktı | `{ ok: boolean, code: 'OK'\|'AUTH_FAILED'\|'UNREACHABLE'\|'RATE_LIMITED'\|'UNKNOWN', detail?: string, checkedAt: ISO-8601 }` |
+| Hız sınırı | tenant+entegrasyon başına **dakikada 3**; aşılırsa HTTP 429 `RATE_LIMITED` (`details.retryAfterSec`) |
+| Kill-switch | `off` ise HTTP 503 `INTEGRATION_PAUSED` (§9; okuma olduğundan `drain`'de çalışır) |
+
+Sonuç kodları (FE iletisi önerisi): `OK` "Bağlantı başarılı"; `AUTH_FAILED` "Kimlik bilgileri reddedildi, bilgileri kontrol edin" (alanları işaretle); `UNREACHABLE` "Servise ulaşılamadı, biraz sonra tekrar deneyin" (kullanıcı hatası değil); `RATE_LIMITED` "Pazaryeri istek sınırına takıldı, biraz sonra deneyin"; `UNKNOWN` "Doğrulanamadı" (ayar eksik/entegrasyon kurulu değil/bu entegrasyon henüz bağlantı testini desteklemiyor; `detail` gösterilebilir). `detail` kısa, sabit Türkçe metindir; sır/PII içermez. Başarıda `detail` yoktur.
+
+FE notları: (1) 429 ve 503 yanıtları sonuç kodu değil HTTP hatasıdır: 429'da düğme `retryAfterSec` kadar pasif kalsın, 503 `INTEGRATION_PAUSED` için §9 iletisi gösterilsin. (2) Kayıtlı ayarı olmayan entegrasyonda `UNKNOWN` döner (HTTP 200); düğme, form kaydedilmeden etkinleştirilmemeli. (3) Hepsiburada adaptörü taşınana kadar `UNKNOWN` ("desteklenmiyor") döner. (4) Sunucu kaynaklı sonuç önbelleğe alınmaz; `checkedAt` yalnız "az önce" göstergesi içindir.
+
+## 12. Net fiyat / net gelir — `FinancialService/getNetRevenuePreview` + sipariş `net` bloğu (COM-07, 2026-09-30) — **member** (`finance:read`, yalnızca OKUMA)
+
+Net değer **okuma anında hesaplanır, kalıcı alan yoktur** (COM-10). Kesintiler tek "komisyon" sayısı değil, ayrı kalemlerdir. Hesap: `backend/src/operations/finance/netRevenue.ts`; kural ayarları: ayar kataloğu `finance.*` (ADR-0020, entegrasyon kapsamlı).
+
+**Ürün liste/detay:** `POST /api/FinancialService/getNetRevenuePreview` — girdi `{ items: [{ barcode? | variantId?, grossPrice?, integrationCode }] }` (en çok 200; her öğede `barcode` veya `variantId` zorunlu; `grossPrice` >= 0, verilmezse varyantın brüt satış fiyatı: kanal bazlı fiyat açıksa `platforms.<kod>.prices.salePrice`, değilse `prices.salePrice`; kurallara uymayan öğe 400). Çıktı `{ items: [{ barcode|null, variantId|null, integrationCode, variantFound, grossSource: 'input'|'variant'|'unknown', vatRate|null, commission: { source, rate|null, categoryId|null }, net }] }`, sıra girdiyle aynıdır.
+
+**Sipariş:** `FinancialService/getOrderCommissionSummary` yanıtında her `items[i]` artık `net` taşır (brüt = kalem `totalPrice`; sabit bedel ve kargo katkısı adetle çarpılır; hakediş varsa komisyon tutarı gerçekleşenden alınır).
+
+`net` nesnesi: `{ gross, commissionAmount, commissionVat, serviceFee, shipping, withholding, net, components: [{ kind, amount|null, source: 'rule'|'override'|'actual'|'unknown' }], missing: kind[], confidence: 'actual'|'estimated'|'partial'|'unknown', reportedSellerRevenue|null }`. Tutarlar TL, 2 ondalık, yarım-yukarı; bileşenler + `net` toplamı brüte tam eşittir.
+
+| `confidence` | Anlamı | Rozet (öneri) |
+|---|---|---|
+| `actual` | Komisyon gerçekleşen hakedişten ve diğer tüm bileşenler biliniyor | "gerçekleşen" |
+| `estimated` | Tüm bileşenler biliniyor; komisyon oran (tablo/override) ile hesaplandı | "tahmini" |
+| `partial` | Bazı bileşenler bilinmiyor; `net` yalnız bilinenleri düşer | "tahmini — eksik bileşen" (+ `missing` listesi, ör. "Hizmet bedeli bilinmiyor") |
+| `unknown` | Komisyon ya da brüt bilinmiyor; `net` **null** | "hesaplanamadı" |
+
+FE kuralları: (1) `amount: null` / `source: 'unknown'` bileşen **asla 0 olarak** gösterilmez; "bilinmiyor" (tire + ipucu) yazılır. (2) Satır görünümü: `Brüt` → her bileşen (etiket: Komisyon, Komisyona KDV, Hizmet/işlem bedeli, Kargo katkısı, Stopaj) → `Tahmini net`; komisyon satırında oran + kaynak etiketi (`commission.source`: override "kendi oranınız", actual "gerçekleşen", estimated "tahmini tablo"). (3) `confidence:'actual'` iken `reportedSellerRevenue` pazaryerinin bildirdiği alacak olarak bilgi amaçlı gösterilebilir (hesaba karışmaz). (4) Bu bir tahmindir; ürün/kampanya karar ekranlarında "gerçek hakediş farklı olabilir" uyarısı bulunsun.
+
+Varsayılan kesinti kuralları (`finance.*`; `null` = bilinmiyor): `withholdingRate` %1 tüm kanallar (7524 sayılı Kanun; matrah KDV hariç **varsayımı**, muhasebe teyidi bekliyor); `commissionVatRate` yalnız Hepsiburada %20 (Trendyol'da oranın KDV dahil olup olmadığı çelişkili kaynaklar nedeniyle bilinmiyor); `serviceFeeFixed`, `serviceFeeRate`, `shippingContribution` hiçbir kanalda doğrulanmış değer yok → `null` (kaynak: `docs/research/MARKETPLACE_COMMISSIONS_2026-09-30.md` §4). Stopaj hesabı için ürün KDV oranı gerekir (`Product.taxPercentage`; 0 "ayarsız" sayılır; siparişte kalem `taxRate`); yoksa stopaj `unknown`. **Bilinen sınır:** ayar akışında tenant katmanı henüz bağlı değil (ADR-0020 Aşama B); kurallar yayınlanmış platform geçersiz kılmalarıyla değişir, tenant'a özel kural girişi yoktur.

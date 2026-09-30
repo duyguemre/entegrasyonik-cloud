@@ -64,7 +64,6 @@
       <v-text-field
         v-model="typedConfirmation"
         :label="`Hedef kodu: ${target}`"
-        density="comfortable"
         :disabled="loading"
       />
     </EkSection>
@@ -85,16 +84,10 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import EkDetailSheet from '@/components/ds/EkDetailSheet.vue'
-import EkSection from '@/components/ds/EkSection.vue'
-import EkStatusChip from '@/components/ds/EkStatusChip.vue'
-import EkDataTable, { type EkTableColumn } from '@/components/ds/EkDataTable.vue'
-import EkDescriptionList, { type EkDescriptionListItem } from '@/components/ds/EkDescriptionList.vue'
-import EkEmptyState from '@/components/ds/EkEmptyState.vue'
-import EkConfirmDialog from '@/components/ds/EkConfirmDialog.vue'
+import { EkDetailSheet, EkSection, EkStatusChip, EkDataTable, type EkTableColumn, EkDescriptionList, type EkDescriptionListItem, EkEmptyState, EkConfirmDialog } from '@entegrasyonik/ui/components'
 import { SETTING_DANGER_TONE } from '@/design/status-map'
 import { getSettingMeta } from './settingsCatalogMirror'
-import { formatNumber } from '@/composables/format'
+import { formatNumber } from '@entegrasyonik/ui/format'
 
 export interface PublishDiffEntry {
   key: string

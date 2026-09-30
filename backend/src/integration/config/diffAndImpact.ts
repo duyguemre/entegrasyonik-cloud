@@ -1,7 +1,7 @@
 // ADR-0020 Karar 3.2/3.3 (Aşama B) — fark tablosu + etki önizlemesi.
 import { getSettingDef as realGetSettingDef } from './catalog';
 import type { SettingDanger } from './types';
-import { ENGINE_TARGET } from './targets';
+import { ENGINE_TARGET, PLATFORM_TARGET } from './targets';
 
 export interface DiffEntry {
     key: string;
@@ -60,7 +60,7 @@ const IMPACT_EXACT_LIMIT = 50;
  */
 export async function computeActiveTenantsImpact(applicationDB: { getClientModel(): ClientModelLike }, target: string): Promise<ImpactResult> {
     const filter: Record<string, unknown> = { status: 'ACTIVE' };
-    if (target !== ENGINE_TARGET) filter['integrations.integrationCode'] = target;
+    if (target !== ENGINE_TARGET && target !== PLATFORM_TARGET) filter['integrations.integrationCode'] = target;
     const model = applicationDB.getClientModel();
     const raw = model.countDocuments(filter);
     const count = typeof (raw as any)?.then === 'function' ? await raw : await (raw as any).exec();

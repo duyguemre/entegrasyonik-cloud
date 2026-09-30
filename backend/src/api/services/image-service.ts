@@ -2,15 +2,25 @@ import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import { ObjectId } from 'mongodb'
 import { ImageOperations, storageService } from '@services/index'
+import {
+    imageVariantUrl, MAX_PIXELS, productImageKey, publicImageUrl, readImageUploadSettings, sha256Hex, sniffImageType, THUMB_WIDTH,
+} from '@services/storage/imagePolicy'
+import { ApplicationError } from '../Security'
+
+/**
+ * ADR-0027 §C: doğrudan yüklemeyle eklenen görsel alt belgesi (`products.images[]`, `strict:false` şema).
+ * Eski (multipart) görsellerden ayrımı `key` alanıdır: `key` varsa nesne içerik-adreslidir ve silme TAM anahtarla yapılır.
+ */
+function toDirectImageView(image: any) {
+    if (!image || typeof image.key !== 'string') return image
+    let thumbUrl = image.url
+    try { thumbUrl = imageVariantUrl(image.key, { width: THUMB_WIDTH, format: 'auto' }) } catch { /* kök yoksa orijinal */ }
+    return { ...image, thumbUrl }
+}
 
 export default class ImageService extends BaseApi implements IService {
     choices: any = undefined
     s3: any
-    currentClientId: any
-    constructor(clientId: number, protected request: any) {
-        super(clientId, request)
-        this.currentClientId = clientId
-    }
 
     async get(): Promise<any> {
         try {
@@ -60,7 +70,8 @@ export default class ImageService extends BaseApi implements IService {
             const filterQuery: any = { tempId: new ObjectId(this.request.productId + '') }
             const resp = await this.clientDB.getProductModel().findOne(filterQuery).select('_id images').lean()
             if (resp && resp.images) {
-                resp.images = resp.images.sort((a: any, b: any) => a.order - b.order); // `order` alanına göre artan sırada
+                resp.images = resp.images.sort((a: any, b: any) => a.order - b.order) // `order` alanına göre artan sırada
+                    .map(toDirectImageView); // ADR-0027: `key`'li (doğrudan yüklenen) görsele `thumbUrl`; eskiler AYNEN
             }
             return resp
         } catch (error) {
@@ -69,6 +80,85 @@ export default class ImageService extends BaseApi implements IService {
         return images
     }
 
+
+    /**
+     * ADR-0027 (1): imzalı PUT bileti. Gövde (rpc-input şeması): `{ tempProductId, contentType, size }`.
+     * R2'ye istek ATILMAZ (yerel imza). Ürün varlığı burada denetlenmez (taslak ürün görsel yüklemesiyle doğar —
+     * eski `addImages` davranışı); tenant sınırı anahtarın `uploads/<clientId>/` önekiyle sunucuda kurulur.
+     */
+    async createUploadUrl(): Promise<any> {
+        const { contentType, size } = this.request
+        const settings = readImageUploadSettings()
+        if (typeof size !== 'number' || size > settings.maxBytes) {
+            throw new ApplicationError(`Görsel en fazla ${settings.maxBytes} bayt olabilir.`, 413, 'IMAGE_TOO_LARGE')
+        }
+        try {
+            return await storageService.createImageUploadTicket(this.currentClientId, contentType, size)
+        } catch (e: any) {
+            if (/izinli değil|tavan/.test(String(e?.message))) throw new ApplicationError('Görsel türü/boyutu kabul edilmiyor.', 415, 'IMAGE_TYPE_NOT_ALLOWED')
+            throw e
+        }
+    }
+
+    /**
+     * ADR-0027 (3): yükleme onayı. Gövde: `{ tempProductId, uploadId, originalname? }`.
+     *  - geçici nesne yoksa/süresi dolduysa 404 UPLOAD_NOT_FOUND;
+     *  - tavan aşımı 413; gerçek tür (sihirli bayt) izin listesinde değilse 415 — her iki durumda geçici nesne silinir;
+     *  - SHA-256 SUNUCUDA hesaplanır → kalıcı anahtar `products/<clientId>/<tempProductId>/<sha256[0:32]>.<ext>`;
+     *  - aynı içerik aynı üründe zaten varsa (dedupe) mevcut görsel döner (`deduped: true`), yeni nesne yazılmaz.
+     */
+    async confirmUpload(): Promise<any> {
+        const { tempProductId, uploadId } = this.request
+        const originalname = typeof this.request.originalname === 'string' && this.request.originalname ? this.request.originalname : uploadId
+        const staged = await storageService.readStagedImage(this.currentClientId, uploadId)
+        if (!staged) throw new ApplicationError('Yükleme bulunamadı ya da süresi doldu.', 404, 'UPLOAD_NOT_FOUND')
+        const reject = async (msg: string, status: number, code: string): Promise<never> => {
+            await storageService.discardStagedImage(this.currentClientId, uploadId)
+            throw new ApplicationError(msg, status, code)
+        }
+        if (staged.tooLarge || !staged.buffer) return await reject('Görsel boyut tavanını aşıyor.', 413, 'IMAGE_TOO_LARGE')
+        const buffer = staged.buffer
+        const contentType = sniffImageType(buffer)
+        if (!contentType) return await reject('Görsel türü kabul edilmiyor (jpeg, png, webp, avif).', 415, 'IMAGE_TYPE_NOT_ALLOWED')
+
+        const meta: any = await ImageOperations.getMetadata(buffer)
+        const width = Number(meta?.width) || 0
+        const height = Number(meta?.height) || 0
+        if (meta?.result === false || width * height > MAX_PIXELS) return await reject('Görsel çözümlenemedi ya da çok büyük.', 415, 'IMAGE_INVALID')
+
+        const sha256 = sha256Hex(buffer)
+        const key = productImageKey(this.currentClientId, String(tempProductId), sha256, contentType)
+        const url = publicImageUrl(key)
+
+        const existing = await this.clientDB.getProductModel().findOne({ tempId: tempProductId }).select('_id images').lean()
+        const dup = existing?.images?.find((img: any) => img && img.key === key)
+        if (dup) {
+            await storageService.discardStagedImage(this.currentClientId, uploadId)
+            return { image: toDirectImageView(dup), deduped: true }
+        }
+
+        await storageService.commitProductImage(this.currentClientId, key, buffer, contentType)
+        await storageService.discardStagedImage(this.currentClientId, uploadId)
+
+        let [w, h] = [width, height]
+        if (meta?.orientation && meta.orientation >= 5) [w, h] = [h, w]
+        const imageDocument: any = {
+            _id: new ObjectId(),
+            order: Array.isArray(existing?.images) ? existing.images.length : 0,
+            originalname: String(originalname).slice(0, 255),
+            isTempImage: false,
+            width: w, height: h,
+            size: buffer.length,
+            extension: key.slice(key.lastIndexOf('.') + 1),
+            url, key, contentType, sha256,
+        }
+        await this.clientDB.getProductModel().updateOne(
+            { tempId: tempProductId },
+            { $push: { images: imageDocument }, $setOnInsert: { stockcode: String(Date.now()), maincode: tempProductId } },
+            { upsert: true },
+        )
+        return { image: toDirectImageView(imageDocument), deduped: false }
+    }
 
     async deleteImage(): Promise<any> {
         if (this.request.imageId == undefined || this.request.tempProductId == undefined) throw Error("no imageId or productId for delete")
@@ -92,7 +182,10 @@ export default class ImageService extends BaseApi implements IService {
                     }
                 })
 
-            if (image && productId) {
+            if (image && productId && typeof image.key === 'string') {
+                // ADR-0027: doğrudan yüklenen görsel — TAM anahtarla sil (tenant öneki StorageService'te denetlenir).
+                await storageService.deleteProductImageKey(this.currentClientId, image.key)
+            } else if (image && productId) {
                 var directory = ImageOperations.imageFilesPath
                 if (!image.transferFromPlatformId) {
                     await storageService.deleteFile(this.currentClientId, 'image', image._id, directory + this.currentClientId + '/' + productId, image.extension)
@@ -124,10 +217,12 @@ export default class ImageService extends BaseApi implements IService {
 
             const imageIds: Array<any> = []
             const imageUrls: Array<any> = []
+            const directKeys = new Map<string, string>()
             for (const selectedImage of this.request.selectedImages) {
                 const image = product.images.find((image: any) => image._id == selectedImage)
                 imageIds.push(image._id)
                 imageUrls.push(image.url)
+                if (typeof image.key === 'string') directKeys.set(String(selectedImage), image.key)
             }
 
             await this.clientDB.getProductModel().updateOne(
@@ -148,7 +243,9 @@ export default class ImageService extends BaseApi implements IService {
 
             var directory = ImageOperations.imageFilesPath
             for (const selectedImage of this.request.selectedImages) {
-                if (!selectedImage.transferFromPlatformId)
+                const directKey = directKeys.get(String(selectedImage))
+                if (directKey) await storageService.deleteProductImageKey(this.currentClientId, directKey)
+                else if (!selectedImage.transferFromPlatformId)
                     await storageService.deleteFolder(this.currentClientId, 'image', directory + this.currentClientId + '/' + productId, selectedImage)
             }
             return true

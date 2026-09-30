@@ -1,857 +1,541 @@
+<!--
+  frontend/src/components/productDefinitions/variants/ProductVariantImagesComponent.vue
+
+  Faz 3 B2 — TEK varyantın görselleri (varyant tablosunda satırdaki küçük görsel → bu panel). Önceki hâl: iki ayrı
+  sürüklenebilir ızgara, "+" kaplamalı galeri, `onActivated` + JSON kopyası, `console.log`'lar, yüklemede
+  backend'in döndürdüğü TÜM ürün görsellerini varyanta ekleyen hata, silinmiş galeri görselini gösteren boş kutular.
+
+  Yeni:
+    1) "Bu varyantın görselleri" — sıralı şerit (ilk = varyant ana görseli). Sürükle-bırak; klavye: kutuya odaklan,
+       Alt+←/→ taşı; × kaldır (toast'ta Geri al).
+    2) Kardeşlere uygula — aynı seçenek değerini (ör. Renk: Kırmızı) paylaşan diğer varyantlara tek tıkla aynı set.
+    3) "Galeriden seç" — çoklu aç/kapa (ImagePicker); yeni görsel en sona eklenir, varyantın kendi sırası korunur.
+    4) Yükle — galeriye eklenir ve YALNIZ yeni yüklenen görsel bu varyanta bağlanır.
+  Değişiklikler `variant.images`'ta tutulur, ürün kaydıyla gider (sözleşme aynı).
+-->
 <template>
+  <EkDialogCard class="productVariantImagesComponent pvi" title="Varyant Resimleri" icon="mdi-palette-swatch-outline" width="xl"
+    :description="headline" confirm-label="Bitti" confirm-icon="mdi-check" hide-cancel @close="emits('close')" @confirm="emits('close')">
+    <div class="pvi-body">
+      <section class="pvi-sec" aria-labelledby="pvi-own-h">
+        <header class="pvi-sec__head">
+          <h3 id="pvi-own-h" class="pvi-sec__title">Bu varyantın görselleri <span class="pvi-count ek-num">{{ ownIds.length }}</span></h3>
+          <span class="pvi-sec__hint">İlk görsel varyantın ana görseli<span class="pvi-pointer"> · sürükleyin ya da <kbd>Alt</kbd>+<kbd>←</kbd>/<kbd>→</kbd></span></span>
+        </header>
 
-  <CardComponent tabindex="0" icon="mdi-image-multiple-outline" title="Varyant Resimleri" :whiteBackground="true"
-    class="productVariantImagesComponent pvi-s1">
-    <LoadingComponent attach=".productDefinitionView" ref="loadingComponentRef"></LoadingComponent>
-    <template #header>
-      <v-btn aria-label="Kapat" @click="emits('close')" elevation="0"
-        min-width="0" color="white" class="pvi-s2"><v-icon size="x-large" color="primary">mdi-close</v-icon></v-btn>
-    </template>
-
-    <LoadingComponent attach=".productVariantImagesComponent" ref="loadingComponentRef"></LoadingComponent>
-
-    <v-row no-gutters>
-      <v-col class="pl-2 pr-4">
-        <div>
-          <CardComponent tabindex="0" :whiteBackground="true" class="pvi-s3">
-            <v-row>
-              <v-col>
-                <div v-if="sortedImageIds?.length == 0" class="d-flex align-center justify-start mt-0 pa-3">
-                  <v-card density="compact" class="pvi-s4" :height="width + 80" :width="width + 120" elevation=0>
-                    <v-card-text class="d-flex align-center justify-center fill-height">
-                      <div>
-                        <v-icon size="200" class="pvi-s5">mdi-image-outline</v-icon>
-                        <div class="text-center text-caption pvi-s6">
-                          Henüz resim eklenmemiş
-                        </div>
-                      </div>
-                    </v-card-text>
-                  </v-card>
-                </div>
-                <Sortable :list='sortedImageIds' @end="onEndSort" tag="div" item-key="index" :key="sortedImageIds"
-                  :options="{ handle: '.drag-handle' }" class="d-flex flex-wrap mt-1 ml-1 mr-1">
-                  <template #item="{ element, index }">
-                    <div class="draggable pa-0 hoveredContainer" :data-id="element">
-                      <v-card density="compact" class="hoveredBorder d-flex flex-column pvi-s7" :height="width + 82"
-                        :width="width + 122"
-                        :elevation="isSelectionExistForVariant(element) == -1 ? 0 : 2"
-                        @click.stop="toggleSelectedImagesForIdForVariant(element)"
-                        :class="{ 'pvi-unselected': selectedImagesForVariant.length > 0 && isSelectionExistForVariant(element) == -1 }">
-                        <v-btn aria-label="Resmi kaldır" class="hovered pvi-s8"
-                          @click.stop="deleteImageForVariant(element)" elevation="0" min-width="0"
-                          color="transparent"><v-icon size="large"
-                            color="deleteButtonColor">mdi-close-thick</v-icon></v-btn>
-                        <v-btn class="hovered pvi-s9"
-                          @click.stop="downloadImage(element)" elevation="0" min-width="0" color="transparent"><v-icon
-                            size="large" color="primary">mdi-download</v-icon></v-btn>
-                        <v-card outlined class="drag-handle hovered pvi-s10"
-                          elevation="1" min-width="0" color="infoButtonColor">
-                          <div class="d-flex justify-center text-center">
-                            <div class="text-caption pvi-s11">
-                              <v-icon size="25" color="processButtonColor">mdi-drag</v-icon>
-                            </div>
-                          </div>
-                        </v-card>
-                        <v-card-text class="pa-0">
-                          <ProductVariantImageEditComponent v-model="sortedImageIds[index]"
-                            :productInfoForm="productInfoForm" :height="206" class="pvi-s12">
-                          </ProductVariantImageEditComponent>
-                        </v-card-text>
-                        <v-card-actions class="align-start justify-center pvi-s13">
-                        </v-card-actions>
-                      </v-card>
-                    </div>
-                  </template>
-                </Sortable>
-              </v-col>
-            </v-row>
-          </CardComponent>
-        </div>
-
-
-      </v-col>
-
-      <v-col cols=4>
-
-        <ImageUploaderComponent :productInfoForm="productInfoForm" :choice="productImagesInfo.selectedChoice"
-          @uploaded-event="assignImages" />
-
-
-
-        <CardComponent tabindex="0" icon="mdi-image-multiple-outline" title="Ürün Resim Galerisi" :whiteBackground="true"
-          class="productVariantImagesComponent pvi-s14">
-
-          <div v-if="productInfoForm.images == undefined || productInfoForm.images.length == 0"
-            class="d-flex align-center justify-start mt-0">
-            <v-card density="compact" class="pvi-s15" :height="width + 80" :width="width + 120" elevation=0>
-              <v-card-text class="d-flex align-center justify-center fill-height">
-                <div>
-                  <v-icon size="200" class="pvi-s16">mdi-image-outline</v-icon>
-                  <div class="text-center text-caption pvi-s17">
-                    Henüz resim eklenmemiş
-                  </div>
-                </div>
-              </v-card-text>
-
-            </v-card>
+        <div v-if="!ownIds.length" class="pvi-own-empty">
+          <v-icon icon="mdi-image-off-outline" aria-hidden="true" />
+          <div>
+            <strong>Bu varyanta görsel atanmadı.</strong>
+            <span>Aşağıdaki galeriden seçin ya da yeni görsel yükleyin.</span>
           </div>
-
-          <Sortable :list='productInfoForm.images' @end="onEndSort" item-key="_id" tag="div"
-            :options="{ disabled: true }" class="d-flex flex-wrap">
-            <template #item="{ element, index }">
-              <div class="draggable pa-0 hoveredContainer" :data-id="element._id">
-                <v-card density="compact" class="d-flex flex-column pvi-s7" :height="width - 32" :width="width + 16" :elevation="0"
-                  :class="{ 'pvi-unselected': selectedImages.length > 0 && isSelectionExist(element._id) == -1 }">
-                  <div class="hovered pvi-s18">
-                    <v-btn
-                      @click.stop="assignImage(element)" elevation="0" min-width="0" color="#ffffff99" class="pvi-s19"><v-icon size="70"
-                        color="processButtonColor" class="pvi-s20">mdi-plus</v-icon></v-btn>
-                  </div>
-
-                  <v-card outlined
-                    elevation="1" min-width="0" color="infoButtonColor" class="pvi-s10">
-                    <div class="d-flex justify-center text-center">
-                    </div>
-                  </v-card>
-                  <v-card-text class="pa-0">
-
-                    <ProductImageComponent v-model="productInfoForm.images[index]"
-                      :productId="productInfoForm._id ? productInfoForm._id : productInfoForm.tempId" :height="96" class="pvi-s13">
-                    </ProductImageComponent>
-                  </v-card-text>
-                  <v-card-actions class="align-start justify-center pvi-s13">
-                  </v-card-actions>
-                </v-card>
-              </div>
-            </template>
-          </Sortable>
-        </CardComponent>
-
-
-        <div class="ma-0 mt-8 pvi-s21">
-          <v-checkbox hide-details density="compact" v-model="selectAllImagesForVariant"
-            :indeterminate="selectedImagesForVariant.length != 0 && selectedImagesForVariant.length < productInfoForm.images.length">
-            <template #label>
-              <div class="text-caption1">
-                {{ $t('common.selectAllImages') }}
-              </div>
-            </template>
-          </v-checkbox>
-
-          <v-btn-group v-if="selectedImagesForVariant.length > 0" elevation="0" class="ml-1  mt-1 mb-2"
-            density="compact">
-            <v-btn density="compact" block class="fill-height pvi-s22" color="saveButtonColor"
-              :disabled="selectedImagesForVariant.length <= 0" @click="deleteImageSelectedForVariant">
-              <div v-if="selectedImagesForVariant.length > 0">
-                Seçili <span class="font-weight-bold pvi-s23">{{ selectedImagesForVariant.length
-                }}</span>
-                Resmi
-                Kaldır
-              </div>
-            </v-btn>
-          </v-btn-group>
         </div>
+        <ul v-else ref="stripRef" class="pvi-strip" aria-label="Varyant görselleri, sıralı">
+          <li v-for="(id, i) in ownIds" :key="id" class="pvi-own" :data-id="id" :class="{ 'is-main': i === 0 }">
+            <button type="button" class="pvi-own__img" :data-own="id"
+              :aria-label="`Varyant görseli ${i + 1} / ${ownIds.length}${i === 0 ? ', ana görsel' : ''}. Taşımak için Alt ve ok tuşları.`"
+              @keydown="onOwnKey($event, i)">
+              <GalleryThumb :src="urlOf(id)" />
+            </button>
+            <span v-if="i === 0" class="pvi-own__badge"><v-icon icon="mdi-star" aria-hidden="true" />Ana</span>
+            <span v-else class="pvi-own__badge pvi-own__badge--n ek-num" aria-hidden="true">{{ i + 1 }}</span>
+            <button type="button" class="pvi-own__remove" :aria-label="`Görsel ${i + 1} varyanttan kaldır`" @click="removeOwn(id)">
+              <v-icon :icon="icons.close" aria-hidden="true" />
+            </button>
+          </li>
+        </ul>
+      </section>
 
+      <EkAlert v-if="siblings.length" tone="info" dense class="pvi-siblings"
+        :title="`${siblingGroupTitle}: ${siblingValueTitle} olan ${siblings.length} varyant daha var`"
+        :text="siblingsInSync ? 'Hepsi bu varyantla aynı görselleri kullanıyor.' : 'Aynı görselleri onlara da tek tıkla uygulayabilirsiniz.'">
+        <template v-if="!siblingsInSync" #actions>
+          <EkButton size="sm" icon="mdi-content-duplicate" :disabled="!ownIds.length" @click="applyToSiblings">{{ siblings.length }} varyanta uygula</EkButton>
+        </template>
+      </EkAlert>
 
-      </v-col>
-    </v-row>
+      <section class="pvi-sec" aria-labelledby="pvi-gal-h">
+        <header class="pvi-sec__head">
+          <h3 id="pvi-gal-h" class="pvi-sec__title">Galeriden seç <span class="pvi-count ek-num">{{ gallery.length }}</span></h3>
+          <EkButton size="sm" :icon="icons.upload" @click="fileInputRef?.click()">Görsel yükle</EkButton>
+        </header>
+        <div v-if="uploadItems.length" class="pvi-uploads" role="status">
+          <div v-for="up in uploadItems" :key="up.id" class="pvi-up" :class="`is-${up.status}`">
+            <span class="pvi-up__thumb"><GalleryThumb :src="up.previewUrl" :alt="up.name" /></span>
+            <span class="pvi-up__text">
+              <span class="pvi-up__name">{{ up.name }}</span>
+              <span v-if="up.status === 'error'" class="pvi-up__err">{{ up.error }}</span>
+              <v-progress-linear v-else :model-value="up.progress" :indeterminate="up.progress === 0" height="4" rounded color="primary" bg-color="neutral"
+                :aria-label="`${up.name} yükleniyor`" />
+            </span>
+            <EkButton v-if="up.status === 'error'" size="sm" :icon="icons.refresh" @click="uploads.retry(up.id)">Tekrar dene</EkButton>
+          </div>
+        </div>
+        <EkAlert v-if="rejected" tone="warning" dense dismissible :text="rejected" @dismiss="rejected = ''" />
+        <p v-if="!gallery.length && !uploadItems.length" class="pvi-muted">Ürün galerisi boş. Yüklediğiniz görsel hem galeriye hem bu varyanta eklenir.</p>
+        <ImagePicker v-else :images="gallery" :model-value="ownIds" size="sm" label="Ürün galerisi" @update:model-value="onPick" />
+      </section>
 
-  </CardComponent>
+      <input ref="fileInputRef" class="pvi-file" type="file" multiple :accept="IMAGE_GUIDE.acceptAttr" tabindex="-1" aria-hidden="true" @change="onFileInput" />
+      <div class="ek-sr-only" aria-live="assertive" aria-atomic="true">{{ liveMsg }}</div>
+    </div>
+    <template #actions-start>
+      <span class="pvi-save"><v-icon icon="mdi-information-outline" aria-hidden="true" />Varyant görselleri ürünü kaydettiğinizde kaydedilir</span>
+    </template>
+  </EkDialogCard>
 </template>
 
 <script setup lang="ts">
-import { Sortable } from "sortablejs-vue3";
-
-import { ref, computed, onMounted, onBeforeMount, nextTick, reactive, onActivated } from 'vue'
-import { useI18n } from 'vue-i18n';
-import LoadingComponent from '@/components/LoadingComponent.vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import Sortable from 'sortablejs'
+import { EkDialogCard, EkButton, EkAlert } from '@entegrasyonik/ui/components'
+import { icons } from '@entegrasyonik/ui/icons'
 import useRestApi from '@/composables/restapi'
-import { useChoicesStore } from '@/stores/choicesStore';
+import { useToast } from '@entegrasyonik/ui/composables/useToast'
+import { useChoicesStore } from '@/stores/choicesStore'
+import GalleryThumb from '@/components/productDefinitions/images/GalleryThumb.vue'
+import ImagePicker from '@/components/productDefinitions/images/ImagePicker.vue'
+import { useImageUploads } from '@/components/productDefinitions/images/useImageUploads'
+import { motionMs } from '@/components/productDefinitions/images/motion'
+import {
+  IMAGE_GUIDE, buildOptionGroups, moveItem, preferredGroup, pruneVariantRefs, variantImageIds, variantKey, variantLabel,
+  type GalleryImage, type VariantLike,
+} from '@/components/productDefinitions/images/galleryModel'
 
-import ImageUploaderComponent from '@/components/productDefinitions/crud/ImageUploaderComponent.vue'
-import ProductImageComponent from '@/components/productDefinitions/products/ProductImageComponent.vue'
-import ProductVariantImageEditComponent from "./ProductVariantImageEditComponent.vue";
-import CardComponent from "@/components/CardComponent.vue";
-
-
-const choicesStore = useChoicesStore()
-var choicesStoreChoices: any = ref()
-
-const isImages = defineModel({ default: false })
-const baseImageURL = ref('https://images.entegrasyonik.com/products/')
-const baseTempImageURL = ref(baseImageURL.value + 'temp/')
-
+defineModel({ default: false })
 const emits = defineEmits(['refreshImages', 'close'])
-const props = defineProps<{
-  productInfoForm: any,
-  variant: any
-}>()
-const sortedImageIds: any = ref([])
-const restApi = useRestApi()
-const variantsList: any = ref()
-const loadingComponentRef: any = ref(null)
-const fileInputRef: any = ref(null)
-const selectedImages: any = ref([])
-const selectedImagesForVariant: any = ref([])
-const productImagesInfo: any = ref(
-  {
-    isVariant: false,
-    selectedChoice: { choiceId: -1, choiceValueId: -1 },
-    selectedChoiceForFilter: { choiceId: -1, choiceValueId: -1 },
-  }
-)
+const props = defineProps<{ productInfoForm: any; variant: VariantLike }>()
 
-const { t } = useI18n()
+const restApi = useRestApi() as any
+const { showToast } = useToast()
+const choicesStore = useChoicesStore()
+const valueTitle = (id: string) => choicesStore.getDirectChoiceValueTitle(id) as string | undefined
 
-const sleep = (ms: number) => {
-  return new Promise(resolve => setTimeout(resolve, ms));
+const gallery = computed<GalleryImage[]>(() => props.productInfoForm.images ?? [])
+const ownIds = computed(() => variantImageIds(props.variant, gallery.value))
+const urlOf = (id: string) => gallery.value.find((x) => x._id === id)?.url
+const headline = computed(() => `${variantLabel(props.variant, valueTitle)}${props.variant.stockcode ? ` · ${props.variant.stockcode}` : ''}`)
+
+const liveMsg = ref('')
+function announce(msg: string) {
+  liveMsg.value = ''
+  requestAnimationFrame(() => { liveMsg.value = msg })
 }
 
-var id = -1
-const width = 160
-var dragging = ref(false)
-
-const onEndSort = (event: any) => {
-  const { newIndex, oldIndex, from, to, item } = event
-  if (newIndex == oldIndex) return
-  const sortedImageIds = Array.from(to.children).map((item: any) => item.dataset.id)
-  console.log("AAAA", sortedImageIds, props.variant.images)
-  props.variant.images = sortedImageIds
-  //sortImages(newIndex, Number(item.dataset.id), sortedImageIds)
+/** Varyantın görsellerini (kimlik listesi) yazar; galeride karşılığı olmayan eski referanslar düşer. */
+function setOwn(ids: string[]) {
+  props.variant.images = ids.slice()
 }
 
-onActivated(() => {
-  console.log("Activated")
-  cloneVariantImages()
-})
-
-const cloneVariantImages = () => {
-  sortedImageIds.value = JSON.parse(JSON.stringify(props.variant.images))
+// ---- kaldır (geri al)
+function removeOwn(id: string) {
+  const before = (props.variant.images ?? []).slice()
+  const i = ownIds.value.indexOf(id)
+  setOwn(ownIds.value.filter((x) => x !== id))
+  announce(`Görsel ${i + 1} varyanttan kaldırıldı`)
+  showToast({ tone: 'info', message: 'Görsel bu varyanttan kaldırıldı (galeride duruyor).', actionLabel: 'Geri al', onAction: () => { props.variant.images = before } })
+  nextTick(() => stripRef.value?.querySelector<HTMLElement>('.pvi-own__img')?.focus())
 }
 
-const sortImages = async (itemIndex: number, imageId: number, sortedImageIds: Array<number>) => {
-  let guid = loadingComponentRef.value.info(t('loading.info.sortingImages'))
-  const response = await restApi.postImage('sortImages', { sortedImageIds: sortedImageIds, order: props.productInfoForm.images[itemIndex].order, orderChangeId: imageId, productId: props.productInfoForm._id ? props.productInfoForm._id : props.productInfoForm.tempId })
-  loadingComponentRef.value.remove(guid)
-  if (response && response.modifiedCount > 0) {
-    getImages()
-  }
+// ---- galeriden seç: eklenen sona, kaldırılan çıkar; varyantın kendi sırası korunur
+function onPick(next: string[]) {
+  const cur = ownIds.value
+  const kept = cur.filter((id) => next.includes(id))
+  const added = next.filter((id) => !cur.includes(id))
+  setOwn([...kept, ...added])
+  announce(added.length ? `Görsel eklendi, ${kept.length + added.length}. sırada` : 'Görsel kaldırıldı')
 }
 
-const toggleSelectedImagesForId = (imageId: number) => {
-  const index = isSelectionExist(imageId)
-  if (index == -1) {
-    selectedImages.value.push(imageId);
-  } else {
-    selectedImages.value.splice(index, 1);
-  }
+// ---- sıralama: sürükle-bırak + Alt+ok
+const stripRef = ref<HTMLElement | null>(null)
+function onOwnKey(e: KeyboardEvent, i: number) {
+  if (!e.altKey || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return
+  e.preventDefault()
+  const n = ownIds.value.length
+  const to = e.key === 'Home' ? 0 : e.key === 'End' ? n - 1 : i + (e.key === 'ArrowLeft' ? -1 : 1)
+  if (to < 0 || to >= n || to === i) return
+  const id = ownIds.value[i]
+  setOwn(moveItem(ownIds.value, i, to))
+  announce(`Konum ${to + 1} / ${n}${to === 0 ? ', ana görsel' : ''}`)
+  nextTick(() => stripRef.value?.querySelector<HTMLElement>(`[data-own="${id}"]`)?.focus())
 }
 
-const isSelectionExist = (imageId: number) => {
-  return selectedImages.value.indexOf(imageId)
-}
-
-const toggleSelectedImagesForIdForVariant = (imageId: number) => {
-  const index = isSelectionExistForVariant(imageId)
-  if (index == -1) {
-    selectedImagesForVariant.value.push(imageId);
-  } else {
-    selectedImagesForVariant.value.splice(index, 1);
-  }
-}
-
-const isSelectionExistForVariant = (imageId: number) => {
-  return selectedImagesForVariant.value.indexOf(imageId)
-}
-
-
-
-const selectAllImagesForVariant = computed({
-  get() {
-    if (!props.variant.images || props.variant.images.length == 0) return false
-    return selectedImagesForVariant.value.length === props.variant.images.length
-  },
-  set(newValue: boolean) {
-    selectedImagesForVariant.value = []
-    if (newValue) {
-      for (let currentImage of props.variant.images) {
-        selectedImagesForVariant.value.push(currentImage)
-      }
-    }
-  }
-})
-
-
-const init = async () => {
-  choicesStoreChoices.value = choicesStore.getChoices()
-  fileInputRef.value = ""
-  /*   await getImages() */
-}
-
-onMounted(() => {
-  init()
-})
-
-onMounted(() => {
-
-  /*   getVariantsList() */
-})
-
-const downloadImage = (imageId: any) => {
-  const link = document.createElement('a');
-  link.href = restApi.downloadImage(imageId)
-  link.target = "_blank"
-  link.click();
-}
-
-const constructImageUrl = async (image: any) => {
-  let binaryImageData = await restApi.postImage('getImage', image)
-
-  return URL.createObjectURL(binaryImageData)
-
-}
-
-const getVariantsList = async () => {
-  await nextTick(() => { })
-  let guid = loadingComponentRef.value.info(t('loading.info.getVariantsList'))
-  await sleep(1)
-  let response = await restApi.post("VariantService/getVariantsList", { _id: props.productInfoForm._id })
-  loadingComponentRef.value.remove(guid)
-  if (response && response.variants) {
-    variantsList.value = []
-    let flag = true
-    for (let variant of response.variants) {
-      variantsList.value.push({ title: variant.title, value: variant._id })
-      if (flag == true) {
-        console.log(variantsList.value, variantsList.value[0])
-        /*         productImagesInfo.value.selectedChoice = variantsList.value[0].value */
-        flag = false
-      }
-    }
-  }
-}
-
-defineExpose({
-  getVariantsList
-});
-
-const images = ref<Array<{ file: File, id: number }>>(
-  []
-)
-const thumbnails = ref<Array<{ url: string, id: number, width: number, height: number }>>(
-  []
-)
-
-
-
-var getFileName = (id: number) => {
-  for (var image of images.value) {
-    if (image.id == id) return image.file.name
-  }
-}
-
-var getFileSizeOld = (id: number) => {
-  for (var image of images.value) {
-    if (image.id == id) {
-      var suffix = "MB"
-      var conversion = 1000000
-      if (image.file.size < 1000000) {
-        conversion = 1000
-        suffix = "KB"
-      }
-      return parseFloat("" + image.file.size / conversion).toFixed(1) + suffix
-
-    }
-  }
-}
-
-var getFileSize = (size: number) => {
-  if (size == undefined) return 0
-  var suffix = "MB"
-  var conversion = 1000000
-  if (size < 1000000) {
-    conversion = 1000
-    suffix = "KB"
-  }
-  return parseFloat("" + size / conversion).toFixed(1) + suffix
-}
-
-var files = ref([])
-function addImage1() {
-  console.log(files)
-}
-
-const deleteImageForVariant = async (imageId: number) => {
-  const index = props.variant.images.indexOf(imageId)
-  if (index >= 0) {
-    props.variant.images.splice(index, 1)
-    cloneVariantImages()
-  }
-}
-
-
-const deleteImage = async (imageId: number) => {
-  let guid = loadingComponentRef.value.info(t('loading.info.getVariantsList'))
-  const response = await restApi.postImage('deleteImage', { imageId, productId: props.productInfoForm._id ? props.productInfoForm._id : props.productInfoForm.tempId })
-  loadingComponentRef.value.remove(guid)
-
-  if (response && response.acknowledged == true && response.modifiedCount == 1) {
-    getImages()
-  }
-}
-
-
-const deleteImageSelectedForVariant = async () => {
-  for (const imageId of selectedImagesForVariant.value) {
-    deleteImageForVariant(imageId)
-  }
-  selectedImagesForVariant.value = []
-}
-
-
-const deleteImageSelected = async () => {
-  let guid = loadingComponentRef.value.info(t('loading.info.getVariantsList'))
-  await sleep(1)
-  const response = await restApi.postImage('deleteImageSelected', { productId: props.productInfoForm._id ? props.productInfoForm._id : props.productInfoForm.tempId, tempProductId: props.productInfoForm.tempId, selectedImages: selectedImages.value })
-  loadingComponentRef.value.remove(guid)
-  if (response && response.acknowledged == true) {
-    getImages()
-  }
-}
-
-
-const refreshImages = async () => {
-  await nextTick(() => { })
-  let guid = loadingComponentRef.value.info(t('loading.info.getImages'))
-  const resp = await restApi.postImage('getImages', {
-    productId: props.productInfoForm._id ? props.productInfoForm._id : props.productInfoForm.tempId
+let sortable: Sortable | null = null
+watch(stripRef, (el) => {
+  sortable?.destroy()
+  sortable = null
+  if (!el) return
+  sortable = Sortable.create(el, {
+    draggable: '.pvi-own',
+    filter: '.pvi-own__remove',
+    preventOnFilter: false,
+    animation: motionMs('base'),
+    forceFallback: true,
+    fallbackTolerance: 4,
+    fallbackClass: 'pvi-drag-clone',
+    ghostClass: 'is-ghost',
+    onEnd(evt) {
+      const item = evt.item
+      evt.from.removeChild(item)
+      evt.from.insertBefore(item, evt.from.children[evt.oldIndex ?? 0] ?? null)
+      const from = evt.oldDraggableIndex ?? -1
+      const to = evt.newDraggableIndex ?? -1
+      if (from < 0 || to < 0 || from === to) return
+      setOwn(moveItem(ownIds.value, from, to))
+      announce(`Görsel ${to + 1}. sıraya taşındı`)
+    },
   })
-  props.productInfoForm.images = resp.images
-  loadingComponentRef.value.remove(guid)
-}
-
-
-
-const getImages = async () => {
-  if (selectedImages.value) selectedImages.value.length = 0
-  refreshImages()
-  emits('refreshImages', '')
-  /*   await nextTick(() => { })
-  
-    let selectedChoice = productImagesInfo.value.selectedChoiceForFilter
-      if(selectedChoice.choiceId==-1 || selectedChoice.choiceValueId==-1) selectedChoice = undefined
-  
-    let guid = loadingComponentRef.value.info(t('loading.info.getImages'))
-    props.productInfoForm.images = await restApi.postImage('getImages', {
-      productId: props.productInfoForm._id ? props.productInfoForm._id : props.productInfoForm.tempId,
-      selectedChoice: selectedChoice
-    })
-    selectedImages.value.length = 0
-    await sleep(1)
-    loadingComponentRef.value.remove(guid) */
-}
-
-const assignImage = (image: any) => {
-  props.variant.images = [...new Set([...props.variant.images, image._id])];
-  cloneVariantImages()
-}
-
-const assignImages = async (images: any) => {
-  console.log("hebelel", images)
-  await getImages()
-  for (const image of images) {
-    props.variant.images.push(image._id)
-  }
-  cloneVariantImages()
-}
-
-const addImage = async ($event: Event) => {
-  const target = $event.target as HTMLInputElement;
-  if (target && target.files) {
-    if (target.files.length > 5) {
-      target.value = ""
-      return false
-    }
-    id++
-
-
-    const formData = new FormData();
-    const pid = productImagesInfo.value._id
-    const tempId = productImagesInfo.value.tempId
-    let selectedChoice = productImagesInfo.value.selectedChoice
-    if (selectedChoice.choiceId == -1 || selectedChoice.choiceValueId == -1) selectedChoice = undefined
-
-    formData.append('product', JSON.stringify({
-      _id: props.productInfoForm._id,
-      tempId: props.productInfoForm.tempId,
-      selectedChoice: selectedChoice
-    }));
-    for (let i = 0; i < target.files.length; i++) {
-      formData.append('files', target.files[i]);
-    }
-
-
-    let guid = loadingComponentRef.value.info(t('loading.info.imageUploading'))
-    await restApi.postImageUpload(formData)
-    loadingComponentRef.value.remove(guid)
-    await getImages()
-
-
-    target.value = ""
-    /*     for (let currentImage of currentImages.value) {
-          currentImage.imageSrc = await constructImageUrl(currentImage)
-        }
-     */
-    /*     images.value.push({ file: target.files[0], id })
-     */    //reader.readAsDataURL(target.files[0])
-  }
-}
-
-
-const reader = new FileReader();
-reader.onload = (event) => {
-  const image = new Image();
-  if (event.target)
-    (<any>image.src) = event.target.result;
-  image.onload = () => {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const thumbnailWidth = width + 400;
-    const thumbnailHeight = (thumbnailWidth / image.width) * image.height;
-    canvas.width = thumbnailWidth;
-    canvas.height = thumbnailHeight;
-    if (ctx)
-      ctx.drawImage(image, 0, 0, thumbnailWidth, thumbnailHeight);
-    thumbnails.value.push({ url: canvas.toDataURL('image/png'), id, width: canvas.width, height: canvas.height })
-  };
-};
-
-
-
-
-const file = ref<File | null>();
-const form = ref<HTMLFormElement>();
-var thumbnailUrl = ref("")
-
-const config = {
-  maxSize: 2000000,
-}
-/* function onFileChanged($event: Event) {
-  const target = $event.target as HTMLInputElement;
-  if (target && target.files) {
-    file.value = target.files[0];
-    generateThumbnail(file.value)
-  }
-}
- */
-async function saveImage() {
-  if (file.value) {
-    try {
-      // save file.value
-    } catch (error) {
-      console.error(error);
-      form.value?.reset();
-      file.value = null;
-    } finally {
-    }
-  }
-};
-
-function generateThumbnail1(file: any) {
-  const reader = new FileReader();
-  reader.onload = (event) => {
-    const image = new Image();
-    if (event.target)
-      (<any>image.src) = event.target.result;
-
-    image.onload = () => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-
-      // Set the canvas size to the thumbnail size you desire
-      const thumbnailWidth = 100;
-      const thumbnailHeight = (thumbnailWidth / image.width) * image.height;
-
-      canvas.width = thumbnailWidth;
-      canvas.height = thumbnailHeight;
-
-      // Draw the image on the canvas
-      if (ctx)
-        ctx.drawImage(image, 0, 0, thumbnailWidth, thumbnailHeight);
-
-      // Convert the canvas content to a data URL
-      thumbnailUrl.value = canvas.toDataURL('image/jpeg');
-    };
-  };
-
-  // Read the file as a data URL
-  reader.readAsDataURL(file);
-}
-
-const imageSrc = computed(() => {
-  if (file.value)
-    console.log(file.value.size)
-  if (!file.value) return "ffff"
-  console.log(file)
-  var a = URL.createObjectURL(file.value)
-  console.log(a)
-  return a
-
 })
+onBeforeUnmount(() => sortable?.destroy())
 
+// ---- aynı seçenek değerini paylaşan kardeşler
+const variants = computed<VariantLike[]>(() => props.productInfoForm.variants ?? [])
+const siblingGroup = computed(() => preferredGroup(buildOptionGroups(variants.value, (id) => choicesStore.getChoiceTitle(id as any) as string | undefined, valueTitle)))
+const siblingValue = computed(() => {
+  const g = siblingGroup.value
+  if (!g) return undefined
+  const myKey = variantKey(props.variant, variants.value.indexOf(props.variant))
+  return g.values.find((v) => v.variantKeys.includes(myKey))
+})
+const siblingGroupTitle = computed(() => siblingGroup.value?.title ?? '')
+const siblingValueTitle = computed(() => siblingValue.value?.title ?? '')
+const siblings = computed(() => {
+  const val = siblingValue.value
+  if (!val || (siblingGroup.value?.values.length ?? 0) < 2) return []
+  return variants.value.filter((v, i) => v !== props.variant && val.variantKeys.includes(variantKey(v, i)))
+})
+const siblingsInSync = computed(() => siblings.value.every((v) => {
+  const ids = variantImageIds(v, gallery.value)
+  return ids.length === ownIds.value.length && ids.every((x, i) => x === ownIds.value[i])
+}))
+
+function applyToSiblings() {
+  const targets = siblings.value
+  const snapshot = targets.map((v) => (v.images ?? []).slice())
+  targets.forEach((v) => { v.images = ownIds.value.slice() })
+  const msg = `${siblingValueTitle.value} görselleri ${targets.length} varyanta uygulandı.`
+  announce(msg)
+  showToast({ tone: 'success', message: msg, actionLabel: 'Geri al', onAction: () => targets.forEach((v, i) => { v.images = snapshot[i] }) })
+}
+
+// ---- yükleme: galeriye ekle + yalnız yeni görseli bu varyanta bağla
+const fileInputRef = ref<HTMLInputElement | null>(null)
+const rejected = ref('')
+const uploads = useImageUploads({
+  product: () => props.productInfoForm,
+  onUploaded: async (_imgs, name) => {
+    const before = new Set(gallery.value.map((x) => x._id))
+    const resp = await restApi.postImage('getImages', { productId: props.productInfoForm.tempId })
+    if (!resp || resp instanceof Error || !Array.isArray(resp.images)) return
+    props.productInfoForm.images = resp.images
+    if (props.productInfoForm.variants) pruneVariantRefs(props.productInfoForm.variants, resp.images)
+    const fresh = resp.images.filter((x: GalleryImage) => !before.has(x._id)).map((x: GalleryImage) => x._id)
+    if (fresh.length) setOwn([...ownIds.value, ...fresh.filter((id: string) => !ownIds.value.includes(id))])
+    announce(`${name} yüklendi ve bu varyanta eklendi`)
+    emits('refreshImages', '')
+  },
+})
+const uploadItems = uploads.items
+function onFileInput(e: Event) {
+  const input = e.target as HTMLInputElement
+  const bad = uploads.add(Array.from(input.files ?? []))
+  rejected.value = bad.length ? bad.map((r) => `${r.file.name}: ${r.reason}`).join(' · ') : ''
+  input.value = ''
+}
 </script>
 
-<style>
-.dropZone {
+<style scoped>
+.pvi-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-5);
+}
+
+.pvi-sec {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-3);
+}
+
+.pvi-sec__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ek-space-2) var(--ek-space-4);
+}
+
+.pvi-sec__title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  margin: 0;
+  font-size: var(--ek-type-subheading-size);
+  line-height: var(--ek-type-subheading-line);
+  font-weight: var(--ek-type-subheading-weight);
+  color: var(--ek-color-content-strong);
+}
+
+.pvi-count {
+  padding: 0 7px;
+  border-radius: var(--ek-radius-chip);
+  background: var(--ek-color-surface-sunken);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: 20px;
+}
+
+.pvi-sec__hint,
+.pvi-muted,
+.pvi-save {
+  margin: 0;
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+  color: var(--ek-color-content-muted);
+}
+
+.pvi-save {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+}
+
+.pvi-save :deep(.v-icon) {
+  font-size: 16px;
+}
+
+kbd {
+  padding: 0 4px;
+  border: 1px solid var(--ek-color-border-strong);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--ek-color-surface);
+  font: inherit;
+  font-size: var(--ek-type-caption-size);
+}
+
+.pvi-own-empty {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-3);
+  padding: var(--ek-space-5);
+  border: 1.5px dashed var(--ek-color-warning-border);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-warning-subtle);
+  color: var(--ek-color-warning-emphasis);
+}
+
+.pvi-own-empty > div {
+  display: flex;
+  flex-direction: column;
+  font-size: var(--ek-type-body-size);
+}
+
+.pvi-own-empty :deep(.v-icon) {
+  font-size: 28px;
+}
+
+.pvi-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ek-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pvi-own {
   position: relative;
-  border: 1px dashed black;
+  width: 132px;
+  aspect-ratio: 1;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  overflow: hidden;
+  cursor: grab;
+  background: var(--ek-color-surface);
+  transition: var(--ek-transition-colors);
 }
 
-.dropZone:hover {
-  background-color: red;
+.pvi-own.is-main {
+  width: 164px;
+  border-color: var(--ek-color-action-border);
 }
 
-.dropZone:hover .dropZone-title {
-  color: var(--ek-color-info);
+.pvi-own:hover {
+  border-color: var(--ek-color-border-strong);
+  box-shadow: var(--ek-shadow-card);
 }
 
-.dropZone-info {
-  color: var(--ek-color-content-muted);
+.pvi-own.is-ghost {
+  border: 1.5px dashed var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+}
+
+.pvi-own.is-ghost > * {
+  opacity: 0;
+}
+
+:global(.pvi-drag-clone) {
+  opacity: 0.92 !important;
+  box-shadow: var(--ek-shadow-popover) !important;
+}
+
+.pvi-own__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: inherit;
+  border-radius: inherit;
+}
+
+.pvi-own__img:focus-visible,
+.pvi-own__remove:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+}
+
+.pvi-own__badge {
   position: absolute;
-  text-align: center;
+  left: var(--ek-space-2);
+  bottom: var(--ek-space-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 7px;
+  border: 1px solid var(--ek-color-action-border);
+  border-radius: var(--ek-radius-chip);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+  font-size: var(--ek-type-caption-size);
+  line-height: 20px;
+  font-weight: 600;
+  pointer-events: none;
 }
 
-.dropZone-title {
+.pvi-own__badge :deep(.v-icon) {
+  font-size: 14px;
+}
+
+.pvi-own__badge--n {
+  border-color: var(--ek-color-border-subtle);
+  background: var(--ek-color-surface);
   color: var(--ek-color-content-muted);
 }
 
-.fileInput {
+.pvi-own__remove {
   position: absolute;
+  top: var(--ek-space-2);
+  right: var(--ek-space-2);
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-control);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-default);
   cursor: pointer;
   opacity: 0;
-  height: 100%;
-  width: 100%;
+  transition: var(--ek-transition-colors), opacity var(--ek-duration-fast) var(--ek-easing-enter);
 }
 
-.dragDropOn .dragDropOnZone {
-  background-color: var(--ek-color-info);
-}
-
-.dragDropOff .dragDropOnZone {}
-
-.dragDropOn {
-  background-color: var(--ek-color-info);
-}
-
-.dragDropOff {}
-
-.dragDropOn .dragCard {
-  /*   top: 204px; */
-
-}
-
-.dragCard {
-  /*   position: absolute; */
-  /*   top: 184px; */
-  /*   top: 150px;
-  bottom: 2px;
-  right: 0;
-  left: 0; */
-  border: 0px dashed var(--ek-color-border-default);
-
-}
-
-.dropZone input {
-  cursor: pointer;
+.pvi-own:hover .pvi-own__remove,
+.pvi-own:focus-within .pvi-own__remove {
   opacity: 1;
 }
 
-.dropZone-upload-limit-info {
-  display: flex;
-  justify-content: flex-start;
-  flex-direction: column;
+.pvi-own__remove:hover {
+  color: var(--ek-color-error);
+  border-color: var(--ek-color-error-border);
 }
 
-.dropZone-over {
-  background: var(--ek-color-surface-sunken);
-  opacity: 0.8;
+.pvi-own__remove :deep(.v-icon) {
+  font-size: 16px;
 }
 
-.dropZone-uploaded {
-  width: 80%;
-  height: 200px;
-  position: relative;
-  border: 0px dashed var(--ek-color-border-default);
-}
-
-.dropZone-uploaded-info {
+.pvi-uploads {
   display: flex;
   flex-direction: column;
+  gap: var(--ek-space-2);
+}
+
+.pvi-up {
+  display: flex;
   align-items: center;
-  color: var(--ek-color-content-muted);
-  position: absolute;
-  top: 50%;
-  width: 100%;
-  transform: translate(0, -50%);
-  text-align: center;
+  gap: var(--ek-space-3);
+  padding: var(--ek-space-2);
+  border: 1px solid var(--ek-color-border-subtle);
+  border-radius: var(--ek-radius-control);
 }
 
-.removeFile {
-  width: 200px;
+.pvi-up.is-error {
+  border-color: var(--ek-color-error-border);
+  background: var(--ek-color-error-subtle);
 }
 
-.custom-expansion-panel .v-expansion-panel-text__wrapper {
-  padding: 0 !important
-}
-</style>
-
-<style>
-/* ADR-0015 B5-2 — satir ici stillerden tasinan siniflar (autostyle). Satir ici stilin onceligi
-   !important ile korunur; ayni ozellikte Vuetify yardimci sinifi/`color` prop cakismasi varsa
-   (satir ici stil zaten yeniliyordu) !important eklenmez. Scope'suz: v-dialog/v-menu ve alt
-   bilesen kokleri scoped ozniteligi almayabilir; onek dosyaya ozgudur. */
-.pvi-s1 {
-  overflow-y: scroll !important;
-  border: 1px solid var(--ek-color-border-default) !important;
-  height: calc(100vh - 110px) !important;
+.pvi-up__thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  overflow: hidden;
+  flex: 0 0 auto;
 }
 
-.pvi-s2 {
-  border: 1px solid var(--ek-color-border-strong) !important;
-  width: 30px !important;
-  opacity: .9 !important;
+.pvi-up__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-1);
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
-.pvi-s3 {
-  overflow-y: scroll !important;
-  height: calc(100vh - 190px) !important;
+.pvi-up__name {
+  font-size: var(--ek-type-caption-size);
+  color: var(--ek-color-content-default);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.pvi-s4 {
-  background-color: white !important;
-  border: 1px solid var(--ek-color-border-default) !important;
+.pvi-up__err {
+  font-size: var(--ek-type-caption-size);
+  color: var(--ek-color-error-emphasis);
 }
 
-.pvi-s5 {
-  opacity: .2 !important;
+.pvi-file {
+  display: none;
 }
 
-.pvi-s6 {
-  opacity: .4 !important;
-  font-style: italic !important;
+@media (hover: none) {
+  .pvi-pointer {
+    display: none;
+  }
+
+  .pvi-own__remove {
+    opacity: 1;
+    width: 40px;
+    height: 40px;
+  }
 }
 
-.pvi-s7 {
-  background-color: var(--ek-color-surface) !important;
-}
+@media (max-width: 640px) {
+  .pvi-strip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 
-.pvi-s8 {
-  position: absolute !important;
-  top: 0px !important;
-  right: 0px !important;
-  height: 30px !important;
-  width: 30px !important;
-  opacity: .9 !important;
-  border-radius: 0 !important;
-  border-bottom-left-radius: 20px !important;
-  z-index: 1 !important;
-}
+  .pvi-own,
+  .pvi-own.is-main {
+    width: auto;
+  }
 
-.pvi-s9 {
-  position: absolute !important;
-  top: 0px !important;
-  left: 0px !important;
-  height: 30px !important;
-  width: 30px !important;
-  opacity: .9 !important;
-  border-radius: 0 !important;
-  border-bottom-right-radius: 20px !important;
-  z-index: 1 !important;
-}
-
-.pvi-s10 {
-  position: absolute !important;
-  bottom: 0px !important;
-  left: 0px !important;
-  right: 0 !important;
-  height: 30px !important;
-  width: auto !important;
-  opacity: .9 !important;
-  border-radius: 0 !important;
-  border-top-left-radius: 20px !important;
-  border-top-right-radius: 20px !important;
-  z-index: 1 !important;
-}
-
-.pvi-s11 {
-  position: absolute !important;
-  bottom: 2px !important;
-  opacity: .7 !important;
-}
-
-.pvi-s12 {
-  max-height: 140px !important;
-}
-
-.pvi-s13 {
-  max-height: 30px !important;
-}
-
-.pvi-s14 {
-  overflow-y: scroll !important;
-  border: 1px solid var(--ek-color-border-default) !important;
-  height: calc(100vh - 510px) !important;
-}
-
-.pvi-s15 {
-  background-color: var(--ek-color-surface-sunken) !important;
-  border: 1px solid var(--ek-color-border-default) !important;
-}
-
-.pvi-s16 {
-  opacity: .05 !important;
-}
-
-.pvi-s17 {
-  opacity: .6 !important;
-}
-
-.pvi-s18 {
-  position: absolute !important;
-  z-index: 2 !important;
-  display: flex !important;
-  align-items: start !important;
-  padding-bottom: 5px !important;
-  justify-content: center !important;
-  width: 100% !important;
-  height: 100% !important;
-}
-
-.pvi-s19 {
-  height: 100% !important;
-  width: 100% !important;
-  border-radius: 5px !important;
-  border: 1px solid var(--ek-color-border-strong) !important;
-}
-
-.pvi-s20 {
-  opacity: .8 !important;
-}
-
-.pvi-s21 {
-  height: 100px !important;
-}
-
-.pvi-s22 {
-  border: 1px solid var(--ek-color-border-strong) !important;
-}
-
-.pvi-s23 {
-  font-size: 1.2em !important;
-}
-
-/* Secim varken secilmemis resimler soluk (onceki dinamik satir ici opacity). */
-.pvi-unselected {
-  opacity: .5 !important;
+  .pvi-own.is-main {
+    grid-column: span 2;
+    grid-row: span 2;
+  }
 }
 </style>

@@ -5,6 +5,8 @@
  * doğrulanmamış unvan asla yazılmaz.
  * S7: gradient üst çizgi, koyu zemin, dört sütun (marka + Ürün + Entegrasyonlar + Yasal) ve hesap bağlantıları.
  * Entegrasyon sütunu yalnızca `getPublicIntegrations()` (mevcut entegrasyonlar).
+ * S19: alt çizgide her sayfada AYNI "Entegrasyonik nedir?" varlık tanımı (src/data/seo.ts `entityDefinition`; llms*,
+ *   markdown alternatifleri ve Organization/SoftwareApplication JSON-LD açıklamasıyla birebir) — arama/LLM tutarlılığı.
  * S16: iletişim e-postası + (girildiyse) adres/telefon `src/data/company.ts`'ten; boş alan satırı gizlenir.
  */
 import Container from './Container.astro'
@@ -14,6 +16,7 @@ import { getPublicIntegrations } from '../data/integrations'
 import { appUrls } from '../lib/site-config'
 import { contactEmail, mailtoHref } from '../lib/contact'
 import { company, hasValue } from '../data/company'
+import { entityDefinition } from '../data/seo'
 
 const productLinks = [...published(primaryNav), ...published(featureNav)]
 const legalLinks = published(legalNav)
@@ -94,6 +97,11 @@ const year = new Date().getFullYear()
           </nav>
         )
       }
+    </div>
+
+    <div class="footer-about" data-testid="entity-definition">
+      <h2 class="footer-heading">Entegrasyonik nedir?</h2>
+      <p>{entityDefinition()}</p>
     </div>
 
     <p class="footer-copy">© {year} Entegrasyonik. Tüm hakları saklıdır.</p>
@@ -240,9 +248,20 @@ const year = new Date().getFullYear()
   .site-footer :global(a:focus-visible) {
     outline-color: var(--site-color-on-primary);
   }
+  .footer-about {
+    margin-top: var(--ek-space-12);
+    padding-top: var(--ek-space-6);
+    border-top: var(--site-border-width) solid var(--site-glass-border);
+  }
+  .footer-about p {
+    max-width: var(--site-measure);
+    margin: 0;
+    font-size: var(--ek-font-size-md);
+    line-height: var(--ek-line-height-normal);
+  }
   .footer-copy {
     max-width: none;
-    margin-top: var(--ek-space-12);
+    margin-top: var(--ek-space-6);
     padding-top: var(--ek-space-6);
     border-top: var(--site-border-width) solid var(--site-glass-border);
     font-size: var(--ek-font-size-md);

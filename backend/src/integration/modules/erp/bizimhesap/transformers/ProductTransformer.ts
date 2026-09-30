@@ -152,9 +152,10 @@ export class ProductTransformer {
                         prices: { salePrice, marketPrice: salePrice },
                         infos: {},
                         upload: {},
-                        mappings: { productId: String(p.id || '') },
                         attributes: variantAttrs,
+                        // ADR-0032 H1 (faz4-db09b): kanal dış kimliği TEK anahtar `mapping`; `mappings` artık yazılmaz.
                         mapping: {
+                            productId: String(p.id || ''),
                             id: p.id,
                             categoryId: p.category,
                             brandId: p.brand

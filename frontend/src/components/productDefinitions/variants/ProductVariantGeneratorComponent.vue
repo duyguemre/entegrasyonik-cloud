@@ -7,14 +7,14 @@
         <div class="d-flex mb-4">
 
           <v-btn-group elevation="0" class="d-block flex-grow-1  mr-1 pvg-s1" density="compact">
-            <v-btn density="compact" block class="fill-height pvg-s2" color="white"
+            <v-btn density="compact" block class="fill-height pvg-s2" color="surface"
               @click="clearForm">
               <span class="">
                 Vazgeç
               </span></v-btn>
           </v-btn-group>
           <v-btn-group elevation="0" class="d-block  flex-grow-1 ml-1" density="compact">
-            <v-btn density="compact" block class="fill-height pvg-s2" color="#E53935ff"
+            <v-btn density="compact" block class="fill-height pvg-s2" color="primary"
               @click="validateAndAddVariants">
               <span class="">
                 {{ $t('common.add') }}
@@ -31,20 +31,20 @@
             <v-select multiple item-value="_id" item-title="title" @click.stop
               v-if="newVariant && newVariant['choices']" v-model="newVariants[index].choiceValueIds"
               :label="choice.title" @change="newVariantCounter++" :items="choice.values" density="compact" class="mb-2 pvg-s3"
-              v-model:menu="newVariants[index].isMenuOpen" variant="outlined" bg-color="textfieldColor" hide-details>
+              v-model:menu="newVariants[index].isMenuOpen" variant="outlined" hide-details>
               <template v-slot:append-item>
                 <v-list-item class="pvg-s4" @click.stop>
                   <div class="mt-4 mb-2">
                     <v-form v-model="choiceForm" @keydown.enter.prevent @submit.prevent class="pvg-s5">
                       <v-text-field variant="outlined" @mousedown.stop density="compact" type="tel" maxlength="32"
-                        counter clearable bg-color="textfieldColor" hint="Yeni Seçenek Değeri" class="customTextField"
+                        counter clearable hint="Yeni Seçenek Değeri" class="customTextField"
                         v-model="choiceValueTitle" @keydown.stop
                         @keyup.enter="choicesStore.addChoiceValue(choice._id, choiceValueTitle); choiceValueTitle = undefined">
                         <template v-slot:label>
                           <span class="font-ital1ic font-weight-light">Yeni Değer</span>
                         </template>
                         <template v-slot:append-inner>
-                          <v-btn class="" size="40" flat min-width=0 density="comfortable" color="processButtonColor"
+                          <v-btn class="" size="40" flat min-width=0 density="comfortable" color="neutral"
                             :disabled="!choiceForm || choiceValueTitle == undefined"
                             @click="choicesStore.addChoiceValue(choice._id, choiceValueTitle); choiceValueTitle = undefined"><span
                               class="">
@@ -58,7 +58,7 @@
                 </v-list-item>
               </template>
               <template #append>
-                <v-icon :color="newVariants[index].isMenuOpen ? 'passiveColor' : 'transparent'" class="pvg-s6">mdi-close</v-icon>
+                <v-icon :color="newVariants[index].isMenuOpen ? 'content-muted' : 'transparent'" class="pvg-s6">mdi-close</v-icon>
               </template>
 
             </v-select>
@@ -152,7 +152,7 @@ const validateAndAddVariants = async () => {
    (satir ici stil zaten yeniliyordu) !important eklenmez. Scope'suz: v-dialog/v-menu ve alt
    bilesen kokleri scoped ozniteligi almayabilir; onek dosyaya ozgudur. */
 .pvg-s1 {
-  box-shadow: 0px 0px 10px rgba(200,220,240,.0) !important;
+  box-shadow: none !important;
 }
 
 .pvg-s2 {

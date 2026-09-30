@@ -10,6 +10,7 @@ import {
     QuestionService
 } from './services';
 import { IntegrationError } from '@integration/modules/common/IntegrationError';
+import { runConnectionProbe, type TestConnectionResult } from '@integration/modules/common/adapter/testConnection';
 
 export default class Hepsiburada implements IPlatform {
     private service: Service;
@@ -34,6 +35,11 @@ export default class Hepsiburada implements IPlatform {
 
     public async init(): Promise<boolean> {
         return true;
+    }
+
+    /** [INT-05 testConnection] Yan etkisiz tek okuma (sipariş listesi, 1 kayıt; Basic kimlik doğrulamalı). Asla fırlatmaz. */
+    public async testConnection(): Promise<TestConnectionResult> {
+        return runConnectionProbe(integrationCode, () => this.orderService.probeConnection());
     }
 
     public getMatchKey() {

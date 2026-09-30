@@ -5,21 +5,9 @@
  */
 
 import '../public/assets/css/site.css'
-import '../public/assets/css/integrations.css'
-// ADR-0011 Karar 1 — token omurgası (`--ek-*` CSS değişkenleri, Vuetify'a bağlı).
-import '@/design/tokens/dist/tokens.app.css'
-// ADR-0015 Karar 1.3/3.1 (A1) — uygulamaya özgü türev değişkenler
-// (`--ek-app-*`) ve Vuetify override katmanı (radius/odak/uppercase).
-// Kademe sırası: Vuetify çekirdek → token CSS değişkenleri → bu ikisi.
-import '@/design/app.css'
-import '@/design/vuetify-overrides.css'
-// ADR-0011 Açık Soru 1 (KARARLANDI 2026-09-27) — Inter, kendi barındırılan
-// (`@fontsource/inter`, CDN YOK). `--ek-font-weight-*` ile eşleşen 4 ağırlık
-// (regular/medium/semibold/bold) yüklenir.
-import '@fontsource/inter/400.css'
-import '@fontsource/inter/500.css'
-import '@fontsource/inter/600.css'
-import '@fontsource/inter/700.css'
+// Ortak stil katmanı (tek merkez: @entegrasyonik/ui — Vuetify çekirdek, token CSS değişkenleri `--ek-*`,
+// uygulama türev değişkenleri, Vuetify override katmanı, kendi barındırılan Inter; ADR-0011/0015/0026).
+import '@entegrasyonik/ui/styles'
 // Plugins
 import { registerPlugins } from '@/plugins'
 // Components
@@ -27,6 +15,8 @@ import App from './App.vue'
 // Composables
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
+import router from './router'
+import { usePublicConfigStore } from '@/stores/publicConfig'
 
 import HorizontalScrollComponent from '@/components/HorizontalScrollComponent.vue';
 import ScrollComponent from '@/components/ScrollComponent.vue';
@@ -43,7 +33,7 @@ import { reportUnexpectedError } from '@/composables/errorReporting'
 // tüketiciler (`StatisticsComponent` vb.) `theme="entegrasyonik"` ile bağlanır.
 import * as echarts from 'echarts/core'
 import { buildEchartsTheme } from '@/design/echarts-theme'
-import { semanticColorsLight } from '@/design/tokens'
+import { semanticColorsLight } from '@entegrasyonik/ui/tokens'
 echarts.registerTheme('entegrasyonik', buildEchartsTheme(semanticColorsLight))
 
 const pinia = createPinia()
@@ -99,7 +89,14 @@ window.addEventListener('error', (event: ErrorEvent) => {
   })
 })
 
-app.mount('#app')
+// FE-CFG-1 (ADR-0031) — kamu açılış yapılandırması montajdan ÖNCE bir kez alınır (3 sn zaman aşımı; alınamazsa
+// güvenli varsayılanlarla açılır). Sonra 5 dk'da bir / sekme görünür olunca / rota değişiminde (eskiyse) tazelenir.
+const publicConfig = usePublicConfigStore(pinia)
+router.afterEach(() => { void publicConfig.ensureFresh() })
+publicConfig.refresh().finally(() => {
+  publicConfig.startAutoRefresh()
+  app.mount('#app')
+})
 
 
 

@@ -16,6 +16,11 @@
  * isimsiz renkli noktalar (`--site-channel-*`, `[data-code]` eşlemesi) ve genel etiketler ("Pazaryeri siparişi").
  * Statik hâl (reduced-motion / "Hareket" durdurulmuş / JS'siz): YALNIZCA 1. sahnenin son durumu — üç sipariş
  * "Rezerve", stok 9, rezerve 3; diğer sahneler görünmez. Döngü yalnızca görünürken çalışır, üzerine gelince durur.
+ *
+ * S21 (kullanıcı: "çerçeveyi daha cool, premium, site ile daha uyumlu"): sahne içeriği aynen korunur; ÇERÇEVE
+ * "uygulama penceresi"ne yükseltildi — pencere çubuğu (nötr noktalar + ortada başlık hapı + sessiz araç çubukları),
+ * marka gradyanından kenar ışığı, cam kasa (bezel), üst kenarda her sahne geçişinde tek sakin parıltı, zemin ışıması.
+ * Adaylar (katmanlı derinlik, çerçevesiz sahne) ve gerekçe: docs/s21-review/README.md; korumalar: tests/hero-frame.test.ts.
  */
 import Button from '../Button.astro'
 import Icon from './Icon.astro'
@@ -112,11 +117,13 @@ const secureItems = [
     </div>
 
 
-    <div class="hero__visual" data-parallax-root>
-      <span class="hero__depth" aria-hidden="true"></span>
+    <div class="hero__visual" data-testid="hero-visual">
       <div class="show" data-scene="hero-mock" data-tilt aria-hidden="true" data-testid="hero-mock">
+        <span class="show__rim" aria-hidden="true"><span class="show__sheen" data-part="frame-sheen"></span></span>
         <div class="show__bar">
+          <span class="show__dots"><i></i><i></i><i></i></span>
           <span class="show__brand"><i class="show__live"></i>Operasyon merkezi</span>
+          <span class="show__tools"><i></i><i></i></span>
         </div>
 
         <div class="show__stage">
@@ -443,6 +450,12 @@ const secureItems = [
 
 
   /* --- Show sahnesi (S13): koyu, derinlikli sahne; 4 dönen sahne (döngü: scenes-loops.css) --- */
+  /*
+   * S21 çerçeve ("uygulama penceresi"; üç aday karşılaştırıldı: docs/s21-review/README.md): pencere çubuğu + marka
+   * gradyanından ince kenar ışığı + üst kenarda sahne geçişlerinde sakin parıltı + zemine oturan ışıma. S9'un ofsetli
+   * iki "hayalet" paneli (ve imleç paralaksı) kalktı — sahneyle yarışan, hizası kaymış kenarlar üretiyordu.
+   * Boyut: çerçeve öğeleri yalnızca `position: absolute` / gölge / arka plan → yerleşim ve yükseklik değişmez (CLS 0).
+   */
   .hero__visual {
     position: relative;
     isolation: isolate;
@@ -450,43 +463,15 @@ const secureItems = [
     flex-direction: column;
     min-width: 0;
   }
+  /* Zemin ışıması: panelin altına düşen yumuşak teal hale (panel havada asılı kalmasın). */
   .hero__visual::before {
     content: '';
     position: absolute;
     z-index: -1;
-    inset: -18% -14% -6%;
-    background: radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-secondary) 26%, transparent), transparent);
-    pointer-events: none;
-  }
-  /*
-   * İkinci (en uzak) ofset pencere katmanı: .hero__depth ile birlikte 2 katmanlı derinlik yığını oluşturur.
-   * S9: her iki katman da imleç konumuna (`pointer: fine`) ve kaydırma konumuna göre birkaç piksel kayar
-   * (src/scripts/interactions.ts `--depth-a-*`/`--depth-b-*`); JS'siz/hareket kapalıyken sabit ofsette kalır.
-   */
-  .hero__visual::after {
-    content: '';
-    position: absolute;
-    z-index: -1;
-    inset: calc(var(--ek-space-8) * -1) calc(var(--ek-space-6) * -1) calc(var(--ek-space-3) * -1) var(--ek-space-8);
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--site-radius-panel);
-    background: var(--site-glass-bg);
-    opacity: 0.45;
-    translate: var(--depth-b-x, 0) var(--depth-b-y, 0);
-    transition: translate var(--ek-duration-slow) var(--ek-easing-standard);
-    pointer-events: none;
-  }
-
-  /* Yakın ofset pencere katmanı (S9 derinlik yığını; S13: sahnenin DIŞINDA — koyu cam içinden kenarı görünmesin). */
-  .hero__depth {
-    position: absolute;
-    z-index: -1;
-    inset: var(--ek-space-5) calc(var(--ek-space-4) * -1) calc(var(--ek-space-5) * -1) var(--ek-space-5);
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--site-radius-panel);
-    background: var(--site-glass-bg);
-    translate: var(--depth-a-x, 0) var(--depth-a-y, 0);
-    transition: translate var(--ek-duration-slow) var(--ek-easing-standard);
+    inset: 12% -10% -14%;
+    background:
+      radial-gradient(46% 22% at 50% 96%, color-mix(in srgb, var(--ek-color-secondary) 38%, transparent), transparent 80%),
+      radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-secondary) 16%, transparent), transparent);
     pointer-events: none;
   }
   .show {
@@ -501,56 +486,124 @@ const secureItems = [
     --show-glow: color-mix(in srgb, var(--ek-color-secondary) 60%, transparent);
     --show-warn: color-mix(in srgb, var(--ek-color-amber) 85%, var(--ek-color-background));
     --show-warn-soft: color-mix(in srgb, var(--ek-color-amber) 22%, transparent);
+    --show-edge: color-mix(in srgb, var(--ek-color-secondary) 75%, var(--ek-color-background));
     position: relative;
     display: flex;
     flex-direction: column;
-    /* Degrade kenarlık: iç zemin padding-box, ince teal->cam kenar border-box (tek öğe, ek katman yok). */
+    /* Degrade kenarlık: iç zemin padding-box, marka gradyanından kenar ışığı border-box (tek öğe, ek katman yok). */
     border: var(--site-border-width) solid transparent;
     border-radius: var(--site-radius-panel);
     background:
-      radial-gradient(70% 50% at 50% 40%, color-mix(in srgb, var(--ek-color-secondary) 15%, transparent), transparent 72%) padding-box,
+      radial-gradient(80% 45% at 50% 0%, color-mix(in srgb, var(--ek-color-secondary) 14%, transparent), transparent 70%) padding-box,
       radial-gradient(60% 40% at 100% 100%, color-mix(in srgb, var(--ek-color-primary-darken-1) 40%, transparent), transparent 70%) padding-box,
-      linear-gradient(165deg, color-mix(in srgb, var(--ek-color-primary) 58%, var(--ek-color-content-strong)) 0%, var(--ek-color-content-strong) 100%) padding-box,
+      linear-gradient(170deg, color-mix(in srgb, var(--ek-color-primary) 52%, var(--ek-color-content-strong)) 0%, var(--ek-color-content-strong) 100%) padding-box,
       linear-gradient(
-          150deg,
-          color-mix(in srgb, var(--ek-color-secondary) 70%, transparent) 0%,
-          var(--site-glass-border) 30%,
-          color-mix(in srgb, var(--ek-color-background) 8%, transparent) 65%,
-          color-mix(in srgb, var(--ek-color-secondary) 40%, transparent) 100%
+          160deg,
+          color-mix(in srgb, var(--ek-color-secondary) 85%, transparent) 0%,
+          color-mix(in srgb, var(--ek-color-background) 22%, transparent) 26%,
+          color-mix(in srgb, var(--ek-color-background) 7%, transparent) 60%,
+          color-mix(in srgb, var(--ek-color-primary-lighten) 55%, transparent) 100%
         )
         border-box;
     box-shadow:
       var(--site-shadow-panel),
-      0 0 6rem -1.5rem color-mix(in srgb, var(--ek-color-secondary) 30%, transparent),
-      inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 14%, transparent);
+      /* Cam kasa (bezel): panelin çevresinde ince, yarı saydam ikinci çerçeve + onun kılcal kenarı */
+      0 0 0 calc(var(--site-border-width) * 6) color-mix(in srgb, var(--ek-color-background) 4%, transparent),
+      0 0 0 calc(var(--site-border-width) * 7) color-mix(in srgb, var(--ek-color-background) 7%, transparent),
+      0 0 7rem -2rem color-mix(in srgb, var(--ek-color-secondary) 34%, transparent),
+      inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 16%, transparent);
     color: var(--site-text-on-dark-body);
     font-size: var(--ek-font-size-sm);
     line-height: var(--ek-line-height-tight);
     user-select: none;
   }
+  /* Üst kenar ışığı: ortada parlak, uçlara sönen ince çizgi + altında yumuşak ışıma; üzerinde yavaş parıltı. */
+  .show__rim {
+    position: absolute;
+    z-index: 1;
+    top: calc(var(--site-border-width) * -1);
+    left: 10%;
+    right: 10%;
+    overflow: hidden;
+    height: var(--site-border-width);
+    background: linear-gradient(90deg, transparent, var(--show-edge) 35%, var(--ek-color-background) 50%, var(--show-edge) 65%, transparent);
+    pointer-events: none;
+  }
+  .show__rim::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    box-shadow: 0 0 var(--ek-space-5) var(--ek-space-1) var(--show-glow);
+    opacity: 0.8;
+  }
+  .show__sheen {
+    position: absolute;
+    inset: 0;
+    width: 30%;
+    background: linear-gradient(90deg, transparent, var(--ek-color-background), transparent);
+    opacity: 0;
+    translate: -100% 0;
+  }
+  /* Pencere çubuğu: nötr pencere noktaları | ortada başlık | sağda sessiz araç çubukları */
   .show__bar {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    justify-content: space-between;
     gap: var(--ek-space-3);
     padding: var(--ek-space-3) var(--ek-space-4);
     border-bottom: var(--site-border-width) solid var(--show-line);
+    border-radius: var(--site-radius-panel) var(--site-radius-panel) 0 0;
+    background: linear-gradient(180deg, var(--show-glass-strong), var(--show-glass));
+  }
+  .show__dots {
+    display: inline-flex;
+    gap: var(--ek-space-2);
+  }
+  .show__dots i,
+  .show__tools i {
+    display: block;
+    width: calc(var(--ek-space-2) + var(--site-border-width) * 2);
+    height: calc(var(--ek-space-2) + var(--site-border-width) * 2);
+    border-radius: var(--ek-radius-full);
+    background: var(--show-line-strong);
+    box-shadow: inset 0 0 0 var(--site-border-width) var(--show-line);
+  }
+  .show__tools {
+    display: inline-flex;
+    justify-content: flex-end;
+    gap: var(--ek-space-2);
+  }
+  .show__tools i {
+    width: var(--ek-space-5);
+    height: calc(var(--ek-space-1) + var(--site-border-width) * 2);
+    background: var(--show-line);
+    box-shadow: none;
+  }
+  .show__tools i:first-child {
+    width: var(--ek-space-8);
   }
   .show__brand {
     display: inline-flex;
     align-items: center;
     gap: var(--ek-space-2);
+    padding: var(--ek-space-1) var(--ek-space-3);
+    border: var(--site-border-width) solid var(--show-line);
+    border-radius: var(--ek-radius-full);
+    background: var(--show-glass);
     color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
     letter-spacing: 0.01em;
+    white-space: nowrap;
   }
   .show__live {
     width: var(--ek-space-2);
     height: var(--ek-space-2);
     border-radius: var(--ek-radius-full);
-    background: var(--site-accent);
+    background: var(--site-accent-on-dark);
     box-shadow: 0 0 0 calc(var(--site-border-width) * 3) color-mix(in srgb, var(--ek-color-secondary) 25%, transparent), 0 0 var(--ek-space-3) var(--show-glow);
   }
+
   /* Sahneler aynı ızgara hücresinde üst üste durur (yükseklik = en uzun sahne; yerleşim animasyonla değişmez). */
   .show__stage {
     position: relative;
@@ -1349,6 +1402,26 @@ const secureItems = [
   }
 
   @media (max-width: 29.99rem) {
+    /* Çerçeve sadeleşir: araç çubukları gizli, pencere noktaları küçük, dış halka/ışıma yumuşar. */
+    .show__bar {
+      grid-template-columns: auto 1fr;
+      padding-inline: var(--ek-space-3);
+    }
+    .show__tools {
+      display: none;
+    }
+    .show__brand {
+      justify-self: end;
+    }
+    .show__dots {
+      gap: var(--ek-space-1);
+    }
+    .show {
+      box-shadow:
+        var(--site-shadow-panel),
+        0 0 4rem -1.5rem color-mix(in srgb, var(--ek-color-secondary) 30%, transparent),
+        inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 16%, transparent);
+    }
     .show__rlabel {
       align-items: flex-start;
     }

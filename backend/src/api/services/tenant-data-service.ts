@@ -5,7 +5,7 @@ import { ApplicationError } from '../Security';
 import Security from '../Security';
 import { AuditLogger } from '@services/audit/AuditLogger';
 import { storageService } from '@services/storage/StorageService';
-import { TenantLifecycleService } from '@operations/tenant/TenantLifecycleService';
+import { createTenantLifecycleService } from '../tenantLifecycleFactory';
 import { EXPORT_COLLECTIONS, sanitizeExportDoc } from '@operations/tenant/exportCollections';
 import { signExportDownloadToken } from '@operations/tenant/exportDownloadToken';
 
@@ -43,7 +43,7 @@ export default class TenantDataService extends BaseApi implements IService {
             throw new ApplicationError('Mağaza adı doğrulanamadı.', 400);
         }
 
-        const lifecycle = new TenantLifecycleService({ applicationDB: this.applicationDB });
+        const lifecycle = createTenantLifecycleService(this.applicationDB);
         return await lifecycle.requestDeletion(order, { actorSub: sub, actor: 'owner' });
     }
 
@@ -54,7 +54,7 @@ export default class TenantDataService extends BaseApi implements IService {
     async cancelDeletion(): Promise<any> {
         const { targetClientId } = this.request;
         if (!targetClientId) throw new ApplicationError('targetClientId gereklidir.', 400);
-        const lifecycle = new TenantLifecycleService({ applicationDB: this.applicationDB });
+        const lifecycle = createTenantLifecycleService(this.applicationDB);
         return await lifecycle.cancelDeletion(Number(targetClientId), { actorSub: this.request.principal?.sub });
     }
 

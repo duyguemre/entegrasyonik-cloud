@@ -94,8 +94,8 @@ afterAll(async () => {
     if (VariantModel) {
         await VariantModel.deleteMany({ stockcode: { $regex: `^${TEST_PREFIX}` } });
     }
-    // Gerçek bağlantıyı kapat (LRU dispose -> database.close()).
-    ClientDBClass?.cache.clear();
+    // Tenant tutamaklarını bırak.
+    ClientDBClass?.resetForTests(); // [faz4-arch-p0db] LRU kalkti: tutamak onbellegi temizlenir (kok baglantiyi DatabaseManager.close kapatir)
 });
 
 describe('StockAllocator — gerçek local Mongo eşzamanlılık kanıtı (ADR-0004 Test Stratejisi, entegrasyonikClient_1)', () => {

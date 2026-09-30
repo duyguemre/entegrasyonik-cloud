@@ -2,7 +2,7 @@
   ADR-0015 N13 "Yakında" — bkz. `GelirIdaresiComponent.vue` gerekçe notu.
 -->
 <template>
-  <IntegrationComingSoonPanel platform-name="Turkcell e-Şirket" category="e-fatura" />
+  <IntegrationComingSoonPanel platform-name="Turkcell e-Şirket" category="e-fatura" alternative-capability="invoiceNotice" />
 </template>
 
 <script setup lang="ts">

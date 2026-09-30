@@ -140,7 +140,8 @@ export interface SourceSnapshotRecord {
 }
 
 async function getModel() {
-    const { DatabaseManagerInstance } = await import('@database/DatabaseManager');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- TS6-01: node16 CJS, tembel yukleme (dinamik import yerine)
+    const { DatabaseManagerInstance } = (require('@database/DatabaseManager') as typeof import('@database/DatabaseManager'));
     const db = await DatabaseManagerInstance.getApplicationDB();
     return (db as any).getSourceSnapshotModel();
 }
@@ -159,19 +160,80 @@ async function defaultWriteSnapshot(record: SourceSnapshotRecord): Promise<void>
 
 export interface HttpDocResponse { status: number; headers: Record<string, string>; body: string }
 
+/** [ADR-0022] Doküman yanıt tavanı (2 MB) ve yönlendirme sınırı. */
+export const SOURCE_MONITOR_MAX_BYTES = 2 * 1024 * 1024;
+export const SOURCE_MONITOR_MAX_REDIRECTS = 3;
+
+/** İzinli host kümesi: izlenen tüm hedef URL'lerin host'ları (yeni host eklemek = descriptor.api.docs değişikliği = kod incelemesi). */
+function monitoredHosts(): Set<string> {
+    const set = new Set<string>();
+    for (const t of listAutoMonitoredDocs()) {
+        try { set.add(new URL(t.url).hostname.toLowerCase()); } catch { /* geçersiz hedef atlanır */ }
+    }
+    return set;
+}
+
+/** Yalnız http(s) + izinli host; IP literal (iç ağ/metadata) ve kimlik bilgili URL reddedilir. */
+export function isSafeMonitorUrl(raw: string, allowedHosts: ReadonlySet<string>): boolean {
+    let u: URL;
+    try { u = new URL(raw); } catch { return false; }
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return false;
+    if (u.username || u.password) return false;
+    const host = u.hostname.toLowerCase();
+    if (host.startsWith('[') || /^[0-9.]+$/.test(host) || /^0x[0-9a-f]+$/i.test(host)) return false;
+    return allowedHosts.has(host);
+}
+
+export interface SafeGetOptions {
+    allowedHosts: ReadonlySet<string>;
+    timeoutMs: number;
+    maxRedirects: number;
+    maxBytes?: number;
+    /** Test enjeksiyonu (varsayılan: axios). */
+    httpGet?: (url: string, cfg: any) => Promise<{ status: number; headers: any; data: any }>;
+}
+
+/**
+ * [ADR-0022] Güvenli GET: axios otomatik yönlendirmesi KAPALI; her hop elle izlenir ve HER hop'ta host izin listesi
+ * denetlenir (izinsiz host'a istek HİÇ atılmaz); en fazla `maxRedirects` hop; gövde tavanı.
+ * Hop'lar arası başlıklar aynen taşınır YALNIZ aynı host'a (cross-host zaten reddedildiği için fiilen hep aynı küme).
+ */
+export async function safeGetText(url: string, headers: Record<string, string>, opts: SafeGetOptions): Promise<HttpDocResponse> {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- TS6-01: node16 CJS, tembel yukleme (dinamik import yerine)
+    const httpGet = opts.httpGet ?? (async (u: string, cfg: any) => (require('axios') as { get(u: string, cfg?: any): Promise<any> }).get(u, cfg));
+    let current = url;
+    for (let hop = 0; hop <= opts.maxRedirects; hop++) {
+        if (!isSafeMonitorUrl(current, opts.allowedHosts)) throw new Error('kaynak izleme: URL izin listesi dışı/güvensiz, istek atılmadı');
+        const res = await httpGet(current, {
+            headers, timeout: opts.timeoutMs, validateStatus: () => true, responseType: 'text',
+            maxRedirects: 0, maxContentLength: opts.maxBytes ?? SOURCE_MONITOR_MAX_BYTES, maxBodyLength: opts.maxBytes ?? SOURCE_MONITOR_MAX_BYTES,
+        });
+        if (res.status >= 300 && res.status < 400 && res.status !== 304) {
+            const loc = res.headers?.location ?? res.headers?.Location;
+            if (!loc) throw new Error('kaynak izleme: yönlendirme Location içermiyor');
+            if (hop === opts.maxRedirects) throw new Error('kaynak izleme: yönlendirme sınırı aşıldı');
+            let next: string;
+            try { next = new URL(String(loc), current).toString(); } catch { throw new Error('kaynak izleme: geçersiz yönlendirme'); }
+            current = next;
+            continue;
+        }
+        return { status: res.status, headers: (res.headers as any) ?? {}, body: typeof res.data === 'string' ? res.data : String(res.data ?? '') };
+    }
+    throw new Error('kaynak izleme: yönlendirme sınırı aşıldı');
+}
+
 async function defaultFetchDoc(url: string, headers: Record<string, string>): Promise<HttpDocResponse> {
-    const axios = (await import('axios')).default;
-    const res = await axios.get(url, { headers, timeout: 10_000, validateStatus: () => true, responseType: 'text' });
-    return { status: res.status, headers: (res.headers as any) ?? {}, body: typeof res.data === 'string' ? res.data : String(res.data ?? '') };
+    const allowed = monitoredHosts();
+    try { allowed.add(new URL(url).hostname.toLowerCase()); } catch { /* safeGetText reddeder */ }
+    return safeGetText(url, headers, { allowedHosts: allowed, timeoutMs: 10_000, maxRedirects: SOURCE_MONITOR_MAX_REDIRECTS });
 }
 
 /** `null`: robots.txt yok/erişilemedi -> İZİNLİ varsayılır (yaygın bot davranışı; ADR bunu yasaklamaz). */
 async function defaultFetchRobots(origin: string, userAgent: string): Promise<string | null> {
     try {
-        const axios = (await import('axios')).default;
-        const res = await axios.get(`${origin}/robots.txt`, { headers: { 'User-Agent': userAgent }, timeout: 5_000, validateStatus: () => true, responseType: 'text' });
-        if (res.status !== 200 || typeof res.data !== 'string') return null;
-        return res.data;
+        const host = new URL(origin).hostname.toLowerCase();
+        const res = await safeGetText(`${origin}/robots.txt`, { 'User-Agent': userAgent }, { allowedHosts: new Set([host]), timeoutMs: 5_000, maxRedirects: 0 });
+        return res.status === 200 ? res.body : null;
     } catch {
         return null;
     }

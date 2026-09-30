@@ -2,6 +2,9 @@ import { Job, Queue } from 'bullmq';
 import { RedisService } from '@services/redis/RedisService';
 import { DatabaseManagerInstance } from '@database/index';
 import { IDeadLetterQueue, IOrderJobData } from '@interfaces/order';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('worker', 'OrderErrorHandler');
 
 export enum ErrorSeverity {
     TRANSIENT = 'TRANSIENT',
@@ -24,30 +27,30 @@ export class OrderErrorHandler {
             const job = await Job.fromId(this.queue, jobId);
 
             if (!job) {
-                console.warn(`[OrderErrorHandler] Job ${jobId} Redis'te bulunamadı.`);
+                log.warn('ORDERERRORHANDLER_JOB_REDIS_TE_BULUNAMADI', `Job ${jobId} Redis'te bulunamadı.`);
                 return;
             }
 
             const jobData = job.data as IOrderJobData;
-            console.log(`[OrderErrorHandler] Hata Analizi -> Job: ${jobId}, Client: ${jobData.clientId}`);
+            log.info('ORDERERRORHANDLER_HATA_ANALIZI_JOB_CLIENT', `Hata Analizi -> Job: ${jobId}, Client: ${jobData.clientId}`);
 
             const severity = this.categorizeError(failedReason);
 
             if (severity === ErrorSeverity.FATAL) {
-                console.error(`[OrderErrorHandler] FATAL HATA. Retry iptal. -> Job: ${jobId}`);
+                log.error('ORDERERRORHANDLER_FATAL_HATA_RETRY_IPTAL', `FATAL HATA. Retry iptal. -> Job: ${jobId}`);
                 // Tip zorlaması: 'FATAL_ERROR' literal olarak gönderiliyor
                 await this.moveToDLQ(job, failedReason, 'FATAL_ERROR');
             }
             else if (job.attemptsMade >= (job.opts.attempts || 1)) {
-                console.error(`[OrderErrorHandler] Tüm retry hakları tükendi. -> Job: ${jobId}`);
+                log.error('ORDERERRORHANDLER_TUM_RETRY_HAKLARI_TUKENDI', `Tüm retry hakları tükendi. -> Job: ${jobId}`);
                 await this.moveToDLQ(job, failedReason, 'MAX_RETRIES_EXCEEDED');
             }
             else {
-                console.info(`[OrderErrorHandler] Geçici hata. Backoff bekleniyor. -> Job: ${jobId}`);
+                log.info('ORDERERRORHANDLER_GECICI_HATA_BACKOFF_BEKLENIYOR', `Geçici hata. Backoff bekleniyor. -> Job: ${jobId}`);
             }
 
         } catch (error) {
-            console.error(`[OrderErrorHandler] Hata işleme sürecinde kritik sorun (Job: ${jobId}):`, error);
+            log.error('ORDERERRORHANDLER_HATA_ISLEME_SURECINDE_KRITIK', `Hata işleme sürecinde kritik sorun (Job: ${jobId}):`, { err: error });
         }
     }
 
@@ -134,15 +137,15 @@ export class OrderErrorHandler {
             // insertOne genellikle any veya Partial bekler, tip güvenliği için cast edilebilir
             await dlqCollection.insertOne(dlqRecord as IDeadLetterQueue);
 
-            console.log(`[OrderErrorHandler] Job ${job.id} MongoDB DLQ'ya taşındı.`);
+            log.info('ORDERERRORHANDLER_JOB_MONGODB_DLQ_YA', `Job ${job.id} MongoDB DLQ'ya taşındı.`);
 
             await job.remove();
-            console.log(`[OrderErrorHandler] Job ${job.id} Redis'ten silindi.`);
+            log.info('ORDERERRORHANDLER_JOB_REDIS_TEN_SILINDI', `Job ${job.id} Redis'ten silindi.`);
 
             this.notifyOpsTeam(dlqRecord);
 
         } catch (err) {
-            console.error(`[OrderErrorHandler] DLQ süreci BAŞARISIZ (Job: ${job?.id}):`, err);
+            log.error('ORDERERRORHANDLER_DLQ_SURECI_BASARISIZ_JOB', `DLQ süreci BAŞARISIZ (Job: ${job?.id}):`, { err });
         }
     }
 

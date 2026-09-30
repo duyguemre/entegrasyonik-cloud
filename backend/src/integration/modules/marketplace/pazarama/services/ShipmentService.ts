@@ -21,7 +21,7 @@ export class ShipmentService {
         return this.mapper.toInternalShipments(shipments);
     }
 
-    @Cache(300, 'shipment-service', that => that.clientId)
+    @Cache({ scope: 'tenant', ttl: '5m', context: 'pazarama-shipment' })
     public async fetchAddresses(): Promise<IInternalAddress[]> {
         try {
             const response = await this.connector.fetchAddresses();

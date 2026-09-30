@@ -9,6 +9,13 @@ import { ProductConnector } from '../api/ProductConnector';
 import { ProductMapper } from '../transformers/ProductTransformer';
 import { Service } from './Service';
 import { IntegrationError } from '@integration/modules/common/IntegrationError';
+import { getIncomplete } from '@integration/contracts/IncompleteFetch';
+
+// [INT-05 / F-02] Listing tarama/akış tavanları (aşılırsa sessiz kesilmez: uyarı + incomplete/FAILED).
+const STATUS_SCAN_MAX_PAGES = 20;        // updateProductStatuses: sayfa başına 500 => 10.000 listing
+const STATUS_SCAN_MAX_RECORDS = 10_000;
+const STREAM_MAX_PAGES = 1000;           // streamProducts: sayfa başına 100 => 100.000 listing
+const STREAM_MAX_RECORDS = 100_000;
 
 export class ProductService {
     private connector: ProductConnector;
@@ -202,8 +209,9 @@ export class ProductService {
     // Sync worker'ın WAITING ürünleri için listing durumu sorgulama
     public async updateProductStatuses(payload: { barcodes: string[], matchValues?: string[] }): Promise<IInternalResult[]> {
         try {
-            const rawData = await this.connector.fetchProductsFromPlatform({ limit: 500, offset: 0 });
-            const products: any[] = rawData?.items || [];
+            // [INT-05 / F-02] Listing'in TÜM sayfaları taranır (önceden yalnız ilk 500 kayıt; sonrası sonsuza dek "henüz bulunamadı" kalırdı).
+            const { items: products } = await this.connector.fetchListingPages({}, { limit: 500, maxPages: STATUS_SCAN_MAX_PAGES, maxRecords: STATUS_SCAN_MAX_RECORDS });
+            const scanIncomplete = !!getIncomplete(products);
 
             const identifiers = payload.matchValues || payload.barcodes || [];
             return identifiers.map((barcode: string) => {
@@ -216,7 +224,9 @@ export class ProductService {
                         matchValue: barcode,
                         barcode,
                         status: 'WAITING' as const,
-                        messages: ['Ürün HB listingde henüz bulunamadı.']
+                        messages: [scanIncomplete
+                            ? 'Ürün HB listingde bulunamadı (listing taraması tavana ulaştı; sonuç eksik olabilir).'
+                            : 'Ürün HB listingde henüz bulunamadı.']
                     };
                 }
 
@@ -241,26 +251,25 @@ export class ProductService {
     // Import: HB'deki ürünleri çekip callback ile ilet
     public async getProductsAndPersist(callback: (chunk: any[]) => Promise<void>, query?: Record<string, any>): Promise<IFetchProductsResult> {
         try {
+            // [INT-05 / F-02] Ortak sayfalama (akış kipi: kayıt bellekte toplanmaz). Önceden toplam alanı (`totalCount`) yoksa ilk sayfadan
+            // sonra DURUYORDU (sessiz eksik import); artık `dönen < limit` ile durur, tekrar eden sayfa/tavan FAILED olarak bildirilir.
             const limit = 100;
-            let offset = 0;
             let totalProcessed = 0;
-            let totalElements = 0;
-
-            while (true) {
-                const rawData = await this.connector.fetchProductsFromPlatform({ limit, offset, ...query });
-                const products: any[] = rawData?.items || [];
-                totalElements = rawData?.totalCount || totalElements;
-
-                if (products.length === 0) break;
-
-                const normalized = products.map((p: any) =>
-                    this.mapper.toInternalVariant(p, { choices: [] }, 15)
-                );
-                await callback(normalized);
-
-                totalProcessed += products.length;
-                offset += limit;
-                if (totalProcessed >= totalElements) break;
+            const { items: rest, total } = await this.connector.fetchListingPages(query, {
+                limit, maxPages: STREAM_MAX_PAGES, maxRecords: STREAM_MAX_RECORDS,
+                onPage: async (products: any[]) => {
+                    const normalized = products.map((p: any) => this.mapper.toInternalVariant(p, { choices: [] }));
+                    await callback(normalized);
+                    totalProcessed += products.length;
+                },
+            });
+            const totalElements = total ?? totalProcessed;
+            const incomplete = getIncomplete(rest);
+            if (incomplete) {
+                return {
+                    totalElements, totalProcessed, totalPages: Math.ceil(totalProcessed / limit) || 1, status: 'FAILED',
+                    error: `Hepsiburada listing akışı tamamlanamadı (${incomplete.reason}); ${totalProcessed} kayıt işlendi.`,
+                };
             }
 
             return {
@@ -276,7 +285,7 @@ export class ProductService {
     }
 
     public async convertToInternalModel(stagedProduct: any): Promise<IInternalConversionResult> {
-        const variant = this.mapper.toInternalVariant(stagedProduct, { choices: [] }, 15);
+        const variant = this.mapper.toInternalVariant(stagedProduct, { choices: [] });
         return {
             product: {
                 title: variant.title,

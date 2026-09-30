@@ -11,7 +11,7 @@ export const useCategoriesStore = defineStore('categoriesStore', () => {
     if (selectCategories.value == undefined || selectCategories.value.length == 0) {
       return { title: '-' }
     }
-    for (var category of selectCategories.value) {
+    for (var category of (selectCategories.value || [])) {
       if (category._id == _id)
         return category
     }
@@ -26,7 +26,7 @@ export const useCategoriesStore = defineStore('categoriesStore', () => {
 
   const checkCategoryPlatformMapping = (categoryId: any, integrationCode: any) => {
     const ret: any = { code: "SUCCESS", choices: [] }
-    for (var category of selectCategories.value) {
+    for (var category of (selectCategories.value || [])) {
       if (category._id != categoryId) continue
       if (category.platforms && Array.isArray(category.platforms)) {
         const platform = category.platforms.find((platform: any) => platform.integrationCode == integrationCode)
@@ -53,7 +53,7 @@ export const useCategoriesStore = defineStore('categoriesStore', () => {
 
 
   const getCategoryPlatformMappingForChoiceId = (categoryId: any, integrationCode: any, choiceId: any) => {
-    for (var category of selectCategories.value) {
+    for (var category of (selectCategories.value || [])) {
       if (category._id != categoryId) continue
       if (category.platforms && Array.isArray(category.platforms)) {
         const platform = category.platforms.find((platform: any) => platform.integrationCode == integrationCode)
@@ -70,7 +70,7 @@ export const useCategoriesStore = defineStore('categoriesStore', () => {
 
   const getCategoryPlatformMapping = (integrationCode: any, integrationCategoryId: any, integrationCategoryChoiceId: any) => {
     console.log(integrationCode, integrationCategoryId, integrationCategoryChoiceId)
-    for (var category of selectCategories.value) {
+    for (var category of (selectCategories.value || [])) {
       if (category.platforms && Array.isArray(category.platforms)) {
         const platform = category.platforms.find((platform: any) => platform.integrationCode == integrationCode && platform.integrationCategoryId == integrationCategoryId)
         if (platform) {
@@ -85,7 +85,7 @@ export const useCategoriesStore = defineStore('categoriesStore', () => {
 
 
   const getCategoryPlatformChoiceId = (integrationCode: any, integrationCategoryId: any, integrationCategoryChoiceId: any) => {
-    for (var category of selectCategories.value) {
+    for (var category of (selectCategories.value || [])) {
       if (category.platforms && Array.isArray(category.platforms)) {
         const platform = category.platforms.find((platform: any) => platform.integrationCode == integrationCode && platform.integrationCategoryId == integrationCategoryId)
         if (platform) {
@@ -100,7 +100,7 @@ export const useCategoriesStore = defineStore('categoriesStore', () => {
   }
 
   const getCategoryNameFromIntegrationCategoryId = (integrationCode: any, integrationCategoryId: any) => {
-    for (var category of selectCategories.value) {
+    for (var category of (selectCategories.value || [])) {
       if (category.platforms && Array.isArray(category.platforms)) {
         const platform = category.platforms.find((platform: any) => platform.integrationCode == integrationCode && platform.integrationCategoryId == integrationCategoryId)
         if (platform)
@@ -114,7 +114,7 @@ export const useCategoriesStore = defineStore('categoriesStore', () => {
     if (selectCategories.value == undefined || selectCategories.value.length == 0) {
       return undefined
     }
-    for (var category of selectCategories.value) {
+    for (var category of (selectCategories.value || [])) {
       if (category._id == categoryId) {
         return category.platforms?.[integrationCode]
       }

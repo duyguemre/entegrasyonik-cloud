@@ -22,10 +22,10 @@
               { label: 'Kesen sistem', value: INVOICE_METHOD_LABELS[invoice.invoiceMethod as InvoiceMethodEnum] || invoice.invoiceMethod },
               { label: 'ETTN', value: invoice.ettn || '—' },
             ]" />
-            <v-btn v-if="invoice.pdfUrl" block color="primary" prepend-icon="mdi-printer" class="mt-4" :href="invoice.pdfUrl" target="_blank">
+            <v-btn v-if="invoice.pdfUrl" block color="primary" prepend-icon="mdi-printer-outline" class="mt-4" :href="invoice.pdfUrl" target="_blank">
               Arşiv görüntüle
             </v-btn>
-            <v-btn v-else block variant="outlined" prepend-icon="mdi-printer-off" class="mt-4" disabled>
+            <v-btn v-else block variant="outlined" prepend-icon="mdi-printer-off-outline" class="mt-4" disabled>
               PDF dosyası yok
             </v-btn>
           </EkSection>
@@ -52,13 +52,13 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import EkDetailSheet from '@/components/ds/EkDetailSheet.vue';
-import EkSection from '@/components/ds/EkSection.vue';
-import EkStatusChip from '@/components/ds/EkStatusChip.vue';
-import EkDescriptionList from '@/components/ds/EkDescriptionList.vue';
-import EkSkeleton from '@/components/ds/EkSkeleton.vue';
-import EkPlatformMark from '@/components/ds/EkPlatformMark.vue';
-import { formatMoney, formatDateTime } from '@/composables/format';
+import { EkDetailSheet, EkSection, EkStatusChip, EkDescriptionList, EkSkeleton, EkPlatformMark } from '@entegrasyonik/ui/components';
+;
+;
+;
+;
+;
+import { formatMoney, formatDateTime } from '@entegrasyonik/ui/format';
 import { INVOICE_STATUS_TONE } from '@/design/status-map';
 import { InvoiceStatusEnum, InvoiceTypeEnum, INVOICE_TYPE_LABELS, InvoiceMethodEnum, INVOICE_METHOD_LABELS } from '@/types/InvoiceTypes';
 

@@ -1,114 +1,90 @@
+<!--
+  frontend/src/components/BrandSyncComponent.vue
+
+  Marka tanımları sağ paneli: seçili markayı düzenleme + platform marka eşleştirme.
+  DS-v2 Aşama 2: kartlar, `EkFormGrid` (yardım metni kalıcı — odak kaybında düğme
+  kaymaz), `PlatformChoiceChip`, tehlikeli silme onayı (ConfirmationDialogComponent →
+  EkDialog), bağlantı durumu `EkStatusChip`. İstek gövdeleri/akışlar DEĞİŞMEDİ.
+-->
 <template>
-  <div class="brandListComponentView pa-4 pt-0 pb-0">
+  <div class="brandListComponentView ek-brand-sync">
 
     <LoadingComponent attach=".brandDefinition" ref="loadingComponentRef"></LoadingComponent>
 
-    <ConfirmationDialogComponent v-model="isConfirmationDialogOpen" :title="selectedBrand?.title"
-      :subtitle="$t('productDefinitions.brand.deleteConfirmation')" color="danger" icon="mdi-delete-outline"
-      confirm-text="SİL" @confirm="deleteBrand()" />
+    <ConfirmationDialogComponent v-model="isConfirmationDialogOpen" :title="`'${selectedBrand?.title ?? ''}' markası silinsin mi?`"
+      :subtitle="$t('productDefinitions.brand.deleteConfirmation')" color="error" icon="mdi-trash-can-outline"
+      confirm-icon="mdi-trash-can-outline" attach=".brandDefinition" confirm-text="Sil" @confirm="deleteBrand()" />
 
-    <div v-if="!selectedBrand" class="d-flex align-center justify-center fill-height sync-info">
-      <div class="mb-12 text-center">
-        <div><v-icon size="300">mdi-cog-outline</v-icon></div>
-        <div class="text-h6 mt-8">{{ $t('productDefinitions.brand.brandWarning') }}</div>
-      </div>
-    </div>
-    <div v-else>
+    <section v-if="!selectedBrand" class="ek-brand-sync__empty" aria-labelledby="ek-brand-sync-empty-title">
+      <EkIconTile icon="mdi-cog-outline" tone="neutral" size="lg" />
+      <h2 id="ek-brand-sync-empty-title" class="ek-brand-sync__empty-title">{{ $t('productDefinitions.brand.brandWarning') }}</h2>
+      <p class="ek-brand-sync__empty-text">
+        Soldaki listeden bir markanın <v-icon icon="mdi-cog-outline" size="16" aria-hidden="true" /> ayar düğmesine basarak
+        marka adını düzenleyebilir ve platform markalarıyla eşleştirebilirsiniz.
+      </p>
+    </section>
 
-      <div class="d-flex">
-        <div>
-          <v-divider vertical class="mr-2 fill-height" thickness="3" color="#888" />
-        </div>
+    <div v-else class="ek-brand-sync__panels">
+      <CardComponent icon="mdi-cog-outline" :title="`${selectedBrand.title} Markasını Düzenle`" :isHovered="false">
+        <v-form v-model="editingBrand.form" @keydown.enter.prevent @submit.prevent>
+          <EkFormGrid :columns="1">
+            <v-text-field @click.stop type="tel" maxlength="160" clearable
+              :hint="$t('productDefinitions.brand.updateBrandDesc')" persistent-hint v-model="newBrandTitle"
+              :rules="formRules.titleRules" :label="$t('productDefinitions.brand.title')" @keyup.enter="updateBrand()" />
+          </EkFormGrid>
+          <div class="ek-brand-sync__row-actions">
+            <EkButton tone="ghost" icon="mdi-trash-can-outline" class="ek-brand-sync__delete"
+              @click.stop="isConfirmationDialogOpen = true">
+              {{ $t('common.delete') }}
+            </EkButton>
+            <EkButton tone="primary" icon="mdi-content-save-outline" :disabled="newBrandTitle == selectedBrand.title"
+              @click.stop="updateBrand()">
+              {{ $t('common.save') }}
+            </EkButton>
+          </div>
+        </v-form>
+      </CardComponent>
 
+      <CardComponent icon="mdi-connection" title="Platform Marka Eşleştirme" :isHovered="false">
+        <template #header><EkHelpHint hint="mapping.brand" /></template>
+        <v-form v-model="editingPlatformForm" @keydown.enter.prevent @submit.prevent>
+          <EkFormSection title="Platform" icon="mdi-storefront-outline" :columns="1"
+            description="Marka eşleştirmesi yapılacak platformu seçin.">
+            <div class="ek-brand-sync__platforms">
+              <PlatformChoiceChip
+                v-for="clientPlatform of [...integrationStore.getClientMarketplaces(), ...integrationStore.getClientECommerces(), ...integrationStore.getClientErps()]"
+                :key="clientPlatform.code" :code="clientPlatform.code" :name="platformName(clientPlatform.code)"
+                :active="integrationCode == clientPlatform.code" @select="integrationCode = clientPlatform.code" />
+            </div>
+          </EkFormSection>
 
-        <div class="mt-0 pa-2 pt-0 pt-0 mt-1 flex-grow-1">
-
-          <CardComponent icon="mdi-cog" title="Platform Kategori Eşleştirme" class="">
-            <v-form v-model="editingBrand.form" style="display:contents" @keydown.enter.prevent @submit.prevent>
-              <div class="d-flex">
-                <v-text-field @click.stop="1" v-ripple.stop variant="outlined" density="compact" type="tel"
-                  maxlength="160" width="200" clearable bg-color="textfieldColor" class="customTextField"
-                  :hint="$t('productDefinitions.brand.updateBrandDesc')" v-model="newBrandTitle"
-                  :rules="formRules.titleRules" @keyup.enter="updateBrand()">
-                  <template v-slot:label>
-                    <span class="font-weight-light">{{ $t('productDefinitions.brand.title')
-                      }}</span>
-                  </template>
-                </v-text-field>
-
-                <v-btn class="premium-delete-btn ml-4" variant="flat" @click.stop="isConfirmationDialogOpen = true">
-                  <v-icon size="large" class="btn-icon">mdi-delete-outline</v-icon>
-                </v-btn>
-              </div>
-
-              <v-btn class="premium-save-btn ml-0" color="saveButtonColor" variant="flat"
-                :disabled="newBrandTitle == selectedBrand.title" @click.stop="updateBrand()">
-                <v-icon start size="small" class="mr-1">mdi-check-circle-outline</v-icon>
+          <EkFormSection v-if="checkIfHasBrandMapping()" title="Platform markası" icon="mdi-tag-outline" :columns="1">
+            <BrandIntegrationSelectBoxComponent v-model="integrationBrand" :integrationCode="integrationCode" />
+            <div class="ek-brand-sync__row-actions">
+              <EkStatusChip v-if="isBrandConnected" tone="success" label="Bağlantı Kuruldu" />
+              <EkButton v-else tone="primary" icon="mdi-content-save-outline" :disabled="!integrationBrand?.id"
+                @click.stop="saveIntegrationBrand()">
                 {{ $t('common.save') }}
-              </v-btn>
-            </v-form>
-          </CardComponent>
-          <CardComponent icon="mdi-connection" title="Platform Marka Eşleştirme" class="mt-12">
-            <v-form v-model="editingPlatformForm" style="display:contents" @keydown.enter.prevent @submit.prevent>
+              </EkButton>
+            </div>
+          </EkFormSection>
 
-              <div class="d-flex align-center mt-2" style="gap: 12px;">
-                <div
-                  v-for="clientPlatform of [...integrationStore.getClientMarketplaces(), ...integrationStore.getClientECommerces(), ...integrationStore.getClientErps()]"
-                  :key="clientPlatform.code">
-
-                  <PlatformImageComponent :integrationCode="clientPlatform.code" height="50" width="100"
-                    :is-active="integrationCode == clientPlatform.code" isSelectable
-                    @select="integrationCode = clientPlatform.code" />
-                </div>
-              </div>
-              <div v-if="checkIfHasBrandMapping()" class="mt-8 d-flex flex-column" style="gap: 8px;">
-                <BrandIntegrationSelectBoxComponent class="mr-0 flex-grow-1" v-model="integrationBrand"
-                  :integrationCode="integrationCode" />
-
-                <v-btn variant="flat" class="premium-connection-btn mt-1"
-                  :class="{ 'is-connected': integrationBrand?.id && integrationBrand?.id == selectedBrand.platforms?.[integrationCode]?.id }"
-                  :disabled="!integrationBrand?.id && !(integrationBrand?.id && integrationBrand?.id == selectedBrand.platforms?.[integrationCode]?.id)"
-                  :color="integrationBrand?.id && integrationBrand?.id == selectedBrand.platforms?.[integrationCode]?.id ? 'transparent' : 'saveButtonColor'"
-                  style="height:40px; min-width:130px;"
-                  :ripple="!(integrationBrand?.id && integrationBrand?.id == selectedBrand.platforms?.[integrationCode]?.id)"
-                  @click.stop="integrationBrand?.id && integrationBrand?.id == selectedBrand.platforms?.[integrationCode]?.id ? null : saveIntegrationBrand()">
-                  <v-icon start size="small" class="mr-1"
-                    :color="integrationBrand?.id && integrationBrand?.id == selectedBrand.platforms?.[integrationCode]?.id ? '#059669' : ''">
-                    {{ integrationBrand?.id && integrationBrand?.id == selectedBrand.platforms?.[integrationCode]?.id ?
-                      'mdi-check-decagram' : 'mdi-content-save-outline' }}
-                  </v-icon>
-
-                  {{ integrationBrand?.id && integrationBrand?.id == selectedBrand.platforms?.[integrationCode]?.id ?
-                    'Bağlantı Kuruldu' : $t('common.save') }}
-                </v-btn>
-              </div>
-
-              <template v-else>
-
-                <div class="ma-6 mt-8 dialog-info1 fill-height align-center justify-center text-center"
-                  style="max-width:600px" v-if="integrationCode != -1">
-                  <div class="d-flex align-center text-center justify-center " style="font-size:.8em">
-                    <v-icon class="mr-0" color="processButtonColor">mdi-lightbulb-outline</v-icon>
-                    <span>
-                      <span class="font-weight-bold">{{ integrationCode }}</span> platformu marka eşleştirme yeteneği
-                      sunmamaktadır.
-                    </span>
-                  </div>
-                </div>
-              </template>
-            </v-form>
-          </CardComponent>
-        </div>
-
-      </div>
+          <p v-else-if="integrationCode != -1" class="ek-brand-sync__note">
+            <v-icon icon="mdi-lightbulb-outline" size="16" aria-hidden="true" />
+            <span><strong>{{ platformName(integrationCode) }}</strong> platformu marka eşleştirme yeteneği sunmamaktadır.</span>
+          </p>
+        </v-form>
+      </CardComponent>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import EkHelpHint from '@/components/page/EkHelpHint.vue'
 import { computed, nextTick, inject, watch, ref, onMounted, onBeforeMount } from 'vue'
+import { EkButton, EkIconTile, EkFormGrid, EkFormSection, EkStatusChip } from '@entegrasyonik/ui/components'
+import PlatformChoiceChip from '@/components/platforms/PlatformChoiceChip.vue'
 import BrandIntegrationSelectBoxComponent from '@/components/BrandIntegrationSelectBoxComponent.vue'
-import PlatformImageComponent from './platforms/PlatformImageComponent.vue';
 import ConfirmationDialogComponent from '@/components/layout/ConfirmationDialogComponent.vue';
 import useRestApi from '@/composables/restapi'
 import LoadingComponent from '@/components/LoadingComponent.vue'
@@ -140,6 +116,10 @@ const loadingComponentRef: any = ref(null)
 const selectedIntegrationBrand: any = ref()
 const integrationCode: any = ref(-1)
 const newBrandTitle: any = ref()
+
+const platformName = (code: string) => integrationStore.getIntegrationTitle(code) || (code ? code.charAt(0).toUpperCase() + code.slice(1) : '')
+// Seçili platform markası, markanın kayıtlı eşleşmesiyle aynıysa bağlantı kurulmuş sayılır (eski düğme durumu).
+const isBrandConnected = computed(() => !!(integrationBrand.value?.id && integrationBrand.value?.id == selectedBrand.value?.platforms?.[integrationCode.value]?.id))
 
 const reset = async () => {
   integrationBrand.value = undefined
@@ -253,11 +233,70 @@ const save = async () => {
 </script>
 
 <style scoped>
-.sync-info {
-  opacity: .3;
+.ek-brand-sync {
+  padding: var(--ek-space-1) var(--ek-space-6) var(--ek-space-6) var(--ek-space-2);
 }
 
-.selected-choice {
-  filter: brightness(1.2);
+.ek-brand-sync__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ek-space-3);
+  max-width: 480px;
+  margin: var(--ek-space-12) auto 0;
+  text-align: center;
+}
+
+.ek-brand-sync__empty-title {
+  margin: 0;
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-heading-size);
+  line-height: var(--ek-type-heading-line);
+  font-weight: var(--ek-type-heading-weight);
+}
+
+.ek-brand-sync__empty-text {
+  margin: 0;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-body-size);
+  line-height: var(--ek-type-body-line);
+}
+
+.ek-brand-sync__panels {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-4);
+}
+
+.ek-brand-sync__row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ek-space-2);
+  margin-top: var(--ek-space-3);
+}
+
+.ek-brand-sync__delete {
+  margin-right: auto;
+  color: var(--ek-color-error);
+}
+
+.ek-brand-sync__platforms {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--ek-space-3);
+}
+
+.ek-brand-sync__note {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  margin: var(--ek-space-4) 0 0;
+  padding: var(--ek-space-2) var(--ek-space-3);
+  border: 1px solid var(--ek-color-info-border);
+  border-radius: var(--ek-radius-control);
+  background: var(--ek-color-info-subtle);
+  color: var(--ek-color-info-emphasis);
+  font-size: var(--ek-type-caption-size);
 }
 </style>

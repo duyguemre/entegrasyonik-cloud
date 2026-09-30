@@ -29,7 +29,7 @@ export const NotificationSchema = new Schema({
     // Görselleştirme için seviye: success, info, warning, error
     severity: {
         type: String,
-        enum: ['success', 'info', 'warning', 'error', 'primary', 'danger'],
+        enum: ['success', 'info', 'warning', 'error', 'primary', 'danger', 'critical'], // [ADR-0029] critical eklendi; danger okunurken error sayılır
         default: 'info'
     },
 
@@ -46,6 +46,17 @@ export const NotificationSchema = new Schema({
     // Durum takibi
     isRead: { type: Boolean, default: false, index: true },
     isDeleted: { type: Boolean, default: false, index: true },
+
+    // [ADR-0029 Karar 3] katalog alanları (yalnız ekleme; eski belgelerde yok). PII/ham hata metni YOK.
+    code: { type: String, default: undefined },
+    category: { type: String, default: undefined },
+    params: { type: Schema.Types.Mixed, default: undefined },
+    eventId: { type: String, default: undefined },          // NotificationEvents._id (impersonation birleşik görünümü tekilleştirir)
+    groupKey: { type: String, default: undefined },
+    count: { type: Number, default: 1 },
+    lastOccurredAt: { type: Date, default: undefined },
+    isArchived: { type: Boolean, default: false },
+    archivedAt: { type: Date, default: null },
 
     // Zaman damgaları
     createdAt: { type: Date, default: Date.now, index: true },

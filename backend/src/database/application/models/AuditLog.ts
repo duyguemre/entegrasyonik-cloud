@@ -14,6 +14,13 @@ export const AuditLogSchema = new mongoose.Schema({
     tid:    { type: Number },                    // tenant order
     ip:     { type: String },
     result: { type: String, enum: ['ok', 'fail', 'error'], required: true },
+    // ADR-0026 Karar 4.8 / ADR-0028 §10 (geriye uyumlu, hepsi istege bagli): kim (actorType), kimin adina (onBehalfOf = hedef tenant),
+    // hangi yuzey (surface), impersonation oturumu (imp), istek korelasyonu (reqId). Mevcut kayitlarda YOK.
+    actorType: { type: String, enum: ['user', 'platform', 'impersonator', 'system'] },
+    onBehalfOf: { type: Number },
+    surface: { type: String, enum: ['app', 'backoffice'] },
+    imp: { type: Boolean },
+    reqId: { type: String },
     meta:   { type: mongoose.Schema.Types.Mixed } // küçük, PII içermeyen düz nesne
 }, {
     collection: 'AuditLogs',

@@ -1,6 +1,9 @@
 import Service from '../services/Service';
 import { fromHttpError } from '@integration/modules/common/IntegrationError';
 import { integrationCode } from '../constants';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('adapter-trendyol', 'MessageConnector');
 
 export class MessageConnector {
     constructor(private service: Service, private params: any) { }
@@ -43,7 +46,7 @@ export class MessageConnector {
             return response?.data?.content || [];
         } catch (error: any) {
             // [ADR-0006 adım 3] ÖNCEKİ DAVRANIŞ hata yutup [] dönmekti. Artık IntegrationError fırlatılır.
-            console.error("[MessageConnector] Trendyol'dan mesajlar çekilemedi:", error.message);
+            log.error('MESSAGECONNECTOR_TRENDYOL_DAN_MESAJLAR_CEKILEMEDI', "Trendyol'dan mesajlar çekilemedi:", { err: error });
             throw fromHttpError(error, {
                 integrationCode, operation: 'fetchMessages', clientId: this.params.clientId, idempotent: true,
             });
@@ -63,7 +66,7 @@ export class MessageConnector {
             const response = await this.service.post(url, { text: answerText });
             return response.status >= 200 && response.status < 300;
         } catch (error: any) {
-            console.error(`[MessageConnector] Trendyol mesaj cevaplama hatası (${externalMessageId}):`, error.message);
+            log.error('MESSAGECONNECTOR_TRENDYOL_MESAJ_CEVAPLAMA_HATASI', `Trendyol mesaj cevaplama hatası (${externalMessageId}):`, { err: error });
             throw fromHttpError(error, {
                 integrationCode, operation: 'answerMessage', clientId: this.params.clientId, idempotent: false,
             });

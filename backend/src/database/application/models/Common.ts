@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { IDeadLetterQueue } from "src/interfaces/order";
+import { IDeadLetterQueue } from "../../../interfaces/order";
 
 
 export const CounterSchema = new mongoose.Schema({

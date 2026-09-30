@@ -16,7 +16,7 @@
  * kaynaklı normalize etme -> `replace`; yeni sekme/geçiş -> `push`, ADR Karar
  * 4 tablosu) her çağrıda tam bir kez tüketilir (asılı kalmaz).
  */
-import { nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import type { Router, RouteLocationNormalizedLoaded } from 'vue-router'
 import { useMenuStore } from '@/stores/site/menu'
@@ -32,6 +32,7 @@ import {
   resolveScreenPath,
   screenKeyForLink,
 } from '@/navigation/screens'
+import { HELP_SCREEN_KEY, helpCenterLink } from '@/help/helpLink'
 
 const PERSIST_VERSION = 1
 
@@ -51,6 +52,14 @@ interface PersistedWorkspace {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
+/** DS-v2 kabuk — akıllı aramanın "Son açılanlar" grubu için en fazla bu kadar bağlantı tutulur (bellekte, oturum içi). */
+const RECENT_LIMIT = 8
+
+/** Kapatılamayan (sabit) sekme: panoda başlayan ana sekme. Eski kural `id != 0` idi; oturumdan geri yüklenen bir sekme id 0 alabildiği için bağlantıya bakılır. */
+export function isPinnedLink(link: any): boolean {
+  return link?.title === 'dashboard' || link?.code === 'DashboardView'
+}
+
 export const useWorkspaceStore = defineStore('workspace', () => {
   const menuStore = useMenuStore()
   const snackbarStore = useSnackbarStore()
@@ -69,6 +78,12 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const mySelectedTabParameters = ref<any>(undefined)
   /** Geriye dönük uyum: eski kodda `SecureLayout.vue:247-253`, artık kullanılmıyor ama parite için tutuluyor. */
   const menuLinkCode = ref<any>(0)
+  /**
+   * DS-v2 kabuk — en son etkinleştirilen bağlantılar (en yeni önce, `code` tekil). Akıllı aramanın
+   * "Son açılanlar" grubu okur.
+   * YALNIZCA bellekte tutulur (PII/serbest metin kalıcılaştırılmaz — ADR-0012 Karar 2/3).
+   */
+  const recentLinks = ref<any[]>([])
 
   let tabIdCounter = 0
   let router: Router | undefined
@@ -304,6 +319,9 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
   watch(mySelectedTab, (newTab) => {
     menuLinkCode.value = undefined
+    if (newTab?.link) {
+      recentLinks.value = [newTab.link, ...recentLinks.value.filter((l: any) => l.code !== newTab.link.code)].slice(0, RECENT_LIMIT)
+    }
     if (newTab && newTab.link) {
       nextTick(() => {
         menuLinkCode.value = newTab.link.code
@@ -319,6 +337,8 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
   /** `menuStore` ağacında `screens.ts` anahtarıyla eşleşen menü düğümünü bulur (kod+parent birleşimiyle — `menuStore.getMenuLinkWithCode` yalnızca `code` alanına bakar, bileşik anahtarı ÇÖZEMEZ). */
   function findLinkByScreenKey(key: string): any {
+    // Yardım merkezi menü ağacında değildir (statik içerik, herkese açık) — istemci bağlantısı (`help/helpLink.ts`).
+    if (key === HELP_SCREEN_KEY) return helpCenterLink(menuStore)
     const menu = menuStore.getMenu()
     if (!Array.isArray(menu)) return undefined // menü hiç yüklenmedi VEYA hata gövdesi döndü (dizi DEĞİL) — bkz. resolveActiveFromRoute.
     const search = (links: any[]): any => {
@@ -468,6 +488,55 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     startRouteWatch()
   }
 
+  // --- DS-v2 kabuk: sekme şeridi eylemleri (klavye kısayolları + sağ tık menüsü) ---
+
+  /** Sekme şeridinin gösterim sırası (açılış sırası; her örnek kendi sekmesidir). */
+  const orderedTabs = computed(() => tabs.value)
+
+  function activateTab(tab: any) {
+    if (tab && mySelectedTab.value !== tab) mySelectedTab.value = tab
+  }
+
+  /** Ctrl+←/→: etkin sekmenin solundaki/sağındaki sekmeye geçer (uçlarda döner). */
+  function activateRelative(delta: number) {
+    const list = orderedTabs.value
+    if (list.length < 2) return
+    const index = list.indexOf(mySelectedTab.value)
+    activateTab(list[(index + delta + list.length) % list.length])
+  }
+
+  /** Alt+1…9: n. sekmeye (0-tabanlı) geçer; yoksa hiçbir şey yapmaz. */
+  function activateIndex(index: number) {
+    const tab = orderedTabs.value[index]
+    if (tab) activateTab(tab)
+  }
+
+  async function closeMany(targets: any[]) {
+    for (const tab of targets) {
+      if (!isPinnedLink(tab.link) && tabs.value.includes(tab)) await closeTab(tab)
+    }
+  }
+
+  /** "Diğerlerini kapat": verilen sekme ve sabit (pano) sekme dışındakileri kapatır, verilen sekmeyi etkin bırakır. */
+  async function closeOthers(tab: any) {
+    await closeMany(tabs.value.filter((t: any) => t !== tab))
+    activateTab(tab)
+  }
+
+  /** "Sağdakileri kapat": verilen sekmenin sağındaki (kapatılabilir) sekmeleri kapatır. */
+  async function closeToRight(tab: any) {
+    const index = tabs.value.indexOf(tab)
+    if (index < 0) return
+    const wasActiveRight = tabs.value.indexOf(mySelectedTab.value) > index
+    await closeMany(tabs.value.slice(index + 1))
+    if (wasActiveRight) activateTab(tab)
+  }
+
+  /** "Tümünü kapat": sabit sekme dışındaki her şey. */
+  async function closeAll() {
+    await closeMany([...tabs.value])
+  }
+
   /**
    * R9b / H-01: yalnızca BELLEKTEKİ çalışma alanı sıfırlanır (önceki kullanıcının açık sekmeleri yeni oturuma taşınmasın).
    * `sessionStorage` kalıcılığına DOKUNMAZ (ADR-0012 Karar 3: oturum süresi dolması sekmeleri silmez; açık çıkış
@@ -480,6 +549,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     mySelectedTab.value = undefined
     mySelectedTabParameters.value = undefined
     menuLinkCode.value = 0
+    recentLinks.value = []
     tabIdCounter = 0
     forceReplace = false
     stopRouteWatch?.()
@@ -498,6 +568,13 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     openTab,
     closeTab,
     clearActiveParameters,
+    recentLinks,
+    activateTab,
+    activateRelative,
+    activateIndex,
+    closeOthers,
+    closeToRight,
+    closeAll,
     resolveActiveFromRoute,
     init,
     clearPersist,

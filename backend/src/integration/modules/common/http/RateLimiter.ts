@@ -14,9 +14,9 @@ export class RateLimiter {
         this.effectiveRatePerMin = baseRatePerMin ?? Infinity;
     }
 
-    /** ratePerMin ayarlı değilse anında geçer (limiter devre dışı). */
-    public async throttle(): Promise<void> {
-        if (!this.baseRatePerMin) return;
+    /** ratePerMin ayarlı değilse anında geçer (limiter devre dışı). Beklenen süreyi (ms) döner (X1: kova bekleme metriği). */
+    public async throttle(): Promise<number> {
+        if (!this.baseRatePerMin) return 0;
         this.maybeRestore();
         const minIntervalMs = 60000 / this.effectiveRatePerMin;
         const now = Date.now();
@@ -24,6 +24,7 @@ export class RateLimiter {
         this.nextAllowedAt = waitUntil + minIntervalMs;
         const delay = waitUntil - now;
         if (delay > 0) await sleep(delay);
+        return Math.max(0, delay);
     }
 
     /** 429 alındığında çağrılır: hızı yarıya indirir (alt sınır 1/dk). */
@@ -35,6 +36,11 @@ export class RateLimiter {
 
     public onSuccess(): void {
         this.maybeRestore();
+    }
+
+    /** Yapılandırılmış taban hız (yoksa undefined = limiter devre dışı). */
+    public getBaseRatePerMin(): number | undefined {
+        return this.baseRatePerMin;
     }
 
     public getEffectiveRatePerMin(): number {

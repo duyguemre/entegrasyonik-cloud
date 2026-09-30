@@ -37,7 +37,7 @@ const CATEGORIES = Object.keys(PATTERNS);
 const EXTENSIONS = new Set(['.vue', '.ts', '.css', '.scss']);
 
 /**
- * ADR-0011 Karar 1/2 (Faz 3 T2) — `src/design/tokens/**` mandalın DIŞINDA
+ * ADR-0011 Karar 1/2 (Faz 3 T2) — `packages/ui/src/tokens/**` mandalın DIŞINDA
  * tutulur: bu dizin token'ların TANIM KAYNAĞI (`palette.ts`/`semantic.ts`/
  * `legacy.ts`'teki hex string'ler primitif/anlamsal renk TANIMLARIdır, bir
  * ekranın/bileşenin literal-stil BORCU değil) + `dist/tokens.{app,static}.css`
@@ -47,7 +47,8 @@ const EXTENSIONS = new Set(['.vue', '.ts', '.css', '.scss']);
  * kullanımını 0'a doğru zorlamayı hedefler; token modülünün kendisi bu
  * kapsamın dışındadır.
  */
-const EXCLUDED_DIRS = ['src/design/tokens'];
+// `src/design/tokens/dist`: site sözleşmesi için kalan üretilmiş tokens.static.css (bkz. scripts/build-tokens.ts).
+const EXCLUDED_DIRS = ['packages/ui/src/tokens', 'src/design/tokens/dist'];
 
 /**
  * ADR-0015 Karar 3.12/A1b — global legacy CSS (`public/assets/css/site.css`,
@@ -103,8 +104,8 @@ function listStyleFiles(srcDir) {
 
 /** `repoRoot`'a göre `src/**` (+ ADR-0015 A1b: seçili `public/assets/css/*`) içindeki her dosya için sayım map'i üretir. */
 function buildCounts(repoRoot) {
-  const srcDir = path.join(repoRoot, 'src');
-  const files = listStyleFiles(srcDir);
+  // ADR-0026: ortak DS kaynağı (packages/ui/src) artık src/ dışında — mandal kapsamı AYNI kalır.
+  const files = [...listStyleFiles(path.join(repoRoot, 'src')), ...listStyleFiles(path.join(repoRoot, 'packages/ui/src'))];
   const map = {};
   for (const absPath of files) {
     const relPath = path.relative(repoRoot, absPath).split(path.sep).join('/');

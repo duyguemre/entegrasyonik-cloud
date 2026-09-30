@@ -1,5 +1,8 @@
 import { IClientDB } from "@interfaces/index";
+import { stockDirtyFields } from "./markStockDirty";
 import { AllocationState, IStockAllocationResult, deriveAvailable } from "@interfaces/stock";
+import { recordStockMovement } from "./stockMovements";
+import type { StockMovementReason } from "@database/client/models/StockMovement";
 
 /**
  * ADR-0004 — Zero-oversell: rezervasyon, çakışma ve stok yayını modeli (Karar 1-2).
@@ -34,6 +37,27 @@ export class StockAllocator {
         return this.clientDB.getVariantModel();
     }
 
+    /**
+     * [ADR-0021 D14] Başarılı (non-idempotent) geçişten SONRA hareket defterine best-effort, asenkron kayıt (beklenmez, fırlatmaz).
+     * `availDelta` = kullanılabilir stok değişimi; `before` = `after - availDelta` (findOneAndUpdate `new:true` sonrası doküman).
+     * Anahtar biçimi: `<kanal>:<dışSiparişId>:<satır>` ya da `return:<kanal>:<claimId>:<satır>`.
+     */
+    private recordMovement(variant: any, reason: StockMovementReason, key: string, availDelta: number): void {
+        if (!variant) return;
+        const parts = String(key).split(':');
+        const isReturn = parts[0] === 'return';
+        const after = deriveAvailable(variant);
+        recordStockMovement(this.clientDB, {
+            variantId: variant._id,
+            sku: variant.stockcode || variant.barcode,
+            delta: availDelta, before: after - availDelta, after,
+            stockAfter: typeof variant.stock === 'number' ? variant.stock : null,
+            reason,
+            ref: { kind: isReturn ? 'claim' : 'order', id: isReturn ? parts[2] : parts[1], key },
+            channel: isReturn ? parts[1] : parts[0],
+        });
+    }
+
     /** `available = stock - reserved`. DB'de saklanmaz, her ihtiyaçta türetilir. */
     public static available(variant: { stock?: number; reserved?: number } | null | undefined): number {
         return deriveAvailable(variant);
@@ -65,11 +89,11 @@ export class StockAllocator {
                 $inc: { reserved: qty, stockVersion: 1 },
                 $push: { allocations: { key, qty, state: 'RESERVED', at: now } },
                 // ADR Karar 6: stok etkileyen (available'ı değiştiren) her geçiş stockDirty=true yapar.
-                $set: { stockDirty: true },
+                $set: { ...stockDirtyFields(now) },
             },
             { new: true },
         );
-        if (reservedDoc) return { state: 'RESERVED', idempotent: false, variant: reservedDoc };
+        if (reservedDoc) { this.recordMovement(reservedDoc, 'order_reserve', key, -qty); return { state: 'RESERVED', idempotent: false, variant: reservedDoc }; }
 
         for (let attempt = 0; attempt < StockAllocator.MAX_RACE_RETRY; attempt++) {
             const current = await this.model.findOne({ _id: variantId }).lean();
@@ -108,11 +132,11 @@ export class StockAllocator {
                 { _id: variantId, allocations: { $elemMatch: { key, state: 'RESERVED' } } },
                 {
                     $inc: { stock: -qty, reserved: -qty },
-                    $set: { 'allocations.$.state': 'COMMITTED', stockDirty: true },
+                    $set: { 'allocations.$.state': 'COMMITTED', ...stockDirtyFields(now) },
                 },
                 { new: true },
             );
-            if (committedDoc) return { state: 'COMMITTED', idempotent: false, variant: committedDoc };
+            if (committedDoc) { this.recordMovement(committedDoc, 'order_commit', key, 0); return { state: 'COMMITTED', idempotent: false, variant: committedDoc }; }
 
             const current = await this.model.findOne({ _id: variantId }).lean();
             if (!current) throw new Error(`[StockAllocator] commit: variant bulunamadı (${String(variantId)})`);
@@ -125,11 +149,11 @@ export class StockAllocator {
                     {
                         $inc: { stock: -qty },
                         $push: { allocations: { key, qty, state: 'COMMITTED', at: now } },
-                        $set: { stockDirty: true },
+                        $set: { ...stockDirtyFields(now) },
                     },
                     { new: true },
                 );
-                if (insertedDoc) return { state: 'COMMITTED', idempotent: false, variant: insertedDoc };
+                if (insertedDoc) { this.recordMovement(insertedDoc, 'order_commit', key, -qty); return { state: 'COMMITTED', idempotent: false, variant: insertedDoc }; }
                 continue; // race: bu aralıkta başka bir çağrı aynı anahtarı ekledi -- tekrar oku.
             }
 
@@ -141,11 +165,11 @@ export class StockAllocator {
                     { _id: variantId, allocations: { $elemMatch: { key, state: 'OVERSOLD' } } },
                     {
                         $inc: { stock: -qty },
-                        $set: { 'allocations.$.state': 'COMMITTED', stockDirty: true },
+                        $set: { 'allocations.$.state': 'COMMITTED', ...stockDirtyFields(now) },
                     },
                     { new: true },
                 );
-                if (fromOversoldDoc) return { state: 'COMMITTED', idempotent: false, variant: fromOversoldDoc };
+                if (fromOversoldDoc) { this.recordMovement(fromOversoldDoc, 'order_commit', key, -qty); return { state: 'COMMITTED', idempotent: false, variant: fromOversoldDoc }; }
                 continue; // race
             }
 
@@ -185,11 +209,11 @@ export class StockAllocator {
                     { _id: variantId, allocations: { $elemMatch: { key, state: 'RESERVED' } } },
                     {
                         $inc: { reserved: -existing.qty },
-                        $set: { 'allocations.$.state': 'RELEASED', stockDirty: true },
+                        $set: { 'allocations.$.state': 'RELEASED', ...stockDirtyFields(now) },
                     },
                     { new: true },
                 );
-                if (releasedDoc) return { state: 'RELEASED', idempotent: false, variant: releasedDoc };
+                if (releasedDoc) { this.recordMovement(releasedDoc, 'order_release', key, existing.qty); return { state: 'RELEASED', idempotent: false, variant: releasedDoc }; }
                 continue; // race: okuma ile yazma arasında state değişti -- yeniden oku.
             }
 
@@ -231,11 +255,11 @@ export class StockAllocator {
                 {
                     $inc: { stock: qty },
                     $push: { allocations: { key: claimKey, qty, state: 'RESTOCKED', at: now } },
-                    $set: { stockDirty: true },
+                    $set: { ...stockDirtyFields(now) },
                 },
                 { new: true },
             );
-            if (restockedDoc) return { state: 'RESTOCKED', idempotent: false, variant: restockedDoc };
+            if (restockedDoc) { this.recordMovement(restockedDoc, 'return_restock', claimKey, qty); return { state: 'RESTOCKED', idempotent: false, variant: restockedDoc }; }
 
             const current = await this.model.findOne({ _id: variantId }).lean();
             if (!current) throw new Error(`[StockAllocator] restock: variant bulunamadı (${String(variantId)})`);
@@ -276,11 +300,11 @@ export class StockAllocator {
             },
             {
                 $inc: { reserved: qty, stockVersion: 1 },
-                $set: { 'allocations.$.state': 'RESERVED', 'allocations.$.at': now, stockDirty: true },
+                $set: { 'allocations.$.state': 'RESERVED', 'allocations.$.at': now, ...stockDirtyFields(now) },
             },
             { new: true },
         );
-        if (retriedDoc) return { state: 'RESERVED', idempotent: false, variant: retriedDoc };
+        if (retriedDoc) { this.recordMovement(retriedDoc, 'order_reserve', key, -qty); return { state: 'RESERVED', idempotent: false, variant: retriedDoc }; }
 
         const current = await this.model.findOne({ _id: variantId }).lean();
         if (!current) throw new Error(`[StockAllocator] retryOversold: variant bulunamadı (${String(variantId)})`);

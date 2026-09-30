@@ -12,9 +12,9 @@ test.describe('P1 — Şifremi unuttum (giriş ekranı sekmesi)', () => {
   test('smoke: sekme e-posta alanı ve gönder düğmesini render eder', async ({ page }) => {
     await installApiMocks(page, NO_SESSION)
     await page.goto('/login')
-    await page.getByRole('tab', { name: 'ŞİFREMİ UNUTTUM' }).click()
+    await page.getByRole('tab', { name: 'Şifremi unuttum' }).click()
 
-    await expect(page.getByLabel('EPosta').last()).toBeVisible()
+    await expect(page.getByLabel('E-posta').last()).toBeVisible()
     await expect(page.getByRole('button', { name: 'Şifremi Sıfırla' })).toBeVisible()
   })
 
@@ -28,8 +28,8 @@ test.describe('P1 — Şifremi unuttum (giriş ekranı sekmesi)', () => {
       },
     })
     await page.goto('/login')
-    await page.getByRole('tab', { name: 'ŞİFREMİ UNUTTUM' }).click()
-    await page.getByLabel('EPosta').last().fill('gecersiz-adres')
+    await page.getByRole('tab', { name: 'Şifremi unuttum' }).click()
+    await page.getByLabel('E-posta').last().fill('gecersiz-adres')
     await page.getByRole('button', { name: 'Şifremi Sıfırla' }).click()
 
     await expect(page.getByText('Geçerli bir e-posta adresi girin.')).toBeVisible()
@@ -52,8 +52,8 @@ test.describe('P1 — Şifremi unuttum (giriş ekranı sekmesi)', () => {
       },
     })
     await page.goto('/login')
-    await page.getByRole('tab', { name: 'ŞİFREMİ UNUTTUM' }).click()
-    await page.getByLabel('EPosta').last().fill('kayitsiz-veya-kayitli@example.invalid')
+    await page.getByRole('tab', { name: 'Şifremi unuttum' }).click()
+    await page.getByLabel('E-posta').last().fill('kayitsiz-veya-kayitli@example.invalid')
     await page.getByRole('button', { name: 'Şifremi Sıfırla' }).click()
 
     await expect(page.getByText('Bu e-posta adresi kayıtlıysa parola sıfırlama bağlantısı gönderildi.')).toBeVisible()
@@ -65,8 +65,8 @@ test.describe('P1 — Şifremi unuttum (giriş ekranı sekmesi)', () => {
   test('hız sınırı (429): aksiyon alınabilir Türkçe mesaj, ham HTTP kodu sızmaz', async ({ page }) => {
     await installApiMocks(page, { ...NO_SESSION, 'AccountService/requestPasswordReset': mockError(429, {}) })
     await page.goto('/login')
-    await page.getByRole('tab', { name: 'ŞİFREMİ UNUTTUM' }).click()
-    await page.getByLabel('EPosta').last().fill('e2e@example.invalid')
+    await page.getByRole('tab', { name: 'Şifremi unuttum' }).click()
+    await page.getByLabel('E-posta').last().fill('e2e@example.invalid')
     await page.getByRole('button', { name: 'Şifremi Sıfırla' }).click()
 
     await expect(page.getByText('Çok fazla deneme yaptınız. Lütfen bir süre sonra tekrar deneyin.')).toBeVisible()
@@ -76,7 +76,7 @@ test.describe('P1 — Şifremi unuttum (giriş ekranı sekmesi)', () => {
   test('axe: ŞİFREMİ UNUTTUM sekmesi 0 ihlal', async ({ page }) => {
     await installApiMocks(page, NO_SESSION)
     await page.goto('/login')
-    await page.getByRole('tab', { name: 'ŞİFREMİ UNUTTUM' }).click()
+    await page.getByRole('tab', { name: 'Şifremi unuttum' }).click()
     await page.evaluate(() => document.fonts.ready)
     // Sekme geçişi `fade-transition` (200ms) kullanır; tarama tam opaklığa ULAŞMADAN çalışırsa
     // axe geçiş-anı opaklığını "düşük kontrast" sanabilir (bkz. bu görevin doğrulama koşusu).
@@ -88,7 +88,7 @@ test.describe('P1 — Şifremi unuttum (giriş ekranı sekmesi)', () => {
   test('ekran görüntüsü tabanı (şifremi unuttum sekmesi)', async ({ page }) => {
     await installApiMocks(page, NO_SESSION)
     await page.goto('/login')
-    await page.getByRole('tab', { name: 'ŞİFREMİ UNUTTUM' }).click()
+    await page.getByRole('tab', { name: 'Şifremi unuttum' }).click()
     await expect(page.getByRole('button', { name: 'Şifremi Sıfırla' })).toBeVisible()
     await page.evaluate(() => document.fonts.ready)
     await page.waitForTimeout(300)

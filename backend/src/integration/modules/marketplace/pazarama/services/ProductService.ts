@@ -1,5 +1,6 @@
 import { PLATFORM_PROCESS, IVariant, IInternalAddress, IExportStagedProduct } from '@interfaces/index';
 import { ProductConnector } from '../api/ProductConnector';
+import { normalizeAttrValue, matchMappingValue } from '@integration/catalog/attributePayload';
 import { ProductMapper } from '../transformers/ProductTransformer';
 import { CategoryService } from './CategoryService';
 import Service from './Service';
@@ -7,6 +8,8 @@ import { integrationCode } from '../constants';
 import { IBatchCheckPayload, IBatchProcessResult, IFetchProductsResult, IInternalConversionResult, IInternalResult, IPlatformProductSummary, IValidationResult } from '@interfaces/index';
 import { ShipmentService } from './ShipmentService';
 import { IntegrationError } from '@integration/modules/common/IntegrationError';
+import { getIncomplete } from '@integration/contracts/IncompleteFetch';
+import { paginatePage, PZ_PAGE_LIMIT, PZ_STREAM_MAX_PAGES, PZ_STREAM_MAX_RECORDS } from '../api/paginatePage';
 
 export class ProductService {
     private connector: ProductConnector;
@@ -149,21 +152,25 @@ export class ProductService {
     }
 
     public async getProductsAndPersist(callback: (chunk: any[]) => Promise<void>, query?: Record<string, any>): Promise<IFetchProductsResult> {
-        let page = 1; // Pazarama genelde 1-indexed
-        let hasMore = true;
-        const size = 100;
+        const size = PZ_PAGE_LIMIT;
         let totalProcessedAcrossPages = 0;
+        let pagesSeen = 0;
 
         const settings = this.params.integrationSettings;
-        let baseUrl = settings.urls.productListUrl;
+        const baseUrl = settings.urls.productListUrl;
 
         try {
-            while (hasMore) {
-                const finalParams = { ...query, page, size };
-                const response = await this.connector.fetchProductsFromPlatform(baseUrl, finalParams);
+            // [INT-05 / F-02] Ortak sayfalama (akış kipi: kayıt bellekte toplanmaz). Önceden tavan YOKTU (her sayfa dolu dönerse sonsuz);
+            // artık tekrar eden sayfa/tavan FAILED olarak bildirilir.
+            const rest = await paginatePage(async (page, limit) => {
+                pagesSeen = page;
+                const response = await this.connector.fetchProductsFromPlatform(baseUrl, { ...query, page, size: limit });
                 const items = response?.data || []; // List API returns items in .data directly based on your mock
-
-                if (items.length > 0) {
+                return Array.isArray(items) ? items : [];
+            }, {
+                operation: 'streamProducts', clientId: this.clientId, limit: size,
+                maxPages: PZ_STREAM_MAX_PAGES, maxRecords: PZ_STREAM_MAX_RECORDS,
+                onPage: async (items) => {
                     // Enrich each product with full details for import
                     const detailedItems = await Promise.all(
                         items.map(async (item: any) => {
@@ -177,16 +184,20 @@ export class ProductService {
 
                     await callback(detailedItems);
                     totalProcessedAcrossPages += items.length;
-                    page++;
-                    if (items.length < size) hasMore = false;
-                } else {
-                    hasMore = false;
-                }
-            }
+                },
+            });
 
-            return { totalElements: totalProcessedAcrossPages, totalProcessed: totalProcessedAcrossPages, totalPages: page - 1, status: 'COMPLETED' };
+            const incomplete = getIncomplete(rest);
+            if (incomplete) {
+                return {
+                    totalElements: totalProcessedAcrossPages, totalProcessed: totalProcessedAcrossPages, totalPages: pagesSeen, status: 'FAILED',
+                    error: `Pazarama ürün akışı tamamlanamadı (${incomplete.reason}); ${totalProcessedAcrossPages} kayıt işlendi.`,
+                };
+            }
+            // totalPages: bugünkü anlam = işlenen sayfa sayısı (son sayfa boş dönerse o sayılmaz)
+            return { totalElements: totalProcessedAcrossPages, totalProcessed: totalProcessedAcrossPages, totalPages: Math.ceil(totalProcessedAcrossPages / size), status: 'COMPLETED' };
         } catch (error: any) {
-            return { totalElements: 0, totalProcessed: totalProcessedAcrossPages, totalPages: page, status: 'FAILED', error: error.message };
+            return { totalElements: 0, totalProcessed: totalProcessedAcrossPages, totalPages: pagesSeen, status: 'FAILED', error: error.message };
         }
     }
 
@@ -246,13 +257,10 @@ export class ProductService {
         const categoryId = stagedProduct.localCategoryId;
         const platformCatId = platformProduct.categoryId || platformProduct.pimCategoryId;
 
-        const [brandId, commission] = await Promise.all([
-            this.params.mappingProvider.getLocalBrandId(platformProduct.brandId),
-            this.params.mappingProvider.getCategoryCommission(platformCatId)
-        ]);
+        const brandId = await this.params.mappingProvider.getLocalBrandId(platformProduct.brandId);
 
         const choicesResult = await this.resolveVariantChoices(platformCatId, platformProduct.attributes, categoryId);
-        const variant = this.transformer.toInternalVariant(platformProduct, choicesResult, commission);
+        const variant = this.transformer.toInternalVariant(platformProduct, choicesResult);
 
         return {
             product: {
@@ -293,9 +301,10 @@ export class ProductService {
         const localChoiceMap = new Map(localChoices.map((c: any) => [String(c._id), c]));
 
         const results: any[] = [];
-        const pAttrMap = new Map<string, string>();
+        const pAttrMap = new Map<string, { valueId?: string; text?: string }>();
         platformAttrs?.forEach(a => {
-            pAttrMap.set(String(a.attributeId), String(a.attributeValueId || a.valueId || a.attributeValue || a.value));
+            const norm = normalizeAttrValue(a);
+            if (norm) pAttrMap.set(String(a.attributeId), norm);
         });
 
         const categorySpecificMappings = allMappings.filter((m: any) =>
@@ -311,10 +320,7 @@ export class ProductService {
 
             if (!pValueFromProduct) continue;
 
-            let matchedValue = mapping.values?.find((v: any) =>
-                String(v.platformValueId) === pValueFromProduct ||
-                String(v.platformValueName).toLocaleUpperCase('tr') === pValueFromProduct.toLocaleUpperCase('tr')
-            );
+            const matchedValue: any = matchMappingValue(mapping.values, pValueFromProduct);
 
             if (matchedValue) {
                 const choiceDoc: any = localChoiceMap.get(String(mapping.localChoiceId));

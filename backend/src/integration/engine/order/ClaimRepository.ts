@@ -1,6 +1,9 @@
 import { DatabaseManagerInstance } from '@database/index';
 import { IClaim } from '@interfaces/claim';
 import { getLogPrefix, LoggerType } from '@utils/Logger';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('worker', 'ClaimRepository');
 
 export interface ISaveClaimResponse {
     insertedExternalIds: string[];
@@ -110,12 +113,12 @@ export class ClaimRepository {
             // 4. Veritabanına Yaz
             const result = await ClaimModel.bulkWrite(bulkOps, { ordered: false });
 
-            console.log(`${this.logPrefix} Persistence: ${result.upsertedCount} Yeni İade, ${result.modifiedCount} Güncelleme.`);
+            log.info('CLAIMREPOSITORY_PERSISTENCE_YENI_IADE_GUNCELLEME', `Persistence: ${result.upsertedCount} Yeni İade, ${result.modifiedCount} Güncelleme.`);
 
             return { insertedExternalIds, updatedExternalIds };
 
         } catch (error) {
-            console.error(`${this.logPrefix} saveClaims Hatası:`, error);
+            log.error('CLAIMREPOSITORY_SAVECLAIMS_HATASI', 'saveClaims Hatası:', { err: error });
             throw error;
         }
     }

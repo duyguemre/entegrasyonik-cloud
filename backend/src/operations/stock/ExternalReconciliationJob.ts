@@ -1,6 +1,9 @@
 import { DatabaseManagerInstance } from "@database/DatabaseManager";
+import { CLIENT_INTEGRATION_HOT_PROJECTION } from "@database/projections";
+import { stockDirtyFields } from './markStockDirty';
 import { RedisService } from "@services/redis/RedisService";
 import IntegrationFactory from "@integration/modules/IntegrationFactory";
+import { allowNewWork, recordIntakeSkip } from "@integration/config/intakeGate";
 
 /**
  * ADR-0004 — Zero-oversell (Karar 8b, Aşama C): DIŞ mutabakat, günlük.
@@ -52,7 +55,7 @@ export class ExternalReconciliationJob {
         const clientDB = await DatabaseManagerInstance.getClientDB(clientOrder);
         if (!clientDB) return { scannedChannels, markedDirty };
 
-        const integrationDoc: any = await clientDB.getClientIntegrationModel().findOne().lean();
+        const integrationDoc: any = await clientDB.getClientIntegrationModel().findOne({}, CLIENT_INTEGRATION_HOT_PROJECTION).lean(); // [DB-03]
         const marketplaces: any[] = (integrationDoc?.marketplace || []).filter((m: any) => m.status !== false);
         if (marketplaces.length === 0) return { scannedChannels, markedDirty };
 
@@ -61,6 +64,8 @@ export class ExternalReconciliationJob {
 
         for (const mp of marketplaces) {
             const code = mp.code;
+            // [ADR-0030 X6] Kill-switch: kanal kapalıyken pazaryerine dış çekme yapılmaz; günlük iş sonraki turda yeniden dener.
+            if (!allowNewWork(code)) { recordIntakeSkip('ExternalReconciliationJob', code, 'new'); continue; }
             scannedChannels++;
             try {
                 const instance = await factory.getInstance(code);
@@ -86,7 +91,7 @@ export class ExternalReconciliationJob {
                             if (lastPublishedQty === undefined || Number.isNaN(reportedQty)) continue;
 
                             if (reportedQty !== lastPublishedQty) {
-                                await variantModel.updateOne({ _id: variant._id }, { $set: { stockDirty: true } });
+                                await variantModel.updateOne({ _id: variant._id }, { $set: stockDirtyFields() });
                                 markedDirty++;
                             }
                         } catch (itemErr) {

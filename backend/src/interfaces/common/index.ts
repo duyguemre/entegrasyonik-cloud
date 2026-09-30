@@ -49,6 +49,14 @@ export interface ICategoryComission {
     id: string | number;
     name: string;
     commissionRate?: number; // Komisyon oranı vb. alanlar
+    /** Trendyol commissions.json: temel oran (%); yoksa `undefined`. */
+    commission?: number | null;
+    /** Trendyol: olgunluk/vade (gün). */
+    maturity?: number | null;
+    /** Trendyol KA1/KA2 kademe oranları (yalnız okuyucu; tenant kademesi seçimi COM-01 teyidi bekler). */
+    tiers?: { KA1?: number; KA2?: number };
+    /** COM-01: tablo kaynağı/bayatlık üst verisi (asOf = repo tarihi, yürürlük tarihi değil; vatIncluded null = bilinmiyor). */
+    meta?: { source: string; asOf: string; vatIncluded: boolean | null; sourceConfidence: string };
     childrenCategories?: ICategoryComission[];
 }
 
@@ -178,6 +186,13 @@ export interface IApplicationDB {
     getBillingEventModel(): any
     /** Hesap yaşam döngüsü token'ları (parola sıfırlama / e-posta doğrulama; yalnızca HASH saklanır, TTL). */
     getAccountTokenModel(): any
+    getMembershipModel(): any
+    getAdminMfaModel(): any
+    getInvitationModel(): any
+    // [ADR-0029] bildirim olay defteri + e-posta outbox.
+    getNotificationEventModel(): any
+    getNotificationDeliveryModel(): any
+    getNotificationPreferencesModel(): any
     // [ADR-0016 §2 / ADR-0017 Karar 3] `platform/runtime/scheduler`: iş başına Mongo lease + JobRunRegistry.
     getJobLeaseModel(): any
     getJobStateModel(): any
@@ -187,6 +202,8 @@ export interface IApplicationDB {
     // ADR-0017 Aşama B: metrik kovası + hata olayı ("mini-Sentry").
     getMetricRollupModel(): any
     getErrorEventModel(): any
+    // ADR-0026 WP-LOG L1: kalici log deposu (LogEvents; autoIndex kapali, indeksler yalniz onayli goc).
+    getLogEventModel(): any
     // ADR-0018 Karar 2c (Aşama B): haftalık kaynak izleyici -- URL başına tek doküman (hash/diff, içerik YOK).
     getSourceSnapshotModel(): any
     // ADR-0020 Karar 3.1 (Aşama B): sürümlü platform geçersiz kılmaları + yayın başlığı (poll edilen küçük belge).
@@ -198,6 +215,8 @@ export interface IApplicationDB {
 
 
 export interface IClientDB {
+    /** ADR-0021 D8 / DB-08: tüm tenant modellerinin indekslerini kurar (provizyon adımı; opsiyonel — sahte uygulamalar bırakabilir). */
+    ensureIndexes?(): Promise<void>
     getClientIntegrationModel(): any
     getPlatformProcessModel(): any,
     getPlatformProcessProductModel(): any,
@@ -209,6 +228,8 @@ export interface IClientDB {
     getChoiceModel(): any
     getProductModel(): any
     getVariantModel(): any
+    getStockMovementModel(): any
+    getCommissionOverrideModel(): any
     getImageModel(): any
     getOrderModel(): any
     getClaimModel(): any

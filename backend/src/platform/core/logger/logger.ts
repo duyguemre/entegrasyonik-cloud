@@ -4,9 +4,10 @@
 // (mixin) + `logger.child({module})` ile modül adı. Redaksiyon VARSAYILAN-RET (Karar 1.4). Taşkın denetimi (Karar 1.5).
 import pino, { DestinationStream, Logger as PinoLogger } from 'pino';
 import { config } from '@config';
-import { getContext } from '@platform/core/context';
-import { redactLogObject } from './redact';
+import { getContext, RequestContext } from '@platform/core/context';
+import { redactLogObject, maskLogText } from './redact';
 import { FloodControl, fingerprintOf } from './floodControl';
+import { computeFingerprint } from './fingerprint';
 
 export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
 
@@ -88,10 +89,15 @@ function root(): PinoLogger {
         mixin() {
             const ctx = getContext();
             if (!ctx) return {};
-            const out: Record<string, unknown> = { reqId: ctx.requestId };
+            // [F-06] LogEvents uyumu: ts + correlationId (= requestId; HTTP'de X-Request-Id, motor işlerinde iş başına id).
+            // `reqId` geriye uyumluluk için AYNEN kalır.
+            const out: Record<string, unknown> = { ts: new Date().toISOString(), reqId: ctx.requestId, correlationId: ctx.requestId };
             if (ctx.tenantId !== undefined) out.tenantId = ctx.tenantId;
             if (ctx.userSub !== undefined) out.userSub = ctx.userSub;
             if (ctx.route !== undefined) out.route = ctx.route;
+            if (ctx.source !== undefined) out.source = ctx.source;
+            if (ctx.integrationCode !== undefined) out.integrationCode = ctx.integrationCode;
+            if (ctx.operation !== undefined) out.operation = ctx.operation;
             return out;
         },
         formatters: {
@@ -108,7 +114,18 @@ function root(): PinoLogger {
     return _root;
 }
 
+/** [F-06] Sunucuda ZORUNLU metin maskesi: `msg` ve biçim argümanları (token/parola/appkey/PII desenleri). */
+function maskMsg(msg: string | undefined, rest: unknown[]): [string | undefined, unknown[]] {
+    return [typeof msg === 'string' ? maskLogText(msg) : msg, rest.map((a) => (typeof a === 'string' ? maskLogText(a) : redactLogObject(a)))];
+}
+
 function mergeArgs(mergingObject: unknown, msg?: string, ...args: unknown[]): [Record<string, unknown> | undefined, string | undefined, unknown[]] {
+    const [obj, m, rest] = mergeArgsRaw(mergingObject, msg, ...args);
+    const [maskedMsg, maskedRest] = maskMsg(m, rest);
+    return [obj, maskedMsg, maskedRest];
+}
+
+function mergeArgsRaw(mergingObject: unknown, msg?: string, ...args: unknown[]): [Record<string, unknown> | undefined, string | undefined, unknown[]] {
     if (mergingObject && typeof mergingObject === 'object' && !(mergingObject instanceof Error)) {
         const flattened = flattenNestedErrors(mergingObject as Record<string, unknown>);
         return [redactLogObject(flattened), msg, args];
@@ -144,6 +161,35 @@ export function setErrorHook(hook: ((payload: ErrorHookPayload) => void) | undef
     errorHook = hook;
 }
 
+/**
+ * ADR-0026 WP-LOG L1: kalici log deposu (LogEvents) için ters çevrilmiş SENKRON kanca (`setErrorHook` deseni; katman kuralı:
+ * uygulama `platform/runtime/logs`ta, bootstrap kurar). Kayıt, zorunlu maskeden GEÇMİŞ alanlardır (`err` düz nesneye
+ * serileştirilmiş). Sink SENKRON ve ucuz olmalı (kuyruğa it); ASLA fırlatmaz/beklemez. Kurulu değilse (varsayılan) tek `if`.
+ */
+export interface LogSinkRecord {
+    level: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
+    msg?: string;
+    fields: Record<string, unknown>;
+    bindings: Record<string, unknown>;
+    ctx?: RequestContext;
+}
+let logSink: ((rec: LogSinkRecord) => void) | undefined;
+
+/** Yalnız bootstrap/test: kalıcı log kancasını kurar/kaldırır (`undefined` -> devre dışı, sıfır maliyet). */
+export function setLogSink(sink: ((rec: LogSinkRecord) => void) | undefined): void {
+    logSink = sink;
+}
+
+function emitToSink(p: PinoLogger, level: LogSinkRecord['level'], obj: Record<string, unknown> | undefined, msg: string | undefined, bindings: Record<string, unknown>): void {
+    const sink = logSink;
+    if (!sink || !p.isLevelEnabled(level)) return;
+    try {
+        const fields: Record<string, unknown> = { ...(obj ?? {}) };
+        if ('err' in fields) fields.err = errSerializer(fields.err);
+        sink({ level, msg, fields, bindings, ctx: getContext() });
+    } catch { /* sink ASLA log akışını etkilemez */ }
+}
+
 export interface Logger {
     trace(mergingObjectOrMsg: unknown, msg?: string, ...args: unknown[]): void;
     debug(mergingObjectOrMsg: unknown, msg?: string, ...args: unknown[]): void;
@@ -156,10 +202,11 @@ export interface Logger {
     flush(): void;
 }
 
-function wrap(p: PinoLogger, module?: string): Logger {
+function wrap(p: PinoLogger, module?: string, bindings: Record<string, unknown> = {}): Logger {
     const level = (fn: 'trace' | 'debug' | 'info' | 'warn' | 'fatal') => (mergingObjectOrMsg: unknown, msg?: string, ...args: unknown[]) => {
         const [obj, m, rest] = mergeArgs(mergingObjectOrMsg, msg, ...args);
         (p[fn] as any)(obj ?? {}, m, ...rest);
+        if (logSink) emitToSink(p, fn, obj, m, bindings);
     };
     return {
         trace: level('trace'),
@@ -174,7 +221,11 @@ function wrap(p: PinoLogger, module?: string): Logger {
             const code = (obj as any)?.code ?? (errVal && typeof errVal === 'object' ? ((errVal as any).code ?? (errVal instanceof Error ? errVal.name : (errVal as any).type)) : undefined);
             const errMsg = errVal instanceof Error ? errVal.message : (errVal as any)?.message;
             const fp = fingerprintOf(module, code, m ?? errMsg ?? '');
-            if (_flood!.admit(fp)) p.error({ ...(obj ?? {}), fp }, m);
+            if (_flood!.admit(fp)) {
+                const out = { ...(obj ?? {}), fp, fingerprint: (obj as any)?.fingerprint ?? computeFingerprint((obj as any)?.source ?? module, typeof code === 'string' ? code : undefined, m ?? errMsg ?? '') };
+                p.error(out, m);
+                if (logSink) emitToSink(p, 'error', out, m, bindings);
+            }
             // ADR-0017 Karar 2.4: taşkın denetiminden BAĞIMSIZ (kendi 10 sn penceresi errorEvents.ts'te) --
             // pino çıktısı bastırılsa bile hata olayı DB'de sayılır. Kanca kurulu değilse (varsayılan) no-op.
             try {
@@ -186,8 +237,8 @@ function wrap(p: PinoLogger, module?: string): Logger {
                 });
             } catch { /* kanca ASLA log akışını etkilemez */ }
         },
-        child(bindings: Record<string, unknown>) {
-            return wrap(p.child(bindings), (bindings.module as string) ?? module);
+        child(childBindings: Record<string, unknown>) {
+            return wrap(p.child(childBindings), (childBindings.module as string) ?? module, { ...bindings, ...childBindings });
         },
         flush() {
             try { (p as any).flush?.(); } catch { /* pino sürümüne göre yoksayılır */ }

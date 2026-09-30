@@ -3,18 +3,27 @@ import { defineStore } from 'pinia'
 import useRestApi from '@/composables/restapi'
 import logger from '@/composables/logger'
 import { registerStoreReset } from '@/stores/resetRegistry'
+import { classifyIntegrationError, type IntegrationErrorInfo } from '@/composables/useIntegrationError'
 
 export const useAttributeMappingStore = defineStore('attributeMappingStore', () => {
   const restApi = useRestApi()
   const mappings = ref<any[]>([])
+  /** Son `retrieveAttributeMappings` başarısızsa neden (yoksa undefined). Boş liste hata DEĞİLDİR. */
+  const loadError = ref<IntegrationErrorInfo | undefined>(undefined)
 
   // --- GETTERS & HELPERS ---
 
   const retrieveAttributeMappings = async () => {
     try {
       const response: any = await restApi.get("AttributeMappingService")
-      if (response) {
+      // `restApi` hatada axios hata nesnesini DÖNER: eskiden bu, `mappings`'e olduğu gibi atanıyordu
+      // (ardından `.some` çağrıları patlardı). Yalnızca dizi atanır; hata `loadError`'a yazılır.
+      if (Array.isArray(response)) {
         mappings.value = response
+        loadError.value = undefined
+      } else {
+        const info = classifyIntegrationError(response, { service: 'AttributeMappingService', subject: 'generic' }, { expectArray: true })
+        loadError.value = info && !info.empty ? info : undefined
       }
     } catch (error) {
       logger.error('Özellik eşleşmeleri alınamadı', { module: 'attributeMapping', op: 'retrieveAttributeMappings', error })
@@ -127,10 +136,11 @@ export const useAttributeMappingStore = defineStore('attributeMappingStore', () 
   }
 
   // R9b: çıkış sonrası önceki kiracının özellik eşlemeleri kalmasın.
-  registerStoreReset('attributeMappingStore', () => { mappings.value = [] })
+  registerStoreReset('attributeMappingStore', () => { mappings.value = []; loadError.value = undefined })
 
   return {
     mappings,
+    loadError,
     retrieveAttributeMappings,
     getMappingDefinition,
     isIntegrationAttributeValueMapped,

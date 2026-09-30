@@ -27,12 +27,12 @@ test.describe('P1-yeni — Abonelik ve Planlar (SubscriptionView)', () => {
     await expect(page.getByText('Özel Teklif')).toBeVisible()
   })
 
-  test('boş durum: satışa açık plan yoksa "Plan Tanımları Henüz Yayınlanmadı" gösterilir', async ({ page }) => {
+  test('boş durum: satışa açık plan yoksa "Plan tanımları henüz yayınlanmadı" gösterilir', async ({ page }) => {
     await installApiMocks(page, { 'BillingService/getPlans': plansBosFixture })
     await gotoAuthed(page)
     await openScreen(page, 'SubscriptionView')
 
-    await expect(page.getByText('Plan Tanımları Henüz Yayınlanmadı')).toBeVisible(SCREEN_READY)
+    await expect(page.getByText('Plan tanımları henüz yayınlanmadı')).toBeVisible(SCREEN_READY)
   })
 
   test('hata durumu: planlar 500 döndüğünde aksiyon alınabilir hata kartı gösterilir, ham hata sızmaz', async ({ page }) => {
@@ -40,7 +40,7 @@ test.describe('P1-yeni — Abonelik ve Planlar (SubscriptionView)', () => {
     await gotoAuthed(page)
     await openScreen(page, 'SubscriptionView')
 
-    await expect(page.getByText('Planlar Yüklenemedi')).toBeVisible(SCREEN_READY)
+    await expect(page.getByText('Planlar yüklenemedi')).toBeVisible(SCREEN_READY)
     await expect(page.getByRole('button', { name: 'Tekrar Dene' })).toBeVisible()
     await expect(page.locator('.subscriptionView')).not.toContainText('500')
     await expect(page.locator('.subscriptionView')).not.toContainText('Internal Server Error')

@@ -5,6 +5,11 @@ import _ from 'lodash';
 import { PLATFORM_PROCESS } from '@interfaces/index';
 import { IIntegrationEngineProvider } from '../provider/IIntegrationEngineProvider';
 import { getSetting } from '@integration/config/ConfigResolver';
+import { observeStockPublishLag } from '@operations/stock/markStockDirty';
+import { stagedLogPush } from '@operations/integration/stagedLogs';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('worker', 'Sentinel');
 
 export default class Sentinel extends BaseWorker {
     protected readonly workerName = 'Catalog Sentinel';
@@ -54,22 +59,22 @@ export default class Sentinel extends BaseWorker {
                 await this.handleTimeout(timedOutProducts, mode, now, clientLogPrefix, matchKey);
             }
 
-            console.log(`${clientLogPrefix} Sentinel searching for pending batches in DB...`);
+            log.debug('SENTINEL_SEARCHING_PENDING_BATCHES', 'Sentinel searching for pending batches in DB...');
             const pendingBatches = await this.engineProvider.getExportStagedProductModel().aggregate([
                 { $match: { batchId: batchId, status: 'SENT', trackingId: { $ne: null } } },
                 { $group: { _id: "$trackingId" } }
             ]);
 
-            console.log(`${clientLogPrefix} Found ${pendingBatches.length} pending trackingId(s) to check.`);
+            log.debug('SENTINEL_FOUND_PENDING_TRACKINGID_CHECK', `Found ${pendingBatches.length} pending trackingId(s) to check.`);
 
             if (pendingBatches.length === 0) {
-                console.log(`${clientLogPrefix} No pending trackingIds found in Batch: ${batchId}. Finalizing signal.`);
+                log.info('SENTINEL_NO_PENDING_TRACKINGIDS', `No pending trackingIds found in Batch: ${batchId}. Finalizing signal.`);
                 await this.finalizeSignal(batchId);
                 return;
             }
 
             for (const batch of pendingBatches) {
-                console.log(`${clientLogPrefix} Calling checkBatchProduct for TrackingId: ${batch._id}`);
+                log.debug('SENTINEL_CALLING_CHECKBATCHPRODUCT_TRACKINGID', `Calling checkBatchProduct for TrackingId: ${batch._id}`);
                 try {
                     const trackingId = batch._id;
                     const report = await instance.checkBatchProduct({ trackingId, mode });
@@ -87,7 +92,7 @@ export default class Sentinel extends BaseWorker {
                     await this.finalizeTracking(batchId, mode, trackingId, report, matchKey);
 
                 } catch (reportErr: any) {
-                    console.error(`${clientLogPrefix} TrackingId ${batch._id} check failed:`, reportErr.message);
+                    log.error('SENTINEL_TRACKINGID_CHECK_FAILED', `TrackingId ${batch._id} check failed:`, { err: reportErr });
 
                     // Veritabanını güncelle: Ürünlerin neden sorgulanamadığını işle ve bir cooldown (bekleme süresi) ver
                     await this.engineProvider.getExportStagedProductModel().updateMany(
@@ -98,12 +103,12 @@ export default class Sentinel extends BaseWorker {
                                 updatedAt: new Date()
                             },
                             $push: {
-                                logs: {
+                                logs: stagedLogPush({ // [DB-04] son 20 giriş
                                     status: 'SENT',
                                     worker: this.workerName,
                                     message: `Takip sorgusu başarısız: ${reportErr.message}. tekrar denenecek.`,
                                     timestamp: new Date()
-                                }
+                                })
                             }
                         }
                     );
@@ -112,10 +117,10 @@ export default class Sentinel extends BaseWorker {
 
             // 3. ADIM: SİNYAL GÜNCELLEME VE KİLİT AÇMA
             await this.finalizeSignal(batchId);
-            console.log(`${clientLogPrefix} Sentinel task finished for Batch: ${batchId}`);
+            log.info('SENTINEL_TASK_FINISHED_BATCH', `Sentinel task finished for Batch: ${batchId}`);
 
         } catch (err: any) {
-            console.error(`${clientLogPrefix} Sentinel Critical Error for Batch ${batchId}:`, err.message);
+            log.error('SENTINEL_CRITICAL_ERROR_BATCH', `Sentinel Critical Error for Batch ${batchId}:`, { err });
             await this.engineProvider.getExportSignalModel().updateOne(
                 { batchId },
                 { $set: { status: 'FAILED', lockedBy: null, errorMessage: err.message, updatedAt: new Date() } }
@@ -151,7 +156,7 @@ export default class Sentinel extends BaseWorker {
         if (variantBulkOps.length > 0) await this.engineProvider.getVariantModel().bulkWrite(variantBulkOps);
         if (stagingBulkOps.length > 0) await this.engineProvider.getExportStagedProductModel().bulkWrite(stagingBulkOps);
 
-        console.log(`${logPrefix} ${staleEntries.length} products timed out and moved to WAITING.`);
+        log.info('SENTINEL_PRODUCTS_TIMED_OUT_MOVED', `${staleEntries.length} products timed out and moved to WAITING.`);
     }
 
     private async finalizeTracking(batchId: string, mode: string, trackingId: string, report: any[], matchKey: string) {
@@ -211,6 +216,15 @@ export default class Sentinel extends BaseWorker {
                     })
                 );
             }
+        }
+
+        // [X2] stock_publish_lag_ms: onaydan ÖNCE (lastPublishedAt henüz eski) düzenleme->onay gecikmesi gözlenir.
+        if (mode === PLATFORM_PROCESS.UPDATE_STOCK) {
+            const confirmed = report
+                .filter(r => (r.status !== 'WAITING' && r.status !== 'FAILED'))
+                .map(r => String(r.matchValue || r.barcode || r.stockCode || r.stockcode || r.sku || r.productSellerCode || ""))
+                .filter(k => k && stagingMap[k]);
+            await observeStockPublishLag(this.engineProvider.getVariantModel(), matchKey, this.integrationCode, confirmed, now);
         }
 
         if (variantBulkOps.length > 0) await this.engineProvider.getVariantModel().bulkWrite(variantBulkOps);

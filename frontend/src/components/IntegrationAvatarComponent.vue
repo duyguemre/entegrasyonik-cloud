@@ -1,16 +1,16 @@
 <template>
     <v-avatar v-if="platform && platform.type"
-        style="border-radius:5px!important;border:0px solid white;border-radius:0"
-        class="mt-0 mr-0 mb-0 ml-0 mr-0 pa-3 text-center d-flex justify-center elevation-0"
-        :style="{ width: width, height: height, 'background-color': platform.color }">
-        <span v-if="mode == 'text'" class="text-white text-caption"
-            style=" user-select: none;letter-spacing:-.4px!important">{{ platform.title }}</span>
+        :class="channelClass(platform.code)"
+        class="integration-avatar mt-0 mr-0 mb-0 ml-0 mr-0 pa-3 text-center d-flex justify-center elevation-0"
+        :style="{ width: width, height: height }">
+        <span v-if="mode == 'text'" class="integration-avatar__title text-caption">{{ platform.title }}</span>
         <v-img v-else :width="platform.width" :src="integrationStore.getIntegrationImagePath(platform)"></v-img>
     </v-avatar>
 </template>
 
 <script lang="ts" setup>
 import { useIntegrationStore } from '@/stores/integrationStore';
+import { channelClass } from '@entegrasyonik/ui/tokens';
 const integrationStore: any = useIntegrationStore()
 withDefaults(defineProps<{
     platform: any,
@@ -24,4 +24,19 @@ withDefaults(defineProps<{
 })
 </script>
 
-<style></style>
+<style scoped>
+/* C1: logo zemini = kanal token'ı (tek kaynak `channelClass` → `--ek-ch-logo-{bg,fg,accent}`); backend `color` alanı kullanılmaz. */
+.integration-avatar {
+    border-radius: var(--ek-radius-none) !important;
+    border: 0;
+    background: var(--ek-ch-logo-bg);
+    color: var(--ek-ch-logo-fg);
+    box-shadow: inset 0 -3px 0 var(--ek-ch-logo-accent);
+}
+
+.integration-avatar__title {
+    user-select: none;
+    letter-spacing: -0.4px !important;
+    color: var(--ek-ch-logo-fg);
+}
+</style>

@@ -8,6 +8,7 @@ import {
 } from '@interfaces/index';
 import { IOrderRejectParams, IClaimRejectParams, IFinancialTransaction, ICargoInvoice } from '@interfaces/platforms';
 import Service from './services/Service';
+import { runConnectionProbe, type TestConnectionResult } from '@integration/modules/common/adapter/testConnection';
 import { SecurityService } from './services/SecurityService';
 import { CategoryService } from './services/CategoryService';
 import { BrandService } from './services/BrandService';
@@ -27,10 +28,22 @@ export default class Ideasoft implements IPlatform {
     constructor(private params: any) {
         this.service = new Service(params);
         this.securityService = new SecurityService(params, this.service);
+        this.service.setTokenProvider(this.securityService); // [C10] token'ı istekler tembel alır/yeniler (init() üretimde çağrılmıyordu)
         this.categoryService = new CategoryService(params, this.service);
         this.brandService = new BrandService(params, this.service);
         this.productService = new ProductService(params, this.service);
         this.orderService = new OrderService(params, this.service);
+    }
+
+    /**
+     * [INT-01 testConnection] Yan etkisiz tek okuma: ürün listesinin TEK kaydı (`limit=1,page=1`); OAuth2 Bearer token
+     * (SecurityService tembel alım/yenileme) zorunlu. Token yoksa/alınamıyorsa AUTH eşlenir. Asla fırlatmaz.
+     */
+    public async testConnection(): Promise<TestConnectionResult> {
+        return runConnectionProbe('ideasoft', async () => {
+            const url = this.params.integrationSettings?.urls?.productListUrl || 'products';
+            await this.service.get(url, { limit: 1, page: 1 }, { operation: 'testConnection' });
+        });
     }
 
     public async init(): Promise<boolean> {

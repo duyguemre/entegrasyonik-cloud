@@ -33,7 +33,7 @@ const PazaramaDescriptor: IntegrationDescriptor = {
         orders: {
             level: 'supported',
             methods: ['retrieveOrders'],
-            note: 'Siparişler çekilir; sipariş durumu, kargo ve fatura bağlantısı güncellenir. Sayfalama doğrulanamadı (INTEGRATIONS_REGISTRY §2.4).',
+            note: 'Siparişler çekilir (sayfa numarası + 100 kayıt; en çok 50 sayfa/5000 kayıt, aşılırsa sonuç "eksik" işaretlenir); sipariş durumu, kargo ve fatura bağlantısı güncellenir. Sayfa alanları (pageNumber/pageSize) canlı API ile doğrulanmadı; yanıtta toplam alanı yok, kısa sayfa son sayfa sayılır.',
             evidence: ['marketplace/pazarama/index.ts retrieveOrders'],
         },
         orderActions: {
@@ -45,7 +45,7 @@ const PazaramaDescriptor: IntegrationDescriptor = {
         returns: {
             level: 'supported',
             methods: ['retrieveClaims', 'approveClaim', 'rejectClaim'],
-            note: 'İade talepleri onaylanır, reddedilir, incelemeye gönderilir veya revize edilir.',
+            note: 'İade talepleri sayfa sayfa çekilir (en çok 50 sayfa/5000 kayıt), onaylanır, reddedilir, incelemeye gönderilir veya revize edilir.',
             evidence: ['marketplace/pazarama/index.ts approveClaim'],
         },
         questions: {
@@ -82,7 +82,7 @@ const PazaramaDescriptor: IntegrationDescriptor = {
     limitations: [
         'Ödeme emrine göre hakediş ayrıntısı sağlanmıyor.',
         'Kargo bilgisi yalnızca siparişin ilk kalemi için iletilir.',
-        'Sipariş çekimi sayfalaması doğrulanamadı; resmi rate limit yayınlanmamış.',
+        'Sipariş/iade sayfalaması (pageNumber/pageSize, 100) canlı API ile doğrulanmadı; sayfa tavanı aşılırsa sonuç eksik işaretlenir. Resmi rate limit yayınlanmamış.',
     ],
     rateLimits: {
         // Kaynak: docs/research/2026-09-28-integration-deadlines-scan.md §5 — resmi limit değeri bulunamadı.

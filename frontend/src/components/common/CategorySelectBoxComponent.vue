@@ -3,8 +3,7 @@
     <LoadingComponent v-if="loading" ref="loadingComponentRef" attach=".category-select-wrapper"></LoadingComponent>
 
     <v-autocomplete v-model="categoryId" v-model:search="categorySearchText" :items="computedCategories"
-      item-value="_id" item-title="title" variant="outlined" density="compact" bg-color="textfieldColor"
-      class="customTextField" :rules="mandatory ? formRules.mandatoryRule : []"
+      item-value="_id" item-title="title" :rules="mandatory ? formRules.mandatoryRule : []"
       :placeholder="$t('productDefinitions.category.search')" no-data-text="Kategori bulunamadı" auto-select-first
       clearable persistent-hint :menu-props="{
         contentClass: 'category-autocomplete-menu',
@@ -13,22 +12,19 @@
       }">
 
       <template #label>
-        <div>
-          {{ $t('productDefinitions.category.name') }}
-          <v-icon v-if="mandatory" size="12" class="mb-2 ml-1">mdi-asterisk</v-icon>
-        </div>
+        {{ $t('productDefinitions.category.name') }}{{ mandatory ? ' *' : '' }}
       </template>
 
       <template v-slot:selection="{ item }: any">
         <div class="d-flex align-center overflow-hidden">
-          <span class="text-subtitle-2 font-weight-bold text-truncate" style="color: rgb(var(--v-theme-passiveColor))">
+          <span class="text-truncate">
             {{ item.title }}
           </span>
         </div>
       </template>
 
       <template v-slot:item="{ item, props: itemProps }: any">
-        <v-list-item v-bind="itemProps"
+        <v-list-item v-bind="itemProps" role="option"
           :class="['custom-category-item', item.raw.isParent ? 'is-parent-row' : 'is-leaf-row']"
           :disabled="item.raw.isParent" title="">
 
@@ -39,10 +35,10 @@
               class="flex-shrink-0">
             </div>
 
-            <v-icon v-if="item.raw.isParent" size="16" class="mr-2" color="grey">
+            <v-icon v-if="item.raw.isParent" size="16" class="mr-2" color="content-muted">
               mdi-folder-network-outline
             </v-icon>
-            <div v-else style="width: 24px;"></div>
+            <div v-else class="csb-icon-gap"></div>
 
             <div class="category-title-wrapper d-flex align-center flex-grow-1 overflow-hidden">
               <span class="category-text text-truncate">{{ item.title }}</span>
@@ -61,10 +57,10 @@
 
       <template v-slot:append-item>
         <v-divider></v-divider>
-        <div class="pa-4 bg-grey-lighten-5">
+        <div class="pa-4 bg-surface-muted">
           <v-form v-model="isNewCategoryValid" @submit.prevent="addNewCategory">
             <v-text-field v-model="newCategoryName" variant="outlined" density="compact" hide-details="auto"
-              class="bg-white" :placeholder="$t('productDefinitions.category.title')" :rules="titleRules">
+              :placeholder="$t('productDefinitions.category.title')" :rules="titleRules">
               <template v-slot:append-inner>
                 <v-btn color="primary" variant="flat" size="small" :disabled="!isNewCategoryValid || !newCategoryName"
                   @click="addNewCategory">
@@ -180,56 +176,49 @@ onMounted(() => {
 }
 
 .breadcrumb-text {
-  font-size: 0.75rem;
-  color: black;
-  font-style: italic;
-  opacity: .6;
-  font-weight: 400;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
 }
 
 .custom-category-item {
-  border-bottom: 1px solid #f5f5f5 !important;
-  min-height: 40px !important;
+  min-height: var(--ek-control-h-lg) !important;
+  border-bottom: 1px solid var(--ek-color-border-subtle);
 }
 
 .leaf-indicator {
   position: absolute;
-  left: -16px;
-  height: 60%;
+  left: calc(var(--ek-space-4) * -1);
   width: 3px;
-  background-color: #1867C0;
-  border-radius: 0 4px 4px 0;
-  box-shadow: 1px 0 6px rgba(24, 103, 192, 0.4);
+  height: 60%;
+  border-radius: 0 var(--ek-radius-sm) var(--ek-radius-sm) 0;
+  background-color: var(--ek-color-action);
+}
+
+.csb-icon-gap {
+  width: var(--ek-space-6);
+  flex: none;
 }
 
 .is-parent-row {
-  background-color: #fcfcfc !important;
+  background-color: var(--ek-color-surface-muted);
 }
 
 .is-parent-row .category-text {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
   text-transform: uppercase;
-  color: rgb(var(--v-theme-passiveColor));
-  font-weight: 600;
-  font-size: 0.8rem;
 }
 
 .is-leaf-row .category-text {
-  font-weight: 500;
-  color: rgb(var(--v-theme-passiveColor));
-  font-size: 0.85rem;
-}
-
-.is-leaf-row:hover {
-  background-color: #f5f7f9 !important;
+  color: var(--ek-color-content-default);
+  font-size: var(--ek-type-body-size);
+  font-weight: var(--ek-type-label-weight);
 }
 
 .child-count {
-  font-size: 0.65rem;
-  color: black;
-  opacity: .6;
-}
-
-:deep(.v-field__input) {
-  font-size: 0.9rem !important;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
 }
 </style>

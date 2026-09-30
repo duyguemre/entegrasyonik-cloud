@@ -1,6 +1,9 @@
 import { DatabaseManagerInstance } from '@database/index';
 import { IFinancialTransaction } from '@interfaces/platforms';
 import { getLogPrefix, LoggerType } from '@utils/Logger';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('worker', 'FinancialRepository');
 
 export class FinancialRepository {
     private workerName: LoggerType = "Financial Repository";
@@ -41,10 +44,10 @@ export class FinancialRepository {
 
             // EXECUTE
             const result = await FinancialModel.bulkWrite(bulkOps, { ordered: false });
-            console.log(`${this.logPrefix} Finansal Senkronizasyon: ${result.upsertedCount} yeni, ${result.modifiedCount} güncellendi.`);
+            log.info('FINANCIALREPOSITORY_FINANSAL_SENKRONIZASYON_YENI_GUNCELL', `Finansal Senkronizasyon: ${result.upsertedCount} yeni, ${result.modifiedCount} güncellendi.`);
 
         } catch (error: any) {
-            console.error(`${this.logPrefix} Finans Repository Hatası:`, error.message);
+            log.error('FINANCIALREPOSITORY_FINANS_REPOSITORY_HATASI', 'Finans Repository Hatası:', { err: error });
             throw error;
         }
     }

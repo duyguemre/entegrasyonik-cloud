@@ -1,9 +1,9 @@
 <template>
     <v-tooltip open-delay="1000" text="Ürünlerde gelişmiş arama yapmak için burayı kullanabilirsiniz">
         <template v-slot:activator="{ props: tooltipProps }">
-            <v-btn v-bind="tooltipProps" size="40" color="white" class="premium-cube-btn ml-2" elevation="0"
+            <v-btn v-bind="tooltipProps" size="40" color="surface" class="premium-cube-btn ml-2" elevation="0"
                 @click="dialog = true">
-                <v-icon size="x-large" :color="isDirty ? 'success' : 'processButtonColor'">
+                <v-icon size="x-large" :color="isDirty ? 'success' : 'content-muted'">
                     mdi-filter-variant
                 </v-icon>
             </v-btn>
@@ -17,69 +17,44 @@
         @close="dialog = false">
 
         <v-form @submit.prevent="handleSearch">
-            <v-row dense>
-                <v-col cols="12">
-                    <v-text-field v-model="modelValue.title" clearable maxlength="160" density="compact"
-                        variant="outlined" bg-color="textfieldColor" placeholder="Ürün başlığını giriniz" counter
-                        class="customTextField">
-                        <template #label>{{ $t('productDefinitions.product.define.productTitle') }}</template>
-                    </v-text-field>
-                </v-col>
+            <EkFormSection title="Ürün bilgileri" icon="mdi-text-box-search-outline">
+                <v-text-field class="ek-span-full" v-model="modelValue.title" clearable maxlength="160" counter
+                    placeholder="Ürün başlığını giriniz" :label="$t('productDefinitions.product.define.productTitle')" />
+                <v-text-field v-model="modelValue.barcode" clearable label="Barkod" />
+                <v-text-field v-model="modelValue.stockcode" clearable label="Stok Kodu" />
+                <CategorySelectBoxComponent v-model="modelValue.category" :withAll="false" noInit @change.stop />
+                <BrandSelectBoxComponent v-model="modelValue.brand" :withAll="false" noInit @change.stop />
+            </EkFormSection>
 
-                <v-col cols="12" sm="6">
-                    <v-text-field v-model="modelValue.barcode" clearable density="compact" variant="outlined"
-                        bg-color="textfieldColor" label="Barkod" class="customTextField" />
-                </v-col>
+            <EkFormSection title="Fiyat ve satış" icon="mdi-currency-try" :columns="3">
+                <VCurrencyComponentVue v-model="modelValue.prices.minSalePrice" :isIconExist="false" :compact="true"
+                    :label="$t('common.min')" clearable :required="false" />
+                <VCurrencyComponentVue v-model="modelValue.prices.maxSalePrice" :isIconExist="false" :compact="true"
+                    :label="$t('common.max')" clearable :required="false" />
+                <v-select v-model="modelValue.onSale" clearable item-value="id"
+                    :items="[{ id: -1, title: 'Hepsi' }, { id: 1, title: 'Satışta Olanlar' }, { id: 0, title: 'Satışta Olmayanlar' }]"
+                    label="Satış Durumu" @change.stop />
+            </EkFormSection>
 
-                <v-col cols="12" sm="6">
-                    <v-text-field v-model="modelValue.stockcode" clearable density="compact" variant="outlined"
-                        bg-color="textfieldColor" label="Stok Kodu" class="customTextField" />
-                </v-col>
-
-                <v-col cols="12" sm="6">
-                    <CategorySelectBoxComponent v-model="modelValue.category" :withAll="false" noInit
-                        @change.stop />
-                </v-col>
-
-                <v-col cols="12" sm="6">
-                    <BrandSelectBoxComponent v-model="modelValue.brand" :withAll="false" noInit @change.stop />
-                </v-col>
-
-                <v-col cols="12" sm="6">
-                    <div class="d-flex">
-                        <VCurrencyComponentVue v-model="modelValue.prices.minSalePrice" :isIconExist="false"
-                            :label="$t('common.min')" clearable :required="false" />
-                        <VCurrencyComponentVue v-model="modelValue.prices.maxSalePrice" :isIconExist="false"
-                            :label="$t('common.max')" clearable :required="false" class="ml-2" />
-                    </div>
-                </v-col>
-
-                <v-col cols="12" sm="6">
-                    <v-select v-model="modelValue.onSale" density="compact" clearable item-value="id"
-                        :items="[{ id: -1, title: 'Hepsi' }, { id: 1, title: 'Satışta Olanlar' }, { id: 0, title: 'Satışta Olmayanlar' }]"
-                        variant="outlined" bg-color="textfieldColor" label="Satış Durumu" @change.stop />
-                </v-col>
-
-                <v-col cols="12">
-                    <div class="mt-2 text-caption font-weight-bold">Platform Yüklenme Durumu</div>
-                    <v-treeview v-model:selected="modelValue.transferStatuses" density="compact"
-                        :items="transferStatusItems" select-strategy="classic" item-value="id" item-key="id" selectable
-                        @change.stop>
-                        <template v-slot:title="{ item }">
-                            <v-icon :color="item.color" v-if="item.icon" size="small" class="mr-1">
-                                {{ item.icon }}
-                            </v-icon>
-                            <span class="text-caption">{{ item.title }}</span>
-                        </template>
-                    </v-treeview>
-                </v-col>
-            </v-row>
+            <EkFormSection title="Platform yüklenme durumu" icon="mdi-cloud-sync-outline" :columns="1">
+                <v-treeview v-model:selected="modelValue.transferStatuses" density="compact"
+                    :items="transferStatusItems" select-strategy="classic" item-value="id" item-key="id" selectable
+                    @change.stop>
+                    <template v-slot:title="{ item }">
+                        <v-icon :color="item.color" v-if="item.icon" size="small" class="mr-1">
+                            {{ item.icon }}
+                        </v-icon>
+                        <span class="text-caption">{{ item.title }}</span>
+                    </template>
+                </v-treeview>
+            </EkFormSection>
         </v-form>
     </ActionDialogComponent>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { EkFormSection } from '@entegrasyonik/ui/components'
 import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue'; // Bileşen yolu
 import VCurrencyComponentVue from '@/components/VCurrencyComponent.vue';
 import CategorySelectBoxComponent from '@/components/common/CategorySelectBoxComponent.vue';

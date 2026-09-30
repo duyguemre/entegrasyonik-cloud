@@ -121,6 +121,46 @@ class S3Manager {
     }
 
     /**
+     * ADR-0027: nesneyi BELLEĞE okur, en fazla `maxBytes` (aşılırsa `{ tooLarge: true }`, gövde bırakılır).
+     * Yoksa `null`. Yalnız doğrulanmış tavanlı yükleme onayında kullanılır (imzalı PUT boyutu zaten imzada sabit).
+     */
+    public async getObjectBuffer(config: S3Config, key: string, maxBytes: number): Promise<{ buffer?: Buffer; tooLarge?: boolean } | null> {
+        const obj = await this.getObject(config, key);
+        if (!obj) return null;
+        if (typeof obj.contentLength === 'number' && obj.contentLength > maxBytes) {
+            try { obj.body?.destroy?.(); } catch { /* yut */ }
+            return { tooLarge: true };
+        }
+        const chunks: Buffer[] = [];
+        let total = 0;
+        for await (const chunk of obj.body as AsyncIterable<Uint8Array>) {
+            total += chunk.length;
+            if (total > maxBytes) {
+                try { (obj.body as any)?.destroy?.(); } catch { /* yut */ }
+                return { tooLarge: true };
+            }
+            chunks.push(Buffer.from(chunk));
+        }
+        return { buffer: Buffer.concat(chunks) };
+    }
+
+    /**
+     * ADR-0027: tam anahtarla yazma (içerik-adresli kalıcı görsel; `Cache-Control` değişmez önbellek).
+     */
+    public async putObject(config: S3Config, key: string, body: Buffer, contentType: string, cacheControl?: string): Promise<void> {
+        const s3 = this.getS3Client(config);
+        await s3.send(new PutObjectCommand({ Bucket: config.bucketName, Key: key, Body: body, ContentType: contentType, CacheControl: cacheControl }));
+    }
+
+    /**
+     * ADR-0027: tam anahtarla silme (hata fırlatır; çağıran best-effort karar verir).
+     */
+    public async deleteKey(config: S3Config, key: string): Promise<void> {
+        const s3 = this.getS3Client(config);
+        await s3.send(new DeleteObjectCommand({ Bucket: config.bucketName, Key: key }));
+    }
+
+    /**
      * Tekil nesne siler
      */
     public async delete(config: S3Config, deleteObject: DeleteObject): Promise<any> {

@@ -1,129 +1,69 @@
 <template>
 
-  <v-card variant="elevated" elevation="0" class="ma-0 pa-0 psvc-s1" color="transparent" height="100%">
+  <div class="psvc-root">
 
     <LoadingComponent :attach="dialogAttach" ref="loadingComponentRef"></LoadingComponent>
 
+    <section v-if="singleVariant && singleVariant.prices" class="psvc-card" aria-labelledby="psvc-title">
+      <h2 id="psvc-title" class="psvc-title">Tekil ürün bilgisi</h2>
+      <p class="psvc-desc">Varyantsız ürünün stok, barkod ve fiyat bilgileri.</p>
 
-    <v-card-title class="d-flex psvc-s2">
+      <EkFormSection title="Kod bilgileri" icon="mdi-barcode">
+        <v-text-field clearable :rules="formRules.titleRules" maxlength="160" counter data-pf-field="stockcode"
+          v-model="singleVariant.stockcode" label="Stok Kodu *" hint="Mağazanızdaki benzersiz ürün kodu" persistent-hint />
+        <v-text-field clearable :rules="formRules.titleRules" maxlength="160" counter data-pf-field="barcode"
+          v-model="singleVariant.barcode" label="Barkod *" hint="Pazaryerlerine gönderilen barkod" persistent-hint />
+      </EkFormSection>
 
-      <v-row v-if="singleVariant && singleVariant.prices">
-        <v-col cols="2">
-        </v-col>
-
-        <v-col>
-          <v-text-field clearable :rules="formRules.titleRules" maxlength="160" type="tel" class="mb-3 mt-2"
-             density="compact" v-model="singleVariant.stockcode"
-            variant="outlined" bg-color="textfieldColor"
-            :hint="$t('productDefinitions.product.define.productTitleDesc')" counter>
-            <template #label>
-              Stok Kodu<v-icon size="12" class="mb-2 ml-1">mdi-asterisk</v-icon>
-            </template>
-          </v-text-field>
-
-          <v-text-field clearable :rules="formRules.titleRules" maxlength="160" type="tel" class="mb-3 mt-2"
-             density="compact" v-model="singleVariant.barcode"
-            variant="outlined" bg-color="textfieldColor"
-            :hint="$t('productDefinitions.product.define.productTitleDesc')" counter>
-            <template #label>
-              Barkod<v-icon size="12" class="mb-2 ml-1">mdi-asterisk</v-icon>
-            </template>
-          </v-text-field>
-
-
-          <div class="d-flex">
-            <v-icon class="mr-1 mt-8 psvc-s3">mdi-currency-try</v-icon>
-            <div class="mb-4 psvc-s4">
-
-              <div v-if="singleVariant?.prices?.isPlatformBasedPrice == false">
-                <div class="d-flex align-center justify-start">
-                  <VCurrencyComponentVue v-model="singleVariant.prices.salePrice"
-                    :rules="formRules.mandatoryRule" :compact="true"
-                    :label="$t('productDefinitions.product.variants.salePrice')" clearable :required="true" class="mt-1 psvc-s5">
-                  </VCurrencyComponentVue>
-                </div>
-
-                <div class="d-flex align-center justify-start">
-                  <VCurrencyComponentVue v-model="singleVariant.prices.marketPrice"
-                    :rules="formRules.mandatoryRule" :compact="true"
-                    :label="$t('productDefinitions.product.variants.marketPrice')" clearable :required="true"
-                    class="mt-2 psvc-s5">
-                  </VCurrencyComponentVue>
-                </div>
-              </div>
-              <template v-else>
-                <div @click="isVariantPlatformPricesDialog = true; editingVariant = singleVariant" class="psvc-s6">
-                  <div>
-
-                    <div class="font-weight-light text-caption mt-1 psvc-s7">
-                      Satış Fiyatı
-                    </div>
-                    <span class="font-weight-bold"> {{
-                      formatCurrency(findMinimumSalePrice(singleVariant.platforms)) }} - {{
-                        formatCurrency(findMaximumSalePrice(singleVariant.platforms)) }}</span>
-                    <div class="font-weight-light text-caption mt-1 psvc-s7">
-                      Piyasa Fiyatı
-                    </div>
-                    <span class="font-weight-medium"> {{
-                      formatCurrency(findMinimumMarketPrice(singleVariant.platforms)) }} - {{
-                        formatCurrency(findMaximumMarketPrice(singleVariant.platforms)) }}</span>
-                  </div>
-                </div>
-              </template>
-            </div>
-
-            <v-checkbox :label="$t('productDefinitions.product.platformPrice')" @update:modelValue="" density="compact"
-              hide-details v-model="singleVariant.prices.isPlatformBasedPrice" @click.stop
-              class="ma-0 ml-12 mb-0 mt-4 pa-0 psvc-s8" />
-
-
+      <EkFormSection title="Fiyat" icon="mdi-currency-try">
+        <template v-if="singleVariant?.prices?.isPlatformBasedPrice == false">
+          <div data-pf-field="salePrice">
+            <VCurrencyComponentVue v-model="singleVariant.prices.salePrice" :rules="formRules.mandatoryRule" :compact="true"
+              :label="`${$t('productDefinitions.product.variants.salePrice')} *`" clearable :isIconExist="false" />
           </div>
+          <VCurrencyComponentVue v-model="singleVariant.prices.marketPrice" :rules="formRules.mandatoryRule" :compact="true"
+            :label="`${$t('productDefinitions.product.variants.marketPrice')} *`" clearable :isIconExist="false" />
+        </template>
+        <button v-else type="button" class="psvc-platform-prices ek-span-2"
+          @click="isVariantPlatformPricesDialog = true; editingVariant = singleVariant">
+          <span class="psvc-kv">
+            <span class="psvc-kv__label">Satış Fiyatı</span>
+            <span class="psvc-kv__value ek-num">{{ formatCurrency(findMinimumSalePrice(singleVariant.platforms)) }} -
+              {{ formatCurrency(findMaximumSalePrice(singleVariant.platforms)) }}</span>
+          </span>
+          <span class="psvc-kv">
+            <span class="psvc-kv__label">Piyasa Fiyatı</span>
+            <span class="psvc-kv__value ek-num">{{ formatCurrency(findMinimumMarketPrice(singleVariant.platforms)) }} -
+              {{ formatCurrency(findMaximumMarketPrice(singleVariant.platforms)) }}</span>
+          </span>
+          <span class="psvc-platform-prices__action">
+            <v-icon icon="mdi-pencil-outline" size="16" aria-hidden="true" /> Platform fiyatlarını düzenle
+          </span>
+        </button>
+        <v-checkbox class="ek-span-full" :label="$t('productDefinitions.product.platformPrice')" hide-details
+          v-model="singleVariant.prices.isPlatformBasedPrice" @click.stop />
+      </EkFormSection>
 
+      <EkFormSection title="Stok" icon="mdi-warehouse">
+        <v-text-field clearable :rules="stockRules" maxlength="160" type="tel" inputmode="numeric" counter
+          v-model="singleVariant.stock" label="Stok Adedi *" hint="Satışa açık stok miktarı" persistent-hint />
+        <v-text-field clearable :rules="formRules.subTitleRules" maxlength="160" counter
+          v-model="singleVariant.shelf" label="Raf" hint="Depodaki raf/konum bilgisi (isteğe bağlı)" persistent-hint />
+      </EkFormSection>
 
-          <v-text-field clearable :rules="formRules.titleRules" maxlength="160" type="tel" class="mb-3 mt-2"
-            density="compact" v-model="singleVariant.stock"
-            variant="outlined" bg-color="textfieldColor"
-            :hint="$t('productDefinitions.product.define.productTitleDesc')" counter>
-            <template #label>
-              Stok Adedi<v-icon size="12" class="mb-2 ml-1">mdi-asterisk</v-icon>
-            </template>
-          </v-text-field>
-
-          <v-text-field clearable :rules="formRules.titleRules" maxlength="160" type="tel" class="mb-3 mt-2"
-            density="compact" v-model="singleVariant.shelf"
-            variant="outlined" bg-color="textfieldColor"
-            :hint="$t('productDefinitions.product.define.productTitleDesc')" counter>
-            <template #label>
-              Raf
-            </template>
-          </v-text-field>
-
-
-          <v-tooltip location="bottom" open-delay="1000" text="Ürün seçeneğini düzenlemek için basınız">
-            <template v-slot:activator="{ props: tooltipProps }">
-
-              <v-btn v-bind="{ ...tooltipProps }" elevation="0" class="ml-7 psvc-s9"
-                @click.stop="isVariantAttributesDialog = !isVariantAttributesDialog; editingVariant = singleVariant"
-                color="processButtonColor">Ürün Özellikleri</v-btn>
-            </template>
-          </v-tooltip>
-
-        </v-col>
-        <v-col cols="2">
-        </v-col>
-
-      </v-row>
-
-    </v-card-title>
-    <v-card-text class="mt-0 pt-1 vertical-table-container">
-
-      <div class="d-flex pa-2 psvc-s10">
+      <div class="psvc-actions">
+        <EkButton tone="secondary" icon="mdi-tune-variant"
+          @click.stop="isVariantAttributesDialog = !isVariantAttributesDialog; editingVariant = singleVariant">
+          Ürün Özellikleri
+        </EkButton>
       </div>
+    </section>
 
-      <v-dialog scrim persistent :retain-focus="false" v-model="show" location-strategy="connected" target="cursor"
-        no-click-animation :close-on-content-click="false" :attach="dialogAttach"
-        :contained="true" location="left" height="100%" width="100%" class="psvc-s11" :class="{ 'psvc-dialog-idle': !isVariantPlatformPricesDialog && !isVariantAttributesDialog }">
+    <div>
 
+      <EkDialogHost :model-value="isVariantPlatformPricesDialog || isVariantAttributesDialog" :attach="dialogAttach"
+        :width="isVariantAttributesDialog ? 'xl' : 'lg'"
+        @update:model-value="(v) => { if (!v) { isVariantPlatformPricesDialog = false; isVariantAttributesDialog = false } }">
 
         <keep-alive>
           <ProductVariantAttributesComponent v-model="isVariantAttributesDialog" :editingVariant="editingVariant" key="ProductImagesComponent"
@@ -138,16 +78,17 @@
             :productInfoForm="productInfoForm" class="psvc-s11" :class="{ 'psvc-dim': !isVariantPlatformPricesDialog }" />
         </keep-alive>
 
-      </v-dialog>
+      </EkDialogHost>
 
-
-    </v-card-text>
-  </v-card>
+    </div>
+  </div>
 
 </template>
 
 <script setup lang="ts">
+import { formatMoney } from '@entegrasyonik/ui/format'
 import { ref, onBeforeMount, onMounted } from 'vue'
+import { EkFormSection, EkButton, EkDialogHost } from '@entegrasyonik/ui/components'
 import { useI18n } from 'vue-i18n';
 import LoadingComponent from '@/components/LoadingComponent.vue'
 
@@ -156,10 +97,11 @@ import VCurrencyComponentVue from '@/components/VCurrencyComponent.vue';
 import ProductVariantAttributesComponent from './ProductVariantAttributesComponent.vue';
 import ProductVariantPlatformPricesComponent from './ProductVariantPlatformPricesComponent.vue';
 
-const show = ref(true)
 const emits = defineEmits(['refreshImages', 'refreshVariants', 'refreshTotalVariantsStockCount', 'close'])
 
 const formRules = useFormRules()
+// Stok adedi sayıdır: zorunlu + yalnız rakam (önceki 2–160 karakter kuralı "5" gibi tek haneli stoku hatalı gösteriyordu).
+const stockRules = [...formRules.mandatoryRule, ...formRules.numberRulesWithoutZero]
 
 var choicesStoreChoices: any = undefined
 const loadingComponentRef: any = ref(null)
@@ -176,9 +118,8 @@ const props = defineProps<{
 }>()
 
 const formatCurrency = (number: number) => {
-  return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(Number(number))
+  return formatMoney(Number(number))
 }
-
 
 onBeforeMount(() => {
 })
@@ -189,9 +130,6 @@ onMounted(() => {
 const sleep = (ms: number) => {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
-
-
-
 
 const findMinimumSalePrice = (platforms: any) => {
   if(!platforms) return 0
@@ -218,76 +156,110 @@ const findMaximumMarketPrice = (platforms: any) => {
     platform.prices.marketPrice && platform.prices.marketPrice > max ? platform.prices.marketPrice : max, 0))
 }
 
-
-
-
 </script>
 
+<style scoped>
+.psvc-root {
+  max-width: 880px;
+  margin: 0 auto;
+}
 
-<style scoped></style>
+.psvc-card {
+  padding: var(--ek-space-6);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface);
+  box-shadow: var(--ek-shadow-card);
+}
+
+.psvc-title {
+  margin: 0;
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-heading-size);
+  line-height: var(--ek-type-heading-line);
+  font-weight: var(--ek-type-heading-weight);
+}
+
+.psvc-desc {
+  margin: var(--ek-space-1) 0 var(--ek-space-5);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+}
+
+.psvc-platform-prices {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ek-space-6);
+  padding: var(--ek-space-3) var(--ek-space-4);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-control);
+  background: var(--ek-color-surface-sunken);
+  color: var(--ek-color-content-default);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: var(--ek-transition-colors);
+}
+
+.psvc-platform-prices:hover {
+  border-color: var(--ek-color-action-border);
+}
+
+.psvc-platform-prices:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+}
+
+.psvc-kv {
+  display: flex;
+  flex-direction: column;
+}
+
+.psvc-kv__label {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.psvc-kv__value {
+  color: var(--ek-color-content-strong);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.psvc-platform-prices__action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  margin-left: auto;
+  color: var(--ek-color-action);
+  font-size: var(--ek-type-label-size);
+  font-weight: var(--ek-type-label-weight);
+}
+
+.psvc-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--ek-space-5);
+}
+
+@media (max-width: 599px) {
+  .psvc-card {
+    padding: var(--ek-space-4);
+  }
+}
+</style>
 
 <style>
 /* ADR-0015 B5-2 — satir ici stillerden tasinan siniflar (autostyle). Satir ici stilin onceligi
    !important ile korunur; ayni ozellikte Vuetify yardimci sinifi/`color` prop cakismasi varsa
    (satir ici stil zaten yeniliyordu) !important eklenmez. Scope'suz: v-dialog/v-menu ve alt
    bilesen kokleri scoped ozniteligi almayabilir; onek dosyaya ozgudur. */
-.psvc-s1 {
-  transition: none !important;
-  box-shadow: none !important;
-  transform: none !important;
-  right: 0 !important;
-}
-
-.psvc-s2 {
-  display: block !important;
-}
-
-.psvc-s3 {
-  opacity: .6 !important;
-}
-
-.psvc-s4 {
-  width: 280px !important;
-  min-height: 100px !important;
-}
-
-.psvc-s5 {
-  max-width: 300px !important;
-}
-
-.psvc-s6 {
-  cursor: pointer !important;
-  width: auto !important;
-  min-width: 130px !important;
-}
-
-.psvc-s7 {
-  line-height: .7;
-  font-size: 10px !important;
-}
-
-.psvc-s8 {
-  min-width: 180px !important;
-}
-
-.psvc-s9 {
-  min-width: 0 !important;
-  border: 1px solid var(--ek-color-border-strong) !important;
-}
-
-.psvc-s10 {
-  max-width: 900px !important;
-  display: none !important;
-}
 
 .psvc-s11 {
   transition: opacity var(--ek-duration-base) var(--ek-easing-standard) !important;
-}
-
-/* Onceki dinamik satir ici stiller (v-dialog koku fragment -> scope'suz). */
-.psvc-dialog-idle {
-  visibility: hidden !important;
-  opacity: .2 !important;
 }
 
 .psvc-dim {

@@ -2,9 +2,16 @@ import type { IApplicationDB, IClientDB } from '@interfaces/index';
 import { DatabaseManagerInstance } from '@database/DatabaseManager';
 import ClientDB from '@database/client/ClientDB';
 import { storageService } from '@services/storage/StorageService';
-import { OrderQueueProducer } from '@integration/engine/order/OrderQueueProducer';
 import { AuditLogger } from '@services/audit/AuditLogger';
-import { ApplicationError } from '../../api/Security';
+import { ApplicationError } from '@platform/core/errors';
+import { getTenantRegistry } from '@database/TenantRegistry';
+import { getIdentityCache } from '@platform/core/security/identityCache';
+
+/** ADR-0024 P1-CORE: Clients.status değişimi TenantRegistry (30 sn) ve kimlik önbelleğinde bayat girdi bırakmasın (aynı pod'da anında). */
+function invalidateTenantState(order: number): void {
+    getTenantRegistry().invalidate(order);
+    getIdentityCache().invalidateTenant(order);
+}
 
 /**
  * ADR-0003 Karar F (adım 8): tenant silme durum makinesi.
@@ -45,6 +52,8 @@ export interface TenantLifecycleDeps {
     getClientDB?: (order: number) => Promise<(IClientDB & { dropDatabase(): Promise<void> }) | undefined>;
     storage?: StorageLike;
     orderQueueProducer?: OrderQueueLike;
+    /** Lazy kurucu (ADR-0024 P0-LAYER: operations -> engine ters kenarı kaldırıldı; gerçek `OrderQueueProducer` üst katmanda enjekte edilir). */
+    orderQueueProducerFactory?: () => OrderQueueLike;
     invalidateClientCache?: (clientId: string) => Promise<void>;
     clearIntegrationFactoryCache?: () => void;
     now?: () => Date;
@@ -64,6 +73,7 @@ export class TenantLifecycleService {
     private readonly clearIntegrationFactoryCache: () => void;
     private readonly now: () => Date;
     private readonly explicitOrderQueueProducer: OrderQueueLike | undefined;
+    private readonly orderQueueProducerFactory: (() => OrderQueueLike) | undefined;
     /** Lazy singleton: gerçek `new OrderQueueProducer()` (dolayısıyla `new bullmq.Queue(...)`) yalnızca GERÇEKTEN
      * bir iş iptali gerektiğinde (requestDeletion/purgeTenant çağrıldığında) kurulur; constructor'da DEĞİL. Bu,
      * TenantLifecycleService'i kullanan modüllerin (ör. admin-service.ts) yalnızca sınıfı import etmesinin/örneklemesinin
@@ -75,6 +85,7 @@ export class TenantLifecycleService {
         this.getClientDB = deps.getClientDB ?? ((order: number) => DatabaseManagerInstance.getClientDB(order) as any);
         this.storage = deps.storage ?? storageService;
         this.explicitOrderQueueProducer = deps.orderQueueProducer;
+        this.orderQueueProducerFactory = deps.orderQueueProducerFactory;
         this.invalidateClientCache = deps.invalidateClientCache ?? ((id: string) => ClientDB.invalidate(id));
         // Lazy require (statik import DEĞİL): IntegrationFactory pazaryeri adaptörlerini (Trendyol/Hepsiburada/...,
         // @Cache dekoratörlü) transitive olarak yükler. Bunu modül YÜKLENİRKEN değil, yalnızca purgeTenant GERÇEKTEN
@@ -88,7 +99,10 @@ export class TenantLifecycleService {
 
     private getOrderQueueProducer(): OrderQueueLike {
         if (this.explicitOrderQueueProducer) return this.explicitOrderQueueProducer;
-        if (!this.lazyOrderQueueProducer) this.lazyOrderQueueProducer = new OrderQueueProducer();
+        if (!this.lazyOrderQueueProducer) {
+            if (!this.orderQueueProducerFactory) throw new Error('TenantLifecycleService: orderQueueProducer veya orderQueueProducerFactory enjekte edilmedi');
+            this.lazyOrderQueueProducer = this.orderQueueProducerFactory();
+        }
         return this.lazyOrderQueueProducer;
     }
 
@@ -111,6 +125,7 @@ export class TenantLifecycleService {
             { order },
             { $set: { status: TENANT_LIFECYCLE_STATUS.DELETION_PENDING, deletionScheduledAt, deletionRequestedAt: this.now(), deletionRequestedBy: opts.actorSub } },
         );
+        invalidateTenantState(order);
 
         // Zamanlanmış sync işlerinin iptali (best-effort): OrderQueueProducer.scheduleJobs() zaten YENİ iş eklemez
         // (status:'ACTIVE' filtresi); burada BEKLEYEN (henüz işlenmemiş) işler kaldırılır.
@@ -137,6 +152,7 @@ export class TenantLifecycleService {
             { order },
             { $set: { status: 'ACTIVE' }, $unset: { deletionScheduledAt: 1, deletionRequestedAt: 1, deletionRequestedBy: 1 } },
         );
+        invalidateTenantState(order);
         void AuditLogger.log({ event: 'tenant.deletion.cancelled', result: 'ok', tid: order, sub: opts.actorSub });
         return { order, status: 'ACTIVE' };
     }
@@ -159,6 +175,7 @@ export class TenantLifecycleService {
         }
 
         await clientModel.updateOne({ order }, { $set: { status: TENANT_LIFECYCLE_STATUS.PURGING } });
+        invalidateTenantState(order);
 
         let step = 'start';
         try {
@@ -190,6 +207,7 @@ export class TenantLifecycleService {
             // 5. ClientDB LRU / IntegrationFactory önbellek temizliği
             step = 'cache';
             await this.invalidateClientCache(String(order));
+            invalidateTenantState(order);
             this.clearIntegrationFactoryCache();
 
             // 6. Mezar taşı: PII'siz, numara asla yeniden kullanılmaz (order KORUNUR, provisioning Counters ile ayrık ilerler)
@@ -204,6 +222,7 @@ export class TenantLifecycleService {
                 { order },
                 { $set: { status: TENANT_LIFECYCLE_STATUS.PURGED, purgedAt: this.now(), purgedBy }, $unset: unsetFields },
             );
+            invalidateTenantState(order);
 
             void AuditLogger.log({ event: 'tenant.purge', result: 'ok', tid: order, sub: purgedBy });
             return { order, status: TENANT_LIFECYCLE_STATUS.PURGED };
@@ -212,6 +231,7 @@ export class TenantLifecycleService {
                 { order },
                 { $set: { status: TENANT_LIFECYCLE_STATUS.PURGE_FAILED, purgeFailedAt: this.now(), purgeFailedStep: step } },
             );
+            invalidateTenantState(order);
             void AuditLogger.log({ event: 'tenant.purge', result: 'error', tid: order, meta: { step } });
             console.error(`[TenantLifecycle] purge adım "${step}" başarısız (tenant ${order}):`, e?.message);
             throw e;

@@ -1,10 +1,12 @@
 import sharp from 'sharp';
 import { ObjectId } from 'mongodb'
+import { config } from '@config'
 
 
 class ImageOperations {
-    BASE_IMAGE_URL = "https://images.entegrasrasyonik.com/products/"
-    BASE_CLIENT_URL = "https://images.entegrasyonik.com/clients/"
+    // [ADR-0031 BE-CFG-1] Tek kaynak: config.images (R2_PUBLIC_URL_IMAGE || eski kök). Sabit alan adı burada TUTULMAZ.
+    get BASE_IMAGE_URL(): string { return config.images.productBaseUrl }
+    get BASE_CLIENT_URL(): string { return config.images.clientBaseUrl }
     thumbnailWidth = 300
     imageFilesPath = "products/"
     clientFilesPath = "clients/"

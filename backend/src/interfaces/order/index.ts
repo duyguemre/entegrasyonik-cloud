@@ -53,6 +53,8 @@ export interface IOrderJobData {
     claimSync?: ISourceSyncWindow;
     financeSync?: ISourceSyncWindow;
     messageSync?: ISourceSyncWindow;
+    /** [F-06] Kuyruğa eklenirken üretilen/taşınan correlation id (HTTP webhook'ta istek id'si); worker aynı id ile devam eder. */
+    correlationId?: string;
 }
 
 /**

@@ -1,1113 +1,984 @@
+<!--
+  frontend/src/components/productDefinitions/variants/ProductVariantListComponent.vue
+
+  Ürün listesinde varyantlı ürünün SEÇENEKLER bölümü (ürün satırının altında açılır). A11 + B1:
+    • Açılış: yükseklik + opaklık (grid satırı 0fr→1fr, `--ek-duration-base`; reduced-motion'da süre 0).
+    • Özet şeridi: varyant sayısı, grup sayısı, toplam stok, tükenen/az stok, kanal kapsamı (yayında/gönderilen, hata sayısı).
+    • B1 — Gruplar ürün güncelle varyant ızgarasıyla AYNI desen: ayırıcı seçenek (ör. Renk) ilk kolonda rowspan'lı birleşik
+      hücre (`VariantGroupCell`, değer + varyant sayısı + grup stoğu); sıra seçenek TANIM sırası (`useVariantGrouping`);
+      rowspan hesabı `variantSheet.windowRowspans` ("Tümünü gör" kırpmasında grup hücresi kalan kısım kadar).
+    • Satır: küçük görsel (`ProductThumb`: kare, iskelet, yer tutucu, çoklu görselde yığın kenarı, gecikmeli önizleme) ·
+      kalan seçenek çipleri + stok kodu (mono) · barkod (mono + kopyala) · fiyat (sağa hizalı, tabular) ·
+      stok (tükendi/az tonu + raf) · kanal durumları · satır eylemleri (`EkRowActions`).
+    • Kanal durumu: gönderilmiş kanal = kanal rengi nokta + ad + durum ikonu; ipucunda durum + kısa neden; tıklayınca ayrıntı kartı
+      (`ProductVariantListTooltipComponent`). Hiç gönderilmemiş kanallar tek soluk çipte toplanır (gürültü azaltma).
+    • Çok varyant (> 8): ilk 8 satır + "Tümünü gör"; açıkken liste kendi içinde kayar (yapışık başlık + yapışık grup adı).
+    • Dar kap (< 600px): satırlar KART (A6b mobil kart deseni); grup hücresi grubun ilk kartının üstünde tam genişlik başlık.
+  Veri yalnız backend varyant projeksiyonundan (bkz. `variantListModel.ts`). Kanala gönder / durum sorgula satır eylemleri
+  YOK: `IntegrationService/processPlatformProduct` ve `checkProductStatus` backend'de tanımsız (FE_CALLS_WITHOUT_BACKEND).
+-->
 <template>
-  <v-data-table-server v-model="selectedVariants" :items-length="originalVariants ? originalVariants.length : 0"
-    :items="originalVariants" fixed-header item-value="barcode" :headers="headers" class="pa-0 ma-0 pl-0 pb-0 ma-0 vl-table"
-    elevation="0" :show-select="true">
-
-    <template v-slot:header.data-table-select="{ allSelected, selectAll, someSelected }">
-      <div class="d-flex align-center justify-center fill-height vl-head-sep">
-        <v-checkbox-btn :model-value="allSelected" :indeterminate="someSelected && !allSelected" color="primaryLighten"
-          aria-label="Tüm varyantları seç"
-          @update:model-value="selectAll(!allSelected)"></v-checkbox-btn>
-      </div>
-    </template>
-
-    <template v-slot:header.variant="{ column, getSortIcon, isSorted, someSelected }">
-      <div class="d-flex  fill-height align-center">
-        <div class="text-center vl-image-head"><v-icon class="mr-8">mdi-image-outline</v-icon></div>
-        <div class="font-weight-bold vl-sort-head vl-w-130" @click="toggleSort('stockcode')"
-          @mouseenter="sortIcon = 'stockcode'" @mouseleave="sortIcon = undefined">
-
-          Stok Kodu
-          <template v-if="sortBy === 'stockcode'">
-            <v-icon>
-              {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-            </v-icon>
-          </template>
-          <v-icon v-else v-if="sortIcon == 'stockcode'" class="vl-sort-icon--hint">
-            {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-          </v-icon>
-
-        </div>
-        |
-        <div class="font-weight-bold text-caption ml-1 vl-sort-head vl-w-60"
-          @click="toggleSort('barcode')" @mouseenter="sortIcon = 'barcode'" @mouseleave="sortIcon = undefined">
-          Barkod
-          <template v-if="sortBy === 'barcode'">
-            <v-icon class="text-caption">
-              {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-            </v-icon>
-          </template>
-          <v-icon class="text-caption vl-sort-icon--hint" v-else v-if="sortIcon == 'barcode'">
-            {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-          </v-icon>
-        </div>
-      </div>
-    </template>
-
-
-
-    <template v-slot:header.choices="{ column, getSortIcon, isSorted, someSelected }">
-      <div class="d-flex fill-height align-center vl-head-sep">
-        <div class="font-weight-bold text-body-2 vl-sort-head vl-w-95"
-          @click="toggleSort('choices')" @mouseenter="sortIcon = 'choices'" @mouseleave="sortIcon = undefined">
-          Seçenekler
-          <template v-if="sortBy === 'choices'">
-            <v-icon>
-              {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-            </v-icon>
-          </template>
-          <v-icon v-else v-if="sortIcon == 'choices'" class="vl-sort-icon--hint">
-            {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-          </v-icon>
-        </div>
-      </div>
-    </template>
-
-
-    <template v-slot:header.prices>
-      <div class="d-flex fill-height align-center vl-head-sep">
-        <div class="font-weight-bold text-body-2 vl-sort-head vl-w-150"
-          @click="toggleSort('prices.salePrice')" @mouseenter="sortIcon = 'prices.salePrice'"
-          @mouseleave="sortIcon = undefined">
-
-
-          Satış Fiyatı
-          <template v-if="sortBy === 'prices.salePrice'">
-            <v-icon>
-              {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-            </v-icon>
-          </template>
-          <v-icon v-else v-if="sortIcon == 'prices.salePrice'" class="vl-sort-icon--hint">
-            {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-          </v-icon>
-        </div>
-        |
-        <div class="font-weight-bold text-caption ml-1 vl-sort-head vl-w-150"
-          @click="toggleSort('prices.marketPrice')" @mouseenter="sortIcon = 'prices.marketPrice'"
-          @mouseleave="sortIcon = undefined">
-
-          Piyasa Fiyatı
-          <template v-if="sortBy === 'prices.marketPrice'">
-            <v-icon class="text-caption">
-              {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-            </v-icon>
-          </template>
-          <v-icon class="text-caption vl-sort-icon--hint" v-else v-if="sortIcon == 'prices.marketPrice'">
-            {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-          </v-icon>
-        </div>
-      </div>
-    </template>
-
-
-
-    <template v-slot:header.stock>
-      <div class="d-flex fill-height align-center vl-head-sep">
-        <div class="font-weight-bold vl-sort-head vl-w-70" @click="toggleSort('stock')"
-          @mouseenter="sortIcon = 'stock'" @mouseleave="sortIcon = undefined">
-
-          Stok Adedi
-          <template v-if="sortBy === 'stock'">
-            <v-icon>
-              {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-            </v-icon>
-          </template>
-          <v-icon v-else v-if="sortIcon == 'stock'" class="vl-sort-icon--hint">
-            {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-          </v-icon>
-        </div>
-
-
-      </div>
-    </template>
-
-    <template v-slot:header.choiceTitle="{ column }">
-
-      <div class="d-flex fill-height align-center">
-        <div class="font-weight-bold text-body-2 vl-sort-head" @click="toggleSort('choiceValueTitle')"
-          @mouseenter="sortIcon = 'choiceValueTitle'" @mouseleave="sortIcon = undefined">
-          Grup
-          <template v-if="sortBy === 'choiceValueTitle'">
-            <v-icon>
-              {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-            </v-icon>
-          </template>
-          <v-icon v-else-if="sortIcon == 'choiceValueTitle'" class="vl-sort-icon--hint">
-            {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-          </v-icon>
-          <v-icon v-else class="vl-sort-icon--hidden">
-            {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-          </v-icon>
-
-        </div>
-      </div>
-
-
-    </template>
-
-    <template v-slot:header.platforms="{ column }">
-      <div class="d-flex fill-height align-center vl-head-sep">
-        <div class="font-weight-bold text-left vl-platforms-head">{{ column.title }}
-        </div>
-      </div>
-    </template>
-
-
-    <template v-slot:header.shelf>
-    </template>
-
-
-
-
-    <template v-slot:header.actions>
-    </template>
-
-
-
-
-    <template v-slot:item="{ item, index, isSelected, toggleSelect }: any">
-      <tr v-if="index != 0 && rowspanSet.get(item.barcode)">
-        <td :colspan="headers.length + 1" class="vl-group-spacer">
-        </td>
-      </tr>
-
-
-      <tr>
-        <td class="pa-0 ma-0 vl-cell-sep">
-          <div class="d-flex align-center justify-center fill-height w-100">
-            <v-checkbox-btn :model-value="selectedVariants.includes(item.barcode)" aria-label="Varyantı seç"
-              color="primaryLighten" @update:model-value="val => {
-                if (val) selectedVariants.push(item.barcode)
-                else selectedVariants = selectedVariants.filter((id: any) => id !== item.barcode)
-              }" class="vl-cb-fixed" />
-
+  <div class="pvl-reveal" :class="{ 'is-open': revealed }">
+    <div class="pvl-reveal__inner">
+      <section ref="rootRef" class="pvl" :class="{ 'is-compact': isCompact }" :aria-label="`${productInfoForm.title ?? 'Ürün'} varyantları`">
+        <header class="pvl-summary">
+          <div class="pvl-summary__facts">
+            <span class="pvl-fact pvl-fact--lead"><span class="ek-num">{{ summary.count }}</span> varyant</span>
+            <span v-if="grouped" class="pvl-fact"><span class="ek-num">{{ groupCount }}</span> {{ slicerTitle }}</span>
+            <span class="pvl-fact">Toplam stok <strong class="ek-num">{{ summary.totalStock }}</strong></span>
+            <span v-if="summary.outOfStock" class="pvl-flag is-out"><span class="ek-num">{{ summary.outOfStock }}</span> tükendi</span>
+            <span v-if="summary.lowStock" class="pvl-flag is-low" :title="`${LOW_STOCK_THRESHOLD} adet ve altı`"><span class="ek-num">{{ summary.lowStock }}</span> az stok</span>
+            <span v-if="selectedCount" class="pvl-flag is-selected"><span class="ek-num">{{ selectedCount }}</span> seçili</span>
           </div>
-        </td>
-        <td class="pl-0 vl-cell-sep">
-          <div class="d-flex align-center fill-height;" @click="">
-            <div class="text-center mr-4 elevation-1 vl-thumb">
-              <v-tooltip location="bottom" open-delay="1000" text="Ürünü düzenlemek için basınız">
-                <template v-slot:activator="{ props: tooltipProps }">
+          <ul class="pvl-summary__channels" aria-label="Kanal kapsamı">
+            <li class="pvl-summary__label" aria-hidden="true">Kanallar</li>
+            <li v-for="c in sentChannels" :key="c.code" class="pvl-cov" :class="channelClass(c.code)">
+              <span class="pvl-cov__dot" aria-hidden="true"></span>
+              <span class="pvl-cov__name">{{ channelTitle(c.code) }}</span>
+              <span class="pvl-cov__val"><span class="ek-num">{{ c.live }}/{{ summary.count }}</span> yayında</span>
+              <span v-if="c.failed" class="pvl-cov__err"><v-icon icon="mdi-alert-circle-outline" aria-hidden="true" /><span class="ek-num">{{ c.failed }}</span> hata</span>
+              <span v-else-if="c.waiting" class="pvl-cov__wait"><v-icon icon="mdi-clock-outline" aria-hidden="true" /><span class="ek-num">{{ c.waiting }}</span> bekliyor</span>
+            </li>
+            <li v-if="unsentChannels.length" class="pvl-cov is-unsent" :title="unsentChannels.map((c) => channelTitle(c.code)).join(', ')">
+              {{ unsentChannels.length === 1 ? channelTitle(unsentChannels[0].code) : `${unsentChannels.length} kanal` }} gönderilmedi
+            </li>
+          </ul>
+        </header>
 
-                  <ProductVariantImageComponent v-bind="{ ...tooltipProps }" :productInfoForm="productInfoForm"
-                    @click.stop="isVariantImagesDialog = true; selectedVariantForEdit = item"
-                    :imageId="item.images ? item.images[0] : undefined" class="vl-thumb-img" />
-
-                </template>
-              </v-tooltip>
-            </div>
-            <div class="d-flex align-center fill-height vl-w-full">
-              <div class="d-flex">
-                <div>
-                  <div class="font-weight-light text-caption mt-1 vl-field-caption">
-                    Stok
-                    Kodu
+        <div :id="scrollId" class="pvl-scroll" :class="{ 'is-scrolling': showAll && summary.count > COMPACT_LIMIT }">
+          <table class="pvl-table" :class="{ 'is-grouped': grouped, 'is-header-named': choiceInHeader }" :aria-label="`${productInfoForm.title ?? 'Ürün'} varyant listesi`" :aria-rowcount="summary.count + 1">
+            <thead>
+              <tr>
+                <th class="pvl-th pvl-th--select" scope="col">
+                  <input ref="allRef" type="checkbox" class="pvl-check" :checked="allSelected" aria-label="Tüm varyantları seç" @change="toggleAll" />
+                </th>
+                <th v-if="grouped" class="pvl-th pvl-th--group" scope="col">{{ slicerTitle }}</th>
+                <th class="pvl-th" scope="col" :aria-sort="ariaSort('choices')">
+                  <button type="button" class="pvl-sort" :class="{ 'is-on': sortBy === 'choices' }" @click="toggleSort('choices')">
+                    {{ grouped ? otherChoicesTitle : 'Varyant' }}<v-icon class="pvl-sort__icon" :icon="sortIconFor('choices')" aria-hidden="true" />
+                  </button>
+                </th>
+                <th class="pvl-th" scope="col" :aria-sort="ariaSort('barcode')">
+                  <button type="button" class="pvl-sort" :class="{ 'is-on': sortBy === 'barcode' }" @click="toggleSort('barcode')">
+                    Barkod<v-icon class="pvl-sort__icon" :icon="sortIconFor('barcode')" aria-hidden="true" />
+                  </button>
+                </th>
+                <th class="pvl-th pvl-th--end" scope="col" :aria-sort="ariaSort('salePrice')">
+                  <button type="button" class="pvl-sort" :class="{ 'is-on': sortBy === 'salePrice' }" @click="toggleSort('salePrice')">
+                    Fiyat<v-icon class="pvl-sort__icon" :icon="sortIconFor('salePrice')" aria-hidden="true" />
+                  </button>
+                </th>
+                <th class="pvl-th pvl-th--end" scope="col" :aria-sort="ariaSort('stock')">
+                  <button type="button" class="pvl-sort" :class="{ 'is-on': sortBy === 'stock' }" @click="toggleSort('stock')">
+                    Stok<v-icon class="pvl-sort__icon" :icon="sortIconFor('stock')" aria-hidden="true" />
+                  </button>
+                </th>
+                <th class="pvl-th" scope="col">Kanal durumu</th>
+                <th class="pvl-th pvl-th--actions" scope="col"><span class="ek-sr-only">İşlemler</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="r in visibleRows" :key="r.variant._id ?? r.variant.barcode ?? r.index" class="pvl-row"
+                :class="{
+                  'is-selected': isSelected(r.variant), 'is-out': stockTone(r.variant.stock) === 'out',
+                  'is-group-start': grouped && r.groupStart, 'has-group-cell': grouped && spans.has(r.index),
+                }">
+                <td class="pvl-td pvl-td--select">
+                  <input type="checkbox" class="pvl-check" :checked="isSelected(r.variant)" :aria-label="`${r.variant.stockcode} varyantını seç`" @change="toggleRow(r.variant)" />
+                </td>
+                <VariantGroupCell v-if="grouped && spans.has(r.index)" :rowspan="spans.get(r.index)" role="rowheader"
+                  class="pvl-vgroup" :title="grouping.groupLabel(r.variant)" :count="r.groupSize" :alt="r.groupIndex % 2 === 1">
+                  <template #meta> · stok <span class="ek-num">{{ groupStock.get(r.groupKey) ?? 0 }}</span></template>
+                </VariantGroupCell>
+                <td class="pvl-td pvl-td--variant">
+                  <div class="pvl-ident">
+                    <ProductThumb class="pvl-thumb" :src="imagesOf(r.variant)[0]" :gallery="imagesOf(r.variant)"
+                      :size="isCompact ? 'xs' : 'sm'" :label="rowTitle(r.variant)" />
+                    <span class="pvl-ident__text">
+                      <span class="pvl-choices">
+                        <span v-for="choice of rowChoices(r.variant.choices, grouped)" :key="choice.choiceId" class="pvl-choice">
+                          <span class="pvl-choice__label">{{ choiceTitle(choice.choiceId) }}</span>
+                          <span class="pvl-choice__value">{{ choiceValueName(choice.choiceId, choice.choiceValueId) ?? '—' }}</span>
+                        </span>
+                        <span v-if="!r.variant.choices?.length" class="pvl-muted">Seçenek yok</span>
+                      </span>
+                      <span class="pvl-code">{{ r.variant.stockcode }}</span>
+                    </span>
                   </div>
-                  <span class="font-weight-bold">{{ item.stockcode }}</span>
-                  <div class="font-weight-light text-caption mt-1 vl-field-caption">
-                    Barkod
-                  </div>
-                  <span class="font-weight-medium">{{ item.barcode }}</span>
-
-                  <!--                   <v-switch v-model="item.onsale" class="ma-0 pa-0 text-caption" color="processButtonColor" hide-details
-                    density="compact">
-                    <template #label>
-                      <div class="font-weight-normal text-caption mt-0"
-                        style="line-height: .8;font-size:11px!important">
-                        Satışa <span v-if="item.onsale == true">Açık</span><span v-else
-                          class="font-weight-bold text-red">Kapalı</span>
-                      </div>
+                </td>
+                <td class="pvl-td pvl-td--barcode" data-label="Barkod">
+                  <span v-if="r.variant.barcode" class="pvl-barcode">
+                    <span class="pvl-mono">{{ r.variant.barcode }}</span>
+                    <button type="button" class="pvl-copy" :aria-label="`${r.variant.barcode} barkodunu kopyala`" @click="copy(r.variant.barcode, 'Barkod')">
+                      <v-icon :icon="icons.copy" aria-hidden="true" />
+                    </button>
+                  </span>
+                  <span v-else class="pvl-muted">—</span>
+                </td>
+                <td class="pvl-td pvl-td--end" data-label="Fiyat">
+                  <span v-if="r.variant.prices?.isPlatformBasedPrice === true" class="pvl-price">
+                    <span class="pvl-price__sale ek-num">{{ money(minOf(r.variant, 'salePrice')) }} – {{ money(maxOf(r.variant, 'salePrice')) }}</span>
+                    <span class="pvl-price__note">Kanala göre</span>
+                  </span>
+                  <span v-else class="pvl-price">
+                    <span class="pvl-price__sale ek-num">{{ money(r.variant.prices?.salePrice) }}</span>
+                    <span v-if="Number(r.variant.prices?.marketPrice) > 0" class="pvl-price__market ek-num">Piyasa {{ money(r.variant.prices.marketPrice) }}</span>
+                  </span>
+                </td>
+                <td class="pvl-td pvl-td--end" data-label="Stok">
+                  <span class="pvl-stock" :class="`is-${stockTone(r.variant.stock)}`">
+                    <span class="pvl-stock__qty ek-num">{{ Math.max(0, Number(r.variant.stock) || 0) }}</span>
+                    <span v-if="stockTone(r.variant.stock) === 'out'" class="pvl-stock__tag">Tükendi</span>
+                    <span v-else-if="stockTone(r.variant.stock) === 'low'" class="pvl-stock__tag" :title="`${LOW_STOCK_THRESHOLD} adet ve altı`">Az</span>
+                    <span v-if="r.variant.shelf" class="pvl-stock__shelf"><v-icon icon="mdi-map-marker-outline" aria-hidden="true" />Raf {{ r.variant.shelf }}</span>
+                  </span>
+                </td>
+                <td class="pvl-td pvl-td--channels" data-label="Kanallar">
+                  <span class="pvl-channels">
+                    <template v-for="ch in rowChannels(r.variant).sent" :key="ch.code">
+                      <v-menu :close-on-content-click="false" location="bottom center" transition="fade-transition" offset="8">
+                        <template #activator="{ props: menuProps }">
+                          <v-tooltip location="top" :open-delay="300" :eager="false" transition="fade-transition" max-width="320">
+                            <template #activator="{ props: tipProps }">
+                              <button type="button" v-bind="mergeProps(menuProps, tipProps)" class="pvl-ch" :class="[channelClass(ch.code), `is-${ch.state.tone}`]"
+                                :data-channel-state="ch.state.tone"
+                                :aria-label="`${channelTitle(ch.code)}: ${ch.state.label}${ch.state.reason ? ' — ' + ch.state.reason : ''}. Ayrıntı`">
+                                <span class="pvl-ch__dot" aria-hidden="true"></span>
+                                <span class="pvl-ch__name">{{ channelTitle(ch.code) }}</span>
+                                <v-icon class="pvl-ch__state" :icon="ch.state.icon" aria-hidden="true" />
+                              </button>
+                            </template>
+                            <span class="pvl-tip">
+                              <strong>{{ channelTitle(ch.code) }} · {{ ch.state.label }}</strong>
+                              <span v-if="ch.state.reason" class="pvl-tip__reason">{{ ch.state.reason }}</span>
+                              <span class="pvl-tip__hint">Ayrıntı için tıklayın</span>
+                            </span>
+                          </v-tooltip>
+                        </template>
+                        <ProductVariantListTooltipComponent :data="r.variant.platforms?.[ch.code]" :channel-code="ch.code" :channel-name="channelTitle(ch.code)" />
+                      </v-menu>
                     </template>
-                  </v-switch>
- -->
-                </div>
-              </div>
-            </div>
-          </div>
+                    <span v-if="rowChannels(r.variant).unsent.length" class="pvl-ch is-unsent"
+                      :title="rowChannels(r.variant).unsent.map(channelTitle).join(', ') + ': gönderilmedi'">
+                      <template v-if="rowChannels(r.variant).sent.length"><span aria-hidden="true">+{{ rowChannels(r.variant).unsent.length }}</span><span class="ek-sr-only">{{ rowChannels(r.variant).unsent.map(channelTitle).join(', ') }}: gönderilmedi</span></template>
+                      <template v-else>Kanala gönderilmedi</template>
+                    </span>
+                  </span>
+                </td>
+                <td class="pvl-td pvl-td--actions">
+                  <EkRowActions :label="`${r.variant.stockcode} işlemleri`" :items="rowActions(r.variant)" />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-        </td>
-        <td :rowspan="rowspanSet.get(item.barcode)" v-if="productInfoForm.hasVariant && rowspanSet.get(item.barcode)"
-          class="text-center vl-td-group">
-          <div class="font-weight-bold">{{ choicesStore.getChoiceValueName(getSlicerChoice(item.choices).choiceId,
-            getSlicerChoice(item.choices).choiceValueId) }} </div>
-        </td>
-
-        <td class="vl-td-choices">
-          <div class="d-flex fill-height align-center d-block mt-1 vl-cell-sep vl-w-full">
-            <div>
-              <div v-for="(choice, index) of item.choices">
-                <div class="d-flex" v-if="choice.slicer != true">
-                  <div :class="(index as any) > 0 ? ['pt-1'] : []">
-                    <div class="font-weight-light text-caption vl-field-caption">
-                      {{ choicesStore.getChoiceTitle(choice.choiceId) }} </div>
-                    <span class="font-weight-bold">{{ choicesStore.getChoiceValueName(choice.choiceId,
-                      choice.choiceValueId) }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </td>
-        <td>
-          <div class="d-flex fill-height align-center vl-cell-sep vl-w-full-soft">
-
-            <div class="d-flex align-center fill-height vl-w-full">
-
-              <template v-if="item.prices.isPlatformBasedPrice == true">
-                <div @click="editingVariantMenu = true; editingVariant = item" class="d-flex align-center fill-height vl-price-cell">
-                  <div>
-                    <!--                         Platform Bazında <span class="font-weight-medium">Satış</span> Fiyatları -->
-                    <div class="font-weight-light text-caption mb-3 vl-field-caption">
-                      (Platform Bazında)
-                    </div>
-
-                    <div class="font-weight-light text-caption mt-1 vl-field-caption">
-                      Satış Fiyatı
-                    </div>
-                    <span class="font-weight-bold"> {{ formatCurrency(findMinimumSalePrice(item.platforms)) }} - {{
-                      formatCurrency(findMaximumSalePrice(item.platforms)) }}</span>
-                    <div class="font-weight-light text-caption mt-1 vl-field-caption">
-                      Piyasa Fiyatı
-                    </div>
-                    <span class="font-weight-medium"> {{ formatCurrency(findMinimumMarketPrice(item.platforms)) }} - {{
-                      formatCurrency(findMaximumMarketPrice(item.platforms)) }}</span>
-                  </div>
-
-                </div>
-              </template>
-              <template v-else>
-                <div @click="" class="d-flex align-center fill-height vl-price-cell">
-                  <div>
-
-                    <div class="font-weight-light text-caption mt-1 vl-field-caption">
-                      Satış Fiyatı
-                    </div>
-                    <span class="font-weight-bold"> {{ formatCurrency(item.prices.salePrice) }}</span>
-                    <div class="font-weight-light text-caption mt-1 vl-field-caption">
-                      Piyasa Fiyatı
-                    </div>
-                    <span class="font-weight-medium"> {{ formatCurrency(item.prices.marketPrice) }}</span>
-                  </div>
-                </div>
-              </template>
-            </div>
-          </div>
-
-        </td>
-        <td>
-          <div class="d-flex font-weight-bold fill-height align-center pr-4 vl-cell-sep vl-w-full">
-
-            <div>
-              <div>
-                <div class="font-weight-light text-caption mt-1 vl-field-caption">
-                  Stok Adedi
-                </div>
-                <div class="d-flex font-weight-bold fill-height align-center vl-w-full">
-                  {{ item.stock }}
-                </div>
-              </div>
-
-              <div>
-                <div class="font-weight-light text-caption mt-1 vl-field-caption">
-                  Raf
-                </div>
-                <div class="d-flex font-weight-bold fill-height align-center vl-w-full">
-                  {{ item.shelf || '-' }}
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-        </td>
-        <td>
-
-          <div class="d-flex fill-height align-center vl-cell-sep">
-
-            <div class="mt-1 mb-1 d-flex flex-wrap ga-3 align-center vl-platforms">
-              <template v-if="integrationStore" v-for="integration of integrationStore.getClientPlatforms()"
-                :key="integration.code">
-
-                <v-menu :close-on-content-click="false" location="bottom center" transition="scale-transition"
-                  offset="10">
-                  <template v-slot:activator="{ props: tooltipProps }">
-                    <div v-bind="tooltipProps" class="position-relative d-flex align-center vl-platform-trigger"
-                      role="button" tabindex="0" :aria-label="`${integration.title || integration.code} durum bilgisi`"
-                      @keydown.enter.prevent="($event.currentTarget as HTMLElement).click()"
-                      @keydown.space.prevent="($event.currentTarget as HTMLElement).click()">
-
-                      <div v-if="getBadgeColor(integration, item) !== 'transparent'" class="status-indicator-dot vl-dot--active"></div>
-
-                      <PlatformImageComponent :integrationCode="integration.code" height="25" width="100"
-                        class="platform-mini-card"
-                        :is-active="item.platforms[integration.code]?.upload?.TRANSFER?.status === 'COMPLETED'"
-                        :isSelectable="true" />
-                    </div>
-                  </template>
-
-                  <ProductVariantListTooltipComponent :data="item.platforms[integration.code]" />
-                </v-menu>
-
-              </template>
-            </div>
-          </div>
-
-
-        </td>
-        <!--         <td>
-          <div class="d-flex justify-end align-center">
-            <v-menu scroll-strategy="close" v-model="menuVariant[item._id]">
-              <template v-slot:activator="{ props }">
-                <v-btn flat size="30" v-bind="props" style="border:1px solid  rgb(var(--v-theme-borderColor));"
-                  elevation=0 color="white">
-                  <v-icon color="processButtonColor" v-bind="props" size="20" class=""
-                    style="opacity: 1;">mdi-menu</v-icon>
-                </v-btn>
-              </template>
-              <v-card style="border-radius:5px" v-if="menuVariant[item._id]">
-                <v-list class="pt-0 pb-0" density="compact" style="background-color:rgb(var(--v-theme-loginForm))">
-                  <v-divider color="passiveColor" class="ml-5 mr-5" />
-                  <v-list-subheader
-                    class="mt-0 d-flex align-center justify-start bg-primaryLightenMore text-white font-weight-bold">
-                    <v-tooltip location="top" :open-delay="700">
-                      <template #activator="{ props }">
-                        <div v-bind="props">
-                          <v-icon size="small" class="">mdi-information-outline</v-icon>
-                          Varyant Platform İşlemleri
-                        </div>
-                      </template>
-                      <span>İşlem, sadece bu varyant için bütün platformlarda uygulanacaktır.</span>
-                    </v-tooltip>
-                  </v-list-subheader>
-                  <v-divider color="passiveColor" class="ml-5 mr-5" />
-                  <v-list-item @click="transferVariant(item._id)" class="font-weight-medium">
-                    <template #prepend>
-                      <v-icon color="saveButtonColor" size="25" class="" style="opacity: 1;">mdi-cloud-upload</v-icon>
-                    </template>
-                    Yükle
-                  </v-list-item>
-                  <v-divider color="passiveColor" class="ml-5 mr-5" />
-                  <v-list-item @click="checkVariantStatus(item._id)" class="font-weight-medium">
-                    <template #prepend>
-                      <v-icon color="success" size="25" class=""
-                        style="opacity: 1;">mdi-cloud-check-variant-outline</v-icon>
-                    </template>
-                    Durum Güncelle
-                  </v-list-item>
-                  <v-divider color="passiveColor" class="ml-5 mr-5" />
-                  <v-list-item @click="updateVariant(item._id)" class="font-weight-medium">
-                    <template #prepend>
-                      <v-icon color="success" size="25" class="" style="opacity: 1;">mdi-sync</v-icon>
-                    </template>
-                    Bilgileri Güncelle
-                  </v-list-item>
-                  <v-divider color="passiveColor" class="ml-5 mr-5" />
-                  <v-list-item @click="updatePriceVariant(item._id)" class="font-weight-medium">
-                    <template #prepend>
-                      <v-icon color="success" size="25" class="" style="opacity: 1;">mdi-currency-try</v-icon>
-                    </template>
-                    Fiyatları Güncelle
-                  </v-list-item>
-                  <v-divider color="passiveColor" class="ml-5 mr-5" />
-                  <v-list-item @click="updateStockVariant(item._id)" class="font-weight-medium">
-                    <template #prepend>
-                      <v-icon color="success" size="25" class="" style="opacity: 1;">mdi-counter</v-icon>
-                    </template>
-                    Stokları Güncelle
-                  </v-list-item>
-                </v-list>
-              </v-card>
-            </v-menu>
-
-          </div>
-        </td> -->
-      </tr>
-    </template>
-    <template v-slot:bottom="{ }">
-    </template>
-  </v-data-table-server>
+        <footer v-if="summary.count > COMPACT_LIMIT" class="pvl-more">
+          <button type="button" class="pvl-more__btn" :aria-expanded="showAll" :aria-controls="scrollId" @click="showAll = !showAll">
+            <template v-if="showAll">Daha az göster</template>
+            <template v-else>Tümünü gör · <span class="ek-num">{{ summary.count - COMPACT_LIMIT }}</span> varyant daha</template>
+            <v-icon class="pvl-more__chevron" :class="{ 'is-open': showAll }" icon="mdi-chevron-down" aria-hidden="true" />
+          </button>
+        </footer>
+      </section>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, watch, computed, onBeforeMount, onMounted } from 'vue'
-import { useI18n } from 'vue-i18n';
-import { useChoicesStore } from '@/stores/choicesStore';
-import ProductVariantImageComponent from './ProductVariantImageComponent.vue'
+import { ref, computed, watch, onMounted, mergeProps, getCurrentInstance } from 'vue'
+import { formatMoney } from '@entegrasyonik/ui/format'
+import { useChoicesStore } from '@/stores/choicesStore'
+import { useIntegrationStore } from '@/stores/integrationStore'
+import { useToast } from '@entegrasyonik/ui/composables/useToast'
+import { channelClass, channelName } from '@entegrasyonik/ui/tokens'
+import { icons } from '@entegrasyonik/ui/icons'
+import { EkRowActions } from '@entegrasyonik/ui/components'
+import type { EkRowAction } from '@entegrasyonik/ui/components'
+import ProductThumb from '../products/ProductThumb.vue'
+import { variantImageSrcs } from '../products/productImage'
+import ProductVariantListTooltipComponent from './ProductVariantListTooltipComponent.vue'
+import VariantGroupCell from './VariantGroupCell.vue'
+import { sortGrouped, useVariantGrouping } from './useVariantGrouping'
+import { windowRowspans } from './grid/variantSheet'
+import {
+  COMPACT_LIMIT, LOW_STOCK_THRESHOLD, channelState, isGroupable, rowChoices, slicerChoice, stockTone, summarizeVariants,
+  type ChannelState,
+} from './variantListModel'
 
-import useIntegrations from '@/composables/integrations';
-import useFormRules from '@/composables/formrules';
-import { useIntegrationStore } from '@/stores/integrationStore';
-import { useCategoriesStore } from '@/stores/categoriesStore';
-import { useStaticsStore } from '@/stores/staticsStore';
-import ProductVariantListTooltipComponent from './ProductVariantListTooltipComponent.vue';
-import PlatformImageComponent from '@/components/platforms/PlatformImageComponent.vue';
-const staticsStore = useStaticsStore()
-
-const categoriesStore = useCategoriesStore()
-const integrationStore = useIntegrationStore()
-const menuIntegration = ref<{ [key: string]: boolean }>({})
-const menuVariant = ref<{ [key: string]: boolean }>({})
-
-const show = ref(true)
-const emits = defineEmits(['checkVariantStatus', 'refreshImages', 'refreshVariants', 'refreshTotalVariantsStockCount', 'close', 'transferVariant', 'updatePriceVariant', 'updateStockVariant', 'updateVariant'])
-
-enum PRODUCT_INTEGRATION_STATUS {
-  PENDING = 'PENDING',
-  SENT = 'SENT',
-  WAITING = 'WAITING',
-  FAILED = 'FAILED',
-  COMPLETED = 'COMPLETED',
-}
-
-const STATUS_META: Record<PRODUCT_INTEGRATION_STATUS, { icon: string; order: number; message: string }> = {
-  [PRODUCT_INTEGRATION_STATUS.PENDING]: {
-    icon: 'mdi-pencil-box',
-    order: 2,
-    message: "Hazırlanıyor"
-  },
-  [PRODUCT_INTEGRATION_STATUS.SENT]: {
-    icon: 'mdi-clock',
-    order: 3,
-    message: "Bekliyor"
-  },
-  [PRODUCT_INTEGRATION_STATUS.WAITING]: {
-    icon: 'mdi-clock',
-    order: 4,
-    message: "Bekliyor"
-  },
-  [PRODUCT_INTEGRATION_STATUS.FAILED]: {
-    icon: 'mdi-close-box',
-    order: 5,
-    message: "Reddedildi"
-  },
-  [PRODUCT_INTEGRATION_STATUS.COMPLETED]: {
-    icon: 'mdi-checkbox-marked',
-    order: 6,
-    message: "Onaylandı"
-  },
-};
-
-const openProduntInPlatform = (code: string, item: any) => {
-  console.log(code)
-  switch (code) {
-    case 'ideasoft':
-      const integration = integrationStore.getClientIntegration(code)
-      console.log(integration)
-      return item.title
-  }
-}
-
-const getBadgeColor = (integration: any, item: any) => {
-  const itemStatus: any = item.platforms[integration.code]?.upload?.TRANSFER?.status
-  const hasMessage: any = item.platforms[integration.code]?.upload?.TRANSFER?.messages?.length > 0
-  const onSale = item.platforms[integration.code]?.upload?.onSale
-  if (onSale != true && itemStatus == PRODUCT_INTEGRATION_STATUS.COMPLETED) {
-    return 'danger'
-  }
-  if (hasMessage)
-    return 'success'
-  else
-    return 'transparent'
-}
-
-
-const getIcon = (integration: any, item: any) => {
-  const itemStatus: any = item.platforms[integration.code]?.upload?.TRANSFER?.status;
-
-  // Statü değerinin enum içinde olup olmadığını kontrol ediyoruz
-  const isValidStatus = Object.values(PRODUCT_INTEGRATION_STATUS).includes(itemStatus);
-
-  // Eğer statü geçerli bir enum değeriyse onu kullan, değilse (veya undefined ise) PENDING dön
-  const status = isValidStatus ? (itemStatus as PRODUCT_INTEGRATION_STATUS) : PRODUCT_INTEGRATION_STATUS.PENDING;
-
-  return STATUS_META[status]?.icon;
-};
-
-
-const formRules = useFormRules()
-const batchProcesses: any = ref({
-  barcode: {
-    menu: false
-  },
-  stockcode: {
-    menu: false
-  },
-  shelf: {
-    menu: false,
-    value: undefined
-  },
-  stock: {
-    menu: false,
-    value: undefined
-  },
-  isPlatformBasedPrice: {
-    menu: false,
-    value: undefined
-  },
-  marketPrice: {
-    menu: false,
-    value: undefined,
-    isPlatformBasedPrice: false,
-    prices: { isPlatformBasedPrice: true }
-  },
-  salePrice: {
-    menu: false,
-    value: undefined,
-    isPlatformBasedPrice: false,
-    prices: { isPlatformBasedPrice: true }
-  }
-
-})
+const props = defineProps<{ productInfoForm: any }>()
+// Geri uyum: üst bileşenin bağladığı olaylar korunur (kanala gönder/durum sorgula backend'de tanımsız → satırda tetiklenmez).
+const emit = defineEmits(['checkVariantStatus', 'refreshImages', 'refreshVariants', 'refreshTotalVariantsStockCount', 'close', 'transferVariant', 'updatePriceVariant', 'updateStockVariant', 'updateVariant', 'editProduct'])
+const selectedVariants = defineModel<string[]>('selectedVariants', { default: () => [] })
 
 const choicesStore = useChoicesStore()
-var choicesStoreChoices: any = undefined
-const integrations: any = useIntegrations()
-const isVariants = defineModel({ default: false })
-const searchVariantForm: any = ref()
-const isFiltered = ref(false)
-const headers: any = ref()
-const multipleVariantHeaders: any = ref()
-const singleVariantHeaders: any = ref()
-const newVariantMenu = ref(false)
-const batchProcessFormMenu = ref(false)
-const editingVariantMenu = ref(false)
-const isVariantImagesDialog = ref(false)
+const integrationStore = useIntegrationStore()
+const { showToast } = useToast()
 
-const { t } = useI18n()
-const selectedVariantForEdit: any = ref(0)
-const integrationCode: any = ref()
-const sortBy: any = ref('choices')
-const sortDesc: any = ref('asc')
-const sortIcon: any = ref()
-const editingComputedVariants: any = ref({})
-const editingVariant: any = ref({})
-var originalVariants: any = ref()
-const selectedVariants: any = defineModel("selectedVariants", { default: [] })
-
-const pagination = ref({
-  limit: 100,
-  page: 1,
-  totalNumberOfPages: 1,
-  totalNumberOfRecords: 0
-})
-
-const props = defineProps<{
-  productInfoForm: any,
-}>()
-
-const formatCurrency = (number: number) => {
-  return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(Number(number))
-}
-
-
-onBeforeMount(() => {
-  initSearchVariantForm()
-})
+const scrollId = `pvl-scroll-${getCurrentInstance()?.uid ?? 0}`
+const rootRef = ref<HTMLElement>()
+const allRef = ref<HTMLInputElement>()
+const revealed = ref(false)
+const showAll = ref(false)
+const sortBy = ref<'choices' | 'barcode' | 'salePrice' | 'stock'>('choices')
+const sortDir = ref<'asc' | 'desc'>('asc')
 
 onMounted(() => {
-  console.log("degisti mounted variantlist")
-  choicesStoreChoices = choicesStore.getChoices()
-  originalVariants.value = JSON.parse(JSON.stringify(props.productInfoForm.variants))
-  search()
-  multipleVariantHeaders.value = [
-    {
-      title: 'Stok Kodu',
-      icon: 'mdi-checkbox-multiple-outline',
-      align: 'left',
-      sortable: true,
-      value: 'variant',
-    },
-    {
-      title: 'Varyant',
-      icon: 'mdi-checkbox-multiple-outline',
-      align: 'left',
-      sortable: true,
-      value: 'choiceTitle',
-    },
-    {
-      title: 'Seçenekler',
-      icon: 'mdi-checkbox-multiple-outline',
-      align: 'left',
-      sortable: true,
-      value: 'choices',
-    },
-    { title: 'Fiyat', icon: 'mdi-currency-try', sortable: true, value: 'prices' },
-    { title: 'Stok', icon: 'mdi-numeric', sortable: true, value: 'stock' },
-    { title: 'Platform Yükleme Durumları', icon: 'mdi-numeric', sortable: false, value: 'platforms' },
-    /*     { title: 'actions', icon: 'mdi-numeric', sortable: false, value: 'actions' } */
-  ]
-
-  singleVariantHeaders.value = [
-    {
-      title: '',
-      icon: 'mdi-checkbox-multiple-outline',
-      align: 'left',
-      sortable: false,
-      value: 'variant',
-    },
-    { title: '', icon: 'mdi-currency-try', sortable: false, value: 'prices' },
-    { title: '', icon: 'mdi-numeric', sortable: false, value: 'stock' },
-    { title: '', icon: 'mdi-numeric', sortable: false, value: 'shelf' },
-    { title: '', icon: 'mdi-numeric', sortable: false, value: 'actions' }
-  ]
-
-  headers.value = singleVariantHeaders.value
-  if (props.productInfoForm.hasVariant == true)
-    headers.value = multipleVariantHeaders.value
+  // Yükseklik + opaklık açılışı: ilk karede kapalı çiz, sonraki karede aç (geçiş token süresinde).
+  requestAnimationFrame(() => requestAnimationFrame(() => (revealed.value = true)))
 })
 
-const sleep = (ms: number) => {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-
-const findMinimumSalePrice = (platforms: any) => {
-  const res = Object.values(platforms).reduce((min: any, platform: any) =>
-    platform.prices && platform.prices.salePrice && platform.prices.salePrice < min ? platform.prices.salePrice : min, Infinity);
-  if (res == Infinity) return 0
-  return Number(res)
-}
-const findMinimumMarketPrice = (platforms: any) => {
-  const res = Object.values(platforms).reduce((min: any, platform: any) =>
-    platform.prices && platform.prices.marketPrice && platform.prices.marketPrice < min ? platform.prices.marketPrice : min, Infinity);
-  if (res == Infinity) return 0
-  return Number(res)
-}
-const findMaximumSalePrice = (platforms: any) => {
-  return Number(Object.values(platforms).reduce((max: any, platform: any) =>
-    platform.prices && platform.prices.salePrice && platform.prices.salePrice > max ? platform.prices.salePrice : max, 0))
-}
-const findMaximumMarketPrice = (platforms: any) => {
-  return Number(Object.values(platforms).reduce((max: any, platform: any) =>
-    platform.prices && platform.prices.marketPrice && platform.prices.marketPrice > max ? platform.prices.marketPrice : max, 0))
-}
-
-watch(() => props.productInfoForm.hasVariant, (newValue) => {
-  if (props.productInfoForm.hasVariant) {
-    headers.value = multipleVariantHeaders.value
-  } else {
-    headers.value = singleVariantHeaders.value
-  }
-})
-
-watch(() => props.productInfoForm.variants, (newValue) => {
-  console.log("degisti")
-  originalVariants.value = JSON.parse(JSON.stringify(props.productInfoForm.variants))
-  newVariantMenu.value = false
-  searchVariantForm.value.searchVariantFormMenu = false
-  batchProcessFormMenu.value = false
-  pagination.value.page = 1
-  search()
-},
-  { deep: true } // Nested değişiklikleri de algılar
+const variants = computed<any[]>(() => props.productInfoForm?.variants ?? [])
+const channelCodes = computed<string[]>(() => (integrationStore.getClientPlatforms?.() ?? []).map((i: any) => i.code))
+const channelTitles = computed<Record<string, string>>(() =>
+  Object.fromEntries((integrationStore.getClientPlatforms?.() ?? []).map((i: any) => [i.code, channelName(i.code, i.title)])),
 )
+const channelTitle = (code: string) => channelTitles.value[code] ?? channelName(code)
 
+const choiceTitle = (choiceId: any) => choicesStore.getChoiceTitle(choiceId) ?? 'Seçenek'
+const choiceValueName = (choiceId: any, valueId: any): string | undefined => choicesStore.getChoiceValueName(choiceId, valueId)
+const valueTitle = (c: any) => choiceValueName(c?.choiceId, c?.choiceValueId) ?? ''
 
-watch(isVariants, (newValue, oldValue) => {
-  if (newValue == true) {
-    pagination.value.page = 1
-    emits('refreshVariants')
-  }
+const summary = computed(() => summarizeVariants(variants.value, channelCodes.value))
+const sentChannels = computed(() => summary.value.channels.filter((c) => c.sent > 0))
+const unsentChannels = computed(() => summary.value.channels.filter((c) => c.sent === 0))
+
+/** Gruplu görünüm: varyantlarda ayırıcı + en az bir başka seçenek varsa ve gruplar tekil değilse (`isGroupable`). */
+const grouped = computed(() => isGroupable(variants.value, !!props.productInfoForm?.hasVariant))
+const slicerTitle = computed(() => choiceTitle(slicerChoice(variants.value[0]?.choices).choiceId))
+/** Gruplu görünümde varyant kolonu başlığı: kalan seçeneklerin adı (ör. "Beden"); karışıksa "Varyant". */
+const otherChoicesTitle = computed(() => {
+  const ids = new Set<string>()
+  for (const v of variants.value) for (const c of rowChoices(v.choices, true)) ids.add(c.choiceId)
+  return ids.size === 1 ? choiceTitle([...ids][0]) : 'Varyant'
 })
+/** Kolon başlığı seçeneği adlandırıyorsa (ör. "Beden") çipte ad tekrarlanmaz — yalnız değer ("M"). */
+const choiceInHeader = computed(() => grouped.value && otherChoicesTitle.value !== 'Varyant')
+const isCompact = computed(() => summary.value.count > COMPACT_LIMIT)
 
+// Ürün güncelle varyant ızgarasıyla ortak sıra + gruplama (grup = ayırıcı seçenek; tanım sırası).
+const grouping = useVariantGrouping((v) => slicerChoice(v?.choices))
 
-const transferVariant = (variantId: any, integrationCode: any = undefined) => {
-  emits('transferVariant', { variantId, integrationCode })
-}
-
-const updatePriceVariant = (variantId: any, integrationCode: any = undefined) => {
-  emits('updatePriceVariant', { variantId, integrationCode })
-}
-
-const updateStockVariant = (variantId: any, integrationCode: any = undefined) => {
-  emits('updateStockVariant', { variantId, integrationCode })
-}
-
-const updateVariant = (variantId: any, integrationCode: any = undefined) => {
-  emits('updateVariant', { variantId, integrationCode })
-}
-
-
-const checkVariantStatus = (variantId: any, integrationCode: any = undefined) => {
-  emits('checkVariantStatus', { variantId, integrationCode })
-}
-
-
-const toggleSort = (key: any) => {
-  if (sortBy.value === key) {
-    sortDesc.value = sortDesc.value == 'asc' ? 'desc' : 'asc'
-  } else {
-    sortBy.value = key
-    sortDesc.value = 'asc'
-  }
-  pagination.value.page = 1
-  search()
-}
-
-const sort = (retrievedVariants: Array<any>) => {
-  console.log("duygu", sortBy.value)
-  if (!sortBy.value) sortBy.value = 'choices';
-  return props.productInfoForm.variants.sort((a: any, b: any) => {
-    console.log("sortBy.value", sortBy.value)
-    if (getSlicerChoice(a.choices)?.choiceValueId === getSlicerChoice(b.choices).choiceValueId) {
-      if (sortBy.value == 'choices') {
-        console.log("asfgsdfd")
-        const aFilteredChoices = a.choices.filter((c: any) => getVarianterChoice(c.choices)?.choiceValueId !== getSlicerChoice(a.choices)?.choiceValueId);
-        const bFilteredChoices = b.choices.filter((c: any) => getVarianterChoice(c.choices)?.choiceValueId !== getSlicerChoice(b.choices)?.choiceValueId);
-
-        const maxLength = Math.max(aFilteredChoices.length, bFilteredChoices.length);
-
-        for (let i = 0; i < maxLength; i++) {
-          const aChoice = aFilteredChoices[i];
-          const bChoice = bFilteredChoices[i];
-
-          if (!aChoice) return sortDesc.value === 'asc' ? -1 : 1;
-          if (!bChoice) return sortDesc.value === 'asc' ? 1 : -1;
-
-          const aTitle = choicesStore.getDirectChoiceValueTitle(aChoice.choiceValueId) || "";
-          const bTitle = choicesStore.getDirectChoiceValueTitle(bChoice.choiceValueId) || "";
-
-          const compare = aTitle.localeCompare(bTitle, 'tr', { sensitivity: 'base' });
-          if (compare !== 0) return sortDesc.value === 'asc' ? compare : -1 * compare;
-        }
-
-        return 0;
-
-
-
-
-      }
-      else if (sortBy.value == 'prices.salePrice') {
-        if (sortDesc.value === 'asc')
-          return a.prices.salePrice - b.prices.salePrice // Fiyatı küçükten büyüğe sırala
-        return b.prices.salePrice - a.prices.salePrice // Fiyatı küçükten büyüğe sırala
-      }
-      else if (sortBy.value == 'prices.marketPrice') {
-        if (sortDesc.value === 'asc')
-          return a.prices.marketPrice - b.prices.marketPrice // Fiyatı küçükten büyüğe sırala
-        return b.prices.marketPrice - a.prices.marketPrice // Fiyatı küçükten büyüğe sırala
-      }
-      else if (sortBy.value == 'stockcode' || sortBy.value == 'barcode') {
-        const compare = a[sortBy.value].localeCompare(b[sortBy.value], 'tr', { sensitivity: 'base' });
-        if (compare !== 0) return sortDesc.value === 'asc' ? compare : -compare;
-      }
-      else {
-        console.log("duygu genel sıralaama", a[sortBy.value], b[sortBy.value])
-        if (sortDesc.value === 'asc')
-          return a[sortBy.value] - b[sortBy.value] // Fiyatı küçükten büyüğe sırala
-        return b[sortBy.value] - a[sortBy.value] // Fiyatı küçükten büyüğe sırala
-      }
-
-    }
-    const aTitle = choicesStore.getDirectChoiceValueTitle(getSlicerChoice(a.choices)?.choiceValueId) || "";
-    const bTitle = choicesStore.getDirectChoiceValueTitle(getSlicerChoice(b.choices)?.choiceValueId) || "";
-
-    if (sortBy.value == 'choiceValueTitle' && sortDesc.value === 'asc')
-      return bTitle.localeCompare(aTitle); // Kategoriyi alfabetik sırala
-    return aTitle.localeCompare(bTitle); // Kategoriyi alfabetik sırala
-  });
-}
-
-const computedMainChoiceId = computed(() => {
-  const category = categoriesStore.getCategory(props.productInfoForm.category)
-  return category?.mainChoiceId
+const collator = new Intl.Collator('tr', { sensitivity: 'base', numeric: true })
+const rows = computed(() => {
+  const dir = sortDir.value === 'asc' ? 1 : -1
+  const key = sortBy.value
+  const cmp = key === 'choices' ? null
+    : key === 'salePrice' ? (a: any, b: any) => (Number(a.prices?.salePrice) - Number(b.prices?.salePrice)) * dir
+    : key === 'stock' ? (a: any, b: any) => ((Number(a.stock) || 0) - (Number(b.stock) || 0)) * dir
+    : (a: any, b: any) => collator.compare(String(a.barcode ?? ''), String(b.barcode ?? '')) * dir
+  const ordered = sortGrouped(variants.value, {
+    groupCmp: grouped.value ? grouping.groupCmp : () => 0,
+    cmp,
+    fallback: (a: any, b: any) => grouping.byChoices(a, b) || collator.compare(String(a.stockcode ?? ''), String(b.stockcode ?? '')),
+    reverse: key === 'choices' && dir < 0,
+  })
+  return grouping.group(ordered)
 })
-
-
-const initSearchVariantForm = async () => {
-  searchVariantForm.value = { searchVariantFormMenu: false }
-  search()
-}
-
-
-const getSlicerChoice = (choices: any[]) => {
-  return choices?.find((c: any) => c.slicer === true) || choices?.[0] || {};
-}
-
-const getVarianterChoice = (choices: any[]) => {
-  return choices?.find((c: any) => c.varianter === true) || choices?.[0] || {};
-}
-
-const rowspanSet = computed(() => {
-  const rowspanMap = new Map()
-  let tempChoiceValueId = undefined
-
-  for (const variant of originalVariants.value) {
-    // 1. choices dizisi içinde isSlicer: true olanı bul, yoksa 0. elemanı al
-    const targetChoice = getSlicerChoice(variant.choices)
-
-    if (!targetChoice) continue
-
-    const currentChoiceValueId = targetChoice.choiceValueId
-
-    if (currentChoiceValueId !== tempChoiceValueId) {
-      tempChoiceValueId = currentChoiceValueId
-
-      // originalVariants içinde aynı slicer değerine sahip kaç tane variant olduğunu filtrele
-      const count = originalVariants.value.filter((item: any) => {
-        const itemTarget = getSlicerChoice(item.choices)
-        return itemTarget?.choiceValueId === currentChoiceValueId
-      }).length
-
-      rowspanMap.set(variant.barcode, count)
-    }
-  }
-
-  return rowspanMap
+const groupCount = computed(() => new Set(rows.value.map((r) => r.groupKey)).size)
+const groupStock = computed(() => {
+  const m = new Map<string, number>()
+  for (const r of rows.value) m.set(r.groupKey, (m.get(r.groupKey) ?? 0) + Math.max(0, Number(r.variant.stock) || 0))
+  return m
 })
+const visibleRows = computed(() => (showAll.value || rows.value.length <= COMPACT_LIMIT ? rows.value : rows.value.slice(0, COMPACT_LIMIT)))
+/** Grup hücresi rowspan'ları (ızgarayla aynı hesap): kırpılan grupta hücre görünen kısım kadar. */
+const spans = computed(() => windowRowspans(rows.value, 0, visibleRows.value.length))
 
+const toggleSort = (key: typeof sortBy.value) => {
+  if (sortBy.value === key) sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  else { sortBy.value = key; sortDir.value = 'asc' }
+}
+const sortIconFor = (key: string) => (sortBy.value === key ? (sortDir.value === 'asc' ? 'mdi-arrow-up' : 'mdi-arrow-down') : 'mdi-swap-vertical')
+const ariaSort = (key: string) => (sortBy.value === key ? (sortDir.value === 'asc' ? 'ascending' : 'descending') : 'none')
 
-const preparePagination = () => {
-  pagination.value.totalNumberOfRecords = originalVariants.value.length
-  pagination.value.totalNumberOfPages = Math.ceil(pagination.value.totalNumberOfRecords / pagination.value.limit)
-  isFiltered.value = originalVariants.value.isFiltered
-
-  const start = (pagination.value.page - 1) * pagination.value.limit;
-  const end = start + pagination.value.limit
-  originalVariants.value = originalVariants.value.slice(start, end)
-
+// Seçim (barkod anahtarlı — üst bileşenin toplu işlem sözleşmesi).
+const isSelected = (v: any) => selectedVariants.value.includes(v.barcode)
+const selectedCount = computed(() => variants.value.filter(isSelected).length)
+const allSelected = computed(() => variants.value.length > 0 && selectedCount.value === variants.value.length)
+watch([selectedCount, allSelected, allRef], () => {
+  if (allRef.value) allRef.value.indeterminate = selectedCount.value > 0 && !allSelected.value
+}, { immediate: true })
+const toggleRow = (v: any) => {
+  selectedVariants.value = isSelected(v) ? selectedVariants.value.filter((b) => b !== v.barcode) : [...selectedVariants.value, v.barcode]
+}
+const toggleAll = () => {
+  selectedVariants.value = allSelected.value ? [] : variants.value.map((v) => v.barcode)
 }
 
-
-
-const checkSearchPrice = (variant: any) => {
-  const min = searchVariantForm.value.min
-  const max = searchVariantForm.value.max
-  if (min == undefined && max == undefined) return true
-
-  const variantSalePrice = variant.prices.salePrice
-  const variantMarketPrice = variant.prices.marketPrice
-
-  if (min != undefined && max != undefined) {
-    if (variantSalePrice >= min && variantSalePrice <= max) return true
-    if (variantMarketPrice >= min && variantMarketPrice <= max) return true
-  } else if (min != undefined) {
-    if (variantSalePrice >= min) return true
-    if (variantMarketPrice >= min) return true
-  } else if (max != undefined) {
-    if (variantSalePrice <= max) return true
-    if (variantMarketPrice <= max) return true
-  }
-  return false
+const imagesOf = (v: any) => variantImageSrcs(v, props.productInfoForm)
+const rowTitle = (v: any) => {
+  const opts = (v.choices ?? []).map(valueTitle).filter(Boolean).join(' / ')
+  return [opts, v.stockcode].filter(Boolean).join(' · ') || 'Varyant'
 }
 
-const search = async () => {
-  await nextTick(() => { })
+const money = (n: unknown) => formatMoney(Number(n) || 0)
+const channelPrices = (v: any, field: 'salePrice' | 'marketPrice') =>
+  Object.values(v.platforms ?? {}).map((p: any) => Number(p?.prices?.[field])).filter((n) => Number.isFinite(n) && n > 0)
+const minOf = (v: any, f: 'salePrice' | 'marketPrice') => { const xs = channelPrices(v, f); return xs.length ? Math.min(...xs) : 0 }
+const maxOf = (v: any, f: 'salePrice' | 'marketPrice') => { const xs = channelPrices(v, f); return xs.length ? Math.max(...xs) : 0 }
 
-  if (!props.productInfoForm.variants) return
-  originalVariants.value = JSON.parse(JSON.stringify(props.productInfoForm.variants))
-  const filteredVariants: any = []
-  for (const variant of originalVariants.value) {
-    if (searchVariantForm.value.shelf) {
-      if (searchVariantForm.value.shelf != variant.shelf)
-        continue
-    }
-    if (searchVariantForm.value.stock) {
-      if (searchVariantForm.value.stock != variant.stock)
-        continue
-    }
-    if (searchVariantForm.value.stockcode) {
-      if (!variant.stock || !variant.stockcode.includes(searchVariantForm.value.stockcode))
-        continue
-    }
-    if (searchVariantForm.value.barcode) {
-      if (!variant.barcode || !variant.barcode.includes(searchVariantForm.value.barcode))
-        continue
-    }
-
-    if (searchVariantForm.value.isPlatformBasedPrice == undefined || searchVariantForm.value.isPlatformBasedPrice == 0) {
-      //
-    } else if (searchVariantForm.value.isPlatformBasedPrice == 2 && variant.prices.isPlatformBasedPrice == false) {
-      continue
-    } else if (variant.prices.isPlatformBasedPrice == true) {
-      continue
-    }
-
-
-    if (searchVariantForm.value.choices) {
-      var flag = true
-      for (let searchChoice of searchVariantForm.value.choices) {
-        if (!searchChoice.choiceValueIds || searchChoice.choiceValueIds.length == 0) continue
-        var choiceFlag = false
-        for (let variantChoice of variant.choices) {
-          if (searchChoice.choiceId === variantChoice.choiceId && searchChoice.choiceValueIds.includes(variantChoice.choiceValueId)) {
-            choiceFlag = true
-            break
-          }
-        }
-        if (choiceFlag == false) {
-          flag = false
-          break
-        }
-      }
-      if (flag == false) continue
-    }
-
-    if (!checkSearchPrice(variant)) continue
-
-    filteredVariants.push(variant)
+const rowChannels = (v: any) => {
+  const sent: { code: string; state: ChannelState }[] = []
+  const unsent: string[] = []
+  for (const code of channelCodes.value) {
+    const state = channelState(v, code)
+    if (state.key === 'none') unsent.push(code)
+    else sent.push({ code, state })
   }
-  originalVariants.value = filteredVariants
-  originalVariants.value = sort(originalVariants.value)
-  preparePagination()
-  if (integrationCode.value) {
-    for (const variant of originalVariants.value) {
-      if (!variant.prices) variant.prices = {}
-      if (!variant.prices[integrationCode.value]) variant.prices[integrationCode.value] = { marketPrice: 0.00, salePrice: 0.00 }
-    }
-  }
-  editingComputedVariants.value = JSON.parse(JSON.stringify(originalVariants.value))
-  return
+  return { sent, unsent }
 }
 
+async function copy(text: string, what: string) {
+  try {
+    await navigator.clipboard.writeText(text)
+    showToast({ tone: 'success', message: `${what} kopyalandı: ${text}` })
+  } catch {
+    showToast({ tone: 'warning', message: `${what} kopyalanamadı; tarayıcı pano iznini kontrol edin.` })
+  }
+}
+
+const rowActions = (v: any): EkRowAction[] => [
+  { key: 'edit', action: 'edit', label: 'Ürün formunda düzenle', onClick: () => emit('editProduct', { variantId: v._id }) },
+  ...(v.barcode ? [{ key: 'copy-barcode', action: 'copy' as const, label: 'Barkodu kopyala', onClick: () => copy(v.barcode, 'Barkod') }] : []),
+  { key: 'copy-stockcode', action: 'copy', label: 'Stok kodunu kopyala', onClick: () => copy(v.stockcode, 'Stok kodu') },
+]
 </script>
 
-
 <style scoped>
-.status-indicator-dot {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  z-index: 2;
-  /* Beyaz çerçeve ile logonun üzerinden ayrılmasını sağlar */
-  border: 2px solid var(--ek-color-surface);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+/* A11 — satır altı varyant alanı. Yalnız semantik token (dark mode'a hazır); sayılar tabular; hareket token süreleri. */
+
+/* Açılış: yükseklik (grid 0fr→1fr) + opaklık. */
+.pvl-reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows var(--ek-duration-base) var(--ek-easing-enter),
+    opacity var(--ek-duration-base) var(--ek-easing-enter);
 }
 
-/* Badge Renklerinin Anlamları (Görsel Netlik İçin) */
-/* Yeşil: Yayında, Kırmızı: Hatalı, Turuncu: Bekliyor vb. */
-
-/*
-  ADR-0015 B5-2 — önceki satır içi stillerin token'lı karşılıkları. Satır içi stilin önceliği,
-  Vuetify'ın yüksek özgüllüklü kurallarıyla (td yüksekliği/kenarlığı, tablo genişliği) çakışan
-  yerlerde `!important` ile korunur.
-*/
-.vl-dot--active {
-  background-color: var(--ek-color-success);
+.pvl-reveal.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
 }
 
-.vl-table {
-  left: 0;
-  z-index: 1;
-  right: 0;
-  width: auto !important;
-  border: 1px solid var(--ek-color-border-color);
-  border-radius: var(--ek-radius-sm);
+.pvl-reveal__inner {
+  min-height: 0;
+  overflow: hidden;
 }
 
-.vl-head-sep {
-  border-right: 1px solid var(--ek-color-border-default);
+/* Kap: ürün satırının devamı — sol hizalama çizgisi + iç girinti, satırla birleşen üst kenar. */
+.pvl {
+  --pvl-indent: 56px;
+  position: relative;
+  container-type: inline-size;
+  margin: 0 var(--ek-space-4) var(--ek-space-4) var(--pvl-indent);
+  border: 1px solid var(--ek-color-border-default);
+  border-top: 0;
+  border-radius: 0 0 var(--ek-radius-card) var(--ek-radius-card);
+  background: var(--ek-color-surface);
+  box-shadow: var(--ek-shadow-card);
 }
 
-.vl-cell-sep {
-  border-right: 1px solid var(--ek-color-border-default) !important;
+/* Özet şeridi */
+.pvl-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ek-space-2) var(--ek-space-4);
+  padding: var(--ek-space-2) var(--ek-space-4);
+  border-top: 2px solid var(--ek-color-action-border);
+  border-bottom: 1px solid var(--ek-color-border-subtle);
+  background: var(--ek-color-surface-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
 }
 
-.vl-image-head {
-  width: 124px;
-  opacity: .6;
+.pvl-summary__facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ek-space-1) var(--ek-space-3);
+  color: var(--ek-color-content-muted);
 }
 
-.vl-sort-head {
-  height: 20px !important;
-  cursor: pointer;
+.pvl-fact strong,
+.pvl-fact--lead {
+  color: var(--ek-color-content-strong);
+  font-weight: var(--ek-font-weight-semibold);
 }
 
-.vl-w-130 {
-  width: 130px;
+.pvl-fact--lead {
+  font-size: var(--ek-type-label-size);
 }
 
-.vl-w-60 {
-  width: 60px;
+.pvl-fact + .pvl-fact::before {
+  content: '·';
+  margin-right: var(--ek-space-3);
+  color: var(--ek-color-content-subtle);
 }
 
-.vl-w-95 {
-  width: 95px;
+.pvl-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 20px;
+  padding: 0 var(--ek-space-2);
+  border: 1px solid;
+  border-radius: var(--ek-radius-chip);
+  font-weight: var(--ek-font-weight-semibold);
 }
 
-.vl-w-150 {
-  width: 150px !important;
+.pvl-flag.is-out { border-color: var(--ek-color-error-border); background: var(--ek-color-error-subtle); color: var(--ek-color-error-emphasis); }
+.pvl-flag.is-low { border-color: var(--ek-color-warning-border); background: var(--ek-color-warning-subtle); color: var(--ek-color-warning-emphasis); }
+.pvl-flag.is-selected { border-color: var(--ek-color-action-border); background: var(--ek-color-action-subtle); color: var(--ek-color-action-emphasis); }
+
+.pvl-summary__channels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ek-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.vl-w-70 {
-  width: 70px;
+.pvl-summary__label {
+  align-self: center;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
 }
 
-.vl-sort-icon--hint {
-  opacity: .5 !important;
+.pvl-cov {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 var(--ek-space-2);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-chip);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-default);
+  white-space: nowrap;
 }
 
-.vl-sort-icon--hidden {
-  opacity: 0 !important;
+.pvl-cov__dot,
+.pvl-ch__dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--ek-radius-chip);
+  background: var(--ek-ch-solid);
 }
 
-.vl-platforms-head {
-  text-align: center;
-  width: 100% !important;
+.pvl-cov__name {
+  color: var(--ek-ch-text);
+  font-weight: var(--ek-font-weight-semibold);
 }
 
-.vl-group-spacer {
-  min-height: 10px !important;
-  line-height: 10px !important;
-  height: 30px !important;
+.pvl-cov__val {
+  color: var(--ek-color-content-muted);
 }
 
-.vl-cb-fixed {
-  flex: 0 0 !important;
+.pvl-cov__val .ek-num {
+  color: var(--ek-color-content-strong);
+  font-weight: var(--ek-font-weight-semibold);
 }
 
-.vl-thumb {
-  width: 110px;
-  min-width: 110px;
+.pvl-cov__err,
+.pvl-cov__wait {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding-left: 6px;
+  border-left: 1px solid var(--ek-color-border-subtle);
+  font-weight: var(--ek-font-weight-semibold);
 }
 
-/* ProductVariantImageComponent kökünün kendi satır içi stili var → :global + !important. */
-:global(.vl-thumb-img) {
-  border-bottom: 1px solid var(--ek-color-surface-sunken) !important;
+.pvl-cov__err { color: var(--ek-color-error-emphasis); }
+.pvl-cov__wait { color: var(--ek-color-info-emphasis); }
+
+.pvl-cov__err .v-icon,
+.pvl-cov__wait .v-icon {
+  font-size: var(--ek-icon-xs);
 }
 
-.vl-td-group {
-  border-color: var(--ek-color-border-default) !important;
-  background-color: var(--ek-color-card-component-hover-color) !important;
+.pvl-cov.is-unsent {
+  border-style: dashed;
+  background: transparent;
+  color: var(--ek-color-content-muted);
 }
 
-.vl-td-choices {
-  border-left: 1px solid var(--ek-color-border-default) !important;
+/* Tablo */
+.pvl-scroll {
+  overflow-x: auto;
 }
 
-.vl-field-caption {
-  font-size: var(--ek-font-size-xs) !important;
-  line-height: .7;
+.pvl-scroll.is-scrolling {
+  max-height: 520px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
-.vl-price-cell {
-  width: auto !important;
-  min-width: 130px;
-}
-
-.vl-w-full {
-  width: 100% !important;
-}
-
-.vl-w-full-soft {
+.pvl-table {
   width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--ek-type-table-size);
+  line-height: var(--ek-type-table-line);
 }
 
-.vl-platforms {
-  max-width: 450px;
+.pvl-th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  height: 34px;
+  padding: 0 var(--ek-space-3);
+  border-bottom: 1px solid var(--ek-color-border-default);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+  text-align: left;
+  white-space: nowrap;
 }
 
-.vl-platform-trigger {
-  cursor: pointer;
+.pvl-th--end { text-align: right; }
+.pvl-th--select,
+.pvl-td--select { width: 44px; padding: 0 0 0 var(--ek-space-4); }
+.pvl-th--actions,
+.pvl-td--actions { width: 1%; padding-right: var(--ek-space-3); }
+
+.pvl-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin: 0 calc(-1 * var(--ek-space-1));
+  padding: 2px var(--ek-space-1);
+  border: 0;
   border-radius: var(--ek-radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  transition: var(--ek-transition-colors);
 }
 
-.vl-platform-trigger:focus-visible {
-  outline: 2px solid var(--ek-color-primary);
-  outline-offset: 2px;
+.pvl-sort:hover,
+.pvl-sort.is-on { color: var(--ek-color-action-emphasis); }
+
+.pvl-sort__icon { font-size: var(--ek-icon-xs); opacity: 0.45; }
+.pvl-sort.is-on .pvl-sort__icon { opacity: 1; }
+
+.pvl-check {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--ek-color-action);
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+/* Satır */
+.pvl-td {
+  padding: var(--ek-space-2) var(--ek-space-3);
+  border-bottom: 1px solid var(--ek-color-border-subtle);
+  color: var(--ek-color-content-default);
+  vertical-align: middle;
+  transition: background-color var(--ek-duration-fast) var(--ek-easing-standard);
+}
+
+.pvl-row:last-child > .pvl-td { border-bottom: 0; }
+.pvl-td--end { text-align: right; }
+.pvl-row:hover > .pvl-td { background: var(--ek-color-surface-muted); }
+.pvl-row.is-selected > .pvl-td { background: var(--ek-color-selection); }
+.pvl-row.is-selected > .pvl-td--select { box-shadow: inset 3px 0 0 var(--ek-color-action); }
+
+/* B1 — rowspan'lı grup kolonu (ürün güncelle varyant ızgarasıyla aynı desen; görünüm `VariantGroupCell`). */
+.pvl-th--group { width: 136px; }
+.pvl-vgroup :deep(.ek-vgroup__label) { position: static; }
+/* "Tümünü gör" iç kaydırmasında grup adı yapışık başlığın altında kalır. */
+.is-scrolling .pvl-vgroup { --ek-vgroup-top: 34px; /* yapışık tablo başlığı yüksekliği */ }
+.is-scrolling .pvl-vgroup :deep(.ek-vgroup__label) { position: sticky; }
+/* Grup ayırıcı çizgi mevcut alt kenarlıkta (ek kenarlık yok → satır yüksekliği A11 ile aynı: 58 px). */
+td.pvl-vgroup { border-top: 0; border-bottom: 1px solid var(--ek-color-border-strong); }
+.pvl-row:last-child > td.pvl-vgroup { border-bottom: 0; }
+.pvl-row:has(+ .pvl-row.is-group-start) > .pvl-td { border-bottom-color: var(--ek-color-border-strong); }
+/* Tek varyantlı grupta etiket satıra sığar (ızgaradaki 56 px satırdan dar liste satırı için sıkı ölçü). */
+.pvl-vgroup :deep(.ek-vgroup__label) { padding: var(--ek-space-2) var(--ek-space-3); }
+.pvl-vgroup :deep(.ek-vgroup__title) { font-size: var(--ek-type-label-size); line-height: var(--ek-type-label-line); }
+.pvl-vgroup :deep(.ek-vgroup__meta) { white-space: nowrap; }
+/* Kolon başlığı seçeneği adlandırıyor ("Beden") → tabloda çipte yalnız değer; kartta (başlık gizli) ad geri gelir. */
+.is-header-named .pvl-choice__label { display: none; }
+.is-header-named .pvl-choice { min-width: 32px; justify-content: center; }
+.is-compact .is-header-named .pvl-choices { flex: none; min-width: 44px; } /* kompakt: stok kodları hizalı */
+.is-grouped .pvl-ident { min-width: 164px; } /* grup adı kendi kolonunda; varyant hücresinde yalnız değer + kod */
+
+/* Kompakt ızgara (> 8 varyant): her hücre tek satır — seçenek + stok kodu, satış + piyasa fiyatı, stok + raf yan yana. */
+.is-compact .pvl-td { padding: 6px var(--ek-space-2); }
+.is-compact .pvl-ident { min-width: 0; }
+.is-compact .pvl-td--select { padding-left: var(--ek-space-4); }
+.is-compact .pvl-ident__text { flex-direction: row; align-items: center; gap: var(--ek-space-2); }
+.is-compact .pvl-price { flex-direction: row; align-items: baseline; gap: var(--ek-space-2); }
+.is-compact .pvl-channels { flex-wrap: nowrap; max-width: none; }
+.is-compact .pvl-stock { grid-template-columns: auto auto auto; }
+.is-compact .pvl-stock__shelf { grid-column: auto; order: -1; margin-right: var(--ek-space-1); }
+
+.pvl-ident {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-3);
+  min-width: 220px;
+}
+
+.pvl-ident__text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.pvl-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ek-space-1);
+}
+
+.pvl-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 var(--ek-space-2);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-chip);
+  background: var(--ek-color-surface);
+  font-size: var(--ek-type-caption-size);
+  white-space: nowrap;
+}
+
+.pvl-choice__label { color: var(--ek-color-content-muted); }
+.pvl-choice__value { color: var(--ek-color-content-strong); font-weight: var(--ek-font-weight-semibold); }
+
+.pvl-code,
+.pvl-mono {
+  font-family: var(--ek-font-mono);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.pvl-code { color: var(--ek-color-content-muted); }
+.pvl-mono { color: var(--ek-color-content-default); }
+
+.pvl-barcode {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  white-space: nowrap;
+}
+
+.pvl-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ek-radius-sm);
+  background: transparent;
+  color: var(--ek-color-content-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: var(--ek-transition-colors), opacity var(--ek-duration-fast) var(--ek-easing-standard);
+}
+
+.pvl-copy .v-icon { font-size: var(--ek-icon-xs); }
+.pvl-row:hover .pvl-copy,
+.pvl-copy:focus-visible { opacity: 1; }
+.pvl-copy:hover { background: var(--ek-color-surface-sunken); color: var(--ek-color-action-emphasis); }
+
+@media (hover: none) {
+  .pvl-copy { opacity: 1; }
+}
+
+.pvl-price,
+.pvl-stock {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  white-space: nowrap;
+}
+
+.pvl-price__sale,
+.pvl-stock__qty {
+  color: var(--ek-color-content-strong);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.pvl-price__market,
+.pvl-stock__shelf,
+.pvl-price__note {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+}
+
+.pvl-stock {
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  justify-items: end;
+  column-gap: 6px;
+  align-items: center;
+}
+
+.pvl-stock__shelf {
+  grid-column: 1 / -1;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.pvl-stock__shelf .v-icon { font-size: var(--ek-icon-xs); }
+
+.pvl-stock__tag {
+  height: 18px;
+  padding: 0 6px;
+  border: 1px solid;
+  border-radius: var(--ek-radius-chip);
+  font-size: var(--ek-type-micro-size);
+  line-height: 16px;
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.pvl-stock.is-out .pvl-stock__qty { color: var(--ek-color-error-emphasis); }
+.pvl-stock.is-out .pvl-stock__tag { border-color: var(--ek-color-error-border); background: var(--ek-color-error-subtle); color: var(--ek-color-error-emphasis); }
+.pvl-stock.is-low .pvl-stock__qty { color: var(--ek-color-warning-emphasis); }
+.pvl-stock.is-low .pvl-stock__tag { border-color: var(--ek-color-warning-border); background: var(--ek-color-warning-subtle); color: var(--ek-color-warning-emphasis); }
+
+/* Kanal durumu */
+.pvl-channels {
+  display: flex;
+  flex-wrap: nowrap; /* B1: satır yüksekliği sabit — çipler tek satır */
+  gap: var(--ek-space-1);
+  max-width: 360px;
+}
+
+.pvl-ch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 6px 0 var(--ek-space-2);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-chip);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-default);
+  font: inherit;
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-semibold);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: var(--ek-transition-colors);
+}
+
+.pvl-ch:hover { border-color: var(--ek-ch-solid); background: var(--ek-ch-subtle); }
+.pvl-ch__state { font-size: var(--ek-icon-sm); }
+.pvl-ch.is-success .pvl-ch__state { color: var(--ek-color-success); }
+.pvl-ch.is-warning .pvl-ch__state { color: var(--ek-color-warning); }
+.pvl-ch.is-info .pvl-ch__state { color: var(--ek-color-info); }
+.pvl-ch.is-danger {
+  border-color: var(--ek-color-error-border);
+  background: var(--ek-color-error-subtle);
+  color: var(--ek-color-error-emphasis);
+}
+.pvl-ch.is-danger .pvl-ch__state { color: var(--ek-color-error); }
+
+.pvl-ch.is-unsent {
+  padding: 0 var(--ek-space-2);
+  border-style: dashed;
+  background: transparent;
+  color: var(--ek-color-content-muted);
+  font-weight: var(--ek-font-weight-regular);
+  cursor: default;
+}
+
+.pvl-tip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pvl-tip__reason { opacity: 0.92; }
+.pvl-tip__hint { opacity: 0.72; font-size: var(--ek-type-micro-size); }
+
+.pvl-sort:focus-visible,
+.pvl-copy:focus-visible,
+.pvl-ch:focus-visible,
+.pvl-more__btn:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+}
+
+.pvl-muted { color: var(--ek-color-content-muted); }
+
+/* Tümünü gör */
+.pvl-more {
+  display: flex;
+  justify-content: center;
+  padding: var(--ek-space-2);
+  border-top: 1px solid var(--ek-color-border-subtle);
+  background: var(--ek-color-surface-muted);
+  border-radius: 0 0 var(--ek-radius-card) var(--ek-radius-card);
+}
+
+.pvl-more__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  height: 28px;
+  padding: 0 var(--ek-space-3);
+  border: 1px solid var(--ek-color-action-border);
+  border-radius: var(--ek-radius-chip);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-action-emphasis);
+  font: inherit;
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-semibold);
+  cursor: pointer;
+  transition: var(--ek-transition-colors);
+}
+
+.pvl-more__btn:hover { background: var(--ek-color-action-subtle); }
+
+.pvl-more__chevron {
+  font-size: var(--ek-icon-sm);
+  transition: transform var(--ek-duration-base) var(--ek-easing-standard);
+}
+
+.pvl-more__chevron.is-open { transform: rotate(180deg); }
+
+/* Dar ekran: girinti küçülür (kart listesi ekran genişliğini kullanır). */
+@media (max-width: 599px) {
+  .pvl { --pvl-indent: 28px; margin-right: var(--ek-space-2); }
+}
+
+/* Dar kap (< 600px): satır = kart (A6b mobil kart deseni). */
+@container (max-width: 599px) {
+  .pvl-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .pvl-table,
+  .pvl-table tbody { display: block; }
+
+  .pvl-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'sel main act'
+      '. barcode barcode'
+      '. price price'
+      '. stock stock'
+      '. ch ch';
+    align-items: center;
+    column-gap: var(--ek-space-3);
+    row-gap: var(--ek-space-1);
+    padding: var(--ek-space-3);
+    border-bottom: 1px solid var(--ek-color-border-subtle);
+  }
+
+  .pvl-row:last-child { border-bottom: 0; }
+
+  /* Grup hücresi: grubun ilk kartının üstünde tam genişlik başlık (kart kenarına taşar). */
+  .pvl-row.has-group-cell {
+    grid-template-areas:
+      'grp grp grp'
+      'sel main act'
+      '. barcode barcode'
+      '. price price'
+      '. stock stock'
+      '. ch ch';
+    padding-top: 0;
+  }
+  .pvl-row.is-group-start:not(:first-child) { border-top: 1px solid var(--ek-color-border-strong); }
+  .pvl-row.is-group-start > .pvl-td { border-top: 0 !important; /* çizgi kartın kendisinde */ }
+  td.pvl-vgroup {
+    grid-area: grp;
+    display: block;
+    margin: 0 calc(-1 * var(--ek-space-3)) var(--ek-space-2);
+    border-top: 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--ek-color-border-subtle);
+  }
+  .pvl-vgroup :deep(.ek-vgroup__label),
+  .is-compact .pvl-vgroup :deep(.ek-vgroup__label) {
+    position: static;
+    flex-direction: row;
+    align-items: baseline;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-2) var(--ek-space-3);
+  }
+  .pvl-vgroup :deep(.ek-vgroup__title) { font-size: var(--ek-type-label-size); line-height: var(--ek-type-label-line); }
+
+  .pvl-row > .pvl-td {
+    padding: 0;
+    border: 0;
+    background: transparent !important; /* kartta zemin satırdadır */
+    text-align: left;
+  }
+
+  .pvl-row:hover { background: var(--ek-color-surface-muted); }
+  .pvl-row.is-selected { background: var(--ek-color-selection); box-shadow: inset 3px 0 0 var(--ek-color-action); }
+  .pvl-row.is-selected > .pvl-td--select { box-shadow: none; }
+
+  .pvl-td--select { grid-area: sel; width: auto; align-self: start; padding-top: 12px !important; }
+  .pvl-td--variant { grid-area: main; }
+  .pvl-td--actions { grid-area: act; align-self: start; width: auto; }
+  .pvl-td--barcode { grid-area: barcode; }
+  .pvl-td--end[data-label='Fiyat'] { grid-area: price; }
+  .pvl-td--end[data-label='Stok'] { grid-area: stock; }
+  .pvl-td--channels { grid-area: ch; }
+
+  .pvl-td[data-label] {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr);
+    align-items: baseline;
+    column-gap: var(--ek-space-3);
+  }
+
+  .pvl-td[data-label]::before {
+    content: attr(data-label);
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-type-micro-size);
+    line-height: var(--ek-type-micro-line);
+    font-weight: var(--ek-type-micro-weight);
+    letter-spacing: var(--ek-type-micro-tracking);
+    text-transform: uppercase;
+  }
+
+  .pvl-td[data-label] > * { justify-self: start; }
+
+  .pvl-price,
+  .pvl-stock { align-items: flex-start; justify-items: start; }
+  .pvl-price { flex-direction: row; flex-wrap: wrap; column-gap: var(--ek-space-2); align-items: baseline; }
+  .pvl-stock { grid-template-columns: auto auto auto; }
+  .pvl-stock__shelf { grid-column: auto; }
+
+  .pvl-ident { min-width: 0; }
+  .is-header-named .pvl-choice__label { display: inline; }
+  .pvl-channels,
+  .is-compact .pvl-channels { flex-wrap: wrap; max-width: none; }
+  .pvl-copy { opacity: 1; }
+  .pvl-summary { padding: var(--ek-space-2) var(--ek-space-3); }
 }
 </style>

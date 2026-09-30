@@ -1,4 +1,4 @@
-import { ApplicationError } from '../../api/Security';
+import { ApplicationError } from '@platform/core/errors';
 
 // ADR-0003 A.1: provisioning girdisi AÇIK alan listesiyle doğrulanır. `...spread` yok; listede olmayan hiçbir alan
 // (isGlobalAdmin, roleCode, owner, order, clientId, dbConfig, status ...) modele taşınmaz — yok sayılır.

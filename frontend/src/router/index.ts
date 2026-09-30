@@ -70,9 +70,42 @@ const routes: RouteRecordRaw[] = [
           requiresAuth: false
         }
       },
+      // Faz 3 / C2a — API_ACCOUNT_LIFECYCLE.md §6: davet bağlantısı `${PUBLIC_APP_URL}/invite#t=<token>`. Kimliksiz;
+      // token yalnız parçadan (`#t=`) okunur ve hemen silinir (`composables/fragmentToken.ts`). Kabul oturum AÇMAZ.
+      {
+        path: 'invite',
+        name: 'InvitationAccept',
+        component: () => import('@/views/unsecure/InvitationAcceptView.vue'),
+        meta: {
+          requiresAuth: false
+        }
+      },
+      // §9: sahiplik devri bağlantısı `${PUBLIC_APP_URL}/accept-ownership#t=<token>`. Kabul OTURUM ister (hedef kullanıcı);
+      // sayfa kimliksiz açılır, oturum yoksa token bellekte bekletilip girişe gidilir ve SPA içinde geri dönülür.
+      {
+        path: 'accept-ownership',
+        name: 'OwnershipAccept',
+        component: () => import('@/views/unsecure/OwnershipAcceptView.vue'),
+        meta: {
+          requiresAuth: false
+        }
+      },
     ],
   },
 ]
+
+// DS-v2 Aşama 1 — tasarım sistemi vitrini: YALNIZCA geliştirmede (`vite` dev sunucusu).
+// `import.meta.env.DEV` derleme zamanında sabitlenir; üretim derlemesinde bu dal ve
+// `DesignSystemView` chunk'ı tamamen elenir (statik test: tests/design-system-route.test.ts).
+// Menüde/komut paletinde YOKTUR. Kimlik gerektirmez (API çağrısı yapmaz).
+if (import.meta.env.DEV) {
+  routes.unshift({
+    path: '/design-system',
+    name: 'DesignSystem',
+    component: () => import('@/views/dev/DesignSystemView.vue'),
+    meta: { requiresAuth: false },
+  })
+}
 
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),

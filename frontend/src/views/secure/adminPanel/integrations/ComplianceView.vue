@@ -33,11 +33,11 @@
       @refresh="refreshAll"
     >
       <template #filters-extra>
-        <v-select v-model="filters.integrationCode" :items="integrationOptions" :label="t('integrationCompliance.filters.integration')" clearable density="comfortable" hide-details class="complianceView__filter" />
-        <v-select v-model="filters.category" :items="categoryOptions" :label="t('integrationCompliance.filters.category')" clearable density="comfortable" hide-details class="complianceView__filter" />
-        <v-select v-model="filters.kind" :items="kindOptions" :label="t('integrationCompliance.filters.kind')" clearable density="comfortable" hide-details class="complianceView__filter" />
-        <v-select v-model="filters.severity" :items="severityOptions" :label="t('integrationCompliance.filters.severity')" clearable density="comfortable" hide-details class="complianceView__filter" />
-        <v-select v-model="filters.status" :items="statusOptions" :label="t('integrationCompliance.filters.status')" clearable density="comfortable" hide-details class="complianceView__filter" />
+        <v-select v-model="filters.integrationCode" :items="integrationOptions" :label="t('integrationCompliance.filters.integration')" clearable hide-details class="complianceView__filter" />
+        <v-select v-model="filters.category" :items="categoryOptions" :label="t('integrationCompliance.filters.category')" clearable hide-details class="complianceView__filter" />
+        <v-select v-model="filters.kind" :items="kindOptions" :label="t('integrationCompliance.filters.kind')" clearable hide-details class="complianceView__filter" />
+        <v-select v-model="filters.severity" :items="severityOptions" :label="t('integrationCompliance.filters.severity')" clearable hide-details class="complianceView__filter" />
+        <v-select v-model="filters.status" :items="statusOptions" :label="t('integrationCompliance.filters.status')" clearable hide-details class="complianceView__filter" />
       </template>
 
       <template #loading>
@@ -65,7 +65,7 @@
           :message="t('integrationCompliance.emptyFiltered.message')"
           show-action
           :action-text="t('integrationCompliance.emptyFiltered.action')"
-          action-icon="mdi-filter-off-outline"
+          action-icon="mdi-filter-remove-outline"
           @action="clearFilters"
         />
       </template>
@@ -106,7 +106,7 @@
             </span>
           </template>
           <template #cell-actions="{ item }">
-            <v-btn icon="mdi-eye-outline" variant="text" density="comfortable" :aria-label="t('integrationCompliance.table.openDetail', { subject: item.subjectKey })" @click="openDetail(item as FindingListItem)" />
+            <EkRowActions :label="t('integrationCompliance.table.openDetail', { subject: item.subjectKey })" :items="[{ key: 'view', action: 'view', label: t('integrationCompliance.table.openDetail', { subject: item.subjectKey }), onClick: () => openDetail(item as FindingListItem) }]" />
           </template>
         </EkDataTable>
       </section>
@@ -123,15 +123,10 @@
 </template>
 
 <script setup lang="ts">
+import { EkRowActions, EkDataTable, type EkTableColumn, EkEmptyState, EkErrorState, EkSkeleton, EkStatusChip, EkPlatformMark } from '@entegrasyonik/ui/components'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import EkListPage from '@/components/ds/templates/EkListPage.vue'
-import EkDataTable, { type EkTableColumn } from '@/components/ds/EkDataTable.vue'
-import EkEmptyState from '@/components/ds/EkEmptyState.vue'
-import EkErrorState from '@/components/ds/EkErrorState.vue'
-import EkSkeleton from '@/components/ds/EkSkeleton.vue'
-import EkStatusChip from '@/components/ds/EkStatusChip.vue'
-import EkPlatformMark from '@/components/ds/EkPlatformMark.vue'
+import EkListPage from '@/components/page/templates/EkListPage.vue'
 import { FINDING_SEVERITY_TONE, FINDING_STATUS_TONE } from '@/design/status-map'
 import useUser from '@/composables/user'
 import PlatformAdminGuard from '@/components/adminPanel/integrations/PlatformAdminGuard.vue'
@@ -329,8 +324,16 @@ defineExpose({
   min-width: 140px;
 }
 
+@media (max-width: 767px) {
+  .complianceView__filter {
+    flex: 1 1 calc(50% - var(--ek-space-2));
+  }
+}
+
 .complianceView {
   min-width: 0;
+  /* Aşama 3: diğer ekranlarla aynı sayfa kenar boşluğu (içerik sol menüye yapışıyordu). */
+  padding: var(--ek-space-6);
 }
 
 .complianceView__findings {

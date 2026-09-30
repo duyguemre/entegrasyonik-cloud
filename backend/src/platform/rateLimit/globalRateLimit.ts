@@ -4,8 +4,8 @@
 // web pod >= 2 olunca Redis tabanlıya geçiş (§Maliyet eşiği); env `GLOBAL_RATE_LIMIT_ENABLED=false` ile kapatılabilir.
 import type { NextFunction, Request, Response } from 'express';
 import { config } from '@config';
-import { createRateLimiter } from '@api/rateLimit';
-import { getClientIp } from '@api/clientIp';
+import { createRateLimiter } from './rateLimit';
+import { getClientIp } from './clientIp';
 
 /** Express, her isteği işlerken `req.res`'i doldurur (bkz. `application.handle`) -- middleware sırasında zaten dolu. */
 function identityKey(req: Request): string {

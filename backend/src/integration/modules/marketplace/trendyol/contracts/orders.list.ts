@@ -63,6 +63,8 @@ const trendyolOrdersListItemSchema = z.object({
     cargoDeci: z.number().optional(),
     invoiceLink: z.string().optional(),
     orderDate: z.number().optional(),
+    createdDate: z.number().optional(),
+    paymentMethod: z.string().optional(),
     creationDate: z.number().optional(),
     estimatedDeliveryEndDate: z.number().optional(),
     shippedDate: z.number().optional(),

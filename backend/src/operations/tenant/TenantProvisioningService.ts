@@ -1,7 +1,9 @@
 import type { IApplicationDB, IClientDB } from '@interfaces/index';
 import { DatabaseManagerInstance } from '@database/DatabaseManager';
 import { AuditLogger } from '@services/audit/AuditLogger';
-import Security, { ApplicationError } from '../../api/Security';
+import Security from '@platform/core/security/Security';
+import { ApplicationError } from '@platform/core/errors';
+import { getTenantRegistry } from '@database/TenantRegistry';
 import { ProvisionInput, validateProvisionInput } from './provisionInput';
 import { buildTenantInfraDefaults } from './tenantInfraDefaults';
 import { ensureTrialSubscription } from './trialSubscription';
@@ -165,6 +167,8 @@ export class TenantProvisioningService {
             step = 'tenant-seed';
             const clientDb = await this.getClientDB(order as number);
             if (!clientDb) throw new Error('Tenant veritabanı bağlantısı kurulamadı.');
+            // ADR-0021 D8 / DB-08: DB_AUTO_INDEX kapalıyken (staging/production) yeni tenant'ın indeksleri burada kurulur (idempotent; yeniden denemede tekrar güvenli).
+            await clientDb.ensureIndexes?.();
             await clientDb.getCategoryModel().findOneAndUpdate(
                 { isMain: true }, // kayıt kontrolü için arama kriteri
                 { parentId: 0, title: 'Ana Kategori', isMain: true, icon: 'mdi-shape', order: 1 },
@@ -208,6 +212,7 @@ export class TenantProvisioningService {
                 { order },
                 { $set: { status: TENANT_STATUS.ACTIVE }, $unset: { provisioning: 1 } },
             );
+            getTenantRegistry().invalidate(order as number);
 
             void AuditLogger.log({ event: 'tenant.provision', result: 'ok', tid: order, ip: opts.ip, meta: { resumed: !!resumeClient } });
             const { provisioning: _p, ...clientOut } = clientDoc;
@@ -320,6 +325,7 @@ export class TenantProvisioningService {
                 { order },
                 { $set: { status: TENANT_STATUS.PROVISIONING_FAILED, 'provisioning.failedAt': new Date(), 'provisioning.failedStep': step } },
             );
+            getTenantRegistry().invalidate(order);
         } catch (err: any) {
             console.error('[TenantProvisioning] PROVISIONING_FAILED durumu yazılamadı:', err?.message);
         }

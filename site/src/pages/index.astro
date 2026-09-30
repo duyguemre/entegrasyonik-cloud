@@ -8,6 +8,7 @@
  * başlarım -> fiyat -> güven -> SSS -> kapanış):
  *   Hero -> Proof (kanıt) -> Sorun/Çözüm (+karşılaştırma) -> Sipariş hikâyesi (farkımız: stok rezervasyonu) ->
  *   Yetenekler (ne sunuyoruz) -> Entegrasyonlar (hangi kanallar) -> Nasıl çalışır (nasıl başlarım) ->
+ *   [S18: Asistan bandı — "yolda" (UPCOMING yüzeyi), Entegrasyonlar ile Nasıl çalışır arasında] ->
  *   Fiyat -> Güvenlik (fiyattan hemen sonra son bir güven pekiştirmesi) -> SSS -> Kapanış.
  * Koyu "sahne" ritmi (Hero, Yetenekler'in iç küme bandı, Nasıl çalışır, Güvenlik, Kapanış) İKİ KOYU BÖLÜM ARKA
  * ARKAYA GELMEYECEK şekilde dağıtılmıştır: Güvenlik kasıtlı olarak Nasıl-çalışır'ın hemen ardına değil, Fiyat'tan
@@ -31,19 +32,17 @@ import PricingSummary from '../components/home/PricingSummary.astro'
 import SecuritySummary from '../components/home/SecuritySummary.astro'
 import FaqPreview from '../components/home/FaqPreview.astro'
 import ClosingCta from '../components/home/ClosingCta.astro'
+import AssistantTeaser from '../components/home/AssistantTeaser.astro'
 ---
 
-<BaseLayout
-  scenes
-  title="Pazaryeri entegrasyonu ve stok yönetimi"
-  description="Entegrasyonik, pazaryerlerindeki ürün, stok, sipariş ve iade süreçlerinizi tek panelde toplar; stok rezervasyonuyla aşırı satış riskini azaltır."
->
+<BaseLayout scenes>
   <Hero />
   <Proof />
   <ProblemSolution />
   <OrderStory />
   <Capabilities />
   <IntegrationShowcase />
+  <AssistantTeaser />
   <HowItWorks />
   <PricingSummary />
   <SecuritySummary />

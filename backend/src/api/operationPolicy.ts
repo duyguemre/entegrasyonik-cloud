@@ -17,18 +17,15 @@
 // `defineCapability({ ..., bindings: [{ rpc: 'Servis/operasyon' }] })` girdisi ile yapılır.
 // FE'ye yeni operasyon eklendiğinde ilgili yetenek/bağ unutulursa 403 ile hemen görünür
 // (tests/characterization/auth/operation-policy.test.ts FE envanterini tarar ve kırılır).
-import { CAPABILITIES } from '../capabilities';
+import { CAPABILITIES, CAPABILITY_BY_RPC } from '../capabilities';
+import type { CapabilityPermission } from '../capabilities/permissions';
 import { derivePolicy } from '../capabilities/derive/policy';
 import type { Tier as CapabilityTier } from '../capabilities/types';
+import { resolveTier, TENANT_TIER_RANK, type TenantTier, type TierActor } from '@platform/core/authz/tier';
 
 export type Tier = CapabilityTier;
-export type TenantTier = 'member' | 'admin' | 'owner';
-
-const TENANT_TIER_RANK: Record<TenantTier, number> = { member: 1, admin: 2, owner: 3 };
+export type { TenantTier };
 const VALID_TIERS: ReadonlyArray<string> = ['member', 'admin', 'owner', 'platformAdmin'];
-
-/** Kademe atamasında kullanılan roller (ADR Karar 7): ROLE_ADMIN ve ROLE_OWNER admin kademesindedir. */
-const ADMIN_ROLE_CODES: ReadonlyArray<string> = ['ROLE_ADMIN', 'ROLE_OWNER'];
 
 export type OperationPolicy = Record<string, Record<string, Tier>>;
 
@@ -62,11 +59,15 @@ export const PSEUDO_SERVICES: ReadonlyArray<string> = ['ImageApi'];
 export const OPEN_OPERATIONS: ReadonlyArray<string> = [
     'SecurityService/login',
     'SecurityService/register',
-    'SecurityService/getCaptcha',
     'SecurityService/logout',
     'AccountService/requestPasswordReset',
     'AccountService/confirmPasswordReset',
     'AccountService/verifyEmail',
+    // [ADR-0028 WP-A4] davet: kimliksiz iki uç (özel rota + accountTokenLimiter; jenerik rotadan reddedilir)
+    'AccountService/getInvitation',
+    'AccountService/acceptInvitation',
+    // [ADR-0026 Karar 4.9] backoffice'in ürettiği tek kullanımlık impersonation bileti = kimlik (dedicated rota; hız sınırlı).
+    'SecurityService/redeemImpersonation',
 ];
 
 const hasOwn = (o: object, k: string) => Object.prototype.hasOwnProperty.call(o, k);
@@ -85,29 +86,22 @@ export function getRequiredTier(service: string, operation: string): Tier | unde
     return VALID_TIERS.includes(tier) ? tier : undefined; // bozuk kayıt de reddedilir
 }
 
-export interface Actor {
-    /** Kimliği doğrulanmış aktörün tenant kademesi; kimlik yoksa undefined. */
-    tier: TenantTier | undefined;
-    /** Doğrulanmış principal.ga === true. */
-    platformAdmin: boolean;
-}
+export type Actor = TierActor;
 
 /**
- * Aktörün kademesini GÜVENİLİR kaynaklardan çıkarır:
- *  - platformAdmin: yalnızca doğrulanmış `principal.ga === true` (istemci gövdesi/token `role` claim'i değil).
- *  - süper yönetici tenant bağlamında `admin` kademesinde çalışır (owner DEĞİL; kendi belgesinde owner:true olsa bile).
- *  - tenant kullanıcısı: `userContext.owner === true` -> owner; roleCode ROLE_ADMIN/ROLE_OWNER -> admin;
- *    diğer/tanımsız/ROLE_OPERATOR -> member.
- * `userContext` sunucuda merkezi Users belgesinden kurulmuş bağlamdır (authenticate.ts buildUserContext).
+ * [ADR-0028 WP-A1] Yeteneğin yetkilendirme izni (kayıt tek kaynak). Kayıtta olmayan / `_` önekli / prototip üyesi -> undefined (varsayılan ret).
+ * `getRequiredTier` ile aynı varlık kurallarına tabidir.
  */
-export function resolveTier(userContext: any, principal: any): Actor {
-    if (!principal || typeof principal !== 'object') return { tier: undefined, platformAdmin: false };
-    if (principal.ga === true) return { tier: 'admin', platformAdmin: true };
-    const uc = userContext && typeof userContext === 'object' ? userContext : {};
-    if (uc.owner === true) return { tier: 'owner', platformAdmin: false };
-    if (typeof uc.roleCode === 'string' && ADMIN_ROLE_CODES.includes(uc.roleCode)) return { tier: 'admin', platformAdmin: false };
-    return { tier: 'member', platformAdmin: false };
+export function getRequiredPermission(service: string, operation: string): CapabilityPermission | undefined {
+    const tier = getRequiredTier(service, operation);
+    if (tier === undefined) return undefined;
+    const cap = CAPABILITY_BY_RPC.get(service + '/' + operation);
+    // Politika tablosu (OPERATION_POLICY) yetkili kalır: yetenek kaydıyla sürüklenmişse (kademe farkı) izin kullanılmaz, çağıran kademe kontrolüne düşer.
+    return cap && cap.minTier === tier ? cap.permission : undefined;
 }
+
+// [ADR-0028 WP-A1] resolveTier platform/core/authz'ye taşındı (depcruise: operations -> api kenarı kapandı); burada yeniden dışa verilir.
+export { resolveTier };
 
 /** Aktör gerekli kademeyi karşılıyor mu? `platformAdmin` ayrı dikeydir; tenant kademeleri onu sağlamaz. */
 export function isAllowed(required: Tier, actor: Actor): boolean {

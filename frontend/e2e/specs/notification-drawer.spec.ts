@@ -1,7 +1,7 @@
 // ADR-0015 B5-3 — components/user/NotificationDrawerComponent.vue.
 // Protokol 13: bu spec önce DEĞİŞMEMİŞ bileşene karşı yazıldı (karakterizasyon).
 //
-// KARAKTERİZASYON NOTU (şüpheli davranış, DÜZELTİLMEDİ — final rapora yazıldı): `stores/
+// KARAKTERİZASYON NOTU (C1.5 ile DÜZELTİLDİ — ilk test bilinçli olarak güncellendi): `stores/
 // notificationDrawer.ts`'in `startPolling()`'i (10sn'de bir `fetchNotifications()` çağıran
 // polling) HİÇBİR YERDEN çağrılmıyor (grep ile doğrulandı — yalnızca kendi tanımında var);
 // `fetchNotifications()` de shell açılışında/`drawer` açılışında DOĞRUDAN ÇAĞRILMIYOR. Yani
@@ -52,13 +52,17 @@ async function openNotificationDrawer(page: any) {
 }
 
 test.describe('ADR-0015 B5-3 — NotificationDrawerComponent', () => {
-  test('karakterizasyon: çekmece açılışında otomatik veri ÇEKİLMİYOR — boş durum gösterilir', async ({ page }) => {
+  // C1.5 (F-06) BİLİNÇLİ DAVRANIŞ DEĞİŞİKLİĞİ (brif: "tam liste YALNIZ çekmece açıldığında çekilsin"):
+  // eski karakterizasyon ("çekmece açılışında veri ÇEKİLMİYOR — boş durum") artık geçersiz; iddia
+  // tersine çevrildi. Menüde bildirim merkezi kaydı yoksa "Tümünü gör" gösterilmez.
+  test('C1.5: çekmece açılınca tam liste çekilir ve kartlar render olur; merkez menüde yoksa "Tümünü gör" yok', async ({ page }) => {
     await installApiMocks(page, withNotifications())
     await gotoAuthed(page)
     await openNotificationDrawer(page)
 
-    await expect(page.getByText('Henüz bildiriminiz yok')).toBeVisible()
-    await expect(page.getByText('E2E içe aktarma tamamlandı')).toHaveCount(0)
+    await expect(page.getByText('E2E içe aktarma tamamlandı')).toBeVisible()
+    await expect(page.getByText('Henüz bildiriminiz yok')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Tümünü gör' })).toHaveCount(0)
   })
 
   test('"Tümünü Okundu İşaretle" tıklanınca fetchNotifications tetiklenir ve kartlar render olur', async ({ page }) => {

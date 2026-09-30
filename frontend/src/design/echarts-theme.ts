@@ -16,16 +16,16 @@
  * // main.ts (A5/B3'te eklenecek):
  * import * as echarts from 'echarts/core'
  * import { buildEchartsTheme } from '@/design/echarts-theme'
- * import { semanticColorsLight } from '@/design/tokens/semantic'
+ * import { semanticColorsLight } from '@entegrasyonik/ui/tokens'
  * echarts.registerTheme('entegrasyonik', buildEchartsTheme(semanticColorsLight))
  *
  * // Bileşende:
  * // <v-chart theme="entegrasyonik" ... />
  * ```
  */
-import type { SemanticColorKey } from './tokens/semantic'
-import { sky, green, amberScale, red, slate } from './tokens/palette'
-import { shadow, radius } from './tokens/scale'
+import type { SemanticColorKey } from '@entegrasyonik/ui/tokens'
+import { sky, green, amberScale, red, slate } from '@entegrasyonik/ui/tokens'
+import { shadow, radius } from '@entegrasyonik/ui/tokens'
 import { JOB_STATUS_TONE, type JobStatus, type StatusTone } from './status-map'
 
 /**

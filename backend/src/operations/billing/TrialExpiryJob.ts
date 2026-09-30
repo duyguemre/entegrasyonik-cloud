@@ -3,6 +3,7 @@ import { RedisService } from "@services/redis/RedisService";
 import { EntitlementService } from "@services/billing/EntitlementService";
 import { NotificationService } from "@services/notification/NotificationService";
 import { PLATFORM_PROCESS } from "@interfaces/index";
+import { getRequestId } from "@platform/core/context";
 
 /**
  * ADR-0008 §3 durum makinesi: `trialing` (14 gün, kartsız) -> deneme bitti + ödeme yok -> `suspended`
@@ -135,7 +136,7 @@ export class TrialExpiryJob {
             payloadRedacted: { from: 'trialing', to: 'suspended', reason: 'trial_expired', planCode: updated.planCode, trialEndsAt: trialEndsAt.toISOString() },
         });
 
-        await this.notify(clientId, {
+        await this.notify(clientId, { code: 'BILLING_TRIAL_ENDED', params: { trialEnd: trialEndsAt.toISOString() }, idempotencyKey: `trial-ended:${trialEndsAt.getTime()}` }, {
             severity: 'error',
             title: 'Deneme Süreniz Sona Erdi',
             message: 'Ücretsiz deneme süreniz sona erdiği için aboneliğiniz askıya alındı. Verilerinizi görüntüleyebilir ve dışa aktarabilirsiniz; '
@@ -160,7 +161,7 @@ export class TrialExpiryJob {
         // girmemek için bu turda GÖNDERİLMEZ, DB düzelince sonraki turda denenir.
         if (outcome !== 'created') return false;
 
-        await this.notify(clientId, {
+        await this.notify(clientId, { code: 'BILLING_TRIAL_ENDING', params: { trialEnd: trialEndsAt.toISOString(), daysLeft: TrialExpiryJob.WARNING_LEAD_DAYS }, idempotencyKey: `trial-ending:${trialEndsAt.getTime()}` }, {
             severity: 'warning',
             title: 'Deneme Süreniz Yakında Sona Erecek',
             message: `Ücretsiz deneme süreniz ${trialEndsAt.toISOString().slice(0, 10)} tarihinde sona erecek. Bir plan seçmezseniz aboneliğiniz askıya alınır ve `
@@ -191,21 +192,31 @@ export class TrialExpiryJob {
         }
     }
 
-    private async notify(clientId: number, payload: { severity: 'warning' | 'error'; title: string; message: string; metaData: Record<string, any> }): Promise<void> {
+    /** [ADR-0029 NB3] Katalog kodu + params ile `notify`; bayrak kapaliyken eski olay (`legacy`) birebir. */
+    private async notify(
+        clientId: number,
+        cat: { code: string; params: Record<string, unknown>; idempotencyKey: string },
+        payload: { severity: 'warning' | 'error'; title: string; message: string; metaData: Record<string, any> },
+    ): Promise<void> {
         try {
-            await NotificationService.sendClientNotification({
-                clientId: String(clientId),
-                notificationData: {
-                    type: 'SYSTEM',
-                    // Notification şeması `mode`u ZORUNLU tutar (PLATFORM_PROCESS enum'u); faturalama için BILLING eklendi.
-                    mode: PLATFORM_PROCESS.BILLING,
-                    severity: payload.severity,
-                    title: payload.title,
-                    message: payload.message,
-                    actionUrl: '/subscription',
-                    metaData: payload.metaData,
-                },
-            } as any);
+            await NotificationService.notify(cat.code, clientId, cat.params, {
+                idempotencyKey: cat.idempotencyKey,
+                corrId: getRequestId(),
+                module: 'TrialExpiryJob',
+                legacy: { event: {
+                    clientId: String(clientId),
+                    notificationData: {
+                        type: 'SYSTEM',
+                        // Notification şeması `mode`u ZORUNLU tutar (PLATFORM_PROCESS enum'u); faturalama için BILLING eklendi.
+                        mode: PLATFORM_PROCESS.BILLING,
+                        severity: payload.severity,
+                        title: payload.title,
+                        message: payload.message,
+                        actionUrl: '/subscription',
+                        metaData: payload.metaData,
+                    },
+                } as any },
+            });
         } catch (error) {
             console.error(`[TrialExpiryJob] Bildirim gönderilemedi (client=${clientId}):`, error);
         }

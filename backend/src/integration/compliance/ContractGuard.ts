@@ -14,6 +14,9 @@ import { setUnknownEnumSink, type UnknownEnumEvent } from '@integration/modules/
 // dosyalarını (ve dolayısıyla `ResilientHttpClient`'ı) içe aktarır -> DÖNGÜSEL bağımlılık oluşur
 // (bkz. `codeToCategory.ts` dosya başı yorumu; dependency-cruiser `no-circular` ile doğrulandı).
 import { categoryOfIntegrationCode } from '@integration/catalog/codeToCategory';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('engine', 'ContractGuard');
 
 export interface ContractRef {
     /** İzlenen işlem sözleşme kimliği, ör. 'trendyol.orders.list@v2'. */
@@ -77,7 +80,7 @@ export function observeContract(
         }
     }).catch((e: any) => {
         // eslint-disable-next-line no-console
-        console.error('[ContractGuard.observeContract] gözlem hatası (iş akışını etkilemez):', e?.message);
+        log.error('CONTRACTGUARD_GOZLEM_HATASI_AKISINI_ETKILEMEZ', 'gözlem hatası (iş akışını etkilemez):', { err: e });
     });
 }
 
@@ -122,7 +125,7 @@ export function observeResponseHeaders(
         });
     }).catch((e: any) => {
         // eslint-disable-next-line no-console
-        console.error('[ContractGuard.observeResponseHeaders] gözlem hatası (iş akışını etkilemez):', e?.message);
+        log.error('CONTRACTGUARD_GOZLEM_HATASI_AKISINI_ETKILEMEZ_2', 'gözlem hatası (iş akışını etkilemez):', { err: e });
     });
 }
 

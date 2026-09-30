@@ -2,69 +2,63 @@
 
   <div class="fill-height">
 
-    <v-card variant="elevated" class="ma-0  pa-0"
-      style="transition: none!important; box-shadow: none; transform: none!important;right:0;background-color:#f3f3f3"
+    <v-card variant="elevated" class="choices-sync ma-0  pa-0"
       height="100%">
 
       <LoadingComponent attach=".productDefinitionView" ref="loadingComponentRef"></LoadingComponent>
 
-      <v-card-title style="" class="mb-0">
+      <v-card-title class="mb-0">
 
-        <div style="position:absolute;top:0px;left:0px;right:0;height:1px;width:auto;opacity:.9;background-color:red"
-          class="elevation-1">
+        <div class="choices-sync__topline elevation-1">
         </div>
 
-        <v-btn
-          style="position:absolute;border:1px solid #fff;border-top:none;border-right:none;top:0px;right:0px;height:40px;width:40px; opacity:.9;border-radius:0;border-bottom-left-radius:20px;"
-          @click="emits('close')" elevation="1" min-width="0" color="red"><v-icon
+        <v-btn class="choices-sync__close choices-sync__close--right"
+          @click="emits('close')" elevation="1" min-width="0" color="error"><v-icon
             size="x-large">mdi-close</v-icon></v-btn>
 
-        <v-btn
-          style="position:absolute;border:1px solid #fff;border-top:none;border-left:none;top:0px;left:0px;height:40px;width:40px; opacity:.9;border-radius:0;border-bottom-right-radius:20px;"
-          @click="emits('close')" elevation="1" min-width="0" color="red"><v-icon
+        <v-btn class="choices-sync__close choices-sync__close--left"
+          @click="emits('close')" elevation="1" min-width="0" color="error"><v-icon
             size="x-large">mdi-close</v-icon></v-btn>
 
 
         <span class="ml-8"></span> <span class="font-weight-medium  text-h6">
-          <v-icon class="mr-0" style="opacity:.7" size="20">mdi-checkbox-multiple-marked</v-icon>
+          <v-icon class="choices-sync__title-icon mr-0" size="20">mdi-checkbox-multiple-marked-outline</v-icon>
           Platform Seçenek Eşleştirme</span>
 
       </v-card-title>
 
-      <v-card-text style="background-color:#eee" class="mt-2"
+      <v-card-text class="choices-sync__body mt-2"
         v-if="choiceSyncInfo?.integrationCategoryChoices?.length > 0">
         <v-row>
           <v-col cols="4" class="pl-2">
 
 
 
-            <v-card class="pa-4"
-              style="margin-top:1px;overflow-y:auto;border:1px solid #ddd;height:calc(100vh - 190px);background-color:#f3f3f3;border-top-right-radius: 0;border-top-left-radius: 0;"
+            <v-card class="choices-sync__panel choices-sync__panel--auto pa-4"
               variant="flat">
 
               <div class="mt-4 mb-8">
                 <div class="d-flex align-center">
-                  <div style="min-width:180px">
-                    <div class="font-weight-light text-caption mt-2" style="line-height: .7;font-size:10px!important">
+                  <div class="choices-sync__summary">
+                    <div class="choices-sync__label font-weight-light text-caption mt-2">
                       Entegrasyonik Kategori
                     </div>
                     <span class="font-weight-medium">{{ choiceSyncInfo.category.title }}</span>
-                    <div class="font-weight-light text-caption mt-4" style="line-height: .7;font-size:10px!important">
+                    <div class="choices-sync__label font-weight-light text-caption mt-4">
                       Entegrasyonik Seçenek
                     </div>
                     <span class="font-weight-medium">{{ choiceSyncInfo.choice.title }}</span>
-                    <div class="font-weight-light text-caption mt-4" style="line-height: .7;font-size:10px!important">
+                    <div class="choices-sync__label font-weight-light text-caption mt-4">
                       Platform
                     </div>
                     <span class="font-weight-medium">{{ choiceSyncInfo.integration.title }}</span>
-                    <div class="font-weight-light text-caption mt-4" style="line-height: .7;font-size:10px!important">
+                    <div class="choices-sync__label font-weight-light text-caption mt-4">
                       {{ choiceSyncInfo.integration.title }} Kategori
                     </div>
                     <span class="font-weight-medium">{{ choiceSyncInfo.integrationCategory.title }}</span>
                   </div>
                   <div class="ml-12">
-                    <v-card class="pa-4"
-                      style="border:1px solid #ddd;background-color:#f3f3f3;border-top-right-radius: 0;border-top-left-radius: 0;"
+                    <v-card class="choices-sync__panel choices-sync__panel--hint pa-4"
                       variant="flat">
                       <HintComponent>
                         {{ choiceSyncInfo.category.title }} {{ choiceSyncInfo.choice.title }} seçeneği için
@@ -82,7 +76,7 @@
 
 
               <v-select @click.stop="1" v-ripple.stop variant="outlined" @update:modelValue="" density="compact"
-                type="tel" maxlength="160" width="200" bg-color="textfieldColor" item-value="_id"
+                type="tel" maxlength="160" width="200" item-value="_id"
                 :items="choiceSyncInfo.integrationCategoryChoices" prepend-icon="mdi-checkbox-multiple-outline"
                 :hint="$t('productDefinitions.category.platformChoiceDesc')" persistent-hint
                 v-model="choiceSyncInfo.mapping.integrationCategoryChoiceId" hide-details>
@@ -93,16 +87,15 @@
 
 
                 <template v-slot:selection="{ item, index }: any">
-                  {{ item.title }} <span v-if="item.raw.mandatory == true" class="ml-2 font-weight-bold"
-                    style="color:red">Zorunlu</span>
+                  {{ item.title }} <span v-if="item.raw.mandatory == true" class="choices-sync__required ml-2 font-weight-bold">Zorunlu</span>
                 </template>
 
 
                 <template v-slot:prepend-item>
-                  <v-list-item class="" style="border:1px solid #ddd;border-top:none">
+                  <v-list-item class="choices-sync__item">
                     <v-text-field append-inner-icon="mdi-magnify" @click.stop="1" v-ripple.stop variant="outlined"
                       @mousedown.stop="1" density="compact" type="tel" maxlength="160" class="mt-2" clearable counter
-                      bg-color="textfieldColor" :rules="formRules.searchRules" v-model="choiceSearchText"
+                      :rules="formRules.searchRules" v-model="choiceSearchText"
                       :hint="$t('productDefinitions.category.searchDesc')">
                       <template v-slot:label>
                         <span class="font-weight-light">Filtrele</span>
@@ -111,14 +104,14 @@
                   </v-list-item>
                 </template>
                 <template v-slot:item="{ item, index, props }: any">
-                  <v-list-item v-bind="props" class="" style="border:1px solid #ddd;border-top:none">
+                  <v-list-item role="option" v-bind="props" class="choices-sync__item">
                     <template #title>
                     </template>
                     <div class="d-flex justify-start align-center ml-6">
-                      <div v-if="item.raw.level && item.raw.level > 0" v-for="n in item.raw.level" style="width:25px">
+                      <div v-if="item.raw.level && item.raw.level > 0" v-for="n in item.raw.level" class="choices-sync__indent">
                       </div>
                       <div class="mr-2 font-weight-thin">{{ index + 1 }}</div> {{ item.title }} <span
-                        v-if="item.raw.mandatory == true" class="ml-2 font-weight-bold" style="color:red">Zorunlu</span>
+                        v-if="item.raw.mandatory == true" class="choices-sync__required ml-2 font-weight-bold">Zorunlu</span>
                     </div>
                   </v-list-item>
                 </template>
@@ -130,8 +123,7 @@
           </v-col>
 
           <v-col>
-            <v-card class="pa-4"
-              style="margin-top:1px;overflow-y:scroll;border:1px solid #ddd;height:calc(100vh - 190px);background-color:#f3f3f3;border-top-right-radius: 0;border-top-left-radius: 0;"
+            <v-card class="choices-sync__panel choices-sync__panel--scroll pa-4"
               variant="flat">
               <div class="d-flex align-center fill-height justify-center"
                 v-if="!choiceSyncInfo.mapping.integrationCategoryChoiceId">
@@ -143,8 +135,7 @@
 
 
               <div class="d-flex align-start mt-4 justify-center" v-else>
-                <!--                 <v-divider thickness="2" class="mr-4" style="" vertical/> -->
-                <div class="flex-grow-1">
+                                <div class="flex-grow-1">
 
                   <v-row>
                     <v-col cols=4 v-for="(choiceValue, index) of choiceSyncInfo.choice?.values">
@@ -153,10 +144,10 @@
 
                         <v-text-field v-if="computedAllowCustom == true" prepend-icon="mdi-checkbox-outline"
                           variant="outlined" density="compact" type="tel" maxlength="160" width="200" clearable
-                          bg-color="textfieldColor" class="customTextField" hide-details
+                          class="customTextField" hide-details
                           v-model="choiceSyncInfo.mapping.values[choiceValue._id]">
                           <template v-slot:label>
-                            <span class="font-weight-normal"> <span style="opacity:.6">Entegrasyonik</span> {{
+                            <span class="font-weight-normal"> <span class="choices-sync__brand">Entegrasyonik</span> {{
                               choiceValue.title }}
                             </span>
                           </template>
@@ -257,4 +248,101 @@ const computedIntegrationChoiceIdValues = computed(() => {
 
 </script>
 
-<style></style>
+<style scoped>
+.choices-sync {
+  transition: none !important;
+  box-shadow: none;
+  transform: none !important;
+  right: 0;
+  background-color: var(--ek-color-surface-sunken);
+}
+
+.choices-sync__topline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  width: auto;
+  opacity: 0.9;
+  background-color: var(--ek-color-error);
+}
+
+.choices-sync__close {
+  position: absolute;
+  top: 0;
+  height: var(--ek-control-h-lg);
+  width: var(--ek-control-h-lg);
+  opacity: 0.9;
+  border: 1px solid var(--ek-color-surface);
+  border-top: none;
+  border-radius: var(--ek-radius-none);
+}
+
+.choices-sync__close--right {
+  right: 0;
+  border-right: none;
+  border-bottom-left-radius: var(--ek-radius-xl);
+}
+
+.choices-sync__close--left {
+  left: 0;
+  border-left: none;
+  border-bottom-right-radius: var(--ek-radius-xl);
+}
+
+.choices-sync__title-icon {
+  opacity: 0.7;
+}
+
+.choices-sync__body {
+  background-color: var(--ek-color-surface-muted);
+}
+
+.choices-sync__panel {
+  border: 1px solid var(--ek-color-border-default);
+  background-color: var(--ek-color-surface-sunken);
+  border-top-right-radius: var(--ek-radius-none);
+  border-top-left-radius: var(--ek-radius-none);
+}
+
+.choices-sync__panel--auto,
+.choices-sync__panel--scroll {
+  margin-top: 1px;
+  height: calc(100vh - 190px);
+}
+
+.choices-sync__panel--auto {
+  overflow-y: auto;
+}
+
+.choices-sync__panel--scroll {
+  overflow-y: scroll;
+}
+
+.choices-sync__summary {
+  min-width: 180px;
+}
+
+.choices-sync__label {
+  line-height: 0.7;
+  font-size: var(--ek-type-micro-size) !important;
+}
+
+.choices-sync__required {
+  color: var(--ek-color-error);
+}
+
+.choices-sync__item {
+  border: 1px solid var(--ek-color-border-default);
+  border-top: none;
+}
+
+.choices-sync__indent {
+  width: 25px;
+}
+
+.choices-sync__brand {
+  opacity: 0.6;
+}
+</style>

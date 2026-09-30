@@ -2,6 +2,8 @@ import { ICategoryAttribute, IExportStagedProduct, IInternalAddress, IVariant, P
 import { integrationCode } from '../constants';
 import { randomUUID } from 'crypto';
 import { IInternalResult } from '@interfaces/index';
+import { IntegrationError } from '@integration/modules/common/IntegrationError';
+import { normalizeAttrValue, missingRequiredAttributes, labelAttribute } from '@integration/catalog/attributePayload';
 
 export class ProductMapper {
     public validate(variant: IVariant, mode: PLATFORM_PROCESS) {
@@ -63,7 +65,7 @@ export class ProductMapper {
             item.listPrice = marketPrice;
             item.vatRate = Number(vMapping?.taxPercentage || variant.product?.taxPercentage || mapping.settings?.taxPercentage || 20);
             item.images = variant.images.map((img: any) => ({ imageurl: typeof img === 'string' ? img : img.url }));
-            item.attributes = this.prepareAttributes(variant, catAttrs);
+            item.attributes = this.prepareAttributes(variant, catAttrs, mapping);
             item.desi = 1;
             item.currencyType = "TRY";
         } else if (mode === PLATFORM_PROCESS.UPDATE_PRICE || mode === PLATFORM_PROCESS.UPDATE_STOCK) {
@@ -76,7 +78,7 @@ export class ProductMapper {
         return item;
     }
 
-    public toInternalVariant(p: any, choicesResult: any, commission: number): IVariant {
+    public toInternalVariant(p: any, choicesResult: any): IVariant {
         const vat = p.vatRate || 0;
         return {
             code: integrationCode,
@@ -89,7 +91,7 @@ export class ProductMapper {
             prices: {
                 isPlatformBasedPrice: false,
                 price: (p.salePrice || 0) * (100 / (100 + vat)),
-                salePrice: (p.salePrice || 0) * (100 / (100 + commission)),
+                salePrice: p.salePrice || 0, // COM-10: ic fiyat = pazaryeri brut satis fiyati; komisyon dusulmez (net fiyat COM-07 modeliyle okuma aninda)
                 marketPrice: p.listPrice || p.salePrice,
             },
             images: p.images?.map((img: any) => typeof img === 'string' ? img : img.url) || [],
@@ -188,16 +190,34 @@ export class ProductMapper {
         });
     }
 
-    private prepareAttributes(variant: any, catAttrs: any[]) {
+    /**
+     * [WP9] Özellik yükü. Pazarama sözleşmesi resmi kaynaktan DOĞRULANAMADI (API_CONTRACTS §4): mevcut alan biçimi
+     * (`attributeId`, `attributeValueId`, `customAttributeValue`) KORUNUR; değişen yalnızca güvenlik: boş/'undefined' değerli
+     * kayıt gönderilmez, kimlik/metin dizeye çevrilir, kategoride ZORUNLU olup eksik özellik yayın öncesi alan bazlı VALIDATION olur.
+     */
+    private prepareAttributes(variant: any, catAttrs: any[], mapping?: any) {
         const vAttrs: Record<string, any> = variant.platforms?.[integrationCode]?.attributes || {};
-        return Object.entries(vAttrs).map(([attrId, attrData]) => {
-            if (!attrData) return null;
-            return {
-                attributeId: attrId,
-                attributeValueId: attrData.attributeValueId,
-                customAttributeValue: attrData.attributeValue
-            };
-        }).filter(Boolean);
+        const out: any[] = [];
+        const sent = new Set<string>();
+        for (const [attrId, attrData] of Object.entries(vAttrs)) {
+            const norm = normalizeAttrValue(attrData);
+            if (!norm) continue;
+            const isObj = attrData !== null && typeof attrData === 'object';
+            const item: any = { attributeId: attrId };
+            // Nesne biçiminde kimlik/metin ayrı taşınır; ilkel (eski) biçimde tek değer hem kimlik hem metin adayıdır.
+            if (norm.valueId !== undefined && isObj) item.attributeValueId = norm.valueId;
+            if (norm.text !== undefined && isObj) item.customAttributeValue = norm.text;
+            if (!isObj) { item.attributeValueId = norm.valueId; item.customAttributeValue = norm.text; }
+            out.push(item);
+            sent.add(String(attrId));
+        }
+        const missing = missingRequiredAttributes(catAttrs, sent);
+        if (missing.length > 0) {
+            throw new IntegrationError('VALIDATION',
+                `Pazarama ürün doğrulaması başarısız (barkod ${String(variant.barcode ?? '?').slice(0, 40)}): zorunlu özellik eksik: ${missing.map(c => labelAttribute(String(c._id), c.title)).join(', ')}.`,
+                { integrationCode, operation: 'prepareAttributes', clientId: mapping?.clientId ?? 'unknown' });
+        }
+        return out;
     }
 
     private getRawAttributesMap(attrs: any[]) {

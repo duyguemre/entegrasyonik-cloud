@@ -3,6 +3,9 @@ import IntegrationFactory from '../../../modules/IntegrationFactory';
 import { BaseWorker } from '../../BaseWorker';
 import { IIntegrationEngineProvider } from '../provider/IIntegrationEngineProvider';
 import os from 'os';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('worker', 'Stager');
 
 export default class Stager extends BaseWorker {
     protected readonly workerName = 'Catalog Stager';
@@ -18,7 +21,6 @@ export default class Stager extends BaseWorker {
         if (!job || job.status !== 'WAITING_FOR_FETCH') return;
 
         const { clientId, integrationCode } = job;
-        const clientLogPrefix = this.getLogPrefix(clientId, integrationCode);
         const podName = process.env.POD_NAME || os.hostname();
 
         try {
@@ -27,7 +29,7 @@ export default class Stager extends BaseWorker {
             const integration = await factory.getInstance(integrationCode);
             const matchKey = integration.getMatchKey() || 'barcode';
 
-            console.log(`${clientLogPrefix} Stager started for ${jobIdStr} on ${podName} using matchKey: ${matchKey}`);
+            log.info('STAGER_STARTED_USING_MATCHKEY', `Stager started for ${jobIdStr} on ${podName} using matchKey: ${matchKey}`);
 
             // 1. Mapping'leri Cache'le (Kritik: ClientDB üzerinden)
             const allMappings = await this.engineProvider.getAttributeMappingModel().find({ integrationCode }).lean();
@@ -216,10 +218,10 @@ export default class Stager extends BaseWorker {
                 { $set: { status: result.status == 'COMPLETED' ? 'READY_TO_SYNC' : 'FAILED', updatedAt: new Date() } }
             );
 
-            console.log(`${clientLogPrefix} Stager finished for ${jobIdStr}  on ${podName}`);
+            log.info('STAGER_FINISHED', `Stager finished for ${jobIdStr}  on ${podName}`);
 
         } catch (error: any) {
-            console.error(`${clientLogPrefix} Stager failed for ${jobIdStr}  on ${podName} error: ${error.message}`);
+            log.error('STAGER_FAILED', `Stager failed for ${jobIdStr}  on ${podName} error: ${error.message}`);
             await this.engineProvider.getImportJobModel().updateOne(
                 { _id: job._id },
                 { $set: { status: 'FAILED', error: { message: error.message } } }
@@ -276,7 +278,9 @@ export default class Stager extends BaseWorker {
 
             const isOk = requiredAttributes.every((attr) => {
                 const attrKey = `${platformId}_${attr.attributeId}`;
-                const matchedAttrs = attributeMap.get(attrKey) || [];
+                // [WP9] Yalnız BU yerel kategoriye ait özellik eşlemeleri sayılır: eskiden aynı platform kategorisine bağlı BAŞKA bir yerel
+                // kategorinin eşlemesi bu yolu "geçerli" gösteriyordu, ürün çevirisi (yerel kategori süzmeli) ise seçenek üretemiyordu.
+                const matchedAttrs = (attributeMap.get(attrKey) || []).filter((a: any) => String(a.localCategoryId) === currentLocalId);
 
                 const hasValue = matchedAttrs.some((aMap) => {
                     return aMap.values?.some((v: any) => {
@@ -326,6 +330,6 @@ export default class Stager extends BaseWorker {
     }
 
     public async start() {
-        console.log(`${this.workerName} runOnce modunda çalışmaya hazır.`);
+        log.debug('STAGER_RUNONCE_MODUNDA_CALISMAYA_HAZIR', 'runOnce modunda çalışmaya hazır.');
     }
 }

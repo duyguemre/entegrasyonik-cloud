@@ -1,4 +1,5 @@
 import { IClientDB } from "@interfaces/index";
+import { CLIENT_INTEGRATION_HOT_PROJECTION } from "@database/projections";
 
 /**
  * StatsOperations: Ürün ve Varyant stok/durum istatistiklerini yöneten,
@@ -53,7 +54,7 @@ export class StatsOperations {
         // 1. Aktif Platform Kodlarını Al (Entegrasyon ayarlarından)
         // Not: Burada getCachedClientIntegrations ihtiyacı duyulabilir, 
         // eğer CatalogOperations'tan bağımsız kurguluyorsak direkt DB'den çekiyoruz.
-        const clientIntegrations = await this.clientDB.getClientIntegrationModel().findOne({}).lean();
+        const clientIntegrations = await this.clientDB.getClientIntegrationModel().findOne({}, CLIENT_INTEGRATION_HOT_PROJECTION).lean(); // [DB-03]
 
         const integrations = [
             ...(clientIntegrations?.marketplace || []),

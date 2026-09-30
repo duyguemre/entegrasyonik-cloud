@@ -9,31 +9,18 @@ import BrandService from './brand-service'
 import IntegrationService from './integration-service'
 
 export default class ConfigurationService extends BaseApi implements IService {
-    currentClientId: number = 0
-    constructor(clientId: number, protected request: any) {
-        super(clientId, request)
-        this.currentClientId = clientId
-    }
 
     async get(): Promise<any> {
 
-        const menuServiceInstance = new MenuService(this.currentClientId, this.request)
-        const productServiceInstance = new ProductService(this.currentClientId, this.request)
-        const categoryServiceInstance = new CategoryService(this.currentClientId, this.request)
-        const brandServiceInstance = new BrandService(this.currentClientId, this.request)
-        const choiceServiceInstance = new ChoiceService(this.currentClientId, this.request)
-        const hashtagServiceInstance = new HashtagService(this.currentClientId, this.request)
-        const integrationServiceInstance = new IntegrationService(this.currentClientId, this.request)
-
-        await Promise.all([
-            menuServiceInstance.init(),
-            productServiceInstance.init(),
-            categoryServiceInstance.init(),
-            brandServiceInstance.init(),
-            choiceServiceInstance.init(),
-            hashtagServiceInstance.init(),
-            integrationServiceInstance.init()
-        ]);
+        // ADR-0024 P1-CORE: 7 kardeş servis ApplicationDB/ClientDB'yi bu servisten DEVRALIR (init() yok; ek okuma yok).
+        const sibling = <T extends BaseApi>(Svc: new (clientId: number, request: any) => T): T => this.sibling(Svc)
+        const menuServiceInstance = sibling(MenuService)
+        const productServiceInstance = sibling(ProductService)
+        const categoryServiceInstance = sibling(CategoryService)
+        const brandServiceInstance = sibling(BrandService)
+        const choiceServiceInstance = sibling(ChoiceService)
+        const hashtagServiceInstance = sibling(HashtagService)
+        const integrationServiceInstance = sibling(IntegrationService)
 
         const [
             productStatistics,

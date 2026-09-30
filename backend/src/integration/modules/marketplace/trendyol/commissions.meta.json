@@ -1,0 +1,15 @@
+{
+    "source": "commissions.json: Trendyol satici paneli kategori tablosu (resmi dosya elle alinmis; dogrulanmis kaynak kaydi yok)",
+    "sourceConfidence": "unverified",
+    "asOf": "2026-04-24",
+    "asOfBasis": "repo ilk commit tarihi; gercek yururluk tarihi bilinmiyor",
+    "effectiveFrom": null,
+    "vatIncluded": null,
+    "tierSemantics": "KA1/KA2 anlami dogrulanmadi (Trendyol destegi/Excel sablonu teyidi bekliyor); hicbir kademe uygulanmaz, yalniz okunur",
+    "staleAfterDays": 90,
+    "knownIssues": [
+        "Ebeveyn-yaprak oranlari tutarsiz (bkz. docs/research/COMMISSIONS_TRENDYOL_CONSISTENCY_2026-09-30.md)",
+        "id 4594 'Ikinci El Otomobil' %50: aykiri, dogrulanmadi",
+        "id 4984 'Dijital Destek Karti': sessiz %0 -> null (bilinmiyor)"
+    ]
+}

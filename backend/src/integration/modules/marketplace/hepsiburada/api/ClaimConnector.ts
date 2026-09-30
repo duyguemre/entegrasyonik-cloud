@@ -1,5 +1,6 @@
 import Service from '../services/Service';
 import { IPlatformResponse, IClaimRejectParams } from '@interfaces/index';
+import { paginateOffset, readTotal } from './paginateOffset';
 
 export class ClaimConnector {
     constructor(private service: Service, private params: any) { }
@@ -7,12 +8,16 @@ export class ClaimConnector {
     public async fetchClaimsFromPlatform(query?: any): Promise<any[]> {
         const s = this.params.integrationSettings.settings || {};
         const merchantId = s.MERCHANTID || s.merchantid || s.SELLERID || s.sellerid || s.APIKEY || s.apikey || "";
-        const response = await this.service.get(`claims/merchantId/${merchantId}`, {
-            limit: 100,
-            offset: 0,
-            ...query
-        });
-        return response?.data || [];
+        // [faz4-int-wp1 / F-02] Tüm sayfalar dolaşılır (bkz. paginateOffset).
+        const { limit: qLimit, offset: qOffset, ...rest } = query || {};
+        const startOffset = Number(qOffset) || 0;
+        return paginateOffset(async (fetched, limit) => {
+            const response = await this.service.get(`claims/merchantId/${merchantId}`, { ...rest, limit, offset: startOffset + fetched });
+            const data = response?.data;
+            // Mevcut davranış: gövde dizi (mapper dizi bekler). Sarmalı biçim (items) yalnız varsa okunur.
+            const items = Array.isArray(data) ? data : (Array.isArray(data?.items) ? data.items : []);
+            return { items, total: Array.isArray(data) ? undefined : readTotal(data) };
+        }, { operation: 'fetchClaimsFromPlatform', clientId: this.params.clientId, limit: Number(qLimit) || undefined });
     }
 
     public async approveClaim(claimId: string, params?: any): Promise<IPlatformResponse> {

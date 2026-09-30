@@ -3,6 +3,7 @@ import {
     IAddress, ICustomerAddress, OrderInternalStatusEnum
 } from '@interfaces/index';
 import { integrationCode } from '../constants';
+import { buildInternalOrder } from '@integration/modules/common/adapter/buildInternalOrder';
 import { reportUnknownEnum } from '@integration/modules/common/contract/reportUnknownEnum';
 
 /** ADR-0018 sözleşme kimliği (Trendyol OrderTransformer.ts'teki ORDERS_CONTRACT_ID deseniyle aynı). */
@@ -35,7 +36,7 @@ export class OrderMapper {
             };
 
             const orderStatus = order.status;
-            const internalOrder: IOrder = {
+            const internalOrder: IOrder = buildInternalOrder({
                 integrationCode,
                 externalOrderId: orderNumber,
                 orderNumber: orderNumber,
@@ -84,9 +85,8 @@ export class OrderMapper {
                         itemStatus: this.mapItemStatus(line.status)
                     };
                 }),
-                flags: { isAllocated: false, isInvoiceGenerated: false, isMetricsProcessed: false },
                 meta: { ...order }
-            };
+            });
 
             return { order: internalOrder, customer, claims: [] };
         });

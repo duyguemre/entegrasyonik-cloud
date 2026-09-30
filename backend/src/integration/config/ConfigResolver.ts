@@ -9,9 +9,9 @@
 // görevde EKLENEMEDİ (görev kısıtı: descriptor'lara yalnız oku/referans ver). URL/host çözümü `legacyIntegrationRecord.ts`
 // içinde AYRI ve bugünküyle BİREBİR AYNI davranışla yapılır.
 import { getSettingDef } from './catalog';
-import { isPerIntegrationDefault, type ResolvedSetting, type SettingDef, type ValueSource } from './types';
+import { isPerIntegrationDefault, type ResolvedSetting, type SettingDef } from './types';
 import { getPublishedOverrideValue, getKnownVersion } from './platformOverrideStore';
-import { ENGINE_TARGET } from './targets';
+import { ENGINE_TARGET, PLATFORM_TARGET } from './targets';
 
 export interface ResolveOptions {
     /** Yalnız `scope==='integration'|'engine+integration'` anahtarlar için: hangi entegrasyon kodu. */
@@ -93,8 +93,6 @@ export function getSetting<T = unknown>(key: string, opts: ResolveOptions = {}):
     return resolveEffectiveConfig<T>(key, opts).value;
 }
 
-export const CONFIG_LAYER_ORDER: readonly ValueSource[] = ['env', 'tenant', 'platform', 'legacy', 'default'];
-
 /**
  * [ADR-0020 Aşama B, YENİ — 3.6] Aşama A'nın `resolveEffectiveConfig`/`getSetting` davranışı BİLEREK DEĞİŞMEDİ
  * (bkz. karakterizasyon testi "opts verilmezse HİÇ çağrılmaz", `ConfigResolver.test.ts`). Mevcut ~20 motor tüketicisi
@@ -106,7 +104,7 @@ export const CONFIG_LAYER_ORDER: readonly ValueSource[] = ['env', 'tenant', 'pla
  */
 export function resolveEffectiveConfigWithPublishedOverrides<T = unknown>(key: string, opts: ResolveOptions = {}): ResolvedSetting<T> {
     const def = getSettingDef(key) as SettingDef<T> | undefined;
-    const target = def && def.scope === 'engine' ? ENGINE_TARGET : (opts.integrationCode ?? ENGINE_TARGET);
+    const target = def && def.scope === 'platform' ? PLATFORM_TARGET : def && def.scope === 'engine' ? ENGINE_TARGET : (opts.integrationCode ?? ENGINE_TARGET);
     return resolveEffectiveConfig<T>(key, {
         ...opts,
         readPlatformOverride: opts.readPlatformOverride ?? ((k) => {

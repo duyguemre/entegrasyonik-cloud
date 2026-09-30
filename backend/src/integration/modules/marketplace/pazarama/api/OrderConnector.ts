@@ -1,18 +1,26 @@
+import { observeResponseSchema } from '@integration/modules/common/contract/observeResponseSchema';
+import { PAZARAMA_ORDERS_LIST } from '../contracts';
 import Service from '../services/Service';
 import { IPlatformResponse, ISendInvoicePayload, ISendTrackingPayload } from '@interfaces/index';
 import { fromHttpError } from '@integration/modules/common/IntegrationError';
 import { integrationCode } from '../constants';
+import { paginatePage } from './paginatePage';
 
 export class OrderConnector {
     constructor(private service: Service, private params: any) { }
 
     public async fetchOrdersFromPlatform(query?: any): Promise<any[]> {
         const baseUrl = this.params.integrationSettings?.urls?.orderListUrl || 'order/getOrdersForApi';
-        console.log(`[PazaramaOrderConnector] Fetching orders with query:`, JSON.stringify(query));
-        // [ADR-0006 1f] POST kullanır ama semantik olarak sipariş sorgusudur (okuma) -> idempotent:true.
-        const response = await this.service.post(baseUrl, query || {}, { idempotent: true, operation: 'fetchOrdersFromPlatform' });
-        // Pazarama returns { data: [], success: true ... }
-        return response?.data?.data || response?.data || [];
+        // [INT-05 / F-02] Tüm sayfalar dolaşılır (bkz. paginatePage); çağıranın pageNumber/pageSize'ı başlangıç değeri olarak korunur.
+        const { pageNumber, pageSize, ...rest } = query || {};
+        return paginatePage(async (page, limit) => {
+            // [ADR-0006 1f] POST kullanır ama semantik olarak sipariş sorgusudur (okuma) -> idempotent:true.
+            const response = await this.service.post(baseUrl, { ...rest, pageNumber: page, pageSize: limit }, { idempotent: true, operation: 'fetchOrdersFromPlatform' });
+            observeResponseSchema(PAZARAMA_ORDERS_LIST, response?.data, { clientId: this.params.clientId });
+            // Pazarama returns { data: [], success: true ... }
+            const items = response?.data?.data || response?.data || [];
+            return Array.isArray(items) ? items : [];
+        }, { operation: 'fetchOrdersFromPlatform', clientId: this.params.clientId, startPage: Number(pageNumber) || 1, limit: Number(pageSize) || undefined });
     }
 
     // Pazarama'da ayrı bir reject servisi yoktur, updateOrderStatus (PUT) kullanılır.

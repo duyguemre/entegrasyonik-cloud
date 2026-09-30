@@ -5,6 +5,10 @@ import { CategoryConnector } from '../api/CategoryConnector';
 import { CategoryMapper } from '../transformers/CategoryTransformer';
 import { Service } from './Service';
 import { IntegrationError } from '@integration/modules/common/IntegrationError';
+import { paginate } from '@integration/modules/common/adapter/paginate';
+import { carryIncomplete } from '@integration/contracts/IncompleteFetch';
+
+const HB_MAX_ATTRIBUTE_VALUE_PAGES = 50;
 
 export class CategoryService {
     private connector: CategoryConnector;
@@ -15,7 +19,8 @@ export class CategoryService {
         this.mapper = new CategoryMapper();
     }
 
-    @Cache(24, integrationCode)
+    // scope:global -- HB kategori ağacı/nitelikleri tüm tenant'lar için aynı (eski `24` = 24 SANİYE birim hatasıydı; 6 saat)
+    @Cache({ scope: 'global', ttl: '6h', context: `${integrationCode}-catalog` })
     public async fetchCategories(): Promise<ICategory[]> {
         try {
             const rawCategories = await this.connector.fetchCategoriesFromPlatform();
@@ -26,7 +31,8 @@ export class CategoryService {
         }
     }
 
-    @Cache(24, integrationCode)
+    // scope:global -- HB kategori ağacı/nitelikleri tüm tenant'lar için aynı (eski `24` = 24 SANİYE birim hatasıydı; 6 saat)
+    @Cache({ scope: 'global', ttl: '6h', context: `${integrationCode}-catalog` })
     public async fetchCategoryAttributes(categoryId: string): Promise<ICategoryAttribute[]> {
         try {
             const rawResponse = await this.connector.fetchCategoryAttributes(categoryId);
@@ -47,24 +53,17 @@ export class CategoryService {
     }
 
     public async fetchCategoryAttributeValues(categoryId: string, attributeId: string): Promise<any[]> {
-        let allValues: any[] = [];
-        let currentPage = 0;
-        let totalPages = 1;
-
-        while (currentPage < totalPages) {
-            const body = await this.connector.fetchCategoryAttributeValues(categoryId, attributeId, currentPage);
+        // [INT-05 / F-02] Ortak sayfalama: `totalPages` kadar, en cok HB_MAX_ATTRIBUTE_VALUE_PAGES sayfa. Tavanda SESSIZ kesilmez:
+        // uyari loglanir ve donen dizi incomplete isaretlenir (degerler onbellege alinmadigi icin kismi liste reddedilmez).
+        const allValues = await paginate<any>(async ({ page }) => {
+            const body = await this.connector.fetchCategoryAttributeValues(categoryId, attributeId, page);
             if (body && Array.isArray(body.data)) {
-                allValues = allValues.concat(body.data);
-                totalPages = body.totalPages || 1;
-            } else {
-                break;
+                const totalPages = body.totalPages || 1;
+                return { items: body.data, next: page + 1 < totalPages ? page + 1 : null };
             }
-            currentPage++;
+            return { items: [], next: null };
+        }, { kind: 'cursor', maxPages: HB_MAX_ATTRIBUTE_VALUE_PAGES, operation: 'fetchCategoryAttributeValues', integrationCode: 'hepsiburada', clientId: this.params.clientId });
 
-            // Safety break for excessive pages
-            if (currentPage > 50) break;
-        }
-
-        return this.mapper.toInternalAttributeValues(allValues);
+        return carryIncomplete(allValues, this.mapper.toInternalAttributeValues(allValues));
     }
 }

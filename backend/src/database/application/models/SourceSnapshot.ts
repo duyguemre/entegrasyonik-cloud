@@ -4,8 +4,6 @@ import mongoose from 'mongoose';
 // İçerik ASLA saklanmaz (yalnız SHA-256 hash'i + koşullu-GET meta verisi + ≤2KB diff, `IntegrationFinding.evidence.docDiff`
 // ile AYNI kırpma sınırı). Bu model salt "değişti mi" karşılaştırması için gerekli en az veriyi tutar.
 
-export const SOURCE_SNAPSHOT_MAX_DIFF_CHARS = 2 * 1024;
-
 export const SourceSnapshotSchema = new mongoose.Schema({
     /** Birincil anahtar: doğrudan URL (adaptör başına birden çok URL olabilir; bkz. descriptor.api.docs[]). */
     url: { type: String, required: true, unique: true },

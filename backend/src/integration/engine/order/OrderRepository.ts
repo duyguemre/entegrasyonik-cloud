@@ -1,6 +1,10 @@
 import { DatabaseManagerInstance } from '@database/index';
 import { IOrder } from '@interfaces/order';
 import { getLogPrefix, LoggerType } from '@utils/Logger';
+import { eventLog } from '@platform/core/logger';
+import { guardOrderRequiredFields } from './orderRequiredGuard';
+
+const log = eventLog('worker', 'OrderRepository');
 
 /**
  * Worker'ın CRM metriklerini (LTV) doğru yönetmesi için dönen sonuç tipi.
@@ -27,6 +31,14 @@ export class OrderRepository {
         this.logPrefix = getLogPrefix(this.workerName, clientId, "");
 
         try {
+            // [faz4-order-guard] Reddetmez: eksik required alanları sayıp uyarır, boş kalem kimliğini deterministik doldurur.
+            const { gaps, lineIdsFilled } = guardOrderRequiredFields(orders);
+            if (Object.keys(gaps).length > 0) {
+                log.warn('ORDERREPOSITORY_ZORUNLU_ALAN_EKSIK', 'Sipariş(ler)de şemada zorunlu alan boş/eksik (upsert doğrulamaz, yazım sürdü).', {
+                    tenantId: clientId, integrationCode: orders[0]?.integrationCode, orderCount: orders.length, gaps, lineIdsFilled,
+                });
+            }
+
             const clientDb = await DatabaseManagerInstance.getClientDB(clientId);
             if (!clientDb) throw new Error(`${this.logPrefix} Client DB not found`);
 
@@ -239,12 +251,12 @@ export class OrderRepository {
                 }
             });
 
-            console.log(`${this.logPrefix} İşlem Özeti: ${insertedExternalIds.length} Yeni, ${updatedExternalIds.length} Güncelleme.`);
+            log.info('ORDERREPOSITORY_ISLEM_OZETI_YENI_GUNCELLEME', `İşlem Özeti: ${insertedExternalIds.length} Yeni, ${updatedExternalIds.length} Güncelleme.`);
 
             return { insertedExternalIds, updatedExternalIds };
 
         } catch (error) {
-            console.error(`${this.logPrefix} Sipariş DB Yazma Hatası:`, error);
+            log.error('ORDERREPOSITORY_SIPARIS_DB_YAZMA_HATASI', 'Sipariş DB Yazma Hatası:', { err: error });
             throw error;
         }
     }
@@ -265,9 +277,9 @@ export class OrderRepository {
             if (!this.logPrefix) {
                 this.logPrefix = getLogPrefix(this.workerName, clientId, integrationCode);
             }
-            console.log(`${this.logPrefix} Son Senkronizasyon Tarihi Güncellendi: ${syncDate}`);
+            log.info('ORDERREPOSITORY_SON_SENKRONIZASYON_TARIHI_GUNCELLENDI', `Son Senkronizasyon Tarihi Güncellendi: ${syncDate}`);
         } catch (error) {
-            console.error(`${this.logPrefix} Timestamp Güncelleme Hatası:`, error);
+            log.error('ORDERREPOSITORY_TIMESTAMP_GUNCELLEME_HATASI', 'Timestamp Güncelleme Hatası:', { err: error });
         }
     }
 
@@ -290,9 +302,9 @@ export class OrderRepository {
             if (!this.logPrefix) {
                 this.logPrefix = getLogPrefix(this.workerName, clientId, integrationCode);
             }
-            console.log(`${this.logPrefix} ${field} Güncellendi: ${date}`);
+            log.info('ORDERREPOSITORY_GUNCELLENDI', `${field} Güncellendi: ${date}`);
         } catch (error) {
-            console.error(`${this.logPrefix} ${field} Güncelleme Hatası:`, error);
+            log.error('ORDERREPOSITORY_GUNCELLEME_HATASI', `${field} Güncelleme Hatası:`, { err: error });
         }
     }
 }

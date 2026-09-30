@@ -2,9 +2,10 @@ import { Express, Request, Response } from 'express';
 import { AuditLogger } from '@services/audit/AuditLogger';
 import { storageService } from '@services/storage/StorageService';
 import { prepareExportDownload, ExportDownloadDeps } from '@operations/tenant/exportDownload';
-import { isAllowed, resolveTier } from './operationPolicy';
+import { canFor } from '@platform/core/authz/can';
 import { createRateLimiter } from './rateLimit';
 import { getClientIp } from './clientIp';
+import { sendHttpError } from './http/errorEnvelope';
 
 // KVKK dışa aktarma indirme rotası (docs/API_TENANT_SURFACE.md §5; ADR-0003 adım 8 / F.22).
 // `TenantDataService.exportTenantData` bir `downloadToken` üretir; bu rota onu tüketir. Jenerik RPC'ye (JSON yanıt) sığmaz
@@ -31,9 +32,9 @@ export function configureExportDownloadRoutes(app: Express, context: string, dep
     app.get(context + EXPORT_DOWNLOAD_ROUTE, limiter, async (req: Request, res: Response) => {
         try {
             // Fail-closed: authenticate middleware'i takılmamışsa/oturum yoksa 401
-            if (!res.locals || !res.locals.principal) { res.status(401).send({ error: 'Token is undefined' }); return; }
+            if (!res.locals || !res.locals.principal) { sendHttpError(res, 401, 'Token is undefined', 'UNAUTHENTICATED'); return; }
 
-            const isOwner = isAllowed('owner', resolveTier(res.locals.userContext, res.locals.principal));
+            const isOwner = canFor(res.locals.userContext, res.locals.principal, 'tenant:export').allowed;
             const outcome = await prepareExportDownload({
                 token: typeof req.query?.token === 'string' ? req.query.token : undefined,
                 order: res.locals.userContext?.order,
@@ -42,7 +43,7 @@ export function configureExportDownloadRoutes(app: Express, context: string, dep
                 isOwner,
             }, deps);
 
-            if (!outcome.ok) { res.status(outcome.status).send({ error: outcome.error }); return; }
+            if (!outcome.ok) { sendHttpError(res, outcome.status, outcome.error); return; }
 
             // Token URL'de taşındığı için: önbellek yok, Referer sızıntısı yok, içerik türü koklama yok
             res.setHeader('Content-Type', 'application/zip');
@@ -59,13 +60,13 @@ export function configureExportDownloadRoutes(app: Express, context: string, dep
             outcome.body.on('error', (e: any) => {
                 console.error('[ExportDownload] akış hatası:', e?.name || e?.message);
                 outcome.abort();
-                if (!res.headersSent) res.status(500).send({ error: 'Arşiv şu anda indirilemiyor.' });
+                if (!res.headersSent) sendHttpError(res, 500, 'Arşiv şu anda indirilemiyor.', 'INTERNAL');
                 else res.destroy();
             });
             outcome.body.pipe(res);
         } catch (e: any) {
             console.error('[ExportDownload] beklenmeyen hata:', e?.name || e?.message);
-            if (!res.headersSent) res.status(500).send({ error: 'Arşiv şu anda indirilemiyor.' });
+            if (!res.headersSent) sendHttpError(res, 500, 'Arşiv şu anda indirilemiyor.', 'INTERNAL');
         }
     });
 }

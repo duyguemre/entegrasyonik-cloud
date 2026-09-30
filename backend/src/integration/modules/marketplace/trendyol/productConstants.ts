@@ -48,3 +48,11 @@ export const TRENDYOL_ORIGIN_REQUIRED_FROM_MS = Date.parse('2026-10-23T00:00:00+
 
 /** `origin` biçimi: 2 harfli ülke kodu (ör. TR, US). */
 export const TRENDYOL_ORIGIN_PATTERN = /^[A-Za-z]{2}$/;
+
+/** Ürün V2 alan sınırları (resmi: developers.trendyol.com ürün-yaratma-v2, API_CONTRACTS_2026-09-30 §1). */
+export const TRENDYOL_FIELD_LIMITS = {
+    barcode: 40, title: 100, productMainId: 40, description: 30000, stockCode: 100, lotNumber: 100, images: 8,
+} as const;
+
+/** Geçerli KDV oranları (V2). */
+export const TRENDYOL_VAT_RATES: ReadonlyArray<number> = [0, 1, 10, 20];

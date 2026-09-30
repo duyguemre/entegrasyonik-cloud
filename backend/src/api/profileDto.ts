@@ -1,3 +1,4 @@
+import { permissionsForProfile } from '@platform/core/authz/can';
 // ADR-0001 Karar 12: login/register/userContext/selectStore yanıtları sunucuda kurulan PROFİL DTO'sudur.
 // Beyaz liste: yalnızca FE'nin kullandığı alanlar döner. password, tokenVersion, failedLoginAttempts, lockUntil, __v ve
 // belgede kalmış diğer (strict:false) alanlar ASLA dönmez.
@@ -19,5 +20,7 @@ export function toProfileDto(user: any): any {
     // Hesap yaşam döngüsü: e-posta doğrulama durumu HER ZAMAN boolean döner; alanı olmayan (eski) kullanıcılar doğrulanmamıştır.
     // (Doğrulanmamış hesap girişten engellenmez; zorunlu kılma ayrı karar.)
     dto.emailVerified = src.emailVerified === true;
+    // [ADR-0028 WP-A1] FE'ye etkili izin listesi (yeni, eklemeli alan; eski alanlar aynen). Karar sunucuda zorlanır; FE yalnız görünürlük için kullanır.
+    dto.permissions = permissionsForProfile(src);
     return dto;
 }

@@ -3,19 +3,14 @@
 // `common/http/ResilientHttpClient.ts` (paylaşımlı retry/breaker varsayılanı), her adaptörün `services/Service.ts`.
 import { z } from 'zod';
 import type { PerIntegrationDefault, SettingDef } from '../types';
+import { ADAPTER_CODES } from '../../modules/adapterKeys';
 import { durationSetting, countSetting } from './helpers';
 
-const INTEGRATION_CODES = ['trendyol', 'hepsiburada', 'n11', 'pazarama', 'ideasoft', 'bizimhesap'] as const;
+const INTEGRATION_CODES = ADAPTER_CODES; // ADR-0033 INT-02: tek kod tablosu
 
 function perIntegration(values: Partial<Record<typeof INTEGRATION_CODES[number], number>>, fallback: number): PerIntegrationDefault<number> {
     return { _: fallback, ...values } as PerIntegrationDefault<number>;
 }
-
-/** `TY_/HB_/N11_/PAZARAMA_/IDEASOFT_/BIZIMHESAP_HTTP_TIMEOUT_MS` — env tanımlıysa değeri KİLİTLER (ADR Karar 1.3). */
-const TIMEOUT_ENV: Record<typeof INTEGRATION_CODES[number], string> = {
-    trendyol: 'TY_HTTP_TIMEOUT_MS', hepsiburada: 'HB_HTTP_TIMEOUT_MS', n11: 'N11_HTTP_TIMEOUT_MS',
-    pazarama: 'PAZARAMA_HTTP_TIMEOUT_MS', ideasoft: 'IDEASOFT_HTTP_TIMEOUT_MS', bizimhesap: 'BIZIMHESAP_HTTP_TIMEOUT_MS',
-};
 
 export const INTEGRATION_HTTP_SETTINGS: SettingDef<number>[] = [
     {
@@ -120,5 +115,3 @@ export const INTEGRATION_HTTP_SETTINGS: SettingDef<number>[] = [
         knownDriftNote: 'K11: JSON\'da YOK, yalnız kod sabiti `IntegrationFactory.EXECUTION_TIMEOUT` (IntegrationFactory.ts:36). Katalog bu değeri İZLER, tüketici migrasyonu bu turda yapılmadı.',
     }),
 ];
-
-export const RESILIENCE_INTEGRATION_CODES = INTEGRATION_CODES;

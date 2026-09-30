@@ -15,7 +15,9 @@ export default tseslint.config(
       'coverage/**',
       'node_modules/**',
       '.vite/**',
-      'src/design/tokens/dist/**', // üretilmiş CSS/JS token çıktısı
+      'src/design/tokens/dist/**', // üretilmiş CSS/JS token çıktısı (site sözleşme yolu)
+      'packages/ui/src/tokens/dist/**', // üretilmiş CSS token çıktısı
+      'packages/ui/src/theme/theme-boot.js', // tarayıcı önyükleme betiği (public/ kopyalarıyla bayt bayt aynı)
       '*.config.js',
       '*.config.mjs',
       '*.config.cjs',
@@ -34,7 +36,7 @@ export default tseslint.config(
   // başlığı) bunu dışlar. Stil göçü ayrı bir iştir (ADR-0011 literal-stil mandalı zaten bu alanı kapsıyor).
   ...pluginVue.configs['flat/essential'],
   {
-    files: ['src/**/*.vue'],
+    files: ['src/**/*.vue', 'packages/ui/src/**/*.vue'],
     languageOptions: {
       parserOptions: {
         // `<script lang="ts">` / `<script setup lang="ts">` bloklarını `vue-eslint-parser`
@@ -45,7 +47,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/**/*.ts', 'src/**/*.vue'],
+    files: ['src/**/*.ts', 'src/**/*.vue', 'packages/ui/src/**/*.ts', 'packages/ui/src/**/*.vue'],
     languageOptions: {
       parserOptions: {
         // Tip-farkındalıklı DEĞİL (yukarıdaki not); `.vue` dosyalarında `<script setup lang="ts">`

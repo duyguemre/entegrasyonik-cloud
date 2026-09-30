@@ -1,9 +1,12 @@
 import { DatabaseManagerInstance } from "@database/DatabaseManager";
 import { RedisService } from "@services/redis/RedisService";
 import IntegrationFactory from "@integration/modules/IntegrationFactory";
-import { EVENTS, integrationEventBus } from "@integration/engine/IntegrationEventBus";
+import { EVENTS, integrationEventBus } from "@platform/runtime/events/IntegrationEventBus";
 import { PLATFORM_PROCESS } from "@interfaces/index";
 import { StockAllocator } from "./StockAllocator";
+import { CLIENT_INTEGRATION_HOT_PROJECTION, stockScanProjection } from "@database/projections";
+import { allowNewWork, recordIntakeSkip } from "@integration/config/intakeGate";
+import { notifyLowStockVariants } from "./lowStock";
 
 /**
  * ADR-0004 — Zero-oversell (Karar 5-6, Aşama C): kanal yayını/debounce köprüsü.
@@ -49,13 +52,23 @@ export class StockPublishTrigger {
     }
 
     /**
-     * ADR Karar 5-6: `publish = clamp(available - max(bufferUnits, floor(available*bufferPercent/100)), 0, kanalMax)`.
+     * [Faz-3] Kanal güvenlik stoğu: kanala yayınlanan taban = `max(0, stok - safetyStock)`. TEK yardımcı (transformer'lara
+     * dokunulmaz; yayın miktarı yalnız bu sınıfta hesaplanır). `safetyStock` yok/0/geçersiz = bugünkü davranış.
+     */
+    public static applySafetyStock(available: number, safetyStock?: number): number {
+        const safety = typeof safetyStock === 'number' && Number.isFinite(safetyStock) && safetyStock > 0 ? safetyStock : 0;
+        return safety === 0 ? available : Math.max(0, available - safety);
+    }
+
+    /**
+     * ADR Karar 5-6: `publish = clamp(base - max(bufferUnits, floor(base*bufferPercent/100)), 0, kanalMax)`, `base = applySafetyStock(available, safetyStock)`.
      * Saf/testable fonksiyon: politika okuma bu sınıfın `run()` metodunda, hesap burada.
      */
     public static computePublishQuantity(
         available: number,
-        opts: { isPrimary: boolean; bufferUnits?: number; bufferPercent?: number; channelMax?: number },
+        opts: { isPrimary: boolean; bufferUnits?: number; bufferPercent?: number; safetyStock?: number; channelMax?: number },
     ): number {
+        available = StockPublishTrigger.applySafetyStock(available, opts.safetyStock);
         const bufferUnits = opts.isPrimary ? 0 : (opts.bufferUnits ?? 1);
         const bufferPercent = opts.bufferPercent ?? 0;
         const buffer = Math.max(bufferUnits, Math.floor(available * bufferPercent / 100));
@@ -98,23 +111,26 @@ export class StockPublishTrigger {
         const clientDB = await DatabaseManagerInstance.getClientDB(clientOrder);
         if (!clientDB) return 0;
 
-        const integrationDoc: any = await clientDB.getClientIntegrationModel().findOne().lean();
+        const integrationDoc: any = await clientDB.getClientIntegrationModel().findOne({}, CLIENT_INTEGRATION_HOT_PROJECTION).lean(); // [DB-03] -erp katalog
         const marketplaces: any[] = (integrationDoc?.marketplace || []).filter((m: any) => m.status !== false);
         if (marketplaces.length === 0) return 0;
 
         const primaryChannel = this.resolvePrimaryChannel(integrationDoc, marketplaces);
 
         const dirtyVariants: any[] = await clientDB.getVariantModel()
-            .find({ stockDirty: true })
+            .find({ stockDirty: true }, stockScanProjection(marketplaces.map((m: any) => m.code))) // [DB-03] yalnız gereken alanlar
             .limit(StockPublishTrigger.SCAN_LIMIT)
             .lean();
         if (!dirtyVariants || dirtyVariants.length === 0) return 0;
+
+        // [Faz-3] düşük stok bildirimi (tenant eşiği yoksa no-op); stoğu değişmiş varyantlar zaten burada taranıyor.
+        await notifyLowStockVariants(clientOrder, dirtyVariants, integrationDoc?.stockPolicy?.lowStockThreshold);
 
         const matchKeyCache: Record<string, string> = {};
         const factory = new IntegrationFactory(clientOrder);
 
         let stagedCount = 0;
-        const clearedVariantIds: any[] = [];
+        const clearedVariantIds: Array<{ _id: any; stockDirtyAt?: Date; stockVersion?: number }> = [];
         const perChannelCount: Record<string, number> = {};
 
         for (const variant of dirtyVariants) {
@@ -124,6 +140,9 @@ export class StockPublishTrigger {
             for (const mp of marketplaces) {
                 const code = mp.code;
                 const platformInfo = (variant as any).platforms?.[code];
+                // [ADR-0030 X6] Kill-switch: kanal kapalıyken yayın kaydı açılmaz VE varyant temizlenmez
+                // (`touchedAnyChannel` set edilmez) -> stockDirty korunur, açılınca sonraki turda yayınlanır.
+                if (!allowNewWork(code)) { recordIntakeSkip('StockPublishTrigger', code, 'new'); continue; }
                 // Var olan iş kuralıyla AYNI (`internalProcessBatch`): sadece TRANSFER tamamlanmış SKU'lar
                 // diğer modlarda (burada UPDATE_STOCK) işlenir.
                 if (platformInfo?.upload?.TRANSFER?.status !== 'COMPLETED') continue;
@@ -145,6 +164,7 @@ export class StockPublishTrigger {
                     isPrimary,
                     bufferUnits: stockPolicy.bufferUnits,
                     bufferPercent: stockPolicy.bufferPercent,
+                    safetyStock: stockPolicy.safetyStock,
                     channelMax,
                 });
 
@@ -166,14 +186,18 @@ export class StockPublishTrigger {
                 stagedCount++;
             }
 
-            if (touchedAnyChannel) clearedVariantIds.push((variant as any)._id);
+            if (touchedAnyChannel) clearedVariantIds.push({ _id: (variant as any)._id, stockDirtyAt: (variant as any).stockDirtyAt, stockVersion: (variant as any).stockVersion });
         }
 
         if (clearedVariantIds.length > 0) {
-            await clientDB.getVariantModel().updateMany(
-                { _id: { $in: clearedVariantIds } },
-                { $set: { stockDirty: false } },
-            );
+            // [X2] KOŞULLU temizleme: tarama ile temizleme arasında araya giren kullanıcı düzenlemesi / rezervasyon
+            // (stockDirtyAt / stockVersion değişir) bayrağı KAYBETMEZ; o varyant bir sonraki turda yeniden taranır.
+            await clientDB.getVariantModel().bulkWrite(clearedVariantIds.map((c: any) => ({
+                updateOne: {
+                    filter: { _id: c._id, stockDirtyAt: c.stockDirtyAt ?? null, stockVersion: c.stockVersion ?? null },
+                    update: { $set: { stockDirty: false } },
+                },
+            })));
         }
 
         for (const [code, count] of Object.entries(perChannelCount)) {

@@ -15,13 +15,14 @@ function withAdminMenu(overrides: Record<string, any> = {}) {
 }
 
 test.describe('P2 — Admin / Destek Yönetimi (AdminTicketListView)', () => {
-  test('smoke: banner + arama kutusu + talep satırları render olur', async ({ page }) => {
+  test('smoke: başlık + arama kutusu + talep satırları render olur', async ({ page }) => {
     await installApiMocks(page, withAdminMenu())
     await gotoAuthed(page)
     await openScreen(page, 'AdminTicketListView')
 
     await expect(page.locator('.ticket-list-view')).toBeVisible()
-    await expect(page.getByText('DESTEK MERKEZİ ANALİZİ')).toBeVisible()
+    // Aşama 3: dekoratif "DESTEK MERKEZİ ANALİZİ" bandı kalktı (warning tonu yanlış anlamdaydı); başlık iddiası yerine geçer.
+    await expect(page.getByRole('heading', { name: 'Destek Yönetimi' })).toBeVisible()
     await expect(page.getByLabel('Talep No, Konu veya Mesaj Ara').first()).toBeVisible()
     await expect(page.getByText('TKT-100001')).toBeVisible()
     await expect(page.getByText('E2E Sipariş senkronizasyonu gecikiyor')).toBeVisible()
@@ -39,7 +40,7 @@ test.describe('P2 — Admin / Destek Yönetimi (AdminTicketListView)', () => {
     await expect(page.getByText('Talep bulunamadı.')).toBeVisible()
   })
 
-  test('hata durumu: 500 alındığında da aynı boş-durumuna düşülür, ham hata sızmaz (gizli davranış — bkz. BACKLOG.md)', async ({ page }) => {
+  test('hata durumu: 500 alındığında "Talepler yüklenemedi" + Tekrar dene gösterilir, ham hata sızmaz', async ({ page }) => {
     // GİZLİ DAVRANIŞ (characterization, düzeltilmedi — BACKLOG.md): `restApi.post` HİÇBİR ZAMAN
     // reddetmiyor; `loadTickets` yalnızca `try/finally` kullanıyor (catch YOK), `res?.success`
     // falsy olunca `tickets` `[]`'de kalıyor — kullanıcı "hata" ile "gerçekten talep yok"
@@ -48,7 +49,9 @@ test.describe('P2 — Admin / Destek Yönetimi (AdminTicketListView)', () => {
     await gotoAuthed(page)
     await openScreen(page, 'AdminTicketListView')
 
-    await expect(page.getByText('Talep bulunamadı.')).toBeVisible()
+    // DS-v2 Aşama 2 — BİLİNÇLİ DEĞİŞİKLİK: hata artık boş durumdan AYRI ("Talepler yüklenemedi" + "Tekrar dene").
+    await expect(page.getByText('Talepler yüklenemedi', { exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Tekrar dene' })).toBeVisible()
     await expect(page.locator('body')).not.toContainText('500')
   })
 
@@ -95,8 +98,16 @@ test.describe('P2 — Admin / Destek Yönetimi (AdminTicketListView)', () => {
     await expect.poll(() => statuses.length).toBeGreaterThan(0)
     expect(statuses[0]).toBe('ALL')
 
-    await page.locator('.status-select-premium').click()
-    await page.getByRole('option', { name: 'AÇIK' }).click()
+    // DS-v2 Aşama 2 — BİLİNÇLİ DEĞİŞİKLİK: durum filtresi sayfa içi panelde; "Sorgula" ile uygulanır.
+    const view = page.locator('.ticket-list-view')
+    const panel = view.locator('.ek-filter')
+    // Panel masaüstünde açık başlar, dar ekranda kapalı: kapalıysa başlıktan aç.
+    const toggle = view.getByRole('button', { name: /Filtreler/ })
+    if ((await toggle.getAttribute('aria-expanded')) === 'false') await toggle.click()
+    await expect(panel.locator('form')).toBeVisible()
+    await panel.locator('.v-select').filter({ hasText: 'Talep durumu' }).click()
+    await page.getByRole('option', { name: 'Açık' }).click()
+    await panel.getByRole('button', { name: /Sorgula/ }).click()
     await expect.poll(() => statuses.includes('OPEN')).toBe(true)
   })
 
@@ -111,7 +122,8 @@ test.describe('P2 — Admin / Destek Yönetimi (AdminTicketListView)', () => {
     await gotoAuthed(page)
     await openScreen(page, 'AdminTicketListView')
 
-    await page.locator('.ticket-list-view thead button:has(.mdi-plus)').click()
+    // DS-v2 Aşama 2 — BİLİNÇLİ DEĞİŞİKLİK: "+" başlık düğmesi yerine başlık eylemi "Yeni talep başlat".
+    await page.getByRole('button', { name: 'Yeni talep başlat' }).click()
     const dialog = page.getByRole('dialog').filter({ hasText: 'Yeni Destek Talebi Başlat' })
     await expect(dialog).toBeVisible()
 

@@ -1,8 +1,15 @@
+import { carryIncomplete } from '@integration/contracts/IncompleteFetch';
 import { IOrderPackage, IOrderRejectParams, IPlatformResponse, ISendInvoicePayload, ISendTrackingPayload, OrderInternalStatusEnum } from '@interfaces/index';
 import { OrderConnector } from '../api/OrderConnector';
 import { OrderMapper } from '../transformers/OrderTransformer';
 import Service from './Service';
 import { IntegrationError } from '@integration/modules/common/IntegrationError';
+import { eventLog } from '@platform/core/logger';
+import { integrationCode } from '../constants';
+
+const log = eventLog('adapter-pazarama', 'OrderService');
+/** Kayıtların TÜMÜ kimliksizse ve en az bu kadar kayıt varsa şema kayması varsayılır (Trendyol/HB DRIFT_MIN_RECORDS ile aynı eşik). */
+const DRIFT_MIN_RECORDS = 3;
 
 export class OrderService {
     private connector: OrderConnector;
@@ -31,11 +38,29 @@ export class OrderService {
             }
 
             const rawOrders = await this.connector.fetchOrdersFromPlatform(apiQuery);
-            return this.mapper.toInternalOrderPackages(rawOrders);
+            return carryIncomplete(rawOrders, this.mapper.toInternalOrderPackages(this.dropMissingIdentity(rawOrders)));
         } catch (error: any) {
             if (IntegrationError.isIntegrationError(error)) throw error;
             throw new Error(`[${this.clientId}][PazaramaOrderService:fetchOrders] ${error.message}`);
         }
+    }
+
+    /**
+     * [INT-05 / conformance C7b, playbook §4.2] Sipariş kimliği (OrderNumber/OrderId) olmayan kayıt boş kimlikle SESSİZCE kaydedilmez:
+     * atlanır + loglanır (Trendyol C22 / HB deseni); kayıtların TÜMÜ (>= DRIFT_MIN_RECORDS) kimliksizse şema kayması varsayılıp VALIDATION fırlatılır.
+     * `carryIncomplete` ham diziden okunur (işaret ham dizidedir); filtreli dizi yalnız mapper'a gider.
+     */
+    private dropMissingIdentity(raw: any[]): any[] {
+        const valid = raw.filter(o => !!(o?.OrderNumber || o?.orderNumber || o?.OrderId || o?.orderId));
+        const skipped = raw.length - valid.length;
+        if (skipped === 0) return raw;
+        log.error('ORDERSERVICE_PZ_SIPARIS_KIMLIGI_EKSIK', `${skipped}/${raw.length} Pazarama sipariş kaydı kimlik (OrderNumber/OrderId) eksikliği nedeniyle ATLANDI (şema kayması olabilir).`);
+        if (raw.length >= DRIFT_MIN_RECORDS && valid.length === 0) {
+            throw new IntegrationError('VALIDATION',
+                `Pazarama sipariş yanıtı beklenen kimlik alanlarını taşımıyor (${raw.length}/${raw.length} kayıt geçersiz; şema kayması şüphesi).`,
+                { integrationCode, operation: 'fetchOrders', clientId: this.clientId, platformCode: 'ORDER_SCHEMA_DRIFT' });
+        }
+        return valid;
     }
 
     public async rejectOrder(externalOrderId: string, params: IOrderRejectParams): Promise<boolean> {

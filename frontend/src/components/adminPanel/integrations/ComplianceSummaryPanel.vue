@@ -86,12 +86,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import EkSkeleton from '@/components/ds/EkSkeleton.vue'
-import EkErrorState from '@/components/ds/EkErrorState.vue'
-import EkStatusChip from '@/components/ds/EkStatusChip.vue'
-import EkPlatformMark from '@/components/ds/EkPlatformMark.vue'
+import { EkSkeleton, EkErrorState, EkStatusChip, EkPlatformMark } from '@entegrasyonik/ui/components'
 import { FINDING_SEVERITY_TONE, JOB_RUN_OUTCOME_TONE, type JobRunOutcome } from '@/design/status-map'
-import { formatDate, formatDateTime } from '@/composables/format'
+import { formatDate, formatDateTime } from '@entegrasyonik/ui/format'
 import { FINDING_SEVERITIES, type ComplianceSummaryItem, type FindingSeverity, type LastProbeRun } from './useIntegrationComplianceApi'
 
 const props = defineProps<{

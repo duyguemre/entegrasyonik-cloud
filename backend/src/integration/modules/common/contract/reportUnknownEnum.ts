@@ -1,3 +1,6 @@
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('engine', 'reportUnknownEnum');
 // ADR-0018 §2a(iii) için MİNİMAL API (Aşama A'nın bulgu modeli/FindingService'i henüz YOK; onu BAŞLATMAZ).
 // Durum eşleyicileri `default` dalında bilinmeyen bir enum değeriyle karşılaşınca sessizce yutmak yerine bunu çağırır.
 // Eşleme davranışı DEĞİŞMEZ (çağıran yine kendi güvenli varsayılanını döner); bu fonksiyon ASLA fırlatmaz.
@@ -41,7 +44,7 @@ export function reportUnknownEnum(contractId: string, field: string, value: unkn
         if (seen === 0 && counts.size >= MAX_TRACKED) counts.clear(); // sınırsız büyümeyi engelle
         counts.set(key, seen + 1);
         if (seen === 0) {
-            console.warn(`[contract-guard] bilinmeyen enum değeri: contract=${contractId} field=${field} value=${event.value} ` +
+            log.warn('REPORTUNKNOWNENUM_BILINMEYEN_ENUM_DEGERI_CONTRACT', `bilinmeyen enum değeri: contract=${contractId} field=${field} value=${event.value} ` +
                 '(eşleme varsayılana düştü; yeni bir pazaryeri durumu olabilir — adaptör eşlemesi gözden geçirilmeli)');
         }
     } catch {

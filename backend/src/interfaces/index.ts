@@ -7,6 +7,5 @@ export * from './platforms';
 export * from './claim';
 export * from './customer';
 export * from './invoice';
-export * from './settlement';
 export * from './message';
 export * from './stock';

@@ -1,0 +1,136 @@
+---
+/**
+ * StatPanel — hero cam panelinde "Bir bakışta" sayaçları (S17: S16 `/entegrasyonlar` kapsam özetinden ortak
+ * bileşene çekildi). Değerler YALNIZCA kayıttan hesaplanıp verilir; her `data-stat` değeri tests/pages.test.ts
+ * içinde aynı kayıttan yeniden hesaplanarak doğrulanır (sabit rakam yazılmaz). Alt kısım için varsayılan yuva.
+ */
+interface Stat {
+  id: string
+  value: number
+  label: string
+}
+
+interface Chip {
+  href: string
+  /** Kanal kodu: renk `[data-code]` eşlemesinden (global.css `--chan`). */
+  code: string
+  label: string
+}
+
+interface Props {
+  tag: string
+  stats: Stat[]
+  testid?: string
+  /** Panelin altında kanal çipleri (S16 /entegrasyonlar deseni). */
+  chips?: Chip[]
+  chipsLabel?: string
+}
+
+const { tag, stats, testid, chips = [], chipsLabel = 'Kullanılabilir kanallar' } = Astro.props
+---
+
+<p class="stat-panel__tag">{tag}</p>
+<dl class="stats" data-testid={testid}>
+  {
+    stats.map((st) => (
+      <div class="stat">
+        <dt class="stat__label">{st.label}</dt>
+        <dd class="stat__value" data-stat={st.id}>
+          {st.value}
+        </dd>
+      </div>
+    ))
+  }
+</dl>
+{
+  chips.length > 0 && (
+    <ul class="hero-chans" role="list" aria-label={chipsLabel}>
+      {chips.map((c) => (
+        <li>
+          <a href={c.href} class="hero-chan" data-code={c.code}>
+            <span class="hero-chan__dot" aria-hidden="true" />
+            {c.label}
+          </a>
+        </li>
+      ))}
+    </ul>
+  )
+}
+<slot />
+
+<style>
+  .stat-panel__tag {
+    margin: 0 0 var(--ek-space-4);
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--site-border-width);
+    margin: 0;
+    overflow: hidden;
+    border-radius: var(--ek-radius-lg);
+    background: var(--site-glass-border);
+  }
+  .stat {
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: flex-end;
+    gap: var(--ek-space-1);
+    padding: var(--ek-space-4);
+    background: color-mix(in srgb, var(--site-stage-deep) 55%, transparent);
+  }
+  .stat__value {
+    margin: 0;
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--site-font-display-sm);
+    font-weight: var(--site-font-display-weight);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: var(--site-font-display-tracking);
+    line-height: 1;
+  }
+  .stat__label {
+    color: var(--site-text-on-dark-body);
+    font-size: var(--ek-font-size-sm);
+  }
+  .hero-chans {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2);
+    margin: var(--ek-space-5) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .hero-chan {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    min-height: calc(var(--ek-space-8) + var(--ek-space-1));
+    padding-inline: var(--ek-space-3);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-full);
+    background: var(--site-glass-bg);
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-medium);
+    text-decoration: none;
+    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .hero-chan:hover {
+    border-color: var(--chan);
+  }
+  .hero-chan:focus-visible {
+    outline-color: var(--site-color-on-primary);
+  }
+  .hero-chan__dot {
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: var(--chan);
+    box-shadow: 0 0 0 calc(var(--site-border-width) * 3) color-mix(in srgb, var(--chan) 30%, transparent);
+  }
+</style>

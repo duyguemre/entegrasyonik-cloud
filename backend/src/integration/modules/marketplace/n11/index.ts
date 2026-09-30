@@ -2,7 +2,8 @@ import { IPlatform, IBrand, ICategory, ICategoryAttribute, ICategoryAttributeVal
 import { IOrderRejectParams, IClaimRejectParams } from '@interfaces/platforms';
 import { IFinancialTransaction, ICargoInvoice } from '@interfaces/platforms';
 
-import Service from './services/Service';
+import Service, { N11_DEFAULT_URLS } from './services/Service';
+import { runConnectionProbe, type TestConnectionResult } from '@integration/modules/common/adapter/testConnection';
 import { OrderService } from './services/OrderService';
 import { ProductService } from './services/ProductService';
 import { CategoryService } from './services/CategoryService';
@@ -36,6 +37,17 @@ export default class N11 implements IPlatform {
     }
 
     public async init(): Promise<boolean> { return true; }
+
+    /**
+     * [INT-01 testConnection] Yan etkisiz tek okuma: REST ürün sorgusunun (`ms/product-query`) TEK kaydı (`size=1`);
+     * `appkey`/`appsecret` başlıkları zorunlu. Kategori CDN'i kimlik doğrulamasızdır (kanıt vermez), SOAP ağırdır. Asla fırlatmaz.
+     */
+    public async testConnection(): Promise<TestConnectionResult> {
+        return runConnectionProbe('n11', async () => {
+            const url = this.params.integrationSettings?.urls?.productListUrl || N11_DEFAULT_URLS.productListUrl;
+            await this.service.rest.get(url, { page: 0, size: 1 }, { operation: 'testConnection' });
+        });
+    }
     public getMatchKey(): MappingKey { return 'stockcode'; }
 
     // Categories & Brands

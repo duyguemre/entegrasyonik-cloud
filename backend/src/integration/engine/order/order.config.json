@@ -28,7 +28,9 @@
         "cursorOverlapMs": 900000
     },
     "orderSync": {
-        "cursorOverlapMs": 300000
+        "cursorOverlapMs": 300000,
+        "maxNarrowings": 5,
+        "minWindowMs": 3600000
     },
     "webhookHealthy": {
         "reconciliationIntervalMs": 300000

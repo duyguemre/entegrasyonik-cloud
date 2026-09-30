@@ -1,6 +1,8 @@
+import { InvalidatesTenantCache } from '@utils/decorator/cache'
 import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import { ObjectId } from 'mongodb'
+import { deleteMappingsOfCategory } from '@operations/catalog/mapping/mappingCleanup'
 export default class CategoryService extends BaseApi implements IService {
     async get(parentId = 0): Promise<any> {
         try {
@@ -39,6 +41,7 @@ export default class CategoryService extends BaseApi implements IService {
         return hebele
     }
 
+    @InvalidatesTenantCache('PlatformMappingProvider')
     async addCategory(): Promise<any> {
         try {
             var parentId: string = this.request.parentCategoryId
@@ -54,18 +57,10 @@ export default class CategoryService extends BaseApi implements IService {
         }
     }
 
-    async saveIntegrationCategory(): Promise<any> {
-        try {
-            const updateQuery = { _id: new ObjectId(this.request.categoryId as string) }
-            const updateSet = { $set: { ['platforms.' + this.request.integrationCode]: this.request.integrationCategoryId } }
-            const resp = await this.clientDB.getCategoryModel().updateOne(updateQuery, updateSet)
-            return { result: resp.modifiedCount == 1 ? true : false }
-        } catch (error) {
-            throw error
-        }
-    }
+    @InvalidatesTenantCache('PlatformMappingProvider')
 
 
+    @InvalidatesTenantCache('PlatformMappingProvider')
     async updateCategory(): Promise<any> {
         try {
             const updateQuery = { _id: new ObjectId(this.request.categoryId as string) }
@@ -77,6 +72,7 @@ export default class CategoryService extends BaseApi implements IService {
         }
     }
 
+    @InvalidatesTenantCache('PlatformMappingProvider')
     async moveCategory(): Promise<any> {
         try {
             const updateQuery = { _id: new ObjectId(this.request.moveCategoryId as string) }
@@ -89,6 +85,7 @@ export default class CategoryService extends BaseApi implements IService {
         }
     }
 
+    @InvalidatesTenantCache('PlatformMappingProvider')
     async changeOrderCategory(): Promise<any> {
         try {
             const filterQuery = { $or: [{ '_id': new ObjectId(this.request.fromCategoryId as string) }, { '_id': new ObjectId(this.request.toCategoryId as string) }] }
@@ -127,11 +124,14 @@ export default class CategoryService extends BaseApi implements IService {
         }
     }
 
+    @InvalidatesTenantCache('PlatformMappingProvider')
     async deleteCategory(): Promise<any> {
         try {
             const deleteQuery = { _id: new ObjectId(this.request._id as string) }
             const resp = await this.clientDB.getCategoryModel().deleteOne(deleteQuery)
-            return resp
+            // Yetim referans temizliği (P1-5): idempotent, silme sonucundan bağımsız. Yanıt şekli korunur (+ sayaç alanı).
+            const deletedMappings = await deleteMappingsOfCategory(this.clientDB.getAttributeMappingModel(), String(this.request._id))
+            return { ...resp, deletedMappings }
         } catch (error) {
             throw error
         }

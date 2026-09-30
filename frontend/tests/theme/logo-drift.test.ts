@@ -33,7 +33,7 @@ function extractShapes(svgSource: string): Array<{ tag: string; attrs: Record<st
 }
 
 describe('logo geometri drift — src/design/brand/logo-mark.svg ≡ site/src/components/Logo.astro', () => {
-  const appSvg = readFileSync(resolve(REPO_ROOT, 'frontend/src/design/brand/logo-mark.svg'), 'utf8')
+  const appSvg = readFileSync(resolve(REPO_ROOT, 'frontend/packages/ui/src/brand/logo-mark.svg'), 'utf8')
   const siteAstro = readFileSync(resolve(REPO_ROOT, 'site/src/components/Logo.astro'), 'utf8')
 
   const appShapes = extractShapes(appSvg)
@@ -54,8 +54,8 @@ describe('logo geometri drift — src/design/brand/logo-mark.svg ≡ site/src/co
 })
 
 describe('EkBrandLogo.vue inline SVG geometrisi ≡ logo-mark.svg', () => {
-  const appSvg = readFileSync(resolve(REPO_ROOT, 'frontend/src/design/brand/logo-mark.svg'), 'utf8')
-  const componentSource = readFileSync(resolve(REPO_ROOT, 'frontend/src/components/ds/EkBrandLogo.vue'), 'utf8')
+  const appSvg = readFileSync(resolve(REPO_ROOT, 'frontend/packages/ui/src/brand/logo-mark.svg'), 'utf8')
+  const componentSource = readFileSync(resolve(REPO_ROOT, 'frontend/packages/ui/src/components/EkBrandLogo.vue'), 'utf8')
 
   it('EkBrandLogo.vue şablonundaki şekiller kaynak SVG ile birebir eşit', () => {
     expect(extractShapes(componentSource)).toEqual(extractShapes(appSvg))
@@ -63,7 +63,7 @@ describe('EkBrandLogo.vue inline SVG geometrisi ≡ logo-mark.svg', () => {
 })
 
 describe('public/favicon.svg geometrisi ≡ logo-mark.svg (Karar 1.4)', () => {
-  const appSvg = readFileSync(resolve(REPO_ROOT, 'frontend/src/design/brand/logo-mark.svg'), 'utf8')
+  const appSvg = readFileSync(resolve(REPO_ROOT, 'frontend/packages/ui/src/brand/logo-mark.svg'), 'utf8')
   const faviconSvg = readFileSync(resolve(REPO_ROOT, 'frontend/public/favicon.svg'), 'utf8')
 
   it('favicon şekilleri kaynak SVG ile birebir eşit (renkler İSTİSNAEN literal, geometri değil)', () => {

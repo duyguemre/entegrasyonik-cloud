@@ -24,7 +24,8 @@ import { MessageStatusEnum } from '@/types/MessageTypes'
 import { TicketStatusEnum } from '@/types/TicketTypes'
 import { InvoiceStatusEnum } from '@/types/InvoiceTypes'
 
-export type StatusTone = 'success' | 'warning' | 'danger' | 'info' | 'neutral'
+import type { StatusTone } from '@entegrasyonik/ui/components/statusTone'
+export type { StatusTone }
 
 export interface StatusMapEntry {
   tone: StatusTone
@@ -187,4 +188,19 @@ export const JOB_RUN_OUTCOME_TONE: Record<JobRunOutcome, StatusMapEntry> = {
   partial: { tone: 'warning', labelKey: 'status.jobRunOutcome.partial' },
   failed: { tone: 'danger', labelKey: 'status.jobRunOutcome.failed' },
   skipped: { tone: 'neutral', labelKey: 'status.jobRunOutcome.skipped' },
+}
+
+// ---- ADR-0004 / docs/API_TENANT_SURFACE.md §2 — sipariş kalemi stok tahsis durumu
+// (`Orders.items[].allocationState`; backend şeması `Order.ts` enum'uyla AYNI 6 kod). Kalem durumu
+// sipariş durumundan AYRIDIR: siparişin kendisi onaylı olsa da kalemi stokta karşılanamamış olabilir. ----
+export const ALLOCATION_STATES = ['RESERVED', 'COMMITTED', 'RELEASED', 'OVERSOLD', 'RESTOCKED', 'UNMAPPED'] as const
+export type AllocationState = (typeof ALLOCATION_STATES)[number]
+
+export const ALLOCATION_STATE_TONE: Record<AllocationState, StatusMapEntry> = {
+  RESERVED: { tone: 'info', labelKey: 'status.allocation.reserved' },
+  COMMITTED: { tone: 'success', labelKey: 'status.allocation.committed' },
+  RELEASED: { tone: 'neutral', labelKey: 'status.allocation.released' },
+  OVERSOLD: { tone: 'danger', labelKey: 'status.allocation.oversold' },
+  RESTOCKED: { tone: 'neutral', labelKey: 'status.allocation.restocked' },
+  UNMAPPED: { tone: 'warning', labelKey: 'status.allocation.unmapped' },
 }

@@ -5,6 +5,9 @@ import config from './import.config.json';
 import _ from 'lodash';
 import { IIntegrationEngineProvider } from '../provider/IIntegrationEngineProvider';
 import { getSetting } from '@integration/config/ConfigResolver';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('worker', 'Importer');
 
 export default class Importer extends BaseWorker {
     protected readonly workerName = 'Catalog Importer';
@@ -266,7 +269,7 @@ export default class Importer extends BaseWorker {
 
             if (productOps.length > 0) await this.engineProvider.getProductModel().bulkWrite(productOps);
         } catch (err: any) {
-            console.error("Stok senkronizasyon hatası:", err.message);
+            log.error('IMPORTER_STOK_SENKRONIZASYON_HATASI', "Stok senkronizasyon hatası:", { err });
         }
     }
 
@@ -293,5 +296,5 @@ export default class Importer extends BaseWorker {
         return crypto.createHash('md5').update(hashString).digest('hex');
     }
 
-    public async start() { console.log(`${this.workerName} runOnce modunda çalışmaya hazır.`); }
+    public async start() { log.debug('IMPORTER_RUNONCE_MODUNDA_CALISMAYA_HAZIR', 'runOnce modunda çalışmaya hazır.'); }
 }

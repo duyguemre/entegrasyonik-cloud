@@ -2,6 +2,7 @@
 import { ICategory, ICategoryAttribute, ICategoryAttributeValue } from '@interfaces/index';
 import { Cache } from '@utils/decorator/cache';
 import commissions from '../commissions.json'; // Local JSON
+import commissionsMeta from '../commissions.meta.json'; // COM-01: kaynak/bayatlık üst verisi
 import { CategoryConnector } from '../api/CategoryConnector';
 import { CategoryMapper } from '../transformers/CategoryTransformer';
 import Service from './Service';
@@ -19,7 +20,8 @@ export class CategoryService {
     }
 
     // CategoryService içinde
-    @Cache(300, 'catalog-service', (that) => that.integrationCode)
+    // scope:global -- trendyol kategori ağacı/nitelikleri tüm tenant'lar için aynı, kimlik bilgisinden bağımsız (ADR-0002 Karar 3)
+    @Cache({ scope: 'global', ttl: '6h', context: 'trendyol-catalog' })
     public async fetchCategoryAttributeValues(categoryId: string, attributeId: string): Promise<ICategoryAttributeValue[]> {
         // 1. Önce kategorinin tüm niteliklerini getir
         const attributes = await this.fetchCategoryAttributes(categoryId);
@@ -39,7 +41,8 @@ export class CategoryService {
         return this.mapper.toInternalValues(raw) as ICategoryAttributeValue[];
     }
 
-    @Cache(300, 'catalog-service', (that) => that.integrationCode)
+    // scope:global -- trendyol kategori ağacı/nitelikleri tüm tenant'lar için aynı, kimlik bilgisinden bağımsız (ADR-0002 Karar 3)
+    @Cache({ scope: 'global', ttl: '6h', context: 'trendyol-catalog' })
     public async fetchCategories(): Promise<ICategory[]> {
         const response = await this.connector.fetchCategoriesFromPlatform();
         if (!response?.data?.categories) throw new Error(`[${this.clientId}] Kategori listesi alınamadı.`);
@@ -49,7 +52,8 @@ export class CategoryService {
         return converted;
     }
 
-    @Cache(300, 'catalog-service', (that) => that.integrationCode)
+    // scope:global -- trendyol kategori ağacı/nitelikleri tüm tenant'lar için aynı, kimlik bilgisinden bağımsız (ADR-0002 Karar 3)
+    @Cache({ scope: 'global', ttl: '6h', context: 'trendyol-catalog' })
     public async fetchCategoryAttributes(categoryId: string): Promise<ICategoryAttribute[]> {
         if (!categoryId) throw new Error(`[${this.clientId}] categoryId eksik.`);
 
@@ -76,6 +80,24 @@ export class CategoryService {
             }
             return undefined;
         };
-        return findRecursive(commissions, categoryId);
+        return CategoryService.toCommissionResult(findRecursive(commissions, String(categoryId)));
+    }
+
+    /**
+     * commissions.json düğümünü tiplenmiş sonuca çevirir. `ka1`/`ka2` ({commission,name}) kademeleri YALNIZ okunur;
+     * hangi kademenin uygulanacağı (tenant kademesi) COM-01 insan teyidine kadar SEÇİLMEZ. `commission` yoksa `null` (bilinmiyor, 0 değil).
+     */
+    private static toCommissionResult(node: any): ICategoryComission | undefined {
+        if (!node) return undefined;
+        const tiers: { KA1?: number; KA2?: number } = {};
+        if (typeof node.ka1?.commission === 'number') tiers.KA1 = node.ka1.commission;
+        if (typeof node.ka2?.commission === 'number') tiers.KA2 = node.ka2.commission;
+        return {
+            ...node,
+            commission: typeof node.commission === 'number' ? node.commission : null,
+            maturity: typeof node.maturity === 'number' ? node.maturity : null,
+            tiers,
+            meta: { source: commissionsMeta.source, asOf: commissionsMeta.asOf, vatIncluded: commissionsMeta.vatIncluded, sourceConfidence: commissionsMeta.sourceConfidence },
+        };
     }
 }

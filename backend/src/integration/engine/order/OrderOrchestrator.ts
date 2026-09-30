@@ -5,6 +5,10 @@ import { OrderErrorHandler } from './OrderErrorHandler';
 import { RedisService } from '@services/redis/RedisService'; // Yeni merkezi servis
 import { startOrderWorkerConsumer } from './worker-runner';
 import { getSetting } from '@integration/config/ConfigResolver';
+import { eventLog } from '@platform/core/logger';
+import { runWithJobContext } from '@platform/core/context';
+
+const log = eventLog('engine', 'OrderOrchestrator');
 
 /**
  * OrderWorker'dan dönen verinin tip tanımı
@@ -42,7 +46,7 @@ export class OrderOrchestrator {
      * Orchestrator'ı başlatır: Hem event listener'ları kurar hem de scheduler'ı tetikler.
      */
     public async start(): Promise<void> {
-        console.log('[OrderOrchestrator] Başlatılıyor...');
+        log.info('ORDERORCHESTRATOR_BASLATILIYOR', 'Başlatılıyor...');
 
         this.setupEventListeners();
         await this.startScheduler();
@@ -51,7 +55,7 @@ export class OrderOrchestrator {
         // Worker-runner da kendi içinde RedisService.getConnectionConfig() kullanmalı.
         startOrderWorkerConsumer();
 
-        console.log(`[OrderOrchestrator] Başarıyla başlatıldı. Event'ler dinleniyor.`);
+        log.info('ORDERORCHESTRATOR_BASARIYLA_BASLATILDI_EVENT_LER', 'Başarıyla başlatıldı. Event\'ler dinleniyor.');
     }
 
     /**
@@ -71,7 +75,7 @@ export class OrderOrchestrator {
 
         // Node.js Event Loop içerisinde periyodik zamanlama
         setInterval(async () => {
-            console.log('[OrderOrchestrator] Periyodik sipariş senkronizasyonu tetikleniyor...');
+            log.info('ORDERORCHESTRATOR_PERIYODIK_SIPARIS_SENKRONIZASYONU_TETI', 'Periyodik sipariş senkronizasyonu tetikleniyor...');
             await this.runScheduleJobsSafely();
         }, syncInterval);
     }
@@ -84,9 +88,10 @@ export class OrderOrchestrator {
      */
     private async runScheduleJobsSafely(): Promise<void> {
         try {
-            await this.producer.scheduleJobs();
+            // [F-06] Zamanlama turu kendi correlation id'sini alır; kuyruğa eklenen her iş ayrıca kendi id'sini taşır.
+            await runWithJobContext({ source: 'engine', operation: 'order.schedule' }, () => this.producer.scheduleJobs());
         } catch (error) {
-            console.error('[OrderOrchestrator] Scheduler çalışırken hata oluştu:', error);
+            log.error('ORDERORCHESTRATOR_SCHEDULER_CALISIRKEN_HATA_OLUSTU', 'Scheduler çalışırken hata oluştu:', { err: error });
         }
     }
 
@@ -100,24 +105,24 @@ export class OrderOrchestrator {
                 // TypeScript casting hatasını önlemek için 'as unknown as' köprüsü kullanıldı
                 const result = returnvalue as unknown as IOrderWorkerResult;
 
-                console.log(`[OrderOrchestrator] Job ${jobId} başarıyla tamamlandı. Client: ${result.clientId}, Sipariş: ${result.processedOrderCount}`);
+                log.info('ORDERORCHESTRATOR_JOB_BASARIYLA_TAMAMLANDI_CLIENT', `Job ${jobId} başarıyla tamamlandı. Client: ${result.clientId}, Sipariş: ${result.processedOrderCount}`);
 
                 if (result.processedOrderCount > 0) {
                     await this.triggerDownstreamWorkflows(result.clientId, result.marketplace, result.insertedIds);
                 }
             } catch (error) {
-                console.error(`[OrderOrchestrator] Completed event işlenirken hata (Job: ${jobId}):`, error);
+                log.error('ORDERORCHESTRATOR_COMPLETED_EVENT_ISLENIRKEN_HATA', `Completed event işlenirken hata (Job: ${jobId}):`, { err: error });
             }
         });
 
         // BAŞARISIZ İŞLER
         this.queueEvents.on('failed', async ({ jobId, failedReason }) => {
-            console.warn(`[OrderOrchestrator] Job ${jobId} başarısız oldu. Neden: ${failedReason}`);
+            log.warn('ORDERORCHESTRATOR_JOB_BASARISIZ_OLDU_NEDEN', `Job ${jobId} başarısız oldu. Neden: ${failedReason}`);
             await this.errorHandler.handleJobFailure(jobId, failedReason);
         });
 
         this.queueEvents.on('error', (error) => {
-            console.error('[OrderOrchestrator] QueueEvents Redis bağlantı hatası:', error);
+            log.error('ORDERORCHESTRATOR_QUEUEEVENTS_REDIS_BAGLANTI_HATASI', 'QueueEvents Redis bağlantı hatası:', { err: error });
         });
     }
 
@@ -125,14 +130,14 @@ export class OrderOrchestrator {
      * Downstream modülleri tetikler.
      */
     private async triggerDownstreamWorkflows(clientId: string, marketplace: string, orderIds: string[]): Promise<void> {
-        console.log(`[OrderOrchestrator] Downstream süreçler tetikleniyor -> Client: ${clientId}`);
+        log.info('ORDERORCHESTRATOR_DOWNSTREAM_SURECLER_TETIKLENIYOR_CLIEN', `Downstream süreçler tetikleniyor -> Client: ${clientId}`);
 
         await Promise.all([
             //TODO
             // Downstream operasyonlar buraya eklenebilir (Stok düşme, fatura oluşturma vb.)
             // PostOrderOperations.triggerAllocation(clientId, marketplace, orderIds),
         ]).catch(err => {
-            console.error(`[OrderOrchestrator] Downstream tetikleme hatası (Client: ${clientId}):`, err);
+            log.error('ORDERORCHESTRATOR_DOWNSTREAM_TETIKLEME_HATASI_CLIENT', `Downstream tetikleme hatası (Client: ${clientId}):`, { err });
         });
     }
 }

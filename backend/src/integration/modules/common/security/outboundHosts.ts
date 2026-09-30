@@ -14,6 +14,7 @@
 //  - Mock modu (`<PREFIX>_MOCK_MODE=true`) AÇIKKEN yalnızca loopback veya mock tabanının host'una izin verilir (assertMockSafeUrl ile aynı kural).
 import { IntegrationError } from '../IntegrationError';
 import { MockPrefix, readMockConfig, isMockSafeUrl } from '../mock/MockMode';
+import { ADAPTER_KEYS } from '../../adapterKeys';
 
 /**
  * Adaptör kodu -> izinli host desenleri. Desen: tam host (`apigw.trendyol.com`) veya joker (`*.ideasoft.com.tr`: EN AZ bir etiket +
@@ -35,13 +36,9 @@ export const ALLOWED_OUTBOUND_HOSTS: Readonly<Record<string, readonly string[]>>
 };
 
 /** ResilientHttpClient'a verilen kod (`n11-soap` gibi eklerle) -> izin listesi anahtarı + mock ön eki. */
-const MOCK_PREFIX: Record<string, MockPrefix> = {
-    trendyol: 'TY', pazarama: 'PAZARAMA', n11: 'N11', hepsiburada: 'HEPSIBURADA', ideasoft: 'IDEASOFT', bizimhesap: 'BIZIMHESAP',
-};
-const MOCK_DEFAULT_BASE: Record<string, string> = {
-    trendyol: 'http://localhost:3005/integration', pazarama: 'http://localhost:3006/apigateway', n11: 'http://localhost:6015/n11',
-    hepsiburada: 'http://127.0.0.1:6015/hepsiburada', ideasoft: 'http://localhost:6015/ideasoft', bizimhesap: 'http://localhost:6015/bizimhesap',
-};
+// ADR-0033 INT-02: mock öneki + varsayılan mock tabanı tek kod tablosundan (`adapterKeys.ts`) türer.
+const MOCK_PREFIX: Record<string, MockPrefix> = Object.fromEntries(ADAPTER_KEYS.map(k => [k.code, k.mockPrefix]));
+const MOCK_DEFAULT_BASE: Record<string, string> = Object.fromEntries(ADAPTER_KEYS.map(k => [k.code, k.mockDefaultBase]));
 
 export const OUTBOUND_HOST_NOT_ALLOWED = 'OUTBOUND_HOST_NOT_ALLOWED';
 

@@ -45,8 +45,9 @@ export function buildBulkWriteOps(snapshots: MetricSeriesSnapshot[], flushedAt: 
             const bucketStart = truncateToBucket(flushedAt, resolution);
             const inc: Record<string, number> = { [`series.${seriesField}.c`]: s.count };
             if (s.sum !== 0) inc[`series.${seriesField}.sum`] = s.sum;
+            const hField = s.bucketSet && s.bucketSet !== 'default' ? `h_${s.bucketSet}` : 'h';
             for (let i = 0; i < s.buckets.length; i++) {
-                if (s.buckets[i] > 0) inc[`series.${seriesField}.h.${i}`] = s.buckets[i];
+                if (s.buckets[i] > 0) inc[`series.${seriesField}.${hField}.${i}`] = s.buckets[i];
             }
             ops.push({
                 updateOne: {

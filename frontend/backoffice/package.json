@@ -1,0 +1,19 @@
+{
+  "name": "@entegrasyonik/backoffice",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Entegrasyonik yönetim uygulaması (admin.entegrasyonik.com) — ADR-0026.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@entegrasyonik/ui": "*",
+    "uqr": "^0.1.3"
+  }
+}

@@ -3,7 +3,8 @@ import { integrationCode } from '../constants';
 import { randomUUID } from 'crypto';
 import { IInternalResult } from '@interfaces/index';
 import { IntegrationError } from '@integration/modules/common/IntegrationError';
-import { TRENDYOL_ORIGIN_PATTERN, TRENDYOL_ORIGIN_REQUIRED_FROM_MS } from '../productConstants';
+import { normalizeAttrValue, indexCategoryAttributes, findValueById, findValueByText, missingRequiredAttributes, labelAttribute } from '@integration/catalog/attributePayload';
+import { TRENDYOL_ORIGIN_PATTERN, TRENDYOL_ORIGIN_REQUIRED_FROM_MS, TRENDYOL_FIELD_LIMITS, TRENDYOL_VAT_RATES } from '../productConstants';
 
 /** `toPlatformBatch` eşleme bağlamı. `contentId` doluysa UPDATE onaylı-içerik gövdesi üretilir (aksi halde onaysız). */
 export interface IProductBatchMapping {
@@ -93,6 +94,8 @@ export class ProductMapper {
         const item: any = {
             barcode: String(variant.barcode)
         };
+        /** [WP9] Özellik (attribute) yüküne ait alan bazlı hatalar; assertContract diğer ihlallerle TEK VALIDATION'da toplar. */
+        let attrErrors: string[] = [];
 
         let shipmentAddressId = Number(vMapping?.shipmentAddressId || mapping.settings?.shipmentAddressId || 0);
         let returningAddressId = Number(vMapping?.returningAddressId || mapping.settings?.returningAddressId || 0);
@@ -132,7 +135,10 @@ export class ProductMapper {
             const deliveryOption = this.getDeliveryOption(vMapping, mapping);
             if (deliveryOption) item.deliveryOption = deliveryOption;
             item.images = this.getImages(variant);
-            item.attributes = this.prepareAttributes(variant, catAttrs);
+            const prepared = this.prepareAttributes(variant, catAttrs);
+            item.attributes = prepared.attributes;
+            attrErrors = prepared.errors;
+            this.assertContract(item, mapping, true, attrErrors);
         }
         else if (mode === PLATFORM_PROCESS.UPDATE) {
             if (mapping.contentId !== undefined && mapping.contentId !== null && String(mapping.contentId) !== '') {
@@ -144,9 +150,9 @@ export class ProductMapper {
                 item.description = this.getDescription(vMapping, variant, mapping);
                 const images = this.getImages(variant);
                 if (images.length > 0) item.images = images;
-                const attributes = this.prepareAttributes(variant, catAttrs, { excludeVariantDefining: true });
+                const prepared = this.prepareAttributes(variant, catAttrs, { excludeVariantDefining: true });
                 // Boş liste GÖNDERİLMEZ: "attributes değişiyorsa TÜM değerler gönderilmeli" — boş dizi silme anlamına gelebilir.
-                if (attributes.length > 0) item.attributes = attributes;
+                if (prepared.attributes.length > 0) { item.attributes = prepared.attributes; attrErrors = prepared.errors; }
             } else {
                 // ONAYSIZ ürün: barkod anahtarlı tam güncelleme (unapproved-bulk-update)
                 item.title = this.getTitle(vMapping, variant, mapping);
@@ -165,8 +171,12 @@ export class ProductMapper {
                 const deliveryOption = this.getDeliveryOption(vMapping, mapping);
                 if (deliveryOption) item.deliveryOption = deliveryOption;
                 item.images = this.getImages(variant);
-                item.attributes = this.prepareAttributes(variant, catAttrs);
+                const prepared = this.prepareAttributes(variant, catAttrs);
+                item.attributes = prepared.attributes;
+                attrErrors = prepared.errors;
+                this.assertContract(item, mapping, true, attrErrors);
             }
+            if (item.contentId !== undefined) this.assertContract(item, mapping, false, attrErrors);
         }
         else if (mode === PLATFORM_PROCESS.UPDATE_VARIANT) {
             item.vatRate = this.getVatRate(vMapping, variant, mapping);
@@ -200,6 +210,57 @@ export class ProductMapper {
         return item;
     }
 
+    /**
+     * [WP5] Gönderim ÖNCESİ yerel sözleşme doğrulaması (resmi V2 sınırları, API_CONTRACTS Trendyol §1): pazaryerinin kesin
+     * reddedeceği veri gönderilmez. Tüm ihlaller alan bazlı TEK VALIDATION hatasında toplanır (kullanıcıya anlamlı mesaj).
+     * `full=true`: aktarma/onaysız güncelleme (zorunlu alanlar aranır); `full=false`: onaylı içerik güncellemesi (yalnız mevcut alanlar).
+     */
+    public assertContract(item: any, mapping: IProductBatchMapping, full: boolean, extraErrors: string[] = []): void {
+        const errs: string[] = [];
+        const has = (v: any) => v !== undefined && v !== null && !(typeof v === 'string' && v.trim() === '');
+        const isInt = (v: any) => typeof v === 'number' && Number.isInteger(v) && v > 0;
+
+        if (full || item.barcode !== undefined) {
+            const b = String(item.barcode ?? '').replace(/\s+/g, '');
+            if (!b) errs.push('barcode: boş olamaz');
+            else if (b.length > TRENDYOL_FIELD_LIMITS.barcode) errs.push(`barcode: en fazla ${TRENDYOL_FIELD_LIMITS.barcode} karakter (${b.length})`);
+            else if (!/^[A-Za-z0-9._-]+$/.test(b)) errs.push("barcode: yalnızca harf, rakam ve . - _ karakterleri kullanılabilir");
+        }
+        if (full || item.title !== undefined) {
+            if (!has(item.title)) errs.push('title: boş olamaz');
+            else if (String(item.title).length > TRENDYOL_FIELD_LIMITS.title) errs.push(`title: en fazla ${TRENDYOL_FIELD_LIMITS.title} karakter (${String(item.title).length})`);
+        }
+        if (full) {
+            if (!has(item.productMainId)) errs.push('productMainId (ana ürün kodu): boş olamaz');
+            else if (String(item.productMainId).length > TRENDYOL_FIELD_LIMITS.productMainId) errs.push(`productMainId: en fazla ${TRENDYOL_FIELD_LIMITS.productMainId} karakter`);
+            if (!isInt(item.brandId)) errs.push('brandId: geçerli (tam sayı) bir Trendyol marka eşleşmesi gerekli');
+            if (!isInt(item.categoryId)) errs.push('categoryId: geçerli (tam sayı) bir Trendyol kategori eşleşmesi gerekli');
+            if (item.quantity !== undefined && !(Number.isInteger(item.quantity) && item.quantity >= 0)) errs.push('quantity: 0 veya pozitif tam sayı olmalı');
+            if (item.salePrice !== undefined && !(item.salePrice > 0)) errs.push('salePrice: 0’dan büyük olmalı');
+            if (item.listPrice !== undefined && item.salePrice !== undefined && item.listPrice < item.salePrice) errs.push('listPrice: salePrice’tan küçük olamaz');
+            if (!TRENDYOL_VAT_RATES.includes(item.vatRate)) errs.push(`vatRate: ${TRENDYOL_VAT_RATES.join(', ')} değerlerinden biri olmalı (${String(item.vatRate)})`);
+            if (has(item.stockCode) && String(item.stockCode).length > TRENDYOL_FIELD_LIMITS.stockCode) errs.push(`stockCode: en fazla ${TRENDYOL_FIELD_LIMITS.stockCode} karakter`);
+            if (has(item.lotNumber) && String(item.lotNumber).length > TRENDYOL_FIELD_LIMITS.lotNumber) errs.push(`lotNumber: en fazla ${TRENDYOL_FIELD_LIMITS.lotNumber} karakter`);
+        }
+        if (item.description !== undefined || full) {
+            const d = String(item.description ?? '');
+            if (full && d.trim() === '') errs.push('description: boş olamaz');
+            else if (d.length > TRENDYOL_FIELD_LIMITS.description) errs.push(`description: en fazla ${TRENDYOL_FIELD_LIMITS.description} karakter (${d.length})`);
+        }
+        if (full || item.images !== undefined) {
+            const imgs: any[] = Array.isArray(item.images) ? item.images : [];
+            if (full && imgs.length === 0) errs.push('images: en az 1 görsel gerekli');
+            if (imgs.length > TRENDYOL_FIELD_LIMITS.images) errs.push(`images: en fazla ${TRENDYOL_FIELD_LIMITS.images} görsel (${imgs.length})`);
+            const bad = imgs.filter(i => !/^https:\/\//i.test(String(i?.url ?? ''))).length;
+            if (bad > 0) errs.push(`images: ${bad} görsel HTTPS değil/boş (yalnızca https:// adresleri kabul edilir)`);
+        }
+        errs.push(...extraErrors);
+        if (errs.length > 0) {
+            throw new IntegrationError('VALIDATION', `Trendyol ürün doğrulaması başarısız (barkod ${String(item.barcode ?? item.contentId ?? '?').slice(0, 40)}): ${errs.join('; ')}.`,
+                { integrationCode, operation: 'assertContract', clientId: mapping.clientId ?? 'unknown' });
+        }
+    }
+
     /** UPDATE gövdesi onaylı içerik güncellemesi mi (contentId anahtarlı)? */
     public isContentUpdateItem(item: any): boolean {
         return !!item && item.contentId !== undefined;
@@ -215,7 +276,10 @@ export class ProductMapper {
         return Number(vMapping?.desi || variant.product?.desi || mapping.settings?.desi || 1);
     }
     private getVatRate(vMapping: any, variant: IVariant, mapping: any) {
-        return Number(vMapping?.taxPercentage || variant.product?.taxPercentage || mapping.settings?.taxPercentage || 20);
+        // 0 (%0 KDV) GEÇERLİ bir orandır: `||` zinciri 0'ı düşürüp 20'ye çeviriyordu (yanlış KDV) → `??` ile yalnız yoksa 20.
+        const raw = [vMapping?.taxPercentage, variant.product?.taxPercentage, mapping.settings?.taxPercentage]
+            .find(v => v !== undefined && v !== null && v !== '');
+        return raw === undefined ? 20 : Number(raw);
     }
 
     private toNumericIfPossible(v: any) {
@@ -287,7 +351,7 @@ export class ProductMapper {
     /**
      * ÜRÜN ALIMI: Platform varyantını dükkan modeline (IVariant) çevirir.
      */
-    public toInternalVariant(p: any, choicesResult: any, commission: number): IVariant {
+    public toInternalVariant(p: any, choicesResult: any): IVariant {
         const vat = p.vatRate || 0;
         return {
             code: integrationCode,
@@ -300,7 +364,7 @@ export class ProductMapper {
             prices: {
                 isPlatformBasedPrice: false,
                 price: p.salePrice * (100 / (100 + vat)),
-                salePrice: p.salePrice * (100 / (100 + commission)),
+                salePrice: p.salePrice, // COM-10: ic fiyat = pazaryeri brut satis fiyati; komisyon dusulmez (net fiyat COM-07 modeliyle okuma aninda)
                 marketPrice: p.listPrice,
             },
             images: p.images?.map((img: any) => img.url) || [],
@@ -545,43 +609,66 @@ export class ProductMapper {
         }));
     }
 
-    private prepareAttributes(variant: any, catAttrs: any[], opts: { excludeVariantDefining?: boolean } = {}) {
-        // varyant içindeki platforms[trendyol].attributes artık objelerden oluşan bir Record
+    /**
+     * [WP9] Özellik yükü (V2 `attributes[]`): `{attributeId:int, attributeValueId:int}` YA DA `{attributeId:int, customAttributeValue:str}`
+     * (birbirini dışlar; API_CONTRACTS Trendyol §1). Kural özeti:
+     *  - Boş/`undefined`/`null` değerli kayıtlar YOK sayılır (zorunluysa aşağıda eksik olarak raporlanır).
+     *  - Kategoride olmayan özellik (kategori değişince kalan bayat kayıt) GÖNDERİLMEZ (Trendyol tüm kalemi reddederdi).
+     *  - Listeden seçilmiş (geçerli) değer kimliği HER ZAMAN kimlikle gider (allowCustom olsa bile); kimlik listede yoksa
+     *    (silinmiş/bayat) metinle eşleşen liste değerine çevrilir, olmazsa allowCustom ise serbest metne düşer, aksi halde HATA.
+     *  - Kimliksiz metin: allowCustom -> customAttributeValue; değilse listede metinle aranır (bulunamazsa HATA;
+     *    değer listesi hiç yüklenmemişse eski davranış: customAttributeValue).
+     *  - Zorunlu kategori özelliği eksikse HATA (alan bazlı). Onaylı içerik güncellemesinde slicer/varianter hariç tutulur ve
+     *    zorunluluk yalnız öznitelik gönderiliyorsa denetlenir.
+     * Not: veri modeli özellik başına TEK değer tutar; çoklu değer (`multiple`) bugün temsil edilemez (rapor: WP9 P1).
+     */
+    private prepareAttributes(variant: any, catAttrs: any[], opts: { excludeVariantDefining?: boolean } = {}): { attributes: any[]; errors: string[] } {
         const vAttrs: Record<string, any> = variant.platforms?.[integrationCode]?.attributes || {};
+        const { byId } = indexCategoryAttributes(catAttrs);
+        const haveCategory = byId.size > 0;
+        const attributes: any[] = [];
+        const errors: string[] = [];
+        const sent = new Set<string>();
 
-        return Object.entries(vAttrs).map(([attrId, attrData]) => {
-            // attrData artık { attributeName, attributeValue, attributeValueId } nesnesidir
-            if (!attrData || (!attrData.attributeValue && !attrData.attributeValueId)) return null;
-
-            // Kategori kurallarını bul (allowCustom izni var mı?)
-            const catAttr = catAttrs.find(c => String(c.platformAttributeId || c._id) === String(attrId));
+        for (const [rawId, attrData] of Object.entries(vAttrs)) {
+            const attrId = String(rawId).trim();
+            if (!/^\d+$/.test(attrId)) { errors.push(`özellik kimliği geçersiz: '${attrId.slice(0, 30)}'`); continue; }
+            const catAttr = haveCategory ? byId.get(attrId) : undefined;
+            if (haveCategory && !catAttr) continue; // bayat (kategori değişti): gönderme
             // [C22] Onaylı içerik güncellemesinde slicer/varianter öznitelikleri değiştirilemez → hariç tut
-            if (opts.excludeVariantDefining && (catAttr?.varianter || catAttr?.slicer)) return null;
-            const isCustomAllowed = catAttr?.allowCustom === true;
+            if (opts.excludeVariantDefining && (catAttr?.varianter || catAttr?.slicer)) continue;
 
-            // Trendyol Batch Request formatına uygun objeyi oluştur
-            const attribute: any = {
-                attributeId: Number(attrId)
-            };
+            const norm = normalizeAttrValue(attrData);
+            if (!norm) continue;
+            const name = catAttr?.title ?? (typeof attrData === 'object' ? attrData?.attributeName : undefined);
+            const label = labelAttribute(attrId, name);
+            const allowCustom = catAttr?.allowCustom === true;
+            const hasList = !!catAttr?.values && catAttr.values.length > 0;
+            const numericId = norm.valueId !== undefined && /^\d+$/.test(norm.valueId) ? norm.valueId : undefined;
 
-            if (isCustomAllowed) {
-                // Eğer kategori serbest metne izin veriyorsa (Örn: Renk: "Lila Grisi")
-                attribute.customAttributeValue = String(attrData.attributeValue);
+            let out: any;
+            if (numericId !== undefined && (!hasList || findValueById(catAttr, numericId))) {
+                out = { attributeId: Number(attrId), attributeValueId: Number(numericId) };
             } else {
-                // Eğer kategori sadece listedeki ID'lere izin veriyorsa (Örn: Beden: 338 -> 7001)
-                // attributeValueId'nin varlığından emin oluyoruz
-                const vId = attrData.attributeValueId;
-                if (vId && vId !== 'undefined' && vId !== 'null') {
-                    attribute.attributeValueId = Number(vId);
+                const byText = norm.text !== undefined && hasList ? findValueByText(catAttr, norm.text) : undefined;
+                if (byText && /^\d+$/.test(String(byText.id))) {
+                    out = { attributeId: Number(attrId), attributeValueId: Number(byText.id) };
+                } else if (norm.text !== undefined && (allowCustom || !hasList)) {
+                    out = { attributeId: Number(attrId), customAttributeValue: norm.text };
                 } else {
-                    // ID yoksa ama kategori izin vermiyorsa, Trendyol hata verir.
-                    // Güvenlik için custom'a düşmeyi deneyebiliriz (platforma göre değişir)
-                    attribute.customAttributeValue = String(attrData.attributeValue);
+                    errors.push(`${label}: '${String(norm.text ?? norm.valueId).slice(0, 40)}' değeri Trendyol değer listesinde yok (silinmiş olabilir) — özelliği yeniden seçin`);
+                    continue;
                 }
             }
+            attributes.push(out);
+            sent.add(attrId);
+        }
 
-            return attribute;
-        }).filter(Boolean);
+        if (haveCategory && (!opts.excludeVariantDefining || attributes.length > 0)) {
+            const missing = missingRequiredAttributes(catAttrs, sent, opts.excludeVariantDefining ? (c => !!(c.varianter || c.slicer)) : undefined);
+            if (missing.length > 0) errors.push(`zorunlu özellik eksik: ${missing.map(c => labelAttribute(String(c._id), c.title)).join(', ')}`);
+        }
+        return { attributes, errors };
     }
 
     private getRawAttributesMap(attrs: any[]) {

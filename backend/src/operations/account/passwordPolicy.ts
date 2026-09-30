@@ -1,4 +1,4 @@
-import { ApplicationError } from '../../api/Security';
+import { ApplicationError } from '@platform/core/errors';
 
 // Hesap yaşam döngüsü: parola politikası TEK YERDE. changePassword ve confirmPasswordReset AYNI fonksiyonu kullanır.
 // (Kayıt akışı `provisionInput.ts` içinde daha gevşek, eski asgari kuralı — 8 karakter — kullanmayı sürdürür; birleştirmek

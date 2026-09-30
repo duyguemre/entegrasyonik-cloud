@@ -63,25 +63,23 @@ test.describe('ADR-0015 B5-3 — AuthorizationListView + UserAddComponent', () =
     await expect(elifRow.locator('button:has(.mdi-delete)')).toBeEnabled()
   })
 
-  test('boş durum: "Personel Bulunamadı" mesajı gösterilir', async ({ page }) => {
+  test('boş durum: "Personel bulunamadı" mesajı gösterilir', async ({ page }) => {
     await installApiMocks(page, withAccountMenu({ 'UserService/getUsers': usersBosFixture, 'UserService/getRoles': rolesFixture }))
     await gotoAuthed(page)
     await openScreen(page, 'AuthorizationListView')
 
-    await expect(page.getByText('Personel Bulunamadı')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'TÜMÜNÜ GÖSTER' })).toBeVisible()
+    await expect(page.getByText('Personel bulunamadı')).toBeVisible()
   })
 
-  test('hata durumu: 500 alındığında da liste boş kalır, ham hata sızmaz (gizli davranış — bkz. BACKLOG önerisi)', async ({ page }) => {
-    // Karakterizasyon (`restapi.ts` `postService` HİÇBİR ZAMAN reddetmiyor, admin-tickets.spec.ts
-    // ile AYNI gizli davranış): `getUsers`'ın try/catch'i tetiklenmiyor, `response.users` undefined
-    // olduğu için `users.value` başlangıç değerinde ([]) kalıyor — "Personel Bulunamadı" görünür,
-    // ayrı bir hata banner'ı YOK, snackbar TETİKLENMİYOR.
+  // DS-v2 Aşama 2 — BİLİNÇLİ DEĞİŞİKLİK: 500 artık boş duruma DÜŞMEZ; "Personel listesi yüklenemedi" + "Tekrar dene" gösterilir.
+  // (Boş durumdaki "TÜMÜNÜ GÖSTER" eylemi de kalktı: filtre sonucu boşsa "Filtreleri temizle" çıkar.)
+  test('hata durumu: 500 alındığında "Personel listesi yüklenemedi" + "Tekrar dene" gösterilir, ham hata sızmaz', async ({ page }) => {
     await installApiMocks(page, withAccountMenu({ 'UserService/getUsers': mockError(500), 'UserService/getRoles': rolesFixture }))
     await gotoAuthed(page)
     await openScreen(page, 'AuthorizationListView')
 
-    await expect(page.getByText('Personel Bulunamadı')).toBeVisible()
+    await expect(page.getByText('Personel listesi yüklenemedi')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Tekrar dene' })).toBeVisible()
   })
 
   test('yeni kullanıcı ekle: "+" ile diyalog açılır, form gönderilince UserService/createUser çağrılır', async ({ page }) => {

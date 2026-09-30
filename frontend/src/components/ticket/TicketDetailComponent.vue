@@ -1,213 +1,531 @@
 <!--
   frontend/src/components/ticket/TicketDetailComponent.vue
 
-  ADR-0015 B5-3 — GÖRSEL KATMAN (bkz. e2e/specs/support-tickets.spec.ts). API sözleşmesi/davranış
-  DEĞİŞMEDİ: `@reply` payload'ı, mesaj listesi kaynağı AYNEN korundu. Durum/öncelik rozetleri çıplak
-  `v-chip` yerine `EkStatusChip`'e taşındı — durum tonu paylaşılan `design/status-map.ts`
-  `TICKET_STATUS_TONE`'dan (A2'de zaten tanımlı), öncelik tonu bu görevin YEREL
-  `composables/ticketPriorityTone.ts` dosyasından gelir (status-map.ts A-owned, dokunulmadı).
+  A6a — talep ayrıntısı: sohbet benzeri zaman çizgisi + sabit yanıt kutusu.
+  Kullanıcının mesajları SAĞDA, destek ekibinin SOLDA; gönderen + zaman damgası (format.ts). Zaman çizgisine yalnız
+  KESİN bilinen olaylar girer (açılış, kapanış) — backend durum geçmişi tutmaz (bkz. ticketRules.buildTimeline).
+  Yanıt gövdesi DEĞİŞMEDİ: `TicketService/sendTicketMessage` `{ ticketId, content, senderType: 'CLIENT' }`.
+  Veri kaynağı: liste satırı nesnesi (ayrı detay isteği YOK); `ticket` yokken iskelet gösterilir.
 -->
 <template>
-  <ActionDialogComponent :model-value="modelValue" @update:model-value="val => $emit('update:modelValue', val)"
-    :title="`DESTEK TALEBİ: ${ticket?.ticketNumber || ''}`" :subtitle="ticket?.subject"
-    icon="mdi-message-text-clock-outline" color="passiveColor" attach="ticketListView" cancel-text="Kapat"
-    show-confirm="false" maxWidth="1000px" @cancel="$emit('update:modelValue', false)" :showFooter="false">
-    <div v-if="ticket" class="ticket-detail-container d-flex flex-column h-100">
-      <!-- Ticket Meta Info Header -->
-      <div class="ek-ticket-meta d-flex flex-wrap align-center">
-        <div class="meta-item">
-          <span class="meta-label">Durum</span>
-          <EkStatusChip :tone="statusTone(ticket.status)" :label="translateStatus(ticket.status)" />
+  <EkDialog
+    :model-value="modelValue"
+    :title="`Destek talebi ${ticket?.ticketNumber || ''}`.trim()"
+    :description="ticket?.subject"
+    icon="mdi-message-text-clock-outline"
+    width="lg"
+    attach="ticketListView"
+    class="ek-ticket-dialog ek-ticket-detail-dialog"
+    hide-actions
+    :retain-focus="false"
+    @update:model-value="(v: boolean) => emit('update:modelValue', v)"
+  >
+    <EkSkeleton v-if="!ticket" type="detail" class="tk-loading" />
+
+    <div v-else class="tk-detail">
+      <!-- Başlık alanı: durum · öncelik · tip · açılış -->
+      <dl class="tk-meta">
+        <div class="tk-meta__item">
+          <dt>Durum</dt>
+          <dd><EkStatusChip :tone="statusTone(ticket.status)" :label="translateStatus(ticket.status)" /></dd>
         </div>
-        <div class="meta-item">
-          <span class="meta-label">Öncelik</span>
-          <EkStatusChip :tone="priorityTone(ticket.priority)" :label="translatePriority(ticket.priority)" />
+        <div class="tk-meta__item">
+          <dt>Öncelik</dt>
+          <dd><EkStatusChip :tone="priorityTone(ticket.priority)" :label="translatePriority(ticket.priority)" /></dd>
         </div>
-        <div class="meta-item">
-          <span class="meta-label">Tip</span>
-          <span class="meta-value">{{ translateType(ticket.type) }}</span>
+        <div class="tk-meta__item">
+          <dt>Talep tipi</dt>
+          <dd class="tk-meta__value">
+            <v-icon :icon="typeIcon(ticket.type)" class="tk-meta__icon" aria-hidden="true" />{{ translateType(ticket.type) }}
+          </dd>
         </div>
-        <div class="meta-item ml-auto">
-          <span class="meta-label">Oluşturma</span>
-          <span class="meta-value ek-num">{{ formatDate(ticket.createdDate) }}</span>
+        <div class="tk-meta__item tk-meta__item--end">
+          <dt>Açılış</dt>
+          <dd class="tk-meta__value ek-num">{{ formatDateTime(ticket.createdDate) }}</dd>
         </div>
+      </dl>
+
+      <!-- Zaman çizgisi -->
+      <div ref="scroller" class="tk-scroll" role="log" aria-label="Yazışma geçmişi" tabindex="0">
+        <ol class="tk-timeline">
+          <template v-for="entry in entries" :key="entry.key">
+            <li v-if="entry.kind === 'day'" class="tk-day">
+              <time :datetime="isoDay(entry.date)">{{ formatDate(entry.date) }}</time>
+            </li>
+            <li v-else-if="entry.kind === 'event'" class="tk-event">
+              <v-icon :icon="entry.icon" class="tk-event__icon" aria-hidden="true" />
+              <span class="tk-event__text">{{ entry.text }}</span>
+              <time v-if="entry.date" class="tk-event__time ek-num" :datetime="isoDay(entry.date)" :aria-label="formatDateTime(entry.date)">{{ timeOf(entry.date) }}</time>
+            </li>
+            <li v-else class="tk-msg" :class="entry.mine ? 'tk-msg--mine' : 'tk-msg--support'">
+              <div class="tk-msg__meta">
+                <span class="tk-msg__sender">{{ entry.sender }}<span class="tk-msg__role"> · {{ entry.mine ? 'Siz' : 'Destek' }}</span></span>
+                <time class="tk-msg__time ek-num" :datetime="isoDay(entry.date)" :aria-label="formatDateTime(entry.date)">{{ timeOf(entry.date) }}</time>
+              </div>
+              <div class="tk-msg__bubble">{{ entry.content }}</div>
+            </li>
+          </template>
+          <li v-if="!hasMessages" class="tk-empty">Bu talepte henüz mesaj yok.</li>
+        </ol>
       </div>
 
-      <!-- Messages Area -->
-      <div ref="messageContainer" class="ek-ticket-messages flex-grow-1 pa-4 overflow-y-auto">
-        <div v-for="(msg, idx) in ticket.messages" :key="idx" class="message-wrapper d-flex mb-4"
-          :class="msg.senderType === 'CLIENT' ? 'justify-end' : 'justify-start'">
-
-          <div class="message-bubble-container d-flex flex-column"
-            :class="msg.senderType === 'CLIENT' ? 'align-end' : 'align-start'">
-            <div class="d-flex align-center mb-1">
-              <span v-if="msg.senderType === 'SUPPORT'" class="sender-name mr-2">{{ msg.senderName }} (Destek)</span>
-              <span class="message-time">{{ formatDate(msg.date) }}</span>
-              <span v-if="msg.senderType === 'CLIENT'" class="sender-name ml-2">{{ msg.senderName }} (Siz)</span>
-            </div>
-
-            <div class="message-bubble pa-3" :class="msg.senderType === 'CLIENT' ? 'client-bubble' : 'support-bubble'">
-              {{ msg.content }}
-            </div>
+      <!-- Yanıt alanı (sabit, altta) -->
+      <div v-if="ticket.status !== TicketStatusEnum.CLOSED" class="tk-reply">
+        <div v-if="reply.state.value.error" class="tk-alert" role="alert">
+          <v-icon icon="mdi-alert-circle-outline" class="tk-alert__icon" aria-hidden="true" />
+          <div>
+            <p class="tk-alert__title">{{ reply.state.value.error.title }}</p>
+            <p class="tk-alert__hint">{{ reply.state.value.error.hint }}</p>
           </div>
         </div>
-      </div>
-
-      <!-- Reply Area -->
-      <div v-if="ticket.status !== 'CLOSED'" class="ek-ticket-reply pa-4">
-        <v-textarea v-model="replyMessage" placeholder="Yanıtınızı buraya yazın..." variant="outlined" density="compact"
-          rows="3" hide-details class="mb-3" @keyup.ctrl.enter="handleReply"></v-textarea>
-        <div class="d-flex justify-end align-center">
-          <span class="ek-ticket-reply__hint mr-4">Ctrl + Enter ile gönder</span>
-          <v-btn color="primary" :loading="replyLoading" :disabled="!replyMessage.trim()" @click="handleReply">
-            <v-icon size="18" class="mr-2">mdi-send</v-icon> Gönder
-          </v-btn>
+        <v-textarea
+          ref="replyField"
+          v-model="reply.draft.value"
+          aria-label="Yanıtınız"
+          placeholder="Yanıtınızı buraya yazın..."
+          rows="2"
+          auto-grow
+          max-rows="6"
+          hide-details
+          :disabled="reply.busy.value"
+          @keydown="onReplyKey"
+        />
+        <div class="tk-reply__bar">
+          <span class="tk-hint"><EkKbd :keys="['Ctrl', 'Enter']" /> ile gönder</span>
+          <span class="tk-counter" :class="`tk-counter--${reply.counter.value.level}`" aria-hidden="true">{{ reply.counter.value.label }}</span>
+          <EkButton tone="primary" icon="mdi-send-outline" :loading="reply.busy.value" :disabled="!reply.canSend.value" @click="handleReply">Gönder</EkButton>
         </div>
+        <div class="ek-sr-only" aria-live="polite" aria-atomic="true">{{ reply.liveMessage.value }}</div>
       </div>
-      <div v-else class="ek-ticket-closed pa-6 text-center">
-        <v-icon class="mr-2">mdi-lock-outline</v-icon>
-        Bu destek talebi kapatılmıştır. Yeni bir mesaj gönderilemez.
+      <div v-else class="tk-closed">
+        <v-icon icon="mdi-lock-outline" class="tk-closed__icon" aria-hidden="true" />
+        <p>Bu destek talebi kapatılmıştır. Yeni bir mesaj gönderilemez — başka bir konu için yeni bir destek talebi açabilirsiniz.</p>
       </div>
     </div>
-  </ActionDialogComponent>
+  </EkDialog>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue';
-import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue';
-import EkStatusChip from '@/components/ds/EkStatusChip.vue';
+import { computed, nextTick, ref, watch } from 'vue'
+import { EkDialog, EkButton, EkKbd, EkSkeleton, EkStatusChip } from '@entegrasyonik/ui/components'
+import { formatDate, formatDateTime } from '@entegrasyonik/ui/format'
 import {
   TicketStatusEnum, TicketPriorityEnum, TicketTypeEnum,
-  TICKET_STATUS_LABELS,
-  TICKET_PRIORITY_LABELS,
-  TICKET_TYPE_LABELS
-} from '@/types/TicketTypes';
-import { TICKET_STATUS_TONE } from '@/design/status-map';
-import { TICKET_PRIORITY_TONE } from './composables/ticketPriorityTone';
+  TICKET_STATUS_LABELS, TICKET_PRIORITY_LABELS, TICKET_TYPE_LABELS,
+} from '@/types/TicketTypes'
+import { TICKET_STATUS_TONE } from '@/design/status-map'
+import { TICKET_PRIORITY_TONE } from './composables/ticketPriorityTone'
+import { TICKET_TYPE_META, buildTimeline, isSubmitShortcut, withDaySeparators } from './composables/ticketRules'
+import { useTicketReply } from './composables/useTicketReply'
+import type { TicketActionResult } from './composables/useTicketActions'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
-  ticket: { type: Object, default: null }
-});
+  ticket: { type: Object, default: null },
+  /** Yanıtı gönderir ve sınıflanmış sonucu döner; başarıda çağıran talep nesnesini günceller. */
+  sendReply: { type: Function as unknown as () => (payload: { ticketId: string; content: string }) => Promise<TicketActionResult>, required: true },
+})
 
-const emit = defineEmits(['update:modelValue', 'reply']);
+const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>()
 
-const replyMessage = ref('');
-const replyLoading = ref(false);
-const messageContainer = ref<any>(null);
+const scroller = ref<HTMLElement | null>(null)
+const replyField = ref<any>(null)
 
-const scrollToBottom = () => {
+const reply = useTicketReply((content) => props.sendReply({ ticketId: props.ticket?._id, content }))
+
+const entries = computed(() => withDaySeparators(buildTimeline(props.ticket)))
+const hasMessages = computed(() => (props.ticket?.messages?.length ?? 0) > 0)
+
+function scrollToBottom() {
   nextTick(() => {
-    if (messageContainer.value) {
-      messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
-    }
-  });
-};
+    requestAnimationFrame(() => {
+      if (scroller.value) scroller.value.scrollTop = scroller.value.scrollHeight
+    })
+  })
+}
 
-const handleReply = async () => {
-  if (!replyMessage.value.trim()) return;
-  replyLoading.value = true;
-  emit('reply', {
-    ticketId: props.ticket._id,
-    content: replyMessage.value
-  });
-  replyMessage.value = '';
-  replyLoading.value = false;
-  scrollToBottom();
-};
+async function handleReply() {
+  if (await reply.submit()) {
+    scrollToBottom()
+    await nextTick()
+    replyField.value?.focus?.()
+  }
+}
 
-const formatDate = (date: any) => date ? new Date(date).toLocaleString('tr-TR') : '-';
-const translateStatus = (s: any) => TICKET_STATUS_LABELS[s as TicketStatusEnum] || s;
-const statusTone = (s: any) => TICKET_STATUS_TONE[s as TicketStatusEnum]?.tone || 'neutral';
-const translatePriority = (p: any) => TICKET_PRIORITY_LABELS[p as TicketPriorityEnum] || p;
-const priorityTone = (p: any) => TICKET_PRIORITY_TONE[p as TicketPriorityEnum] || 'neutral';
-const translateType = (t: any) => TICKET_TYPE_LABELS[t as TicketTypeEnum] || t;
+function onReplyKey(e: KeyboardEvent) {
+  if (isSubmitShortcut(e)) {
+    e.preventDefault()
+    handleReply()
+  }
+}
+
+watch(() => [props.modelValue, props.ticket?._id, props.ticket?.messages?.length], () => {
+  if (props.modelValue) scrollToBottom()
+}, { flush: 'post' })
+
+// Başka talebe geçilince taslak ve hata sıfırlanır.
+watch(() => props.ticket?._id, () => reply.reset())
+
+/** Gün ayracının altında yalnız saat (tam tarih-saat okuyucuya `aria-label` ile verilir). */
+const timeOf = (d: unknown) => formatDateTime(d as string).split(' ')[1] ?? '—'
+const isoDay = (d: unknown) => {
+  const t = d ? new Date(d as string).getTime() : NaN
+  return Number.isNaN(t) ? undefined : new Date(t).toISOString()
+}
+const translateStatus = (s: any) => TICKET_STATUS_LABELS[s as TicketStatusEnum] || s
+const statusTone = (s: any) => TICKET_STATUS_TONE[s as TicketStatusEnum]?.tone || 'neutral'
+const translatePriority = (p: any) => TICKET_PRIORITY_LABELS[p as TicketPriorityEnum] || p
+const priorityTone = (p: any) => TICKET_PRIORITY_TONE[p as TicketPriorityEnum] || 'neutral'
+const translateType = (t: any) => TICKET_TYPE_LABELS[t as TicketTypeEnum] || t
+const typeIcon = (t: any) => TICKET_TYPE_META[t as TicketTypeEnum]?.icon || 'mdi-help-circle-outline'
 </script>
 
 <style scoped>
-.ticket-detail-container {
-  min-height: 400px;
+.tk-loading {
+  padding: var(--ek-space-5) var(--ek-space-6);
 }
 
-.ek-ticket-meta {
-  gap: var(--ek-space-4);
-  padding: var(--ek-space-4);
+.tk-detail {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
+.tk-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ek-space-3) var(--ek-space-6);
+  margin: 0;
+  padding: var(--ek-space-3) var(--ek-space-6);
+  border-top: 1px solid var(--ek-color-border-subtle);
   border-bottom: 1px solid var(--ek-color-border-default);
   background: var(--ek-color-surface-muted);
 }
 
-.ek-ticket-messages {
-  scrollbar-width: thin;
-  max-height: 500px;
-  background: var(--ek-color-surface-muted);
-}
-
-.meta-item {
+.tk-meta__item {
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-1);
+  min-width: 0;
 }
 
-.meta-label {
-  font-size: var(--ek-font-size-xs);
-  font-weight: var(--ek-font-weight-semibold);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+.tk-meta__item--end {
+  margin-left: auto;
+}
+
+.tk-meta dt {
   color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
 }
 
-.meta-value {
-  font-size: var(--ek-font-size-sm);
-  font-weight: var(--ek-font-weight-semibold);
+.tk-meta dd {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  min-height: var(--ek-space-5);
+}
+
+.tk-meta__value {
+  gap: var(--ek-space-1);
   color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-label-size);
+  font-weight: var(--ek-type-subheading-weight);
 }
 
-.message-bubble {
-  max-width: 80%;
-  border-radius: var(--ek-radius-lg);
-  font-size: var(--ek-font-size-md);
-  line-height: 1.5;
-  white-space: pre-wrap;
+.tk-meta__icon {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-icon-sm);
 }
 
-.client-bubble {
-  background: var(--ek-color-primary);
-  color: var(--ek-color-background);
-  border-bottom-right-radius: 2px;
-}
-
-.support-bubble {
+/* Zaman çizgisi */
+.tk-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--ek-space-4) var(--ek-space-6);
   background: var(--ek-color-surface);
-  color: var(--ek-color-content-strong);
-  border-bottom-left-radius: 2px;
+  scrollbar-width: thin;
+}
+
+.tk-scroll:focus-visible {
+  outline: none;
+  box-shadow: inset var(--ek-focus-ring);
+}
+
+.tk-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tk-day {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-3);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+  font-weight: var(--ek-type-subheading-weight);
+}
+
+.tk-day::before,
+.tk-day::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--ek-color-border-subtle);
+}
+
+.tk-event {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--ek-space-2);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+  text-align: center;
+}
+
+.tk-event__icon {
+  font-size: var(--ek-icon-sm);
+}
+
+.tk-event__text {
+  font-weight: var(--ek-type-subheading-weight);
+}
+
+.tk-msg {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-1);
+  max-width: 78%;
+  min-width: 0;
+}
+
+.tk-msg--mine {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.tk-msg--support {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.tk-msg__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--ek-space-1) var(--ek-space-2);
+  max-width: 100%;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+}
+
+.tk-msg--mine .tk-msg__meta {
+  justify-content: flex-end;
+}
+
+.tk-msg__sender {
+  color: var(--ek-color-content-default);
+  font-weight: var(--ek-type-subheading-weight);
+  overflow-wrap: anywhere;
+}
+
+.tk-msg__role {
+  color: var(--ek-color-content-muted);
+  font-weight: 400;
+}
+
+.tk-msg__bubble {
+  max-width: 100%;
+  padding: var(--ek-space-3) var(--ek-space-4);
   border: 1px solid var(--ek-color-border-default);
-}
-
-.sender-name {
-  font-size: var(--ek-font-size-xs);
-  font-weight: var(--ek-font-weight-semibold);
-  color: var(--ek-color-content-muted);
-  text-transform: uppercase;
-}
-
-.message-time {
-  font-size: var(--ek-font-size-xs);
-  color: var(--ek-color-content-subtle);
-}
-
-.ek-ticket-reply {
-  border-top: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
   background: var(--ek-color-surface);
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-body-size);
+  line-height: var(--ek-type-body-line);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
-.ek-ticket-reply__hint {
-  font-size: var(--ek-font-size-xs);
+.tk-msg--mine .tk-msg__bubble {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  border-bottom-right-radius: var(--ek-radius-control);
+}
+
+.tk-msg--support .tk-msg__bubble {
+  background: var(--ek-color-surface-muted);
+  border-bottom-left-radius: var(--ek-radius-control);
+}
+
+.tk-empty {
+  padding: var(--ek-space-6) 0;
   color: var(--ek-color-content-muted);
+  text-align: center;
 }
 
-.ek-ticket-closed {
+/* Yanıt alanı */
+.tk-reply {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-3);
+  padding: var(--ek-space-4) var(--ek-space-6);
+  border-top: 1px solid var(--ek-color-border-default);
+  background: var(--ek-color-surface-muted);
+}
+
+.tk-reply__bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ek-space-3);
+}
+
+.tk-reply__bar .tk-counter {
+  margin-left: auto;
+}
+
+.tk-hint {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+}
+
+.tk-counter {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+  font-variant-numeric: tabular-nums;
+}
+
+.tk-counter--warn {
+  color: var(--ek-color-warning-emphasis);
+  font-weight: var(--ek-type-subheading-weight);
+}
+
+.tk-counter--over {
+  color: var(--ek-color-error-emphasis);
+  font-weight: var(--ek-type-subheading-weight);
+}
+
+.tk-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ek-space-3);
+  padding: var(--ek-space-3) var(--ek-space-4);
+  border: 1px solid var(--ek-color-error-border);
+  border-radius: var(--ek-radius-control);
+  background: var(--ek-color-error-subtle);
+  color: var(--ek-color-error-emphasis);
+}
+
+.tk-alert__icon {
+  flex: none;
+  margin-top: 2px;
+  font-size: var(--ek-icon-md);
+}
+
+.tk-alert__title,
+.tk-alert__hint {
+  margin: 0;
+  font-size: var(--ek-type-label-size);
+  line-height: var(--ek-type-body-line);
+}
+
+.tk-alert__title {
+  font-weight: var(--ek-type-subheading-weight);
+}
+
+.tk-closed {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ek-space-3);
+  padding: var(--ek-space-4) var(--ek-space-6);
+  border-top: 1px solid var(--ek-color-border-default);
   background: var(--ek-color-surface-muted);
   color: var(--ek-color-content-muted);
-  font-weight: var(--ek-font-weight-semibold);
+}
+
+.tk-closed p {
+  margin: 0;
+}
+
+.tk-closed__icon {
+  flex: none;
+  margin-top: 2px;
+  font-size: var(--ek-icon-md);
+}
+
+@media (max-width: 599px) {
+  .tk-meta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tk-meta,
+  .tk-scroll,
+  .tk-reply,
+  .tk-closed {
+    padding-left: var(--ek-space-4);
+    padding-right: var(--ek-space-4);
+  }
+
+  .tk-meta__item--end {
+    margin-left: 0;
+  }
+
+  .tk-msg {
+    max-width: 92%;
+  }
+}
+</style>
+
+<style src="./ticket-dialog.css"></style>
+
+<style>
+/* Ayrıntı diyaloğu: sabit yükseklik; gövde kaydırmaz, iç zaman çizgisi kayar, yanıt alanı altta sabit kalır. */
+.ek-ticket-detail-dialog .ek-dialog.ek-dialog {
+  height: calc(100vh - var(--ek-space-16) - var(--ek-space-16));
+  max-height: 46rem;
+}
+
+.ek-ticket-detail-dialog .ek-dialog__body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.ek-ticket-detail-dialog .ek-dialog__desc {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 599px) {
+  .ek-ticket-detail-dialog .ek-dialog.ek-dialog {
+    height: 100%;
+    max-height: none;
+  }
 }
 </style>

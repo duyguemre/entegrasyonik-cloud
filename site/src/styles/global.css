@@ -172,33 +172,40 @@ ul {
 }
 
 /*
- * Kanal (pazaryeri/entegrasyon) marka rengi eşlemesi (S8) — bkz. src/data/channel-colors.ts.
- * `--chan`: ham yaklaşık marka tonu (kenarlık/nokta/ince vurgu; metin taşımaz).
- * `--chan-fill`: karartılmış, beyaz harfle AA-güvenli dolu monogram zemini.
+ * Kanal (pazaryeri/entegrasyon) marka rengi eşlemesi (C1S) — değerler site-tokens.css `--channel-*`
+ * (kaynak: docs/cloud-contracts/CHANNEL_BRAND_COLORS.md); kod listesi src/data/channel-colors.ts.
+ * `--chan`: resmi marka rengi (değiştirilmeden; nokta/şerit/kenarlık/dolgulu rozet zemini).
+ * `--chan-on`: `--chan` zeminindeki metin rengi (siyah/beyaz, ≥4.5:1).
+ * Önce özgüllüğü sıfır (:where) nötr varsayılan: eşlenmemiş/yalnız-UI kanal kodları nötr gri alır.
+ * Fiyat planı kartları da `data-code` taşır (plan kodu) — kanal değildir, hariç tutulur.
  */
+:where([data-code]:not([data-part='plan'])) {
+  --chan: var(--channel-neutral);
+  --chan-on: var(--channel-neutral-on);
+}
 [data-code='trendyol'] {
-  --chan: var(--site-channel-trendyol);
-  --chan-fill: var(--site-channel-trendyol-fill);
+  --chan: var(--channel-trendyol);
+  --chan-on: var(--channel-trendyol-on);
 }
 [data-code='hepsiburada'] {
-  --chan: var(--site-channel-hepsiburada);
-  --chan-fill: var(--site-channel-hepsiburada-fill);
+  --chan: var(--channel-hepsiburada);
+  --chan-on: var(--channel-hepsiburada-on);
 }
 [data-code='n11'] {
-  --chan: var(--site-channel-n11);
-  --chan-fill: var(--site-channel-n11-fill);
+  --chan: var(--channel-n11);
+  --chan-on: var(--channel-n11-on);
 }
 [data-code='pazarama'] {
-  --chan: var(--site-channel-pazarama);
-  --chan-fill: var(--site-channel-pazarama-fill);
+  --chan: var(--channel-pazarama);
+  --chan-on: var(--channel-pazarama-on);
 }
 [data-code='ideasoft'] {
-  --chan: var(--site-channel-ideasoft);
-  --chan-fill: var(--site-channel-ideasoft-fill);
+  --chan: var(--channel-ideasoft);
+  --chan-on: var(--channel-ideasoft-on);
 }
 [data-code='bizimhesap'] {
-  --chan: var(--site-channel-bizimhesap);
-  --chan-fill: var(--site-channel-bizimhesap-fill);
+  --chan: var(--channel-bizimhesap);
+  --chan-on: var(--channel-bizimhesap-on);
 }
 
 /*

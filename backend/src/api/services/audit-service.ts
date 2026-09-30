@@ -16,6 +16,9 @@ const RESULTS = ['ok', 'fail', 'error']
 /** Platform-içi olaylar (süper yönetici yazma kayıtları: `admin.write`, `admin.*`) tenant'a gösterilmez. */
 const PLATFORM_INTERNAL_EVENT_PREFIX = 'admin.'
 
+const IMPERSONATION_EVENT_PREFIX = 'impersonation.'
+const SUPPORT_ACTOR_LABEL = 'Entegrasyonik Destek'
+
 // [GV-01] ortak yardımcı (@utils/search): aynı kaçış kuralı, tek kaynak
 import { escapeRegex } from '@utils/search'
 
@@ -87,18 +90,23 @@ export default class AuditService extends BaseApi implements IService {
         const model = this.applicationDB.getAuditLogModel()
         const [total, rows] = await Promise.all([
             model.countDocuments(filter).maxTimeMS(QUERY_MAX_TIME_MS),
-            model.find(filter, { at: 1, event: 1, result: 1, sub: 1, meta: 1 }).sort({ at: -1 }).skip((page - 1) * limit).limit(limit).maxTimeMS(QUERY_MAX_TIME_MS).lean(),
+            model.find(filter, { at: 1, event: 1, result: 1, sub: 1, meta: 1, imp: 1 }).sort({ at: -1 }).skip((page - 1) * limit).limit(limit).maxTimeMS(QUERY_MAX_TIME_MS).lean(),
         ])
 
         return {
-            logs: (rows || []).map((r: any) => ({
-                id: String(r._id),
-                at: r.at,
-                event: r.event,
-                result: r.result,
-                userId: r.sub ?? null,
-                meta: sanitizeMeta(r.meta) ?? null,
-            })),
+            logs: (rows || []).map((r: any) => {
+                // [B3 / ADR-0028 Karar 9] Destek (impersonation) kayıtlarında platform yöneticisinin kimliği tenant'a SIZMAZ: userId yerine sabit etiket.
+                const support = r.imp === true || (typeof r.event === 'string' && r.event.startsWith(IMPERSONATION_EVENT_PREFIX))
+                return {
+                    id: String(r._id),
+                    at: r.at,
+                    event: r.event,
+                    result: r.result,
+                    userId: support ? null : (r.sub ?? null),
+                    ...(support ? { actorLabel: SUPPORT_ACTOR_LABEL } : {}),
+                    meta: sanitizeMeta(r.meta) ?? null,
+                }
+            }),
             page,
             limit,
             totalNumberOfRecords: total,

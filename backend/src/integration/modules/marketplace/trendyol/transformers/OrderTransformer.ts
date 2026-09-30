@@ -1,7 +1,11 @@
 import { IOrderPackage, IOrder, ICustomer, IOrderItem, IAddress, ICustomerAddress, OrderInternalStatusEnum } from '@interfaces/index';
 import { integrationCode } from '../constants'; // 'trendyol'
 import { IntegrationError } from '@integration/modules/common/IntegrationError';
+import { buildInternalOrder } from '@integration/modules/common/adapter/buildInternalOrder';
 import { reportUnknownEnum } from '@integration/modules/common/contract/reportUnknownEnum';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('adapter-trendyol', 'OrderTransformer');
 
 /** ADR-0018 sözleşme kimliği (Aşama A'da zod şemasıyla eşleşecek). */
 export const ORDERS_CONTRACT_ID = 'trendyol.orders.list@v2';
@@ -19,6 +23,9 @@ export interface SkippedOrderRecord { ref: string; reason: 'MISSING_ORDER_ID' | 
 
 /** Toplu şema kayması sezgisi: bu kadar (veya fazla) kayıtta HEPSİ geçersizse tek tek atlamak yerine hata fırlatılır. */
 const DRIFT_MIN_RECORDS = 3;
+
+/** `orderDate` GMT+3 kodlu (bkz. resolveOrderDate). */
+export const TRENDYOL_ORDER_DATE_GMT3_OFFSET_MS = 3 * 60 * 60 * 1000;
 
 type StatusFlag = 'paymentPending' | 'unpacked' | 'unknownStatus';
 interface StatusRule { internal: OrderInternalStatusEnum; flag?: StatusFlag; }
@@ -71,7 +78,7 @@ export class OrderMapper {
             if (mapped) out.push(mapped);
         }
         if (this.lastSkipped.length > 0) {
-            console.error(`[OrderMapper] ${this.lastSkipped.length}/${orders.length} Trendyol sipariş kaydı kritik alan eksikliği nedeniyle ATLANDI (şema kayması olabilir): ` +
+            log.error('ORDERTRANSFORMER_ORDERMAPPER_TRENDYOL_SIPARIS_KAYDI', `${this.lastSkipped.length}/${orders.length} Trendyol sipariş kaydı kritik alan eksikliği nedeniyle ATLANDI (şema kayması olabilir): ` +
                 this.lastSkipped.slice(0, 10).map(r => `${r.ref}:${r.reason}`).join(', '));
             if (orders.length >= DRIFT_MIN_RECORDS && this.lastSkipped.length === orders.length) {
                 throw new IntegrationError('VALIDATION',
@@ -156,7 +163,7 @@ export class OrderMapper {
             }
 
             // 3. ORDER MAPPING
-            const internalOrder: IOrder = {
+            const internalOrder: IOrder = buildInternalOrder({
                 integrationCode: integrationCode,
                 externalOrderId,
                 orderNumber: order.orderNumber || externalOrderId,
@@ -170,7 +177,7 @@ export class OrderMapper {
 
                 cancelSource: source,
                 dates: {
-                    orderDate: (order.orderDate || order.creationDate) ? new Date(order.orderDate || order.creationDate) : new Date(),
+                    orderDate: this.resolveOrderDate(order),
                     estimatedDeliveryDate: order.estimatedDeliveryEndDate ? new Date(order.estimatedDeliveryEndDate) : undefined,
                     shippedDate: order.shippedDate ? new Date(order.shippedDate) : undefined,
                     deliveredDate: order.deliveredDate ? new Date(order.deliveredDate) : undefined,
@@ -230,16 +237,14 @@ export class OrderMapper {
                     };
                 }),
 
-                flags: {
-                    isAllocated: false,
-                    isInvoiceGenerated: !!order.invoiceLink,
-                    isMetricsProcessed: false
-                },
+                flags: { isAllocated: false, isInvoiceGenerated: !!order.invoiceLink, isMetricsProcessed: false },
 
                 meta: {
                     packageId: order.shipmentPackageId ?? order.id ?? order.packageId,
                     giftBox: !!order.giftBox || !!order.giftBoxRequested,
                     commercial: !!order.commercial,
+                    // [WP5] 09.09.2026'dan beri sipariş yanıtında `paymentMethod` var (esnek `meta`; şema değişikliği yok).
+                    paymentMethod: order.paymentMethod ?? undefined,
                     micro: !!order.micro,
                     etgbNo: order.etgbNo,
                     etgbDate: order.etgbDate,
@@ -247,7 +252,7 @@ export class OrderMapper {
                     // Hesaplanan bayrak ham alanların ÜSTÜNE yazılır (`...order` hiçbir zaman `statusFlag` taşımaz).
                     ...(statusRule.flag ? { statusFlag: statusRule.flag } : {}),
                 }
-            };
+            });
 
             return {
                 order: internalOrder,
@@ -255,6 +260,20 @@ export class OrderMapper {
                 claims: [] // Claims are handled by ClaimConnector separately
             };
         }
+    }
+
+    /**
+     * Sipariş tarihi -> UTC `Date`. Resmi (changelog/getShipmentPackages): `orderDate` GMT+3, `createdDate` GMT döner
+     * (tutarsızlık). `orderDate` epoch'u yerel (TR) duvar saatini UTC'ymiş gibi kodlar => gerçek an = değer - 3 sa.
+     * `createdDate` (ve eski `creationDate`) zaten GMT'dir => düzeltme YOK. Öncelik: orderDate (düzeltilmiş) → createdDate → şimdi.
+     * TODO(WP5, sandbox doğrulaması): kayma yönü/sabiti stage hesabı gelince canlı örnekle teyit edilmeli.
+     */
+    private resolveOrderDate(order: any): Date {
+        const od = Number(order.orderDate);
+        if (order.orderDate !== undefined && order.orderDate !== null && order.orderDate !== '' && Number.isFinite(od)) return new Date(od - TRENDYOL_ORDER_DATE_GMT3_OFFSET_MS);
+        const cd = pick(order.createdDate, order.creationDate);
+        if (cd !== undefined && Number.isFinite(Number(cd))) return new Date(Number(cd));
+        return new Date();
     }
 
     /**

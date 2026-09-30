@@ -3,16 +3,16 @@
 
   ADR-0015 B5-3 — GÖRSEL KATMAN (bkz. e2e/specs/printouts.spec.ts). Davranış DEĞİŞMEDİ: ekran bir
   liste değil, backend'e HİÇ istek atmayan bir şablon tasarımcısı taslağıdır; sürükle-bırak (dragstart/
-  drop/dragend), tuvale `<p type="move">` ekleme, tıklayınca seçme (seçili öğe #00f), ayar paneli,
+  drop/dragend), tuvale `<p type="move">` ekleme, tıklayınca seçme (seçili öğe mavi), ayar paneli,
   "Sil", kâğıt boyutu düğmeleri (tuval `:width/:height` inline style), ölü "Test Çıktısı"/"Temizle"
   düğmeleri ve `#a4` kimliği AYNEN korundu. Görünen metinler/etiketler değişmedi.
 
-  - Başlık `EkPageHeader`'a; token'sız hex/inline style, `bg-color="textfieldColor"`, eski
+  - Başlık `EkPageHeader`'a; token'sız renk/inline style, `bg-color="textfieldColor"`, eski
     `scroll-element`/`expand-background-patch`/`ScrollComponent` (özel kaydırma çubuğu) kaldırıldı;
     kaydırma yerel `overflow:auto`. Palet metinleri `paletteGroups` verisinden render edilir.
   - Yerleşim: araç çubuğu sarılır (mobil/tabletteki üst üste binme giderildi), tuval küçülmez
     (`flex:none`, kap içinde kaydırılır).
-  - Karakterizasyon (DÜZELTİLMEDİ): seçim rengi "#00f" ve sürükleme opaklığı script'te DOM'a
+  - Karakterizasyon (DÜZELTİLMEDİ): seçim rengi (saf mavi, `blue`) ve sürükleme opaklığı script'te DOM'a
     doğrudan yazılır (spec bunu mavi olarak bekler); Genişlik/Yükseklik/Çıktı Tipi/Yazı Tipi/Yazı
     Büyüklüğü/Kopya Sayısı alanları hiçbir state'e bağlı değil; "Sil" sonrası seçim temizlenmez;
     paletteki alanlar klavyeyle sürüklenemez (yalnızca HTML5 fare DnD).
@@ -26,7 +26,7 @@
     />
 
     <div class="ek-printout__toolbar">
-      <v-select clearable prepend-icon="mdi-form-textbox" density="comfortable"
+      <v-select clearable prepend-icon="mdi-form-textbox"
         :label="$t('printouts.printout.searchlabel')" variant="outlined" hide-details
         class="ek-printout__select ek-printout__select--type"></v-select>
 
@@ -40,15 +40,15 @@
         </v-btn>
       </div>
 
-      <v-select clearable density="comfortable" :label="$t('printouts.printout.fontsize')" variant="outlined"
+      <v-select clearable :label="$t('printouts.printout.fontsize')" variant="outlined"
         hide-details class="ek-printout__select"></v-select>
-      <v-select clearable density="comfortable" :label="$t('printouts.printout.fontfamily')" variant="outlined"
+      <v-select clearable :label="$t('printouts.printout.fontfamily')" variant="outlined"
         hide-details class="ek-printout__select"></v-select>
-      <v-select clearable density="comfortable" :label="$t('printouts.printout.copy')" variant="outlined"
+      <v-select clearable :label="$t('printouts.printout.copy')" variant="outlined"
         hide-details class="ek-printout__select"></v-select>
 
       <div class="ek-printout__actions">
-        <v-btn prepend-icon="mdi-printer" color="primary" variant="flat">{{ $t("printouts.printout.test") }}</v-btn>
+        <v-btn prepend-icon="mdi-printer-outline" color="primary" variant="flat">{{ $t("printouts.printout.test") }}</v-btn>
         <v-btn prepend-icon="mdi-cancel" variant="outlined">{{ $t("printouts.printout.clear") }}</v-btn>
       </div>
     </div>
@@ -65,12 +65,12 @@
         <div v-if="selectedDragElement" class="ek-printout__panel">
           <div class="ek-printout__panel-title">{{ selectedDragElement.target.innerHTML }}</div>
           <div class="ek-printout__panel-fields">
-            <v-text-field clearable density="comfortable" :label="$t('printouts.printout.width')"
+            <v-text-field clearable :label="$t('printouts.printout.width')"
               variant="outlined" hide-details></v-text-field>
-            <v-text-field clearable density="comfortable" :label="$t('printouts.printout.height')"
+            <v-text-field clearable :label="$t('printouts.printout.height')"
               variant="outlined" hide-details></v-text-field>
           </div>
-          <v-btn prepend-icon="mdi-delete-outline" @click="selectedDragElement.target.remove()" variant="outlined"
+          <v-btn prepend-icon="mdi-trash-can-outline" @click="selectedDragElement.target.remove()" variant="outlined"
             color="error" class="ek-printout__delete">{{ $t("printouts.printout.delete") }}</v-btn>
         </div>
 
@@ -87,7 +87,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import { ref, reactive, onMounted, watch } from 'vue'
-import EkPageHeader from '@/components/ds/EkPageHeader.vue'
+import EkPageHeader from '@/components/page/EkPageHeader.vue'
 
 
 const { t } = useI18n()
@@ -154,13 +154,13 @@ const paletteGroups = [
 
 
 var selectDragElement = (event: any) => {
-  if (selectedDragElement.value && selectedDragElement.value.target) selectedDragElement.value.target.style.color = "#000"
+  if (selectedDragElement.value && selectedDragElement.value.target) selectedDragElement.value.target.style.color = "black"
   if (selectedDragElement.value && selectedDragElement.value.target && selectedDragElement.value.target.innerHTML == event.target.innerHTML) {
     selectedDragElement.value = undefined
   }
   else {
     selectedDragElement.value = event
-    selectedDragElement.value.target.style.color = "#00f"
+    selectedDragElement.value.target.style.color = "blue"
   }
 
 }
@@ -252,8 +252,8 @@ var a = () => {
 var buttons = [
   {
     title: t("printouts.printout.save"),
-    icon: 'mdi-note-edit-outline',
-    color: 'saveButtonColor',
+    icon: 'mdi-pencil-outline',
+    color: 'primary',
     to: '',
     click: a
   },

@@ -1,6 +1,9 @@
 import { DatabaseManagerInstance } from '@database/index';
 import { IInvoice } from '@interfaces/invoice';
 import { getLogPrefix, LoggerType } from '@utils/Logger';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('worker', 'InvoiceRepository');
 
 export interface ISaveInvoiceResponse {
     insertedExternalIds: string[];
@@ -116,13 +119,13 @@ export class InvoiceRepository {
             // 4. Submit
             if (bulkOps.length > 0) {
                 const result = await InvoiceModel.bulkWrite(bulkOps as any, { ordered: false });
-                console.log(`${this.logPrefix} Persistence: ${result.upsertedCount} Yeni Fatura, ${result.modifiedCount} Güncelleme.`);
+                log.info('INVOICEREPOSITORY_PERSISTENCE_YENI_FATURA_GUNCELLEME', `Persistence: ${result.upsertedCount} Yeni Fatura, ${result.modifiedCount} Güncelleme.`);
             }
 
             return { insertedExternalIds, updatedExternalIds };
 
         } catch (error) {
-            console.error(`${this.logPrefix} saveInvoices Hatası:`, error);
+            log.error('INVOICEREPOSITORY_SAVEINVOICES_HATASI', 'saveInvoices Hatası:', { err: error });
             throw error;
         }
     }

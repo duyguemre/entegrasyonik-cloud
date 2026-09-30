@@ -1,3 +1,5 @@
+import { observeResponseSchema } from '@integration/modules/common/contract/observeResponseSchema';
+import { N11_BATCH_STATUS } from '../contracts';
 import Service, { N11_DEFAULT_URLS } from '../services/Service';
 
 export class ProductConnector {
@@ -35,7 +37,9 @@ export class ProductConnector {
 
     public async checkBatchProductRest(taskId: string): Promise<any> {
         const url = this.getUrl('checkTransferUrl');
-        return await this.service.rest.get(url, { taskId });
+        const data = await this.service.rest.get(url, { taskId });
+        observeResponseSchema(N11_BATCH_STATUS, data, { clientId: this.params.clientId });
+        return data;
     }
 
     // SOAP Methods

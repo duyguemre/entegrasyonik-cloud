@@ -1,84 +1,45 @@
 <template>
   <ActionDialogComponent :model-value="true" :title="user._id ? 'Kullanıcı Düzenle' : 'Yeni Kullanıcı Ekle'"
     :subtitle="user._id ? `${user.name} ${user.surname} kullanıcısını güncelliyorsunuz.` : 'Sisteme yeni bir kullanıcı tanımlayın.'"
-    icon="mdi-account-plus-outline" color="primary" confirmButtomColor="processButtonColor"
+    icon="mdi-account-plus-outline" color="primary" confirmButtomColor="primary"
     :confirmText="user._id ? 'Güncelle' : 'Kaydet'" cancelText="İptal" maxWidth="800px" @confirm="createOrUpdateUser"
     @cancel="emits('close')" @close="emits('close')" attach="authorizationListView">
     <div class="user-form-container">
+      <EkFormSection title="Hesap bilgileri" icon="mdi-account-details-outline">
+        <v-text-field v-model="user.name" label="İsim" />
+        <v-text-field v-model="user.surname" label="Soyisim" />
+        <v-text-field class="ek-span-full" v-model="user.email" label="E-posta Adresi" prepend-inner-icon="mdi-email-outline" />
+      </EkFormSection>
 
-      <v-row>
-        <v-col cols="12" md="7" class="pr-md-6">
-          <div class="ek-form-section-title d-flex align-center">
-            <v-icon start color="primary">mdi-account-details-outline</v-icon>
-            Hesap Bilgileri
+      <EkFormSection title="Güvenlik bilgileri" icon="mdi-lock-outline"
+        :description="user._id ? 'Şifreyi değiştirmek istemiyorsanız boş bırakın.' : undefined">
+        <v-text-field v-model="user.password" label="Şifre" type="password" prepend-inner-icon="mdi-lock-outline"
+          :placeholder="user._id ? 'Değiştirmek istemiyorsanız boş bırakın' : ''" />
+        <v-text-field v-if="!user._id" v-model="user.password2" label="Şifre Tekrar" type="password" />
+      </EkFormSection>
+
+      <EkFormSection title="Rol ve yetkiler" icon="mdi-shield-account-outline" :columns="1">
+        <v-select v-model="user.roleCode" :items="globalRoles" item-title="name" item-value="code"
+          label="Kullanıcı Rolü Seçiniz" :readonly="user.owner" />
+        <div v-if="selectedRoleInfo" class="uac-note uac-note--info">
+          <v-icon icon="mdi-information-outline" size="16" aria-hidden="true" />
+          <div>
+            <strong>{{ selectedRoleInfo?.name }} Rolü Hakkında</strong>
+            <p>{{ selectedRoleInfo?.description || 'Bu rol için bir açıklama tanımlanmamış.' }}</p>
           </div>
-
-          <v-row dense>
-            <v-col cols="12" sm="6">
-              <v-text-field v-model="user.name" density="compact" label="İsim" variant="outlined" class="mb-2" />
-            </v-col>
-            <v-col cols="12" sm="6">
-              <v-text-field v-model="user.surname" density="compact" label="Soyisim" variant="outlined" class="mb-2" />
-            </v-col>
-          </v-row>
-
-          <v-text-field v-model="user.email" density="compact" label="E-posta Adresi" variant="outlined"
-            class="mb-2" prepend-inner-icon="mdi-email-outline" />
-
-          <v-divider class="my-4" />
-
-          <div class="ek-form-section-subtitle">Güvenlik Bilgileri</div>
-          <v-row dense>
-            <v-col cols="12" sm="6">
-              <v-text-field v-model="user.password" density="compact" label="Şifre" type="password" variant="outlined"
-                class="mb-2" prepend-inner-icon="mdi-lock-outline"
-                :placeholder="user._id ? 'Değiştirmek istemiyorsanız boş bırakın' : ''" />
-            </v-col>
-            <v-col cols="12" sm="6" v-if="!user._id">
-              <v-text-field v-model="user.password2" density="compact" label="Şifre Tekrar" type="password"
-                variant="outlined" class="mb-2" />
-            </v-col>
-          </v-row>
-        </v-col>
-
-        <v-col cols="12" md="5" class="border-left-md">
-          <div class="ek-form-section-title d-flex align-center">
-            <v-icon start color="primary">mdi-shield-account-outline</v-icon>
-            Rol ve Yetkiler
-          </div>
-
-          <v-select v-model="user.roleCode" :items="globalRoles" item-title="name" item-value="code"
-            label="Kullanıcı Rolü Seçiniz" variant="outlined" density="compact" class="mb-4"
-            :readonly="user.owner">
-            <template #append-inner>
-              <v-icon color="primary">mdi-chevron-down</v-icon>
-            </template>
-          </v-select>
-
-          <div v-if="selectedRoleInfo" class="role-preview-card pa-4">
-            <div class="d-flex align-center mb-2">
-              <v-icon color="primary" size="20" class="mr-2">mdi-information-outline</v-icon>
-              <span class="text-caption font-weight-semibold text-primary">
-                {{ selectedRoleInfo?.name }} Rolü Hakkında
-              </span>
-            </div>
-            <p class="text-caption ek-muted lh-sm mb-0">
-              {{ selectedRoleInfo?.description || 'Bu rol için bir açıklama tanımlanmamış.' }}
-            </p>
-          </div>
-
-          <v-alert v-if="user.owner" type="warning" variant="tonal" density="compact"
-            class="mt-4 text-caption" icon="mdi-alert-decagram">
-            Bu kullanıcı Mağaza Yöneticisi olduğu için rolü değiştirilemez.
-          </v-alert>
-        </v-col>
-      </v-row>
+        </div>
+        <p v-if="user.owner" class="uac-note uac-note--warning" role="status">
+          <v-icon icon="mdi-alert-decagram-outline" size="16" aria-hidden="true" />
+          <span>Bu kullanıcı Mağaza Yöneticisi olduğu için rolü değiştirilemez.</span>
+        </p>
+      </EkFormSection>
     </div>
   </ActionDialogComponent>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onActivated, computed } from 'vue'
+import { EkFormSection } from '@entegrasyonik/ui/components'
 import { useI18n } from 'vue-i18n'
 import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue'
 import useRestApi from '@/composables/restapi'
@@ -134,43 +95,31 @@ onActivated(async () => {
 </script>
 
 <style scoped>
-.user-form-container {
-  min-height: 400px;
+.uac-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ek-space-2);
+  margin: 0;
+  padding: var(--ek-space-3);
+  border: 1px solid;
+  border-radius: var(--ek-radius-control);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
 }
 
-.ek-form-section-title {
-  font-size: var(--ek-font-size-lg);
-  font-weight: var(--ek-font-weight-semibold);
-  color: var(--ek-color-primary);
-  margin-bottom: var(--ek-space-4);
+.uac-note p {
+  margin: var(--ek-space-1) 0 0;
 }
 
-.ek-form-section-subtitle {
-  font-size: var(--ek-font-size-sm);
-  font-weight: var(--ek-font-weight-semibold);
-  color: var(--ek-color-content-muted);
-  margin-bottom: var(--ek-space-2);
+.uac-note--info {
+  border-color: var(--ek-color-info-border);
+  background: var(--ek-color-info-subtle);
+  color: var(--ek-color-info-emphasis);
 }
 
-.ek-muted {
-  color: var(--ek-color-content-muted);
-}
-
-.role-preview-card {
-  background-color: color-mix(in srgb, var(--ek-color-primary) 6%, transparent);
-  border: 1px dashed color-mix(in srgb, var(--ek-color-primary) 25%, transparent);
-  border-radius: var(--ek-radius-lg);
-  transition: background-color var(--ek-duration-base) var(--ek-easing-standard);
-}
-
-.lh-sm {
-  line-height: 1.5;
-}
-
-@media (min-width: 960px) {
-  .border-left-md {
-    border-left: 1px solid var(--ek-color-border-default);
-    padding-left: var(--ek-space-6);
-  }
+.uac-note--warning {
+  border-color: var(--ek-color-warning-border);
+  background: var(--ek-color-warning-subtle);
+  color: var(--ek-color-warning-emphasis);
 }
 </style>

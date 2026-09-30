@@ -1,6 +1,6 @@
 import Security, { ApplicationError } from "./Security"
 import { Express, Request, Response } from 'express';
-import runOperation from "./RunOperation";
+import runOperation, { RequestMeta } from "./RunOperation";
 import { authenticateRequest, isOpenRoute } from "./authenticate";
 import { isSessionResult } from "./sessionResult";
 import { toProfileDto } from "./profileDto";
@@ -13,7 +13,7 @@ import { handleClientLog } from "./clientLog";
 import { sanitizeResponse } from "./responseSanitizer";
 import { AuditLogger } from "@services/audit/AuditLogger";
 import { getRequestId } from "@platform/core/context";
-import { ERROR_CODES } from "@platform/core/errors";
+import { AppError, ERROR_CODES } from "@platform/core/errors";
 import { logger } from "@platform/core/logger";
 
 const log = logger.child({ module: 'ApiManager' });
@@ -21,6 +21,13 @@ const log = logger.child({ module: 'ApiManager' });
 // ADR-0001: bu dosyadaki rotalar Webserver'daki `authenticate` middleware'inden SONRA çalışır.
 // res.locals.userContext / res.locals.principal yalnızca o middleware tarafından (doğrulanmış token'dan) doldurulur.
 // Fail-closed: açık listede olmayan bir rota principal'sız gelirse (middleware takılmamışsa) 401.
+/** Sunucu tarafı istek üst verisi: istemci IP'si + authenticate'in çözdüğü tenant kaydı (ctx.tenant). */
+function requestMetaOf(req: Request, res: Response): RequestMeta {
+    const rawKey = req.headers?.['idempotency-key'];
+    const idempotencyKey = typeof rawKey === 'string' ? rawKey : undefined;
+    return { ip: getClientIp(req), tenant: res.locals?.tenant, idempotencyKey }
+}
+
 function requireAuthenticated(res: Response) {
     if (!res.locals || !res.locals.principal) throw new ApplicationError("Token is undefined", 401)
 }
@@ -33,7 +40,7 @@ function requireAuthenticated(res: Response) {
  * ADR-0003 D.17: başarılı yanıt gövdesi, son savunma hattı olarak yasak anahtar adları (parola özeti, dbConfig, depolama anahtarları...)
  * için taranır; bulunursa silinir ve olay loglanır (hata sinyali). Sızıntı yoksa gövde AYNEN gönderilir.
  */
-function sendOk(req: Request, res: Response, body: any) {
+export function sendOk(req: Request, res: Response, body: any) {
     res.status(200).send(sanitizeResponse(body, { service: req.params?.service, operation: req.params?.operation }))
 }
 
@@ -44,11 +51,11 @@ function sendOk(req: Request, res: Response, body: any) {
  * yalnızca sunucu logunda, `platform/core/logger` sıcak-yol göçü — ADR-0017 Karar 1.7 adım 2). 4xx iletileri
  * (doğrulama/yetki/hesap uçları) DEĞİŞMEZ.
  */
-function sendError(req: Request, res: Response, e: any, defaultStatus: number = 500) {
+export function sendError(req: Request, res: Response, e: any, defaultStatus: number = 500) {
     const statusCode = (e && e.statusCode) ? e.statusCode : defaultStatus
     const requestId = getRequestId()
     let message = e?.message
-    let code: string | undefined = (e && typeof e.code === 'string' && e.name === 'ApplicationError') ? e.code : undefined
+    let code: string | undefined = (e instanceof AppError && typeof e.code === 'string') ? e.code : undefined
     if (statusCode >= 500) {
         // Beklenmeyen hata: ayrıntı yalnızca sunucu logunda (requestId ile eşleştirilebilir), istemciye SIZMAZ.
         log.error({ service: req.params?.service, operation: req.params?.operation, err: e }, 'Beklenmeyen hata')
@@ -57,6 +64,8 @@ function sendError(req: Request, res: Response, e: any, defaultStatus: number = 
     }
     const body: any = { error: message, service: req.params?.service, operation: req.params?.operation }
     if (code) body.code = code
+    // [ADR-0023] Girdi doğrulama hatası: alan yolu + ileti listesi (DEĞER içermez, gövde yansıtılmaz). Yalnız 4xx VALIDATION.
+    if (statusCode < 500 && code === 'VALIDATION' && Array.isArray(e?.details)) body.fields = e.details
     if (requestId) body.requestId = requestId
     res.status(statusCode).send(body)
 }
@@ -71,7 +80,12 @@ const DEDICATED_ONLY_OPERATIONS: ReadonlySet<string> = new Set([
     'accountservice/requestpasswordreset',
     'accountservice/confirmpasswordreset',
     'accountservice/verifyemail',
+    'accountservice/getinvitation',
+    'accountservice/acceptinvitation',
     'accountservice/changepassword',
+    // [ADR-0026] cerez basan/kapatan impersonation operasyonlari yalniz ozel rotalardan (SessionResult jenerik rotada cerezsiz sizardi)
+    'securityservice/redeemimpersonation',
+    'securityservice/endimpersonation',
 ])
 
 export function configureApis(
@@ -115,12 +129,29 @@ export function configureApis(
             sendError(req, res, e)
         }
     })
+    // [ADR-0028 WP-A4] Davet: kimliksiz iki uç (accountTokenLimiter; oturum AÇMAZ).
+    app.post(context + '/AccountService/getInvitation', accountTokenLimiter, async (req: Request, res: Response) => {
+        try {
+            const resp = await runOperation(undefined, "AccountService", "getInvitation", req.body, undefined, { ip: getClientIp(req) })
+            sendOk(req, res, resp)
+        } catch (e: any) {
+            sendError(req, res, e)
+        }
+    })
+    app.post(context + '/AccountService/acceptInvitation', accountTokenLimiter, async (req: Request, res: Response) => {
+        try {
+            const resp = await runOperation(undefined, "AccountService", "acceptInvitation", req.body, undefined, { ip: getClientIp(req) })
+            sendOk(req, res, resp)
+        } catch (e: any) {
+            sendError(req, res, e)
+        }
+    })
     // Kimlikli: parola değişince diğer oturumlar düşer (tokenVersion++); ÇAĞRAN oturum için yeni çerez basılır (selectStore deseni).
     // Claim'ler gövdeye ASLA girmez (jenerik rota sessionClaims'i gövdeye koyardı; bu yüzden özel rota).
     app.post(context + '/AccountService/changePassword', async (req: Request, res: Response) => {
         try {
             requireAuthenticated(res)
-            const result = await runOperation(res.locals.userContext, "AccountService", "changePassword", req.body, res.locals.principal, { ip: getClientIp(req) })
+            const result = await runOperation(res.locals.userContext, "AccountService", "changePassword", req.body, res.locals.principal, requestMetaOf(req, res))
             if (!isSessionResult(result)) throw new ApplicationError('changePassword failed', 500)
             Security.setSessionCookie(res, result.sessionClaims)
             res.status(200).send(result.body)
@@ -157,12 +188,40 @@ export function configureApis(
                 res.status(200).send(result.body)
                 return
             }
-            // ör. { requireCaptcha: true } — oturum açılmadı
+            // oturum açılmadı (SessionResult değil)
             res.status(200).send(result)
         } catch (e: any) {
             // Başarısızlıkta yalnızca IP kaydedilir; hesabın bulunup bulunmadığı/nedeni (kilit, pasif, parola) audit'e de YAZILMAZ
             const credentialFailure = e && (e.statusCode === 401 || e.statusCode === 400)
             void AuditLogger.log({ event: 'login', result: credentialFailure ? 'fail' : 'error', ip })
+            sendError(req, res, e)
+        }
+    })
+    // [ADR-0026 Karar 4.9] Backoffice bileti tüketir, `imp:true` oturum çerezini basar (60 dk, UZATILMAZ). Açık rota (kimlik = bilet); hız sınırlı.
+    app.post(context + '/SecurityService/redeemImpersonation', accountTokenLimiter, async (req: Request, res: Response) => {
+        try {
+            const result = await runOperation(undefined, "SecurityService", "redeemImpersonation", req.body, undefined, { ip: getClientIp(req) })
+            if (!isSessionResult(result)) throw new ApplicationError('redeemImpersonation failed', 500)
+            Security.setSessionCookie(res, result.sessionClaims)
+            res.status(200).send(result.body)
+        } catch (e: any) {
+            sendError(req, res, e)
+        }
+    })
+    // Impersonation oturumunu bitirir (yalnız `imp:true` oturum): çerez silinir, `impersonation.end` denetime yazılır.
+    app.post(context + '/SecurityService/endImpersonation', async (req: Request, res: Response) => {
+        try {
+            requireAuthenticated(res)
+            const principal = res.locals.principal
+            if (principal.imp !== true) throw new ApplicationError('Aktif bir impersonation oturumu yok.', 400)
+            void AuditLogger.log({
+                event: 'impersonation.end', result: 'ok', sub: principal.sub, tid: principal.tid, ip: getClientIp(req),
+                actorType: 'impersonator', onBehalfOf: principal.tid, surface: 'app', imp: true,
+                meta: typeof principal.impReason === 'string' && principal.impReason ? { reason: principal.impReason } : undefined,
+            })
+            Security.expireSecurityCookie(res, context)
+            res.status(200).send(true)
+        } catch (e: any) {
             sendError(req, res, e)
         }
     })
@@ -181,7 +240,7 @@ export function configureApis(
     app.post(context + '/SecurityService/selectStore', async (req: Request, res: Response) => {
         try {
             requireAuthenticated(res)
-            const result = await runOperation(res.locals.userContext, "SecurityService", "selectStore", req.body, res.locals.principal, { ip: getClientIp(req) })
+            const result = await runOperation(res.locals.userContext, "SecurityService", "selectStore", req.body, res.locals.principal, requestMetaOf(req, res))
             if (!isSessionResult(result)) throw new ApplicationError('selectStore failed', 500)
             Security.setSessionCookie(res, result.sessionClaims)
             res.status(200).send(result.body)
@@ -194,7 +253,11 @@ export function configureApis(
         try {
             requireAuthenticated(res)
             // Doğrulanmış principal + merkezi Users belgesinden sunucuda kurulan bağlam; yanıt profil DTO'sudur
-            res.status(200).send(toProfileDto(res.locals.userContext))
+            const dto: any = toProfileDto(res.locals.userContext)
+            const pr = res.locals.principal
+            // [B3] Destek oturumu: bant sayfa yenilemesinde de çıkabilsin diye oturum durumu sunucudan gelir (profil DTO'su yönetici kullanıcıdır: ad/soyad = bant etiketi)
+            if (pr?.imp === true) dto.impersonation = { active: true, expiresAt: typeof pr.exp === 'number' ? new Date(pr.exp * 1000).toISOString() : undefined, reason: typeof pr.impReason === 'string' ? pr.impReason : undefined }
+            res.status(200).send(dto)
         } catch (e: any) {
             sendError(req, res, e)
         }
@@ -224,10 +287,10 @@ export function configureApis(
     app.post(context + '/:service/:operation', async (req: Request, res: Response) => {
         try {
             if (DEDICATED_ONLY_OPERATIONS.has((req.params.service + '/' + req.params.operation).toLowerCase())) throw new ApplicationError('Forbidden', 403)
-            // Yalnızca açık listedeki operasyonlar (ör. SecurityService/getCaptcha) kimliksiz çalışır
+            // Yalnızca açık listedeki operasyonlar (ör. SecurityService/login) kimliksiz çalışır
             if (!isOpenRoute('POST', req.params.service + '/' + req.params.operation)) requireAuthenticated(res)
 
-            const resp = await runOperation(res.locals.userContext, req.params.service, req.params.operation, req.body, res.locals.principal, { ip: getClientIp(req) })
+            const resp = await runOperation(res.locals.userContext, req.params.service, req.params.operation, req.body, res.locals.principal, requestMetaOf(req, res))
             sendOk(req, res, resp)
         } catch (e: any) {
             sendError(req, res, e)
@@ -238,7 +301,7 @@ export function configureApis(
         try {
             requireAuthenticated(res)
 
-            const resp = await runOperation(res.locals.userContext, req.params.service, 'get', {}, res.locals.principal, { ip: getClientIp(req) })
+            const resp = await runOperation(res.locals.userContext, req.params.service, 'get', {}, res.locals.principal, requestMetaOf(req, res))
             sendOk(req, res, resp);
         } catch (e: any) {
             sendError(req, res, e)

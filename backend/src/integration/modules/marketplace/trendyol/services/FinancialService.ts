@@ -3,6 +3,16 @@ import { FinancialConnector } from '../api/FinancialConnector';
 import { FinancialMapper } from '../transformers/FinancialMapper';
 import Service from '../services/Service';
 import { IntegrationError } from '@integration/modules/common/IntegrationError';
+import { markIncomplete } from '@integration/contracts/IncompleteFetch';
+
+/** Resmi belge: sayfa boyutu 500 veya 1000. */
+const PAGE_SIZE = 500;
+/** 500 x 200 = 100.000 satır / (tip x pencere); aşılırsa kalan sonraki turda (imleç örtüşmesi + günlük tarama) yakalanır. */
+const MAX_PAGES = 200;
+/** settlements `transactionType` (komisyon/hakediş satırları). */
+const SETTLEMENT_TYPES = ['Sale', 'Return'] as const;
+/** otherfinancials `transactionType` (çağrı başına tek tip). */
+const OTHER_FINANCIAL_TYPES = ['PaymentOrder', 'DeductionInvoices', 'CreditNote', 'CommissionInvoice'] as const;
 
 export class FinancialService {
     private connector: FinancialConnector;
@@ -18,32 +28,59 @@ export class FinancialService {
     /**
      * Trendyol'dan hem settlements hem de otherfinancials verilerini çeker,
      * birleştirir ve evrensel IFinancialTransaction formatına dönüştürür.
+     *
+     * [COM-03] Uçlar `transactionType` ister (çağrı başına TEK tip; docs/research/MARKETPLACE_COMMISSIONS_2026-09-30.md §3) ->
+     * tip başına ayrı çağrı; her çağrı `totalPages` boyunca sayfalanır (önceden yalnız page 0 okunurdu).
+     * Aynı kayıt tekrar gelirse yazım tarafı (FinancialRepository) `{integrationCode, externalId}` ile koşullu upsert yapar (idempotent).
      */
     public async fetchFinancials(query: { startDate: Date, endDate: Date, transactionTypes?: string[] }): Promise<IFinancialTransaction[]> {
         try {
             // Trendyol 15 gün kısıtlaması olduğu için aralığı parçalara bölüyoruz
             const chunks = this.splitDateRange(query.startDate, query.endDate, 15);
             const allTransactions: IFinancialTransaction[] = [];
+            let capped = false;
+            const wanted = query.transactionTypes?.length ? new Set(query.transactionTypes) : undefined;
+            const pick = (all: readonly string[]) => (wanted ? all.filter(t => wanted.has(t)) : [...all]);
 
             for (const chunk of chunks) {
-                const chunkQuery = { ...query, startDate: chunk.start, endDate: chunk.end };
-                
-                // 1. Settlements (Satış, İade, İndirim vb.)
-                const rawSettlements = await this.connector.fetchSettlements(chunkQuery);
-                const internalSettlements = this.mapper.toInternalTransactions(rawSettlements, 'TRENDYOL');
-                allTransactions.push(...internalSettlements);
+                const base = { startDate: chunk.start, endDate: chunk.end };
+
+                // 1. Settlements (Satış, İade): gerçekleşen komisyon burada
+                for (const transactionType of pick(SETTLEMENT_TYPES)) {
+                    const raw = await this.fetchAllPages(p => this.connector.fetchSettlements({ ...base, transactionType, ...p }));
+                    capped = capped || raw.capped;
+                    allTransactions.push(...this.mapper.toInternalTransactions(raw, 'TRENDYOL'));
+                }
 
                 // 2. Other Financials (Hakediş ödemeleri, faturalar, virmanlar vb.)
-                const rawOtherFinancials = await this.connector.fetchOtherFinancials(chunkQuery);
-                const internalOthers = this.mapper.toInternalTransactions(rawOtherFinancials, 'TRENDYOL');
-                allTransactions.push(...internalOthers);
+                for (const transactionType of pick(OTHER_FINANCIAL_TYPES)) {
+                    const raw = await this.fetchAllPages(p => this.connector.fetchOtherFinancials({ ...base, transactionType, ...p }));
+                    capped = capped || raw.capped;
+                    allTransactions.push(...this.mapper.toInternalTransactions(raw, 'TRENDYOL'));
+                }
             }
 
-            return allTransactions;
+            return capped ? markIncomplete(allTransactions, { reason: 'PAGINATION_PAGE_CAP', collected: allTransactions.length }) : allTransactions;
         } catch (error: any) {
             if (IntegrationError.isIntegrationError(error)) throw error;
             throw new Error(`[${this.clientId}][FinancialService:fetchFinancials] ${error.message}`);
         }
+    }
+
+    /**
+     * `totalPages` boyunca sayfalar (0-tabanlı); tüm `content` tek zarfta birleşir. MAX_PAGES tavanına takılıp sayfa kalırsa
+     * `capped:true` döner (çağıran sonucu `markIncomplete` ile işaretler -> imleç ilerlemez; playbook §4.8).
+     */
+    private async fetchAllPages(fetchPage: (p: { page: number; size: number }) => Promise<any>): Promise<{ content: any[]; capped: boolean }> {
+        const content: any[] = [];
+        for (let page = 0; page < MAX_PAGES; page++) {
+            const res = await fetchPage({ page, size: PAGE_SIZE });
+            const rows = Array.isArray(res?.content) ? res.content : [];
+            content.push(...rows);
+            const totalPages = Number(res?.totalPages);
+            if (rows.length === 0 || !Number.isFinite(totalPages) || page + 1 >= totalPages) return { content, capped: false };
+        }
+        return { content, capped: true };
     }
 
     /**

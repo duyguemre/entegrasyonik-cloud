@@ -2,7 +2,7 @@ import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import { ObjectId } from 'mongodb'
 import { randomBytes } from 'crypto'
-import { containsRegex, normalizePagination } from '@utils/search'
+import { containsRegex, normalizePagination, pickSortField } from '@utils/search'
 
 /* import Marketplace from '../../integration/modules/marketplace'
 import ECommerce from 'ecommerce'
@@ -12,14 +12,17 @@ import _ from 'lodash'
 import { EVENTS, integrationEventBus } from '../../integration/engine/IntegrationEventBus'
 import { SendNotificationEvent, PLATFORM_PROCESS } from '@interfaces/index'
 import { NotificationService } from '@services/notification/NotificationService'
+import { safeErrorCode } from '@operations/notifications/safeError'
+import { getRequestId } from '@platform/core/context'
 import { SENSITIVE_MASK, isSecretField, maskClientIntegrationsDoc, encryptSecrets, maskIntegrationItem, resolveSecretsForWrite } from '../integrationSecrets'
 import { ApplicationError } from '../Security'
 import { stripTenantUrlFields, isTenantUrlLikeKey, hasInvalidStoreName } from '../tenantSettingsGuard'
 import { AuditLogger } from '@services/audit/AuditLogger'
 import { buildIntegrationHealth } from '@operations/integration/IntegrationHealthOperations'
+import { testIntegrationConnection } from '@operations/integration/TestConnectionOperation'
 import {
     AUTO_CANCEL_SUPPORTED_CHANNELS, STOCK_POLICY_DEFAULTS, STOCK_POLICY_LIMITS, StockPolicyValidationError,
-    pickChannelStockPolicy, validateChannelStockPolicyPatch, validateIntegrationCode,
+    pickChannelStockPolicy, pickLowStockThreshold, validateChannelStockPolicyPatch, validateIntegrationCode, validateLowStockThreshold,
 } from '@operations/stock/stockPolicyValidation'
 
 
@@ -29,13 +32,14 @@ const FE_VISIBLE_PLATFORM_URLS: Record<string, string[]> = {
     bizimhesap: ['baseUrl', 'authorizationUrl', 'redirectUrl'],
 }
 
-export default class IntegrationService extends BaseApi implements IService {
-    currentClientId!: any
+/** [DB-02] ImportJobs sıralama alanı izin listesi (Import.ts şeması; FE: startedAt/completedAt/processedCount). */
+export const IMPORT_JOB_SORT_FIELDS: readonly string[] = [
+    '_id', 'jobId', 'integrationCode', 'status', 'startedAt', 'completedAt', 'updatedAt',
+    'totalCount', 'validCount', 'invalidCount', 'duplicateCount', 'processedCount', 'failedCount',
+];
 
-    constructor(clientId: number, protected request: any) {
-        super(clientId, request);
-        this.currentClientId = clientId;
-    }
+export default class IntegrationService extends BaseApi implements IService {
+
 
     async get(): Promise<any> {
         try {
@@ -131,6 +135,14 @@ export default class IntegrationService extends BaseApi implements IService {
         return encryptSecrets(resolved, code)
     }
 
+    /**
+     * [INT-09] Ayar kaydedilince `IntegrationFactory` örnek/ayar önbelleği (5 dk) o tenant+entegrasyon için düşürülür; aksi halde eski
+     * kimlik/ayarlı örnek süre dolana dek kullanılırdı. En iyi çaba: önbellek hatası kaydı ASLA bozmaz (TTL zaten sınırlar).
+     */
+    private dropFactoryCache(code: unknown): void {
+        try { IntegrationFactory.invalidate(Number(this.currentClientId), String(code ?? '')) } catch { /* best-effort */ }
+    }
+
     async saveClientErpSettings(): Promise<any> {
         try {
             const filterQuery = { 'erp.code': this.request.clientErp.code }
@@ -140,6 +152,7 @@ export default class IntegrationService extends BaseApi implements IService {
             const editIntegration = await this.clientDB.getClientIntegrationModel().findOneAndUpdate(filterQuery, { $set: { 'erp.$.settings': settings }, },
                 { upsert: false, returnDocument: 'after' }
             )
+            this.dropFactoryCache(this.request.clientErp.code)
             return maskIntegrationItem(editIntegration.erp.find((erp: any) => erp.code === this.request.clientErp.code)) || null
         } catch (error) {
             throw error
@@ -156,6 +169,7 @@ export default class IntegrationService extends BaseApi implements IService {
             const editIntegration = await this.clientDB.getClientIntegrationModel().findOneAndUpdate(filterQuery, { $set: { 'marketplace.$.settings': settings }, },
                 { upsert: false, returnDocument: 'after' }
             )
+            this.dropFactoryCache(this.request.clientMarketplace.code)
             return maskIntegrationItem(editIntegration.marketplace.find((marketplace: any) => marketplace.code === this.request.clientMarketplace.code)) || null
         } catch (error) {
             throw error
@@ -184,6 +198,7 @@ export default class IntegrationService extends BaseApi implements IService {
             const effective = configured ?? sorted[0]?.code ?? null
             return {
                 primaryChannel: configured,
+                lowStockThreshold: pickLowStockThreshold(doc?.stockPolicy?.lowStockThreshold),
                 effectivePrimaryChannel: effective,
                 primaryChannelIsConnected: configured === null ? true : marketplaces.some(m => m.code === configured),
                 channels: sorted.map(m => ({
@@ -202,27 +217,45 @@ export default class IntegrationService extends BaseApi implements IService {
         }
     }
 
-    /** Tenant düzeyi `stockPolicy.primaryChannel`. `primaryChannel: null|''` = temizle (varsayılan: ilk bağlanan pazaryeri). */
+    /**
+     * Tenant düzeyi stok politikası: `primaryChannel` (`null|''` = temizle; varsayılan: ilk bağlanan pazaryeri) ve/veya
+     * `lowStockThreshold` (tamsayı; `null` = temizle/kapat, varsayılan YOK = düşük stok bildirimi kapalı). En az biri zorunludur.
+     */
     async saveTenantStockPolicy(): Promise<any> {
         try {
             const raw = this.request.primaryChannel
-            if (raw === undefined) throw new ApplicationError('primaryChannel zorunludur (temizlemek için null).', 400)
+            const rawLow = this.request.lowStockThreshold
+            if (raw === undefined && rawLow === undefined) throw new ApplicationError('primaryChannel zorunludur (temizlemek için null).', 400)
             const clear = raw === null || raw === ''
             let code: string | undefined
-            if (!clear) {
+            if (raw !== undefined && !clear) {
                 try { code = validateIntegrationCode(raw) } catch (e) { this.stockPolicyError(e) }
+            }
+            let low: number | null | undefined
+            if (rawLow !== undefined) {
+                try { low = validateLowStockThreshold(rawLow) } catch (e) { this.stockPolicyError(e) }
             }
 
             const model = this.clientDB.getClientIntegrationModel()
             // Var olmayan/bağlı olmayan pazaryeri koda atanamaz: filtre aynı zamanda varlık korumasıdır (atomik)
-            const filter: any = clear ? {} : { 'marketplace.code': code }
-            const update: any = clear ? { $unset: { 'stockPolicy.primaryChannel': '' } } : { $set: { 'stockPolicy.primaryChannel': code } }
+            const filter: any = raw !== undefined && !clear ? { 'marketplace.code': code } : {}
+            const $set: any = {}
+            const $unset: any = {}
+            if (raw !== undefined) { if (clear) $unset['stockPolicy.primaryChannel'] = ''; else $set['stockPolicy.primaryChannel'] = code }
+            if (low !== undefined) { if (low === null) $unset['stockPolicy.lowStockThreshold'] = ''; else $set['stockPolicy.lowStockThreshold'] = low }
+            const update: any = {}
+            if (Object.keys($set).length) update.$set = $set
+            if (Object.keys($unset).length) update.$unset = $unset
             const updated: any = await model.findOneAndUpdate(filter, update, { upsert: false, returnDocument: 'after' })
-            if (!updated) throw new ApplicationError(clear ? 'Entegrasyon ayarları bulunamadı.' : 'Belirtilen pazaryeri bağlı değil.', clear ? 404 : 400)
+            if (!updated) throw new ApplicationError(raw !== undefined && !clear ? 'Belirtilen pazaryeri bağlı değil.' : 'Entegrasyon ayarları bulunamadı.', raw !== undefined && !clear ? 400 : 404)
 
-            void AuditLogger.fromRequest(this.request, 'stock.policy.primary', 'ok', { primaryChannel: clear ? '(cleared)' : code })
+            if (raw !== undefined) void AuditLogger.fromRequest(this.request, 'stock.policy.primary', 'ok', { primaryChannel: clear ? '(cleared)' : code })
+            if (low !== undefined) void AuditLogger.fromRequest(this.request, 'stock.policy.lowStock', 'ok', { lowStockThreshold: low === null ? '(cleared)' : low })
             const now = updated.stockPolicy?.primaryChannel
-            return { primaryChannel: typeof now === 'string' && now ? now : null }
+            return {
+                primaryChannel: typeof now === 'string' && now ? now : null,
+                ...(rawLow !== undefined ? { lowStockThreshold: pickLowStockThreshold(updated.stockPolicy?.lowStockThreshold) } : {}),
+            }
         } catch (error) {
             throw error
         }
@@ -253,6 +286,7 @@ export default class IntegrationService extends BaseApi implements IService {
                 { 'marketplace.code': code }, update, { upsert: false, returnDocument: 'after' }
             )
             if (!updated) throw new ApplicationError('Belirtilen pazaryeri bağlı değil.', 404)
+            this.dropFactoryCache(code)
             const item = (updated.marketplace || []).find((m: any) => m.code === code)
 
             void AuditLogger.fromRequest(this.request, 'stock.policy.channel', 'ok', {
@@ -268,6 +302,14 @@ export default class IntegrationService extends BaseApi implements IService {
      * [N7] Kendi tenant'ının entegrasyon sağlığı (YALNIZCA OKUMA): son başarılı senkron, son hata (`IntegrationError.code`),
      * devre kesici, son 24 sa çağrı sayıları. Tenant = `currentClientId` (doğrulanmış principal); gövde alanı tenant SEÇEMEZ.
      */
+    /**
+     * [INT-01] "Bağlantıyı test et": yan etkisiz kimlik/erişim doğrulaması. Tenant = `currentClientId` (gövde tenant SEÇEMEZ).
+     * Yanıt `{ok, code: OK|AUTH_FAILED|UNREACHABLE|RATE_LIMITED|UNKNOWN, detail?, checkedAt}`; tenant+entegrasyon başına dakikada 3 (429).
+     */
+    async testConnection(): Promise<any> {
+        return testIntegrationConnection(Number(this.currentClientId), this.request.integrationCode)
+    }
+
     async getIntegrationHealth(): Promise<any> {
         try {
             return await buildIntegrationHealth({
@@ -319,6 +361,7 @@ export default class IntegrationService extends BaseApi implements IService {
             const editIntegration = await this.clientDB.getClientIntegrationModel().findOneAndUpdate(filterQuery, { $set: { 'shipment.$.settings': settings }, },
                 { upsert: false, returnDocument: 'after' }
             )
+            this.dropFactoryCache(this.request.clientShipment.code)
             return maskIntegrationItem(editIntegration.shipment.find((shipment: any) => shipment.code === this.request.clientShipment.code)) || null
         } catch (error) {
             throw error
@@ -348,26 +391,6 @@ export default class IntegrationService extends BaseApi implements IService {
 
 
 
-    async saveOrUpdateIntegrationCategory(): Promise<any> {
-        try {
-            const filterQuery = {
-                'integrationCategoryMap.categoryId': this.request.integrationCategory.integrationCategoryMap.categoryId,
-                'integrationCategoryMap.integrationCode': this.request.integrationCategory.integrationCategoryMap.integrationCode,
-                /*                 'integrationCategoryMap.integrationCategoryId': this.request.integrationCategory.integrationCategoryMap.integrationCategoryId */
-            }
-            delete this.request.integrationCategory._id
-            const integrationCategory = await this.clientDB.getIntegrationCategoryModel().findOneAndUpdate(filterQuery, { $set: this.request.integrationCategory },
-                { upsert: true, returnDocument: 'after' }
-            )
-            if (integrationCategory)
-                return { _id: integrationCategory._id }
-            return undefined
-        } catch (error) {
-            throw error
-        }
-    }
-
-
     async saveOrUpdateIntegrationBrand(): Promise<any> {
         try {
             const filterQuery = {
@@ -385,24 +408,6 @@ export default class IntegrationService extends BaseApi implements IService {
         }
     }
 
-
-
-
-    async retrievePlatformProcesses(): Promise<any[]> {
-        try {
-            const filterQuery = {};
-            const projection = { products: 0, 'report.errors': 0 }; // `products` alanını hariç tut
-
-            const results = await this.clientDB.getPlatformProcessModel()
-                .find(filterQuery)
-                .select(projection) // select ile projection kullanımı
-                .lean(); // plain JS object olarak dönmesini sağlar, performans için iyi
-
-            return results; // bu zaten bir array olacak
-        } catch (error) {
-            throw error;
-        }
-    }
 
 
 
@@ -460,6 +465,7 @@ export default class IntegrationService extends BaseApi implements IService {
             const editIntegration = await this.clientDB.getClientIntegrationModel().findOneAndUpdate(filterQuery, update,
                 { upsert: false, returnDocument: 'after' }
             ).lean()
+            this.dropFactoryCache(this.request.clientECommerce.code)
             return maskIntegrationItem(editIntegration.ecommerce.find((ecommerce: any) => ecommerce.code === this.request.clientECommerce.code)) || null
         } catch (error) {
             throw error
@@ -992,8 +998,10 @@ export default class IntegrationService extends BaseApi implements IService {
         // Dinamik sıralama objesi oluşturma
         // Eğer sortBy gelirse onu kullan, gelmezse varsayılan startedAt: -1 kullan
         const sortQuery: any = {};
-        if (sortBy) {
-            sortQuery[sortBy] = sortOrder === 'desc' ? -1 : 1;
+        // [DB-02] sıralama alanı izin listesi; bilinmeyen alan => varsayılan (jobId azalan)
+        const pickedSort = pickSortField(sortBy, IMPORT_JOB_SORT_FIELDS, 'jobId');
+        if (!pickedSort.usedFallback) {
+            sortQuery[pickedSort.field] = sortOrder === 'desc' ? -1 : 1;
         } else {
             sortQuery.jobId = -1;
         }
@@ -1158,11 +1166,11 @@ export default class IntegrationService extends BaseApi implements IService {
          */
     private async internalProcessBatch(request: any) {
         const { mode, selectedIntegrations, barcodeList, scope } = request;
+        const requestId = new ObjectId().toString();
         try {
             const now = new Date();
             const clientId = this.currentClientId;
             const initialScore = this.getInitialPriorityScore(mode);
-            const requestId = new ObjectId().toString();
 
             const BULK_LIMIT = 1000;
             const stagedOpsMap: Record<string, any[]> = {};
@@ -1340,33 +1348,52 @@ export default class IntegrationService extends BaseApi implements IService {
                 }
 
                 // 3. GLOBAL BİLDİRİM FIRLATMA (Yeni eklenen kısım)
-                NotificationService.sendClientNotification({
-                    clientId: clientId,
-                    notificationData: {
-                        type: 'BATCH_PROCESS',
-                        mode: mode,
-                        severity: totalAccepted > 0 ? 'success' : 'warning',
-                        title: 'İşlem Özeti',
-                        message: `İşlemler sekmesinden takip edebilirsiniz.`,
-                        metaData: { integrationCode, mode, totalAccepted, totalAlreadyTransfer, totalNoTransferSkipped }
-                    }
-                } as SendNotificationEvent);
+                // [ADR-0029 NB3] CATALOG_BATCH_SUBMITTED; bayrak kapaliyken eski olay birebir.
+                void NotificationService.notify('CATALOG_BATCH_SUBMITTED', Number(clientId), {
+                    integ: integrationCode, mode, batchId: requestId, itemCount: Number(totalAccepted) || 0, hasWarnings: !(totalAccepted > 0),
+                }, {
+                    idempotencyKey: `batch:${requestId}:${integrationCode}`,
+                    corrId: getRequestId(),
+                    module: 'IntegrationService',
+                    legacy: { event: {
+                        clientId: clientId,
+                        notificationData: {
+                            type: 'BATCH_PROCESS',
+                            mode: mode,
+                            severity: totalAccepted > 0 ? 'success' : 'warning',
+                            title: 'İşlem Özeti',
+                            message: `İşlemler sekmesinden takip edebilirsiniz.`,
+                            metaData: { integrationCode, mode, totalAccepted, totalAlreadyTransfer, totalNoTransferSkipped }
+                        }
+                    } as SendNotificationEvent },
+                }).catch(() => undefined);
 
             }
         } catch (error: any) {
             console.error("internalProcessBatch Critical Error:", error);
 
-            NotificationService.sendClientNotification({
-                clientId: this.currentClientId,
-                notificationData: {
-                    type: 'BATCH_PROCESS',
-                    mode: mode,
-                    severity: 'error',
-                    title: 'İşlem Başarısız',
-                    message: `Toplu işlem sırasında bir hata oluştu: ${error.message || 'Sistemsel hata'}`,
-                    metaData: { mode: request.mode, error: error.message }
-                }
-            } as SendNotificationEvent);
+            // [ADR-0029 NB3, N-05] Kullaniciya ham error.message GITMEZ: guvenli hata kodu + corrId. Bayrak kapaliyken eski olay
+            // (ham mesaj dahil) birebir korunur; bayrak acilinca bu yol devreye girmez.
+            const integs: string[] = Array.isArray(selectedIntegrations) ? selectedIntegrations : [];
+            void NotificationService.notify('CATALOG_BATCH_FAILED', Number(this.currentClientId), {
+                integ: (integs.length === 1 ? integs[0] : 'multi').slice(0, 60), mode: String(mode ?? 'unknown'), batchId: requestId,
+                errorCode: safeErrorCode(error), corrId: getRequestId(),
+            }, {
+                idempotencyKey: `batch-failed:${requestId}`,
+                corrId: getRequestId(),
+                module: 'IntegrationService',
+                legacy: { event: {
+                    clientId: this.currentClientId,
+                    notificationData: {
+                        type: 'BATCH_PROCESS',
+                        mode: mode,
+                        severity: 'error',
+                        title: 'İşlem Başarısız',
+                        message: `Toplu işlem sırasında bir hata oluştu: ${error.message || 'Sistemsel hata'}`,
+                        metaData: { mode: request.mode, error: error.message }
+                    }
+                } as SendNotificationEvent },
+            }).catch(() => undefined);
         }
     }
 
@@ -1435,28 +1462,6 @@ export default class IntegrationService extends BaseApi implements IService {
     }
 
 
-    async retrieveOrders() {
-        try {
-            const orders = await this.clientDB.getOrderModel().find().lean()
-            return orders
-        } catch (error) {
-            throw error
-        }
-    }
-
-
-    async retrieveOrdersFromIntegration() {
-        try {
-            const integrationCode = this.request.integrationCode
-            const factory = new IntegrationFactory(Number(this.currentClientId));
-            const integration = await factory.getInstance(integrationCode);
-            return await integration.retrieveOrders()
-        } catch (error) {
-            throw error
-        }
-    }
-
-
     async retrieveCategoryAttributesFromIntegration() {
         try {
             const integrationCode = this.request.integrationCode
@@ -1503,7 +1508,8 @@ export default class IntegrationService extends BaseApi implements IService {
      * yalnız manifestoyu döner (ADR-0018 Karar 4 Aşama A DoD: "getCatalog salt-okunur uç (member)").
      */
     async getCatalog(): Promise<any[]> {
-        const { listIntegrationDescriptors } = await import('../../integration/catalog/IntegrationDescriptorRegistry');
+        // eslint-disable-next-line @typescript-eslint/no-require-imports -- TS6-01: node16 CJS, tembel yukleme (dinamik import yerine)
+        const { listIntegrationDescriptors } = (require('../../integration/catalog/IntegrationDescriptorRegistry') as typeof import('../../integration/catalog/IntegrationDescriptorRegistry'));
         return listIntegrationDescriptors().map((d) => ({
             code: d.code,
             displayName: d.displayName,

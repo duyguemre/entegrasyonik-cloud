@@ -1,66 +1,38 @@
 <template>
   <ActionDialogComponent :modelValue="modelValue" @update:modelValue="$emit('update:modelValue', $event)"
     @cancel="close" @close="close" title="Yeni Fatura Ekle" subtitle="Manuel fatura veya dış evrak girişi"
-    icon="mdi-receipt-text-plus" color="success" confirmText="Faturayı Kaydet" cancelText="Vazgeç"
+    icon="mdi-receipt-text-plus-outline" color="success" confirmText="Faturayı Kaydet" cancelText="Vazgeç"
     attach=".invoiceListView" maxWidth="700px" @confirm="promptConfirmation" :isConfirmDisabled="!isFormValid || loading">
 
-    <div class="pa-2 pa-sm-4">
-      <v-form ref="formRef" v-model="isFormValid" class="d-flex flex-column gap-4">
+      <v-form ref="formRef" v-model="isFormValid">
 
-        <v-alert type="info" variant="tonal" density="compact" class="mb-2 text-caption">
-          Bu ekrandan eklediğiniz faturalar <strong class="uppercase">MANUAL</strong> statüsünde kaydedilir. Eğer bir
-          Pazar Yeri sipariş numarasını girerseniz, o sipariş ile otomatik olarak eşleştirilecektir.
-        </v-alert>
-
-        <v-row dense>
-          <v-col cols="12" md="6">
-            <v-text-field v-model="formData.invoiceNumber" label="Fatura Numarası (Seri ve Sıra No)" variant="outlined"
-              density="comfortable" prepend-inner-icon="mdi-numeric" bg-color="white" class="customTextField"
+        <p class="cif-note">
+          <v-icon icon="mdi-information-outline" size="16" aria-hidden="true" />
+          <span>Bu ekrandan eklediğiniz faturalar <strong>MANUAL</strong> statüsünde kaydedilir. Bir pazaryeri sipariş
+            numarası girerseniz fatura o siparişle otomatik eşleştirilir.</span>
+        </p>
+        <EkFormGrid :columns="2">
+            <v-text-field v-model="formData.invoiceNumber" label="Fatura Numarası (Seri ve Sıra No)" prepend-inner-icon="mdi-numeric"
               :rules="[v => !!v || 'Zorunlu alan']" />
-          </v-col>
-          <v-col cols="12" md="6">
-            <v-text-field v-model="formData.ettn" label="ETTN (İsteğe Bağlı)" variant="outlined" density="comfortable"
-              prepend-inner-icon="mdi-identifier" bg-color="white" class="customTextField"
+            <v-text-field v-model="formData.ettn" label="ETTN (İsteğe Bağlı)"
+              prepend-inner-icon="mdi-identifier"
               placeholder="Sistem otomatik üretebilir" />
-          </v-col>
-        </v-row>
-
-        <v-row dense>
-          <v-col cols="12" md="6">
             <v-select v-model="formData.type" :items="invoiceTypes" item-title="title" item-value="value"
-              label="Fatura Tipi" variant="outlined" density="comfortable"
-              prepend-inner-icon="mdi-format-list-bulleted-type" bg-color="white" class="customTextField" />
-          </v-col>
-          <v-col cols="12" md="6">
+              label="Fatura Tipi"
+              prepend-inner-icon="mdi-format-list-bulleted-type" />
             <v-select v-model="formData.documentType" :items="documentTypes" item-title="title" item-value="value"
-              label="Belge Türü" variant="outlined" density="comfortable" prepend-inner-icon="mdi-file-document-outline"
-              bg-color="white" class="customTextField" />
-          </v-col>
-        </v-row>
-
-        <v-row dense>
-          <v-col cols="12" md="6">
-            <v-text-field v-model="formData.externalOrderId" label="Sipariş / Paket Numarası (Opsiyonel)"
-              variant="outlined" density="comfortable" prepend-inner-icon="mdi-pound" bg-color="white"
-              class="customTextField" placeholder="Siparişle bağlamak için girin" />
-          </v-col>
-          <v-col cols="12" md="6">
-            <v-text-field v-model="formData.totalAmount" label="Toplam Tutar (₺)" variant="outlined"
-              density="comfortable" prepend-inner-icon="mdi-currency-try" bg-color="white"
-              class="customTextField text-success font-weight-black" type="number" step="0.01"
+              label="Belge Türü" prepend-inner-icon="mdi-file-document-outline" />
+            <v-text-field v-model="formData.externalOrderId" label="Sipariş / Paket Numarası (Opsiyonel)" prepend-inner-icon="mdi-pound" placeholder="Siparişle bağlamak için girin" />
+            <v-text-field v-model="formData.totalAmount" label="Toplam Tutar (₺)" prepend-inner-icon="mdi-currency-try"
+              type="number" step="0.01"
               :rules="[v => v >= 0 || 'Geçerli bir tutar girin']" />
-          </v-col>
-        </v-row>
-
-        <v-row dense>
-          <v-col cols="12">
-            <v-text-field v-model="formData.pdfUrl" label="PDF / Arşiv URL" variant="outlined" density="comfortable"
-              prepend-inner-icon="mdi-link-variant" bg-color="white" class="customTextField"
+            <v-text-field class="ek-span-full" v-model="formData.pdfUrl" label="PDF / Arşiv URL"
+              prepend-inner-icon="mdi-link-variant"
               placeholder="https://sunucu.com/fatura.pdf" />
-          </v-col>
-        </v-row>
+        </EkFormGrid>
       </v-form>
-    </div>
+    
+
   </ActionDialogComponent>
 
   <ConfirmationDialogComponent 
@@ -69,7 +41,7 @@
     subtitle="Fatura Kaydedilecek" 
     message="Girdiğiniz bilgilerin doğruluğundan eminseniz, fatura manuel olarak sisteme işlenecektir. Onaylıyor musunuz?"
     icon="mdi-help-circle-outline" 
-    color="success" 
+    color="primary" 
     confirm-text="Evet, Onaylıyorum" 
     confirm-icon="mdi-check-circle-outline"
     @confirm="executeSaveInvoice" 
@@ -81,6 +53,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
+import { EkFormGrid } from '@entegrasyonik/ui/components'
 import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue';
 import ConfirmationDialogComponent from '@/components/layout/ConfirmationDialogComponent.vue';
 import useRestApi from '@/composables/restapi';
@@ -165,6 +138,20 @@ async function executeSaveInvoice() {
 </script>
 
 <style scoped>
+.cif-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ek-space-2);
+  margin: 0 0 var(--ek-space-4);
+  padding: var(--ek-space-3);
+  border: 1px solid var(--ek-color-info-border);
+  border-radius: var(--ek-radius-control);
+  background: var(--ek-color-info-subtle);
+  color: var(--ek-color-info-emphasis);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+}
+
 .gap-4 {
   gap: 16px;
 }

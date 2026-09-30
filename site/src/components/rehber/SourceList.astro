@@ -1,0 +1,104 @@
+---
+/**
+ * SourceList — rehber kaynak listesi (S20): başlık (dış bağlantı), yayımcı, güven etiketi (resmi/ikincil),
+ * "yalnız özet görüldü" notu ve erişim tarihi; altında son güncelleme ve sonraki gözden geçirme tarihi.
+ * Dış bağlantılar yeni sekmede açılmaz (okur akışı bozulmasın); `rel="noopener noreferrer"`.
+ */
+import Icon from '../home/Icon.astro'
+import { TRUST_LABEL, type Source } from '../../data/kb/sources'
+import { formatTrDate } from '../../lib/kb-render'
+
+interface Props {
+  sources: Source[]
+  updated: string
+  reviewBy?: string
+}
+
+const { sources, updated, reviewBy } = Astro.props
+---
+
+<ol class="src-list" role="list">
+  {
+    sources.map((s) => (
+      <li class="src" data-trust={s.trust === 'R' ? 'official' : 'secondary'}>
+        <span class="src__badge">{TRUST_LABEL[s.trust]}</span>
+        <a class="src__title" href={s.url} rel="noopener noreferrer">
+          {s.title}
+          <Icon name="link" size="sm" />
+        </a>
+        <span class="src__meta">
+          {s.publisher} · Erişim: <time datetime={s.accessed}>{formatTrDate(s.accessed)}</time>
+          {s.summaryOnly && <> · Sayfa gövdesi okunamadı, başlık ve özet esas alındı</>}
+        </span>
+      </li>
+    ))
+  }
+</ol>
+<p class="src-foot" data-testid="guide-updated">
+  <Icon name="clock" size="sm" />
+  <span>
+    Son güncelleme: <time datetime={updated}>{formatTrDate(updated)}</time>
+    {reviewBy && <> · Sonraki gözden geçirme: <time datetime={reviewBy}>{formatTrDate(reviewBy)}</time></>}
+  </span>
+</p>
+
+<style>
+  .src-list {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface);
+    list-style: none;
+  }
+  .src {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+    padding: var(--ek-space-4);
+  }
+  .src + .src {
+    border-top: var(--site-border-width) solid var(--ek-color-border-default);
+  }
+  .src__badge {
+    align-self: flex-start;
+    padding: 0 var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-surface-muted);
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    line-height: var(--site-font-body-line-height);
+  }
+  .src[data-trust='official'] .src__badge {
+    background: var(--ek-color-success-subtle);
+    color: var(--ek-color-content-strong);
+  }
+  .src__title {
+    display: inline;
+    color: var(--site-color-link);
+    font-weight: var(--ek-font-weight-semibold);
+    line-height: var(--ek-line-height-tight);
+    text-underline-offset: 0.2em;
+    overflow-wrap: anywhere;
+  }
+  .src__title :global(.icon) {
+    display: inline-block;
+    margin-inline-start: var(--ek-space-1);
+    vertical-align: middle;
+  }
+  .src__meta {
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-sm);
+  }
+  .src-foot {
+    display: flex;
+    gap: var(--ek-space-2);
+    align-items: center;
+    margin: 0;
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-sm);
+  }
+</style>

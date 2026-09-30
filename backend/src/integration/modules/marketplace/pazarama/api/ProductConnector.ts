@@ -1,4 +1,9 @@
+import { observeResponseSchema } from '@integration/modules/common/contract/observeResponseSchema';
+import { PAZARAMA_BATCH_RESULT, PAZARAMA_UPDATE_BATCH_RESULT } from '../contracts';
 import Service from '../services/Service';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('adapter-pazarama', 'ProductConnector');
 
 export class ProductConnector {
     constructor(
@@ -21,9 +26,10 @@ export class ProductConnector {
             const urlTemplate = this.params.integrationSettings?.urls?.checkBatchUrl || 'product/getProductBatchResult?BatchRequestId=<BATCHID>';
             const url = urlTemplate.replace('<BATCHID>', batchId);
             const response = await this.service.get(url);
+            observeResponseSchema(PAZARAMA_BATCH_RESULT, response?.data, { clientId: this.params.clientId });
             return response?.data;
         } catch (error: any) {
-            console.error(`[ProductConnector:fetchBatchResults] Error fetching batch ${batchId}:`, error.message);
+            log.error('PRODUCTCONNECTOR_ERROR_FETCHING_BATCH', `Error fetching batch ${batchId}:`, { err: error });
             throw error;
         }
     }
@@ -33,9 +39,10 @@ export class ProductConnector {
             const urlTemplate = this.params.integrationSettings?.urls?.checkUpdateBatchUrl || 'listing-state/batch-id/<BATCHID>/lake-projections?page=1&pageSize=3000';
             const url = urlTemplate.replace('<BATCHID>', batchId);
             const response = await this.service.get(url);
+            observeResponseSchema(PAZARAMA_UPDATE_BATCH_RESULT, response?.data, { clientId: this.params.clientId });
             return response?.data;
         } catch (error: any) {
-            console.error(`[ProductConnector:fetchUpdateBatchResults] Error fetching batch ${batchId}:`, error.message);
+            log.error('PRODUCTCONNECTOR_ERROR_FETCHING_BATCH_2', `Error fetching batch ${batchId}:`, { err: error });
             throw error;
         }
     }

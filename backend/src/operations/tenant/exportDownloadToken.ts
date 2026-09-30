@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import Security from '../../api/Security';
+import Security from '@platform/core/security/Security';
 
 /**
  * ADR-0003 adım 8 (KVKK dışa aktarma, Karar F.22): "24 saat geçerli imzalı URL".

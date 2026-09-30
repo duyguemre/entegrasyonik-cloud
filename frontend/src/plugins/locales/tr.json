@@ -1,9 +1,22 @@
 {
+  "notificationCenter": {
+    "types": {
+      "STOCK_ALERT": "Stok uyarısı",
+      "SYSTEM": "Sistem",
+      "ORDER": "Sipariş",
+      "BATCH_PROCESS": "Toplu işlem",
+      "IMPORT_READY": "İçe aktarma",
+      "EXPORT_READY": "Dışa aktarma",
+      "INFO": "Bilgi"
+    }
+  },
   "language": {
     "en": "English",
     "tr": "Türkçe"
   },
   "menu": {
+    "notifications": "Bildirimler",
+    "notificationPreferences": "Bildirim tercihleri",
     "test": "Test Sayfası",
     "mainpage": "Anasayfa",
     "system": "Sistem",
@@ -81,15 +94,20 @@
       "adminTicketList": "Destek Yönetimi",
       "adminOperations": "Platform İşlemleri",
       "adminSystemManagement": "Sistem Yönetimi",
-      "adminIntegrationCompliance": "Entegrasyon Uyum"
+      "adminIntegrationCompliance": "Entegrasyon Uyum",
+      "integrationConfigList": "Entegrasyonlar",
+      "integrationSettings": "Entegrasyon ayarları",
+      "engineSettings": "Motor ayarları",
+      "effectiveConfig": "Etkin yapılandırma"
     },
     "integrations": {
       "integrations": "Entegrasyonlar",
       "marketplace": "Pazaryeri",
       "ecommerce": "E-Ticaret",
-      "erp": "Erp",
+      "erp": "ERP",
       "shipping": "Kargo",
-      "einvoice": "E-Fatura"
+      "einvoice": "E-Fatura",
+      "integrationHealth": "Entegrasyon Sağlığı"
     },
     "settings": {
       "settings": "Ayarlar",
@@ -98,9 +116,20 @@
       "printoutList": "Çıktılar",
       "logList": "İşlemler"
     },
+    "integrationHealth": "Entegrasyon Sağlığı",
+    "auditLog": "Denetim Günlüğü",
     "accountSecurity": "Hesabım ve Güvenlik",
     "privacyData": "Veri ve Gizlilik",
-    "stockPolicy": "Stok Politikası"
+    "stockPolicy": "Stok Politikası",
+    "stockHealth": "Stok Sağlığı",
+    "user": {
+      "user": "Hesabım",
+      "subscription": "Abonelik İşlemleri",
+      "invoiceInfo": "Fatura Bilgileri",
+      "changePassword": "Şifre Değiştir",
+      "exit": "Çıkış"
+    },
+    "account": "Hesabım"
   },
   "batch": {
     "menu": {
@@ -159,7 +188,7 @@
       "new": {
         "title": "Yeni Müşteri",
         "customer": "Müşteri Adı",
-        "email": "EPosta",
+        "email": "E-posta",
         "phone": "Telefon",
         "real": "Gerçek Kişi",
         "corporate": "Tüzel Kişi",
@@ -174,7 +203,7 @@
         "save": "Kaydet",
         "clear": "Temizle"
       },
-      "email": "EPosta",
+      "email": "E-posta",
       "search": "Müşteri Ara",
       "searchlabel": "Müşteri Adı, Adresi, Eposta vb...",
       "phone": "Telefon",
@@ -253,6 +282,30 @@
         "status": "Durum",
         "subject": "Konu"
       }
+    },
+    "sla": {
+      "waiting": "Bekliyor: {duration}",
+      "waitingLong": "Uzun bekliyor: {duration}",
+      "thresholdHint": "Müşteri {duration} önce yazdı. Eşikler öneridir, pazaryeri yanıt süresi değildir: {warning} sa uyarı, {danger} sa üstü kritik.",
+      "duration": {
+        "lessThanMinute": "1 dk'dan az",
+        "minutes": "{m} dk",
+        "hours": "{h} sa",
+        "daysHours": "{d} gün {h} sa",
+        "days": "{d} gün"
+      },
+      "awaitingFirst": "Bekleyenler önce",
+      "thisPage": "bu sayfada",
+      "awaitingFirstHint": "Yalnız bu sayfadaki mesajları en uzun bekleyenden başlayarak sıralar; sunucu sıralamasını değiştirmez.",
+      "awaitingCount": "Bu sayfada {n} bekleyen",
+      "answer": {
+        "rule": "{channel} kuralı: {min}–{max} karakter",
+        "noRule": "Bu kanal için karakter sınırı tanımlı değil; sayaç bilgi amaçlıdır.",
+        "tooShort": "En az {min} karakter gerekli ({channel} kuralı).",
+        "tooLong": "En fazla {max} karakter gönderilebilir ({channel} kuralı).",
+        "count": "{n} karakter",
+        "countOf": "{n} / {max}"
+      }
     }
   },
   "invoices": {
@@ -265,7 +318,7 @@
         "customer": "Müşteri",
         "tckn": "TC Kimlik No",
         "vkn": "Vergi Numarası",
-        "email": "EPosta",
+        "email": "E-posta",
         "customerName": "Müşteri Adı",
         "phone": "Telefon",
         "taxissuer": "Vergi Dairesi",
@@ -295,7 +348,7 @@
       "countTotal": "Toplam Adet",
       "orderId": "Sipariş Numarası",
       "all": "Tüm Faturalar",
-      "email": "EPosta",
+      "email": "E-posta",
       "phone": "Telefon",
       "unapproved": "Arşivlenmemiş",
       "canceled": "İptal Faturalar",
@@ -420,16 +473,16 @@
   "login": {
     "forgottenpassword": {
       "title": "Şifremi Unuttum",
-      "reset": "Şifremi Sıfırla"
+      "reset": "Şifremi sıfırla"
     },
     "register": {
-      "title": "Kayıt Ol",
+      "title": "Kayıt ol",
       "repassword": "Şifre (Tekrar)",
       "name": "İsim",
       "surname": "Soyisim"
     },
     "username": "Kullanıcı Adı",
-    "email": "EPosta",
+    "email": "E-posta",
     "password": "Şifre",
     "title": "Giriş",
     "google": "Google İle Giriş Yap"
@@ -442,7 +495,7 @@
   "logs": {
     "log": {
       "new": "Yeni Müşteri Oluştur",
-      "email": "EPosta",
+      "email": "E-posta",
       "search": "İşlem Ara",
       "searchlabel": "İşlem Adı",
       "phone": "Telefon",
@@ -1115,6 +1168,14 @@
       "partial": "Kısmi",
       "failed": "Başarısız",
       "skipped": "Atlandı"
+    },
+    "allocation": {
+      "reserved": "Rezerve",
+      "committed": "Sevk edildi",
+      "released": "Serbest",
+      "oversold": "Aşırı satış",
+      "restocked": "Stoka döndü",
+      "unmapped": "Eşleşmedi"
     }
   },
   "integrationCompliance": {
@@ -1297,7 +1358,10 @@
       "integrations": "Entegrasyonlar",
       "finance": "Finans ve Raporlar",
       "admin": "Yönetim",
-      "other": "Diğer"
+      "other": "Diğer",
+      "settings": "Ayarlar",
+      "account": "Hesabım",
+      "help": "Yardım"
     }
   },
   "definitions": {
@@ -1335,6 +1399,298 @@
     },
     "return": {
       "title": "İade Tanımları"
+    }
+  },
+  "integrationCoverage": {
+    "title": "Bu kanalda neler çalışır",
+    "subtitle": "{name} bağlantısının bugünkü kapsamı — entegrasyon kaydından",
+    "subtitleLoading": "Kapsam bilgisi alınıyor…",
+    "statusLimited": "Sınırlı kapsam",
+    "healthLink": "Bağlantı sağlığı",
+    "loadError": "Kapsam bilgisi şu an alınamadı. Ayarlarınızı yine de düzenleyip kaydedebilirsiniz.",
+    "retry": "Tekrar dene",
+    "chipsAria": "{name} kapsamı",
+    "undeclared": "Kayıtta yer almıyor",
+    "details": "Ayrıntılar ve sınırlamalar ({n})",
+    "detailsCapabilities": "Yetenekler",
+    "limitations": "Bilinen sınırlamalar",
+    "noLimitations": "Kayıtlı sınırlama yok.",
+    "verification": "Doğrulama",
+    "verifiedLive": "Canlı pazaryeri API'si ile doğrulandı.",
+    "verifiedMock": "Test ortamında doğrulandı; canlı API ile uçtan uca doğrulama henüz yapılmadı.",
+    "verifiedNone": "Doğrulama bilgisi yok.",
+    "level": {
+      "supported": "Destekleniyor",
+      "limited": "Sınırlı",
+      "platform_auto": "Kanal kendisi yapar",
+      "not_supported": "Desteklenmiyor"
+    },
+    "count": {
+      "supported": "{n} destekleniyor",
+      "limited": "{n} sınırlı",
+      "platform_auto": "{n} kanal yapar",
+      "not_supported": "{n} desteklenmiyor"
+    },
+    "capability": {
+      "products": "Ürün aktarımı",
+      "stockPrice": "Stok ve fiyat",
+      "orders": "Sipariş çekme",
+      "orderActions": "Sipariş onay / red",
+      "returns": "İadeler",
+      "questions": "Müşteri soruları",
+      "finance": "Finans / hakediş",
+      "shippingNotice": "Kargo bildirimi",
+      "invoiceNotice": "Fatura bildirimi",
+      "categories": "Kategori ve marka",
+      "accountingSync": "Muhasebe eşitleme",
+      "shipmentCreate": "Gönderi oluşturma",
+      "label": "Kargo etiketi",
+      "tracking": "Kargo takibi",
+      "shipmentCancel": "Gönderi iptali",
+      "rates": "Fiyat sorgulama",
+      "returnShipment": "İade gönderisi",
+      "einvoiceIssue": "e-Fatura kesme",
+      "earchiveIssue": "e-Arşiv kesme",
+      "edespatchIssue": "e-İrsaliye",
+      "documentStatus": "Belge durumu",
+      "documentCancel": "Belge iptali",
+      "taxpayerLookup": "Mükellef sorgulama",
+      "documentPdf": "Belge PDF'i"
+    }
+  },
+  "integrationComingSoon": {
+    "badge": "Yakında",
+    "title": "{name} {category} entegrasyonu henüz yok",
+    "categoryTitle": "{category} entegrasyonu henüz yok",
+    "categoryMessage": "Bu kategoride henüz otomatik entegrasyon yok. Kullanıma açıldığında sağlayıcılar ve bağlantı ayarları bu ekranda görünecek.",
+    "message": "Bu sağlayıcıyla otomatik entegrasyon henüz yok. Kullanıma açıldığında bağlantı ayarları bu ekranda görünecek.",
+    "noCredentials": "Bu ekrandan kimlik bilgisi (API anahtarı, parola) kaydedilmez.",
+    "keepsSettings": "Daha önce girilmiş ayarlarınız varsa silinmez.",
+    "alternativesTitle": "Bugün yapabilecekleriniz",
+    "alternatives": {
+      "shippingNotice": "Sipariş Yönetimi'ndeki \"Kargoya ver\" işlemiyle takip bilgisini girip siparişin geldiği kanala iletebilirsiniz. Bu kanallarda çalışır:",
+      "invoiceNotice": "Faturayı kendi e-fatura sağlayıcınızda kestikten sonra Sipariş Yönetimi'ndeki \"Fatura oluştur\" işlemiyle fatura bağlantısını siparişin geldiği kanala iletebilirsiniz. Bu kanallarda çalışır:"
+    },
+    "saveReason": "Kaydedilecek ayar yok — bu sağlayıcı için entegrasyon henüz geliştirilmedi.",
+    "save": "Kaydet",
+    "guide": {
+      "step1Title": "Durum: yakında",
+      "step1Text": "Bu kategoride henüz otomatik entegrasyon bulunmuyor; listedeki sağlayıcılarla henüz bağlantı kurulamıyor.",
+      "step2Title": "Kimlik bilgisi girmeyin",
+      "step2Text": "Entegrasyon açılana kadar bu ekrandan API anahtarı veya parola kaydedilmez.",
+      "step3Title": "Bugün ne yapabilirim?",
+      "step3Text": "Bağlı satış kanallarınız üzerinden bugün yapılabilenler bu ekrandaki panelde listelenir."
+    }
+  },
+  "integrationWebhook": {
+    "title": "Anlık sipariş bildirimi (webhook)",
+    "subtitle": "Trendyol sipariş durumu değiştiğinde bu adrese haber verir; sipariş eşitlemesi zamanlanmış çekimi beklemeden başlar.",
+    "channel": "Kanal",
+    "status": "Durum",
+    "lastReceived": "Son bildirim",
+    "create": "Webhook adresi oluştur",
+    "renew": "Yeni adres üret",
+    "state": {
+      "none": "Kurulmadı",
+      "healthy": "Bildirim alınıyor",
+      "unhealthy": "Bildirim kesildi",
+      "waiting": "İlk bildirim bekleniyor",
+      "unknown": "Durum bilinmiyor"
+    },
+    "onceNote": "Güvenlik için adres yalnızca oluşturulduğu anda bir kez gösterilir ve bu sayfada saklanmaz. Adresi kaybederseniz yeni adres üretin.",
+    "confirmCreateTitle": "Webhook adresi oluşturulsun mu?",
+    "confirmCreateText": "Oluşturulan adresi Trendyol satıcı panelindeki webhook ayarına girmeniz gerekir. Adres yalnızca bir kez gösterilir.",
+    "confirmRenewTitle": "Webhook adresi yenilensin mi?",
+    "confirmRenewText": "Mevcut adres geçersiz olur, Trendyol panelinde yeni adresi girmeniz gerekir. Yeni adres girilene kadar anlık bildirim gelmez; siparişler zamanlanmış çekimle gelmeye devam eder.",
+    "issuedTitle": "Yeni webhook adresi hazır",
+    "issuedHint": "Bu adresi kopyalayıp Trendyol satıcı panelindeki webhook ayarına yapıştırın.",
+    "urlLabel": "Webhook adresi",
+    "copy": "Kopyala",
+    "hide": "Gizle",
+    "issuedNote": "Bu adres bir daha gösterilmez. Sayfadan ayrıldığınızda ya da Gizle'ye bastığınızda ekrandan silinir.",
+    "issuedToast": "Webhook adresi oluşturuldu — Trendyol panelinde güncelleyin.",
+    "copied": "Adres panoya kopyalandı.",
+    "copyFailed": "Panoya kopyalanamadı — adres seçildi, elle kopyalayabilirsiniz.",
+    "forbidden": "Webhook adresini yalnızca mağaza sahibi veya yöneticisi oluşturabilir.",
+    "error": "Webhook adresi oluşturulamadı — Trendyol entegrasyonunuzun kurulu olduğundan emin olup tekrar deneyin."
+  },
+  "integrationHealth": {
+    "section": "Entegrasyonlar",
+    "title": "Entegrasyon sağlığı",
+    "description": "Bağlı pazaryeri ve sistemlerinizin son 24 saatteki çağrı sonuçları, son hata ve bağlantı durumu.",
+    "generatedAt": "Son güncelleme: {time}",
+    "window": "Son {hours} saatlik pencere",
+    "loading": "Sağlık durumu alınıyor…",
+    "notLoaded": "Sağlık durumu alınamadı",
+    "refresh": "Yenile",
+    "refreshError": "Sağlık durumu yenilenemedi — ekrandaki bilgiler önceki güncellemeye ait.",
+    "loadError": "Entegrasyon sağlığı yüklenemedi — bağlantınızı kontrol edip tekrar deneyin.",
+    "forbidden": {
+      "title": "Bu ekran için yetkiniz yok",
+      "message": "Entegrasyon sağlığını mağaza sahibi veya yöneticisi görüntüleyebilir. Erişim için mağaza yöneticinize başvurun."
+    },
+    "kpi": {
+      "aria": "Özet",
+      "healthy": "Sağlıklı",
+      "healthyHint": "Son çağrıları sorunsuz tamamlanan entegrasyonlar",
+      "attention": "Dikkat gerektiren",
+      "attentionHint": "Son çağrısı hatayla sonuçlananlar",
+      "down": "Erişilemiyor",
+      "downHint": "Devre kesicisi açık olanlar",
+      "calls": "Son {hours} saat çağrı",
+      "callsHint": "{errors} hata · başarı {rate}",
+      "callsNone": "Bu pencerede çağrı yapılmadı"
+    },
+    "empty": {
+      "title": "Henüz entegrasyon yok",
+      "message": "Bir pazaryeri veya sistem bağladığınızda sağlık durumu burada görünür.",
+      "action": "Pazaryeri bağla"
+    },
+    "listAria": "Entegrasyonlar",
+    "listTitle": "Entegrasyonlar",
+    "sourceNote": "Sağlık durumu, entegrasyonların gerçek çağrı ölçümlerinden türetilir; bu ekran pazaryerine test isteği göndermez. Hiç çağrı yapılmamış bir entegrasyon için \"veri yok\" gösterilir.",
+    "status": {
+      "healthy": "Sağlıklı",
+      "degraded": "Sorunlu",
+      "down": "Erişilemiyor",
+      "no_data": "Veri yok",
+      "not_configured": "Yapılandırılmadı"
+    },
+    "type": {
+      "marketplace": "Pazaryeri",
+      "ecommerce": "E-ticaret sitesi",
+      "shipment": "Kargo",
+      "einvoice": "E-fatura",
+      "erp": "ERP / muhasebe",
+      "unknown": "Entegrasyon"
+    },
+    "card": {
+      "disabled": "Pasif",
+      "credentials": "Kimlik bilgisi",
+      "lastSync": "Son başarılı senkron",
+      "neverConnected": "Hiç bağlanmadı",
+      "noSync": "Henüz senkron yok",
+      "webhook": "Webhook",
+      "circuit": "Devre kesici",
+      "windowAria": "Son {hours} saat",
+      "window": "Son {hours} saat",
+      "calls": "{total} çağrı",
+      "successRate": "başarı {rate}",
+      "noCalls": "Çağrı yok",
+      "success": "{n} başarılı",
+      "errors": "{n} hatalı",
+      "byCode": "Hata kodlarına göre",
+      "lastError": "Son hata",
+      "operation": "İşlem",
+      "openSettings": "{name} ayarlarını aç"
+    },
+    "credentials": {
+      "configured": "Girildi",
+      "missing": "Girilmedi",
+      "no_record": "Ayar kaydı yok"
+    },
+    "webhook": {
+      "none": "Kullanılmıyor",
+      "unknown": "Durum bilinmiyor",
+      "healthy": "Sağlıklı",
+      "unhealthy": "Sorunlu"
+    },
+    "circuit": {
+      "closed": "Kapalı (normal)",
+      "open": "Açık",
+      "half_open": "Yarı açık",
+      "none": "Gözlem yok",
+      "stale": "eski gözlem",
+      "openHint": "Çağrılar geçici olarak durduruldu",
+      "half_openHint": "Deneme çağrıları yapılıyor"
+    },
+    "errorCode": {
+      "AUTH": "Kimlik doğrulama",
+      "RATE_LIMITED": "Hız sınırı",
+      "UNAVAILABLE": "Servis erişilemez",
+      "VALIDATION": "Doğrulama hatası",
+      "NOT_FOUND": "Bulunamadı",
+      "NOT_SUPPORTED": "Desteklenmiyor",
+      "UNKNOWN_OUTCOME": "Sonucu belirsiz",
+      "INTERNAL": "İç hata",
+      "UNKNOWN": "Bilinmeyen hata",
+      "OTHER": "Diğer"
+    }
+  },
+  "auditLog": {
+    "section": "Ayarlar",
+    "title": "Denetim günlüğü",
+    "description": "Mağazanızda kimin, ne zaman, hangi işlemi yaptığını inceleyin. Kayıtlar yalnızca okunabilir.",
+    "forbidden": {
+      "title": "Bu ekran için yetkiniz yok",
+      "message": "Denetim günlüğünü mağaza sahibi veya yöneticisi görüntüleyebilir. Erişim için mağaza yöneticinize başvurun."
+    },
+    "frameAria": "Denetim kayıtları",
+    "filters": {
+      "title": "Filtreler",
+      "from": "Başlangıç tarihi",
+      "to": "Bitiş tarihi",
+      "event": "Olay veya olay grubu",
+      "noEvent": "Eşleşen olay yok",
+      "user": "Kullanıcı",
+      "noUser": "Eşleşen kullanıcı yok",
+      "result": "Sonuç",
+      "presetsAria": "Hazır tarih aralıkları",
+      "preset": "Son {days} gün"
+    },
+    "validation": {
+      "date": "GG.AA.YYYY biçiminde geçerli bir tarih girin.",
+      "order": "Bitiş tarihi başlangıçtan önce olamaz.",
+      "span": "Tarih aralığı en fazla {max} gün olabilir.",
+      "event": "Geçersiz olay seçimi.",
+      "user": "Geçersiz kullanıcı seçimi.",
+      "result": "Geçersiz sonuç seçimi.",
+      "blocked": "Filtrelerde düzeltilmesi gereken alanlar var; liste son geçerli filtreyle gösteriliyor."
+    },
+    "summary": "kayıt · {from} – {to}",
+    "loading": "Kayıtlar yükleniyor…",
+    "order": "En yeni kayıt üstte",
+    "loadError": "Denetim kayıtları yüklenemedi — bağlantınızı kontrol edip tekrar deneyin.",
+    "gridAria": "Denetim kayıtları tablosu",
+    "empty": {
+      "title": "Bu aralıkta kayıt yok",
+      "text": "Seçili tarih aralığında mağazanızda kayda geçen bir işlem bulunmuyor.",
+      "filteredTitle": "Bu filtrelerle kayıt yok",
+      "filteredText": "Tarih aralığını genişletin veya filtreleri kaldırın.",
+      "clear": "Filtreleri temizle"
+    },
+    "openDetail": "{event} kaydının ayrıntılarını aç",
+    "userUnknown": "Bilinmeyen kullanıcı",
+    "userSystem": "Sistem",
+    "pagerAria": "Denetim kayıtları sayfalama",
+    "detail": {
+      "event": "Olay",
+      "at": "Zaman",
+      "eventName": "Olay adı",
+      "user": "Kullanıcı",
+      "result": "Sonuç",
+      "id": "Kayıt kimliği",
+      "meta": "Ayrıntılar",
+      "metaHint": "Kayda eklenen yalnızca güvenli, düz değerler gösterilir.",
+      "noMeta": "Bu kayıt için ek ayrıntı yok."
+    },
+    "result": {
+      "ok": "Başarılı",
+      "fail": "Başarısız",
+      "error": "Hata"
+    },
+    "col": {
+      "at": "Zaman",
+      "event": "Olay",
+      "user": "Kullanıcı",
+      "result": "Sonuç",
+      "details": "Ayrıntı"
+    },
+    "chip": {
+      "range": "Tarih",
+      "event": "Olay",
+      "user": "Kullanıcı",
+      "result": "Sonuç"
     }
   },
   "accountSecurity": {
@@ -1399,6 +1755,235 @@
       "generic": "Parolanız şu an değiştirilemedi — bağlantınızı kontrol edip tekrar deneyin."
     }
   },
+  "apiErrors": {
+    "VALIDATION": "Girilen bilgiler geçersiz. Alanları kontrol edip tekrar deneyin.",
+    "UNAUTHENTICATED": "Oturumunuz sona erdi. Lütfen yeniden giriş yapın.",
+    "FORBIDDEN": "Bu işlem için yetkiniz yok.",
+    "NOT_FOUND": "Kayıt bulunamadı; silinmiş ya da değişmiş olabilir. Listeyi yenileyin.",
+    "CONFLICT": "İşlem mevcut durumla çakışıyor. Listeyi yenileyip tekrar deneyin.",
+    "RATE_LIMITED": "Çok fazla istek gönderildi. Biraz bekleyip tekrar deneyin.",
+    "QUOTA_EXCEEDED": "Plan kotanız doldu. Devam etmek için planınızı yükseltin.",
+    "PLAN_REQUIRED": "Bu özellik mevcut planınızda yok.",
+    "SUBSCRIPTION_RESTRICTED": "Aboneliğiniz bu işlem için yeterli erişime sahip değil.",
+    "REAUTH_REQUIRED": "Bu işlem için parolanızı yeniden doğrulamanız gerekiyor.",
+    "INTERNAL": "Beklenmeyen bir hata oluştu. Sorun sürerse destek ekibine başvurun.",
+    "AUTH": "Pazaryeri kimlik bilgisi geçersiz. Entegrasyon ayarlarını kontrol edin.",
+    "UNAVAILABLE": "Servis geçici olarak kullanılamıyor. Birkaç dakika sonra tekrar deneyin.",
+    "NOT_SUPPORTED": "Bu işlem bu entegrasyonda desteklenmiyor.",
+    "UNKNOWN_OUTCOME": "İşlemin sonucu doğrulanamadı. Tekrar denemeden önce durumu kontrol edin.",
+    "INVALID_REQUEST": "İstek geçersiz. Alanları kontrol edip tekrar deneyin.",
+    "INVALID_CURRENT_PASSWORD": "Parola hatalı.",
+    "SAME_PASSWORD": "Yeni parola mevcut parolayla aynı olamaz.",
+    "WEAK_PASSWORD": "Parola yeterince güçlü değil. En az 10 karakter kullanın ve büyük harf, küçük harf, rakam, sembolden en az üçünü birleştirin ya da 16+ karakterlik bir parola cümlesi seçin. Ad, soyad veya e-posta adınızı içermemeli.",
+    "TOKEN_INVALID": "Bağlantı geçersiz ya da süresi dolmuş.",
+    "EMAIL_NOT_CONFIGURED": "E-posta gönderimi şu an yapılandırılmamış. Destek ekibiyle iletişime geçin.",
+    "COOLDOWN": "Kısa süre önce gönderildi. Bir dakika bekleyip tekrar deneyin.",
+    "MAIL_FAILED": "E-posta gönderilemedi. Birkaç dakika sonra tekrar deneyin.",
+    "INVITATION_INVALID": "Davet bağlantısı geçersiz. E-postadaki bağlantıyı eksiksiz açtığınızdan emin olun.",
+    "INVITATION_EXPIRED": "Bu davetin süresi dolmuş. Mağaza yöneticisinden daveti yeniden göndermesini isteyin.",
+    "INVITATION_REVOKED": "Bu davet iptal edilmiş. Mağaza yöneticisiyle iletişime geçin.",
+    "INVITATION_ACCEPTED": "Bu davet daha önce kabul edilmiş. Hesabınızla giriş yapabilirsiniz.",
+    "INVITATION_RATE_LIMITED": "Saatlik davet sınırına ulaşıldı (yeniden gönderimler dahil saatte 20). Biraz sonra tekrar deneyin.",
+    "PLAN_LIMIT_REACHED": "Planınızın kullanıcı sınırına ulaşıldı (aktif üyeler ve bekleyen davetler birlikte sayılır). Planınızı yükseltin ya da bekleyen bir daveti iptal edin.",
+    "ALREADY_MEMBER": "Bu kişi zaten mağazanızın üyesi.",
+    "EMAIL_TAKEN": "Bu e-posta adresine davet gönderilemiyor. Farklı bir adres deneyin.",
+    "LAST_OWNER": "Mağazanın son sahibi askıya alınamaz. Önce sahipliği başka bir üyeye devredin.",
+    "ALREADY_OWNER": "Seçilen kişi zaten mağaza sahibi.",
+    "TARGET_NOT_ACTIVE": "Sahiplik yalnızca aktif bir üyeye devredilebilir.",
+    "TARGET_EMAIL_UNVERIFIED": "Bu üyenin e-postası doğrulanmamış. Devirden önce e-postasını doğrulamasını isteyin.",
+    "IDEMPOTENCY_IN_PROGRESS": "İşlem sürüyor. Birkaç saniye sonra listeyi yenileyip sonucu kontrol edin.",
+    "IDEMPOTENCY_KEY_REUSED": "Bu işlem farklı bilgilerle zaten gönderilmiş. Sayfayı yenileyip işlemi yeniden başlatın.",
+    "NETWORK": "Sunucuya ulaşılamadı. Bağlantınızı kontrol edip tekrar deneyin.",
+    "GENERIC": "İşlem tamamlanamadı. Tekrar deneyin."
+  },
+  "reauth": {
+    "title": "Kimliğinizi doğrulayın",
+    "description": "Bu işlem hesabınızın güvenliğini etkiliyor. Devam etmek için parolanızı yeniden girin; doğrulama 5 dakika geçerli olur.",
+    "password": "Parola",
+    "confirm": "Doğrula ve devam et",
+    "cancel": "Vazgeç",
+    "hint": "Vazgeçerseniz işlem yapılmaz.",
+    "errors": {
+      "required": "Parolanızı girin.",
+      "wrongPassword": "Parola hatalı. Art arda 5 hatalı denemede hesabınız 15 dakika kilitlenir.",
+      "rateLimited": "Çok fazla deneme yapıldı. Biraz bekleyip tekrar deneyin.",
+      "network": "Sunucuya ulaşılamadı. Bağlantınızı kontrol edin.",
+      "generic": "Doğrulama tamamlanamadı. Tekrar deneyin."
+    }
+  },
+  "team": {
+    "roles": {
+      "owner": "Sahip",
+      "admin": "Yönetici",
+      "operator": "Operatör"
+    },
+    "roleHints": {
+      "admin": "Ekip, mağaza ayarları ve entegrasyonlar dahil tüm işlemleri yönetir.",
+      "operator": "Sipariş, ürün, iade ve mesaj gibi günlük işleri yürütür; ekibi ve ayarları yönetemez."
+    },
+    "status": {
+      "active": "Aktif",
+      "suspended": "Askıda",
+      "pending": "Bekliyor",
+      "expired": "Süresi doldu"
+    },
+    "columns": {
+      "status": "Durum"
+    },
+    "you": "Siz",
+    "invite": {
+      "open": "Kişi davet et",
+      "title": "Ekibe kişi davet et",
+      "description": "Davet bağlantısı e-postayla gider ve 7 gün geçerlidir. Kişi bağlantıyı açıp kendi parolasını belirler; parolasını siz görmez veya belirlemezsiniz.",
+      "email": "E-posta",
+      "emailHint": "Bağlantı bu adrese gönderilir.",
+      "role": "Rol",
+      "roleCeiling": "Davetle yalnız yönetici veya operatör rolü verilebilir; mağaza sahipliği ayrıca devredilir.",
+      "submit": "Davet gönder",
+      "sent": "Davet {email} adresine gönderildi.",
+      "mailFailed": "Davet oluşturuldu ancak e-posta gönderilemedi. Bekleyen davetlerden yeniden gönderin.",
+      "upgrade": "Aboneliği görüntüle",
+      "errors": {
+        "emailRequired": "E-posta adresini girin.",
+        "emailInvalid": "Geçerli bir e-posta adresi girin (ör. ad{'@'}firma.com).",
+        "roleRequired": "Bir rol seçin.",
+        "forbidden": "Bu rolü verme yetkiniz yok. Kendi rolünüzden yüksek bir rol davetle verilemez."
+      }
+    },
+    "invitations": {
+      "title": "Bekleyen davetler",
+      "subtitle": "Kabul edilene kadar plan kullanıcı sınırına sayılır.",
+      "count": "{n} davet",
+      "expires": "{date} tarihine kadar",
+      "daysLeft": "{n} gün kaldı",
+      "lastDay": "Bir günden az kaldı",
+      "expiredAt": "{date} tarihinde sona erdi",
+      "resend": "Yeniden gönder",
+      "resendExpired": "Yeni bağlantı gönder",
+      "resent": "Davet {email} adresine yeniden gönderildi.",
+      "revoke": "Daveti iptal et",
+      "revokeTitle": "Davet iptal edilsin mi?",
+      "revokeText": "{email} adresine gönderilen bağlantı geçersiz olur. Kişiyi daha sonra yeniden davet edebilirsiniz.",
+      "revoked": "Davet iptal edildi.",
+      "loadError": "Bekleyen davetler yüklenemedi.",
+      "retry": "Tekrar dene",
+      "showAll": "Tümünü göster ({n})",
+      "showLess": "Daha az göster",
+      "notPending": "Bu davet artık beklemede değil; kabul edilmiş ya da iptal edilmiş olabilir. Liste yenilendi."
+    },
+    "suspend": {
+      "action": "Askıya al",
+      "title": "{name} askıya alınsın mı?",
+      "text": "Kişinin açık oturumları hemen kapanır ve yeniden etkinleştirilene kadar giriş yapamaz. Hesabı, verileri ve işlem geçmişi silinmez.",
+      "reason": "Neden (isteğe bağlı)",
+      "reasonHint": "Denetim kaydında görünür; kişiye gönderilmez.",
+      "confirm": "Askıya al",
+      "done": "{name} askıya alındı.",
+      "forbidden": "Bu kişiyi askıya alma yetkiniz yok. Kendinizi askıya alamazsınız; mağaza sahibine yalnız sahip dokunabilir."
+    },
+    "reactivate": {
+      "action": "Yeniden etkinleştir",
+      "title": "{name} yeniden etkinleştirilsin mi?",
+      "text": "Kişi mevcut rolüyle yeniden giriş yapabilir.",
+      "confirm": "Yeniden etkinleştir",
+      "done": "{name} yeniden etkinleştirildi."
+    },
+    "transfer": {
+      "action": "Sahipliği devret",
+      "open": "Sahipliği devret",
+      "title": "Mağaza sahipliğini devret",
+      "description": "Sahiplik iki adımda devredilir. Devri siz başlatırsınız; yeni sahip e-postasındaki bağlantıyı kendi hesabıyla açıp kabul eder.",
+      "step1": "Devri başlatın",
+      "step1Text": "Yeni sahibi seçin. Güvenlik için parolanız yeniden sorulabilir.",
+      "step2": "Yeni sahip kabul eder",
+      "step2Text": "Bağlantı 72 saat geçerlidir. Kabul edilene kadar sahip sizsiniz ve devri iptal edebilirsiniz.",
+      "target": "Yeni sahip",
+      "targetHint": "Yalnız aktif ve e-postası doğrulanmış üyeler seçilebilir.",
+      "targetRequired": "Yeni sahibi seçin.",
+      "noTargets": "Devredilebilecek aktif üye yok. Önce ekibe bir yönetici davet edin.",
+      "consequence": "Devir kabul edildiğinde rolünüz Yönetici olur ve ikinizin de oturumu kapanır; yeniden giriş yapmanız gerekir.",
+      "confirm": "Devri başlat",
+      "started": "Devir başlatıldı. {name} e-postasındaki bağlantıyla kabul edebilir.",
+      "pendingTitle": "Sahiplik devri onay bekliyor",
+      "pendingText": "{name} kabul edene kadar mağaza sahibi sizsiniz.",
+      "pendingUntil": "Bağlantı {date} tarihine kadar geçerli.",
+      "cancel": "Devri iptal et",
+      "cancelTitle": "Sahiplik devri iptal edilsin mi?",
+      "cancelText": "Gönderilen bağlantı geçersiz olur. Devri daha sonra yeniden başlatabilirsiniz.",
+      "cancelPrevious": "Bekleyen bir devri iptal et",
+      "cancelled": "Sahiplik devri iptal edildi.",
+      "noPending": "İptal edilecek bekleyen bir devir yok.",
+      "pendingQuestion": "Daha önce başlattığınız bir devir mi var?"
+    },
+    "gates": {
+      "self": "Kendi hesabınızda yapılamaz",
+      "ownerOnly": "Yalnız mağaza sahibi yapabilir",
+      "lastOwner": "Mağazanın son sahibi askıya alınamaz",
+      "noPermission": "Yetkiniz yok",
+      "platformAdmin": "Platform yöneticisine devredilemez"
+    }
+  },
+  "invitation": {
+    "pageTitle": "Ekip daveti",
+    "loading": "Davet bilgileri yükleniyor…",
+    "heading": "{store} sizi ekibine davet etti",
+    "summary": "Hesabınızı oluşturduğunuzda mağazaya aşağıdaki rolle katılırsınız.",
+    "store": "Mağaza",
+    "role": "Rol",
+    "email": "E-posta",
+    "validUntil": "Geçerlilik",
+    "validUntilValue": "{date} tarihine kadar",
+    "formTitle": "Hesabınızı oluşturun",
+    "name": "Ad",
+    "surname": "Soyad",
+    "password": "Parola",
+    "password2": "Parola (tekrar)",
+    "passwordHint": "En az 10 karakter; büyük harf, küçük harf, rakam ve sembolden en az üçü ya da 16+ karakterlik bir parola cümlesi. Adınızı veya e-postanızı içermemeli.",
+    "submit": "Daveti kabul et",
+    "successTitle": "Hesabınız hazır",
+    "successText": "Daveti kabul ettiniz. Güvenliğiniz için oturum otomatik açılmaz; e-posta adresiniz ve yeni parolanızla giriş yapın.",
+    "toLogin": "Giriş yap",
+    "noTokenTitle": "Davet bağlantısı bulunamadı",
+    "noTokenText": "Bu sayfa yalnız davet e-postasındaki bağlantıyla açılır. Bağlantıyı e-postadan yeniden açın; sayfayı yenilediyseniz bağlantı güvenlik için adresten silinmiştir.",
+    "expiredTitle": "Davetin süresi dolmuş",
+    "revokedTitle": "Davet iptal edilmiş",
+    "acceptedTitle": "Davet zaten kabul edilmiş",
+    "invalidTitle": "Davet bağlantısı geçersiz",
+    "errorTitle": "Davet bilgileri alınamadı",
+    "errors": {
+      "nameRequired": "Adınızı girin.",
+      "surnameRequired": "Soyadınızı girin.",
+      "passwordShort": "Parola en az 10 karakter olmalı.",
+      "passwordMismatch": "Parolalar birbiriyle eşleşmiyor."
+    },
+    "expiredText": "Davet bağlantıları 7 gün geçerlidir. Mağaza yöneticisinden daveti yeniden göndermesini isteyin; yeni bağlantı e-postanıza gelir.",
+    "revokedText": "Mağaza yöneticisi bu daveti geri çekti. Bir yanlışlık olduğunu düşünüyorsanız yöneticiyle iletişime geçin.",
+    "acceptedText": "Bu davetle hesabınız zaten oluşturulmuş. E-posta adresiniz ve parolanızla giriş yapın; parolanızı hatırlamıyorsanız \"Şifremi unuttum\"u kullanın.",
+    "invalidText": "Bağlantı eksik ya da bozuk kopyalanmış olabilir. Davet e-postasındaki bağlantıyı yeniden açın."
+  },
+  "ownership": {
+    "pageTitle": "Sahiplik devri",
+    "heading": "Mağaza sahipliğini kabul edin",
+    "text": "Mağaza sahibi, mağazanın sahipliğini size devretmek istiyor. Kabul ettiğinizde abonelik, ödeme ve ekip dahil tüm yetkiler size geçer; önceki sahip Yönetici olur.",
+    "signedInAs": "Oturum: {user}",
+    "consequence": "Kabulden sonra güvenlik için iki tarafın da oturumu kapanır; yeniden giriş yapmanız gerekir.",
+    "accept": "Sahipliği kabul et",
+    "decline": "Şimdi değil",
+    "loginTitle": "Devam etmek için giriş yapın",
+    "loginText": "Devri, davetin gönderildiği hesapla giriş yaparak kabul edebilirsiniz.",
+    "login": "Giriş yap ve devam et",
+    "successTitle": "Artık mağaza sahibisiniz",
+    "successText": "Güvenliğiniz için oturumunuz kapatıldı. Yeniden giriş yaparak devam edin.",
+    "noTokenTitle": "Devir bağlantısı bulunamadı",
+    "noTokenText": "Bu sayfa yalnız e-postadaki devir bağlantısıyla açılır. Bağlantıyı e-postadan yeniden açın.",
+    "invalidTitle": "Devir bağlantısı geçersiz",
+    "invalidText": "Bağlantının süresi dolmuş, iptal edilmiş, kullanılmış ya da başka bir hesaba ait olabilir. Mağaza sahibinden devri yeniden başlatmasını isteyin.",
+    "toApp": "Uygulamaya dön"
+  },
+  "loginNotice": {
+    "invitationAccepted": "Hesabınız oluşturuldu. E-posta adresiniz ve yeni parolanızla giriş yapın.",
+    "ownershipTransferred": "Sahiplik devri tamamlandı. Güvenlik için yeniden giriş yapın."
+  },
   "privacyData": {
     "title": "Veri ve gizlilik",
     "description": "Mağaza verilerinizin bir kopyasını alın ve kişisel verilerin işlenmesine ilişkin belgeleri inceleyin.",
@@ -1433,6 +2018,46 @@
         "gone": "Bu arşiv daha önce indirildi veya artık mevcut değil — yeni bir dışa aktarma hazırlayın.",
         "rateLimited": "Çok fazla indirme denemesi yapıldı — birkaç dakika sonra tekrar deneyin.",
         "generic": "Arşiv indirilemedi — bağlantınızı kontrol edip tekrar deneyin."
+      }
+    },
+    "deletion": {
+      "title": "Mağazayı sil",
+      "description": "Mağazanızın ve ona ait tüm verilerin silinmesi için talep oluşturun. Bu işlemi yalnızca mağaza sahibi yapabilir.",
+      "panelTitle": "Mağaza silme talebi",
+      "panelText": "Talep oluşturulduğunda mağazanız silinmek üzere askıya alınır.",
+      "facts": {
+        "suspend": "Talep sonrası mağaza 30 gün askıda kalır.",
+        "restore": "Bu süre içinde geri alma yalnızca destek ekibi üzerinden yapılabilir.",
+        "export": "Verilerinizin bir kopyasına ihtiyacınız varsa talepten önce yukarıdan dışa aktarma hazırlayın."
+      },
+      "moreInfo": "Ayrıntılı bilgi: gizlilik ve KVKK belgeleri",
+      "action": "Silme talebi oluştur",
+      "verify": {
+        "title": "Kimliğinizi doğrulayın",
+        "description": "Devam etmek için parolanızı girin ve mağaza adını aynen yazın.",
+        "passwordLabel": "Parola",
+        "typeNameHint": "Onaylamak için şu adı aynen yazın:",
+        "typeNameHintUnknown": "Onaylamak için mağaza adınızı aynen yazın.",
+        "nameLabel": "Mağaza adı",
+        "confirm": "Sil"
+      },
+      "confirm": {
+        "title": "'{name}' için silme talebi oluşturulsun mu?",
+        "description": "Mağaza 30 gün askıda kalır; bu süre içinde geri alma yalnızca destek ekibi üzerinden yapılabilir.",
+        "action": "Silme talebi oluştur"
+      },
+      "doneTitle": "Silme talebi alındı",
+      "doneText": "Mağazanız {date} tarihine kadar askıda kalacak. Bu süre içinde geri almak için destek ekibiyle iletişime geçin.",
+      "doneTextNoDate": "Mağazanız 30 gün askıda kalacak. Bu süre içinde geri almak için destek ekibiyle iletişime geçin.",
+      "toast": "Silme talebi oluşturuldu.",
+      "errors": {
+        "wrongPassword": "Parola doğrulanamadı.",
+        "passwordRequired": "Parola gerekli.",
+        "storeNameMismatch": "Mağaza adı doğrulanamadı — adı büyük/küçük harf dahil aynen yazın.",
+        "ownerOnly": "Bu işlem yalnızca mağaza sahibi tarafından yapılabilir — mağaza sahibi hesabıyla giriş yapın.",
+        "notEligible": "Mağazanız şu anda silme talebine uygun durumda değil — destek ekibiyle iletişime geçin.",
+        "noTenant": "Mağaza bulunamadı — sayfayı yenileyip tekrar deneyin.",
+        "generic": "Silme talebi oluşturulamadı — birkaç dakika sonra tekrar deneyin."
       }
     },
     "legal": {
@@ -1517,6 +2142,243 @@
       "tokenInvalid": "Bu doğrulama bağlantısının süresi dolmuş veya daha önce kullanılmış.",
       "rateLimited": "Çok fazla deneme yapıldı — birkaç dakika sonra tekrar deneyin.",
       "generic": "E-posta adresiniz şu an doğrulanamadı — birkaç dakika sonra bağlantıyı yeniden açın."
+    }
+  },
+  "stockHealth": {
+    "section": "Katalog",
+    "title": "Stok sağlığı",
+    "description": "Açıkta kalan sipariş kalemleri ve varyant stok dengesi",
+    "updatedAt": "Son güncelleme {time}",
+    "refresh": "Yenile",
+    "retry": "Tekrar dene",
+    "loadError": "Stok sağlığı yüklenemedi — bağlantınızı kontrol edip tekrar deneyin.",
+    "staleNotice": "Güncel veriler alınamadı. Gösterilen bilgiler {time} tarihli.",
+    "forbidden": {
+      "title": "Bu ekrana erişiminiz yok",
+      "message": "Stok sağlığını görüntüleme yetkiniz bulunmuyor. Erişim için hesap sahibinizle görüşün."
+    },
+    "kpiLabel": "Stok göstergeleri",
+    "unit": {
+      "lines": "{n} kalem",
+      "units": "{n} adet",
+      "variants": "{n} varyant"
+    },
+    "kpi": {
+      "oversold": "Açık aşırı satış",
+      "oversoldUnits": "{n} adet stokta karşılanamadı",
+      "oversoldNone": "Açık aşırı satış yok",
+      "unmapped": "Eşleşmeyen kalem",
+      "unmappedUnits": "{n} adet ürünle eşleşmedi",
+      "unmappedNone": "Eşleşmeyen açık kalem yok",
+      "available": "Kullanılabilir stok",
+      "availableDesc": "{reserved} adet rezerve · toplam {total} adet",
+      "publishPending": "Yayın bekleyen",
+      "publishPendingDesc": "Stok değişikliği kanallara gönderilecek",
+      "publishPendingNone": "Bekleyen stok gönderimi yok"
+    },
+    "attention": {
+      "title": "Dikkat gerektiren siparişler",
+      "subtitle": "Aşırı satış veya eşleşmeyen kalemi olan siparişler",
+      "subtitleCount": "{orders} siparişte {lines} kalem",
+      "openAll": "Siparişlerde filtrele",
+      "openOrder": "{order} siparişini sipariş listesinde aç",
+      "emptyTitle": "Dikkat gerektiren sipariş yok",
+      "emptyText": "Aşırı satış veya eşleşmeyen kalem içeren açık sipariş bulunmuyor.",
+      "escalated": "Manuel işlem bildirildi · {time}",
+      "qty": "{n} adet",
+      "limitNote": "En yeni {n} sipariş gösteriliyor. Tamamı için sipariş listesinde filtreleyin."
+    },
+    "col": {
+      "order": "Sipariş",
+      "channel": "Kanal",
+      "product": "Ürün",
+      "quantity": "Adet",
+      "state": "Stok durumu",
+      "sku": "Stok kodu",
+      "barcode": "Barkod",
+      "noIdentifier": "Stok kodu / barkod yok"
+    },
+    "balance": {
+      "title": "Varyant stok dengesi",
+      "subtitle": "Tüm varyantların toplamı",
+      "availableOf": "adet kullanılabilir · toplam {total}",
+      "barLabel": "Kullanılabilir {available} adet, rezerve {reserved} adet",
+      "available": "Kullanılabilir",
+      "reserved": "Rezerve",
+      "total": "Toplam varyant",
+      "withReservations": "Rezervasyonlu varyant",
+      "overReserved": "Stoğu aşan rezerv",
+      "publishPending": "Yayın bekleyen varyant",
+      "check": "Kontrol edin"
+    },
+    "reconciliation": {
+      "title": "Stok mutabakatı",
+      "untrackedChip": "İzlenmiyor",
+      "untrackedTitle": "Mutabakat sonuçları henüz kaydedilmiyor",
+      "untrackedText": "Mutabakat işleri bulduğu farkları yalnızca \"yayın bekleyen\" olarak işaretliyor; sonuç kaydı tutulmadığı için son çalışma zamanı burada gösterilemiyor.",
+      "lastRun": "Son mutabakat",
+      "neverRun": "Mutabakat henüz çalışmadı."
+    },
+    "legend": {
+      "title": "Stok durumları",
+      "RESERVED": "Stok bu kalem için ayrıldı; kullanılabilir miktardan düşüldü.",
+      "COMMITTED": "Kalem kargoya verildi; ayrılan stok kesin olarak düşüldü.",
+      "RELEASED": "Kalem iptal edildi; ayrılan stok serbest bırakıldı.",
+      "OVERSOLD": "Sipariş geldiğinde yeterli stok yoktu. Stok politikanıza göre yeniden denenir veya iptal edilir.",
+      "RESTOCKED": "İade edilen ürün stoğa geri eklendi.",
+      "UNMAPPED": "Kalem hiçbir varyantla eşleşmedi; stok ayrılamadı. Stok kodunu veya barkodu kontrol edin."
+    }
+  },
+  "finance": {
+    "title": "Finans",
+    "description": "Hakediş, kesinti, kargo faturası ve ödeme emirlerinizi tek yerden izleyin.",
+    "tabs": {
+      "label": "Finans görünümleri",
+      "transactions": "İşlemler",
+      "summary": "Özet",
+      "cargoInvoices": "Kargo faturaları",
+      "payouts": "Ödeme dökümü"
+    },
+    "filters": {
+      "channels": "Kanallar",
+      "channel": "Kanal",
+      "startDate": "Başlangıç",
+      "endDate": "Bitiş",
+      "orderNumber": "Sipariş no",
+      "invoiceNumber": "Fatura no ile ara (tam eşleşme)"
+    },
+    "summary": {
+      "kpiLabel": "Dönem özeti",
+      "totalCredit": "Toplam alacak",
+      "totalCreditHint": "Satış ve diğer alacak kayıtları",
+      "totalDebt": "Toplam borç",
+      "totalDebtHint": "Komisyon, kesinti ve gider kayıtları",
+      "netAmount": "Net hakediş",
+      "netAmountHint": "Pazaryeri kayıtlarındaki net tutar",
+      "transactionCount": "İşlem sayısı",
+      "transactionCountHint": "Toplama giren kayıt",
+      "note": "Tutarlar, seçili dönem ve kanallardaki finansal kayıtların sunucu toplamıdır. Komisyon ve kargo için ayrı toplam henüz sunulmuyor.",
+      "emptyTitle": "Bu dönemde finansal kayıt yok",
+      "emptyText": "Seçili dönem ve kanallarda toplanacak hareket bulunamadı. Tarih aralığını genişletin veya kanalları değiştirin.",
+      "errorSubject": "Finansal özet",
+      "breakdownTitle": "Kanal kırılımı",
+      "breakdownHint": "Bağlı her kanal için aynı dönemin sunucu toplamı",
+      "breakdownEmptyTitle": "Bağlı kanal yok",
+      "breakdownEmptyText": "Kanal kırılımı, hesabınıza bağlı pazaryeri ve mağazalar için gösterilir.",
+      "colChannel": "Kanal",
+      "colCount": "İşlem",
+      "colCredit": "Alacak",
+      "colDebt": "Borç",
+      "colNet": "Net",
+      "colState": "Durum",
+      "stateOk": "Kayıt var",
+      "stateEmpty": "Kayıt yok",
+      "stateError": "Yüklenemedi"
+    },
+    "cargo": {
+      "label": "Kargo faturaları tablosu",
+      "noun": "fatura",
+      "colInvoice": "Fatura no",
+      "colChannel": "Kanal",
+      "colOrder": "Sipariş no",
+      "colPackage": "Paket no",
+      "colType": "Gönderim",
+      "colDesi": "Desi",
+      "colAmount": "Tutar",
+      "colDate": "Tarih",
+      "emptyTitle": "Kargo faturası yok",
+      "emptyText": "Pazaryerlerinden kargo faturası aktarıldığında burada listelenir.",
+      "filteredEmptyTitle": "Bu filtrelerle kargo faturası yok",
+      "filteredEmptyText": "Fatura ve sipariş numarası tam eşleşme ile aranır. Filtreleri gevşetip yeniden sorgulayın.",
+      "unsupportedTitle": "Bu kanal için bu görünüm desteklenmiyor",
+      "unsupportedText": "{channel} entegrasyonu kargo faturası sağlamıyor. Bu bir sıfır tutar değil; veri bu kanaldan gelmiyor.",
+      "support": "Kargo faturası sağlamayan kanallar: {channels}",
+      "capped": "İlk {max} satır gösteriliyor — tüm faturalar için tarih aralığını daraltın.",
+      "errorTitle": "Kargo faturaları yüklenemedi"
+    },
+    "payouts": {
+      "label": "Ödeme emirleri tablosu",
+      "noun": "ödeme emri",
+      "colOrder": "Ödeme emri",
+      "colChannel": "Kanal",
+      "colDate": "Ödeme tarihi",
+      "colAmount": "Tutar",
+      "colDescription": "Açıklama",
+      "colAction": "Döküm",
+      "open": "Dökümü aç",
+      "noOrderId": "Bu kayıtta ödeme emri numarası yok",
+      "dueDate": "Vade: {date}",
+      "lookupLabel": "Ödeme emri no",
+      "lookupAction": "Dökümü getir",
+      "emptyTitle": "Ödeme emri yok",
+      "emptyText": "Pazaryerinden hesabınıza aktarılan ödemeler burada listelenir.",
+      "filteredEmptyTitle": "Bu filtrelerle ödeme emri yok",
+      "filteredEmptyText": "Filtreleri gevşetin veya temizleyip yeniden sorgulayın.",
+      "unsupportedTitle": "Bu kanal için bu görünüm desteklenmiyor",
+      "unsupportedText": "{channel} entegrasyonu ödeme emri dökümü sağlamıyor. Bu bir sıfır tutar değil; veri bu kanaldan gelmiyor.",
+      "support": "Ödeme dökümü sağlamayan kanallar: {channels}",
+      "errorTitle": "Ödeme emirleri yüklenemedi"
+    },
+    "payoutDetail": {
+      "identity": "Ödeme emri {id}",
+      "overview": "Ödeme özeti",
+      "overviewHint": "Listeden seçilen ödeme kaydı",
+      "items": "Döküm kalemleri",
+      "itemsHint": "Bu ödeme emrine bağlı finansal kayıtlar, tarih sırasıyla",
+      "itemCount": "Kalem sayısı",
+      "firstDate": "İlk kayıt",
+      "lastDate": "Son kayıt",
+      "channel": "Kanal",
+      "amount": "Ödeme tutarı",
+      "payoutDate": "Ödeme tarihi",
+      "colRef": "İşlem no",
+      "colType": "Tür",
+      "colOrder": "Sipariş",
+      "colDate": "Tarih",
+      "colCredit": "Alacak",
+      "colDebt": "Borç",
+      "colNet": "Net",
+      "emptyTitle": "Bu ödeme emrine bağlı kalem yok",
+      "emptyText": "Kalemler, ödeme emri pazaryerinden aktarıldığında görünür.",
+      "errorSubject": "Ödeme dökümü"
+    }
+  },
+  "subscriptionBanner": {
+    "regionLabel": "Abonelik durumu",
+    "manage": "Aboneliği yönet",
+    "manageShort": "Yönet",
+    "minimize": "Bildirimi küçült",
+    "expand": "Bildirimi genişlet",
+    "trialEndsSoon": "Deneme sürenizin bitmesine {days} gün kaldı ({date}). Kesintisiz devam etmek için bir plan seçin.",
+    "trialEndsToday": "Deneme süreniz bugün ({date}) sona eriyor. Kesintisiz devam etmek için bir plan seçin.",
+    "trialEnded": "Deneme süreniz {date} tarihinde sona erdi. Plan seçilmezse hesap askıya alınır ve stok senkronu durur.",
+    "pastDueGrace": "Son ödemeniz alınamadı. {date} tarihine kadar ödeme tamamlanmazsa hesap askıya alınır ve stok senkronu durur.",
+    "pastDue": "Son ödemeniz alınamadı. Ödeme tamamlanmazsa hesap askıya alınır ve stok senkronu durur.",
+    "pastDueStopped": "Stok senkronu durdu — kanallarda aşırı satış riski. Ödemeyi tamamlayın.",
+    "suspended": "Stok senkronu durdu — kanallarda aşırı satış riski. Ödemeyi tamamlayın.",
+    "canceledUntil": "Aboneliğiniz iptal edildi. {date} tarihine kadar tüm özellikler açık; sonrasında hesap salt okunur olur ve stok senkronu durur.",
+    "canceled": "Aboneliğiniz iptal edildi. Dönem sonunda hesap salt okunur olur ve stok senkronu durur.",
+    "canceledEnded": "Abonelik dönemi {date} tarihinde bitti: hesap salt okunur, stok senkronu durdu. Devam etmek için bir plan seçin.",
+    "canceledStopped": "Abonelik dönemi bitti: hesap salt okunur, stok senkronu durdu. Devam etmek için bir plan seçin.",
+    "expired": "Aboneliğiniz sona erdi: stok senkronu ve düzenleme kapalı. Devam etmek için bir plan seçin.",
+    "compact": {
+      "trialEndsSoon": "Deneme bitiyor: {days} gün kaldı ({date})",
+      "trialEndsToday": "Deneme bugün bitiyor ({date})",
+      "trialEnded": "Deneme süresi doldu ({date})",
+      "pastDueGrace": "Ödeme bekleniyor · son gün {date}",
+      "pastDue": "Ödeme bekleniyor",
+      "pastDueStopped": "Ödeme alınamadı · stok senkronu durdu",
+      "suspended": "Askıda · stok senkronu durdu",
+      "canceledUntil": "İptal edildi · {date} tarihine kadar açık",
+      "canceled": "İptal edildi · dönem sonunda salt okunur",
+      "canceledEnded": "Salt okunur · stok senkronu durdu",
+      "canceledStopped": "Salt okunur · stok senkronu durdu",
+      "expired": "Abonelik sona erdi · stok senkronu kapalı"
+    }
+  },
+  "help": {
+    "center": {
+      "title": "Yardım merkezi"
     }
   }
 }

@@ -107,7 +107,8 @@ test.describe('P3 (B5-2) — Ürün varyantları (ProductVariantsComponent)', ()
     const root = await openVariantStep(page)
 
     await root.locator('thead').getByRole('button').filter({ has: page.locator('.mdi-menu') }).click()
-    const menu = page.locator('.v-overlay--active .v-list').filter({ hasText: 'Varyant İşlemleri' })
+    // DS-v2 A2: EkContextMenu (role=menu) — eski .v-list seçicisi bilinçli güncellendi.
+    const menu = page.locator('.v-overlay--active [role="menu"]').filter({ hasText: 'Varyant İşlemleri' })
     await expect(menu).toBeVisible()
     for (const label of ['Ara', 'Toplu Özellik Düzenleme', 'Toplu Fiyat Düzenleme', 'Toplu Seçenek Eşleştir', 'Toplu Silme']) {
       await expect(menu.getByText(label, { exact: true })).toBeVisible()

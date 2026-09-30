@@ -6,6 +6,10 @@ import { ImportOrchestrator } from "./catalog/import/ImportOrchestrator";
 import config from './orchestrator.config.json';
 import os from 'os';
 import { OrderOrchestrator } from "./order/OrderOrchestrator";
+import { eventLog } from '@platform/core/logger';
+import { config as appConfig } from '@config';
+
+const log = eventLog('engine', 'IntegrationEngine');
 
 /**
  * IntegrationEngine - Merkezi Yönetim Birimi
@@ -40,7 +44,7 @@ export default class IntegrationEngine {
         // Belirlenen aralıklarla sistemi kontrol etmeye devam et.
         setInterval(() => {
             this.clearAllZombieLocks(applicationDB, false).catch(err =>
-                console.error("[IntegrationEngine] Global Cleanup Error:", err.message)
+                log.error('INTEGRATIONENGINE_GLOBAL_CLEANUP_ERROR', "Global Cleanup Error:", { err })
             );
         }, this.ZOMBIE_CHECK_INTERVAL);
 
@@ -48,9 +52,7 @@ export default class IntegrationEngine {
         // Sipariş çekme gibi arka plan görevlerini başlat.
         //new OrderFetcher('trendyol').start().catch(err => console.error("OrderFetcher Error", err));
 
-        console.log(
-            `[\x1b[32mIntegrationEngine\x1b[0m] Engine started on \x1b[35m${this.POD_NAME}\x1b[0m.`
-        );
+        log.info('INTEGRATIONENGINE_ENGINE_STARTED', `Engine started on ${this.POD_NAME}.`);
 
         // 4. ADIM: ALT ORKESTRATÖRLERİ BAŞLAT
         // [BACKLOG "%0-kapsamlı orkestrasyon sınıfları" madde 1, 2026-09-27 — başlatma-zamanı izolasyon
@@ -71,16 +73,21 @@ export default class IntegrationEngine {
         // mevcut veriler etkilenmez); bunu loglayıp izlemeye/insan müdahalesine bırakmak, TÜM süreci
         // kapatmaktan daha güvenlidir. Üçü de başarısız olursa ayrıca toplu bir "tamamen devre dışı"
         // uyarısı loglanır (aşağıya bakınız).
+        // [LIVE-RO] Canlı salt-okuma kipi (LIVE_READONLY=1): pazaryerine YAZAN Export hattı (Dispatcher/Validator/Publisher/Sentinel/Sync) ve zamanlanmış
+        // sipariş çekimi/BullMQ işçisi BAŞLATILMAZ; yalnız kullanıcı tetiklemeli İÇE ALMA (Stager/Importer) çalışır. Kip kapalıyken davranış AYNI.
+        if (appConfig.liveReadonly.enabled) {
+            log.warn('INTEGRATIONENGINE_LIVE_READONLY', 'LIVE_READONLY: Export ve Order orkestratörleri BAŞLATILMADI; yalnız ImportOrchestrator çalışıyor.');
+            this.safeStartSubsystem('ImportOrchestrator', () => ImportOrchestrator.start(applicationDB));
+            return;
+        }
         const started = [
             this.safeStartSubsystem('ExportOrchestrator', () => ExportOrchestrator.start(applicationDB)),
             this.safeStartSubsystem('ImportOrchestrator', () => ImportOrchestrator.start(applicationDB)),
             this.safeStartSubsystem('OrderOrchestrator', () => OrderOrchestrator.start()),
         ];
         if (started.every((ok) => !ok)) {
-            console.error(
-                "[IntegrationEngine] KRİTİK: Export/Import/Order orkestratörlerinin ÜÇÜ DE başlatılamadı; " +
-                "arka plan orkestrasyonu tamamen devre dışı (web/health sunucusu etkilenmedi, süreç kapanmadı)."
-            );
+            log.error('INTEGRATIONENGINE_KRITIK_EXPORT_IMPORT_ORDER', "KRİTİK: Export/Import/Order orkestratörlerinin ÜÇÜ DE başlatılamadı; " +
+                "arka plan orkestrasyonu tamamen devre dışı (web/health sunucusu etkilenmedi, süreç kapanmadı).");
         }
     }
 
@@ -94,10 +101,7 @@ export default class IntegrationEngine {
             starter();
             return true;
         } catch (err: any) {
-            console.error(
-                `[IntegrationEngine] ${name}.start() başlatma hatası (izole edildi, diğer alt-sistemler etkilenmedi):`,
-                err?.message ?? err
-            );
+            log.error('INTEGRATIONENGINE_START_BASLATMA_HATASI_IZOLE', `${name}.start() başlatma hatası (izole edildi, diğer alt-sistemler etkilenmedi):`, { detail: err?.message ?? err });
             return false;
         }
     }
@@ -113,7 +117,7 @@ export default class IntegrationEngine {
                 ImportOrchestrator.clearZombies(applicationDB, isInitial)
             ]);
         } catch (err: any) {
-            console.error("[IntegrationEngine] clearAllZombieLocks Error:", err.message);
+            log.error('INTEGRATIONENGINE_CLEARALLZOMBIELOCKS_ERROR', "clearAllZombieLocks Error:", { err });
         }
     }
 }

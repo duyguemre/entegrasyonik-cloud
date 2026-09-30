@@ -1,34 +1,67 @@
 ---
 /**
- * 404 — markalı, hafif animasyonlu (S11). Koyu "sahne" zemini (diğer iç sayfa hero'larıyla aynı mesh/ızgara);
- * `scenes` BaseLayout'a geçilmez (bu sayfa ayrı bir sahne/hareket-durdurma altyapısı gerektirmez), bu yüzden
- * dekoratif kopuk-bağlantı animasyonu kendi `<style>` bloğunda, yalnızca `prefers-reduced-motion: no-preference`
- * altında ve yalnızca `opacity`/`transform` ile çalışır (global.css'teki genel reduced-motion kuralı da ayrıca korur).
+ * 404 — markalı ve yardımcı (S11; S17 premium tur). Koyu "sahne" zemini (iç sayfa hero'larıyla aynı mesh/ızgara).
+ * S17: sorularda arama formu (GET → `/sss?q=…`; JS'siz de SSS sayfasına gider, JS varsa SSS süzgeci sorguyu
+ * uygular), ana sayfa + SSS eylemleri ve alt bölümde site haritası kartları (ortak `NextLinks`) + `HelpBand`.
+ * Dekoratif kopuk-bağlantı animasyonu yalnızca `prefers-reduced-motion: no-preference` altında, yalnızca
+ * `opacity`/`transform` ile ve SONLU (üç tur) çalışır — sürekli hareket olmadığı için "Hareket" anahtarı gerekmez;
+ * `html[data-motion='paused']` tercihi de ayrıca saygı görür.
  */
 import BaseLayout from '../layouts/BaseLayout.astro'
 import Section from '../components/Section.astro'
 import Button from '../components/Button.astro'
+import Icon from '../components/home/Icon.astro'
+import SectionHead from '../components/pages/SectionHead.astro'
+import NextLinks from '../components/pages/NextLinks.astro'
+import HelpBand from '../components/pages/HelpBand.astro'
 ---
 
-<BaseLayout title="Sayfa bulunamadı" noindex>
-  <Section tone="stage" labelledby="nf-title" size="narrow" class="nf-section">
+<BaseLayout path="/404">
+  <Section tone="stage" labelledby="nf-title" class="nf-section">
     <div class="nf">
-      <div class="nf__glyph" aria-hidden="true">
-        <span class="nf__node nf__node--a"></span>
-        <span class="nf__link"></span>
-        <span class="nf__node nf__node--b"></span>
+      <div class="nf__body">
+        <div class="nf__glyph" aria-hidden="true">
+          <span class="nf__node nf__node--a"></span>
+          <span class="nf__link"></span>
+          <span class="nf__node nf__node--b"></span>
+        </div>
+        <p class="nf__code" aria-hidden="true">404</p>
+        <h1 id="nf-title">Sayfa bulunamadı</h1>
+        <p class="nf__lead">Aradığınız sayfa taşınmış ya da kaldırılmış olabilir. Adresi kontrol edebilir, sorularda arayabilir veya ana sayfaya dönebilirsiniz.</p>
+        <form class="nf-search" action="/sss" method="get" role="search" aria-label="Sık sorulan sorularda ara">
+          <label class="sr-only" for="nf-q">Sık sorulan sorularda ara</label>
+          <span class="nf-search__icon" aria-hidden="true"><Icon name="search" size="sm" /></span>
+          <input id="nf-q" class="nf-search__input" type="search" name="q" placeholder="Sorularda arayın" autocomplete="off" />
+          <button type="submit" class="nf-search__btn">Ara</button>
+        </form>
+        <div class="nf__actions">
+          <Button href="/" variant="inverse" size="lg">Ana sayfaya dön</Button>
+          <Button href="/sss" variant="inverse-outline" size="lg">Sık sorulan sorular</Button>
+        </div>
       </div>
-      <p class="nf__code" aria-hidden="true">404</p>
-      <h1 id="nf-title">Sayfa bulunamadı</h1>
-      <p>Aradığınız sayfa taşınmış ya da kaldırılmış olabilir. Adresi kontrol edebilir veya ana sayfaya dönebilirsiniz.</p>
-      <div class="nf__actions">
-        <Button href="/" variant="inverse" size="lg">Ana sayfaya dön</Button>
-      </div>
-      <p class="nf__more">
-        Aradığınızı bulamadıysanız <a href="/sss">sık sorulan sorulara</a> bakabilir veya{' '}
-        <a href="/iletisim">bize yazabilirsiniz</a>.
-      </p>
     </div>
+  </Section>
+
+  <Section labelledby="nf-links-title" class="nf-links">
+    <SectionHead id="nf-links-title" eyebrow="Site haritası" title="Buradan devam edebilirsiniz" />
+    <NextLinks
+      links={[
+        { href: '/ozellikler', icon: 'layers', title: 'Özellikler', text: 'Stok rezervasyonu, birleşik sipariş, iade ve soru yönetimi.' },
+        { href: '/entegrasyonlar', icon: 'plug', title: 'Entegrasyonlar', text: 'Kanallar ve her kanalın desteklediği işlemler.' },
+        { href: '/fiyatlandirma', icon: 'card', title: 'Fiyatlandırma', text: 'Planlar, ücretsiz deneme ve karşılaştırma.' },
+        { href: '/guvenlik', icon: 'shield', title: 'Güvenlik', text: 'Anahtarlarınızın ve verinizin nasıl korunduğu.' },
+        { href: '/destek', icon: 'book', title: 'Destek merkezi', text: 'Adım adım kurulum ve kanal bağlama rehberleri.' },
+        { href: '/iletisim', icon: 'mail', title: 'İletişim', text: 'Sorunuzu doğrudan ekibimize yazın.' },
+      ]}
+    />
+    <HelpBand
+      title="Bir bağlantı mı bozuk?"
+      text="Bu sayfaya bir bağlantıdan geldiyseniz bize haber verin; düzeltelim."
+      links={[
+        { label: 'Bize yazın', href: '/iletisim' },
+        { label: 'Destek merkezi', href: '/destek' },
+      ]}
+    />
   </Section>
 </BaseLayout>
 
@@ -36,13 +69,19 @@ import Button from '../components/Button.astro'
   .nf-section:global(.section) {
     display: flex;
     align-items: center;
-    min-height: calc(60vh - var(--site-header-height));
+    min-height: calc(62vh - var(--site-header-height));
   }
   .nf {
     display: flex;
+    justify-content: center;
+    text-align: center;
+  }
+  .nf__body {
+    display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     gap: var(--ek-space-4);
+    max-width: 40rem;
   }
   .nf__glyph {
     display: flex;
@@ -55,9 +94,10 @@ import Button from '../components/Button.astro'
     height: var(--ek-space-6);
     border-radius: var(--ek-radius-md);
     background: var(--ek-color-secondary);
+    box-shadow: 0 0 0 calc(var(--site-border-width) * 4) color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
   }
   .nf__link {
-    width: var(--ek-space-10);
+    width: var(--ek-space-12);
     height: var(--site-border-width);
     background: repeating-linear-gradient(
       90deg,
@@ -68,10 +108,10 @@ import Button from '../components/Button.astro'
     );
   }
   .nf__code {
-    color: var(--site-color-on-primary-muted);
-    font-size: var(--ek-font-size-xl);
-    font-weight: var(--site-font-display-weight);
-    letter-spacing: var(--site-font-display-tracking);
+    color: var(--site-accent-on-dark);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-bold);
+    letter-spacing: 0.2em;
     font-variant-numeric: tabular-nums;
   }
   .nf h1 {
@@ -80,31 +120,92 @@ import Button from '../components/Button.astro'
     line-height: var(--site-font-display-line-height);
     letter-spacing: var(--site-font-display-tracking);
   }
-  .nf p {
-    max-width: var(--site-measure);
-  }
-  .nf__actions {
-    margin-top: var(--ek-space-4);
-  }
-  .nf__more {
-    color: var(--site-color-on-primary-muted);
-    font-size: var(--ek-font-size-md);
-  }
-  .nf__more a {
-    color: var(--site-color-on-primary);
-    font-weight: var(--ek-font-weight-semibold);
+  .nf__lead {
+    font-size: var(--ek-font-size-xl);
+    line-height: var(--site-font-body-line-height);
   }
 
-  /* Kopuk bağlantı animasyonu: iki düğüm hafifçe uzaklaşıp yaklaşır (yalnızca transform/opacity, CLS 0). */
+  .nf-search {
+    position: relative;
+    display: flex;
+    gap: var(--ek-space-2);
+    width: 100%;
+    max-width: 32rem;
+    margin-top: var(--ek-space-2);
+    padding: var(--ek-space-1);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface);
+    box-shadow: var(--site-shadow-panel);
+  }
+  .nf-search__icon {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: var(--ek-space-4);
+    display: inline-flex;
+    color: var(--site-text-meta);
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+  .nf-search__input {
+    flex: 1;
+    min-width: 0;
+    min-height: var(--site-tap-target);
+    padding-inline: calc(var(--ek-space-4) * 2 + var(--ek-space-2)) var(--ek-space-2);
+    border: 0;
+    border-radius: var(--ek-radius-md);
+    background: transparent;
+    color: var(--site-text-heading);
+    font: inherit;
+    font-size: var(--ek-font-size-lg);
+  }
+  .nf-search__input::placeholder {
+    color: var(--site-text-meta);
+  }
+  .nf-search__input:focus-visible {
+    outline: var(--site-focus-ring-width) solid var(--site-color-focus-ring);
+    outline-offset: 0;
+  }
+  .nf-search__btn {
+    flex: none;
+    min-height: var(--site-tap-target);
+    padding-inline: var(--ek-space-5);
+    border: 0;
+    border-radius: var(--ek-radius-md);
+    background: var(--ek-color-primary);
+    color: var(--site-color-on-primary);
+    font: inherit;
+    font-weight: var(--ek-font-weight-semibold);
+    cursor: pointer;
+    transition: background-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .nf-search__btn:hover {
+    background: var(--ek-color-primary-darken-1);
+  }
+  .nf__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--ek-space-3);
+    margin-top: var(--ek-space-2);
+  }
+
+  .nf-links:global(.section) {
+    padding-block: calc(var(--site-section-y) * 0.72);
+  }
+  .nf-links :global(.next-links) {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  }
+
+  /* Kopuk bağlantı: iki düğüm hafifçe uzaklaşıp yaklaşır — SONLU (üç tur), yalnızca transform/opacity, CLS 0. */
   @media (prefers-reduced-motion: no-preference) {
-    .nf__node--a {
-      animation: nf-drift-a var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite;
+    :global(html:not([data-motion='paused'])) .nf__node--a {
+      animation: nf-drift-a var(--site-motion-ambient-fast) var(--site-motion-ease-loop) 3;
     }
-    .nf__node--b {
-      animation: nf-drift-b var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite;
+    :global(html:not([data-motion='paused'])) .nf__node--b {
+      animation: nf-drift-b var(--site-motion-ambient-fast) var(--site-motion-ease-loop) 3;
     }
-    .nf__link {
-      animation: nf-fade var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite;
+    :global(html:not([data-motion='paused'])) .nf__link {
+      animation: nf-fade var(--site-motion-ambient-fast) var(--site-motion-ease-loop) 3;
     }
     @keyframes nf-drift-a {
       0%,

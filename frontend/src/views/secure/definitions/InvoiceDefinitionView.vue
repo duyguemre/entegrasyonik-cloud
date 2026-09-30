@@ -13,9 +13,9 @@
   <div class="legacy-definition-body">
   <div class="search-section">
     <div class="d-flex">
-      <div style="width:48%">
+      <div class="legacy-definition-search">
         <div class="d-flex">
-          <v-text-field clearable prepend-icon="mdi-form-textbox" density="comfortable"
+          <v-text-field clearable prepend-icon="mdi-form-textbox"
             :label="$t('customers.customer.searchlabel')" variant="outlined"></v-text-field>
           <v-bottom-sheet>
             <template v-slot:activator="{ props }">
@@ -47,16 +47,16 @@
       <template v-slot:item.customer="{ item, index }">
         <div class="mt-2 mb-2">
           <div class="font-weight-medium">{{ item.customer.name.toLocaleUpperCase() }}</div>
-          <v-text-field class="mt-3" readonly :label="$t('customers.customer.email')" variant="plain" density="compact"
+          <v-text-field class="mt-3" readonly :label="$t('customers.customer.email')" density="compact"
             hide-details v-model="item.customer.email">
           </v-text-field>
-          <v-text-field class="mt-3" readonly :label="$t('customers.customer.phone')" variant="plain" density="compact"
+          <v-text-field class="mt-3" readonly :label="$t('customers.customer.phone')" density="compact"
             hide-details v-model="item.customer.phone">
           </v-text-field>
         </div>
       </template>
       <template v-slot:item.address="{ item, index }">
-        <v-text-field class="mt-3" readonly variant="plain" density="compact" hide-details v-model="item.address.desc">
+        <v-text-field class="mt-3" readonly density="compact" hide-details v-model="item.address.desc">
         </v-text-field>
         {{ item.address.county }} / {{ item.address.state }} / {{ item.address.country }}
         <div class="d-flex">
@@ -64,14 +64,14 @@
       </template>
       <template v-slot:item.customerType="{ item, index }">
         <div v-if="item.customerType.isCompany">
-          <v-text-field class="mt-3" readonly :label="$t('customers.customer.customerType.taxId')" variant="plain"
+          <v-text-field class="mt-3" readonly :label="$t('customers.customer.customerType.taxId')"
             density="compact" hide-details v-model="item.customerType.taxId">
           </v-text-field>
-          <v-text-field class="mt-3" readonly :label="$t('customers.customer.customerType.taxIssuer')" variant="plain"
+          <v-text-field class="mt-3" readonly :label="$t('customers.customer.customerType.taxIssuer')"
             density="compact" hide-details v-model="item.customerType.taxIssuer">
           </v-text-field>
         </div>
-        <v-text-field v-else class="mt-3" readonly :label="$t('customers.customer.customerType.tc')" variant="plain"
+        <v-text-field v-else class="mt-3" readonly :label="$t('customers.customer.customerType.tc')"
           density="compact" hide-details v-model="item.customerType.tc">
         </v-text-field>
 
@@ -81,10 +81,10 @@
         <div class="text-center justify-center align-center">
           <v-btn-group class="pa-0" density="comfortable">
             <v-btn class="" min-width=0 variant="text" aria-label="Düzenle">
-              <v-icon>mdi-pencil</v-icon>
+              <v-icon>mdi-pencil-outline</v-icon>
             </v-btn>
             <v-btn class="" min-width=0 variant="text" color="error" aria-label="Sil">
-              <v-icon>mdi-delete</v-icon>
+              <v-icon>mdi-trash-can-outline</v-icon>
             </v-btn>
           </v-btn-group>
         </div>
@@ -98,7 +98,7 @@
 </template>
 
 <script setup lang="ts">
-import EkPageHeader from '@/components/ds/EkPageHeader.vue'
+import EkPageHeader from '@/components/page/EkPageHeader.vue'
 import { useI18n } from 'vue-i18n';
 import { ref, onMounted, watch } from 'vue'
 import PaginationComponent from '@/components/PaginationComponent.vue';
@@ -124,7 +124,7 @@ var buttons: any = [
   {
     title: t("customers.customer.new.title"),
     icon: 'mdi-plus',
-    color: 'newButtonColor',
+    color: 'primary',
     to: '',
     click: showNewCustomerPopup,
   },
@@ -301,6 +301,10 @@ var openUpdate = (id: number) => {
   inset: 0;
   display: flex;
   flex-direction: column;
+}
+
+.legacy-definition-search {
+  width: 48%;
 }
 
 .legacy-definition-body {

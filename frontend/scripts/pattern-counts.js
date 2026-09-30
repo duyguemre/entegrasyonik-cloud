@@ -6,7 +6,7 @@
  * `<template>` değil) bir ratchet.
  *
  * Kapsam: `src/**\/*.vue` (Karar 6.4: "Kapsam src/**\/*.vue"). `EkStatusChip`
- * gibi şablonların KENDİSİ olduğu için `src/components/ds/**` HARİÇ.
+ * gibi şablonların KENDİSİ olduğu için `src/components/page/**` (uygulamaya özgü sayfa şablonları) HARİÇ; ortak DS bileşenleri zaten `packages/ui`'dadır ve taranmaz.
  *
  * Sayaçlar (dosya başına):
  *  - rawDataTable:     `<v-data-table`, `<v-data-table-server`, `<v-table`
@@ -44,7 +44,7 @@ const RAW_PATTERNS = {
 
 const EXCEPTION_COMMENT = /ek-pattern-exception/g;
 
-const EXCLUDED_DIRS = ['src/components/ds'];
+const EXCLUDED_DIRS = ['src/components/page'];
 
 function isExcluded(relPosixPath) {
   return EXCLUDED_DIRS.some((dir) => relPosixPath === dir || relPosixPath.startsWith(dir + '/'));
@@ -123,7 +123,19 @@ function buildCounts(repoRoot) {
   return map;
 }
 
-/** `views/secure/**\/*.vue` altında `EkPageHeader` İÇERMEYEN ekran kökleri. */
+/**
+ * Ekran sayfa başlığını standart bileşenle mi çiziyor? `EkPageHeader` ya da DS-v2 liste
+ * standardı şablonu `EkListScreen` (başlık verilmişse kendi H1 başlık bloğunu çizer).
+ */
+function hasPageHeader(content) {
+  if (content.includes('EkPageHeader')) return true;
+  const at = content.search(/<EkListScreen\b/);
+  if (at < 0) return false;
+  // Açılış etiketinin öznitelikleri (öznitelik değerlerinde `=>` olabildiği için `>`e göre kesilmez).
+  return /\s:?title=/.test(content.slice(at, at + 2000).split(/\n\s*>\s*\n/)[0]);
+}
+
+/** `views/secure/**\/*.vue` altında sayfa başlığı (EkPageHeader / başlıklı EkListScreen) İÇERMEYEN ekran kökleri. */
 function buildPageHeaderMissing(repoRoot) {
   const viewsDir = path.join(repoRoot, 'src', 'views', 'secure');
   if (!fs.existsSync(viewsDir)) return {};
@@ -132,12 +144,13 @@ function buildPageHeaderMissing(repoRoot) {
   for (const absPath of files) {
     const relPath = path.relative(repoRoot, absPath).split(path.sep).join('/');
     const content = fs.readFileSync(absPath, 'utf8');
-    map[relPath] = content.includes('EkPageHeader') ? 0 : 1;
+    map[relPath] = hasPageHeader(content) ? 0 : 1;
   }
   return map;
 }
 
 module.exports = {
+  hasPageHeader,
   RAW_PATTERNS,
   countFileContent,
   listVueFiles,

@@ -6,9 +6,9 @@ import mongoose from "mongoose";
 // (yüksek entropi -> yavaş/tuzlu özet gerekmez). Tek kullanımlıktır: tüketim `usedAt` alanının ATOMİK
 // (findOneAndUpdate, koşul `usedAt` yok + süre dolmamış) doldurulmasıyla yapılır. Süre dolunca TTL indeksi belgeyi siler.
 
-export type AccountTokenPurpose = 'password_reset' | 'email_verify';
+export type AccountTokenPurpose = 'password_reset' | 'email_verify' | 'ownership_transfer' | 'admin_invite';
 
-export const ACCOUNT_TOKEN_PURPOSES: ReadonlyArray<AccountTokenPurpose> = ['password_reset', 'email_verify'];
+export const ACCOUNT_TOKEN_PURPOSES: ReadonlyArray<AccountTokenPurpose> = ['password_reset', 'email_verify', 'ownership_transfer', 'admin_invite'];
 
 export const AccountTokenSchema = new mongoose.Schema({
     sub:       { type: String, required: true },                 // merkezi Users._id (string)
@@ -18,6 +18,9 @@ export const AccountTokenSchema = new mongoose.Schema({
     expiresAt: { type: Date, required: true },
     usedAt:    { type: Date },
     ip:        { type: String },                                 // talebin geldiği IP (yalnızca inceleme için)
+    // [ADR-0028 WP-A4] yalnız purpose='ownership_transfer': `sub` = devri KABUL edecek hedef; tenant + devri başlatan sahip (merkezi Users._id)
+    tid:         { type: Number },
+    initiatedBy: { type: String },
 }, {
     collection: 'AccountTokens',
     versionKey: false,

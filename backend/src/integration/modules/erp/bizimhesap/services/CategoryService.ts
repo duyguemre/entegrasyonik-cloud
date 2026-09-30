@@ -45,6 +45,6 @@ export class CategoryService {
             { 'erp.code': integrationCode },
             { 'erp.$': 1 }
         ).lean();
-        return doc?.erp?.[0]?.settings?.catalog || {};
+        return doc?.erp?.find((e: any) => e?.code === integrationCode)?.settings?.catalog || {};
     }
 }

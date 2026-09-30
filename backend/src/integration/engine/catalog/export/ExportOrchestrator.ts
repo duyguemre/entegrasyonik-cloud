@@ -11,6 +11,11 @@ import { storageService } from '@services/storage/StorageService';
 import { IntegrationEngineProvider } from '../provider/IntegrationEngineProvider';
 import { StatisticsTracker } from '@services/statistics/StatisticsTracker';
 import { getSetting } from '@integration/config/ConfigResolver';
+import { eventLog } from '@platform/core/logger';
+import { runWithJobContext } from '@platform/core/context';
+import { inFlightBlocked, anyIntakeRestricted, recordIntakeSkip } from '@integration/config/intakeGate';
+
+const log = eventLog('engine', 'ExportOrchestrator');
 
 export class ExportOrchestrator {
     private static readonly POD_NAME = process.env.POD_NAME || os.hostname();
@@ -44,9 +49,9 @@ export class ExportOrchestrator {
                 // 1. ADIM: DISPATCHER TETİKLEME
                 try {
                     const dispatcher = new Dispatcher();
-                    await dispatcher.run();
+                    await runWithJobContext({ source: 'engine', operation: 'export.dispatch' }, () => dispatcher.run()); // [F-06] iş başına yeni correlation id
                 } catch (dispErr: any) {
-                    console.error(`[ExportOrchestrator] Dispatcher Error:`, dispErr.message);
+                    log.error('EXPORTORCHESTRATOR_DISPATCHER_ERROR', 'Dispatcher Error:', { err: dispErr });
                 }
 
                 // 2. ADIM: Uygun Sinyal Arama Sorgusu
@@ -64,8 +69,14 @@ export class ExportOrchestrator {
                     query.$nor = busyFilters;
                 }
 
+                // [ADR-0030 X6] Kill-switch `off`: Validator/Publisher/Sentinel/Sync (dış çağrı yapan süren işler) o
+                // entegrasyon için seçilmez; sinyaller kilitsiz kalır (silinmez), açılınca devam eder. Global `off` = hiç seçilmez.
+                const blocked = inFlightBlocked();
+                if (blocked.codes.length > 0) query.integrationCode = { $nin: blocked.codes };
+                if (blocked.all || blocked.codes.length > 0) recordIntakeSkip('ExportOrchestrator', blocked.all ? undefined : blocked.codes.join(','), 'inflight');
+
                 // 3. ADIM: ATOMİK GÜNCELLEME
-                const lockedSignal = await SignalModel.findOneAndUpdate(
+                const lockedSignal = blocked.all ? null : await SignalModel.findOneAndUpdate(
                     query,
                     [
                         {
@@ -114,6 +125,8 @@ export class ExportOrchestrator {
                         .lean();
 
                     this.dynamicDelay = getSetting<number>('export.orchestrator.exportLoopDelay');
+                    // [ADR-0030 X6] Kısıt varken kısa aralıkla yeniden bak (kapı açılınca <=15 sn'de devam).
+                    if (anyIntakeRestricted()) this.dynamicDelay = Math.min(this.dynamicDelay, 15000);
 
                     if (nextPotentialSignal) {
                         const msUntilNextRun = nextPotentialSignal.nextRunAt.getTime() - Date.now();
@@ -123,7 +136,7 @@ export class ExportOrchestrator {
                         this.dynamicDelay = Math.max(1000, Math.min(msUntilNextRun, this.dynamicDelay));
                     }
 
-                    console.log(`[ExportOrchestrator] No active jobs. Waiting for ${this.dynamicDelay}ms...`);
+                    log.debug('EXPORTORCHESTRATOR_NO_ACTIVE_JOBS', `No active jobs. Waiting for ${this.dynamicDelay}ms...`);
 
                     await new Promise<void>((resolve) => {
                         resolveWakeUp = resolve;
@@ -140,7 +153,7 @@ export class ExportOrchestrator {
                 }
 
             } catch (err: any) {
-                console.error(`[ExportOrchestrator] Loop Error:`, err.message);
+                log.error('EXPORTORCHESTRATOR_LOOP_ERROR', 'Loop Error:', { err });
                 await new Promise(resolve => setTimeout(resolve, 10000));
             }
         }
@@ -156,7 +169,15 @@ export class ExportOrchestrator {
         }
     }
 
-    private static async dispatch(signal: any, workerType: string, applicationDB: any, rateLimitKey: string) {
+    /** [F-06] Her işçi turu KENDİ correlation id'si ve tenant/entegrasyon/işlem bağlamıyla çalışır (adaptör çağrılarına ALS ile akar). */
+    private static dispatch(signal: any, workerType: string, applicationDB: any, rateLimitKey: string) {
+        return runWithJobContext(
+            { source: 'worker', tenantId: Number(signal.clientId), integrationCode: signal.integrationCode, operation: `export.${workerType}` },
+            () => this.dispatchInner(signal, workerType, applicationDB, rateLimitKey),
+        );
+    }
+
+    private static async dispatchInner(signal: any, workerType: string, applicationDB: any, rateLimitKey: string) {
         const startedAt = new Date();
         let workerError: string | undefined;
 
@@ -164,7 +185,7 @@ export class ExportOrchestrator {
             let worker: any;
             const clientDB = await DatabaseManagerInstance.getClientDB(signal.clientId.toString());
             if (!clientDB) {
-                console.error(`[ExportOrchestrator] Client DB not found for Client ID: ${signal.clientId}`);
+                log.error('EXPORTORCHESTRATOR_CLIENT_DB_NOT_FOUND', `Client DB not found for Client ID: ${signal.clientId}`);
                 return;
             }
             const engineProvider = new IntegrationEngineProvider(applicationDB, clientDB)
@@ -180,7 +201,7 @@ export class ExportOrchestrator {
             }
         } catch (err: any) {
             workerError = err.message;
-            console.error(`[ExportOrchestrator] Worker Dispatch Error (${signal.batchId}):`, err.message);
+            log.error('EXPORTORCHESTRATOR_WORKER_DISPATCH_ERROR', `Worker Dispatch Error (${signal.batchId}):`, { err });
         } finally {
             this.activePlatformLocks.delete(rateLimitKey);
 
@@ -234,7 +255,7 @@ export class ExportOrchestrator {
 
         try {
             if (!clientId) {
-                console.error(`[ExportOrchestrator] Client ID not found for Job ID: ${signal._id}`);
+                log.error('EXPORTORCHESTRATOR_CLIENT_ID_NOT_FOUND', `Client ID not found for Job ID: ${signal._id}`);
                 return;
             }
             const clientDB = await DatabaseManagerInstance.getClientDB(clientId);
@@ -279,11 +300,11 @@ export class ExportOrchestrator {
 
                     await stagedProductModel.bulkWrite(bulkOps);
 
-                    console.log(`[Archive] ${stagedProducts.length} items' payloads moved to R2.`);
+                    log.info('EXPORTORCHESTRATOR_ITEMS_PAYLOADS_MOVED_R2', `${stagedProducts.length} items' payloads moved to R2.`);
                 }
             }
         } catch (err: any) {
-            console.error(`[Archive Error]:`, err.message);
+            log.error('EXPORTORCHESTRATOR_ARCHIVE_ERROR', 'Arsivleme hatasi (Archive Error)', { err });
         }
     }
 

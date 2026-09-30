@@ -4,7 +4,7 @@
   ADR-0015 B5-3 — GÖRSEL KATMAN, mantık KESİNLİKLE DEĞİŞMEDİ (görev talimatı: oturum/güvenlik
   akışı ekranı — bkz. e2e/specs/user-account-forms.spec.ts). Karakterizasyon: script bloğu BOŞTU,
   hiçbir "Kaydet/Değiştir" düğmesi render EDİLMİYORDU — bu AYNEN korunuyor, YENİ bir düğme/olay
-  işleyici EKLENMEDİ. Yalnızca iki alanın düzeni (eski `style="width:48%"` inline hack'i) DS
+  işleyici EKLENMEDİ. Yalnızca iki alanın düzeni (eski `width:48%` inline hack'i) DS
   grid/token'larıyla değiştirildi. `.changePasswordView` kök sınıfı yeni eklendi (kardeş ekranlarla
   aynı isimlendirme kuralı; davranışı ETKİLEMEZ).
 
@@ -19,16 +19,16 @@
 
     <div class="ek-static-screen__form">
       <!-- Karakterizasyon: orijinalde `type` YOK (düz metin girişi) — DEĞİŞTİRİLMEDİ, bkz. dosya başı notu. -->
-      <v-text-field clearable prepend-inner-icon="mdi-lock-outline" density="comfortable"
+      <v-text-field clearable prepend-inner-icon="mdi-lock-outline"
         :label="$t('user.changePassword.password')" variant="outlined"></v-text-field>
-      <v-text-field clearable prepend-inner-icon="mdi-lock-check-outline" density="comfortable"
+      <v-text-field clearable prepend-inner-icon="mdi-lock-check-outline"
         :label="$t('user.changePassword.repassword')" variant="outlined"></v-text-field>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import EkPageHeader from '@/components/ds/EkPageHeader.vue'
+import EkPageHeader from '@/components/page/EkPageHeader.vue'
 </script>
 
 <style scoped>

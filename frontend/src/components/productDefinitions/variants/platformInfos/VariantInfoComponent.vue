@@ -1,13 +1,12 @@
 <template>
-  <v-card variant="elevated" elevation="0" class="ma-0 pa-0" color="transparent"
-    style="transition: none!important; box-shadow: none; transform: none!important;right:0;">
+  <v-card variant="elevated" elevation="0" class="vinfo-card ma-0 pa-0" color="transparent">
 
-    <v-card-title class="d-flex" style="display:block!important">
+    <v-card-title class="vinfo-title d-flex">
 
       <v-row>
         <v-col cols="12" sm="12" md="8" lg="6" xl="4" class="pb-0">
           <v-text-field clearable :rules="formRules.length_0_16" maxlength="20" type="tel" class="" density="compact"
-            v-model="variantPlatformInfo.title" variant="outlined" bg-color="textfieldColor"
+            v-model="variantPlatformInfo.title" variant="outlined"
             :hint="'Varsayılan ' + productInfoForm.title">
             <template #label>
               Variant Başlık (Varsayılan <span class="font-weight-medium">{{ productInfoForm.title }}</span>)
@@ -17,7 +16,7 @@
         </v-col>
         <v-col cols="12" sm="6" md="4" lg="3" xl="2" class="pb-0">
           <v-text-field clearable :rules="formRules.length_0_16" maxlength="20" type="tel" class="" density="compact"
-            v-model="variantPlatformInfo.shippingDuration" variant="outlined" bg-color="textfieldColor"
+            v-model="variantPlatformInfo.shippingDuration" variant="outlined"
             :hint="'Varsayılan ' + computedDefaultShipingDuration + '  gün'">
             <template #label>
               Kargo Süresi (Varsayılan <span class="font-weight-medium">{{ computedDefaultShipingDuration }} Gün</span>)
@@ -27,7 +26,7 @@
         </v-col>
         <v-col cols="12" sm="6" md="4" lg="3" xl="2" class="pb-0">
           <v-text-field clearable :rules="formRules.length_0_16" maxlength="16" type="tel" class="" density="compact"
-            v-model="variantPlatformInfo.desi" variant="outlined" bg-color="textfieldColor"
+            v-model="variantPlatformInfo.desi" variant="outlined"
             :hint="'Varsayılan ' + computedDefaultDesi + ' dm³'">
             <template #label>
               Desi (Varsayılan <span class="font-weight-medium">{{ computedDefaultDesi }} dm³</span>)
@@ -39,7 +38,7 @@
         <v-col cols="12" sm="6" md="4" lg="3" xl="2" class="pb-0">
 
           <v-text-field clearable :rules="formRules.length_0_16" maxlength="16" type="tel" class="" density="compact"
-            v-model="variantPlatformInfo.warranty" variant="outlined" bg-color="textfieldColor"
+            v-model="variantPlatformInfo.warranty" variant="outlined"
             :hint="'Varsayılan ' + computedDefaultWarranty + ' Ay'">
             <template #label>
               Garanti Süresi (Varsayılan <span class="font-weight-medium">{{ computedDefaultWarranty }} Ay</span>)
@@ -50,7 +49,7 @@
         </v-col>
         <v-col cols="12" sm="6" md="4" lg="3" xl="2" class="pb-0">
           <v-text-field clearable :rules="formRules.length_0_16" maxlength="16" type="tel" class="" density="compact"
-            v-model="variantPlatformInfo.maxPurchaseQuantity" variant="outlined" bg-color="textfieldColor"
+            v-model="variantPlatformInfo.maxPurchaseQuantity" variant="outlined"
             :hint="'Varsayılan ' + computedDefaultMaxPurchaseQuantity + ' Adet'">
             <template #label>
               Maksimum Satılabilir Adet (Varsayılan <span class="font-weight-medium">{{
@@ -62,8 +61,7 @@
 
         <v-col cols="12" sm="6" md="4" lg="3" xl="2" class="pb-0">
           <v-select :rules="formRules.mandatoryRule" density="compact" class="customTextField"
-            v-model.number="productInfoForm.taxPercentage" item-value="_id" :items="taxList" variant="outlined"
-            bg-color="textfieldColor">
+            v-model.number="productInfoForm.taxPercentage" item-value="_id" :items="taxList" variant="outlined">
             <template #label>
               {{ $t('productDefinitions.product.define.taxPercentage')
               }}
@@ -81,6 +79,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatMoney } from '@entegrasyonik/ui/format'
 import { ref, onBeforeMount, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n';
 import { useStaticsStore } from '@/stores/staticsStore';
@@ -109,7 +108,7 @@ const props = defineProps<{
 }>()
 
 const formatCurrency = (number: number) => {
-  return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(Number(number))
+  return formatMoney(Number(number))
 }
 
 
@@ -153,7 +152,8 @@ const sleep = (ms: number) => {
 
 
 const retrieveShipments = async () => {
-  shipments.value = await integrationStore.retrievePlatformInfos(integrationCode)
+  // DS-v2 A6a: yanıt dizi değilse (hata/boş) liste boş kalır — eskiden .find patlıyor, genel hata bildirimi çıkıyordu.
+  { const r = await integrationStore.retrievePlatformInfos(integrationCode); shipments.value = Array.isArray(r) ? r : [] }
 }
 
 
@@ -185,4 +185,15 @@ const findMaximumMarketPrice = (platforms: any) => {
 </script>
 
 
-<style scoped></style>
+<style scoped>
+.vinfo-card {
+  transition: none !important;
+  box-shadow: none;
+  transform: none !important;
+  right: 0;
+}
+
+.vinfo-title {
+  display: block !important;
+}
+</style>

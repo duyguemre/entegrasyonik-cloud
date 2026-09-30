@@ -1,5 +1,6 @@
 import { IPlatform, IBrand, ICategory, ICategoryAttribute, ICategoryAttributeValue, ICategoryComission, IOrderPackage, IBatchProcessResult, IExportStagedProduct, IMessage, IFetchProductsResult, IInternalConversionResult, IInternalResult, IPlatformProductSummary, IValidationResult, IVariant, IBatchCheckPayload, IPlatformResponse, ISendInvoicePayload, ISendTrackingPayload, IClaimRejectionReason, OrderInternalStatusEnum } from '@interfaces/index';
 import Service from './services/Service';
+import { runConnectionProbe, type TestConnectionResult } from '@integration/modules/common/adapter/testConnection';
 import { BrandService } from './services/BrandService';
 import { CategoryService } from './services/CategoryService';
 import { ProductService } from './services/ProductService';
@@ -38,6 +39,17 @@ export default class Pazarama implements IPlatform {
 
     public async init(): Promise<boolean> {
         return true; // Auth is handled automatically in Service.ts
+    }
+
+    /**
+     * [INT-01 testConnection] Yan etkisiz tek okuma: ürün listesinin TEK kaydı (`page=1,size=1`). Çağrı OAuth2 token alımını
+     * (client_credentials) da zorlar; kimlik bilgisi reddi token uçundan (401/400) veya listeden (401/403) AUTH olarak gelir. Asla fırlatmaz.
+     */
+    public async testConnection(): Promise<TestConnectionResult> {
+        return runConnectionProbe('pazarama', async () => {
+            const url = this.params.integrationSettings?.urls?.productListUrl || 'product/products';
+            await this.service.get(url, { page: 1, size: 1 }, { operation: 'testConnection' });
+        });
     }
 
     public getMatchKey() {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { buildChartCategoricalPalette, buildEchartsTheme, CHART_STATUS, chartStatusFill } from '../../src/design/echarts-theme'
-import { semanticColorsLight } from '../../src/design/tokens/semantic'
+import { semanticColorsLight } from '@entegrasyonik/ui/tokens'
 import { contrastRatio } from './contrastRatio'
 
 /**

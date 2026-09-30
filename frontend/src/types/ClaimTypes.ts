@@ -23,7 +23,7 @@ export const CLAIM_INTERNAL_STATUS_COLORS: Record<ClaimInternalStatusEnum, strin
     [ClaimInternalStatusEnum.UNDER_REVIEW]: 'warning',
     [ClaimInternalStatusEnum.APPROVED]: 'success',
     [ClaimInternalStatusEnum.REJECTED]: 'success',
-    [ClaimInternalStatusEnum.CANCELLED]: 'passiveColor',
+    [ClaimInternalStatusEnum.CANCELLED]: 'neutral',
     [ClaimInternalStatusEnum.DISPUTED]: 'warning',
     [ClaimInternalStatusEnum.COMPLETED]: 'success'
 };

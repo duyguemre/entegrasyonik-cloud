@@ -9,7 +9,7 @@
 
       <div v-if="isMapped" :key="'mapped-state'"
         class="mapped-success-state d-flex align-start pa-4 rounded-lg">
-        <v-icon color="success" size="32" class="mr-4 mt-1">mdi-check-decagram</v-icon>
+        <v-icon color="success" size="32" class="mr-4 mt-1">mdi-check-decagram-outline</v-icon>
         <div class="d-flex flex-column">
           <span class="mapped-title">
             Kategori Eşleşmesi Doğrulandı

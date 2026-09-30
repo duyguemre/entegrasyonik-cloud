@@ -32376,7 +32376,7 @@
                         "id": 4984,
                         "name": "Dijital Destek Kartı",
                         "parentId": 2997,
-                        "commission": 0,
+                        "commission": null,
                         "maturity": 21,
                         "ka1": null,
                         "ka2": null,

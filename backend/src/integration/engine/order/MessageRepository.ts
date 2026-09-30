@@ -1,6 +1,9 @@
 import { DatabaseManagerInstance } from '@database/index';
 import { IMessage } from '@interfaces/index';
 import { getLogPrefix, LoggerType } from '@utils/Logger';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('worker', 'MessageRepository');
 
 export class MessageRepository {
     private workerName: LoggerType = "Message Repository"
@@ -76,10 +79,10 @@ export class MessageRepository {
 
             // 3. EXECUTE
             const result = await MessageModel.bulkWrite(bulkOps, { ordered: false });
-            console.log(`${this.logPrefix} Mesaj Senkronizasyonu: ${result.upsertedCount} yeni, ${result.modifiedCount} güncellendi/eşleşti.`);
+            log.info('MESSAGEREPOSITORY_MESAJ_SENKRONIZASYONU_YENI_GUNCELLENDI', `Mesaj Senkronizasyonu: ${result.upsertedCount} yeni, ${result.modifiedCount} güncellendi/eşleşti.`);
 
         } catch (error: any) {
-            console.error(`${this.logPrefix} Mesaj Repository Hatası:`, error.message);
+            log.error('MESSAGEREPOSITORY_MESAJ_REPOSITORY_HATASI', 'Mesaj Repository Hatası:', { err: error });
             throw error;
         }
     }

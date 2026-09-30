@@ -1,105 +1,68 @@
+<!--
+  Toplu ürün işlemleri menüsü (ProductListView başlığındaki "Toplu işlemler" ⋮ menüsünün
+  içeriği). DS-v2 Aşama 2: `EkMenuPanel` — gruplu (platform · Excel · ürün bilgileri),
+  ikonlu, ayraçlı; tehlikeli "Toplu Sil" en sonda error tonunda. ↑↓ Home End Enter Esc.
+  Sözleşme DEĞİŞMEDİ: seçilen işlem kodu `executeBatch` ile yayılır.
+-->
 <template>
-    <v-list v-if="actionMenu" density="compact" class="pt-0 bam-s1">
-        <v-list-subheader
-            class="mt-0 d-flex align-center justify-start bg-primaryLightenMore text-white font-weight-bold">
-            <v-tooltip location="top" :open-delay="700">
-                <template #activator="{ props }">
-                    <div v-bind="props">Toplu Ürün İşlemleri</div>
-                </template>
-                <span>İşlem, sadece bu ürün ve varyantları için bütün platformlara uygulanacaktır.</span>
-            </v-tooltip>
-        </v-list-subheader>
-
-        <v-list-item @click="executeBatch(PLATFORM_PROCESS.TRANSFER)" class="font-weight-medium">
-            <template #prepend><v-icon color="saveButtonColor" size="25" class="bam-s2">mdi-cloud-upload</v-icon></template>Platformlara
-            Yükle
-        </v-list-item>
-        <v-divider color="passiveColor" class="mx-5" />
-        <v-list-item @click="executeBatch(PLATFORM_PROCESS.UPDATE)" class="font-weight-medium">
-            <template #prepend><v-icon color="success" size="25" class="bam-s2">mdi-sync</v-icon></template>Platformlarda
-            Güncelle
-        </v-list-item>
-        <v-divider color="passiveColor" class="mx-5" />
-        <v-list-item @click="executeBatch(PLATFORM_PROCESS.UPDATE_PRICE)" class="font-weight-medium">
-            <template #prepend><v-icon color="success" size="25" class="bam-s2">mdi-currency-try</v-icon></template>Platform
-            Fiyatlarını Güncelle
-        </v-list-item>
-        <v-divider color="passiveColor" class="mx-5" />
-        <v-list-item @click="executeBatch(PLATFORM_PROCESS.UPDATE_STOCK)" class="font-weight-medium">
-            <template #prepend><v-icon color="success" size="25" class="bam-s2">mdi-counter</v-icon></template>Platform
-            Stoklarını Güncelle
-        </v-list-item>
-        <v-divider color="passiveColor" class="mx-5" />
-        <v-list-item @click="executeBatch('FETCH_PRODUCT')" class="font-weight-medium">
-            <template #prepend><v-icon color="primary" size="25" class="bam-s2">mdi-cloud-download</v-icon></template>Platformdan
-            Ürün Yükle
-        </v-list-item>
-
-        <v-divider color="passiveColor" class="my-2 bam-s3" />
-
-        <v-list-item @click="executeBatch('EXPORT_EXCEL')" class="font-weight-medium">
-            <template #prepend><v-icon color="success" size="25" class="bam-s2">mdi-microsoft-excel</v-icon></template>Excel'e
-            Aktar
-        </v-list-item>
-        <v-divider color="passiveColor" class="mx-5" />
-        <v-list-item @click="executeBatch('IMPORT_EXCEL')" class="font-weight-medium">
-            <template #prepend><v-icon color="primary" size="25" class="bam-s2">mdi-file-excel-box</v-icon></template>Excel'den
-            Güncelle
-        </v-list-item>
-        <v-divider color="passiveColor" class="mx-5" />
-        <v-list-item @click="executeBatch('CHANGE_STATUS')" class="font-weight-medium">
-            <template #prepend><v-icon color="warning" size="25" class="bam-s2">mdi-toggle-switch</v-icon></template>Satış
-            Durum Değiştir
-        </v-list-item>
-        <v-divider color="passiveColor" class="mx-5" />
-        <v-list-item @click="executeBatch('SET_CATEGORY')" class="font-weight-medium">
-            <template #prepend><v-icon color="info" size="25" class="bam-s2">mdi-shape</v-icon></template>Kategori
-            Ata /
-            Değiştir
-        </v-list-item>
-        <v-divider color="passiveColor" class="mx-5" />
-        <v-list-item @click="executeBatch('SET_BRAND')" class="font-weight-medium">
-            <template #prepend><v-icon color="info" size="25" class="bam-s2">mdi-watermark</v-icon></template>Marka
-            Ata /
-            Değiştir
-        </v-list-item>
-        <v-divider color="passiveColor" class="mx-5" />
-        <v-list-item @click="executeBatch('SET_TAGS')" class="font-weight-medium">
-            <template #prepend><v-icon color="info" size="25" class="bam-s2">mdi-tag-multiple</v-icon></template>Etiket
-            (Tag) Ata / Değiştir
-        </v-list-item>
-        <v-divider color="passiveColor" class="mx-5" />
-        <v-list-item @click="executeBatch('DELETE')" class="font-weight-medium">
-            <template #prepend><v-icon color="error" size="25" class="bam-s2">mdi-delete</v-icon></template>Toplu
-            Sil
-        </v-list-item>
-    </v-list>
+  <EkMenuPanel v-if="actionMenu" ref="panelRef" class="bam-panel" label="Toplu ürün işlemleri"
+    title="Toplu Ürün İşlemleri"
+    description="İşlem seçili ürünlere ve varyantlarına, bağlı tüm platformlarda uygulanır."
+    :groups="groups" @select="(item) => emit('executeBatch', item.key)" />
 </template>
 
 <script setup lang="ts">
-import { PLATFORM_PROCESS } from '@/types/PlatformProcess';
-defineProps<{ actionMenu: boolean }>()
-const emit = defineEmits(['executeBatch'])
+import { nextTick, onMounted, ref, watch } from 'vue'
+import { EkMenuPanel, type EkMenuGroup } from '@entegrasyonik/ui/components'
+import { PLATFORM_PROCESS } from '@/types/PlatformProcess'
 
-const executeBatch = (mode: string) => {
-    emit('executeBatch', mode)
+const props = defineProps<{ actionMenu: boolean }>()
+const emit = defineEmits(['executeBatch'])
+const panelRef = ref<InstanceType<typeof EkMenuPanel> | null>(null)
+
+const groups: EkMenuGroup[] = [
+  {
+    label: 'Platform',
+    items: [
+      { key: PLATFORM_PROCESS.TRANSFER, label: 'Platformlara Yükle', icon: 'mdi-upload-outline' },
+      { key: PLATFORM_PROCESS.UPDATE, label: 'Platformlarda Güncelle', icon: 'mdi-sync' },
+      { key: PLATFORM_PROCESS.UPDATE_PRICE, label: 'Platform Fiyatlarını Güncelle', icon: 'mdi-currency-try' },
+      { key: PLATFORM_PROCESS.UPDATE_STOCK, label: 'Platform Stoklarını Güncelle', icon: 'mdi-counter' },
+      { key: 'FETCH_PRODUCT', label: 'Platformdan Ürün Yükle', icon: 'mdi-download-outline' },
+    ],
+  },
+  {
+    label: 'Excel',
+    items: [
+      { key: 'EXPORT_EXCEL', label: "Excel'e Aktar", icon: 'mdi-microsoft-excel' },
+      { key: 'IMPORT_EXCEL', label: "Excel'den Güncelle", icon: 'mdi-file-excel-box-outline' },
+    ],
+  },
+  {
+    label: 'Ürün bilgileri',
+    items: [
+      { key: 'CHANGE_STATUS', label: 'Satış Durum Değiştir', icon: 'mdi-toggle-switch-outline' },
+      { key: 'SET_CATEGORY', label: 'Kategori Ata / Değiştir', icon: 'mdi-shape-outline' },
+      { key: 'SET_BRAND', label: 'Marka Ata / Değiştir', icon: 'mdi-watermark' },
+      { key: 'SET_TAGS', label: 'Etiket (Tag) Ata / Değiştir', icon: 'mdi-tag-multiple-outline' },
+    ],
+  },
+  {
+    items: [{ key: 'DELETE', label: 'Toplu Sil', icon: 'mdi-trash-can-outline', danger: true }],
+  },
+]
+
+// Menü açıldığında klavye odağı ilk işleme gelir (EkContextMenu ile aynı davranış).
+function focusFirst() {
+  nextTick(() => panelRef.value?.focusFirst())
 }
+onMounted(() => props.actionMenu && focusFirst())
+watch(() => props.actionMenu, (open) => open && focusFirst())
 </script>
 
-<style>
-/* ADR-0015 B5-2 — satir ici stillerden tasinan siniflar (autostyle). Satir ici stilin onceligi
-   !important ile korunur; ayni ozellikte Vuetify yardimci sinifi/`color` prop cakismasi varsa
-   (satir ici stil zaten yeniliyordu) !important eklenmez. Scope'suz: v-dialog/v-menu ve alt
-   bilesen kokleri scoped ozniteligi almayabilir; onek dosyaya ozgudur. */
-.bam-s1 {
-  background-color: var(--ek-color-card-component-hover-color) !important;
-}
-
-.bam-s2 {
-  opacity: 1 !important;
-}
-
-.bam-s3 {
-  border-width: 1px !important;
+<style scoped>
+.bam-panel {
+  border: 0;
+  box-shadow: none;
 }
 </style>

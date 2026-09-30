@@ -59,20 +59,22 @@ test.describe('ADR-0015 B5-3 — TicketListView (destek) + TicketCreateDialog + 
     await expect(page.getByText('E2E entegrasyon sorusu')).toBeVisible()
   })
 
-  test('boş durum: "Destek Talebi Bulunamadı" mesajı gösterilir', async ({ page }) => {
+  test('boş durum: "Destek talebi bulunamadı" mesajı gösterilir', async ({ page }) => {
     await installApiMocks(page, withSupportMenu({ 'TicketService/getTickets': ticketsBosFixture }))
     await gotoAuthed(page)
     await openScreen(page, 'TicketListView')
 
-    await expect(page.getByText('Destek Talebi Bulunamadı')).toBeVisible()
+    await expect(page.getByText('Destek talebi bulunamadı')).toBeVisible()
   })
 
-  test('hata durumu: 500 alındığında da liste boş kalır (gizli davranış, catch YOK — console.error ile yutuluyor)', async ({ page }) => {
+  // DS-v2 Aşama 2 — BİLİNÇLİ DEĞİŞİKLİK: 500 artık boş duruma DÜŞMEZ; "Destek talepleri yüklenemedi" + "Tekrar dene" gösterilir.
+  test('hata durumu: 500 alındığında "Destek talepleri yüklenemedi" + "Tekrar dene" gösterilir', async ({ page }) => {
     await installApiMocks(page, withSupportMenu({ 'TicketService/getTickets': mockError(500) }))
     await gotoAuthed(page)
     await openScreen(page, 'TicketListView')
 
-    await expect(page.getByText('Destek Talebi Bulunamadı')).toBeVisible()
+    await expect(page.getByText('Destek talepleri yüklenemedi')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Tekrar dene' })).toBeVisible()
   })
 
   test('yeni bilet aç: diyalog açılır, gönderilince TicketService/openTicket çağrılır', async ({ page }) => {
@@ -88,7 +90,7 @@ test.describe('ADR-0015 B5-3 — TicketListView (destek) + TicketCreateDialog + 
     await openScreen(page, 'TicketListView')
 
     await page.locator('.ticketListView button:has(.mdi-plus)').click()
-    const dialog = page.getByRole('dialog').filter({ hasText: 'YENİ DESTEK TALEBİ' })
+    const dialog = page.getByRole('dialog').filter({ hasText: 'Yeni destek talebi' })
     await expect(dialog).toBeVisible()
     await dialog.getByLabel('Konu', { exact: true }).fill('E2E test talebi')
     await dialog.getByLabel('Mesajınız', { exact: true }).fill('Bu bir E2E test mesajıdır.')

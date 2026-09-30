@@ -17,11 +17,6 @@ const DEFAULT_INVOICE_SORT_FIELD = 'createdAt';
 
 export default class InvoiceService extends BaseApi implements IService {
 
-    currentClientId: any
-    constructor(clientId: number, protected request: any) {
-        super(clientId, request)
-        this.currentClientId = clientId
-    }
 
     async get(): Promise<any> {
     }

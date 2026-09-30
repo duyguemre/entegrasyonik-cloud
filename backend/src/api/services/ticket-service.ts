@@ -1,15 +1,11 @@
 import { IService, TICKET_STATUS, TICKET_TYPE, TICKET_PRIORITY } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import { nextSequence } from '@utils/sequence'
-import { containsRegex, normalizePagination } from '@utils/search'
+import { containsRegex, normalizePagination, pickSortField } from '@utils/search'
+import { TICKET_SORT_FIELDS } from '../listSortFields';
 
 export default class TicketService extends BaseApi implements IService {
-    currentClientId: number
 
-    constructor(clientId: number, protected request: any) {
-        super(clientId, request)
-        this.currentClientId = clientId
-    }
 
     async get(): Promise<any> {
     }
@@ -53,8 +49,9 @@ export default class TicketService extends BaseApi implements IService {
 
             // Sıralama
             const sort: any = {};
-            if (sortBy?.key) {
-                sort[sortBy.key] = sortBy.order === 'desc' ? -1 : 1;
+            const picked = pickSortField(sortBy?.key, TICKET_SORT_FIELDS, 'lastMessageAt');
+            if (!picked.usedFallback) {
+                sort[picked.field] = sortBy.order === 'desc' ? -1 : 1;
             } else {
                 sort.lastMessageAt = -1; // Varsayılan: Son aktiviteye göre
             }
@@ -63,11 +60,11 @@ export default class TicketService extends BaseApi implements IService {
 
             const result = await this.applicationDB.getTicketModel().aggregate([
                 { $match: filterQuery },
+                { $sort: sort }, // [DB-02] $facet dışında: indeks kullanılabilir
                 {
                     $facet: {
                         totalRecords: [{ $count: 'count' }],
                         tickets: [
-                            { $sort: sort },
                             { $skip: skip },
                             { $limit: pagination.limit }
                         ]

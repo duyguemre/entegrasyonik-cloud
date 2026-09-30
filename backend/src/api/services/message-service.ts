@@ -6,12 +6,7 @@ import { containsRegex, normalizePagination } from '@utils/search';
 
 export default class MessageService extends BaseApi implements IService {
 
-    currentClientId: any
 
-    constructor(clientId: number, protected request: any) {
-        super(clientId, request)
-        this.currentClientId = clientId
-    }
 
     async get(): Promise<any> { }
 
@@ -68,11 +63,11 @@ export default class MessageService extends BaseApi implements IService {
             const result = await this.clientDB.getMessageModel().aggregate([
                 // PERFORMANS NOTU: Match her zaman ilk aşama olmalı
                 { $match: filterQuery },
+                { $sort: { [sortField]: sortOrder } }, // [DB-02] $facet dışında: indeks kullanılabilir
                 {
                     $facet: {
                         metadata: [{ $count: 'total' }],
                         data: [
-                            { $sort: { [sortField]: sortOrder } },
                             { $skip: skipCount },
                             { $limit: pagination.limit },
                             {

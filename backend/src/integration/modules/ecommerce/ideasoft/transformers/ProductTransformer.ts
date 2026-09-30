@@ -1,5 +1,6 @@
 import { IVariant, IInternalResult, ICategoryAttribute } from '@interfaces/index';
 import { integrationCode } from '../constants';
+import { normalizeAttrValue } from '@integration/catalog/attributePayload';
 
 export class ProductTransformer {
     private slugify(text: string): string {
@@ -61,11 +62,14 @@ export class ProductTransformer {
         const formattedPrice = Math.round(Number(salePrice) * 100) / 100;
 
         const variantAttrs = (variant as any).platforms?.[integrationCode]?.attributes || {};
+        // [WP9] FE değeri nesne ({attributeValueId,...}) olarak kaydeder; eskiden nesnenin KENDİSİ `options[].id` olarak gidiyordu.
+        // Seçenek kimliği zorunludur: kimliği olmayan (yalnız metin) kayıt gönderilmez. İlkel (eski) biçim aynen desteklenir.
         const optionGroups = Object.entries(variantAttrs)
-            .filter(([, valueId]) => !!valueId)
-            .map(([attrId, valueId]) => ({
-                id: attrId,
-                options: [{ id: valueId }]
+            .map(([attrId, raw]) => ({ attrId, optionId: normalizeAttrValue(raw)?.valueId }))
+            .filter((e) => e.optionId !== undefined)
+            .map((e) => ({
+                id: e.attrId,
+                options: [{ id: e.optionId }]
             }));
 
         return {
@@ -116,7 +120,7 @@ export class ProductTransformer {
                     prices: { salePrice, marketPrice: salePrice },
                     infos: {},
                     upload: {},
-                    mappings: { productId: platformProduct.id },
+                    mapping: { productId: platformProduct.id },
                     attributes: {}
                 }
             },

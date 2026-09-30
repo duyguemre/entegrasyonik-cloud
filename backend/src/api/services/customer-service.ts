@@ -1,7 +1,13 @@
 import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import { ObjectId } from 'mongodb'
-import { containsRegex, normalizePagination } from '@utils/search'
+import { containsRegex, normalizePagination, pickSortField } from '@utils/search'
+
+/** [DB-02] Sıralama alanı izin listesi; bilinmeyen alan => varsayılan `createdAt`. */
+export const CUSTOMER_SORT_FIELDS: readonly string[] = [
+    '_id', 'createdAt', 'updatedAt', 'firstName', 'lastName', 'companyName', 'email', 'phone', 'status',
+    'metrics.totalOrderCount', 'metrics.totalSpent', 'metrics.totalClaimCount', 'metrics.totalReturnAmount', 'metrics.lastOrderDate',
+];
 
 /**
  * CustomerService
@@ -25,7 +31,7 @@ export default class CustomerService extends BaseApi implements IService {
                 sortBy: sortReq
             } = this.request;
 
-            const sortField = sortReq?.key || 'createdAt';
+            const sortField = pickSortField(sortReq?.key, CUSTOMER_SORT_FIELDS, 'createdAt').field;
             const sortOrder = sortReq?.order === 'desc' ? -1 : 1;
             const pagination = normalizePagination(rawPagination, 15); // [GV-01/MM-08] limit üst sınırı, page>=1
             const skipCount = (pagination.page - 1) * pagination.limit;
@@ -56,11 +62,11 @@ export default class CustomerService extends BaseApi implements IService {
             // 3. AGGREGATION PIPELINE (Listeleme + Finansal Özet)
             const result = await this.clientDB.getCustomerModel().aggregate([
                 { $match: filterQuery },
+                { $sort: { [sortField]: sortOrder } }, // [DB-02] $facet dışında: indeks kullanılabilir
                 {
                     $facet: {
                         metadata: [{ $count: 'total' }],
                         data: [
-                            { $sort: { [sortField]: sortOrder } },
                             { $skip: skipCount },
                             { $limit: pagination.limit },
                             {

@@ -19,11 +19,6 @@ const DEFAULT_ORDER_SORT_FIELD = 'dates.orderDate';
 
 export default class OrderService extends BaseApi implements IService {
 
-    currentClientId: any
-    constructor(clientId: number, protected request: any) {
-        super(clientId, request)
-        this.currentClientId = clientId
-    }
 
     async get(): Promise<any> {
         // İleride tekil sipariş detayı çekmek için
@@ -470,25 +465,6 @@ export default class OrderService extends BaseApi implements IService {
             message: `${results.successCount} sipariş onaylandı, ${results.failedCount} hata.`,
             data: results
         };
-    }
-
-    /**
-     * GENEL STATÜ GÜNCELLEME (Manuel müdahaleler için)
-     */
-    async updateOrderStatus(): Promise<any> {
-        try {
-            const { orderId, internalStatus } = this.request;
-
-            const updatedOrder = await this.clientDB.getOrderModel().findByIdAndUpdate(
-                orderId,
-                { $set: { internalStatus: internalStatus, 'dates.externalUpdatedAt': new Date() } },
-                { new: true }
-            );
-
-            return { success: true, data: updatedOrder };
-        } catch (error) {
-            throw error;
-        }
     }
 
     /**

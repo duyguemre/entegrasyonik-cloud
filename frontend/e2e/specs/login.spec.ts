@@ -17,10 +17,10 @@ test.describe('P1 — Giriş', () => {
   test('smoke: giriş formu render olur (sekmeler + alanlar + buton)', async ({ page }) => {
     await page.goto('/login')
 
-    await expect(page.getByRole('tab', { name: 'GİRİŞ' })).toBeVisible()
-    await expect(page.getByRole('tab', { name: 'KAYIT' })).toBeVisible()
-    await expect(page.getByRole('tab', { name: 'ŞİFREMİ UNUTTUM' })).toBeVisible()
-    await expect(page.getByLabel('EPosta')).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Giriş' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Kayıt' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Şifremi unuttum' })).toBeVisible()
+    await expect(page.getByLabel('E-posta')).toBeVisible()
     await expect(page.getByLabel('Şifre', { exact: true })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Giriş' })).toBeVisible()
   })
@@ -37,7 +37,7 @@ test.describe('P1 — Giriş', () => {
       'SecurityService/getCaptcha': { captcha: 'AB12' },
     })
     await page.goto('/login')
-    await page.getByLabel('EPosta').fill('e2e@example.invalid')
+    await page.getByLabel('E-posta').fill('e2e@example.invalid')
     await page.getByLabel('Şifre', { exact: true }).fill('e2e-pass')
     await page.getByRole('button', { name: 'Giriş' }).click()
 
@@ -52,7 +52,7 @@ test.describe('P1 — Giriş', () => {
       'SecurityService/login': mockError(401, { message: 'Unauthorized' }),
     })
     await page.goto('/login')
-    await page.getByLabel('EPosta').fill('yanlis@example.invalid')
+    await page.getByLabel('E-posta').fill('yanlis@example.invalid')
     await page.getByLabel('Şifre', { exact: true }).fill('yanlis-sifre')
     await page.getByRole('button', { name: 'Giriş' }).click()
 
@@ -75,7 +75,7 @@ test.describe('P1 — Giriş', () => {
       },
     })
     await page.goto('/login')
-    await page.getByLabel('EPosta').fill('e2e@example.invalid')
+    await page.getByLabel('E-posta').fill('e2e@example.invalid')
     await page.getByLabel('Şifre', { exact: true }).fill('e2e-pass-1234')
     await page.getByRole('button', { name: 'Giriş' }).click()
 
@@ -88,7 +88,7 @@ test.describe('P1 — Giriş', () => {
 
   test('ekran görüntüsü tabanı (giriş formu)', async ({ page }) => {
     await page.goto('/login')
-    await expect(page.getByRole('tab', { name: 'GİRİŞ' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Giriş' })).toBeVisible()
     // ADR-0011 Açık Soru 1 (Inter göçü) — bkz. `nav.ts` `waitForShellReady` yorumu: Inter'in
     // tam yüklendiğinden emin olmadan alınan ekran görüntüsü FOUT/reflow nedeniyle kararsız
     // olabiliyor; bu ekran `waitForShellReady` kullanmadığından aynı bekleme burada tekrarlanır.

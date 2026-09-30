@@ -24,24 +24,12 @@
     <LoadingComponent attach=".settingListView" ref="loadingComponentRef"></LoadingComponent>
 
     <div v-if="settings" class="settingListView__body">
-      <v-tabs v-model="activeTab" color="primary" align-tabs="start" class="settingListView__tabs" show-arrows>
-        <v-tab :value="1" class="text-none">
-          <v-icon start size="18">mdi-store-cog-outline</v-icon>
-          <span>Mağaza Kimliği</span>
-        </v-tab>
-        <v-tab :value="2" class="text-none">
-          <v-icon start size="18">mdi-file-document-edit-outline</v-icon>
-          <span>Fatura & Yasal Bilgiler</span>
-        </v-tab>
-        <v-tab :value="3" class="text-none">
-          <v-icon start size="18">mdi-truck-delivery-outline</v-icon>
-          <span>Lojistik & Operasyon</span>
-        </v-tab>
-        <v-tab :value="4" class="text-none">
-          <v-icon start size="18">mdi-bell-ring-outline</v-icon>
-          <span>İletişim & Bildirimler</span>
-        </v-tab>
-      </v-tabs>
+      <EkPageTabs v-model="activeTab" class="settingListView__tabs" label="Ayar bölümleri" :tabs="[
+        { value: 1, label: 'Mağaza Kimliği', icon: 'mdi-store-cog-outline' },
+        { value: 2, label: 'Fatura & Yasal Bilgiler', icon: 'mdi-pencil-outline' },
+        { value: 3, label: 'Lojistik & Operasyon', icon: 'mdi-truck-delivery-outline' },
+        { value: 4, label: 'İletişim & Bildirimler', icon: 'mdi-bell-ring-outline' },
+      ]" />
 
       <div class="settingListView__panel">
         <v-window v-model="activeTab" class="settingListView__window">
@@ -49,13 +37,13 @@
           <v-window-item :value="1">
             <v-row>
               <v-col cols="12" md="7">
-                <v-text-field clearable maxlength="128" density="comfortable" v-model="settings.storeName"
+                <v-text-field clearable maxlength="128" v-model="settings.storeName"
                   variant="outlined" label="Mağaza Adı"
                   hint="Müşterilere ve e-postalarda görünecek resmi mağaza adınız" persistent-hint counter />
 
                 <div class="settingListView__block">
                   <p class="settingListView__block-title">
-                    <v-icon start size="20" color="primary">mdi-palette-swatch</v-icon>
+                    <v-icon start size="20" color="primary">mdi-palette-swatch-outline</v-icon>
                     Mağaza Renk Paleti
                   </p>
 
@@ -85,7 +73,7 @@
                     </v-menu>
                   </div>
 
-                  <v-text-field v-model="settings.brandColor" variant="outlined" density="comfortable"
+                  <v-text-field v-model="settings.brandColor" variant="outlined"
                     label="Seçili Renk Kodu" class="settingListView__color-code" prepend-inner-icon="mdi-pound">
                   </v-text-field>
                 </div>
@@ -93,8 +81,7 @@
                 <div class="settingListView__block">
                   <div class="settingListView__logo-head">
                     <p class="settingListView__block-title">Mağaza Logosu</p>
-                    <v-switch v-model="useLogoUrl" label="URL kullan" color="primary" density="compact" hide-details
-                      inset></v-switch>
+                    <v-switch v-model="useLogoUrl" label="URL kullan" color="primary" density="compact" hide-details></v-switch>
                   </div>
 
                   <!-- Upload Mode -->
@@ -113,7 +100,7 @@
                       <p class="settingListView__help">Resmi mağaza logonuzu buradan yükleyebilirsiniz.</p>
                       <v-btn color="primary" variant="outlined" size="small" class="text-none"
                         @click="logoInput?.click()">
-                        <v-icon start size="16">mdi-cloud-upload-outline</v-icon>
+                        <v-icon start size="16">mdi-upload-outline</v-icon>
                         {{ settings.logo ? 'Logoyu Değiştir' : 'Logo Seç' }}
                       </v-btn>
                     </div>
@@ -123,7 +110,7 @@
 
                   <!-- URL Mode -->
                   <div v-else>
-                    <v-text-field clearable maxlength="512" density="comfortable" v-model="settings.logo"
+                    <v-text-field clearable maxlength="512" v-model="settings.logo"
                       variant="outlined" placeholder="https://example.com/logo.png"
                       prepend-inner-icon="mdi-link-variant"
                       hint="Doğrudan bir görsel bağlantısı yapıştırmak için kullanın." persistent-hint />
@@ -156,7 +143,7 @@
                     <div class="settingListView__preview-text">
                       <h4 class="settingListView__preview-name">{{ settings.storeName || 'Mağaza Adı' }}</h4>
                       <div class="settingListView__verified">
-                        <v-icon size="14" color="success">mdi-check-decagram</v-icon>
+                        <v-icon size="14" color="success">mdi-check-decagram-outline</v-icon>
                         <span>Doğrulanmış Mağaza</span>
                       </div>
                     </div>
@@ -177,60 +164,60 @@
               </v-col>
 
               <v-col cols="12" sm="6">
-                <v-text-field clearable density="comfortable" v-model="settings.invoice.firstname" label="İsim"
+                <v-text-field clearable v-model="settings.invoice.firstname" label="İsim"
                   variant="outlined" />
               </v-col>
               <v-col cols="12" sm="6">
-                <v-text-field clearable density="comfortable" v-model="settings.invoice.lastname" label="Soyisim"
+                <v-text-field clearable v-model="settings.invoice.lastname" label="Soyisim"
                   variant="outlined" />
               </v-col>
 
               <v-col cols="12" sm="6">
-                <v-text-field clearable density="comfortable" v-model="settings.invoice.tckn" label="T.C. Kimlik No"
+                <v-text-field clearable v-model="settings.invoice.tckn" label="T.C. Kimlik No"
                   variant="outlined" maxlength="11" />
               </v-col>
               <v-col cols="12" sm="6">
-                <v-text-field clearable density="comfortable" v-model="settings.invoice.phone" label="Fatura Telefon"
+                <v-text-field clearable v-model="settings.invoice.phone" label="Fatura Telefon"
                   variant="outlined" />
               </v-col>
 
               <template v-if="settings.invoice.type === 1">
                 <v-col cols="12">
-                  <v-text-field clearable density="comfortable" v-model="settings.invoice.companyName"
+                  <v-text-field clearable v-model="settings.invoice.companyName"
                     label="Firma Ünvanı" variant="outlined" />
                 </v-col>
                 <v-col cols="12" sm="6">
-                  <v-text-field clearable density="comfortable" v-model="settings.invoice.taxOffice"
+                  <v-text-field clearable v-model="settings.invoice.taxOffice"
                     label="Vergi Dairesi" variant="outlined" />
                 </v-col>
                 <v-col cols="12" sm="6">
-                  <v-text-field clearable density="comfortable" v-model="settings.invoice.taxNumber" label="Vergi No"
+                  <v-text-field clearable v-model="settings.invoice.taxNumber" label="Vergi No"
                     variant="outlined" />
                 </v-col>
 
                 <!-- Yeni Yasal Alanlar -->
                 <v-col cols="12" sm="6">
-                  <v-text-field clearable density="comfortable" v-model="settings.mersisNo" label="MERSIS No"
+                  <v-text-field clearable v-model="settings.mersisNo" label="MERSIS No"
                     variant="outlined" hint="Hukuki belgelerde basılacaktır" persistent-hint />
                 </v-col>
                 <v-col cols="12" sm="6">
-                  <v-text-field clearable density="comfortable" v-model="settings.ticaretSicilNo"
+                  <v-text-field clearable v-model="settings.ticaretSicilNo"
                     label="Ticaret Sicil No" variant="outlined" hint="Hukuki belgelerde basılacaktır"
                     persistent-hint />
                 </v-col>
               </template>
 
               <v-col cols="12">
-                <v-textarea clearable density="comfortable" v-model="settings.invoice.address" label="Fatura Adresi"
+                <v-textarea clearable v-model="settings.invoice.address" label="Fatura Adresi"
                   variant="outlined" rows="3" />
               </v-col>
 
               <v-col cols="12" sm="6">
-                <v-select clearable :items="staticsStore.cities" density="comfortable" v-model="settings.invoice.city"
+                <v-select clearable :items="staticsStore.cities" v-model="settings.invoice.city"
                   label="İl" variant="outlined" />
               </v-col>
               <v-col cols="12" sm="6">
-                <v-text-field clearable density="comfortable" v-model="settings.invoice.district" label="İlçe"
+                <v-text-field clearable v-model="settings.invoice.district" label="İlçe"
                   variant="outlined" />
               </v-col>
             </v-row>
@@ -240,7 +227,7 @@
           <v-window-item :value="3">
             <v-row>
               <v-col cols="12" sm="6">
-                <v-text-field clearable density="comfortable" v-model.number="settings.shippingDuration"
+                <v-text-field clearable v-model.number="settings.shippingDuration"
                   variant="outlined" type="number">
                   <template #label>
                     Kargo Süresi (Gün) <span class="settingListView__label-hint">(Varsayılan: {{
@@ -250,7 +237,7 @@
               </v-col>
 
               <v-col cols="12" sm="6">
-                <v-text-field clearable density="comfortable" v-model.number="settings.desi" variant="outlined"
+                <v-text-field clearable v-model.number="settings.desi" variant="outlined"
                   type="number">
                   <template #label>
                     Varsayılan Desi (dm³) <span class="settingListView__label-hint">(Varsayılan: {{
@@ -260,12 +247,12 @@
               </v-col>
 
               <v-col cols="12" sm="6">
-                <v-select density="comfortable" v-model.number="settings.taxPercentage" item-value="_id"
+                <v-select v-model.number="settings.taxPercentage" item-value="_id"
                   :items="taxList" variant="outlined" label="Varsayılan KDV Oranı" />
               </v-col>
 
               <v-col cols="12" sm="6">
-                <v-text-field clearable density="comfortable" v-model.number="settings.warranty" variant="outlined"
+                <v-text-field clearable v-model.number="settings.warranty" variant="outlined"
                   type="number">
                   <template #label>
                     Garanti Süresi (Ay) <span class="settingListView__label-hint">(Varsayılan: {{
@@ -275,7 +262,7 @@
               </v-col>
 
               <v-col cols="12" sm="6">
-                <v-text-field clearable density="comfortable" v-model.number="settings.maxPurchaseQuantity"
+                <v-text-field clearable v-model.number="settings.maxPurchaseQuantity"
                   variant="outlined" type="number">
                   <template #label>
                     Maksimum Satış Adedi <span class="settingListView__label-hint">(Varsayılan: {{
@@ -285,7 +272,7 @@
               </v-col>
 
               <v-col cols="12" sm="6">
-                <v-select density="comfortable" v-model="settings.timezone" :items="timezones" variant="outlined"
+                <v-select v-model="settings.timezone" :items="timezones" variant="outlined"
                   label="Zaman Dilimi" hint="Sipariş senkronizasyonu bu zaman dilimine göre yapılacaktır"
                   persistent-hint />
               </v-col>
@@ -306,23 +293,22 @@
           <v-window-item :value="4">
             <v-row>
               <v-col cols="12" sm="6">
-                <v-text-field clearable density="comfortable" v-model="settings.alertEmail"
+                <v-text-field clearable v-model="settings.alertEmail"
                   label="Hata Bildirim E-postası" variant="outlined" prepend-inner-icon="mdi-email-alert-outline"
                   hint="Entegrasyon hataları bu adrese gönderilecektir" persistent-hint />
               </v-col>
               <v-col cols="12" sm="6">
-                <v-text-field clearable density="comfortable" v-model="settings.supportPhone"
+                <v-text-field clearable v-model="settings.supportPhone"
                   label="Müşteri Destek Telefonu" variant="outlined" prepend-inner-icon="mdi-headphones"
                   hint="Müşterilerinizin göreceği iletişim numarası" persistent-hint />
               </v-col>
 
               <v-col cols="12">
-                <v-alert type="info" variant="tonal" density="compact" border="start"
-                  title="Entegrasyon Sağlık Durumu">
+                <EkAlert tone="info" title="Entegrasyon sağlık durumu">
                   Bu bölümdeki iletişim bilgileri, sistem mimarinizin bir parçası olarak entegrasyonlarınızın
                   sürekliliğini sağlamak için kullanılır.
                   Kritik bir hata oluştuğunda belirtilen kanallar üzerinden otomatik bilgilendirme yapılır.
-                </v-alert>
+                </EkAlert>
               </v-col>
             </v-row>
           </v-window-item>
@@ -340,11 +326,11 @@
 </template>
 
 <script setup lang="ts">
+import { EkPageTabs, EkAlert, EkStatusChip } from '@entegrasyonik/ui/components'
 import { ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n';
 import LoadingComponent from '@/components/LoadingComponent.vue'
-import EkPageHeader from '@/components/ds/EkPageHeader.vue'
-import EkStatusChip from '@/components/ds/EkStatusChip.vue'
+import EkPageHeader from '@/components/page/EkPageHeader.vue'
 import { useStaticsStore } from '@/stores/staticsStore';
 import useRestApi from '@/composables/restapi'
 import { useSnackbarStore } from '@/stores/snackbarStore';
@@ -352,6 +338,12 @@ import { useSnackbarStore } from '@/stores/snackbarStore';
 const restApi = useRestApi()
 const snackbarStore = useSnackbarStore();
 const activeTab = ref(1)
+/**
+ * Marka rengi kullanıcı VERİSİDİR (tenant ayarı olarak `#RRGGBB` yazılır) — tasarım token'ı değil.
+ * Palet 24-bit tamsayı olarak tutulur, kayıt biçimine burada çevrilir.
+ */
+const hexOf = (rgb: number): string => '#' + rgb.toString(16).padStart(6, '0').toUpperCase()
+
 const logoInput = ref<HTMLInputElement | null>(null)
 const useLogoUrl = ref(false)
 
@@ -362,7 +354,7 @@ const settings: any = ref({
   maxPurchaseQuantity: undefined,
   taxPercentage: undefined,
   logo: '',
-  brandColor: '#4F46E5',
+  brandColor: hexOf(0x4f46e5),
   alertEmail: '',
   supportPhone: '',
   timezone: 'Europe/Istanbul',
@@ -390,14 +382,14 @@ const { t } = useI18n()
 const taxList = Array.from({ length: 29 }, (_, i) => ({ _id: i + 1, value: i + 1, title: i + 1 }))
 
 const premiumPalettes = [
-  { name: 'Royal Indigo', hex: '#4F46E5' },
-  { name: 'Ocean Blue', hex: '#0EA5E9' },
-  { name: 'Emerald', hex: '#10B981' },
-  { name: 'Amber', hex: '#F59E0B' },
-  { name: 'Ruby', hex: '#E11D48' },
-  { name: 'Slate', hex: '#475569' },
-  { name: 'Deep Purple', hex: '#7C3AED' },
-  { name: 'Forest', hex: '#065F46' }
+  { name: 'Royal Indigo', hex: hexOf(0x4f46e5) },
+  { name: 'Ocean Blue', hex: hexOf(0x0ea5e9) },
+  { name: 'Emerald', hex: hexOf(0x10b981) },
+  { name: 'Amber', hex: hexOf(0xf59e0b) },
+  { name: 'Ruby', hex: hexOf(0xe11d48) },
+  { name: 'Slate', hex: hexOf(0x475569) },
+  { name: 'Deep Purple', hex: hexOf(0x7c3aed) },
+  { name: 'Forest', hex: hexOf(0x065f46) }
 ]
 
 const timezones = [
@@ -500,7 +492,7 @@ const getSettings = async () => {
       // Varsayılan dilim ve günler eğer DB'de yoksa set edelim
       if (!settings.value.timezone) settings.value.timezone = 'Europe/Istanbul';
       if (!settings.value.workingDays) settings.value.workingDays = [1, 2, 3, 4, 5];
-      if (!settings.value.brandColor) settings.value.brandColor = '#4F46E5';
+      if (!settings.value.brandColor) settings.value.brandColor = hexOf(0x4f46e5);
     }
   } catch (error) {
     loadingComponentRef.value.remove(guid)

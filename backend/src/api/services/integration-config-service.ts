@@ -6,7 +6,7 @@ import { config } from '@config'
 import { getIntegrationDescriptor, listIntegrationDescriptors } from '@integration/catalog/IntegrationDescriptorRegistry'
 import { listSettings, getSettingDef, CATALOG_VERSION } from '@integration/config/catalog'
 import { resolveEffectiveConfig } from '@integration/config/ConfigResolver'
-import { ENGINE_TARGET } from '@integration/config/targets'
+import { ENGINE_TARGET, PLATFORM_TARGET } from '@integration/config/targets'
 import * as repo from '@integration/config/revisionRepository'
 import type { RevisionModels } from '@integration/config/revisionRepository'
 import { validatePatch } from '@integration/config/validatePatch'
@@ -34,14 +34,14 @@ import { setTargetIntake, type IntakeValue } from '@integration/config/platformO
 
 function assertKnownTarget(target: unknown): string {
     if (typeof target !== 'string' || target.length === 0) throw new ApplicationError('target zorunludur.', 400, 'VALIDATION')
-    if (target === ENGINE_TARGET) return target
+    if (target === ENGINE_TARGET || target === PLATFORM_TARGET) return target // ADR-0031: `_platform` çalışma zamanı platform ayarları
     const descriptor = getIntegrationDescriptor(target)
     if (!descriptor) throw new ApplicationError(`Bilinmeyen hedef: ${target}`, 404, 'NOT_FOUND')
     return target
 }
 
 function descriptorHostInfo(target: string) {
-    if (target === ENGINE_TARGET) return undefined
+    if (target === ENGINE_TARGET || target === PLATFORM_TARGET) return undefined
     const d = getIntegrationDescriptor(target)
     return d ? { allowedHosts: d.config.hosts, retiredEndpoints: d.config.retiredEndpoints } : undefined
 }
@@ -49,7 +49,11 @@ function descriptorHostInfo(target: string) {
 /** Bu hedefte (scope uyumlu) tanımlı TÜM katalog anahtarları. */
 function applicableSettingKeys(target: string): string[] {
     return listSettings()
-        .filter((s) => (target === ENGINE_TARGET ? s.scope !== 'integration' : s.scope !== 'engine'))
+        .filter((s) => {
+            if (target === PLATFORM_TARGET) return s.scope === 'platform' // ADR-0031: yalnız platform anahtarları
+            if (s.scope === 'platform') return false                       // ... ve YALNIZ `_platform`'a
+            return target === ENGINE_TARGET ? s.scope !== 'integration' : s.scope !== 'engine'
+        })
         .map((s) => s.key)
 }
 
@@ -98,7 +102,7 @@ export default class IntegrationConfigService extends BaseApi implements IServic
         const target = assertKnownTarget(this.request?.target)
         const models = this.models()
         const published = await repo.getPublished(models, target)
-        const integrationCode = target === ENGINE_TARGET ? undefined : target
+        const integrationCode = (target === ENGINE_TARGET || target === PLATFORM_TARGET) ? undefined : target
 
         const values = applicableSettingKeys(target).map((key) => resolveEffectiveConfig(key, {
             integrationCode,
@@ -109,6 +113,24 @@ export default class IntegrationConfigService extends BaseApi implements IServic
         }))
 
         return { target, publishedVersion: published?.version ?? 0, catalogVersion: CATALOG_VERSION, values }
+    }
+
+    /**
+     * [BO B6b / ADR-0020 C açık işi] Ayar kataloğunun GÖRÜNTÜLEME metaverisi (salt okuma; `settingsCatalogMirror.ts` kopyasının yerini alır).
+     * Değer/sır yok: yalnız tanım (etiket, yardım, birim, varsayılan, tehlike, kapsam...). `consumers`/`knownDriftNote` (iç yollar) ve zod şeması DÖNMEZ.
+     * `target` verilirse yalnız o hedefte uygulanabilir anahtarlar.
+     */
+    async getCatalog(): Promise<any> {
+        const target = this.request?.target === undefined ? undefined : assertKnownTarget(this.request.target)
+        const keys = target ? new Set(applicableSettingKeys(target)) : undefined
+        const items = listSettings()
+            .filter((d) => !keys || keys.has(d.key))
+            .map((d) => ({
+                key: d.key, group: d.group, scope: d.scope, type: d.type, unit: d.unit, default: d.default, safeRange: d.safeRange,
+                danger: d.danger, applies: d.applies, label: d.label, help: d.help, impact: d.impact, advanced: d.advanced ?? false,
+                overridable: d.overridable, envLock: d.envLock, tenantOverridable: d.tenantOverridable, since: d.since, deprecated: d.deprecated, exposure: d.exposure,
+            }))
+        return { catalogVersion: CATALOG_VERSION, items }
     }
 
     /** `platform.integrationConfig.history` */
@@ -168,7 +190,7 @@ export default class IntegrationConfigService extends BaseApi implements IServic
     }
 
     private async buildPreview(target: string, draftOverrides: Record<string, unknown>, published: repo.RevisionDoc | null) {
-        const integrationCode = target === ENGINE_TARGET ? undefined : target
+        const integrationCode = (target === ENGINE_TARGET || target === PLATFORM_TARGET) ? undefined : target
         const diff: DiffEntry[] = computeDiff(published?.overrides ?? {}, draftOverrides, getSettingDef)
         const impact = await computeActiveTenantsImpact(this.applicationDB, target)
         const danger = highestDanger(diff)
@@ -336,6 +358,7 @@ export default class IntegrationConfigService extends BaseApi implements IServic
      */
     async setIntake(): Promise<any> {
         const target = assertKnownTarget(this.request?.target)
+        if (target === PLATFORM_TARGET) throw new ApplicationError('setIntake `_platform` hedefinde geçerli değil.', 400, 'VALIDATION')
         const intake: IntakeValue | undefined = ['on', 'drain', 'off'].includes(this.request?.intake) ? this.request.intake : undefined
         if (!intake) throw new ApplicationError('intake geçersiz. Beklenen: on | drain | off', 400, 'VALIDATION')
         const actor = this.actor()
@@ -398,7 +421,7 @@ export default class IntegrationConfigService extends BaseApi implements IServic
 
         const target = assertKnownTarget(finding.integrationCode)
         const actor = this.actor()
-        const descriptor = target === ENGINE_TARGET ? undefined : getIntegrationDescriptor(target)
+        const descriptor = (target === ENGINE_TARGET || target === PLATFORM_TARGET) ? undefined : getIntegrationDescriptor(target)
 
         // Emekli uç eşleşmesi (Karar 5 "replacementKey'in host seçimi") -- BİLGİ amaçlı, en iyi çaba (subjectKey ya da
         // kanıt yolları desenle örtüşüyorsa). İkinci bir doğruluk kaynağı AÇILMAZ, yalnız manifestodan OKUNUR.

@@ -38,12 +38,6 @@ export const PRODUCT_URL_MIGRATIONS: ReadonlyArray<ProductUrlChange> = [
     { key: 'categoryAttributeValuesUrl', from: null, to: 'product/categories/<CATEGORYID>/attributes/<ATTRIBUTEID>/values' },
 ];
 
-/** Değişmeyen (doğrulanmış) ürün anahtarları — bilgi amaçlı; kod bunlara dokunmaz. */
-export const PRODUCT_URL_UNCHANGED_KEYS: ReadonlyArray<string> = [
-    'checkBatchUrl', 'checkTransferUrl', 'updatePriceUrl', 'updateStockUrl', 'updateContentUrl', 'updateVariantUrl',
-    'categoryListUrl', 'brandListUrl',
-];
-
 const PLACEHOLDER_SELLER = '<SELLERID>';
 
 function split(url: string): { path: string; query: string } {

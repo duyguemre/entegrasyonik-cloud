@@ -1,34 +1,27 @@
 <template>
     <ActionDialogComponent v-model="show" title="Manuel Kargo Girişi"
         subtitle="Kargo entegrasyonu dışındaki gönderiler için bilgi kaydı" icon="mdi-truck-delivery-outline"
-        color="passiveColor" confirm-text="Kargoya Ver" cancel-text="Vazgeç" confirm-buttom-color="passiveColor"
+        color="primary" confirm-text="Kargoya Ver" cancel-text="Vazgeç" confirm-buttom-color="primary"
         :is-confirm-disabled="isFormInvalid" @confirm="handleSubmit" @cancel="handleClose" attach="orderListView"
         max-width="600px">
         <v-form ref="formRef" @submit.prevent="handleSubmit">
-            <v-row dense>
-                <v-col cols="12">
+            <EkFormGrid :columns="1">
                     <v-select v-model="form.carrierName"
                         :items="['Aras Kargo', 'Yurtiçi Kargo', 'MNG Kargo', 'Sürat Kargo', 'Trendyol Express', 'PTT Kargo', 'Diğer']"
-                        label="Kargo Firması" variant="outlined" density="comfortable" class="customTextField"
+                        label="Kargo Firması"
                         :rules="[v => !!v || 'Kargo firması seçilmelidir']"></v-select>
-                </v-col>
-                <v-col cols="12">
-                    <v-text-field v-model="form.trackingCode" label="Takip Numarası" variant="outlined"
-                        density="comfortable" class="customTextField" placeholder="Kargo takip numarasını giriniz"
+                    <v-text-field v-model="form.trackingCode" label="Takip Numarası" placeholder="Kargo takip numarasını giriniz"
                         :rules="[v => !!v || 'Takip numarası zorunludur']" autofocus></v-text-field>
-                </v-col>
-                <v-col cols="12">
-                    <v-text-field v-model="form.trackingUrl" label="Takip Linki (Opsiyonel)" variant="outlined"
-                        density="comfortable" class="customTextField" placeholder="https://..."
+                    <v-text-field v-model="form.trackingUrl" label="Takip Linki (Opsiyonel)" placeholder="https://..."
                         prepend-inner-icon="mdi-link-variant"></v-text-field>
-                </v-col>
-            </v-row>
+            </EkFormGrid>
         </v-form>
     </ActionDialogComponent>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
+import { EkFormGrid } from '@entegrasyonik/ui/components'
 import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue';
 
 // State yönetimi

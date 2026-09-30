@@ -34,8 +34,8 @@ test.describe('B3 karakterizasyon — Mağaza Yönetimi (AdminClientListView)', 
     await openScreen(page, 'AdminClientListView')
     await expect(page.getByText('E2E Örnek Mağaza', { exact: true })).toBeVisible()
 
-    // GİZLİ DAVRANIŞ (düzeltilmedi): `pagination.limit` 50 ile başlıyor ama `v-data-table-server`'ın
-    // `@update:options` olayı Vuetify varsayılanı `itemsPerPage=10`'u yazıyor — sunucuya limit 10 gider.
+    // DS-v2 Aşama 2: `v-data-table-server` kalktı; eskiden onun yazdığı limit 10, ekranın varsayılanı
+    // yapılarak sunucuya giden gövde AYNI tutuldu.
     expect(bodies[0]).toEqual({ search: '', page: 1, limit: 10, sortField: 'order', sortOrder: 1 })
     const view = page.locator('.adminClientListView')
     await expect(view).toContainText('Toplam Mağaza')
@@ -61,12 +61,9 @@ test.describe('B3 karakterizasyon — Mağaza Yönetimi (AdminClientListView)', 
     await expect.poll(() => bodies.length).toBe(initial + 1)
     expect(bodies.at(-1)).toMatchObject({ search: 'Pasif', page: 1, sortField: 'order', sortOrder: 1 })
 
-    await page.getByRole('button', { name: 'Mağazaları ara' }).click()
-    await expect.poll(() => bodies.length).toBe(initial + 2)
-    expect(bodies.at(-1)).toMatchObject({ search: 'Pasif' })
-
+    // DS-v2 Aşama 2 — BİLİNÇLİ DEĞİŞİKLİK: büyüteç düğmesi kalktı (arama yalnız Enter ile).
     await page.getByRole('button', { name: 'Listeyi yenile' }).click()
-    await expect.poll(() => bodies.length).toBe(initial + 3)
+    await expect.poll(() => bodies.length).toBe(initial + 2)
     expect(bodies.at(-1)).toEqual(bodies.at(-2))
   })
 

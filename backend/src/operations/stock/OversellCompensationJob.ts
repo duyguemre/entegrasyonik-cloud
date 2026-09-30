@@ -1,7 +1,9 @@
 import { DatabaseManagerInstance } from "@database/DatabaseManager";
+import { CLIENT_INTEGRATION_HOT_PROJECTION } from "@database/projections";
 import { RedisService } from "@services/redis/RedisService";
 import IntegrationFactory from "@integration/modules/IntegrationFactory";
 import { NotificationService } from "@services/notification/NotificationService";
+import { getRequestId } from "@platform/core/context";
 import { StockAllocator } from "./StockAllocator";
 import { IOrderRejectParams } from "@interfaces/index";
 import { getPodIdentity } from "@utils/podIdentity";
@@ -107,7 +109,7 @@ export class OversellCompensationJob {
         }).lean();
         if (!oversoldOrders || oversoldOrders.length === 0) return { retried, cancelled, escalated };
 
-        const integrationDoc: any = await clientDB.getClientIntegrationModel().findOne().lean();
+        const integrationDoc: any = await clientDB.getClientIntegrationModel().findOne({}, CLIENT_INTEGRATION_HOT_PROJECTION).lean(); // [DB-03]
         const allocator = new StockAllocator(clientDB as any);
         const factory = new IntegrationFactory(clientOrder);
         const now = new Date();
@@ -153,7 +155,7 @@ export class OversellCompensationJob {
                 { _id: order._id, 'items.externalLineItemId': item.externalLineItemId },
                 { $set: { 'items.$.allocationState': 'RESERVED', 'items.$.lastAllocationAppliedAt': new Date() } },
             );
-            await this.notify(clientOrder, order, item, {
+            await this.notify(clientOrder, order, item, { code: 'STOCK_REALLOCATED', params: {} }, {
                 severity: 'success',
                 title: 'Stok yeniden ayrıldı',
                 message: `${order.orderNumber || order.externalOrderId} numaralı siparişteki stok yetersizliği giderildi; kalem yeniden RESERVED durumuna alındı.`,
@@ -191,7 +193,7 @@ export class OversellCompensationJob {
                         $unset: { 'items.$.cancelClaimedBy': '', 'items.$.cancelClaimedAt': '', 'items.$.cancelClaimUntil': '' },
                     },
                 );
-                await this.notify(clientOrder, order, item, {
+                await this.notify(clientOrder, order, item, { code: 'STOCK_COMPENSATION_MANUAL', params: { reason: 'cancel_uncertain' } }, {
                     severity: 'error',
                     title: 'Manuel doğrulama gerekli: iptal sonucu belirsiz',
                     message: `${order.orderNumber || order.externalOrderId} numaralı siparişteki "${item.productName || item.sku}" kalemi için pazaryerine gönderilen otomatik iptalin sonucu belirsiz (zaman aşımı/ağ hatası ya da bu kanal için otomatik iptal kod eşlemesi henüz tanımlı değil). Çift iptal riski nedeniyle otomatik tekrar denenmeyecek; lütfen pazaryeri panelinden sipariş durumunu doğrulayın.`,
@@ -206,7 +208,7 @@ export class OversellCompensationJob {
                     { _id: order._id, 'items.externalLineItemId': item.externalLineItemId },
                     { $set: { 'items.$.allocationState': 'RELEASED', 'items.$.itemStatus': 'CANCELLED', 'items.$.lastAllocationAppliedAt': new Date() } },
                 );
-                await this.notify(clientOrder, order, item, {
+                await this.notify(clientOrder, order, item, { code: 'STOCK_LINE_AUTO_CANCELLED', params: {} }, {
                     severity: 'warning',
                     title: 'Sipariş kalemi otomatik iptal edildi',
                     message: `${order.orderNumber || order.externalOrderId} numaralı siparişteki "${item.productName || item.sku}" kalemi stok yetersizliği nedeniyle otomatik olarak pazaryerine iptal bildirildi.`,
@@ -224,7 +226,7 @@ export class OversellCompensationJob {
             { _id: order._id, 'items.externalLineItemId': item.externalLineItemId },
             { $set: { 'items.$.oversoldEscalatedAt': new Date() } },
         );
-        await this.notify(clientOrder, order, item, {
+        await this.notify(clientOrder, order, item, { code: 'STOCK_COMPENSATION_MANUAL', params: { reason: 'insufficient_stock' } }, {
             severity: 'error',
             title: 'Manuel işlem gerekli: stok yetersizliği',
             message: `${order.orderNumber || order.externalOrderId} numaralı siparişteki "${item.productName || item.sku}" kalemi ${OversellCompensationJob.DEFAULT_GRACE_MINUTES} dk'lık bekleme süresini geçti; ${channelSupported ? 'otomatik iptal denendi ancak başarısız oldu' : 'bu kanalda otomatik iptal desteklenmiyor veya politika kapalı'}, manuel olarak ele alınmalı.`,
@@ -350,24 +352,41 @@ export class OversellCompensationJob {
         return mp?.settings?.stockPolicy || {};
     }
 
-    private async notify(clientOrder: number, order: any, item: any, payload: { severity: 'success' | 'warning' | 'error'; title: string; message: string }): Promise<void> {
+    /** [ADR-0029 NB3] Katalog kodu + params ile `notify`; bayrak kapaliyken eski olay (`legacy`) birebir. */
+    private async notify(
+        clientOrder: number,
+        order: any,
+        item: any,
+        cat: { code: string; params: Record<string, unknown>; withInteg?: boolean },
+        payload: { severity: 'success' | 'warning' | 'error'; title: string; message: string },
+    ): Promise<void> {
         try {
-            await NotificationService.sendClientNotification({
-                clientId: String(clientOrder),
-                notificationData: {
-                    type: 'STOCK_ALERT',
-                    severity: payload.severity,
-                    title: payload.title,
-                    message: payload.message,
-                    metaData: {
-                        integrationCode: order.integrationCode,
-                        externalOrderId: order.externalOrderId,
-                        externalLineItemId: item.externalLineItemId,
-                        sku: item.sku,
-                        barcode: item.barcode,
+            await NotificationService.notify(cat.code, clientOrder, {
+                ...(cat.withInteg ? { integ: String(order.integrationCode ?? 'unknown') } : {}),
+                lineId: String(item.externalLineItemId),
+                orderId: String(order.externalOrderId),
+                ...(item.sku && cat.code !== 'STOCK_COMPENSATION_MANUAL' ? { sku: String(item.sku).slice(0, 80) } : {}), // MANUAL semasinda sku yok (strict)
+                ...cat.params,
+            }, {
+                corrId: getRequestId(),
+                module: 'OversellCompensationJob',
+                legacy: { event: {
+                    clientId: String(clientOrder),
+                    notificationData: {
+                        type: 'STOCK_ALERT',
+                        severity: payload.severity,
+                        title: payload.title,
+                        message: payload.message,
+                        metaData: {
+                            integrationCode: order.integrationCode,
+                            externalOrderId: order.externalOrderId,
+                            externalLineItemId: item.externalLineItemId,
+                            sku: item.sku,
+                            barcode: item.barcode,
+                        },
                     },
-                },
-            } as any);
+                } as any },
+            });
         } catch (error) {
             console.error('[OversellCompensationJob] Bildirim gönderilemedi:', error);
         }

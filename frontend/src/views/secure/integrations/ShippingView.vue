@@ -1,6 +1,8 @@
 <template>
   <div class="shippingView">
-    <div class="workarea-scroll screen-scroll-inset">
+    <!-- C1.2: kargo kaydı yokken kaydırılan alanda odaklanabilir öğe kalmaz (Kaydet nedenli devre dışı) — klavyeyle
+         kaydırılabilsin diye alan odaklanabilir bölgedir (axe scrollable-region-focusable). -->
+    <div class="workarea-scroll screen-scroll-inset" tabindex="0" role="region" aria-label="Kargo entegrasyonları">
       <LoadingComponent attach=".shippingView" ref="loadingComponentRef"></LoadingComponent>
 
       <div class="pa-6 pb-0">
@@ -8,13 +10,12 @@
           description="Kargo firmalarınızı bağlayın ve ayarlarını buradan yönetin." />
       </div>
 
-      <v-row class="ma-0">
-        <v-col cols="12" lg="8" class="pa-0">
-          <div class="pa-6">
+      <div class="ek-integration-layout">
+        <div class="ek-integration-layout__main">
+          <div v-if="clientShipments?.length">
             <IntegrationPlatformRail :items="clientShipments" :model-value="editingClientIntegration.code"
-              :live-codes="LIVE_CODES" ariaLabel="Kargo firması seçimi"
+              :live-codes="liveCodes" ariaLabel="Kargo firması seçimi"
               @select="setAndRetrieveEditingClientShipment" />
-            <DividerComponent />
           </div>
           <v-form ref="newVariantFormRef" v-model="isFormValid">
             <v-card-text class="pa-0 px-0" role="tabpanel"
@@ -61,38 +62,20 @@
                     category="kargo" />
                 </template>
               </div>
-              <EkEmptyState v-else variant="not-connected" title="Başlamak İçin Seçim Yapın"
+              <!-- C1.2: mağazada hiç kargo kaydı yoksa "yukarıdan seçin" demek yanıltıcıdır (seçilecek bir şey yok) —
+                   kategori düzeyi dürüst "Yakında" paneli + bugün pazaryeri üzerinden yapılabilen (katalogdan). -->
+              <IntegrationComingSoonPanel v-else-if="!clientShipments?.length" category="Kargo"
+                alternative-capability="shippingNotice" />
+              <EkEmptyState v-else variant="not-connected" title="Başlamak için seçim yapın"
                 message="Yukarıdaki listeden bir kargo firması seçerek ayarları yönetmeye başlayabilirsiniz." />
             </v-card-text>
           </v-form>
-        </v-col>
+        </div>
 
-        <v-col cols="12" lg="4" class="pa-6">
-          <CardComponent>
-            <div class="d-flex align-center mb-6">
-              <v-icon color="passiveColor" class="mr-2">mdi-lightbulb-on-outline</v-icon>
-              <span class="text-subtitle-1 font-weight-bold">Hızlı Başlangıç Rehberi</span>
-            </div>
-
-            <div v-for="(step, i) in guideSteps" :key="i" class="mb-5 d-flex">
-              <div class="step-number mr-4">{{ i + 1 }}</div>
-              <div>
-                <div class="text-subtitle-2 font-weight-bold mb-1">{{ step.title }}</div>
-                <div class="text-caption opacity-60">{{ step.text }}</div>
-              </div>
-            </div>
-
-            <v-divider class="my-6 opacity-10"></v-divider>
-
-            <v-alert variant="tonal" color="passiveColor" density="compact" class="rounded-lg border-opacity-25">
-              <template v-slot:prepend>
-                <v-icon size="small">mdi-help-circle-outline</v-icon>
-              </template>
-              <div class="text-caption">API bilgileriniz hatalı ise bağlantı "Pasif" görünecektir.</div>
-            </v-alert>
-          </CardComponent>
-        </v-col>
-      </v-row>
+        <aside class="ek-integration-layout__aside">
+          <IntegrationGuideCard :steps="comingSoonGuide" note="" />
+        </aside>
+      </div>
     </div>
   </div>
 </template>
@@ -112,16 +95,16 @@ import LoadingComponent from '@/components/LoadingComponent.vue'
 import useRestApi from '@/composables/restapi'
 import { useIntegrationStore } from '@/stores/integrationStore'
 import { useI18n } from 'vue-i18n'
-import CardComponent from '@/components/CardComponent.vue'
-import DividerComponent from '@/components/layout/DividerComponent.vue'
-import EkPageHeader from '@/components/ds/EkPageHeader.vue'
-import EkEmptyState from '@/components/ds/EkEmptyState.vue'
+import IntegrationGuideCard from '@/components/integrations/IntegrationGuideCard.vue'
+import EkPageHeader from '@/components/page/EkPageHeader.vue'
+import { EkEmptyState } from '@entegrasyonik/ui/components'
 import IntegrationPlatformRail from '@/components/integrations/IntegrationPlatformRail.vue'
 import IntegrationComingSoonPanel from '@/components/integrations/IntegrationComingSoonPanel.vue'
+import { useIntegrationScreen } from '@/components/integrations/useIntegrationScreen'
 
-// `docs/INTEGRATIONS_REGISTRY.md` §5.1 — "NET: backend'de hiçbir kargo API
-// entegrasyonu YOK". Canlı küme KASITLI olarak BOŞTUR (N13).
-const LIVE_CODES: string[] = []
+// `docs/INTEGRATIONS_REGISTRY.md` §5.1 — "NET: backend'de hiçbir kargo API entegrasyonu YOK". C1.2: canlı küme
+// `getCatalog` manifestosundan gelir (bugün BOŞ; yedek `FALLBACK_LIVE_CODES.shipping` da boş — N13).
+const { liveCodes, comingSoonGuide } = useIntegrationScreen('shipment')
 
 const integrationStore: any = useIntegrationStore()
 const { t } = useI18n()
@@ -130,11 +113,8 @@ const loadingComponentRef: any = ref(null)
 const restApi = useRestApi()
 const editingClientIntegration: any = ref({ settings: {} })
 
-const guideSteps = [
-  { title: 'Firmayı Seçin', text: 'Üstteki ikonlara tıklayarak işlem yapacağınız kargo firmasını seçin.' },
-  { title: 'API Bağlantısı', text: 'Kargo firmasının panelinden aldığınız API bilgilerini ilgili alanlara girin.' },
-  { title: 'Kaydet ve Aktifleştir', text: 'Bilgileri kaydettikten sonra entegrasyon otomatik olarak aktif hale gelir.' }
-]
+// C1.2 — eski rehber adımları ("Kaydet ve Aktifleştir: … otomatik olarak aktif hale gelir") gerçeği yansıtmıyordu;
+// yerine ortak dürüst `comingSoonGuide` kullanılır.
 
 onMounted(() => {
   if (clientShipments.value && clientShipments.value.length > 0)
@@ -175,33 +155,6 @@ const setAndRetrieveEditingClientShipment = async (integrationCode: string) => {
 .screen-scroll-inset {
   bottom: var(--ek-space-1);
 }
-
-.step-number {
-  min-width: var(--ek-space-6);
-  height: var(--ek-space-6);
-  background: var(--ek-color-passive-color);
-  color: white;
-  border-radius: var(--ek-radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--ek-font-size-xs);
-  font-weight: var(--ek-font-weight-bold);
-}
-
-.opacity-70 {
-  opacity: 0.7;
-}
-
-.opacity-60 {
-  opacity: 0.6;
-}
-
-.opacity-50 {
-  opacity: 0.5;
-}
-
-.opacity-10 {
-  opacity: 0.1;
-}
 </style>
+
+<style scoped src="@/components/integrations/integration-layout.css"></style>

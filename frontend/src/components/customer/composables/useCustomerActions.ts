@@ -88,8 +88,8 @@ export function useCustomerActions(executeAction: Function, snackbarStore: any, 
             note('Not: Sipariş geçmişi veritabanında anonim olarak kalmaya devam edecektir.'),
         ];
         confirmDialogObj.confirmText = 'EVET, SİL';
-        confirmDialogObj.confirmIcon = 'mdi-delete-forever';
-        confirmDialogObj.icon = 'mdi-alert-octagon';
+        confirmDialogObj.confirmIcon = 'mdi-trash-can-outline';
+        confirmDialogObj.icon = 'mdi-alert-octagon-outline';
         confirmDialogObj.color = 'error';
         confirmDialogObj.show = true;
 
@@ -129,8 +129,8 @@ export function useCustomerActions(executeAction: Function, snackbarStore: any, 
             note('Bu işlem geri alınamaz.'),
         ];
         confirmDialogObj.confirmText = 'EVET, TOPLU SİL';
-        confirmDialogObj.confirmIcon = 'mdi-delete-sweep';
-        confirmDialogObj.icon = 'mdi-alert-decagram';
+        confirmDialogObj.confirmIcon = 'mdi-trash-can-outline';
+        confirmDialogObj.icon = 'mdi-alert-decagram-outline';
         confirmDialogObj.color = 'error';
         confirmDialogObj.show = true;
 

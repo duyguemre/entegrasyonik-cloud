@@ -6,7 +6,7 @@
 
     <!-- `localItem` boş kaldığında (rapor bulunamadı/servis hatası) aksiyon alınabilir boş/hata durumu.
          İş mantığı (veri çekme/`getReport()` yeniden deneme) DEĞİŞMEDİ. -->
-    <EkEmptyState v-if="!localItem && !loading" variant="error" title="Rapor Verilerine Ulaşılamadı"
+    <EkEmptyState v-if="!localItem && !loading" variant="error" title="Rapor verilerine ulaşılamadı"
       message="İşlem raporu henüz hazırlanmamış olabilir veya sunucuyla olan bağlantıda bir sorun yaşanıyor."
       showAction actionText="Yeniden dene" actionIcon="mdi-refresh" @action="getReport()" />
 
@@ -36,12 +36,12 @@
             <span class="meta-item__value">{{ formatDateTime(localItem.createdAt) }}</span>
           </div>
           <div class="meta-item">
-            <v-icon size="16" aria-hidden="true">mdi-clock-check</v-icon>
+            <v-icon size="16" aria-hidden="true">mdi-clock-check-outline</v-icon>
             <span class="meta-item__label">Bitiş:</span>
             <span class="meta-item__value">{{ localItem.completedAt ? formatDateTime(localItem.completedAt) : '-' }}</span>
           </div>
           <div v-if="localItem.nextRunAt && !localItem.completedAt" class="meta-item">
-            <v-icon size="16" aria-hidden="true">mdi-calendar-clock</v-icon>
+            <v-icon size="16" aria-hidden="true">mdi-calendar-clock-outline</v-icon>
             <span class="meta-item__label">Sonraki İşlem:</span>
             <span class="meta-item__value">{{ formatDateTime(localItem.nextRunAt) }}</span>
           </div>
@@ -66,7 +66,7 @@
         <v-img v-if="localItem.image" :src="localItem.image" width="175" height="175" cover
           class="product-card__image" :alt="localItem.title"></v-img>
         <div v-else class="product-card__image product-card__image--empty">
-          <v-icon size="40" aria-hidden="true">mdi-image-off</v-icon>
+          <v-icon size="40" aria-hidden="true">mdi-image-off-outline</v-icon>
         </div>
         <div class="product-card__body">
           <div class="product-card__title">{{ localItem.title }}</div>
@@ -159,15 +159,13 @@ import { BarChart } from 'echarts/charts'
 import { TooltipComponent, GridComponent } from 'echarts/components'
 import { LegacyGridContainLabel } from 'echarts/features'
 import PlatformImageComponent from '../platforms/PlatformImageComponent.vue'
-import EkEmptyState from '@/components/ds/EkEmptyState.vue'
-import EkSkeleton from '@/components/ds/EkSkeleton.vue'
-import EkStatusChip from '@/components/ds/EkStatusChip.vue'
-import EkSection from '@/components/ds/EkSection.vue'
-import { formatDateTime } from '@/composables/format'
-import { semanticColorsLight } from '@/design/tokens'
+import { EkEmptyState, EkSkeleton, EkStatusChip, EkSection } from '@entegrasyonik/ui/components'
+import { formatDateTime } from '@entegrasyonik/ui/format'
+import { semanticColorsLight } from '@entegrasyonik/ui/tokens'
 import type { StatusTone } from '@/design/status-map'
 import { escapeHtml } from '@/utils/escapeHtml'
 import { PLATFORM_PROCESS_LABELS, PLATFORM_PROCESS } from '@/types/PlatformProcess'
+import { reportPollInterval } from '@/stores/publicConfig'
 
 use([CanvasRenderer, BarChart, TooltipComponent, GridComponent, LegacyGridContainLabel])
 
@@ -186,8 +184,8 @@ const exportSteps = [
   { title: 'Kuyrukta', status: 'QUEUED', icon: 'mdi-queue' },
   { title: 'Ürün Doğrulanıyor', status: 'PREPARING', icon: 'mdi-cog-outline' },
   { title: 'İşlem Pazaryerine Gönderiliyor', status: 'PENDING', icon: 'mdi-tray-arrow-up' },
-  { title: 'Gönderim Sorgulanıyor', status: 'SENT', icon: 'mdi-cloud-upload' },
-  { title: 'Ürün Onayı Bekleniyor', status: 'WAITING', icon: 'mdi-file-clock' },
+  { title: 'Gönderim Sorgulanıyor', status: 'SENT', icon: 'mdi-upload-outline' },
+  { title: 'Ürün Onayı Bekleniyor', status: 'WAITING', icon: 'mdi-file-clock-outline' },
   { title: 'Tamamlandı', status: 'COMPLETED', icon: 'mdi-check-all' }
 ]
 
@@ -324,7 +322,7 @@ const getReport = async (isSilent = false) => {
   }
 };
 
-const startPolling = () => { stopPolling(); pollTimer = setTimeout(() => { getReport(true) }, 5000); };
+const startPolling = () => { stopPolling(); pollTimer = setTimeout(() => { getReport(true) }, reportPollInterval()); };
 const stopPolling = () => { if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; } };
 
 const calculateDuration = (start: any, end: any) => {

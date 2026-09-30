@@ -1,19 +1,13 @@
 <template>
 
-  <CardComponent icon="mdi-checkbox-multiple-marked" title="Varyant Bilgileri" :isHovered="false" class="pva-s1">
+  <CardComponent icon="mdi-checkbox-multiple-marked-outline" title="Varyant Bilgileri" :isHovered="false" class="pva-s1">
     <LoadingComponent attach=".productDefinitionView" ref="loadingComponentRef"></LoadingComponent>
 
     <template #header>
 
-      <v-btn-group elevation="0" class="ml-2 mr-2" density="compact">
-        <v-btn density="compact" color="#E53935ff" @click="save()" class="pva-s2">
-          <span class="">
-            Varyanta Ata
-          </span></v-btn>
-      </v-btn-group>
+      <EkButton tone="primary" size="sm" icon="mdi-check" @click="save()">Varyanta Ata</EkButton>
 
-      <v-btn aria-label="Kapat" @click="emits('close')" elevation="0" min-width="0"
-        color="white" class="pva-s3"><v-icon size="x-large" color="primary">mdi-close</v-icon></v-btn>
+      <EkButton tone="ghost" size="sm" icon="mdi-close" icon-only aria-label="Kapat" @click="emits('close')" />
 
     </template>
 
@@ -22,70 +16,30 @@
       <div
         class="pt-0 pva-s4">
 
-        <div v-for="clientMarketplace of computedPlatformList" class="pa-0 pt-0"
-          :class="tab.code == clientMarketplace.code ? 'pva-tab--active' : 'pva-tab--idle-8'">
-          <v-sheet v-if="clientMarketplace?.type?.code == 'marketplace'"
-            @click="changeIntegration(clientMarketplace.code); tab = clientMarketplace"
-            class="mt-0 mr-0 mb-0 ml-0 mr-0 pa-3 text-center d-flex justify-center pva-s5"
-            :class="[tab.code == clientMarketplace.code ? 'elevation-5 pva-logo--active' : 'pva-logo--idle']" :style="{ 'background-color': clientMarketplace.color }">
-            <v-img :width="clientMarketplace.width"
-              :src="integrationStore.getIntegrationImagePath(clientMarketplace)"></v-img>
-          </v-sheet>
-        </div>
-
-        <div v-for="clientEcommerce of integrationStore.getClientECommerces()" class="pa-0 pt-0"
-          :class="tab.code == clientEcommerce.code ? 'pva-tab--active' : 'pva-tab--idle-9'">
-          <v-sheet
-            @click="changeIntegration(clientEcommerce.code); tab = clientEcommerce"
-            class="mt-0 mr-0 mb-0 ml-0 mr-0 pa-3 text-center d-flex justify-center pva-s5"
-            :class="[tab.code == clientEcommerce.code ? 'elevation-5 pva-logo--active' : 'pva-logo--idle']" :style="{ 'background-color': clientEcommerce.color }">
-            <v-img :width="clientEcommerce.width"
-              :src="integrationStore.getIntegrationImagePath(clientEcommerce)"></v-img>
-          </v-sheet>
-        </div>
-
-
-
-        <div v-for="clientErp of integrationStore.getClientErps()" class="pa-0 pt-0"
-          :class="tab.code == clientErp.code ? 'pva-tab--active' : 'pva-tab--idle-9'">
-          <v-sheet
-            @click="changeIntegration(clientErp.code); tab = clientErp"
-            class="mt-0 mr-0 mb-0 ml-0 mr-0 pa-3 text-center d-flex justify-center pva-s5"
-            :class="[tab.code == clientErp.code ? 'elevation-5 pva-logo--active' : 'pva-logo--idle']" :style="{ 'background-color': clientErp.color }">
-            <v-img :width="clientErp.width" :src="integrationStore.getIntegrationImagePath(clientErp)"></v-img>
-          </v-sheet>
-        </div>
+        <!-- DS-v2 A6a: adlı, klavyeyle gezilebilir kanal sekmeleri (eski logo kutuları yerine) -->
+        <ChannelTabList :model-value="tab?.code" label="Özellikleri düzenlenecek kanal"
+          @select="(ch: any) => { changeIntegration(ch.code); tab = ch }" />
 
       </div>
 
 
       <div v-if="editingVariant.platforms" class="pva-s6">
 
-        <v-list class="pa-0 ma-0 card-component pva-s7">
-
-          <v-list-group value="batch">
-            <template v-slot:activator="{ props }">
-
-              <v-list-item v-bind="props" class="pl-2 pr-2 card-component-header pva-s8">
-                <template #title>
-                  <span class="pva-s9">
-                    <div class="font-weight-bold pva-s10"><v-icon
-                        class="mr-1">mdi-information-outline</v-icon>Platform Bazında Bilgiler</div>
-                  </span>
-                </template>
-              </v-list-item>
-            </template>
-            <v-divider class="mb-4" />
-
-            <v-list-item class="pl-0 pva-s11"
-              v-if="editingVariant.platforms[tab.code]">
-              <VariantInfoComponent v-model="editingVariant.platforms[tab.code].mapping"
-                :productInfoForm="productInfoForm" />
-              <component :is="platformInfoComponentsMap.get(tab.code)"
-                v-model="editingVariant.platforms[tab.code].mapping" :productInfoForm="productInfoForm" />
-            </v-list-item>
-          </v-list-group>
-        </v-list>
+        <!-- DS-v2 A6a: erişilebilir akordeon (eski v-list/v-list-group: axe aria-required-children / aria-allowed-attr) -->
+        <v-expansion-panels class="pva-s7 pva-acc" variant="accordion" flat>
+          <v-expansion-panel value="batch" class="pva-acc__panel">
+            <v-expansion-panel-title class="pva-acc__title">
+              <v-icon class="mr-2" icon="mdi-information-outline" aria-hidden="true" />Platform Bazında Bilgiler
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <template v-if="editingVariant.platforms[tab.code]">
+                <VariantInfoComponent v-model="editingVariant.platforms[tab.code].mapping" :productInfoForm="productInfoForm" />
+                <component :is="platformInfoComponentsMap.get(tab.code)"
+                  v-model="editingVariant.platforms[tab.code].mapping" :productInfoForm="productInfoForm" />
+              </template>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
         <v-divider class="mb-8" />
 
 
@@ -97,7 +51,7 @@
 
             <div v-if="checkCategoryPlatformMappingResult.code == 'PLATFORM'">
 
-              <div class="d-flex justify-center mt-4 text-danger font-weight-medium">
+              <div class="d-flex justify-center mt-4 text-error font-weight-medium">
                 Kategorisi Eşleştirmesi Yapılmalı.
               </div>
               <div class="d-flex justify-center mt-1 mb-4">
@@ -125,7 +79,7 @@
             </div>
             <div v-else-if="checkCategoryPlatformMappingResult.code == 'CHOICE'">
 
-              <div class="d-flex justify-center mt-4 text-danger font-weight-medium">
+              <div class="d-flex justify-center mt-4 text-error font-weight-medium">
                 Seçenek Eşleştirmesi Yapılmalı.
               </div>
               <div class="d-flex justify-center mt-1 mb-4">
@@ -157,7 +111,7 @@
 
           </div>
           <template v-else>
-            <template v-if="editingVariant.platforms[selectedIntegrationCode]?.attributes" :color="platform.color+'08'">
+            <template v-if="editingVariant.platforms[selectedIntegrationCode]?.attributes">
 
               <template v-if="platformAttributes.get(selectedIntegrationCode)">
 
@@ -202,7 +156,7 @@
                         </template>
 
                         <template v-slot:item="{ item, index, props }: any">
-                          <v-list-item v-bind="props" class="pva-s12">
+                          <v-list-item role="option" v-bind="props" class="pva-s12">
                             <template #title>
                             </template>
                             <div class="d-flex justify-start align-center ml-6">
@@ -249,7 +203,7 @@
                         </template>
 
                         <template v-slot:item="{ item, index, props }: any">
-                          <v-list-item v-bind="props" class="pva-s12">
+                          <v-list-item role="option" v-bind="props" class="pva-s12">
                             <template #title>
                             </template>
                             <div class="d-flex justify-start align-center ml-6">
@@ -268,6 +222,7 @@
 
                 <div class="mt-8"></div>
                 <CardComponent title="Zorunlu Özellikleri (*)">
+                  <template #header><EkHelpHint hint="attributes.required" /></template>
 
                   <v-row>
                     <v-col cols="4" md="4" sm="6" lg="3" xl="2"
@@ -306,7 +261,7 @@
                         </template>
 
                         <template v-slot:item="{ item, index, props }: any">
-                          <v-list-item v-bind="props" class="pva-s12">
+                          <v-list-item role="option" v-bind="props" class="pva-s12">
                             <template #title>
                             </template>
                             <div class="d-flex justify-start align-center ml-6">
@@ -352,7 +307,7 @@
                         </template>
 
                         <template v-slot:item="{ item, index, props }: any">
-                          <v-list-item v-bind="props" class="pva-s12">
+                          <v-list-item role="option" v-bind="props" class="pva-s12">
                             <template #title>
                             </template>
                             <div class="d-flex justify-start align-center ml-6">
@@ -408,7 +363,7 @@
                         </template>
 
                         <template v-slot:item="{ item, index, props }: any">
-                          <v-list-item v-bind="props" class="pva-s12">
+                          <v-list-item role="option" v-bind="props" class="pva-s12">
                             <template #title>
                             </template>
                             <div class="d-flex justify-start align-center ml-6">
@@ -454,7 +409,7 @@
                         </template>
 
                         <template v-slot:item="{ item, index, props }: any">
-                          <v-list-item v-bind="props" class="pva-s12">
+                          <v-list-item role="option" v-bind="props" class="pva-s12">
                             <template #title>
                             </template>
                             <div class="d-flex justify-start align-center ml-6">
@@ -473,11 +428,15 @@
 
               </template>
               <template v-else>
-                <v-card flat class="mt-12 mb-12">
-                  <v-card-text class="text-center">
-                    <span class="font-weight-bold">{{ selectedIntegrationCode }}</span> kategori özellikleri yükleniyor
-                  </v-card-text>
-                </v-card>
+                <!-- DS-v2 A6a: pazaryeri özellik listesi alınamazsa sonsuz "yükleniyor" yerine anlaşılır hata / boş durum
+                     (useIntegrationError — kategori/özellik eşleme ekranlarıyla aynı eşleme). -->
+                <div class="pva-state">
+                  <IntegrationErrorPanel v-if="platformAttributeErrors.get(selectedIntegrationCode)"
+                    :info="platformAttributeErrors.get(selectedIntegrationCode)!" :retrying="attributesRetrying" :autofocus="false"
+                    @retry="retryPlatformAttributes(selectedIntegrationCode)" />
+                  <IntegrationLoadingBlock v-else
+                    :label="`${integrationStore.getIntegrationTitle(selectedIntegrationCode) || 'Pazaryeri'} kategori özellikleri alınıyor…`" />
+                </div>
               </template>
             </template>
           </template>
@@ -490,7 +449,10 @@
 </template>
 
 <script setup lang="ts">
+import EkHelpHint from '@/components/page/EkHelpHint.vue'
+import { formatNumber } from '@entegrasyonik/ui/format'
 import { Sortable } from "sortablejs-vue3";
+import { EkButton } from '@entegrasyonik/ui/components'
 
 import { ref, computed, onMounted, onBeforeMount, nextTick, reactive, onActivated, defineAsyncComponent, shallowRef } from 'vue'
 import { useI18n } from 'vue-i18n';
@@ -502,6 +464,10 @@ import CardComponent from '@/components/CardComponent.vue';
 
 
 import { useIntegrationStore } from '@/stores/integrationStore';
+import ChannelTabList from './ChannelTabList.vue'
+import IntegrationErrorPanel from '@/components/integrations/IntegrationErrorPanel.vue'
+import IntegrationLoadingBlock from '@/components/integrations/IntegrationLoadingBlock.vue'
+import type { IntegrationErrorInfo } from '@/composables/useIntegrationError'
 import { useBrandsStore } from '@/stores/brandsStore';
 import { useCategoriesStore } from '@/stores/categoriesStore';
 const categoriesStore = useCategoriesStore()
@@ -517,8 +483,6 @@ const choicesStore = useChoicesStore()
 var choicesStoreChoices: any = ref()
 const tab: any = ref()
 const isImages = defineModel({ default: false })
-const baseImageURL = ref('https://images.entegrasyonik.com/products/')
-const baseTempImageURL = ref(baseImageURL.value + 'temp/')
 
 const emits = defineEmits(['refreshImages', 'close'])
 const props = defineProps<{
@@ -744,13 +708,25 @@ const fillPlatformAttributes = (integrationCode: string) => {
   }
 }
 
+// DS-v2 A6a: hata yolu artık görünür (eskiden yanıt yoksa sessizce "yükleniyor"da kalıyordu).
+const platformAttributeErrors = ref(new Map<string, IntegrationErrorInfo>())
+const attributesRetrying = ref(false)
 const retrieveAndSetPlatformAttributes = async (integrationCode: string) => {
   if (platformAttributes.value.get(integrationCode)) return platformAttributes.value.get(integrationCode)
-  const resp = await integrationStore.retrieveIntegrationCategoryChoices(integrationCode, categoriesStore.getIntegrationCategoryId(integrationCode, props.productInfoForm.category))
-  if (resp && resp.length > 0) {
-    const filtered = resp.filter((attribute: any) => !isCustomMap(integrationCode, attribute._id));
+  const result = await integrationStore.loadIntegrationCategoryChoices(integrationCode, categoriesStore.getIntegrationCategoryId(integrationCode, props.productInfoForm.category))
+  const errors = new Map(platformAttributeErrors.value)
+  if (result.ok) {
+    errors.delete(integrationCode)
+    const filtered = result.data.filter((attribute: any) => !isCustomMap(integrationCode, attribute._id));
     platformAttributes.value.set(integrationCode, filtered)
+  } else {
+    errors.set(integrationCode, result.error)
   }
+  platformAttributeErrors.value = errors
+}
+const retryPlatformAttributes = async (integrationCode: string) => {
+  attributesRetrying.value = true
+  try { await retrieveAndSetPlatformAttributes(integrationCode) } finally { attributesRetrying.value = false }
 }
 
 const computedPlatformList = computed(() => {
@@ -940,7 +916,7 @@ var getFileSizeOld = (id: number) => {
         conversion = 1000
         suffix = "KB"
       }
-      return parseFloat("" + image.file.size / conversion).toFixed(1) + suffix
+      return formatNumber(Math.round(image.file.size / conversion * 10) / 10) + suffix
 
     }
   }
@@ -954,7 +930,7 @@ var getFileSize = (size: number) => {
     conversion = 1000
     suffix = "KB"
   }
-  return parseFloat("" + size / conversion).toFixed(1) + suffix
+  return formatNumber(Math.round(size / conversion * 10) / 10) + suffix
 }
 
 var files = ref([])
@@ -1022,7 +998,7 @@ const assignImages = async () => {
 const addImage = async ($event: Event) => {
   const target = $event.target as HTMLInputElement;
   if (target && target.files) {
-    if (target.files.length > 5) {
+    if (target.files.length > 5 || !uploadLimit.accept(target.files)) {
       target.value = ""
       return false
     }
@@ -1087,9 +1063,9 @@ const file = ref<File | null>();
 const form = ref<HTMLFormElement>();
 var thumbnailUrl = ref("")
 
-const config = {
-  maxSize: 2000000,
-}
+import { useUploadLimit } from '@/composables/useUploadLimit'
+// FE-CFG-1: yükleme tavanı backend ortam değeri (`env.images.uploadMaxBytes`); eski kullanılmayan 2 MB `maxSize` sabiti kaldırıldı.
+const uploadLimit = useUploadLimit()
 /* function onFileChanged($event: Event) {
   const target = $event.target as HTMLInputElement;
   if (target && target.files) {
@@ -1156,6 +1132,10 @@ const imageSrc = computed(() => {
 </script>
 
 <style>
+/* DS-v2 A6a — pazaryeri özellik listesi hata/yükleniyor alanı + kanal bilgileri akordeonu */
+.pva-acc__panel { border: 1px solid var(--ek-color-border-default); border-radius: var(--ek-radius-card) !important; background: var(--ek-color-surface-muted) !important; }
+.pva-acc__title { min-height: 48px !important; font-weight: 600; color: var(--ek-color-content-strong); }
+.pva-state { padding: var(--ek-space-4) 0; }
 .dropZone {
   position: relative;
   border: 1px dashed black;
@@ -1293,7 +1273,13 @@ const imageSrc = computed(() => {
 }
 
 .pva-s6 {
-  margin-left: 160px !important;
+  margin-left: 184px !important;
+}
+
+/* DS-v2 A6a — dar ekran: sabit kanal kolonu içeriğin üstüne binmesin; sekmeler üstte yatay şerit */
+@media (max-width: 600px) {
+  .pva-s4 { position: static !important; height: auto !important; min-width: 0 !important; margin-bottom: var(--ek-space-3); }
+  .pva-s6 { margin-left: 0 !important; }
 }
 
 .pva-s7 {

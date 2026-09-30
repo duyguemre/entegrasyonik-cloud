@@ -9,6 +9,12 @@ import { DatabaseManagerInstance } from '@database/index';
 import { IntegrationEngineProvider } from '../provider/IntegrationEngineProvider';
 import { StatisticsTracker } from '@services/statistics/StatisticsTracker';
 import { getSetting } from '@integration/config/ConfigResolver';
+import { eventLog } from '@platform/core/logger';
+import { runWithJobContext, getRequestId } from '@platform/core/context';
+import { safeErrorCode } from '@operations/notifications/safeError';
+import { inFlightBlocked, anyIntakeRestricted, recordIntakeSkip } from '@integration/config/intakeGate';
+
+const log = eventLog('engine', 'ImportOrchestrator');
 
 export class ImportOrchestrator {
     private static activeImportJobIds: Set<string> = new Set();
@@ -29,12 +35,19 @@ export class ImportOrchestrator {
 
         while (true) {
             try {
-                const job = await applicationDB.getImportJobModel().findOneAndUpdate(
-                    {
-                        status: { $in: ['WAITING_FOR_FETCH', 'READY_TO_SYNC'] },
-                        lockedBy: { $in: [null, this.POD_NAME] },
-                        _id: { $nin: Array.from(this.activeImportJobIds) }
-                    },
+                // [ADR-0030 X6] Kill-switch `off`: o entegrasyonun import işleri seçilmez (kilitsiz kalır, silinmez);
+                // global off = hiç seçilmez. `drain`: süren iş biter (import işleri zaten kullanıcı tetiklemeli, yeni iş
+                // API'de oluşur; motor tarafında yalnız `off` durdurur).
+                const blocked = inFlightBlocked();
+                const importFilter: any = {
+                    status: { $in: ['WAITING_FOR_FETCH', 'READY_TO_SYNC'] },
+                    lockedBy: { $in: [null, this.POD_NAME] },
+                    _id: { $nin: Array.from(this.activeImportJobIds) }
+                };
+                if (blocked.codes.length > 0) importFilter.integrationCode = { $nin: blocked.codes };
+                if (blocked.all || blocked.codes.length > 0) recordIntakeSkip('ImportOrchestrator', blocked.all ? undefined : blocked.codes.join(','), 'inflight');
+                const job = blocked.all ? null : await applicationDB.getImportJobModel().findOneAndUpdate(
+                    importFilter,
                     { $set: { lockedBy: this.POD_NAME, lastCheckedAt: new Date() } },
                     { sort: { updatedAt: 1 }, new: true }
                 ).lean();
@@ -49,16 +62,25 @@ export class ImportOrchestrator {
                     // [ADR-0020 Aşama A] JSON'dan (`import.config.json`) doğrudan okuma yerine tek çözümleyici;
                     // DEĞER AYNI (30000 — ölü `||` yedek 5000 artık hiçbir yerde YOK, bkz. ADR K10 ve katalogdaki
                     // `knownDriftNote`).
-                    setTimeout(() => { if (wakeUp === resolve) { wakeUp = null; resolve(); } }, getSetting<number>('import.orchestrator.importLoopDelay'));
+                    const delay = getSetting<number>('import.orchestrator.importLoopDelay');
+                    setTimeout(() => { if (wakeUp === resolve) { wakeUp = null; resolve(); } }, anyIntakeRestricted() ? Math.min(delay, 15000) : delay);
                 });
             } catch (err: any) {
-                console.error(`[ImportOrchestrator] Loop Error:`, err.message);
+                log.error('IMPORTORCHESTRATOR_LOOP_ERROR', 'Loop Error:', { err });
                 await new Promise(r => setTimeout(r, 10000));
             }
         }
     }
 
-    private static async dispatch(job: any, applicationDB: any) {
+    /** [F-06] İçe aktarma turu: iş başına yeni correlation id + tenant/entegrasyon/işlem bağlamı. */
+    private static dispatch(job: any, applicationDB: any) {
+        return runWithJobContext(
+            { source: 'worker', tenantId: Number(job.clientId), integrationCode: job.integrationCode, operation: job.status === 'WAITING_FOR_FETCH' ? 'import.fetch' : 'import.sync' },
+            () => this.dispatchInner(job, applicationDB),
+        );
+    }
+
+    private static async dispatchInner(job: any, applicationDB: any) {
         const startedAt = new Date();
         const operationType = job.status === 'WAITING_FOR_FETCH' ? 'IMPORT_FETCH' : 'IMPORT_SYNC';
         const jobIdStr = job._id.toString();
@@ -66,12 +88,12 @@ export class ImportOrchestrator {
 
         try {
             if (!job.clientId) {
-                console.error(`[ImportOrchestrator] Client ID not found for Job ID: ${job._id}`);
+                log.error('IMPORTORCHESTRATOR_CLIENT_ID_NOT_FOUND', `Client ID not found for Job ID: ${job._id}`);
                 return;
             }
             const clientDB = await DatabaseManagerInstance.getClientDB(job.clientId.toString());
             if (!clientDB) {
-                console.error(`[ImportOrchestrator] Client DB not found for Client ID: ${job.clientId}`);
+                log.error('IMPORTORCHESTRATOR_CLIENT_DB_NOT_FOUND', `Client DB not found for Client ID: ${job.clientId}`);
                 return;
             }
             const engineProvider = new IntegrationEngineProvider(applicationDB, clientDB)
@@ -109,25 +131,36 @@ export class ImportOrchestrator {
 
     private static sendNotification(job: any) {
         if (job.status === 'COMPLETED' || job.status === 'FAILED') {
-            NotificationService.sendClientNotification({
-                clientId: job.clientId.toString(),
-                notificationData: {
-                    type: 'IMPORT_READY' as any,
-                    mode: PLATFORM_PROCESS.IMPORT,
-                    severity: job.status === 'COMPLETED' ? 'success' : 'danger',
-                    title: job.status === 'COMPLETED' ? 'Ürün Çekme Tamamlandı' : 'Ürün Çekme Başarısız',
-                    message: `${job.integrationCode.toUpperCase()} platformundan ürün çekme işlemi sona erdi.`,
-                    metaData: {
-                        integrationCode: job.integrationCode, jobId: job._id.toString(), status: job.status, mode: 'IMPORT',
-                        totalCount: job.totalCount,
-                        validCount: job.validCount,
-                        invalidCount: job.invalidCount,
-                        duplicateCount: job.duplicateCount,
-                        processedCount: job.processedCount,
-                        failedCount: job.failedCount
+            const failed = job.status === 'FAILED';
+            const jobId = job._id.toString();
+            // [ADR-0029 NB3] Katalog kodu; ham hata mesaji YOK (FAILED icin guvenli hata kodu). Bayrak kapaliyken legacy olay birebir.
+            const params = failed
+                ? { integ: job.integrationCode, jobId, errorCode: safeErrorCode(job.errorCode), corrId: getRequestId() }
+                : { integ: job.integrationCode, jobId, itemCount: Number(job.processedCount ?? job.totalCount ?? 0) };
+            void NotificationService.notify(failed ? 'CATALOG_IMPORT_FAILED' : 'CATALOG_IMPORT_COMPLETED', Number(job.clientId), params, {
+                idempotencyKey: `import:${jobId}:${job.status}`,
+                corrId: getRequestId(),
+                module: 'ImportOrchestrator',
+                legacy: { event: {
+                    clientId: job.clientId.toString(),
+                    notificationData: {
+                        type: 'IMPORT_READY' as any,
+                        mode: PLATFORM_PROCESS.IMPORT,
+                        severity: job.status === 'COMPLETED' ? 'success' : 'danger',
+                        title: job.status === 'COMPLETED' ? 'Ürün Çekme Tamamlandı' : 'Ürün Çekme Başarısız',
+                        message: `${job.integrationCode.toUpperCase()} platformundan ürün çekme işlemi sona erdi.`,
+                        metaData: {
+                            integrationCode: job.integrationCode, jobId, status: job.status, mode: 'IMPORT',
+                            totalCount: job.totalCount,
+                            validCount: job.validCount,
+                            invalidCount: job.invalidCount,
+                            duplicateCount: job.duplicateCount,
+                            processedCount: job.processedCount,
+                            failedCount: job.failedCount
+                        }
                     }
-                }
-            } as SendNotificationEvent);
+                } as SendNotificationEvent },
+            }).catch(() => undefined);
         }
     }
 

@@ -4,6 +4,7 @@
  * Kanal başına (`ClientIntegrations.marketplace[].settings.stockPolicy`) alanlar ve sınırları:
  *   bufferUnits        tamsayı  0..STOCK_POLICY_LIMITS.bufferUnitsMax    (varsayılan, birincil olmayan kanal: 1)
  *   bufferPercent      sayı     0..100                                    (varsayılan 0)
+ *   safetyStock        tamsayı  0..STOCK_POLICY_LIMITS.safetyStockMax     (varsayılan 0 = bugünkü davranış; kanala yayın = max(0, stok - safetyStock))
  *   graceMinutes       tamsayı  0..STOCK_POLICY_LIMITS.graceMinutesMax    (varsayılan 30)
  *   autoCancelOversold boolean                                            (varsayılan true; kanalın iptal yeteneği yoksa uygulanmaz)
  * Alan değeri `null` = "bu alanı varsayılana döndür" (DB'den $unset edilir).
@@ -12,12 +13,14 @@
  * notu: restock kararı çağıranın sorumluluğu ve henüz bağlanmadı) — yazılabilir yapmak, etkisiz bir ayar sunmak olurdu.
  */
 
-export const CHANNEL_STOCK_POLICY_FIELDS = ['bufferUnits', 'bufferPercent', 'graceMinutes', 'autoCancelOversold'] as const;
+export const CHANNEL_STOCK_POLICY_FIELDS = ['bufferUnits', 'bufferPercent', 'safetyStock', 'graceMinutes', 'autoCancelOversold'] as const;
 export type ChannelStockPolicyField = typeof CHANNEL_STOCK_POLICY_FIELDS[number];
 
 export const STOCK_POLICY_LIMITS = {
     bufferUnitsMax: 100000,
     bufferPercentMax: 100,
+    safetyStockMax: 1_000_000,
+    lowStockThresholdMax: 1_000_000,
     graceMinutesMax: 7 * 24 * 60, // 7 gün
 } as const;
 
@@ -25,6 +28,7 @@ export const STOCK_POLICY_LIMITS = {
 export const STOCK_POLICY_DEFAULTS = {
     bufferUnits: 1,          // yalnızca birincil olmayan kanallarda; birincil kanalda 0
     bufferPercent: 0,
+    safetyStock: 0,
     graceMinutes: 30,
     autoCancelOversold: true,
 } as const;
@@ -75,6 +79,11 @@ export function validateChannelStockPolicyPatch(input: any): ValidatedChannelPol
                     throw new StockPolicyValidationError(`bufferPercent 0 ile ${STOCK_POLICY_LIMITS.bufferPercentMax} arasında bir sayı olmalıdır.`);
                 }
                 break;
+            case 'safetyStock':
+                if (typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > STOCK_POLICY_LIMITS.safetyStockMax) {
+                    throw new StockPolicyValidationError(`safetyStock 0 ile ${STOCK_POLICY_LIMITS.safetyStockMax} arasında bir tamsayı olmalıdır.`);
+                }
+                break;
             case 'graceMinutes':
                 if (typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > STOCK_POLICY_LIMITS.graceMinutesMax) {
                     throw new StockPolicyValidationError(`graceMinutes 0 ile ${STOCK_POLICY_LIMITS.graceMinutesMax} arasında bir tamsayı olmalıdır.`);
@@ -103,6 +112,7 @@ export function pickChannelStockPolicy(raw: any): Partial<Record<ChannelStockPol
     if (!isPlainObject(raw)) return out;
     if (typeof raw.bufferUnits === 'number') out.bufferUnits = raw.bufferUnits;
     if (typeof raw.bufferPercent === 'number') out.bufferPercent = raw.bufferPercent;
+    if (typeof raw.safetyStock === 'number') out.safetyStock = raw.safetyStock;
     if (typeof raw.graceMinutes === 'number') out.graceMinutes = raw.graceMinutes;
     if (typeof raw.autoCancelOversold === 'boolean') out.autoCancelOversold = raw.autoCancelOversold;
     return out;
@@ -114,3 +124,20 @@ export function pickChannelStockPolicy(raw: any): Partial<Record<ChannelStockPol
  * tests/characterization/stock/stock-policy-api.test.ts (statik eşitlik testi) kırılır.
  */
 export const AUTO_CANCEL_SUPPORTED_CHANNELS: ReadonlyArray<string> = ['trendyol', 'hepsiburada', 'pazarama'];
+
+/**
+ * Tenant düzeyi düşük stok eşiği (`ClientIntegrations.stockPolicy.lowStockThreshold`). Varsayılan YOK = özellik kapalı.
+ * `null` = temizle (kapat). Tamsayı 0..lowStockThresholdMax. `undefined` çağıranın işi (alan gönderilmedi).
+ */
+export function validateLowStockThreshold(value: any): number | null {
+    if (value === null) return null;
+    if (typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > STOCK_POLICY_LIMITS.lowStockThresholdMax) {
+        throw new StockPolicyValidationError(`lowStockThreshold 0 ile ${STOCK_POLICY_LIMITS.lowStockThresholdMax} arasında bir tamsayı (ya da temizlemek için null) olmalıdır.`);
+    }
+    return value;
+}
+
+/** DB'den okunan tenant eşiği: yalnız geçerli tamsayı; aksi (yok/bozuk) = kapalı (`null`). */
+export function pickLowStockThreshold(raw: any): number | null {
+    return typeof raw === 'number' && Number.isInteger(raw) && raw >= 0 && raw <= STOCK_POLICY_LIMITS.lowStockThresholdMax ? raw : null;
+}

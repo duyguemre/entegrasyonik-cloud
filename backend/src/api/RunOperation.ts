@@ -1,12 +1,23 @@
+import { impersonationDenial } from './impersonationPolicy'
 import MicroserviceWrapper from "./ApiWrapper";
 import Apis from './index'
 import { ApplicationError } from './Security';
 import { AuditLogger } from '@services/audit/AuditLogger';
-import { IMAGE_API_TARGETS, OPEN_OPERATIONS, PSEUDO_SERVICES, getRequiredTier, isAllowed, resolveTier } from './operationPolicy';
+import { IMAGE_API_TARGETS, OPEN_OPERATIONS, PSEUDO_SERVICES, getRequiredPermission, getRequiredTier, isAllowed, resolveTier } from './operationPolicy';
+import { can } from '@platform/core/authz/can';
 import { CAPABILITY_BY_RPC } from '../capabilities';
 import { recordHttpRequestMetric } from '@platform/runtime/metrics';
 import { config } from '@config';
+import { validateRpcRequest } from './requestValidation';
 import { EntitlementService } from '@services/billing/EntitlementService';
+import type { TenantEntry } from '@database/TenantRegistry';
+import { buildRequestContext } from './requestContext';
+import { getRequestId } from '@platform/core/context';
+import { isSensitiveRead } from './admin/stepUp';
+import { withIdempotency } from './idempotencyGuard';
+import { enforceIntakeForRpc } from './intakeRpcGuard';
+import { enforceLiveReadonlyForRpc } from './liveReadonlyRpcGuard';
+import { planAppWriteAudit, captureBefore, buildAppWriteEntry } from './appWriteAudit';
 var services = new Map<string, MicroserviceWrapper>()
 
 /**
@@ -42,7 +53,7 @@ function getService(serviceName: string): MicroserviceWrapper | undefined {
     return services.get(serviceName)
 }
 
-/** Açık operasyonlar (login/register/getCaptcha/logout): kimliksiz çalışır, politika kaydına takılmaz. Tam (büyük/küçük harf duyarlı) eşleşme. */
+/** Açık operasyonlar (login/register/logout): kimliksiz çalışır, politika kaydına takılmaz. Tam (büyük/küçük harf duyarlı) eşleşme. */
 function isOpenOperation(service: string, operation: string): boolean {
     return OPEN_OPERATIONS.includes(service + '/' + operation);
 }
@@ -56,8 +67,30 @@ function authorize(policyService: string, policyOperation: string, userContext: 
     const required = getRequiredTier(policyService, policyOperation)
     if (required === undefined) throw new ApplicationError('Forbidden', 403)
     if (!principal) throw new ApplicationError('Token is undefined', 401)
-    if (!isAllowed(required, resolveTier(userContext, principal))) throw new ApplicationError('Forbidden', 403)
+    // [ADR-0028 WP-A1] Karar noktası: izin tabanlı `can` (kademe paritesi capability-parity testiyle kanıtlı). Kayıt bozuksa fail-closed.
+    const permission = getRequiredPermission(policyService, policyOperation)
+    const actor = resolveTier(userContext, principal)
+    // Politika kaydı var ama yetenek kaydına çözülemiyorsa (capability-drift; yalnız test/sürüklenme) eski kademe kontrolü korunur.
+    const allowed = permission === undefined ? isAllowed(required, actor) : can(actor, permission).allowed
+    if (!allowed) throw new ApplicationError('Forbidden', 403)
+    enforceImpersonationRestrictions(policyService, policyOperation, principal)
     observeCapabilityResolution(policyService, policyOperation)
+}
+
+/**
+ * [ADR-0026 Karar 4.9.7 / ADR-0028 Karar 9] Impersonation (`imp:true`) oturumunda yıkıcı (`effect:'destructive'`), dış-dünya (`external:true`)
+ * ve tenant sahipliği/ödeme/kullanıcı-yönetimi izinli (`users:manage`, `billing:manage`, `tenant:*`) işlemler REDDEDİLİR (403). Gerekirse yönetici
+ * bunları backoffice'teki karşılık ekranlarından yapar. Kayıtsız (drift) RPC'de guard karar üretmez (varsayılan ret zaten `getRequiredTier`'da).
+ */
+function enforceImpersonationRestrictions(service: string, operation: string, principal: any): void {
+    // Kapsam: bilet ile açılan (sabit ömürlü, `fx`) impersonation oturumları. Eski `selectStore` imp oturumu (fx yok) Aşama 3'te
+    // `ADMIN_API_ONLY=true` ile kapanana kadar DEĞİŞMEZ (mevcut /api davranışı; characterization: operation-policy.test.ts); bayrak açılınca
+    // kalan her imp oturumu da kapsama girer.
+    if (!principal || principal.imp !== true) return
+    if (principal.fx !== true && !config.admin.apiOnly) return
+    if (impersonationDenial(service + '/' + operation)) {
+        throw new ApplicationError('Bu işlem yönetici görüntüleme (impersonation) oturumunda yapılamaz.', 403, 'FORBIDDEN')
+    }
 }
 
 /**
@@ -91,19 +124,35 @@ async function enforceEntitlementGuard(service: string, operation: string, tenan
 }
 
 /** Sunucu tarafı istek üst verisi (ör. istemci IP'si); istek gövdesinden ASLA alınmaz. */
-export interface RequestMeta { ip?: string }
+export interface RequestMeta {
+    ip?: string;
+    /** authenticate'in çözdüğü ACTIVE tenant kaydı (sunucu tarafı; ctx.tenant'ı besler, BaseApi'de kayıt defteri okumasını önler). */
+    tenant?: TenantEntry;
+    /** [ADR-0026] Çağrının geldiği bağlama noktası. `'backoffice'` (`/admin-api`): audit yetenek `effect`inden türetilir (Karar 4.8). Gövdeden ASLA alınmaz. */
+    surface?: 'app' | 'backoffice';
+    /** [ADR-0026 Karar 4.6/4.8] Step-up gerektiren işlemde doğrulanmış gerekçe (audit `meta.reason`). */
+    reason?: string;
+    /** [ADR-0030 X3] Ham `Idempotency-Key` başlığı (yalnız dış etkili yazma RPC'lerinde anlamlı). Gövdeden ASLA alınmaz. */
+    idempotencyKey?: string;
+}
 
 async function execute(userContext: any, service: string, operation: string, request: any, principal: any, requestMeta?: RequestMeta) {
     let microServiceWrapper = getService(service)
     if (!microServiceWrapper) throw new ApplicationError('Forbidden', 403)
 
     const clientId = userContext?.order;
-    const { userContext: _uc, principal: _pr, requestMeta: _rm, order: _o, clientId: bodyClientId, ...safeRequest } = (request ?? {}) as any;
+    const { userContext: _uc, principal: _pr, requestMeta: _rm, ctx: _ctx, order: _o, clientId: bodyClientId, ...safeRequest } = (request ?? {}) as any;
     if (service === 'SecurityService' && operation === 'selectStore' && bodyClientId !== undefined) {
         safeRequest.clientId = bodyClientId;
     }
-    const enhancedRequest: any = { ...safeRequest, userContext, principal };
-    if (requestMeta) enhancedRequest.requestMeta = requestMeta;
+    // [ADR-0023] Yetkilendirme + sunucu alanlarının atılmasından SONRA, servis örneklenmeden ÖNCE gövde şema doğrulaması
+    // (şemasız operasyon eskisi gibi). Hata 400 VALIDATION; servis/DB'ye hiç dokunulmaz.
+    const validated = validateRpcRequest(service, operation, safeRequest);
+    const enhancedRequest: any = { ...validated, userContext, principal };
+    if (requestMeta) enhancedRequest.requestMeta = { ip: requestMeta.ip };
+    // ADR-0024 P1-CORE: tipli bağlam (BaseApi `this.ctx`); `userContext`/`principal` alanları geriye uyumluluk için kalır.
+    const ctx = buildRequestContext({ principal, userContext, tenant: requestMeta?.tenant && requestMeta.tenant.order === clientId ? requestMeta.tenant : undefined, ip: requestMeta?.ip });
+    if (ctx) enhancedRequest.ctx = ctx;
     return await microServiceWrapper.process(clientId, operation, enhancedRequest)
 }
 
@@ -112,8 +161,41 @@ function isAdminWrite(service: string, operation: string): boolean {
     return service === 'AdminService' && !/^(get|retrieve)/i.test(operation)
 }
 
+/**
+ * [ADR-0030 X4] Müşteri yüzeyindeki yazmalar (`effect !== 'read'`) `app.write` olarak yazılır (okumalar yazılmaz). Alanlar/PII/önce-sonra
+ * kuralları `appWriteAudit.ts`'te. Denetim hazırlığı/yazımı hiçbir koşulda isteği düşürmez veya sonucunu değiştirmez.
+ */
+async function executeAppWriteAudited(userContext: any, service: string, operation: string, request: any, principal: any, requestMeta?: RequestMeta) {
+    let plan: ReturnType<typeof planAppWriteAudit>
+    try { plan = planAppWriteAudit(service, operation, principal) } catch { plan = undefined }
+    if (!plan && principal?.imp === true) {
+        // [B3] Destek oturumunda OKUMALAR (ve `app.write` planı olmayan istekler) da denetlenir (tenant denetim görünümünde `impersonation.request`; yük/PII yok, yalnız servis+operasyon).
+        try {
+            void AuditLogger.log({
+                event: 'impersonation.request', result: 'ok', sub: principal.sub, tid: principal.tid, ip: requestMeta?.ip, surface: 'app',
+                actorType: 'impersonator', imp: true, onBehalfOf: principal.tid, reqId: getRequestId(),
+                meta: { service, operation, effect: CAPABILITY_BY_RPC.get(service + '/' + operation)?.effect ?? 'unknown', ...(typeof principal.impReason === 'string' && principal.impReason ? { impReason: principal.impReason.slice(0, 200) } : {}) },
+            })
+        } catch { /* denetim asla isteği etkilemez */ }
+    }
+    if (!plan) return await execute(userContext, service, operation, request, principal, requestMeta)
+    const before = await captureBefore(plan, userContext?.order, request)
+    const emit = (error?: any) => {
+        try { void AuditLogger.log(buildAppWriteEntry(plan!, request, before, principal, requestMeta?.ip, error)) } catch { /* denetim asla isteği etkilemez */ }
+    }
+    try {
+        const resp = await execute(userContext, service, operation, request, principal, requestMeta)
+        emit()
+        return resp
+    } catch (e) {
+        emit(e ?? new Error('unknown'))
+        throw e
+    }
+}
+
 async function executeAudited(userContext: any, service: string, operation: string, request: any, principal: any, requestMeta?: RequestMeta) {
-    if (!isAdminWrite(service, operation)) return await execute(userContext, service, operation, request, principal, requestMeta)
+    if (requestMeta?.surface === 'backoffice') return await executeBackofficeAudited(userContext, service, operation, request, principal, requestMeta)
+    if (!isAdminWrite(service, operation)) return await executeAppWriteAudited(userContext, service, operation, request, principal, requestMeta)
     const base = { sub: principal?.sub, tid: principal?.tid, ip: requestMeta?.ip }
     try {
         const resp = await execute(userContext, service, operation, request, principal, requestMeta)
@@ -121,6 +203,37 @@ async function executeAudited(userContext: any, service: string, operation: stri
         return resp
     } catch (e) {
         void AuditLogger.log({ event: 'admin.write', result: 'error', ...base, meta: { service, operation } })
+        throw e
+    }
+}
+
+/**
+ * [ADR-0026 Karar 4.8 / plan S7] `/admin-api` üzerindeki TÜM yazmalar (`effect !== 'read'`; kayıtsız RPC de yazma sayılır) `backoffice.write`,
+ * tenant PII'sine dokunan okumalar `backoffice.sensitive_read` olarak yazılır. Karar servis adı regex'inden DEĞİL yetenek `effect`inden türer
+ * (bugünkü `isAdminWrite` yalnız `AdminService` yazmalarını yakalıyordu). Eski `admin.write` kaydı bu yüzeyde YAZILMAZ (çift kayıt tekilleştirilir);
+ * `IntegrationConfigService`/`IntegrationComplianceService`'in kendi audit çağrıları (config.publish vb.) korunur. Hedef tenant `onBehalfOf`'a
+ * yazılır (`tid` bilerek boş: tenant denetim görünümünde platform-içi kayıt görünmesin). Salt okuma ve hassas olmayan okuma yazılmaz.
+ */
+async function executeBackofficeAudited(userContext: any, service: string, operation: string, request: any, principal: any, requestMeta: RequestMeta) {
+    const rpc = service + '/' + operation
+    const cap = CAPABILITY_BY_RPC.get(rpc)
+    const write = !cap || cap.effect !== 'read'
+    const sensitive = !write && isSensitiveRead(rpc)
+    if (!write && !sensitive) return await execute(userContext, service, operation, request, principal, requestMeta)
+    const target = [request?.tid, request?.clientId, request?.order].map(Number).find(n => Number.isInteger(n) && n > 0)
+    const meta: Record<string, any> = { service, operation, effect: cap?.effect ?? 'unknown' }
+    if (requestMeta.reason) meta.reason = requestMeta.reason
+    const base = {
+        event: write ? 'backoffice.write' : 'backoffice.sensitive_read',
+        sub: principal?.sub, ip: requestMeta.ip, surface: 'backoffice' as const, actorType: 'platform' as const,
+        reqId: getRequestId(), onBehalfOf: target, meta,
+    }
+    try {
+        const resp = await execute(userContext, service, operation, request, principal, requestMeta)
+        void AuditLogger.log({ ...base, result: 'ok' })
+        return resp
+    } catch (e) {
+        void AuditLogger.log({ ...base, result: 'error' })
         throw e
     }
 }
@@ -152,12 +265,21 @@ export default async function run(userContext: any, service: string, operation: 
 
 async function runInner(userContext: any, service: string, operation: string, request: any, principal?: any, requestMeta?: RequestMeta) {
     if (!isOpenOperation(service, operation)) {
+        // [ADR-0026 Aşama 3, BAYRAK: ADMIN_API_ONLY (varsayılan false = davranış DEĞİŞMEZ)] platformAdmin işlemleri (selectStore dahil) yalnız `/admin-api`.
+        if (config.admin.apiOnly && requestMeta?.surface !== 'backoffice' && getRequiredTier(service, operation) === 'platformAdmin') {
+            throw new ApplicationError('Bu işlem yalnızca yönetim uygulamasından yapılabilir.', 403, 'ADMIN_API_ONLY')
+        }
         // Sözde-servisler (ImageApi) jenerik RPC ile çağrılamaz; yalnızca runImageApi ile
         if (PSEUDO_SERVICES.includes(service)) throw new ApplicationError('Forbidden', 403)
         authorize(service, operation, userContext, principal)
         await enforceEntitlementGuard(service, operation, userContext?.order)
     }
-    return await executeAudited(userContext, service, operation, request, principal, requestMeta)
+    // [LIVE-RO] canlı salt-okuma kipi (LIVE_READONLY=1): dış dünyaya yazan RPC'ler 423 (kip kapalıyken no-op; servis örneklenmeden ÖNCE)
+    enforceLiveReadonlyForRpc(service, operation)
+    // [ADR-0030 X6-b] acil durdurma (intake): dış çağrı yapan RPC'ler (idempotency kaydı açılmadan ÖNCE reddedilir)
+    await enforceIntakeForRpc(service, operation, request, requestMeta?.surface, userContext?.order)
+    // [ADR-0030 X3] dış etkili yazma RPC'lerinde Idempotency-Key (varsayılan gözlem kipi: davranış değişmez)
+    return await withIdempotency(service, operation, userContext, principal, request, requestMeta, () => executeAudited(userContext, service, operation, request, principal, requestMeta))
 }
 
 /**

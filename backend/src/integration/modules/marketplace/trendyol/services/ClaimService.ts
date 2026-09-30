@@ -3,6 +3,7 @@ import { IClaimPackage, IClaimRejectionReason, IClaimRejectParams, IPlatformResp
 import { ClaimConnector } from '../api/ClaimConnector';
 import { ClaimMapper } from '../transformers/ClaimTransformer';
 import Service from './Service';
+import { carryIncomplete } from '@integration/contracts/IncompleteFetch';
 import { IntegrationError } from '@integration/modules/common/IntegrationError';
 
 export class ClaimService {
@@ -23,7 +24,7 @@ export class ClaimService {
     public async fetchClaims(query?: Record<string, any>): Promise<IClaimPackage[]> {
         try {
             const rawClaims = await this.connector.fetchClaimsFromPlatform(query);
-            return this.mapper.toInternalClaimPackages(rawClaims);
+            return carryIncomplete(rawClaims, this.mapper.toInternalClaimPackages(rawClaims));
         } catch (error: any) {
             if (IntegrationError.isIntegrationError(error)) throw error;
             if (error.message.includes(`[${this.clientId}]`)) throw error;

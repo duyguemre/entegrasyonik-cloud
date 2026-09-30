@@ -8,7 +8,7 @@
   bildirimine normalize edildi (Karar 6 "tek iş = tek desen").
 -->
 <template>
-  <IntegrationComingSoonPanel platform-name="PTT Kargo" category="kargo" />
+  <IntegrationComingSoonPanel platform-name="PTT Kargo" category="kargo" alternative-capability="shippingNotice" />
 </template>
 
 <script setup lang="ts">

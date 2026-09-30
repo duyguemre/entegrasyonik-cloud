@@ -1,3 +1,4 @@
+import { carryIncomplete } from '@integration/contracts/IncompleteFetch';
 import { IFinancialTransaction, ICargoInvoice } from '@interfaces/platforms';
 import { FinancialConnector } from '../api/FinancialConnector';
 import { FinancialMapper } from '../transformers/FinancialMapper';
@@ -18,7 +19,7 @@ export class FinancialService {
     public async fetchFinancials(query: any): Promise<IFinancialTransaction[]> {
         try {
             const rawTransactions = await this.connector.fetchTransactions(query);
-            return this.mapper.toInternalTransactions(rawTransactions);
+            return carryIncomplete(rawTransactions, this.mapper.toInternalTransactions(rawTransactions));
         } catch (error: any) {
             if (IntegrationError.isIntegrationError(error)) throw error;
             throw new Error(`[${this.clientId}][HepsiburadaFinancialService:fetchFinancials] ${error.message}`);

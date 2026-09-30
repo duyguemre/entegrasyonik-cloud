@@ -1,6 +1,10 @@
 
 import { defineStore } from 'pinia'
 import { ref, readonly, reactive } from 'vue';
+import { integrationAccent } from '@entegrasyonik/ui/tokens';
+
+/** Ölçülmüş marka rengi olmayan platformlar (CHANNEL_BRAND_COLORS.md dışı) → nötr rol (EkChannelDot kuralı). */
+const NEUTRAL_MARK = 'var(--ek-color-neutral)'
 
 
 var version = ref(0)
@@ -11,14 +15,14 @@ const ecommerces:any = reactive([
 ecommerces.push({
     id:1,
     code: 'ideasoft',
-    color: '#99cf65',
+    color: integrationAccent.ideasoft,
     logo: '/assets/images/integrations/ecommerce/ideasoft.png',
     width: 100
 })
 ecommerces.push({
     id:2,
     code: 'ticimax',
-    color: '#0d154b',
+    color: NEUTRAL_MARK,
     logo: '/assets/images/integrations/ecommerce/ticimax.svg',
     width: 90
 }
@@ -26,7 +30,7 @@ ecommerces.push({
 ecommerces.push({
     id:3,
     code: 'shopify',
-    color: '#95BF47',
+    color: integrationAccent.shopify,
     logo: '/assets/images/integrations/ecommerce/shopify.svg',
     width: 100
 }
@@ -34,7 +38,7 @@ ecommerces.push({
 ecommerces.push({
     id:4,
     code: 'opencart',
-    color: '#23C0F0',
+    color: NEUTRAL_MARK,
     logo: '/assets/images/integrations/ecommerce/opencart.svg',
     width: 100
 }
@@ -42,7 +46,7 @@ ecommerces.push({
 ecommerces.push({
     id:5,
     code: 'woocommerce',
-    color: '#7F54B3',
+    color: integrationAccent.woocommerce,
     logo: '/assets/images/integrations/ecommerce/woocommerce.svg',
     width: 100
 }
@@ -50,7 +54,7 @@ ecommerces.push({
 ecommerces.push({
     id:6,
     code: 'wix',
-    color: '#000000',
+    color: NEUTRAL_MARK,
     logo: '/assets/images/integrations/ecommerce/wix.svg',
     width: 100
 }
@@ -58,7 +62,7 @@ ecommerces.push({
 ecommerces.push({
     id:7,
     code: 'ankaeticaret',
-    color: '#673ab7',
+    color: NEUTRAL_MARK,
     logo: '/assets/images/integrations/ecommerce/ankaeticaret.svg',
     width: 100
 }
@@ -66,7 +70,7 @@ ecommerces.push({
 ecommerces.push({
     id:8,
     code: 'eticaretsoft',
-    color: '#067DB7',
+    color: NEUTRAL_MARK,
     logo: '/assets/images/integrations/ecommerce/eticaretsoft.svg',
     width: 100
 }

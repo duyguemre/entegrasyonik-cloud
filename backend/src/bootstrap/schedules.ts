@@ -1,0 +1,154 @@
+// ADR-0024 P0-LIFE (D5) / ADR-0016 §2: 11 zamanlayici isinin TEK kaydi. Onceki 10 ince `*Scheduler.ts` sarmalayicisinin
+// (ad, aralik, sure siniri, kritiklik, ilk-kosu, lease, kapsam) davranisi BIREBIR korunur
+// (tests/unit/bootstrap/schedules.characterization.test.ts). Dagitik kilit + POD_NAME `platform/runtime/scheduler`
+// icindedir (degismedi). Rol kapisi: 'worker' -> yalniz worker/all (IntegrationEngine ile ayni kapi); 'any' -> HER rol.
+import type { AppRole } from '@health/HealthCheck';
+import { config } from '@config';
+import { startJob, defineJob, stopAllJobs, productionSchedulerDeps } from '@platform/runtime/scheduler';
+import type { JobController, JobDefinition, JobOutcome, RunJobDeps } from '@platform/runtime/scheduler';
+import { logger } from '@platform/core/logger';
+import { flushMetricsOnce } from '@platform/runtime/metrics/metricsFlush';
+import { productionMetricRollupModel } from '@platform/runtime/metrics/prodDeps';
+import { AllocationSweepJob } from '@operations/stock/AllocationSweepJob';
+import { StockPublishTrigger } from '@operations/stock/StockPublishTrigger';
+import { OversellCompensationJob } from '@operations/stock/OversellCompensationJob';
+import { InternalReconciliationJob } from '@operations/stock/InternalReconciliationJob';
+import { ExternalReconciliationJob } from '@operations/stock/ExternalReconciliationJob';
+import { TrialExpiryJob } from '@operations/billing/TrialExpiryJob';
+import { runProbes, ProbeRunnerDeps } from '@integration/compliance/ProbeRunner';
+import { runSourceMonitor, SourceMonitorDeps } from '@integration/compliance/SourceMonitor';
+import { runConfigHeadPoll, CONFIG_HEAD_POLL_JOB_NAME } from '@integration/config/configHeadPoll';
+import { runExportSignalPoll } from '@integration/engine/catalog/export/exportSignalPoll';
+import { createEmailDispatcher } from '@operations/notifications/delivery/createEmailDispatcher';
+import type { EmailDispatcher } from '@operations/notifications/delivery/EmailDispatcher';
+import { writeResilienceSnapshot } from '@integration/modules/common/http/resilienceSnapshot';
+import { RedisService } from '@services/redis/RedisService';
+import { runsWorker } from './roles';
+
+const log = logger.child({ module: 'bootstrap.schedules' });
+const MIN = 60 * 1000;
+const HOUR = 60 * MIN;
+const DAY = 24 * HOUR;
+
+type Runnable = { run(): Promise<any> };
+/** Eski sarmalayicilarin ortak eslemesi: is sinifinin `skipped:boolean` sonucu -> `'redis_unavailable'` nedeni. */
+const redisSkip = (job: Runnable) => async (): Promise<JobOutcome> => {
+  const r = await job.run();
+  return { ...r, skipped: r.skipped ? 'redis_unavailable' : undefined };
+};
+
+export interface ScheduleSpec {
+  /** Is adi (= JobDefinition.name = lease anahtari). */
+  id: string;
+  runsOn: 'worker' | 'any';
+  /** true: lease KAPALI, uretim bagimliliklari tembel cozulur (her pod kendi sayaclarini yazmali). */
+  leaseOff?: boolean;
+  /** `impl`: testlerde enjekte edilen is/tetikleyici/bagimlilik (uretimde undefined -> varsayilan ornek). */
+  build(impl?: any): JobDefinition;
+}
+
+/** Siralama = eski `entegrasyonik.ts` baslatma sirasi. */
+export const SCHEDULES: readonly ScheduleSpec[] = [
+  { id: 'stock.allocationSweep', runsOn: 'worker', build: (impl?: Runnable) => defineJob({
+    name: 'stock.allocationSweep', everyMs: 15 * MIN, maxDurationMs: 5 * MIN, criticality: 'critical', runOnStart: 'always',
+    run: redisSkip(impl ?? new AllocationSweepJob()) }) },
+  { id: 'stock.publish', runsOn: 'worker', build: (impl?: Runnable) => defineJob({
+    name: 'stock.publish', everyMs: 30 * 1000, maxDurationMs: 25 * 1000, criticality: 'critical', runOnStart: 'always',
+    run: redisSkip(impl ?? new StockPublishTrigger()) }) },
+  { id: 'stock.oversellCompensation', runsOn: 'worker', build: (impl?: Runnable) => defineJob({
+    name: 'stock.oversellCompensation', everyMs: 5 * MIN, maxDurationMs: 4 * MIN, criticality: 'critical', runOnStart: 'always',
+    run: redisSkip(impl ?? new OversellCompensationJob()) }) },
+  { id: 'stock.internalReconciliation', runsOn: 'worker', build: (impl?: Runnable) => defineJob({
+    name: 'stock.internalReconciliation', everyMs: HOUR, maxDurationMs: 30 * MIN, criticality: 'normal', runOnStart: 'always',
+    run: redisSkip(impl ?? new InternalReconciliationJob()) }) },
+  // Dis mutabakat: gunluk is her deploy'da yeniden kosmaz (ADR-0017 Karar 3) -> 'ifDue'.
+  { id: 'stock.externalReconciliation', runsOn: 'worker', build: (impl?: Runnable) => defineJob({
+    name: 'stock.externalReconciliation', everyMs: DAY, maxDurationMs: 2 * HOUR, criticality: 'normal', runOnStart: 'ifDue',
+    run: redisSkip(impl ?? new ExternalReconciliationJob()) }) },
+  { id: 'billing.trialExpiry', runsOn: 'worker', build: (impl?: Runnable) => defineJob({
+    name: 'billing.trialExpiry', everyMs: 15 * MIN, maxDurationMs: 5 * MIN, criticality: 'normal', runOnStart: 'always',
+    run: redisSkip(impl ?? new TrialExpiryJob()) }) },
+  { id: 'catalog.exportSignalPoll', runsOn: 'worker', build: () => defineJob({
+    name: 'catalog.exportSignalPoll', everyMs: config.scheduler.exportIdlePollMs,
+    maxDurationMs: Math.max(5000, config.scheduler.exportIdlePollMs * 2), criticality: 'normal', runOnStart: 'always',
+    run: runExportSignalPoll }) },
+  { id: 'compliance.probeRunner', runsOn: 'worker', build: (probeDeps: ProbeRunnerDeps = {}) => defineJob({
+    name: 'compliance.probeRunner', everyMs: DAY, maxDurationMs: 5 * MIN, criticality: 'normal', runOnStart: 'always',
+    runType: 'scheduler', scope: { level: 'platform' }, run: async () => runProbes(probeDeps) }) },
+  { id: 'compliance.sourceMonitor', runsOn: 'worker', build: (monitorDeps: SourceMonitorDeps = {}) => defineJob({
+    name: 'compliance.sourceMonitor', everyMs: 7 * DAY, maxDurationMs: 30 * MIN, criticality: 'normal', runOnStart: 'ifDue',
+    runType: 'scheduler', scope: { level: 'platform' }, run: async () => runSourceMonitor(monitorDeps) }) },
+  // ADR-0029 NB5: e-posta outbox gondericisi (anlik + ozet). Bayrak kapaliyken (NOTIFY_V2/EMAIL_ENABLED) DB'ye dokunmadan doner.
+  { id: 'notifications.email-dispatch', runsOn: 'worker', build: (impl?: EmailDispatcher) => {
+    let d: EmailDispatcher | undefined = impl;
+    return defineJob({
+      name: 'notifications.email-dispatch', everyMs: 15 * 1000, maxDurationMs: 60 * 1000, criticality: 'normal', runOnStart: 'always',
+      run: async () => { d ??= createEmailDispatcher(); const r = await d.runOnce(); return { skipped: r.skipped, processed: r.processed, failed: r.failed, note: r.note }; } });
+  } },
+  // Metrik flush: HER rolde; lease KASITLI kapali (her pod kendi surec-ici kayit defterini flush eder, ADR-0017 Karar 2.1).
+  { id: 'observability.metrics-flush', runsOn: 'any', leaseOff: true, build: () => defineJob({
+    name: 'observability.metrics-flush', everyMs: MIN, maxDurationMs: 30 * 1000, criticality: 'normal', runOnStart: 'always',
+    run: async () => {
+      const model = await productionMetricRollupModel();
+      const r = await flushMetricsOnce({ model });
+      // [BO B6] pod dayanıklılık anlık görüntüsü (resilience:<pod>, 60 sn TTL); Redis hazır değilse atlanır, hata akışı bozmaz.
+      if (RedisService.isReady()) await writeResilienceSnapshot(RedisService.getInstance());
+      return { processed: r.seriesFlushed, note: `ops=${r.opsWritten}` };
+    } }) },
+  // Platform ayar yayini yoklamasi: HER rolde (ADR-0020 Karar 3.6).
+  { id: CONFIG_HEAD_POLL_JOB_NAME, runsOn: 'any', build: () => defineJob({
+    name: CONFIG_HEAD_POLL_JOB_NAME, everyMs: 15 * 1000, maxDurationMs: 10 * 1000, criticality: 'normal', runOnStart: 'always',
+    run: runConfigHeadPoll }) },
+];
+
+const controllers = new Map<string, JobController>();
+
+/** [LIVE-RO] Canli salt-okuma kipinde (LIVE_READONLY=1) YALNIZ bunlar baslar: dis sisteme yazan/cagri yapan hicbir is (stok yayini, mutabakat, probe, kaynak izleyici, e-posta) acilmaz. */
+export const LIVE_READONLY_SCHEDULE_IDS: readonly string[] = ['observability.metrics-flush', CONFIG_HEAD_POLL_JOB_NAME];
+
+/** Bir rolde baslayacak is adlari (kayit sirasiyla). Rol x is matrisinin tek kaynagi. */
+export function scheduleIdsForRole(role: AppRole): string[] {
+  const liveRo = config.liveReadonly.enabled;
+  return SCHEDULES
+    .filter((s) => s.runsOn === 'any' || runsWorker(role))
+    .filter((s) => !liveRo || LIVE_READONLY_SCHEDULE_IDS.includes(s.id))
+    .map((s) => s.id);
+}
+
+/** Tek isi baslatir; ayni surecte ikinci cagri no-op (idempotent). `deps` yalniz testler icin. */
+export function startSchedule(id: string, opts: { impl?: unknown; deps?: RunJobDeps } = {}): void {
+  const spec = SCHEDULES.find((s) => s.id === id);
+  if (!spec) throw new Error(`[bootstrap.schedules] bilinmeyen zamanlayici: ${id}`);
+  if (controllers.has(id)) return;
+  const def = spec.build(opts.impl);
+
+  if (!spec.leaseOff) { controllers.set(id, startJob(def, opts.deps)); return; }
+  if (opts.deps) { controllers.set(id, startJob(def, { ...opts.deps, leaseEnabled: false })); return; }
+
+  // leaseOff + uretim: bagimliliklar tembel cozulur; stop() cozum bitmeden cagrilirsa is hic baslamaz.
+  let stoppedBeforeInit = false;
+  let inner: JobController | undefined;
+  productionSchedulerDeps()
+    .then((resolved) => { if (!stoppedBeforeInit) inner = startJob(def, { ...resolved, leaseEnabled: false }); })
+    .catch((err) => log.error({ err, job: id }, 'uretim bagimliliklari cozulemedi'));
+  controllers.set(id, {
+    stop() { stoppedBeforeInit = true; inner?.stop(); },
+    overlapSkippedCount: () => inner?.overlapSkippedCount() ?? 0,
+    isRunning: () => inner?.isRunning() ?? false,
+  });
+}
+
+/** Rolun tum islerini kayit sirasiyla baslatir; baslatilan is adlarini dondurur. */
+export function startSchedules(role: AppRole): string[] {
+  const ids = scheduleIdsForRole(role);
+  for (const id of ids) startSchedule(id);
+  return ids;
+}
+
+/** Bir isi (veya `id` verilmezse hepsini) durdurur; yeni tur planlanmaz. Kapanis + testler icin. */
+export function stopSchedules(id?: string): void {
+  if (id) { controllers.get(id)?.stop(); controllers.delete(id); return; }
+  for (const c of controllers.values()) c.stop();
+  controllers.clear();
+  stopAllJobs();
+}

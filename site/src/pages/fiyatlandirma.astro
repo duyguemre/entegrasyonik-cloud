@@ -5,16 +5,31 @@
  * hiçbir olgusal değer sabit yazmaz. Yol haritası özellikleri (ROADMAP_VISIBLE=false) kartlarda görünmez.
  * CTA'lar uygulamaya devreder: `${PUBLIC_APP_URL}/login?mode=register&plan=<kod>&interval=<aralık>`.
  * Kurumsal (özel teklif) planın CTA'sı /iletisim'e gider; sayfa henüz yayımlanmamışsa bağlantı üretilmez (kırık link yok).
+ *
+ * S17 (S16 tasarım dili): koyu hero + ortak `HeroActions`; önerilen plan (kayıttan: en çok özellikli sabit fiyatlı
+ * plan) şerit + yükseltilmiş kartla vurgulanır; kart altında "Her planda" paneli (`getPlanCommonFeatures()`,
+ * yalnızca `available` yetenekler). Karşılaştırma tablosu fiyat/limit satırlarının ardından özellik satırlarını
+ * (her planda ortak + plan eklentileri + deneme) gösterir; ≥1024 px'te başlık satırı site header'ının altına
+ * yapışır (kapsayıcı kaydırma kapsayıcısı DEĞİL, S16 CoverageMatrix deseni), daha dar ekranda yatay kaydırılır ve
+ * ilk sütun sabit kalır. SSS ortak `Accordion`, kapanış ortak `CtaBand` + `HelpBand`.
  */
 import BaseLayout from '../layouts/BaseLayout.astro'
+import { crumbsFor } from '../data/seo'
 import Section from '../components/Section.astro'
 import Button from '../components/Button.astro'
 import Badge from '../components/Badge.astro'
+import Icon from '../components/home/Icon.astro'
 import PageHero from '../components/pages/PageHero.astro'
-import { siteConfig, appUrls } from '../lib/site-config'
+import HeroActions from '../components/pages/HeroActions.astro'
+import SectionHead from '../components/pages/SectionHead.astro'
+import Accordion from '../components/pages/Accordion.astro'
+import HelpBand from '../components/pages/HelpBand.astro'
+import CtaBand from '../components/pages/CtaBand.astro'
+import { appUrls } from '../lib/site-config'
 import { primaryNav, published } from '../data/navigation'
 import { getPublicPlans, getPlanSourceNotice, getVatNotice, getPublicTrial, getTrialPlanCode } from '../data/plans'
-import { getComparisonRows, getPricingFaq, getPlanPitch } from '../data/pricing'
+import { getComparisonRows, getPricingFaq, getPlanPitch, getPlanCommonFeatures } from '../data/pricing'
+
 
 const plans = getPublicPlans()
 const rows = getComparisonRows(plans)
@@ -23,7 +38,8 @@ const trial = getPublicTrial()
 const trialPlanCode = getTrialPlanCode()
 const proposalNotice = getPlanSourceNotice()
 const vatNotice = getVatNotice()
-const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Fiyatlandırma' }]
+const commonFeatures = getPlanCommonFeatures()
+const crumbs = crumbsFor('/fiyatlandirma')
 
 const isPublished = (href: string) => published(primaryNav).some((i) => i.href === href)
 const contactHref = isPublished('/iletisim') ? '/iletisim' : undefined
@@ -34,81 +50,103 @@ const registerPlan = plans.find((p) => p.code === trialPlanCode) ?? plans.find((
 const closingHref = appUrls.register({ plan: registerPlan?.code, interval: registerPlan?.interval })
 
 // Hero görseli: sabit fiyatlı planlar ARTAN fiyat sırasındadır (getPublicPlans() garantisi) — çubuk yüksekliği
-// bu sıraya göre CSS'te (nth-child) kademelenir. Inline `style` KULLANILMAZ (CSP `style-src 'self'`, ham
-// değer/piksel yasağı da zaten hardcode yasağı ile aynı gerekçeye dayanır).
+// bu sıraya göre CSS'te (nth-child) kademelenir. Inline `style` KULLANILMAZ (CSP `style-src 'self'`).
 const fixedPlans = plans.filter((p) => p.priceKind === 'fixed')
 // Görsel vurgu: en çok özelliği içeren sabit fiyatlı plan (gerçek veriden, iddia metni eklenmez).
 const featuredCode = [...fixedPlans].sort((a, b) => b.features.length - a.features.length)[0]?.code
+
+type LimitKey = (typeof plans)[number]['limits'][number]['key']
+const LIMIT_ICON: Record<LimitKey, 'plug' | 'layers' | 'users'> = { channels: 'plug', skus: 'layers', users: 'users' }
+
+// Karşılaştırma: plan eklentisi satırları — planlardaki özellik kodlarının birleşimi (kayıt sırası korunur).
+const planFeatureRows = [...new Map(plans.flatMap((p) => p.features.map((f) => [f.code, f.label] as const))).entries()].map(
+  ([code, label]) => ({ code, label, cells: plans.map((p) => p.features.some((f) => f.code === code)) }),
+)
+const trialDaysLabel = `${fmt(trial.days)} gün`
 ---
 
-<BaseLayout
-  title="Fiyatlandırma"
-  description="Entegrasyonik planlarını karşılaştırın: kanal, ürün varyantı ve kullanıcı limitleri, deneme sürümü ve sık sorulan sorular."
->
+<BaseLayout>
+
   <PageHero
     title="İşinize uygun planı seçin"
+    eyebrow="Fiyatlandırma"
     lead="Çok kanallı satış operasyonunuzu ölçeğinize uygun planla yönetin. Ücretsiz denemeyle başlayın; kanal, ürün ve ekip sayınız büyüdükçe planınızı uygulama içinden yükseltin."
     crumbs={crumbs}
   >
+    <HeroActions
+      actions={[
+        { label: 'Planları karşılaştırın', href: '#karsilastir' },
+        { label: 'Sık sorulan sorular', href: '#fiyat-sss' },
+      ]}
+    />
     {
       (proposalNotice || vatNotice) && (
         <div class="notice" role="note" data-testid="pricing-notice">
-          {proposalNotice && <strong>{proposalNotice}</strong>}
-          <span>Fiyatlar ve plan içerikleri taslaktır; nihai değerler onaylandığında güncellenir.{vatNotice ? ` ${vatNotice}` : ''}</span>
+          <Icon name="info" size="sm" />
+          <div>
+            {proposalNotice && <strong>{proposalNotice}</strong>}
+            <span>Fiyatlar ve plan içerikleri taslaktır; nihai değerler onaylandığında güncellenir.{vatNotice ? ` ${vatNotice}` : ''}</span>
+          </div>
         </div>
       )
     }
     <Fragment slot="visual">
-      <p class="stat-panel__tag">Aylık fiyat kademesi</p>
+      <p class="panel-tag">Aylık fiyat kademesi</p>
       <ul class="tier-chart" role="list">
         {
           fixedPlans.map((p) => (
-            <li>
+            <li data-featured={p.code === featuredCode ? 'true' : undefined}>
+              <span class="tier-chart__price">{p.priceLabel}</span>
               <span class="tier-chart__bar" aria-hidden="true" />
               <span class="tier-chart__name">{p.name}</span>
-              <span class="tier-chart__price">{p.priceLabel}</span>
             </li>
           ))
         }
       </ul>
-      <p class="stat-panel__caption">Kurumsal plan özel tekliftir; sabit fiyat gösterilmez.</p>
+      <p class="panel-caption">Kurumsal plan özel tekliftir; sabit fiyat gösterilmez.</p>
     </Fragment>
   </PageHero>
 
-  <Section tone="muted" labelledby="plans-title" class="tight-section">
-    <h2 id="plans-title" class="sr-only">Planlar</h2>
-    <ul class="plans" data-testid="plan-cards">
+  <Section id="planlar" tone="muted" labelledby="plans-title" class="tight-section">
+    <SectionHead
+      id="plans-title"
+      eyebrow="Planlar"
+      title="Ölçeğinize uygun plan"
+      lead="Her plan aynı çekirdekle gelir; kanal, ürün varyantı ve kullanıcı limitleri ölçeğinize göre değişir."
+    />
+    <ul class="plans" data-testid="plan-cards" role="list">
       {
         plans.map((plan) => {
           const isTrialPlan = trialPlanCode === plan.code
           const isFeatured = plan.code === featuredCode
+          const pitch = getPlanPitch(plan.code)
           return (
             <li class="plan" data-plan={plan.code}>
               <article aria-labelledby={`plan-${plan.code}-name`} class:list={['plan__card', { 'plan__card--featured': isFeatured }]}>
+                {isFeatured && <p class="plan__ribbon">Önerilen</p>}
                 <header class="plan__head">
-                  <div class="plan__title-row">
-                    <h3 id={`plan-${plan.code}-name`}>{plan.name}</h3>
-                    {isFeatured && <span class="plan__featured">Önerilen</span>}
-                  </div>
-                  {getPlanPitch(plan.code) && <p class="plan__pitch">{getPlanPitch(plan.code)!.headline}</p>}
+                  <h3 id={`plan-${plan.code}-name`}>{plan.name}</h3>
+                  {pitch && <p class="plan__pitch">{pitch.headline}</p>}
                   {plan.tagline && <p class="plan__tagline">{plan.tagline}</p>}
                 </header>
 
-                <div class="plan__price">
-                  <span class="plan__amount" data-testid="plan-price">{plan.priceLabel}</span>
-                  {plan.periodLabel && <span class="plan__period">{plan.periodLabel}</span>}
+                <div class="plan__pricebox">
+                  <div class="plan__price">
+                    <span class="plan__amount" data-testid="plan-price">{plan.priceLabel}</span>
+                    {plan.periodLabel && <span class="plan__period">{plan.periodLabel}</span>}
+                  </div>
+                  <p class="plan__vat">{plan.vatLabel || 'Kapsama göre size özel'}</p>
+                  {isTrialPlan && (
+                    <Badge tone="info" class="plan__trial">
+                      {fmt(trial.days)} gün ücretsiz deneme{trial.cardRequired ? '' : ' · kart gerekmez'}
+                    </Badge>
+                  )}
                 </div>
-                <p class="plan__vat">{plan.vatLabel || 'Kapsama göre size özel'}</p>
-
-                {isTrialPlan && (
-                  <Badge tone="info">
-                    {fmt(trial.days)} gün ücretsiz deneme{trial.cardRequired ? '' : ' · kart gerekmez'}
-                  </Badge>
-                )}
 
                 <ul class="plan__list" aria-label={`${plan.name} plan limitleri`}>
                   {plan.limits.map((l) => (
                     <li>
+                      <span class="plan__list-icon" aria-hidden="true"><Icon name={LIMIT_ICON[l.key]} size="sm" /></span>
                       <span class="plan__list-label">{l.label}</span>
                       <span class="plan__list-value">{l.value === null ? 'Özel limit' : fmt(l.value)}</span>
                     </li>
@@ -118,7 +156,10 @@ const featuredCode = [...fixedPlans].sort((a, b) => b.features.length - a.featur
                 {plan.features.length > 0 && (
                   <ul class="plan__features" aria-label={`${plan.name} plan özellikleri`}>
                     {plan.features.map((f) => (
-                      <li>{f.label}</li>
+                      <li>
+                        <span class="plan__check" aria-hidden="true"><Icon name="check" size="sm" /></span>
+                        <span>{f.label}</span>
+                      </li>
                     ))}
                   </ul>
                 )}
@@ -127,7 +168,7 @@ const featuredCode = [...fixedPlans].sort((a, b) => b.features.length - a.featur
                   {plan.cta === 'trial' ? (
                     <Button
                       href={appUrls.register({ plan: plan.code, interval: plan.interval })}
-                      variant={isTrialPlan ? 'primary' : 'secondary'}
+                      variant={isFeatured || (!featuredCode && isTrialPlan) ? 'primary' : 'secondary'}
                       size="lg"
                       aria-label={`${plan.name} planı için ${isTrialPlan ? 'ücretsiz dene' : 'planı seç'}`}
                       data-testid="plan-cta"
@@ -148,143 +189,218 @@ const featuredCode = [...fixedPlans].sort((a, b) => b.features.length - a.featur
         })
       }
     </ul>
+
+    {
+      commonFeatures.length > 0 && (
+        <div class="common" data-testid="plan-common">
+          <div class="common__head">
+            <p class="common__title">Her planda</p>
+            <a class="common__link" href="/ozellikler">
+              Tüm özellikler <Icon name="arrow" size="sm" />
+            </a>
+          </div>
+          <ul class="common__list" role="list">
+            {commonFeatures.map((f) => (
+              <li>
+                <span class="plan__check" aria-hidden="true"><Icon name="check" size="sm" /></span>
+                <span>{f}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )
+    }
   </Section>
 
-  <Section labelledby="compare-title" class="tight-section">
-    <div class="compare">
-      <h2 id="compare-title">Planları karşılaştırın</h2>
-      <div class="table-wrap" role="region" aria-label="Plan karşılaştırma tablosu" tabindex="0">
-        <table class="compare__table" data-testid="compare-table">
-          <caption class="sr-only">Planların fiyat ve limit karşılaştırması</caption>
-          <thead>
-            <tr>
-              <th scope="col">Plan</th>
-              {plans.map((p) => <th scope="col">{p.name}</th>)}
-            </tr>
-          </thead>
-          <tbody>
-            <tr class="compare__price-row">
-              <th scope="row">{plans[0]?.intervalLabel} fiyat</th>
-              {plans.map((p) => (
-                <td>
-                  <span class="cell-strong">{p.priceLabel}</span>
-                  {p.vatLabel && <span class="cell-note">{p.vatLabel}</span>}
-                </td>
-              ))}
-            </tr>
+  <Section id="karsilastir" labelledby="compare-title" class="tight-section">
+    <SectionHead
+      id="compare-title"
+      eyebrow="Karşılaştırma"
+      title="Planları karşılaştırın"
+      lead="Fiyat, limit ve özellikleri yan yana görün; tablo kaydırılırken plan adları üstte kalır."
+    />
+    <div class="table-wrap" role="region" aria-label="Plan karşılaştırma tablosu" tabindex="0">
+      <table class="compare__table" data-testid="compare-table">
+        <caption class="sr-only">Planların fiyat, limit ve özellik karşılaştırması</caption>
+        <thead>
+          <tr>
+            <th scope="col">Plan</th>
             {
-              rows.map((row) => (
-                <tr>
-                  <th scope="row">{row.label}</th>
-                  {row.cells.map((c) => <td>{c.value === null ? 'Özel limit' : fmt(c.value)}</td>)}
-                </tr>
+              plans.map((p) => (
+                <th scope="col" class:list={{ 'is-featured': p.code === featuredCode }}>
+                  {p.name}
+                </th>
               ))
             }
-          </tbody>
-        </table>
-      </div>
-      <p class="compare__note">Plan içerikleri taslaktır; nihai kapsam onaylandığında güncellenir.</p>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="compare__price-row" data-row-kind="limit">
+            <th scope="row">{plans[0]?.intervalLabel} fiyat</th>
+            {plans.map((p) => (
+              <td class:list={{ 'is-featured': p.code === featuredCode }}>
+                <span class="cell-strong">{p.priceLabel}</span>
+                {p.vatLabel && <span class="cell-note">{p.vatLabel}</span>}
+              </td>
+            ))}
+          </tr>
+          {
+            rows.map((row) => (
+              <tr data-row-kind="limit">
+                <th scope="row">{row.label}</th>
+                {row.cells.map((c) => (
+                  <td class:list={{ 'is-featured': c.planCode === featuredCode }}>{c.value === null ? 'Özel limit' : fmt(c.value)}</td>
+                ))}
+              </tr>
+            ))
+          }
+          <tr class="compare__group">
+            <td colspan={plans.length + 1}>Özellikler</td>
+          </tr>
+          <tr data-row-kind="feature">
+            <th scope="row">Ücretsiz deneme</th>
+            {plans.map((p) => (
+              <td class:list={{ 'is-featured': p.code === featuredCode }}>
+                {p.code === trialPlanCode ? (
+                  <span class="cell-strong">{trialDaysLabel}</span>
+                ) : (
+                  <>
+                    <span class="cell-dash" aria-hidden="true" />
+                    <span class="sr-only">Yok</span>
+                  </>
+                )}
+              </td>
+            ))}
+          </tr>
+          {
+            commonFeatures.map((f) => (
+              <tr data-row-kind="feature">
+                <th scope="row">{f}</th>
+                {plans.map((p) => (
+                  <td class:list={{ 'is-featured': p.code === featuredCode }}>
+                    <span class="cell-check" aria-hidden="true"><Icon name="check" size="sm" /></span>
+                    <span class="sr-only">Dahil</span>
+                  </td>
+                ))}
+              </tr>
+            ))
+          }
+          {
+            planFeatureRows.map((r) => (
+              <tr data-row-kind="feature">
+                <th scope="row">{r.label}</th>
+                {r.cells.map((has, idx) => (
+                  <td class:list={{ 'is-featured': plans[idx].code === featuredCode }}>
+                    {has ? (
+                      <>
+                        <span class="cell-check" aria-hidden="true"><Icon name="check" size="sm" /></span>
+                        <span class="sr-only">Dahil</span>
+                      </>
+                    ) : (
+                      <>
+                        <span class="cell-dash" aria-hidden="true" />
+                        <span class="sr-only">Dahil değil</span>
+                      </>
+                    )}
+                  </td>
+                ))}
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
     </div>
+    <p class="compare__note">Plan içerikleri taslaktır; nihai kapsam onaylandığında güncellenir.</p>
   </Section>
 
-  <Section tone="muted" labelledby="faq-title" size="narrow" class="tight-section">
-    <h2 id="faq-title" class="faq__title">Fiyatlandırma hakkında sorular</h2>
-    <div class="faq" data-testid="pricing-faq">
-      {
-        faq.map((item) => (
-          <details class="faq__item">
-            <summary>{item.question}</summary>
-            <p>{item.answer}</p>
-          </details>
-        ))
-      }
+  <Section id="fiyat-sss" tone="muted" labelledby="faq-title" size="narrow" class="tight-section">
+    <SectionHead id="faq-title" eyebrow="SSS" title="Fiyatlandırma hakkında sorular" />
+    <div data-testid="pricing-faq">
+      <Accordion items={faq} />
     </div>
-    <p class="faq__more">
-      {faqPageHref && <a href={faqPageHref}>Tüm sık sorulan sorular</a>}
-      <a href="/yasal/abonelik-sozlesmesi">Abonelik sözleşmesi</a>
-      <a href="/yasal/iptal-iade">İptal ve iade koşulları</a>
-    </p>
+    <ul class="doc-links" role="list" aria-label="İlgili belgeler">
+      {faqPageHref && (
+        <li>
+          <a href={faqPageHref}><Icon name="help" size="sm" />Tüm sık sorulan sorular</a>
+        </li>
+      )}
+      <li>
+        <a href="/yasal/abonelik-sozlesmesi"><Icon name="book" size="sm" />Abonelik sözleşmesi</a>
+      </li>
+      <li>
+        <a href="/yasal/iptal-iade"><Icon name="book" size="sm" />İptal ve iade koşulları</a>
+      </li>
+    </ul>
+    <HelpBand title="Planınızdan emin değil misiniz?" text="Operasyonunuzu anlatın, size uygun planı birlikte seçelim." links={[{ label: 'Bize yazın', href: '/iletisim' }, { label: 'Destek merkezi', href: '/destek' }]} />
   </Section>
 
-  <Section tone="stage" labelledby="cta-title">
-    <div class="cta">
-      <h2 id="cta-title">Tüm kanallarınızı tek panelde yönetmeye bugün başlayın</h2>
-      <p>
-        Ücretsiz denemeyle pazaryeri hesaplarınızı bağlayın; merkezi stok yönetimi, overselling koruması ve birleşik sipariş
-        akışını kendi operasyonunuzda görün.
-      </p>
-      <div class="cta__actions">
-        <Button href={closingHref} variant="inverse" size="lg">Ücretsiz dene</Button>
-        <Button href={appUrls.login()} variant="inverse-outline" size="lg">Giriş yap</Button>
-      </div>
-    </div>
-  </Section>
+  <CtaBand
+    id="cta-title"
+    title="Tüm kanallarınızı tek panelde yönetmeye bugün başlayın"
+    text="Ücretsiz denemeyle pazaryeri hesaplarınızı bağlayın; merkezi stok yönetimi, overselling koruması ve birleşik sipariş akışını kendi operasyonunuzda görün."
+    primary={{ label: 'Ücretsiz dene', href: closingHref }}
+    secondary={{ label: 'Giriş yap', href: appUrls.login() }}
+  />
 </BaseLayout>
 
-<script>
-  import '../scripts/interactions'
-</script>
-
 <style>
-  /* Bölümler arası dikey ritim genel olarak sıkılaştırıldı (S11b). */
   .tight-section:global(.section) {
     padding-block: calc(var(--site-section-y) * 0.72);
   }
-  /* Taslak fiyat notu (ürün kararı bekliyor): kaldırılmaz, görsel ağırlığı küçük bir dipnota indirildi (S12). */
+
+  /* --- Hero --- */
+  /* Taslak fiyat notu (ürün kararı bekliyor): kaldırılmaz; cam zeminli küçük dipnot. */
   .notice {
+    display: flex;
+    gap: var(--ek-space-2);
+    align-items: flex-start;
+    max-width: var(--site-measure);
+    margin-top: var(--ek-space-3);
+    padding: var(--ek-space-3) var(--ek-space-4);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-lg);
+    background: var(--site-glass-bg);
+    color: var(--site-text-on-dark-body);
+    font-size: var(--ek-font-size-xs);
+    line-height: var(--site-font-body-line-height);
+  }
+  .notice :global(.icon) {
+    flex: none;
+    margin-top: 0.1em;
+    color: var(--site-accent-on-dark);
+  }
+  .notice div {
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-1);
-    max-width: var(--site-measure);
-    padding-inline-start: var(--ek-space-3);
-    border-inline-start: var(--site-border-width) solid var(--site-glass-border);
-    color: var(--site-color-on-primary-muted);
-    font-size: var(--ek-font-size-xs);
   }
   .notice strong {
+    color: var(--site-text-on-dark-heading);
     font-weight: var(--ek-font-weight-semibold);
   }
-  .plan__title-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--ek-space-3);
-  }
-  .plan__featured {
-    padding: var(--ek-space-1) var(--ek-space-3);
-    border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-secondary) 16%, transparent);
-    color: var(--ek-color-secondary-darken-1);
-    font-size: var(--site-card-eyebrow-size);
-    font-weight: var(--site-card-eyebrow-weight);
-    letter-spacing: var(--site-card-eyebrow-tracking);
-    text-transform: uppercase;
-  }
-  .plan__pitch {
-    color: var(--ek-color-content-strong);
-    font-size: var(--site-card-value-size);
-    font-weight: var(--site-card-value-weight);
-  }
-
-  /* --- Hero görsel: fiyat kademesi (gerçek oran) --- */
-  .stat-panel__tag {
+  .panel-tag {
     margin: 0 0 var(--ek-space-5);
-    color: var(--site-color-on-primary-muted);
+    color: var(--site-text-on-dark-meta);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
   }
-  .stat-panel__caption {
+  .panel-caption {
     margin: var(--ek-space-5) 0 0;
-    color: var(--site-color-on-primary-muted);
+    padding-top: var(--ek-space-4);
+    border-top: var(--site-border-width) solid var(--site-glass-border);
+    color: var(--site-text-on-dark-body);
     font-size: var(--ek-font-size-sm);
   }
   .tier-chart {
     display: flex;
     align-items: flex-end;
-    gap: var(--ek-space-5);
-    height: calc(var(--ek-space-16) * 2);
+    gap: var(--ek-space-6);
+    height: calc(var(--ek-space-16) * 2.4);
+    margin: 0;
+    padding: 0 var(--ek-space-4);
+    list-style: none;
   }
   .tier-chart li {
     display: flex;
@@ -298,27 +414,31 @@ const featuredCode = [...fixedPlans].sort((a, b) => b.features.length - a.featur
   .tier-chart__bar {
     display: block;
     width: 100%;
-    max-width: var(--ek-space-10);
-    /* Planlar zaten artan fiyat sırasındadır (getPublicPlans()); yükseklik bu sıraya göre kademelenir.
-       Inline `style` kullanılmaz (CSP `style-src 'self'`, bkz. yukarıdaki not). */
-    height: 45%;
+    max-width: var(--ek-space-16);
+    /* Planlar artan fiyat sırasındadır (getPublicPlans()); yükseklik bu sıraya göre kademelenir. */
+    height: 40%;
     border-radius: var(--ek-radius-md) var(--ek-radius-md) 0 0;
-    background: linear-gradient(180deg, var(--ek-color-secondary), color-mix(in srgb, var(--ek-color-secondary) 55%, var(--ek-color-primary-darken-1)));
+    background: linear-gradient(180deg, color-mix(in srgb, var(--ek-color-secondary) 55%, transparent), color-mix(in srgb, var(--ek-color-secondary) 12%, transparent));
+    box-shadow: inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-secondary) 80%, transparent);
   }
   .tier-chart li:nth-child(2) .tier-chart__bar {
-    height: 70%;
+    height: 68%;
   }
   .tier-chart li:nth-child(3) .tier-chart__bar {
-    height: 100%;
+    height: 90%;
+  }
+  .tier-chart li[data-featured] .tier-chart__bar {
+    background: linear-gradient(180deg, var(--ek-color-secondary), color-mix(in srgb, var(--ek-color-secondary) 45%, var(--ek-color-primary-darken-1)));
   }
   .tier-chart__name {
-    color: var(--site-color-on-primary);
+    color: var(--site-text-on-dark-heading);
     font-size: var(--ek-font-size-sm);
     font-weight: var(--ek-font-weight-semibold);
   }
   .tier-chart__price {
-    color: var(--site-color-on-primary-muted);
-    font-size: var(--ek-font-size-xs);
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-lg);
+    font-weight: var(--ek-font-weight-bold);
     font-variant-numeric: tabular-nums;
   }
 
@@ -327,33 +447,59 @@ const featuredCode = [...fixedPlans].sort((a, b) => b.features.length - a.featur
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: var(--ek-space-6);
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
   .plan {
     display: flex;
+    min-width: 0;
   }
   .plan__card {
+    position: relative;
     display: flex;
     flex-direction: column;
-    gap: var(--ek-space-4);
+    gap: var(--ek-space-5);
     width: 100%;
-    padding: var(--ek-space-8);
-    background: var(--ek-color-surface);
+    padding: var(--ek-space-8) var(--ek-space-6) var(--ek-space-6);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-xl);
+    border-radius: var(--site-radius-panel);
+    background: var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
     transition:
       border-color var(--ek-duration-base) var(--ek-easing-standard),
       box-shadow var(--ek-duration-base) var(--ek-easing-standard);
   }
-  /* Görsel vurgu: en çok özelliği içeren sabit fiyatlı plan (gerçek veriden türetilir, iddia metni yok). */
-  .plan__card--featured {
-    border-color: var(--ek-color-secondary-darken-1);
-    border-width: calc(var(--site-border-width) * 2);
+  .plan__card:hover,
+  .plan__card:focus-within {
+    border-color: var(--ek-color-border-strong);
     box-shadow: var(--site-shadow-card-hover);
   }
-  @media (min-width: 800px) {
-    .plan__card--featured {
-      transform: translateY(calc(var(--ek-space-2) * -1));
-    }
+  .plan__card--featured {
+    border: calc(var(--site-border-width) * 2) solid var(--ek-color-secondary-darken-1);
+    background:
+      radial-gradient(90% 50% at 50% 0%, color-mix(in srgb, var(--ek-color-secondary) 12%, transparent), transparent 70%),
+      var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card-hover);
+  }
+  .plan__card--featured:hover,
+  .plan__card--featured:focus-within {
+    border-color: var(--ek-color-secondary-darken-1);
+  }
+  .plan__ribbon {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 50%;
+    padding: var(--ek-space-1) var(--ek-space-4);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-secondary-darken-1);
+    color: var(--site-color-on-primary);
+    font-size: var(--site-card-eyebrow-size);
+    font-weight: var(--ek-font-weight-bold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    transform: translate(-50%, -50%);
   }
   .plan__head {
     display: flex;
@@ -361,77 +507,119 @@ const featuredCode = [...fixedPlans].sort((a, b) => b.features.length - a.featur
     gap: var(--ek-space-2);
   }
   .plan__head h3 {
+    color: var(--site-text-heading);
     font-size: var(--ek-font-size-2xl);
+    font-weight: var(--ek-font-weight-bold);
+    letter-spacing: -0.01em;
+  }
+  .plan__pitch {
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-md);
     font-weight: var(--ek-font-weight-semibold);
   }
   .plan__tagline {
-    color: var(--ek-color-content-default);
-    font-size: var(--ek-font-size-lg);
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-md);
+    line-height: var(--site-font-body-line-height);
+  }
+  .plan__pricebox {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+    padding-block: var(--ek-space-4);
+    border-block: var(--site-border-width) solid var(--ek-color-border-default);
   }
   .plan__price {
     display: flex;
     align-items: baseline;
-    gap: var(--ek-space-2);
-    font-variant-numeric: tabular-nums;
+    gap: var(--ek-space-1);
   }
   .plan__amount {
-    color: var(--ek-color-content-strong);
+    color: var(--site-text-heading);
     font-size: var(--site-font-display-sm);
     font-weight: var(--site-font-display-weight);
-    line-height: var(--site-font-display-line-height);
+    font-variant-numeric: tabular-nums;
     letter-spacing: var(--site-font-display-tracking);
+    line-height: 1.1;
   }
   .plan__period {
-    color: var(--ek-color-content-default);
-    font-size: var(--ek-font-size-xl);
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-lg);
+    font-weight: var(--ek-font-weight-medium);
   }
   .plan__vat {
-    margin-top: calc(var(--ek-space-2) * -1);
-    color: var(--ek-color-content-muted);
-    font-size: var(--ek-font-size-md);
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-sm);
+  }
+  .plan__pricebox :global(.plan__trial) {
+    margin-top: var(--ek-space-2);
   }
   .plan__list {
     display: flex;
     flex-direction: column;
-    border-top: var(--site-border-width) solid var(--ek-color-border-default);
+    gap: var(--ek-space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
   .plan__list li {
     display: flex;
-    justify-content: space-between;
+    align-items: center;
     gap: var(--ek-space-3);
-    padding-block: var(--ek-space-3);
-    border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
-    font-size: var(--ek-font-size-lg);
-    font-variant-numeric: tabular-nums;
+    font-size: var(--ek-font-size-md);
+  }
+  .plan__list-icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-8);
+    height: var(--ek-space-8);
+    border-radius: var(--ek-radius-md);
+    background: var(--ek-color-surface-muted);
+    color: var(--site-link-accent);
   }
   .plan__list-label {
-    color: var(--ek-color-content-default);
+    flex: 1;
+    color: var(--site-text-body);
   }
   .plan__list-value {
-    color: var(--ek-color-content-strong);
-    font-weight: var(--ek-font-weight-semibold);
-    text-align: end;
+    color: var(--site-text-heading);
+    font-weight: var(--ek-font-weight-bold);
+    font-variant-numeric: tabular-nums;
   }
   .plan__features {
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-2);
-    color: var(--ek-color-content-default);
-    font-size: var(--ek-font-size-lg);
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
-  .plan__features li {
-    position: relative;
-    padding-inline-start: var(--ek-space-5);
+  .plan__features li,
+  .common__list li {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ek-space-3);
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-md);
+    line-height: var(--site-font-body-line-height);
   }
-  .plan__features li::before {
-    content: '';
-    position: absolute;
-    inset-inline-start: 0;
-    top: 0.55em;
-    width: var(--ek-space-2);
-    height: var(--ek-space-2);
+  .plan__check {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-5);
+    height: var(--ek-space-5);
+    margin-top: 0.1em;
     border-radius: var(--ek-radius-full);
     background: var(--ek-color-secondary-darken-1);
+    color: var(--site-color-on-primary);
+  }
+  .plan__check :global(.icon) {
+    width: var(--ek-space-3);
+    height: var(--ek-space-3);
   }
   .plan__cta {
     margin-top: auto;
@@ -441,168 +629,241 @@ const featuredCode = [...fixedPlans].sort((a, b) => b.features.length - a.featur
     width: 100%;
   }
   .plan__cta-note {
-    color: var(--ek-color-content-muted);
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-sm);
+  }
+
+  /* --- Her planda --- */
+  .common {
+    margin-top: var(--ek-space-8);
+    padding: var(--ek-space-6);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--site-radius-panel);
+    background: var(--ek-color-surface);
+  }
+  .common__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ek-space-3);
+    margin-bottom: var(--ek-space-4);
+  }
+  .common__title {
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .common__link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    min-height: var(--site-tap-target);
+    color: var(--site-link-accent);
     font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+    text-decoration: none;
+  }
+  .common__link:hover {
+    text-decoration: underline;
+  }
+  .common__list {
+    display: grid;
+    gap: var(--ek-space-3) var(--ek-space-6);
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
 
   /* --- Karşılaştırma tablosu --- */
-  .compare {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-5);
-  }
-  .compare h2,
-  .faq__title,
-  .cta h2 {
-    font-size: var(--site-font-display-sm);
-    font-weight: var(--site-font-display-weight);
-    line-height: var(--site-font-display-line-height);
-    letter-spacing: var(--site-font-display-tracking);
-  }
   .table-wrap {
+    /* Konumlu kapsayıcı: hücrelerdeki mutlak konumlu .sr-only metinler kaydırma alanında kalır (sayfayı taşırmaz). */
+    position: relative;
     overflow-x: auto;
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-lg);
+    border-radius: var(--site-radius-panel);
+    background: var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
   }
   .compare__table {
     width: 100%;
-    min-width: calc(var(--site-container-narrow) * 0.85);
-    border-collapse: collapse;
-    font-size: var(--ek-font-size-lg);
-    font-variant-numeric: tabular-nums;
+    min-width: 36rem;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: var(--ek-font-size-md);
   }
   .compare__table th,
   .compare__table td {
-    padding: var(--ek-space-4);
-    text-align: start;
-    vertical-align: top;
+    padding: var(--ek-space-4) var(--ek-space-5);
     border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
+    text-align: start;
+    vertical-align: middle;
   }
   .compare__table thead th {
-    position: sticky;
-    inset-block-start: 0;
-    inset-inline-start: 0;
-    z-index: 2;
-    background: var(--ek-color-surface-muted);
-    color: var(--ek-color-content-strong);
-    font-weight: var(--ek-font-weight-semibold);
+    background: var(--ek-color-surface);
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-lg);
+    font-weight: var(--ek-font-weight-bold);
+    border-bottom: calc(var(--site-border-width) * 2) solid var(--ek-color-border-strong);
+  }
+  .compare__table thead th:first-child {
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-xs);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .compare__table thead th.is-featured {
+    background: color-mix(in srgb, var(--ek-color-secondary) 6%, var(--ek-color-surface));
+    color: var(--site-link-accent);
   }
   .compare__table tbody th {
-    position: sticky;
-    inset-inline-start: 0;
-    z-index: 1;
-    background: var(--ek-color-surface);
-    color: var(--ek-color-content-default);
-    font-weight: var(--ek-font-weight-semibold);
+    color: var(--site-text-body);
+    font-weight: var(--ek-font-weight-medium);
+  }
+  .compare__table td {
+    color: var(--site-text-heading);
+    font-variant-numeric: tabular-nums;
+  }
+  .compare__table .is-featured {
+    background: color-mix(in srgb, var(--ek-color-secondary) 6%, var(--ek-color-surface));
   }
   .compare__table tbody tr:last-child th,
   .compare__table tbody tr:last-child td {
     border-bottom: 0;
   }
-  /* Fiyat satırı: bir üst "grup" gibi hafifçe ayrılır (S11 — yapışkan başlık + grup vurgusu).
-     Özgüllük `.compare__table tbody th` (0,1,2) kuralını geçmek için satır + hücre birlikte seçilir. */
-  .compare__table tbody tr.compare__price-row th,
-  .compare__table tbody tr.compare__price-row td {
+  .compare__table tbody tr:not(.compare__group):hover th,
+  .compare__table tbody tr:not(.compare__group):hover td {
     background: var(--ek-color-surface-muted);
   }
-  .compare__table tbody tr:hover td,
-  .compare__table tbody tr:hover th {
-    background: color-mix(in srgb, var(--ek-color-primary) 5%, var(--ek-color-surface));
+  .compare__group td {
+    padding-block: var(--ek-space-3);
+    background: var(--ek-color-surface-muted);
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
   .cell-strong {
     display: block;
-    color: var(--ek-color-content-strong);
-    font-weight: var(--ek-font-weight-semibold);
+    color: var(--site-text-heading);
+    font-weight: var(--ek-font-weight-bold);
   }
   .cell-note {
     display: block;
-    color: var(--ek-color-content-muted);
-    font-size: var(--ek-font-size-md);
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-sm);
   }
-  .compare__note {
-    color: var(--ek-color-content-muted);
-    font-size: var(--ek-font-size-md);
-  }
-
-  /* --- SSS --- */
-  .faq__title {
-    margin-bottom: var(--ek-space-6);
-  }
-  .faq {
-    display: flex;
-    flex-direction: column;
-    border-top: var(--site-border-width) solid var(--ek-color-border-default);
-  }
-  .faq__item {
-    border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
-  }
-  .faq__item summary {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--ek-space-4);
-    min-height: var(--site-tap-target);
-    padding-block: var(--ek-space-4);
-    color: var(--ek-color-content-strong);
-    font-size: var(--ek-font-size-xl);
-    font-weight: var(--ek-font-weight-semibold);
-    list-style: none;
-    cursor: pointer;
-  }
-  .faq__item summary::-webkit-details-marker {
-    display: none;
-  }
-  .faq__item summary::after {
-    content: '+';
-    flex: none;
-    color: var(--ek-color-content-default);
-    font-size: var(--ek-font-size-2xl);
-    font-weight: var(--ek-font-weight-regular);
-  }
-  .faq__item[open] summary::after {
-    content: '\2212';
-  }
-  .faq__item p {
-    max-width: var(--site-measure);
-    padding-bottom: var(--ek-space-5);
-    color: var(--ek-color-content-default);
-    font-size: var(--ek-font-size-lg);
-  }
-  .faq__more {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ek-space-1) var(--ek-space-6);
-    margin-top: var(--ek-space-6);
-  }
-  .faq__more a {
+  .cell-check {
     display: inline-flex;
     align-items: center;
-    min-height: var(--site-tap-target);
-    color: var(--site-color-link);
-    font-size: var(--ek-font-size-lg);
-    font-weight: var(--ek-font-weight-semibold);
+    justify-content: center;
+    width: var(--ek-space-6);
+    height: var(--ek-space-6);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-secondary-darken-1);
+    color: var(--site-color-on-primary);
+  }
+  .cell-dash {
+    display: inline-block;
+    width: var(--ek-space-3);
+    height: calc(var(--site-border-width) * 2);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-border-strong);
+    vertical-align: middle;
+  }
+  .compare__note {
+    margin-top: var(--ek-space-4);
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-sm);
   }
 
-  /* --- Kapanış --- */
-  .cta {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--ek-space-5);
-    max-width: var(--site-container-narrow);
-  }
-  .cta p {
-    font-size: var(--ek-font-size-xl);
-  }
-  .cta__actions {
+  /* --- SSS belgeleri --- */
+  .doc-links {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--ek-space-3);
+    gap: var(--ek-space-2) var(--ek-space-3);
+    margin: var(--ek-space-6) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .doc-links a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    min-height: var(--site-tap-target);
+    padding-inline: var(--ek-space-4);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-surface);
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-medium);
+    text-decoration: none;
+    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .doc-links a:hover {
+    border-color: var(--ek-color-secondary-darken-1);
+  }
+  .doc-links :global(.icon) {
+    color: var(--site-link-accent);
   }
 
+  /* <1024: tablo yatay kaydırılır; ilk sütun sabit (S16 CoverageMatrix deseni). */
+  @media (max-width: 767.98px) {
+    .compare__table th,
+    .compare__table td {
+      padding: var(--ek-space-3);
+    }
+    .compare__table th:first-child {
+      width: 10rem;
+      font-size: var(--ek-font-size-sm);
+    }
+  }
+  @media (max-width: 1023.98px) {
+    .compare__table th:first-child {
+      position: sticky;
+      inset-inline-start: 0;
+      z-index: 1;
+      background: var(--ek-color-surface);
+      box-shadow: var(--site-border-width) 0 0 var(--ek-color-border-default);
+    }
+  }
+  @media (min-width: 768px) {
+    .common__list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
   @media (min-width: 800px) {
     .plans {
       grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+      align-items: stretch;
+    }
+  }
+  /* >=1024: tablo sığar → kapsayıcı kaydırma kapsayıcısı DEĞİL; başlık satırı site header'ının altına yapışır. */
+  @media (min-width: 1024px) {
+    .table-wrap {
+      overflow: clip;
+    }
+    .compare__table thead th {
+      position: sticky;
+      top: var(--site-header-height);
+      z-index: 2;
+    }
+    .compare__table thead th:first-child {
+      border-start-start-radius: var(--site-radius-panel);
+    }
+    .compare__table thead th:last-child {
+      border-start-end-radius: var(--site-radius-panel);
+    }
+    .common__list {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .plan__card--featured {
+      margin-block: calc(var(--ek-space-3) * -1);
+      padding-block: calc(var(--ek-space-8) + var(--ek-space-3)) calc(var(--ek-space-6) + var(--ek-space-3));
     }
   }
 </style>

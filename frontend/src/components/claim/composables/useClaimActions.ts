@@ -102,7 +102,7 @@ export function useClaimActions(executeClaimAction: Function, snackbarStore: any
         confirmDialogObj.title = 'İADE TALEBİNİ ONAYLA';
         confirmDialogObj.message = `${item.externalClaimId} nolu iade talebini onaylıyor musunuz? Bu işlem sonucunda müşteriye ücret iadesi süreci başlayacaktır.`;
         confirmDialogObj.confirmText = 'Evet, Onayla';
-        confirmDialogObj.icon = 'mdi-check-decagram';
+        confirmDialogObj.icon = 'mdi-check-decagram-outline';
         confirmDialogObj.color = 'success';
         confirmDialogObj.show = true;
 
@@ -174,8 +174,8 @@ export function useClaimActions(executeClaimAction: Function, snackbarStore: any
             note('Bu işlem geri alınamaz.'),
         ];
         confirmDialogObj.confirmText = 'EVET, TOPLU SİL';
-        confirmDialogObj.confirmIcon = 'mdi-delete-sweep';
-        confirmDialogObj.icon = 'mdi-alert-decagram';
+        confirmDialogObj.confirmIcon = 'mdi-trash-can-outline';
+        confirmDialogObj.icon = 'mdi-alert-decagram-outline';
         confirmDialogObj.color = 'error';
         confirmDialogObj.show = true;
 

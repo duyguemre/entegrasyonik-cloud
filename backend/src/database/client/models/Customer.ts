@@ -1,5 +1,5 @@
 import { Schema } from 'mongoose';
-import { ICustomerAddress, ICustomerDocument, IExternalIdentity } from 'src/interfaces/customer';
+import { ICustomerAddress, ICustomerDocument, IExternalIdentity } from '../../../interfaces/customer';
 
 /**
  * Alt Şema: Farklı Kanallardaki Kimlikler

@@ -3,6 +3,7 @@
 import { IIntegrationEngineProvider } from "./IIntegrationEngineProvider";
 import { IApplicationDB, IClientDB } from "@interfaces/index";
 import { StatsOperations } from "@operations/client/StatsOperations";
+import { PlatformMappingProvider } from "@integration/modules/provider/PlatformMappingProvider";
 import { QueryBuilderOperations } from "@operations/integration/QueryBuilderOperations";
 
 export class IntegrationEngineProvider implements IIntegrationEngineProvider {
@@ -52,6 +53,10 @@ export class IntegrationEngineProvider implements IIntegrationEngineProvider {
 
     getProductModel() {
         return this.clientDB.getProductModel();
+    }
+
+    getPlatformMappingProvider(clientId: any, integrationCode: string) {
+        return new PlatformMappingProvider(this.clientDB, clientId, integrationCode);
     }
 
     getAttributeMappingModel() {

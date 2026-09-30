@@ -17,11 +17,6 @@ const DEFAULT_CLAIM_SORT_FIELD = 'claimedAt';
 
 export default class ClaimService extends BaseApi implements IService {
 
-    currentClientId: any
-    constructor(clientId: number, protected request: any) {
-        super(clientId, request)
-        this.currentClientId = clientId
-    }
 
     async get(): Promise<any> {
         // İleride tekil iade/talep detayı çekmek için
@@ -330,35 +325,6 @@ export default class ClaimService extends BaseApi implements IService {
             message: `${results.successCount} talep onaylandı, ${results.failedCount} hata alındı.`,
             data: results
         };
-    }
-
-    /**
-     * GENEL STATÜ GÜNCELLEME (Manuel müdahaleler için)
-     */
-    async updateClaimStatus(): Promise<any> {
-        try {
-            const { claimId, internalStatus, description } = this.request;
-
-            const updatedClaim = await this.clientDB.getClaimModel().findByIdAndUpdate(
-                claimId,
-                {
-                    $set: { internalStatus: internalStatus, 'dates.externalUpdatedAt': new Date() },
-                    $push: {
-                        history: {
-                            status: internalStatus,
-                            changedAt: new Date(),
-                            description: description || 'Statü manuel olarak güncellendi.',
-                            actionBy: 'USER'
-                        }
-                    }
-                },
-                { new: true }
-            );
-
-            return { success: true, data: updatedClaim };
-        } catch (error) {
-            throw error;
-        }
     }
 
     /**

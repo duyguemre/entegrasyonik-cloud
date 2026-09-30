@@ -11,17 +11,18 @@
   karşılığı (salt-okunur, grep): `tenant-data-service.ts:70`, `ExportDownloadApiManager.ts:18`.
   Arşiv kapsamı `backend/src/operations/tenant/exportCollections.ts` envanterinden yazıldı (sırlar hariç).
 
+  Hesap/mağaza silme talebi (`TenantDataService/requestDeletion`, yalnız owner): `AccountDeletionPanel`
+  (iki adımlı DS-v2 `EkDialog` akışı; yanlış parola 401'i yerelde yakalanır, genel oturum yönlendirmesi değişmez).
+
   BİLİNÇLİ SINIRLAR ("sözleşme bekliyor", rapora yazıldı):
-  - Hesap/mağaza silme talebi (`TenantDataService/requestDeletion`): backend'de VAR ama yanıt şekli ve
-    talep sonrası oturum/erişim davranışı API dokümanlarında TANIMLI DEĞİL → yıkıcı bir akış tahminle
-    yazılmadı, ekranda gösterilmez.
   - Müşteri anonimleştirme (`CustomerService.anonymizeCustomer`) müşteri detayına aittir (B4 dışı dosya).
   - "Arşiv 7 gün sonra silinir" İDDİA EDİLMEZ: backend'de zamanlayıcı yok (§5 sınırlama 2).
 -->
 <template>
   <div class="privacyDataView">
-    <EkSettingsTemplate :title="$t('privacyData.title')" :description="$t('privacyData.description')">
+    <EkSettingsTemplate section="Hesap" :title="$t('privacyData.title')" :description="$t('privacyData.description')">
       <EkSettingsSection :title="$t('privacyData.export.title')" :description="$t('privacyData.export.description')">
+        <template #title-extra><EkHelpHint hint="privacy.export" /></template>
         <ul class="privacyDataView__facts">
           <li v-for="fact in facts" :key="fact.key" class="privacyDataView__fact">
             <v-icon size="18" aria-hidden="true">{{ fact.icon }}</v-icon>
@@ -44,7 +45,7 @@
               {{ $t('privacyData.export.readyText', { expiresAt: expiresAtText }) }}
             </p>
             <div class="privacyDataView__actions">
-              <v-btn color="primary" class="text-none" prepend-icon="mdi-download" :loading="phase === 'downloading'" @click="download">
+              <v-btn color="primary" class="text-none" prepend-icon="mdi-download-outline" :loading="phase === 'downloading'" @click="download">
                 {{ $t('privacyData.download.action') }}
               </v-btn>
             </div>
@@ -64,7 +65,7 @@
           </div>
 
           <div v-else class="privacyDataView__actions privacyDataView__actions--start">
-            <v-btn color="primary" class="text-none" prepend-icon="mdi-database-export-outline" :loading="phase === 'preparing'" @click="prepare">
+            <v-btn color="primary" class="text-none" prepend-icon="mdi-file-export-outline" :loading="phase === 'preparing'" @click="prepare">
               {{ $t('privacyData.export.action') }}
             </v-btn>
             <span v-if="phase === 'preparing'" class="privacyDataView__muted" role="status">{{ $t('privacyData.export.preparing') }}</span>
@@ -75,6 +76,16 @@
             <span>{{ $t(errorKey) }}</span>
           </p>
         </template>
+      </EkSettingsSection>
+
+      <EkSettingsSection
+        v-if="isOwner"
+        :title="$t('privacyData.deletion.title')"
+        :description="$t('privacyData.deletion.description')"
+        class="privacyDataView__deletion"
+      >
+        <template #title-extra><EkHelpHint hint="privacy.delete" /></template>
+        <AccountDeletionPanel :store-name="storeName" />
       </EkSettingsSection>
 
       <EkSettingsSection :title="$t('privacyData.legal.title')" :description="$t('privacyData.legal.description')">
@@ -94,13 +105,15 @@
 </template>
 
 <script setup lang="ts">
+import EkHelpHint from '@/components/page/EkHelpHint.vue'
 import { computed, ref } from 'vue'
-import EkSettingsTemplate from '@/components/ds/templates/EkSettingsTemplate.vue'
-import EkSettingsSection from '@/components/ds/templates/EkSettingsSection.vue'
+import EkSettingsTemplate from '@/components/page/templates/EkSettingsTemplate.vue'
+import EkSettingsSection from '@/components/page/templates/EkSettingsSection.vue'
+import AccountDeletionPanel from '@/components/privacy/AccountDeletionPanel.vue'
 import useUser from '@/composables/user'
-import { useToast } from '@/composables/useToast'
+import { useToast } from '@entegrasyonik/ui/composables/useToast'
 import { useI18n } from 'vue-i18n'
-import { formatDateTime } from '@/composables/format'
+import { formatDateTime } from '@entegrasyonik/ui/format'
 import { apiStatus, isApiError } from '@/composables/apiErrors'
 import { SITE_LEGAL_PATHS, siteUrl } from '@/config/siteLinks'
 import { downloadErrorKey, exportErrorKey, useTenantDataApi } from '@/composables/useTenantDataApi'
@@ -112,6 +125,9 @@ const { t } = useI18n()
 
 // İstemci tarafı görünürlük ipucu (savunma derinliği); ASIL yetki sınırı backend `owner` kademesidir.
 const isOwner = computed(() => userApi.isOwner?.() === true)
+// Silme onayında yazılacak ad. Not: backend `Clients.title` ile karşılaştırır; FE'de o alan yok,
+// en yakın kaynak ayarlardaki mağaza adıdır (farklıysa sunucu 400 döner ve alan hatası gösterilir — YEREL NOT).
+const storeName = computed(() => String(userApi.getStoreName?.() ?? '').trim())
 
 const facts = [
   { key: 'privacyData.export.facts.scope', icon: 'mdi-folder-zip-outline' },

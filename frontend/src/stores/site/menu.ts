@@ -75,12 +75,22 @@ export const useMenuStore = defineStore('menu', () => {
     ['user/ExitView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/ExitView.vue')))],
 
     ['AuthorizationListView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/AuthorizationListView.vue')))],
+    ['NotificationCenterView', shallowRef(defineAsyncComponent(() => import('@/views/secure/NotificationCenterView.vue')))],
+    ['NotificationPreferencesView', shallowRef(defineAsyncComponent(() => import('@/views/secure/settings/NotificationPreferencesView.vue')))],
+
+    // ADR-0015 B4-P1c — yeni ekranlar (yalnızca EKLEME; `screens.ts` ile birebir anahtar, register-intent testi eşliği korur).
+    // Gerçek menü ağacı kaydı (ApplicationDB `menus`) bu bulut görevinin kapsamı dışı — B4-P0 ile aynı emsal.
+    ['integrations/IntegrationHealthView', shallowRef(defineAsyncComponent(() => import('@/views/secure/integrations/IntegrationHealthView.vue')))],
+    ['AuditLogView', shallowRef(defineAsyncComponent(() => import('@/views/secure/settings/AuditLogView.vue')))],
 
     // ADR-0015 B4-P0 — yeni ekranlar (yalnızca EKLEME; `screens.ts` ile birebir anahtar). Gerçek menü ağacı kaydı
     // (ApplicationDB `menus`) bu bulut görevinin kapsamı dışı — ADR-0020 ekranlarıyla aynı emsal (yukarıda).
     ['AccountSecurityView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/AccountSecurityView.vue')))],
     ['PrivacyDataView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/PrivacyDataView.vue')))],
     ['StockPolicyView', shallowRef(defineAsyncComponent(() => import('@/views/secure/integrations/StockPolicyView.vue')))],
+    ['StockHealthView', shallowRef(defineAsyncComponent(() => import('@/views/secure/StockHealthView.vue')))],
+    // Yardım merkezi (statik içerik; menü ağacına bağlı değil — bağlantı `help/helpLink.ts`).
+    ['HelpCenterView', shallowRef(defineAsyncComponent(() => import('@/views/secure/HelpCenterView.vue')))],
 
   ]);
 

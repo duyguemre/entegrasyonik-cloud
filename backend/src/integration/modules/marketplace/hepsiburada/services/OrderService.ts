@@ -1,8 +1,15 @@
+import { carryIncomplete } from '@integration/contracts/IncompleteFetch';
 import { IOrderPackage, IOrderRejectParams, IPlatformResponse, ISendInvoicePayload, ISendTrackingPayload } from '@interfaces/index';
 import { OrderConnector } from '../api/OrderConnector';
 import { OrderMapper } from '../transformers/OrderTransformer';
 import { Service } from './Service';
 import { IntegrationError } from '@integration/modules/common/IntegrationError';
+import { eventLog } from '@platform/core/logger';
+import { integrationCode } from '../constants';
+
+const log = eventLog('adapter-hepsiburada', 'OrderService');
+/** Kayıtların TÜMÜ kimliksizse ve en az bu kadar kayıt varsa şema kayması varsayılır (Trendyol DRIFT_MIN_RECORDS ile aynı eşik). */
+const DRIFT_MIN_RECORDS = 3;
 
 export class OrderService {
     private connector: OrderConnector;
@@ -23,14 +30,35 @@ export class OrderService {
                 apiQuery.beginDate = date.toISOString().split('T')[0];
             }
             if (query?.beginDate) apiQuery.beginDate = query.beginDate;
-            if (query?.endDate) apiQuery.endDate = query.endDate;
+            if (query?.endDate) apiQuery.endDate = query.endDate instanceof Date ? query.endDate.toISOString().split('T')[0] : query.endDate;
 
             const rawOrders = await this.connector.fetchOrdersFromPlatform(apiQuery);
-            return this.mapper.toInternalOrderPackages(rawOrders);
+            return carryIncomplete(rawOrders, this.mapper.toInternalOrderPackages(this.dropMissingIdentity(rawOrders)));
         } catch (error: any) {
             if (IntegrationError.isIntegrationError(error)) throw error;
             throw new Error(`[${this.clientId}][HepsiburadaOrderService:fetchOrders] ${error.message}`);
         }
+    }
+
+    /** testConnection probu (bkz. OrderConnector.probeConnection); hata sınıflandırması ortak `runConnectionProbe`'dadır. */
+    public probeConnection(): Promise<void> { return this.connector.probeConnection(); }
+
+    /**
+     * [INT-05 / conformance C7b, playbook §4.2] Sipariş kimliği (orderNumber/orderId) olmayan kayıt boş kimlikle SESSİZCE kaydedilmez:
+     * atlanır + loglanır (Trendyol C22 deseni); kayıtların TÜMÜ (>= DRIFT_MIN_RECORDS) kimliksizse şema kayması varsayılıp VALIDATION fırlatılır.
+     * `carryIncomplete` ham diziden okunur (işaret ham dizidedir); filtreli dizi yalnız mapper'a gider.
+     */
+    private dropMissingIdentity(raw: any[]): any[] {
+        const valid = raw.filter(o => !!(o?.orderNumber || o?.orderId));
+        const skipped = raw.length - valid.length;
+        if (skipped === 0) return raw;
+        log.error('ORDERSERVICE_HB_SIPARIS_KIMLIGI_EKSIK', `${skipped}/${raw.length} Hepsiburada sipariş kaydı kimlik (orderNumber/orderId) eksikliği nedeniyle ATLANDI (şema kayması olabilir).`);
+        if (raw.length >= DRIFT_MIN_RECORDS && valid.length === 0) {
+            throw new IntegrationError('VALIDATION',
+                `Hepsiburada sipariş yanıtı beklenen kimlik alanlarını taşımıyor (${raw.length}/${raw.length} kayıt geçersiz; şema kayması şüphesi).`,
+                { integrationCode, operation: 'fetchOrders', clientId: this.clientId, platformCode: 'ORDER_SCHEMA_DRIFT' });
+        }
+        return valid;
     }
 
     public async rejectOrder(externalOrderId: string, params: IOrderRejectParams): Promise<boolean> {

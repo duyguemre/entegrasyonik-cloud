@@ -1,6 +1,12 @@
 import express, { Express, Request, Response } from 'express';
 import { DatabaseManagerInstance } from '@database/DatabaseManager';
 import { OrderQueueProducer } from '@integration/engine/order/OrderQueueProducer';
+import { createHash } from 'crypto';
+import { createRateLimiter } from './rateLimit';
+import { safeEqual, verifyWebhookHeaders } from './webhookAuth';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('webhook', 'WebhookApiManager');
 
 // ADR-0005 Karar 8 (Aşama B): Trendyol sipariş durumu webhook alıcısı.
 //
@@ -23,7 +29,18 @@ import { OrderQueueProducer } from '@integration/engine/order/OrderQueueProducer
 // header/signature şeması belgelenmemiş. BULGU olarak işaretlendi (bkz. görev raporu / BACKLOG). Bu nedenle
 // doğrulama TAMAMEN `hookToken` eşleşmesine dayanır (ADR-0005 Karar 8: "pazaryerinin desteklediği kimlik
 // doğrulama başlığı da doğrulanır" notu bu bulgudan ötürü UYGULANAMADI).
+//
+// WP10 (güvenlik): (a) token karşılaştırması sabit-zamanlı (`safeEqual`); (b) Trendyol'un RESMİ yöntemleri (API_KEY başlığı
+// veya Basic; HMAC yok -- docs/research/API_CONTRACTS_2026-09-30.md) entegrasyon kaydında `webhookAuthType` ile
+// yapılandırılmışsa ZORUNLU doğrulanır, yapılandırılmamışsa bugünkü davranış korunur + uyarı loglanır (geriye uyumluluk);
+// (c) tüm doğrulama hataları AYNI 404'tür (token yok/yanlış/başlık yanlış ayrımı sızmaz; ADR-0005 Karar 8: 404);
+// (d) yalnız JSON Content-Type (gövde varsa) ve oran sınırı (token başına + IP başına kaba tavan).
+// Tekilleştirme: olay gövdesi okunmaz (Karar 8); webhook yalnız "şimdi çek" sinyalidir. Aynı sinyalin tekrarı
+// `enqueueWebhookTriggeredSync` içindeki 10 sn jobId tekilleştirmesiyle tek sync işine iner (çift işleme yok; sync durum-çekimidir, idempotenttir).
 const WEBHOOK_BODY_LIMIT = '256kb';
+const WEBHOOK_TOKEN_RATE = { windowMs: 60_000, max: 60 };   // Trendyol tekrar denemesi 5 dk'da bir; 60/dk cömert
+const WEBHOOK_IP_RATE = { windowMs: 60_000, max: 600 };     // Trendyol IP'leri tenant'lar arası paylaşımlı: kaba tavan
+const warnedUnconfigured = new Map<string, number>();
 
 // Tek Queue/Redis bağlantısı: modül yüklendiğinde (Webserver başlarken) BİR KEZ kurulur. `OrderQueueProducer`
 // constructor'ı Redis'e senkron bağlanmaya ÇALIŞMAZ (ADR-0005 Karar 2 ile aynı dayanıklılık garantisi) -- Redis
@@ -50,7 +67,7 @@ export interface IWebhookResult {
  *    Bağlam: "başarısız teslimde 5 dk'da bir yeniden dener" -- bu nedenle iç hatada 200 DÖNMEK yerine 500 tercih
  *    edildi, aksi halde Trendyol bizim hatamızı "teslim edildi" sayardı).
  */
-export async function handleTrendyolWebhook(hookToken: string): Promise<IWebhookResult> {
+export async function handleTrendyolWebhook(hookToken: string, headers?: Record<string, unknown>): Promise<IWebhookResult> {
     try {
         if (!hookToken) return { statusCode: 404 };
 
@@ -62,10 +79,22 @@ export async function handleTrendyolWebhook(hookToken: string): Promise<IWebhook
         ).lean();
         if (!client) return { statusCode: 404 };
 
-        const integration = (client.integrations || []).find((i: any) => i && i.webhookToken === hookToken);
+        const integration = (client.integrations || []).find((i: any) => i && safeEqual(i.webhookToken, hookToken));
         // Kapsam (ADR-0005 Karar 8, Faz 2): bu rota YALNIZCA Trendyol için. Teorik olarak başka bir entegrasyon
         // türü aynı alanı kullanıp eşleşse bile (bugün üretmiyoruz, ama savunmacı) işlenmez.
         if (!integration || integration.integrationCode !== 'trendyol') return { statusCode: 404 };
+
+        // WP10: Trendyol başlık doğrulaması (yapılandırılmışsa zorunlu; aksi halde geriye uyumlu + uyarı).
+        const headerAuth = verifyWebhookHeaders(integration, headers);
+        if (headerAuth === 'fail') return { statusCode: 404 };
+        if (headerAuth === 'not-configured') {
+            const k = String(client.clientId);
+            const t = Date.now();
+            if ((warnedUnconfigured.get(k) ?? 0) + 3_600_000 < t) {
+                warnedUnconfigured.set(k, t);
+                log.warn('WEBHOOK_HEADER_AUTH_UNCONFIGURED', 'trendyol webhook: başlık kimlik doğrulaması (API_KEY/BASIC) yapılandırılmamış; yalnız URL token ile doğrulandı', { clientId: client.clientId });
+            }
+        }
 
         const now = new Date();
         const lastSyncTimestamp = integration.lastSuccessfulOrderSync || new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -80,19 +109,42 @@ export async function handleTrendyolWebhook(hookToken: string): Promise<IWebhook
 
         return { statusCode: 200 };
     } catch (e: any) {
-        console.error('[WebhookApiManager] Trendyol webhook işleme hatası:', e?.message);
+        log.error('WEBHOOK_PROCESSING_FAILED', '[WebhookApiManager] Trendyol webhook işleme hatası:', { err: e?.message });
         return { statusCode: 500 };
     }
 }
 
 /** `Webserver.configure()` içinde, health/ready ile aynı yerde ve authenticate middleware'inden ÖNCE çağrılır. */
 export function configureWebhookRoutes(app: Express) {
+    const ipLimiter = createRateLimiter(WEBHOOK_IP_RATE);
+    const tokenLimiter = createRateLimiter({
+        ...WEBHOOK_TOKEN_RATE,
+        // Ham token bellekte/anahtarda tutulmaz: kısaltılmış özet.
+        keyFn: (req) => createHash('sha256').update(String(req.params?.hookToken ?? '')).digest('hex').slice(0, 16),
+    });
     app.post(
         '/hooks/trendyol/:hookToken',
+        ipLimiter,
+        tokenLimiter,
+        webhookContentTypeGuard,
         express.raw({ type: '*/*', limit: WEBHOOK_BODY_LIMIT }),
         async (req: Request, res: Response) => {
-            const result = await handleTrendyolWebhook(req.params.hookToken);
+            const result = await handleTrendyolWebhook(req.params.hookToken, req.headers as Record<string, unknown>);
             res.status(result.statusCode).end();
         },
     );
+}
+
+/** Gövde VARSA yalnız application/json kabul edilir (boş gövdeli ping'ler geçer); aksi 415. */
+export function webhookContentTypeGuard(req: Request, res: Response, next: () => void) {
+    const len = Number(req.headers['content-length'] ?? 0);
+    const chunked = !!req.headers['transfer-encoding'];
+    if (len > 0 || chunked) {
+        const ct = String(req.headers['content-type'] ?? '').toLowerCase();
+        if (!/^application\/json(\s*;|$)/.test(ct)) {
+            res.status(415).end();
+            return;
+        }
+    }
+    next();
 }

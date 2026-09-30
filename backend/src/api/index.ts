@@ -32,6 +32,16 @@ import StockService from "./services/stock-service"
 import AuditService from "./services/audit-service"
 import IntegrationConfigService from "./services/integration-config-service"
 import IntegrationComplianceService from "./services/integration-compliance-service"
+import BackofficeLogService from "./services/backoffice-log-service"
+import BackofficeErrorService from "./services/backoffice-error-service"
+import BackofficeAuditService from "./services/backoffice-audit-service"
+import BackofficeAdminUserService from "./services/backoffice-admin-user-service"
+import BackofficeBillingService from "./services/backoffice-billing-service"
+import BackofficeTenantService from "./services/backoffice-tenant-service"
+import BackofficeEngineService from "./services/backoffice-engine-service"
+import BackofficeOverviewService from "./services/backoffice-overview-service"
+import BackofficeIntegrationService from "./services/backoffice-integration-service"
+import BackofficeInfraService from "./services/backoffice-infra-service"
 export default {
     MenuService,
     SecurityService,
@@ -66,5 +76,15 @@ export default {
     StockService,
     AuditService,
     IntegrationConfigService,
-    IntegrationComplianceService
+    IntegrationComplianceService,
+    BackofficeLogService,
+    BackofficeErrorService,
+    BackofficeAuditService,
+    BackofficeAdminUserService,
+    BackofficeBillingService,
+    BackofficeTenantService,
+    BackofficeEngineService,
+    BackofficeOverviewService,
+    BackofficeIntegrationService,
+    BackofficeInfraService
 }

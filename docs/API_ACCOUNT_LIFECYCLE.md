@@ -75,6 +75,35 @@ Tek kullanım atomiktir: eşzamanlı iki istekten yalnızca biri başarılı olu
 
 `POST /api/AccountService/resendVerificationEmail` — İstek gövdesi boş. Başarı `200 { "success": true }` ya da zaten doğrulanmışsa `{ "success": true, "alreadyVerified": true }`. Hatalar: `429 COOLDOWN` (60 sn), `502 MAIL_FAILED` (SMTP hatası; ayrıntı sızmaz), `503 EMAIL_NOT_CONFIGURED`, `401`.
 
+## 6. Davet (ADR-0028 WP-A4) — `UserService/*` (kademe: admin) + AÇIK `AccountService/*`
+
+Token 256 bit rastgele, DB'de YALNIZ sha256 (`Invitations.tokenHash`), **7 gün**, tek kullanım (atomik `pending -> accepted`). E-posta bağlantısı: `${PUBLIC_APP_URL}/invite#t=<token>` (fragment; sunucu günlüğüne/Referer'a düşmez; FE okuyunca `history.replaceState` ile siler).
+
+| Uç | Kimlik | Girdi -> Çıktı / Hatalar |
+|---|---|---|
+| `UserService/inviteUser` | admin (`users:manage`) | `{email, role: 'admin'\|'operator'}` -> `{id,email,role,status,expiresAt,expired,invitedBy,createdAt}` (token/özet ASLA dönmez). `403` rol tavanı (`owner` davetle verilemez; kendi kademesinden yüksek rol yok), `409 ALREADY_MEMBER` / `409 EMAIL_TAKEN` (başka mağazaya bağlı; Aşama 1-2 tek üyelik), `403 PLAN_LIMIT_REACHED` (limits.users: aktif üye + bekleyen davet), `429 INVITATION_RATE_LIMITED` (tenant başına 20/saat), `502 MAIL_FAILED` (davet kayıtlı kalır -> `resendInvitation`), `503 EMAIL_NOT_CONFIGURED` |
+| `UserService/resendInvitation` / `revokeInvitation` | admin | `{invitationId}` -> davet DTO / `{success:true}`; yeni token eskisini öldürür. `404` (bekleyen değil) |
+| `UserService/listInvitations` | admin (`users:read`) | `{status?: 'pending'\|'accepted'\|'revoked'}` -> `{invitations: [...]}` (en çok 200; `expired` bayrağı) |
+| `AccountService/getInvitation` | **AÇIK**, `accountTokenLimiter` | `{token}` -> `{tenantTitle, role, email (maskeli), expiresAt}`. `400 INVITATION_INVALID`, `410 INVITATION_EXPIRED\|INVITATION_REVOKED`, `409 INVITATION_ACCEPTED` |
+| `AccountService/acceptInvitation` | **AÇIK**, `accountTokenLimiter` | `{token, name, surname, password}` -> `{success:true}` (oturum AÇMAZ; FE giriş sayfasına yönlendirir). Parola politikası token TÜKETİLMEDEN uygulanır (`400 WEAK_PASSWORD` daveti yakmaz). Kullanıcı `emailVerified:true` doğar. Yeni kullanıcı (merkezi Users + moda göre tenant kopyası + Membership) tek işlemde; hata halinde geri alınır |
+
+Mevcut kullanıcıya üyelik ekleme (çoklu üyelik) **Aşama 3**'tedir (ADR-0028 §7.3, §12); bugün başka mağazaya bağlı e-posta için genel `409 EMAIL_TAKEN` döner.
+
+## 7. Askıya alma — `UserService/suspendUser` / `reactivateUser` (admin)
+
+`{userId, reason?}` (`userId`: FE kullanıcı listesindeki tenant kopyası `_id`'si ya da merkezi `_id`) -> `{success:true, status}`. Sahibe yalnız sahip dokunur; kendine dokunulamaz (`403`); son aktif sahip askıya alınamaz (`409 LAST_OWNER`; işlem sonrası yeniden sayım + telafi). Yazılanlar: `Memberships.status/suspendedAt/By/Reason` (dual+membership), legacy `Users.isActive` (merkezi + tenant kopyası; legacy+dual), `tokenVersion++` ve kimlik önbelleği temizliği -> hedefin oturumları anında düşer (çok pod'da `AUTH_IDENTITY_CACHE_TTL_MS` kadar gecikme). İkinci askı idempotenttir.
+
+## 8. Adım-yükseltme — `AccountService/reauthenticate` (member, kimlikli)
+
+`{password}` -> `{success:true, reauthValidUntil}` (5 dk). Yanlış parola `400 INVALID_CURRENT_PASSWORD` (401 DEĞİL) + login ile aynı kilit sayacı. **Mekanizma sunucu taraflıdır** (`Users.reauthAt`; kullanıcı bazlı, oturum bazlı değil); ADR'nin `reauth_at` çerez claim'ine geçiş `operations/users/reauth.ts` içinde tek dosyalık değişikliktir. Step-up gerekip süresi geçmişse işlem `401 REAUTH_REQUIRED` döner; FE parola diyaloğu açıp `reauthenticate` + asıl isteği yineler.
+
+## 9. Sahiplik devri (iki adım; ADR-0028 Karar 5.5)
+
+1. `UserService/initiateOwnershipTransfer {targetUserId}` (yalnız sahip, **step-up**): hedef aktif + e-postası doğrulanmış üye olmalı (`409 TARGET_NOT_ACTIVE|TARGET_EMAIL_UNVERIFIED|ALREADY_OWNER`). `AccountTokens purpose='ownership_transfer'` (72 saat, tek kullanım, yalnız sha256; tenant başına TEK bekleyen: yenisi eskisini öldürür). Hedefe e-posta `${PUBLIC_APP_URL}/accept-ownership#t=<token>` + uygulama içi bildirim `SECURITY_OWNERSHIP_TRANSFER_REQUESTED`. Yanıt `{success, transferId, expiresAt}`. `cancelOwnershipTransfer` (sahip) bekleyeni iptal eder.
+2. `UserService/acceptOwnershipTransfer {token}` (**hedef, oturum açıkken**): sıra hedef `owner` -> eski sahip `admin` (ara durumda 0 sahip yok); ikinci adım başarısızsa birincisi geri alınır ve belirteç yeniden kullanılabilir kalır. İki tarafın `tokenVersion`'ı artar (yeniden giriş). Geçersiz/başkasına ait/süresi dolmuş/kullanılmış belirteç: hep `400 TOKEN_INVALID`. Audit: `ownership.transfer.request|accept|cancel` + `membership.role_change`; bildirim `SECURITY_OWNERSHIP_TRANSFERRED`.
+
+Tüm bu uçlar `imp:true` (impersonation) oturumunda `403`. Audit meta'da hedef kullanıcı (`targetUserId`), eski/yeni rol (`fromRole/toRole`) ve durum (`fromStatus/toStatus`) bulunur; e-posta/token yazılmaz.
+
 ## Kayıt ve `emailVerified`
 
 - `SecurityService.register` başarısından sonra (yanıtı geciktirmeden, arka planda, best-effort) doğrulama e-postası gönderilir. E-posta/SMTP/`PUBLIC_APP_URL` hatası **kaydı bozmaz** (yalnızca uyarı loglanır).
@@ -112,3 +141,9 @@ En az 10 karakter; 10–15 karakterlik parolalar en az 3 sınıf (küçük/büy�
 4. **`UserService.updateUser` e-postayı değiştirebilir** ve `emailVerified`'ı sıfırlamaz / yeniden doğrulama istemez; ayrıca yöneticinin başkasının parolasını eski parola olmadan yazması sürüyor (`createUser`/`updateUser`) — davet bağlantılı akış (FRONTEND_GAP N11) bunu kapatır.
 5. Süper yönetici (`isGlobalAdmin`) hesapları da e-posta ile sıfırlanabilir (tek faktör: posta kutusu). Platform yöneticileri için sıfırlamayı kapatma/ek doğrulama istenirse ayrı karar (2FA yok).
 6. `GET /api/AccountService` → 403 (kayıtsız `get`); `AccountService` için başka genel metot yok.
+
+### 8.1 Step-up kapsamı (WP-A5)
+`401 REAUTH_REQUIRED` dönen işlemler: `UserService/{createUser,updateUser}` ile **admin rolü verme** (ROLE_ADMIN), `UserService/inviteUser` `role:'admin'`, `UserService/suspendUser` ve `UserService/deleteUser` (hedef **sahip değilse**), sahiplik devri başlatma. Rol düşürme / operator rolü / ad güncelleme step-up istemez. Rol değişiminde hedefin `tokenVersion`'ı artar (eski oturum 401; hedef yeniden giriş yapar); `dual/membership` modda rol ayrıca Membership'e yazılır.
+
+### 8.2 Captcha kaldırıldı (WP-A5)
+`SecurityService/getCaptcha` ve `login` yanıtındaki `{requireCaptcha}` dalı KALDIRILDI (sahte, doğrulanmıyordu). Koruma: IP hız sınırlayıcı + 5 hatalı denemede 15 dk kilit. `captcha` gövde alanı yok sayılır. FE: `LoginComponent.vue` captcha paneli / `user.ts getCaptcha` temizlenebilir (artık tetiklenmez).

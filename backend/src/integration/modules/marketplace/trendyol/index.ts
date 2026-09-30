@@ -2,6 +2,7 @@ import { ICategoryAttributeValue, ICategory, ICategoryAttribute, IVariant, ICate
 
 // Temel Servis (HTTP/Client)
 import Service from './services/Service';
+import { runConnectionProbe, type TestConnectionResult } from '@integration/modules/common/adapter/testConnection';
 
 // Alt Servisler (İş mantığı koordinatörleri)
 import { ProductService } from './services/ProductService';
@@ -61,6 +62,19 @@ export default class Trendyol implements IPlatform {
      */
     public async init(): Promise<boolean> {
         return true;
+    }
+
+    /**
+     * [INT-01 testConnection] Yan etkisiz tek okuma: onaylı ürün listesinin TEK kaydı (`size=1`), servis grubu `product_read`.
+     * Sipariş listesi seçilmedi (30/dk pacer'ı ve PII'li gövde); kategori/marka uçları kimlik doğrulamasız olduğundan kanıt vermez.
+     * Basic auth (APIKEY/APISECRET) + `{SELLERID} - Entegrasyonik` User-Agent zorunlu; gövde atılır. Asla fırlatmaz.
+     */
+    public async testConnection(): Promise<TestConnectionResult> {
+        return runConnectionProbe('trendyol', async () => {
+            const sellerId = this.integrationParameters?.integrationSettings?.settings?.SELLERID;
+            await this._service.get(`product/sellers/${encodeURIComponent(String(sellerId ?? ''))}/products/approved`, { page: 0, size: 1 },
+                { group: 'product_read', operation: 'testConnection', timeoutMs: Number(process.env.TY_HTTP_TIMEOUT_MS) || 10000 });
+        });
     }
 
     // --- KATEGORİ & MARKA İŞLEMLERİ ---

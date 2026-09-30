@@ -1,0 +1,139 @@
+---
+/**
+ * HelpBand — "Aradığınızı bulamadınız mı?" bandı (S17). SSS, fiyatlandırma, özellik derin sayfaları ve 404 aynı
+ * deseni kullanır: kısa başlık + tek cümle + destek merkezi / iletişim bağlantıları. Açık zeminde kart görünümü.
+ */
+import Icon from '../home/Icon.astro'
+
+interface Link {
+  label: string
+  href: string
+}
+
+interface Props {
+  title?: string
+  text?: string
+  links?: Link[]
+  testid?: string
+}
+
+const {
+  title = 'Aradığınızı bulamadınız mı?',
+  text = 'Destek merkezinde adım adım rehberlere göz atın ya da sorunuzu bize yazın.',
+  links = [
+    { label: 'Destek merkezi', href: '/destek' },
+    { label: 'Bize yazın', href: '/iletisim' },
+  ],
+  testid = 'help-band',
+} = Astro.props
+---
+
+<div class="help-band-wrap">
+<aside class="help-band" aria-label={title} data-testid={testid}>
+  <span class="help-band__icon" aria-hidden="true"><Icon name="help" size="md" /></span>
+  <div class="help-band__body">
+    <p class="help-band__title">{title}</p>
+    <p class="help-band__text">{text}</p>
+  </div>
+  <div class="help-band__links">
+    {
+      links.map((l, i) => (
+        <a class:list={['help-band__link', { 'help-band__link--primary': i === 0 }]} href={l.href}>
+          {l.label}
+          <Icon name="arrow" size="sm" />
+        </a>
+      ))
+    }
+  </div>
+</aside>
+</div>
+
+<style>
+  /* Kapsayıcı sorgusu: dar (narrow) kapsayıcıda bağlantılar alta iner, genişte tek satır. */
+  .help-band-wrap {
+    container-type: inline-size;
+    margin-top: var(--ek-space-10);
+  }
+  .help-band {
+    display: grid;
+    gap: var(--ek-space-4);
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    padding: var(--ek-space-6);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--site-radius-panel);
+    background:
+      radial-gradient(60% 120% at 0% 0%, color-mix(in srgb, var(--ek-color-secondary) 10%, transparent), transparent 70%),
+      var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
+  }
+  .help-band__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-12);
+    height: var(--ek-space-12);
+    border-radius: var(--ek-radius-lg);
+    background: linear-gradient(140deg, var(--ek-color-primary), var(--ek-color-primary-darken-1));
+    color: var(--site-color-on-primary);
+  }
+  .help-band__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+    min-width: 0;
+  }
+  .help-band__title {
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-xl);
+    font-weight: var(--ek-font-weight-bold);
+  }
+  .help-band__text {
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-md);
+    line-height: var(--site-font-body-line-height);
+  }
+  .help-band__links {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-3);
+  }
+  .help-band__link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    min-height: var(--site-tap-target);
+    padding-inline: var(--ek-space-5);
+    border: var(--site-border-width) solid var(--ek-color-border-strong);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface);
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+    text-decoration: none;
+    transition:
+      background-color var(--ek-duration-base) var(--ek-easing-standard),
+      border-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .help-band__link:hover {
+    border-color: var(--ek-color-primary);
+  }
+  .help-band__link--primary {
+    border-color: var(--ek-color-primary);
+    background: var(--ek-color-primary);
+    color: var(--site-color-on-primary);
+  }
+  .help-band__link--primary:hover {
+    background: var(--ek-color-primary-darken-1);
+  }
+  @container (min-width: 52rem) {
+    .help-band {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      padding: var(--ek-space-6) var(--ek-space-8);
+    }
+    .help-band__links {
+      grid-column: auto;
+    }
+  }
+</style>

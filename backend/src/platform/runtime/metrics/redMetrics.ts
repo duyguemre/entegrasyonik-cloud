@@ -55,3 +55,60 @@ export function recordIntegrationCallMetric(entry: IntegrationCallMetricInput): 
 export function recordUnhandledRejection(): void {
     metricsRegistry.incCounter('unhandled_rejections', {}, 1);
 }
+
+// --- [F-06] Platform + operasyon kapsamlı entegrasyon çağrı metrikleri (tenant etiketi YOK; Karar 2.3 kardinalite) ---
+
+/** Etiket kardinalitesini sınırlar: UUID/uzun hex -> <id>, sayı -> #, 60 karaktere kırpılır. */
+export function normalizeOperationLabel(op: string): string {
+    return String(op ?? 'unknown')
+        .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '<id>')
+        .replace(/\b[0-9a-f]{16,}\b/gi, '<id>')
+        .replace(/\d+/g, '#')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 60) || 'unknown';
+}
+
+export interface IntegrationOperationMetricInput {
+    integrationCode: string;
+    operation: string;
+    kind: 'read' | 'write';
+    status: 'ok' | 'error';
+    /** Hata sınıfı (IntegrationError.code); `status:'error'` ise. */
+    errorClass?: string;
+    durationMs: number;
+    retries: number;
+}
+
+/**
+ * Çağrı süresi + hata oranı sayaçları: `integration_op_calls{integrationCode,operation,kind,outcome}`,
+ * `integration_op_duration_ms{integrationCode,operation,kind}`, `integration_op_errors_total{integrationCode,operation,errorClass}`,
+ * `integration_op_retries_total{integrationCode,operation}`. `tenantId` etiketi KASITLI olarak YOK (imza almaz).
+ */
+export function recordIntegrationOperationMetric(e: IntegrationOperationMetricInput): void {
+    const operation = normalizeOperationLabel(e.operation);
+    const base = { integrationCode: e.integrationCode, operation };
+    const outcome = e.status === 'ok' ? 'ok' : (e.errorClass ?? 'ERROR');
+    metricsRegistry.incCounter('integration_op_calls', { ...base, kind: e.kind, outcome }, 1);
+    metricsRegistry.observeHistogram('integration_op_duration_ms', { ...base, kind: e.kind }, e.durationMs);
+    if (e.status === 'error') metricsRegistry.incCounter('integration_op_errors_total', { ...base, errorClass: e.errorClass ?? 'ERROR' }, 1);
+    if (e.retries > 0) metricsRegistry.incCounter('integration_op_retries_total', base, e.retries);
+}
+
+/**
+ * [ADR-0030 X1] Giden hız kovası sayaçları (tenant etiketi YOK; seri sayısı = pazaryeri x grup, küçük):
+ * `integration_rate_bucket_waits_total{integrationCode,group}` (kovada bekleyen çağrı sayısı),
+ * `integration_rate_bucket_wait_ms_total{...}` (toplam bekleme), `integration_rate_bucket_rejects_total{...}`
+ * (pazaryerinin 429 ile reddettiği ve tükenen çağrılar), `integration_barcode_price_deferred_total{integrationCode}`.
+ */
+export function recordRateBucketMetric(e: { integrationCode: string; group: string; event: 'wait' | 'reject' | 'barcode_deferred'; waitMs?: number }): void {
+    const labels = { integrationCode: e.integrationCode, group: e.group };
+    if (e.event === 'wait') {
+        metricsRegistry.incCounter('integration_rate_bucket_waits_total', labels, 1);
+        if (e.waitMs && e.waitMs > 0) metricsRegistry.incCounter('integration_rate_bucket_wait_ms_total', labels, Math.round(e.waitMs));
+    } else if (e.event === 'reject') {
+        metricsRegistry.incCounter('integration_rate_bucket_rejects_total', labels, 1);
+    } else {
+        metricsRegistry.incCounter('integration_barcode_price_deferred_total', { integrationCode: e.integrationCode }, 1);
+    }
+}

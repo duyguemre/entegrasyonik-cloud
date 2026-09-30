@@ -1,37 +1,67 @@
 import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
-import { ObjectId } from 'mongodb'
 import { StatsOperations } from '@operations/client/StatsOperations'
+import { findStockChanges, recordManualStockMovements, stockDirtyFields } from '@operations/stock/markStockDirty'
+import { stripEngineOwnedVariantFields } from './product-service'
+import { ObjectId } from 'mongodb'
+import crypto from 'crypto'
+
+/**
+ * [DB-07 / DBR-09] Bu servisin TÜM varyant okuma/yazmaları kanonik `Variants` koleksiyonuna (getVariantModel) gider.
+ * Eski gömülü `Product.variants` dizisi şemada yoktur (client/models/Product.ts) ve yedekte hiç yazılmamıştır; o yola
+ * yazan kod kaldırıldı. Yazma kuralları ProductService ile aynıdır: motor-sahipli alanlar (reserved/allocations/
+ * stockVersion/stockDirty) gövdeden atılır, stok değişince stockDirty işaretlenir (X2), variantHash yeniden hesaplanır.
+ */
+const toObjectId = (v: any) => (v instanceof ObjectId ? v : new ObjectId(String(v)))
+const hashChoices = (maincode: any, choices: any) => {
+    const normalized = maincode + '|' + (choices || []).slice().sort((a: any, b: any) => String(a.choiceId).localeCompare(String(b.choiceId))).map((c: any) => `${c.choiceId}:${c.choiceValueId}`).join('|')
+    return crypto.createHash('sha256').update(normalized).digest('hex')
+}
 
 export default class VariantService extends BaseApi implements IService {
     choices: any = undefined
 
-
-    currentClientId: any
-
-    constructor(clientId: number, protected request: any) {
-        super(clientId, request)
-        this.currentClientId = clientId
-    }
-
-
     async get(): Promise<any> {
     }
 
-
     async getVariants(): Promise<any> {
         try {
-            const filterQuery = { _id: this.request._id }
-            const response = await this.clientDB.getProductModel().findOne(filterQuery).select("_id variants").lean()
-
-            if (response) return response.variants
-            return undefined
+            // FE sözleşmesi: girdi `_id` = ürün id; yanıt varyant dizisi.
+            if (!this.request._id) return undefined
+            return await this.clientDB.getVariantModel().find({ productId: toObjectId(this.request._id) }).lean()
         } catch (error) {
             throw error
         }
     }
 
+    /** FE (5 bileşen) `VariantService/getVariantsList` çağırır: `{ variants: [{ _id, title }] }` bekler (açılır liste). */
+    async getVariantsList(): Promise<any> {
+        if (!this.request._id) return { variants: [] }
+        const rows: any[] = await this.clientDB.getVariantModel()
+            .find({ productId: toObjectId(this.request._id) }, { _id: 1, title: 1, stockcode: 1, barcode: 1, choices: 1 }).lean()
+        return {
+            variants: (rows || []).map((v: any) => ({
+                _id: v._id,
+                title: v.title || v.stockcode || String(v._id),
+                stockcode: v.stockcode,
+                barcode: v.barcode,
+                choices: v.choices,
+            })),
+        }
+    }
 
+    /** Varyant eklenirken variantHash için ürünün maincode'u gerekir. */
+    private async getProductMaincode(productId: any): Promise<string | undefined> {
+        const p: any = await this.clientDB.getProductModel().findOne({ _id: productId }).select('maincode').lean()
+        return p?.maincode
+    }
+
+    private async afterVariantWrite(productId: any): Promise<void> {
+        await this.updateProductStock(productId)
+        await this.updateProductPrices(productId)
+        const statsOperations = new StatsOperations(this.clientDB)
+        await statsOperations.markStatsAsDirty()
+    }
 
     //TODO BASKA BIR YOL DUSUNULECEK
     async getIntegrations(): Promise<any> {
@@ -39,13 +69,8 @@ export default class VariantService extends BaseApi implements IService {
             const filterQuery = {}
             const projection = { settings: 0 }
             // [BULGU DÜZELTMESİ, 2026-09-29, ADR-0016 B-R-T1] `.populate('type')` eksikti (ProductService.getIntegrations'ın
-            // aksine, bkz. product-service.ts aynı metot) -> aşağıdaki constructMatchQuery/constructUpdateQuery'nin
-            // `item.type.code` erişimi hep undefined dönüyor, marketplace/ecommerce filtresi HER ZAMAN boş kalıyor,
-            // min/max fiyat aramasında {$or:[]} üretilip gerçek Mongo'da "must be a nonempty array" hatasıyla patlıyordu.
-            // [BULGU DÜZELTMESİ, 2026-09-29] `find(filterQuery, { projection })` de AYRICA yanlış sarmalanmıştı —
-            // mongoose'un ikinci argümanı DOĞRUDAN alan-seçim nesnesi bekler. Gerçek Mongo'da (mongodb-memory-server
-            // ile doğrulandı, bkz. tests/mongo-semantics/integrationProjectionShape.mongoSemantics.test.ts) bu HATA
-            // FIRLATMIYORDU, sessizce TÜM alanları (settings dahil) döndürüyordu — B4 gereksiz alan sızıntısı.
+            // aksine) -> `item.type.code` erişimi hep undefined dönüyordu; `find(filterQuery, projection)` ikinci argümanı
+            // DOĞRUDAN alan-seçim nesnesidir (bkz. tests/mongo-semantics/integrationProjectionShape.mongoSemantics.test.ts).
             return await this.applicationDB.getIntegrationModel().find(filterQuery, projection).populate('type')
         } catch (error) {
             throw error
@@ -65,208 +90,108 @@ export default class VariantService extends BaseApi implements IService {
         return this.choices
     }
 
-    async constructMatchQuery(searchVariantForm: any) {
-        var searchMatch: any = []
-        if (searchVariantForm == undefined) return searchMatch
-        if (searchVariantForm.shelf) {
-            searchMatch.push({ 'shelf': searchVariantForm.shelf })
-        }
-        if (searchVariantForm.isPlatformBasedPrice == undefined || searchVariantForm.isPlatformBasedPrice == 0) {
-        } else if (searchVariantForm.isPlatformBasedPrice == 2) {
-            searchMatch.push({ 'isPlatformBasedPrice': true })
-        } else {
-            searchMatch.push({ 'isPlatformBasedPrice': false })
-        }
-        if (searchVariantForm.stockcode) {
-            searchMatch.push({ 'stockcode': searchVariantForm.stockcode })
-        }
-        if (searchVariantForm.stock) {
-            searchMatch.push({ 'stock': searchVariantForm.stock })
-        }
-        if (searchVariantForm.barcode) {
-            searchMatch.push({ 'barcode': searchVariantForm.barcode })
-        }
-
-        if (searchVariantForm.choices) {
-            for (let choice of searchVariantForm.choices) {
-                if (choice.choiceValueIds.length > 0)
-                    searchMatch.push({ choices: { $elemMatch: { choiceId: choice.choiceId, choiceValueId: { $in: choice.choiceValueIds } } } })
-
-                /*                     searchMatch.push({ ['choices.' + choice.choiceId]: { $in: choice.choiceValueIds } }) */
-            }
-        }
-
-        let integrations = await this.getIntegrations()
-        let priceArray: any = []
-        if (searchVariantForm.min != undefined) {
-            for (let integration of integrations.filter((item: any) => item.type.code == 'marketplace' || item.type.code == 'ecommerce')) {
-                priceArray.push({ [integration.code + '.marketPrice']: { $gte: searchVariantForm.min } })
-                priceArray.push({ [integration.code + '.costPrice']: { $gte: searchVariantForm.min } })
-            }
-        }
-        if (searchVariantForm.max != undefined) {
-            for (let integration of integrations.filter((item: any) => item.type.code == 'marketplace' || item.type.code == 'ecommerce')) {
-                priceArray.push({ [integration.code + '.marketPrice']: { $lte: searchVariantForm.max } })
-                priceArray.push({ [integration.code + '.costPrice']: { $lte: searchVariantForm.max } })
-            }
-        }
-        if (searchVariantForm.min || searchVariantForm.max)
-            searchMatch.push({ $or: priceArray })
-
-        return searchMatch
-    }
-
-
-
-
-
-    async constructUpdateQuery(scope: any, batchProcessForm: any) {
-        var updateQuery: any = {}
+    /** Toplu güncelleme `$set` gövdesi (Variants belgesi üzerinde nokta yolları; tanımsız alanlar ATLANIR). `scope` yol biçimini etkilemez. */
+    async constructUpdateQuery(_scope: any, batchProcessForm: any) {
+        const updateQuery: any = {}
         if (batchProcessForm == undefined) return updateQuery
 
-        if (batchProcessForm.stock != undefined) {
-            if (scope == 2)
-                updateQuery['variants.$[].stock'] = batchProcessForm.stock
-            else
-                updateQuery['variants.$[elem].stock'] = batchProcessForm.stock
-        }
-        if (batchProcessForm.shelf != undefined) {
-            if (scope == 2)
-                updateQuery['variants.$[].shelf'] = batchProcessForm.shelf
-            else
-                updateQuery['variants.$[elem].shelf'] = batchProcessForm.shelf
-        }
+        if (batchProcessForm.stock != undefined) updateQuery['stock'] = batchProcessForm.stock
+        if (batchProcessForm.shelf != undefined) updateQuery['shelf'] = batchProcessForm.shelf
 
-        let integrations = await this.getIntegrations()
-        let priceObject: any = { prices: {} }
-        priceObject.prices.marketPrice = batchProcessForm.prices.marketPrice
-        priceObject.prices.salePrice = batchProcessForm.prices.salePrice
-        priceObject.prices.isPlatformBasedPrice = batchProcessForm.prices.isPlatformBasedPrice
-        for (let integration of integrations.filter((item: any) => item.type.code == 'marketplace' || item.type.code == 'ecommerce')) {
-            if (batchProcessForm.prices[integration.code] != undefined) {
-                if (batchProcessForm.prices[integration.code].marketPrice != undefined) {
-                    priceObject.prices[integration.code] = {}
-                    priceObject.prices[integration.code].marketPrice = batchProcessForm.prices[integration.code].marketPrice
-                }
-                if (batchProcessForm.prices[integration.code].salePrice != undefined) {
-                    if (priceObject.prices[integration.code] == undefined) priceObject.prices[integration.code] = {}
-                    priceObject.prices[integration.code].salePrice = batchProcessForm.prices[integration.code].salePrice
-                }
+        const prices = batchProcessForm.prices
+        if (prices) {
+            if (prices.marketPrice != undefined) updateQuery['prices.marketPrice'] = prices.marketPrice
+            if (prices.salePrice != undefined) updateQuery['prices.salePrice'] = prices.salePrice
+            if (prices.isPlatformBasedPrice != undefined) updateQuery['prices.isPlatformBasedPrice'] = prices.isPlatformBasedPrice
+
+            const integrations = await this.getIntegrations()
+            for (const integration of integrations.filter((item: any) => item.type.code == 'marketplace' || item.type.code == 'ecommerce')) {
+                const ip = prices[integration.code]
+                if (ip == undefined) continue
+                // Kanal fiyatı Variants'ta platforms.<kod>.prices altında tutulur
+                if (ip.marketPrice != undefined) updateQuery[`platforms.${integration.code}.prices.marketPrice`] = ip.marketPrice
+                if (ip.salePrice != undefined) updateQuery[`platforms.${integration.code}.prices.salePrice`] = ip.salePrice
             }
         }
+        return updateQuery
+    }
 
-        if (scope == 2) {
-            priceObject['variants.$[].prices'] = priceObject.prices
-            delete priceObject.prices
+    private variantScopeFilter(): any {
+        const filter: any = { productId: toObjectId(this.request.productId) }
+        if (this.request.scope == 0 || this.request.scope == 1) {
+            filter._id = { $in: (this.request.selectedVariants || []).map(toObjectId) }
         }
-        else {
-            priceObject['variants.$[elem].prices'] = priceObject.prices
-            delete priceObject.prices
-        }
-
-        return { ...updateQuery, ...priceObject }
+        return filter
     }
 
     async batchProcessUpdate(): Promise<any> {
         try {
-            const filterQuery: any = { $and: [{ _id: this.request.productId }] }
-            var arrayFilter: any = {}
-            let updateQuery: any = await this.constructUpdateQuery(this.request.scope, this.request.batchProcessForm)
-            switch (this.request.scope) {
-                case 0:
-                case 1:
-                    filterQuery.$and.push({ 'variants._id': { $in: this.request.selectedVariants } })
-                    arrayFilter = { arrayFilters: [{ "elem._id": { $in: this.request.selectedVariants } }] } // Belirli variantId'lere sahip olanları filtrele
-                    return await this.clientDB.getProductModel().updateOne(
-                        filterQuery,
-                        { $set: updateQuery },
-                        arrayFilter
-                    )
-                case 2:
-                    return await this.clientDB.getProductModel().updateOne(
-                        filterQuery,
-                        { $set: updateQuery }
-                    )
+            const set: any = await this.constructUpdateQuery(this.request.scope, this.request.batchProcessForm)
+            if (Object.keys(set).length === 0) return { acknowledged: true, matchedCount: 0, modifiedCount: 0 }
+            // stok değişiyorsa yayın için işaretle (X2 tek kapı)
+            let stockChanges: any[] = []
+            if (set.stock !== undefined) {
+                Object.assign(set, stockDirtyFields())
+                // [ADR-0021 D14] hareket defteri için önce değer (kapsam ≤ tek ürünün varyantları; 5000 üst sınır)
+                const nextStock = Number(set.stock)
+                if (Number.isFinite(nextStock)) {
+                    try { // best-effort: defter okuması başarısızsa toplu güncelleme ETKİLENMEZ (hareket yazılmaz)
+                        const prior: any[] = await this.clientDB.getVariantModel().find(this.variantScopeFilter(), { stock: 1, reserved: 1, stockcode: 1, barcode: 1 }).limit(5000).lean()
+                        stockChanges = (prior || []).filter((p) => Number(p.stock ?? 0) !== nextStock)
+                            .map((p) => ({ variantId: String(p._id), before: Number(p.stock ?? 0), after: nextStock, reserved: Number(p.reserved ?? 0), sku: p.stockcode || p.barcode }))
+                    } catch { stockChanges = [] }
+                }
             }
+            const result = await this.clientDB.getVariantModel().updateMany(this.variantScopeFilter(), { $set: set })
+            if (stockChanges.length > 0) recordManualStockMovements(this.clientDB, stockChanges, this.request)
+            await this.afterVariantWrite(this.request.productId)
+            return result
         } catch (error) {
             throw error
         }
     }
-
 
     async batchProcessDelete(): Promise<any> {
         try {
-
-            const filterQuery: any = { $and: [{ _id: this.request.productId }] }
-            switch (this.request.scope) {
-                case 0:
-                case 1:
-                    return await this.clientDB.getProductModel().updateOne(
-                        filterQuery,
-                        { $pull: { variants: { _id: { $in: this.request.selectedVariants } } } }
-                    )
-                case 2:
-                    return await this.clientDB.getProductModel().updateOne(
-                        filterQuery,
-                        { $set: { variants: [] } }
-                    )
-            }
-
+            const result: any = await this.clientDB.getVariantModel().deleteMany(this.variantScopeFilter())
+            await this.afterVariantWrite(this.request.productId)
+            // FE `modifiedCount > 0` bekler
+            return { ...result, modifiedCount: result?.deletedCount ?? 0 }
         } catch (error) {
             throw error
         }
-    }
-
-
-    async generateVariantId(productId: any, choices: any) {
-        let variantId = productId
-        for (let choice of await this.getChoices()) {
-            if (choices[choice.title])
-                variantId += '__' + choice._id + '_' + choices[choice.title]
-            /*             else variantId += '|' + choice.title + '_' + 0  */
-        }
-        return variantId
     }
 
     async addVariant(): Promise<any> {
         try {
-            /*             this.request.variant.order = await this.getMaxVariantOrder(this.request.variant.productId) + 1 */
-            //this.request.variant._id = await this.getNextSequence()
+            const productId = toObjectId(this.request.productId)
+            const maincode = await this.getProductMaincode(productId)
+            if (maincode === undefined) return { acknowledged: false, modifiedCount: 0 }
 
-            var resp = {}
+            const doc = stripEngineOwnedVariantFields(this.request.variant)
+            delete doc._id
+            doc.productId = productId
+            doc.variantHash = hashChoices(maincode, doc.choices)
+
+            let resp: any
             try {
-                delete this.request.variant._id
-                resp = await this.clientDB.getProductModel().updateOne(
-                    { _id: this.request.productId }, // Filter
-                    { $push: { variants: this.request.variant } } // create
-                )
-
-                // 🔥 YENİ VARYANT EKLENDİ: İstatistikleri (Total Count & Stock) kirlet
-                // İşlem başarılıysa tetikleyelim
-                if ((resp as any).modifiedCount > 0) {
-                    const statsOperations = new StatsOperations(this.clientDB);
-                    await statsOperations.markStatsAsDirty();
-                }
-
-
+                const created = await this.clientDB.getVariantModel().create(doc)
+                resp = { acknowledged: true, insertedId: (created as any)?._id, modifiedCount: 1 }
             } catch (error: any) {
-                resp = error.result
+                if (error?.code === 11000) return { acknowledged: false, modifiedCount: 0, error: 'DUPLICATE_VARIANT' }
+                throw error
             }
-
-            this.updateProductStock(this.request.productId)
-            this.updateProductPrices(this.request.productId)
-
+            await this.afterVariantWrite(productId)
             return resp
         } catch (error) {
             throw error
         }
     }
 
-
     async updateProductStock(productId: any): Promise<any> {
         try {
             const stockAgg = await this.clientDB.getVariantModel().aggregate([
-                { $match: { productId: productId } },
+                { $match: { productId: toObjectId(productId) } },
                 {
                     $group: {
                         _id: null,
@@ -334,7 +259,7 @@ export default class VariantService extends BaseApi implements IService {
             }
 
             const variants = await this.clientDB.getVariantModel().find(
-                { productId: productId }
+                { productId: toObjectId(productId) }
             ).lean()
 
             const prices = getOverallMinMaxPrices(variants)
@@ -353,54 +278,31 @@ export default class VariantService extends BaseApi implements IService {
 
     async updateVariants(): Promise<any> {
         try {
+            const productId = toObjectId(this.request.productId)
+            const maincode = await this.getProductMaincode(productId)
+            const incoming: any[] = this.request.variants || []
+            const stockChanges = await findStockChanges(this.clientDB.getVariantModel(), incoming)
+            const stockChanged = { has: (id: string) => stockChanges.has(id) }
+            const dirtyNow = stockDirtyFields()
+            const bulkOperations = incoming.map((original: any) => {
+                const v = stripEngineOwnedVariantFields(original)
+                const id = v._id
+                delete v._id
+                delete v.productId
+                if (maincode !== undefined && Array.isArray(v.choices)) v.variantHash = hashChoices(maincode, v.choices)
+                if (stockChanged.has(String(id))) Object.assign(v, dirtyNow)
+                return { updateOne: { filter: { _id: toObjectId(id), productId }, update: { $set: v } } }
+            })
 
-            const updateVariantArray = []
-            for (const variant of this.request.variants) {
-                updateVariantArray.push(variant)
-            }
-            const bulkOperations = updateVariantArray.map(variant => {
-                return {
-                    updateOne: {
-                        filter: { _id: this.request.productId, 'variants._id': variant._id }, // Product'ın ID'si ve variants içinde ilgili variant ID'si
-                        update: { $set: { 'variants.$': variant } } // Var olan variant'ı yeni değerlerle güncelle
-                    }
-                };
-            });
-
-            const result = await this.clientDB.getProductModel().bulkWrite(bulkOperations)
-            this.updateProductStock(this.request.productId)
-            this.updateProductPrices(this.request.productId)
-            const statsOperations = new StatsOperations(this.clientDB);
-            statsOperations.markStatsAsDirty();
-
+            const result = await this.clientDB.getVariantModel().bulkWrite(bulkOperations)
+            recordManualStockMovements(this.clientDB, stockChanges.values(), this.request) // [ADR-0021 D14] hareket defteri (asenkron)
+            await this.afterVariantWrite(productId)
             return result
         } catch (error) {
             throw error
         }
     }
 
-
-    async updateVariant(): Promise<any> {
-        try {
-            var resp: any = {}
-            this.request.variant._id = new ObjectId(this.request.variant._id as string)
-            try {
-                resp = await this.clientDB.getProductModel().updateOne(
-                    { _id: this.request.productId, 'variants._id': this.request.variant._id }, // Filter
-                    { $set: { 'variants.$': this.request.variant } } // Update
-                )
-            } catch (error: any) {
-                resp = error.result
-            }
-            this.updateProductStock(this.request.productId)
-            this.updateProductPrices(this.request.productId)
-            const statsOperations = new StatsOperations(this.clientDB);
-            statsOperations.markStatsAsDirty();
-            return resp
-        } catch (error) {
-            throw error
-        }
-    }
 
     generateCombinations1 = (variantChoices: any) => {
         const keys = Object.keys(variantChoices);
@@ -420,10 +322,6 @@ export default class VariantService extends BaseApi implements IService {
         generate({}, 0);
         return combinations;
     }
-
-
-
-
 
 
     async prepareCandidateArray(productId: string): Promise<any> {
@@ -451,7 +349,6 @@ export default class VariantService extends BaseApi implements IService {
     }
 
 
-
     async addVariants(): Promise<any> {
         try {
             let variantsChoiceCombinations = await this.prepareCandidateArray(this.request.productId) //this.generateCombinations(this.request.variantChoices)
@@ -467,26 +364,27 @@ export default class VariantService extends BaseApi implements IService {
                 })
             }
 
+            const productId = toObjectId(this.request.productId)
+            const maincode = await this.getProductMaincode(productId)
+            if (maincode === undefined) return { acknowledged: false, modifiedCount: 0 }
 
-            var resp = {}
+            const docs = candidateVariants.map((cv: any) => {
+                const d = stripEngineOwnedVariantFields(cv)
+                d.productId = productId
+                d.variantHash = hashChoices(maincode, d.choices)
+                return d
+            })
+
+            let resp: any
             try {
-                resp = await this.clientDB.getProductModel().updateOne(
-                    { _id: this.request.productId }, // Filter
-                    { $push: { variants: candidateVariants } } // create
-                )
+                const inserted: any[] = await this.clientDB.getVariantModel().insertMany(docs)
+                // FE `modifiedCount == 1` bekler (eski tek-$push sözleşmesi): en az bir ekleme = 1; gerçek adet insertedCount'ta
+                resp = { acknowledged: true, insertedCount: inserted.length, modifiedCount: inserted.length > 0 ? 1 : 0 }
             } catch (error: any) {
-                resp = error.result
+                if (error?.code === 11000) return { acknowledged: false, modifiedCount: 0, error: 'DUPLICATE_VARIANT' }
+                throw error
             }
-
-            this.updateProductStock(this.request.productId)
-            this.updateProductPrices(this.request.productId)
-
-
-            // 🔥 YENİ VARYANT EKLENDİ: İstatistikleri (Total Count & Stock) kirlet
-            // İşlem başarılıysa tetikleyelim
-            const statsOperations = new StatsOperations(this.clientDB);
-            statsOperations.markStatsAsDirty();
-
+            await this.afterVariantWrite(productId)
             return resp
         } catch (error) {
             throw error

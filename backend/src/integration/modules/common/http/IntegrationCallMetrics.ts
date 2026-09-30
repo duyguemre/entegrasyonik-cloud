@@ -1,3 +1,6 @@
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('engine', 'IntegrationCallMetrics');
 // ADR-0006 Karar 1: her HTTP çağrısı için best-effort metrik. AuditLogger deseniyle aynı yaklaşım:
 // yazma asenkron, hata YUTULUR ve loglanır, isteği ASLA düşürmez/geciktirmez.
 
@@ -18,7 +21,8 @@ export type IntegrationCallMetricSink = (record: Record<string, any>) => Promise
 let customSink: IntegrationCallMetricSink | undefined;
 
 async function defaultSink(record: Record<string, any>): Promise<void> {
-    const { DatabaseManagerInstance } = await import('@database/DatabaseManager');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- TS6-01: node16 CJS, tembel yukleme (dinamik import yerine)
+    const { DatabaseManagerInstance } = (require('@database/DatabaseManager') as typeof import('@database/DatabaseManager'));
     const db = await DatabaseManagerInstance.getApplicationDB();
     await (db as any).getIntegrationCallMetricModel().create(record);
 }
@@ -50,10 +54,10 @@ export class IntegrationCallMetrics {
             if (entry.httpStatus !== undefined) record.httpStatus = entry.httpStatus;
             const sink = customSink ?? defaultSink;
             return Promise.resolve().then(() => sink(record)).catch((e: any) => {
-                console.error('[IntegrationCallMetrics] kayıt yazılamadı (best-effort):', e?.message);
+                log.error('INTEGRATIONCALLMETRICS_KAYIT_YAZILAMADI_BEST_EFFORT', 'kayıt yazılamadı (best-effort):', { err: e });
             });
         } catch (e: any) {
-            console.error('[IntegrationCallMetrics] kayıt hazırlanamadı (best-effort):', e?.message);
+            log.error('INTEGRATIONCALLMETRICS_KAYIT_HAZIRLANAMADI_BEST_EFFORT', 'kayıt hazırlanamadı (best-effort):', { err: e });
             return Promise.resolve();
         }
     }

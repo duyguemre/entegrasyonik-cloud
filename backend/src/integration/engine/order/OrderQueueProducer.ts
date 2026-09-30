@@ -5,6 +5,11 @@ import orderConfig from './order.config.json';
 import { DatabaseManagerInstance } from '@database/index';
 import { config } from '@config';
 import { EntitlementService } from '@services/billing/EntitlementService';
+import { eventLog } from '@platform/core/logger';
+import { getRequestId, newCorrelationId } from '@platform/core/context';
+import { allowNewWork, recordIntakeSkip } from '@integration/config/intakeGate';
+
+const log = eventLog('engine', 'OrderQueueProducer');
 
 export class OrderQueueProducer {
     private readonly QUEUE_NAME = 'order-sync-queue';
@@ -37,12 +42,12 @@ export class OrderQueueProducer {
      */
     public async scheduleJobs(): Promise<void> {
         if (!RedisService.isReady()) {
-            console.warn(`[OrderQueueProducer] Redis bağlı değil (isReady()=false); bu tur ATLANIYOR (ADR-0005 Karar 2).`);
+            log.warn('ORDERQUEUEPRODUCER_REDIS_NOT_READY', 'Redis bağlı değil (isReady()=false); bu tur ATLANIYOR (ADR-0005 Karar 2).');
             return;
         }
 
         try {
-            console.log(`[OrderQueueProducer] İş zamanlama döngüsü başlatılıyor...`);
+            log.info('ORDERQUEUEPRODUCER_ZAMANLAMA_DONGUSU_BASLATILIYOR', 'İş zamanlama döngüsü başlatılıyor...');
 
             // DatabaseManager üzerinden ApplicationDB (Merkezi DB) modeline erişiyoruz
             const applicationDB = await DatabaseManagerInstance.getApplicationDB();
@@ -52,7 +57,7 @@ export class OrderQueueProducer {
             const activeClients = await clientModel.find({ status: 'ACTIVE' }).lean();
 
             if (!activeClients || activeClients.length === 0) {
-                console.log(`[OrderQueueProducer] Aktif client bulunamadı. İşlem atlanıyor.`);
+                log.info('ORDERQUEUEPRODUCER_AKTIF_CLIENT_BULUNAMADI_ISLEM', 'Aktif client bulunamadı. İşlem atlanıyor.');
                 return;
             }
 
@@ -84,6 +89,9 @@ export class OrderQueueProducer {
 
                 for (const integration of integrations) {
                     if (integration.status != true) continue
+                    // [ADR-0030 X6] Kill-switch: drain/off iken YENİ sipariş senkron işi kuyruğa alınmaz. İmleç
+                    // (lastSuccessfulOrderSync) ilerlemez -> açılınca aralık geriye dönük çekilir (sipariş kaybı yok).
+                    if (!allowNewWork(integration.integrationCode)) { recordIntakeSkip('OrderQueueProducer', integration.integrationCode, 'new'); continue; }
                     // Sync Integrity: Son başarılı senkronizasyon tarihi yoksa fallback kullan
                     const lastSync = integration.lastSuccessfulOrderSync || this.getFallbackDate();
 
@@ -98,7 +106,7 @@ export class OrderQueueProducer {
                         clientModel.updateOne(
                             { clientId: client.clientId, 'integrations.integrationCode': integration.integrationCode },
                             { $set: { 'integrations.$.webhookHealthy': false } },
-                        ).catch((e: any) => console.error(`[OrderQueueProducer] webhookHealthy düşürme hatası:`, e));
+                        ).catch((e: any) => log.error('ORDERQUEUEPRODUCER_WEBHOOKHEALTHY_DUSURME_HATASI', 'webhookHealthy düşürme hatası:', { err: e }));
                     }
                     if (webhookHealth.healthy) {
                         const reconciliationIntervalMs = orderConfig.webhookHealthy?.reconciliationIntervalMs || 300000;
@@ -124,6 +132,7 @@ export class OrderQueueProducer {
                         integrationCode: integration.integrationCode,
                         lastSyncTimestamp: lastSync,
                         isManualTrigger: false,
+                        correlationId: newCorrelationId('ord'), // [F-06] iş başına yeni id; worker aynı id ile devam eder
                         ...(claimSync ? { claimSync } : {}),
                         ...(financeSync ? { financeSync } : {}),
                         ...(messageSync ? { messageSync } : {}),
@@ -145,10 +154,10 @@ export class OrderQueueProducer {
                 }
             }
 
-            console.log(`[OrderQueueProducer] Döngü tamamlandı. Toplam ${jobsAdded} adet iş Redis'e bırakıldı.`);
+            log.info('ORDERQUEUEPRODUCER_DONGU_TAMAMLANDI_TOPLAM_ADET', `Döngü tamamlandı. Toplam ${jobsAdded} adet iş Redis'e bırakıldı.`);
 
         } catch (error) {
-            console.error(`[OrderQueueProducer] İşler zamanlanırken kritik bir hata oluştu:`, error);
+            log.error('ORDERQUEUEPRODUCER_ISLER_ZAMANLANIRKEN_KRITIK_HATA', 'İşler zamanlanırken kritik bir hata oluştu:', { err: error });
         }
     }
 
@@ -203,7 +212,13 @@ export class OrderQueueProducer {
         lastSyncTimestamp: Date | string,
     ): Promise<{ jobId: string; skipped: boolean }> {
         if (!RedisService.isReady()) {
-            console.warn(`[OrderQueueProducer] Webhook tetiklemesi: Redis bağlı değil (isReady()=false); iş EKLENMEDİ (ADR-0005 Karar 2).`);
+            log.warn('ORDERQUEUEPRODUCER_WEBHOOK_REDIS_NOT_READY', 'Webhook tetiklemesi: Redis bağlı değil (isReady()=false); iş EKLENMEDİ (ADR-0005 Karar 2).');
+            return { jobId: '', skipped: true };
+        }
+
+        // [ADR-0030 X6] Kill-switch: webhook tetiklemesi de yeni iş sayılır; atlanır (sonraki periyodik tur yakalar).
+        if (!allowNewWork(integrationCode)) {
+            recordIntakeSkip('OrderQueueProducer.webhook', integrationCode, 'new');
             return { jobId: '', skipped: true };
         }
 
@@ -216,6 +231,8 @@ export class OrderQueueProducer {
             integrationCode,
             lastSyncTimestamp,
             isManualTrigger: false,
+            // [F-06] Webhook HTTP isteğinin id'si (varsa) işe taşınır -> istek -> kuyruk -> worker -> adaptör tek iz.
+            correlationId: getRequestId() ?? newCorrelationId('wh'),
         };
 
         await this.orderQueue.add(`fetch-orders-${integrationCode}`, jobData, { jobId });

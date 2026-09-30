@@ -3,16 +3,14 @@
     <div v-if="modelValue.length > 0" class="batch-process-menu-wrapper">
       <v-card class="batch-process-menu px-4 py-3 d-flex align-center shadow-lg w-100">
         <!-- Selection Info -->
-        <div class="selection-info d-flex align-center text-white">
-          <v-chip color="white" text-color="primary" class="font-weight-black mr-3">
-            {{ modelValue.length }}
-          </v-chip>
-          <span class="font-weight-bold text-uppercase text-caption" style="letter-spacing: 1px;">
+        <div class="selection-info d-flex align-center">
+          <EkBadge variant="count" tone="action" class="mr-3">{{ modelValue.length }}</EkBadge>
+          <span class="font-weight-bold text-uppercase text-caption selection-title">
             {{ title }}
           </span>
         </div>
 
-        <v-divider vertical class="mx-6 bg-white opacity-20" style="height: 30px;"></v-divider>
+        <v-divider vertical class="mx-6 batch-divider"></v-divider>
 
         <!-- Dynamic Actions -->
         <div class="d-flex align-center gap-2">
@@ -63,9 +61,10 @@
         <v-btn
           icon="mdi-close"
           variant="text"
-          color="white"
+          color="action-contrast"
           size="small"
           class="opacity-70 hover-opacity-100"
+          aria-label="Seçimi temizle"
           @click="$emit('clear')"
         ></v-btn>
       </v-card>
@@ -74,6 +73,7 @@
 </template>
 
 <script setup lang="ts">
+import { EkBadge } from '@entegrasyonik/ui/components'
 /**
  * BATCH PROCESS MENU
  * Standardized bulk action bar for all listing modules.
@@ -101,54 +101,67 @@ defineEmits(['action', 'clear']);
 <style scoped lang="scss">
 .batch-process-menu-wrapper {
   position: fixed;
-  bottom: 24px;
+  bottom: var(--ek-space-6);
   left: 50%;
   transform: translateX(-50%);
   width: 90%;
   max-width: 600px;
-  z-index: 1000;
+  z-index: var(--ek-z-header);
 }
 
 .batch-process-menu {
-  background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: 16px !important;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3) !important;
+  background: var(--ek-color-surface-inverse) !important;
+  border: 1px solid var(--ek-color-neutral-border) !important;
+  border-radius: var(--ek-radius-dialog) !important;
+  box-shadow: var(--ek-shadow-dialog) !important;
+}
+
+.selection-info {
+  color: var(--ek-color-content-inverse);
+}
+
+.selection-title {
+  letter-spacing: 0.08em;
+}
+
+.batch-divider {
+  height: 30px;
+  opacity: 0.2;
+  border-color: var(--ek-color-content-inverse);
 }
 
 .bulk-action-btn {
   background: transparent !important;
-  color: white !important;
-  transition: all 0.3s ease;
+  color: var(--ek-color-content-inverse) !important;
+  transition: background-color var(--ek-duration-fast) var(--ek-easing-standard), color var(--ek-duration-fast) var(--ek-easing-standard);
   min-width: 80px !important;
   height: auto !important;
-  padding: 8px !important;
+  padding: var(--ek-space-2) !important;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.1) !important;
-    transform: translateY(-2px);
+    background: var(--ek-color-neutral-emphasis) !important;
   }
 
   .btn-label {
-    font-size: 10px;
-    font-weight: 800;
+    font-size: var(--ek-type-micro-size);
+    font-weight: var(--ek-font-weight-bold);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.04em;
   }
 }
 
-/* Hover Colors based on Action Type */
-.success-btn:hover { color: #10b981 !important; }
-.error-btn:hover, .danger-btn:hover { color: #fb7185 !important; }
-.info-btn:hover { color: #3b82f6 !important; }
-.warning-btn:hover { color: #f59e0b !important; }
-.primary-btn:hover { color: #6366f1 !important; }
+/* Hover Colors based on Action Type (koyu yüzey üstünde okunur açık ton) */
+.success-btn:hover { color: var(--ek-color-success-border) !important; }
+.error-btn:hover, .danger-btn:hover { color: var(--ek-color-error-border) !important; }
+.info-btn:hover { color: var(--ek-color-info-border) !important; }
+.warning-btn:hover { color: var(--ek-color-warning-border) !important; }
+.primary-btn:hover { color: var(--ek-color-action-border) !important; }
 
 .hover-opacity-100:hover {
   opacity: 1 !important;
 }
 
 .gap-2 {
-  gap: 8px;
+  gap: var(--ek-space-2);
 }
 </style>

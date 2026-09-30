@@ -14,12 +14,15 @@ const PAGES = [
   ['iletisim', '/iletisim'],
   ['stok-rezervasyonu', '/ozellikler/stok-rezervasyonu'],
   ['destek', '/destek'],
+  ['asistan', '/asistan'], // S18
 ] as const
 
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
 
 async function expectNoViolations(page: Page) {
   await waitForFonts(page)
+  // S18: /asistan döngüsel sohbet sahnesi taşır — axe statik son kare üzerinde çalışsın (a11y.spec.ts ile aynı desen).
+  await page.evaluate(() => document.getAnimations().forEach((a) => a instanceof CSSAnimation && a.cancel()))
   const results = await new AxeBuilder({ page }).withTags(TAGS).analyze()
   expect(results.violations.map((v) => ({ id: v.id, impact: v.impact, nodes: v.nodes.map((n) => n.target.join(' ')) }))).toEqual([])
 }
@@ -276,6 +279,7 @@ test.describe('iç sayfalar — ekran görüntüleri (3 viewport)', () => {
     ['iletisim', '/iletisim'],
     ['stok-rezervasyonu', '/ozellikler/stok-rezervasyonu'],
     ['destek', '/destek'],
+    ['asistan', '/asistan'], // S18
   ] as const) {
     test(name, async ({ page }) => {
       await page.goto(route)
@@ -283,4 +287,37 @@ test.describe('iç sayfalar — ekran görüntüleri (3 viewport)', () => {
       await expect(page).toHaveScreenshot(`inner-${name}.png`, { fullPage: true })
     })
   }
+})
+
+// S18 — /asistan: örnek senaryo sahnesi (döngüsel). Hareket azaltılmışken statik SON KARE: tüm diyalog ve onay kartı
+// görünür, "yazıyor" göstergesi gizli. Hareket açıkken kontrol header'da; kullanıcı durdurabilir (WCAG 2.2.2).
+test.describe('asistan — sohbet sahnesi', () => {
+  test('reduced-motion: statik son kare (soru, sonuç, ikinci istek, onay kartı görünür; yazıyor gizli)', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.goto('/asistan')
+    const scene = page.getByTestId('assistant-scene')
+    await expect(scene.getByTestId('scenario-label')).toHaveText('Örnek senaryo')
+    for (const part of ['ai-ask1', 'ai-result', 'ai-ask2', 'ai-approve']) {
+      await expect(scene.locator(`[data-part="${part}"]`)).toHaveCSS('opacity', '1')
+    }
+    await expect(scene.locator('[data-part="ai-typing1"]')).toHaveCSS('opacity', '0')
+    await expect(page.getByTestId('motion-toggle')).toBeHidden()
+  })
+
+  test('hareket açık: durdurma kontrolü görünür; durdurunca sahne statik son kareye döner', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'no-preference' })
+    await page.goto('/asistan')
+    const toggle = page.getByTestId('motion-toggle')
+    await expect(toggle).toBeVisible()
+    await toggle.click()
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    await expect(page.getByTestId('assistant-scene').locator('[data-part="ai-approve"]')).toHaveCSS('opacity', '1')
+  })
+
+  test('axe (hareket azaltılmış, SSS açık)', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.goto('/asistan')
+    for (const d of await page.locator('details.acc__item').all()) await d.locator('summary').click()
+    await expectNoViolations(page)
+  })
 })

@@ -210,7 +210,7 @@ export const productCapabilities: ProductCapability[] = [
     title: 'Anahtarlar arayüzde ve API yanıtlarında gösterilmez',
     summary: 'Kaydedilmiş entegrasyon anahtarları arayüze ve API yanıtlarına maskelenmiş olarak döner.',
     status: 'available',
-    evidence: [evidence('backend/src/api/responseSanitizer.ts', 'responseSanitizer maskeleme', 'sensitive')],
+    evidence: [evidence('backend/src/platform/core/security/responseSanitizer.ts', 'responseSanitizer maskeleme', 'sensitive')],
   },
   {
     id: 'role-based-access',
@@ -243,8 +243,8 @@ export const productCapabilities: ProductCapability[] = [
       'Oturum, imzalı bir belirteç (JWT) ile yönetilir; belirteç HTTP-only çerezde taşınır, süresi sınırlıdır ve tarayıcıdaki betikler tarafından okunamaz.',
     status: 'available',
     evidence: [
-      evidence('backend/src/api/Security.ts', 'Security çerez ayarları', 'httpOnly: true'),
-      evidence('backend/src/api/Security.ts', 'Security imzalı JWT', 'jwt.sign'),
+      evidence('backend/src/platform/core/security/Security.ts', 'Security çerez ayarları', 'httpOnly: true'),
+      evidence('backend/src/platform/core/security/Security.ts', 'Security imzalı JWT', 'jwt.sign'),
     ],
   },
   {

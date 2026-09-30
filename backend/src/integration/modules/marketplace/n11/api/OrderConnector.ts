@@ -1,3 +1,5 @@
+import { observeResponseSchema } from '@integration/modules/common/contract/observeResponseSchema';
+import { N11_ORDERS_LIST_REST, N11_ORDERS_LIST_SOAP } from '../contracts';
 import Service, { N11_DEFAULT_URLS } from '../services/Service';
 
 export class OrderConnector {
@@ -10,12 +12,16 @@ export class OrderConnector {
     // REST Methods (GET => okuma, varsayılan idempotent:true)
     public async fetchOrdersRest(params: any): Promise<any> {
         const url = this.getUrl('orderListUrl');
-        return await this.service.rest.get(url, params, { operation: 'fetchOrdersRest' });
+        const data = await this.service.rest.get(url, params, { operation: 'fetchOrdersRest' });
+        observeResponseSchema(N11_ORDERS_LIST_REST, data, { clientId: this.params.clientId });
+        return data;
     }
 
     // SOAP Methods
     public async fetchOrdersFromPlatform(query: any): Promise<any> {
-        return await this.service.soapRequest('orderService', 'sch:OrderListRequest', query, { idempotent: true });
+        const data = await this.service.soapRequest('orderService', 'sch:OrderListRequest', query, { idempotent: true });
+        observeResponseSchema(N11_ORDERS_LIST_SOAP, data, { clientId: this.params.clientId });
+        return data;
     }
 
     public async makeOrderItemShipment(payload: any): Promise<any> {

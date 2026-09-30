@@ -1,126 +1,68 @@
-<!--
-  ADR-0015 Aşama B2 — Ideasoft (canlı, `docs/INTEGRATIONS_REGISTRY.md` §3.1).
-  ARAŞTIRMA BULGUSU (BACKLOG'a taşındı): önceki sürümde `isAuthDialog` HİÇBİR
-  YERDEN `true` yapılmıyordu (gerçek OAuth akışı `startAuthFlow()`'un açtığı
-  native popup penceresidir, `window.open`) — bu yüzden template'teki
-  eski diyalog + `IdeasoftAuthComponent` bloğu asla render OLMUYORDU. Ayrıca
-  `IdeasoftAuthComponent.vue` içeriği Ideasoft'la alakasız (ürün görseli
-  sürükle-bırak) kopyala-yapıştır kalıntısıydı, global (scoped OLMAYAN)
-  `.dropZone` CSS'i sızdırıyordu. Ölü + alakasız kod silindi (davranış
-  DEĞİŞMEDİ — zaten hiç render olmuyordu); `IdeasoftAuthComponent.vue` de
-  bu nedenle kaldırıldı (grep: sıfır kalan referans).
--->
 <template>
   <div class="ideasoftComponent" v-if="editingClientIntegration">
     <LoadingComponent attach=".ecommerceView" ref="loadingComponentRef"></LoadingComponent>
 
-    <v-row class="pa-0 ma-0">
-      <v-col cols="12" class="pa-0">
-        <IntegrationFormFrame v-model="activeTab" :tabs="[
-          { value: 1, label: 'Api Bilgileri' },
-          { value: 2, label: 'Varsayılan Bilgiler' },
-        ]" @save="emits('update', editingClientIntegration)" @clear="emits('refresh', editingClientIntegration.code)">
-          <!-- API Information Tab -->
-          <v-window-item :value="1">
-            <v-text-field class="customTextField" clearable density="compact"
-              v-model="editingClientIntegration.settings.storeName" label="Mağaza Adı" variant="outlined"
-              bg-color="textfieldColor"></v-text-field>
+    <IntegrationFormFrame v-model="activeTab" :tabs="[
+        { value: 1, label: 'Api Bilgileri' },
+        { value: 2, label: 'Varsayılan Bilgiler' },
+      ]" @save="emits('update', editingClientIntegration)" @clear="emits('refresh', editingClientIntegration.code)">
+      <v-window-item :value="1">
+        <EkFormSection title="Bağlantı bilgileri" icon="mdi-key-outline"
+          description="Ideasoft yönetim panelindeki uygulama (API) ayarlarından alınır.">
+          <template #legend-extra><EkHelpHint hint="integration.credentials.ideasoft" /></template>
+          <v-text-field class="ek-span-full" clearable v-model="editingClientIntegration.settings.storeName"
+            label="Mağaza Adı" />
+          <v-text-field clearable v-model="editingClientIntegration.settings.key" label="Client ID" />
+          <v-text-field clearable v-model="editingClientIntegration.settings.secret" label="Client Secret" />
+          <div class="ek-span-full ek-ideasoft-status-row">
+            <span class="ek-ideasoft-status-row__label">Entegrasyon Durumu</span>
+            <EkStatusChip v-if="editingClientIntegration.settings?.auth?.refresh_token == 'sensitive'"
+              tone="success" label="Yetkili" />
+            <EkStatusChip v-else tone="danger" label="Yetkisiz" />
+            <EkButton tone="primary" size="sm" icon="mdi-shield-check-outline" class="ek-ideasoft-status-row__action"
+              @click="startAuthFlow()">
+              Entegrasyona Yetki Ver
+            </EkButton>
+          </div>
+        </EkFormSection>
 
-            <v-text-field class="customTextField" clearable density="compact" label="Client ID"
-              v-model="editingClientIntegration.settings.key" variant="outlined"
-              bg-color="textfieldColor"></v-text-field>
+        <EkFormSection title="Ürün eşitleme" icon="mdi-sync"
+          description="Bağlantı başarılı olduktan sonra verilerinizi senkronize etmek için kullanın.">
+          <div class="ek-span-full">
+            <EkButton tone="secondary" icon="mdi-download-outline" @click="retrieveCategories()">
+              Ürün ve Kategorileri Getir
+            </EkButton>
+          </div>
+        </EkFormSection>
+      </v-window-item>
 
-            <v-text-field class="customTextField" clearable density="compact" label="Client Secret"
-              v-model="editingClientIntegration.settings.secret" variant="outlined"
-              bg-color="textfieldColor"></v-text-field>
-
-            <div class="d-flex align-center flex-wrap mt-4 pa-4 ga-3 ek-ideasoft-status-row">
-              <div class="d-flex align-center ga-2">
-                <span class="text-subtitle-2 font-weight-bold opacity-70">Entegrasyon Durumu:</span>
-                <EkStatusChip v-if="editingClientIntegration.settings?.auth?.refresh_token == 'sensitive'"
-                  tone="success" label="YETKİLİ" />
-                <EkStatusChip v-else tone="danger" label="YETKİSİZ" />
-              </div>
-              <v-spacer class="d-none d-sm-block"></v-spacer>
-              <v-btn color="primary" size="small" variant="flat" prepend-icon="mdi-shield-check-outline"
-                @click="startAuthFlow()">
-                Entegrasyona Yetki Ver
-              </v-btn>
-            </div>
-
-            <div class="mt-6">
-              <v-btn block variant="outlined" class="rounded-lg border-opacity-25" prepend-icon="mdi-download-outline"
-                @click="retrieveCategories()">
-                Ürün ve Kategorileri Getir
-              </v-btn>
-              <div class="text-caption mt-2 opacity-60 text-center">
-                Bağlantı başarılı olduktan sonra verilerinizi senkronize etmek için kullanın.
-              </div>
-            </div>
-          </v-window-item>
-
-          <!-- Default Values Tab -->
-          <v-window-item :value="2">
-            <v-container class="pa-0">
-              <v-row dense>
-                <v-col cols="12">
-                  <div class="text-subtitle-2 mb-2 ml-1 font-weight-bold opacity-70">
-                    <v-icon size="small" class="mr-1">mdi-tag-outline</v-icon> Satış ve KDV Ayarları
-                  </div>
-                  <v-divider class="mb-4" />
-                </v-col>
-
-                <v-col cols="12" sm="6">
-                  <v-select class="customTextField" density="compact" :items="taxList" item-value="_id"
-                    v-model.number="editingClientIntegration.settings.taxPercentage" variant="outlined"
-                    bg-color="textfieldColor" label="KDV Oranı" clearable />
-                </v-col>
-
-                <v-col cols="12" sm="6">
-                  <v-text-field class="customTextField" clearable density="compact" label="Varsayılan Desi"
-                    v-model="editingClientIntegration.settings.desi" variant="outlined" bg-color="textfieldColor" />
-                </v-col>
-
-                <v-col cols="12" sm="6">
-                  <v-text-field class="customTextField" clearable density="compact" label="Varsayılan Garanti"
-                    v-model="editingClientIntegration.settings.warranty" variant="outlined"
-                    bg-color="textfieldColor" />
-                </v-col>
-
-                <v-col cols="12" sm="6">
-                  <v-select class="customTextField" clearable density="compact" label="Ürünün Stok Tipi"
-                    v-model="editingClientIntegration.settings.stockTypeLabel" variant="outlined"
-                    :items="staticsStore.ideasoft.stockTypeLabelOptions" bg-color="textfieldColor" />
-                </v-col>
-
-                <v-col cols="12" sm="6">
-                  <v-select class="customTextField" clearable density="compact" label="Hediye Durumu"
-                    v-model="editingClientIntegration.settings.hasGift" variant="outlined" :items="[
-                      { title: 'Hediyesiz', value: 0 },
-                      { title: 'Hediyeli', value: 1 }
-                    ]" bg-color="textfieldColor" />
-                </v-col>
-
-                <v-col cols="12" sm="6">
-                  <VCurrencyComponentVue @click.stop v-model="editingClientIntegration.settings.customShippingCost"
-                    :compact="true" label="Varsayılan Kargo Ücreti" clearable :isIconExist="false" :required="false"
-                    bg-color="textfieldColor" />
-                </v-col>
-              </v-row>
-            </v-container>
-          </v-window-item>
-        </IntegrationFormFrame>
-      </v-col>
-    </v-row>
+      <v-window-item :value="2">
+        <EkFormSection title="Satış ve KDV ayarları" icon="mdi-tag-outline">
+          <v-select :items="taxList" item-value="_id" clearable
+            v-model.number="editingClientIntegration.settings.taxPercentage" label="KDV Oranı" />
+          <v-text-field clearable label="Varsayılan Desi" v-model="editingClientIntegration.settings.desi" />
+          <v-text-field clearable label="Varsayılan Garanti" v-model="editingClientIntegration.settings.warranty" />
+          <v-select clearable label="Ürünün Stok Tipi" v-model="editingClientIntegration.settings.stockTypeLabel"
+            :items="staticsStore.ideasoft.stockTypeLabelOptions" />
+          <v-select clearable label="Hediye Durumu" v-model="editingClientIntegration.settings.hasGift" :items="[
+              { title: 'Hediyesiz', value: 0 },
+              { title: 'Hediyeli', value: 1 }
+            ]" />
+          <VCurrencyComponentVue @click.stop v-model="editingClientIntegration.settings.customShippingCost"
+            :compact="true" label="Varsayılan Kargo Ücreti" clearable :isIconExist="false" :required="false" />
+        </EkFormSection>
+      </v-window-item>
+    </IntegrationFormFrame>
   </div>
 </template>
 
 <script setup lang="ts">
+import EkHelpHint from '@/components/page/EkHelpHint.vue'
 import { ref, computed, onBeforeMount, onBeforeUnmount, onMounted } from 'vue'
 import { v4 as uuidv4 } from 'uuid'
 import LoadingComponent from '@/components/LoadingComponent.vue'
 import IntegrationFormFrame from '@/components/integrations/IntegrationFormFrame.vue'
-import EkStatusChip from '@/components/ds/EkStatusChip.vue'
+import { EkStatusChip, EkButton, EkFormSection } from '@entegrasyonik/ui/components'
 import useRestApi from '@/composables/restapi'
 import VCurrencyComponentVue from '@/components/VCurrencyComponent.vue'
 import { useStaticsStore } from '@/stores/staticsStore'
@@ -245,17 +187,23 @@ export default {
 
 <style scoped>
 .ek-ideasoft-status-row {
-  gap: var(--ek-space-2);
-  background: var(--ek-color-surface-muted);
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-lg);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ek-space-3);
+  padding: var(--ek-space-3) var(--ek-space-4);
+  background: var(--ek-color-surface-sunken);
+  border: 1px solid var(--ek-color-border-subtle);
+  border-radius: var(--ek-radius-control);
 }
 
-.opacity-70 {
-  opacity: 0.7;
+.ek-ideasoft-status-row__label {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-label-size);
+  font-weight: var(--ek-type-label-weight);
 }
 
-.opacity-60 {
-  opacity: 0.6;
+.ek-ideasoft-status-row__action {
+  margin-left: auto;
 }
 </style>

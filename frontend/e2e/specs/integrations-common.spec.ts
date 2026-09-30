@@ -36,7 +36,7 @@ for (const s of screens) {
       await expectScreenOpen(page, s.containerClass)
       await expect(page.locator(s.containerClass).getByText('Hızlı Başlangıç Rehberi')).toBeVisible()
       // onMounted ilk platformu otomatik seçip ayar formunu getiriyor (empty-state GÖRÜNMEMELİ).
-      await expect(page.locator(s.containerClass).getByText('Başlamak İçin Seçim Yapın')).toHaveCount(0)
+      await expect(page.locator(s.containerClass).getByText('Başlamak için seçim yapın')).toHaveCount(0)
     })
 
     test(`${s.code} boş durum: mağazada bu tür entegrasyon yoksa boş-durum kartı gösterilir`, async ({ page }) => {
@@ -45,7 +45,7 @@ for (const s of screens) {
       await gotoAuthed(page)
       await openScreen(page, s.code)
 
-      await expect(page.locator(s.containerClass).getByText('Başlamak İçin Seçim Yapın')).toBeVisible()
+      await expect(page.locator(s.containerClass).getByText('Başlamak için seçim yapın')).toBeVisible()
     })
 
     test(`${s.code} hata durumu: ayar getirme 500 dönerse sessizce boş-durum kartına düşer (gizli davranış — bkz. BACKLOG.md)`, async ({ page }) => {
@@ -57,7 +57,7 @@ for (const s of screens) {
       await gotoAuthed(page)
       await openScreen(page, s.code)
 
-      await expect(page.locator(s.containerClass).getByText('Başlamak İçin Seçim Yapın')).toBeVisible()
+      await expect(page.locator(s.containerClass).getByText('Başlamak için seçim yapın')).toBeVisible()
       await expect(page.locator('body')).not.toContainText('500')
     })
 
@@ -103,7 +103,7 @@ test.describe('P1 — integrations/ShippingView', () => {
     await openScreen(page, 'ShippingView')
 
     await expectScreenOpen(page, '.shippingView')
-    await expect(page.locator('.shippingView').getByText('Başlamak İçin Seçim Yapın')).toBeVisible()
+    await expect(page.locator('.shippingView').getByText('Başlamak için seçim yapın')).toBeVisible()
   })
 
   test('hata durumu: IntegrationService/getClientIntegrations 500 dönse bile ham hata sızmaz', async ({ page }) => {

@@ -3,6 +3,12 @@ import { integrationCode } from '../constants';
 import { ProductTransformer } from '../transformers/ProductTransformer';
 import Service from './Service';
 import { IntegrationError } from '@integration/modules/common/IntegrationError';
+import { observeResponseSchema } from '@integration/modules/common/contract/observeResponseSchema';
+import { BIZIMHESAP_PRODUCTS_LIST } from '../contracts';
+
+/** ADR-0032 H1: kanal dış ürün kimliği. Yeni yazım `mapping`; okuma eski `mappings` kayıtlarını da tanır (göç yok). */
+export const platformProductId = (channelState: any): string | undefined =>
+    channelState?.mapping?.productId ?? channelState?.mappings?.productId;
 
 export class ProductService {
     private transformer: ProductTransformer;
@@ -20,6 +26,7 @@ export class ProductService {
             .replace('<SELLERID>', settings.sellerId || '');
 
         const response = await this.service.get(productListUrl);
+        observeResponseSchema(BIZIMHESAP_PRODUCTS_LIST, response?.data, { clientId: this.params.clientId }); // F-09: yalnız gözlem (C7a)
         return response?.data?.data?.products || response?.data?.products || response?.data || [];
     }
 
@@ -81,7 +88,7 @@ export class ProductService {
                 },
                 images: [],
                 choices: [],
-                platforms: { [integrationCode]: { prices: {}, infos: {}, upload: {}, mappings: {}, attributes: {} } },
+                platforms: { [integrationCode]: { prices: {}, infos: {}, upload: {}, mapping: {}, attributes: {} } },
                 onSale: raw.isActive === 1,
                 tempId: String(raw.id || '')
             } as any
@@ -119,8 +126,11 @@ export class ProductService {
         return this.transformer.toInternalStatusResult(platformProducts);
     }
 
+    /** [faz4-conf-fix C8b, playbook §4.3] Batch kavramı yok (yazmalar senkron/yok): `undefined` yalnız "sonuçlanmadı" içindir => NOT_SUPPORTED. */
     public async checkBatchProduct(payload: IBatchCheckPayload): Promise<IInternalResult[] | undefined> {
-        return undefined;
+        throw new IntegrationError('NOT_SUPPORTED', 'checkBatchProduct bu entegrasyon için desteklenmiyor (batch kavramı yok)', {
+            integrationCode, operation: 'checkBatchProduct', clientId: this.clientId,
+        });
     }
 
     /**

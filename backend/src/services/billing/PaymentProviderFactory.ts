@@ -18,12 +18,6 @@ export function getConfiguredProviderName(): PaymentProviderName {
     throw new Error(`[PaymentProviderFactory] PAYMENT_PROVIDER geçersiz: "${raw}" (yalnızca "mock" desteklenir; "iyzico" ayrı bir görevde eklenecek).`);
 }
 
-export function getConfiguredEnv(): PaymentEnv {
-    const raw = (process.env.PAYMENT_ENV || 'sandbox').trim().toLowerCase();
-    if (raw === 'sandbox' || raw === 'live') return raw as PaymentEnv;
-    throw new Error(`[PaymentProviderFactory] PAYMENT_ENV geçersiz: "${raw}" (yalnızca "sandbox"/"live").`);
-}
-
 let singleton: PaymentProvider | undefined;
 
 /** Süreç boyunca tek bir sağlayıcı örneği (MockPaymentProvider'ın süreç-içi durumu tutarlı kalsın diye). */

@@ -118,7 +118,7 @@ export const faq: FaqItem[] = [
         'Bağlantı ekranı yönergesi',
         'Pazar yeri panelinden aldığınız API anahtarlarını ilgili alanlara girin.',
       ),
-      evidence('frontend/src/views/secure/integrations/MarketplaceView.vue', 'Hatalı bilgi: pasif bağlantı', 'API bilgileriniz hatalı ise bağlantı "Pasif" görünecektir.'),
+      evidence('frontend/src/components/integrations/IntegrationGuideCard.vue', 'Hatalı bilgi: pasif bağlantı', 'API bilgileriniz hatalı ise bağlantı "Pasif" görünecektir.'),
     ],
   },
   {
@@ -242,7 +242,7 @@ export const faq: FaqItem[] = [
     answer: `${capability('secrets-encryption').summary} ${capability('secrets-masked').summary} Anahtarlarınız yalnızca bağlantıyı kurmak için sunucu tarafında kullanılır.`,
     evidence: [
       evidence('backend/src/utils/FieldCrypto.ts', 'FieldCrypto AES-256-GCM', 'aes-256-gcm'),
-      evidence('backend/src/api/responseSanitizer.ts', 'responseSanitizer maskeleme', 'sensitive'),
+      evidence('backend/src/platform/core/security/responseSanitizer.ts', 'responseSanitizer maskeleme', 'sensitive'),
     ],
   },
   {

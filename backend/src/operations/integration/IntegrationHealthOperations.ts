@@ -1,4 +1,5 @@
-import { maskIntegrationItem, SENSITIVE_MASK } from '../../api/integrationSecrets';
+import { CLIENT_INTEGRATION_HOT_PROJECTION } from '@database/projections';
+import { maskIntegrationItem, SENSITIVE_MASK } from '../../platform/core/security/integrationSecrets';
 import { redactMessage } from '../../integration/modules/common/IntegrationError';
 
 /**
@@ -86,7 +87,7 @@ export async function buildIntegrationHealth(deps: IntegrationHealthDeps): Promi
 
     const [clientDoc, ciDoc, countRows, errorCodeRows, latestRows, lastErrorRows] = await Promise.all([
         deps.applicationDB.getClientModel().findOne({ clientId }, { integrations: 1, _id: 0 }).lean(),
-        deps.clientDB?.getClientIntegrationModel ? deps.clientDB.getClientIntegrationModel().findOne({}).lean() : Promise.resolve(null),
+        deps.clientDB?.getClientIntegrationModel ? deps.clientDB.getClientIntegrationModel().findOne({}, CLIENT_INTEGRATION_HOT_PROJECTION).lean() : Promise.resolve(null),
         metricModel.aggregate([
             { $match: { clientId: clientKey, at: { $gte: since24h } } },
             { $group: { _id: { integrationCode: '$integrationCode', status: '$status' }, count: { $sum: 1 } } },

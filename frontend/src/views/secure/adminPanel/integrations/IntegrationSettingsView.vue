@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import EkEmptyState from '@/components/ds/EkEmptyState.vue'
+import { EkEmptyState } from '@entegrasyonik/ui/components'
 import PlatformAdminGuard from '@/components/adminPanel/integrations/PlatformAdminGuard.vue'
 import IntegrationConfigSettingsBody from '@/components/adminPanel/integrations/IntegrationConfigSettingsBody.vue'
 import useUser from '@/composables/user'

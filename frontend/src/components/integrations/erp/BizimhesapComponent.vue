@@ -1,138 +1,60 @@
-<!--
-  ADR-0015 Aşama B2 — Bizimhesap (canlı, `docs/INTEGRATIONS_REGISTRY.md` §4.1).
-  ARAŞTIRMA BULGUSU (BACKLOG'a taşındı): önceki sürümde template
-  `<BizimhesapAuthComponent>` referans veriyordu ama bu bileşen PROJEDE HİÇ
-  YOKTU (dosya bulunamadı) ve `isAuthDialog` hiçbir yerden `true`
-  yapılmıyordu — blok asla render OLMUYORDU (ölü + kırık referans). Silindi
-  (davranış DEĞİŞMEDİ — zaten hiç render olmuyordu).
--->
 <template>
   <div class="bizimhesapComponent">
     <LoadingComponent attach=".erpView" ref="loadingComponentRef"></LoadingComponent>
 
-    <v-row v-if="editingClientIntegration" class="pa-0 ma-0">
-      <v-col cols="12" class="pa-0">
-        <IntegrationFormFrame v-model="activeTab" :tabs="[
-          { value: 1, label: 'Api Bilgileri' },
-          { value: 2, label: 'Kargo Bilgileri' },
-        ]" @save="emits('update', editingClientIntegration)" @clear="emits('refresh', editingClientIntegration.code)">
-          <!-- Tab 1: API Bilgileri -->
-          <v-window-item :value="1">
-            <v-text-field class="customTextField" clearable density="compact"
-              v-model="editingClientIntegration.settings.key"
-              label="Bizimhesap ID" variant="outlined" bg-color="textfieldColor"></v-text-field>
+    <IntegrationFormFrame v-if="editingClientIntegration" v-model="activeTab" :tabs="[
+        { value: 1, label: 'Api Bilgileri' },
+        { value: 2, label: 'Kargo Bilgileri' },
+      ]" @save="emits('update', editingClientIntegration)" @clear="emits('refresh', editingClientIntegration.code)">
+      <v-window-item :value="1">
+        <EkFormSection title="Bağlantı bilgileri" icon="mdi-key-outline"
+          description="Bizimhesap panelindeki API erişim bilgilerinden alınır.">
+          <template #legend-extra><EkHelpHint hint="integration.credentials.bizimhesap" /></template>
+          <v-text-field clearable v-model="editingClientIntegration.settings.key" label="Bizimhesap ID" />
+          <v-text-field clearable v-model="editingClientIntegration.settings.secret" label="Api Key" />
+          <v-switch class="ek-span-full" hide-details color="primary"
+            v-model="editingClientIntegration.settings.status" :label="$t('integrations.status')" />
+        </EkFormSection>
 
-            <v-text-field class="customTextField" clearable density="compact" label="Api Key"
-              v-model="editingClientIntegration.settings.secret" variant="outlined"
-              bg-color="textfieldColor"></v-text-field>
+        <EkFormSection title="Ürün işlemleri" icon="mdi-sync"
+          description="Bizimhesap ürünlerini Entegrasyonik ürünleriyle eşleştirir.">
+          <div class="ek-span-full">
+            <EkButton tone="secondary" icon="mdi-link-variant" @click="checkStatus()">Ürünleri Eşleştir</EkButton>
+          </div>
+        </EkFormSection>
+      </v-window-item>
 
-            <v-switch class="mr-0 ml-8" hide-details color="success"
-              v-model="editingClientIntegration.settings.status" inset>
-              <template v-slot:label>
-                {{ $t('integrations.status') }}
-              </template>
-            </v-switch>
+      <v-window-item :value="2">
+        <EkFormSection title="Kargo ölçüleri" icon="mdi-package-variant-closed">
+          <v-text-field clearable label="Varsayılan Desi" v-model="editingClientIntegration.settings.desi" />
+          <v-text-field clearable label="Varsayılan Ağırlık" v-model="editingClientIntegration.settings.weight" />
+        </EkFormSection>
 
-            <v-divider class="my-4 opacity-10"></v-divider>
+        <EkFormSection title="Ödeme ve şube bilgileri" icon="mdi-bank-outline">
+          <v-text-field clearable label="Şube" v-model="editingClientIntegration.settings.branch" />
+          <v-text-field clearable label="Posta Çeki Hesap Numarası" v-model="editingClientIntegration.settings.cheque" />
+          <v-select clearable label="Satıcı Ödeme Kodu" v-model="editingClientIntegration.settings.paymentCode" />
+        </EkFormSection>
 
-            <div class="text-subtitle-2 mb-3 ml-1 font-weight-bold opacity-70">
-              <v-icon size="small" class="mr-1">mdi-sync</v-icon> Ürün İşlemleri
-            </div>
-            <v-btn color="primary" variant="flat" @click="checkStatus()">
-              <v-icon start size="18">mdi-link-variant</v-icon>
-              Ürünleri Eşleştir
-            </v-btn>
-          </v-window-item>
-
-          <!-- Tab 2: Kargo Bilgileri -->
-          <v-window-item :value="2">
-            <v-container class="pa-0">
-              <v-row dense>
-
-                <v-col cols="12">
-                  <div class="text-subtitle-2 mb-2 ml-1 font-weight-bold opacity-70">
-                    <v-icon size="small" class="mr-1">mdi-package-variant-closed</v-icon> Kargo Ölçüleri
-                  </div>
-                  <v-divider class="mb-4" />
-                </v-col>
-
-                <v-col cols="12" sm="6">
-                  <v-text-field class="customTextField" clearable density="compact" label="Varsayılan Desi"
-                    v-model="editingClientIntegration.settings.desi" variant="outlined"
-                    bg-color="textfieldColor"></v-text-field>
-                </v-col>
-
-                <v-col cols="12" sm="6">
-                  <v-text-field class="customTextField" clearable density="compact" label="Varsayılan Ağırlık"
-                    v-model="editingClientIntegration.settings.weight" variant="outlined"
-                    bg-color="textfieldColor"></v-text-field>
-                </v-col>
-
-                <v-col cols="12" class="mt-4">
-                  <div class="text-subtitle-2 mb-2 ml-1 font-weight-bold opacity-70">
-                    <v-icon size="small" class="mr-1">mdi-bank-outline</v-icon> Ödeme ve Şube Bilgileri
-                  </div>
-                  <v-divider class="mb-4" />
-                </v-col>
-
-                <v-col cols="12" sm="6">
-                  <v-text-field class="customTextField" clearable density="compact" label="Şube"
-                    v-model="editingClientIntegration.settings.branch" variant="outlined"
-                    bg-color="textfieldColor"></v-text-field>
-                </v-col>
-
-                <v-col cols="12" sm="6">
-                  <v-text-field class="customTextField" clearable density="compact" label="Posta Çeki Hesap Numarası"
-                    v-model="editingClientIntegration.settings.cheque" variant="outlined"
-                    bg-color="textfieldColor"></v-text-field>
-                </v-col>
-
-                <v-col cols="12" sm="6">
-                  <v-select class="customTextField" clearable density="compact" label="Satıcı Ödeme Kodu"
-                    v-model="editingClientIntegration.settings.paymentCode" variant="outlined"
-                    bg-color="textfieldColor"></v-select>
-                </v-col>
-
-                <v-col cols="12" class="mt-4">
-                  <div class="text-subtitle-2 mb-2 ml-1 font-weight-bold opacity-70">
-                    <v-icon size="small" class="mr-1">mdi-cog-sync-outline</v-icon> Otomasyon Ayarları
-                  </div>
-                  <v-divider class="mb-4" />
-                </v-col>
-
-                <v-col cols="12" sm="6">
-                  <v-switch class="px-2" hide-details color="success"
-                    v-model="editingClientIntegration.settings.isAutoBarcode" inset>
-                    <template v-slot:label>
-                      <span class="text-body-2">Gelen sipariş barkodu otomatik oluşturulsun</span>
-                    </template>
-                  </v-switch>
-                </v-col>
-
-                <v-col cols="12" sm="6">
-                  <v-switch class="px-2" hide-details color="info"
-                    v-model="editingClientIntegration.settings.isAutoShipment" inset>
-                    <template v-slot:label>
-                      <span class="text-body-2">Gelen sipariş otomatik kargoya gönderilsin</span>
-                    </template>
-                  </v-switch>
-                </v-col>
-
-              </v-row>
-            </v-container>
-          </v-window-item>
-        </IntegrationFormFrame>
-      </v-col>
-    </v-row>
+        <EkFormSection title="Otomasyon ayarları" icon="mdi-cog-sync-outline">
+          <v-switch hide-details color="primary" v-model="editingClientIntegration.settings.isAutoBarcode"
+            label="Gelen sipariş barkodu otomatik oluşturulsun" />
+          <v-switch hide-details color="primary" v-model="editingClientIntegration.settings.isAutoShipment"
+            label="Gelen sipariş otomatik kargoya gönderilsin" />
+        </EkFormSection>
+      </v-window-item>
+    </IntegrationFormFrame>
   </div>
 </template>
 
 <script setup lang="ts">
+import EkHelpHint from '@/components/page/EkHelpHint.vue'
 import { ref, onBeforeMount } from 'vue'
 import { useStaticsStore } from '@/stores/staticsStore'
 import { useIntegrationStore } from '@/stores/integrationStore'
 import LoadingComponent from '@/components/LoadingComponent.vue'
 import IntegrationFormFrame from '@/components/integrations/IntegrationFormFrame.vue'
+import { EkButton, EkFormSection } from '@entegrasyonik/ui/components'
 import useRestApi from '@/composables/restapi'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 
@@ -169,13 +91,3 @@ onBeforeMount(() => {
   props.editingClientIntegration.settings.barcode = props.editingClientIntegration.settings.barcode || { start: undefined, end: undefined }
 })
 </script>
-
-<style scoped>
-.opacity-70 {
-  opacity: 0.7;
-}
-
-.opacity-10 {
-  opacity: 0.1;
-}
-</style>

@@ -218,27 +218,30 @@
   --site-tilt-leave-ease: cubic-bezier(0.22, 0.61, 0.36, 1); /* ease-out (sıçrama/aşma yok) */
 
   /*
-   * Kanal (pazaryeri/entegrasyon) marka renkleri (S8 2. tur, 2026-09-29) — İSTİSNAİ HAM HEX:
-   * bu 6 değişken (`--site-channel-*`) tests/tokens.test.ts'te açıkça listelenmiş tek istisnadır; dosyanın
-   * geri kalanı hâlâ yalnızca `--ek-color-*` türevi kullanır. Değerler YAKLAŞIK marka tonudur (resmî marka
-   * kılavuzu doğrulanmadı), LOGO DEĞİLDİR (marka izni açık soru — ADR-0014 Açık Soru 3): yalnızca monogram
-   * rozeti zemini / ince kenarlık / nokta gibi dekoratif ayırt edici olarak kullanılır. Eşleme tek kaynak:
-   * src/data/channel-colors.ts + global.css `[data-code]`. `-fill` türevleri (siyaha doğru karıştırılmış)
-   * beyaz harfli dolu monogram rozetlerinde kullanılır — WCAG AA (≥3:1 büyük/kalın metin) için karartılmıştır;
-   * ham `--site-channel-*` değeri yalnızca kenarlık/nokta gibi metin taşımayan yerlerde kullanılır.
+   * Kanal (pazaryeri/entegrasyon) RESMİ marka renkleri (C1S, 2026-09-30) — İSTİSNAİ HAM HEX.
+   * TEK KAYNAK: docs/cloud-contracts/CHANNEL_BRAND_COLORS.md (kullanıcı onaylı, ölçülmüş değerler). Frontend
+   * aynı tabloyu `channel.<kod>.brand` / `channel.<kod>.onBrand` olarak uygular — değerler birebir aynıdır;
+   * değişiklik yalnız belge + bu blok üzerinden (tests/channel-colors.test.ts belgeyi sabit olarak taşır).
+   * Kural: marka rengi DEĞİŞTİRİLMEZ (tint/karartma türetilmez). `--channel-<kod>-on` dolgulu zemindeki
+   * metin rengidir: siyah/beyazdan hangisi ≥4.5:1 (WCAG AA) ise — renk değil metin rengi seçilir.
+   * Yalnız uygulanmış (backend entegrasyonu olan) 6 kanal tanımlıdır; belgedeki yalnız-UI kanallar ve
+   * ölçülmemiş/bilinmeyen kanallar `--channel-neutral` (nötr gri, --ek-* türevi) alır.
+   * Bu değişkenler tests/tokens.test.ts'te açıkça listelenmiş tek ham-hex istisnasıdır; logo DEĞİLDİR.
    */
-  --site-channel-trendyol: #f27a1a;
-  --site-channel-hepsiburada: #ff6000;
-  --site-channel-n11: #5c2d91;
-  --site-channel-pazarama: #6c3ce1;
-  --site-channel-ideasoft: #0063e5;
-  --site-channel-bizimhesap: #00a86b;
-  --site-channel-trendyol-fill: color-mix(in srgb, var(--site-channel-trendyol) 70%, black);
-  --site-channel-hepsiburada-fill: color-mix(in srgb, var(--site-channel-hepsiburada) 70%, black);
-  --site-channel-n11-fill: color-mix(in srgb, var(--site-channel-n11) 85%, black);
-  --site-channel-pazarama-fill: color-mix(in srgb, var(--site-channel-pazarama) 75%, black);
-  --site-channel-ideasoft-fill: color-mix(in srgb, var(--site-channel-ideasoft) 80%, black);
-  --site-channel-bizimhesap-fill: color-mix(in srgb, var(--site-channel-bizimhesap) 70%, black);
+  --channel-trendyol: #FF6620;
+  --channel-trendyol-on: #000000;
+  --channel-hepsiburada: #FF6000;
+  --channel-hepsiburada-on: #000000;
+  --channel-n11: #FF44EE;
+  --channel-n11-on: #000000;
+  --channel-pazarama: #0137F3;
+  --channel-pazarama-on: #FFFFFF;
+  --channel-ideasoft: #391EE0;
+  --channel-ideasoft-on: #FFFFFF;
+  --channel-bizimhesap: #20554E;
+  --channel-bizimhesap-on: #FFFFFF;
+  --channel-neutral: var(--ek-color-neutral);
+  --channel-neutral-on: var(--ek-color-background);
 }
 
 /*

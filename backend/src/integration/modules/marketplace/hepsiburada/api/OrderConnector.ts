@@ -1,7 +1,10 @@
+import { observeResponseSchema } from '@integration/modules/common/contract/observeResponseSchema';
+import { HB_ORDERS_LIST } from '../contracts';
 import Service from '../services/Service';
 import { IPlatformResponse, ISendInvoicePayload } from '@interfaces/index';
 import { fromHttpError } from '@integration/modules/common/IntegrationError';
 import { integrationCode } from '../constants';
+import { paginateOffset, readTotal } from './paginateOffset';
 
 export class OrderConnector {
     constructor(private service: Service, private params: any) { }
@@ -11,20 +14,30 @@ export class OrderConnector {
         return s.MERCHANTID || s.merchantid || s.SELLERID || s.sellerid || s.APIKEY || s.apikey || "";
     }
 
-    public async fetchOrdersFromPlatform(query?: any): Promise<any[]> {
+    private orderListUrl(): string {
         const merchantId = this.getMerchantId();
         const urls = this.params.integrationSettings.urls || {};
-        let url = urls.orderListUrl || urls.orders || `orders/merchantid/${merchantId}`;
-        
-        url = url.replace('<MERCHANTID>', merchantId);
+        const url: string = urls.orderListUrl || urls.orders || `orders/merchantid/${merchantId}`;
+        return url.replace('<MERCHANTID>', merchantId);
+    }
 
-        const response = await this.service.get(url, {
-            limit: 100,
-            offset: 0,
-            ...query
-        });
+    /** [INT-05 testConnection] Yan etkisiz en ucuz okuma: sipariş listesinin TEK kaydı (limit=1). Gövde atılır (PII saklanmaz). */
+    public async probeConnection(): Promise<void> {
+        await this.service.get(this.orderListUrl(), { limit: 1, offset: 0 }, { operation: 'testConnection' });
+    }
 
-        return response?.data?.items || [];
+    public async fetchOrdersFromPlatform(query?: any): Promise<any[]> {
+        const url = this.orderListUrl();
+
+        // [faz4-int-wp1 / F-02] Tüm sayfalar dolaşılır (bkz. paginateOffset); çağıranın limit/offset'i başlangıç değeri olarak korunur.
+        const { limit: qLimit, offset: qOffset, ...rest } = query || {};
+        const startOffset = Number(qOffset) || 0;
+        return paginateOffset(async (fetched, limit) => {
+            const response = await this.service.get(url, { ...rest, limit, offset: startOffset + fetched });
+            const data = response?.data;
+            observeResponseSchema(HB_ORDERS_LIST, data, { clientId: this.params.clientId });
+            return { items: Array.isArray(data?.items) ? data.items : [], total: readTotal(data) };
+        }, { operation: 'fetchOrdersFromPlatform', clientId: this.params.clientId, limit: Number(qLimit) || undefined });
     }
 
     public async fetchOrderDetails(orderNumber: string): Promise<any> {

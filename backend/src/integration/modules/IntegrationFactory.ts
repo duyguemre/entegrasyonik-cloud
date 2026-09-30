@@ -13,6 +13,9 @@ import N11 from './marketplace/n11';
 import Hepsiburada from './marketplace/hepsiburada';
 import Ideasoft from './ecommerce/ideasoft';
 import Bizimhesap from './erp/bizimhesap';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('engine', 'IntegrationFactory');
 
 /**
  * [DÜZELTME 2026-09-28] IPlatform sözleşmesinde SENKRON tanımlı metotlar. `wrapWithTimeout` Proxy'si bunları
@@ -46,13 +49,6 @@ export default class IntegrationFactory {
         return getColoredPrefix('IntegrationFactory', label);
     }
 
-    /**
-     * Statik metotlar için Global prefix.
-     */
-    private static get globalLog(): string {
-        return getColoredPrefix('IntegrationFactory', 'Global - Factory');
-    }
-
     /*     public async getClientDB(): Promise<any> {
             await this.ensureInitialized();
             return this.clientDB;
@@ -69,7 +65,7 @@ export default class IntegrationFactory {
             this.instanceCache.clear();
             this.configCache.clear();
             this.lastCacheClear = now;
-            console.log(`${this.globalLog} Global cache automatically cleared.`);
+            log.debug('INTEGRATIONFACTORY_GLOBAL_CACHE_AUTOMATICALLY_CLEARED', 'Global cache automatically cleared.');
         }
     }
 
@@ -215,9 +211,15 @@ export default class IntegrationFactory {
         return proxiedInstance;
     }
 
+    /** Tek bir tenant+entegrasyonun örnek/ayar önbelleğini atar (ayar değişikliği sonrası güncel sınama için; diğer tenant/kodlara dokunmaz). */
+    public static invalidate(clientId: number, integrationCode: string): void {
+        const prefix = `${clientId}_${(integrationCode || '').trim().toLowerCase()}_`;
+        for (const m of [this.instanceCache, this.configCache]) for (const k of [...m.keys()]) if (k.startsWith(prefix)) m.delete(k);
+    }
+
     public static clearCache() {
         this.instanceCache.clear();
         this.configCache.clear();
-        console.log(`${this.globalLog} Global cache manually cleared.`);
+        log.debug('INTEGRATIONFACTORY_GLOBAL_CACHE_MANUALLY_CLEARED', 'Global cache manually cleared.');
     }
 }

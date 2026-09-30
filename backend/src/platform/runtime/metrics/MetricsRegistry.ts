@@ -10,7 +10,23 @@
 
 export const HISTOGRAM_BUCKETS_MS: readonly number[] = [50, 100, 250, 500, 1000, 2500, 5000, 10000, 30000, 60000];
 /** Son "taşma" kovası: `Number.POSITIVE_INFINITY` (Prometheus `+Inf` eşdeğeri). */
-const BUCKET_COUNT = HISTOGRAM_BUCKETS_MS.length + 1;
+
+/**
+ * X12: isimli kova setleri. `default` = `HISTOGRAM_BUCKETS_MS` (mevcut metrikler, anlam DEĞİŞMEZ). `long` = uzun gecikmeli
+ * metrikler (stok yayın gecikmesi; SLO p95 <= 2 dk doğrulanabilsin). Rollup'ta `default` -> `h`, diğerleri -> `h_<ad>` alanına
+ * yazılır (eski 60 sn kovalı `h` satırlarıyla KARIŞMAZ; bkz. metricsFlush / publishLag).
+ */
+export const HISTOGRAM_BUCKET_SETS: Readonly<Record<string, readonly number[]>> = {
+    default: HISTOGRAM_BUCKETS_MS,
+    long: [...HISTOGRAM_BUCKETS_MS, 120000, 300000, 900000, 1800000, 3600000],
+};
+/** Metrik adı -> kova seti adı (listede olmayan metrik `default`). */
+const METRIC_BUCKET_SET: Readonly<Record<string, string>> = { stock_publish_lag_ms: 'long' };
+
+function bucketSetNameFor(metric: string): string {
+    const n = METRIC_BUCKET_SET[metric];
+    return n && HISTOGRAM_BUCKET_SETS[n] ? n : 'default';
+}
 
 export const MAX_SERIES = 5000;
 const SERIES_DROPPED_METRIC = 'metrics_series_dropped';
@@ -26,6 +42,8 @@ export interface MetricSeriesSnapshot {
     sum: number;
     /** Yalnız histogram: `HISTOGRAM_BUCKETS_MS` ile aynı uzunluk + 1 (+Inf); KÜMÜLATİF DEĞİL, kovaya ÖZGÜ sayım. */
     buckets: number[];
+    /** Kova seti adı (`HISTOGRAM_BUCKET_SETS`); sayaçlarda `default`. `buckets` uzunluğu = set uzunluğu + 1. */
+    bucketSet?: string;
 }
 
 interface SeriesAccumulator {
@@ -34,6 +52,7 @@ interface SeriesAccumulator {
     count: number;
     sum: number;
     buckets: number[] | undefined;
+    bounds: readonly number[];
 }
 
 function canonicalLabelKey(labels: MetricLabels): string {
@@ -41,11 +60,11 @@ function canonicalLabelKey(labels: MetricLabels): string {
     return keys.map((k) => `${k}=${labels[k]}`).join(',');
 }
 
-function bucketIndexFor(valueMs: number): number {
-    for (let i = 0; i < HISTOGRAM_BUCKETS_MS.length; i++) {
-        if (valueMs <= HISTOGRAM_BUCKETS_MS[i]) return i;
+function bucketIndexFor(valueMs: number, bounds: readonly number[]): number {
+    for (let i = 0; i < bounds.length; i++) {
+        if (valueMs <= bounds[i]) return i;
     }
-    return BUCKET_COUNT - 1; // +Inf
+    return bounds.length; // +Inf
 }
 
 export class MetricsRegistry {
@@ -66,7 +85,8 @@ export class MetricsRegistry {
             this.droppedCount++;
             return undefined;
         }
-        acc = { metric, labels, count: 0, sum: 0, buckets: withHistogram ? new Array(BUCKET_COUNT).fill(0) : undefined };
+        const bounds = HISTOGRAM_BUCKET_SETS[bucketSetNameFor(metric)];
+        acc = { metric, labels, count: 0, sum: 0, bounds, buckets: withHistogram ? new Array(bounds.length + 1).fill(0) : undefined };
         this.series.set(key, acc);
         return acc;
     }
@@ -86,8 +106,8 @@ export class MetricsRegistry {
             if (!acc) return;
             acc.count += 1;
             acc.sum += Math.max(0, valueMs);
-            if (!acc.buckets) acc.buckets = new Array(BUCKET_COUNT).fill(0);
-            acc.buckets[bucketIndexFor(valueMs)] += 1;
+            if (!acc.buckets) acc.buckets = new Array(acc.bounds.length + 1).fill(0);
+            acc.buckets[bucketIndexFor(valueMs, acc.bounds)] += 1;
         } catch { /* metrik kaydı ANA AKIŞI asla etkilemez */ }
     }
 
@@ -98,10 +118,10 @@ export class MetricsRegistry {
     drain(): MetricSeriesSnapshot[] {
         const out: MetricSeriesSnapshot[] = [];
         for (const acc of this.series.values()) {
-            out.push({ metric: acc.metric, labels: acc.labels, count: acc.count, sum: acc.sum, buckets: acc.buckets ? [...acc.buckets] : [] });
+            out.push({ metric: acc.metric, labels: acc.labels, count: acc.count, sum: acc.sum, buckets: acc.buckets ? [...acc.buckets] : [], bucketSet: bucketSetNameFor(acc.metric) });
         }
         if (this.droppedCount > 0) {
-            out.push({ metric: SERIES_DROPPED_METRIC, labels: {}, count: this.droppedCount, sum: 0, buckets: [] });
+            out.push({ metric: SERIES_DROPPED_METRIC, labels: {}, count: this.droppedCount, sum: 0, buckets: [], bucketSet: 'default' });
         }
         this.series.clear();
         this.droppedCount = 0;

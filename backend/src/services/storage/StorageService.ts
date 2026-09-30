@@ -1,6 +1,22 @@
 import { IClientOperations, S3Config } from '@interfaces/index';
 import S3Manager, { UploadObject } from './S3Manager';
-import { parseExportArchiveKey } from '../../operations/tenant/exportKey';
+import { parseExportArchiveKey } from '../../utils/exportKey';
+import { presignUrl } from './presign';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('api', 'StorageService');
+import {
+    ImageContentType, IMMUTABLE_CACHE_CONTROL, isAllowedImageType, isTenantProductKey, newUploadId, readImageUploadSettings, stagingKey, UPLOAD_PREFIX,
+} from './imagePolicy';
+
+export interface ImageUploadTicket {
+    uploadId: string;
+    method: 'PUT';
+    url: string;
+    headers: Record<string, string>;
+    expiresAt: string;
+    maxBytes: number;
+}
 
 /**
  * StorageService: Sistem genelinde Cloudflare R2 işlemlerini yöneten merkezi servis.
@@ -15,7 +31,7 @@ class StorageService {
      * Uygulama başlangıcında (app.ts) merkezi veritabanı instance'ını enjekte eder.
      */
     public initialize(clientOps: IClientOperations): void {
-        console.log("[\x1b[32mStorageService\x1b[0m] Initialized...");
+        log.info('STORAGE_INITIALIZED', '[StorageService] Initialized...');
 
         this.clientOps = clientOps;
     }
@@ -137,20 +153,81 @@ class StorageService {
                 await S3Manager.deleteMany(config, { directory, fileName: `${id}/` });
                 return { result: true };
             } catch (error: any) {
-                console.error(`[StorageService] deletePrefix (${type}/${directory}) hata:`, error?.message);
+                log.error('STORAGE_DELETE_PREFIX_FAILED', `[StorageService] deletePrefix (${type}/${directory}) hata:`, { err: error?.message });
                 return { result: false, error: error?.message };
             }
         };
 
-        const [imageClients, imageProducts, archive] = await Promise.all([
+        // ADR-0027: doğrudan yüklemenin geçici öneki (`uploads/<clientId>/`) da purge kapsamındadır.
+        const [imageClients, imageProducts, imageUploads, archive] = await Promise.all([
             safeDelete('image', 'clients'),
             safeDelete('image', 'products'),
+            safeDelete('image', UPLOAD_PREFIX),
             safeDelete('archive', 'exports'),
         ]);
-        const image = (imageClients.result && imageProducts.result)
+        const image = (imageClients.result && imageProducts.result && imageUploads.result)
             ? { result: true }
-            : { result: false, error: [imageClients.error, imageProducts.error].filter(Boolean).join(' | ') };
+            : { result: false, error: [imageClients.error, imageProducts.error, imageUploads.error].filter(Boolean).join(' | ') };
         return { image, archive };
+    }
+
+    // --- ADR-0027: tarayıcıdan doğrudan R2'ye (imzalı PUT) görsel yükleme ---------------------------------------
+
+    /**
+     * İmzalı PUT bileti üretir (R2'ye İSTEK ATMAZ; yalnız yerel HMAC). Tür izin listesi + boyut tavanı burada;
+     * `Content-Type` ve `Content-Length` imzaya dahildir (farklı tür/boyutla PUT R2'de 403 alır). Hedef: tenant önekli,
+     * rastgele GEÇİCİ anahtar (`uploads/<clientId>/<uploadId>`) — kalıcı nesnelerin üzerine yazmak imkânsızdır.
+     */
+    public async createImageUploadTicket(clientId: string | number, contentType: string, size: number): Promise<ImageUploadTicket> {
+        const settings = readImageUploadSettings();
+        if (!isAllowedImageType(contentType)) throw new Error('Storage: görsel türü izinli değil');
+        if (!Number.isInteger(size) || size < 1 || size > settings.maxBytes) throw new Error('Storage: görsel boyutu tavanı aşıyor');
+        const config = await this.getClientStorageConfig(String(clientId), 'image');
+        const uploadId = newUploadId();
+        const signed = presignUrl({
+            method: 'PUT', endpoint: config.endpoint as string, bucket: config.bucketName, key: stagingKey(clientId, uploadId),
+            region: config.region || 'auto', accessKeyId: config.accessKeyId, secretAccessKey: config.secretAccessKey,
+            expiresInSec: settings.ttlSec, signedHeaders: { 'Content-Type': contentType, 'Content-Length': size },
+        });
+        return { uploadId, method: 'PUT', url: signed.url, headers: signed.headers, expiresAt: signed.expiresAt, maxBytes: settings.maxBytes };
+    }
+
+    /** Geçici yüklemeyi (tavanlı) okur. Yoksa null; tavan aşılırsa `{ tooLarge: true }`. */
+    public async readStagedImage(clientId: string | number, uploadId: string): Promise<{ buffer?: Buffer; tooLarge?: boolean } | null> {
+        const config = await this.getClientStorageConfig(String(clientId), 'image');
+        return await S3Manager.getObjectBuffer(config, stagingKey(clientId, uploadId), readImageUploadSettings().maxBytes);
+    }
+
+    /** Geçici yüklemeyi siler (best-effort; kalan yetimi R2 yaşam döngüsü kuralı `uploads/` 1 günde temizler). */
+    public async discardStagedImage(clientId: string | number, uploadId: string): Promise<boolean> {
+        try {
+            const config = await this.getClientStorageConfig(String(clientId), 'image');
+            await S3Manager.deleteKey(config, stagingKey(clientId, uploadId));
+            return true;
+        } catch (error: any) {
+            log.error('STORAGE_DISCARD_STAGED_FAILED', '[StorageService] discardStagedImage hata:', { err: error?.name || error?.message });
+            return false;
+        }
+    }
+
+    /** Doğrulanmış içeriği kalıcı içerik-adresli anahtara yazar (değişmez önbellek başlığıyla). */
+    public async commitProductImage(clientId: string | number, key: string, buffer: Buffer, contentType: ImageContentType): Promise<void> {
+        if (!isTenantProductKey(clientId, key)) throw new Error('Storage: anahtar tenant ürün öneki dışında');
+        const config = await this.getClientStorageConfig(String(clientId), 'image');
+        await S3Manager.putObject(config, key, buffer, contentType, IMMUTABLE_CACHE_CONTROL);
+    }
+
+    /** Kalıcı ürün görselini TAM anahtarla siler; anahtar bu tenant'ın `products/<clientId>/` önekinde değilse DOKUNMAZ. */
+    public async deleteProductImageKey(clientId: string | number, key: string): Promise<boolean> {
+        if (!isTenantProductKey(clientId, key)) return false;
+        try {
+            const config = await this.getClientStorageConfig(String(clientId), 'image');
+            await S3Manager.deleteKey(config, key);
+            return true;
+        } catch (error: any) {
+            log.error('STORAGE_DELETE_IMAGE_KEY_FAILED', '[StorageService] deleteProductImageKey hata:', { err: error?.name || error?.message });
+            return false;
+        }
     }
 
     /**

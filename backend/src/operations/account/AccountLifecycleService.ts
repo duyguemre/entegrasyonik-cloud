@@ -1,12 +1,15 @@
 import type { IApplicationDB, IClientDB } from '@interfaces/index';
 import { DatabaseManagerInstance } from '@database/DatabaseManager';
 import { AuditLogger } from '@services/audit/AuditLogger';
-import Security, { ApplicationError, SessionClaimsInput } from '../../api/Security';
+import Security, { SessionClaimsInput } from '@platform/core/security/Security';
+import { ApplicationError } from '@platform/core/errors';
+import { getIdentityCache } from '@platform/core/security/identityCache';
 import { EMAIL_MAX_LENGTH, EMAIL_RE, normalizeEmail } from '../tenant/provisionInput';
 import { PASSWORD_INPUT_MAX_LENGTH, assertPasswordStrength } from './passwordPolicy';
 import {
     EMAIL_VERIFY_TTL_MS, PASSWORD_RESET_TTL_MS, consumeToken, isWellFormedToken, isWithinCooldown, issueToken, peekToken, revokeOutstanding,
 } from './accountTokens';
+import { REAUTH_WINDOW_MS } from '../users/reauth';
 import { emailVerificationMail, passwordChangedMail, passwordResetMail } from './accountMailTemplates';
 
 /**
@@ -20,8 +23,9 @@ import { emailVerificationMail, passwordChangedMail, passwordResetMail } from '.
 export type MailSender = (to: string, subject: string, text: string, html?: string) => Promise<void>;
 
 /** Varsayılan gönderici: mevcut MailService (lazy import: modül yüklemek SMTP taşıyıcısını/dotenv'i tetiklemesin; testler sahte gönderici verir). */
-const defaultMailSender: MailSender = async (to, subject, text, html) => {
-    const { mailService } = await import('@services/mail/MailService');
+export const defaultMailSender: MailSender = async (to, subject, text, html) => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- TS6-01: node16 CJS, tembel yukleme (dinamik import yerine)
+    const { mailService } = (require('@services/mail/MailService') as typeof import('@services/mail/MailService'));
     await mailService.send(to, subject, text, html);
 };
 
@@ -176,6 +180,7 @@ export class AccountLifecycleService {
             throw new ApplicationError('Parola başka bir işlemle eş zamanlı değiştirildi. Lütfen tekrar deneyin.', 409, CODES.CONFLICT);
         }
 
+        getIdentityCache().invalidateUser(String(user._id)); // ADR-0024 P1-CORE: tokenVersion++ eski oturumların önbellek girdisini de düşürür
         await this.syncTenantCopy(updated, hash);
         // Kalan parola sıfırlama bağlantıları artık geçersiz (parola değişti)
         await this.revokeQuietly(String(user._id), 'password_reset');
@@ -192,6 +197,33 @@ export class AccountLifecycleService {
             auth_time: principal.auth_time, // oturumun 7 günlük mutlak sınırı KORUNUR (parola değişimi ömrü uzatmaz)
         };
         return { sessionClaims, body: { success: true } };
+    }
+
+    /**
+     * [ADR-0028 Karar 8 / WP-A4] Adım-yükseltmesi: kimlikli kullanıcının parolasını yeniden doğrular ve `Users.reauthAt` yazar (5 dk geçerli;
+     * `operations/users/reauth.ts`). Yanlış parola login ile aynı sayaç/kilit kuralına yazılır; 400 (401 DEĞİL: FE oturum yakalayıcısını tetiklemesin).
+     * Impersonation oturumunda yapılamaz (hedef kullanıcının parolası bilinemez).
+     */
+    public async reauthenticate(principal: ChangePasswordInput['principal'], password: unknown, ip?: string): Promise<{ success: true; reauthValidUntil: Date }> {
+        if (!principal || typeof principal.sub !== 'string' || !principal.sub) throw new ApplicationError('Token is undefined', 401);
+        if (principal.imp === true) throw new ApplicationError('Bu işlem başka bir mağaza görüntülenirken yapılamaz.', 403);
+        if (typeof password !== 'string' || password.length === 0 || password.length > PASSWORD_INPUT_MAX_LENGTH) {
+            throw new ApplicationError(INVALID_REQUEST_MESSAGE, 400, CODES.INVALID_REQUEST);
+        }
+        const user: any = await this.findUserById(principal.sub);
+        if (!user || user.isActive === false || typeof user.password !== 'string') {
+            await this.security.comparePassword(password, await this.security.getDummyHash());
+            throw new ApplicationError('Token not verified', 401);
+        }
+        if (!(await this.security.comparePassword(password, user.password))) {
+            await this.recordFailedAttempt(user);
+            void AuditLogger.log({ event: 'reauth', result: 'fail', sub: principal.sub, tid: principal.tid, ip });
+            throw new ApplicationError(INVALID_CURRENT_PASSWORD_MESSAGE, 400, CODES.INVALID_CURRENT_PASSWORD);
+        }
+        const at = new Date(this.now());
+        await this.db.getUserModel().updateOne({ _id: user._id }, { $set: { reauthAt: at, failedLoginAttempts: 0 }, $unset: { lockUntil: 1 } });
+        void AuditLogger.log({ event: 'reauth', result: 'ok', sub: principal.sub, tid: principal.tid, ip });
+        return { success: true, reauthValidUntil: new Date(at.getTime() + REAUTH_WINDOW_MS) };
     }
 
     // ------------------------------------------------------------------------------------------------------------------
@@ -279,6 +311,7 @@ export class AccountLifecycleService {
             void AuditLogger.log({ event: 'password_reset.confirm', result: 'fail', ip });
             throw invalid();
         }
+        getIdentityCache().invalidateUser(String(user._id)); // ADR-0024 P1-CORE: tokenVersion++ eski oturumların önbellek girdisini de düşürür
         await this.syncTenantCopy(updated, hash);
         await this.revokeQuietly(String(user._id), 'password_reset');
         void AuditLogger.log({ event: 'password_reset.confirm', result: 'ok', sub: String(user._id), tid: Number.isInteger(Number(updated.order)) && !updated.isGlobalAdmin ? Number(updated.order) : undefined, ip });
@@ -372,6 +405,7 @@ export class AccountLifecycleService {
         if (attempts >= LOCK_AFTER_ATTEMPTS) set.lockUntil = new Date(this.now() + LOCK_MS);
         try {
             await this.db.getUserModel().updateOne({ _id: user._id }, { $set: set });
+            if (set.lockUntil) getIdentityCache().invalidateUser(String(user._id)); // kilit açık oturumlara anında yansır
         } catch (e: any) {
             console.error('[AccountLifecycle] başarısız deneme sayacı yazılamadı:', e?.message);
         }

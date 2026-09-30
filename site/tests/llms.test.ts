@@ -140,14 +140,29 @@ describe('S14: yeni sayfalar llms* içinde', () => {
 describe('llms* çıktısı: yasaklı ifade / mutlak iddia / roadmap sızıntısı yok (claims.test.ts ile aynı disiplin)', () => {
   const roadmapNames = integrations.filter((i) => i.status === 'roadmap').flatMap((i) => [i.name, ...i.aliases])
   const forbiddenNames = [...new Set([...STATIC_FORBIDDEN_NAMES, ...roadmapNames])]
-  const texts: Array<[string, string]> = [
+  // Tembel: `llms`/`llmsFull` beforeAll'da dolar (describe gövdesi derlemeden önce çalışır).
+  const texts = (): Array<[string, string]> => [
     ['llms.txt', llms],
     ['llms-full.txt', llmsFull],
   ]
+  // S20b DAR İSTİSNA: "## Rehber" bölümü pazarı/mevzuatı anlatan kaynaklı bilgi içeriğidir (e-Fatura, GİB, e-Arşiv gibi
+  // adlar ürün iddiası değil konu adıdır) → YALNIZCA ad/kalıp taramasından muaftır; mutlak iddia ve altyapı taramaları
+  // bölüm dahil tüm metinde sürer. Rehber metninin kendi ad/rakip/rakam korumaları tests/rehber.test.ts'tedir.
+  const withoutRehber = (text: string): string => text.replace(/\n## Rehber\n[\s\S]*?(?=\n## )/, '\n')
+  const productTexts = (): Array<[string, string]> => texts().map(([f, t]) => [f, withoutRehber(t)])
+
+  it('rehber istisnası yalnızca "## Rehber" bölümünü kapsar (bölüm var ve Optional ondan sonra)', () => {
+    for (const [file, text] of texts()) {
+      expect(text, file).toContain('\n## Rehber\n')
+      expect(text.indexOf('\n## Optional'), file).toBeGreaterThan(text.indexOf('\n## Rehber\n'))
+      expect(withoutRehber(text), file).toContain('\n## Optional')
+      expect(withoutRehber(text), file).not.toContain('/rehber/')
+    }
+  })
 
   it('roadmap/mevcut olmayan ürün adları geçmez', () => {
     const hits: string[] = []
-    for (const [file, text] of texts) {
+    for (const [file, text] of productTexts()) {
       const n = norm(text)
       for (const name of forbiddenNames) if (phraseRe(name).test(n)) hits.push(`${file}: "${name}"`)
     }
@@ -156,7 +171,7 @@ describe('llms* çıktısı: yasaklı ifade / mutlak iddia / roadmap sızıntıs
 
   it('yasaklı kalıplar (kargo/e-fatura API, yol haritası dili) geçmez', () => {
     const hits: string[] = []
-    for (const [file, text] of texts) {
+    for (const [file, text] of productTexts()) {
       const n = norm(text)
       for (const [label, re] of FORBIDDEN_PATTERNS) if (re.test(n)) hits.push(`${file}: ${label}`)
     }
@@ -165,7 +180,7 @@ describe('llms* çıktısı: yasaklı ifade / mutlak iddia / roadmap sızıntıs
 
   it('doğrulanamaz mutlak/üstünlük/garanti iddiaları geçmez', () => {
     const hits: string[] = []
-    for (const [file, text] of texts) {
+    for (const [file, text] of texts()) {
       const n = norm(text)
       for (const p of ABSOLUTE_PREFIXES) if (prefixRe(p).test(n)) hits.push(`${file}: "${p}"`)
     }
@@ -174,7 +189,7 @@ describe('llms* çıktısı: yasaklı ifade / mutlak iddia / roadmap sızıntıs
 
   it('sertifika/altyapı/SLA iddiaları geçmez', () => {
     const hits: string[] = []
-    for (const [file, text] of texts) {
+    for (const [file, text] of texts()) {
       const n = norm(text)
       for (const p of UNPROVEN_INFRA) if (prefixRe(p).test(n)) hits.push(`${file}: "${p}"`)
     }
@@ -182,7 +197,7 @@ describe('llms* çıktısı: yasaklı ifade / mutlak iddia / roadmap sızıntıs
   })
 
   it('internalNotes/evidence gibi görünmez alanlar sızmaz', () => {
-    for (const [, text] of texts) {
+    for (const [, text] of texts()) {
       expect(text).not.toContain('internalNotes')
       expect(text).not.toContain('INTEGRATIONS_REGISTRY')
     }

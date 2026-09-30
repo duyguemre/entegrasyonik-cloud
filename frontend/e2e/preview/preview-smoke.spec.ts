@@ -54,8 +54,8 @@ test.describe('Üretim derlemesi duman testi (vite preview)', () => {
     const probe = attachProbe(page, [/status code 401/])
     await page.goto('/login')
 
-    await expect(page.getByRole('tab', { name: 'GİRİŞ' })).toBeVisible({ timeout: 20000 })
-    await expect(page.getByLabel('EPosta')).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Giriş' })).toBeVisible({ timeout: 20000 })
+    await expect(page.getByLabel('E-posta')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Giriş' })).toBeVisible()
     await page.evaluate(() => document.fonts.ready)
     await page.waitForLoadState('networkidle')

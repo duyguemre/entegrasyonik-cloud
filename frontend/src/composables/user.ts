@@ -35,8 +35,8 @@ export default function useUser() {
   const integrationStore: any = useIntegrationStore()
 
   const restApi = useRestApi()
-  const login = async (username: string, password: string, captcha?: string) => {
-    const resp: any = await restApi.post('SecurityService/login', { username, password, captcha })
+  const login = async (username: string, password: string) => {
+    const resp: any = await restApi.post('SecurityService/login', { username, password })
 
     if (resp?.requireStoreSelection) {
       stores.value = resp.clients
@@ -156,10 +156,6 @@ export default function useUser() {
   }
 
 
-  const getCaptcha = async () => {
-    return await restApi.post('SecurityService/getCaptcha', {})
-  }
-
   const getRoles = async () => {
     return await restApi.post('UserService/getRoles', {})
   }
@@ -243,6 +239,13 @@ export default function useUser() {
     return undefined
   })
 
+  // C2.4: kullanıcı/mağaza kapsamlı yerel kayıtlar için KİMLİK (e-posta/ad değil). Mağaza: süper-yönetici
+  // seçimi (`activeClientId`) öncelikli, yoksa oturumun kendi `clientId`'si (profileDto beyaz listesi).
+  const getSessionScope = computed(() => ({
+    userId: userContext.value?._id as string | undefined,
+    tenantId: (activeClientId.value || userContext.value?.clientId) as string | number | undefined,
+  }))
+
 
   const checkAuthorization = (resource: string) => {
     if (userContext.value.owner == true) return false
@@ -260,7 +263,7 @@ export default function useUser() {
   }
 
   const isOwner = () => {
-    return userContext.value.owner
+    return userContext.value?.owner
   }
 
   // ADR-0020 Aşama C — admin panel (Entegrasyon Ayarları) ekranları, `platformAdmin`
@@ -271,14 +274,21 @@ export default function useUser() {
     return userContext.value?.isGlobalAdmin === true
   }
 
+  // Tenant `admin` kademesi (mağaza sahibi, ROLE_ADMIN/ROLE_OWNER rolü veya platform yöneticisi) — yalnızca
+  // GÖRÜNÜRLÜK ipucu; asıl yetki sınırı backend `operationPolicy.resolveTier` (ADMIN_ROLE_CODES ile aynı küme).
+  const isTenantAdmin = () => {
+    const uc = userContext.value
+    return uc?.owner === true || uc?.isGlobalAdmin === true || ['ROLE_ADMIN', 'ROLE_OWNER'].includes(uc?.roleCode)
+  }
+
   return {
     getRoles,
     selectStore,
     stores,
     activeClientId,
-    getCaptcha,
     isOwner,
     isPlatformAdmin,
+    isTenantAdmin,
     getStoreName,
     getStoreLogo,
     getResources,
@@ -291,6 +301,7 @@ export default function useUser() {
     confirmPasswordReset,
     isAuthenticated,
     getUsername,
+    getSessionScope,
     getProductStatistics,
     retrieveProductStatistics
   }

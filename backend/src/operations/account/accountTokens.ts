@@ -6,6 +6,8 @@ import type { AccountTokenPurpose } from '@database/application/models/AccountTo
 
 export const PASSWORD_RESET_TTL_MS = 30 * 60 * 1000;       // 30 dakika
 export const EMAIL_VERIFY_TTL_MS = 24 * 60 * 60 * 1000;    // 24 saat
+export const OWNERSHIP_TRANSFER_TTL_MS = 72 * 60 * 60 * 1000;  // 72 saat (ADR-0028 Karar 5.5)
+export const ADMIN_INVITE_TTL_MS = 48 * 60 * 60 * 1000;      // 48 saat (B12 platform yöneticisi daveti; tenant davetinden kısa)
 /** Aynı kullanıcı/amaç için en sık bu aralıkla yeni token/e-posta üretilir (posta kutusu taşırma savunması). */
 export const TOKEN_RESEND_COOLDOWN_MS = 60 * 1000;
 
@@ -14,6 +16,8 @@ const TOKEN_BYTES = 32; // 256 bit
 const TOKEN_SHAPE = /^[A-Za-z0-9_-]{32,128}$/;
 
 export function ttlFor(purpose: AccountTokenPurpose): number {
+    if (purpose === 'ownership_transfer') return OWNERSHIP_TRANSFER_TTL_MS;
+    if (purpose === 'admin_invite') return ADMIN_INVITE_TTL_MS;
     return purpose === 'password_reset' ? PASSWORD_RESET_TTL_MS : EMAIL_VERIFY_TTL_MS;
 }
 

@@ -41,7 +41,7 @@ export class ShipmentService {
     }
 
 
-    @Cache(300, 'shipment-service', that => that.clientId)
+    @Cache({ scope: 'tenant', ttl: '5m', context: 'trendyol-shipment' })
     public async fetchAddresses(): Promise<IInternalAddress[]> {
         try {
 

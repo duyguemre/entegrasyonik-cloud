@@ -8,14 +8,15 @@
           description="E-ticaret altyapınızı bağlayın ve API ayarlarını buradan yönetin." />
       </div>
 
-      <v-row class="ma-0">
-        <v-col cols="12" lg="8" class="pa-0">
-          <div class="pa-6">
+      <div class="ek-integration-layout">
+        <div class="ek-integration-layout__main">
+          <div>
             <IntegrationPlatformRail :items="clientECommerces" :model-value="editingClientIntegration.code"
-              :live-codes="LIVE_CODES" ariaLabel="E-ticaret platformu seçimi"
+              :live-codes="liveCodes" ariaLabel="E-ticaret platformu seçimi"
               @select="setAndRetrieveEditingClientECommerce" />
-            <DividerComponent />
           </div>
+          <IntegrationCapabilityChips v-if="isLive(editingClientIntegration.code)" :code="editingClientIntegration.code"
+            category="ecommerce" :show-health-link="!!healthLink" @open-health="openHealth" />
           <v-form ref="newVariantFormRef" v-model="isFormValid">
             <v-card-text class="pa-0 px-0" role="tabpanel"
               :aria-label="editingClientIntegration.code ? `${editingClientIntegration.code} ayarları` : 'Seçim bekleniyor'">
@@ -57,38 +58,18 @@
                     category="e-ticaret" />
                 </template>
               </div>
-              <EkEmptyState v-else variant="not-connected" title="Başlamak İçin Seçim Yapın"
+              <EkEmptyState v-else variant="not-connected" title="Başlamak için seçim yapın"
                 message="Yukarıdaki listeden bir e-ticaret platformu seçerek ayarları yönetmeye başlayabilirsiniz." />
             </v-card-text>
           </v-form>
-        </v-col>
+        </div>
 
-        <v-col cols="12" lg="4" class="pa-6">
-          <CardComponent>
-            <div class="d-flex align-center mb-6">
-              <v-icon color="passiveColor" class="mr-2">mdi-lightbulb-on-outline</v-icon>
-              <span class="text-subtitle-1 font-weight-bold">Hızlı Başlangıç Rehberi</span>
-            </div>
-
-            <div v-for="(step, i) in guideSteps" :key="i" class="mb-5 d-flex">
-              <div class="step-number mr-4">{{ i + 1 }}</div>
-              <div>
-                <div class="text-subtitle-2 font-weight-bold mb-1">{{ step.title }}</div>
-                <div class="text-caption opacity-60">{{ step.text }}</div>
-              </div>
-            </div>
-
-            <v-divider class="my-6 opacity-10"></v-divider>
-
-            <v-alert variant="tonal" color="passiveColor" density="compact" class="rounded-lg border-opacity-25">
-              <template v-slot:prepend>
-                <v-icon size="small">mdi-help-circle-outline</v-icon>
-              </template>
-              <div class="text-caption">API bilgileriniz hatalı ise bağlantı "Pasif" görünecektir.</div>
-            </v-alert>
-          </CardComponent>
-        </v-col>
-      </v-row>
+        <aside class="ek-integration-layout__aside">
+          <!-- C1.2: kodu olmayan sağlayıcı seçiliyken "API anahtarını girin" adımları gösterilmez. -->
+          <IntegrationGuideCard v-if="!editingClientIntegration.code || isLive(editingClientIntegration.code)" :steps="guideSteps" />
+          <IntegrationGuideCard v-else :steps="comingSoonGuide" note="" />
+        </aside>
+      </div>
     </div>
   </div>
 </template>
@@ -107,15 +88,16 @@ import LoadingComponent from '@/components/LoadingComponent.vue'
 import useRestApi from '@/composables/restapi'
 import { useIntegrationStore } from '@/stores/integrationStore'
 import { useI18n } from 'vue-i18n'
-import CardComponent from '@/components/CardComponent.vue'
-import DividerComponent from '@/components/layout/DividerComponent.vue'
-import EkPageHeader from '@/components/ds/EkPageHeader.vue'
-import EkEmptyState from '@/components/ds/EkEmptyState.vue'
+import IntegrationGuideCard from '@/components/integrations/IntegrationGuideCard.vue'
+import EkPageHeader from '@/components/page/EkPageHeader.vue'
+import { EkEmptyState } from '@entegrasyonik/ui/components'
 import IntegrationPlatformRail from '@/components/integrations/IntegrationPlatformRail.vue'
 import IntegrationComingSoonPanel from '@/components/integrations/IntegrationComingSoonPanel.vue'
+import IntegrationCapabilityChips from '@/components/integrations/IntegrationCapabilityChips.vue'
+import { useIntegrationScreen } from '@/components/integrations/useIntegrationScreen'
 
-// `docs/INTEGRATIONS_REGISTRY.md` §3.1 — yalnızca Ideasoft'un gerçek backend bağlantısı var.
-const LIVE_CODES = ['ideasoft']
+// C1.2 — canlı küme `getCatalog` manifestosundan (yedek: `FALLBACK_LIVE_CODES`, bkz. `integrationCatalog.ts`).
+const { liveCodes, isLive, healthLink, openHealth, comingSoonGuide } = useIntegrationScreen('ecommerce')
 
 const integrationStore: any = useIntegrationStore()
 const { t } = useI18n()
@@ -170,28 +152,9 @@ const setAndRetrieveEditingClientECommerce = async (integrationCode: string) => 
   bottom: var(--ek-space-1);
 }
 
-.step-number {
-  min-width: var(--ek-space-6);
-  height: var(--ek-space-6);
-  background: var(--ek-color-passive-color);
-  color: white;
-  border-radius: var(--ek-radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--ek-font-size-xs);
-  font-weight: var(--ek-font-weight-bold);
-}
-
-.opacity-60 {
-  opacity: 0.6;
-}
-
-.opacity-10 {
-  opacity: 0.1;
-}
-
 .opacity-40 {
   opacity: 0.4;
 }
 </style>
+
+<style scoped src="@/components/integrations/integration-layout.css"></style>

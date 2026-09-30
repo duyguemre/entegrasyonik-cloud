@@ -21,11 +21,6 @@ const SHIPMENT_SORT_FIELDS: readonly string[] = [
 
 export default class ShipmentService extends BaseApi implements IService {
 
-    currentClientId: any
-    constructor(clientId: number, protected request: any) {
-        super(clientId, request)
-        this.currentClientId = clientId
-    }
 
     async get(): Promise<any> {
     }
@@ -59,13 +54,13 @@ export default class ShipmentService extends BaseApi implements IService {
 
             const result = await this.clientDB.getOrderModel().aggregate([
                 { $match: filterQuery },
+                { $sort: sortBy }, // [DB-02] $facet dışında: indeks kullanılabilir
                 {
                     $facet: {
                         totalNumberOfRecords: [
                             { $count: 'count' }
                         ],
                         orders: [
-                            { $sort: sortBy },
                             { $skip: skipCount },
                             { $limit: limitCount }
                         ]
@@ -285,4 +280,4 @@ export default class ShipmentService extends BaseApi implements IService {
             return { success: false, message: syncError.message };
         }
     }
-}
+}

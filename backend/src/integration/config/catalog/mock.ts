@@ -4,10 +4,9 @@
 import { z } from 'zod';
 import { MOCK_PREFIXES } from '@config/env';
 import type { SettingDef } from '../types';
+import { ADAPTER_KEYS } from '../../modules/adapterKeys';
 
-const MOCK_INTEGRATION_CODE: Record<typeof MOCK_PREFIXES[number], string> = {
-    TY: 'trendyol', PAZARAMA: 'pazarama', N11: 'n11', HEPSIBURADA: 'hepsiburada', IDEASOFT: 'ideasoft', BIZIMHESAP: 'bizimhesap',
-};
+const MOCK_INTEGRATION_CODE: Record<string, string> = Object.fromEntries(ADAPTER_KEYS.map(k => [k.mockPrefix, k.code])); // ADR-0033 INT-02
 
 export const MOCK_SETTINGS: SettingDef<any>[] = MOCK_PREFIXES.flatMap((prefix) => {
     const code = MOCK_INTEGRATION_CODE[prefix];

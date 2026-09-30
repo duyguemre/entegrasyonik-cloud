@@ -18,7 +18,7 @@ export class BrandService {
                 { 'erp.code': integrationCode },
                 { 'erp.$': 1 }
             ).lean();
-            return doc?.erp?.[0]?.settings?.catalog?.brands || [];
+            return doc?.erp?.find((e: any) => e?.code === integrationCode)?.settings?.catalog?.brands || [];
         } catch (error: any) {
             if (IntegrationError.isIntegrationError(error)) throw error;
             throw new Error(`[${this.clientId}][${integrationCode}BrandService:fetchBrands] ${error.message}`);

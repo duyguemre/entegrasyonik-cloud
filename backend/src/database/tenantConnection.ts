@@ -45,3 +45,25 @@ export function buildTenantDbConfig(client: TenantDbRecord, env: NodeJS.ProcessE
         poolsize,
     };
 }
+
+/**
+ * Tenant DB adı İZİN KAPISI (CLAUDE.md kural 2 + ADR-0003/0024): ad güvenli alt kümeden olmalı VE ya izinli bilinen tenant
+ * adlarından biri ya da provisioning'in ürettiği kalıp (`entegrasyonikClient_<n>`, n yalnız rakam) olmalı. Genel önek kuralı
+ * (ör. `entegrasyonik*`) BİLİNÇLİ OLARAK kullanılmaz — `entegrasyonik_test` gibi keyfi adları geçirirdi. Uygulama DB'si
+ * (`entegrasyonikDB`, env `DB_NAME`) tenant olamaz. Başka projelerin DB'leri (aynı cluster) bu kapıdan geçemez.
+ */
+const KNOWN_TENANT_DB_NAMES: ReadonlySet<string> = new Set([
+    'entegrasyonik',
+    'entegrasyonik_client',
+    'entegrasyonik_client_2',
+    'entegrasyonik_client_24',
+    'entegrasyonik_client_25',
+    'entegrasyonikClient_1',
+]);
+const PROVISIONED_TENANT_DB = /^entegrasyonikClient_[1-9]\d{0,8}$/;
+export function isAllowedTenantDbName(name: unknown, appDbName: string | undefined = rawEnv().DB_NAME): name is string {
+    if (!isValidTenantDbName(name)) return false;
+    if (!KNOWN_TENANT_DB_NAMES.has(name) && !PROVISIONED_TENANT_DB.test(name)) return false;
+    if (name === 'entegrasyonikDB' || (appDbName && name === appDbName)) return false;
+    return true;
+}

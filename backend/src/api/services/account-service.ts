@@ -1,7 +1,9 @@
 import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import type { SessionResult } from '../sessionResult'
-import { AccountLifecycleService, GENERIC_RESET_MESSAGE, runInBackground } from '@operations/account/AccountLifecycleService'
+import { AccountLifecycleService, GENERIC_RESET_MESSAGE, runInBackground, defaultMailSender } from '@operations/account/AccountLifecycleService'
+import { InvitationService } from '@operations/users/invitations'
+import { DatabaseManagerInstance } from '@database/DatabaseManager'
 
 /**
  * Kimlik hesabı yaşam döngüsü uçları (docs/API_ACCOUNT_LIFECYCLE.md). İnce API katmanı: iş kuralları AccountLifecycleService'te.
@@ -59,5 +61,31 @@ export default class AccountService extends BaseApi implements IService {
     /** Oturum açmış kullanıcının doğrulama e-postasını yeniden gönderir (dakikada en fazla 1). */
     async resendVerificationEmail(): Promise<any> {
         return await this.lifecycle().resendVerification(this.request?.principal, this.ip())
+    }
+
+    /**
+     * [ADR-0028 WP-A4] AÇIK (kimliksiz) davet uçları: yalnız `{tenantTitle, role, email (maskeli), expiresAt}` döner. Rate limit ApiManager'daki özel rotada
+     * (accountTokenLimiter). Oturum AÇMAZ (kabul sonrası kullanıcı giriş yapar).
+     */
+    async getInvitation(): Promise<any> {
+        return await this.invitations().getPublic(this.request?.token, this.ip())
+    }
+
+    /** Token (tek kullanım, sha256 sabit-zamanlı) + ad/soyad/parola; kullanıcı + üyelik oluşturur (e-posta doğrulanmış sayılır: token e-postaya gitti). */
+    async acceptInvitation(): Promise<any> {
+        const { token, name, surname, password } = this.request ?? {}
+        return await this.invitations().accept({ token, name, surname, password }, this.ip())
+    }
+
+    private invitations(): InvitationService {
+        return new InvitationService({
+            applicationDB: this.applicationDB, mailSender: defaultMailSender,
+            getClientDB: (tid: number) => DatabaseManagerInstance.getClientDB(tid),
+        })
+    }
+
+    /** [ADR-0028 Karar 8] Adım-yükseltmesi: parolayı yeniden doğrular; `reauthValidUntil` (5 dk) döner. Kimlikli. */
+    async reauthenticate(): Promise<any> {
+        return await this.lifecycle().reauthenticate(this.request?.principal, this.request?.password, this.ip())
     }
 }

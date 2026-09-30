@@ -1,3 +1,5 @@
+import { observeResponseSchema } from '@integration/modules/common/contract/observeResponseSchema';
+import { N11_CATEGORIES_LIST, N11_CATEGORY_ATTRIBUTES } from '../contracts';
 import Service, { N11_DEFAULT_URLS } from '../services/Service';
 
 export class CategoryConnector {
@@ -10,13 +12,17 @@ export class CategoryConnector {
     // REST Methods
     public async fetchCategoriesRest(): Promise<any> {
         const url = this.getUrl('categoryListUrl');
-        return await this.service.rest.getReal(url);
+        const data = await this.service.rest.getReal(url);
+        observeResponseSchema(N11_CATEGORIES_LIST, data, { clientId: this.params.clientId });
+        return data;
     }
 
     public async fetchCategoryAttributesRest(categoryId: string): Promise<any> {
         const pattern = this.getUrl('categoryAttributeListUrl');
         const url = pattern.replace('<CATEGORYID>', categoryId);
-        return await this.service.rest.getReal(url);
+        const data = await this.service.rest.getReal(url);
+        observeResponseSchema(N11_CATEGORY_ATTRIBUTES, data, { clientId: this.params.clientId });
+        return data;
     }
 
     // SOAP Methods (tümü okuma -> idempotent:true)

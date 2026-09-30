@@ -18,13 +18,13 @@
 
     <v-tabs v-model="tab" grow hide-slider class="ek-login-tabs" height="44">
       <v-tab value="login" :ripple="false" class="ek-login-tab">
-        <v-icon start size="16">mdi-login</v-icon>GİRİŞ
+        <v-icon start size="16">mdi-login</v-icon>Giriş
       </v-tab>
       <v-tab value="register" :ripple="false" class="ek-login-tab">
-        <v-icon start size="16">mdi-account-plus-outline</v-icon>KAYIT
+        <v-icon start size="16">mdi-account-plus-outline</v-icon>Kayıt
       </v-tab>
       <v-tab value="forgot" :ripple="false" class="ek-login-tab">
-        <v-icon start size="16">mdi-key-alert-outline</v-icon>ŞİFREMİ UNUTTUM
+        <v-icon start size="16">mdi-key-alert-outline</v-icon>Şifremi unuttum
       </v-tab>
     </v-tabs>
 
@@ -34,6 +34,8 @@
         <v-window-item value="login" transition="fade-transition" reverse-transition="fade-transition">
           <div class="form-pane">
             <LoadingComponent attach=".LoginView" ref="loadingLogin" />
+            <!-- Faz 3 / C2a: davet kabulü / sahiplik devri oturum açmaz → buraya bilgi notuyla gelinir. -->
+            <EkAlert v-if="reasonNoticeKey && !errorMessage" tone="success" dense class="mb-3" :text="$t(reasonNoticeKey)" />
             <v-form @submit.prevent="handleLogin">
               <v-text-field v-model="authData.email" :label="$t('login.email')" autocomplete="username"
                 class="mb-3"></v-text-field>
@@ -46,10 +48,7 @@
               </div>
 
               <v-expand-transition>
-                <v-alert v-if="errorMessage" type="error" variant="tonal" density="compact" role="alert"
-                  aria-live="assertive" class="mb-3 text-caption">
-                  {{ errorMessage }}
-                </v-alert>
+                <EkAlert v-if="errorMessage" tone="error" dense live class="mb-3" :text="errorMessage" />
               </v-expand-transition>
 
               <div v-if="!isStoreSelectionPhase">
@@ -57,19 +56,6 @@
                   {{ $t('login.title') }}
                 </v-btn>
               </div>
-
-              <!-- GÜVENLİK KODU (CAPTCHA) -->
-              <v-expand-transition>
-                <div v-if="requireCaptcha && !isStoreSelectionPhase" class="ek-login-captcha-panel">
-                  <div class="d-flex align-center justify-space-between mb-2">
-                    <span class="ek-login-captcha-label">Güvenlik kodu</span>
-                    <div class="captcha-box">{{ captchaSecret }}</div>
-                    <v-btn icon="mdi-refresh" variant="text" size="small" aria-label="Güvenlik kodunu yenile"
-                      @click="refreshCaptcha"></v-btn>
-                  </div>
-                  <v-text-field v-model="authData.captcha" label="Kodu Giriniz" autocomplete="off"></v-text-field>
-                </div>
-              </v-expand-transition>
 
               <!-- MAĞAZA SEÇİMİ (SÜPER YÖNETİCİ) -->
               <v-expand-transition>
@@ -120,20 +106,15 @@
                   <span>Deneme sürümüyle başlarsınız; kart bilgisi istenmez. Planı, kayıttan sonra abonelik ekranında onaylarsınız.</span>
                 </div>
               </div>
-              <v-row dense>
-                <v-col cols="12" sm="6"><v-text-field v-model="regData.name" :label="$t('login.register.name')"
-                    autocomplete="given-name"></v-text-field></v-col>
-                <v-col cols="12" sm="6"><v-text-field v-model="regData.surname" :label="$t('login.register.surname')"
-                    autocomplete="family-name"></v-text-field></v-col>
-              </v-row>
-              <v-text-field v-model="regData.email" :label="$t('login.email')" autocomplete="email"></v-text-field>
-              <v-row dense>
-                <v-col cols="12" sm="6"><v-text-field v-model="regData.password" :label="$t('login.password')"
-                    type="password" autocomplete="new-password"></v-text-field></v-col>
-                <v-col cols="12" sm="6"><v-text-field v-model="regData.password2"
-                    :label="$t('login.register.repassword')" type="password"
-                    autocomplete="new-password"></v-text-field></v-col>
-              </v-row>
+              <!-- Aşama 3: tek form ızgarası (EkFormGrid) — alanlar arası boşluk sabit, üst üste binme yok. -->
+              <EkFormGrid :columns="2" class="ek-login-register-grid">
+                <v-text-field v-model="regData.name" :label="$t('login.register.name')" autocomplete="given-name" />
+                <v-text-field v-model="regData.surname" :label="$t('login.register.surname')" autocomplete="family-name" />
+                <v-text-field v-model="regData.email" :label="$t('login.email')" autocomplete="email" class="ek-span-full" />
+                <v-text-field v-model="regData.password" :label="$t('login.password')" type="password" autocomplete="new-password" />
+                <v-text-field v-model="regData.password2" :label="$t('login.register.repassword')" type="password"
+                  autocomplete="new-password" />
+              </EkFormGrid>
               <!-- ADR-0014 S4b: yasal onay. İşaretlenmeden kayıt GÖNDERİLMEZ (handleRegister). Metinler sitede (kanonik kaynak). -->
               <div class="consent-block">
                 <v-checkbox v-model="consent" class="consent-checkbox" data-testid="register-consent"
@@ -171,10 +152,7 @@
                 class="mb-2"></v-text-field>
 
               <v-expand-transition>
-                <v-alert v-if="forgotError" type="error" variant="tonal" density="compact" role="alert"
-                  aria-live="assertive" class="mb-3 text-caption">
-                  {{ forgotError }}
-                </v-alert>
+                <EkAlert v-if="forgotError" tone="error" dense live class="mb-3" :text="forgotError" />
               </v-expand-transition>
 
               <v-btn block color="primary" height="40" class="ek-login-submit" type="submit"
@@ -204,6 +182,7 @@
 </template>
 
 <script setup lang="ts">
+import { EkAlert, EkFormGrid } from '@entegrasyonik/ui/components'
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import useUser from '@/composables/user'
@@ -264,14 +243,20 @@ const resolveRedirectTarget = (): string => {
   }
   return '/dashboard'
 }
+const LOGIN_REASON_NOTICES: Record<string, string> = {
+  'invitation-accepted': 'loginNotice.invitationAccepted',
+  'ownership-transferred': 'loginNotice.ownershipTransferred',
+}
+const reasonNoticeKey = computed(() => {
+  const reason = Array.isArray(route.query.reason) ? route.query.reason[0] : route.query.reason
+  return typeof reason === 'string' ? LOGIN_REASON_NOTICES[reason] ?? '' : ''
+})
 const loadingLogin = ref()
 const errorMessage = ref('')
-const requireCaptcha = ref(false)
-const captchaSecret = ref('')
 const isStoreSelectionPhase = ref(false)
 const storeSearch = ref('')
 
-const authData = reactive({ email: '', password: '', captcha: '' })
+const authData = reactive({ email: '', password: '' })
 const regData = reactive({ name: '', surname: '', email: '', password: '', password2: '' })
 
 const filteredStores = computed(() => {
@@ -291,24 +276,14 @@ const handleStoreSelect = async (clientId: number) => {
   }
 }
 
-const refreshCaptcha = async () => {
-  const resp: any = await userApi.getCaptcha()
-  if (resp?.captcha) {
-    captchaSecret.value = resp.captcha
-  }
-}
-
 const handleLogin = async () => {
   errorMessage.value = ""
   const guid = loadingLogin.value.info("")
 
-  const loginResp: any = await userApi.login(authData.email, authData.password, authData.captcha)
+  // Faz 4 hesap sözleşmesi: backend artık `requireCaptcha` dönmez (captcha kaldırıldı) — ölü dal silindi.
+  const loginResp: any = await userApi.login(authData.email, authData.password)
 
-  if (loginResp?.requireCaptcha) {
-    requireCaptcha.value = true
-    await refreshCaptcha()
-    errorMessage.value = loginResp.message || "Güvenlik kodu gereklidir."
-  } else if (loginResp?.requireStoreSelection) {
+  if (loginResp?.requireStoreSelection) {
     isStoreSelectionPhase.value = true
     errorMessage.value = ""
   } else if (await userApi.isAuthenticated()) {
@@ -393,9 +368,9 @@ const handleForgotPassword = async () => {
 }
 
 .ek-login-tab {
-  font-weight: var(--ek-font-weight-semibold) !important;
-  font-size: 11px !important;
-  letter-spacing: 0.03em;
+  font-weight: var(--ek-type-tab-weight) !important;
+  font-size: var(--ek-type-tab-size) !important;
+  letter-spacing: 0;
   color: var(--ek-color-content-muted) !important;
   border-radius: var(--ek-radius-md);
   transition: color var(--ek-duration-fast) var(--ek-easing-standard);
@@ -409,23 +384,16 @@ const handleForgotPassword = async () => {
 
 .login-content-wrapper {
   position: relative;
-  height: 372px;
 }
 
-.login-window {
-  height: 100% !important;
-}
-
-/* ADR-0014 S4b: kayıt sekmesi plan bandı + yasal onay içerir; sabit yükseklik yetmez. */
-.login-content-wrapper--register {
-  height: calc(var(--ek-space-16) * 9);
-}
-
+/* Aşama 3: sabit yükseklik (372px / 576px) kalktı — sekme içeriği kendi yüksekliğinde; alt bilgi
+   düğmenin hemen altında durur, başlık sekmeler arasında yerinden oynamaz (form üste yaslı). */
 .form-pane {
   width: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
+}
+
+.ek-login-register-grid {
+  margin-bottom: var(--ek-space-2);
 }
 
 .ek-login-submit {
@@ -474,31 +442,6 @@ const handleForgotPassword = async () => {
 
 .ek-login-forgot-success .v-icon {
   color: var(--ek-color-success);
-}
-
-.ek-login-captcha-panel {
-  margin-top: var(--ek-space-4);
-  padding: var(--ek-space-4);
-  background-color: var(--ek-color-surface-muted);
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-lg);
-}
-
-.ek-login-captcha-label {
-  font-size: var(--ek-font-size-xs);
-  font-weight: var(--ek-font-weight-semibold);
-  color: var(--ek-color-content-muted);
-}
-
-.captcha-box {
-  padding: var(--ek-space-1) var(--ek-space-3);
-  letter-spacing: 4px;
-  font-family: var(--ek-font-mono);
-  font-weight: var(--ek-font-weight-bold);
-  color: var(--ek-color-danger);
-  background-color: var(--ek-color-surface);
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-md);
 }
 
 .ek-login-store-panel {
@@ -588,7 +531,13 @@ const handleForgotPassword = async () => {
 }
 
 .consent-links .legal-link {
+  color: var(--ek-color-action);
   text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.consent-links .legal-link:hover {
+  color: var(--ek-color-action-hover);
 }
 
 .ek-login-footer {

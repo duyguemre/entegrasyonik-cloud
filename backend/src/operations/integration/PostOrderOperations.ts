@@ -1,5 +1,6 @@
 import { IClientDB } from "@interfaces/index";
 import { NotificationService } from "@services/notification/NotificationService";
+import { getRequestId } from "@platform/core/context";
 import { StockAllocator } from "@operations/stock/StockAllocator";
 import { deriveDesiredAllocationBucket, AllocationBucket } from "@operations/stock/orderStatusMapping";
 import { IStockAllocationResult } from "@interfaces/stock";
@@ -135,7 +136,7 @@ export class PostOrderOperations {
                     { _id: order._id, 'items.externalLineItemId': item.externalLineItemId },
                     { $set: { 'items.$.allocationState': 'UNMAPPED' } },
                 );
-                await this.notify(clientId, order, item, {
+                await this.notify(clientId, order, item, { code: 'STOCK_UNMAPPED_LINE', withInteg: true, params: {} }, {
                     severity: 'warning',
                     title: 'Stok eşleşmesi bulunamadı',
                     message: `${order.orderNumber || order.externalOrderId} numaralı siparişteki "${item.productName || item.sku || item.barcode || item.externalLineItemId}" kalemi için varyant eşleşmesi bulunamadı; stok tahsisi yapılmadı.`,
@@ -170,7 +171,7 @@ export class PostOrderOperations {
         // mantığı Aşama C'dedir; burada yalnızca YENİ tespit edilen (idempotent tekrar DEĞİL) OVERSOLD için
         // tenant'a anında bildirim gönderilir.
         if (result.state === 'OVERSOLD' && !result.idempotent) {
-            await this.notify(clientId, order, item, {
+            await this.notify(clientId, order, item, { code: 'STOCK_OVERSOLD', withInteg: true, params: {} }, {
                 severity: 'error',
                 title: 'Stok yetersiz (oversell)',
                 message: `${order.orderNumber || order.externalOrderId} numaralı sipariş stok yetersizliğinden OVERSOLD işaretlendi; telafi akışı (Aşama C) devreye girene kadar manuel takip gerekir.`,
@@ -219,29 +220,41 @@ export class PostOrderOperations {
         );
     }
 
+    /** [ADR-0029 NB3] Katalog kodu + params ile `notify`; bayrak kapaliyken eski olay (`legacy`) birebir. */
     private async notify(
         clientId: number,
         order: any,
         item: any,
+        cat: { code: string; params: Record<string, unknown>; withInteg?: boolean },
         payload: { severity: 'warning' | 'error'; title: string; message: string },
     ): Promise<void> {
         try {
-            await NotificationService.sendClientNotification({
-                clientId: String(clientId),
-                notificationData: {
-                    type: 'STOCK_ALERT',
-                    severity: payload.severity,
-                    title: payload.title,
-                    message: payload.message,
-                    metaData: {
-                        integrationCode: order.integrationCode,
-                        externalOrderId: order.externalOrderId,
-                        externalLineItemId: item.externalLineItemId,
-                        sku: item.sku,
-                        barcode: item.barcode,
+            await NotificationService.notify(cat.code, clientId, {
+                ...(cat.withInteg ? { integ: String(order.integrationCode ?? 'unknown') } : {}),
+                lineId: String(item.externalLineItemId),
+                orderId: String(order.externalOrderId),
+                ...(item.sku ? { sku: String(item.sku).slice(0, 80) } : {}),
+                ...cat.params,
+            }, {
+                corrId: getRequestId(),
+                module: 'PostOrderOperations',
+                legacy: { event: {
+                    clientId: String(clientId),
+                    notificationData: {
+                        type: 'STOCK_ALERT',
+                        severity: payload.severity,
+                        title: payload.title,
+                        message: payload.message,
+                        metaData: {
+                            integrationCode: order.integrationCode,
+                            externalOrderId: order.externalOrderId,
+                            externalLineItemId: item.externalLineItemId,
+                            sku: item.sku,
+                            barcode: item.barcode,
+                        },
                     },
-                },
-            } as any);
+                } as any },
+            });
         } catch (error) {
             console.error('[PostOrderOperations] Bildirim gönderilemedi:', error);
         }

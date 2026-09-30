@@ -23,7 +23,7 @@
             <span class="meta-item__value">{{ formatDate(localItem.startedAt) }}</span>
           </div>
           <div class="meta-item">
-            <v-icon size="16" aria-hidden="true">mdi-clock-check</v-icon>
+            <v-icon size="16" aria-hidden="true">mdi-clock-check-outline</v-icon>
             <span class="meta-item__label">Bitiş:</span>
             <span class="meta-item__value">{{ formatDate(localItem.completedAt) }}</span>
           </div>
@@ -71,7 +71,7 @@
 
             <div class="info-item-card info-item-card--info">
               <div class="info-item-card__head">
-                <v-icon color="info" size="small" aria-hidden="true">mdi-check-decagram</v-icon>
+                <v-icon color="info" size="small" aria-hidden="true">mdi-check-decagram-outline</v-icon>
                 <span class="info-item-card__label info-item-card__label--info">Aday Aktarım</span>
                 <v-spacer></v-spacer>
                 <b class="info-item-card__value info-item-card__value--info">{{ localItem.validCount || 0 }}</b>
@@ -98,7 +98,7 @@
             </div>
             <div class="info-item-card info-item-card--danger">
               <div class="info-item-card__head">
-                <v-icon color="error" size="small" aria-hidden="true">mdi-close-octagon</v-icon>
+                <v-icon color="error" size="small" aria-hidden="true">mdi-close-octagon-outline</v-icon>
                 <span class="info-item-card__label info-item-card__label--danger">İşlem Hatası</span>
                 <v-spacer></v-spacer>
                 <b class="info-item-card__value info-item-card__value--danger">{{ localItem.failedCount || 0 }}</b>
@@ -116,7 +116,7 @@
 
       <div v-if="allImpactedCategories.length" class="panel panel--muted mapping-section">
         <div class="mapping-section__head">
-          <v-icon color="error" aria-hidden="true">mdi-tag-off</v-icon>
+          <v-icon color="error" aria-hidden="true">mdi-tag-off-outline</v-icon>
           <h3 class="mapping-section__title">Eksik Eşleştirme Detayları</h3>
         </div>
         <div class="mapping-section__desc">
@@ -230,7 +230,7 @@
       </div>
     </div>
 
-    <EkEmptyState v-else-if="!loading" variant="error" title="Rapor Verilerine Ulaşılamadı"
+    <EkEmptyState v-else-if="!loading" variant="error" title="Rapor verilerine ulaşılamadı"
       message="İşlem raporu henüz hazırlanmamış olabilir veya sunucuyla olan bağlantıda bir sorun yaşanıyor."
       showAction actionText="Yeniden dene" actionIcon="mdi-refresh" @action="getReport()" />
   </div>
@@ -252,11 +252,11 @@ import { useAttributeMappingStore } from '@/stores/site/attributeMapping'
 import DetailedImportLogReportMissingCategory from './DetailedImportLogReportMissingCategory.vue'
 import DetailedImportLogReportMissingAttribute from './DetailedImportLogReportMissingAttribute.vue'
 import PlatformImageComponent from '../platforms/PlatformImageComponent.vue'
-import EkEmptyState from '@/components/ds/EkEmptyState.vue'
-import EkSkeleton from '@/components/ds/EkSkeleton.vue'
-import { formatDateTime } from '@/composables/format'
-import { semanticColorsLight } from '@/design/tokens'
+import { EkEmptyState, EkSkeleton } from '@entegrasyonik/ui/components'
+import { formatDateTime } from '@entegrasyonik/ui/format'
+import { semanticColorsLight } from '@entegrasyonik/ui/tokens'
 import type { StatusTone } from '@/design/status-map'
+import { reportPollInterval } from '@/stores/publicConfig'
 
 use([CanvasRenderer, BarChart, TooltipComponent, GridComponent, LegacyGridContainLabel])
 const activeMenuCatId = ref<string | null>(null);
@@ -277,10 +277,10 @@ const isMounted = ref(false)
 
 const steps = [
   { title: 'Sırada', status: 'WAITING_FOR_FETCH', icon: 'mdi-clock-outline' },
-  { title: 'Ürünler Çekiliyor', status: 'FETCHING', icon: 'mdi-cloud-download-outline' },
+  { title: 'Ürünler Çekiliyor', status: 'FETCHING', icon: 'mdi-download-outline' },
   { title: 'Analiz Ediliyor', status: 'READY_TO_SYNC', icon: 'mdi-file-find-outline' },
-  { title: 'Ürünler Aktarılıyor', status: 'PROCESSING', icon: 'mdi-cached' },
-  { title: 'Tamamlandı', status: 'COMPLETED', icon: 'mdi-check-decagram' }
+  { title: 'Ürünler Aktarılıyor', status: 'PROCESSING', icon: 'mdi-refresh' },
+  { title: 'Tamamlandı', status: 'COMPLETED', icon: 'mdi-check-decagram-outline' }
 ]
 
 
@@ -409,7 +409,7 @@ const getReport = async (isSilent = false) => {
   }
 };
 
-const startPolling = () => { stopPolling(); pollTimer = setTimeout(() => { getReport(true) }, 5000); };
+const startPolling = () => { stopPolling(); pollTimer = setTimeout(() => { getReport(true) }, reportPollInterval()); };
 const stopPolling = () => { if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; } };
 
 const resolveCategoryNames = async () => {

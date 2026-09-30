@@ -3,7 +3,7 @@
     <LoadingComponent v-if="loading" ref="loadingComponentRef" attach=".brand-select-wrapper"></LoadingComponent>
 
     <v-autocomplete v-model="brandId" v-model:search="brandSearchText" :items="computedBrands" item-value="_id"
-      item-title="title" variant="outlined" density="compact" bg-color="textfieldColor" class="customTextField"
+      item-title="title"
       :rules="mandatory ? formRules.mandatoryRule : []" :placeholder="$t('productDefinitions.brand.search')"
       :no-data-text="$t('productDefinitions.brand.nodata')" auto-select-first clearable persistent-hint :menu-props="{
         contentClass: 'brand-autocomplete-menu',
@@ -12,25 +12,22 @@
       }">
 
       <template #label>
-        <div>
-          {{ $t('productDefinitions.brand.name') }}
-          <v-icon v-if="mandatory" size="12" class="mb-2 ml-1">mdi-asterisk</v-icon>
-        </div>
+        {{ $t('productDefinitions.brand.name') }}{{ mandatory ? ' *' : '' }}
       </template>
 
       <template v-slot:selection="{ item }: any">
         <div class="d-flex align-center overflow-hidden">
-          <span class="text-subtitle-2 font-weight-bold text-truncate" style="color: rgb(var(--v-theme-passiveColor))">
+          <span class="text-truncate">
             {{ item.title }}
           </span>
         </div>
       </template>
 
       <template v-slot:item="{ item, props: itemProps }: any">
-        <v-list-item v-bind="itemProps" class="custom-brand-item" title="">
+        <v-list-item v-bind="itemProps" role="option" class="custom-brand-item" title="">
           <div class="d-flex align-center w-100 position-relative">
             <div class="leaf-indicator"></div>
-            <v-icon size="16" class="mr-2" color="grey">
+            <v-icon size="16" class="mr-2" color="content-muted">
               mdi-tag-outline
             </v-icon>
             <div class="brand-title-wrapper d-flex align-center flex-grow-1 overflow-hidden">
@@ -42,10 +39,10 @@
 
       <template v-slot:append-item>
         <v-divider></v-divider>
-        <div class="pa-4 bg-grey-lighten-5">
+        <div class="pa-4 bg-surface-muted">
           <v-form v-model="isNewBrandValid" @submit.prevent="addNewBrand">
             <v-text-field v-model="newBrandName" variant="outlined" density="compact" hide-details="auto"
-              class="bg-white" :placeholder="$t('productDefinitions.brand.title')" :rules="titleRules">
+              :placeholder="$t('productDefinitions.brand.title')" :rules="titleRules">
               <template v-slot:append-inner>
                 <v-btn color="primary" variant="flat" size="small" :disabled="!isNewBrandValid || !newBrandName"
                   @click="addNewBrand">
@@ -153,31 +150,22 @@ onMounted(() => {
 }
 
 .custom-brand-item {
-  border-bottom: 1px solid #f5f5f5 !important;
-  min-height: 40px !important;
+  min-height: var(--ek-control-h-lg) !important;
+  border-bottom: 1px solid var(--ek-color-border-subtle);
 }
 
 .leaf-indicator {
   position: absolute;
-  left: -16px;
-  height: 60%;
+  left: calc(var(--ek-space-4) * -1);
   width: 3px;
-  background-color: #1867C0;
-  border-radius: 0 4px 4px 0;
-  box-shadow: 1px 0 6px rgba(24, 103, 192, 0.4);
+  height: 60%;
+  border-radius: 0 var(--ek-radius-sm) var(--ek-radius-sm) 0;
+  background-color: var(--ek-color-action);
 }
 
 .brand-text {
-  font-weight: 500;
-  color: rgb(var(--v-theme-passiveColor));
-  font-size: 0.85rem;
-}
-
-.custom-brand-item:hover {
-  background-color: #f5f7f9 !important;
-}
-
-:deep(.v-field__input) {
-  font-size: 0.9rem !important;
+  color: var(--ek-color-content-default);
+  font-size: var(--ek-type-body-size);
+  font-weight: var(--ek-type-label-weight);
 }
 </style>

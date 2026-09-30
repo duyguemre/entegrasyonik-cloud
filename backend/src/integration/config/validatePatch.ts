@@ -3,7 +3,7 @@
 // gerçek kataloğa (bugün `type:'host'` ayarı YOK) bağımlı KALMAZ.
 import { getSettingDef as realGetSettingDef } from './catalog';
 import type { SettingDef } from './types';
-import { ENGINE_TARGET } from './targets';
+import { ENGINE_TARGET, PLATFORM_TARGET } from './targets';
 import { assertSafeHostOverride, assertNotRetiredEndpoint, HostGuardError, type RetiredEndpointPatternLike } from './urlGuard';
 
 export interface PatchValidationError {
@@ -28,6 +28,8 @@ export interface ValidatePatchOptions {
 const FORBIDDEN_KEY_SEGMENT = /(^|\.)(password|secret|token|key)($|\.)/i;
 
 function scopeAllowsTarget(scope: SettingDef['scope'], target: string): boolean {
+    if (scope === 'platform') return target === PLATFORM_TARGET; // ADR-0031: yalnız `_platform`
+    if (target === PLATFORM_TARGET) return false; // `_platform` hedefi motor/entegrasyon anahtarı kabul etmez
     if (scope === 'engine') return target === ENGINE_TARGET;
     if (scope === 'integration') return target !== ENGINE_TARGET;
     return true; // 'engine+integration': her iki hedefte de geçerli

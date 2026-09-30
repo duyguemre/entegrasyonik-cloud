@@ -43,35 +43,25 @@
           <v-form @submit.prevent="handleSubmit">
             <v-text-field
               v-model="newPassword"
-              label="Yeni Parola"
+              label="Yeni parola"
               type="password"
               autocomplete="new-password"
               class="mb-2"
             ></v-text-field>
             <v-text-field
               v-model="newPassword2"
-              label="Yeni Parola (Tekrar)"
+              label="Yeni parola (tekrar)"
               type="password"
               autocomplete="new-password"
               class="mb-2"
             ></v-text-field>
 
             <v-expand-transition>
-              <v-alert
-                v-if="errorMessage"
-                type="error"
-                variant="tonal"
-                density="compact"
-                role="alert"
-                aria-live="assertive"
-                class="mb-3 text-caption"
-              >
-                {{ errorMessage }}
-              </v-alert>
+              <EkAlert v-if="errorMessage" tone="error" dense live class="mb-3" :text="errorMessage" />
             </v-expand-transition>
 
             <v-btn block color="primary" height="40" type="submit" :loading="loading">
-              Parolamı Güncelle
+              Parolamı güncelle
             </v-btn>
           </v-form>
 
@@ -87,10 +77,10 @@
 </template>
 
 <script setup lang="ts">
+import { EkAlert, EkEmptyState } from '@entegrasyonik/ui/components'
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AuthShell from '@/components/login/AuthShell.vue'
-import EkEmptyState from '@/components/ds/EkEmptyState.vue'
 import useUser from '@/composables/user'
 
 const route = useRoute()

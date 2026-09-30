@@ -1,100 +1,52 @@
+<!--
+  Marka tanımları sol paneli: arama + yeni marka ekleme + marka listesi.
+  DS-v2 Aşama 2: kart (CardComponent/EkCard dili), alanlar EkFormGrid, satırlar token
+  yüzeyli liste (eski gri kutular/sıra kutusu/literal renkler kaldırıldı); ⚙ düğmesi
+  gerçek düğme + erişilebilir ad. Ekleme/arama/seçim davranışı DEĞİŞMEDİ.
+-->
 <template>
   <div class="brandListComponentView">
     <LoadingComponent attach=".brandDefinition" ref="loadingComponentRef"></LoadingComponent>
 
+    <div class="workarea-scroll ek-brand-list">
+      <CardComponent icon="mdi-tag-multiple-outline" title="Marka Listesi" :isHovered="false">
+        <EkFormGrid :columns="1">
+          <v-text-field append-inner-icon="mdi-magnify" @click.stop type="tel" maxlength="160" clearable counter
+            :rules="formRules.searchRules" v-model="brandSearchText" :label="$t('productDefinitions.brand.search')"
+            :hint="$t('productDefinitions.brand.brandSearchDesc')" />
 
+          <v-form v-model="brandForm" @keydown.enter.prevent @submit.prevent>
+            <v-text-field type="tel" maxlength="160" counter clearable :hint="$t('productDefinitions.brand.brandNameDesc')"
+              v-model="brandName" :rules="titleRules" :label="$t('productDefinitions.brand.title')"
+              @keyup.enter="addBrand({ title: brandName }); brandName = undefined">
+              <template v-slot:append-inner>
+                <EkButton tone="primary" size="sm" icon="mdi-plus" icon-only aria-label="Marka ekle"
+                  :disabled="!brandForm || brandName == undefined"
+                  @click="addBrand({ title: brandName }); brandName = undefined" />
+              </template>
+            </v-text-field>
+          </v-form>
+        </EkFormGrid>
 
-
-    <!--     <div class="workarea-scroll pa-6 pr-2 pt-0 pb-0"
-      style="margin-top:95px;border-right:0px solid #ddd;border-top:1px solid #ddd;"> -->
-    <div class="workarea-scroll pa-6 pr-2 pt-4 pb-0" style="">
-
-      <CardComponent icon="mdi-shape" title="Marka Listesi">
-
-        <v-text-field append-inner-icon="mdi-magnify" @click.stop="1" v-ripple.stop variant="outlined" density="compact"
-          type="tel" maxlength="160" class="ma-4 mb-1 ml-0 mr-0 pr-0 customTextField" clearable counter
-          :rules="formRules.searchRules" v-model="brandSearchText"
-          :hint="$t('productDefinitions.brand.brandSearchDesc')">
-
-          <template v-slot:label>
-            <span class="font-weight-light">{{ $t('productDefinitions.brand.search')
-              }}</span>
+        <ul class="ek-brand-list__items" aria-label="Markalar">
+          <template v-for="(brand, index) of computedBrands" :key="brand._id">
+            <li v-if="!brand.isMain" class="ek-brand-list__item">
+              <span class="ek-brand-list__index ek-num" aria-hidden="true">{{ index }}</span>
+              <v-icon icon="mdi-folder-outline" size="18" class="ek-brand-list__icon" aria-hidden="true" />
+              <span class="ek-brand-list__title">{{ brand.title }}</span>
+              <EkButton tone="ghost" size="sm" icon="mdi-cog-outline" icon-only :aria-label="`${brand.title} ayarları`"
+                @click.stop="openBrandSync(brand)" />
+            </li>
           </template>
-        </v-text-field>
-
-        <v-list density="compact" dense nav v-model:opened="open" activatable open-strategy="single" width="100%"
-          active-strategy="single-independent" class="mt-1"
-          style="background-color:#f8f8f8;border:1px solid #ddd;border-radius:5px;background1:linear-gradient(0deg, #fff 10%, #fafaff 20%, #fafaff 80%, #fff 90%)!important">
-
-          <!--       <v-list density="compact" dense nav v-model:opened="open" activatable open-strategy="single" width="100%"
-        active-strategy="single-independent" style="background-color:#eee"> -->
-
-          <div class="mt-1">
-            <div class="d-flex">
-
-              <v-form v-model="brandForm" style="display:contents" @keydown.enter.prevent @submit.prevent>
-                <v-text-field variant="outlined" density="compact" type="tel" maxlength="160" counter clearable
-                  bg-color="textfieldColor" :hint="$t('productDefinitions.brand.brandNameDesc')" class="customTextField"
-                  v-model="brandName" :rules="titleRules"
-                  @keyup.enter="addBrand({ title: brandName }); brandName = undefined">
-                  <template v-slot:label>
-                    <span class="font-ital1ic font-weight-light">{{ $t('productDefinitions.brand.title') }}</span>
-                  </template>
-                  <template v-slot:append-inner>
-                    <v-btn class="fill-height" size="40" flat min-width=0 density="compact" color="processButtonColor"
-                      :disabled="!brandForm || brandName == undefined"
-                      @click="addBrand({ title: brandName }); brandName = undefined"><span class="">
-                        <v-icon>mdi-plus</v-icon>
-                      </span></v-btn>
-                  </template>
-                </v-text-field>
-              </v-form>
-            </div>
-          </div>
-
-
-          <template v-for="(brand, index) of computedBrands" :style="{'background-color':index%2==0?'#eee':'#fff'}">
-            <div v-if="!brand.isMain"
-              style="position:relative;border:1px solid #bbb;border-bottom-left-radius:2px;border-bottom-right-radius:2px;"
-              class="mb-3 brand-menu" :style="{ 'background-color': index % 2 == 0 ? '#f7f7f7' : '#fbfbfb' }">
-              <v-list-group :value="brand._id" @click="eventBus.emit('pageResize', '')">
-                <template v-slot:activator="{ props, isOpen }">
-
-                  <v-list-item v-bind="props" :prepend-icon="brand.icon" :value="brand._id"
-                    class="pt-0 pb-0  pl-2 mb-0 pr-0  elevation-0 brand-list-item"
-                    style="padding-inline-start: 8px!important">
-                    <template v-slot:prepend="{ isSelected, isActive }">
-                      <div style="border:1px solid black" class="pr-3 pl-3 mr-4" @dragover.prevent> {{ index }}
-                      </div>
-                    </template>
-                    <div class="pt-3 pb-3">
-                      <v-icon style="opacity:.6" class="mr-2">mdi-folder-outline</v-icon>
-                      {{ brand.title }}
-                    </div>
-                    <template v-slot:append="{ isSelected, isActive }">
-                      <v-list-item-action end style="height:100%!important">
-
-                                      <v-icon size="large" @click.stop="openBrandSync(brand)" style="opacity:1;" class="mr-4" btn color="processButtonColor">mdi-cog</v-icon>
-
-
-                      </v-list-item-action>
-                    </template>
-                  </v-list-item>
-                </template>
-              </v-list-group>
-            </div>
-          </template>
-        </v-list>
-
+        </ul>
       </CardComponent>
     </div>
-
-
   </div>
 </template>
 
 <script lang="ts" setup>
 import { computed, inject, ref, onBeforeMount, onBeforeUnmount } from 'vue'
+import { EkButton, EkFormGrid } from '@entegrasyonik/ui/components'
 import useRestApi from '@/composables/restapi'
 import useFormRules from '@/composables/formrules';
 import { useI18n } from 'vue-i18n';
@@ -200,4 +152,60 @@ const update = () => {
 
 </script>
 
-<style scoped></style>
+<style scoped>
+.ek-brand-list {
+  padding: var(--ek-space-4) var(--ek-space-2) 0 var(--ek-space-6);
+}
+
+.ek-brand-list__items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-1);
+  margin: var(--ek-space-4) 0 0;
+  padding: var(--ek-space-1);
+  border: 1px solid var(--ek-color-border-subtle);
+  border-radius: var(--ek-radius-control);
+  background: var(--ek-color-surface-sunken);
+  list-style: none;
+}
+
+.ek-brand-list__items:empty {
+  display: none;
+}
+
+.ek-brand-list__item {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-3);
+  min-height: var(--ek-control-h-lg);
+  padding: var(--ek-space-1) var(--ek-space-1) var(--ek-space-1) var(--ek-space-3);
+  border: 1px solid var(--ek-color-border-subtle);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface);
+  transition: var(--ek-transition-colors);
+}
+
+.ek-brand-list__item:hover {
+  border-color: var(--ek-color-border-default);
+}
+
+.ek-brand-list__index {
+  min-width: var(--ek-space-6);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+}
+
+.ek-brand-list__icon {
+  color: var(--ek-color-content-muted);
+}
+
+.ek-brand-list__title {
+  flex: 1;
+  min-width: 0;
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-body-size);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+</style>

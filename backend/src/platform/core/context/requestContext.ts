@@ -11,6 +11,12 @@ export interface RequestContext {
     userSub?: string;
     /** Örn. "ProductService/get" (RPC) ya da "POST /api/AccountService/login" (özel rota). */
     route?: string;
+    /** [F-06 / BACKOFFICE_PLAN §2.9 LogEvents.source] api | engine | worker | webhook | auth | adapter-{platform}. */
+    source?: string;
+    /** [F-06] İşin/çağrının ait olduğu entegrasyon (adaptör çağrısı içinde `ResilientHttpClient` doldurur). */
+    integrationCode?: string;
+    /** [F-06] Üst düzey işlem adı (örn. "order.sync", "export.Publisher", "GET /orders"). */
+    operation?: string;
 }
 
 const storage = new AsyncLocalStorage<RequestContext>();
@@ -46,4 +52,41 @@ export function enrichContext(patch: Partial<Omit<RequestContext, 'requestId'>>)
 /** Yalnız testler için: verilmiş bağlamla senkron bir bloğu çalıştırır. */
 export function withTestContext<T>(ctx: Partial<RequestContext> & { requestId?: string }, fn: () => T): T {
     return storage.run({ requestId: ctx.requestId ?? 'test-' + crypto.randomUUID(), ...ctx }, fn);
+}
+
+/** [F-06] Motor işleri (scheduler/BullMQ/orkestratör) için yeni correlation id (HTTP `X-Request-Id` biçimini sağlar: 8-64 [A-Za-z0-9_-]). */
+export function newCorrelationId(prefix = 'job'): string {
+    return `${prefix}-${crypto.randomUUID()}`;
+}
+
+/**
+ * [F-06] Bir motor işi için YENİ bağlam açar (iş başına yeni correlation id; `correlationId` verilirse -- örn. kuyruğa
+ * eklerken taşınan id -- aynen kullanılır). Mevcut bağlam (varsa) İÇ İÇE korunmaz: iş kendi izini taşır.
+ */
+export function runWithJobContext<T>(
+    ctx: Omit<RequestContext, 'requestId'> & { correlationId?: string },
+    fn: () => T,
+): T {
+    const { correlationId, ...rest } = ctx;
+    return storage.run({ ...rest, requestId: correlationId ?? newCorrelationId() }, fn);
+}
+
+/**
+ * [F-06] Mevcut bağlamın AYNI correlation id'sini koruyarak alanları (integrationCode/operation/...) geçici olarak
+ * değiştirir (yeni bir kopya ile; dış bağlam bozulmaz). Bağlam yoksa yeni bir bağlam açar.
+ */
+export function withContextPatch<T>(patch: Partial<Omit<RequestContext, 'requestId'>>, fn: () => T): T {
+    const cur = storage.getStore();
+    return storage.run({ ...(cur ?? { requestId: newCorrelationId() }), ...patch }, fn);
+}
+
+export const CORRELATION_HEADER = 'X-Correlation-Id';
+
+/**
+ * [F-06] Giden isteklerde correlation başlığı. YALNIZ KENDİ servislerimize (iç API/worker/MCP) eklenir; PAZARYERİ/üçüncü taraf
+ * isteklerine ASLA eklenmez (`ResilientHttpClient` bu yardımcıyı KULLANMAZ; bir statik test bunu korur). Bağlam yoksa boş nesne.
+ */
+export function correlationHeaders(): Record<string, string> {
+    const id = storage.getStore()?.requestId;
+    return id ? { [CORRELATION_HEADER]: id } : {};
 }

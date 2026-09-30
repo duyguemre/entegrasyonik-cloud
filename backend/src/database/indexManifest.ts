@@ -45,7 +45,10 @@ function normalizeOptions(fields: Record<string, unknown>, options: Record<strin
     return { name, fields, options: kept };
 }
 
-function collectSection(models: Record<string, Model<any>>): ManifestSection {
+/** Şemaya bağlanmamış `*_INDEXES` sabiti beyanı (DB-05): `dev-tools/_indexManifestSource.js` model dosyalarından toplar. */
+type ConstantDecl = { section: 'app' | 'tenant'; collection: string; indexes: ReadonlyArray<{ fields: Record<string, unknown>; options?: Record<string, unknown> }> };
+
+function collectSection(models: Record<string, Model<any>>, constants: ConstantDecl[] = []): ManifestSection {
     const out: ManifestSection = {};
     for (const model of Object.values(models)) {
         const collectionName = model.collection.name;
@@ -53,6 +56,15 @@ function collectSection(models: Record<string, Model<any>>): ManifestSection {
         const entries = declared.map(([fields, options]) => normalizeOptions(fields, options));
         entries.sort((a, b) => a.name.localeCompare(b.name));
         out[collectionName] = entries;
+    }
+    // Sabit beyanları: aynı adlı girdi şemadan zaten geldiyse tekrar eklenmez (Membership/Invitation hem sabit hem schema.index).
+    for (const decl of constants) {
+        const entries = out[decl.collection] || (out[decl.collection] = []);
+        for (const i of decl.indexes) {
+            const e = normalizeOptions({ ...i.fields }, i.options ? { ...i.options } : undefined);
+            if (!entries.some((x) => x.name === e.name)) entries.push(e);
+        }
+        entries.sort((a, b) => a.name.localeCompare(b.name));
     }
     return out;
 }
@@ -66,12 +78,13 @@ export function buildIndexManifest(
     appFactory: SchemaFactory,
     tenantFactory: SchemaFactory,
     createConnection: () => Connection = () => mongoose.createConnection(),
+    indexConstants: ConstantDecl[] = [],
 ): IndexManifest {
     const appConn = createConnection();
     const tenantConn = createConnection();
     // Bağlantılar hiç açılmadı (openUri çağrılmadı); yalnız şema kaydı için kullanıldı.
     return {
-        app: collectSection(appFactory(appConn)),
-        tenant: collectSection(tenantFactory(tenantConn)),
+        app: collectSection(appFactory(appConn), indexConstants.filter((c) => c.section === 'app')),
+        tenant: collectSection(tenantFactory(tenantConn), indexConstants.filter((c) => c.section === 'tenant')),
     };
 }

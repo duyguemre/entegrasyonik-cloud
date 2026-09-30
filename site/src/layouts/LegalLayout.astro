@@ -7,9 +7,20 @@
  * - İnceleme notları (`note` blokları) yalnızca SITE_DRAFT=true iken görünür
  * - Yazdırma stili: üst/alt bilgi ve gezinme gizlenir, metin sayfa genişliğine yayılır
  * Girdi yalnızca repodaki veri dosyalarıdır (src/data/legal/*); satır içi işaretleme src/lib/legal-render.ts'te kaçırılarak dönüştürülür.
+ *
+ * S17 premium belge düzeni (içerik/yer tutucu çözümlemesi DEĞİŞMEDİ — yalnızca iskelet ve stil):
+ * - Koyu kompakt hero (ortak `PageHero`: ekmek kırıntısı + tek h1 + özet) ve cam "Belge bilgileri" paneli (sürüm,
+ *   son güncelleme, durum, bölüm sayısı); TASLAK bandı metin sütununun en üstünde, belirgin uyarı kartı.
+ * - Bölüm numaraları: başlıktaki "N. " öneki rozet olarak çizilir (metin aynen kalır; ekran okuyucu aynı başlığı okur).
+ * - Yapışkan içindekiler (≥1024) + okunan bölüm vurgusu (`src/scripts/legal-toc.ts`, IntersectionObserver; JS'siz
+ *   hâlde sıradan bağlantı listesi). "Yazdır" düğmesi yalnızca JS ile görünür.
+ * - Yazdırma: hero sade siyah-beyaz, gezinme/içindekiler/ilgili belgeler gizli, bağlantı adresleri yazılır.
  */
 import BaseLayout from './BaseLayout.astro'
+import { crumbsFor } from '../data/seo'
 import Container from '../components/Container.astro'
+import PageHero from '../components/pages/PageHero.astro'
+import Icon from '../components/home/Icon.astro'
 import { siteConfig } from '../lib/site-config'
 import { renderInline, pendingPlaceholderKeys } from '../lib/legal-render'
 import { placeholders } from '../data/legal/placeholders'
@@ -25,6 +36,12 @@ const showBanner = !LEGAL_REVIEWED
 const showNotes = siteConfig.draft
 const keys = pendingPlaceholderKeys(doc)
 const related = legalDocs.filter((d) => d.slug !== doc.slug)
+const crumbs = crumbsFor(legalHref(doc.slug))
+/** "3. Başlık" -> { num: '3', text: 'Başlık' } — numara yoksa yalnızca metin. */
+const splitNum = (title: string) => {
+  const m = title.match(/^(\d+)\.\s+(.*)$/)
+  return m ? { num: m[1], text: m[2] } : { num: '', text: title }
+}
 const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR', {
   timeZone: 'UTC',
   day: 'numeric',
@@ -33,24 +50,15 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
 })
 ---
 
-<BaseLayout title={doc.title} description={doc.description} noindex={!LEGAL_REVIEWED}>
-  <article class="legal" data-testid="legal-page" data-slug={doc.slug} aria-labelledby="legal-title">
-    <Container>
-      <header class="legal-head">
-        {
-          showBanner && (
-            <div class="legal-draft" role="note" data-testid="legal-draft-banner">
-              <strong>{LEGAL_DRAFT_BANNER}</strong>
-              <span>
-                Bu metin hukuki incelemeden geçmemiştir; yayımlanmış bir sözleşme veya hukuki görüş değildir. Metindeki
-                vurgulu, çerçeveli alanlar yer tutucudur ve doldurulmayı bekliyor.
-              </span>
-            </div>
-          )
-        }
-        <p class="legal-eyebrow">Yasal</p>
-        <h1 id="legal-title">{doc.title}</h1>
-        <p class="legal-summary">{doc.summary}</p>
+<BaseLayout path={legalHref(doc.slug)}>
+  <article class="legal" data-testid="legal-page" data-slug={doc.slug} aria-labelledby="page-title">
+    <PageHero title={doc.title} eyebrow="Yasal" lead={doc.summary} crumbs={crumbs}>
+      <button type="button" class="legal-print" data-legal-print hidden>
+        <Icon name="receipt" size="sm" />
+        Yazdır
+      </button>
+      <Fragment slot="visual">
+        <p class="legal-panel__tag">Belge bilgileri</p>
         <dl class="legal-meta">
           <div>
             <dt>Sürüm</dt>
@@ -60,24 +68,58 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
             <dt>Son güncelleme</dt>
             <dd><time datetime={doc.updatedAt}>{updated}</time></dd>
           </div>
+          <div>
+            <dt>Durum</dt>
+            <dd>{showBanner ? 'Taslak, hukuki inceleme bekliyor' : 'Yayında'}</dd>
+          </div>
+          <div>
+            <dt>Bölüm</dt>
+            <dd>{doc.sections.length}</dd>
+          </div>
         </dl>
-      </header>
+      </Fragment>
+    </PageHero>
+
+    <Container>
+      {
+        showBanner && (
+          <div class="legal-draft" role="note" data-testid="legal-draft-banner">
+            <span class="legal-draft__icon" aria-hidden="true"><Icon name="info" size="md" /></span>
+            <div>
+              <strong>{LEGAL_DRAFT_BANNER}</strong>
+              <span>
+                Bu metin hukuki incelemeden geçmemiştir; yayımlanmış bir sözleşme veya hukuki görüş değildir. Metindeki
+                vurgulu, çerçeveli alanlar yer tutucudur ve doldurulmayı bekliyor.
+              </span>
+            </div>
+          </div>
+        )
+      }
 
       <div class="legal-grid">
         <nav class="legal-toc" aria-labelledby="legal-toc-title" data-testid="legal-toc">
           <h2 id="legal-toc-title" class="legal-toc__title">İçindekiler</h2>
           <ul class="legal-toc__list">
             {
-              doc.sections.map((section) => (
-                <li>
-                  <a href={`#${section.id}`}>{section.title}</a>
-                </li>
-              ))
+              doc.sections.map((section) => {
+                const t = splitNum(section.title)
+                return (
+                  <li>
+                    <a href={`#${section.id}`} data-toc-link={section.id}>
+                      {t.num && <span class="legal-toc__num" aria-hidden="true">{t.num}</span>}
+                      <span class="legal-toc__text">{t.num && <span class="sr-only">{t.num}. </span>}{t.text}</span>
+                    </a>
+                  </li>
+                )
+              })
             }
             {
               keys.length > 0 && (
                 <li>
-                  <a href="#doldurulacak-alanlar">Doldurulması gereken alanlar</a>
+                  <a href="#doldurulacak-alanlar" data-toc-link="doldurulacak-alanlar">
+                    <span class="legal-toc__num legal-toc__num--ph" aria-hidden="true"><Icon name="info" size="sm" /></span>
+                    <span class="legal-toc__text">Doldurulması gereken alanlar</span>
+                  </a>
                 </li>
               )
             }
@@ -89,7 +131,10 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
             {
               doc.sections.map((section) => (
                 <section id={section.id} aria-labelledby={`${section.id}-title`} class="legal-section">
-                  <h2 id={`${section.id}-title`}>{section.title}</h2>
+                  <h2 id={`${section.id}-title`}>
+                    {splitNum(section.title).num && <span class="legal-num" aria-hidden="true">{splitNum(section.title).num}</span>}
+                    <span>{splitNum(section.title).num && <span class="sr-only">{splitNum(section.title).num}. </span>}{splitNum(section.title).text}</span>
+                  </h2>
                   {section.blocks.map((block) => {
                     switch (block.type) {
                       case 'p':
@@ -181,15 +226,20 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
 
           <nav class="legal-related" aria-labelledby="legal-related-title" data-testid="legal-related">
             <h2 id="legal-related-title">İlgili yasal belgeler</h2>
-            <ul>
+            <ul role="list">
               {
                 related.map((d) => (
                   <li>
-                    <a href={legalHref(d.slug)}>{d.title}</a>
+                    <a href={legalHref(d.slug)}>
+                      <Icon name="book" size="sm" />
+                      <span>{d.title}</span>
+                      <Icon name="arrow" size="sm" />
+                    </a>
                   </li>
                 ))
               }
             </ul>
+            <a class="legal-top" href="#page-title">Başa dön</a>
           </nav>
         </div>
       </div>
@@ -197,69 +247,102 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
   </article>
 </BaseLayout>
 
+<script>
+  import '../scripts/legal-toc'
+</script>
+
 <style>
-  .legal {
+  .legal > :global(.container) {
     padding-block: var(--ek-space-10) var(--site-section-y);
   }
 
-  /* --- Başlık bloğu --- */
-  .legal-head {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-3);
-    max-width: var(--site-container-narrow);
-    margin-bottom: var(--ek-space-10);
+  /* --- Hero: yazdır düğmesi (yalnızca JS) ve cam belge bilgileri paneli --- */
+  .legal-print {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    min-height: var(--site-tap-target);
+    padding-inline: var(--ek-space-4);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-lg);
+    background: var(--site-glass-bg);
+    color: var(--site-color-on-primary);
+    font: inherit;
+    font-weight: var(--ek-font-weight-semibold);
+    cursor: pointer;
+    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
   }
-  .legal-draft {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-1);
-    padding: var(--ek-space-4) var(--ek-space-5);
-    margin-bottom: var(--ek-space-4);
-    background: var(--ek-color-warning-subtle);
-    border: var(--site-border-width) solid var(--ek-color-border-strong);
-    border-inline-start-width: var(--ek-space-1);
-    border-radius: var(--ek-radius-md);
-    color: var(--ek-color-content-strong);
-    font-size: var(--ek-font-size-lg);
+  .legal-print[hidden] {
+    display: none;
   }
-  .legal-draft strong {
-    font-weight: var(--ek-font-weight-bold);
+  .legal-print:hover {
+    border-color: var(--site-color-on-primary-muted);
   }
-  .legal-eyebrow {
-    color: var(--ek-color-content-muted);
-    font-size: var(--ek-font-size-md);
+  .legal-print:focus-visible {
+    outline-color: var(--site-color-on-primary);
+  }
+  .legal-panel__tag {
+    margin: 0 0 var(--ek-space-3);
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
-  .legal-head h1 {
-    font-size: var(--site-font-display-sm);
-    font-weight: var(--site-font-display-weight);
-    line-height: var(--site-font-display-line-height);
-    letter-spacing: var(--site-font-display-tracking);
-  }
-  .legal-summary {
-    color: var(--ek-color-content-default);
-    font-size: var(--ek-font-size-xl);
-  }
   .legal-meta {
     display: flex;
-    flex-wrap: wrap;
-    gap: var(--ek-space-2) var(--ek-space-8);
-    margin: var(--ek-space-2) 0 0;
-    color: var(--ek-color-content-muted);
-    font-size: var(--ek-font-size-md);
-  }
-  .legal-meta dt {
-    font-weight: var(--ek-font-weight-semibold);
-  }
-  .legal-meta dd {
+    flex-direction: column;
     margin: 0;
   }
   .legal-meta div {
     display: flex;
-    gap: var(--ek-space-2);
+    justify-content: space-between;
+    gap: var(--ek-space-4);
+    padding-block: var(--ek-space-3);
+  }
+  .legal-meta div + div {
+    border-top: var(--site-border-width) solid var(--site-glass-border);
+  }
+  .legal-meta dt {
+    color: var(--site-text-on-dark-body);
+    font-size: var(--ek-font-size-sm);
+  }
+  .legal-meta dd {
+    margin: 0;
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+  }
+
+  /* --- TASLAK bandı --- */
+  .legal-draft {
+    display: flex;
+    gap: var(--ek-space-4);
+    align-items: flex-start;
+    margin-bottom: var(--ek-space-10);
+    padding: var(--ek-space-5) var(--ek-space-6);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-warning) 55%, var(--ek-color-border-default));
+    border-radius: var(--site-radius-panel);
+    background: var(--ek-color-warning-subtle);
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-md);
+    line-height: var(--site-font-body-line-height);
+  }
+  .legal-draft__icon {
+    display: inline-flex;
+    flex: none;
+    color: var(--ek-color-warning);
+  }
+  .legal-draft div {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+  }
+  .legal-draft strong {
+    font-size: var(--ek-font-size-lg);
+    font-weight: var(--ek-font-weight-bold);
   }
 
   /* --- Izgara: içindekiler + metin --- */
@@ -270,33 +353,75 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
   }
   .legal-toc {
     padding: var(--ek-space-5);
-    background: var(--ek-color-surface-muted);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-lg);
+    border-radius: var(--site-radius-panel);
+    background: var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
   }
   .legal-toc__title {
     margin-bottom: var(--ek-space-3);
-    font-size: var(--ek-font-size-md);
-    letter-spacing: 0.06em;
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.08em;
     text-transform: uppercase;
   }
   .legal-toc__list {
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
   .legal-toc__list a {
-    display: inline-flex;
-    align-items: center;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ek-space-3);
     min-height: var(--site-tap-target);
-    color: var(--ek-color-content-default);
-    font-size: var(--ek-font-size-lg);
+    padding: var(--ek-space-2);
+    border-radius: var(--ek-radius-md);
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-md);
+    line-height: var(--ek-line-height-tight);
     text-decoration: none;
-    transition: color var(--ek-duration-fast) var(--ek-easing-standard);
+    transition:
+      background-color var(--ek-duration-fast) var(--ek-easing-standard),
+      color var(--ek-duration-fast) var(--ek-easing-standard);
   }
   .legal-toc__list a:hover {
-    color: var(--site-color-link);
-    text-decoration: underline;
+    background: var(--ek-color-surface-muted);
+    color: var(--site-text-heading);
+  }
+  .legal-toc__list a[aria-current='true'] {
+    background: color-mix(in srgb, var(--ek-color-secondary) 10%, var(--ek-color-surface));
+    color: var(--site-text-heading);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .legal-toc__num {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--ek-space-6);
+    height: var(--ek-space-6);
+    border-radius: var(--ek-radius-sm);
+    background: var(--ek-color-surface-muted);
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-bold);
+    font-variant-numeric: tabular-nums;
+  }
+  .legal-toc__num--ph {
+    background: var(--ek-color-warning-subtle);
+    color: var(--ek-color-warning);
+  }
+  .legal-toc__list a[aria-current='true'] .legal-toc__num:not(.legal-toc__num--ph) {
+    background: var(--ek-color-secondary-darken-1);
+    color: var(--site-color-on-primary);
+  }
+  .legal-toc__text {
+    padding-top: calc(var(--ek-space-1) * 0.5);
   }
 
   /* --- Metin --- */
@@ -310,25 +435,63 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-10);
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-lg);
+    line-height: var(--site-font-body-line-height);
+  }
+  .legal-body > .legal-section + .legal-section {
+    padding-top: var(--ek-space-10);
+    border-top: var(--site-border-width) solid var(--ek-color-border-default);
   }
   .legal-section {
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-4);
+    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
   }
-  .legal-section h2,
+  .legal-section > :global(p) {
+    max-width: var(--site-measure);
+  }
+  .legal-section h2 {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ek-space-3);
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-2xl);
+    font-weight: var(--ek-font-weight-bold);
+    letter-spacing: -0.01em;
+    line-height: var(--ek-line-height-tight);
+  }
+  .legal-num {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--ek-space-8);
+    height: var(--ek-space-8);
+    border-radius: var(--ek-radius-md);
+    background: linear-gradient(140deg, var(--ek-color-primary), var(--ek-color-primary-darken-1));
+    color: var(--site-color-on-primary);
+    font-size: var(--ek-font-size-md);
+    font-variant-numeric: tabular-nums;
+  }
   .legal-fields h2,
   .legal-related h2 {
-    font-size: var(--ek-font-size-2xl);
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-xl);
+    font-weight: var(--ek-font-weight-bold);
     line-height: var(--ek-line-height-tight);
   }
   .legal-section h3 {
     margin-top: var(--ek-space-2);
+    color: var(--site-text-heading);
     font-size: var(--ek-font-size-xl);
   }
   .legal-body :global(a),
   .legal-fields :global(a) {
     color: var(--site-color-link);
+    font-weight: var(--ek-font-weight-medium);
+    text-underline-offset: 0.2em;
   }
   .legal-body :global(strong) {
     color: var(--ek-color-content-strong);
@@ -338,28 +501,38 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-2);
-    padding-inline-start: var(--ek-space-6);
     max-width: var(--site-measure);
+    margin: 0;
+    padding-inline-start: var(--ek-space-6);
   }
   .legal-list > li {
     list-style: disc;
     padding-inline-start: var(--ek-space-1);
   }
+  .legal-list > li::marker {
+    color: var(--ek-color-secondary-darken-1);
+  }
   .legal-list--ordered > li {
     list-style: decimal;
+  }
+  .legal-list--ordered > li::marker {
+    font-weight: var(--ek-font-weight-semibold);
   }
 
   /* --- Tablo --- */
   .legal-table-wrap {
+    position: relative;
     overflow-x: auto;
     border: var(--site-border-width) solid var(--ek-color-border-default);
     border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
   }
   .legal-table {
     width: 100%;
     min-width: calc(var(--site-container-narrow) * 0.75);
     border-collapse: collapse;
-    font-size: var(--ek-font-size-lg);
+    font-size: var(--ek-font-size-md);
   }
   .legal-table--wide {
     min-width: calc(var(--site-container-narrow) * 1.25);
@@ -375,11 +548,16 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
   .legal-table th:first-child,
   .legal-table td:first-child {
     min-width: calc(var(--ek-space-16) * 2);
+    color: var(--site-text-heading);
+    font-weight: var(--ek-font-weight-medium);
   }
   .legal-table thead th {
     background: var(--ek-color-surface-muted);
-    color: var(--ek-color-content-strong);
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
   }
   .legal-table tbody tr:last-child td {
     border-bottom: 0;
@@ -399,13 +577,14 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-1);
+    max-width: var(--site-measure);
     padding: var(--ek-space-4) var(--ek-space-5);
     background: var(--ek-color-info-subtle);
     border: var(--site-border-width) solid var(--ek-color-border-default);
     border-inline-start: var(--ek-space-1) solid var(--ek-color-info);
     border-radius: var(--ek-radius-md);
     color: var(--ek-color-content-strong);
-    font-size: var(--ek-font-size-lg);
+    font-size: var(--ek-font-size-md);
   }
   .review-note strong {
     font-weight: var(--ek-font-weight-semibold);
@@ -417,42 +596,43 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
     flex-direction: column;
     gap: var(--ek-space-4);
     padding: var(--ek-space-6);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-warning) 40%, var(--ek-color-border-default));
+    border-radius: var(--site-radius-panel);
     background: var(--ek-color-surface-muted);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-xl);
+    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
+  }
+  .legal-fields > p {
+    max-width: var(--site-measure);
+    color: var(--site-text-body);
   }
   .legal-fields__list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-4);
+    display: grid;
+    gap: var(--ek-space-3);
     margin: 0;
   }
   .legal-fields__item {
     display: flex;
     flex-direction: column;
-    gap: var(--ek-space-1);
-    padding-bottom: var(--ek-space-4);
-    border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
-  }
-  .legal-fields__item:last-child {
-    padding-bottom: 0;
-    border-bottom: 0;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-4);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface);
   }
   .legal-fields__item dt {
-    font-size: var(--ek-font-size-lg);
+    font-size: var(--ek-font-size-md);
   }
   .legal-fields__item dd {
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-1);
     margin: 0;
-    max-width: var(--site-measure);
-    color: var(--ek-color-content-default);
-    font-size: var(--ek-font-size-lg);
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-md);
   }
   .legal-fields__owner {
-    color: var(--ek-color-content-muted);
-    font-size: var(--ek-font-size-md);
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-sm);
     font-weight: var(--ek-font-weight-medium);
   }
 
@@ -460,29 +640,67 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
   .legal-related {
     display: flex;
     flex-direction: column;
-    gap: var(--ek-space-3);
+    gap: var(--ek-space-4);
   }
   .legal-related ul {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ek-space-1) var(--ek-space-6);
+    display: grid;
+    gap: var(--ek-space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
   .legal-related a {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-3);
+    min-height: var(--site-tap-target);
+    height: 100%;
+    padding: var(--ek-space-3) var(--ek-space-4);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface);
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-medium);
+    text-decoration: none;
+    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .legal-related a:hover {
+    border-color: var(--ek-color-secondary-darken-1);
+  }
+  .legal-related a span {
+    flex: 1;
+  }
+  .legal-related a :global(.icon) {
+    flex: none;
+    color: var(--site-link-accent);
+  }
+  .legal-top {
+    align-self: flex-start;
     display: inline-flex;
     align-items: center;
     min-height: var(--site-tap-target);
-    font-size: var(--ek-font-size-lg);
+    color: var(--site-link-accent);
+    font-weight: var(--ek-font-weight-semibold);
   }
 
+  @media (min-width: 768px) {
+    .legal-related ul,
+    .legal-fields__list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
   @media (min-width: 1024px) {
     .legal-grid {
-      grid-template-columns: calc(var(--site-container-narrow) / 3) minmax(0, 1fr);
+      grid-template-columns: minmax(0, 18rem) minmax(0, 1fr);
       gap: var(--ek-space-12);
       align-items: start;
     }
     .legal-toc {
       position: sticky;
       top: calc(var(--site-header-height) + var(--ek-space-6));
+      max-height: calc(100dvh - var(--site-header-height) - var(--ek-space-12));
+      overflow-y: auto;
     }
   }
 
@@ -495,19 +713,63 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
     :global(.draft-banner),
     :global(.site-header),
     :global(.site-footer),
+    .legal :global(.breadcrumb),
+    .legal-print,
     .legal-toc,
     .legal-related {
       display: none !important;
     }
-    .legal {
-      padding-block: 0;
+    /* Koyu hero kağıtta sade: zemin/doku yok, siyah metin, panel çerçevesiz. */
+    .legal :global(.page-hero) {
+      padding-block: 0 !important;
+      background: none !important;
+      color: var(--ek-color-content-strong);
+    }
+    .legal :global(.page-hero::before),
+    .legal :global(.page-hero::after) {
+      display: none !important;
+    }
+    .legal :global(.page-hero h1),
+    .legal :global(.page-hero p),
+    .legal-panel__tag,
+    .legal-meta dt,
+    .legal-meta dd {
+      color: var(--ek-color-content-strong) !important;
+    }
+    .legal :global(.page-hero__visual) {
+      padding: 0 !important;
+      border: 0 !important;
+      background: none !important;
+      box-shadow: none !important;
+      backdrop-filter: none !important;
+      transform: none !important;
+    }
+    .legal :global(.page-hero__grid) {
+      display: block !important;
+      margin-top: 0 !important;
+    }
+    .legal > :global(.container) {
+      padding-block: var(--ek-space-4) 0;
+    }
+    .legal-panel__tag {
+      display: none;
+    }
+    .legal-meta {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: var(--ek-space-1) var(--ek-space-6);
+    }
+    .legal-meta div,
+    .legal-meta div + div {
+      gap: var(--ek-space-2);
+      padding: 0;
+      border: 0;
     }
     .legal-grid {
       display: block;
     }
-    .legal-head,
     .legal-list,
-    .legal-fields__item dd {
+    .legal-section > :global(p) {
       max-width: none;
     }
     .legal-section,
@@ -520,8 +782,14 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
     .legal-section h3 {
       break-after: avoid;
     }
+    .legal-num {
+      background: none;
+      color: var(--ek-color-content-strong);
+      border: var(--site-border-width) solid var(--ek-color-content-strong);
+    }
     .legal-table-wrap {
       overflow: visible;
+      box-shadow: none;
     }
     .legal-table {
       min-width: 0;

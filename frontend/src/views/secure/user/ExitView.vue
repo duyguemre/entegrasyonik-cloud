@@ -23,7 +23,7 @@
 import { onBeforeMount } from 'vue';
 import useRestApi from '@/composables/restapi';
 import { useRouter } from 'vue-router'
-import EkPageHeader from '@/components/ds/EkPageHeader.vue'
+import EkPageHeader from '@/components/page/EkPageHeader.vue'
 const router = useRouter()
 
 const restApi = useRestApi()

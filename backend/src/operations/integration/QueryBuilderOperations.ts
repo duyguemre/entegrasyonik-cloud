@@ -1,3 +1,4 @@
+import { stagedLogPush } from './stagedLogs';
 /**
  * QueryBuilderOperations: Veritabanı toplu güncelleme (Bulk Update) işlemlerinde 
  * kullanılan standart sorgu objelerini hazırlayan yardımcı sınıf.
@@ -159,7 +160,7 @@ export class QueryBuilderOperations {
                 filter: { _id: entryId },
                 update: {
                     $set: setFields,
-                    $push: { logs: logEntry }
+                    $push: { logs: stagedLogPush(logEntry) } // [DB-04] son 20 giriş
                 }
             }
         };

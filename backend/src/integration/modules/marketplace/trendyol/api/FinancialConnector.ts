@@ -1,4 +1,10 @@
 import Service from '../services/Service';
+import { observeResponseSchema } from '@integration/modules/common/contract/observeResponseSchema';
+import { TRENDYOL_SETTLEMENTS_LIST, TRENDYOL_OTHERFINANCIALS_LIST } from '../contracts/finance.settlements';
+import { TRENDYOL_FINANCE_GROUP, TRENDYOL_STOREFRONT_CODE } from '../limits';
+
+/** [COM-03] Finans uclari: kendi servis grubu kovasi (100/dk) + zorunlu storeFrontCode basligi. */
+const FINANCE_CALL_OPTS = { group: TRENDYOL_FINANCE_GROUP, headers: { storeFrontCode: TRENDYOL_STOREFRONT_CODE } } as const;
 
 export class FinancialConnector {
     constructor(private service: Service, private params: any) { }
@@ -10,7 +16,8 @@ export class FinancialConnector {
         const baseUrl = this.getFormattedUrl('financeSettlementsUrl');
         const queryParams = this.prepareQueryParams(query);
 
-        const response = await this.service.get(baseUrl, queryParams);
+        const response = await this.service.get(baseUrl, queryParams, FINANCE_CALL_OPTS);
+        observeResponseSchema(TRENDYOL_SETTLEMENTS_LIST, response?.data, { clientId: this.params.clientId });
         return response?.data;
     }
 
@@ -21,7 +28,8 @@ export class FinancialConnector {
         const baseUrl = this.getFormattedUrl('financeOtherFinancialsUrl');
         const queryParams = this.prepareQueryParams(query);
 
-        const response = await this.service.get(baseUrl, queryParams);
+        const response = await this.service.get(baseUrl, queryParams, FINANCE_CALL_OPTS);
+        observeResponseSchema(TRENDYOL_OTHERFINANCIALS_LIST, response?.data, { clientId: this.params.clientId });
         return response?.data;
     }
 
@@ -39,7 +47,8 @@ export class FinancialConnector {
             size: 1000
         };
 
-        const response = await this.service.get(baseUrl, queryParams);
+        const response = await this.service.get(baseUrl, queryParams, FINANCE_CALL_OPTS);
+        observeResponseSchema(TRENDYOL_SETTLEMENTS_LIST, response?.data, { clientId: this.params.clientId });
         return response?.data;
     }
 
@@ -54,7 +63,8 @@ export class FinancialConnector {
             size: 1000
         };
 
-        const response = await this.service.get(baseUrl, queryParams);
+        const response = await this.service.get(baseUrl, queryParams, FINANCE_CALL_OPTS);
+        observeResponseSchema(TRENDYOL_SETTLEMENTS_LIST, response?.data, { clientId: this.params.clientId });
         return response?.data;
     }
 

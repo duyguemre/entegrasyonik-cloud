@@ -135,9 +135,20 @@ export class OrderMapper {
     public toInternalOrderPackagesFromRest(rawResponse: any): IOrderPackage[] {
         const content = Array.isArray(rawResponse?.content) ? rawResponse.content : [];
 
-        const toDate = (epochMs: unknown): Date | undefined => {
-            const n = Number(epochMs);
-            return Number.isFinite(n) && n > 0 ? new Date(n) : undefined;
+        // Birincil doküman: epoch ms. İkincil kaynak (DOĞRULANAMADI): yanıt tarihi 'DD-MM-YYYY HH:MM:SS' (GMT+3).
+        // Çözülemeyen değer undefined kalır (tarih uydurulmaz).
+        const toDate = (value: unknown): Date | undefined => {
+            const n = Number(value);
+            if (Number.isFinite(n) && n > 0) return new Date(n);
+            if (typeof value === 'string') {
+                const m = /^(\d{2})-(\d{2})-(\d{4})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/.exec(value.trim());
+                if (m) {
+                    const [, dd, mm, yyyy, hh = '00', mi = '00', ss = '00'] = m;
+                    const t = Date.parse(`${yyyy}-${mm}-${dd}T${hh}:${mi}:${ss}+03:00`);
+                    return Number.isFinite(t) ? new Date(t) : undefined;
+                }
+            }
+            return undefined;
         };
 
         return content.filter((o: any) => o && o.orderNumber).map((o: any) => {

@@ -21,7 +21,7 @@ const N11Descriptor: IntegrationDescriptor = {
         products: {
             level: 'supported',
             methods: ['streamProducts', 'transferProducts', 'updateProduct', 'updateProductVariant', 'updateProductDelivery', 'updateProductStatuses', 'checkBatchProduct'],
-            note: 'Ürün aktarımı ve güncelleme toplu görev akışıyla (ms/product/tasks) yapılır.',
+            note: 'Ürün aktarımı ve güncelleme toplu görev akışıyla (ms/product/tasks) yapılır. Ürün listesi tüm sayfalar dolaşılarak akıtılır (sayfa başına 100; tavan 1000 sayfa / 100.000 kayıt, aşılırsa ya da sayfa tekrar ederse akış FAILED olur, sessiz kesilmez); sayfa parametre adları canlı API ile doğrulanmadı.',
             evidence: ['marketplace/n11/index.ts transferProducts'],
         },
         stockPrice: {
@@ -31,9 +31,9 @@ const N11Descriptor: IntegrationDescriptor = {
             evidence: ['marketplace/n11/index.ts updateProductStock'],
         },
         orders: {
-            level: 'limited',
+            level: 'supported',
             methods: ['retrieveOrders'],
-            note: 'Siparişler önce REST (`rest/delivery/v1/shipmentPackages`), UNAVAILABLE/NOT_SUPPORTED olursa SOAP\'a düşerek çekilir; çekim tek sayfa ile sınırlıdır.',
+            note: 'Siparişler önce REST (`rest/delivery/v1/shipmentPackages`) ile sayfalı çekilir (sayfa başına 100; tavan 50 sayfa / 5.000 kayıt, aşılırsa ya da sayfa tekrar ederse sonuç "eksik" işaretlenir ve son başarılı senkron zamanı ilerlemez). REST UNAVAILABLE/NOT_SUPPORTED olursa ya da yanıt biçimi beklenmedikse SOAP yedeğine düşülür; SOAP yolu sayfalanmaz. Kimliksiz kayıt atlanır; tamamı kimliksizse VALIDATION (şema kayması).',
             evidence: ['marketplace/n11/services/OrderService.ts fetchOrders'],
         },
         // orderActions BİLİNÇLİ olarak not_supported: approveOrder VE rejectOrder ikisi de gerçek bir SOAP/REST
@@ -63,6 +63,12 @@ const N11Descriptor: IntegrationDescriptor = {
             note: 'Hakediş görünümü kısmidir; ilk sayfa ile sınırlıdır. Ödeme emri sorgusu (retrieveSettlementsByPaymentId) daima boş dizi döner.',
             evidence: ['marketplace/n11/index.ts retrieveFinancials'],
         },
+        categories: {
+            level: 'supported',
+            methods: ['retrieveCategories', 'retrieveCategoryAttributes', 'retrieveCategoryAttributeValues'],
+            note: 'Kategori ağacı (CDN), nitelikler (REST) ve nitelik değerleri (SOAP) alınır. Marka ve komisyon bilgisi sağlanmaz (boş/undefined döner).',
+            evidence: ['marketplace/n11/index.ts retrieveCategories'],
+        },
         shippingNotice: {
             level: 'limited',
             methods: ['sendOrderShipping'],
@@ -80,6 +86,7 @@ const N11Descriptor: IntegrationDescriptor = {
         'Sipariş onaylama ve reddetme bu sürümde desteklenmez; işlem NOT_SUPPORTED hatası olarak bildirilir.',
         'İade, soru ve hakediş listeleri ilk sayfa ile sınırlıdır.',
         'Marka bilgisi ve ödeme emri sorgusu sağlanmıyor.',
+        'Sipariş sayfalaması (currentPage/pageSize/totalElements) ve ürün sorgusu sayfa alanları canlı API ile doğrulanmadı; SOAP yedek yolu sayfalanmaz.',
         'SOAP servislerinin (ProductSellingService/ProductStockService dahil) gelecekteki kapanış takvimi doğrulanamadı (BACKLOG P2).',
     ],
     rateLimits: {
@@ -87,8 +94,8 @@ const N11Descriptor: IntegrationDescriptor = {
             perMinute: 1000,
             source: 'docs/research/2026-09-28-integration-deadlines-scan.md §3 (REST sipariş/fiyat-stok servisi resmi limiti)',
         },
-        // ResilientHttpClient politikası ile eşitlik: n11/services/Service.ts sharedPolicy (maxConcurrent:10, ratePerMin:1000, timeoutMs env||30000);
-        // n11-soap AYNI politika değerleriyle AYRI bir ResilientHttpClient örneğidir (breaker izolasyonu için, bkz. Service.ts yorum).
+        // ResilientHttpClient politikası ile eşitlik: ortak AdapterHttpService tabanı (katalog: maxConcurrent:10, ratePerMin:1000, timeoutMs env||30000);
+        // n11-soap AYNI politika değerleriyle AYRI bir ResilientHttpClient örneğidir (breaker izolasyonu için, bkz. n11/services/Service.ts yorum).
         configured: { maxConcurrent: 10, ratePerMin: 1000, timeoutMs: 30000 },
         verified: false,
     },

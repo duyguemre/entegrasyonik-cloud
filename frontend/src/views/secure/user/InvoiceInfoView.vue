@@ -4,7 +4,7 @@
   ADR-0015 B5-3 — GÖRSEL KATMAN, mantık DEĞİŞMEDİ (bkz. e2e/specs/user-account-forms.spec.ts).
   Karakterizasyon: hiçbir alanda `v-model` YOKTU (tamamen durumsuz/inert form), `buttons` script'te
   tanımlı ama template'te HİÇ KULLANILMIYORDU (kaydet düğmesi render edilmiyor) — AYNEN korunuyor,
-  YENİ bir v-model/kaydet düğmesi EKLENMEDİ. Eski `style="width:48%"` / `style="width:4%"` inline
+  YENİ bir v-model/kaydet düğmesi EKLENMEDİ. Eski `width:48%` / `width:4%` inline
   2-sütun hack'i DS grid'iyle değiştirildi. `.invoiceInfoView` kök sınıfı yeni eklendi (kardeş
   ekranlarla aynı isimlendirme kuralı; davranışı ETKİLEMEZ).
 
@@ -27,29 +27,29 @@
 
       <div class="ek-static-screen__grid">
         <div class="ek-static-screen__col">
-          <v-text-field clearable prepend-inner-icon="mdi-account-outline" density="comfortable"
+          <v-text-field clearable prepend-inner-icon="mdi-account-outline"
             :label="$t('user.invoiceInfo.name')" variant="outlined"></v-text-field>
-          <v-text-field clearable prepend-inner-icon="mdi-account-outline" density="comfortable"
+          <v-text-field clearable prepend-inner-icon="mdi-account-outline"
             :label="$t('user.invoiceInfo.surname')" variant="outlined"></v-text-field>
-          <v-text-field clearable prepend-inner-icon="mdi-card-account-details-outline" density="comfortable"
+          <v-text-field clearable prepend-inner-icon="mdi-card-account-details-outline"
             :label="$t('user.invoiceInfo.tc')" variant="outlined"></v-text-field>
-          <v-text-field clearable prepend-inner-icon="mdi-domain" density="comfortable"
+          <v-text-field clearable prepend-inner-icon="mdi-domain"
             :label="$t('user.invoiceInfo.company')" variant="outlined"></v-text-field>
           <div class="ek-static-screen__row">
-            <v-text-field clearable prepend-inner-icon="mdi-bank-outline" density="comfortable"
+            <v-text-field clearable prepend-inner-icon="mdi-bank-outline"
               :label="$t('user.invoiceInfo.taxissuer')" variant="outlined"></v-text-field>
-            <v-text-field clearable prepend-inner-icon="mdi-pound" density="comfortable"
+            <v-text-field clearable prepend-inner-icon="mdi-pound"
               :label="$t('user.invoiceInfo.taxid')" variant="outlined"></v-text-field>
           </div>
         </div>
 
         <div class="ek-static-screen__col">
-          <v-textarea rows="3" clearable prepend-inner-icon="mdi-map-marker-outline" density="comfortable"
+          <v-textarea rows="3" clearable prepend-inner-icon="mdi-map-marker-outline"
             :label="$t('user.invoiceInfo.address')" variant="outlined"></v-textarea>
           <div class="ek-static-screen__row">
-            <v-select clearable prepend-inner-icon="mdi-city-variant-outline" density="comfortable"
+            <v-select clearable prepend-inner-icon="mdi-city-variant-outline"
               :label="$t('user.invoiceInfo.state')" variant="outlined"></v-select>
-            <v-select clearable prepend-inner-icon="mdi-map-marker-radius-outline" density="comfortable"
+            <v-select clearable prepend-inner-icon="mdi-map-marker-radius-outline"
               :label="$t('user.invoiceInfo.district')" variant="outlined"></v-select>
           </div>
         </div>
@@ -60,16 +60,16 @@
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import EkPageHeader from '@/components/ds/EkPageHeader.vue'
-import EkSection from '@/components/ds/EkSection.vue'
+import EkPageHeader from '@/components/page/EkPageHeader.vue'
+import { EkSection } from '@entegrasyonik/ui/components'
 
 const { t } = useI18n()
 
 var buttons = [
 {
   title: t("user.invoiceInfo.save"),
-  icon: 'mdi-note-edit-outline',
-  color: 'saveButtonColor',
+  icon: 'mdi-pencil-outline',
+  color: 'primary',
   to: '',
 },
 ]

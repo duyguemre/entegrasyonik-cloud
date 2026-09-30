@@ -2,13 +2,18 @@ import { IClaimRejectParams, IPlatformResponse } from '@interfaces/index';
 import Service from '../services/Service';
 import { fromHttpError } from '@integration/modules/common/IntegrationError';
 import { integrationCode } from '../constants';
+import { paginatePage } from './paginatePage';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('adapter-pazarama', 'ClaimConnector');
 
 export class ClaimConnector {
     constructor(private service: Service, private params: any) { }
 
-    public async fetchClaimsFromPlatform(query?: any): Promise<any> {
+    /** Tüm iade sayfalarını dolaşır (bkz. paginatePage) ve ham iade kayıtlarının DİZİSİNİ döner (tavanda `markIncomplete` işaretli). */
+    public async fetchClaimsFromPlatform(query?: any): Promise<any[]> {
         const baseUrl = this.params.integrationSettings?.urls?.claimListUrl || 'order/getRefund';
-        
+
         const formatDate = (date: any) => {
             if (!date) return undefined;
             if (typeof date === 'string') return date;
@@ -16,22 +21,27 @@ export class ClaimConnector {
             return d.toISOString().replace('T', ' ').substring(0, 19);
         };
 
-        // Pazarama expects POST with pagination and filters
-        const payload = {
-            pageNumber: query?.page || 1,
-            pageSize: query?.size || 100,
-            refundStatus: query?.status,
-            requestStartDate: formatDate(query?.startDate),
-            requestEndDate: formatDate(query?.endDate),
-            ...query
-        };
+        return paginatePage(async (page, limit) => {
+            // Pazarama expects POST with pagination and filters
+            const payload = {
+                refundStatus: query?.status,
+                requestStartDate: formatDate(query?.startDate),
+                requestEndDate: formatDate(query?.endDate),
+                ...query,
+                pageNumber: page,
+                pageSize: limit,
+            };
 
-        // [ADR-0006 1f] POST kullanır ama semantik olarak iade listesi sorgusudur (okuma) -> idempotent:true.
-        const response = await this.service.post(baseUrl, payload, { idempotent: true, operation: 'fetchClaimsFromPlatform' });
-
-        console.log(`[PazaramaClaimConnector] URL: ${baseUrl} | Payload: ${JSON.stringify(payload)} | Received: ${response?.data?.data?.refundList?.length || 0} claims`);
-
-        return response?.data;
+            // [ADR-0006 1f] POST kullanır ama semantik olarak iade listesi sorgusudur (okuma) -> idempotent:true.
+            const response = await this.service.post(baseUrl, payload, { idempotent: true, operation: 'fetchClaimsFromPlatform' });
+            const body = response?.data;
+            const list = body?.data?.refundList || body?.refundList || (Array.isArray(body) ? body : []);
+            log.info('CLAIMCONNECTOR_URL_PAYLOAD_RECEIVED_CLAIMS', `Pazarama iade listesi alindi: ${list?.length || 0} kayit`);
+            return Array.isArray(list) ? list : [];
+        }, {
+            operation: 'fetchClaimsFromPlatform', clientId: this.params.clientId,
+            startPage: Number(query?.pageNumber ?? query?.page) || 1, limit: Number(query?.pageSize ?? query?.size) || undefined,
+        });
     }
 
     public async approveClaim(externalClaimId: string, params?: any): Promise<IPlatformResponse> {

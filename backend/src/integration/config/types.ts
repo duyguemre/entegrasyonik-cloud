@@ -15,7 +15,7 @@ export type SettingApplies = 'immediate' | 'next_cycle' | 'restart';
 
 /** Ayar tipi (ADR Karar 2.1). Aşama A kataloğu yalnız `int|duration|bool|enum` kullanır; `host/pathTemplate` Aşama
  *  A'da (descriptor.ts'e `config` alanı eklenemediği için, bkz. rapor) MODELLENMEZ — bkz. `legacyIntegrationRecord.ts`. */
-export type SettingType = 'int' | 'duration' | 'bool' | 'enum' | 'host' | 'pathTemplate' | 'stringList' | 'text';
+export type SettingType = 'int' | 'duration' | 'bool' | 'enum' | 'host' | 'pathTemplate' | 'stringList' | 'text' | 'decimal';
 
 /** UI bölümü (ADR Karar 2.3 tablosu — motor ayarları ekranının sekmeleri, Aşama C). */
 export type SettingGroup =
@@ -28,9 +28,16 @@ export type SettingGroup =
     | 'endpoints'          // "Uç noktalar"
     | 'mock'                // "Mock / gerçek mod"
     | 'status'               // "Durum ve kapsam"
-    | 'cache';                // "Önbellek"
+    | 'cache'                // "Önbellek"
+    // ADR-0031: `_platform` hedefi (Sistem ayarları ekranı)
+    | 'platform.support'
+    | 'platform.announcement'
+    | 'platform.maintenance'
+    | 'platform.features'
+    | 'platform.ui';
 
-export type SettingScope = 'engine' | 'integration' | 'engine+integration';
+/** `platform` (ADR-0031): YALNIZ `_platform` hedefinde geçerli; `_engine`/entegrasyon çözümlemesinde görünmez. */
+export type SettingScope = 'engine' | 'integration' | 'engine+integration' | 'platform';
 
 export type ValueSource = 'default' | 'legacy' | 'platform' | 'tenant' | 'env';
 
@@ -69,6 +76,8 @@ export interface SettingDef<T = unknown> {
     deprecated?: { since: string; replacement?: string };
     /** Aşama A envanter notu: JSON/kod fallback çelişkisi varsa (K10) buraya yazılır — kataloğa yalnız BİLGİ olarak girer, davranışı değiştirmez. */
     knownDriftNote?: string;
+    /** ADR-0031: 'public' ise `GET /api/public-config` bu anahtarı kimliksiz döner. Varsayılan (tanımsız) = yöneticiye özel. */
+    exposure?: 'public';
 }
 
 export interface ResolvedSetting<T = unknown> {
@@ -80,10 +89,3 @@ export interface ResolvedSetting<T = unknown> {
     /** `source==='platform'`ise yayındaki revizyon numarası (Aşama A'da her zaman undefined). */
     revision?: number;
 }
-
-/** `SettingDef.schema` için ortak kurucular (ADR Karar 2.1 alan tipleri). Tümü STRICT: aralık dışı değer reddedilir. */
-export const settingSchemas = {
-    intRange: (min: number, max: number) => z.number().int().min(min).max(max),
-    boolean: () => z.boolean(),
-    enumOf: <V extends readonly [string, ...string[]]>(values: V) => z.enum(values),
-} as const;

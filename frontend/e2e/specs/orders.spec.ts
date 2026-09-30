@@ -2,7 +2,7 @@
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { installApiMocks, mockError } from '../fixtures/mockApi'
-import { ordersBosFixture, ordersDoluFixture } from '../fixtures/apiData'
+import { buildOrder, ordersBosFixture, ordersDoluFixture } from '../fixtures/apiData'
 import { gotoAuthed, openScreen } from '../fixtures/nav'
 
 // NOT: `v-data-table-server` yalnızca `$vuetify.display.mdAndUp` (Vuetify varsayılanı: >=960px)
@@ -24,25 +24,25 @@ test.describe('P1 — Siparişler (OrderListView)', () => {
     await expect(page.getByText('E2E-100002')).toBeVisible()
   })
 
-  test('boş durum: sonuç yoksa "Sipariş Bulunamadı" kartı gösterilir', async ({ page }) => {
+  test('boş durum: sonuç yoksa "Sipariş bulunamadı" kartı gösterilir', async ({ page }) => {
     await installApiMocks(page, { 'OrderService/getOrders': ordersBosFixture })
     await gotoAuthed(page)
     await openScreen(page, 'OrderListView')
 
-    await expect(page.getByText('Sipariş Bulunamadı')).toBeVisible()
+    await expect(page.getByText('Sipariş bulunamadı')).toBeVisible()
   })
 
-  test('hata durumu: 500 alındığında da aynı "Sipariş Bulunamadı" boş-durumuna düşülür, ham hata sızmaz (gizli davranış — bkz. BACKLOG.md)', async ({ page }) => {
-    // GİZLİ DAVRANIŞ (characterization, düzeltilmedi — BACKLOG.md): getOrders() `if (res.orders)`
-    // şartı sağlanmadığında listeyi güncellemiyor ama `loading` her koşulda `finally` içinde false
-    // oluyor; kullanıcı "hata" ile "gerçekten sipariş yok" durumunu AYIRT EDEMİYOR — ikisi de aynı
-    // boş-durum kartını gösteriyor.
+  test('hata durumu: 500 alındığında "Siparişler yüklenemedi" + Tekrar dene gösterilir (boştan AYRI), ham hata sızmaz', async ({ page }) => {
+    // DS-v2 Aşama 2 (liste standardı) — BİLİNÇLİ DAVRANIŞ DEĞİŞİKLİĞİ: eskiden `restApi.post` hatayı
+    // axios hata nesnesiyle ÇÖZDÜĞÜ için liste "Sipariş bulunamadı" boş durumuna düşüyordu (hata ≠ boş
+    // ayırt edilemiyordu, BACKLOG). Artık `isRequestError` ile hata ayrı gösterilir; API çağrısı AYNI.
     await installApiMocks(page, { 'OrderService/getOrders': mockError(500) })
     await gotoAuthed(page)
     await openScreen(page, 'OrderListView')
 
-    await expect(page.getByText('Sipariş Bulunamadı')).toBeVisible()
-    await expect(page.locator('body')).not.toContainText('500')
+    await expect(page.getByText('Siparişler yüklenemedi')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Tekrar dene' })).toBeVisible()
+    await expect(page.locator('.orderListView')).not.toContainText('500')
   })
 
   test('etkileşim: göz ikonuna tıklayınca sipariş detayı açılır', async ({ page }, testInfo) => {
@@ -78,10 +78,8 @@ test.describe('P1 — Siparişler (OrderListView)', () => {
     const results = await new AxeBuilder({ page }).include('.orderListView').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
     await testInfo.attach('axe-OrderListView-sonuclari.json', { body: JSON.stringify(results.violations, null, 2), contentType: 'application/json' })
     console.log(`[axe] OrderListView: ${results.violations.length} WCAG 2.1 AA ihlali`)
-    // A-yaması gerekli (bkz. customers.spec.ts aynı not) — EkDataTable role=table + nested <table>.
-    const knownDsIssues = new Set(['aria-required-children'])
-    const ownViolations = results.violations.filter(v => !knownDsIssues.has(v.id))
-    expect(ownViolations, JSON.stringify(ownViolations, null, 2)).toEqual([])
+    // DS-v2 Aşama 2: liste EkDataGrid'e (yerel <table>) taşındı — eski `aria-required-children` istisnası kalktı.
+    expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([])
   })
 })
 
@@ -117,5 +115,38 @@ test.describe('P1 — Sipariş Detayı (OrderDetailComponent)', () => {
     const knownDsIssues = new Set(['aria-required-children', 'color-contrast', 'scrollable-region-focusable'])
     const ownViolations = results.violations.filter(v => !knownDsIssues.has(v.id))
     expect(ownViolations, JSON.stringify(ownViolations, null, 2)).toEqual([])
+  })
+})
+
+test.describe('C1.1 — Sipariş detayında stok tahsis zaman çizgisi', () => {
+  test.beforeEach(async ({}, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium-desktop', 'Detay, masaüstü tablodaki göz ikonuyla açılıyor (mdAndUp/>=960px)')
+  })
+
+  test('tahsis durumu olan kalemler detayda durum çipi ve zaman kaydıyla listelenir', async ({ page }) => {
+    const order = buildOrder({
+      items: [
+        { externalLineItemId: 'L1', sku: 'SKU-E2E-0001', productName: 'E2E Test Ürünü', quantity: 2, allocationState: 'OVERSOLD', lastAllocationAppliedAt: '2026-09-20T10:16:00.000Z', oversoldEscalatedAt: '2026-09-20T10:30:00.000Z' },
+        { externalLineItemId: 'L2', sku: 'SKU-E2E-0002', productName: 'E2E İkinci Ürün', quantity: 1, allocationState: 'RESERVED', lastAllocationAppliedAt: '2026-09-20T10:16:00.000Z' },
+      ],
+    })
+    await installApiMocks(page, { 'OrderService/getOrders': { orders: [order], totalNumberOfRecords: 1 } })
+    await gotoAuthed(page)
+    await openScreen(page, 'OrderListView')
+    await page.locator('.orderListView tbody tr').first().locator('button:has(.mdi-eye)').click()
+    const timeline = page.getByRole('region', { name: 'Stok tahsisi' })
+    await expect(timeline).toBeVisible()
+    await expect(timeline).toContainText('Aşırı satış')
+    await expect(timeline).toContainText('Rezerve')
+    await expect(timeline).toContainText('Aşırı satış için manuel işlem bildirildi')
+  })
+
+  test('tahsis durumu olmayan (eski) siparişte bölüm görünmez', async ({ page }) => {
+    await installApiMocks(page, { 'OrderService/getOrders': ordersDoluFixture })
+    await gotoAuthed(page)
+    await openScreen(page, 'OrderListView')
+    await page.locator('.orderListView tbody tr').first().locator('button:has(.mdi-eye)').click()
+    await expect(page.getByRole('dialog').filter({ hasText: 'E2E-100001' })).toBeVisible()
+    await expect(page.getByRole('region', { name: 'Stok tahsisi' })).toHaveCount(0)
   })
 })

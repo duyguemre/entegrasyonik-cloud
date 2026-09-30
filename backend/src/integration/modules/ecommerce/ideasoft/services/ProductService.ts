@@ -4,9 +4,23 @@ import {
     IValidationResult, IVariant, IBatchCheckPayload, PLATFORM_PROCESS
 } from '@interfaces/index';
 import { integrationCode } from '../constants';
+import { IntegrationError } from '@integration/modules/common/IntegrationError';
 import { ProductTransformer } from '../transformers/ProductTransformer';
 import { CategoryService } from './CategoryService';
 import Service from './Service';
+import { paginate } from '@integration/modules/common/adapter/paginate';
+import { getIncomplete } from '@integration/contracts/IncompleteFetch';
+import { maxPages } from './paging';
+import { observeResponseSchema } from '@integration/modules/common/contract/observeResponseSchema';
+import { IDEASOFT_PRODUCTS_LIST } from '../contracts';
+
+/**
+ * [DB-09 / ADR-0032 H1] Kanal dış kimliği tek anahtar `mapping` altında YAZILIR. Okuma geriye dönük olarak eski
+ * `mappings` adını da tanır (eski kayıtlar için; göç/rename yok, yeni yazımda `mapping` kazanır).
+ */
+export const platformProductId = (channelState: any): string | undefined =>
+    channelState?.mapping?.productId ?? channelState?.mappings?.productId;
+
 
 export class ProductService {
     private transformer: ProductTransformer;
@@ -82,7 +96,7 @@ export class ProductService {
         const transferUrl = urls.transferUrl || 'products';
 
         if (hasVariant) {
-            let parentProductId = product?.platforms?.[integrationCode]?.mappings?.productId;
+            let parentProductId = platformProductId(product?.platforms?.[integrationCode]);
             if (!parentProductId) {
                 const productPayload = this.transformer.buildIdeasoftProduct({
                     ...product,
@@ -113,14 +127,14 @@ export class ProductService {
     }
 
     private async doUpdateStock(variant: IVariant, urls: any): Promise<void> {
-        const productId = (variant as any).platforms?.[integrationCode]?.mappings?.productId;
+        const productId = platformProductId((variant as any).platforms?.[integrationCode]);
         if (!productId) throw new Error('Ürün ID bulunamadı');
         const updateUrl = (urls.updateUrl || 'products/<PRODUCTID>').replace('<PRODUCTID>', productId);
         await this.service.put(updateUrl, { stockAmount: Number((variant as any).stock || 0) });
     }
 
     private async doUpdatePrice(variant: IVariant, urls: any): Promise<void> {
-        const productId = (variant as any).platforms?.[integrationCode]?.mappings?.productId;
+        const productId = platformProductId((variant as any).platforms?.[integrationCode]);
         if (!productId) throw new Error('Ürün ID bulunamadı');
         const salePrice = (variant as any).platforms?.[integrationCode]?.prices?.salePrice
             || (variant as any).prices?.salePrice || 0;
@@ -129,7 +143,7 @@ export class ProductService {
     }
 
     private async doUpdate(variant: IVariant, settings: any, urls: any): Promise<void> {
-        const productId = (variant as any).platforms?.[integrationCode]?.mappings?.productId;
+        const productId = platformProductId((variant as any).platforms?.[integrationCode]);
         if (!productId) throw new Error('Ürün ID bulunamadı');
         const [catId, brandId] = await Promise.all([
             this.params.mappingProvider.getPlatformCategoryId((variant as any).product?.category),
@@ -146,7 +160,7 @@ export class ProductService {
         if (!clientDB || !variantId) return;
         await clientDB.getVariantModel().updateOne(
             { _id: variantId },
-            { $set: { [`platforms.${integrationCode}.mappings.productId`]: platformId } }
+            { $set: { [`platforms.${integrationCode}.mapping.productId`]: platformId } }
         );
     }
 
@@ -155,7 +169,7 @@ export class ProductService {
         if (!clientDB || !productId) return;
         await clientDB.getProductModel().updateOne(
             { _id: productId },
-            { $set: { [`platforms.${integrationCode}.mappings.productId`]: platformId } }
+            { $set: { [`platforms.${integrationCode}.mapping.productId`]: platformId } }
         );
     }
 
@@ -168,30 +182,39 @@ export class ProductService {
         const maxConcurrent = 5;
         let currentPage = 1;
         let totalProcessed = 0;
+        let round = 0;
 
         const urls = this.params.integrationSettings?.urls || {};
         const productListUrl = urls.productListUrl || 'products';
 
         try {
-            while (true) {
+            // [INT-05] Ortak paginate, akış kipi: 5 sayfalık TUR = bir "sayfa" (cursor kipi: tüm tur boşalana dek sürer; sayfa boyutu
+            // varsayımı yok). Callback eskisi gibi SAYFA BAŞINA, tur içinde sırayla çağrılır; kayıtlar bellekte toplanmaz (collect:false).
+            const rest = await paginate<any>(async () => {
+                if (round++ > 0) await new Promise(r => setTimeout(r, 1000)); // turlar arası 1 sn (hız sınırı koruması)
                 const batchRequests = Array.from({ length: maxConcurrent }, () => {
                     const url = `${productListUrl}?limit=${pageLimit}&page=${currentPage++}`;
-                    return this.service.get(url).then((r: any) => r?.data || []);
+                    return this.service.get(url).then((r: any) => { observeResponseSchema(IDEASOFT_PRODUCTS_LIST, r?.data, { clientId: this.params.clientId }); return r?.data || []; }); // F-09 (C7a): yalnız gözlem
                 });
-
                 const results = await Promise.all(batchRequests);
-                let anyData = false;
-
-                for (const items of results) {
-                    if (Array.isArray(items) && items.length > 0) {
-                        anyData = true;
-                        await callback(items);
-                        totalProcessed += items.length;
-                    }
+                const filled = results.filter((items: any) => Array.isArray(items) && items.length > 0);
+                for (const items of filled) {
+                    await callback(items);
+                    totalProcessed += items.length;
                 }
+                return { items: filled.flat(), next: round };
+            }, {
+                kind: 'cursor', maxPages: maxPages(), operation: 'streamProducts', integrationCode,
+                clientId: this.params.clientId || 'UnknownClient', collect: false,
+            });
 
-                if (!anyData) break;
-                await new Promise(r => setTimeout(r, 1000));
+            // Tavan/tekrar eden sayfa: eski davranışta tekrar COMPLETED, tavan FAILED idi; artık İKİSİ de eksik veri olduğundan FAILED (sessiz kesme yok).
+            const incomplete = getIncomplete(rest);
+            if (incomplete) {
+                return {
+                    totalElements: totalProcessed, totalProcessed, totalPages: currentPage - 1, status: 'FAILED',
+                    error: `Ideasoft ürün akışı tamamlanamadı (${incomplete.reason}); ${totalProcessed} kayıt işlendi.`,
+                };
             }
 
             return { totalElements: totalProcessed, totalProcessed, totalPages: currentPage - 1, status: 'COMPLETED' };
@@ -242,8 +265,11 @@ export class ProductService {
         };
     }
 
+    /** [faz4-conf-fix C8b, playbook §4.3] Batch kavramı yok (yazmalar senkron/yok): `undefined` yalnız "sonuçlanmadı" içindir => NOT_SUPPORTED. */
     public async checkBatchProduct(payload: IBatchCheckPayload): Promise<IInternalResult[] | undefined> {
-        return undefined;
+        throw new IntegrationError('NOT_SUPPORTED', 'checkBatchProduct bu entegrasyon için desteklenmiyor (batch kavramı yok)', {
+            integrationCode, operation: 'checkBatchProduct', clientId: this.params?.clientId || 'UnknownClient',
+        });
     }
 
     /**
@@ -256,6 +282,7 @@ export class ProductService {
         const urls = this.params.integrationSettings?.urls || {};
         const productListUrl = urls.productListUrl || 'products';
         const response = await this.service.get(productListUrl, { limit: 100, page: 1 });
+        observeResponseSchema(IDEASOFT_PRODUCTS_LIST, response.data, { clientId: this.params.clientId }); // F-09 (C7a)
         const items = Array.isArray(response.data) ? response.data : (response.data?.data || []);
         return this.transformer.toInternalStatusResult(items);
     }

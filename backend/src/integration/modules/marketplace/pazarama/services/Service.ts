@@ -1,86 +1,73 @@
-import { AxiosResponse } from 'axios';
-import { ResilientHttpClient } from '@integration/modules/common/http/ResilientHttpClient';
+import type { AxiosResponse } from 'axios';
+import { ADAPTER_KEYS } from '@integration/modules/adapterKeys';
+import { AdapterHttpService, type AuthConfig, type CallOpts } from '@integration/modules/common/adapter/AdapterHttpService';
+import { OAuthTokenCache } from '@integration/modules/common/adapter/OAuthTokenCache';
 import { IntegrationError, fromHttpError } from '@integration/modules/common/IntegrationError';
 import { integrationCode } from '../constants';
-import { readMockConfig, assertEndpointMockable, assertMockSafeUrl } from '@integration/modules/common/mock/MockMode';
-import { getSetting } from '@integration/config/ConfigResolver';
 
-// ADR-0006 Karar 1: p-limit/özel retry/backoff mantığı kaldırıldı; tüm HTTP çağrıları paylaşımlı
-// ResilientHttpClient üzerinden geçer (retry/backoff/circuit breaker/timeout/AbortController/metrik).
-// [ADR-0006 adım 1] ÖNCEKİ DAVRANIŞ (429'da manuel exponential backoff, 401'de sınırsız kendi kendine
-// retry) artık YOK; bkz. tests/characterization/common/Pazarama.resilience.contract.test.ts.
-//
-// BULGU (1f): Pazarama'nın resmi rate limit/eşzamanlılık bilgisi doğrulanamadı (panel/PDF 403 döndü).
-// maxConcurrent önceki pLimit(11) değeri korunmuştur; ratePerMin BİLİNMEDİĞİ için ayarlanmamıştır
-// (limiter devre dışı, yalnızca eşzamanlılık/circuit breaker/timeout korumaları aktif). Canlıya
-// geçmeden panel dokümanından teyit edilmeli (BACKLOG'a not düşülmüştür).
-export default class Service {
-    private clientId: string;
-    private http: ResilientHttpClient;
-    private accessToken: string | null = null;
-    private tokenExpiresAt: number = 0;
+// ADR-0033 INT-05: Pazarama Service, ortak `AdapterHttpService` + `OAuthTokenCache` tabanına geçti (ResilientHttpClient kurulumu,
+// mock/gerçek URL çözümleme ve get/post/put/delete sarmalayıcıları tabandan; token önbelleği single-flight). Davranış karakterizasyonla
+// birebir (tests/characterization/common/Pazarama.service.characterization.test.ts + MockMode.failOpen + Pazarama.resilience.contract):
+//   - ADR-0006/0020: timeout PAZARAMA_HTTP_TIMEOUT_MS || katalog (30sn), maxConcurrent 11; `ratePerMin` BİLİNÇLİ ayarlanmamış (resmi limit
+//     doğrulanamadı, panel/PDF 403; katalogda 0 = sınırsız) — canlıya geçmeden panel dokümanından teyit edilmeli.
+//   - okuma idempotent:true; POST/PUT idempotent:false (5xx/timeout'ta retry YOK => UNKNOWN_OUTCOME); sorgu amaçlı POST'lar çağıranda
+//     `idempotent:true` ile işaretlenir (connector'lar).
+//   - [BACKLOG C19] mock AÇIKKEN yalnız PAZARAMA_MOCKABLE_ENDPOINTS listesindeki uçlar çağrılabilir (enforceMockableEndpoints) ve mutlak
+//     Pazarama adresleri mock tabanına çevrilir; çevrilemeyen yabancı host fail-closed.
+// BİLİNÇLİ DÜZELTMELER (INT-05): (1) token istek gövdesi URLSearchParams ile KODLANIR (ham birleştirme `&`/`=` içeren sırrı bozuyordu);
+// (2) eşzamanlı çağrılar TEK token isteği paylaşır (single-flight); (3) token ucunun varsayılan mock portu (6011) ADAPTER_KEYS'teki
+// tek değere (3006) bağlandı.
+// Platforma özgü kalan: OAuth2 client_credentials token alımı, Bearer+User-Agent başlığı ve 401 -> token yenile -> BİR KEZ tekrar ("auth hook";
+// ortak tabanda jenerik hook yok, adaptör seviyesinde kalır).
+const KEY = ADAPTER_KEYS.find(k => k.code === 'pazarama')!;
+const DEFAULT_TOKEN_URL = 'https://isortagimgiris.pazarama.com/connect/token';
+
+export default class Service extends AdapterHttpService {
+    protected readonly mockHostPattern = /https:\/\/(isortagim|isortagimapi)\.pazarama\.com(\/api|\/apigateway)?/g;
+    protected readonly enforceMockableEndpoints = true;
+    private readonly tokens = new OAuthTokenCache(() => this.fetchToken());
 
     public static getInstance(integrationParameters: any): Service {
         return new Service(integrationParameters);
     }
 
-    constructor(private params: any) {
-        this.clientId = params.clientId || "UnknownClient";
-        this.http = new ResilientHttpClient(integrationCode, this.clientId, {
-            // PAZARAMA_HTTP_TIMEOUT_MS: SADECE TEST/operasyonel ayar amaçlı; verilmezse ADR-0020 kataloğu (30sn).
-            // [ADR-0020 Aşama A] Kaynak: integrationHttp.ts `resilience.timeoutMs` (pazarama=30000).
-            timeoutMs: Number(process.env.PAZARAMA_HTTP_TIMEOUT_MS) || getSetting<number>('resilience.timeoutMs', { integrationCode: 'pazarama' }),
-            // [ADR-0020 Aşama A] Kaynak: `resilience.maxConcurrent` (pazarama=11). önceki pLimit(11) değeri korunuyor.
-            maxConcurrent: getSetting<number>('resilience.maxConcurrent', { integrationCode: 'pazarama' }),
-            // ratePerMin: BİLİNÇLİ OLARAK AYARLANMADI (bkz. yukarıdaki BULGU notu — resmi rate limit
-            // doğrulanamadı; katalogda `_` yedeği 0/"tanımsız" olsa da bu ADR-0020 Aşama A görevi
-            // BİLİNÇLİ OLARAK bu alanı kataloğa köprülemedi, ta ki resmi değer doğrulanana kadar).
-        });
+    constructor(params: any) {
+        super(KEY, params);
     }
 
-    private getTokenUrl(): string {
-        const mock = readMockConfig('PAZARAMA', 'http://localhost:6011/apigateway');
-        const isMockActive = mock.enabled;
-        const mockBaseUrl = mock.baseUrl;
-        let tokenUrl = this.params.integrationSettings.urls?.tokenUrl || "https://isortagimgiris.pazarama.com/connect/token";
-
-        if (isMockActive) {
+    private tokenUrl(): string {
+        const mock = this.mockConfig();
+        if (mock.enabled) {
             // Mock base URL genellikle /apigateway ile biter, token ise root altındadır
-            const rootUrl = mockBaseUrl.split('/apigateway')[0];
-            tokenUrl = `${rootUrl}/connect/token`;
+            return `${mock.baseUrl.split('/apigateway')[0]}/connect/token`;
         }
-        return tokenUrl;
+        return this.params.integrationSettings?.urls?.tokenUrl || DEFAULT_TOKEN_URL;
     }
 
     /**
-     * OAuth2 Token Alır. Token isteği de paylaşımlı dayanıklılık katmanından geçer (ADR-0006 Karar 1:
-     * "tüm dış çağrılar" istisnasız). Yan etkisiz/tekrarı güvenli olduğu için idempotent (okuma) sayılır.
+     * OAuth2 token alır (OAuthTokenCache'in getirici işlevi). Token isteği de paylaşımlı dayanıklılık katmanından geçer (ADR-0006 Karar 1:
+     * "tüm dış çağrılar" istisnasız); yan etkisiz/tekrarı güvenli olduğu için idempotent (okuma) sayılır.
      */
-    public async getAccessToken(forceRefresh = false): Promise<string> {
-        // Token geçerliyse (5 dk pay bırakarak) mevcut olanı dön
-        if (!forceRefresh && this.accessToken && Date.now() < this.tokenExpiresAt - 300000) {
-            return this.accessToken;
-        }
-
-        const { APIKEY, APISECRET } = this.params.integrationSettings.settings;
-        const tokenUrl = this.getTokenUrl();
-
+    private async fetchToken(): Promise<{ token: string; expiresInSec: number }> {
+        const { APIKEY, APISECRET } = this.params.integrationSettings?.settings || {};
         try {
             const response = await this.http.post(
-                tokenUrl,
-                `grant_type=client_credentials&client_id=${APIKEY}&client_secret=${APISECRET}`,
+                this.tokenUrl(),
+                new URLSearchParams({ grant_type: 'client_credentials', client_id: String(APIKEY ?? ''), client_secret: String(APISECRET ?? '') }),
                 {
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     idempotent: true,
                     operation: 'getAccessToken',
                 },
             );
-
-            this.accessToken = response.data.access_token;
-            // expires_in saniye cinsinden döner
-            this.tokenExpiresAt = Date.now() + (response.data.expires_in * 1000);
-
-            return this.accessToken!;
+            const token = response.data?.access_token;
+            if (!token) {
+                throw new IntegrationError('AUTH', 'Pazarama token yanıtı access_token içermiyor.', {
+                    integrationCode, operation: 'getAccessToken', clientId: this.clientId, platformCode: 'TOKEN_RESPONSE_INVALID',
+                });
+            }
+            const expiresIn = Number(response.data?.expires_in);
+            return { token, expiresInSec: Number.isFinite(expiresIn) ? expiresIn : 0 };
         } catch (error: any) {
             throw fromHttpError(error, {
                 integrationCode, operation: 'getAccessToken', clientId: this.clientId, idempotent: true,
@@ -88,73 +75,49 @@ export default class Service {
         }
     }
 
-    private async getAuthHeaders() {
-        const token = await this.getAccessToken();
+    /** Geçerli token'ı döner (süre sonuna 5 dk kala yeniler); `forceRefresh` önbelleği atlar. Eşzamanlı çağrılar tek istek paylaşır. */
+    public async getAccessToken(forceRefresh = false): Promise<string> {
+        return this.tokens.get(forceRefresh);
+    }
+
+    protected async authConfig(): Promise<AuthConfig> {
+        const token = await this.tokens.get();
         return {
-            'Authorization': `Bearer ${token}`,
-            'User-Agent': `${this.clientId} - Entegrasyonik`,
-            'Content-Type': 'application/json'
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'User-Agent': `${this.clientId} - Entegrasyonik`,
+                'Content-Type': 'application/json',
+            },
         };
     }
 
-    private getTargetUrl(url: string): string {
-        // [BACKLOG C19] Mock modu FAIL-CLOSED (bkz. common/mock/MockMode.ts): mock AÇIKKEN listede
-        // olmayan endpoint gerçek adrese GİTMEZ, NOT_SUPPORTED fırlatılır.
-        // NOT: getTokenUrl'in varsayılan mock tabanı (6011) bununkinden (3006) FARKLIDIR — mevcut
-        // (tutarsız) davranış korunmuştur; BACKLOG'a not düşüldü.
-        const mock = readMockConfig('PAZARAMA', 'http://localhost:3006/apigateway');
-        const errCtx = { integrationCode, clientId: this.clientId };
-        if (mock.enabled) assertEndpointMockable(mock, url, errCtx);
-        const isMockActive = mock.enabled;
-        const mockBaseUrl = mock.baseUrl;
-
-        if (!url.startsWith('http')) {
-            const base = isMockActive ? mockBaseUrl : this.params.integrationSettings.urls.baseUrl;
-            return `${base.replace(/\/$/, '')}/${url.replace(/^\//, '')}`;
-        }
-
-        if (isMockActive) {
-            let transformedUrl = url.replace(/https:\/\/(isortagim|isortagimapi)\.pazarama\.com(\/api|\/apigateway)?/g, mockBaseUrl);
-            // Host mock tabanına çevrilemediyse gerçek/yabancı adrese SIZMASIN.
-            assertMockSafeUrl(mock, transformedUrl, errCtx);
-            return transformedUrl;
-        }
-
-        return url;
-    }
-
-    private async request(method: 'get' | 'post' | 'put', url: string, dataOrParams?: any, opts?: { idempotent?: boolean; operation?: string }, authRetried = false): Promise<AxiosResponse> {
-        const fullUrl = this.getTargetUrl(url);
+    // [ADR-0006 Karar 1] "auth hook": Pazarama 401/403 (AUTH) -> token'ı geçersiz say, BİR KEZ yeniden dene. Paylaşımlı
+    // ResilientHttpClient'ta/tabanda jenerik bir auth-hook arayüzü YOK; bu davranış burada adaptör seviyesinde uygulanır.
+    private async withAuthRetry<T>(call: () => Promise<T>, authRetried = false): Promise<T> {
         try {
-            const headers = await this.getAuthHeaders();
-            if (method === 'get') return await this.http.get(fullUrl, dataOrParams, { headers, ...opts });
-            if (method === 'post') return await this.http.post(fullUrl, dataOrParams, { headers, ...opts });
-            return await this.http.put(fullUrl, dataOrParams, { headers, ...opts });
+            return await call();
         } catch (error: any) {
-            // [ADR-0006 Karar 1] "auth hook": Pazarama 401 -> token'ı geçersiz say, BİR KEZ yeniden dene.
-            // Bu davranış tek adaptöre özgü olduğu için (paylaşımlı ResilientHttpClient'ta jenerik bir
-            // auth-hook arayüzü YOK, B1'de eklenmedi) burada adaptör seviyesinde uygulanmıştır (BULGU:
-            // N11/Ideasoft gibi başka token-yenileme gerektiren adaptörler eklenirse ortak bir hook
-            // noktası düşünülmeli).
             if (!authRetried && IntegrationError.isIntegrationError(error) && error.code === 'AUTH') {
-                this.accessToken = null;
-                await this.getAccessToken(true);
-                return this.request(method, url, dataOrParams, opts, true);
+                this.tokens.invalidate();
+                await this.tokens.get(true);
+                return this.withAuthRetry(call, true);
             }
             throw error;
         }
     }
 
     /** GET => okuma (idempotent varsayılan true), ADR-0006: ağ/timeout/5xx/429'da retry edilir. */
-    public async get<T = any>(url: string, params?: any, extra?: { idempotent?: boolean; operation?: string }) {
-        return this.request('get', url, params, { idempotent: true, ...extra });
+    public override async get<T = any>(url: string, params?: any, opts?: CallOpts): Promise<AxiosResponse<T>> {
+        return this.withAuthRetry(() => super.get<T>(url, params, opts));
     }
-    /** POST/PUT => yazma varsayılan (idempotent:false); adaptör bazı POST'ları okuma sayar (liste/sorgu
-     *  uçları) ve `idempotent:true` ile çağırır (bkz. connector'lar, 1f: "Pazarama sipariş sorgusu"). */
-    public async post<T = any>(url: string, data?: any, extra?: { idempotent?: boolean; operation?: string }) {
-        return this.request('post', url, data, { idempotent: false, ...extra });
+    /** POST/PUT => yazma varsayılan (idempotent:false); adaptör bazı POST'ları okuma sayar (liste/sorgu uçları) ve `idempotent:true` ile çağırır. */
+    public override async post<T = any>(url: string, data?: any, opts?: CallOpts): Promise<AxiosResponse<T>> {
+        return this.withAuthRetry(() => super.post<T>(url, data, opts));
     }
-    public async put<T = any>(url: string, data?: any, extra?: { idempotent?: boolean; operation?: string }) {
-        return this.request('put', url, data, { idempotent: false, ...extra });
+    public override async put<T = any>(url: string, data?: any, opts?: CallOpts): Promise<AxiosResponse<T>> {
+        return this.withAuthRetry(() => super.put<T>(url, data, opts));
+    }
+    public override async delete<T = any>(url: string, opts?: CallOpts): Promise<AxiosResponse<T>> {
+        return this.withAuthRetry(() => super.delete<T>(url, opts));
     }
 }

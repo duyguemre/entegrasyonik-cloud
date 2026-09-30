@@ -1,3 +1,4 @@
+import { carryIncomplete } from '@integration/contracts/IncompleteFetch';
 import { IClaimPackage, IOrderRejectionReason, IClaimRejectParams, IPlatformResponse } from '@interfaces/index';
 import { ClaimConnector } from '../api/ClaimConnector';
 import { ClaimMapper } from '../transformers/ClaimTransformer';
@@ -18,7 +19,7 @@ export class ClaimService {
     public async fetchClaims(query?: Record<string, any>): Promise<IClaimPackage[]> {
         try {
             const rawResponse = await this.connector.fetchClaimsFromPlatform(query);
-            return this.mapper.toInternalClaimPackages(rawResponse);
+            return carryIncomplete(rawResponse, this.mapper.toInternalClaimPackages(rawResponse));
         } catch (error: any) {
             if (IntegrationError.isIntegrationError(error)) throw error;
             throw new Error(`[${this.clientId}][HepsiburadaClaimService:fetchClaims] ${error.message}`);

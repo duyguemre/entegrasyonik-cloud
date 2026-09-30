@@ -3,13 +3,13 @@ import {
   semanticColorsLight,
   semanticColorsDark,
   type SemanticColorKey,
-} from '../../src/design/tokens/semantic'
+} from '@entegrasyonik/ui/tokens'
 import {
   legacyColorsLight,
   legacyColorsDark,
   type LegacyColorKey,
-} from '../../src/design/tokens/legacy'
-import { duration, easing } from '../../src/design/tokens/scale'
+} from '@entegrasyonik/ui/tokens'
+import { duration, easing } from '@entegrasyonik/ui/tokens'
 import { contrastRatio } from './contrastRatio'
 
 /**

@@ -4,7 +4,11 @@ import _ from 'lodash';
 import os from 'os';
 import { PLATFORM_PROCESS } from '@interfaces/index';
 import { IIntegrationEngineProvider } from "../provider/IIntegrationEngineProvider";
+import { AttributeResolver } from '@integration/catalog/attributeResolver';
 import { getSetting } from '@integration/config/ConfigResolver';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('worker', 'Validator');
 
 export default class Validator extends BaseWorker {
     protected readonly workerName = 'Catalog Validator';
@@ -13,6 +17,7 @@ export default class Validator extends BaseWorker {
     private readonly internalChunkSize = getSetting<number>('export.validator.chunkSize');
     private integrationCode!: string;
     private clientId!: string;
+    private attrResolver?: AttributeResolver;
 
     constructor(private engineProvider: IIntegrationEngineProvider) {
         super();
@@ -31,10 +36,13 @@ export default class Validator extends BaseWorker {
         const factory = new IntegrationFactory(Number(clientId));
         await factory.getInstance(this.integrationCode);
 
-        const clientLogPrefix = this.getLogPrefix(clientId, this.integrationCode);
-        console.log(`${clientLogPrefix} Validator started for Batch: ${batchId} on ${podName}`);
+        log.info('VALIDATOR_STARTED_BATCH', `Validator started for Batch: ${batchId} on ${podName}`);
 
         const productCache: Map<string, any> = new Map();
+        // [WP12] Özellik çözümleyici: paket başına tek örnek (kategori bazlı eşleme bellekte paylaşılır).
+        this.attrResolver = typeof this.engineProvider.getPlatformMappingProvider === 'function'
+            ? new AttributeResolver(this.engineProvider.getPlatformMappingProvider(clientId, integrationCode), integrationCode)
+            : undefined;
 
         try {
             const instance = await factory.getInstance(this.integrationCode);
@@ -48,7 +56,7 @@ export default class Validator extends BaseWorker {
                 .select(`_id ${matchKey} mode targetPublishQty`)
                 .lean();
 
-            console.log(`[${this.clientId}][Validator] Found ${allEntries.length} entries. MatchKey: ${matchKey}`);
+            log.debug('VALIDATOR_FOUND_ENTRIES_MATCHKEY', `Found ${allEntries.length} entries. MatchKey: ${matchKey}`);
 
             if (!allEntries || allEntries.length === 0) {
                 await this.updateSignalStatus(batchId, 'PENDING');
@@ -77,10 +85,10 @@ export default class Validator extends BaseWorker {
             }
 
             await this.updateSignalStatus(batchId, 'PENDING');
-            console.log(`${clientLogPrefix} Validator finished Batch: ${batchId}. Total Validated: ${processedCount}`);
+            log.info('VALIDATOR_FINISHED_BATCH_TOTAL', `Validator finished Batch: ${batchId}. Total Validated: ${processedCount}`);
 
         } catch (error: any) {
-            console.error(`${clientLogPrefix} Validation Critical Error for Batch ${batchId}:`, error.message);
+            log.error('VALIDATOR_VALIDATION_CRITICAL_ERROR_BATCH', `Validation Critical Error for Batch ${batchId}:`, { err: error });
             await this.updateSignalStatus(batchId, 'FAILED', error.message);
             throw error;
         }
@@ -108,7 +116,7 @@ export default class Validator extends BaseWorker {
                 // Varyantı ana koleksiyondan gelen map'ten alıyoruz
                 const variant = variantMap[matchValue];
                 if (!variant) {
-                    console.error(`[${this.clientId}][Validator] Variant not found for matchValue: ${matchValue} (MatchKey: ${matchKey}). Entry:`, JSON.stringify(entry));
+                    log.error('VALIDATOR_VARIANT_NOT_FOUND', `Variant not found for matchValue: ${matchValue} (MatchKey: ${matchKey}). Entry:`, { detail: JSON.stringify(entry) });
                     throw new Error(`${matchValue} değerine sahip varyant ana tabloda bulunamadı.`);
                 }
 
@@ -140,6 +148,17 @@ export default class Validator extends BaseWorker {
                 // --- Lokal Validasyon ---
                 if (!variant.product.category) throw new Error("Ürünün kategorisi bulunamadı.");
                 if (!variant.product.brand) throw new Error("Ürünün markası bulunamadı.");
+
+                // [WP12, ADR-0025] Yerel seçeneklerden platform özelliklerini TEK noktada çöz (dolu olanlara dokunmaz).
+                // Çözümleyici hatası yayını durdurmaz (eski davranış); zorunlu özellik eksikse dönüştürücü VALIDATION verir.
+                if (this.attrResolver) {
+                    try {
+                        const r = await this.attrResolver.resolveInto(variant, product.category);
+                        if (r.warnings.length) log.warn('VALIDATOR_OZELLIK_UYARISI', `${matchValue} özellik uyarısı: ${r.warnings.join('; ')}`);
+                    } catch (resErr: any) {
+                        log.warn('VALIDATOR_OZELLIK_COZUMLENEMEDI', `${matchValue} özellik çözümlenemedi: ${resErr?.message}`);
+                    }
+                }
 
                 // Platforma Özel (Trendyol, HB vb.) Validasyon
                 const validation = await instance.validate(variant);

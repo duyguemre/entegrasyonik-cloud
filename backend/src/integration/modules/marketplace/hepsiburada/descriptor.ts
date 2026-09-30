@@ -31,9 +31,9 @@ const HepsiburadaDescriptor: IntegrationDescriptor = {
             evidence: ['marketplace/hepsiburada/index.ts updateProductStock'],
         },
         orders: {
-            level: 'limited',
+            level: 'supported',
             methods: ['retrieveOrders'],
-            note: 'Sipariş çekimi sayfalamasızdır; tek seferde sınırlı sayıda sipariş alınır (doğrulanamadı, INTEGRATIONS_REGISTRY §2.2).',
+            note: 'Sipariş çekimi sayfalıdır (offset+limit, sayfa başına 100; tavan 50 sayfa / 5.000 kayıt). Tavan aşılırsa sessiz kesilmez: sonuç incomplete işaretlenir ve son başarılı senkron zamanı ilerlemez. Kimliksiz kayıt atlanır; tamamı kimliksizse VALIDATION (şema kayması).',
             evidence: ['marketplace/hepsiburada/index.ts retrieveOrders'],
         },
         orderActions: {
@@ -60,6 +60,12 @@ const HepsiburadaDescriptor: IntegrationDescriptor = {
             note: 'Hakediş görünümü kısmidir; kargo faturası ve ödeme emri sorgusu döner ama daima boş dizi (retrieveCargoInvoices/retrieveSettlementsByPaymentId).',
             evidence: ['marketplace/hepsiburada/index.ts retrieveFinancials'],
         },
+        categories: {
+            level: 'supported',
+            methods: ['retrieveCategories', 'retrieveCategoryAttributes', 'retrieveCategoryAttributeValues'],
+            note: 'Kategori ağacı, nitelik ve nitelik değerleri pazaryerinden alınır. Marka ve komisyon bilgisi sağlanmaz (boş döner).',
+            evidence: ['marketplace/hepsiburada/index.ts retrieveCategories'],
+        },
         shippingNotice: {
             level: 'limited',
             methods: ['sendOrderShipping'],
@@ -77,7 +83,7 @@ const HepsiburadaDescriptor: IntegrationDescriptor = {
         'Varyant güncelleme desteklenmiyor (NOT_SUPPORTED).',
         'Teslimat güncelleme desteklenmiyor (NOT_SUPPORTED).',
         'Kargo faturası ve komisyon bilgisi sağlanmıyor.',
-        'Sipariş çekimi sayfalamasızdır.',
+        'Sipariş/iade çekiminde tavan 5.000 kayıttır (aşılırsa incomplete işaretlenir).',
     ],
     rateLimits: {
         documented: {

@@ -2,7 +2,7 @@
 // `effect` ELLE yazılır, `output` 'legacy', girdi gevşek nesne).
 import { z } from 'zod';
 import type {
-    AgentDecision, CapabilityDef, CapabilityInit, McpDecisionNotExposed, NotExposedReason, RpcRef, Stage, UiMapping,
+    AgentDecision, CapabilityDef, CapabilityInit, McpDecisionNotExposed, NotExposedReason, Stage, UiMapping,
 } from './types';
 
 /**
@@ -11,9 +11,6 @@ import type {
  * doğrulama kademelidir (ADR-0019 Gerekçe / B3).
  */
 export const legacyInput = z.record(z.string(), z.unknown());
-
-/** Bir girdi şemasının `legacyInput` (şemalandırılmamış) olup olmadığı. */
-export const isLegacyInput = (schema: unknown): boolean => schema === legacyInput;
 
 /** Ajan kararı: ADR-0018 henüz kodda yok; bütün yetenekler şimdilik `allowed:false` (açık karar, unutulmuş değil). */
 export const NO_AGENT: AgentDecision = { allowed: false };
@@ -47,8 +44,6 @@ export function onShell(surface: 'init' | 'menu' | 'notifications' | 'app_bar' |
 export function noUi(reason: string): UiMapping {
     return { none: { reason } };
 }
-
-export const rpcs = (...refs: RpcRef[]) => refs.map((rpc) => ({ rpc }));
 
 /** Bir platform (ga) kapsamı yeteneği mi (varsayılan kapsam çıkarımı). */
 const defaultScope = (init: CapabilityInit): 'tenant' | 'user' | 'platform' => (init.domain === 'platform' ? 'platform' : 'tenant');

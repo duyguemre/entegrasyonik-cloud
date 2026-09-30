@@ -14,6 +14,9 @@ export interface IPlatformMappingProvider {
     // Varyant & Seçenek Mantığı
     getLocalChoices(): Promise<any[]>;
     getAllAttributeMappings(): Promise<any[]>;
+    /** [WP9] Yerel kategori (+ isteğe bağlı platform kategorisi) için bu entegrasyonun özellik eşlemeleri. */
+    getAttributeMappingsForCategory(localCategoryId: string, platformCategoryId?: string | number): Promise<any[]>;
     // Gerekirse komisyon/vergi gibi ayarları da buradan sağlayabiliriz
-    getCategoryCommission(platformCategoryId: string | number): Promise<number>;
+    /** Komisyon yüzdesi; `null` = bilinmiyor (0 DEĞİL). */
+    getCategoryCommission(platformCategoryId: string | number): Promise<number | null>;
 }

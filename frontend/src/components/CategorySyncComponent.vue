@@ -1,298 +1,188 @@
+<!--
+  frontend/src/components/CategorySyncComponent.vue
+
+  Kategori tanımları sağ paneli: seçili kategoriyi düzenleme + pazaryeri kategori
+  eşleştirme + seçenek eşleştirme/eşitleme panelleri. DS-v2 Aşama 2: kartlar
+  (CardComponent/EkCard dili), alanlar `EkFormGrid`, platform seçimi
+  `PlatformChoiceChip`, silme onayı tehlikeli `EkConfirmDialog` (eski kırmızı açılır
+  kart kaldırıldı), seçenek panelleri `EkDialogHost` (görünmez sürekli açık
+  v-dialog kaldırıldı). Tüm istek gövdeleri ve akışlar DEĞİŞMEDİ.
+-->
 <template>
-  <div class="categorySyncComponent pa-4 pt-0 pb-0">
+  <div class="categorySyncComponent ek-category-sync">
 
-    <v-menu v-model="confirmationDelete.isDialogOpen" :close-on-content-click="false"
-      :activator="confirmationDelete.activator" @update:model-value="cancelDeleteCategory()">
-      <template v-slot:activator="{ props }">
-        <span v-bind="props"></span>
-      </template>
-
-      <v-card prepend-icon="mdi-delete-outline" color="danger" class="pl-4 pr-4">
-        <template v-slot:title>
-          <div class="d-flex align-center justify-center">
-            <v-icon>mdi-exclamation</v-icon>
-            KATEGORİ SİLİNECEK
-            <v-icon size="xx-large">mdi-exclamation</v-icon>
-          </div>
-        </template>
-        <template v-slot:text>
-          <div class="d-flex justify-center">Silmek istediğinizden emin misiniz?</div>
-          <div class="mt-4 mb-4 text-center">
-            <v-btn color="tonal" min-width="100" variant="outlined" @click="cancelDeleteCategory()" class="mr-4">
-              {{ $t('common.cancel') }}
-            </v-btn>
-            <v-btn color="error" bg-color="error" variant="flat" style="border:1px solid white" min-width="100"
-              @click="deleteCategory()">
-              {{ $t('common.delete') }}
-            </v-btn>
-          </div>
-        </template>
-      </v-card>
-    </v-menu>
+    <EkConfirmDialog :model-value="confirmationDelete.isDialogOpen"
+      :title="`'${confirmationDelete.category?.title ?? selectedCategory?.title ?? ''}' kategorisi silinsin mi?`"
+      description="Kategori ve platform eşleştirmeleri kalıcı olarak silinir. Bu işlem geri alınamaz."
+      :confirm-label="$t('common.delete')" :cancel-label="$t('common.cancel')" confirm-icon="mdi-trash-can-outline"
+      icon="mdi-trash-can-outline" danger attach=".categoryListView"
+      @update:model-value="(v: boolean) => { if (!v) cancelDeleteCategory() }" @confirm="deleteCategory()" />
 
     <LoadingComponent attach=".categoryListView" ref="loadingComponentRef"></LoadingComponent>
 
-    <v-dialog scrim persistent :retain-focus="false" v-model="show" location-strategy="connected" target="cursor"
-      no-click-animation :close-on-content-click="false" :attach="'.categoryListComponentView'"
-      style="transition: opacity .1s ease-in!important"
-      :style="!choiceSyncInfo.isChoiceSyncOpen && !isChoiceMappingOpen ? { 'visibility': 'hidden', 'opacity': '.2!important' } : {}"
-      :contained="true" location="left" height="100%" width="100%">
-
+    <EkDialogHost :model-value="choiceSyncInfo.isChoiceSyncOpen || isChoiceMappingOpen"
+      attach=".categoryListView" width="xl"
+      @update:model-value="(v) => { if (!v) { choiceSyncInfo.isChoiceSyncOpen = false; isChoiceMappingOpen = false } }">
       <keep-alive>
-        <ChoicesSyncComponent v-model="choiceSyncInfo" style="transition: opacity .2s ease-in!important"
-          :style="!choiceSyncInfo.isChoiceSyncOpen ? { 'opacity': '.2!important' } : {}" key="ChoicesSyncComponent"
+        <ChoicesSyncComponent v-model="choiceSyncInfo" key="ChoicesSyncComponent"
           @close="choiceSyncInfo.isChoiceSyncOpen = false" v-if="choiceSyncInfo.isChoiceSyncOpen == true" />
       </keep-alive>
-
       <keep-alive>
         <ChoicesMappingComponent v-model="isChoiceMappingOpen" :integrationCode="integrationCode"
           :integrationCategoryId="integrationCategoryId" :integrationChoice="integrationChoice"
-          :localCategoryId="selectedCategory?._id" style="transition: opacity .2s ease-in!important"
-          :style="!isChoiceMappingOpen ? { 'opacity': '.2!important' } : {}" key="ChoicesMappingComponent"
+          :localCategoryId="selectedCategory?._id" key="ChoicesMappingComponent"
+          :valuesError="valuesLoad.error.value" :valuesLoading="valuesLoad.loading.value" @retryValues="retryValues"
           @close="isChoiceMappingOpen = false" v-if="isChoiceMappingOpen == true" />
       </keep-alive>
-    </v-dialog>
+    </EkDialogHost>
 
-    <div v-if="!selectedCategory?._id" class="d-flex align-center justify-center fill-height sync-info">
-      <div class="mb-12 text-center" style="max-width: 600px;">
-        <div><v-icon size="120" color="blue-grey-lighten-4">mdi-auto-fix</v-icon></div>
+    <!-- Seçim yokken: otomatik eşleştirme + yönlendirme -->
+    <section v-if="!selectedCategory?._id" class="ek-category-sync__empty" aria-labelledby="ek-category-sync-empty-title">
+      <EkIconTile icon="mdi-auto-fix" tone="action" size="lg" />
+      <h2 id="ek-category-sync-empty-title" class="ek-category-sync__empty-title">
+        {{ $t('productDefinitions.category.categoryWarning') }}
+      </h2>
 
-        <div class="text-h5 mt-6 blue-grey--text text--darken-3 font-weight-bold">
-          {{ $t('productDefinitions.category.categoryWarning') }}
-        </div>
-
-        <div class="mt-10 pa-6 rounded-lg border-dashed" style="border: 2px dashed #cfd8dc">
-          <p class="text-body-1 blue-grey--text text--darken-1 mb-6">
-            Sisteminizdeki eşleşmemiş tüm <strong>uç (leaf)</strong> kategorileri, yapay zeka desteğiyle saniyeler
-            içinde
-            otomatik olarak eşleştirebilirsiniz.
-          </p>
-
-          <v-btn color="primary" size="x-large" class="px-12 font-weight-black elevation-2" prepend-icon="mdi-flash"
-            :loading="isAutoMatching" rounded="lg" @click="startAutoMatch">
-            OTOMATİK EŞLEŞTİRMEYİ BAŞLAT
-          </v-btn>
-
-          <div
-            class="mt-4 text-caption blue-grey--text text--darken-1 d-flex align-center justify-center bg-blue-grey-lighten-5 pa-2 rounded">
-            <v-icon size="16" color="blue-grey" class="mr-2">mdi-information-outline</v-icon>
-            <span>
-              Yapay zeka bazen benzer isimli kategorilerde hatalı eşleştirme yapabilir.
-              <strong>İşlem sonrası eşleşmeleri kontrol etmeniz önerilir.</strong>
-            </span>
-          </div>
-
-          <div class="mt-3 text-caption grey--text text--darken-1 d-flex align-center justify-center">
-            <v-icon size="14" color="orange-darken-2" class="mr-1">mdi-alert-circle-outline</v-icon>
-            Mevcut manuel eşleşmeleriniz korunur, sadece boş olanlar doldurulur.
-          </div>
-        </div>
-
-        <div class="mt-8">
-          <div class="d-flex align-center mb-4">
-            <v-divider></v-divider>
-            <span class="mx-4 text-caption font-weight-bold blue-grey--text text--lighten-2">VEYA</span>
-            <v-divider></v-divider>
-          </div>
-
-          <p class="text-body-2 blue-grey--text text--darken-1">
-            Soldaki kategori ağacından bir kategori seçip
-            <v-icon size="small" class="mx-1" color="blue-grey-lighten-1">mdi-cog</v-icon>
-            <strong>ayar</strong> butonuna tıklayarak manuel ilerleyebilirsiniz.
-          </p>
-        </div>
+      <div class="ek-category-sync__auto">
+        <p class="ek-category-sync__lead">
+          Sisteminizdeki eşleşmemiş tüm <strong>uç (leaf)</strong> kategorileri, yapay zeka desteğiyle saniyeler
+          içinde otomatik olarak eşleştirebilirsiniz.
+        </p>
+        <EkButton tone="primary" icon="mdi-flash-outline" :loading="isAutoMatching" @click="startAutoMatch">
+          Otomatik eşleştirmeyi başlat
+        </EkButton>
+        <p class="ek-category-sync__note ek-category-sync__note--info">
+          <v-icon icon="mdi-information-outline" size="16" aria-hidden="true" />
+          <span>Yapay zeka benzer isimli kategorilerde hatalı eşleştirme yapabilir.
+            <strong>İşlem sonrası eşleşmeleri kontrol etmeniz önerilir.</strong></span>
+        </p>
+        <p class="ek-category-sync__note ek-category-sync__note--warning">
+          <v-icon icon="mdi-alert-circle-outline" size="16" aria-hidden="true" />
+          <span>Mevcut manuel eşleşmeleriniz korunur, yalnızca boş olanlar doldurulur.</span>
+        </p>
       </div>
-    </div>
 
+      <div class="ek-category-sync__or" aria-hidden="true"><span>veya</span></div>
+      <p class="ek-category-sync__manual">
+        Soldaki kategori ağacından bir kategori seçip
+        <v-icon icon="mdi-cog-outline" size="16" aria-hidden="true" /> <strong>ayar</strong> düğmesiyle manuel ilerleyebilirsiniz.
+      </p>
+    </section>
 
-    <div v-else>
-      <div class="d-flex">
-        <div>
-          <v-divider vertical class="mr-2 fill-height" thickness="3" color="#888" />
-        </div>
+    <div v-else class="ek-category-sync__panels">
+      <CardComponent icon="mdi-cog-outline" :title="selectedCategory.title + ' Kategorisini Düzenle'" :isHovered="false">
+        <v-form v-model="editingCategory.form" @keydown.enter.prevent @submit.prevent>
+          <EkFormGrid :columns="1">
+            <v-text-field @click.stop maxlength="160" clearable counter v-model="editingCategory.title"
+              :rules="formRules.titleRules" :label="$t('productDefinitions.category.title')"
+              @keyup.enter="updateCategory()" />
+          </EkFormGrid>
+          <div class="ek-category-sync__row-actions">
+            <EkButton tone="ghost" icon="mdi-trash-can-outline" class="ek-category-sync__delete"
+              @click.stop="deleteConfirmation(selectedCategory, $event)">
+              {{ $t('common.delete') }}
+            </EkButton>
+            <EkButton tone="primary" icon="mdi-content-save-outline"
+              :disabled="editingCategory.title == selectedCategory.title" @click.stop="updateCategory()">
+              {{ $t('common.save') }}
+            </EkButton>
+          </div>
+        </v-form>
+      </CardComponent>
 
-        <div class="mt-0 pa-2 pt-1 flex-grow-1">
-          <CardComponent icon="mdi-cog" :title="selectedCategory.title + ' Kategorisini Düzenle'">
-            <v-form v-model="editingCategory.form" style="display:contents" @keydown.enter.prevent @submit.prevent>
-              <div class="d-flex">
-                <v-text-field @click.stop="1" v-ripple.stop variant="outlined" density="compact" maxlength="160"
-                  width="200" clearable bg-color="textfieldColor" class="customTextField"
-                  v-model="editingCategory.title" :rules="formRules.titleRules" @keyup.enter="updateCategory()">
-                  <template v-slot:label>
-                    <span class="font-weight-light">{{ $t('productDefinitions.category.title') }}</span>
-                  </template>
-                </v-text-field>
+      <CardComponent icon="mdi-connection" title="Platform Kategori Eşleştirme" :isHovered="false"
+        v-if="selectedCategory.children?.length == 0">
+        <template #header><EkHelpHint hint="mapping.category" /></template>
+        <EkFormSection title="Platform" icon="mdi-storefront-outline" :columns="1"
+          description="Eşleştirme yapılacak pazaryeri veya e-ticaret platformunu seçin.">
+          <div class="ek-category-sync__platforms">
+            <PlatformChoiceChip
+              v-for="clientPlatform of [...integrationStore.getClientMarketplaces(), ...integrationStore.getClientECommerces()]"
+              :key="clientPlatform.code" :code="clientPlatform.code" :name="platformName(clientPlatform.code)"
+              :active="integrationCode == clientPlatform.code"
+              @select="integrationCode = clientPlatform.code; setPlatform()" />
+          </div>
+        </EkFormSection>
 
-                <!--                 <v-btn-group class="fill-height ml-4" style="border:1px solid #bbb" density="compact">
-                  <v-btn flat color="saveButtonColor" style="min-width:0;width:40px;height:40px;"
-                    @click.stop="deleteConfirmation(selectedCategory, $event)">
-                    <v-icon size="x-large">mdi-delete</v-icon>
-                  </v-btn>
-                </v-btn-group>
- -->
-                <v-btn class="premium-delete-btn ml-4" variant="flat"
-                  @click.stop="deleteConfirmation(selectedCategory, $event)">
-                  <v-icon size="large" class="btn-icon">mdi-delete-outline</v-icon>
-                </v-btn>
-
-              </div>
-              <!--               <v-btn flat :disabled="editingCategory.title == selectedCategory.title" class=" ml-0"
-                style="height:40px;min-width:130px;" color="saveButtonColor" @click.stop="updateCategory()">{{
-                  $t('common.save') }}</v-btn>
- -->
-              <v-btn class="premium-save-btn ml-0" color="saveButtonColor" variant="flat"
-                :disabled="editingCategory.title == selectedCategory.title" @click.stop="updateCategory()">
-                <v-icon start size="small" class="mr-1">mdi-check-circle-outline</v-icon>
+        <template v-if="integrationCode && integrationCode != -1">
+          <EkFormSection title="Platform kategorisi" icon="mdi-file-tree-outline" :columns="1">
+            <CategoryIntegrationSelectBoxComponent v-model="integrationCategoryId" :integrationCode="integrationCode" />
+            <div class="ek-category-sync__row-actions">
+              <EkStatusChip v-if="isCategorySaved" tone="success" label="Bağlantı Kuruldu" />
+              <EkButton v-else tone="primary" icon="mdi-content-save-outline" :disabled="!integrationCategoryId"
+                @click.stop="saveIntegrationCategory()">
                 {{ $t('common.save') }}
-              </v-btn>
-
-            </v-form>
-          </CardComponent>
-
-          <v-divider class="mt-8" />
-
-
-          <CardComponent icon="mdi-connection" title="Platform Kategori Eşleştirme" class="mt-4"
-            v-if="selectedCategory.children?.length == 0">
-
-
-            <div class="d-flex align-center mt-2" style="gap: 12px;">
-              <div
-                v-for="clientPlatform of [...integrationStore.getClientMarketplaces(), ...integrationStore.getClientECommerces()]"
-                :key="clientPlatform.code">
-
-
-                <PlatformImageComponent :integrationCode="clientPlatform.code" height="50" width="100"
-                  :is-active="integrationCode == clientPlatform.code" isSelectable
-                  @select="integrationCode = clientPlatform.code; setPlatform()" />
-
-                <!-- 
-                <v-sheet @click="integrationCode = clientPlatform.code; setPlatform()"
-                  class="platform-card pa-4 d-flex justify-center align-center"
-                  :class="[integrationCode == clientPlatform.code ? 'active-platform' : 'inactive-platform']" :style="{
-                    '--brand-color': clientPlatform.color,
-                    '--brand-glow': clientPlatform.color + '40', // %25 opacity glow
-                    width: '110px',
-                    height: '70px',
-                    borderRadius: '12px !important'
-                  }">
-                  <div class="logo-box">
-                    <v-img :width="clientPlatform.width" contain
-                      :src="integrationStore.getIntegrationImagePath(clientPlatform)" class="platform-logo"></v-img>
-                  </div>
-                </v-sheet> -->
-              </div>
+              </EkButton>
             </div>
+          </EkFormSection>
 
-
-            <div class="ma-2">
-              <template v-if="integrationCode && integrationCode != -1">
-                <div class="d-flex mt-6">
-                  <CategoryIntegrationSelectBoxComponent class="flex-grow-1" v-model="integrationCategoryId"
-                    :integrationCode="integrationCode" />
-                </div>
-                <!--                 <v-btn flat :disabled="!integrationCategoryId || isCategorySaved" class="mt-1"
-                  style="height:40px;min-width:130px;" :color="isCategorySaved ? 'success' : 'saveButtonColor'"
-                  @click.stop="saveIntegrationCategory">
-                  {{ isCategorySaved ? 'Bağlantı Kuruldu' : $t('common.save') }}
-                </v-btn>
- -->
-
-
-                <v-btn variant="flat" class="premium-connection-btn mt-1" :class="{ 'is-connected': isCategorySaved }"
-                  :disabled="!integrationCategoryId && !isCategorySaved"
-                  :color="isCategorySaved ? 'transparent' : 'saveButtonColor'" style="height:40px; min-width:130px;"
-                  :ripple="!isCategorySaved" @click.stop="isCategorySaved ? null : saveIntegrationCategory()">
-                  <v-icon start size="small" class="mr-1" :color="isCategorySaved ? '#059669' : ''">
-                    {{ isCategorySaved ? 'mdi-check-decagram' : 'mdi-content-save-outline' }}
-                  </v-icon>
-
-                  {{ isCategorySaved ? 'Bağlantı Kuruldu' : $t('common.save') }}
-                </v-btn>
-
-
-                <v-divider class="mt-8" />
-                <template v-if="integrationChoices && integrationChoices.length > 0">
-                  <div class="d-flex  mt-8">
-                    <v-autocomplete class="customTextField" variant="outlined" density="compact"
-                      bg-color="textfieldColor" return-object item-value="_id" item-title="title"
-                      :items="integrationChoices" v-model="integrationChoice" :disabled="!isCategorySaved"
-                      placeholder="Lütfen Seçiniz" persistent-placeholder no-data-text="Seçenek bulunamadı"
-                      @update:model-value="retrieveIntegrationCategoryAttributeValues()">
-                      <template v-slot:selection="{ item }: any">
-                        <v-chip size="x-small"
-                          :color="item.raw.slicer ? 'purple' : (item.raw.varianter ? 'red' : 'blue-grey-lighten-1')"
-                          class="mr-2 font-weight-bold" variant="flat">
-                          {{ item.raw.slicer ? 'ÜRÜN BÖLEN' : (item.raw.varianter ? 'VARYANT' : 'NİTELİK') }}
-                        </v-chip>
-                        <span class="text-subtitle-2">{{ item.title }}</span>
-                      </template>
-
-                      <template v-slot:item="{ item, index, props: itemProps }: any">
-                        <v-list-item v-bind="itemProps" class="custom-list-item">
-                          <template v-slot:title>
-                            <div class="d-flex align-center">
-                              <span class="index-column">
-                                {{integrationChoices.findIndex((x: any) => x._id === item.raw._id) + 1}}
-                              </span>
-
-                              <v-chip size="x-small"
-                                :color="item.raw.slicer ? 'purple' : (item.raw.varianter ? 'red' : 'blue-grey-lighten-2')"
-                                class="mr-2 font-weight-black text-white"
-                                style="min-width: 85px; justify-content: center;">
-                                {{ item.raw.slicer ? 'ÜRÜN BÖLEN' : (item.raw.varianter ? 'VARYANT' : 'NİTELİK') }}
-                              </v-chip>
-
-                              <span
-                                style="  font-weight: 500;color: rgb(var(--v-theme-passiveColor));font-size: 0.85rem;"
-                                :class="{ 'font-weight-bold': item.raw.slicer || item.raw.varianter }">
-                                {{ item.title }}
-                              </span>
-                            </div>
-                          </template>
-
-                          <template v-slot:append>
-                            <v-icon v-if="item.raw.required" color="error" size="x-small">mdi-asterisk</v-icon>
-                          </template>
-                        </v-list-item>
-                      </template>
-                    </v-autocomplete>
-                  </div>
-                  <!--                   <v-btn flat :disabled="!integrationChoice || !isCategorySaved" class="mt-0" style="height:41px;"
-                    color="processButtonColor" @click.stop="isChoiceMappingOpen = true">
-                    Seçenek Eşleştir
-                  </v-btn>
- -->
-                  <v-btn class="premium-process-btn mt-0" color="processButtonColor" variant="flat"
-                    :disabled="!integrationChoice || !isCategorySaved" @click.stop="isChoiceMappingOpen = true">
-                    <v-icon start size="small" class="mr-1">mdi-link-variant</v-icon>
-                    Seçenek Eşleştir
-                  </v-btn>
-
-                </template>
+          <EkFormSection v-if="isCategorySaved && (integrationChoices.length > 0 || choicesLoad.status.value !== 'idle')"
+            title="Seçenek eşleştirme" icon="mdi-link-variant" :columns="1"
+            description="Kategori bağlantısı kaydedildikten sonra platform seçeneklerini eşleştirebilirsiniz.">
+            <IntegrationLoadingBlock v-if="choicesLoad.status.value === 'loading' && !choicesLoad.error.value"
+              :label="`${platformName(integrationCode)} kategori özellikleri alınıyor…`" />
+            <IntegrationErrorPanel v-else-if="choicesLoad.error.value" :info="choicesLoad.error.value"
+              :retrying="choicesLoad.loading.value" @retry="retryChoices" />
+            <template v-else>
+            <v-autocomplete ref="choiceFieldRef" return-object item-value="_id" item-title="title" :items="integrationChoices"
+              v-model="integrationChoice" :disabled="!isCategorySaved" label="Platform seçeneği"
+              placeholder="Lütfen seçiniz" persistent-placeholder no-data-text="Seçenek bulunamadı"
+              @update:model-value="retrieveIntegrationCategoryAttributeValues()">
+              <template v-slot:selection="{ item }: any">
+                <EkBadge :tone="choiceKind(item.raw).tone" class="ek-category-sync__kind">{{ choiceKind(item.raw).label }}</EkBadge>
+                <span>{{ item.title }}</span>
               </template>
+              <template v-slot:item="{ item, props: itemProps }: any">
+                <v-list-item role="option" v-bind="itemProps" :title="undefined">
+                  <div class="ek-category-sync__choice">
+                    <span class="ek-category-sync__choice-index ek-num">
+                      {{ integrationChoices.findIndex((x: any) => x._id === item.raw._id) + 1 }}
+                    </span>
+                    <EkBadge :tone="choiceKind(item.raw).tone" class="ek-category-sync__kind">{{ choiceKind(item.raw).label }}</EkBadge>
+                    <span :class="{ 'is-strong': item.raw.slicer || item.raw.varianter }">{{ item.title }}</span>
+                    <v-icon v-if="item.raw.required" icon="mdi-asterisk" size="12" class="ek-category-sync__required"
+                      aria-label="Zorunlu" />
+                  </div>
+                </v-list-item>
+              </template>
+            </v-autocomplete>
+            <IntegrationLoadingBlock v-if="valuesLoad.status.value === 'loading' && !valuesLoad.error.value"
+              :label="`${integrationChoice?.title ?? 'Özellik'} değerleri alınıyor…`" />
+            <IntegrationErrorPanel v-else-if="valuesLoad.error.value" :info="valuesLoad.error.value"
+              :retrying="valuesLoad.loading.value" @retry="retryValues" />
+            <div class="ek-category-sync__row-actions">
+              <EkButton tone="secondary" icon="mdi-link-variant" :disabled="!integrationChoice || !isCategorySaved"
+                @click.stop="isChoiceMappingOpen = true">
+                Seçenek Eşleştir
+              </EkButton>
             </div>
-          </CardComponent>
-        </div>
-      </div>
+            </template>
+          </EkFormSection>
+        </template>
+      </CardComponent>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import EkHelpHint from '@/components/page/EkHelpHint.vue'
 import { watch, ref, onMounted, nextTick, reactive } from 'vue'
 import CategoryIntegrationSelectBoxComponent from '@/components/CategoryIntegrationSelectBoxComponent.vue';
 import LoadingComponent from '@/components/LoadingComponent.vue'
 import ChoicesSyncComponent from '@/components/ChoicesSyncComponent.vue';
 import ChoicesMappingComponent from '@/components/ChoicesMappingComponent.vue';
 import CardComponent from '@/components/CardComponent.vue';
+import { EkConfirmDialog, EkDialogHost, EkButton, EkIconTile, EkFormGrid, EkFormSection, EkStatusChip, EkBadge } from '@entegrasyonik/ui/components'
+import PlatformChoiceChip from '@/components/platforms/PlatformChoiceChip.vue'
+import IntegrationErrorPanel from '@/components/integrations/IntegrationErrorPanel.vue'
+import IntegrationLoadingBlock from '@/components/integrations/IntegrationLoadingBlock.vue'
+import { useIntegrationLoad } from '@/composables/useIntegrationError'
 
 import useRestApi from '@/composables/restapi'
 import useFormRules from '@/composables/formrules';
 import { useIntegrationStore } from '@/stores/integrationStore';
 import { useCategoriesStore } from '@/stores/categoriesStore';
 import { useSnackbarStore } from '@/stores/snackbarStore';
-import PlatformImageComponent from './platforms/PlatformImageComponent.vue';
 
 const snackbarStore = useSnackbarStore();
 const categoriesStore = useCategoriesStore()
@@ -312,6 +202,14 @@ const loadingComponentRef: any = ref(null)
 const integrationChoices: any = ref([])
 const integrationChoice: any = ref()
 const isCategorySaved = ref(false)
+const choiceFieldRef: any = ref(null)
+
+// Pazaryeri özellik / değer listeleri: yükleniyor · hata · boş liste ayrı durumlar (bkz. useIntegrationError.ts).
+const choicesLoad = useIntegrationLoad(() =>
+  integrationStore.loadIntegrationCategoryChoices(integrationCode.value, integrationCategoryId.value))
+const valuesLoad = useIntegrationLoad(() =>
+  integrationStore.loadIntegrationCategoryAttributeValues(integrationCode.value, integrationCategoryId.value, integrationChoice.value._id))
+const resetLoads = () => { choicesLoad.reset(); valuesLoad.reset() }
 
 const confirmationDelete = reactive<any>({
   activator: undefined,
@@ -321,6 +219,12 @@ const confirmationDelete = reactive<any>({
 
 
 const isAutoMatching = ref(false);
+
+const platformName = (code: string) => integrationStore.getIntegrationTitle(code) || (code ? code.charAt(0).toUpperCase() + code.slice(1) : '')
+
+// Platform seçeneğinin türü: ürün bölen (slicer) · varyant · nitelik — renk değil anlamlı ton + metin.
+const choiceKind = (choice: any): { label: string; tone: 'info' | 'warning' | 'neutral' } =>
+  choice?.slicer ? { label: 'Ürün bölen', tone: 'info' } : choice?.varianter ? { label: 'Varyant', tone: 'warning' } : { label: 'Nitelik', tone: 'neutral' }
 
 const startAutoMatch = async () => {
   let guid = loadingComponentRef.value.info("Kategoriler analiz ediliyor ve eşleştiriliyor...");
@@ -353,6 +257,7 @@ watch(() => integrationCategoryId.value, async (newVal, oldVal) => {
   integrationChoice.value = undefined
   integrationChoices.value = []
   isCategorySaved.value = false
+  resetLoads()
 
   if (newVal) {
     // DOM'un render olması ve alt componentlerin (select box vb) hazırlanması için bekle
@@ -371,6 +276,7 @@ const reset = async () => {
     integrationChoices.value = []
     integrationChoice.value = undefined
     isCategorySaved.value = false
+    resetLoads()
   }
 }
 
@@ -384,6 +290,7 @@ const setPlatform = async () => {
   isCategorySaved.value = false
   integrationChoices.value = []
   integrationChoice.value = undefined
+  resetLoads()
 
   if (!selectedCategory.value?._id || integrationCode.value === -1) {
     return
@@ -456,30 +363,44 @@ const saveIntegrationCategory = async () => {
 
 const retrieveIntegrationCategoryChoices = async () => {
   if (!integrationCategoryId.value) return
-  let guid = loadingComponentRef.value.info("")
-  const resp = await integrationStore.retrieveIntegrationCategoryChoices(integrationCode.value, integrationCategoryId.value)
-  loadingComponentRef.value.remove(guid)
-
-  if (resp && resp.length > 0) {
-    integrationChoices.value = resp.sort((a: any, b: any) => {
+  const result = await choicesLoad.run()
+  if (result.ok) {
+    integrationChoices.value = [...result.data].sort((a: any, b: any) => {
       const scoreA = (a.slicer ? 2 : (a.varianter ? 1 : 0));
       const scoreB = (b.slicer ? 2 : (b.varianter ? 1 : 0));
       if (scoreA !== scoreB) return scoreB - scoreA;
       return a.title?.localeCompare(b.title);
     });
+  } else {
+    integrationChoices.value = []
   }
 }
 
-const retrieveIntegrationCategoryAttributeValues = async () => {
-  if (!integrationChoice.value || integrationChoice.value.allowCustom) return
-  // Eğer zaten değerler varsa ve boş değilse tekrar çekme (Örn: N11 CDN hepsini bir kerede getiriyor)
-  if (integrationChoice.value.values && integrationChoice.value.values.length > 0) return
-
-  const resp = await integrationStore.retrieveIntegrationCategoryAttributeValues(
-    integrationCode.value, integrationCategoryId.value, integrationChoice.value._id
-  )
-  if (resp) integrationChoice.value.values = resp
+// Hata panelinden "Tekrar dene": başarılıysa odak yeni görünen alana taşınır.
+const retryChoices = async () => {
+  await retrieveIntegrationCategoryChoices()
+  if (!choicesLoad.error.value) { await nextTick(); choiceFieldRef.value?.focus?.() }
 }
+
+const fetchIntegrationCategoryAttributeValues = async () => {
+  const target = integrationChoice.value
+  if (!target || target.allowCustom) return
+  // Eğer zaten değerler varsa ve boş değilse tekrar çekme (Örn: N11 CDN hepsini bir kerede getiriyor)
+  if (target.values && target.values.length > 0) return
+
+  const result = await valuesLoad.run()
+  // Kullanıcı bu arada başka bir seçenek seçtiyse eski yanıt yeni seçeneğe yazılmaz.
+  if (result.ok && integrationChoice.value === target) target.values = result.data
+}
+
+// Seçenek değişti: önceki değer-yükleme durumunu (hata/boş) temizleyip yeniden yükle.
+const retrieveIntegrationCategoryAttributeValues = async () => {
+  valuesLoad.reset()
+  await fetchIntegrationCategoryAttributeValues()
+}
+
+// "Tekrar dene": mevcut hata paneli yerinde kalır (düğme yükleniyor), sıfırlanmaz.
+const retryValues = () => fetchIntegrationCategoryAttributeValues()
 
 const updateCategory = async () => {
   let guid = loadingComponentRef.value.info("")
@@ -527,90 +448,147 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.sync-info {
-  opacity: .6;
+.ek-category-sync {
+  padding: var(--ek-space-1) var(--ek-space-6) var(--ek-space-6) var(--ek-space-2);
 }
 
-.customTextField {
-  margin-bottom: 8px;
+.ek-category-sync__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ek-space-4);
+  max-width: 560px;
+  margin: var(--ek-space-10) auto 0;
+  text-align: center;
 }
 
-.index-column {
-  min-width: 30px;
-  font-weight: 200;
-  opacity: 0.5;
-  font-size: 0.8rem;
+.ek-category-sync__empty-title {
+  margin: 0;
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-title-size);
+  line-height: var(--ek-type-title-line);
+  font-weight: var(--ek-type-title-weight);
 }
 
-.custom-list-item {
-  border-bottom: 1px solid #eeeeee !important;
-  padding-top: 4px !important;
-  padding-bottom: 4px !important;
+.ek-category-sync__auto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ek-space-3);
+  width: 100%;
+  padding: var(--ek-space-5);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface);
+  box-shadow: var(--ek-shadow-card);
 }
 
-.custom-list-item:last-child {
-  border-bottom: none !important;
+.ek-category-sync__lead {
+  margin: 0;
+  color: var(--ek-color-content-default);
+  font-size: var(--ek-type-body-size);
+  line-height: var(--ek-type-body-line);
 }
 
-
-
-.platform-card {
-  position: relative;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+.ek-category-sync__note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ek-space-2);
+  width: 100%;
+  margin: 0;
+  padding: var(--ek-space-2) var(--ek-space-3);
+  border: 1px solid;
+  border-radius: var(--ek-radius-control);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+  text-align: left;
 }
 
-
-/* Seçili olan kart için "Glow" ve belirginleşme efekti */
-.active-platform {
-  z-index: 2;
-  border-color: var(--brand-color);
-  background: rgb(from var(--brand-color) r g b / 0.08);
-  /* Modern alpha kullanımı */
-  transform: translateY(-6px);
-
+.ek-category-sync__note--info {
+  border-color: var(--ek-color-info-border);
+  background: var(--ek-color-info-subtle);
+  color: var(--ek-color-info-emphasis);
 }
 
-.active-platform::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 30%;
-  height: 3px;
-  background: var(--brand-color);
-  border-radius: 10px 10px 0 0;
+.ek-category-sync__note--warning {
+  border-color: var(--ek-color-warning-border);
+  background: var(--ek-color-warning-subtle);
+  color: var(--ek-color-warning-emphasis);
 }
 
-.inactive-platform {
-  border: 1px solid #aaa !important;
-  cursor: pointer;
-}
-
-
-
-
-.logo-box {
-  width: 80px;
-  height: 50px;
+.ek-category-sync__or {
   display: flex;
   align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  filter: grayscale(0.8);
-  /* Aktif değilken gri tonlama */
-  opacity: 0.9;
-  transition: all 0.3s ease;
+  gap: var(--ek-space-3);
+  width: 100%;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
 }
 
-.platform-logo {
-  opacity: 0.9;
+.ek-category-sync__or::before,
+.ek-category-sync__or::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--ek-color-border-subtle);
 }
 
-.active-platform .logo-box {
-  opacity: 1;
-  filter: grayscale(0);
+.ek-category-sync__manual {
+  margin: 0;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-body-size);
+}
+
+.ek-category-sync__panels {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-4);
+}
+
+.ek-category-sync__row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ek-space-2);
+  margin-top: var(--ek-space-3);
+}
+
+.ek-category-sync__delete {
+  margin-right: auto;
+  color: var(--ek-color-error);
+}
+
+.ek-category-sync__platforms {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--ek-space-3);
+}
+
+.ek-category-sync__choice {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  min-width: 0;
+}
+
+.ek-category-sync__choice-index {
+  min-width: var(--ek-space-6);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+}
+
+.ek-category-sync__choice .is-strong {
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.ek-category-sync__kind {
+  margin-right: var(--ek-space-2);
+}
+
+.ek-category-sync__required {
+  color: var(--ek-color-error);
 }
 </style>

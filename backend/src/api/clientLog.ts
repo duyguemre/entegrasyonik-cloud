@@ -7,6 +7,7 @@ import type { Request, Response } from 'express';
 import { redactFreeText, redactLogObject, fingerprintOf } from '@platform/core/logger';
 import { recordErrorEvent } from '@platform/runtime/metrics';
 import { getRequestId } from '@platform/core/context';
+import { sendHttpError } from './http/errorEnvelope';
 
 export const CLIENT_LOG_MAX_BODY_BYTES = 8 * 1024;
 const ALLOWED_LEVELS = ['error', 'warn'] as const;
@@ -105,9 +106,9 @@ export function resetClientLogDedupForTests(): void {
 }
 
 export function handleClientLog(req: Request, res: Response): void {
-    if (isBodyTooLarge(req)) { res.status(413).send({ error: 'İstek gövdesi çok büyük (8 KB üst sınırı).' }); return; }
+    if (isBodyTooLarge(req)) { sendHttpError(res, 413, 'İstek gövdesi çok büyük (8 KB üst sınırı).', 'PAYLOAD_TOO_LARGE'); return; }
     const parsed = parseClientLogBody(req.body);
-    if (!parsed) { res.status(400).send({ error: 'Geçersiz istek.' }); return; }
+    if (!parsed) { sendHttpError(res, 400, 'Geçersiz istek.', 'VALIDATION'); return; }
 
     const sanitized = sanitizeBody(parsed);
     const principal = (res.locals as any)?.principal;

@@ -1,5 +1,4 @@
 import { IService } from '@interfaces/index'
-import { BASE_IMAGE_URL } from 'src/Constants'
 import { ImageOperations, storageService } from '@services/index'
 import { BaseApi } from '../BaseApi'
 import { ObjectId } from 'mongodb'
@@ -8,6 +7,11 @@ import { containsRegex, normalizePagination } from '@utils/search'
 import * as XLSX from 'xlsx'
 import crypto from 'crypto';
 import { StatsOperations } from '@operations/client/StatsOperations';
+import { config } from '@config';
+import { findStockChanges, recordManualStockMovements, stockDirtyFields } from '@operations/stock/markStockDirty';
+
+/** exportExcel: varyantların tek seferde çekildiği ürün grubu boyutu (bellek üst sınırı = grup × ürün başına varyant). */
+const EXPORT_BATCH_PRODUCTS = 500;
 
 /**
  * [MM-08 / ADR-0021 aynı desen] getProducts sıralama alanı izin listesi. `ProductSchema` (Product.ts) alanlarından
@@ -37,31 +41,12 @@ export default class ProductService extends BaseApi implements IService {
 
     // --- TEMEL GET METOTLARI ---
 
-    currentClientId: any
-    constructor(clientId: number, protected request: any) {
-        super(clientId, request)
-        this.currentClientId = clientId
-    }
 
 
     async get(): Promise<any> {
         try {
             const filterQuery = {}
             return await this.clientDB.getProductModel().find(filterQuery).sort({ order: 1 })
-        } catch (error) {
-            throw error
-        }
-    }
-
-    async getIntegrations(): Promise<any> {
-        try {
-            const filterQuery = {}
-            const projection = { settings: 0 }
-            // [BULGU DÜZELTMESİ, 2026-09-29] `find(filterQuery, { projection })` YANLIŞ sarmalanmıştı — mongoose'un
-            // ikinci argümanı DOĞRUDAN alan-seçim nesnesi bekler. Gerçek Mongo'da (mongodb-memory-server ile
-            // doğrulandı, bkz. tests/mongo-semantics/integrationProjectionShape.mongoSemantics.test.ts) bu HATA
-            // FIRLATMIYORDU, sessizce TÜM alanları (settings dahil) döndürüyordu — B4 gereksiz alan sızıntısı.
-            return await this.applicationDB.getIntegrationModel().find(filterQuery, projection).populate('type')
         } catch (error) {
             throw error
         }
@@ -131,11 +116,11 @@ export default class ProductService extends BaseApi implements IService {
 
             const result = await this.clientDB.getProductModel().aggregate([
                 { $match: filterQuery },
+                { $sort: sortBy }, // [DB-02] $facet dışında: indeks kullanılabilir
                 {
                     $facet: {
                         totalNumberOfRecords: [{ $count: 'count' }],
                         products: [
-                            { $sort: sortBy },
                             { $skip: skipCount },
                             { $limit: pagination.limit },
                             {
@@ -321,18 +306,24 @@ export default class ProductService extends BaseApi implements IService {
                 { upsert: true, returnDocument: 'after' }
             );
 
+            // [X2] stoğu DEĞİŞEN mevcut varyantlar yayın için işaretlenir (tek kapı: operations/stock/markStockDirty.ts)
+            const stockChanges = await findStockChanges(this.clientDB.getVariantModel(), variants);
+            const stockChanged = { has: (id: string) => stockChanges.has(id) };
+            const dirtyNow = stockDirtyFields();
             const bulkOperations = variants.map((original: any) => {
                 // [N6 / ADR-0004] FE'nin bayat okuması rezervasyon alanlarını ezemez (bkz. stripEngineOwnedVariantFields)
                 const v = stripEngineOwnedVariantFields(original);
                 v.productId = resp._id;
                 v.variantHash = this.hashChoices(resp.maincode, v.choices);
                 if (v._id) {
+                    if (stockChanged.has(String(v._id))) Object.assign(v, dirtyNow);
                     return { updateOne: { filter: { _id: new ObjectId(v._id) }, update: { $set: v } } };
                 }
                 return { insertOne: { document: v } };
             });
 
             await this.clientDB.getVariantModel().bulkWrite(bulkOperations);
+            recordManualStockMovements(this.clientDB, stockChanges.values(), this.request); // [ADR-0021 D14] hareket defteri (asenkron)
 
             const res = await this.copyTempImages(resp._id, productInfo.tempId);
             if (res) await this.updateTempImageDocuments(resp._id, productInfo.tempId);
@@ -403,7 +394,7 @@ export default class ProductService extends BaseApi implements IService {
                                 isTempImage: false,
                                 // [ADR-0013 B3, 2026-09-27] clientId eklendi — yükleme yolu (image-service.ts
                                 // addImages) ve `copyTempImages` hedef diziniyle tutarlı.
-                                url: `${BASE_IMAGE_URL}${this.currentClientId}/${productId}/${imageId}.${extension}`
+                                url: `${config.images.productBaseUrl}${this.currentClientId}/${productId}/${imageId}.${extension}`
                             }
                         }
                     }
@@ -462,32 +453,69 @@ export default class ProductService extends BaseApi implements IService {
         return crypto.createHash('sha256').update(normalized).digest('hex');
     }
 
+    /**
+     * [F-12 / WP8] Bellek dostu Excel dışa aktarma. ESKİ: tüm ürünler + tüm varyantlar (tam belge) belleğe, satır tavanı yok.
+     * ŞİMDİ: (1) ürünler `cursor` ile akıtılır (yalnız `title` projeksiyonu), (2) varyantlar ürün gruplarıyla (EXPORT_BATCH_PRODUCTS)
+     * ve YALNIZ gereken alanlarla (`barcode/stock/prices.salePrice` + seçili entegrasyonların TRANSFER.status) çekilir,
+     * (3) satır (varyant) sayısı `EXPORT_EXCEL_MAX_ROWS` (varsayılan 20000, env) ile SINIRLI: aşılırsa üretim durur ve
+     * `{ result: false, code: 'EXPORT_ROW_LIMIT', message, limit }` döner (FE `response.message`'ı hata olarak gösterir).
+     * Yanıt sözleşmesi DEĞİŞMEZ: `{ result, excelData (base64 xlsx), fileName }` / hiç ürün yoksa `{ result: true, count: 0 }`.
+     */
     async exportExcel(): Promise<any> {
         try {
             const { scope, selectedProducts, searchProductForm, selectedIntegrations } = this.request;
+            const maxRows: number = config.exports.excelMaxRows;
+            const codes: string[] = Array.isArray(selectedIntegrations) ? selectedIntegrations : [];
+            // `platforms.<kod>...` projeksiyon yoluna gömülür: yalnız güvenli kodlar (yol enjeksiyonu yok)
+            if (codes.some((c) => typeof c !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(c))) throw new ApplicationError('Geçersiz entegrasyon kodu.', 400, 'VALIDATION');
+
             const filterQuery: any = {};
             if (scope === 0) filterQuery._id = { $in: selectedProducts.map((id: string) => new ObjectId(id)) };
             else if (scope === 1) Object.assign(filterQuery, await this.getProductFilterQuery(searchProductForm?.data || searchProductForm));
 
-            const productsToProcess = await this.clientDB.getProductModel().find(filterQuery).lean();
-            if (!productsToProcess || productsToProcess.length === 0) return { result: true, count: 0 };
+            const variantProjection: any = { productId: 1, barcode: 1, stock: 1, 'prices.salePrice': 1 };
+            for (const code of codes) variantProjection[`platforms.${code}.upload.TRANSFER.status`] = 1;
 
-            const productIds = productsToProcess.map((p: any) => p._id);
-            const allVariants = await this.clientDB.getVariantModel().find({ productId: { $in: productIds } }).lean() || [];
             const data: any[] = [];
+            let productCount = 0;
+            let overLimit = false;
 
-            for (const product of productsToProcess) {
-                const productVariants = allVariants.filter((variant: any) => variant.productId.toString() === product._id.toString());
-                for (const variant of productVariants) {
-                    const row: any = { 'Ürün': product.title, 'Barkod': variant.barcode, 'Stok': variant.stock, 'Fiyat': variant.prices?.salePrice };
-                    if (selectedIntegrations) {
-                        for (const code of selectedIntegrations) {
-                            row[code.toUpperCase()] = variant.platforms?.[code]?.upload?.TRANSFER?.status || 'PENDING';
-                        }
-                    }
-                    data.push(row);
+            const flush = async (batch: any[]): Promise<void> => {
+                const variants = await this.clientDB.getVariantModel().find({ productId: { $in: batch.map((p) => p._id) } }, variantProjection).lean() || [];
+                const byProduct = new Map<string, any[]>();
+                for (const v of variants as any[]) {
+                    const key = v.productId.toString();
+                    const list = byProduct.get(key);
+                    if (list) list.push(v); else byProduct.set(key, [v]);
                 }
+                for (const product of batch) {
+                    for (const variant of byProduct.get(product._id.toString()) ?? []) {
+                        if (data.length >= maxRows) { overLimit = true; return; }
+                        const row: any = { 'Ürün': product.title, 'Barkod': variant.barcode, 'Stok': variant.stock, 'Fiyat': variant.prices?.salePrice };
+                        for (const code of codes) row[code.toUpperCase()] = variant.platforms?.[code]?.upload?.TRANSFER?.status || 'PENDING';
+                        data.push(row);
+                    }
+                }
+            };
+
+            const cursor = this.clientDB.getProductModel().find(filterQuery, { title: 1 }).lean().cursor({ batchSize: EXPORT_BATCH_PRODUCTS });
+            let batch: any[] = [];
+            for await (const product of cursor as AsyncIterable<any>) {
+                productCount++;
+                batch.push(product);
+                if (batch.length >= EXPORT_BATCH_PRODUCTS) { await flush(batch); batch = []; }
+                if (overLimit) break;
             }
+            if (!overLimit && batch.length > 0) await flush(batch);
+
+            if (overLimit) {
+                return {
+                    result: false, code: 'EXPORT_ROW_LIMIT', limit: maxRows,
+                    message: `Dışa aktarma satır sınırını (${maxRows}) aşıyor. Lütfen filtreyi daraltın veya daha az ürün seçin.`,
+                };
+            }
+            if (productCount === 0) return { result: true, count: 0 };
+
             const worksheet = XLSX.utils.json_to_sheet(data);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, 'Ürünler');

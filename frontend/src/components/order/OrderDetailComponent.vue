@@ -1,194 +1,115 @@
+<!--
+  frontend/src/components/order/OrderDetailComponent.vue
+
+  Aşama 6b (Standart 6) — sipariş detayı: özet başlık (kanal rengi, durum, tutar, tarih) → uyarılar (EkAlert) →
+  durum zaman çizgisi (tarihler veriden) → kalemler + tutar dökümü → Alıcı · Teslimat · Kargo · Fatura kartları →
+  stok tahsisi. Ana eylemler başlıkta: sıradaki iş BİRİNCİL, diğerleri ikincil, iptal tehlikeli tonda (onay ekranda).
+  Uydurma veri yok: alan yoksa "—" ya da açıklayıcı boş metin. Sekme içi yan sayfa (EkDetailSheet, Standart 7).
+-->
 <template>
   <EkDetailSheet v-model="isOpen" :identity="order?.orderNumber ?? 'Sipariş detayı'">
     <template #status>
       <EkStatusChip v-if="order" :tone="statusEntry.tone" :label="$t(statusEntry.labelKey)" />
     </template>
     <template #actions>
-      <v-btn v-if="order && isOrderActionAllowed(order, 'CANCEL')" variant="outlined" :disabled="isLocked" prepend-icon="mdi-delete-sweep-outline" @click="emit('cancel', order)">
-        İptal et
-      </v-btn>
-      <v-btn v-if="order && isOrderActionAllowed(order, 'APPROVE')" color="primary" :disabled="isLocked" prepend-icon="mdi-check-circle-outline" @click="emitAction('APPROVE')">
-        Onayla
-      </v-btn>
-      <v-btn v-if="order && isOrderActionAllowed(order, 'INVOICE')" color="primary" :disabled="isLocked" prepend-icon="mdi-receipt-text-plus-outline" @click="emitAction('INVOICE')">
-        Fatura oluştur
-      </v-btn>
-      <v-btn v-if="order && isOrderActionAllowed(order, 'SHIP')" color="primary" :disabled="isLocked" prepend-icon="mdi-truck-outline" @click="emitAction('SHIP')">
-        Kargoya ver
-      </v-btn>
+      <template v-if="order">
+        <EkActionButton v-if="isOrderActionAllowed(order, 'CANCEL')" action="cancel" show-label size="md" label="İptal et" :disabled="isLocked" @click="emit('cancel', order)" />
+        <EkButton
+          v-for="a in forwardActions"
+          :key="a.key"
+          :tone="a.key === primaryKey ? 'primary' : 'secondary'"
+          :icon="a.icon"
+          :disabled="isLocked"
+          @click="emitAction(a.key)"
+        >{{ a.label }}</EkButton>
+      </template>
     </template>
 
-    <div v-if="order" class="d-flex flex-column ek-gap-8">
-      <v-alert v-if="order.platformDiscrepancy?.hasDiscrepancy" type="error" variant="tonal" icon="mdi-alert-circle">
-        <div class="text-body-2 font-weight-semibold">Finansal uyumsuzluk tespit edildi</div>
-        <div class="text-caption">{{ order.platformDiscrepancy?.message }}</div>
-        <v-btn color="error" variant="outlined" size="small" class="mt-2" @click="emit('resolveDiscrepancy', order)">
-          Farkı eşitle ve faturayı yenile
-        </v-btn>
-      </v-alert>
-
-      <v-alert v-if="isLocked" type="warning" variant="tonal" icon="mdi-clock-check-outline">
-        <div class="text-body-2 font-weight-semibold">İşlem devam ediyor</div>
-        <div class="text-caption">{{ lockMessage }} Pazar yerinin işlemi tamamlaması için yaklaşık 2 dakika kilit uygulanır.</div>
-      </v-alert>
-
-      <EkSection>
-        <EkDescriptionList :items="identityItems" />
-        <div v-if="metaBadges.length" class="d-flex ek-gap-1 mt-2 flex-wrap">
+    <div v-if="order" class="ek-od">
+      <EkRecordSummary
+        :channel="order.integrationCode"
+        kind="Sipariş"
+        :title="customerName"
+        :facts="summaryFacts"
+        :amount="formatMoney(order.financials?.grandTotal)"
+        amount-label="Ödenecek toplam"
+        :amount-hint="itemCountText"
+        label="Sipariş özeti"
+      >
+        <template #status>
           <EkStatusChip v-for="b in metaBadges" :key="b.label" :tone="b.tone" :label="b.label" />
-        </div>
-      </EkSection>
+        </template>
+      </EkRecordSummary>
 
-      <EkSection v-if="order.internalStatus !== OrderInternalStatusEnum.CANCELLED && order.internalStatus !== OrderInternalStatusEnum.DELIVERED" title="Süreç durumu">
-        <div class="ek-order-stepper">
-          <div v-for="(step, i) in steps" :key="i" class="ek-order-step" :class="{ 'ek-order-step--done': stepperStep >= i, 'ek-order-step--active': stepperStep === i }">
-            <span class="ek-order-step__dot" />
-            <span class="ek-order-step__label">{{ step }}</span>
-          </div>
-        </div>
-        <v-alert v-if="statusInformation" :type="alertType" variant="tonal" :icon="statusInformation.icon" class="mt-4">
-          <div class="text-body-2 font-weight-medium">{{ statusInformation.title }}</div>
-          <div class="text-caption mt-1">{{ statusInformation.desc }}</div>
-        </v-alert>
+      <EkAlert v-if="order.platformDiscrepancy?.hasDiscrepancy" tone="error" title="Finansal uyumsuzluk tespit edildi" :text="order.platformDiscrepancy?.message">
+        <template #actions>
+          <EkButton tone="secondary" size="sm" @click="emit('resolveDiscrepancy', order)">Farkı eşitle ve faturayı yenile</EkButton>
+        </template>
+      </EkAlert>
+      <EkAlert v-if="isLocked" tone="warning" icon="mdi-clock-check-outline" title="İşlem devam ediyor" :text="`${lockMessage} Pazar yerinin işlemi tamamlaması için yaklaşık 2 dakika kilit uygulanır.`" />
+      <EkAlert v-if="order.internalStatus === OrderInternalStatusEnum.RETURNED" tone="error" title="İade talebi / süreci" text="Bu sipariş için pazaryeri üzerinde bir iade süreci başlatılmıştır. Ayrıntılar İade Yönetimi ekranında." />
+      <EkAlert
+        v-if="(order.internalStatus === OrderInternalStatusEnum.CANCELLED || order.internalStatus === OrderInternalStatusEnum.RETURNED) && order.flags?.isInvoiceGenerated"
+        tone="warning" icon="mdi-file-cancel-outline" title="Faturalandırılmış iptal/iade"
+        text="Bu siparişin faturası sistem tarafından kesilmiştir. Faturayı iptal etmeyi veya iade faturası düzenlemeyi unutmayın."
+      />
 
-        <v-alert v-if="order.internalStatus === OrderInternalStatusEnum.RETURNED" type="error" variant="tonal" icon="mdi-alert-decagram" class="mt-3">
-          <div class="text-caption font-weight-semibold">Dikkat: İade talebi / süreci</div>
-          <div class="text-caption">Bu sipariş için pazaryeri üzerinde bir iade süreci başlatılmıştır. Detaylı bilgi için İade Yönetimi sayfasını kontrol ediniz.</div>
-        </v-alert>
-
-        <v-alert v-if="(order.internalStatus === OrderInternalStatusEnum.CANCELLED || order.internalStatus === OrderInternalStatusEnum.RETURNED) && order.flags?.isInvoiceGenerated" type="warning" variant="tonal" icon="mdi-file-cancel" class="mt-3">
-          <div class="text-caption font-weight-semibold">Dikkat: Faturalandırılmış iptal/iade</div>
-          <div class="text-caption">Bu siparişin faturası sistem tarafından kesilmiştir. Faturayı iptal etmeyi veya iade faturası düzenlemeyi unutmayın.</div>
-        </v-alert>
-
-        <div v-if="order.internalStatus !== OrderInternalStatusEnum.CANCELLED && order.dates?.estimatedDeliveryDate && order.internalStatus !== OrderInternalStatusEnum.DELIVERED" class="mt-3">
-          <EkDescriptionList :items="[{ label: 'Tahmini teslimat', value: formatDateTime(order.dates.estimatedDeliveryDate) }]" />
-        </div>
-
-        <div v-if="order.internalStatus === OrderInternalStatusEnum.CANCELLED" class="mt-3">
-          <EkDescriptionList :items="[
+      <EkSection title="Süreç durumu">
+        <EkStatusTimeline :steps="timelineSteps" label="Sipariş süreci" />
+        <EkAlert v-if="statusInformation" class="mt-4" :tone="alertTone" :icon="statusInformation.icon" :title="statusInformation.title" :text="statusInformation.desc" dense />
+        <EkDescriptionList
+          v-if="order.internalStatus === OrderInternalStatusEnum.CANCELLED"
+          class="mt-3"
+          :items="[
             { label: 'İptal kaynağı', value: order.cancelSource === 'SELLER' ? 'Satıcı kaynaklı' : 'Müşteri / platform' },
             { label: 'İptal gerekçesi', value: order.cancelReason || 'Pazar yeri tarafından bir gerekçe iletilmedi.' },
             { label: 'İptal tarihi', value: formatDateTime(order.dates?.cancelledDate) },
-          ]" />
-        </div>
+          ]"
+        />
       </EkSection>
 
-      <v-row v-if="order.internalStatus !== OrderInternalStatusEnum.CANCELLED" dense>
-        <v-col cols="12" sm="6">
-          <EkSection title="Fatura">
-            <EkDescriptionList :items="[{ label: order.invoice?.invoiceNumber ? `E-Fatura (${order.invoice?.invoiceMethod || 'Elektronik'})` : 'E-Fatura', value: order.invoice?.invoiceNumber || 'Fatura bilgisi yok' }]" />
-            <v-btn v-if="order.invoice?.invoiceNumber" variant="outlined" size="small" class="mt-2" :disabled="!order.invoice?.invoiceLink" prepend-icon="mdi-file-pdf-box" @click="openLink(order.invoice?.invoiceLink)">
-              PDF görüntüle
-            </v-btn>
-          </EkSection>
-        </v-col>
-        <v-col cols="12" sm="6">
-          <EkSection title="Sevkiyat">
-            <div v-if="order.fulfillment?.length" class="d-flex flex-column ek-gap-3">
-              <div v-for="(pkg, pIdx) in order.fulfillment" :key="pIdx">
-                <EkDescriptionList :items="[{ label: pkg.trackingCode ? `${pkg.carrierName} takip kodu` : 'Takip kodu', value: pkg.trackingCode || 'Takip bilgisi yok' }]" />
-                <div v-if="pkg.trackingCode" class="d-flex ek-gap-2 mt-1">
-                  <v-btn variant="outlined" size="small" prepend-icon="mdi-barcode-scan" @click="emit('print', order)">Barkod yazdır</v-btn>
-                  <v-btn variant="outlined" size="small" :disabled="!pkg?.trackingUrl" prepend-icon="mdi-map-marker-outline" @click="openLink(pkg?.trackingUrl)">Takip sayfası</v-btn>
-                </div>
-              </div>
-            </div>
-            <EkEmptyState v-else variant="no-data" title="Sevkiyat bilgisi yok" message="Bu sipariş için henüz kargo kaydı oluşturulmadı." />
-          </EkSection>
-        </v-col>
-      </v-row>
-
-      <EkSection title="Ödeme detayları">
-        <EkDescriptionList :items="[
-          { label: 'Ara toplam', value: formatMoney(order.financials?.subTotal) },
-          { label: 'KDV', value: formatMoney(order.financials?.totalTax) },
-          { label: 'Kargo ücreti', value: formatMoney(order.financials?.shippingFee) },
-          { label: 'İndirim', value: order.financials?.totalDiscount > 0 ? `-${formatMoney(order.financials?.totalDiscount)}` : formatMoney(0) },
-        ]" />
-        <div class="ek-order-total mt-4 pa-4 d-flex align-center justify-space-between">
-          <span class="text-caption font-weight-medium text-uppercase">Ödenecek toplam</span>
-          <span class="text-h5 font-weight-bold ek-num">{{ formatMoney(order.financials?.grandTotal) }}</span>
-        </div>
-      </EkSection>
-
-      <EkSection title="Ürünler">
+      <EkSection title="Ürünler" :description="itemCountText">
         <EkDataTable :items="order.items || []" :columns="itemColumns" row-key="sku">
           <template #cell-productName="{ item }">
-            <div class="d-flex flex-column">
-              <div class="d-flex align-center ek-gap-1">
-                <span class="font-weight-medium text-body-2" :class="{ 'ek-strike': item.itemStatus !== 'ACTIVE' }">{{ item.productName }}</span>
-                <EkStatusChip v-if="item.itemStatus !== 'ACTIVE'" tone="danger" :label="item.itemStatus === 'CANCELLED' ? 'İptal' : 'İade'" />
-              </div>
-              <span class="text-caption ek-muted">SKU: {{ item.sku }}<template v-if="item.barcode"> · Barkod: {{ item.barcode }}</template></span>
+            <div class="ek-od-item">
+              <span class="ek-od-item__name" :class="{ 'ek-strike': item.itemStatus && item.itemStatus !== 'ACTIVE' }">{{ item.productName }}</span>
+              <span class="ek-od-item__meta ek-num">{{ item.sku ? `SKU ${item.sku}` : '' }}<template v-if="item.barcode"> · {{ item.barcode }}</template></span>
+              <EkStatusChip v-if="item.itemStatus && item.itemStatus !== 'ACTIVE'" tone="danger" :label="item.itemStatus === 'CANCELLED' ? 'İptal' : 'İade'" />
             </div>
           </template>
-          <template #cell-unitPrice="{ item }">{{ formatMoney(item.totalPrice) }}</template>
+          <template #cell-unitPrice="{ item }"><span class="ek-num">{{ item.unitPrice !== undefined ? formatMoney(item.unitPrice) : '—' }}</span></template>
+          <template #cell-totalPrice="{ item }"><span class="ek-num ek-od-strong">{{ formatMoney(item.totalPrice) }}</span></template>
         </EkDataTable>
+        <dl class="ek-od-totals">
+          <div><dt>Ara toplam</dt><dd class="ek-num">{{ formatMoney(order.financials?.subTotal) }}</dd></div>
+          <div v-if="order.financials?.totalDiscount > 0"><dt>İndirim</dt><dd class="ek-num">-{{ formatMoney(order.financials?.totalDiscount) }}</dd></div>
+          <div><dt>KDV</dt><dd class="ek-num">{{ formatMoney(order.financials?.totalTax) }}</dd></div>
+          <div><dt>Kargo ücreti</dt><dd class="ek-num">{{ formatMoney(order.financials?.shippingFee) }}</dd></div>
+          <div class="ek-od-totals__grand"><dt>Ödenecek toplam</dt><dd class="ek-num">{{ formatMoney(order.financials?.grandTotal) }}</dd></div>
+        </dl>
       </EkSection>
 
-      <EkSection title="Müşteri">
-        <div class="d-flex align-center ek-gap-3 mb-4">
-          <v-avatar color="surface-muted" size="44">
-            <span class="text-body-2 font-weight-bold">{{ order.billingAddress?.firstName?.[0] }}{{ order.billingAddress?.lastName?.[0] }}</span>
-          </v-avatar>
-          <div class="d-flex flex-column">
-            <span class="font-weight-medium text-body-2">{{ order.billingAddress?.firstName }} {{ order.billingAddress?.lastName }}</span>
-            <span class="text-caption ek-muted">{{ formatPhoneNumber(order.billingAddress?.phone) }} · {{ order.billingAddress?.email || '—' }}</span>
-          </div>
-        </div>
-        <EkDescriptionList :items="[
-          { label: 'Adres', value: `${order.shippingAddress?.addressLine1 || ''}` },
-          { label: 'Şehir / İlçe', value: `${order.shippingAddress?.city || ''} / ${order.shippingAddress?.state || ''}` },
-          { label: 'Fatura tipi', value: order.billingAddress?.isCorporate ? 'Kurumsal' : 'Bireysel' },
-          { label: 'Firma', value: order.billingAddress?.companyName || 'Bireysel' },
-        ]" />
-      </EkSection>
+      <div class="ek-od-cards">
+        <!-- A13: Alıcı = ortak müşteri kartı (kimlik · maskeli iletişim + kopya · fatura/teslimat adresi ayrımı); tam satır. -->
+        <CustomerBuyerCard class="ek-od-buyer" title="Alıcı" wide :person="buyer" :channel="order.integrationCode"
+          :billing="billingAddress" :shipping="shippingAddress" />
+        <EkInfoCard title="Kargo" icon="mdi-truck-outline" :tone="order.fulfillment?.length ? 'info' : 'neutral'"
+          :rows="shipmentRows" empty-text="Bu sipariş için henüz kargo kaydı oluşturulmadı.">
+          <template v-if="firstShipment?.trackingCode" #actions>
+            <EkButton tone="secondary" size="sm" icon="mdi-barcode-scan" @click="emit('print', order)">Barkod yazdır</EkButton>
+            <EkButton tone="ghost" size="sm" :icon="icons.openExternal" :disabled="!firstShipment?.trackingUrl" @click="openLink(firstShipment?.trackingUrl)">Takip sayfası</EkButton>
+          </template>
+        </EkInfoCard>
+        <EkInfoCard title="Fatura" icon="mdi-receipt-text-outline" :tone="order.invoice?.invoiceNumber ? 'success' : 'neutral'"
+          :rows="invoiceRows" empty-text="Fatura henüz oluşturulmadı.">
+          <template v-if="order.invoice?.invoiceNumber" #actions>
+            <EkButton tone="secondary" size="sm" icon="mdi-file-pdf-box" :disabled="!order.invoice?.invoiceLink" @click="openLink(order.invoice?.invoiceLink)">PDF görüntüle</EkButton>
+          </template>
+        </EkInfoCard>
+      </div>
 
-      <EkSection title="Sipariş yolculuğu">
-        <ol class="ek-order-timeline">
-          <li v-for="event in timelineEvents" :key="event.id" class="ek-order-timeline__item">
-            <span class="ek-order-timeline__dot" :class="{ 'ek-order-timeline__dot--success': event.isSuccess }" />
-            <div class="d-flex flex-column">
-              <span class="text-body-2 font-weight-medium">{{ event.label }}</span>
-              <span class="text-caption ek-muted ek-num">{{ formatDateTime(event.date) }}</span>
-            </div>
-          </li>
-        </ol>
-      </EkSection>
-
-      <EkSection title="Operasyon rehberi" description="Siparişin yaşam döngüsü ve zorunlu aksiyon adımları">
-        <v-row dense>
-          <v-col cols="12" sm="6">
-            <div class="ek-guide-card pa-3 border-subtle rounded-lg h-100">
-              <v-icon size="18" color="content-muted" class="mb-2">mdi-shield-check-outline</v-icon>
-              <div class="text-caption font-weight-semibold mb-1">1. Sipariş onayı</div>
-              <div class="text-caption ek-muted">Pazar yeri onayı bekleniyor. Bu aşamada fatura kesilemez ve kargo işlemi yapılamaz.</div>
-            </div>
-          </v-col>
-          <v-col cols="12" sm="6">
-            <div class="ek-guide-card pa-3 border-subtle rounded-lg h-100">
-              <v-icon size="18" color="content-muted" class="mb-2">mdi-receipt-text-outline</v-icon>
-              <div class="text-caption font-weight-semibold mb-1">2. Fatura ve hazırlık</div>
-              <div class="text-caption ek-muted">Sipariş onaylandı. Fatura kesebilir, kargo etiketi yazdırabilir ve kargo işlemini başlatabilirsiniz.</div>
-            </div>
-          </v-col>
-          <v-col cols="12" sm="6">
-            <div class="ek-guide-card pa-3 border-subtle rounded-lg h-100">
-              <v-icon size="18" color="content-muted" class="mb-2">mdi-package-variant-closed</v-icon>
-              <div class="text-caption font-weight-semibold mb-1">3. Teslimat bekleniyor</div>
-              <div class="text-caption ek-muted">Paket kargo firmasında. Yeni kargo işlemi yapılamaz, yalnızca takip edilebilir.</div>
-            </div>
-          </v-col>
-          <v-col cols="12" sm="6">
-            <div class="ek-guide-card pa-3 border-subtle rounded-lg h-100">
-              <v-icon size="18" color="content-muted" class="mb-2">mdi-truck-fast-outline</v-icon>
-              <div class="text-caption font-weight-semibold mb-1">4. Teslimat</div>
-              <div class="text-caption ek-muted">Süreç tamamlandı; operasyonel işlemler kilitlenir, yalnızca kayıtlar incelenebilir.</div>
-            </div>
-          </v-col>
-        </v-row>
-      </EkSection>
+      <!-- C1.1: kalem stok tahsisi — yalnızca en az bir kalemde tahsis durumu varsa. -->
+      <OrderAllocationTimeline v-if="hasAllocation" :items="order.items" />
     </div>
 
     <EkSkeleton v-else type="detail" />
@@ -197,17 +118,27 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import EkDetailSheet from '@/components/ds/EkDetailSheet.vue';
-import EkSection from '@/components/ds/EkSection.vue';
-import EkStatusChip from '@/components/ds/EkStatusChip.vue';
-import EkDescriptionList, { type EkDescriptionListItem } from '@/components/ds/EkDescriptionList.vue';
-import EkDataTable, { type EkTableColumn } from '@/components/ds/EkDataTable.vue';
-import EkEmptyState from '@/components/ds/EkEmptyState.vue';
-import EkSkeleton from '@/components/ds/EkSkeleton.vue';
-import { formatMoney, formatDateTime } from '@/composables/format';
+import { EkDetailSheet, EkSection, EkStatusChip, EkDescriptionList, EkDataTable, type EkTableColumn, EkSkeleton, EkAlert, type EkAlertTone, EkButton, EkActionButton, EkRecordSummary, type EkSummaryFact, EkStatusTimeline, type EkTimelineStep, EkInfoCard } from '@entegrasyonik/ui/components';
+;
+;
+;
+;
+;
+;
+;
+;
+;
+;
+;
+import CustomerBuyerCard, { type BuyerPerson } from '@/components/customer/card/CustomerBuyerCard.vue';
+import { addressView } from '@/components/customer/customerCard';
+import { icons } from '@entegrasyonik/ui/icons';
+import { formatMoney, formatDateTime } from '@entegrasyonik/ui/format';
 import { ORDER_STATUS_TONE, type StatusTone } from '@/design/status-map';
 import { OrderInternalStatusEnum } from '@/types/OrderTypes';
 import { useLifecycle } from '@/composables/useLifecycle';
+import OrderAllocationTimeline from '@/components/order/OrderAllocationTimeline.vue';
+import { isAllocationState } from '@/composables/useStockHealthApi';
 
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
@@ -217,7 +148,6 @@ const props = defineProps({
 const emit = defineEmits(['statusAction', 'cancel', 'print', 'resolveDiscrepancy', 'update:modelValue']);
 
 const { isOrderActionAllowed } = useLifecycle();
-const steps = ['Sipariş oluşturuldu', 'Satıcı onayı', 'Hazırlanıyor', 'Kargoya verildi', 'Teslim edildi'];
 
 const isOpen = computed({
     get: () => props.modelValue,
@@ -225,21 +155,11 @@ const isOpen = computed({
 });
 
 const statusEntry = computed(() => ORDER_STATUS_TONE[props.order?.internalStatus as OrderInternalStatusEnum] ?? { tone: 'neutral' as StatusTone, labelKey: 'status.order.unapproved' });
-const alertType = computed(() => {
+const alertTone = computed<EkAlertTone>(() => {
     const tone = statusEntry.value.tone;
-    return tone === 'danger' ? 'error' : tone === 'neutral' ? 'info' : tone;
+    return tone === 'danger' ? 'error' : tone === 'neutral' ? 'info' : (tone as EkAlertTone);
 });
 
-const stepperStep = computed(() => {
-    if (!props.order) return 0;
-    const s = props.order.internalStatus;
-    if (s === OrderInternalStatusEnum.UNAPPROVED) return 0;
-    if (s === OrderInternalStatusEnum.AWAITING_APPROVAL) return 1;
-    if (s === OrderInternalStatusEnum.APPROVED) return 2;
-    if (s === OrderInternalStatusEnum.SHIPPED) return 3;
-    if (s === OrderInternalStatusEnum.DELIVERED) return 4;
-    return -1;
-});
 
 const metaBadges = computed(() => {
     if (!props.order) return [];
@@ -250,67 +170,120 @@ const metaBadges = computed(() => {
     return badges;
 });
 
-const identityItems = computed<EkDescriptionListItem[]>(() => {
-    if (!props.order) return [];
-    const items: EkDescriptionListItem[] = [
-        { label: 'Sipariş No', value: props.order.orderNumber },
-        { label: 'Sipariş tarihi', value: formatDateTime(props.order.dates?.orderDate) },
-    ];
-    if (props.order.internalStatus === OrderInternalStatusEnum.DELIVERED) {
-        items.push({ label: 'Teslim tarihi', value: formatDateTime(props.order.dates?.deliveredDate) });
-    }
-    return items;
+const customerName = computed(() => {
+    const b = props.order?.billingAddress;
+    const name = [b?.firstName, b?.lastName].filter(Boolean).join(' ');
+    return name || props.order?.customerFirstName || 'Müşteri bilgisi yok';
 });
+
+// A13 — alıcı kartı verisi (siparişin fatura adresi kimliği; müşteri kaydı siparişte gömülü gelmez → müşteri olma tarihi yok).
+const buyer = computed<BuyerPerson | null>(() => {
+    const o = props.order;
+    if (!o) return null;
+    const b = o.billingAddress ?? {};
+    const sh = o.shippingAddress ?? {};
+    return {
+        id: o._id,
+        firstName: b.firstName || o.customerFirstName || sh.firstName,
+        lastName: b.lastName || o.customerLastName || sh.lastName,
+        companyName: b.companyName,
+        isCorporate: !!b.isCorporate,
+        taxNumber: b.taxNumber,
+        taxOffice: b.taxOffice,
+        phone: b.phone || sh.phone,
+        email: b.email || sh.email,
+    };
+});
+const billingAddress = computed(() => addressView(props.order?.billingAddress));
+const shippingAddress = computed(() => addressView(props.order?.shippingAddress));
+
+const itemCountText = computed(() => {
+    const items = props.order?.items ?? [];
+    const qty = items.reduce((n: number, i: any) => n + (Number(i?.quantity) || 0), 0);
+    return `${items.length} kalem · ${qty} adet`;
+});
+
+// Özet: kimlik + tarih + kanal durumu (spec çapası: "Sipariş No" etiketi görünür).
+const summaryFacts = computed<EkSummaryFact[]>(() => {
+    const o = props.order;
+    if (!o) return [];
+    const facts: EkSummaryFact[] = [
+        { label: 'Sipariş No', value: o.orderNumber, numeric: true },
+        { label: 'Sipariş tarihi', value: formatDateTime(o.dates?.orderDate), numeric: true },
+    ];
+    if (o.internalStatus === OrderInternalStatusEnum.DELIVERED) facts.push({ label: 'Teslim tarihi', value: formatDateTime(o.dates?.deliveredDate), numeric: true });
+    else if (o.dates?.estimatedDeliveryDate && o.internalStatus !== OrderInternalStatusEnum.CANCELLED) facts.push({ label: 'Tahmini teslim', value: formatDateTime(o.dates.estimatedDeliveryDate), numeric: true });
+    return facts;
+});
+
+/** Durum zaman çizgisi: yaşam döngüsü adımları + VERİDEKİ tarihler (tarih yoksa gösterilmez). */
+const timelineSteps = computed<EkTimelineStep[]>(() => {
+    const o = props.order;
+    if (!o) return [];
+    const d = o.dates ?? {};
+    const s = o.internalStatus;
+    const fmt = (v: any) => (v ? formatDateTime(v) : undefined);
+    const base = [
+        { key: 'created', label: 'Sipariş alındı', date: fmt(d.orderDate) },
+        { key: 'approved', label: 'Onaylandı', date: fmt(d.approvedDate) },
+        { key: 'invoiced', label: 'Faturalandı', date: fmt(o.invoice?.invoicedAt || d.invoiceDate) },
+        { key: 'shipped', label: 'Kargoya verildi', date: fmt(d.shippedDate) },
+        { key: 'delivered', label: 'Teslim edildi', date: fmt(d.deliveredDate) },
+    ];
+    // Adım konumu: 0 alındı · 1 onay · 2 fatura/hazırlık · 3 kargo · 4 teslim.
+    const pos = s === OrderInternalStatusEnum.UNAPPROVED ? 0 : s === OrderInternalStatusEnum.AWAITING_APPROVAL ? 1
+        : s === OrderInternalStatusEnum.APPROVED ? (o.flags?.isInvoiceGenerated || o.invoice?.invoiceNumber ? 3 : 2)
+        : s === OrderInternalStatusEnum.SHIPPED ? 4 : s === OrderInternalStatusEnum.DELIVERED ? 5 : -1;
+    if (s === OrderInternalStatusEnum.CANCELLED || s === OrderInternalStatusEnum.RETURNED) {
+        const done = base.filter((b) => b.date).map((b) => ({ ...b, state: 'done' as const }));
+        const last = s === OrderInternalStatusEnum.CANCELLED
+            ? { key: 'cancelled', label: 'İptal edildi', date: fmt(d.cancelledDate), state: 'failed' as const, description: o.cancelReason || undefined }
+            : { key: 'returned', label: 'İade edildi', date: fmt(d.externalUpdatedAt), state: 'failed' as const };
+        return [...(done.length ? done : [{ ...base[0], state: 'done' as const }]), last];
+    }
+    return base.map((b, i) => ({ ...b, state: i < pos ? 'done' : i === pos ? 'current' : 'upcoming' }));
+});
+
+const firstShipment = computed(() => props.order?.fulfillment?.[0]);
+const shipmentRows = computed(() => {
+    const f = firstShipment.value;
+    if (!f) return [];
+    return [
+        { label: 'Kargo firması', value: f.carrierName },
+        { label: 'Takip kodu', value: f.trackingCode || 'Takip bilgisi yok', numeric: true },
+        ...(f.desi ? [{ label: 'Desi', value: String(f.desi), numeric: true }] : []),
+        ...((props.order?.fulfillment?.length ?? 0) > 1 ? [{ label: 'Paket', value: `${props.order.fulfillment.length} paket` }] : []),
+    ];
+});
+const invoiceRows = computed(() => {
+    const inv = props.order?.invoice;
+    if (!inv?.invoiceNumber) return [];
+    return [
+        { label: 'Fatura no', value: inv.invoiceNumber, numeric: true },
+        { label: 'Tür', value: inv.invoiceMethod === 'E_ARCHIVE' ? 'E-arşiv' : inv.invoiceMethod === 'E_INVOICE' ? 'E-fatura' : inv.invoiceMethod },
+        { label: 'Tarih', value: inv.invoicedAt ? formatDateTime(inv.invoicedAt) : '', numeric: true },
+    ];
+});
+
+/** İleri eylemler: sıradaki iş birincil (onay → fatura → kargo). */
+const FORWARD = [
+    { key: 'APPROVE', label: 'Onayla', icon: 'mdi-check-circle-outline' },
+    { key: 'INVOICE', label: 'Fatura oluştur', icon: 'mdi-receipt-text-plus-outline' },
+    { key: 'SHIP', label: 'Kargoya ver', icon: 'mdi-truck-outline' },
+] as const;
+const forwardActions = computed(() => (props.order ? FORWARD.filter((a) => isOrderActionAllowed(props.order, a.key as any)) : []));
+const primaryKey = computed(() => forwardActions.value[0]?.key);
 
 const itemColumns: EkTableColumn[] = [
-    { key: 'productName', label: 'Ürün detayı' },
-    { key: 'quantity', label: 'Adet', align: 'end' },
-    { key: 'unitPrice', label: 'Toplam', align: 'end' },
+    { key: 'productName', label: 'Ürün' },
+    { key: 'quantity', label: 'Adet', type: 'number' },
+    { key: 'unitPrice', label: 'Birim fiyat', align: 'end' },
+    { key: 'totalPrice', label: 'Tutar', align: 'end' },
 ];
 
-const timelineEvents = computed(() => {
-    if (!props.order) return [];
-    const events: any[] = [];
-    const o = props.order;
+const hasAllocation = computed(() => (props.order?.items ?? []).some((item: any) => isAllocationState(item?.allocationState)));
 
-    events.push({ id: 'created', label: 'Sipariş oluşturuldu', date: o.dates?.orderDate });
 
-    if (o.internalStatus !== OrderInternalStatusEnum.UNAPPROVED) {
-        events.push({
-            id: 'awaiting_approval',
-            label: o.internalStatus === OrderInternalStatusEnum.AWAITING_APPROVAL ? 'Satıcı onayı bekleniyor' : 'Satıcı onayı alındı',
-            date: o.dates?.approvedDate || (o.internalStatus === OrderInternalStatusEnum.AWAITING_APPROVAL ? undefined : o.updatedAt),
-        });
-    }
-    if (o.invoice?.invoicedAt || o.dates?.invoiceDate) {
-        events.push({ id: 'invoiced', label: 'Fatura oluşturuldu', date: o.invoice?.invoicedAt || o.dates?.invoiceDate });
-    }
-    if (o.dates?.shippedDate || [OrderInternalStatusEnum.SHIPPED, OrderInternalStatusEnum.DELIVERED].includes(o.internalStatus)) {
-        events.push({ id: 'shipped', label: 'Kargoya verildi', date: o.dates?.shippedDate });
-    }
-    if (o.dates?.deliveredDate || o.internalStatus === OrderInternalStatusEnum.DELIVERED) {
-        events.push({ id: 'delivered', label: 'Teslim edildi', date: o.dates?.deliveredDate, isSuccess: true });
-    }
-    if (o.internalStatus === OrderInternalStatusEnum.CANCELLED) {
-        events.push({ id: 'cancelled', label: 'Sipariş iptal edildi', date: o.dates?.cancelledDate });
-    }
-    if (o.internalStatus === OrderInternalStatusEnum.RETURNED) {
-        events.push({ id: 'returned', label: 'Sipariş iade edildi', date: o.dates?.externalUpdatedAt || new Date() });
-    }
-
-    return events.filter(e => e.date).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-});
-
-/** Türkiye telefon formatlayıcı: +90 (5XX) XXX XX XX */
-const formatPhoneNumber = (phone: string | number): string => {
-    if (!phone) return '—';
-    let cleaned = ('' + phone).replace(/\D/g, '');
-    if (cleaned.startsWith('90')) cleaned = cleaned.substring(2);
-    if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
-    if (cleaned.length !== 10) return String(phone);
-    const match = cleaned.match(/^(\d{3})(\d{3})(\d{2})(\d{2})$/);
-    return match ? `+90 (${match[1]}) ${match[2]} ${match[3]} ${match[4]}` : String(phone);
-};
 
 const openLink = (url: string) => { if (url) window.open(url, '_blank'); };
 
@@ -350,9 +323,9 @@ const statusInformation = computed(() => {
         case OrderInternalStatusEnum.SHIPPED:
             return { title: 'Teslimat yolunda', desc: 'Sipariş kargoya verildi. Bu aşamada yalnızca teslimat takibi yapılabilir.', icon: 'mdi-truck-fast-outline' };
         case OrderInternalStatusEnum.DELIVERED:
-            return { title: 'Sipariş tamamlandı', desc: 'Sipariş müşteriye ulaştı. Tüm operasyonel süreçler tamamlandı.', icon: 'mdi-check-circle' };
+            return { title: 'Sipariş tamamlandı', desc: 'Sipariş müşteriye ulaştı. Tüm operasyonel süreçler tamamlandı.', icon: 'mdi-check-circle-outline' };
         case OrderInternalStatusEnum.CANCELLED:
-            return { title: 'Sipariş iptal edildi', desc: 'Bu sipariş iptal edildi, üzerinde işlem yapılamaz.', icon: 'mdi-close-circle' };
+            return { title: 'Sipariş iptal edildi', desc: 'Bu sipariş iptal edildi, üzerinde işlem yapılamaz.', icon: 'mdi-close-circle-outline' };
         case OrderInternalStatusEnum.RETURNED:
             return { title: 'Sipariş iade edildi', desc: 'Müşteri bu siparişi iade etti. Detayları İadeler bölümünden takip edebilirsiniz.', icon: 'mdi-keyboard-return' };
         default:
@@ -362,17 +335,33 @@ const statusInformation = computed(() => {
 </script>
 
 <style scoped>
-.ek-gap-1 { gap: var(--ek-space-1); }
-.ek-gap-2 { gap: var(--ek-space-2); }
-.ek-gap-3 { gap: var(--ek-space-3); }
-.ek-gap-8 { gap: var(--ek-space-8); }
+.ek-od {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-6);
+}
 
-.ek-muted {
+.ek-od-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ek-od-item__name {
+  font-weight: var(--ek-font-weight-medium);
+  color: var(--ek-color-content-strong);
+}
+
+.ek-od-item__meta {
+  font-size: var(--ek-type-caption-size);
   color: var(--ek-color-content-muted);
 }
 
-.border-subtle {
-  border: 1px solid var(--ek-color-border-default);
+.ek-od-strong {
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-strong);
 }
 
 .ek-strike {
@@ -380,79 +369,54 @@ const statusInformation = computed(() => {
   color: var(--ek-color-error);
 }
 
-.ek-order-total {
-  background: var(--ek-color-primary);
-  color: var(--ek-color-background);
-  border-radius: var(--ek-radius-lg);
-}
-
-.ek-order-stepper {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--ek-space-2);
-}
-
-.ek-order-step {
-  flex: 1;
+.ek-od-totals {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--ek-space-2);
-  text-align: center;
+  gap: var(--ek-space-1);
+  width: min(100%, 320px);
+  margin: var(--ek-space-3) 0 0 auto;
 }
 
-.ek-order-step__dot {
-  width: 10px;
-  height: 10px;
-  border-radius: var(--ek-radius-full);
-  background: var(--ek-color-border-strong);
+.ek-od-totals > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ek-space-4);
+  font-size: var(--ek-type-body-size);
+  line-height: var(--ek-type-body-line);
 }
 
-.ek-order-step--done .ek-order-step__dot,
-.ek-order-step--active .ek-order-step__dot {
-  background: var(--ek-color-primary);
-}
-
-.ek-order-step__label {
-  font-size: var(--ek-font-size-xs);
-  font-weight: var(--ek-font-weight-medium);
+.ek-od-totals dt {
   color: var(--ek-color-content-muted);
 }
 
-.ek-order-step--active .ek-order-step__label {
-  color: var(--ek-color-content-strong);
-  font-weight: var(--ek-font-weight-semibold);
-}
-
-.ek-order-timeline {
-  list-style: none;
+.ek-od-totals dd {
   margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--ek-space-4);
+  color: var(--ek-color-content-strong);
 }
 
-.ek-order-timeline__item {
-  display: flex;
-  align-items: flex-start;
+.ek-od-totals__grand {
+  margin-top: var(--ek-space-1);
+  padding-top: var(--ek-space-2);
+  border-top: 1px solid var(--ek-color-border-default);
+}
+
+.ek-od-totals__grand dt,
+.ek-od-totals__grand dd {
+  font-weight: var(--ek-font-weight-bold);
+  color: var(--ek-color-content-strong);
+}
+
+.ek-od-totals__grand dd {
+  font-size: var(--ek-type-heading-size);
+}
+
+.ek-od-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
   gap: var(--ek-space-3);
 }
 
-.ek-order-timeline__dot {
-  width: 8px;
-  height: 8px;
-  margin-top: 6px;
-  border-radius: var(--ek-radius-full);
-  background: var(--ek-color-content-subtle);
-  flex: none;
-}
-
-.ek-order-timeline__dot--success {
-  background: var(--ek-color-success);
-}
-
-.ek-guide-card {
-  background: var(--ek-color-surface);
+.ek-od-buyer {
+  grid-column: 1 / -1;
 }
 </style>

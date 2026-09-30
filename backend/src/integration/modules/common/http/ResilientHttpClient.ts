@@ -20,6 +20,10 @@ import { assertAllowedOutboundHost } from '../security/outboundHosts';
 // adaptör descriptor.ts <-> limits.ts <-> ResilientHttpClient DÖNGÜSEL bağımlılığı OLUŞMAZ. Gerçek modül
 // çağrı ANINDA dinamik `import()` ile yüklenir (bkz. `observeCompliance`).
 import type { ContractRef } from '@integration/compliance/ContractGuard';
+// [F-06] Çağrı başına süre/durum/hata sınıfı log'u + platform/operasyon metrik sayaçları (tenant etiketi YOK) + bağlam taşıma.
+import { eventLog } from '@platform/core/logger';
+import { withContextPatch } from '@platform/core/context';
+import { recordIntegrationOperationMetric, recordRateBucketMetric } from '@platform/runtime/metrics';
 
 export type HttpMethod = 'get' | 'post' | 'put' | 'delete' | 'patch';
 type Kind = 'read' | 'write';
@@ -40,6 +44,12 @@ export interface ResilientPolicyConfig {
     timeoutMs?: number;       // varsayılan 30000
     maxConcurrent?: number;   // varsayılan 10
     ratePerMin?: number;      // varsayılan yok (sınırsız)
+    /** [ADR-0030 X1] Servis grubu başına AYRI kova (dk başı istek). `group` etiketli çağrılar YALNIZ kendi grup kovasından geçer
+     *  (adaptörün genel `ratePerMin` kovasını bekletmez/tüketmez => okuma seli yazmayı aç bırakmaz; toplam tavan = grup kovaları
+     *  toplamı). Etiketsiz veya tablosu olmayan gruplu çağrı bugünkü genel kovaya düşer. Bir gruptaki 429 yalnız o grubu yavaşlatır. */
+    groupRatePerMin?: Record<string, number>;
+    /** [ADR-0022] Yanıt/istek gövdesi üst sınırı (bayt). Varsayılan 20 MB (`DEFAULT_MAX_CONTENT_BYTES`). */
+    maxContentBytes?: number;
     retry?: RetryPolicyConfig;
     breaker?: BreakerPolicyConfig;
 }
@@ -61,6 +71,8 @@ export interface ResilientRequestOptions {
     /** [ADR-0018 Karar 2a] Verilirse yanıt gövdesi, ayrı bir zod sözleşmesine karşı GÖZLEMLENİR (asenkron,
      *  hataya dayanıklı, yanıtı ASLA değiştirmez/geciktirmez/reddetmez — yalnız bulgu üretir). */
     contract?: ContractRef;
+    /** [ADR-0030 X1] Servis grubu etiketi (örn. 'product_read'). Verilmezse eski davranış (tek genel kova). */
+    group?: string;
 }
 
 function mapCircuitState(state: CircuitState): 'closed' | 'open' | 'half_open' {
@@ -82,7 +94,8 @@ function isTimeoutLike(err: any): boolean {
     );
 }
 function isNetworkError(err: any): boolean {
-    return !!err && !err.response && !!err.code && !err.isBrokenCircuitError;
+    // [ADR-0022] Kendi sınıflandırdığımız IntegrationError (yönlendirme/boyut reddi) ağ hatası DEĞİLDİR: retry/breaker sayılmaz.
+    return !!err && !err.response && !!err.code && !err.isBrokenCircuitError && !IntegrationError.isIntegrationError(err);
 }
 function httpStatusOf(err: any): number | undefined { return err?.response?.status; }
 function is5xxOr408(err: any): boolean {
@@ -143,9 +156,26 @@ interface AdapterState {
     bulkhead: BulkheadPolicy;
     breakers: Map<Kind, CircuitBreakerPolicy>;
     limiter: RateLimiter;
+    groupLimiters: Map<string, RateLimiter>;
+    /** [BO B6] Devre kesicinin en son 'open' durumuna geçtiği an (epoch ms); yalnız gözlem. */
+    lastOpenedAt?: number;
 }
 
 const MAX_429_RETRIES = 4;
+
+/** [ADR-0022] Varsayılan yanıt/istek gövdesi tavanı (20 MB). */
+export const DEFAULT_MAX_CONTENT_BYTES = 20 * 1024 * 1024;
+
+const OVERSIZE_CODES = new Set(['ERR_FR_MAX_BODY_LENGTH_EXCEEDED']);
+function isOversizeError(err: any): boolean {
+    if (!err || err.response) return false;
+    if (OVERSIZE_CODES.has(err.code)) return true;
+    return err.code === 'ERR_BAD_RESPONSE' && /maxContentLength size of/i.test(String(err.message ?? ''));
+}
+/** Location başlığından yalnız HOST (sorgu/sır sızmasın). */
+function safeLocationHost(loc: any): string {
+    try { return new URL(String(loc)).hostname || '(göreli)'; } catch { return '(göreli)'; }
+}
 
 export class ResilientHttpClient {
     private static adapterStates = new Map<string, AdapterState>();
@@ -164,6 +194,31 @@ export class ResilientHttpClient {
     /** Testlerde temiz durumdan başlamak için (breaker/limiter/bulkhead belleği süreç-içidir). */
     public static resetAllState(): void {
         ResilientHttpClient.adapterStates.clear();
+    }
+
+    /**
+     * [BO B6] Süreç-içi dayanıklılık durumunun ANLIK GÖRÜNTÜSÜ (salt okuma): entegrasyon başına devre kesici durumları (tenant SAYISI olarak),
+     * hız sınırı bütçesi ve son açılma anı. Tenant kimliği/istek verisi dönmez. (`resilienceSnapshot.ts` Redis'e yazar.)
+     */
+    public static snapshotState(): Array<{ integrationCode: string; circuits: { closed: number; open: number; half_open: number }; rate: { limited: number; tenants: number; minRatio: number | null }; lastOpenedAt: number | null }> {
+        const by = new Map<string, { circuits: { closed: number; open: number; half_open: number }; limited: number; tenants: number; minRatio: number | null; lastOpenedAt: number | null }>();
+        for (const [key, st] of ResilientHttpClient.adapterStates) {
+            const code = key.slice(key.indexOf('::') + 2);
+            let e = by.get(code);
+            if (!e) { e = { circuits: { closed: 0, open: 0, half_open: 0 }, limited: 0, tenants: 0, minRatio: null, lastOpenedAt: null }; by.set(code, e); }
+            e.tenants++;
+            for (const b of st.breakers.values()) e.circuits[mapCircuitState(b.state)]++;
+            const base = st.limiter.getBaseRatePerMin();
+            if (base) {
+                const ratio = st.limiter.getEffectiveRatePerMin() / base;
+                if (ratio < 1) e.limited++;
+                e.minRatio = e.minRatio === null ? ratio : Math.min(e.minRatio, ratio);
+            }
+            if (st.lastOpenedAt && (e.lastOpenedAt === null || st.lastOpenedAt > e.lastOpenedAt)) e.lastOpenedAt = st.lastOpenedAt;
+        }
+        return [...by.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([integrationCode, e]) => ({
+            integrationCode, circuits: e.circuits, rate: { limited: e.limited, tenants: e.tenants, minRatio: e.minRatio === null ? null : Math.round(e.minRatio * 100) / 100 }, lastOpenedAt: e.lastOpenedAt,
+        }));
     }
 
     /** SADECE TEST: bkz. `testDelayScale`. `1` üretim/varsayılan davranıştır. */
@@ -187,10 +242,21 @@ export class ResilientHttpClient {
                 bulkhead: bulkhead(maxConcurrent, maxConcurrent * 50),
                 breakers: new Map(),
                 limiter: new RateLimiter(this.policyConfig.ratePerMin),
+                groupLimiters: new Map(),
             };
             ResilientHttpClient.adapterStates.set(key, state);
         }
         return state;
+    }
+
+    /** Grup için AYRI limiter (yalnız tabloda tanımlı gruplar); yoksa undefined => genel kova. */
+    private getGroupLimiter(state: AdapterState, group?: string): RateLimiter | undefined {
+        if (!group) return undefined;
+        const rate = this.policyConfig.groupRatePerMin?.[group];
+        if (!rate) return undefined;
+        let l = state.groupLimiters.get(group);
+        if (!l) { l = new RateLimiter(rate); state.groupLimiters.set(group, l); }
+        return l;
     }
 
     private getBreaker(kind: Kind): CircuitBreakerPolicy {
@@ -204,6 +270,7 @@ export class ResilientHttpClient {
                 breaker: new ConsecutiveBreaker(consecutiveFailures),
                 halfOpenAfter: new EscalatingHalfOpenBackoff(openMs, maxOpenMs),
             });
+            try { breaker.onStateChange((st) => { if (st === CircuitState.Open) state.lastOpenedAt = Date.now(); }); } catch { /* gözlem ana akışı etkilemez */ }
             state.breakers.set(kind, breaker);
         }
         return breaker;
@@ -224,7 +291,7 @@ export class ResilientHttpClient {
         const idempotent = opts.idempotent ?? (method === 'get');
         const operation = this.buildOperation(opts);
         const response = await this.executeCustom<AxiosResponse<T>>(
-            { operation, idempotent, timeoutMs: opts.timeoutMs, url: opts.url },
+            { operation, idempotent, timeoutMs: opts.timeoutMs, url: opts.url, group: opts.group },
             (signal) => this.performAxios<T>(opts, method, signal),
         );
         this.observeCompliance(opts, operation, response);
@@ -241,8 +308,34 @@ export class ResilientHttpClient {
      * şekilli bir hata fırlatması yeterlidir (SOAP fault'ları adaptör tarafında bu şekle çevrilmelidir).
      * NOT: Bu görevde YALNIZCA arayüz/altyapı hazırdır; N11 SOAP'ın buna taşınması ADR-0006 Aşama B2'dedir.
      */
-    public async executeCustom<T>(
-        opts: { operation: string; idempotent?: boolean; timeoutMs?: number; url?: string },
+    public executeCustom<T>(
+        opts: { operation: string; idempotent?: boolean; timeoutMs?: number; url?: string; group?: string },
+        fn: (signal: AbortSignal) => Promise<T>,
+    ): Promise<T> {
+        // [F-06] Aynı correlation id korunur; log/metrik bağlamı bu çağrı için entegrasyon + işlemle zenginleşir.
+        // (Pazaryerine correlation BAŞLIĞI eklenmez -- yalnız kendi servislerimize, bkz. platform/core/context.)
+        const tenant = typeof this.clientId === 'number' ? this.clientId : Number(this.clientId);
+        return withContextPatch({
+            integrationCode: this.integrationCode,
+            operation: opts.operation,
+            source: `adapter-${this.integrationCode}`,
+            ...(Number.isFinite(tenant) ? { tenantId: tenant } : {}),
+        }, () => this.executeCustomInner<T>(opts, fn));
+    }
+
+    /** [F-06] Tek çağrının sonucunu (süre, durum, retry, hata sınıfı) loglar ve metrik sayaçlarına yazar. Asla fırlatmaz. */
+    private observeOutcome(operation: string, kind: Kind, status: 'ok' | 'error', durationMs: number, retries: number, extra: { errorClass?: string; httpStatus?: number; circuitState?: string }): void {
+        try {
+            recordIntegrationOperationMetric({ integrationCode: this.integrationCode, operation, kind, status, errorClass: extra.errorClass, durationMs, retries });
+            const log = eventLog(`adapter-${this.integrationCode}`, 'ResilientHttpClient');
+            const fields = { operation, integrationCode: this.integrationCode, durationMs, retries, kind, httpStatus: extra.httpStatus, circuitState: extra.circuitState, errorClass: extra.errorClass };
+            if (status === 'ok') log.debug('HTTP_CALL_OK', 'Dış çağrı başarılı', fields);
+            else log.warn('HTTP_CALL_FAILED', 'Dış çağrı başarısız', fields);
+        } catch { /* gözlem ana akışı ASLA etkilemez */ }
+    }
+
+    private async executeCustomInner<T>(
+        opts: { operation: string; idempotent?: boolean; timeoutMs?: number; url?: string; group?: string },
         fn: (signal: AbortSignal) => Promise<T>,
     ): Promise<T> {
         // [K7 2026-09-28] Tek giden-host koruması: hedef URL bilinen platform host'una (https, izin listesi) ait değilse istek
@@ -256,6 +349,9 @@ export class ResilientHttpClient {
 
         const state = this.getAdapterState();
         const breaker = this.getBreaker(kind);
+        const groupLimiter = this.getGroupLimiter(state, opts.group);
+        const limiter = groupLimiter ?? state.limiter;
+        const bucket = groupLimiter ? (opts.group as string) : 'default';
 
         const maxAttempts = this.policyConfig.retry?.maxAttempts ?? 4;
         const baseDelayMs = (this.policyConfig.retry?.baseDelayMs ?? 1000) * ResilientHttpClient.testDelayScale;
@@ -266,7 +362,8 @@ export class ResilientHttpClient {
         let attempts429 = 0;
 
         for (; ;) {
-            await state.limiter.throttle();
+            const waitedMs = await limiter.throttle();
+            if (waitedMs > 0) recordRateBucketMetric({ integrationCode: this.integrationCode, group: bucket, event: 'wait', waitMs: waitedMs });
 
             const retryPolicy = retry(handleWhen(shouldRetry), {
                 maxAttempts,
@@ -286,24 +383,26 @@ export class ResilientHttpClient {
                     invocations++;
                     return fn(context.signal);
                 });
-                state.limiter.onSuccess();
+                limiter.onSuccess();
                 void IntegrationCallMetrics.record({
                     integrationCode: this.integrationCode, operation, clientId: this.clientId,
                     status: 'ok', durationMs: Date.now() - start, retries: Math.max(0, invocations - 1),
                     circuitState: mapCircuitState(breaker.state),
                 });
+                this.observeOutcome(operation, kind, 'ok', Date.now() - start, Math.max(0, invocations - 1), { httpStatus: (response as any)?.status, circuitState: mapCircuitState(breaker.state) });
                 return response;
             } catch (err: any) {
                 if (is429(err) && !err?.isBrokenCircuitError) {
                     attempts429++;
                     const retryAfterMs = parseRetryAfter(err?.response?.headers?.['retry-after']);
-                    state.limiter.onRateLimited();
+                    limiter.onRateLimited();
 
                     if (retryAfterMs !== undefined && retryAfterMs <= 60000 && attempts429 <= MAX_429_RETRIES) {
                         await sleep(retryAfterMs);
                         continue;
                     }
 
+                    recordRateBucketMetric({ integrationCode: this.integrationCode, group: bucket, event: 'reject' });
                     const rateLimitedErr = new IntegrationError('RATE_LIMITED', err?.response?.data?.message || 'Hız sınırı aşıldı (429)', {
                         integrationCode: this.integrationCode, operation, clientId: this.clientId,
                         httpStatus: 429, retryAfterMs,
@@ -313,6 +412,7 @@ export class ResilientHttpClient {
                         status: 'error', durationMs: Date.now() - start, retries: Math.max(0, invocations - 1),
                         circuitState: mapCircuitState(breaker.state), code: 'RATE_LIMITED', httpStatus: 429,
                     });
+                    this.observeOutcome(operation, kind, 'error', Date.now() - start, Math.max(0, invocations - 1), { errorClass: 'RATE_LIMITED', httpStatus: 429, circuitState: mapCircuitState(breaker.state) });
                     throw rateLimitedErr;
                 }
 
@@ -326,24 +426,44 @@ export class ResilientHttpClient {
                     status: 'error', durationMs: Date.now() - start, retries: Math.max(0, invocations - 1),
                     circuitState: mapCircuitState(breaker.state), code: integrationErr.code, httpStatus: integrationErr.httpStatus,
                 });
+                this.observeOutcome(operation, kind, 'error', Date.now() - start, Math.max(0, invocations - 1), { errorClass: integrationErr.code, httpStatus: integrationErr.httpStatus, circuitState: mapCircuitState(breaker.state) });
                 throw integrationErr;
             }
         }
     }
 
     private async performAxios<T>(opts: ResilientRequestOptions, method: HttpMethod, signal: AbortSignal): Promise<AxiosResponse<T>> {
+        const maxBytes = this.policyConfig.maxContentBytes ?? DEFAULT_MAX_CONTENT_BYTES;
         const config: any = {
             headers: opts.headers,
             auth: opts.auth,
             signal,
+            // [ADR-0022] Yönlendirme TAKİP EDİLMEZ (kimlik başlıklı isteğin izinsiz host'a taşınmasını önler) ve gövde tavanı.
+            maxRedirects: 0,
+            maxContentLength: maxBytes,
+            maxBodyLength: maxBytes,
         };
-        if (method === 'get' || method === 'delete') {
-            config.params = opts.params;
-            return method === 'get' ? axios.get(opts.url, config) : axios.delete(opts.url, config);
+        try {
+            if (method === 'get' || method === 'delete') {
+                config.params = opts.params;
+                return await (method === 'get' ? axios.get(opts.url, config) : axios.delete(opts.url, config));
+            }
+            if (method === 'post') return await axios.post(opts.url, opts.data, config);
+            if (method === 'put') return await axios.put(opts.url, opts.data, config);
+            return await axios.patch(opts.url, opts.data, config);
+        } catch (err: any) {
+            const status: number | undefined = err?.response?.status;
+            const ctx = { integrationCode: this.integrationCode, operation: this.buildOperation(opts), clientId: this.clientId };
+            if (status !== undefined && status >= 300 && status < 400) {
+                throw new IntegrationError('VALIDATION',
+                    `Yönlendirme reddedildi (HTTP ${status} -> ${safeLocationHost(err.response?.headers?.location)}); ADR-0022: yönlendirme takip edilmez.`,
+                    { ...ctx, httpStatus: status });
+            }
+            if (isOversizeError(err)) {
+                throw new IntegrationError('VALIDATION', `Gövde boyut tavanı (${maxBytes} bayt) aşıldı; ADR-0022.`, ctx);
+            }
+            throw err;
         }
-        if (method === 'post') return axios.post(opts.url, opts.data, config);
-        if (method === 'put') return axios.put(opts.url, opts.data, config);
-        return axios.patch(opts.url, opts.data, config);
     }
 
     /**
@@ -357,7 +477,8 @@ export class ResilientHttpClient {
         if (process.env.CONTRACT_GUARD === 'off') return;
         const tenantId = typeof this.clientId === 'number' ? this.clientId : Number(this.clientId);
         const tenantIdHint = Number.isFinite(tenantId) ? tenantId : undefined;
-        void import('@integration/compliance/ContractGuard').then((guard) => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports -- TS6-01: node16 CJS, tembel yukleme (dinamik import yerine)
+        void Promise.resolve(require('@integration/compliance/ContractGuard') as typeof import('@integration/compliance/ContractGuard')).then((guard) => {
             guard.observeResponseHeaders(this.integrationCode, tenantIdHint, operation, response.headers as any);
             if (opts.contract) guard.observeContract(opts.contract, this.integrationCode, tenantIdHint, response.data);
         }).catch(() => { /* bekçi hiçbir koşulda iş akışını bozmaz */ });

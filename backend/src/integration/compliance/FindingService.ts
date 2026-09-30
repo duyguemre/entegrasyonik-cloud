@@ -5,6 +5,9 @@ import crypto from 'crypto';
 import type {
     IntegrationFindingKind, IntegrationFindingSource, IntegrationFindingSeverity, IntegrationFindingStatus,
 } from '@database/application/models/IntegrationFinding';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('engine', 'FindingService');
 
 export interface FindingEvidence {
     paths?: string[];
@@ -68,7 +71,8 @@ let customSink: FindingSink | undefined;
 let customReader: FindingReader | undefined;
 
 async function getModel() {
-    const { DatabaseManagerInstance } = await import('@database/DatabaseManager');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- TS6-01: node16 CJS, tembel yukleme (dinamik import yerine)
+    const { DatabaseManagerInstance } = (require('@database/DatabaseManager') as typeof import('@database/DatabaseManager'));
     const db = await DatabaseManagerInstance.getApplicationDB();
     return (db as any).getIntegrationFindingModel();
 }
@@ -226,7 +230,7 @@ export class FindingService {
             }
         } catch (e: any) {
             // eslint-disable-next-line no-console
-            console.error('[FindingService.report] kayıt yazılamadı (best-effort):', e?.message);
+            log.error('FINDINGSERVICE_KAYIT_YAZILAMADI_BEST_EFFORT', 'kayıt yazılamadı (best-effort):', { err: e });
         }
     }
 

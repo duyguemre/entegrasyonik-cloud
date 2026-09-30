@@ -1,9 +1,16 @@
+import { carryIncomplete } from '@integration/contracts/IncompleteFetch';
 import { IOrderPackage, IOrderRejectParams, IPlatformResponse, ISendInvoicePayload, ISendTrackingPayload, OrderInternalStatusEnum } from '@interfaces/index';
 import { OrderConnector } from '../api/OrderConnector';
+import { paginatePage, readTotal, N11_MAX_PAGES } from '../api/paginatePage';
 import { OrderMapper } from '../transformers/OrderMapper';
 import Service from './Service';
 import { IntegrationError } from '@integration/modules/common/IntegrationError';
 import { integrationCode } from '../constants';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('adapter-n11', 'OrderService');
+/** Kayıtların TÜMÜ kimliksizse ve en az bu kadar kayıt varsa şema kayması varsayılır (Trendyol/HB/Pazarama DRIFT_MIN_RECORDS ile aynı eşik). */
+const DRIFT_MIN_RECORDS = 3;
 
 export class OrderService {
     private connector: OrderConnector;
@@ -16,31 +23,87 @@ export class OrderService {
         this.mapper = new OrderMapper();
     }
 
+    /**
+     * REST sipariş sayfalaması (ortak `paginate` üzerinde; bkz. api/paginatePage.ts). Durma: totalElements'a ulaşma | dönen < pageSize | boş sayfa.
+     * Sunucu sayfa parametresini yok sayıp aynı sayfayı dönerse ya da sayfa tavanına (50) ulaşılırsa sonuç `markIncomplete` ile işaretlenir
+     * (yapılandırılmış uyarı). İlk sayfa `content[]` içermiyorsa `undefined` (çağıran SOAP'a düşer); sonraki sayfa bozuksa fırlatılır
+     * (kısmi sonuç dönmez). Tarih istek biçimi: epoch ms (ikincil kaynak: GMT+3 - epoch
+     * mutlak olduğundan dönüşüm gerekmez; parametre adları startDate/endDate ikincil kaynağa dayanır, DOĞRULANAMADI).
+     */
+    private async fetchAllRestPages(query?: Record<string, any>): Promise<any[] | undefined> {
+        const window: Record<string, number> = {};
+        if (query?.lastSyncTimestamp) {
+            const start = new Date(query.lastSyncTimestamp).getTime();
+            if (Number.isFinite(start)) {
+                window.startDate = start;
+                // [faz4-int-wp7] Motor daraltilmis pencere icin endDate verebilir (eksik cekimde bolme).
+                const qe = query?.endDate ? new Date(query.endDate).getTime() : NaN;
+                window.endDate = Number.isFinite(qe) ? qe : Date.now();
+            }
+        }
+        let shapeMissing = false;
+        const raw = await paginatePage(async (page, limit) => {
+            const response = await this.connector.fetchOrdersRest({ pageSize: limit, currentPage: page, ...window });
+            if (!Array.isArray(response?.content)) {
+                if (page === 0) {
+                    log.warn('N11_REST_UNEXPECTED_SHAPE', `REST yanıtı beklenen şekilde değil (content[] yok), SOAP'a düşülüyor. Yanıt anahtarları: ${Object.keys(response ?? {}).join(',') || '(boş)'}`);
+                    shapeMissing = true;
+                    return { items: [] };
+                }
+                throw new Error(`REST sipariş sayfa ${page} beklenen şekilde değil (content[] yok); kısmi sonuç döndürülmedi.`);
+            }
+            return { items: response.content, total: readTotal(response.totalElements) };
+        }, { operation: 'fetchOrders', clientId: this.clientId, maxPages: N11_MAX_PAGES });
+        return shapeMissing ? undefined : raw;
+    }
+
+    /** Sayfalar arası örtüşen paketleri tekilleştirir (kimlik: id ?? orderNumber). Kimlik denetiminden SONRA çağrılır (kimliksiz kayıtlar birbirine çökmesin). */
+    private dedupe(list: any[]): any[] {
+        const seen = new Set<string>();
+        return list.filter(o => {
+            const key = String(o?.id ?? o?.orderNumber ?? JSON.stringify(o));
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    }
+
+    /**
+     * [INT-05 / conformance C7b, playbook §4.2] Sipariş numarası (`orderNumber`) olmayan kayıt (mapper da bunu eler) SESSİZCE yutulmaz:
+     * atlanır + loglanır (Trendyol C22 / HB / Pazarama deseni); kayıtların TÜMÜ (>= DRIFT_MIN_RECORDS) kimliksizse şema kayması varsayılıp
+     * VALIDATION fırlatılır. `carryIncomplete` ham diziden okunur (işaret ham dizidedir).
+     */
+    private dropMissingIdentity(raw: any[]): any[] {
+        const valid = raw.filter(o => !!o?.orderNumber);
+        const skipped = raw.length - valid.length;
+        if (skipped === 0) return raw;
+        log.error('ORDERSERVICE_N11_SIPARIS_KIMLIGI_EKSIK', `${skipped}/${raw.length} N11 sipariş kaydı kimlik (orderNumber) eksikliği nedeniyle ATLANDI (şema kayması olabilir).`);
+        if (raw.length >= DRIFT_MIN_RECORDS && valid.length === 0) {
+            throw new IntegrationError('VALIDATION',
+                `N11 sipariş yanıtı beklenen kimlik alanlarını taşımıyor (${raw.length}/${raw.length} kayıt geçersiz; şema kayması şüphesi).`,
+                { integrationCode, operation: 'fetchOrders', clientId: this.clientId, platformCode: 'ORDER_SCHEMA_DRIFT' });
+        }
+        return valid;
+    }
+
     public async fetchOrders(query?: Record<string, any>): Promise<IOrderPackage[]> {
         try {
             // Try REST first
             try {
-                const response = await this.connector.fetchOrdersRest({
-                    pageSize: 100,
-                    currentPage: 0
-                });
-                // [N11 REST şekil düzeltmesi, 2026-09-29] TERS ÇEVRİLDİ: ÖNCEKİ kontrol `response.shipmentPackages`
-                // idi — kaynak (`n11APISoapREFERANSDOKUMANTASYONU_v9_0.docx` §3.7 GetShipmentPackages) gerçek REST
-                // 200 yanıtının `{totalElements, content:[...]}` şeklinde olduğunu, `shipmentPackages` alanının
-                // HİÇ var olmadığını gösteriyor — kontrol HER ZAMAN false'du, REST dalı hiç tetiklenmiyordu ve
-                // SESSİZCE (log yok) SOAP'a düşülüyordu (bkz. karakterizasyon: N11.resilience.contract.test.ts).
-                if (Array.isArray(response?.content)) {
-                    return this.mapper.toInternalOrderPackagesFromRest(response);
+                // [faz4-int-wp1 / F-02] Tüm sayfalar dolaşılır; lastSyncTimestamp varsa zaman penceresi (epoch ms)
+                // isteğe girer. İlk sayfa beklenen şekilde değilse (content[] yok) eski davranış: SOAP'a düşülür.
+                const restPackages = await this.fetchAllRestPages(query);
+                if (restPackages) {
+                    return carryIncomplete(restPackages, this.mapper.toInternalOrderPackagesFromRest({ content: this.dedupe(this.dropMissingIdentity(restPackages)) }));
                 }
-                // Beklenmeyen/tanınmayan REST şekli: sessizce yutulmaz — görünür kılınır, SOAP'a bilinçli düşülür.
-                console.warn(`[N11OrderService:fetchOrders] REST yanıtı beklenen şekilde değil (content[] yok), SOAP'a düşülüyor. Yanıt anahtarları: ${Object.keys(response ?? {}).join(',') || '(boş)'}`);
+                // content[] yok: fetchAllRestPages uyardı; SOAP'a bilinçli düşülür.
             } catch (e: any) {
                 // [ADR-0006 Karar 2] TERS ÇEVRİLDİ: ÖNCEKİ DAVRANIŞ her REST hatasında (AUTH/VALIDATION
                 // dahil) sessizce SOAP'a düşerdi. Yedek yol yalnızca UNAVAILABLE/NOT_SUPPORTED'ta ve
                 // LOGLANARAK kullanılır; AUTH/VALIDATION'da yedeğe düşülmez, hata doğrudan fırlatılır.
                 const code = IntegrationError.isIntegrationError(e) ? e.code : undefined;
                 if (code !== 'UNAVAILABLE' && code !== 'NOT_SUPPORTED') throw e;
-                console.warn(`[N11OrderService:fetchOrders] REST başarısız (${code}), SOAP'a düşülüyor: ${e.message}`);
+                log.warn('ORDERSERVICE_REST_BASARISIZ_SOAP_DUSULUYOR', `REST başarısız (${code}), SOAP'a düşülüyor: ${e.message}`);
             }
 
             // N11 API requires search parameters. We default to the last 24 hours.
@@ -64,7 +127,9 @@ export class OrderService {
             };
 
             const response = await this.connector.fetchOrdersFromPlatform(payload);
-            return this.mapper.toInternalOrderPackages(response);
+            const soapOrders = response?.orderList?.order;
+            const soapList = soapOrders ? (Array.isArray(soapOrders) ? soapOrders : [soapOrders]) : [];
+            return this.mapper.toInternalOrderPackages({ orderList: { order: this.dropMissingIdentity(soapList) } });
 
         } catch (error: any) {
             if (IntegrationError.isIntegrationError(error)) throw error;

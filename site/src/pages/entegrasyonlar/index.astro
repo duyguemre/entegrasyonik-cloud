@@ -6,20 +6,18 @@
  * kapsam matrisi buraya taşındı; `CoverageMatrix`) ve kartlarda eksiksiz gösterilir.
  */
 import BaseLayout from '../../layouts/BaseLayout.astro'
+import { crumbsFor } from '../../data/seo'
 import Section from '../../components/Section.astro'
 import PageHero from '../../components/pages/PageHero.astro'
-import PageMeta from '../../components/pages/PageMeta.astro'
 import IntegrationCard from '../../components/pages/IntegrationCard.astro'
 import CoverageMatrix from '../../components/pages/CoverageMatrix.astro'
 import CtaBand from '../../components/pages/CtaBand.astro'
+import HeroActions from '../../components/pages/HeroActions.astro'
+import StatPanel from '../../components/pages/StatPanel.astro'
 import { getPublicIntegrations, COVERAGE_LABELS, type CoverageLevel, type IntegrationKind } from '../../data/integrations'
-import { breadcrumbJsonLd } from '../../lib/seo'
 import { appUrls } from '../../lib/site-config'
 
-const title = 'Entegrasyonlar'
-const description =
-  'Entegrasyonik pazaryerlerini, e-ticaret altyapınızı ve ERP sisteminizi tek panelde buluşturur; her entegrasyonun kapsamı kanal bazında açıkça yazılıdır.'
-const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Entegrasyonlar' }]
+const crumbs = crumbsFor('/entegrasyonlar')
 
 const all = getPublicIntegrations()
 const groups: Array<{ kind: IntegrationKind; id: string; heading: string; note: string }> = [
@@ -48,13 +46,7 @@ const COVERAGE_METER: Record<CoverageLevel, number> = { broad: 3, partial: 2, li
 const coverageLevels = Object.keys(COVERAGE_LABELS) as CoverageLevel[]
 ---
 
-<BaseLayout title={title} description={description}>
-  <PageMeta
-    slot="head"
-    title={title}
-    description={description}
-    jsonLd={[breadcrumbJsonLd([{ label: 'Ana sayfa', path: '/' }, { label: title, path: '/entegrasyonlar' }])]}
-  />
+<BaseLayout>
 
   <PageHero
     title="Entegrasyonlar"
@@ -62,36 +54,14 @@ const coverageLevels = Object.keys(COVERAGE_LABELS) as CoverageLevel[]
     lead="Pazaryerlerinizi, e-ticaret altyapınızı ve ERP sisteminizi tek panelde buluşturun. Her kanalın hangi işlemleri desteklediğini kanal bazında şeffafça gösteriyoruz."
     crumbs={crumbs}
   >
-    <div class="hero-links">
-      <a class="hero-link" href="#katalog">Kataloğa göz atın</a>
-      <a class="hero-link hero-link--ghost" href="#kapsam">Kanal bazında kapsam</a>
-    </div>
+    <HeroActions
+      actions={[
+        { label: 'Kataloğa göz atın', href: '#katalog' },
+        { label: 'Kanal bazında kapsam', href: '#kapsam' },
+      ]}
+    />
     <Fragment slot="visual">
-      <p class="stat-panel__tag">Kapsam özeti</p>
-      <dl class="stats" data-testid="integration-stats">
-        {
-          stats.map((st) => (
-            <div class="stat">
-              <dt class="stat__label">{st.label}</dt>
-              <dd class="stat__value" data-stat={st.id}>
-                {st.value}
-              </dd>
-            </div>
-          ))
-        }
-      </dl>
-      <ul class="hero-chans" role="list" aria-label="Kullanılabilir kanallar">
-        {
-          all.map((i) => (
-            <li>
-              <a href={`/entegrasyonlar/${i.code}`} class="hero-chan" data-code={i.code}>
-                <span class="hero-chan__dot" aria-hidden="true" />
-                {i.name}
-              </a>
-            </li>
-          ))
-        }
-      </ul>
+      <StatPanel tag="Kapsam özeti" stats={stats} testid="integration-stats" chips={all.map((c) => ({ href: `/entegrasyonlar/${c.code}`, code: c.code, label: c.name }))} />
     </Fragment>
   </PageHero>
 
@@ -169,112 +139,6 @@ const coverageLevels = Object.keys(COVERAGE_LABELS) as CoverageLevel[]
 <style>
   .tight-section:global(.section) {
     padding-block: calc(var(--site-section-y) * 0.72);
-  }
-
-  /* --- Hero --- */
-  .hero-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ek-space-3);
-  }
-  .hero-link {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--site-tap-target);
-    padding-inline: var(--ek-space-5);
-    border: var(--site-border-width) solid transparent;
-    border-radius: var(--ek-radius-lg);
-    background: var(--ek-color-surface);
-    color: var(--ek-color-primary);
-    font-weight: var(--ek-font-weight-semibold);
-    text-decoration: none;
-    transition: background-color var(--ek-duration-base) var(--ek-easing-standard), border-color var(--ek-duration-base) var(--ek-easing-standard);
-  }
-  .hero-link:hover {
-    background: color-mix(in srgb, var(--ek-color-surface) 88%, var(--ek-color-secondary));
-  }
-  .hero-link--ghost {
-    border-color: var(--site-glass-border);
-    background: var(--site-glass-bg);
-    color: var(--site-color-on-primary);
-  }
-  .hero-link--ghost:hover {
-    border-color: var(--site-color-on-primary-muted);
-    background: color-mix(in srgb, var(--ek-color-background) 12%, transparent);
-  }
-  .hero-link:focus-visible {
-    outline-color: var(--site-color-on-primary);
-  }
-  .stat-panel__tag {
-    margin: 0 0 var(--ek-space-4);
-    color: var(--site-text-on-dark-meta);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-  .stats {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--site-border-width);
-    margin: 0;
-    overflow: hidden;
-    border-radius: var(--ek-radius-lg);
-    background: var(--site-glass-border);
-  }
-  .stat {
-    display: flex;
-    flex-direction: column-reverse;
-    justify-content: flex-end;
-    gap: var(--ek-space-1);
-    padding: var(--ek-space-4);
-    background: color-mix(in srgb, var(--site-stage-deep) 55%, transparent);
-  }
-  .stat__value {
-    margin: 0;
-    color: var(--site-text-on-dark-heading);
-    font-size: var(--site-font-display-sm);
-    font-weight: var(--site-font-display-weight);
-    font-variant-numeric: tabular-nums;
-    letter-spacing: var(--site-font-display-tracking);
-    line-height: 1;
-  }
-  .stat__label {
-    color: var(--site-text-on-dark-body);
-    font-size: var(--ek-font-size-sm);
-  }
-  .hero-chans {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ek-space-2);
-    margin: var(--ek-space-5) 0 0;
-    padding: 0;
-    list-style: none;
-  }
-  .hero-chan {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-    min-height: calc(var(--ek-space-8) + var(--ek-space-1));
-    padding-inline: var(--ek-space-3);
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-full);
-    background: var(--site-glass-bg);
-    color: var(--site-text-on-dark-heading);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-medium);
-    text-decoration: none;
-    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
-  }
-  .hero-chan:hover {
-    border-color: var(--chan);
-  }
-  .hero-chan__dot {
-    width: var(--ek-space-2);
-    height: var(--ek-space-2);
-    border-radius: var(--ek-radius-full);
-    background: var(--chan);
-    box-shadow: 0 0 0 calc(var(--site-border-width) * 3) color-mix(in srgb, var(--chan) 30%, transparent);
   }
 
   /* --- Katalog başlığı + gösterge --- */

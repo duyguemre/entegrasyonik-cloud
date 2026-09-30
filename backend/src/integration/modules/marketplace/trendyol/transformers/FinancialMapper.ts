@@ -47,6 +47,7 @@ export class FinancialMapper {
                 meta: {
                     receiptId: item.receiptId,
                     barcode: item.barcode,
+                    paymentPeriod: item.paymentPeriod, // [COM-03] vade gün sayısı (hakediş tarihi = teslim + bu gün)
                     affiliate: item.affiliate
                 }
             };

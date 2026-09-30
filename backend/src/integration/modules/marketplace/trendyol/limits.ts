@@ -40,11 +40,20 @@ export const TRENDYOL_ORDER_V2 = {
      * startDate/endDate aralığı en fazla 2 hafta. Sınır dahil/hariç belirsiz olduğundan 1 dk pay bırakılır.
      */
     maxWindowMs: 14 * 24 * 60 * 60 * 1000 - 60 * 1000,
+    /** Sorgulanabilir en eski an: yalnızca SON 1 AY (30 gün; sınır belirsiz olduğundan 1 sa pay). */
+    maxLookbackMs: 30 * 24 * 60 * 60 * 1000 - 60 * 60 * 1000,
     /** Tarih verilmediğinde Trendyol "son 1 hafta" döner; taşma bölmesi için bu pencere açık yazılır. */
     defaultWindowMs: 7 * 24 * 60 * 60 * 1000,
     /** Daha dar bölünemeyen pencere (bu kadar dar pencerede >10.000 paket beklenmez; aşılırsa hata). */
     minSplitMs: 60 * 1000,
 } as const;
+
+/**
+ * [INT-05] İade listesi (GET .../claims) sayfalama güvenliği. size=50 sabit; resmi bir sayfa/pencere üst sınırı belgelenmemiş
+ * (API_CONTRACTS:22), bu yüzden sipariş V2 ile tutarlı 50 sayfa (maxPageIndex 49 + 1) tavan alınır (= 2.500 iade/sorgu penceresi).
+ * Aşılırsa sonuç PAGINATION_PAGE_CAP ile işaretlenir (imleç ilerlemez). Eşzamanlılık 3: X1 grup kotasını patlatmadan hız.
+ */
+export const TRENDYOL_CLAIM_PAGING = { maxPages: TRENDYOL_ORDER_V2.maxPageIndex + 1, concurrency: 3 } as const;
 
 /**
  * Muhafazakâr taban (spec §3.7): sipariş çekme için resmi kaynaklar ÇELİŞİYOR (kademeli tablo 30/40/50/100/100 istek/dk
@@ -103,3 +112,80 @@ class OrderListPacer {
 }
 
 export const orderListPacer = new OrderListPacer();
+
+// ---------------------------------------------------------------------------------------------------------------------
+// [ADR-0030 X1] Servis grubu kovaları (Trendyol 14 Eyl 2026 limitleri: docs/research/API_CONTRACTS_2026-09-30.md:16,
+// https://developers.trendyol.com/docs/1-servis-limitleri.md). Limitler satıcının ürün sayısı kademesine bağlıdır.
+// KADEME SEÇİMİ İNSAN KARARI BEKLİYOR (gap raporu §5-3): tenant başına kademe ayarı yok; ORKESTRATÖR VARSAYILANI en muhafazakâr
+// 50K kademesidir. Diğer kademeler için kaynakta yalnız aralık var (okuma 1000-2000, ürün yazma 200-600, stok-fiyat 350-2000);
+// kesin kademe değerleri doğrulanamadığından tabloya EKLENMEDİ (uydurma yok) — env ile grup bazında yükseltilebilir.
+// Gruplu çağrılar YALNIZ kendi kovasından geçer (genel 200/dk kovasını tüketmez); toplam tavan = grup kovaları toplamı.
+// ---------------------------------------------------------------------------------------------------------------------
+export type TrendyolRateGroup = 'product_read' | 'product_write' | 'inventory_price_write';
+
+/** 50K kademesi (en muhafazakâr) — orkestratör varsayılanı. */
+export const TRENDYOL_GROUP_RATE_PER_MIN_50K: Readonly<Record<TrendyolRateGroup, number>> = {
+    product_read: 1000,
+    product_write: 200,
+    inventory_price_write: 350,
+};
+
+const GROUP_ENV: Readonly<Record<TrendyolRateGroup, string>> = {
+    product_read: 'TY_RATE_PRODUCT_READ_PER_MIN',
+    product_write: 'TY_RATE_PRODUCT_WRITE_PER_MIN',
+    inventory_price_write: 'TY_RATE_INVENTORY_PRICE_PER_MIN',
+};
+
+/** Grup başına dk limiti: env (pozitif tamsayı) yoksa/geçersizse 50K kademe varsayılanı. */
+export function trendyolGroupRatePerMin(): Record<TrendyolRateGroup, number> {
+    const out = {} as Record<TrendyolRateGroup, number>;
+    for (const g of Object.keys(TRENDYOL_GROUP_RATE_PER_MIN_50K) as TrendyolRateGroup[]) {
+        out[g] = positiveIntEnv(GROUP_ENV[g], TRENDYOL_GROUP_RATE_PER_MIN_50K[g]);
+    }
+    return out;
+}
+
+/** Ürün yazma URL'sinden servis grubu: stok-fiyat ucu ayrı kovadır, diğer ürün yazmaları `product_write`. */
+export function trendyolWriteGroupForUrl(url: string): TrendyolRateGroup {
+    return /price-and-inventory/i.test(url) ? 'inventory_price_write' : 'product_write';
+}
+
+/** Barkod başına fiyat güncelleme sınırı: 30/dk (50K ve diğer kademelerde aynı; API_CONTRACTS:16). */
+export const TRENDYOL_PRICE_PER_BARCODE_PER_MIN = 30;
+
+/**
+ * Barkod başına kayan-pencere (60 sn) fiyat yazım sayacı, süreç-içi (tek replika). `reserve` çağrısı bir slot ayırır ve slot
+ * boşalana dek beklenmesi gereken ms'yi döner (0 = hemen gönderilebilir). Reddetmez/düşürmez: çağıran ertelemeyi uygular.
+ */
+export class BarcodePriceGate {
+    private stamps = new Map<string, number[]>();
+    constructor(private readonly perMin = TRENDYOL_PRICE_PER_BARCODE_PER_MIN, private readonly windowMs = 60_000) { }
+
+    public reserve(key: string, now = Date.now()): number {
+        const arr = (this.stamps.get(key) ?? []).filter(t => now - t < this.windowMs);
+        let at = now;
+        if (arr.length >= this.perMin) at = arr[arr.length - this.perMin] + this.windowMs;
+        arr.push(at);
+        this.stamps.set(key, arr);
+        if (this.stamps.size > 20_000) this.gc(now);
+        return Math.max(0, at - now);
+    }
+
+    private gc(now: number): void {
+        for (const [k, a] of this.stamps) if (a.every(t => now - t >= this.windowMs)) this.stamps.delete(k);
+    }
+
+    public reset(): void { this.stamps.clear(); }
+}
+
+export const barcodePriceGate = new BarcodePriceGate();
+
+/**
+ * [COM-03] Finans (settlements/otherfinancials) servis grubu: resmi limit 100 istek/dk (docs/research/API_CONTRACTS_2026-09-30.md:16,
+ * "Finance 100"; kademeye bagli aralik belirtilmemis). Ayri kova: finans taramasi siparis/urun kovalarini tuketmez.
+ * TODO: kademe/limit degisirse buradan guncelle (env dugmesi bilincli EKLENMEDI).
+ */
+export const TRENDYOL_FINANCE_GROUP = 'finance';
+export const TRENDYOL_FINANCE_RATE_PER_MIN = 100;
+/** Finans istekleri `storeFrontCode` basligini ZORUNLU tutar (resmi belge); bu entegrasyon yalnizca Turkiye magazasini kapsar. */
+export const TRENDYOL_STOREFRONT_CODE = 'TR';

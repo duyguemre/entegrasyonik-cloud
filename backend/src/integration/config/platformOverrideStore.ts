@@ -84,10 +84,8 @@ export function getPollDiagnosticsForTests(): { consecutiveFailures: number; las
 // (sürüm değişmese bile, `intake` yayın akışının DIŞINDadır — Karar 3.8 son paragraf) `setTargetIntake` çağırır;
 // `IntegrationConfigService.setIntake` de YEREL pod'da ANINDA senkronlar (diğer pod'lar ≤15 sn'de yoklamayla alır).
 //
-// BİLİNÇLİ SINIR (rapora yazılır): bu dosya yalnız OKUNABİLİR durumu sağlar (`isIntakeOpen`/`getIntake`/
-// `getMaintenance`). Motor tüketicileri (Dispatcher/OrderQueueProducer/StockPublishTrigger/IntegrationService)
-// BU GÖREVDE bu fonksiyonları ÇAĞIRMAZ — bağlama ayrı bir BACKLOG kalemidir (görev talimatı, "hızlandırma eşiği"
-// bugün karşılanmıyor).
+// Bu dosya OKUNABİLİR durumu sağlar. Motor tüketicileri (ADR-0030 X6) durumu doğrudan değil `intakeGate.ts`
+// üzerinden okur (global `_engine` + entegrasyon başına birleşik karar, atlama metriği + log).
 // ---------------------------------------------------------------------------------------------------------------------
 export type IntakeValue = 'on' | 'drain' | 'off';
 export interface IntakeMaintenance { message?: { tr?: string; en?: string }; until?: Date }
@@ -110,6 +108,13 @@ export function getIntake(target: string): IntakeValue {
 /** Karar 3.8 "drain: yeni iş alınmaz" — motor tüketicileri için tek satırlık okunabilir kapı (BAĞLANMADI, yukarı bkz). */
 export function isIntakeOpen(target: string): boolean {
     return getIntake(target) === 'on';
+}
+
+/** Kapı yardımcıları için: `on` OLMAYAN hedefler (ucuz; bellek içi harita). */
+export function listNonOpenIntakeTargets(): Array<{ target: string; intake: IntakeValue }> {
+    const out: Array<{ target: string; intake: IntakeValue }> = [];
+    for (const [target, s] of intakeState) if (s.intake !== 'on') out.push({ target, intake: s.intake });
+    return out;
 }
 
 export function getMaintenance(target: string): IntakeMaintenance | undefined {

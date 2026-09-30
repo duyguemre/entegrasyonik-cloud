@@ -8,6 +8,9 @@ import { integrationCode } from '../constants';
 import { TRENDYOL_ORDER_V2, orderListPacer, trendyolOrderListRatePerMin } from '../limits';
 import { normalizeTrendyolOrderListUrl } from '../urlSafetyNet';
 import { TRENDYOL_ORDERS_LIST_CONTRACT } from '../contracts/orders.list';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('adapter-trendyol', 'OrderConnector');
 
 /** Kod içi varsayılan (DB'de orderListUrl yoksa): resmi V2 yolu (spec §1). */
 const DEFAULT_ORDER_LIST_URL = "https://apigw.trendyol.com/integration/order/sellers/<SELLERID>/v2/orders";
@@ -53,13 +56,18 @@ export class OrderConnector {
         if (startMs === undefined && endMs === undefined) {
             windows.push({});
         } else {
-            const end = endMs ?? Date.now();
-            const start = startMs ?? (end - TRENDYOL_ORDER_V2.maxWindowMs);
-            if (end < start) {
+            const now = Date.now();
+            const end = endMs ?? now;
+            // [WP5] Yalnız son 1 ay sorgulanabilir: daha eski başlangıç kırpılır (aksi halde 4xx); bitiş de bu tabanın altındaysa boş.
+            const floor = now - TRENDYOL_ORDER_V2.maxLookbackMs;
+            const rawStart = startMs ?? (end - TRENDYOL_ORDER_V2.maxWindowMs);
+            if (end < rawStart) {
                 throw new IntegrationError('VALIDATION', 'Sipariş sorgusu: endDate startDate\'ten önce olamaz.', {
                     integrationCode, operation: 'fetchOrdersFromPlatform', clientId: this.params.clientId,
                 });
             }
+            const start = Math.max(rawStart, floor);
+            if (end < start) return []; // tüm aralık 1 aylık pencerenin dışında: sorgulanamaz (Trendyol yalnız son 1 ay)
             for (let cursor = start; cursor <= end;) {
                 const wEnd = Math.min(end, cursor + TRENDYOL_ORDER_V2.maxWindowMs);
                 windows.push({ start: cursor, end: wEnd });
@@ -88,7 +96,7 @@ export class OrderConnector {
             // [ADR-0006 adım 3] ÖNCEKİ DAVRANIŞ hata yutup [] dönmekti ("sipariş yok" ile "çekme başarısız"
             // ayırt edilemiyordu, bkz. tests/characterization/stubs/Trendyol.errorSwallow.stub.test.ts).
             // Artık IntegrationError fırlatılır; ImportOrchestrator/Stager hatayı görür, imleç ilerlemez.
-            console.error(`[OrderConnector] ${sellerId} için sipariş çekme hatası:`, error.message);
+            log.error('ORDERCONNECTOR_SIPARIS_CEKME_HATASI', `${sellerId} için sipariş çekme hatası:`, { err: error });
             const ie = fromHttpError(error, {
                 integrationCode, operation: 'fetchOrdersFromPlatform', clientId: this.params.clientId, idempotent: true,
             });
@@ -176,7 +184,7 @@ export class OrderConnector {
             const key = String(this.params.clientId);
             if (!warnedLegacyUrl.has(key)) {
                 warnedLegacyUrl.add(key);
-                console.warn(`[OrderConnector] client=${key} orderListUrl ESKİ (V2'siz) biçimde algılandı, V2'ye normalize edildi: ${n.note}. ` +
+                log.warn('ORDERCONNECTOR_CLIENT_ORDERLISTURL_ESKI_V2', `client=${key} orderListUrl ESKİ (V2'siz) biçimde algılandı, V2'ye normalize edildi: ${n.note}. ` +
                     'DB tanımı güncellenmeli (npm run migrate:trendyol-urls; Protokol 12).');
             }
         }

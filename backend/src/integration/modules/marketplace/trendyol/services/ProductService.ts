@@ -8,7 +8,15 @@ import { IBatchCheckPayload, IBatchProcessResult, IFetchProductsResult, IInterna
 import { ShipmentService } from './ShipmentService';
 import { fillUrl, resolveProductUrls, ResolvedProductUrls } from '../api/productUrls';
 import { TRENDYOL_PRODUCT_LIMITS } from '../productConstants';
+import { barcodePriceGate } from '../limits';
+import { ResilientHttpClient } from '@integration/modules/common/http/ResilientHttpClient';
+import { sleep } from '@integration/modules/common/http/RateLimiter';
+import { recordRateBucketMetric } from '@platform/runtime/metrics';
 import { IntegrationError } from '@integration/modules/common/IntegrationError';
+import { normalizeAttrValue, matchMappingValue } from '@integration/catalog/attributePayload';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('adapter-trendyol', 'ProductService');
 
 interface IGroup {
     url: string;
@@ -119,6 +127,8 @@ export class ProductService {
         const all = Array.from(groups.values()).filter(g => g.items.length > 0);
         if (all.length === 0) return { trackingId: null, result: false, failedVariants, variantList: [] };
 
+        if (mode === PLATFORM_PROCESS.UPDATE_PRICE) await this.applyBarcodePriceLimit(all);
+
         const variantList: any[] = [];
         let firstTracking: string | null = null;
         let sentAny = false;
@@ -155,6 +165,29 @@ export class ProductService {
 
         if (!sentAny) return { trackingId: null, result: false, failedVariants, variantList: [] };
         return { trackingId: firstTracking, result: true, variantList, failedVariants, type: mode };
+    }
+
+    /**
+     * [ADR-0030 X1] Barkod başına fiyat güncelleme sınırı (Trendyol 30/dk). (1) Aynı partide aynı barkod birden çok kez varsa
+     * BİRLEŞTİRİLİR (son değer kazanır; varyant kayıtları korunur). (2) Barkodun son 60 sn'deki fiyat yazımı 30'u aşacaksa çağrı
+     * REDDEDİLMEZ, slot boşalana dek (en fazla ~60 sn) ERTELENİR; kalem düşürülmez.
+     */
+    private async applyBarcodePriceLimit(groups: IGroup[]): Promise<void> {
+        let maxWaitMs = 0;
+        for (const g of groups) {
+            if (g.contentBarcodes) continue;
+            const byBarcode = new Map<string, any>();
+            for (const it of g.items) byBarcode.set(String(it.barcode), it);
+            g.items = Array.from(byBarcode.values());
+            for (const barcode of byBarcode.keys()) {
+                const w = barcodePriceGate.reserve(`${this.clientId}::${barcode}`);
+                if (w > 0) { maxWaitMs = Math.max(maxWaitMs, w); recordRateBucketMetric({ integrationCode, group: 'price_per_barcode', event: 'barcode_deferred' }); }
+            }
+        }
+        if (maxWaitMs > 0) {
+            log.warn('BARCODE_PRICE_DEFERRED', 'Barkod başına fiyat sınırı (30/dk) aşıldı; gönderim ertelendi', { waitMs: maxWaitMs });
+            await sleep(ResilientHttpClient.scaleDelayMs(maxWaitMs));
+        }
     }
 
     // contentId -> barkodlar (content-bulk-update sonucu barkod taşımaz). Süreç-içi, sınırlı ve TTL'li (sonuçlar ~4 sa görünür).
@@ -331,13 +364,10 @@ export class ProductService {
         if (!platformProduct.pimCategoryId) {
             throw new Error(`Pazaryeri kategori ID (pimCategoryId) eksik. Ürün: ${platformProduct.barcode || platformProduct.title}`);
         }
-        const [brandId, commission] = await Promise.all([
-            this.params.mappingProvider.getLocalBrandId(platformProduct.brandId),
-            this.params.mappingProvider.getCategoryCommission(platformProduct.pimCategoryId)
-        ]);
+        const brandId = await this.params.mappingProvider.getLocalBrandId(platformProduct.brandId);
 
         const choicesResult = await this.resolveVariantChoices(platformProduct.pimCategoryId, platformProduct.attributes, categoryId);
-        const variant = this.transformer.toInternalVariant(platformProduct, choicesResult, commission);
+        const variant = this.transformer.toInternalVariant(platformProduct, choicesResult);
 
         return {
             product: {
@@ -364,7 +394,7 @@ export class ProductService {
         const data = await this.connector.fetchBatchStatus(url);
         const interpretation = this.transformer.interpretBatchResponse(data);
         if (!interpretation.done) {
-            console.log(`[Trendyol][checkBatchProduct] batch=${String(batchId).slice(0, 40)} sonuçlanmadı: ${interpretation.note}`);
+            log.info('PRODUCTSERVICE_BATCH_SONUCLANMADI', `batch=${String(batchId).slice(0, 40)} sonuçlanmadı: ${interpretation.note}`);
             return undefined;
         }
 
@@ -446,10 +476,11 @@ export class ProductService {
         const results: any[] = [];
         const mappedAttrIds: string[] = [];
 
-        // 2. Trendyol ürün verisini Map'e çevir
-        const pAttrMap = new Map<string, string>();
+        // 2. Trendyol ürün verisini Map'e çevir (kimlik + metin ayrı taşınır: eşleme önce kimlikle, sonra metinle çözülür)
+        const pAttrMap = new Map<string, { valueId?: string; text?: string }>();
         platformAttrs?.forEach(a => {
-            pAttrMap.set(String(a.attributeId), String(a.attributeValueId || a.attributeValue));
+            const norm = normalizeAttrValue(a);
+            if (norm) pAttrMap.set(String(a.attributeId), norm);
         });
 
 
@@ -470,32 +501,12 @@ export class ProductService {
 
         for (const mapping of categorySpecificMappings) {
             const pAttrId = String(mapping.platformAttributeId);
-            const trendyolValueFromProduct = pAttrMap.get(pAttrId); // Bu attributeValueId veya attributeValue'dur
+            const trendyolValueFromProduct = pAttrMap.get(pAttrId);
 
             if (!trendyolValueFromProduct) continue;
 
-            let matchedValue: any = null;
-
-            // 1. DURUM: Mapping içinde sabit değerler varsa (Normal akış)
-            if (mapping.values && mapping.values.length > 0) {
-                matchedValue = mapping.values.find((v: any) =>
-                    String(v.platformValueId) === trendyolValueFromProduct ||
-                    String(v.platformValueName).toLocaleUpperCase('tr') === trendyolValueFromProduct.toLocaleUpperCase('tr')
-                );
-            }
-
-            // 2. DURUM: allowCustom aktifse veya mapping değerleri boşsa (Senin dediğin kritik nokta)
-            // Eğer yukarıda sabit bir eşleşme bulamadıysak ve alan custom girişe izin veriyorsa:
-            if (!matchedValue) {
-                // Not: Şemana 'allowCustom' bilgisini eklediysen onu kontrol et,
-                // yoksa values boş olduğunda da bu mantığı çalıştırabiliriz.
-
-                // Burada 'platformValueName' üzerinden birebir metin eşleşmesi arıyoruz
-                // Çünkü allowCustom olan yerlerde platformValueId genelde null veya değişkendir.
-                matchedValue = mapping.values?.find((v: any) =>
-                    v.platformValueName.toLocaleUpperCase('tr') === trendyolValueFromProduct.toLocaleUpperCase('tr')
-                );
-            }
+            // Kimlik kesin eşleşmesi öncelikli, sonra metin (allowCustom alanlarında platformValueId null olabilir).
+            const matchedValue: any = matchMappingValue(mapping.values, trendyolValueFromProduct);
 
             if (matchedValue) {
                 const choiceDoc: any = localChoiceMap.get(String(mapping.localChoiceId));

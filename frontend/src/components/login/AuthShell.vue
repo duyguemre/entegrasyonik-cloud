@@ -63,7 +63,7 @@
 </template>
 
 <script setup lang="ts">
-import EkBrandLogo from '@/components/ds/EkBrandLogo.vue'
+import { EkBrandLogo } from '@entegrasyonik/ui/components'
 
 /** ADR-0015 Karar 4 — yalnızca kanıtlı iddialar (bkz. dosya başı yorumu). */
 const trustItems = [
@@ -213,7 +213,10 @@ const trustItems = [
   }
 
   .ek-auth-shell__form {
-    padding: var(--ek-space-10) var(--ek-space-6);
+    /* Aşama 3: form sütunu ÜSTE yaslı (ortalı değil) — giriş/kayıt/şifre sekmeleri ve sıfırlama/doğrulama
+       sayfalarında başlık aynı yükseklikte durur; içerik boyu değişince zıplamaz. */
+    justify-content: flex-start;
+    padding: max(var(--ek-space-12), 14vh) var(--ek-space-6) var(--ek-space-10);
   }
 }
 

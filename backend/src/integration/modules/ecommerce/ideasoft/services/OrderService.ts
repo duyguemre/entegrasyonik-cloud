@@ -2,6 +2,9 @@ import { IOrderPackage, IOrderRejectParams, IPlatformResponse, ISendInvoicePaylo
 import { integrationCode } from '../constants';
 import { OrderTransformer } from '../transformers/OrderTransformer';
 import Service from './Service';
+import { carryIncomplete } from '@integration/contracts/IncompleteFetch';
+import { fetchAllPages, observedItems } from './paging';
+import { IDEASOFT_ORDERS_LIST } from '../contracts';
 import { IntegrationError } from '@integration/modules/common/IntegrationError';
 
 export class OrderService {
@@ -10,7 +13,7 @@ export class OrderService {
 
     constructor(private params: any, private service: Service) {
         this.clientId = params.clientId || 'UnknownClient';
-        this.transformer = new OrderTransformer();
+        this.transformer = new OrderTransformer(this.clientId);
     }
 
     public async fetchOrders(query?: Record<string, any>): Promise<IOrderPackage[]> {
@@ -27,19 +30,10 @@ export class OrderService {
                 apiParams.startDate = yesterday.toISOString().split('T')[0];
             }
 
-            const allOrders: any[] = [];
-            let page = 1;
+            const allOrders = await fetchAllPages(async page => observedItems(IDEASOFT_ORDERS_LIST, (await this.service.get(orderListUrl, { ...apiParams, page })).data, this.clientId), 'fetchOrders', this.clientId);
 
-            while (true) {
-                const response = await this.service.get(orderListUrl, { ...apiParams, page });
-                const items = Array.isArray(response.data) ? response.data : (response.data?.data || []);
-                if (!items.length) break;
-                allOrders.push(...items);
-                if (items.length < 100) break;
-                page++;
-            }
-
-            return this.transformer.toInternalOrderPackages(allOrders);
+            // [INT-05] tavan/tekrar => motor (OrderWorker) `getIncomplete` ile okur: imleç ilerletilmez, eksik veri sessiz kaybolmaz
+            return carryIncomplete(allOrders, this.transformer.toInternalOrderPackages(allOrders));
         } catch (error: any) {
             if (IntegrationError.isIntegrationError(error)) throw error;
             throw new Error(`[${this.clientId}][${integrationCode}OrderService:fetchOrders] ${error.message}`);

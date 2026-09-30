@@ -1,0 +1,484 @@
+---
+/**
+ * ChatScene (S18) — Asistan hero'sundaki sohbet sahnesi: "örnek senaryo" etiketli, kurgusal bir diyalog.
+ * İçerik TAMAMEN `src/data/assistant.ts` → `assistantScenario` kaydından gelir (markup'ta metin yok).
+ *
+ * Hareket (ADR-0014 Karar 3; tests/scenes.test.ts): `data-scene="assistant-chat"` döngüsel (ambient) sahnedir —
+ * 30 sn'lik tek zaman çizelgesi (src/styles/scenes-loops.css): soru → "yazıyor" → sonuç kartı → ikinci istek →
+ * "yazıyor" → onay kartı → onay düğmesi vurgusu → sakin çıkış. Yalnızca opacity/translate/scale; `paused` başlar,
+ * yalnızca görünürken oynar. Reduced-motion / Hareket kapalı / JS'siz: STATİK SON KARE = tüm diyalog görünür,
+ * onay kartı "onay bekliyor" hâlinde (yazıyor göstergeleri ve vurgu halkası gizli).
+ *
+ * Erişilebilirlik: sahne bir <figure>; figcaption örnek olduğunu söyler. Sahte düğmeler gerçek düğme DEĞİLDİR
+ * (odaklanamaz `span`), klavye sırasında yer almaz. Dekoratif öğeler `aria-hidden`.
+ */
+import Icon from '../home/Icon.astro'
+import { assistantScenario as s } from '../../data/assistant'
+---
+
+<figure class="chat" data-scene="assistant-chat" data-testid="assistant-scene" aria-labelledby="chat-caption">
+  <div class="chat__window">
+    <div class="chat__bar">
+      <span class="chat__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="chat__title">
+        <span class="chat__logo" aria-hidden="true"><Icon name="sparkle" size="sm" /></span>
+        {s.windowTitle}
+      </span>
+      <span class="chat__sample" data-testid="scenario-label">{s.label}</span>
+    </div>
+    <p class="chat__status"><span class="chat__live" aria-hidden="true"></span>{s.status}</p>
+
+    <ol class="chat__thread" role="list">
+      <li class="msg msg--user" data-part="ai-ask1">
+        <p class="bubble">{s.ask1}</p>
+      </li>
+
+      <li class="msg msg--bot">
+        <span class="typing" data-part="ai-typing1" aria-hidden="true">
+          <span class="typing__dots"><i data-part="ai-dot"></i><i data-part="ai-dot"></i><i data-part="ai-dot"></i></span>
+          {s.typing}
+        </span>
+        <div class="card" data-part="ai-result" data-testid="scenario-result">
+          <div class="card__head">
+            <span class="card__icon" aria-hidden="true"><Icon name="stock" size="sm" /></span>
+            <p class="card__title">{s.resultTitle}</p>
+            <span class="card__meta">{s.resultMeta}</span>
+          </div>
+          <table class="rows">
+            <caption class="sr-only">{s.resultTitle}</caption>
+            <thead class="sr-only">
+              <tr><th scope="col">Ürün</th><th scope="col">Stok kodu</th><th scope="col">Stok</th></tr>
+            </thead>
+            <tbody>
+              {
+                s.rows.map((r) => (
+                  <tr class="row" data-part="ai-row">
+                    <td class="row__name">{r.name}</td>
+                    <td class="row__sku">{r.sku}</td>
+                    <td class="row__stock"><span>{r.stock}</span></td>
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
+          <p class="card__link">
+            <span>{s.resultLink}</span>
+            <Icon name="arrow" size="sm" />
+          </p>
+        </div>
+      </li>
+
+      <li class="msg msg--user" data-part="ai-ask2">
+        <p class="bubble">{s.ask2}</p>
+      </li>
+
+      <li class="msg msg--bot">
+        <span class="typing" data-part="ai-typing2" aria-hidden="true">
+          <span class="typing__dots"><i data-part="ai-dot"></i><i data-part="ai-dot"></i><i data-part="ai-dot"></i></span>
+          {s.typing}
+        </span>
+        <div class="card card--approve" data-part="ai-approve" data-testid="scenario-approval">
+          <div class="card__head">
+            <span class="card__icon card__icon--warn" aria-hidden="true"><Icon name="shield" size="sm" /></span>
+            <p class="card__title">{s.approvalTitle}</p>
+            <span class="card__meta">{s.approvalMeta}</span>
+          </div>
+          <table class="diff">
+            <caption class="sr-only">{s.approvalMeta}</caption>
+            <thead class="sr-only">
+              <tr><th scope="col">Ürün</th><th scope="col">Şimdiki fiyat</th><th scope="col">Yeni fiyat</th></tr>
+            </thead>
+            <tbody>
+              {
+                s.changes.map((c) => (
+                  <tr>
+                    <td class="diff__name">{c.name}</td>
+                    <td class="diff__from"><s>{c.from}</s></td>
+                    <td class="diff__to">{c.to}</td>
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
+          <div class="card__actions" aria-hidden="true">
+            <span class="fake-btn fake-btn--primary">
+              <span class="fake-btn__ring" data-part="ai-press"></span>
+              <Icon name="check" size="sm" />
+              {s.approve}
+            </span>
+            <span class="fake-btn">{s.cancel}</span>
+          </div>
+          <p class="card__note"><Icon name="lock" size="sm" /><span>{s.approvalNote}</span></p>
+        </div>
+      </li>
+    </ol>
+
+    <div class="chat__input" aria-hidden="true">
+      <span>{s.inputPlaceholder}</span>
+      <span class="chat__send"><Icon name="arrow" size="sm" /></span>
+    </div>
+  </div>
+  <figcaption id="chat-caption" class="chat__caption">
+    <Icon name="info" size="sm" />
+    <span><strong>{s.label}:</strong> {s.caption}</span>
+  </figcaption>
+</figure>
+
+<style>
+  .chat {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    min-width: 0;
+    margin: 0;
+  }
+  /* Arka ışıma: pencerenin arkasında yumuşak ikincil renk halesi (dekoratif, statik). */
+  .chat::before {
+    content: '';
+    position: absolute;
+    inset: 8% -6% 14%;
+    z-index: 0;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-secondary) 30%, transparent), transparent);
+    filter: blur(var(--ek-space-10));
+    pointer-events: none;
+  }
+  .chat__window {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--site-radius-panel);
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--ek-color-background) 9%, transparent), color-mix(in srgb, var(--ek-color-background) 3%, transparent)),
+      color-mix(in srgb, var(--site-stage-deep) 82%, var(--ek-color-primary));
+    box-shadow:
+      var(--site-shadow-panel),
+      inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 14%, transparent);
+    color: var(--site-text-on-dark-body);
+  }
+
+  /* --- Pencere çubuğu --- */
+  .chat__bar {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-3) var(--ek-space-4);
+    border-bottom: var(--site-border-width) solid var(--site-glass-border);
+  }
+  .chat__dots {
+    display: inline-flex;
+    gap: var(--ek-space-1);
+  }
+  .chat__dots i {
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--ek-color-background) 22%, transparent);
+  }
+  .chat__title {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .chat__logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-6);
+    height: var(--ek-space-6);
+    border-radius: var(--ek-radius-md);
+    background: var(--site-gradient-accent-on-dark);
+    color: var(--site-stage-deep);
+  }
+  .chat__sample {
+    margin-inline-start: auto;
+    padding: var(--ek-space-1) var(--ek-space-2);
+    border: var(--site-border-width) dashed color-mix(in srgb, var(--ek-color-warning) 70%, transparent);
+    border-radius: var(--ek-radius-full);
+    color: color-mix(in srgb, var(--ek-color-warning) 55%, var(--ek-color-background));
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .chat__status {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    margin: 0;
+    padding: var(--ek-space-2) var(--ek-space-4);
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-xs);
+  }
+  .chat__live {
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    border-radius: 50%;
+    background: var(--ek-color-secondary);
+    box-shadow: 0 0 0 0.1875rem color-mix(in srgb, var(--ek-color-secondary) 25%, transparent);
+  }
+
+  /* --- Akış --- */
+  .chat__thread {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    margin: 0;
+    padding: var(--ek-space-2) var(--ek-space-4) var(--ek-space-4);
+    list-style: none;
+  }
+  .msg {
+    position: relative;
+    display: flex;
+    min-width: 0;
+  }
+  .msg--user {
+    justify-content: flex-end;
+  }
+  .bubble {
+    max-width: 85%;
+    margin: 0;
+    padding: var(--ek-space-2) var(--ek-space-4);
+    border-radius: var(--ek-radius-lg) var(--ek-radius-lg) var(--ek-radius-sm) var(--ek-radius-lg);
+    background: linear-gradient(140deg, var(--ek-color-primary-lighten), var(--ek-color-primary));
+    box-shadow: 0 var(--ek-space-2) var(--ek-space-4) calc(var(--ek-space-2) * -1) color-mix(in srgb, var(--ek-color-primary) 80%, transparent);
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-medium);
+    line-height: var(--ek-line-height-normal);
+  }
+
+  /* "Yazıyor" göstergesi: sonucun yerinde, üst üste durur; statik hâlde görünmez. */
+  .typing {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-2) var(--ek-space-3);
+    border-radius: var(--ek-radius-lg);
+    background: var(--site-glass-bg);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-xs);
+    opacity: 0;
+  }
+  .typing__dots {
+    display: inline-flex;
+    gap: var(--ek-space-1);
+  }
+  /* Stagger sırası (--k) CSS'te: satır içi style CSP'ye takılır (style-src 'self'). */
+  .typing__dots i:nth-child(2),
+  .row:nth-child(2) {
+    --k: 1;
+  }
+  .typing__dots i:nth-child(3),
+  .row:nth-child(3) {
+    --k: 2;
+  }
+  .row:nth-child(4) {
+    --k: 3;
+  }
+  .typing__dots i {
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: 50%;
+    background: var(--ek-color-secondary);
+  }
+
+  /* --- Kartlar --- */
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    width: min(100%, 26rem);
+    padding: var(--ek-space-3) var(--ek-space-4);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-lg) var(--ek-radius-lg) var(--ek-radius-lg) var(--ek-radius-sm);
+    background: color-mix(in srgb, var(--ek-color-background) 6%, transparent);
+  }
+  .card--approve {
+    border-color: color-mix(in srgb, var(--ek-color-warning) 55%, transparent);
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--ek-color-warning) 10%, transparent), transparent 70%),
+      color-mix(in srgb, var(--ek-color-background) 6%, transparent);
+  }
+  .card__head {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+  }
+  .card__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: var(--ek-space-6);
+    height: var(--ek-space-6);
+    border-radius: var(--ek-radius-md);
+    background: color-mix(in srgb, var(--ek-color-secondary) 18%, transparent);
+    color: var(--site-accent-on-dark);
+  }
+  .card__icon--warn {
+    background: color-mix(in srgb, var(--ek-color-warning) 20%, transparent);
+    color: color-mix(in srgb, var(--ek-color-warning) 60%, var(--ek-color-background));
+  }
+  .card__title {
+    margin: 0;
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .card__meta {
+    margin-inline-start: auto;
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-xs);
+    white-space: nowrap;
+  }
+  .rows,
+  .diff {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--ek-font-size-xs);
+  }
+  .rows td,
+  .diff td {
+    padding: var(--ek-space-2) 0;
+    border-top: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-background) 9%, transparent);
+    vertical-align: middle;
+  }
+  .row__name,
+  .diff__name {
+    color: var(--site-text-on-dark-heading);
+    font-weight: var(--ek-font-weight-medium);
+  }
+  .row__sku {
+    padding-inline: var(--ek-space-2) !important;
+    color: var(--site-text-on-dark-meta);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .row__stock {
+    text-align: end;
+  }
+  .row__stock span {
+    display: inline-flex;
+    min-width: var(--ek-space-6);
+    justify-content: center;
+    padding: 0 var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-error) 26%, transparent);
+    color: var(--site-text-on-dark-heading);
+    font-weight: var(--ek-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+  }
+  .diff__from {
+    padding-inline: var(--ek-space-2) !important;
+    color: var(--site-text-on-dark-meta);
+    text-align: end;
+    white-space: nowrap;
+  }
+  .diff__to {
+    color: var(--site-accent-on-dark);
+    font-weight: var(--ek-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+    white-space: nowrap;
+  }
+  .card__link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-1);
+    margin: 0;
+    color: var(--site-accent-on-dark);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .card__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2);
+    padding-top: var(--ek-space-1);
+  }
+  .fake-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-1);
+    padding: var(--ek-space-2) var(--ek-space-3);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-md);
+    color: var(--site-text-on-dark-body);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .fake-btn--primary {
+    border-color: transparent;
+    background: var(--ek-color-secondary);
+    color: var(--site-stage-deep);
+  }
+  /* Onay vurgusu: "kullanıcı düğmeye yöneliyor" — yalnızca oynatmada görünür (statik: gizli). */
+  .fake-btn__ring {
+    position: absolute;
+    inset: calc(var(--ek-space-1) * -1);
+    border-radius: var(--ek-radius-lg);
+    box-shadow: var(--site-glow-ring);
+    opacity: 0;
+  }
+  .card__note {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    margin: 0;
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-xs);
+  }
+
+  /* --- Giriş kutusu --- */
+  .chat__input {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 var(--ek-space-4) var(--ek-space-4);
+    padding: var(--ek-space-2) var(--ek-space-2) var(--ek-space-2) var(--ek-space-4);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-background) 5%, transparent);
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-sm);
+  }
+  .chat__send {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-8);
+    height: var(--ek-space-8);
+    border-radius: 50%;
+    background: var(--site-gradient-accent-on-dark);
+    color: var(--site-stage-deep);
+  }
+
+  .chat__caption {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ek-space-2);
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-sm);
+    line-height: var(--ek-line-height-normal);
+  }
+  .chat__caption strong {
+    color: var(--site-text-on-dark-body);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+</style>

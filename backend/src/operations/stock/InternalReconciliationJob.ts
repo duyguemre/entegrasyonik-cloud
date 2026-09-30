@@ -1,5 +1,7 @@
 import { DatabaseManagerInstance } from "@database/DatabaseManager";
 import { RedisService } from "@services/redis/RedisService";
+import { deriveAvailable } from "@interfaces/stock";
+import { recordStockMovement } from "./stockMovements";
 
 /**
  * ADR-0004 — Zero-oversell (Karar 8a, Aşama C): İÇ mutabakat, saatlik.
@@ -86,6 +88,14 @@ export class InternalReconciliationJob {
             );
             if (corrigedDoc) {
                 corrected++;
+                // [ADR-0021 D14] reserved düzeltmesi kullanılabilir stoğu değiştirir -> hareket defteri (best-effort, asenkron)
+                const after = deriveAvailable(corrigedDoc as any);
+                recordStockMovement(clientDB, {
+                    variantId: (variant as any)._id, sku: (corrigedDoc as any).stockcode || (corrigedDoc as any).barcode,
+                    delta: currentReserved - sumReserved, before: after - (currentReserved - sumReserved), after,
+                    stockAfter: typeof (corrigedDoc as any).stock === 'number' ? (corrigedDoc as any).stock : null,
+                    reason: 'reconcile', ref: { kind: 'job', id: 'InternalReconciliationJob', key: `reconcile:${String((variant as any)._id)}:${Number((corrigedDoc as any).stockVersion) || 0}` },
+                });
                 console.warn(`[InternalReconciliationJob] Onarıldı: variant=${(variant as any)._id} reserved ${currentReserved} -> ${sumReserved} (allocations RESERVED toplamı).`);
             } else {
                 // stockVersion o sırada değişmiş (başka bir eşzamanlı geçiş) -- bu turda ATLANIR, bir sonraki

@@ -1,15 +1,18 @@
 import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import { DatabaseManagerInstance } from "@database/DatabaseManager";
-import { nodeCache } from "@utils/decorator/cache";
+import { buildCacheDump } from "../cacheDump";
 import { RedisService } from "@services/redis/RedisService";
 import { ApplicationError } from '../Security';
 import { TenantProvisioningService } from '@operations/tenant/TenantProvisioningService';
-import { TenantLifecycleService } from '@operations/tenant/TenantLifecycleService';
+import { createTenantLifecycleService } from '../tenantLifecycleFactory';
 import { toClientDto, CLIENT_SAFE_PROJECTION, CLIENT_SORT_FIELDS } from '../clientDto';
 import { maskIntegrationItem } from '../integrationSecrets';
 import { nextSequence } from '@utils/sequence';
-import { containsRegex, clampPage, clampLimit } from '@utils/search';
+import { containsRegex, clampPage, clampLimit, pickSortField } from '@utils/search';
+import { TICKET_SORT_FIELDS } from '../listSortFields';
+import { getTenantRegistry } from '@database/TenantRegistry';
+import { getIdentityCache } from '@platform/core/security/identityCache';
 
 /**
  * AdminService
@@ -194,7 +197,8 @@ export default class AdminService extends BaseApi implements IService {
 
             const skip = (Number(page) - 1) * Number(limit);
             const sort: any = {};
-            sort[sortField] = Number(sortOrder);
+            // [DB-02] sıralama alanı izin listesi; bilinmeyen alan => lastMessageAt
+            sort[pickSortField(sortField, TICKET_SORT_FIELDS, 'lastMessageAt').field] = Number(sortOrder) === 1 ? 1 : -1;
 
             const [tickets, total] = await Promise.all([
                 this.applicationDB.getTicketModel().find(query).sort(sort).skip(skip).limit(Number(limit)).lean(),
@@ -361,18 +365,8 @@ export default class AdminService extends BaseApi implements IService {
             const importActiveCount = await this.applicationDB.getImportJobModel().countDocuments({ ...trafficFilter, lockedBy: { $ne: null } });
 
             // 4. Bellek Cache (NodeCache) İstatistikleri ve Detayı
-            const cacheStats = nodeCache.getStats();
-            const allKeys = nodeCache.keys();
-
-            const cacheDetails: Record<string, number> = {};
-            allKeys.forEach(key => {
-                const prefix = key.split('-')[0] || 'Unknown';
-                cacheDetails[prefix] = (cacheDetails[prefix] || 0) + 1;
-            });
-
-            const cacheBreakdown = Object.entries(cacheDetails)
-                .map(([name, count]) => ({ name, count }))
-                .sort((a, b) => b.count - a.count);
+            // WP10: aile bazında sayılar; ham anahtar/tenant kimliği yanıta girmez (bkz. cacheDump.ts).
+            const cacheDump = buildCacheDump();
 
             // 5. En Aktif 5 Müşteri (Ayrı Ayrı Export ve Import) - Filtrelenebilir
             const aggregateActivity = async (model: any, dateField: string = 'createdAt') => {
@@ -503,10 +497,7 @@ export default class AdminService extends BaseApi implements IService {
                         export: { wait: flagQueuedCount, active: exportActiveCount },
                         import: { wait: importQueuedCount, active: importActiveCount }
                     },
-                    memoryCache: {
-                        ...cacheStats,
-                        breakdown: cacheBreakdown
-                    },
+                    memoryCache: cacheDump,
                     topExports,
                     topImports
                 },
@@ -716,6 +707,9 @@ export default class AdminService extends BaseApi implements IService {
                 { $set },
                 { new: true }
             );
+            // ADR-0024 P1-CORE: status ACTIVE<->PASSIVE değişimi TenantRegistry/kimlik önbelleğinde 30 sn bayat kalmasın
+            getTenantRegistry().invalidate(Number(targetClientId));
+            getIdentityCache().invalidateTenant(Number(targetClientId));
 
             return { success: true, client: toClientDto(res) };
         } catch (error) {
@@ -736,7 +730,7 @@ export default class AdminService extends BaseApi implements IService {
             const { targetClientId } = this.request;
             if (!targetClientId) throw new Error('targetClientId gereklidir.');
 
-            const lifecycle = new TenantLifecycleService({ applicationDB: this.applicationDB });
+            const lifecycle = createTenantLifecycleService(this.applicationDB);
             const result = await lifecycle.requestDeletion(Number(targetClientId), {
                 actorSub: this.request.principal?.sub,
                 actor: 'platformAdmin',

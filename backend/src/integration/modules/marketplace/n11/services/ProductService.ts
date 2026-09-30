@@ -1,5 +1,7 @@
 import { IBatchProcessResult, IBatchCheckPayload, IInternalResult, IFetchProductsResult, IInternalConversionResult, IPlatformProductSummary, IVariant, IValidationResult, IExportStagedProduct, PLATFORM_PROCESS } from '@interfaces/index';
 import { ProductConnector } from '../api/ProductConnector';
+import { paginatePage, readTotal, N11_STREAM_MAX_PAGES, N11_STREAM_MAX_RECORDS } from '../api/paginatePage';
+import { getIncomplete } from '@integration/contracts/IncompleteFetch';
 import { ProductMapper } from '../transformers/Mappers';
 import Service from './Service';
 import { IntegrationError } from '@integration/modules/common/IntegrationError';
@@ -15,22 +17,33 @@ export class ProductService {
         this.mapper = new ProductMapper();
     }
 
+    /**
+     * [INT-05 / F-02] Ürün akışı TÜM sayfaları dolaşır (ortak `paginate`, akış kipi: sayfa başına callback, bellekte toplanmaz). ÖNCEKİ DAVRANIŞ
+     * yalnız ilk 100 ürünü alıp COMPLETED dönerdi (sessiz kesme). Durma: toplam (`pagingData.totalCount`) | dönen < 100 | boş sayfa. Tavan
+     * (1000 sayfa / 100.000 kayıt) ya da tekrar eden sayfa (sunucu sayfa parametresini yok saydı) => FAILED (+ yapılandırılmış uyarı), COMPLETED DEĞİL.
+     */
     public async streamProducts(callback: (chunk: any[]) => Promise<void>, query?: Record<string, any>): Promise<IFetchProductsResult> {
+        let processed = 0;
+        let pages = 0;
+        let platformTotal: number | undefined;
         try {
-            const response = await this.connector.fetchProductListRest({
-                pageSize: 100,
-                currentPage: 0
+            const collected = await paginatePage(async (page, limit) => {
+                const response = await this.connector.fetchProductListRest({ pageSize: limit, currentPage: page });
+                platformTotal = readTotal(response.pagingData?.totalCount) ?? platformTotal;
+                return { items: response.products || [], total: readTotal(response.pagingData?.totalCount) };
+            }, {
+                operation: 'streamProducts', clientId: this.clientId,
+                maxPages: N11_STREAM_MAX_PAGES, maxRecords: N11_STREAM_MAX_RECORDS,
+                onPage: async (items) => { await callback(items); processed += items.length; pages++; },
             });
-            const products = response.products || [];
-            if (products.length > 0) {
-                await callback(products);
+            const incomplete = getIncomplete(collected);
+            if (incomplete) {
+                return {
+                    status: 'FAILED', totalElements: platformTotal || processed, totalProcessed: processed, totalPages: pages,
+                    error: `N11 ürün akışı tamamlanamadı (${incomplete.reason}); ${processed} kayıt işlendi.`,
+                };
             }
-            return {
-                status: 'COMPLETED',
-                totalElements: response.pagingData?.totalCount || products.length,
-                totalProcessed: products.length,
-                totalPages: 1
-            };
+            return { status: 'COMPLETED', totalElements: platformTotal || processed, totalProcessed: processed, totalPages: pages || 1 };
         } catch (error: any) {
             if (IntegrationError.isIntegrationError(error)) throw error;
             throw new Error(`[${this.clientId}][N11ProductService:streamProducts] ${error.message}`);

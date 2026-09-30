@@ -7,13 +7,6 @@
 
 export type AllocationState = 'RESERVED' | 'COMMITTED' | 'RELEASED' | 'OVERSOLD' | 'RESTOCKED';
 
-/** Terminal state'ler: buradan geri dönüş YOK (ADR Karar 2, madde 2 sonu). */
-export const TERMINAL_ALLOCATION_STATES: ReadonlySet<AllocationState> = new Set<AllocationState>([
-    'COMMITTED',
-    'RELEASED',
-    'RESTOCKED',
-]);
-
 export interface IAllocationEntry {
     /** `"<integrationCode>:<externalOrderId>:<externalLineItemId>"`; iade: `"return:<integrationCode>:<claimId>:<lineId>"`. */
     key: string;

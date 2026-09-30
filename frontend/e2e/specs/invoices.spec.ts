@@ -21,7 +21,7 @@ test.describe('P2 — Faturalar (InvoiceListView)', () => {
     await expect(page.getByText('INV-E2E-0002')).toBeVisible()
   })
 
-  test('boş durum: sonuç yoksa "Fatura Bulunamadı" kartı gösterilir (BİLİNÇLİ TAMAMLAMA — bkz. BACKLOG.md)', async ({ page }, testInfo) => {
+  test('boş durum: sonuç yoksa "Fatura bulunamadı" kartı gösterilir (BİLİNÇLİ TAMAMLAMA — bkz. BACKLOG.md)', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'Masaüstü tablo (mdAndUp/>=960px) gerektiriyor — bkz. dosya başı NOT')
     // BİLİNÇLİ TAMAMLAMA (characterization AŞAMASINDA bugünkü davranış Vuetify'ın kendi `tr`
     // locale varsayılanıydı — "Bu görünümde veri yok.", node_modules/vuetify/lib/locale/tr.js
@@ -34,10 +34,10 @@ test.describe('P2 — Faturalar (InvoiceListView)', () => {
     await gotoAuthed(page)
     await openScreen(page, 'InvoiceListView')
 
-    await expect(page.getByText('Fatura Bulunamadı')).toBeVisible()
+    await expect(page.getByText('Fatura bulunamadı')).toBeVisible()
   })
 
-  test('hata durumu: 500 alındığında da aynı "Fatura Bulunamadı" boş-durumuna düşülür, ham hata sızmaz (gizli davranış — bkz. BACKLOG.md)', async ({ page }, testInfo) => {
+  test('hata durumu: 500 alındığında "Faturalar yüklenemedi" + Tekrar dene gösterilir (boştan AYRI), ham hata sızmaz', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'Masaüstü tablo (mdAndUp/>=960px) gerektiriyor — bkz. dosya başı NOT')
     // GİZLİ DAVRANIŞ (characterization, düzeltilmedi — BACKLOG.md): `restApi.post` HİÇBİR ZAMAN
     // reddetmiyor (bkz. restapi.ts `postService`); bu yüzden `getInvoices`'daki `catch` bloğu
@@ -48,7 +48,9 @@ test.describe('P2 — Faturalar (InvoiceListView)', () => {
     await gotoAuthed(page)
     await openScreen(page, 'InvoiceListView')
 
-    await expect(page.getByText('Fatura Bulunamadı')).toBeVisible()
+    // DS-v2 Aşama 2 — BİLİNÇLİ DAVRANIŞ DEĞİŞİKLİĞİ: hata artık boş durumdan ayrı (isRequestError); API çağrısı AYNI.
+    await expect(page.getByText('Faturalar yüklenemedi')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Tekrar dene' })).toBeVisible()
     await expect(page.locator('body')).not.toContainText('500')
   })
 

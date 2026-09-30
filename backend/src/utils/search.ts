@@ -47,3 +47,13 @@ export function clampPage(raw: unknown): number {
 export function normalizePagination(raw: any, defaultLimit: number, max: number = MAX_PAGE_LIMIT): { page: number; limit: number } {
     return { page: clampPage(raw?.page), limit: clampLimit(raw?.limit, defaultLimit, max) };
 }
+
+/**
+ * [DB-02 / DBR-06] Sıralama alanı İZİN LİSTESİ: liste uçlarında `sortBy.key` yalnız bu listedeki alanlardan biri olabilir.
+ * Bilinmeyen/tür dışı alan HATA vermez (mevcut FE akışı bozulmasın) — `fallback` (varsayılan sıralama alanı) kullanılır.
+ * Dönüş: `{ field, usedFallback }`; yön çağıranın mevcut kuralında kalır.
+ */
+export function pickSortField(raw: unknown, allowed: readonly string[], fallback: string): { field: string; usedFallback: boolean } {
+    if (typeof raw === 'string' && allowed.includes(raw)) return { field: raw, usedFallback: false };
+    return { field: fallback, usedFallback: true };
+}

@@ -5,17 +5,11 @@
     attach="adminClientListView">
 
     <div class="pa-0">
-      <v-tabs v-model="activeTab" color="primary" class="admin-tabs px-4 border-b">
-        <v-tab value="overview" class="font-weight-black">
-          <v-icon start size="18">mdi-view-dashboard-outline</v-icon> GENEL BAKIŞ
-        </v-tab>
-        <v-tab value="operations" class="font-weight-black">
-          <v-icon start size="18">mdi-buffer</v-icon> OPERASYONEL İZLEME
-        </v-tab>
-        <v-tab value="settings" class="font-weight-black">
-          <v-icon start size="18">mdi-cog-outline</v-icon> MAĞAZA AYARLARI
-        </v-tab>
-      </v-tabs>
+      <EkPageTabs v-model="activeTab" class="px-4" label="Mağaza ayrıntıları" :tabs="[
+        { value: 'overview', label: 'Genel bakış', icon: 'mdi-view-dashboard-outline' },
+        { value: 'operations', label: 'Operasyonel izleme', icon: 'mdi-buffer' },
+        { value: 'settings', label: 'Mağaza ayarları', icon: 'mdi-cog-outline' },
+      ]" />
 
       <v-window v-model="activeTab" class="pa-4">
         <!-- Overview Tab -->
@@ -50,7 +44,7 @@
                           <div class="d-flex align-center justify-space-between">
                             <span class="text-subtitle-2 font-weight-black color-slate-900">{{ int.integrationCode
                               }}</span>
-                            <EkStatusChip tone="success" label="AKTİF" />
+                            <EkStatusChip tone="success" label="Aktif" />
                           </div>
                           <div class="text-micro font-weight-bold color-slate-500 mt-1 line-clamp-1">
                             {{ int.title || 'Platform Entegrasyonu' }}
@@ -211,7 +205,7 @@
                 <v-card flat border class="rounded-xl pa-5 border-subtle h-100">
                   <div class="d-flex align-center justify-space-between mb-4">
                     <div class="text-subtitle-2 font-weight-black color-slate-800 uppercase">ARŞİV DEPOLAMA (R2)</div>
-                    <v-switch v-model="form.archive.isActive" hide-details color="success" inset density="compact"
+                    <v-switch v-model="form.archive.isActive" hide-details density="compact"
                       class="premium-switch">
                       <template v-slot:label>
                         <span class="text-caption font-weight-black color-slate-500 mr-2">DURUM</span>
@@ -238,7 +232,7 @@
                 <v-card flat border class="rounded-xl pa-5 border-subtle h-100">
                   <div class="d-flex align-center justify-space-between mb-4">
                     <div class="text-subtitle-2 font-weight-black color-slate-800 uppercase">RESİM DEPOLAMA (R2)</div>
-                    <v-switch v-model="form.image.isActive" hide-details color="success" inset density="compact"
+                    <v-switch v-model="form.image.isActive" hide-details density="compact"
                       class="premium-switch">
                       <template v-slot:label>
                         <span class="text-caption font-weight-black color-slate-500 mr-2">DURUM</span>
@@ -278,7 +272,7 @@
                             <div class="text-micro font-weight-black color-slate-700 uppercase">{{ item.integrationCode }}</div>
                             <div class="text-micro font-weight-bold color-slate-400 uppercase">{{ item.type }}</div>
                           </div>
-                          <v-switch v-model="item.status" hide-details color="success" inset density="compact" class="premium-switch"
+                          <v-switch v-model="item.status" hide-details density="compact" class="premium-switch"
                             :aria-label="`${item.integrationCode} entegrasyonu etkin`"></v-switch>
                         </v-card>
                       </v-col>
@@ -310,16 +304,17 @@
 </template>
 
 <script setup lang="ts">
+import { EkPageTabs, EkKpiRow, EkSkeleton, EkStatusChip } from '@entegrasyonik/ui/components'
 import { ref, reactive, computed, watch } from 'vue';
 import useRestApi from '@/composables/restapi';
 import { useSnackbarStore } from '@/stores/snackbarStore';
 import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue';
 import ClientStatsCard from '@/components/adminPanel/ClientStatsCard.vue';
 import useMarketplaceStore from '@/stores/marketplace';
-import EkKpiRow from '@/components/ds/EkKpiRow.vue';
-import EkSkeleton from '@/components/ds/EkSkeleton.vue';
-import EkStatusChip from '@/components/ds/EkStatusChip.vue';
-import { formatDateTime, formatPercent } from '@/composables/format';
+;
+;
+;
+import { formatDateTime, formatPercent } from '@entegrasyonik/ui/format';
 
 const marketplaceStore = useMarketplaceStore();
 
