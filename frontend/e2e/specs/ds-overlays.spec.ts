@@ -153,18 +153,19 @@ test.describe('DS-v2 A2 — tehlikeli onay diyaloğu (ürün silme)', () => {
     const cancel = dialog.getByRole('button', { name: 'İptal' })
     await expect(cancel).toBeFocused()
     const confirm = dialog.getByRole('button', { name: 'Sil' })
-    const [confirmBg, errorToken] = await Promise.all([
-      confirm.evaluate((el) => getComputedStyle(el).backgroundColor),
-      page.evaluate(() => {
-        const probe = document.createElement('span')
-        probe.style.color = 'var(--ek-color-error)'
-        document.body.appendChild(probe)
-        const c = getComputedStyle(probe).color
-        probe.remove()
-        return c
-      }),
-    ])
-    expect(confirmBg).toBe(errorToken)
+    const errorToken = await page.evaluate(() => {
+      const probe = document.createElement('span')
+      probe.style.color = 'var(--ek-color-error)'
+      document.body.appendChild(probe)
+      const c = getComputedStyle(probe).color
+      probe.remove()
+      return c
+    })
+    // [Test ortamı sağlamlaştırması] Dar görünümde satırdaki "Ürünü sil" ikonu ile diyalogdaki "Sil" düğmesi
+    // aynı noktaya denk geliyor: tıklamadan kalan imleç düğmeyi hover (koyu error) durumunda bırakıyordu.
+    // Dinlenme rengi ölçülür — imleç diyalog dışına alınır, açılış geçişi bitene kadar beklenir. İddia aynı.
+    await page.mouse.move(1, 1)
+    await expect.poll(() => confirm.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(errorToken)
 
     if (testInfo.project.name === 'chromium-desktop') {
       const axe = await new AxeBuilder({ page }).include('.v-overlay--active .v-overlay__content').withTags(AXE_TAGS).analyze()
