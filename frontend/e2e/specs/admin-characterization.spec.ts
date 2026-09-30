@@ -43,8 +43,8 @@ test.describe('B3 karakterizasyon — Mağaza Yönetimi (AdminClientListView)', 
     await expect(view).toContainText('Pasif')
     await expect(view).toContainText('ID: 1001')
     await expect(view).toContainText('E2E Örnek Ticaret A.Ş.')
-    await expect(view.getByText('AKTİF', { exact: true })).toBeVisible()
-    await expect(view.getByText('PASİF', { exact: true })).toBeVisible()
+    await expect(view.getByText('Aktif', { exact: true })).toBeVisible()
+    await expect(view.getByText('Pasif', { exact: true })).toBeVisible()
   })
 
   test('arama: Enter ve büyüteç düğmesi getClients\'i arama metniyle yeniden ister; yenile aynı gövdeyi gönderir', async ({ page }) => {

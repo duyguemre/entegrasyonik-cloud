@@ -10,7 +10,7 @@
     <ConfirmationDialogComponent v-model="confirmationDelete.isDialogOpen"
       :title="confirmationDelete.mode === 'single' ? 'KAYIT SİLİNECEK' : 'SEÇİLENLER SİLİNECEK'"
       :message="confirmationDelete.mode === 'single' ? 'Bu işlem kaydını silmek istediğinizden emin misiniz?' : `${validSelectedJobsCount} adet kayıt silinecek. Emin misiniz?`"
-      icon="mdi-delete-alert-outline" color="error" confirmText="SİL" cancelText="İPTAL" attach=".exportLogList"
+      icon="mdi-delete-alert-outline" color="error" confirmText="Sil" cancelText="İptal" attach=".exportLogList"
       @confirm="confirmDelete()" @cancel="cancelDelete()" />
     <LoadingComponent :attach="dialogAttach" ref="loadingComponentRef"></LoadingComponent>
 

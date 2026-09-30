@@ -59,9 +59,9 @@
       </div>
     </div>
 
-    <ActionDialogComponent v-model="searchForm.form.menu" title="MESAJ FİLTRELEME" attach=".messageListView"
+    <ActionDialogComponent v-model="searchForm.form.menu" title="Mesaj filtreleme" attach=".messageListView"
       subtitle="Kategori ve durum bazlı filtreleme" icon="mdi-filter-cog" color="content-muted" maxWidth="600px"
-      confirmText="FİLTRELERİ UYGULA" @confirm="getMessages(true); searchForm.form.menu = false"
+      confirmText="Filtreleri uygula" @confirm="getMessages(true); searchForm.form.menu = false"
       @cancel="resetFilters()">
       <v-row dense>
         <v-col cols="12" md="6">

@@ -33,10 +33,10 @@ test.describe('P2 — Admin / Sistem Yönetimi (AdminSystemManagementView)', () 
     await openScreen(page, 'AdminSystemManagementView')
 
     await expect(page.locator('.adminSystemManagementView')).toBeVisible()
-    await expect(page.getByText('Sistem Durum Özeti')).toBeVisible()
+    await expect(page.getByText('Sistem durum özeti')).toBeVisible()
     // Aşama 3: bölüm başlıkları cümle düzeninde (heading rolü).
-    await expect(page.getByRole('heading', { name: 'Export operasyonları' })).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Import operasyonları' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Gönderim işlemleri' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Çekim işlemleri' })).toBeVisible()
     await expect(page.getByText('TAMAMLANDI').first()).toBeVisible()
     await expect(page.getByText('e2e-pod-a1')).toBeVisible()
     await expect(page.getByText('Kuyruk Analizi')).toBeVisible()

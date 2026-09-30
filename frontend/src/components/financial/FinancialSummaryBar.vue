@@ -35,15 +35,15 @@ const items = computed(() => {
   const fc = (v: any) => `${props.formatCurrency(v)} ₺`
   return props.compact
     ? [
-        { label: 'Satış', value: fc(s.totalCredit), tone: 'success' },
+        { label: 'Satış', value: fc(s.totalCredit), tone: '' },
         { label: 'Komisyon', value: fc(s.totalDebt), tone: '' },
-        { label: 'Net', value: fc(s.netAmount), tone: 'strong' },
+        { label: 'Net', value: fc(s.netAmount), tone: '' },
         { label: 'İşlem', value: `${s.transactionCount}`, tone: '' },
       ]
     : [
-        { label: 'Toplam Satış', value: fc(s.totalCredit), tone: 'success' },
+        { label: 'Toplam Satış', value: fc(s.totalCredit), tone: '' },
         { label: 'Komisyon', value: fc(s.totalDebt), tone: '' },
-        { label: 'Net Hakediş', value: fc(s.netAmount), tone: 'strong' },
+        { label: 'Net Hakediş', value: fc(s.netAmount), tone: '' },
         { label: 'Kargo', value: fc(s.totalCargo), tone: '' },
         { label: 'İşlem', value: `${s.transactionCount} adet`, tone: '' },
       ]
@@ -53,7 +53,8 @@ const items = computed(() => {
 <style scoped>
 /* Aşama 3: KPI dili — mikro etiket (BÜYÜK HARF) üstte, değer altta kalın ve tabular; hücreler ince ayraçlı
    ızgara (dar ekranda satıra sarılır, yatay taşma yok). Komisyon kırmızı DEĞİL: gider bir hata değildir
-   (renk anlamı: error = hata/tehlike); gelir yeşil, net vurgu, diğerleri nötr. */
+   (renk anlamı: error = hata/tehlike). Aşama 4: gelir/net de NÖTR — pano KPI'larıyla aynı dil; yeşil 'başarı',
+   mavi 'aksiyon' anlamı taşır, tutar vurgusu değildir (işaretli tutarlar tabloda +/− rengini korur). */
 .ek-fin-summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -105,6 +106,4 @@ const items = computed(() => {
   text-overflow: ellipsis;
 }
 
-.ek-fin-summary__value--success { color: var(--ek-color-success-emphasis); }
-.ek-fin-summary__value--strong { color: var(--ek-color-action-emphasis); }
 </style>

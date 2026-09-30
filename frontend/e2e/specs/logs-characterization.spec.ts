@@ -42,7 +42,7 @@ async function openExportList(page: Page, bodies?: any[]) {
 }
 
 async function openImportTab(page: Page) {
-  await page.getByRole('tab', { name: 'Ürün Çekim İşlemleri' }).click()
+  await page.getByRole('tab', { name: 'Ürün çekim işlemleri' }).click()
   await expect(page.locator('.importLogList')).toBeVisible()
 }
 

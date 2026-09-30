@@ -295,7 +295,7 @@ onMounted(() => {
 
 .subscription-inner {
   max-width: 1100px;
-  margin: 0 auto;
+  margin: 0; /* Aşama 4: sayfa ızgarasına sola hizalı */
   padding: var(--ek-space-6);
   display: flex;
   flex-direction: column;

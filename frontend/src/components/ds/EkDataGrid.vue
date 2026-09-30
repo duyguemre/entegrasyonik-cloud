@@ -17,6 +17,8 @@
     - Yatay taşma (Aşama 3): seçim kolonu + İLK veri kolonu (kimlik) sola yapışık (kap ≥ 600px);
       altında içerik kalan yapışık kenar `shadow-scroll-start/end` gölgesi alır → kolon "kesik"
       görünmez, kaydırılabildiği anlaşılır. Kolon `pin: 'none'` ilk kolonu serbest bırakır.
+    - Dar kap (< 600px, Aşama 4): satır = KART (☐ · kimlik başlığı · eylemler; altında ETİKET–değer satırları),
+      başlık satırı sıralama çubuğuna iner. Kolon `label` kart etiketi olur (`hideLabel` → etiketsiz).
     - Hücre slot kapsamı: `{ row, item, value, index }` (`item` = `row`, göç kolaylığı)
   Yükseklik: kapsayıcısını doldurur (`EkListFrame` içinde kullanılır);
   sayfalama bu bileşenin DIŞINDA, çerçevenin altına sabittir.
@@ -29,10 +31,10 @@
     :aria-busy="loading || undefined"
     @scroll.passive="measure"
   >
-    <table class="ek-grid__table" :aria-label="label" :aria-rowcount="loading ? undefined : rows.length + 1">
-      <thead>
-        <tr>
-          <th v-if="selectable" class="ek-grid__th ek-grid__th--select" scope="col">
+    <table class="ek-grid__table" role="table" :aria-label="label" :aria-rowcount="loading ? undefined : rows.length + 1">
+      <thead role="rowgroup">
+        <tr role="row">
+          <th v-if="selectable" class="ek-grid__th ek-grid__th--select" scope="col" role="columnheader">
             <input
               ref="allRef"
               type="checkbox"
@@ -47,8 +49,9 @@
             v-for="(col, ci) in columns"
             :key="col.key"
             class="ek-grid__th"
-            :class="[`ek-grid__th--${col.align ?? alignFor(col)}`, { 'is-sorted': sort?.key === col.key }, pinClass(col, ci)]"
+            :class="[`ek-grid__th--${col.align ?? alignFor(col)}`, { 'is-sorted': sort?.key === col.key, 'is-sortable': col.sortable }, pinClass(col, ci)]"
             scope="col"
+            role="columnheader"
             :aria-sort="col.sortable ? ariaSort(col.key) : undefined"
             v-bind="col.width ? { width: col.width } : {}"
           >
@@ -60,17 +63,17 @@
           </th>
         </tr>
       </thead>
-      <tbody v-if="loading">
-        <tr v-for="n in skeletonRows" :key="`sk-${n}`" class="ek-grid__row ek-grid__row--skeleton" aria-hidden="true">
-          <td v-if="selectable" class="ek-grid__td ek-grid__td--select"><span class="ek-grid__bone ek-grid__bone--box"></span></td>
-          <td v-for="(col, ci) in columns" :key="col.key" class="ek-grid__td">
+      <tbody v-if="loading" role="rowgroup">
+        <tr v-for="n in skeletonRows" :key="`sk-${n}`" class="ek-grid__row ek-grid__row--skeleton" role="row" aria-hidden="true">
+          <td v-if="selectable" class="ek-grid__td ek-grid__td--select" role="cell"><span class="ek-grid__bone ek-grid__bone--box"></span></td>
+          <td v-for="(col, ci) in columns" :key="col.key" class="ek-grid__td" role="cell">
             <span class="ek-grid__bone" :class="`ek-grid__bone--w${(n + ci) % 3}`"></span>
           </td>
         </tr>
       </tbody>
-      <tbody v-else-if="error">
-        <tr>
-          <td class="ek-grid__empty-cell" :colspan="columns.length + (selectable ? 1 : 0)">
+      <tbody v-else-if="error" role="rowgroup">
+        <tr role="row">
+          <td role="cell" class="ek-grid__empty-cell" :colspan="columns.length + (selectable ? 1 : 0)">
             <div class="ek-grid__empty" role="alert">
               <EkIconTile icon="mdi-alert-circle-outline" tone="error" size="lg" />
               <p class="ek-grid__empty-title">{{ errorTitle }}</p>
@@ -80,14 +83,15 @@
           </td>
         </tr>
       </tbody>
-      <tbody v-else-if="rows.length">
+      <tbody v-else-if="rows.length" role="rowgroup">
         <template v-for="(row, ri) in rows" :key="row[rowKey]">
         <tr
           class="ek-grid__row"
+          role="row"
           :class="[{ 'is-selected': isSelected(row), 'is-hover': forceHoverIndex === ri }, rowClass?.(row)]"
           @click="emit('row-click', row)"
         >
-          <td v-if="selectable" class="ek-grid__td ek-grid__td--select" @click.stop>
+          <td v-if="selectable" class="ek-grid__td ek-grid__td--select" role="cell" @click.stop>
             <input
               type="checkbox"
               class="ek-grid__check"
@@ -101,21 +105,23 @@
             v-for="(col, ci) in columns"
             :key="col.key"
             class="ek-grid__td"
-            :class="[`ek-grid__td--${col.type ?? 'text'}`, `ek-grid__td--${col.align ?? alignFor(col)}`, { 'ek-grid__td--wrap': col.wrap }, pinClass(col, ci)]"
+            :class="[`ek-grid__td--${col.type ?? 'text'}`, `ek-grid__td--${col.align ?? alignFor(col)}`, { 'ek-grid__td--wrap': col.wrap, 'ek-grid__td--lead': isLead(col, ci) }, pinClass(col, ci)]"
+            role="cell"
+            :data-label="col.hideLabel || isLead(col, ci) ? undefined : col.label"
           >
             <slot :name="`cell-${col.key}`" :row="row" :item="row" :value="row[col.key]" :index="ri">{{ row[col.key] ?? '—' }}</slot>
           </td>
         </tr>
-        <tr v-if="expandedSet.has(row[rowKey])" class="ek-grid__expanded">
-          <td class="ek-grid__expanded-cell" :colspan="columns.length + (selectable ? 1 : 0)">
+        <tr v-if="expandedSet.has(row[rowKey])" class="ek-grid__expanded" role="row">
+          <td role="cell" class="ek-grid__expanded-cell" :colspan="columns.length + (selectable ? 1 : 0)">
             <slot name="expanded" :row="row" :item="row" />
           </td>
         </tr>
         </template>
       </tbody>
-      <tbody v-else>
-        <tr>
-          <td class="ek-grid__empty-cell" :colspan="columns.length + (selectable ? 1 : 0)">
+      <tbody v-else role="rowgroup">
+        <tr role="row">
+          <td role="cell" class="ek-grid__empty-cell" :colspan="columns.length + (selectable ? 1 : 0)">
             <div class="ek-grid__empty" role="status">
               <EkIconTile :icon="emptyIcon" tone="neutral" size="lg" />
               <p class="ek-grid__empty-title">{{ emptyTitle }}</p>
@@ -227,6 +233,11 @@ onMounted(() => {
 })
 onBeforeUnmount(() => resizeObserver?.disconnect())
 watch(() => [props.rows, props.columns, props.loading], () => nextTick(measure))
+
+/** Dar kapta (kart düzeni) kartın başlığı olan kolon: ilk veri kolonu (kimlik). */
+function isLead(col: EkGridColumn, index: number) {
+  return index === 0 && col.pin !== 'end'
+}
 
 function pinClass(col: EkGridColumn, index: number) {
   if (col.pin === 'end') return 'ek-grid__pin-end'
@@ -545,5 +556,218 @@ function toggleSort(key: string) {
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-body-size);
   white-space: normal;
+}
+/* Aşama 4 — DAR KAP (< 600px) KART DÜZENİ. Masaüstü tablo 390px'te yalnız iki kolon + eylem kolonu gösteriyordu
+   (durum, tutar, mesaj metni görünmüyordu). Dar kapta her satır bir karttır:
+     [☐] Kimlik (ilk kolon, başlık) ............................ [eylemler]
+         ETİKET      değer
+         ETİKET      değer …
+   Başlık satırı yalnız SIRALAMA ÇUBUĞUNA iner (sıralanabilir kolonlar + tümünü seç); diğer başlıklar ekran okuyucuda
+   kalır. Tablo anlamı açık ARIA rolleriyle korunur (display değişince yerel rol düşmesin). */
+@container (max-width: 599.98px) {
+  .ek-grid {
+    background: var(--ek-color-surface);
+  }
+
+  .ek-grid__table,
+  .ek-grid__table > tbody {
+    display: block;
+  }
+
+  .ek-grid__table > thead {
+    display: block;
+    position: sticky;
+    top: 0;
+    z-index: var(--ek-z-sticky);
+  }
+
+  .ek-grid__table > thead > tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ek-space-1) var(--ek-space-2);
+    min-height: 40px;
+    padding: var(--ek-space-1) var(--ek-space-4);
+    border-bottom: 1px solid var(--ek-color-border-default);
+    background: var(--ek-color-surface-muted);
+  }
+
+  .ek-grid__th {
+    position: static;
+    height: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .ek-grid__th--select {
+    width: auto;
+    padding: 0 var(--ek-space-2) 0 0;
+    background: transparent;
+  }
+
+  .ek-grid__th.ek-grid__pin-end,
+  .ek-grid__th.ek-grid__pin-start {
+    background: transparent;
+    box-shadow: none;
+  }
+
+  /* Sıralanamayan kolon başlıkları görsel olarak gizli (ekran okuyucu adı korunur). */
+  .ek-grid__th:not(.is-sortable):not(.ek-grid__th--select) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .ek-grid__th .ek-grid__sort {
+    margin: 0;
+    padding: var(--ek-space-1) var(--ek-space-2);
+    border-radius: var(--ek-radius-chip);
+  }
+
+  .ek-grid__th.is-sorted .ek-grid__sort {
+    background: var(--ek-color-action-subtle);
+  }
+
+  .ek-grid__th--end .ek-grid__sort {
+    flex-direction: row;
+  }
+
+  .ek-grid__row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: var(--ek-space-3);
+    row-gap: var(--ek-space-1);
+    padding: var(--ek-space-3) var(--ek-space-4);
+    border-bottom: 1px solid var(--ek-color-border-subtle);
+    transition: var(--ek-transition-colors);
+  }
+
+  .ek-grid__td,
+  .ek-grid__td--select,
+  .ek-grid__td.ek-grid__pin-end,
+  .ek-grid__td.ek-grid__pin-start {
+    position: static;
+    height: auto;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    text-align: left;
+    white-space: normal;
+  }
+
+  .ek-grid__td--select {
+    grid-column: 1;
+    grid-row: 1;
+    width: auto;
+    display: flex;
+  }
+
+  .ek-grid__td--lead {
+    grid-column: 2;
+    grid-row: 1;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    overflow-wrap: anywhere;
+  }
+
+  .ek-grid__row:not(:has(.ek-grid__td--select)) > .ek-grid__td--lead {
+    grid-column: 1 / 3;
+  }
+
+  .ek-grid__td.ek-grid__pin-end {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+  }
+
+  /* Etiketsiz (hideLabel) veri hücresi: kart genişliğinde, etiketsiz satır. */
+  .ek-grid__td:not([data-label]):not(.ek-grid__td--lead):not(.ek-grid__pin-end):not(.ek-grid__td--select) {
+    grid-column: 2 / -1;
+  }
+
+  /* Anahtar–değer satırları: etiket solda sabit genişlik (mikro), değer sağında akar. */
+  .ek-grid__td[data-label] {
+    grid-column: 2 / -1;
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr);
+    align-items: baseline;
+    column-gap: var(--ek-space-3);
+    min-height: 24px;
+  }
+
+  .ek-grid__row:not(:has(.ek-grid__td--select)) > .ek-grid__td[data-label] {
+    grid-column: 1 / -1;
+  }
+
+  /* Hücrenin tüm çocukları değer kolonunda alt alta (çok öğeli hücreler etiket kolonuna taşmaz); rozetler esnemez. */
+  .ek-grid__td[data-label] > * {
+    grid-column: 2;
+    justify-self: start;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .ek-grid__td[data-label]::before {
+    grid-column: 1;
+    grid-row: 1 / span 4;
+    content: attr(data-label);
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-type-micro-size);
+    line-height: var(--ek-type-micro-line);
+    font-weight: var(--ek-type-micro-weight);
+    letter-spacing: var(--ek-type-micro-tracking);
+    text-transform: uppercase;
+  }
+
+  .ek-grid__td--wrap {
+    min-width: 0;
+  }
+
+  .ek-grid__row:not(.ek-grid__row--skeleton):hover > .ek-grid__td,
+  .ek-grid__row.is-hover > .ek-grid__td,
+  .ek-grid__row.is-selected > .ek-grid__td {
+    background: transparent;
+  }
+
+  .ek-grid__row:not(.ek-grid__row--skeleton):hover,
+  .ek-grid__row.is-hover {
+    background: var(--ek-color-surface-muted);
+  }
+
+  .ek-grid__row.is-selected {
+    background: var(--ek-color-selection);
+    box-shadow: inset 3px 0 0 var(--ek-color-action);
+  }
+
+  .ek-grid__row.is-selected > .ek-grid__td:first-child {
+    box-shadow: none;
+  }
+
+  /* İskelet kartı: başlık kemiği + iki satır. */
+  .ek-grid__row--skeleton > .ek-grid__td:not(.ek-grid__td--select) {
+    grid-column: 2 / -1;
+  }
+
+  .ek-grid__row--skeleton > .ek-grid__td:nth-child(n + 5) {
+    display: none;
+  }
+
+  .ek-grid__expanded,
+  .ek-grid__expanded-cell,
+  .ek-grid__table > tbody > tr:not(.ek-grid__row) {
+    display: block;
+  }
+
+  .ek-grid__empty-cell {
+    display: block;
+  }
 }
 </style>

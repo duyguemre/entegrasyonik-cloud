@@ -50,7 +50,7 @@
                           <div class="d-flex align-center justify-space-between">
                             <span class="text-subtitle-2 font-weight-black color-slate-900">{{ int.integrationCode
                               }}</span>
-                            <EkStatusChip tone="success" label="AKTİF" />
+                            <EkStatusChip tone="success" label="Aktif" />
                           </div>
                           <div class="text-micro font-weight-bold color-slate-500 mt-1 line-clamp-1">
                             {{ int.title || 'Platform Entegrasyonu' }}

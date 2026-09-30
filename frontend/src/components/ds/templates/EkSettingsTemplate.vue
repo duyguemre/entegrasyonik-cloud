@@ -17,7 +17,7 @@
 -->
 <template>
   <div class="ek-settings-template">
-    <EkPageHeader :title="title" :description="description" />
+    <EkPageHeader :section="section" :title="title" :description="description" />
 
     <div class="ek-settings-template__content">
       <slot />
@@ -39,6 +39,8 @@ withDefaults(
   defineProps<{
     title: string
     description?: string
+    /** Bölüm yolu (breadcrumb) — diğer ekranlarla aynı başlık ritmi. */
+    section?: string
     dirty?: boolean
     saving?: boolean
     unsavedHint?: string
@@ -54,9 +56,10 @@ const emit = defineEmits<{ save: []; discard: [] }>()
 </script>
 
 <style scoped>
+/* Aşama 4: içerik sayfa ızgarasına SOLA hizalı (liste/pano ekranlarıyla aynı sol kenar); okuma genişliği 960px. */
 .ek-settings-template {
   max-width: 960px;
-  margin: 0 auto;
+  margin: 0;
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-8);

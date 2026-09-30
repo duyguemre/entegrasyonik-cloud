@@ -4,7 +4,7 @@
     <LoadingComponent attach=".hashtagListView" ref="loadingComponentRef" />
     <ConfirmationDialogComponent v-model="confirmationDelete.isDialogOpen" title="Grubu Sil?"
       :message="`'${confirmationDelete.item?.title}' grubu kalıcı olarak silinecektir. Emin misiniz?`"
-      icon="mdi-delete-alert-outline" color="error" confirmText="SİL" cancelText="İPTAL" @confirm="removeHashtag()"
+      icon="mdi-delete-alert-outline" color="error" confirmText="Sil" cancelText="İptal" @confirm="removeHashtag()"
       @cancel="confirmationDelete.isDialogOpen = false" />
 
     <EkListScreen

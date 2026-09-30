@@ -162,13 +162,14 @@ const bodyId = `ek-filter-body-${uid}`
   background: var(--ek-color-surface-sunken);
 }
 
+/* Aşama 4: eylem çubuğu gövdenin DEVAMI (aynı sunken yüzey, ayraç yok) — alanlar ile Sorgula tek blok okunur. */
 .ek-filter__actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: var(--ek-space-2);
-  padding: var(--ek-space-3) var(--ek-space-4);
-  border-top: 1px solid var(--ek-color-border-subtle);
+  padding: 0 var(--ek-space-4) var(--ek-space-4);
+  background: var(--ek-color-surface-sunken);
 }
 
 .ek-filter__actions {

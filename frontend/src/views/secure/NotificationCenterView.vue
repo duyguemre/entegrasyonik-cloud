@@ -114,6 +114,11 @@
         <template #cell-title="{ row }">
           <div class="ek-nc-item" :class="{ 'is-unread': !row.isRead }">
             <span v-if="!row.isRead" class="ek-nc-item__dot" aria-hidden="true"></span>
+            <!-- Dar ekran: tür kolonu yok — tür ikonu bildirimin yanında (kart başlığı = bildirim). -->
+            <span v-if="compact" class="ek-nc-type">
+              <EkIconTile :icon="notificationTypeIcon(row.type)" :tone="tileTone(row)" size="sm" />
+              <span class="ek-sr-only">{{ typeLabel(row.type) }}</span>
+            </span>
             <div class="ek-nc-item__text">
               <span class="ek-nc-item__head">
                 <button type="button" class="ek-nc-item__title" @click.stop="openDetail(row)">{{ row.title }}</button>
@@ -286,13 +291,12 @@ const FULL_COLUMNS: EkGridColumn[] = [
   { key: 'title', label: 'Bildirim' },
   { key: 'createdAt', label: 'Zaman', sortable: true, width: '164px' },
   { key: 'status', label: 'Durum', width: '120px' },
-  { key: 'actions', label: 'İşlemler', align: 'end', width: '128px' },
+  { key: 'actions', label: 'İşlemler', align: 'end', width: '128px', hideLabel: true, pin: 'end' },
 ]
-// Dar ekran: yatay kaydırma yerine üç kolon — tür yalnız ikon, zaman ve okunma bilgisi başlık hücresinde.
+// Dar ekran (kart düzeni, Aşama 4): kart başlığı bildirimin kendisi — tür ikonu, zaman ve okunma bilgisi başlık hücresinde.
 const COMPACT_COLUMNS: EkGridColumn[] = [
-  { key: 'type', label: 'Tür', width: '52px' },
   { key: 'title', label: 'Bildirim' },
-  { key: 'actions', label: 'İşlemler', align: 'end', width: '84px' },
+  { key: 'actions', label: 'İşlemler', align: 'end', width: '84px', hideLabel: true, pin: 'end' },
 ]
 const compact = computed(() => isMobile.value)
 const columns = computed(() => (compact.value ? COMPACT_COLUMNS : FULL_COLUMNS))

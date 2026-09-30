@@ -57,7 +57,7 @@
         </span>
       </template>
       <template #cell-status="{ row }">
-        <EkStatusChip :tone="row.status === 'ACTIVE' ? 'success' : 'neutral'" :label="row.status === 'ACTIVE' ? 'AKTİF' : 'PASİF'" />
+        <EkStatusChip :tone="row.status === 'ACTIVE' ? 'success' : 'neutral'" :label="row.status === 'ACTIVE' ? 'Aktif' : 'Pasif'" />
       </template>
       <template #cell-actions="{ row }">
         <span class="ek-row-actions" @click.stop>

@@ -4,7 +4,7 @@
     <LoadingComponent attach=".choiceListView" ref="loadingComponentRef" />
     <ConfirmationDialogComponent v-model="confirmationDelete.isDialogOpen" title="Grubu Sil?"
       :message="`'${confirmationDelete.item?.title}' grubu kalıcı olarak silinecektir. Emin misiniz?`"
-      icon="mdi-delete-alert-outline" color="error" confirmText="SİL" cancelText="İPTAL" @confirm="removeChoice()"
+      icon="mdi-delete-alert-outline" color="error" confirmText="Sil" cancelText="İptal" @confirm="removeChoice()"
       @cancel="confirmationDelete.isDialogOpen = false" />
 
     <EkListScreen

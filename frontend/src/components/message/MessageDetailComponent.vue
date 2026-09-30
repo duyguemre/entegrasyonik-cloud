@@ -9,7 +9,7 @@
         <div class="d-flex flex-column justify-center flex-grow-1">
           <div class="d-flex align-center ek-gap-2 flex-wrap">
             <span class="text-caption font-weight-medium ek-chip-neutral"><v-icon size="14" class="mr-1">{{ MESSAGE_TYPE_ICONS[message.type as MessageTypeEnum] }}</v-icon>{{ MESSAGE_TYPE_LABELS[message.type as MessageTypeEnum] }}</span>
-            <span class="text-caption font-weight-medium ek-chip-neutral text-uppercase">{{ message.integrationCode }}</span>
+            <EkChannelDot class="text-caption" :code="message.integrationCode" />
           </div>
           <div class="text-caption ek-muted mt-2">Gönderim tarihi: {{ formatDateTime(message.date) }}</div>
           <MessageWaitChip v-if="awaiting" class="mt-2" :message="message" :now="now" show-hint />
@@ -47,7 +47,7 @@
           <v-avatar v-if="message.context.imageUrl" rounded="lg" size="56">
             <v-img :src="message.context.imageUrl" cover />
           </v-avatar>
-          <v-icon v-else size="36" color="content-subtle">mdi-package-variant</v-icon>
+          <EkIconTile v-else icon="mdi-package-variant" tone="neutral" />
 
           <div class="d-flex flex-column flex-grow-1">
             <span v-if="message.context.productName" class="text-caption font-weight-medium">{{ message.context.productName }}</span>
@@ -104,6 +104,8 @@ import EkSection from '@/components/ds/EkSection.vue';
 import EkStatusChip from '@/components/ds/EkStatusChip.vue';
 import EkSkeleton from '@/components/ds/EkSkeleton.vue';
 import EkButton from '@/components/ds/EkButton.vue';
+import EkChannelDot from '@/components/ds/EkChannelDot.vue';
+import EkIconTile from '@/components/ds/EkIconTile.vue';
 import MessageWaitChip from './MessageWaitChip.vue';
 import { answerLengthState, answerRuleFor, isAwaitingReply } from './messageSla';
 import { formatDateTime } from '@/composables/format';

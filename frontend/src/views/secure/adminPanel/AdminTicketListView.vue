@@ -92,7 +92,7 @@
 
     <ActionDialogComponent v-model="createDialog.show" title="Yeni Destek Talebi Başlat"
       subtitle="Belirli bir dükkan için yeni bir destek süreci başlatın" icon="mdi-store-edit-outline" color="success"
-      confirmText="TALEBİ OLUŞTUR" cancelText="İPTAL" :isLoading="createDialog.loading" @confirm="doCreateTicket"
+      confirmText="Talebi oluştur" cancelText="İptal" :isLoading="createDialog.loading" @confirm="doCreateTicket"
       @cancel="createDialog.show = false" attach=".ticket-list-view" maxWidth="600px">
       <div class="pa-2">
         <v-autocomplete v-model="createDialog.targetClientId" :items="clients" item-title="name" item-value="clientId"
@@ -125,7 +125,7 @@ import { isRequestError } from '@/components/ds/listStandard';
 import EkStatusChip from '@/components/ds/EkStatusChip.vue';
 import { formatDateTime } from '@/composables/format';
 import type { StatusTone } from '@/design/status-map';
-import { TICKET_PRIORITY_LABELS, TICKET_TYPE_LABELS, type TicketPriorityEnum, type TicketTypeEnum } from '@/types/TicketTypes';
+import { TICKET_PRIORITY_LABELS, TICKET_STATUS_COLORS, TICKET_STATUS_LABELS, TICKET_TYPE_LABELS, type TicketPriorityEnum, type TicketStatusEnum, type TicketTypeEnum } from '@/types/TicketTypes';
 
 const restApi = useRestApi();
 const snackbarStore = useSnackbarStore();
@@ -165,7 +165,7 @@ const confirmDialog = reactive({
 const sortBy = ref<any[]>([{ key: 'lastMessageAt', order: 'desc' }]);
 const pagination = reactive({
   page: 1,
-  limit: 50,
+  limit: 25,
   total: 0,
 });
 
@@ -335,22 +335,13 @@ function confirmDelete(ticket: any) {
   confirmDialog.show = true;
 }
 
+// Aşama 4: durum adı/tonu mağaza tarafındaki destek listesiyle tek kaynak (TicketTypes).
 function formatStatus(status: string) {
-  const mapping: any = {
-    'OPEN': 'AÇIK',
-    'IN_PROGRESS': 'İŞLEMDE',
-    'RESOLVED': 'ÇÖZÜLDÜ'
-  };
-  return mapping[status] || status;
+  return TICKET_STATUS_LABELS[status as TicketStatusEnum] ?? status;
 }
 
 function getStatusTone(status: string): StatusTone {
-  switch (status) {
-    case 'OPEN': return 'danger';
-    case 'IN_PROGRESS': return 'warning';
-    case 'RESOLVED': return 'success';
-    default: return 'neutral';
-  }
+  return (TICKET_STATUS_COLORS[status as TicketStatusEnum] as StatusTone | undefined) ?? 'neutral';
 }
 
 function getPriorityTone(priority: string): StatusTone {
@@ -413,7 +404,6 @@ onMounted(() => {
 
 .ek-ticket-subject__type {
   font-size: var(--ek-type-caption-size);
-  text-transform: uppercase;
 }
 
 .ek-ticket-last__snippet {

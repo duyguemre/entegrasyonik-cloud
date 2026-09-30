@@ -102,7 +102,7 @@ test.describe('P1 — /reset-password (e-postadaki bağlantının hedefi)', () =
     await page.goto('/reset-password')
 
     await expect(page.getByText('Bağlantı geçersiz')).toBeVisible()
-    await expect(page.getByLabel('Yeni Parola', { exact: true })).toHaveCount(0)
+    await expect(page.getByLabel('Yeni parola', { exact: true })).toHaveCount(0)
   })
 
   test('istemci doğrulaması: kısa/uyuşmayan parolalarda backend çağrılmaz', async ({ page }) => {
@@ -115,12 +115,12 @@ test.describe('P1 — /reset-password (e-postadaki bağlantının hedefi)', () =
       },
     })
     await page.goto('/reset-password?token=e2e-fake-token')
-    await page.getByLabel('Yeni Parola', { exact: true }).fill('kisa')
+    await page.getByLabel('Yeni parola', { exact: true }).fill('kisa')
     await page.getByLabel('Yeni Parola (Tekrar)').fill('kisa')
     await page.getByRole('button', { name: 'Parolamı Güncelle' }).click()
     await expect(page.getByText('Parolanız en az 10 karakter olmalı.')).toBeVisible()
 
-    await page.getByLabel('Yeni Parola', { exact: true }).fill('gecerli-parola-1')
+    await page.getByLabel('Yeni parola', { exact: true }).fill('gecerli-parola-1')
     await page.getByLabel('Yeni Parola (Tekrar)').fill('baska-bir-parola-2')
     await page.getByRole('button', { name: 'Parolamı Güncelle' }).click()
     await expect(page.getByText('Girdiğiniz parolalar birbiriyle uyuşmuyor.')).toBeVisible()
@@ -142,7 +142,7 @@ test.describe('P1 — /reset-password (e-postadaki bağlantının hedefi)', () =
     // Güvenlik notu (API sözleşmesi FE önerisi): token okunur okunmaz (mount anında) URL'den silinir
     // — geçmiş/log sızıntısını önlemek için bu form etkileşiminden ÖNCE gerçekleşir.
     await expect(page).not.toHaveURL(/token=/)
-    await page.getByLabel('Yeni Parola', { exact: true }).fill('gecerli-yeni-parola-1')
+    await page.getByLabel('Yeni parola', { exact: true }).fill('gecerli-yeni-parola-1')
     await page.getByLabel('Yeni Parola (Tekrar)').fill('gecerli-yeni-parola-1')
     await page.getByRole('button', { name: 'Parolamı Güncelle' }).click()
 
@@ -159,7 +159,7 @@ test.describe('P1 — /reset-password (e-postadaki bağlantının hedefi)', () =
       'AccountService/confirmPasswordReset': mockError(400, { error: 'Geçersiz veya süresi dolmuş bağlantı.', service: 'AccountService', operation: 'confirmPasswordReset', code: 'TOKEN_INVALID' }),
     })
     await page.goto('/reset-password?token=e2e-expired-token')
-    await page.getByLabel('Yeni Parola', { exact: true }).fill('gecerli-yeni-parola-1')
+    await page.getByLabel('Yeni parola', { exact: true }).fill('gecerli-yeni-parola-1')
     await page.getByLabel('Yeni Parola (Tekrar)').fill('gecerli-yeni-parola-1')
     await page.getByRole('button', { name: 'Parolamı Güncelle' }).click()
 
@@ -175,7 +175,7 @@ test.describe('P1 — /reset-password (e-postadaki bağlantının hedefi)', () =
       'AccountService/confirmPasswordReset': mockError(400, { error: 'Parolanız çok zayıf; en az 3 farklı karakter sınıfı kullanın.', service: 'AccountService', operation: 'confirmPasswordReset', code: 'WEAK_PASSWORD' }),
     })
     await page.goto('/reset-password?token=e2e-fake-token')
-    await page.getByLabel('Yeni Parola', { exact: true }).fill('aaaaaaaaaa')
+    await page.getByLabel('Yeni parola', { exact: true }).fill('aaaaaaaaaa')
     await page.getByLabel('Yeni Parola (Tekrar)').fill('aaaaaaaaaa')
     await page.getByRole('button', { name: 'Parolamı Güncelle' }).click()
 

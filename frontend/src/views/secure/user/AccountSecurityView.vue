@@ -23,6 +23,7 @@
 <template>
   <div class="accountSecurityView">
     <EkSettingsTemplate
+      section="Hesap"
       :title="$t('accountSecurity.title')"
       :description="$t('accountSecurity.description')"
     >

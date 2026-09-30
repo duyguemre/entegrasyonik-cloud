@@ -103,7 +103,7 @@
       "integrations": "Entegrasyonlar",
       "marketplace": "Pazaryeri",
       "ecommerce": "E-Ticaret",
-      "erp": "Erp",
+      "erp": "ERP",
       "shipping": "Kargo",
       "einvoice": "E-Fatura",
       "integrationHealth": "Entegrasyon Sağlığı"
@@ -472,10 +472,10 @@
   "login": {
     "forgottenpassword": {
       "title": "Şifremi Unuttum",
-      "reset": "Şifremi Sıfırla"
+      "reset": "Şifremi sıfırla"
     },
     "register": {
-      "title": "Kayıt Ol",
+      "title": "Kayıt ol",
       "repassword": "Şifre (Tekrar)",
       "name": "İsim",
       "surname": "Soyisim"

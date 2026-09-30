@@ -20,7 +20,7 @@
 -->
 <template>
   <div class="privacyDataView">
-    <EkSettingsTemplate :title="$t('privacyData.title')" :description="$t('privacyData.description')">
+    <EkSettingsTemplate section="Hesap" :title="$t('privacyData.title')" :description="$t('privacyData.description')">
       <EkSettingsSection :title="$t('privacyData.export.title')" :description="$t('privacyData.export.description')">
         <ul class="privacyDataView__facts">
           <li v-for="fact in facts" :key="fact.key" class="privacyDataView__fact">

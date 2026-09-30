@@ -339,6 +339,21 @@ function setCollapsed(v: boolean) {
   flex: none;
 }
 
+@media (min-width: 1024px) {
+  .ek-list-screen__head:not(.is-headless) {
+    flex-wrap: nowrap;
+  }
+
+  .ek-list-screen__head:not(.is-headless) .ek-list-screen__titles {
+    flex: 1 1 auto;
+  }
+
+  .ek-list-screen__head:not(.is-headless) .ek-list-screen__head-actions {
+    flex: none;
+    flex-wrap: nowrap;
+  }
+}
+
 .ek-list-screen__hint {
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
@@ -357,7 +372,9 @@ function setCollapsed(v: boolean) {
      eylem varsa birincil + yenile birlikte alt satıra geçer — yenile tek başına bir satır kaplamaz. */
   .ek-list-screen__search,
   .ek-list-screen__head.is-headless .ek-list-screen__search {
-    flex: 1 1 220px;
+    /* Aşama 4: 160px taban — arama + metinli birincil eylem + yenile 390px'te TEK satır (yenile tek başına alt
+       satıra düşüyordu, ör. Ürünler). */
+    flex: 1 1 160px;
     width: auto;
   }
 }

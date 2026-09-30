@@ -16,8 +16,8 @@
           <div class="ek-span-full ek-ideasoft-status-row">
             <span class="ek-ideasoft-status-row__label">Entegrasyon Durumu</span>
             <EkStatusChip v-if="editingClientIntegration.settings?.auth?.refresh_token == 'sensitive'"
-              tone="success" label="YETKİLİ" />
-            <EkStatusChip v-else tone="danger" label="YETKİSİZ" />
+              tone="success" label="Yetkili" />
+            <EkStatusChip v-else tone="danger" label="Yetkisiz" />
             <EkButton tone="primary" size="sm" icon="mdi-shield-check-outline" class="ek-ideasoft-status-row__action"
               @click="startAuthFlow()">
               Entegrasyona Yetki Ver

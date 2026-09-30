@@ -13,7 +13,7 @@
       </div>
 
       <!-- Operasyonel kontroller -->
-      <EkSection title="Sistem Durum Özeti" class="block">
+      <EkSection title="Sistem durum özeti" class="block">
         <div class="panel controls-bar">
           <div class="controls-group">
             <v-select v-model="timeFrame" :items="timeFrameOptions" density="compact" hide-details variant="outlined"
@@ -21,8 +21,8 @@
               aria-label="Zaman aralığı"></v-select>
 
             <v-select v-model="targetClientId" :items="clients" item-title="title" item-value="clientId"
-              label="Mağaza Seçiniz" density="compact" hide-details clearable variant="outlined"
-              class="customTextField client-select-inline" color="primary" placeholder="Tüm Mağazalar">
+              label="Mağaza" density="compact" hide-details clearable variant="outlined"
+              class="customTextField client-select-inline" color="primary" placeholder="Tüm mağazalar">
               <template v-slot:prepend-inner>
                 <v-icon size="18">mdi-store-outline</v-icon>
               </template>
@@ -47,13 +47,13 @@
       <!-- Export / Import -->
       <v-row class="block">
         <v-col cols="12" md="6">
-          <h2 class="section-title">Export operasyonları</h2>
+          <h2 class="section-title">Gönderim işlemleri</h2>
           <div class="panel panel--muted stack-gap">
             <div class="panel-head">
               <div class="panel-head__left">
-                <span class="panel-title">Export trafiği (global)</span>
+                <span class="panel-title">Gönderim trafiği (tüm mağazalar)</span>
                 <v-btn icon="mdi-information-outline" size="28" variant="text" color="primary"
-                  @click="openExportDetail()" title="Detaylı Analiz" aria-label="Export trafiği detaylı analizini aç"></v-btn>
+                  @click="openExportDetail()" title="Detaylı Analiz" aria-label="Gönderim trafiği detaylı analizini aç"></v-btn>
               </div>
               <v-icon color="primary" size="24" aria-hidden="true">mdi-upload-network-outline</v-icon>
             </div>
@@ -78,10 +78,10 @@
         </v-col>
 
         <v-col cols="12" md="6">
-          <h2 class="section-title">Import operasyonları</h2>
+          <h2 class="section-title">Çekim işlemleri</h2>
           <div class="panel panel--muted stack-gap">
             <div class="panel-head">
-              <span class="panel-title">Import trafiği (global)</span>
+              <span class="panel-title">Çekim trafiği (tüm mağazalar)</span>
               <v-icon color="success" size="24" aria-hidden="true">mdi-download-network-outline</v-icon>
             </div>
             <div class="metric-pills">
@@ -120,7 +120,7 @@
                     <div class="insight-value">{{ healthData.operationInsights.metrics.totalFetched }}</div>
                   </div>
                 </div>
-                <EkStatusChip tone="info" label="PLATFORM" />
+                <EkStatusChip tone="info" label="Platform" />
               </div>
 
               <div class="metric-insight-card">
@@ -131,7 +131,7 @@
                     <div class="insight-value">{{ healthData.operationInsights.metrics.totalInserted }}</div>
                   </div>
                 </div>
-                <EkStatusChip tone="success" label="VERİTABANI" />
+                <EkStatusChip tone="success" label="Veritabanı" />
               </div>
 
               <div class="metric-insight-card">
@@ -142,7 +142,7 @@
                     <div class="insight-value">{{ healthData.operationInsights.metrics.totalUpdated }}</div>
                   </div>
                 </div>
-                <EkStatusChip tone="warning" label="SYNC" />
+                <EkStatusChip tone="warning" label="Senkron" />
               </div>
 
               <div class="metric-insight-card">
@@ -153,7 +153,7 @@
                     <div class="insight-value">{{ healthData.operationInsights.metrics.totalFailed }}</div>
                   </div>
                 </div>
-                <EkStatusChip tone="danger" label="KRİTİK" />
+                <EkStatusChip tone="danger" label="Kritik" />
               </div>
             </div>
           </v-col>
@@ -198,7 +198,7 @@
               <li v-for="pod in healthData.infrastructure.activePods" :key="pod" class="pod-item">
                 <span class="insight-icon insight-icon--info insight-icon--sm"><v-icon size="18" aria-hidden="true">mdi-console</v-icon></span>
                 <span class="pod-item__name">{{ pod }}</span>
-                <EkStatusChip tone="success" label="ÇALIŞIYOR" />
+                <EkStatusChip tone="success" label="Çalışıyor" />
               </li>
             </ul>
             <EkEmptyState v-else variant="no-data" title="Aktif işlemci bulunamadı"
@@ -219,7 +219,7 @@
               <div class="queue-box">
                 <div class="queue-box__head">
                   <span class="label-caps">Sipariş Senkronizasyonu</span>
-                  <EkStatusChip tone="warning" label="BULLMQ" />
+                  <EkStatusChip tone="warning" label="BullMQ" />
                 </div>
                 <div class="queue-box__counts">
                   <div class="queue-count">
@@ -236,7 +236,7 @@
               <div class="queue-box">
                 <div class="queue-box__head">
                   <span class="label-caps">Export İşlemleri</span>
-                  <EkStatusChip tone="info" label="INTERNAL" />
+                  <EkStatusChip tone="info" label="Dahili" />
                 </div>
                 <div class="queue-box__counts">
                   <div class="queue-count">
@@ -253,7 +253,7 @@
               <div class="queue-box">
                 <div class="queue-box__head">
                   <span class="label-caps">Import İşlemleri</span>
-                  <EkStatusChip tone="success" label="INTERNAL" />
+                  <EkStatusChip tone="success" label="Dahili" />
                 </div>
                 <div class="queue-box__counts">
                   <div class="queue-count">
@@ -1205,12 +1205,7 @@ onUnmounted(() => {
 .select-max-140 { max-width: 140px; }
 .select-max-150 { max-width: 150px; }
 
-.timeframe-select-inline :deep(.v-field__input),
-.client-select-inline :deep(.v-field__input) {
-  font-size: var(--ek-font-size-sm) !important;
-  font-weight: var(--ek-font-weight-semibold) !important;
-  color: var(--ek-color-primary) !important;
-}
+/* Aşama 4: araç çubuğu seçicileri DS alan tipografisinde (yan yana iki seçici farklı boyut/renkte görünüyordu). */
 
 // ── Grafik boyutları ────────────────────────────────────────────────────────
 .chart { width: 100%; }

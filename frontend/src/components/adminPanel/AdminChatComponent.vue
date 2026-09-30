@@ -53,6 +53,7 @@ import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue
 import EkStatusChip from '@/components/ds/EkStatusChip.vue';
 import { formatDate, formatDateTime } from '@/composables/format';
 import type { StatusTone } from '@/design/status-map';
+import { TICKET_STATUS_COLORS, TICKET_STATUS_LABELS, type TicketStatusEnum } from '@/types/TicketTypes';
 
 const props = defineProps({
   modelValue: { type: Boolean, required: true },
@@ -96,23 +97,11 @@ function submitReply() {
 // Saat: mesaj balonunda yalnızca gün içi zaman yeterli; tarih+saat biçimlendiricisinden saat kısmı alınır.
 const formatTime = (date: any) => (date ? formatDateTime(date).split(' ')[1] ?? '' : '');
 
-const STATUS_LABELS: Record<string, string> = {
-  OPEN: 'AÇIK',
-  IN_PROGRESS: 'İŞLEMDE',
-  RESOLVED: 'ÇÖZÜLDÜ',
-  CLOSED: 'KAPALI',
-};
-const statusLabel = (status: string) => STATUS_LABELS[status] || status;
+// Aşama 4: durum adı/tonu tek kaynak (TicketTypes) — liste ve sohbet aynı dili konuşur.
+const statusLabel = (status: string) => TICKET_STATUS_LABELS[status as TicketStatusEnum] ?? status;
 
-const statusTone = (status: string): StatusTone => {
-  switch (status) {
-    case 'OPEN': return 'danger';
-    case 'IN_PROGRESS': return 'warning';
-    case 'RESOLVED': return 'success';
-    case 'CLOSED': return 'neutral';
-    default: return 'info';
-  }
-};
+const statusTone = (status: string): StatusTone =>
+  (TICKET_STATUS_COLORS[status as TicketStatusEnum] as StatusTone | undefined) ?? 'info';
 
 const priorityTone = (priority: string): StatusTone => {
   switch (priority) {

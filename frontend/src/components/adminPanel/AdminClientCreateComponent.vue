@@ -1,7 +1,7 @@
 <template>
   <ActionDialogComponent :modelValue="modelValue" @update:modelValue="$emit('update:modelValue', $event)"
     title="Yeni Mağaza Oluştur" subtitle="Sisteme yeni bir dükkan ve yönetici hesabı tanımlayın" icon="mdi-store-plus-outline"
-    color="primary" maxWidth="800px" showFooter confirmText="MAĞAZA OLUŞTUR" cancelText="İPTAL"
+    color="primary" maxWidth="800px" showFooter confirmText="Mağaza oluştur" cancelText="İptal"
     confirmButtomColor="primary" :isLoading="saving" @confirm="save" @cancel="$emit('close')" @close="$emit('close')"
     attach=".adminClientListView">
 

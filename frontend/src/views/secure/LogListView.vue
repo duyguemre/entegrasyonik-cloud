@@ -3,7 +3,8 @@
     <!-- DS-v2 Aşama 2: her sekme kendi liste standardını (EkListScreen) taşır — filtre paneli,
          aktif çipler, sayfalama sekmeye yereldir. Başlığı bu sayfa taşır. -->
     <EkPageHeader
-      title="İşlem Kayıtları"
+      section="Ayarlar"
+      title="İşlem kayıtları"
       description="Pazaryerlerine gönderilen ve pazaryerlerinden çekilen ürün işlemlerini buradan izleyin."
     />
 
@@ -23,11 +24,11 @@ import EkPageTabs from '@/components/ds/EkPageTabs.vue';
 import ImportLogList from '@/components/logListView/ImportLogList.vue';
 import ExportLogList from '@/components/logListView/ExportLogList.vue';
 
-// Default olarak "Ürün Gönderim İşlemleri" seçili geliyor
+// Varsayılan sekme: ürün gönderim işlemleri
 const activeTab = ref('export');
 const tabs = [
-  { value: 'export', label: 'Ürün Gönderim İşlemleri' },
-  { value: 'import', label: 'Ürün Çekim İşlemleri' },
+  { value: 'export', label: 'Ürün gönderim işlemleri' },
+  { value: 'import', label: 'Ürün çekim işlemleri' },
 ];
 </script>
 

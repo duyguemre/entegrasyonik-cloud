@@ -228,7 +228,7 @@ test.describe('ADR-0015 B5-3 — FinancialListView (finans)', () => {
     await expect(dialog.getByText('MANUEL İŞLEM')).toBeVisible()
     await expect(dialog.getByText('Bu işlem için ek açıklama bulunmuyor.')).toBeVisible()
     await expect(dialog.getByText('KDV Kesintisi (Meta)')).toHaveCount(0)
-    await dialog.getByRole('button', { name: 'KAPAT' }).click()
+    await dialog.getByRole('button', { name: 'Kapat' }).click()
     await expect(dialog).toBeHidden()
   })
 })

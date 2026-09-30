@@ -929,7 +929,7 @@ const resetSearchProductForm = () => {
     },
     sort: { field: '_id', direction: 'desc' },
     pagination: {
-      limit: 10,
+      limit: 25,
       page: 1,
       totalNumberOfPages: 1,
       totalNumberOfRecords: 0

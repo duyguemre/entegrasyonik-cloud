@@ -15,6 +15,7 @@
 <template>
   <div class="stockPolicyView">
     <EkSettingsTemplate
+      section="Katalog"
       :title="$t('stockPolicy.title')"
       :description="$t('stockPolicy.description')"
       :dirty="isDirty"

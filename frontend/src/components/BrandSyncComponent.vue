@@ -13,7 +13,7 @@
 
     <ConfirmationDialogComponent v-model="isConfirmationDialogOpen" :title="`'${selectedBrand?.title ?? ''}' markası silinsin mi?`"
       :subtitle="$t('productDefinitions.brand.deleteConfirmation')" color="error" icon="mdi-trash-can-outline"
-      confirm-icon="mdi-trash-can-outline" attach=".brandDefinition" confirm-text="SİL" @confirm="deleteBrand()" />
+      confirm-icon="mdi-trash-can-outline" attach=".brandDefinition" confirm-text="Sil" @confirm="deleteBrand()" />
 
     <section v-if="!selectedBrand" class="ek-brand-sync__empty" aria-labelledby="ek-brand-sync-empty-title">
       <EkIconTile icon="mdi-cog-outline" tone="neutral" size="lg" />

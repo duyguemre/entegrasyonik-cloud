@@ -98,6 +98,25 @@
   font-weight: var(--ek-font-weight-medium);
 }
 
+/* ---- Aşama 4: ham `v-btn` metin boyutu = DS düğme tipografisi ----
+ * Kök yazı boyutu 14px; Vuetify düğme boyutlarını rem ile verdiği için `v-btn` metni 12.25px (small 10.5px,
+ * x-small 8.75px) çiziliyordu — aynı ekranda EkButton (13px, yarı kalın) ile yan yana iki farklı düğme dili.
+ * Boyut → rol: default/large = `label`, small = `caption`, x-small = `micro` boyutu. İkon düğmeleri hariç. */
+.v-btn.v-btn--size-default:not(.v-tab):not(.v-btn--icon),
+.v-btn.v-btn--size-large:not(.v-tab):not(.v-btn--icon) {
+  font-size: var(--ek-type-label-size);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.v-btn.v-btn--size-small:not(.v-tab):not(.v-btn--icon) {
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.v-btn.v-btn--size-x-small:not(.v-tab):not(.v-btn--icon) {
+  font-size: var(--ek-type-micro-size);
+}
+
 /* ---- Aşama 3: ekran içi sekmeler (v-tabs) — cümle düzeni, `tab` tipografi rolü ----
  * Kabuk sekme şeridi artık `EkWorkspaceTabs` (v-tab DEĞİL); `'ANASAYFA'` iddiası metin
  * karşılaştırmasına taşındı (DESIGN_SYSTEM §13). Böylece Vuetify'ın BÜYÜK HARF + geniş aralıklı
