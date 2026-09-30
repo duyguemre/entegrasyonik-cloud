@@ -683,6 +683,35 @@ export const PAGE_HELP: Record<string, PageHelp> = {
     article: 'acc-users',
   },
 
+  // Kanıt: views/secure/user/ConnectedAppsView.vue (MCP-6). Ayrı "yapay zekâ bağlantısı" makalesi MCP-7'de (ADR-0035
+  // Etki Alanı "kullanıcıya yönelik bağlantı rehberi"); o zamana dek veri/gizlilik makalesine bağlanır.
+  ConnectedAppsView: {
+    purpose:
+      'Hesabınıza bağladığınız yapay zekâ uygulamalarını görün, onay bekleyen işlemleri inceleyin ve bağlantıları kesin.',
+    tips: [
+      '"Nasıl bağlanırım?" bölümündeki adresi yapay zekâ uygulamanızın bağlayıcı ekleme ekranına yapıştırın.',
+      'Bağlı uygulamaların önerdiği her işlem burada ve bağlantıda verilen sayfada ayrıca onayınızı bekler.',
+      'Bir bağlantıyı kestiğinizde uygulama hesabınıza en geç bir dakika içinde erişemez.',
+      'Mağaza sahibi ve yöneticiler mağazadaki tüm bağlantıları görebilir ve hepsini birden kesebilir.',
+    ],
+    shortcuts: ['tabClose'],
+    article: 'acc-privacy',
+  },
+
+  // Kanıt: views/secure/settings/AiConnectionView.vue (MCP-6)
+  'settings/AiConnectionView': {
+    purpose:
+      'Mağazanızdaki kullanıcıların kendi yapay zekâ uygulamalarını bu mağazaya bağlayıp bağlayamayacağını belirleyin.',
+    tips: [
+      'Varsayılan Kapalı’dır; açmak için veri aktarımı bilgilendirmesini okuyup onaylamanız gerekir.',
+      'Yalnız okuma seçeneğinde uygulamalar işlem öneremez; okuma + işlem önerme seçeneğinde her işlem ayrıca onaylanır.',
+      'Kapalı’ya almak mevcut bağlantıları askıya alır; tamamen kesmek için Bağlı uygulamalar ekranını kullanın.',
+      'Bu ayarı yalnız mağaza sahibi değiştirebilir; diğer kullanıcılar durumu görür.',
+    ],
+    shortcuts: ['tabClose'],
+    article: 'acc-privacy',
+  },
+
   // Kanıt: views/secure/user/AccountSecurityView.vue
   AccountSecurityView: {
     purpose:
