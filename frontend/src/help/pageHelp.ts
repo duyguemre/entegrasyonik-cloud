@@ -579,7 +579,7 @@ export const PAGE_HELP: Record<string, PageHelp> = {
     purpose:
       'İşletmenize uygun planı seçin, mevcut aboneliğinizin durumunu buradan izleyin.',
     tips: [
-      'Üstteki durum bandı aboneliğinizin deneme, aktif, ödeme bekliyor, askıda veya sona ermiş olduğunu açıklar.',
+      'Üstteki durum bandı aboneliğinizin güncel durumunu (deneme, aktif, ödeme sorunu, askı veya bitiş) ve ne anlama geldiğini açıklar.',
       'Plan kartlarında kanal, varyant (SKU), kullanıcı ve günlük MCP çağrısı limitleri yer alır.',
       'Bu Plana Geç düğmesi onay sonrası ödeme adımını başlatır; durum, ödeme sağlayıcısından onay gelince güncellenir.',
     ],
