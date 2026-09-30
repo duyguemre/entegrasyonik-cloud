@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import { ref, readonly, reactive } from 'vue';
 import { integrationAccent } from '@/design/tokens/palette';
 
-/** Canlı entegrasyon olmayan platformlar için marka aksanı yok → nötr rol (EkChannelDot kuralı). */
+/** Ölçülmüş marka rengi olmayan platformlar (CHANNEL_BRAND_COLORS.md dışı) → nötr rol (EkChannelDot kuralı). */
 const NEUTRAL_MARK = 'var(--ek-color-neutral)'
 
 
@@ -30,7 +30,7 @@ ecommerces.push({
 ecommerces.push({
     id:3,
     code: 'shopify',
-    color: NEUTRAL_MARK,
+    color: integrationAccent.shopify,
     logo: '/assets/images/integrations/ecommerce/shopify.svg',
     width: 100
 }
@@ -46,7 +46,7 @@ ecommerces.push({
 ecommerces.push({
     id:5,
     code: 'woocommerce',
-    color: NEUTRAL_MARK,
+    color: integrationAccent.woocommerce,
     logo: '/assets/images/integrations/ecommerce/woocommerce.svg',
     width: 100
 }

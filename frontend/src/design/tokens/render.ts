@@ -169,37 +169,50 @@ function renderEffectLines(): string[] {
 }
 
 /**
- * Aşama 5 — kanal renkleri (`palette.ts` `channelPalette` TEK kaynak):
- *   `--ek-channel-<kod>-{solid,subtle,border,text}` + tanımsız kanal için `neutral` (nötr durum rollerine bağlı).
- * Tema bağımsız (kanal kimliği dark'ta da aynı) → yalnız `:root`.
+ * C1 — kanal marka renkleri (`palette.ts` `channelPalette` TEK kaynak):
+ *   `--ek-channel-<kod>-brand` / `-on-brand` (+ varsa `-secondary`, yalnız logo zemini) ve tanımsız kanal için
+ *   `neutral` (nötr durum rollerine bağlı). `--ek-channel-ring`: marka rengini DEĞİŞTİRMEDEN küçük işaretleri
+ *   (nokta, logo zemini, dolgulu çip) her iki temada zeminden ayıran nötr kıl halka (içerik renginin %20'si).
+ * Marka rengi tema bağımsız (dark'ta da aynı) → yalnız `:root`; halka tema rolüne bağlı olduğu için kendiliğinden döner.
  */
+export const CHANNEL_SCOPE_CODES = [...Object.keys(channelPalette), 'neutral'] as const
+
 function renderChannelLines(): string[] {
   const lines: string[] = []
   for (const [code, tones] of Object.entries(channelPalette)) {
-    for (const [tone, value] of Object.entries(tones)) lines.push(cssVarLine(`channel-${code}-${tone}`, value))
+    lines.push(cssVarLine(`channel-${code}-brand`, tones.brand), cssVarLine(`channel-${code}-on-brand`, tones.onBrand))
+    if ('secondary' in tones) lines.push(cssVarLine(`channel-${code}-secondary`, tones.secondary))
   }
   lines.push(
-    cssVarLine('channel-neutral-solid', 'var(--ek-color-border-strong)'),
-    cssVarLine('channel-neutral-subtle', 'var(--ek-color-neutral-subtle)'),
-    cssVarLine('channel-neutral-border', 'var(--ek-color-neutral-border)'),
-    cssVarLine('channel-neutral-text', 'var(--ek-color-content-default)'),
+    cssVarLine('channel-neutral-brand', 'var(--ek-color-neutral)'),
+    cssVarLine('channel-neutral-on-brand', 'var(--ek-color-neutral-contrast)'),
+    cssVarLine('channel-ring', 'color-mix(in srgb, var(--ek-color-content-default) 20%, transparent)'),
   )
   return lines
 }
 
 /**
- * Kanal kapsam sınıfları: `.ek-ch-<kod>` öğeye `--ek-ch-{solid,subtle,border,text}` verir. Bileşenler kanal
- * rengini satır içi stil/`v-bind` OLMADAN, yalnız sınıf + `var(--ek-ch-*)` ile kullanır (`design/channels.ts`).
+ * Kanal kapsam sınıfları: `.ek-ch-<kod>` öğeye `--ek-ch-brand`, `--ek-ch-on-brand`, `--ek-ch-secondary` (tanımsızsa
+ * marka) verir. Bileşenler kanal rengini satır içi stil/`v-bind` OLMADAN, yalnız sınıf + `var(--ek-ch-*)` ile kullanır
+ * (`design/channels.ts`). Geri uyum takma adları (C1 öncesi tüketiciler; yeni kodda KULLANMA): `solid`/`border` →
+ * marka, `subtle` → nötr zemin, `text` → varsayılan içerik rengi — hiçbiri marka tonu türetmez.
  */
 function renderChannelScopes(): string[] {
-  const codes = [...Object.keys(channelPalette), 'neutral']
-  return codes.map((code) =>
-    [
+  return CHANNEL_SCOPE_CODES.map((code) => {
+    const tones = (channelPalette as Record<string, { secondary?: string }>)[code]
+    const brand = `var(--ek-channel-${code}-brand)`
+    return [
       `.ek-ch-${code} {`,
-      ...['solid', 'subtle', 'border', 'text'].map((tone) => `  --ek-ch-${tone}: var(--ek-channel-${code}-${tone});`),
+      `  --ek-ch-brand: ${brand};`,
+      `  --ek-ch-on-brand: var(--ek-channel-${code}-on-brand);`,
+      `  --ek-ch-secondary: ${tones?.secondary ? `var(--ek-channel-${code}-secondary)` : brand};`,
+      `  --ek-ch-solid: ${brand};`,
+      `  --ek-ch-border: ${brand};`,
+      '  --ek-ch-subtle: var(--ek-color-neutral-subtle);',
+      '  --ek-ch-text: var(--ek-color-content-default);',
       '}',
-    ].join('\n'),
-  )
+    ].join('\n')
+  })
 }
 
 function renderShadowLines(light: boolean): string[] {

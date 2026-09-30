@@ -2,10 +2,10 @@
   "_meta": "ADR-0011 Karar 2 / Aşama 1 literal-stil mandalı tabanı. node scripts/check-style-baseline.js --write ile üretildi (bkz. scripts/style-literal-counts.js). Hiçbir dosyada/kategoride sayı ARTAMAZ; yeni dosyalar 0 ile başlamalı; düşüş serbest ama bu dosyanın güncellenmesi gerekir (check-style-baseline.js OK dönene kadar).",
   "date": "2026-09-30",
   "totals": {
-    "total": 20,
+    "total": 16,
     "hex": 0,
     "rgb": 0,
-    "inlineStyle": 20,
+    "inlineStyle": 16,
     "cubicBezier": 0,
     "motion": 0
   },
@@ -193,14 +193,6 @@
       "cubicBezier": 0,
       "motion": 0,
       "total": 0
-    },
-    "src/components/SnackbarComponent.vue": {
-      "hex": 0,
-      "rgb": 0,
-      "inlineStyle": 2,
-      "cubicBezier": 0,
-      "motion": 0,
-      "total": 2
     },
     "src/components/VCurrencyComponent.vue": {
       "hex": 0,
@@ -498,7 +490,23 @@
       "motion": 0,
       "total": 0
     },
+    "src/components/ds/EkActionButton.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
     "src/components/ds/EkActiveFilters.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/EkAlert.vue": {
       "hex": 0,
       "rgb": 0,
       "inlineStyle": 0,
@@ -515,6 +523,14 @@
       "total": 0
     },
     "src/components/ds/EkBadge.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/EkBrandLoader.vue": {
       "hex": 0,
       "rgb": 0,
       "inlineStyle": 0,
@@ -730,6 +746,14 @@
       "motion": 0,
       "total": 0
     },
+    "src/components/ds/EkInfoCard.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
     "src/components/ds/EkKbd.vue": {
       "hex": 0,
       "rgb": 0,
@@ -755,6 +779,14 @@
       "total": 0
     },
     "src/components/ds/EkListFrame.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/EkLoadingOverlay.vue": {
       "hex": 0,
       "rgb": 0,
       "inlineStyle": 0,
@@ -826,6 +858,38 @@
       "motion": 0,
       "total": 0
     },
+    "src/components/ds/EkProblemState.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/EkRecordSummary.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/EkRefreshButton.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/EkRowActions.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
     "src/components/ds/EkSavedViews.vue": {
       "hex": 0,
       "rgb": 0,
@@ -835,6 +899,14 @@
       "total": 0
     },
     "src/components/ds/EkSection.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/EkSelect.vue": {
       "hex": 0,
       "rgb": 0,
       "inlineStyle": 0,
@@ -874,6 +946,14 @@
       "motion": 0,
       "total": 0
     },
+    "src/components/ds/EkStatusTimeline.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
     "src/components/ds/EkToastHost.vue": {
       "hex": 0,
       "rgb": 0,
@@ -898,6 +978,14 @@
       "motion": 0,
       "total": 0
     },
+    "src/components/ds/cascadeMotion.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
     "src/components/ds/ek-dialog-overlay.css": {
       "hex": 0,
       "rgb": 0,
@@ -907,6 +995,22 @@
       "total": 0
     },
     "src/components/ds/listStandard.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/pageTrail.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/ds/selectOptions.ts": {
       "hex": 0,
       "rgb": 0,
       "inlineStyle": 0,
@@ -1450,6 +1554,14 @@
       "motion": 0,
       "total": 0
     },
+    "src/components/layout/WorkspaceTabHost.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
     "src/components/layout/dialogTone.ts": {
       "hex": 0,
       "rgb": 0,
@@ -1637,10 +1749,10 @@
     "src/components/platforms/PlatformImageComponent.vue": {
       "hex": 0,
       "rgb": 0,
-      "inlineStyle": 4,
+      "inlineStyle": 3,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 4
+      "total": 3
     },
     "src/components/privacy/AccountDeletionPanel.vue": {
       "hex": 0,
@@ -1765,10 +1877,10 @@
     "src/components/productDefinitions/products/ProductBatchProcessComponent.vue": {
       "hex": 0,
       "rgb": 0,
-      "inlineStyle": 1,
+      "inlineStyle": 0,
       "cubicBezier": 0,
       "motion": 0,
-      "total": 1
+      "total": 0
     },
     "src/components/productDefinitions/products/ProductDeleteConfirmDialog.vue": {
       "hex": 0,
@@ -1971,6 +2083,14 @@
       "total": 0
     },
     "src/components/productDefinitions/variants/platformInfos/VariantInfoComponent.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/components/productDefinitions/variants/variantListModel.ts": {
       "hex": 0,
       "rgb": 0,
       "inlineStyle": 0,
@@ -2290,6 +2410,22 @@
       "motion": 0,
       "total": 0
     },
+    "src/composables/usePageContext.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/composables/useProblem.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
     "src/composables/useProductFormProgress.ts": {
       "hex": 0,
       "rgb": 0,
@@ -2323,6 +2459,14 @@
       "total": 0
     },
     "src/composables/useStockPolicyApi.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/composables/useTabScope.ts": {
       "hex": 0,
       "rgb": 0,
       "inlineStyle": 0,
@@ -2387,6 +2531,14 @@
       "total": 0
     },
     "src/design/echarts-theme.ts": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/design/icons.ts": {
       "hex": 0,
       "rgb": 0,
       "inlineStyle": 0,
@@ -2803,6 +2955,14 @@
       "total": 0
     },
     "src/views/dev/design-system/DsCascade.vue": {
+      "hex": 0,
+      "rgb": 0,
+      "inlineStyle": 0,
+      "cubicBezier": 0,
+      "motion": 0,
+      "total": 0
+    },
+    "src/views/dev/design-system/DsFeedback.vue": {
       "hex": 0,
       "rgb": 0,
       "inlineStyle": 0,

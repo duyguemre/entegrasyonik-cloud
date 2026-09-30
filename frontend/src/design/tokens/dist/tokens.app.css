@@ -263,81 +263,115 @@
   --ek-color-scrim-veil: color-mix(in srgb, var(--ek-color-scrim) 44%, transparent);
   --ek-focus-ring: 0 0 0 2px var(--ek-color-surface), 0 0 0 4px var(--ek-color-border-focus);
   --ek-selection-ring: inset 0 0 0 1px var(--ek-color-action-border);
-  --ek-channel-trendyol-solid: #F27A1A;
-  --ek-channel-trendyol-subtle: #FEF2E8;
-  --ek-channel-trendyol-border: #FACCA8;
-  --ek-channel-trendyol-text: #9B4E11;
-  --ek-channel-hepsiburada-solid: #E0284F;
-  --ek-channel-hepsiburada-subtle: #FCEAED;
-  --ek-channel-hepsiburada-border: #F3ADBC;
-  --ek-channel-hepsiburada-text: #B01F3E;
-  --ek-channel-n11-solid: #7C3AED;
-  --ek-channel-n11-subtle: #F2EBFD;
-  --ek-channel-n11-border: #CDB4F8;
-  --ek-channel-n11-text: #6A2FD0;
-  --ek-channel-pazarama-solid: #C0268F;
-  --ek-channel-pazarama-subtle: #F9E9F4;
-  --ek-channel-pazarama-border: #E7ADD4;
-  --ek-channel-pazarama-text: #A2207A;
-  --ek-channel-ideasoft-solid: #0E4C92;
-  --ek-channel-ideasoft-subtle: #E7EDF4;
-  --ek-channel-ideasoft-border: #A3BBD6;
-  --ek-channel-ideasoft-text: #0E4C92;
-  --ek-channel-bizimhesap-solid: #0F9488;
-  --ek-channel-bizimhesap-subtle: #E7F4F3;
-  --ek-channel-bizimhesap-border: #A4D6D2;
-  --ek-channel-bizimhesap-text: #0B7067;
-  --ek-channel-neutral-solid: var(--ek-color-border-strong);
-  --ek-channel-neutral-subtle: var(--ek-color-neutral-subtle);
-  --ek-channel-neutral-border: var(--ek-color-neutral-border);
-  --ek-channel-neutral-text: var(--ek-color-content-default);
+  --ek-channel-trendyol-brand: #FF6620;
+  --ek-channel-trendyol-on-brand: #000000;
+  --ek-channel-hepsiburada-brand: #FF6000;
+  --ek-channel-hepsiburada-on-brand: #000000;
+  --ek-channel-n11-brand: #FF44EE;
+  --ek-channel-n11-on-brand: #000000;
+  --ek-channel-n11-secondary: #1C1C1E;
+  --ek-channel-pazarama-brand: #0137F3;
+  --ek-channel-pazarama-on-brand: #FFFFFF;
+  --ek-channel-pazarama-secondary: #FF008B;
+  --ek-channel-ideasoft-brand: #391EE0;
+  --ek-channel-ideasoft-on-brand: #FFFFFF;
+  --ek-channel-bizimhesap-brand: #20554E;
+  --ek-channel-bizimhesap-on-brand: #FFFFFF;
+  --ek-channel-shopify-brand: #7AB55C;
+  --ek-channel-shopify-on-brand: #000000;
+  --ek-channel-woocommerce-brand: #873EFF;
+  --ek-channel-woocommerce-on-brand: #FFFFFF;
+  --ek-channel-neutral-brand: var(--ek-color-neutral);
+  --ek-channel-neutral-on-brand: var(--ek-color-neutral-contrast);
+  --ek-channel-ring: color-mix(in srgb, var(--ek-color-content-default) 20%, transparent);
 }
 
 .ek-ch-trendyol {
-  --ek-ch-solid: var(--ek-channel-trendyol-solid);
-  --ek-ch-subtle: var(--ek-channel-trendyol-subtle);
-  --ek-ch-border: var(--ek-channel-trendyol-border);
-  --ek-ch-text: var(--ek-channel-trendyol-text);
+  --ek-ch-brand: var(--ek-channel-trendyol-brand);
+  --ek-ch-on-brand: var(--ek-channel-trendyol-on-brand);
+  --ek-ch-secondary: var(--ek-channel-trendyol-brand);
+  --ek-ch-solid: var(--ek-channel-trendyol-brand);
+  --ek-ch-border: var(--ek-channel-trendyol-brand);
+  --ek-ch-subtle: var(--ek-color-neutral-subtle);
+  --ek-ch-text: var(--ek-color-content-default);
 }
 
 .ek-ch-hepsiburada {
-  --ek-ch-solid: var(--ek-channel-hepsiburada-solid);
-  --ek-ch-subtle: var(--ek-channel-hepsiburada-subtle);
-  --ek-ch-border: var(--ek-channel-hepsiburada-border);
-  --ek-ch-text: var(--ek-channel-hepsiburada-text);
+  --ek-ch-brand: var(--ek-channel-hepsiburada-brand);
+  --ek-ch-on-brand: var(--ek-channel-hepsiburada-on-brand);
+  --ek-ch-secondary: var(--ek-channel-hepsiburada-brand);
+  --ek-ch-solid: var(--ek-channel-hepsiburada-brand);
+  --ek-ch-border: var(--ek-channel-hepsiburada-brand);
+  --ek-ch-subtle: var(--ek-color-neutral-subtle);
+  --ek-ch-text: var(--ek-color-content-default);
 }
 
 .ek-ch-n11 {
-  --ek-ch-solid: var(--ek-channel-n11-solid);
-  --ek-ch-subtle: var(--ek-channel-n11-subtle);
-  --ek-ch-border: var(--ek-channel-n11-border);
-  --ek-ch-text: var(--ek-channel-n11-text);
+  --ek-ch-brand: var(--ek-channel-n11-brand);
+  --ek-ch-on-brand: var(--ek-channel-n11-on-brand);
+  --ek-ch-secondary: var(--ek-channel-n11-secondary);
+  --ek-ch-solid: var(--ek-channel-n11-brand);
+  --ek-ch-border: var(--ek-channel-n11-brand);
+  --ek-ch-subtle: var(--ek-color-neutral-subtle);
+  --ek-ch-text: var(--ek-color-content-default);
 }
 
 .ek-ch-pazarama {
-  --ek-ch-solid: var(--ek-channel-pazarama-solid);
-  --ek-ch-subtle: var(--ek-channel-pazarama-subtle);
-  --ek-ch-border: var(--ek-channel-pazarama-border);
-  --ek-ch-text: var(--ek-channel-pazarama-text);
+  --ek-ch-brand: var(--ek-channel-pazarama-brand);
+  --ek-ch-on-brand: var(--ek-channel-pazarama-on-brand);
+  --ek-ch-secondary: var(--ek-channel-pazarama-secondary);
+  --ek-ch-solid: var(--ek-channel-pazarama-brand);
+  --ek-ch-border: var(--ek-channel-pazarama-brand);
+  --ek-ch-subtle: var(--ek-color-neutral-subtle);
+  --ek-ch-text: var(--ek-color-content-default);
 }
 
 .ek-ch-ideasoft {
-  --ek-ch-solid: var(--ek-channel-ideasoft-solid);
-  --ek-ch-subtle: var(--ek-channel-ideasoft-subtle);
-  --ek-ch-border: var(--ek-channel-ideasoft-border);
-  --ek-ch-text: var(--ek-channel-ideasoft-text);
+  --ek-ch-brand: var(--ek-channel-ideasoft-brand);
+  --ek-ch-on-brand: var(--ek-channel-ideasoft-on-brand);
+  --ek-ch-secondary: var(--ek-channel-ideasoft-brand);
+  --ek-ch-solid: var(--ek-channel-ideasoft-brand);
+  --ek-ch-border: var(--ek-channel-ideasoft-brand);
+  --ek-ch-subtle: var(--ek-color-neutral-subtle);
+  --ek-ch-text: var(--ek-color-content-default);
 }
 
 .ek-ch-bizimhesap {
-  --ek-ch-solid: var(--ek-channel-bizimhesap-solid);
-  --ek-ch-subtle: var(--ek-channel-bizimhesap-subtle);
-  --ek-ch-border: var(--ek-channel-bizimhesap-border);
-  --ek-ch-text: var(--ek-channel-bizimhesap-text);
+  --ek-ch-brand: var(--ek-channel-bizimhesap-brand);
+  --ek-ch-on-brand: var(--ek-channel-bizimhesap-on-brand);
+  --ek-ch-secondary: var(--ek-channel-bizimhesap-brand);
+  --ek-ch-solid: var(--ek-channel-bizimhesap-brand);
+  --ek-ch-border: var(--ek-channel-bizimhesap-brand);
+  --ek-ch-subtle: var(--ek-color-neutral-subtle);
+  --ek-ch-text: var(--ek-color-content-default);
+}
+
+.ek-ch-shopify {
+  --ek-ch-brand: var(--ek-channel-shopify-brand);
+  --ek-ch-on-brand: var(--ek-channel-shopify-on-brand);
+  --ek-ch-secondary: var(--ek-channel-shopify-brand);
+  --ek-ch-solid: var(--ek-channel-shopify-brand);
+  --ek-ch-border: var(--ek-channel-shopify-brand);
+  --ek-ch-subtle: var(--ek-color-neutral-subtle);
+  --ek-ch-text: var(--ek-color-content-default);
+}
+
+.ek-ch-woocommerce {
+  --ek-ch-brand: var(--ek-channel-woocommerce-brand);
+  --ek-ch-on-brand: var(--ek-channel-woocommerce-on-brand);
+  --ek-ch-secondary: var(--ek-channel-woocommerce-brand);
+  --ek-ch-solid: var(--ek-channel-woocommerce-brand);
+  --ek-ch-border: var(--ek-channel-woocommerce-brand);
+  --ek-ch-subtle: var(--ek-color-neutral-subtle);
+  --ek-ch-text: var(--ek-color-content-default);
 }
 
 .ek-ch-neutral {
-  --ek-ch-solid: var(--ek-channel-neutral-solid);
-  --ek-ch-subtle: var(--ek-channel-neutral-subtle);
-  --ek-ch-border: var(--ek-channel-neutral-border);
-  --ek-ch-text: var(--ek-channel-neutral-text);
+  --ek-ch-brand: var(--ek-channel-neutral-brand);
+  --ek-ch-on-brand: var(--ek-channel-neutral-on-brand);
+  --ek-ch-secondary: var(--ek-channel-neutral-brand);
+  --ek-ch-solid: var(--ek-channel-neutral-brand);
+  --ek-ch-border: var(--ek-channel-neutral-brand);
+  --ek-ch-subtle: var(--ek-color-neutral-subtle);
+  --ek-ch-text: var(--ek-color-content-default);
 }

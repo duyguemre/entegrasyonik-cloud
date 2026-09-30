@@ -1,9 +1,8 @@
 <template>
-    <div @click="handleButtonClick" class="premium-platform-card" :class="{
+    <div @click="handleButtonClick" class="premium-platform-card" :class="[channelClass(integrationCode), {
         'is-active': !isSelectable || isActive,
         'is-selectable': isSelectable
-    }" :style="{
-        '--brand-color': brandColor,
+    }]" :style="{
         'width': safeWidth ? (typeof safeWidth === 'number' ? safeWidth + 12 + 'px' : `calc(${safeWidth} + 12px)`) : 'auto'
     }">
         <div class="logo-box" :style="{ 'width': safeWidth + 'px', 'height': height + 'px' }">
@@ -12,11 +11,11 @@
  -->
 
             <div class="d-flex align-center ma-2">
-                <v-avatar :color="brandColor" :size="Number(height) * 0.6" class="platform-avatar">
+                <v-avatar :size="Number(height) * 0.6" class="platform-avatar">
                     <span class="font-weight-black text-h6 platform-avatar__letter"
                         :style="{ fontSize: 'calc(' + height + 'px / 2.5)!important' }">{{
                             integrationCode?.charAt(0) }}</span>
-                </v-avatar> <span class="platform-name" :style="{ color: brandColor }">{{
+                </v-avatar> <span class="platform-name">{{
                         integrationCode?.charAt(0).toUpperCase() + integrationCode?.slice(1)
                     }}</span>
             </div>
@@ -28,10 +27,11 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
 import { useIntegrationStore } from '@/stores/integrationStore'
+import { channelClass } from '@/design/channels'
 
 const integrationStore = useIntegrationStore()
 const src = ref('')
-const brandColor = ref('var(--ek-color-border-strong)')
+// C1: kanal rengi backend kaydının `color` alanından DEĞİL, tek kaynaktan (`channelClass` → `--ek-ch-brand`).
 
 const emit = defineEmits(['select', 'click'])
 
@@ -55,7 +55,6 @@ const loadIntegrationData = () => {
     const integration = integrationStore.getIntegration(props.integrationCode)
     if (integration) {
         src.value = integrationStore.getIntegrationImagePathByCode(props.integrationCode) ?? ''
-        brandColor.value = integration.color || 'var(--ek-color-border-strong)'
     }
 }
 
@@ -112,8 +111,7 @@ watch(() => props.integrationCode, loadIntegrationData)
 
 /* --- AKTİF DURUM --- */
 .premium-platform-card.is-active {
-    border-color: var(--brand-color);
-    background: color-mix(in srgb, var(--brand-color) 8%, transparent);
+    border-color: var(--ek-ch-brand);
 }
 
 /* Seçili durum: kenarlık + alt vurgu çizgisi (zıplama/kayma yok — premium görsel dil). */
@@ -127,7 +125,7 @@ watch(() => props.integrationCode, loadIntegrationData)
     transform: translateX(-50%);
     width: 30%;
     height: 3px;
-    background: var(--brand-color);
+    background: var(--ek-ch-brand);
     border-radius: var(--ek-radius-md) var(--ek-radius-md) 0 0;
 }
 
@@ -138,15 +136,18 @@ watch(() => props.integrationCode, loadIntegrationData)
 
 .platform-avatar {
     margin-right: var(--ek-space-1);
+    background: var(--ek-ch-brand);
+    box-shadow: inset 0 0 0 1px var(--ek-channel-ring);
 }
 
 .platform-avatar__letter {
-    color: var(--ek-color-action-contrast);
+    color: var(--ek-ch-on-brand);
     line-height: 1;
     text-transform: capitalize;
 }
 
 .platform-name {
+    color: var(--ek-color-content-default);
     font-weight: var(--ek-font-weight-semibold);
     letter-spacing: -0.03em;
 }

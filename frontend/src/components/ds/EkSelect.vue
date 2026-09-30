@@ -227,7 +227,8 @@ function clearAll() {
   width: 8px;
   height: 8px;
   border-radius: var(--ek-radius-chip);
-  background: var(--ek-ch-solid, var(--ek-color-border-strong));
+  background: var(--ek-ch-brand, var(--ek-color-border-strong));
+  box-shadow: inset 0 0 0 1px var(--ek-channel-ring);
 }
 
 .ek-select-menu .ek-select-menu__dot.is-success { background: var(--ek-color-success); }
@@ -265,16 +266,18 @@ function clearAll() {
 }
 
 .ek-select .ek-select__chip.v-chip[class*='ek-ch-'] {
-  background: var(--ek-ch-subtle);
-  border: 1px solid var(--ek-ch-border);
-  color: var(--ek-ch-text);
+  /* C1: tint yok — nötr çip, kanal rengi yalnız noktada. */
+  background: var(--ek-color-surface);
+  border: 1px solid var(--ek-color-border-default);
+  color: var(--ek-color-content-default);
 }
 
 .ek-select .ek-select__chip-dot {
   width: 6px;
   height: 6px;
   border-radius: var(--ek-radius-chip);
-  background: var(--ek-ch-solid);
+  background: var(--ek-ch-brand);
+  box-shadow: inset 0 0 0 1px var(--ek-channel-ring);
 }
 
 .ek-select .ek-select__more {

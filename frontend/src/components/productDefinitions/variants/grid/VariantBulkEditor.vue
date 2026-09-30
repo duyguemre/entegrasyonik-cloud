@@ -57,8 +57,7 @@
           <thead>
             <tr v-if="hasChannelCols" class="vbe-band" aria-hidden="true">
               <th class="vbe-corner-band"></th>
-              <th v-for="b in bands" :key="b.key" :colspan="b.span" class="vbe-band__th" :class="{ 'is-channel': b.channel }"
-                v-channel-accent="b.channel">
+              <th v-for="b in bands" :key="b.key" :colspan="b.span" class="vbe-band__th" :class="b.channel ? ['is-channel', channelClass(b.channel)] : undefined">
                 <EkChannelDot v-if="b.channel" :code="b.channel" :name="b.label" />
                 <span v-else>{{ b.label }}</span>
               </th>
@@ -68,8 +67,7 @@
                 <button type="button" class="vbe-head-btn" aria-label="Tüm hücreleri seç" @click="sheet.selectAll()">Varyant</button>
               </th>
               <th v-for="(c, ci) in columns" :key="c.key" role="columnheader" scope="col" :aria-colindex="ci + 2"
-                class="vbe-colhead" :class="{ 'is-num': c.kind !== 'text', 'is-sel': colSelected(ci), 'is-channel': !!c.channel }"
-                v-channel-accent="c.channel">
+                class="vbe-colhead" :class="{ 'is-num': c.kind !== 'text', 'is-sel': colSelected(ci), 'is-channel': !!c.channel }">
                 <button type="button" class="vbe-head-btn" :aria-label="`${c.channelName ? c.channelName + ' ' : ''}${c.label} kolonunu seç`"
                   @click="(e: MouseEvent) => sheet.selectCol(ci, e.shiftKey)">{{ c.label }}</button>
               </th>
@@ -187,14 +185,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch, type Directive } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import EkDialogCard from '@/components/ds/EkDialogCard.vue'
 import EkButton from '@/components/ds/EkButton.vue'
 import EkIconTile from '@/components/ds/EkIconTile.vue'
 import EkTooltip from '@/components/ds/EkTooltip.vue'
 import EkKbd from '@/components/ds/EkKbd.vue'
 import EkChannelDot from '@/components/ds/EkChannelDot.vue'
-import { integrationAccent } from '@/design/tokens/palette'
+import { channelClass } from '@/design/channels'
 import { formatMoney } from '@/composables/format'
 import { useChoicesStore } from '@/stores/choicesStore'
 import { useIntegrationStore } from '@/stores/integrationStore'
@@ -217,20 +215,6 @@ const emit = defineEmits<{ close: []; applied: [count: number] }>()
 
 const choicesStore = useChoicesStore()
 const integrationStore = useIntegrationStore()
-
-/**
- * Kanal rengi CSS değişkeni (`--vbe-ch`) — yalnız bilinen 6 entegrasyon (`integrationAccent`); satır içi `style`
- * yazmadan veri güdümlü renk. Ortak kanal rengi token'ı gelince (paralel görev) buradan kaldırılır.
- */
-const vChannelAccent: Directive<HTMLElement, string | undefined> = {
-  mounted: (el, b) => paint(el, b.value),
-  updated: (el, b) => paint(el, b.value),
-}
-function paint(el: HTMLElement, code?: string) {
-  const hex = code ? (integrationAccent as Record<string, string>)[code.toLowerCase()] : undefined
-  if (hex) el.style.setProperty('--vbe-ch', hex)
-  else el.style.removeProperty('--vbe-ch')
-}
 
 // ── taslak: yalnız düzenlenen alanların kopyası; kaynak nesneye Uygula'da yazılır ──
 const channels = computed(() => [...(integrationStore.getClientMarketplaces() || []), ...(integrationStore.getClientECommerces() || [])]
@@ -570,7 +554,7 @@ defineExpose({ sheet, changes, apply, requestClose })
   font-weight: 600;
   text-align: left;
 }
-.vbe-band__th.is-channel { box-shadow: inset 0 3px 0 var(--vbe-ch, var(--ek-color-border-strong)); border-left: 1px solid var(--ek-color-border-default); }
+.vbe-band__th.is-channel { box-shadow: inset 0 3px 0 var(--ek-ch-brand, var(--ek-color-border-strong)); border-left: 1px solid var(--ek-color-border-default); }
 .vbe-corner-band { left: 0; z-index: 5 !important; }
 .vbe-band + tr th { top: 28px; }
 .vbe-colhead, .vbe-corner {

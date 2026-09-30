@@ -70,7 +70,6 @@
                       v-for="(integration, index) of integrationStore.getClientMarketplaces().filter((item: any) => item.type.code == 'marketplace')">
                       <IntegrationAvatarComponent mode="text" :platform="integration" width="120px" height="65px"
                         :class="platformReady(integration.code) ? 'bp-panel__platform--ready' : 'bp-panel__platform--idle'"
-                        :style="platformReady(integration.code) ? { 'background-color': integration.color } : undefined"
                         class="bp-panel__platform mb-2 mr-1"
                         @click.stop="batchProcessForm.platformUploadStatus ? setPlatformUploads(integration.code) : ''" />
                     </template>

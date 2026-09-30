@@ -6,10 +6,12 @@
   `PlatformImageComponent` kullanımlarının buna taşınması A3/A5/B'nin işi —
   "bu ekranların İÇERİĞİNE dokunma" kısıtı).
 
-  Varsayılan: MONOGRAM rozeti (24/32px yuvarlak kare) + platform adı (sm 500). Aşama 5: kanal tonlu
-  avatar (açık kanal zemini, kanal halkası + alt şerit, kanal tonunda harf) — renkler `.ek-ch-<kod>`
-  kapsamından (`design/channels.ts`; tek kaynak `palette.ts` `channelPalette`). Veri eksikliğinde (bugünkü soluk gri renge düşen davranış)
-  NÖTR monogram gösterilir — asla soluk/boş kutu YOK. Resmî logo görseli
+  Varsayılan: MONOGRAM rozeti (24/32px yuvarlak kare) + platform adı (sm 500). C1: logo zemini = kanalın RESMİ
+  marka rengi (tint yok), harf `onBrand` (siyah/beyaz, ≥ 4.5:1); ikincil marka rengi olan kanalda (N11 siyahı,
+  Pazarama pembesi) alt kenarda 3px ikincil şerit — ikincil renk YALNIZ burada kullanılır. Nötr kıl halka
+  (`--ek-channel-ring`) koyu marka renklerini dark zeminden ayırır. Renkler `.ek-ch-<kod>` kapsamından
+  (`design/channels.ts`; tek kaynak `palette.ts` `channelPalette`). Veri eksikliğinde / tanımsız kanalda
+  NÖTR monogram (nötr açık zemin, varsayılan metin) gösterilir — asla soluk/boş kutu YOK. Resmî logo görseli
   KULLANILMAZ (Açık Soru 2 varsayılanı).
 
   Kullanım:
@@ -38,7 +40,7 @@ import { channelClass, channelCode } from '@/design/channels'
 const props = withDefaults(
   defineProps<{
     name: string
-    /** Kanal kodu (trendyol/hepsiburada/n11/pazarama/ideasoft/bizimhesap); tanımsızsa nötr monogram. */
+    /** Kanal kodu (`channelPalette` anahtarları); tanımsızsa nötr monogram. */
     code?: string
     size?: 'sm' | 'lg'
     showName?: boolean
@@ -69,17 +71,18 @@ const initial = computed(() => props.name?.trim().charAt(0).toUpperCase() || '?'
   justify-content: center;
   flex: none;
   border-radius: var(--ek-radius-tile);
-  /* Aşama 5: kanal rengi AKTİF — avatar zemini kanalın açık tonu, ince kanal halkası, baş harf kanal tonunda (AA).
-     Tanımsız kanal `.ek-ch-neutral` (nötr zemin, `content-default` harf). */
-  background: var(--ek-ch-subtle);
-  box-shadow: inset 0 0 0 1px var(--ek-ch-border);
-  color: var(--ek-ch-text);
+  /* Tanımsız kanal: nötr açık zemin + nötr kenar, `content-default` harf. */
+  background: var(--ek-color-neutral-subtle);
+  box-shadow: inset 0 0 0 1px var(--ek-color-neutral-border);
+  color: var(--ek-color-content-default);
   font-weight: var(--ek-font-weight-bold);
 }
 
-/* Bilinen kanalda alt kenarda 3px kanal şeridi — avatar küçükken bile rengi taşır. */
+/* Bilinen kanal: logo zemini marka rengi, harf onBrand; ikincil şerit (yoksa marka rengi → görünmez). */
 .ek-platform-mark.is-known .ek-platform-mark__badge {
-  box-shadow: inset 0 0 0 1px var(--ek-ch-border), inset 0 -3px 0 var(--ek-ch-solid);
+  background: var(--ek-ch-brand);
+  color: var(--ek-ch-on-brand);
+  box-shadow: inset 0 0 0 1px var(--ek-channel-ring), inset 0 -3px 0 var(--ek-ch-secondary);
 }
 
 .ek-platform-mark__badge--sm {
@@ -99,7 +102,8 @@ const initial = computed(() => props.name?.trim().charAt(0).toUpperCase() || '?'
   width: 8px;
   height: 8px;
   border-radius: var(--ek-radius-chip);
-  background: var(--ek-ch-solid);
+  background: var(--ek-ch-brand);
+  box-shadow: inset 0 0 0 1px var(--ek-channel-ring);
 }
 
 .ek-platform-mark--dot {

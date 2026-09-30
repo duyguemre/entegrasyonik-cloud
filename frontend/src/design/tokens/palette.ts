@@ -76,35 +76,37 @@ export const statusDark = {
 } as const
 
 /**
- * Kanal (pazaryeri/entegrasyon) renk ailesi — TEK KAYNAK (Aşama 5, kullanıcı geri bildirimi madde 3).
- * Her kanalın 4 tonu: `solid` (nokta, sol şerit, avatar halkası — dekoratif, adı her zaman yanında),
- * `subtle` (çip/avatar zemini), `border` (çip kenarlığı), `text` (subtle ve beyaz zeminde metin, ≥ 5:1 AA).
- * Kanallar birbirinden AYRIŞSIN diye tonlar markaya yakın ama ayrı renk açılarında seçildi: marka
- * renkleri çakışan çiftler (Trendyol/Hepsiburada turuncu, N11/Pazarama mor) ayrıldı — Hepsiburada gül
- * kırmızısına (≠ hata kırmızısı: daha pembe, açık zemin), Pazarama macentaya kaydı. Durum renkleriyle
- * (başarı yeşili, uyarı kehribarı, bilgi mavisi, aksiyon kobaltı) aynı açıda kanal YOKTUR.
- * Yalnızca bugün gerçekten entegre olan 6 sağlayıcı; resmi logo KULLANILMAZ (Açık Soru 2 varsayılanı).
- * Kontrast çiftleri `tests/theme/channel-tokens.test.ts` ile korunur.
+ * Kanal (pazaryeri/entegrasyon) MARKA renkleri — TEK KAYNAK (C1, 2026-09-30). Değerler kullanıcı onaylı
+ * `docs/cloud-contracts/CHANNEL_BRAND_COLORS.md` tablosundan AYNEN (resmi ikon/logo ölçümü); değişiklik yalnız
+ * o belge + bu dosya üzerinden. Kural: marka rengi DEĞİŞTİRİLMEZ — açık ton/tint TÜRETİLMEZ; yüzeyde yalnız
+ * nokta, şerit, çip kenarı, logo zemini ya da dolgulu çip olarak doğrudan kullanılır. Dark temada da aynıdır.
+ *   `brand`     — resmi birincil renk.
+ *   `onBrand`   — marka zemininde METİN rengi: siyah/beyazdan ≥ 4.5:1 olanı (hesaplanmış; test korur).
+ *   `secondary` — yalnız logo zemini aksanı (N11 siyahı, Pazarama pembesi); başka yüzeyde kullanılmaz.
+ * Trendyol ile Hepsiburada bilinçli olarak YAKIN turuncudur (kullanıcı isteği) — kanal adı her zaman yazılır,
+ * renk tek başına ayırt edici değildir. Shopify/WooCommerce: düşük güven (simple-icons), yalnız UI formu var.
+ * Listede olmayan kanal → nötr (`.ek-ch-neutral`).
  */
 export const channelPalette = {
-  trendyol: { solid: '#F27A1A', subtle: '#FEF2E8', border: '#FACCA8', text: '#9B4E11' },
-  hepsiburada: { solid: '#E0284F', subtle: '#FCEAED', border: '#F3ADBC', text: '#B01F3E' },
-  n11: { solid: '#7C3AED', subtle: '#F2EBFD', border: '#CDB4F8', text: '#6A2FD0' },
-  pazarama: { solid: '#C0268F', subtle: '#F9E9F4', border: '#E7ADD4', text: '#A2207A' },
-  ideasoft: { solid: '#0E4C92', subtle: '#E7EDF4', border: '#A3BBD6', text: '#0E4C92' },
-  bizimhesap: { solid: '#0F9488', subtle: '#E7F4F3', border: '#A4D6D2', text: '#0B7067' },
-} as const
+  trendyol: { brand: '#FF6620', onBrand: '#000000' },
+  hepsiburada: { brand: '#FF6000', onBrand: '#000000' },
+  n11: { brand: '#FF44EE', onBrand: '#000000', secondary: '#1C1C1E' },
+  pazarama: { brand: '#0137F3', onBrand: '#FFFFFF', secondary: '#FF008B' },
+  ideasoft: { brand: '#391EE0', onBrand: '#FFFFFF' },
+  bizimhesap: { brand: '#20554E', onBrand: '#FFFFFF' },
+  shopify: { brand: '#7AB55C', onBrand: '#000000' },
+  woocommerce: { brand: '#873EFF', onBrand: '#FFFFFF' },
+} as const satisfies Record<string, { brand: string; onBrand: '#000000' | '#FFFFFF'; secondary?: string }>
 
 export type ChannelCode = keyof typeof channelPalette
-export type ChannelTone = keyof (typeof channelPalette)[ChannelCode]
 
 /**
- * Pazaryeri/entegrasyon marka vurgu rengi (ADR-0015 Karar 3.11) — `channelPalette.solid`'in
+ * Pazaryeri/entegrasyon marka vurgu rengi (ADR-0015 Karar 3.11) — `channelPalette.brand`'in
  * geri uyumlu görünümü (mağaza kayıtları `color` alanı). METİN rengi DEĞİLDİR.
  */
 export const integrationAccent = Object.fromEntries(
-  Object.entries(channelPalette).map(([code, tones]) => [code, tones.solid]),
-) as { readonly [K in ChannelCode]: (typeof channelPalette)[K]['solid'] }
+  Object.entries(channelPalette).map(([code, tones]) => [code, tones.brand]),
+) as { readonly [K in ChannelCode]: (typeof channelPalette)[K]['brand'] }
 
 /**
  * `plugins/vuetify.ts`'teki tarihsel `baseColor`/`shadeColor(color, percent)`

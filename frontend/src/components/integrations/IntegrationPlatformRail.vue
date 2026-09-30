@@ -134,8 +134,8 @@ function onKeydown(event: KeyboardEvent) {
   gap: var(--ek-space-3);
 }
 
-/* Aşama 5: kanal kartı kendi rengini taşır — solda 3px kanal şeridi; seçili kart kanalın açık tonunda,
-   kanal kenarlığı + kanal halkası (seçim yalnız renkle değil, kalın çerçeve + aria-selected ile). */
+/* C1: kanal kartı kendi marka rengini taşır (tint yok) — solda 3px marka şeridi + marka zeminli logo; seçili kart
+   marka kenarlığı + marka halkası (seçim yalnız renkle değil, kalın çerçeve + koyu ad + aria-selected ile). */
 .ek-integration-rail__item {
   position: relative;
   display: flex;
@@ -146,14 +146,13 @@ function onKeydown(event: KeyboardEvent) {
   background: var(--ek-color-surface);
   border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-control);
-  box-shadow: inset 3px 0 0 var(--ek-ch-solid), var(--ek-shadow-card);
+  box-shadow: inset 3px 0 0 var(--ek-ch-brand), var(--ek-shadow-card);
   cursor: pointer;
   transition: var(--ek-transition-colors);
 }
 
 .ek-integration-rail__item:hover {
-  border-color: var(--ek-ch-border);
-  background: color-mix(in srgb, var(--ek-ch-subtle) 55%, var(--ek-color-surface));
+  border-color: var(--ek-ch-brand);
 }
 
 .ek-integration-rail__item:focus-visible {
@@ -162,13 +161,12 @@ function onKeydown(event: KeyboardEvent) {
 }
 
 .ek-integration-rail__item.is-selected {
-  background: var(--ek-ch-subtle);
-  border-color: var(--ek-ch-solid);
-  box-shadow: inset 3px 0 0 var(--ek-ch-solid), 0 0 0 1px var(--ek-ch-solid);
+  border-color: var(--ek-ch-brand);
+  box-shadow: inset 3px 0 0 var(--ek-ch-brand), 0 0 0 1px var(--ek-ch-brand);
 }
 
 .ek-integration-rail__item.is-selected :deep(.ek-platform-mark__name) {
-  color: var(--ek-ch-text);
+  color: var(--ek-color-content-strong);
   font-weight: var(--ek-font-weight-semibold);
 }
 
