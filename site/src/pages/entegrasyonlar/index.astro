@@ -27,25 +27,23 @@ const groups: Array<{ kind: IntegrationKind; id: string; heading: string; note: 
   { kind: 'ecommerce', id: 'e-ticaret', heading: 'E-ticaret altyapıları', note: 'Kendi mağazanızın ürün ve siparişleri.' },
   { kind: 'erp', id: 'erp', heading: 'ERP ve muhasebe', note: 'Ürün kataloğu ve siparişlerin okunması.' },
 ]
+// Yalnızca kayıtta gerçekten entegrasyonu olan türler sekme olur (kargo/fatura gibi uygulanmamış türler görünmez).
 const visibleGroups = groups
   .map((g) => ({ ...g, items: getPublicIntegrations(g.kind) }))
   .filter((g) => g.items.length > 0)
 
-// Küçük türler (ör. tek kartlık "E-ticaret altyapıları"/"ERP ve muhasebe") tam genişlikte kendi satırında
-// yalnız kalınca sağda büyük bir boşluk bırakıyordu (S11). İki (veya daha az) kartlık ardışık türler tek bir
-// satırda yan yana kümelenir; zengin türler (ör. Pazaryerleri) tam genişlikte kalır.
-const SMALL_GROUP_MAX = 2
-type VisibleGroup = (typeof visibleGroups)[number]
-const rows: VisibleGroup[][] = []
-for (const g of visibleGroups) {
-  const prevRow = rows[rows.length - 1]
-  const prevIsSmall = prevRow && prevRow.length === 1 && prevRow[0].items.length <= SMALL_GROUP_MAX
-  if (prevIsSmall && g.items.length <= SMALL_GROUP_MAX) prevRow.push(g)
-  else rows.push([g])
-}
+/*
+ * S16 kapsam özeti sayaçları — YALNIZCA kayıttan hesaplanır (sabit rakam yazılmaz). tests/pages.test.ts her
+ * `data-stat` değerini aynı kayıttan yeniden hesaplayıp karşılaştırır.
+ */
+const capabilityKinds = new Set(all.flatMap((i) => i.capabilities.map((c) => c.key)))
+const stats = [
+  { id: 'integrations', value: all.length, label: 'kullanılabilir entegrasyon' },
+  { id: 'marketplaces', value: getPublicIntegrations('marketplace').length, label: 'pazaryeri' },
+  { id: 'kinds', value: visibleGroups.length, label: 'kategori' },
+  { id: 'capabilities', value: capabilityKinds.size, label: 'işlem türü' },
+]
 
-// Hero görseli: kapsam segmenti göstergesinin (kart altındaki nokta şeridi) açıklaması — uydurma rakam yok,
-// yalnızca `data-level` özniteliğinde (görünür metin değil) sayı geçer.
 const COVERAGE_METER: Record<CoverageLevel, number> = { broad: 3, partial: 2, limited: 1 }
 const coverageLevels = Object.keys(COVERAGE_LABELS) as CoverageLevel[]
 ---
@@ -60,54 +58,87 @@ const coverageLevels = Object.keys(COVERAGE_LABELS) as CoverageLevel[]
 
   <PageHero
     title="Entegrasyonlar"
+    eyebrow="Kanallar"
     lead="Pazaryerlerinizi, e-ticaret altyapınızı ve ERP sisteminizi tek panelde buluşturun. Her kanalın hangi işlemleri desteklediğini kanal bazında şeffafça gösteriyoruz."
     crumbs={crumbs}
   >
-    <nav class="kind-nav" aria-label="Entegrasyon türleri">
-      {visibleGroups.map((g) => <a href={`#${g.id}`}>{g.heading}</a>)}
-      <a href="#kapsam">Kanal bazında kapsam</a>
-    </nav>
+    <div class="hero-links">
+      <a class="hero-link" href="#katalog">Kataloğa göz atın</a>
+      <a class="hero-link hero-link--ghost" href="#kapsam">Kanal bazında kapsam</a>
+    </div>
     <Fragment slot="visual">
-      <p class="stat-panel__tag">Kapsam nasıl okunur</p>
-      <ul class="legend" role="list">
+      <p class="stat-panel__tag">Kapsam özeti</p>
+      <dl class="stats" data-testid="integration-stats">
+        {
+          stats.map((st) => (
+            <div class="stat">
+              <dt class="stat__label">{st.label}</dt>
+              <dd class="stat__value" data-stat={st.id}>
+                {st.value}
+              </dd>
+            </div>
+          ))
+        }
+      </dl>
+      <ul class="hero-chans" role="list" aria-label="Kullanılabilir kanallar">
+        {
+          all.map((i) => (
+            <li>
+              <a href={`/entegrasyonlar/${i.code}`} class="hero-chan" data-code={i.code}>
+                <span class="hero-chan__dot" aria-hidden="true" />
+                {i.name}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </Fragment>
+  </PageHero>
+
+  <Section id="katalog" labelledby="katalog-title" class="tight-section">
+    <div class="cat-head">
+      <div class="cat-head__text">
+        <h2 id="katalog-title">Entegrasyon kataloğu</h2>
+        <p>Kategoriye göre süzün; her kartta desteklenen işlemler ve kapsam düzeyi yer alır.</p>
+      </div>
+      <ul class="legend" role="list" aria-label="Kapsam göstergesi">
         {
           coverageLevels.map((level) => (
             <li>
               <span class="legend__meter" aria-hidden="true" data-level={COVERAGE_METER[level]}>
                 <span></span><span></span><span></span>
               </span>
-              <span class="legend__label">{COVERAGE_LABELS[level]}</span>
+              {COVERAGE_LABELS[level]}
             </li>
           ))
         }
       </ul>
-      <p class="stat-panel__caption">Her kartın altında aynı gösterge; ayrıntı detay sayfasındadır.</p>
-    </Fragment>
-  </PageHero>
+    </div>
 
-  <Section labelledby="katalog-title" class="tight-section">
-    <h2 id="katalog-title" class="sr-only">Entegrasyon kataloğu</h2>
-    {
-      rows.map((row, index) => (
-        <div class:list={['kind-row', { 'kind-row--cluster': row.length > 1 }]} data-first={index === 0 ? 'true' : undefined}>
-          {row.map((g) => (
-            <div class="kind-group" id={g.id}>
-              <div class="group__head">
-                <h3 id={`${g.id}-title`}>{g.heading}</h3>
-                <p>{g.note}</p>
-              </div>
-              <ul class="grid" role="list">
-                {g.items.map((integration) => (
-                  <li>
-                    <IntegrationCard integration={integration} />
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      ))
-    }
+    <div class="filters" role="group" aria-label="Kategoriye göre süz" data-int-filter data-testid="integration-filter">
+      <button type="button" class="filter" aria-pressed="true" data-filter="all">
+        Tümü <span class="filter__count" data-stat="integrations">{all.length}</span>
+      </button>
+      {
+        visibleGroups.map((g) => (
+          <button type="button" class="filter" aria-pressed="false" data-filter={g.kind} aria-controls="int-grid">
+            {g.heading} <span class="filter__count" data-stat={`kind-${g.kind}`}>{g.items.length}</span>
+          </button>
+        ))
+      }
+    </div>
+    <p class="sr-only" role="status" aria-live="polite" data-int-filter-status></p>
+
+    <ul class="grid" role="list" id="int-grid" data-testid="integration-grid">
+      {
+        all.map((integration) => (
+          <li data-kind={integration.kind}>
+            <IntegrationCard integration={integration} />
+          </li>
+        ))
+      }
+    </ul>
+    <p class="fineprint">Bu sayfada yer alan entegrasyonları hesabınıza bugün bağlayabilirsiniz. Listede olmayan bir kanal için <a href="/iletisim">bize yazın</a>.</p>
   </Section>
 
   <Section id="kapsam" labelledby="kapsam-title" tone="muted" class="tight-section">
@@ -119,7 +150,6 @@ const coverageLevels = Object.keys(COVERAGE_LABELS) as CoverageLevel[]
       </p>
     </div>
     <CoverageMatrix integrations={all} labelledby="kapsam-title" />
-    <p class="fineprint">Bu sayfada yer alan entegrasyonları hesabınıza bugün bağlayabilirsiniz.</p>
   </Section>
 
   <CtaBand
@@ -133,142 +163,286 @@ const coverageLevels = Object.keys(COVERAGE_LABELS) as CoverageLevel[]
 
 <script>
   import '../../scripts/interactions'
+  import '../../scripts/integration-filter'
 </script>
 
 <style>
-  .kind-nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ek-space-2) var(--ek-space-3);
-  }
-  .kind-nav a {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--site-tap-target);
-    padding-inline: var(--ek-space-4);
-    border: var(--site-border-width) solid var(--site-color-on-primary-muted);
-    border-radius: var(--ek-radius-full);
-    color: var(--site-color-on-primary);
-    font-weight: var(--ek-font-weight-medium);
-    text-decoration: none;
-    transition:
-      background-color var(--ek-duration-base) var(--ek-easing-standard),
-      border-color var(--ek-duration-base) var(--ek-easing-standard);
-  }
-  .kind-nav a:hover {
-    background: color-mix(in srgb, var(--ek-color-background) 12%, transparent);
-    border-color: var(--site-color-on-primary);
-  }
-  .kind-nav a:focus-visible {
-    outline-color: var(--site-color-on-primary);
-  }
-  /* Bölümler arası dikey ritim genel olarak sıkılaştırıldı (S11b). */
   .tight-section:global(.section) {
     padding-block: calc(var(--site-section-y) * 0.72);
   }
-  /* Tek Section içinde art arda kataloğu türleri — her biri kendi tam bölümü olmadığı için S9'daki aşırı
-     boşluk giderildi; yalnızca ince bir ayraçla ayrılır. */
-  .kind-row + .kind-row {
-    margin-top: var(--ek-space-12);
-    padding-top: var(--ek-space-12);
-    border-top: var(--site-border-width) solid var(--ek-color-border-default);
+
+  /* --- Hero --- */
+  .hero-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-3);
   }
-  /* İki küçük tür (≤2 kart) yan yana kümelenir: tek başına kaldığında sağda büyük boşluk bırakan tek kartlık
-     bölüm yerine, aynı satırda iki dar sütun (S11). */
-  .kind-row--cluster {
+  .hero-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--site-tap-target);
+    padding-inline: var(--ek-space-5);
+    border: var(--site-border-width) solid transparent;
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface);
+    color: var(--ek-color-primary);
+    font-weight: var(--ek-font-weight-semibold);
+    text-decoration: none;
+    transition: background-color var(--ek-duration-base) var(--ek-easing-standard), border-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .hero-link:hover {
+    background: color-mix(in srgb, var(--ek-color-surface) 88%, var(--ek-color-secondary));
+  }
+  .hero-link--ghost {
+    border-color: var(--site-glass-border);
+    background: var(--site-glass-bg);
+    color: var(--site-color-on-primary);
+  }
+  .hero-link--ghost:hover {
+    border-color: var(--site-color-on-primary-muted);
+    background: color-mix(in srgb, var(--ek-color-background) 12%, transparent);
+  }
+  .hero-link:focus-visible {
+    outline-color: var(--site-color-on-primary);
+  }
+  .stat-panel__tag {
+    margin: 0 0 var(--ek-space-4);
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .stats {
     display: grid;
-    gap: var(--ek-space-10);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--site-border-width);
+    margin: 0;
+    overflow: hidden;
+    border-radius: var(--ek-radius-lg);
+    background: var(--site-glass-border);
+  }
+  .stat {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: var(--ek-space-1);
+    padding: var(--ek-space-4);
+    background: color-mix(in srgb, var(--site-stage-deep) 55%, transparent);
+  }
+  .stat__value {
+    margin: 0;
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--site-font-display-sm);
+    font-weight: var(--site-font-display-weight);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: var(--site-font-display-tracking);
+    line-height: 1;
+  }
+  .stat__label {
+    color: var(--site-text-on-dark-body);
+    font-size: var(--ek-font-size-sm);
+  }
+  .hero-chans {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2);
+    margin: var(--ek-space-5) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .hero-chan {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    min-height: calc(var(--ek-space-8) + var(--ek-space-1));
+    padding-inline: var(--ek-space-3);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-full);
+    background: var(--site-glass-bg);
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-medium);
+    text-decoration: none;
+    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .hero-chan:hover {
+    border-color: var(--chan);
+  }
+  .hero-chan__dot {
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: var(--chan);
+    box-shadow: 0 0 0 calc(var(--site-border-width) * 3) color-mix(in srgb, var(--chan) 30%, transparent);
+  }
+
+  /* --- Katalog başlığı + gösterge --- */
+  .cat-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--ek-space-6);
+    margin-bottom: var(--ek-space-6);
+  }
+  .cat-head__text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    max-width: 40rem;
+  }
+  .cat-head h2,
+  .group__head h2 {
+    color: var(--site-text-heading);
+    font-size: var(--site-font-display-sm);
+    font-weight: var(--site-font-display-weight);
+    line-height: var(--site-font-display-line-height);
+    letter-spacing: var(--site-font-display-tracking);
+  }
+  .cat-head p,
+  .group__head p {
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-lg);
+  }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2) var(--ek-space-5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-sm);
+  }
+  .legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+  }
+  .legend__meter {
+    display: inline-flex;
+    gap: calc(var(--ek-space-1) * 0.5);
+  }
+  .legend__meter span {
+    width: var(--ek-space-3);
+    height: var(--ek-space-1);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-border-default);
+  }
+  .legend__meter[data-level='1'] span:nth-child(1),
+  .legend__meter[data-level='2'] span:nth-child(-n + 2),
+  .legend__meter[data-level='3'] span {
+    background: var(--ek-color-secondary-darken-1);
+  }
+
+  /* --- Süzgeç çipleri --- */
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2);
+    margin-bottom: var(--ek-space-8);
+    padding: var(--ek-space-1);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-xl);
+    background: var(--ek-color-surface-muted);
+    width: fit-content;
+    max-width: 100%;
+  }
+  .filter {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    min-height: var(--site-tap-target);
+    padding-inline: var(--ek-space-4);
+    border: var(--site-border-width) solid transparent;
+    border-radius: var(--ek-radius-lg);
+    background: transparent;
+    color: var(--site-text-body);
+    font: inherit;
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-medium);
+    cursor: pointer;
+    transition:
+      background-color var(--ek-duration-fast) var(--ek-easing-standard),
+      color var(--ek-duration-fast) var(--ek-easing-standard),
+      box-shadow var(--ek-duration-fast) var(--ek-easing-standard);
+  }
+  .filter:hover {
+    color: var(--site-text-heading);
+    background: var(--ek-color-surface);
+  }
+  .filter:focus-visible {
+    outline: var(--site-focus-ring-width) solid var(--site-color-focus-ring);
+    outline-offset: var(--site-focus-ring-offset);
+  }
+  .filter[aria-pressed='true'] {
+    border-color: var(--ek-color-border-default);
+    background: var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
+    color: var(--site-text-heading);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .filter__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--ek-space-6);
+    height: var(--ek-space-6);
+    padding-inline: var(--ek-space-1);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-surface-sunken);
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+  }
+  .filter[aria-pressed='true'] .filter__count {
+    background: var(--ek-color-primary);
+    color: var(--site-color-on-primary);
+  }
+
+  /* --- Kart ızgarası --- */
+  .grid {
+    display: grid;
     grid-template-columns: 1fr;
+    gap: var(--ek-space-6);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .grid > li {
+    display: flex;
+    min-width: 0;
+  }
+  .grid > li[hidden] {
+    display: none;
+  }
+  .grid > li > :global(*) {
+    width: 100%;
   }
   @media (min-width: 700px) {
-    .kind-row--cluster {
+    .grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+  }
+  @media (min-width: 1100px) {
+    .grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  .fineprint {
+    margin-top: var(--ek-space-8);
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-md);
+  }
+  .fineprint a {
+    color: var(--site-link-accent);
+    font-weight: var(--ek-font-weight-semibold);
   }
   .group__head {
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-2);
     margin-bottom: var(--ek-space-6);
-  }
-  .group__head h3 {
-    font-size: var(--site-font-display-sm);
-    font-weight: var(--site-font-display-weight);
-    line-height: var(--site-font-display-line-height);
-    letter-spacing: var(--site-font-display-tracking);
-  }
-  .group__head p {
-    color: var(--ek-color-content-muted);
-    font-size: var(--ek-font-size-lg);
-  }
-  /* `flex` (grid değil): tek/iki ögeli türlerde kart tam satır genişliğine gerilmez, doğal boyutunda solda
-     kalır — geniş boş sütun bırakmaz. Çok ögeli türlerde ise doğal olarak birden çok sütuna sarar. */
-  .grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ek-space-6);
-  }
-  .grid > li {
-    display: flex;
-    flex: 1 1 20rem;
-    max-width: 26rem;
-  }
-  .grid > li > :global(*) {
-    width: 100%;
-  }
-  .fineprint {
-    margin-top: var(--ek-space-6);
-    color: var(--ek-color-content-muted);
-    font-size: var(--ek-font-size-md);
-  }
-
-  /* --- Hero görsel: kapsam gösterge kılavuzu --- */
-  .stat-panel__tag {
-    margin: 0 0 var(--ek-space-4);
-    color: var(--site-color-on-primary-muted);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-  .stat-panel__caption {
-    margin: var(--ek-space-5) 0 0;
-    color: var(--site-color-on-primary-muted);
-    font-size: var(--ek-font-size-sm);
-  }
-  .legend {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-4);
-  }
-  .legend li {
-    display: flex;
-    align-items: center;
-    gap: var(--ek-space-3);
-  }
-  .legend li + li {
-    padding-top: var(--ek-space-4);
-    border-top: var(--site-border-width) solid var(--site-glass-border);
-  }
-  .legend__meter {
-    display: inline-flex;
-    flex: none;
-    gap: var(--ek-space-1);
-  }
-  .legend__meter span {
-    width: var(--ek-space-5);
-    height: var(--ek-space-1);
-    border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-background) 24%, transparent);
-  }
-  .legend__meter[data-level='1'] span:nth-child(1),
-  .legend__meter[data-level='2'] span:nth-child(-n + 2),
-  .legend__meter[data-level='3'] span {
-    background: var(--ek-color-secondary);
-  }
-  .legend__label {
-    color: var(--site-color-on-primary);
-    font-size: var(--ek-font-size-lg);
-    font-weight: var(--ek-font-weight-semibold);
   }
 </style>

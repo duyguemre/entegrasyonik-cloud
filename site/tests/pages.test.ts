@@ -141,6 +141,28 @@ describe('her sayfa: tek h1, başlık, meta, breadcrumb', () => {
   })
 })
 
+/**
+ * S16 kapsam özeti sayaçları (`data-stat`): kayıttan HESAPLANAN sayılar. Her değer burada aynı kayıttan yeniden
+ * hesaplanıp birebir karşılaştırılır (uyuşmazsa hata); doğrulananlar "sabit rakam yok" taramasından çıkarılır.
+ * Başka hiçbir rakam serbest değildir.
+ */
+const EXPECTED_STATS: Record<string, number> = {
+  integrations: getPublicIntegrations().length,
+  marketplaces: getPublicIntegrations('marketplace').length,
+  kinds: new Set(getPublicIntegrations().map((i) => i.kind)).size,
+  capabilities: new Set(getPublicIntegrations().flatMap((i) => i.capabilities.map((c) => c.key))).size,
+  'kind-marketplace': getPublicIntegrations('marketplace').length,
+  'kind-ecommerce': getPublicIntegrations('ecommerce').length,
+  'kind-erp': getPublicIntegrations('erp').length,
+}
+function withoutVerifiedStats(source: string): string {
+  return source.replace(/<(dd|span)([^>]*)\sdata-stat="([^"]+)"([^>]*)>\s*(\d+)\s*<\/\1>/g, (_m, _tag, _a, id: string, _b, value: string) => {
+    expect(EXPECTED_STATS[id], `bilinmeyen sayaç: ${id}`).toBeDefined()
+    expect(Number(value), `sayaç ${id}`).toBe(EXPECTED_STATS[id])
+    return ''
+  })
+}
+
 describe('gizli öğe yok (roadmap, evidence, dahili notlar)', () => {
   const roadmap = integrations.filter((i) => i.status === 'roadmap').flatMap((i) => [i.name, ...i.aliases])
   const internal = integrations.flatMap((i) => i.internalNotes.slice(0, 2).map((n) => n.slice(0, 30)))
@@ -168,7 +190,7 @@ describe('gizli öğe yok (roadmap, evidence, dahili notlar)', () => {
   it('doğrulanamaz mutlak/sertifika iddiası ve sabit rakam yok', () => {
     const banned = ['%100', 'kesintisiz', 'sınırsız', 'garanti', '7/24', 'iso 27001', 'soc 2', 'veri merkezi', 'uptime', 'sertifikalı', 'en iyi', 'binlerce']
     for (const route of INNER_PAGES) {
-      const text = visibleText(html(draftDir, route))
+      const text = visibleText(withoutVerifiedStats(html(draftDir, route)))
       const lower = text.toLocaleLowerCase('tr-TR')
       for (const b of banned) expect(lower, `${route}: ${b}`).not.toContain(b)
       // rakam yalnızca kanıtlı belirteçlerde (claims.test.ts NUMERIC_ALLOWLIST ile aynı)
@@ -210,6 +232,19 @@ describe('/entegrasyonlar', () => {
     expect([...cards.matchAll(/<li class="cm__card"/g)]).toHaveLength(AVAILABLE_INTEGRATION_CODES.length)
     // kapsam verisi kayıtla birebir: Bizimhesap stok/fiyat yazmaz -> "Bu kanalda yok"
     expect(visibleText(cards)).toMatch(/Stok ve fiyat güncelleme: Bu kanalda yok/)
+  })
+
+  it('S16: kapsam özeti sayaçları kayıttan; süzgeç yalnızca kayıttaki türler; her kartta kayıttan türeyen durum rozeti', () => {
+    const p = page()
+    const stats = [...p.matchAll(/data-stat="([^"]+)"[^>]*>\s*(\d+)\s*</g)].map((m) => [m[1], Number(m[2])] as const)
+    expect(stats.length).toBeGreaterThanOrEqual(4)
+    for (const [id, v] of stats) expect(v, id).toBe(EXPECTED_STATS[id])
+    const filters = [...p.matchAll(/data-filter="([a-z]+)"/g)].map((m) => m[1])
+    expect(filters).toEqual(['all', ...new Set(getPublicIntegrations().map((i) => i.kind))])
+    const statuses = [...p.matchAll(/data-testid="integration-status"[^>]*>([\s\S]*?)<\/span>\s*<\/div>|data-testid="integration-status"/g)]
+    expect(statuses.length).toBe(AVAILABLE_INTEGRATION_CODES.length)
+    expect(visibleText(p)).toContain('Kullanılabilir')
+    expect(visibleText(p)).not.toMatch(/Canlı|Yakında/)
   })
 
   it('her kart kendi detay sayfasına bağlanır', () => {

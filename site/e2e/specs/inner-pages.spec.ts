@@ -80,6 +80,23 @@ test.describe('gezinme', () => {
     await expect(page).toHaveURL(/\/entegrasyonlar\/?$/)
   })
 
+  test('entegrasyonlar: kategori süzgeci (aria-pressed) kartları süzer, klavyeyle çalışır ve sonucu duyurur', async ({ page }) => {
+    await page.goto('/entegrasyonlar')
+    const filter = page.getByTestId('integration-filter')
+    const cards = page.getByTestId('integration-card')
+    await expect(filter.locator('[data-filter="all"]')).toHaveAttribute('aria-pressed', 'true')
+    await filter.locator('[data-filter="erp"]').click()
+    await expect(filter.locator('[data-filter="erp"]')).toHaveAttribute('aria-pressed', 'true')
+    await expect(page.locator('#int-grid > li:not([hidden])')).toHaveCount(1)
+    await expect(cards.filter({ visible: true })).toHaveCount(1)
+    await expect(page.locator('[data-int-filter-status]')).toContainText('entegrasyon gösteriliyor')
+    const all = filter.locator('[data-filter="all"]')
+    await all.focus()
+    await page.keyboard.press('Enter')
+    await expect(page.locator('#int-grid > li:not([hidden])')).toHaveCount(6)
+    for (const s of await page.getByTestId('integration-status').all()) await expect(s).toHaveText('Kullanılabilir')
+  })
+
   test('yol haritası öğesi için detay sayfası yok (404)', async ({ page }) => {
     const response = await page.goto('/entegrasyonlar/amazon')
     expect(response?.status()).toBe(404)

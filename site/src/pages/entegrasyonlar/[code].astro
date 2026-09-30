@@ -15,6 +15,10 @@
  * `teknik-bilgi` kaydıyla aynı kanıt) ve sağda gerekli bilgileri maskeli alanlarla gösteren örnek ayar paneli
  * (yalnızca kimlik bilgisi TÜRLERİ; değer/sır yok). SEO: başlık/açıklama kurulum niyetine göre güçlendirildi,
  * `HowTo` JSON-LD adımları sayfadaki adımlarla birebir aynıdır.
+ *
+ * S16 (kullanıcı: "daha profesyonel, premium"): hero'da kayıttan türeyen durum rozeti (`statusLabel`) ve kanal rengi
+ * ışıması; yetenek matrisi başlık satırlı kart tabloya dönüştü; yan sütunda her zaman "Bir bakışta" özet kartı
+ * (durum, tür, kapsam, gerekli bilgi türleri, rehbere bağlantı) + varsa sınırlar. Rakam/uydurma durum yok.
  */
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import Section from '../../components/Section.astro'
@@ -118,10 +122,14 @@ const previewCapabilities = i.capabilities.slice(0, 4)
   />
 
   <PageHero title={heading} lead={i.summary} crumbs={crumbs} eyebrow={i.kindLabel}>
+    <span class="hero-status" data-testid="integration-status">
+      <span class="hero-status__dot" aria-hidden="true"></span>
+      {i.statusLabel}
+    </span>
     <Badge tone={coverageTone[i.coverage]}>{i.coverageLabel}</Badge>
     {guide && <a class="hero-guide-link" href="#baglanti-rehberi">Bağlantı rehberi</a>}
     <Fragment slot="visual">
-      <div class="hero-visual">
+      <div class="hero-visual" data-code={i.code}>
         <div class="hero-visual__id">
           <ChannelMono code={i.code} name={i.name} size="lg" />
           <p class="hero-visual__kind">{i.kindLabel}</p>
@@ -152,7 +160,9 @@ const previewCapabilities = i.capabilities.slice(0, 4)
       <h2 id="matris-title">Yetenek matrisi</h2>
       <p>Bu entegrasyonda hangi işlemlerin tam, hangilerinin temel düzeyde desteklendiği.</p>
     </div>
-    <div class:list={['matrix-layout', { 'matrix-layout--split': hasLimits }]}>
+    <div class="matrix-layout matrix-layout--split">
+      <div class="matrix">
+      <p class="matrix__head" aria-hidden="true"><span>İşlem</span><span>Ne yapılır</span></p>
       <ul class="rows" role="list" data-testid="capability-matrix">
         {
           i.capabilities.map((c) => (
@@ -171,9 +181,35 @@ const previewCapabilities = i.capabilities.slice(0, 4)
           ))
         }
       </ul>
-      {
-        hasLimits && (
-          <aside class="limits-aside" aria-label="Sınırlamalar ve sunulmayanlar">
+      </div>
+      <aside class="limits-aside" aria-label={hasLimits ? 'Bir bakışta, sınırlamalar ve sunulmayanlar' : 'Bir bakışta'}>
+        <div class="glance" data-code={i.code} data-testid="integration-glance">
+          <div class="glance__head">
+            <ChannelMono code={i.code} name={i.name} size="sm" />
+            <h3>Bir bakışta</h3>
+          </div>
+          <dl class="glance__list">
+            <div><dt>Durum</dt><dd><span class="glance__status"><span class="hero-status__dot" aria-hidden="true"></span>{i.statusLabel}</span></dd></div>
+            <div><dt>Tür</dt><dd>{i.kindLabel}</dd></div>
+            <div><dt>Kapsam</dt><dd>{i.coverageLabel}</dd></div>
+            {guide && (
+              <div class="glance__creds">
+                <dt>Gerekli bilgiler</dt>
+                <dd>
+                  <ul role="list">
+                    {guide.credentials.map((c) => (
+                      <li><Icon name="key" size="sm" /> {c}</li>
+                    ))}
+                  </ul>
+                </dd>
+              </div>
+            )}
+          </dl>
+          {guide && <a class="glance__link" href="#baglanti-rehberi">Nasıl bağlanır? <Icon name="arrow" size="sm" /></a>}
+        </div>
+        {
+          hasLimits && (
+          <>
             {i.limitations.length > 0 && (
               <div class="bound-card bound-card--warn" aria-labelledby="sinirlamalar-title" data-testid="limitations">
                 <h3 id="sinirlamalar-title">
@@ -198,9 +234,10 @@ const previewCapabilities = i.capabilities.slice(0, 4)
                 </ul>
               </div>
             )}
-          </aside>
-        )
-      }
+          </>
+          )
+        }
+      </aside>
     </div>
   </Section>
 
@@ -318,9 +355,40 @@ const previewCapabilities = i.capabilities.slice(0, 4)
 
   /* --- Hero görsel: kanal monogramı + kapsam segment çubuğu + ilk 4 yetenek --- */
   .hero-visual {
+    position: relative;
+    isolation: isolate;
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-5);
+  }
+  /* Kanal rengi ışıması (dekoratif) */
+  .hero-visual::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: calc(var(--ek-space-6) * -1);
+    border-radius: inherit;
+    background: radial-gradient(60% 50% at 50% 0%, color-mix(in srgb, var(--chan) 34%, transparent), transparent 70%);
+    pointer-events: none;
+  }
+  .hero-status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-1) var(--ek-space-3);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-success-subtle) 45%, transparent);
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-success) 22%, transparent);
+    color: var(--ek-color-success-subtle);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .hero-status__dot {
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: currentColor;
+    box-shadow: 0 0 0 calc(var(--site-border-width) * 3) color-mix(in srgb, currentColor 25%, transparent);
   }
   .hero-visual__id {
     display: flex;
@@ -374,13 +442,32 @@ const previewCapabilities = i.capabilities.slice(0, 4)
     gap: var(--ek-space-8);
     align-items: start;
   }
+  .matrix {
+    min-width: 0;
+    overflow: hidden;
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--site-radius-panel);
+    background: var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
+  }
+  .matrix__head {
+    display: none;
+    max-width: none;
+    padding: var(--ek-space-3) var(--ek-space-6) var(--ek-space-3) calc(var(--ek-space-6) + var(--ek-space-8) + var(--ek-space-4));
+    border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
+    background: var(--ek-color-surface-muted);
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
   .rows {
     display: flex;
     flex-direction: column;
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-xl);
-    background: var(--ek-color-surface);
-    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
   /* Desteklenen/kısmi işlemler ikon + renk + etiketle ayrılır (yalnızca renk anlam taşımaz: ikon + metin de var). */
   .row {
@@ -391,8 +478,11 @@ const previewCapabilities = i.capabilities.slice(0, 4)
     padding: var(--ek-space-5) var(--ek-space-6);
     border-inline-start: var(--ek-space-1) solid transparent;
   }
-  .row[data-level='supported'] {
-    border-inline-start-color: var(--ek-color-success);
+  .row {
+    transition: background-color var(--ek-duration-fast) var(--ek-easing-standard);
+  }
+  .row:hover {
+    background: var(--ek-color-surface-muted);
   }
   .row[data-level='limited'] {
     border-inline-start-color: var(--ek-color-warning);
@@ -430,11 +520,107 @@ const previewCapabilities = i.capabilities.slice(0, 4)
     gap: var(--ek-space-2) var(--ek-space-3);
   }
   .row__label h3 {
-    font-size: var(--ek-font-size-xl);
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-lg);
   }
   .row__note {
-    color: var(--ek-color-content-default);
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-md);
+    line-height: var(--site-font-body-line-height);
+  }
+
+  /* "Bir bakışta" özet kartı */
+  .glance {
+    position: relative;
+    overflow: hidden;
+    padding: var(--ek-space-5);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--site-radius-panel);
+    background:
+      radial-gradient(80% 60% at 100% 0%, color-mix(in srgb, var(--chan) 8%, transparent), transparent 70%),
+      var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
+  }
+  .glance::before {
+    content: '';
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    height: calc(var(--site-border-width) * 3);
+    background: var(--chan);
+  }
+  .glance__head {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-3);
+    margin-bottom: var(--ek-space-4);
+  }
+  .glance__head h3 {
+    color: var(--site-text-heading);
     font-size: var(--ek-font-size-lg);
+  }
+  .glance__list {
+    margin: 0;
+  }
+  .glance__list > div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--ek-space-4);
+    padding-block: var(--ek-space-3);
+    border-top: var(--site-border-width) solid var(--ek-color-border-default);
+    font-size: var(--ek-font-size-md);
+  }
+  .glance__list dt {
+    color: var(--site-text-meta);
+  }
+  .glance__list dd {
+    margin: 0;
+    color: var(--site-text-heading);
+    font-weight: var(--ek-font-weight-semibold);
+    text-align: end;
+  }
+  .glance__list > .glance__creds {
+    flex-direction: column;
+    gap: var(--ek-space-2);
+  }
+  .glance__creds dd {
+    text-align: start;
+  }
+  .glance__creds ul {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .glance__creds li {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    font-weight: var(--ek-font-weight-medium);
+  }
+  .glance__creds :global(.icon) {
+    color: var(--site-accent);
+  }
+  .glance__status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    color: var(--ek-color-success);
+  }
+  .glance__link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    min-height: var(--site-tap-target);
+    margin-top: var(--ek-space-2);
+    color: var(--site-link-accent);
+    font-weight: var(--ek-font-weight-semibold);
+    text-decoration: none;
+  }
+  .glance__link:hover {
+    text-decoration: underline;
   }
 
   /* Yan kutu (masaüstü sticky; "Sınırlamalar ve sunulmayanlar" artık ayrı bölüm değil, S11b). */
@@ -714,6 +900,11 @@ const previewCapabilities = i.capabilities.slice(0, 4)
   }
 
   @media (min-width: 768px) {
+    .matrix__head {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+      gap: var(--ek-space-6);
+    }
     .row__body {
       display: grid;
       grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
