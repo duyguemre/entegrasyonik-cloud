@@ -12,7 +12,7 @@ import { buildSite } from '../scripts/lib/build.mjs'
 import { PATHS } from '../src/data/evidence'
 import { integrations, AVAILABLE_INTEGRATION_CODES, getPublicIntegrations } from '../src/data/integrations'
 import { getPublicCapabilities, getStockReservationStory } from '../src/data/capabilities'
-import { getPublicFaq, getSupportCategories } from '../src/data/faq'
+import { getPublicFaq, getPublicFaqByCategory, getSupportCategories } from '../src/data/faq'
 import { connectGuides, getConnectGuide } from '../src/data/connect'
 import { featureDetails } from '../src/data/feature-details'
 import { legalNav, primaryNav, published } from '../src/data/navigation'
@@ -159,6 +159,9 @@ const EXPECTED_STATS: Record<string, number> = {
   features: getPublicCapabilities('core').length,
   'features-available': getPublicCapabilities('core').filter((c) => c.status === 'available').length,
   'features-partial': getPublicCapabilities('core').filter((c) => c.status === 'partial').length,
+  // S17 /sss sekme sayaçları: SSS kaydından
+  'faq-total': getPublicFaq().length,
+  ...Object.fromEntries(getPublicFaqByCategory().map((c) => [`faq-cat-${c.id}`, c.items.length])),
 }
 function withoutVerifiedStats(source: string): string {
   return source.replace(/<(dd|span)([^>]*)\sdata-stat="([^"]+)"([^>]*)>\s*(\d+)\s*<\/\1>/g, (_m, _tag, _a, id: string, _b, value: string) => {

@@ -3,6 +3,8 @@
  * Accordion — JS'siz, `<details>` tabanlı (ADR-0014 Karar 1: yerel öğeler tercih edilir). Klavye (Enter/Space) ve
  * ekran okuyucu davranışı tarayıcıdan gelir. Açılma/kapanma geri bildirimi yalnızca ok simgesinin dönmesidir
  * (`--ek-duration-base`); `prefers-reduced-motion` altında global kural geçişi kısaltır.
+ * S17: açık öğe vurgusu (sol vurgu çizgisi + hafif zemin), okunabilir cevap genişliği; SSS süzgeci öğeleri `hidden`
+ * ile gizlediğinde ayırıcı çizgi yalnızca GÖRÜNÜR öğeler arasında kalır.
  */
 interface Item {
   id: string
@@ -44,8 +46,24 @@ const { items } = Astro.props
     background: var(--ek-color-surface);
     overflow: hidden;
   }
-  .acc__item + .acc__item {
+  .acc__item {
+    position: relative;
+    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-4));
+    transition: background-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .acc__item:not([hidden]) ~ .acc__item:not([hidden]) {
     border-top: var(--site-border-width) solid var(--ek-color-border-default);
+  }
+  .acc__item[open] {
+    background: color-mix(in srgb, var(--ek-color-secondary) 5%, var(--ek-color-surface));
+  }
+  .acc__item[open]::before {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: calc(var(--site-border-width) * 3);
+    background: var(--ek-color-secondary-darken-1);
   }
   .acc__summary {
     display: flex;
@@ -55,7 +73,7 @@ const { items } = Astro.props
     min-height: var(--site-tap-target);
     padding: var(--ek-space-4) var(--ek-space-6);
     color: var(--ek-color-content-strong);
-    font-size: var(--ek-font-size-xl);
+    font-size: var(--ek-font-size-lg);
     font-weight: var(--ek-font-weight-semibold);
     line-height: var(--ek-line-height-tight);
     cursor: pointer;
@@ -84,13 +102,16 @@ const { items } = Astro.props
     transition: transform var(--ek-duration-base) var(--ek-easing-standard);
   }
   .acc__item[open] .acc__icon {
+    color: var(--site-link-accent);
     transform: rotate(180deg);
   }
   .acc__body {
     padding: 0 var(--ek-space-6) var(--ek-space-6);
   }
   .acc__body p {
-    color: var(--ek-color-content-default);
-    font-size: var(--ek-font-size-lg);
+    max-width: var(--site-measure);
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-md);
+    line-height: var(--site-font-body-line-height);
   }
 </style>
