@@ -73,7 +73,9 @@ test.describe('ADR-0015 B4-P0 — N1 Hesabım ve güvenlik', () => {
     await page.goto(`/${B4_SCREENS.AccountSecurityView.slug}`)
     const root = page.locator(`${ROOT}:not(.hide-tab-component)`)
 
-    await expect(root.getByText('Hesap bilgileriniz yüklenemedi — bağlantınızı kontrol edip tekrar deneyin.')).toBeVisible({ timeout: 20000 })
+    // Aşama 6b (Standart 1): hata deseni "ne oldu" ile "ne yapmalı"yı ayrı satırda gösterir — iddia aynı, metin bölündü.
+    await expect(root.getByText('Hesap bilgileriniz yüklenemedi', { exact: true })).toBeVisible({ timeout: 20000 })
+    await expect(root.getByText('Bağlantınızı kontrol edip tekrar deneyin.', { exact: true }).first()).toBeVisible()
     await expect(root).not.toContainText('500')
     await expect(root).not.toContainText('stack')
     await expect(root.getByRole('button', { name: 'Tekrar dene' })).toBeVisible()

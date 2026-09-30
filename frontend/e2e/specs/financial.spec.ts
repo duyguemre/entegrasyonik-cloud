@@ -426,7 +426,9 @@ test.describe('C1.4 — Finans sekmeleri', () => {
   test('özet hata: 500 → sabit hata metni + Tekrar dene (ham hata sızmaz)', async ({ page }) => {
     await openTab(page, { [SUMMARY_ENDPOINT]: mockError(500) }, 'Özet')
     const kpis = page.locator('.financialListView').getByRole('region', { name: 'Dönem özeti' })
-    await expect(kpis.getByText('Finansal özet yüklenemedi — Bağlantınızı kontrol edip yeniden deneyin.')).toBeVisible()
+    // Aşama 6b (Standart 1): hata deseni "ne oldu" ile "ne yapmalı"yı ayrı satırda gösterir — iddia aynı, metin bölündü.
+    await expect(kpis.getByText('Finansal özet yüklenemedi', { exact: true })).toBeVisible()
+    await expect(kpis.getByText('Bağlantınızı kontrol edip yeniden deneyin.', { exact: true }).first()).toBeVisible()
     await expect(kpis.getByRole('button', { name: 'Tekrar dene' })).toBeVisible()
     await expect(kpis).not.toContainText('E2E sentetik hata')
     await expect(kpis).not.toContainText('500')
@@ -435,7 +437,9 @@ test.describe('C1.4 — Finans sekmeleri', () => {
   test('özet yetki: 403 → "yetkiniz yok" durumu', async ({ page }) => {
     await openTab(page, { [SUMMARY_ENDPOINT]: mockError(403, { message: 'Forbidden' }) }, 'Özet')
     const kpis = page.locator('.financialListView').getByRole('region', { name: 'Dönem özeti' })
-    await expect(kpis.getByText(/Finansal özet görüntülenemiyor — Bu görünüm için yetkiniz yok/)).toBeVisible()
+    // Aşama 6b (Standart 1): "ne oldu" / "ne yapmalı" ayrı satırlarda — iddia aynı, metin bölündü.
+    await expect(kpis.getByText('Finansal özet görüntülenemiyor', { exact: true })).toBeVisible()
+    await expect(kpis.getByText(/Bu görünüm için yetkiniz yok/)).toBeVisible()
     await expect(kpis).not.toContainText('Forbidden')
   })
 
@@ -553,7 +557,9 @@ test.describe('C1.4 — Finans sekmeleri', () => {
     const view = page.locator('.financialListView')
     await view.getByRole('row').filter({ hasText: '4829301' }).getByRole('button', { name: 'Dökümü aç' }).click()
     const sheet = page.getByRole('dialog').filter({ hasText: 'Ödeme emri 4829301' })
-    await expect(sheet.getByText('Ödeme dökümü yüklenemedi — Bağlantınızı kontrol edip yeniden deneyin.')).toBeVisible()
+    // Aşama 6b (Standart 1): hata deseni "ne oldu" ile "ne yapmalı"yı ayrı satırda gösterir — iddia aynı, metin bölündü.
+    await expect(sheet.getByText('Ödeme dökümü yüklenemedi', { exact: true })).toBeVisible()
+    await expect(sheet.getByText('Bağlantınızı kontrol edip yeniden deneyin.', { exact: true }).first()).toBeVisible()
     await expect(sheet).not.toContainText('E2E sentetik hata')
   })
 

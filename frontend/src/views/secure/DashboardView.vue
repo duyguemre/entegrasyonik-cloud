@@ -20,7 +20,10 @@
           :meta="headerDescription"
           description="İşletmenizin sipariş, ciro, stok ve entegrasyon durumunun özeti. Kartlardaki oklarla ilgili listeye geçersiniz."
           :tips="['Kartlardaki sayılar son yüklemeye aittir; Yenile ile tüm kartlar yeniden okunur.', 'Bekleyen aksiyonlar kartı, işlem bekleyen kayıtların listesini doğrudan açar.']"
-          :secondary-actions="[{ label: 'Yenile', icon: 'mdi-refresh', onClick: refreshAll }]"
+          refreshable
+          :refreshing="anyLoading"
+          :last-updated="insights.loadedAt.value"
+          @refresh="refreshAll"
         />
 
         <section class="dash-section" aria-labelledby="dash-performance">
@@ -117,6 +120,8 @@ const headerDescription = computed(() => {
   if (at) parts.push(`Son güncelleme ${formatDateTime(at)}`)
   return parts.join(' · ')
 })
+
+const anyLoading = computed(() => resources.some((r) => r.state.value === 'loading'))
 
 const refreshAll = () => {
   resources.forEach((r) => r.load())

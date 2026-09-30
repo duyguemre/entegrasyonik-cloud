@@ -95,3 +95,33 @@ describe('Standart 7 — sekme sınırında kalan örtüler', () => {
     expect(read('src/layouts/SecureLayout.vue')).toMatch(/closest\('\.ek-tab-host'\)/)
   })
 })
+
+describe('Standart 9 — tek sayfa yenileme düğmesi', async () => {
+  const { matchShortcut, SHORTCUTS } = await import('../src/navigation/shortcuts')
+  const read = (p: string) => files.find((f) => f.path === p)?.text ?? ''
+
+  it('Alt+R etkin sekmeyi yeniler; Ctrl+R/F5 (tarayıcı) ezilmez; metin alanında çalışmaz', () => {
+    const ev = (o: Partial<KeyboardEvent>) => ({ key: 'r', code: 'KeyR', ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, ...o }) as any
+    expect(matchShortcut(ev({ altKey: true }))?.id).toBe('pageRefresh')
+    expect(matchShortcut(ev({ ctrlKey: true }))).toBeUndefined()
+    expect(matchShortcut(ev({ ctrlKey: true, altKey: true }))).toBeUndefined() // AltGr
+    expect(matchShortcut(ev({ altKey: true }), { tagName: 'INPUT', type: 'text' } as any)).toBeUndefined()
+    expect(SHORTCUTS.find((s) => s.id === 'pageRefresh')?.keys).toEqual(['Alt', 'R'])
+  })
+
+  it('düğme başlık satırında (EkPageBar) ve kabuk kısayolu onu tetikler', () => {
+    expect(read('src/components/ds/EkPageBar.vue')).toMatch(/<EkRefreshButton\b/)
+    expect(read('src/components/ds/EkRefreshButton.vue')).toMatch(/data-page-refresh/)
+    expect(read('src/layouts/SecureLayout.vue')).toMatch(/case 'pageRefresh'/)
+  })
+
+  it('sayfa başlığında ayrı "Yenile" ikincil eylemi ya da serbest yenile ikon düğmesi yok', () => {
+    const offenders = files
+      .filter((f) => f.path.startsWith('src/views/secure/'))
+      .flatMap((f) => [
+        ...[...f.text.matchAll(/secondary-actions="[^"]*mdi-refresh/g)].map(() => `${f.path}: secondary-actions Yenile`),
+        ...[...f.text.matchAll(/<EkButton[^>]*icon="mdi-refresh"[^>]*icon-only/g)].map(() => `${f.path}: serbest yenile ikonu`),
+      ])
+    expect(offenders).toEqual([])
+  })
+})

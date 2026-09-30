@@ -15,6 +15,11 @@
       :section="t('integrationHealth.section')"
       :title="t('integrationHealth.title')"
       :description="t('integrationHealth.description')"
+      :refreshable="state !== 'forbidden'"
+      :refreshing="state === 'loading' || refreshing"
+      :refresh-label="t('integrationHealth.refresh')"
+      :last-updated="data?.generatedAt"
+      @refresh="load(true)"
     />
 
     <div v-if="state !== 'forbidden'" class="ek-health-view__strip">
@@ -28,9 +33,6 @@
         <span v-else-if="state === 'loading'">{{ t('integrationHealth.loading') }}</span>
         <span v-else>{{ t('integrationHealth.notLoaded') }}</span>
       </p>
-      <EkButton tone="secondary" size="sm" icon="mdi-refresh" :loading="state === 'loading' || refreshing" @click="load(true)">
-        {{ t('integrationHealth.refresh') }}
-      </EkButton>
     </div>
 
     <EkEmptyState

@@ -92,7 +92,9 @@ test.describe('ADR-0015 B4-P1c — N7 Entegrasyon sağlığı', () => {
     })
     await openB4P1cScreen(page, 'IntegrationHealthView')
     const root = page.locator(ROOT)
-    await expect(root.getByText('Entegrasyon sağlığı yüklenemedi — bağlantınızı kontrol edip tekrar deneyin.')).toBeVisible()
+    // Aşama 6b (Standart 1): hata deseni "ne oldu" ile "ne yapmalı"yı ayrı satırda gösterir — iddia aynı, metin bölündü.
+    await expect(root.getByText('Entegrasyon sağlığı yüklenemedi', { exact: true })).toBeVisible()
+    await expect(root.getByText('Bağlantınızı kontrol edip tekrar deneyin.', { exact: true }).first()).toBeVisible()
     await expect(root).not.toContainText('Mongo')
     await root.getByRole('button', { name: 'Tekrar dene' }).click()
     await expect(root.locator('.ek-health-card')).toHaveCount(5)

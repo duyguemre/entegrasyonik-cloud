@@ -17,7 +17,10 @@
           :section="$t('stockHealth.section')"
           :title="$t('stockHealth.title')"
           :description="headerDescription"
-          :secondary-actions="state === 'forbidden' ? [] : [{ label: $t('stockHealth.refresh'), icon: 'mdi-refresh', onClick: load }]"
+          :refreshable="state !== 'forbidden'"
+          :refreshing="state === 'loading'"
+          :last-updated="data?.generatedAt"
+          @refresh="load"
         />
 
         <EkEmptyState

@@ -95,7 +95,9 @@ test.describe('ADR-0015 B4-P1c — N10 Denetim günlüğü', () => {
     })
     await openB4P1cScreen(page, 'AuditLogView')
     const root = page.locator(ROOT)
-    await expect(root.getByText('Denetim kayıtları yüklenemedi — bağlantınızı kontrol edip tekrar deneyin.')).toBeVisible()
+    // Aşama 6b (Standart 1): hata deseni "ne oldu" ile "ne yapmalı"yı ayrı satırda gösterir — iddia aynı, metin bölündü.
+    await expect(root.getByText('Denetim kayıtları yüklenemedi', { exact: true })).toBeVisible()
+    await expect(root.getByText('Bağlantınızı kontrol edip tekrar deneyin.', { exact: true }).first()).toBeVisible()
     await expect(root).not.toContainText('Mongo')
     await root.getByRole('button', { name: 'Tekrar dene' }).click()
     await expect(grid(page).locator('tbody tr')).toHaveCount(8)

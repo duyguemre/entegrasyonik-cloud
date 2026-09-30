@@ -74,7 +74,9 @@ test.describe('ADR-0015 B4-P0 — N5 Stok politikası', () => {
     await mocks(page, { 'IntegrationService/getStockPolicy': mockError(500, { error: 'MongoServerError: stack' }) })
     await openB4Screen(page, 'StockPolicyView')
     const root = page.locator(ROOT)
-    await expect(root.getByText('Stok politikası yüklenemedi — bağlantınızı kontrol edip tekrar deneyin.')).toBeVisible()
+    // Aşama 6b (Standart 1): hata deseni "ne oldu" ile "ne yapmalı"yı ayrı satırda gösterir — iddia aynı, metin bölündü.
+    await expect(root.getByText('Stok politikası yüklenemedi', { exact: true })).toBeVisible()
+    await expect(root.getByText('Bağlantınızı kontrol edip tekrar deneyin.', { exact: true }).first()).toBeVisible()
     await expect(root.getByRole('button', { name: 'Tekrar dene' })).toBeVisible()
     await expect(root).not.toContainText('Mongo')
 

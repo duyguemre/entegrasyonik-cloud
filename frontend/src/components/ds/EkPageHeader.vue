@@ -17,7 +17,8 @@
 -->
 <template>
   <header class="ek-page-header">
-    <EkPageBar :section="section" :title="title" :description="description" :tips="tips" :meta="meta">
+    <EkPageBar :section="section" :title="title" :description="description" :tips="tips" :meta="meta"
+      :refreshable="refreshable" :refreshing="refreshing" :last-updated="lastUpdated" @refresh="emit('refresh')">
       <template v-if="primaryAction || secondaryActions?.length || overflowActions?.length" #actions>
         <v-btn
           v-for="action in secondaryActions"
@@ -85,7 +86,12 @@ defineProps<{
   primaryAction?: EkPageHeaderAction
   secondaryActions?: EkPageHeaderAction[]
   overflowActions?: EkPageHeaderAction[]
+  /** Aşama 6b (Standart 9): tek yenile düğmesi başlık satırının en sağında (EkRefreshButton; Alt+R). */
+  refreshable?: boolean
+  refreshing?: boolean
+  lastUpdated?: Date | string | number | null
 }>()
+const emit = defineEmits<{ refresh: [] }>()
 </script>
 
 <style scoped>

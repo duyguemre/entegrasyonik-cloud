@@ -258,6 +258,13 @@ function runShortcut(match: ShortcutMatch) {
     case 'shortcutHelp':
       shortcutHelpOpen.value = true
       return
+    case 'pageRefresh': {
+      // Aşama 6b (Standart 9): etkin sekmenin TEK yenile düğmesi (EkRefreshButton, `data-page-refresh`) tetiklenir —
+      // sayfa kendi yükleme mantığını kullanır; düğmesi olmayan sayfada kısayol sessizce etkisizdir.
+      const host = document.querySelector<HTMLElement>('.ek-tab-host:not(.ek-tab-host--hidden)')
+      host?.querySelector<HTMLButtonElement>('[data-page-refresh]:not([disabled])')?.click()
+      return
+    }
   }
 }
 

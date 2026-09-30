@@ -28,6 +28,7 @@ export type ShortcutId =
   | 'headerToggle'
   | 'focusMode'
   | 'shortcutHelp'
+  | 'pageRefresh'
 
 export interface ShortcutDefinition {
   id: ShortcutId
@@ -35,7 +36,7 @@ export interface ShortcutDefinition {
   keys: readonly string[]
   /** Kısayol listesinde ve tooltip'te görünen açıklama. */
   label: string
-  group: 'Genel' | 'Sekmeler' | 'Görünüm'
+  group: 'Genel' | 'Sekmeler' | 'Görünüm' | 'Sayfa'
   /** Metin alanında odak varken de çalışır mı. */
   allowInEditable?: boolean
   /** Aynı eylemi tetikleyen eski tuşlar (geri uyum; listede "ayrıca" olarak gösterilir). */
@@ -55,10 +56,14 @@ export const SHORTCUTS: readonly ShortcutDefinition[] = [
   // Ctrl+Shift+H: Chrome/Electron'da ayrılmış değil; metin alanında karakter üretmez. Eski Alt+U takma ad olarak çalışır.
   { id: 'headerToggle', keys: ['Ctrl', 'Shift', 'H'], label: 'Üst bölümü daralt / göster', group: 'Görünüm', allowInEditable: true, aliases: [['Alt', 'U']] },
   { id: 'focusMode', keys: ['Ctrl', 'Shift', 'F'], label: 'Tam ekran (odak modu: üst bar ve sol menü gizlenir)', group: 'Görünüm', allowInEditable: true },
+  // Aşama 6b (Standart 9): etkin sekmenin sayfa verisini yenile. Ctrl+R / F5 tarayıcıyı yeniler (EZİLMEZ — tüm
+  // çalışma alanı sekmeleri kaybolurdu); Alt+R Chrome/Edge/Electron'da ayrılmış değil, AltGr (Ctrl+Alt) ile çakışmaz.
+  // Metin alanında çalışmaz (yazma sırasında yanlışlıkla yenileme yok).
+  { id: 'pageRefresh', keys: ['Alt', 'R'], label: 'Sayfa verisini yenile (etkin sekme)', group: 'Sayfa' },
 ] as const
 
 export const SHORTCUT_GROUPS: ReadonlyArray<{ label: ShortcutDefinition['group']; items: ShortcutDefinition[] }> = (
-  ['Genel', 'Sekmeler', 'Görünüm'] as const
+  ['Genel', 'Sekmeler', 'Görünüm', 'Sayfa'] as const
 ).map((label) => ({ label, items: SHORTCUTS.filter((s) => s.group === label) }))
 
 /** Metin alanında yazarken de çalışan kısayollar (kısayol diyaloğundaki not buradan üretilir). */
@@ -116,6 +121,7 @@ function raw(event: ShortcutKeyEvent): ShortcutMatch | undefined {
 
   if (event.altKey && !mod) {
     if (!event.shiftKey && (code === 'KeyW' || key === 'w')) return { id: 'tabClose' }
+    if (!event.shiftKey && (code === 'KeyR' || key === 'r')) return { id: 'pageRefresh' }
     if (!event.shiftKey && (code === 'KeyU' || key === 'u' || key === 'ü')) return { id: 'headerToggle' }
     const digit = /^Digit([1-9])$/.exec(code)?.[1] ?? (/^[1-9]$/.test(key) ? key : undefined)
     if (!event.shiftKey && digit) return { id: 'tabGoto', index: Number(digit) - 1 }

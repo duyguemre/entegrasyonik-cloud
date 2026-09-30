@@ -23,6 +23,10 @@
       section="Genel"
       title="Bildirimler"
       description="Toplu işlem, aktarım, sipariş ve stok bildirimleriniz. Bildirimler oluşturulduktan 3 gün sonra otomatik silinir."
+      refreshable
+      :refreshing="loading"
+      :last-updated="loadedAt"
+      @refresh="load()"
     />
 
     <EkListFrame label="Bildirimler" class="ek-notification-center__frame">
@@ -74,7 +78,6 @@
             </span>
             <div class="ek-nc-toolbar__end">
               <span v-if="loadedAt" class="ek-nc-toolbar__stamp">Güncellendi {{ formatRelative(loadedAt, now) }}</span>
-              <EkButton tone="ghost" size="sm" icon="mdi-refresh" icon-only aria-label="Listeyi yenile" :loading="loading" @click="load()" />
               <EkButton size="sm" icon="mdi-check-all" :disabled="!unreadTotal" :loading="busy === 'read-all'" @click="markAllRead">
                 Tümünü okundu işaretle
               </EkButton>

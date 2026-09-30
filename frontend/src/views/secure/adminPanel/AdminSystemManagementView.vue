@@ -5,7 +5,8 @@
     <div class="flex-grow-1 overflow-y-auto scroll-area" :aria-busy="loading ? 'true' : 'false'">
 
       <EkPageHeader section="Yönetim" title="Sistem Yönetimi"
-        description="Platform sağlığı, aktif işleyiciler ve bellek durumu anlık olarak izleniyor." />
+        description="Platform sağlığı, aktif işleyiciler ve bellek durumu anlık olarak izleniyor."
+        refreshable :refreshing="loading" @refresh="loadData()" />
 
       <!-- Yeniden yükleme göstergesi: ince 2px çizgi (ilk yükleme dahil yerleşimi kaydırmaz) -->
       <div class="load-indicator">
@@ -35,11 +36,6 @@
                 <span class="controls-label">Canlı izleme</span>
               </template>
             </v-switch>
-
-            <v-btn @click="loadData()" icon variant="outlined" density="comfortable"
-              :loading="loading" aria-label="Sistem verilerini yenile">
-              <v-icon>mdi-refresh</v-icon>
-            </v-btn>
           </div>
         </div>
       </EkSection>

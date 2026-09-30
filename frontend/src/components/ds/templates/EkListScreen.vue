@@ -22,7 +22,8 @@
   <div class="ek-list-screen">
     <!-- Aşama 5: başlık = EkPageBar (bölüm › H1 (i) … arama + eylemler tek satırda; açıklama "Sayfa hakkında" panelinde). -->
     <header v-if="title" class="ek-list-screen__head">
-      <EkPageBar :section="section" :title="title" :description="description" :tips="tips ?? autoTips">
+      <EkPageBar :section="section" :title="title" :description="description" :tips="tips ?? autoTips"
+        :refreshable="refreshable" :refreshing="loading" :refresh-label="refreshLabel" @refresh="emit('refresh')">
         <template #actions>
           <div class="ek-list-screen__head-actions">
             <v-text-field
@@ -39,7 +40,6 @@
               @click:clear="emit('search-submit')"
             />
             <span v-if="$slots['header-actions']" class="ek-list-screen__extra"><slot name="header-actions" /></span>
-            <EkButton v-if="refreshable" class="ek-list-screen__refresh" tone="ghost" icon="mdi-refresh" icon-only :aria-label="refreshLabel" :loading="loading" @click="emit('refresh')" />
           </div>
         </template>
       </EkPageBar>
@@ -60,7 +60,7 @@
           @click:clear="emit('search-submit')"
         />
         <span v-if="$slots['header-actions']" class="ek-list-screen__extra"><slot name="header-actions" /></span>
-        <EkButton v-if="refreshable" class="ek-list-screen__refresh" tone="ghost" icon="mdi-refresh" icon-only :aria-label="refreshLabel" :loading="loading" @click="emit('refresh')" />
+        <EkRefreshButton v-if="refreshable" class="ek-list-screen__refresh" :loading="loading" :label="refreshLabel" @refresh="emit('refresh')" />
       </div>
     </header>
 
@@ -161,6 +161,7 @@ import EkDataGrid, { type EkGridColumn, type EkGridSort } from '../EkDataGrid.vu
 import EkPagerBar from '../EkPagerBar.vue'
 import EkButton from '../EkButton.vue'
 import EkSavedViews, { type EkSavedViewsConfig } from '../EkSavedViews.vue'
+import EkRefreshButton from '../EkRefreshButton.vue'
 import EkPageBar from '../EkPageBar.vue'
 
 const props = withDefaults(

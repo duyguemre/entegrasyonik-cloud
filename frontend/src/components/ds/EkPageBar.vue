@@ -35,7 +35,11 @@
         </button>
         <span v-if="meta" class="ek-page-bar__meta ek-page-header__description">{{ meta }}</span>
       </div>
-      <div v-if="$slots.actions" class="ek-page-bar__actions"><slot name="actions" /></div>
+      <div v-if="$slots.actions || refreshable" class="ek-page-bar__actions">
+        <slot name="actions" />
+        <!-- Aşama 6b (Standart 9): tek yenile düğmesi — satırın EN SAĞI, her sayfada aynı yer. -->
+        <EkRefreshButton v-if="refreshable" class="ek-page-bar__refresh" :loading="refreshing" :label="refreshLabel" :last-updated="lastUpdated" @refresh="emit('refresh')" />
+      </div>
     </div>
 
     <EkCollapse :id="panelId" :open="about.open.value" role="region" :aria-label="`${title} sayfası hakkında`">
@@ -69,10 +73,11 @@
 import { useId } from 'vue'
 import EkCollapse from './EkCollapse.vue'
 import EkKbd from './EkKbd.vue'
+import EkRefreshButton from './EkRefreshButton.vue'
 import { SHORTCUTS, type ShortcutId } from '@/navigation/shortcuts'
 import { usePageAbout } from '@/composables/usePageAbout'
 
-defineProps<{
+withDefaults(defineProps<{
   title: string
   /** Kayıt defterindeki bölüm adı (breadcrumb'ın ilk halkası; tıklanabilir değil). */
   section?: string
@@ -82,13 +87,20 @@ defineProps<{
   tips?: string[]
   /** Başlık satırında her zaman görünen kısa durum metni (açıklama DEĞİL). */
   meta?: string
-}>()
+  /** Aşama 6b: sayfanın yenile düğmesi (satırın en sağı; Alt+R). */
+  refreshable?: boolean
+  refreshing?: boolean
+  refreshLabel?: string
+  lastUpdated?: Date | string | number | null
+}>(), { refreshLabel: 'Yenile' })
+const emit = defineEmits<{ refresh: [] }>()
 
 const PAGE_KEYS: Array<{ id: ShortcutId; label: string }> = [
   { id: 'search', label: 'Akıllı arama' },
   { id: 'tabClose', label: 'Sekmeyi kapat' },
   { id: 'headerToggle', label: 'Üst bölümü daralt' },
   { id: 'focusMode', label: 'Tam ekran' },
+  { id: 'pageRefresh', label: 'Sayfayı yenile' },
 ]
 const keys = PAGE_KEYS.map((k) => ({ ...k, keys: SHORTCUTS.find((s) => s.id === k.id)?.keys ?? [] }))
 
@@ -297,6 +309,11 @@ function openShortcutHelp() {
     width: 100%;
     justify-content: flex-start;
     margin-left: 0;
+  }
+
+  /* Dar ekranda da yenile satırın sağında kalır (konum sabit). */
+  .ek-page-bar__refresh {
+    margin-left: auto;
   }
 }
 </style>

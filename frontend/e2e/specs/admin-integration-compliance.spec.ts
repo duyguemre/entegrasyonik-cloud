@@ -131,7 +131,9 @@ test.describe('ADR-0018 — Entegrasyon uyum konsolu', () => {
     await openComplianceScreen(page)
     const view = root(page)
 
-    await expect(view.getByText('Uyum bulguları yüklenemedi — bağlantınızı kontrol edip tekrar deneyin.')).toBeVisible()
+    // Aşama 6b (Standart 1): hata deseni "ne oldu" ile "ne yapmalı"yı ayrı satırda gösterir — iddia aynı, metin bölündü.
+    await expect(view.getByText('Uyum bulguları yüklenemedi', { exact: true })).toBeVisible()
+    await expect(view.getByText('Bağlantınızı kontrol edip tekrar deneyin.', { exact: true }).first()).toBeVisible()
     await expect(view).not.toContainText('500')
     await expect(view).not.toContainText('INTERNAL')
     await expect(view).not.toContainText('FindingService')

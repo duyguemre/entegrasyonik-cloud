@@ -35,10 +35,24 @@ const renderList = computed(() => {
     return [...byCode.values()]
 })
 
+// Aşama 6b: işlev ref'i her yeniden çizimde tetiklenir (sekme kabı eklendi → daha sık). `initialize`/`activate`
+// yalnız sekme ETKİNLEŞTİĞİ anda bir kez çağrılır (aynı etkin sekmede tekrar çizim yeniden yükleme yapmaz).
+const shown: Record<string, unknown> = {}
 const setRef = (menuLink: any) => (el: any) => {
+    // Değişen kapanış nedeniyle Vue eski ref'i `null` ile çağırır — yok sayılır (örnek değişimi aşağıda ayırt edilir).
+    if (!el) return
     componentRefs.value[menuLink.code] = el;
     nextTick().then(() => {
-        if (props.tab?.link.code != menuLink.code) return
+        if (props.tab?.link.code != menuLink.code) {
+            shown[menuLink.code] = undefined
+            return
+        }
+        // Aynı etkin sekmede aynı bileşen örneği + aynı parametreler → zaten etkinleştirildi (yeni parametre, ör. akıllı
+        // aramadan aynı ekrana gelen kayıt, yeniden etkinleştirir).
+        const prev = shown[menuLink.code] as { el: any; params: any } | undefined
+        const params = props.tab?.link?.parameters
+        if (prev && prev.el === el && prev.params === params) return
+        shown[menuLink.code] = { el, params }
         if (props.tab.link.isInitialized == true) {
             if (el?.activate != undefined) {
                 el.activate(props.tab.link.parameters)
