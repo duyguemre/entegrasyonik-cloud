@@ -52,6 +52,8 @@
       @clear-filters="resetFilters"
       @refresh="getMessages(true)"
     >
+      <!-- faz3-fe-help: ilk kullanım — hiç kayıt yokken "Nasıl başlanır?" (filtreli boş sonuçta gösterilmez). -->
+      <template #empty-action><HelpStartLink article="ord-messages-sla" /></template>
       <template #filters>
         <v-select v-model="searchForm.data.status" :items="statusOptions" label="Mesaj durumu" item-title="label" item-value="value" clearable />
         <v-select v-model="searchForm.data.type" :items="typeOptions" label="Mesaj tipi" item-title="label" item-value="value" clearable />
@@ -128,6 +130,7 @@
 </template>
 
 <script setup lang="ts">
+import HelpStartLink from '@/components/help/HelpStartLink.vue'
 import EkRowActions, { type EkRowAction } from '@/components/ds/EkRowActions.vue'
 import { ref, reactive, computed, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';

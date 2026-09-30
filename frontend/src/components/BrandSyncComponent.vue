@@ -46,6 +46,7 @@
       </CardComponent>
 
       <CardComponent icon="mdi-connection" title="Platform Marka Eşleştirme" :isHovered="false">
+        <template #header><EkHelpHint hint="mapping.brand" /></template>
         <v-form v-model="editingPlatformForm" @keydown.enter.prevent @submit.prevent>
           <EkFormSection title="Platform" icon="mdi-storefront-outline" :columns="1"
             description="Marka eşleştirmesi yapılacak platformu seçin.">
@@ -79,6 +80,7 @@
 </template>
 
 <script setup lang="ts">
+import EkHelpHint from '@/components/ds/EkHelpHint.vue'
 import { computed, nextTick, inject, watch, ref, onMounted, onBeforeMount } from 'vue'
 import EkButton from '@/components/ds/EkButton.vue'
 import EkIconTile from '@/components/ds/EkIconTile.vue'

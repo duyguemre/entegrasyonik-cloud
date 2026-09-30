@@ -70,6 +70,8 @@
       @clear-filters="clearForm"
       @refresh="getProducts(true)"
     >
+      <!-- faz3-fe-help: ilk kullanım — hiç kayıt yokken "Nasıl başlanır?" (filtreli boş sonuçta gösterilmez). -->
+      <template #empty-action><HelpStartLink article="gs-first-product-transfer" /></template>
       <template #header-actions>
         <EkButton icon="mdi-plus" @click="openProductDefinition()">Yeni ürün</EkButton>
       </template>
@@ -205,6 +207,7 @@
 </template>
 
 <script setup lang="ts">
+import HelpStartLink from '@/components/help/HelpStartLink.vue'
 import EkRowActions from '@/components/ds/EkRowActions.vue'
 import { useI18n } from 'vue-i18n';
 import { ref, onMounted, onBeforeMount, onActivated, watch, computed, nextTick, getCurrentInstance, inject, onDeactivated, onUnmounted, reactive } from 'vue'

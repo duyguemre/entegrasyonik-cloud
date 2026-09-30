@@ -44,6 +44,7 @@
       />
       <template v-else>
         <EkSettingsSection :title="$t('stockPolicy.primary.title')" :description="$t('stockPolicy.primary.description')">
+          <template #title-extra><EkHelpHint hint="stock.channelPolicy" /></template>
           <v-select
             v-model="primaryDraft"
             class="stockPolicyView__primary"
@@ -61,6 +62,7 @@
         </EkSettingsSection>
 
         <EkSettingsSection :title="$t('stockPolicy.channels.title')" :description="$t('stockPolicy.channels.description')">
+          <template #title-extra><EkHelpHint hint="stock.safetyStock" /></template>
           <article
             v-for="channel in policy.channels"
             :key="channel.integrationCode"
@@ -147,6 +149,7 @@
 </template>
 
 <script setup lang="ts">
+import EkHelpHint from '@/components/ds/EkHelpHint.vue'
 import { computed, inject, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import EkSettingsTemplate from '@/components/ds/templates/EkSettingsTemplate.vue'

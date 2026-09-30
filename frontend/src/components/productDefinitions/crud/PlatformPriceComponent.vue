@@ -66,6 +66,7 @@
               </v-menu>
             </template>
           </v-tooltip>
+          <EkHelpHint hint="price.rules" class="ppc-help" />
         </template>
       </VCurrencyComponentVue>
     </section>
@@ -111,6 +112,7 @@
 </template>
 
 <script setup lang="ts">
+import EkHelpHint from '@/components/ds/EkHelpHint.vue'
 import { ref, computed, useId, onMounted } from 'vue'
 import EkButton from '@/components/ds/EkButton.vue'
 import EkFormGrid from '@/components/ds/EkFormGrid.vue'

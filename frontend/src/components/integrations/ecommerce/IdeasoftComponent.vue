@@ -9,6 +9,7 @@
       <v-window-item :value="1">
         <EkFormSection title="Bağlantı bilgileri" icon="mdi-key-outline"
           description="Ideasoft yönetim panelindeki uygulama (API) ayarlarından alınır.">
+          <template #legend-extra><EkHelpHint hint="integration.credentials.ideasoft" /></template>
           <v-text-field class="ek-span-full" clearable v-model="editingClientIntegration.settings.storeName"
             label="Mağaza Adı" />
           <v-text-field clearable v-model="editingClientIntegration.settings.key" label="Client ID" />
@@ -56,6 +57,7 @@
 </template>
 
 <script setup lang="ts">
+import EkHelpHint from '@/components/ds/EkHelpHint.vue'
 import { ref, computed, onBeforeMount, onBeforeUnmount, onMounted } from 'vue'
 import { v4 as uuidv4 } from 'uuid'
 import LoadingComponent from '@/components/LoadingComponent.vue'

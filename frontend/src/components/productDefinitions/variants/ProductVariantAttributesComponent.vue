@@ -222,6 +222,7 @@
 
                 <div class="mt-8"></div>
                 <CardComponent title="Zorunlu Özellikleri (*)">
+                  <template #header><EkHelpHint hint="attributes.required" /></template>
 
                   <v-row>
                     <v-col cols="4" md="4" sm="6" lg="3" xl="2"
@@ -448,6 +449,7 @@
 </template>
 
 <script setup lang="ts">
+import EkHelpHint from '@/components/ds/EkHelpHint.vue'
 import { formatNumber } from '@/composables/format'
 import { Sortable } from "sortablejs-vue3";
 import EkButton from '@/components/ds/EkButton.vue'

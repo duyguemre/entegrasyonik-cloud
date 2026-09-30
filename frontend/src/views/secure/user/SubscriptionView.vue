@@ -33,7 +33,10 @@
 
       <!-- Planlar -->
       <section class="plans-section">
-        <h3 class="section-title">Planlar</h3>
+        <div class="section-title-row">
+          <h3 class="section-title">Planlar</h3>
+          <EkHelpHint hint="subscription.plan" />
+        </div>
 
         <!-- ADR-0014 S4b: kayıt sırasında (tanıtım sitesinden) seçilen plan önerisi. Yalnızca izinli plan kodu + listede var olan plan. -->
         <div v-if="suggestedPlan" class="suggested-plan-note" role="status" data-testid="suggested-plan-note">
@@ -115,6 +118,7 @@
 </template>
 
 <script setup lang="ts">
+import EkHelpHint from '@/components/ds/EkHelpHint.vue'
 import EkAlert from '@/components/ds/EkAlert.vue'
 // ADR-0008 (ödeme sağlayıcısı/abonelik modeli) + ADR-0011 Karar 2 "P1-yeni": bu ekran
 // `SubscriptionView.vue`'nun ürünle ilgisiz yer tutucu içeriğinin (bkz. git geçmişi) YERİNE
@@ -299,6 +303,17 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-6);
+}
+
+.section-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  margin: 0 0 var(--ek-space-4) 0;
+}
+
+.section-title-row .section-title {
+  margin: 0;
 }
 
 .section-title {

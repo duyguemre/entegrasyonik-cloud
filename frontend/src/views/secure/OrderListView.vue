@@ -31,7 +31,9 @@
           <strong>{{ actionDialog.order?.orderNumber }}</strong> nolu sipariş için iptal nedeni seçiniz:
         </div>
         <v-select v-model="actionDialog.selectedReason" :items="actionDialog.reasons" item-title="title" item-value="id"
-          label="İptal gerekçesi" return-object prepend-inner-icon="mdi-comment-question-outline" />
+          label="İptal gerekçesi" return-object prepend-inner-icon="mdi-comment-question-outline">
+        <template #append><EkHelpHint hint="order.approveCancel" /></template>
+      </v-select>
       </div>
 
       <div v-else>
@@ -93,6 +95,8 @@
       @apply-view="applySavedView"
       @refresh="getOrders(true)"
     >
+      <!-- faz3-fe-help: ilk kullanım — hiç kayıt yokken "Nasıl başlanır?" (filtreli boş sonuçta gösterilmez). -->
+      <template #empty-action><HelpStartLink article="gs-first-integration" /></template>
       <template #filters>
         <v-select v-model="searchOrderForm.data.integrationCodes" :items="integrationStore.getClientPlatforms()"
           item-title="title" item-value="code" label="Kanal" multiple chips closable-chips clearable />
@@ -169,6 +173,8 @@
 </template>
 
 <script setup lang="ts">
+import HelpStartLink from '@/components/help/HelpStartLink.vue'
+import EkHelpHint from '@/components/ds/EkHelpHint.vue'
 import EkAlert from '@/components/ds/EkAlert.vue'
 import { problemFromError, type ProblemCopy } from '@/composables/useProblem'
 import EkRowActions, { type EkRowAction } from '@/components/ds/EkRowActions.vue'

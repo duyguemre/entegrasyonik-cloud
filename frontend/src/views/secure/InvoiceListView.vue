@@ -53,6 +53,8 @@
       @clear-filters="clearFilters"
       @refresh="getInvoices(true)"
     >
+      <!-- faz3-fe-help: ilk kullanım — hiç kayıt yokken "Nasıl başlanır?" (filtreli boş sonuçta gösterilmez). -->
+      <template #empty-action><HelpStartLink article="fin-invoices-reports" /></template>
       <template #header-actions>
         <EkButton icon="mdi-plus" @click="createDialog = true">Yeni fatura ekle</EkButton>
       </template>
@@ -101,6 +103,7 @@
 </template>
 
 <script setup lang="ts">
+import HelpStartLink from '@/components/help/HelpStartLink.vue'
 import EkRowActions from '@/components/ds/EkRowActions.vue'
 import { ref, onMounted, computed } from 'vue';
 import useRestApi from '@/composables/restapi';

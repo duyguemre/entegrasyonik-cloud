@@ -92,6 +92,7 @@
 
       <CardComponent icon="mdi-connection" title="Platform Kategori Eşleştirme" :isHovered="false"
         v-if="selectedCategory.children?.length == 0">
+        <template #header><EkHelpHint hint="mapping.category" /></template>
         <EkFormSection title="Platform" icon="mdi-storefront-outline" :columns="1"
           description="Eşleştirme yapılacak pazaryeri veya e-ticaret platformunu seçin.">
           <div class="ek-category-sync__platforms">
@@ -164,6 +165,7 @@
 </template>
 
 <script setup lang="ts">
+import EkHelpHint from '@/components/ds/EkHelpHint.vue'
 import { watch, ref, onMounted, nextTick, reactive } from 'vue'
 import CategoryIntegrationSelectBoxComponent from '@/components/CategoryIntegrationSelectBoxComponent.vue';
 import LoadingComponent from '@/components/LoadingComponent.vue'
