@@ -10,7 +10,7 @@
     "rawSpinner": 0,
     "iconBtnNoLabel": 1,
     "patternExceptions": 2,
-    "pageHeaderMissing": 4
+    "pageHeaderMissing": 2
   },
   "files": {
     "src/App.vue": {
@@ -2463,8 +2463,8 @@
     "src/views/secure/integrations/MarketplaceView.vue": 0,
     "src/views/secure/integrations/ShippingView.vue": 0,
     "src/views/secure/integrations/StockPolicyView.vue": 0,
-    "src/views/secure/productDefinitions/BrandListView.vue": 1,
-    "src/views/secure/productDefinitions/CategoryListView.vue": 1,
+    "src/views/secure/productDefinitions/BrandListView.vue": 0,
+    "src/views/secure/productDefinitions/CategoryListView.vue": 0,
     "src/views/secure/productDefinitions/ChoiceListView.vue": 0,
     "src/views/secure/productDefinitions/HashtagListView.vue": 0,
     "src/views/secure/productDefinitions/ProductListView.vue": 0,

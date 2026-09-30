@@ -30,7 +30,7 @@
       @keydown="onKeydown"
     >
       <v-virtual-scroll v-if="virtual" ref="virtualRef" :items="rows" :item-height="ROW_H" class="cat-tree__virtual">
-        <template #default="{ item }">
+        <template v-slot:default="{ item }">
           <CategoryTreeRow v-bind="rowProps(item as NodeRow)" v-on="rowHandlers" />
         </template>
       </v-virtual-scroll>
