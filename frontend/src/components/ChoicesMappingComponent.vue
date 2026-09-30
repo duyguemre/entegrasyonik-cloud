@@ -23,7 +23,7 @@
         <v-select :items="choices" v-model="choice" return-object label="Entegrasyonik Seçenek Grubu"
           @update:model-value="reset">
           <template v-slot:item="{ item, index, props: itemProps }: any">
-            <v-list-item v-bind="itemProps" :title="undefined">
+            <v-list-item role="option" v-bind="itemProps" :title="undefined">
               <div class="cm-option">
                 <span class="cm-option__index ek-num">{{ index + 1 }}</span>
                 <span class="cm-option__title">{{ item.title }}</span>
@@ -63,7 +63,7 @@
             :items="integrationChoice.values" v-model="mapping[choiceValue._id]"
             :menu-props="{ closeOnContentClick: true }" auto-select-first clearable>
             <template v-slot:item="{ item, index, props: itemProps }: any">
-              <v-list-item v-bind="itemProps" :title="undefined">
+              <v-list-item role="option" v-bind="itemProps" :title="undefined">
                 <div class="cm-option">
                   <span class="cm-option__index ek-num">{{ index + 1 }}</span>
                   <span>{{ item.title }}</span>

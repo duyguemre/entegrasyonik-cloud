@@ -58,7 +58,7 @@
         <v-select v-model="searchForm.data.status" :items="statusOptions" label="Mesaj durumu" item-title="label" item-value="value" clearable />
         <v-select v-model="searchForm.data.type" :items="typeOptions" label="Mesaj tipi" item-title="label" item-value="value" clearable />
         <v-select v-model="searchForm.data.isRejected" :items="REJECT_OPTIONS" label="Red durumu" item-title="label" item-value="value" />
-        <v-select v-model="searchForm.data.integrationCodes" :items="CHANNEL_OPTIONS" item-title="title" item-value="value" label="Kanal" multiple chips closable-chips clearable />
+        <EkSelect kind="channel" v-model="searchForm.data.integrationCodes" :items="CHANNEL_OPTIONS" item-title="title" item-value="value" label="Kanal" multiple clearable />
         <EkDateField v-model="searchForm.data.startDate" label="Başlangıç tarihi" value-format="iso-date" :max="searchForm.data.endDate" />
         <EkDateField v-model="searchForm.data.endDate" label="Bitiş tarihi" value-format="iso-date" :min="searchForm.data.startDate" />
       </template>
@@ -131,6 +131,7 @@
 
 <script setup lang="ts">
 import HelpStartLink from '@/components/help/HelpStartLink.vue'
+import EkSelect from '@/components/ds/EkSelect.vue'
 import EkRowActions, { type EkRowAction } from '@/components/ds/EkRowActions.vue'
 import { ref, reactive, computed, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';

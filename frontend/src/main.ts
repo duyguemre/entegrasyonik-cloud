@@ -36,7 +36,7 @@ import CustomDialogComponent from '@/components/CustomDialogComponent.vue';
 
 // ADR-0017 Karar 1.8 — global hata sınırı (frontend log/hata mimarisi).
 import logger from '@/composables/logger'
-import { reportUnexpectedError } from '@/composables/errorReporting'
+import { isBenignBrowserNotice, reportUnexpectedError } from '@/composables/errorReporting'
 
 // ADR-0015 Karar 3.6 (A5) — ECharts tema adaptörü tek noktadan kaydedilir;
 // tüketiciler (`StatisticsComponent` vb.) `theme="entegrasyonik"` ile bağlanır.
@@ -88,6 +88,13 @@ window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => 
 // (img/script/link) YAKALAMAZ — yalnızca script çalışma zamanı hatalarını (window'a
 // kadar bubble eden) yakalar; broken image gibi durumlar için gürültülü toast riski yok.
 window.addEventListener('error', (event: ErrorEvent) => {
+  // Tarayıcının zararsız "ResizeObserver loop …" bildirimi (bir karede tamamlanamayan boyut gözlemi — kap sorgulu
+  // kart düzeni / sekme şeridi ölçümü tetikleyebilir) bir hata DEĞİLDİR: kullanıcıya "Bir şeyler ters gitti" gösterilmez,
+  // yalnız sessiz teknik kayıt (Aşama 6b).
+  if (isBenignBrowserNotice(event.message)) {
+    reportUnexpectedError('Zararsız tarayıcı bildirimi', { module: 'errorHandler', message: event.message }, { silent: true })
+    return
+  }
   reportUnexpectedError('Yakalanmamış global hata', {
     module: 'errorHandler',
     message: event.message,

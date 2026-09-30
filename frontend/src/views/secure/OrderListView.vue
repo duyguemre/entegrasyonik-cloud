@@ -98,12 +98,9 @@
       <!-- faz3-fe-help: ilk kullanım — hiç kayıt yokken "Nasıl başlanır?" (filtreli boş sonuçta gösterilmez). -->
       <template #empty-action><HelpStartLink article="gs-first-integration" /></template>
       <template #filters>
-        <v-select v-model="searchOrderForm.data.integrationCodes" :items="integrationStore.getClientPlatforms()"
-          item-title="title" item-value="code" label="Kanal" multiple chips closable-chips clearable />
-        <v-select v-model="searchOrderForm.data.internalStatuses" :items="statusOptions" item-title="title"
-          item-value="id" label="Sipariş durumu" multiple chips closable-chips clearable />
-        <v-select v-model="searchOrderForm.data.allocationStates" :items="allocationOptions" item-title="title"
-          item-value="id" label="Stok durumu" multiple chips closable-chips clearable />
+        <EkSelect v-model="searchOrderForm.data.integrationCodes" kind="channel" :items="channelSelectOptions" label="Kanal" multiple clearable />
+        <EkSelect v-model="searchOrderForm.data.internalStatuses" kind="status" :items="statusSelectOptions" label="Sipariş durumu" multiple clearable recent-key="orders.status" />
+        <EkSelect v-model="searchOrderForm.data.allocationStates" kind="status" :items="allocationSelectOptions" label="Stok durumu" multiple clearable />
       </template>
 
       <template #bulk-actions>
@@ -175,6 +172,8 @@
 <script setup lang="ts">
 import HelpStartLink from '@/components/help/HelpStartLink.vue'
 import EkHelpHint from '@/components/ds/EkHelpHint.vue'
+import EkSelect from '@/components/ds/EkSelect.vue'
+import { channelOptionsFrom, toneOptionsFrom } from '@/components/ds/selectOptions'
 import EkAlert from '@/components/ds/EkAlert.vue'
 import { problemFromError, type ProblemCopy } from '@/composables/useProblem'
 import EkRowActions, { type EkRowAction } from '@/components/ds/EkRowActions.vue'
@@ -344,6 +343,10 @@ const applied = ref({ globalSearch: '', integrationCodes: [] as string[], intern
 
 // "Stok durumu" filtresi — kapalı küme (status-map ALLOCATION_STATES), etiketler status.allocation.*
 const allocationOptions = computed(() => ALLOCATION_STATES.map(id => ({ id, title: allocationTitle(id) })))
+// Aşama 6b (Standart 12): alana özel seçim deneyimi — kanal rengi / durum tonu noktası (tek kaynak status-map).
+const channelSelectOptions = computed(() => channelOptionsFrom(integrationStore.getClientPlatforms()))
+const statusSelectOptions = computed(() => toneOptionsFrom(statusOptions.value, (id) => ORDER_STATUS_TONE[id as OrderInternalStatusEnum]?.tone))
+const allocationSelectOptions = computed(() => toneOptionsFrom(allocationOptions.value, (id) => ALLOCATION_STATE_TONE[id as keyof typeof ALLOCATION_STATE_TONE]?.tone))
 function allocationTitle(id: string): string {
   return isAllocationState(id) ? t(ALLOCATION_STATE_TONE[id].labelKey) : id
 }

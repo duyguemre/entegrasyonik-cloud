@@ -18,10 +18,8 @@
         <li v-for="(item, j) in block.items" :key="j"><HelpText :text="item" /></li>
       </ul>
 
-      <div v-else-if="block.type === 'note'" class="ek-help-body__note" :class="`is-${block.tone}`" role="note">
-        <v-icon :icon="NOTE_ICON[block.tone]" aria-hidden="true" />
-        <p><span class="ek-sr-only">{{ NOTE_LABEL[block.tone] }}: </span><HelpText :text="block.text" /></p>
-      </div>
+      <!-- A6b Standart 1: bilgi/uyarı gösterimi tek bileşen (EkAlert). -->
+      <EkAlert v-else-if="block.type === 'note'" :tone="block.tone" class="ek-help-body__note"><HelpText :text="block.text" /></EkAlert>
 
       <div v-else-if="block.type === 'table'" class="ek-help-body__table-wrap">
         <table class="ek-help-body__table">
@@ -107,6 +105,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import EkKbd from '@/components/ds/EkKbd.vue'
+import EkAlert from '@/components/ds/EkAlert.vue'
 import EkButton from '@/components/ds/EkButton.vue'
 import EkPlatformMark from '@/components/ds/EkPlatformMark.vue'
 import HelpText from './HelpText.vue'
@@ -119,8 +118,6 @@ defineProps<{ blocks: HelpBlock[] }>()
 
 const nav = useHelpNavigation()
 
-const NOTE_ICON = { info: 'mdi-information-outline', warning: 'mdi-alert-outline', success: 'mdi-check-circle-outline' } as const
-const NOTE_LABEL = { info: 'Bilgi', warning: 'Dikkat', success: 'İpucu' } as const
 const KIND_LABEL = { marketplace: 'Pazaryeri', ecommerce: 'E-ticaret', erp: 'ERP / ön muhasebe' } as const
 
 const shortcutGroups = computed(() => {
@@ -225,39 +222,6 @@ const channelRows = channelGuideRows()
   color: var(--ek-color-content-subtle);
 }
 
-.ek-help-body__note {
-  display: grid;
-  grid-template-columns: 20px minmax(0, 1fr);
-  gap: var(--ek-space-3);
-  padding: var(--ek-space-3) var(--ek-space-4);
-  border: 1px solid var(--ek-color-info-border);
-  border-radius: var(--ek-radius-card);
-  background: var(--ek-color-info-subtle);
-}
-
-.ek-help-body__note .v-icon {
-  margin-top: 3px;
-  font-size: 20px;
-  color: var(--ek-color-info-emphasis);
-}
-
-.ek-help-body__note.is-warning {
-  border-color: var(--ek-color-warning-border);
-  background: var(--ek-color-warning-subtle);
-}
-
-.ek-help-body__note.is-warning .v-icon {
-  color: var(--ek-color-warning-emphasis);
-}
-
-.ek-help-body__note.is-success {
-  border-color: var(--ek-color-success-border);
-  background: var(--ek-color-success-subtle);
-}
-
-.ek-help-body__note.is-success .v-icon {
-  color: var(--ek-color-success-emphasis);
-}
 
 .ek-help-body__table-wrap {
   overflow-x: auto;

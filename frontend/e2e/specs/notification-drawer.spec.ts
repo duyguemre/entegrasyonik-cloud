@@ -90,7 +90,8 @@ test.describe('ADR-0015 B5-3 — NotificationDrawerComponent', () => {
     await gotoAuthed(page)
     await openNotificationDrawer(page)
 
-    await page.locator('button:has(.mdi-trash-can-outline)').click()
+    // Aşama 6b (Standart 10): satır silme ikonları da kayıt defteri glifini kullanır — düğme adıyla seçilir (iddia aynı).
+    await page.getByRole('button', { name: 'Tümünü sil' }).click()
 
     await expect.poll(() => deletePayload).not.toBeNull()
     expect(deletePayload.all).toBe(true)

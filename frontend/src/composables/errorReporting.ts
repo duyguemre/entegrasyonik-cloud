@@ -51,3 +51,12 @@ export function reportUnexpectedError(
 
   return supportCode
 }
+
+/**
+ * Aşama 6b: tarayıcının zararsız bildirimleri (hata değil). "ResizeObserver loop completed with undelivered notifications"
+ * / "ResizeObserver loop limit exceeded": bir karede tamamlanamayan boyut gözlemi bir sonraki karede teslim edilir;
+ * kullanıcıya hata toast'ı olarak gösterilmez.
+ */
+export function isBenignBrowserNotice(message: unknown): boolean {
+  return typeof message === 'string' && /^ResizeObserver loop (completed with undelivered notifications|limit exceeded)/.test(message)
+}

@@ -86,3 +86,13 @@ describe('reportUnexpectedError (ADR-0017 Karar 1.8)', () => {
     expect(logger.error).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('isBenignBrowserNotice (Aşama 6b)', async () => {
+  const { isBenignBrowserNotice } = await import('../src/composables/errorReporting')
+  it('ResizeObserver döngü bildirimi zararsızdır; gerçek hata değildir', () => {
+    expect(isBenignBrowserNotice('ResizeObserver loop completed with undelivered notifications.')).toBe(true)
+    expect(isBenignBrowserNotice('ResizeObserver loop limit exceeded')).toBe(true)
+    expect(isBenignBrowserNotice('TypeError: x is undefined')).toBe(false)
+    expect(isBenignBrowserNotice(undefined)).toBe(false)
+  })
+})

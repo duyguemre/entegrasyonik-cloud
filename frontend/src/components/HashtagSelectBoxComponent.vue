@@ -21,7 +21,7 @@
             </v-chip>
         </template>
         <template v-slot:item="{ props, item }">
-            <v-list-item v-bind="props" :title="item.title" :subtitle="(item.raw as any).groupTitle">
+            <v-list-item role="option" v-bind="props" :title="item.title" :subtitle="(item.raw as any).groupTitle">
                 <template #prepend>
                     <v-icon :color="(item.raw as any).color || 'content-muted'" size="small">mdi-tag</v-icon>
                 </template>

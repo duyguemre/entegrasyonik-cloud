@@ -213,10 +213,9 @@
       @refresh="getFinancials(true)"
     >
       <template #filters>
-        <v-select v-model="searchForm.integrationCodes" :items="integrationStore.getClientPlatforms()"
-          item-title="title" item-value="code" label="Platformlar" multiple chips clearable />
-        <v-select v-model="searchForm.transactionTypes" :items="transactionTypeOptions" label="İşlem Tipi"
-          multiple chips clearable />
+        <EkSelect kind="channel" v-model="searchForm.integrationCodes" :items="channelOptionsFrom(integrationStore.getClientPlatforms())" label="Platformlar" multiple clearable />
+        <EkSelect v-model="searchForm.transactionTypes" :items="transactionTypeOptions" label="İşlem Tipi"
+          multiple clearable />
         <EkDateField v-model="searchForm.startDate" label="Başlangıç" :max="searchForm.endDate" />
         <EkDateField v-model="searchForm.endDate" label="Bitiş" :min="searchForm.startDate" />
       </template>
@@ -271,6 +270,8 @@
 </template>
 
 <script setup lang="ts">
+import EkSelect from '@/components/ds/EkSelect.vue'
+import { channelOptionsFrom } from '@/components/ds/selectOptions'
 import EkRowActions from '@/components/ds/EkRowActions.vue'
 import { ref, reactive, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';

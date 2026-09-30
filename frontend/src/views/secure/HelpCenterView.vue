@@ -57,15 +57,18 @@
           </button>
         </li>
       </ul>
-      <div v-else-if="trimmed.length >= 2" class="ek-help-center__no-results">
-        <EkIconTile icon="mdi-magnify-close" tone="neutral" size="lg" />
-        <p class="ek-help-center__no-results-title">“{{ trimmed }}” için makale bulunamadı</p>
-        <p class="ek-help-center__muted">Farklı bir sözcük deneyin ya da konulara göz atın. Aradığınızı bulamazsanız destek ekibine yazın.</p>
-        <div class="ek-help-center__row-actions">
-          <EkButton tone="secondary" icon="mdi-view-grid-outline" @click="clearSearch">Konulara göz at</EkButton>
-          <EkButton tone="primary" icon="mdi-lifebuoy" @click="ticketOpen = true">Destek talebi aç</EkButton>
-        </div>
-      </div>
+      <!-- A6b Standart 1: boş durum tek bileşen (EkEmptyState). -->
+      <EkEmptyState
+        v-else-if="trimmed.length >= 2"
+        variant="no-results"
+        class="ek-help-center__empty"
+        :title="`“${trimmed}” için makale bulunamadı`"
+        message="Farklı bir sözcük deneyin ya da aramayı temizleyip konulara göz atın. Aradığınızı bulamazsanız destek ekibine yazın."
+        show-action
+        action-text="Destek talebi aç"
+        action-icon="mdi-lifebuoy"
+        @action="ticketOpen = true"
+      />
     </section>
 
     <!-- ANA SAYFA -->
@@ -229,12 +232,17 @@
         </article>
 
         <!-- Bilinmeyen makale -->
-        <div v-else class="ek-help-center__no-results">
-          <EkIconTile icon="mdi-file-question-outline" tone="neutral" size="lg" />
-          <p class="ek-help-center__no-results-title">Makale bulunamadı</p>
-          <p class="ek-help-center__muted">Bağlantı eski olabilir. Konulara göz atın ya da yukarıdan arayın.</p>
-          <EkButton tone="secondary" icon="mdi-view-grid-outline" @click="goHome">Yardım merkezine dön</EkButton>
-        </div>
+        <EkEmptyState
+          v-else
+          variant="no-results"
+          class="ek-help-center__empty"
+          title="Makale bulunamadı"
+          message="Bağlantı eski olabilir. Konulara göz atın ya da yukarıdan arayın."
+          show-action
+          action-text="Yardım merkezine dön"
+          action-icon="mdi-view-grid-outline"
+          @action="goHome"
+        />
       </main>
     </div>
 
@@ -249,6 +257,7 @@ import { useRoute, useRouter } from 'vue-router'
 import EkPageHeader from '@/components/ds/EkPageHeader.vue'
 import EkButton from '@/components/ds/EkButton.vue'
 import EkIconTile from '@/components/ds/EkIconTile.vue'
+import EkEmptyState from '@/components/ds/EkEmptyState.vue'
 import HelpArticleBody from '@/components/help/HelpArticleBody.vue'
 import HelpMarks from '@/components/help/HelpMarks.vue'
 import HelpSupportCta from '@/components/help/HelpSupportCta.vue'
@@ -381,10 +390,6 @@ function focusResult(index: number) {
 function openFirstResult() {
   const first = results.value[0]
   if (first) goArticle(first.article.id)
-}
-function clearSearch() {
-  query.value = ''
-  focusSearch()
 }
 
 // ---- Makale açılınca odak ve kaydırma ----
@@ -798,7 +803,7 @@ defineExpose({ initialize, activate: initialize })
   line-height: 1.5;
 }
 
-.ek-help-center__no-results {
+.ek-help-center__empty {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -809,24 +814,8 @@ defineExpose({ initialize, activate: initialize })
   text-align: center;
 }
 
-.ek-help-center__no-results-title {
-  margin: var(--ek-space-2) 0 0;
-  color: var(--ek-color-content-strong);
-  font-weight: var(--ek-font-weight-semibold);
-}
 
-.ek-help-center__no-results .ek-help-center__muted {
-  max-width: 440px;
-  margin: 0;
-}
 
-.ek-help-center__row-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--ek-space-2);
-  margin-top: var(--ek-space-2);
-}
 
 /* ---- Kategori + makale düzeni ---- */
 .ek-help-center__layout {

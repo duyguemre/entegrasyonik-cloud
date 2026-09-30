@@ -2,7 +2,8 @@
 
 > **Durum:** Aşama 1 (tasarım sistemi + vitrin), Aşama 2 (kabuk, liste standardı, diyalog/menü/form, dashboard) ve
 > **Aşama 3 (entegrasyon + premium eleştiri turları)** `cloud/ds-v2-int` dalında birleşik (§14); **Aşama 4** (W1/W2 birleştirmesi +
-> ikinci bağımsız premium tur) `cloud/ds-v2-int2` (§15); **Aşama 5** (kullanıcı geri bildirimi, 11 madde) `cloud/ds-v2-a5` (§16). Görsel taban onayı yerelde (Windows) yapılır.
+> ikinci bağımsız premium tur) `cloud/ds-v2-int2` (§15); **Aşama 5** (kullanıcı geri bildirimi, 11 madde) `cloud/ds-v2-a5` (§16);
+> **Aşama 6b** (uygulama geneli tutarlılık turu, 12 standart + `cloud/ds-v2-a6a` birleşimi) `cloud/ds-v2-a6b` (§17). Görsel taban onayı yerelde (Windows) yapılır.
 > **Vitrin:** `npm run dev` → `http://localhost:3000/design-system` (yalnızca geliştirme; üretim derlemesinde yok, menüde yok).
 > **İnceleme görselleri:** `frontend/docs/design-system-review/` (liste §12).
 > **Kaynaklar:** kullanıcı brifi `docs/design-reference/README.md` (görsel yön), ADR-0011 (token mimarisi), ADR-0015 (süreç/test/desen kataloğu; görsel yönü bu brifle geçersiz kılındı).
@@ -179,6 +180,16 @@ Mevcut ds bileşenlerinin (EkStatusChip, EkDataTable, EkKpiCard, EkFilterBar, Ek
 | `EkFormSection` | form bölümleri (entegrasyon, ürün, diyalog gövdeleri) | `fieldset` + `legend` (ikon + başlık) + isteğe bağlı yardım; içi `EkFormGrid` (varsayılan 2 kolon); hata metni alanın altında `error` tonunda, `aria-describedby` ile bağlı |
 | `EkDialogHost` | sekme içinden açılan panel/çekmece gövdeleri (varyant, eşitleme, galeri) | `EkDialog` kabuğu olmadan yalnız overlay; `attach` ile sekme kapsayıcısına bağlanır (sol menünün altında kalmaz); `placement` center/end |
 | `EkCascadeDialog` | form içinde kademeli seçim (pazaryeri kategori eşleştirme) | salt-okunur alan + modal `EkCascadePicker`; taslak yol, Onayla ile yaprak kimliği döner; Esc/Vazgeç değişiklik yapmaz |
+| `EkAlert` (6b) | TÜM satır içi uyarı/bilgi bantları | ton info/success/warning/error; ikon + başlık + metin + `#actions`; ham `v-alert` yok |
+| `EkProblemState` (6b) | TÜM hata durumları (sayfa, liste gövdesi, panel, entegrasyon yanıtı) | ne oldu · olası neden · ne yapmalı · Tekrar dene · `#actions` · katlanır teknik ayrıntı (kapalıyken DOM'da yok) |
+| `EkToastHost` + `useToast` (6b) | TÜM geçici bildirimler (eski `snackbarStore` buraya yönlenir) | ton şeridi, süre çizgisi, üzerine gelince durur, hata kalıcı, ≤3 |
+| `EkBrandLoader` / `EkLoadingOverlay` (6b) | engelleyici iş (kaydet/sil/aktar) | logo motifi animasyon (reduced-motion statik); örtü yalnız sekme kabını örter; ilk yükleme = iskelet |
+| `EkRefreshButton` (6b) | sayfa yenileme | `EkPageBar`/`EkPageHeader`/`EkListScreen` `refreshable`; başlık satırının en sağı; dönen ikon; "Son güncelleme"; Alt+R |
+| `EkActionButton` + `design/icons.ts` (6b) | TÜM eylem ikonları | kayıt defteri: aynı iş = aynı glif/ton/ipucu; tehlikeli = hata tonu + onay |
+| `EkRowActions` (6b) | TÜM liste satır/kart eylemleri | ≤2 eylem ikon düğme (tehlikeli en sağda); 3+ ana eylem + `⋯` (grup, ayraç, tehlikeli en sonda) |
+| `EkPageTabs` v2 (6b) | TÜM sayfa içi sekmeler | ikinci seviye: zeminsiz metin + 2px alt çizgi, ikon, sayı rozeti, taşmada ok |
+| `EkRecordSummary` / `EkStatusTimeline` / `EkInfoCard` (6b) | kayıt detayı (sipariş, iade) | kanal renkli özet · tarihli durum çizgisi (dar kapta dikey) · bilgi kartları |
+| `EkSelect` (6b) | liste filtreleri ve alan-özel seçimler | kanal rengi/durum tonu noktası, alt satır, grup, son kullanılanlar, arama + vurgu, n/m seçili · Tümünü seç · Temizle |
 
 Vitrin-only prop'lar (`forceState`, `forceHoverKey`, `forceOpen`, `inline`) yalnızca vitrin içindir.
 
@@ -378,6 +389,67 @@ araç `A5_REVIEW=1 A5_REVIEW_WIDTH=1440|800|390 A5_REVIEW_OUT=<klasör> npx play
 `--ek-app-chip-h-sm/md`. **Değişen:** `tabstrip-bg`/`tab-hover` (light). **Yeni bileşenler:** `EkPageBar`, `EkCollapse`,
 `ShellChromeHandle`. **Testler:** `tests/theme/channel-tokens.test.ts`, `tests/shell-shortcuts.test.ts` (Ctrl+Shift+H),
 `e2e/specs/page-about.spec.ts`, `shell-dsv2` (dikey taşma 3 viewport; anahtar testi → "anahtar yok, sekmeden geçiş").
+
+## 17. Aşama 6b — uygulama geneli tutarlılık turu (12 standart, `cloud/ds-v2-a6b`)
+
+Taban `cloud/ds-v2-a5` (A5 bitmiş: `docs/a5-review/after/*` commit'li). **`cloud/ds-v2-a6a` birleştirildi** (a6a-review görüntüleri
+commit'liydi): çakışma yalnız mandal tabanlarında (yeniden sayıldı, artış yok). a6a raporunda ayrı bir "ortak bileşen ihtiyaçları"
+listesi yoktu; a6a'nın ekrana özel ortak parçaları bu standartlara bağlandı: `IntegrationErrorPanel` → `EkProblemState` (Standart 1),
+`IntegrationLoadingBlock` iskelet deseni (Standart 8), `ChannelTabList` ikinci seviye sekme dili (Standart 5), varyant araç çubuğu →
+`EkBulkBar` (Standart 3). Süreç: envanter → tek ds bileşeni/desen → tüm ekranlar → ekran görüntüsü göz incelemesi → 2. iterasyon.
+Önce/sonra: `docs/a6b-review/{before,after}/sNN-*-{1440,390}.png`; araç
+`A6B_REVIEW=1 A6B_REVIEW_WIDTH=1440|390 A6B_REVIEW_OUT=<klasör> npx playwright test e2e/specs/a6b-review.spec.ts --project=chromium-desktop`.
+
+| # | Standart | Envanter (önce) | Tek kaynak | Uygulandı |
+|---|---|---|---|---|
+| 1 | Hata / uyarı / bilgi / boş / toast | 21 ham `v-alert` (11 dosya); 3 bildirim mekanizması (snackbar 154 çağrı, `useToast` 14, `LoadingComponent` sonuç kutuları); hata deseni 2 farklı görünüm | `EkAlert`, `EkProblemState`, `EkEmptyState`, `useToast`/`EkToastHost`, `useProblem` | ham `v-alert` 0 (detay ekranları dahil); `snackbarStore` → `useToast` (ayrı görünüm silindi); `LoadingComponent` sonuçları toast; `EkErrorState`, `IntegrationErrorPanel`, `EkDataGrid` hata gövdesi → `EkProblemState`; sipariş/iade listesi hatasında neden + teknik ayrıntı (`problemFromError`). Entegrasyon yanıtı alınamama (kategori/özellik/değer eşleme) aynı desen. |
+| 2 | Mobilde tablo → kart | `EkDataGrid` kart (26 liste); `EkDataTable` kartsız (9 kullanım: sipariş/iade/müşteri kalemleri, yönetim tabloları); ham `v-data-table` 8 | `EkDataGrid`, `EkDataTable` kap sorgusu (< 600px) | `EkDataTable` kart düzeni (ilk kolon başlık, `actions` sağ üst, ETİKET–değer); ham `v-data-table` mobil satırı ds kart dili (Vuetify eşiği değişmedi); kart sıralama çubuğu tek satır yatay kayar. Kartta: birincil alan, durum çipi, kanal şeridi, ana eylem + `⋯`. |
+| 3 | Toplu işlem + bağlam | `EkBulkBar` 9 ekran + 2 kopya (bildirim, varyant); satır eylemi 18 ekranda 2–3 serbest ikon, 1 ekranda `⋯` | `EkBulkBar`, `EkRowActions`, `EkContextMenu`/`EkMenuPanel` | kopyalar `EkBulkBar`'a; tüm liste eylem hücreleri `EkRowActions` (tek kural: ≤2 ikon, 3+ ana + `⋯`; tehlikeli kırmızı, menüde en sonda); sipariş satır menüsü aynı bileşene. |
+| 4 | Ana sekmeler dar ekranda | ok/solma/tekerlek/etkini göster/liste menüsü vardı; 390px'te sekmeler "F…" | `EkWorkspaceTabs`, `ShellTabStrip` | < 768px sekme ≥ 136px + yatay kayar; kapatma yalnız etkinde; açık sekmeler listesinde "Etkin sekme"; A5 klasör/çizgisiz geçiş korundu. |
+| 5 | Sayfa içi sekmeler | `EkPageTabs` (3 ekran, rozet/ikon yok) + 4 ham `v-tabs` (farklı renk/büyük harf) | `EkPageTabs` v2 | ikinci seviye dil (zeminsiz metin + 2px aksiyon alt çizgisi), ikon, sayı rozeti, taşmada ok; müşteri, mağaza detayı, ayarlar göç etti (giriş ekranının segment anahtarı bilinçli istisna). |
+| 6 | Sipariş + iade | detay: düz tanım listeleri, statik rehber kartları, tarihsiz stepper | `EkRecordSummary`, `EkStatusTimeline`, `EkInfoCard` | özet başlık (kanal rengi, alıcı, No, tarih, toplam), tarihli durum çizgisi (iptal/red başarısız adım), kalemler + tutar dökümü, Alıcı/Teslimat/Kargo/Fatura kartları; iade nedeni kartı + süreç adımları + geçmiş; başlıkta sıradaki iş birincil, iptal/red tehlikeli. Müşteri metrikleri veride yoksa gösterilmez (backend projeksiyonu göndermiyor — uydurma 0 yok). `EkDetailSheet` axe 2 → 0. |
+| 7 | Sekme sınırında overlay | tek `.workplace-area`; ~30 örtü gövdeye teleport (yan sayfalar, onaylar, alt sayfalar) | `WorkspaceTabHost` + `useTabScope`/`useTabOverlay` | bkz. aşağıda. |
+| 8 | Yükleme | `LoadingComponent` dönen çember + sonuç kutuları (55 kullanım); iskelet 19; düğme içi `EkButton loading` | `EkBrandLoader`, `EkLoadingOverlay`, `EkSkeleton`, `EkButton loading` | tek desen: ilk yükleme = iskelet (yüklenirken "0 kayıt" sayfalaması gizli), engelleyici iş = sekme içi marka örtüsü (+ isteğe bağlı yüzde), düğme işi = düğme içi. |
+| 9 | Sayfa yenileme | 13 farklı yenile düğmesi (ikincil "Yenile", araç çubuğu ikonu, kutu düğme; çoğu dönmüyor) | `EkRefreshButton` | başlık satırının en sağı (dar ekranda başlık satırında), çerçeveli 32px, yüklenirken döner (reduced-motion'da durur), ipucu "Yenile · Son güncelleme 14:02 · Alt+R"; pano, stok sağlığı, entegrasyon sağlığı, bildirimler, sistem yönetimi + tüm `EkListScreen` listeleri. |
+| 10 | Eylem ikonları | kayıt defteri yok; sil 9 glif, düzenle 6, görüntüle 5, indir 5, yükle 6, kapat 6, `⋯` yatay/dikey | `design/icons.ts`, `EkActionButton` | 49 eski glif kanoniğe (68 dosya); sil = `trash-can-outline` + hata tonu + onay; iptal = `cancel`; görüntüle = `eye-outline`; `⋯` yatay. Alan-özel eylem (Yanıtla, Okundu işaretle) kendi ikonunu korur. |
+| 11 | Form elemanları | `density="comfortable"` 67, `variant="plain"` 42 (7 eski ekran), anahtar rengi/inset 22 sapma; komşu yardım metni alanı uzatıyordu | Vuetify varsayılanları + `vuetify-overrides.css` | tek yükseklik 40px (compact), anahtar tek görünüm (inset, primary), seçim denetimleri 40px satır, tek satır alanda önek/yer tutucu kaymaz, `v-input` satırları `auto auto` (ızgarada alan boyu sabit). A5 etiket geçişi korundu. |
+| 12 | Açılır listeler | kanal/durum seçimleri şablonsuz; kanal kaynağı 3 farklı; `#item` şablonlarında `role=option` eksik (10 dosya) | `EkSelect` + `selectOptions.ts` | kanal rengi + tür alt satırı, durum tonu, grup, son kullanılanlar, 8+ seçenekte arama + `<mark>` vurgusu, n/m seçili · Tümünü seç · Temizle, "+n" çip özeti, boş/yükleniyor metni; 18 filtre alanı göç etti; marka/kategori seçicilerin mevcut özel şablonları korundu + `role=option`. |
+
+### 17.1 Standart 7 — sekme içi örtüler (çalışma alanı çoklu görevi)
+
+- Her sekme `WorkspaceTabHost` (`#ek-tab-host-<kod>`, `position:relative`) içinde çizilir; gizli sekmede kap `display:none` → örtüler
+  durumunu koruyarak gizlenir, sekmeye dönünce aynı durumda görünür.
+- ds örtüleri (`EkDialog`, `EkDialogHost`, `EkCascadeDialog`, `EkDetailSheet`, `EkLoadingOverlay`, `LoadingComponent`) `useTabOverlay` ile
+  kaba bağlanır (`attach` + `contained`); ham `v-dialog`/`v-bottom-sheet` Vuetify varsayılanlarıyla (defaults provider) aynı kaba.
+- Odak tuzağı sekme içi: odak kabın içinde örtü dışına kaçarsa örtüye döner; sekme şeridi / üst bar / sol menü serbest. Fareyle geri
+  dönüşte odak açık örtüye, klavyeyle şeritte geziniliyorsa şeritte kalır.
+- Esc ve perde tıklaması yalnız ODAKTAKİ sekmenin en üst örtüsünü kapatır (Vuetify genel yığını başka sekmedeki örtüyü "en üst" saydığı
+  için kapanış `useTabOverlay`'de). Kabuk kısayol bekçisi yalnız uygulama geneli örtülerde durur → diyalog açıkken Ctrl+←/→ çalışır.
+- **Tam ekran kalan (uygulama geneli) örtüler:** kısayol listesi (`ShortcutHelpDialog`, SecureLayout), bildirim çekmecesi
+  (`NotificationDrawerComponent`), toast (`EkToastHost`, App.vue), üst çubuğun uygulama yükleme örtüsü (ApplicationBar → `.AppView`),
+  akıllı arama sonuçları ve kabuk menüleri (sekme/hesap/yardım). Oturum süresi dolunca diyalog değil `/login?reason=session-expired`
+  yönlendirmesi var; genel onay servisi yok.
+- Test: `e2e/specs/tab-overlays.spec.ts` (iki sekmede ayrı diyalog, geçiş, diğer sekmede işlem, Esc yalnız odaktaki sekme, şerit/arama
+  örtü altında değil, Ctrl+←/→ diyalog açıkken).
+
+### 17.2 Yeni kısayol
+
+| Tuş | Eylem | Not |
+|---|---|---|
+| Alt+R | Etkin sekmenin sayfa verisini yenile (`EkRefreshButton`) | Ctrl+R / F5 tarayıcıyı yeniler (EZİLMEZ — tüm sekmeler kaybolurdu); Alt+R Chrome/Edge/Electron'da ayrılmış değil; AltGr (Ctrl+Alt) ile eşleşmez; metin alanında çalışmaz. |
+
+### 17.3 Bekçiler (mandal / test)
+
+`tests/a6b-standards.test.ts` — eski eylem glifi 0 (kayıt defteri dışı ikon yasak), liste eylem hücreleri `EkRowActions`, sekme kabı +
+ds örtüleri sekme kapsamında, hiçbir örtü `attach="body"`/`:attach="true|false"` ile kendini gövdeye zorlamaz (uygulama geneli liste
+hariç), kabuk bekçisi yalnız genel örtüde durur, Alt+R eşlemesi, başlıkta serbest "Yenile" yok, `EkDataTable`/`EkDataGrid` kart kap
+sorgusu, "n … seçildi" çubuğu yalnız `EkBulkBar`, ham `v-tabs` yok (giriş hariç), alan yoğunluk/varyant sapması 0, anahtar rengi yalnız
+primary, `#item` şablonlarında `role=option`, kanal filtresi `EkSelect`. `tests/select-options.test.ts` (seçenek mantığı),
+`tests/useToast.test.ts`, `tests/error-reporting.test.ts` (toast'a yönlenme). e2e: `tab-overlays.spec.ts`, vitrin §13 `design-system.spec`
+(axe dahil). Token değişikliği YOK.
+
+**Bilinçli e2e seçici güncellemeleri (iddia aynı):** yeni gliflere seçiciler (`.mdi-eye` → `.mdi-eye-outline` vb.), hata deseninin
+"ne oldu / ne yapmalı" iki satırı (7 iddia), `EkProblemState` sınıfı (kategori eşleme), mağaza detayı sekme adı cümle düzeni.
 
 ## 19. Yardım merkezi ve bağlamsal yardım (`cloud/fe-help`)
 

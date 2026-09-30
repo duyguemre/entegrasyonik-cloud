@@ -60,8 +60,8 @@
       </template>
 
       <template #filters>
-        <v-select v-model="searchInvoiceForm.filters.status" :items="STATUS_ITEMS"
-          label="Fatura durumu" multiple chips closable-chips clearable item-title="title" item-value="value" />
+        <EkSelect v-model="searchInvoiceForm.filters.status" :items="STATUS_ITEMS"
+          label="Fatura durumu" multiple clearable item-title="title" item-value="value" />
         <v-select v-model="searchInvoiceForm.filters.type" :items="TYPE_ITEMS"
           clearable item-title="title" item-value="value" label="Belge tipi" />
       </template>
@@ -104,6 +104,7 @@
 
 <script setup lang="ts">
 import HelpStartLink from '@/components/help/HelpStartLink.vue'
+import EkSelect from '@/components/ds/EkSelect.vue'
 import EkRowActions from '@/components/ds/EkRowActions.vue'
 import { ref, onMounted, computed } from 'vue';
 import useRestApi from '@/composables/restapi';

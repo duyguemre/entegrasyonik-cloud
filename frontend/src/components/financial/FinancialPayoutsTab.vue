@@ -69,14 +69,11 @@
       </template>
 
       <template #filters>
-        <v-select
+        <EkSelect kind="channel"
           v-model="form.integrationCodes"
-          :items="channelOptions"
-          item-title="title"
-          item-value="code"
+          :items="channelOptionsFrom(channelOptions)"
           :label="t('finance.filters.channels')"
           multiple
-          chips
           clearable
         />
         <EkDateField v-model="form.startDate" :label="t('finance.filters.startDate')" :max="form.endDate" />
@@ -129,6 +126,8 @@
 </template>
 
 <script setup lang="ts">
+import EkSelect from '@/components/ds/EkSelect.vue'
+import { channelOptionsFrom } from '@/components/ds/selectOptions'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDisplay } from 'vuetify'

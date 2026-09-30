@@ -171,3 +171,26 @@ describe('Standart 11 — form elemanları tek ızgara', () => {
     expect(css).toMatch(/grid-template-rows: auto auto;/)
   })
 })
+
+describe('Standart 12 — açılır liste seçenekleri', () => {
+  it('özel öğe şablonları (#item) seçenek rolünü korur (role="option")', () => {
+    const offenders: string[] = []
+    for (const f of files.filter((x) => x.path.endsWith('.vue'))) {
+      for (const sel of f.text.matchAll(/<(v-select|v-autocomplete|v-combobox)\b[\s\S]*?<\/\1>/g)) {
+        for (const slot of sel[0].matchAll(/<template (?:#item|v-slot:item)=[\s\S]*?<\/template>/g)) {
+          for (const li of slot[0].matchAll(/<v-list-item\b[^>]*>/g)) {
+            if (/v-bind=/.test(li[0]) && !/role="option"/.test(li[0])) offenders.push(f.path)
+          }
+        }
+      }
+    }
+    expect(offenders).toEqual([])
+  })
+
+  it('liste filtrelerinde kanal seçimi kanal renkli EkSelect (kind="channel")', () => {
+    const offenders = files
+      .filter((f) => f.path.endsWith('.vue') && /<v-select\b[^>]*getClientPlatforms\(\)/.test(f.text))
+      .map((f) => f.path)
+    expect(offenders).toEqual([])
+  })
+})

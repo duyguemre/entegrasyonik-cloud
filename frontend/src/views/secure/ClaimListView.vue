@@ -68,10 +68,9 @@
       <!-- faz3-fe-help: ilk kullanım — hiç kayıt yokken "Nasıl başlanır?" (filtreli boş sonuçta gösterilmez). -->
       <template #empty-action><HelpStartLink article="ord-returns" /></template>
       <template #filters>
-        <v-select v-model="searchClaimForm.data.integrationCodes" :items="integrationStore.getClientPlatforms()"
-          item-title="title" item-value="code" label="Kanal" multiple chips closable-chips clearable />
-        <v-select v-model="searchClaimForm.data.internalStatuses" :items="statusOptions" item-title="title"
-          item-value="id" label="Talep durumu" multiple chips closable-chips clearable />
+        <EkSelect kind="channel" v-model="searchClaimForm.data.integrationCodes" :items="channelOptionsFrom(integrationStore.getClientPlatforms())" label="Kanal" multiple clearable />
+        <EkSelect v-model="searchClaimForm.data.internalStatuses" kind="status" :items="toneOptionsFrom(statusOptions, (id) => CLAIM_STATUS_TONE[id as ClaimInternalStatusEnum]?.tone)" item-title="title"
+          item-value="id" label="Talep durumu" multiple clearable />
       </template>
 
       <template #bulk-actions>
@@ -109,6 +108,8 @@
 <script setup lang="ts">
 import HelpStartLink from '@/components/help/HelpStartLink.vue'
 import EkHelpHint from '@/components/ds/EkHelpHint.vue'
+import EkSelect from '@/components/ds/EkSelect.vue'
+import { channelOptionsFrom, toneOptionsFrom } from '@/components/ds/selectOptions'
 import { problemFromError, type ProblemCopy } from '@/composables/useProblem'
 import EkRowActions from '@/components/ds/EkRowActions.vue'
 import { ref, computed, reactive } from 'vue'

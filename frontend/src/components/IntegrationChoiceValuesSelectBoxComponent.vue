@@ -23,7 +23,7 @@
       </v-list-item>
     </template>
     <template v-slot:item="{item,index,props}:any">
-      <v-list-item v-bind="props" class="choice-select__item">
+      <v-list-item role="option" v-bind="props" class="choice-select__item">
         <template #title>
         </template>
         <div class="d-flex justify-start align-center ml-6">

@@ -56,14 +56,14 @@
       <template #filters>
         <EkDateField v-model="searchExportLogForm.data.startDate" label="Başlangıç tarihi" :max="searchExportLogForm.data.endDate" />
         <EkDateField v-model="searchExportLogForm.data.endDate" label="Bitiş tarihi" :min="searchExportLogForm.data.startDate" />
-        <v-select v-model="searchExportLogForm.data.integrationCode" :items="integrationStore.getClientPlatforms()" item-title="title" item-value="code"
-          label="Kanal" clearable multiple chips closable-chips />
+        <EkSelect kind="channel" v-model="searchExportLogForm.data.integrationCode" :items="channelOptionsFrom(integrationStore.getClientPlatforms())"
+          label="Kanal" clearable multiple />
         <v-select v-model="searchExportLogForm.data.mode" :items="processMenuItems" label="İşlem tipi" item-value="id" clearable />
         <v-text-field v-model="searchExportLogForm.data.title" label="Ürün adı" clearable />
         <v-text-field v-model="searchExportLogForm.data.barcode" label="Barkod" clearable />
         <v-text-field v-model="searchExportLogForm.data.stockcode" label="Stok kodu" clearable />
-        <v-select v-model="searchExportLogForm.data.statuses" :items="statusOptions" item-title="title" item-value="id"
-          label="İşlem durumu" clearable multiple chips closable-chips />
+        <EkSelect v-model="searchExportLogForm.data.statuses" :items="statusOptions" item-title="title" item-value="id"
+          label="İşlem durumu" clearable multiple />
         <CategorySelectBoxComponent v-model="searchExportLogForm.data.category" :withAll="false" noInit />
         <BrandSelectBoxComponent v-model="searchExportLogForm.data.brand" :withAll="false" noInit />
         <v-select v-for="(choice, index) in choicesStore.choices" :key="index"
@@ -120,6 +120,8 @@
 </template>
 
 <script setup lang="ts">
+import EkSelect from '@/components/ds/EkSelect.vue'
+import { channelOptionsFrom } from '@/components/ds/selectOptions'
 import EkRowActions from '@/components/ds/EkRowActions.vue'
 import { ref, onMounted, reactive, computed } from 'vue'
 import useRestApi from '@/composables/restapi'

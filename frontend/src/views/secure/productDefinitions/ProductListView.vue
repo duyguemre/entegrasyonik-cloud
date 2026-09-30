@@ -85,8 +85,8 @@
         <BrandSelectBoxComponent v-model="searchProductForm.data.brand" :withAll="false" noInit />
         <VCurrencyComponentVue v-model="searchProductForm.data.prices.minSalePrice" :isIconExist="false" label="Minimum fiyat" clearable :required="false" />
         <VCurrencyComponentVue v-model="searchProductForm.data.prices.maxSalePrice" :isIconExist="false" label="Maksimum fiyat" clearable :required="false" />
-        <v-select v-model="searchProductForm.data.transferStatuses" :items="transferStatusOptions" item-title="title" item-value="value"
-          label="Platform yüklenme durumu" multiple chips closable-chips clearable class="ek-span-2" />
+        <EkSelect v-model="searchProductForm.data.transferStatuses" :items="transferStatusOptions" item-title="title" item-value="value"
+          label="Platform yüklenme durumu" multiple clearable class="ek-span-2" />
       </template>
 
       <template #bulk-actions>
@@ -208,6 +208,7 @@
 
 <script setup lang="ts">
 import HelpStartLink from '@/components/help/HelpStartLink.vue'
+import EkSelect from '@/components/ds/EkSelect.vue'
 import EkRowActions from '@/components/ds/EkRowActions.vue'
 import { useI18n } from 'vue-i18n';
 import { ref, onMounted, onBeforeMount, onActivated, watch, computed, nextTick, getCurrentInstance, inject, onDeactivated, onUnmounted, reactive } from 'vue'
