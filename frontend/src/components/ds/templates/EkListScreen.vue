@@ -343,11 +343,11 @@ function setCollapsed(v: boolean) {
     width: 100%;
   }
 
-  /* Aşama 3: mobilde arama tam satır; eylemler (birincil + yenile) altında sağa yaslı tek satır —
-     yenile düğmesi tek başına alt satıra düşmez. */
+  /* Aşama 3: mobilde arama geniş tabanlı (220px); yalnız "yenile" varsa aynı satırda kalır, metinli birincil
+     eylem varsa birincil + yenile birlikte alt satıra geçer — yenile tek başına bir satır kaplamaz. */
   .ek-list-screen__search,
   .ek-list-screen__head.is-headless .ek-list-screen__search {
-    flex: 1 1 100%;
+    flex: 1 1 220px;
     width: auto;
   }
 }

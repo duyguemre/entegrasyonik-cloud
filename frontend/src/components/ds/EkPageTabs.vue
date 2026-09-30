@@ -12,8 +12,9 @@
   Kullanım:
     <EkPageTabs v-model="activeTab" :tabs="[{ value: 'overview', label: 'Genel' }, { value: 'logs', label: 'Kayıtlar' }]" />
 -->
+<!-- Aşama 3: dar ekranda taşan sekmeler oklarla kaydırılır (`show-arrows`; son sekme kesik kalmaz). -->
 <template>
-  <v-tabs :model-value="modelValue" class="ek-page-tabs" @update:model-value="(value) => emit('update:modelValue', value as string)">
+  <v-tabs :model-value="modelValue" class="ek-page-tabs" show-arrows @update:model-value="(value) => emit('update:modelValue', value as string)">
     <v-tab v-for="tab in tabs" :key="tab.value" :value="tab.value">
       {{ tab.label }}
     </v-tab>
