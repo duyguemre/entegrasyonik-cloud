@@ -15,7 +15,7 @@
       label="Üst kategori" placeholder="Ana seviye (üst kategori yok)" persistent-placeholder
       hint="Boş bırakırsanız ana seviyeye eklenir." persistent-hint data-qc-field="parent">
       <template #item="{ item, props: itemProps }: any">
-        <v-list-item v-bind="itemProps" :subtitle="item.raw.breadcrumb || undefined" />
+        <v-list-item v-bind="itemProps" role="option" :subtitle="item.raw.breadcrumb || undefined" />
       </template>
     </v-autocomplete>
   </QuickCreateDialog>

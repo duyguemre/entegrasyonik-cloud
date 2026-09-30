@@ -6,6 +6,7 @@
  * `variant.platforms[kod].prices.{salePrice,marketPrice}`. Kanal dönüştürücüleri `platforms[kod].prices || prices`
  * kullanır (backend salt-okunur doğrulandı: trendyol/ProductTransformer) → özel fiyatı olmayan kanal ANA FİYATLA gider.
  */
+import { formatMoney } from '@entegrasyonik/ui/format'
 
 export interface PricePair {
   salePrice?: number | null
@@ -161,6 +162,4 @@ export function bulkPreview(rows: readonly ChannelPriceRow[], field: BulkField, 
   return `${n} kanalda ${opText[op]} (ör. ${sample.title}: ${fmtTry(from)} → ${fmtTry(to)}).${convText}`
 }
 
-function fmtTry(n: number): string {
-  return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', minimumFractionDigits: 2 }).format(n)
-}
+const fmtTry = (n: number): string => formatMoney(n)

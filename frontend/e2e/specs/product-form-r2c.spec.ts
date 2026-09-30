@@ -28,6 +28,8 @@ async function openProduct(page: Page, product: any, extra: Record<string, any> 
   await page.locator('.productListView tbody tr').first().locator('button[aria-label="Ürünü düzenle"]').click()
   const root = page.locator(`.productUpdateView${product._id}`)
   await expect(root.getByText('Ürün Tanımı').first()).toBeVisible({ timeout: 20_000 })
+  // Tanıtım turu kartı dar ekranda form alt çubuğunu örter; kullanıcı gibi kapatılır.
+  await page.getByRole('button', { name: 'Şimdi değil' }).click({ timeout: 3000 }).catch(() => undefined)
   return root
 }
 
@@ -134,6 +136,7 @@ test.describe('FR2-PFORM 27-28 — galeri', () => {
     const card = page.locator('.v-overlay--active').filter({ hasText: 'Resim Galerisi' }).first()
     const tile = card.locator('.pig-tile').nth(2)
     await expect(tile).toBeVisible()
+    await tile.scrollIntoViewIfNeeded()
     const box = (await tile.boundingBox())!
     const sx = box.x + box.width / 2
     const sy = box.y + box.height / 2

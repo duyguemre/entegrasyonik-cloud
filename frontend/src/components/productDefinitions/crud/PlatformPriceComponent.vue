@@ -25,7 +25,7 @@
           :label="$t('productDefinitions.product.variants.marketPrice')" clearable />
         <span class="cpe-disc" :class="{ 'is-none': baseDiscount === null }">
           <span class="cpe-micro">İndirim</span>
-          <strong class="ek-num">{{ baseDiscount === null ? '—' : `%${pct(baseDiscount)}` }}</strong>
+          <strong class="ek-num">{{ baseDiscount === null ? '—' : pct(baseDiscount) }}</strong>
         </span>
       </div>
     </section>
@@ -84,7 +84,7 @@
                 :aria-label="`${row.title} satış fiyatı`" class="cpe-in" />
               <span v-if="row.diff && row.diff.abs !== 0" class="cpe-diff ek-num" :class="row.diff.abs > 0 ? 'is-up' : 'is-down'">
                 <v-icon :icon="row.diff.abs > 0 ? 'mdi-arrow-up' : 'mdi-arrow-down'" aria-hidden="true" />
-                {{ money(Math.abs(row.diff.abs)) }}<template v-if="row.diff.pct !== null"> (%{{ pct(Math.abs(row.diff.pct)) }})</template>
+                {{ money(Math.abs(row.diff.abs)) }}<template v-if="row.diff.pct !== null"> ({{ pct(Math.abs(row.diff.pct)) }})</template>
                 <span class="cpe-diff__ref">ana fiyata göre</span>
               </span>
               <span v-else class="cpe-diff is-same">Ana fiyatla aynı</span>
@@ -101,7 +101,7 @@
             <span class="cpe-cell cpe-market cpe-inherit is-num ek-num" role="cell"><span class="cpe-lbl" aria-hidden="true">Piyasa</span>{{ money(row.market) }}</span>
           </template>
 
-          <span class="cpe-cell is-num ek-num cpe-disc-cell" role="cell">{{ row.discountPct === null ? '—' : `%${pct(row.discountPct)}` }}</span>
+          <span class="cpe-cell is-num ek-num cpe-disc-cell" role="cell">{{ row.discountPct === null ? '—' : pct(row.discountPct) }}</span>
 
           <span class="cpe-cell cpe-act" role="cell">
             <EkButton v-if="!row.custom" size="sm" tone="secondary" icon="mdi-pencil-outline" :data-cpe="`custom-${row.code}`"
@@ -130,7 +130,7 @@
 import EkHelpHint from '@/components/page/EkHelpHint.vue'
 import { computed, reactive, ref } from 'vue'
 import { EkButton, EkEmptyState, EkPlatformMark, EkTooltip } from '@entegrasyonik/ui/components'
-import { formatMoney } from '@entegrasyonik/ui/format'
+import { formatMoney, formatPercent } from '@entegrasyonik/ui/format'
 import { useToast } from '@entegrasyonik/ui/composables/useToast'
 import VCurrencyComponentVue from '@/components/VCurrencyComponent.vue'
 import { useIntegrationStore } from '@/stores/integrationStore'
@@ -152,15 +152,16 @@ const rows = computed(() => channelRows(channels.value, props.platformPriceForm)
 const customCount = computed(() => rows.value.filter((r) => r.custom).length)
 
 /** Ana fiyat nesnesi (yoksa oluşturulur; ürün kaydında zaten var). */
-const basePriceForm = computed(() => {
-  if (!props.platformPriceForm.prices) props.platformPriceForm.prices = { salePrice: 0, marketPrice: 0, isPlatformBasedPrice: true }
-  return props.platformPriceForm.prices
-})
+// Çağıran varyant nesnesini doğrudan düzenler (mevcut sözleşme); ana fiyat nesnesi yoksa kurulumda bir kez açılır.
+// eslint-disable-next-line vue/no-mutating-props
+if (!props.platformPriceForm.prices) props.platformPriceForm.prices = { salePrice: 0, marketPrice: 0, isPlatformBasedPrice: true }
+const basePriceForm = computed(() => props.platformPriceForm.prices)
 const baseDiscount = computed(() => discountPct(Number(basePriceForm.value.salePrice) || 0, Number(basePriceForm.value.marketPrice) || 0))
 const customOf = (code: string) => props.platformPriceForm.platforms[code].prices
 
 const money = (v: number) => formatMoney(Number(v) || 0)
-const pct = (v: number) => new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 1 }).format(v)
+/** 17.8 → "%17,8" (DS biçimleyici; oran 0..1). */
+const pct = (v: number) => formatPercent(v / 100)
 
 // ---- toplu değişiklik ----
 const bulkOpen = ref(false)
