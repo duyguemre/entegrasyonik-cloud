@@ -556,3 +556,19 @@ bölümü; ortak ds bileşenlerine dokunulmadı, token değişikliği yok. Önce
 | Çok varyant | > 8: kompakt ızgara + "Tümünü gör" (iç kaydırma, yapışık başlık) |
 | Dar kap | < 600px kart (A6b) |
 | Mantık | `variants/variantListModel.ts` (saf, `tests/variant-list-model.test.ts`) |
+
+## 22. B1 — ürün listesi: rowspan'lı varyant grupları + premium küçük görsel (`cloud/fe-b1`)
+
+Taban `cloud/ds-v2-a6b` + `fe-breadcrumb` + `fe-a9` + `fe-a10` + `fe-a11`. Önce/sonra + gerekçe + alternatifler: `docs/b1-review/README.md`.
+
+| Konu | Karar |
+|---|---|
+| Grup deseni | ürün güncelle ızgarasıyla AYNI: ilk kolon rowspan'lı grup hücresi `VariantGroupCell` (ad + n varyant [+ stok]); A11 grup başlık satırı kaldırıldı |
+| Sıra | `useVariantGrouping`: grup = seçenek tanım sırası, grup içi kolon sıralaması → kalan seçenek tanım sırası (S, M, L, XL) |
+| Rowspan | tek hesap `variantSheet.groupRows` + `windowRowspans` (ızgara sanal kaydırma = liste "Tümünü gör" kırpması) |
+| Satır | A11 korunur (barkod kopyala, kanal çipi + neden + kart, stok tonu, raf, `EkRowActions`); yükseklik 58 px (değişmedi), yatay taşma 0 |
+| Küçük görsel | `ProductThumb`: kare 28/40/44, cover, ince kenar + radius-tile, iskelet, yer tutucu ikon; **sayı rozeti yok**, çoklu görselde arkada ince yığın kenarı |
+| Önizleme | 450 ms gecikmeli, etkileşimsiz `v-tooltip`, sabit 240×240 çerçeve (hoplamaz), ≤ 5 kare şerit; klavye odağında da açılır |
+| Dar kap | < 600px kart; grup hücresi ilk kartın üstünde tam genişlik başlık |
+| Testler | `tests/b1-variant-grouping.test.ts`, `tests/b1-product-thumb.test.ts`, `e2e/specs/b1-variant-list.spec.ts` (3 viewport + axe); inceleme `e2e/specs/b1-review.spec.ts` |
+
