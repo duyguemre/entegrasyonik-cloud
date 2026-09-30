@@ -370,6 +370,8 @@ export async function openScreen(page: Page, screenCode: keyof typeof MENU_SCREE
     if (!(await subItem.isVisible().catch(() => false))) {
       await groupItem.click()
       await expect(subItem).toBeVisible()
+      // Aşama 3 (birleşik kabuk): grup açılış geçişi bitmeden tıklanan 2.+ alt öğe mobil çekmecede kaçabiliyor.
+      await page.waitForTimeout(300)
     }
     await subItem.click()
   } else {

@@ -4,10 +4,10 @@
   <div class="brandDefinition">
     <div class="workarea-scroll">
       <v-row class="mt-0 mb-0 bdv-row">
-        <v-col cols="12" sm="6" class="bdv-col">
+        <v-col cols="12" md="6" class="bdv-col">
           <BrandListComponent v-model="isBrandsListed" @openBrandSync="openBrandSync($event)" />
         </v-col>
-        <v-col cols="12" sm="6" class="bdv-col">
+        <v-col cols="12" md="6" class="bdv-col">
           <BrandSyncComponent v-model="selectedBrand" />
         </v-col>
       </v-row>
@@ -60,10 +60,16 @@ onMounted(() => {
   height: 100%;
 }
 
-/* Faz3 DS-v2 int düzeltme: <600px'te (xs) iki panel alt alta (cols=12, sm=6). Yan yana 375px'te
-   liste paneli ~140px'e sıkışıp marka/kategori adları 0 genişliğe düşüyordu (satır başlığı ellipsis). */
+/* Aşama 3 + int düzeltme: dar ekranda (<960px) iki panel ÜST ÜSTE (yan yana 375px'te liste adları sıfır
+   genişliğe eziliyordu; 800px'te de iki panel ~330px'e sıkışıyordu); tam ekran yükseklik yalnız yan yana düzende. */
+.bdv-col {
+  position: relative;
+  min-height: 520px;
+}
+
+@media (min-width: 960px) {
 .bdv-col {
   height: calc(100vh - 110px);
-  position: relative;
+}
 }
 </style>

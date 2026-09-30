@@ -12,7 +12,7 @@
     </EkContextMenu>
 -->
 <template>
-  <v-menu v-model="open" :location="location" :close-on-content-click="false" @update:model-value="onToggle">
+  <v-menu v-model="open" :location="location" :close-on-content-click="false" @update:model-value="onToggle" @after-leave="flushSelect">
     <template #activator="{ props: activatorProps }">
       <slot name="activator" :props="activatorProps" />
     </template>
@@ -45,8 +45,22 @@ function onToggle(value: boolean) {
   if (value) nextTick(() => panelRef.value?.focusFirst())
 }
 
+// Aşama 3: seçim menü KAPANDIKTAN sonra yayılır. v-menu kapanışta odağı tetikleyiciye geri verir; seçim bir
+// diyalog açıyorsa (ör. tehlikeli onay) diyaloğun varsayılan odağı (Vazgeç) bu geri dönüşle çalınıyordu.
+let pending: EkMenuItem | null = null
+let fallback: ReturnType<typeof setTimeout> | undefined
+function flushSelect() {
+  if (fallback) clearTimeout(fallback)
+  fallback = undefined
+  const item = pending
+  pending = null
+  if (item) emit('select', item)
+}
+
 function onSelect(item: EkMenuItem) {
-  emit('select', item)
+  pending = item
   open.value = false
+  // Geçiş olayı gelmezse (reduced-motion vb.) seçim yine de yayılır.
+  fallback = setTimeout(flushSelect, 400)
 }
 </script>
