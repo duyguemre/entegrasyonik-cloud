@@ -31,6 +31,7 @@
         <ChoicesMappingComponent v-model="isChoiceMappingOpen" :integrationCode="integrationCode"
           :integrationCategoryId="integrationCategoryId" :integrationChoice="integrationChoice"
           :localCategoryId="selectedCategory?._id" key="ChoicesMappingComponent"
+          :valuesError="valuesLoad.error.value" :valuesLoading="valuesLoad.loading.value" @retryValues="retryValues"
           @close="isChoiceMappingOpen = false" v-if="isChoiceMappingOpen == true" />
       </keep-alive>
     </EkDialogHost>
@@ -114,10 +115,15 @@
             </div>
           </EkFormSection>
 
-          <EkFormSection v-if="integrationChoices && integrationChoices.length > 0" title="Seçenek eşleştirme"
-            icon="mdi-link-variant" :columns="1"
+          <EkFormSection v-if="isCategorySaved && (integrationChoices.length > 0 || choicesLoad.status.value !== 'idle')"
+            title="Seçenek eşleştirme" icon="mdi-link-variant" :columns="1"
             description="Kategori bağlantısı kaydedildikten sonra platform seçeneklerini eşleştirebilirsiniz.">
-            <v-autocomplete return-object item-value="_id" item-title="title" :items="integrationChoices"
+            <IntegrationLoadingBlock v-if="choicesLoad.status.value === 'loading' && !choicesLoad.error.value"
+              :label="`${platformName(integrationCode)} kategori özellikleri alınıyor…`" />
+            <IntegrationErrorPanel v-else-if="choicesLoad.error.value" :info="choicesLoad.error.value"
+              :retrying="choicesLoad.loading.value" @retry="retryChoices" />
+            <template v-else>
+            <v-autocomplete ref="choiceFieldRef" return-object item-value="_id" item-title="title" :items="integrationChoices"
               v-model="integrationChoice" :disabled="!isCategorySaved" label="Platform seçeneği"
               placeholder="Lütfen seçiniz" persistent-placeholder no-data-text="Seçenek bulunamadı"
               @update:model-value="retrieveIntegrationCategoryAttributeValues()">
@@ -139,12 +145,17 @@
                 </v-list-item>
               </template>
             </v-autocomplete>
+            <IntegrationLoadingBlock v-if="valuesLoad.status.value === 'loading' && !valuesLoad.error.value"
+              :label="`${integrationChoice?.title ?? 'Özellik'} değerleri alınıyor…`" />
+            <IntegrationErrorPanel v-else-if="valuesLoad.error.value" :info="valuesLoad.error.value"
+              :retrying="valuesLoad.loading.value" @retry="retryValues" />
             <div class="ek-category-sync__row-actions">
               <EkButton tone="secondary" icon="mdi-link-variant" :disabled="!integrationChoice || !isCategorySaved"
                 @click.stop="isChoiceMappingOpen = true">
                 Seçenek Eşleştir
               </EkButton>
             </div>
+            </template>
           </EkFormSection>
         </template>
       </CardComponent>
@@ -168,6 +179,9 @@ import EkFormSection from '@/components/ds/EkFormSection.vue'
 import EkStatusChip from '@/components/ds/EkStatusChip.vue'
 import EkBadge from '@/components/ds/EkBadge.vue'
 import PlatformChoiceChip from '@/components/platforms/PlatformChoiceChip.vue'
+import IntegrationErrorPanel from '@/components/integrations/IntegrationErrorPanel.vue'
+import IntegrationLoadingBlock from '@/components/integrations/IntegrationLoadingBlock.vue'
+import { useIntegrationLoad } from '@/composables/useIntegrationError'
 
 import useRestApi from '@/composables/restapi'
 import useFormRules from '@/composables/formrules';
@@ -193,6 +207,14 @@ const loadingComponentRef: any = ref(null)
 const integrationChoices: any = ref([])
 const integrationChoice: any = ref()
 const isCategorySaved = ref(false)
+const choiceFieldRef: any = ref(null)
+
+// Pazaryeri özellik / değer listeleri: yükleniyor · hata · boş liste ayrı durumlar (bkz. useIntegrationError.ts).
+const choicesLoad = useIntegrationLoad(() =>
+  integrationStore.loadIntegrationCategoryChoices(integrationCode.value, integrationCategoryId.value))
+const valuesLoad = useIntegrationLoad(() =>
+  integrationStore.loadIntegrationCategoryAttributeValues(integrationCode.value, integrationCategoryId.value, integrationChoice.value._id))
+const resetLoads = () => { choicesLoad.reset(); valuesLoad.reset() }
 
 const confirmationDelete = reactive<any>({
   activator: undefined,
@@ -240,6 +262,7 @@ watch(() => integrationCategoryId.value, async (newVal, oldVal) => {
   integrationChoice.value = undefined
   integrationChoices.value = []
   isCategorySaved.value = false
+  resetLoads()
 
   if (newVal) {
     // DOM'un render olması ve alt componentlerin (select box vb) hazırlanması için bekle
@@ -258,6 +281,7 @@ const reset = async () => {
     integrationChoices.value = []
     integrationChoice.value = undefined
     isCategorySaved.value = false
+    resetLoads()
   }
 }
 
@@ -271,6 +295,7 @@ const setPlatform = async () => {
   isCategorySaved.value = false
   integrationChoices.value = []
   integrationChoice.value = undefined
+  resetLoads()
 
   if (!selectedCategory.value?._id || integrationCode.value === -1) {
     return
@@ -343,30 +368,44 @@ const saveIntegrationCategory = async () => {
 
 const retrieveIntegrationCategoryChoices = async () => {
   if (!integrationCategoryId.value) return
-  let guid = loadingComponentRef.value.info("")
-  const resp = await integrationStore.retrieveIntegrationCategoryChoices(integrationCode.value, integrationCategoryId.value)
-  loadingComponentRef.value.remove(guid)
-
-  if (resp && resp.length > 0) {
-    integrationChoices.value = resp.sort((a: any, b: any) => {
+  const result = await choicesLoad.run()
+  if (result.ok) {
+    integrationChoices.value = [...result.data].sort((a: any, b: any) => {
       const scoreA = (a.slicer ? 2 : (a.varianter ? 1 : 0));
       const scoreB = (b.slicer ? 2 : (b.varianter ? 1 : 0));
       if (scoreA !== scoreB) return scoreB - scoreA;
       return a.title?.localeCompare(b.title);
     });
+  } else {
+    integrationChoices.value = []
   }
 }
 
-const retrieveIntegrationCategoryAttributeValues = async () => {
-  if (!integrationChoice.value || integrationChoice.value.allowCustom) return
-  // Eğer zaten değerler varsa ve boş değilse tekrar çekme (Örn: N11 CDN hepsini bir kerede getiriyor)
-  if (integrationChoice.value.values && integrationChoice.value.values.length > 0) return
-
-  const resp = await integrationStore.retrieveIntegrationCategoryAttributeValues(
-    integrationCode.value, integrationCategoryId.value, integrationChoice.value._id
-  )
-  if (resp) integrationChoice.value.values = resp
+// Hata panelinden "Tekrar dene": başarılıysa odak yeni görünen alana taşınır.
+const retryChoices = async () => {
+  await retrieveIntegrationCategoryChoices()
+  if (!choicesLoad.error.value) { await nextTick(); choiceFieldRef.value?.focus?.() }
 }
+
+const fetchIntegrationCategoryAttributeValues = async () => {
+  const target = integrationChoice.value
+  if (!target || target.allowCustom) return
+  // Eğer zaten değerler varsa ve boş değilse tekrar çekme (Örn: N11 CDN hepsini bir kerede getiriyor)
+  if (target.values && target.values.length > 0) return
+
+  const result = await valuesLoad.run()
+  // Kullanıcı bu arada başka bir seçenek seçtiyse eski yanıt yeni seçeneğe yazılmaz.
+  if (result.ok && integrationChoice.value === target) target.values = result.data
+}
+
+// Seçenek değişti: önceki değer-yükleme durumunu (hata/boş) temizleyip yeniden yükle.
+const retrieveIntegrationCategoryAttributeValues = async () => {
+  valuesLoad.reset()
+  await fetchIntegrationCategoryAttributeValues()
+}
+
+// "Tekrar dene": mevcut hata paneli yerinde kalır (düğme yükleniyor), sıfırlanmaz.
+const retryValues = () => fetchIntegrationCategoryAttributeValues()
 
 const updateCategory = async () => {
   let guid = loadingComponentRef.value.info("")

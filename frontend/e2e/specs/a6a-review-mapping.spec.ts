@@ -3,6 +3,7 @@
 import { test, expect, type Page, type Route } from '@playwright/test'
 import { installApiMocks, mockError, type MockValue } from '../fixtures/mockApi'
 import { menuFixture, gotoAuthed, openDrawer } from '../fixtures/nav'
+import { choicesDoluFixture } from '../fixtures/apiData'
 
 const PHASE = process.env.A6A_PHASE === 'after' ? 'after' : 'before'
 const OUT = 'docs/a6a-review'
@@ -64,6 +65,7 @@ async function setup(page: Page, overrides: Record<string, MockValue>) {
     'IntegrationService/retrieveCategoriesFromIntegration': platformCategories,
     'IntegrationService/retrieveCommisionForCategoryFromIntegration': { commission: 12 },
     'IntegrationService/retrieveCategoryAttributesFromIntegration': platformAttributes,
+    ChoiceService: choicesDoluFixture,
     'AttributeMappingService': [],
     'AttributeMappingService/getAttributeMapping': {},
     'IntegrationService/retrieveCategoryAttributeValuesFromIntegration': [{ id: 1, title: 'Kırmızı' }],
@@ -99,13 +101,17 @@ for (const vp of [{ w: 1440, h: 900 }, { w: 390, h: 844 }]) {
       })
     }
 
-    test('değerler 5xx', async ({ page }) => {
-      await setup(page, { 'IntegrationService/retrieveCategoryAttributeValuesFromIntegration': FAILS['5xx'] })
-      await page.getByLabel('Platform seçeneği').click()
-      await page.locator('.v-overlay--active .v-list-item').filter({ hasText: 'Renk' }).first().click()
-      await page.getByRole('button', { name: /Seçenek Eşleştir/ }).click()
-      await shot(page, 'values-5xx', vp.w)
-    })
+    for (const key of ['5xx', 'empty']) {
+      test(`değerler ${key}`, async ({ page }) => {
+        await setup(page, { 'IntegrationService/retrieveCategoryAttributeValuesFromIntegration': FAILS[key] })
+        await page.getByLabel('Platform seçeneği').click()
+        await page.locator('.v-overlay--active .v-list-item').filter({ hasText: 'Renk' }).first().click()
+        await page.getByRole('button', { name: /Seçenek Eşleştir/ }).click()
+        await page.locator('.cm-card .v-field').first().click()
+        await page.locator('.v-overlay--active .v-list-item').filter({ hasText: 'E2E Renk Grubu' }).first().click()
+        await shot(page, `values-${key}`, vp.w, '.cm-card fieldset')
+      })
+    }
 
     if (PHASE === 'after') {
       test('teknik ayrıntı açık (kategori + özellik)', async ({ page }) => {

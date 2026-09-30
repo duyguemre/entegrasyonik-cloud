@@ -12,8 +12,10 @@
   <div class="categorySyncComponent">
     <LoadingComponent ref="loadingComponentRef" attach=".categorySyncComponent"></LoadingComponent>
 
-    <div v-if="integrationCategories.length > 0">
-      <v-text-field :model-value="selectedLabel" readonly clearable
+    <IntegrationLoadingBlock v-if="status === 'loading' && !loadError" :label="`${platformTitle} kategorileri alınıyor…`" />
+    <IntegrationErrorPanel v-else-if="loadError" :info="loadError" :retrying="loading" @retry="retryLoad" />
+    <div v-else-if="integrationCategories.length > 0">
+      <v-text-field ref="fieldRef" :model-value="selectedLabel" readonly clearable
         :label="`${platformTitle} kategorisi`" :placeholder="$t('productDefinitions.category.search')"
         :rules="mandatory == true ? formRules.mandatoryRule : []" :hint="hintText" persistent-hint
         append-inner-icon="mdi-file-tree-outline" class="ek-integration-category-field"
@@ -28,13 +30,16 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, watch, ref } from 'vue'
+import { computed, nextTick, watch, ref } from 'vue'
 import { useIntegrationStore } from '@/stores/integrationStore';
 import useFormRules from '@/composables/formrules';
 import LoadingComponent from './LoadingComponent.vue';
 import EkCascadeDialog from '@/components/ds/EkCascadeDialog.vue'
 import type { EkCascadeNode } from '@/components/ds/EkCascadePicker.vue'
 import { formatNumber } from '@/composables/format'
+import IntegrationErrorPanel from '@/components/integrations/IntegrationErrorPanel.vue'
+import IntegrationLoadingBlock from '@/components/integrations/IntegrationLoadingBlock.vue'
+import { useIntegrationLoad } from '@/composables/useIntegrationError'
 
 const integrationStore = useIntegrationStore()
 const integrationCategories = ref<any[]>([])
@@ -50,34 +55,53 @@ const props = withDefaults(defineProps<{ mandatory?: boolean, integrationCode: s
 })
 const formRules: any = useFormRules()
 
-watch(() => props.integrationCode, async (newCode) => {
-  if (!newCode) return
-  let guid = loadingComponentRef.value?.info("")
-  try {
-    const resp = await integrationStore.getIntegrationCategories(newCode)
-    const catMap = new Map();
-    resp.forEach((c: any) => catMap.set(c._id, c));
+// Pazaryeri kategori ağacı: yükleniyor (iskelet) · hata / boş liste (IntegrationErrorPanel: neden + ne yapmalı +
+// Tekrar dene + teknik ayrıntı) · hazır. Hata artık sessiz bir boşluk DEĞİL (bkz. useIntegrationError.ts).
+const fieldRef = ref<any>(null)
+const { status, error: loadError, loading, run, reset: resetLoad } = useIntegrationLoad(
+  () => integrationStore.loadIntegrationCategories(props.integrationCode),
+)
 
-    integrationCategories.value = resp.map((cat: any, idx: number) => {
-      const path = [];
-      let parent = catMap.get(cat.parentId);
-      while (parent) {
-        path.unshift(parent.title);
-        parent = catMap.get(parent.parentId);
-      }
-      return {
-        ...cat,
-        originalIndex: idx + 1,
-        isParent: cat.children?.length > 0,
-        childrenCount: cat.children?.length || 0,
-        breadcrumb: path.join(' > ')
-      }
-    });
-  } catch (e) {
+function applyCategories(resp: any[]) {
+  const catMap = new Map();
+  resp.forEach((c: any) => catMap.set(c._id, c));
+
+  integrationCategories.value = resp.map((cat: any, idx: number) => {
+    const path = [];
+    let parent = catMap.get(cat.parentId);
+    while (parent) {
+      path.unshift(parent.title);
+      parent = catMap.get(parent.parentId);
+    }
+    return {
+      ...cat,
+      originalIndex: idx + 1,
+      isParent: cat.children?.length > 0,
+      childrenCount: cat.children?.length || 0,
+      breadcrumb: path.join(' > ')
+    }
+  });
+}
+
+async function loadCategories(focusOnRecover = false) {
+  const hadError = !!loadError.value
+  const result = await run()
+  if (result.ok) {
+    applyCategories(result.data)
+    // Hata panelinden "Tekrar dene" ile kurtarıldıysa odak, yeni görünen alana taşınır.
+    if (focusOnRecover && hadError) { await nextTick(); fieldRef.value?.focus?.() }
+  } else {
     integrationCategories.value = []
-  } finally {
-    loadingComponentRef.value?.remove(guid)
   }
+}
+
+const retryLoad = () => loadCategories(true)
+
+watch(() => props.integrationCode, async (newCode) => {
+  integrationCategories.value = []
+  resetLoad()
+  if (!newCode) return
+  await loadCategories()
 }, { immediate: true })
 
 const platformTitle = computed(() => integrationStore.getIntegrationTitle(props.integrationCode) || props.integrationCode)

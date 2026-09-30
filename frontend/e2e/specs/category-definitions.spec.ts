@@ -11,8 +11,8 @@
 // görünürlüğünü DEĞİL, mevcut (aktif) yüzeyi doğrular.
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
-import { installApiMocks } from '../fixtures/mockApi'
-import { categoriesDoluFixture } from '../fixtures/apiData'
+import { installApiMocks, mockError, type MockValue } from '../fixtures/mockApi'
+import { categoriesDoluFixture, choicesDoluFixture } from '../fixtures/apiData'
 import { menuFixture, gotoAuthed, openDrawer, expectScreenOpen } from '../fixtures/nav'
 import type { Page } from '@playwright/test'
 
@@ -85,5 +85,202 @@ test.describe('P3 (B5-2) — Kategoriler (CategoryListView)', () => {
     const results = await new AxeBuilder({ page }).include('.categoryListView').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
     await testInfo.attach('axe-CategoryListView-sonuclari.json', { body: JSON.stringify(results.violations, null, 2), contentType: 'application/json' })
     console.log(`[axe] CategoryListView: ${results.violations.length} WCAG 2.1 AA ihlali`)
+  })
+})
+
+// A6a — kategori / özellik eşleme: pazaryeri API'sinden yanıt alınamadığında anlaşılır durum
+// (NE OLDU + OLASI NEDEN + NE YAPMALI + Tekrar dene + Entegrasyon ayarına git + katlanır teknik ayrıntı).
+// Boş liste hata DEĞİLDİR (ayrı boş durum). Sınıflandırma: composables/useIntegrationError.ts.
+const mappingLocalTree = [
+  { _id: 'cat-root', title: 'Kategoriler', isMain: true, children: [] },
+  { _id: 'cat-tisort', title: 'Tişört', level: 0, children: [], choiceIds: [], platforms: [] },
+]
+const mappingPlatformCategories = [
+  { _id: 1001, title: 'Tişört', parentId: 0, children: [] },
+  { _id: 1002, title: 'Gömlek', parentId: 0, children: [] },
+]
+const mappingPlatformAttributes = [
+  { _id: 'attr-renk', title: 'Renk', required: true, allowCustom: false, varianter: true, slicer: false },
+]
+
+async function openMappingPanel(page: Page, overrides: Record<string, MockValue> = {}) {
+  await page.clock.setFixedTime(new Date('2026-09-30T09:30:00'))
+  await installApiMocks(page, {
+    MenuService: menuFixtureWithCategory,
+    CategoryService: mappingLocalTree,
+    ChoiceService: choicesDoluFixture,
+    'AttributeMappingService/getCategoryMapping': { platformCategoryId: 1001 },
+    'AttributeMappingService': [],
+    'AttributeMappingService/getAttributeMapping': {},
+    'IntegrationService/retrieveCategoriesFromIntegration': mappingPlatformCategories,
+    'IntegrationService/retrieveCommisionForCategoryFromIntegration': { commission: 12 },
+    'IntegrationService/retrieveCategoryAttributesFromIntegration': mappingPlatformAttributes,
+    'IntegrationService/retrieveCategoryAttributeValuesFromIntegration': [{ id: 1, title: 'Kırmızı' }],
+    ...overrides,
+  })
+  await gotoAuthed(page)
+  await openCategoryListView(page)
+  await page.getByRole('button', { name: 'Tişört ayarları' }).click()
+  await page.locator('.categorySyncComponent .ek-platform-choice').first().click()
+}
+
+const errorPanel = (page: Page) => page.getByTestId('integration-error-panel')
+const axeViolations = async (page: Page) => {
+  const results = await new AxeBuilder({ page })
+    .include('[data-testid="integration-error-panel"]')
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+    .analyze()
+  return results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`)
+}
+
+test.describe('A6a — kategori/özellik eşleme hata durumları', () => {
+  test('kategori ağacı 500: neden + ne yapmalı + Tekrar dene; ham hata/HTTP kodu gövdede değil, teknik ayrıntı katlanır', async ({ page }) => {
+    await openMappingPanel(page, {
+      'IntegrationService/retrieveCategoriesFromIntegration': mockError(500, { error: 'Beklenmeyen bir hata oluştu.', code: 'INTERNAL', requestId: 'req-e2e-1' }),
+    })
+    const panel = errorPanel(page)
+    await expect(panel).toBeVisible()
+    await expect(panel).toHaveAttribute('data-kind', 'server')
+    await expect(panel.getByRole('heading', { name: 'Trendyol kategori listesi şu an alınamadı' })).toBeVisible()
+    await expect(panel.getByText('Olası neden')).toBeVisible()
+    await expect(panel.getByText('Ne yapmalı')).toBeVisible()
+    await expect(panel.getByRole('button', { name: 'Tekrar dene' })).toBeVisible()
+    // Teknik ayrıntı varsayılan KAPALI; açılınca servis/HTTP/zaman görünür, gövde metninde ham kod yok.
+    const details = panel.locator('details')
+    await expect(details).not.toHaveAttribute('open', '')
+    await expect(panel.locator('.ek-int-err__body > .ek-int-err__line').first()).not.toContainText('500')
+    await panel.locator('summary').click()
+    await expect(details).toContainText('IntegrationService/retrieveCategoriesFromIntegration')
+    await expect(details).toContainText('500')
+    await expect(details).toContainText('trendyol')
+    await expect(details).toContainText('INTERNAL')
+    await expect(details).toContainText('req-e2e-1')
+    await expect(details).toContainText('2026-09-30T')
+    // Yalnız güvenli alanlar: istek gövdesi sızmaz.
+    await expect(details).not.toContainText('integrationCategoryId')
+  })
+
+  test('kategori ağacı 403 → yetki durumu; tekrar dene önerilmez', async ({ page }) => {
+    await openMappingPanel(page, { 'IntegrationService/retrieveCategoriesFromIntegration': mockError(403, { error: 'Bu işlem için yetkiniz yok.' }) })
+    const panel = errorPanel(page)
+    await expect(panel).toHaveAttribute('data-kind', 'auth')
+    await expect(panel.getByRole('heading', { name: 'Bu işlem için erişim izniniz yok' })).toBeVisible()
+    await expect(panel.getByRole('button', { name: 'Tekrar dene' })).toHaveCount(0)
+  })
+
+  test('kategori ağacı 504 → zaman aşımı', async ({ page }) => {
+    await openMappingPanel(page, { 'IntegrationService/retrieveCategoriesFromIntegration': mockError(504, { error: 'Gateway Timeout' }) })
+    await expect(errorPanel(page)).toHaveAttribute('data-kind', 'timeout')
+    await expect(errorPanel(page).getByRole('heading', { name: 'Trendyol yanıt vermedi' })).toBeVisible()
+  })
+
+  test('ağ hatası → network; "Entegrasyon ayarına git" gösterilmez', async ({ page }) => {
+    await openMappingPanel(page, { 'IntegrationService/retrieveCategoriesFromIntegration': (route) => route.abort('failed') })
+    const panel = errorPanel(page)
+    await expect(panel).toHaveAttribute('data-kind', 'network')
+    await expect(panel.getByRole('heading', { name: 'Sunucuya ulaşılamadı' })).toBeVisible()
+    await expect(panel.getByRole('button', { name: 'Entegrasyon ayarına git' })).toHaveCount(0)
+  })
+
+  test('boş kategori listesi ≠ hata: ayrı boş durum, "Yeniden kontrol et"', async ({ page }) => {
+    await openMappingPanel(page, { 'IntegrationService/retrieveCategoriesFromIntegration': [] })
+    const panel = errorPanel(page)
+    await expect(panel).toHaveAttribute('data-kind', 'empty')
+    await expect(panel).toHaveAttribute('role', 'status')
+    await expect(panel.getByRole('button', { name: 'Yeniden kontrol et' })).toBeVisible()
+    await panel.locator('summary').click()
+    await expect(panel.locator('details')).not.toContainText('HTTP durumu')
+  })
+
+  test('özellikler 500 → hata paneli', async ({ page }) => {
+    await openMappingPanel(page, { 'IntegrationService/retrieveCategoryAttributesFromIntegration': mockError(500) })
+    await expect(errorPanel(page)).toHaveAttribute('data-kind', 'server')
+    await expect(errorPanel(page).getByRole('heading', { name: 'Trendyol kategori özellikleri şu an alınamadı' })).toBeVisible()
+  })
+
+  test('özellikler boş dizi → "bu kategori için özellik döndürmedi" nötr boş durumu', async ({ page }) => {
+    await openMappingPanel(page, { 'IntegrationService/retrieveCategoryAttributesFromIntegration': [] })
+    const panel = errorPanel(page)
+    await expect(panel).toHaveAttribute('data-kind', 'empty')
+    await expect(panel.getByRole('heading', { name: 'Trendyol bu kategori için özellik döndürmedi' })).toBeVisible()
+  })
+
+  test('Tekrar dene AYNI isteği yeniden yapar, düğme yüklenir; başarılınca alan görünür ve odak alana taşınır', async ({ page }) => {
+    let calls = 0
+    let release: () => void = () => {}
+    const gate = new Promise<void>((resolve) => { release = resolve })
+    await openMappingPanel(page, {
+      'IntegrationService/retrieveCategoriesFromIntegration': async (route, headers) => {
+        calls++
+        if (calls === 1) return route.fulfill({ status: 500, contentType: 'application/json', headers, body: JSON.stringify({ error: 'x', code: 'INTERNAL' }) })
+        await gate
+        return route.fulfill({ status: 200, contentType: 'application/json', headers, body: JSON.stringify(mappingPlatformCategories) })
+      },
+    })
+    const panel = errorPanel(page)
+    const retry = panel.getByRole('button', { name: 'Tekrar dene' })
+    await expect(retry).toBeVisible()
+    await retry.click()
+    // İstek sürerken panel yerinde kalır ve düğme yükleniyor (aria-busy).
+    await expect(panel.getByRole('button', { name: 'Tekrar dene' })).toHaveAttribute('aria-busy', 'true')
+    release()
+    await expect(panel).toHaveCount(0)
+    expect(calls).toBe(2)
+    await expect(page.getByRole('textbox', { name: /Trendyol kategorisi/ })).toBeFocused()
+  })
+
+  test('klavye: başlık odak alır; Tab ile Tekrar dene → Entegrasyon ayarına git → Teknik ayrıntı; Enter ile açılır', async ({ page }) => {
+    await openMappingPanel(page, { 'IntegrationService/retrieveCategoriesFromIntegration': mockError(500) })
+    const panel = errorPanel(page)
+    await expect(panel.getByRole('heading')).toBeFocused()
+    await page.keyboard.press('Tab')
+    await expect(panel.getByRole('button', { name: 'Tekrar dene' })).toBeFocused()
+    await page.keyboard.press('Tab')
+    await expect(panel.getByRole('button', { name: 'Entegrasyon ayarına git' })).toBeFocused()
+    await page.keyboard.press('Tab')
+    await expect(panel.locator('summary')).toBeFocused()
+    await page.keyboard.press('Enter')
+    await expect(panel.locator('details')).toHaveAttribute('open', '')
+  })
+
+  test('Entegrasyon ayarına git: mevcut sekme yolu ile Pazaryeri ekranını açar', async ({ page }) => {
+    await openMappingPanel(page, { 'IntegrationService/retrieveCategoriesFromIntegration': mockError(500) })
+    await errorPanel(page).getByRole('button', { name: 'Entegrasyon ayarına git' }).click()
+    await expectScreenOpen(page, '.marketplaceView')
+  })
+
+  test('özellik değerleri 500 (Seçenek Eşleştirme paneli): değer eşleştirme yerine hata paneli, tekrar deneyince değerler gelir', async ({ page }) => {
+    let calls = 0
+    await openMappingPanel(page, {
+      'IntegrationService/retrieveCategoryAttributeValuesFromIntegration': (route, headers) => {
+        calls++
+        return calls === 1
+          ? route.fulfill({ status: 500, contentType: 'application/json', headers, body: JSON.stringify({ error: 'x' }) })
+          : route.fulfill({ status: 200, contentType: 'application/json', headers, body: JSON.stringify([{ id: 1, title: 'Kırmızı' }]) })
+      },
+    })
+    await page.getByLabel('Platform seçeneği').click()
+    await page.locator('.v-overlay--active .v-list-item').filter({ hasText: 'Renk' }).first().click()
+    await expect(errorPanel(page).getByRole('heading', { name: 'Trendyol özellik değerleri şu an alınamadı' })).toBeVisible()
+    await page.getByRole('button', { name: /Seçenek Eşleştir/ }).click()
+    await page.locator('.cm-card .v-field').first().click()
+    await page.locator('.v-overlay--active .v-list-item').filter({ hasText: 'E2E Renk Grubu' }).first().click()
+    const dialogPanel = page.locator('.cm-card').getByTestId('integration-error-panel')
+    await expect(dialogPanel).toBeVisible()
+    await dialogPanel.getByRole('button', { name: 'Tekrar dene' }).click()
+    await expect(page.locator('.cm-card').getByTestId('integration-error-panel')).toHaveCount(0)
+    await expect(page.locator('.cm-card label', { hasText: 'Siyah' }).first()).toBeVisible()
+  })
+
+  test('axe: hata paneli WCAG 2.1 AA = 0 ihlal (katlanır ayrıntı açık)', async ({ page }) => {
+    await openMappingPanel(page, { 'IntegrationService/retrieveCategoryAttributesFromIntegration': mockError(500) })
+    await errorPanel(page).locator('summary').click()
+    expect(await axeViolations(page)).toEqual([])
+  })
+
+  test('axe: boş durum paneli = 0 ihlal', async ({ page }) => {
+    await openMappingPanel(page, { 'IntegrationService/retrieveCategoryAttributesFromIntegration': [] })
+    await expect(errorPanel(page)).toBeVisible()
+    expect(await axeViolations(page)).toEqual([])
   })
 })
