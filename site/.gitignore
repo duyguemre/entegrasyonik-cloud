@@ -1,2 +1,4 @@
 # Astro tarafindan uretilen tip/onbellek dizini (derleme ciktisi, commit edilmez)
 .astro/
+# Lighthouse betiğinin rapor/profil çıktısı (npm run lighthouse; commit edilmez)
+.lighthouse/
