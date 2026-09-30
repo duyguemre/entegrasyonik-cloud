@@ -155,6 +155,61 @@ test.describe('Hero ürün paneli', () => {
   })
 })
 
+test.describe('S21: hero çerçevesi (uygulama penceresi)', () => {
+  /** Sayfa yüklenişinden itibaren biriken layout-shift toplamı (girdi kaynaklı kaymalar hariç). */
+  const cls = (page: Page) =>
+    page.evaluate(
+      () =>
+        new Promise<number>((resolve) => {
+          let sum = 0
+          new PerformanceObserver((list) => {
+            for (const e of list.getEntries() as Array<PerformanceEntry & { value: number; hadRecentInput: boolean }>) {
+              if (!e.hadRecentInput) sum += e.value
+            }
+          }).observe({ type: 'layout-shift', buffered: true })
+          setTimeout(() => resolve(sum), 250)
+        }),
+    )
+
+  test('CLS 0: çerçeve boyutu sahne döngüsü boyunca sabit; çerçeve süsleri yatay taşma üretmez', async ({ page }) => {
+    await page.goto('/')
+    await waitForFonts(page)
+    await readyMotion(page)
+    const mock = page.getByTestId('hero-mock')
+    await mock.scrollIntoViewIfNeeded()
+    await expect(mock).toHaveAttribute('data-visible', 'true')
+    const size = () => mock.evaluate((el) => ({ w: el.offsetWidth, h: el.offsetHeight }))
+    const before = await size()
+    await page.waitForTimeout(8500) // 1. sahneden 2. sahneye geçiş (7,5 sn dilim) + parıltı süpürmesi
+    expect(await size()).toEqual(before)
+    expect(await cls(page)).toBeLessThan(0.01)
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
+    expect(overflow).toBeLessThanOrEqual(0)
+  })
+
+  test('reduced-motion: parıltı görünmez ve çalışmaz, kenar ışığı + pencere çubuğu görünür', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.goto('/')
+    await waitForFonts(page)
+    await expect(page.locator('[data-testid="hero-mock"] .show__bar')).toBeVisible()
+    await expect(page.locator('[data-testid="hero-mock"] .show__brand')).toHaveText('Operasyon merkezi')
+    const frame = await page.evaluate(() => {
+      const sheen = document.querySelector<HTMLElement>('[data-part="frame-sheen"]')!
+      const rim = document.querySelector<HTMLElement>('.show__rim')!
+      return {
+        sheen: Number(getComputedStyle(sheen).opacity),
+        sheenAnims: sheen.getAnimations().length,
+        rimWidth: rim.getBoundingClientRect().width,
+        rimBg: getComputedStyle(rim).backgroundImage,
+      }
+    })
+    expect(frame.sheen).toBe(0)
+    expect(frame.sheenAnims).toBe(0)
+    expect(frame.rimWidth).toBeGreaterThan(0)
+    expect(frame.rimBg).toContain('linear-gradient')
+  })
+})
+
 test.describe('Kayan şerit, sayaçlar, yapışkan öğeler', () => {
   test('deneme günü sayacı son değere ulaşır (14) ve şerit tam listeyi içerir (S12: durum sayacı yok)', async ({ page }) => {
     await page.goto('/')
