@@ -296,6 +296,21 @@ const ribbon = [
     }
   }
 
+  /* Dar ekran: ray 2×2 kalır ama yalnızca ikon + başlık (alt satırlar hero'da ve sayfanın devamında zaten anlatılıyor). */
+  @media (max-width: 639.98px) {
+    .stat {
+      padding: var(--ek-space-3);
+    }
+    .stat__icon {
+      grid-row: auto;
+    }
+    .stat__sub {
+      display: none;
+    }
+    .stat__label {
+      font-size: var(--ek-font-size-sm);
+    }
+  }
   @media (min-width: 1024px) {
     .stats {
       grid-template-columns: repeat(4, minmax(0, 1fr));

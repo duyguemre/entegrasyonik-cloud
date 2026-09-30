@@ -313,7 +313,8 @@ const secureItems = [
 <style>
   .hero {
     position: relative;
-    overflow: hidden;
+    /* S24: yalnızca yatay kırpma — mock'un zemine oturan ışıması alt kenarda kesilmeden fayda rayının zeminine akar. */
+    overflow-x: clip;
     isolation: isolate;
     padding-block: var(--ek-space-12) var(--ek-space-10);
     /* S24: zemin `index.astro` → `.stage-top` (hero + fayda rayı tek sahne). */
@@ -327,6 +328,9 @@ const secureItems = [
     inset: 0;
     z-index: -1;
     pointer-events: none;
+    /* S24: ızgara ve ışımalar alt kenarda söner → fayda rayına (ortak `.stage-top` zemini) kesitsiz geçiş. */
+    -webkit-mask-image: linear-gradient(to bottom, var(--ek-color-content-strong) 70%, transparent);
+    mask-image: linear-gradient(to bottom, var(--ek-color-content-strong) 70%, transparent);
   }
   .hero__grid {
     position: absolute;
@@ -520,9 +524,10 @@ const secureItems = [
     content: '';
     position: absolute;
     z-index: -1;
-    inset: 12% -10% -14%;
+    /* S24: ışıma kendi kutusunun İÇİNDE söner (önceden alt kenarda kesiliyor, hero altında sert çizgi bırakıyordu). */
+    inset: 12% -10% -24%;
     background:
-      radial-gradient(46% 22% at 50% 96%, color-mix(in srgb, var(--ek-color-secondary) 38%, transparent), transparent 80%),
+      radial-gradient(46% 16% at 50% 78%, color-mix(in srgb, var(--ek-color-secondary) 38%, transparent), transparent 80%),
       radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-secondary) 16%, transparent), transparent);
     pointer-events: none;
   }

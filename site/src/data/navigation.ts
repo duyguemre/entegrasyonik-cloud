@@ -37,7 +37,7 @@ export interface NavGroup {
 }
 
 export const navGroups: NavGroup[] = [
-  { id: 'product', label: 'Ürün', lead: 'Platformun yetenekleri ve kanal bağlantıları' },
+  { id: 'product', label: 'Ürün', lead: 'Platform ve yetenekler' },
   { id: 'solutions', label: 'Çözümler', lead: 'İhtiyacınıza ve satış kanalınıza göre' },
   { id: 'resources', label: 'Kaynaklar', lead: 'Rehberler, yanıtlar ve destek' },
 ]
