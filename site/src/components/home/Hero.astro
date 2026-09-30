@@ -16,6 +16,11 @@
  * isimsiz renkli noktalar (`--site-channel-*`, `[data-code]` eşlemesi) ve genel etiketler ("Pazaryeri siparişi").
  * Statik hâl (reduced-motion / "Hareket" durdurulmuş / JS'siz): YALNIZCA 1. sahnenin son durumu — üç sipariş
  * "Rezerve", stok 9, rezerve 3; diğer sahneler görünmez. Döngü yalnızca görünürken çalışır, üzerine gelince durur.
+ *
+ * S21 (kullanıcı: "çerçeveyi daha cool, premium, site ile daha uyumlu"): sahne içeriği aynen korunur; ÇERÇEVE
+ * "uygulama penceresi"ne yükseltildi — pencere çubuğu (nötr noktalar + ortada başlık hapı + sessiz araç çubukları),
+ * marka gradyanından kenar ışığı, cam kasa (bezel), üst kenarda her sahne geçişinde tek sakin parıltı, zemin ışıması.
+ * Adaylar (katmanlı derinlik, çerçevesiz sahne) ve gerekçe: docs/s21-review/README.md; korumalar: tests/hero-frame.test.ts.
  */
 import Button from '../Button.astro'
 import Icon from './Icon.astro'
@@ -465,7 +470,7 @@ const secureItems = [
     z-index: -1;
     inset: 12% -10% -14%;
     background:
-      radial-gradient(50% 32% at 50% 100%, color-mix(in srgb, var(--ek-color-secondary) 30%, transparent), transparent 80%),
+      radial-gradient(46% 22% at 50% 96%, color-mix(in srgb, var(--ek-color-secondary) 38%, transparent), transparent 80%),
       radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-secondary) 16%, transparent), transparent);
     pointer-events: none;
   }
@@ -504,7 +509,7 @@ const secureItems = [
       var(--site-shadow-panel),
       /* Cam kasa (bezel): panelin çevresinde ince, yarı saydam ikinci çerçeve + onun kılcal kenarı */
       0 0 0 calc(var(--site-border-width) * 6) color-mix(in srgb, var(--ek-color-background) 4%, transparent),
-      0 0 0 calc(var(--site-border-width) * 7) color-mix(in srgb, var(--ek-color-background) 9%, transparent),
+      0 0 0 calc(var(--site-border-width) * 7) color-mix(in srgb, var(--ek-color-background) 7%, transparent),
       0 0 7rem -2rem color-mix(in srgb, var(--ek-color-secondary) 34%, transparent),
       inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 16%, transparent);
     color: var(--site-text-on-dark-body);
@@ -521,15 +526,15 @@ const secureItems = [
     right: 10%;
     overflow: hidden;
     height: var(--site-border-width);
-    background: linear-gradient(90deg, transparent, var(--show-edge) 50%, transparent);
+    background: linear-gradient(90deg, transparent, var(--show-edge) 35%, var(--ek-color-background) 50%, var(--show-edge) 65%, transparent);
     pointer-events: none;
   }
   .show__rim::after {
     content: '';
     position: absolute;
     inset: 0;
-    box-shadow: 0 0 var(--ek-space-4) var(--ek-space-1) var(--show-glow);
-    opacity: 0.55;
+    box-shadow: 0 0 var(--ek-space-5) var(--ek-space-1) var(--show-glow);
+    opacity: 0.8;
   }
   .show__sheen {
     position: absolute;
