@@ -151,7 +151,7 @@
 
           </div>
           <template v-else>
-            <template v-if="editingVariant.platforms[selectedIntegrationCode]?.attributes" :color="platform.color+'08'">
+            <template v-if="editingVariant.platforms[selectedIntegrationCode]?.attributes">
 
               <template v-if="platformAttributes.get(selectedIntegrationCode)">
 

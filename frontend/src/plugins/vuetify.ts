@@ -32,7 +32,7 @@ import { VTreeview } from 'vuetify/labs/VTreeview'
 import { lightTheme, darkTheme } from '@/design/vuetify-theme'
 import { vuetifyDefaults } from '@/design/vuetify-defaults'
 
-// https://vuetifyjs.com/en/introduction/why-vuetify/#feature-guides
+// https://vuetifyjs.com/en/introduction/why-vuetify/ (feature guides)
 export default createVuetify({
   locale: {
     locale: 'tr',       // Varsayılan dil

@@ -146,8 +146,7 @@
           </div>
           <template v-else>
             <template
-              v-if="tab.code == selectedIntegrationCode && batchVariant.platforms[selectedIntegrationCode]?.attributes"
-              :color="platform.color+'08'">
+              v-if="tab.code == selectedIntegrationCode && batchVariant.platforms[selectedIntegrationCode]?.attributes">
 
               <template v-if="platformAttributes.get(selectedIntegrationCode)">
 
