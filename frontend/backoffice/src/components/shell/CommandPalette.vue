@@ -68,6 +68,8 @@ import { GROUPS, SCREENS, STATUS_BADGE } from '@bo/navigation/screens'
 import { setThemePreference } from '@bo/theme'
 import { requestReauth } from '@bo/auth/reauth'
 import { session } from '@bo/auth/session'
+import { CHAT_PRODUCT } from '@entegrasyonik/chat/brand'
+import { otopilot } from '@bo/chat/otopilot'
 
 const emit = defineEmits<{ logout: [] }>()
 const router = useRouter()
@@ -161,7 +163,13 @@ const results = computed(() => {
           .sort((a, b) => a.r - b.r || a.i - b.i)
           .map((x) => x.c)
       : list
-  return [...jumpCmds.value, ...pick(screenCmds.value), ...pick(actionCmds)]
+  // Otopilot'a sor: sorgu ≥ 2 karakter ve sohbet erişilebilirken EN ÜSTTE (web paletiyle aynı davranış).
+  const raw = query.value.trim()
+  const ask: Cmd[] =
+    raw.length >= 2 && otopilot.available.value
+      ? [{ id: 'otopilot:ask', group: CHAT_PRODUCT.name, label: `${CHAT_PRODUCT.name}'a sor: «${raw.slice(0, 120)}»`, icon: 'mdi-creation-outline', hint: 'salt okuma', terms: '', run: () => otopilot.open({ via: 'palette', text: raw.slice(0, 4000) }) }]
+      : []
+  return [...ask, ...jumpCmds.value, ...pick(screenCmds.value), ...pick(actionCmds)]
 })
 
 const flat = computed(() => results.value.map((c, index) => ({ ...c, index })))

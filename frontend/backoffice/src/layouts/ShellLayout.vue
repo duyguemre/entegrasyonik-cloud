@@ -20,6 +20,7 @@
         </button>
       </template>
     </v-navigation-drawer>
+    <OtopilotDock />
     <v-main class="bo-shell__main">
       <main id="bo-main" tabindex="-1">
         <RouterView :key="route.path" />
@@ -35,6 +36,8 @@ import { useDisplay } from 'vuetify'
 import { EkKbd, EkSidebarNav, type EkSideItem, type EkSideSection } from '@entegrasyonik/ui/components'
 import TopBar from '@bo/components/TopBar.vue'
 import CommandPalette from '@bo/components/shell/CommandPalette.vue'
+import OtopilotDock from '@bo/chat/OtopilotDock.vue'
+import { otopilot } from '@bo/chat/otopilot'
 import { session } from '@bo/auth/session'
 import { GROUPS, SCREENS, SECTIONS, STATUS_BADGE, screenByKey, screensOf, type BoScreen } from '@bo/navigation/screens'
 import { notify } from '@bo/utils/toast'
@@ -54,8 +57,22 @@ function onEsc(e: KeyboardEvent) {
   drawerOpen.value = false
   document.querySelector<HTMLButtonElement>('.bo-top__start .bo-top__icon-btn')?.focus()
 }
-onMounted(() => window.addEventListener('keydown', onEsc))
-onBeforeUnmount(() => window.removeEventListener('keydown', onEsc))
+// Otopilot: Ctrl/⌘+J aç/kapat (web ile aynı kısayol; metin alanında da çalışır — composer'dan kapatmak için).
+function onChatKey(e: KeyboardEvent) {
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'j') {
+    e.preventDefault()
+    otopilot.toggle('shortcut')
+  }
+}
+onMounted(() => {
+  window.addEventListener('keydown', onEsc)
+  window.addEventListener('keydown', onChatKey)
+  otopilot.init()
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onEsc)
+  window.removeEventListener('keydown', onChatKey)
+})
 
 const leaf = (s: BoScreen, label = s.label): EkSideItem => {
   const badge = STATUS_BADGE[s.status]

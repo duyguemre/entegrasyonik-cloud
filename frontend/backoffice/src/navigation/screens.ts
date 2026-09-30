@@ -8,7 +8,7 @@
  *      `plan` alanını silin. Yol (path) DEĞİŞMEZ — yer imleri ve komut paleti bozulmaz.
  *   3. Görünüm `BoPageHeader` kullanır; başlık, açıklama ve breadcrumb bu kayıttan otomatik gelir.
  *
- * Bilgi mimarisi: 5 bölüm → 11 grup → ekranlar. Grubun tek ekranı varsa menüde yaprak, birden fazlaysa açılır grup.
+ * Bilgi mimarisi: 5 bölüm → 12 grup → ekranlar. Grubun tek ekranı varsa menüde yaprak, birden fazlaysa açılır grup.
  */
 export type ScreenStatus = 'ready' | 'draft' | 'planned'
 
@@ -16,6 +16,7 @@ export type SectionKey = 'home' | 'customers' | 'platform' | 'observe' | 'govern
 
 export type GroupKey =
   | 'overview'
+  | 'otopilot'
   | 'customers'
   | 'subscriptions'
   | 'engine'
@@ -71,6 +72,7 @@ export const SECTIONS: Array<{ key: SectionKey; label: string }> = [
 
 export const GROUPS: BoGroup[] = [
   { key: 'overview', label: 'Genel bakış', icon: 'mdi-view-dashboard-outline', section: 'home' },
+  { key: 'otopilot', label: 'Otopilot', icon: 'mdi-creation-outline', section: 'home' },
   { key: 'customers', label: 'Müşteriler', icon: 'mdi-storefront-outline', section: 'customers' },
   { key: 'subscriptions', label: 'Abonelikler', icon: 'mdi-card-account-details-outline', section: 'customers' },
   { key: 'engine', label: 'Motor ve kuyruklar', icon: 'mdi-cog-transfer-outline', section: 'platform' },
@@ -97,6 +99,19 @@ export const SCREENS: BoScreen[] = [
     path: '/genel-bakis',
     keywords: ['sağlık', 'pano', 'dashboard', 'health'],
     view: () => import('../views/OverviewView.vue'),
+  },
+
+  // Otopilot (K21, CHAT_UI_CONTRACT §7.2): tam sayfa sohbet; yan panel kabukta (chat/OtopilotDock). Salt okuma (v1).
+  {
+    key: 'otopilot',
+    label: 'Otopilot',
+    lede: 'Platform durumunu, kuyrukları ve logları doğal dille sorun. Yalnız okur; işlem önermez ve sohbetler kaydedilmez.',
+    icon: 'mdi-creation-outline',
+    group: 'otopilot',
+    path: '/otopilot',
+    keywords: ['sohbet', 'chat', 'yapay zekâ', 'ai', 'sor', 'ajan'],
+    status: 'ready',
+    view: () => import('../views/otopilot/OtopilotView.vue'),
   },
 
   // ---------------------------------------------------------------- Müşteri
@@ -241,6 +256,17 @@ export const SCREENS: BoScreen[] = [
     keywords: ['feature flag', 'bayrak', 'bakım', 'maintenance', 'duyuru şeridi', 'destek e-postası', 'ortam'],
     status: 'ready',
     view: () => import('../views/settings/SettingsView.vue'),
+  },
+  {
+    key: 'otopilot-settings',
+    label: 'Otopilot',
+    lede: 'Yönetim uygulamasındaki sohbetin platform yapay zekâ sağlayıcı anahtarı. Müşteri anahtarları burada görünmez.',
+    icon: 'mdi-key-chain-variant',
+    group: 'settings',
+    path: '/sistem/otopilot',
+    keywords: ['yapay zekâ anahtarı', 'api anahtarı', 'sağlayıcı', 'byok', 'llm', 'model'],
+    status: 'ready',
+    view: () => import('../views/otopilot/OtopilotSettingsView.vue'),
   },
 
   // ---------------------------------------------------------------- Bildirimler ve duyurular (ADR-0029 NB7/NB8)

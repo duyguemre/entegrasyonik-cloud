@@ -30,6 +30,8 @@ describe('backoffice statik kurallar', () => {
     for (const f of files) {
       const rel = relative(ROOT, f)
       if (rel.startsWith(join('src', 'api', 'mock')) || rel === join('src', 'api', 'index.ts')) continue
+      // Otopilot yan panel tercihi: yalnız { open, width }, `bo:` önekli (chat-storage.test.ts korur).
+      if (rel === join('src', 'chat', 'prefs.ts')) continue
       expect(/localStorage|sessionStorage|document\.cookie/.test(read(f)), `${rel}`).toBe(false)
     }
   })

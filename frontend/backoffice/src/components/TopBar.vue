@@ -22,6 +22,20 @@
     </button>
 
     <div class="bo-top__end">
+      <button
+        v-if="otopilot.available.value"
+        type="button"
+        class="bo-top__icon-btn bo-top__otopilot"
+        :class="{ 'is-open': otopilot.panelOpen.value || otopilot.onPage.value }"
+        :aria-label="`${CHAT_PRODUCT.name} (${modKey}+J)`"
+        :aria-pressed="otopilot.panelOpen.value"
+        :title="`${CHAT_PRODUCT.name} — salt okuma (${modKey}+J)`"
+        data-testid="otopilot-launcher"
+        @click="otopilot.toggle('button')"
+      >
+        <v-icon icon="mdi-creation-outline" aria-hidden="true" />
+        <span v-if="!compact" class="bo-top__otopilot-label">{{ CHAT_PRODUCT.name }}</span>
+      </button>
       <StepUpIndicator :compact="compact" />
       <v-menu location="bottom end" :offset="6">
         <template #activator="{ props: menu }">
@@ -86,6 +100,8 @@ import StepUpIndicator from '@bo/components/shell/StepUpIndicator.vue'
 import type { ThemePreference } from '@entegrasyonik/ui/theme'
 import { currentEnv } from '@bo/utils/env'
 import { session } from '@bo/auth/session'
+import { CHAT_PRODUCT } from '@entegrasyonik/chat/brand'
+import { otopilot } from '@bo/chat/otopilot'
 import { setThemePreference, themeMode, themePreference } from '@bo/theme'
 import { formatDateTime, formatRelative } from '@bo/utils/format'
 
@@ -271,6 +287,21 @@ const env = currentEnv
   font-size: var(--ek-icon-lg);
   cursor: pointer;
   transition: var(--ek-transition-colors);
+}
+
+.bo-top__otopilot {
+  gap: var(--ek-space-2);
+  width: auto;
+  padding: 0 var(--ek-space-2);
+  font-size: var(--ek-icon-md);
+}
+.bo-top__otopilot-label {
+  font-size: var(--ek-type-label-size);
+  font-weight: var(--ek-font-weight-medium);
+}
+.bo-top__otopilot.is-open {
+  border-color: var(--ek-color-chrome-border);
+  background: var(--ek-color-chrome-raised);
 }
 
 .bo-top__icon-btn:hover,
