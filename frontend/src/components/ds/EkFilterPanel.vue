@@ -36,7 +36,7 @@
           <span class="ek-filter__glyph" aria-hidden="true"><v-icon :icon="icons.filter" /></span>
           <span class="ek-filter__title">{{ title }}</span>
           <span v-if="activeCount" class="ek-filter__count ek-num" aria-hidden="true">{{ activeCount }}</span>
-          <span class="ek-sr-only">, {{ activeCount ? `${activeCount} aktif filtre` : 'aktif filtre yok' }}</span>
+          <span class="ek-sr-only">, {{ filterCountText(activeCount) }}</span>
         </button>
       </component>
 
@@ -73,6 +73,7 @@ import EkFormGrid from './EkFormGrid.vue'
 import EkCollapse from './EkCollapse.vue'
 import EkActiveFilters, { type EkActiveFilterChip } from './EkActiveFilters.vue'
 import { icons } from '@/design/icons'
+import { filterCountText } from './filterHeader'
 
 const props = withDefaults(
   defineProps<{

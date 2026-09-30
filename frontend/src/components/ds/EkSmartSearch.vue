@@ -17,7 +17,7 @@
 <template>
   <div ref="rootRef" class="ek-search" :class="{ 'is-open': isOpen, 'is-focused': focused }">
     <div class="ek-search__field">
-      <v-icon class="ek-search__icon" icon="mdi-magnify" aria-hidden="true" />
+      <v-icon class="ek-search__icon" :icon="SHELL_ICONS.search" aria-hidden="true" />
       <input
         ref="inputRef"
         :value="modelValue"
@@ -106,7 +106,7 @@
 </template>
 
 <script setup lang="ts">
-import { outlineIcon } from '@/design/icons'
+import { SHELL_ICONS, outlineIcon } from '@/design/icons'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
 import EkBadge from './EkBadge.vue'
 import EkKbd from './EkKbd.vue'

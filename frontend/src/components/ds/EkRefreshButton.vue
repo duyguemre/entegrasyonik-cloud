@@ -58,7 +58,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import EkKbd from './EkKbd.vue'
 import { icons } from '@/design/icons'
 import { shortcutKeys } from '@/navigation/shortcuts'
-import { formatRelativeTime, injectRefreshState } from './refreshState'
+import { formatRelativeTime, injectRefreshState, resolveRefreshView } from './refreshState'
 
 const props = withDefaults(
   defineProps<{
@@ -132,13 +132,6 @@ watch(
   },
 )
 
-const state = computed<'idle' | 'loading' | 'success' | 'error'>(() => {
-  if (props.loading) return 'loading'
-  if (hasError.value) return 'error'
-  if (flash.value) return 'success'
-  return 'idle'
-})
-
 const updatedAt = computed(() => {
   const v = props.lastUpdated ?? tracked.value
   if (v === null || v === undefined) return null
@@ -148,22 +141,13 @@ const updatedAt = computed(() => {
 
 const updatedText = computed(() => (updatedAt.value ? formatRelativeTime(updatedAt.value, now.value) : ''))
 
-const tipTitle = computed(() => {
-  if (state.value === 'loading') return 'Yenileniyor…'
-  if (state.value === 'error') return 'Yenilenemedi — tekrar denemek için tıklayın'
-  return props.label
-})
-const tipMeta = computed(() => {
-  if (!updatedText.value) return ''
-  return state.value === 'error' ? `Son başarılı güncelleme ${updatedText.value}` : `Son güncelleme ${updatedText.value}`
-})
-
-const ariaLabel = computed(() => {
-  const base = `${props.label} (${keys.join('+')})`
-  if (props.loading) return `${base}, yenileniyor`
-  if (hasError.value) return `${base}, son yenileme başarısız${updatedText.value ? `; son başarılı güncelleme ${updatedText.value}` : ''}`
-  return updatedText.value ? `${base}, son güncelleme ${updatedText.value}` : base
-})
+const view = computed(() =>
+  resolveRefreshView({ loading: props.loading, error: hasError.value, flash: flash.value, label: props.label, keys, updatedText: updatedText.value }),
+)
+const state = computed(() => view.value.state)
+const tipTitle = computed(() => view.value.tipTitle)
+const tipMeta = computed(() => view.value.tipMeta)
+const ariaLabel = computed(() => view.value.ariaLabel)
 
 function onClick() {
   if (!props.loading && !props.disabled) emit('refresh')

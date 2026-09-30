@@ -40,10 +40,10 @@
         type="button"
         class="ek-active-filters__more"
         :aria-expanded="expanded"
-        :aria-label="expanded ? 'Filtre özetini daralt' : `${hiddenCount} filtre daha göster`"
+        :aria-label="overflowLabel(hiddenCount, expanded).aria"
         @click="expanded = !expanded"
       >
-        {{ expanded ? 'Daha az' : `+${hiddenCount}` }}
+        {{ overflowLabel(hiddenCount, expanded).text }}
       </button>
     </div>
 
@@ -69,6 +69,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { fitChipCount, overflowLabel } from './filterHeader'
 
 export interface EkActiveFilterChip {
   key: string
@@ -97,23 +98,8 @@ function measure() {
   if (!track || !m) return
   const avail = track.clientWidth
   if (!avail) return
-  const chips = Array.from(m.children) as HTMLElement[]
-  const widths = chips.map((c) => c.getBoundingClientRect().width)
-  const total = widths.reduce((a, w) => a + w, 0) + GAP * Math.max(0, widths.length - 1)
-  if (total <= avail) {
-    fitCount.value = widths.length
-    return
-  }
-  let used = 0
-  let n = 0
-  for (const w of widths) {
-    const next = used + (n ? GAP : 0) + w
-    if (next + GAP + MORE_W > avail) break
-    used = next
-    n += 1
-  }
-  // En az bir çip görünür (dar kapta çip kendi içinde üç nokta ile kısalır).
-  fitCount.value = Math.max(1, n)
+  const widths = (Array.from(m.children) as HTMLElement[]).map((c) => c.getBoundingClientRect().width)
+  fitCount.value = fitChipCount(widths, avail, GAP, MORE_W)
 }
 
 let ro: ResizeObserver | undefined
