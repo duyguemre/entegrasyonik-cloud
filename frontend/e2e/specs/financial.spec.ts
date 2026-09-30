@@ -86,15 +86,18 @@ test.describe('ADR-0015 B5-3 — FinancialListView (finans)', () => {
 
   test('özet şeridi etiketleri (masaüstü: Toplam Satış/Komisyon/Net Hakediş/Kargo/İşlem; mobil kısa etiketler)', async ({ page }, testInfo) => {
     await open(page, { [ENDPOINT]: financialDoluFixture })
+    // [DS-v2 A3, KASITLI] Liste standardı tabloyu dar görünümde de (EkDataGrid) gösteriyor; tablodaki işlem türü
+    // rozeti de "Satış" yazdığından etiketler özet şeridinin kendi grubuna ("Finansal özet") kapsanır.
+    const strip = page.locator('.financialListView').getByRole('group', { name: 'Finansal özet' })
     if (testInfo.project.name === 'chromium-desktop') {
       for (const l of ['Toplam Satış', 'Komisyon', 'Net Hakediş', 'Kargo', 'İşlem']) {
-        await expect(page.locator('.financialListView').getByText(l, { exact: true })).toBeVisible()
+        await expect(strip.getByText(l, { exact: true })).toBeVisible()
       }
       await expect(page.getByText('777,50 ₺')).toBeVisible()
       await expect(page.getByText('321 adet')).toBeVisible()
     } else {
       for (const l of ['Satış', 'Komisyon', 'Net', 'İşlem']) {
-        await expect(page.locator('.financialListView').getByText(l, { exact: true })).toBeVisible()
+        await expect(strip.getByText(l, { exact: true })).toBeVisible()
       }
       // Karakterizasyon: mobil özet şeridi Kargo toplamını GÖSTERMEZ.
       await expect(page.getByText('777,50')).toHaveCount(0)
