@@ -22,6 +22,14 @@ async function openStockHealth(page: Page, overrides: Record<string, MockValue> 
   return page.locator('.stockHealthView')
 }
 
+/**
+ * [DS-v2 A3, KASITLI] Pano (ilk açılan sekme) `StockAttentionCard` için aynı `StockService/getStockOverview`
+ * RPC'sini `{ limit: 5 }` gövdesiyle çağırır (DashboardView). Ekranın kendi çağrısını ayırt etmek için.
+ */
+function isDashboardStockCall(body: any) {
+  return body?.limit === 5
+}
+
 /** İsteği yakalayıp verilen gövdeyle yanıtlayan mock (istek gövdesi doğrulaması için). */
 function capture(bodies: any[], response: any): MockValue {
   return async (route: any, headers: any) => {
@@ -54,7 +62,9 @@ test.describe('C1.1 — Stok sağlığı (StockHealthView)', () => {
     await expect(recon).not.toContainText(/\d{2}\.\d{2}\.\d{4}/)
 
     // Sözleşme: { limit } (1..50), tenant kimliği gövdede YOK.
-    expect(bodies[0]).toEqual({ limit: 20 })
+    // [DS-v2 A3, KASITLI] Pano "Stok ve eşleşme uyarıları" kartı (StockAttentionCard) aynı RPC'yi
+    // { limit: 5 } ile çağırır (ilk açılan pano sekmesi); ekranın KENDİ isteği tek ve { limit: 20 }.
+    expect(bodies.filter((b) => !isDashboardStockCall(b))).toEqual([{ limit: 20 }])
   })
 
   test('boş: açık aşırı satış/eşleşmeyen kalem yoksa sakin metin (sahte "mükemmel" yok, 0 ≠ —)', async ({ page }) => {
@@ -85,6 +95,10 @@ test.describe('C1.1 — Stok sağlığı (StockHealthView)', () => {
     let calls = 0
     const view = await openStockHealth(page, {
       'StockService/getStockOverview': async (route: any, headers: any) => {
+        // [DS-v2 A3, KASITLI] pano kartının çağrısı sayılmaz (bkz. isDashboardStockCall).
+        if (isDashboardStockCall(route.request().postDataJSON())) {
+          return route.fulfill({ status: 200, headers, contentType: 'application/json', body: JSON.stringify(stockOverviewDoluFixture) })
+        }
         calls += 1
         if (calls === 1) return route.fulfill({ status: 200, headers, contentType: 'application/json', body: JSON.stringify(stockOverviewDoluFixture) })
         return route.fulfill({ status: 500, headers, contentType: 'application/json', body: '{"error":"x"}' })
