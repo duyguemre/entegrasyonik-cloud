@@ -23,7 +23,7 @@
         </div>
 
         <aside class="ek-integration-layout__aside">
-          <IntegrationGuideCard :steps="guideSteps" :note="''" />
+          <IntegrationGuideCard :steps="comingSoonGuide" note="" />
         </aside>
       </div>
 
@@ -32,8 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, markRaw } from 'vue'
-import { useI18n } from 'vue-i18n'
+import { ref, markRaw } from 'vue'
 import useEInvoiceStore from '@/stores/einvoice'
 import IntegrationGuideCard from '@/components/integrations/IntegrationGuideCard.vue'
 import EkPageHeader from '@/components/ds/EkPageHeader.vue'
@@ -46,14 +45,13 @@ import ELogoComponent from '@/components/integrations/einvoice/ELogoComponent.vu
 import GelirIdaresiComponent from '@/components/integrations/einvoice/GelirIdaresiComponent.vue'
 import { useIntegrationScreen } from '@/components/integrations/useIntegrationScreen'
 
-const { t } = useI18n()
 
 const einvoiceStore = useEInvoiceStore()
 const selectedPlatform = ref(einvoiceStore.getEInvoices()?.[0]?.code || '')
 
 // `docs/INTEGRATIONS_REGISTRY.md` §5.2 — "NET: backend'de e-fatura sağlayıcı entegrasyonu YOK". C1.2: canlı küme
 // `getCatalog` manifestosundan gelir (bugün BOŞ; yedek `FALLBACK_LIVE_CODES.einvoice` da boş — N13).
-const { liveCodes } = useIntegrationScreen('einvoice')
+const { liveCodes, comingSoonGuide } = useIntegrationScreen('einvoice')
 
 const componentMap: Record<string, any> = {
   trendyolefaturam: markRaw(TrendyolEFaturamComponent),
@@ -62,12 +60,8 @@ const componentMap: Record<string, any> = {
   geliridaresi: markRaw(GelirIdaresiComponent),
 }
 
-// C1.2 — eski adımlar ("Kaydet ve Test Et: … fatura kesmeyi deneyebilirsiniz") gerçeği yansıtmıyordu.
-const guideSteps = computed(() => [
-  { title: t('integrationComingSoon.guide.step1Title'), text: t('integrationComingSoon.guide.step1Text') },
-  { title: t('integrationComingSoon.guide.step2Title'), text: t('integrationComingSoon.guide.step2Text') },
-  { title: t('integrationComingSoon.guide.step3Title'), text: t('integrationComingSoon.guide.step3Text') },
-])
+// C1.2 — eski rehber adımları ("Kaydet ve Test Et: … fatura kesmeyi deneyebilirsiniz") gerçeği yansıtmıyordu;
+// yerine ortak dürüst `comingSoonGuide` kullanılır.
 
 function selectPlatform(code: string) {
   selectedPlatform.value = code

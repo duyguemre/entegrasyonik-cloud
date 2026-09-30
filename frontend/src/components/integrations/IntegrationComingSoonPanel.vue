@@ -262,5 +262,10 @@ onMounted(async () => {
   .ek-coming-soon-panel__actions {
     padding: var(--ek-space-3) var(--ek-space-4);
   }
+
+  .ek-coming-soon-panel__reason {
+    flex-basis: 100%;
+    min-width: 0;
+  }
 }
 </style>

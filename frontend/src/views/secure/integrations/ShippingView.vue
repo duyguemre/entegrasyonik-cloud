@@ -1,6 +1,8 @@
 <template>
   <div class="shippingView">
-    <div class="workarea-scroll screen-scroll-inset">
+    <!-- C1.2: kargo kaydı yokken kaydırılan alanda odaklanabilir öğe kalmaz (Kaydet nedenli devre dışı) — klavyeyle
+         kaydırılabilsin diye alan odaklanabilir bölgedir (axe scrollable-region-focusable). -->
+    <div class="workarea-scroll screen-scroll-inset" tabindex="0" role="region" aria-label="Kargo entegrasyonları">
       <LoadingComponent attach=".shippingView" ref="loadingComponentRef"></LoadingComponent>
 
       <div class="pa-6 pb-0">
@@ -71,7 +73,7 @@
         </div>
 
         <aside class="ek-integration-layout__aside">
-          <IntegrationGuideCard :steps="guideSteps" :note="''" />
+          <IntegrationGuideCard :steps="comingSoonGuide" note="" />
         </aside>
       </div>
     </div>
@@ -102,7 +104,7 @@ import { useIntegrationScreen } from '@/components/integrations/useIntegrationSc
 
 // `docs/INTEGRATIONS_REGISTRY.md` §5.1 — "NET: backend'de hiçbir kargo API entegrasyonu YOK". C1.2: canlı küme
 // `getCatalog` manifestosundan gelir (bugün BOŞ; yedek `FALLBACK_LIVE_CODES.shipping` da boş — N13).
-const { liveCodes } = useIntegrationScreen('shipment')
+const { liveCodes, comingSoonGuide } = useIntegrationScreen('shipment')
 
 const integrationStore: any = useIntegrationStore()
 const { t } = useI18n()
@@ -111,12 +113,8 @@ const loadingComponentRef: any = ref(null)
 const restApi = useRestApi()
 const editingClientIntegration: any = ref({ settings: {} })
 
-// C1.2 — eski adımlar ("Kaydet ve Aktifleştir: … otomatik olarak aktif hale gelir") gerçeği yansıtmıyordu.
-const guideSteps = computed(() => [
-  { title: t('integrationComingSoon.guide.step1Title'), text: t('integrationComingSoon.guide.step1Text') },
-  { title: t('integrationComingSoon.guide.step2Title'), text: t('integrationComingSoon.guide.step2Text') },
-  { title: t('integrationComingSoon.guide.step3Title'), text: t('integrationComingSoon.guide.step3Text') },
-])
+// C1.2 — eski rehber adımları ("Kaydet ve Aktifleştir: … otomatik olarak aktif hale gelir") gerçeği yansıtmıyordu;
+// yerine ortak dürüst `comingSoonGuide` kullanılır.
 
 onMounted(() => {
   if (clientShipments.value && clientShipments.value.length > 0)

@@ -145,6 +145,12 @@ test.describe('C1.2 — dürüst "Yakında" (kodu olmayan sağlayıcılar)', () 
     await expect(save).toBeDisabled()
     await expect(save).toHaveAccessibleDescription('Kaydedilecek ayar yok — bu sağlayıcı için entegrasyon henüz geliştirilmedi.')
     await expect(coverage(page, '.ecommerceView')).toHaveCount(0)
+    // Rehber kartı kodu olmayan sağlayıcıda "API anahtarlarını girin" demez.
+    const guide = root.locator('.ek-integration-layout__aside')
+    await expect(guide).toContainText('Kimlik bilgisi girmeyin')
+    await expect(guide).not.toContainText('API Bağlantısı')
+    await rail.nth(0).click()
+    await expect(guide).toContainText('API Bağlantısı')
     expect(saves).toEqual([])
   })
 
@@ -320,7 +326,8 @@ test.describe('inceleme görselleri (C1.2)', () => {
   async function shoot(page: Page, root: string, name: string, full = false) {
     await page.waitForTimeout(500)
     if (full) {
-      const h = await page.locator(root).evaluate((el) => el.scrollHeight)
+      // Entegrasyon ekranları içerikleri kendi `.workarea-scroll` alanında kaydırır; yükseklik oradan ölçülür.
+      const h = await page.locator(root).evaluate((el) => (el.querySelector('.workarea-scroll') ?? el).scrollHeight)
       await page.setViewportSize({ width: vw, height: Math.min(3200, h + 160) })
       await page.waitForTimeout(300)
     }

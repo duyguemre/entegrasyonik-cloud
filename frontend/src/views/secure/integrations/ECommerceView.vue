@@ -65,7 +65,9 @@
         </div>
 
         <aside class="ek-integration-layout__aside">
-          <IntegrationGuideCard :steps="guideSteps" />
+          <!-- C1.2: kodu olmayan sağlayıcı seçiliyken "API anahtarını girin" adımları gösterilmez. -->
+          <IntegrationGuideCard v-if="!editingClientIntegration.code || isLive(editingClientIntegration.code)" :steps="guideSteps" />
+          <IntegrationGuideCard v-else :steps="comingSoonGuide" note="" />
         </aside>
       </div>
     </div>
@@ -95,7 +97,7 @@ import IntegrationCapabilityChips from '@/components/integrations/IntegrationCap
 import { useIntegrationScreen } from '@/components/integrations/useIntegrationScreen'
 
 // C1.2 — canlı küme `getCatalog` manifestosundan (yedek: `FALLBACK_LIVE_CODES`, bkz. `integrationCatalog.ts`).
-const { liveCodes, isLive, healthLink, openHealth } = useIntegrationScreen('ecommerce')
+const { liveCodes, isLive, healthLink, openHealth, comingSoonGuide } = useIntegrationScreen('ecommerce')
 
 const integrationStore: any = useIntegrationStore()
 const { t } = useI18n()

@@ -328,7 +328,7 @@
       "waiting": "Waiting for first notification",
       "unknown": "Status unknown"
     },
-    "onceNote": "For security, the address is shown only once when it is created and is not stored on this page. Renew it if you lose it.",
+    "onceNote": "For security, the address is shown only once when it is created and is not stored on this page. Generate a new one if you lose it.",
     "confirmCreateTitle": "Create a webhook address?",
     "confirmCreateText": "You need to enter the new address in the webhook setting of the Trendyol seller panel. The address is shown only once.",
     "confirmRenewTitle": "Renew the webhook address?",

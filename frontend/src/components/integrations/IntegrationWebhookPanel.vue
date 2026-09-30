@@ -18,12 +18,6 @@
     :heading-level="2"
     class="ek-webhook"
   >
-    <template #actions>
-      <EkButton tone="secondary" size="sm" :icon="hasWebhook ? 'mdi-key-change' : 'mdi-key-plus'" @click="confirmOpen = true">
-        {{ hasWebhook ? t('integrationWebhook.renew') : t('integrationWebhook.create') }}
-      </EkButton>
-    </template>
-
     <dl class="ek-webhook__facts">
       <div class="ek-webhook__fact">
         <dt>{{ t('integrationWebhook.channel') }}</dt>
@@ -63,10 +57,15 @@
       </div>
       <p class="ek-webhook__issued-note">{{ t('integrationWebhook.issuedNote') }}</p>
     </div>
-    <p v-else class="ek-webhook__note">
-      <v-icon icon="mdi-shield-key-outline" size="16" aria-hidden="true" />
-      <span>{{ t('integrationWebhook.onceNote') }}</span>
-    </p>
+    <div class="ek-webhook__action-row">
+      <p v-if="!issued" class="ek-webhook__note">
+        <v-icon icon="mdi-shield-key-outline" size="16" aria-hidden="true" />
+        <span>{{ t('integrationWebhook.onceNote') }}</span>
+      </p>
+      <EkButton tone="secondary" size="sm" :icon="hasWebhook ? 'mdi-key-change' : 'mdi-key-plus'" class="ek-webhook__action" @click="confirmOpen = true">
+        {{ hasWebhook ? t('integrationWebhook.renew') : t('integrationWebhook.create') }}
+      </EkButton>
+    </div>
 
     <EkConfirmDialog
       v-model="confirmOpen"
@@ -212,12 +211,28 @@ onBeforeUnmount(hideIssued)
   line-height: var(--ek-type-body-line);
 }
 
+.ek-webhook__action-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ek-space-3);
+  margin-top: var(--ek-space-4);
+  padding-top: var(--ek-space-4);
+  border-top: 1px solid var(--ek-color-border-subtle);
+}
+
+.ek-webhook__action {
+  margin-left: auto;
+}
+
 .ek-webhook__note,
 .ek-webhook__issued-note {
   display: flex;
+  flex: 1;
   align-items: flex-start;
   gap: var(--ek-space-2);
-  margin: var(--ek-space-4) 0 0;
+  min-width: 240px;
+  margin: 0;
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
   line-height: var(--ek-type-caption-line);
@@ -278,9 +293,6 @@ onBeforeUnmount(hideIssued)
   outline-offset: 1px;
 }
 
-.ek-webhook__issued-note {
-  margin-top: 0;
-}
 
 @media (max-width: 599px) {
   .ek-webhook__facts {
@@ -293,6 +305,15 @@ onBeforeUnmount(hideIssued)
 
   .ek-webhook__url {
     flex-basis: 100%;
+  }
+
+  .ek-webhook__note {
+    min-width: 0;
+    flex-basis: 100%;
+  }
+
+  .ek-webhook__action {
+    margin-left: 0;
   }
 }
 </style>

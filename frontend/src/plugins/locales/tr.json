@@ -1471,7 +1471,7 @@
       "waiting": "İlk bildirim bekleniyor",
       "unknown": "Durum bilinmiyor"
     },
-    "onceNote": "Güvenlik için adres yalnızca oluşturulduğu anda bir kez gösterilir ve bu sayfada saklanmaz. Adresi kaybederseniz yenileyin.",
+    "onceNote": "Güvenlik için adres yalnızca oluşturulduğu anda bir kez gösterilir ve bu sayfada saklanmaz. Adresi kaybederseniz yeni adres üretin.",
     "confirmCreateTitle": "Webhook adresi oluşturulsun mu?",
     "confirmCreateText": "Oluşturulan adresi Trendyol satıcı panelindeki webhook ayarına girmeniz gerekir. Adres yalnızca bir kez gösterilir.",
     "confirmRenewTitle": "Webhook adresi yenilensin mi?",
