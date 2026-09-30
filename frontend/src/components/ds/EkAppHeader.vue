@@ -4,10 +4,9 @@
   DS-v2 — kimlik taşıyan üst bar (chrome). Tek marka degradesi
   (`--ek-gradient-chrome`), üzerindeki tüm kontroller `chrome-raised`
   zeminli ve `chrome-border` çerçeveli — aynı dil.
-    [☰] [logo]  [Genel | Seçili kayıt]   [#search ...........]   [🔔 n] [?] [profil]
-  Çalışma alanı anahtarı: genel çalışma alanı ↔ seçili kayıt bağlamı
-  (sipariş/ürün/entegrasyon). Bağlam yoksa ikinci segment devre dışıdır.
-  Dar ekranda (<768) segment etiketleri gizlenir, yalnız ikonlar kalır.
+    [☰] [logo]   [#search ...........]   [🔔 n] [?] [profil]
+  Aşama 5: "Genel | Seçili kayıt" çalışma alanı anahtarı KALDIRILDI (kullanıcı geri bildirimi: anlamı
+  anlaşılmıyordu; kayıt bağlamına sekme şeridinden zaten erişilir).
   Ek (geri uyumlu): menü düğmesinde kısayollu ipucu; `data-header-action`
   çapaları (kabuk, v-menu'leri bu düğmelere bağlar); `#end-start` slot'u.
 -->
@@ -31,32 +30,6 @@
         <span class="ek-header__tip">Menüyü aç/kapat <EkKbd :keys="menuShortcut" tone="inverse" /></span>
       </v-tooltip>
       <EkBrandLogo tone="inverse" :variant="compact ? 'mark' : 'full'" :size="28" class="ek-header__brand" />
-      <div class="ek-header__switch" role="radiogroup" aria-label="Çalışma alanı">
-        <button
-          type="button"
-          role="radio"
-          class="ek-header__segment"
-          :class="{ 'is-on': workspace === 'general' }"
-          :aria-checked="workspace === 'general'"
-          @click="emit('update:workspace', 'general')"
-        >
-          <v-icon icon="mdi-view-dashboard-outline" aria-hidden="true" />
-          <span class="ek-header__segment-label">Genel</span>
-        </button>
-        <button
-          type="button"
-          role="radio"
-          class="ek-header__segment"
-          :class="{ 'is-on': workspace === 'record' }"
-          :aria-checked="workspace === 'record'"
-          :disabled="!recordLabel"
-          :title="recordLabel ? recordLabel : recordHint"
-          @click="emit('update:workspace', 'record')"
-        >
-          <v-icon icon="mdi-package-variant-closed" aria-hidden="true" />
-          <span class="ek-header__segment-label">{{ recordLabel ?? 'Seçili kayıt' }}</span>
-        </button>
-      </div>
     </div>
 
     <div class="ek-header__center">
@@ -92,8 +65,6 @@ import EkKbd from './EkKbd.vue'
 
 const props = withDefaults(
   defineProps<{
-    workspace?: 'general' | 'record'
-    recordLabel?: string
     userName: string
     storeName: string
     notificationCount?: number
@@ -102,21 +73,16 @@ const props = withDefaults(
     menuShortcut?: string[]
     /** Sol menü açık mı (menü düğmesi `aria-expanded`). */
     menuExpanded?: boolean
-    /** Seçili kayıt yokken ikinci segmentin açıklaması. */
-    recordHint?: string
   }>(),
   {
-    workspace: 'general',
     notificationCount: 0,
     compact: false,
     menuShortcut: () => ['Ctrl', 'B'],
     menuExpanded: undefined,
-    recordHint: 'Bir kayıt (ör. ürün düzenleme) açıldığında etkinleşir',
   },
 )
 
 const emit = defineEmits<{
-  'update:workspace': [value: 'general' | 'record']
   'toggle-menu': []
   notifications: []
   help: []
@@ -192,8 +158,7 @@ const initials = computed(() =>
 }
 
 .ek-header__icon-btn:focus-visible,
-.ek-header__user:focus-visible,
-.ek-header__segment:focus-visible {
+.ek-header__user:focus-visible {
   outline: 2px solid var(--ek-color-chrome-text);
   outline-offset: 1px;
 }
@@ -209,58 +174,6 @@ const initials = computed(() =>
   top: 2px;
   right: 2px;
   box-shadow: 0 0 0 2px var(--ek-color-chrome);
-}
-
-.ek-header__switch {
-  display: inline-flex;
-  gap: 2px;
-  padding: 2px;
-  border: 1px solid var(--ek-color-chrome-border);
-  border-radius: var(--ek-radius-control);
-  background: var(--ek-color-chrome);
-}
-
-.ek-header__segment {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ek-space-2);
-  height: 30px;
-  max-width: 200px;
-  padding: 0 var(--ek-space-3);
-  border: 0;
-  border-radius: var(--ek-radius-md);
-  background: transparent;
-  color: var(--ek-color-chrome-text-muted);
-  font-family: inherit;
-  font-size: var(--ek-type-label-size);
-  font-weight: var(--ek-font-weight-semibold);
-  cursor: pointer;
-  transition: var(--ek-transition-colors);
-}
-
-.ek-header__segment :deep(.v-icon) {
-  font-size: var(--ek-icon-sm);
-}
-
-.ek-header__segment-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.ek-header__segment:hover:not(:disabled) {
-  color: var(--ek-color-chrome-text);
-}
-
-.ek-header__segment.is-on {
-  background: var(--ek-color-surface);
-  color: var(--ek-color-action-emphasis);
-  box-shadow: var(--ek-shadow-card);
-}
-
-.ek-header__segment:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
 }
 
 .ek-header__user {
@@ -328,8 +241,6 @@ const initials = computed(() =>
     padding: 0 var(--ek-space-2);
   }
 
-  .ek-header__segment-label,
-  .ek-header__switch,
   .ek-header__help {
     display: none;
   }

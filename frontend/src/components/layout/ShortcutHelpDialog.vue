@@ -22,7 +22,10 @@
         <dl class="ek-shortcuts__list">
           <div v-for="item in group.items" :key="item.id" class="ek-shortcuts__row">
             <dt class="ek-shortcuts__desc">{{ item.label }}</dt>
-            <dd class="ek-shortcuts__keys"><EkKbd :keys="[...item.keys]" /></dd>
+            <dd class="ek-shortcuts__keys">
+              <EkKbd :keys="[...item.keys]" />
+              <span v-for="alias in item.aliases ?? []" :key="alias.join('+')" class="ek-shortcuts__alias">veya <EkKbd :keys="[...alias]" /></span>
+            </dd>
           </div>
         </dl>
       </section>
@@ -44,7 +47,8 @@ import EkButton from '@/components/ds/EkButton.vue'
 import EkKbd from '@/components/ds/EkKbd.vue'
 import { EDITABLE_SAFE_SHORTCUTS, SHORTCUT_GROUPS } from '@/navigation/shortcuts'
 
-const editableSafe = EDITABLE_SAFE_SHORTCUTS.map((s) => s.keys.join('+')).join(' ve ')
+const safeKeys = EDITABLE_SAFE_SHORTCUTS.map((s) => s.keys.join('+'))
+const editableSafe = safeKeys.length > 1 ? `${safeKeys.slice(0, -1).join(', ')} ve ${safeKeys[safeKeys.length - 1]}` : safeKeys.join('')
 
 defineProps<{ modelValue: boolean }>()
 defineEmits<{ 'update:modelValue': [value: boolean] }>()
@@ -98,8 +102,21 @@ defineEmits<{ 'update:modelValue': [value: boolean] }>()
 }
 
 .ek-shortcuts__keys {
+  display: inline-flex;
   flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ek-space-2);
   margin: 0;
+}
+
+.ek-shortcuts__alias {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
 }
 
 .ek-shortcuts__note {

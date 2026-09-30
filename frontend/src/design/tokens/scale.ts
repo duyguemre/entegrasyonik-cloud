@@ -151,6 +151,8 @@ export const shadow = {
     // Aşama 3: yatay kaydırılan tabloda sabit kolonun kenar gölgesi (altında içerik olduğunu söyler)
     'scroll-start': '10px 0 12px -6px rgba(18, 26, 43, 0.18)',
     'scroll-end': '-10px 0 12px -6px rgba(18, 26, 43, 0.18)',
+    // Aşama 5: etkin workspace sekmesi — yalnız YUKARI/yanlara yumuşak gölge (alt kenar içerikle birleşik kalır)
+    'tab-active': '0 -3px 8px -4px rgba(18, 26, 43, 0.22)',
   },
   dark: {
     none: 'none',
@@ -164,6 +166,7 @@ export const shadow = {
     chrome: '0 1px 0 rgba(0, 0, 0, 0.50)',
     'scroll-start': '10px 0 12px -6px rgba(0, 0, 0, 0.5)',
     'scroll-end': '-10px 0 12px -6px rgba(0, 0, 0, 0.5)',
+    'tab-active': '0 -3px 8px -4px rgba(0, 0, 0, 0.5)',
   },
 } as const
 

@@ -33,6 +33,14 @@ describe('matchShortcut', () => {
     expect(matchShortcut(ev('?', { shift: true }))).toEqual({ id: 'shortcutHelp' })
   })
 
+  it('Aşama 5: Ctrl+Shift+H üst bölüm (metin alanında da); Alt+U takma adı metin alanında çalışmaz', () => {
+    expect(matchShortcut(ev('H', { ctrl: true, shift: true, code: 'KeyH' }))).toEqual({ id: 'headerToggle' })
+    expect(matchShortcut(ev('H', { ctrl: true, shift: true, code: 'KeyH' }), input())).toEqual({ id: 'headerToggle' })
+    expect(matchShortcut(ev('u', { alt: true, code: 'KeyU' }), input())).toBeUndefined()
+    expect(shortcutKeys('headerToggle')).toEqual(['Ctrl', 'Shift', 'H'])
+    expect(SHORTCUTS.find((s) => s.id === 'headerToggle')?.aliases).toEqual([['Alt', 'U']])
+  })
+
   it('tarayıcının kendi kısayollarını ve AltGr karakterlerini ezmez', () => {
     expect(matchShortcut(ev('ArrowLeft', { alt: true }))).toBeUndefined() // geri
     expect(matchShortcut(ev('w', { ctrl: true }))).toBeUndefined() // sekme kapat (tarayıcı)

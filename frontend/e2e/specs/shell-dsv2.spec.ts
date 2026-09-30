@@ -255,31 +255,47 @@ test.describe('DS-v2 kabuk — sekme menüsü ve sol menü', () => {
     await page.keyboard.press('Control+b')
   })
 
-  test('üst bar çalışma alanı anahtarı: kayıt sekmesi açılınca "seçili kayıt" etkinleşir, Genel ↔ kayıt geçer', async ({ page }) => {
-    test.skip(isMobile(page), 'Dar ekranda anahtar gizli (EkAppHeader <768) — kayıt sekmesi şeritte')
+  // Aşama 5 (kullanıcı geri bildirimi, madde 10): "Genel | Seçili kayıt" anahtarı üst bardan KALDIRILDI — anlamı
+  // anlaşılmıyordu. Kasten değişen davranış: anahtar yok; kayıt bağlamına (ürün düzenleme) sekme şeridinden gidilir.
+  test('üst barda çalışma alanı anahtarı yok; kayıt sekmesi ↔ liste sekmesi şeritten geçilir', async ({ page }) => {
     await installApiMocks(page, {
       MenuService: menuFixtureWithProductUpdate,
       ChoiceService: choicesDoluFixture,
     })
     await gotoAuthed(page)
-    const record = page.getByRole('radiogroup', { name: 'Çalışma alanı' }).getByRole('radio').nth(1)
-    await expect(record).toBeDisabled()
+    await expect(page.getByRole('radiogroup', { name: 'Çalışma alanı' })).toHaveCount(0)
 
     await openScreen(page, 'ProductListView')
-    // Ürün görseli (küçük resim) kayıt sekmesini açar (ProductListView `openEditProduct` — çok örnekli sekme).
-    // Birleştirme (Aşama 3): liste standardında küçük resim bir düğmedir (`.plv-thumb`, "… ürününü düzenle").
     await page.locator('.productListView').getByRole('button', { name: 'E2E Test Ürünü ürününü düzenle' }).click()
     await expect(page.locator(TAB)).toHaveCount(3, { timeout: 20_000 })
-    await expect(record).toBeEnabled()
-    await expect(record).toContainText('E2E Test Ürünü')
-    await expect(record).toHaveAttribute('aria-checked', 'true')
-
-    await page.getByRole('radio', { name: 'Genel' }).click()
-    await expect(page.getByRole('radio', { name: 'Genel' })).toHaveAttribute('aria-checked', 'true')
+    const record = page.getByRole('tab', { name: 'E2E Test Ürünü' })
+    await expect(record).toHaveAttribute('aria-selected', 'true')
+    await page.getByRole('tab', { name: 'Ürünler' }).click()
     await expect(page.getByRole('tab', { name: 'Ürünler' })).toHaveAttribute('aria-selected', 'true')
     await record.click()
-    await expect(record).toHaveAttribute('aria-checked', 'true')
-    await expect(page.getByRole('tab', { name: 'E2E Test Ürünü' })).toHaveAttribute('aria-selected', 'true')
+    await expect(record).toHaveAttribute('aria-selected', 'true')
+  })
+
+  // Aşama 5 (madde 5): sekme şeridinde dikey kaydırma çubuğu görünüyordu. Şerit hiçbir öğesinde dikey taşma/çubuk
+  // alanı üretmez; çok sekmede yalnız yatay taşma (gizli çubuk + ok). Her viewport'ta koşar.
+  test('sekme şeridi: dikey taşma yok, kaydırma çubuğu alanı 0; taşmada ok düğmesi', async ({ page }) => {
+    await installApiMocks(page)
+    await gotoAuthed(page)
+    for (const screen of ['OrderListView', 'ClaimListView', 'CustomerListView', 'InvoiceListView', 'MessageListView', 'MarketplaceView']) {
+      await openScreen(page, screen)
+    }
+    const metrics = await page.locator('.workplace-tabs').evaluate((root) =>
+      [root, ...root.querySelectorAll<HTMLElement>('*')].map((el) => {
+        const e = el as HTMLElement
+        const cs = getComputedStyle(e)
+        return { cls: e.className?.toString?.() ?? '', vOverflow: /auto|scroll/.test(cs.overflowY) && e.scrollHeight > e.clientHeight, gutter: e.offsetHeight - e.clientHeight - parseFloat(cs.borderTopWidth) - parseFloat(cs.borderBottomWidth) }
+      }),
+    )
+    expect(metrics.filter((m) => m.vOverflow)).toEqual([])
+    const list = page.locator('.workplace-tabs [role="tablist"]')
+    expect(await list.evaluate((el) => el.offsetHeight - el.clientHeight)).toBe(0)
+    const overflowing = await list.evaluate((el) => el.scrollWidth > el.clientWidth)
+    if (overflowing) await expect(page.locator('.workplace-tabs .ek-tabs__arrow').first()).toBeAttached()
   })
 
   test('axe: kabuk (üst bar, sol menü, sekme şeridi) WCAG 2.1 AA ihlali 0', async ({ page }) => {

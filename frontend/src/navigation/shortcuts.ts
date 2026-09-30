@@ -38,6 +38,8 @@ export interface ShortcutDefinition {
   group: 'Genel' | 'Sekmeler' | 'Görünüm'
   /** Metin alanında odak varken de çalışır mı. */
   allowInEditable?: boolean
+  /** Aynı eylemi tetikleyen eski tuşlar (geri uyum; listede "ayrıca" olarak gösterilir). */
+  aliases?: readonly (readonly string[])[]
 }
 
 export const SHORTCUTS: readonly ShortcutDefinition[] = [
@@ -49,8 +51,10 @@ export const SHORTCUTS: readonly ShortcutDefinition[] = [
   { id: 'tabClose', keys: ['Alt', 'W'], label: 'Etkin sekmeyi kapat', group: 'Sekmeler' },
   // Metin/zengin metin alanında Ctrl+B "kalın" demektir (ör. açıklama editörü) — orada EZİLMEZ.
   { id: 'sidebarToggle', keys: ['Ctrl', 'B'], label: 'Sol menüyü daralt / genişlet', group: 'Görünüm' },
-  { id: 'headerToggle', keys: ['Alt', 'U'], label: 'Üst bölümü daralt / göster', group: 'Görünüm' },
-  { id: 'focusMode', keys: ['Ctrl', 'Shift', 'F'], label: 'Odak modu (tam ekran çalışma alanı)', group: 'Görünüm', allowInEditable: true },
+  // Aşama 5: üst bölüm düğmesi sekme şeridinden kalktı (üst barın altındaki yüzen tutamak + bu kısayol).
+  // Ctrl+Shift+H: Chrome/Electron'da ayrılmış değil; metin alanında karakter üretmez. Eski Alt+U takma ad olarak çalışır.
+  { id: 'headerToggle', keys: ['Ctrl', 'Shift', 'H'], label: 'Üst bölümü daralt / göster', group: 'Görünüm', allowInEditable: true, aliases: [['Alt', 'U']] },
+  { id: 'focusMode', keys: ['Ctrl', 'Shift', 'F'], label: 'Tam ekran (odak modu: üst bar ve sol menü gizlenir)', group: 'Görünüm', allowInEditable: true },
 ] as const
 
 export const SHORTCUT_GROUPS: ReadonlyArray<{ label: ShortcutDefinition['group']; items: ShortcutDefinition[] }> = (
@@ -106,6 +110,7 @@ function raw(event: ShortcutKeyEvent): ShortcutMatch | undefined {
   if (mod && !event.altKey && !event.shiftKey && (key === 'k' || code === 'KeyK')) return { id: 'search' }
   if (mod && !event.altKey && !event.shiftKey && (key === 'b' || code === 'KeyB')) return { id: 'sidebarToggle' }
   if (mod && !event.altKey && event.shiftKey && (key === 'f' || code === 'KeyF')) return { id: 'focusMode' }
+  if (mod && !event.altKey && event.shiftKey && (key === 'h' || code === 'KeyH')) return { id: 'headerToggle' }
   if (mod && !event.altKey && !event.shiftKey && key === 'ArrowRight') return { id: 'tabNext' }
   if (mod && !event.altKey && !event.shiftKey && key === 'ArrowLeft') return { id: 'tabPrev' }
 
@@ -120,6 +125,11 @@ function raw(event: ShortcutKeyEvent): ShortcutMatch | undefined {
   return undefined
 }
 
+/** Takma ad yalnız kendi tuşuyla eşleşir: metin alanında Alt+U (ü karakteri üretebilir) çalışmaz, Ctrl+Shift+H çalışır. */
+function isAlias(match: ShortcutMatch, event: ShortcutKeyEvent): boolean {
+  return match.id === 'headerToggle' && event.altKey
+}
+
 /**
  * Bir klavye olayını kayıttaki kısayola eşler. Metin alanında odak varken
  * yalnızca `allowInEditable` kısayolları eşleşir.
@@ -129,7 +139,7 @@ export function matchShortcut(event: ShortcutKeyEvent, target?: EventTarget | nu
   if (!match) return undefined
   if (isEditableTarget(target)) {
     const def = SHORTCUTS.find((s) => s.id === match.id)
-    if (!def?.allowInEditable) return undefined
+    if (!def?.allowInEditable || isAlias(match, event)) return undefined
   }
   return match
 }

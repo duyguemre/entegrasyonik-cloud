@@ -79,7 +79,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const menuLinkCode = ref<any>(0)
   /**
    * DS-v2 kabuk — en son etkinleştirilen bağlantılar (en yeni önce, `code` tekil). Akıllı aramanın
-   * "Son açılanlar" grubu ve üst bardaki çalışma alanı anahtarı (Genel ↔ seçili kayıt) okur.
+   * "Son açılanlar" grubu okur.
    * YALNIZCA bellekte tutulur (PII/serbest metin kalıcılaştırılmaz — ADR-0012 Karar 2/3).
    */
   const recentLinks = ref<any[]>([])
@@ -535,30 +535,6 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   }
 
   /**
-   * Üst bar çalışma alanı anahtarı — "seçili kayıt" bağlamı: en son etkinleştirilmiş, HÂLÂ AÇIK,
-   * çok örnekli (singleton=false: ürün düzenleme gibi tek bir kayda ait) sekme. Yoksa `undefined`.
-   */
-  const recordTab = computed(() => {
-    for (const link of recentLinks.value) {
-      if (link.singleton !== false) continue
-      const tab = tabs.value.find((t: any) => t.link === link || t.link.code === link.code)
-      if (tab) return tab
-    }
-    return undefined
-  })
-
-  /** "Genel" çalışma alanı: en son etkinleştirilmiş tekil (singleton) sekme, yoksa ilk sekme. */
-  function activateGeneral() {
-    for (const link of recentLinks.value) {
-      if (link.singleton === false) continue
-      const tab = tabs.value.find((t: any) => t.link.code === link.code)
-      if (tab) return activateTab(tab)
-    }
-    const first = tabs.value.find((t: any) => t.link.singleton !== false)
-    if (first) activateTab(first)
-  }
-
-  /**
    * R9b / H-01: yalnızca BELLEKTEKİ çalışma alanı sıfırlanır (önceki kullanıcının açık sekmeleri yeni oturuma taşınmasın).
    * `sessionStorage` kalıcılığına DOKUNMAZ (ADR-0012 Karar 3: oturum süresi dolması sekmeleri silmez; açık çıkış
    * `clearPersist()` ile siler). Route izleyici DURDURULUR: yeni oturumda `init()` onu, kalıcı sekmeler geri yüklendikten
@@ -590,11 +566,9 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     closeTab,
     clearActiveParameters,
     recentLinks,
-    recordTab,
     activateTab,
     activateRelative,
     activateIndex,
-    activateGeneral,
     closeOthers,
     closeToRight,
     closeAll,

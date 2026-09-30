@@ -6,8 +6,9 @@
   kesilen başlıkta tooltip; soldaki boşluk YOK — ilk sekme şeridin başından
   başlar). Durum `stores/workspace.ts`'te; bu bileşen yalnızca görünüm + eylem.
     - Sağ tık / Shift+F10: Kapat · Diğerlerini kapat · Sağdakileri kapat
-    - Sağ uç: açık sekmeler listesi (Alt+1…9 ipuçlu), üst bölümü daralt (Alt+U),
-      odak modu (Ctrl+Shift+F)
+    - Sağ uç: YALNIZ açık sekmeler listesi (Alt+1…9 ipuçlu). Aşama 5: "üst bölümü daralt" ve
+      "tam ekran" düğmeleri şeridi daralttığı için buradan kalktı → üst barın alt kenarındaki yüzen
+      tutamak (`ShellChromeHandle`) + kısayollar (Ctrl+Shift+H / Ctrl+Shift+F).
   Her sekme ayrı bir örnektir (çok örnekli kayıt sekmeleri de ayrı sekme).
   Spec çapası: kök `.workplace-tabs` (kabuğun mount olduğunun işareti).
 -->
@@ -40,39 +41,6 @@
             <EkMenuPanel autofocus ref="listPanelRef" class="ek-shell-tabs__list" :groups="listGroups" label="Açık sekmeler" @select="onListSelect" @close="listOpen = false" />
           </v-menu>
 
-          <template v-if="!compact">
-            <span class="ek-shell-tabs__sep" aria-hidden="true"></span>
-            <v-tooltip :eager="false" transition="fade-transition" location="bottom" :open-delay="400">
-              <template #activator="{ props: tipProps }">
-                <button
-                  v-bind="tipProps"
-                  type="button"
-                  class="ek-shell-tabs__tool"
-                  :aria-pressed="headerCollapsed"
-                  :aria-label="withShortcut(headerCollapsed ? 'Üst bölümü göster' : 'Üst bölümü daralt', 'headerToggle')"
-                  @click="$emit('toggle-header')"
-                >
-                  <v-icon :icon="headerCollapsed ? 'mdi-chevron-down' : 'mdi-chevron-up'" aria-hidden="true" />
-                </button>
-              </template>
-              <span class="ek-shell-tabs__tip">{{ headerCollapsed ? 'Üst bölümü göster' : 'Üst bölümü daralt' }} <EkKbd :keys="shortcutKeys('headerToggle')" tone="inverse" /></span>
-            </v-tooltip>
-          </template>
-          <v-tooltip :eager="false" transition="fade-transition" location="bottom" :open-delay="400">
-            <template #activator="{ props: tipProps }">
-              <button
-                v-bind="tipProps"
-                type="button"
-                class="ek-shell-tabs__tool"
-                :aria-pressed="focusMode"
-                :aria-label="withShortcut(focusMode ? 'Odak modundan çık' : 'Odak modu', 'focusMode')"
-                @click="$emit('toggle-focus')"
-              >
-                <v-icon :icon="focusMode ? 'mdi-arrow-collapse' : 'mdi-arrow-expand'" aria-hidden="true" />
-              </button>
-            </template>
-            <span class="ek-shell-tabs__tip">{{ focusMode ? 'Odak modundan çık' : 'Odak modu' }} <EkKbd :keys="shortcutKeys('focusMode')" tone="inverse" /></span>
-          </v-tooltip>
         </div>
       </template>
     </EkWorkspaceTabs>
@@ -88,17 +56,10 @@ import { computed, nextTick, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import EkWorkspaceTabs, { type EkWorkspaceTab } from '@/components/ds/EkWorkspaceTabs.vue'
 import EkMenuPanel, { type EkMenuGroup, type EkMenuItem } from '@/components/ds/EkMenuPanel.vue'
-import EkKbd from '@/components/ds/EkKbd.vue'
 import { isPinnedLink, useWorkspaceStore } from '@/stores/workspace'
-import { shortcutKeys, withShortcut } from '@/navigation/shortcuts'
+import { shortcutKeys } from '@/navigation/shortcuts'
 import { resolveMenuTitle } from '@/navigation/menuTitle'
 
-withDefaults(defineProps<{ headerCollapsed?: boolean; focusMode?: boolean; compact?: boolean }>(), {
-  headerCollapsed: false,
-  focusMode: false,
-  compact: false,
-})
-defineEmits<{ 'toggle-header': []; 'toggle-focus': [] }>()
 
 const { t, te } = useI18n({ useScope: 'global' })
 const workspace = useWorkspaceStore()
@@ -200,28 +161,30 @@ function onListSelect(item: EkMenuItem) {
   height: var(--ek-app-tabstrip-height);
 }
 
+.ek-shell-tabs__strip :deep(.ek-tabs__trailing) {
+  align-self: stretch;
+  align-items: flex-end;
+}
+
 .ek-shell-tabs__tools {
   display: flex;
   align-items: center;
   gap: 2px;
-  padding-left: var(--ek-space-1);
+  /* Üstteki 12px yüzen tutamağa (ShellChromeHandle) ayrılır: liste düğmesi şeridin altına yaslı, çakışma yok. */
+  align-self: flex-end;
+  padding: 0 0 var(--ek-space-1) var(--ek-space-1);
 }
 
-.ek-shell-tabs__sep {
-  width: 1px;
-  height: 16px;
-  margin: 0 var(--ek-space-1);
-  background: var(--ek-color-border-strong);
-}
 
 .ek-shell-tabs__tool {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 2px;
-  min-width: 28px;
-  height: 28px;
-  padding: 0 var(--ek-space-1);
+  /* Genişlik = üstteki yüzen tutamak (52px): ikisi tek sütun gibi hizalı, sekmelere taşmaz. */
+  min-width: 52px;
+  height: 24px;
+  padding: 0 var(--ek-space-2);
   border: 0;
   border-radius: var(--ek-radius-control);
   background: transparent;
@@ -237,10 +200,6 @@ function onListSelect(item: EkMenuItem) {
   color: var(--ek-color-content-strong);
 }
 
-.ek-shell-tabs__tool[aria-pressed='true'] {
-  background: var(--ek-color-action-subtle);
-  color: var(--ek-color-action-emphasis);
-}
 
 .ek-shell-tabs__tool:focus-visible {
   outline: none;
@@ -252,11 +211,6 @@ function onListSelect(item: EkMenuItem) {
   font-weight: var(--ek-font-weight-semibold);
 }
 
-.ek-shell-tabs__tip {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ek-space-2);
-}
 
 .ek-shell-tabs__list {
   max-height: min(480px, calc(100vh - 120px));

@@ -1,16 +1,19 @@
 <!--
   frontend/src/components/ds/EkWorkspaceTabs.vue
 
-  DS-v2 — workspace sekmeleri (çok görevli çalışma alanı). Gerçek sekme hissi:
-    - şerit `tabstrip-bg` tonunda; pasif sekmeler zeminle aynı, aralarında ince ayraç
-    - ETKİN sekme `tab-active` (= içerik zemini) ile altındaki içerikle BİRLEŞİR,
-      üst kenarda 2px aksiyon çizgisi, yarı-kalın başlık
+  DS-v2 — workspace sekmeleri (çok görevli çalışma alanı). Gerçek (klasör) sekme hissi:
+    - şerit `tabstrip-bg` tonunda; pasif sekmeler geri planda (zeminle aynı, soluk metin, ince ayraç)
+    - ETKİN sekme `tab-active` (= içerik zemini) ile altındaki içerikle TEK PARÇA birleşir: arada çizgi
+      YOK (şeridin alt çizgisi etkin sekmenin altında kesilir), alt köşelerde içbükey geçiş (klasör sekmesi),
+      yukarı doğru yumuşak gölge, üst kenarda 2px aksiyon çizgisi, yarı-kalın başlık (Aşama 5)
     - kapatma düğmesi küçük (20px) ve zarif: etkin sekmede ve hover/odakta görünür
     - uzun başlık tek satırda kesilir (…), tam başlık tooltip'te
   Soldaki anlamsız boşluk YOK: ilk sekme şeridin başından başlar (#leading
   slot'u isteğe bağlı sabit öğe içindir, ör. modül başlatıcı).
   Klavye: ←/→ sekmeler arası, Home/End, Enter/Space etkinleştir, Delete kapat
-  (WAI-ARIA tabs deseni, roving tabindex). Taşma: yatay kaydırma.
+  (WAI-ARIA tabs deseni, roving tabindex). Taşma (Aşama 5): YALNIZ yatay; kaydırma çubuğu gizli,
+  taşan kenarda solma + ok düğmesi (fare), tekerlek yatay kaydırır, etkin sekme görünür alana getirilir.
+  Dikey kaydırma hiçbir koşulda oluşmaz (kap `overflow-y: hidden` + çubuk alanı 0).
   Ek (geri uyumlu): başlık gerçekten kesildiyse (…) tam başlık v-tooltip'te
   (yalnızca taşan sekmede — kesilmeyen başlıkta tekrar eden ipucu yok);
   sağ tık / Shift+F10 / Menü tuşu → `contextmenu(id, {x,y})`; orta tık kapatır.
@@ -18,7 +21,11 @@
 <template>
   <div class="ek-tabs">
     <div v-if="$slots.leading" class="ek-tabs__leading"><slot name="leading" /></div>
-    <div ref="listRef" class="ek-tabs__list" role="tablist" :aria-label="label" @keydown="onKeydown">
+    <div class="ek-tabs__viewport" :class="{ 'can-left': canLeft, 'can-right': canRight }">
+    <button v-if="canLeft" type="button" class="ek-tabs__arrow ek-tabs__arrow--start" tabindex="-1" aria-hidden="true" @click="scrollByPage(-1)">
+      <v-icon icon="mdi-chevron-left" />
+    </button>
+    <div ref="listRef" class="ek-tabs__list" role="tablist" :aria-label="label" @keydown="onKeydown" @scroll.passive="updateOverflow" @wheel="onWheel">
       <div
         v-for="tab in tabs"
         :key="tab.id"
@@ -27,6 +34,8 @@
         @contextmenu.prevent="emit('contextmenu', tab.id, { x: $event.clientX, y: $event.clientY })"
         @auxclick="onAuxClick($event, tab)"
       >
+        <span class="ek-tab__flare ek-tab__flare--start" aria-hidden="true"></span>
+        <span class="ek-tab__flare ek-tab__flare--end" aria-hidden="true"></span>
         <v-tooltip :eager="false" transition="fade-transition" :disabled="!truncated.has(tab.id)" location="bottom" :open-delay="500" :text="tab.title">
           <template #activator="{ props: tipProps }">
             <button
@@ -61,6 +70,10 @@
           <v-icon icon="mdi-close" />
         </span>
       </div>
+    </div>
+    <button v-if="canRight" type="button" class="ek-tabs__arrow ek-tabs__arrow--end" tabindex="-1" aria-hidden="true" @click="scrollByPage(1)">
+      <v-icon icon="mdi-chevron-right" />
+    </button>
     </div>
     <div v-if="$slots.trailing" class="ek-tabs__trailing"><slot name="trailing" /></div>
     <span :id="closeHintId" class="ek-sr-only">Kapatmak için Delete tuşuna basın</span>
@@ -104,7 +117,54 @@ watch(
 const truncated = ref(new Set<string>())
 let resizeObserver: ResizeObserver | undefined
 
+/** Yatay taşma: hangi kenarda gizli sekme var (solma + ok yalnız o kenarda). */
+const canLeft = ref(false)
+const canRight = ref(false)
+
+function updateOverflow() {
+  const el = listRef.value
+  if (!el) return
+  const max = el.scrollWidth - el.clientWidth
+  canLeft.value = el.scrollLeft > 1
+  canRight.value = max - el.scrollLeft > 1
+}
+
+function scrollByPage(direction: 1 | -1) {
+  const el = listRef.value
+  if (!el) return
+  el.scrollBy({ left: direction * Math.max(160, el.clientWidth * 0.6), behavior: prefersReducedMotion() ? 'auto' : 'smooth' })
+}
+
+/** Dikey tekerlek yatay kaydırır (yalnız taşma varken; aksi halde sayfa davranışı bozulmaz). */
+function onWheel(event: WheelEvent) {
+  const el = listRef.value
+  if (!el || el.scrollWidth <= el.clientWidth || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return
+  event.preventDefault()
+  el.scrollLeft += event.deltaY
+}
+
+function prefersReducedMotion() {
+  return typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+}
+
+/** Etkin sekme görünür alanda kalsın (klavye/kısayolla etkinleşen, şeridin dışında kalan sekme). */
+function revealActive() {
+  const el = listRef.value
+  const tab = el?.querySelector<HTMLElement>(`[data-tab-id="${props.modelValue}"]`)?.closest<HTMLElement>('.ek-tab')
+  if (!el || !tab) return
+  const pad = 32
+  if (tab.offsetLeft < el.scrollLeft + pad) el.scrollLeft = Math.max(0, tab.offsetLeft - pad)
+  else if (tab.offsetLeft + tab.offsetWidth > el.scrollLeft + el.clientWidth - pad) el.scrollLeft = tab.offsetLeft + tab.offsetWidth - el.clientWidth + pad
+  updateOverflow()
+}
+
+watch(
+  () => [props.modelValue, props.tabs.length],
+  () => nextTick(revealActive),
+)
+
 function measure() {
+  updateOverflow()
   const next = new Set<string>()
   listRef.value?.querySelectorAll<HTMLElement>('[data-title-id]').forEach((el) => {
     if (el.scrollWidth > el.clientWidth + 1) next.add(el.dataset.titleId as string)
@@ -115,6 +175,7 @@ function measure() {
 
 onMounted(() => {
   measure()
+  nextTick(revealActive)
   if (typeof ResizeObserver !== 'undefined' && listRef.value) {
     resizeObserver = new ResizeObserver(() => measure())
     resizeObserver.observe(listRef.value)
@@ -191,14 +252,18 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
 
 <style scoped>
 .ek-tabs {
+  position: relative;
   display: flex;
   align-items: flex-end;
   gap: var(--ek-space-2);
   min-width: 0;
   height: 40px;
   padding: 0 var(--ek-space-2) 0 0;
+  /* Kap hiçbir yönde kaydırılmaz (dikey kaydırma çubuğu hatası — Aşama 5); taşma yalnız listede, yatay. */
+  overflow: hidden;
   background: var(--ek-color-tabstrip-bg);
-  border-bottom: 1px solid var(--ek-color-border-default);
+  /* Alt çizgi kenarlık değil iç gölge: etkin sekme üstüne biner ve çizgiyi KESER (tek parça geçiş). */
+  box-shadow: inset 0 -1px 0 var(--ek-color-border-default);
 }
 
 .ek-tabs__leading,
@@ -213,6 +278,14 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   padding-left: var(--ek-space-2);
 }
 
+.ek-tabs__viewport {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+}
+
 .ek-tabs__list {
   display: flex;
   align-items: flex-end;
@@ -220,11 +293,63 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   min-width: 0;
   height: 100%;
   overflow-x: auto;
-  /* overflow-x:auto tek başına overflow-y'yi de auto yapar; sekmenin -1px alt payı (şerit kenarlığının
-     üstüne binme) 1px dikey taşma üretir → klasik (yer kaplayan) kaydırma çubuklu sistemlerde (Windows)
-     şeritte dikey kaydırma çubuğu çıkıyordu. Kaydırma kabı zaten kırptığı için görünüm değişmez. */
   overflow-y: hidden;
-  scrollbar-width: thin;
+  overscroll-behavior-x: contain;
+  /* Kaydırma çubuğu hiç yer kaplamaz (klasik çubuklu sistemlerde şeridi daraltıp dikey çubuk üretiyordu);
+     taşma solma + ok düğmeleriyle anlatılır. */
+  scrollbar-width: none;
+}
+
+.ek-tabs__list::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Taşan kenarda solma: sekme metni şeridin tonuna erir (maske — renk literal'i yok). */
+.ek-tabs__viewport.can-left .ek-tabs__list {
+  mask-image: linear-gradient(to right, transparent 0, black 40px);
+}
+
+.ek-tabs__viewport.can-right .ek-tabs__list {
+  mask-image: linear-gradient(to left, transparent 0, black 40px);
+}
+
+.ek-tabs__viewport.can-left.can-right .ek-tabs__list {
+  mask-image: linear-gradient(to right, transparent 0, black 40px, black calc(100% - 40px), transparent 100%);
+}
+
+.ek-tabs__arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-chip);
+  background: var(--ek-color-surface);
+  box-shadow: var(--ek-shadow-card);
+  color: var(--ek-color-content-default);
+  font-size: var(--ek-icon-sm);
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: var(--ek-transition-colors);
+}
+
+.ek-tabs__arrow:hover {
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.ek-tabs__arrow--start {
+  left: var(--ek-space-1);
+}
+
+.ek-tabs__arrow--end {
+  right: var(--ek-space-1);
 }
 
 .ek-tab {
@@ -234,9 +359,6 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   flex: 0 1 220px;
   min-width: 120px;
   height: 34px;
-  margin-bottom: -1px;
-  border: 1px solid transparent;
-  border-bottom: 0;
   border-radius: var(--ek-radius-tab) var(--ek-radius-tab) 0 0;
   color: var(--ek-color-content-muted);
   transition: var(--ek-transition-colors);
@@ -247,10 +369,11 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   content: '';
   position: absolute;
   left: -1px;
-  top: 9px;
-  bottom: 9px;
+  top: 10px;
+  bottom: 10px;
   width: 1px;
   background: var(--ek-color-border-strong);
+  transition: opacity var(--ek-duration-fast) var(--ek-easing-standard);
 }
 
 .ek-tab.is-active::before,
@@ -268,13 +391,37 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   color: var(--ek-color-content-strong);
 }
 
+/* ETKİN: içerik zemini tonunda, şeridin önüne çıkar (yüksek, gölgeli), alt kenarı içerikle birleşir. */
 .ek-tab.is-active {
   height: 36px;
   background: var(--ek-color-tab-active);
-  border-color: var(--ek-color-border-default);
   color: var(--ek-color-content-strong);
-  box-shadow: inset 0 2px 0 var(--ek-color-action);
+  box-shadow: inset 0 2px 0 var(--ek-color-action), var(--ek-shadow-tab-active);
   z-index: 1;
+}
+
+/* Klasör sekmesi: alt köşelerde içbükey geçiş — sekme zemini şeride yumuşakça "akar" (çizgi yok). */
+.ek-tab__flare {
+  display: none;
+  position: absolute;
+  bottom: 0;
+  width: var(--ek-radius-tab);
+  height: var(--ek-radius-tab);
+  pointer-events: none;
+}
+
+.ek-tab.is-active .ek-tab__flare {
+  display: block;
+}
+
+.ek-tab__flare--start {
+  left: calc(-1 * var(--ek-radius-tab));
+  background: radial-gradient(circle at 0 0, transparent calc(var(--ek-radius-tab) - 0.5px), var(--ek-color-tab-active) var(--ek-radius-tab));
+}
+
+.ek-tab__flare--end {
+  right: calc(-1 * var(--ek-radius-tab));
+  background: radial-gradient(circle at 100% 0, transparent calc(var(--ek-radius-tab) - 0.5px), var(--ek-color-tab-active) var(--ek-radius-tab));
 }
 
 .ek-tab__button {
@@ -356,13 +503,17 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
 }
 
 .ek-tab__close:hover {
-  background: var(--ek-color-border-subtle);
+  background: var(--ek-color-tab-hover);
   color: var(--ek-color-content-strong);
 }
 
 @media (hover: none) {
   .ek-tab__close {
     opacity: 1;
+  }
+
+  .ek-tabs__arrow {
+    display: none;
   }
 }
 

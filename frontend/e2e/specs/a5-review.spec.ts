@@ -140,12 +140,12 @@ const cases: Array<{ name: string; run: (page: Page) => Promise<void> }> = [
     run: async (p) => {
       await open(p, 'OrderListView')
       await p.screenshot({ path: file('m09-ust-1-normal'), clip: topClip(160) })
-      const toggle = p.locator('[data-shell-action="header-toggle"]').first()
-      if (await toggle.isVisible().catch(() => false)) await toggle.hover()
+      const toggle = p.locator('.ek-chrome-handle__pill').first()
+      if (await toggle.isVisible().catch(() => false)) await toggle.hover({ position: { x: 26, y: 24 } })
       await settle(p, 700)
       await p.screenshot({ path: file('m09-ust-2-hover'), clip: topClip(160) })
+      await p.mouse.move(700, 500)
       await p.keyboard.press('Control+Shift+H')
-      await p.keyboard.press('Alt+U')
       await settle(p, 700)
       await p.screenshot({ path: file('m09-ust-3-daraltilmis'), clip: topClip(160) })
     },
@@ -168,7 +168,7 @@ const cases: Array<{ name: string; run: (page: Page) => Promise<void> }> = [
 
 test.describe('A5 inceleme görüntüleri', () => {
   test.skip(!ENABLED, 'Yalnızca A5_REVIEW=1 ile (inceleme turu)')
-  test.use({ viewport: { width: WIDTH, height: HEIGHT } })
+  test.use({ viewport: { width: WIDTH, height: HEIGHT }, deviceScaleFactor: Number(process.env.A5_REVIEW_SCALE) || 1 })
   test.beforeEach(async ({ page }) => {
     await page.clock.setFixedTime(NOW)
   })

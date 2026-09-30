@@ -3,8 +3,6 @@
   <DsSpecimen title="Kabuk kompozisyonu" note="Üst bar kimliği taşır; sidebar zeminden bir kademe açık; etkin sekme içerikle birleşir. Arama açılırı gruplu, klavyeyle gezilir." flush>
     <div class="ds-shell">
       <EkAppHeader
-        v-model:workspace="workspace"
-        record-label="TY-102348"
         user-name="Deniz Aydın"
         store-name="Örnek Moda · Yönetici"
         :notification-count="4"
@@ -75,7 +73,6 @@ import { searchGroups, sidebarSections, workspaceTabs } from './demoData'
 
 const { width } = useDisplay()
 const compact = computed(() => width.value < breakpoint.desktop)
-const workspace = ref<'general' | 'record'>('general')
 const query = ref('TY-1023')
 const tabs = ref([...workspaceTabs])
 const tab = ref('order-detail')

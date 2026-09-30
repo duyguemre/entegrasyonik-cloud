@@ -7,8 +7,9 @@
        (`.v-navigation-drawer.soft-nav` seçicisi tekil kalsın — Ek A kancası)
     3. `v-main`: abonelik durum bandı (C2.2; yalnız bir durum varsa) + `ShellTabStrip` (sekmeler) +
        çalışma alanı (etkin sekmenin ekranı). Bant yüksekliği `--ek-shell-banner-h` ile alttakilere eklenir.
-  Görünüm durumları: üst bölüm daraltılmış (Alt+U) · odak modu (Ctrl+Shift+F: üst bar + sol
-  menü gizlenir, tarayıcı destekliyorsa tam ekran). Tüm kısayollar `navigation/shortcuts.ts`
+  Görünüm durumları: üst bölüm daraltılmış (Ctrl+Shift+H, eski Alt+U) · odak modu (Ctrl+Shift+F: üst bar +
+  sol menü gizlenir, tarayıcı destekliyorsa tam ekran). İkisinin düğmeleri üst barın alt kenarındaki yüzen
+  tutamakta (`ShellChromeHandle`, Aşama 5) — sekme şeridinde değil. Tüm kısayollar `navigation/shortcuts.ts`
   kaydından; bu dosya yalnızca olayı eyleme bağlar.
   Sekme durumu `stores/workspace.ts`'te (ADR-0012 Karar 3); kenar menü sunum tercihi
   `stores/sidebar.ts`'te (ADR-0015 Karar 2.1/2.2).
@@ -45,9 +46,11 @@
         v-if="tabs"
         id="tour-homepage-tabs"
         class="ek-shell__tabs"
-        :header-collapsed="headerCollapsed"
+      />
+      <ShellChromeHandle
+        class="ek-shell__handle"
+        :collapsed="!headerShown"
         :focus-mode="focusMode"
-        :compact="isMobile"
         @toggle-header="toggleHeader"
         @toggle-focus="toggleFocusMode"
       />
@@ -76,6 +79,7 @@ import NavigationRail from '@/components/layout/NavigationRail.vue'
 import NotificationDrawerComponent from '@/components/user/NotificationDrawerComponent.vue'
 import ApplicationBar from '@/components/layout/ApplicationBar.vue'
 import ShellTabStrip from '@/components/layout/ShellTabStrip.vue'
+import ShellChromeHandle from '@/components/layout/ShellChromeHandle.vue'
 import ShortcutHelpDialog from '@/components/layout/ShortcutHelpDialog.vue'
 import ShellSubscriptionBanner from '@/components/layout/ShellSubscriptionBanner.vue'
 import { useSubscriptionBannerStore } from '@/stores/subscriptionBanner'
@@ -408,6 +412,15 @@ const closeTemporaryMenu = () => {
 .ek-shell__tabs {
   top: calc(var(--v-layout-top, 0px) + var(--ek-shell-banner-h, 0px));
   z-index: var(--ek-z-sticky);
+}
+
+/* Yüzen tutamak: üst barın (varsa bandın) alt kenarına yapışık, sekme şeridinin sağ üst köşesinde; sekmelerin üstünde. */
+.ek-shell__handle {
+  position: absolute;
+  top: calc(var(--v-layout-top, 0px) + var(--ek-shell-banner-h, 0px));
+  right: calc(var(--v-layout-right, 0px) + var(--ek-space-2));
+  z-index: calc(var(--ek-z-sticky) + 1);
+  transition: top var(--ek-duration-base) var(--ek-easing-standard);
 }
 
 .workplace-area {

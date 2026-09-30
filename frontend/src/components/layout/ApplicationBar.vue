@@ -3,11 +3,10 @@
 
   DS-v2 Aşama 2 — kabuğun üst barı: Vuetify düzen katmanı (`v-app-bar`, sol
   menü/sekmelerin ofsetini verir, `visible=false` ile yukarı kayarak daralır)
-  + görünüm `EkAppHeader` (marka degradesi, çalışma alanı anahtarı, birleşik
-  akıllı arama, bildirim, yardım, hesap).
+  + görünüm `EkAppHeader` (marka degradesi, birleşik akıllı arama, bildirim,
+  yardım, hesap).
   Menüler `EkMenuPanel` ile (ikonlu, gruplu, kısayollu; tehlikeli öğe en sonda).
-  Çalışma alanı anahtarı: Genel ↔ seçili kayıt (en son açılan çok örnekli
-  sekme, ör. ürün düzenleme) — `workspace.recordTab`.
+  Aşama 5: "Genel | Seçili kayıt" anahtarı kaldırıldı — kayıt sekmeleri şeritte.
 -->
 <template>
   <v-app-bar tag="div" :model-value="visible" height="56" flat class="ek-shell-bar" color="transparent">
@@ -15,8 +14,6 @@
     <EkAppHeader
       id="tour-homepage-topmenu"
       class="ek-shell-bar__header"
-      :workspace="workspaceMode"
-      :record-label="recordLabel"
       :user-name="identityName"
       :store-name="identityMeta"
       :notification-count="notificationDrawer.unreadCount"
@@ -24,7 +21,6 @@
       :menu-shortcut="shortcutKeys('sidebarToggle')"
       :menu-expanded="menuExpanded"
       @toggle-menu="$emit('toggle-menu')"
-      @update:workspace="onWorkspace"
       @notifications="notificationDrawer.toggleDrawer()"
     >
       <template #search>
@@ -90,19 +86,6 @@ const storeName = computed(() => userApi.getStoreName() || '')
 // Kimlik: birincil satır mağaza (tenant) adı, ikincil satır oturumdaki kullanıcı.
 const identityName = computed(() => storeName.value || userApi.getUsername.value || 'Mağaza paneli')
 const identityMeta = computed(() => (storeName.value ? userApi.getUsername.value ?? '' : 'Mağaza paneli'))
-
-const workspaceMode = computed<'general' | 'record'>(() =>
-  workspace.recordTab && workspace.mySelectedTab === workspace.recordTab ? 'record' : 'general',
-)
-const recordLabel = computed(() => {
-  const link = workspace.recordTab?.link
-  return link ? String(link.title ?? '') || undefined : undefined
-})
-
-function onWorkspace(mode: 'general' | 'record') {
-  if (mode === 'record' && workspace.recordTab) workspace.activateTab(workspace.recordTab)
-  else if (mode === 'general') workspace.activateGeneral()
-}
 
 const helpGroups: EkMenuGroup[] = [
   {
