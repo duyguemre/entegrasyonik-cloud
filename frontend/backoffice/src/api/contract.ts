@@ -140,6 +140,78 @@ export interface SystemHealthResponse {
   }
 }
 
+// ---------------------------------------------------------------- Genel bakış [2-BE B1 — cloud-contracts/API_BACKOFFICE_OVERVIEW_ENGINE.md]
+/** Bölüm 2 sn içinde toplanamadıysa yalnız o bölüm düşer; uç 200 döner. */
+export interface DegradedSection {
+  status: 'degraded'
+  error: 'timeout' | 'error'
+}
+export type HealthSection<T> = ({ status: 'ok' } & T) | DegradedSection
+export interface HealthDependencies {
+  ready: boolean
+  role: 'web' | 'worker' | 'all'
+  mongo: 'ok' | 'fail'
+  redis: 'ok' | 'fail' | 'n/a'
+}
+export interface HealthPod {
+  pod: string
+  activeLeases: number
+  runningJobs: number
+  lastSeenAt: string
+  self: boolean
+}
+export interface HealthPods {
+  self: string
+  windowMinutes: number
+  items: HealthPod[]
+}
+export interface HealthRed {
+  windowMinutes: number
+  from: string
+  requests: number
+  byStatusClass: Partial<Record<'2xx' | '3xx' | '4xx' | '5xx', number>>
+  errors5xx: number
+  /** 5xx / toplam; istek yoksa null. */
+  errorRate: number | null
+  requestsPerMinute: number
+  durationAvgMs: number | null
+  /** Histogram kovasının üst sınırı; `null` + overflow = 60 sn üstü. */
+  durationP95Ms: number | null
+  durationP95Overflow: boolean
+  scope: 'platform'
+  note?: string
+}
+export interface HealthQueue {
+  name: string
+  /** false → Redis hazır değil; sayaçlar null. */
+  available: boolean
+  backlog: number | null
+  active: number | null
+  failed: number | null
+  dlqPending: number | null
+}
+export interface HealthIntake {
+  allOpen: boolean
+  scope: 'process'
+  restricted: Array<{ target: string; intake: string }>
+}
+export interface HealthIssues {
+  open: number
+  newLast24h: number
+}
+export type OverviewSectionKey = 'dependencies' | 'pods' | 'red' | 'queues' | 'intake' | 'issues'
+export interface OverviewHealthResponse {
+  generatedAt: string
+  status: 'ok' | 'degraded'
+  degradedSections: OverviewSectionKey[]
+  dependencies: HealthSection<HealthDependencies>
+  pods: HealthSection<HealthPods>
+  red: HealthSection<HealthRed>
+  queues: HealthSection<{ items: HealthQueue[] }>
+  intake: HealthSection<HealthIntake>
+  issues: HealthSection<HealthIssues>
+}
+
 // ---------------------------------------------------------------- Log Kontrol Merkezi [PLAN L6–L8]
 export type LogLevel = 'info' | 'warn' | 'error' | 'fatal'
 /** ADR-0026 Karar 7.1 `src`. */
@@ -310,6 +382,7 @@ export interface AdminRpc {
   'BackofficeAuthService/me': [Record<string, never>, BackofficeMe]
   'AdminService/getClients': [GetClientsRequest, GetClientsResponse]
   'AdminService/getSystemHealth': [{ timeFrame?: 'DAY' | 'WEEK' | 'MONTH' | 'ALL' }, SystemHealthResponse]
+  'BackofficeOverviewService/getHealth': [Record<string, never>, OverviewHealthResponse]
   'BackofficeTenantService/startImpersonation': [StartImpersonationRequest, StartImpersonationResponse]
   'LogCenterService/listLogs': [ListLogsRequest, ListLogsResponse]
   'LogCenterService/getIssueGroups': [GetIssueGroupsRequest, GetIssueGroupsResponse]

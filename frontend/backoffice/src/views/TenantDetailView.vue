@@ -1,28 +1,23 @@
 <template>
   <div class="bo-page">
-    <nav class="bo-crumbs" aria-label="Konum">
-      <RouterLink to="/musteriler">Müşteriler</RouterLink>
-      <span aria-hidden="true">/</span>
-      <span aria-current="page">{{ title }}</span>
-    </nav>
-
     <EkEmptyState v-if="notFound" variant="no-results" title="Müşteri bulunamadı" :message="`#${tid} numaralı kayıt yok ya da kaldırılmış.`" />
     <template v-else>
-      <div class="bo-page__head">
-        <div class="bo-tenant__title">
-          <h1 class="bo-page__title">{{ title }}</h1>
-          <div class="bo-tenant__chips">
-            <span class="bo-tenant__tid ek-num">#{{ tid }}</span>
-            <EkStatusChip v-if="life.data.value" :tone="TENANT_STATUS[life.data.value.status].tone" :label="TENANT_STATUS[life.data.value.status].label" dot />
-            <EkStatusChip v-if="life.data.value?.trial" :tone="SUB_STATUS[life.data.value.trial.subscriptionStatus].tone" :label="`${planLabel(life.data.value.trial.planCode)} · ${SUB_STATUS[life.data.value.trial.subscriptionStatus].label}`" />
-            <EkStatusChip v-if="life.data.value?.trial?.billingExempt" tone="neutral" label="Faturalamadan muaf" />
-          </div>
-        </div>
-        <div class="bo-page__actions">
+      <BoPageHeader :title="title" lede="" :extra-crumbs="[{ label: title }]" :updated-at="life.loadedAt.value ?? undefined">
+        <template #status>
+          <EkStatusChip v-if="life.data.value" :tone="TENANT_STATUS[life.data.value.status].tone" :label="TENANT_STATUS[life.data.value.status].label" dot />
+          <EkStatusChip v-if="life.data.value?.trial" :tone="SUB_STATUS[life.data.value.trial.subscriptionStatus].tone" :label="`${planLabel(life.data.value.trial.planCode)} · ${SUB_STATUS[life.data.value.trial.subscriptionStatus].label}`" />
+          <EkStatusChip v-if="life.data.value?.trial?.billingExempt" tone="neutral" label="Faturalamadan muaf" />
+        </template>
+        <template #meta>
+          <span class="bo-tenant__tid ek-num">#{{ tid }}</span>
+          <EkCopyButton :value="String(tid)" label="Mağaza numarası" />
+        </template>
+        <template #actions>
+          <EkButton tone="secondary" icon="mdi-shield-search" @click="router.push({ path: '/denetim', query: { tid: String(tid) } })">Denetim kaydı</EkButton>
           <EkButton tone="secondary" icon="mdi-card-account-details-outline" :disabled="!life.data.value?.trial" @click="router.push(`/abonelikler/${tid}`)">Abonelik</EkButton>
           <EkButton tone="primary" icon="mdi-account-eye-outline" :disabled="!canImpersonate" data-testid="impersonate" @click="imp.open(tid)">Müşterinin gözünden aç</EkButton>
-        </div>
-      </div>
+        </template>
+      </BoPageHeader>
       <p v-if="life.data.value && !canImpersonate" class="bo-tenant__why bo-muted">
         <v-icon icon="mdi-information-outline" aria-hidden="true" />Destek oturumu yalnız aktif mağazada açılabilir (şu an: {{ TENANT_STATUS[life.data.value.status].label.toLocaleLowerCase('tr') }}).
       </p>
@@ -88,7 +83,7 @@
                 </li>
               </ul>
               <template #footer>
-                <RouterLink to="/denetim" class="bo-tenant__more">Denetim kayıtlarında aç <v-icon icon="mdi-arrow-right" aria-hidden="true" /></RouterLink>
+                <RouterLink :to="{ path: '/denetim', query: { tid: String(tid) } }" class="bo-tenant__more">Denetim kayıtlarında aç <v-icon icon="mdi-arrow-right" aria-hidden="true" /></RouterLink>
               </template>
             </EkCard>
           </div>
@@ -125,6 +120,7 @@ import {
   EkAlert,
   EkButton,
   EkCard,
+  EkCopyButton,
   EkChannelDot,
   EkDescriptionList,
   EkEmptyState,
@@ -140,6 +136,7 @@ import type { ClientDto, TenantLifecycle } from '@bo/api/contract'
 import { useResource } from '@bo/composables/useResource'
 import { useGuardedAction } from '@bo/composables/useGuardedAction'
 import { useTabQuery } from '@bo/composables/useTabQuery'
+import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import GuardedDialog from '@bo/components/kit/GuardedDialog.vue'
 import { CHANNEL, SUB_STATUS, TENANT_STATUS, planLabel } from '@bo/utils/labels'
@@ -261,35 +258,6 @@ const undo = useGuardedAction(
 </script>
 
 <style scoped>
-.bo-crumbs {
-  display: flex;
-  align-items: center;
-  gap: var(--ek-space-2);
-  color: var(--ek-color-content-subtle);
-  font-size: var(--ek-type-label-size);
-}
-.bo-crumbs a {
-  color: var(--ek-color-content-muted);
-  text-decoration: none;
-}
-.bo-crumbs a:hover {
-  color: var(--ek-color-content-strong);
-  text-decoration: underline;
-}
-.bo-crumbs [aria-current] {
-  color: var(--ek-color-content-default);
-}
-.bo-tenant__title {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ek-space-2);
-}
-.bo-tenant__chips {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--ek-space-2);
-}
 .bo-tenant__tid {
   color: var(--ek-color-content-muted);
   font-family: var(--ek-font-mono);

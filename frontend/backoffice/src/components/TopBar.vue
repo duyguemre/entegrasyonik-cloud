@@ -1,5 +1,5 @@
 <template>
-  <header class="bo-top">
+  <header class="bo-top" :class="`env-${env.key}`">
     <div class="bo-top__start">
       <button type="button" class="bo-top__icon-btn" :aria-label="menuOpen ? 'Menüyü kapat' : 'Menüyü aç'" :aria-expanded="menuOpen" @click="$emit('toggle-menu')">
         <v-icon icon="mdi-menu" aria-hidden="true" />
@@ -8,12 +8,21 @@
         <EkBrandLogo tone="inverse" :variant="compact ? 'mark' : 'full'" :size="26" />
         <span class="bo-top__product">Yönetim</span>
       </RouterLink>
-      <span class="bo-top__env" :class="`is-${env.tone}`" :title="env.hint">
-        <span class="bo-top__env-dot" aria-hidden="true"></span>{{ env.label }}
+      <span class="bo-top__env" :class="`is-${env.key}`" :title="env.hint" data-testid="env-badge">
+        <v-icon :icon="env.icon" aria-hidden="true" /><span>{{ env.label }}</span><span class="ek-sr-only"> ortamı — {{ env.hint }}</span>
       </span>
     </div>
 
+    <button type="button" class="bo-top__search" :class="{ 'is-compact': compact }" aria-label="Komut paleti: ekran, müşteri ya da istek ara (Ctrl+K)" data-testid="command-open" @click="$emit('open-palette')">
+      <v-icon icon="mdi-magnify" aria-hidden="true" />
+      <template v-if="!compact">
+        <span class="bo-top__search-text">Ekran, müşteri ya da istek ara…</span>
+        <EkKbd :keys="[modKey, 'K']" tone="chrome" />
+      </template>
+    </button>
+
     <div class="bo-top__end">
+      <StepUpIndicator :compact="compact" />
       <v-menu location="bottom end" :offset="6">
         <template #activator="{ props: menu }">
           <button v-bind="menu" type="button" class="bo-top__icon-btn" :aria-label="`Tema: ${themeLabel}`" data-testid="theme-menu">
@@ -72,15 +81,18 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { EkBrandLogo } from '@entegrasyonik/ui/components'
+import { EkBrandLogo, EkKbd } from '@entegrasyonik/ui/components'
+import StepUpIndicator from '@bo/components/shell/StepUpIndicator.vue'
 import type { ThemePreference } from '@entegrasyonik/ui/theme'
-import { USE_MOCK } from '@bo/api'
+import { currentEnv } from '@bo/utils/env'
 import { session } from '@bo/auth/session'
 import { setThemePreference, themeMode, themePreference } from '@bo/theme'
 import { formatDateTime, formatRelative } from '@bo/utils/format'
 
 defineProps<{ menuOpen: boolean; compact: boolean }>()
-defineEmits<{ 'toggle-menu': []; logout: [] }>()
+defineEmits<{ 'toggle-menu': []; logout: []; 'open-palette': [] }>()
+
+const modKey = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl'
 
 const THEME_OPTIONS: Array<{ value: ThemePreference; label: string; icon: string }> = [
   { value: 'system', label: 'Sistem', icon: 'mdi-monitor' },
@@ -100,13 +112,7 @@ const initials = computed(() =>
 const themeLabel = computed(() => THEME_OPTIONS.find((o) => o.value === themePreference.value)?.label ?? '')
 const themeIcon = computed(() => (themeMode.value === 'dark' ? 'mdi-weather-night' : 'mdi-white-balance-sunny'))
 
-const ENV: Record<string, { label: string; tone: 'neutral' | 'info' | 'warning' | 'error'; hint: string }> = {
-  mock: { label: 'Örnek veri', tone: 'info', hint: 'Sahte /admin-api — gerçek müşteri verisi yok' },
-  local: { label: 'Yerel', tone: 'neutral', hint: 'Yerel backend' },
-  staging: { label: 'Staging', tone: 'warning', hint: 'Test ortamı' },
-  production: { label: 'Üretim', tone: 'error', hint: 'Canlı ortam — işlemler gerçek müşterileri etkiler' },
-}
-const env = computed(() => ENV[USE_MOCK ? 'mock' : (import.meta.env.VITE_ADMIN_ENV ?? 'local')] ?? ENV.local)
+const env = currentEnv
 </script>
 
 <style scoped>
@@ -160,11 +166,11 @@ const env = computed(() => ENV[USE_MOCK ? 'mock' : (import.meta.env.VITE_ADMIN_E
 .bo-top__env {
   display: inline-flex;
   align-items: center;
-  gap: var(--ek-space-2);
-  height: var(--ek-app-chip-h-md);
-  padding: 0 var(--ek-space-3);
+  gap: var(--ek-space-1);
+  height: var(--ek-control-h-sm);
+  padding: 0 var(--ek-space-3) 0 var(--ek-space-2);
   border: 1px solid var(--ek-color-chrome-border);
-  border-radius: var(--ek-radius-chip);
+  border-radius: var(--ek-radius-full);
   background: var(--ek-color-chrome-raised);
   color: var(--ek-color-chrome-text);
   font-size: var(--ek-type-caption-size);
@@ -172,29 +178,83 @@ const env = computed(() => ENV[USE_MOCK ? 'mock' : (import.meta.env.VITE_ADMIN_E
   white-space: nowrap;
 }
 
-.bo-top__env-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: var(--ek-radius-full);
-  background: var(--ek-color-neutral);
+.bo-top__env .v-icon {
+  font-size: var(--ek-icon-sm);
 }
 
-.bo-top__env.is-info .bo-top__env-dot {
-  background: var(--ek-color-info);
+.bo-top__env.is-mock .v-icon {
+  color: var(--ek-color-info);
 }
 
-.bo-top__env.is-warning .bo-top__env-dot {
+.bo-top__env.is-staging {
+  border-color: var(--ek-color-warning);
   background: var(--ek-color-warning);
+  color: var(--ek-color-warning-contrast);
 }
 
-.bo-top__env.is-error {
-  border-color: var(--ek-color-error-border);
-  background: var(--ek-color-error-subtle);
-  color: var(--ek-color-error-emphasis);
-}
-
-.bo-top__env.is-error .bo-top__env-dot {
+.bo-top__env.is-production {
+  border-color: var(--ek-color-error);
   background: var(--ek-color-error);
+  color: var(--ek-color-error-contrast);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Üst kenarda ortam şeridi: staging sarı, üretim kırmızı (kaydırmada da görünür — bar sabit). */
+.bo-top.env-staging {
+  box-shadow: inset 0 3px 0 var(--ek-color-warning), var(--ek-shadow-chrome);
+}
+
+.bo-top.env-production {
+  box-shadow: inset 0 3px 0 var(--ek-color-error), var(--ek-shadow-chrome);
+}
+
+.bo-top__search {
+  display: inline-flex;
+  flex: 0 1 420px;
+  align-items: center;
+  gap: var(--ek-space-2);
+  min-width: 0;
+  height: var(--ek-control-h-md);
+  margin: 0 auto;
+  padding: 0 var(--ek-space-2) 0 var(--ek-space-3);
+  border: 1px solid var(--ek-color-chrome-border);
+  border-radius: var(--ek-radius-control);
+  background: var(--ek-color-chrome-raised);
+  color: var(--ek-color-chrome-text-muted);
+  font: inherit;
+  font-size: var(--ek-type-label-size);
+  text-align: left;
+  cursor: pointer;
+  transition: var(--ek-transition-colors);
+}
+
+.bo-top__search:hover {
+  color: var(--ek-color-chrome-text);
+}
+
+.bo-top__search:focus-visible {
+  outline: 2px solid var(--ek-color-chrome-text);
+  outline-offset: 1px;
+}
+
+.bo-top__search-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bo-top__search.is-compact {
+  flex: none;
+  justify-content: center;
+  width: var(--ek-control-h-md);
+  margin: 0 0 0 auto;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+  color: var(--ek-color-chrome-text);
+  font-size: var(--ek-icon-lg);
 }
 
 .bo-top__icon-btn {
@@ -375,6 +435,26 @@ const env = computed(() => ENV[USE_MOCK ? 'mock' : (import.meta.env.VITE_ADMIN_E
 @media (max-width: 599px) {
   .bo-top__product {
     display: none;
+  }
+
+  .bo-top {
+    gap: var(--ek-space-1);
+    padding: 0 var(--ek-space-2);
+  }
+
+  .bo-top__start,
+  .bo-top__end {
+    gap: var(--ek-space-1);
+  }
+
+  .bo-top__brand {
+    margin: 0;
+  }
+}
+
+@media (max-width: 1199px) {
+  .bo-top__search:not(.is-compact) {
+    flex-basis: 280px;
   }
 }
 </style>

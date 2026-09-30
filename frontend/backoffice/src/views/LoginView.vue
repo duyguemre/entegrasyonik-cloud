@@ -14,6 +14,9 @@
     </aside>
 
     <main class="bo-login__panel">
+      <p class="bo-login__env" :class="`is-${env.key}`" data-testid="login-env">
+        <v-icon :icon="env.icon" aria-hidden="true" /><span>{{ env.label }}</span><span class="bo-login__env-hint">{{ env.hint }}</span>
+      </p>
       <div class="bo-login__card">
         <div class="bo-login__mobile-brand"><EkBrandLogo :size="28" /><span>Yönetim</span></div>
 
@@ -38,6 +41,10 @@
             :type="showPassword ? 'text' : 'password'"
             autocomplete="current-password"
             :disabled="busy"
+            :hint="capsLock ? 'Büyük harf kilidi (Caps Lock) açık' : undefined"
+            :persistent-hint="capsLock"
+            @keydown="detectCaps"
+            @keyup="detectCaps"
           >
             <template #append-inner>
               <button type="button" class="bo-login__reveal" :aria-pressed="showPassword" :aria-label="showPassword ? 'Parolayı gizle' : 'Parolayı göster'" @click="showPassword = !showPassword">
@@ -69,6 +76,10 @@
             :disabled="busy"
             autofocus
           />
+          <div v-if="!useRecovery" class="bo-totp-timer" aria-hidden="true">
+            <span class="bo-totp-timer__track"><span class="bo-totp-timer__bar" :style="{ transform: `scaleX(${totpLeft / 30})` }"></span></span>
+            <span class="bo-totp-timer__text">Kod <span class="ek-num">{{ totpLeft }}</span> sn sonra yenilenir</span>
+          </div>
           <v-text-field v-else v-model="recoveryCode" label="Kurtarma kodu" placeholder="xxxx-xxxx" autocomplete="off" :disabled="busy" autofocus />
           <p v-if="error" class="bo-login__error" role="alert">{{ error }}</p>
           <EkButton tone="primary" type="submit" block :loading="busy" :disabled="useRecovery ? recoveryCode.length < 8 : !/^\d{6}$/.test(code)">Doğrula</EkButton>
@@ -121,7 +132,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, onBeforeUnmount, ref, watch } from 'vue'
 import { EkAlert, EkBrandLogo, EkButton, EkSkeleton } from '@entegrasyonik/ui/components'
 import QrCode from '@bo/components/QrCode.vue'
 // Örnek hesap ipucu yalnız dev paketinde (üretim derlemesinde import.meta.env.DEV=false → kod atılır).
@@ -131,6 +142,7 @@ import { AdminApiError } from '@bo/api/client'
 import { NOTICE_TEXT } from '@bo/auth/machine'
 import { session } from '@bo/auth/session'
 import { notify } from '@bo/utils/toast'
+import { currentEnv as env } from '@bo/utils/env'
 
 const status = computed(() => session.state.status)
 const notice = computed(() => session.state.notice)
@@ -146,6 +158,16 @@ const busy = ref(false)
 const error = ref('')
 const otpauthUri = ref('')
 const savedCodes = ref(false)
+const capsLock = ref(false)
+
+function detectCaps(e: KeyboardEvent) {
+  capsLock.value = typeof e.getModifierState === 'function' && e.getModifierState('CapsLock')
+}
+
+// TOTP 30 sn penceresi: kalan süre göstergesi (kod süresi dolmak üzereyse kullanıcı bir sonrakini bekler).
+const totpLeft = ref(30 - (Math.floor(Date.now() / 1000) % 30))
+const totpTimer = setInterval(() => (totpLeft.value = 30 - (Math.floor(Date.now() / 1000) % 30)), 1000)
+onBeforeUnmount(() => clearInterval(totpTimer))
 
 const stepList = computed(() => (status.value === 'enroll' || status.value === 'recovery' ? ['Parola', 'Doğrulayıcı kurulumu', 'Kurtarma kodları'] : ['Parola', 'Doğrulama kodu']))
 const stepIndex = computed(() => ({ signedOut: 0, booting: 0, verify: 1, enroll: 1, recovery: 2, signedIn: 2 })[status.value])
@@ -232,8 +254,80 @@ function download() {
   padding: var(--ek-space-8);
   /* Kabuk (chrome) tonları: iki temada da koyu zemin + açık metin. `--ek-app-login-gradient` `brand`'den türer ve
      dark'ta açık bir tona döner (beyaz metin kontrastı düşer) — uygulamanın dark-1a işine not düşüldü. */
-  background: linear-gradient(160deg, var(--ek-color-chrome) 0%, var(--ek-color-chrome-end) 100%);
+  background:
+    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--ek-color-chrome-text) 9%, transparent) 1px, transparent 0) 0 0 / 22px 22px,
+    radial-gradient(70% 55% at 85% 12%, color-mix(in srgb, var(--ek-color-secondary) 22%, transparent), transparent 70%),
+    linear-gradient(160deg, var(--ek-color-chrome) 0%, var(--ek-color-chrome-end) 100%);
   color: var(--ek-color-chrome-text);
+}
+
+.bo-login__env {
+  position: absolute;
+  top: var(--ek-space-5);
+  right: var(--ek-space-6);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  margin: 0;
+  padding: var(--ek-space-1) var(--ek-space-3);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-full);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-default);
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.bo-login__env .v-icon {
+  font-size: var(--ek-icon-sm);
+}
+
+.bo-login__env-hint {
+  color: var(--ek-color-content-muted);
+  font-weight: var(--ek-font-weight-regular);
+}
+
+.bo-login__env.is-staging {
+  border-color: var(--ek-color-warning);
+  background: var(--ek-color-warning);
+  color: var(--ek-color-warning-contrast);
+}
+
+.bo-login__env.is-production {
+  border-color: var(--ek-color-error);
+  background: var(--ek-color-error);
+  color: var(--ek-color-error-contrast);
+}
+
+.bo-login__env.is-staging .bo-login__env-hint,
+.bo-login__env.is-production .bo-login__env-hint {
+  color: inherit;
+}
+
+.bo-totp-timer {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  margin-top: calc(-1 * var(--ek-space-2));
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+}
+
+.bo-totp-timer__track {
+  position: relative;
+  overflow: hidden;
+  width: 64px;
+  height: 3px;
+  border-radius: var(--ek-radius-full);
+  background: var(--ek-color-border-subtle);
+}
+
+.bo-totp-timer__bar {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--ek-color-action);
+  transform-origin: left center;
 }
 
 .bo-login__stage-inner {
@@ -284,6 +378,7 @@ function download() {
 }
 
 .bo-login__panel {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -507,8 +602,20 @@ function download() {
   }
 
   .bo-login__panel {
-    align-items: flex-start;
-    padding: var(--ek-space-6) var(--ek-space-4);
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: var(--ek-space-4);
+    padding: var(--ek-space-4);
+  }
+
+  .bo-login__env {
+    position: static;
+    align-self: flex-start;
+  }
+
+  .bo-login__env-hint {
+    display: none;
   }
 
   .bo-login__card {

@@ -1,38 +1,27 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { watch } from 'vue'
 import { session } from './auth/session'
-import { SCREENS } from './navigation/screens'
+import { DEFAULT_PATH, DETAIL_ROUTES, SCREENS } from './navigation/screens'
 
-const views: Record<string, () => Promise<unknown>> = {
-  overview: () => import('./views/OverviewView.vue'),
-  logs: () => import('./views/LogCenterView.vue'),
-  audit: () => import('./views/AuditView.vue'),
-  tenants: () => import('./views/TenantsView.vue'),
-  subscriptions: () => import('./views/billing/SubscriptionsView.vue'),
-  integrations: () => import('./views/integrations/IntegrationsView.vue'),
-  engine: () => import('./views/engine/EngineView.vue'),
-  infra: () => import('./views/infra/InfraView.vue'),
-  cache: () => import('./views/infra/CacheView.vue'),
-  settings: () => import('./views/settings/SettingsView.vue'),
-  admins: () => import('./views/admins/AdminsView.vue'),
-}
+const PlannedView = () => import('./views/PlannedView.vue')
 
+// Rotalar YALNIZ ekran kaydından üretilir (navigation/screens.ts): planlı ekran kalıcı yolunda "yakında" durumuyla açılır.
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/giris', name: 'login', component: () => import('./views/LoginView.vue'), meta: { public: true, title: 'Giriş' } },
-    // Davet kabulü (B12): kimliksiz; bilet `#t=` parçasında (sunucu günlüğü/Referer görmez).
+    // Davet kabulü (B12): kimliksiz, kabuksuz; bilet `#t=` parçasında (sunucu günlüğü/Referer görmez).
     { path: '/accept-invite', name: 'accept-invite', component: () => import('./views/admins/AcceptInviteView.vue'), meta: { public: true, title: 'Daveti kabul et' } },
     {
       path: '/',
       component: () => import('./layouts/ShellLayout.vue'),
       children: [
-        { path: '', redirect: '/genel-bakis' },
-        ...SCREENS.filter((s) => s.status !== 'planned').map((s) => ({ path: s.path.slice(1), name: s.key, component: views[s.key], meta: { title: s.label } })),
-        { path: 'abonelikler/:tid(\\d+)', name: 'subscription', component: () => import('./views/billing/SubscriptionDetailView.vue'), meta: { title: 'Abonelik' } },
-        { path: 'musteriler/:tid(\\d+)', name: 'tenant', component: () => import('./views/TenantDetailView.vue'), meta: { title: 'Müşteri' } },
-        { path: 'plan/:key', name: 'planned', component: () => import('./views/PlannedView.vue'), meta: { title: 'Planlanan ekran' } },
-        { path: ':rest(.*)*', redirect: '/genel-bakis' },
+        { path: '', redirect: DEFAULT_PATH },
+        ...DETAIL_ROUTES.map((d) => ({ path: d.path.slice(1), name: d.name, component: d.view, meta: { title: d.title, screen: d.parent } })),
+        ...SCREENS.map((s) => ({ path: s.path.slice(1), name: s.key, component: s.view ?? PlannedView, meta: { title: s.label, screen: s.key } })),
+        // Eski yer tutucu yolları (/plan/<anahtar>) kalıcı yola yönlenir.
+        { path: 'plan/:key', redirect: (to: { params: Record<string, unknown> }) => SCREENS.find((s) => s.key === to.params.key)?.path ?? DEFAULT_PATH },
+        { path: ':rest(.*)*', redirect: DEFAULT_PATH },
       ],
     },
   ],
@@ -71,7 +60,8 @@ watch(
   () => session.state.status,
   (status, previous) => {
     const current = router.currentRoute.value
-    if (status === 'signedOut' && previous && previous !== 'signedOut' && !current.meta.public) {
+    // Açılış (booting → signedOut) ilk gezinme bitmeden gelir: o an `current` henüz hedef rota değildir; korumayı beforeEach yapar.
+    if (status === 'signedOut' && previous && previous !== 'signedOut' && previous !== 'booting' && !current.meta.public) {
       router.replace({ name: 'login', query: { r: current.fullPath } })
     }
     if (status === 'signedIn' && current.name === 'login') {

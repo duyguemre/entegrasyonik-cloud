@@ -1,18 +1,16 @@
 <template>
   <div class="bo-page">
-    <div class="bo-page__head">
-      <div>
-        <h1 class="bo-page__title">Log kontrol merkezi</h1>
-        <p class="bo-page__lede">Olaylar kategoriye ve parmak izine göre gruplu: önce “ne bozuk”, sonra “hangi istekte”.</p>
-      </div>
-      <div class="bo-page__actions">
-        <EkStatusChip tone="info" label="Taslak · uçlar henüz yok (L6–L8)" icon="mdi-flask-outline" />
+    <BoPageHeader>
+      <template #meta>
+        <span class="bo-inline-note"><v-icon icon="mdi-flask-outline" aria-hidden="true" />Örnek veriyle taslak — uçlar (L6–L8) henüz yok</span>
+      </template>
+      <template #actions>
         <div class="bo-seg" role="radiogroup" aria-label="Zaman aralığı">
           <button v-for="r in RANGES" :key="r.value" type="button" role="radio" class="bo-seg__opt" :aria-checked="range === r.value" @click="range = r.value">{{ r.label }}</button>
         </div>
         <EkButton tone="secondary" icon="mdi-refresh" icon-only aria-label="Yenile" :loading="loading" @click="loadAll" />
-      </div>
-    </div>
+      </template>
+    </BoPageHeader>
 
     <!-- Kategori şeridi: kontrol merkezinin ana ekseni -->
     <section class="bo-cats" aria-label="Kategoriler">
@@ -39,6 +37,7 @@
           <Sparkline :values="c.series" :tone="c.error ? 'error' : c.warn ? 'warning' : 'neutral'" :label="`${CATEGORY[c.category].label}: uyarı ve hata eğilimi`" />
         </button>
       </template>
+      <p v-else-if="!loading" class="bo-muted">Kategori hacmi okunamadı. <button type="button" class="bo-link" @click="loadAll">Yeniden dene</button></p>
       <EkSkeleton v-else type="cards" :rows="1" />
     </section>
 
@@ -91,7 +90,8 @@
 
         <!-- Sorun grupları -->
         <div v-if="tab === 'issues'" id="panel-issues" role="tabpanel" aria-labelledby="tab-issues">
-          <EkSkeleton v-if="!issues" type="table" :rows="6" />
+          <BoPanelState v-if="issuesError" state="error" :error="issuesError" error-text="Sorun grupları yüklenemedi" @retry="loadIssues" />
+          <EkSkeleton v-else-if="!issues" type="table" :rows="6" />
           <EkEmptyState v-else-if="!issues.length" variant="no-results" title="Bu filtrelerde sorun yok" message="Aralığı genişletin ya da filtreleri temizleyin." />
           <ul v-else class="bo-issues">
             <li v-for="issue in issues" :key="issue.fp">
@@ -115,7 +115,7 @@
                 <span class="bo-issue__num bo-issue__num--tenants"><strong class="ek-num">{{ issue.tenantCount || '—' }}</strong><span>müşteri</span></span>
                 <span class="bo-issue__when">
                   <EkStatusChip :tone="ISSUE_STATUS[issue.status].tone" :label="ISSUE_STATUS[issue.status].label" dot />
-                  <span class="ek-num">{{ formatRelative(issue.lastSeen) }}</span>
+                  <span class="ek-num"><EkRelativeTime :value="issue.lastSeen" /></span>
                 </span>
               </button>
             </li>
@@ -132,7 +132,8 @@
               </template>
             </v-tooltip>
           </div>
-          <EkSkeleton v-if="!stream" type="table" :rows="8" />
+          <BoPanelState v-if="streamError" state="error" :error="streamError" error-text="Olay akışı yüklenemedi" @retry="loadStream" />
+          <EkSkeleton v-else-if="!stream" type="table" :rows="8" />
           <EkEmptyState v-else-if="!stream.items.length" variant="no-results" title="Olay yok" message="Bu filtrelerle kayıt bulunamadı." />
           <div v-else class="bo-stream">
             <table>
@@ -142,11 +143,15 @@
               </thead>
               <tbody>
                 <tr v-for="e in stream.items" :key="e.id" :class="`lvl-${e.level}`">
-                  <td class="ek-num bo-stream__time">{{ formatClock(e.t) }}<span>{{ formatRelative(e.t) }}</span></td>
+                  <td class="ek-num bo-stream__time">{{ formatClock(e.t) }}<span><EkRelativeTime :value="e.t" /></span></td>
                   <td><EkStatusChip :tone="LEVEL[e.level].tone" :label="LEVEL[e.level].label" /></td>
                   <td class="bo-stream__src">{{ CATEGORY[e.category].label }}<span>{{ SOURCE[e.src] }}<template v-if="e.tid"> · #{{ e.tid }}</template></span></td>
                   <td class="bo-stream__msg">{{ e.msg }}</td>
-                  <td><button v-if="e.reqId" type="button" class="bo-link bo-mono" @click="traceId = e.reqId">{{ e.reqId.slice(4, 12) }}</button></td>
+                  <td class="bo-stream__req">
+                    <template v-if="e.reqId">
+                      <button type="button" class="bo-link bo-mono" :aria-label="`İstek zincirini aç: ${e.reqId}`" @click="traceId = e.reqId">{{ e.reqId.slice(4, 12) }}</button><EkCopyButton :value="e.reqId" label="İstek kimliği" />
+                    </template>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -188,7 +193,7 @@
         <section v-if="trend" class="bo-drawer__section">
           <h3>Örnek (maskeli)</h3>
           <pre class="bo-drawer__sample">{{ trend.sample.msg }}</pre>
-          <p class="bo-drawer__fp">parmak izi <code>{{ selected.fp }}</code></p>
+          <p class="bo-drawer__fp">parmak izi <code>{{ selected.fp }}</code><EkCopyButton :value="selected.fp" label="Parmak izi" /></p>
         </section>
         <section v-if="trend?.tenants.length" class="bo-drawer__section">
           <h3>Etkilenen müşteriler</h3>
@@ -200,7 +205,7 @@
           <h3>Son istekler</h3>
           <ul class="bo-drawer__reqs">
             <li v-for="id in trend.reqIds" :key="id">
-              <code>{{ id }}</code>
+              <code>{{ id }}</code><EkCopyButton :value="id" label="İstek kimliği" />
               <EkButton tone="ghost" size="sm" icon="mdi-source-branch" @click="traceId = id">İzi aç</EkButton>
             </li>
           </ul>
@@ -215,10 +220,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { EkBadge, EkButton, EkChannelDot, EkDescriptionList, EkDetailSheet, EkEmptyState, EkSkeleton, EkStatusChip } from '@entegrasyonik/ui/components'
+import { EkBadge, EkButton, EkChannelDot, EkCopyButton, EkDescriptionList, EkDetailSheet, EkEmptyState, EkRelativeTime, EkSkeleton, EkStatusChip } from '@entegrasyonik/ui/components'
+import BoPanelState from '@bo/components/shell/BoPanelState.vue'
 import BarTrend from '@bo/components/BarTrend.vue'
 import Sparkline from '@bo/components/Sparkline.vue'
 import TraceDialog from '@bo/components/TraceDialog.vue'
+import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
 import { api } from '@bo/api'
 import type {
   GetIssueTrendResponse,
@@ -231,7 +238,7 @@ import type {
   LogSource,
 } from '@bo/api/contract'
 import { CATEGORY, CHANNEL, ISSUE_STATUS, LEVEL, SOURCE } from '@bo/utils/labels'
-import { formatClock, formatDateTime, formatRelative } from '@bo/utils/format'
+import { formatClock, formatDateTime } from '@bo/utils/format'
 
 const RANGES: Array<{ value: LogRange; label: string }> = [
   { value: '1h', label: '1 sa' },
@@ -265,6 +272,8 @@ const loadingMore = ref(false)
 const selected = ref<IssueGroup | null>(null)
 const trend = ref<GetIssueTrendResponse | null>(null)
 const traceId = ref<string | null>(null)
+const issuesError = ref<unknown>(null)
+const streamError = ref<unknown>(null)
 
 const facets = computed(() => stream.value?.facets)
 const sourcesShown = computed(() => ALL_SOURCES.filter((s) => (facets.value?.src[s] ?? 0) > 0 || src.value.includes(s)))
@@ -295,14 +304,19 @@ const compact = (n: number) =>
 
 async function loadIssues() {
   issues.value = null
-  const res = await api.call('LogCenterService/getIssueGroups', {
-    range: range.value,
-    sort: sort.value,
-    category: category.value.length ? category.value : undefined,
-    src: src.value.length ? src.value : undefined,
-  })
-  // Seviye yüzü sorun gruplarında da uygulanır (grup = tek seviye).
-  issues.value = level.value.length ? res.items.filter((i) => level.value.includes(i.level)) : res.items
+  issuesError.value = null
+  try {
+    const res = await api.call('LogCenterService/getIssueGroups', {
+      range: range.value,
+      sort: sort.value,
+      category: category.value.length ? category.value : undefined,
+      src: src.value.length ? src.value : undefined,
+    })
+    // Seviye yüzü sorun gruplarında da uygulanır (grup = tek seviye).
+    issues.value = level.value.length ? res.items.filter((i) => level.value.includes(i.level)) : res.items
+  } catch (e) {
+    issuesError.value = e
+  }
 }
 
 function streamFilter() {
@@ -317,7 +331,12 @@ function streamFilter() {
 }
 
 async function loadStream() {
-  stream.value = await api.call('LogCenterService/listLogs', streamFilter())
+  streamError.value = null
+  try {
+    stream.value = await api.call('LogCenterService/listLogs', streamFilter())
+  } catch (e) {
+    streamError.value = e
+  }
 }
 
 async function loadMore() {
@@ -335,7 +354,7 @@ async function loadAll() {
   loading.value = true
   try {
     volume.value = null
-    const [v] = await Promise.all([api.call('LogCenterService/getVolumeByCategory', { range: range.value }), loadIssues(), loadStream()])
+    const [v] = await Promise.all([api.call('LogCenterService/getVolumeByCategory', { range: range.value }).catch(() => null), loadIssues(), loadStream()])
     volume.value = v
   } finally {
     loading.value = false
@@ -366,6 +385,8 @@ function closeIssue() {
 }
 
 onMounted(async () => {
+  // Komut paleti / denetim bağlantısı: ?reqId= → istek zinciri doğrudan açılır.
+  if (typeof route.query.reqId === 'string' && route.query.reqId) traceId.value = route.query.reqId
   await loadAll()
   const fp = route.query.fp
   const hit = typeof fp === 'string' ? issues.value?.find((i) => i.fp === fp) : undefined
@@ -374,34 +395,9 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.bo-seg {
-  display: inline-flex;
-  padding: 3px;
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-control);
-  background: var(--ek-color-surface-muted);
-}
 
-.bo-seg__opt {
-  height: 30px;
-  padding: 0 var(--ek-space-3);
-  border: 0;
-  border-radius: var(--ek-radius-md);
-  background: transparent;
-  color: var(--ek-color-content-muted);
-  font: inherit;
-  font-size: var(--ek-type-label-size);
-  font-weight: var(--ek-font-weight-medium);
-  cursor: pointer;
-}
 
-.bo-seg__opt[aria-checked='true'] {
-  background: var(--ek-color-surface);
-  color: var(--ek-color-content-strong);
-  box-shadow: var(--ek-shadow-sm);
-}
 
-.bo-seg__opt:focus-visible,
 .bo-cat:focus-visible,
 .bo-issue:focus-visible,
 .bo-tab:focus-visible,

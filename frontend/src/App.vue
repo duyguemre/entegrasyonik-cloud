@@ -6,13 +6,15 @@
     <!-- Faz 3 / C2a — adım-yükseltme (401 REAUTH_REQUIRED) parola diyaloğu: uygulama genelinde TEK örnek, sekme dışında. -->
     <ReauthDialog />
     <router-view v-if="isReady" />
+    <!-- FR2-39 — açılış ekranı: ortak paketteki tek bileşen (backoffice ile aynı); 200 ms gecikmeli, hızlı açılışta görünmez. -->
+    <EkBootScreen v-else label="Hesabınız hazırlanıyor…" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import useUser from './composables/user';
-import { EkToastHost } from '@entegrasyonik/ui/components';
+import { EkBootScreen, EkToastHost } from '@entegrasyonik/ui/components';
 import ReauthDialog from './components/user/ReauthDialog.vue';
 
 

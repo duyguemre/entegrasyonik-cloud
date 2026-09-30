@@ -5,7 +5,10 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { ACCOUNT } from '../support/session'
 
-const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'docs', 'review')
+// BO_REVIEW_OUT: çıktı klasörü (backoffice/ köküne göre; varsayılan docs/review). BO_REVIEW_TAG: dosya adı öneki (ör. once/sonra).
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
+const OUT = join(ROOT, process.env.BO_REVIEW_OUT ?? join('docs', 'review'))
+const TAG = process.env.BO_REVIEW_TAG ? `${process.env.BO_REVIEW_TAG}-` : ''
 const CONFIGS = [
   { theme: 'light', width: 1440 },
   { theme: 'dark', width: 1440 },
@@ -17,8 +20,11 @@ test.skip(!process.env.BO_REVIEW, 'BO_REVIEW=1 ile koşar')
 test.setTimeout(240_000)
 
 async function shot(page: Page, name: string, cfg: (typeof CONFIGS)[number], fullPage = true) {
+  // Tam yükleme (goto) açılış ekranından geçer: kabuk + iskeletler bitsin.
+  await page.waitForLoadState('networkidle')
+  await expect(page.locator('.v-skeleton-loader, .bo-boot, .ek-boot')).toHaveCount(0, { timeout: 10_000 }).catch(() => undefined)
   await page.waitForTimeout(700)
-  await page.screenshot({ path: join(OUT, `${name}-${cfg.theme}-${cfg.width}.png`), fullPage, animations: 'disabled' })
+  await page.screenshot({ path: join(OUT, `${TAG}${name}-${cfg.theme}-${cfg.width}.png`), fullPage, animations: 'disabled' })
 }
 
 async function login(page: Page, email: string) {
