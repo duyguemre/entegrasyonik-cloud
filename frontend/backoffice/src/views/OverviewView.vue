@@ -120,7 +120,7 @@
           <h3 class="bo-ov-sub">Podlar</h3>
           <BoPanelState v-if="health.pods.status === 'degraded'" state="degraded" degraded-title="Pod listesi okunamadı" :degraded-reason="health.pods.error" @retry="load" />
           <BoPanelState v-else-if="!health.pods.items.length" state="empty" empty-title="İş yapan pod yok" empty-text="Son 15 dakikada kira tutan ya da zamanlayıcı çalıştıran pod görülmedi." />
-          <div v-else class="bo-table-wrap bo-table-wrap--flat">
+          <div v-else class="bo-table-wrap bo-table-wrap--flat" tabindex="0" role="region" aria-label="Podlar tablosu">
             <table class="bo-table" data-density="compact">
               <caption class="ek-sr-only">Podlar</caption>
               <thead>
@@ -147,7 +147,7 @@
       <EkCard title="Kuyruklar" subtitle="BullMQ kuyrukları · DLQ: elle inceleme bekleyen kalıcı hatalar" icon="mdi-tray-full" :heading-level="2">
         <BoPanelState v-if="!health" :state="healthError ? 'error' : 'loading'" :error="healthError" skeleton="table" :rows="2" @retry="load" />
         <BoPanelState v-else-if="health.queues.status === 'degraded'" state="degraded" degraded-title="Kuyruk sayaçları okunamadı" :degraded-reason="health.queues.error" @retry="load" />
-        <div v-else class="bo-table-wrap bo-table-wrap--flat">
+        <div v-else class="bo-table-wrap bo-table-wrap--flat" tabindex="0" role="region" aria-label="Kuyruk sayaçları tablosu">
           <table class="bo-table" data-density="compact">
             <caption class="ek-sr-only">Kuyruk sayaçları</caption>
             <thead>

@@ -98,6 +98,11 @@ html.ek-theme-switching *::after {
   background: var(--ek-color-surface);
 }
 
+.bo-table-wrap:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+}
+
 .bo-table {
   width: 100%;
   border-collapse: separate;

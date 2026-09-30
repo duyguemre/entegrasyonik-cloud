@@ -42,7 +42,7 @@
         @retry="load"
       />
     </div>
-    <div v-else class="bo-table-wrap" :aria-busy="loading || undefined">
+    <div v-else class="bo-table-wrap" tabindex="0" role="region" aria-label="Müşteriler tablosu" :aria-busy="loading || undefined">
       <table class="bo-table">
         <caption class="ek-sr-only">Müşteriler — {{ visible.length }} kayıt</caption>
         <thead>

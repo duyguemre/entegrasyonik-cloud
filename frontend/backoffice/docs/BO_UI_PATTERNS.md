@@ -83,7 +83,7 @@ doğrula, çıkış). Yeni ekranın palette görünmesi için ek iş gerekmez �
 
 ## 3. Yoğun veri tabloları — `.bo-table` (styles/backoffice.css)
 ```html
-<div class="bo-table-wrap" style="--bo-table-max-h: 70vh">
+<div class="bo-table-wrap" tabindex="0" role="region" aria-label="Başarısız işler tablosu" style="--bo-table-max-h: 70vh">
   <table class="bo-table" data-density="compact">
     <caption class="ek-sr-only">…</caption>
     <thead><tr><th scope="col">Kuyruk</th><th scope="col" class="is-num">Bekleyen</th></tr></thead>
@@ -92,6 +92,7 @@ doğrula, çıkış). Yeni ekranın palette görünmesi için ek iş gerekmez �
 </div>
 <p class="bo-table-foot">12 / 40 kayıt · kaynak: BackofficeEngineService/listFailedJobs</p>
 ```
+- Kaydırılabilir kap klavyeyle odaklanır (`tabindex="0"` + `role="region"` + `aria-label`; axe `scrollable-region-focusable`).
 - Başlık yapışkan; satır 44 px (`compact` 36 px — 20+ satırlık operasyon listeleri compact).
 - Sayılar sağa hizalı + tabular (`is-num ek-num`); kimlikler mono (`is-id`) + `EkCopyButton`; zamanlar `EkRelativeTime`.
 - Tıklanabilir satır: fareyle satırın tamamı, klavyeyle satırdaki **birincil bağlantı** (tek sekme durağı; satıra ayrıca

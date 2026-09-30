@@ -7,7 +7,7 @@
       v-model="drawerOpen"
       :permanent="!mobile"
       :temporary="mobile"
-      :width="264"
+      :width="280"
       class="bo-shell__nav"
       aria-label="Yönetim menüsü"
     >
@@ -29,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
 import { EkKbd, EkSidebarNav, type EkSideItem, type EkSideSection } from '@entegrasyonik/ui/components'
@@ -47,6 +47,15 @@ const mobile = computed(() => smAndDown.value)
 const drawerOpen = ref(!mobile.value)
 const paletteOpen = ref(false)
 watch(mobile, (m) => (drawerOpen.value = !m))
+
+// Mobil çekmece Esc ile kapanır; odak menü düğmesine döner.
+function onEsc(e: KeyboardEvent) {
+  if (e.key !== 'Escape' || !mobile.value || !drawerOpen.value || paletteOpen.value) return
+  drawerOpen.value = false
+  document.querySelector<HTMLButtonElement>('.bo-top__start .bo-top__icon-btn')?.focus()
+}
+onMounted(() => window.addEventListener('keydown', onEsc))
+onBeforeUnmount(() => window.removeEventListener('keydown', onEsc))
 
 const leaf = (s: BoScreen, label = s.label): EkSideItem => {
   const badge = STATUS_BADGE[s.status]

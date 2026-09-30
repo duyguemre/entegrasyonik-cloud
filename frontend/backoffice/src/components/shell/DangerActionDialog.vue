@@ -171,7 +171,7 @@ function confirm() {
 
 .bo-danger__fact {
   display: grid;
-  grid-template-columns: 170px minmax(0, 1fr);
+  grid-template-columns: 150px minmax(0, 1fr);
   gap: var(--ek-space-3);
   padding: var(--ek-space-3) var(--ek-space-4);
 }
