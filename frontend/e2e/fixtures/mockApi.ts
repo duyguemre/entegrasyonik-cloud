@@ -60,8 +60,31 @@ function isErrorMarker(value: any): value is MockErrorMarker {
 // Uygulamanın açılış akışı (App.vue -> fetchUserContext/initApp, SecureLayout -> menu, ...) için
 // gerçekçi varsayılan yanıtlar. Testler yalnızca ilgilendikleri yolu `overrides` ile değiştirir;
 // geri kalanı burada tanımlı "DOLU" (başarı) durumundan gelir.
+/** FE-CFG (ADR-0031) — `GET /api/public-config` varsayılanı: duyuru/bakım kapalı, destek boş (mevcut görsel tabanlar değişmez). */
+export const publicConfigFixture = {
+  version: 0,
+  env: { images: { productBaseUrl: 'https://images.entegrasyonik.com/products/', uploadMaxBytes: 10485760 } },
+  settings: {
+    'support.email': '',
+    'support.phone': '',
+    'announcement.enabled': false,
+    'announcement.level': 'info',
+    'announcement.text': '',
+    'maintenance.enabled': false,
+    'maintenance.message': '',
+    'ui.listPageSize': 25,
+    'ui.reportPollMs': 5000,
+  },
+}
+
+/** Varsayılanın `settings` alanlarını değiştirilmiş public-config gövdesi. */
+export function publicConfigWith(settings: Record<string, unknown>) {
+  return { ...publicConfigFixture, version: 1, settings: { ...publicConfigFixture.settings, ...settings } }
+}
+
 export const defaultRoutes: Record<string, MockValue> = {
   checkAuthentication: true,
+  'public-config': publicConfigFixture,
   userContext: userContextFixture,
   MenuService: menuFixture,
   'MenuService/retrieveFavorites': [],

@@ -82,7 +82,7 @@ const userApi = useUser()
 const workspace = useWorkspaceStore()
 const notificationDrawer = useNotificationDrawerStore()
 const { locale } = useI18n({ useScope: 'global' })
-const { isDesktop } = useShellBreakpoints()
+const { isDesktop, isMobile } = useShellBreakpoints()
 
 const storeName = computed(() => userApi.getStoreName() || '')
 // Kimlik: birincil satır mağaza (tenant) adı, ikincil satır oturumdaki kullanıcı.
@@ -102,15 +102,17 @@ const helpGroups = computed<EkMenuGroup[]>(() => [
   ...supportContactGroups(publicConfig.supportEmail, publicConfig.supportPhone),
 ])
 
-const accountGroups: EkMenuGroup[] = [
+// Dar ekranda (< 768) üst barın yardım düğmesi gizlidir; destek iletişimi hesap menüsünde, çıkıştan önce görünür.
+const accountGroups = computed<EkMenuGroup[]>(() => [
   {
     items: [
       { key: 'settings', label: 'Ayarlar', icon: 'mdi-cog-outline' },
       { key: 'shortcuts', label: 'Klavye kısayolları', icon: 'mdi-keyboard-outline', shortcut: shortcutKeys('shortcutHelp') },
     ],
   },
+  ...(isMobile.value ? supportContactGroups(publicConfig.supportEmail, publicConfig.supportPhone) : []),
   { items: [{ key: 'logout', label: 'Çıkış', icon: 'mdi-logout', danger: true }] },
-]
+])
 
 
 const openByTitle = (title: string) => eventBus.emit('openTab', menuStore.getMenuLinkWithTitle(title))
@@ -119,10 +121,12 @@ function onHelpSelect(item: EkMenuItem) {
   helpOpen.value = false
   if (item.key === 'shortcuts') emit('open-shortcuts')
   else if (item.key === 'tickets') openByTitle('ticketList')
-  else {
-    const href = supportContactHref(item.key, publicConfig.supportEmail, publicConfig.supportPhone)
-    if (href) window.location.href = href
-  }
+  else openSupportContact(item.key)
+}
+
+function openSupportContact(key: string) {
+  const href = supportContactHref(key, publicConfig.supportEmail, publicConfig.supportPhone)
+  if (href) window.location.href = href
 }
 
 function onAccountSelect(item: EkMenuItem) {
@@ -130,6 +134,7 @@ function onAccountSelect(item: EkMenuItem) {
   if (item.key === 'settings') openByTitle('settingList')
   else if (item.key === 'shortcuts') emit('open-shortcuts')
   else if (item.key === 'logout') logout()
+  else openSupportContact(item.key)
 }
 
 const logout = async () => {
