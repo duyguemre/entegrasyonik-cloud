@@ -71,7 +71,7 @@
           <span role="columnheader"><span class="ek-sr-only">İşlem</span></span>
         </div>
 
-        <div v-for="row in rows" :key="row.code" class="cpe-tr" :class="{ 'is-custom': row.custom }" role="row" :data-channel="row.code">
+        <div v-for="row in rows" :key="row.code" class="cpe-tr" :class="{ 'is-custom': row.custom }" role="row" :data-cpe-row="row.code">
           <span class="cpe-ch" role="cell">
             <EkPlatformMark :name="row.title" :code="row.code" />
             <span class="cpe-src" :class="row.custom ? 'is-custom' : 'is-base'">{{ row.custom ? 'Özel fiyat' : 'Ana fiyat' }}</span>

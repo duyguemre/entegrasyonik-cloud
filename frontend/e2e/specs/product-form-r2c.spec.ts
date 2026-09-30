@@ -136,6 +136,8 @@ test.describe('FR2-PFORM 27-28 — galeri', () => {
     const card = page.locator('.v-overlay--active').filter({ hasText: 'Resim Galerisi' }).first()
     const tile = card.locator('.pig-tile').nth(2)
     await expect(tile).toBeVisible()
+    const axe = await new AxeBuilder({ page }).include('.v-overlay--active:not(.v-snackbar)').withTags(AXE_TAGS).analyze()
+    expect(axe.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious').map((v) => v.id)).toEqual([])
     await tile.scrollIntoViewIfNeeded()
     const box = (await tile.boundingBox())!
     const sx = box.x + box.width / 2
@@ -173,6 +175,8 @@ test.describe('FR2-PFORM 24/29 — varyant ızgarası görselleri', () => {
     expect(tb.width).toBeGreaterThanOrEqual(48)
     expect(tb.height).toBeGreaterThanOrEqual(48)
     await expect(thumb).toHaveAttribute('aria-label', /2 görsel/)
+    const axe = await new AxeBuilder({ page }).include('.vg').withTags(AXE_TAGS).analyze()
+    expect(axe.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious').map((v) => v.id)).toEqual([])
   })
 })
 
@@ -198,7 +202,7 @@ test.describe('FR2-PFORM 25 — kanal bazında fiyatlar', () => {
     await dialog.locator('[data-cpe="custom-ideasoft"]').click()
     await expect(dialog.getByLabel('Ideasoft satış fiyatı')).toHaveValue('349,90')
     await dialog.locator('[data-cpe="reset-trendyol"]').click()
-    await expect(dialog.locator('[data-channel="trendyol"]')).toContainText('Ana fiyat')
+    await expect(dialog.locator('[data-cpe-row="trendyol"]')).toContainText('Ana fiyat')
 
     await dialog.locator('[data-cpe="bulk-toggle"]').click()
     await dialog.locator('[data-cpe="bulk-value"] input').fill('10')
