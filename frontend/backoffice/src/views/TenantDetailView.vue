@@ -11,6 +11,7 @@
           <span class="bo-tenant__tid">Mağaza no <span class="bo-mono ek-num">#{{ tid }}</span><EkCopyButton :value="tid" label="Mağaza numarası" /></span>
         </template>
         <template #actions>
+          <EkButton tone="secondary" icon="mdi-shield-search" @click="router.push({ path: '/denetim', query: { tid: String(tid) } })">Denetim kayıtları</EkButton>
           <EkButton tone="primary" icon="mdi-account-switch-outline" :disabled="!client" data-testid="impersonate" @click="openImpersonation">Hesaba geçici erişim</EkButton>
         </template>
       </BoPageHeader>

@@ -373,34 +373,9 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.bo-seg {
-  display: inline-flex;
-  padding: 3px;
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-control);
-  background: var(--ek-color-surface-muted);
-}
 
-.bo-seg__opt {
-  height: 30px;
-  padding: 0 var(--ek-space-3);
-  border: 0;
-  border-radius: var(--ek-radius-md);
-  background: transparent;
-  color: var(--ek-color-content-muted);
-  font: inherit;
-  font-size: var(--ek-type-label-size);
-  font-weight: var(--ek-font-weight-medium);
-  cursor: pointer;
-}
 
-.bo-seg__opt[aria-checked='true'] {
-  background: var(--ek-color-surface);
-  color: var(--ek-color-content-strong);
-  box-shadow: var(--ek-shadow-sm);
-}
 
-.bo-seg__opt:focus-visible,
 .bo-cat:focus-visible,
 .bo-issue:focus-visible,
 .bo-tab:focus-visible,

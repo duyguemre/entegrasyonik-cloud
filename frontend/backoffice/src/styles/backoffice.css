@@ -190,3 +190,81 @@ html.ek-theme-switching *::after {
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
 }
+
+/* Segment seçici (tek seçimli filtre: durum, aralık, yüzey). role=radiogroup + role=radio düğmeler. */
+.bo-seg {
+  display: inline-flex;
+  flex-wrap: wrap;
+  padding: 3px;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-control);
+  background: var(--ek-color-surface-muted);
+}
+
+.bo-seg__opt {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  height: 30px;
+  padding: 0 var(--ek-space-3);
+  border: 0;
+  border-radius: var(--ek-radius-md);
+  background: transparent;
+  color: var(--ek-color-content-muted);
+  font: inherit;
+  font-size: var(--ek-type-label-size);
+  font-weight: var(--ek-font-weight-medium);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: var(--ek-transition-colors);
+}
+
+.bo-seg__opt:hover {
+  color: var(--ek-color-content-strong);
+}
+
+.bo-seg__opt[aria-checked='true'] {
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-strong);
+  box-shadow: var(--ek-shadow-sm);
+}
+
+.bo-seg__opt:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+}
+
+.bo-seg__count {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Filtre çubuğu: arama + segmentler + seçimler tek satır, sarılır. */
+.bo-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ek-space-3);
+}
+
+/* Liste sayfalarında < 768 px gizlenen ikincil sütun / yalnız dar ekranda görünen kısa etiket. */
+.bo-show-sm {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .bo-hide-sm {
+    display: none;
+  }
+
+  .bo-show-sm {
+    display: inline;
+  }
+
+  .bo-table thead th,
+  .bo-table tbody td,
+  .bo-table tbody th {
+    padding-inline: var(--ek-space-3);
+  }
+}

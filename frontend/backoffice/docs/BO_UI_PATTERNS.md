@@ -87,14 +87,18 @@ doğrula, çıkış). Yeni ekranın palette görünmesi için ek iş gerekmez �
   <table class="bo-table" data-density="compact">
     <caption class="ek-sr-only">…</caption>
     <thead><tr><th scope="col">Kuyruk</th><th scope="col" class="is-num">Bekleyen</th></tr></thead>
-    <tbody><tr class="is-link" tabindex="0" @click="open(r)" @keydown.enter="open(r)">…<td class="is-num ek-num">…</td></tr></tbody>
+    <tbody><tr class="is-link" @click="open(r, $event)"><th scope="row"><RouterLink :to="…">{{ r.ad }}</RouterLink></th>…<td class="is-num ek-num">…</td></tr></tbody>
   </table>
 </div>
 <p class="bo-table-foot">12 / 40 kayıt · kaynak: BackofficeEngineService/listFailedJobs</p>
 ```
 - Başlık yapışkan; satır 44 px (`compact` 36 px — 20+ satırlık operasyon listeleri compact).
 - Sayılar sağa hizalı + tabular (`is-num ek-num`); kimlikler mono (`is-id`) + `EkCopyButton`; zamanlar `EkRelativeTime`.
-- Tıklanabilir satır klavyeyle açılır (`tabindex=0` + Enter); satır içindeki kopyala düğmesi satırı tetiklemez.
+- Tıklanabilir satır: fareyle satırın tamamı, klavyeyle satırdaki **birincil bağlantı** (tek sekme durağı; satıra ayrıca
+  `tabindex` verilmez). `open()` tıklama bir `a`/`button` üstündeyse ya da metin seçiliyse satırı açmaz (örnek:
+  `TenantsView.vue`). Birincil bağlantısı olmayan satırda `tabindex="0"` + Enter.
+- Filtre çubuğu `.bo-toolbar`; tek seçimli filtreler `.bo-seg` (radiogroup), sayaçlı (`.bo-seg__count`).
+- Mobilde ikincil sütunlar `bo-hide-sm` ile gizlenir.
 - Mobilde (< 768 px) tablo yatay kayar; 3'ten fazla sütunlu ana listeler için kart satır görünümü tercih edilir.
 - Mevcut `EkDataTable` (ortak paket) de kullanılabilir; aynı kurallar (sayı hizası, rozet standardı) geçerlidir.
 
