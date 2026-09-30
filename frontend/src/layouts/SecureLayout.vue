@@ -477,9 +477,17 @@ const closeTemporaryMenu = () => {
   transition: top var(--ek-duration-base) var(--ek-easing-standard);
 }
 
+/* FR2-SHELL madde 3 (fe-r2a): çalışma alanı KAYDIRMA KABIDIR. Önceden `overflow: visible` idi → kendi iç kaydırıcısı
+   olmayan uzun sayfalar (Yardım merkezi, ürün formu …) BELGEYİ kaydırıyor, mutlak konumlu sekme şeridi ve başlık
+   sayfayla birlikte yukarı kayıyordu (ölçüm: /help belge 1793px / pencere 800px). Artık belge kaymaz; ana sekmeler
+   her sayfada sabit. `overscroll-behavior: contain` — iç kaydırma sonunda sayfa zıplamaz. `.workarea-scroll`
+   kullanan ekranlar (mutlak iç kaydırıcı) değişmez. */
 .workplace-area {
   top: calc(var(--v-layout-top, 0px) + var(--ek-shell-banner-h, 0px) + var(--ek-app-tabstrip-height));
   bottom: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   border: none;
   border-radius: 0;
   background-color: var(--ek-color-background);

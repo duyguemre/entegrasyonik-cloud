@@ -165,4 +165,29 @@ test.describe('FR2 fe-r2b inceleme görüntüleri', () => {
     await page.waitForTimeout(1200)
     await shot(page, 'hover-onizleme', 1440)
   })
+
+  for (const w of WIDTHS) {
+    test(`kanal durumu paneli ${w}`, async ({ page }) => {
+      await page.setViewportSize({ width: w, height: w > 600 ? 900 : 844 })
+      await openProducts(page)
+      await dismissTour(page)
+      const row = page.locator('.productListView tbody tr').filter({ hasText: 'Seramik kupa' }).first()
+      await row.locator('.pcs').click()
+      await expect(page.locator('.pcs-panel')).toBeVisible()
+      await page.waitForTimeout(400)
+      await shot(page, 'kanal-paneli', w)
+    })
+
+    test(`galeri ${w}`, async ({ page }) => {
+      await page.setViewportSize({ width: w, height: w > 600 ? 900 : 844 })
+      await openProducts(page)
+      await dismissTour(page)
+      const row = page.locator('.productListView tbody tr').filter({ hasText: 'Deri sırt çantası' }).first()
+      await row.locator('button.pth').click()
+      await expect(page.locator('.pgd')).toBeVisible()
+      await page.keyboard.press('ArrowRight')
+      await page.waitForTimeout(600)
+      await shot(page, 'galeri', w)
+    })
+  }
 })

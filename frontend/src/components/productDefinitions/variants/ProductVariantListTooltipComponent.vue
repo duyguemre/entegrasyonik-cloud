@@ -9,8 +9,8 @@
 <template>
   <v-card class="premium-status-container pvt" :class="channelCode ? channelClass(channelCode) : undefined">
     <div v-if="channelName" class="pvt-channel">
-      <span class="pvt-channel__dot" aria-hidden="true"></span>
-      <span class="pvt-channel__name">{{ channelName }}</span>
+      <!-- K13: kanal kimliği = kanal rozeti (uygulamanın tek rozet biçimi). -->
+      <EkChannelBadge :code="channelCode" :name="channelName" size="sm" />
     </div>
 
     <div class="header-section pvt-head" :class="[`is-${saleTone}`, { 'is-on-sale': isActuallyOnSale }]">
@@ -70,6 +70,7 @@ import { computed } from 'vue'
 import { useStaticsStore } from '@/stores/staticsStore'
 import { PLATFORM_PROCESS, PLATFORM_PROCESS_LABELS } from '@/types/PlatformProcess'
 import { channelClass } from '@entegrasyonik/ui/tokens'
+import { EkChannelBadge } from '@entegrasyonik/ui/components'
 
 const staticsStore: any = useStaticsStore()
 const props = defineProps<{ data: any; channelCode?: string; channelName?: string }>()
@@ -164,17 +165,6 @@ const formatCurrency = (n: number) => (n ? formatMoney(Number(n)) : formatMoney(
 .pvt-channel {
   display: flex;
   align-items: center;
-  gap: var(--ek-space-2);
-  color: var(--ek-ch-text);
-  font-size: var(--ek-type-label-size);
-  font-weight: var(--ek-font-weight-semibold);
-}
-
-.pvt-channel__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: var(--ek-radius-chip);
-  background: var(--ek-ch-solid);
 }
 
 /* Satış durumu bandı: ton subtle zemin + ton kenarlık; metin emphasis (AA). */

@@ -97,3 +97,69 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+/* ---- FR2-SHELL madde 6: modern bağlantı / aksiyon dili (frontend/docs/FR2_PATTERNS.md §3) ----
+ * "Mavi + üstüne gelince altı çizili" yerine: aksiyon rengi, orta ağırlık, çizgi YOK; üzerine gelince ince (1px)
+ * alt çizgi soldan dolar ve renk bir kademe koyulaşır; odakta DS odak halkası. Sonda ok ikonu (`.ek-link__arrow`)
+ * varsa hover'da 2px sağa kayar (reduced-motion'da kaymaz — süre token'ı 0'a iner).
+ *   .ek-link          birincil satır içi bağlantı / metin eylemi ("Yardım merkezinde oku →", "Tümünü gör")
+ *   .ek-link--quiet   liste içi bağlantı (makale listesi, ikincil gezinme): nötr metin, hover'da aksiyon rengi
+ *   .ek-link--sm      caption boyu
+ * Ham `<a>` (sınıfsız) aynı dili otomatik alır. Düğme gibi davranan bağlantı için `EkButton tone="ghost"`. */
+.ek-link,
+:where(.v-application) a:not([class]) {
+  --ek-link-fg: var(--ek-color-action);
+  --ek-link-fg-hover: var(--ek-color-action-hover);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  padding: 0;
+  border: 0;
+  border-radius: var(--ek-radius-sm);
+  background: none;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 1px;
+  color: var(--ek-link-fg);
+  font: inherit;
+  font-weight: var(--ek-font-weight-medium);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-size var(--ek-duration-base) var(--ek-easing-standard),
+    color var(--ek-duration-fast) var(--ek-easing-standard);
+}
+
+.ek-link:hover,
+:where(.v-application) a:not([class]):hover {
+  color: var(--ek-link-fg-hover);
+  background-size: 100% 1px;
+  text-decoration: none;
+}
+
+.ek-link:focus-visible,
+:where(.v-application) a:not([class]):focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+}
+
+.ek-link--quiet {
+  --ek-link-fg: var(--ek-color-content-default);
+  --ek-link-fg-hover: var(--ek-color-action);
+  font-weight: var(--ek-font-weight-regular);
+}
+
+.ek-link--sm {
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+}
+
+.ek-link .ek-link__arrow {
+  font-size: 1.05em;
+  transition: transform var(--ek-duration-base) var(--ek-easing-standard);
+}
+
+.ek-link:hover .ek-link__arrow {
+  transform: translateX(2px);
+}
