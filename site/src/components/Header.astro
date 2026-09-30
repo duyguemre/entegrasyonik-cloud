@@ -718,6 +718,9 @@ const registerHref = appUrls.register()
     :global(html[data-scrolled='true']) .bar {
       transform: translateY(calc(var(--site-header-height) / -12));
     }
+    :global(html[data-scrolled='true']) {
+      --site-header-visible: calc(var(--site-header-height) * 5 / 6);
+    }
     .nav-desktop {
       display: flex;
       flex: 1;

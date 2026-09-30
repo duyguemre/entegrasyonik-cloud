@@ -2,7 +2,7 @@
  * Gruplanmış menü modeli — header açılır panelleri, mobil çekmece ve footer sütunları AYNI modelden türer (tek kaynak).
  * S23: ilk sürüm. S25 (seçkin menü): her panel = ikonlu kartlar (+ Çözümler'de kanal rozetli satırlar) + öne çıkan kart
  * + alt şerit. Olgusal içerik ÜRETİLMEZ: metin/yol `navigation.ts`, kanallar `getPublicIntegrations()`, deneme süresi ve
- * kart şartı plan kaydından (`getPublicTrial`), ajan vaadi `agent-claims.ts`'ten, rehber başlıkları `kb` kaydından.
+ * kart şartı plan kaydından (`getPublicTrial`), ajan vaadi `assistant.ts` üzerinden vaat kaydından (`agent-claims.ts`), rehber başlıkları `kb` kaydından.
  */
 import {
   FEATURED_GUIDE_SLUG,
@@ -20,7 +20,7 @@ import {
 import { getPublicIntegrations, type PublicIntegration } from './integrations'
 import { clusterOf, clusters, getGuide, guideHref, guides, guidesIn, readingMinutes } from './kb'
 import { getPublicTrial, getTrialPlanCode } from './plans'
-import { claim } from './agent-claims'
+import { assistantTeaser } from './assistant'
 import { AGENT_BRAND, AGENT_PATH } from './agent-brand'
 import { appUrls } from '../lib/site-config'
 
@@ -73,7 +73,7 @@ function feature(kind: NavFeatureKind): MenuFeature | undefined {
   if (kind === 'agent') {
     const item = published(primaryNav).find((i) => i.href === AGENT_PATH)
     if (!item) return undefined
-    return { kind, eyebrow: copy.eyebrow, badge: item.badge, title: AGENT_BRAND, text: claim('core-short'), cta: { label: copy.cta, href: AGENT_PATH } }
+    return { kind, eyebrow: copy.eyebrow, badge: item.badge, title: AGENT_BRAND, text: assistantTeaser.lead, cta: { label: copy.cta, href: AGENT_PATH } }
   }
   if (kind === 'trial') {
     const code = getTrialPlanCode()

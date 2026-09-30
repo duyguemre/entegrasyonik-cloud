@@ -694,7 +694,12 @@ describe('S24: Otopilot sayfası derlenmiş — sade hero, aşama/örnek etiketi
   })
 
   it('header: ajan bağlantısı (etiket = ad sabiti) "Yeni" rozetli ve sayfasında aria-current="page"', () => {
-    expect(page()).toMatch(new RegExp(`<a class="nav-link"[^>]*href="${ASSISTANT_PATH}"[^>]*aria-current="page"[^>]*>\\s*${AGENT_BRAND}\\s*<span class="nav-badge"[^>]*>Yeni</span>`))
+    // S25: Ürün panelinin öne çıkan kartı (başlık = ad sabiti + "Yeni"); bağlantı sayfasında aria-current, mobil
+    // çekmecenin kartı da aynı hedefe gider.
+    const card = page().match(/data-testid="nav-feature-agent"[\s\S]*?<\/a>/)![0]
+    expect(card).toMatch(new RegExp(`>\\s*${AGENT_BRAND}\\s*<span class="nav-badge[^"]*"[^>]*>Yeni</span>`))
+    expect(card).toMatch(new RegExp(`<a class="mega-feature__cta"[^>]*href="${ASSISTANT_PATH}"[^>]*aria-current="page"`))
+    expect(page()).toMatch(new RegExp(`<a class="drawer-feature"[^>]*href="${ASSISTANT_PATH}"[^>]*aria-current="page"`))
   })
 
   it('S22: eski adresler için dist/_redirects 301 kuralları yazılır; eski rota sayfa olarak derlenmez', () => {

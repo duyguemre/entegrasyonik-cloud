@@ -37,7 +37,8 @@ import {
   PROPOSAL_NOTICE,
   PLAN_SEED_PATH,
 } from '../src/data/plans'
-import { getComparisonRows, getPricingFaq, getPricingFaqRecords, getPlanPitch, getPlanCommonFeatures } from '../src/data/pricing'
+import { getComparisonRows, getPricingFaq, getPricingFaqRecords, getPlanPitch, getPlanCommonFeatures, getPlanAgentRows, getPlanAgentSummary, planAgentIntro } from '../src/data/pricing'
+import { menuGroups } from '../src/data/nav-menu'
 import { featuresBridge, heroAgentEntry } from '../src/data/assistant'
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -112,6 +113,11 @@ function publicContent() {
     assistantBridge: featuresBridge,
     // S22: ana sayfa hero'sundaki ajan girişi de katı taramadan geçer
     heroAgent: heroAgentEntry,
+    // S25: üst menü kopyası (panel başlıkları, fayda satırları, öne çıkan kartlar, alt şeritler) ve K46 fiyat metinleri
+    // de katı taramadan geçer. Rakamlı alanlar (deneme süresi, okuma süresi) `meta` anahtarındadır → sayı denetiminden
+    // muaf (değer kayıttan: plan seed / rehber metni).
+    nav: menuGroups().map((g) => ({ label: g.label, lead: g.lead, links: g.links.map((l) => [l.label, l.description ?? '']), footer: g.footer, feature: g.feature })),
+    planAgent: { intro: planAgentIntro, rows: getPlanAgentRows(), summary: getPublicPlans().map((p) => getPlanAgentSummary(p.code)) },
   }
 }
 
@@ -416,7 +422,7 @@ const NUMERIC_ALLOWLIST: Array<{ token: string; why: EvidenceRef }> = [
 ]
 
 /** Sayısal-iddia denetiminden muaf anahtarlar (biçimlenmiş fiyat, kimlik/kod, taslak notu). */
-const NON_PROSE_KEYS = new Set(['priceLabel', 'code', 'id', 'notice', 'periodLabel', 'channelCodes', 'basedOn', 'icon'])
+const NON_PROSE_KEYS = new Set(['priceLabel', 'code', 'id', 'notice', 'periodLabel', 'channelCodes', 'basedOn', 'icon', 'meta', 'href'])
 
 describe('(3) görünür içerikte yasaklı ifade / mutlak / kanıtsız sayısal iddia yok', () => {
   const content = publicContent()
