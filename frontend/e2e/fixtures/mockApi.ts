@@ -38,6 +38,7 @@ import {
   userContextFixture,
 } from './apiData'
 import { menuFixture } from './nav'
+import { integrationCatalogFixture } from './integrationCatalog'
 
 export type MockValue = any | ((route: Route, corsHeaders: Record<string, string>) => Promise<void> | void)
 
@@ -79,6 +80,8 @@ export const defaultRoutes: Record<string, MockValue> = {
   // DS-v2 dashboard kartları (stok uyarıları, entegrasyon sağlığı).
   'StockService/getStockOverview': stockOverviewFixture,
   'IntegrationService/getIntegrationHealth': integrationHealthFixture,
+  // C1.2 — kanal kapsamı / canlı küme (backend manifestolarının birebir kopyası, bkz. integrationCatalog.ts).
+  'IntegrationService/getCatalog': integrationCatalogFixture(),
   'OrderService/getOrders': ordersDoluFixture,
   'ProductService/getProducts': productsDoluFixture,
   'ClaimService/getClaims': claimsDoluFixture,

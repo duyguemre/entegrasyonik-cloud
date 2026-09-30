@@ -12,9 +12,11 @@
         <div class="ek-integration-layout__main">
           <div>
             <IntegrationPlatformRail :items="clientMarketplaces" :model-value="editingClientIntegration.code"
-              :live-codes="LIVE_CODES" ariaLabel="Pazar yeri seçimi"
+              :live-codes="liveCodes" ariaLabel="Pazar yeri seçimi"
               @select="setAndRetrieveEditingClientMarketplace" />
           </div>
+          <IntegrationCapabilityChips v-if="isLive(editingClientIntegration.code)" :code="editingClientIntegration.code"
+            category="marketplace" :show-health-link="!!healthLink" @open-health="openHealth" />
           <v-form ref="newVariantFormRef" v-model="isFormValid">
             <v-card-text class="pa-0 px-0" role="tabpanel"
               :aria-label="editingClientIntegration.code ? `${editingClientIntegration.code} ayarları` : 'Seçim bekleniyor'">
@@ -73,10 +75,11 @@ import EkPageHeader from '@/components/ds/EkPageHeader.vue'
 import EkEmptyState from '@/components/ds/EkEmptyState.vue'
 import IntegrationPlatformRail from '@/components/integrations/IntegrationPlatformRail.vue'
 import IntegrationComingSoonPanel from '@/components/integrations/IntegrationComingSoonPanel.vue'
+import IntegrationCapabilityChips from '@/components/integrations/IntegrationCapabilityChips.vue'
+import { useIntegrationScreen } from '@/components/integrations/useIntegrationScreen'
 
-// `docs/INTEGRATIONS_REGISTRY.md`'deki 6 canlı koddan bu ekranı ilgilendiren 4'ü
-// (ADR-0015 N13 — "Yakında" durumu ile aynı canlı küme, ADR-0014 ile tutarlı).
-const LIVE_CODES = ['trendyol', 'hepsiburada', 'n11', 'pazarama']
+// C1.2 — canlı küme `getCatalog` manifestosundan (yedek: `FALLBACK_LIVE_CODES`, bkz. `integrationCatalog.ts`).
+const { liveCodes, isLive, healthLink, openHealth } = useIntegrationScreen('marketplace')
 
 const integrationStore: any = useIntegrationStore()
 const { t } = useI18n()
