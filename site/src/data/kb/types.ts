@@ -33,7 +33,7 @@ export interface GuideFaq {
 }
 
 /** Sayfa sonundaki Entegrasyonik bağlamı: metin `src/data/kb/index.ts` içinde KAYITLARDAN üretilir. */
-export type CtaKind = 'stock' | 'channels' | 'invoice' | 'returns' | 'security' | 'connect' | 'catalog' | 'finance'
+export type CtaKind = 'stock' | 'channels' | 'invoice' | 'returns' | 'security' | 'connect' | 'catalog' | 'finance' | 'shipping'
 
 export interface Guide {
   /** `/rehber/` altındaki yol (ör. `e-fatura/eticarette-e-fatura-zorunlulugu`). */

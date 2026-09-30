@@ -36,6 +36,9 @@ export type SourceId =
   | 'S32'
   | 'S35'
   | 'S36'
+  | 'S37'
+  | 'S43'
+  | 'S44'
   | 'S39'
   | 'S40'
   | 'S41'
@@ -96,6 +99,9 @@ export const sources: Record<SourceId, Source> = {
   S32: s('S32', 'İ', 'Tamindir', 'Trendyol satıcı olma işlemleri', 'https://www.tamindir.com/blog/trendyol-satici-olma-islemleri_90568/'),
   S35: s('S35', 'İ', 'Haber Gazetesi', 'Hepsiburada entegrasyonu için izlenecek adımlar', 'https://www.habergazetesi.com.tr/hepsiburada-entegrasyon-icin-hangi-adimlari-izlemeliyim'),
   S36: s('S36', 'R', 'Hepsiburada', 'Hepsiburada geliştirici portalı', 'https://developers.hepsiburada.com', true),
+  S37: s('S37', 'İ', 'Ideasoft Blog', 'n11 mağaza açma rehberi', 'https://www.ideasoft.com.tr/n11-magaza-acma-rehberi/'),
+  S43: s('S43', 'İ', 'Ideasoft Blog', 'ÇiçekSepeti mağaza açma rehberi', 'https://www.ideasoft.com.tr/cicek-sepeti-magaza-acma-rehberi/'),
+  S44: s('S44', 'İ', 'Ideasoft Blog', 'PttAVM mağaza açma rehberi', 'https://www.ideasoft.com.tr/epttavm-magaza-acmak-rehberi/'),
   S39: s('S39', 'R', 'Türkiye İş Bankası', 'Pazaryeri çözümleri', 'https://www.isbank.com.tr/is-ticari/pazaryeri-cozumleri', true),
   S40: s('S40', 'R', 'Amazon', 'Selling Partner API (Türkiye) geliştirici sayfası', 'https://developer.amazonservices.com/tr'),
   S41: s('S41', 'R', 'Amazon', 'Üçüncü taraf SP-API geliştirici ücretlerinin iptali duyurusu', 'https://developer.amazonservices.com/tr/amazon-ucuncu-taraf-sp-api-gelistirici-ucretlerini-iptal-etti'),

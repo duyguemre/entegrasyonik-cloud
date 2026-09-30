@@ -10,6 +10,7 @@ import type { ClusterId, CtaKind, Guide } from './types'
 import { mevzuatGuides } from './guides/mevzuat'
 import { pazaryeriGuides } from './guides/pazaryerleri'
 import { operasyonGuides } from './guides/operasyon'
+import { ikinciDalgaGuides } from './guides/ikinci-dalga'
 import { sources, type Source, type SourceId } from './sources'
 import { getPublicCapabilities } from '../capabilities'
 import { getPublicIntegration, getPublicIntegrations } from '../integrations'
@@ -18,13 +19,16 @@ import { getConnectGuide } from '../connect'
 export const REHBER_PATH = '/rehber'
 export const GLOSSARY_PATH = '/rehber/sozluk'
 
-/** KB §12 öncelik sırası (sözlük ayrı sayfadır: `/rehber/sozluk`). */
+/** KB §12 ilk 15 öncelikli sayfa sırası (sözlük R26 ayrı sayfadır: `/rehber/sozluk`). */
 export const PRIORITY_ORDER = ['R14', 'R2', 'R3', 'R28', 'R29', 'R27', 'R22', 'R20', 'R15', 'R10', 'R30', 'R9', 'R11', 'R21']
+/** KB §12 "sonraki dalga"dan yayımlananlar (KB sırasıyla). */
+export const SECOND_WAVE_ORDER = ['R1', 'R12', 'R16', 'R17', 'R18', 'R23', 'R24', 'R25']
+const ORDER = [...PRIORITY_ORDER, ...SECOND_WAVE_ORDER]
 
-const all: Guide[] = [...mevzuatGuides, ...pazaryeriGuides, ...operasyonGuides]
+const all: Guide[] = [...mevzuatGuides, ...pazaryeriGuides, ...operasyonGuides, ...ikinciDalgaGuides]
 const rank = (g: Guide) => {
-  const i = PRIORITY_ORDER.indexOf(g.kbId)
-  return i === -1 ? PRIORITY_ORDER.length : i
+  const i = ORDER.indexOf(g.kbId)
+  return i === -1 ? ORDER.length : i
 }
 export const guides: Guide[] = [...all].sort((a, b) => rank(a) - rank(b))
 
@@ -124,6 +128,13 @@ export function getGuideCta(kind: CtaKind, channel?: string): GuideCta {
         link: { label: 'Kanal bazında kapsamı görün', href: '/entegrasyonlar' },
       }
     }
+    case 'shipping':
+      return {
+        title: 'Kargo takip bilgisini siparişle iletin',
+        text: `Entegrasyonik kargo firmalarıyla doğrudan bağlantı kurmaz ve etiket üretmez. ${cap('shipping-invoice-notice').summary}`,
+        note: partial('shipping-invoice-notice'),
+        link: { label: 'Kanal bazında kapsamı görün', href: '/entegrasyonlar' },
+      }
     case 'returns':
       return {
         title: 'İade taleplerini tek listede yönetin',

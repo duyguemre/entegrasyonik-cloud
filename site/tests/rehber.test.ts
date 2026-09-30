@@ -16,7 +16,7 @@ import { readFileSync, existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { buildSite } from '../scripts/lib/build.mjs'
-import { guides, getGuide, getGuideCta, allGuideCtas, guideTexts, guideHref, relatedOf, clusters, guidesIn, PRIORITY_ORDER, REHBER_PATH, GLOSSARY_PATH } from '../src/data/kb'
+import { guides, getGuide, getGuideCta, allGuideCtas, guideTexts, guideHref, relatedOf, clusters, guidesIn, PRIORITY_ORDER, SECOND_WAVE_ORDER, REHBER_PATH, GLOSSARY_PATH } from '../src/data/kb'
 import { glossary, GLOSSARY_META } from '../src/data/kb/glossary'
 import { sources } from '../src/data/kb/sources'
 import { factTokens } from '../src/data/kb/facts'
@@ -98,8 +98,9 @@ const sentences = (t: string) => plainKb(t).split(/(?<=[.!?])\s+/).filter((s) =>
 // ------------------------------------------------------------------------------------------ (1) kayıt bütünlüğü
 
 describe('(1) kayıt bütünlüğü', () => {
-  it('KB §12: öncelikli 15 sayfanın 14 rehberi + sözlük, öncelik sırasıyla', () => {
-    expect(guides.map((g) => g.kbId)).toEqual(PRIORITY_ORDER)
+  it('KB §12: öncelikli 15 sayfanın 14 rehberi + sözlük öncelik sırasıyla, ardından sonraki dalga', () => {
+    expect(guides.map((g) => g.kbId)).toEqual([...PRIORITY_ORDER, ...SECOND_WAVE_ORDER])
+    expect(PRIORITY_ORDER.length + 1).toBe(15)
     expect(glossary.length).toBe(48)
   })
 
