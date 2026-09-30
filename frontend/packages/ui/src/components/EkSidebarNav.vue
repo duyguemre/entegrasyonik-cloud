@@ -48,6 +48,7 @@
                   hookClasses?.item,
                   item.children ? hookClasses?.groupHeader : undefined,
                   {
+                    'is-muted': item.muted,
                     'is-active': isActive(item),
                     'is-hover': forceHoverKey === item.key,
                     'is-parent-active': !!item.children && isAncestor(item),
@@ -61,7 +62,7 @@
               >
                 <v-icon class="ek-side__icon" :icon="outlineIcon(item.icon) ?? 'mdi-circle-small'" aria-hidden="true" />
                 <span class="ek-side__label ek-side__fade">{{ item.label }}</span>
-                <EkBadge v-if="item.badge" class="ek-side__fade" variant="count" :tone="item.badgeTone ?? 'action'" :text="item.badge" />
+                <EkBadge v-if="item.badge" class="ek-side__fade" :variant="item.badgeVariant ?? 'count'" :tone="item.badgeTone ?? 'action'" :text="item.badge" />
                 <v-icon
                   v-if="item.children"
                   class="ek-side__chevron ek-side__fade"
@@ -88,13 +89,13 @@
                   <button
                     type="button"
                     class="ek-side__subitem"
-                    :class="[hookClasses?.subItem, { 'is-active': child.key === activeKey, 'is-hover': forceHoverKey === child.key }]"
+                    :class="[hookClasses?.subItem, { 'is-muted': child.muted, 'is-active': child.key === activeKey, 'is-hover': forceHoverKey === child.key }]"
                     :data-key="child.key"
                     :aria-current="child.key === activeKey ? 'page' : undefined"
                     @click="emit('select', child.key)"
                   >
                     <span class="ek-side__label">{{ child.label }}</span>
-                    <EkBadge v-if="child.badge" variant="count" :tone="child.badgeTone ?? 'neutral'" :text="child.badge" />
+                    <EkBadge v-if="child.badge" :variant="child.badgeVariant ?? 'count'" :tone="child.badgeTone ?? 'neutral'" :text="child.badge" />
                   </button>
                 </li>
               </ul>
@@ -117,6 +118,10 @@ export interface EkSideItem {
   icon?: string
   badge?: string | number
   badgeTone?: 'action' | 'success' | 'warning' | 'error' | 'info' | 'neutral'
+  /** Ek (geri uyumlu): rozet biçimi — varsayılan `count` (dolu sayaç); `label` sakin çerçeveli etiket (ör. "Yakında"). */
+  badgeVariant?: 'count' | 'label'
+  /** Ek (geri uyumlu): henüz hazır olmayan ekran — etiket soluk; tıklanabilir kalır. */
+  muted?: boolean
   children?: EkSideItem[]
 }
 
@@ -400,6 +405,12 @@ function onItem(item: EkSideItem) {
 
 .ek-side__item.is-active .ek-side__icon {
   color: var(--ek-color-action);
+}
+
+.ek-side__item.is-muted:not(.is-active) .ek-side__label,
+.ek-side__item.is-muted:not(.is-active) .ek-side__icon,
+.ek-side__subitem.is-muted:not(.is-active) .ek-side__label {
+  color: var(--ek-color-content-muted);
 }
 
 .ek-side__label {
