@@ -110,10 +110,23 @@ const bodyId = `ek-filter-body-${uid}`
 }
 
 .ek-filter__head-actions {
+  position: relative;
   display: flex;
   flex: none;
   align-items: center;
   gap: var(--ek-space-2);
+  padding: 0 var(--ek-space-2) 0 var(--ek-space-3);
+}
+
+/* Daralt okunu başlık eylemlerinden ayıran ince ayraç (iki ok yan yana karışmasın). */
+.ek-filter__head-actions::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  height: 20px;
+  border-left: 1px solid var(--ek-color-border-default);
+  transform: translateY(-50%);
 }
 
 .ek-filter__toggle:focus-visible {

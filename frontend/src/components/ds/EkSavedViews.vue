@@ -86,6 +86,10 @@
         <p class="ek-views__current" :class="{ 'is-empty': !hasCurrent }">
           {{ hasCurrent ? summarize(current) : `Kaydetmek için önce ${fieldList} seçip sorgulayın.` }}
         </p>
+        <p v-if="activeView" class="ek-views__dupe">
+          <v-icon icon="mdi-information-outline" aria-hidden="true" />
+          <span>Bu filtreler “{{ activeView.name }}” görünümünde zaten kayıtlı. Aynı adı yazarsanız güncellenir.</span>
+        </p>
         <div class="ek-views__save-row">
           <v-text-field
             ref="nameFieldRef"
@@ -252,7 +256,6 @@ function remove(view: SavedView) {
   gap: var(--ek-space-1);
   max-width: 240px;
   height: var(--ek-control-h-sm);
-  margin-right: var(--ek-space-2);
   padding: 0 var(--ek-space-2);
   border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-control);
@@ -447,6 +450,37 @@ function remove(view: SavedView) {
 .ek-views__delete:hover {
   background: var(--ek-color-error-subtle);
   color: var(--ek-color-error-emphasis);
+}
+
+.ek-views__delete .v-icon {
+  font-size: var(--ek-icon-md);
+}
+
+/* Fareli cihazda sil düğmesi satır üzerine gelinene/odaklanana dek geri planda kalır (dokunmatikte hep görünür). */
+@media (hover: hover) and (pointer: fine) {
+  .ek-views__delete {
+    opacity: 0.45;
+  }
+
+  .ek-views__item:hover .ek-views__delete,
+  .ek-views__item:focus-within .ek-views__delete {
+    opacity: 1;
+  }
+}
+
+.ek-views__dupe {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ek-space-1);
+  margin: 0;
+  color: var(--ek-color-info-emphasis);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+}
+
+.ek-views__dupe .v-icon {
+  margin-top: 1px;
+  font-size: var(--ek-icon-xs);
 }
 
 .ek-views__empty {
