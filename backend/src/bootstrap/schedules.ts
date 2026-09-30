@@ -21,6 +21,10 @@ import { runConfigHeadPoll, CONFIG_HEAD_POLL_JOB_NAME } from '@integration/confi
 import { runExportSignalPoll } from '@integration/engine/catalog/export/exportSignalPoll';
 import { createEmailDispatcher } from '@operations/notifications/delivery/createEmailDispatcher';
 import type { EmailDispatcher } from '@operations/notifications/delivery/EmailDispatcher';
+import { runAnnouncementFanout, type FanoutDeps } from '@operations/notifications/announcements';
+import { createAnnouncementFanoutDeps } from '@operations/notifications/createAnnouncementFanout';
+import { createAlertEvaluator } from '@operations/alerts/createAlertEvaluator';
+import type { AlertEvaluator } from '@operations/alerts/AlertEvaluator';
 import { writeResilienceSnapshot } from '@integration/modules/common/http/resilienceSnapshot';
 import { RedisService } from '@services/redis/RedisService';
 import { runsWorker } from './roles';
@@ -84,6 +88,28 @@ export const SCHEDULES: readonly ScheduleSpec[] = [
     return defineJob({
       name: 'notifications.email-dispatch', everyMs: 15 * 1000, maxDurationMs: 60 * 1000, criticality: 'normal', runOnStart: 'always',
       run: async () => { d ??= createEmailDispatcher(); const r = await d.runOnce(); return { skipped: r.skipped, processed: r.processed, failed: r.failed, note: r.note }; } });
+  } },
+  // ADR-0029 NB7: duyuru durum gecisleri + inApp/e-posta fan-out. NOTIFY_V2_ENABLED=false iken DB'ye dokunmadan doner (`skipped:'notify_disabled'`).
+  { id: 'notifications.announcements', runsOn: 'worker', build: (deps?: FanoutDeps) => {
+    let d: FanoutDeps | undefined = deps;
+    return defineJob({
+      name: 'notifications.announcements', everyMs: MIN, maxDurationMs: 5 * MIN, criticality: 'normal', runOnStart: 'always',
+      run: async () => {
+        d ??= createAnnouncementFanoutDeps();
+        const r = await runAnnouncementFanout(d);
+        return { skipped: r.skipped, processed: r.activated + r.ended + r.fannedOut, failed: 0, note: `activated=${r.activated} ended=${r.ended} fanout=${r.fannedOut} notified=${r.notified}` };
+      } });
+  } },
+  // ADR-0017 Asama C / NB8: alarm degerlendiricisi (esik kurallari + cooldown + platform bildirimi). ALERT_EVALUATOR_ENABLED=false iken DB/Redis'e dokunmadan doner.
+  { id: 'alerts.evaluator', runsOn: 'worker', build: (impl?: AlertEvaluator) => {
+    let e: AlertEvaluator | undefined = impl;
+    return defineJob({
+      name: 'alerts.evaluator', everyMs: MIN, maxDurationMs: MIN, criticality: 'normal', runOnStart: 'always',
+      run: async () => {
+        e ??= createAlertEvaluator();
+        const r = await e.runOnce();
+        return { skipped: r.skipped, processed: r.evaluated, failed: 0, note: `firing=${r.evaluated} new=${r.newFirings} resolved=${r.resolved} renotified=${r.renotified} platform=${r.platformNotified} tenant=${r.tenantNotified} shadow=${r.shadow} maint=${r.maintenance}` };
+      } });
   } },
   // Metrik flush: HER rolde; lease KASITLI kapali (her pod kendi surec-ici kayit defterini flush eder, ADR-0017 Karar 2.1).
   { id: 'observability.metrics-flush', runsOn: 'any', leaseOff: true, build: () => defineJob({

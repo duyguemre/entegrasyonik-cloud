@@ -20,6 +20,7 @@ import { DatabaseManagerInstance } from '@database/DatabaseManager';
 import Security from '@api/Security';
 import { createAuthenticateMiddleware } from '@api/authenticate';
 import { configureNotificationStreamRoutes, getNotificationStreamHub } from '@api/http/notificationStream';
+import { configureAgentRoutes, getAgentBroker } from '@api/http/agentRoutes';
 import { createOriginCheckMiddleware, parseCorsOrigins } from '@api/originCheck';
 import { checkReadiness, AppRole } from '@health/HealthCheck';
 import { RedisService } from '@services/redis';
@@ -98,6 +99,8 @@ export default class Webserver {
             allowedOrigins: config.corsOptions.origin,
             enabled: () => appCfg.notify.streamEnabled,
         });
+        // ADR-0034 BR-1: sohbet araci (`/api/agent/*`; SSE tur). Jenerik `/:service/:operation` rotasindan ONCE.
+        configureAgentRoutes(this.app, config.context, { broker: getAgentBroker });
         configureApis(this.app, config.context)
         configureImageServices(this.app, config.context, config.imageFilesPath)
         // KVKK dışa aktarma indirme rotası (owner, oturumlu, tek kullanımlık token; docs/API_TENANT_SURFACE.md §5)

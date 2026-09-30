@@ -20,6 +20,8 @@ import { MembershipSchema } from './models/Membership';
 import { InvitationSchema } from './models/Invitation';
 import { AdminMfaSchema } from './models/AdminMfa';
 import { NotificationEventSchema } from './models/NotificationEvent';
+import { AnnouncementSchema } from './models/Announcement';
+import { AlertSchema } from './models/Alert';
 import { NotificationDeliverySchema } from './models/NotificationDelivery';
 import { NotificationPreferencesSchema } from './models/NotificationPreferences';
 import { JobLeaseSchema } from './models/JobLease';
@@ -67,6 +69,9 @@ export default (mongooseConnection: Connection): Record<string, Model<any>> => {
         notification_event: mongooseConnection.model('notification_event', NotificationEventSchema),
         notification_delivery: mongooseConnection.model('notification_delivery', NotificationDeliverySchema),
         notification_preferences: mongooseConnection.model('notification_preferences', NotificationPreferencesSchema),
+        // ADR-0029 NB7/NB8: platform duyurulari + uyari yasam dongusu (autoIndex kapali; indeksler yalniz onayli gocle: migrations/0017)
+        announcement: mongooseConnection.model('announcement', AnnouncementSchema),
+        alert: mongooseConnection.model('alert', AlertSchema),
         // ADR-0016 §2 / ADR-0017 Karar 3: zamanlayıcı lease + JobRunRegistry (JobState/JobRuns)
         job_lease: mongooseConnection.model('job_lease', JobLeaseSchema),
         job_state: mongooseConnection.model('job_state', JobStateSchema),

@@ -8,6 +8,8 @@ import { PaymentProviderError } from '@services/billing/PaymentProvider';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 export const MAX_TRIAL_EXTENSION_DAYS = 30;
+/** K40: bir aboneliğin TOPLAM deneme uzatması (gün); `Subscriptions.trialExtensionDays` sayacı (yoksa 0). */
+export const MAX_TRIAL_EXTENSION_TOTAL_DAYS = 60;
 /** Sağlayıcıya yazılabilir (aktif) abonelik durumları; `canceled`/`expired` terminaldir. */
 const CHANGEABLE: ReadonlyArray<string> = ['trialing', 'active', 'past_due'];
 const CANCELABLE: ReadonlyArray<string> = ['trialing', 'active', 'past_due', 'suspended'];
@@ -19,6 +21,8 @@ export interface SubscriptionAdminDeps {
     provider: () => PaymentProvider;
     invalidateEntitlement: (clientId: number) => void;
     now?: () => Date;
+    /** K40: canlı salt-okuma kipi açık mı (yalnız sağlayıcı çağrısı olan iptal yolunda 423 için). */
+    liveReadonly?: () => boolean;
 }
 export interface AdminActorCtx { sub?: string; reason: string; reqId?: string }
 
@@ -79,32 +83,50 @@ export async function extendTrial(d: SubscriptionAdminDeps, input: { tid: number
     const now = nowOf(d);
     const sub = await loadSub(d, input.tid);
     if (sub.billingExempt === true) conflict('Muaf (legacy) abonelikte deneme uzatılamaz.', 'SUBSCRIPTION_EXEMPT');
-    if (sub.status !== 'trialing' || !sub.trialEndsAt) conflict('Yalnızca süren (trialing) deneme uzatılabilir.', 'TRIAL_NOT_ACTIVE');
+    // K40: denemesi bitip askıya alınmış (kartsız: sağlayıcı kaydı yok) abonelik de uzatmayla yeniden `trialing` olur.
+    const reopen = sub.status === 'suspended' && !sub.providerSubscriptionRef && !!sub.trialEndsAt;
+    if ((sub.status !== 'trialing' && !reopen) || !sub.trialEndsAt) conflict('Yalnızca süren (trialing) ya da denemesi bitip askıya alınmış (kartsız) abonelik uzatılabilir.', 'TRIAL_NOT_ACTIVE');
+    const used = Number.isFinite(sub.trialExtensionDays) ? Number(sub.trialExtensionDays) : 0;
+    const remaining = Math.max(0, MAX_TRIAL_EXTENSION_TOTAL_DAYS - used);
+    if (days > remaining) {
+        throw new ApplicationError(`Toplam deneme uzatma sınırı ${MAX_TRIAL_EXTENSION_TOTAL_DAYS} gün; kalan ${remaining} gün.`, 409, 'TRIAL_EXTENSION_LIMIT', { remainingDays: remaining, usedDays: used, maxTotalDays: MAX_TRIAL_EXTENSION_TOTAL_DAYS });
+    }
     const prev = new Date(sub.trialEndsAt);
     const base = prev.getTime() > now.getTime() ? prev : now;
     const next = new Date(base.getTime() + days * DAY_MS);
-    // İyimser kilit: aynı `trialEndsAt` + hâlâ trialing (TrialExpiryJob ya da başka admin araya girdiyse eşleşmez).
+    // İyimser kilit: aynı `trialEndsAt` + aynı durum (TrialExpiryJob ya da başka admin araya girdiyse eşleşmez) + toplam sınırı atomik korunur
+    // (`$not $gt` alan yokken de eşleşir).
     const res: any = await d.subscriptionModel.updateOne(
-        { clientId: input.tid, status: 'trialing', billingExempt: { $ne: true }, trialEndsAt: sub.trialEndsAt },
-        { $set: { trialEndsAt: next, currentPeriodEnd: next } },
+        { clientId: input.tid, status: sub.status, billingExempt: { $ne: true }, trialEndsAt: sub.trialEndsAt, trialExtensionDays: { $not: { $gt: MAX_TRIAL_EXTENSION_TOTAL_DAYS - days } } },
+        { $set: { status: 'trialing', trialEndsAt: next, currentPeriodEnd: next }, $inc: { trialExtensionDays: days } },
     );
     if (!matched(res)) conflict('Abonelik eş zamanlı değişti; yeniden deneyin.', 'SUBSCRIPTION_CHANGED');
     d.invalidateEntitlement(input.tid);
-    await writeEvent(d, now, input.tid, 'subscription.trial_extended', `trial-extended:${input.tid}:${next.getTime()}`, { from: prev.toISOString(), to: next.toISOString(), days }, ctx);
-    return { tid: input.tid, status: 'trialing', trialEndsAt: next, previousTrialEndsAt: prev, extendedDays: days };
+    await writeEvent(d, now, input.tid, 'subscription.trial_extended', `trial-extended:${input.tid}:${next.getTime()}`, { from: prev.toISOString(), to: next.toISOString(), days, reopened: reopen, fromStatus: sub.status, totalExtensionDays: used + days }, ctx);
+    return { tid: input.tid, status: 'trialing', trialEndsAt: next, previousTrialEndsAt: prev, extendedDays: days, totalExtensionDays: used + days, remainingExtensionDays: remaining - days, reopened: reopen };
 }
 
 export async function cancelSubscription(d: SubscriptionAdminDeps, input: { tid: number; atPeriodEnd: boolean }, ctx: AdminActorCtx): Promise<any> {
     const now = nowOf(d);
     const sub = await loadSub(d, input.tid);
     if (!CANCELABLE.includes(sub.status)) conflict(`Abonelik '${sub.status}' durumunda; iptal edilemez.`, 'SUBSCRIPTION_NOT_CANCELABLE');
+    // K40: sağlayıcıda kaydı olmayan (kartsız deneme/askı) abonelikte iptal YEREL ve doğrudan uygulanır (sağlayıcı çağrısı yok, external=false).
+    if (sub.billingExempt !== true && !sub.providerSubscriptionRef) {
+        const res0: any = await d.subscriptionModel.updateOne({ clientId: input.tid, status: sub.status, billingExempt: { $ne: true }, providerSubscriptionRef: { $in: [null, ''] } }, { $set: { status: 'canceled', cancelAtPeriodEnd: false } });
+        if (!matched(res0)) conflict('Abonelik eş zamanlı değişti; durumu yenileyip kontrol edin.', 'SUBSCRIPTION_CHANGED');
+        d.invalidateEntitlement(input.tid);
+        await writeEvent(d, now, input.tid, 'subscription.admin_canceled', `admin-cancel:${input.tid}:${ctx.reqId ?? now.getTime()}`, { from: sub.status, to: 'canceled', atPeriodEnd: false, local: true }, ctx);
+        return { tid: input.tid, status: 'canceled', cancelAtPeriodEnd: false, currentPeriodEnd: sub.currentPeriodEnd ?? null, external: false };
+    }
+    // Sağlayıcı çağrısı olan yol: canlı salt-okuma kipinde 423 (RPC düzeyinde değil, yalnız bu yolda; liveReadonlyRpcGuard istisna listesi).
+    if (d.liveReadonly?.()) throw new ApplicationError('Canlı salt-okuma kipi: bu işlem ödeme sağlayıcısına yazacağı için kapalıdır.', 423, 'LIVE_READONLY');
     const provider = requireProviderSub(d, sub);
     const canonical = await callProvider(() => provider.cancel(sub.providerSubscriptionRef, input.atPeriodEnd));
     const res: any = await d.subscriptionModel.updateOne({ clientId: input.tid, status: sub.status, providerSubscriptionRef: sub.providerSubscriptionRef }, { $set: canonicalSet(canonical) });
     if (!matched(res)) conflict('Abonelik eş zamanlı değişti; durumu yenileyip kontrol edin.', 'SUBSCRIPTION_CHANGED');
     d.invalidateEntitlement(input.tid);
     await writeEvent(d, now, input.tid, 'subscription.admin_canceled', `admin-cancel:${input.tid}:${ctx.reqId ?? now.getTime()}`, { from: sub.status, to: canonical.status, atPeriodEnd: input.atPeriodEnd }, ctx);
-    return { tid: input.tid, status: canonical.status, cancelAtPeriodEnd: !!canonical.cancelAtPeriodEnd, currentPeriodEnd: canonical.currentPeriodEnd ?? null };
+    return { tid: input.tid, status: canonical.status, cancelAtPeriodEnd: !!canonical.cancelAtPeriodEnd, currentPeriodEnd: canonical.currentPeriodEnd ?? null, external: true };
 }
 
 export async function changePlan(d: SubscriptionAdminDeps, input: { tid: number; planCode: string }, ctx: AdminActorCtx): Promise<any> {

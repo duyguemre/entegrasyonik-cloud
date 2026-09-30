@@ -13,6 +13,7 @@ import { decideAfterFailure, MAX_ATTEMPTS } from './retry';
 import { DEFAULT_TZ, nextDigestAt, normalizeDigest, quietUntil, type DigestPref, type QuietHours } from './schedule';
 import { isUsableSecret, signUnsubscribeToken, UNSUB_ALL } from './unsubscribeToken';
 import type { CompletePatch, DeliveryDoc, DeliveryStore } from './deliveryStore';
+import { isPlatformUserId, platformHashOf } from '../platformRecipients';
 
 const log = logger.child({ module: 'notifications.email' });
 const MIN = 60_000;
@@ -36,6 +37,8 @@ export interface DispatcherDeps {
     apiUrl?: string;
     /** NOTIFY_UNSUB_SECRET */
     unsubSecret?: string;
+    /** NB8: platform alarm alicisi (`userId='platform:<ozet>'`) -> `ALERT_EMAIL_TO` adresi; bulunamazsa undefined (kayit `skipped:no_recipient`). */
+    platformRecipient?(hash: string): string | undefined;
     now?(): Date;
     leaseMs?: number;
     batchSize?: number;
@@ -106,6 +109,16 @@ export class EmailDispatcher {
         return h;
     }
 
+    /** Alici/tercih cozumu: platform alicisi env'den (tercih/abonelik yok, dogrulanmis sayilir); digerleri Users + NotificationPreferences. */
+    private async loadRecipient(d: DeliveryDoc): Promise<{ user: MailRecipient | null; prefs: LoadedPrefs; platform: boolean }> {
+        if (isPlatformUserId(d.userId)) {
+            const email = this.d.platformRecipient?.(platformHashOf(d.userId));
+            return { user: email ? { email, emailVerified: true, isActive: true } : null, prefs: {}, platform: true };
+        }
+        const [user, prefs] = await Promise.all([this.d.loadUser(d.userId), this.d.loadPrefs(d.tid, d.userId)]);
+        return { user, prefs, platform: false };
+    }
+
     /** Ortak on kontroller. `undefined` = gonderilebilir. */
     private gate(def: NotificationDefinition | undefined, user: MailRecipient | null, prefs: LoadedPrefs): string | undefined {
         if (!def) return 'unknown_code';
@@ -121,7 +134,7 @@ export class EmailDispatcher {
     private async processInstant(d: DeliveryDoc, lu: Date): Promise<Outcome> {
         if (d.attempts > MAX_ATTEMPTS) return this.finish(d, lu, { set: { status: 'dead', lastErrorCode: 'lease_expired' } }, 'dead', 'max_attempts');
         const def = getDefinition(d.code);
-        const [user, prefs] = await Promise.all([this.d.loadUser(d.userId), this.d.loadPrefs(d.tid, d.userId)]);
+        const { user, prefs, platform } = await this.loadRecipient(d);
         const why = this.gate(def, user, prefs);
         if (why) return this.skip(d, lu, why);
         const now = this.now();
@@ -129,7 +142,7 @@ export class EmailDispatcher {
             const until = quietUntil(now, prefs.quiet);
             if (until) return this.defer(d, lu, until, 'quiet_hours');
         }
-        const service = def!.mandatory; // zorunlu: abonelik baglantisi yok (ADR-0029 Karar 4)
+        const service = def!.mandatory || platform; // zorunlu ve platform alarmi: abonelik baglantisi yok (ADR-0029 Karar 4)
         const u = this.urls(d.tid, d.userId, def!.category, service);
         if (!u.ok) { log.error({ deliveryId: String(d._id) }, 'PUBLIC_APP_URL/NOTIFY_UNSUB_SECRET eksik: abonelik baglantisi uretilemedi; gonderim ertelendi'); return this.defer(d, lu, new Date(now.getTime() + 5 * MIN), 'misconfigured'); }
         const ev = (await this.d.loadEvents([d.eventId])).get(String(d.eventId));
@@ -161,7 +174,8 @@ export class EmailDispatcher {
 
     private async processDigestGroup(rows: DeliveryDoc[], tally: (o: Outcome) => void): Promise<boolean> {
         const first = rows[0];
-        const prefs = await this.d.loadPrefs(first.tid, first.userId);
+        const platform = isPlatformUserId(first.userId);
+        const prefs = platform ? {} : await this.d.loadPrefs(first.tid, first.userId);
         const now = this.now();
         const oldest = Math.min(...rows.map((r) => new Date(r.createdAt).getTime()));
         const dueAt = nextDigestAt(new Date(oldest), prefs.digest ?? normalizeDigest(undefined), prefs.quiet?.tz ?? DEFAULT_TZ);
@@ -173,7 +187,7 @@ export class EmailDispatcher {
         for (const r of rows) { const l = await this.d.store.leaseDigestById(r._id, now, leaseUntil); if (l) leased.push(l); }
         if (!leased.length) return false;
 
-        const user = await this.d.loadUser(first.userId);
+        const user = (await this.loadRecipient(first)).user;
         const sendable: Array<{ d: DeliveryDoc; def: NotificationDefinition }> = [];
         for (const l of leased) {
             const def = getDefinition(l.code);
@@ -187,7 +201,7 @@ export class EmailDispatcher {
             const until = quietUntil(now, prefs.quiet);
             if (until) { for (const s of sendable) tally(await this.defer(s.d, leaseUntil, until, 'quiet_hours')); return false; }
         }
-        const service = sendable.every((s) => s.def.mandatory);
+        const service = platform || sendable.every((s) => s.def.mandatory);
         const u = this.urls(first.tid, first.userId, UNSUB_ALL, service);
         if (!u.ok) {
             log.error({ tid: first.tid }, 'PUBLIC_APP_URL/NOTIFY_UNSUB_SECRET eksik: ozet ertelendi');

@@ -243,8 +243,14 @@ const TENANT: NotificationDefinition[] = [
     // ---- system ----
     defineNotification({
         code: 'SYSTEM_ANNOUNCEMENT', category: 'system', severity: (p) => (p.kind === 'info' || p.kind === 'release' ? 'info' : 'warning'), severities: ['info', 'warning'],
-        mandatory: false, defaultChannels: { inApp: true, email: 'off' }, audience: { permission: 'app:use', fallbackMinTier: 'member' },
-        params: z.object({ announcementId: id(), kind: z.enum(['info', 'release', 'maintenance', 'incident']) }).strict(),
+        // NB7: e-posta varsayilani 'instant' -- duyuru isi kanal secimini notify `opts.email` ile belirler (yalniz inApp duyuruda false); kullanici kategori tercihi (opt-out) gecerli kalir.
+        mandatory: false, defaultChannels: { inApp: true, email: 'instant' }, audience: { permission: 'app:use', fallbackMinTier: 'member' },
+        // title/summary: platform yoneticisinin yazdigi duyuru metni (tenant verisi/PII degil); Tr zorunlu degil cunku genel yedek sablon vardir.
+        params: z.object({
+            announcementId: id(), kind: z.enum(['info', 'release', 'maintenance', 'incident']),
+            title: z.string().min(1).max(160).optional(), summary: z.string().min(1).max(600).optional(),
+            titleEn: z.string().min(1).max(160).optional(), summaryEn: z.string().min(1).max(600).optional(),
+        }).strict(),
         action: (p) => `/notifications?announcement=${q(p.announcementId)}`, dedupeKey: (p) => p.announcementId, retention: 'standard', surface: 'tenant',
         example: { announcementId: 'AN-1', kind: 'maintenance' },
     }),

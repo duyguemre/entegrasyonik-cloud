@@ -12,7 +12,7 @@ import { FEATURE_SETTINGS } from './features';
  * (silme/ekleme) değişirse elle artırılır. Eski bir `catalogVersion` taşıyan revizyon okunduğunda
  * `IntegrationConfigService` yalnız BİLGİ amaçlı bir uyarı üretir (davranışı DEĞİŞTİRMEZ, ADR §A5).
  */
-export const CATALOG_VERSION = '2026-09-30.b3';
+export const CATALOG_VERSION = '2026-10-01.b4';
 
 /** Kod tabanının bugünkü (Aşama A, ADR-0020) TÜM ayar tanımları. Anahtar (`key`) BENZERSİZDİR (tutarlılık testi). */
 export const SETTINGS_CATALOG: readonly SettingDef<any>[] = [

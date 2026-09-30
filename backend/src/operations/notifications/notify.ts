@@ -6,8 +6,8 @@
 // Cagirana ASLA hata firlatmaz; sonuc `status` ile doner.
 import { logger } from '@platform/core/logger';
 import { getDefinition } from './catalog';
-import type { NotificationSeverity } from './catalog.types';
-import { Member, resolveRecipients, HasPermission } from './audience';
+import type { MinTier, NotificationSeverity } from './catalog.types';
+import { Member, memberTier, resolveRecipients, HasPermission } from './audience';
 import { resolveChannels } from './preferences';
 import { NotificationLedger, LedgerModelLike } from './ledger';
 import { bumpGroup, createForRecipients, InAppNotificationInput, NotificationModelLike } from './inAppRepository';
@@ -29,7 +29,15 @@ export interface NotifyOptions {
     corrId?: string;
     /** Uretici modul adi (defter `source.module`). */
     module?: string;
+    /** NB7: e-posta kanalini cagiran belirler (false = e-posta teslimi uretilmez). Verilmezse katalog/tercih kurali. */
+    email?: boolean;
+    /** NB7: alici kume alt siniri (ornek 'admin' = yalniz sahip ve yoneticiler). */
+    minTier?: MinTier;
+    /** NB8: golge mod -- yalniz defter yazilir (`suppressed:shadow`), uygulama ici belge/e-posta/zil uretilmez. */
+    shadow?: boolean;
 }
+
+const TIER_RANK: Record<MinTier, number> = { member: 1, admin: 2, owner: 3 };
 
 export interface DeliveryModelLike { insertMany(docs: any[]): Promise<any[]> }
 
@@ -99,6 +107,17 @@ export class Notifier {
         }
     }
 
+    /** NB8 golge mod: yalniz defter kaydi (idempotency/grup YOK); tenant bildirimi uretilmez. */
+    private async recordShadow(code: string, category: string, tid: number, severity: string, params: Record<string, unknown>, opts: NotifyOptions, occurredAt: Date): Promise<NotifyResult> {
+        const r = await this.ledger.tryInsert({
+            tid, code, category, severity, kind: 'event', idemKey: `s:${code}:${tid}:${occurredAt.getTime()}:${Math.random().toString(36).slice(2, 10)}`,
+            lastOccurredAt: occurredAt, params, source: { module: opts.module, corrId: opts.corrId },
+        });
+        if (!r.inserted) return { status: 'failed', reason: 'ledger_conflict' };
+        await this.ledger.finalize(r.id, { recipientCount: 0, inAppCount: 0, emailQueued: 0, suppressedCount: 1 });
+        return { status: 'suppressed', eventId: r.id, recipients: 0, reason: 'shadow' };
+    }
+
     private async run(code: string, tid: number, rawParams: Record<string, unknown>, opts: NotifyOptions, legacy?: LegacyOverride): Promise<NotifyResult> {
         const def = getDefinition(code);
         if (!def) { log.warn({ notifyCode: code }, 'bilinmeyen bildirim kodu'); return { status: 'failed', reason: 'unknown_code' }; }
@@ -117,6 +136,7 @@ export class Notifier {
             if (JSON.stringify(params).length > 2048) return { status: 'failed', reason: 'params_too_large' };
         }
         const occurredAt = opts.occurredAt ?? this.now();
+        if (opts.shadow) return this.recordShadow(def.code, def.category, tid, legacy ? 'info' : typeof def.severity === 'function' ? def.severity(params) : def.severity, params, opts, occurredAt);
         const severity: NotificationSeverity = legacy ? legacy.severity : typeof def.severity === 'function' ? def.severity(params) : def.severity;
         const base = { tid, code: def.code, category: def.category, severity, source: { module: opts.module, corrId: opts.corrId } };
         const stored = legacy ? undefined : params;
@@ -165,7 +185,8 @@ export class Notifier {
 
             // 5) alicilar
             const members = await this.deps.listMembers(tid);
-            const recipients = resolveRecipients(def, opts, members, this.deps.hasPermission);
+            let recipients = resolveRecipients(def, opts, members, this.deps.hasPermission);
+            if (opts.minTier) recipients = recipients.filter((m) => TIER_RANK[memberTier(m)] >= TIER_RANK[opts.minTier!]);
             if (!recipients.length) {
                 await this.ledger.finalize(eventId, { recipientCount: 0, inAppCount: 0, emailQueued: 0, suppressedCount: 0 });
                 return { status: 'suppressed', eventId, recipients: 0, reason: 'no_recipients' };
@@ -197,7 +218,7 @@ export class Notifier {
             for (const m of recipients) {
                 if (opts.actorImpersonating && m.userId === opts.actorUserId) { suppressed++; continue; } // destek aktoru e-posta ALAMAZ
                 const ch = resolveChannels(def);
-                if (ch.email === 'off') continue;
+                if (ch.email === 'off' || opts.email === false) continue;
                 let status: 'pending' | 'skipped' = 'pending'; let reason: string | undefined;
                 if (!emailEnabled) { status = 'skipped'; reason = 'disabled'; }
                 else if (m.emailVerified !== true && !(def.mandatory && EMAIL_UNVERIFIED_EXEMPT.has(def.category))) { status = 'skipped'; reason = 'unverified'; }

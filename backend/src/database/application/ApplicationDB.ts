@@ -104,6 +104,8 @@ export default class ApplicationDB implements IApplicationDB {
     public getNotificationEventModel() { return this.database.getModel('notification_event'); }
     public getNotificationDeliveryModel() { return this.database.getModel('notification_delivery'); }
     public getNotificationPreferencesModel() { return this.database.getModel('notification_preferences'); }
+    public getAnnouncementModel() { return this.database.getModel('announcement'); }
+    public getAlertModel() { return this.database.getModel('alert'); }
     // [ADR-0016 §2 / ADR-0017 Karar 3] `platform/runtime/scheduler`: iş başına Mongo lease + JobRunRegistry.
     public getJobLeaseModel() { return this.database.getModel('job_lease'); }
     public getJobStateModel() { return this.database.getModel('job_state'); }

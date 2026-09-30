@@ -193,6 +193,9 @@ export interface IApplicationDB {
     getNotificationEventModel(): any
     getNotificationDeliveryModel(): any
     getNotificationPreferencesModel(): any
+    // [ADR-0029 NB7/NB8] platform duyurulari + uyari yasam dongusu.
+    getAnnouncementModel(): any
+    getAlertModel(): any
     // [ADR-0016 §2 / ADR-0017 Karar 3] `platform/runtime/scheduler`: iş başına Mongo lease + JobRunRegistry.
     getJobLeaseModel(): any
     getJobStateModel(): any

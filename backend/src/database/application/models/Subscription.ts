@@ -22,6 +22,8 @@ export const SubscriptionSchema = new mongoose.Schema({
     planVersion: { type: Number, required: true, default: 1 },
     status: { type: String, enum: SUBSCRIPTION_STATUSES, required: true, default: 'trialing' },
     trialEndsAt: { type: Date, required: false },
+    // K40: backoffice deneme uzatmalarının TOPLAM günü (tavan 60; yoksa 0). Yeni alan: göç gerekmez.
+    trialExtensionDays: { type: Number, required: false },
     currentPeriodStart: { type: Date, required: false },
     currentPeriodEnd: { type: Date, required: false },
     cancelAtPeriodEnd: { type: Boolean, required: true, default: false },

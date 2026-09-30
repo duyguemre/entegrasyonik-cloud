@@ -197,7 +197,7 @@ export function configureApis(
             sendError(req, res, e)
         }
     })
-    // [ADR-0026 Karar 4.9] Backoffice bileti tüketir, `imp:true` oturum çerezini basar (60 dk, UZATILMAZ). Açık rota (kimlik = bilet); hız sınırlı.
+    // [ADR-0026 Karar 4.9] Backoffice bileti tüketir, `imp:true` oturum çerezini basar (30 dk - K41, UZATILMAZ). Açık rota (kimlik = bilet); hız sınırlı.
     app.post(context + '/SecurityService/redeemImpersonation', accountTokenLimiter, async (req: Request, res: Response) => {
         try {
             const result = await runOperation(undefined, "SecurityService", "redeemImpersonation", req.body, undefined, { ip: getClientIp(req) })

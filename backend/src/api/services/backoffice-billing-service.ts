@@ -1,3 +1,4 @@
+import { config } from '@config'
 import { IService } from '@interfaces/index'
 import { Types } from 'mongoose'
 import { BaseApi } from '../BaseApi'
@@ -49,6 +50,7 @@ export default class BackofficeBillingService extends BaseApi implements IServic
         return {
             subscriptionModel: this.applicationDB.getSubscriptionModel(), planModel: this.applicationDB.getPlanModel(), billingEventModel: this.applicationDB.getBillingEventModel(),
             provider: () => getPaymentProvider(), invalidateEntitlement: (id: number) => EntitlementService.invalidate(id),
+            liveReadonly: () => config.liveReadonly.enabled,
         }
     }
     private actorCtx() { return { sub: this.request?.principal?.sub as string | undefined, reason: this.reason(), reqId: getRequestId() } }

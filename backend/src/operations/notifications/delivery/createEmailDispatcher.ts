@@ -5,6 +5,7 @@ import { DatabaseManagerInstance } from '@database/DatabaseManager';
 import { EmailDispatcher, type DispatcherDeps, type LedgerEvent, type LoadedPrefs } from './EmailDispatcher';
 import { MongoDeliveryStore } from './deliveryStore';
 import { normalizeDigest, normalizeQuiet } from './schedule';
+import { parseAlertRecipients } from '../platformRecipients';
 
 /** PUBLIC_APP_URL: https (ya da yalniz localhost icin http), kimlik bilgisi/sorgu/parca yok. Gecersiz/yoksa undefined. */
 export function resolveAppUrl(raw: string | undefined): string | undefined {
@@ -45,6 +46,8 @@ export function createEmailDispatcherDeps(): DispatcherDeps {
         appUrl: resolveAppUrl(config.mail.publicAppUrl),
         apiUrl: resolveAppUrl(config.notify.publicApiUrl) ?? resolveAppUrl(config.mail.publicAppUrl), // ADR-0027: abonelik baglantisi API origin'inde
         unsubSecret: config.notify.unsubSecret,
+        // NB8: platform alarm alicisi ozetten env listesine (adres veritabaninda yok)
+        platformRecipient: (hash) => parseAlertRecipients(config.notify.alertEmailTo).find((r) => r.hash === hash)?.email,
     };
 }
 

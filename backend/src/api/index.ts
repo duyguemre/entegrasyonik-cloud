@@ -42,6 +42,8 @@ import BackofficeEngineService from "./services/backoffice-engine-service"
 import BackofficeOverviewService from "./services/backoffice-overview-service"
 import BackofficeIntegrationService from "./services/backoffice-integration-service"
 import BackofficeInfraService from "./services/backoffice-infra-service"
+import BackofficeNotificationService from "./services/backoffice-notification-service"
+import AnnouncementService from "./services/announcement-service"
 export default {
     MenuService,
     SecurityService,
@@ -86,5 +88,7 @@ export default {
     BackofficeEngineService,
     BackofficeOverviewService,
     BackofficeIntegrationService,
-    BackofficeInfraService
+    BackofficeInfraService,
+    BackofficeNotificationService,
+    AnnouncementService
 }

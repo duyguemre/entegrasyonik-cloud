@@ -15,6 +15,7 @@ import { BACKOFFICE_CAPABILITIES } from './domains/backoffice';
 import { BACKOFFICE_INFRA_CAPABILITIES } from './domains/backoffice-infra';
 import { BACKOFFICE_BILLING_CAPABILITIES } from './domains/backoffice-billing';
 import { BACKOFFICE_ENGINE_CAPABILITIES } from './domains/backoffice-engine';
+import { BACKOFFICE_NOTIFICATIONS_CAPABILITIES } from './domains/backoffice-notifications';
 import { REPORTS_CAPABILITIES } from './domains/reports';
 import { SHIPMENTS_CAPABILITIES } from './domains/shipments';
 import { SUPPORT_CAPABILITIES } from './domains/support';
@@ -37,6 +38,7 @@ export const CAPABILITIES: ReadonlyArray<CapabilityDef> = attachRpcInputs([
     ...BACKOFFICE_INFRA_CAPABILITIES,
     ...BACKOFFICE_BILLING_CAPABILITIES,
     ...BACKOFFICE_ENGINE_CAPABILITIES,
+    ...BACKOFFICE_NOTIFICATIONS_CAPABILITIES,
     ...ACCOUNT_CAPABILITIES,
     ...BILLING_CAPABILITIES,
     ...SUPPORT_CAPABILITIES,

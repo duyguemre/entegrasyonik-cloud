@@ -280,6 +280,16 @@ function buildShape(m: Mode) {
         // Abonelik baglantisi API origin'i (bos -> PUBLIC_APP_URL). Abonelikten cikma belirteci HMAC sirri (SIR; yalniz .env).
         PUBLIC_API_URL: t.str(),
         NOTIFY_UNSUB_SECRET: t.str(),
+        // --- ADR-0017 Asama C / ADR-0029 NB8: platform alarm degerlendiricisi (varsayilan KAPALI; DB kapisi 0017 gocu) ---
+        // ALERT_EVALUATOR_ENABLED=false: degerlendirici is DB'ye dokunmadan doner. ALERT_SHADOW_UNTIL (ISO tarih): bu tarihe dek yalniz kayit (e-posta/tenant bildirimi YOK).
+        ALERT_EVALUATOR_ENABLED: t.bool(false),
+        ALERT_SHADOW_UNTIL: t.str(),
+        // Platform alarm e-posta alicilari (virgulle ayrik; yoksa yalniz backoffice Uyarilar paneli). Adres veritabanina YAZILMAZ (yalniz ozet), gonderimde env'den cozulur.
+        ALERT_EMAIL_TO: t.str(),
+
+        // --- ADR-0034 Karar 9 / BR-1: sohbet aracısı. AGENT_LLM_SCRIPTED=true: TÜM tenant'lar için sahte (scripted) LLM sağlayıcısı;
+        // YALNIZ yerel/test (APP_ENV/NODE_ENV=production iken süreç başlamaz; ayrıca ScriptedLlmProvider üretimde kurulamaz). Değer yok = kapalı.
+        AGENT_LLM_SCRIPTED: t.bool(false),
 
         // --- ADR-0020 Karar 3.2/9.1 (Aşama B): iki kişi kuralı iskeleti ---
         // Varsayılan `false` (KAPALI): bugün tek platformAdmin var; açılırsa hiçbir `dangerous` yayın yapılamaz
@@ -431,7 +441,10 @@ function nest(e: Record<string, any>) {
         // ADR-0029 (bildirim sistemi; varsayılan kapalı)
         notify: { v2Enabled: e.NOTIFY_V2_ENABLED as boolean, emailEnabled: e.NOTIFY_EMAIL_ENABLED as boolean,
             streamEnabled: e.NOTIFY_STREAM_ENABLED as boolean, streamMaxPerUser: e.NOTIFY_STREAM_MAX_PER_USER as number, streamMaxTotal: e.NOTIFY_STREAM_MAX_TOTAL as number,
-            realtimeBus: e.REALTIME_BUS as string | undefined, publicApiUrl: e.PUBLIC_API_URL as string | undefined, unsubSecret: e.NOTIFY_UNSUB_SECRET as string | undefined },
+            realtimeBus: e.REALTIME_BUS as string | undefined, publicApiUrl: e.PUBLIC_API_URL as string | undefined, unsubSecret: e.NOTIFY_UNSUB_SECRET as string | undefined,
+            alertEvaluatorEnabled: e.ALERT_EVALUATOR_ENABLED as boolean, alertShadowUntil: e.ALERT_SHADOW_UNTIL as string | undefined, alertEmailTo: e.ALERT_EMAIL_TO as string | undefined },
+        // ADR-0034 (sohbet aracısı)
+        agent: { llmScripted: e.AGENT_LLM_SCRIPTED as boolean },
         // LIVE-RO: canlı salt-okuma kipi
         liveReadonly: { enabled: e.LIVE_READONLY as boolean, allowTokenRefresh: (e.LIVE_READONLY_ALLOW_TOKEN_REFRESH as string[]).map(s => s.toLowerCase()) },
         // ADR-0020 Karar 3.2/9.1 (Aşama B)
@@ -483,12 +496,19 @@ function assertAdminCorsDisjoint(raw: NodeJS.ProcessEnv): void {
     if (issues.length) throw new ConfigError(issues);
 }
 
+/** ADR-0034 Karar 9: sahte LLM sağlayıcısı üretimde açılamaz (süreç başlamaz; yalnız değişken ADI). */
+function assertAgentScriptedNotInProduction(cfg: AppConfig): void {
+    if (cfg.agent.llmScripted && (cfg.isProduction || cfg.nodeEnv === 'production')) {
+        throw new ConfigError(['AGENT_LLM_SCRIPTED: production ortamında açılamaz (yalnız yerel/test)']);
+    }
+}
+
 /** Ham ortamı (varsayılan process.env) doğrular. Strict: hata listesi + ConfigError; lenient: hep tipli sonuç. */
 export function parseEnv(raw: NodeJS.ProcessEnv, opts: { strict: boolean }): AppConfig {
     const { schema } = getSchema(opts.strict);
     const res = schema.safeParse(raw);
     if (res.success) {
-        if (opts.strict) assertAdminCorsDisjoint(raw);
+        if (opts.strict) { assertAdminCorsDisjoint(raw); assertAgentScriptedNotInProduction(res.data); }
         return res.data;
     }
     const issues = res.error.issues.map(i => `${String(i.path[0] ?? '(env)')}: ${reasonOf(i)}`);

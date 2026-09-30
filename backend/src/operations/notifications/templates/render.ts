@@ -19,6 +19,13 @@ export interface RenderedNotification { title: string; message: string }
 export function renderNotification(code: string, params: Record<string, unknown>, locale: NotificationLocale = 'tr'): RenderedNotification {
     const def = getDefinition(code);
     if (def?.legacy) return { title: String(params.title ?? ''), message: String(params.message ?? '') };
+    if (code === 'SYSTEM_ANNOUNCEMENT') {
+        // Duyuru metni platform yoneticisinden gelir (params.title/summary[, En]); yoksa genel sablon.
+        const en = locale === 'en';
+        const title = (en ? params.titleEn : undefined) ?? params.title;
+        const summary = (en ? params.summaryEn : undefined) ?? params.summary;
+        if (typeof title === 'string' && title) return { title, message: typeof summary === 'string' ? summary : '' };
+    }
     const t = TABLES[locale]?.[code] ?? TR[code];
     if (!t) return { title: code, message: '' };
     return { title: interpolate(t.title, params), message: interpolate(t.body, params) };
