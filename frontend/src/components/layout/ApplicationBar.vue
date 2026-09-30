@@ -62,6 +62,8 @@ import EkMenuPanel, { type EkMenuGroup, type EkMenuItem } from '@/components/ds/
 import { useWorkspaceStore } from '@/stores/workspace'
 import { useShellBreakpoints } from '@/composables/useShellBreakpoints'
 import { shortcutKeys } from '@/navigation/shortcuts'
+import { useHelpNavigation } from '@/help/useHelpNavigation'
+import { usePageAbout } from '@/composables/usePageAbout'
 
 withDefaults(defineProps<{ visible?: boolean; menuExpanded?: boolean }>(), { visible: true, menuExpanded: undefined })
 const emit = defineEmits<{ 'toggle-menu': []; 'open-shortcuts': []; 'search-dismiss': []; 'search-blur': [] }>()
@@ -79,6 +81,8 @@ const router = useRouter()
 const userApi = useUser()
 const workspace = useWorkspaceStore()
 const notificationDrawer = useNotificationDrawerStore()
+const helpNav = useHelpNavigation()
+const pageAbout = usePageAbout()
 const { locale } = useI18n({ useScope: 'global' })
 const { isDesktop } = useShellBreakpoints()
 
@@ -87,11 +91,21 @@ const storeName = computed(() => userApi.getStoreName() || '')
 const identityName = computed(() => storeName.value || userApi.getUsername.value || 'Mağaza paneli')
 const identityMeta = computed(() => (storeName.value ? userApi.getUsername.value ?? '' : 'Mağaza paneli'))
 
+// Yardım menüsü (faz3-fe-help): yardım merkezi + bağlamsal yardım girişleri. "Bu sayfa hakkında" etkin sekmenin
+// (i) panelini açar (tercih ortak, `usePageAbout`); tur kabuktaki `HelpTour`'u başlatır (`ek:help-tour`).
 const helpGroups: EkMenuGroup[] = [
   {
     label: 'Yardım',
     items: [
+      { key: 'helpCenter', label: 'Yardım merkezi', description: 'Rehberler, sorun giderme ve SSS', icon: 'mdi-book-open-page-variant-outline' },
+      { key: 'pageAbout', label: 'Bu sayfa hakkında', description: 'Amaç, ipuçları ve kısayollar', icon: 'mdi-information-outline' },
+      { key: 'tour', label: 'Uygulama turunu başlat', description: 'Kabuğu 1 dakikada tanıyın', icon: 'mdi-map-marker-path' },
       { key: 'shortcuts', label: 'Klavye kısayolları', icon: 'mdi-keyboard-outline', shortcut: shortcutKeys('shortcutHelp') },
+    ],
+  },
+  {
+    label: 'Destek',
+    items: [
       { key: 'tickets', label: 'Destek kayıtları', description: 'Talep oluşturun, yanıtları izleyin', icon: 'mdi-lifebuoy' },
     ],
   },
@@ -114,6 +128,9 @@ function onHelpSelect(item: EkMenuItem) {
   helpOpen.value = false
   if (item.key === 'shortcuts') emit('open-shortcuts')
   else if (item.key === 'tickets') openByTitle('ticketList')
+  else if (item.key === 'helpCenter') helpNav.openHelp()
+  else if (item.key === 'pageAbout') pageAbout.setOpen(true)
+  else if (item.key === 'tour') window.dispatchEvent(new CustomEvent('ek:help-tour'))
 }
 
 function onAccountSelect(item: EkMenuItem) {

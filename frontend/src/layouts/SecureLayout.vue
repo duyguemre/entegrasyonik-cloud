@@ -68,6 +68,8 @@
     </v-main>
 
     <ShortcutHelpDialog v-model="shortcutHelpOpen" />
+    <!-- faz3-fe-help: isteğe bağlı kısa tur (ilk girişte teklif; Yardım menüsünden yeniden başlatılır). -->
+    <HelpTour :ready="tourReady" />
   </v-layout>
 </template>
 
@@ -82,6 +84,7 @@ import ShellTabStrip from '@/components/layout/ShellTabStrip.vue'
 import ShellChromeHandle from '@/components/layout/ShellChromeHandle.vue'
 import ShortcutHelpDialog from '@/components/layout/ShortcutHelpDialog.vue'
 import ShellSubscriptionBanner from '@/components/layout/ShellSubscriptionBanner.vue'
+import HelpTour from '@/components/help/HelpTour.vue'
 import { useSubscriptionBannerStore } from '@/stores/subscriptionBanner'
 import { useMenuStore } from '@/stores/site/menu'
 import { useSidebarStore } from '@/stores/sidebar'
@@ -122,6 +125,7 @@ const appBarRef = ref<InstanceType<typeof ApplicationBar> | null>(null)
 const wrapperRef: any = ref(null)
 const workAreaRef: any = ref(null)
 const shortcutHelpOpen = ref(false)
+const tourReady = ref(false)
 /** Sayfa başlığındaki "Sayfa hakkında" panelinin "Tüm kısayollar" bağlantısı (EkPageBar → `ek:shortcut-help`). */
 const openShortcutHelp = () => (shortcutHelpOpen.value = true)
 
@@ -352,6 +356,8 @@ onMounted(async () => {
   document.addEventListener('fullscreenchange', onFullscreenChange)
   subscriptionStore.start()
   await workspace.init()
+  const menu = menuStore.getMenu?.()
+  tourReady.value = Array.isArray(menu) && menu.length > 0
 })
 
 // ADR-0012 Karar 5 "etkin sekme değişiminde odak çalışma alanına taşınır" + DS-v2 giriş hareketi.

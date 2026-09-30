@@ -46,12 +46,16 @@
       <div class="ek-page-bar__about">
         <section class="ek-page-bar__block">
           <h2 class="ek-page-bar__label">Bu sayfa</h2>
-          <p class="ek-page-bar__text">{{ description || `${title} ekranı.` }}</p>
+          <p class="ek-page-bar__text">{{ purpose || `${title} ekranı.` }}</p>
+          <button v-if="help?.article" type="button" class="ek-page-bar__all ek-page-bar__read" data-page-help-read @click="nav.openHelp(help.article)">
+            Yardım merkezinde oku
+            <v-icon icon="mdi-arrow-right" aria-hidden="true" />
+          </button>
         </section>
-        <section v-if="tips?.length" class="ek-page-bar__block">
+        <section v-if="tipList?.length" class="ek-page-bar__block">
           <h2 class="ek-page-bar__label">İpuçları</h2>
           <ul class="ek-page-bar__tips">
-            <li v-for="tip in tips" :key="tip">{{ tip }}</li>
+            <li v-for="tip in tipList" :key="tip">{{ tip }}</li>
           </ul>
         </section>
         <section class="ek-page-bar__block ek-page-bar__block--keys">
@@ -70,14 +74,17 @@
 </template>
 
 <script setup lang="ts">
-import { useId } from 'vue'
+import { computed, useId } from 'vue'
 import EkCollapse from './EkCollapse.vue'
 import EkKbd from './EkKbd.vue'
 import EkRefreshButton from './EkRefreshButton.vue'
 import { SHORTCUTS, type ShortcutId } from '@/navigation/shortcuts'
 import { usePageAbout } from '@/composables/usePageAbout'
+import { useTabScope } from '@/composables/useTabScope'
+import { pageHelpFor } from '@/help/pageHelpLookup'
+import { useHelpNavigation } from '@/help/useHelpNavigation'
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   title: string
   /** Kayıt defterindeki bölüm adı (breadcrumb'ın ilk halkası; tıklanabilir değil). */
   section?: string
@@ -92,6 +99,8 @@ withDefaults(defineProps<{
   refreshing?: boolean
   refreshLabel?: string
   lastUpdated?: Date | string | number | null
+  /** Sayfa yardımı anahtarı (`help/pageHelp.ts`); verilmezse içinde bulunulan çalışma alanı sekmesinin kodu. */
+  helpKey?: string
 }>(), { refreshLabel: 'Yenile' })
 const emit = defineEmits<{ refresh: [] }>()
 
@@ -102,7 +111,24 @@ const PAGE_KEYS: Array<{ id: ShortcutId; label: string }> = [
   { id: 'focusMode', label: 'Tam ekran' },
   { id: 'pageRefresh', label: 'Sayfayı yenile' },
 ]
-const keys = PAGE_KEYS.map((k) => ({ ...k, keys: SHORTCUTS.find((s) => s.id === k.id)?.keys ?? [] }))
+// Bağlamsal yardım (faz3-fe-help): "Sayfa hakkında" içeriğinin TEK kaydı `help/pageHelp.ts` (ekran → amaç, ipuçları,
+// kısayollar, makale). Anahtar sekme kabından (`WorkspaceTabHost` → `ek-tab-host-<kod>`) gelir; kayıtta yoksa sayfanın
+// kendi `description`/`tips` değerleri kullanılır (vitrin, sekme dışı kullanım).
+const scope = useTabScope()
+const nav = useHelpNavigation()
+const tabCode = scope?.hostId.replace(/^ek-tab-host-/, '')
+const help = computed(() => pageHelpFor(props.helpKey ?? tabCode))
+const purpose = computed(() => help.value?.purpose ?? props.description)
+const tipList = computed(() => help.value?.tips ?? props.tips)
+
+const SHORT_LABEL: Partial<Record<ShortcutId, string>> = Object.fromEntries(PAGE_KEYS.map((k) => [k.id, k.label]))
+const keys = computed(() => {
+  const ids = (help.value?.shortcuts?.length ? help.value.shortcuts : PAGE_KEYS.map((k) => k.id)) as ShortcutId[]
+  return ids
+    .map((id) => SHORTCUTS.find((s) => s.id === id))
+    .filter((s): s is NonNullable<typeof s> => !!s)
+    .map((s) => ({ id: s.id, label: SHORT_LABEL[s.id] ?? s.label, keys: s.keys }))
+})
 
 const about = usePageAbout()
 const panelId = `ek-page-about-${useId()}`
@@ -294,6 +320,17 @@ function openShortcutHelp() {
 
 .ek-page-bar__all:hover {
   text-decoration: underline;
+}
+
+.ek-page-bar__read {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  min-height: 24px;
+}
+
+.ek-page-bar__read :deep(.v-icon) {
+  font-size: var(--ek-icon-sm);
 }
 
 @media (max-width: 1023px) {

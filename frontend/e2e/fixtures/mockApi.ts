@@ -160,6 +160,16 @@ async function respond(route: Route, def: MockValue, extraHeaders: Record<string
  * (konsola uyarı basılır — testte "[mockApi] Eşlenmemiş" araması ile yakalanabilir).
  */
 export async function installApiMocks(page: Page, overrides: Record<string, MockValue> = {}) {
+  // faz3-fe-help (kasten değişen davranış): ilk girişte sağ altta "uygulama turu" teklifi çıkar. Mevcut spec'ler
+  // (ekran görüntüsü tabanları, axe, tıklamalar) bu teklif OLMADAN yazıldı → varsayılan "reddedildi" başlar.
+  // Turu sınayan spec (`help-center.spec.ts`) bu anahtarı kendi init betiğiyle siler.
+  await page.addInitScript(() => {
+    try {
+      if (!window.sessionStorage.getItem('ek.e2e.tourOptIn')) window.localStorage.setItem('ek.help.v1.tour', 'dismissed')
+    } catch {
+      /* depo yok */
+    }
+  })
   await page.route('**/api/**', async (route) => {
     const method = route.request().method()
     const cors = await corsHeaders(route)
