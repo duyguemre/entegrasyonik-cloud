@@ -7,7 +7,6 @@
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import Section from '../../components/Section.astro'
 import PageHero from '../../components/pages/PageHero.astro'
-import PageMeta from '../../components/pages/PageMeta.astro'
 import SectionHead from '../../components/pages/SectionHead.astro'
 import HeroActions from '../../components/pages/HeroActions.astro'
 import Accordion from '../../components/pages/Accordion.astro'
@@ -17,12 +16,11 @@ import { clusters, getGuide, getGuideCta, guideHref, guides, guidesIn, GLOSSARY_
 import { glossary } from '../../data/kb/glossary'
 import { sources } from '../../data/kb/sources'
 import { GLOSSARY_PREVIEW, HUB, HUB_FAQ, MARKET_HIGHLIGHT, PRINCIPLES } from '../../data/kb/hub'
-import { breadcrumbJsonLd, faqJsonLd } from '../../lib/seo'
-import { collectionJsonLd } from '../../lib/kb-jsonld'
+import { crumbsFor } from '../../data/seo'
 import { formatTrDate } from '../../lib/kb-render'
 import { appUrls } from '../../lib/site-config'
 
-const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Rehber' }]
+const crumbs = crumbsFor(REHBER_PATH)
 const usedSources = new Set(guides.flatMap((g) => g.sources))
 const officialCount = [...usedSources].filter((id) => sources[id].trust === 'R').length
 const featured = guides.slice(0, 3)
@@ -31,22 +29,9 @@ const marketSource = sources[MARKET_HIGHLIGHT.source]
 const glossaryPreview = GLOSSARY_PREVIEW.map((id) => glossary.find((t) => t.id === id)!)
 const cta = getGuideCta('channels')
 
-const jsonLd = [
-  breadcrumbJsonLd([
-    { label: 'Ana sayfa', path: '/' },
-    { label: 'Rehber', path: REHBER_PATH },
-  ]),
-  collectionJsonLd(HUB.title, HUB.description, REHBER_PATH, [
-    ...guides.map((g) => ({ name: g.title, path: guideHref(g.slug) })),
-    { name: 'E-ticaret entegrasyon sözlüğü', path: GLOSSARY_PATH },
-  ]),
-  faqJsonLd(HUB_FAQ),
-]
 ---
 
-<BaseLayout title={HUB.seoTitle} description={HUB.description}>
-  <PageMeta slot="head" title={HUB.seoTitle} description={HUB.description} jsonLd={jsonLd} />
-
+<BaseLayout path={REHBER_PATH}>
   <PageHero title={HUB.title} lead={HUB.lead} crumbs={crumbs} eyebrow="Rehber">
     <HeroActions
       actions={[

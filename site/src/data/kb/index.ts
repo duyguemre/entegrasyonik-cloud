@@ -6,12 +6,13 @@
  *   `getPublicCapabilities()`, kanal adları ve kimlik bilgisi türleri `getPublicIntegrations()` / `getConnectGuide()`
  *   kayıtlarından gelir (roadmap sızmaz). Fatura bağlamı "fatura düzenlemez" olumsuzlamasıyla başlar.
  */
-import type { ClusterId, CtaKind, Guide } from './types'
+import type { ClusterId, CtaKind, GlossaryTerm, Guide } from './types'
 import { mevzuatGuides } from './guides/mevzuat'
 import { pazaryeriGuides } from './guides/pazaryerleri'
 import { operasyonGuides } from './guides/operasyon'
 import { ikinciDalgaGuides } from './guides/ikinci-dalga'
 import { sources, type Source, type SourceId } from './sources'
+import { glossary } from './glossary'
 import { getPublicCapabilities } from '../capabilities'
 import { getPublicIntegration, getPublicIntegrations } from '../integrations'
 import { getConnectGuide } from '../connect'
@@ -33,6 +34,12 @@ const rank = (g: Guide) => {
 export const guides: Guide[] = [...all].sort((a, b) => rank(a) - rank(b))
 
 export const guideHref = (slug: string): string => `${REHBER_PATH}/${slug}`
+
+/** Sözlük terimleri Türkçe alfabetik sırada (sayfa ve DefinedTermSet aynı sırayı kullanır). */
+export const glossarySorted = (): GlossaryTerm[] => {
+  const collator = new Intl.Collator('tr-TR', { sensitivity: 'base' })
+  return [...glossary].sort((a, b) => collator.compare(a.term, b.term))
+}
 export const getGuide = (slug: string): Guide | undefined => guides.find((g) => g.slug === slug)
 
 export interface Cluster {

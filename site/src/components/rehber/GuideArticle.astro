@@ -1,7 +1,8 @@
 ---
 /**
- * GuideArticle — rehber sayfası iskeleti (S20). BaseLayout/PageMeta/PageHero/Accordion ortak bileşenlerini kullanır;
- * layout ve SEO altyapısına (S19 alanı) dokunmaz: JSON-LD `PageMeta` `jsonLd` prop'u ile verilir.
+ * GuideArticle — rehber sayfası iskeleti (S20). BaseLayout/PageHero/Accordion ortak bileşenlerini kullanır.
+ * S20b: başlık/açıklama/canonical/OG/JSON-LD (Article + FAQPage + HowTo + BreadcrumbList) S19 tek kaynağından —
+ * `src/data/seo.ts` rehber kaydı + `src/lib/kb-jsonld.ts`; BaseLayout basar. Ekmek kırıntısı `crumbsFor()` ile aynı zincir.
  *
  * Düzen: koyu kompakt hero (ekmek kırıntısı + tek h1 + cam "Rehber bilgileri" paneli) → iki sütun: yapışkan
  * içindekiler (≥1024) + okuma sütunu (ölçülü satır uzunluğu `--site-measure`). Okuma sütunu sırası:
@@ -13,16 +14,14 @@
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import Container from '../Container.astro'
 import PageHero from '../pages/PageHero.astro'
-import PageMeta from '../pages/PageMeta.astro'
 import Accordion from '../pages/Accordion.astro'
 import Icon from '../home/Icon.astro'
 import GuideBlocks from './GuideBlocks.astro'
 import SourceList from './SourceList.astro'
 import { clusterOf, getGuideCta, guideHref, readingMinutes, relatedOf, sourcesOf, REHBER_PATH } from '../../data/kb'
 import type { Guide } from '../../data/kb/types'
-import { breadcrumbJsonLd, faqJsonLd } from '../../lib/seo'
-import { articleJsonLd, howToJsonLd } from '../../lib/kb-jsonld'
-import { formatTrDate, plainKb, renderKbInline } from '../../lib/kb-render'
+import { crumbsFor } from '../../data/seo'
+import { formatTrDate, renderKbInline } from '../../lib/kb-render'
 import { appUrls } from '../../lib/site-config'
 
 interface Props {
@@ -39,17 +38,7 @@ const cta = getGuideCta(g.cta, g.ctaChannel)
 const minutes = readingMinutes(g)
 const faqItems = g.faq.map((f) => ({ id: `sss-${f.id}`, question: f.question, answer: f.answer }))
 
-const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Rehber', href: REHBER_PATH }, { label: g.title }]
-const jsonLd = [
-  breadcrumbJsonLd([
-    { label: 'Ana sayfa', path: '/' },
-    { label: 'Rehber', path: REHBER_PATH },
-    { label: g.title, path },
-  ]),
-  articleJsonLd(g, path, srcs),
-  faqJsonLd(g.faq.map((f) => ({ question: f.question, answer: plainKb(f.answer) }))),
-  howToJsonLd(g),
-].filter((x): x is Record<string, unknown> => Boolean(x))
+const crumbs = crumbsFor(path)
 
 const toc = [
   { id: 'kisa-yanit', label: 'Kısa yanıt' },
@@ -59,9 +48,7 @@ const toc = [
 ]
 ---
 
-<BaseLayout title={g.seoTitle} description={g.description}>
-  <PageMeta slot="head" title={g.seoTitle} description={g.description} jsonLd={jsonLd} />
-
+<BaseLayout path={path}>
   <article class="guide" data-testid="guide-page" data-slug={g.slug} aria-labelledby="page-title">
     <PageHero title={g.title} eyebrow={cluster.title} lead={g.description} crumbs={crumbs} visualDesktopOnly>
       <p class="guide-hero-meta">

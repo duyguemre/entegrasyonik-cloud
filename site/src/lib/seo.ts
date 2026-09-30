@@ -21,6 +21,7 @@ import { getConnectGuide } from '../data/connect'
 import { getPublicIntegration, type PublicIntegration } from '../data/integrations'
 import { getPublicCapabilities } from '../data/capabilities'
 import { defaultPlanSource, getPublicPlans, trialOffer, type PlanSource } from '../data/plans'
+import { kbJsonLd } from './kb-jsonld'
 import {
   SITE_NAME,
   canonicalPath,
@@ -147,7 +148,7 @@ export function webPageJsonLd(entry: SeoEntry): Node {
   if (entry.path !== '/' && entry.crumb) node.breadcrumb = { '@id': `${pageUrl(entry.path)}#breadcrumb` }
   // Geliştirme aşamasındaki (upcoming) sayfa bugünkü yazılımın parçası gibi işaretlenmez.
   if ((entry.section === 'product' || entry.section === 'integrations') && !entry.upcoming) node.about = { '@id': SOFTWARE_ID() }
-  if (type === 'FAQPage') {
+  if (type === 'FAQPage' && !entry.kb) {
     node.mainEntity = getPublicFaq().map((i) => ({
       '@type': 'Question',
       name: i.question,
@@ -224,7 +225,11 @@ export function howToJsonLd(i: PublicIntegration, description: string): Node | u
 
 /** Kayıttaki `schema` alanına göre sayfanın tüm JSON-LD düğümleri (sıra: sayfa, breadcrumb, ek düğümler). */
 export function jsonLdFor(entry: SeoEntry): Node[] {
-  const nodes: Node[] = [webPageJsonLd(entry)]
+  const page = webPageJsonLd(entry)
+  // S20b: rehber sayfaları — sayfa düğümüne ek (hub ItemList) + Article/FAQPage/HowTo/DefinedTermSet `kb-jsonld`'den.
+  const kb = entry.kb ? kbJsonLd(entry) : undefined
+  if (kb?.mainEntity) page.mainEntity = kb.mainEntity
+  const nodes: Node[] = [page]
   const trail = crumbTrail(entry.path)
   if (trail.length > 0) nodes.push(breadcrumbJsonLd(trail, entry.path))
   if (entry.schema.includes('Organization')) nodes.push(organizationJsonLd())
@@ -235,6 +240,7 @@ export function jsonLdFor(entry: SeoEntry): Node[] {
     const howTo = integration ? howToJsonLd(integration, entry.description) : undefined
     if (howTo) nodes.push(howTo)
   }
+  if (kb) nodes.push(...kb.nodes)
   return nodes
 }
 

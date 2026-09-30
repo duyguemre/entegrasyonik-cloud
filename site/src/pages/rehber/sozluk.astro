@@ -7,23 +7,20 @@
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import Container from '../../components/Container.astro'
 import PageHero from '../../components/pages/PageHero.astro'
-import PageMeta from '../../components/pages/PageMeta.astro'
 import CtaBand from '../../components/pages/CtaBand.astro'
 import Icon from '../../components/home/Icon.astro'
 import SourceList from '../../components/rehber/SourceList.astro'
-import { getGuide, getGuideCta, guideHref, GLOSSARY_PATH, REHBER_PATH } from '../../data/kb'
+import { getGuide, getGuideCta, glossarySorted, guideHref, GLOSSARY_PATH, REHBER_PATH } from '../../data/kb'
 import { glossary, GLOSSARY_META } from '../../data/kb/glossary'
 import { sources } from '../../data/kb/sources'
-import { breadcrumbJsonLd } from '../../lib/seo'
-import { definedTermSetJsonLd } from '../../lib/kb-jsonld'
+import { crumbsFor } from '../../data/seo'
 import { formatTrDate } from '../../lib/kb-render'
 import { appUrls } from '../../lib/site-config'
 
-const { title, seoTitle, description, lead } = GLOSSARY_META
-const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Rehber', href: REHBER_PATH }, { label: 'Sözlük' }]
+const { title, lead } = GLOSSARY_META
+const crumbs = crumbsFor(GLOSSARY_PATH)
 
-const collator = new Intl.Collator('tr-TR', { sensitivity: 'base' })
-const sorted = [...glossary].sort((a, b) => collator.compare(a.term, b.term))
+const sorted = glossarySorted()
 const letterOf = (term: string) => term.charAt(0).toLocaleUpperCase('tr-TR')
 const groups: Array<{ letter: string; id: string; terms: typeof glossary }> = []
 for (const t of sorted) {
@@ -38,19 +35,9 @@ for (const t of sorted) {
 const srcs = GLOSSARY_META.sources.map((id) => sources[id])
 const cta = getGuideCta('stock')
 
-const jsonLd = [
-  breadcrumbJsonLd([
-    { label: 'Ana sayfa', path: '/' },
-    { label: 'Rehber', path: REHBER_PATH },
-    { label: 'Sözlük', path: GLOSSARY_PATH },
-  ]),
-  definedTermSetJsonLd(title, description, GLOSSARY_PATH, sorted, guideHref),
-]
 ---
 
-<BaseLayout title={seoTitle} description={description}>
-  <PageMeta slot="head" title={seoTitle} description={description} jsonLd={jsonLd} />
-
+<BaseLayout path={GLOSSARY_PATH}>
   <article class="gloss" data-testid="glossary-page" aria-labelledby="page-title">
     <PageHero title={title} eyebrow="Rehber · Sözlük" lead={lead} crumbs={crumbs}>
       <p class="gloss-hero-meta">

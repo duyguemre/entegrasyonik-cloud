@@ -18,6 +18,9 @@ import { getPublicIntegrations, type IntegrationKind, type PublicIntegration } f
 import { getConnectGuide } from './connect'
 import { legalDocs, legalHref, LEGAL_REVIEWED } from './legal'
 import { ASSISTANT_NAME, ASSISTANT_PATH, assistantLlms } from './assistant'
+import { clusterOf, guideHref, guides, GLOSSARY_PATH, REHBER_PATH } from './kb'
+import { HUB } from './kb/hub'
+import { GLOSSARY_META } from './kb/glossary'
 
 export const SITE_NAME = 'Entegrasyonik'
 export const TITLE_SEPARATOR = ' · '
@@ -36,8 +39,13 @@ export type SchemaNode =
   | 'FAQPage'
   | 'HowTo'
   | 'BreadcrumbList'
+  | 'Article'
+  | 'DefinedTermSet'
 
-export type SeoSection = 'product' | 'integrations' | 'help' | 'company' | 'legal' | 'system'
+export type SeoSection = 'product' | 'integrations' | 'help' | 'company' | 'legal' | 'system' | 'rehber'
+
+/** Rehber (S20) sayfasının bilgi merkezi kaydı: JSON-LD (Article/FAQPage/HowTo/DefinedTermSet/ItemList) buradan üretilir. */
+export type KbRef = { kind: 'hub' } | { kind: 'glossary' } | { kind: 'guide'; slug: string }
 
 export interface SeoEntry {
   /** Köke göreli yol, sondaki eğik çizgi YOK ('/' hariç). Canonical biçimi `canonicalPath()` ile üretilir. */
@@ -69,6 +77,8 @@ export interface SeoEntry {
   upcoming?: boolean
   /** İlgili entegrasyon kodu (HowTo/OG için). */
   integrationCode?: string
+  /** Rehber sayfası (S20b): içerik ve JSON-LD `src/data/kb/**` kaydından. */
+  kb?: KbRef
 }
 
 const KIND_PHRASE: Record<IntegrationKind, string> = {
@@ -314,7 +324,63 @@ function legalEntries(): SeoEntry[] {
   }))
 }
 
-export const seoEntries: SeoEntry[] = [...STATIC_ENTRIES, ...integrationEntries(), ...legalEntries()]
+/**
+ * Rehber / bilgi merkezi (S20 içeriği, S20b kaydı): hub, sözlük ve her rehber sayfası. Başlık/açıklama/tarih
+ * `src/data/kb/**` kayıtlarından (S20 içerik kuralları orada; tests/rehber.test.ts). JSON-LD türleri:
+ * hub → CollectionPage (+ ItemList) + FAQPage; sözlük → DefinedTermSet; rehber → Article + FAQPage (+ HowTo).
+ * Bu sayfalar ÜRÜN iddiası değil kaynaklı bilgi içeriğidir: `about: SoftwareApplication` bağlanmaz (section 'rehber').
+ */
+function rehberEntries(): SeoEntry[] {
+  const kbSources = ['src/data/kb', 'src/components/rehber']
+  return [
+    {
+      path: REHBER_PATH,
+      title: HUB.seoTitle,
+      description: HUB.description,
+      index: true,
+      crumb: 'Rehber',
+      schema: ['CollectionPage', 'FAQPage'],
+      ogEyebrow: 'Rehber',
+      section: 'rehber',
+      llmsSummary: 'Pazaryerinde satış, mevzuat ve stok operasyonu üzerine kaynaklı ve tarihli rehberlerin dizini.',
+      sources: ['src/pages/rehber/index.astro', ...kbSources],
+      kb: { kind: 'hub' },
+    },
+    {
+      path: GLOSSARY_PATH,
+      title: GLOSSARY_META.seoTitle,
+      description: GLOSSARY_META.description,
+      index: true,
+      crumb: 'Sözlük',
+      parent: REHBER_PATH,
+      schema: ['WebPage', 'DefinedTermSet'],
+      ogEyebrow: 'Rehber · Sözlük',
+      section: 'rehber',
+      llmsSummary: 'Pazaryeri, stok, API ve mevzuat terimlerinin kısa tanımları; her terimin kalıcı çapası vardır.',
+      sources: ['src/pages/rehber/sozluk.astro', ...kbSources],
+      kb: { kind: 'glossary' },
+    },
+    ...guides.map(
+      (g) =>
+        ({
+          path: guideHref(g.slug),
+          title: g.seoTitle,
+          description: g.description,
+          index: true,
+          crumb: g.title,
+          parent: REHBER_PATH,
+          schema: g.howTo ? ['WebPage', 'Article', 'FAQPage', 'HowTo'] : ['WebPage', 'Article', 'FAQPage'],
+          ogEyebrow: `Rehber · ${clusterOf(g).title}`,
+          section: 'rehber',
+          llmsSummary: g.summary,
+          sources: ['src/pages/rehber/[...slug].astro', ...kbSources],
+          kb: { kind: 'guide', slug: g.slug },
+        }) satisfies SeoEntry,
+    ),
+  ]
+}
+
+export const seoEntries: SeoEntry[] = [...STATIC_ENTRIES, ...integrationEntries(), ...rehberEntries(), ...legalEntries()]
 
 /** '/sss/' | '/sss/index.html' | '/404.html' → '/sss' | '/404'. */
 export function normalizePath(pathname: string): string {
