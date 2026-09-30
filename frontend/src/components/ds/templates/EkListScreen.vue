@@ -20,16 +20,31 @@
 -->
 <template>
   <div class="ek-list-screen">
-    <header class="ek-list-screen__head" :class="{ 'is-headless': !title }">
-      <div v-if="title" class="ek-list-screen__titles">
-        <nav v-if="section" class="ek-list-screen__breadcrumb" aria-label="Breadcrumb">
-          <span>{{ section }}</span>
-          <v-icon icon="mdi-chevron-right" size="14" aria-hidden="true" />
-          <span class="ek-list-screen__breadcrumb-current">{{ title }}</span>
-        </nav>
-        <h1 class="ek-list-screen__title">{{ title }}</h1>
-        <p v-if="description" class="ek-list-screen__desc">{{ description }}</p>
-      </div>
+    <!-- Aşama 5: başlık = EkPageBar (bölüm › H1 (i) … arama + eylemler tek satırda; açıklama "Sayfa hakkında" panelinde). -->
+    <header v-if="title" class="ek-list-screen__head">
+      <EkPageBar :section="section" :title="title" :description="description" :tips="tips ?? autoTips">
+        <template #actions>
+          <div class="ek-list-screen__head-actions">
+            <v-text-field
+              v-if="searchPlaceholder !== undefined"
+              :model-value="search"
+              :label="searchPlaceholder"
+              prepend-inner-icon="mdi-magnify"
+              clearable
+              hide-details
+              density="compact"
+              class="ek-list-screen__search"
+              @update:model-value="(v: string | null) => emit('update:search', v ?? '')"
+              @keyup.enter="emit('search-submit')"
+              @click:clear="emit('search-submit')"
+            />
+            <span v-if="$slots['header-actions']" class="ek-list-screen__extra"><slot name="header-actions" /></span>
+            <EkButton v-if="refreshable" class="ek-list-screen__refresh" tone="ghost" icon="mdi-refresh" icon-only :aria-label="refreshLabel" :loading="loading" @click="emit('refresh')" />
+          </div>
+        </template>
+      </EkPageBar>
+    </header>
+    <header v-else class="ek-list-screen__head is-headless">
       <div class="ek-list-screen__head-actions">
         <v-text-field
           v-if="searchPlaceholder !== undefined"
@@ -143,6 +158,7 @@ import EkDataGrid, { type EkGridColumn, type EkGridSort } from '../EkDataGrid.vu
 import EkPagerBar from '../EkPagerBar.vue'
 import EkButton from '../EkButton.vue'
 import EkSavedViews, { type EkSavedViewsConfig } from '../EkSavedViews.vue'
+import EkPageBar from '../EkPageBar.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -150,7 +166,10 @@ const props = withDefaults(
     title?: string
     /** Bölüm yolu (breadcrumb) — sol menüdeki bölüm adı (ör. "Satış"); EkPageHeader ile aynı ritim. */
     section?: string
+    /** Sayfanın amacı — Aşama 5: "Sayfa hakkında" (i) panelinde. */
     description?: string
+    /** Panel ipuçları; verilmezse listenin yeteneklerinden (arama, filtre, seçim, sıralama, görünümler) üretilir. */
+    tips?: string[]
     /** Tablo ve çerçevenin erişilebilir adı. */
     label: string
     /** Seçim çubuğu için nesne adı ("sipariş", "ürün" …). */
@@ -244,6 +263,17 @@ const slots = useSlots()
 const cellSlots = computed(() => Object.keys(slots).filter((n) => n.startsWith('cell-')))
 const isFiltered = computed(() => props.chips.length > 0)
 
+/** Listenin GERÇEKTEN sunduğu yeteneklerden kısa kullanım ipuçları (uydurma özellik anlatılmaz). */
+const autoTips = computed(() => {
+  const tips: string[] = []
+  if (props.searchPlaceholder !== undefined) tips.push(`Arama kutusunda arayın (${props.searchPlaceholder.replace(/\s+Ara$/i, '').toLocaleLowerCase('tr-TR')}).`)
+  if (slots.filters) tips.push('Filtreler panelini başlığından açıp kapatın; uygulanan filtreler çip olarak görünür ve tek tıkla kaldırılır.')
+  if (props.savedViews) tips.push('Sık kullandığınız filtreleri "Görünümler" menüsüyle kaydedip tek tıkla uygulayın.')
+  if (props.columns.some((c) => c.sortable)) tips.push('Sıralamak için kolon başlığına tıklayın; ikinci tıklama yönü değiştirir.')
+  if (props.selectable) tips.push(`Toplu işlem için ${props.noun} satırlarını seçin; eylemler tablonun üstünde belirir.`)
+  return tips
+})
+
 // Panel açık/kapalı durumu: v-model verilmişse dışarıdan, yoksa bu örnekte (sekmeye yerel) tutulur.
 // Dar ekranda (<768px) panel kapalı başlar: tablo ilk ekranda görünür kalsın.
 const localCollapsed = ref(typeof window !== 'undefined' && window.innerWidth < 768)
@@ -281,42 +311,6 @@ function setCollapsed(v: boolean) {
   flex: 0 1 420px;
 }
 
-.ek-list-screen__titles {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ek-space-1);
-  min-width: 0;
-}
-
-/* Aşama 3: EkPageHeader ile AYNI başlık ritmi (bölüm yolu → H1 → açıklama). */
-.ek-list-screen__breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: var(--ek-space-1);
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
-  line-height: var(--ek-type-caption-line);
-}
-
-.ek-list-screen__breadcrumb-current {
-  color: var(--ek-color-content-default);
-}
-
-.ek-list-screen__title {
-  margin: 0;
-  color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-title-size);
-  line-height: var(--ek-type-title-line);
-  font-weight: var(--ek-type-title-weight);
-}
-
-.ek-list-screen__desc {
-  margin: 0;
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-body-size);
-  line-height: var(--ek-type-body-line);
-}
-
 .ek-list-screen__head-actions {
   display: flex;
   flex-wrap: wrap;
@@ -347,16 +341,7 @@ function setCollapsed(v: boolean) {
 }
 
 @media (min-width: 1024px) {
-  .ek-list-screen__head:not(.is-headless) {
-    flex-wrap: nowrap;
-  }
-
-  .ek-list-screen__head:not(.is-headless) .ek-list-screen__titles {
-    flex: 1 1 auto;
-  }
-
   .ek-list-screen__head:not(.is-headless) .ek-list-screen__head-actions {
-    flex: none;
     flex-wrap: nowrap;
   }
 }

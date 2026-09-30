@@ -17,7 +17,9 @@
       <div class="dash-page">
         <EkPageHeader
           title="Genel bakış"
-          :description="headerDescription"
+          :meta="headerDescription"
+          description="İşletmenizin sipariş, ciro, stok ve entegrasyon durumunun özeti. Kartlardaki oklarla ilgili listeye geçersiniz."
+          :tips="['Kartlardaki sayılar son yüklemeye aittir; Yenile ile tüm kartlar yeniden okunur.', 'Bekleyen aksiyonlar kartı, işlem bekleyen kayıtların listesini doğrudan açar.']"
           :secondary-actions="[{ label: 'Yenile', icon: 'mdi-refresh', onClick: refreshAll }]"
         />
 

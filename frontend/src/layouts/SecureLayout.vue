@@ -122,6 +122,8 @@ const appBarRef = ref<InstanceType<typeof ApplicationBar> | null>(null)
 const wrapperRef: any = ref(null)
 const workAreaRef: any = ref(null)
 const shortcutHelpOpen = ref(false)
+/** Sayfa başlığındaki "Sayfa hakkında" panelinin "Tüm kısayollar" bağlantısı (EkPageBar → `ek:shortcut-help`). */
+const openShortcutHelp = () => (shortcutHelpOpen.value = true)
 
 // ---- Sol menü sunumu (ADR-0015 Karar 2.1/2.2) ----
 
@@ -337,6 +339,7 @@ onMounted(async () => {
   })
   workspace.attachRouter(router)
   window.addEventListener('keydown', onGlobalKeydown)
+  window.addEventListener('ek:shortcut-help', openShortcutHelp)
   document.addEventListener('fullscreenchange', onFullscreenChange)
   subscriptionStore.start()
   await workspace.init()
@@ -360,6 +363,7 @@ onBeforeMount(() => {
 onBeforeUnmount(() => {
   eventBus.off('openTab', workspace.openTab)
   window.removeEventListener('keydown', onGlobalKeydown)
+  window.removeEventListener('ek:shortcut-help', openShortcutHelp)
   document.removeEventListener('fullscreenchange', onFullscreenChange)
   subscriptionStore.stop()
   bannerObserver?.disconnect()
