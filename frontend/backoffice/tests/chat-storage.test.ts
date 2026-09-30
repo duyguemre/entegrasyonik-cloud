@@ -77,3 +77,13 @@ describe('host bağlantıları (yalnız backoffice rotaları)', () => {
     expect(boLinkForEntity({ type: 'order', id: 'O-1', label: 'sipariş' })).toBeNull()
   })
 })
+
+describe('backoffice metinleri', () => {
+  it('tenant dili ("hesap sahibi", "ekip") platform diliyle ezilir; bilinmeyen anahtar pakete bırakılır', async () => {
+    const { boChatText, BO_CHAT_TEXTS } = await import('../src/chat/texts')
+    expect(boChatText('chat.setup.consentCheckbox')).toMatch(/platform yöneticisi/)
+    expect(boChatText('chat.setup.removeBody', { name: 'Otopilot' })).toMatch(/^Kaldırınca Otopilot/)
+    expect(boChatText('chat.panel.close')).toBeUndefined()
+    for (const v of Object.values(BO_CHAT_TEXTS)) expect(v).not.toMatch(/hesap sahibi|tüm ekip|Asistan|Assistant|Copilot/i)
+  })
+})

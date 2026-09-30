@@ -9,7 +9,7 @@
     <BoPageHeader />
     <div class="bo-grid-2 bo-otps">
       <EkCard title="Platform sağlayıcı anahtarı" subtitle="Yalnız yönetim uygulamasındaki sohbet kullanır; müşteri anahtarlarından ayrıdır." icon="mdi-key-chain-variant">
-        <ChatProviderSetup :api="otopilot.controllerRef.value.transport.setup" variant="settings" @changed="onChanged" />
+        <ChatProviderSetup :api="otopilot.controllerRef.value.transport.setup" variant="settings" :translate="otopilot.controllerRef.value.t" @changed="onChanged" />
       </EkCard>
       <EkCard title="Nasıl çalışır?" icon="mdi-information-outline" :heading-level="3">
         <ul class="bo-otps__list">

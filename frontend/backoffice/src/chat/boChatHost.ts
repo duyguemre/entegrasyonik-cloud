@@ -8,6 +8,7 @@ import type { ChatHost } from '@entegrasyonik/chat'
 import type { AppLink, EntityRef } from '@entegrasyonik/chat/protocol'
 import { SCREENS, screenByKey } from '@bo/navigation/screens'
 import { SUB_STATUS, TENANT_STATUS } from '@bo/utils/labels'
+import { boChatText } from './texts'
 
 export const BO_CHAT_SCREEN = 'otopilot'
 export const BO_CHAT_SETTINGS_SCREEN = 'otopilot-settings'
@@ -37,6 +38,7 @@ export function createBoChatHost(router: Router): ChatHost {
   return {
     surface: 'backoffice',
     locale: () => 'tr',
+    t: (key, params) => boChatText(key, params),
     formatDefaults: () => ({ currency: 'TRY', timeZone: 'Europe/Istanbul' }),
     resolveLink(link) {
       const target = resolveBoLink(link)
