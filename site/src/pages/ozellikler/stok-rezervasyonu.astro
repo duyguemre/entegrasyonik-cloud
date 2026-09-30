@@ -13,13 +13,13 @@
  */
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import Section from '../../components/Section.astro'
-import Button from '../../components/Button.astro'
 import Icon from '../../components/home/Icon.astro'
 import PageHero from '../../components/pages/PageHero.astro'
 import PageMeta from '../../components/pages/PageMeta.astro'
 import Accordion from '../../components/pages/Accordion.astro'
 import CtaBand from '../../components/pages/CtaBand.astro'
 import SectionHead from '../../components/pages/SectionHead.astro'
+import HeroActions from '../../components/pages/HeroActions.astro'
 import { getPublicCapabilities, getStockReservationStory } from '../../data/capabilities'
 import { getFeaturePoints } from '../../data/feature-details'
 import { getPublicFaq } from '../../data/faq'
@@ -41,6 +41,12 @@ const faqItems = getPublicFaq().filter((f) => FAQ_IDS.includes(f.id))
 
 const PROBLEM_ICONS = ['orders', 'clock', 'info'] as const
 const BENEFIT_ICONS = ['stock', 'refresh', 'eye', 'layers'] as const
+/** S17 anlatı rotası: bölüm etiketleri ve başlıkları tek yerden (bölüm başlıklarıyla birebir aynı). */
+const STORY_RAIL = [
+  { id: 'sorun', eyebrow: 'Sorun', title: 'Aynı son ürün iki kanalda satıldığında', icon: 'info', tone: 'warn' },
+  { id: 'nasil-calisir', eyebrow: 'Nasıl çalışır', title: 'Her sipariş önce rezervasyondan geçer', icon: 'stock', tone: 'brand' },
+  { id: 'fayda', eyebrow: 'Fayda', title: 'Stoğunuz tek merkezde, kontrol sizde', icon: 'check', tone: 'ok' },
+] as const
 /** Yayın satırındaki adsız kanal düğümleri (yalnızca dekoratif). */
 const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
 ---
@@ -60,8 +66,12 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
   />
 
   <PageHero title="Aşırı satış (overselling) nasıl önlenir?" lead={capability.summary} crumbs={crumbs} eyebrow="Stok rezervasyonu">
-    <Button href={appUrls.register()} variant="inverse" size="lg">Ücretsiz dene</Button>
-    <Button href="#nasil-calisir" variant="inverse-outline" size="lg">Nasıl çalışır</Button>
+    <HeroActions
+      actions={[
+        { label: 'Ücretsiz dene', href: appUrls.register() },
+        { label: 'Nasıl çalışır', href: '#nasil-calisir' },
+      ]}
+    />
     <Fragment slot="visual">
       <figure class="ledger" data-scene="reveal">
         <figcaption class="ledger__tag">Kullanılabilir stok</figcaption>
@@ -84,9 +94,30 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
     </Fragment>
   </PageHero>
 
+  <!-- S17: anlatı omurgası — hero kenarına binen üç adımlı rota (sayfanın kendi bölüm başlıkları; numara CSS sayacı) -->
+  <div class="rail-wrap">
+    <nav class="story-rail" aria-label="Bu sayfadaki anlatı" data-testid="story-rail">
+      <ol role="list">
+        {
+          STORY_RAIL.map((r) => (
+            <li>
+              <a href={`#${r.id}`} class="story-rail__link" data-tone={r.tone}>
+                <span class="story-rail__icon" aria-hidden="true"><Icon name={r.icon} size="sm" /></span>
+                <span class="story-rail__body">
+                  <span class="story-rail__eyebrow">{r.eyebrow}</span>
+                  <span class="story-rail__title">{r.title}</span>
+                </span>
+              </a>
+            </li>
+          ))
+        }
+      </ol>
+    </nav>
+  </div>
+
   <!-- Sorun -->
-  <Section labelledby="sorun-title" class="tight-section">
-    <SectionHead id="sorun-title" eyebrow="Sorun" title="Aynı son ürün iki kanalda satıldığında" />
+  <Section id="sorun" labelledby="sorun-title" class="tight-section">
+    <SectionHead id="sorun-title" eyebrow={STORY_RAIL[0].eyebrow} title={STORY_RAIL[0].title} />
     <ol class="problems" role="list">
       {
         story.problems.map((p, idx) => (
@@ -104,7 +135,7 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
 
   <!-- Nasıl çalışır: koyu sahne + akış -->
   <Section tone="stage" id="nasil-calisir" labelledby="nasil-title" class="flow-section">
-    <SectionHead id="nasil-title" eyebrow="Nasıl çalışır" title="Her sipariş önce rezervasyondan geçer" inverse />
+    <SectionHead id="nasil-title" eyebrow={STORY_RAIL[1].eyebrow} title={STORY_RAIL[1].title} inverse />
     <div class="flow-layout">
       <ol class="flow-steps" role="list" data-testid="stock-steps">
         {
@@ -189,8 +220,8 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
   </Section>
 
   <!-- Fayda -->
-  <Section tone="muted" labelledby="fayda-title" class="tight-section">
-    <SectionHead id="fayda-title" eyebrow="Fayda" title="Stoğunuz tek merkezde, kontrol sizde" />
+  <Section id="fayda" tone="muted" labelledby="fayda-title" class="tight-section">
+    <SectionHead id="fayda-title" eyebrow={STORY_RAIL[2].eyebrow} title={STORY_RAIL[2].title} />
     <ul class="benefits" role="list" data-testid="stock-benefits">
       {
         story.benefits.map((b, idx) => (
@@ -210,13 +241,21 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
       <div class="facts__list">
         <h3 class="facts__title">Arka planda ne olur</h3>
         <ul class="bullets" role="list">
-          {points.map((p) => <li>{p}</li>)}
+          {
+            points.map((p) => (
+              <li>
+                <span class="bullets__check" aria-hidden="true"><Icon name="check" size="sm" /></span>
+                <span>{p}</span>
+              </li>
+            ))
+          }
         </ul>
       </div>
       {
         capability.caveat && (
           <p class="facts__caveat">
-            <strong>Kapsam notu:</strong> {capability.caveat}
+            <Icon name="info" size="sm" />
+            <span><strong>Kapsam notu:</strong> {capability.caveat}</span>
           </p>
         )
       }
@@ -322,6 +361,92 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
   .ledger__caption {
     color: var(--site-color-on-primary-muted);
     font-size: var(--ek-font-size-sm);
+  }
+
+  /* ------------------------------------------------------------------ S17 anlatı rotası (hero kenarına biner) */
+  .rail-wrap {
+    position: relative;
+    z-index: 1;
+    width: min(100% - 2 * var(--site-gutter), var(--site-container-max));
+    margin: calc(var(--ek-space-10) * -1) auto 0;
+  }
+  .story-rail ol {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    overflow: hidden;
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--site-radius-panel);
+    background: var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card-hover);
+    counter-reset: rail;
+  }
+  .story-rail li {
+    counter-increment: rail;
+  }
+  .story-rail li + li {
+    border-top: var(--site-border-width) solid var(--ek-color-border-default);
+  }
+  .story-rail__link {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-4);
+    height: 100%;
+    padding: var(--ek-space-4) var(--ek-space-5);
+    color: inherit;
+    text-decoration: none;
+    transition: background-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .story-rail__link:hover {
+    background: var(--ek-color-surface-muted);
+  }
+  .story-rail__link:focus-visible {
+    outline-offset: calc(var(--site-focus-ring-width) * -1);
+  }
+  .story-rail__icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
+    border-radius: var(--ek-radius-lg);
+  }
+  .story-rail__link[data-tone='warn'] .story-rail__icon {
+    background: var(--ek-color-warning-subtle);
+    color: var(--ek-color-warning);
+  }
+  .story-rail__link[data-tone='brand'] .story-rail__icon {
+    background: linear-gradient(140deg, var(--ek-color-primary), var(--ek-color-primary-darken-1));
+    color: var(--site-color-on-primary);
+  }
+  .story-rail__link[data-tone='ok'] .story-rail__icon {
+    background: var(--ek-color-success-subtle);
+    color: var(--ek-color-success);
+  }
+  .story-rail__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+    min-width: 0;
+  }
+  .story-rail__eyebrow {
+    color: var(--site-link-accent);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .story-rail__eyebrow::before {
+    content: counter(rail, decimal-leading-zero) ' · ';
+    color: var(--site-text-meta);
+  }
+  .story-rail__title {
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+    line-height: var(--ek-line-height-tight);
   }
 
   /* ------------------------------------------------------------------ Sorun kartları */
@@ -806,29 +931,36 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
   .bullets {
     display: flex;
     flex-direction: column;
-    gap: var(--ek-space-2);
+    gap: var(--ek-space-3);
     color: var(--ek-color-content-default);
     font-size: var(--ek-font-size-md);
   }
   .bullets li {
-    position: relative;
-    padding-inline-start: var(--ek-space-5);
+    display: flex;
+    gap: var(--ek-space-3);
+    align-items: flex-start;
+    line-height: var(--site-font-body-line-height);
   }
-  .bullets li::before {
-    content: '';
-    position: absolute;
-    inset-inline-start: 0;
-    top: 0.6em;
-    width: var(--ek-space-2);
-    height: var(--ek-space-2);
+  .bullets__check {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-6);
+    height: var(--ek-space-6);
     border-radius: var(--ek-radius-full);
     background: var(--ek-color-secondary-darken-1);
+    color: var(--site-color-on-primary);
   }
   .facts__caveat {
+    display: flex;
+    gap: var(--ek-space-2);
+    align-items: flex-start;
     align-self: start;
     padding: var(--ek-space-3) var(--ek-space-4);
-    border-inline-start: var(--ek-space-1) solid var(--ek-color-warning);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-warning) 45%, transparent);
     border-radius: var(--ek-radius-md);
+    line-height: var(--site-font-body-line-height);
     background: var(--ek-color-warning-subtle);
     color: var(--ek-color-content-strong);
     font-size: var(--ek-font-size-md);
@@ -841,8 +973,40 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
   }
 
   @media (min-width: 768px) {
+    .story-rail ol {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .story-rail li + li {
+      border-top: 0;
+      border-inline-start: var(--site-border-width) solid var(--ek-color-border-default);
+    }
     .problems {
       grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    /* Neden-sonuç bağı: kartlar arasındaki boşluğun ortasında küçük yön işareti (dekoratif, statik). */
+    .problem + .problem::before,
+    .problem + .problem::after {
+      content: '';
+      position: absolute;
+      z-index: 1;
+      inset-block-start: 50%;
+    }
+    .problem + .problem::before {
+      inset-inline-start: calc(var(--ek-space-5) * -0.5 - var(--ek-space-3));
+      width: var(--ek-space-6);
+      height: var(--ek-space-6);
+      border-radius: var(--ek-radius-full);
+      background: var(--ek-color-surface);
+      box-shadow: 0 0 0 var(--site-border-width) var(--ek-color-border-default), var(--site-shadow-card);
+      transform: translateY(-50%);
+    }
+    .problem + .problem::after {
+      inset-inline-start: calc(var(--ek-space-5) * -0.5 - var(--ek-space-1) * 0.75);
+      width: var(--ek-space-2);
+      height: var(--ek-space-2);
+      border-block-start: calc(var(--site-border-width) * 2) solid var(--site-link-accent);
+      border-inline-end: calc(var(--site-border-width) * 2) solid var(--site-link-accent);
+      transform: translateY(-50%) rotate(45deg);
     }
     .benefits {
       grid-template-columns: repeat(2, minmax(0, 1fr));
