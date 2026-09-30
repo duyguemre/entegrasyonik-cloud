@@ -16,7 +16,7 @@
       :class="{ 'ek-action-btn--danger': isDanger }"
       tone="ghost"
       :size="size"
-      :icon="def.icon"
+      :icon="icon ?? def.icon"
       :icon-only="!showLabel"
       :aria-label="text"
       :disabled="disabled"
@@ -52,6 +52,8 @@ const props = withDefaults(
     disabled?: boolean
     loading?: boolean
     shortcut?: string | string[]
+    /** Alan-özel eylem ikonu (ör. Yanıtla, Okundu işaretle). Genel fiiller (sil, düzenle, görüntüle …) kayıt defterinden gelir. */
+    icon?: string
   }>(),
   { size: 'sm', showLabel: false, disabled: false, loading: false },
 )

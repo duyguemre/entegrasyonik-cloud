@@ -46,11 +46,9 @@
     @refresh="load"
   >
     <template #filters>
-      <v-select
+      <EkSelect kind="channel"
         v-model="form.integrationCode"
-        :items="channelOptions"
-        item-title="title"
-        item-value="code"
+        :items="channelOptionsFrom(channelOptions)"
         :label="t('finance.filters.channel')"
         clearable
       />
@@ -86,6 +84,8 @@
 </template>
 
 <script setup lang="ts">
+import EkSelect from '@/components/ds/EkSelect.vue'
+import { channelOptionsFrom } from '@/components/ds/selectOptions'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import EkListScreen from '@/components/ds/templates/EkListScreen.vue'

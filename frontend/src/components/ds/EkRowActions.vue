@@ -19,6 +19,7 @@
       v-for="item in inlineItems"
       :key="item.key"
       :action="item.action"
+      :icon="item.icon"
       :label="item.label"
       :disabled="item.disabled"
       :loading="item.loading"

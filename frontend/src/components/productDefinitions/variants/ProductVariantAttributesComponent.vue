@@ -156,7 +156,7 @@
                         </template>
 
                         <template v-slot:item="{ item, index, props }: any">
-                          <v-list-item v-bind="props" class="pva-s12">
+                          <v-list-item role="option" v-bind="props" class="pva-s12">
                             <template #title>
                             </template>
                             <div class="d-flex justify-start align-center ml-6">
@@ -203,7 +203,7 @@
                         </template>
 
                         <template v-slot:item="{ item, index, props }: any">
-                          <v-list-item v-bind="props" class="pva-s12">
+                          <v-list-item role="option" v-bind="props" class="pva-s12">
                             <template #title>
                             </template>
                             <div class="d-flex justify-start align-center ml-6">
@@ -260,7 +260,7 @@
                         </template>
 
                         <template v-slot:item="{ item, index, props }: any">
-                          <v-list-item v-bind="props" class="pva-s12">
+                          <v-list-item role="option" v-bind="props" class="pva-s12">
                             <template #title>
                             </template>
                             <div class="d-flex justify-start align-center ml-6">
@@ -306,7 +306,7 @@
                         </template>
 
                         <template v-slot:item="{ item, index, props }: any">
-                          <v-list-item v-bind="props" class="pva-s12">
+                          <v-list-item role="option" v-bind="props" class="pva-s12">
                             <template #title>
                             </template>
                             <div class="d-flex justify-start align-center ml-6">
@@ -362,7 +362,7 @@
                         </template>
 
                         <template v-slot:item="{ item, index, props }: any">
-                          <v-list-item v-bind="props" class="pva-s12">
+                          <v-list-item role="option" v-bind="props" class="pva-s12">
                             <template #title>
                             </template>
                             <div class="d-flex justify-start align-center ml-6">
@@ -408,7 +408,7 @@
                         </template>
 
                         <template v-slot:item="{ item, index, props }: any">
-                          <v-list-item v-bind="props" class="pva-s12">
+                          <v-list-item role="option" v-bind="props" class="pva-s12">
                             <template #title>
                             </template>
                             <div class="d-flex justify-start align-center ml-6">

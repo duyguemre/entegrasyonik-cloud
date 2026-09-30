@@ -61,7 +61,7 @@
       @refresh="getCustomers(true)"
     >
       <template #filters>
-        <v-select v-model="searchCustomerForm.data.cities" :items="CITY_OPTIONS" label="Şehir" multiple chips closable-chips clearable />
+        <EkSelect v-model="searchCustomerForm.data.cities" :items="CITY_OPTIONS" label="Şehir" multiple clearable />
         <v-select v-model="searchCustomerForm.data.status" :items="STATUS_OPTIONS" label="Müşteri durumu" clearable />
       </template>
 
@@ -103,6 +103,7 @@
 </template>
 
 <script setup lang="ts">
+import EkSelect from '@/components/ds/EkSelect.vue'
 import EkRowActions from '@/components/ds/EkRowActions.vue'
 import { ref, onMounted, computed } from 'vue';
 import useRestApi from '@/composables/restapi';

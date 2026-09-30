@@ -63,12 +63,12 @@
       </template>
 
       <template #filters>
-        <v-select v-model="searchTicketForm.data.statuses" :items="statusOptions" item-title="title" item-value="id"
-          label="Durumlar" multiple chips clearable />
-        <v-select v-model="searchTicketForm.data.priorities" :items="priorityOptions" item-title="title"
-          item-value="id" label="Öncelik Seviyesi" multiple chips clearable />
-        <v-select v-model="searchTicketForm.data.types" :items="typeOptions" item-title="title" item-value="id"
-          label="Talep Tipleri" multiple chips clearable />
+        <EkSelect v-model="searchTicketForm.data.statuses" :items="statusOptions" item-title="title" item-value="id"
+          label="Durumlar" multiple clearable />
+        <EkSelect v-model="searchTicketForm.data.priorities" :items="priorityOptions" item-title="title"
+          item-value="id" label="Öncelik Seviyesi" multiple clearable />
+        <EkSelect v-model="searchTicketForm.data.types" :items="typeOptions" item-title="title" item-value="id"
+          label="Talep Tipleri" multiple clearable />
         <EkDateField v-model="searchTicketForm.data.startDate" label="Başlangıç" :max="searchTicketForm.data.endDate" />
         <EkDateField v-model="searchTicketForm.data.endDate" label="Bitiş" :min="searchTicketForm.data.startDate" />
       </template>
@@ -114,6 +114,7 @@
 </template>
 
 <script setup lang="ts">
+import EkSelect from '@/components/ds/EkSelect.vue'
 import EkRowActions, { type EkRowAction } from '@/components/ds/EkRowActions.vue'
 import { ref, onMounted, reactive, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
