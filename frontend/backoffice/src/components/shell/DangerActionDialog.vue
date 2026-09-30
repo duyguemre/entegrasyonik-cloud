@@ -64,6 +64,9 @@
         </div>
       </dl>
 
+      <!-- bo-p2 (ekleyici): işleme özgü alanlar (ör. gün sayısı, hedef plan, e-posta) gerekçenin üstünde. -->
+      <slot />
+
       <v-textarea
         v-if="requireReason"
         v-model="reason"
@@ -112,6 +115,8 @@ const props = withDefaults(
     requireReason?: boolean
     reasonPlaceholder?: string
     busy?: boolean
+    /** bo-p2 (ekleyici): işleme özgü ek alan geçersizken onayı kapatır. */
+    blocked?: boolean
     error?: string
   }>(),
   {
@@ -139,7 +144,7 @@ watch(
 )
 
 const length = computed(() => reason.value.trim().length)
-const canConfirm = computed(() => !props.busy && (!props.requireReason || length.value >= REASON_MIN))
+const canConfirm = computed(() => !props.busy && !props.blocked && (!props.requireReason || length.value >= REASON_MIN))
 const reasonHint = computed(() =>
   length.value < REASON_MIN ? `En az ${REASON_MIN} karakter (${length.value}/${REASON_MIN}). Denetim kaydına yazılır.` : 'Bu metin denetim kaydına işlemle birlikte yazılır.',
 )

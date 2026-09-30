@@ -135,7 +135,7 @@ export const SCREENS: BoScreen[] = [
       endpoints: 'AdminService/getTickets · Aşama 3 taşıma',
     },
   }),
-  planned({
+  {
     key: 'subscriptions',
     label: 'Abonelikler',
     lede: 'Planlar, abonelik geçmişi ve gelir metrikleri.',
@@ -143,14 +143,12 @@ export const SCREENS: BoScreen[] = [
     group: 'subscriptions',
     path: '/abonelikler',
     keywords: ['plan', 'fatura', 'mrr', 'gelir', 'billing'],
-    plan: {
-      items: ['Abonelik listesi: durum ve plan filtresi', 'Detay: faturalama olayları geçmişi', 'Deneme uzatma, plan değiştirme, iptal (gerekçe + kimlik doğrulama)', 'MRR, denemeden ücretliye dönüşüm, kayıp oranı'],
-      endpoints: 'B4a–B4c · BackofficeBillingService',
-    },
-  }),
+    status: 'ready',
+    view: () => import('../views/billing/SubscriptionsView.vue'),
+  },
 
   // ---------------------------------------------------------------- Platform
-  planned({
+  {
     key: 'engine',
     label: 'Motor ve kuyruklar',
     lede: 'Sipariş kuyruğu, başarısız işler, takılı kiralar ve zamanlayıcı koşuları.',
@@ -158,25 +156,21 @@ export const SCREENS: BoScreen[] = [
     group: 'engine',
     path: '/motor',
     keywords: ['bullmq', 'queue', 'kuyruk', 'dlq', 'kira', 'lease', 'zamanlayıcı'],
-    plan: {
-      items: ['Kuyruk sayımları ve 24 saatlik seri', 'Başarısız işler: yeniden dene / at (gerekçe)', 'Takılı kiralar ve sahip pod', 'Zamanlayıcı koşuları (14 gün)'],
-      endpoints: 'B7a–B7d · BackofficeEngineService',
-    },
-  }),
-  planned({
+    status: 'ready',
+    view: () => import('../views/engine/EngineView.vue'),
+  },
+  {
     key: 'integrations',
     label: 'Entegrasyonlar',
-    lede: 'Entegrasyon tanımları ve ayarları, uyum konsolu, platform geneli API sağlığı.',
+    lede: 'Platform geneli API sağlığı, pod bazında dayanıklılık (devre kesici, hız bütçesi, alım) ve ayar kataloğu ile etkin değerler.',
     icon: 'mdi-transit-connection-variant',
     group: 'integrations',
     path: '/entegrasyonlar',
     keywords: ['trendyol', 'hepsiburada', 'n11', 'pazarama', 'devre kesici', 'intake'],
-    plan: {
-      items: ['Tanımlar, ayarlar, motor ayarları, etkin ayar', 'Uyum konsolu', 'API sağlığı: çağrı, hata oranı, p95, etkilenen müşteri sayısı', 'Devre kesici, hız sınırı bütçesi, alım (intake) durumu'],
-      endpoints: 'B5, B6 · Aşama 3 taşıma',
-    },
-  }),
-  planned({
+    status: 'ready',
+    view: () => import('../views/integrations/IntegrationsView.vue'),
+  },
+  {
     key: 'infra',
     label: 'Redis ve MongoDB',
     lede: 'Salt okuma altyapı durumu. Anahtar adı, değer ve belge içeriği asla gösterilmez.',
@@ -184,12 +178,10 @@ export const SCREENS: BoScreen[] = [
     group: 'infra',
     path: '/altyapi',
     keywords: ['redis', 'mongo', 'veritabanı', 'bellek', 'indeks'],
-    plan: {
-      items: ['Redis: bellek, istemciler, isabet oranı, önek ailesine göre anahtar sayısı', 'MongoDB: bağlantılar, işlem sayaçları, izinli veritabanlarının boyutları', 'Koleksiyon ve indeks kullanımı', 'Yavaş sorgular (uygulama tarafında ölçülür)'],
-      endpoints: 'B8a–B8d · BackofficeInfraService',
-    },
-  }),
-  planned({
+    status: 'ready',
+    view: () => import('../views/infra/InfraView.vue'),
+  },
+  {
     key: 'cache',
     label: 'Önbellek',
     lede: 'Uygulama önbelleği metrikleri ve aile bazında boşaltma.',
@@ -197,11 +189,9 @@ export const SCREENS: BoScreen[] = [
     group: 'infra',
     path: '/altyapi/onbellek',
     keywords: ['cache', 'boşalt'],
-    plan: {
-      items: ['İsabet / ıskalama ve aile dökümü', 'Aile boşaltma (gerekçe + kimlik doğrulama)'],
-      endpoints: 'B9 · BackofficeInfraService/getCacheMetrics',
-    },
-  }),
+    status: 'ready',
+    view: () => import('../views/infra/CacheView.vue'),
+  },
 
   // ---------------------------------------------------------------- Gözlem
   {
@@ -228,32 +218,28 @@ export const SCREENS: BoScreen[] = [
   },
 
   // ---------------------------------------------------------------- Yönetişim
-  planned({
+  {
     key: 'admins',
     label: 'Yöneticiler',
-    lede: 'Platform yöneticileri, iki adımlı doğrulama durumu ve oturumlar.',
+    lede: 'Platform yöneticileri, davetler ve iki adımlı doğrulama; her değişiklik gerekçe ve kimlik doğrulaması ister.',
     icon: 'mdi-account-key-outline',
     group: 'admins',
     path: '/yoneticiler',
     keywords: ['yönetici', '2fa', 'totp', 'oturum', 'güvenlik'],
-    plan: {
-      items: ['Yönetici listesi, davet, devre dışı bırakma', 'İki adımlı doğrulamayı sıfırlama (gerekçe + kimlik doğrulama)', 'Tüm oturumları kapat', 'IP izin listesi (salt okuma)'],
-      endpoints: 'B12 · BackofficeAdminUserService',
-    },
-  }),
-  planned({
+    status: 'ready',
+    view: () => import('../views/admins/AdminsView.vue'),
+  },
+  {
     key: 'flags',
-    label: 'Bayraklar ve bakım',
-    lede: 'Özellik bayrakları ve bakım modu: taslak, yayın ve geri alma.',
+    label: 'Platform ayarları',
+    lede: 'Bakım modu, destek ve duyuru ayarları, özellik bayrakları ve salt okunur ortam bilgisi; taslak, gerekçeli yayın ve geri alma.',
     icon: 'mdi-flag-outline',
     group: 'settings',
     path: '/sistem/bayraklar',
-    keywords: ['feature flag', 'bakım', 'maintenance'],
-    plan: {
-      items: ['Özellik bayrakları', 'Bakım modu ve ileti', 'Yayın ve geri alma denetime yazılır'],
-      endpoints: 'B11 · IntegrationConfigService (platform hedefi)',
-    },
-  }),
+    keywords: ['feature flag', 'bayrak', 'bakım', 'maintenance', 'duyuru şeridi', 'destek e-postası', 'ortam'],
+    status: 'ready',
+    view: () => import('../views/settings/SettingsView.vue'),
+  },
   planned({
     key: 'notifications',
     label: 'Bildirimler ve duyurular',
@@ -271,6 +257,7 @@ export const SCREENS: BoScreen[] = [
 
 export const DETAIL_ROUTES: BoDetailRoute[] = [
   { name: 'tenant', path: '/musteriler/:tid(\\d+)', parent: 'tenants', title: 'Müşteri', view: () => import('../views/TenantDetailView.vue') },
+  { name: 'subscription', path: '/abonelikler/:tid(\\d+)', parent: 'subscriptions', title: 'Abonelik', view: () => import('../views/billing/SubscriptionDetailView.vue') },
 ]
 
 export const DEFAULT_PATH = '/genel-bakis'

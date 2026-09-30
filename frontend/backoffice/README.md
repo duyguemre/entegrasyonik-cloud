@@ -47,12 +47,25 @@ src/components/          TopBar, ReauthDialog, TraceDialog, StatusTile, Sparklin
 | `BackofficeTenantService/startImpersonation {tid, reason≥10}` → `{url}` | 2-BE | step-up; URL yalnız `window.open(url,'_blank','noopener,noreferrer')` |
 | `AdminService/getClients` | MEVCUT | `clientDto` beyaz listesi |
 | `AdminService/getSystemHealth` (altküme) · `GET /health` · `GET /ready` | MEVCUT | `/ready` 503 de gövde döner |
-| `BackofficeTenantService/getLifecycle {tid}` | PLAN B2 | şekil öneri |
+| `BackofficeTenantService/getLifecycle {tid}` · `cancelDeletion {tid, reason}` | BE HAZIR (B2) | `src/api/contracts/billing.ts`; müşteri detayı → Yaşam döngüsü sekmesi |
 | `LogCenterService/listLogs · getIssueGroups · getIssueTrend · getVolumeByCategory · getTrace` | PLAN L6–L8 | şekil öneri (`category` ekseni öneri) |
 | `BackofficeAuditService/search` | PLAN B10 | alanlar 2-BE `AuditLogs` şeması; önce/sonra `meta.b_*`/`meta.a_*` |
 
 Hata kodları (ERROR_CODES.md): `UNAUTHENTICATED` (401 → girişe dön), `MFA_REQUIRED` (403 → girişe dön), `REAUTH_REQUIRED`
 (401 → step-up), `VALIDATION` (+`fields`), `RATE_LIMITED`, `IMPERSONATION_UNAVAILABLE`, `NOT_FOUND`.
+
+### Aşama 4 (bo-p2) — BE HAZIR, tipler `src/api/contracts/*.ts`, sahte uçlar `src/api/mock/ops/*.ts`
+| Grup | Uçlar | Ekran |
+|---|---|---|
+| B7a-d | `BackofficeEngineService/getQueues · listFailedJobs · retryJob · discardJob · getStateMachineJobs · releaseStuckLease · listJobRuns` | `/motor` |
+| B5/B6/B6b/B6c | `BackofficeIntegrationService/getApiHealth · getResilienceState`, `IntegrationConfigService/getCatalog · getEffectiveConfig` | `/entegrasyonlar` |
+| B8a-d, B9 | `BackofficeInfraService/getRedisStatus · getMongoStatus · getMongoCollections · getSlowQueries · getCacheMetrics · flushCacheFamily` | `/altyapi`, `/altyapi/onbellek` |
+| B4a/b/c | `BackofficeBillingService/listSubscriptions · getSubscription · extendTrial · cancelSubscription · changePlan · getRevenueMetrics` | `/abonelikler`, `/abonelikler/:tid` |
+| B11 + BO-CFG-1 | `IntegrationConfigService/getEffectiveConfig · saveDraft · discardDraft · previewPublish · publish · rollback · history` (`target:'_platform'`), `GET /api/public-config` | `/sistem/bayraklar` (Platform ayarları) |
+| B12 | `BackofficeAdminUserService/list · invite · disable · enable · resetMfa`, `BackofficeAuthService/acceptInvite` | `/yoneticiler`, `/accept-invite#t=` |
+| B3 | `BackofficeTenantService/startImpersonation` → `{url, expiresInSeconds}` | müşteri detayı "Müşterinin gözünden aç" |
+
+Step-up listesi `REAUTH_OPS` backend `admin/stepUp.ts REAUTH_RPCS` ile testle eşlenir. Örnek davet bileti: `/accept-invite#t=ornekDavetBileti0000000000000000000000000000` (parola ≥12, harf+rakam). Test kolları: `docs/BO_UI_PATTERNS.md` bo-p2 eki.
 
 ## Güvenlik notları
 - Kimlik yalnız HttpOnly `EK_ADMIN` çerezinde; kod token/oturumu hiçbir depoya yazmaz (statik test). localStorage'da yalnız
