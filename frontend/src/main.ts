@@ -26,6 +26,8 @@ import App from './App.vue'
 // Composables
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
+import router from './router'
+import { usePublicConfigStore } from '@/stores/publicConfig'
 
 import HorizontalScrollComponent from '@/components/HorizontalScrollComponent.vue';
 import ScrollComponent from '@/components/ScrollComponent.vue';
@@ -105,7 +107,14 @@ window.addEventListener('error', (event: ErrorEvent) => {
   })
 })
 
-app.mount('#app')
+// FE-CFG-1 (ADR-0031) — kamu açılış yapılandırması montajdan ÖNCE bir kez alınır (3 sn zaman aşımı; alınamazsa
+// güvenli varsayılanlarla açılır). Sonra 5 dk'da bir / sekme görünür olunca / rota değişiminde (eskiyse) tazelenir.
+const publicConfig = usePublicConfigStore(pinia)
+router.afterEach(() => { void publicConfig.ensureFresh() })
+publicConfig.refresh().finally(() => {
+  publicConfig.startAutoRefresh()
+  app.mount('#app')
+})
 
 
 

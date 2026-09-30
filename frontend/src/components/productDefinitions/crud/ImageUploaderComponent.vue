@@ -24,7 +24,10 @@ import { ref, onMounted, onBeforeMount, nextTick, reactive } from 'vue'
 import LoadingComponent from '@/components/LoadingComponent.vue'
 import useRestApi from '@/composables/restapi'
 import { useI18n } from 'vue-i18n';
+import { useUploadLimit } from '@/composables/useUploadLimit'
 const { t } = useI18n()
+// FE-CFG-1: yükleme tavanı backend ortam değeri (`env.images.uploadMaxBytes`).
+const uploadLimit = useUploadLimit()
 
 const props = defineProps<{
   productInfoForm: any,
@@ -56,7 +59,7 @@ const openFilePicker = (event: MouseEvent) => {
 const upload = async ($event: Event) => {
   const target = $event.target as HTMLInputElement;
   if (target && target.files) {
-    if (target.files.length > maxImageCount.value) {
+    if (target.files.length > maxImageCount.value || !uploadLimit.accept(target.files)) {
       target.value = ""
       return false
     }

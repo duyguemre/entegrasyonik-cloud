@@ -148,8 +148,6 @@ const choicesStore = useChoicesStore()
 var choicesStoreChoices: any = ref()
 
 const isImages = defineModel({ default: false })
-const baseImageURL = ref('https://images.entegrasyonik.com/products/')
-const baseTempImageURL = ref(baseImageURL.value + 'temp/')
 
 const emits = defineEmits(['refreshImages', 'close'])
 const props = defineProps<{

@@ -356,8 +356,6 @@ const choicesStore = useChoicesStore()
 var choicesStoreChoices: any = ref()
 const tab: any = ref()
 const isImages = defineModel({ default: false })
-const baseImageURL = ref('https://images.entegrasyonik.com/products/')
-const baseTempImageURL = ref(baseImageURL.value + 'temp/')
 const attributeSearchText: any = ref({})
 
 const emits = defineEmits(['refreshImages', 'close', "batchVariantAttributesUpdate"])
@@ -796,7 +794,7 @@ const assignImages = async () => {
 const addImage = async ($event: Event) => {
   const target = $event.target as HTMLInputElement;
   if (target && target.files) {
-    if (target.files.length > 5) {
+    if (target.files.length > 5 || !uploadLimit.accept(target.files)) {
       target.value = ""
       return false
     }
@@ -861,9 +859,9 @@ const file = ref<File | null>();
 const form = ref<HTMLFormElement>();
 var thumbnailUrl = ref("")
 
-const config = {
-  maxSize: 2000000,
-}
+import { useUploadLimit } from '@/composables/useUploadLimit'
+// FE-CFG-1: yükleme tavanı backend ortam değeri (`env.images.uploadMaxBytes`); eski kullanılmayan `maxSize: 2000000` kaldırıldı.
+const uploadLimit = useUploadLimit()
 /* function onFileChanged($event: Event) {
   const target = $event.target as HTMLInputElement;
   if (target && target.files) {

@@ -8,8 +8,8 @@
 </template>
 <script setup lang="ts">
 import { ref, inject, nextTick, watch, computed, onBeforeMount, onMounted } from 'vue'
-const baseImageURL = ref('https://images.entegrasyonik.com/products/')
-const baseTempImageURL = ref(baseImageURL.value + 'temp/')
+import { useProductImageUrl } from '@/composables/useProductImageUrl'
+const productImageUrl = useProductImageUrl()
 var imageId: any = defineModel({ default: {} }) 
  const image:any = ref() 
 const props = withDefaults(defineProps<{
@@ -45,11 +45,9 @@ const computedImage = computed(() => {
   if (!image.value || !image.value._id) {
     return { width: 0, src: undefined }
   }
-  var src = image.value.url
+  var src = productImageUrl(image.value, props.productInfoForm, { thumbnail: true })
   var width = 0 
-  if (src == undefined) {
-    src = (image.value.isTempImage == false ? baseImageURL.value : baseTempImageURL.value) + props.productInfoForm.tempId + '/' + image.value._id + '_t.' + image.value.extension
-  } else {
+  if (image.value.url) {
     width = image.value.width * 100 / image.value.height
   }
   if(aspect.value) {
