@@ -67,3 +67,21 @@ Menü fikstürü üretim ağacının biçimindedir (Ayarlar grubu altında "Uygu
 - `SettingListView` sayfa başlığı hâlâ "Mağaza Ayarları" (menü: "Uygulama Ayarları") ve "Ayarları Kaydet" ham `v-btn` —
   ekran FR2-SCREENS madde 36'nın alanında, bu işte dokunulmadı.
 - Görsel tabanlar (`*-win32.png`) alan yüksekliği / filtre / breadcrumb değişikliği nedeniyle yerelde yenilenmeli.
+
+## Testler (bulut, chromium, 1280 masaüstü projesi)
+
+| Kontrol | Sonuç |
+|---|---|
+| vitest (frontend) | 67 dosya / 1379 test yeşil (yeni `tests/r2a-shell.test.ts`; `a6b-standards`, `b4-sidebar-breadcrumb` bilinçli güncellendi) |
+| vitest `@entegrasyonik/ui` + backoffice | 22 + 30 yeşil |
+| vue-tsc / style / pattern / no-console mandalları | 0 hata / korundu |
+| `npm run build`, `npm run build:backoffice` | yeşil |
+| axe (yardım merkezi ana sayfa + makale, sayfa hakkında + filtre, sol menü, sekme şeridi) | 0 ihlal |
+| Playwright (34 spec, `--update-snapshots=missing`) — dal vs `origin/main` aynı spec'ler | Dala özgü kırmızı YOK. 18 test tabanda da kırmızı (orders ×9, settings ×6, shell-dsv2 ×2, list-standard axe, notification-drawer, account-security:64) |
+
+Bulunan ve düzeltilen gerileme: çalışma alanı kendi içinde kaydığı için sağ alttaki **tur teklif kartı** sayfanın en altındaki
+içeriği (Hesabım formunun "Parolayı değiştir" düğmesi) örtebiliyordu → kart açıkken yüksekliği kadar alt pay
+(`--ek-tour-offer-space`, `.workplace-area` alt dolgusu). `account-security.spec` turu test etmediği için teklifi kapatır
+(Playwright görünür alandaki öğeyi kaydırmaz).
+
+Tam koşu (tüm spec'ler × 3 görünüm) bu oturumun zaman bütçesini aştı; görsel tabanlar zaten yerelde (win32) yenilenecek.
