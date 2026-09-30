@@ -47,6 +47,9 @@
       </div>
     </header>
 
+    <!-- Aşama 3: başlık ile liste arasında özet (KPI satırı vb.) — başlığın ÜSTÜNE konmasın (hiyerarşi). -->
+    <div v-if="$slots.summary" class="ek-list-screen__summary"><slot name="summary" /></div>
+
     <EkListFrame :label="label" class="ek-list-screen__frame">
       <template v-if="$slots.filters || chips.length" #filters>
         <EkFilterPanel
@@ -320,6 +323,10 @@ function setCollapsed(v: boolean) {
 .ek-list-screen__frame {
   flex: 1;
   min-height: 0;
+}
+
+.ek-list-screen__summary {
+  flex: none;
 }
 
 .ek-list-screen__hint {

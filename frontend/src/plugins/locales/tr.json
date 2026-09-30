@@ -93,7 +93,11 @@
       "adminTicketList": "Destek Yönetimi",
       "adminOperations": "Platform İşlemleri",
       "adminSystemManagement": "Sistem Yönetimi",
-      "adminIntegrationCompliance": "Entegrasyon Uyum"
+      "adminIntegrationCompliance": "Entegrasyon Uyum",
+      "integrationConfigList": "Entegrasyonlar",
+      "integrationSettings": "Entegrasyon ayarları",
+      "engineSettings": "Motor ayarları",
+      "effectiveConfig": "Etkin yapılandırma"
     },
     "integrations": {
       "integrations": "Entegrasyonlar",

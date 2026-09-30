@@ -60,14 +60,18 @@ withDefaults(
 </script>
 
 <style scoped>
+/* Aşama 3: EkMetricCard ile AYNI KPI dili — mikro etiket (BÜYÜK HARF) → `metric` değer → alt bilgi;
+   kart = kenarlık + yumuşak gölge (brif "sayı vurguları aynı tipografiyle"). API değişmedi. */
 .ek-kpi-card {
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-1);
+  min-width: 0;
   padding: var(--ek-space-5);
   border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-lg);
+  border-radius: var(--ek-radius-card);
   background: var(--ek-color-surface);
+  box-shadow: var(--ek-shadow-card);
   text-align: left;
   font-family: inherit;
   transition: border-color var(--ek-duration-fast) var(--ek-easing-standard);
@@ -82,15 +86,22 @@ withDefaults(
 }
 
 .ek-kpi-card__label {
-  font-size: var(--ek-font-size-sm);
-  font-weight: var(--ek-font-weight-medium);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
   color: var(--ek-color-content-muted);
 }
 
 .ek-kpi-card__value {
-  font-size: var(--ek-font-size-3xl);
-  font-weight: var(--ek-font-weight-semibold);
+  font-size: var(--ek-type-metric-size);
+  line-height: var(--ek-type-metric-line);
+  font-weight: var(--ek-type-metric-weight);
   color: var(--ek-color-content-strong);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ek-kpi-card__footer {

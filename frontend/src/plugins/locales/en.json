@@ -49,7 +49,13 @@
       "changePassword": "Change Password",
       "exit": "Sign Out"
     },
-    "account": "My Account"
+    "account": "My Account",
+    "adminPanel": {
+      "integrationConfigList": "Integrations",
+      "integrationSettings": "Integration settings",
+      "engineSettings": "Engine settings",
+      "effectiveConfig": "Effective configuration"
+    }
   },
   "title": {
     "config": "Configuration"

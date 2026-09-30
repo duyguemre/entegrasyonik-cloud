@@ -40,7 +40,7 @@ const TITLES: Record<string, string> = {
   'adminPanel/AdminClientListView': 'adminClientlist',
   'adminPanel/AdminTicketListView': 'adminTicketList',
   'adminPanel/AdminSystemManagementView': 'adminSystemManagement',
-  'adminPanel/IntegrationConfigListView': 'adminOperations',
+  'adminPanel/IntegrationConfigListView': 'integrationConfigList',
   'adminPanel/ComplianceView': 'adminIntegrationCompliance',
   'adminPanel/IntegrationSettingsView': 'integrationSettings',
   'adminPanel/EngineSettingsView': 'engineSettings',

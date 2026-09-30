@@ -11,7 +11,7 @@
   adıyla sunulur — var olmayan bir "çelişki" tespiti iddia EDİLMEZ (E3/C7).
 
   DS-v2 Aşama 2: tablo `EkListScreen` (liste standardı) ile gösterilir — anahtar/değer listesi, sayfalamasız,
-  arama/filtre/sıralama İSTEMCİ tarafında (`sortRows`). KPI satırı listenin üstünde kalır; "Son güncelleme"
+  arama/filtre/sıralama İSTEMCİ tarafında (`sortRows`). KPI satırı başlığın ALTINDA (`#summary`, Aşama 3); "Son güncelleme"
   bilgisi açıklama satırındadır. Sayfa H1'i `EkListScreen` başlığıdır (tek H1).
 -->
 <template>
@@ -19,12 +19,6 @@
    <PlatformAdminGuard :allowed="isPlatformAdmin()">
     <EkEmptyState v-if="!target" variant="no-data" title="Hedef seçilmedi" message="Bu ekran bir entegrasyon kodu (?code=) ya da motor hedefiyle açılmalıdır." />
     <template v-else>
-      <EkKpiRow class="effectiveConfigView__kpis">
-        <EkKpiCard label="Yayındaki sürüm" :value="publishedVersionLabel" />
-        <EkKpiCard label="Katalog sürümü" :value="catalogVersionLabel" />
-        <EkKpiCard label="Toplam ayar" :value="rows.length" />
-        <EkKpiCard label="Varsayılan dışı" :value="nonDefaultCount" />
-      </EkKpiRow>
 
       <EkListScreen
         section="Yönetim"
@@ -60,6 +54,14 @@
         @clear-filters="clearFilters"
         @refresh="load"
       >
+        <template #summary>
+        <EkKpiRow class="effectiveConfigView__kpis">
+          <EkKpiCard label="Yayındaki sürüm" :value="publishedVersionLabel" />
+          <EkKpiCard label="Katalog sürümü" :value="catalogVersionLabel" />
+          <EkKpiCard label="Toplam ayar" :value="rows.length" />
+          <EkKpiCard label="Varsayılan dışı" :value="nonDefaultCount" />
+        </EkKpiRow>
+        </template>
         <template #header-actions>
           <EkButton icon="mdi-download-outline" :disabled="state !== 'ready'" @click="exportJson">Dışa aktar (JSON)</EkButton>
         </template>

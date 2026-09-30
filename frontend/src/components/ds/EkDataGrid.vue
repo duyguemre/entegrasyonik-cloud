@@ -288,8 +288,8 @@ function toggleSort(key: string) {
   background:
     linear-gradient(to right, var(--ek-color-surface) 40%, transparent) left center / 24px 100% no-repeat local,
     linear-gradient(to left, var(--ek-color-surface) 40%, transparent) right center / 24px 100% no-repeat local,
-    radial-gradient(farthest-side at 0 50%, color-mix(in srgb, var(--ek-color-scrim) 18%, transparent), transparent) left center / 12px 100% no-repeat scroll,
-    radial-gradient(farthest-side at 100% 50%, color-mix(in srgb, var(--ek-color-scrim) 18%, transparent), transparent) right center / 12px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 0 50%, color-mix(in srgb, var(--ek-color-scrim) 14%, transparent), transparent) left center / 10px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, color-mix(in srgb, var(--ek-color-scrim) 14%, transparent), transparent) right center / 10px 100% no-repeat scroll,
     var(--ek-color-surface);
   scrollbar-width: thin;
 }
