@@ -68,6 +68,9 @@ export const richClaim = buildClaim({
     { status: 'UNDER_REVIEW', changedAt: '2026-09-24T14:10:00.000Z', description: 'Ürün depoya ulaştı, inceleniyor' },
   ],
   claimedAt: '2026-09-22T09:00:00.000Z',
+  customer: { _id: 'customer-e2e-0001', firstName: 'Ayşe', lastName: 'Yılmaz', phone: '5551112233', email: 'ayse.yilmaz@e2e.invalid', isPhoneMasked: false, isEmailMasked: false, createdAt: '2026-01-15T00:00:00.000Z',
+    addresses: [{ title: 'Ev', firstName: 'Ayşe', lastName: 'Yılmaz', addressLine1: 'Örnek Mah. Test Sok. No: 4', city: 'İstanbul', state: 'Kadıköy' }],
+    metrics: { totalSpent: 1200.5, totalOrderCount: 8, totalClaimCount: 1, totalReturnAmount: 149.9 } },
 })
 
 export const r2dClaims = {

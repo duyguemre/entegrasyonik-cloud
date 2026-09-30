@@ -38,7 +38,6 @@
             <time class="ek-alloc__time ek-num" :datetime="event.at">{{ formatDateTime(event.at) }}</time>
           </li>
         </ol>
-        <p v-else-if="entry.state" class="ek-alloc__no-events">Tahsis zamanı kaydı yok.</p>
       </li>
     </ol>
   </section>

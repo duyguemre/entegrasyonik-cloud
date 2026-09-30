@@ -1073,18 +1073,18 @@
       "unapproved": "Platform Onayı Bekliyor",
       "awaitingApproval": "Satıcı Onayı Bekliyor",
       "approved": "Sipariş Onaylandı",
-      "shipped": "Teslimat Bekleniyor",
+      "shipped": "Kargoda",
       "delivered": "Teslim Edildi",
       "cancelled": "İptal Edildi",
       "returned": "İade Edildi"
     },
     "claim": {
-      "waiting": "İade Talebi Oluşturuldu",
+      "waiting": "Yeni Talep",
       "underReview": "İncelemede",
-      "approved": "Tamamlandı",
-      "rejected": "Tamamlandı",
+      "approved": "Onaylandı",
+      "rejected": "Reddedildi",
       "cancelled": "İptal Edildi",
-      "disputed": "İncelemede",
+      "disputed": "İtirazda",
       "completed": "Tamamlandı"
     },
     "message": {

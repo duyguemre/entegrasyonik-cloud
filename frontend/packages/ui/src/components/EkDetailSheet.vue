@@ -18,7 +18,7 @@
     </EkDetailSheet>
 -->
 <template>
-  <v-dialog v-model="isOpen" content-class="ek-detail-sheet" transition="fade-transition"
+  <v-dialog v-model="isOpen" :content-class="['ek-detail-sheet', `ek-detail-sheet--${size ?? 'md'}`].join(' ')" transition="fade-transition"
     :content-props="{ id: contentId }" v-bind="tabOverlay.overlayProps.value">
     <v-card class="ek-detail-sheet__card">
       <header class="ek-detail-sheet__header">
@@ -48,6 +48,8 @@ const props = defineProps<{
   identity: string
   /** Açık hedef (verilmezse çalışma alanı sekmesinin kabı; sekme dışında gövde). */
   attach?: string | boolean | Element
+  /** Genişlik: `md` 720px (varsayılan) · `lg` 960px — iki kolonlu kayıt detayları (sipariş, iade; fe-r2d). */
+  size?: 'md' | 'lg'
 }>()
 
 const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>()
@@ -83,6 +85,10 @@ const isOpen = computed({
   width: 720px;
   max-width: 100%;
   border-radius: 0;
+}
+
+.ek-detail-sheet--lg.v-overlay__content {
+  width: 960px;
 }
 
 /* Sekme kabına bağlı (contained): kabın sağına yaslı, kabın yüksekliğinde. */
