@@ -2,7 +2,7 @@
 
 > **Durum:** Aşama 1 (tasarım sistemi + vitrin), Aşama 2 (kabuk, liste standardı, diyalog/menü/form, dashboard) ve
 > **Aşama 3 (entegrasyon + premium eleştiri turları)** `cloud/ds-v2-int` dalında birleşik (§14); **Aşama 4** (W1/W2 birleştirmesi +
-> ikinci bağımsız premium tur) `cloud/ds-v2-int2` (§15). Görsel taban onayı yerelde (Windows) yapılır.
+> ikinci bağımsız premium tur) `cloud/ds-v2-int2` (§15); **Aşama 5** (kullanıcı geri bildirimi, 11 madde) `cloud/ds-v2-a5` (§16). Görsel taban onayı yerelde (Windows) yapılır.
 > **Vitrin:** `npm run dev` → `http://localhost:3000/design-system` (yalnızca geliştirme; üretim derlemesinde yok, menüde yok).
 > **İnceleme görselleri:** `frontend/docs/design-system-review/` (liste §12).
 > **Kaynaklar:** kullanıcı brifi `docs/design-reference/README.md` (görsel yön), ADR-0011 (token mimarisi), ADR-0015 (süreç/test/desen kataloğu; görsel yönü bu brifle geçersiz kılındı).
@@ -163,18 +163,18 @@ Mevcut ds bileşenlerinin (EkStatusChip, EkDataTable, EkKpiCard, EkFilterBar, Ek
 | `EkTooltip` | ipucu | ters yüzey, kısayol içinde; aria-label'ın yerine geçmez |
 | `EkDialog` (+`EkDialogCard`) | tüm diyaloglar | başlık bandı · içerik · eylem çubuğu; `tone="danger"` soru başlığı + nesne adı + varsayılan odak Vazgeç; genişlik sm 440 / md 560 / lg 760 |
 | `EkMenuPanel` / `EkContextMenu` | bağlam, satır `⋯`, üst bar menüleri | gruplu (mikro başlık), ayraçlı, ikonlu, kısayollu; tehlikeli en sonda; ↑↓ Home End Enter Esc |
-| `EkAppHeader` | üst bar | degrade kimlik; çalışma alanı anahtarı (Genel ↔ seçili kayıt); `#search`; bildirim sayacı, yardım, profil |
+| `EkAppHeader` | üst bar | degrade kimlik; `#search`; bildirim sayacı, yardım, profil (Aşama 5: "Genel ↔ seçili kayıt" anahtarı KALDIRILDI) |
 | `EkSmartSearch` | üst bar araması | gruplu sonuç + sayaç; eşleşme `<mark>`; tür rozeti + "ETİKET değer" çipleri; combobox/listbox, ↑↓ Enter Esc |
-| `EkWorkspaceTabs` | çalışma alanı sekmeleri | etkin sekme içerikle birleşir + 2px aksiyon çizgisi; kapatma hover/etkin'de; uzun başlık … + tooltip; ←/→ Home End Enter Delete; soldaki boşluk yok |
+| `EkWorkspaceTabs` | çalışma alanı sekmeleri | **Aşama 5:** etkin sekme klasör sekmesi — içerik zemininde, arada çizgi yok (şerit alt çizgisi iç gölge, etkin sekme keser), içbükey alt köşe, `shadow-tab-active`; şerit `tabstrip-bg` bir kademe koyu; taşma YALNIZ yatay (gizli çubuk + solma + ok, tekerlek yatay; dikey kaydırma yok) + 2px aksiyon çizgisi; kapatma hover/etkin'de; uzun başlık … + tooltip; ←/→ Home End Enter Delete; soldaki boşluk yok |
 | `EkSidebarNav` | sol menü | etiket 2 satıra sarılır (kesilmez); etkin = `sidebar-active` + 3px gösterge; ray modunda tooltip |
 | `EkFormGrid` | TÜM formlar ve filtreler | eşit kolon + 16px boşluk; `ek-span-2`/`ek-span-full`; tablet ≤2, mobil 1 → alanlar üst üste binmez |
-| `EkFilterPanel` + `EkActiveFilters` | liste filtreleri | sayfa İÇİ, katlanabilir; Temizle · Sorgula (Aşama 4: eylem çubuğu gövdeyle aynı `surface-sunken` blok, ayraçsız); aktif filtreler çip, tek tıkla kaldır |
+| `EkFilterPanel` + `EkActiveFilters` | liste filtreleri | sayfa İÇİ, katlanabilir (Aşama 5: `EkCollapse` ile yükseklik + opaklık 200ms, reduced-motion'da anında); Temizle · Sorgula (Aşama 4: eylem çubuğu gövdeyle aynı `surface-sunken` blok, ayraçsız); aktif filtreler çip, tek tıkla kaldır |
 | `EkDataGrid` | TÜM liste tabloları | yapışkan mikro başlık, `aria-sort`, seçim + tri-state, hover/selected, tipli kolon (id/num/muted), iskelet, boş durum; **yatay taşma (Aşama 3):** seçim + ilk (kimlik) kolonu sola yapışık (kap ≥600px; `pin:'none'` kapatır), `pin:'end'` eylem kolonu sağa yapışık, altında içerik kalan kenar `shadow-scroll-*` gölgesi, yapışık kolonsuz dar görünümde CSS kaydırma gölgesi; **dar kap (< 600px, Aşama 4): satır = KART** (☐ · kimlik başlığı · eylemler; altında ETİKET–değer; `label` kart etiketi, `hideLabel` etiketsiz), başlık satırı sıralama çubuğu (sıralanabilir kolon yoksa gizli), açık ARIA tablo rolleri; seçim kolonu tam 44px; tek satır metin kolonu ≤ 240px (üç nokta) |
 | `EkPagerBar` | sayfalama | çerçevenin ALTINA SABİT; sol boyut+toplam, orta sayfalar, sağ `#trailing` |
 | `EkListFrame` | liste ekranı iskeleti | filtreler → kart (toolbar → grid [yalnız burası kayar] → pager) |
 | `EkCascadePicker` | kategori ağacı, ekran başlatıcı | Miller kolonları, seçili yol vurgusu, arama tam yol, ←→↑↓ Enter |
 | `EkDateField` | TÜM tarih alanları | her zaman **GG.AA.YYYY** (tarayıcının yerel `type="date"`'i kullanılmaz); yazarken nokta otomatik; geçersiz tarihte hata metni; takvim Türkçe, pazartesi başlar, sayfa içi küçük menü; `label`/`min`/`max`/temizlenebilir; model `valueFormat` `iso-date` (metin) \| `date` (`Date`), verilmezse gelen türü korur (Aşama 3 birleşimi: iki dalın ayrı yazdığı sürümler tek bileşen) |
-| `EkListScreen` | TÜM liste ekranları | başlık = bölüm yolu (`section`) → H1 → açıklama (EkPageHeader ile aynı ritim); `#summary` yuvası başlık ile liste arasında (KPI satırı); sayfa boyutu 10/25/50/100, varsayılan 25 (`tests/page-size-standard.test.ts`) |
+| `EkListScreen` | TÜM liste ekranları | başlık = `EkPageBar` (Aşama 5: bölüm › H1 (i) … arama + eylemler tek satır; açıklama + yeteneklerden üretilen ipuçları "Sayfa hakkında" panelinde); `channelKey` → satır kanal şeridi; `#summary` yuvası başlık ile liste arasında (KPI satırı); sayfa boyutu 10/25/50/100, varsayılan 25 (`tests/page-size-standard.test.ts`) |
 | `EkSavedViews` | kişisel kayıtlı filtre görünümleri (C2.4) | `EkListScreen` `saved-views` ile filtre başlığının sağında (`EkFilterPanel` `#head-actions`, daraltılmışken de görünür); uygula · sil (toast'ta Geri al) · kaydet; görünüm YALNIZ `screens.ts` `urlParams` alanlarını taşır (`useSavedViews` → `pickUrlParams`; arama metni saklanmaz), yerel depo `ek.views.v1.<userId>.<tenantId>`, erişilemezse gizli; ekran başına ≤20; uygulanınca adres `replace` ile kurulur |
 | `EkFormSection` | form bölümleri (entegrasyon, ürün, diyalog gövdeleri) | `fieldset` + `legend` (ikon + başlık) + isteğe bağlı yardım; içi `EkFormGrid` (varsayılan 2 kolon); hata metni alanın altında `error` tonunda, `aria-describedby` ile bağlı |
 | `EkDialogHost` | sekme içinden açılan panel/çekmece gövdeleri (varyant, eşitleme, galeri) | `EkDialog` kabuğu olmadan yalnız overlay; `attach` ile sekme kapsayıcısına bağlanır (sol menünün altında kalmaz); `placement` center/end |
@@ -268,13 +268,13 @@ Her adım ADR-0015 süreçleriyle: spec önce yeşil → göç → ekran görün
 | Parça | Dosya | Ne yapar |
 |---|---|---|
 | Yerleşim | `layouts/SecureLayout.vue` | Üst bar tam genişlik (Vuetify layout sırası), altında sol menü + sekme şeridi + çalışma alanı. Üst bölüm daraltma (üst bar yukarı kayar), odak modu (üst bar + sol menü gizli, destekleniyorsa tarayıcı tam ekranı; tam ekrandan Esc ile çıkış odak modunu da kapatır). Sekme değişiminde çalışma alanına kısa giriş hareketi (opaklık + 4px, `--ek-duration-base`, `--ek-easing-enter`; reduced-motion'da yok). Tüm kısayolların tek dinleyicisi. |
-| Üst bar | `components/layout/ApplicationBar.vue` | `v-app-bar` (düzen) + `EkAppHeader` (görünüm). Çalışma alanı anahtarı: **Genel ↔ seçili kayıt** (en son açılan çok örnekli sekme, ör. ürün düzenleme; yoksa devre dışı + açıklama). Yardım ve hesap menüleri `EkMenuPanel` (kısayollu, tehlikeli "Çıkış" en sonda). |
+| Üst bar | `components/layout/ApplicationBar.vue` | `v-app-bar` (düzen) + `EkAppHeader` (görünüm). (Aşama 5: çalışma alanı anahtarı kaldırıldı.) Yardım ve hesap menüleri `EkMenuPanel` (kısayollu, tehlikeli "Çıkış" en sonda). |
 | Akıllı arama | `components/layout/ShellSearch.vue` | Komut paleti ile BİRLEŞİK (Ctrl+K). Boş sorgu: **Son açılanlar** (oturum içi, yalnız bellekte). Sorgu: **Ekranlar** (menü, anında) + ≥2 karakterde `SmartService/unifiedSearch` → Siparişler / Ürünler / Müşteriler / İadeler ve talepler; grup başlığı + sayaç, eşleşme `<mark>`, "ETİKET değer" çipleri, kanal marka noktası. Seçim eski davranışla aynı (arama değeri sekme parametresi — URL'ye yazılmaz). Uydurma sonuç yok. |
 | Sekmeler | `components/layout/ShellTabStrip.vue` | `EkWorkspaceTabs`; her açık örnek ayrı sekme; pano sekmesi sabit. Sağ tık: Kapat · Diğerlerini kapat · Sağdakileri kapat. Sağ uçta: açık sekmeler listesi (Alt+1…9 ipuçlu, "Tümünü kapat"), üst bölümü daralt, odak modu. |
 | Sol menü | `components/layout/NavigationMenu.vue`, `NavigationRail.vue`, `useShellMenu.ts` | `EkSidebarNav` (tam) ve aynı modelin ray sunumu (ikon + sağa açılan ipucu). Favori yıldızı öğenin sağında. Spec çapaları korunur: `.soft-nav`, `.soft-item`, `.v-list-group`/`__header`, `.sub-item-soft`, `.soft-rail`, `.rail-logo-btn`, `.collapse-btn`. |
 | Kısayol kaydı | `navigation/shortcuts.ts` | Kısayolların TEK tanımı; dinleyici, ipuçları (EkKbd) ve `?` diyaloğu (`ShortcutHelpDialog.vue`) buradan okur. |
 
-**Kısayollar** (metin alanında yazarken yalnızca Ctrl+K ve Ctrl+Shift+F çalışır — Ctrl+B orada "kalın" olarak kalır; tarayıcının kendi kısayolları ezilmez):
+**Kısayollar** (metin alanında yazarken yalnızca Ctrl+K, Ctrl+Shift+H ve Ctrl+Shift+F çalışır — Ctrl+B orada "kalın" olarak kalır; tarayıcının kendi kısayolları ezilmez):
 
 | Tuş | Eylem |
 |---|---|
@@ -284,8 +284,8 @@ Her adım ADR-0015 süreçleriyle: spec önce yeşil → göç → ekran görün
 | Alt+1…9 | N. sekmeye git |
 | Alt+W | Etkin sekmeyi kapat (pano sekmesi kapanmaz) |
 | Ctrl+B | Sol menü: masaüstünde tam ↔ ray, tablet/mobilde katmanı aç/kapa |
-| Alt+U | Üst bölümü daralt / göster |
-| Ctrl+Shift+F | Odak modu |
+| Ctrl+Shift+H (eski Alt+U takma ad) | Üst bölümü daralt / göster (Aşama 5; düğmesi üst barın altındaki yüzen tutamakta) |
+| Ctrl+Shift+F | Tam ekran / odak modu (düğmesi yüzen tutamakta) |
 | Sekme şeridinde ←/→ · Home/End · Enter · Delete · Shift+F10 | gezin · etkinleştir · kapat · sekme menüsü |
 | Aramada ↑/↓ · Enter · Esc | gezin · aç · kapat |
 
@@ -352,3 +352,29 @@ Token değişikliği YOK (yalnız mevcut rol token'larına bağlama). **Eleştir
 Araç: `A4_REVIEW=1 A4_REVIEW_WIDTH=1440|800|390 A4_REVIEW_OUT=<klasör> npx playwright test e2e/specs/a4-review.spec.ts --project=chromium-desktop`
 (ekranlar + W1/W2 durumları + boş/hata/yükleniyor/stres + klavye odağı; saat sabit). Son görüntüler: `docs/design-system-review/a4-final/*.png`
 (1440 ve 390; Linux Chromium — görsel onay yerelde).
+
+## 16. Aşama 5 — kullanıcı geri bildirimi (11 madde, `cloud/ds-v2-a5`)
+
+Her madde tek yerde (DS bileşeni / token) çözüldü ve tüm ekranlara yayıldı; ekran başına yama yok.
+Önce/sonra görüntüleri: `docs/a5-review/{before,after}/mNN-*-{1440,390}.png` (+ sekme şeridi 800);
+araç `A5_REVIEW=1 A5_REVIEW_WIDTH=1440|800|390 A5_REVIEW_OUT=<klasör> npx playwright test e2e/specs/a5-review.spec.ts --project=chromium-desktop`
+(`A5_REVIEW_SCALE=2` yakın çekim).
+
+| # | Konu | Tek kaynak | Değişiklik |
+|---|---|---|---|
+| 1 | Hiyerarşi | `EkPageBar` | üst bar → sekme şeridi → **tek satır** (bölüm › H1 (i) · meta … eylemler) → filtre → içerik; büyük başlık+açıklama bloğu yok (liste ekranlarında ~60px dikey kazanç) |
+| 2 | Çipler | `EkStatusChip`, `EkActiveFilters`, `v-chip` (overrides), `--ek-app-chip-h-sm/md` (22/28) | tek çip dili: ton `subtle` zemin + 1px `*-border` + `*-emphasis` metin (AA), hap yarıçap, 14px ikon/6px nokta optik ortalı, hover/odak halkası |
+| 3 | Kanal renkleri | `palette.ts` `channelPalette` → `--ek-channel-<kod>-{solid,subtle,border,text}` + `.ek-ch-<kod>` kapsam sınıfları (`render.ts`), `design/channels.ts` | kanallar ayrışır (renk açısı ≥ 20°, test); kanal çipi (`EkChannelDot`), kanal tonlu avatar + alt şerit (`EkPlatformMark`), entegrasyon kartı sol şerit/seçim, liste satırı/kartı sol şerit (`EkDataGrid channelKey`), varyant kanal durumu; `integrationAccent` = `solid` (geri uyum) |
+| 4 | Etkin sekme | `EkWorkspaceTabs`, `tabstrip-bg` ink-200 / `tab-hover` ink-150, `shadow-tab-active` | klasör sekmesi: içerik zemini, çizgisiz tek parça geçiş, içbükey köşe; pasifler geri planda |
+| 5 | Dikey kaydırma | `EkWorkspaceTabs` | kap `overflow:hidden`, liste yalnız yatay + çubuk alanı 0; solma + ok; e2e: 3 viewport'ta dikey taşma/çubuk alanı 0 |
+| 6 | Sayfa başlığı | `EkPageBar` (+ `EkPageHeader`, `EkListScreen` delege eder) | açıklama breadcrumb satırındaki (i) ile açılan "Sayfa hakkında" panelinde: amaç · ipuçları · kısayollar · "Tüm kısayollar" (`ek:shortcut-help`); varsayılan kapalı, tercih ortak ve hatırlanır (`usePageAbout`, `ek.ui.v1.pageAbout`) |
+| 7 | Filtre geçişi | `EkCollapse` | `grid-template-rows 0fr↔1fr` + opaklık, `--ek-duration-base`; kapalıyken `visibility:hidden` + `inert` |
+| 8 | Etiket titremesi | `vuetify-overrides.css`, `site.css` | hareket eden etiket geçiş boyunca görünür; ölçek = micro/body (11/14) → varış boyutu = yüzen kopya; iki kopya aynı ağırlık/aile/aralık; yalnız transform |
+| 9 | Üst bölüm / tam ekran | `ShellChromeHandle`, `shortcuts.ts` | düğmeler sekme şeridinden kalktı → üst barın alt kenarında yüzen tutamak (dinlenirken 12px dil, üzerine gelince/odakta iki düğme); **Ctrl+Shift+H** üst bölüm (Alt+U takma ad), **Ctrl+Shift+F** tam ekran; kısayol listesinde ve tooltip'te |
+| 10 | Genel \| Seçili kayıt | `EkAppHeader`, `ApplicationBar`, `stores/workspace` | anahtar ve `recordTab`/`activateGeneral` kaldırıldı; kayıt bağlamı sekme şeridinden |
+| 11 | Ürün seçenekleri | `ProductVariantListComponent`, `EkDataGrid` genişleme geçişi | varyant ızgarası: mikro başlık + sıralama, görsel + stok kodu/barkod, grup hücresi, seçenek çipleri, fiyat/stok sağa hizalı tabular (tükenen vurgulu, raf), kanal renginde durum çipi + ikon |
+
+**Yeni token'lar:** `shadow-tab-active`, `--ek-channel-*` (6 kanal + nötr × 4 ton), `.ek-ch-*` kapsam sınıfları,
+`--ek-app-chip-h-sm/md`. **Değişen:** `tabstrip-bg`/`tab-hover` (light). **Yeni bileşenler:** `EkPageBar`, `EkCollapse`,
+`ShellChromeHandle`. **Testler:** `tests/theme/channel-tokens.test.ts`, `tests/shell-shortcuts.test.ts` (Ctrl+Shift+H),
+`e2e/specs/page-about.spec.ts`, `shell-dsv2` (dikey taşma 3 viewport; anahtar testi → "anahtar yok, sekmeden geçiş").
