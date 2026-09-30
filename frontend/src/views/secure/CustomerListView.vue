@@ -13,7 +13,8 @@
       @confirm="actionDialog.onConfirm" @cancel="actionDialog.show = false" maxWidth="400px" />
 
     <CustomerDetailComponent v-model="editDialog.show" :customer="selectedCustomerForDetail" :can-anonymize="canAnonymize"
-      @save="handleSave" @anonymize="askAnonymize" />
+      :loading="detailState.loading" :error="detailState.error"
+      @save="handleSave" @anonymize="askAnonymize" @retry="loadDetail(detailState.id)" />
 
     <!-- C1.6 (ADR-0003 F.23) — son kullanıcı silme talebi: kişisel alanlar kalıcı maskelenir, kayıtlar kalır. -->
     <EkConfirmDialog v-model="anonymizeDialog.show" danger :loading="anonymizeDialog.loading"
@@ -73,24 +74,26 @@
 
       <template #cell-name="{ row }">
         <span class="ek-customer">
-          <span class="ek-customer__avatar" aria-hidden="true">{{ row.firstName?.[0] }}{{ row.lastName?.[0] }}</span>
+          <CustomerAvatar :first-name="row.firstName" :last-name="row.lastName" :anonymized="isAnonymized(row.firstName)" size="sm" />
           <span class="ek-customer__name">{{ row.fullName }}</span>
-          <EkStatusChip v-if="row.isCorporate" tone="info" label="Kurumsal" />
+          <EkBadge v-if="row.isCorporate" tone="info">Kurumsal</EkBadge>
         </span>
       </template>
       <template #cell-channel="{ row }">
         <EkChannelDot v-if="row.externalIdentities?.[0]?.integrationCode" :code="row.externalIdentities[0].integrationCode" />
         <span v-else class="ek-muted">Sistem</span>
       </template>
-      <template #cell-phone="{ row }"><span class="ek-num">{{ formatPhone(row.phone) }}</span></template>
-      <template #cell-email="{ row }">{{ row.email || '—' }}</template>
+      <!-- A13 · KVKK: listede iletişim her zaman maskeli; açık değer yalnız müşteri kartında "Göster" ile. -->
+      <template #cell-phone="{ row }"><span class="ek-num">{{ listContact('phone', row.phone, row.isPhoneMasked) }}</span></template>
+      <template #cell-email="{ row }">{{ listContact('email', row.email, row.isEmailMasked) }}</template>
       <template #cell-region="{ row }">
-        {{ row.addresses?.[0]?.city || '—' }}<span v-if="row.addresses?.[0]?.state" class="ek-muted"> · {{ row.addresses[0].state }}</span>
+        <span class="ek-region">{{ row.addresses?.[0]?.city || '—' }}<span v-if="row.addresses?.[0]?.state" class="ek-muted"> · {{ row.addresses[0].state }}</span></span>
       </template>
       <template #cell-orders="{ row }"><span class="ek-num">{{ row.metrics?.totalOrderCount || 0 }}</span></template>
       <template #cell-netRevenue="{ row }"><span class="ek-num">{{ formatMoney(row.netRevenue) }}</span></template>
       <template #cell-returnRate="{ row }">
-        <EkStatusChip :tone="returnRateTone(row.returnRate)" :label="formatPercent((row.returnRate || 0) / 100)" />
+        <EkStatusChip v-if="row.metrics?.totalOrderCount > 0" :tone="rateTone(row.returnRate ?? 0) ?? 'success'" :label="formatPercent((row.returnRate || 0) / 100)" />
+        <span v-else class="ek-muted">—<span class="ek-sr-only">sipariş yok</span></span>
       </template>
       <template #cell-actions="{ row }">
         <EkRowActions :label="`${row.firstName ?? ''} ${row.lastName ?? ''} işlemleri`" :items="[
@@ -110,7 +113,10 @@ import useRestApi from '@/composables/restapi';
 import { useSnackbarStore } from '@/stores/snackbarStore';
 import { useCustomerFilters } from '@/components/customer/composables/useCustomerFilters';
 import { useCustomerActions } from '@/components/customer/composables/useCustomerActions';
-import { formatMoney, formatPercent, formatPhone } from '@/composables/format';
+import { formatMoney, formatPercent } from '@/composables/format';
+import CustomerAvatar from '@/components/customer/card/CustomerAvatar.vue';
+import EkBadge from '@/components/ds/EkBadge.vue';
+import { contactValue, isAnonymized, returnRateTone as rateTone } from '@/components/customer/customerCard';
 
 import LoadingComponent from '@/components/LoadingComponent.vue';
 import ConfirmationDialogComponent from '@/components/layout/ConfirmationDialogComponent.vue';
@@ -241,28 +247,39 @@ function onPageSizeChange(size: number) {
   handlePageChange(1);
 }
 
-function returnRateTone(rate: number): 'success' | 'warning' | 'danger' {
-  if (rate > 30) return 'danger';
-  if (rate > 15) return 'warning';
-  return 'success';
-}
 
 async function getCustomers(resetPage: boolean = false) { await getCustomersInternal(resetPage); }
 
 
 
-const openDetailedReport = async (item: any) => {
-  const guid = loadingComponentRef.value?.info("Analitik veriler hazırlanıyor...") || "loading";
-  try {
-    const res = await restApi.post('CustomerService/getCustomerDetail', { customerId: item._id });
-    selectedCustomerForDetail.value = res;
-    editDialog.value.show = true;
-  } catch (error) {
-    snackbarStore.addSnackbar({ text: "Detay verisi alınamadı", color: "error" });
-  } finally {
-    loadingComponentRef.value?.remove(guid);
+// A13 — yan sayfa hemen açılır (iskelet); hata boş kayıt gibi çizilmez (EkProblemState + Tekrar dene).
+const detailState = ref({ id: '', loading: false, error: false });
+
+async function loadDetail(id: string) {
+  if (!id) return;
+  detailState.value = { id, loading: true, error: false };
+  const res: any = await restApi.post('CustomerService/getCustomerDetail', { customerId: id }).catch(() => null);
+  if (detailState.value.id !== id) return; // başka müşteri açıldı
+  if (!res || isRequestError(res) || isApiError(res) || !res._id) {
+    detailState.value = { id, loading: false, error: true };
+    return;
   }
+  selectedCustomerForDetail.value = res;
+  detailState.value = { id, loading: false, error: false };
+}
+
+const openDetailedReport = (item: any) => {
+  selectedCustomerForDetail.value = null;
+  editDialog.value.show = true;
+  loadDetail(String(item._id));
 };
+
+function listContact(kind: 'phone' | 'email', raw: string, sourceMasked?: boolean) {
+  const v = contactValue(kind, raw, { sourceMasked });
+  if (v.hidden === 'marketplace') return 'Pazaryeri gizledi';
+  if (v.hidden === 'anonymized') return 'Anonimleştirildi';
+  return v.display ?? '—';
+}
 
 const handleSave = async ({ customerId, updateData }: any) => {
   try {
@@ -372,17 +389,8 @@ defineExpose({
   gap: var(--ek-space-2);
 }
 
-.ek-customer__avatar {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--ek-radius-chip);
-  background: var(--ek-color-action-subtle);
-  color: var(--ek-color-action-emphasis);
-  font-size: var(--ek-type-micro-size);
-  font-weight: var(--ek-font-weight-semibold);
+.ek-region {
+  white-space: nowrap;
 }
 
 .ek-customer__name {

@@ -90,19 +90,9 @@
       </EkSection>
 
       <div class="ek-od-cards">
-        <EkInfoCard title="Alıcı" icon="mdi-account-outline" :rows="[
-          { label: 'Ad soyad', value: customerName },
-          { label: 'Telefon', value: order.billingAddress?.phone ? formatPhone(order.billingAddress.phone) : '' },
-          { label: 'E-posta', value: order.billingAddress?.email },
-          { label: 'Fatura tipi', value: order.billingAddress?.isCorporate ? 'Kurumsal' : 'Bireysel' },
-          ...(order.billingAddress?.isCorporate ? [{ label: 'Firma', value: order.billingAddress?.companyName }, { label: 'Vergi no', value: order.billingAddress?.taxNumber }] : []),
-        ]" />
-        <EkInfoCard title="Teslimat adresi" icon="mdi-map-marker-outline" :rows="[
-          { label: 'Alıcı', value: [order.shippingAddress?.firstName, order.shippingAddress?.lastName].filter(Boolean).join(' ') },
-          { label: 'Adres', value: order.shippingAddress?.addressLine1 },
-          { label: 'İlçe / il', value: [order.shippingAddress?.state, order.shippingAddress?.city].filter(Boolean).join(' / ') },
-          { label: 'Tahmini teslim', value: order.dates?.estimatedDeliveryDate ? formatDateTime(order.dates.estimatedDeliveryDate) : '' },
-        ]" />
+        <!-- A13: Alıcı = ortak müşteri kartı (kimlik · maskeli iletişim + kopya · fatura/teslimat adresi ayrımı); tam satır. -->
+        <CustomerBuyerCard class="ek-od-buyer" title="Alıcı" wide :person="buyer" :channel="order.integrationCode"
+          :billing="billingAddress" :shipping="shippingAddress" />
         <EkInfoCard title="Kargo" icon="mdi-truck-outline" :tone="order.fulfillment?.length ? 'info' : 'neutral'"
           :rows="shipmentRows" empty-text="Bu sipariş için henüz kargo kaydı oluşturulmadı.">
           <template v-if="firstShipment?.trackingCode" #actions>
@@ -140,8 +130,10 @@ import EkActionButton from '@/components/ds/EkActionButton.vue';
 import EkRecordSummary, { type EkSummaryFact } from '@/components/ds/EkRecordSummary.vue';
 import EkStatusTimeline, { type EkTimelineStep } from '@/components/ds/EkStatusTimeline.vue';
 import EkInfoCard from '@/components/ds/EkInfoCard.vue';
+import CustomerBuyerCard, { type BuyerPerson } from '@/components/customer/card/CustomerBuyerCard.vue';
+import { addressView } from '@/components/customer/customerCard';
 import { icons } from '@/design/icons';
-import { formatMoney, formatDateTime, formatPhone } from '@/composables/format';
+import { formatMoney, formatDateTime } from '@/composables/format';
 import { ORDER_STATUS_TONE, type StatusTone } from '@/design/status-map';
 import { OrderInternalStatusEnum } from '@/types/OrderTypes';
 import { useLifecycle } from '@/composables/useLifecycle';
@@ -183,6 +175,27 @@ const customerName = computed(() => {
     const name = [b?.firstName, b?.lastName].filter(Boolean).join(' ');
     return name || props.order?.customerFirstName || 'Müşteri bilgisi yok';
 });
+
+// A13 — alıcı kartı verisi (siparişin fatura adresi kimliği; müşteri kaydı siparişte gömülü gelmez → müşteri olma tarihi yok).
+const buyer = computed<BuyerPerson | null>(() => {
+    const o = props.order;
+    if (!o) return null;
+    const b = o.billingAddress ?? {};
+    const sh = o.shippingAddress ?? {};
+    return {
+        id: o._id,
+        firstName: b.firstName || o.customerFirstName || sh.firstName,
+        lastName: b.lastName || o.customerLastName || sh.lastName,
+        companyName: b.companyName,
+        isCorporate: !!b.isCorporate,
+        taxNumber: b.taxNumber,
+        taxOffice: b.taxOffice,
+        phone: b.phone || sh.phone,
+        email: b.email || sh.email,
+    };
+});
+const billingAddress = computed(() => addressView(props.order?.billingAddress));
+const shippingAddress = computed(() => addressView(props.order?.shippingAddress));
 
 const itemCountText = computed(() => {
     const items = props.order?.items ?? [];
@@ -401,5 +414,9 @@ const statusInformation = computed(() => {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
   gap: var(--ek-space-3);
+}
+
+.ek-od-buyer {
+  grid-column: 1 / -1;
 }
 </style>

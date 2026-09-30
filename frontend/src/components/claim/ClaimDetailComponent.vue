@@ -77,11 +77,10 @@
           :rows="[{ label: 'Kargo firması', value: claim.meta.replacementInfo.carrierName }, { label: 'Takip kodu', value: claim.meta.replacementInfo.trackingCode, numeric: true }]" />
         <EkInfoCard v-if="claim.meta?.rejectedInfo?.trackingCode" title="Reddedilen paket (geri gönderilen)" icon="mdi-package-variant-remove" tone="error"
           :rows="[{ label: 'Kargo firması', value: claim.meta.rejectedInfo.carrierName }, { label: 'Takip kodu', value: claim.meta.rejectedInfo.trackingCode, numeric: true }]" />
-        <EkInfoCard title="Müşteri" icon="mdi-account-outline" :rows="customerItems" empty-text="Bu talep için müşteri kaydı bulunamadı.">
-          <template v-if="claim.customer && hasMetrics" #aside>
-            <EkStatusChip :tone="scoreTone" :label="`Skor: ${customerScore}`" />
-          </template>
-        </EkInfoCard>
+        <!-- A13: ortak müşteri kartı. İade listesi projeksiyonu adres/metrik/kimlikleri çıkarır → bu bloklar yalnız veri varsa çizilir. -->
+        <CustomerBuyerCard class="ek-cd-buyer" title="Müşteri" :person="claimCustomer" :channel="claim.integrationCode"
+          :billing="customerAddresses.billing" :shipping="customerAddresses.shipping" :metrics="customerMetrics"
+          empty-text="Bu talep için müşteri kaydı bulunamadı." />
       </div>
 
       <EkSection title="İade geçmişi">
@@ -116,7 +115,9 @@ import EkRecordSummary, { type EkSummaryFact } from '@/components/ds/EkRecordSum
 import EkStatusTimeline, { type EkTimelineStep } from '@/components/ds/EkStatusTimeline.vue';
 import EkInfoCard from '@/components/ds/EkInfoCard.vue';
 import { icons } from '@/design/icons';
-import { formatMoney, formatDateTime, formatPercent } from '@/composables/format';
+import { formatMoney, formatDateTime } from '@/composables/format';
+import CustomerBuyerCard, { type BuyerPerson } from '@/components/customer/card/CustomerBuyerCard.vue';
+import { metricSummary, splitCustomerAddresses } from '@/components/customer/customerCard';
 import { CLAIM_STATUS_TONE, type StatusTone } from '@/design/status-map';
 import { ClaimInternalStatusEnum, CLAIM_INTERNAL_STATUS_LABELS } from '@/types/ClaimTypes';
 import { useLifecycle } from '@/composables/useLifecycle';
@@ -137,16 +138,6 @@ const isOpen = computed({
 
 const openLink = (url: string) => { if (url) window.open(url, '_blank'); };
 
-/** Türkiye telefon formatlayıcı: +90 (5XX) XXX XX XX */
-const formatPhoneNumber = (phone: string | number): string => {
-    if (!phone) return '—';
-    let cleaned = ('' + phone).replace(/\D/g, '');
-    if (cleaned.startsWith('90')) cleaned = cleaned.substring(2);
-    if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
-    if (cleaned.length !== 10) return String(phone);
-    const match = cleaned.match(/^(\d{3})(\d{3})(\d{2})(\d{2})$/);
-    return match ? `+90 (${match[1]}) ${match[2]} ${match[3]} ${match[4]}` : String(phone);
-};
 
 function statusToneOf(status: ClaimInternalStatusEnum) {
     return CLAIM_STATUS_TONE[status] ?? { tone: 'neutral' as StatusTone, labelKey: 'status.claim.waiting' };
@@ -224,8 +215,6 @@ const historyEntries = computed(() => {
     return list.length ? list : [{ status: 'WAITING', description: 'İade talebi oluşturuldu', changedAt: props.claim?.claimedAt }];
 });
 
-const hasMetrics = computed(() => !!props.claim?.customer?.metrics);
-
 const statusInformation = computed(() => {
     if (!props.claim) return null;
     const s = props.claim.internalStatus as ClaimInternalStatusEnum;
@@ -242,37 +231,15 @@ const statusInformation = computed(() => {
     return { title: CLAIM_INTERNAL_STATUS_LABELS[s] ?? 'Bilgi alınıyor', ...info };
 });
 
-const customerScore = computed(() => {
+// A13 — müşteri kartı verisi (yalnız backend alanları; tek skor/formül kaldırıldı — iki farklı sayı üretiyordu).
+const claimCustomer = computed<BuyerPerson | null>(() => {
     const c = props.claim?.customer;
-    return (c?.metrics?.totalOrderCount || 0) - ((c?.metrics?.totalClaimCount || 0) * 2);
+    if (!c) return null;
+    return { id: c._id, firstName: c.firstName, lastName: c.lastName, companyName: c.companyName, isCorporate: c.isCorporate, taxNumber: c.taxNumber, taxOffice: c.taxOffice,
+        phone: c.phone, email: c.email, isPhoneMasked: c.isPhoneMasked, isEmailMasked: c.isEmailMasked, createdAt: c.createdAt };
 });
-
-const scoreTone = computed<StatusTone>(() => {
-    const score = props.claim?.customer?.insights?.customerScore || 0;
-    if (score > 15) return 'success';
-    if (score > 5) return 'warning';
-    return 'danger';
-});
-
-
-const customerItems = computed(() => {
-    const c = props.claim?.customer;
-    if (!c) return [];
-    const rows: Array<{ label: string; value?: string; numeric?: boolean }> = [
-        { label: 'Ad soyad', value: [c.firstName, c.lastName].filter(Boolean).join(' ') },
-        { label: 'Telefon', value: c.phone ? formatPhoneNumber(c.phone) : '' },
-        { label: 'E-posta', value: c.email },
-    ];
-    const city = `${c.addresses?.[0]?.city || ''} ${c.addresses?.[0]?.state || ''}`.trim();
-    if (city) rows.push({ label: 'Lokasyon', value: city });
-    // Metrikler yalnız veride varsa (backend projeksiyonu göndermiyorsa 0/boş UYDURULMAZ).
-    if (c.metrics) {
-        const returnRate = c.metrics.totalOrderCount > 0 ? c.metrics.totalClaimCount / c.metrics.totalOrderCount : 0;
-        rows.push({ label: 'Net kazanç (LTV)', value: formatMoney((c.metrics.totalSpent || 0) - (c.metrics.totalReturnAmount || 0)), numeric: true });
-        rows.push({ label: 'İade oranı', value: formatPercent(returnRate), numeric: true });
-    }
-    return rows;
-});
+const customerAddresses = computed(() => splitCustomerAddresses(props.claim?.customer?.addresses));
+const customerMetrics = computed(() => metricSummary(props.claim?.customer?.metrics));
 
 const itemColumns: EkTableColumn[] = [
     { key: 'productName', label: 'Ürün' },

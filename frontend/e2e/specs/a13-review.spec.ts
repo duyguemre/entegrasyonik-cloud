@@ -157,7 +157,7 @@ const cases: Array<{ name: string; run: (page: Page) => Promise<void> }> = [
 
 // Yakın çekim: yalnız kart, 2× ölçek.
 const closeups: Array<{ name: string; run: (page: Page) => Promise<void> }> = [
-  { name: 'z01-liste-satir', run: async (p) => { await open(p, 'CustomerListView'); const r = view(p, 'customerListView').locator('tbody tr, .ek-grid__card, [role="row"]:has(button)').first(); await r.screenshot({ path: file('z01-liste-satir') }) } },
+  { name: 'z01-liste-satir', run: async (p) => { await open(p, 'CustomerListView'); const r = view(p, 'customerListView').locator('[role="row"]:has(button:has(.mdi-eye-outline))').first(); await r.screenshot({ path: file('z01-liste-satir') }) } },
   {
     name: 'z02-detay-kart',
     run: async (p) => {
@@ -171,7 +171,7 @@ const closeups: Array<{ name: string; run: (page: Page) => Promise<void> }> = [
     run: async (p) => {
       await open(p, 'CustomerListView'); await openRow(p, 'customerListView')
       const reveal = sheet(p).getByRole('button', { name: /Kişisel verileri göster/ }).first()
-      if (await reveal.isVisible().catch(() => false)) { await reveal.click(); await settle(p, 300) }
+      if (await reveal.isVisible().catch(() => false)) { await reveal.click(); await p.mouse.move(0, 0); await p.locator('body').focus().catch(() => undefined); await settle(p, 500) }
       await p.locator('.ek-cust-profile, .ek-detail-sheet__body > div').first().screenshot({ path: file('z03-detay-kart-acik') })
     },
   },
