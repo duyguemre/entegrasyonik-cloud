@@ -13,8 +13,8 @@
 <template>
   <v-dialog
     :model-value="modelValue"
-    :attach="attach || false"
-    :contained="!!attach"
+    v-bind="tabOverlay.overlayProps.value"
+    :content-props="{ id: contentId }"
     class="ek-dialog-overlay ek-cascade-dialog"
     content-class="ek-dialog-content ek-dialog-content--xl"
     @update:model-value="(v: boolean) => emit('update:modelValue', v)"
@@ -41,7 +41,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, toRef, useId, watch } from 'vue'
+import { useTabOverlay } from '@/composables/useTabScope'
 import EkCascadePicker, { type EkCascadeNode } from './EkCascadePicker.vue'
 import EkButton from './EkButton.vue'
 
@@ -73,6 +74,15 @@ const props = withDefaults(
 const emit = defineEmits<{ 'update:modelValue': [open: boolean]; confirm: [path: string[]] }>()
 
 const draft = ref<string[]>([...props.path])
+const contentId = `ek-cascade-dialog-${useId()}`
+// Aşama 6b (Standart 7): sekme kabına bağlanır; Esc/perde kapanışı sekme içi.
+const tabOverlay = useTabOverlay({
+  open: toRef(props, 'modelValue'),
+  attach: toRef(props, 'attach'),
+  persistent: computed(() => false),
+  close: () => emit('update:modelValue', false),
+  contentId,
+})
 
 // Her açılışta taslak, onaylanmış seçimden başlar.
 watch(

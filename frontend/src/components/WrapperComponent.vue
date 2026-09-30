@@ -1,15 +1,17 @@
 <template>
-    <div class="">
-        <div v-for="menuLink in renderList" :key="menuLink.code" class="h-100">
+    <div class="h-100">
+        <WorkspaceTabHost v-for="menuLink in renderList" :key="menuLink.code" :code="menuLink.code"
+            :active="tab?.link?.code == menuLink.code">
             <component v-if="menuLink.isRendered" :ref="setRef(menuLink)" :is="menuLink.component"
                 @clear="emits('clear')" :isRendered="menuLink.isRendered" :parameters="tab?.link?.parameters"
                 :class="[tab?.link.code != menuLink.code ? 'hide-tab-component' : 'wrapper-active-component h-100']" />
-        </div>
+        </WorkspaceTabHost>
     </div>
 </template>
 
 <script lang="ts" setup>
 import { computed, nextTick, ref } from 'vue'
+import WorkspaceTabHost from '@/components/layout/WorkspaceTabHost.vue'
 const emits = defineEmits(['clear'])
 const props = defineProps<{
     tab: any,

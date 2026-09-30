@@ -22,11 +22,9 @@
   <v-dialog
     v-if="!inline"
     :model-value="modelValue"
-    :persistent="persistent || confirmLoading"
     :max-width="resolvedMaxWidth"
-    :attach="resolvedAttach"
-    :contained="!!resolvedAttach"
     :retain-focus="retainFocus"
+    v-bind="tabOverlay.overlayProps.value"
     :aria-labelledby="titleId"
     :aria-describedby="description || $slots.description ? descId : undefined"
     :activator="activator"
@@ -47,7 +45,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, useId, watch } from 'vue'
+import { computed, nextTick, ref, toRef, useId, watch } from 'vue'
+import { useTabOverlay } from '@/composables/useTabScope'
 import EkDialogCard from './EkDialogCard.vue'
 import type { EkTone } from './EkIconTile.vue'
 
@@ -117,15 +116,18 @@ const titleId = `ek-dialog-title-${dialogUid}`
 const descId = `ek-dialog-desc-${dialogUid}`
 const cssWidth = (v: number | string) => (typeof v === 'number' || /^\d+$/.test(v) ? `${v}px` : v)
 const resolvedMaxWidth = computed(() => (props.maxWidth ? cssWidth(props.maxWidth) : PRESET[props.width]))
-// Eski çağıranlar sekme kabını noktasız verebiliyor ("orderListView") — sınıf seçicisine çevrilir.
-const resolvedAttach = computed(() => {
-  const a = props.attach
-  if (!a) return false
-  if (typeof a === 'string' && /^[A-Za-z][\w-]*$/.test(a)) return `.${a}`
-  return a
+const contentId = `ek-dialog-content-${dialogUid}`
+// Aşama 6b (Standart 7): sekme içinden açılan diyalog o sekmenin kabına bağlanır (yalnız o içeriği örter);
+// eski çağıranların noktasız `attach` değeri ("orderListView") sınıf seçicisine çevrilir.
+const tabOverlay = useTabOverlay({
+  open: toRef(props, 'modelValue'),
+  attach: toRef(props, 'attach'),
+  persistent: computed(() => props.persistent || props.confirmLoading),
+  close: () => emit('update:modelValue', false),
+  contentId,
 })
 // Özel genişlik: eski global kural `max-width: unset !important` kullandığı için değer de önemli.
-const contentProps = computed(() => (props.maxWidth ? { style: { maxWidth: `${cssWidth(props.maxWidth)} !important` } } : {}))
+const contentProps = computed(() => ({ id: contentId, ...(props.maxWidth ? { style: { maxWidth: `${cssWidth(props.maxWidth)} !important` } } : {}) }))
 const cardProps = computed(() => ({
   titleId,
   descId,

@@ -1,178 +1,84 @@
+<!--
+  frontend/src/components/LoadingComponent.vue
+
+  Eski yükleme/sonuç API'si (55 kullanım): `info(text)` → iş örtüsü açılır, `remove(id)` kapatır; `success/warning/
+  error(text)` → sonuç. Aşama 6b (Standart 1 + 8): görünüm tek desenlere taşındı —
+    • info / ilerleme → `EkLoadingOverlay` (marka yükleme işareti, YALNIZ bağlandığı içeriği örter: `attach` verilmezse
+      çalışma alanı sekmesinin kabı; uygulama geneli olan tek örnek üst çubuktaki `.AppView` bağlamasıdır);
+    • success / warning / error → tek toast kaynağı (`useToast`) — engelleyici sonuç kutusu YOK.
+  Dışa açık API (info, success, error, warning, remove, showProgress, closeProgress) AYNI.
+-->
 <template>
-  <div v-if="messages.length > 0">
-    <v-overlay persistent v-model="isOverlayActive" location-strategy="connected" target="cursor"
-      class="align-center justify-center fill-height" :attach="attach" :contained="true" location="left">
-
-
-      <div class="align-center justify-center d-flex loading-stage">
-        <v-progress-linear class="elevation-3 mb-16 loading-progress" opacity="1"
-          bg-opacity="1" bg-color="surface"
-          v-model="progressPower" v-if="showProgressBar" color="neutral" height="35">
-          <template v-slot:default>
-            <span class="font-weight-bold">%{{ progressPower }}</span>
-          </template>
-        </v-progress-linear>
-
-
-        <v-progress-circular v-else width="8" size="100"
-          v-if="messages.filter((item: any) => item.type == 'info').length > 0" color="action-contrast"
-          indeterminate></v-progress-circular>
-      </div>
-      <v-alert color="neutral" border="top" class="loading-alert" density="default" elevation="22"
-        v-if="messages.filter((item: any) => item.type == 'info').length > 10000" rounded prominent
-        title="Lütfen Bekleyiniz" type="info">
-
-        <!--          icon="mdi-clock-time-eight-outline" -->
-
-        <template #prepend>
-        </template>
-
-        <template #title>
-          <div class="d-flex justify-center align-center text-center loading-alert__title">
-
-            <v-progress-circular color="action-contrast" indeterminate></v-progress-circular>
-          </div>
-        </template>
-        <div class="mt-2">
-          <p v-for="message of messages.filter((item: any) => item.type == 'info')">{{ message.text }}</p>
-        </div>
-      </v-alert>
-      <v-alert border="top" class="loading-alert" density="default" elevation="22"
-        v-if="messages.filter((item: any) => item.type == 'success').length > 0" icon="mdi-check" title="İşlem Başarılı"
-        type="success">
-        <template #title>
-          <div>
-            <p v-for="message of messages.filter((item: any) => item.type == 'success')">{{ message.text }}</p>
-          </div>
-        </template>
-      </v-alert>
-      <v-alert border="top" class="loading-alert" density="default" elevation="22"
-        v-if="messages.filter((item: any) => item.type == 'warning').length > 0" icon="mdi-exclamation" title="Uyarı"
-        type="warning">
-        <div class="mt-2">
-          <p v-for="message of messages.filter((item: any) => item.type == 'warning')">{{ message.text }}</p>
-        </div>
-      </v-alert>
-      <v-alert border="top" class="loading-alert" density="default" elevation="22"
-        v-if="messages.filter((item: any) => item.type == 'error').length > 0" icon="mdi-close" title="İşlem Başarısız"
-        type="error">
-        <div class="mt-2">
-          <p v-for="message of messages.filter((item: any) => item.type == 'error')">{{ message.text }}</p>
-        </div>
-      </v-alert>
-    </v-overlay>
-  </div>
+  <EkLoadingOverlay :model-value="active" :label="label" :progress="showProgressBar ? progressPower : undefined" :attach="attach" />
 </template>
 
 <script lang="ts" setup>
-import { nextTick } from 'process';
-import { watch, ref, onActivated } from 'vue'
-const props = defineProps<{
-  attach?: string,
-}>()
+import { computed, ref } from 'vue'
+import EkLoadingOverlay from '@/components/ds/EkLoadingOverlay.vue'
+import { useToast, type ToastTone } from '@/composables/useToast'
 
+const props = defineProps<{ attach?: string }>()
+const { showToast } = useToast()
 
-const isOverlayActive = ref(true)
-
-const messages: any = ref([])
-
-const progressPower: any = ref(0)
+interface Message { id: string; text: string; type: 'info' | 'progress' }
+const messages = ref<Message[]>([])
+const progressPower = ref(0)
 const showProgressBar = ref(false)
-var timeoutId: any = undefined
-var time = 30
+let timeoutId: ReturnType<typeof setTimeout> | undefined
+let time = 30
+
+const active = computed(() => messages.value.length > 0 || showProgressBar.value)
+const label = computed(() => messages.value.find((m) => m.type === 'info')?.text || (showProgressBar.value ? 'İşleniyor…' : 'Yükleniyor…'))
+
+const generateGUID = () =>
+  'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16)
+  })
+
 const closeProgress = async () => {
   clearTimeout(timeoutId)
   progressPower.value = 100
   setTimeout(() => {
     showProgressBar.value = false
     progressPower.value = 0
-    messages.value.length = 0
+    messages.value = messages.value.filter((m) => m.type !== 'progress')
   }, 800)
 }
+
+// Sunucu ilerleme bildirmiyor: tahmini ilerleme (yavaşlayan adımlar, %95'te bekler) — eski davranış aynen.
 const showProgress = () => {
-  messages.value.push({})
   showProgressBar.value = true
   timeoutId = setTimeout(() => {
-    progressPower.value += ((Math.floor(Math.random() * 100)) % 8) + 1;
-    if (progressPower.value < 20) time = 500;
-    else if (progressPower.value < 40) time = 600;
-    else if (progressPower.value < 80) time = 800;
+    progressPower.value += (Math.floor(Math.random() * 100) % 8) + 1
+    if (progressPower.value < 20) time = 500
+    else if (progressPower.value < 40) time = 600
+    else if (progressPower.value < 80) time = 800
     else if (progressPower.value > 95) {
-      progressPower.value = 95;
-      time = 500;
+      progressPower.value = 95
+      time = 500
     }
-    if (showProgressBar.value == true) showProgress()
-  }, time);
-}
-
-
-
-const generateGUID = () => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-    var r = Math.random() * 16 | 0,
-      v = c == 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
+    if (showProgressBar.value) showProgress()
+  }, time)
 }
 
 const info = (text: string) => {
-  let message = { id: generateGUID(), text, type: "info" }
+  const message: Message = { id: generateGUID(), text, type: 'info' }
   messages.value.push(message)
   return message.id
 }
 
-const success = (text: string) => {
-  let message = { id: generateGUID(), text, type: "success" }
-  messages.value.push(message)
-  return message.id
+const notify = (tone: ToastTone, text: string) => {
+  showToast({ tone, message: text })
+  return generateGUID()
 }
-
-const error = (text: string) => {
-  let message = { id: generateGUID(), text, type: "error" }
-  messages.value.push(message)
-  return message.id
-}
-
-const warning = (text: string) => {
-  let message = { id: generateGUID(), text, type: "warning" }
-  messages.value.push(message)
-  return message.id
-}
-
+const success = (text: string) => notify('success', text)
+const error = (text: string) => notify('error', text)
+const warning = (text: string) => notify('warning', text)
 
 const remove = (guid: string) => {
-  messages.value = messages.value.filter((item: any) => item.id !== guid);
+  messages.value = messages.value.filter((item) => item.id !== guid)
 }
 
-defineExpose({
-  info,
-  success,
-  error,
-  warning,
-  remove,
-  showProgress,
-  closeProgress
-});
-
+defineExpose({ info, success, error, warning, remove, showProgress, closeProgress, attach: props.attach })
 </script>
-
-<style scoped>
-.loading-stage {
-  height: 100%;
-}
-
-.loading-progress {
-  border-radius: var(--ek-radius-sm);
-  border: 1px solid var(--ek-color-border-strong);
-  opacity: 1;
-  width: 300px;
-}
-
-.loading-alert {
-  border: 1px solid var(--ek-color-border-strong);
-}
-
-.loading-alert__title {
-  width: 100%;
-}
-</style>

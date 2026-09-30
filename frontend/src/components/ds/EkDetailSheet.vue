@@ -18,7 +18,8 @@
     </EkDetailSheet>
 -->
 <template>
-  <v-dialog v-model="isOpen" content-class="ek-detail-sheet" transition="fade-transition">
+  <v-dialog v-model="isOpen" content-class="ek-detail-sheet" transition="fade-transition"
+    :content-props="{ id: contentId }" v-bind="tabOverlay.overlayProps.value">
     <v-card class="ek-detail-sheet__card">
       <header class="ek-detail-sheet__header">
         <div class="ek-detail-sheet__identity">
@@ -38,15 +39,28 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, toRef, useId } from 'vue'
+import { useTabOverlay } from '@/composables/useTabScope'
 
 const props = defineProps<{
   modelValue: boolean
   /** Başlıktaki kimlik metni (ör. sipariş no). */
   identity: string
+  /** Açık hedef (verilmezse çalışma alanı sekmesinin kabı; sekme dışında gövde). */
+  attach?: string | boolean | Element
 }>()
 
 const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>()
+
+const contentId = `ek-detail-sheet-${useId()}`
+// Aşama 6b (Standart 7): yan sayfa sekmenin içerik alanına bağlanır — sekme şeridi/üst bar/menü açık kalır.
+const tabOverlay = useTabOverlay({
+  open: toRef(props, 'modelValue'),
+  attach: toRef(props, 'attach'),
+  persistent: computed(() => false),
+  close: () => emit('update:modelValue', false),
+  contentId,
+})
 
 const isOpen = computed({
   get: () => props.modelValue,
@@ -69,6 +83,11 @@ const isOpen = computed({
   width: 720px;
   max-width: 100%;
   border-radius: 0;
+}
+
+/* Sekme kabına bağlı (contained): kabın sağına yaslı, kabın yüksekliğinde. */
+.v-overlay--contained > .ek-detail-sheet.v-overlay__content {
+  position: absolute;
 }
 
 @media (max-width: 1279px) {

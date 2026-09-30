@@ -22,10 +22,8 @@
 <template>
   <v-dialog
     :model-value="modelValue"
-    :attach="resolvedAttach"
-    :contained="!!resolvedAttach"
-    :persistent="persistent"
     :retain-focus="retainFocus"
+    v-bind="tabOverlay.overlayProps.value"
     :class="['ek-dialog-overlay', 'ek-dialog-host', `ek-dialog-host--${placement}`]"
     :content-class="`ek-dialog-content ek-dialog-host__content ek-dialog-content--${maxWidth ? 'custom' : width}`"
     :content-props="contentProps"
@@ -36,7 +34,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, toRef, useId } from 'vue'
+import { useTabOverlay } from '@/composables/useTabScope'
 
 const props = withDefaults(
   defineProps<{
@@ -55,13 +54,16 @@ const props = withDefaults(
 const emit = defineEmits<{ 'update:modelValue': [open: boolean] }>()
 
 const cssWidth = (v: number | string) => (typeof v === 'number' || /^\d+$/.test(v) ? `${v}px` : v)
-const resolvedAttach = computed(() => {
-  const a = props.attach
-  if (!a) return false
-  if (typeof a === 'string' && /^[A-Za-z][\w-]*$/.test(a)) return `.${a}`
-  return a
+const contentId = `ek-dialog-host-${useId()}`
+// Aşama 6b (Standart 7): sekme kabına bağlanır (yalnız o sekmenin içeriğini örter); Esc/perde kapanışı sekme içi.
+const tabOverlay = useTabOverlay({
+  open: toRef(props, 'modelValue'),
+  attach: toRef(props, 'attach'),
+  persistent: toRef(props, 'persistent'),
+  close: () => emit('update:modelValue', false),
+  contentId,
 })
-const contentProps = computed(() => (props.maxWidth ? { style: { maxWidth: `${cssWidth(props.maxWidth)} !important` } } : {}))
+const contentProps = computed(() => ({ id: contentId, ...(props.maxWidth ? { style: { maxWidth: `${cssWidth(props.maxWidth)} !important` } } : {}) }))
 </script>
 
 <style src="./ek-dialog-overlay.css"></style>

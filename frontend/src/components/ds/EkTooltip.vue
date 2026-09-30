@@ -18,8 +18,9 @@
       <EkKbd v-if="shortcut" :keys="shortcut" tone="inverse" />
     </span>
   </span>
+  <!-- Aşama 6b: tembel (`eager=false`) — kapalı ipucu metni DOM'da kalmaz (erişilebilir ad/metin çiftlenmesi yok). -->
   <v-tooltip
-    v-else :location="location" :open-delay="openDelay" :model-value="forceOpen || undefined">
+    v-else :location="location" :open-delay="openDelay" :model-value="forceOpen || undefined" :eager="false" transition="fade-transition">
     <template #activator="{ props: activatorProps }">
       <span class="ek-tooltip__anchor" v-bind="activatorProps">
         <slot />
