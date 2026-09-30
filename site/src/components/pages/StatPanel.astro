@@ -1,0 +1,76 @@
+---
+/**
+ * StatPanel — hero cam panelinde "Bir bakışta" sayaçları (S17: S16 `/entegrasyonlar` kapsam özetinden ortak
+ * bileşene çekildi). Değerler YALNIZCA kayıttan hesaplanıp verilir; her `data-stat` değeri tests/pages.test.ts
+ * içinde aynı kayıttan yeniden hesaplanarak doğrulanır (sabit rakam yazılmaz). Alt kısım için varsayılan yuva.
+ */
+interface Stat {
+  id: string
+  value: number
+  label: string
+}
+
+interface Props {
+  tag: string
+  stats: Stat[]
+  testid?: string
+}
+
+const { tag, stats, testid } = Astro.props
+---
+
+<p class="stat-panel__tag">{tag}</p>
+<dl class="stats" data-testid={testid}>
+  {
+    stats.map((st) => (
+      <div class="stat">
+        <dt class="stat__label">{st.label}</dt>
+        <dd class="stat__value" data-stat={st.id}>
+          {st.value}
+        </dd>
+      </div>
+    ))
+  }
+</dl>
+<slot />
+
+<style>
+  .stat-panel__tag {
+    margin: 0 0 var(--ek-space-4);
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--site-border-width);
+    margin: 0;
+    overflow: hidden;
+    border-radius: var(--ek-radius-lg);
+    background: var(--site-glass-border);
+  }
+  .stat {
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: flex-end;
+    gap: var(--ek-space-1);
+    padding: var(--ek-space-4);
+    background: color-mix(in srgb, var(--site-stage-deep) 55%, transparent);
+  }
+  .stat__value {
+    margin: 0;
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--site-font-display-sm);
+    font-weight: var(--site-font-display-weight);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: var(--site-font-display-tracking);
+    line-height: 1;
+  }
+  .stat__label {
+    color: var(--site-text-on-dark-body);
+    font-size: var(--ek-font-size-sm);
+  }
+</style>

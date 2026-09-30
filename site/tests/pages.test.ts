@@ -155,6 +155,10 @@ const EXPECTED_STATS: Record<string, number> = {
   'kind-marketplace': getPublicIntegrations('marketplace').length,
   'kind-ecommerce': getPublicIntegrations('ecommerce').length,
   'kind-erp': getPublicIntegrations('erp').length,
+  // S17 /ozellikler "Bir bakışta": çekirdek yetenek kaydından
+  features: getPublicCapabilities('core').length,
+  'features-available': getPublicCapabilities('core').filter((c) => c.status === 'available').length,
+  'features-partial': getPublicCapabilities('core').filter((c) => c.status === 'partial').length,
 }
 function withoutVerifiedStats(source: string): string {
   return source.replace(/<(dd|span)([^>]*)\sdata-stat="([^"]+)"([^>]*)>\s*(\d+)\s*<\/\1>/g, (_m, _tag, _a, id: string, _b, value: string) => {
