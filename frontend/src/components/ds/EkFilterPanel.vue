@@ -139,10 +139,6 @@ function onHeadClick(e: MouseEvent) {
   background: var(--ek-color-surface-sunken);
 }
 
-.ek-filter__head:has(.ek-filter__toggle:focus-visible) {
-  box-shadow: inset 0 0 0 2px var(--ek-color-border-focus);
-}
-
 .ek-filter__heading {
   flex: none;
   min-width: 0;
@@ -167,6 +163,7 @@ function onHeadClick(e: MouseEvent) {
 
 .ek-filter__toggle:focus-visible {
   outline: none;
+  box-shadow: var(--ek-focus-ring);
 }
 
 .ek-filter__glyph {

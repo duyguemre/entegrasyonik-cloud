@@ -12,8 +12,8 @@
       Sığma hesabı görünmez bir ölçüm kopyasından (tüm çipler) yapılır → görünür satır ölçüm döngüsüne girmez.
 -->
 <template>
+  <div v-if="filters.length" class="ek-active-filters-root" :class="`ek-active-filters-root--${variant}`">
   <div
-    v-if="filters.length"
     class="ek-active-filters"
     :class="[`ek-active-filters--${variant}`, { 'is-expanded': expanded }]"
     role="group"
@@ -56,7 +56,9 @@
       {{ variant === 'compact' ? 'Temizle' : 'Tümünü temizle' }}
     </button>
 
-    <!-- Ölçüm kopyası (yalnız compact): tüm çipler tek satırda, görünmez; sığma hesabı buradan. -->
+  </div>
+    <!-- Ölçüm kopyası (yalnız compact): tüm çipler tek satırda, görünmez; sığma hesabı buradan. Grubun DIŞINDA
+         (erişilebilir ağaçta ve "Aktif filtreler" grubunun metninde yer almaz). -->
     <div v-if="variant === 'compact'" ref="measureRef" class="ek-active-filters__measure" aria-hidden="true" inert>
       <span v-for="f in filters" :key="f.key" class="ek-active-filters__chip">
         <span class="ek-active-filters__chip-label">{{ f.label }}:</span>
@@ -140,6 +142,16 @@ watch(
 </script>
 
 <style scoped>
+.ek-active-filters-root {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+
+.ek-active-filters-root > .ek-active-filters {
+  flex: 1 1 auto;
+}
+
 .ek-active-filters {
   position: relative;
   display: flex;
