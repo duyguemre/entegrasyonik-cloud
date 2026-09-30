@@ -2,10 +2,10 @@
   <div class="categoryListView">
     <div class="workarea-scroll">
       <v-row class="mt-0 mb-0 cdv-row">
-        <v-col class="cdv-col">
+        <v-col cols="12" sm="6" class="cdv-col">
           <CategoryListComponent v-model="isCategoriesListed" @openCategorySync="openCategorySync($event)" />
         </v-col>
-        <v-col class="cdv-col">
+        <v-col cols="12" sm="6" class="cdv-col">
           <CategorySyncComponent v-model="selectedCategory" />
         </v-col>
       </v-row>
@@ -112,6 +112,8 @@ const drawer = computed({
   height: 100%;
 }
 
+/* Faz3 DS-v2 int düzeltme: <600px'te (xs) iki panel alt alta (cols=12, sm=6). Yan yana 375px'te
+   liste paneli ~140px'e sıkışıp marka/kategori adları 0 genişliğe düşüyordu (satır başlığı ellipsis). */
 .cdv-col {
   height: calc(100vh - 110px);
   position: relative;
