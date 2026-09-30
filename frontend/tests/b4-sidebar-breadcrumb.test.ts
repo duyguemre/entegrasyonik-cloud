@@ -88,11 +88,12 @@ describe('B4 — daralma/genişleme koreografisi', () => {
 describe('B4 — breadcrumb çipleri + yardım tetikleyicisi', () => {
   const css = style(bar)
 
-  it('ara öğeler ve kök nötr çip (ince kenarlık, çok hafif zemin, chip-h-md); vurgu rengi yok', () => {
+  // FR2-SHELL madde 1 (fe-r2a, bilinçli güncelleme): çip kenarlığı/zemini KALKTI — sakin metin izi (kullanıcı: "amatör").
+  it('ara öğeler ve kök nötr metin halkası (kenarlık/zemin yok, chip-h-md hedef yüksekliği); vurgu rengi yok', () => {
     const chip = rule(css, '.ek-crumbs__chip')
     expect(chip).toContain('height: var(--ek-app-chip-h-md)')
-    expect(chip).toContain('border: 1px solid var(--ek-color-border-default)')
-    expect(chip).toContain('background: var(--ek-color-surface-muted)')
+    expect(chip).toContain('border: 0')
+    expect(chip).toContain('background: transparent')
     expect(chip).toContain('color: var(--ek-color-content-muted)')
     const crumbBlocks = blocks(css).filter((b) => b.sel.includes('ek-crumbs'))
     for (const b of crumbBlocks) expect(b.body, b.sel).not.toMatch(/--ek-color-action/)

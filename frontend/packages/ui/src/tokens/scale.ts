@@ -129,6 +129,8 @@ export const controlHeight = {
   sm: 32,
   md: 36,
   lg: 40,
+  /** Metin/seçim/tarih alanı (FR2-SHELL madde 5: 40 → 36, düğme `md` ile aynı hiza). */
+  field: 36,
 } as const
 
 /**
