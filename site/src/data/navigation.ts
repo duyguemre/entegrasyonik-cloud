@@ -3,6 +3,7 @@
  * sayfa yazıldığında (S2b/S5) yalnızca bayrak çevrilir; böylece S0'da kırık bağlantı üretilmez.
  * Bu dosya iddia içermez (yalnızca yol + etiket).
  */
+import { AGENT_BRAND, AGENT_PATH } from './agent-brand'
 export interface NavItem {
   label: string
   href: string
@@ -14,7 +15,7 @@ export interface NavItem {
 export const primaryNav: NavItem[] = [
   { label: 'Özellikler', href: '/ozellikler', published: true }, // S2b
   { label: 'Entegrasyonlar', href: '/entegrasyonlar', published: true }, // S2b
-  { label: 'Asistan', href: '/asistan', published: true, badge: 'Yeni' }, // S18 (UPCOMING yüzeyi — src/data/assistant.ts)
+  { label: AGENT_BRAND, href: AGENT_PATH, published: true, badge: 'Yeni' }, // S18 → S22: etiket ve hedef ad sabitinden (src/data/agent-brand.ts)
   { label: 'Fiyatlandırma', href: '/fiyatlandirma', published: true }, // S4b
   { label: 'Güvenlik', href: '/guvenlik', published: true }, // S2b
   { label: 'SSS', href: '/sss', published: true }, // S2b

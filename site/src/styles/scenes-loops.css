@@ -1707,4 +1707,87 @@
     ) {
     animation-play-state: paused;
   }
+
+  /* ---------------------------------------------------------------------------------------- */
+  /* agent-console (S22) — ajan sayfası hero konsolu: durum noktalarında sakin ışıma (6 sn, satır  */
+  /*   başına kaydırılmış) + konsolu yukarıdan aşağı tarayan ince ışık (12 sn). Statik hâl: noktalar */
+  /*   dolu, tarama ışığı görünmez (AgentConsole.astro).                                           */
+  /* agent-loop (S22) — ajan döngüsü: geniş ekranda iz çizgisi boyunca akan ışık (12 sn) ve sırası   */
+  /*   gelen düğümde hafif büyüme. Statik hâl: ışık yok, düğümler dolu (AgentLoop.astro).           */
+  /* ---------------------------------------------------------------------------------------- */
+  @keyframes loop-agent-live {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.35;
+    }
+  }
+  @keyframes loop-agent-scan {
+    0% {
+      opacity: 0;
+      translate: 0 -100%;
+    }
+    10% {
+      opacity: 1;
+    }
+    60% {
+      opacity: 1;
+      translate: 0 600%;
+    }
+    70%,
+    100% {
+      opacity: 0;
+      translate: 0 600%;
+    }
+  }
+  @keyframes loop-agent-trace {
+    0% {
+      opacity: 0;
+      translate: 0 0;
+    }
+    6% {
+      opacity: 1;
+    }
+    88% {
+      opacity: 1;
+      translate: 100% 0;
+    }
+    94%,
+    100% {
+      opacity: 0;
+      translate: 100% 0;
+    }
+  }
+  @keyframes loop-agent-beacon {
+    0%,
+    10%,
+    100% {
+      scale: 1;
+    }
+    4% {
+      scale: 1.08;
+    }
+  }
+  html[data-motion='play'] [data-scene='agent-console'][data-state='play'] [data-part='agent-live'] {
+    animation: loop-agent-live var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
+    animation-delay: calc(var(--site-motion-phase) * var(--k, 0));
+    animation-fill-mode: backwards;
+  }
+  html[data-motion='play'] [data-scene='agent-console'][data-state='play'] [data-part='agent-scan'] {
+    animation: loop-agent-scan var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
+  }
+  html[data-motion='play'] [data-scene='agent-loop'][data-state='play'] [data-part='loop-trace'] {
+    animation: loop-agent-trace var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
+  }
+  html[data-motion='play'] [data-scene='agent-loop'][data-state='play'] [data-part='loop-node'] {
+    animation: loop-agent-beacon var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
+    animation-delay: calc(var(--site-motion-loop-scene) * 0.2 * var(--k, 0));
+    animation-fill-mode: backwards;
+  }
+  html[data-motion='play'] [data-scene='agent-console'][data-state='play'][data-visible='true'] :is([data-part='agent-live'], [data-part='agent-scan']),
+  html[data-motion='play'] [data-scene='agent-loop'][data-state='play'][data-visible='true'] :is([data-part='loop-trace'], [data-part='loop-node']) {
+    animation-play-state: running;
+  }
 }

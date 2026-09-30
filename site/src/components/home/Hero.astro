@@ -21,6 +21,11 @@
  * "uygulama penceresi"ne yükseltildi — pencere çubuğu (nötr noktalar + ortada başlık hapı + sessiz araç çubukları),
  * marka gradyanından kenar ışığı, cam kasa (bezel), üst kenarda her sahne geçişinde tek sakin parıltı, zemin ışıması.
  * Adaylar (katmanlı derinlik, çerçevesiz sahne) ve gerekçe: docs/s21-review/README.md; korumalar: tests/hero-frame.test.ts.
+ *
+ * S22 (SR2-HOME): kopyanın en üstünde ajan ürününe giriş hapı — ad + tek cümle değer + sayfa bağlantısı. Metin
+ * `heroAgentEntry` kaydından (src/data/assistant.ts); İSTİSNA DEĞİLDİR (claims.test.ts katı taraması; "yolda" dili yok),
+ * aşama etiketi ("Erken erişim") görünür. Operasyon merkezi penceresinin canlı noktasıyla aynı görsel dil.
+ * Ana mesaj (başlık, açıklama, CTA'lar) değişmedi.
  */
 import Button from '../Button.astro'
 import Icon from './Icon.astro'
@@ -28,6 +33,7 @@ import { appUrls } from '../../lib/site-config'
 import { getPublicIntegrations } from '../../data/integrations'
 import { getPublicCapabilities } from '../../data/capabilities'
 import { getPublicTrial } from '../../data/plans'
+import { ASSISTANT_PATH, heroAgentEntry as agent } from '../../data/assistant'
 
 const trial = getPublicTrial()
 // Kanal noktaları: yalnızca mevcut entegrasyonların RENGİ (ad DOM'a yazılmaz; sahne aria-hidden'dır).
@@ -89,6 +95,14 @@ const secureItems = [
 
   <div class="hero__inner">
     <div class="hero__copy">
+      <a class="hero__agent" href={ASSISTANT_PATH} data-testid="hero-agent-entry">
+        <span class="hero__agent-row">
+          <span class="hero__agent-badge"><i class="hero__agent-live" aria-hidden="true"></i>{agent.badge}</span>
+          <strong class="hero__agent-name">{agent.name}</strong>
+          <span class="hero__agent-cta">{agent.cta}<Icon name="arrow" size="sm" /></span>
+        </span>
+        <span class="hero__agent-value">{agent.value}</span>
+      </a>
       <p class="hero__eyebrow"><span class="hero__eyebrow-dot" aria-hidden="true"></span>Çok kanallı satış yönetimi</p>
       <h1 id="hero-title" class="hero__title">
         Tüm pazaryerleriniz, <span class="hero__accent">tek stok</span>, tek panel.
@@ -371,6 +385,75 @@ const secureItems = [
     align-items: flex-start;
     gap: var(--ek-space-6);
     min-width: 0;
+  }
+  /* S22: ajan girişi hapı — cam zemin + marka gradyanından ince kenar; odak/üzerine gelme durumları site genelindeki
+     bağlantı dilinde. Dar ekranda değer cümlesi gizlenir (ad + aşama + bağlantı kalır). */
+  .hero__agent {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+    max-width: 36rem;
+    padding: var(--ek-space-3) var(--ek-space-4);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 38%, transparent);
+    border-radius: var(--ek-radius-lg);
+    background:
+      linear-gradient(100deg, color-mix(in srgb, var(--ek-color-secondary) 14%, transparent), transparent 75%),
+      var(--site-glass-bg);
+    color: var(--site-text-on-dark-body);
+    font-size: var(--ek-font-size-sm);
+    text-decoration: none;
+    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .hero__agent:hover {
+    border-color: var(--site-accent-on-dark);
+  }
+  .hero__agent:focus-visible {
+    outline: var(--site-focus-ring-width) solid var(--site-color-focus-ring);
+    outline-offset: var(--site-focus-ring-offset);
+  }
+  .hero__agent-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ek-space-2) var(--ek-space-3);
+  }
+  .hero__agent-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    padding: 0 var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: var(--site-gradient-accent-on-dark);
+    color: var(--site-stage-deep);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-bold);
+    line-height: var(--ek-line-height-normal);
+  }
+  .hero__agent-live {
+    width: calc(var(--ek-space-1) * 1.5);
+    height: calc(var(--ek-space-1) * 1.5);
+    border-radius: var(--ek-radius-full);
+    background: var(--site-stage-deep);
+  }
+  .hero__agent-name {
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .hero__agent-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-1);
+    margin-inline-start: auto;
+    color: var(--site-accent-on-dark);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .hero__agent:hover .hero__agent-cta :global(.icon) {
+    translate: calc(var(--ek-space-1) * 0.5) 0;
+  }
+  .hero__agent-value {
+    color: var(--site-text-on-dark-body);
+    line-height: var(--ek-line-height-normal);
   }
   .hero__eyebrow {
     display: inline-flex;

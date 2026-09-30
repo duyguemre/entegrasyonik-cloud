@@ -1,9 +1,9 @@
 ---
 /**
- * AssistantTeaser (S18) — ana sayfada "Entegrasyonik Asistan" bandı: dikkat çekici ama sayfayı ele geçirmeyen tek kart.
- * UPCOMING yüzeyidir (`UPCOMING_SURFACES.components`): "yolda" dili yalnızca burada ve /asistan'da görünebilir.
+ * AssistantTeaser (S18) — ana sayfada ajan ürünü bandı (S22: ad `AGENT_NAME` sabitinden): dikkat çekici ama sayfayı ele geçirmeyen tek kart.
+ * UPCOMING yüzeyidir (`UPCOMING_SURFACES.components`): "yolda" dili yalnızca burada ve ajan sayfasında görünebilir.
  * Tüm metin `assistantTeaser` kaydından (src/data/assistant.ts); aşama rozeti ZORUNLU (tests/upcoming.test.ts).
- * Sağdaki küçük sohbet önizlemesi dekoratiftir (aria-hidden), hareketsizdir; asıl örnek senaryo /asistan'dadır.
+ * Sağdaki küçük sohbet önizlemesi dekoratiftir (aria-hidden), hareketsizdir; asıl örnek senaryo ajan sayfasındadır.
  * Yerleşim: Entegrasyonlar (gri) ile Nasıl çalışır (koyu) arasında açık zeminli, dar dikey boşluklu bir bant.
  */
 import Section from '../Section.astro'
@@ -12,14 +12,14 @@ import StageBadge from '../assistant/StageBadge.astro'
 import { ASSISTANT_PATH, assistantTeaser as t } from '../../data/assistant'
 ---
 
-<Section id="asistan" labelledby="asistan-baslik" class="teaser-section">
+<Section id="ajan-bandi" labelledby="ajan-bandi-baslik" class="teaser-section">
   <div class="teaser" data-testid="assistant-teaser">
     <div class="teaser__body">
       <div class="teaser__tags">
         <span class="teaser__soon"><Icon name="sparkle" size="sm" />{t.eyebrow}</span>
         <StageBadge stage="early-access" inverse />
       </div>
-      <h2 id="asistan-baslik">{t.title}</h2>
+      <h2 id="ajan-bandi-baslik">{t.title}</h2>
       <p class="teaser__lead">{t.lead}</p>
       <ul class="teaser__points" role="list">
         {

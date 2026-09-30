@@ -17,7 +17,8 @@
 import { getPublicIntegrations, type IntegrationKind, type PublicIntegration } from './integrations'
 import { getConnectGuide } from './connect'
 import { legalDocs, legalHref, LEGAL_REVIEWED } from './legal'
-import { ASSISTANT_NAME, ASSISTANT_PATH, assistantLlms } from './assistant'
+import { ASSISTANT_PATH, assistantLlms } from './assistant'
+import { AGENT_BRAND, AGENT_DESCRIPTOR, AGENT_NAME } from './agent-brand'
 import { clusterOf, guideHref, guides, GLOSSARY_PATH, REHBER_PATH } from './kb'
 import { HUB } from './kb/hub'
 import { GLOSSARY_META } from './kb/glossary'
@@ -229,20 +230,19 @@ const STATIC_ENTRIES: SeoEntry[] = [
     sources: ['src/pages/iletisim.astro', 'src/data/company.ts'],
   },
   {
-    // S18 (içerik kararları S18'e ait): vizyon sayfası — ürünün bugünkü sürümünde YOK; LLM metinlerinde S18'in
-    // `assistantLlms.short` satırıyla ("geliştirme aşamasında") geçer. Açıklama 155 sınırı için S18 metninden kısaltıldı.
+    // S18 (içerik kararları S18'e ait) → S22: ad/rota/başlık/ekmek kırıntısı TEK ad sabitinden (src/data/agent-brand.ts).
+    // Vizyon sayfası — platformun bugünkü sürümünde YOK; LLM metinlerinde `assistantLlms.short` ("geliştirme aşamasında").
     path: ASSISTANT_PATH,
-    title: ASSISTANT_NAME,
-    description:
-      'Stok, sipariş ve fiyat işlerinizi sohbetle yöneteceğiniz, kritik işlemleri onayınıza sunacak asistan. Geliştirme aşamasında; erken erişim listesi açık.',
+    title: `${AGENT_BRAND}: ${AGENT_DESCRIPTOR}`,
+    description: `${AGENT_NAME}: stok, sipariş ve katalog işlerinizi izleyecek, öneri getirecek ve onayınızla uygulayacak ajanlar. Geliştirme aşamasında.`,
     index: true,
     upcoming: true,
-    crumb: 'Asistan',
+    crumb: AGENT_BRAND,
     schema: ['WebPage'],
     ogEyebrow: 'Geliştirme aşamasında',
     section: 'product',
     llmsSummary: assistantLlms.short,
-    sources: ['src/pages/asistan.astro', 'src/data/assistant.ts', 'src/components/assistant'],
+    sources: ['src/pages/[ajan].astro', 'src/data/assistant.ts', 'src/data/agent-brand.ts', 'src/components/assistant'],
   },
   {
     path: '/404',
