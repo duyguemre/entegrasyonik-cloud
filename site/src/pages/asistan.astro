@@ -269,6 +269,7 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
         </ul>
       </div>
       <div class="cta__panel" data-testid="assistant-cta">
+        <p class="cta__subject"><Icon name="mail" size="sm" /><span>{assistantCta.subjectNote} <strong>{assistantCta.subject}</strong></span></p>
         <EmailActions email={contactEmail} id="asistan-erken" subject={assistantCta.subject} tone="dark" sendLabel={assistantCta.sendLabel} />
       </div>
     </div>
@@ -884,6 +885,24 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
   .cta__points :global(.icon) {
     flex: none;
     margin-top: 0.1875rem;
+    color: var(--site-accent-on-dark);
+  }
+  .cta__subject {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    margin: 0 0 var(--ek-space-5);
+    padding-bottom: var(--ek-space-4);
+    border-bottom: var(--site-border-width) solid var(--site-glass-border);
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-sm);
+  }
+  .cta__subject strong {
+    color: var(--site-text-on-dark-heading);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .cta__subject :global(.icon) {
+    flex: none;
     color: var(--site-accent-on-dark);
   }
   .cta__panel {

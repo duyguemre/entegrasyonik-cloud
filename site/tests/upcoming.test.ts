@@ -416,4 +416,10 @@ describe('(5) erken erişim: form yok, mailto deseni', () => {
     }
     expect(readFileSync(path.join(srcDir, 'pages', 'asistan.astro'), 'utf8')).toMatch(/<EmailActions[^>]*subject=\{assistantCta\.subject\}/)
   })
+
+  it('satır içi style özniteliği yok (CSP style-src \'self\'; stagger sırası CSS nth-child ile)', () => {
+    for (const f of ['pages/asistan.astro', ...UPCOMING_SURFACES.components, 'components/assistant/ChatScene.astro', 'components/assistant/StageBadge.astro']) {
+      expect(readFileSync(path.join(srcDir, f), 'utf8'), f).not.toMatch(/\sstyle=/)
+    }
+  })
 })

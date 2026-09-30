@@ -35,7 +35,7 @@ import { assistantScenario as s } from '../../data/assistant'
 
       <li class="msg msg--bot">
         <span class="typing" data-part="ai-typing1" aria-hidden="true">
-          <span class="typing__dots"><i data-part="ai-dot"></i><i data-part="ai-dot" style="--k: 1"></i><i data-part="ai-dot" style="--k: 2"></i></span>
+          <span class="typing__dots"><i data-part="ai-dot"></i><i data-part="ai-dot"></i><i data-part="ai-dot"></i></span>
           {s.typing}
         </span>
         <div class="card" data-part="ai-result" data-testid="scenario-result">
@@ -51,8 +51,8 @@ import { assistantScenario as s } from '../../data/assistant'
             </thead>
             <tbody>
               {
-                s.rows.map((r, k) => (
-                  <tr class="row" data-part="ai-row" style={`--k: ${k}`}>
+                s.rows.map((r) => (
+                  <tr class="row" data-part="ai-row">
                     <td class="row__name">{r.name}</td>
                     <td class="row__sku">{r.sku}</td>
                     <td class="row__stock"><span>{r.stock}</span></td>
@@ -74,7 +74,7 @@ import { assistantScenario as s } from '../../data/assistant'
 
       <li class="msg msg--bot">
         <span class="typing" data-part="ai-typing2" aria-hidden="true">
-          <span class="typing__dots"><i data-part="ai-dot"></i><i data-part="ai-dot" style="--k: 1"></i><i data-part="ai-dot" style="--k: 2"></i></span>
+          <span class="typing__dots"><i data-part="ai-dot"></i><i data-part="ai-dot"></i><i data-part="ai-dot"></i></span>
           {s.typing}
         </span>
         <div class="card card--approve" data-part="ai-approve" data-testid="scenario-approval">
@@ -275,6 +275,18 @@ import { assistantScenario as s } from '../../data/assistant'
   .typing__dots {
     display: inline-flex;
     gap: var(--ek-space-1);
+  }
+  /* Stagger sırası (--k) CSS'te: satır içi style CSP'ye takılır (style-src 'self'). */
+  .typing__dots i:nth-child(2),
+  .row:nth-child(2) {
+    --k: 1;
+  }
+  .typing__dots i:nth-child(3),
+  .row:nth-child(3) {
+    --k: 2;
+  }
+  .row:nth-child(4) {
+    --k: 3;
   }
   .typing__dots i {
     width: 0.375rem;

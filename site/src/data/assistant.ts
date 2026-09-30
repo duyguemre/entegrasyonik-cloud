@@ -398,6 +398,7 @@ export const assistantCta = {
   title: 'Erken erişim listesine katılın',
   text: 'Asistanı ilk deneyenlerden olmak ve geliştirme sürecine fikirlerinizle katkı vermek isterseniz bize yazın. Uygun aşamaya geldiğimizde sizinle iletişime geçeceğiz.',
   subject: 'Asistan erken erişim',
+  subjectNote: 'E-postanın konu satırı hazır gelir:',
   sendLabel: 'Listeye katılmak için yazın',
   points: [
     'Form yok, hesap açmanız gerekmez: tek bir e-posta yeterli.',
