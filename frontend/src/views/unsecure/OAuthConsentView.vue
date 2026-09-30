@@ -330,10 +330,9 @@ onBeforeUnmount(() => {
   color: var(--ek-color-content-strong);
   overflow-wrap: anywhere;
 }
-.ek-consent__title:focus-visible {
+/* Programatik odak (tabindex=-1, etkileşimsiz başlık): halka çizilmez — ekran okuyucu başlığı okur, Tab sonraki öğeye gider. */
+.ek-consent__title:focus {
   outline: none;
-  box-shadow: var(--ek-focus-ring);
-  border-radius: var(--ek-radius-control);
 }
 .ek-consent__app {
   font-weight: var(--ek-font-weight-bold);
@@ -441,7 +440,7 @@ onBeforeUnmount(() => {
 .ek-consent__link {
   color: var(--ek-color-action);
   font-weight: var(--ek-font-weight-medium);
-  margin-left: var(--ek-space-1);
+  white-space: nowrap;
 }
 .ek-consent__link:focus-visible {
   outline: none;

@@ -248,10 +248,9 @@ onBeforeUnmount(stopTicker)
   color: var(--ek-color-content-strong);
   overflow-wrap: anywhere;
 }
-.ek-approval__title:focus-visible {
+/* Programatik odak (tabindex=-1, etkileşimsiz başlık): halka çizilmez — ekran okuyucu başlığı okur, Tab sonraki öğeye gider. */
+.ek-approval__title:focus {
   outline: none;
-  box-shadow: var(--ek-focus-ring);
-  border-radius: var(--ek-radius-control);
 }
 .ek-approval__timer {
   display: flex;
