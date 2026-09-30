@@ -51,6 +51,10 @@
   );
   /* Giriş paneli üzerindeki yazı/çizim mürekkebi (FR2-DARK: dark'ta krom metni). */
   --ek-app-login-ink: var(--ek-color-background);
+
+  /* FR2-DARK — kullanıcı görseli zemini (mağaza logosu, şeffaf PNG/SVG): light'ta yüzey; dark'ta açık bir "plaka",
+   * koyu mürekkepli şeffaf logolar koyu zeminde kaybolmasın. Yalnız mevcut token'lardan türetilir. */
+  --ek-app-media-plate: var(--ek-color-surface);
 }
 
 /* FR2-DARK: koyu temada `brand` açık (logo işareti koyu zeminde görünsün diye); giriş paneli ise koyu marka
@@ -62,6 +66,7 @@
     color-mix(in srgb, var(--ek-color-chrome) 40%, var(--ek-color-chrome-end)) 100%
   );
   --ek-app-login-ink: var(--ek-color-chrome-text);
+  --ek-app-media-plate: color-mix(in srgb, var(--ek-color-content-strong) 94%, var(--ek-color-surface));
 }
 
 [data-density='compact'] {
