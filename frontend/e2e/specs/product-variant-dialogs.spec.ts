@@ -31,7 +31,7 @@ async function axeReport(page: Page, testInfo: any, name: string, include: strin
   // diyaloğun kendi ihlallerini ölçmek için hariç tutulur.
   const results = await new AxeBuilder({ page }).include(include).withTags(AXE_TAGS).analyze()
   await testInfo.attach(`axe-${name}-sonuclari.json`, { body: JSON.stringify(results.violations, null, 2), contentType: 'application/json' })
-  console.log(`[axe] ${name}: ${results.violations.length} WCAG 2.1 AA ihlali`)
+  console.log(`[axe] ${name}: ${results.violations.length} WCAG 2.1 AA ihlali`, results.violations.map((v) => v.id + ':' + v.nodes.map((n) => n.target.join(' ')).join(' / ')).join(' | '))
 }
 
 async function openOpsMenuItem(page: Page, root: Locator, label: string) {
@@ -133,5 +133,35 @@ test.describe('P3 (B5-2) — Varyant diyalogları (ProductVariantsComponent alt 
     await expect(card).toBeVisible()
     await shot(page, 'variant-images.png')
     await axeReport(page, testInfo, 'ProductVariantImagesComponent', '.v-overlay--active:not(.v-snackbar)')
+  })
+})
+
+// DS-v2 A6a — pazaryeri özellik listesi alınamazsa toplu özellik panelinde anlaşılır hata + Tekrar dene
+// (eskiden sonsuz "yükleniyor" ve genel "Bir şeyler ters gitti" bildirimleri). Eşleme ekranlarıyla aynı
+// `useIntegrationError` eşlemesi. Kanal seçimi artık adlı sekmeler (role=tab).
+test.describe('A6a — varyant özellik panelinde pazaryeri hatası', () => {
+  test('500 → hata paneli; Tekrar dene başarılı olunca özellikler gelir; kanal sekmeleri klavyeyle gezilir', async ({ page }, testInfo) => {
+    let fail = true
+    const root = await openVariantStep(page, variantProduct, {
+      'IntegrationService/retrieveCategoryAttributesFromIntegration': async (route: any, headers: any) => {
+        if (fail) return route.fulfill({ status: 500, contentType: 'application/json', headers, body: JSON.stringify({ error: 'Beklenmeyen bir hata oluştu.', code: 'INTERNAL' }) })
+        return route.fulfill({ status: 200, contentType: 'application/json', headers, body: JSON.stringify([{ _id: 'attr-1', title: 'Kumaş', required: true, varianter: false, slicer: false, allowCustom: true, values: [] }]) })
+      },
+    })
+    await openOpsMenuItem(page, root, 'Toplu Özellik Düzenleme')
+    const card = page.locator('.v-overlay--active').filter({ hasText: 'Toplu Varyant Bilgileri' }).first()
+    const trendyol = card.getByRole('tab', { name: /Trendyol/ })
+    await trendyol.click()
+    await expect(trendyol).toHaveAttribute('aria-selected', 'true')
+    await expect(card.getByText('Trendyol kategori özellikleri şu an alınamadı')).toBeVisible()
+    await expect(page.locator('.v-snackbar__wrapper').filter({ hasText: 'Bir şeyler ters gitti' })).toHaveCount(0)
+    await axeReport(page, testInfo, 'ProductBatchVariantAttributes-hata', '.v-overlay--active:not(.v-snackbar)')
+    await trendyol.press('ArrowDown')
+    await expect(card.getByRole('tab', { name: /Hepsiburada/ })).toBeFocused()
+    await card.getByRole('tab', { name: /Trendyol/ }).click()
+    fail = false
+    await card.getByRole('button', { name: 'Tekrar dene' }).click()
+    await expect(card.getByText('Zorunlu Özellikleri (*)')).toBeVisible()
+    await expect(card.getByText('Trendyol kategori özellikleri şu an alınamadı')).toHaveCount(0)
   })
 })

@@ -88,7 +88,7 @@ export function setCell(v: any, key: ColumnKey, value: CellValue): void {
 export function parseNumber(input: CellValue): number | null {
   if (input === null || input === undefined) return null
   if (typeof input === 'number') return Number.isFinite(input) ? input : NaN
-  let s = String(input).trim().replace(/[\s ₺%]|TL|TRY/gi, '')
+  let s = String(input).trim().replace(/[\s\u00a0₺%]|TL|TRY/gi, '')
   if (s === '') return null
   const neg = /^[-−]/.test(s)
   s = s.replace(/^[-−+]/, '')

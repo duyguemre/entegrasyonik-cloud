@@ -5,6 +5,7 @@
 // Veri tamamen sentetiktir (Protokol 7): 3 renk × 4 beden = 12 varyant (+ stres: 8 × 6 = 48).
 import { test, expect, type Page } from '@playwright/test'
 import { buildChoice } from '../fixtures/apiData'
+import { mockError } from '../fixtures/mockApi'
 import { installApiMocks } from '../fixtures/mockApi'
 import { gotoAuthed, openScreen } from '../fixtures/nav'
 import { buildVariant, menuFixtureWithProductUpdate, variantProduct } from '../fixtures/productUpdate'
@@ -127,6 +128,17 @@ test.describe('A6a inceleme — varyant alanı', () => {
     const root = await openVariantStep(page, product(3, 4), { ChoiceService: CHOICES })
     await openOps(page, root, 'Toplu Özellik Düzenleme')
     await shoot(page, 'batch-attributes')
+  })
+
+  test('toplu özellik düzenleme — pazaryeri hatası', async ({ page }) => {
+    const root = await openVariantStep(page, product(3, 4), {
+      ChoiceService: CHOICES,
+      'IntegrationService/retrieveCategoryAttributesFromIntegration': mockError(500, { error: 'Beklenmeyen bir hata oluştu.', code: 'INTERNAL', requestId: 'req-a6a-1' }),
+    })
+    await openOps(page, root, 'Toplu Özellik Düzenleme')
+    await page.locator('.v-overlay--active').getByRole('tab', { name: /Trendyol/ }).click()
+    await settle(page, 800)
+    await shoot(page, 'batch-attributes-error')
   })
 
   test('toplu düzenleyici (seçim + önizleme)', async ({ page }) => {
