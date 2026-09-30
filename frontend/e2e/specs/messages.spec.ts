@@ -2,7 +2,7 @@
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { installApiMocks, mockError } from '../fixtures/mockApi'
-import { messagesBosFixture, messagesDoluFixture } from '../fixtures/apiData'
+import { buildMessage, messagesBosFixture, messagesDoluFixture } from '../fixtures/apiData'
 import { gotoAuthed, openScreen } from '../fixtures/nav'
 
 // NOT (orders.spec.ts ile aynı gerçek davranış): `v-data-table-server` yalnızca
@@ -82,5 +82,98 @@ test.describe('P2 — Mesajlar (MessageListView)', () => {
     const knownDsIssues = new Set(['aria-required-children'])
     const ownViolations = results.violations.filter(v => !knownDsIssues.has(v.id))
     expect(ownViolations, JSON.stringify(ownViolations, null, 2)).toEqual([])
+  })
+})
+
+// C2.5 — bekleme süresi rozeti + kanal karakter kuralı. Saat sabitlenir (rozet metni/tonu tarihe bağlı).
+// Eşikler ÖNERİ (messageSla.ts): <24 sa neutral, 24–48 sa warning, >48 sa danger.
+const SLA_NOW = new Date('2026-09-25T12:00:00.000Z')
+const slaFixture = {
+  messages: [
+    buildMessage({ _id: 'sla-answered', status: 'ANSWERED', integrationCode: 'hepsiburada', text: 'Cevaplanmış soru', answer: 'Evet', date: '2026-09-20T12:00:00.000Z' }),
+    buildMessage({ _id: 'sla-3h', text: 'Üç saattir bekleyen soru', date: '2026-09-25T09:00:00.000Z' }),
+    buildMessage({ _id: 'sla-30h', text: 'Otuz saattir bekleyen soru', date: '2026-09-24T06:00:00.000Z' }),
+    buildMessage({ _id: 'sla-52h', type: 'ORDER_QUESTION', text: 'Elli iki saattir bekleyen soru', context: { orderNumber: 'E2E-SLA-1' }, date: '2026-09-23T08:00:00.000Z' }),
+    buildMessage({ _id: 'sla-hb', integrationCode: 'hepsiburada', text: 'Hepsiburada sorusu', date: '2026-09-25T11:00:00.000Z' }),
+  ],
+  totalNumberOfRecords: 5,
+  totalNumberOfPages: 1,
+}
+
+test.describe('C2.5 — Mesaj bekleme süresi + karakter sınırı', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.clock.setFixedTime(SLA_NOW)
+    await installApiMocks(page, { 'MessageService/getMessages': slaFixture, 'MessageService/markAsRead': { success: true } })
+    await gotoAuthed(page)
+    await openScreen(page, 'MessageListView')
+    await expect(page.getByText('Üç saattir bekleyen soru')).toBeVisible()
+  })
+
+  test('bekleyen mesajda süre rozeti eşik tonuyla; cevaplanmışta "—"', async ({ page }) => {
+    const rows = page.locator('.messageListView tbody tr')
+    const chip = (text: string) => rows.filter({ hasText: text }).locator('.ek-message-wait')
+    await expect(chip('Üç saattir')).toHaveText('Bekliyor: 3 sa')
+    await expect(chip('Üç saattir')).toHaveAttribute('data-tone', 'neutral')
+    await expect(chip('Otuz saattir')).toHaveText('Bekliyor: 1 gün 6 sa')
+    await expect(chip('Otuz saattir')).toHaveAttribute('data-tone', 'warning')
+    await expect(chip('Elli iki')).toHaveText('Uzun bekliyor: 2 gün 4 sa')
+    await expect(chip('Elli iki')).toHaveAttribute('data-tone', 'danger')
+    await expect(chip('Cevaplanmış soru')).toHaveCount(0)
+    await expect(rows.filter({ hasText: 'Cevaplanmış soru' }).locator('.ek-message-wait__none')).toContainText('Bekleyen yanıt yok')
+  })
+
+  test('"Bekleyenler önce · bu sayfada" yalnız istemci tarafı sıralar', async ({ page }) => {
+    const toggle = page.getByRole('button', { name: /Bekleyenler önce/ })
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false')
+    await expect(page.getByText('Bu sayfada 4 bekleyen')).toBeVisible({ visible: (page.viewportSize()?.width ?? 0) >= 600 })
+    const requests: string[] = []
+    page.on('request', r => { if (r.url().includes('MessageService/getMessages')) requests.push(r.url()) })
+    await toggle.click()
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    const texts = page.locator('.messageListView tbody tr .ek-message-text__body')
+    await expect(texts).toHaveText(['Elli iki saattir bekleyen soru', 'Otuz saattir bekleyen soru', 'Üç saattir bekleyen soru', 'Hepsiburada sorusu', 'Cevaplanmış soru'])
+    expect(requests, 'sıralama sunucuya gitmez').toEqual([])
+  })
+
+  test('Trendyol yanıtı: 9 karakterde gönder devre dışı, 10 karakterde etkin; sayaç N / 2000', async ({ page }) => {
+    await page.locator('.messageListView tbody tr').filter({ hasText: 'Üç saattir' }).getByRole('button', { name: 'Mesajı cevapla' }).click()
+    const sheet = page.getByRole('dialog').filter({ hasText: 'Üç saattir bekleyen soru' })
+    await expect(sheet).toBeVisible()
+    await expect(sheet.locator('.ek-message-wait')).toHaveText('Bekliyor: 3 sa')
+    await expect(sheet.getByText('Trendyol kuralı: 10–2000 karakter')).toBeVisible()
+    const send = sheet.getByRole('button', { name: 'Cevabı gönder' })
+    const box = sheet.getByLabel('Cevabınızı buraya yazınız…')
+    await expect(send).toBeDisabled()
+    await box.fill('123456789')
+    await expect(send).toBeDisabled()
+    await expect(sheet.getByText('En az 10 karakter gerekli (Trendyol kuralı).')).toBeVisible()
+    await expect(sheet.locator('.v-counter')).toHaveText('9 / 2000')
+    await box.fill('1234567890')
+    await expect(send).toBeEnabled()
+    await expect(sheet.locator('.v-counter')).toHaveText('10 / 2000')
+  })
+
+  test('kuralı bilinmeyen kanalda sayaç yalnız bilgi; kısa yanıt gönderilebilir', async ({ page }) => {
+    await page.locator('.messageListView tbody tr').filter({ hasText: 'Hepsiburada sorusu' }).getByRole('button', { name: 'Mesajı cevapla' }).click()
+    const sheet = page.getByRole('dialog').filter({ hasText: 'Hepsiburada sorusu' })
+    await expect(sheet.getByText('Bu kanal için karakter sınırı tanımlı değil; sayaç bilgi amaçlıdır.')).toBeVisible()
+    await sheet.getByLabel('Cevabınızı buraya yazınız…').fill('Var')
+    await expect(sheet.getByRole('button', { name: 'Cevabı gönder' })).toBeEnabled()
+    await expect(sheet.locator('.v-counter')).toHaveText('3')
+  })
+
+  test('axe: rozetli liste ve yanıt paneli — 0 ihlal', async ({ page }) => {
+    const knownDsIssues = new Set(['aria-required-children'])
+    const list = await new AxeBuilder({ page }).include('.messageListView').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
+    expect(list.violations.filter(v => !knownDsIssues.has(v.id)), JSON.stringify(list.violations, null, 2)).toEqual([])
+    await page.locator('.messageListView tbody tr').filter({ hasText: 'Elli iki' }).getByRole('button', { name: 'Mesajı cevapla' }).click()
+    const sheet = page.getByRole('dialog').filter({ hasText: 'Elli iki saattir bekleyen soru' })
+    await sheet.getByLabel('Cevabınızı buraya yazınız…').fill('kısa')
+    await sheet.getByLabel('Cevabınızı buraya yazınız…').blur()
+    await expect(sheet.getByText('En az 10 karakter gerekli (Trendyol kuralı).')).toBeVisible()
+    // Panel kayma + mesaj geçişi bitmeden taranırsa ara renkler ölçülür; animasyonların bitmesi beklenir.
+    await page.waitForFunction(() => document.getAnimations().every(a => a.playState !== 'running'))
+    const detail = await new AxeBuilder({ page }).include('.v-overlay--active').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
+    expect(detail.violations, JSON.stringify(detail.violations, null, 2)).toEqual([])
   })
 })
