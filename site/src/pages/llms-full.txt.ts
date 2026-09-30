@@ -10,7 +10,7 @@ import { getPublicCapabilities, getStockReservationStory } from '../data/capabil
 import { getPublicFaq, getSupportCategories } from '../data/faq'
 import { getConnectGuide } from '../data/connect'
 import { getPublicPlans, getPlanSourceNotice, getVatNotice, getPublicTrial } from '../data/plans'
-import { TAGLINE, UPCOMING_NOTE, canonicalPath, entityDefinition, markdownPath, seoEntries } from '../data/seo'
+import { TAGLINE, canonicalPath, entityDefinition, markdownPath, seoEntries } from '../data/seo'
 import { ASSISTANT_PATH, ASSISTANT_NAME, assistantLlms } from '../data/assistant'
 import { AGENT_DESCRIPTOR } from '../data/agent-brand'
 import { guideHref, guides, sourcesOf } from '../data/kb'
@@ -45,8 +45,7 @@ export const GET: APIRoute = () => {
   lines.push('## Sayfalar')
   lines.push('')
   for (const e of seoEntries.filter((x) => x.index && x.section !== 'rehber')) {
-    const note = e.upcoming && !e.llmsSummary.includes(UPCOMING_NOTE) ? ` (${UPCOMING_NOTE})` : ''
-    lines.push(`- [${e.title}](${url(canonicalPath(e.path))}): ${e.llmsSummary}${note} Markdown: ${url(markdownPath(e.path))}`)
+    lines.push(`- [${e.title}](${url(canonicalPath(e.path))}): ${e.llmsSummary} Markdown: ${url(markdownPath(e.path))}`)
   }
   lines.push('')
 
@@ -130,10 +129,12 @@ export const GET: APIRoute = () => {
   }
   lines.push('')
 
-  // S18: vizyon sayfası — "upcoming"; bugünkü yeteneklerden AYRI bölüm, kesin kip yok (tests/upcoming.test.ts).
-  lines.push(`## ${ASSISTANT_NAME} — ${AGENT_DESCRIPTOR} (upcoming)`)
+  // S24 (K43): ajan bölümü; satırlar vaat kaydından (src/data/agent-claims.ts; tests/agent-claims.test.ts).
+  lines.push(`## ${ASSISTANT_NAME} — ${AGENT_DESCRIPTOR}`)
   lines.push('')
   lines.push(`Sayfa: ${url(canonicalPath(ASSISTANT_PATH))}`)
+  lines.push('')
+  lines.push(assistantLlms.short)
   lines.push('')
   for (const l of assistantLlms.full) lines.push(`- ${l}`)
   lines.push('')

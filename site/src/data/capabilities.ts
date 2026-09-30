@@ -184,8 +184,9 @@ export const productCapabilities: ProductCapability[] = [
   {
     id: 'tenant-database',
     group: 'security',
-    title: 'Her müşteri için ayrı veritabanı',
-    summary: 'Her müşteri hesabı için ayrı bir veritabanı kullanılır.',
+    // S24 (K46): ziyaretçiye "müşteri" denmez; yapı (veritabanı) değil üst seviye güven mesajı anlatılır.
+    title: 'Verileriniz yalnızca size ait',
+    summary: 'Ürün, stok ve sipariş verileriniz izole bir alanda tutulur; başka bir işletmenin verisiyle karışmaz.',
     status: 'available',
     evidence: [
       evidence(PATHS.adr0003, 'ADR-0003 kiracı DB adlandırma', 'entegrasyonikClient_1'),
@@ -199,7 +200,7 @@ export const productCapabilities: ProductCapability[] = [
     id: 'secrets-encryption',
     group: 'security',
     title: 'Entegrasyon anahtarları şifreli saklanır',
-    summary: 'Pazaryeri ve entegrasyon API anahtarları veritabanında AES-256-GCM ile şifrelenerek saklanır.',
+    summary: 'Pazaryeri ve entegrasyon API anahtarlarınız AES-256-GCM ile şifrelenerek saklanır.',
     status: 'available',
     evidence: [evidence('backend/src/utils/FieldCrypto.ts', 'FieldCrypto AES-256-GCM', 'aes-256-gcm')],
     internalNotes: ['Canlı veri göçü (--apply) insan onayı bekliyor (BACKLOG C5/C12); iddia kod yeteneğine dayanır.'],
@@ -425,8 +426,8 @@ export const homePillars: HomePillar[] = [
     id: 'isolation',
     icon: 'database',
     title: 'Size özel, şifreli veri',
-    line: 'Her hesap kendi veritabanında; entegrasyon anahtarları şifreli saklanır.',
-    points: ['Hesaba özel veritabanı', 'AES-256-GCM ile şifreleme', 'Maskeli anahtar gösterimi'],
+    line: 'Verileriniz yalnızca size ait, izole bir alanda; entegrasyon anahtarlarınız şifreli saklanır.',
+    points: ['İzole veri alanı', 'Şifreli anahtar saklama', 'Maskeli anahtar gösterimi'],
     basedOn: ['tenant-database', 'secrets-encryption', 'secrets-masked'],
   },
   {

@@ -250,7 +250,7 @@ export const faq: FaqItem[] = [
     category: 'guvenlik-veri',
     question: 'Verilerim diğer işletmelerin verileriyle aynı yerde mi tutulur?',
     answer:
-      'Hayır. Her müşteri hesabı için ayrı bir veritabanı kullanılır; ürün, stok ve sipariş verileriniz hesabınıza ayrılmış bu veritabanında tutulur. Kullanıcı hesabı, yapılandırma ve sistem kayıtları gibi platform genelindeki bilgiler ise ortak platform veritabanında yer alır.',
+      'Hayır. Ürün, stok ve sipariş verileriniz yalnızca size ait, izole bir alanda tutulur ve başka bir işletmenin verisiyle karışmaz. Kullanıcı hesabı ve yapılandırma gibi platform genelindeki bilgiler ayrıca yönetilir.',
     evidence: [
       evidence(PATHS.adr0003, 'ADR-0003 kiracı DB adlandırma', 'entegrasyonikClient_1'),
       evidence('CLAUDE.md', 'CLAUDE.md mimari: platform geneli veri ApplicationDB', 'platform-wide metadata (users, configs, logs)'),
@@ -274,7 +274,7 @@ export const faq: FaqItem[] = [
     category: 'guvenlik-veri',
     question: 'Entegrasyon yazılımı seçerken nelere dikkat etmeliyim?',
     answer:
-      "Karşılaştırırken dört ölçüte bakmanızı öneririz: verilerinizin hesabınıza ayrılmış bir veritabanında tutulması, pazaryeri API anahtarlarının şifreli saklanması, eşzamanlı siparişlerde stok rezervasyonu ve tanımlı olmayan işlemleri varsayılan olarak reddeden bir yetkilendirme modeli. Entegrasyonik'te her müşteri hesabı için ayrı bir veritabanı kullanılır ve API anahtarları AES-256-GCM ile şifrelenerek saklanır. Stok yalnızca mevcut adet kadar rezerve edilir; sunucuda tanımlı işlem listesinde olmayan her işlem reddedilir. Son olarak her kanalda hangi işlemlerin desteklendiğini entegrasyon sayfalarındaki kapsam tablolarından kontrol edin.",
+      "Karşılaştırırken dört ölçüte bakmanızı öneririz: verilerinizin size ayrılmış, izole bir alanda tutulması, pazaryeri API anahtarlarının şifreli saklanması, eşzamanlı siparişlerde stok rezervasyonu ve tanımlı olmayan işlemleri varsayılan olarak reddeden bir yetkilendirme modeli. Entegrasyonik'te verileriniz yalnızca size ait, izole bir alanda tutulur ve API anahtarlarınız AES-256-GCM ile şifrelenerek saklanır. Stok yalnızca mevcut adet kadar rezerve edilir; sunucuda tanımlı işlem listesinde olmayan her işlem reddedilir. Son olarak her kanalda hangi işlemlerin desteklendiğini entegrasyon sayfalarındaki kapsam tablolarından kontrol edin.",
     evidence: [
       evidence(PATHS.adr0003, 'ADR-0003 kiracı DB adlandırma', 'entegrasyonikClient_1'),
       evidence('backend/src/utils/FieldCrypto.ts', 'FieldCrypto AES-256-GCM', 'aes-256-gcm'),

@@ -65,7 +65,7 @@ const gains = [
   {
     icon: 'shield' as const,
     title: 'Kurumsal düzeyde güvenlik',
-    text: 'Entegrasyon anahtarları şifreli saklanır; her müşterinin verisi kendi veritabanında izole tutulur.',
+    text: 'Entegrasyon anahtarlarınız şifreli saklanır; verileriniz yalnızca size ait, izole bir alanda korunur.',
     requires: ['secrets-encryption', 'tenant-database'],
   },
 ].filter((g) => g.requires.every((id) => capIds.has(id)))

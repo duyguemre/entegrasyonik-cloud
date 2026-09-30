@@ -8,16 +8,14 @@
 import type { APIRoute } from 'astro'
 import { siteConfig } from '../lib/site-config'
 import { getPublicIntegrations } from '../data/integrations'
-import { TAGLINE, UPCOMING_NOTE, canonicalPath, entityDefinition, markdownPath, seoEntries, type SeoEntry } from '../data/seo'
+import { TAGLINE, canonicalPath, entityDefinition, markdownPath, seoEntries, type SeoEntry } from '../data/seo'
 
 const base = siteConfig.siteUrl ?? ''
 const url = (path: string) => `${base}${path}`
 
 const line = (e: SeoEntry): string => {
-  // Geliştirme aşamasındaki sayfa: özet notu zaten taşımıyorsa eklenir (S18 `assistantLlms.short` taşır).
-  const note = e.upcoming && !e.llmsSummary.includes(UPCOMING_NOTE) ? ` (${UPCOMING_NOTE})` : ''
   const md = e.index ? ` Markdown: ${url(markdownPath(e.path))}` : ''
-  return `- [${e.title}](${url(canonicalPath(e.path))}): ${e.llmsSummary}${note}${md}`
+  return `- [${e.title}](${url(canonicalPath(e.path))}): ${e.llmsSummary}${md}`
 }
 
 export const GET: APIRoute = () => {

@@ -582,7 +582,7 @@ export const mevzuatGuides: Guide[] = [
             type: 'ul',
             items: [
               'Pazaryeri API anahtarları ve sırlar veritabanında şifreli mi saklanıyor?',
-              'Her müşterinin verisi diğerlerinden nasıl ayrılıyor?',
+              'Verilerim diğer işletmelerin verilerinden nasıl ayrılıyor?',
               'Rol ve yetki tanımlanabiliyor mu; kim neyi görebiliyor?',
               'Veri işleyen olarak hangi sözleşme ve aydınlatma metinleri sunuluyor?',
             ],

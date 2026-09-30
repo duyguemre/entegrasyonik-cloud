@@ -48,7 +48,7 @@ const gains = [
     <ul class="cta__chips" data-reveal aria-label="Kazanımlar">
       {gains.map((g) => <li><Icon name={g.icon} size="sm" />{g.text}</li>)}
       {encrypted && <li><Icon name="lock" size="sm" />Şifreli anahtar saklama</li>}
-      {tenant && <li><Icon name="database" size="sm" />Ayrı müşteri veritabanı</li>}
+      {tenant && <li><Icon name="database" size="sm" />Verileriniz yalnızca size ait</li>}
     </ul>
   </div>
 </Section>

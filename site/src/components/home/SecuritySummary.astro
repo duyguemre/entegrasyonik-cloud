@@ -48,10 +48,10 @@ const summary = (id: string) => byId.get(id)?.summary ?? ''
 const PILLARS: Pillar[] = [
   {
     key: 'cells',
-    eyebrow: 'Çok kiracılı mimari',
+    eyebrow: 'Veri izolasyonu',
     icon: 'database',
     title: 'Veri izolasyonu',
-    lead: 'Ürün, stok ve sipariş verileriniz, yalnızca hesabınıza ayrılmış veritabanında tutulur.',
+    lead: 'Ürün, stok ve sipariş verileriniz yalnızca size aittir; izole bir alanda korunur.',
     ids: ['tenant-database'],
   },
   {
@@ -64,7 +64,7 @@ const PILLARS: Pillar[] = [
   },
   {
     key: 'tiers',
-    eyebrow: 'RBAC',
+    eyebrow: 'Ekip yetkileri',
     icon: 'users',
     title: 'Yetki ve erişim kontrolü',
     lead: 'Ekibinizde kimin neyi yapabileceğini siz belirlersiniz; her işlem sunucuda yetki denetiminden geçer.',
@@ -89,7 +89,7 @@ if (unplaced.length > 0) throw new Error(`Güvenlik özeti: sütuna atanmamış 
 
 // Kalkan illüstrasyonunun koruma katmanı çipleri: yalnızca kayıtta bulunan iddialar.
 const GUARDS: Array<{ id: string; icon: 'lock' | 'users' | 'shield' | 'database' | 'key'; label: string; sub: string }> = [
-  { id: 'tenant-database', icon: 'database', label: 'Veri izolasyonu', sub: 'Hesaba özel veritabanı' },
+  { id: 'tenant-database', icon: 'database', label: 'Veri izolasyonu', sub: 'Yalnızca size ait' },
   { id: 'secrets-encryption', icon: 'key', label: 'Şifreli anahtarlar', sub: 'AES-256-GCM' },
   { id: 'role-based-access', icon: 'users', label: 'Rol tabanlı yetki', sub: 'Üç yetki kademesi' },
   { id: 'default-deny', icon: 'shield', label: 'Varsayılan red', sub: 'Tanımsız işlem reddedilir' },
@@ -111,11 +111,11 @@ const cells = Array.from({ length: 24 }, (_, i) => ({ x: (i % 8) * 29 + 4, y: Ma
         eyebrow="Güvenlik ve KVKK"
         title="Anahtarlarınız ve verileriniz için kurumsal düzeyde güvenlik"
         accent="kurumsal düzeyde güvenlik"
-        lead="Pazaryeri API anahtarlarınız şifreli bir kasada, operasyon verileriniz size ayrılmış veritabanında saklanır; ekibinizin her işlemi sunucuda yetki denetiminden geçer."
+        lead="Pazaryeri API anahtarlarınız şifreli bir kasada, operasyon verileriniz yalnızca size ait, izole bir alanda saklanır; ekibinizin her işlemi sunucuda yetki denetiminden geçer."
       />
       <ul class="sec__specs" aria-label="Öne çıkan güvenlik katmanları">
         {byId.has('secrets-encryption') && <li><Icon name="lock" size="sm" />AES-256-GCM şifreleme</li>}
-        {byId.has('tenant-database') && <li><Icon name="database" size="sm" />Hesaba özel veritabanı</li>}
+        {byId.has('tenant-database') && <li><Icon name="database" size="sm" />İzole veri alanı</li>}
         {byId.has('role-based-access') && <li><Icon name="users" size="sm" />Rol tabanlı erişim</li>}
       </ul>
       {detailHref && <a class="link sec__link" href={detailHref}>Güvenlik mimarisini inceleyin <Icon name="arrow" size="sm" /></a>}

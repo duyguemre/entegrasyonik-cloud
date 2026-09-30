@@ -71,11 +71,6 @@ export interface SeoEntry {
   previewOnly?: boolean
   /** lastmod için kaynak dosyalar (site/ köküne göreli). */
   sources: string[]
-  /**
-   * Geliştirme aşamasındaki (henüz kullanıma açık olmayan) bir özelliği tanıtan sayfa: llms.txt / llms-full.txt /
-   * markdown çıktısında "geliştirme aşamasında" notuyla geçer (yol haritası dili YOK; tests/seo.test.ts korur).
-   */
-  upcoming?: boolean
   /** İlgili entegrasyon kodu (HowTo/OG için). */
   integrationCode?: string
   /** Rehber sayfası (S20b): içerik ve JSON-LD `src/data/kb/**` kaydından. */
@@ -220,7 +215,7 @@ const STATIC_ENTRIES: SeoEntry[] = [
     path: '/iletisim',
     title: 'İletişim ve kurumsal teklif',
     description:
-      'Entegrasyonik ile iletişime geçin: kurumsal teklif, genel sorular, yeni kanal talepleri ve mevcut müşteri destek talepleri için e-posta.',
+      'Entegrasyonik ile iletişime geçin: kurumsal teklif, genel sorular, yeni kanal talepleri ve hesap destek talepleri için e-posta.',
     index: true,
     crumb: 'İletişim',
     schema: ['ContactPage'],
@@ -230,16 +225,15 @@ const STATIC_ENTRIES: SeoEntry[] = [
     sources: ['src/pages/iletisim.astro', 'src/data/company.ts'],
   },
   {
-    // S18 (içerik kararları S18'e ait) → S22: ad/rota/başlık/ekmek kırıntısı TEK ad sabitinden (src/data/agent-brand.ts).
-    // Vizyon sayfası — platformun bugünkü sürümünde YOK; LLM metinlerinde `assistantLlms.short` ("geliştirme aşamasında").
+    // S18 → S22: ad/rota/başlık/ekmek kırıntısı TEK ad sabitinden (src/data/agent-brand.ts). S24 (K43): pazarlama dili;
+    // "geliştirme aşamasında" notu yok. LLM özeti vaat kaydından (`assistantLlms.short` → src/data/agent-claims.ts).
     path: ASSISTANT_PATH,
     title: `${AGENT_BRAND}: ${AGENT_DESCRIPTOR}`,
-    description: `${AGENT_NAME}: stok, sipariş ve katalog işlerinizi izleyecek, öneri getirecek ve onayınızla uygulayacak ajanlar. Geliştirme aşamasında.`,
+    description: `${AGENT_NAME}: stok, sipariş ve katalog işlerinizi izleyen, hazır öneriler getiren ve yalnızca onayınızla uygulayan operasyon ajanları.`,
     index: true,
-    upcoming: true,
     crumb: AGENT_BRAND,
     schema: ['WebPage'],
-    ogEyebrow: 'Geliştirme aşamasında',
+    ogEyebrow: 'Operasyon ajanları',
     section: 'product',
     llmsSummary: assistantLlms.short,
     sources: ['src/pages/[ajan].astro', 'src/data/assistant.ts', 'src/data/agent-brand.ts', 'src/components/assistant'],
@@ -442,9 +436,6 @@ export function crumbsFor(pathname: string): Array<{ label: string; href?: strin
   const trail = crumbTrail(pathname)
   return trail.map((c, i) => (i < trail.length - 1 ? { label: c.label, href: c.path } : { label: c.label }))
 }
-
-/** LLM metinlerinde geliştirme aşamasındaki sayfalara eklenen not. */
-export const UPCOMING_NOTE = 'geliştirme aşamasında'
 
 export const indexableEntries = (): SeoEntry[] => seoEntries.filter((e) => e.index)
 export const previewOnlyPaths = (): string[] => seoEntries.filter((e) => e.previewOnly).map((e) => e.path)

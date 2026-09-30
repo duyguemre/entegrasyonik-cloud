@@ -1,23 +1,19 @@
 ---
 /**
- * Ajan sayfası — "Entegrasyonik Otopilot: operasyon ajanları" (S18 "Asistan" → S22 ajan-önce yeniden tasarım).
+ * Ajan sayfası — "Entegrasyonik Otopilot: operasyon ajanları" (S18 "Asistan" → S22 ajan-önce → S24 pazarlama dili).
  *
  * ROTA: dosya adı dinamiktir (`[ajan].astro`); tek yol `AGENT_PATH` ad sabitinden gelir (src/data/agent-brand.ts).
  * Ad değişince rota, başlık, gezinme ve e-posta konusu kendiliğinden değişir; eski yol `AGENT_LEGACY_PATHS` → 301
  * (`dist/_redirects`, astro.config.mjs). S18 adresi `/asistan` bu yolla yönlenir.
  *
- * DÜRÜSTLÜK (tests/upcoming.test.ts): bu yetenekler platformun bugünkü sürümünde YOK. Sayfa `UPCOMING_SURFACES`
- * listesindedir; tüm metin `src/data/assistant.ts`'ten gelir (markup'ta sabit metin yazılmaz):
- *   - Planlanan her kart ve sınır maddesi bir aşama rozeti taşır ve gelecek kipindedir.
- *   - "Güven" bölümü KANITLI (bugün kodda; her madde repo içi evidence'a bağlı) ve PLANLANAN maddeleri görsel
- *     olarak ayırır: kanıtlı = düz çerçeve + "Kodda" etiketi; planlanan = kesikli çerçeve + aşama rozeti.
- *   - Hero konsolu "Örnek görünüm", sohbet sahnesi "Örnek senaryo" etiketlidir; rakamlar yalnızca sohbet sahnesinde.
- * Erken erişim: form YOK (ADR-0014) — `mailto:` (EmailActions), konu `${AGENT_BRAND} erken erişim`.
+ * S24 (kullanıcı kararları K43–K46): Otopilot hazır bir özellik gibi, şimdiki zamanla anlatılır. Aşama rozeti,
+ * "erken erişim" formu/mailto'su, "örnek görünüm/senaryo" etiketleri ve teknik anlatım (açık standart, protokol,
+ * yerel uygulama) kaldırıldı. Tüm metin `src/data/assistant.ts`'ten; her VAAT cümlesi yalnızca `agent-claims.ts`
+ * kaydından gelir (markup'ta sabit metin yazılmaz; tests/agent-claims.test.ts). Demo talebi: form YOK — `mailto:`
+ * (EmailActions), konu `${AGENT_BRAND} demo talebi`; ikinci yol kayıt ("Hemen başlayın").
  *
- * S22 kurgu (SR2-AGENT): ajan-önce hiyerarşi. Bölüm ritmi: koyu hero (ajan konsolu) -> açık (ajan döngüsü) ->
- * koyu (ajanlar) -> açık (sınırlar + güven) -> gri (sohbet) -> açık (yerel uygulama) -> gri (SSS) -> koyu (CTA).
- * S22 madde 1: hero'nun üstündeki boşluk giderildi — içerik dikeyde ortalanmıyor (uzun sahne kopyayı aşağı
- * itiyordu), üst iç boşluk header'a göre sıkı; görsel sütunu kopyanın üst hizasından başlar.
+ * Bölüm ritmi: koyu hero (tek başlık + tek cümle + tek CTA; ajan konsolu) -> açık (ajan döngüsü) -> koyu (ajanlar)
+ * -> açık (kontrol sizde) -> gri (sohbet) -> açık (SSS) -> koyu (demo).
  */
 import BaseLayout from '../layouts/BaseLayout.astro'
 import Section from '../components/Section.astro'
@@ -28,7 +24,6 @@ import SectionHead from '../components/pages/SectionHead.astro'
 import Accordion from '../components/pages/Accordion.astro'
 import EmailActions from '../components/pages/EmailActions.astro'
 import ChatScene from '../components/assistant/ChatScene.astro'
-import StageBadge from '../components/assistant/StageBadge.astro'
 import AgentConsole from '../components/assistant/AgentConsole.astro'
 import AgentLoop from '../components/assistant/AgentLoop.astro'
 import {
@@ -36,14 +31,13 @@ import {
   assistantHero as hero,
   loopSection,
   agentsSection,
-  guardrailsSection,
+  controlSection,
   chatSection,
-  localSection,
-  trustSection,
   assistantFaq,
   assistantCta,
 } from '../data/assistant'
 import { contactEmail } from '../lib/contact'
+import { appUrls } from '../lib/site-config'
 import { crumbsFor } from '../data/seo'
 
 export function getStaticPaths() {
@@ -52,32 +46,24 @@ export function getStaticPaths() {
 
 const crumbs = crumbsFor(AGENT_PATH)
 const [titleBefore, titleAfter] = hero.title.split(hero.accent)
-const provenById = new Map(trustSection.proven.map((t) => [t.id, t]))
 ---
 
 <BaseLayout scenes>
 
-  <!-- Hero: koyu sahne + ajan konsolu (örnek görünüm) -->
+  <!-- Hero: tek başlık + tek cümle + tek CTA; sağda ajan konsolu -->
   <Section tone="stage" labelledby="page-title" class="ai-hero">
     <Breadcrumb items={crumbs} inverse />
     <div class="ai-hero__grid">
       <div class="ai-hero__body">
-        <p class="ai-hero__chip">
+        <p class="ai-hero__chip" data-testid="agent-hero-chip">
           <span class="ai-hero__chip-icon" aria-hidden="true"><Icon name="sparkle" size="sm" /></span>
-          <span data-testid="early-access-badge">{hero.badge}</span>
-          <span class="ai-hero__chip-sep" aria-hidden="true"></span>
-          <span class="ai-hero__chip-meta">{hero.eyebrow}<span class="ai-hero__chip-desc"> · {hero.descriptor}</span></span>
+          <span>{hero.eyebrow}</span>
         </p>
         <h1 id="page-title">{titleBefore}<span class="ai-accent">{hero.accent}</span>{titleAfter}</h1>
         <p class="ai-hero__lead">{hero.lead}</p>
         <div class="ai-hero__actions">
-          <Button href="#erken-erisim" variant="inverse" size="lg">{hero.primary}</Button>
-          <Button href="#dongu" variant="inverse-outline" size="lg">{hero.secondary}</Button>
+          <Button href="#demo" variant="inverse" size="lg" data-testid="agent-hero-cta">{hero.primary}</Button>
         </div>
-        <p class="ai-hero__note" data-testid="assistant-status-note">
-          <Icon name="info" size="sm" />
-          <span>{hero.note}</span>
-        </p>
       </div>
       <div class="ai-hero__visual">
         <AgentConsole />
@@ -101,15 +87,13 @@ const provenById = new Map(trustSection.proven.map((t) => [t.id, t]))
     <ul class="cards cards--4" role="list">
       {
         agentsSection.cards.map((c) => (
-          <li class:list={['pcard', 'pcard--dark', 'acard', { 'pcard--lead': c.id === agentsSection.highlight.id }]} data-testid="assistant-card" data-stage={c.stage}>
+          <li class="pcard pcard--dark acard" data-testid="assistant-card">
             <div class="pcard__top">
               <span class="pcard__icon acard__icon" aria-hidden="true">
                 <Icon name={c.icon} size="md" />
                 <i class="acard__led"></i>
               </span>
-              <StageBadge stage={c.stage} inverse />
             </div>
-            {c.id === agentsSection.highlight.id && <p class="pcard__flag">{agentsSection.highlight.label}</p>}
             <h3 class="pcard__title">{c.title}</h3>
             <p class="pcard__text">{c.text}</p>
             <dl class="acard__io">
@@ -128,12 +112,12 @@ const provenById = new Map(trustSection.proven.map((t) => [t.id, t]))
     </ul>
   </Section>
 
-  <!-- (3) Sınırlar + güven: onay kapısı akışı, sınır maddeleri, kanıtlı vs planlanan -->
-  <Section id="sinirlar" labelledby="sinirlar-title" class="ai-section">
-    <SectionHead id="sinirlar-title" eyebrow={guardrailsSection.eyebrow} title={guardrailsSection.title} lead={guardrailsSection.lead} />
-    <ol class="gateflow" aria-label={guardrailsSection.flowLabel} data-testid="gate-flow">
+  <!-- (3) Kontrol sizde: onay kapısı akışı + güvence maddeleri (fayda dili) -->
+  <Section id="kontrol" labelledby="kontrol-title" class="ai-section">
+    <SectionHead id="kontrol-title" eyebrow={controlSection.eyebrow} title={controlSection.title} lead={controlSection.lead} />
+    <ol class="gateflow" aria-label={controlSection.flowLabel} data-testid="gate-flow">
       {
-        guardrailsSection.flow.map((f) => (
+        controlSection.flow.map((f) => (
           <li class:list={['gateflow__item', { 'gateflow__item--you': f.actor === 'you' }]} data-actor={f.actor}>
             <span class="gateflow__icon" aria-hidden="true"><Icon name={f.icon} size="sm" /></span>
             <span>{f.label}</span>
@@ -143,79 +127,18 @@ const provenById = new Map(trustSection.proven.map((t) => [t.id, t]))
     </ol>
     <ul class="guards" role="list">
       {
-        guardrailsSection.items.map((g) => {
-          const base = provenById.get(g.foundation)
-          return (
-            <li class="guard" data-testid="guardrail" data-stage={g.stage}>
-              <div class="pcard__top">
-                <span class="guard__icon" aria-hidden="true"><Icon name={g.icon} size="md" /></span>
-                <StageBadge stage={g.stage} />
-              </div>
-              <h3 class="guard__title">{g.title}</h3>
-              <p class="guard__text">{g.text}</p>
-              {base && (
-                <p class="guard__base" data-foundation={base.id}>
-                  <Icon name="check" size="sm" />
-                  <span>{guardrailsSection.foundationLabel}: {base.title}</span>
-                </p>
-              )}
-            </li>
-          )
-        })
+        controlSection.items.map((g) => (
+          <li class="guard" data-testid="guardrail">
+            <span class="guard__icon" aria-hidden="true"><Icon name={g.icon} size="md" /></span>
+            <h3 class="guard__title">{g.title}</h3>
+            <p class="guard__text">{g.text}</p>
+          </li>
+        ))
       }
     </ul>
-
-    <div class="trust" id="guven">
-      <div class="trust__intro">
-        <SectionHead id="guven-title" eyebrow={trustSection.eyebrow} title={trustSection.title} lead={trustSection.lead} compact />
-      </div>
-      <div class="trust__col" data-testid="trust-proven-group">
-        <div class="trust__head">
-          <span class="trust__pill trust__pill--proven"><Icon name="check" size="sm" />{trustSection.provenLabel}</span>
-          <p>{trustSection.provenLead}</p>
-        </div>
-        <ul class="trust__grid" role="list">
-          {
-            trustSection.proven.map((t) => (
-              <li class="tcard" data-testid="trust-proven" data-proof={t.id}>
-                <span class="tcard__icon" aria-hidden="true"><Icon name={t.icon} size="sm" /></span>
-                <div class="tcard__body">
-                  <h3 class="tcard__title">{t.title}</h3>
-                  <p class="tcard__text">{t.text}</p>
-                  <p class="tcard__where">
-                    <Icon name="check" size="sm" />
-                    <span>{trustSection.provenTag}: {t.where}</span>
-                  </p>
-                </div>
-              </li>
-            ))
-          }
-        </ul>
-      </div>
-      <div class="trust__col trust__col--planned" data-testid="trust-planned-group">
-        <div class="trust__head">
-          <span class="trust__pill trust__pill--planned"><Icon name="clock" size="sm" />{trustSection.plannedLabel}</span>
-          <p>{trustSection.plannedLead}</p>
-        </div>
-        <ul class="trust__list" role="list">
-          {
-            trustSection.planned.map((t) => (
-              <li class="tcard tcard--planned" data-testid="trust-planned" data-stage={t.stage}>
-                <span class="tcard__icon" aria-hidden="true"><Icon name={t.icon} size="sm" /></span>
-                <div class="tcard__body">
-                  <StageBadge stage={t.stage} />
-                  <h3 class="tcard__title">{t.title}</h3>
-                  <p class="tcard__text">{t.text}</p>
-                </div>
-              </li>
-            ))
-          }
-        </ul>
-      </div>
-    </div>
   </Section>
 
-  <!-- (4) Sohbetle de yönetin: örnek senaryo sahnesi -->
+  <!-- (4) Sohbetle yönetin -->
   <Section id="sohbet" labelledby="sohbet-title" tone="muted" class="ai-section ai-chat">
     <div class="split">
       <div class="split__aside">
@@ -241,10 +164,9 @@ const provenById = new Map(trustSection.proven.map((t) => [t.id, t]))
     <ul class="cards cards--4 chat-cards" role="list">
       {
         chatSection.cards.map((c) => (
-          <li class="pcard" data-testid="assistant-card" data-stage={c.stage}>
+          <li class="pcard" data-testid="assistant-card">
             <div class="pcard__top">
               <span class="pcard__icon" aria-hidden="true"><Icon name={c.icon} size="md" /></span>
-              <StageBadge stage={c.stage} />
             </div>
             <h3 class="pcard__title">{c.title}</h3>
             <p class="pcard__text">{c.text}</p>
@@ -254,59 +176,18 @@ const provenById = new Map(trustSection.proven.map((t) => [t.id, t]))
     </ul>
   </Section>
 
-  <!-- (5) Yerel uygulama + açık standart -->
-  <Section id="yerel" labelledby="yerel-title" class="ai-section">
-    <SectionHead id="yerel-title" eyebrow={localSection.eyebrow} title={localSection.title} lead={localSection.lead} />
-    <div class="local">
-      <ul class="cards cards--2" role="list">
-        {
-          localSection.cards.map((c) => (
-            <li class="pcard" data-testid="assistant-card" data-stage={c.stage}>
-              <div class="pcard__top">
-                <span class="pcard__icon" aria-hidden="true"><Icon name={c.icon} size="md" /></span>
-                <StageBadge stage={c.stage} />
-              </div>
-              <h3 class="pcard__title">{c.title}</h3>
-              <p class="pcard__text">{c.text}</p>
-            </li>
-          ))
-        }
-      </ul>
-      <aside class="protocol" aria-labelledby="protocol-title" data-testid="protocol-explainer">
-        <p class="protocol__tag">{localSection.protocol.name}</p>
-        <h3 id="protocol-title" class="protocol__title">{localSection.protocol.title}</h3>
-        <div class="plug" aria-hidden="true">
-          <span class="plug__node"><Icon name="sparkle" size="sm" /><span>{localSection.protocol.nodes[0]}</span></span>
-          <span class="plug__wire"><span class="plug__label">{localSection.protocol.short}</span></span>
-          <span class="plug__node plug__node--core"><Icon name="layers" size="sm" /><span>{localSection.protocol.nodes[1]}</span></span>
-        </div>
-        <p class="protocol__text">{localSection.protocol.text}</p>
-        <ul class="protocol__points" role="list">
-          {
-            localSection.protocol.points.map((p) => (
-              <li>
-                <Icon name="check" size="sm" />
-                <span>{p}</span>
-              </li>
-            ))
-          }
-        </ul>
-      </aside>
-    </div>
-  </Section>
-
   <!-- SSS -->
-  <Section id="sorular" labelledby="sorular-title" tone="muted" class="ai-section" size="narrow">
+  <Section id="sorular" labelledby="sorular-title" class="ai-section" size="narrow">
     <SectionHead id="sorular-title" eyebrow={assistantFaq.eyebrow} title={assistantFaq.title} />
     <Accordion items={assistantFaq.items} />
   </Section>
 
-  <!-- Erken erişim -->
-  <Section id="erken-erisim" labelledby="erken-erisim-title" tone="stage" class="ai-section ai-cta">
+  <!-- Demo -->
+  <Section id="demo" labelledby="demo-title" tone="stage" class="ai-section ai-cta">
     <div class="cta">
       <div class="cta__body">
         <p class="cta__eyebrow">{assistantCta.eyebrow}</p>
-        <h2 id="erken-erisim-title">{assistantCta.title}</h2>
+        <h2 id="demo-title">{assistantCta.title}</h2>
         <p class="cta__text">{assistantCta.text}</p>
         <ul class="cta__points" role="list">
           {
@@ -321,7 +202,11 @@ const provenById = new Map(trustSection.proven.map((t) => [t.id, t]))
       </div>
       <div class="cta__panel" data-testid="assistant-cta">
         <p class="cta__subject"><Icon name="mail" size="sm" /><span>{assistantCta.subjectNote} <strong>{assistantCta.subject}</strong></span></p>
-        <EmailActions email={contactEmail} id="ajan-erken" subject={assistantCta.subject} tone="dark" sendLabel={assistantCta.sendLabel} />
+        <EmailActions email={contactEmail} id="ajan-demo" subject={assistantCta.subject} tone="dark" sendLabel={assistantCta.sendLabel} />
+        <a class="cta__start" href={appUrls.register()} data-testid="agent-start-link">
+          <span>{assistantCta.start}</span>
+          <Icon name="arrow" size="sm" />
+        </a>
       </div>
     </div>
   </Section>
@@ -382,21 +267,6 @@ const provenById = new Map(trustSection.proven.map((t) => [t.id, t]))
     background: var(--site-gradient-accent-on-dark);
     color: var(--site-stage-deep);
   }
-  .ai-hero__chip-sep {
-    width: var(--site-border-width);
-    height: var(--ek-space-4);
-    background: var(--site-glass-border);
-  }
-  .ai-hero__chip-meta {
-    color: var(--site-text-on-dark-body);
-    font-weight: var(--ek-font-weight-medium);
-  }
-  /* Dar ekranda hap tek satırda kalsın: betimleyici (başlık ve girişte de geçer) gizlenir. */
-  @media (max-width: 479.98px) {
-    .ai-hero__chip-desc {
-      display: none;
-    }
-  }
   .ai-hero__body h1 {
     max-width: 18ch;
     font-size: var(--site-font-display-md);
@@ -421,18 +291,6 @@ const provenById = new Map(trustSection.proven.map((t) => [t.id, t]))
     flex-wrap: wrap;
     gap: var(--ek-space-3);
     margin-top: var(--ek-space-1);
-  }
-  .ai-hero__note {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--ek-space-2);
-    max-width: 38rem;
-    margin: 0;
-    padding-top: var(--ek-space-4);
-    border-top: var(--site-border-width) solid var(--site-glass-border);
-    color: var(--site-text-on-dark-meta);
-    font-size: var(--ek-font-size-sm);
-    line-height: var(--ek-line-height-normal);
   }
   .ai-hero__visual {
     min-width: 0;
@@ -534,18 +392,6 @@ const provenById = new Map(trustSection.proven.map((t) => [t.id, t]))
   .pcard--dark .pcard__text {
     color: var(--site-text-on-dark-body);
   }
-  .pcard--lead {
-    border-color: color-mix(in srgb, var(--ek-color-secondary) 55%, transparent);
-    box-shadow: inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-secondary) 55%, transparent);
-  }
-  .pcard__flag {
-    margin: 0;
-    color: var(--site-accent-on-dark);
-    font-size: var(--site-card-eyebrow-size);
-    font-weight: var(--site-card-eyebrow-weight);
-    letter-spacing: var(--site-card-eyebrow-tracking);
-    text-transform: uppercase;
-  }
 
   /* ------------------------------------------------------------------ (a) sohbet */
   .split {
@@ -599,135 +445,6 @@ const provenById = new Map(trustSection.proven.map((t) => [t.id, t]))
   .prompt :global(.icon) {
     flex: none;
     color: var(--site-accent);
-  }
-
-  /* ------------------------------------------------------------------ (b) yerel */
-  .local {
-    display: grid;
-    gap: var(--ek-space-6);
-  }
-  @media (min-width: 1024px) {
-    .local {
-      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-      align-items: stretch;
-    }
-  }
-  /* Dar ekranda açık standart açıklaması kartlardan ÖNCE gelir (MCP'nin ne olduğu önce anlaşılsın). */
-  @media (max-width: 1023.98px) {
-    .protocol {
-      order: -1;
-    }
-  }
-  .protocol {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-4);
-    min-width: 0;
-    padding: var(--ek-space-8) var(--ek-space-6);
-    overflow: hidden;
-    border-radius: var(--site-radius-panel);
-    background:
-      radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--ek-color-secondary) 22%, transparent), transparent 60%),
-      var(--site-gradient-stage);
-    box-shadow: var(--site-shadow-panel);
-    color: var(--site-text-on-dark-body);
-  }
-  .protocol__tag {
-    color: var(--site-accent-on-dark);
-    font-size: var(--site-card-eyebrow-size);
-    font-weight: var(--site-card-eyebrow-weight);
-    letter-spacing: var(--site-card-eyebrow-tracking);
-    text-transform: uppercase;
-  }
-  .protocol__title {
-    color: var(--site-text-on-dark-heading);
-    font-size: var(--ek-font-size-2xl);
-    font-weight: var(--ek-font-weight-bold);
-    letter-spacing: -0.01em;
-    line-height: var(--ek-line-height-tight);
-  }
-  .protocol__text {
-    font-size: var(--ek-font-size-md);
-    line-height: var(--site-font-body-line-height);
-  }
-  .plug {
-    display: flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-    padding: var(--ek-space-4);
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-lg);
-    background: var(--site-glass-bg);
-  }
-  .plug__node {
-    display: inline-flex;
-    flex: 1 1 0;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--ek-space-2);
-    min-width: 0;
-    padding: var(--ek-space-3) var(--ek-space-2);
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-md);
-    background: color-mix(in srgb, var(--site-stage-deep) 50%, transparent);
-    color: var(--site-text-on-dark-heading);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-semibold);
-    text-align: center;
-  }
-  .plug__node :global(.icon) {
-    color: var(--site-accent-on-dark);
-  }
-  .plug__node--core {
-    border-color: color-mix(in srgb, var(--ek-color-secondary) 50%, transparent);
-  }
-  .plug__wire {
-    position: relative;
-    display: inline-flex;
-    flex: 0 1 var(--ek-space-16);
-    justify-content: center;
-    min-width: var(--ek-space-12);
-  }
-  .plug__wire::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    right: 0;
-    left: 0;
-    height: var(--site-border-width);
-    background: var(--site-gradient-accent-on-dark);
-  }
-  .plug__label {
-    position: relative;
-    padding: 0 var(--ek-space-2);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 60%, transparent);
-    border-radius: var(--ek-radius-full);
-    background: var(--site-stage-deep);
-    color: var(--site-accent-on-dark);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-bold);
-    letter-spacing: 0.06em;
-  }
-  .protocol__points {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-2);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-  .protocol__points li {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--ek-space-2);
-    font-size: var(--ek-font-size-sm);
-    line-height: var(--ek-line-height-normal);
-  }
-  .protocol__points :global(.icon) {
-    flex: none;
-    margin-top: 0.125rem;
-    color: var(--site-accent-on-dark);
   }
 
   /* ------------------------------------------------------------------ (2) ajanlar */
@@ -794,129 +511,6 @@ const provenById = new Map(trustSection.proven.map((t) => [t.id, t]))
     flex: none;
     margin-top: var(--ek-space-1);
     color: var(--site-accent);
-  }
-
-  /* ------------------------------------------------------------------ (d) güven */
-  .trust {
-    display: grid;
-    gap: var(--ek-space-8);
-  }
-  @media (min-width: 1024px) {
-    .trust {
-      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-      align-items: start;
-    }
-  }
-  .trust__col {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-5);
-    min-width: 0;
-  }
-  .trust__head {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--ek-space-2);
-  }
-  .trust__head p {
-    color: var(--site-text-meta);
-    font-size: var(--ek-font-size-md);
-  }
-  .trust__pill {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-    padding: var(--ek-space-1) var(--ek-space-3);
-    border-radius: var(--ek-radius-full);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-semibold);
-    color: var(--ek-color-content-strong);
-  }
-  .trust__pill--proven {
-    background: var(--ek-color-success-subtle);
-  }
-  .trust__pill--planned {
-    border: var(--site-border-width) dashed var(--ek-color-border-strong);
-    background: var(--ek-color-surface);
-  }
-  .trust__grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--ek-space-4);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-  @media (min-width: 640px) {
-    .trust__grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-  .trust__list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-4);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-  .tcard {
-    display: flex;
-    gap: var(--ek-space-4);
-    min-width: 0;
-    padding: var(--ek-space-5);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--site-radius-panel);
-    background: var(--ek-color-surface);
-    box-shadow: var(--site-shadow-card);
-  }
-  .tcard--planned {
-    border-style: dashed;
-    border-color: var(--ek-color-border-strong);
-    background: var(--ek-color-surface-sunken);
-    box-shadow: none;
-  }
-  .tcard__icon {
-    display: inline-flex;
-    flex: none;
-    align-items: center;
-    justify-content: center;
-    width: var(--ek-space-10);
-    height: var(--ek-space-10);
-    border-radius: var(--ek-radius-md);
-    background: var(--ek-color-success-subtle);
-    color: var(--ek-color-content-strong);
-  }
-  .tcard--planned .tcard__icon {
-    background: var(--ek-color-surface);
-    border: var(--site-border-width) dashed var(--ek-color-border-strong);
-  }
-  .tcard__body {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--ek-space-2);
-    min-width: 0;
-  }
-  .tcard__title {
-    color: var(--site-text-heading);
-    font-size: var(--ek-font-size-lg);
-    font-weight: var(--ek-font-weight-bold);
-  }
-  .tcard__text {
-    color: var(--site-text-body);
-    font-size: var(--ek-font-size-md);
-    line-height: var(--site-font-body-line-height);
-  }
-  .tcard__where {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-1);
-    margin-top: auto;
-    color: var(--site-link-accent);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-semibold);
   }
 
   /* ------------------------------------------------------------------ (e) CTA */
@@ -992,6 +586,24 @@ const provenById = new Map(trustSection.proven.map((t) => [t.id, t]))
   .cta__subject :global(.icon) {
     flex: none;
     color: var(--site-accent-on-dark);
+  }
+  .cta__start {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    margin-top: var(--ek-space-5);
+    color: var(--site-accent-on-dark);
+    font-weight: var(--ek-font-weight-semibold);
+    text-decoration: none;
+  }
+  .cta__start:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+  .cta__start:focus-visible {
+    outline: var(--site-focus-ring-width) solid currentColor;
+    outline-offset: var(--site-focus-ring-offset);
+    border-radius: var(--ek-radius-sm);
   }
   .cta__panel {
     min-width: 0;
@@ -1091,9 +703,21 @@ const provenById = new Map(trustSection.proven.map((t) => [t.id, t]))
     padding: 0;
     list-style: none;
   }
+  /* S24: beş güvence maddesi → geniş ekranda üstte üç, altta iki (6 sütunlu ızgara; kenarlar hizalı). */
   @media (min-width: 768px) {
     .guards {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1024px) {
+    .guards {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+    .guard {
+      grid-column: span 2;
+    }
+    .guard:nth-child(n + 4) {
+      grid-column: span 3;
     }
   }
   .guard {
@@ -1102,11 +726,12 @@ const provenById = new Map(trustSection.proven.map((t) => [t.id, t]))
     gap: var(--ek-space-3);
     min-width: 0;
     padding: var(--ek-space-6);
-    border: var(--site-border-width) dashed var(--ek-color-border-strong);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
     border-radius: var(--site-radius-panel);
     background:
       linear-gradient(180deg, var(--site-accent-soft), transparent 45%),
       var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
   }
   .guard__icon {
     display: inline-flex;
@@ -1128,30 +753,6 @@ const provenById = new Map(trustSection.proven.map((t) => [t.id, t]))
     color: var(--site-text-body);
     font-size: var(--ek-font-size-md);
     line-height: var(--site-font-body-line-height);
-  }
-  .guard__base {
-    display: inline-flex;
-    align-items: flex-start;
-    gap: var(--ek-space-2);
-    margin-top: auto;
-    padding: var(--ek-space-2) var(--ek-space-3);
-    border-radius: var(--ek-radius-md);
-    background: var(--ek-color-success-subtle);
-    color: var(--ek-color-content-strong);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-semibold);
-  }
-  .guard__base :global(.icon) {
-    flex: none;
-    margin-top: 0.125rem;
-  }
-  .trust {
-    margin-top: calc(var(--site-section-y) * 0.6);
-    padding-top: calc(var(--site-section-y) * 0.5);
-    border-top: var(--site-border-width) solid var(--ek-color-border-default);
-  }
-  .trust__intro {
-    grid-column: 1 / -1;
   }
 
   /* ------------------------------------------------------------------ (4) sohbet */
