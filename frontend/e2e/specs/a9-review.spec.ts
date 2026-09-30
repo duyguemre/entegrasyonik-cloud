@@ -114,6 +114,7 @@ test.describe('A9 kademeli seçici geçiş kareleri', () => {
     const picker = await openPicker(page)
     const shot = async (name: string) => picker.screenshot({ path: file(name), animations: 'allow' })
 
+    await page.screenshot({ path: file('00-sayfa-secim-oncesi') })
     await shot('01-secim-oncesi')
 
     await clickAndFreeze(page, option(picker, /Moda/), WIDTH > 640 ? 90 : 170)
@@ -129,6 +130,7 @@ test.describe('A9 kademeli seçici geçiş kareleri', () => {
     await shot('04-yaprak-onay-gecis-ortasi')
     await release(page)
     await shot('05-yaprak-onay-sonrasi')
+    await page.screenshot({ path: file('12-sayfa-yaprak-secili') })
 
     if (WIDTH > 640) {
       // Üst seviye değişimi: Giyim → Kadın kapanır (derinden sığa), Elektronik açılır.
