@@ -229,7 +229,16 @@ function focusRow(id: string | null | undefined) {
   focusId.value = id
   nextTick(() => {
     scrollToRow(id)
-    nextTick(() => document.getElementById(rowDomId(id))?.focus({ preventScroll: !virtual.value }))
+    // Sanal listede satır, kaydırmadan sonraki karede çizilir → birkaç kare bekle.
+    let tries = 0
+    const attempt = () => {
+      const el = document.getElementById(rowDomId(id))
+      if (el) {
+        el.focus({ preventScroll: true })
+        el.scrollIntoView({ block: 'nearest' })
+      } else if (++tries < 12) requestAnimationFrame(attempt)
+    }
+    attempt()
   })
 }
 
@@ -475,7 +484,6 @@ defineOptions({ name: 'CategoryTree' })
   min-height: 0;
   padding: var(--ek-space-2) var(--ek-space-2) var(--ek-space-4);
   overflow-y: auto;
-  scrollbar-gutter: stable;
 }
 
 .cat-tree__virtual {

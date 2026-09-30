@@ -178,9 +178,9 @@ watch(
   background: var(--ek-color-surface);
 }
 
-.brand-detail__map.is-on {
-  border-color: var(--ek-ch-border);
-  background: var(--ek-ch-subtle);
+.brand-detail__map.is-off {
+  border-style: dashed;
+  background: transparent;
 }
 
 .brand-detail__map-dot {
@@ -222,10 +222,12 @@ watch(
   white-space: nowrap;
 }
 
-.brand-detail__map.is-on .brand-detail__map-name,
-.brand-detail__map.is-on .brand-detail__map-value,
 .brand-detail__map.is-on .brand-detail__map-icon {
-  color: var(--ek-ch-text);
+  color: var(--ek-color-success-emphasis);
+}
+
+.brand-detail__map.is-off .brand-detail__map-name {
+  color: var(--ek-color-content-muted);
 }
 
 .brand-detail__map-icon {

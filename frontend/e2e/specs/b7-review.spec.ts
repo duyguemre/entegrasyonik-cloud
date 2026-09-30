@@ -73,7 +73,7 @@ const root = (page: Page, which: 'Kategoriler' | 'Markalar') => page.locator(whi
 /** 2x yakın çekim: verilen öğenin kutusu (görünür alana kırpılır). */
 async function closeUp(page: Page, target: Locator, name: string) {
   if (!ZOOM) return
-  const box = await target.boundingBox().catch(() => null)
+  const box = await target.boundingBox({ timeout: 5000 }).catch(() => null)
   if (!box) return
   const vw = page.viewportSize()!
   const x = Math.max(0, box.x - 8)
@@ -135,7 +135,7 @@ const SCENARIOS: { name: string; run: (p: Page) => Promise<void> }[] = [
     run: async (p) => {
       await open(p, 'Kategoriler')
       await shot(p, file('k1-kategori-liste'))
-      await closeUp(p, root(p, 'Kategoriler').locator('.b7-cat-tree, .ek-category-list').first(), 'k1-kategori-liste')
+      await closeUp(p, root(p, 'Kategoriler').locator('.cat-pane, .ek-category-list').first(), 'k1-kategori-liste')
     },
   },
   {
@@ -144,7 +144,7 @@ const SCENARIOS: { name: string; run: (p: Page) => Promise<void> }[] = [
       await open(p, 'Kategoriler')
       await search(p, 'Kategoriler', 'tişört')
       await shot(p, file('k2-kategori-arama'))
-      await closeUp(p, root(p, 'Kategoriler').locator('.b7-cat-tree, .ek-category-list').first(), 'k2-kategori-arama')
+      await closeUp(p, root(p, 'Kategoriler').locator('.cat-pane, .ek-category-list').first(), 'k2-kategori-arama')
     },
   },
   {
@@ -153,9 +153,9 @@ const SCENARIOS: { name: string; run: (p: Page) => Promise<void> }[] = [
       await open(p, 'Kategoriler')
       await selectCategory(p, ['Giyim', 'Kadın', 'Üst Giyim', 'Tişört'])
       await shot(p, file('k3-kategori-secili'))
-      await closeUp(p, root(p, 'Kategoriler').locator('.b7-cat-detail, .categorySyncComponent').first(), 'k3-kategori-secili')
+      await closeUp(p, root(p, 'Kategoriler').locator('.cat-detail, .categorySyncComponent').first(), 'k3-kategori-secili')
       if (narrow) {
-        await root(p, 'Kategoriler').locator('.b7-cat-detail, .categorySyncComponent').first().evaluate((el) => el.scrollIntoView({ block: 'start' }))
+        await root(p, 'Kategoriler').locator('.cat-detail, .categorySyncComponent').first().evaluate((el) => el.scrollIntoView({ block: 'start' }))
         await settle(p, 300)
         await shot(p, file('k3-kategori-secili', '-2'))
       }
@@ -173,7 +173,7 @@ const SCENARIOS: { name: string; run: (p: Page) => Promise<void> }[] = [
     run: async (p) => {
       await open(p, 'Markalar')
       await shot(p, file('m1-marka-liste'))
-      await closeUp(p, root(p, 'Markalar').locator('.b7-brand-list, .ek-brand-list').first(), 'm1-marka-liste')
+      await closeUp(p, root(p, 'Markalar').locator('.brand-pane, .ek-brand-list').first(), 'm1-marka-liste')
     },
   },
   {
@@ -190,7 +190,7 @@ const SCENARIOS: { name: string; run: (p: Page) => Promise<void> }[] = [
       await open(p, 'Markalar')
       await selectBrand(p, 'Ege Pamuk')
       await shot(p, file('m3-marka-secili'))
-      await closeUp(p, root(p, 'Markalar').locator('.b7-brand-detail, .ek-brand-sync').first(), 'm3-marka-secili')
+      await closeUp(p, root(p, 'Markalar').locator('.brand-detail, .ek-brand-sync').first(), 'm3-marka-secili')
     },
   },
   {

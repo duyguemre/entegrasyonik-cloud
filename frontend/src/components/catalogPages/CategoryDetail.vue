@@ -277,9 +277,9 @@ watch(syncModel, (v) => {
   background: var(--ek-color-surface);
 }
 
-.cat-detail__map.is-on {
-  border-color: var(--ek-ch-border);
-  background: var(--ek-ch-subtle);
+.cat-detail__map.is-off {
+  border-style: dashed;
+  background: transparent;
 }
 
 .cat-detail__map-dot {
@@ -309,10 +309,6 @@ watch(syncModel, (v) => {
   white-space: nowrap;
 }
 
-.cat-detail__map.is-on .cat-detail__map-name {
-  color: var(--ek-ch-text);
-}
-
 .cat-detail__map-state {
   display: inline-flex;
   flex: none;
@@ -323,7 +319,7 @@ watch(syncModel, (v) => {
 }
 
 .cat-detail__map.is-on .cat-detail__map-state {
-  color: var(--ek-ch-text);
+  color: var(--ek-color-success-emphasis);
 }
 
 .cat-detail__hint,

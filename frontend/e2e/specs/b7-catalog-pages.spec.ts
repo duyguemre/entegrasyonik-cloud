@@ -203,6 +203,28 @@ test.describe('B7 — Kategoriler', () => {
     await expect(page.getByText('Kategoriler yüklenemedi')).toHaveCount(0)
   })
 
+  test('derin/büyük ağaç: > 300 görünür satırda sanallaştırma (DOM\'da sınırlı satır), End son düğüme gider', async ({ page }) => {
+    const big = [
+      { _id: 'root', parentId: 0, title: 'Kategoriler', isMain: true },
+      ...Array.from({ length: 8 }, (_, g) => ({
+        _id: `g${g}`, parentId: 'root', title: `Grup ${g + 1}`, level: 0,
+        children: Array.from({ length: 80 }, (_, i) => ({ _id: `g${g}-${i}`, parentId: `g${g}`, title: `Alt kategori ${g + 1}.${i + 1}`, level: 1, children: [] })),
+      })),
+    ]
+    await open(page, 'Kategoriler', { CategoryService: big, AttributeMappingService: [] })
+    await expect(row(page, 'Grup 1')).toBeVisible()
+    await page.getByRole('button', { name: 'Tümünü aç' }).click()
+    await expect(page.locator('.cat-tree__virtual')).toBeVisible()
+    const rendered = await page.getByRole('treeitem').count()
+    expect(rendered).toBeGreaterThan(5)
+    expect(rendered).toBeLessThan(120) // 648 satırdan yalnız görünür pencere
+    await page.getByRole('treeitem').first().focus()
+    await page.keyboard.press('End')
+    await expect(row(page, 'Alt kategori 8.80')).toBeFocused()
+    await page.keyboard.press('Home')
+    await expect(row(page, 'Grup 1')).toBeFocused()
+  })
+
   test('axe: WCAG 2.1 AA = 0 ihlal (genel bakış + seçili yaprak)', async ({ page }) => {
     await open(page, 'Kategoriler')
     await expect(row(page, 'Giyim')).toBeVisible()

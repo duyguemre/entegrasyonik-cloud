@@ -169,7 +169,6 @@ defineExpose({ focusFirst: () => focusAt(Math.max(0, props.items.findIndex((b) =
   padding: var(--ek-space-3) var(--ek-space-4) var(--ek-space-4);
   overflow-y: auto;
   list-style: none;
-  scrollbar-gutter: stable;
 }
 
 .brand-col.is-grid .brand-col__items {
@@ -345,9 +344,9 @@ defineExpose({ focusFirst: () => focusAt(Math.max(0, props.items.findIndex((b) =
 }
 
 .brand-col__chip.is-on {
-  border-color: var(--ek-ch-border);
-  background: var(--ek-ch-subtle);
-  color: var(--ek-ch-text);
+  border-color: var(--ek-color-border-default);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-default);
 }
 
 .brand-col__chip.is-off {

@@ -59,7 +59,7 @@
       </span>
       <span v-if="childCount" class="cat-row__count ek-num" aria-hidden="true">{{ childCount }}</span>
       <span class="cat-row__spacer" aria-hidden="true"></span>
-      <span v-if="missing" class="cat-row__missing ek-num" aria-hidden="true"><span class="cat-row__missing-dot"></span>{{ missing }} eksik</span>
+      <span v-if="missing" class="cat-row__missing ek-num" aria-hidden="true"><v-icon icon="mdi-link-variant-off" size="14" class="cat-row__missing-icon" />{{ missing }} eksik</span>
       <CatMappingDots v-else-if="mapping && mapping.length" :states="mapping" aria-hidden="true" class="cat-row__dots" />
 
       <span class="cat-row__menu" @click.stop @keydown.stop>
@@ -304,18 +304,15 @@ const menuGroups = computed<EkMenuGroup[]>(() => [
   display: inline-flex;
   flex: none;
   align-items: center;
-  gap: 5px;
+  gap: 3px;
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
   line-height: 18px;
   white-space: nowrap;
 }
 
-.cat-row__missing-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: var(--ek-radius-chip);
-  background: var(--ek-color-warning);
+.cat-row__missing-icon {
+  color: var(--ek-color-warning);
 }
 
 .cat-row__edit {
@@ -326,7 +323,6 @@ const menuGroups = computed<EkMenuGroup[]>(() => [
 .cat-row__menu {
   display: inline-flex;
   flex: none;
-  margin-left: var(--ek-space-1);
 }
 
 @media (hover: hover) {
