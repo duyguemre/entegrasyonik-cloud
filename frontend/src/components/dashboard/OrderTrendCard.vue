@@ -30,7 +30,7 @@
       </div>
       <v-chart
         class="dash-trend__chart"
-        :theme="DASHBOARD_CHART_THEME"
+        :theme="chartTheme"
         :option="option"
         autoresize
         role="img"
@@ -57,12 +57,13 @@ import VChart from 'vue-echarts'
 import { EkCard, EkErrorState } from '@entegrasyonik/ui/components'
 import DashboardEmpty from './DashboardEmpty.vue'
 import { formatMoney, formatNumber } from '@entegrasyonik/ui/format'
-import { DASHBOARD_CHART_THEME, chartColors, ensureDashboardChartTheme } from './chartTheme'
+import { useDashboardChartTheme } from './chartTheme'
 import { useDashboardNavigation } from './useDashboardNavigation'
 import type { OrderInsights } from './dashboardTypes'
 
 use([CanvasRenderer, BarChart, LineChart, GridComponent, TooltipComponent])
-ensureDashboardChartTheme()
+// FR2-DARK: tema adı ve seri renkleri etkin moda göre (light/dark).
+const { theme: chartTheme, colors: themeColors } = useDashboardChartTheme()
 
 const props = defineProps<{ data: OrderInsights | null; loading: boolean; error: boolean }>()
 const emit = defineEmits<{ retry: [] }>()
@@ -88,7 +89,9 @@ const ariaSummary = computed(() => {
   return `Son 7 günde ${fmt(total)} sipariş; en yoğun gün ${peak ? dayLabel(peak.date) : '-'} (${fmt(peak?.count ?? 0)} sipariş). Ayrıntı tabloda.`
 })
 
-const option = computed(() => ({
+const option = computed(() => {
+  const chartColors = themeColors.value
+  return {
   grid: { top: 16, right: 8, bottom: 4, left: 8, containLabel: true },
   tooltip: {
     trigger: 'axis',
@@ -126,7 +129,8 @@ const option = computed(() => ({
       data: days.value.map((d) => d.revenue ?? 0),
     },
   ],
-}))
+}
+})
 </script>
 
 <style scoped>

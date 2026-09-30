@@ -26,7 +26,7 @@
     />
     <div v-else class="dash-status__layout">
       <div class="dash-status__ring">
-        <v-chart class="dash-status__chart" :theme="DASHBOARD_CHART_THEME" :option="option" autoresize aria-hidden="true" />
+        <v-chart class="dash-status__chart" :theme="chartTheme" :option="option" autoresize aria-hidden="true" />
         <div class="dash-status__center" aria-hidden="true">
           <span class="dash-status__total">{{ fmt(total) }}</span>
           <span class="dash-status__total-label">sipariş</span>
@@ -66,12 +66,13 @@ import DashboardEmpty from './DashboardEmpty.vue'
 import { formatNumber, formatPercent } from '@entegrasyonik/ui/format'
 import { ORDER_STATUS_TONE, type StatusTone } from '@/design/status-map'
 import { OrderInternalStatusEnum } from '@/types/OrderTypes'
-import { DASHBOARD_CHART_THEME, chartColors, ensureDashboardChartTheme } from './chartTheme'
+import { useDashboardChartTheme } from './chartTheme'
 import { useDashboardNavigation } from './useDashboardNavigation'
 import type { OrderInsights } from './dashboardTypes'
 
 use([CanvasRenderer, PieChart, TooltipComponent])
-ensureDashboardChartTheme()
+// FR2-DARK: tema adı ve seri renkleri etkin moda göre (light/dark).
+const { theme: chartTheme, colors: themeColors } = useDashboardChartTheme()
 
 const props = defineProps<{ data: OrderInsights | null; loading: boolean; error: boolean }>()
 const emit = defineEmits<{ retry: [] }>()
@@ -91,16 +92,19 @@ const ORDER: OrderInternalStatusEnum[] = [
 
 // Aynı tondaki ikinci durum, tonun koyu (`-emphasis`) adımıyla ayrışır; anlamı yine etiket taşır.
 type Swatch = 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'warning-2' | 'info-2' | 'danger-2'
-const toneColor: Record<Swatch, string> = {
-  success: chartColors.success,
-  warning: chartColors.warning,
-  'warning-2': chartColors['warning-emphasis'],
-  info: chartColors.info,
-  'info-2': chartColors['info-emphasis'],
-  danger: chartColors.error,
-  'danger-2': chartColors['error-emphasis'],
-  neutral: chartColors.neutral,
-}
+const toneColor = computed<Record<Swatch, string>>(() => {
+  const chartColors = themeColors.value
+  return {
+    success: chartColors.success,
+    warning: chartColors.warning,
+    'warning-2': chartColors['warning-emphasis'],
+    info: chartColors.info,
+    'info-2': chartColors['info-emphasis'],
+    danger: chartColors.error,
+    'danger-2': chartColors['error-emphasis'],
+    neutral: chartColors.neutral,
+  }
+})
 
 const fmt = (v: number) => formatNumber(v ?? 0)
 const total = computed(() => ORDER.reduce((a, s) => a + (props.data?.statusDistribution?.[s] ?? 0), 0))
@@ -128,11 +132,11 @@ const option = computed(() => ({
       avoidLabelOverlap: true,
       label: { show: false },
       labelLine: { show: false },
-      itemStyle: { borderColor: chartColors.surface, borderWidth: 2 },
+      itemStyle: { borderColor: themeColors.value.surface, borderWidth: 2 },
       emphasis: { scale: false },
       data: rows.value
         .filter((r) => r.count > 0)
-        .map((r) => ({ name: r.label, value: r.count, itemStyle: { color: toneColor[r.swatch] } })),
+        .map((r) => ({ name: r.label, value: r.count, itemStyle: { color: toneColor.value[r.swatch] } })),
     },
   ],
 }))
