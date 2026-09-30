@@ -83,6 +83,10 @@ async function openClaimDetail(p: Page) {
   await firstRow(p, 'claimListView').locator('button:has(.mdi-eye-outline)').first().click({ timeout: 4000 })
   await settle(p, 900)
 }
+async function scrollSheet(p: Page) {
+  await p.locator('.ek-detail-sheet__body').first().evaluate((el) => el.scrollTo({ top: el.scrollHeight })).catch(() => undefined)
+  await settle(p, 400)
+}
 async function selectRows(p: Page, cls: string, n = 2) {
   const boxes = view(p, cls).locator('tbody tr input[type="checkbox"]')
   const count = Math.min(n, await boxes.count())
@@ -146,9 +150,9 @@ const cases: Array<{ name: string; run: (page: Page) => Promise<void> }> = [
   { name: 's05-ic-sekme-entegrasyon', run: async (p) => { await open(p, 'integrations/MarketplaceView'); await p.screenshot({ path: file('s05-ic-sekme-entegrasyon') }) } },
   // 6 — sipariş + iade
   { name: 's06-siparis-liste', run: async (p) => { await open(p, 'OrderListView'); await p.screenshot({ path: file('s06-siparis-liste') }) } },
-  { name: 's06-siparis-detay', run: async (p) => { await open(p, 'OrderListView'); await openOrderDetail(p); await p.screenshot({ path: file('s06-siparis-detay') }) } },
+  { name: 's06-siparis-detay', run: async (p) => { await open(p, 'OrderListView'); await openOrderDetail(p); await p.screenshot({ path: file('s06-siparis-detay') }); await scrollSheet(p); await p.screenshot({ path: file('s06-siparis-detay-alt') }) } },
   { name: 's06-iade-liste', run: async (p) => { await open(p, 'ClaimListView'); await p.screenshot({ path: file('s06-iade-liste') }) } },
-  { name: 's06-iade-detay', run: async (p) => { await open(p, 'ClaimListView'); await openClaimDetail(p); await p.screenshot({ path: file('s06-iade-detay') }) } },
+  { name: 's06-iade-detay', run: async (p) => { await open(p, 'ClaimListView'); await openClaimDetail(p); await p.screenshot({ path: file('s06-iade-detay') }); await scrollSheet(p); await p.screenshot({ path: file('s06-iade-detay-alt') }) } },
   // 7 — sekme sınırında kalan overlay
   {
     name: 's07-overlay-sekme',

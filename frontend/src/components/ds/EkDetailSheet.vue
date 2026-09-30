@@ -31,7 +31,7 @@
           <v-btn icon="mdi-close" variant="text" density="comfortable" aria-label="Kapat" @click="isOpen = false" />
         </div>
       </header>
-      <div class="ek-detail-sheet__body">
+      <div class="ek-detail-sheet__body" tabindex="0" role="region" :aria-label="`${identity} ayrıntıları`">
         <slot />
       </div>
     </v-card>
@@ -150,5 +150,13 @@ const isOpen = computed({
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-8);
+}
+</style>
+
+<style scoped>
+/* Kaydırılan gövde klavyeyle odaklanabilir (axe scrollable-region-focusable); odak halkası iç kenarda. */
+.ek-detail-sheet__body:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--ek-color-border-focus);
 }
 </style>

@@ -46,7 +46,7 @@ export const ACTION_ICONS = {
   help: { icon: 'mdi-help-circle-outline', label: 'Yardım', aliases: ['mdi-help-circle'] },
   back: { icon: 'mdi-arrow-left', label: 'Geri' },
   approve: { icon: 'mdi-check', label: 'Onayla' },
-  reject: { icon: 'mdi-close-circle-outline', label: 'Reddet' },
+  reject: { icon: 'mdi-close-circle-outline', label: 'Reddet', danger: true },
   send: { icon: 'mdi-send-outline', label: 'Gönder', aliases: ['mdi-send'] },
   link: { icon: 'mdi-link-variant', label: 'Bağlantı', aliases: ['mdi-link'] },
 } as const satisfies Record<string, ActionIconDef>
