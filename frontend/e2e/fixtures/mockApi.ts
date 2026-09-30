@@ -139,7 +139,8 @@ async function corsHeaders(route: Route): Promise<Record<string, string>> {
     'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
-    'Access-Control-Allow-Headers': 'content-type,authorization',
+    // faz3-fe-c2a: dış etkili yazma RPC'leri `Idempotency-Key` başlığı gönderir (API_IDEMPOTENCY.md); preflight izin vermeli.
+    'Access-Control-Allow-Headers': 'content-type,authorization,idempotency-key',
   }
 }
 

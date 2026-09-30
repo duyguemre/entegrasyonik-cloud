@@ -57,10 +57,16 @@ test.describe('ADR-0015 B5-3 — AuthorizationListView + UserAddComponent', () =
     await gotoAuthed(page)
     await openScreen(page, 'AuthorizationListView')
 
+    // BİLİNÇLİ SEÇİCİ GÜNCELLEMESİ (faz3-fe-c2a, iddia aynı): ekip yönetimi satıra "Askıya al" / "Sahipliği devret"
+    // ekledi → 3+ eylemde EkRowActions kuralı gereği "Sil" (tehlikeli) `⋯` menüsünün sonuna taşındı. Sahibin silme
+    // öğesi menüde devre dışı, diğer personelinki etkin.
     const denizRow = page.locator('.authorizationListView tbody tr', { hasText: 'Deniz Kaya' })
-    await expect(denizRow.locator('button:has(.mdi-trash-can-outline)')).toBeDisabled()
+    await denizRow.locator('[data-action="more"]').click()
+    await expect(page.getByRole('menuitem', { name: /Mağaza yöneticisi silinemez/ })).toHaveAttribute('aria-disabled', 'true')
+    await page.keyboard.press('Escape')
     const elifRow = page.locator('.authorizationListView tbody tr', { hasText: 'Elif Yıldız' })
-    await expect(elifRow.locator('button:has(.mdi-trash-can-outline)')).toBeEnabled()
+    await elifRow.locator('[data-action="more"]').click()
+    await expect(page.getByRole('menuitem', { name: /^Sil$/ })).not.toHaveAttribute('aria-disabled', 'true')
   })
 
   test('boş durum: "Personel bulunamadı" mesajı gösterilir', async ({ page }) => {
