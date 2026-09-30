@@ -18,6 +18,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - İş kendi dalında yapılır (`cloud/<kısa-ad>`), `main`'e push edilmez. Küçük adımlarla commit + push (oturum kesilirse iş kaybolmasın).
    - Görsel tabanlar Windows'ta üretilir (`*-win32.png`). Bulutta Playwright'ı `--update-snapshots=missing` ile çalıştır; `*-linux.png` dosyaları git-ignored'dır, commit'leme. Görsel onay yerelde yapılır.
    - Token tasarrufu: ara adımlarda yalnızca ilgili spec'i ve tek viewport'u çalıştır; tam koşu ve tam sayfa ekran görüntüsü yalnızca sonda.
+8. **Kullanıcı kararları kaydı:** Ürün sahibinin isteklerinden doğan ürün/mimari kararlar `docs/adr/USER_DECISIONS.md`'de tek dizinde tutulur. Her oturum (yerel ve bulut) işe başlarken okur; kullanıcı yeni bir yön verdiğinde aynı iş içinde satır eklenir (mimari etkisi varsa ADR yazılıp bağlanır), değişen karar silinmez `DEĞİŞTİ → Kxx` olarak işaretlenir. Brif veya ADR bu kayıtla çelişirse çelişki raporlanır.
 
 ## Project Overview
 

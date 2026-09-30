@@ -4,7 +4,7 @@ import { BaseApi } from '../BaseApi'
 import { ObjectId } from 'mongodb'
 import { ApplicationError } from '../Security'
 import { containsRegex, normalizePagination } from '@utils/search'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 import crypto from 'crypto';
 import { StatsOperations } from '@operations/client/StatsOperations';
 import { config } from '@config';
@@ -516,10 +516,15 @@ export default class ProductService extends BaseApi implements IService {
             }
             if (productCount === 0) return { result: true, count: 0 };
 
-            const worksheet = XLSX.utils.json_to_sheet(data);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, 'Ürünler');
-            return { result: true, excelData: XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' }), fileName: `urun_listesi.xlsx` };
+            // [C18b] xlsx (bakımsız, açıklı) -> exceljs. Yalnız YAZMA; değerler düz veri (formül nesnesi üretilmez: '=...' metin kalır).
+            const headers: string[] = [];
+            for (const row of data) for (const k of Object.keys(row)) if (!headers.includes(k)) headers.push(k);
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('Ürünler');
+            worksheet.addRow(headers);
+            for (const row of data) worksheet.addRow(headers.map((h) => row[h] ?? null));
+            const buffer = await workbook.xlsx.writeBuffer();
+            return { result: true, excelData: Buffer.from(buffer as ArrayBuffer).toString('base64'), fileName: `urun_listesi.xlsx` };
         } catch (error) { throw error; }
     }
 }
