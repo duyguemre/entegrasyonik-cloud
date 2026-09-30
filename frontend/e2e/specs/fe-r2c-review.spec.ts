@@ -80,6 +80,17 @@ for (const { w, h } of WIDTHS) {
       }
     })
 
+    test(`galeri varyant görselleri ${w}`, async ({ page }) => {
+      const root = await open(page, r2cVariantProduct)
+      await root.getByText('Ürün Tanımı').first().click()
+      await root.locator('[data-pf-field="gallery"]').click()
+      const card = page.locator('.v-overlay--active').filter({ hasText: 'Resim Galerisi' }).first()
+      await expect(card).toBeVisible()
+      await card.getByRole('tab', { name: /Varyantlar/ }).click()
+      await page.waitForTimeout(600)
+      await snap(page, 'gallery-variants', w)
+    })
+
     test(`tekil ürün kanal fiyatı ${w}`, async ({ page }) => {
       const root = await open(page, r2cSingleProduct)
       await root.getByText('Tekil Ürün Bilgisi').first().click()
