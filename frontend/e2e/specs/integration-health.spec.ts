@@ -6,6 +6,7 @@ import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { installApiMocks, mockError, type MockValue } from '../fixtures/mockApi'
 import { AXE_TAGS, B4P1C_SCREENS, integrationHealthFixture, menuFixtureWithB4P1c, openB4P1cScreen } from '../fixtures/b4p1cScreens'
+import { waitForShellReady } from '../fixtures/nav'
 
 const ROOT = B4P1C_SCREENS.IntegrationHealthView.root
 const OP = 'IntegrationService/getIntegrationHealth'
@@ -105,24 +106,31 @@ test.describe('ADR-0015 B4-P1c — N7 Entegrasyon sağlığı', () => {
   })
 
   test('etkileşim: Yenile yeniden okur (gövde {}), veri kalır; kart oku ilgili ayar sekmesini açar', async ({ page }) => {
+    // [DS-v2 A3, zamanlama sağlamlaştırması] Derin bağlantıda kabuk pano sekmesini de açabiliyor; pano
+    // "Entegrasyon sağlığı" kartı aynı RPC'yi çağırır (yük altında ekrandan ÖNCE/SONRA). Bu yüzden yanıt
+    // çağrı sırasına değil "Yenile'ye basıldı mı"ya bağlı ve sayım ekran açıldıktan sonraki farka göre.
     const bodies: any[] = []
+    let refreshed = false
     await mocks(page, {
       [OP]: async (route: any, headers: Record<string, string>) => {
         bodies.push(route.request().postDataJSON())
-        const data = bodies.length === 1
-          ? integrationHealthFixture()
-          : integrationHealthFixture({ generatedAt: '2026-09-29T11:05:00.000Z' })
+        const data = refreshed
+          ? integrationHealthFixture({ generatedAt: '2026-09-29T11:05:00.000Z' })
+          : integrationHealthFixture()
         return route.fulfill({ status: 200, contentType: 'application/json', headers, body: JSON.stringify(data) })
       },
     })
     await openB4P1cScreen(page, 'IntegrationHealthView')
     const root = page.locator(ROOT)
     const stamp = root.getByText(/Son güncelleme:/)
+    await expect(stamp).toBeVisible()
     const before = await stamp.textContent()
+    const n = bodies.length
+    refreshed = true
     await root.getByRole('button', { name: 'Yenile' }).click()
-    await expect.poll(() => bodies.length).toBe(2)
+    await expect.poll(() => bodies.length).toBe(n + 1)
     await expect(stamp).not.toHaveText(before ?? '')
-    expect(bodies).toEqual([{}, {}])
+    expect(bodies.every((b) => JSON.stringify(b) === '{}')).toBe(true)
     await expect(root.locator('.ek-health-card')).toHaveCount(5)
 
     await card(page, 'Bizimhesap').getByRole('button', { name: 'Bizimhesap ayarlarını aç' }).click()
@@ -130,19 +138,26 @@ test.describe('ADR-0015 B4-P1c — N7 Entegrasyon sağlığı', () => {
   })
 
   test('rol (olumsuz): ekran menüde yoksa menüde görünmez ve derin bağlantı panoya döner', async ({ page }) => {
-    let called = false
+    // [DS-v2 A3, KASITLI] Pano artık "Entegrasyon sağlığı" kartı için aynı RPC'yi mount'ta BİR kez çağırıyor
+    // (DashboardView; yetki backend'de — 403 → kart hiç gösterilmez). Olumsuz rol iddiası korunur: ekranın
+    // KENDİ okuması hiç yapılmaz (toplam tek çağrı = panonunki), ekran kökü ve kalp ikonu (menü/kart) yok.
+    let calls = 0
     await installApiMocks(page, {
       MenuService: menuFixtureWithB4P1c(['AuditLogView']),
       [OP]: async (route: any, headers: Record<string, string>) => {
-        called = true
+        calls += 1
         return route.fulfill({ status: 403, contentType: 'application/json', headers, body: '{"error":"Forbidden"}' })
       },
     })
     await page.goto(`/${B4P1C_SCREENS.IntegrationHealthView.slug}`)
     await expect(page).toHaveURL(/\/dashboard$/, { timeout: 20000 })
+    await waitForShellReady(page)
+    await expect.poll(() => calls).toBe(1)
     await expect(page.locator(ROOT)).toHaveCount(0)
+    await expect(page.locator('.dash-health')).toHaveCount(0)
     await expect(page.locator(`.mdi-heart-pulse`)).toHaveCount(0)
-    expect(called).toBe(false)
+    await page.waitForTimeout(500)
+    expect(calls).toBe(1)
   })
 
   test('ekran görüntüsü tabanı (entegrasyon sağlığı)', async ({ page }) => {
