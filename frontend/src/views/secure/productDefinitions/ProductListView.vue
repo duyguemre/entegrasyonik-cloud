@@ -129,8 +129,9 @@
             <span class="plv-product__title">{{ row.title }}</span>
             <button v-if="row.hasVariant" type="button" class="plv-variants-toggle" :aria-expanded="productIdForVariantList == row._id"
               @click.stop="selectProduct(row)">
-              ({{ row.variants.length }} Seçenek)
-              <v-icon size="16" :icon="productIdForVariantList == row._id ? 'mdi-chevron-up' : 'mdi-chevron-down'" aria-hidden="true" />
+              <v-icon class="plv-variants-toggle__icon" icon="mdi-view-grid-outline" aria-hidden="true" />
+              <span class="ek-num">{{ row.variants.length }}</span> seçenek
+              <v-icon class="plv-variants-toggle__chevron" :class="{ 'is-open': productIdForVariantList == row._id }" icon="mdi-chevron-down" aria-hidden="true" />
             </button>
             <span v-if="row.hashtags?.length" class="plv-tags">
               <span v-for="hashtag of row.hashtags" :key="hashtag._id ?? hashtag.title" class="plv-tag" :title="hashtag.title">
@@ -1200,15 +1201,37 @@ const getStatusLabel = (type: string) => {
   display: inline-flex;
   align-items: center;
   align-self: flex-start;
-  gap: 2px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--ek-color-action);
+  gap: var(--ek-space-1);
+  height: var(--ek-app-chip-h-sm);
+  margin-top: 2px;
+  padding: 0 var(--ek-space-1) 0 var(--ek-space-2);
+  border: 1px solid var(--ek-color-action-border);
+  border-radius: var(--ek-radius-chip);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
   font: inherit;
   font-size: var(--ek-type-caption-size);
   font-weight: var(--ek-font-weight-semibold);
   cursor: pointer;
+  transition: var(--ek-transition-colors);
+}
+
+.plv-variants-toggle:hover,
+.plv-variants-toggle[aria-expanded='true'] {
+  border-color: var(--ek-color-action);
+}
+
+.plv-variants-toggle__icon {
+  font-size: var(--ek-icon-xs);
+}
+
+.plv-variants-toggle__chevron {
+  font-size: var(--ek-icon-sm);
+  transition: transform var(--ek-duration-base) var(--ek-easing-standard);
+}
+
+.plv-variants-toggle__chevron.is-open {
+  transform: rotate(180deg);
 }
 
 .plv-variants-toggle:focus-visible {
@@ -1337,7 +1360,7 @@ const getStatusLabel = (type: string) => {
 }
 
 .plv-variants {
-  padding: var(--ek-space-2) var(--ek-space-3) var(--ek-space-3);
+  padding: var(--ek-space-3) var(--ek-space-4) var(--ek-space-4);
 }
 
 :deep(.plv-row-offsale) .plv-product__title {

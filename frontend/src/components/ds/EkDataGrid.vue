@@ -112,11 +112,13 @@
             <slot :name="`cell-${col.key}`" :row="row" :item="row" :value="row[col.key]" :index="ri">{{ row[col.key] ?? '—' }}</slot>
           </td>
         </tr>
+        <Transition name="ek-grid-expand">
         <tr v-if="expandedSet.has(row[rowKey])" class="ek-grid__expanded" role="row">
           <td role="cell" class="ek-grid__expanded-cell" :colspan="columns.length + (selectable ? 1 : 0)">
             <slot name="expanded" :row="row" :item="row" />
           </td>
         </tr>
+        </Transition>
         </template>
       </tbody>
       <tbody v-else role="rowgroup">
@@ -444,6 +446,30 @@ function toggleSort(key: string) {
 
   .ek-grid.is-overflow-start .ek-grid__pin-start {
     box-shadow: var(--ek-shadow-scroll-start), inset -1px 0 0 var(--ek-color-border-default);
+  }
+}
+
+/* Aşama 5: genişleyen satır yumuşak girer/çıkar (opaklık + 4px; reduced-motion'da süre token'ı 0). */
+.ek-grid-expand-enter-active {
+  transition: opacity var(--ek-duration-base) var(--ek-easing-enter);
+}
+
+.ek-grid-expand-leave-active {
+  transition: opacity var(--ek-duration-fast) var(--ek-easing-standard);
+}
+
+.ek-grid-expand-enter-from,
+.ek-grid-expand-leave-to {
+  opacity: 0;
+}
+
+.ek-grid-expand-enter-active > .ek-grid__expanded-cell > * {
+  animation: ek-grid-expand-in var(--ek-duration-base) var(--ek-easing-enter);
+}
+
+@keyframes ek-grid-expand-in {
+  from {
+    transform: translateY(calc(-1 * var(--ek-motion-distance-sm)));
   }
 }
 

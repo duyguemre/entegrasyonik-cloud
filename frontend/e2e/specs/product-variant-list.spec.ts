@@ -64,7 +64,8 @@ async function openVariantList(page: Page) {
   await gotoAuthed(page)
   await openScreen(page, 'ProductListView')
   const productRow = page.locator('.productListView tbody tr').filter({ hasText: 'E2E Varyant Listesi Ürünü' }).first()
-  await productRow.getByText('(2 Seçenek)').click()
+  // [DS-v2 A5, KASITLI] Açma düğmesi "(2 Seçenek)" metninden "2 seçenek" çip düğmesine döndü (madde 11).
+  await productRow.getByRole('button', { name: '2 seçenek' }).click()
   const list = page.locator(`#variant-target-${listProduct._id} .v-data-table`)
   await expect(list).toBeVisible({ timeout: 20_000 })
   return list

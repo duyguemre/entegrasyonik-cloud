@@ -1,351 +1,176 @@
+<!--
+  frontend/src/components/productDefinitions/variants/ProductVariantListComponent.vue
+
+  Ürün listesinde varyantlı ürünün SEÇENEKLER bölümü (satırın altında açılır). Aşama 5 (kullanıcı geri
+  bildirimi madde 11) — premium varyant ızgarası:
+    ☐ │ [görsel] STOK KODU / barkod │ GRUP (ayırıcı seçenek, satır birleştirmeli) │ SEÇENEKLER (çip) │
+      SATIŞ / PİYASA FİYATI (sağa hizalı) │ STOK (sağa hizalı, tükenen vurgulu) + raf │ KANAL DURUMLARI
+  Kanal durumu: her kanal kendi renginde çip (kanal noktası + ad) + durum ikonu (ton `status-map` dilinde);
+  çipe tıklayınca ayrıntı kartı (`ProductVariantListTooltipComponent`). Veri yalnız ürünün kendi varyant
+  kayıtlarından; mantık (sıralama, seçim, grup birleştirme) değişmedi.
+-->
 <template>
   <v-data-table-server v-model="selectedVariants" :items-length="originalVariants ? originalVariants.length : 0"
-    :items="originalVariants" fixed-header item-value="barcode" :headers="headers" class="pa-0 ma-0 pl-0 pb-0 ma-0 vl-table"
+    :items="originalVariants" fixed-header item-value="barcode" :headers="headers" class="vl-table"
     elevation="0" :show-select="true">
 
     <template v-slot:header.data-table-select="{ allSelected, selectAll, someSelected }">
-      <div class="d-flex align-center justify-center fill-height vl-head-sep">
-        <v-checkbox-btn :model-value="allSelected" :indeterminate="someSelected && !allSelected" color="content-muted"
-          aria-label="Tüm varyantları seç"
+      <div class="vl-head vl-head--select">
+        <v-checkbox-btn :model-value="allSelected" :indeterminate="someSelected && !allSelected" color="primary"
+          aria-label="Tüm varyantları seç" density="compact"
           @update:model-value="selectAll(!allSelected)"></v-checkbox-btn>
       </div>
     </template>
 
-    <template v-slot:header.variant="{ column, getSortIcon, isSorted, someSelected }">
-      <div class="d-flex  fill-height align-center">
-        <div class="text-center vl-image-head"><v-icon class="mr-8">mdi-image-outline</v-icon></div>
-        <div class="font-weight-bold vl-sort-head vl-w-130" @click="toggleSort('stockcode')"
-          @mouseenter="sortIcon = 'stockcode'" @mouseleave="sortIcon = undefined">
-
-          Stok Kodu
-          <template v-if="sortBy === 'stockcode'">
-            <v-icon>
-              {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-            </v-icon>
-          </template>
-          <v-icon v-else v-if="sortIcon == 'stockcode'" class="vl-sort-icon--hint">
-            {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-          </v-icon>
-
-        </div>
-        |
-        <div class="font-weight-bold text-caption ml-1 vl-sort-head vl-w-60"
-          @click="toggleSort('barcode')" @mouseenter="sortIcon = 'barcode'" @mouseleave="sortIcon = undefined">
-          Barkod
-          <template v-if="sortBy === 'barcode'">
-            <v-icon class="text-caption">
-              {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-            </v-icon>
-          </template>
-          <v-icon class="text-caption vl-sort-icon--hint" v-else v-if="sortIcon == 'barcode'">
-            {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-          </v-icon>
-        </div>
+    <template v-slot:header.variant>
+      <div class="vl-head">
+        <button type="button" class="vl-sort" :class="{ 'is-on': sortBy === 'stockcode' }" @click="toggleSort('stockcode')">
+          <span>Stok Kodu</span><v-icon class="vl-sort__icon" :icon="sortIconFor('stockcode')" aria-hidden="true" />
+        </button>
+        <span class="vl-head__sep" aria-hidden="true">/</span>
+        <button type="button" class="vl-sort" :class="{ 'is-on': sortBy === 'barcode' }" @click="toggleSort('barcode')">
+          <span>Barkod</span><v-icon class="vl-sort__icon" :icon="sortIconFor('barcode')" aria-hidden="true" />
+        </button>
       </div>
     </template>
 
-
-
-    <template v-slot:header.choices="{ column, getSortIcon, isSorted, someSelected }">
-      <div class="d-flex fill-height align-center vl-head-sep">
-        <div class="font-weight-bold text-body-2 vl-sort-head vl-w-95"
-          @click="toggleSort('choices')" @mouseenter="sortIcon = 'choices'" @mouseleave="sortIcon = undefined">
-          Seçenekler
-          <template v-if="sortBy === 'choices'">
-            <v-icon>
-              {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-            </v-icon>
-          </template>
-          <v-icon v-else v-if="sortIcon == 'choices'" class="vl-sort-icon--hint">
-            {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-          </v-icon>
-        </div>
+    <template v-slot:header.choiceTitle>
+      <div class="vl-head">
+        <button type="button" class="vl-sort" :class="{ 'is-on': sortBy === 'choiceValueTitle' }" @click="toggleSort('choiceValueTitle')">
+          <span>Grup</span><v-icon class="vl-sort__icon" :icon="sortIconFor('choiceValueTitle')" aria-hidden="true" />
+        </button>
       </div>
     </template>
 
+    <template v-slot:header.choices>
+      <div class="vl-head">
+        <button type="button" class="vl-sort" :class="{ 'is-on': sortBy === 'choices' }" @click="toggleSort('choices')">
+          <span>Seçenekler</span><v-icon class="vl-sort__icon" :icon="sortIconFor('choices')" aria-hidden="true" />
+        </button>
+      </div>
+    </template>
 
     <template v-slot:header.prices>
-      <div class="d-flex fill-height align-center vl-head-sep">
-        <div class="font-weight-bold text-body-2 vl-sort-head vl-w-150"
-          @click="toggleSort('prices.salePrice')" @mouseenter="sortIcon = 'prices.salePrice'"
-          @mouseleave="sortIcon = undefined">
-
-
-          Satış Fiyatı
-          <template v-if="sortBy === 'prices.salePrice'">
-            <v-icon>
-              {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-            </v-icon>
-          </template>
-          <v-icon v-else v-if="sortIcon == 'prices.salePrice'" class="vl-sort-icon--hint">
-            {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-          </v-icon>
-        </div>
-        |
-        <div class="font-weight-bold text-caption ml-1 vl-sort-head vl-w-150"
-          @click="toggleSort('prices.marketPrice')" @mouseenter="sortIcon = 'prices.marketPrice'"
-          @mouseleave="sortIcon = undefined">
-
-          Piyasa Fiyatı
-          <template v-if="sortBy === 'prices.marketPrice'">
-            <v-icon class="text-caption">
-              {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-            </v-icon>
-          </template>
-          <v-icon class="text-caption vl-sort-icon--hint" v-else v-if="sortIcon == 'prices.marketPrice'">
-            {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-          </v-icon>
-        </div>
+      <div class="vl-head vl-head--end">
+        <button type="button" class="vl-sort" :class="{ 'is-on': sortBy === 'prices.salePrice' }" @click="toggleSort('prices.salePrice')">
+          <span>Satış Fiyatı</span><v-icon class="vl-sort__icon" :icon="sortIconFor('prices.salePrice')" aria-hidden="true" />
+        </button>
+        <span class="vl-head__sep" aria-hidden="true">/</span>
+        <button type="button" class="vl-sort" :class="{ 'is-on': sortBy === 'prices.marketPrice' }" @click="toggleSort('prices.marketPrice')">
+          <span>Piyasa Fiyatı</span><v-icon class="vl-sort__icon" :icon="sortIconFor('prices.marketPrice')" aria-hidden="true" />
+        </button>
       </div>
     </template>
-
-
 
     <template v-slot:header.stock>
-      <div class="d-flex fill-height align-center vl-head-sep">
-        <div class="font-weight-bold vl-sort-head vl-w-70" @click="toggleSort('stock')"
-          @mouseenter="sortIcon = 'stock'" @mouseleave="sortIcon = undefined">
-
-          Stok Adedi
-          <template v-if="sortBy === 'stock'">
-            <v-icon>
-              {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-            </v-icon>
-          </template>
-          <v-icon v-else v-if="sortIcon == 'stock'" class="vl-sort-icon--hint">
-            {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-          </v-icon>
-        </div>
-
-
+      <div class="vl-head vl-head--end">
+        <button type="button" class="vl-sort" :class="{ 'is-on': sortBy === 'stock' }" @click="toggleSort('stock')">
+          <span>Stok Adedi</span><v-icon class="vl-sort__icon" :icon="sortIconFor('stock')" aria-hidden="true" />
+        </button>
       </div>
-    </template>
-
-    <template v-slot:header.choiceTitle="{ column }">
-
-      <div class="d-flex fill-height align-center">
-        <div class="font-weight-bold text-body-2 vl-sort-head" @click="toggleSort('choiceValueTitle')"
-          @mouseenter="sortIcon = 'choiceValueTitle'" @mouseleave="sortIcon = undefined">
-          Grup
-          <template v-if="sortBy === 'choiceValueTitle'">
-            <v-icon>
-              {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-            </v-icon>
-          </template>
-          <v-icon v-else-if="sortIcon == 'choiceValueTitle'" class="vl-sort-icon--hint">
-            {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-          </v-icon>
-          <v-icon v-else class="vl-sort-icon--hidden">
-            {{ sortDesc === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
-          </v-icon>
-
-        </div>
-      </div>
-
-
     </template>
 
     <template v-slot:header.platforms="{ column }">
-      <div class="d-flex fill-height align-center vl-head-sep">
-        <div class="font-weight-bold text-left vl-platforms-head">{{ column.title }}
-        </div>
-      </div>
+      <div class="vl-head"><span class="vl-head__label">{{ column.title }}</span></div>
     </template>
-
 
     <template v-slot:header.shelf>
     </template>
 
-
-
-
     <template v-slot:header.actions>
     </template>
 
-
-
-
-    <template v-slot:item="{ item, index, isSelected, toggleSelect }: any">
-      <tr v-if="index != 0 && rowspanSet.get(item.barcode)">
-        <td :colspan="headers.length + 1" class="vl-group-spacer">
-        </td>
+    <template v-slot:item="{ item, index }: any">
+      <tr v-if="index != 0 && rowspanSet.get(item.barcode)" class="vl-group-gap" aria-hidden="true">
+        <td :colspan="headers.length + 1"></td>
       </tr>
 
+      <tr class="vl-row" :class="{ 'is-selected': selectedVariants.includes(item.barcode) }">
+        <td class="vl-td vl-td--select">
+          <v-checkbox-btn :model-value="selectedVariants.includes(item.barcode)" :aria-label="`${item.stockcode} varyantını seç`"
+            color="primary" density="compact" @update:model-value="val => {
+              if (val) selectedVariants.push(item.barcode)
+              else selectedVariants = selectedVariants.filter((id: any) => id !== item.barcode)
+            }" />
+        </td>
 
-      <tr>
-        <td class="pa-0 ma-0 vl-cell-sep">
-          <div class="d-flex align-center justify-center fill-height w-100">
-            <v-checkbox-btn :model-value="selectedVariants.includes(item.barcode)" aria-label="Varyantı seç"
-              color="content-muted" @update:model-value="val => {
-                if (val) selectedVariants.push(item.barcode)
-                else selectedVariants = selectedVariants.filter((id: any) => id !== item.barcode)
-              }" class="vl-cb-fixed" />
-
+        <td class="vl-td">
+          <div class="vl-ident">
+            <v-tooltip location="bottom" :open-delay="600" :eager="false" transition="fade-transition" text="Varyant görsellerini düzenle">
+              <template v-slot:activator="{ props: tooltipProps }">
+                <ProductVariantImageComponent v-bind="{ ...tooltipProps }" :productInfoForm="productInfoForm"
+                  @click.stop="isVariantImagesDialog = true; selectedVariantForEdit = item"
+                  :imageId="item.images ? item.images[0] : undefined" class="vl-thumb" />
+              </template>
+            </v-tooltip>
+            <span class="vl-ident__text">
+              <span class="vl-code ek-num">{{ item.stockcode }}</span>
+              <span class="vl-barcode ek-num"><v-icon icon="mdi-barcode" aria-hidden="true" />{{ item.barcode }}</span>
+            </span>
           </div>
         </td>
-        <td class="pl-0 vl-cell-sep">
-          <div class="d-flex align-center fill-height;" @click="">
-            <div class="text-center mr-4 elevation-1 vl-thumb">
-              <v-tooltip location="bottom" open-delay="1000" text="Ürünü düzenlemek için basınız">
-                <template v-slot:activator="{ props: tooltipProps }">
 
-                  <ProductVariantImageComponent v-bind="{ ...tooltipProps }" :productInfoForm="productInfoForm"
-                    @click.stop="isVariantImagesDialog = true; selectedVariantForEdit = item"
-                    :imageId="item.images ? item.images[0] : undefined" class="vl-thumb-img" />
-
-                </template>
-              </v-tooltip>
-            </div>
-            <div class="d-flex align-center fill-height vl-w-full">
-              <div class="d-flex">
-                <div>
-                  <div class="font-weight-light text-caption mt-1 vl-field-caption">
-                    Stok
-                    Kodu
-                  </div>
-                  <span class="font-weight-bold">{{ item.stockcode }}</span>
-                  <div class="font-weight-light text-caption mt-1 vl-field-caption">
-                    Barkod
-                  </div>
-                  <span class="font-weight-medium">{{ item.barcode }}</span>
-
-                  
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </td>
         <td :rowspan="rowspanSet.get(item.barcode)" v-if="productInfoForm.hasVariant && rowspanSet.get(item.barcode)"
-          class="text-center vl-td-group">
-          <div class="font-weight-bold">{{ choicesStore.getChoiceValueName(getSlicerChoice(item.choices).choiceId,
-            getSlicerChoice(item.choices).choiceValueId) }} </div>
+          class="vl-td vl-td--group">
+          <span class="vl-group">
+            <span class="vl-group__name">{{ choicesStore.getChoiceValueName(getSlicerChoice(item.choices).choiceId,
+              getSlicerChoice(item.choices).choiceValueId) }}</span>
+            <span class="vl-group__count">{{ rowspanSet.get(item.barcode) }} varyant</span>
+          </span>
         </td>
 
-        <td class="vl-td-choices">
-          <div class="d-flex fill-height align-center d-block mt-1 vl-cell-sep vl-w-full">
-            <div>
-              <div v-for="(choice, index) of item.choices">
-                <div class="d-flex" v-if="choice.slicer != true">
-                  <div :class="(index as any) > 0 ? ['pt-1'] : []">
-                    <div class="font-weight-light text-caption vl-field-caption">
-                      {{ choicesStore.getChoiceTitle(choice.choiceId) }} </div>
-                    <span class="font-weight-bold">{{ choicesStore.getChoiceValueName(choice.choiceId,
-                      choice.choiceValueId) }}</span>
+        <td class="vl-td">
+          <span class="vl-choices">
+            <template v-for="choice of item.choices" :key="choice.choiceId">
+              <span v-if="choice.slicer != true" class="vl-choice">
+                <span class="vl-choice__label">{{ choicesStore.getChoiceTitle(choice.choiceId) }}</span>
+                <span class="vl-choice__value">{{ choicesStore.getChoiceValueName(choice.choiceId, choice.choiceValueId) }}</span>
+              </span>
+            </template>
+            <span v-if="!item.choices?.some((c: any) => c.slicer != true)" class="vl-muted">—</span>
+          </span>
+        </td>
+
+        <td class="vl-td vl-td--end">
+          <span v-if="item.prices.isPlatformBasedPrice == true" class="vl-price" @click="editingVariantMenu = true; editingVariant = item">
+            <span class="vl-price__note">Kanala göre</span>
+            <span class="vl-price__sale ek-num">{{ formatCurrency(findMinimumSalePrice(item.platforms)) }} – {{ formatCurrency(findMaximumSalePrice(item.platforms)) }}</span>
+            <span class="vl-price__market ek-num">Piyasa {{ formatCurrency(findMinimumMarketPrice(item.platforms)) }} – {{ formatCurrency(findMaximumMarketPrice(item.platforms)) }}</span>
+          </span>
+          <span v-else class="vl-price">
+            <span class="vl-price__sale ek-num">{{ formatCurrency(item.prices.salePrice) }}</span>
+            <span class="vl-price__market ek-num">Piyasa {{ formatCurrency(item.prices.marketPrice) }}</span>
+          </span>
+        </td>
+
+        <td class="vl-td vl-td--end">
+          <span class="vl-stock">
+            <span class="vl-stock__qty ek-num" :class="{ 'is-out': !Number(item.stock) }">{{ item.stock ?? 0 }}</span>
+            <span v-if="!Number(item.stock)" class="vl-stock__out">Stokta yok</span>
+            <span v-if="item.shelf" class="vl-stock__shelf"><v-icon icon="mdi-map-marker-outline" aria-hidden="true" />Raf {{ item.shelf }}</span>
+          </span>
+        </td>
+
+        <td class="vl-td">
+          <div class="vl-platforms">
+            <template v-if="integrationStore" v-for="integration of integrationStore.getClientPlatforms()" :key="integration.code">
+              <v-menu :close-on-content-click="false" location="bottom center" transition="fade-transition" offset="8">
+                <template v-slot:activator="{ props: menuProps }">
+                  <div v-bind="menuProps" class="vl-platform platform-mini-card" :class="[channelClass(integration.code), `is-${platformState(integration, item).tone}`]"
+                    role="button" tabindex="0"
+                    :aria-label="`${integration.title || integration.code}: ${platformState(integration, item).label} — durum bilgisi`"
+                    @keydown.enter.prevent="($event.currentTarget as HTMLElement).click()"
+                    @keydown.space.prevent="($event.currentTarget as HTMLElement).click()">
+                    <span class="vl-platform__dot" aria-hidden="true"></span>
+                    <span class="vl-platform__name">{{ integration.title || integration.code }}</span>
+                    <v-icon class="vl-platform__state" :icon="platformState(integration, item).icon" aria-hidden="true" />
                   </div>
-                </div>
-              </div>
-            </div>
+                </template>
+                <ProductVariantListTooltipComponent :data="item.platforms[integration.code]" />
+              </v-menu>
+            </template>
           </div>
-
         </td>
-        <td>
-          <div class="d-flex fill-height align-center vl-cell-sep vl-w-full-soft">
-
-            <div class="d-flex align-center fill-height vl-w-full">
-
-              <template v-if="item.prices.isPlatformBasedPrice == true">
-                <div @click="editingVariantMenu = true; editingVariant = item" class="d-flex align-center fill-height vl-price-cell">
-                  <div>
-                    <!--                         Platform Bazında <span class="font-weight-medium">Satış</span> Fiyatları -->
-                    <div class="font-weight-light text-caption mb-3 vl-field-caption">
-                      (Platform Bazında)
-                    </div>
-
-                    <div class="font-weight-light text-caption mt-1 vl-field-caption">
-                      Satış Fiyatı
-                    </div>
-                    <span class="font-weight-bold"> {{ formatCurrency(findMinimumSalePrice(item.platforms)) }} - {{
-                      formatCurrency(findMaximumSalePrice(item.platforms)) }}</span>
-                    <div class="font-weight-light text-caption mt-1 vl-field-caption">
-                      Piyasa Fiyatı
-                    </div>
-                    <span class="font-weight-medium"> {{ formatCurrency(findMinimumMarketPrice(item.platforms)) }} - {{
-                      formatCurrency(findMaximumMarketPrice(item.platforms)) }}</span>
-                  </div>
-
-                </div>
-              </template>
-              <template v-else>
-                <div @click="" class="d-flex align-center fill-height vl-price-cell">
-                  <div>
-
-                    <div class="font-weight-light text-caption mt-1 vl-field-caption">
-                      Satış Fiyatı
-                    </div>
-                    <span class="font-weight-bold"> {{ formatCurrency(item.prices.salePrice) }}</span>
-                    <div class="font-weight-light text-caption mt-1 vl-field-caption">
-                      Piyasa Fiyatı
-                    </div>
-                    <span class="font-weight-medium"> {{ formatCurrency(item.prices.marketPrice) }}</span>
-                  </div>
-                </div>
-              </template>
-            </div>
-          </div>
-
-        </td>
-        <td>
-          <div class="d-flex font-weight-bold fill-height align-center pr-4 vl-cell-sep vl-w-full">
-
-            <div>
-              <div>
-                <div class="font-weight-light text-caption mt-1 vl-field-caption">
-                  Stok Adedi
-                </div>
-                <div class="d-flex font-weight-bold fill-height align-center vl-w-full">
-                  {{ item.stock }}
-                </div>
-              </div>
-
-              <div>
-                <div class="font-weight-light text-caption mt-1 vl-field-caption">
-                  Raf
-                </div>
-                <div class="d-flex font-weight-bold fill-height align-center vl-w-full">
-                  {{ item.shelf || '-' }}
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-        </td>
-        <td>
-
-          <div class="d-flex fill-height align-center vl-cell-sep">
-
-            <div class="mt-1 mb-1 d-flex flex-wrap ga-3 align-center vl-platforms">
-              <template v-if="integrationStore" v-for="integration of integrationStore.getClientPlatforms()"
-                :key="integration.code">
-
-                <v-menu :close-on-content-click="false" location="bottom center" transition="scale-transition"
-                  offset="10">
-                  <template v-slot:activator="{ props: tooltipProps }">
-                    <div v-bind="tooltipProps" class="position-relative d-flex align-center vl-platform-trigger"
-                      role="button" tabindex="0" :aria-label="`${integration.title || integration.code} durum bilgisi`"
-                      @keydown.enter.prevent="($event.currentTarget as HTMLElement).click()"
-                      @keydown.space.prevent="($event.currentTarget as HTMLElement).click()">
-
-                      <div v-if="getBadgeColor(integration, item) !== 'transparent'" class="status-indicator-dot vl-dot--active"></div>
-
-                      <PlatformImageComponent :integrationCode="integration.code" height="25" width="100"
-                        class="platform-mini-card"
-                        :is-active="item.platforms[integration.code]?.upload?.TRANSFER?.status === 'COMPLETED'"
-                        :isSelectable="true" />
-                    </div>
-                  </template>
-
-                  <ProductVariantListTooltipComponent :data="item.platforms[integration.code]" />
-                </v-menu>
-
-              </template>
-            </div>
-          </div>
-
-
-        </td>
-        
       </tr>
     </template>
     <template v-slot:bottom="{ }">
@@ -366,7 +191,8 @@ import { useIntegrationStore } from '@/stores/integrationStore';
 import { useCategoriesStore } from '@/stores/categoriesStore';
 import { useStaticsStore } from '@/stores/staticsStore';
 import ProductVariantListTooltipComponent from './ProductVariantListTooltipComponent.vue';
-import PlatformImageComponent from '@/components/platforms/PlatformImageComponent.vue';
+import { channelClass } from '@/design/channels'
+import type { StatusTone } from '@/design/status-map'
 const staticsStore = useStaticsStore()
 
 const categoriesStore = useCategoriesStore()
@@ -436,6 +262,26 @@ const getBadgeColor = (integration: any, item: any) => {
     return 'transparent'
 }
 
+
+/**
+ * Aşama 5 — kanal çipinin durum ikonu/tonu (yalnız varyant kaydındaki `upload.TRANSFER.status` + `onSale`).
+ * Ton adları `status-map` dilinde; metin ekran okuyucu adına girer (renk tek başına anlam taşımaz).
+ */
+const platformState = (integration: any, item: any): { tone: StatusTone; icon: string; label: string } => {
+  const upload = item.platforms?.[integration.code]?.upload
+  const status = upload?.TRANSFER?.status
+  if (status === PRODUCT_INTEGRATION_STATUS.COMPLETED) {
+    return upload?.onSale === true
+      ? { tone: 'success', icon: 'mdi-check-circle', label: 'Yayında' }
+      : { tone: 'warning', icon: 'mdi-pause-circle', label: 'Onaylandı, satışa kapalı' }
+  }
+  if (status === PRODUCT_INTEGRATION_STATUS.FAILED) return { tone: 'danger', icon: 'mdi-alert-circle', label: 'Reddedildi' }
+  if (status === PRODUCT_INTEGRATION_STATUS.SENT || status === PRODUCT_INTEGRATION_STATUS.WAITING) return { tone: 'info', icon: 'mdi-clock-outline', label: 'Onay bekliyor' }
+  if (status === PRODUCT_INTEGRATION_STATUS.PENDING) return { tone: 'info', icon: 'mdi-progress-upload', label: 'Hazırlanıyor' }
+  return { tone: 'neutral', icon: 'mdi-circle-outline', label: 'Gönderilmedi' }
+}
+
+const sortIconFor = (key: string) => (sortBy.value === key ? (sortDesc.value === 'asc' ? 'mdi-arrow-down' : 'mdi-arrow-up') : 'mdi-swap-vertical')
 
 const getIcon = (integration: any, item: any) => {
   const itemStatus: any = item.platforms[integration.code]?.upload?.TRANSFER?.status;
@@ -890,149 +736,323 @@ const search = async () => {
 
 
 <style scoped>
-.status-indicator-dot {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  z-index: 2;
-  /* Beyaz çerçeve ile logonun üzerinden ayrılmasını sağlar */
-  border: 2px solid var(--ek-color-surface);
-  box-shadow: var(--ek-shadow-sm);
-}
-
-/* Badge Renklerinin Anlamları (Görsel Netlik İçin) */
-/* Yeşil: Yayında, Kırmızı: Hatalı, Turuncu: Bekliyor vb. */
-
-/*
-  ADR-0015 B5-2 — önceki satır içi stillerin token'lı karşılıkları. Satır içi stilin önceliği,
-  Vuetify'ın yüksek özgüllüklü kurallarıyla (td yüksekliği/kenarlığı, tablo genişliği) çakışan
-  yerlerde `!important` ile korunur.
-*/
-.vl-dot--active {
-  background-color: var(--ek-color-success);
-}
-
+/* Aşama 5 — varyant ızgarası: ürün satırının altında "iç tablo" — sunken çerçeve içinde beyaz ızgara,
+   mikro başlık, satır ayraçları ince, sayılar sağa hizalı tabular, gruplar arasında ince bant. */
 .vl-table {
-  left: 0;
-  z-index: 1;
-  right: 0;
-  width: auto !important;
-  border: 1px solid var(--ek-color-border-color);
+  width: auto !important; /* Vuetify tablo kabı satır içi genişlik verir */
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface);
+  box-shadow: var(--ek-shadow-card);
+  overflow: hidden;
+}
+
+.vl-table :deep(thead th) {
+  height: 36px !important; /* Vuetify başlık yüksekliği satır içi değişkenle gelir */
+  padding: 0 var(--ek-space-2) !important;
+  border-bottom: 1px solid var(--ek-color-border-default) !important;
+  background: var(--ek-color-surface-muted) !important;
+}
+
+.vl-head {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  height: 100%;
+}
+
+.vl-head--end {
+  justify-content: flex-end;
+}
+
+.vl-head--select {
+  justify-content: center;
+}
+
+.vl-head__sep {
+  color: var(--ek-color-content-subtle);
+  font-size: var(--ek-type-micro-size);
+}
+
+.vl-head__label,
+.vl-sort {
+  color: var(--ek-color-content-muted);
+  font-family: inherit;
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.vl-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px var(--ek-space-1);
+  border: 0;
   border-radius: var(--ek-radius-sm);
+  background: transparent;
+  cursor: pointer;
+  transition: var(--ek-transition-colors);
 }
 
-.vl-head-sep {
-  border-right: 1px solid var(--ek-color-border-default);
+.vl-sort:hover,
+.vl-sort.is-on {
+  color: var(--ek-color-action-emphasis);
 }
 
-.vl-cell-sep {
-  border-right: 1px solid var(--ek-color-border-default) !important;
+.vl-sort:focus-visible,
+.vl-platform:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
 }
 
-.vl-image-head {
-  width: 124px;
-  opacity: .6;
+.vl-sort__icon {
+  font-size: var(--ek-icon-xs);
+  opacity: 0.45;
 }
 
-.vl-sort-head {
-  height: 20px !important;
+.vl-sort.is-on .vl-sort__icon {
+  opacity: 1;
+}
+
+.vl-row > .vl-td {
+  height: auto !important;
+  padding: var(--ek-space-2) !important;
+  border-bottom: 1px solid var(--ek-color-border-subtle) !important;
+  vertical-align: middle;
+  color: var(--ek-color-content-default);
+  font-size: var(--ek-type-table-size);
+  line-height: var(--ek-type-table-line);
+  transition: background-color var(--ek-duration-fast) var(--ek-easing-standard);
+}
+
+.vl-row:hover > .vl-td:not(.vl-td--group) {
+  background: var(--ek-color-surface-muted);
+}
+
+.vl-row.is-selected > .vl-td:not(.vl-td--group) {
+  background: var(--ek-color-selection);
+}
+
+.vl-td--select {
+  width: 44px;
+  padding: 0 var(--ek-space-1) !important;
+}
+
+.vl-td--end {
+  text-align: right;
+}
+
+.vl-group-gap > td {
+  height: 6px !important;
+  padding: 0 !important;
+  border-bottom: 1px solid var(--ek-color-border-subtle) !important;
+  background: var(--ek-color-surface-sunken);
+}
+
+/* Kimlik: 40px görsel + stok kodu (güçlü) + barkod (soluk, ikonlu). */
+.vl-ident {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  min-width: 180px;
+}
+
+:deep(.vl-thumb img),
+:deep(.vl-thumb .v-img__img) {
+  width: 100% !important; /* görsel bileşeni satır içi ölçü taşır */
+  height: 100% !important;
+  object-fit: cover;
+}
+
+:deep(.vl-thumb) {
+  flex: none;
+  width: 40px !important; /* görsel bileşeni satır içi ölçü taşır */
+  height: 40px !important;
+  overflow: hidden;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface-sunken);
   cursor: pointer;
 }
 
-.vl-w-130 {
-  width: 130px;
+.vl-ident__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
-.vl-w-60 {
-  width: 60px;
+.vl-code {
+  color: var(--ek-color-content-strong);
+  font-weight: var(--ek-font-weight-semibold);
 }
 
-.vl-w-95 {
-  width: 95px;
+.vl-barcode {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
 }
 
-.vl-w-150 {
-  width: 150px !important;
+.vl-barcode .v-icon {
+  font-size: var(--ek-icon-xs);
 }
 
-.vl-w-70 {
-  width: 70px;
+/* Grup (ayırıcı seçenek): birleştirilmiş hücre, sunken zemin, üstte hizalı ad + varyant sayısı. */
+.vl-td--group {
+  width: 1%;
+  vertical-align: top !important;
+  padding-top: var(--ek-space-3) !important;
+  border-right: 1px solid var(--ek-color-border-subtle) !important;
+  background: var(--ek-color-surface-sunken);
 }
 
-.vl-sort-icon--hint {
-  opacity: .5 !important;
+.vl-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  white-space: nowrap;
 }
 
-.vl-sort-icon--hidden {
-  opacity: 0 !important;
+.vl-group__name {
+  color: var(--ek-color-content-strong);
+  font-weight: var(--ek-font-weight-semibold);
 }
 
-.vl-platforms-head {
-  text-align: center;
-  width: 100% !important;
+.vl-group__count {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
 }
 
-.vl-group-spacer {
-  min-height: 10px !important;
-  line-height: 10px !important;
-  height: 30px !important;
+/* Seçenek değerleri çip: "ETİKET değer" (etiket soluk, değer güçlü) — DS çip ölçüsü. */
+.vl-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ek-space-1);
 }
 
-.vl-cb-fixed {
-  flex: 0 0 !important;
+.vl-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  height: var(--ek-app-chip-h-sm);
+  padding: 0 var(--ek-space-2);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-chip);
+  background: var(--ek-color-surface-sunken);
+  font-size: var(--ek-type-caption-size);
+  white-space: nowrap;
 }
 
-.vl-thumb {
-  width: 110px;
-  min-width: 110px;
+.vl-choice__label {
+  color: var(--ek-color-content-muted);
 }
 
-/* ProductVariantImageComponent kökünün kendi satır içi stili var → :global + !important. */
-:global(.vl-thumb-img) {
-  border-bottom: 1px solid var(--ek-color-surface-sunken) !important;
+.vl-choice__value {
+  color: var(--ek-color-content-strong);
+  font-weight: var(--ek-font-weight-semibold);
 }
 
-.vl-td-group {
-  border-color: var(--ek-color-border-default) !important;
-  background-color: var(--ek-color-card-component-hover-color) !important;
+.vl-muted {
+  color: var(--ek-color-content-muted);
 }
 
-.vl-td-choices {
-  border-left: 1px solid var(--ek-color-border-default) !important;
+.vl-price,
+.vl-stock {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  white-space: nowrap;
 }
 
-.vl-field-caption {
-  font-size: var(--ek-font-size-xs) !important;
-  line-height: .7;
+.vl-price__note {
+  color: var(--ek-color-info-emphasis);
+  font-size: var(--ek-type-micro-size);
+  font-weight: var(--ek-font-weight-semibold);
 }
 
-.vl-price-cell {
-  width: auto !important;
-  min-width: 130px;
+.vl-price__sale,
+.vl-stock__qty {
+  color: var(--ek-color-content-strong);
+  font-weight: var(--ek-font-weight-semibold);
 }
 
-.vl-w-full {
-  width: 100% !important;
+.vl-price__market,
+.vl-stock__shelf {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
 }
 
-.vl-w-full-soft {
-  width: 100%;
+.vl-stock__qty.is-out {
+  color: var(--ek-color-error-emphasis);
 }
 
+.vl-stock__out {
+  color: var(--ek-color-error-emphasis);
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-medium);
+}
+
+.vl-stock__shelf {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.vl-stock__shelf .v-icon {
+  font-size: var(--ek-icon-xs);
+}
+
+/* Kanal durumu: kanalın kendi renginde çip (kanal noktası + ad, kanal tonu metin) + durum ikonu (durum tonu). */
 .vl-platforms {
-  max-width: 450px;
+  /* Sarılan kanal çipleri: genişlik yetince satır başına 2 çip; dar alanda kolon en geniş çipe kadar daralır. */
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ek-space-1);
+  max-width: 260px;
 }
 
-.vl-platform-trigger {
+.vl-platform {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--ek-app-chip-h-sm);
+  padding: 0 6px 0 var(--ek-space-2);
+  border: 1px solid var(--ek-ch-border);
+  border-radius: var(--ek-radius-chip);
+  background: var(--ek-ch-subtle);
+  color: var(--ek-ch-text);
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-semibold);
   cursor: pointer;
-  border-radius: var(--ek-radius-sm);
+  transition: var(--ek-transition-colors);
 }
 
-.vl-platform-trigger:focus-visible {
-  outline: 2px solid var(--ek-color-primary);
-  outline-offset: 2px;
+.vl-platform:hover {
+  border-color: var(--ek-ch-solid);
 }
+
+.vl-platform__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--ek-radius-chip);
+  background: var(--ek-ch-solid);
+}
+
+.vl-platform__state {
+  font-size: var(--ek-icon-sm);
+}
+
+.vl-platform.is-success .vl-platform__state { color: var(--ek-color-success); }
+.vl-platform.is-warning .vl-platform__state { color: var(--ek-color-warning); }
+.vl-platform.is-danger .vl-platform__state { color: var(--ek-color-error); }
+.vl-platform.is-info .vl-platform__state { color: var(--ek-color-info); }
+.vl-platform.is-neutral .vl-platform__state { color: var(--ek-color-content-muted); }
 </style>

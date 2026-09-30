@@ -21,7 +21,7 @@ const want = (name: string) => !ONLY.length || ONLY.some((o) => name.includes(o)
 function variant(o: Record<string, any> = {}) {
   return {
     _id: 'a5-var-1', stockcode: 'A5-TSH-SIYAH-M', barcode: '8690000000301',
-    choices: [{ choiceId: 'choice-e2e-1', choiceValueId: 'choiceval-e2e-1', slicer: true }],
+    choices: [{ choiceId: 'choice-e2e-1', choiceValueId: 'choiceval-e2e-1', slicer: true }, { choiceId: 'choice-e2e-2', choiceValueId: 'choiceval-e2e-3' }],
     prices: { salePrice: 349.9, marketPrice: 429.9, isPlatformBasedPrice: false }, stock: 12, shelf: 'B-02', images: [],
     platforms: {
       trendyol: { upload: { TRANSFER: { status: 'COMPLETED', updatedAt: '2026-09-20T10:00:00.000Z' }, onSale: true }, prices: { salePrice: 349.9, marketPrice: 429.9 }, stock: 12 },
@@ -34,7 +34,7 @@ const VARIANT_PRODUCT = buildProduct({
   _id: 'a5-product-var', title: 'Organik pamuk basic tişört', hasVariant: true,
   variants: [
     variant(),
-    variant({ _id: 'a5-var-2', stockcode: 'A5-TSH-BEYAZ-M', barcode: '8690000000302', choices: [{ choiceId: 'choice-e2e-1', choiceValueId: 'choiceval-e2e-2', slicer: true }], stock: 0, shelf: undefined, platforms: { trendyol: { upload: { TRANSFER: { status: 'PENDING' } } } } }),
+    variant({ _id: 'a5-var-2', stockcode: 'A5-TSH-BEYAZ-M', barcode: '8690000000302', choices: [{ choiceId: 'choice-e2e-1', choiceValueId: 'choiceval-e2e-2', slicer: true }, { choiceId: 'choice-e2e-2', choiceValueId: 'choiceval-e2e-3' }], stock: 0, shelf: undefined, platforms: { trendyol: { upload: { TRANSFER: { status: 'PENDING' } } } } }),
     variant({ _id: 'a5-var-3', stockcode: 'A5-TSH-SIYAH-L', barcode: '8690000000303', stock: 4, prices: { salePrice: 369.9, marketPrice: 449.9, isPlatformBasedPrice: false } }),
   ],
 })
@@ -160,7 +160,7 @@ const cases: Array<{ name: string; run: (page: Page) => Promise<void> }> = [
         ChoiceService: choicesDoluFixture,
         'ProductService/getProducts': { products: [VARIANT_PRODUCT, SINGLE_PRODUCT], totalNumberOfRecords: 2, fromTo: '1-2 / 2', isFiltered: false },
       })
-      await p.locator('.productListView').getByText(/\(3 Seçenek\)|3 seçenek/i).first().click()
+      await p.locator('.productListView').getByRole('button', { name: /3 seçenek/i }).first().click()
       await p.locator('#variant-target-a5-product-var').waitFor({ timeout: 10000 }).catch(() => undefined)
       await settle(p, 900)
       await p.screenshot({ path: file('m11-urun-secenek') })
