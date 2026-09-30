@@ -555,3 +555,24 @@ bölümü; ortak ds bileşenlerine dokunulmadı, token değişikliği yok. Önce
 | Çok varyant | > 8: kompakt ızgara + "Tümünü gör" (iç kaydırma, yapışık başlık) |
 | Dar kap | < 600px kart (A6b) |
 | Mantık | `variants/variantListModel.ts` (saf, `tests/variant-list-model.test.ts`) |
+
+## 18. B2 — ürün resim galerisi + varyanta resim atama (`cloud/fe-b2`)
+
+Ayrıntılı araştırma → eleştiri → karar → iterasyon kaydı: `docs/b2-review/README.md` (görseller `before/`, `iterasyon-1/`, `after/`).
+
+- **Yapı:** `crud/ProductImagesComponent` (EkDialogCard xl) → `[Galeri | Varyantlar · n eksik]` (EkPageTabs, varyantlı üründe). Galeri: EkBulkBar →
+  ızgara (ilk hücre KAPAK 2×2 + `minmax(148px)` kutular + "Görsel ekle" hücresi) → öneri satırı; alt bilgi kaydetme durumu.
+  Parçalar `productDefinitions/images/`: `galleryModel.ts` (saf), `useImageUploads.ts`, `GalleryThumb`, `ImagePicker`, `ImageLightbox`, `VariantImageAssign`, `motion.ts`.
+  Varyant satırından tek varyant paneli: `variants/ProductVariantImagesComponent`.
+- **Etkileşim:** sürükle-bırak (fare: kartın tamamı; dokunmatik: tutamak), klavye (tutamak: Boşluk → oklar → Boşluk / Esc, `aria-live`),
+  ⋯ menüsü alternatifleri; sil = Geri al tostu; yükleme = bırak / tıkla / Ctrl+V, kart başına ilerleme · hata · Tekrar dene.
+- **Hareket:** yalnız opaklık + SortableJS yer değiştirme (`--ek-duration-base`, JS'de `motionMs()` token'dan; reduced-motion ve `data-motion="reduced"` → 0).
+  Yer tutucu kesik çerçeve, taşınan kopya `shadow-popover`; ölçek/zıplama yok.
+- **Renk:** yalnız semantik token (kapak = action-subtle/emphasis, kalite = warning/info-subtle, hata kartı = error-subtle); ham renk 0.
+- **Paylaşılan küçük düzeltmeler:** `useTabScope` Esc — `[data-ek-esc-local]` içinden gelen Esc örtüyü kapatmaz;
+  `EkToastHost` z-index `--ek-z-toast + --ek-z-overlay` (Vuetify örtü yığını 2400'e çıkıp toast'u örtüyordu);
+  `restApi.postImageUpload(data, onProgress?)`.
+- **Testler:** `tests/b2-gallery-model.test.ts` (19: sıra/kapak/klavye hedefi, referans çözümleme, seçenek grubu atama, kullanım, kalite, dosya),
+  `tests/restapi/postImageUpload.test.ts` (+1 ilerleme), `e2e/specs/b2-gallery.spec.ts` (11 × 3 viewport: klavye sıralama + Esc, kapak, geri al'lı silme,
+  yükleme hata/tekrar, tür reddi, önizleme, grup ataması, toplu atama, axe AA = 0). Görsel taban yok (inceleme: `b2-review.spec.ts`);
+  `product-images.png` / `variant-images.png` / `product-variants*.png` tabanları Windows'ta bilinçli yenilenmeli.

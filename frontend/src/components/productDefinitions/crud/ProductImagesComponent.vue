@@ -79,8 +79,8 @@
         <div v-if="!visible.length && !uploadItems.length" class="pig-empty">
           <button type="button" class="pig-drop" @click="pickFiles">
             <span class="pig-drop__icon" aria-hidden="true"><v-icon :icon="icons.upload" /></span>
-            <span class="pig-drop__title">Ürün görsellerini buraya bırakın</span>
-            <span class="pig-drop__sub">ya da <u>bilgisayarınızdan seçin</u> · panoya kopyaladığınız görseli <kbd>Ctrl</kbd>+<kbd>V</kbd> ile yapıştırın</span>
+            <span class="pig-drop__title"><span class="pig-pointer">Ürün görsellerini buraya bırakın</span><span class="pig-touch">Ürün görsellerini ekleyin</span></span>
+            <span class="pig-drop__sub"><span class="pig-pointer">ya da </span><u>cihazınızdan seçin</u><span class="pig-pointer"> · panoya kopyaladığınız görseli <kbd>Ctrl</kbd>+<kbd>V</kbd> ile yapıştırın</span></span>
           </button>
           <ul class="pig-guide" aria-label="Görsel önerileri">
             <li><v-icon icon="mdi-file-image-outline" aria-hidden="true" />JPG, PNG ya da WebP · tek seferde en çok {{ IMAGE_GUIDE.maxFilesPerBatch }}</li>
@@ -165,7 +165,7 @@
             <button type="button" class="pig-add" @click="pickFiles">
               <v-icon :icon="icons.upload" aria-hidden="true" />
               <span class="pig-add__title">Görsel ekle</span>
-              <span class="pig-add__sub">Sürükleyin, seçin ya da yapıştırın</span>
+              <span class="pig-add__sub pig-pointer">Sürükleyin, seçin ya da yapıştırın</span>
             </button>
           </li>
         </ul>
@@ -197,7 +197,7 @@
       <span class="pig-save" role="status">
         <template v-if="saving"><v-icon icon="mdi-cloud-sync-outline" aria-hidden="true" />Kaydediliyor…</template>
         <template v-else-if="uploadItems.length"><v-icon :icon="icons.upload" aria-hidden="true" />{{ uploadLine }}</template>
-        <template v-else><v-icon icon="mdi-cloud-check-outline" aria-hidden="true" />Sıra ve silme anında kaydedilir<span v-if="hasVariants" class="pig-wide"> · varyant atamaları ürünle kaydedilir</span></template>
+        <template v-else><v-icon icon="mdi-cloud-check-outline" aria-hidden="true" /><span>Sıra ve silme anında kaydedilir<span v-if="hasVariants" class="pig-wide"> · varyant atamaları ürünle kaydedilir</span></span></template>
       </span>
     </template>
   </EkDialogCard>
@@ -1360,8 +1360,21 @@ kbd {
   font-size: 16px;
 }
 
+/* işaretçi / dokunmatik metinleri (sürükle-bırak ve Ctrl+V yalnız işaretçili cihazda anlamlı) */
+.pig-touch {
+  display: none;
+}
+
 /* dokunmatik: eylemler hep görünür, hedefler ≥ 40px */
 @media (hover: none) {
+  .pig-pointer {
+    display: none;
+  }
+
+  .pig-touch {
+    display: inline;
+  }
+
   .pig-tile__top {
     opacity: 1;
   }

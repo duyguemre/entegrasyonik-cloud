@@ -20,7 +20,7 @@
       <section class="pvi-sec" aria-labelledby="pvi-own-h">
         <header class="pvi-sec__head">
           <h3 id="pvi-own-h" class="pvi-sec__title">Bu varyantın görselleri <span class="pvi-count ek-num">{{ ownIds.length }}</span></h3>
-          <span class="pvi-sec__hint">İlk görsel varyantın ana görseli · sürükleyin ya da <kbd>Alt</kbd>+<kbd>←</kbd>/<kbd>→</kbd></span>
+          <span class="pvi-sec__hint">İlk görsel varyantın ana görseli<span class="pvi-pointer"> · sürükleyin ya da <kbd>Alt</kbd>+<kbd>←</kbd>/<kbd>→</kbd></span></span>
         </header>
 
         <div v-if="!ownIds.length" class="pvi-own-empty">
@@ -513,6 +513,10 @@ kbd {
 }
 
 @media (hover: none) {
+  .pvi-pointer {
+    display: none;
+  }
+
   .pvi-own__remove {
     opacity: 1;
     width: 40px;

@@ -59,7 +59,7 @@ async function snap(page: Page, name: string, panel?: any, closeup?: any) {
 }
 
 test.describe('B2 inceleme', () => {
-  test.use({ deviceScaleFactor: 2 })
+  test.use({ deviceScaleFactor: 2, ...(WIDTH <= 480 ? { hasTouch: true, isMobile: true } : {}) })
 
   test('bos', async ({ page }) => {
     const panel = await openGallery(page, galleryProduct({ images: [], assigned: false }), { getImages: { images: [] } })
@@ -115,6 +115,26 @@ test.describe('B2 inceleme', () => {
       await panel.getByRole('tab', { name: /Varyant/ }).click()
       await page.waitForTimeout(500)
       await snap(page, '04-atama', panel, panel)
+    })
+
+    test('atama editoru', async ({ page }) => {
+      const panel = await openGallery(page, galleryProduct())
+      await panel.getByRole('tab', { name: /Varyant/ }).click()
+      const row = panel.locator('.via__row').filter({ hasText: 'Beyaz' })
+      await row.getByRole('button', { name: 'Görsel seç' }).click()
+      await row.getByRole('button', { name: /^Görsel 5/ }).click()
+      await page.waitForTimeout(400)
+      await snap(page, '04b-atama-editoru', panel, row)
+    })
+
+    test('secim ve toplu atama', async ({ page }) => {
+      const panel = await openGallery(page, galleryProduct())
+      await panel.getByLabel('Görsel 5 seç').check({ force: true })
+      await panel.getByLabel('Görsel 6 seç').check({ force: true })
+      await panel.getByRole('button', { name: 'Varyantlara ata' }).click()
+      await panel.getByRole('button', { name: 'Beyaz', exact: true }).click()
+      await page.waitForTimeout(400)
+      await snap(page, '08-secim-toplu-atama', panel, panel.locator('.pig-gallery'))
     })
 
     test('onizleme', async ({ page }) => {
