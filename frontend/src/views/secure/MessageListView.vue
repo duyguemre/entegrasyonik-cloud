@@ -62,21 +62,23 @@
       </template>
 
       <template #toolbar-end>
-        <span v-if="awaitingOnPage > 0" class="ek-message-awaiting-count" aria-live="polite">{{ t('messages.sla.awaitingCount', { n: awaitingOnPage }) }}</span>
-        <EkTooltip :text="t('messages.sla.awaitingFirstHint')">
-          <EkButton
-            tone="secondary"
-            size="sm"
-            :icon="awaitingFirst ? 'mdi-check' : 'mdi-sort-clock-descending-outline'"
-            class="ek-message-awaiting-toggle"
-            :class="{ 'is-active': awaitingFirst }"
-            :aria-pressed="awaitingFirst ? 'true' : 'false'"
-            :disabled="loading || !rows.length"
-            @click="awaitingFirst = !awaitingFirst"
-          >
-            {{ t('messages.sla.awaitingFirst') }}<span class="ek-message-awaiting-toggle__scope"> · {{ t('messages.sla.thisPage') }}</span>
-          </EkButton>
-        </EkTooltip>
+        <span class="ek-message-awaiting">
+          <span v-if="awaitingOnPage > 0" class="ek-message-awaiting-count" aria-live="polite">{{ t('messages.sla.awaitingCount', { n: awaitingOnPage }) }}</span>
+          <EkTooltip :text="t('messages.sla.awaitingFirstHint')">
+            <EkButton
+              tone="secondary"
+              size="sm"
+              :icon="awaitingFirst ? 'mdi-check' : 'mdi-sort-clock-descending-outline'"
+              class="ek-message-awaiting-toggle"
+              :class="{ 'is-active': awaitingFirst }"
+              :aria-pressed="awaitingFirst ? 'true' : 'false'"
+              :disabled="loading || !rows.length"
+              @click="awaitingFirst = !awaitingFirst"
+            >
+              {{ t('messages.sla.awaitingFirst') }}<span class="ek-message-awaiting-toggle__scope"> · {{ t('messages.sla.thisPage') }}</span>
+            </EkButton>
+          </EkTooltip>
+        </span>
       </template>
 
       <template #bulk-actions>
@@ -95,10 +97,13 @@
       <template #cell-text="{ row }">
         <span class="ek-message-text">
           <span class="ek-message-text__body">{{ row.text }}</span>
-          <span v-if="row.context?.productName || row.context?.orderNumber" class="ek-message-text__ctx">
-            <template v-if="row.context?.productName">Ürün: {{ row.context.productName }}</template>
-            <template v-if="row.context?.productName && row.context?.orderNumber"> · </template>
-            <span v-if="row.context?.orderNumber" class="ek-num">Sipariş: {{ row.context.orderNumber }}</span>
+          <span v-if="row.context?.productName || row.context?.orderNumber || isAwaitingReply(row)" class="ek-message-text__meta">
+            <MessageWaitChip :message="row" :now="now" tooltip />
+            <span v-if="row.context?.productName || row.context?.orderNumber" class="ek-message-text__ctx">
+              <template v-if="row.context?.productName">Ürün: {{ row.context.productName }}</template>
+              <template v-if="row.context?.productName && row.context?.orderNumber"> · </template>
+              <span v-if="row.context?.orderNumber" class="ek-num">Sipariş: {{ row.context.orderNumber }}</span>
+            </span>
           </span>
         </span>
       </template>
@@ -110,7 +115,6 @@
         <EkStatusChip :tone="effectiveTone(row)" :label="effectiveLabel(row)" />
       </template>
       <template #cell-date="{ row }"><span class="ek-num">{{ formatDateTime(row.date) }}</span></template>
-      <template #cell-waiting="{ row }"><MessageWaitChip :message="row" :now="now" placeholder tooltip /></template>
       <template #cell-actions="{ row }">
         <span class="ek-row-actions">
           <EkButton tone="ghost" size="sm" :icon="needsReply(row) ? 'mdi-message-reply-text' : 'mdi-eye'" icon-only :aria-label="needsReply(row) ? 'Mesajı cevapla' : 'Mesajı görüntüle'" @click="openDetail(row)" />
@@ -204,9 +208,8 @@ const columns: EkGridColumn[] = [
   { key: 'channel', label: 'Kanal' },
   { key: 'text', label: 'Mesaj' },
   { key: 'customer', label: 'Müşteri' },
+  // C2.5 — bekleme süresi rozeti Mesaj hücresinde: ayrı kolon/tarih hücresi dar ekranda yatay kaydırmanın dışında kalıyordu.
   { key: 'date', label: 'Tarih', sortable: true },
-  // C2.5 — bekleme süresi (saklanan alan değil, `date`'ten türetilir → sunucuda sıralanamaz).
-  { key: 'waiting', label: t('messages.sla.column') },
   { key: 'status', label: 'Durum', sortable: true },
   { key: 'actions', label: 'İşlemler', align: 'end', hideLabel: true, pin: 'end' },
 ];
@@ -498,6 +501,7 @@ defineExpose({
 .ek-message-text__ctx {
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ek-message-text__ctx {
@@ -513,6 +517,21 @@ defineExpose({
 .ek-row-actions {
   display: inline-flex;
   gap: var(--ek-space-1);
+}
+
+.ek-message-text__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  min-width: 0;
+}
+
+.ek-message-awaiting {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ek-space-2);
 }
 
 .ek-message-awaiting-count {
@@ -535,12 +554,6 @@ defineExpose({
 
 .ek-message-awaiting-toggle.is-active .ek-message-awaiting-toggle__scope {
   color: inherit;
-}
-
-@media (max-width: 599px) {
-  .ek-message-awaiting-count {
-    display: none;
-  }
 }
 
 .ek-bulk-danger {

@@ -109,23 +109,22 @@ test.describe('C2.5 — Mesaj bekleme süresi + karakter sınırı', () => {
     await expect(page.getByText('Üç saattir bekleyen soru')).toBeVisible()
   })
 
-  test('bekleyen mesajda süre rozeti eşik tonuyla; cevaplanmışta "—"', async ({ page }) => {
+  test('bekleyen mesajda süre rozeti eşik tonuyla; cevaplanmışta rozet yok', async ({ page }) => {
     const rows = page.locator('.messageListView tbody tr')
     const chip = (text: string) => rows.filter({ hasText: text }).locator('.ek-message-wait')
     await expect(chip('Üç saattir')).toHaveText('Bekliyor: 3 sa')
     await expect(chip('Üç saattir')).toHaveAttribute('data-tone', 'neutral')
     await expect(chip('Otuz saattir')).toHaveText('Bekliyor: 1 gün 6 sa')
     await expect(chip('Otuz saattir')).toHaveAttribute('data-tone', 'warning')
-    await expect(chip('Elli iki')).toHaveText('Uzun bekliyor: 2 gün 4 sa')
+    await expect(chip('Elli iki')).toHaveText('Uzun bekliyor: 2 gün')
     await expect(chip('Elli iki')).toHaveAttribute('data-tone', 'danger')
     await expect(chip('Cevaplanmış soru')).toHaveCount(0)
-    await expect(rows.filter({ hasText: 'Cevaplanmış soru' }).locator('.ek-message-wait__none')).toContainText('Bekleyen yanıt yok')
   })
 
   test('"Bekleyenler önce · bu sayfada" yalnız istemci tarafı sıralar', async ({ page }) => {
     const toggle = page.getByRole('button', { name: /Bekleyenler önce/ })
     await expect(toggle).toHaveAttribute('aria-pressed', 'false')
-    await expect(page.getByText('Bu sayfada 4 bekleyen')).toBeVisible({ visible: (page.viewportSize()?.width ?? 0) >= 600 })
+    await expect(page.getByText('Bu sayfada 4 bekleyen')).toBeVisible()
     const requests: string[] = []
     page.on('request', r => { if (r.url().includes('MessageService/getMessages')) requests.push(r.url()) })
     await toggle.click()

@@ -283,16 +283,13 @@
       }
     },
     "sla": {
-      "column": "Bekleme",
       "waiting": "Bekliyor: {duration}",
       "waitingLong": "Uzun bekliyor: {duration}",
-      "noWait": "Bekleyen yanıt yok",
-      "thresholdHint": "Müşteri {duration} önce yazdı. Eşikler öneridir (ayarlanabilir): {warning} sa uyarı, {danger} sa üstü kritik.",
+      "thresholdHint": "Müşteri {duration} önce yazdı. Eşikler öneridir, pazaryeri yanıt süresi değildir: {warning} sa uyarı, {danger} sa üstü kritik.",
       "duration": {
         "lessThanMinute": "1 dk'dan az",
         "minutes": "{m} dk",
         "hours": "{h} sa",
-        "hoursMinutes": "{h} sa {m} dk",
         "daysHours": "{d} gün {h} sa",
         "days": "{d} gün"
       },

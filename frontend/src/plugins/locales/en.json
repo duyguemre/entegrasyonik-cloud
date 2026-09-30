@@ -361,16 +361,13 @@
   },
   "messages": {
     "sla": {
-      "column": "Waiting",
       "waiting": "Waiting: {duration}",
       "waitingLong": "Long wait: {duration}",
-      "noWait": "No reply pending",
-      "thresholdHint": "Customer wrote {duration} ago. Thresholds are suggestions (adjustable): {warning} h warning, over {danger} h critical.",
+      "thresholdHint": "Customer wrote {duration} ago. Thresholds are suggestions, not a marketplace deadline: {warning} h warning, over {danger} h critical.",
       "duration": {
         "lessThanMinute": "under 1 min",
         "minutes": "{m} min",
         "hours": "{h} h",
-        "hoursMinutes": "{h} h {m} min",
         "daysHours": "{d} d {h} h",
         "days": "{d} d"
       },
