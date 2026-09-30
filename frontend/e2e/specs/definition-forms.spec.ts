@@ -76,6 +76,13 @@ test.describe('DS-v2 A2 — marka tanımı paneli (karakterizasyon)', () => {
     await panel.locator('button:has(.mdi-delete-outline), button:has(.mdi-trash-can-outline)').first().click()
     await expect(dialog).toBeVisible()
     if (testInfo.project.name === 'chromium-desktop') {
+      // [Test ortamı sağlamlaştırması — Windows'ta kırmızı, Linux'ta yeşil] `toBeVisible` opaklığa bakmaz; yavaş
+      // makinede axe açılış geçişinin (fade/scale) ortasında çalışıp yarı saydam metni `color-contrast` ihlali
+      // sayıyordu (geçiş yapay olarak 3 sn'ye uzatılınca Linux'ta da aynı ihlal üretildi). Tarama, kaplamanın
+      // CSS geçişleri bittikten sonra yapılır — iddia aynı: 0 ihlal.
+      await expect.poll(() => page.locator('.v-overlay--active .v-overlay__content').first().evaluate(
+        (el) => el.getAnimations({ subtree: true }).filter((a) => a.playState === 'running').length,
+      ), { timeout: 10000 }).toBe(0)
       const axe = await new AxeBuilder({ page }).include('.v-overlay--active .v-overlay__content').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
       expect(axe.violations.map((v) => v.id)).toEqual([])
     }
