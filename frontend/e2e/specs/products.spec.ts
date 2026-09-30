@@ -13,8 +13,9 @@ test.describe('P1 — Ürünler (ProductListView)', () => {
 
     await expectScreenOpen(page, '.productListView')
     await expect(page.getByLabel('Ürün Adı, Stok Kodu, Barkod').first()).toBeVisible()
-    await expect(page.getByText('E2E Test Ürünü')).toBeVisible()
-    await expect(page.getByText('E2E İkinci Ürün')).toBeVisible()
+    // Birleştirme (Aşama 3): pano kartları da aynı ürün adını taşıyor (gizli sekmede DOM'da) → ekrana kapsandı.
+    await expect(page.locator('.productListView').getByText('E2E Test Ürünü', { exact: true })).toBeVisible()
+    await expect(page.locator('.productListView').getByText('E2E İkinci Ürün', { exact: true })).toBeVisible()
   })
 
   test('boş durum: sonuç yoksa "Ürün bulunamadı" kartı gösterilir', async ({ page }) => {
@@ -60,7 +61,7 @@ test.describe('P1 — Ürünler (ProductListView)', () => {
     await installApiMocks(page)
     await gotoAuthed(page)
     await openScreen(page, 'ProductListView')
-    await expect(page.getByText('E2E Test Ürünü')).toBeVisible()
+    await expect(page.locator('.productListView').getByText('E2E Test Ürünü', { exact: true })).toBeVisible()
     const results = await new AxeBuilder({ page }).include('.productListView').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
     await testInfo.attach('axe-ProductListView-sonuclari.json', { body: JSON.stringify(results.violations, null, 2), contentType: 'application/json' })
     console.log(`[axe] ProductListView: ${results.violations.length} WCAG 2.1 AA ihlali`)

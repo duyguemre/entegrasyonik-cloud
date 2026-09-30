@@ -260,7 +260,8 @@ test.describe('DS-v2 kabuk — sekme menüsü ve sol menü', () => {
 
     await openScreen(page, 'ProductListView')
     // Ürün görseli (küçük resim) kayıt sekmesini açar (ProductListView `openEditProduct` — çok örnekli sekme).
-    await page.locator('.productListView .plv-thumb-wrap').first().click()
+    // Birleştirme (Aşama 3): liste standardında küçük resim bir düğmedir (`.plv-thumb`, "… ürününü düzenle").
+    await page.locator('.productListView').getByRole('button', { name: 'E2E Test Ürünü ürününü düzenle' }).click()
     await expect(page.locator(TAB)).toHaveCount(3, { timeout: 20_000 })
     await expect(record).toBeEnabled()
     await expect(record).toContainText('E2E Test Ürünü')
