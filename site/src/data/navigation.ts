@@ -3,6 +3,7 @@
  * sayfa yazıldığında (S2b/S5) yalnızca bayrak çevrilir; böylece S0'da kırık bağlantı üretilmez.
  * Bu dosya iddia içermez (yalnızca yol + etiket).
  */
+import { AGENT_BRAND, AGENT_PATH } from './agent-brand'
 /**
  * S23 (SR2-NAV): üst bar gruplanmış menüdür — Ürün / Çözümler / Kaynaklar açılır paneldir, Fiyatlandırma doğrudan
  * bağlantıdır. Grup kimliği ve başlığı `navGroups`'ta; her öğe `group` ile bağlanır. `primaryNav` DÜZ liste olarak
@@ -42,7 +43,7 @@ export const navGroups: NavGroup[] = [
 export const primaryNav: NavItem[] = [
   { label: 'Özellikler', href: '/ozellikler', published: true, group: 'product', icon: 'layers', description: 'Stok, sipariş, iade ve mesajlar tek panelde' }, // S2b
   { label: 'Entegrasyonlar', href: '/entegrasyonlar', published: true, group: 'product', icon: 'plug', description: 'Bağlanabilen kanallar ve kapsamları' }, // S2b
-  { label: 'Asistan', href: '/asistan', published: true, badge: 'Yeni', group: 'product', icon: 'sparkle' }, // S18 (UPCOMING yüzeyi — src/data/assistant.ts; ad/hedef site-s22'de)
+  { label: AGENT_BRAND, href: AGENT_PATH, published: true, badge: 'Yeni', group: 'product', icon: 'sparkle' }, // S18 → S22: etiket ve hedef ad sabitinden (src/data/agent-brand.ts)
   { label: 'Güvenlik', href: '/guvenlik', published: true, group: 'product', icon: 'shield', description: 'Verinizi ve anahtarlarınızı nasıl koruyoruz' }, // S2b
   { label: 'Fiyatlandırma', href: '/fiyatlandirma', published: true }, // S4b — üst barda doğrudan bağlantı
   { label: 'Rehber', href: '/rehber', published: true, group: 'resources', icon: 'book', description: 'Pazaryeri, mevzuat ve operasyon rehberleri' }, // S20 (bilgi merkezi — src/data/kb/**)

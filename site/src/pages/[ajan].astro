@@ -1,15 +1,23 @@
 ---
 /**
- * /asistan — "Entegrasyonik Asistan" (S18): sohbetle yönetim, yerel uygulama ve ajanlar için VİZYON sayfası.
+ * Ajan sayfası — "Entegrasyonik Otopilot: operasyon ajanları" (S18 "Asistan" → S22 ajan-önce yeniden tasarım).
  *
- * DÜRÜSTLÜK (tests/upcoming.test.ts): bu yetenekler ürünün bugünkü sürümünde YOK. Sayfa `UPCOMING_SURFACES`
+ * ROTA: dosya adı dinamiktir (`[ajan].astro`); tek yol `AGENT_PATH` ad sabitinden gelir (src/data/agent-brand.ts).
+ * Ad değişince rota, başlık, gezinme ve e-posta konusu kendiliğinden değişir; eski yol `AGENT_LEGACY_PATHS` → 301
+ * (`dist/_redirects`, astro.config.mjs). S18 adresi `/asistan` bu yolla yönlenir.
+ *
+ * DÜRÜSTLÜK (tests/upcoming.test.ts): bu yetenekler platformun bugünkü sürümünde YOK. Sayfa `UPCOMING_SURFACES`
  * listesindedir; tüm metin `src/data/assistant.ts`'ten gelir (markup'ta sabit metin yazılmaz):
- *   - Planlanan her kart bir aşama rozeti taşır (Geliştirme aşamasında / Erken erişim / Planlanan) ve gelecek kipindedir.
+ *   - Planlanan her kart ve sınır maddesi bir aşama rozeti taşır ve gelecek kipindedir.
  *   - "Güven" bölümü KANITLI (bugün kodda; her madde repo içi evidence'a bağlı) ve PLANLANAN maddeleri görsel
  *     olarak ayırır: kanıtlı = düz çerçeve + "Kodda" etiketi; planlanan = kesikli çerçeve + aşama rozeti.
- *   - Hero sahnesi açıkça "Örnek senaryo" etiketlidir (ChatScene.astro); rakamlar yalnızca orada, örnek veridir.
- * Erken erişim: form YOK (ADR-0014) — `mailto:` (EmailActions), konu "Asistan erken erişim".
- * Bölüm ritmi: koyu hero -> açık (sohbet) -> gri (yerel) -> koyu (ajanlar) -> açık (güven) -> gri (SSS) -> koyu (CTA).
+ *   - Hero konsolu "Örnek görünüm", sohbet sahnesi "Örnek senaryo" etiketlidir; rakamlar yalnızca sohbet sahnesinde.
+ * Erken erişim: form YOK (ADR-0014) — `mailto:` (EmailActions), konu `${AGENT_BRAND} erken erişim`.
+ *
+ * S22 kurgu (SR2-AGENT): ajan-önce hiyerarşi. Bölüm ritmi: koyu hero (ajan konsolu) -> açık (ajan döngüsü) ->
+ * koyu (ajanlar) -> açık (sınırlar + güven) -> gri (sohbet) -> açık (yerel uygulama) -> gri (SSS) -> koyu (CTA).
+ * S22 madde 1: hero'nun üstündeki boşluk giderildi — içerik dikeyde ortalanmıyor (uzun sahne kopyayı aşağı
+ * itiyordu), üst iç boşluk header'a göre sıkı; görsel sütunu kopyanın üst hizasından başlar.
  */
 import BaseLayout from '../layouts/BaseLayout.astro'
 import Section from '../components/Section.astro'
@@ -21,13 +29,16 @@ import Accordion from '../components/pages/Accordion.astro'
 import EmailActions from '../components/pages/EmailActions.astro'
 import ChatScene from '../components/assistant/ChatScene.astro'
 import StageBadge from '../components/assistant/StageBadge.astro'
+import AgentConsole from '../components/assistant/AgentConsole.astro'
+import AgentLoop from '../components/assistant/AgentLoop.astro'
 import {
-  ASSISTANT_NAME,
-  ASSISTANT_PATH,
+  AGENT_PATH,
   assistantHero as hero,
+  loopSection,
+  agentsSection,
+  guardrailsSection,
   chatSection,
   localSection,
-  agentsSection,
   trustSection,
   assistantFaq,
   assistantCta,
@@ -35,13 +46,18 @@ import {
 import { contactEmail } from '../lib/contact'
 import { crumbsFor } from '../data/seo'
 
-const crumbs = crumbsFor(ASSISTANT_PATH)
+export function getStaticPaths() {
+  return [{ params: { ajan: AGENT_PATH.slice(1) } }]
+}
+
+const crumbs = crumbsFor(AGENT_PATH)
 const [titleBefore, titleAfter] = hero.title.split(hero.accent)
+const provenById = new Map(trustSection.proven.map((t) => [t.id, t]))
 ---
 
 <BaseLayout scenes>
 
-  <!-- Hero: koyu sahne + örnek senaryo sohbeti -->
+  <!-- Hero: koyu sahne + ajan konsolu (örnek görünüm) -->
   <Section tone="stage" labelledby="page-title" class="ai-hero">
     <Breadcrumb items={crumbs} inverse />
     <div class="ai-hero__grid">
@@ -50,13 +66,13 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
           <span class="ai-hero__chip-icon" aria-hidden="true"><Icon name="sparkle" size="sm" /></span>
           <span data-testid="early-access-badge">{hero.badge}</span>
           <span class="ai-hero__chip-sep" aria-hidden="true"></span>
-          <span class="ai-hero__chip-meta">{hero.eyebrow}</span>
+          <span class="ai-hero__chip-meta">{hero.eyebrow}<span class="ai-hero__chip-desc"> · {hero.descriptor}</span></span>
         </p>
         <h1 id="page-title">{titleBefore}<span class="ai-accent">{hero.accent}</span>{titleAfter}</h1>
         <p class="ai-hero__lead">{hero.lead}</p>
         <div class="ai-hero__actions">
           <Button href="#erken-erisim" variant="inverse" size="lg">{hero.primary}</Button>
-          <Button href="#sohbet" variant="inverse-outline" size="lg">{hero.secondary}</Button>
+          <Button href="#dongu" variant="inverse-outline" size="lg">{hero.secondary}</Button>
         </div>
         <p class="ai-hero__note" data-testid="assistant-status-note">
           <Icon name="info" size="sm" />
@@ -64,130 +80,95 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
         </p>
       </div>
       <div class="ai-hero__visual">
-        <ChatScene />
+        <AgentConsole />
       </div>
     </div>
   </Section>
 
-  <!-- (a) Sohbetle yönet -->
-  <Section id="sohbet" labelledby="sohbet-title" class="ai-section">
-    <div class="split">
-      <div class="split__aside">
-        <SectionHead id="sohbet-title" eyebrow={chatSection.eyebrow} title={chatSection.title} lead={chatSection.lead} compact />
-        <div class="prompts">
-          <p class="prompts__label">{chatSection.examplesLabel}</p>
-          <ul class="prompts__list" role="list">
-            {
-              chatSection.examples.map((q) => (
-                <li class="prompt">
-                  <Icon name="chat" size="sm" />
-                  <span>{q}</span>
-                </li>
-              ))
-            }
-          </ul>
-        </div>
-      </div>
-      <ul class="cards cards--2" role="list">
-        {
-          chatSection.cards.map((c) => (
-            <li class="pcard" data-testid="assistant-card" data-stage={c.stage}>
-              <div class="pcard__top">
-                <span class="pcard__icon" aria-hidden="true"><Icon name={c.icon} size="md" /></span>
-                <StageBadge stage={c.stage} />
-              </div>
-              <h3 class="pcard__title">{c.title}</h3>
-              <p class="pcard__text">{c.text}</p>
-            </li>
-          ))
-        }
-      </ul>
-    </div>
+  <!-- (1) Ajan döngüsü -->
+  <Section id="dongu" labelledby="dongu-title" class="ai-section">
+    <SectionHead id="dongu-title" eyebrow={loopSection.eyebrow} title={loopSection.title} lead={loopSection.lead} />
+    <AgentLoop />
+    <p class="principle-note">
+      <Icon name="shield" size="sm" />
+      <span>{loopSection.principle}</span>
+    </p>
   </Section>
 
-  <!-- (b) Yerel uygulama + açık standart -->
-  <Section id="yerel" labelledby="yerel-title" tone="muted" class="ai-section">
-    <SectionHead id="yerel-title" eyebrow={localSection.eyebrow} title={localSection.title} lead={localSection.lead} />
-    <div class="local">
-      <ul class="cards cards--2" role="list">
-        {
-          localSection.cards.map((c) => (
-            <li class="pcard" data-testid="assistant-card" data-stage={c.stage}>
-              <div class="pcard__top">
-                <span class="pcard__icon" aria-hidden="true"><Icon name={c.icon} size="md" /></span>
-                <StageBadge stage={c.stage} />
-              </div>
-              <h3 class="pcard__title">{c.title}</h3>
-              <p class="pcard__text">{c.text}</p>
-            </li>
-          ))
-        }
-      </ul>
-      <aside class="protocol" aria-labelledby="protocol-title" data-testid="protocol-explainer">
-        <p class="protocol__tag">{localSection.protocol.name}</p>
-        <h3 id="protocol-title" class="protocol__title">{localSection.protocol.title}</h3>
-        <div class="plug" aria-hidden="true">
-          <span class="plug__node"><Icon name="chat" size="sm" /><span>{localSection.protocol.nodes[0]}</span></span>
-          <span class="plug__wire"><span class="plug__label">{localSection.protocol.short}</span></span>
-          <span class="plug__node plug__node--core"><Icon name="layers" size="sm" /><span>{localSection.protocol.nodes[1]}</span></span>
-        </div>
-        <p class="protocol__text">{localSection.protocol.text}</p>
-        <ul class="protocol__points" role="list">
-          {
-            localSection.protocol.points.map((p) => (
-              <li>
-                <Icon name="check" size="sm" />
-                <span>{p}</span>
-              </li>
-            ))
-          }
-        </ul>
-      </aside>
-    </div>
-  </Section>
-
-  <!-- (c) Ajanlar -->
+  <!-- (2) Ajanlar -->
   <Section id="ajanlar" labelledby="ajanlar-title" tone="stage" class="ai-section">
     <SectionHead id="ajanlar-title" eyebrow={agentsSection.eyebrow} title={agentsSection.title} lead={agentsSection.lead} inverse />
-    <div class="flow" aria-label={agentsSection.flowLabel} role="group">
-      {
-        agentsSection.flow.map((step, i) => (
-          <>
-            {i > 0 && (
-              <span class="flow__arrow" aria-hidden="true">
-                <Icon name="arrow" size="sm" />
-              </span>
-            )}
-            <span class:list={['flow__step', { 'flow__step--you': i === agentsSection.flow.length - 2 }]}>{step}</span>
-          </>
-        ))
-      }
-    </div>
     <ul class="cards cards--4" role="list">
       {
         agentsSection.cards.map((c) => (
-          <li class:list={['pcard', 'pcard--dark', { 'pcard--lead': c.id === agentsSection.highlight.id }]} data-testid="assistant-card" data-stage={c.stage}>
+          <li class:list={['pcard', 'pcard--dark', 'acard', { 'pcard--lead': c.id === agentsSection.highlight.id }]} data-testid="assistant-card" data-stage={c.stage}>
             <div class="pcard__top">
-              <span class="pcard__icon" aria-hidden="true"><Icon name={c.icon} size="md" /></span>
+              <span class="pcard__icon acard__icon" aria-hidden="true">
+                <Icon name={c.icon} size="md" />
+                <i class="acard__led"></i>
+              </span>
               <StageBadge stage={c.stage} inverse />
             </div>
             {c.id === agentsSection.highlight.id && <p class="pcard__flag">{agentsSection.highlight.label}</p>}
             <h3 class="pcard__title">{c.title}</h3>
             <p class="pcard__text">{c.text}</p>
+            <dl class="acard__io">
+              <div>
+                <dt><Icon name="eye" size="sm" />{agentsSection.watchLabel}</dt>
+                <dd>{c.watches}</dd>
+              </div>
+              <div>
+                <dt><Icon name="sparkle" size="sm" />{agentsSection.bringLabel}</dt>
+                <dd>{c.brings}</dd>
+              </div>
+            </dl>
           </li>
         ))
       }
     </ul>
-    <p class="principle-note">
-      <Icon name="shield" size="sm" />
-      <span>{agentsSection.principle}</span>
-    </p>
   </Section>
 
-  <!-- (d) Güven: kanıtlı vs planlanan -->
-  <Section id="guven" labelledby="guven-title" class="ai-section">
-    <SectionHead id="guven-title" eyebrow={trustSection.eyebrow} title={trustSection.title} lead={trustSection.lead} />
-    <div class="trust">
+  <!-- (3) Sınırlar + güven: onay kapısı akışı, sınır maddeleri, kanıtlı vs planlanan -->
+  <Section id="sinirlar" labelledby="sinirlar-title" class="ai-section">
+    <SectionHead id="sinirlar-title" eyebrow={guardrailsSection.eyebrow} title={guardrailsSection.title} lead={guardrailsSection.lead} />
+    <ol class="gateflow" aria-label={guardrailsSection.flowLabel} data-testid="gate-flow">
+      {
+        guardrailsSection.flow.map((f) => (
+          <li class:list={['gateflow__item', { 'gateflow__item--you': f.actor === 'you' }]} data-actor={f.actor}>
+            <span class="gateflow__icon" aria-hidden="true"><Icon name={f.icon} size="sm" /></span>
+            <span>{f.label}</span>
+          </li>
+        ))
+      }
+    </ol>
+    <ul class="guards" role="list">
+      {
+        guardrailsSection.items.map((g) => {
+          const base = provenById.get(g.foundation)
+          return (
+            <li class="guard" data-testid="guardrail" data-stage={g.stage}>
+              <div class="pcard__top">
+                <span class="guard__icon" aria-hidden="true"><Icon name={g.icon} size="md" /></span>
+                <StageBadge stage={g.stage} />
+              </div>
+              <h3 class="guard__title">{g.title}</h3>
+              <p class="guard__text">{g.text}</p>
+              {base && (
+                <p class="guard__base" data-foundation={base.id}>
+                  <Icon name="check" size="sm" />
+                  <span>{guardrailsSection.foundationLabel}: {base.title}</span>
+                </p>
+              )}
+            </li>
+          )
+        })
+      }
+    </ul>
+
+    <div class="trust" id="guven">
+      <div class="trust__intro">
+        <SectionHead id="guven-title" eyebrow={trustSection.eyebrow} title={trustSection.title} lead={trustSection.lead} compact />
+      </div>
       <div class="trust__col" data-testid="trust-proven-group">
         <div class="trust__head">
           <span class="trust__pill trust__pill--proven"><Icon name="check" size="sm" />{trustSection.provenLabel}</span>
@@ -234,13 +215,93 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
     </div>
   </Section>
 
+  <!-- (4) Sohbetle de yönetin: örnek senaryo sahnesi -->
+  <Section id="sohbet" labelledby="sohbet-title" tone="muted" class="ai-section ai-chat">
+    <div class="split">
+      <div class="split__aside">
+        <SectionHead id="sohbet-title" eyebrow={chatSection.eyebrow} title={chatSection.title} lead={chatSection.lead} compact />
+        <div class="prompts">
+          <p class="prompts__label">{chatSection.examplesLabel}</p>
+          <ul class="prompts__list" role="list">
+            {
+              chatSection.examples.map((q) => (
+                <li class="prompt">
+                  <Icon name="chat" size="sm" />
+                  <span>{q}</span>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </div>
+      <div class="split__scene">
+        <ChatScene />
+      </div>
+    </div>
+    <ul class="cards cards--4 chat-cards" role="list">
+      {
+        chatSection.cards.map((c) => (
+          <li class="pcard" data-testid="assistant-card" data-stage={c.stage}>
+            <div class="pcard__top">
+              <span class="pcard__icon" aria-hidden="true"><Icon name={c.icon} size="md" /></span>
+              <StageBadge stage={c.stage} />
+            </div>
+            <h3 class="pcard__title">{c.title}</h3>
+            <p class="pcard__text">{c.text}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <!-- (5) Yerel uygulama + açık standart -->
+  <Section id="yerel" labelledby="yerel-title" class="ai-section">
+    <SectionHead id="yerel-title" eyebrow={localSection.eyebrow} title={localSection.title} lead={localSection.lead} />
+    <div class="local">
+      <ul class="cards cards--2" role="list">
+        {
+          localSection.cards.map((c) => (
+            <li class="pcard" data-testid="assistant-card" data-stage={c.stage}>
+              <div class="pcard__top">
+                <span class="pcard__icon" aria-hidden="true"><Icon name={c.icon} size="md" /></span>
+                <StageBadge stage={c.stage} />
+              </div>
+              <h3 class="pcard__title">{c.title}</h3>
+              <p class="pcard__text">{c.text}</p>
+            </li>
+          ))
+        }
+      </ul>
+      <aside class="protocol" aria-labelledby="protocol-title" data-testid="protocol-explainer">
+        <p class="protocol__tag">{localSection.protocol.name}</p>
+        <h3 id="protocol-title" class="protocol__title">{localSection.protocol.title}</h3>
+        <div class="plug" aria-hidden="true">
+          <span class="plug__node"><Icon name="sparkle" size="sm" /><span>{localSection.protocol.nodes[0]}</span></span>
+          <span class="plug__wire"><span class="plug__label">{localSection.protocol.short}</span></span>
+          <span class="plug__node plug__node--core"><Icon name="layers" size="sm" /><span>{localSection.protocol.nodes[1]}</span></span>
+        </div>
+        <p class="protocol__text">{localSection.protocol.text}</p>
+        <ul class="protocol__points" role="list">
+          {
+            localSection.protocol.points.map((p) => (
+              <li>
+                <Icon name="check" size="sm" />
+                <span>{p}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </aside>
+    </div>
+  </Section>
+
   <!-- SSS -->
   <Section id="sorular" labelledby="sorular-title" tone="muted" class="ai-section" size="narrow">
     <SectionHead id="sorular-title" eyebrow={assistantFaq.eyebrow} title={assistantFaq.title} />
     <Accordion items={assistantFaq.items} />
   </Section>
 
-  <!-- (e) Erken erişim -->
+  <!-- Erken erişim -->
   <Section id="erken-erisim" labelledby="erken-erisim-title" tone="stage" class="ai-section ai-cta">
     <div class="cta">
       <div class="cta__body">
@@ -260,7 +321,7 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
       </div>
       <div class="cta__panel" data-testid="assistant-cta">
         <p class="cta__subject"><Icon name="mail" size="sm" /><span>{assistantCta.subjectNote} <strong>{assistantCta.subject}</strong></span></p>
-        <EmailActions email={contactEmail} id="asistan-erken" subject={assistantCta.subject} tone="dark" sendLabel={assistantCta.sendLabel} />
+        <EmailActions email={contactEmail} id="ajan-erken" subject={assistantCta.subject} tone="dark" sendLabel={assistantCta.sendLabel} />
       </div>
     </div>
   </Section>
@@ -271,19 +332,24 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
 </script>
 
 <style>
-  .ai-section:global(.section) {
+  /* S22 (madde 1) KÖK NEDEN: `.ai-hero:global(.section)` sayfanın kapsam kimliğini istiyordu, oysa <section>'ı
+     Section.astro kendi kimliğiyle basar → kural hiç eşleşmiyor, hero varsayılan bölüm boşluğunu (üstte ~8rem) alıyordu.
+     Seçiciler tamamen global; sayfaya özgü sınıf adları (ai-*) yalnızca bu sayfada kullanılır. */
+  :global(.section.ai-section) {
     padding-block: calc(var(--site-section-y) * 0.78);
   }
 
   /* ------------------------------------------------------------------ hero */
-  .ai-hero:global(.section) {
-    padding-block: var(--ek-space-8) calc(var(--site-section-y) * 0.7);
+  /* S22 (madde 1): üst iç boşluk header'a göre sıkı; ızgara üstten hizalı (dikey ortalama, uzun görselin kopyayı
+     aşağı itip header ile içerik arasında boş bant bırakmasına yol açıyordu). */
+  :global(.section.ai-hero) {
+    padding-block: var(--ek-space-6) calc(var(--site-section-y) * 0.62);
     overflow: hidden;
   }
   .ai-hero__grid {
     display: grid;
-    gap: var(--ek-space-12);
-    margin-top: var(--ek-space-8);
+    gap: var(--ek-space-10);
+    margin-top: var(--ek-space-6);
   }
   .ai-hero__body {
     display: flex;
@@ -325,9 +391,15 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
     color: var(--site-text-on-dark-body);
     font-weight: var(--ek-font-weight-medium);
   }
+  /* Dar ekranda hap tek satırda kalsın: betimleyici (başlık ve girişte de geçer) gizlenir. */
+  @media (max-width: 479.98px) {
+    .ai-hero__chip-desc {
+      display: none;
+    }
+  }
   .ai-hero__body h1 {
-    max-width: 14ch;
-    font-size: var(--site-font-display-lg);
+    max-width: 18ch;
+    font-size: var(--site-font-display-md);
     font-weight: var(--site-font-display-weight);
     line-height: var(--site-font-display-line-height);
     letter-spacing: var(--site-font-display-tracking);
@@ -341,7 +413,7 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
   .ai-hero__lead {
     max-width: 38rem;
     color: var(--site-text-on-dark-body);
-    font-size: var(--ek-font-size-xl);
+    font-size: var(--ek-font-size-lg);
     line-height: var(--site-font-body-line-height);
   }
   .ai-hero__actions {
@@ -368,10 +440,12 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
   @media (min-width: 1024px) {
     .ai-hero__grid {
       grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
-      align-items: center;
+      align-items: start;
+    }
+    .ai-hero__visual {
+      padding-top: var(--ek-space-10);
     }
   }
-
   /* ------------------------------------------------------------------ ortak kart */
   .cards {
     display: grid;
@@ -656,46 +730,70 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
     color: var(--site-accent-on-dark);
   }
 
-  /* ------------------------------------------------------------------ (c) ajanlar */
-  .flow {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--ek-space-2);
-    margin-bottom: var(--ek-space-8);
+  /* ------------------------------------------------------------------ (2) ajanlar */
+  .acard__icon {
+    position: relative;
   }
-  .flow__step {
-    padding: var(--ek-space-2) var(--ek-space-4);
-    border: var(--site-border-width) solid var(--site-glass-border);
+  /* "Canlı" durum ledi: statik (dekoratif); ajanın sürekli izleme rolünü simgeler. */
+  .acard__led {
+    position: absolute;
+    inset-block-start: calc(var(--ek-space-1) * -1);
+    inset-inline-end: calc(var(--ek-space-1) * -1);
+    width: var(--ek-space-3);
+    height: var(--ek-space-3);
+    border: calc(var(--site-border-width) * 2) solid var(--site-stage-deep);
     border-radius: var(--ek-radius-full);
-    background: var(--site-glass-bg);
+    background: var(--ek-color-secondary);
+    box-shadow: 0 0 var(--ek-space-3) color-mix(in srgb, var(--ek-color-secondary) 70%, transparent);
+  }
+  .acard__io {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    margin: auto 0 0;
+    padding-top: var(--ek-space-4);
+    border-top: var(--site-border-width) dashed var(--site-glass-border);
+  }
+  .acard__io div {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+  }
+  .acard__io dt {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-1);
+    color: var(--site-accent-on-dark);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .acard__io dd {
+    margin: 0;
     color: var(--site-text-on-dark-heading);
     font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-semibold);
-  }
-  .flow__step--you {
-    border-color: transparent;
-    background: var(--site-gradient-accent-on-dark);
-    color: var(--site-stage-deep);
-  }
-  .flow__arrow {
-    display: inline-flex;
-    color: var(--site-text-on-dark-meta);
+    font-weight: var(--ek-font-weight-medium);
+    line-height: var(--ek-line-height-normal);
   }
   .principle-note {
     display: flex;
     align-items: flex-start;
     gap: var(--ek-space-3);
     max-width: 52rem;
-    margin: var(--ek-space-8) 0 0;
-    color: var(--site-text-on-dark-body);
+    margin: var(--ek-space-10) 0 0;
+    padding: var(--ek-space-4) var(--ek-space-5);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface-sunken);
+    color: var(--site-text-body);
     font-size: var(--ek-font-size-md);
     line-height: var(--site-font-body-line-height);
   }
   .principle-note :global(.icon) {
     flex: none;
     margin-top: var(--ek-space-1);
-    color: var(--site-accent-on-dark);
+    color: var(--site-accent);
   }
 
   /* ------------------------------------------------------------------ (d) güven */
@@ -902,5 +1000,169 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
     border-radius: var(--site-radius-panel);
     background: var(--site-glass-bg);
     box-shadow: var(--site-shadow-panel);
+  }
+
+  /* ------------------------------------------------------------------ (3) sınırlar */
+  .gateflow {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--ek-space-2);
+    margin: 0 0 var(--ek-space-8);
+    padding: 0;
+    list-style: none;
+    counter-reset: none;
+  }
+  .gateflow__item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-3) var(--ek-space-4);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface);
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .gateflow__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-8);
+    height: var(--ek-space-8);
+    border-radius: var(--ek-radius-full);
+    background: var(--site-accent-soft);
+    color: var(--site-accent);
+  }
+  /* Dar ekran: aşamalar arası dikey bağ çizgisi (simge merkezinden). */
+  .gateflow__item + .gateflow__item::before {
+    content: '';
+    position: absolute;
+    inset-block-end: 100%;
+    inset-inline-start: calc(var(--ek-space-4) + var(--ek-space-4) - var(--site-border-width) / 2);
+    width: var(--site-border-width);
+    height: var(--ek-space-2);
+    background: var(--site-accent-line);
+  }
+  .gateflow__item--you {
+    border-color: color-mix(in srgb, var(--ek-color-amber) 65%, transparent);
+    background: var(--ek-color-warning-subtle);
+    box-shadow: 0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-amber) 14%, transparent);
+  }
+  .gateflow__item--you .gateflow__icon {
+    background: linear-gradient(140deg, var(--ek-color-primary), var(--ek-color-primary-darken-1));
+    color: var(--site-color-on-primary);
+  }
+  @media (min-width: 768px) {
+    .gateflow {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--ek-space-6);
+    }
+    /* Aşamalar arası ok: kutular arasındaki boşlukta ince çizgi + uç. */
+    .gateflow__item + .gateflow__item::before {
+      content: '';
+      position: absolute;
+      inset-block-start: 50%;
+      inset-block-end: auto;
+      inset-inline-start: auto;
+      inset-inline-end: 100%;
+      width: var(--ek-space-6);
+      height: var(--site-border-width);
+      background: var(--site-accent-line);
+    }
+    .gateflow__item + .gateflow__item::after {
+      content: '';
+      position: absolute;
+      inset-block-start: calc(50% - var(--ek-space-1));
+      inset-inline-end: calc(100% + var(--site-border-width));
+      width: 0;
+      height: 0;
+      border-block: var(--ek-space-1) solid transparent;
+      border-inline-start: var(--ek-space-1) solid var(--site-accent-line);
+      translate: 100% 0;
+    }
+  }
+  .guards {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--ek-space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  @media (min-width: 768px) {
+    .guards {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  .guard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    min-width: 0;
+    padding: var(--ek-space-6);
+    border: var(--site-border-width) dashed var(--ek-color-border-strong);
+    border-radius: var(--site-radius-panel);
+    background:
+      linear-gradient(180deg, var(--site-accent-soft), transparent 45%),
+      var(--ek-color-surface);
+  }
+  .guard__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-12);
+    height: var(--ek-space-12);
+    border: var(--site-border-width) solid var(--site-accent-line);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface);
+    color: var(--site-accent);
+  }
+  .guard__title {
+    color: var(--site-text-heading);
+    font-size: var(--site-card-title-size);
+    font-weight: var(--site-card-title-weight);
+  }
+  .guard__text {
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-md);
+    line-height: var(--site-font-body-line-height);
+  }
+  .guard__base {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: var(--ek-space-2);
+    margin-top: auto;
+    padding: var(--ek-space-2) var(--ek-space-3);
+    border-radius: var(--ek-radius-md);
+    background: var(--ek-color-success-subtle);
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .guard__base :global(.icon) {
+    flex: none;
+    margin-top: 0.125rem;
+  }
+  .trust {
+    margin-top: calc(var(--site-section-y) * 0.6);
+    padding-top: calc(var(--site-section-y) * 0.5);
+    border-top: var(--site-border-width) solid var(--ek-color-border-default);
+  }
+  .trust__intro {
+    grid-column: 1 / -1;
+  }
+
+  /* ------------------------------------------------------------------ (4) sohbet */
+  .split__scene {
+    min-width: 0;
+  }
+  /* Sohbet sahnesinin dekoratif ışıması (S18'de hero'nun overflow:hidden'ı içindeydi) dar ekranda yatay taşma yapmasın. */
+  :global(.section.ai-chat) {
+    overflow-x: clip;
+  }
+  .chat-cards {
+    margin-top: var(--ek-space-10);
   }
 </style>

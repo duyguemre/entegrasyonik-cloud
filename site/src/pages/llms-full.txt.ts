@@ -12,6 +12,7 @@ import { getConnectGuide } from '../data/connect'
 import { getPublicPlans, getPlanSourceNotice, getVatNotice, getPublicTrial } from '../data/plans'
 import { TAGLINE, UPCOMING_NOTE, canonicalPath, entityDefinition, markdownPath, seoEntries } from '../data/seo'
 import { ASSISTANT_PATH, ASSISTANT_NAME, assistantLlms } from '../data/assistant'
+import { AGENT_DESCRIPTOR } from '../data/agent-brand'
 import { guideHref, guides, sourcesOf } from '../data/kb'
 import { plainKb } from '../lib/kb-render'
 
@@ -130,7 +131,7 @@ export const GET: APIRoute = () => {
   lines.push('')
 
   // S18: vizyon sayfası — "upcoming"; bugünkü yeteneklerden AYRI bölüm, kesin kip yok (tests/upcoming.test.ts).
-  lines.push(`## ${ASSISTANT_NAME} (upcoming)`)
+  lines.push(`## ${ASSISTANT_NAME} — ${AGENT_DESCRIPTOR} (upcoming)`)
   lines.push('')
   lines.push(`Sayfa: ${url(canonicalPath(ASSISTANT_PATH))}`)
   lines.push('')

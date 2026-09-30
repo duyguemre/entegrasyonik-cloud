@@ -485,9 +485,9 @@ describe('LLM görünürlüğü: llms.txt, llms-full.txt, markdown alternatifler
     // S18 dar istisnası: "yolda" dili yalnızca UPCOMING_SURFACES sayfalarında serbest (tests/upcoming.test.ts); o sayfaların
     // markdown'ı yerine "geliştirme aşamasında" notunun varlığı zorunlu.
     const upcomingPages = new Set<string>(UPCOMING_SURFACES.pages)
-    // UPCOMING bileşeni (ana sayfa Asistan bandı, `UPCOMING_SURFACES.components`) aynı istisnayı taşır: denetim, o bant
+    // UPCOMING bileşeni (ana sayfa ajan bandı, `UPCOMING_SURFACES.components`) aynı istisnayı taşır: denetim, o bant
     // çıkarılmış HTML'in markdown'ı üzerinde yapılır (bandın dışında "yolda" dili yine yasak).
-    const withoutUpcomingBand = (html: string) => html.replace(/<section\b[^>]*\bid="asistan"[\s\S]*?<\/section>/g, '')
+    const withoutUpcomingBand = (html: string) => html.replace(/<section\b[^>]*\bid="ajan-bandi"[\s\S]*?<\/section>/g, '')
     for (const e of indexableEntries()) {
       const html = read(e.path)
       const md = (html.includes('data-testid="assistant-teaser"')

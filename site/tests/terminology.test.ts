@@ -45,10 +45,6 @@ const ALLOWED_SENTENCES: { part: string; why: string }[] = [
   { part: 'yazılımı tersine mühendislikle çözmek', why: 'Kullanım koşulları: yasaklı kullanım (fikri mülkiyet)' },
   { part: 'hizmetin yazılımı, tasarımı, arayüzü', why: 'Kullanım koşulları: fikri mülkiyet hakları' },
   { part: 'hiçbir yazılım hizmeti', why: 'Kullanım koşulları: genel sorumluluk sınırı (Entegrasyonik tanımı değil)' },
-  {
-    part: 'bu maddelerin her biri ürünün bugünkü yazılımında uygulanmıştır',
-    why: 'src/data/assistant.ts (ajan sayfası) site-s22 kapsamında; s22 birleşince bu satır kaldırılır ve cümle "platform" olur',
-  },
 ]
 
 const allowed = (sentence: string) => ALLOWED_SENTENCES.some((a) => sentence.includes(a.part))
