@@ -20,6 +20,9 @@ export const tr = {
   'panel.retryLoad': 'Yeniden dene',
   'panel.loadFailed': '{name} şu an yüklenemedi — bağlantınızı kontrol edip yeniden deneyin.',
 
+  'thread.label': 'Mesajlar',
+  'thread.jump': 'En yeni mesaja in',
+  'setup.backToChat': 'Sohbete dön',
   // Boş durum
   'empty.title': '{name} ile işinizi konuşarak yapın',
   'empty.body': 'Siparişleri, stokları ve satışları sorun; yapılacak her değişiklik önce onayınıza gelir.',
@@ -61,6 +64,8 @@ export const tr = {
   // Parçalar — tablo
   'table.caption': '{title} — {count} kayıt',
   'table.captionTotal': '{title} — {shown} / {total} kayıt',
+  'table.count': '{count} kayıt',
+  'table.countTotal': '{shown} / {total} kayıt',
   'table.scrollRegion': '{title} tablosu (yatay kaydırılabilir)',
   'table.more': 'Daha fazla göster',
   'table.moreLoading': 'Yükleniyor…',

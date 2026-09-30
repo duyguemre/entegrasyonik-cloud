@@ -18,6 +18,9 @@ export const en: Record<ChatMessageKey, string> = {
   'panel.retryLoad': 'Try again',
   'panel.loadFailed': '{name} could not be loaded — check your connection and try again.',
 
+  'thread.label': 'Messages',
+  'thread.jump': 'Jump to latest message',
+  'setup.backToChat': 'Back to chat',
   'empty.title': 'Get work done by talking to {name}',
   'empty.body': 'Ask about orders, stock and sales; every change comes to you for approval first.',
   'empty.suggestions': 'Example questions',
@@ -54,6 +57,8 @@ export const en: Record<ChatMessageKey, string> = {
 
   'table.caption': '{title} — {count} records',
   'table.captionTotal': '{title} — {shown} of {total} records',
+  'table.count': '{count} records',
+  'table.countTotal': '{shown} of {total} records',
   'table.scrollRegion': '{title} table (scrolls horizontally)',
   'table.more': 'Show more',
   'table.moreLoading': 'Loading…',
