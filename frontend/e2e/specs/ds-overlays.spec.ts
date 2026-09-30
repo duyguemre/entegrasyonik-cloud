@@ -153,6 +153,8 @@ test.describe('DS-v2 A2 — tehlikeli onay diyaloğu (ürün silme)', () => {
     const cancel = dialog.getByRole('button', { name: 'İptal' })
     await expect(cancel).toBeFocused()
     const confirm = dialog.getByRole('button', { name: 'Sil' })
+    // Mobilde "Ürünü sil" tıklamasının imleç konumu onay düğmesinin üstüne denk geliyor → hover tonu ölçülüyordu.
+    await page.mouse.move(0, 0)
     const [confirmBg, errorToken] = await Promise.all([
       confirm.evaluate((el) => getComputedStyle(el).backgroundColor),
       page.evaluate(() => {
@@ -164,7 +166,9 @@ test.describe('DS-v2 A2 — tehlikeli onay diyaloğu (ürün silme)', () => {
         return c
       }),
     ])
-    expect(confirmBg).toBe(errorToken)
+    void confirmBg
+    // Renk geçişi (hover → normal, 150ms) bitene kadar yoklanır.
+    await expect.poll(() => confirm.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(errorToken)
 
     if (testInfo.project.name === 'chromium-desktop') {
       const axe = await new AxeBuilder({ page }).include('.v-overlay--active .v-overlay__content').withTags(AXE_TAGS).analyze()

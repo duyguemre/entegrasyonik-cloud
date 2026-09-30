@@ -88,13 +88,13 @@ test.describe('ADR-0015 B5-3 — FinancialListView (finans)', () => {
     await open(page, { [ENDPOINT]: financialDoluFixture })
     if (testInfo.project.name === 'chromium-desktop') {
       for (const l of ['Toplam Satış', 'Komisyon', 'Net Hakediş', 'Kargo', 'İşlem']) {
-        await expect(page.locator('.financialListView').getByText(l, { exact: true })).toBeVisible()
+        await expect(page.locator('.financialListView .ek-fin-summary').getByText(l, { exact: true })).toBeVisible()
       }
       await expect(page.getByText('777,50 ₺')).toBeVisible()
       await expect(page.getByText('321 adet')).toBeVisible()
     } else {
       for (const l of ['Satış', 'Komisyon', 'Net', 'İşlem']) {
-        await expect(page.locator('.financialListView').getByText(l, { exact: true })).toBeVisible()
+        await expect(page.locator('.financialListView .ek-fin-summary').getByText(l, { exact: true })).toBeVisible()
       }
       // Karakterizasyon: mobil özet şeridi Kargo toplamını GÖSTERMEZ.
       await expect(page.getByText('777,50')).toHaveCount(0)

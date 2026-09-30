@@ -19,7 +19,9 @@ function trLabel(sentence: string) {
 
 function recorder(response: any, bodies: any[]) {
   return async (route: Route, headers: Record<string, string>) => {
-    bodies.push(route.request().postDataJSON?.() ?? null)
+    const body = route.request().postDataJSON?.() ?? null
+    // Birleştirme (Aşama 3): pano "son işler" kartı aynı ucu `{ page: 1, limit: 5 }` ile çağırır — ekranın gövdesi değil.
+    if (!(body && body.limit === 5 && !('sortBy' in body))) bodies.push(body)
     return route.fulfill({ status: 200, contentType: 'application/json', headers, body: JSON.stringify(response) })
   }
 }
@@ -39,7 +41,7 @@ test.describe('B3 karakterizasyon — log listeleri istek gövdeleri', () => {
     await installApiMocks(page, { MenuService: menuFixtureWithLogs, 'IntegrationService/getExportJobs': recorder(exportJobsDoluFixture, bodies) })
     await gotoAuthed(page)
     await openScreen(page, 'LogListView')
-    await expect(page.getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
+    await expect(page.locator('.logListView').getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
 
     expect(bodies[0]).toEqual({ page: 1, limit: 25, sortBy: 'createdAt', sortOrder: 'desc' })
   })
@@ -49,7 +51,7 @@ test.describe('B3 karakterizasyon — log listeleri istek gövdeleri', () => {
     await installApiMocks(page, { MenuService: menuFixtureWithLogs, 'IntegrationService/getExportJobs': recorder(exportJobsDoluFixture, bodies) })
     await gotoAuthed(page)
     await openScreen(page, 'LogListView')
-    await expect(page.getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
+    await expect(page.locator('.logListView').getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
 
     const search = page.getByLabel('Ürün Adı, Barkod, Stok Kodu veya Platform Ara').first()
     await search.fill('  E2E-BARKOD  ')
@@ -63,7 +65,7 @@ test.describe('B3 karakterizasyon — log listeleri istek gövdeleri', () => {
     await installApiMocks(page, { MenuService: menuFixtureWithLogs, 'IntegrationService/getExportJobs': recorder(exportJobsDoluFixture, bodies) })
     await gotoAuthed(page)
     await openScreen(page, 'LogListView')
-    await expect(page.getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
+    await expect(page.locator('.logListView').getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
 
     await page.getByRole('button', { name: 'Listeyi yenile' }).click()
     await expect.poll(() => bodies.length).toBe(2)
@@ -80,7 +82,7 @@ test.describe('B3 karakterizasyon — log listeleri istek gövdeleri', () => {
     })
     await gotoAuthed(page)
     await openScreen(page, 'LogListView')
-    await expect(page.getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
+    await expect(page.locator('.logListView').getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
 
     const view = page.locator('.exportLogList')
     await view.getByRole('button', { name: /Filtreler/ }).click()
