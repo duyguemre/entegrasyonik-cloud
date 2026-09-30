@@ -35,9 +35,9 @@ const header = (route: string) => page(route).match(/<header class="site-header[
 describe('S25 menü: tek kayıt, premium içerik', () => {
   const groups = menuGroups()
 
-  it('üç panel (Ürün / Çözümler / Kaynaklar) + tek doğrudan bağlantı (Fiyatlandırma); üst öğe sayısı 4', () => {
+  it('üç panel (Ürün / Çözümler / Kaynaklar) + tek doğrudan bağlantı (Fiyatlar); üst öğe sayısı 4', () => {
     expect(groups.map((g) => g.label)).toEqual(['Ürün', 'Çözümler', 'Kaynaklar'])
-    expect(published(primaryNav).filter((i) => !i.group).map((i) => i.label)).toEqual(['Fiyatlandırma'])
+    expect(published(primaryNav).filter((i) => !i.group).map((i) => i.label)).toEqual(['Fiyatlar'])
   })
 
   it('her kart: ikon + başlık + tek satır fayda açıklaması (kısa: en çok 60 karakter)', () => {

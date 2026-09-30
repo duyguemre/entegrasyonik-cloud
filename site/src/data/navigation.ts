@@ -5,7 +5,7 @@
  */
 import { AGENT_BRAND, AGENT_DESCRIPTOR, AGENT_PATH } from './agent-brand'
 /**
- * S23 (SR2-NAV): üst bar gruplanmış menüdür — Ürün / Çözümler / Kaynaklar açılır paneldir, Fiyatlandırma doğrudan
+ * S23 (SR2-NAV): üst bar gruplanmış menüdür — Ürün / Çözümler / Kaynaklar açılır paneldir, Fiyatlar doğrudan
  * bağlantıdır. `primaryNav` DÜZ liste olarak kalır (yayım bayrağı, kırık bağlantı ve rozet testleri bu listeyi okur).
  *
  * S25 (seçkin menü): menünün TÜM içeriği bu dosyadadır — her öğe panelde nerede durduğunu (`slot`) bilir:
@@ -26,7 +26,7 @@ export interface NavItem {
   published: boolean
   /** Küçük vurgu rozeti (ör. "Yeni") — yalnızca metin; iddia taşımaz. */
   badge?: string
-  /** Menü grubu; verilmezse üst barda doğrudan bağlantıdır (ör. Fiyatlandırma). */
+  /** Menü grubu; verilmezse üst barda doğrudan bağlantıdır (ör. Fiyatlar). */
   group?: NavGroupId
   /** Açılır paneldeki tek satırlık fayda açıklaması (reklam dili; olgusal sayı yok). */
   description?: string
@@ -85,7 +85,7 @@ export const primaryNav: NavItem[] = [
   { label: 'Entegrasyonlar', href: '/entegrasyonlar', published: true, group: 'solutions', slot: 'strip', cta: 'Tüm entegrasyonlar', icon: 'plug', description: 'Bağlanabilen kanallar ve kapsamları' }, // S2b → S25 Çözümler şeridi
   { label: AGENT_BRAND, href: AGENT_PATH, published: true, badge: 'Yeni', group: 'product', slot: 'feature', icon: 'sparkle' }, // S18 → S22: etiket ve hedef ad sabitinden (src/data/agent-brand.ts); S25 öne çıkan kart
   { label: 'Güvenlik', href: '/guvenlik', published: true, group: 'product', icon: 'shield', description: 'Verileriniz şifreli, erişim rol rol sizin elinizde' }, // S2b
-  { label: 'Fiyatlandırma', href: '/fiyatlandirma', published: true }, // S4b — üst barda doğrudan bağlantı
+  { label: 'Fiyatlar', href: '/fiyatlandirma', published: true }, // S4b — üst barda doğrudan bağlantı (S24: kısa etiket "Fiyatlar")
   { label: 'Rehber', href: '/rehber', published: true, group: 'resources', icon: 'book', description: 'Pazaryeri, mevzuat ve operasyon rehberleri' }, // S20 (bilgi merkezi — src/data/kb/**)
   { label: 'SSS', href: '/sss', published: true, group: 'resources', icon: 'help', description: 'Merak edilenlere net yanıtlar' }, // S2b
   { label: 'Destek', href: '/destek', published: true, group: 'resources', icon: 'chat', description: 'Kurulumdan kanal bağlantısına yardım' }, // S14

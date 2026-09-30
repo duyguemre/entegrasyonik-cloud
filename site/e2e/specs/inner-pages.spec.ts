@@ -71,7 +71,7 @@ test.describe('gezinme', () => {
       ['Ürün', 'Güvenlik'],
       ['Kaynaklar', 'SSS'],
       ['Kaynaklar', 'İletişim'],
-      [null, 'Fiyatlandırma'],
+      [null, 'Fiyatlar'],
     ] as const) {
       await expect(await revealNavLink(page, group, label), `${group} → ${label}`).toBeVisible()
     }
@@ -297,14 +297,14 @@ test.describe('iç sayfalar — ekran görüntüleri (3 viewport)', () => {
   }
 })
 
-// S18 — /asistan: örnek senaryo sahnesi (döngüsel). Hareket azaltılmışken statik SON KARE: tüm diyalog ve onay kartı
+// S18 — /asistan: sohbet sahnesi (döngüsel; S24: görünür "Örnek senaryo" etiketi kaldırıldı — K44). Hareket azaltılmışken statik SON KARE: tüm diyalog ve onay kartı
 // görünür, "yazıyor" göstergesi gizli. Hareket açıkken kontrol header'da; kullanıcı durdurabilir (WCAG 2.2.2).
 test.describe('ajan sayfası — sohbet sahnesi', () => {
   test('reduced-motion: statik son kare (soru, sonuç, ikinci istek, onay kartı görünür; yazıyor gizli)', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await page.goto(AGENT_PATH)
     const scene = page.getByTestId('assistant-scene')
-    await expect(scene.getByTestId('scenario-label')).toHaveText('Örnek senaryo')
+    await expect(scene.getByTestId('scenario-label')).toHaveCount(0)
     for (const part of ['ai-ask1', 'ai-result', 'ai-ask2', 'ai-approve']) {
       await expect(scene.locator(`[data-part="${part}"]`)).toHaveCSS('opacity', '1')
     }
@@ -355,7 +355,7 @@ test.describe('ajan sayfası — S22', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await page.goto(AGENT_PATH)
     const consoleFig = page.getByTestId('agent-console')
-    await expect(consoleFig.getByTestId('console-label')).toHaveText('Örnek görünüm')
+    await expect(consoleFig.getByTestId('console-label')).toHaveCount(0) // S24 (K44): etiket yok
     await expect(consoleFig.locator('[data-part="agent-scan"]')).toHaveCSS('opacity', '0')
     for (const dot of await consoleFig.locator('[data-part="agent-live"]').all()) await expect(dot).toHaveCSS('opacity', '1')
     await expect(page.getByTestId('loop-step')).toHaveCount(5)

@@ -45,7 +45,7 @@ test.describe('S23 üst menü — masaüstü', () => {
       await waitForFonts(page)
       await noHorizontalOverflow(page)
       for (const g of ['Ürün', 'Çözümler', 'Kaynaklar']) await expect(trigger(page, g)).toBeVisible()
-      await expect(nav(page).getByRole('link', { name: 'Fiyatlandırma', exact: true })).toBeVisible()
+      await expect(nav(page).getByRole('link', { name: 'Fiyatlar', exact: true })).toBeVisible()
       await expect(page.getByTestId('register-link')).toBeVisible()
       // açık panel de görünüm alanına sığar
       for (const g of ['Ürün', 'Çözümler', 'Kaynaklar']) {
@@ -114,11 +114,11 @@ test.describe('S23 üst menü — masaüstü', () => {
     await page.keyboard.press('ArrowRight')
     await expect(trigger(page, 'Çözümler')).toBeFocused()
     await page.keyboard.press('End')
-    await expect(nav(page).getByRole('link', { name: 'Fiyatlandırma', exact: true })).toBeFocused()
+    await expect(nav(page).getByRole('link', { name: 'Fiyatlar', exact: true })).toBeFocused()
     await page.keyboard.press('ArrowRight') // sarar
     await expect(urun).toBeFocused()
     await page.keyboard.press('ArrowLeft')
-    await expect(nav(page).getByRole('link', { name: 'Fiyatlandırma', exact: true })).toBeFocused()
+    await expect(nav(page).getByRole('link', { name: 'Fiyatlar', exact: true })).toBeFocused()
   })
 
   test('odak tuzağı yok: Tab paneldeki bağlantılardan sonra gruptan çıkar ve panel kapanır', async ({ page }) => {
@@ -131,7 +131,7 @@ test.describe('S23 üst menü — masaüstü', () => {
     for (let i = 0; i < count; i++) await page.keyboard.press('Tab')
     await expect(panel.getByRole('link').last()).toBeFocused()
     await page.keyboard.press('Tab')
-    await expect(nav(page).getByRole('link', { name: 'Fiyatlandırma', exact: true })).toBeFocused()
+    await expect(nav(page).getByRole('link', { name: 'Fiyatlar', exact: true })).toBeFocused()
     await expect(kaynak).toHaveAttribute('aria-expanded', 'false')
   })
 
@@ -214,7 +214,7 @@ test.describe('S23 üst menü — masaüstü', () => {
     expect(h1).toBe(h0) // sayfa zıplamaz
     const scale = await header.evaluate((el) => getComputedStyle(el, '::before').transform)
     expect(scale).not.toBe('none')
-    const link = nav(page).getByRole('link', { name: 'Fiyatlandırma', exact: true })
+    const link = nav(page).getByRole('link', { name: 'Fiyatlar', exact: true })
     await expect(link).toHaveAttribute('aria-current', 'page')
     const underline = await link.evaluate((el) => getComputedStyle(el, '::after').content)
     expect(underline).not.toBe('none')
@@ -242,7 +242,7 @@ test.describe('S23 üst menü — mobil/tablet çekmece', () => {
     await page.getByTestId('menu-toggle').click()
     const panel = page.locator('.nav-mobile__panel')
     const group = (name: string) => panel.locator('details.drawer-group', { has: page.locator('summary', { hasText: name }) })
-    await expect(panel.getByRole('link', { name: 'Fiyatlandırma', exact: true })).toBeVisible()
+    await expect(panel.getByRole('link', { name: 'Fiyatlar', exact: true })).toBeVisible()
     await expect(group('Ürün').getByRole('link', { name: 'Katalog yönetimi', exact: true })).toBeHidden()
 
     await group('Ürün').locator('summary').click()

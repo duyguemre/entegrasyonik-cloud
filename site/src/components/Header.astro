@@ -4,6 +4,8 @@
  * ADR-0014 Karar 2).
  *
  * S23 (SR2-NAV): Ürün / Çözümler / Kaynaklar açılır panel (mega-menü), Fiyatlandırma doğrudan bağlantı.
+ * S24 (kullanıcı madde 8, sadelik): üç grup + "Fiyatlar" ortada, sağda metin "Giriş" + tek birincil CTA, ayraç yok,
+ * hareket kontrolü yalnızca simge.
  * S25 (seçkin menü; karar: docs/s25-review/NAV_DECISION.md): model tek kaynaktan (`src/data/navigation.ts` →
  * `nav-menu.ts`; footer da aynı). Her panel = ikonlu kartlar (başlık + tek satır fayda) + sağda öne çıkan kart +
  * tabanda alt şerit. Çözümler satırları kanal rozetleri (ChannelMono) taşır.
@@ -193,7 +195,7 @@ const registerHref = appUrls.register()
         )
       }
       <div class="nav-desktop__actions">
-        <Button href={loginHref} variant="ghost" data-testid="login-link">Giriş yap</Button>
+        <a class="nav-link nav-login" href={loginHref} data-testid="login-link" aria-label="Giriş yap">Giriş</a>
         <Button href={registerHref} variant="primary" data-testid="register-link">Ücretsiz dene</Button>
       </div>
     </nav>
@@ -754,11 +756,13 @@ const registerHref = appUrls.register()
       min-width: 0;
       margin-inline-start: var(--ek-space-4);
     }
+    /* S24 (kullanıcı: "kalabalık sürüyor"): üç grup + Fiyatlar ORTADA; sağda metin "Giriş" + tek CTA, ayraç yok. */
     .nav-desktop__links {
       display: flex;
       align-self: stretch;
       align-items: center;
       gap: var(--ek-space-1);
+      margin-inline: auto;
     }
     .nav-group {
       display: flex;
@@ -801,10 +805,11 @@ const registerHref = appUrls.register()
       display: flex;
       flex: none;
       align-items: center;
-      gap: var(--ek-space-2);
-      margin-inline-start: auto;
-      padding-inline-start: var(--ek-space-4);
-      border-inline-start: var(--site-border-width) solid var(--ek-color-border-default);
+      gap: var(--ek-space-3);
+    }
+    .nav-login {
+      color: var(--ek-color-content-strong);
+      font-weight: var(--ek-font-weight-semibold);
     }
 
     /* --- açılır panel: bar'ın altında, kapsayıcıda ortalı (tüm gruplar aynı yerde açılır → tek menü hissi) --- */
@@ -1237,9 +1242,6 @@ const registerHref = appUrls.register()
     }
     .nav-desktop {
       margin-inline-start: var(--ek-space-2);
-    }
-    .nav-desktop__actions {
-      padding-inline-start: var(--ek-space-2);
     }
   }
   @media (min-width: 80rem) {

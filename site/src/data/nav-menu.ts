@@ -134,5 +134,5 @@ export function flatLinks(g: MenuGroup): MenuLink[] {
   return byPage.filter((l) => (seen.has(l.href) ? false : (seen.add(l.href), true)))
 }
 
-/** Üst barda doğrudan bağlantılar (Fiyatlandırma). */
+/** Üst barda doğrudan bağlantılar (Fiyatlar). */
 export const menuDirect = (): MenuLink[] => directNav().map(fromNav)
