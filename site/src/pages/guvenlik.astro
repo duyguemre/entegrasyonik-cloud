@@ -1,8 +1,13 @@
 ---
 /**
- * /guvenlik — doğrulanabilir güvenlik anlatısı (ADR-0014 Karar 5). Yalnızca `getPublicCapabilities('security')`
- * kayıtları (her biri kodda/ADR'de kanıtlı; kanıtlar `tests/claims.test.ts` ile doğrulanır). Sertifika/uyumluluk,
- * veri konumu ve SLA iddiası YOKTUR. KVKK bağlantısı yalnızca ilgili yasal sayfa `published` ise verilir (S5).
+ * /guvenlik — doğrulanabilir güvenlik anlatısı (ADR-0014 Karar 5).
+ *
+ * S16 (kullanıcı: "premium tasarım + high-level içerik"): teknik ayrıntı yığını yerine YÖNETİCİ DÜZEYİ çerçeve —
+ * altı güvence ilkesi (`src/data/security-principles.ts`), her biri kısa başlık + tek cümle değer + JS'siz
+ * `<details>` "Ayrıntı" bölümü. Ayrıntılar yalnızca kanıtlı kayıtlardır: `getPublicCapabilities('security')`
+ * (her kayıt tam bir ilkede, `data-testid="security-claim"`; kanıt: tests/claims.test.ts) ve ilkenin kendi kanıtlı
+ * maddeleri (kanıt: tests/pages.test.ts). Sertifika/uyumluluk, veri konumu, SLA ve süre iddiası YOKTUR.
+ * KVKK bağlantısı yalnızca ilgili yasal sayfa `published` ise verilir (S5).
  */
 import BaseLayout from '../layouts/BaseLayout.astro'
 import Section from '../components/Section.astro'
@@ -12,79 +17,33 @@ import PageHero from '../components/pages/PageHero.astro'
 import PageMeta from '../components/pages/PageMeta.astro'
 import CtaBand from '../components/pages/CtaBand.astro'
 import { getPublicCapabilities, type PublicProductCapability } from '../data/capabilities'
+import { securityPrinciples } from '../data/security-principles'
 import { legalNav, published } from '../data/navigation'
 import { breadcrumbJsonLd } from '../lib/seo'
-import { appUrls } from '../lib/site-config'
 
 const title = 'Güvenlik'
 const description =
-  'Entegrasyonik güvenlik yaklaşımı: müşteri başına ayrı veritabanı, şifreli entegrasyon anahtarları, rol tabanlı erişim, HTTP-only oturum çerezi ve dayanıklılık katmanı.'
+  'Entegrasyonik güvence ilkeleri: veri izolasyonu, şifreli saklanan entegrasyon sırları, rol tabanlı erişim ve oturum güvenliği, denetim izi, KVKK kapsamında veri işleme, yedekleme ve süreklilik.'
 const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Güvenlik' }]
 
 const security = getPublicCapabilities('security')
+const byId = new Map(security.map((c) => [c.id, c]))
+const assigned = new Set(securityPrinciples.flatMap((p) => p.capabilityIds))
+// Hiçbir kayıt kaybolmasın: bir ilkeye bağlanmamış kayıt varsa son ilkenin ayrıntısına düşer (test ayrıca uyarır).
+const orphans = security.filter((c) => !assigned.has(c.id))
+const principles = securityPrinciples.map((p, idx) => ({
+  ...p,
+  claims: [
+    ...p.capabilityIds.map((id) => byId.get(id)).filter((c): c is PublicProductCapability => !!c),
+    ...(idx === securityPrinciples.length - 1 ? orphans : []),
+  ],
+}))
 
-// İstek yolu + şifreleme diyagramı (S11): kayıtta bulunan iddialar dışında adım eklenmez.
-const ICONS: Record<string, 'lock' | 'users' | 'shield' | 'database' | 'key'> = {
-  'session-cookie': 'lock',
-  'role-based-access': 'users',
-  'default-deny': 'shield',
-  'secrets-encryption': 'key',
-  'tenant-database': 'database',
-}
-const FLOW_STEPS: Array<{ id: string; label: string; sub: string }> = [
-  { id: 'session-cookie', label: 'Oturum doğrulanır', sub: 'İmzalı belirteç, HTTP-only çerez' },
-  { id: 'role-based-access', label: 'Yetki kademesi kontrol edilir', sub: 'Üye, yönetici, ana yönetici' },
-  { id: 'default-deny', label: 'Tanımsız işlem reddedilir', sub: 'Varsayılan: red' },
-  { id: 'secrets-encryption', label: 'Anahtar şifresi çözülür', sub: 'AES-256-GCM, yalnızca sunucuda' },
-  { id: 'tenant-database', label: 'Müşteri veritabanına ulaşır', sub: 'Hesabınıza ayrılmış veri' },
-]
-const flow = FLOW_STEPS.filter((s) => security.some((i) => i.id === s.id))
-
-/** Kayıtları temalara böler; hiçbir kayıt kaybolmasın diye tanımsız olanlar "Diğer" başlığına düşer. */
-const themes: Array<{ id: string; heading: string; lead: string; ids: string[] }> = [
-  { id: 'veri', heading: 'Veri izolasyonu', lead: 'Ürün, stok ve sipariş verileriniz hesabınıza ayrılmış veritabanında tutulur.', ids: ['tenant-database'] },
-  {
-    id: 'anahtarlar',
-    heading: 'Şifreli anahtar kasası',
-    lead: 'Pazaryeri ve entegrasyon kimlik bilgileriniz durağan veride şifrelenir, arayüzde maskelenir.',
-    ids: ['secrets-encryption', 'secrets-masked'],
-  },
-  {
-    id: 'erisim',
-    heading: 'Yetki ve erişim kontrolü',
-    lead: 'Ekibinizde kimin neyi yapabileceğini siz belirlersiniz; her işlem sunucuda yetki denetiminden geçer.',
-    ids: ['role-based-access', 'default-deny', 'session-cookie'],
-  },
-  { id: 'odeme', heading: 'Güvenli ödeme altyapısı', lead: 'Kart verisi sistemlerimizden geçmeyecek şekilde tasarlanmıştır.', ids: ['hosted-payment'] },
-  {
-    id: 'dayaniklilik',
-    heading: 'Dayanıklı altyapı',
-    lead: 'Pazaryeri bağlantılarınız geçici hatalara karşı hata toleranslı bir katmandan geçer.',
-    ids: ['integration-resilience'],
-  },
-]
-const claimed = new Set(themes.flatMap((t) => t.ids))
-const rest = security.filter((c) => !claimed.has(c.id))
-const groups = [
-  ...themes.map((t) => ({ ...t, items: t.ids.map((id) => security.find((c) => c.id === id)).filter((c): c is PublicProductCapability => !!c) })),
-  ...(rest.length > 0 ? [{ id: 'diger', heading: 'Diğer', lead: '', ids: [], items: rest }] : []),
-].filter((g) => g.items.length > 0)
-
-const kvkk = published(legalNav).find((i) => i.href === '/yasal/kvkk-aydinlatma')
-const privacy = published(legalNav).find((i) => i.href === '/yasal/gizlilik')
-
-// Tek kartlık temalar (ör. "Veriler", "Ödeme") tam genişlikte kendi satırında yalnız kalınca büyük bir yan
-// boşluk bırakıyordu (S11 — özellikler/entegrasyonlar sayfalarındaki aynı düzeltme). Ardışık küçük (≤2 kart)
-// temalar tek satırda kümelenir; zengin temalar (ör. "Erişim ve oturum") kendi satırında kalır.
-const SMALL_THEME_MAX = 2
-type Group = (typeof groups)[number]
-const groupRows: Group[][] = []
-for (const g of groups) {
-  const prevRow = groupRows[groupRows.length - 1]
-  const prevIsSmall = prevRow && prevRow.length === 1 && prevRow[0].items.length <= SMALL_THEME_MAX
-  if (prevIsSmall && g.items.length <= SMALL_THEME_MAX) prevRow.push(g)
-  else groupRows.push([g])
-}
+const legal = published(legalNav)
+const kvkk = legal.find((i) => i.href === '/yasal/kvkk-aydinlatma')
+const privacy = legal.find((i) => i.href === '/yasal/gizlilik')
+const subscription = legal.find((i) => i.href === '/yasal/abonelik-sozlesmesi')
+const legalCards = [kvkk, privacy, subscription].filter((x): x is NonNullable<typeof x> => !!x)
 ---
 
 <BaseLayout title={title} description={description}>
@@ -97,92 +56,126 @@ for (const g of groups) {
 
   <PageHero
     title="Güvenlik"
-    lead="Pazaryeri API anahtarlarınızdan operasyon verilerinize kadar her katman kurumsal düzeyde güvenlik ilkeleriyle tasarlandı. Aşağıdaki her madde, ürünün yazılımında uygulanmış bir korumaya dayanır."
+    eyebrow="Güvence"
+    lead="Pazaryeri anahtarlarınızdan operasyon verinize kadar her katman, ürünün yazılımında uygulanmış korumalara dayanır. Aşağıda bunları yönetici düzeyinde özetliyoruz; ayrıntısını merak ettiğiniz her ilkeyi açabilirsiniz."
     crumbs={crumbs}
   >
+    <div class="hero-links">
+      <a class="hero-link" href="#ilkeler">Güvence ilkeleri</a>
+      <a class="hero-link hero-link--ghost" href="#kapsam">Kapsam ve KVKK</a>
+    </div>
     <Fragment slot="visual">
-      <div class="hero-visual">
-        <span class="hero-visual__icon"><Icon name="shield" size="lg" /></span>
-        <span class="hero-visual__icon hero-visual__icon--accent"><Icon name="lock" size="md" /></span>
-      </div>
-      <p class="stat-panel__caption">Anahtarlarınız ve verileriniz için kurumsal düzeyde güvenlik.</p>
+      <p class="panel-tag">Güvence ilkeleri</p>
+      <ul class="hero-list" role="list">
+        {
+          principles.map((p) => (
+            <li>
+              <span class="hero-list__icon" aria-hidden="true"><Icon name={p.icon} size="sm" /></span>
+              <a href={`#ilke-${p.id}`}>{p.title}</a>
+            </li>
+          ))
+        }
+      </ul>
     </Fragment>
   </PageHero>
 
-  <Section labelledby="akis-title" tone="stage" class="tight-section">
-    <div class="head head--dark">
-      <h2 id="akis-title">Bir istek nasıl denetlenir</h2>
-      <p>Panelden yapılan bir işlem sunucuya ulaştığında sırayla şu kontrollerden geçer.</p>
+  <Section id="ilkeler" labelledby="ilkeler-title" class="tight-section">
+    <div class="head">
+      <p class="eyebrow">Yönetici özeti</p>
+      <h2 id="ilkeler-title">Güvence ilkelerimiz</h2>
+      <p>Her ilke, ürünün bugün uyguladığı bir korumaya dayanır. Teknik ayrıntılar her kartın "Ayrıntı" bölümündedir.</p>
     </div>
-    <ol class="flow" data-testid="request-flow">
+
+    <ol class="principles" role="list" data-testid="security-principles">
       {
-        flow.map((s) => (
-          <li class="flow__step">
-            <span class="flow__icon"><Icon name={ICONS[s.id]} size="md" /></span>
-            <span class="flow__text">
-              <strong>{s.label}</strong>
-              <span>{s.sub}</span>
+        principles.map((p) => (
+          <li class="principle" id={`ilke-${p.id}`} data-principle={p.id}>
+            <span class="principle__icon" aria-hidden="true">
+              <Icon name={p.icon} size="md" />
             </span>
+            <h3 class="principle__title">{p.title}</h3>
+            <p class="principle__value">{p.value}</p>
+            <details class="principle__more">
+              <summary>
+                <span>Ayrıntı</span>
+                <Icon name="chevron" size="sm" />
+              </summary>
+              <div class="principle__detail">
+                {p.claims.length > 0 && (
+                  <ul class="claims" role="list">
+                    {p.claims.map((c) => (
+                      <li class="claim" data-testid="security-claim" data-claim={c.id}>
+                        <p class="claim__title">
+                          <Icon name="check" size="sm" />
+                          <span>{c.title}</span>
+                          {c.status === 'partial' && <Badge tone="warning">{c.statusLabel}</Badge>}
+                        </p>
+                        <p class="claim__text">{c.summary}</p>
+                        {c.caveat && <p class="claim__caveat">{c.caveat}</p>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {p.points.length > 0 && (
+                  <ul class="claims" role="list">
+                    {p.points.map((pt) => (
+                      <li class="claim" data-testid="security-point">
+                        <p class="claim__text claim__text--point">
+                          <Icon name="check" size="sm" />
+                          <span>{pt.text}</span>
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </details>
           </li>
         ))
       }
     </ol>
   </Section>
 
-  <Section labelledby="claim-groups-title" tone="stage" class="tight-section">
-    <h2 id="claim-groups-title" class="sr-only">Güvenlik iddiaları</h2>
-    {
-      groupRows.map((row, index) => (
-        <div class:list={['claim-row', { 'claim-row--cluster': row.length > 1 }]} data-first={index === 0 ? 'true' : undefined}>
-          {row.map((g) => (
-            <div class="claim-group" id={g.id}>
-              <div class="head head--dark">
-                <h3 id={`${g.id}-title`}>{g.heading}</h3>
-                {g.lead && <p>{g.lead}</p>}
-              </div>
-              <ul class="grid" role="list">
-                {g.items.map((c) => (
-                  <li>
-                    <article class="sec-card" aria-labelledby={`sec-${c.id}`} data-testid="security-claim" data-claim={c.id} data-tilt>
-                      <div class="sec-card__head">
-                        <h4 id={`sec-${c.id}`}>{c.title}</h4>
-                        {c.status === 'partial' && <Badge tone="warning">{c.statusLabel}</Badge>}
-                      </div>
-                      <p>{c.summary}</p>
-                      {c.caveat && <p class="sec-card__caveat">{c.caveat}</p>}
-                    </article>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      ))
-    }
-  </Section>
-
-  <Section labelledby="kapsam-title" size="narrow" class="tight-section">
-    <div class="head">
-      <h2 id="kapsam-title">Kapsam ve KVKK</h2>
-    </div>
-    <div class="prose">
-      <p>
-        Bu sayfa bir sertifikasyon veya bağımsız denetim belgesi değildir; yalnızca ürünün uyguladığı teknik önlemleri özetler.
-        Sunulan tüm bilgiler ürünün mevcut sürümüne aittir.
-      </p>
+  <Section id="kapsam" labelledby="kapsam-title" tone="muted" class="tight-section">
+    <div class="scope">
+      <div class="head head--compact">
+        <p class="eyebrow">Şeffaflık</p>
+        <h2 id="kapsam-title">Kapsam ve KVKK</h2>
+        <p>
+          Bu sayfa bir sertifikasyon veya bağımsız denetim belgesi değildir; yalnızca ürünün uyguladığı teknik önlemleri özetler.
+          Sunulan tüm bilgiler ürünün mevcut sürümüne aittir.
+        </p>
+        {
+          kvkk ? (
+            <p>
+              Kişisel verilerin işlenmesine ilişkin ayrıntılar için <a href={kvkk.href}>{kvkk.label}</a>
+              {privacy ? (
+                <>
+                  {' '}ve <a href={privacy.href}>{privacy.label}</a>
+                </>
+              ) : null}
+              {' '}sayfalarına bakabilirsiniz.
+            </p>
+          ) : (
+            <p data-testid="kvkk-pending">KVKK aydınlatma metni ve gizlilik politikası yayımlandığında bu sayfadan erişilebilecektir.</p>
+          )
+        }
+      </div>
       {
-        kvkk ? (
-          <p>
-            Kişisel verilerin işlenmesine ilişkin ayrıntılar için <a href={kvkk.href}>{kvkk.label}</a>
-            {privacy ? (
-              <>
-                {' '}ve <a href={privacy.href}>{privacy.label}</a>
-              </>
-            ) : null}
-            {' '}sayfalarına bakabilirsiniz.
-          </p>
-        ) : (
-          <p data-testid="kvkk-pending">KVKK aydınlatma metni ve gizlilik politikası yayımlandığında bu sayfadan erişilebilecektir.</p>
+        legalCards.length > 0 && (
+          <ul class="docs" role="list" aria-label="İlgili yasal belgeler">
+            {legalCards.map((d) => (
+              <li>
+                <a class="doc" href={d.href}>
+                  <span class="doc__icon" aria-hidden="true">
+                    <Icon name="book" size="sm" />
+                  </span>
+                  <span class="doc__label">{d.label}</span>
+                  <Icon name="arrow" size="sm" />
+                </a>
+              </li>
+            ))}
+          </ul>
         )
       }
     </div>
@@ -202,7 +195,6 @@ for (const g of groups) {
 </script>
 
 <style>
-  /* Bölümler arası dikey ritim genel olarak sıkılaştırıldı (S11b). */
   .tight-section:global(.section) {
     padding-block: calc(var(--site-section-y) * 0.72);
   }
@@ -210,173 +202,334 @@ for (const g of groups) {
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-2);
-    margin-bottom: var(--ek-space-8);
+    max-width: 46rem;
+    margin-bottom: var(--ek-space-10);
   }
-  .head h2,
-  .head h3 {
+  .head--compact {
+    margin-bottom: 0;
+  }
+  .eyebrow {
+    color: var(--site-link-accent);
+    font-size: var(--site-card-eyebrow-size);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .head h2 {
+    color: var(--site-text-heading);
     font-size: var(--site-font-display-sm);
     font-weight: var(--site-font-display-weight);
     line-height: var(--site-font-display-line-height);
     letter-spacing: var(--site-font-display-tracking);
   }
-  .head p {
-    color: var(--ek-color-content-muted);
+  .head p:not(.eyebrow) {
+    color: var(--site-text-body);
     font-size: var(--ek-font-size-lg);
+    line-height: var(--site-font-body-line-height);
   }
-  /* Koyu sahnede Section'ın genel `p` rengi zaten açık (site-color-on-primary-muted); burada özgüllükle korunur. */
-  .head.head--dark p {
-    color: var(--site-color-on-primary-muted);
+  .head a {
+    color: var(--site-link-accent);
+    font-weight: var(--ek-font-weight-semibold);
   }
 
-  /* --- Hero görsel --- */
-  .hero-visual {
+  /* --- Hero --- */
+  .hero-links {
     display: flex;
-    justify-content: center;
-    gap: var(--ek-space-4);
+    flex-wrap: wrap;
+    gap: var(--ek-space-3);
   }
-  .hero-visual__icon {
+  .hero-link {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    width: calc(var(--ek-space-16) * 0.9);
-    height: calc(var(--ek-space-16) * 0.9);
-    border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-secondary) 20%, transparent);
+    min-height: var(--site-tap-target);
+    padding-inline: var(--ek-space-5);
+    border: var(--site-border-width) solid transparent;
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface);
+    color: var(--ek-color-primary);
+    font-weight: var(--ek-font-weight-semibold);
+    text-decoration: none;
+    transition: background-color var(--ek-duration-base) var(--ek-easing-standard), border-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .hero-link:hover {
+    background: color-mix(in srgb, var(--ek-color-surface) 88%, var(--ek-color-secondary));
+  }
+  .hero-link--ghost {
+    border-color: var(--site-glass-border);
+    background: var(--site-glass-bg);
     color: var(--site-color-on-primary);
   }
-  .hero-visual__icon--accent {
-    align-self: flex-end;
-    width: var(--ek-space-12);
-    height: var(--ek-space-12);
-    background: var(--ek-color-secondary);
-    color: var(--ek-color-content-strong);
+  .hero-link--ghost:hover {
+    border-color: var(--site-color-on-primary-muted);
   }
-  .stat-panel__caption {
-    margin: var(--ek-space-5) 0 0;
-    text-align: center;
-    color: var(--site-color-on-primary-muted);
-    font-size: var(--ek-font-size-sm);
+  .hero-link:focus-visible {
+    outline-color: var(--site-color-on-primary);
   }
-
-  /* --- İstek yolu --- */
-  .flow {
-    display: grid;
-    gap: var(--ek-space-4);
-    grid-template-columns: 1fr;
+  .panel-tag {
+    margin: 0 0 var(--ek-space-3);
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
-  .flow__step {
+  .hero-list {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .hero-list li {
     display: flex;
     align-items: center;
-    gap: var(--ek-space-4);
-    padding: var(--ek-space-5);
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--site-radius-panel);
-    background: var(--site-glass-bg);
-    backdrop-filter: blur(var(--site-glass-blur));
-    -webkit-backdrop-filter: blur(var(--site-glass-blur));
+    gap: var(--ek-space-3);
+    padding-block: var(--ek-space-2);
   }
-  .flow__icon {
+  .hero-list li + li {
+    border-top: var(--site-border-width) solid var(--site-glass-border);
+  }
+  .hero-list__icon {
     display: inline-flex;
     flex: none;
     align-items: center;
     justify-content: center;
-    width: var(--ek-space-10);
-    height: var(--ek-space-10);
+    width: var(--ek-space-8);
+    height: var(--ek-space-8);
     border-radius: var(--ek-radius-md);
-    background: color-mix(in srgb, var(--ek-color-secondary) 24%, transparent);
-    color: var(--site-color-on-primary);
+    background: color-mix(in srgb, var(--ek-color-secondary) 18%, transparent);
+    color: var(--site-accent-on-dark);
   }
-  .flow__text {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-1);
-    color: var(--site-color-on-primary-muted);
-    font-size: var(--ek-font-size-sm);
+  .hero-list a {
+    color: var(--site-text-on-dark-heading);
+    font-weight: var(--ek-font-weight-medium);
+    text-decoration: none;
   }
-  .flow__text strong {
-    color: var(--site-color-on-primary);
-    font-size: var(--ek-font-size-lg);
-    font-weight: var(--ek-font-weight-semibold);
+  .hero-list a:hover {
+    text-decoration: underline;
   }
 
-  /* --- İddia grupları: cam kartlar (S11) --- */
-  .claim-row + .claim-row {
-    margin-top: var(--ek-space-16);
-    padding-top: var(--ek-space-16);
-    border-top: var(--site-border-width) solid var(--site-glass-border);
-  }
-  /* Ardışık küçük temalar (≤2 kart) yan yana kümelenir — tek başına kalan tema sağda boşluk bırakmasın. */
-  .claim-row--cluster {
+  /* --- İlkeler --- */
+  .principles {
     display: grid;
-    gap: var(--ek-space-10);
     grid-template-columns: 1fr;
-  }
-  @media (min-width: 700px) {
-    .claim-row--cluster {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-  .grid {
-    display: grid;
     gap: var(--ek-space-5);
-    grid-template-columns: 1fr;
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
-  .sec-card {
+  .principle {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-3);
-    height: 100%;
+    min-width: 0;
     padding: var(--ek-space-6);
-    border: var(--site-border-width) solid var(--site-glass-border);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
     border-radius: var(--site-radius-panel);
-    background: var(--site-glass-bg);
-    box-shadow: inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 18%, transparent);
-    color: var(--site-color-on-primary-muted);
+    background:
+      radial-gradient(80% 60% at 0% 0%, color-mix(in srgb, var(--ek-color-secondary) 6%, transparent), transparent 70%),
+      var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
+    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
     transition:
       border-color var(--ek-duration-base) var(--ek-easing-standard),
-      background-color var(--ek-duration-base) var(--ek-easing-standard);
+      box-shadow var(--ek-duration-base) var(--ek-easing-standard);
   }
-  .sec-card:hover,
-  .sec-card:focus-within {
-    border-color: color-mix(in srgb, var(--ek-color-secondary) 60%, transparent);
-    background: color-mix(in srgb, var(--ek-color-background) 10%, transparent);
+  .principle:hover,
+  .principle:focus-within,
+  .principle:has(details[open]) {
+    border-color: color-mix(in srgb, var(--ek-color-secondary) 40%, var(--ek-color-border-default));
+    box-shadow: var(--site-shadow-card-hover);
   }
-  .sec-card__head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: var(--ek-space-2) var(--ek-space-3);
-  }
-  .sec-card__head h4 {
+  .principle__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-12);
+    height: var(--ek-space-12);
+    margin-bottom: var(--ek-space-1);
+    border-radius: var(--ek-radius-lg);
+    background: linear-gradient(140deg, var(--ek-color-primary), var(--ek-color-primary-darken-1));
+    box-shadow: 0 var(--ek-space-2) var(--ek-space-4) calc(var(--ek-space-2) * -1) color-mix(in srgb, var(--ek-color-primary) 70%, transparent);
     color: var(--site-color-on-primary);
-    font-size: var(--site-card-title-size);
-    font-weight: var(--site-card-title-weight);
   }
-  .sec-card__caveat {
+  .principle__title {
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-xl);
+    font-weight: var(--ek-font-weight-bold);
+    letter-spacing: -0.01em;
+  }
+  .principle__value {
+    margin-bottom: var(--ek-space-2);
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-md);
+    line-height: var(--site-font-body-line-height);
+  }
+  .principle__more {
+    margin-top: auto;
+    border-top: var(--site-border-width) solid var(--ek-color-border-default);
+  }
+  .principle__more summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: var(--site-tap-target);
     padding-top: var(--ek-space-3);
-    border-top: var(--site-border-width) solid var(--site-glass-border);
-    color: var(--site-color-on-primary-muted);
-    font-size: var(--ek-font-size-sm);
+    color: var(--site-link-accent);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+    list-style: none;
+    cursor: pointer;
   }
-  .prose {
+  .principle__more summary::-webkit-details-marker {
+    display: none;
+  }
+  .principle__more summary:focus-visible {
+    outline: var(--site-focus-ring-width) solid var(--site-color-focus-ring);
+    outline-offset: var(--site-focus-ring-offset);
+    border-radius: var(--ek-radius-sm);
+  }
+  .principle__more summary :global(.icon) {
+    transition: transform var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .principle__more[open] summary :global(.icon) {
+    transform: rotate(180deg);
+  }
+  .principle__detail {
+    padding-top: var(--ek-space-3);
+  }
+  .claims {
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-4);
-    color: var(--ek-color-content-default);
-    font-size: var(--ek-font-size-lg);
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
+  .claims + .claims {
+    margin-top: var(--ek-space-4);
+  }
+  .claim {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+  }
+  .claim__title,
+  .claim__text--point {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--ek-space-2);
+  }
+  .claim__title {
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .claim__title span {
+    flex: 1;
+    min-width: 0;
+  }
+  .claim__title :global(.icon),
+  .claim__text--point :global(.icon) {
+    margin-top: calc(var(--ek-space-1) * 0.5);
+    color: var(--ek-color-success);
+  }
+  .claim__text {
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-sm);
+    line-height: var(--site-font-body-line-height);
+  }
+  .claim__title + .claim__text,
+  .claim__caveat {
+    padding-inline-start: calc(var(--ek-space-4) + var(--ek-space-2));
+  }
+  .claim__text--point span {
+    flex: 1;
+    min-width: 0;
+  }
+  .claim__caveat {
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-sm);
+    font-style: italic;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .principle__more summary :global(.icon) {
+      transition: none;
+    }
+  }
+
+  /* --- Kapsam + yasal belgeler --- */
+  .scope {
+    display: grid;
+    gap: var(--ek-space-8);
+    align-items: start;
+  }
+  .docs {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .doc {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-3);
+    min-height: calc(var(--site-tap-target) + var(--ek-space-4));
+    padding: var(--ek-space-3) var(--ek-space-5);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-xl);
+    background: var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
+    color: var(--site-text-heading);
+    font-weight: var(--ek-font-weight-semibold);
+    text-decoration: none;
+    transition:
+      border-color var(--ek-duration-base) var(--ek-easing-standard),
+      box-shadow var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .doc:hover {
+    border-color: color-mix(in srgb, var(--ek-color-secondary) 45%, var(--ek-color-border-default));
+    box-shadow: var(--site-shadow-card-hover);
+  }
+  .doc:focus-visible {
+    outline: var(--site-focus-ring-width) solid var(--site-color-focus-ring);
+    outline-offset: var(--site-focus-ring-offset);
+  }
+  .doc__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-8);
+    height: var(--ek-space-8);
+    border-radius: var(--ek-radius-md);
+    background: var(--site-accent-soft);
+    color: var(--site-link-accent);
+  }
+  .doc__label {
+    flex: 1;
+  }
+  .doc > :global(.icon:last-child) {
+    color: var(--site-link-accent);
+  }
+
   @media (min-width: 768px) {
-    .grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-    .flow {
-      grid-template-columns: repeat(2, 1fr);
+    .principles {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
-  @media (min-width: 1200px) {
-    .grid {
-      grid-template-columns: repeat(3, 1fr);
+  @media (min-width: 1100px) {
+    .principles {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1024px) {
+    .scope {
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+      gap: var(--ek-space-12);
     }
   }
 </style>

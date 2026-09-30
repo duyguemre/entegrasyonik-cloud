@@ -248,12 +248,18 @@ test.describe('iletisim', () => {
 test.describe('guvenlik', () => {
   test('güvenlik iddiaları ve kapsam sınırı görünür; sertifika iddiası yok', async ({ page }) => {
     await page.goto('/guvenlik')
+    // S16: ilkeler yönetici düzeyinde; teknik kayıtlar JS'siz <details> "Ayrıntı" içinde (klavyeyle açılır)
+    await expect(page.locator('[data-principle]')).toHaveCount(6)
+    await expect(page.getByTestId('security-claim').first()).toBeHidden()
+    const summary = page.locator('[data-principle="izolasyon"] summary')
+    await summary.focus()
+    await page.keyboard.press('Enter')
     await expect(page.getByTestId('security-claim').first()).toBeVisible()
     await expect(page.getByText('AES-256-GCM').first()).toBeVisible()
     await expect(page.getByText('sertifikasyon veya bağımsız denetim belgesi değildir')).toBeVisible()
     // S5 yasal sayfaları yayımlandı (legalNav published): bekleyen-not yerine gerçek bağlantı.
     await expect(page.getByTestId('kvkk-pending')).toHaveCount(0)
-    await expect(page.locator('main a[href="/yasal/kvkk-aydinlatma"]')).toBeVisible()
+    await expect(page.locator('main a[href="/yasal/kvkk-aydinlatma"]').first()).toBeVisible()
   })
 })
 

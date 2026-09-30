@@ -18,6 +18,7 @@ import { featureDetails } from '../src/data/feature-details'
 import { legalNav, primaryNav, published } from '../src/data/navigation'
 import { resolveContactEmail, mailtoHref, DEFAULT_CONTACT_EMAIL } from '../src/lib/contact'
 import { company } from '../src/data/company'
+import { securityPrinciples } from '../src/data/security-principles'
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const repoRoot = path.resolve(siteRoot, '..')
@@ -317,6 +318,30 @@ describe('/guvenlik', () => {
     for (const id of ['secrets-encryption', 'session-cookie', 'role-based-access', 'integration-resilience', 'tenant-database']) {
       expect(ids).toContain(id)
     }
+  })
+
+  it('S16: dört-altı güvence ilkesi; her güvenlik kaydı tam bir ilkede; her ilke maddesi repoda kanıtlı', () => {
+    expect(securityPrinciples.length).toBeGreaterThanOrEqual(4)
+    expect(securityPrinciples.length).toBeLessThanOrEqual(6)
+    const ids = getPublicCapabilities('security').map((c) => c.id)
+    const assigned = securityPrinciples.flatMap((p) => p.capabilityIds)
+    expect([...assigned].sort()).toEqual([...ids].sort())
+    for (const pr of securityPrinciples) {
+      expect(pr.capabilityIds.length + pr.points.length, pr.id).toBeGreaterThan(0)
+      for (const pt of pr.points) {
+        expect(pt.evidence.length, pt.text).toBeGreaterThan(0)
+        for (const e of pt.evidence) {
+          const file = path.join(repoRoot, e.path)
+          expect(existsSync(file), e.path).toBe(true)
+          if (e.contains) expect(readFileSync(file, 'utf8').includes(e.contains), `${e.path}: ${e.contains}`).toBe(true)
+        }
+      }
+    }
+    const p = page()
+    expect([...p.matchAll(/data-principle="([a-z]+)"/g)].map((m) => m[1])).toEqual(securityPrinciples.map((x) => x.id))
+    // ayrıntılar JS'siz <details>; değer cümlesi her zaman görünür
+    expect((p.match(/<details class="principle__more/g) ?? []).length).toBe(securityPrinciples.length)
+    for (const pr of securityPrinciples) expect(visibleText(p)).toContain(pr.value)
   })
 
   it('AES-256-GCM, HTTP-only, dayanıklılık ifadeleri kayıttan gelir', () => {
