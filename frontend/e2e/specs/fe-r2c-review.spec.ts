@@ -33,6 +33,8 @@ async function open(page: Page, product: any, extra: Record<string, any> = {}) {
   await page.locator('.productListView tbody tr').first().locator('button[aria-label="Ürünü düzenle"]').click()
   const root = page.locator(`.productUpdateView${product._id}`)
   await expect(root.getByText('Ürün Tanımı').first()).toBeVisible({ timeout: 20_000 })
+  // tanıtım turu kartı ekranın bir kısmını örter — inceleme görüntüsünde kapatılır
+  await page.getByRole('button', { name: 'Şimdi değil' }).click({ timeout: 3000 }).catch(() => undefined)
   return root
 }
 
@@ -83,8 +85,7 @@ for (const { w, h } of WIDTHS) {
       await root.getByText('Tekil Ürün Bilgisi').first().click()
       await page.waitForTimeout(400)
       await snap(page, 'single-variant', w)
-      await root.getByText('Platform fiyatlarını düzenle').first().click().catch(() => undefined)
-      await root.locator('.psvc-platform-prices, .cpe-summary').first().click().catch(() => undefined)
+      await root.locator('[data-pf-field="channelPrices"], .psvc-platform-prices').first().click({ timeout: 5000 })
       await page.waitForTimeout(600)
       await snap(page, 'channel-prices', w)
     })

@@ -5,7 +5,7 @@
     <v-autocomplete v-model="brandId" v-model:search="brandSearchText" v-model:menu="menuOpen" :items="computedBrands" item-value="_id"
       item-title="title" :custom-filter="brandFilter" @keydown.enter="onEnter"
       :rules="mandatory ? formRules.mandatoryRule : []" :placeholder="$t('productDefinitions.brand.search')"
-      :no-data-text="createQuery ? `“${createQuery}” ile eşleşen marka yok` : $t('productDefinitions.brand.nodata')" auto-select-first clearable persistent-hint :menu-props="{
+      :no-data-text="createQuery ? `“${createQuery}” ile eşleşen marka yok` : $t('productDefinitions.brand.nodata')" auto-select-first @update:focused="selectOnFocus" clearable persistent-hint :menu-props="{
         contentClass: 'brand-autocomplete-menu',
         maxHeight: '400',
         transition: false
@@ -15,13 +15,6 @@
         {{ $t('productDefinitions.brand.name') }}{{ mandatory ? ' *' : '' }}
       </template>
 
-      <template v-slot:selection="{ item }: any">
-        <div class="d-flex align-center overflow-hidden">
-          <span class="text-truncate">
-            {{ item.title }}
-          </span>
-        </div>
-      </template>
 
       <template v-slot:item="{ item, props: itemProps }: any">
         <v-list-item v-bind="itemProps" role="option" class="custom-brand-item" title="">
@@ -50,7 +43,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, getCurrentInstance, nextTick } from 'vue'
 import { useBrandsStore } from '@/stores/brandsStore'
 import { useI18n } from 'vue-i18n'
 import useFormRules from '@/composables/formrules'
@@ -124,6 +117,17 @@ function onCreated(id: string, title: string) {
   brandId.value = id as any
   brandSearchText.value = ''
   showToast({ tone: 'success', message: `“${title}” markası eklendi ve seçildi.` })
+}
+
+/** Odakta mevcut ad seçili gelir: yazmaya başlayınca ad DEĞİŞİR (seçili adın sonuna eklenmez). */
+const instance = getCurrentInstance()
+function selectOnFocus(focused: boolean) {
+  if (!focused) return
+  const input = (instance?.proxy?.$el as HTMLElement | undefined)?.querySelector?.('input')
+  if (!input) return
+  // Fare tıklamasında imleci yerleştiren mouseup seçimi bozmasın (tek seferlik).
+  input.addEventListener('mouseup', (e) => e.preventDefault(), { once: true })
+  nextTick(() => setTimeout(() => input.select(), 0))
 }
 
 function onPicked(id: string) {

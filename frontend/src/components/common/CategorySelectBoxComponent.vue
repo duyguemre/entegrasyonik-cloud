@@ -4,7 +4,7 @@
 
     <v-autocomplete v-model="categoryId" v-model:search="categorySearchText" v-model:menu="menuOpen" :items="computedCategories"
       item-value="_id" item-title="title" :rules="mandatory ? formRules.mandatoryRule : []" :custom-filter="categoryFilter"
-      :placeholder="$t('productDefinitions.category.search')" auto-select-first @keydown.enter="onEnter"
+      :placeholder="$t('productDefinitions.category.search')" auto-select-first @update:focused="selectOnFocus" @keydown.enter="onEnter"
       :no-data-text="createQuery ? `“${createQuery}” ile eşleşen kategori yok` : 'Kategori bulunamadı'"
       clearable persistent-hint :menu-props="{
         contentClass: 'category-autocomplete-menu',
@@ -16,13 +16,6 @@
         {{ $t('productDefinitions.category.name') }}{{ mandatory ? ' *' : '' }}
       </template>
 
-      <template v-slot:selection="{ item }: any">
-        <div class="d-flex align-center overflow-hidden">
-          <span class="text-truncate">
-            {{ item.title }}
-          </span>
-        </div>
-      </template>
 
       <template v-slot:item="{ item, props: itemProps }: any">
         <v-list-item v-bind="itemProps" role="option"
@@ -67,7 +60,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, getCurrentInstance, nextTick } from 'vue'
 import { useCategoriesStore } from '@/stores/categoriesStore'
 import useFormRules from '@/composables/formrules'
 import { useToast } from '@entegrasyonik/ui/composables/useToast'
@@ -154,6 +147,17 @@ function onCreated(id: string, title: string) {
   categoryId.value = id as any
   categorySearchText.value = ''
   showToast({ tone: 'success', message: `“${title}” kategorisi eklendi ve seçildi.` })
+}
+
+/** Odakta mevcut ad seçili gelir: yazmaya başlayınca ad DEĞİŞİR (seçili adın sonuna eklenmez). */
+const instance = getCurrentInstance()
+function selectOnFocus(focused: boolean) {
+  if (!focused) return
+  const input = (instance?.proxy?.$el as HTMLElement | undefined)?.querySelector?.('input')
+  if (!input) return
+  // Fare tıklamasında imleci yerleştiren mouseup seçimi bozmasın (tek seferlik).
+  input.addEventListener('mouseup', (e) => e.preventDefault(), { once: true })
+  nextTick(() => setTimeout(() => input.select(), 0))
 }
 
 function onPicked(id: string) {
