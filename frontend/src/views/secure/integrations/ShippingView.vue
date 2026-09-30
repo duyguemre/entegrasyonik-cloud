@@ -10,9 +10,9 @@
 
       <div class="ek-integration-layout">
         <div class="ek-integration-layout__main">
-          <div>
+          <div v-if="clientShipments?.length">
             <IntegrationPlatformRail :items="clientShipments" :model-value="editingClientIntegration.code"
-              :live-codes="LIVE_CODES" ariaLabel="Kargo firması seçimi"
+              :live-codes="liveCodes" ariaLabel="Kargo firması seçimi"
               @select="setAndRetrieveEditingClientShipment" />
           </div>
           <v-form ref="newVariantFormRef" v-model="isFormValid">
@@ -60,6 +60,10 @@
                     category="kargo" />
                 </template>
               </div>
+              <!-- C1.2: mağazada hiç kargo kaydı yoksa "yukarıdan seçin" demek yanıltıcıdır (seçilecek bir şey yok) —
+                   kategori düzeyi dürüst "Yakında" paneli + bugün pazaryeri üzerinden yapılabilen (katalogdan). -->
+              <IntegrationComingSoonPanel v-else-if="!clientShipments?.length" category="Kargo"
+                alternative-capability="shippingNotice" />
               <EkEmptyState v-else variant="not-connected" title="Başlamak için seçim yapın"
                 message="Yukarıdaki listeden bir kargo firması seçerek ayarları yönetmeye başlayabilirsiniz." />
             </v-card-text>
@@ -67,7 +71,7 @@
         </div>
 
         <aside class="ek-integration-layout__aside">
-          <IntegrationGuideCard :steps="guideSteps" />
+          <IntegrationGuideCard :steps="guideSteps" :note="''" />
         </aside>
       </div>
     </div>
@@ -94,10 +98,11 @@ import EkPageHeader from '@/components/ds/EkPageHeader.vue'
 import EkEmptyState from '@/components/ds/EkEmptyState.vue'
 import IntegrationPlatformRail from '@/components/integrations/IntegrationPlatformRail.vue'
 import IntegrationComingSoonPanel from '@/components/integrations/IntegrationComingSoonPanel.vue'
+import { useIntegrationScreen } from '@/components/integrations/useIntegrationScreen'
 
-// `docs/INTEGRATIONS_REGISTRY.md` §5.1 — "NET: backend'de hiçbir kargo API
-// entegrasyonu YOK". Canlı küme KASITLI olarak BOŞTUR (N13).
-const LIVE_CODES: string[] = []
+// `docs/INTEGRATIONS_REGISTRY.md` §5.1 — "NET: backend'de hiçbir kargo API entegrasyonu YOK". C1.2: canlı küme
+// `getCatalog` manifestosundan gelir (bugün BOŞ; yedek `FALLBACK_LIVE_CODES.shipping` da boş — N13).
+const { liveCodes } = useIntegrationScreen('shipment')
 
 const integrationStore: any = useIntegrationStore()
 const { t } = useI18n()
@@ -106,11 +111,12 @@ const loadingComponentRef: any = ref(null)
 const restApi = useRestApi()
 const editingClientIntegration: any = ref({ settings: {} })
 
-const guideSteps = [
-  { title: 'Firmayı Seçin', text: 'Üstteki ikonlara tıklayarak işlem yapacağınız kargo firmasını seçin.' },
-  { title: 'API Bağlantısı', text: 'Kargo firmasının panelinden aldığınız API bilgilerini ilgili alanlara girin.' },
-  { title: 'Kaydet ve Aktifleştir', text: 'Bilgileri kaydettikten sonra entegrasyon otomatik olarak aktif hale gelir.' }
-]
+// C1.2 — eski adımlar ("Kaydet ve Aktifleştir: … otomatik olarak aktif hale gelir") gerçeği yansıtmıyordu.
+const guideSteps = computed(() => [
+  { title: t('integrationComingSoon.guide.step1Title'), text: t('integrationComingSoon.guide.step1Text') },
+  { title: t('integrationComingSoon.guide.step2Title'), text: t('integrationComingSoon.guide.step2Text') },
+  { title: t('integrationComingSoon.guide.step3Title'), text: t('integrationComingSoon.guide.step3Text') },
+])
 
 onMounted(() => {
   if (clientShipments.value && clientShipments.value.length > 0)

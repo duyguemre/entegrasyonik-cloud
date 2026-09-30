@@ -2,7 +2,7 @@
   ADR-0015 N13 "Yakında" — bkz. `PttComponent.vue` gerekçe notu.
 -->
 <template>
-  <IntegrationComingSoonPanel platform-name="MNG Kargo" category="kargo" />
+  <IntegrationComingSoonPanel platform-name="MNG Kargo" category="kargo" alternative-capability="shippingNotice" />
 </template>
 
 <script setup lang="ts">
