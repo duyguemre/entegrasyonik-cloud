@@ -271,6 +271,13 @@ export default function useUser() {
     return userContext.value?.isGlobalAdmin === true
   }
 
+  // Tenant `admin` kademesi (mağaza sahibi, ROLE_ADMIN/ROLE_OWNER rolü veya platform yöneticisi) — yalnızca
+  // GÖRÜNÜRLÜK ipucu; asıl yetki sınırı backend `operationPolicy.resolveTier` (ADMIN_ROLE_CODES ile aynı küme).
+  const isTenantAdmin = () => {
+    const uc = userContext.value
+    return uc?.owner === true || uc?.isGlobalAdmin === true || ['ROLE_ADMIN', 'ROLE_OWNER'].includes(uc?.roleCode)
+  }
+
   return {
     getRoles,
     selectStore,
@@ -279,6 +286,7 @@ export default function useUser() {
     getCaptcha,
     isOwner,
     isPlatformAdmin,
+    isTenantAdmin,
     getStoreName,
     getStoreLogo,
     getResources,

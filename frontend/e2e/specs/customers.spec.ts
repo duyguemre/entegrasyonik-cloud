@@ -91,3 +91,59 @@ test.describe('P2 — Müşteriler (CustomerListView)', () => {
     expect(ownViolations, JSON.stringify(ownViolations, null, 2)).toEqual([])
   })
 })
+
+// C1.6 madde 2 — müşteri anonimleştirme (CustomerService/anonymizeCustomer, admin kademesi; ADR-0003 F.23).
+test.describe('C1.6 — Müşteri anonimleştirme', () => {
+  test.beforeEach(async ({}, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium-desktop', 'Masaüstü tablo (mdAndUp/>=960px) gerektiriyor')
+  })
+
+  async function openDetail(page: any, overrides: Record<string, any> = {}) {
+    await installApiMocks(page, {
+      'CustomerService/getCustomers': customersDoluFixture,
+      'CustomerService/getCustomerDetail': buildCustomerDetail(),
+      ...overrides,
+    })
+    await gotoAuthed(page)
+    await openScreen(page, 'CustomerListView')
+    await page.locator('.customerListView tbody tr').first().locator('button:has(.mdi-eye)').click()
+    const dialog = page.getByRole('dialog').filter({ hasText: 'Müşteri Kartı' })
+    await expect(dialog).toBeVisible()
+    return dialog
+  }
+
+  test('etkileşim: ⋯ → anonimleştir → tehlikeli onay (varsayılan odak Vazgeç) → istek gövdesi { customerId } → başarı bildirimi', async ({ page }) => {
+    let body: any
+    const dialog = await openDetail(page, {
+      'CustomerService/anonymizeCustomer': async (route: any, headers: Record<string, string>) => {
+        body = route.request().postDataJSON()
+        return route.fulfill({ status: 200, contentType: 'application/json', headers, body: JSON.stringify({ success: true, customerId: body?.customerId }) })
+      },
+    })
+    await dialog.getByRole('button', { name: 'Müşteri işlemleri' }).click()
+    await page.getByRole('menuitem', { name: /Kişisel verileri anonimleştir/ }).click()
+
+    const confirm = page.getByRole('alertdialog')
+    await expect(confirm).toContainText("'Ayşe Yılmaz' anonimleştirilsin mi?")
+    await expect(confirm).toContainText('sipariş kayıtları kalır')
+    await expect(confirm.getByRole('button', { name: 'Vazgeç' })).toBeFocused()
+    await confirm.getByRole('button', { name: 'Anonimleştir' }).click()
+
+    await expect(page.getByText('Müşterinin kişisel verileri anonimleştirildi.')).toBeVisible()
+    expect(body).toEqual({ customerId: buildCustomerDetail()._id })
+  })
+
+  test('hata: 403 yetki mesajı gösterilir, ham hata sızmaz', async ({ page }) => {
+    const dialog = await openDetail(page, { 'CustomerService/anonymizeCustomer': mockError(403, { error: 'Forbidden' }) })
+    await dialog.getByRole('button', { name: 'Müşteri işlemleri' }).click()
+    await page.getByRole('menuitem', { name: /Kişisel verileri anonimleştir/ }).click()
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Anonimleştir' }).click()
+    await expect(page.getByText('Bu işlem için yönetici yetkisi gerekir.')).toBeVisible()
+    await expect(page.locator('body')).not.toContainText('Forbidden')
+  })
+
+  test('rol: yönetici olmayan kullanıcıda işlem menüsü görünmez', async ({ page }) => {
+    const dialog = await openDetail(page, { userContext: { _id: 'user-e2e-002', username: 'personel@entegrasyonik-e2e.invalid', owner: false, roleCode: 'ROLE_STAFF', resources: [] } })
+    await expect(dialog.getByRole('button', { name: 'Müşteri işlemleri' })).toHaveCount(0)
+  })
+})

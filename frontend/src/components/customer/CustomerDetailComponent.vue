@@ -3,6 +3,14 @@
         <template #status>
             <EkStatusChip :tone="entry.tone" :label="$t(entry.labelKey)" />
         </template>
+        <template v-if="customer && canAnonymize" #actions>
+            <!-- C1.6: yıkıcı eylem ⋯ menüsünde, en sonda (admin; asıl sınır backend `customers.anonymize` minTier admin). -->
+            <EkContextMenu :groups="actionMenu" label="Müşteri işlemleri" @select="onMenuSelect">
+                <template #activator="{ props: menuProps }">
+                    <EkButton v-bind="menuProps" tone="ghost" icon="mdi-dots-horizontal" icon-only aria-label="Müşteri işlemleri" />
+                </template>
+            </EkContextMenu>
+        </template>
 
         <div v-if="customer" class="d-flex flex-column ek-gap-8">
             <div class="d-flex align-center flex-wrap ek-gap-4">
@@ -145,13 +153,26 @@ import { ORDER_STATUS_TONE, CLAIM_STATUS_TONE, storeStatusTone } from '@/design/
 import { OrderInternalStatusEnum } from '@/types/OrderTypes';
 import { ClaimInternalStatusEnum } from '@/types/ClaimTypes';
 import PlatformImageComponent from '../platforms/PlatformImageComponent.vue';
+import EkContextMenu from '@/components/ds/EkContextMenu.vue';
+import EkButton from '@/components/ds/EkButton.vue';
+import type { EkMenuGroup, EkMenuItem } from '@/components/ds/EkMenuPanel.vue';
 
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
-    customer: { type: Object, default: () => null }
+    customer: { type: Object, default: () => null },
+    /** Yönetici kademesi: "Kişisel verileri anonimleştir" menü öğesi görünür. */
+    canAnonymize: { type: Boolean, default: false }
 });
 
-const emit = defineEmits(['update:modelValue', 'save']);
+const emit = defineEmits(['update:modelValue', 'save', 'anonymize']);
+
+const actionMenu: EkMenuGroup[] = [
+    { label: 'Kişisel veriler', items: [{ key: 'anonymize', label: 'Kişisel verileri anonimleştir', icon: 'mdi-account-cancel-outline', description: 'Geri alınamaz', danger: true }] },
+];
+
+function onMenuSelect(item: EkMenuItem) {
+    if (item.key === 'anonymize') emit('anonymize', props.customer);
+}
 
 const isOpen = computed({
     get: () => props.modelValue,

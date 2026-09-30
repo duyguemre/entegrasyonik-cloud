@@ -12,7 +12,15 @@
       :color="actionDialog.color" :confirm-text="actionDialog.confirmText" :confirm-icon="actionDialog.confirmIcon"
       @confirm="actionDialog.onConfirm" @cancel="actionDialog.show = false" maxWidth="400px" />
 
-    <CustomerDetailComponent v-model="editDialog.show" :customer="selectedCustomerForDetail" @save="handleSave" />
+    <CustomerDetailComponent v-model="editDialog.show" :customer="selectedCustomerForDetail" :can-anonymize="canAnonymize"
+      @save="handleSave" @anonymize="askAnonymize" />
+
+    <!-- C1.6 (ADR-0003 F.23) — son kullanıcı silme talebi: kişisel alanlar kalıcı maskelenir, kayıtlar kalır. -->
+    <EkConfirmDialog v-model="anonymizeDialog.show" danger :loading="anonymizeDialog.loading"
+      :title="`'${anonymizeDialog.name}' anonimleştirilsin mi?`"
+      description="Ad, iletişim ve adres bilgileri kalıcı olarak maskelenir; sipariş kayıtları kalır. Bu işlem geri alınamaz."
+      confirm-label="Anonimleştir" confirm-icon="mdi-account-cancel-outline"
+      @confirm="anonymizeCustomer" @cancel="anonymizeDialog.show = false" />
 
     <EkListScreen
       title="Müşteriler"
@@ -36,7 +44,6 @@
       :page="pagination.page"
       :page-size="pagination.limit"
       :total="pagination.totalNumberOfRecords"
-      :page-size-options="[15, 25, 50, 100]"
       empty-title="Müşteri Bulunamadı"
       empty-text="Siparişlerle gelen müşteriler burada listelenir."
       empty-icon="mdi-account-group-outline"
@@ -112,6 +119,9 @@ import EkButton from '@/components/ds/EkButton.vue';
 import EkChannelDot from '@/components/ds/EkChannelDot.vue';
 import EkStatusChip from '@/components/ds/EkStatusChip.vue';
 import { isRequestError } from '@/components/ds/listStandard';
+import EkConfirmDialog from '@/components/ds/EkConfirmDialog.vue';
+import useUser from '@/composables/user';
+import { apiMessage, apiStatus, isApiError } from '@/composables/apiErrors';
 
 const emits = defineEmits(['clear'])
 const restApi = useRestApi();
@@ -263,6 +273,34 @@ const handleSave = async ({ customerId, updateData }: any) => {
     snackbarStore.addSnackbar({ text: 'Kaydedilirken hata oluştu', color: 'error' });
   }
 };
+
+// C1.6 — müşteri anonimleştirme (CustomerService/anonymizeCustomer, admin).
+const user = useUser();
+const canAnonymize = computed(() => user.isTenantAdmin());
+const anonymizeDialog = ref({ show: false, loading: false, customerId: '', name: '' });
+
+function askAnonymize(customer: any) {
+  if (!customer?._id) return;
+  const name = [customer.firstName, customer.lastName].filter(Boolean).join(' ') || 'Müşteri';
+  anonymizeDialog.value = { show: true, loading: false, customerId: String(customer._id), name };
+}
+
+async function anonymizeCustomer() {
+  anonymizeDialog.value.loading = true;
+  const res: any = await restApi.post('CustomerService/anonymizeCustomer', { customerId: anonymizeDialog.value.customerId });
+  anonymizeDialog.value.loading = false;
+  if (isApiError(res) || res?.success !== true) {
+    const text = apiStatus(res) === 403
+      ? 'Bu işlem için yönetici yetkisi gerekir.'
+      : apiMessage(res, 'Müşteri anonimleştirilemedi — birkaç dakika sonra tekrar deneyin.');
+    snackbarStore.addSnackbar({ text, color: 'error' });
+    return;
+  }
+  anonymizeDialog.value.show = false;
+  editDialog.value.show = false;
+  snackbarStore.addSnackbar({ text: 'Müşterinin kişisel verileri anonimleştirildi.', color: 'success' });
+  getCustomers();
+}
 
 const triggerDelete = (item: any) => handleDelete(item, actionDialog.value);
 
