@@ -20,7 +20,7 @@ const CONTRACT: Record<string, { brand: string; secondary?: string }> = {
 }
 const BLACK = '#000000'
 const WHITE = '#FFFFFF'
-const tones = channelPalette as Record<string, { brand: string; onBrand: string; secondary?: string }>
+const tones = channelPalette as Record<string, { brand: string; onBrand: string; secondary?: string; logoOnSecondary?: boolean }>
 
 describe('kanal marka renkleri — değerler', () => {
   it('kanal kümesi ve marka renkleri sözleşmeyle AYNEN aynı', () => {
@@ -44,8 +44,15 @@ describe('kanal marka renkleri — değerler', () => {
     expect(Object.entries(tones).filter(([, t]) => t.secondary).map(([c]) => c).sort()).toEqual(['n11', 'pazarama'])
   })
 
+  for (const [code, t] of Object.entries(tones)) {
+    it(`${code}: logo zemininde harf ≥ 4.5:1 (N11 ikincil zemin + marka harf; diğerleri marka zemin + onBrand)`, () => {
+      const [bg, fg] = t.logoOnSecondary && t.secondary ? [t.secondary, t.brand] : [t.brand, t.onBrand]
+      expect(contrastRatio(fg, bg)).toBeGreaterThanOrEqual(4.5)
+    })
+  }
+
   it('tint/ton türetilmez: kanal kaydında yalnız brand/onBrand/secondary alanları', () => {
-    for (const t of Object.values(tones)) for (const k of Object.keys(t)) expect(['brand', 'onBrand', 'secondary']).toContain(k)
+    for (const t of Object.values(tones)) for (const k of Object.keys(t)) expect(['brand', 'onBrand', 'secondary', 'logoOnSecondary']).toContain(k)
   })
 
   it('Trendyol ve Hepsiburada bilinçli olarak aynı turuncu ailesinde (kullanıcı isteği)', () => {
@@ -69,7 +76,12 @@ describe('kanal marka renkleri — tek kaynaktan çözülür', () => {
       const scope = css.slice(css.indexOf(`.ek-ch-${code} {`), css.indexOf('}', css.indexOf(`.ek-ch-${code} {`)))
       expect(scope).toContain(`--ek-ch-brand: var(--ek-channel-${code}-brand);`)
       expect(scope).toContain(`--ek-ch-on-brand: var(--ek-channel-${code}-on-brand);`)
-      expect(scope).toContain(`--ek-ch-secondary: var(--ek-channel-${code}-${t.secondary ? 'secondary' : 'brand'});`)
+      const sec = `var(--ek-channel-${code}-${t.secondary ? 'secondary' : 'brand'})`
+      const inv = !!(t.secondary && t.logoOnSecondary)
+      expect(scope).toContain(`--ek-ch-secondary: ${sec};`)
+      expect(scope).toContain(`--ek-ch-logo-bg: ${inv ? sec : `var(--ek-channel-${code}-brand)`};`)
+      expect(scope).toContain(`--ek-ch-logo-fg: var(--ek-channel-${code}-${inv ? 'brand' : 'on-brand'});`)
+      expect(scope).toContain(`--ek-ch-logo-accent: ${sec};`)
       expect(channelCode(code.toUpperCase())).toBe(code)
       expect(channelClass(` ${code.toUpperCase()} `)).toBe(`ek-ch-${code}`)
       expect(channelColors(code)).toEqual({ brand: t.brand, onBrand: t.onBrand, secondary: t.secondary })

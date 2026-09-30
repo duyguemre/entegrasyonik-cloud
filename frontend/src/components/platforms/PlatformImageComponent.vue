@@ -136,12 +136,12 @@ watch(() => props.integrationCode, loadIntegrationData)
 
 .platform-avatar {
     margin-right: var(--ek-space-1);
-    background: var(--ek-ch-brand);
-    box-shadow: inset 0 0 0 1px var(--ek-channel-ring);
+    background: var(--ek-ch-logo-bg);
+    box-shadow: inset 0 0 0 1px var(--ek-channel-ring), inset 0 -3px 0 var(--ek-ch-logo-accent);
 }
 
 .platform-avatar__letter {
-    color: var(--ek-ch-on-brand);
+    color: var(--ek-ch-logo-fg);
     line-height: 1;
     text-transform: capitalize;
 }

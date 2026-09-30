@@ -193,19 +193,26 @@ function renderChannelLines(): string[] {
 
 /**
  * Kanal kapsam sınıfları: `.ek-ch-<kod>` öğeye `--ek-ch-brand`, `--ek-ch-on-brand`, `--ek-ch-secondary` (tanımsızsa
- * marka) verir. Bileşenler kanal rengini satır içi stil/`v-bind` OLMADAN, yalnız sınıf + `var(--ek-ch-*)` ile kullanır
+ * marka) ve logo zemini üçlüsünü `--ek-ch-logo-{bg,fg,accent}` verir (varsayılan: marka / onBrand / ikincil-yoksa-marka;
+ * `logoOnSecondary`: ikincil / marka / ikincil). Bileşenler kanal rengini satır içi stil/`v-bind` OLMADAN, yalnız sınıf + `var(--ek-ch-*)` ile kullanır
  * (`design/channels.ts`). Geri uyum takma adları (C1 öncesi tüketiciler; yeni kodda KULLANMA): `solid`/`border` →
  * marka, `subtle` → nötr zemin, `text` → varsayılan içerik rengi — hiçbiri marka tonu türetmez.
  */
 function renderChannelScopes(): string[] {
   return CHANNEL_SCOPE_CODES.map((code) => {
-    const tones = (channelPalette as Record<string, { secondary?: string }>)[code]
+    const tones = (channelPalette as Record<string, { secondary?: string; logoOnSecondary?: boolean }>)[code]
     const brand = `var(--ek-channel-${code}-brand)`
+    const onBrand = `var(--ek-channel-${code}-on-brand)`
+    const secondary = tones?.secondary ? `var(--ek-channel-${code}-secondary)` : brand
+    const inverse = !!(tones?.secondary && tones.logoOnSecondary)
     return [
       `.ek-ch-${code} {`,
       `  --ek-ch-brand: ${brand};`,
-      `  --ek-ch-on-brand: var(--ek-channel-${code}-on-brand);`,
-      `  --ek-ch-secondary: ${tones?.secondary ? `var(--ek-channel-${code}-secondary)` : brand};`,
+      `  --ek-ch-on-brand: ${onBrand};`,
+      `  --ek-ch-secondary: ${secondary};`,
+      `  --ek-ch-logo-bg: ${inverse ? secondary : brand};`,
+      `  --ek-ch-logo-fg: ${inverse ? brand : onBrand};`,
+      `  --ek-ch-logo-accent: ${secondary};`,
       `  --ek-ch-solid: ${brand};`,
       `  --ek-ch-border: ${brand};`,
       '  --ek-ch-subtle: var(--ek-color-neutral-subtle);',

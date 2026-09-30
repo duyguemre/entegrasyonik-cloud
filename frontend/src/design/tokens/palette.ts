@@ -82,7 +82,9 @@ export const statusDark = {
  * nokta, şerit, çip kenarı, logo zemini ya da dolgulu çip olarak doğrudan kullanılır. Dark temada da aynıdır.
  *   `brand`     — resmi birincil renk.
  *   `onBrand`   — marka zemininde METİN rengi: siyah/beyazdan ≥ 4.5:1 olanı (hesaplanmış; test korur).
- *   `secondary` — yalnız logo zemini aksanı (N11 siyahı, Pazarama pembesi); başka yüzeyde kullanılmaz.
+ *   `secondary` — yalnız logo zemininde (N11 siyahı, Pazarama pembesi); başka yüzeyde kullanılmaz.
+ *   `logoOnSecondary` — logo zemini ikincil renk, harf marka rengi (N11: resmi ikon siyah zemin + pembe). Yoksa
+ *                  logo zemini marka rengi, harf `onBrand`, ikincil renk (varsa) alt kenarda 3px şerit (Pazarama).
  * Trendyol ile Hepsiburada bilinçli olarak YAKIN turuncudur (kullanıcı isteği) — kanal adı her zaman yazılır,
  * renk tek başına ayırt edici değildir. Shopify/WooCommerce: düşük güven (simple-icons), yalnız UI formu var.
  * Listede olmayan kanal → nötr (`.ek-ch-neutral`).
@@ -90,13 +92,13 @@ export const statusDark = {
 export const channelPalette = {
   trendyol: { brand: '#FF6620', onBrand: '#000000' },
   hepsiburada: { brand: '#FF6000', onBrand: '#000000' },
-  n11: { brand: '#FF44EE', onBrand: '#000000', secondary: '#1C1C1E' },
+  n11: { brand: '#FF44EE', onBrand: '#000000', secondary: '#1C1C1E', logoOnSecondary: true },
   pazarama: { brand: '#0137F3', onBrand: '#FFFFFF', secondary: '#FF008B' },
   ideasoft: { brand: '#391EE0', onBrand: '#FFFFFF' },
   bizimhesap: { brand: '#20554E', onBrand: '#FFFFFF' },
   shopify: { brand: '#7AB55C', onBrand: '#000000' },
   woocommerce: { brand: '#873EFF', onBrand: '#FFFFFF' },
-} as const satisfies Record<string, { brand: string; onBrand: '#000000' | '#FFFFFF'; secondary?: string }>
+} as const satisfies Record<string, { brand: string; onBrand: '#000000' | '#FFFFFF'; secondary?: string; logoOnSecondary?: true }>
 
 export type ChannelCode = keyof typeof channelPalette
 

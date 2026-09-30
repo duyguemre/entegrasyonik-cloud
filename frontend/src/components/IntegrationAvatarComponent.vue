@@ -25,17 +25,18 @@ withDefaults(defineProps<{
 </script>
 
 <style scoped>
-/* C1: zemin = kanalın marka rengi (tek kaynak `channelClass` → `--ek-ch-brand`), metin onBrand; backend `color` alanı kullanılmaz. */
+/* C1: logo zemini = kanal token'ı (tek kaynak `channelClass` → `--ek-ch-logo-{bg,fg,accent}`); backend `color` alanı kullanılmaz. */
 .integration-avatar {
     border-radius: var(--ek-radius-none) !important;
     border: 0;
-    background: var(--ek-ch-brand);
-    color: var(--ek-ch-on-brand);
+    background: var(--ek-ch-logo-bg);
+    color: var(--ek-ch-logo-fg);
+    box-shadow: inset 0 -3px 0 var(--ek-ch-logo-accent);
 }
 
 .integration-avatar__title {
     user-select: none;
     letter-spacing: -0.4px !important;
-    color: var(--ek-ch-on-brand);
+    color: var(--ek-ch-logo-fg);
 }
 </style>

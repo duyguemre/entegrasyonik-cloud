@@ -375,7 +375,7 @@ araç `A5_REVIEW=1 A5_REVIEW_WIDTH=1440|800|390 A5_REVIEW_OUT=<klasör> npx play
 |---|---|---|---|
 | 1 | Hiyerarşi | `EkPageBar` | üst bar → sekme şeridi → **tek satır** (bölüm › H1 (i) · meta … eylemler) → filtre → içerik; büyük başlık+açıklama bloğu yok (liste ekranlarında ~60px dikey kazanç) |
 | 2 | Çipler | `EkStatusChip`, `EkActiveFilters`, `v-chip` (overrides), `--ek-app-chip-h-sm/md` (22/28) | tek çip dili: ton `subtle` zemin + 1px `*-border` + `*-emphasis` metin (AA), hap yarıçap, 14px ikon/6px nokta optik ortalı, hover/odak halkası |
-| 3 | Kanal renkleri | `palette.ts` `channelPalette` → `--ek-channel-<kod>-{solid,subtle,border,text}` + `.ek-ch-<kod>` kapsam sınıfları (`render.ts`), `design/channels.ts` | kanallar ayrışır (renk açısı ≥ 20°, test); kanal çipi (`EkChannelDot`), kanal tonlu avatar + alt şerit (`EkPlatformMark`), entegrasyon kartı sol şerit/seçim, liste satırı/kartı sol şerit (`EkDataGrid channelKey`), varyant kanal durumu; `integrationAccent` = `solid` (geri uyum) |
+| 3 | Kanal renkleri (**C1 ile değişti, bkz. §19**) | `palette.ts` `channelPalette` → `--ek-channel-<kod>-{solid,subtle,border,text}` + `.ek-ch-<kod>` kapsam sınıfları (`render.ts`), `design/channels.ts` | kanallar ayrışır (renk açısı ≥ 20°, test); kanal çipi (`EkChannelDot`), kanal tonlu avatar + alt şerit (`EkPlatformMark`), entegrasyon kartı sol şerit/seçim, liste satırı/kartı sol şerit (`EkDataGrid channelKey`), varyant kanal durumu; `integrationAccent` = `solid` (geri uyum) |
 | 4 | Etkin sekme | `EkWorkspaceTabs`, `tabstrip-bg` ink-200 / `tab-hover` ink-150, `shadow-tab-active` | klasör sekmesi: içerik zemini, çizgisiz tek parça geçiş, içbükey köşe; pasifler geri planda |
 | 5 | Dikey kaydırma | `EkWorkspaceTabs` | kap `overflow:hidden`, liste yalnız yatay + çubuk alanı 0; solma + ok; e2e: 3 viewport'ta dikey taşma/çubuk alanı 0 |
 | 6 | Sayfa başlığı | `EkPageBar` (+ `EkPageHeader`, `EkListScreen` delege eder) | açıklama breadcrumb satırındaki (i) ile açılan "Sayfa hakkında" panelinde: amaç · ipuçları · kısayollar · "Tüm kısayollar" (`ek:shortcut-help`); varsayılan kapalı, tercih ortak ve hatırlanır (`usePageAbout`, `ek.ui.v1.pageAbout`) |
@@ -555,3 +555,56 @@ bölümü; ortak ds bileşenlerine dokunulmadı, token değişikliği yok. Önce
 | Çok varyant | > 8: kompakt ızgara + "Tümünü gör" (iç kaydırma, yapışık başlık) |
 | Dar kap | < 600px kart (A6b) |
 | Mantık | `variants/variantListModel.ts` (saf, `tests/variant-list-model.test.ts`) |
+
+## 19. C1 — kanal marka renkleri tek kaynak (`cloud/fe-c1`)
+
+Kullanıcı: "Entegrasyonların kendi renklerini kullan — Pazarama daha mor/mavi, Hepsiburada Trendyol'a benzer turuncu; HER YERDE
+aynı renk." + "resmi renk, tint değil". Kaynak: `docs/cloud-contracts/CHANNEL_BRAND_COLORS.md` (kullanıcı onaylı ölçüm) — değerler
+AYNEN `src/design/tokens/palette.ts` `channelPalette`'e alındı; Aşama 5'in uydurma/kaydırılmış tonları (HB gül kırmızısı, N11 mor,
+Pazarama macenta, açık `subtle` zeminler, koyulaştırılmış `text`) KALDIRILDI.
+
+**Token tablosu** (`channel.<kod>.brand` / `.onBrand`; onBrand = siyah/beyazdan ≥ 4.5:1 olan, `tests/theme/channel-tokens.test.ts`):
+
+| Kanal | `brand` | `onBrand` | onBrand kontrastı (diğeri) | `secondary` (yalnız logo zemini) | Logo zemini |
+|---|---|---|---|---|---|
+| Trendyol | `#FF6620` | `#000000` | 7.17 (beyaz 2.93) | — | marka + siyah harf |
+| Hepsiburada | `#FF6000` | `#000000` | 6.93 (beyaz 3.03) | — | marka + siyah harf |
+| N11 | `#FF44EE` | `#000000` | 7.31 (beyaz 2.87) | `#1C1C1E` | ikincil siyah + pembe harf (5.93) — resmi ikon gibi |
+| Pazarama | `#0137F3` | `#FFFFFF` | 7.39 (siyah 2.84) | `#FF008B` | marka + beyaz harf + 3px pembe alt şerit |
+| Ideasoft | `#391EE0` | `#FFFFFF` | 8.62 (siyah 2.44) | — | marka + beyaz harf |
+| Bizimhesap | `#20554E` | `#FFFFFF` | 8.50 (siyah 2.47) | — | marka + beyaz harf |
+| Shopify* | `#7AB55C` | `#000000` | 8.59 (beyaz 2.44) | — | marka + siyah harf |
+| WooCommerce* | `#873EFF` | `#FFFFFF` | 5.04 (siyah 4.16) | — | marka + beyaz harf |
+| diğer / bilinmeyen | `neutral` rolü | `neutral-contrast` | — | — | nötr açık zemin + varsayılan harf |
+
+\* belgede düşük güven (simple-icons), entegrasyon yok — yalnız UI formu. Ray'da canlı olmayan kanal yine nötr ("Yakında").
+
+**Üretilen CSS** (`npm run tokens`, yalnız `:root` → dark'ta marka rengi aynı): `--ek-channel-<kod>-brand|on-brand|secondary`,
+`--ek-channel-neutral-*`, `--ek-channel-ring` (= `color-mix(content-default 20%, transparent)`: marka rengini DEĞİŞTİRMEDEN nokta /
+dolgu / logo zeminini iki temada zeminden ayıran nötr kıl halka). `.ek-ch-<kod>` → `--ek-ch-brand`, `--ek-ch-on-brand`,
+`--ek-ch-secondary`, `--ek-ch-logo-{bg,fg,accent}`; geri uyum adları (yeni kodda KULLANMA, ratchet'li): `solid`/`border` = marka,
+`subtle` = `neutral-subtle`, `text` = `content-default` — hiçbiri marka tonu türetmez.
+
+**Görünüm kuralı (tint yok):** nokta (8px, halka), satır/kart sol şeridi (3px), çip = nötr yüzey + nötr kenar + marka noktası +
+varsayılan metin (`EkChannelDot` varsayılanı; yoğun listeler), dolgulu çip = marka zemin + onBrand (`variant="filled"`, vurgu),
+logo zemini = `EkPlatformMark` / `PlatformImageComponent` / `IntegrationAvatarComponent`, seçili platform kartı = marka kenarı +
+halka. Kanal adı her zaman yazılır (TY/HB bilinçli olarak aynı turuncu ailesi).
+
+**Envanter (tek kaynağa bağlananlar):** `EkChannelDot`, `EkPlatformMark`, `EkSelect` (seçim çipi + menü noktası),
+`IntegrationPlatformRail`, `PlatformImageComponent` ve `IntegrationAvatarComponent` (backend kaydının `color` alanıyla + satır içi
+stille boyuyordu; `color-mix` %8 tint vardı; ad marka renginde metindi → `channelClass`), `ProductBatchProcessComponent` (satır içi
+`integration.color` kaldırıldı), `VariantBulkEditor` (`integrationAccent` kopya direktifi → `channelClass`), `stores/einvoice.ts`
+(uydurma `info` mavisi → nötr), `stores/ecommerce.ts` (Shopify/WooCommerce belge değeri). Değişmeden tek kaynaktan beslenenler:
+`EkDataGrid` satır şeridi, `EkPageBar` kayıt noktası, `EkRecordSummary`, varyant listesi/ipucu (`--ek-ch-solid|text|subtle` takma adları).
+
+**Bekçiler:** `tests/theme/channel-tokens.test.ts` (sözleşme değerleri aynen, onBrand ≥ 4.5 ve iki seçeneğin iyisi, logo harfi ≥ 4.5,
+her kod CSS + sınıf + `channelColors` + `integrationAccent` + ad aynı kaynaktan, dark'ta değişmez, bilinmeyen → nötr),
+`tests/theme/channel-single-source.test.ts` (statik: `src/` içinde token dizini dışında ham kanal hex'i — bugünkü + C1 öncesi —
+yok; kanal-anahtarlı renk eşlemesi yok; `integration|platform.color` ile boyama yok; `integrationAccent` yalnız mağaza kayıtlarında;
+eski `--ek-channel-*-solid|subtle|border|text` yok; takma ad kullanımı azalan ratchet). Stil ratchet'i 20 → 16 (satır içi stil).
+**Görseller:** `docs/c1-review/{before,after}/` — `urun-listesi`, `siparis-listesi`, `entegrasyonlar` × light/dark (1440 +
+`-yakin`); araç `C1_REVIEW=1 C1_REVIEW_OUT=<klasör> [C1_REVIEW_DARK=1] PW_CHROMIUM=/opt/pw-browsers/chromium npx playwright test
+e2e/specs/c1-review.spec.ts --project=chromium-desktop` (uygulamada tema anahtarı yok; spec Vuetify temasını sayfa içinden çevirir).
+**Bekleyen (yerel):** `onBrand` sütununun `docs/cloud-contracts/CHANNEL_BRAND_COLORS.md`'ye işlenmesi (bulut oturumu `docs/`
+dışına yazamaz) ve kanal çipi/noktası içeren görsel tabanların Windows'ta bilinçli yeniden tabanlanması.
+

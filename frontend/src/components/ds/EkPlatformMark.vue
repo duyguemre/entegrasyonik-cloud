@@ -7,8 +7,8 @@
   "bu ekranların İÇERİĞİNE dokunma" kısıtı).
 
   Varsayılan: MONOGRAM rozeti (24/32px yuvarlak kare) + platform adı (sm 500). C1: logo zemini = kanalın RESMİ
-  marka rengi (tint yok), harf `onBrand` (siyah/beyaz, ≥ 4.5:1); ikincil marka rengi olan kanalda (N11 siyahı,
-  Pazarama pembesi) alt kenarda 3px ikincil şerit — ikincil renk YALNIZ burada kullanılır. Nötr kıl halka
+  marka rengi (tint yok), harf `onBrand` (siyah/beyaz, ≥ 4.5:1) — `--ek-ch-logo-{bg,fg,accent}`. İkincil renk YALNIZ
+  burada: N11 resmi ikonu gibi siyah zemin + pembe harf; Pazarama mavi zemin + alt kenarda 3px pembe şerit. Nötr kıl halka
   (`--ek-channel-ring`) koyu marka renklerini dark zeminden ayırır. Renkler `.ek-ch-<kod>` kapsamından
   (`design/channels.ts`; tek kaynak `palette.ts` `channelPalette`). Veri eksikliğinde / tanımsız kanalda
   NÖTR monogram (nötr açık zemin, varsayılan metin) gösterilir — asla soluk/boş kutu YOK. Resmî logo görseli
@@ -78,11 +78,11 @@ const initial = computed(() => props.name?.trim().charAt(0).toUpperCase() || '?'
   font-weight: var(--ek-font-weight-bold);
 }
 
-/* Bilinen kanal: logo zemini marka rengi, harf onBrand; ikincil şerit (yoksa marka rengi → görünmez). */
+/* Bilinen kanal: logo zemini + harf token'dan; alt şerit ikincil renk (yoksa zeminle aynı → görünmez). */
 .ek-platform-mark.is-known .ek-platform-mark__badge {
-  background: var(--ek-ch-brand);
-  color: var(--ek-ch-on-brand);
-  box-shadow: inset 0 0 0 1px var(--ek-channel-ring), inset 0 -3px 0 var(--ek-ch-secondary);
+  background: var(--ek-ch-logo-bg);
+  color: var(--ek-ch-logo-fg);
+  box-shadow: inset 0 0 0 1px var(--ek-channel-ring), inset 0 -3px 0 var(--ek-ch-logo-accent);
 }
 
 .ek-platform-mark__badge--sm {

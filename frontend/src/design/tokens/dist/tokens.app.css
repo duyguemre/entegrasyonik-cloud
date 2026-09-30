@@ -290,6 +290,9 @@
   --ek-ch-brand: var(--ek-channel-trendyol-brand);
   --ek-ch-on-brand: var(--ek-channel-trendyol-on-brand);
   --ek-ch-secondary: var(--ek-channel-trendyol-brand);
+  --ek-ch-logo-bg: var(--ek-channel-trendyol-brand);
+  --ek-ch-logo-fg: var(--ek-channel-trendyol-on-brand);
+  --ek-ch-logo-accent: var(--ek-channel-trendyol-brand);
   --ek-ch-solid: var(--ek-channel-trendyol-brand);
   --ek-ch-border: var(--ek-channel-trendyol-brand);
   --ek-ch-subtle: var(--ek-color-neutral-subtle);
@@ -300,6 +303,9 @@
   --ek-ch-brand: var(--ek-channel-hepsiburada-brand);
   --ek-ch-on-brand: var(--ek-channel-hepsiburada-on-brand);
   --ek-ch-secondary: var(--ek-channel-hepsiburada-brand);
+  --ek-ch-logo-bg: var(--ek-channel-hepsiburada-brand);
+  --ek-ch-logo-fg: var(--ek-channel-hepsiburada-on-brand);
+  --ek-ch-logo-accent: var(--ek-channel-hepsiburada-brand);
   --ek-ch-solid: var(--ek-channel-hepsiburada-brand);
   --ek-ch-border: var(--ek-channel-hepsiburada-brand);
   --ek-ch-subtle: var(--ek-color-neutral-subtle);
@@ -310,6 +316,9 @@
   --ek-ch-brand: var(--ek-channel-n11-brand);
   --ek-ch-on-brand: var(--ek-channel-n11-on-brand);
   --ek-ch-secondary: var(--ek-channel-n11-secondary);
+  --ek-ch-logo-bg: var(--ek-channel-n11-secondary);
+  --ek-ch-logo-fg: var(--ek-channel-n11-brand);
+  --ek-ch-logo-accent: var(--ek-channel-n11-secondary);
   --ek-ch-solid: var(--ek-channel-n11-brand);
   --ek-ch-border: var(--ek-channel-n11-brand);
   --ek-ch-subtle: var(--ek-color-neutral-subtle);
@@ -320,6 +329,9 @@
   --ek-ch-brand: var(--ek-channel-pazarama-brand);
   --ek-ch-on-brand: var(--ek-channel-pazarama-on-brand);
   --ek-ch-secondary: var(--ek-channel-pazarama-secondary);
+  --ek-ch-logo-bg: var(--ek-channel-pazarama-brand);
+  --ek-ch-logo-fg: var(--ek-channel-pazarama-on-brand);
+  --ek-ch-logo-accent: var(--ek-channel-pazarama-secondary);
   --ek-ch-solid: var(--ek-channel-pazarama-brand);
   --ek-ch-border: var(--ek-channel-pazarama-brand);
   --ek-ch-subtle: var(--ek-color-neutral-subtle);
@@ -330,6 +342,9 @@
   --ek-ch-brand: var(--ek-channel-ideasoft-brand);
   --ek-ch-on-brand: var(--ek-channel-ideasoft-on-brand);
   --ek-ch-secondary: var(--ek-channel-ideasoft-brand);
+  --ek-ch-logo-bg: var(--ek-channel-ideasoft-brand);
+  --ek-ch-logo-fg: var(--ek-channel-ideasoft-on-brand);
+  --ek-ch-logo-accent: var(--ek-channel-ideasoft-brand);
   --ek-ch-solid: var(--ek-channel-ideasoft-brand);
   --ek-ch-border: var(--ek-channel-ideasoft-brand);
   --ek-ch-subtle: var(--ek-color-neutral-subtle);
@@ -340,6 +355,9 @@
   --ek-ch-brand: var(--ek-channel-bizimhesap-brand);
   --ek-ch-on-brand: var(--ek-channel-bizimhesap-on-brand);
   --ek-ch-secondary: var(--ek-channel-bizimhesap-brand);
+  --ek-ch-logo-bg: var(--ek-channel-bizimhesap-brand);
+  --ek-ch-logo-fg: var(--ek-channel-bizimhesap-on-brand);
+  --ek-ch-logo-accent: var(--ek-channel-bizimhesap-brand);
   --ek-ch-solid: var(--ek-channel-bizimhesap-brand);
   --ek-ch-border: var(--ek-channel-bizimhesap-brand);
   --ek-ch-subtle: var(--ek-color-neutral-subtle);
@@ -350,6 +368,9 @@
   --ek-ch-brand: var(--ek-channel-shopify-brand);
   --ek-ch-on-brand: var(--ek-channel-shopify-on-brand);
   --ek-ch-secondary: var(--ek-channel-shopify-brand);
+  --ek-ch-logo-bg: var(--ek-channel-shopify-brand);
+  --ek-ch-logo-fg: var(--ek-channel-shopify-on-brand);
+  --ek-ch-logo-accent: var(--ek-channel-shopify-brand);
   --ek-ch-solid: var(--ek-channel-shopify-brand);
   --ek-ch-border: var(--ek-channel-shopify-brand);
   --ek-ch-subtle: var(--ek-color-neutral-subtle);
@@ -360,6 +381,9 @@
   --ek-ch-brand: var(--ek-channel-woocommerce-brand);
   --ek-ch-on-brand: var(--ek-channel-woocommerce-on-brand);
   --ek-ch-secondary: var(--ek-channel-woocommerce-brand);
+  --ek-ch-logo-bg: var(--ek-channel-woocommerce-brand);
+  --ek-ch-logo-fg: var(--ek-channel-woocommerce-on-brand);
+  --ek-ch-logo-accent: var(--ek-channel-woocommerce-brand);
   --ek-ch-solid: var(--ek-channel-woocommerce-brand);
   --ek-ch-border: var(--ek-channel-woocommerce-brand);
   --ek-ch-subtle: var(--ek-color-neutral-subtle);
@@ -370,6 +394,9 @@
   --ek-ch-brand: var(--ek-channel-neutral-brand);
   --ek-ch-on-brand: var(--ek-channel-neutral-on-brand);
   --ek-ch-secondary: var(--ek-channel-neutral-brand);
+  --ek-ch-logo-bg: var(--ek-channel-neutral-brand);
+  --ek-ch-logo-fg: var(--ek-channel-neutral-on-brand);
+  --ek-ch-logo-accent: var(--ek-channel-neutral-brand);
   --ek-ch-solid: var(--ek-channel-neutral-brand);
   --ek-ch-border: var(--ek-channel-neutral-brand);
   --ek-ch-subtle: var(--ek-color-neutral-subtle);
