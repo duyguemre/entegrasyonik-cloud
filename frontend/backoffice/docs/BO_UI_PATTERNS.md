@@ -28,7 +28,8 @@ Bölüm → grup → ekran:
 | Gözlem | Loglar ve sorunlar | `logs` `/loglar` | taslak |
 | | Denetim | `audit` `/denetim` | hazır |
 | Yönetişim | Yöneticiler | `admins` `/yoneticiler` | yakında |
-| | Sistem ayarları | `flags` `/sistem/bayraklar` · `notifications` `/sistem/duyurular` | yakında |
+| | Sistem ayarları | `flags` `/sistem/bayraklar` | yakında |
+| | Bildirimler ve duyurular (bo-next) | `announcements` `/sistem/duyurular` (yol korundu) · `deliveries` `/bildirimler/teslimler` · `tenant-notifications` `/bildirimler/musteri-gecmisi` · `notification-catalog` `/bildirimler/katalog` · `alerts` `/bildirimler/uyarilar` | hazır |
 
 **Planlı ekranı hazır yapmak (bo-p2):**
 ```ts
@@ -189,3 +190,26 @@ Bu ek bo-p1 desenlerinin ÜZERİNE kuruludur; çelişki yoksa yukarıdaki kurall
 **Paket ve kabuk dokunuşları (ekleyici):** `@entegrasyonik/ui` → `EkReasonDialog` (sunumsal gerekçe diyaloğu; backoffice'te artık `DangerActionDialog` kullanılır, paket bileşeni diğer yüzeyler için duruyor). `DangerActionDialog` → varsayılan slot + `blocked` prop'u (ek alan geçersizken onay kapalı). Davranış değişmedi.
 
 **Sahte API test kolları** (tarayıcı konsolu / e2e): `__boMock.setDegraded(true)` (Redis düşük → kuyruk/dayanıklılık/Redis 503; B7a `available:false`), `setLiveReadonly(true)` (retryJob/cancelSubscription/changePlan 423), `setFeatureFlags(true)` (örnek bayraklar), `failOps('<Servis>/')` (500), `expireReauth()` (sonraki hassas işlemde step-up). Sahte durum sayfa yenilemesinde sıfırlanır: e2e'de kol, SPA içi gezinmeden önce çekilir.
+
+---
+
+## Ek — bo-next (bildirimler, K40/K41, sohbet) yapı taşları
+Bu ek bo-p1 + bo-p2 desenlerinin ÜZERİNE kuruludur.
+
+**Bilgi mimarisi:** Yönetişim bölümüne `notifications` grubu ("Bildirimler ve duyurular") açıldı; `notifications` planlı
+girdisi `announcements` anahtarıyla aynı yolda (`/sistem/duyurular`) hazır oldu. "Sistem ayarları" tek ekranlı kaldığı için
+menüde yaprak görünür. Duyuru alt sayfaları `DETAIL_ROUTES`: `/sistem/duyurular/yeni`, `/:id`, `/:id/duzenle`.
+
+| Yapı taşı | Yer | Kural |
+|---|---|---|
+| `useGuardedAction` bağlamı | tüm yazmalar | `open(ctx)` bağlamı **null olamaz** (`confirm` null bağlamı yok sayar). Bağlamsız işlemde anlamlı bir etiket verin: `open('self')`, `open('draft')`. |
+| Sahte adaptör | `src/api/mock/adapter.ts` | Yanıt ağdaki gibi **JSON kopyası**dır; ekran sahte sunucunun nesnesini referansla paylaşmaz. Yazma yanıtını ekrana koyarken de yeni nesne verin (aynı referans `computed`'ı tetiklemez). |
+| `EmailFrame` | `views/notifications/EmailFrame.vue` | Sunucu e-posta HTML'i YALNIZ `<iframe sandbox="" srcdoc>` içinde (betik/form/üst gezinme yok), asla `v-html`. İki temada açık zeminde çizilir. |
+| `AnnouncementPreview` | `views/notifications/` | Bant / uygulama içi / e-posta sekmeleri + TR/EN; kanal kapalıysa not düşer. Düzenleyicide taslak 400 ms gecikmeli `previewAnnouncement {draft}` ile canlı. |
+| `useCountdown` | `src/composables/useCountdown.ts` | Geri sayım daima SUNUCU bitiş anından (K41 destek oturumu 30 dk, uzatılamaz); istemci süre eklemez. Bitiş türetilmişse (başlangıç + 30 dk) `~` ile "yaklaşık" gösterilir. |
+| Hata `details` | `AdminApiError.details`, `utils/errors.ts codeAction` | Koda özgü sayısal ayrıntı eyleme yansır (ör. `TRIAL_EXTENSION_LIMIT` → "En fazla N gün daha uzatabilirsiniz"). Bilinmeyen kodda tür eylemi. |
+| Yoklama | `AlertsView` | SSE yoksa 30 sn yoklama; sekme gizliyken ve diyalog açıkken durur. |
+
+**Sahte API test kolları (ek):** `__boMock.setNotifyEmail(false)` → `sendTestEmail` 503 `NOTIFY_EMAIL_UNAVAILABLE`.
+`setLiveReadonly(true)` artık `scheduleAnnouncement`, `retryDelivery`, `sendTestEmail` ve yalnız SAĞLAYICI yolundaki
+`cancelSubscription`'ı da 423 yapar (kartsız abonelikte iptal yereldir, K40).

@@ -6,7 +6,7 @@
       </template>
       <template #actions>
         <EkButton tone="secondary" icon="mdi-close" @click="router.push(isEdit ? `/sistem/duyurular/${id}` : '/sistem/duyurular')">Vazgeç</EkButton>
-        <EkButton tone="primary" icon="mdi-content-save-outline" :disabled="!!blocking || !ready" data-testid="save" @click="save.open(null)">Taslağı kaydet</EkButton>
+        <EkButton tone="primary" icon="mdi-content-save-outline" :disabled="!!blocking || !ready" data-testid="save" @click="save.open('draft')">Taslağı kaydet</EkButton>
       </template>
     </BoPageHeader>
 
@@ -20,7 +20,7 @@
     <StateBlock v-else-if="loadState !== 'ready'" :phase="loadState" :error="loadError" skeleton="form" :rows="6" @retry="loadExisting" />
 
     <div v-else class="bo-grid-2 bo-anne">
-      <form class="bo-anne__form" novalidate aria-label="Duyuru formu" @submit.prevent="!blocking && save.open(null)">
+      <form class="bo-anne__form" novalidate aria-label="Duyuru formu" @submit.prevent="!blocking && save.open('draft')">
         <EkCard title="Tür ve önem" icon="mdi-shape-outline">
           <div class="bo-anne__kinds" role="radiogroup" aria-label="Duyuru türü">
             <button
@@ -345,7 +345,7 @@ onBeforeUnmount(() => clearTimeout(timer))
 
 // ---------------------------------------------------------------- kayıt
 const save = useGuardedAction(
-  async (_ctx: null, reason) => {
+  async (_ctx: 'draft', reason) => {
     const d = draft.value
     if (!d) throw new Error('invalid')
     return id

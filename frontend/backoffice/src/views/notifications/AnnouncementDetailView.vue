@@ -186,7 +186,8 @@ const schedule = useGuardedAction(
   (r) => {
     const s = r.announcement.status
     notifyAudited(s === 'active' ? 'Duyuru yayına alındı.' : `Duyuru ${formatDateTime(r.announcement.startsAt)} için zamanlandı.`, () => router.push({ path: '/denetim', query: { event: 'backoffice.write' } }))
-    res.data.value = { announcement: r.announcement }
+    // Yanıt nesnesi yeni kopya olarak yazılır (aynı referans hesaplanan değeri tetiklemez).
+    res.data.value = { announcement: { ...r.announcement } }
     pv.load()
   },
 )
@@ -194,7 +195,7 @@ const cancel = useGuardedAction(
   (aid: string, reason) => api.call('BackofficeNotificationService/cancelAnnouncement', { id: aid, reason }),
   (r) => {
     notifyAudited('Duyuru iptal edildi.', () => router.push({ path: '/denetim', query: { event: 'backoffice.write' } }))
-    res.data.value = { announcement: r.announcement }
+    res.data.value = { announcement: { ...r.announcement } }
   },
 )
 

@@ -18,7 +18,9 @@ export function createMockAdapter({ server, latency = [0, 0] }: MockAdapterOptio
     const method = (config.method ?? 'get').toUpperCase() === 'POST' ? 'POST' : 'GET'
     const body = typeof config.data === 'string' && config.data ? JSON.parse(config.data) : config.data
     const res = server.handle(method, `${config.baseURL ?? ''}${config.url ?? ''}`, body)
-    const response = { data: res.data, status: res.status, statusText: String(res.status), headers: new AxiosHeaders(res.headers), config, request: {} }
+    // Ağ gibi: yanıt JSON kopyasıdır (ekran sahte sunucunun nesnelerini referansla paylaşmaz, değiştiremez).
+    const data = res.data === undefined ? undefined : JSON.parse(JSON.stringify(res.data))
+    const response = { data, status: res.status, statusText: String(res.status), headers: new AxiosHeaders(res.headers), config, request: {} }
     const valid = config.validateStatus ? config.validateStatus(res.status) : res.status >= 200 && res.status < 300
     if (valid) return response
     throw new AxiosError(`Request failed with status code ${res.status}`, res.status >= 500 ? AxiosError.ERR_BAD_RESPONSE : AxiosError.ERR_BAD_REQUEST, config, {}, response)

@@ -2,7 +2,7 @@
   <div class="bo-page">
     <BoPageHeader :updated-at="cat.loadedAt.value ?? undefined">
       <template #actions>
-        <EkButton tone="secondary" icon="mdi-email-check-outline" data-testid="test-email" @click="testMail.open(null)">Test e-postası gönder</EkButton>
+        <EkButton tone="secondary" icon="mdi-email-check-outline" data-testid="test-email" @click="testMail.open('self')">Test e-postası gönder</EkButton>
         <EkRefreshButton :loading="cat.refreshing.value" @refresh="cat.load()" />
       </template>
     </BoPageHeader>
@@ -209,7 +209,7 @@ watch([selected, channel, locale, params], () => {
 onBeforeUnmount(() => clearTimeout(timer))
 
 const testMail = useGuardedAction(
-  (_c: null, reason) => api.call('BackofficeNotificationService/sendTestEmail', { reason }),
+  (_c: 'self', reason) => api.call('BackofficeNotificationService/sendTestEmail', { reason }),
   () => notifyAudited('Test e-postası kendi adresinize gönderildi. Gelen kutunuzu kontrol edin.', () => router.push({ path: '/denetim', query: { event: 'backoffice.write' } })),
 )
 
