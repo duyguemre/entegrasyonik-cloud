@@ -113,7 +113,7 @@ const TECHNICAL_TERMS = ['model context protocol', 'mcp', 'protokol', 'acik stan
 const DATE_WORDS = ['ocak', 'subat', 'mart', 'nisan', 'mayis', 'haziran', 'temmuz', 'agustos', 'eylul', 'ekim', 'kasim', 'aralik', 'ceyrek', 'bu yil', 'gelecek yil', 'yil sonu', 'q1', 'q2', 'q3', 'q4']
 const CUSTOMER_CLAIMS = ['musterilerimiz', 'musterimiz', 'kullanicilarimiz', 'referans', 'bekleme listesi', 'firma kullan', 'isletme kullan', 'basari hikaye']
 const HYPE = ['her seyi', 'her sey', 'sihir', 'kendi kendine', 'insan mudahalesi olmadan', 'otomatik pilot', 'devrim', 'zahmetsiz', 'dusunmenize gerek']
-/** K46 madde 7: fiyat/paket vaadi yazılmaz (dahil mi ekstra mı kararı araştırmada). */
+/** K46 madde 7: Otopilot yüzeylerinde fiyat/paket dili yok. S25 (K46 fiyat kararı): plan dahiliyeti YALNIZCA /fiyatlandirma'da anlatılır (src/data/pricing.ts, tests/nav-menu.test.ts). */
 const PRICING_WORDS = ['ucret', 'fiyatlandirma', 'paket', 'plan dahil', 'ek ucret', 'bedava', 'ucretsiz']
 
 // ------------------------------------------------------------------------------------------ içerik kümeleri
