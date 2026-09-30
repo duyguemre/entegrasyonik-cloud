@@ -57,9 +57,9 @@ withDefaults(
 <style scoped>
 .ek-status-chip {
   display: inline-flex;
+  flex: none;
   align-items: center;
   gap: 5px;
-  max-width: 100%;
   height: var(--ek-app-chip-h-sm);
   padding: 0 var(--ek-space-2);
   border: 1px solid transparent;
@@ -69,11 +69,6 @@ withDefaults(
   line-height: 1;
   white-space: nowrap;
   vertical-align: middle;
-}
-
-.ek-status-chip__label {
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .ek-status-chip__dot {
