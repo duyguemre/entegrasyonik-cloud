@@ -87,31 +87,52 @@
     </div>
 
     <EkCollapse :id="panelId" :open="about.open.value" role="region" :aria-label="`${title} sayfası hakkında`">
-      <div class="ek-page-bar__about">
-        <section class="ek-page-bar__block">
-          <h2 class="ek-page-bar__label">Bu sayfa</h2>
-          <p class="ek-page-bar__text">{{ purpose || `${title} ekranı.` }}</p>
-          <button v-if="help?.article" type="button" class="ek-page-bar__all ek-page-bar__read" data-page-help-read @click="nav.openHelp(help.article)">
-            Yardım merkezinde oku
-            <v-icon icon="mdi-arrow-right" aria-hidden="true" />
+      <!-- FR2-HELP madde 16 (fe-r2a): rehber kartı — başlık (ikon + "<Sayfa> hakkında" + kapat), üç sütun: amaç (okunur
+           gövde metni + "Yardım merkezinde oku →"), numaralı ipuçları, kısayollar (tuş satırları). Nötr yüzey + ince
+           aksiyon tonlu üst şerit; içerikle yarışmaz. Esc ya da × kapatır (tercih ortak, `usePageAbout`). -->
+      <div class="ek-page-bar__about" @keydown.esc.stop="closeAbout">
+        <header class="ek-about__head">
+          <span class="ek-about__glyph" aria-hidden="true"><v-icon icon="mdi-lightbulb-on-outline" /></span>
+          <div class="ek-about__heading">
+            <p class="ek-about__eyebrow">Sayfa rehberi</p>
+            <h2 class="ek-about__title">{{ title }} hakkında</h2>
+          </div>
+          <button type="button" class="ek-about__close" aria-label="Sayfa hakkında bilgiyi kapat" @click="closeAbout">
+            <v-icon icon="mdi-close" aria-hidden="true" />
           </button>
-        </section>
-        <section v-if="tipList?.length" class="ek-page-bar__block">
-          <h2 class="ek-page-bar__label">İpuçları</h2>
-          <ul class="ek-page-bar__tips">
-            <li v-for="tip in tipList" :key="tip">{{ tip }}</li>
-          </ul>
-        </section>
-        <section class="ek-page-bar__block ek-page-bar__block--keys">
-          <h2 class="ek-page-bar__label">Kısayollar</h2>
-          <dl class="ek-page-bar__keys">
-            <div v-for="k in keys" :key="k.id" class="ek-page-bar__key">
-              <dt>{{ k.label }}</dt>
-              <dd><EkKbd :keys="[...k.keys]" /></dd>
-            </div>
-          </dl>
-          <button type="button" class="ek-page-bar__all" @click="openShortcutHelp">Tüm kısayollar</button>
-        </section>
+        </header>
+        <div class="ek-about__grid">
+          <section class="ek-page-bar__block ek-page-bar__block--purpose">
+            <h3 class="ek-page-bar__label">Bu sayfa</h3>
+            <p class="ek-page-bar__text">{{ purpose || `${title} ekranı.` }}</p>
+            <button v-if="help?.article" type="button" class="ek-link ek-page-bar__read" data-page-help-read @click="nav.openHelp(help.article)">
+              Yardım merkezinde oku
+              <v-icon class="ek-link__arrow" icon="mdi-arrow-right" aria-hidden="true" />
+            </button>
+          </section>
+          <section v-if="tipList?.length" class="ek-page-bar__block ek-page-bar__block--tips">
+            <h3 class="ek-page-bar__label">İpuçları</h3>
+            <ol class="ek-page-bar__tips">
+              <li v-for="(tip, i) in tipList" :key="tip">
+                <span class="ek-page-bar__tip-n ek-num" aria-hidden="true">{{ i + 1 }}</span>
+                <span>{{ tip }}</span>
+              </li>
+            </ol>
+          </section>
+          <section class="ek-page-bar__block ek-page-bar__block--keys">
+            <h3 class="ek-page-bar__label">Kısayollar</h3>
+            <dl class="ek-page-bar__keys">
+              <div v-for="k in keys" :key="k.id" class="ek-page-bar__key">
+                <dt>{{ k.label }}</dt>
+                <dd><EkKbd :keys="[...k.keys]" /></dd>
+              </div>
+            </dl>
+            <button type="button" class="ek-link ek-link--sm ek-page-bar__all" @click="openShortcutHelp">
+              Tüm kısayollar
+              <v-icon class="ek-link__arrow" icon="mdi-arrow-right" aria-hidden="true" />
+            </button>
+          </section>
+        </div>
       </div>
     </EkCollapse>
   </div>
@@ -187,6 +208,10 @@ const keys = computed(() => {
 
 const about = usePageAbout()
 const panelId = `ek-page-about-${useId()}`
+
+function closeAbout() {
+  about.setOpen(false)
+}
 
 function openShortcutHelp() {
   window.dispatchEvent(new CustomEvent('ek:shortcut-help'))
@@ -293,7 +318,10 @@ async function copyRecord() {
   min-width: 0;
 }
 
-/* ---- A7 → B4 breadcrumb: [kök çip] › [ara çip] › H1 — nötr, ince kenarlı küçük çipler; ayraç sade chevron ----
+/* ---- FR2-SHELL madde 1 (fe-r2a): çip/kenarlık KALKTI ("amatör" geri bildirimi). Yol artık sakin bir metin izi:
+   [modül ikonu karosu] Bölüm  ›  Ara ekran  ›  H1 — kök ve ara halkalar `content-muted` metin (ara halkalar sessiz
+   bağlantı, hover'da koyulaşıp alt çizgi dolar), ayraç `border-strong` ince chevron, H1 tek güçlü nokta.
+   Önceki (A7 → B4) not korunur: ---- [kök çip] › [ara çip] › H1 — nötr, ince kenarlı küçük çipler; ayraç sade chevron ----
    Çip = 28px (`chip-h-md`, etkileşimli), `radius-chip`, 1px `border-default`, çok hafif zemin (`surface-muted`), metin
    `content-muted`; bağlantı çipinde hover → zemin `surface` + kenarlık `border-strong` + metin `content-strong`.
    Kök (bölüm) aynı çip ama statik (tıklanmaz — Karar 2.3), modül ikonu çipin içinde nötr tonda. Vurgu rengi YOK:
@@ -361,12 +389,12 @@ async function copyRecord() {
 .ek-crumbs__chip {
   display: inline-flex;
   align-items: center;
-  gap: var(--ek-space-1);
+  gap: 6px;
   height: var(--ek-app-chip-h-md);
-  padding: 0 var(--ek-space-3);
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-chip);
-  background: var(--ek-color-surface-muted);
+  padding: 0 var(--ek-space-1);
+  border: 0;
+  border-radius: var(--ek-radius-sm);
+  background: transparent;
   color: var(--ek-color-content-muted);
   font: inherit;
   white-space: nowrap;
@@ -376,7 +404,19 @@ async function copyRecord() {
 .ek-crumbs__chip--static {
   min-width: 0;
   max-width: 100%;
-  padding-left: var(--ek-space-2);
+  padding-left: 0;
+}
+
+/* Kök: modül ikonu küçük tonlu karoda (menüdeki ikonla aynı glif) — konumu tek bakışta söyler, çip/kenarlık yok. */
+.ek-crumbs__chip--static .ek-crumbs__chip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--ek-radius-sm);
+  background: var(--ek-color-surface-sunken);
+  color: var(--ek-color-content-default);
 }
 
 /* Kök çip de kısalabilir (en son ara öğelerden sonra): dar satırda metin üç noktaya, en kötü ikon çipine iner —
@@ -399,8 +439,8 @@ async function copyRecord() {
 .ek-crumbs__sep {
   display: inline-flex;
   align-items: center;
-  margin: 0 var(--ek-space-1);
-  color: var(--ek-color-content-subtle);
+  margin: 0 2px;
+  color: var(--ek-color-border-strong);
   user-select: none;
 }
 
@@ -427,13 +467,34 @@ async function copyRecord() {
   color: var(--ek-color-content-default);
 }
 
-.ek-crumbs__link:hover,
+/* Ara bağlantı: sessiz metin bağlantısı (FR2 madde 6 dili) — hover'da koyulaşır, 1px alt çizgi soldan dolar. */
+.ek-crumbs__link {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: var(--ek-space-1) calc(100% - 5px);
+  background-size: 0% 1px;
+  transition:
+    background-size var(--ek-duration-base) var(--ek-easing-standard),
+    color var(--ek-duration-fast) var(--ek-easing-standard);
+}
+
+.ek-crumbs__link:hover {
+  color: var(--ek-color-content-strong);
+  background-size: calc(100% - 2 * var(--ek-space-1)) 1px;
+}
+
 .ek-crumbs__more:hover,
 .ek-crumbs__back:hover,
 .ek-crumbs__more[aria-expanded='true'] {
-  border-color: var(--ek-color-border-strong);
-  background: var(--ek-color-surface);
+  background: var(--ek-color-surface-sunken);
   color: var(--ek-color-content-strong);
+}
+
+.ek-crumbs__link:focus-visible,
+.ek-crumbs__more:focus-visible,
+.ek-crumbs__back:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
 }
 
 /* SON öğe = sayfa başlığı: tipografi ölçeğinden `title` rolü — hiyerarşinin tek güçlü noktası. */
@@ -608,26 +669,46 @@ async function copyRecord() {
   margin-left: 0;
 }
 
-/* Panel: başlık satırının hemen altında, sayfa zemininde ince çerçeveli bilgi yüzeyi (kart değil — içerikle yarışmaz). */
+/* FR2-HELP madde 16: rehber kartı. Nötr yüzey (kart dili), üstte 3px aksiyon şeridi yerine ince aksiyon tonlu
+   başlık bandı; gövde üç sütun. Metin okunur boyda (body), ipuçları numaralı; tuş satırları noktalı kılavuzla. */
 .ek-page-bar__about {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.4fr) minmax(0, 1fr);
-  gap: var(--ek-space-3) var(--ek-space-6);
-  margin-top: var(--ek-space-2);
-  padding: var(--ek-space-3) var(--ek-space-4);
-  border: 1px solid var(--ek-color-action-border);
+  margin-top: var(--ek-space-3);
+  overflow: hidden;
+  border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-card);
-  background: var(--ek-color-action-subtle);
+  background: var(--ek-color-surface);
+  box-shadow: var(--ek-shadow-card);
 }
 
-.ek-page-bar__block {
+.ek-about__head {
   display: flex;
-  flex-direction: column;
-  gap: var(--ek-space-2);
+  align-items: center;
+  gap: var(--ek-space-3);
+  padding: var(--ek-space-3) var(--ek-space-3) var(--ek-space-3) var(--ek-space-4);
+  border-bottom: 1px solid var(--ek-color-border-subtle);
+  background: linear-gradient(90deg, var(--ek-color-action-subtle), var(--ek-color-surface) 70%);
+}
+
+.ek-about__glyph {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface);
+  box-shadow: inset 0 0 0 1px var(--ek-color-action-border);
+  color: var(--ek-color-action);
+  font-size: var(--ek-icon-md);
+}
+
+.ek-about__heading {
+  flex: 1;
   min-width: 0;
 }
 
-.ek-page-bar__label {
+.ek-about__eyebrow {
   margin: 0;
   color: var(--ek-color-action-emphasis);
   font-size: var(--ek-type-micro-size);
@@ -637,84 +718,175 @@ async function copyRecord() {
   text-transform: uppercase;
 }
 
-.ek-page-bar__text,
-.ek-page-bar__tips {
+.ek-about__title {
   margin: 0;
+  overflow: hidden;
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-subheading-size);
+  line-height: var(--ek-type-subheading-line);
+  font-weight: var(--ek-type-subheading-weight);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ek-about__close {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--ek-control-h-sm);
+  height: var(--ek-control-h-sm);
+  border: 0;
+  border-radius: var(--ek-radius-control);
+  background: transparent;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-icon-md);
+  cursor: pointer;
+  transition: var(--ek-transition-colors);
+}
+
+.ek-about__close:hover {
+  background: var(--ek-color-surface-sunken);
+  color: var(--ek-color-content-strong);
+}
+
+.ek-about__close:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+}
+
+.ek-about__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1.5fr) minmax(0, 1fr);
+}
+
+.ek-page-bar__block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-2);
+  min-width: 0;
+  padding: var(--ek-space-4);
+}
+
+.ek-page-bar__block + .ek-page-bar__block {
+  border-left: 1px solid var(--ek-color-border-subtle);
+}
+
+.ek-page-bar__label {
+  margin: 0;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.ek-page-bar__text {
+  margin: 0;
+  color: var(--ek-color-content-default);
+  font-size: var(--ek-type-body-size);
+  line-height: var(--ek-type-body-line);
+}
+
+.ek-page-bar__tips {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
   color: var(--ek-color-content-default);
   font-size: var(--ek-type-table-size);
   line-height: var(--ek-type-table-line);
 }
 
-.ek-page-bar__tips {
+.ek-page-bar__tips > li {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding-left: var(--ek-space-4);
+  gap: var(--ek-space-2);
+}
+
+.ek-page-bar__tip-n {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  border-radius: var(--ek-radius-full);
+  background: var(--ek-color-surface-sunken);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.ek-page-bar__block--keys {
+  background: var(--ek-color-surface-muted);
 }
 
 .ek-page-bar__keys {
   display: flex;
   flex-direction: column;
-  gap: var(--ek-space-1);
+  gap: var(--ek-space-2);
   margin: 0;
 }
 
 .ek-page-bar__key {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--ek-space-3);
+  gap: var(--ek-space-2);
   color: var(--ek-color-content-default);
   font-size: var(--ek-type-caption-size);
   line-height: var(--ek-type-caption-line);
+}
+
+/* Etiket ile tuşlar arasında noktalı kılavuz — göz satırı kolay izler. */
+.ek-page-bar__key dt {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--ek-space-2);
+  min-width: 0;
+}
+
+.ek-page-bar__key dt::after {
+  content: '';
+  flex: 1;
+  min-width: var(--ek-space-3);
+  border-bottom: 1px dotted var(--ek-color-border-strong);
 }
 
 .ek-page-bar__key dd {
   margin: 0;
 }
 
-.ek-page-bar__all {
-  align-self: flex-start;
-  padding: 0;
-  border: 0;
-  border-radius: var(--ek-radius-sm);
-  background: transparent;
-  color: var(--ek-color-action);
-  font-family: inherit;
-  font-size: var(--ek-type-caption-size);
-  font-weight: var(--ek-font-weight-semibold);
-  cursor: pointer;
-}
-
-.ek-page-bar__all:hover {
-  text-decoration: underline;
-}
-
+.ek-page-bar__all,
 .ek-page-bar__read {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ek-space-1);
-  min-height: 24px;
-}
-
-.ek-page-bar__read :deep(.v-icon) {
-  font-size: var(--ek-icon-sm);
+  align-self: flex-start;
+  margin-top: var(--ek-space-1);
 }
 
 @media (max-width: 1023px) {
-  .ek-page-bar__about {
+  .ek-about__grid {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 
   .ek-page-bar__block--keys {
     grid-column: 1 / -1;
+    border-left: 0;
+    border-top: 1px solid var(--ek-color-border-subtle);
   }
 }
 
 @media (max-width: 599px) {
-  .ek-page-bar__about {
+  .ek-about__grid {
     grid-template-columns: minmax(0, 1fr);
-    padding: var(--ek-space-3) var(--ek-space-4);
+  }
+
+  .ek-page-bar__block + .ek-page-bar__block {
+    border-left: 0;
+    border-top: 1px solid var(--ek-color-border-subtle);
   }
 
   .ek-page-bar__row {

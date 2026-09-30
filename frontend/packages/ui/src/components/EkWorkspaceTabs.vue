@@ -14,8 +14,9 @@
   Soldaki anlamsız boşluk YOK: ilk sekme şeridin başından başlar (#leading
   slot'u isteğe bağlı sabit öğe içindir, ör. modül başlatıcı).
   Klavye: ←/→ sekmeler arası, Home/End, Enter/Space etkinleştir, Delete kapat
-  (WAI-ARIA tabs deseni, roving tabindex). Taşma (Aşama 5): YALNIZ yatay; kaydırma çubuğu gizli,
-  taşan kenarda solma + ok düğmesi (fare), tekerlek yatay kaydırır, etkin sekme görünür alana getirilir.
+  (WAI-ARIA tabs deseni, roving tabindex). Taşma (Aşama 5 → FR2 madde 9): YALNIZ yatay; kaydırma çubuğu gizli,
+  taşan kenarda solma; ok düğmeleri YERİNE sağda "+N ⌄" daha fazla listesi (tam görünmeyen sekmeler); tekerlek
+  yatay kaydırır, etkin sekme görünür alana getirilir.
   Dikey kaydırma hiçbir koşulda oluşmaz (kap `overflow-y: hidden` + çubuk alanı 0).
   Ek (geri uyumlu): başlık gerçekten kesildiyse (…) tam başlık v-tooltip'te
   (yalnızca taşan sekmede — kesilmeyen başlıkta tekrar eden ipucu yok);
@@ -25,9 +26,6 @@
   <div class="ek-tabs">
     <div v-if="$slots.leading" class="ek-tabs__leading"><slot name="leading" /></div>
     <div class="ek-tabs__viewport" :class="{ 'can-left': canLeft, 'can-right': canRight }">
-    <button v-if="canLeft" type="button" class="ek-tabs__arrow ek-tabs__arrow--start" tabindex="-1" aria-hidden="true" @click="scrollByPage(-1)">
-      <v-icon icon="mdi-chevron-left" />
-    </button>
     <div ref="listRef" class="ek-tabs__list" role="tablist" :aria-label="label" @keydown="onKeydown" @scroll.passive="updateOverflow" @wheel="onWheel">
       <div
         v-for="tab in tabs"
@@ -75,10 +73,19 @@
         </span>
       </div>
     </div>
-    <button v-if="canRight" type="button" class="ek-tabs__arrow ek-tabs__arrow--end" tabindex="-1" aria-hidden="true" @click="scrollByPage(1)">
-      <v-icon icon="mdi-chevron-right" />
-    </button>
     </div>
+    <!-- FR2-SHELL madde 9 (fe-r2a): sekmeler taşarsa kenar okları + kaydırma YERİNE sağda "daha fazla" listesi —
+         şeritte tam görünmeyen sekmeler sayısıyla; seçilen sekme etkinleşir ve şeritte görünür alana gelir. -->
+    <v-menu v-if="hiddenTabs.length" v-model="moreOpen" location="bottom end" :offset="6">
+      <template #activator="{ props: menuProps }">
+        <button v-bind="menuProps" type="button" class="ek-tabs__more" :class="{ 'is-open': moreOpen }"
+          :aria-label="`Daha fazla sekme (${hiddenTabs.length})`" data-tabs-more>
+          <span class="ek-num">+{{ hiddenTabs.length }}</span>
+          <v-icon icon="mdi-chevron-down" aria-hidden="true" />
+        </button>
+      </template>
+      <EkMenuPanel autofocus :groups="moreGroups" label="Daha fazla sekme" @select="onMoreSelect" @close="moreOpen = false" />
+    </v-menu>
     <div v-if="$slots.trailing" class="ek-tabs__trailing"><slot name="trailing" /></div>
     <span :id="closeHintId" class="ek-sr-only">Kapatmak için Delete tuşuna basın</span>
   </div>
@@ -86,7 +93,8 @@
 
 <script setup lang="ts">
 import { outlineIcon } from '../icons'
-import { nextTick, onBeforeUnmount, onMounted, onUpdated, ref, useId, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, onUpdated, ref, useId, watch } from 'vue'
+import EkMenuPanel, { type EkMenuGroup, type EkMenuItem } from './EkMenuPanel.vue'
 
 export interface EkWorkspaceTab {
   id: string
@@ -126,18 +134,36 @@ let resizeObserver: ResizeObserver | undefined
 const canLeft = ref(false)
 const canRight = ref(false)
 
+/** Şeritte TAM görünmeyen sekmelerin kimlikleri ("daha fazla" listesi). */
+const hiddenIds = ref<string[]>([])
+const moreOpen = ref(false)
+const hiddenTabs = computed(() => props.tabs.filter((t) => hiddenIds.value.includes(t.id)))
+const moreGroups = computed<EkMenuGroup[]>(() => [
+  { items: hiddenTabs.value.map((t) => ({ key: t.id, label: t.title, icon: t.icon ? outlineIcon(t.icon) : undefined })) },
+])
+
 function updateOverflow() {
   const el = listRef.value
   if (!el) return
   const max = el.scrollWidth - el.clientWidth
   canLeft.value = el.scrollLeft > 1
   canRight.value = max - el.scrollLeft > 1
+  const left = el.scrollLeft
+  const right = left + el.clientWidth
+  const next: string[] = []
+  if (max > 1) {
+    el.querySelectorAll<HTMLElement>('.ek-tab').forEach((tab) => {
+      const id = tab.querySelector<HTMLElement>('[data-tab-id]')?.dataset.tabId
+      if (id && (tab.offsetLeft < left - 1 || tab.offsetLeft + tab.offsetWidth > right + 1)) next.push(id)
+    })
+  }
+  if (next.join('|') !== hiddenIds.value.join('|')) hiddenIds.value = next
 }
 
-function scrollByPage(direction: 1 | -1) {
-  const el = listRef.value
-  if (!el) return
-  el.scrollBy({ left: direction * Math.max(160, el.clientWidth * 0.6), behavior: prefersReducedMotion() ? 'auto' : 'smooth' })
+function onMoreSelect(item: EkMenuItem) {
+  moreOpen.value = false
+  emit('update:modelValue', item.key)
+  nextTick(() => focusTab(item.key))
 }
 
 /** Dikey tekerlek yatay kaydırır (yalnız taşma varken; aksi halde sayfa davranışı bozulmaz). */
@@ -146,10 +172,6 @@ function onWheel(event: WheelEvent) {
   if (!el || el.scrollWidth <= el.clientWidth || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return
   event.preventDefault()
   el.scrollLeft += event.deltaY
-}
-
-function prefersReducedMotion() {
-  return typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 }
 
 /** Etkin sekme görünür alanda kalsın (klavye/kısayolla etkinleşen, şeridin dışında kalan sekme). */
@@ -330,37 +352,47 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   mask-image: linear-gradient(to right, transparent 0, black 40px, black calc(100% - 40px), transparent 100%);
 }
 
-.ek-tabs__arrow {
-  position: absolute;
-  top: 50%;
-  z-index: 2;
+.ek-tabs__more {
   display: inline-flex;
+  flex: none;
+  align-self: center;
   align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
+  gap: 2px;
+  height: 28px;
+  margin-left: var(--ek-space-1);
+  padding: 0 var(--ek-space-1) 0 var(--ek-space-2);
   border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-chip);
+  border-radius: var(--ek-radius-control);
   background: var(--ek-color-surface);
   box-shadow: var(--ek-shadow-card);
   color: var(--ek-color-content-default);
-  font-size: var(--ek-icon-sm);
+  font-family: inherit;
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-semibold);
   cursor: pointer;
-  transform: translateY(-50%);
   transition: var(--ek-transition-colors);
 }
 
-.ek-tabs__arrow:hover {
-  background: var(--ek-color-action-subtle);
-  color: var(--ek-color-action-emphasis);
+.ek-tabs__more .v-icon {
+  font-size: var(--ek-icon-sm);
+  color: var(--ek-color-content-muted);
+  transition: transform var(--ek-duration-base) var(--ek-easing-standard);
 }
 
-.ek-tabs__arrow--start {
-  left: var(--ek-space-1);
+.ek-tabs__more:hover,
+.ek-tabs__more.is-open {
+  border-color: var(--ek-color-border-input);
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-content-strong);
 }
 
-.ek-tabs__arrow--end {
-  right: var(--ek-space-1);
+.ek-tabs__more.is-open .v-icon {
+  transform: rotate(180deg);
+}
+
+.ek-tabs__more:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
 }
 
 .ek-tab {
@@ -666,8 +698,8 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
     opacity: 1;
   }
 
-  .ek-tabs__arrow {
-    display: none;
+  .ek-tabs__more .v-icon {
+    transition: none;
   }
 }
 
