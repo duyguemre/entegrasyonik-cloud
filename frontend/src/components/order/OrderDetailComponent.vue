@@ -127,6 +127,9 @@
         </EkDataTable>
       </EkSection>
 
+      <!-- C1.1: kalem stok tahsisi — yalnızca en az bir kalemde tahsis durumu varsa (eski siparişlerde boş bölüm göstermeyiz). -->
+      <OrderAllocationTimeline v-if="hasAllocation" :items="order.items" />
+
       <EkSection title="Müşteri">
         <div class="d-flex align-center ek-gap-3 mb-4">
           <v-avatar color="surface-muted" size="44">
@@ -208,6 +211,8 @@ import { formatMoney, formatDateTime } from '@/composables/format';
 import { ORDER_STATUS_TONE, type StatusTone } from '@/design/status-map';
 import { OrderInternalStatusEnum } from '@/types/OrderTypes';
 import { useLifecycle } from '@/composables/useLifecycle';
+import OrderAllocationTimeline from '@/components/order/OrderAllocationTimeline.vue';
+import { isAllocationState } from '@/composables/useStockHealthApi';
 
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
@@ -267,6 +272,8 @@ const itemColumns: EkTableColumn[] = [
     { key: 'quantity', label: 'Adet', align: 'end' },
     { key: 'unitPrice', label: 'Toplam', align: 'end' },
 ];
+
+const hasAllocation = computed(() => (props.order?.items ?? []).some((item: any) => isAllocationState(item?.allocationState)));
 
 const timelineEvents = computed(() => {
     if (!props.order) return [];

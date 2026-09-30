@@ -2,7 +2,7 @@
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { installApiMocks, mockError } from '../fixtures/mockApi'
-import { ordersBosFixture, ordersDoluFixture } from '../fixtures/apiData'
+import { buildOrder, ordersBosFixture, ordersDoluFixture } from '../fixtures/apiData'
 import { gotoAuthed, openScreen } from '../fixtures/nav'
 
 // NOT: `v-data-table-server` yalnızca `$vuetify.display.mdAndUp` (Vuetify varsayılanı: >=960px)
@@ -115,5 +115,38 @@ test.describe('P1 — Sipariş Detayı (OrderDetailComponent)', () => {
     const knownDsIssues = new Set(['aria-required-children', 'color-contrast', 'scrollable-region-focusable'])
     const ownViolations = results.violations.filter(v => !knownDsIssues.has(v.id))
     expect(ownViolations, JSON.stringify(ownViolations, null, 2)).toEqual([])
+  })
+})
+
+test.describe('C1.1 — Sipariş detayında stok tahsis zaman çizgisi', () => {
+  test.beforeEach(async ({}, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium-desktop', 'Detay, masaüstü tablodaki göz ikonuyla açılıyor (mdAndUp/>=960px)')
+  })
+
+  test('tahsis durumu olan kalemler detayda durum çipi ve zaman kaydıyla listelenir', async ({ page }) => {
+    const order = buildOrder({
+      items: [
+        { externalLineItemId: 'L1', sku: 'SKU-E2E-0001', productName: 'E2E Test Ürünü', quantity: 2, allocationState: 'OVERSOLD', lastAllocationAppliedAt: '2026-09-20T10:16:00.000Z', oversoldEscalatedAt: '2026-09-20T10:30:00.000Z' },
+        { externalLineItemId: 'L2', sku: 'SKU-E2E-0002', productName: 'E2E İkinci Ürün', quantity: 1, allocationState: 'RESERVED', lastAllocationAppliedAt: '2026-09-20T10:16:00.000Z' },
+      ],
+    })
+    await installApiMocks(page, { 'OrderService/getOrders': { orders: [order], totalNumberOfRecords: 1 } })
+    await gotoAuthed(page)
+    await openScreen(page, 'OrderListView')
+    await page.locator('.orderListView tbody tr').first().locator('button:has(.mdi-eye)').click()
+    const timeline = page.getByRole('region', { name: 'Stok tahsisi' })
+    await expect(timeline).toBeVisible()
+    await expect(timeline).toContainText('Aşırı satış')
+    await expect(timeline).toContainText('Rezerve')
+    await expect(timeline).toContainText('Aşırı satış için manuel işlem bildirildi')
+  })
+
+  test('tahsis durumu olmayan (eski) siparişte bölüm görünmez', async ({ page }) => {
+    await installApiMocks(page, { 'OrderService/getOrders': ordersDoluFixture })
+    await gotoAuthed(page)
+    await openScreen(page, 'OrderListView')
+    await page.locator('.orderListView tbody tr').first().locator('button:has(.mdi-eye)').click()
+    await expect(page.getByRole('dialog').filter({ hasText: 'E2E-100001' })).toBeVisible()
+    await expect(page.getByRole('region', { name: 'Stok tahsisi' })).toHaveCount(0)
   })
 })

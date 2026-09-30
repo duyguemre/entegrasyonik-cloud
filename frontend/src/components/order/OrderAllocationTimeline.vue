@@ -1,8 +1,8 @@
 <!--
   Sipariş kalemi stok tahsis zaman çizgisi — C1.1 / F-01 (ADR-0004).
 
-  AYRI bileşendir: sipariş detay diyaloğuna HENÜZ BAĞLANMADI (detay gövdesi DS-v2 diyalog göçünün
-  kapsamında). Bağlanınca kullanım: <OrderAllocationTimeline :items="order.items" />
+  Sipariş detayına (`OrderDetailComponent`, EkDetailSheet gövdesi) bağlıdır; en az bir kalemde tahsis
+  durumu varsa görünür. Kullanım: <OrderAllocationTimeline :items="order.items" />
   Kaynak: `OrderService/getOrders` → `orders[].items[]` (allocationState, lastAllocationAppliedAt,
   oversoldEscalatedAt — docs/API_TENANT_SURFACE.md §2.1) veya getStockOverview `recentOrders[].items[]`.
   Backend tahsis GEÇMİŞİNİ siparişte tutmaz; yalnızca SON geçiş zamanı ve aşırı satış bildirimi
@@ -10,7 +10,7 @@
 -->
 <template>
   <section class="ek-alloc" :aria-labelledby="headingId">
-    <h3 :id="headingId" class="ek-alloc__heading">{{ title }}</h3>
+    <h2 :id="headingId" class="ek-alloc__heading">{{ title }}</h2>
 
     <p v-if="entries.length === 0" class="ek-alloc__empty">Bu siparişte kalem yok.</p>
 
@@ -68,15 +68,15 @@ const entries = computed(() => buildAllocationTimeline(props.items))
 .ek-alloc {
   display: flex;
   flex-direction: column;
-  gap: var(--ek-space-3);
+  gap: var(--ek-space-4);
 }
 
 .ek-alloc__heading {
   margin: 0;
   color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-subheading-size);
-  line-height: var(--ek-type-subheading-line);
-  font-weight: var(--ek-type-subheading-weight);
+  font-size: var(--ek-type-heading-size);
+  line-height: var(--ek-type-heading-line);
+  font-weight: var(--ek-type-heading-weight);
 }
 
 .ek-alloc__items,
