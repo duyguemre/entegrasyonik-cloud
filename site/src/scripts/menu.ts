@@ -20,6 +20,7 @@
  */
 const HOVER_OPEN_MS = 120
 const HOVER_CLOSE_MS = 240
+const CLICK_AFTER_HOVER_MS = 500
 const menu = document.querySelector<HTMLDetailsElement>('[data-mobile-menu]')
 
 if (menu) {
@@ -63,6 +64,12 @@ if (nav) {
     t.setAttribute('aria-expanded', 'true')
   }
   let hoverTimer: number | undefined
+  // Hover ile az önce açılan paneli, hemen ardından gelen tıklama KAPATMAZ (fareyle düğmeye gelip tıklayan kullanıcı).
+  let hoverOpened: { t: HTMLElement; at: number } | undefined
+  const hoverOpen = (t: HTMLElement) => {
+    open(t)
+    hoverOpened = { t, at: performance.now() }
+  }
   const later = (ms: number, fn: () => void) => {
     window.clearTimeout(hoverTimer)
     hoverTimer = window.setTimeout(fn, ms)
@@ -75,7 +82,9 @@ if (nav) {
 
     t.addEventListener('click', () => {
       window.clearTimeout(hoverTimer)
-      if (isOpen(t)) close(t)
+      const justHovered = hoverOpened?.t === t && performance.now() - hoverOpened.at < CLICK_AFTER_HOVER_MS
+      hoverOpened = undefined
+      if (isOpen(t) && !justHovered) close(t)
       else open(t)
     })
 
@@ -84,8 +93,8 @@ if (nav) {
       if (event.pointerType !== 'mouse') return
       if (openTrigger()) {
         window.clearTimeout(hoverTimer)
-        if (!isOpen(t)) open(t)
-      } else later(HOVER_OPEN_MS, () => open(t))
+        if (!isOpen(t)) hoverOpen(t)
+      } else later(HOVER_OPEN_MS, () => hoverOpen(t))
     })
     group.addEventListener('pointerenter', (event) => {
       if (event.pointerType === 'mouse' && isOpen(t)) window.clearTimeout(hoverTimer)

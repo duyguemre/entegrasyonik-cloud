@@ -224,20 +224,24 @@ const registerHref = appUrls.register()
                 </summary>
                 <div class="drawer-group__body">
                   <ul class="drawer-links" role="list">
-                    {g.links.map((l) => (
+                    {g.links.map((l, i) => (
                       <li class="drawer-item">
-                        <a class="drawer-link" href={l.href} aria-current={currentOf(l.href)}>
+                        <div class="drawer-link">
                           {l.icon && (
                             <span class="drawer-link__icon" aria-hidden="true">
                               <Icon name={l.icon} size="sm" />
                             </span>
                           )}
-                          <span class="drawer-link__label">
+                          <a class="drawer-link__label" href={l.href} aria-current={currentOf(l.href)} aria-describedby={l.description ? `m-${descId(g.id, i)}` : undefined}>
                             {l.label}
                             {l.badge && <span class="nav-badge">{l.badge}</span>}
-                          </span>
-                          {l.description && <span class="drawer-link__desc">{l.description}</span>}
-                        </a>
+                          </a>
+                          {l.description && (
+                            <span class="drawer-link__desc" id={`m-${descId(g.id, i)}`}>
+                              {l.description}
+                            </span>
+                          )}
+                        </div>
                         {l.channels && l.channels.length > 0 && (
                           <ul class="drawer-chans" role="list" aria-label={`${l.label}: kanallar`}>
                             {l.channels.map((c) => (
@@ -587,8 +591,22 @@ const registerHref = appUrls.register()
   .drawer-link:hover {
     background: color-mix(in srgb, var(--ek-color-surface-sunken) 60%, var(--ek-color-background));
   }
-  .drawer-link[aria-current] {
+  .drawer-link:has(> [aria-current]) {
     background: color-mix(in srgb, var(--ek-color-secondary) 9%, var(--ek-color-background));
+  }
+  /* Tüm satır tıklanabilir; açıklama bağlantı adına girmez (aria-describedby). */
+  .drawer-link__label::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--ek-radius-lg);
+  }
+  .drawer-link__label:focus-visible {
+    outline: none;
+  }
+  .drawer-link:has(> .drawer-link__label:focus-visible) {
+    outline: var(--site-focus-ring-width) solid var(--site-color-focus-ring);
+    outline-offset: calc(var(--site-focus-ring-width) * -1);
   }
   .drawer-link__icon {
     grid-row: 1 / span 2;
@@ -602,8 +620,13 @@ const registerHref = appUrls.register()
     color: var(--site-link-accent);
   }
   .drawer-link__label {
+    color: var(--ek-color-content-strong);
     font-size: var(--ek-font-size-md);
     font-weight: var(--ek-font-weight-semibold);
+    text-decoration: none;
+  }
+  .drawer-link__label[aria-current] {
+    color: var(--site-link-accent);
   }
   .drawer-link__desc {
     grid-column: 2;
