@@ -163,8 +163,9 @@ const confirmDialog = ref<{ show: boolean; planCode: string; title: string; subt
 });
 
 const FEATURE_LABELS: Record<string, string> = {
-  einvoice: 'E-Fatura', erp: 'ERP Entegrasyonu', shipping: 'Kargo Entegrasyonu',
-  mcp: 'MCP / AI Asistan', desktopApp: 'Masaüstü Uygulaması',
+  // fe-r3d (APP_IDENTITY §8): cümle düzeni; MCP kullanıcı dilinde "Yapay zekâ bağlantısı" (P-MCP-1 ekran adı).
+  einvoice: 'E-Fatura', erp: 'ERP entegrasyonu', shipping: 'Kargo entegrasyonu',
+  mcp: 'Yapay zekâ bağlantısı', desktopApp: 'Masaüstü uygulaması',
 };
 
 const statusMeta = computed(() => subscriptionStatusMeta(subscriptionStatus.value));

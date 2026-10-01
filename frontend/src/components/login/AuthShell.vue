@@ -12,6 +12,7 @@
   Güven maddeleri YALNIZCA kanıtlı iddialardır (bkz. `site/src/data/capabilities.ts`
   — AES-256-GCM şifreleme, müşteri başına ayrı veritabanı, ödeme sağlayıcısı
   barındırdığı formdan kart verisi bize gelmez). Sahte istatistik/logo YOK.
+  fe-r3d (APP_IDENTITY §5/§8, K44/K45): metin sitenin fayda diliyle — teknik ayrıntı (algoritma, veritabanı yapısı) yok.
 -->
 <template>
   <div class="ek-auth-shell">
@@ -67,8 +68,8 @@ import { EkBrandLogo } from '@entegrasyonik/ui/components'
 
 /** ADR-0015 Karar 4 — yalnızca kanıtlı iddialar (bkz. dosya başı yorumu). */
 const trustItems = [
-  'Pazaryeri API anahtarlarınız AES-256-GCM ile şifrelenir',
-  'Her mağazanın verisi ayrı veritabanında tutulur',
+  'Entegrasyon anahtarlarınız şifreli saklanır',
+  'Verileriniz yalnızca size ait, izole bir alanda korunur',
   'Kart bilgileriniz sistemimizden geçmez',
 ]
 </script>
