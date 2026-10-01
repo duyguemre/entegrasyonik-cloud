@@ -6,10 +6,17 @@
     <!-- ADR-0015 Karar 1.4 — SVG işaret birincil, .ico YEDEK (eski tarayıcılar). -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
     <title>Entegrasyonik</title>
+    <!-- MOB-01 — PWA: manifest + açık/koyu tema rengi (palette navy[900] / inkDark.chromeStart) + iOS ana ekran. -->
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#13255B" />
+    <meta name="theme-color" content="#13255B" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0B1530" media="(prefers-color-scheme: dark)" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Entegrasyonik" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <!-- ADR-0026 Karar 3.4 / FR2-DARK: tema ilk boyamadan ÖNCE (eşzamanlı, modül değil; kaynak packages/ui/src/theme/theme-boot.js). -->
     <script src="/theme-boot.js" data-storage-key="ek-theme"></script>
 

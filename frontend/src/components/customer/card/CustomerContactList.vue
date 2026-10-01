@@ -82,7 +82,7 @@ const rows = computed<Row[]>(() => {
 const platformRows = computed<Row[]>(() =>
   (props.identities ?? []).filter((id) => id?.externalCustomerId).map((id) => ({
     key: `id-${id.integrationCode}-${id.externalCustomerId}`, label: 'Platform no', icon: 'mdi-identifier', channel: id.integrationCode,
-    noun: 'Platform müşteri no', copyLabel: `${channelName(id.integrationCode)} müşteri numarasını kopyala`, numeric: true,
+    noun: 'Kanal müşteri no', copyLabel: `${channelName(id.integrationCode)} müşteri numarasını kopyala`, numeric: true,
     value: { kind: 'tax', display: id.externalCustomerId!, copy: id.externalCustomerId!, hidden: null, maskable: false },
   })),
 )

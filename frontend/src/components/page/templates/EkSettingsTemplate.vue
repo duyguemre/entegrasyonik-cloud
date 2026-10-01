@@ -23,7 +23,7 @@
       <slot />
     </div>
 
-    <div v-if="dirty" class="ek-settings-template__save-bar">
+    <div v-if="dirty" class="ek-settings-template__save-bar" data-ek-sticky-bottom>
       <span v-if="unsavedHint" class="ek-settings-template__hint">{{ unsavedHint }}</span>
       <v-spacer />
       <v-btn variant="outlined" :disabled="saving" @click="emit('discard')">Vazgeç</v-btn>

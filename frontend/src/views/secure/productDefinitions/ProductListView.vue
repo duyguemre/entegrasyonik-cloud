@@ -75,6 +75,8 @@
     >
       <!-- faz3-fe-help: ilk kullanım — hiç kayıt yokken "Nasıl başlanır?" (filtreli boş sonuçta gösterilmez). -->
       <template #empty-action><HelpStartLink article="gs-first-product-transfer" /></template>
+      <!-- MOB-03: telefonda barkod okut → aynı arama (barkod/stok kodu/ad); tek sonuçta ürün açılır. -->
+      <template #search-append><BarcodeScanButton target="product" @code="onScannedCode" /></template>
       <template #header-actions>
         <EkButton icon="mdi-plus" @click="openProductDefinition()">Yeni ürün</EkButton>
       </template>
@@ -213,6 +215,7 @@ import ProductChannelStatus from '@/components/productDefinitions/products/Produ
 import { productImageSrcs } from '@/components/productDefinitions/products/productImage'
 import { formatMoney } from '@entegrasyonik/ui/format'
 import EkListScreen from '@/components/page/templates/EkListScreen.vue'
+import BarcodeScanButton from '@/components/barcode/BarcodeScanButton.vue'
 import { isRequestError } from '@entegrasyonik/ui/components/listStandard'
 import CategorySelectBoxComponent from '@/components/common/CategorySelectBoxComponent.vue'
 import BrandSelectBoxComponent from '@/components/common/BrandSelectBoxComponent.vue'
@@ -612,7 +615,7 @@ const columns: EkGridColumn[] = [
   { key: 'price', label: 'Fiyat', type: 'num', sortable: true },
   { key: 'stock', label: 'Stok', type: 'num', sortable: true },
   { key: 'brandCategory', label: 'Marka / kategori' },
-  { key: 'platforms', label: 'Kanallar', width: '200px' },
+  { key: 'platforms', label: 'Kanallar', width: '232px' },
   { key: 'actions', label: 'İşlemler', align: 'end', hideLabel: true, pin: 'end' },
 ]
 
@@ -860,6 +863,14 @@ const clearForm = () => {
   getProducts(true)
 }
 
+// MOB-03: okunan kod hızlı aramaya yazılır (sunucuda ad/stok kodu/barkod "içerir" araması; yazma yok).
+// Tek ürün eşleşirse doğrudan açılır (BACKLOG MOB-03 kabulü: barkod → ürün detayı); birden çoksa liste filtreli kalır.
+async function onScannedCode(code: string) {
+  searchProductForm.value.data.searchText = code
+  await getProducts(true)
+  if (!loadError.value && products.value.length === 1 && searchProductForm.value.pagination.totalNumberOfRecords === 1) openEditProduct(products.value[0])
+}
+
 const searchAdvanced = () => {
   searchProductForm.value.data.searchText = undefined
   search()
@@ -960,7 +971,7 @@ const resetSearchProductForm = () => {
 }
 
 .custom-float {
-  animation: float 1s ease-in-out infinite;
+  animation: float var(--ek-motion-loop-flow) var(--ek-easing-standard) infinite;
 }
 
 @keyframes float {
@@ -1063,7 +1074,7 @@ const resetSearchProductForm = () => {
 /* --- plv- öneki: bu <style> global olduğu için ad çakışmasını önler. Toplu işlem/aktarım
    diyaloğu kabın içine (attach) iliştirilir; kapalıyken görünmez tutulur. --- */
 .plv-dialog-transition {
-  transition: opacity var(--ek-duration-fast) var(--ek-easing-enter) !important;
+  transition: opacity var(--ek-motion-overlay) !important;
 }
 
 .plv-dialog-hidden {
@@ -1159,7 +1170,7 @@ const resetSearchProductForm = () => {
 
 .plv-variants-toggle__chevron {
   font-size: var(--ek-icon-sm);
-  transition: transform var(--ek-duration-base) var(--ek-easing-standard);
+  transition: transform var(--ek-motion-reveal);
 }
 
 .plv-variants-toggle__chevron.is-open {

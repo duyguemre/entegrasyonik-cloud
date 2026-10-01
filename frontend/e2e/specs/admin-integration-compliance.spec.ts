@@ -95,7 +95,7 @@ test.describe('ADR-0018 — Entegrasyon uyum konsolu', () => {
     const probe = view.locator('.compliance-summary__probe')
     await expect(probe).toHaveCount(1)
     await expect(probe.getByText('Başarılı')).toBeVisible()
-    await expect(probe.getByText('6 probe işlendi · 0 başarısız')).toBeVisible()
+    await expect(probe.getByText('6 kontrol işlendi · 0 başarısız')).toBeVisible()
     await expect(probe.getByText('tek bir platform turu', { exact: false })).toBeVisible()
 
     // Tablo: 6 satır, kritik en üstte (backend lastSeenAt sırası şiddet içinde korunur).
@@ -119,7 +119,7 @@ test.describe('ADR-0018 — Entegrasyon uyum konsolu', () => {
     await expect(view.getByText('İzleme aktif', { exact: false })).toBeVisible()
     await expect(view.getByText('izlenmeyen uçlardaki değişiklikleri kapsamaz', { exact: false })).toBeVisible()
     await expect(view.locator('.compliance-summary__card')).toHaveCount(6)
-    await expect(view.getByText('Henüz kayıtlı bir probe turu yok.')).toBeVisible()
+    await expect(view.getByText('Henüz kayıtlı bir kontrol turu yok.')).toBeVisible()
     await expect(view.locator('tbody tr')).toHaveCount(0)
   })
 
@@ -237,7 +237,7 @@ test.describe('ADR-0018 — Entegrasyon uyum konsolu', () => {
     await expect(sheet).not.toContainText('400')
   })
 
-  test('rol (olumlu): platformAdmin menüde "Entegrasyon Uyum" girişini görür', async ({ page }) => {
+  test('rol (olumlu): platformAdmin menüde "Entegrasyon uyumu" girişini görür', async ({ page }) => {
     await mocks(page)
     await page.goto('/')
     await waitForWorkplaceReady(page)
@@ -245,7 +245,7 @@ test.describe('ADR-0018 — Entegrasyon uyum konsolu', () => {
     const drawer = page.locator('.v-navigation-drawer.soft-nav')
     const group = drawer.locator('.v-list-group').filter({ has: page.locator('.v-list-group__header .mdi-shield-account-outline') })
     await group.locator('.v-list-group__header').click()
-    await expect(group.getByText('Entegrasyon Uyum', { exact: true })).toBeVisible()
+    await expect(group.getByText('Entegrasyon uyumu', { exact: true })).toBeVisible()
   })
 
   test('rol (olumsuz): platformAdmin OLMAYAN — menüde yok, derin bağlantı açılmaz, uyum RPC çağrılmaz', async ({ page }) => {
@@ -258,7 +258,7 @@ test.describe('ADR-0018 — Entegrasyon uyum konsolu', () => {
     await openDrawer(page)
     const drawer = page.locator('.v-navigation-drawer.soft-nav')
     await expect(drawer.locator(`.${COMPLIANCE_MENU_ICON}`)).toHaveCount(0)
-    await expect(drawer.getByText('Entegrasyon Uyum', { exact: true })).toHaveCount(0)
+    await expect(drawer.getByText('Entegrasyon uyumu', { exact: true })).toHaveCount(0)
     expect(calls.list.length + calls.summary.length + calls.getDetail.length + calls.transition.length).toBe(0)
   })
 

@@ -70,7 +70,7 @@ export const HELP_HINTS = {
 
   // Kanıt: site/src/data/connect.ts (COMMON_STEPS), components/integrations/IntegrationFormFrame.vue (Kaydet/Vazgeç),
   //        components/integrations/IntegrationComingSoonPanel.vue ("Yakında" sağlayıcılarda kimlik alanı yok)
-  // Yer: views/secure/integrations/{Marketplace,ECommerce,Erp}View.vue → IntegrationGuideCard "API Bağlantısı" adımının yanı
+  // Yer: views/secure/integrations/{Marketplace,ECommerce,Erp}View.vue → IntegrationGuideCard "API bağlantısı" adımının yanı
   //      (yeni eklenecek her entegrasyon formunda EkFormSection title="Bağlantı bilgileri" başlığının yanı)
   'integration.credentials.generic': {
     title: 'Bağlantı bilgileri',
@@ -168,7 +168,7 @@ export const HELP_HINTS = {
   // Yer: views/secure/user/PrivacyDataView.vue → EkSettingsSection "Verilerinizi dışa aktarın" başlığının yanı
   'privacy.export': {
     title: 'Veri dışa aktarma',
-    text: 'Mağazanızın verileri ZIP arşivinde NDJSON dosyaları olarak hazırlanır; parolalar ve pazaryeri API anahtarları eklenmez. İndirme bağlantısı 24 saat geçerli ve tek kullanımlıktır. Bu işlemi yalnızca mağaza sahibi yapabilir.',
+    text: 'Mağazanızın verileri tek bir sıkıştırılmış arşiv (ZIP) olarak hazırlanır; parolalar ve pazaryeri API anahtarları eklenmez. İndirme bağlantısı 24 saat geçerli ve tek kullanımlıktır. Bu işlemi yalnızca mağaza sahibi yapabilir.',
     article: 'acc-privacy',
   },
 
@@ -184,7 +184,7 @@ export const HELP_HINTS = {
   // Yer: views/secure/user/SubscriptionView.vue → h3.section-title "Planlar" başlığının yanı
   'subscription.plan': {
     title: 'Plan seçimi',
-    text: 'Bu Plana Geç düğmesi onayınızdan sonra ödeme adımını başlatır; abonelik durumunuz ödeme sağlayıcısından onay gelince otomatik güncellenir. Deneme sürümünde deneme bitimine kadar tüm özellikler açıktır. Askıya alınan abonelikte verileriniz görüntülenebilir ama düzenleme ve pazaryeri senkronizasyonu durur.',
+    text: 'Bu plana geç düğmesi onayınızdan sonra ödeme adımını başlatır; abonelik durumunuz ödeme sağlayıcısından onay gelince otomatik güncellenir. Deneme sürümünde deneme bitimine kadar tüm özellikler açıktır. Askıya alınan abonelikte verileriniz görüntülenebilir ama düzenleme ve pazaryeri senkronizasyonu durur.',
     article: 'acc-subscription',
   },
 
@@ -195,7 +195,7 @@ export const HELP_HINTS = {
   //      (ikincil: #bulk-actions "Onayla" düğmesi)
   'order.approveCancel': {
     title: 'Sipariş onayı ve iptali',
-    text: 'Onay yalnızca "Satıcı Onayı Bekliyor" durumundaki siparişlerde açıktır. Kargoya verilmiş, teslim edilmiş veya iade edilmiş sipariş iptal edilemez; iptal pazaryerinde gerekçeyle yapılır ve geri alınamaz. Faturası kesilmiş siparişte faturayı e-Fatura portalınızdan ayrıca iptal etmeniz gerekir.',
+    text: 'Onay yalnızca "Satıcı onayı bekliyor" durumundaki siparişlerde açıktır. Kargoya verilmiş, teslim edilmiş veya iade edilmiş sipariş iptal edilemez; iptal pazaryerinde gerekçeyle yapılır ve geri alınamaz. Faturası kesilmiş siparişte faturayı e-Fatura portalınızdan ayrıca iptal etmeniz gerekir.',
     article: 'ord-approve-cancel',
   },
 } satisfies Record<string, HelpHint>

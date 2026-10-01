@@ -1,4 +1,4 @@
-// P2 — Admin paneli / Sistem Yönetimi (AdminSystemManagementView: platform sağlığı, kuyruklar,
+// P2 — Admin paneli / Sistem yönetimi (AdminSystemManagementView: platform sağlığı, kuyruklar,
 // önbellek, Redis, operasyonel içgörüler + export detay / önbellek diyalogları). ADR-0011 Bağlam:
 // "AdminSystemManagementView 41 hex" — literal sayısı en yüksek dosya. platformAdmin-only (ADR-0001).
 // Menü kaydı için sentetik 'adminPanel' grubu — bkz. admin-clients.spec.ts / nav.ts `menuFixtureWithAdmin`.
@@ -26,7 +26,7 @@ async function scrollAreaTo(page: Page, where: 'top' | 'bottom') {
   await page.waitForTimeout(200)
 }
 
-test.describe('P2 — Admin / Sistem Yönetimi (AdminSystemManagementView)', () => {
+test.describe('P2 — Admin / Sistem yönetimi (AdminSystemManagementView)', () => {
   test('smoke: başlık, trafik özetleri, kuyruk/önbellek/Redis kartları ve 5 grafik render olur', async ({ page }) => {
     await installApiMocks(page, withAdminMenu())
     await gotoAuthed(page)
@@ -82,7 +82,7 @@ test.describe('P2 — Admin / Sistem Yönetimi (AdminSystemManagementView)', () 
     const dialog = page.getByRole('dialog').filter({ hasText: 'Gönderim trafiği — ayrıntılı analiz' })
     await expect(dialog).toBeVisible()
     await expect(dialog).toContainText('E2E Örnek Ticaret A.Ş.')
-    await expect(dialog).toContainText('Ürün Gönderimi')
+    await expect(dialog).toContainText('Ürün gönderimi')
     await expect(dialog).toContainText('Sıradaki:')
 
     await dialog.getByRole('button', { name: 'Grafik görünümü' }).click()

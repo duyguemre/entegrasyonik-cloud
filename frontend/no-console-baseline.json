@@ -29,7 +29,7 @@
     "src/stores/integrationStore.ts": 1,
     "src/stores/loadingStore.ts": 2,
     "src/stores/marketplace.ts": 2,
-    "src/views/secure/PrintoutListView.vue": 3,
+    "src/views/secure/PrintoutListView.vue": 0,
     "src/views/secure/SettingListView.vue": 1,
     "src/views/secure/adminPanel/AdminView.vue": 1,
     "src/views/secure/definitions/ProductDefinitionView.vue": 7,

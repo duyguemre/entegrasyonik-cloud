@@ -134,9 +134,18 @@ function renderCell(item: Record<string, any>, column: EkTableColumn): string {
   border-radius: var(--ek-radius-lg);
 }
 
+/* FR3 madde 9: EkDataGrid ile aynı tablo tipografisi (tek aile, tablo genelinde tabular rakam). */
 .ek-data-table__table {
   width: 100%;
   border-collapse: collapse;
+  font-family: var(--ek-font-sans);
+  font-size: var(--ek-type-table-size);
+  line-height: var(--ek-type-table-line);
+  font-variant-numeric: tabular-nums;
+}
+
+.ek-data-table__table td :where(*:not(.v-icon):not(.mdi)) {
+  font-family: inherit !important;
 }
 
 .ek-data-table__head {
@@ -161,7 +170,7 @@ function renderCell(item: Record<string, any>, column: EkTableColumn): string {
 
 .ek-data-table__row {
   border-bottom: 1px solid var(--ek-color-border-default);
-  transition: background-color var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: background-color var(--ek-motion-feedback);
 }
 
 .ek-data-table__row:hover {

@@ -124,12 +124,14 @@ function onHeadClick(e: MouseEvent) {
 }
 
 /* ── Başlık çubuğu ─────────────────────────────────────────────────────────── */
+/* FR3 madde 6 (fe-r3a): başlık kompakt — 52 → 44px (kontrol `sm` 32 + 2×6), karo 32 → 24px; dikeyde ~16px kazanç
+   (başlık + gövde + eylem çubuğu). Yapı ve davranış aynı (A8). */
 .ek-filter__head {
   display: flex;
   align-items: center;
   gap: var(--ek-space-3);
-  min-height: 52px;
-  padding: var(--ek-space-2) var(--ek-space-3) var(--ek-space-2) var(--ek-space-2);
+  min-height: 44px;
+  padding: 6px var(--ek-space-3) 6px var(--ek-space-2);
   background: var(--ek-color-surface);
   border-bottom: 1px solid var(--ek-color-border-subtle);
   cursor: pointer;
@@ -155,7 +157,7 @@ function onHeadClick(e: MouseEvent) {
   display: inline-flex;
   align-items: center;
   gap: var(--ek-space-2);
-  height: 36px;
+  height: var(--ek-control-h-sm);
   padding: 0 var(--ek-space-2) 0 var(--ek-space-1);
   border: 0;
   border-radius: var(--ek-radius-control);
@@ -175,13 +177,13 @@ function onHeadClick(e: MouseEvent) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--ek-radius-tile);
+  width: 24px;
+  height: 24px;
+  border-radius: var(--ek-radius-sm);
   background: var(--ek-color-surface-muted);
   box-shadow: inset 0 0 0 1px var(--ek-color-border-subtle);
   color: var(--ek-color-content-default);
-  font-size: var(--ek-icon-sm);
+  font-size: var(--ek-icon-xs);
   transition: var(--ek-transition-colors);
 }
 
@@ -261,15 +263,15 @@ function onHeadClick(e: MouseEvent) {
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: var(--ek-radius-control);
   color: var(--ek-color-content-muted);
-  font-size: var(--ek-icon-lg);
+  font-size: var(--ek-icon-md);
   transition:
-    transform var(--ek-duration-base) var(--ek-easing-standard),
-    background-color var(--ek-duration-fast) var(--ek-easing-standard),
-    color var(--ek-duration-fast) var(--ek-easing-standard);
+    transform var(--ek-motion-reveal),
+    background-color var(--ek-motion-feedback),
+    color var(--ek-motion-feedback);
 }
 
 .ek-filter__head:hover .ek-filter__chevron {
@@ -316,7 +318,7 @@ function onHeadClick(e: MouseEvent) {
 
 /* ── Gövde ─────────────────────────────────────────────────────────────────── */
 .ek-filter__body {
-  padding: var(--ek-space-5) var(--ek-space-4) var(--ek-space-4);
+  padding: var(--ek-space-4);
   background: var(--ek-color-surface-muted);
 }
 
@@ -327,7 +329,7 @@ function onHeadClick(e: MouseEvent) {
   align-items: center;
   justify-content: flex-end;
   gap: var(--ek-space-2);
-  padding: var(--ek-space-3) var(--ek-space-4);
+  padding: var(--ek-space-2) var(--ek-space-4);
   background: var(--ek-color-surface);
   border-top: 1px solid var(--ek-color-border-subtle);
 }

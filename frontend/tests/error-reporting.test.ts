@@ -17,11 +17,13 @@ vi.mock('../src/composables/logger', () => {
 
 import logger from '../src/composables/logger'
 import { useToast } from '@entegrasyonik/ui/composables/useToast'
-import { reportUnexpectedError } from '../src/composables/errorReporting'
+import { reportUnexpectedError, resetUnexpectedErrorCoalescing } from '../src/composables/errorReporting'
 
 describe('reportUnexpectedError (ADR-0017 Karar 1.8)', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
+    resetUnexpectedErrorCoalescing()
+    vi.useRealTimers()
     vi.mocked(logger.error).mockClear()
     const { toasts, dismissToast } = useToast()
     for (const t of [...toasts]) dismissToast(t.id)
@@ -84,5 +86,35 @@ describe('reportUnexpectedError (ADR-0017 Karar 1.8)', () => {
 
     expect(() => reportUnexpectedError('Erken hata', { module: 'test' })).not.toThrow()
     expect(logger.error).toHaveBeenCalledTimes(1)
+  })
+
+  // P16: menü 500'de aynı kökten üç hata → tek bildirim, tek Destek kodu; teknik log her biri için yazılır.
+  it('kısa pencerede ardışık beklenmeyen hatalar tek bildirimde toplanır (P16)', () => {
+    vi.useFakeTimers()
+    const { toasts } = useToast()
+
+    const a = reportUnexpectedError('Router hata yakaladı', { module: 'router' })
+    const b = reportUnexpectedError('Yakalanmamış promise reddi', { module: 'errorHandler' })
+    const c = reportUnexpectedError('Vue hata sınırı yakaladı', { module: 'errorHandler' })
+
+    expect(toasts).toHaveLength(1)
+    expect(b).toBe(a)
+    expect(c).toBe(a)
+    expect(logger.error).toHaveBeenCalledTimes(3)
+    expect(logger.error).toHaveBeenLastCalledWith('Vue hata sınırı yakaladı', expect.objectContaining({ coalesced: true }))
+
+    // Pencere geçtikten sonraki hata yeni bildirim olur.
+    vi.advanceTimersByTime(5000)
+    reportUnexpectedError('Sonraki hata', { module: 'x' })
+    expect(toasts.length).toBeGreaterThanOrEqual(1)
+    expect(logger.error).toHaveBeenLastCalledWith('Sonraki hata', expect.not.objectContaining({ coalesced: true }))
+    vi.useRealTimers()
+  })
+
+  it('özel iletili hata toplanmaz, her zaman gösterilir (P16)', () => {
+    const { toasts } = useToast()
+    reportUnexpectedError('İlk', { module: 'x' })
+    reportUnexpectedError('Chunk', { module: 'router' }, { userMessage: 'Uygulama güncellendi, sayfa yenileniyor…', color: 'info' })
+    expect(toasts).toHaveLength(2)
   })
 })

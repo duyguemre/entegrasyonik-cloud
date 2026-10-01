@@ -34,7 +34,7 @@ for (const s of screens) {
       await openScreen(page, s.code)
 
       await expectScreenOpen(page, s.containerClass)
-      await expect(page.locator(s.containerClass).getByText('Hızlı Başlangıç Rehberi')).toBeVisible()
+      await expect(page.locator(s.containerClass).getByText('Hızlı başlangıç rehberi')).toBeVisible()
       // onMounted ilk platformu otomatik seçip ayar formunu getiriyor (empty-state GÖRÜNMEMELİ).
       await expect(page.locator(s.containerClass).getByText('Başlamak için seçim yapın')).toHaveCount(0)
     })

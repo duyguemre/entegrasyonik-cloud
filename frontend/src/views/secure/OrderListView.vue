@@ -69,7 +69,7 @@
       :error-details="loadProblem?.details"
       error-title="Siparişler yüklenemedi"
       :search="filters.globalSearch"
-      search-placeholder="Sipariş No, Müşteri Adı veya Telefon Ara"
+      search-placeholder="Sipariş no, müşteri adı veya telefon ara"
       :chips="activeChips"
       :filter-count="panelFilterCount"
       :saved-views="savedViews"
@@ -98,10 +98,14 @@
     >
       <!-- faz3-fe-help: ilk kullanım — hiç kayıt yokken "Nasıl başlanır?" (filtreli boş sonuçta gösterilmez). -->
       <template #empty-action><HelpStartLink article="gs-first-integration" /></template>
+      <!-- MOB-03: telefonda barkod okut → aynı genel arama (sipariş no / pazaryeri no / kargo takip no); tek sonuçta detay açılır. -->
+      <template #search-append><BarcodeScanButton target="order" @code="onScannedCode" /></template>
       <template #filters>
         <EkSelect v-model="filters.integrationCodes" kind="channel" :items="channelSelectOptions" label="Kanal" multiple clearable />
         <EkSelect v-model="filters.internalStatuses" kind="status" :items="statusSelectOptions" label="Sipariş durumu" multiple clearable recent-key="orders.status" />
         <EkSelect v-model="filters.allocationStates" kind="status" :items="allocationSelectOptions" label="Stok durumu" multiple clearable />
+        <!-- FR3 madde 10: tarih aralığı (OrderService/getOrders `filter.startDate/endDate` → sipariş tarihi). -->
+        <EkDateRange v-model:start="filters.startDate" v-model:end="filters.endDate" label="Sipariş tarihi" value-format="iso-date" />
       </template>
 
       <template #bulk-actions>
@@ -148,7 +152,8 @@
         <span v-else class="ek-order-alloc__none">—</span>
       </template>
       <template #cell-orderDate="{ row }">
-        <span class="ek-num">{{ formatDateTime(row.dates?.orderDate) }}</span>
+        <!-- P04 (K49): listede yalnız gün; saat ipucunda (1440'ta yatay kaydırma kalmaz). -->
+        <time class="ek-num" :datetime="row.dates?.orderDate" :title="formatDateTime(row.dates?.orderDate)">{{ formatDate(row.dates?.orderDate) }}</time>
       </template>
       <template #cell-total="{ row }">
         <span class="ek-order-total">
@@ -175,7 +180,7 @@
 <script setup lang="ts">
 import HelpStartLink from '@/components/help/HelpStartLink.vue'
 import EkHelpHint from '@/components/page/EkHelpHint.vue'
-import { EkSelect, EkAlert, EkRowActions, type EkRowAction, EkButton, EkContextMenu, EkChannelDot, EkStatusChip, EkConfirmDialog, EkFormDialog, EkPlatformMark } from '@entegrasyonik/ui/components'
+import { EkDateRange, EkSelect, EkAlert, EkRowActions, type EkRowAction, EkButton, EkContextMenu, EkChannelDot, EkStatusChip, EkConfirmDialog, EkFormDialog, EkPlatformMark } from '@entegrasyonik/ui/components'
 import type { EkGridColumn, EkGridSort, EkActiveFilterChip, EkMenuGroup } from '@entegrasyonik/ui/components'
 import { channelOptionsFrom, toneOptionsFrom } from '@entegrasyonik/ui/components/selectOptions'
 import { problemFromError, type ProblemCopy } from '@/composables/useProblem'
@@ -186,11 +191,13 @@ import useRestApi from '@/composables/restapi'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import { useIntegrationStore } from '@/stores/integrationStore'
 import { useListQuery, listPayload } from '@/composables/useListQuery'
+import BarcodeScanButton from '@/components/barcode/BarcodeScanButton.vue'
 import { isOrderLocked, countBulkEligible, bulkTargetIds } from '@/components/order/orderRules'
 import { useOrderActions } from '@/components/order/composables/useOrderActions'
 import { useOrderCancel } from '@/components/order/composables/useOrderCancel'
 import { useLifecycle } from '@/composables/useLifecycle'
-import { formatMoney, formatDateTime } from '@entegrasyonik/ui/format'
+import { formatMoney, formatDate, formatDateTime } from '@entegrasyonik/ui/format'
+import { formatDateRange } from '@entegrasyonik/ui/components/dateRange'
 import { ORDER_STATUS_TONE, ALLOCATION_STATE_TONE, ALLOCATION_STATES } from '@/design/status-map'
 import { orderStatusOptions, ORDER_STATUS_GUIDE } from '@/design/status-map'
 import { useI18n } from 'vue-i18n'
@@ -394,11 +401,12 @@ const activeChips = computed<EkActiveFilterChip[]>(() => {
   if (applied.value.allocationStates.length) {
     chips.push({ key: 'allocationStates', label: 'Stok durumu', value: applied.value.allocationStates.map(allocationTitle).join(', ') })
   }
+  if (applied.value.startDate || applied.value.endDate) chips.push({ key: 'date', label: 'Tarih', value: formatDateRange(applied.value.startDate, applied.value.endDate) })
   return chips
 })
 
 const panelFilterCount = computed(() => (applied.value.integrationCodes.length ? 1 : 0) + (applied.value.internalStatuses.length ? 1 : 0)
-  + (applied.value.allocationStates.length ? 1 : 0))
+  + (applied.value.allocationStates.length ? 1 : 0) + (applied.value.startDate || applied.value.endDate ? 1 : 0))
 
 // C2.4 kayıtlı görünümler: son sorgulanan filtreler verilir; görünüme YALNIZ screens.ts `urlParams`
 // alanları (durum, stok durumu) girer — arama metni/kanal süzülür (useSavedViews → pickUrlParams).
@@ -418,6 +426,8 @@ function applySavedView(params: Record<string, any>) {
   data.integrationCodes = []
   data.internalStatuses = Array.isArray(params.internalStatuses) ? [...params.internalStatuses] : []
   data.allocationStates = allocationParam(params.allocationStates) ?? []
+  data.startDate = undefined
+  data.endDate = undefined
   getOrders(true)
 }
 
@@ -427,6 +437,7 @@ function removeChip(key: string) {
   if (key === 'integrationCodes') data.integrationCodes = []
   if (key === 'internalStatuses') data.internalStatuses = []
   if (key === 'allocationStates') data.allocationStates = []
+  if (key === 'date') { data.startDate = undefined; data.endDate = undefined }
   getOrders(true)
 }
 
@@ -585,6 +596,13 @@ const onOrderSelectionUpdate = (item: any, val: boolean) => {
   else selectedOrders.value = selectedOrders.value.filter(id => id !== item._id);
 };
 const openDetailedReport = (item: any) => { selectedOrderForDetail.value = item; isDetailOpen.value = true; };
+
+// MOB-03: okunan kod genel aramaya yazılır (yazma yok). Tek sipariş eşleşirse detayı açılır; birden çoksa liste filtreli kalır.
+async function onScannedCode(code: string) {
+  filters.value.globalSearch = code
+  await submitSearch()
+  if (!error.value && orders.value.length === 1 && total.value === 1) openDetailedReport(orders.value[0])
+}
 
 const getCancelSourceLabel = (source: string) => {
   if (source === 'SELLER') return 'Satıcı';
@@ -751,5 +769,12 @@ defineExpose({
 
 .ek-bulk-danger {
   color: var(--ek-color-error);
+}
+
+/* MOB-00: dokunmatikte satır/bağlantı hedefi en az 44 px (--ek-control-h-touch). */
+@media (pointer: coarse) {
+  .ek-order-items {
+    min-height: var(--ek-control-h-touch);
+  }
 }
 </style>

@@ -4,7 +4,7 @@
 
     <div class="flex-grow-1 overflow-y-auto scroll-area" :aria-busy="loading ? 'true' : 'false'">
 
-      <EkPageHeader section="Yönetim" title="Sistem Yönetimi"
+      <EkPageHeader section="Yönetim" title="Sistem yönetimi"
         description="Platform sağlığı, aktif işleyiciler ve bellek durumu anlık olarak izleniyor."
         refreshable :refreshing="loading" @refresh="loadData()" />
 
@@ -341,7 +341,7 @@
               clearable variant="outlined" class="customTextField select-max-150"
               color="primary"></v-select>
 
-            <v-select v-model="exportFilters.mode" :items="modeOptions" label="İşlem Tipi" density="compact"
+            <v-select v-model="exportFilters.mode" :items="modeOptions" label="İşlem türü" density="compact"
               hide-details clearable variant="outlined" class="customTextField select-max-150"
               color="primary"></v-select>
 
@@ -1269,7 +1269,7 @@ onUnmounted(() => {
   background: var(--ek-color-surface);
   border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-lg);
-  transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
+  transition: border-color var(--ek-motion-reveal);
 
   &:hover { border-color: var(--ek-color-border-strong); }
 }
@@ -1419,8 +1419,8 @@ onUnmounted(() => {
 // Tıklanabilir önbellek kartları: hover/odakta yalnızca kenarlık geri bildirimi + görünür odak halkası.
 .hover-effect {
   cursor: pointer;
-  transition: border-color var(--ek-duration-base) var(--ek-easing-standard),
-    box-shadow var(--ek-duration-base) var(--ek-easing-standard);
+  transition: border-color var(--ek-motion-reveal),
+    box-shadow var(--ek-motion-reveal);
 }
 
 .hover-effect:hover,

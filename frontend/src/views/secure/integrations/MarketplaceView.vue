@@ -91,9 +91,9 @@ const restApi = useRestApi()
 const editingClientIntegration: any = ref({ settings: {} })
 
 const guideSteps = [
-  { title: 'Platformu Belirleyin', text: 'Üstteki ikonlara tıklayarak işlem yapacağınız pazar yerini seçin.' },
-  { title: 'API Bağlantısı', text: 'Pazar yeri panelinden aldığınız API anahtarlarını ilgili alanlara girin.' },
-  { title: 'Katalog Senkronu', text: 'Kaydettikten sonra Ürünleri Çek butonuyla verilerinizi eşitleyin.' }
+  { title: 'Kanalı seçin', text: 'Üstteki ikonlara tıklayarak işlem yapacağınız pazar yerini seçin.' },
+  { title: 'API bağlantısı', text: 'Pazar yeri panelinden aldığınız API anahtarlarını ilgili alanlara girin.' },
+  { title: 'Katalog Senkronu', text: 'Kaydettikten sonra Ürünleri çek butonuyla verilerinizi eşitleyin.' }
 ]
 
 onMounted(() => {

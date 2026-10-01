@@ -438,3 +438,75 @@
 .v-btn.v-btn--icon.text-error > .v-btn__overlay {
   opacity: 0;
 }
+
+/* ---- FR3 madde 7 (fe-r3a): HAREKET TEK KAYNAK — Vuetify'ın kendi geçişleri de rollere bağlanır ----
+ * Vuetify adlandırılmış geçişleri kendi sürelerini (0.3s / 225ms / 125ms …) ve cubic-bezier eğrilerini `!important` ile
+ * yazar; açılan katman (menü, diyalog, ipucu) bu yüzden uygulamanın geri kalanından farklı hızda akıyordu. Giriş =
+ * `overlay`, çıkış = `dismiss`, yeniden sıralama/yükseklik = `reveal`. Liste `node_modules/vuetify` CSS'inden
+ * türetilip bekçi testinde (`tests/motion-single-source.test.ts`) karşılaştırılır — yeni Vuetify geçişi eklenirse test düşer. */
+.dialog-bottom-transition-enter-active, .dialog-top-transition-enter-active, .dialog-transition-enter-active,
+.fab-transition-enter-active, .fade-transition-enter-active, .message-transition-enter-active,
+.picker-reverse-transition-enter-active, .picker-transition-enter-active, .scale-rotate-reverse-transition-enter-active,
+.scale-rotate-transition-enter-active, .scale-transition-enter-active, .scroll-x-reverse-transition-enter-active,
+.scroll-x-transition-enter-active, .scroll-y-reverse-transition-enter-active, .scroll-y-transition-enter-active,
+.slide-x-reverse-transition-enter-active, .slide-x-transition-enter-active, .slide-y-reverse-transition-enter-active,
+.slide-y-transition-enter-active {
+  transition-duration: var(--ek-motion-overlay-duration) !important;
+  transition-timing-function: var(--ek-motion-overlay-easing) !important;
+}
+
+.dialog-bottom-transition-leave-active, .dialog-top-transition-leave-active, .dialog-transition-leave-active,
+.fab-transition-leave-active, .fade-transition-leave-active, .message-transition-leave-active,
+.picker-reverse-transition-leave-active, .picker-transition-leave-active, .scale-rotate-reverse-transition-leave-active,
+.scale-rotate-transition-leave-active, .scale-transition-leave-active, .scroll-x-reverse-transition-leave-active,
+.scroll-x-transition-leave-active, .scroll-y-reverse-transition-leave-active, .scroll-y-transition-leave-active,
+.slide-x-reverse-transition-leave-active, .slide-x-transition-leave-active, .slide-y-reverse-transition-leave-active,
+.slide-y-transition-leave-active {
+  transition-duration: var(--ek-motion-dismiss-duration) !important;
+  transition-timing-function: var(--ek-motion-dismiss-easing) !important;
+}
+
+.fade-transition-move, .scale-transition-move, .scroll-x-transition-move, .scroll-y-transition-move,
+.slide-x-transition-move, .slide-y-transition-move, .slide-x-reverse-transition-move, .slide-y-reverse-transition-move,
+.scroll-x-reverse-transition-move, .scroll-y-reverse-transition-move, .fab-transition-move, .message-transition-move,
+.picker-transition-move, .picker-reverse-transition-move, .scale-rotate-transition-move,
+.scale-rotate-reverse-transition-move, .dialog-transition-move, .dialog-bottom-transition-move,
+.dialog-top-transition-move,
+.expand-transition-enter-active, .expand-transition-leave-active, .expand-transition-move,
+.expand-x-transition-enter-active, .expand-x-transition-leave-active, .expand-x-transition-move {
+  transition-duration: var(--ek-motion-reveal-duration) !important;
+  transition-timing-function: var(--ek-motion-reveal-easing) !important;
+}
+
+/* Bileşen mikro geçişleri (hover/basma katmanı, düğme, sekme, seçim denetimi, perde) → `feedback`;
+ * akordeon başlığı / perde → `reveal` / `overlay`. */
+.v-btn,
+.v-btn__overlay,
+.v-btn__underlay,
+.v-list-item__overlay,
+.v-chip__overlay,
+.v-card__overlay,
+.v-tab,
+.v-expansion-panel-title__overlay,
+.v-selection-control__input,
+.v-selection-control__input::before,
+.v-field__outline,
+.v-field__overlay,
+.v-switch__track,
+.v-switch__thumb,
+.v-pagination__item {
+  transition-duration: var(--ek-motion-feedback-duration);
+  transition-timing-function: var(--ek-motion-feedback-easing);
+}
+
+.v-expansion-panel-title__icon,
+.v-expansion-panel,
+.v-expansion-panel__shadow {
+  transition-duration: var(--ek-motion-reveal-duration);
+  transition-timing-function: var(--ek-motion-reveal-easing);
+}
+
+.v-overlay__scrim {
+  transition-duration: var(--ek-motion-overlay-duration) !important;
+  transition-timing-function: var(--ek-motion-overlay-easing) !important;
+}

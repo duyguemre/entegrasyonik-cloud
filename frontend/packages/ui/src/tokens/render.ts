@@ -38,6 +38,10 @@ import {
   duration,
   easing,
   motionDistance,
+  motionRole,
+  motionStaggerDivisor,
+  motionLoop,
+  easingLinear,
   zIndex,
 } from './scale'
 import { channelPalette, channelBadgeMix } from './palette'
@@ -135,12 +139,21 @@ function renderDsV2ScaleLines(): string[] {
   }
   for (const [key, value] of Object.entries(controlHeight)) lines.push(pxLine(`control-h-${key}`, value))
   for (const [key, value] of Object.entries(motionDistance)) lines.push(pxLine(`motion-distance-${key}`, value))
+  // FR3 madde 7: hareket rolleri — kök süre/eğri token'larına BAĞLI (reduced-motion kökten akar).
+  lines.push(cssVarLine('easing-linear', easingLinear))
+  for (const [role, m] of Object.entries(motionRole)) {
+    lines.push(cssVarLine(`motion-${role}-duration`, `var(--ek-duration-${m.duration})`))
+    lines.push(cssVarLine(`motion-${role}-easing`, `var(--ek-easing-${m.easing})`))
+    lines.push(cssVarLine(`motion-${role}`, `var(--ek-motion-${role}-duration) var(--ek-motion-${role}-easing)`))
+  }
+  lines.push(cssVarLine('motion-stagger', `calc(var(--ek-duration-fast) / ${motionStaggerDivisor})`))
+  for (const [key, value] of Object.entries(motionLoop)) lines.push(cssVarLine(`motion-loop-${key}`, `${value}ms`))
   for (const [key, value] of Object.entries(zIndex)) lines.push(cssVarLine(`z-${key}`, String(value)))
   lines.push(
     cssVarLine(
       'transition-colors',
       ['color', 'background-color', 'border-color', 'box-shadow', 'opacity']
-        .map((prop) => `${prop} var(--ek-duration-fast) var(--ek-easing-enter)`)
+        .map((prop) => `${prop} var(--ek-motion-feedback)`)
         .join(', '),
     ),
   )

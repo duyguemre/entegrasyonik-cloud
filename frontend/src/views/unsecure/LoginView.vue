@@ -58,7 +58,7 @@ integrationStore.init()
   font-size: var(--ek-font-size-sm);
   font-weight: var(--ek-font-weight-semibold);
   text-decoration: none;
-  transition: color var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: color var(--ek-motion-feedback);
 }
 
 .ek-login-site-link:hover,

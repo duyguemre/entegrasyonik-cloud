@@ -554,7 +554,7 @@ const formatTime = (dateStr?: string) => (dateStr ? formatRelative(dateStr) : ''
     box-shadow: var(--ek-shadow-raised);
     opacity: 0;
     pointer-events: none;
-    transition: opacity var(--ek-duration-fast) var(--ek-easing-standard);
+    transition: opacity var(--ek-motion-feedback);
   }
 
   .ek-nd-item:hover .ek-nd-item__actions,

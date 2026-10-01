@@ -2,12 +2,12 @@
   frontend/src/components/integrations/IntegrationGuideCard.vue
 
   DS-v2 Aşama 2 — entegrasyon ekranlarının (pazaryeri/e-ticaret/kargo/e-fatura/ERP)
-  sağ kolonundaki "Hızlı Başlangıç Rehberi" kartı, TEK KAYNAK. Önceden 5 ekran
+  sağ kolonundaki "Hızlı başlangıç rehberi" kartı, TEK KAYNAK. Önceden 5 ekran
   aynı eski kart + tonlu uyarı kutusunu ayrı ayrı çiziyordu. `EkCard` başlık
   motifi (ikon kapsülü + başlık) + numaralı adımlar (`ol`) + bilgi notu.
 -->
 <template>
-  <EkCard title="Hızlı Başlangıç Rehberi" icon="mdi-lightbulb-on-outline" icon-tone="info" :heading-level="2">
+  <EkCard title="Hızlı başlangıç rehberi" icon="mdi-lightbulb-on-outline" icon-tone="info" :heading-level="2">
     <ol class="ek-guide">
       <li v-for="(step, i) in steps" :key="i" class="ek-guide__step">
         <span class="ek-guide__num ek-num" aria-hidden="true">{{ i + 1 }}</span>

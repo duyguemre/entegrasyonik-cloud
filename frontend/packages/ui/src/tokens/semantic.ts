@@ -154,11 +154,13 @@ export const workspaceColorsLight: Record<WorkspaceColorKey, string> = {
   'chrome-border': navy[600],
   'chrome-text': ink[0],
   'chrome-text-muted': navy[200],
-  'sidebar-bg': ink[50],
+  // FR3 madde 1 (fe-r3a): menü yüzeyi BEYAZ (kart dili) — gri çalışma alanından ince kenarlıkla ayrışır; önce menü ile
+  // çalışma alanı aynı griye yakındı (ink-50 ↔ ink-100), sınır belirsiz ve "seçkin değil" geri bildirimi.
+  'sidebar-bg': ink[0],
   'sidebar-border': ink[200],
   'sidebar-section': navy[500],
   'sidebar-text': ink[700],
-  'sidebar-hover': ink[150],
+  'sidebar-hover': ink[100],
   'sidebar-active': cobalt[100],
   // Aşama 5: şerit bir kademe koyu (ink-200) → etkin sekme (= içerik zemini ink-100) çok daha belirgin öne çıkar;
   // pasif hover şeritten açık (ink-150), etkinden koyu — "öne gelme" sırası tek yönde.
@@ -207,7 +209,8 @@ export const workspaceColorsDark: Record<WorkspaceColorKey, string> = {
   'chrome-border': inkDark.chromeBorder,
   'chrome-text': inkDark.textStrong,
   'chrome-text-muted': navy[200],
-  'sidebar-bg': inkDark.sidebar,
+  // FR3 madde 1: koyu temada menü canvas'tan bir kademe yüksek yüzey (light'taki beyaz menü ↔ gri alan ilişkisinin aynısı).
+  'sidebar-bg': inkDark.surface,
   'sidebar-border': inkDark.borderSubtle,
   'sidebar-section': navy[300],
   'sidebar-text': inkDark.textDefault,

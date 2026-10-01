@@ -37,9 +37,9 @@
                 :class="[stepDotClass(index, step.status), currentStepIndex === index && isProcessing ? 'step-dot--processing' : '']"></span>
               <span class="step-title"
                 :class="{ 'active-text': currentStepIndex === index, 'passed-text': currentStepIndex > index }">
-                {{ currentStepIndex === index && localItem.status === 'FAILED' ? 'Hata Oluştu' : (currentStepIndex
+                {{ currentStepIndex === index && localItem.status === 'FAILED' ? 'Hata oluştu' : (currentStepIndex
                   ===
-                  index && localItem.status === 'CANCELLED' ? 'İptal Edildi' : step.title) }}
+                  index && localItem.status === 'CANCELLED' ? 'İptal edildi' : step.title) }}
               </span>
             </div>
           </div>
@@ -805,7 +805,7 @@ onBeforeUnmount(() => {
   font-size: var(--ek-font-size-xs);
   font-weight: var(--ek-font-weight-semibold);
   cursor: pointer;
-  transition: background-color var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: background-color var(--ek-motion-feedback);
 }
 
 .map-chip:focus-visible,
@@ -941,7 +941,7 @@ onBeforeUnmount(() => {
   background: var(--ek-color-border-strong);
   position: relative;
   z-index: 2;
-  transition: background-color var(--ek-duration-slow) var(--ek-easing-standard);
+  transition: background-color var(--ek-motion-layout);
 }
 
 .step-dot--upcoming {

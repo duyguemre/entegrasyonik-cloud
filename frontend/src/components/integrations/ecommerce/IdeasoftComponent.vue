@@ -11,17 +11,17 @@
           description="Ideasoft yönetim panelindeki uygulama (API) ayarlarından alınır.">
           <template #legend-extra><EkHelpHint hint="integration.credentials.ideasoft" /></template>
           <v-text-field class="ek-span-full" clearable v-model="editingClientIntegration.settings.storeName"
-            label="Mağaza Adı" />
+            label="Mağaza adı" />
           <v-text-field clearable v-model="editingClientIntegration.settings.key" label="Client ID" />
           <v-text-field clearable v-model="editingClientIntegration.settings.secret" label="Client Secret" />
           <div class="ek-span-full ek-ideasoft-status-row">
-            <span class="ek-ideasoft-status-row__label">Entegrasyon Durumu</span>
+            <span class="ek-ideasoft-status-row__label">Entegrasyon durumu</span>
             <EkStatusChip v-if="editingClientIntegration.settings?.auth?.refresh_token == 'sensitive'"
               tone="success" label="Yetkili" />
             <EkStatusChip v-else tone="danger" label="Yetkisiz" />
             <EkButton tone="primary" size="sm" icon="mdi-shield-check-outline" class="ek-ideasoft-status-row__action"
               @click="startAuthFlow()">
-              Entegrasyona Yetki Ver
+              Entegrasyona yetki ver
             </EkButton>
           </div>
         </EkFormSection>

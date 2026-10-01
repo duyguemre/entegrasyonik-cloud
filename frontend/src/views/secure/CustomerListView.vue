@@ -37,7 +37,7 @@
       :error="loadError"
       error-title="Müşteriler yüklenemedi"
       :search="searchCustomerForm.data.globalSearch"
-      search-placeholder="İsim, Telefon, E-posta veya Vergi No"
+      search-placeholder="Ad, telefon, e-posta veya vergi no"
       :chips="activeChips"
       :filter-count="panelFilterCount"
       selectable
@@ -77,7 +77,7 @@
       <template #cell-name="{ row }">
         <span class="ek-customer">
           <CustomerAvatar :first-name="row.firstName || row.companyName" :last-name="row.lastName" :anonymized="isAnonymized(row.firstName)" size="sm" />
-          <span class="ek-customer__name" :class="{ 'ek-muted': !row.firstName && !row.lastName && !row.companyName }">{{ row.fullName }}</span>
+          <span class="ek-customer__name" :class="{ 'ek-muted': !row.firstName && !row.lastName && !row.companyName }" :title="row.fullName">{{ row.fullName }}</span>
           <EkBadge v-if="row.isCorporate" tone="info">Kurumsal</EkBadge>
         </span>
       </template>
@@ -89,8 +89,15 @@
         <span v-else class="ek-muted">Sistem</span>
       </template>
       <!-- A13 · KVKK: listede iletişim her zaman maskeli; açık değer yalnız müşteri kartında "Göster" ile. -->
-      <template #cell-phone="{ row }"><span class="ek-num">{{ listContact('phone', row.phone, row.isPhoneMasked) }}</span></template>
-      <template #cell-email="{ row }">{{ listContact('email', row.email, row.isEmailMasked) }}</template>
+      <!-- P04 (K49): Telefon + E-posta tek "İletişim" kolonu (telefon üstte, e-posta ikincil satır). -->
+      <template #cell-contact="{ row }">
+        <span class="ek-cust-contact">
+          <span class="ek-num">{{ listContact('phone', row.phone, row.isPhoneMasked) }}</span>
+          <!-- İki alan da aynı nedenle gizliyse ("Pazaryeri gizledi") tek satır yeter. -->
+          <span v-if="listContact('email', row.email, row.isEmailMasked) !== listContact('phone', row.phone, row.isPhoneMasked)"
+            class="ek-cust-contact__sub" :title="listContact('email', row.email, row.isEmailMasked)">{{ listContact('email', row.email, row.isEmailMasked) }}</span>
+        </span>
+      </template>
       <template #cell-region="{ row }">
         <span class="ek-region">{{ row.addresses?.[0]?.city || '—' }}<span v-if="row.addresses?.[0]?.state" class="ek-muted"> · {{ row.addresses[0].state }}</span></span>
       </template>
@@ -166,9 +173,8 @@ const STATUS_OPTIONS = [
 // (yalnız saklanan alanlar: ad, şehir); ciro/iade oranı sayfada hesaplandığı için sıralanamaz.
 const columns: EkGridColumn[] = [
   { key: 'name', label: 'Müşteri', sortable: true },
-  { key: 'channel', label: 'Kaynak' },
-  { key: 'phone', label: 'Telefon' },
-  { key: 'email', label: 'E-posta', type: 'muted' },
+  { key: 'channel', label: 'Kanal' },
+  { key: 'contact', label: 'İletişim' },
   { key: 'region', label: 'Şehir', sortable: true },
   { key: 'orders', label: 'Sipariş', type: 'num' },
   { key: 'netRevenue', label: 'Net ciro', type: 'num' },
@@ -378,6 +384,21 @@ defineExpose({
 </script>
 
 <style scoped>
+.ek-cust-contact {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ek-cust-contact__sub {
+  overflow: hidden;
+  max-width: 220px;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .ek-customer-channels__more {
   font-size: var(--ek-type-caption-size);
   color: var(--ek-color-content-muted);
@@ -414,6 +435,13 @@ defineExpose({
   display: inline-flex;
   align-items: center;
   gap: var(--ek-space-2);
+  /* Uzun ad kısalır, "Kurumsal" rozeti hücre kenarında kırpılmaz. */
+  max-width: 100%;
+  min-width: 0;
+}
+
+.ek-customer > :not(.ek-customer__name) {
+  flex: none;
 }
 
 .ek-region {
@@ -421,6 +449,10 @@ defineExpose({
 }
 
 .ek-customer__name {
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--ek-color-content-strong);
   font-weight: var(--ek-font-weight-medium);
 }

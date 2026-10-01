@@ -554,7 +554,7 @@ const CellBody = defineComponent({
 .vg-th--num .vg-sort { flex-direction: row-reverse; }
 .vg-sort:hover { color: var(--ek-color-content-strong); }
 .vg-sort:focus-visible { outline: none; box-shadow: var(--ek-focus-ring); }
-.vg-sort__icon { font-size: var(--ek-icon-xs); opacity: 0; transition: opacity var(--ek-duration-fast) var(--ek-easing-standard); }
+.vg-sort__icon { font-size: var(--ek-icon-xs); opacity: 0; transition: opacity var(--ek-motion-feedback); }
 .vg-sort:hover .vg-sort__icon, .vg-sort__icon.is-on { opacity: 1; }
 .vg-sort__icon.is-on { color: var(--ek-color-action); }
 

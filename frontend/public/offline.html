@@ -1,274 +1,38 @@
 <!DOCTYPE html>
 <html lang="tr">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İnternet Bağlantısı Kesildi | Premium Panel</title>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
-
-    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.x/css/materialdesignicons.min.css" rel="stylesheet">
-
-    <style>
-        /* --- SENİN RENK PALETİN VE GLOBAL AYARLAR --- */
-        :root {
-            --bg-color: #f5f7f9;
-            /* Sitenin genel arka planı */
-            --passive-color: #96a9b7;
-            /* Senin PassiveColor */
-            --passive-dark: #455A64;
-            /* Koyu PassiveColor */
-            --success-color: #10b981;
-            /* Success Yeşili */
-            --error-color: #f43f5e;
-            /* Error Kırmızısı */
-            --white: #ffffff;
-            --text-dark: #1e293b;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-dark);
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-
-        /* --- OFFLINE KAPSAYICI (Bento Style & Glassmorphism) --- */
-        .offline-container {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            border-radius: 24px;
-            /* Senin Yuvarlak Hatların */
-            padding: 40px;
-            text-align: center;
-            max-width: 480px;
-            width: 90%;
-            /* Senin Premium Gölgen (PassiveColor tonlu) */
-            box-shadow:
-                0 4px 6px -1px rgba(0, 0, 0, 0.05),
-                0 25px 50px -12px rgba(150, 169, 183, 0.2) !important;
-            transition: all 0.3s ease;
-        }
-
-        /* --- GÖRSEL VE İKON ALANI --- */
-        .icon-wrapper {
-            position: relative;
-            margin-bottom: 30px;
-            display: inline-flex;
-        }
-
-        /* Ana Bulut İkonu (PassiveColor) */
-        .mdi-cloud-off-outline {
-            font-size: 80px;
-            color: var(--passive-color);
-            opacity: 0.8;
-        }
-
-        /* Uyarı Noktası (Error Kırmızısı + Glow) */
-        .status-dot {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 14px;
-            height: 14px;
-            background-color: var(--error-color);
-            border-radius: 50%;
-            border: 2px solid var(--white);
-            /* Kırmızı Parlama Efekti */
-            box-shadow: 0 0 10px rgba(244, 63, 94, 0.6);
-            animation: pulse-red 2s infinite;
-        }
-
-        /* --- METİN STİLLERİ (Masaüstü/Mobil Uyumlu) --- */
-        h1 {
-            font-weight: 900;
-            font-size: 1.5rem;
-            letter-spacing: -0.03em;
-            color: var(--passive-dark);
-            margin-bottom: 12px;
-            text-transform: uppercase;
-        }
-
-        p {
-            font-size: 0.9rem;
-            color: #64748b;
-            /* Muted Slate */
-            line-height: 1.6;
-            margin-bottom: 30px;
-            font-weight: 500;
-        }
-
-        /* --- İŞLEM BUTONU (Premium Success) --- */
-        .retry-btn {
-            background-color: var(--success-color);
-            color: var(--white);
-            border: none;
-            border-radius: 12px;
-            /* Senin Buton Yuvarlaklığın */
-            padding: 12px 24px;
-            font-size: 0.85rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            /* Yeşil Parlama Efekti (Glow) */
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-        }
-
-        .retry-btn:hover {
-            background-color: #059669;
-            /* Koyu Yeşil */
-            transform: translateY(-2px) scale(1.02);
-            box-shadow: 0 6px 15px rgba(16, 185, 129, 0.4);
-        }
-
-        .retry-btn:active {
-            transform: translateY(0) scale(1);
-        }
-
-        /* --- FOOTER / DURUM BİLGİSİ --- */
-        .offline-footer {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid rgba(150, 169, 183, 0.1);
-            font-size: 0.75rem;
-            color: var(--passive-color);
-            font-weight: 600;
-        }
-
-        /* --- ANİMASYONLAR --- */
-        @keyframes pulse-red {
-            0% {
-                box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.6);
-            }
-
-            70% {
-                box-shadow: 0 0 0 10px rgba(244, 63, 94, 0);
-            }
-
-            100% {
-                box-shadow: 0 0 0 0 rgba(244, 63, 94, 0);
-            }
-        }
-
-        @keyframes mdi-spin {
-            from {
-                transform: rotate(0deg);
-            }
-
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        .mdi-loading.mdi-spin {
-            animation: mdi-spin 1s infinite linear;
-        }
-
-        /* Mobil Uyumluluk */
-        @media (max-width: 600px) {
-            .offline-container {
-                padding: 30px 20px;
-            }
-
-            h1 {
-                font-size: 1.25rem;
-            }
-
-            .mdi-cloud-off-outline {
-                font-size: 60px;
-            }
-        }
-
-
-        /* Footer içindeki marka vurgusu */
-        .brand-highlight {
-            color: var(--passive-dark);
-            background: rgba(150, 169, 183, 0.15);
-            /* Passive color'ın çok açık hali */
-            padding: 2px 8px;
-            border-radius: 6px;
-            font-weight: 800;
-            letter-spacing: 0.5px;
-            display: inline-block;
-            margin: 0 2px;
-            border: 1px solid rgba(150, 169, 183, 0.2);
-        }
-
-        .offline-footer {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Bağlantı yok · Entegrasyonik</title>
+  <!-- MOB-01 — dürüst çevrimdışı ekranı. Service worker yalnız bu sayfayı ve kabuk dosyalarını önbellekte tutar;
+       kiracı verisi önbellekte YOK, bu yüzden çevrimdışıyken hiçbir veri gösterilmez. Satır içi betik yok (CSP).
+       Renkler İSTİSNAEN literal (ayrı belge; paket token'larına erişemez): packages/ui/src/tokens/palette.ts ile senkron. -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <meta name="theme-color" content="#13255B" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0B1530" media="(prefers-color-scheme: dark)">
+  <script src="/theme-boot.js" data-storage-key="ek-theme"></script>
+  <style>
+    :root { --bg: #F6F8FB; --card: #FFFFFF; --border: #E4E8EF; --ink: #121A2B; --muted: #505C71; --brand: #2E55D4; --on-brand: #FFFFFF; }
+    :root[data-theme="dark"] { --bg: #0E131E; --card: #151B28; --border: #222B3B; --ink: #EEF2F8; --muted: #A3AEC0; --brand: #6C8BE6; --on-brand: #0B0F18; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 16px; background: var(--bg); color: var(--ink);
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    main { width: 100%; max-width: 420px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 32px 24px; text-align: center; }
+    img { width: 48px; height: 48px; }
+    h1 { font-size: 1.25rem; font-weight: 600; margin: 16px 0 8px; }
+    p { margin: 0 0 24px; color: var(--muted); line-height: 1.5; font-size: .9375rem; }
+    a.retry { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; padding: 0 20px;
+      border-radius: 8px; background: var(--brand); color: var(--on-brand); font-weight: 600; text-decoration: none; }
+    a.retry:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+  </style>
 </head>
-
 <body>
-    <div class="offline-container">
-        <div class="icon-wrapper">
-            <i class="mdi mdi-cloud-off-outline"></i>
-            <div class="status-dot"></div>
-        </div>
-
-        <h1>Bağlantı Kesildi</h1>
-
-        <p>Üzgünüz, şu anda internet bağlantınızda bir kesinti görünüyor. Sayfayı yenilemeyi deneyebilir veya
-            bağlantınızın gelmesini bekleyebilirsiniz.</p>
-
-        <button class="retry-btn" id="retryBtn">
-            <i class="mdi mdi-refresh"></i>
-            Tekrar Dene
-        </button>
-
-        <div class="offline-footer">
-            <span class="brand-highlight">ENTEGRASYONIK</span>| Çevrimdışı Mod
-        </div>
-    </div>
-
-    <script>
-        // "Tekrar Dene" butonuna basınca sayfayı yenileme (UI Feedback'li)
-        document.getElementById('retryBtn').addEventListener('click', function () {
-            const icon = this.querySelector('.mdi');
-            const text = this.querySelector('span') || this;
-
-            // İkonu loader yap
-            icon.classList.remove('mdi-refresh');
-            icon.classList.add('mdi-loading', 'mdi-spin');
-            this.style.opacity = '0.7';
-            this.disabled = true;
-
-            // 1 saniye sonra sayfayı yenile (Bağlantı kontrolü hissi verir)
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-        });
-
-        // İnternet geri geldiğinde otomatik yenileme (UX Geliştirme)
-        window.addEventListener('online', function () {
-            // Eğer kullanıcı hala bu sayfadaysa, internet geldiği an ana sayfaya yönlendir.
-            window.location.href = '/';
-        });
-    </script>
+  <main role="main" aria-labelledby="t">
+    <img src="/favicon.svg" alt="" width="48" height="48">
+    <h1 id="t">İnternet bağlantısı yok</h1>
+    <p>Entegrasyonik çevrimdışıyken veri göstermez ve işlem yapmaz. Bağlantınız geri geldiğinde sayfa kendiliğinden yenilenir.</p>
+    <a class="retry" href="/">Tekrar dene</a>
+  </main>
+  <script src="/offline.js"></script>
 </body>
-
 </html>

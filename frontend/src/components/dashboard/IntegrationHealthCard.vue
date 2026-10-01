@@ -10,7 +10,7 @@
     :subtitle="subtitle"
     icon="mdi-heart-pulse"
     :icon-tone="headerTone"
-    :heading-level="2"
+    :heading-level="3"
     :to-label="canOpen('marketplace') ? 'Pazaryeri entegrasyonlarını aç' : undefined"
     flush
     class="dash-health"

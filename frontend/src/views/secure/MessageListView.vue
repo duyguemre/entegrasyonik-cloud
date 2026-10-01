@@ -28,7 +28,7 @@
       :error="loadError"
       error-title="Mesajlar yüklenemedi"
       :search="searchForm.data.globalSearch"
-      search-placeholder="Mesaj içeriği, Ürün Adı veya Sipariş No"
+      search-placeholder="Mesaj içeriği, ürün adı veya sipariş no"
       :chips="activeChips"
       :filter-count="panelFilterCount"
       selectable
@@ -55,12 +55,11 @@
       <!-- faz3-fe-help: ilk kullanım — hiç kayıt yokken "Nasıl başlanır?" (filtreli boş sonuçta gösterilmez). -->
       <template #empty-action><HelpStartLink article="ord-messages-sla" /></template>
       <template #filters>
+        <EkSelect kind="channel" v-model="searchForm.data.integrationCodes" :items="CHANNEL_OPTIONS" item-title="title" item-value="value" label="Kanal" multiple clearable />
         <v-select v-model="searchForm.data.status" :items="statusOptions" label="Mesaj durumu" item-title="label" item-value="value" clearable />
         <v-select v-model="searchForm.data.type" :items="typeOptions" label="Mesaj tipi" item-title="label" item-value="value" clearable />
-        <v-select v-model="searchForm.data.isRejected" :items="REJECT_OPTIONS" label="Red durumu" item-title="label" item-value="value" />
-        <EkSelect kind="channel" v-model="searchForm.data.integrationCodes" :items="CHANNEL_OPTIONS" item-title="title" item-value="value" label="Kanal" multiple clearable />
-        <EkDateField v-model="searchForm.data.startDate" label="Başlangıç tarihi" value-format="iso-date" :max="searchForm.data.endDate" />
-        <EkDateField v-model="searchForm.data.endDate" label="Bitiş tarihi" value-format="iso-date" :min="searchForm.data.startDate" />
+        <v-select v-model="searchForm.data.isRejected" :items="REJECT_OPTIONS" label="Ret durumu" item-title="label" item-value="value" clearable />
+        <EkDateRange v-model:start="searchForm.data.startDate" v-model:end="searchForm.data.endDate" label="Mesaj tarihi" value-format="iso-date" />
       </template>
 
       <template #toolbar-end>
@@ -131,7 +130,7 @@
 
 <script setup lang="ts">
 import HelpStartLink from '@/components/help/HelpStartLink.vue'
-import { EkSelect, EkRowActions, type EkRowAction, EkButton, EkDateField, EkChannelDot, EkStatusChip, EkTooltip } from '@entegrasyonik/ui/components'
+import { EkSelect, EkRowActions, type EkRowAction, EkButton, EkDateRange, EkChannelDot, EkStatusChip, EkTooltip } from '@entegrasyonik/ui/components'
 import type { EkGridColumn, EkGridSort, EkActiveFilterChip } from '@entegrasyonik/ui/components'
 import { ref, reactive, computed, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -205,7 +204,8 @@ const searchForm = reactive({
 const statusOptions = Object.entries(MESSAGE_STATUS_LABELS).map(([value, label]) => ({ value, label }));
 const typeOptions = Object.entries(MESSAGE_TYPE_LABELS).map(([value, label]) => ({ value, label }));
 
-const REJECT_OPTIONS = [{ label: 'Tümü', value: null }, { label: 'Sadece reddedilenler', value: true }, { label: 'Reddedilmeyenler', value: false }];
+// P02 (K49): boş alan = tümü; "Tümü" seçeneği yok (temizlenebilir).
+const REJECT_OPTIONS = [{ label: 'Sadece reddedilenler', value: true }, { label: 'Reddedilmeyenler', value: false }];
 const CHANNEL_OPTIONS = [{ title: 'Trendyol', value: 'trendyol' }, { title: 'Hepsiburada', value: 'hepsiburada' }, { title: 'N11', value: 'n11' }];
 
 // DS-v2 liste standardı. MessageService.getMessages `sortBy.key` ile SUNUCUDA sıralar

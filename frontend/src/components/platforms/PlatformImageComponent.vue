@@ -78,7 +78,7 @@ watch(() => props.integrationCode, loadIntegrationData)
     align-items: center;
     justify-content: center;
     cursor: default;
-    transition: border-color var(--ek-duration-base) var(--ek-easing-standard), background-color var(--ek-duration-base) var(--ek-easing-standard);
+    transition: border-color var(--ek-motion-reveal), background-color var(--ek-motion-reveal);
     vertical-align: middle;
     /* td içinde dikey hizalama garantisi */
 }
@@ -98,7 +98,7 @@ watch(() => props.integrationCode, loadIntegrationData)
     padding-left: 12px;
     filter: grayscale(0.8);
     opacity: 0.9;
-    transition: opacity var(--ek-duration-base) var(--ek-easing-standard), filter var(--ek-duration-base) var(--ek-easing-standard);
+    transition: opacity var(--ek-motion-reveal), filter var(--ek-motion-reveal);
 }
 
 .platform-logo {

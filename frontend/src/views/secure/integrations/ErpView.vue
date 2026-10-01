@@ -71,9 +71,9 @@ const restApi = useRestApi()
 const editingClientIntegration: any = ref({ settings: {} })
 
 const guideSteps = [
-  { title: 'Platformu Belirleyin', text: 'Üstteki ikonlara tıklayarak işlem yapacağınız ERP yazılımını seçin.' },
-  { title: 'API Bağlantısı', text: 'ERP panelinizden aldığınız API anahtarlarını ilgili alanlara girin.' },
-  { title: 'Ürün Eşleştirme', text: 'Kaydettikten sonra Ürünleri Eşleştir butonuyla verilerinizi senkronize edin.' }
+  { title: 'Kanalı seçin', text: 'Üstteki ikonlara tıklayarak işlem yapacağınız ERP yazılımını seçin.' },
+  { title: 'API bağlantısı', text: 'ERP panelinizden aldığınız API anahtarlarını ilgili alanlara girin.' },
+  { title: 'Ürün eşleştirme', text: 'Kaydettikten sonra Ürünleri eşleştir butonuyla verilerinizi senkronize edin.' }
 ]
 
 onMounted(() => {

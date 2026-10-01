@@ -141,7 +141,7 @@ function onKey(e: KeyboardEvent) {
   width: calc(100% - 2 * var(--ek-space-16));
   height: calc(100% - 2 * var(--ek-space-4));
   object-fit: contain;
-  transition: opacity var(--ek-duration-base) var(--ek-easing-enter);
+  transition: opacity var(--ek-motion-overlay);
 }
 
 .pgd__img.is-loading { opacity: 0; }

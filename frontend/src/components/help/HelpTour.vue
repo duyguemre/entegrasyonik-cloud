@@ -10,7 +10,7 @@
   <Teleport to="body">
     <transition name="ek-tour-fade">
       <section
-        v-if="offerOpen && !running"
+        v-if="offerOpen && !running && !offerSuppressed"
         ref="offerEl"
         class="ek-tour-offer"
         role="dialog"
@@ -249,11 +249,50 @@ watch(offerEl, (el) => {
   }
 }, { flush: 'post' })
 
+// P14 (K49): teklif kartı birincil eylemleri örtmesin — (1) açık çekmece / diyalog / menü / açılır liste varken gizlenir,
+// (2) katmanı çekmece/menü katmanının ALTINDA (`--ek-z-header`), (3) ekranda yapışık alt çubuk (`data-ek-sticky-bottom`,
+// ör. "Kaydedilmemiş değişiklik" çubuğu) görünürken kart çubuğun üstüne kalkar. Yalnız konum/katman; akış aynı.
+const offerSuppressed = ref(false)
+const offerLift = ref(0)
+const OVERLAY_OPEN = '.v-overlay--active:not(.v-tooltip):not(.v-snackbar), .v-navigation-drawer--temporary.v-navigation-drawer--active'
+let avoidFrame = 0
+function syncOfferAvoidance() {
+  avoidFrame = 0
+  if (typeof document === 'undefined') return
+  offerSuppressed.value = !!document.querySelector(OVERLAY_OPEN)
+  const vh = window.innerHeight
+  let lift = 0
+  document.querySelectorAll<HTMLElement>('[data-ek-sticky-bottom]').forEach((bar) => {
+    const r = bar.getBoundingClientRect()
+    if (r.height > 0 && r.top < vh && r.bottom > vh - 4) lift = Math.max(lift, vh - r.top)
+  })
+  offerLift.value = Math.ceil(lift)
+}
+watch(offerLift, (px) => document.documentElement.style.setProperty('--ek-tour-offer-lift', `${px}px`))
+const scheduleAvoidance = () => {
+  if (!avoidFrame && typeof requestAnimationFrame !== 'undefined') avoidFrame = requestAnimationFrame(syncOfferAvoidance)
+}
+let avoidObserver: MutationObserver | undefined
+watch(offerOpen, (open) => {
+  avoidObserver?.disconnect()
+  avoidObserver = undefined
+  window.removeEventListener('scroll', scheduleAvoidance, true)
+  if (!open || typeof MutationObserver === 'undefined') return
+  syncOfferAvoidance()
+  avoidObserver = new MutationObserver(scheduleAvoidance)
+  avoidObserver.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] })
+  window.addEventListener('scroll', scheduleAvoidance, true)
+}, { immediate: true })
+
 onMounted(() => {
   window.addEventListener('ek:help-tour', onExternalStart)
   window.addEventListener('resize', onResize)
 })
 onBeforeUnmount(() => {
+  avoidObserver?.disconnect()
+  window.removeEventListener('scroll', scheduleAvoidance, true)
+  if (avoidFrame) cancelAnimationFrame(avoidFrame)
+  document.documentElement.style.removeProperty('--ek-tour-offer-lift')
   offerObserver?.disconnect()
   setOfferSpace(0)
   clearTimeout(offerTimer)
@@ -269,8 +308,9 @@ defineExpose({ start })
   position: fixed;
   /* ADR-0034: Otopilot yan paneli açıkken teklif kartı panelin soluna kayar (`--ek-otopilot-offset`, OtopilotDock yazar). */
   right: calc(var(--ek-otopilot-offset, 0px) + var(--ek-space-6));
-  bottom: var(--ek-space-6);
-  z-index: var(--ek-z-toast);
+  bottom: calc(var(--ek-space-6) + var(--ek-tour-offer-lift, 0px));
+  /* P14: çekmece/menü/diyalog katmanının altında (açıkken ayrıca gizlenir). */
+  z-index: var(--ek-z-header);
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   gap: var(--ek-space-3);
@@ -349,8 +389,8 @@ defineExpose({ start })
   outline: 2px solid var(--ek-color-border-focus);
   outline-offset: 0;
   pointer-events: none;
-  transition: left var(--ek-duration-base) var(--ek-easing-standard), top var(--ek-duration-base) var(--ek-easing-standard),
-    width var(--ek-duration-base) var(--ek-easing-standard), height var(--ek-duration-base) var(--ek-easing-standard);
+  transition: left var(--ek-motion-reveal), top var(--ek-motion-reveal),
+    width var(--ek-motion-reveal), height var(--ek-motion-reveal);
 }
 
 .ek-tour__spot.is-none {
@@ -401,7 +441,7 @@ defineExpose({ start })
 
 .ek-tour-fade-enter-active,
 .ek-tour-fade-leave-active {
-  transition: opacity var(--ek-duration-base) var(--ek-easing-standard);
+  transition: opacity var(--ek-motion-reveal);
 }
 
 .ek-tour-fade-enter-from,
@@ -412,7 +452,7 @@ defineExpose({ start })
 @media (max-width: 599px) {
   .ek-tour-offer {
     right: var(--ek-space-4);
-    bottom: var(--ek-space-4);
+    bottom: calc(var(--ek-space-4) + var(--ek-tour-offer-lift, 0px));
     left: var(--ek-space-4);
     width: auto;
   }

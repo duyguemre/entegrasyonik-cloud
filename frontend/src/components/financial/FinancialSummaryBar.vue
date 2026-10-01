@@ -59,7 +59,7 @@ const props = defineProps<{
   formatCurrency: (v: any) => string
 }>()
 
-const money = (v: any) => `${props.formatCurrency(v)} ₺`
+const money = (v: any) => props.formatCurrency(v)
 
 /** Kesintinin brüt alacağa oranı (0–100); brüt yok/0 ise null (oran uydurulmaz). */
 const deductionShare = computed<number | null>(() => {
