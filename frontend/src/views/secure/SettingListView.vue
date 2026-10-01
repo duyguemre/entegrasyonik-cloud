@@ -131,7 +131,7 @@
                   </div>
                 </div>
               </div>
-              <p class="settingListView__help">Ad, renk ve logo değiştikçe önizleme anında güncellenir; kaydettiğinizde yayına alınır.</p>
+              <p class="settingListView__help">Ad, renk ve logo değiştikçe önizleme anında güncellenir; değişiklikler kaydettiğinizde saklanır.</p>
             </aside>
           </div>
         </section>
@@ -264,7 +264,7 @@
             </SettingRow>
           </EkDetailPanel>
           <EkAlert v-show="!searching" tone="info" title="Entegrasyon sağlık durumu">
-            Bir entegrasyonda kritik hata oluştuğunda hata bildirim e-postasına otomatik bilgilendirme gönderilir.
+            Entegrasyonlarınızın anlık durumunu ve son hatalarını Entegrasyon sağlığı ekranından izleyebilirsiniz.
           </EkAlert>
         </section>
 
@@ -359,7 +359,7 @@ const GROUPS: Array<{ value: GroupId; label: string; short: string; description:
 interface SettingDef { group: GroupId; label: string; description?: string; keywords?: string; path: string; corporate?: boolean }
 const ROWS: Record<string, SettingDef> = {
   storeName: { group: 1, label: 'Mağaza Adı', description: 'Müşterilere ve e-postalarda görünecek resmi mağaza adınız.', keywords: 'isim unvan', path: 'storeName' },
-  brandColor: { group: 1, label: 'Mağaza Renk Paleti', description: 'Önizlemede ve mağaza kimliğinde kullanılan marka renginiz. Paletten seçin ya da kendi renginizi girin.', keywords: 'renk marka tema', path: 'brandColor' },
+  brandColor: { group: 1, label: 'Mağaza Renk Paleti', description: 'Mağaza kimliğinizin rengi; önizlemede görünür. Paletten seçin ya da kendi renginizi girin.', keywords: 'renk marka tema', path: 'brandColor' },
   logo: { group: 1, label: 'Mağaza Logosu', description: 'Dosya yükleyin ya da doğrudan bir görsel bağlantısı yapıştırın.', keywords: 'logo görsel resim', path: 'logo' },
   invoiceType: { group: 2, label: 'Fatura tipi', description: 'Kurumsal seçildiğinde şirket bilgileri bölümü açılır.', keywords: 'bireysel kurumsal şahıs şirket', path: 'invoice.type' },
   firstname: { group: 2, label: 'İsim', keywords: 'ad', path: 'invoice.firstname' },
@@ -379,9 +379,9 @@ const ROWS: Record<string, SettingDef> = {
   taxPercentage: { group: 3, label: 'Varsayılan KDV Oranı', description: 'Yeni ürünlerde önerilen KDV oranı.', keywords: 'kdv vergi oran', path: 'taxPercentage' },
   warranty: { group: 3, label: 'Garanti Süresi (Ay)', description: 'Mağaza genelindeki garanti süresi.', keywords: 'garanti', path: 'warranty' },
   maxPurchaseQuantity: { group: 3, label: 'Maksimum Satış Adedi', description: 'Tek siparişte satılabilecek en fazla adet.', keywords: 'adet limit sınır', path: 'maxPurchaseQuantity' },
-  timezone: { group: 3, label: 'Zaman Dilimi', description: 'Sipariş senkronizasyonu bu zaman dilimine göre yapılacaktır.', keywords: 'saat dilim', path: 'timezone' },
-  workingDays: { group: 3, label: 'Çalışma Günleri', description: 'Seçili günlerin dışındaki siparişlerin kargo süresi otomatik olarak bir sonraki iş gününe kaydırılacaktır.', keywords: 'gün tatil hafta', path: 'workingDays' },
-  alertEmail: { group: 4, label: 'Hata Bildirim E-postası', description: 'Entegrasyon hataları bu adrese gönderilecektir.', keywords: 'e-posta mail uyarı hata', path: 'alertEmail' },
+  timezone: { group: 3, label: 'Zaman Dilimi', description: 'Mağazanızın çalıştığı zaman dilimi.', keywords: 'saat dilim', path: 'timezone' },
+  workingDays: { group: 3, label: 'Çalışma Günleri', description: 'Mağazanızın sipariş hazırlayıp kargoya verdiği günler.', keywords: 'gün tatil hafta', path: 'workingDays' },
+  alertEmail: { group: 4, label: 'Hata Bildirim E-postası', description: 'Entegrasyon hata bildirimleri için iletişim adresiniz.', keywords: 'e-posta mail uyarı hata', path: 'alertEmail' },
   supportPhone: { group: 4, label: 'Müşteri Destek Telefonu', description: 'Müşterilerinizin göreceği iletişim numarası.', keywords: 'telefon destek', path: 'supportPhone' },
 }
 const row = (key: string) => ROWS[key]
