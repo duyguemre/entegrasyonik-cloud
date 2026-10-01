@@ -22,7 +22,9 @@
       </button>
     </figcaption>
 
-    <div v-if="state === 'loading'" class="bo-chart__skel" :style="{ height: `${height}px` }" aria-busy="true" aria-label="Grafik yükleniyor"></div>
+    <div v-if="state === 'loading'" class="bo-chart__skel" :style="{ height: `${height}px` }" role="status" aria-busy="true">
+      <span class="ek-sr-only">Grafik yükleniyor…</span>
+    </div>
     <div v-else-if="state === 'error'" class="bo-chart__msg is-error" :style="{ minHeight: `${height}px` }" role="alert">
       <v-icon icon="mdi-alert-circle-outline" aria-hidden="true" />
       <span>{{ errorText }}</span>
@@ -111,7 +113,12 @@ onMounted(() => {
 })
 onBeforeUnmount(() => mq?.removeEventListener?.('change', onMq))
 
-const hasData = computed(() => props.series.some((s) => s.data.some((v) => v !== 0)))
+// bo-wdg: "0 hata" gerçek bir ölçümdür → tümü 0 olan seri çizilir. Boş = seri/nokta yok ya da hepsi null/NaN.
+// İstisna halka (donut): toplam 0 iken dilim çizilemez → boş metni.
+const hasData = computed(() => {
+  const finite = props.series.flatMap((s) => s.data).filter((v) => typeof v === 'number' && Number.isFinite(v))
+  return props.kind === 'donut' ? finite.some((v) => v !== 0) : finite.length > 0
+})
 const option = computed(() =>
   buildOption({ kind: props.kind, series: props.series, categories: props.categories, format: props.format, threshold: props.threshold, categoryTones: props.categoryTones, mode: mode.value, animate: !reduced.value }),
 )

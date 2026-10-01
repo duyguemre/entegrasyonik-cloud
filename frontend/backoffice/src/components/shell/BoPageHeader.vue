@@ -41,6 +41,9 @@
         </div>
       </div>
       <div v-if="$slots.actions" class="bo-ph__actions"><slot name="actions" /></div>
+      <!-- bo-wdg: otomatik yenileme başarısızlığı kalıcı durum bölgesinde duyurulur (yalnız eski veri; "Güncellendi" her
+           turda okunmaz). Bölge hep DOM'da → ilk başarısızlık da duyurulur. -->
+      <span class="ek-sr-only" role="status" data-testid="page-stale-live">{{ stale && updatedAt ? 'Sayfa yenilenemedi; gösterilen veri eski.' : '' }}</span>
     </div>
   </header>
 </template>

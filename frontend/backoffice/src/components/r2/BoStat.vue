@@ -15,7 +15,7 @@
     class="bo-stat"
     :class="[`is-${tone}`, { 'is-link': !!to }]"
     v-bind="to ? (isHash ? { href: to } : { to }) : {}"
-    :aria-label="to ? `${label}: ${value}${hint ? ` — ${hint}` : ''}` : undefined"
+    :aria-label="to ? linkLabel : undefined"
     :title="info"
     data-bo-stat
   >
@@ -27,7 +27,7 @@
       <span v-if="loading" class="bo-stat__skel" aria-hidden="true"></span>
       <span v-else class="bo-stat__value ek-num">{{ value }}</span>
       <span v-if="delta && !loading" class="bo-stat__delta" :class="`is-${delta.dir}`">
-        <v-icon v-if="delta.dir !== 'flat'" :icon="delta.dir === 'up' ? 'mdi-arrow-top-right' : 'mdi-arrow-bottom-right'" aria-hidden="true" />{{ delta.text }}
+        <v-icon v-if="delta.dir !== 'flat'" :icon="delta.dir === 'up' ? 'mdi-arrow-top-right' : 'mdi-arrow-bottom-right'" aria-hidden="true" /><span v-if="deltaWord" class="ek-sr-only">{{ deltaWord }} </span>{{ delta.text }}
       </span>
     </span>
     <span v-if="hint" class="bo-stat__hint">{{ hint }}</span>
@@ -63,6 +63,15 @@ const props = withDefaults(
   { tone: 'neutral' },
 )
 const isHash = computed(() => typeof props.to === 'string' && props.to.startsWith('#'))
+// bo-wdg: değişim yönü yalnız ikon/renk değil, metin olarak da (ekran okuyucu); bağlantılı kutuda ad değişimi ve ⓘ bilgisini içerir.
+const DELTA_WORD = { up: 'artış', down: 'azalış', flat: '' } as const
+const deltaWord = computed(() => (props.delta ? DELTA_WORD[props.delta.dir] : ''))
+const linkLabel = computed(() => {
+  const delta = props.delta ? `, ${[deltaWord.value, props.delta.text].filter(Boolean).join(' ')}` : ''
+  const hint = props.hint ? ` — ${props.hint}` : ''
+  const info = props.info ? `. ${props.info}` : ''
+  return `${props.label}: ${props.value}${delta}${hint}${info}`
+})
 const sparkTone = computed(() => (props.tone === 'critical' ? 'error' : props.tone === 'warning' ? 'warning' : 'action'))
 </script>
 
@@ -139,7 +148,8 @@ const sparkTone = computed(() => (props.tone === 'critical' ? 'error' : props.to
 
 .bo-stat__info {
   flex: none;
-  color: var(--ek-color-content-subtle);
+  /* bo-wdg: anlam taşıyan ikon → okunur kontrast (subtle ≈ 2,4:1). */
+  color: var(--ek-color-content-muted);
   font-size: var(--ek-icon-xs);
 }
 

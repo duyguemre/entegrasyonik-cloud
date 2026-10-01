@@ -88,5 +88,8 @@ describe('BO2-50 eylem sözlüğü tek kaynak', () => {
   it('erişilebilir ad nesneyle kurulur', () => {
     expect(boActionLabel('edit', 'Duyuruyu')).toBe('Duyuruyu düzenle')
     expect(boActionLabel('refresh')).toBe('Yenile')
+    // bo-wdg: "Ayrıntı" isimdir → nesneyle doğal fiil öbeği.
+    expect(boActionLabel('detail')).toBe('Ayrıntı')
+    expect(boActionLabel('detail', 'Poyraz Outdoor aboneliğinin')).toBe('Poyraz Outdoor aboneliğinin ayrıntılarını aç')
   })
 })

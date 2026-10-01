@@ -18,7 +18,7 @@
         <template v-if="loading">
           <span class="bo-sh__skeleton bo-sh__skeleton--title" aria-hidden="true"></span>
           <span class="bo-sh__skeleton" aria-hidden="true"></span>
-          <span class="ek-sr-only">Durum denetleniyor</span>
+          <span class="ek-sr-only">Durum denetleniyor…</span>
         </template>
         <template v-else>
           <p class="bo-sh__verdict" data-testid="status-verdict">{{ verdict }}</p>
@@ -29,7 +29,8 @@
     </div>
     <ul v-if="!loading && facts?.length" class="bo-sh__facts" aria-label="Özet">
       <li v-for="f in facts" :key="f.label">
-        <component :is="f.href ? 'a' : f.to ? RouterLink : 'span'" :href="f.href" :to="f.to" class="bo-sh__fact" :class="[`is-${f.tone ?? 'ok'}`, { 'is-link': f.href || f.to }]">
+        <!-- bo-wdg: `href` yalnız <a>'ya, `to` yalnız RouterLink'e bağlanır (RouterLink'e `href=undefined` geçmesi href'siz <a> üretiyordu). -->
+        <component :is="f.href ? 'a' : f.to ? RouterLink : 'span'" v-bind="factLink(f)" class="bo-sh__fact" :class="[`is-${f.tone ?? 'ok'}`, { 'is-link': f.href || f.to }]">
           <span class="bo-sh__fact-dot" aria-hidden="true"></span>
           <span class="bo-sh__fact-label">{{ f.label }}</span>
           <span class="bo-sh__fact-value">{{ f.value }}</span>
@@ -72,6 +73,12 @@ const props = withDefaults(
 )
 
 const badge = computed(() => HEALTH_BADGE[props.health])
+/** Özet maddesinin bağlantı öznitelikleri: sayfa içi çapa `href`, ekran `to`; ikisi de yoksa düz metin. */
+function factLink(f: StatusFact): Record<string, unknown> {
+  if (f.href) return { href: f.href }
+  if (f.to) return { to: f.to }
+  return {}
+}
 </script>
 
 <style scoped>

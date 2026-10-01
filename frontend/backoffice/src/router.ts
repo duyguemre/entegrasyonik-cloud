@@ -1,5 +1,5 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import { watch } from 'vue'
+import { START_LOCATION, createRouter, createWebHistory } from 'vue-router'
+import { nextTick, watch } from 'vue'
 import { session } from './auth/session'
 import { DEFAULT_PATH, DETAIL_ROUTES, SCREENS } from './navigation/screens'
 
@@ -58,8 +58,16 @@ router.beforeEach(async (to) => {
   return true
 })
 
-router.afterEach((to) => {
+router.afterEach((to, from, failure) => {
   document.title = `${(to.meta.title as string) ?? 'Yönetim'} · Entegrasyonik Yönetim`
+  // bo-wdg: ekran değişince odak içerik bölgesine (`#bo-main`, tabindex=-1) taşınır — klavye/ekran okuyucu yeni sayfanın
+  // başından devam eder, mobilde kapanan çekmecede kalmaz. İlk açılış, yalnız sorgu/çapa değişimi (süzgeç, sekme,
+  // `#bölüm`) ve iptal edilen gezinme hariç; kaydırma `scrollBehavior`'da kalır (`preventScroll`).
+  if (failure || from === START_LOCATION || to.path === from.path) return
+  void nextTick(() => {
+    const main = document.getElementById('bo-main')
+    main?.focus({ preventScroll: true })
+  })
 })
 
 // Oturum düşerse (401 / MFA_REQUIRED) giriş ekranına dön; geri dönüş yolunu koru.

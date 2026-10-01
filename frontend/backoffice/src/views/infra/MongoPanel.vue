@@ -33,7 +33,7 @@
       </BoTileGrid>
 
       <BoSection title="Veritabanları" description="Koleksiyonları görmek için bir satır seçin" icon="mdi-database-outline" flush>
-        <BoDataTable tabindex="0" :items="dbRows as unknown as Array<Record<string, unknown>>" :columns="DB_COLUMNS" row-key="key" label="Veritabanları">
+        <BoDataTable :items="dbRows as unknown as Array<Record<string, unknown>>" :columns="DB_COLUMNS" row-key="key" label="Veritabanları">
           <template #cell-label="{ item }">
               <button v-if="item.available" type="button" class="bo-link-btn bo-mongo__pick" :aria-pressed="selectedKey === item.key" :data-db="item.key" @click="pick(item as unknown as DbRow)">{{ item.label }}</button>
               <span v-else class="bo-cell-stack"><span>{{ item.label }}</span><EkStatusChip tone="warning" label="Okunamadı" title="Bu veritabanının istatistiği alınamadı" /></span>

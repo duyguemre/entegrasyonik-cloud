@@ -17,7 +17,7 @@
       :empty-message="`Seçili aralıkta ${res.data.value?.thresholdMs ?? 200} ms eşiğini aşan sorgu kaydı yok ya da ölçüm henüz veri yazmadı.`"
       @retry="res.load()"
     >
-      <BoDataTable tabindex="0" v-if="res.data.value" :items="rows" :columns="COLUMNS" row-key="k" label="Yavaş sorgular">
+      <BoDataTable v-if="res.data.value" :items="rows" :columns="COLUMNS" row-key="k" label="Yavaş sorgular">
         <template #cell-db="{ item }"><EkStatusChip tone="neutral" :label="item.db === 'app' ? 'Uygulama' : 'Müşteri'" /></template>
         <template #cell-collection="{ item }"><code class="bo-code">{{ item.collection }}</code></template>
         <template #cell-op="{ item }"><code class="bo-code">{{ item.op }}</code></template>

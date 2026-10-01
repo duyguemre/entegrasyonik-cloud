@@ -10,15 +10,17 @@
 
   `cols` verildiğinde sütun sayısı sabittir (kırılım: < 1024 px → en çok 2, < 600 px → 1; `mobile-cols` ile değişir).
   `min` verildiğinde sütun sayısı genişlikten türer (`auto-fit`). `span` için çocukta `data-span="2"`.
+  bo-wdg: otomatik kipte kap tek sütuna düşünce (dar bölüm) `data-span="2"` örtük ikinci sütun açıp taşırıyordu → kap
+  genişliği izlenir, tek sütunda geniş kutu tek hücre olur.
 -->
 <template>
-  <div class="bo-tiles" :class="{ 'is-dense': dense, 'is-auto': !cols }" :style="style" data-bo-tiles>
+  <div ref="el" class="bo-tiles" :class="{ 'is-dense': dense, 'is-auto': !cols, 'is-single': single }" :style="style" data-bo-tiles>
     <slot />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
 const props = withDefaults(defineProps<{ cols?: 1 | 2 | 3 | 4 | 5 | 6; min?: number; dense?: boolean; mobileCols?: 1 | 2 }>(), {
   min: 260,
@@ -30,6 +32,24 @@ const style = computed(() => ({
   '--bo-tiles-min': `${props.min}px`,
   '--bo-tiles-mobile': String(props.mobileCols),
 }))
+
+// Otomatik kip: iki sütun sığmıyor mu (genişlik < 2 × min + boşluk)? Sabit `cols` kipinde kırılımlar CSS'te.
+const el = ref<HTMLElement | null>(null)
+const single = ref(false)
+let ro: ResizeObserver | undefined
+function measure() {
+  const node = el.value
+  if (!node || props.cols) return
+  const gap = parseFloat(getComputedStyle(node).columnGap) || 0
+  single.value = node.clientWidth < 2 * props.min + gap
+}
+onMounted(() => {
+  if (props.cols || typeof ResizeObserver !== 'function') return
+  ro = new ResizeObserver(measure)
+  if (el.value) ro.observe(el.value)
+  measure()
+})
+onBeforeUnmount(() => ro?.disconnect())
 </script>
 
 <style scoped>
@@ -60,6 +80,10 @@ const style = computed(() => ({
 
 .bo-tiles > :deep([data-span='all']) {
   grid-column: 1 / -1;
+}
+
+.bo-tiles.is-auto.is-single > :deep([data-span='2']) {
+  grid-column: auto;
 }
 
 @media (max-width: 1023px) {

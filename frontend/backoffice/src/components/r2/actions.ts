@@ -49,8 +49,15 @@ export const BO_ACTIONS = {
 
 export type BoActionKind = keyof typeof BO_ACTIONS
 
-/** "Sil" ya da nesneyle "Duyuruyu sil" — nesne verilirse fiil küçük harfle eklenir (erişilebilir ad). */
+/**
+ * "Sil" ya da nesneyle "Duyuruyu sil" — nesne verilirse fiil küçük harfle eklenir (erişilebilir ad).
+ * `detail` bir isimdir ("Ayrıntı"), fiil değil: nesneyle "<nesne> ayrıntılarını aç" olur (bo-wdg; eski "X ayrıntı"
+ * Türkçe değildi). Nesne tamlayan ekiyle verilir: "Poyraz Outdoor aboneliğinin" → "Poyraz Outdoor aboneliğinin
+ * ayrıntılarını aç". Satır bağlantılarında nesne satıra özgü olmalı (aynı adlı bağlantı listesi yasak).
+ */
 export function boActionLabel(kind: BoActionKind, object?: string): string {
   const verb = BO_ACTIONS[kind].label
-  return object ? `${object} ${verb.charAt(0).toLocaleLowerCase('tr-TR')}${verb.slice(1)}` : verb
+  if (!object) return verb
+  if (kind === 'detail') return `${object} ayrıntılarını aç`
+  return `${object} ${verb.charAt(0).toLocaleLowerCase('tr-TR')}${verb.slice(1)}`
 }

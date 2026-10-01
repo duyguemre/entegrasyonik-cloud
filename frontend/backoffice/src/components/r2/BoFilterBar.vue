@@ -4,6 +4,8 @@
   - Süzgeç değişince liste baştan yüklenir ve değer URL'e yazılır (sayfanın işi; `useCursorList.reload` + router.replace).
   - "Filtreleri temizle" yalnız `active > 0` iken görünür; sözlükteki `clearFilters` eylemiyle (BO2-50).
   - < 768 px: alanlar tam genişlik, segmentler kendi satırında; yatay kaydırma yok (BO2-71).
+  - bo-wdg: sayaç canlı bölgesi kalıcıdır (yalnız metin değişir → ilk süzgeç de duyurulur); "Filtreleri temizle" kendini
+    kaldırdığı için odak aramaya (yoksa ilk alana) taşınır.
 
     <BoFilterBar :active="activeCount" label="Denetim süzgeçleri" @clear="clearFilters">
       <template #search><v-text-field v-model="q" … /></template>
@@ -13,13 +15,15 @@
     </BoFilterBar>
 -->
 <template>
-  <div class="bo-filter" role="search" :aria-label="label" data-bo-filter>
+  <div ref="root" class="bo-filter" role="search" :aria-label="label" data-bo-filter>
+    <span class="ek-sr-only" aria-live="polite" data-testid="filters-live">{{ active ? `Etkin süzgeç sayısı: ${active}` : cleared ? 'Etkin süzgeç yok' : '' }}</span>
     <div v-if="$slots.search" class="bo-filter__search"><slot name="search" /></div>
     <div class="bo-filter__fields"><slot /></div>
     <div v-if="active || $slots.trailing" class="bo-filter__end">
       <template v-if="active">
-        <span class="bo-filter__count" aria-live="polite">{{ active }} süzgeç etkin</span>
-        <BoAction kind="clearFilters" size="sm" data-testid="filters-clear" @click="emit('clear')" />
+        <!-- Görünür sayaç; ekran okuyucu aynı metni yukarıdaki kalıcı canlı bölgeden alır (çift okuma yok). -->
+        <span class="bo-filter__count" aria-hidden="true">{{ active }} süzgeç etkin</span>
+        <BoAction kind="clearFilters" size="sm" data-testid="filters-clear" @click="onClear" />
       </template>
       <slot name="trailing" />
     </div>
@@ -27,10 +31,32 @@
 </template>
 
 <script setup lang="ts">
+import { nextTick, ref, watch } from 'vue'
 import BoAction from './BoAction.vue'
 
-withDefaults(defineProps<{ label: string; active?: number }>(), { active: 0 })
+const props = withDefaults(defineProps<{ label: string; active?: number }>(), { active: 0 })
 const emit = defineEmits<{ clear: [] }>()
+
+const root = ref<HTMLElement | null>(null)
+/** Bir kez süzgeç etkinleşti mi — 0'a dönüş "Süzgeç etkin değil" diye duyurulur, ilk açılışta sessiz. */
+const cleared = ref(false)
+watch(
+  () => props.active,
+  (n, prev) => {
+    if (!n && prev) cleared.value = true
+  },
+)
+
+// Gezici tabindex'li segmentte (`tabindex=-1` seçenekler) yalnız sekme durağı olan seçenek alınır.
+const FOCUSABLE = ':is(input:not([type="hidden"]), select, textarea, button):not([disabled]):not([tabindex="-1"]), [tabindex="0"]'
+function onClear() {
+  emit('clear')
+  void nextTick(() => {
+    const el = root.value
+    const target = el?.querySelector<HTMLElement>(`.bo-filter__search :is(${FOCUSABLE})`) ?? el?.querySelector<HTMLElement>(`.bo-filter__fields :is(${FOCUSABLE})`)
+    target?.focus()
+  })
+}
 </script>
 
 <style scoped>

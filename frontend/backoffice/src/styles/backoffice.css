@@ -6,6 +6,11 @@ body {
   font-family: var(--ek-font-sans);
 }
 
+/* bo-wdg (WCAG 2.4.11): sabit üst bar klavye odağını ve `#bölüm` çapalarını örtmesin. */
+html {
+  scroll-padding-top: calc(var(--ek-app-topbar-height, 56px) + var(--ek-space-3));
+}
+
 /* Tema geçişi kuralı (ek-theme-switching) ortak pakette: @entegrasyonik/ui/styles app.css. */
 
 .bo-page {
@@ -234,6 +239,13 @@ body {
 .bo-seg__opt:focus-visible {
   outline: none;
   box-shadow: var(--ek-focus-ring);
+}
+
+/* bo-wdg: kapalı seçenek tıklanabilir görünmez (ayrı opaklık token'ı yok → sönük içerik rengi). */
+.bo-seg__opt:disabled,
+.bo-seg__opt:disabled:hover {
+  color: var(--ek-color-content-subtle);
+  cursor: not-allowed;
 }
 
 .bo-seg__count {

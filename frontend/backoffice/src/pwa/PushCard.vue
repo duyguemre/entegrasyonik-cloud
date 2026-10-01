@@ -13,10 +13,21 @@
       <ul v-if="cfg.devices.length" class="bo-push__devices" aria-label="Kayıtlı cihazlarım">
         <li v-for="d in cfg.devices" :key="d.id" class="bo-push__row">
           <span>{{ d.deviceLabel || 'Cihaz' }} <span class="bo-muted">· {{ formatDateTime(d.createdAt) }}</span></span>
-          <EkButton tone="ghost" size="sm" icon="mdi-close" :aria-label="`${d.deviceLabel || 'Cihaz'} kaldır`" @click="onRemove(d.id)">Kaldır</EkButton>
+          <EkButton tone="ghost" size="sm" icon="mdi-close" :aria-label="`${d.deviceLabel || 'Cihaz'} cihazını kaldır`" :loading="removingId === d.id" :disabled="removingId !== null" data-testid="bo-push-remove" @click="askRemove(d)">Kaldır</EkButton>
         </li>
       </ul>
     </div>
+    <!-- bo-wdg: başka cihazın aboneliği uzaktan geri eklenemez → onay zorunlu (§6 yıkıcı eylem). -->
+    <EkConfirmDialog
+      :model-value="!!pending"
+      :title="`${pending?.deviceLabel || 'Cihaz'} kaldırılsın mı?`"
+      description="Bu cihaz kritik uyarıları artık almaz. Yeniden eklemek için o cihazda paneli açıp “Bu cihazda aç” seçilmelidir."
+      confirm-label="Cihazı kaldır"
+      danger
+      :loading="removingId !== null"
+      @update:model-value="(v: boolean) => { if (!v && removingId === null) pending = null }"
+      @confirm="confirmRemove"
+    />
   </EkCard>
 </template>
 
@@ -24,12 +35,14 @@
 // MOB-06: platform yöneticisi web push aboneliği (yalnız kritik dikkat maddeleri). Sunucu kanalı kapalıysa kart hiç görünmez.
 // İzin YALNIZ "Bu cihazda aç" tıklamasıyla istenir.
 import { onMounted, ref } from 'vue'
-import { EkButton, EkCard } from '@entegrasyonik/ui/components'
+import { EkButton, EkCard, EkConfirmDialog } from '@entegrasyonik/ui/components'
 import type { BoPushConfig } from '@bo/api/contract'
 import { formatDateTime } from '@bo/utils/format'
 import { notify } from '@bo/utils/toast'
 import { isNativeShell } from '@entegrasyonik/ui/native'
 import { currentPermission, detectPushSupport, pushUsableHere, useBoWebPush, type PermissionState, type PushSupport } from './webPush'
+
+type BoPushDevice = BoPushConfig['devices'][number]
 
 const push = useBoWebPush()
 const cfg = ref<BoPushConfig | null>(null)
@@ -62,10 +75,24 @@ async function run(action: () => Promise<{ ok: boolean; message?: string }>, don
 
 const onEnable = () => run(() => push.enable(cfg.value?.publicKey ?? null), 'Kritik uyarılar bu cihazda açıldı.')
 const onDisable = () => run(() => push.disable(), 'Bu cihazda bildirimler kapatıldı.')
-async function onRemove(id: string) {
-  if (await push.removeDevice(id)) notify('success', 'Cihaz kaldırıldı.')
-  else notify('error', 'Cihaz kaldırılamadı — tekrar deneyin.')
-  await refresh()
+/** Onay bekleyen cihaz; `removingId` satır meşgul durumu (çift tık iki çağrı yapmaz). */
+const pending = ref<BoPushDevice | null>(null)
+const removingId = ref<string | null>(null)
+function askRemove(d: BoPushDevice) {
+  if (removingId.value === null) pending.value = d
+}
+async function confirmRemove() {
+  const d = pending.value
+  if (!d || removingId.value !== null) return
+  removingId.value = d.id
+  try {
+    if (await push.removeDevice(d.id)) notify('success', 'Cihaz kaldırıldı.')
+    else notify('error', 'Cihaz kaldırılamadı — tekrar deneyin.')
+    await refresh()
+  } finally {
+    removingId.value = null
+    pending.value = null
+  }
 }
 
 onMounted(refresh)

@@ -53,9 +53,10 @@
         <p v-if="tenantSearching" class="bo-cmdk__empty" role="status">Müşteriler aranıyor…</p>
         <p v-else-if="!flat.length" class="bo-cmdk__empty">“{{ query }}” için sonuç yok. Mağaza adı, müşteri numarası (ör. 102) ya da istek kimliği deneyin.</p>
       </div>
-      <p class="bo-cmdk__foot" aria-live="polite">
+      <!-- bo-wdg: canlı bölge yalnız sayaç (tuş ipuçları her yazışta yeniden okunmaz). -->
+      <p class="bo-cmdk__foot">
         <span><EkKbd :keys="['↑', '↓']" /> seç</span><span><EkKbd :keys="['Enter']" /> aç</span>
-        <span class="bo-cmdk__count">{{ flat.length }} sonuç</span>
+        <span class="bo-cmdk__count" aria-live="polite">{{ flat.length }} sonuç</span>
       </p>
     </div>
   </v-dialog>
@@ -75,6 +76,10 @@ import { recents } from '@bo/navigation/recents'
 import { CHAT_PRODUCT } from '@entegrasyonik/chat/brand'
 import { otopilot } from '@bo/chat/otopilot'
 
+const props = defineProps<{
+  /** Kabuğun kısayol engeli (başka diyalog açık): palet kapalıyken Ctrl+K / "/" açmaz (tehlikeli diyalogun üstüne binmez). */
+  blocked?: () => boolean
+}>()
 const emit = defineEmits<{ logout: []; shortcuts: [] }>()
 const router = useRouter()
 const route = useRoute()
@@ -270,10 +275,12 @@ function run(cmd: Cmd | undefined) {
 function onKey(e: KeyboardEvent) {
   const target = e.target as HTMLElement | null
   const typing = !!target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))
+  // Başka bir diyalog açıkken (gerekçe/onay) palet açılmaz; açıksa Ctrl+K yine kapatır.
+  const blocked = !open.value && !!props.blocked?.()
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
     e.preventDefault()
-    open.value = !open.value
-  } else if (e.key === '/' && !typing && !open.value) {
+    if (!blocked) open.value = !open.value
+  } else if (e.key === '/' && !typing && !open.value && !blocked) {
     e.preventDefault()
     open.value = true
   }
@@ -321,12 +328,18 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   outline: none;
 }
 
+/* bo-wdg: alanın kendi çerçevesi yok (`outline: none`) → odak arama satırının alt çizgisinde görünür. */
+.bo-cmdk__search:focus-within {
+  box-shadow: inset 0 -2px 0 var(--ek-color-border-focus);
+}
+
 .bo-cmdk__input::placeholder {
   color: var(--ek-color-content-muted);
 }
 
 .bo-cmdk__list {
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: var(--ek-space-2);
 }
 

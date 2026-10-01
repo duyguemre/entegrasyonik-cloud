@@ -11,7 +11,9 @@
 <template>
   <div class="bo-dt" :class="{ 'bo-dense': density === 'compact' }" role="region" :aria-label="label" data-bo-datatable>
     <StateBlock v-if="phase && phase !== 'ready'" :phase="phase" :error="error" skeleton="table" :rows="skeletonRows" :empty-title="emptyTitle" :empty-message="emptyMessage" @retry="emit('retry')" />
-    <EkDataTable v-else v-bind="$attrs" :items="items" :columns="columns" :row-key="rowKey">
+    <!-- bo-wdg: kök `.ek-data-table` yatay kaydırma kabıdır → klavyeyle odaklanır bölge (BoTableFrame ile aynı ad deseni).
+         Öznitelikler yalnız burada verilir; web uygulamasının EkDataTable'ı değişmez. -->
+    <EkDataTable v-else v-bind="$attrs" :items="items" :columns="columns" :row-key="rowKey" tabindex="0" role="region" :aria-label="`${label} tablosu`">
       <template v-for="(_, name) in $slots" #[name]="slotProps"><slot :name="name" v-bind="slotProps ?? {}" /></template>
     </EkDataTable>
     <slot name="footer" />
@@ -47,5 +49,16 @@ const emit = defineEmits<{ retry: [] }>()
   display: flex;
   flex-direction: column;
   min-width: 0;
+}
+
+/* §12.2 tablo rolü (13/20): paket hücresi 14 px (`--ek-font-size-md`) → BoTableFrame ile aynı ölçü. */
+.bo-dt :deep(.ek-data-table__td) {
+  font-size: var(--ek-type-table-size);
+  line-height: var(--ek-type-table-line);
+}
+
+.bo-dt :deep(.ek-data-table:focus-visible) {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
 }
 </style>

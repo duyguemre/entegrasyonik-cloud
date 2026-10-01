@@ -3,24 +3,27 @@
   loading → iskelet · empty → açıklayıcı boş durum · error → EkProblemState (+ Tekrar dene) ·
   degraded (503: bağımlılık hazır değil) → uyarı tonlu EkProblemState · notFound → boş durum. `ready` → varsayılan slot.
   Teknik ayrıntı (kod, HTTP, istek kimliği) katlanır bölümdedir; gövdede ham hata yok.
+  bo-wdg: hata kalıcı canlı kabın içinde çizilir → yüklemeden sonra çıkan hata bir kez duyurulur (BoPanelState ile aynı).
 -->
 <template>
   <div class="bo-state" :aria-busy="phase === 'loading' || undefined">
     <EkSkeleton v-if="phase === 'loading'" :type="skeleton" :rows="rows" />
-    <EkProblemState
-      v-else-if="phase === 'error' || phase === 'degraded'"
-      :tone="phase === 'degraded' ? 'warning' : 'error'"
-      :icon="phase === 'degraded' ? 'mdi-lan-disconnect' : undefined"
-      :title="phase === 'degraded' ? (degradedTitle ?? error?.title ?? 'Bağımlılık hazır değil') : (errorTitle ?? error?.title ?? 'Yüklenemedi')"
-      :action="error?.action"
-      :size="size"
-      :retryable="true"
-      :retrying="retrying"
-      :details="details"
-      @retry="emit('retry')"
-    />
-    <EkEmptyState v-else-if="phase === 'empty' || phase === 'notFound'" :variant="emptyVariant" :title="emptyTitle" :message="emptyMessage" />
-    <slot v-else />
+    <div class="bo-state__live" aria-live="polite" data-testid="state-live">
+      <EkProblemState
+        v-if="phase === 'error' || phase === 'degraded'"
+        :tone="phase === 'degraded' ? 'warning' : 'error'"
+        :icon="phase === 'degraded' ? 'mdi-lan-disconnect' : undefined"
+        :title="problemTitle"
+        :action="error?.action"
+        :size="size"
+        :retryable="true"
+        :retrying="retrying"
+        :details="details"
+        @retry="emit('retry')"
+      />
+    </div>
+    <EkEmptyState v-if="phase === 'empty' || phase === 'notFound'" :variant="emptyVariant" :title="emptyTitle" :message="emptyMessage" />
+    <slot v-else-if="phase === 'ready'" />
   </div>
 </template>
 
@@ -46,6 +49,10 @@ const props = withDefaults(
   { skeleton: 'table', rows: 6, emptyTitle: 'Kayıt yok', emptyMessage: 'Gösterilecek kayıt bulunmuyor.', emptyVariant: 'no-data', size: 'inline', retrying: false },
 )
 const emit = defineEmits<{ retry: [] }>()
+
+const problemTitle = computed(() =>
+  props.phase === 'degraded' ? (props.degradedTitle ?? props.error?.title ?? 'Bağımlılık hazır değil') : (props.errorTitle ?? props.error?.title ?? 'Yüklenemedi'),
+)
 
 const details = computed(() => {
   const e = props.error

@@ -33,8 +33,15 @@
           <p v-if="checks.length" class="bo-al__checks"><span class="bo-al__checks-k">Denetlenen</span> {{ checks.join(' · ') }}</p>
         </div>
       </div>
-      <ol v-else class="bo-al__list" :aria-label="listLabel" data-testid="attention-list">
-        <li v-for="it in visible" :key="it.id" class="bo-al__item" :class="[`is-${it.severity}`, { 'is-compact': compact }]" :data-severity="it.severity">
+      <ol v-else ref="listEl" class="bo-al__list" :aria-label="listLabel" data-testid="attention-list">
+        <li
+          v-for="(it, i) in visible"
+          :key="it.id"
+          class="bo-al__item"
+          :class="[`is-${it.severity}`, { 'is-compact': compact }]"
+          :data-severity="it.severity"
+          :tabindex="i === revealFrom ? -1 : undefined"
+        >
           <span class="bo-al__sev" aria-hidden="true"><v-icon :icon="SEVERITY[it.severity].icon" /></span>
           <div class="bo-al__body">
             <component :is="`h${headingLevel}`" class="bo-al__title">{{ it.title }}</component>
@@ -76,7 +83,7 @@
         </li>
       </ol>
       <p v-if="total > items.length" class="bo-al__truncated">Toplam {{ total }} maddenin en önemli {{ items.length }} tanesi gösteriliyor.</p>
-      <button v-if="hiddenCount > 0" type="button" class="bo-al__more" :aria-expanded="expanded" @click="expanded = true">
+      <button v-if="hiddenCount > 0" type="button" class="bo-al__more" :aria-expanded="expanded" @click="showMore">
         {{ hiddenCount }} madde daha göster <span class="bo-al__more-hint">({{ hiddenText }})</span>
       </button>
     </template>
@@ -84,7 +91,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { EkRelativeTime } from '@entegrasyonik/ui/components'
 import BoPanelState from '@bo/components/shell/BoPanelState.vue'
 import BoCollapsible from '@bo/components/r2/BoCollapsible.vue'
@@ -136,6 +143,15 @@ const shown = computed(() => (expanded.value ? props.items.length : Math.max(pro
 const visible = computed(() => props.items.slice(0, shown.value))
 const hiddenCount = computed(() => props.items.length - visible.value.length)
 const hiddenText = computed(() => countText(props.items.slice(shown.value)))
+
+// bo-wdg: "N madde daha göster" tıklanınca kaybolur → odak ilk yeni maddeye (programla odaklanır, sekme sırasına girmez).
+const listEl = ref<HTMLOListElement | null>(null)
+const revealFrom = ref<number | null>(null)
+function showMore() {
+  revealFrom.value = visible.value.length
+  expanded.value = true
+  void nextTick(() => (listEl.value?.children[revealFrom.value!] as HTMLElement | undefined)?.focus())
+}
 </script>
 
 <style scoped>
@@ -143,6 +159,15 @@ const hiddenText = computed(() => countText(props.items.slice(shown.value)))
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.bo-al__item:focus {
+  outline: none;
+}
+
+.bo-al__item:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
 }
 
 .bo-al__item {

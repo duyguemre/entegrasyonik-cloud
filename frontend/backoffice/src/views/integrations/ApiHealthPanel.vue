@@ -26,7 +26,7 @@
           <BoStat label="Hata alan entegrasyon" :value="`${totals.failing} / ${res.data.value.items.length}`" :tone="totals.failing ? 'warning' : 'success'" />
         </BoTileGrid>
 
-        <BoDataTable tabindex="0" :items="rows" :columns="COLUMNS" row-key="integrationCode" label="Entegrasyon başına API sağlığı">
+        <BoDataTable :items="rows" :columns="COLUMNS" row-key="integrationCode" label="Entegrasyon başına API sağlığı">
           <template #cell-integrationCode="{ item }">
             <EkChannelDot :code="String(item.integrationCode)" :name="CHANNEL[String(item.integrationCode)] ?? String(item.integrationCode)" variant="plain" />
           </template>

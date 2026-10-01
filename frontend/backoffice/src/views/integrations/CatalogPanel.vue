@@ -36,7 +36,7 @@
         </BoTileGrid>
 
         <div v-if="filtered.length">
-          <BoDataTable tabindex="0" :items="visible as unknown as Array<Record<string, unknown>>" :columns="COLUMNS" row-key="key" label="Ayar kataloğu">
+          <BoDataTable :items="visible as unknown as Array<Record<string, unknown>>" :columns="COLUMNS" row-key="key" label="Ayar kataloğu">
           <template #cell-key="{ item }">
               <span class="bo-cell-stack bo-cat__key">
                 <span class="bo-cat__label">{{ (item as unknown as Row).label.tr }}</span>
