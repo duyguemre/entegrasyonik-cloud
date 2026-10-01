@@ -23,6 +23,13 @@ import { test, expect } from '@playwright/test'
 import { installApiMocks } from '../fixtures/mockApi'
 import { gotoAuthed } from '../fixtures/nav'
 import { HIDDEN_DEFINITION_SCREENS, menuFixtureWithLegacyDefinitions, openHiddenDefinitionScreen } from '../fixtures/definitionsMenu'
+import { suppressTourOffer } from '../fixtures/appDialog'
+
+// Tur teklifi kartı (HelpTour, sağ alt sabit) mobilde gezinme çekmecesinin alt öğelerini örtüyor ve tıklamayı
+// engelliyor (PROPOSALS_PENDING P14). Bu dosyanın konusu değil → kapatılmış sayılır.
+test.beforeEach(async ({ page }) => {
+  await suppressTourOffer(page)
+})
 
 const cases = [
   { screen: HIDDEN_DEFINITION_SCREENS.BrandDefinitionView, title: 'Marka Tanımları' },

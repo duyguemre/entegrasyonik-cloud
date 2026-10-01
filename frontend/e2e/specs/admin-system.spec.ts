@@ -7,6 +7,13 @@ import AxeBuilder from '@axe-core/playwright'
 import { installApiMocks, mockError } from '../fixtures/mockApi'
 import { adminSystemHealthBosFixture, adminSystemHealthDoluFixture } from '../fixtures/apiData'
 import { gotoAuthed, menuFixtureWithAdmin, openScreen } from '../fixtures/nav'
+import { suppressTourOffer } from '../fixtures/appDialog'
+
+// Tur teklifi kartı (HelpTour, sağ alt sabit) mobilde gezinme çekmecesinin alt öğelerini örtüyor ve tıklamayı
+// engelliyor (PROPOSALS_PENDING P14). Bu dosyanın konusu değil → kapatılmış sayılır.
+test.beforeEach(async ({ page }) => {
+  await suppressTourOffer(page)
+})
 
 function withAdminMenu(overrides: Record<string, any> = {}) {
   return { MenuService: menuFixtureWithAdmin, ...overrides }

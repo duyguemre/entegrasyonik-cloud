@@ -8,6 +8,13 @@ import { test, expect, type Page, type Locator } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { installApiMocks } from '../fixtures/mockApi'
 import { gotoAuthed, openScreen } from '../fixtures/nav'
+import { suppressTourOffer } from '../fixtures/appDialog'
+
+// Tur teklifi kartı (HelpTour, sağ alt sabit) mobilde gezinme çekmecesinin alt öğelerini örtüyor ve tıklamayı
+// engelliyor (PROPOSALS_PENDING P14). Bu dosyanın konusu değil → kapatılmış sayılır.
+test.beforeEach(async ({ page }) => {
+  await suppressTourOffer(page)
+})
 
 const platformInfos = {
   shipments: [

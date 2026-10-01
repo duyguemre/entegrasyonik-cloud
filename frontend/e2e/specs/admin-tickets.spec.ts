@@ -6,6 +6,13 @@ import AxeBuilder from '@axe-core/playwright'
 import { installApiMocks, mockError } from '../fixtures/mockApi'
 import { adminTicketsBosFixture } from '../fixtures/apiData'
 import { gotoAuthed, menuFixtureWithAdmin, openScreen } from '../fixtures/nav'
+import { suppressTourOffer } from '../fixtures/appDialog'
+
+// Tur teklifi kartı (HelpTour, sağ alt sabit) mobilde gezinme çekmecesinin alt öğelerini örtüyor ve tıklamayı
+// engelliyor (PROPOSALS_PENDING P14). Bu dosyanın konusu değil → kapatılmış sayılır.
+test.beforeEach(async ({ page }) => {
+  await suppressTourOffer(page)
+})
 
 // NOT: `AdminTicketListView`'in `v-data-table-server`'ı da `mdAndUp` koşuluna bağlı DEĞİL —
 // tablo her viewport'ta render oluyor; testler 3 viewport'un tamamında koşar.
