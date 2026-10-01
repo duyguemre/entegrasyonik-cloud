@@ -2,6 +2,8 @@
 // Backend eşi: backend/src/platform/core/context/clientPlatform.ts (değer listesi AYNI; iki tarafın testi sabit listeyi korur).
 // İstemci sınıfı `X-Client-Platform` başlığıyla gönderir; sunucu izinli listeyle doğrular (yoksa UA'dan kaba sınıf).
 // Ham UA/cihaz bilgisi GÖNDERİLMEZ ve saklanmaz; yalnız aşağıdaki sınıf değeri.
+// Android kabuğu tanıma kuralı MOB-07 köprüsüyle AYNI (`./native/shell` isNativeShell: UA işareti + Capacitor.isNativePlatform()).
+import { parseShellUserAgent } from './native/shell'
 
 export const CLIENT_PLATFORM_HEADER = 'X-Client-Platform'
 
@@ -19,7 +21,7 @@ export function platformClassOf(p: ClientPlatform): PlatformClass {
 
 /** Algılama girdileri (testte sahte ortam verilir). Hepsi isteğe bağlı: eksik sinyal = o yol atlanır. */
 export interface PlatformEnv {
-  /** Capacitor çalışma zamanı (yerel kabukta WebView'a enjekte edilir): `isNativePlatform()`, `getPlatform()`. */
+  /** Capacitor çalışma zamanı (yerel kabukta WebView'a enjekte edilir): `isNativePlatform()`. */
   Capacitor?: { isNativePlatform?: () => boolean; getPlatform?: () => string }
   /** Electron yerel köprüsü (DESK-00 preload; varsa). Yoksa UA'daki `Electron/` işareti yedektir. */
   ekDesktop?: unknown
@@ -41,7 +43,7 @@ function isMobileDevice(env: PlatformEnv): boolean {
 
 /**
  * Platformu belirler (öncelik sırası):
- * 1. Capacitor yerel kabuk (Android) → `android_app`
+ * 1. Android Capacitor kabuğu (UA `EntegrasyonikShell/…` işareti VE `Capacitor.isNativePlatform()`) → `android_app`
  * 2. Electron (köprü ya da UA) → `electron`
  * 3. Kurulu uygulama (display-mode standalone/fullscreen/minimal-ui ya da iOS `navigator.standalone`) + mobil cihaz → `pwa`
  *    (masaüstüne kurulu PWA → `desktop_web`; masaüstü/mobil ana kırılımı korunur)
@@ -50,8 +52,7 @@ function isMobileDevice(env: PlatformEnv): boolean {
 export function detectClientPlatform(env: PlatformEnv | undefined = defaultEnv()): ClientPlatform {
   if (!env) return 'unknown'
   try {
-    const cap = env.Capacitor
-    if (cap?.isNativePlatform?.()) return cap.getPlatform?.() === 'android' ? 'android_app' : 'unknown'
+    if (env.Capacitor?.isNativePlatform?.() === true && parseShellUserAgent(env.navigator?.userAgent ?? '') !== null) return 'android_app'
     if (env.ekDesktop || /\bElectron\//i.test(env.navigator?.userAgent ?? '')) return 'electron'
     const mobile = isMobileDevice(env)
     const installed = mq(env, '(display-mode: standalone)') || mq(env, '(display-mode: fullscreen)') || mq(env, '(display-mode: minimal-ui)') || env.navigator?.standalone === true

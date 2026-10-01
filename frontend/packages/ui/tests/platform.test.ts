@@ -19,8 +19,13 @@ describe('detectClientPlatform', () => {
   it('liste backend ile aynı (sıra + değer)', () => {
     expect(CLIENT_PLATFORMS).toEqual(['desktop_web', 'electron', 'mobile_web', 'pwa', 'android_app', 'unknown'])
   })
-  it('Capacitor yerel Android → android_app (UA/görünüm ne olursa olsun)', () => {
-    expect(detectClientPlatform(env({ ua: UA_ANDROID, media: [...TOUCH, '(display-mode: standalone)'], cap: { isNativePlatform: () => true, getPlatform: () => 'android' } }))).toBe('android_app')
+  const UA_SHELL = UA_ANDROID + ' EntegrasyonikShell/1.0.0 (backoffice; fcm=0)'
+  it('Android kabuğu (UA işareti + isNativePlatform; MOB-07 köprüsüyle aynı kural) → android_app', () => {
+    expect(detectClientPlatform(env({ ua: UA_SHELL, media: [...TOUCH, '(display-mode: standalone)'], cap: { isNativePlatform: () => true, getPlatform: () => 'android' } }))).toBe('android_app')
+  })
+  it('UA işareti tek başına ya da isNativePlatform tek başına kabuk saymaz', () => {
+    expect(detectClientPlatform(env({ ua: UA_SHELL, media: TOUCH }))).toBe('mobile_web')
+    expect(detectClientPlatform(env({ ua: UA_ANDROID, media: TOUCH, cap: { isNativePlatform: () => true } }))).toBe('mobile_web')
   })
   it('Capacitor web modunda (isNativePlatform=false) yok sayılır', () => {
     expect(detectClientPlatform(env({ ua: UA_ANDROID, media: TOUCH, cap: { isNativePlatform: () => false, getPlatform: () => 'web' } }))).toBe('mobile_web')

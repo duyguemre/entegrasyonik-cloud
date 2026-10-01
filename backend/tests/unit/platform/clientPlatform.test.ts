@@ -31,7 +31,12 @@ describe('clientPlatform', () => {
         expect(resolveClientPlatform(undefined, UA_ELECTRON)).toBe('electron');
     });
 
-    it('UA yedeği PWA/kabuk uydurmaz; betik/boş UA → unknown', () => {
+    it('UA yedeği: Android kabuğu işareti (MOB-07) → android_app', () => {
+        expect(platformFromUserAgent(UA_ANDROID + ' EntegrasyonikShell/1.0.0 (app; fcm=1)')).toBe('android_app');
+        expect(platformFromUserAgent(UA_ANDROID + ' EntegrasyonikShell/x')).toBe('mobile_web');
+    });
+
+    it('UA yedeği PWA uydurmaz; betik/boş UA → unknown', () => {
         expect(platformFromUserAgent(UA_DESKTOP)).toBe('desktop_web');
         expect(platformFromUserAgent('curl/8.4.0')).toBe('unknown');
         expect(platformFromUserAgent('')).toBe('unknown');

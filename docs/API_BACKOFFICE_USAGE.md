@@ -10,13 +10,13 @@ Karar: `USER_DECISIONS` K55 (BACKLOG MOB-08), K51 sayfa deseni. Ortak kurallar `
 | `electron` | Electron masaüstü kabuğu | `desktop` |
 | `mobile_web` | Mobil tarayıcı | `mobile` |
 | `pwa` | Mobil cihaza kurulu PWA (display-mode standalone/fullscreen/minimal-ui ya da iOS `navigator.standalone`) | `mobile` |
-| `android_app` | Android Capacitor kabuğu (`Capacitor.isNativePlatform()` + `getPlatform()==='android'`) | `mobile` |
+| `android_app` | Android Capacitor kabuğu (UA `EntegrasyonikShell/` işareti + `Capacitor.isNativePlatform()`) | `mobile` |
 | `unknown` | Belirlenemedi | `unknown` |
 
 - **Tek kaynak:** önyüz `@entegrasyonik/ui/platform` (`detectClientPlatform`, müşteri uygulaması + backoffice + sohbet taşıyıcıları), backend `src/platform/core/context/clientPlatform.ts`. Değer listesi iki tarafta aynı sırada sabit (iki tarafın testi korur).
-- **Algılama sırası (önyüz):** Capacitor yerel kabuk → Electron (köprü `window.ekDesktop` ya da UA `Electron/`) → kurulu uygulama + mobil cihaz → mobil cihaz (UA-CH `mobile`, `(pointer: coarse)` + `(hover: none)`, UA işareti) → masaüstü. Dar masaüstü penceresi mobil sayılmaz. Değer oturum boyunca önbelleklenir.
+- **Algılama sırası (önyüz):** Android kabuğu (MOB-07 köprüsüyle aynı kural: UA `EntegrasyonikShell/…` işareti VE `Capacitor.isNativePlatform()`) → Electron (köprü `window.ekDesktop` ya da UA `Electron/`) → kurulu uygulama + mobil cihaz → mobil cihaz (UA-CH `mobile`, `(pointer: coarse)` + `(hover: none)`, UA işareti) → masaüstü. Dar masaüstü penceresi mobil sayılmaz. Değer oturum boyunca önbelleklenir.
 - **Gönderim:** müşteri uygulaması kendi API köküne giden her axios isteğine (request interceptor; dış adreslere eklenmez), backoffice `/admin-api` axios örneğine, iki sohbet SSE taşıyıcısına başlık ekler. Yalnız sınıf değeri gider.
-- **Sunucu:** `createRequestIdMiddleware` (tüm rotalardan önce) başlığı izinli listeyle doğrular (büyük/küçük harf ve boşluk duyarsız, ≤ 32 karakter). Geçersiz/eksikse **UA'dan kaba sınıf** (yalnız yedek: `electron` / `mobile_web` / `desktop_web` / `unknown`; PWA ve kabuk UA'dan uydurulmaz). Sonuç `res.locals.clientPlatform` ve ALS bağlamına (`RequestContext.clientPlatform`) girer. Ham UA hiçbir yere yazılmaz.
+- **Sunucu:** `createRequestIdMiddleware` (tüm rotalardan önce) başlığı izinli listeyle doğrular (büyük/küçük harf ve boşluk duyarsız, ≤ 32 karakter). Geçersiz/eksikse **UA'dan kaba sınıf** (yalnız yedek: Android kabuğunun bilinçli UA işareti `EntegrasyonikShell/… (app|backoffice; fcm=…)` → `android_app`; ardından `electron` / `mobile_web` / `desktop_web` / `unknown`; PWA UA'dan uydurulmaz). Sonuç `res.locals.clientPlatform` ve ALS bağlamına (`RequestContext.clientPlatform`) girer. Ham UA hiçbir yere yazılmaz.
 - **CORS:** `/admin-api` `allowedHeaders` listesine `X-Client-Platform` eklendi. Müşteri `/api` CORS'u `allowedHeaders` belirtmez (istek başlıklarını yansıtır) → değişiklik gerekmez.
 
 ## 2. Kayıtlar (geriye uyumlu)

@@ -40,12 +40,13 @@ export function platformsOfFilter(f: PlatformFilter | undefined | null): ClientP
 }
 
 /**
- * UA'dan KABA sınıf (yalnız başlık yoksa). PWA/kurulu uygulama UA'dan güvenilir ayırt edilemez → yalnız
- * electron / mobile_web / desktop_web / unknown döner. UA yalnız burada okunur ve saklanmaz.
+ * UA'dan KABA sınıf (yalnız başlık yoksa). PWA UA'dan ayırt edilemez → uydurulmaz. Android kabuğu UA'ya bilinçli işaret
+ * koyar (`EntegrasyonikShell/<sürüm> (app|backoffice; fcm=0|1)`, MOB-07) → `android_app`. UA yalnız burada okunur ve saklanmaz.
  */
 export function platformFromUserAgent(ua: unknown): ClientPlatform {
     if (typeof ua !== 'string' || ua.trim() === '') return 'unknown';
     const s = ua.slice(0, 512);
+    if (/\bEntegrasyonikShell\/[0-9A-Za-z.+-]{1,32} \((?:app|backoffice); fcm=[01]\)/.test(s)) return 'android_app';
     if (/\bElectron\//i.test(s)) return 'electron';
     if (/Android|iPhone|iPad|iPod|Mobile|Opera Mini|IEMobile/i.test(s)) return 'mobile_web';
     if (/Mozilla\/|AppleWebKit|Gecko\//i.test(s)) return 'desktop_web';
