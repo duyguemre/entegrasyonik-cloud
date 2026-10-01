@@ -3,11 +3,11 @@ import { BaseApi } from '../BaseApi'
 import { DatabaseManagerInstance } from "@database/DatabaseManager";
 import { buildCacheDump } from "../cacheDump";
 import { RedisService } from "@services/redis/RedisService";
-import { ApplicationError } from '../Security';
+import { ApplicationError } from '@platform/core/security/Security';
 import { TenantProvisioningService } from '@operations/tenant/TenantProvisioningService';
 import { createTenantLifecycleService } from '../tenantLifecycleFactory';
 import { toClientDto, CLIENT_SAFE_PROJECTION, CLIENT_SORT_FIELDS } from '../clientDto';
-import { maskIntegrationItem } from '../integrationSecrets';
+import { maskIntegrationItem } from '@platform/core/security/integrationSecrets';
 import { nextSequence } from '@utils/sequence';
 import { containsRegex, clampPage, clampLimit, pickSortField } from '@utils/search';
 import { TICKET_SORT_FIELDS } from '../listSortFields';

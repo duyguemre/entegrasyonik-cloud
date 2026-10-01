@@ -1,7 +1,7 @@
 import { IService } from '@interfaces/index'
 import { Types } from 'mongoose'
 import { BaseApi } from '../BaseApi'
-import { ApplicationError } from '../Security'
+import { ApplicationError } from '@platform/core/security/Security'
 import { sanitizeMeta } from '@services/audit/AuditLogger'
 import { auditSensitiveRead } from './backoffice-support'
 

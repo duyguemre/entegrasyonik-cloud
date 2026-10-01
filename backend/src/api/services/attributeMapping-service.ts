@@ -4,7 +4,7 @@ import { BaseApi } from '../BaseApi'
 import { ObjectId } from 'mongodb'
 import stringSimilarity from 'string-similarity'
 import IntegrationFactory from '../../integration/modules/IntegrationFactory'
-import { ApplicationError } from '../Security'
+import { ApplicationError } from '@platform/core/security/Security'
 import { listIntegrationDescriptorsByCategory } from '@integration/catalog/IntegrationDescriptorRegistry'
 import { deleteStaleAttributeMappings } from '@operations/catalog/mapping/mappingCleanup'
 

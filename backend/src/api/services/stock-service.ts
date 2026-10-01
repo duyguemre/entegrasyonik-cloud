@@ -1,6 +1,6 @@
 import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
-import { ApplicationError } from '../Security'
+import { ApplicationError } from '@platform/core/security/Security'
 import { ObjectId } from 'mongodb'
 import { ATTENTION_ALLOCATION_STATES } from '@operations/stock/allocationStates'
 import { pickLowStockThreshold, STOCK_POLICY_LIMITS } from '@operations/stock/stockPolicyValidation'

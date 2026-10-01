@@ -1,6 +1,6 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
-import { createRateLimiter, rateLimitOptionsFromEnv, registerRateLimitOptionsFromEnv } from '../../../src/api/rateLimit';
-import { getClientIp, getTrustedProxyHops } from '../../../src/api/clientIp';
+import { createRateLimiter, rateLimitOptionsFromEnv, registerRateLimitOptionsFromEnv } from '../../../src/platform/rateLimit/rateLimit';
+import { getClientIp, getTrustedProxyHops } from '../../../src/platform/rateLimit/clientIp';
 import { toProfileDto } from '../../../src/api/profileDto';
 import { makeFakeApp, makeReq, makeRes } from './_helpers';
 

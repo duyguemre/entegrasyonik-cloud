@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals
 import axios from 'axios';
 import { assertAllowedOutboundHost, hostMatchesPattern, ALLOWED_OUTBOUND_HOSTS, OUTBOUND_HOST_NOT_ALLOWED } from '../../../src/integration/modules/common/security/outboundHosts';
 import { ResilientHttpClient } from '../../../src/integration/modules/common/http/ResilientHttpClient';
-import { stripTenantUrlFields, isTenantUrlLikeKey, isValidStoreName, hasInvalidStoreName } from '../../../src/api/tenantSettingsGuard';
+import { stripTenantUrlFields, isTenantUrlLikeKey, isValidStoreName, hasInvalidStoreName } from '../../../src/platform/core/security/tenantSettingsGuard';
 
 const ENVS = ['TY_MOCK_MODE', 'HEPSIBURADA_MOCK_MODE', 'N11_MOCK_MODE', 'PAZARAMA_MOCK_MODE', 'IDEASOFT_MOCK_MODE', 'BIZIMHESAP_MOCK_MODE', 'HEPSIBURADA_MOCK_BASE_URL'];
 beforeEach(() => { for (const k of ENVS) delete process.env[k]; });

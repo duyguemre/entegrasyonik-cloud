@@ -10,7 +10,7 @@ import type { Server } from 'http';
 import { createAdminRouter } from '../../../src/api/admin/AdminApiManager';
 import { ADMIN_COOKIE_NAME, signAdminSession } from '../../../src/api/admin/adminSession';
 import { BACKOFFICE_SYSTEM_PROMPT } from '../../../src/api/admin/adminAgentRoutes';
-import Security from '../../../src/api/Security';
+import Security from '../../../src/platform/core/security/Security';
 import { AgentBroker } from '../../../src/operations/agent/AgentBroker';
 import { ConversationStore } from '../../../src/operations/agent/ConversationStore';
 import { MemoryKv } from '../../../src/operations/agent/kv';

@@ -1,7 +1,7 @@
 import { impersonationDenial } from './impersonationPolicy'
 import MicroserviceWrapper from "./ApiWrapper";
 import Apis from './index'
-import { ApplicationError } from './Security';
+import { ApplicationError } from '@platform/core/security/Security';
 import { AuditLogger } from '@services/audit/AuditLogger';
 import { IMAGE_API_TARGETS, OPEN_OPERATIONS, PSEUDO_SERVICES, getRequiredPermission, getRequiredTier, isAllowed, resolveTier } from './operationPolicy';
 import { can } from '@platform/core/authz/can';

@@ -12,7 +12,7 @@ import type { McpApprovals } from '@operations/mcp/mcpApprovals';
 import type { AgentCtx } from '@operations/agent/types';
 import { resolveTier } from '@platform/core/authz/tier';
 import { getMcpApprovals } from '../../mcp/approvalsRuntime';
-import { getClientIp } from '../clientIp';
+import { getClientIp } from '@platform/rateLimit/clientIp';
 import { ConnectionsService, type ConnectionsSession } from '../oauth/connections';
 import { getOAuthRuntime } from '../oauth/routes';
 import { setMcpAccessReader } from '../oauth/tenantAccess';

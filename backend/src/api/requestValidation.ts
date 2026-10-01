@@ -4,7 +4,7 @@
 // alanların ADLARI (arındırılmış, sınırlı) yazılır.
 import type { ZodIssue } from 'zod';
 import { RPC_INPUT_BY_RPC } from '../capabilities';
-import { ApplicationError } from './Security';
+import { ApplicationError } from '@platform/core/security/Security';
 
 export interface FieldIssue { path: string; message: string }
 

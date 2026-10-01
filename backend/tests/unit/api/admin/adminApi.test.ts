@@ -10,7 +10,7 @@ import run from '../../../../src/api/RunOperation';
 import { createAdminRouter } from '../../../../src/api/admin/AdminApiManager';
 import { ADMIN_COOKIE_NAME, signAdminSession, verifyAdminToken } from '../../../../src/api/admin/adminSession';
 import { totpAt } from '../../../../src/api/admin/totp';
-import Security from '../../../../src/api/Security';
+import Security from '../../../../src/platform/core/security/Security';
 import { AuditLogger } from '../../../../src/services/audit/AuditLogger';
 import { Clock, makeDeps, makeUser } from '../../../helpers/adminFakes';
 import { signedToken } from '../../../characterization/auth/_helpers';

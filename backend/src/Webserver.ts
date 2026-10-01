@@ -17,7 +17,7 @@ import { configureNotificationUnsubscribeRoutes } from '@api/http/notificationUn
 import { configurePublicConfigRoute } from '@api/http/publicConfig';
 import { createMaintenanceMiddleware } from '@api/http/maintenanceGuard';
 import { DatabaseManagerInstance } from '@database/DatabaseManager';
-import Security from '@api/Security';
+import Security from '@platform/core/security/Security';
 import { createAuthenticateMiddleware } from '@api/authenticate';
 import { configureNotificationStreamRoutes, getNotificationStreamHub } from '@api/http/notificationStream';
 import { configureAgentRoutes, getAgentBroker } from '@api/http/agentRoutes';

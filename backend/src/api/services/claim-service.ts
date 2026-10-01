@@ -1,7 +1,7 @@
 import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import IntegrationFactory from '@integration/modules/IntegrationFactory';
-import { ApplicationError } from '../Security'
+import { ApplicationError } from '@platform/core/security/Security'
 import { ClaimInternalStatusEnum } from '@interfaces/claim';
 import { containsRegex, normalizePagination } from '@utils/search';
 

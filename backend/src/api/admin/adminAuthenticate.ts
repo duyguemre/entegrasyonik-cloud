@@ -3,7 +3,7 @@
 //   `mfa===true` (tam oturum), hesap aktif/kilitsiz, tokenVersion tutarli, oturum iptal edilmemis, mutlak 8 sa asilmamis.
 // Musteri `JWT_TOKEN` cerezi burada HIC okunmaz. Tum hatalar tek genel 401 (asama `pwd` ile full endpoint'e gelmek 403 MFA_REQUIRED).
 import type { Request } from 'express';
-import { ApplicationError } from '@api/Security';
+import { ApplicationError } from '@platform/core/security/Security';
 import { readAdminCookie, verifyAdminToken, type AdminPrincipal, type AdminStage } from './adminSession';
 import type { AdminDeps } from './adminDeps';
 

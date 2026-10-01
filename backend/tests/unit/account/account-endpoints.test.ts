@@ -23,7 +23,7 @@ jest.mock('../../../src/api/index', () => ({
 
 import jwt from 'jsonwebtoken';
 import { mailService } from '@services/mail/MailService';
-import Security from '../../../src/api/Security';
+import Security from '../../../src/platform/core/security/Security';
 import { configureApis } from '../../../src/api/ApiManager';
 import { drainBackground } from '../../../src/operations/account/AccountLifecycleService';
 import { hashToken } from '../../../src/operations/account/accountTokens';

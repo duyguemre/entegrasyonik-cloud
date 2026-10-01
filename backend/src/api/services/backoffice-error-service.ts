@@ -1,6 +1,6 @@
 import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
-import { ApplicationError } from '../Security'
+import { ApplicationError } from '@platform/core/security/Security'
 
 const QUERY_MAX_TIME_MS = 5000
 

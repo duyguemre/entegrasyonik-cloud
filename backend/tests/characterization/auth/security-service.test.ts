@@ -17,7 +17,7 @@ jest.mock('@database/DatabaseManager', () => ({
 
 import SecurityService from '../../../src/api/services/security-service';
 import { AuditLogger } from '../../../src/services/audit/AuditLogger';
-import Security from '../../../src/api/Security';
+import Security from '../../../src/platform/core/security/Security';
 import { makeFakeApp, makeReq, makeRes } from './_helpers';
 import { makeCentralDb, makeTenantDb } from '../tenant/_fakes';
 

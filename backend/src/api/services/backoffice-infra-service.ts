@@ -1,6 +1,6 @@
 import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
-import { ApplicationError } from '../Security'
+import { ApplicationError } from '@platform/core/security/Security'
 import { config } from '@config'
 import { RedisService } from '@services/redis/RedisService'
 import ClientDB from '../../database/client/ClientDB'

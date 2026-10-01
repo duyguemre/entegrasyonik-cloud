@@ -1,5 +1,5 @@
 // ADR-0026 WP-LOG L2: Backoffice log/denetim servislerinin ortak yardımcıları (yanıt kesme, filtre özeti, tek-kayıt hassas okuma denetimi).
-import { ApplicationError } from '../Security';
+import { ApplicationError } from '@platform/core/security/Security';
 import { AuditLogger } from '@services/audit/AuditLogger';
 import { getRequestId } from '@platform/core/context';
 import { LogQueryError } from '@platform/runtime/logs';

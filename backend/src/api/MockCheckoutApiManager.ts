@@ -6,7 +6,7 @@ import { PaymentProviderError } from '@services/billing/PaymentProvider';
 import {
     consumeCheckoutToken, isMockCheckoutEnabled, mintCheckoutToken, verifyAndConsumeDevRequest, verifyCheckoutToken,
 } from '@services/billing/mockCheckoutToken';
-import { createRateLimiter } from './rateLimit';
+import { createRateLimiter } from '@platform/rateLimit/rateLimit';
 import { handleBillingWebhook, IBillingWebhookResult } from './BillingWebhookApiManager';
 
 // ADR-0008 §1 (MockPaymentProvider "hosted checkout" sayfası + dev tetikleyicisi) + ADR-0014 S4a.

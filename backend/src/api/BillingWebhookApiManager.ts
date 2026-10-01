@@ -4,7 +4,7 @@ import { AuditLogger } from '@services/audit/AuditLogger';
 import { getConfiguredProviderName, getPaymentProvider } from '@services/billing/PaymentProviderFactory';
 import { EntitlementService } from '@services/billing/EntitlementService';
 import { PaymentProviderError, WebhookHeaders } from '@services/billing/PaymentProvider';
-import { createRateLimiter } from './rateLimit';
+import { createRateLimiter } from '@platform/rateLimit/rateLimit';
 
 // ADR-0008 §4: "Ayrı rota: POST /api/billing/webhooks/:provider — jenerik /:service/:operation RPC'sinin dışında,
 // JWT gerektirmez, IP/istek rate limit'li, ham gövde (raw body) yakalanır."

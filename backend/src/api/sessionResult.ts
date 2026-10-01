@@ -1,4 +1,4 @@
-import type { SessionClaimsInput } from './Security';
+import type { SessionClaimsInput } from '@platform/core/security/Security';
 
 /**
  * login/register/selectStore sonucu: `body` HTTP yanıt gövdesidir (profil DTO'su; token/parola içermez);

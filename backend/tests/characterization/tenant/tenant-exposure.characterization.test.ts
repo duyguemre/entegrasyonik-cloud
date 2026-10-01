@@ -20,7 +20,7 @@ jest.mock('@services/notification/NotificationService', () => ({ NotificationSer
 import AdminService from '../../../src/api/services/admin-service';
 import UserService from '../../../src/api/services/user-service';
 import IntegrationService from '../../../src/api/services/integration-service';
-import { decryptSecrets } from '../../../src/api/integrationSecrets';
+import { decryptSecrets } from '../../../src/platform/core/security/integrationSecrets';
 import { isEncrypted } from '../../../src/utils/FieldCrypto';
 
 // [ADR-0003 adım 6] Yazma yolunda sır alanları artık `enc:v1:` ile şifreli yazılır (eskiden düz metin). Testler yazılan değeri

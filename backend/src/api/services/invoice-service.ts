@@ -2,7 +2,7 @@ import { IService, OrderInternalStatusEnum, IPlatformResponse } from '@interface
 import { BaseApi } from '../BaseApi'
 import { Types } from 'mongoose'
 import IntegrationFactory from '@integration/modules/IntegrationFactory';
-import { ApplicationError } from '../Security'
+import { ApplicationError } from '@platform/core/security/Security'
 import { containsRegex, normalizePagination } from '@utils/search';
 
 /**

@@ -21,7 +21,7 @@ import {
 import { createToolRuntime } from '@operations/agent/tools';
 import { dbVerifyRefs } from '@operations/agent/refVerifiers';
 import { resolveTier } from '@platform/core/authz/tier';
-import { getClientIp } from '../clientIp';
+import { getClientIp } from '@platform/rateLimit/clientIp';
 import { AppError } from '@platform/core/errors';
 import { publicErrorExtras, sendHttpError } from './errorEnvelope';
 import type { Actor } from '../requestContext';

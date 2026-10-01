@@ -275,7 +275,7 @@ describe('ApiManager: GET /userContext ve /checkAuthentication', () => {
       jest.doMock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: {} }));
       jest.doMock('../../../src/api/authenticate', () => ({
         ...(jest.requireActual('../../../src/api/authenticate') as any),
-        authenticateRequest: async () => { const { ApplicationError } = require('../../../src/api/Security'); throw new ApplicationError('Token not verified', 401); },
+        authenticateRequest: async () => { const { ApplicationError } = require('../../../src/platform/core/security/Security'); throw new ApplicationError('Token not verified', 401); },
       }));
       const { configureApis } = require('../../../src/api/ApiManager');
       app = makeFakeApp();

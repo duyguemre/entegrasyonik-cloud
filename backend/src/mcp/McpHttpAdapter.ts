@@ -15,7 +15,7 @@ import { getPlatformSetting } from '@integration/config/platformSettings';
 import { getAgentKv, type AgentKv } from '@operations/agent/kv';
 import { createToolRuntime } from '@operations/agent/tools';
 import { resolveIdentity } from '../api/authenticate';
-import { getClientIp } from '../api/clientIp';
+import { getClientIp } from '@platform/rateLimit/clientIp';
 import { sendHttpError } from '../api/http/errorEnvelope';
 import { parseCorsOrigins } from '../api/originCheck';
 import { getOAuthRuntime } from '../api/oauth/routes';

@@ -1,6 +1,6 @@
 import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
-import { ApplicationError } from '../Security'
+import { ApplicationError } from '@platform/core/security/Security'
 import { AuditLogger } from '@services/audit/AuditLogger'
 import { config } from '@config'
 import { getIntegrationDescriptor, listIntegrationDescriptors } from '@integration/catalog/IntegrationDescriptorRegistry'

@@ -10,7 +10,7 @@ jest.mock('@services/redis', () => ({ RedisService: { isReady: () => !!redisHold
 
 import { issueImpersonationTicket, redeemImpersonationTicket, hashTicket, IMPERSONATION_SESSION_SECONDS } from '../../../../src/api/admin/impersonationTicket';
 import SecurityService from '../../../../src/api/services/security-service';
-import Security, { SESSION_COOKIE_NAME } from '../../../../src/api/Security';
+import Security, { SESSION_COOKIE_NAME } from '../../../../src/platform/core/security/Security';
 import { AuditLogger } from '../../../../src/services/audit/AuditLogger';
 import { Clock, FakeRedis, FakeUserModel, FakeClientModel, makeUser } from '../../../helpers/adminFakes';
 import { makeRes } from '../../../characterization/auth/_helpers';

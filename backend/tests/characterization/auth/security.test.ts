@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from '@jest/globals';
 import jwt from 'jsonwebtoken';
-import Security, { ApplicationError } from '../../../src/api/Security';
+import Security, { ApplicationError } from '../../../src/platform/core/security/Security';
 import { makeReq, makeRes, signedToken, forgedToken, unsignedToken, tokenSignedWith, legacyStyleToken, nowSec, TEST_USER_ID } from './_helpers';
 
 // Characterization: backend/src/api/Security.ts

@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { DatabaseManagerInstance } from '@database/DatabaseManager';
-import Security, { ApplicationError, SessionPrincipal } from './Security';
+import Security, { ApplicationError, SessionPrincipal } from '@platform/core/security/Security';
 import { OPEN_OPERATIONS } from './operationPolicy';
 import { sendHttpError } from './http/errorEnvelope';
 import { enrichContext } from '@platform/core/context';

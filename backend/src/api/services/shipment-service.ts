@@ -1,7 +1,7 @@
 import { IService, OrderInternalStatusEnum, IPlatformResponse } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import IntegrationFactory from '@integration/modules/IntegrationFactory';
-import { ApplicationError } from '../Security';
+import { ApplicationError } from '@platform/core/security/Security';
 
 export const MAX_SHIPMENTS_PAGE_LIMIT = 100;
 

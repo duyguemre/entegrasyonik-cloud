@@ -1,4 +1,4 @@
-import { ApplicationError } from '../Security'
+import { ApplicationError } from '@platform/core/security/Security'
 
 /** Mongo `MaxTimeMSExpired` (50) -> 504 QUERY_TIMEOUT; Redis/diğer bağlantı hatası -> 503 INFRA_UNAVAILABLE; ApplicationError aynen. Ham hata iletisi yanıta girmez. */
 export function toInfraError(e: any): Error {

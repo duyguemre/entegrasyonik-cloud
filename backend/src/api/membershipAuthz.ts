@@ -3,7 +3,7 @@ import { logger } from '@platform/core/logger';
 import { metricsRegistry } from '@platform/runtime/metrics';
 import { resolveTier } from '@platform/core/authz/tier';
 import { ROLE_PERMISSIONS, roleFromTier, type Role } from '../capabilities/roles';
-import { ApplicationError } from './Security';
+import { ApplicationError } from '@platform/core/security/Security';
 
 // ADR-0028 Karar 6 / WP-A3: authenticate'in yetki kaynağı (MEMBERSHIP_SOURCE = legacy | dual | membership).
 //  - legacy: bugünkü davranış birebir (rol Users.owner/roleCode'dan; resolveTier). Bu dosya hiçbir okuma/metrik üretmez.

@@ -29,7 +29,7 @@ const redisMock: any = { info: jest.fn(async () => 'redis_version:7.0\r\nused_me
 jest.mock('@services/redis/RedisService', () => ({ RedisService: { getInstance: () => redisMock } }));
 
 import AdminService from '../../../src/api/services/admin-service';
-import Security from '../../../src/api/Security';
+import Security from '../../../src/platform/core/security/Security';
 import { makeCentralDb, makeTenantDb } from '../tenant/_fakes';
 
 function chain(result: any) {

@@ -1,6 +1,6 @@
 import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
-import { ApplicationError } from '../Security'
+import { ApplicationError } from '@platform/core/security/Security'
 import { createTenantLifecycleService } from '../tenantLifecycleFactory'
 import { getTenantLifecycle } from '../../operations/backoffice/tenantLifecycle'
 import { listTenants, getHealthSummary, type TenantOpsDeps } from '../../operations/backoffice/tenantOps'

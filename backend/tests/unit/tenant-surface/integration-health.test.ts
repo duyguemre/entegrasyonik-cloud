@@ -16,7 +16,7 @@ jest.mock('@integration/engine/IntegrationEventBus', () => ({ EVENTS: {}, integr
 jest.mock('@services/notification/NotificationService', () => ({ NotificationService: {} }));
 
 import IntegrationService from '../../../src/api/services/integration-service';
-import { sanitizeResponse } from '../../../src/api/responseSanitizer';
+import { sanitizeResponse } from '../../../src/platform/core/security/responseSanitizer';
 import { buildIntegrationHealth, sanitizeOperation, CIRCUIT_STALE_MS } from '../../../src/operations/integration/IntegrationHealthOperations';
 
 const NOW = new Date('2026-09-28T12:00:00.000Z');

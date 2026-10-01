@@ -156,7 +156,7 @@ describe('Webserver kurulumu (ADR-0001 adım 3)', () => {
 
 describe('Kaynak taraması (statik): istek yolunda jwt.decode ve MOCK SECURITY kalmadı', () => {
   const root = path.join(__dirname, '../../../src');
-  const files = ['Webserver.ts', 'api/ApiManager.ts', 'api/ImageApiManager.ts', 'api/RunOperation.ts', 'api/Security.ts', 'api/authenticate.ts', 'api/services/security-service.ts'];
+  const files = ['Webserver.ts', 'api/ApiManager.ts', 'api/ImageApiManager.ts', 'api/RunOperation.ts', 'platform/core/security/Security.ts', 'api/authenticate.ts', 'api/services/security-service.ts'];
   const read = (f: string) => fs.readFileSync(path.join(root, f), 'utf8');
 
   it('[ADR-0001 adım 3] hiçbir kimlik dosyasında decode( çağrısı yoktur (yorum satırları hariç)', () => {
@@ -171,6 +171,6 @@ describe('Kaynak taraması (statik): istek yolunda jwt.decode ve MOCK SECURITY k
   });
 
   it('[ADR-0001 adım 2] kaynak kodda gömülü JWT sırrı alanı yok (accessTokenSecret)', () => {
-    expect(read('api/Security.ts')).not.toMatch(/accessTokenSecret/);
+    expect(read('platform/core/security/Security.ts')).not.toMatch(/accessTokenSecret/);
   });
 });

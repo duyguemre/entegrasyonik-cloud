@@ -1,6 +1,6 @@
 import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
-import { ApplicationError } from '../Security'
+import { ApplicationError } from '@platform/core/security/Security'
 import { sanitizeMeta } from '@services/audit/AuditLogger'
 
 const DAY_MS = 24 * 60 * 60 * 1000

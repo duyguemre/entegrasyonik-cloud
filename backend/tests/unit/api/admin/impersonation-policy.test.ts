@@ -4,7 +4,7 @@ import { describe, it, expect, jest, beforeEach, afterAll } from '@jest/globals'
 import jwt from 'jsonwebtoken';
 import { CAPABILITIES, CAPABILITY_BY_RPC, rpcBindingsOf } from '../../../../src/capabilities';
 import { impersonationDenial, IMP_DENIED_CREDENTIAL_RPCS } from '../../../../src/api/impersonationPolicy';
-import Security from '../../../../src/api/Security';
+import Security from '../../../../src/platform/core/security/Security';
 
 const allRpcs = () => CAPABILITIES.flatMap(c => rpcBindingsOf(c).map(b => ({ rpc: b.rpc, cap: c })));
 

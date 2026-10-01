@@ -3,8 +3,8 @@ import { AuditLogger } from '@services/audit/AuditLogger';
 import { storageService } from '@services/storage/StorageService';
 import { prepareExportDownload, ExportDownloadDeps } from '@operations/tenant/exportDownload';
 import { canFor } from '@platform/core/authz/can';
-import { createRateLimiter } from './rateLimit';
-import { getClientIp } from './clientIp';
+import { createRateLimiter } from '@platform/rateLimit/rateLimit';
+import { getClientIp } from '@platform/rateLimit/clientIp';
 import { sendHttpError } from './http/errorEnvelope';
 
 // KVKK dışa aktarma indirme rotası (docs/API_TENANT_SURFACE.md §5; ADR-0003 adım 8 / F.22).

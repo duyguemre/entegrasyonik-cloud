@@ -1,7 +1,7 @@
 // ADR-0024 P0-LIFE: BILESIM KOKU. Sira: yapilandirma dogrulama -> Redis -> (DB tembel/ClientOperations) -> HTTP -> motor
 // -> zamanlayicilar. Rol (`APP_ROLE`, varsayilan all) hangi katmanlarin acilacagini belirler; davranis eski
 // `entegrasyonik.ts` ile AYNIDIR. `entegrasyonik.ts` yalniz kopruleri kurar, bu modulu cagirir ve sinyalleri baglar.
-import Security from '../api/Security';
+import Security from '@platform/core/security/Security';
 import { DatabaseManagerInstance } from '@database/DatabaseManager';
 import IntegrationEngine from '../integration/engine/IntegrationEngine';
 import { NotificationService } from '@services/notification/NotificationService';

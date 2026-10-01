@@ -7,12 +7,12 @@
 import express, { NextFunction, Request, Response, Router } from 'express';
 import cors from 'cors';
 import { config } from '@config';
-import Security, { ApplicationError, type SessionPrincipal } from '@api/Security';
+import Security, { ApplicationError, type SessionPrincipal } from '@platform/core/security/Security';
 import runOperation from '@api/RunOperation';
 import { getRequiredTier } from '@api/operationPolicy';
 import { buildUserContext } from '@api/authenticate';
 import { sendError, sendOk } from '@api/ApiManager';
-import { getClientIp } from '@api/clientIp';
+import { getClientIp } from '@platform/rateLimit/clientIp';
 import { createRateLimiter, rateLimitOptionsFromEnv } from '@platform/rateLimit/rateLimit';
 import { getIdentityCache } from '@platform/core/security/identityCache';
 import { AuditLogger, type AuditEntry } from '@services/audit/AuditLogger';

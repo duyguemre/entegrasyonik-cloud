@@ -1,7 +1,7 @@
 import { IOrderRejectParams, IService, OrderInternalStatusEnum } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import IntegrationFactory from '@integration/modules/IntegrationFactory';
-import { ApplicationError } from '../Security'
+import { ApplicationError } from '@platform/core/security/Security'
 import { ORDER_ITEM_ALLOCATION_STATES } from '@operations/stock/allocationStates'
 import { containsRegex, normalizePagination } from '@utils/search'
 import { PLATFORM_TIME_ZONE, startOfDayInZone, endOfDayInZone, addDaysInZone, dayKeyInZone } from '@utils/timeZone'

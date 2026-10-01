@@ -5,7 +5,7 @@ import { ImageOperations, storageService } from '@services/index'
 import {
     imageVariantUrl, MAX_PIXELS, productImageKey, publicImageUrl, readImageUploadSettings, sha256Hex, sniffImageType, THUMB_WIDTH,
 } from '@services/storage/imagePolicy'
-import { ApplicationError } from '../Security'
+import { ApplicationError } from '@platform/core/security/Security'
 
 /**
  * ADR-0027 §C: doğrudan yüklemeyle eklenen görsel alt belgesi (`products.images[]`, `strict:false` şema).

@@ -1,7 +1,7 @@
 import { Express, NextFunction, Request, Response } from 'express';
 import multer from 'multer';
 import { runImageApi } from "./RunOperation";
-import { sanitizeResponse } from "./responseSanitizer";
+import { sanitizeResponse } from "@platform/core/security/responseSanitizer";
 import { sendHttpError } from './http/errorEnvelope';
 import { logger } from '@platform/core/logger';
 

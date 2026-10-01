@@ -1,5 +1,5 @@
 import { IBaseMicroservice } from "@interfaces/index";
-import { ApplicationError } from "./Security";
+import { ApplicationError } from "@platform/core/security/Security";
 
 // ADR-0001 (Karar 8): asıl yetki/izinli liste kararı RunOperation'da (OPERATION_POLICY) verilir. Bu sarmalayıcı ikinci
 // savunma hattıdır: politika kaydı yanlışlıkla bozulsa bile yaşam döngüsü/iç/prototip üyeleri RPC ile ÇAĞRILAMAZ.

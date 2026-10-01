@@ -1,7 +1,7 @@
 import { IService } from '@interfaces/index'
 import { getIdentityCache } from '@platform/core/security/identityCache'
 import { BaseApi } from '../BaseApi'
-import Security, { ApplicationError, SessionClaimsInput } from '../Security'
+import Security, { ApplicationError, SessionClaimsInput } from '@platform/core/security/Security'
 import { toProfileDto } from '../profileDto'
 import { resolveProfileSource } from '../membershipAuthz'
 import type { SessionResult } from '../sessionResult'

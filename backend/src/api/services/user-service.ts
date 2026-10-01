@@ -1,6 +1,6 @@
 import { BaseApi } from '../BaseApi'
 import { ObjectId } from 'mongodb'
-import Security, { ApplicationError } from '../Security'
+import Security, { ApplicationError } from '@platform/core/security/Security'
 import { IService } from '@interfaces/index'
 import { getIdentityCache } from '@platform/core/security/identityCache'
 import { AuditLogger } from '@services/audit/AuditLogger'

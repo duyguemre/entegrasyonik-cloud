@@ -35,7 +35,7 @@ jest.mock('archiver', () => jest.fn(() => {
 }));
 
 import TenantDataService from '../../../src/api/services/tenant-data-service';
-import Security from '../../../src/api/Security';
+import Security from '../../../src/platform/core/security/Security';
 import { TENANT_LIFECYCLE_STATUS } from '../../../src/operations/tenant/TenantLifecycleService';
 import { verifyExportDownloadToken } from '../../../src/operations/tenant/exportDownloadToken';
 

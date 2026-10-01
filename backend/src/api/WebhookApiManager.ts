@@ -2,7 +2,7 @@ import express, { Express, Request, Response } from 'express';
 import { DatabaseManagerInstance } from '@database/DatabaseManager';
 import { OrderQueueProducer } from '@integration/engine/order/OrderQueueProducer';
 import { createHash } from 'crypto';
-import { createRateLimiter } from './rateLimit';
+import { createRateLimiter } from '@platform/rateLimit/rateLimit';
 import { safeEqual, verifyWebhookHeaders } from './webhookAuth';
 import { eventLog } from '@platform/core/logger';
 
