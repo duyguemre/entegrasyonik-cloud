@@ -19,6 +19,8 @@ interface Props {
   visualDesktopOnly?: boolean
 }
 
+import Eyebrow from '../Eyebrow.astro'
+
 const { title, lead, crumbs, eyebrow, visualDesktopOnly = false } = Astro.props
 const hasVisual = Astro.slots.has('visual')
 ---
@@ -27,7 +29,7 @@ const hasVisual = Astro.slots.has('visual')
   <Breadcrumb items={crumbs} inverse />
   <div class:list={['page-hero__grid', { 'page-hero__grid--split': hasVisual }]}>
     <div class="page-hero__body">
-      {eyebrow && <p class="page-hero__eyebrow">{eyebrow}</p>}
+      {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
       <h1 id="page-title">{title}</h1>
       {lead && <p class="page-hero__lead">{lead}</p>}
       <div class="page-hero__extra"><slot /></div>
@@ -56,15 +58,6 @@ const hasVisual = Astro.slots.has('visual')
     gap: var(--ek-space-4);
     max-width: calc(var(--site-container-narrow) + var(--ek-space-16));
     min-width: 0;
-  }
-  /* ELEV (A8/A14): eyebrow = sayfa adı, ana sayfa bölüm etiketleriyle aynı dil (küçük, büyük harf, koyu zeminde teal). */
-  /* Seçici, Section'ın `.section--stage p` kuralından güçlü olmalı (aksi hâlde soluk beyaza döner). */
-  .page-hero__body .page-hero__eyebrow {
-    color: var(--site-accent-on-dark);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
   }
   /* ELEV: önceki `.page-hero h1` seçicisi kapsam dışı kalıyordu (sınıf alt bileşen Section'da) → H1 genel 36/700'e
      düşüyordu. H1 artık bir değer cümlesidir; display ölçeği bileşenin kendi öğesine bağlanır. */

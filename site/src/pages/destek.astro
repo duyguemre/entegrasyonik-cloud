@@ -11,6 +11,7 @@
  * kanalları (uygulama içi talep, konu bazlı e-posta, SSS; YANIT SÜRESİ İDDİASI YOK) → altta iletişim bandı
  * (adres + e-posta gönder + adresi kopyala). Yeni olgu üretilmez; metinler SSS/iletişim kayıtlarından gelir.
  */
+import Eyebrow from '../components/Eyebrow.astro'
 import BaseLayout from '../layouts/BaseLayout.astro'
 import { crumbsFor } from '../data/seo'
 import Section from '../components/Section.astro'
@@ -193,7 +194,7 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
   <Section tone="stage" labelledby="iletisim-bandi-title" class="contact-band">
     <div class="band">
       <div class="band__copy">
-        <p class="band__eyebrow">İletişim</p>
+        <Eyebrow class="band__eyebrow">İletişim</Eyebrow>
         <h2 id="iletisim-bandi-title">Bize doğrudan yazın</h2>
         <p>Genel iletişim adresimize e-posta gönderebilir veya adresi kopyalayıp dilediğiniz uygulamadan yazabilirsiniz.</p>
       </div>
@@ -454,13 +455,6 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-3);
-  }
-  .band__eyebrow {
-    color: var(--site-accent-on-dark);
-    font-size: var(--site-card-eyebrow-size);
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
   }
   .band h2 {
     font-size: var(--site-font-display-sm);

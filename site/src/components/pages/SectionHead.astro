@@ -15,12 +15,14 @@ interface Props {
   align?: 'start' | 'center'
 }
 
+import Eyebrow from '../Eyebrow.astro'
+
 const { id, title, eyebrow, lead, inverse = false, compact = false, align = 'start' } = Astro.props
 const hasSlot = Astro.slots.has('default')
 ---
 
 <div class:list={['shead', { 'shead--inverse': inverse, 'shead--compact': compact, 'shead--center': align === 'center' }]}>
-  {eyebrow && <p class="shead__eyebrow">{eyebrow}</p>}
+  {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
   <h2 id={id}>{title}</h2>
   {lead && <p class="shead__lead">{lead}</p>}
   {hasSlot && <div class="shead__lead"><slot /></div>}
@@ -42,13 +44,6 @@ const hasSlot = Astro.slots.has('default')
     margin-inline: auto;
     text-align: center;
   }
-  .shead__eyebrow {
-    color: var(--site-link-accent);
-    font-size: var(--site-card-eyebrow-size);
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
   .shead h2 {
     color: var(--site-text-heading);
     font-size: var(--site-font-display-sm);
@@ -67,9 +62,6 @@ const hasSlot = Astro.slots.has('default')
   .shead__lead :global(a) {
     color: var(--site-link-accent);
     font-weight: var(--ek-font-weight-semibold);
-  }
-  .shead--inverse .shead__eyebrow {
-    color: var(--site-accent-on-dark);
   }
   .shead--inverse h2 {
     color: var(--site-text-on-dark-heading);
