@@ -5,6 +5,9 @@ Kaynak: `cloud/fe-polish` denetimi (r2a+r2b+r2c+r2d+dark birleşik dal; tüm ekr
 gideriz"). Bu dosyadaki maddelerin HİÇBİRİ uygulanmadı — akış/davranış, bilgi mimarisi, alan, varsayılan, veri gösterim
 mantığı veya terim kararı içeriyor. Uygulanan bariz düzeltmeler: `docs/fe-polish-review/README.md`.
 
+> **Durum (2026-10-01, fe-r3d):** P01–P16 K49 ile ONAYLANDI ve uygulandı — her maddenin altında "KARAR: uygulandı"
+> satırı (commit + varsa sapma). Kalan backend işleri: aşağıdaki "Backend'e iletilecekler (r3d)" bölümü.
+
 Görüntüler `docs/fe-polish-review/once/` altında (`<ekran>-<light|dark>-<1440|390>.png`, uygulama öncesi birleşik hal).
 Her madde: **Ekran · Sorun · Öneri · Alternatif · Etki · Risk**. Onay için madde numarasını yazmanız yeterli
 (ör. "P03 öneri, P07 alternatif, P10 hayır").
@@ -39,6 +42,7 @@ Her madde: **Ekran · Sorun · Öneri · Alternatif · Etki · Risk**. Onay içi
 - **Alternatif:** Tüm uygulamada `1.048,80 ₺` (Türkçe yazımda sık; site fiyat sayfası ile karşılaştırılıp karar verilir).
 - **Etki:** Finans özet şeridi, finans detay diyaloğu, abonelik kartları; görsel tabanlar yenilenir.
 - **Risk:** Düşük. Yalnız gösterim; tutarlar değişmez. Site ile tutarlılık kontrol edilmeli (K14 "site ile tutarlı").
+- **KARAR: uygulandı (K49, öneri) — tek biçim `₺1.048,80` (`formatMoney`; finans + abonelik). Commit `19705fa8`.**
 
 ### P02 — Filtrelerde "Tümü" varsayılanı tutarsız
 - **Ekran:** Mesajlar ("Red durumu" = Tümü, etiket yukarıda), Bildirimler ("Okunma durumu" = Tümü çipi) ↔ diğer tüm filtreler boş.
@@ -48,6 +52,7 @@ Her madde: **Ekran · Sorun · Öneri · Alternatif · Etki · Risk**. Onay içi
 - **Alternatif:** "Tümü" kalır ama diğer alanlar gibi düz metin (çip değil) ve tüm ekranlarda aynı.
 - **Etki:** `MessageListView`, `NotificationCenterView` filtre varsayılanı ve istek parametresi (boş → gönderilmez).
 - **Risk:** Düşük-orta: varsayılan değişikliği; backend'in "parametre yok = tümü" davrandığı doğrulanmalı (mock'larla).
+- **KARAR: uygulandı (K49, öneri) — "Tümü" seçeneği kalktı, boş = tümü (Mesajlar, Bildirimler). Commit `30711b98`.**
 
 ### P03 — Sekmeli ekranlarda arama + yenile gövdede
 - **Ekran:** Finans (İşlemler sekmesi), İşlem kayıtları (Ürün gönderim/çekim sekmeleri).
@@ -57,6 +62,7 @@ Her madde: **Ekran · Sorun · Öneri · Alternatif · Etki · Risk**. Onay içi
 - **Alternatif:** Sekmeli ekranlar için FR2_PATTERNS'a istisna yazılır ("sekme kendi araç satırını taşır"), görünüm aynı kalır.
 - **Etki:** `FinancialListView`, `LogListView`, `EkListScreen` (dış başlığa yuva/olay); Alt+R kısayolu.
 - **Risk:** Orta: sekme ↔ başlık iletişimi yeni bir sözleşme; liste spec'leri güncellenir.
+- **KARAR: uygulandı (K49, öneri) — Finans ve İşlem kayıtlarında etkin sekmenin arama + ek eylemler + yenile'si başlık çubuğunda (`EkPageHeader tools-id` + `EkListScreen tools-target`, Teleport; `listTools.ts`). Araçsız sekme (Finans › Özet) başlıkta araç bırakmaz. Commit `9b31dabe`; e2e `financial.spec` "başlık araçları (P03)".**
 
 ### P04 — 1440px'te liste tablosu yatay kayıyor (son kolon yapışık eylem kolonunun altında)
 - **Ekran:** Siparişler (Tarih), İadeler (Tarih), Müşteriler (İade oranı) — sol menü açıkken 1440 genişlikte.
@@ -68,6 +74,7 @@ Her madde: **Ekran · Sorun · Öneri · Alternatif · Etki · Risk**. Onay içi
 - **Alternatif:** Kullanıcının kolon gizleyebildiği "Kolonlar" menüsü (Görünümler ile birlikte saklanır).
 - **Etki:** `OrderListView`, `ClaimListView`, `CustomerListView` kolon tanımları; görsel tabanlar.
 - **Risk:** Orta: veri gösterim düzeni değişir; kaydedilmiş görünümlerle etkileşim kontrol edilmeli.
+- **KARAR: uygulandı (K49, öneri — kısmen) — tarih kolonu yalnız gün, saat ipucunda (`<time title>`; Siparişler, İadeler); Müşterilerde Telefon + E-posta tek "İletişim" kolonu. Ölçüm 1440×900: taşma Siparişler +29px, İadeler +41px, Müşteriler +62px → 0. "İçerik + Stok" birleştirmesi GEREKMEDİ (tarih kısalınca sığdı; uygulanmadı). Commit `9fe84410`.**
 
 ### P05 — Sekme adı ≠ sayfa başlığı ≠ menü adı
 - **Ekran:** Birden çok: "Sipariş Yönetimi" (menü/sekme) ↔ "Siparişler" (başlık); "İade Yönetimi" ↔ "İade talepleri";
@@ -79,6 +86,7 @@ Her madde: **Ekran · Sorun · Öneri · Alternatif · Etki · Risk**. Onay içi
 - **Alternatif:** Yalnız sekme adı = başlık (menü backend verisinden gelir, dokunulmaz).
 - **Etki:** `tr.json` `menu.*`, ekran başlıkları, yardım içeriği ve e2e seçicileri (ada göre seçenler).
 - **Risk:** Orta: menü başlıkları kısmen backend menü kaydından (`MenuService`) gelir; i18n anahtarı ile çözülenler değişir.
+- **KARAR: uygulandı (K49, öneri) — tek ad kaydı: menü/sekme kısa adı = başlık kökü (Siparişler, İadeler, Abonelik, Finans, İşlem kayıtları, Mağaza ayarları…). Commit `db65f7d1`.**
 
 ### P06 — Destek adlandırması üç farklı
 - **Ekran:** Destek. Menü grubu "Destek Kayıtları" › yaprak "Destek Kayıtları", başlık "Destek Talepleri", düğme
@@ -87,6 +95,7 @@ Her madde: **Ekran · Sorun · Öneri · Alternatif · Etki · Risk**. Onay içi
 - **Alternatif:** Yalnız düğme metni "Yeni talep", menü olduğu gibi.
 - **Etki:** `TicketListView`, `menu.support_ticket_list`, yardım makaleleri ("Yeni Bilet Aç" geçen yerler), spec'ler.
 - **Risk:** Düşük (metin + menü kaydı).
+- **KARAR: uygulandı (K49, öneri) — "Destek talepleri" + "Yeni talep"; tek yapraklı destek grubu düzleşir. Commit `db65f7d1`.**
 
 ### P07 — "Şifre" ve "Parola" karışık
 - **Ekran:** Giriş/kayıt ("Şifre", "Şifremi unuttum", "Şifrenizi mi unuttunuz?") ↔ Hesabım ve güvenlik ("Mevcut parola",
@@ -95,6 +104,7 @@ Her madde: **Ekran · Sorun · Öneri · Alternatif · Etki · Risk**. Onay içi
 - **Alternatif:** Tek terim "Şifre" (kullanıcı dilinde daha yaygın; giriş ekranları zaten böyle).
 - **Etki:** `tr.json` giriş/kayıt/sıfırlama anahtarları, e-posta şablonu metinleri (backend — ayrı iş), yardım içeriği, spec'ler.
 - **Risk:** Düşük; e-posta şablonları backend'de olduğundan iki taraf birlikte değişmeli.
+- **KARAR: uygulandı (K49, öneri) — tek terim "Parola" (giriş/kayıt/sıfırlama/kullanıcı formları, yardım). E-posta şablonları backend'de (ayrı iş, aşağıda). Commit `e453c483`.**
 
 ### P08 — Kurumsal planda 999 / 999.999 limitleri sayı olarak görünüyor
 - **Ekran:** Abonelik ve Planlar, "Kurumsal" kartı: "999 Kanal", "999.999 Varyant", "999 Kullanıcı". Görüntü: `once/subscription-dark-1440.png`.
@@ -103,6 +113,7 @@ Her madde: **Ekran · Sorun · Öneri · Alternatif · Etki · Risk**. Onay içi
 - **Alternatif:** Plan kaydına açık `unlimited` bayrağı (backend sözleşmesi — ayrı iş).
 - **Etki:** `SubscriptionView` plan özellik satırları.
 - **Risk:** Düşük; yalnız gösterim. Tavan eşiğinin backend plan kaydıyla teyidi gerekir (uydurma eşik olmasın).
+- **KARAR: uygulandı (K49, öneri) — tavan değerler (999 kanal/kullanıcı, 999.999 varyant/çağrı) "Sınırsız". Plan kaydında açık `unlimited` bayrağı backend isteği olarak kalır. Commit `19705fa8`.**
 
 ### P09 — Denetim günlüğünde ham kod ve "Bilinmeyen kullanıcı"
 - **Ekran:** Denetim günlüğü. "Neden: wrong_current", "Bilinmeyen kullanıcı …-owner". Görüntü: `once/settings-audit-log-dark-1440.png`.
@@ -111,12 +122,14 @@ Her madde: **Ekran · Sorun · Öneri · Alternatif · Etki · Risk**. Onay içi
 - **Alternatif:** Ham kodu ikincil (monospace) satırda bırakıp üstte okunur metin.
 - **Etki:** `AuditLogView` ayrıntı sütunu; karşılık tablosu backend hata kataloğundan gelmeli (premium-ui-standards: FE metin uydurmaz).
 - **Risk:** Düşük-orta: karşılıklar backend kaynağından alınmalı.
+- **KARAR: uygulandı (K49, öneri + alternatif birlikte) — neden kodları okunur karşılıkla (`REASON_LABELS`: backend AuditLogger çağrılarındaki 9 kodun tamamı, tarama 2026-10-01); ham kod yalnız ayrıntı panelinde ikincil satırda; kayıtta olmayan kod ham kalır. Çözülemeyen kullanıcı: kullanıcı dizini eksiksizse "Silinmiş kullanıcı", değilse "Bilinmeyen kullanıcı"; listede ham kimlik yok (maskeli e-posta denetim DTO'sunda olmadığı için kullanılamadı). Backend'de hata kataloğu gelince `REASON_LABELS` oradan beslenmeli. Commit `40facc8b`.**
 
 ### P10 — Mesajlar filtresinde "Kanal" sonda
 - **Ekran:** Mesajlar filtre paneli: Mesaj durumu · Mesaj tipi · Red durumu · **Kanal**. Diğer listelerde Kanal ilk alan.
   Görüntü: `once/messages-light-1440.png`.
 - **Öneri:** Kanal ilk sıraya. **Alternatif:** Tüm listelerde filtre sırası standardı FR2_PATTERNS'a yazılır (Kanal → Durum → Tür → Tarih).
 - **Etki/Risk:** `MessageListView` filtre sırası; düşük.
+- **KARAR: uygulandı (K49, öneri) — Mesajlar filtresinde Kanal ilk sırada. Commit `30711b98`.**
 
 ### P11 — Menü grubu düzeni
 - **Ekran:** Menü (destek/yönetim menüsü olan hesaplar): "Finans ve raporlar" altında Finansal İşlemler + Çıktılar + **Ayarlar**;
@@ -126,18 +139,21 @@ Her madde: **Ekran · Sorun · Öneri · Alternatif · Etki · Risk**. Onay içi
 - **Öneri:** Ayarlar + Yetkilendirme + Çıktılar "Ayarlar" grubunda; Finans grubu yalnız finans.
 - **Alternatif:** FE'de bölüm eşlemesi (`SECTIONS`) ile menü verisinden bağımsız gruplama.
 - **Risk:** Orta (IA + backend menü verisi; yerel oturum işi).
+- **KARAR: uygulandı (K49, alternatif — FE bölüm eşlemesi) — Mağaza ayarları + Çıktılar + Yetkilendirme "Ayarlar" bölümünde (`menuShape.regroupMenu`); kalıcı grup düzeni backend menü verisinde ayrıca yapılmalı. Commit `db65f7d1`.**
 
 ### P12 — E-Fatura sağlayıcılarının kısa adı yok
 - **Ekran:** E-Fatura sağlayıcı şeridi: "TE" (iki ayrı sağlayıcı aynı kısa ad), "E-" (e-Logo), "Gİ" (GİB). Görüntü: `once/integrations-einvoice-dark-1440.png`.
 - **Öneri:** K13 kısa/uzun ad kaydına e-fatura sağlayıcıları eklenir (ör. TEF, TCL, ELG, GİB); renkleri yalnız orijinal
   marka hex'i doğrulanınca (K13: tahmini renk yok), o zamana kadar nötr.
 - **Etki/Risk:** `CHANNEL_SHORT` kaydı; düşük. Marka adları/kısaltmaları ürün sahibince onaylanmalı.
+- **KARAR: uygulandı (K49, öneri) — e-fatura kısa/uzun ad kaydı (TEF, TCL, ELG, GİB); renk doğrulanana kadar nötr. Kısaltmalar ürün sahibince teyit edilmeli. Commit `3edac58e`.**
 
 ### P13 — Giriş ekranında "Şifremi unuttum" iki kez
 - **Ekran:** Giriş: üst sekme "Şifremi unuttum" + alan altı "Şifrenizi mi unuttunuz?" bağlantısı. Görüntü: `once/giris-light-390.png`.
 - **Öneri:** Üç sekme → iki sekme (Giriş · Kayıt); sıfırlama yalnız alan altındaki bağlantıdan.
 - **Alternatif:** Sekme kalır, bağlantı kalkar.
 - **Etki/Risk:** `AuthShell`/giriş akışı; login spec'leri. Düşük-orta (akış değişikliği).
+- **KARAR: uygulandı (K49, öneri) — giriş iki sekme (Giriş · Kayıt); sıfırlama yalnız alan altındaki bağlantıdan. Commit `e453c483`.**
 
 ---
 
@@ -154,6 +170,7 @@ Bu maddeler için test GEVŞETİLMEDİ; testler yalnız ilgili ekranda kartı ba
 - **Alternatif:** Kartı sağ alttan üst bar altındaki ince bir bilgi şeridine taşı.
 - **Etki:** `HelpTour` + kabuk katman tokenları; tur teklifi spec'leri ve görsel tabanlar.
 - **Risk:** Düşük (yalnız konum/katman). Kullanıcının ilk ziyaret deneyimini değiştirdiği için onaylı.
+- **KARAR: uygulandı (K49, öneri) — tur kartı açık çekmece/diyalog/menüde gizlenir, katmanı çekmecenin altında, yapışık alt çubuklu ekranda çubuğun üstüne kalkar. Commit `3377f130`.**
 
 ### P15 — Açık filtre paneliyle liste alanı ~0 yüksekliğe iniyor
 - **Ekran:** Denetim günlüğü (uyarı bandıyla), Bildirim merkezi — 1280×800'de filtre paneli açıkken (masaüstü varsayılanı).
@@ -163,6 +180,7 @@ Bu maddeler için test GEVŞETİLMEDİ; testler yalnız ilgili ekranda kartı ba
 - **Alternatif:** Dar yükseklikte filtre paneli varsayılan kapalı açılır.
 - **Etki:** Ortak `EkListFrame` (tüm liste ekranları); görsel tabanlar.
 - **Risk:** Düşük-orta (ortak bileşen düzeni).
+- **KARAR: uygulandı (K49, öneri) — liste kartı asgari 340px; sığmazsa ekran kendi içinde kayar (`EkListScreen`; EkListFrame'i doğrudan kullanan Denetim günlüğü ve Finans kökleri de). Commit `3377f130`, `5a0e13b1`.**
 
 ### P16 — Menü 500'de üç ayrı "Bir şeyler ters gitti" bildirimi
 - **Ekran:** Kabuk açılışı, `MenuService` 500 döndüğünde.
@@ -172,6 +190,7 @@ Bu maddeler için test GEVŞETİLMEDİ; testler yalnız ilgili ekranda kartı ba
 - **Alternatif:** Menü hatasında bildirim yerine kenar menüde satır içi hata durumu + Tekrar dene.
 - **Etki:** `reportUnexpectedError` / bildirim kuyruğu.
 - **Risk:** Düşük.
+- **KARAR: uygulandı (K49, öneri) — aynı kökten 4 sn içindeki beklenmeyen hatalar tek bildirim + tek Destek kodu (teknik log her biri için; çağıranın kendi iletisi toplanmaz). Commit `d05584a7`.**
 
 ## MCP önyüzü (cloud/mcp-fe) önerileri
 
@@ -181,8 +200,8 @@ karar verilince `docs/adr/USER_DECISIONS.md`'ye satır eklenir ve buradaki madde
 
 | # | Tarih | Kaynak | Öneri | Neden onay gerekiyor | Durum |
 |---|---|---|---|---|---|
-| P-MCP-1 | 2026-10-01 | cloud/mcp-fe (MCP-6) | **Ekran adları.** Bulut brifi S3/S4 için "Bağlı uygulamalar / **Otopilot bağlantıları** (ad ürün sabitinden)" diyor; `MCP_UI_CONTRACT.md` §1 ise S3 = "Bağlı uygulamalar", S4 = "**Yapay zekâ bağlantısı**". Uygulanan: sözleşme adları (kanonik). Öneri: adları sözleşmedeki gibi bırakmak — MCP bağlantısı kullanıcının **kendi** yapay zekâ uygulamasıdır (K37b), Otopilot ise uygulama içi ajandır (K39); "Otopilot bağlantıları" iki ürünü karıştırır. Otopilot adı istenirse tek değişiklik `src/components/mcp/mcpMessages.ts` (`menu.*`, `mcp.connections.title`, `mcp.settings.title`) + `CHAT_PRODUCT` sabiti (yalnız `cloud/chat-fe` dalında; ana dalda yok). | Bilgi mimarisi / ürün adlandırması; brif ile sözleşme çelişiyor (CLAUDE.md kural 8 — raporlandı) | BEKLİYOR |
-| P-MCP-2 | 2026-10-01 | cloud/mcp-fe (MCP-6) | **Ortak onay kartı.** `@entegrasyonik/chat` (`PartConfirm`) bu dalın tabanında yok (`cloud/chat-fe` birleşmedi). İşlem onayı önizlemesi (`src/components/mcp/McpActionPreview.vue`) sözleşmeye göre, sohbet onay kartıyla aynı görsel ritimde (ikon karosu + başlık + işlem çipi, pazaryeri notu, etkilenen kayıtlar) yazıldı. Öneri: sohbet paketi ana dala girince önizleme gövdesi pakete taşınsın; sohbet kartı ve S2 aynı bileşeni kullansın. | Paketler arası bileşen taşıma (iki bulut işini etkiler) | BEKLİYOR |
+| P-MCP-1 | 2026-10-01 | cloud/mcp-fe (MCP-6) | **Ekran adları.** Bulut brifi S3/S4 için "Bağlı uygulamalar / **Otopilot bağlantıları** (ad ürün sabitinden)" diyor; `MCP_UI_CONTRACT.md` §1 ise S3 = "Bağlı uygulamalar", S4 = "**Yapay zekâ bağlantısı**". Uygulanan: sözleşme adları (kanonik). Öneri: adları sözleşmedeki gibi bırakmak — MCP bağlantısı kullanıcının **kendi** yapay zekâ uygulamasıdır (K37b), Otopilot ise uygulama içi ajandır (K39); "Otopilot bağlantıları" iki ürünü karıştırır. Otopilot adı istenirse tek değişiklik `src/components/mcp/mcpMessages.ts` (`menu.*`, `mcp.connections.title`, `mcp.settings.title`) + `CHAT_PRODUCT` sabiti (yalnız `cloud/chat-fe` dalında; ana dalda yok). | Bilgi mimarisi / ürün adlandırması; brif ile sözleşme çelişiyor (CLAUDE.md kural 8 — raporlandı) | KARAR: öneri uygulandı (K49) — sözleşme adları korunur ("Bağlı uygulamalar" / "Yapay zekâ bağlantısı"); değişiklik gerekmedi |
+| P-MCP-2 | 2026-10-01 | cloud/mcp-fe (MCP-6) | **Ortak onay kartı.** `@entegrasyonik/chat` (`PartConfirm`) bu dalın tabanında yok (`cloud/chat-fe` birleşmedi). İşlem onayı önizlemesi (`src/components/mcp/McpActionPreview.vue`) sözleşmeye göre, sohbet onay kartıyla aynı görsel ritimde (ikon karosu + başlık + işlem çipi, pazaryeri notu, etkilenen kayıtlar) yazıldı. Öneri: sohbet paketi ana dala girince önizleme gövdesi pakete taşınsın; sohbet kartı ve S2 aynı bileşeni kullansın. | Paketler arası bileşen taşıma (iki bulut işini etkiler) | KARAR: uygulandı (K49) — gövde ortak bileşen `@entegrasyonik/chat/confirm` (`ConfirmBody`), sohbet `PartConfirm` ve `McpActionPreview` kullanır; başlık/eylemler yüzeyde kalır (odak sözleşmeleri farklı). Commit `1e8f4c97` |
 
 ## FR3 kabuk / tablo (cloud/fe-r3a) önerileri
 
@@ -234,3 +253,19 @@ sözleşmesinin DIŞINA çıkan ya da akış değiştiren maddelerdir; HİÇBİR
   (menü verisi backend'de — P11 ile birlikte değerlendirilir).
 - **C09 — Doğrudan termal yazdırma (ZPL) ve 203/300 dpi barkod modül yuvarlama:** bugün tarayıcı yazdırma + vektör
   SVG barkod (ölçekte bulanıklık yok). Termal yazıcı dağılımı netleşince (araştırma Q2) değerlendirilir.
+
+## fe-r3d (2026-10-01) — FR3 madde 17–18 sonrası
+
+**Onay kapsamı notu:** FR3 madde 17 / K49 onayı, belge o tarihte içerdiği maddeler içindir (P01–P16, P-MCP-1/2) — hepsi
+yukarıda "KARAR" ile kapatıldı. P-R3A-*, P-R3B-*, C01–C09 FR3 turunda K49'DAN SONRA yazıldı; BEKLİYOR durumlarını korur
+(ayrı onay gerekir).
+
+### Backend'e iletilecekler (r3d)
+
+| No | İstek | Kaynak | Önyüz hazırlığı |
+|---|---|---|---|
+| B-R3D-1 | Plan kaydında açık `unlimited` bayrağı (999 / 999.999 tavan değer yerine) | P08 | `SubscriptionView` `UNLIMITED_AT` eşiği; bayrak gelince yalnız `formatLimit` değişir |
+| B-R3D-2 | Denetim günlüğü neden kodu kataloğu (kod → okunur metin) API'den | P09 | `REASON_LABELS` (`useAuditLogApi.ts`) 9 kodu taşır; katalog gelince oradan beslenir |
+| B-R3D-3 | Menü verisinde kalıcı grup düzeni (Ayarlar bölümü: Mağaza ayarları, Çıktılar, Yetkilendirme; Finans grubu yalnız finans) | P11 | FE eşlemesi `menuShape.regroupMenu`; backend düzeni gelince eşleme no-op olur |
+| B-R3D-4 | E-posta şablonlarında "şifre" → "parola" | P07 | Uygulama metinleri tamam |
+| B-R3D-5 | Denetim DTO'sunda silinmiş kullanıcı için ad/maskeli e-posta anlık görüntüsü (`actorLabel`) | P09 | Bugün dizinden çözülüyor; dizin eksikse "Bilinmeyen kullanıcı" |
