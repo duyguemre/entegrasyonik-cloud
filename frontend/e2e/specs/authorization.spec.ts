@@ -58,10 +58,16 @@ test.describe('ADR-0015 B5-3 — AuthorizationListView + UserAddComponent', () =
     await gotoAuthed(page)
     await openScreen(page, 'AuthorizationListView')
 
-    const denizRow = page.locator('.authorizationListView tbody tr', { hasText: 'Deniz Kaya' })
-    await expect(denizRow.locator('button:has(.mdi-delete)')).toBeDisabled()
-    const elifRow = page.locator('.authorizationListView tbody tr', { hasText: 'Elif Yıldız' })
-    await expect(elifRow.locator('button:has(.mdi-delete)')).toBeEnabled()
+    // EkRowActions: "Düzenle" satırda, "Sil" ⋯ bağlam menüsünde (aria-disabled menuitem).
+    const view = page.locator('.authorizationListView')
+    await view.getByRole('button', { name: 'Deniz işlemleri' }).click()
+    const denizMenu = page.getByRole('menu', { name: 'Deniz işlemleri' })
+    await expect(denizMenu.getByRole('menuitem', { name: 'Mağaza yöneticisi silinemez' })).toHaveAttribute('aria-disabled', 'true')
+    await page.keyboard.press('Escape')
+    await expect(denizMenu).toBeHidden()
+    await view.getByRole('button', { name: 'Elif işlemleri' }).click()
+    const elifMenu = page.getByRole('menu', { name: 'Elif işlemleri' })
+    await expect(elifMenu.getByRole('menuitem', { name: 'Sil', exact: true })).not.toHaveAttribute('aria-disabled', 'true')
   })
 
   test('boş durum: "Personel bulunamadı" mesajı gösterilir', async ({ page }) => {
@@ -114,8 +120,7 @@ test.describe('ADR-0015 B5-3 — AuthorizationListView + UserAddComponent', () =
     await gotoAuthed(page)
     await openScreen(page, 'AuthorizationListView')
 
-    const elifRow = page.locator('.authorizationListView tbody tr', { hasText: 'Elif Yıldız' })
-    await elifRow.locator('button:has(.mdi-pencil)').click()
+    await page.locator('.authorizationListView').getByRole('row').filter({ hasText: 'Elif Yıldız' }).getByRole('button', { name: 'Düzenle' }).click()
 
     const dialog = page.getByRole('dialog').filter({ hasText: 'Kullanıcı Düzenle' })
     await expect(dialog).toBeVisible()

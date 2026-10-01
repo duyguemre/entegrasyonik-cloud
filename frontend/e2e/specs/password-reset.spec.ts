@@ -33,7 +33,7 @@ test.describe('P1 — Şifremi unuttum (giriş ekranı sekmesi)', () => {
     await page.getByRole('button', { name: 'Şifremi Sıfırla' }).click()
 
     await expect(page.getByText('Geçerli bir e-posta adresi girin.')).toBeVisible()
-    await page.waitForTimeout(300)
+    // İstemci doğrulaması senkron döner (await'ten önce return) — görünen hata iletisi çağrı olmadığının kanıtıdır.
     expect(called).toBe(false)
   })
 
@@ -102,7 +102,7 @@ test.describe('P1 — /reset-password (e-postadaki bağlantının hedefi)', () =
     await page.goto('/reset-password')
 
     await expect(page.getByText('Bağlantı geçersiz')).toBeVisible()
-    await expect(page.getByLabel('Yeni Parola', { exact: true })).toHaveCount(0)
+    await expect(page.getByLabel('Yeni parola', { exact: true })).toHaveCount(0)
   })
 
   test('istemci doğrulaması: kısa/uyuşmayan parolalarda backend çağrılmaz', async ({ page }) => {
@@ -115,17 +115,17 @@ test.describe('P1 — /reset-password (e-postadaki bağlantının hedefi)', () =
       },
     })
     await page.goto('/reset-password?token=e2e-fake-token')
-    await page.getByLabel('Yeni Parola', { exact: true }).fill('kisa')
-    await page.getByLabel('Yeni Parola (Tekrar)').fill('kisa')
-    await page.getByRole('button', { name: 'Parolamı Güncelle' }).click()
+    await page.getByLabel('Yeni parola', { exact: true }).fill('kisa')
+    await page.getByLabel('Yeni parola (tekrar)').fill('kisa')
+    await page.getByRole('button', { name: 'Parolamı güncelle' }).click()
     await expect(page.getByText('Parolanız en az 10 karakter olmalı.')).toBeVisible()
 
-    await page.getByLabel('Yeni Parola', { exact: true }).fill('gecerli-parola-1')
-    await page.getByLabel('Yeni Parola (Tekrar)').fill('baska-bir-parola-2')
-    await page.getByRole('button', { name: 'Parolamı Güncelle' }).click()
+    await page.getByLabel('Yeni parola', { exact: true }).fill('gecerli-parola-1')
+    await page.getByLabel('Yeni parola (tekrar)').fill('baska-bir-parola-2')
+    await page.getByRole('button', { name: 'Parolamı güncelle' }).click()
     await expect(page.getByText('Girdiğiniz parolalar birbiriyle uyuşmuyor.')).toBeVisible()
 
-    await page.waitForTimeout(300)
+    // İstemci doğrulaması senkron döner (await'ten önce return) — görünen hata iletisi çağrı olmadığının kanıtıdır.
     expect(called).toBe(false)
   })
 
@@ -142,9 +142,9 @@ test.describe('P1 — /reset-password (e-postadaki bağlantının hedefi)', () =
     // Güvenlik notu (API sözleşmesi FE önerisi): token okunur okunmaz (mount anında) URL'den silinir
     // — geçmiş/log sızıntısını önlemek için bu form etkileşiminden ÖNCE gerçekleşir.
     await expect(page).not.toHaveURL(/token=/)
-    await page.getByLabel('Yeni Parola', { exact: true }).fill('gecerli-yeni-parola-1')
-    await page.getByLabel('Yeni Parola (Tekrar)').fill('gecerli-yeni-parola-1')
-    await page.getByRole('button', { name: 'Parolamı Güncelle' }).click()
+    await page.getByLabel('Yeni parola', { exact: true }).fill('gecerli-yeni-parola-1')
+    await page.getByLabel('Yeni parola (tekrar)').fill('gecerli-yeni-parola-1')
+    await page.getByRole('button', { name: 'Parolamı güncelle' }).click()
 
     await expect(page.getByText('Parolanız güncellendi. Yeni parolanızla giriş yapabilirsiniz.')).toBeVisible()
     await expect.poll(() => sentToken).toBe('e2e-fake-token')
@@ -159,9 +159,9 @@ test.describe('P1 — /reset-password (e-postadaki bağlantının hedefi)', () =
       'AccountService/confirmPasswordReset': mockError(400, { error: 'Geçersiz veya süresi dolmuş bağlantı.', service: 'AccountService', operation: 'confirmPasswordReset', code: 'TOKEN_INVALID' }),
     })
     await page.goto('/reset-password?token=e2e-expired-token')
-    await page.getByLabel('Yeni Parola', { exact: true }).fill('gecerli-yeni-parola-1')
-    await page.getByLabel('Yeni Parola (Tekrar)').fill('gecerli-yeni-parola-1')
-    await page.getByRole('button', { name: 'Parolamı Güncelle' }).click()
+    await page.getByLabel('Yeni parola', { exact: true }).fill('gecerli-yeni-parola-1')
+    await page.getByLabel('Yeni parola (tekrar)').fill('gecerli-yeni-parola-1')
+    await page.getByRole('button', { name: 'Parolamı güncelle' }).click()
 
     await expect(page.getByText('Bu bağlantının süresi dolmuş veya daha önce kullanılmış.')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Yeni bir sıfırlama bağlantısı iste' })).toBeVisible()
@@ -175,9 +175,9 @@ test.describe('P1 — /reset-password (e-postadaki bağlantının hedefi)', () =
       'AccountService/confirmPasswordReset': mockError(400, { error: 'Parolanız çok zayıf; en az 3 farklı karakter sınıfı kullanın.', service: 'AccountService', operation: 'confirmPasswordReset', code: 'WEAK_PASSWORD' }),
     })
     await page.goto('/reset-password?token=e2e-fake-token')
-    await page.getByLabel('Yeni Parola', { exact: true }).fill('aaaaaaaaaa')
-    await page.getByLabel('Yeni Parola (Tekrar)').fill('aaaaaaaaaa')
-    await page.getByRole('button', { name: 'Parolamı Güncelle' }).click()
+    await page.getByLabel('Yeni parola', { exact: true }).fill('aaaaaaaaaa')
+    await page.getByLabel('Yeni parola (tekrar)').fill('aaaaaaaaaa')
+    await page.getByRole('button', { name: 'Parolamı güncelle' }).click()
 
     await expect(page.getByText('Parolanız çok zayıf; en az 3 farklı karakter sınıfı kullanın.')).toBeVisible()
   })
@@ -185,7 +185,7 @@ test.describe('P1 — /reset-password (e-postadaki bağlantının hedefi)', () =
   test('ekran görüntüsü tabanı (yeni parola formu)', async ({ page }) => {
     await installApiMocks(page, NO_SESSION)
     await page.goto('/reset-password?token=e2e-fake-token')
-    await expect(page.getByRole('button', { name: 'Parolamı Güncelle' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Parolamı güncelle' })).toBeVisible()
     await page.evaluate(() => document.fonts.ready)
     await page.waitForTimeout(300)
     await expect(page).toHaveScreenshot('reset-password.png', { fullPage: false })

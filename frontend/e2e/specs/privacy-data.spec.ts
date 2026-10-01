@@ -3,6 +3,7 @@
 // tenant-data/export/download?token=` (owner, tek kullanımlık). Sentetik fixture (Protokol 7: PII yok).
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import { appDialogs, suppressTourOffer } from '../fixtures/appDialog'
 import { installApiMocks, mockError, type MockValue } from '../fixtures/mockApi'
 import { userContextFixture } from '../fixtures/apiData'
 import { AXE_TAGS, B4_SCREENS, menuFixtureWithB4, openB4Screen } from '../fixtures/b4Screens'
@@ -33,6 +34,9 @@ function zipRoute(counter: { calls: number; tokens: string[] }, secondStatus = 4
 }
 
 test.describe('ADR-0015 B4-P0 — N4 Veri ve gizlilik (KVKK)', () => {
+  // Tur teklifi kartı (900ms sonra, sağ alt) ekran görüntüsünü zamanlamaya bağlı değiştirir → deterministik: kapatılmış sayılır.
+  test.beforeEach(async ({ page }) => { await suppressTourOffer(page) })
+
   test('smoke: derin bağlantı; dışa aktarma bölümü, kapsam bilgileri ve yasal bağlantılar render olur', async ({ page }) => {
     await mocks(page)
     await openB4Screen(page, 'PrivacyDataView')
@@ -171,7 +175,7 @@ const DELETION_OK = { order: 7, status: 'DELETION_PENDING', deletionScheduledAt:
 async function openDeletionDialog(page: any) {
   const root = page.locator(ROOT)
   await root.getByRole('button', { name: 'Silme talebi oluştur' }).click()
-  const dialog = page.getByRole('dialog').filter({ hasText: 'Kimliğinizi doğrulayın' })
+  const dialog = appDialogs(page).filter({ hasText: 'Kimliğinizi doğrulayın' })
   await expect(dialog).toBeVisible()
   return dialog
 }
@@ -182,6 +186,9 @@ async function fillVerify(dialog: any, password: string, name: string) {
 }
 
 test.describe('C1.6 — Mağaza silme talebi (owner)', () => {
+  // Tur teklifi kartı (900ms sonra, sağ alt) ekran görüntüsünü zamanlamaya bağlı değiştirir → deterministik: kapatılmış sayılır.
+  test.beforeEach(async ({ page }) => { await suppressTourOffer(page) })
+
   test('smoke: sahip için "Mağazayı sil" bölümü, nötr açıklama ve yasal bağlantı render olur', async ({ page }) => {
     await mocks(page)
     await openB4Screen(page, 'PrivacyDataView')
@@ -234,7 +241,7 @@ test.describe('C1.6 — Mağaza silme talebi (owner)', () => {
     await expect(next).toBeEnabled()
     await next.click()
 
-    const confirm = page.getByRole('dialog').filter({ hasText: 'silme talebi oluşturulsun mu?' })
+    const confirm = appDialogs(page).filter({ hasText: 'silme talebi oluşturulsun mu?' })
     await expect(confirm.getByRole('heading', { name: `'${STORE}' için silme talebi oluşturulsun mu?` })).toBeVisible()
     await expect(confirm.getByRole('button', { name: 'Vazgeç' })).toBeFocused()
     expect(body).toBeUndefined()
@@ -245,7 +252,7 @@ test.describe('C1.6 — Mağaza silme talebi (owner)', () => {
     await expect(root.getByText(/29\.10\.2026 \d{2}:\d{2} tarihine kadar askıda kalacak/)).toBeVisible()
     expect(body).toEqual({ password: 'e2e-sentetik-parola', confirmTenantName: STORE })
     await expect(root.getByRole('button', { name: 'Silme talebi oluştur' })).toHaveCount(0)
-    await expect(page.getByRole('dialog')).toHaveCount(0)
+    await expect(appDialogs(page)).toHaveCount(0)
   })
 
   test('vazgeç: son onayda Vazgeç → istek atılmaz, alanlar temizlenir', async ({ page }) => {
@@ -260,8 +267,8 @@ test.describe('C1.6 — Mağaza silme talebi (owner)', () => {
     let dialog = await openDeletionDialog(page)
     await fillVerify(dialog, 'e2e-sentetik-parola', STORE)
     await dialog.getByRole('button', { name: 'Sil', exact: true }).click()
-    await page.getByRole('dialog').filter({ hasText: 'silme talebi oluşturulsun mu?' }).getByRole('button', { name: 'Vazgeç' }).click()
-    await expect(page.getByRole('dialog')).toHaveCount(0)
+    await appDialogs(page).filter({ hasText: 'silme talebi oluşturulsun mu?' }).getByRole('button', { name: 'Vazgeç' }).click()
+    await expect(appDialogs(page)).toHaveCount(0)
     expect(called).toBe(false)
 
     dialog = await openDeletionDialog(page)
@@ -281,7 +288,7 @@ test.describe('C1.6 — Mağaza silme talebi (owner)', () => {
     const dialog = await openDeletionDialog(page)
     await fillVerify(dialog, 'yanlis-sentetik-parola', STORE)
     await dialog.getByRole('button', { name: 'Sil', exact: true }).click()
-    await page.getByRole('dialog').getByRole('button', { name: 'Silme talebi oluştur' }).click()
+    await appDialogs(page).getByRole('button', { name: 'Silme talebi oluştur' }).click()
 
     await expect(dialog).toBeVisible()
     await expect(dialog.getByText('Parola doğrulanamadı.')).toBeVisible()
@@ -306,15 +313,15 @@ test.describe('C1.6 — Mağaza silme talebi (owner)', () => {
     const dialog = await openDeletionDialog(page)
     await fillVerify(dialog, 'e2e-sentetik-parola', STORE)
     await dialog.getByRole('button', { name: 'Sil', exact: true }).click()
-    await page.getByRole('dialog').getByRole('button', { name: 'Silme talebi oluştur' }).click()
+    await appDialogs(page).getByRole('button', { name: 'Silme talebi oluştur' }).click()
     await expect(dialog.getByText('Mağaza adı doğrulanamadı — adı büyük/küçük harf dahil aynen yazın.')).toBeVisible()
 
     await dialog.getByRole('button', { name: 'Sil', exact: true }).click()
-    await page.getByRole('dialog').getByRole('button', { name: 'Silme talebi oluştur' }).click()
+    await appDialogs(page).getByRole('button', { name: 'Silme talebi oluştur' }).click()
     const root = page.locator(ROOT)
     await expect(root.getByRole('alert')).toHaveText('Silme talebi oluşturulamadı — birkaç dakika sonra tekrar deneyin.')
     await expect(page.locator('body')).not.toContainText('MongoServerError')
-    await expect(page.getByRole('dialog')).toHaveCount(0)
+    await expect(appDialogs(page)).toHaveCount(0)
   })
 
   test('ekran görüntüsü tabanı (silme — doğrulama diyaloğu)', async ({ page }) => {
@@ -339,12 +346,12 @@ test.describe('C1.6 — Mağaza silme talebi (owner)', () => {
     expect(verify.violations, JSON.stringify(verify.violations, null, 2)).toEqual([])
 
     await dialog.getByRole('button', { name: 'Sil', exact: true }).click()
-    await expect(page.getByRole('dialog').filter({ hasText: 'silme talebi oluşturulsun mu?' })).toBeVisible()
+    await expect(appDialogs(page).filter({ hasText: 'silme talebi oluşturulsun mu?' })).toBeVisible()
     await page.waitForTimeout(400)
     const confirm = await new AxeBuilder({ page }).include('.v-overlay--active .v-overlay__content').withTags(AXE_TAGS).analyze()
     expect(confirm.violations, JSON.stringify(confirm.violations, null, 2)).toEqual([])
 
-    await page.getByRole('dialog').getByRole('button', { name: 'Silme talebi oluştur' }).click()
+    await appDialogs(page).getByRole('button', { name: 'Silme talebi oluştur' }).click()
     await expect(page.locator(ROOT).getByText('Silme talebi alındı')).toBeVisible()
     const done = await new AxeBuilder({ page }).include(ROOT).withTags(AXE_TAGS).analyze()
     expect(done.violations, JSON.stringify(done.violations, null, 2)).toEqual([])

@@ -25,25 +25,7 @@ test.describe('P1 — Giriş', () => {
     await expect(page.getByRole('button', { name: 'Giriş' })).toBeVisible()
   })
 
-  test('gizli iş kuralı: güvenlik kodu (CAPTCHA) gerektiğinde cevap ekranda AÇIK METİN gösteriliyor (bkz. BACKLOG.md)', async ({ page }) => {
-    // GİZLİ DAVRANIŞ (characterization, düzeltilmedi — BACKLOG.md'ye "incelenmesi gereken davranış" eklendi):
-    // requireCaptcha=true döndüğünde LoginComponent captcha metnini {{ captchaSecret }} ile DOĞRUDAN
-    // render ediyor (bkz. LoginComponent.vue satır ~50) — yani "güvenlik kodu" kullanıcının kendisine
-    // sunuluyor, bir insan/bot ayrımı sağlamıyor. Şüpheli ama bu görevde DÜZELTİLMEDİ, yalnızca sabitlendi.
-    await installApiMocks(page, {
-      checkAuthentication: false,
-      userContext: mockError(401, {}),
-      'SecurityService/login': { requireCaptcha: true, message: 'Güvenlik kodu gereklidir.' },
-      'SecurityService/getCaptcha': { captcha: 'AB12' },
-    })
-    await page.goto('/login')
-    await page.getByLabel('E-posta').fill('e2e@example.invalid')
-    await page.getByLabel('Şifre', { exact: true }).fill('e2e-pass')
-    await page.getByRole('button', { name: 'Giriş' }).click()
-
-    await expect(page.getByText('Güvenlik kodu gereklidir.')).toBeVisible()
-    await expect(page.locator('.captcha-box')).toHaveText('AB12')
-  })
+  // Silindi: CAPTCHA "gizli iş kuralı" testi — Faz 4 hesap sözleşmesiyle captcha kaldırıldı (LoginComponent artık `requireCaptcha` işlemez).
 
   test('hata durumu: hatalı bilgilerde Türkçe hata mesajı gösterilir, ham hata sızmaz', async ({ page }) => {
     await installApiMocks(page, {

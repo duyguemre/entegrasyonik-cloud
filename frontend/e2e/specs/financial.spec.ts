@@ -6,6 +6,7 @@
 // etmeksizin aynı metin) yazıldı; tabloya/karta ÖZGÜ etkileşimler yalnızca masaüstünde test edilir.
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import { expectProblemState } from '../fixtures/problemState'
 import { installApiMocks, mockError } from '../fixtures/mockApi'
 import { gotoAuthed, menuFixtureWithAccountSupport, openScreen, waitForWorkplaceReady } from '../fixtures/nav'
 
@@ -430,8 +431,7 @@ test.describe('C1.4 — Finans sekmeleri', () => {
   test('özet hata: 500 → sabit hata metni + Tekrar dene (ham hata sızmaz)', async ({ page }) => {
     await openTab(page, { [SUMMARY_ENDPOINT]: mockError(500) }, 'Özet')
     const kpis = page.locator('.financialListView').getByRole('region', { name: 'Dönem özeti' })
-    await expect(kpis.getByText('Finansal özet yüklenemedi — Bağlantınızı kontrol edip yeniden deneyin.')).toBeVisible()
-    await expect(kpis.getByRole('button', { name: 'Tekrar dene' })).toBeVisible()
+    await expectProblemState(kpis, 'Finansal özet yüklenemedi — Bağlantınızı kontrol edip yeniden deneyin.')
     await expect(kpis).not.toContainText('E2E sentetik hata')
     await expect(kpis).not.toContainText('500')
   })
@@ -439,7 +439,7 @@ test.describe('C1.4 — Finans sekmeleri', () => {
   test('özet yetki: 403 → "yetkiniz yok" durumu', async ({ page }) => {
     await openTab(page, { [SUMMARY_ENDPOINT]: mockError(403, { message: 'Forbidden' }) }, 'Özet')
     const kpis = page.locator('.financialListView').getByRole('region', { name: 'Dönem özeti' })
-    await expect(kpis.getByText(/Finansal özet görüntülenemiyor — Bu görünüm için yetkiniz yok/)).toBeVisible()
+    await expectProblemState(kpis, 'Finansal özet görüntülenemiyor — Bu görünüm için yetkiniz yok; hesap yöneticinizden erişim isteyin.', { retry: false })
     await expect(kpis).not.toContainText('Forbidden')
   })
 
@@ -557,7 +557,7 @@ test.describe('C1.4 — Finans sekmeleri', () => {
     const view = page.locator('.financialListView')
     await view.getByRole('row').filter({ hasText: '4829301' }).getByRole('button', { name: 'Dökümü aç' }).click()
     const sheet = page.getByRole('dialog').filter({ hasText: 'Ödeme emri 4829301' })
-    await expect(sheet.getByText('Ödeme dökümü yüklenemedi — Bağlantınızı kontrol edip yeniden deneyin.')).toBeVisible()
+    await expectProblemState(sheet, 'Ödeme dökümü yüklenemedi — Bağlantınızı kontrol edip yeniden deneyin.')
     await expect(sheet).not.toContainText('E2E sentetik hata')
   })
 

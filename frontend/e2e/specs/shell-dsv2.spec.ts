@@ -6,9 +6,8 @@
 import { test, expect, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { installApiMocks } from '../fixtures/mockApi'
+import { appDialogs } from '../fixtures/appDialog'
 import { gotoAuthed, openDrawer, openScreen, waitForPlatformListStable } from '../fixtures/nav'
-import { menuFixtureWithProductUpdate } from '../fixtures/productUpdate'
-import { choicesDoluFixture } from '../fixtures/apiData'
 
 const AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
 const TAB = '.workplace-tabs [role="tab"]'
@@ -27,7 +26,6 @@ const searchMock = {
 
 const width = (page: Page) => page.viewportSize()?.width ?? 0
 const isDesktop = (page: Page) => width(page) >= 1024
-const isMobile = (page: Page) => width(page) < 768
 
 /**
  * Kabuk bölgeleri (üst bar, sol menü, sekme şeridi, açık katmanlar). Ekran içerikleri (çalışma
@@ -132,7 +130,7 @@ test.describe('DS-v2 kabuk — kısayollar', () => {
     await gotoAuthed(page)
     await page.locator('.workplace-area').focus()
     await page.keyboard.press('Shift+?')
-    const dialog = page.getByRole('dialog')
+    const dialog = appDialogs(page) // tur teklifi kartı da role=dialog; yalnız gerçek diyalog
     await expect(dialog.getByRole('heading', { name: 'Klavye kısayolları' })).toBeVisible()
     for (const text of ['Akıllı aramaya git', 'Sonraki sekme', 'Etkin sekmeyi kapat', 'Sol menüyü daralt', 'Üst bölümü daralt', 'Odak modu']) {
       await expect(dialog.getByText(text, { exact: false })).toBeVisible()
@@ -164,8 +162,8 @@ test.describe('DS-v2 kabuk — akıllı arama', () => {
     await expect(orders.getByRole('option').first()).toHaveAttribute('aria-selected', 'true')
     await page.keyboard.press('ArrowDown')
     await expect(orders.getByRole('option').nth(1)).toHaveAttribute('aria-selected', 'true')
-    const active = await input.getAttribute('aria-activedescendant')
-    expect(active).toBe(await orders.getByRole('option').nth(1).getAttribute('id'))
+    const secondId = await orders.getByRole('option').nth(1).getAttribute('id')
+    await expect(input).toHaveAttribute('aria-activedescendant', secondId!)
 
     const axe = await shellAxe(page).analyze()
     expect(axe.violations).toEqual([])
@@ -241,39 +239,16 @@ test.describe('DS-v2 kabuk — sekme menüsü ve sol menü', () => {
     test.skip(!isDesktop(page), 'Ray yalnızca masaüstünde kullanıcı tercihi')
     await page.keyboard.press('Control+b')
     const rail = page.locator('.v-navigation-drawer.soft-rail')
-    await rail.locator('button[aria-label="Sipariş Yönetimi"]').hover()
+    // Rayda düğme kabı 214px genişliğinde ama yalnız 64px'lik şerit görünür; merkeze değil ikonun üstüne gelinir.
+    await rail.locator('button[aria-label="Sipariş Yönetimi"]').hover({ position: { x: 20, y: 18 } })
     await expect(page.getByRole('tooltip').filter({ hasText: 'Sipariş Yönetimi' })).toBeVisible()
     const railAxe = await shellAxe(page).analyze()
     expect(railAxe.violations).toEqual([])
     await page.keyboard.press('Control+b')
   })
 
-  test('üst bar çalışma alanı anahtarı: kayıt sekmesi açılınca "seçili kayıt" etkinleşir, Genel ↔ kayıt geçer', async ({ page }) => {
-    test.skip(isMobile(page), 'Dar ekranda anahtar gizli (EkAppHeader <768) — kayıt sekmesi şeritte')
-    await installApiMocks(page, {
-      MenuService: menuFixtureWithProductUpdate,
-      ChoiceService: choicesDoluFixture,
-    })
-    await gotoAuthed(page)
-    const record = page.getByRole('radiogroup', { name: 'Çalışma alanı' }).getByRole('radio').nth(1)
-    await expect(record).toBeDisabled()
-
-    await openScreen(page, 'ProductListView')
-    // Ürün görseli (küçük resim) kayıt sekmesini açar (ProductListView `openEditProduct` — çok örnekli sekme).
-    // Birleştirme (Aşama 3): liste standardında küçük resim bir düğmedir (`.plv-thumb`, "… ürününü düzenle").
-    await page.locator('.productListView').getByRole('button', { name: 'E2E Test Ürünü ürününü düzenle' }).click()
-    await expect(page.locator(TAB)).toHaveCount(3, { timeout: 20_000 })
-    await expect(record).toBeEnabled()
-    await expect(record).toContainText('E2E Test Ürünü')
-    await expect(record).toHaveAttribute('aria-checked', 'true')
-
-    await page.getByRole('radio', { name: 'Genel' }).click()
-    await expect(page.getByRole('radio', { name: 'Genel' })).toHaveAttribute('aria-checked', 'true')
-    await expect(page.getByRole('tab', { name: 'Ürünler' })).toHaveAttribute('aria-selected', 'true')
-    await record.click()
-    await expect(record).toHaveAttribute('aria-checked', 'true')
-    await expect(page.getByRole('tab', { name: 'E2E Test Ürünü' })).toHaveAttribute('aria-selected', 'true')
-  })
+  // Silindi: "üst bar çalışma alanı anahtarı (Genel ↔ seçili kayıt)" testi — Aşama 5'te anahtar kaldırıldı (EkAppHeader/ApplicationBar);
+  // kayıt sekmeleri artık doğrudan sekme şeridinde (kayıt sekmesi açma davranışı ürün/sekme spec'lerinde kapsanır).
 
   test('axe: kabuk (üst bar, sol menü, sekme şeridi) WCAG 2.1 AA ihlali 0', async ({ page }) => {
     await installApiMocks(page)

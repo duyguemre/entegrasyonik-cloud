@@ -136,12 +136,12 @@ test.describe('ADR-0015 B5-3 — PrintoutListView (çıktı şablonu tasarımcı
     await expect(page.getByLabel('Genişlik', { exact: true })).toBeVisible()
     await expect(page.getByLabel('Yükseklik', { exact: true })).toBeVisible()
     await expect(silBtn(page)).toBeVisible()
-    // Seçili öğe mavi (#00f) renklenir
-    await expect(dropped).toHaveCSS('color', 'rgb(0, 0, 255)')
+    // Seçili öğe eylem rengiyle (token: --ek-color-action; eski #00f yerine, FR2-DARK) renklenir
+    await expect(dropped).toHaveAttribute('style', /color:\s*var\(--ek-color-action\)/)
 
     await dropped.dispatchEvent('click')
     await expect(page.getByLabel('Genişlik', { exact: true })).toHaveCount(0)
-    await expect(dropped).toHaveCSS('color', 'rgb(0, 0, 0)')
+    await expect(dropped).toHaveAttribute('style', /color:\s*var\(--ek-color-content-default\)/)
   })
 
   test('Sil: seçili alanı tuvalden kaldırır', async ({ page }) => {

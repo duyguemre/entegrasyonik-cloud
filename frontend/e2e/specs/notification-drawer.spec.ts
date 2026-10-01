@@ -70,7 +70,7 @@ test.describe('ADR-0015 B5-3 — NotificationDrawerComponent', () => {
     await gotoAuthed(page)
     await openNotificationDrawer(page)
 
-    await page.locator('button:has(.mdi-check-all)').click()
+    await page.getByRole('button', { name: 'Tümünü okundu işaretle' }).click()
 
     await expect(page.getByText('E2E içe aktarma tamamlandı')).toBeVisible()
     await expect(page.getByText('Trendyol kataloğunuzdan 42 ürün aktarıldı.')).toBeVisible()
@@ -90,7 +90,11 @@ test.describe('ADR-0015 B5-3 — NotificationDrawerComponent', () => {
     await gotoAuthed(page)
     await openNotificationDrawer(page)
 
-    await page.locator('button:has(.mdi-trash-can-outline)').click()
+    // Tümünü sil artık ⋯ "Bildirim işlemleri" menüsünde ve onay diyaloğu ister (tehlikeli eylem).
+    await page.getByRole('button', { name: 'Bildirim işlemleri' }).click()
+    await page.getByRole('menuitem', { name: 'Tümünü sil' }).click()
+    const confirm = page.getByRole('dialog').filter({ hasText: 'Tüm bildirimler silinsin mi?' })
+    await confirm.getByRole('button', { name: 'Tümünü sil' }).click()
 
     await expect.poll(() => deletePayload).not.toBeNull()
     expect(deletePayload.all).toBe(true)

@@ -103,7 +103,8 @@ test.describe('P1 — integrations/ShippingView', () => {
     await openScreen(page, 'ShippingView')
 
     await expectScreenOpen(page, '.shippingView')
-    await expect(page.locator('.shippingView').getByText('Başlamak için seçim yapın')).toBeVisible()
+    // C1.2: kayıt yokken "Başlamak için seçim yapın" yerine kategori düzeyi "Yakında" paneli gösterilir.
+    await expect(page.locator('.shippingView').getByRole('heading', { name: 'Kargo entegrasyonu henüz yok' })).toBeVisible()
   })
 
   test('hata durumu: IntegrationService/getClientIntegrations 500 dönse bile ham hata sızmaz', async ({ page }) => {
