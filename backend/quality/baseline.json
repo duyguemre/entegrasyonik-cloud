@@ -17,7 +17,7 @@
       "src/api/rpc/handlers/customer-service.ts": 4,
       "src/api/rpc/handlers/financial-service.ts": 2,
       "src/api/rpc/handlers/image-service.ts": 2,
-      "src/api/rpc/handlers/integration-service.ts": 15,
+      "src/api/rpc/handlers/integration-service.ts": 8,
       "src/api/rpc/handlers/invoice-service.ts": 2,
       "src/api/rpc/handlers/menu-service.ts": 1,
       "src/api/rpc/handlers/message-service.ts": 5,
@@ -50,7 +50,8 @@
       "src/services/notification/NotificationService.ts": 2,
       "src/services/redis/RedisService.ts": 4,
       "src/services/storage/S3Manager.ts": 6,
-      "src/bootstrap/Webserver.ts": 3
+      "src/bootstrap/Webserver.ts": 3,
+      "src/integration/engine/catalog/export/ExportBatchService.ts": 7
     },
     "otherByRule": {
       "@typescript-eslint/no-unused-vars": 8,

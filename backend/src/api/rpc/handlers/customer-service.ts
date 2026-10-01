@@ -1,9 +1,8 @@
 import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import { CustomerPanelRepository } from '@database/repositories/tenant/CustomerPanelRepository'
-import { listCustomers, customerDetail, updateCustomer, anonymizeCustomer, CUSTOMER_SORT_FIELDS } from '@operations/orders/customers'
+import { listCustomers, customerDetail, updateCustomer, anonymizeCustomer } from '@operations/orders/customers'
 
-export { CUSTOMER_SORT_FIELDS }
 
 /**
  * CustomerService
