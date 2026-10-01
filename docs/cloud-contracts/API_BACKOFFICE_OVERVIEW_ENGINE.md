@@ -97,3 +97,6 @@ Girdi: `{}`.
 - Pod listesi iş yapan podları gösterir; boşta pod için ayrı heartbeat mekanizması yok.
 - `QueueMetricsCollector` sipariş kuyruğu olaylarına bağlı değilse `metrics.series` sıfır kalır (collector bağlantısı `QueueMetricsCollector.ts` başlığındaki açık bulgu).
 - Yetenek kaydında `mcp` kapalı (platform_admin); agent/MCP'ye açılmaz.
+
+## Ek (K51 / BO1) — dashboard ve toplu işlem
+Tam sözleşme `docs/API_BACKOFFICE_ATTENTION.md`: `BackofficeOverviewService/getAttention` (öncelik sıralı "dikkat gerektirenler", sistem + müşteriler), `getPulse` (büyük resim); BE-03 `listFailedJobs` süzgeçleri (`tid`, `integrationCode`, `errorCode`) + `retryJobs` (toplu, ≤ 50, step-up + gerekçe, idempotent, LIVE_READONLY 423); BE-04 `listFailedJobs` öğelerinde `reqId`/`traceId`.

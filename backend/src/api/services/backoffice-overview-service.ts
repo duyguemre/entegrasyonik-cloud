@@ -6,6 +6,10 @@ import { checkReadiness, type AppRole } from '@health/HealthCheck'
 import { listNonOpenIntakeTargets } from '@integration/config/platformOverrideStore'
 import { OverviewOps } from '../admin/overviewOps'
 import { productionQueueProvider } from './backoffice-engine-service'
+import { AttentionOps } from '../admin/attentionOps'
+import { PulseOps } from '../admin/pulseOps'
+import { productionAttentionSources } from './backoffice-attention-support'
+import { computeRevenueMetrics } from '../../operations/backoffice/revenueMetrics'
 
 /**
  * B1 (BACKOFFICE_PLAN §3) -- `/admin-api` Genel bakış / sağlık panosu: bağımlılıklar (HealthCheck), podlar, RED (son 1 sa), kuyruk birikimi, intake, açık sorunlar.
@@ -27,5 +31,19 @@ export default class BackofficeOverviewService extends BaseApi implements IServi
             intake: () => listNonOpenIntakeTargets(),
             podName: process.env.POD_NAME || os.hostname(),
         }).getHealth()
+    }
+
+    /** K51 (BO1): "dikkat gerektirenler" (sistem + müşteriler). Salt okuma, denetimsiz (agregat, PII yok). Sözleşme: docs/API_BACKOFFICE_ATTENTION.md. */
+    async getAttention(): Promise<any> {
+        return new AttentionOps({ sources: productionAttentionSources(this.applicationDB) }).getAttention(this.request?.limit)
+    }
+
+    /** K51 (BO1): büyük resim kullanım özeti; olmayan veri `computable:false` ('hesaplanamadı'). */
+    async getPulse(): Promise<any> {
+        const db = this.applicationDB
+        return new PulseOps({
+            clientModel: db.getClientModel(), metricRollupModel: db.getMetricRollupModel(), callMetricModel: db.getIntegrationCallMetricModel(),
+            revenue: () => computeRevenueMetrics({ subscriptionModel: db.getSubscriptionModel(), planModel: db.getPlanModel(), billingEventModel: db.getBillingEventModel() }, '30d'),
+        }).getPulse()
     }
 }
