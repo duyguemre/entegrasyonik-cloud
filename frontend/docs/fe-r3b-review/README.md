@@ -32,7 +32,13 @@ Veri: `e2e/fixtures/r2dReview.ts` + `e2e/fixtures/r3bReview.ts` (sentetik, `.inv
 
 ## Testler (bulut, chromium)
 
-Bkz. rapor bölümü (aşağıda, son koşu).
+Son koşu birleşik dalda (`origin/main` + `cloud/fe-r3a` + bu dal):
+- `vitest run` **80 dosya / 1553 test geçti** (yeni: `fe-r3b-channel-summary`, `fe-r3b-next-actions`; r3a hareket bekçisi dahil). `vue-tsc` 0 hata. `vite build` ve `build:backoffice` başarılı. style / pattern / typecheck / no-console mandalları OK. ESLint 0 hata.
+- `test:backoffice`: ui paketi 102 testten **1'i kırmızı** (`p2-states` REAUTH_OPS ↔ backend REAUTH_RPCS) — **en güncel `origin/main`'de ve `cloud/fe-r3a`'da da aynı**; backend listesiyle uyuşmazlık, bu dalın değil (backend bulutta salt-okunur).
+- Playwright (chromium-desktop, `--update-snapshots=missing`; linux tabanları git-ignored, görsel onay yerelde): orders, claims, customers, invoices, support-tickets, products, dashboard, settings (**16/16 — ana dalda 4'ü kırmızıydı**), fe-r2b-channel-badge, messages, design-system, dark-mode, product-variant-list → **106 test geçti**; görsel taban testleri ilk koşuda taban yazar, ikinci koşuda 10/10. dark-mode iki test 4 paralel işçide zaman aşımı verdi, tek başına 10/10.
+- **Önceden kırmızı (ana dalda da):** `ds-overlays` 4 test (kademeli kategori seçici / tehlikeli onay) — `origin/main` worktree'sinde aynı şekilde kırmızı.
+- axe (WCAG 2.1 AA): `sonra/axe/` 38 görüntünün **tamamı 0 ihlal** (light + dark, 1440 + 390). Ayarlar aramasındaki soluk bölüm ihlali (3.3:1) iterasyon 5'te giderildi.
+- Spec güncellemeleri (bilinçli): `dashboard.spec` ("Bekleyen aksiyonlar" kartı → "Bugün sırada"), `support-tickets.spec` (diyalog başlığı → kimlik), `settings.spec` (+2 test: arama, değişiklik durumu/Vazgeç; tek seçici `.v-window-item--active` → bölüm), `motion-single-source` ratchet (3 dosya 0'a indi).
 
 ## Backend'e iletilecek eksikler
 
