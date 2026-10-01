@@ -85,7 +85,7 @@
       <template #cell-items="{ row }">
         <span class="ek-claim-items">
           <span class="ek-num">{{ row.items?.length || 0 }} kalem</span>
-          <span v-if="row.items?.length" class="ek-claim-items__name">{{ row.items[0].productName }}</span>
+          <span v-if="row.items?.length" class="ek-claim-items__name" :title="row.items[0].productName">{{ row.items[0].productName }}</span>
         </span>
       </template>
       <template #cell-totalRefundAmount="{ row }">
@@ -377,6 +377,10 @@ defineExpose({
 }
 
 .ek-claim-items__name {
+  /* fe-polish: ürün adı kolonu genişletip 1440px'te Tarih kolonunu yapışık eylem kolonunun altına itiyordu;
+     tam ad ipucunda (title). */
+  max-width: 160px;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--ek-color-content-muted);

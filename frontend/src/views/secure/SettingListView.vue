@@ -52,7 +52,7 @@
                       :class="{ 'active': settings.brandColor === color.hex }"
                       :style="{ backgroundColor: color.hex }" :aria-label="color.name"
                       :aria-pressed="settings.brandColor === color.hex" @click="settings.brandColor = color.hex">
-                      <v-tooltip activator="parent" location="top">{{ color.name }}</v-tooltip>
+                      <v-tooltip activator="parent" location="top" :eager="false">{{ color.name }}</v-tooltip>
                       <v-icon v-if="settings.brandColor === color.hex" class="color-swatch-item__check"
                         size="20">mdi-check</v-icon>
                     </button>
@@ -63,7 +63,7 @@
                         <button v-bind="props" type="button" class="color-swatch-item custom-picker-trigger"
                           aria-label="Özel Renk">
                           <v-icon size="24">mdi-plus</v-icon>
-                          <v-tooltip activator="parent" location="top">Özel Renk</v-tooltip>
+                          <v-tooltip activator="parent" location="top" :eager="false">Özel Renk</v-tooltip>
                         </button>
                       </template>
                       <v-card min-width="300" class="settingListView__picker">
@@ -315,10 +315,8 @@
         </v-window>
 
         <div class="settingListView__actions">
-          <v-btn class="settingListView__save" color="primary" variant="flat" @click.stop="saveSettings">
-            <v-icon start size="small">mdi-check-circle-outline</v-icon>
-            Ayarları Kaydet
-          </v-btn>
+          <!-- fe-polish: FR2 §2 tek kaydet standardı (intent="save": primary · kaydet ikonu). -->
+          <EkButton intent="save" class="settingListView__save" @click="saveSettings">Ayarları Kaydet</EkButton>
         </div>
       </div>
     </div>
@@ -326,7 +324,7 @@
 </template>
 
 <script setup lang="ts">
-import { EkPageTabs, EkAlert, EkStatusChip } from '@entegrasyonik/ui/components'
+import { EkPageTabs, EkAlert, EkStatusChip, EkButton } from '@entegrasyonik/ui/components'
 import { ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n';
 import LoadingComponent from '@/components/LoadingComponent.vue'
@@ -517,7 +515,8 @@ onMounted(() => {
   gap: var(--ek-space-6);
   padding: var(--ek-space-6);
   max-width: 1120px;
-  margin: 0 auto;
+  /* fe-polish: ortalanmıyor — başlık/breadcrumb diğer tüm ekranlarla aynı sol hizada. */
+  margin: 0;
 }
 
 .settingListView__body {

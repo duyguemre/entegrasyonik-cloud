@@ -80,11 +80,8 @@
 
       <template #cell-title="{ row }">
         <span class="ek-log-product">
-          <span class="ek-log-thumb">
-            <v-img :src="row.image" cover :alt="''">
-              <template #placeholder><v-icon icon="mdi-image-outline" size="20" aria-hidden="true" /></template>
-            </v-img>
-          </span>
+          <!-- fe-polish: ürün listesiyle aynı küçük görsel (FR2 18–20); görsel yoksa boş kare yerine yer tutucu ikon. -->
+          <ProductThumb :src="row.image || undefined" :label="row.title" size="sm" />
           <span class="ek-log-product__text">
             <span class="ek-log-product__title">{{ row.title }}</span>
             <span class="ek-log-product__meta">
@@ -135,6 +132,7 @@ import BrandSelectBoxComponent from '@/components/common/BrandSelectBoxComponent
 import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue'
 import ConfirmationDialogComponent from '@/components/layout/ConfirmationDialogComponent.vue'
 import EkListScreen from '@/components/page/templates/EkListScreen.vue'
+import ProductThumb from '@/components/productDefinitions/products/ProductThumb.vue'
 import { isRequestError } from '@entegrasyonik/ui/components/listStandard'
 import { formatDate, formatDateTime, formatMoney, formatNumber } from '@entegrasyonik/ui/format'
 import type { StatusTone } from '@/design/status-map'
@@ -397,20 +395,6 @@ onMounted(() => getJobs(true));
   align-items: center;
   gap: var(--ek-space-3);
   max-width: 360px;
-}
-
-.ek-log-thumb {
-  flex: none;
-  width: 40px;
-  height: 40px;
-  overflow: hidden;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-tile);
-  background: var(--ek-color-surface-sunken);
-  color: var(--ek-color-content-subtle);
 }
 
 .ek-log-product__text {

@@ -134,7 +134,7 @@
       <template #cell-items="{ row }">
         <button type="button" class="ek-order-items" :aria-label="`${row.orderNumber} içeriğini görüntüle`" @click="openDetailedReport(row)">
           <span class="ek-num">{{ row.items?.length || 0 }} kalem</span>
-          <span v-if="row.items?.length > 0" class="ek-order-items__name">{{ row.items[0].productName }}</span>
+          <span v-if="row.items?.length > 0" class="ek-order-items__name" :title="row.items[0].productName">{{ row.items[0].productName }}</span>
         </button>
       </template>
       <template #cell-allocation="{ row }">
@@ -696,7 +696,10 @@ defineExpose({
 }
 
 .ek-order-items__name {
-  max-width: 100%;
+  /* fe-polish: ürün adı kolonu genişletip 1440px'te Tarih kolonunu yapışık eylem kolonunun altına itiyordu;
+     tam ad ipucunda (title). */
+  max-width: 160px;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--ek-color-content-muted);
