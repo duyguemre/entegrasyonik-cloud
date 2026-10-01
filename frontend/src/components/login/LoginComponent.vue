@@ -16,15 +16,13 @@
   <div class="premium-login-card">
     <h1 class="ek-login-heading">{{ headingText }}</h1>
 
-    <v-tabs v-model="tab" grow hide-slider class="ek-login-tabs" height="44">
+    <!-- P13 (K49): parola sıfırlama sekme değil; tek giriş noktası parola alanının altındaki bağlantı. -->
+    <v-tabs v-if="tab !== 'forgot'" v-model="tab" grow hide-slider class="ek-login-tabs" height="44">
       <v-tab value="login" :ripple="false" class="ek-login-tab">
         <v-icon start size="16">mdi-login</v-icon>Giriş
       </v-tab>
       <v-tab value="register" :ripple="false" class="ek-login-tab">
         <v-icon start size="16">mdi-account-plus-outline</v-icon>Kayıt
-      </v-tab>
-      <v-tab value="forgot" :ripple="false" class="ek-login-tab">
-        <v-icon start size="16">mdi-key-alert-outline</v-icon>Şifremi unuttum
       </v-tab>
     </v-tabs>
 
@@ -44,7 +42,7 @@
                 autocomplete="current-password" class="mb-2"></v-text-field>
 
               <div v-if="!isStoreSelectionPhase" class="ek-login-forgot-row">
-                <button type="button" class="ek-login-link" @click="tab = 'forgot'">Şifrenizi mi unuttunuz?</button>
+                <button type="button" class="ek-login-link" @click="tab = 'forgot'">Parolanızı mı unuttunuz?</button>
               </div>
 
               <v-expand-transition>
@@ -159,7 +157,7 @@
                 :loading="forgotLoading">
                 {{ $t('login.forgottenpassword.reset') }}
               </v-btn>
-              <v-btn variant="text" block size="small" class="mt-2" @click="tab = 'login'">Vazgeç</v-btn>
+              <v-btn variant="text" block size="small" class="mt-2" @click="tab = 'login'">Girişe dön</v-btn>
             </v-form>
           </div>
         </v-window-item>
@@ -218,7 +216,7 @@ const tab = ref<LoginTabValue>(registerIntent.register ? 'register' : (tabFromQu
 // ADR-0015 Karar 4 — sağ form alanı üst başlığı, aktif sekmeye göre değişir (yalnızca sunum, spec çapası DEĞİL).
 const headingText = computed(() => {
   if (tab.value === 'register') return 'Hesap oluşturun'
-  if (tab.value === 'forgot') return 'Şifrenizi sıfırlayın'
+  if (tab.value === 'forgot') return 'Parolanızı sıfırlayın'
   return 'Hesabınıza giriş yapın'
 })
 

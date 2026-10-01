@@ -20,9 +20,9 @@ export const ARTICLES_TR: HelpArticle[] = [
     order: 1,
     title: 'Hesabınız ve ilk giriş',
     summary: 'Hesap oluşturma, giriş yapma, mağaza seçimi, e-posta doğrulama ve parola sıfırlama adımları.',
-    keywords: ['giriş', 'kayıt', 'hesap oluştur', 'mağaza seç', 'e-posta doğrulama', 'şifremi unuttum', 'parola sıfırlama', 'login'],
+    keywords: ['giriş', 'kayıt', 'hesap oluştur', 'mağaza seç', 'e-posta doğrulama', 'şifremi unuttum', 'parolamı unuttum', 'parola sıfırlama', 'login'],
     body: [
-      { type: 'p', text: 'Entegrasyonik giriş ekranında üç sekme bulunur: **Giriş**, **Kayıt** ve **Şifremi unuttum**. Hesabınız bir mağazaya (işletmeye) bağlıdır; birden fazla mağazaya erişiminiz varsa girişten sonra hangisini yöneteceğinizi seçersiniz.' },
+      { type: 'p', text: 'Entegrasyonik giriş ekranında iki sekme bulunur: **Giriş** ve **Kayıt**. Parolanızı unuttuysanız parola alanının altındaki **Parolanızı mı unuttunuz?** bağlantısını kullanın. Hesabınız bir mağazaya (işletmeye) bağlıdır; birden fazla mağazaya erişiminiz varsa girişten sonra hangisini yöneteceğinizi seçersiniz.' },
       { type: 'h', text: 'Hesap oluşturma' },
       {
         type: 'steps',
@@ -49,7 +49,7 @@ export const ARTICLES_TR: HelpArticle[] = [
       {
         type: 'steps',
         items: [
-          'Giriş ekranında **Şifremi unuttum** sekmesini açın ve e-posta adresinizi girin.',
+          'Giriş ekranında parola alanının altındaki **Parolanızı mı unuttunuz?** bağlantısına tıklayın ve e-posta adresinizi girin.',
           'Gelen e-postadaki bağlantıyı açın ve yeni parolanızı belirleyin. Bağlantı **30 dakika** geçerlidir ve tek kullanımlıktır.',
           'Yeni parolanızla giriş yapın. Parola sıfırlandığında açık olan tüm oturumlarınız kapanır.',
         ],

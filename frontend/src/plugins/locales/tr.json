@@ -29,7 +29,7 @@
     "userManagement": "",
     "sales": "ETicaret Yönetim",
     "profile": "Kullanıcı",
-    "change_password": "Şifre Değiştir",
+    "change_password": "Parola değiştir",
     "roles": "Yetkilendirme",
     "exit": "Çıkış",
     "support_ticket": "Destek Kaydı",
@@ -38,7 +38,7 @@
     "applicationAdministration": "Uygulama Yönetimi",
     "userAdministration": "Kullanıcı Yönetimi",
     "invoiceInfo": "Fatura Bilgileri",
-    "changePassword": "Şifre Değiştir",
+    "changePassword": "Parola değiştir",
     "authorization": "Yetkilendirme",
     "subscription": "Abonelik İşlemleri",
     "sale": "Satış",
@@ -126,7 +126,7 @@
       "user": "Hesabım",
       "subscription": "Abonelik İşlemleri",
       "invoiceInfo": "Fatura Bilgileri",
-      "changePassword": "Şifre Değiştir",
+      "changePassword": "Parola değiştir",
       "exit": "Çıkış"
     },
     "account": "Hesabım",
@@ -474,18 +474,18 @@
   },
   "login": {
     "forgottenpassword": {
-      "title": "Şifremi Unuttum",
-      "reset": "Şifremi sıfırla"
+      "title": "Parolamı unuttum",
+      "reset": "Parolamı sıfırla"
     },
     "register": {
       "title": "Kayıt ol",
-      "repassword": "Şifre (Tekrar)",
+      "repassword": "Parola (Tekrar)",
       "name": "İsim",
       "surname": "Soyisim"
     },
     "username": "Kullanıcı Adı",
     "email": "E-posta",
-    "password": "Şifre",
+    "password": "Parola",
     "title": "Giriş",
     "google": "Google İle Giriş Yap"
   },
@@ -904,8 +904,8 @@
       "company": "Firma Ünvanı"
     },
     "changePassword": {
-      "password": "Yeni Şifre",
-      "repassword": "Yeni Şifre (Tekrar)",
+      "password": "Yeni parola",
+      "repassword": "Yeni parola (Tekrar)",
       "save": "Değiştir"
     },
     "subscription": {},
@@ -1968,7 +1968,7 @@
     },
     "expiredText": "Davet bağlantıları 7 gün geçerlidir. Mağaza yöneticisinden daveti yeniden göndermesini isteyin; yeni bağlantı e-postanıza gelir.",
     "revokedText": "Mağaza yöneticisi bu daveti geri çekti. Bir yanlışlık olduğunu düşünüyorsanız yöneticiyle iletişime geçin.",
-    "acceptedText": "Bu davetle hesabınız zaten oluşturulmuş. E-posta adresiniz ve parolanızla giriş yapın; parolanızı hatırlamıyorsanız \"Şifremi unuttum\"u kullanın.",
+    "acceptedText": "Bu davetle hesabınız zaten oluşturulmuş. E-posta adresiniz ve parolanızla giriş yapın; parolanızı hatırlamıyorsanız \"Parolanızı mı unuttunuz?\" bağlantısını kullanın.",
     "invalidText": "Bağlantı eksik ya da bozuk kopyalanmış olabilir. Davet e-postasındaki bağlantıyı yeniden açın."
   },
   "ownership": {

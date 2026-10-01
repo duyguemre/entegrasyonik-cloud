@@ -34,8 +34,8 @@ test.describe('ADR-0015 B5-3 — Hesap ekranları (ExitView / ChangePasswordView
     await gotoAuthed(page)
     await openScreen(page, 'ChangePasswordView')
 
-    await expect(page.getByLabel('Yeni Şifre', { exact: true })).toBeVisible()
-    await expect(page.getByLabel('Yeni Şifre (Tekrar)', { exact: true })).toBeVisible()
+    await expect(page.getByLabel('Yeni parola', { exact: true })).toBeVisible()
+    await expect(page.getByLabel('Yeni parola (Tekrar)', { exact: true })).toBeVisible()
     // Karakterizasyon: script bloğu boş, hiçbir "Değiştir/Kaydet" düğmesi DOM'da yok.
     // Kapsam form alanı: kabuk (menü/sekme) ve sayfa başlığı ("Sayfa hakkında: Şifre Değiştir") düğmeleri formun düğmesi değildir.
     await expect(page.locator('.changePasswordView .ek-static-screen__form').getByRole('button', { name: /değiştir|kaydet/i })).toHaveCount(0)

@@ -13,7 +13,7 @@
     <EkFormSection title="Yönetici hesabı (owner)" icon="mdi-account-key-outline" :columns="3">
       <v-text-field v-model="userForm.fullName" label="Ad Soyad" placeholder="Yönetici Adı" />
       <v-text-field v-model="userForm.email" label="E-Posta Adresi" placeholder="admin@magaza.com" />
-      <v-text-field v-model="userForm.password" label="Giriş Şifresi" type="password" />
+      <v-text-field v-model="userForm.password" label="Giriş parolası" type="password" />
     </EkFormSection>
 
     <p class="acc-footnote">

@@ -25,8 +25,8 @@ async function fillRegisterForm(page: Page) {
   await page.getByLabel('İsim').fill('Deneme')
   await page.getByLabel('Soyisim').fill('Kullanici')
   await page.getByLabel('E-posta').last().fill('yeni@example.invalid')
-  await page.getByLabel('Şifre', { exact: true }).last().fill('e2e-pass-1234')
-  await page.getByLabel('Şifre (Tekrar)').fill('e2e-pass-1234')
+  await page.getByLabel('Parola', { exact: true }).last().fill('e2e-pass-1234')
+  await page.getByLabel('Parola (Tekrar)').fill('e2e-pass-1234')
 }
 
 /** Oturumsuz başlar; `SecurityService/register` çağrısı oturumu açar (çerez davranışının mock karşılığı). */
@@ -64,7 +64,7 @@ test.describe('ADR-0014 S4b — site -> kayıt devri', () => {
     const band = page.getByTestId('register-plan-band')
     await expect(band).toBeVisible()
     await expect(band).toContainText('Seçtiğiniz plan: Büyüme')
-    await expect(page.getByLabel('Şifre (Tekrar)')).toBeVisible()
+    await expect(page.getByLabel('Parola (Tekrar)')).toBeVisible()
   })
 
   test('mode=register plansız: kayıt sekmesi açılır, bilgi bandı yok', async ({ page }) => {

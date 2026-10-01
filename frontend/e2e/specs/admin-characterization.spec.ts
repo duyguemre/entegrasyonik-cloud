@@ -82,7 +82,7 @@ test.describe('B3 karakterizasyon — Mağaza Yönetimi (AdminClientListView)', 
     await page.getByRole('button', { name: 'Yeni mağaza oluştur' }).click()
     const dialog = page.getByRole('dialog').filter({ hasText: 'Yeni Mağaza Oluştur' })
     await expect(dialog).toBeVisible()
-    for (const label of ['Mağaza Adı', 'Mağaza Başlığı', 'Ad Soyad', 'E-Posta Adresi', 'Giriş Şifresi']) {
+    for (const label of ['Mağaza Adı', 'Mağaza Başlığı', 'Ad Soyad', 'E-Posta Adresi', 'Giriş parolası']) {
       await expect(dialog.getByLabel(label)).toBeVisible()
     }
 
@@ -96,7 +96,7 @@ test.describe('B3 karakterizasyon — Mağaza Yönetimi (AdminClientListView)', 
     await dialog.getByLabel('Mağaza Başlığı').fill('E2E Yeni Ticaret')
     await dialog.getByLabel('Ad Soyad').fill('E2E Yönetici')
     await dialog.getByLabel('E-Posta Adresi').fill('yonetici@e2e.invalid')
-    await dialog.getByLabel('Giriş Şifresi').fill('E2e-Sifre-123')
+    await dialog.getByLabel('Giriş parolası').fill('E2e-Sifre-123')
     await submit.click()
 
     await expect.poll(() => createBodies.length).toBe(1)
