@@ -9,6 +9,7 @@ import { EntitlementService } from '@services/billing/EntitlementService'
 import { auditSensitiveRead } from './backoffice-support'
 import { extendTrial, cancelSubscription, changePlan, type SubscriptionAdminDeps } from '../../../operations/backoffice/subscriptionAdmin'
 import { computeRevenueMetrics } from '../../../operations/backoffice/revenueMetrics'
+import { getCompetitionSettings, getTenantCompetition, setCompetitionOverride, type CompetitionAdminDeps } from '../../../operations/backoffice/competitionAdmin'
 
 const DEFAULT_LIMIT = 50
 const MAX_LIMIT = 200
@@ -92,6 +93,16 @@ export default class BackofficeBillingService extends BaseApi implements IServic
     async extendTrial(): Promise<any> { return extendTrial(this.adminDeps(), { tid: this.request?.tid, days: this.request?.days }, this.actorCtx()) }
     async cancelSubscription(): Promise<any> { return cancelSubscription(this.adminDeps(), { tid: this.request?.tid, atPeriodEnd: this.request?.atPeriodEnd === true }, this.actorCtx()) }
     async changePlan(): Promise<any> { return changePlan(this.adminDeps(), { tid: this.request?.tid, planCode: this.request?.planCode }, this.actorCtx()) }
+
+    // PRC-CFG (K57-S5): rekabet modülü ayarları. Plan varsayılanı/bütçe `IntegrationConfigService` (`_platform`) ile; burada okuma + tenant istisnası.
+    private competitionDeps(): CompetitionAdminDeps {
+        return { subscriptionModel: this.applicationDB.getSubscriptionModel(), clientModel: this.applicationDB.getClientModel(), billingEventModel: this.applicationDB.getBillingEventModel() }
+    }
+    async getCompetitionSettings(): Promise<any> { return getCompetitionSettings(this.competitionDeps()) }
+    async getTenantCompetition(): Promise<any> { return getTenantCompetition(this.competitionDeps(), { tid: this.request?.tid }) }
+    async setCompetitionOverride(): Promise<any> {
+        return setCompetitionOverride(this.competitionDeps(), { tid: this.request?.tid, override: this.request?.override, note: this.request?.note }, this.actorCtx())
+    }
 
     async getRevenueMetrics(): Promise<any> {
         return computeRevenueMetrics({

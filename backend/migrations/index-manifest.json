@@ -1286,6 +1286,32 @@
         }
       },
       {
+        "name": "competition_trendyol_status",
+        "fields": {
+          "competition.trendyol.status": 1
+        },
+        "options": {
+          "partialFilterExpression": {
+            "competition.trendyol.status": {
+              "$exists": true
+            }
+          }
+        }
+      },
+      {
+        "name": "costPrice_number",
+        "fields": {
+          "costPrice": 1
+        },
+        "options": {
+          "partialFilterExpression": {
+            "costPrice": {
+              "$type": "number"
+            }
+          }
+        }
+      },
+      {
         "name": "productId_1",
         "fields": {
           "productId": 1
@@ -2224,6 +2250,26 @@
         },
         "options": {
           "unique": true
+        }
+      }
+    ],
+    "BuyboxSnapshots": [
+      {
+        "name": "integ_barcode_observedAt",
+        "fields": {
+          "integrationCode": 1,
+          "barcode": 1,
+          "observedAt": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "ttl_observedAt_90d",
+        "fields": {
+          "observedAt": 1
+        },
+        "options": {
+          "expireAfterSeconds": 7776000
         }
       }
     ]

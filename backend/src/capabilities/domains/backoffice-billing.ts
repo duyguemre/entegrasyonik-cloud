@@ -31,6 +31,16 @@ export const BACKOFFICE_BILLING_CAPABILITIES = [
         id: 'platform.revenue.metrics', domain: 'platform', summary: { tr: 'Gelir metrikleri: MRR, durum dağılımı, deneme dönüşümü, kayıp', en: 'Revenue metrics: MRR, status distribution, trial conversion, churn' },
         effect: 'read', minTier: 'platformAdmin', permission: PLATFORM_ONLY, bindings: [{ rpc: 'BackofficeBillingService/getRevenueMetrics' }], ui: UI, mcp: PA, agent: NO_AGENT,
     }),
+    // PRC-CFG (K57-S5): rekabet modülü ayarları. Plan varsayılanı/bütçe `_platform` kataloğunda (IntegrationConfigService ile yayın).
+    c({
+        id: 'platform.competition.settings', domain: 'platform', summary: { tr: 'Rekabet modülü ayarları: plan varsayılanları, kanal bütçesi, tenant istisnaları', en: 'Competition module settings: plan defaults, channel budget, tenant overrides' },
+        effect: 'read', minTier: 'platformAdmin', permission: PLATFORM_ONLY,
+        bindings: [{ rpc: 'BackofficeBillingService/getCompetitionSettings' }, { rpc: 'BackofficeBillingService/getTenantCompetition' }], ui: UI, mcp: PA, agent: NO_AGENT,
+    }),
+    c({
+        id: 'platform.competition.override.set', domain: 'platform', summary: { tr: 'Tenant için rekabet ayarı istisnası yaz/kaldır (SKU tavanı, tazeleme, tazelik, öncelik; gerekçe)', en: 'Set/clear a tenant competition override (SKU cap, refresh, freshness, priority; reason)' },
+        effect: 'write', minTier: 'platformAdmin', permission: PLATFORM_ONLY, bindings: [{ rpc: 'BackofficeBillingService/setCompetitionOverride' }], ui: UI, mcp: PA, agent: NO_AGENT,
+    }),
     c({
         id: 'platform.tenant.lifecycle', domain: 'platform', summary: { tr: 'Tenant yaşam döngüsü: durum, deneme, silme talebi, provisioning adımları, son etkinlik', en: 'Tenant lifecycle: status, trial, deletion request, provisioning steps, recent activity' },
         effect: 'read', minTier: 'platformAdmin', permission: PLATFORM_ONLY, bindings: [{ rpc: 'BackofficeTenantService/getLifecycle' }], ui: UI, mcp: PA, agent: NO_AGENT,

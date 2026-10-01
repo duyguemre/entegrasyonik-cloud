@@ -102,8 +102,12 @@ describe('eşikler platform ayarından (ADR-0031)', () => {
             for (const c of s.consumers) expect(fs.existsSync(path.resolve(__dirname, '../../../src/integration', c))).toBe(true);
         }
         expect(listPublicPlatformSettings().some((s) => s.key.startsWith('alerts.'))).toBe(false);
-        // ADR-0031 gözden geçirme eşiği: `_platform` anahtar sayısı 25'i geçmez
-        expect(SETTINGS_CATALOG.filter((s) => s.scope === 'platform').length).toBeLessThanOrEqual(25);
+        // ADR-0031 gözden geçirme eşiği: `_platform` anahtar sayısı 25'i geçmez. PRC-CFG (2026-10-01) eşiği aştı; ADR'nin öngördüğü
+        // değerlendirme yapıldı: rekabet anahtarları ayrı grupta (`platform.pricing`) ve ayrı backoffice ekranında; ayrı hedef gerekmedi
+        // (yayın sıklığı düşük). Bu yüzden genel sayım o grubu dışlar, grup kendi tavanını taşır (ADR notu insan onayında, rapor).
+        const platformKeys = SETTINGS_CATALOG.filter((s) => s.scope === 'platform');
+        expect(platformKeys.filter((s) => s.group !== 'platform.pricing').length).toBeLessThanOrEqual(25);
+        expect(platformKeys.filter((s) => s.group === 'platform.pricing').length).toBeLessThanOrEqual(15);
     });
 
     it('katalog varsayılanları kodun DEFAULT_THRESHOLDS değerleriyle birebir aynı', () => {

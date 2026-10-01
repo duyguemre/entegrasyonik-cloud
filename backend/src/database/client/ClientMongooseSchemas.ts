@@ -23,6 +23,7 @@ import { MessageSchema } from './models/Message';
 import { IdempotencyKeySchema } from './models/IdempotencyKey';
 import { StockMovementSchema } from './models/StockMovement';
 import { CommissionOverrideSchema } from './models/CommissionOverride';
+import { BuyboxSnapshotSchema } from './models/BuyboxSnapshot';
 import { UserSchema } from './models/User';
 import { FinancialTransactionSchema, CargoInvoiceSchema } from './models/Financial';
 
@@ -56,6 +57,7 @@ export default (mongooseConnection: Connection): Record<string, Model<any>> => {
         cargo_invoice: mongooseConnection.model('cargo_invoice', CargoInvoiceSchema),
         idempotency_key: mongooseConnection.model('idempotency_key', IdempotencyKeySchema),
         stock_movement: mongooseConnection.model('stock_movement', StockMovementSchema),
-        commission_override: mongooseConnection.model('commission_override', CommissionOverrideSchema)
+        commission_override: mongooseConnection.model('commission_override', CommissionOverrideSchema),
+        buybox_snapshot: mongooseConnection.model('buybox_snapshot', BuyboxSnapshotSchema)
     }
 }
