@@ -17,6 +17,12 @@ import { ObjectId } from 'mongodb';
 import ImageService from '@api/rpc/handlers/image-service';
 import { storageService } from '@services/index';
 import { imageOperations as ImageOperations } from '@operations/catalog/images/image-operations';
+import { captureLogs, type LogCapture } from '../../helpers/logCapture';
+
+// F-06 (ADR-0024 P4): api/** console -> eventLog; loglar stdout JSON satırlarından doğrulanır.
+let cap: LogCapture;
+beforeEach(() => { cap = captureLogs(); });
+afterEach(() => { cap.restore(); });
 
 let productModel: any;
 let variantModel: any;
@@ -302,7 +308,7 @@ describe('ImageService.addImages', () => {
     productModel.findOneAndUpdate.mockImplementation(() => { throw new Error('write failed'); });
     const res = await makeService({ uploadImageForm: { tempProductId: 'p1' }, files }).addImages();
     expect(res).toBe(false);
-    expect(console.error).toHaveBeenCalled();
+    expect(cap.lines).toContainEqual(expect.objectContaining({ level: 'error' })); // F-06: console.error -> eventLog
   });
 
   it('[MEVCUT DAVRANIŞ] prepareImageQueries hatası DIŞ catch tarafından yeniden fırlatılır (yutulmaz — #2\'deki DB hatasından FARKLI)', async () => {
@@ -319,7 +325,7 @@ describe('ImageService.addImages', () => {
 
     const res = await makeService({ uploadImageForm: { tempProductId: 'p1' }, files }).addImages();
     expect(res).toEqual([{ _id: imgId }]);
-    expect(console.log).toHaveBeenCalled();
+    expect(cap.lines).toContainEqual(expect.objectContaining({ level: 'error' }));
   });
 
   it('[MEVCUT DAVRANIŞ] originalname eşleşmezse (insertedDoc bulunamaz) uploadImage o kayıt için HİÇ çağrılmaz', async () => {

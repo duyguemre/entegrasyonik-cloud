@@ -15,6 +15,12 @@
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 
 import FinancialService, { CARGO_INVOICES_MAX_ROWS } from '@api/rpc/handlers/financial-service';
+import { captureLogs, type LogCapture } from '../../helpers/logCapture';
+
+// F-06 (ADR-0024 P4): api/** console -> eventLog; loglar stdout JSON satırlarından doğrulanır.
+let cap: LogCapture;
+beforeEach(() => { cap = captureLogs(); });
+afterEach(() => { cap.restore(); });
 
 let financialModel: any;
 let cargoInvoiceModel: any;
@@ -118,7 +124,7 @@ describe('FinancialService.getTransactionData', () => {
   it('[MEVCUT DAVRANIŞ] filtre ve sonuç sayısı console.log ile loglanır (mevcut debug logu; kod DEĞİŞTİRİLMEDİ)', async () => {
     financialModel.find.mockReturnValue(chain([{ _id: 't1', integrationCode: 'trendyol', transactionType: 'SALE' }]));
     await makeService({}).getTransactionData();
-    expect(console.log).toHaveBeenCalled();
+    expect(cap.lines).toContainEqual(expect.objectContaining({ code: 'FINANCIAL_GET_RESULT', found: 1 }));
   });
 
   it('[MEVCUT DAVRANIŞ] hata olduğu gibi yeniden fırlatılır (console.error KULLANILMAZ)', async () => {
