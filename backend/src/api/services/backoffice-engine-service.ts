@@ -27,8 +27,9 @@ export default class BackofficeEngineService extends BaseApi implements IService
     private reason(): string { return String(this.request?.reason ?? '').trim().slice(0, 500) }
 
     async getQueues(): Promise<any> { return this.ops().getQueues() }
-    async listFailedJobs(): Promise<any> { const r = this.request || {}; return this.ops().listFailedJobs({ queue: r.queue as EngineQueueName, source: r.source, cursor: r.cursor, limit: r.limit }) }
+    async listFailedJobs(): Promise<any> { const r = this.request || {}; return this.ops().listFailedJobs({ queue: r.queue as EngineQueueName, source: r.source, cursor: r.cursor, limit: r.limit, tid: r.tid, integrationCode: r.integrationCode, errorCode: r.errorCode }) }
     async retryJob(): Promise<any> { const r = this.request || {}; return this.ops().retryJob(this.actor(), { queue: r.queue, jobId: r.jobId, reason: this.reason() }) }
+    async retryJobs(): Promise<any> { const r = this.request || {}; return this.ops().retryJobs(this.actor(), { queue: r.queue, jobIds: r.jobIds, reason: this.reason() }) }
     async discardJob(): Promise<any> { const r = this.request || {}; return this.ops().discardJob(this.actor(), { queue: r.queue, jobId: r.jobId, reason: this.reason() }) }
     async getStateMachineJobs(): Promise<any> { return this.ops().getStateMachineJobs() }
     async releaseStuckLease(): Promise<any> { const r = this.request || {}; return this.ops().releaseStuckLease(this.actor(), { kind: r.kind, id: r.id, reason: this.reason() }) }

@@ -29,6 +29,7 @@ export const REAUTH_RPCS: ReadonlySet<string> = new Set([
     'BackofficeAdminUserService/resetMfa',
     'BackofficeInfraService/flushCacheFamily',
     'BackofficeEngineService/retryJob',
+    'BackofficeEngineService/retryJobs',
     'BackofficeEngineService/discardJob',
     'BackofficeEngineService/releaseStuckLease',
     // ADR-0029 NB7/NB8: yazan bildirim/duyuru/uyari uclari (toplu e-posta dahil) step-up + gerekce

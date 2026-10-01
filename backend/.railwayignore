@@ -1,0 +1,9 @@
+# ADR-0027 §9: `railway up` (backend/ içinden) YÜKLEMEDEN önce bu desenleri dışarıda bırakır.
+# Yerel sırlar Railway derleyicisine ASLA gönderilmez (imajda da yok: .dockerignore). Değerler yalnız Railway Variables'ta.
+.env
+.env.*
+!.env.example
+node_modules
+dist
+coverage
+*.log

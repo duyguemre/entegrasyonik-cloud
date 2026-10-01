@@ -86,6 +86,10 @@ export const BACKOFFICE_ENGINE_CAPABILITIES = [
         effect: 'write', external: true, minTier: 'platformAdmin', permission: PLATFORM_ONLY, bindings: [{ rpc: 'BackofficeEngineService/retryJob' }], ui: UI, mcp: PA, agent: NO_AGENT,
     }),
     c({
+        id: 'platform.engine.retry_jobs', domain: 'platform', summary: { tr: 'Başarısız kuyruk işlerini toplu yeniden dene (≤ 50; step-up + gerekçe; iş başına sonuç; dış yazma tetikleyebilir)', en: 'Retry failed queue jobs in bulk (≤ 50; step-up + reason; per-job result; may trigger external writes)' },
+        effect: 'write', external: true, minTier: 'platformAdmin', permission: PLATFORM_ONLY, bindings: [{ rpc: 'BackofficeEngineService/retryJobs' }], ui: UI, mcp: PA, agent: NO_AGENT,
+    }),
+    c({
         id: 'platform.engine.discard_job', domain: 'platform', summary: { tr: 'Başarısız kuyruk işini sil (step-up + gerekçe)', en: 'Discard a failed queue job (step-up + reason)' },
         effect: 'destructive', minTier: 'platformAdmin', permission: PLATFORM_ONLY, bindings: [{ rpc: 'BackofficeEngineService/discardJob' }], ui: UI, mcp: PA, agent: NO_AGENT,
     }),
