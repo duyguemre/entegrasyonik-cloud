@@ -152,6 +152,8 @@ const BACKEND_ONLY_NOT_YET_IN_FE = [
   'BackofficeBillingService/getPricingRulesOverview',
   'BackofficeTenantService/getLifecycle', 'BackofficeTenantService/cancelDeletion', 'BackofficeTenantService/listTenants', 'BackofficeTenantService/getHealthSummary', 'BackofficeTenantService/getUsage',
   'BackofficePrefsService/listViews', 'BackofficePrefsService/saveView', 'BackofficePrefsService/deleteView',
+  // [MOB-06] backoffice web push aboneliği (yalnız /admin-api): backoffice SPA ayrı yüzey.
+  'BackofficePrefsService/getPushConfig', 'BackofficePrefsService/subscribePush', 'BackofficePrefsService/unsubscribePush',
   // [B5/B6/B8/B9] entegrasyon sağlığı + altyapı gözlemi + cache (yalnız /admin-api).
   'BackofficeIntegrationService/getApiHealth', 'BackofficeIntegrationService/getResilienceState',
   // [ADR-0029 NB7/NB8] duyuru bandı (F-N4 bulut FE işi) + backoffice bildirim/duyuru/uyarı (yalnız /admin-api).
