@@ -83,8 +83,8 @@
       </template>
       <template #cell-channel="{ row }">
         <span v-if="row.channels.length" class="ek-customer-channels">
-          <EkChannelDot v-for="code in row.channels.slice(0, 2)" :key="code" :code="code" />
-          <span v-if="row.channels.length > 2" class="ek-muted ek-num" :title="row.channels.slice(2).join(', ')">+{{ row.channels.length - 2 }}</span>
+          <EkChannelDot :code="row.channels[0]" />
+          <span v-if="row.channels.length > 1" class="ek-customer-channels__more ek-num" :title="row.channels.slice(1).join(', ')">+{{ row.channels.length - 1 }}<span class="ek-sr-only"> kanal daha</span></span>
         </span>
         <span v-else class="ek-muted">Sistem</span>
       </template>
@@ -378,9 +378,14 @@ defineExpose({
 </script>
 
 <style scoped>
+.ek-customer-channels__more {
+  font-size: var(--ek-type-caption-size);
+  color: var(--ek-color-content-muted);
+}
+
 .ek-customer-channels {
   display: inline-flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: var(--ek-space-1);
 }
