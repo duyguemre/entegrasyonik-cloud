@@ -3,7 +3,7 @@
   <GuardedDialog
     :action="save"
     :title="cs.hadOverride ? 'Müşteri istisnasını düzenle' : 'Müşteri istisnası ekle'"
-    :description="cs.tenantLabel ? `${cs.tenantLabel.name} · #${cs.tenantLabel.tid}` : 'Önce müşteri numarasını girip mevcut ayarını getirin.'"
+    :description="cs.tenantLabel ? 'Bu müşteri için plan değerleri alan alan geçersiz kılınır.' : 'Önce müşteri numarasını girip mevcut ayarını getirin.'"
     icon="mdi-tune-variant"
     :items="items"
     reversible
