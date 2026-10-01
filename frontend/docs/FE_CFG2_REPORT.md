@@ -64,7 +64,7 @@ Dal `cloud/fe-cfg2` · taban `origin/main` (`sync: faz3-arayuz @ 487e2869`) · t
 | lint | 0 hata (uyarılar mevcut taban) |
 | frontend Playwright (ilgili spec, chromium-desktop) | public-config 4/4, legacy-definition 7/7, product-definition-parts + product-variant-dialogs 10/10; chromium-mobile: 10 geçti, 1 bilerek atlandı |
 | backoffice Playwright (ilgili, ara adım) | usage 4/4, settings-admins "sistem ayarları" 6/6 (biri soğuk başlangıçta bir kez zaman aşımı, tek başına yeşil) |
-| **backoffice Playwright tam koşu** | BO_FULL_RUN |
+| **backoffice Playwright tam koşu** (3 proje, `--update-snapshots=missing`) | **356 geçti, 158 atlandı (inceleme/ortam kapılı), 8 kırmızı (21 dk).** 8'in tamamı `smoke.spec` görsel tabanı: bulutta `*-linux.png` yoktu → "snapshot doesn't exist, writing actual" (masaüstü açık + koyu × 4 ekran). Yeniden koşu: smoke **48 geçti / 3 atlandı**. Davranış kırmızısı yok. |
 
 Not: bulutta Playwright `playwright.cloud.config.ts` (uygulama) ve `PW_CHROMIUM_PATH=/opt/pw-browsers/chromium` (backoffice) ile koşuldu; `cdn.playwright.dev` 403 (kurulum betiğindeki tarayıcı indirmesi başarısız, önceden kurulu Chromium kullanıldı). Rollup'ın linux ikilisi kilit dosyasında yok: `npm i --no-save @rollup/rollup-linux-x64-gnu@4.63.5`. `*-linux.png` commit'lenmedi; görsel onay yerelde.
 
