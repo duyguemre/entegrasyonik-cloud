@@ -10,7 +10,7 @@
     "rawSpinner": 0,
     "iconBtnNoLabel": 1,
     "patternExceptions": 3,
-    "pageHeaderMissing": 5
+    "pageHeaderMissing": 2
   },
   "files": {
     "packages/chat/src/components/ChatComposer.vue": {
@@ -293,47 +293,7 @@
       "patternExceptions": 0,
       "total": 0
     },
-    "src/components/CategoryIntegrationSelectBoxComponent.vue": {
-      "rawDataTable": 0,
-      "rawDialog": 0,
-      "rawChip": 0,
-      "rawFormat": 0,
-      "rawSpinner": 0,
-      "iconBtnNoLabel": 0,
-      "patternExceptions": 0,
-      "total": 0
-    },
-    "src/components/CategoryListComponent.vue": {
-      "rawDataTable": 0,
-      "rawDialog": 0,
-      "rawChip": 0,
-      "rawFormat": 0,
-      "rawSpinner": 0,
-      "iconBtnNoLabel": 0,
-      "patternExceptions": 0,
-      "total": 0
-    },
     "src/components/CategorySelectBoxLevelComponent.vue": {
-      "rawDataTable": 0,
-      "rawDialog": 0,
-      "rawChip": 0,
-      "rawFormat": 0,
-      "rawSpinner": 0,
-      "iconBtnNoLabel": 0,
-      "patternExceptions": 0,
-      "total": 0
-    },
-    "src/components/CategorySyncComponent.vue": {
-      "rawDataTable": 0,
-      "rawDialog": 0,
-      "rawChip": 0,
-      "rawFormat": 0,
-      "rawSpinner": 0,
-      "iconBtnNoLabel": 0,
-      "patternExceptions": 0,
-      "total": 0
-    },
-    "src/components/CategoryTreeComponent.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
       "rawChip": 0,
@@ -574,6 +534,86 @@
       "total": 0
     },
     "src/components/adminPanel/integrations/SettingField.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/components/barcode/BarcodeScanButton.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/components/brands/BrandChannelRow.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/components/categories/CategoryChannelRow.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/components/categories/CategoryDetail.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/components/categories/CategoryManager.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/components/categories/CategoryNewRow.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/components/categories/CategoryTree.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/components/categories/ChannelCategoryPicker.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
       "rawChip": 0,
@@ -1643,6 +1683,46 @@
       "patternExceptions": 0,
       "total": 0
     },
+    "src/components/pricing/BuyboxBadge.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/components/pricing/BuyboxSparkline.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/components/pricing/CompetitionPanel.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/components/pricing/CostCoverageChip.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
     "src/components/printouts/TemplateEditor.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
@@ -1744,6 +1824,26 @@
       "total": 0
     },
     "src/components/productDefinitions/crud/ProductInfoFormComponent.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/components/productDefinitions/definitions/DefinitionValueAdd.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/components/productDefinitions/definitions/DefinitionValueChip.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
       "rawChip": 0,
@@ -2123,6 +2223,16 @@
       "patternExceptions": 0,
       "total": 0
     },
+    "src/components/settings/PushDeviceCard.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
     "src/components/settings/SettingRow.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
@@ -2274,6 +2384,16 @@
       "total": 0
     },
     "src/layouts/UnsecureLayout.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/pwa/PwaPrompts.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
       "rawChip": 0,
@@ -2853,6 +2973,16 @@
       "patternExceptions": 0,
       "total": 0
     },
+    "src/views/secure/pricing/PricingRulesView.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
     "src/views/secure/productDefinitions/BrandListView.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
@@ -3139,7 +3269,7 @@
     "src/views/secure/adminPanel/integrations/IntegrationConfigListView.vue": 0,
     "src/views/secure/adminPanel/integrations/IntegrationSettingsView.vue": 0,
     "src/views/secure/definitions/BrandDefinitionView.vue": 0,
-    "src/views/secure/definitions/CategoryDefinitionView.vue": 1,
+    "src/views/secure/definitions/CategoryDefinitionView.vue": 0,
     "src/views/secure/definitions/CustomerDefinitionView.vue": 0,
     "src/views/secure/definitions/HashtagDefinitionView.vue": 0,
     "src/views/secure/definitions/InvoiceDefinitionView.vue": 0,
@@ -3155,8 +3285,9 @@
     "src/views/secure/integrations/MarketplaceView.vue": 0,
     "src/views/secure/integrations/ShippingView.vue": 0,
     "src/views/secure/integrations/StockPolicyView.vue": 0,
-    "src/views/secure/productDefinitions/BrandListView.vue": 1,
-    "src/views/secure/productDefinitions/CategoryListView.vue": 1,
+    "src/views/secure/pricing/PricingRulesView.vue": 0,
+    "src/views/secure/productDefinitions/BrandListView.vue": 0,
+    "src/views/secure/productDefinitions/CategoryListView.vue": 0,
     "src/views/secure/productDefinitions/ChoiceListView.vue": 0,
     "src/views/secure/productDefinitions/HashtagListView.vue": 0,
     "src/views/secure/productDefinitions/ProductListView.vue": 0,

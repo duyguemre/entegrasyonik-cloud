@@ -126,18 +126,58 @@ function buildCounts(repoRoot) {
 }
 
 /**
- * Ekran sayfa başlığını standart bileşenle mi çiziyor? `EkPageHeader` ya da DS-v2 liste
- * standardı şablonu `EkListScreen` (başlık verilmişse kendi H1 başlık bloğunu çizer).
+ * Ekran sayfa başlığını standart bileşenle mi çiziyor? `EkPageHeader`, Aşama 5 tek başlık satırı
+ * `EkPageBar` (EkPageHeader'ın görünümü; doğrudan da kullanılır) ya da DS-v2 liste standardı şablonu
+ * `EkListScreen` (başlık verilmişse kendi H1 başlık bloğunu — EkPageBar — çizer).
  */
 function hasPageHeader(content) {
   if (content.includes('EkPageHeader')) return true;
+  if (/<EkPageBar\b/.test(content)) return true;
   const at = content.search(/<EkListScreen\b/);
   if (at < 0) return false;
   // Açılış etiketinin öznitelikleri (öznitelik değerlerinde `=>` olabildiği için `>`e göre kesilmez).
   return /\s:?title=/.test(content.slice(at, at + 2000).split(/\n\s*>\s*\n/)[0]);
 }
 
-/** `views/secure/**\/*.vue` altında sayfa başlığı (EkPageHeader / başlıklı EkListScreen) İÇERMEYEN ekran kökleri. */
+/**
+ * Ekranın içe aktardığı yerel `.vue` bileşen yolları (`@/…` ya da göreli). Ekran kökü içeriğini tek bir
+ * yönetici bileşene devredebilir (ör. `CategoryDefinitionView` → `CategoryManager`, başlığı orada çizilir).
+ * Sayfa şablonlarının kendisi (`src/components/page/**`) devre sayılmaz — onlar `hasPageHeader` ile okunur.
+ */
+function localVueImports(content, absPath, repoRoot) {
+  const out = [];
+  const importRe = /import\s+[\w${}\s,]+\s+from\s+['"]([^'"]+\.vue)['"]/g;
+  let m;
+  while ((m = importRe.exec(content)) !== null) {
+    const spec = m[1];
+    let target;
+    if (spec.startsWith('@/')) target = path.join(repoRoot, 'src', spec.slice(2));
+    else if (spec.startsWith('.')) target = path.resolve(path.dirname(absPath), spec);
+    else continue;
+    const rel = path.relative(repoRoot, target).split(path.sep).join('/');
+    if (isExcluded(rel) || !fs.existsSync(target)) continue;
+    out.push(target);
+  }
+  return out;
+}
+
+/**
+ * Başlık ekranın kendisinde ya da devrettiği bileşen zincirinde mi (en çok `depth` adım)?
+ * Döngüye karşı ziyaret kümesi tutulur.
+ */
+function screenHasPageHeader(absPath, repoRoot, depth = 2, seen = new Set()) {
+  if (seen.has(absPath)) return false;
+  seen.add(absPath);
+  const content = fs.readFileSync(absPath, 'utf8');
+  if (hasPageHeader(content)) return true;
+  if (depth <= 0) return false;
+  return localVueImports(content, absPath, repoRoot).some((dep) => screenHasPageHeader(dep, repoRoot, depth - 1, seen));
+}
+
+/**
+ * `views/secure/**\/*.vue` altında sayfa başlığı (EkPageHeader / EkPageBar / başlıklı EkListScreen) İÇERMEYEN
+ * ekran kökleri — başlığı içe aktardığı bileşende çizen ekran (yönetici bileşene devir) başlıklı sayılır.
+ */
 function buildPageHeaderMissing(repoRoot) {
   const viewsDir = path.join(repoRoot, 'src', 'views', 'secure');
   if (!fs.existsSync(viewsDir)) return {};
@@ -145,14 +185,14 @@ function buildPageHeaderMissing(repoRoot) {
   const map = {};
   for (const absPath of files) {
     const relPath = path.relative(repoRoot, absPath).split(path.sep).join('/');
-    const content = fs.readFileSync(absPath, 'utf8');
-    map[relPath] = hasPageHeader(content) ? 0 : 1;
+    map[relPath] = screenHasPageHeader(absPath, repoRoot) ? 0 : 1;
   }
   return map;
 }
 
 module.exports = {
   hasPageHeader,
+  screenHasPageHeader,
   RAW_PATTERNS,
   countFileContent,
   listVueFiles,
