@@ -165,10 +165,10 @@ const columns: EkGridColumn[] = [
   { key: 'externalOrderId', label: 'Sipariş no', sortable: true },
   { key: 'integrationCode', label: 'Kanal', sortable: true },
   { key: 'internalStatus', label: 'Durum', sortable: true },
+  { key: 'totalRefundAmount', label: 'İade tutarı', type: 'num', sortable: true },
   { key: 'items', label: 'İçerik' },
   { key: 'type', label: 'Tür', sortable: true },
   { key: 'claimedAt', label: 'Tarih', sortable: true },
-  { key: 'totalRefundAmount', label: 'İade tutarı', type: 'num', sortable: true },
   { key: 'actions', label: 'İşlemler', align: 'end', hideLabel: true, pin: 'end' },
 ]
 

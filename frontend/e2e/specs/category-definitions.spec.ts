@@ -57,6 +57,23 @@ test.describe('P3 (B5-2) — Kategoriler (CategoryListView)', () => {
     await expect(page.getByText('Eşitleme için önce Kategori seçmelisiniz')).toBeVisible()
   })
 
+  // fe-b7 (554d858) davranışı bu tabanda: arama alanının KENDİ temizle simgesi modeli `null` yapar — ağaç süzgeci
+  // çökmeden sıfırlanır (b7 sayfaları henüz tabanda yok; aynı güvence mevcut kategori arama alanında).
+  test('arama alanının temizle simgesi (model null) güvenli: ağaç sıfırlanır, sayfa hatası yok', async ({ page }) => {
+    const errors: string[] = []
+    page.on('pageerror', (e) => errors.push(e.message))
+    await installApiMocks(page, { MenuService: menuFixtureWithCategory, CategoryService: categoriesDoluFixture })
+    await gotoAuthed(page)
+    await openCategoryListView(page)
+    const field = page.locator('.ek-category-list .v-text-field:visible').filter({ has: page.locator('.mdi-magnify') }).first()
+    const input = field.locator('input')
+    await input.fill('zzzz-yok')
+    await field.locator('.v-field__clearable .v-icon').click()
+    await expect(input).toHaveValue('')
+    await expect(page.getByText('Kategori Listesi')).toBeVisible()
+    expect(errors).toEqual([])
+  })
+
   test('boş durum: kategori yoksa da form/arama yüzeyi bozulmadan açılır (ham hata sızmaz)', async ({ page }) => {
     await installApiMocks(page, { MenuService: menuFixtureWithCategory, CategoryService: [] })
     await gotoAuthed(page)

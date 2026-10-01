@@ -20,6 +20,9 @@ const PROFILE = {
 const ROOT = B4_SCREENS.AccountSecurityView.root
 
 async function mocks(page: any, overrides: Record<string, MockValue> = {}) {
+  // fe-r2a: çalışma alanı artık kendi içinde kayıyor; formun en altındaki gönder düğmesi görünür alanda kalıp sağ alttaki
+  // tur teklif kartının altına denk gelebiliyor (Playwright görünür öğeyi kaydırmaz). Bu spec turu test etmez → teklif kapalı.
+  await page.addInitScript(() => localStorage.setItem('ek.help.v1.tour', 'dismissed'))
   await installApiMocks(page, { MenuService: menuFixtureWithB4(), userContext: PROFILE, ...overrides })
 }
 

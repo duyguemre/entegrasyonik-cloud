@@ -9,6 +9,7 @@
   Biçimler (tek kayıt: `CHANNEL_NAMES` / `CHANNEL_SHORT` / `CARRIERS`):
     form="long"  (varsayılan) → [ Trendyol ]  — liste hücresi, filtre çipi, başlık
     form="short"              → [TY]          — dar sütun, kanal başına durum, seçim listesi öncülü (ad `title` + ekran okuyucu)
+  `muted`: pasif (ör. ürün bu kanalda yok) — nötr, kesik kenarlık.
   Boyut: xs 20px · sm 24px (varsayılan) · md 28px. Renk tek başına anlam taşımaz: kısa formda da ad erişilebilir addır.
 
   Kullanım:
@@ -17,7 +18,7 @@
     <EkChannelBadge kind="carrier" name="Yurtiçi Kargo" />
 -->
 <template>
-  <span class="ek-chb" :class="[scope, `ek-chb--${form}`, `ek-chb--${size}`]" :title="form === 'short' ? label : undefined"
+  <span class="ek-chb" :class="[muted ? 'ek-ch-neutral' : scope, `ek-chb--${form}`, `ek-chb--${size}`, { 'is-muted': muted }]" :title="form === 'short' ? label : undefined"
     :data-channel="resolvedCode || undefined">
     <template v-if="form === 'short'">
       <span class="ek-chb__mark" aria-hidden="true">{{ short }}</span>
@@ -40,8 +41,10 @@ const props = withDefaults(
     kind?: 'channel' | 'carrier'
     form?: 'long' | 'short'
     size?: 'xs' | 'sm' | 'md'
+    /** "Yok / pasif" görünümü: nötr tonlar + kesik kenarlık (ör. ürün o kanalda yok). Metin kontrastı AA kalır. */
+    muted?: boolean
   }>(),
-  { code: '', name: '', kind: 'channel', form: 'long', size: 'sm' },
+  { code: '', name: '', kind: 'channel', form: 'long', size: 'sm', muted: false },
 )
 
 const resolvedCode = computed(() =>
@@ -88,6 +91,14 @@ const short = computed(() => channelShort(resolvedCode.value || props.code, prop
 .ek-chb__name {
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Pasif: nötr kapsam (ton AA) + kesik kenarlık — "bu kanalda yok" tek bakışta; opaklık kullanılmaz (kontrast düşmesin). */
+.ek-chb.is-muted {
+  border-style: dashed;
+  border-color: var(--ek-color-border-strong);
+  background: transparent;
+  color: var(--ek-color-content-muted);
 }
 
 /* Kısa form: kare monogram (3 harfte hafifçe genişler); köşe rozetle aynı dil, biraz daha kare. */
