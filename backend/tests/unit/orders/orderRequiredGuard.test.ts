@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
-import { guardOrderRequiredFields } from '@integration/engine/order/orderRequiredGuard';
+import { guardOrderRequiredFields } from '@database/repositories/tenant/orderRequiredGuard';
 
 const addr = (over: any = {}) => ({ firstName: 'A', addressLine1: 'x', city: 'c', state: 's', ...over });
 const item = (over: any = {}) => ({ externalLineItemId: 'L1', externalItemId: 'P1', productName: 'n', sku: 'S', ...over });

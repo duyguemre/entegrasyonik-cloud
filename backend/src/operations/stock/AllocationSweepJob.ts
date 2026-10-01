@@ -1,6 +1,6 @@
 import { DatabaseManagerInstance } from "@database/index";
 import { RedisService } from "@services/redis/RedisService";
-import { PostOrderOperations } from "@operations/integration/PostOrderOperations";
+import { PostOrderOperations } from "@operations/orders/postOrder";
 
 /**
  * ADR-0004 — Zero-oversell (Karar 3, çökme/kaçak telafisi): "her 15 dk'da bir, allocationState aynası

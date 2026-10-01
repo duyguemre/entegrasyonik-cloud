@@ -1,9 +1,9 @@
-import { OrderRepository } from './OrderRepository';
-import { CustomerRepository } from './CustomerRepository';
-import { ClaimRepository } from './ClaimRepository';
-import { InvoiceRepository } from './InvoiceRepository';
-import { MessageRepository } from './MessageRepository';
-import { FinancialRepository } from './FinancialRepository';
+import { OrderRepository } from '../../../database/repositories/tenant/OrderRepository';
+import { CustomerRepository } from '../../../database/repositories/tenant/CustomerRepository';
+import { ClaimRepository } from '../../../database/repositories/tenant/ClaimRepository';
+import { InvoiceRepository } from '../../../database/repositories/tenant/InvoiceRepository';
+import { MessageRepository } from '../../../database/repositories/tenant/MessageRepository';
+import { FinancialRepository } from '../../../database/repositories/tenant/FinancialRepository';
 import {
     IOrderJobData,
     IOrchestratorResult,
@@ -16,7 +16,7 @@ import { Types } from 'mongoose';
 import { StatisticsTracker, IOperationLogInput } from '@services/statistics/StatisticsTracker';
 import orderConfig from './order.config.json';
 import { DatabaseManagerInstance } from '@database/index';
-import { PostOrderOperations } from '@operations/integration/PostOrderOperations';
+import { PostOrderOperations } from '@operations/orders/postOrder';
 import { getIncomplete, IncompleteInfo, isWindowOverflowError } from '@integration/contracts/IncompleteFetch';
 import { NotificationService } from '@services/notification/NotificationService';
 import { eventLog } from '@platform/core/logger';

@@ -18,7 +18,7 @@ import { SENSITIVE_MASK, isSecretField, maskClientIntegrationsDoc, encryptSecret
 import { ApplicationError } from '@platform/core/security/Security'
 import { stripTenantUrlFields, isTenantUrlLikeKey, hasInvalidStoreName } from '@platform/core/security/tenantSettingsGuard'
 import { AuditLogger } from '@services/audit/AuditLogger'
-import { buildIntegrationHealth } from '@operations/integration/IntegrationHealthOperations'
+import { buildIntegrationHealth } from '@operations/integrations/health'
 import { testIntegrationConnection } from '@operations/integration/TestConnectionOperation'
 import {
     AUTO_CANCEL_SUPPORTED_CHANNELS, STOCK_POLICY_DEFAULTS, STOCK_POLICY_LIMITS, StockPolicyValidationError,

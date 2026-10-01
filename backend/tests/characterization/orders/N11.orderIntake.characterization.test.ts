@@ -10,27 +10,27 @@
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import { Types, model } from 'mongoose';
 
-jest.mock('@integration/engine/order/OrderRepository', () => ({ OrderRepository: jest.fn() }));
-jest.mock('@integration/engine/order/CustomerRepository', () => ({ CustomerRepository: jest.fn() }));
-jest.mock('@integration/engine/order/ClaimRepository', () => ({ ClaimRepository: jest.fn() }));
-jest.mock('@integration/engine/order/InvoiceRepository', () => ({ InvoiceRepository: jest.fn() }));
-jest.mock('@integration/engine/order/MessageRepository', () => ({ MessageRepository: jest.fn() }));
-jest.mock('@integration/engine/order/FinancialRepository', () => ({ FinancialRepository: jest.fn() }));
+jest.mock('@database/repositories/tenant/OrderRepository', () => ({ OrderRepository: jest.fn() }));
+jest.mock('@database/repositories/tenant/CustomerRepository', () => ({ CustomerRepository: jest.fn() }));
+jest.mock('@database/repositories/tenant/ClaimRepository', () => ({ ClaimRepository: jest.fn() }));
+jest.mock('@database/repositories/tenant/InvoiceRepository', () => ({ InvoiceRepository: jest.fn() }));
+jest.mock('@database/repositories/tenant/MessageRepository', () => ({ MessageRepository: jest.fn() }));
+jest.mock('@database/repositories/tenant/FinancialRepository', () => ({ FinancialRepository: jest.fn() }));
 jest.mock('@integration/modules/IntegrationFactory', () => ({ __esModule: true, default: jest.fn() }));
 jest.mock('@services/statistics/StatisticsTracker', () => ({ StatisticsTracker: { track: jest.fn(), trackMany: jest.fn() } }));
 jest.mock('@database/index', () => ({ DatabaseManagerInstance: { getClientDB: jest.fn() } }));
-jest.mock('@operations/integration/PostOrderOperations', () => ({ PostOrderOperations: jest.fn() }));
+jest.mock('@operations/orders/postOrder', () => ({ PostOrderOperations: jest.fn() }));
 
 import { OrderWorker } from '@integration/engine/order/OrderWorker';
-import { OrderRepository } from '@integration/engine/order/OrderRepository';
-import { CustomerRepository } from '@integration/engine/order/CustomerRepository';
-import { ClaimRepository } from '@integration/engine/order/ClaimRepository';
-import { InvoiceRepository } from '@integration/engine/order/InvoiceRepository';
-import { MessageRepository } from '@integration/engine/order/MessageRepository';
-import { FinancialRepository } from '@integration/engine/order/FinancialRepository';
+import { OrderRepository } from '@database/repositories/tenant/OrderRepository';
+import { CustomerRepository } from '@database/repositories/tenant/CustomerRepository';
+import { ClaimRepository } from '@database/repositories/tenant/ClaimRepository';
+import { InvoiceRepository } from '@database/repositories/tenant/InvoiceRepository';
+import { MessageRepository } from '@database/repositories/tenant/MessageRepository';
+import { FinancialRepository } from '@database/repositories/tenant/FinancialRepository';
 import IntegrationFactory from '@integration/modules/IntegrationFactory';
 import { DatabaseManagerInstance } from '@database/index';
-import { PostOrderOperations } from '@operations/integration/PostOrderOperations';
+import { PostOrderOperations } from '@operations/orders/postOrder';
 import { OrderService } from '@integration/modules/marketplace/n11/services/OrderService';
 import { OrderSchema } from '@database/client/models/Order';
 

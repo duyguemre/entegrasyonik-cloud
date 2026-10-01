@@ -128,7 +128,7 @@ describe('sendClientNotification çağıranları: mode zorunlu tiplerde mode gö
 
   it('STOCK_ALERT gönderen iki yol (PostOrderOperations, OversellCompensationJob) mode göndermez ve artık gerekmez', () => {
     const stock = sites.filter((s) => s.type === 'STOCK_ALERT');
-    expect(stock.map((s) => s.file).sort()).toEqual(['operations/integration/PostOrderOperations.ts', 'operations/stock/OversellCompensationJob.ts']);
+    expect(stock.map((s) => s.file).sort()).toEqual(['operations/orders/postOrder.ts', 'operations/stock/OversellCompensationJob.ts']);
     expect(stock.every((s) => !s.hasMode)).toBe(true);
   });
 });
