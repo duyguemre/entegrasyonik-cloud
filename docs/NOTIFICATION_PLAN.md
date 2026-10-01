@@ -157,7 +157,7 @@ Test komutları `docs/TESTING.md`'den alınır:
   - `integration/engine/catalog/import/ImportOrchestrator.ts` (yalnızca `sendNotification`)
   - `integration/engine/order/OrderWorker.ts` (yalnızca `notifyWindowOverflow` + `overflowNotifiedAt` kaldırma)
   - `operations/billing/TrialExpiryJob.ts` (`notify`)
-  - `operations/integration/PostOrderOperations.ts` (`notify`)
+  - `operations/orders/postOrder.ts` (`notify`)
   - `operations/stock/OversellCompensationJob.ts` (`notify`)
   - `operations/account/AccountLifecycleService.ts` (parola değişti)
   - `operations/client/ClientOperations.ts` (`saveNotification` silinir)

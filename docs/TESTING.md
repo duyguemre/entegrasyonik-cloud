@@ -44,6 +44,15 @@ membershipAuthz + mevcut http rotaları), `webhooks/`, `files/` (ImageApiManager
 `node dev-tools/codemods/move-module.js <harita.json>` (kuru çalıştırma) → `--write` (git mv + `import`/`require`/`jest.mock` yolları).
 `tests/static/noMockedShim.static.test.ts`: `jest.mock` hedefi yalnız yeniden-dışa-aktarma (shim) dosyası olamaz.
 
+**Dalga 3 / P3-INT + P3-ORD (entegrasyon ve sipariş alanı):** handler'lar ince cephedir; iş kuralları `operations/integrations/`
+(`settings`, `stockPolicy`, `health`, `jobs`, `platformLookup`) ve `operations/orders/` (`orders`, `dashboard`, `claims`, `customers`,
+`messages`, `invoices`, `shipments`, `postOrder`) + `operations/finance/transactions`, sorgular `database/repositories/{app,tenant}/`.
+Tenant repository'leri kurucuda tenant DB tutamacını alır (`new OrderRepository(clientDB)`); motorun ingest yöntemleri (eski
+`integration/engine/order/*Repository`) aynı sınıflarda `clientId` ile çalışır. Toplu dışa aktarım paketi:
+`integration/engine/catalog/export/ExportBatchService`. Karakterizasyon testleri handler'ı sahte `clientDB` modelleriyle çağırır;
+repository yöntemleri model çağrı biçimini (argüman sayısı dahil) birebir korur. İlgili koşular: `test:module -- orders`,
+`test:module -- stock`, `test:api`, `test:module -- catalog`, `test:module -- engine`.
+
 ## Gerçek-Mongo testleri neden varsayılan koşuda değil
 
 `tests/integration/*` (`*.realmongo.test.ts`, `mongoLease`, `StockAllocator.concurrency`, `realMongoTestDb.selfcheck`) yerel

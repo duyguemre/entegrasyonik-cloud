@@ -84,7 +84,7 @@ Rota sütunu, müşteri uygulamasındaki slug'dır (`frontend/src/navigation/scr
 ### 2.4 Entegrasyonlar
 | No | Uç | Etki | Not |
 |---|---|---|---|
-| B5 | `BackofficeIntegrationService/getApiHealth {integrationCode?, range}` → platform geneli çağrı sayısı, hata oranı (kod bazında), p95, etkilenen tenant **sayısı** | okuma | `IntegrationCallMetrics` üzerinden. `operations/integration/IntegrationHealthOperations.ts` tenant sürümünü yeniden kullanır. **BE hazır (2026-09-30)** — sözleşme `docs/API_BACKOFFICE_INTEGRATIONS_INFRA.md` |
+| B5 | `BackofficeIntegrationService/getApiHealth {integrationCode?, range}` → platform geneli çağrı sayısı, hata oranı (kod bazında), p95, etkilenen tenant **sayısı** | okuma | `IntegrationCallMetrics` üzerinden. `operations/integrations/health.ts` tenant sürümünü yeniden kullanır. **BE hazır (2026-09-30)** — sözleşme `docs/API_BACKOFFICE_INTEGRATIONS_INFRA.md` |
 | B6 | `getResilienceState` → entegrasyon × pod: devre kesici durumu, hız sınırı bütçesi, son açılma zamanı; intake (on/drain/off) | okuma | Her pod metrik flush'ında `resilience:<pod>` Redis anahtarına 60 sn TTL'li anlık görüntü yazar. Uç tüm podların anahtarlarını okur. **BE hazır (2026-09-30)** — sözleşme `docs/API_BACKOFFICE_INTEGRATIONS_INFRA.md` |
 | B6b | `IntegrationConfigService/getCatalog` | okuma | ADR-0020 C açık işi (`settingsCatalogMirror.ts` geçici kopyasını kaldırır). **BE hazır (2026-09-30)** — sözleşme `docs/API_BACKOFFICE_INTEGRATIONS_INFRA.md` |
 | B6c | `IntegrationConfigService/getEffectiveConfig` yetenek bağı (ya da FE → `get`) | — | §1.1 #5 bulgusu. **BE hazır (2026-09-30)** — sözleşme `docs/API_BACKOFFICE_INTEGRATIONS_INFRA.md` |
