@@ -18,7 +18,8 @@ test.skip(!process.env.BO_REVIEW, 'BO_REVIEW=1 ile koşar')
 test.setTimeout(420_000)
 
 async function settleShot(page: Page, name: string, cfg: Cfg, fullPage = true) {
-  await page.waitForLoadState('networkidle')
+  // Sandbox iframe (e-posta önizlemesi) varken koyu temada networkidle tetiklenmeyebiliyor; sahte API'de ağ yok → süre sınırlı.
+  await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => undefined)
   await expect(page.locator('.v-skeleton-loader, [aria-busy="true"]')).toHaveCount(0, { timeout: 10_000 }).catch(() => undefined)
   await page.waitForTimeout(600)
   await page.screenshot({ path: join(OUT, `${name}-${cfg.theme}-${cfg.width}.png`), fullPage, animations: 'disabled' })
@@ -114,5 +115,50 @@ for (const cfg of CONFIGS) {
     await page.getByTestId('impersonate').click()
     await dialogShot(page, '71-diyalog-destek-oturumu', cfg)
     await ctx.close()
+  })
+
+  // ---- Otopilot (CHAT-FE-3): yeni bağlamda mock bayrağıyla
+  test(`bo-next inceleme otopilot ${cfg.theme} ${cfg.width}`, async ({ browser }) => {
+    for (const [config, steps] of [
+      ['enabled', 'chat'],
+      ['setup-required', 'setup'],
+    ] as const) {
+      const ctx = await browser.newContext({ viewport: { width: cfg.width, height: cfg.width > 600 ? 900 : 844 }, colorScheme: cfg.theme })
+      const page = await ctx.newPage()
+      await page.addInitScript((c) => {
+        ;(window as unknown as { __BO_CHAT_MOCK__: unknown }).__BO_CHAT_MOCK__ = { config: c, speed: 0 }
+      }, config)
+      await page.goto('/giris')
+      await page.getByLabel('E-posta').fill(ACCOUNT.email)
+      await page.getByLabel('Parola', { exact: true }).fill(ACCOUNT.password)
+      await page.getByRole('button', { name: 'Devam et' }).click()
+      await page.getByLabel('Doğrulama kodu').fill('123456')
+      await page.getByRole('button', { name: 'Doğrula', exact: true }).click()
+      await expect(page).toHaveURL(/\/genel-bakis$/)
+      if (steps === 'chat') {
+        await page.getByTestId('otopilot-launcher').click()
+        const box = page.getByRole('textbox', { name: "Otopilot'a mesaj" })
+        await expect(box).toBeVisible()
+        await settleShot(page, '80-otopilot-bos', cfg, false)
+        await box.fill('onay bekleyen siparişler')
+        await box.press('Enter')
+        await expect(page.locator('.ek-chat-table')).toBeVisible()
+        await settleShot(page, '81-otopilot-tablo', cfg, false)
+        await box.fill('satış özeti')
+        await box.press('Enter')
+        await expect(page.locator('.ek-chat-kpi')).toBeVisible()
+        await settleShot(page, '82-otopilot-kpi', cfg, false)
+        if (cfg.width > 600) {
+          await page.getByRole('button', { name: 'Tam sayfada aç' }).click()
+          await expect(page).toHaveURL(/\/otopilot$/)
+          await settleShot(page, '83-otopilot-tam-sayfa', cfg, false)
+        }
+      } else {
+        await page.goto('/sistem/otopilot')
+        await expect(page.getByLabel('API anahtarı')).toBeVisible()
+        await settleShot(page, '84-otopilot-platform-anahtari', cfg)
+      }
+      await ctx.close()
+    }
   })
 }

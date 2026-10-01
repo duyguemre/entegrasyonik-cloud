@@ -20,6 +20,7 @@ Bölüm → grup → ekran:
 | Bölüm | Grup | Ekranlar (yol) | Durum (BO-P1) |
 |---|---|---|---|
 | — | Genel bakış | `overview` `/genel-bakis` | hazır |
+| — | Otopilot (bo-next) | `otopilot` `/otopilot` (tam sayfa; yan panel kabukta) | hazır |
 | Müşteri ve gelir | Müşteriler | `tenants` `/musteriler` · `lifecycle` `/musteriler/yasam-dongusu` · `support` `/musteriler/destek` | hazır · yakında · yakında |
 | | Abonelikler | `subscriptions` `/abonelikler` | yakında |
 | Platform | Motor ve kuyruklar | `engine` `/motor` | yakında |
@@ -28,7 +29,7 @@ Bölüm → grup → ekran:
 | Gözlem | Loglar ve sorunlar | `logs` `/loglar` | taslak |
 | | Denetim | `audit` `/denetim` | hazır |
 | Yönetişim | Yöneticiler | `admins` `/yoneticiler` | yakında |
-| | Sistem ayarları | `flags` `/sistem/bayraklar` | yakında |
+| | Sistem ayarları | `flags` `/sistem/bayraklar` · `otopilot-settings` `/sistem/otopilot` (platform yapay zekâ anahtarı) | hazır |
 | | Bildirimler ve duyurular (bo-next) | `announcements` `/sistem/duyurular` (yol korundu) · `deliveries` `/bildirimler/teslimler` · `tenant-notifications` `/bildirimler/musteri-gecmisi` · `notification-catalog` `/bildirimler/katalog` · `alerts` `/bildirimler/uyarilar` | hazır |
 
 **Planlı ekranı hazır yapmak (bo-p2):**
@@ -213,3 +214,16 @@ menüde yaprak görünür. Duyuru alt sayfaları `DETAIL_ROUTES`: `/sistem/duyur
 **Sahte API test kolları (ek):** `__boMock.setNotifyEmail(false)` → `sendTestEmail` 503 `NOTIFY_EMAIL_UNAVAILABLE`.
 `setLiveReadonly(true)` artık `scheduleAnnouncement`, `retryDelivery`, `sendTestEmail` ve yalnız SAĞLAYICI yolundaki
 `cancelSubscription`'ı da 423 yapar (kartsız abonelikte iptal yereldir, K40).
+
+### Otopilot (CHAT-FE-3, CHAT_UI_CONTRACT §7.2)
+- Aynı `@entegrasyonik/chat` paketi; backoffice'e özgü her şey `src/chat/`: taşıyıcı `/admin-api/agent` (`transport.ts`),
+  host (`boChatHost.ts`: yalnız backoffice rotaları; tenant → müşteri detayı, platformJob → başarısız işler, logEvent →
+  log merkezi), metin ezmeleri (`texts.ts`: "hesap sahibi/ekip" yerine "platform yöneticisi"), tek örnek (`otopilot.ts`),
+  kabuktaki TEK bağlama noktası `OtopilotDock.vue` (ShellLayout).
+- Yerleşim web ile aynı: ≥ 1280 px itme, 768–1279 px üstüne binme (scrim yok), < 768 px yalnız tam sayfa; genişlik 360–560.
+  Giriş noktaları: üst bar düğmesi, Ctrl/⌘+J, komut paletinde en üstte "Otopilot'a sor: «…»".
+- v1 **salt okuma**: `info.readOnly` istemcide her zaman true (rozet); backoffice yazma aracı yok.
+- Depolama: yalnız `{ open, width }` → `bo:chat:<yönetici sub>` (`prefs.ts`, backoffice'te depoya yazan tek dosya). Müşteri
+  anahtarları (`ek:chat:*`), mock bayrağı (`__EK_CHAT_MOCK__`) ve `/api/agent` backoffice kodunda geçmez (chat-storage.test.ts).
+- Geliştirme/test: sahte /admin-api açıkken mock taşıyıcı; Playwright `window.__BO_CHAT_MOCK__ = { config, speed }`. Bayraksız
+  otomasyonda sohbet kapalıdır (mevcut specler ve görsel tabanlar etkilenmez).
