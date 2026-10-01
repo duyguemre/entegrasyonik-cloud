@@ -53,7 +53,8 @@ describe('intakeRpcGuard', () => {
     });
     it('kapsam = yetenek kaydı: dış + pazaryeri etki alanı; hesap/faturalama hariç', async () => {
         const gated = CAPABILITIES.filter(c => c.external && rpcBindingsOf(c).some(b => isIntakeGatedRpc(...(b.rpc.split('/') as [string, string])).gated)).map(c => c.domain);
-        expect(new Set(gated)).toEqual(new Set(['integrations', 'orders', 'claims', 'invoices', 'shipments', 'messages']));
+        // PRC-R2: `pricing.suggestions.apply` (catalog, dış etkili: Trendyol fiyat yayını) da motor acil durdurmasına tabidir.
+        expect(new Set(gated)).toEqual(new Set(['integrations', 'orders', 'claims', 'invoices', 'shipments', 'messages', 'catalog']));
     });
     it('kod çözümü', async () => {
         expect(resolveIntegrationCodes({ integrationCode: 'a', selectedIntegrations: ['b'] })).toEqual(['a', 'b']);
