@@ -32,6 +32,7 @@ Amaç: Entegrasyonik'te HER modül/ekran/uç, işlevi kadar aşağıdaki **kesi�
 | B6 | **Kötüye kullanım** | Rate limit (IP+hesap), kaba kuvvet koruması, kayıt/parola sıfırlama numaralandırma yok, kota. |
 | B7 | **Denetim izi** | Güvenlik ve veri değiştiren eylemler `AuditLogs`'a (kim/ne/ne zaman/tenant), PII'siz; okunabilir ekran. Kapsam ve önce/sonra kuralı: F7. |
 | B8 | **KVKK / veri yaşam döngüsü** | Veri envanteri, dışa aktarma/silme/anonimleştirme, saklama süreleri (TTL), rıza kaydı, aydınlatma metinleri; canlı müşteri verisi maskeli (C13). |
+| B8a | **İstemci platformu / kullanım ölçümü** (MOB-08, K55) | Platform sınıfı yalnız `X-Client-Platform` (tek kaynak `@entegrasyonik/ui/platform` ↔ `platform/core/context/clientPlatform.ts`), UA yalnız sunucuda kaba yedek ve **saklanmaz**; kayıtlara yalnız sınıf (`desktop_web/electron/mobile_web/pwa/android_app/unknown`) girer. Aktif kullanım `UsageDaily` (gün+tenant+platform, takma kimlik `sha256(sub)`[:16], 180 gün TTL); IP/UA/ham kimlik yok; impersonation ve platform yöneticisi sayılmaz. Yeni kullanım boyutu bu kalıba uyar (`docs/API_BACKOFFICE_USAGE.md`). |
 | B9 | **Bağımlılık/lisans** | `npm audit` eşiği, lisans taraması (GPL/AGPL yasak; CKEditor kararı bekliyor), kullanılmayan bağımlılık temizliği. |
 | B10 | **Oturum/hesap** | Parola politikası, `tokenVersion` ile oturum iptali, 2FA yolu (P1), e-posta doğrulama. |
 
