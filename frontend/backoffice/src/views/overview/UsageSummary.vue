@@ -55,7 +55,7 @@ const stats = computed(() => {
     { key: 'active', label: 'Aktif müşteri', value: t.state === 'ok' ? nf.format(t.active) : null, hint: t.state === 'ok' ? `toplam ${nf.format(t.total)}` : '', to: tenants },
     { key: 'subs', label: 'Ücretli abonelik', value: m.state === 'ok' ? nf.format(m.activeSubscriptions) : null, hint: '', to: subs },
     { key: 'trialing', label: 'Denemede', value: m.state === 'ok' ? nf.format(m.trialing) : null, hint: '', to: subs },
-    { key: 'lost', label: 'Kaybedilen (30 gün)', value: m.state === 'ok' ? nf.format(m.lostLast30d) : null, hint: 'iptal ya da süresi dolan', to: subs },
+    { key: 'lost', label: 'Kayıp (30 gün)', value: m.state === 'ok' ? nf.format(m.lostLast30d) : null, hint: 'iptal / süre dolumu', to: subs },
   ]
 })
 

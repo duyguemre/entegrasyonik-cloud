@@ -35,6 +35,7 @@
       <BoTriageSection id="sistem" :index="1" question="Sistemde müdahale gereken var mı?" :health="sys.health" :answer="sys.answer" :more="{ label: 'Uyarılar', to: { name: 'alerts' } }">
         <BoAttentionList
           :items="sys.items"
+          :limit="narrow ? 2 : 5"
           :total="attention?.total.system ?? 0"
           :state="listState"
           :error="attentionError"
@@ -48,7 +49,7 @@
         />
       </BoTriageSection>
 
-      <BoTriageSection id="buyuk-resim" :index="2" question="Kullanım büyük resimde nasıl?" :health="big.health" :answer="big.answer" :calm="big.health === 'ok'">
+      <BoTriageSection id="buyuk-resim" :index="2" question="Kullanım büyük resimde nasıl?" :health="big.health" :answer="big.answer" :calm="big.health === 'ok'" lede="Son 24 saat; değişim 7 günlük ortalamaya göre.">
         <BoPanelState v-if="pulseState !== 'ready'" :state="pulseState" :error="pulseError" :rows="5" empty-title="Kullanım özeti henüz bağlı değil" empty-text="Sunucu bu özeti sağladığında trendler burada görünür. O zamana dek: Entegrasyonlar › API sağlığı." empty-icon="mdi-chart-line-variant" @retry="load" />
         <PulseTrends v-else-if="pulse" :model="pulse" />
       </BoTriageSection>
@@ -63,7 +64,7 @@
           :checks="attention?.checks.tenant ?? []"
           :degraded="attention?.degraded.tenant ?? []"
           list-label="Müşterilerde dikkat isteyenler"
-          :limit="4"
+          :limit="narrow ? 2 : 4"
           ok-title="Müşterilerde müdahale gereken bir şey yok"
           ok-text="Entegrasyon hatası, eşitleme gecikmesi, ödeme sorunu ya da bekleyen kurulum yok."
           unsupported-title="Müşteri denetimleri henüz bağlı değil"
@@ -134,14 +135,25 @@ async function load() {
   loading.value = false
 }
 
+// Mobilde (< 600 px) önce hüküm ve sayılar: listeler 2 maddeyle açılır (kritikler her zaman görünür).
+const narrow = ref(false)
+let mq: MediaQueryList | undefined
+const onMq = () => (narrow.value = !!mq?.matches)
+
 let timer: ReturnType<typeof setInterval> | undefined
 onMounted(() => {
+  mq = window.matchMedia('(max-width: 600px)')
+  onMq()
+  mq.addEventListener('change', onMq)
   void load()
   timer = setInterval(() => {
     if (document.visibilityState === 'visible') void load()
   }, REFRESH_MS)
 })
-onBeforeUnmount(() => clearInterval(timer))
+onBeforeUnmount(() => {
+  clearInterval(timer)
+  mq?.removeEventListener('change', onMq)
+})
 
 // ------------------------------------------------------------ türetilmiş durum
 const items = computed<AttentionItem[]>(() => (attention.value ? [...attention.value.items.system, ...attention.value.items.tenant] : []))

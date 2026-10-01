@@ -37,7 +37,7 @@ defineProps<{ model: PulseModel }>()
 
 .bo-pt__row {
   display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(56px, auto) minmax(0, 1.5fr) 72px;
+  grid-template-columns: minmax(0, 1.1fr) minmax(56px, auto) minmax(0, 1.5fr) 64px;
   align-items: center;
   gap: var(--ek-space-3);
   min-height: 44px;

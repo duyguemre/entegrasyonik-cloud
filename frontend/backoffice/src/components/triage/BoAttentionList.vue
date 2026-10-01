@@ -43,8 +43,7 @@
               <span v-if="it.count" class="bo-al__count ek-num">{{ it.count }}</span>
               <span v-if="it.since" class="bo-al__since"><EkRelativeTime :value="it.since" /> başladı</span>
             </p>
-            <p v-if="it.why" class="bo-al__why">{{ it.why }}<template v-if="it.impact"> {{ it.impact }}</template></p>
-            <p v-else-if="it.impact" class="bo-al__why">{{ it.impact }}</p>
+            <p v-if="it.why || it.impact" class="bo-al__why">{{ [it.why, it.impact].filter(Boolean).join(' ') }}</p>
             <ul v-if="it.subjects?.length" class="bo-al__subjects" :aria-label="`Etkilenen müşteriler: ${it.title}`">
               <li v-for="s in it.subjects.slice(0, 3)" :key="s.tid">
                 <RouterLink class="bo-al__tenant" :to="{ name: 'tenant', params: { tid: String(s.tid) } }">

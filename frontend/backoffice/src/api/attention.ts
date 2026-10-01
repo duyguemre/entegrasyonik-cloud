@@ -169,7 +169,8 @@ export function toItem(d: AttentionItemDto): AttentionItem {
     title: d.title,
     why: d.why,
     impact: d.impact,
-    count: d.count === null ? null : `${nf.format(d.count)}${d.countUnit ? ` ${d.countUnit}` : ''}`,
+    // Birimsiz sayı ("3") tek başına belirsiz — yalnız birimle gösterilir (başlık/why zaten sayıyı söyler).
+    count: d.count === null || !d.countUnit ? null : `${nf.format(d.count)} ${d.countUnit}`,
     advice: ADVICE[checkKey(d.id)],
     action: navs[0] ? { label: navs[0].label, to: routeOf(preferDetail(navs[0].target, d.subjects ?? [])) } : undefined,
     secondary: navs[1] ? { label: navs[1].label, to: routeOf(navs[1].target) } : undefined,
@@ -297,11 +298,11 @@ export function fromPulse(r: GetPulseResponse): PulseModel {
     const o = r.orders
     rows.push(
       o.computable && o.last24h !== null
-        ? { key: 'orders', label: 'İşlenen sipariş (24 sa)', value: nf.format(o.last24h), ...versus(o.last24h, o.previous24h, 'Önceki 24 saate'), series: o.hourly.length ? o.hourly.map((p) => p.count) : null, over: false, state: 'ok' }
-        : { key: 'orders', label: 'İşlenen sipariş (24 sa)', value: '—', note: `${NA_NOTE} — platform geneli sipariş sayacı yok`, series: null, over: false, state: 'na' },
+        ? { key: 'orders', label: 'İşlenen sipariş', value: nf.format(o.last24h), ...versus(o.last24h, o.previous24h, 'Önceki 24 saate'), series: o.hourly.length ? o.hourly.map((p) => p.count) : null, over: false, state: 'ok' }
+        : { key: 'orders', label: 'İşlenen sipariş', value: '—', note: `${NA_NOTE} (platform sipariş sayacı yok)`, series: null, over: false, state: 'na' },
     )
   } else {
-    rows.push(deg('orders', 'İşlenen sipariş (24 sa)'))
+    rows.push(deg('orders', 'İşlenen sipariş'))
     degraded.push('Siparişler')
   }
 
@@ -310,17 +311,17 @@ export function fromPulse(r: GetPulseResponse): PulseModel {
     const h = r.calls.http
     rows.push(
       h.computable && h.last24h !== null
-        ? { key: 'http', label: 'API isteği (24 sa)', value: nf.format(h.last24h), ...versus(h.last24h, h.last7d === null ? null : h.last7d / 7, '7 günlük ortalamaya'), series: h.hourly.map((p) => p.count), over: false, state: 'ok' }
-        : { key: 'http', label: 'API isteği (24 sa)', value: '—', note: NA_NOTE, series: null, over: false, state: 'na' },
+        ? { key: 'http', label: 'API isteği', value: nf.format(h.last24h), ...versus(h.last24h, h.last7d === null ? null : h.last7d / 7, '7 gün ortalamasına'), series: h.hourly.map((p) => p.count), over: false, state: 'ok' }
+        : { key: 'http', label: 'API isteği', value: '—', note: NA_NOTE, series: null, over: false, state: 'na' },
     )
     const i = r.calls.integration
     rows.push(
       i.computable && i.last24h !== null
-        ? { key: 'integration', label: 'Kanal çağrısı (24 sa)', value: nf.format(i.last24h), ...versus(i.last24h, i.last7d === null ? null : i.last7d / 7, '7 günlük ortalamaya'), series: null, over: false, state: 'ok' }
-        : { key: 'integration', label: 'Kanal çağrısı (24 sa)', value: '—', note: NA_NOTE, series: null, over: false, state: 'na' },
+        ? { key: 'integration', label: 'Kanal çağrısı', value: nf.format(i.last24h), ...versus(i.last24h, i.last7d === null ? null : i.last7d / 7, '7 gün ortalamasına'), series: null, over: false, state: 'ok' }
+        : { key: 'integration', label: 'Kanal çağrısı', value: '—', note: NA_NOTE, series: null, over: false, state: 'na' },
     )
   } else {
-    rows.push(deg('http', 'API isteği (24 sa)'), deg('integration', 'Kanal çağrısı (24 sa)'))
+    rows.push(deg('http', 'API isteği'), deg('integration', 'Kanal çağrısı'))
     degraded.push('Çağrı sayıları')
   }
 
@@ -332,17 +333,17 @@ export function fromPulse(r: GetPulseResponse): PulseModel {
     const rate = req ? err / req : null
     rows.push(
       h.computable && rate !== null
-        ? { key: 'http5xx', label: 'Sunucu hata oranı (5xx, 24 sa)', value: pct1(rate), note: `${nf.format(err)} hata · olağan eşik %5`, series: h.hourly.map((p) => p.rate ?? 0), over: rate >= 0.05, state: 'ok' }
-        : { key: 'http5xx', label: 'Sunucu hata oranı (5xx, 24 sa)', value: '—', note: NA_NOTE, series: null, over: false, state: 'na' },
+        ? { key: 'http5xx', label: 'Sunucu hata oranı (5xx)', value: pct1(rate), note: `${nf.format(err)} hata · eşik %5`, series: h.hourly.map((p) => p.rate ?? 0), over: rate >= 0.05, state: 'ok' }
+        : { key: 'http5xx', label: 'Sunucu hata oranı (5xx)', value: '—', note: NA_NOTE, series: null, over: false, state: 'na' },
     )
     const i = r.errorRate.integration
     rows.push(
       i.computable && i.last24h !== null
-        ? { key: 'intErr', label: 'Kanal hata oranı (24 sa)', value: pct1(i.last24h), note: `7 gün: ${i.last7d === null ? '—' : pct1(i.last7d)} · olağan eşik %20`, series: null, over: i.last24h >= 0.2, state: 'ok' }
-        : { key: 'intErr', label: 'Kanal hata oranı (24 sa)', value: '—', note: NA_NOTE, series: null, over: false, state: 'na' },
+        ? { key: 'intErr', label: 'Kanal hata oranı', value: pct1(i.last24h), note: `7 gün ${i.last7d === null ? '—' : pct1(i.last7d)} · eşik %20`, series: null, over: i.last24h >= 0.2, state: 'ok' }
+        : { key: 'intErr', label: 'Kanal hata oranı', value: '—', note: NA_NOTE, series: null, over: false, state: 'na' },
     )
   } else {
-    rows.push(deg('http5xx', 'Sunucu hata oranı (5xx, 24 sa)'), deg('intErr', 'Kanal hata oranı (24 sa)'))
+    rows.push(deg('http5xx', 'Sunucu hata oranı (5xx)'), deg('intErr', 'Kanal hata oranı'))
     degraded.push('Hata oranları')
   }
 

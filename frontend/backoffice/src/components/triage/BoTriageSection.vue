@@ -132,5 +132,12 @@ const tone = computed<StatusTone>(() => (props.calm ? 'neutral' : HEALTH_BADGE[p
   .bo-ts {
     padding: var(--ek-space-3) var(--ek-space-4);
   }
+
+  .bo-ts__q {
+    flex: 1 1 0;
+    min-width: 0;
+    font-size: var(--ek-type-body-size);
+    line-height: var(--ek-type-body-line);
+  }
 }
 </style>
