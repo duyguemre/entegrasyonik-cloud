@@ -7,7 +7,8 @@ import { join } from 'node:path'
 const tabs = readFileSync(join(__dirname, '..', 'packages/ui/src/components/EkWorkspaceTabs.vue'), 'utf8')
 const css = tabs.slice(tabs.indexOf('<style'))
 const rule = (selector: string) => {
-  const i = css.indexOf(`${selector} {`)
+  // Satır başındaki kural (FR3: `.ek-tab:not(.is-active) .ek-tab__close {` gibi daha özgül kurallarla karışmasın).
+  const i = css.indexOf(`\n${selector} {`)
   return i < 0 ? '' : css.slice(i, css.indexOf('}', i))
 }
 /** Sekmenin hover/odak durumlarını tanımlayan tüm kural blokları. */
@@ -33,9 +34,10 @@ describe('A12 — pasif sekme hover yalnız renk/opaklık', () => {
     expect(rule('.ek-tab.is-active .ek-tab__wash')).toMatch(/opacity: 0;\s*transition: none/)
   })
 
-  it('sekme zemini hover’da DEĞİŞMEZ (ışıma katmanı taşır) — hover metni muted → default, strong yalnız etkin', () => {
+  it('sekme zemini hover’da DEĞİŞMEZ (ışıma katmanı taşır) — FR3: pasif metin default, hover strong; yarı kalın yalnız etkin', () => {
     expect(css).not.toMatch(/\.ek-tab:hover,\s*\.ek-tab\.is-hover\s*\{[^}]*background/)
-    expect(css).toMatch(/\.ek-tab:not\(\.is-active\):hover,\s*\.ek-tab\.is-hover:not\(\.is-active\)\s*\{\s*color: var\(--ek-color-content-default\)/)
+    expect(rule('.ek-tab')).toContain('color: var(--ek-color-content-default)')
+    expect(css).toMatch(/\.ek-tab:not\(\.is-active\):hover,\s*\.ek-tab\.is-hover:not\(\.is-active\)\s*\{\s*color: var\(--ek-color-content-strong\)/)
   })
 })
 
@@ -49,10 +51,13 @@ describe('A12 — genişlik sabitliği', () => {
     expect(ghost).toContain('visibility: hidden')
   })
 
-  it('kapatma pasifte opaklıkla gizli (display/width ile değil) → yeri her zaman ayrılı', () => {
+  it('kapatma pasifte opaklıkla gizli (display/width ile değil); FR3: pasifte yer AYIRMAZ, solma bölgesinin üstünde belirir', () => {
     const close = rule('.ek-tab__close')
     expect(close).toContain('opacity: 0')
     expect(close).toContain('width: 20px')
+    const passive = css.slice(css.indexOf('.ek-tab:not(.is-active) .ek-tab__close {'))
+    expect(passive.slice(0, passive.indexOf('}'))).toContain('position: absolute')
+    expect(css).toMatch(/\.ek-tab:not\(\.is-active\) \.ek-tab__title \{[^}]*mask-image/)
   })
 })
 

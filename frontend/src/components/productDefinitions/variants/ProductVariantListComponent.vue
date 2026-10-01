@@ -671,7 +671,9 @@ td.pvl-vgroup { border-top: 0; border-bottom: 1px solid var(--ek-color-border-st
 
 .pvl-code,
 .pvl-mono {
-  font-family: var(--ek-font-mono);
+  /* FR3 madde 9: tabloda tek aile — kod da Inter (tabular rakam). */
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
   font-size: var(--ek-type-caption-size);
   line-height: var(--ek-type-caption-line);
   font-variant-numeric: tabular-nums;

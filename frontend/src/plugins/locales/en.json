@@ -350,7 +350,7 @@
   },
   "shell": {
     "favorites": {
-      "empty": "Star the screens you use most; they stay pinned here.",
+      "empty": "Screens you star are pinned here.",
       "add": "Add to favorites",
       "remove": "Remove from favorites",
       "added": "added to favorites",

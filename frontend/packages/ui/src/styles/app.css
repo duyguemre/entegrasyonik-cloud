@@ -124,6 +124,22 @@ html[data-theme='dark'] {
   font-variant-numeric: tabular-nums;
 }
 
+/* FR3 madde 9 — tablo hücresi metin rolleri (EkDataGrid / EkDataTable hücre slot'larında): birincil satır (ad, başlık)
+ * ve altındaki ikincil satır (açıklama, kod, zaman). Ekranlar hücrede kendi boyut/ağırlık/aile seçmez. */
+.ek-cell-primary {
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-table-size);
+  line-height: var(--ek-type-table-line);
+  font-weight: var(--ek-font-weight-medium);
+}
+
+.ek-cell-secondary {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+  font-weight: var(--ek-font-weight-regular);
+}
+
 /* DS-v2 — yalnızca ekran okuyucuya görünen metin (görsel olarak gizli). */
 .ek-sr-only {
   position: absolute;

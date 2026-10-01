@@ -21,12 +21,12 @@
           <ol class="ek-crumbs__list">
             <li v-if="section && view.showRoot" class="ek-crumbs__item ek-crumbs__item--root">
               <span class="ek-crumbs__chip ek-crumbs__chip--static">
-                <v-icon v-if="rootIcon" class="ek-crumbs__chip-icon" :icon="rootIcon" size="14" aria-hidden="true" />
+                <v-icon v-if="rootIcon" class="ek-crumbs__chip-icon" :icon="rootIcon" size="13" aria-hidden="true" />
                 <span class="ek-crumbs__text">{{ section }}</span>
               </span>
             </li>
             <li v-if="view.folded.length" class="ek-crumbs__item">
-              <span v-if="section && view.showRoot" class="ek-crumbs__sep" aria-hidden="true"><v-icon icon="mdi-chevron-right" size="16" /></span>
+              <span v-if="section && view.showRoot" class="ek-crumbs__sep" aria-hidden="true"><v-icon icon="mdi-chevron-right" size="14" /></span>
               <EkContextMenu :groups="foldedGroups" label="Üst sayfalar" location="bottom start" @select="onFolded">
                 <template #activator="{ props: menuProps }">
                   <button type="button" class="ek-crumbs__more ek-crumbs__chip" v-bind="menuProps"
@@ -37,16 +37,16 @@
               </EkContextMenu>
             </li>
             <li v-for="(crumb, i) in view.middle" :key="`${i}-${crumb.label}`" class="ek-crumbs__item">
-              <span v-if="(section && view.showRoot) || view.folded.length || i > 0" class="ek-crumbs__sep" aria-hidden="true"><v-icon icon="mdi-chevron-right" size="16" /></span>
+              <span v-if="(section && view.showRoot) || view.folded.length || i > 0" class="ek-crumbs__sep" aria-hidden="true"><v-icon icon="mdi-chevron-right" size="14" /></span>
               <button v-if="narrow && i === 0 && view.back" type="button" class="ek-crumbs__back ek-crumbs__chip" :aria-label="`Geri: ${view.back.label}`"
                 :title="`Geri: ${view.back.label}`" @click="view.back.onSelect?.()">
                 <v-icon :icon="icons.back" size="16" aria-hidden="true" />
               </button>
               <button v-if="crumb.onSelect" type="button" class="ek-crumbs__link ek-crumbs__chip" :title="crumb.label" @click="crumb.onSelect()">{{ crumb.label }}</button>
-              <span v-else class="ek-crumbs__text" :title="crumb.label">{{ crumb.label }}</span>
+              <span v-else class="ek-crumbs__text ek-crumbs__chip ek-crumbs__chip--static" :title="crumb.label">{{ crumb.label }}</span>
             </li>
             <li class="ek-crumbs__item ek-crumbs__item--current">
-              <span v-if="(section && view.showRoot) || view.folded.length || view.middle.length" class="ek-crumbs__sep" aria-hidden="true"><v-icon icon="mdi-chevron-right" size="16" /></span>
+              <span v-if="(section && view.showRoot) || view.folded.length || view.middle.length" class="ek-crumbs__sep" aria-hidden="true"><v-icon icon="mdi-chevron-right" size="14" /></span>
               <h1 class="ek-page-bar__title" aria-current="page" :title="title">{{ title }}</h1>
               <span v-if="record?.code" class="ek-record-id" :class="channelClass(record.channel)">
                 <span v-if="record.channel" class="ek-record-id__dot" aria-hidden="true"></span>
@@ -392,17 +392,25 @@ async function copyRecord() {
   text-overflow: ellipsis;
 }
 
+/* ---- FR3 madde 3 (fe-r3a, K49): NÖTR ÇİP geri geldi ----
+   Kök (bölüm) ve ara halkalar küçük nötr çip: hap yarıçapı, 1px `border-subtle`, `surface-muted` zemin, ikincil metin
+   (12/500) — vurgu rengi YOK. Bağlantı çipi hover'da yüzeye çıkar (zemin `surface`, kenarlık `border-strong`, metin
+   `content-strong`); kök statiktir (Karar 2.3). Bulunulan sayfa çip DEĞİL: hiyerarşinin tek güçlü noktası H1 — çipler
+   ondan küçük ve sakin olduğu için "yol" ile "buradasınız" ayrımı bir bakışta okunur. Durumlar geometri değiştirmez. */
 .ek-crumbs__chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: var(--ek-app-chip-h-md);
-  padding: 0 var(--ek-space-1);
-  border: 0;
-  border-radius: var(--ek-radius-sm);
-  background: transparent;
+  height: var(--ek-app-chip-h-sm);
+  padding: 0 var(--ek-space-2);
+  border: 1px solid var(--ek-color-border-subtle);
+  border-radius: var(--ek-radius-chip);
+  background: var(--ek-color-surface-muted);
   color: var(--ek-color-content-muted);
   font: inherit;
+  font-size: var(--ek-type-caption-size);
+  line-height: 1;
+  font-weight: var(--ek-font-weight-medium);
   white-space: nowrap;
   transition: var(--ek-transition-colors);
 }
@@ -410,14 +418,13 @@ async function copyRecord() {
 .ek-crumbs__chip--static {
   min-width: 0;
   max-width: 100%;
-  padding-left: 0;
 }
 
 /* Kök çip de kısalabilir (en son ara öğelerden sonra): dar satırda metin üç noktaya, en kötü ikon çipine iner —
    başlık ve eylemler üst üste binmez (800px'te arama alanı H1'in üstüne biniyordu). */
 .ek-crumbs__item--root {
   flex: 0 100 auto;
-  min-width: calc(var(--ek-app-chip-h-md) + var(--ek-space-2));
+  min-width: calc(var(--ek-app-chip-h-sm) + var(--ek-space-4));
 }
 
 .ek-crumbs__chip-icon {
@@ -433,9 +440,15 @@ async function copyRecord() {
 .ek-crumbs__sep {
   display: inline-flex;
   align-items: center;
-  margin: 0 2px;
-  color: var(--ek-color-border-strong);
+  margin: 0 var(--ek-space-1);
+  color: var(--ek-color-content-subtle);
   user-select: none;
+}
+
+/* Son ayraç (çip → başlık) biraz daha nefesli: "yol" biter, "buradasınız" başlar. */
+.ek-crumbs__item--current > .ek-crumbs__sep {
+  margin-left: var(--ek-space-1);
+  margin-right: var(--ek-space-1);
 }
 
 .ek-crumbs__link,
@@ -446,13 +459,13 @@ async function copyRecord() {
 
 .ek-crumbs__link {
   display: inline-block;
-  line-height: calc(var(--ek-app-chip-h-md) - 2px);
+  line-height: calc(var(--ek-app-chip-h-sm) - 2px);
 }
 
 .ek-crumbs__more,
 .ek-crumbs__back {
   justify-content: center;
-  width: var(--ek-app-chip-h-md);
+  width: calc(var(--ek-app-chip-h-sm) + var(--ek-space-2));
   padding: 0;
 }
 
@@ -461,26 +474,13 @@ async function copyRecord() {
   color: var(--ek-color-content-default);
 }
 
-/* Ara bağlantı: sessiz metin bağlantısı (FR2 madde 6 dili) — hover'da koyulaşır, 1px alt çizgi soldan dolar. */
-.ek-crumbs__link {
-  background-image: linear-gradient(currentColor, currentColor);
-  background-repeat: no-repeat;
-  background-position: var(--ek-space-1) calc(100% - 5px);
-  background-size: 0% 1px;
-  transition:
-    background-size var(--ek-motion-reveal),
-    color var(--ek-motion-feedback);
-}
-
-.ek-crumbs__link:hover {
-  color: var(--ek-color-content-strong);
-  background-size: calc(100% - 2 * var(--ek-space-1)) 1px;
-}
-
+/* Bağlantı çipi: hover'da yüzeye çıkar (nötr — vurgu rengi yok). */
+.ek-crumbs__link:hover,
 .ek-crumbs__more:hover,
 .ek-crumbs__back:hover,
 .ek-crumbs__more[aria-expanded='true'] {
-  background: var(--ek-color-surface-sunken);
+  border-color: var(--ek-color-border-strong);
+  background: var(--ek-color-surface);
   color: var(--ek-color-content-strong);
 }
 
@@ -499,7 +499,7 @@ async function copyRecord() {
   font-size: var(--ek-type-title-size);
   line-height: var(--ek-type-title-line);
   font-weight: var(--ek-type-title-weight);
-  letter-spacing: -0.01em;
+  letter-spacing: var(--ek-type-title-tracking);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

@@ -1354,7 +1354,7 @@
   },
   "shell": {
     "favorites": {
-      "empty": "Sık kullandığınız ekranları yıldızlayın; burada sabitlenir.",
+      "empty": "Yıldızladığınız ekranlar burada sabitlenir.",
       "add": "Favorilere ekle",
       "remove": "Favorilerden çıkar",
       "added": "favorilere eklendi",
