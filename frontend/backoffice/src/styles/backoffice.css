@@ -273,3 +273,24 @@ html.ek-theme-switching *::after {
     padding-inline: var(--ek-space-3);
   }
 }
+
+/* ---- BO-ELEV E6: sayfa içi süzgeç alanları tek boy ve tek punto ----
+   Vuetify'ın compact alanları (40 px, 16 px yazı) .bo-seg (38 px, 14 px) ve düğmelerle aynı göz hizasına çekilir.
+   Yalnız sayfa gövdesi (.bo-page) — giriş/diyalog formları etkilenmez. */
+.bo-page .v-input--density-compact {
+  --v-input-control-height: 38px;
+}
+
+.bo-page .v-input--density-compact .v-field {
+  --v-field-input-padding-top: 7px;
+  --v-field-input-padding-bottom: 7px;
+  font-size: var(--ek-type-label-size);
+}
+
+.bo-page .v-input--density-compact .v-field__input {
+  min-height: 38px;
+}
+
+.bo-page .v-input--density-compact .v-field-label:not(.v-field-label--floating) {
+  font-size: var(--ek-type-label-size);
+}

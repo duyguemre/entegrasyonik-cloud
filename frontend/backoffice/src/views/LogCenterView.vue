@@ -67,6 +67,16 @@
       </aside>
 
       <section class="bo-logs__main">
+        <p v-if="tid" class="bo-logs__scope" data-testid="tid-scope">
+          <span class="bo-logs__scope-chip">
+            <v-icon icon="mdi-storefront-outline" aria-hidden="true" />
+            Müşteri <RouterLink :to="`/musteriler/${tid}`" class="ek-num">#{{ tid }}</RouterLink>
+            <button type="button" class="bo-logs__scope-x" :aria-label="`Müşteri #${tid} süzgecini kaldır`" @click="tid = undefined">
+              <v-icon icon="mdi-close" aria-hidden="true" />
+            </button>
+          </span>
+          <span class="bo-logs__scope-note">Olay akışına uygulanır; sorun grupları platform genelidir.</span>
+        </p>
         <div class="bo-tabs">
           <div class="bo-tabs__list" role="tablist" aria-label="Görünüm">
           <button id="tab-issues" type="button" role="tab" class="bo-tab" :aria-selected="tab === 'issues'" aria-controls="panel-issues" @click="tab = 'issues'">
@@ -256,11 +266,16 @@ const ALL_SOURCES = Object.keys(SOURCE) as LogSource[]
 
 const route = useRoute()
 const router = useRouter()
+// URL süzgeçleri (genel bakış ve müşteri detayından iz sürme — BO-ELEV E1/E5): ?level=error,fatal · ?category= · ?tid=
+const queryList = <T extends string>(key: string, allowed: readonly T[]): T[] =>
+  typeof route.query[key] === 'string' ? (route.query[key] as string).split(',').filter((v): v is T => (allowed as readonly string[]).includes(v)) : []
+const queryTid = Number(route.query.tid)
+const tid = ref<number | undefined>(Number.isInteger(queryTid) && queryTid > 0 ? queryTid : undefined)
 const range = ref<LogRange>('24h')
-const tab = ref<'issues' | 'stream'>('issues')
+const tab = ref<'issues' | 'stream'>(tid.value ? 'stream' : 'issues')
 const sort = ref<'lastSeen' | 'count' | 'tenantCount' | 'new'>('lastSeen')
-const category = ref<LogCategory[]>([])
-const level = ref<LogLevel[]>([])
+const category = ref<LogCategory[]>(queryList('category', Object.keys(CATEGORY) as LogCategory[]))
+const level = ref<LogLevel[]>(queryList('level', ['fatal', 'error', 'warn', 'info'] as const))
 const src = ref<LogSource[]>([])
 const text = ref('')
 
@@ -283,7 +298,7 @@ const legacyShare = computed(() => {
   const total = Object.values(f).reduce((a, b) => a + (b ?? 0), 0)
   return total ? Math.round(((f['legacy-console'] ?? 0) / total) * 100) : 0
 })
-const filtered = computed(() => category.value.length + level.value.length + src.value.length > 0 || !!text.value)
+const filtered = computed(() => category.value.length + level.value.length + src.value.length > 0 || !!text.value || !!tid.value)
 
 function toggle<T>(list: T[], value: T) {
   const i = list.indexOf(value)
@@ -296,6 +311,7 @@ function clearFilters() {
   level.value = []
   src.value = []
   text.value = ''
+  tid.value = undefined
 }
 
 /** 12.345 → "12,3 bin" (Intl'in "B" kısaltması "milyar" sanılabiliyor). */
@@ -326,6 +342,7 @@ function streamFilter() {
     src: src.value.length ? src.value : undefined,
     category: category.value.length ? category.value : undefined,
     text: text.value?.trim() || undefined,
+    tid: tid.value,
     limit: 50,
   }
 }
@@ -370,6 +387,11 @@ function debouncedStream() {
 watch(range, loadAll)
 watch([category, level, src], () => Promise.all([loadIssues(), loadStream()]), { deep: true })
 watch(sort, loadIssues)
+watch(tid, (v) => {
+  const { tid: _tid, ...rest } = route.query
+  router.replace({ query: v ? { ...rest, tid: String(v) } : rest })
+  void loadStream()
+})
 
 async function openIssue(issue: IssueGroup) {
   selected.value = issue
@@ -404,6 +426,59 @@ onMounted(async () => {
 .bo-link:focus-visible {
   outline: 2px solid var(--ek-color-border-focus);
   outline-offset: 1px;
+}
+
+/* ---- müşteri kapsamı (?tid=) ---- */
+.bo-logs__scope {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ek-space-2) var(--ek-space-3);
+  margin: 0 0 var(--ek-space-3);
+}
+
+.bo-logs__scope-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  min-height: 28px;
+  padding: 0 var(--ek-space-1) 0 var(--ek-space-2);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-control);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-label-size);
+  font-weight: var(--ek-font-weight-medium);
+}
+
+.bo-logs__scope-chip .v-icon {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-icon-sm);
+}
+
+.bo-logs__scope-x {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: var(--ek-radius-sm);
+  background: none;
+  cursor: pointer;
+}
+
+.bo-logs__scope-x:hover {
+  background: var(--ek-color-surface-muted);
+}
+
+.bo-logs__scope-x:focus-visible {
+  outline: 2px solid var(--ek-color-border-focus);
+  outline-offset: 1px;
+}
+
+.bo-logs__scope-note {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
 }
 
 /* ---- kategori şeridi ---- */

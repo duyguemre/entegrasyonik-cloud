@@ -5,6 +5,8 @@
     2. Geri alınabilir mi?   → `reversible` + `reversibleNote`
     3. Kim etkilenir?        → `tenant` (mağaza adı + #no) ya da `scope` ("Tüm müşteriler", "Sipariş kuyruğu")
     4. Neden?                → gerekçe (≥10 karakter; denetim kaydına `meta.reason` olarak yazılır)
+  BO-ELEV (DA-1): ilk satır ORTAM'dır — üst bardaki rozet diyalog örtüsünün altında kalır; en kritik anda ortam diyalogda
+  görünür (Üretim kırmızı, Staging sarı).
   Kimlik doğrulama (step-up) durumu da gösterilir: son 5 dk içinde doğrulanmadıysa onayda parola + kod diyaloğu açılır
   (istemci `REAUTH_REQUIRED`'ı yakalar, isteği bir kez yeniler — bileşen bunu ayrıca yapmaz).
   Onay sonrası ekran `notifyAudited(...)` ile toast + "Denetim kaydını aç" bağlantısı gösterir.
@@ -30,6 +32,13 @@
   >
     <div class="bo-danger">
       <dl class="bo-danger__facts">
+        <div class="bo-danger__fact" :class="`is-env-${currentEnv.key}`" data-testid="danger-env">
+          <dt><v-icon :icon="currentEnv.icon" aria-hidden="true" />Ortam</dt>
+          <dd>
+            <EkStatusChip :tone="ENV_TONE[currentEnv.key]" :label="currentEnv.key === 'production' ? 'ÜRETİM' : currentEnv.label" dot />
+            <span class="bo-danger__note">{{ currentEnv.hint }}</span>
+          </dd>
+        </div>
         <div class="bo-danger__fact">
           <dt><v-icon icon="mdi-lightning-bolt-outline" aria-hidden="true" />Ne olacak</dt>
           <dd>
@@ -88,8 +97,11 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { EkDialog, EkStatusChip } from '@entegrasyonik/ui/components'
+import { EkDialog, EkStatusChip, type StatusTone } from '@entegrasyonik/ui/components'
 import { session } from '@bo/auth/session'
+import { currentEnv, type EnvKey } from '@bo/utils/env'
+
+const ENV_TONE: Record<EnvKey, StatusTone> = { production: 'danger', staging: 'warning', mock: 'info', local: 'neutral' }
 
 const REASON_MIN = 10
 const STEP_UP_MS = 5 * 60 * 1000
@@ -179,6 +191,19 @@ function confirm() {
   grid-template-columns: 150px minmax(0, 1fr);
   gap: var(--ek-space-3);
   padding: var(--ek-space-3) var(--ek-space-4);
+}
+
+/* Üretim/staging: ortam satırı üst kenarında renk şeridi (yalnız bu satır; diyalog sakin kalır). */
+.bo-danger__fact.is-env-production {
+  border-radius: var(--ek-radius-lg) var(--ek-radius-lg) 0 0;
+  background: var(--ek-color-error-subtle);
+  box-shadow: inset 3px 0 0 var(--ek-color-error);
+}
+
+.bo-danger__fact.is-env-staging {
+  border-radius: var(--ek-radius-lg) var(--ek-radius-lg) 0 0;
+  background: var(--ek-color-warning-subtle);
+  box-shadow: inset 3px 0 0 var(--ek-color-warning);
 }
 
 .bo-danger__fact + .bo-danger__fact {

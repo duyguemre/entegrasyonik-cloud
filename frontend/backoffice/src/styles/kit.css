@@ -186,3 +186,54 @@
     flex: 1 1 100%;
   }
 }
+
+/* ---- BO-ELEV (CONSOLE_IDENTITY ilke 2–3) ---- */
+
+/* Operasyon listeleri sıkı yoğunluk: EkDataTable satırı 36 px. Sarmalayıcıya (EkCard/div) verilir. */
+.bo-dense {
+  --ek-app-row-h: 36px;
+}
+
+/* Kimlik (iş, kayıt) — mono, zeminsiz; satırda tek satır kalır. */
+.bo-id {
+  color: var(--ek-color-content-strong);
+  font-family: var(--ek-font-mono);
+  font-size: var(--ek-type-caption-size);
+  white-space: nowrap;
+}
+
+/* Hata kodu bir KİMLİKTİR, durum değil: nötr kenarlıklı mono etiket (gökkuşağı rozet yok). Açıklama title'da. */
+.bo-code-tag {
+  display: inline-block;
+  padding: 0 6px;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-sm);
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-content-default);
+  font-family: var(--ek-font-mono);
+  font-size: var(--ek-type-micro-size);
+  line-height: 20px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/* Satır eylemleri: yıkıcı eylem ince ayraçla ayrılır, ancak üzerine gelince kırmızılaşır. */
+.bo-row-actions {
+  align-items: center;
+}
+
+.bo-row-actions__sep {
+  width: 1px;
+  height: 18px;
+  margin-inline: var(--ek-space-1);
+  background: var(--ek-color-border-default);
+}
+
+.bo-row-actions__danger:hover,
+.bo-row-actions__danger:focus-visible {
+  color: var(--ek-color-error-emphasis) !important;
+}
+
+.bo-cell-stack {
+  align-items: flex-start;
+}

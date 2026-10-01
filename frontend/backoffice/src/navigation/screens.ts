@@ -128,12 +128,13 @@ export const SCREENS: BoScreen[] = [
   },
   planned({
     key: 'lifecycle',
-    label: 'Yaşam döngüsü',
-    lede: 'Deneme, askı ve silme bekleyen hesaplar; silmeyi geri alma ve süre uzatma.',
+    // BO-ELEV IA-5: tek müşterinin yaşam döngüsü müşteri detayında hazır; bu planlı ekran ÇAPRAZ müşteri kuyruğudur.
+    label: 'Hesap kuyruğu',
+    lede: 'Deneme, askı ve silme bekleyen hesaplar tek listede; tek müşterinin yaşam döngüsü müşteri detayında.',
     icon: 'mdi-timeline-clock-outline',
     group: 'customers',
     path: '/musteriler/yasam-dongusu',
-    keywords: ['deneme', 'askı', 'silme'],
+    keywords: ['deneme', 'askı', 'silme', 'yaşam döngüsü'],
     plan: {
       items: ['Duruma göre hesap kuyruğu: deneme, ödeme gecikti, askıda, silme bekliyor', 'Silmeyi geri alma ve deneme uzatma (gerekçe + kimlik doğrulama)', 'Kurulum adımları ve takılan hesaplar'],
       endpoints: 'B2 · BackofficeTenantService',

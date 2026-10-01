@@ -85,7 +85,7 @@ test.describe('kabuk ve ekranlar', () => {
     const nav = page.getByRole('navigation', { name: 'Yönetim ekranları' })
     for (const [menu, heading, path] of [
       // bo-next sonrası hâlâ planlı olanlar (Abonelik, Motor, Altyapı, Yöneticiler, Platform ayarları, Bildirimler hazır).
-      [['Müşteriler', 'Yaşam döngüsü'], 'Yaşam döngüsü', '/musteriler/yasam-dongusu'],
+      [['Müşteriler', 'Hesap kuyruğu'], 'Hesap kuyruğu', '/musteriler/yasam-dongusu'],
       [['Destek talepleri'], 'Destek talepleri', '/musteriler/destek'],
     ] as const) {
       for (const label of menu) {

@@ -5,7 +5,7 @@
       <BoPageHeader :title="title" lede="" :extra-crumbs="[{ label: title }]" :updated-at="life.loadedAt.value ?? undefined">
         <template #status>
           <EkStatusChip v-if="life.data.value" :tone="TENANT_STATUS[life.data.value.status].tone" :label="TENANT_STATUS[life.data.value.status].label" dot />
-          <EkStatusChip v-if="life.data.value?.trial" :tone="SUB_STATUS[life.data.value.trial.subscriptionStatus].tone" :label="`${planLabel(life.data.value.trial.planCode)} · ${SUB_STATUS[life.data.value.trial.subscriptionStatus].label}`" />
+          <EkStatusChip v-if="life.data.value?.trial" :tone="SUB_STATUS[life.data.value.trial.subscriptionStatus].tone" :label="`Abonelik: ${planLabel(life.data.value.trial.planCode)} · ${SUB_STATUS[life.data.value.trial.subscriptionStatus].label}`" />
           <EkStatusChip v-if="life.data.value?.trial?.billingExempt" tone="neutral" label="Faturalamadan muaf" />
           <EkStatusChip v-if="session.active.value" tone="warning" icon="mdi-account-eye-outline" :label="`Destek oturumu açık · ~${session.text.value}`" data-testid="imp-session-chip" />
         </template>
@@ -45,7 +45,7 @@
       <EkPageTabs v-model="tab" :tabs="TABS" label="Müşteri bölümleri" />
 
       <template v-if="tab === 'ozet'">
-        <div class="bo-grid bo-tenant__grid">
+        <div class="bo-grid bo-tenant__grid bo-tenant__grid--summary">
           <EkCard title="Hesap" icon="mdi-storefront-outline">
             <EkDescriptionList v-if="client && life.data.value" :items="accountItems" />
             <StateBlock v-else :phase="life.phase.value === 'ready' ? 'loading' : life.phase.value" :error="life.error.value" skeleton="detail" :rows="3" @retry="life.load()" />
@@ -55,11 +55,27 @@
             <ul v-if="client?.integrations?.length" class="bo-tenant__channels">
               <li v-for="i in client.integrations" :key="i.integrationCode">
                 <EkChannelDot :code="i.integrationCode" :name="CHANNEL[i.integrationCode] ?? i.integrationCode" variant="plain" />
-                <span class="bo-muted">{{ i.type }}</span>
+                <span class="bo-muted">{{ channelTypeLabel(i.type) }}</span>
               </li>
             </ul>
             <p v-else-if="client" class="bo-muted">Bağlı kanal yok.</p>
             <EkSkeleton v-else type="detail" :rows="2" />
+          </EkCard>
+
+          <!-- BO-ELEV E5: "bu müşteride ne oluyor?" — her iz ekranına müşteri süzgeciyle tek tıkla. -->
+          <EkCard title="İz sür" subtitle="Bu müşteriye süzülmüş kayıtlar" icon="mdi-map-marker-path" class="bo-tenant__trace" data-testid="tenant-trace">
+            <ul class="bo-trace">
+              <li v-for="t in traceLinks" :key="t.label">
+                <RouterLink :to="t.to" class="bo-trace__link">
+                  <v-icon :icon="t.icon" class="bo-trace__icon" aria-hidden="true" />
+                  <span class="bo-trace__text">
+                    <span class="bo-trace__label">{{ t.label }}</span>
+                    <span class="bo-trace__hint">{{ t.hint }}</span>
+                  </span>
+                  <v-icon icon="mdi-arrow-right" class="bo-trace__go" aria-hidden="true" />
+                </RouterLink>
+              </li>
+            </ul>
           </EkCard>
         </div>
       </template>
@@ -150,7 +166,7 @@ import { useTabQuery } from '@bo/composables/useTabQuery'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import GuardedDialog from '@bo/components/kit/GuardedDialog.vue'
-import { CHANNEL, SUB_STATUS, TENANT_STATUS, planLabel } from '@bo/utils/labels'
+import { CHANNEL, SUB_STATUS, TENANT_STATUS, channelTypeLabel, planLabel } from '@bo/utils/labels'
 import { formatDate, formatDateTime, formatRelative } from '@bo/utils/format'
 import { notifyAudited } from '@bo/utils/toast'
 import '@bo/styles/kit.css'
@@ -161,6 +177,16 @@ const tid = Number(route.params.tid)
 const client = ref<ClientDto | null>(null)
 const clientLoaded = ref(false)
 const tab = useTabQuery(['ozet', 'yasam-dongusu'] as const, 'ozet')
+const traceLinks = computed(() => {
+  const q = { tid: String(tid) }
+  return [
+    { label: 'Olay akışı', hint: 'Log merkezi · bu müşterinin olayları', icon: 'mdi-pulse', to: { path: '/loglar', query: q } },
+    { label: 'Denetim kayıtları', hint: 'Kim, ne zaman, hangi gerekçeyle', icon: 'mdi-shield-search', to: { path: '/denetim', query: q } },
+    { label: 'Bildirim geçmişi', hint: 'Gönderilen e-posta ve uygulama içi bildirimler', icon: 'mdi-bell-outline', to: { path: '/bildirimler/musteri-gecmisi', query: q } },
+    { label: 'Abonelik', hint: 'Plan, deneme süresi, ödeme durumu', icon: 'mdi-card-account-details-outline', to: `/abonelikler/${tid}` },
+  ]
+})
+
 const TABS = [
   { value: 'ozet', label: 'Özet', icon: 'mdi-view-grid-outline' },
   { value: 'yasam-dongusu', label: 'Yaşam döngüsü', icon: 'mdi-timeline-clock-outline' },
@@ -299,6 +325,54 @@ const undo = useGuardedAction(
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
 }
+.bo-tenant__grid--summary > :first-child {
+  grid-row: span 2;
+}
+.bo-trace {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bo-trace li + li {
+  border-top: 1px solid var(--ek-color-border-subtle);
+}
+.bo-trace__link {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ek-space-3);
+  padding: var(--ek-space-2);
+  border-radius: var(--ek-radius-md);
+  color: var(--ek-color-content-default);
+  text-decoration: none;
+  transition: var(--ek-transition-colors);
+}
+.bo-trace__link:hover {
+  background: var(--ek-color-surface-muted);
+}
+.bo-trace__link:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--ek-color-border-focus);
+}
+.bo-trace__icon,
+.bo-trace__go {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-icon-sm);
+}
+.bo-trace__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.bo-trace__label {
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-label-size);
+  font-weight: var(--ek-font-weight-medium);
+}
+.bo-trace__hint {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+}
 .bo-tenant__channels,
 .bo-tenant__events {
   display: flex;
@@ -356,6 +430,9 @@ const undo = useGuardedAction(
 @media (max-width: 1023px) {
   .bo-tenant__grid {
     grid-template-columns: 1fr;
+  }
+  .bo-tenant__grid--summary > :first-child {
+    grid-row: auto;
   }
 }
 </style>

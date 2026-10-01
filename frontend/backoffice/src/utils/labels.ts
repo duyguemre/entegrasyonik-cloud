@@ -70,6 +70,18 @@ export const CHANNEL: Record<string, string> = {
   bizimhesap: 'Bizimhesap',
 }
 
+/** Kanal türü (Clients.integrations[].type) — ham enum ekranda gösterilmez (BO-ELEV ST-3). Bilinmeyen tür olduğu gibi. */
+export const CHANNEL_TYPE: Record<string, string> = {
+  MARKETPLACE: 'Pazaryeri',
+  ECOMMERCE: 'E-ticaret',
+  ERP: 'ERP',
+  EINVOICE: 'E-fatura',
+  CARGO: 'Kargo',
+  SHIPPING: 'Kargo',
+  PLATFORM: 'Platform',
+}
+export const channelTypeLabel = (t: string | undefined) => (t ? (CHANNEL_TYPE[t.toUpperCase()] ?? t) : '')
+
 /** Sağlık durumu → rozet (genel bakış kartları ve bölümler; BO_UI_PATTERNS §5). */
 export type HealthState = 'ok' | 'degraded' | 'fail' | 'unknown'
 export const HEALTH: Record<HealthState, { label: string; tone: StatusTone; icon: string }> = {

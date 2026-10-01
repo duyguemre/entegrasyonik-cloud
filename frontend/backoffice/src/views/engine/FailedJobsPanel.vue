@@ -17,7 +17,7 @@
 
     <EkAlert v-if="source === 'dlq'" tone="info" dense title="Ölü mektuplar salt okunur" text="Kalıcı hatalı ya da denemesi tükenmiş işler. Yeniden kuyruğa alma/silme kuralı (idempotency) henüz karara bağlanmadı; bu yüzden yalnız listelenir." />
 
-    <EkCard flush>
+    <EkCard flush class="bo-dense">
       <StateBlock
         :phase="list.phase.value"
         :error="list.error.value"
@@ -29,7 +29,7 @@
       >
         <EkDataTable v-if="source === 'bullmq'" :items="bullItems" :columns="BULL_COLUMNS" row-key="id">
           <template #cell-id="{ item }">
-            <span class="bo-cell-stack"><code class="bo-code">{{ item.id }}</code><span>{{ item.operation }}</span></span>
+            <code class="bo-id" :title="item.operation">{{ item.id }}</code>
           </template>
           <template #cell-tenantId="{ item }">
             <RouterLink v-if="item.tenantId" :to="`/musteriler/${item.tenantId}`" class="ek-num">#{{ item.tenantId }}</RouterLink>
@@ -40,23 +40,24 @@
             <span v-else class="bo-muted">—</span>
           </template>
           <template #cell-errorCode="{ item }">
-            <EkStatusChip :tone="codeInfo(item.errorCode).tone" :label="item.errorCode" :title="codeInfo(item.errorCode).text" />
+            <code class="bo-code-tag" :title="codeInfo(item.errorCode).text">{{ item.errorCode }}</code>
           </template>
           <template #cell-attempts="{ item }"><span class="ek-num">{{ item.attemptsMade }}/{{ item.maxAttempts }}</span></template>
           <template #cell-failedAt="{ item }">
-            <span class="bo-cell-stack"><span>{{ formatRelative(item.failedAt) }}</span><span class="ek-num">{{ formatDateTime(item.failedAt) }}</span></span>
+            <EkRelativeTime :value="item.failedAt" />
           </template>
           <template #cell-actions="{ item }">
             <span class="bo-row-actions">
-              <EkButton size="sm" tone="secondary" icon="mdi-replay" :aria-label="`${item.id} yeniden dene`" data-testid="retry" @click="retry.open(item as FailedBullJob)">Yeniden dene</EkButton>
-              <EkButton size="sm" tone="ghost" icon="mdi-delete-outline" icon-only :aria-label="`${item.id} sil`" data-testid="discard" @click="discard.open(item as FailedBullJob)" />
+              <EkButton size="sm" tone="ghost" icon="mdi-replay" :aria-label="`${item.id} yeniden dene`" data-testid="retry" @click="retry.open(item as FailedBullJob)">Yeniden dene</EkButton>
+              <span class="bo-row-actions__sep" aria-hidden="true"></span>
+              <EkButton class="bo-row-actions__danger" size="sm" tone="ghost" icon="mdi-delete-outline" icon-only :aria-label="`${item.id} sil`" data-testid="discard" @click="discard.open(item as FailedBullJob)" />
             </span>
           </template>
         </EkDataTable>
 
         <EkDataTable v-else :items="dlqItems" :columns="DLQ_COLUMNS" row-key="id">
           <template #cell-originalJobId="{ item }">
-            <span class="bo-cell-stack"><code class="bo-code">{{ item.originalJobId }}</code><span class="bo-mono">{{ item.id }}</span></span>
+            <code class="bo-id" :title="`Ölü mektup kaydı: ${item.id}`">{{ item.originalJobId }}</code>
           </template>
           <template #cell-tenantId="{ item }">
             <RouterLink v-if="item.tenantId" :to="`/musteriler/${item.tenantId}`" class="ek-num">#{{ item.tenantId }}</RouterLink>
@@ -65,12 +66,12 @@
           <template #cell-integrationCode="{ item }">
             <EkChannelDot v-if="item.integrationCode" :code="item.integrationCode" :name="CHANNEL[item.integrationCode] ?? item.integrationCode" variant="plain" />
           </template>
-          <template #cell-errorCode="{ item }"><EkStatusChip :tone="codeInfo(item.errorCode).tone" :label="item.errorCode" /></template>
+          <template #cell-errorCode="{ item }"><code class="bo-code-tag" :title="codeInfo(item.errorCode).text">{{ item.errorCode }}</code></template>
           <template #cell-dlqType="{ item }">{{ item.dlqType === 'FATAL_ERROR' ? 'Kalıcı hata' : 'Deneme tükendi' }}</template>
           <template #cell-status="{ item }">
             <EkStatusChip :tone="item.status === 'PENDING_MANUAL_REVIEW' ? 'warning' : 'neutral'" :label="item.status === 'PENDING_MANUAL_REVIEW' ? 'İnceleme bekliyor' : item.status" dot />
           </template>
-          <template #cell-failedAt="{ item }">{{ formatRelative(item.failedAt) }}</template>
+          <template #cell-failedAt="{ item }"><EkRelativeTime :value="item.failedAt" /></template>
         </EkDataTable>
         <LoadMore :count="list.items.value.length" :has-more="list.hasMore.value" :loading="list.loadingMore.value" :error="list.moreError.value" @more="list.loadMore()" />
       </StateBlock>
@@ -99,7 +100,8 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { EkAlert, EkButton, EkCard, EkChannelDot, EkDataTable, EkRefreshButton, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
+import { useRoute, useRouter } from 'vue-router'
+import { EkAlert, EkButton, EkCard, EkChannelDot, EkDataTable, EkRefreshButton, EkRelativeTime, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import type { DlqRecord, FailedBullJob, FailedJobSource } from '@bo/api/contract'
 import { useCursorList } from '@bo/composables/useCursorList'
@@ -109,7 +111,6 @@ import GuardedDialog from '@bo/components/kit/GuardedDialog.vue'
 import LoadMore from '@bo/components/kit/LoadMore.vue'
 import { CHANNEL } from '@bo/utils/labels'
 import { codeInfo } from '@bo/utils/codes'
-import { formatDateTime, formatRelative } from '@bo/utils/format'
 import { notify } from '@bo/utils/toast'
 import '@bo/styles/kit.css'
 
@@ -138,7 +139,14 @@ const DLQ_COLUMNS: EkTableColumn[] = [
 
 const queues = ref<string[]>([])
 const queue = ref<string>('')
-const source = ref<FailedJobSource>('bullmq')
+// ?kaynak=dlq — genel bakıştaki "elle inceleme bekliyor" bağlantısı doğrudan ölü mektuplara açılır.
+const route = useRoute()
+const router = useRouter()
+const source = ref<FailedJobSource>(route.query.kaynak === 'dlq' ? 'dlq' : 'bullmq')
+watch(source, (v) => {
+  const { kaynak: _k, ...rest } = route.query
+  router.replace({ query: v === 'dlq' ? { ...rest, kaynak: 'dlq' } : rest })
+})
 
 const list = useCursorList<FailedBullJob | DlqRecord>((cursor) =>
   api.call('BackofficeEngineService/listFailedJobs', { queue: queue.value, source: source.value, cursor, limit: 25 }),

@@ -10,18 +10,30 @@
     </BoPageHeader>
 
     <!-- Genel durum şeridi: tek bakışta "her şey yolunda mı?" -->
+    <!-- BO-ELEV: şerit bir hüküm verir; her madde bir sonraki adıma (ilgili ekran) bağlıdır. -->
     <div v-if="health" class="bo-ov-status" :class="`is-${overall.tone}`" role="status" data-testid="overall-status">
       <v-icon :icon="overall.icon" aria-hidden="true" />
       <div class="bo-ov-status__text">
         <strong>{{ overall.title }}</strong>
-        <span v-if="overall.items.length">{{ overall.items.join(' · ') }}</span>
+        <span v-if="overall.tone === 'success'">{{ overall.note }}</span>
       </div>
+      <ul v-if="overall.items.length" class="bo-ov-status__items" aria-label="Dikkat isteyen konular">
+        <li v-for="item in overall.items" :key="item.label">
+          <RouterLink :to="item.to" class="bo-ov-status__item" :class="`is-${item.tone}`">
+            <span class="bo-ov-status__dot" aria-hidden="true"></span>
+            <span>{{ item.label }}</span>
+            <span class="bo-ov-status__where">{{ item.where }}</span>
+            <v-icon icon="mdi-arrow-right" aria-hidden="true" />
+          </RouterLink>
+        </li>
+      </ul>
     </div>
     <BoPanelState v-else-if="healthError" state="error" :error="healthError" error-text="Sistem durumu okunamadı" :retrying="loading" @retry="load" />
 
     <section class="bo-ov-kpis" aria-label="Temel göstergeler">
       <HealthKpi
         label="Bağımlılıklar"
+        :to="'/altyapi'"
         icon="mdi-connection"
         :state="kpi.dependencies.state"
         :value="kpi.dependencies.value"
@@ -31,6 +43,7 @@
       />
       <HealthKpi
         label="İstek hızı"
+        :to="'/entegrasyonlar'"
         icon="mdi-speedometer"
         :state="kpi.rate.state"
         :value="kpi.rate.value"
@@ -41,6 +54,7 @@
       />
       <HealthKpi
         label="Hata oranı (5xx)"
+        :to="{ path: '/loglar', query: { level: 'fatal,error' } }"
         icon="mdi-alert-octagon-outline"
         :state="kpi.errors.state"
         :value="kpi.errors.value"
@@ -52,6 +66,7 @@
       />
       <HealthKpi
         label="Yanıt süresi (p95)"
+        :to="'/entegrasyonlar'"
         icon="mdi-timer-outline"
         :state="kpi.latency.state"
         :value="kpi.latency.value"
@@ -64,6 +79,7 @@
       />
       <HealthKpi
         label="Kuyruk birikimi"
+        :to="kpi.queues.to ?? '/motor'"
         icon="mdi-tray-full"
         :state="kpi.queues.state"
         :value="kpi.queues.value"
@@ -74,6 +90,7 @@
       />
       <HealthKpi
         label="Açık sorunlar"
+        :to="'/loglar'"
         icon="mdi-alert-decagram-outline"
         :state="kpi.issues.state"
         :value="kpi.issues.value"
@@ -216,6 +233,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import type { RouteLocationRaw } from 'vue-router'
 import { EkButton, EkCard, EkRelativeTime, EkStatusChip, type StatusTone } from '@entegrasyonik/ui/components'
 import { formatNumber, formatPercent } from '@entegrasyonik/ui/format'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
@@ -278,7 +296,7 @@ function degradedReason(key: OverviewSectionKey) {
   return s && s.status === 'degraded' ? s.error : undefined
 }
 
-type Kpi = { state: KpiState; value?: string; unit?: string; detail?: string; chip?: string }
+type Kpi = { state: KpiState; value?: string; unit?: string; detail?: string; chip?: string; to?: RouteLocationRaw }
 const LOADING: Kpi = { state: 'loading' }
 
 const kpi = computed(() => {
@@ -334,10 +352,12 @@ const kpi = computed(() => {
     queues = down.length
       ? { state: 'fail', value: '—', detail: 'Redis hazır değil — sayaçlar okunamıyor', chip: 'Erişilemiyor' }
       : {
-          state: backlog > 100 ? 'degraded' : 'ok',
+          // DLQ = elle müdahale bekleyen iş; sıfır değilse "sağlıklı" denmez (BO-ELEV IA-2).
+          state: backlog > 100 || dlq > 0 ? 'degraded' : 'ok',
           value: formatNumber(backlog),
           detail: `${formatNumber(failed)} başarısız · ${formatNumber(dlq)} DLQ bekliyor`,
-          chip: backlog > 100 ? 'Eşik üstü' : undefined,
+          chip: backlog > 100 ? 'Eşik üstü' : dlq > 0 ? 'İnceleme bekliyor' : undefined,
+          to: dlq > 0 ? { path: '/motor', query: { sekme: 'basarisiz', kaynak: 'dlq' } } : undefined,
         }
   }
 
@@ -364,22 +384,48 @@ const SECTION_LABEL: Record<OverviewSectionKey, string> = {
   issues: 'Sorun sayıları',
 }
 
+type StatusItem = { label: string; where: string; to: RouteLocationRaw; tone: 'error' | 'warning' }
+const SECTION_TARGET: Record<OverviewSectionKey, { where: string; to: RouteLocationRaw }> = {
+  dependencies: { where: 'Altyapı', to: '/altyapi' },
+  pods: { where: 'Altyapı', to: '/altyapi' },
+  red: { where: 'Entegrasyonlar', to: '/entegrasyonlar' },
+  queues: { where: 'Motor', to: '/motor' },
+  intake: { where: 'Dayanıklılık', to: { path: '/entegrasyonlar', query: { sekme: 'dayaniklilik' } } },
+  issues: { where: 'Loglar', to: '/loglar' },
+}
+
+/** Genel durum: hüküm + bağlantılı maddeler (önce kırmızı, sonra sarı). */
 const overall = computed(() => {
   const h = health.value!
-  const items: string[] = []
+  const k = kpi.value
+  const items: StatusItem[] = []
   if (h.dependencies.status === 'ok') {
-    if (h.dependencies.mongo === 'fail') items.push('MongoDB erişilemiyor')
-    if (h.dependencies.redis === 'fail') items.push('Redis erişilemiyor — sipariş kuyruğu durdu')
+    if (h.dependencies.mongo === 'fail') items.push({ label: 'MongoDB erişilemiyor', where: 'Altyapı', to: { path: '/altyapi', query: { sekme: 'mongodb' } }, tone: 'error' })
+    if (h.dependencies.redis === 'fail') items.push({ label: 'Redis erişilemiyor — sipariş kuyruğu durdu', where: 'Altyapı', to: '/altyapi', tone: 'error' })
   }
-  for (const k of h.degradedSections) items.push(`${SECTION_LABEL[k]} okunamadı`)
-  for (const [key, label] of [['errors', 'Hata oranı yüksek'], ['latency', 'Yanıt süresi yavaş']] as const) {
-    const s = kpi.value[key].state
-    if (s === 'degraded' || s === 'fail') items.push(label)
+  for (const s of h.degradedSections) items.push({ label: `${SECTION_LABEL[s]} okunamadı`, ...SECTION_TARGET[s], tone: 'warning' })
+  if (k.errors.state === 'degraded' || k.errors.state === 'fail')
+    items.push({ label: `Hata oranı ${k.errors.value}`, where: 'Loglar', to: { path: '/loglar', query: { level: 'fatal,error' } }, tone: k.errors.state === 'fail' ? 'error' : 'warning' })
+  if (k.latency.state === 'degraded' || k.latency.state === 'fail')
+    items.push({ label: `Yanıt süresi p95 ${k.latency.value} ${k.latency.unit ?? ''}`.trim(), where: 'Entegrasyonlar', to: '/entegrasyonlar', tone: k.latency.state === 'fail' ? 'error' : 'warning' })
+  if (h.queues.status === 'ok') {
+    const dlq = h.queues.items.reduce((n, x) => n + (x.dlqPending ?? 0), 0)
+    if (dlq > 0) items.push({ label: `${formatNumber(dlq)} iş elle inceleme bekliyor (DLQ)`, where: 'Motor', to: { path: '/motor', query: { sekme: 'basarisiz', kaynak: 'dlq' } }, tone: 'warning' })
   }
-  const bad = h.status === 'degraded' || items.length > 0
-  return bad
-    ? { tone: 'warning', icon: 'mdi-alert', title: h.dependencies.status === 'ok' && !h.dependencies.ready ? 'Kısmi bozulma' : 'Dikkat gerektiren durum var', items }
-    : { tone: 'success', icon: 'mdi-check-circle', title: 'Tüm sistemler çalışıyor', items: ['Bağımlılıklar hazır, hata oranı ve yanıt süresi olağan'] }
+  if (h.issues.status === 'ok' && h.issues.newLast24h > 0)
+    items.push({ label: `${formatNumber(h.issues.newLast24h)} yeni sorun (24 sa)`, where: 'Loglar', to: '/loglar', tone: 'warning' })
+  items.sort((a, b) => (a.tone === b.tone ? 0 : a.tone === 'error' ? -1 : 1))
+
+  if (!items.length && h.status !== 'degraded')
+    return { tone: 'success', icon: 'mdi-check-circle', title: 'Tüm sistemler çalışıyor', note: 'Bağımlılıklar hazır; hata oranı, yanıt süresi ve kuyruklar olağan.', items }
+  const critical = items.some((i) => i.tone === 'error')
+  const title =
+    h.dependencies.status === 'ok' && !h.dependencies.ready
+      ? 'Kısmi bozulma'
+      : items.length === 1
+        ? '1 konu dikkat istiyor'
+        : `${items.length} konu dikkat istiyor`
+  return { tone: critical ? 'error' : 'warning', icon: critical ? 'mdi-alert-octagon' : 'mdi-alert', title, note: '', items }
 })
 
 const deps = computed<Array<{ label: string; hint: string; state: HealthState; stateLabel?: string }>>(() => {
@@ -423,6 +469,74 @@ const auditState = computed<PanelState>(() => (audit.value === null ? (auditFail
   border-color: var(--ek-color-warning-border);
   background: var(--ek-color-warning-subtle);
   color: var(--ek-color-warning-emphasis);
+}
+
+.bo-ov-status.is-error {
+  border-color: var(--ek-color-error-border);
+  background: var(--ek-color-error-subtle);
+  color: var(--ek-color-error-emphasis);
+}
+
+.bo-ov-status:has(.bo-ov-status__items) {
+  flex-wrap: wrap;
+}
+
+/* Maddeler: sakin satır içi bağlantılar (yüzey üstünde), her biri hedef ekranın adını taşır. */
+.bo-ov-status__items {
+  display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  gap: var(--ek-space-2);
+  margin: 0;
+  padding: 0 0 0 calc(var(--ek-icon-lg) + var(--ek-space-3));
+  list-style: none;
+}
+
+.bo-ov-status__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  min-height: 32px;
+  padding: 0 var(--ek-space-3);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-control);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-label-size);
+  font-weight: var(--ek-font-weight-medium);
+  text-decoration: none;
+  transition: var(--ek-transition-colors);
+}
+
+.bo-ov-status__item:hover {
+  border-color: var(--ek-color-border-strong);
+}
+
+.bo-ov-status__item:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+}
+
+.bo-ov-status__dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: var(--ek-radius-full);
+  background: var(--ek-color-warning);
+}
+
+.bo-ov-status__item.is-error .bo-ov-status__dot {
+  background: var(--ek-color-error);
+}
+
+.bo-ov-status__where {
+  color: var(--ek-color-content-muted);
+  font-weight: var(--ek-font-weight-regular);
+}
+
+.bo-ov-status__item .v-icon {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-icon-sm);
 }
 
 .bo-ov-status > .v-icon {
@@ -783,9 +897,9 @@ const auditState = computed<PanelState>(() => (audit.value === null ? (auditFail
   }
 }
 
-@media (max-width: 420px) {
-  .bo-ov-kpis {
-    grid-template-columns: 1fr;
+@media (max-width: 600px) {
+  .bo-ov-status__items {
+    padding-left: 0;
   }
 }
 </style>

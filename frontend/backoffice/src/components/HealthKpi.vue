@@ -1,12 +1,18 @@
 <!--
   HealthKpi — genel bakış KPI kartı: mikro etiket + sağlık rozeti → metrik değer → tek satır bağlam → (isteğe bağlı)
   terim açıklaması. Bölüm getHealth'te düşmüşse (degraded) değer yerine "Okunamadı" + neden + Yeniden dene.
+  `to` verilirse kartın tamamı ayrıntı ekranına gider (BO-ELEV: her gösterge bir sonraki adıma bağlı); klavyede tek sekme
+  durağı etiketteki bağlantıdır, "Yeniden dene" bağlantının üstünde kalır.
 -->
 <template>
-  <article class="bo-kpi" :class="`is-${state}`" :aria-busy="state === 'loading' || undefined">
+  <article class="bo-kpi" :class="[`is-${state}`, { 'is-link': to }]" :aria-busy="state === 'loading' || undefined">
     <header class="bo-kpi__head">
       <v-icon class="bo-kpi__icon" :icon="icon" aria-hidden="true" />
-      <h3 class="bo-kpi__label">{{ label }}</h3>
+      <h3 class="bo-kpi__label">
+        <RouterLink v-if="to" :to="to" class="bo-kpi__link">{{ label }}<span class="ek-sr-only"> — ayrıntı</span></RouterLink>
+        <template v-else>{{ label }}</template>
+      </h3>
+      <v-icon v-if="to" class="bo-kpi__go" icon="mdi-arrow-right" aria-hidden="true" />
     </header>
     <template v-if="state === 'loading'">
       <span class="bo-kpi__skeleton bo-kpi__skeleton--value" aria-hidden="true"></span>
@@ -35,6 +41,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import type { RouteLocationRaw } from 'vue-router'
 import { EkStatusChip } from '@entegrasyonik/ui/components'
 import { HEALTH, type HealthState } from '@bo/utils/labels'
 
@@ -52,6 +59,8 @@ const props = defineProps<{
   /** Teknik terimin kısa açıklaması (ör. p95). */
   help?: string
   degradedReason?: string
+  /** Ayrıntı ekranı (kartın tamamı tıklanır). */
+  to?: RouteLocationRaw
 }>()
 defineEmits<{ retry: [] }>()
 
@@ -60,6 +69,7 @@ const chipState = computed<HealthState>(() => (props.state === 'section-degraded
 
 <style scoped>
 .bo-kpi {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-1);
@@ -176,6 +186,74 @@ const chipState = computed<HealthState>(() => (props.state === 'section-degraded
 .bo-kpi__retry:focus-visible {
   outline: none;
   box-shadow: var(--ek-focus-ring);
+}
+
+.bo-kpi.is-link {
+  transition: var(--ek-transition-colors);
+}
+
+.bo-kpi.is-link:hover {
+  border-color: var(--ek-color-border-strong);
+}
+
+.bo-kpi.is-link:has(.bo-kpi__link:focus-visible) {
+  box-shadow: var(--ek-focus-ring);
+}
+
+.bo-kpi__link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.bo-kpi__link:focus-visible {
+  outline: none;
+}
+
+/* Kartın tamamı tıklanır (bağlantı tek sekme durağı). */
+.bo-kpi__link::after {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  content: '';
+}
+
+.bo-kpi__go {
+  color: var(--ek-color-content-subtle);
+  font-size: var(--ek-icon-sm);
+  opacity: 0;
+  transition: opacity var(--ek-duration-fast) var(--ek-easing-standard);
+}
+
+.bo-kpi.is-link:hover .bo-kpi__go,
+.bo-kpi.is-link:has(.bo-kpi__link:focus-visible) .bo-kpi__go {
+  opacity: 1;
+}
+
+.bo-kpi__retry {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 600px) {
+  .bo-kpi {
+    padding: var(--ek-space-3);
+  }
+
+  .bo-kpi__value {
+    font-size: var(--ek-type-heading-size);
+    line-height: var(--ek-type-heading-line);
+  }
+
+  /* Terim açıklaması masaüstünde; dar ekranda önce sayılar. */
+  .bo-kpi__help {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bo-kpi__go {
+    transition: none;
+  }
 }
 
 .bo-kpi__skeleton {

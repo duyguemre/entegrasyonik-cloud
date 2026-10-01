@@ -57,9 +57,10 @@
             <RouterLink v-if="tidOf(item as AlertRow)" :to="`/musteriler/${tidOf(item as AlertRow)}`" class="ek-num bo-al__tid">#{{ tidOf(item as AlertRow) }}</RouterLink>
           </template>
           <template #cell-time="{ item }">
-            <span class="bo-cell-stack">
-              <span>{{ item.status === 'resolved' ? `çözüldü ${formatRelative((item as AlertRow).resolvedAt ?? undefined)}` : `başladı ${formatRelative((item as AlertRow).firstFiredAt)}` }}</span>
-              <span class="bo-muted">son görülme {{ formatRelative((item as AlertRow).lastSeenAt) }}</span>
+            <span class="bo-cell-stack bo-al__time">
+              <span v-if="item.status === 'resolved' && item.resolvedAt">Çözüldü <EkRelativeTime :value="(item as AlertRow).resolvedAt!" /></span>
+              <span v-else>Başladı <EkRelativeTime :value="(item as AlertRow).firstFiredAt" /></span>
+              <span>son görülme <EkRelativeTime :value="(item as AlertRow).lastSeenAt" /></span>
             </span>
           </template>
           <template #cell-actions="{ item }">
@@ -101,7 +102,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { EkAlert, EkButton, EkCard, EkDataTable, EkRefreshButton, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
+import { EkAlert, EkButton, EkCard, EkDataTable, EkRefreshButton, EkRelativeTime, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import type { AlertLevel, AlertRow, AlertStatus } from '@bo/api/contract'
 import { useCursorList } from '@bo/composables/useCursorList'
@@ -111,7 +112,7 @@ import StateBlock from '@bo/components/kit/StateBlock.vue'
 import LoadMore from '@bo/components/kit/LoadMore.vue'
 import GuardedDialog from '@bo/components/kit/GuardedDialog.vue'
 import { ALERT_LEVEL, ALERT_RULE, CHANNEL } from '@bo/utils/labels'
-import { formatDateTime, formatRelative } from '@bo/utils/format'
+import { formatDateTime } from '@bo/utils/format'
 import { notifyAudited } from '@bo/utils/toast'
 import '@bo/styles/kit.css'
 
@@ -214,6 +215,10 @@ onBeforeUnmount(() => clearInterval(poll))
 <style scoped>
 .bo-al__rule {
   font-weight: var(--ek-font-weight-medium);
+}
+/* Zaman sütunu kırılmaz (BO-ELEV TB-4): kısa göreli zaman + tek satır. */
+.bo-al__time > span {
+  white-space: nowrap;
 }
 .bo-al__chips {
   display: inline-flex;
