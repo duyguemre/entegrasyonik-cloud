@@ -57,8 +57,9 @@ function tenantActivity(tid: number, now: number, days: number): Activity[] {
       if (quiet && i >= keys.length - 10) return // son 10 günde etkinlik yok
       const r = hash(tid, u, i) % 100
       if (r < 62) out.push({ day, tid, user: u, platform: primary })
-      if (r % 7 === 0) out.push({ day, tid, user: u, platform: secondary })
-      if (r === 99) out.push({ day, tid, user: u, platform: 'unknown' })
+      // İkinci platform yalnız bazı kullanıcılarda ve seyrek; platformu belirlenemeyen istek çok seyrek (eski sürüm).
+      if (h % 3 === 0 && r % 11 === 0) out.push({ day, tid, user: u, platform: secondary })
+      if (u === 0 && tid % 5 === 0 && i % 13 === 0) out.push({ day, tid, user: u, platform: 'unknown' })
     })
   }
   return out

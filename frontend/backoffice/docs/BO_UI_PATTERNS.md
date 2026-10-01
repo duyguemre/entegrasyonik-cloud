@@ -253,3 +253,19 @@ menüde yaprak görünür. Duyuru alt sayfaları `DETAIL_ROUTES`: `/sistem/duyur
 
 **Sahte API (ek):** `failOps(prefix)` artık tüm operasyonlara uygulanır (oturum uçları hariç) — genel bakış yenileme
 hatası `failOps('BackofficeOverviewService/')` ile denenir.
+
+---
+
+## Ek — MOB-08 (kullanımda platform ayrımı) yapı taşları
+Sözleşme `docs/API_BACKOFFICE_USAGE.md`; karar K55. K51 sayfa hiyerarşisi (Durum → Karar → Eylem → Ayrıntı) kullanım bölümlerinde bu parçalarla kurulur.
+
+| Yapı taşı | Yer | Kural |
+|---|---|---|
+| `usageVerdict.ts` | `views/usage/` | SAF hüküm: `{tone, title, sentence, decisions[], actions[]}`. Eşikler yalnız burada (`UNKNOWN_SHARE_WARN` %20, `MOBILE_MAJORITY` %50, `INACTIVE_DAYS_WARN` 7). Okunamayan (degraded) ≠ "kullanım yok"; hesaplanamayan ayrı hüküm. Eylem ≤ 3, hepsi bağlantı. |
+| `UsageVerdictBlock` | `views/usage/` | Durum (h2 + tek cümle, `role=status`) → "Müdahale gerekir mi?" → "Ne yapılabilir?". < 768 px tek sütun. Ton sol kenar + ikon + metin (renk tek başına anlam taşımaz). |
+| `PlatformBreakdown` | `views/usage/` | Ana kırılım Masaüstü / Mobil (+ varsa Belirlenemedi) her zaman görünür; alt türler `<details>` içinde. `MeterList` (değer metin). |
+| `PlatformFilter` | `views/usage/` | `.bo-seg` Tümü/Masaüstü/Mobil + "Alt tür" seçimi; değer URL'de `?platform=` (`platformFromQuery`). Alt tür seçiliyken segmentte işaret yok. |
+| Etiketler | `utils/labels.ts` `PLATFORM_CLASS`, `CLIENT_PLATFORM` | Ekranda satır içi platform adı yazılmaz. Değer listesi `@entegrasyonik/ui/platform` (tek kaynak). |
+| `SeriesBars` `tone:'success'` | `components/kit/` | Kategorik ikinci seri (mobil); alarm anlamı yok. |
+
+**Sahte API kolu (ek):** `__boMock.setUsageEmpty(true)` → `getPulse.activeUsers` ve `getUsage.activeUsers` `computable:false`.
