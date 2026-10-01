@@ -133,8 +133,9 @@ const tone = computed<StatusTone>(() => (props.calm ? 'neutral' : HEALTH_BADGE[p
     padding: var(--ek-space-3) var(--ek-space-4);
   }
 
+  /* Soru kendi satırında (numarayla); cevap rozeti ve bağlantı alt satıra iner — üst üste binme yok. */
   .bo-ts__q {
-    flex: 1 1 0;
+    flex: 1 1 calc(100% - 22px - var(--ek-space-3));
     min-width: 0;
     font-size: var(--ek-type-body-size);
     line-height: var(--ek-type-body-line);

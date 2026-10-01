@@ -360,6 +360,8 @@ export function fromPulse(r: GetPulseResponse): PulseModel {
     const currency = Object.keys(m.currency)[0] ?? 'TRY'
     mrr = { state: 'ok', currency, minor: m.currency[currency] ?? 0, activeSubscriptions: m.activeSubscriptions, trialing: m.trialing, lostLast30d: m.lostLast30d }
   }
+  // Ölçülemeyen satırlar sona: büyük resim ölçülen değerlerle açılır.
+  rows.sort((a, b) => Number(a.state === 'na') - Number(b.state === 'na'))
   return { generatedAt: r.generatedAt, rows, usage: { tenants, mrr }, degraded }
 }
 

@@ -259,7 +259,8 @@ hatası `failOps('BackofficeOverviewService/')` ile denenir.
 ## 11. Sayfa deseni: Durum → Karar → Eylem → Ayrıntı (BO-R1, K51) — **TÜM sayfalar**
 Kaynak: kullanıcı geri bildirimi `docs/cloud-contracts/BO_FEEDBACK_R1_2026-10-01.md` (BO1-PAGES 6-7), karar K51. İlke:
 `elev/CONSOLE_IDENTITY.md` §1 "Önce karar, sonra veri". Konsol bilgi yığmaz, **yönlendirir**: her sayfa yukarıdan aşağı
-dört soruyu sırayla yanıtlar. Kaynak dal: `cloud/bo-r1a` (bileşenler + genel bakış); diğer sayfalara uygulama `cloud/bo-r1b`.
+dört soruyu sırayla yanıtlar. Kaynak dal: `cloud/bo-r1a` (bileşenler + genel bakış); diğer sayfalara uygulama `cloud/bo-r1b`. İnceleme kareleri:
+`docs/bo-r1a-review/` (`REVIEW.md`).
 
 | Katman | Soru | Bileşen | Kural |
 |---|---|---|---|
@@ -292,19 +293,24 @@ Bileşenler `src/components/triage/` altında (backoffice'e özgü; ortak pakete
 <BoAttentionList :items="entries" :state="state" :error="error" :checks="checks" :degraded="degraded"
   ok-title="Sistem tarafında müdahale gereken bir şey yok" list-label="Sistemde dikkat isteyenler" @retry="load" />
 ```
-- Madde (`AttentionEntry`): `{ id, severity, title, impact, advice, action: { label, to }, secondary?, since?, tenant? }`.
-  Her madde aynı sırayla üç soruyu yanıtlar: **Ne oldu** (`title`, özne + durum, sayı içerir) · **Ne kadar ciddi** (önem
-  rozeti + `impact`: kim/ne etkileniyor, eşik + `since`: "52 dk önce başladı") · **Ne yapmalı** (`advice`, tek cümle) +
-  **eylem** (`action.to`: hedef ekran + süzgeç önceden uygulanmış; yerinde yazma değil).
-- Sıra: `critical` → `warning` → `info`, aynı önemde eskiden yeniye (uzun sürenin önce görülmesi). Sunucu sıralı verse de
-  istemci `sortItems` ile garanti eder.
-- `limit` (5): fazlası "N madde daha göster (2 uyarı · 1 bilgi)"; **kritikler limitten bağımsız hep görünür**.
+- Madde (`AttentionEntry`, `triage.ts`): `{ id, severity, title, why?, impact?, count?, advice?, action?, secondary?,
+  capabilities?, since?, subjects? }`. Her madde aynı sırayla üç soruyu yanıtlar: **Ne oldu** (`title` + `why`) · **Ne
+  kadar ciddi** (önem metni ikonla + `count` "412 çağrı" + `impact` + `since` "52 dk önce başladı") · **Ne yapmalı**
+  (`advice`, tek cümle) + **eylem** (`action.to`: hedef ekran + süzgeç önceden uygulanmış; yerinde yazma değil).
+  `capabilities` (yerinde güvenli eylem önerisi, ör. "Hepsini yeniden dene") yalnız kilit ikonlu ipucu olarak çizilir;
+  akış ilgili ekranda `GuardedDialog` ile yapılır. `subjects` → nötr müşteri kimlikleri (ilk 3 + "+N müşteri").
+- Sıra: sayfanın verdiği sıra korunur (panoda sunucu sırası: ciddiyet → etki ağırlığı → eskiden yeniye). Sayfa kendi
+  verisinden liste kuruyorsa `critical` → `warning` → `info`, aynı önemde eskiden yeniye dizer.
+- `limit` (5; mobilde panoda 2): fazlası "N madde daha göster (2 uyarı · 1 bilgi)"; **kritikler limitten bağımsız hep
+  görünür**. `total` (sunucu toplamı) `items`'tan büyükse "Toplam N maddenin en önemli M tanesi gösteriliyor".
 - Kritik maddenin eylemi dolgu (`.bo-act-link.is-primary`), diğerleri sakin ikincil. Ekranda tek bir dolgu düğme hedeflenir.
 - Durumlar: `loading` (iskelet) · `error` (`BoPanelState` hata + Tekrar dene) · `unsupported` (uç yok — "henüz bağlı değil",
   uydurma veri YOK) · `ready` + boş → **her şey yolunda** (`okTitle` + `okText` + "Denetlenen: …") · `ready` + `degraded`
   dolu → sarı not "X okunamadı — liste eksik olabilir" + Yeniden dene (liste yine çizilir).
-- Müşteri kapsamlı maddede `tenant` → nötr kimlik (`#107 Örnek · Mağaza`, müşteri detayına bağlı); renkli rozet olmaz.
-- Metin kuralı: başlık ünlemsiz, enum yok; `impact` sayıyla; `advice` emir kipi değil "…kontrol edin" (siz dili).
+- Müşteri kapsamlı maddede `subjects` → nötr kimlik (`#107 Örnek · Mağaza`, müşteri detayına bağlı); renkli rozet olmaz.
+- Önem rengi yalnız ikon ve önem sözcüğünde ("Kritik"/"Uyarı"); ikon biçimi de farklıdır (sekizgen/üçgen/daire) — renk
+  tek taşıyıcı değil. Kritik maddenin eylemi dolgu, diğerleri sakin.
+- Metin kuralı: başlık ünlemsiz, enum yok; sayı birimiyle (birimsiz sayı gösterilmez); `advice` "…kontrol edin" (siz dili).
 
 ### 11.3 Eylem — `BoActionCard`
 ```vue
@@ -344,26 +350,34 @@ Bileşenler `src/components/triage/` altında (backoffice'e özgü; ortak pakete
 5. Hedef sayfalar gelen süzgeci okur (`?sekme=`, `?kaynak=`, `?tid=`, `?fp=`, `?level=`); okumuyorsa eklenir (§Ek BO-ELEV "İz
    bağlantıları"). Yeni okunan sorgu parametresi bu tabloya yazılır:
 
-| Hedef (ad) | Yol | Okunan süzgeç |
-|---|---|---|
-| `engine` | `/motor` | `sekme=kuyruklar|basarisiz|durum|zamanlanmis`, `kaynak=dlq` |
-| `integrations` | `/entegrasyonlar` | `sekme=saglik|dayaniklilik|katalog` |
-| `infra` | `/altyapi` | `sekme=redis|mongodb|yavas` |
-| `logs` | `/loglar` | `tid`, `level`, `category`, `reqId`, `fp` |
-| `alerts` | `/bildirimler/uyarilar` | — (bo-r1b: `?durum=firing` önerilir) |
-| `tenant` | `/musteriler/:tid` | `sekme=ozet|yasam-dongusu` |
-| `subscription` | `/abonelikler/:tid` | — |
-| `subscriptions` | `/abonelikler` | `sekme=abonelikler|gelir` (bo-r1b: `?durum=past_due|trialing|suspended` önerilir) |
+| Hedef | Yol | Okunan süzgeç (ekran) | Sözleşme (`API_BACKOFFICE_ATTENTION.md`) adı → çeviri (`src/api/attention.ts routeOf`) |
+|---|---|---|---|
+| `engine` | `/motor` | `sekme=kuyruklar|basarisiz|durum|zamanlanmis`, `kaynak=dlq` | `tab=queues|failed|state-machine|scheduled` → `sekme`; `source` → `kaynak` |
+| `integrations` | `/entegrasyonlar` | `sekme=saglik|dayaniklilik|katalog` | `tab=api-health|resilience|catalog` → `sekme`; `integrationCode`, `range` geçer (**bo-r1b: okunmalı**) |
+| `infra` | `/altyapi` | `sekme=redis|mongodb|yavas` | `tab=slow-queries` → `sekme=yavas`; `range` geçer |
+| `logs` | `/loglar` | `tid`, `level`, `category`, `reqId`, `fp` | `tab=issues` düşer (varsayılan sekme); `status=open` geçer (**bo-r1b**) |
+| `alerts` | `/bildirimler/uyarilar` | — | `status=firing`, `ruleId` geçer (**bo-r1b: okunmalı**) |
+| `tenant` | `/musteriler/:tid` | `sekme=ozet|yasam-dongusu` | tek müşterili öğe buraya yönlenir (aşağıda) |
+| `subscription` | `/abonelikler/:tid` | — | tek müşterili abonelik öğesi buraya yönlenir |
+| `subscriptions` | `/abonelikler` | `sekme=abonelikler|gelir` | `status=past_due|suspended|trialing`, `endingInDays` geçer (**bo-r1b: okunmalı**) |
+| `tenants` | `/musteriler` | — | `hasIssues=1` geçer (**bo-r1b: BE-01 `listTenants` ile okunmalı**) |
+| (yakında) | `/musteriler/yasam-dongusu`, `/musteriler/destek` | ekran planlı | `status=…`, `olderThanHours` — ekran gelene dek tek müşterili öğe müşteri detayına yönlenir |
+
+Tek müşterili öğe kuralı (`preferDetail`): `subjects` tek ise liste hedefi (`/abonelikler`, `/musteriler`,
+`/musteriler/yasam-dongusu`, `/musteriler/destek`) yerine o müşterinin kaydı açılır — tek tıkla doğru kayıt.
 
 6. Kontrol: ilk ekranda (1440 × 900 ve 390 × 844) hüküm + ilk dikkat maddesi + eylemi görünür mü? "Her şey yolunda"
    senaryosu da çizildi mi (sahte API'de sakin kol)? Axe açık/koyu 0.
 
-**Panodaki uygulama (bo-r1a):** genel bakış dört soruyu sırayla yanıtlar — 1 sistemde müdahale (getAttention `scope:system`),
-2 büyük resim (getPulse trendleri, sakin), 3 müşterilerde müdahale (`scope:tenant`), 4 genel kullanım (müşteri/gelir/kanal
-özeti); teknik ayrıntılar (bağımlılık/pod/kuyruk/alım/son yönetim işlemleri) katlanır. Veri tek adaptörden:
-`src/api/attention.ts` (`loadAttention`, `loadPulse`; uç yoksa `getHealth`'ten sistem maddeleri türetilir, müşteri bölümü
-"henüz bağlı değil"). Sözleşme: `docs/cloud-contracts/API_BACKOFFICE_ATTENTION.md` (gelene dek öneri:
-`frontend/backoffice/docs/ATTENTION_CONTRACT_PROPOSAL.md`).
+**Panodaki uygulama (bo-r1a):** genel bakış dört soruyu sırayla yanıtlar — 1 sistemde müdahale (getAttention
+`groups.system`), 2 büyük resim (getPulse: API isteği, kanal çağrısı, 5xx ve kanal hata oranı, sipariş — sakin), 3
+müşterilerde müdahale (`groups.customers`), 4 genel kullanım (müşteri/abonelik sayıları, MRR); teknik ayrıntılar
+(bağımlılık/pod/kuyruk/alım/son yönetim işlemleri) katlanır (`?ayrinti=teknik`). 1440'ta duvar düzeni (1|2 / 1|4 / 3|4;
+DOM sırası 1-2-3-4). Veri tek adaptörden: `src/api/attention.ts` (`loadAttention`, `loadPulse`; uç yoksa `getHealth`'ten
+sistem maddeleri türetilir, müşteri bölümü "henüz bağlı değil"). Sözleşme: `docs/cloud-contracts/API_BACKOFFICE_ATTENTION.md`.
+Metin (title/why/impact/eylem etiketi) sunucudandır; önyüz yalnız kontrol kimliğine göre "Ne yapmalı" ipucu ekler.
 
-**Sahte API (ek):** `__boMock.setCalm(true)` → "her şey yolunda" senaryosu (getAttention boş, getHealth olağan);
-`__boMock.setAttentionMissing(true)` → getAttention/getPulse 404 (eski backend; adaptör geri düşüşü).
+**Sahte API (ek):** `__boMock.setCalm(true)` → "her şey yolunda" (getAttention boş, getHealth olağan);
+`setAttentionDegraded(['circuits'])` → okunamayan kontrol (`status:'degraded'`); `setAttentionMissing(true)` →
+getAttention/getPulse 404 (eski backend; adaptör geri düşüşü). Sahte durum sayfa yenilemesinde sıfırlanır: kolu çekip
+"Yenile"ye basın (e2e: `r1a.spec.ts`).

@@ -243,10 +243,10 @@ const usageAnswer = computed(() => {
 .bo-ov-grid {
   display: grid;
   grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-  /* Duvar düzeni, DOM (okuma) sırası 1-2-3-4 korunarak: 1 ve 4 orta satırı paylaşır (esnek), böylece kısa bölümün
-     altında boşluk kalmaz — 3 hemen 1'in, 4 hemen 2'nin altından başlar. */
+  /* Duvar düzeni, DOM (okuma) sırası 1-2-3-4 korunarak: 1 ilk iki satırı, 4 son iki satırı kaplar; son satır esnek. Böylece
+     3 hemen 1'in, 4 hemen 2'nin altından başlar (kısa bölümün altında boşluk kalmaz). */
   grid-template-areas: 'sistem buyuk' 'sistem kullanim' 'musteriler kullanim';
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto auto 1fr;
   gap: var(--ek-space-4);
   align-items: start;
 }
