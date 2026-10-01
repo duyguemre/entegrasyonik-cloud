@@ -42,7 +42,21 @@
     </section>
 
     <div class="bo-logs">
-      <aside class="bo-facets" aria-label="Filtreler">
+      <!-- MOB-06: telefonda seviye/kaynak süzgeçleri katlanır — önce sorunlar (Durum → Karar), süzgeç istenince. -->
+      <button
+        type="button"
+        class="bo-facets-toggle"
+        :aria-expanded="facetsOpen"
+        aria-controls="bo-facets"
+        data-testid="facets-toggle"
+        @click="facetsOpen = !facetsOpen"
+      >
+        <v-icon icon="mdi-filter-variant" aria-hidden="true" />
+        <span>Seviye ve kaynak süzgeci</span>
+        <span v-if="facetCount" class="bo-facets-toggle__n ek-num">{{ facetCount }}</span>
+        <v-icon class="bo-facets-toggle__chev" :icon="facetsOpen ? 'mdi-chevron-up' : 'mdi-chevron-down'" aria-hidden="true" />
+      </button>
+      <aside id="bo-facets" class="bo-facets" :class="{ 'is-open': facetsOpen }" aria-label="Filtreler">
         <fieldset class="bo-facet">
           <legend>Seviye</legend>
           <label v-for="l in LEVELS" :key="l" class="bo-facet__opt" :class="`lvl-${l}`">
@@ -298,6 +312,8 @@ const legacyShare = computed(() => {
   const total = Object.values(f).reduce((a, b) => a + (b ?? 0), 0)
   return total ? Math.round(((f['legacy-console'] ?? 0) / total) * 100) : 0
 })
+const facetsOpen = ref(false)
+const facetCount = computed(() => level.value.length + src.value.length)
 const filtered = computed(() => category.value.length + level.value.length + src.value.length > 0 || !!text.value || !!tid.value)
 
 function toggle<T>(list: T[], value: T) {
@@ -1036,6 +1052,50 @@ onMounted(async () => {
   .bo-issue__spark,
   .bo-issue__num--tenants,
   .bo-issue__when {
+    display: none;
+  }
+}
+
+.bo-facets-toggle {
+  display: none;
+}
+
+@media (max-width: 767.98px) {
+  .bo-facets-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    width: 100%;
+    min-height: 44px;
+    padding: 0 var(--ek-space-3);
+    border: 1px solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-control);
+    background: var(--ek-color-surface);
+    color: var(--ek-color-content-strong);
+    font: inherit;
+    font-size: var(--ek-type-label-size);
+    font-weight: var(--ek-font-weight-medium);
+    cursor: pointer;
+  }
+
+  .bo-facets-toggle:focus-visible {
+    outline: 2px solid var(--ek-color-border-focus);
+    outline-offset: 1px;
+  }
+
+  .bo-facets-toggle__n {
+    padding: 0 var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-action);
+    color: var(--ek-color-action-contrast);
+    font-size: var(--ek-type-caption-size);
+  }
+
+  .bo-facets-toggle__chev {
+    margin-left: auto;
+  }
+
+  .bo-facets:not(.is-open) {
     display: none;
   }
 }

@@ -1,5 +1,6 @@
 import '@entegrasyonik/ui/styles'
 import './styles/backoffice.css'
+import './styles/mobile.css'
 import { createApp } from 'vue'
 import { createEkVuetify } from '@entegrasyonik/ui/theme'
 import App from './App.vue'

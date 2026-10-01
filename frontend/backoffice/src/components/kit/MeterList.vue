@@ -95,4 +95,16 @@ const pct = (v: number) => (v <= 0 ? 0 : Math.max(2, Math.min(100, (v / top.valu
   font-weight: var(--ek-font-weight-semibold);
   text-align: right;
 }
+/* MOB-06: telefonda (kart görünümünde dar hücre) satır iki kata ayrılır — etiket + değer üstte, çubuk tam genişlik altta;
+   değer kırpılmaz. */
+@media (max-width: 599.98px) {
+  .bo-meter__row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: var(--ek-space-1);
+  }
+  .bo-meter__track {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
 </style>

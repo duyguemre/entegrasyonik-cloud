@@ -1,0 +1,133 @@
+/* ---- MOB-06: backoffice telefon katmanı (360–430 px; kırılım < 768 px) ----
+   Masaüstü/tablet görünümü DEĞİŞMEZ (görsel tabanlar etkilenmez); kurallar yalnız bu ortam sorgusunun içindedir.
+   İlke: dokunmatik hedef ≥ 44 px (WCAG 2.5.5), yatay kaydırma yok, Durum → Karar → Eylem sırası korunur.
+   Seçiciler `#app` önekli: tembel yüklenen kit.css ve bileşen içi (scoped) stiller bu katmanı ezmesin.
+   Ayrıntı ve bulgular: docs/bo-mob-review/README.md. */
+
+@media (max-width: 767.98px) {
+  /* 1) Dokunmatik yoğunluk — kontrol boyu tokenları 44 px'e çıkar (EkButton, EkRefreshButton, menü öğesi, alanlar). */
+  :root {
+    --ek-control-h-sm: 44px;
+    --ek-control-h-md: 44px;
+    --ek-control-h-lg: 48px;
+    --ek-control-h-field: 44px;
+  }
+
+  /* Sayfa içi süzgeç alanları (E6: 38 px) → 44 px; 16 px yazı (odakta tarayıcı yakınlaştırması olmaz). */
+  #app .bo-page .v-input--density-compact {
+    --v-input-control-height: 44px;
+  }
+
+  #app .bo-page .v-input--density-compact .v-field {
+    --v-field-input-padding-top: 10px;
+    --v-field-input-padding-bottom: 10px;
+    font-size: 1rem;
+  }
+
+  #app .bo-page .v-input--density-compact .v-field__input {
+    min-height: 44px;
+  }
+
+  /* Segment, sekme, seçim kontrolleri */
+  #app .bo-seg__opt {
+    height: 44px;
+    min-width: 44px;
+  }
+
+  #app .bo-tab,
+  #app .v-tab.v-btn,
+  #app .v-slide-group__prev,
+  #app .v-slide-group__next {
+    min-height: 44px;
+  }
+
+  #app .v-slide-group__prev,
+  #app .v-slide-group__next {
+    min-width: 44px;
+    flex-basis: 44px;
+  }
+
+  #app .v-selection-control {
+    min-height: 44px;
+  }
+
+  /* Kabuk: atlama bağlantısı, çekmece menüsü ve alt ipucu */
+  #app .bo-skip:focus {
+    min-height: 44px;
+  }
+
+  #app .ek-side__item,
+  #app .bo-shell__hint {
+    min-height: 44px;
+  }
+
+  /* 2) Satır içi küçük hedefler (kimlik bağlantıları, kopyala, aç/kapa, “tümü →” bağlantıları):
+     yerleşimi büyütmeden dokunma alanı 44 × 44'e genişletilir (görünmez ::after). Komşu hedefle çakışırsa
+     DOM'da sonraki kazanır; bu yüzden yalnız tek başına duran hedeflere uygulanır. */
+  #app .ek-copy,
+  #app .bo-ph__crumb-link,
+  #app .bo-audit__req,
+  #app .bo-audit__tenant,
+  #app .bo-audit__toggle,
+  #app .bo-al__tid,
+  #app .bo-tenants__name,
+  #app .bo-link-more,
+  #app .bo-ov-audit__open,
+  #app .bo-ov-status__item,
+  #app .bo-series__toggle,
+  #app .bo-logs__scope-x,
+  #app .bo-link,
+  #app .bo-link-btn,
+  #app .bo-sd__tid,
+  #app .ek-chat-setup__help,
+  #app .bo-hit {
+    position: relative;
+  }
+
+  #app .ek-copy::after,
+  #app .bo-ph__crumb-link::after,
+  #app .bo-audit__req::after,
+  #app .bo-audit__tenant::after,
+  #app .bo-audit__toggle::after,
+  #app .bo-al__tid::after,
+  #app .bo-tenants__name::after,
+  #app .bo-link-more::after,
+  #app .bo-ov-audit__open::after,
+  #app .bo-ov-status__item::after,
+  #app .bo-series__toggle::after,
+  #app .bo-logs__scope-x::after,
+  #app .bo-link::after,
+  #app .bo-link-btn::after,
+  #app .bo-sd__tid::after,
+  #app .ek-chat-setup__help::after,
+  #app .bo-hit::after {
+    content: '';
+    position: absolute;
+    top: min(0px, calc((100% - 44px) / 2));
+    bottom: min(0px, calc((100% - 44px) / 2));
+    left: min(0px, calc((100% - 44px) / 2));
+    right: min(0px, calc((100% - 44px) / 2));
+  }
+
+  /* Log merkezinde süzgeç seçenekleri tam satır dokunma alanı */
+  #app .bo-facet__opt {
+    min-height: 44px;
+  }
+}
+
+/* 3) Ölçü kartları telefonda iki sütun — dört sayı tek ekranda (Durum bir bakışta), kart iç boşluğu sıkı. */
+@media (max-width: 599.98px) {
+  #app .bo-health__kpis,
+  #app .bo-redis__kpis,
+  #app .bo-mongo__kpis,
+  #app .bo-cache__kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--ek-space-3);
+  }
+
+  #app .ek-metric {
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-3);
+  }
+}
