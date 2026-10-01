@@ -52,7 +52,7 @@ ritmini bozuyordu (iki gri bölüm art arda); albeni yerleşimle değil vitrinin
 3. **Bütün sayfa (it3).** Kapanış çiplerinde "Şifreli anahtar saklama / Verileriniz yalnızca size ait" tekrarı (N3 "her güvenlik
    iddiası bir kez") → kaldırıldı. `/ozellikler` küme numaraları ve "N yetenek" sayacı `pages.test` "görünür metinde sabit rakam yok"
    kuralına takıldı → numaralar CSS sayacıyla çiziliyor, sayaç kaldırıldı (kural gevşetilmedi).
-4. **Birleştirme.** s27b ile çakışma yok. s27b'nin `fiyatlandirma.astro`'sunda ad sabiti yerine düz "Otopilot" yazılmıştı
+4. **Birleştirme (iki kez).** s27b ile çakışma yok; s27b'nin kapanış commit'leri (N1/N2/N10, fiyat 3. iterasyon, README) ikinci birleştirmeyle alındı, testler birleşik durumda yeniden koşuldu. s27b'nin `fiyatlandirma.astro`'sunda ad sabiti yerine düz "Otopilot" yazılmıştı
    (`agent-claims.test` S22 kuralı kırmızı) → iki satır `${AGENT_BRAND}` yapıldı. Anasayfa planları s27b'nin `getPlanCards()`
    kaydına bağlandı; taslak notu s27b'nin N4 varsayılanını izliyor (görünür ziyaretçi dili, iç kayıt `data-proposal-notice`).
 
