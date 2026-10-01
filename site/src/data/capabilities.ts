@@ -208,7 +208,7 @@ export const productCapabilities: ProductCapability[] = [
   {
     id: 'secrets-masked',
     group: 'security',
-    title: 'Anahtarlar arayüzde ve API yanıtlarında gösterilmez',
+    title: 'Anahtarlar ekranlarda açık gösterilmez',
     summary: 'Kaydedilmiş entegrasyon anahtarları arayüze ve API yanıtlarına maskelenmiş olarak döner.',
     status: 'available',
     evidence: [evidence('backend/src/platform/core/security/responseSanitizer.ts', 'responseSanitizer maskeleme', 'sensitive')],
