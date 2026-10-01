@@ -5,7 +5,7 @@
         <h2 id="bo-subs-title" class="bo-panel__title">Abonelikler</h2>
         <p class="bo-panel__hint">En yeni kayıt önce. Bir müşteriyi seçerek plan, olaylar ve yönetim eylemlerini görürsünüz.</p>
       </div>
-      <EkRefreshButton :loading="list.refreshing.value || list.phase.value === 'loading'" @refresh="list.reload({ keep: true })" />
+      <EkRefreshButton quiet-success :loading="list.refreshing.value || list.phase.value === 'loading'" @refresh="list.reload({ keep: true })" />
     </header>
 
     <div class="bo-toolbar">
@@ -65,7 +65,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { EkButton, EkCard, EkDataTable, EkRefreshButton, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import type { SubscriptionRow, SubscriptionStatus } from '@bo/api/contract'
@@ -92,8 +93,19 @@ const STATUS_ITEMS = [
 ]
 const PLAN_ITEMS = [{ title: 'Tüm planlar', value: '' }, ...Object.entries(PLAN).map(([value, title]) => ({ title, value }))]
 
-const status = ref<SubscriptionStatus | ''>('')
-const plan = ref('')
+// Süzgeçler URL'de (?durum= ?plan=): hüküm bağlantıları ve paylaşılan görünüm aynı listeyi açar.
+const route = useRoute()
+const router = useRouter()
+const queryRef = <T extends string>(key: string, valid: (v: string) => boolean, fallback: T) =>
+  computed<T>({
+    get: () => {
+      const v = route.query[key]
+      return typeof v === 'string' && valid(v) ? (v as T) : fallback
+    },
+    set: (v) => void router.replace({ query: { ...route.query, [key]: v || undefined } }),
+  })
+const status = queryRef<SubscriptionStatus | ''>('durum', (v) => v in SUB_STATUS, '')
+const plan = queryRef<string>('plan', (v) => v in PLAN, '')
 const filtered = computed(() => !!status.value || !!plan.value)
 
 const list = useCursorList<SubscriptionRow>((cursor) =>
@@ -110,8 +122,8 @@ function cardLabel(s: SubscriptionRow) {
   return s.cardLast4 ? `${(s.cardBrand ?? 'kart').toLocaleUpperCase('tr')} •••• ${s.cardLast4}` : ''
 }
 function clearFilters() {
-  status.value = ''
-  plan.value = ''
+  // Tek geçişte: iki ayrı replace eski sorguyu üst üste yazar.
+  void router.replace({ query: { ...route.query, durum: undefined, plan: undefined } })
 }
 
 watch([status, plan], () => list.reload())

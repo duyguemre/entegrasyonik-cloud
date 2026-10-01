@@ -3,7 +3,7 @@
     <EkEmptyState v-if="res.phase.value === 'notFound'" variant="no-results" title="Abonelik bulunamadı" :message="`#${tid} numaralı müşterinin aboneliği yok ya da kaldırılmış.`" />
     <StateBlock v-else-if="!sub" :phase="res.phase.value" :error="res.error.value" skeleton="detail" :rows="4" degraded-title="Abonelik şu an okunamıyor" @retry="res.load()" />
     <template v-else>
-      <BoPageHeader :title="title" lede="" :extra-crumbs="[{ label: title }]" :updated-at="res.loadedAt.value ?? undefined">
+      <BoPageHeader :title="title" lede="" :extra-crumbs="[{ label: title }]" :updated-at="res.loadedAt.value ?? undefined" :stale="res.stale.value">
         <template #status>
           <EkStatusChip :tone="SUB_STATUS[sub.status].tone" :label="SUB_STATUS[sub.status].label" dot />
           <EkStatusChip v-if="sub.billingExempt" tone="neutral" label="Faturalamadan muaf" />
@@ -13,11 +13,11 @@
           <RouterLink :to="`/musteriler/${tid}`" class="bo-sd__tid ek-num" data-testid="tenant-link">Müşteri #{{ tid }}</RouterLink>
         </template>
         <template #actions>
-          <EkRefreshButton :loading="res.refreshing.value" @refresh="res.load()" />
+          <EkButton tone="secondary" icon="mdi-refresh" :loading="res.refreshing.value" data-page-refresh @click="res.load()">Yenile</EkButton>
         </template>
       </BoPageHeader>
 
-      <EkAlert v-if="res.stale.value && res.error.value" tone="warning" title="Güncel veri alınamadı" :text="res.error.value.message" />
+      <PageVerdict :verdict="verdict" />
 
       <div class="bo-grid-2">
         <EkCard title="Özet" icon="mdi-card-account-details-outline">
@@ -53,7 +53,7 @@
         </EkCard>
       </div>
 
-      <EkCard title="Yönetim eylemleri" subtitle="Her eylem gerekçe ve kimlik doğrulaması ister; denetim kaydına yazılır." icon="mdi-shield-edit-outline">
+      <EkCard id="yonetim-eylemleri" title="Yönetim eylemleri" subtitle="Her eylem gerekçe ve kimlik doğrulaması ister; denetim kaydına yazılır." icon="mdi-shield-edit-outline">
         <ul class="bo-sd__actions">
           <li>
             <EkButton tone="secondary" :icon="reopen ? 'mdi-restore' : 'mdi-timer-plus-outline'" :disabled="!!extendWhy" data-testid="extend-trial" @click="openExtend">{{ reopen ? 'Denemeyi yeniden aç' : 'Denemeyi uzat' }}</EkButton>
@@ -122,6 +122,7 @@
       :description="title"
       icon="mdi-cancel"
       danger
+      :confirm-text="String(tid)"
       :items="cancelItems"
       confirm-label="Aboneliği iptal et"
       confirm-icon="mdi-cancel"
@@ -137,9 +138,11 @@
 
 <script setup lang="ts">
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
-import { computed, onMounted, ref } from 'vue'
+import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
+import { CANCEL_HASH, subscriptionDetailVerdict } from './billingVerdict'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { EkAlert, EkButton, EkCard, EkEmptyState, EkRefreshButton, EkStatusChip } from '@entegrasyonik/ui/components'
+import { EkAlert, EkButton, EkCard, EkEmptyState, EkStatusChip } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import type { GetSubscriptionResponse } from '@bo/api/contract'
 import { useResource } from '@bo/composables/useResource'
@@ -298,6 +301,37 @@ function openCancel() {
   atPeriodEnd.value = !cancelLocal.value
   cancel.open(tid)
 }
+
+// Hüküm: abonelik + olaylar tek okumadan; yazma eylemleri aşağıdaki GuardedDialog'ları açar.
+const verdict = computed(() =>
+  sub.value || (res.phase.value !== 'loading' && res.phase.value !== 'notFound')
+    ? subscriptionDetailVerdict({
+        tid,
+        sub: sub.value,
+        events: res.data.value?.events ?? [],
+        failed: res.data.value === null,
+        stale: res.stale.value,
+        retry: () => void res.load(),
+        why: { extend: extendWhy.value, change: changeWhy.value, cancel: cancelWhy.value },
+        reopen: reopen.value,
+        openExtend,
+        openChange,
+        openCancel,
+      })
+    : null,
+)
+
+// Hükümdeki "Aboneliği iptal et" (danger) eylemi yalnız buraya götürür: yönetim eylemleri kartına kaydırır, iptal düğmesine odaklanır.
+watch(
+  () => [route.hash, sub.value?.tid],
+  async () => {
+    if (route.hash !== CANCEL_HASH || !sub.value) return
+    await nextTick()
+    document.getElementById('yonetim-eylemleri')?.scrollIntoView({ block: 'center' })
+    document.querySelector<HTMLElement>('[data-testid="cancel-sub"]')?.focus()
+  },
+  { immediate: true },
+)
 
 onMounted(() => res.load())
 </script>

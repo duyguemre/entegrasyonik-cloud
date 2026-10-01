@@ -2,9 +2,9 @@
   <div class="bo-page">
     <EkEmptyState v-if="notFound" variant="no-results" title="Müşteri bulunamadı" :message="`#${tid} numaralı kayıt yok ya da kaldırılmış.`" />
     <template v-else>
-      <BoPageHeader :title="title" lede="" :extra-crumbs="[{ label: title }]" :updated-at="life.loadedAt.value ?? undefined">
+      <BoPageHeader :title="title" lede="" :extra-crumbs="[{ label: title }]" :updated-at="life.loadedAt.value ?? undefined" :stale="life.stale.value">
         <template #status>
-          <EkStatusChip v-if="life.data.value" :tone="TENANT_STATUS[life.data.value.status].tone" :label="TENANT_STATUS[life.data.value.status].label" dot />
+          <EkStatusChip v-if="life.data.value" :tone="TENANT_STATUS[life.data.value.status].tone" :label="life.data.value.status === 'DELETION_PENDING' ? 'Silme talebi bekliyor' : TENANT_STATUS[life.data.value.status].label" dot />
           <EkStatusChip v-if="life.data.value?.trial" :tone="SUB_STATUS[life.data.value.trial.subscriptionStatus].tone" :label="`Abonelik: ${planLabel(life.data.value.trial.planCode)} · ${SUB_STATUS[life.data.value.trial.subscriptionStatus].label}`" />
           <EkStatusChip v-if="life.data.value?.trial?.billingExempt" tone="neutral" label="Faturalamadan muaf" />
           <EkStatusChip v-if="session.active.value" tone="warning" icon="mdi-account-eye-outline" :label="`Destek oturumu açık · ~${session.text.value}`" data-testid="imp-session-chip" />
@@ -14,11 +14,16 @@
           <EkCopyButton :value="String(tid)" label="Mağaza numarası" />
         </template>
         <template #actions>
+          <EkButton v-if="life.data.value?.deletion?.canCancel" tone="secondary" icon="mdi-undo-variant" data-testid="cancel-deletion" @click="undo.open(tid)">Silme talebini geri al</EkButton>
           <EkButton tone="secondary" icon="mdi-shield-search" @click="router.push({ path: '/denetim', query: { tid: String(tid) } })">Denetim kaydı</EkButton>
           <EkButton tone="secondary" icon="mdi-card-account-details-outline" :disabled="!life.data.value?.trial" @click="router.push(`/abonelikler/${tid}`)">Abonelik</EkButton>
+          <CopyViewLink />
+          <EkButton tone="secondary" icon="mdi-refresh" :loading="life.refreshing.value" data-page-refresh @click="refresh">Yenile</EkButton>
           <EkButton tone="primary" icon="mdi-account-eye-outline" :disabled="!canImpersonate" data-testid="impersonate" @click="imp.open(tid)">Müşterinin gözünden aç</EkButton>
         </template>
       </BoPageHeader>
+      <PageVerdict :verdict="verdict" />
+
       <p v-if="life.data.value && !canImpersonate" class="bo-tenant__why bo-muted">
         <v-icon icon="mdi-information-outline" aria-hidden="true" />Destek oturumu yalnız aktif mağazada açılabilir (şu an: {{ TENANT_STATUS[life.data.value.status].label.toLocaleLowerCase('tr') }}).
       </p>
@@ -30,17 +35,6 @@
         :text="`Tek kullanımlık bağlantı ${ticket.text.value} içinde kullanılmazsa geçersiz olur. Oturum açıldığında ${IMPERSONATION_SESSION_MINUTES} dakika sürer ve uzatılamaz; kalan süre müşteri uygulamasındaki bantta gösterilir.`"
         data-testid="imp-ticket"
       />
-
-      <EkAlert
-        v-if="life.data.value?.deletion?.canCancel"
-        tone="warning"
-        title="Silme talebi bekliyor"
-        :text="deletionText"
-      >
-        <template #actions>
-          <EkButton tone="secondary" size="sm" icon="mdi-undo-variant" data-testid="cancel-deletion" @click="undo.open(tid)">Silme talebini geri al</EkButton>
-        </template>
-      </EkAlert>
 
       <EkPageTabs v-model="tab" :tabs="TABS" label="Müşteri bölümleri" />
 
@@ -140,7 +134,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   EkAlert,
@@ -164,11 +158,14 @@ import { useResource } from '@bo/composables/useResource'
 import { useGuardedAction } from '@bo/composables/useGuardedAction'
 import { useTabQuery } from '@bo/composables/useTabQuery'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
+import CopyViewLink from '@bo/components/CopyViewLink.vue'
+import { tenantDetailVerdict } from './tenantDetailVerdict'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import GuardedDialog from '@bo/components/kit/GuardedDialog.vue'
 import { CHANNEL, SUB_STATUS, TENANT_STATUS, channelTypeLabel, planLabel } from '@bo/utils/labels'
 import { formatDate, formatDateTime, formatRelative } from '@bo/utils/format'
-import { notifyAudited } from '@bo/utils/toast'
+import { notify, notifyAudited } from '@bo/utils/toast'
 import '@bo/styles/kit.css'
 
 const route = useRoute()
@@ -217,6 +214,20 @@ const notFound = computed(() => life.phase.value === 'notFound' || (clientLoaded
 const title = computed(() => client.value?.title ?? life.data.value?.name ?? `#${tid}`)
 const canImpersonate = computed(() => life.data.value?.status === 'ACTIVE')
 
+// NT-01: komut paletindeki "Destek oturumu aç" → `?eylem=destek`. Yaşam döngüsü okununca güvenli akış (step-up + gerekçe)
+// açılır; sorgu tek kullanımlıktır (yenilemede diyalog yeniden açılmaz).
+watch(
+  [() => route.query.eylem, () => life.data.value],
+  ([eylem, data]) => {
+    if (eylem !== 'destek' || !data) return
+    const { eylem: _e, ...rest } = route.query
+    void router.replace({ query: rest })
+    if (canImpersonate.value) imp.open(tid)
+    else notify('info', 'Destek oturumu yalnız aktif mağazada açılabilir.')
+  },
+  { immediate: true },
+)
+
 // K41: bilet ömrü sunucu yanıtından (expiresInSeconds); oturum bitişi = başlangıç (impersonation.redeem) + 30 dk (sözleşme §5).
 // Backoffice'e oturum `expiresAt` alanı gelmez; son olaylardan türetilen değer "yaklaşık" (~) gösterilir.
 const ticketExpiresAt = ref<number | null>(null)
@@ -230,11 +241,30 @@ const sessionExpiresAt = computed(() => {
 })
 const session = useCountdown(sessionExpiresAt)
 
-onMounted(async () => {
+async function refresh() {
   const [list] = await Promise.allSettled([api.call('AdminService/getClients', { search: String(tid), limit: 50 }), life.load()])
-  client.value = list.status === 'fulfilled' ? (list.value.clients.find((c) => c.clientId === tid) ?? null) : null
+  // Yenilemede liste okunamazsa son iyi satır korunur.
+  if (list.status === 'fulfilled') client.value = list.value.clients.find((c) => c.clientId === tid) ?? null
   clientLoaded.value = true
-})
+}
+onMounted(refresh)
+
+// Hüküm (Durum → Karar → Eylem): yaşam döngüsü + liste satırı; sağlık özeti ucu (BE-02) yok.
+const verdict = computed(() =>
+  life.data.value || (life.phase.value !== 'loading' && life.phase.value !== 'notFound')
+    ? tenantDetailVerdict({
+        tid,
+        life: life.data.value,
+        client: client.value,
+        failed: life.data.value === null,
+        stale: life.stale.value,
+        retry: () => void life.load(),
+        tabTo: (t) => ({ query: { ...route.query, sekme: t === 'ozet' ? undefined : t } }),
+        impersonate: canImpersonate.value ? () => imp.open(tid) : undefined,
+        undoDeletion: () => undo.open(tid),
+      })
+    : null,
+)
 
 const accountItems = computed(() => {
   const c = client.value!
@@ -283,13 +313,6 @@ const deletionItems = computed(() => {
     ...(d.purgeFailedStep ? [{ label: 'Silme hatası', value: d.purgeFailedStep }] : []),
   ]
 })
-const deletionText = computed(() => {
-  const d = life.data.value?.deletion
-  if (!d) return ''
-  const when = d.scheduledAt ? formatDate(d.scheduledAt) : '—'
-  return `Mağaza verileri ${when} tarihinde kalıcı olarak silinecek${d.daysUntilPurge !== null ? ` (${d.daysUntilPurge} gün kaldı)` : ''}. Müşteri vazgeçtiyse talebi geri alabilirsiniz.`
-})
-
 const imp = useGuardedAction(
   (id: number, reason) => api.call('BackofficeTenantService/startImpersonation', { tid: id, reason }),
   ({ url, expiresInSeconds }) => {

@@ -1,6 +1,13 @@
 <template>
   <div class="bo-page">
-    <BoPageHeader />
+    <BoPageHeader :updated-at="updatedAt" :stale="stale">
+      <template #actions>
+        <CopyViewLink />
+        <EkButton tone="secondary" icon="mdi-refresh" :loading="loading" data-page-refresh @click="load">Yenile</EkButton>
+      </template>
+    </BoPageHeader>
+
+    <PageVerdict :verdict="verdict" />
 
     <div class="bo-toolbar">
       <v-text-field
@@ -21,6 +28,7 @@
           role="radio"
           class="bo-seg__opt"
           :aria-checked="status === opt.value"
+          :data-segment="opt.value"
           @click="status = opt.value"
         >
           {{ opt.label }} <span class="bo-seg__count">{{ countOf(opt.value) }}</span>
@@ -36,8 +44,8 @@
         :error="error"
         error-text="Müşteri listesi yüklenemedi"
         empty-icon="mdi-storefront-remove-outline"
-        :empty-title="search || status !== 'all' ? 'Eşleşen müşteri yok' : 'Henüz müşteri yok'"
-        :empty-text="search || status !== 'all' ? 'Aramayı ya da durum filtresini değiştirin.' : 'Kayıt olan mağazalar burada listelenir.'"
+        :empty-title="filtered ? 'Eşleşen müşteri yok' : 'Henüz müşteri yok'"
+        :empty-text="filtered ? 'Aramayı ya da durum filtresini değiştirin.' : 'Kayıt olan mağazalar burada listelenir.'"
         :retrying="loading"
         @retry="load"
       />
@@ -47,11 +55,19 @@
         <caption class="ek-sr-only">Müşteriler — {{ visible.length }} kayıt</caption>
         <thead>
           <tr>
-            <th scope="col">Mağaza</th>
+            <th scope="col" :aria-sort="ariaSort('magaza')">
+              <button type="button" class="bo-tenants__sort" data-sort="magaza" @click="toggleSort('magaza')">Mağaza<v-icon :icon="sortIcon('magaza')" aria-hidden="true" /></button>
+            </th>
             <th scope="col">Durum</th>
             <th scope="col" class="bo-hide-sm">Kanallar</th>
-            <th scope="col" class="is-num"><span class="bo-hide-sm">Son sipariş eşitleme</span><span class="bo-show-sm">Son eşitleme</span></th>
-            <th scope="col" class="is-num bo-hide-sm">Kayıt</th>
+            <th scope="col" class="is-num" :aria-sort="ariaSort('sonEsitleme')">
+              <button type="button" class="bo-tenants__sort" data-sort="sonEsitleme" @click="toggleSort('sonEsitleme')">
+                <span class="bo-hide-sm">Son sipariş eşitleme</span><span class="bo-show-sm">Son eşitleme</span><v-icon :icon="sortIcon('sonEsitleme')" aria-hidden="true" />
+              </button>
+            </th>
+            <th scope="col" class="is-num bo-hide-sm" :aria-sort="ariaSort('kayit')">
+              <button type="button" class="bo-tenants__sort" data-sort="kayit" @click="toggleSort('kayit')">Kayıt<v-icon :icon="sortIcon('kayit')" aria-hidden="true" /></button>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -91,41 +107,88 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { EkChannelDot, EkCopyButton, EkRelativeTime, EkStatusChip } from '@entegrasyonik/ui/components'
+import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { EkButton, EkChannelDot, EkCopyButton, EkRelativeTime, EkStatusChip } from '@entegrasyonik/ui/components'
 import { formatDate } from '@entegrasyonik/ui/format'
+import CopyViewLink from '@bo/components/CopyViewLink.vue'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import BoPanelState, { type PanelState } from '@bo/components/shell/BoPanelState.vue'
 import { api } from '@bo/api'
-import type { ClientDto } from '@bo/api/contract'
+import type { ClientDto, GetClientsRequest } from '@bo/api/contract'
 import { CHANNEL } from '@bo/utils/labels'
+import { SEGMENT_SLUG, SLUG_SEGMENT, inSegment, tenantsVerdict, type TenantSegment } from './tenantsVerdict'
 
 const STATUS_OPTIONS = [
   { value: 'all', label: 'Tümü' },
   { value: 'ACTIVE', label: 'Aktif' },
   { value: 'PASSIVE', label: 'Pasif' },
-] as const
+  { value: 'stale', label: 'Eşitleme eski' },
+  { value: 'nochannel', label: 'Kanalsız' },
+] as const satisfies ReadonlyArray<{ value: TenantSegment; label: string }>
 
-const search = ref('')
-const status = ref<(typeof STATUS_OPTIONS)[number]['value']>('all')
-const clients = ref<ClientDto[]>([])
+/** `?sira=` anahtarı → sözleşmedeki sortField. Plan sütunu yok: plan bilgisi liste ucunda taşınmıyor (BE-01). */
+const SORT_FIELD = { magaza: 'title', sonEsitleme: 'lastSuccessfulOrderSync', kayit: 'createdAt' } as const
+type SortKey = keyof typeof SORT_FIELD
+/** Tarih sütunlarında ilk tıklama "en yeni önce", mağazada A→Z. */
+const FIRST_DIR: Record<SortKey, 1 | -1> = { magaza: 1, sonEsitleme: -1, kayit: -1 }
+
+const route = useRoute()
+const router = useRouter()
+
+function setQuery(patch: Record<string, string | undefined>) {
+  router.replace({ query: { ...route.query, ...patch } })
+}
+
+// --- URL durumu: ?q= ?durum= ?sira=
+const search = ref(typeof route.query.q === 'string' ? route.query.q : '')
+const status = computed<TenantSegment>({
+  get: () => SLUG_SEGMENT[String(route.query.durum ?? '')] ?? 'all',
+  set: (v) => setQuery({ durum: SEGMENT_SLUG[v] }),
+})
+const sort = computed<{ key: SortKey; dir: 1 | -1 } | null>(() => {
+  const raw = typeof route.query.sira === 'string' ? route.query.sira : ''
+  const dir = raw.startsWith('-') ? -1 : 1
+  const key = raw.replace(/^-/, '') as SortKey
+  return key in SORT_FIELD ? { key, dir } : null
+})
+function toggleSort(key: SortKey) {
+  const cur = sort.value
+  const dir = cur?.key === key ? ((cur.dir * -1) as 1 | -1) : FIRST_DIR[key]
+  setQuery({ sira: `${dir === -1 ? '-' : ''}${key}` })
+}
+const ariaSort = (key: SortKey) => (sort.value?.key === key ? (sort.value.dir === 1 ? 'ascending' : 'descending') : 'none')
+const sortIcon = (key: SortKey) => (sort.value?.key === key ? (sort.value.dir === 1 ? 'mdi-arrow-up' : 'mdi-arrow-down') : 'mdi-unfold-more-horizontal')
+
+// --- Veri: süzgeçsiz tam liste (hüküm + sayaçlar) ve aramalıysa sunucu aramalı liste
+const all = ref<ClientDto[] | null>(null)
+const found = ref<ClientDto[] | null>(null)
 const total = ref(0)
-const loaded = ref(false)
 const loading = ref(false)
 const error = ref<unknown>(null)
-const router = useRouter()
+const stale = ref(false)
+const updatedAt = ref<number | undefined>()
+
+function request(searchText?: string): GetClientsRequest {
+  const s = sort.value
+  return { search: searchText || undefined, limit: 200, sortField: s ? SORT_FIELD[s.key] : 'order', sortOrder: s ? s.dir : 1 }
+}
 
 async function load() {
   loading.value = true
   error.value = null
+  const q = search.value?.trim() ?? ''
   try {
-    const res = await api.call('AdminService/getClients', { search: search.value?.trim() || undefined, limit: 200, sortField: 'order', sortOrder: 1 })
-    clients.value = res.clients
-    total.value = res.total
-    loaded.value = true
+    const [full, hit] = await Promise.all([api.call('AdminService/getClients', request()), q ? api.call('AdminService/getClients', request(q)) : Promise.resolve(null)])
+    all.value = full.clients
+    total.value = full.total
+    found.value = hit ? hit.clients : null
+    stale.value = false
+    updatedAt.value = Date.now()
   } catch (e) {
     error.value = e
+    stale.value = all.value !== null
   } finally {
     loading.value = false
   }
@@ -142,19 +205,77 @@ const isStale = (iso: string) => Date.now() - Date.parse(iso) > STALE_MS
 let timer: ReturnType<typeof setTimeout> | undefined
 function debouncedLoad() {
   clearTimeout(timer)
-  timer = setTimeout(load, 250)
+  timer = setTimeout(() => {
+    setQuery({ q: search.value?.trim() || undefined })
+  }, 250)
 }
 onMounted(load)
+onBeforeUnmount(() => clearTimeout(timer))
+// URL (arama ya da sıra) değişince — başka sekmeden paylaşılan bağlantı, geri/ileri — yeniden oku.
+watch(
+  () => [route.query.q, route.query.sira],
+  () => {
+    const q = typeof route.query.q === 'string' ? route.query.q : ''
+    if (q !== (search.value ?? '')) search.value = q
+    void load()
+  },
+)
 
-const visible = computed(() => (status.value === 'all' ? clients.value : clients.value.filter((c) => c.status === status.value)))
-const state = computed<PanelState>(() => (!loaded.value ? (error.value ? 'error' : 'loading') : error.value ? 'error' : visible.value.length ? 'ready' : 'empty'))
-const countOf = (value: string) => (value === 'all' ? clients.value.length : clients.value.filter((c) => c.status === value).length)
+const clients = computed(() => (search.value?.trim() && found.value ? found.value : (all.value ?? [])))
+const visible = computed(() => clients.value.filter((c) => inSegment(c, status.value)))
+const filtered = computed(() => !!search.value?.trim() || status.value !== 'all')
+const loaded = computed(() => all.value !== null)
+const state = computed<PanelState>(() => (!loaded.value ? (error.value ? 'error' : 'loading') : visible.value.length ? 'ready' : 'empty'))
+const countOf = (value: TenantSegment) => (all.value ?? []).filter((c) => inSegment(c, value)).length
+
+const verdict = computed(() =>
+  loaded.value || error.value
+    ? tenantsVerdict({
+        clients: all.value,
+        total: total.value,
+        failed: !!error.value && !loaded.value,
+        stale: stale.value,
+        retry: load,
+        segmentTo: (seg) => ({ query: { ...route.query, durum: SEGMENT_SLUG[seg] } }),
+      })
+    : null,
+)
 </script>
 
 <style scoped>
 .bo-tenants__search {
   flex: 1 1 280px;
   max-width: 420px;
+}
+
+.bo-tenants__sort {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  padding: 0;
+  border: 0;
+  border-radius: var(--ek-radius-sm);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+.bo-tenants__sort .v-icon {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-icon-sm);
+}
+
+th[aria-sort='ascending'] .bo-tenants__sort .v-icon,
+th[aria-sort='descending'] .bo-tenants__sort .v-icon {
+  color: var(--ek-color-action-emphasis);
+}
+
+.bo-tenants__sort:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
 }
 
 .bo-tenants__panel {
