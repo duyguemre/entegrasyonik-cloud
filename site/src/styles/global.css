@@ -149,6 +149,9 @@ ul {
   --site-card-desc-color: var(--site-text-on-dark-meta);
   --site-color-link: var(--site-accent-on-dark);
   --site-link-accent: var(--site-accent-on-dark);
+  /* Türetilmiş tokenlar :root'ta çözülür → koyu yüzeyde ayrıca eşlenir. */
+  --site-eyebrow-color: var(--site-accent-on-dark);
+  --site-color-link-hover: var(--site-text-on-dark-heading);
 }
 
 ::selection {
