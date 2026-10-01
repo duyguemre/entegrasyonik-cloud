@@ -24,6 +24,10 @@ import { IdempotencyKeySchema } from './models/IdempotencyKey';
 import { StockMovementSchema } from './models/StockMovement';
 import { CommissionOverrideSchema } from './models/CommissionOverride';
 import { BuyboxSnapshotSchema } from './models/BuyboxSnapshot';
+import { PriceRuleSchema } from './models/PriceRule';
+import { PriceSuggestionSchema } from './models/PriceSuggestion';
+import { PriceHistorySchema } from './models/PriceHistory';
+import { PricingSettingsSchema } from './models/PricingSettings';
 import { UserSchema } from './models/User';
 import { FinancialTransactionSchema, CargoInvoiceSchema } from './models/Financial';
 
@@ -58,6 +62,10 @@ export default (mongooseConnection: Connection): Record<string, Model<any>> => {
         idempotency_key: mongooseConnection.model('idempotency_key', IdempotencyKeySchema),
         stock_movement: mongooseConnection.model('stock_movement', StockMovementSchema),
         commission_override: mongooseConnection.model('commission_override', CommissionOverrideSchema),
-        buybox_snapshot: mongooseConnection.model('buybox_snapshot', BuyboxSnapshotSchema)
+        buybox_snapshot: mongooseConnection.model('buybox_snapshot', BuyboxSnapshotSchema),
+        price_rule: mongooseConnection.model('price_rule', PriceRuleSchema),
+        price_suggestion: mongooseConnection.model('price_suggestion', PriceSuggestionSchema),
+        price_history: mongooseConnection.model('price_history', PriceHistorySchema),
+        pricing_settings: mongooseConnection.model('pricing_settings', PricingSettingsSchema)
     }
 }
