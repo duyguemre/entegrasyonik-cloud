@@ -15,13 +15,16 @@ export const FANOUT_STALL_MS = 15 * 60_000
 /** E-posta sağlayıcı sınıf kodları: ayar kapalı/hatalı ya da SMTP erişim hatası (ham SMTP metni değil). */
 export const EMAIL_PROVIDER_CODES = /^(disabled|misconfigured|SMTP_.*)$/
 
-/** Susturma bitişi: aynı gün "05:42'ye dek", değilse "3 Eki 05:42'ye dek". */
+/**
+ * Susturma bitişi: aynı gün "bitiş 05:42", değilse "bitiş 3 Eki 05:42". Ek almayan kalıp: saate ses uyumlu ek
+ * ("'ye/'a/'e dek") okunuşa göre değişir ve sabit ek yanlış düşer ("14:30'ye").
+ */
 export function muteUntilText(iso: string, now = Date.now()): string {
   const d = new Date(iso)
   const clock = new Intl.DateTimeFormat('tr-TR', { hour: '2-digit', minute: '2-digit' }).format(d)
-  if (d.toDateString() === new Date(now).toDateString()) return `${clock}'ye dek`
+  if (d.toDateString() === new Date(now).toDateString()) return `bitiş ${clock}`
   const day = new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'short' }).format(d)
-  return `${day} ${clock}'ye dek`
+  return `bitiş ${day} ${clock}`
 }
 
 const isMuted = (a: AlertRow, now: number) => !!a.mutedUntil && Date.parse(a.mutedUntil) > now

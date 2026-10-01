@@ -86,6 +86,7 @@ test.describe('sistem ayarları', () => {
     await page.keyboard.press('Escape')
     await expect(dlg).toBeHidden()
     await page.getByTestId('discard-draft').click()
+    await page.getByRole('alertdialog', { name: 'Taslak atılsın mı?' }).getByRole('button', { name: 'Taslağı at' }).click()
     await expect(page.getByTestId('draft-bar')).toHaveCount(0)
   })
 })

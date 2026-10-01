@@ -13,7 +13,7 @@
           <EkCopyButton :value="a.id" label="Duyuru kimliği" />
         </template>
         <template #actions>
-          <BoAction v-if="a.status === 'draft'" kind="edit" object="Duyuruyu" data-testid="edit" @click="router.push(`/sistem/duyurular/${a.id}/duzenle`)" />
+          <BoAction v-if="a.status === 'draft'" kind="edit" object="Duyuruyu" data-testid="edit" :to="`/sistem/duyurular/${a.id}/duzenle`" />
           <EkButton v-if="a.status === 'draft'" tone="primary" :icon="startsInFuture ? 'mdi-calendar-clock' : 'mdi-send-outline'" data-testid="schedule" @click="openSchedule">
             {{ startsInFuture ? 'Zamanla' : 'Şimdi yayınla' }}
           </EkButton>
@@ -248,10 +248,13 @@ onMounted(reload)
 .bo-annd__t {
   margin: 0;
   font-weight: var(--ek-font-weight-semibold);
+  overflow-wrap: anywhere;
 }
 .bo-annd__b {
   margin: var(--ek-space-1) 0 0;
   white-space: pre-line;
+  /* Kesintisiz URL / uzun kelime dar ekranda taşmasın. */
+  overflow-wrap: anywhere;
 }
 @media (max-width: 1023px) {
   .bo-annd__grid {

@@ -11,12 +11,15 @@
     <BoTileGrid :cols="2">
       <BoSection fill title="Platform sağlayıcı anahtarı" description="Yalnız yönetim uygulamasındaki sohbet kullanır; müşteri anahtarlarından ayrıdır." icon="mdi-key-chain-variant">
         <v-text-field
+          ref="reasonRef"
           v-model="platformKeyReason"
           label="Gerekçe (kaydet/kaldır için zorunlu)"
-          hint="10-500 karakter; denetim kaydına yazılır. Kaydetme ve kaldırma ayrıca parola + TOTP ile yeniden doğrulama ister."
+          hint="10–500 karakter; denetim kaydına yazılır. Kaydetme ve kaldırma ayrıca parola + TOTP ile yeniden doğrulama ister."
           persistent-hint
           density="compact"
           maxlength="500"
+          :counter="REASON_MAX"
+          :error-messages="platformKeyReasonError || undefined"
           autocomplete="off"
           class="mb-4"
           data-testid="platform-key-reason"
@@ -39,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent, onMounted } from 'vue'
+import { computed, defineAsyncComponent, nextTick, onMounted, ref, watch } from 'vue'
 import { CHAT_PRODUCT } from '@entegrasyonik/chat/brand'
 import { EkButton } from '@entegrasyonik/ui/components'
 import BoSection from '@bo/components/r2/BoSection.vue'
@@ -48,7 +51,7 @@ import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import { otopilotVerdict } from './otopilotVerdict'
 import { otopilot } from '@bo/chat/otopilot'
-import { platformKeyReason } from '@bo/chat/setupReason'
+import { platformKeyReason, platformKeyReasonError, REASON_MAX } from '@bo/chat/setupReason'
 import '@bo/styles/kit.css'
 
 const ChatProviderSetup = defineAsyncComponent(() => import('@entegrasyonik/chat').then((m) => m.ChatProviderSetup))
@@ -58,6 +61,12 @@ const verdict = computed(() => {
   return otopilotVerdict({ status: m.status, unavailableReason: m.unavailableReason, errorCode: m.error?.code, retry: () => void otopilot.controller().ensureLoaded(true) })
 })
 onMounted(() => void otopilot.controller().ensureLoaded())
+
+/** Kaydet/kaldır gerekçesiz denendiyse hata alanın altında görünür ve odak alana döner (paket formu ayrıca hatayı yazar). */
+const reasonRef = ref<{ focus: () => void } | null>(null)
+watch(platformKeyReasonError, (msg) => {
+  if (msg) void nextTick(() => reasonRef.value?.focus())
+})
 
 function onChanged() {
   platformKeyReason.value = ''

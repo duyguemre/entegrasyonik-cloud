@@ -6,7 +6,7 @@
       </template>
       <template #actions>
         <EkButton tone="secondary" icon="mdi-close" @click="router.push(isEdit ? `/sistem/duyurular/${id}` : '/sistem/duyurular')">Vazgeç</EkButton>
-        <BoAction kind="save" label="Taslağı kaydet" :disabled="!!blocking || !ready" data-testid="save" @click="save.open('draft')" />
+        <BoAction kind="save" label="Taslağı kaydet" :disabled="!ready" data-testid="save" @click="trySave" />
       </template>
     </BoPageHeader>
 
@@ -20,7 +20,7 @@
     <StateBlock v-else-if="loadState !== 'ready'" :phase="loadState" :error="loadError" skeleton="form" :rows="6" @retry="loadExisting" />
 
     <div v-else class="bo-anne">
-      <form class="bo-anne__form" novalidate aria-label="Duyuru formu" @submit.prevent="!blocking && save.open('draft')">
+      <form class="bo-anne__form" novalidate aria-label="Duyuru formu" @submit.prevent="trySave">
         <BoSection title="Tür ve önem" icon="mdi-shape-outline" :heading-level="2">
           <div class="bo-anne__stack">
             <BoSegmented :model-value="form.kind" label="Duyuru türü" :options="KIND_OPTS" @update:model-value="setKind" />
@@ -62,7 +62,7 @@
               <v-textarea
                 v-model="form.tidsText"
                 label="Müşteri numaraları"
-                placeholder="101, 102, 107"
+                placeholder="ör. 101, 102, 107…"
                 density="compact"
                 rows="2"
                 auto-grow
@@ -82,7 +82,7 @@
             <v-checkbox v-model="form.inApp" :disabled="form.email" density="compact" hide-details label="Uygulama içi bildirim" data-testid="ch-inapp" />
             <v-checkbox v-model="form.email" density="compact" hide-details label="E-posta (toplu)" data-testid="ch-email" />
           </div>
-          <p v-if="form.email" class="bo-muted bo-anne__hint">E-posta seçildiğinde uygulama içi bildirim de gönderilir. Zamanlarken "yalnız hizmet duyurusu" onayı istenir.</p>
+          <p v-if="form.email" class="bo-muted bo-anne__hint">E-posta seçildiğinde uygulama içi bildirim de gönderilir. Zamanlarken “yalnız hizmet duyurusu” onayı istenir.</p>
           <p v-if="touched && !form.banner && !form.inApp && !form.email" class="bo-anne__err" role="alert">En az bir kanal seçin.</p>
           <div class="bo-anne__row">
             <v-text-field v-model="form.startsAt" type="datetime-local" label="Başlangıç" density="compact" class="bo-anne__half" :error-messages="touched && !startsIso ? 'Başlangıç zamanı zorunlu.' : undefined" data-testid="starts-at" />
@@ -115,16 +115,27 @@
       :confirm-label="isEdit ? 'Gerekçeyle güncelle' : 'Gerekçeyle kaydet'"
       confirm-icon="mdi-content-save-outline"
     />
+
+    <EkConfirmDialog
+      v-model="leave.open.value"
+      :title="LEAVE_DIALOG.title"
+      description="Duyuru formundaki kaydedilmemiş değişiklikler kaybolur. Bu işlem geri alınamaz."
+      :confirm-label="LEAVE_DIALOG.confirmLabel"
+      :cancel-label="LEAVE_DIALOG.cancelLabel"
+      danger
+      @confirm="leave.confirm"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { EkButton, EkCollapse, EkEmptyState } from '@entegrasyonik/ui/components'
+import { EkButton, EkCollapse, EkConfirmDialog, EkEmptyState } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import type { AnnouncementAudience, AnnouncementInput, AnnouncementKind, AnnouncementPreview as Preview, AnnouncementSeverity } from '@bo/api/contract'
 import { useGuardedAction } from '@bo/composables/useGuardedAction'
+import { LEAVE_DIALOG, useLeaveGuard } from '@bo/composables/useLeaveGuard'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
 import BoAction from '@bo/components/r2/BoAction.vue'
 import BoSection from '@bo/components/r2/BoSection.vue'
@@ -251,10 +262,45 @@ const draft = computed<AnnouncementInput | null>(() => {
 })
 const blocking = computed(() => (draft.value ? '' : 'Önizleme ve kayıt için başlık, metin, hedef, en az bir kanal ve geçerli bir zaman gerekli.'))
 
+/** Geçersiz alanlar form sırasıyla (ilk hataya odak için seçici). */
+const invalidTargets = computed(() =>
+  [
+    !form.titleTr.trim() && '[data-testid="title-tr"] input',
+    !form.bodyTr.trim() && '[data-testid="body-tr"] textarea:not(.v-textarea__sizer)',
+    form.targetMode === 'plans' && !form.planCodes.length && '.bo-anne__plans input',
+    form.targetMode === 'tenants' && (parsed.value.invalid.length || !parsed.value.tids.length || parsed.value.tids.length > 5000) && '[data-testid="tids"] textarea:not(.v-textarea__sizer)',
+    !form.banner && !form.inApp && !form.email && '[data-testid="ch-banner"] input',
+    !startsIso.value && '[data-testid="starts-at"] input',
+    !!endError.value && '[data-testid="ends-at"] input',
+  ].filter((x): x is string => typeof x === 'string'),
+)
+
+/**
+ * BO-WDG: Kaydet hep etkin. Geçersizken tıklanınca tüm alan hataları görünür (`touched`) ve odak ilk hatalı alana gider;
+ * geçerliyse gerekçe diyaloğu açılır.
+ */
+async function trySave() {
+  touched.value = true
+  if (!blocking.value) {
+    save.open('draft')
+    return
+  }
+  await nextTick()
+  const sel = invalidTargets.value[0]
+  const el = sel ? document.querySelector<HTMLElement>(sel) : null
+  el?.scrollIntoView({ block: 'center' })
+  el?.focus({ preventScroll: true })
+}
+
 // ---------------------------------------------------------------- yükleme (düzenleme)
 const loadState = ref<'loading' | 'ready' | 'error' | 'degraded' | 'notFound' | 'locked'>(isEdit ? 'loading' : 'ready')
 const loadError = shallowRef<DescribedError | null>(null)
 const ready = computed(() => loadState.value === 'ready')
+
+/** Ayrılma uyarısı: form, açılıştaki (ya da yüklenen taslaktaki) hâlinden farklıysa sorar. */
+const baseline = ref(JSON.stringify(form))
+const dirty = computed(() => ready.value && JSON.stringify(form) !== baseline.value)
+const leave = useLeaveGuard(dirty)
 async function loadExisting() {
   if (!id) return
   loadState.value = 'loading'
@@ -284,6 +330,7 @@ async function loadExisting() {
       dismissible: i.dismissible ?? true,
     })
     showEn.value = !!(i.title.en || i.body.en)
+    baseline.value = JSON.stringify(form)
     loadState.value = 'ready'
   } catch (e) {
     const d = describeError(e)
@@ -343,6 +390,8 @@ const save = useGuardedAction(
   },
   (r) => {
     notifyAudited(isEdit ? 'Taslak güncellendi.' : 'Taslak oluşturuldu. Yayına almak için zamanlayın.', () => router.push({ path: '/denetim', query: { event: 'backoffice.write' } }))
+    // Kaydedildi: detaya dönüşte ayrılma sorusu yok.
+    leave.allow()
     router.push(`/sistem/duyurular/${r.announcement.id}`)
   },
 )

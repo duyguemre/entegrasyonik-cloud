@@ -17,7 +17,6 @@
           />
         </div>
       </fieldset>
-      <EkAlert v-if="cfg.saveError" tone="error" live dense :text="cfg.saveError.message" data-testid="save-error" />
     </div>
     <template #footer>
       <div class="bo-plat__actions">
@@ -30,7 +29,6 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { EkAlert } from '@entegrasyonik/ui/components'
 import BoSection from '@bo/components/r2/BoSection.vue'
 import BoAction from '@bo/components/r2/BoAction.vue'
 import SettingField from './SettingField.vue'

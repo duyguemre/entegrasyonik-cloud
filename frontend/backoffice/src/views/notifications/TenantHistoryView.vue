@@ -52,12 +52,12 @@
           <EkStatusChip :tone="sev(item as TenantHistoryRow).tone" :label="sev(item as TenantHistoryRow).label" dot />
         </template>
         <template #cell-count="{ item }">
-          <span class="bo-cell-stack"><span class="ek-num">{{ item.count }}</span><span class="bo-muted">{{ (item as TenantHistoryRow).count > 1 ? 'gruplandı' : 'tek olay' }}</span></span>
+          <span class="bo-cell-stack"><span class="ek-num">{{ formatCount((item as TenantHistoryRow).count) }}</span><span class="bo-muted">{{ (item as TenantHistoryRow).count > 1 ? 'gruplandı' : 'tek olay' }}</span></span>
         </template>
         <template #cell-recipients="{ item }">
           <span class="bo-cell-stack">
-            <span class="ek-num">{{ item.recipientCount }} alıcı</span>
-            <span class="bo-muted">uygulama içi {{ item.inAppCount }}<template v-if="(item as TenantHistoryRow).suppressedCount"> · bastırılan {{ item.suppressedCount }}</template></span>
+            <span class="ek-num">{{ formatCount((item as TenantHistoryRow).recipientCount) }} alıcı</span>
+            <span class="bo-muted ek-num">uygulama içi {{ formatCount((item as TenantHistoryRow).inAppCount) }}<template v-if="(item as TenantHistoryRow).suppressedCount"> · bastırılan {{ formatCount((item as TenantHistoryRow).suppressedCount) }}</template></span>
           </span>
         </template>
         <template #cell-email="{ item }">
@@ -103,6 +103,7 @@ import BoSection from '@bo/components/r2/BoSection.vue'
 import BoDataTable from '@bo/components/r2/BoDataTable.vue'
 import { DELIVERY_STATUS, NOTIFY_CATEGORY, NOTIFY_SEVERITY } from '@bo/utils/labels'
 import { formatDateTime, formatRelative } from '@bo/utils/format'
+import { formatCount } from '@bo/utils/units'
 import '@bo/styles/kit.css'
 
 const COLUMNS: EkTableColumn[] = [

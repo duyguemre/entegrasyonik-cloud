@@ -30,8 +30,8 @@
               </template>
               <tr v-for="c in byCode" :key="c.code">
                 <th scope="row"><button type="button" class="bo-link-btn bo-mono" :aria-label="`${c.code} teslimlerini listele`" @click="code = c.code">{{ c.code }}</button></th>
-                <td class="is-num ek-num">{{ c.total }}</td>
-                <td class="is-num ek-num" :class="{ 'bo-dlv__bad': c.bad > 0 }">{{ c.bad }}</td>
+                <td class="is-num ek-num">{{ formatCount(c.total) }}</td>
+                <td class="is-num ek-num" :class="{ 'bo-dlv__bad': c.bad > 0 }">{{ formatCount(c.bad) }}</td>
               </tr>
             </BoTableFrame>
           </BoSection>
@@ -42,7 +42,7 @@
     <BoSection id="bo-dlv-list" title="Teslimler" description="En yeni önce. Satırda alıcı adresi ve ileti metni yoktur; hata yalnız sınıf koduyla gösterilir." icon="mdi-format-list-bulleted">
       <BoFilterBar label="Teslim süzgeçleri" :active="activeFilters" @clear="clearFilters">
         <BoSegmented v-model="status" label="Teslim durumu" :options="STATUS_OPTS" />
-        <v-text-field v-model="codeInput" label="Bildirim kodu" placeholder="ORDER_SYNC_FAILED" density="compact" hide-details clearable class="bo-toolbar__field" data-testid="code-filter" @keydown.enter="code = codeInput?.trim().toUpperCase() || ''" @click:clear="code = ''" @blur="code = codeInput?.trim().toUpperCase() || ''" />
+        <v-text-field v-model="codeInput" label="Bildirim kodu" placeholder="ör. ORDER_SYNC_FAILED…" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" density="compact" hide-details clearable class="bo-toolbar__field" data-testid="code-filter" @keydown.enter="code = codeInput?.trim().toUpperCase() || ''" @click:clear="code = ''" @blur="code = codeInput?.trim().toUpperCase() || ''" />
         <v-text-field v-model="tidInput" label="Müşteri no" type="number" min="1" density="compact" hide-details clearable class="bo-toolbar__field bo-dlv__tid" @keydown.enter="applyTid" @blur="applyTid" @click:clear="tid = null" />
       </BoFilterBar>
       <EkAlert v-if="eventId" tone="info" dense :title="`Olay ${eventId} teslimleri`" text="Müşteri bildirim geçmişinden açılan tek olayın teslimleri gösteriliyor.">
@@ -83,8 +83,8 @@
         </template>
         <template #cell-actions="{ item }">
           <span class="bo-row-actions">
-            <BoAction v-if="canRetry(item as DeliveryRow)" kind="retry" size="sm" icon-only :object="String(item.id)" data-testid="retry" @click="retry.open(item as DeliveryRow)" />
-            <BoAction v-if="canDiscard(item as DeliveryRow)" kind="discard" size="sm" icon-only :object="String(item.id)" data-testid="discard" @click="discard.open(item as DeliveryRow)" />
+            <BoAction v-if="canRetry(item as DeliveryRow)" kind="retry" size="sm" icon-only :object="rowObject(item as DeliveryRow)" data-testid="retry" @click="retry.open(item as DeliveryRow)" />
+            <BoAction v-if="canDiscard(item as DeliveryRow)" kind="discard" size="sm" icon-only :object="rowObject(item as DeliveryRow)" data-testid="discard" @click="discard.open(item as DeliveryRow)" />
           </span>
         </template>
         <template v-if="list.phase.value === 'ready'" #footer>
@@ -239,6 +239,8 @@ const list = useCursorList<DeliveryRow>((cursor) =>
 )
 const rows = computed(() => list.items.value as unknown as Array<Record<string, unknown>>)
 const canRetry = (d: DeliveryRow) => d.status === 'dead' || d.status === 'failed'
+/** Satır ikon düğmesinin okunur nesnesi: "ORDER_SYNC_FAILED (#101) teslimini yeniden dene" (ham kimlik değil). */
+const rowObject = (d: DeliveryRow) => `${d.code}${d.tid ? ` (#${d.tid})` : ''} teslimini`
 const canDiscard = (d: DeliveryRow) => ['pending', 'dead', 'failed', 'skipped'].includes(d.status)
 function whenText(d: DeliveryRow) {
   if (d.sentAt) return `gönderildi ${formatDateTime(d.sentAt)}`

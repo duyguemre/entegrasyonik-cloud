@@ -57,7 +57,7 @@
           </span>
         </template>
         <template #cell-detail="{ item }">
-          <span class="bo-al__detail">{{ detailText(item as AlertRow) }}</span>
+          <span class="bo-al__detail ek-num">{{ detailText(item as AlertRow) }}</span>
           <RouterLink v-if="tidOf(item as AlertRow)" :to="`/musteriler/${tidOf(item as AlertRow)}`" class="ek-num bo-al__tid">#{{ tidOf(item as AlertRow) }}</RouterLink>
         </template>
         <template #cell-time="{ item }">
@@ -69,8 +69,8 @@
         </template>
         <template #cell-actions="{ item }">
           <span v-if="item.status === 'firing'" class="bo-row-actions">
-            <EkButton v-if="isMuted(item as AlertRow)" size="sm" tone="ghost" icon="mdi-bell-ring-outline" data-testid="unmute" @click="openMute(item as AlertRow, 0)">Susturmayı kaldır</EkButton>
-            <EkButton v-else size="sm" tone="secondary" icon="mdi-bell-off-outline" data-testid="mute" @click="openMute(item as AlertRow, 4)">Sustur</EkButton>
+            <EkButton v-if="isMuted(item as AlertRow)" size="sm" tone="ghost" icon="mdi-bell-ring-outline" :aria-label="`Susturmayı kaldır: ${rowName(item as AlertRow)}`" data-testid="unmute" @click="openMute(item as AlertRow, 0)">Susturmayı kaldır</EkButton>
+            <EkButton v-else size="sm" tone="secondary" icon="mdi-bell-off-outline" :aria-label="`Sustur: ${rowName(item as AlertRow)}`" data-testid="mute" @click="openMute(item as AlertRow, 4)">Sustur</EkButton>
           </span>
         </template>
         <template v-if="list.phase.value === 'ready'" #footer>
@@ -125,6 +125,7 @@ import BoDataTable from '@bo/components/r2/BoDataTable.vue'
 import GuardedDialog from '@bo/components/kit/GuardedDialog.vue'
 import { ALERT_LEVEL, ALERT_RULE, CHANNEL } from '@bo/utils/labels'
 import { formatDateTime } from '@bo/utils/format'
+import { formatCount } from '@bo/utils/units'
 import { notifyAudited } from '@bo/utils/toast'
 import '@bo/styles/kit.css'
 
@@ -209,16 +210,20 @@ function clearFilters() {
 const hasShadow = computed(() => list.items.value.some((a) => a.shadow && a.status === 'firing'))
 
 const ruleInfo = (a: AlertRow) => ALERT_RULE[a.ruleId] ?? { label: 'Kural', hint: '' }
+/** Satır düğmesinin benzersiz adı (görünen fiil başta + kural + kapsam): "Sustur: Entegrasyon hata oranı · R1:trendyol". */
+const rowName = (a: AlertRow) => `${ruleInfo(a).label} · ${a.scopeKey}`
 const isMuted = (a: AlertRow) => !!a.mutedUntil && Date.parse(a.mutedUntil) > Date.now()
 const tidOf = (a: AlertRow) => (typeof a.detail.tid === 'number' && a.detail.tid > 0 ? a.detail.tid : null)
 const integ = (v: unknown) => (typeof v === 'string' ? (CHANNEL[v] ?? v) : '—')
 function detailText(a: AlertRow): string {
   const d = a.detail
-  if (a.ruleId === 'R1') return `${integ(d.integ)}: ${d.errors}/${d.total} çağrı hatalı (%${Math.round(Number(d.rate) * 100)})`
-  if (a.ruleId === 'R2' && 'authErrors' in d) return `${integ(d.integ)}: ${d.authErrors} kimlik hatası (15 dk)`
-  if (a.ruleId === 'R2') return `${integ(d.integ)}: ${d.openCircuits} devre kesici açık · ${Math.round(Number(d.openForSec) / 60)} dk`
-  if (a.ruleId === 'R4') return `${d.wait} bekleyen iş · en eski ${Math.round(Number(d.oldestWaitSec) / 60)} dk`
-  if (a.ruleId === 'R7') return `Son saatte ${d.dead} kalıcı hatalı teslim`
+  // Sayılar binlik ayırıcıyla (formatCount); hücre `ek-num` (eşit genişlikli rakam).
+  const n = (v: unknown) => formatCount(Number(v))
+  if (a.ruleId === 'R1') return `${integ(d.integ)}: ${n(d.errors)}/${n(d.total)} çağrı hatalı (%${Math.round(Number(d.rate) * 100)})`
+  if (a.ruleId === 'R2' && 'authErrors' in d) return `${integ(d.integ)}: ${n(d.authErrors)} kimlik hatası (15 dk)`
+  if (a.ruleId === 'R2') return `${integ(d.integ)}: ${n(d.openCircuits)} devre kesici açık · ${n(Math.round(Number(d.openForSec) / 60))} dk`
+  if (a.ruleId === 'R4') return `${n(d.wait)} bekleyen iş · en eski ${n(Math.round(Number(d.oldestWaitSec) / 60))} dk`
+  if (a.ruleId === 'R7') return `Son saatte ${n(d.dead)} kalıcı hatalı teslim`
   return Object.entries(d)
     .map(([k, v]) => `${k}=${v}`)
     .join(' · ')

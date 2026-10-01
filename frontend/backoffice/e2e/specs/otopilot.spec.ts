@@ -83,6 +83,37 @@ test.describe('Otopilot (backoffice)', () => {
     await expect(dock(page).locator('.ek-chat-kpi')).toBeVisible()
   })
 
+  test('tam sayfa: "Yeni sohbet" onay ister (geri alınamaz); kurulum gerekiyorsa form yerine ayar bağlantısı', async ({ page }) => {
+    test.skip(!desktop(page), 'masaüstü')
+    await withChat(page, 'enabled')
+    await page.goto('/otopilot')
+    const full = page.locator('.ek-chat.is-page')
+    await composer(page).fill('satış')
+    await composer(page).press('Enter')
+    await expect(full.locator('.ek-chat-kpi')).toBeVisible()
+    await full.getByRole('button', { name: 'Yeni sohbet' }).click()
+    const ask = page.getByRole('alertdialog', { name: 'Yeni sohbet başlatılsın mı?' })
+    await expect(ask).toContainText('geri alınamaz')
+    await ask.getByRole('button', { name: 'Vazgeç' }).click()
+    await expect(full.locator('.ek-chat-kpi')).toBeVisible()
+    await full.getByRole('button', { name: 'Yeni sohbet' }).click()
+    await ask.getByRole('button', { name: 'Konuşmayı sil' }).click()
+    await expect(full.locator('.ek-chat-kpi')).toHaveCount(0)
+    await chatAxe(page)
+  })
+
+  test('tam sayfa kurulum gerekiyorsa: gerekçesiz form yok, Otopilot ayarına bağlantı', async ({ page }) => {
+    test.skip(!desktop(page), 'masaüstü')
+    await withChat(page, 'setup-required')
+    await page.goto('/otopilot')
+    const link = page.getByTestId('otopilot-setup-link')
+    await expect(link).toBeVisible()
+    await expect(page.locator('.ek-chat.is-page').getByLabel('API anahtarı')).toHaveCount(0)
+    await link.getByRole('link', { name: 'Otopilot ayarını aç' }).click()
+    await expect(page).toHaveURL(/\/sistem\/otopilot$/)
+    await expect(page.getByTestId('platform-key-reason')).toBeVisible()
+  })
+
   test('platform anahtarı kurulumu (Sistem ayarları → Otopilot): test hatası → kayıt; anahtar DOM/depoda kalmaz; depo yalnız bo: öneki', async ({ page }) => {
     await withChat(page, 'setup-required')
     await page.goto('/sistem/otopilot')

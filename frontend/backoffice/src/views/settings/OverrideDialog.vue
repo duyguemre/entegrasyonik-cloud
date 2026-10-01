@@ -99,7 +99,7 @@
             <template v-else-if="cs.check.isEmpty">Henüz bir istisna değeri girilmedi.</template>
             <template v-else>Kayıttan sonra etkin: <strong class="ek-num">{{ afterText }}</strong></template>
           </p>
-          <BoAction kind="delete" label="İstisnayı kaldır" size="sm" :disabled="!cs.hadOverride" data-testid="override-clear" @click="cs.clearFields()" />
+          <BoAction kind="delete" label="Alanları temizle" size="sm" :disabled="!cs.hadOverride" data-testid="override-clear" @click="cs.clearFields()" />
         </div>
       </template>
     </div>

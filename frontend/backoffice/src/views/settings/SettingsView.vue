@@ -11,12 +11,7 @@
     <StateBlock :phase="cfg.phase" :error="cfg.error" skeleton="form" :rows="6" error-title="Sistem ayarları yüklenemedi" degraded-title="Ayar servisi şu an kullanılamıyor" @retry="cfg.load()">
       <EkAlert v-if="cfg.stale" tone="warning" dense title="Gösterilen veri eski olabilir" text="Son yenileme başarısız oldu; yenilemeyi yeniden deneyin." />
 
-      <EkAlert v-if="cfg.hasDraft" tone="info" live dense class="bo-draftbar" data-testid="draft-bar" title="Yayınlanmamış taslak var" :text="`${cfg.preview ? cfg.preview.diff.length + ' ayar değişecek. ' : ''}Yayınlanana kadar müşteri uygulaması bundan etkilenmez.`">
-        <template #actions>
-          <EkButton size="sm" tone="primary" :disabled="!cfg.preview" @click="cfg.publish.open({})">Önizle ve yayınla</EkButton>
-          <EkButton size="sm" tone="secondary" :loading="cfg.discarding" data-testid="discard-draft" @click="cfg.discard()">Vazgeç</EkButton>
-        </template>
-      </EkAlert>
+      <DraftBar :cfg="cfg" />
 
       <BoTabs :tabs="TABS" label="Sistem ayarları bölümleri" class="bo-settings">
         <template #default="{ tab }">
@@ -30,6 +25,15 @@
     </StateBlock>
 
     <PublishDialogs :cfg="cfg" :publish="state.publish" :rollback="state.rollback" />
+    <EkConfirmDialog
+      v-model="leave.open.value"
+      :title="LEAVE_DIALOG.title"
+      :description="`Kaydedilmemiş ya da yayınlanmamış ${cfg.changedKeys.length} ayar değişikliği bu sayfadan çıkınca kaybolur. Bu işlem geri alınamaz.`"
+      :confirm-label="LEAVE_DIALOG.confirmLabel"
+      :cancel-label="LEAVE_DIALOG.cancelLabel"
+      danger
+      @confirm="leave.confirm"
+    />
   </div>
 </template>
 
@@ -40,7 +44,8 @@ import BoTabs from '@bo/components/r2/BoTabs.vue'
 import { computed, nextTick, onMounted, reactive, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
-import { EkAlert, EkButton } from '@entegrasyonik/ui/components'
+import { EkAlert, EkConfirmDialog } from '@entegrasyonik/ui/components'
+import { LEAVE_DIALOG, useLeaveGuard } from '@bo/composables/useLeaveGuard'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import { usePlatformConfig } from './usePlatformConfig'
 import MaintenanceCard from './MaintenanceCard.vue'
@@ -49,11 +54,14 @@ import FeatureFlagsPanel from './FeatureFlagsPanel.vue'
 import EnvPanel from './EnvPanel.vue'
 import HistoryPanel from './HistoryPanel.vue'
 import PublishDialogs from './PublishDialogs.vue'
+import DraftBar from './DraftBar.vue'
 import { settingsVerdict } from './settingsVerdict'
 import '@bo/styles/kit.css'
 
 const state = usePlatformConfig()
 const cfg = reactive(state)
+/** BO-WDG: yayınlanmamış değişiklikle ayrılırken (gezinti / sekme kapatma) sorar. */
+const leave = useLeaveGuard(() => cfg.changedKeys.length > 0)
 
 /** BO2-70: uzun sayfa sekmelere bölünür (`?sekme=`); varsayılan sekme (Platform ayarları) URL'e yazılmaz. */
 const TABS = [
@@ -115,7 +123,4 @@ onMounted(() => cfg.load())
 </script>
 
 <style scoped>
-.bo-draftbar {
-  margin-bottom: var(--ek-space-4);
-}
 </style>

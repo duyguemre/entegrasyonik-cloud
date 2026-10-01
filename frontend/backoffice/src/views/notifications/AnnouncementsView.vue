@@ -2,7 +2,7 @@
   <div class="bo-page">
     <BoPageHeader :updated-at="loadedAt ?? undefined" :stale="summary.stale.value">
       <template #actions>
-        <BoAction kind="add" label="Yeni duyuru" data-testid="new-announcement" @click="router.push('/sistem/duyurular/yeni')" />
+        <BoAction kind="add" label="Yeni duyuru" data-testid="new-announcement" to="/sistem/duyurular/yeni" />
         <BoAction kind="refresh" :loading="list.refreshing.value || list.phase.value === 'loading' || summary.refreshing.value" data-page-refresh @click="refresh" />
       </template>
     </BoPageHeader>

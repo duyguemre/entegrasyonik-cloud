@@ -26,7 +26,7 @@
         <p v-if="!channels.inApp" class="bo-muted bo-annp__off">Uygulama içi kanal kapalı: bildirim merkezine düşmez.</p>
         <article class="bo-annp__notif" aria-label="Uygulama içi bildirim örneği">
           <v-icon :icon="ANN_KIND[preview.banner.kind].icon" aria-hidden="true" />
-          <div>
+          <div class="bo-annp__notif-text">
             <h3 class="bo-annp__notif-title">{{ preview.notification[locale].title }}</h3>
             <p class="bo-annp__notif-msg">{{ preview.notification[locale].message }}</p>
           </div>
@@ -100,6 +100,9 @@ const pick = (t: AnnouncementText) => (locale.value === 'en' && t.en) || t.tr
 }
 .bo-annp__app {
   display: flex;
+  min-width: 0;
+  /* Kullanıcı metni (kesintisiz URL) bant önizlemesini taşırmasın. */
+  overflow-wrap: anywhere;
   flex-direction: column;
   gap: var(--ek-space-2);
   padding: var(--ek-space-3);
@@ -121,6 +124,11 @@ const pick = (t: AnnouncementText) => (locale.value === 'en' && t.en) || t.tr
 }
 .bo-annp__notif .v-icon {
   color: var(--ek-color-content-muted);
+}
+.bo-annp__notif-text {
+  /* Esnek satırda metin kabı küçülebilsin; uzun kelime/URL kırılır. */
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .bo-annp__notif-title {
   margin: 0;

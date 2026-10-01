@@ -50,6 +50,7 @@ for (const cfg of CONFIGS) {
     await page.getByTestId('draft-bar').scrollIntoViewIfNeeded()
     await shot(page, '03-sistem-ayarlari-taslak', cfg, false)
     await page.getByTestId('discard-draft').click()
+    await page.getByRole('alertdialog', { name: 'Taslak atılsın mı?' }).getByRole('button', { name: 'Taslağı at' }).click()
     await expect(page.getByTestId('draft-bar')).toHaveCount(0)
 
     await page.getByRole('tab', { name: /Yayın geçmişi/ }).click()

@@ -3,6 +3,8 @@
   R2: sohbet sayfa genişliğini kullanır (`wide`: UI parçaları 1180 px'e kadar, düz metin ≤ 80ch, dar kapta tablolar kart satır →
   yatay kaydırma yok). ≥ 1600 px sağda yardımcı sütun (daha dar ekranda sohbet tüm genişliği alır; öneriler boş durumda): "Ne sorabilirsiniz" (tek dokunuşla gönderir) + "Nasıl çalışır" + durum.
   Sohbet görünür alanı doldurur (sayfa kaymaz, yalnız konuşma kayar).
+  BO-WDG: "Yeni sohbet" onay ister (konuşma kaydedilmez → geri alınamaz). Kurulum gerekiyorsa gerekçesiz paket formu
+  YERİNE ayar sayfası bağlantısı (gerekçe + step-up yalnız orada). Yazma alanına otomatik odak yalnız ince işaretçide.
 -->
 <template>
   <div class="bo-page bo-otopilot-page">
@@ -17,7 +19,24 @@
 
     <div class="bo-otopilot-page__layout">
       <div class="bo-otopilot-page__panel">
-        <ChatPanel ref="panelRef" :controller="otopilot.controllerRef.value" mode="page" wide :show-close="false" @collapse="otopilot.collapseToSide()" />
+        <ChatPanel
+          ref="panelRef"
+          :controller="otopilot.controllerRef.value"
+          mode="page"
+          wide
+          confirm-reset
+          :autofocus="finePointer"
+          :show-close="false"
+          @collapse="otopilot.collapseToSide()"
+        >
+          <template #setup>
+            <div class="bo-otopilot-page__setup" data-testid="otopilot-setup-link">
+              <p class="bo-otopilot-page__setup-title">Otopilot için platform anahtarı gerekiyor</p>
+              <p class="bo-otopilot-page__setup-body">Anahtar Otopilot ayarında, denetim kaydına yazılan bir gerekçe ve kimlik doğrulamayla kurulur. Kurma yetkiniz yoksa bir platform sahibine başvurun.</p>
+              <BoAction kind="detail" label="Otopilot ayarını aç" :to="SETTINGS_ROUTE" />
+            </div>
+          </template>
+        </ChatPanel>
       </div>
 
       <aside class="bo-otopilot-page__rail" aria-label="Otopilot yardımı" data-testid="otopilot-rail">
@@ -69,6 +88,8 @@ import { otopilotVerdict, SETTINGS_ROUTE } from './otopilotVerdict'
 
 const ChatPanel = defineAsyncComponent(() => import('@entegrasyonik/chat').then((m) => m.ChatPanel))
 const panelRef = ref<{ focusComposer: () => void } | null>(null)
+/** Dokunmatik cihazda otomatik odak ekran klavyesini açıp sayfayı örter: yalnız ince işaretçide (fare) odaklanır. */
+const finePointer = typeof window === 'undefined' || typeof window.matchMedia !== 'function' ? true : !window.matchMedia('(pointer: coarse)').matches
 
 /** Yönetim sohbeti için örnek sorular (salt okuma; platform kapsamı). Sunucu kendi önerilerini boş durumda ayrıca verir. */
 const PROMPT_GROUPS = [
@@ -114,6 +135,29 @@ onMounted(() => void otopilot.controller().ensureLoaded())
 .bo-otopilot-page__link {
   color: var(--ek-color-content-strong);
   text-decoration: underline;
+}
+.bo-otopilot-page__setup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ek-space-3);
+  max-width: 560px;
+  margin: 0 auto;
+  padding: var(--ek-space-6) var(--ek-space-4);
+}
+.bo-otopilot-page__setup p {
+  margin: 0;
+}
+.bo-otopilot-page__setup-title {
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-heading-size);
+  font-weight: var(--ek-type-heading-weight);
+  line-height: var(--ek-type-heading-line);
+}
+.bo-otopilot-page__setup-body {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-body-size);
+  line-height: var(--ek-type-body-line);
 }
 .bo-otopilot-page__layout {
   display: grid;

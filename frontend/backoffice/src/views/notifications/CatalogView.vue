@@ -304,6 +304,7 @@ onMounted(() => cat.load())
   font-size: var(--ek-type-caption-size);
 }
 .bo-ncat__out {
+  min-width: 0;
   transition: opacity var(--ek-duration-fast) var(--ek-easing-standard);
 }
 .bo-ncat__out[aria-busy='true'] {
@@ -318,6 +319,11 @@ onMounted(() => cat.load())
   border: 1px solid var(--ek-color-border-subtle);
   border-radius: var(--ek-radius-md);
   background: var(--ek-color-surface-raised);
+}
+.bo-ncat__notif > * {
+  /* Parametreli önizleme (uzun URL / kimlik) dar ekranda kırılır, taşmaz. */
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 .bo-ncat__notif h3 {
   margin: 0;
