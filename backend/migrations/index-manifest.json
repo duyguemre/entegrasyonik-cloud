@@ -1150,6 +1150,36 @@
           "unique": true
         }
       }
+    ],
+    "UsageDaily": [
+      {
+        "name": "expAt_ttl",
+        "fields": {
+          "expAt": 1
+        },
+        "options": {
+          "expireAfterSeconds": 0
+        }
+      },
+      {
+        "name": "tid_1_day_-1",
+        "fields": {
+          "tid": 1,
+          "day": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "uniq_day_tid_platform",
+        "fields": {
+          "day": 1,
+          "tid": 1,
+          "platform": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
     ]
   },
   "tenant": {

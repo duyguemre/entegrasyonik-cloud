@@ -38,6 +38,7 @@ import { OAuthAuthCodeSchema } from './models/OAuthAuthCode';
 import { OAuthRefreshTokenSchema } from './models/OAuthRefreshToken';
 import { BackofficeViewSchema } from './models/BackofficeView';
 import { PushSubscriptionSchema } from './models/PushSubscription';
+import { UsageDailySchema } from './models/UsageDaily';
 
 export default (mongooseConnection: Connection): Record<string, Model<any>> => {
     return {
@@ -103,5 +104,7 @@ export default (mongooseConnection: Connection): Record<string, Model<any>> => {
         backoffice_view: mongooseConnection.model('backoffice_view', BackofficeViewSchema),
         // MOB-04: web push abonelikleri (kullanici x cihaz, sifreli uc). autoIndex kapali; indeksler yalniz onayli gocle: migrations/0020.
         push_subscription: mongooseConnection.model('push_subscription', PushSubscriptionSchema),
+        // MOB-08 / K55: gunluk aktif kullanim (gun+tenant+platform). autoIndex kapali; indeksler yalniz onayli gocle: migrations/0021.
+        usage_daily: mongooseConnection.model('usage_daily', UsageDailySchema),
     }
 }

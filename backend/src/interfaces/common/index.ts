@@ -198,6 +198,8 @@ export interface IApplicationDB {
     getAlertModel(): any
     getBackofficeViewModel(): any
     getPushSubscriptionModel(): any
+    /** MOB-08 / K55: gunluk aktif kullanim (gun+tenant+platform). */
+    getUsageDailyModel(): any
     getOAuthClientModel(): any
     getOAuthAuthCodeModel(): any
     getOAuthRefreshTokenModel(): any

@@ -13,6 +13,7 @@ import { handleClientLog } from "../http/clientLog";
 import { sanitizeResponse } from "@platform/core/security/responseSanitizer";
 import { AuditLogger } from "@services/audit/AuditLogger";
 import { getRequestId } from "@platform/core/context";
+import { recordUsageActivity } from "./usageActivity";
 import { AppError, ERROR_CODES } from "@platform/core/errors";
 import { logger } from "@platform/core/logger";
 
@@ -291,6 +292,7 @@ export function configureApis(
             if (!isOpenRoute('POST', req.params.service + '/' + req.params.operation)) requireAuthenticated(res)
 
             const resp = await runOperation(res.locals.userContext, req.params.service, req.params.operation, req.body, res.locals.principal, requestMetaOf(req, res))
+            recordUsageActivity(res.locals.principal, res.locals.clientPlatform)   // MOB-08: fail-open, beklenmez
             sendOk(req, res, resp)
         } catch (e: any) {
             sendError(req, res, e)
