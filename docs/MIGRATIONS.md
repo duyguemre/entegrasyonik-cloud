@@ -76,3 +76,12 @@ idempotenttir; `down` yalnız kendi indekslerini düşürür. Önce yedek (CLAUD
 
 Sıra: 0021 → 0022 (0022, 0021'e bağlı değildir ama PRC-R2 PRC-R1 verisini okur). `PriceSuggestions` tekillik indeksi kurulmadan
 `features.pricingRules` açılmamalıdır (aynı (kural, varyant) için çift güncel kayıt riski).
+
+**Bulut birleşimi INT-1001 (2026-10-01) — mobil/kullanım göçleri.** `0021` numarası iki dalda kullanılmıştı (`0021-pricing-competition-tenant`
+ve `0021-usage-daily-app`); kullanım göçü **0023**'e alındı. Hepsi bulutta yazıldı, ÇALIŞTIRILMADI.
+
+| No | Kimlik | İş | Kapsam / tür | Ne yapar | Geri alma (`down`) |
+|---|---|---|---|---|---|
+| 0020 | `0020-push-subscriptions-app` | MOB-04 / ADR-0029 | app / index | `PushSubscriptions` `uniq_endpointHash` (UNIQUE), `tid_1_userId_1_createdAt_-1`; `WEBPUSH_VAPID_*` açılmadan önce `done` olmalı | indeksleri düşürür (veri silinmez) |
+| 0023 | `0023-usage-daily-app` | MOB-08 / K55 | app / index | `UsageDaily` `uniq_day_tid_platform` (UNIQUE), `tid_1_day_-1`, `expAt_ttl` (180 g); ilk dağıtımdan önce uygulanmalı | indeksleri düşürür (veri silinmez) |
+
