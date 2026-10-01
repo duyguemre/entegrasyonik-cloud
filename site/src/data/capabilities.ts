@@ -220,7 +220,7 @@ export const productCapabilities: ProductCapability[] = [
     summary: 'Kullanıcılar üye, yönetici ve ana yönetici kademeleriyle yetkilendirilir; hassas işlemler üst kademe gerektirir.',
     status: 'available',
     evidence: [
-      evidence('backend/src/api/operationPolicy.ts', 'operationPolicy yetki kademeleri', 'member < admin < owner'),
+      evidence('backend/src/api/rpc/operationPolicy.ts', 'operationPolicy yetki kademeleri', 'member < admin < owner'),
       evidence(PATHS.adr0001, 'ADR-0001 RBAC'),
     ],
   },
@@ -232,8 +232,8 @@ export const productCapabilities: ProductCapability[] = [
       'Tanımlı olmayan ya da yetkinizin yetmediği bir işlem sunucuda reddedilir; yetkiniz tarayıcıdan gelen bilgiye değil hesap kaydınıza göre belirlenir.',
     status: 'available',
     evidence: [
-      evidence('backend/src/api/operationPolicy.ts', 'operationPolicy varsayılan red', 'varsayılan olarak REDDEDİLİR'),
-      evidence('backend/src/api/operationPolicy.ts', 'operationPolicy yetki kaynağı', "token'daki `role` claim'i KULLANILMAZ"),
+      evidence('backend/src/api/rpc/operationPolicy.ts', 'operationPolicy varsayılan red', 'varsayılan olarak REDDEDİLİR'),
+      evidence('backend/src/api/rpc/operationPolicy.ts', 'operationPolicy yetki kaynağı', "token'daki `role` claim'i KULLANILMAZ"),
     ],
   },
   {

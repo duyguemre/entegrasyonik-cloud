@@ -1,5 +1,5 @@
 import bodyParser from 'body-parser';
-import { errorHandler, notFoundHandler } from './api/http/errorEnvelope';
+import { errorHandler, notFoundHandler } from '../api/http/errorEnvelope';
 import { Server } from 'http';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
@@ -8,23 +8,23 @@ import express, { Express, Request, Response } from 'express';
 
 import { configureApis } from '@api/rpc/ApiManager';
 import { configureAdminApi } from '@api/admin';
-import { configureImageServices } from '@api/ImageApiManager';
-import { configureExportDownloadRoutes } from '@api/ExportDownloadApiManager';
-import { configureWebhookRoutes } from '@api/WebhookApiManager';
-import { configureBillingWebhookRoutes } from '@api/BillingWebhookApiManager';
-import { configureMockCheckoutRoutes } from '@api/MockCheckoutApiManager';
+import { configureImageServices } from '@api/files/ImageApiManager';
+import { configureExportDownloadRoutes } from '@api/files/ExportDownloadApiManager';
+import { configureWebhookRoutes } from '@api/webhooks/WebhookApiManager';
+import { configureBillingWebhookRoutes } from '@api/webhooks/BillingWebhookApiManager';
+import { configureMockCheckoutRoutes } from '@api/webhooks/MockCheckoutApiManager';
 import { configureNotificationUnsubscribeRoutes } from '@api/http/notificationUnsubscribe';
 import { configurePublicConfigRoute } from '@api/http/publicConfig';
 import { createMaintenanceMiddleware } from '@api/http/maintenanceGuard';
 import { DatabaseManagerInstance } from '@database/DatabaseManager';
 import Security from '@platform/core/security/Security';
-import { createAuthenticateMiddleware } from '@api/authenticate';
+import { createAuthenticateMiddleware } from '@api/http/authenticate';
 import { configureNotificationStreamRoutes, getNotificationStreamHub } from '@api/http/notificationStream';
 import { configureAgentRoutes, getAgentBroker } from '@api/http/agentRoutes';
 import { configureOAuthConsentRoutes, configureOAuthPublicRoutes } from '@api/oauth'
 import { configureMcpRoutes } from '@api/http/mcpRoutes';
-import { configureMcpEndpoint } from './mcp';
-import { createOriginCheckMiddleware, parseCorsOrigins } from '@api/originCheck';
+import { configureMcpEndpoint } from '../mcp';
+import { createOriginCheckMiddleware, parseCorsOrigins } from '@api/http/originCheck';
 import { checkReadiness, AppRole } from '@health/HealthCheck';
 import { RedisService } from '@services/redis';
 import { config, config as appCfg } from '@config';

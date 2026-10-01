@@ -9,7 +9,7 @@ import http from 'http';
 import express from 'express';
 import compression from 'compression';
 import { configureAgentRoutes } from '../../../src/api/http/agentRoutes';
-import { createOriginCheckMiddleware } from '../../../src/api/originCheck';
+import { createOriginCheckMiddleware } from '../../../src/api/http/originCheck';
 import { errorHandler, notFoundHandler } from '../../../src/api/http/errorEnvelope';
 import { AgentBroker, type ResolvedProvider } from '../../../src/operations/agent/AgentBroker';
 import { MemoryKv } from '../../../src/operations/agent/kv';

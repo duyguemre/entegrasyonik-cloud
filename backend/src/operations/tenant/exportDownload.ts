@@ -4,7 +4,7 @@ import { parseExportArchiveKey } from './exportKey';
 
 /**
  * KVKK dışa aktarma indirme kararı (ADR-0003 adım 8, Karar F.22) — Express'ten BAĞIMSIZ, saf/enjekte edilebilir.
- * Route katmanı: api/ExportDownloadApiManager.ts.
+ * Route katmanı: api/files/ExportDownloadApiManager.ts.
  *
  * Güvenlik özellikleri:
  *  - HMAC imzalı token (exportDownloadToken.ts) + 24 sa geçerlilik (imza doğrulaması sırasında).

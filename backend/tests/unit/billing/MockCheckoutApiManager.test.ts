@@ -21,7 +21,7 @@ import {
     CHECKOUT_TOKEN_TTL_MS, consumeCheckoutToken, isMockCheckoutEnabled, mintCheckoutToken, resetCheckoutTokensForTests,
     signDevRequest, verifyCheckoutToken,
 } from '@services/billing/mockCheckoutToken';
-import { configureMockCheckoutRoutes, escapeHtml } from '@api/MockCheckoutApiManager';
+import { configureMockCheckoutRoutes, escapeHtml } from '@api/webhooks/MockCheckoutApiManager';
 
 let subscriptionUpdateOne: jest.Mock<(...a: any[]) => Promise<any>>;
 const events = new Set<string>();

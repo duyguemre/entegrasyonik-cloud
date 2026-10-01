@@ -10,7 +10,7 @@ import { config } from '@config';
 import Security, { ApplicationError, type SessionPrincipal } from '@platform/core/security/Security';
 import runOperation from '@api/rpc/RunOperation';
 import { getRequiredTier } from '@api/rpc/operationPolicy';
-import { buildUserContext } from '@api/authenticate';
+import { buildUserContext } from '@api/http/authenticate';
 import { sendError, sendOk } from '@api/rpc/ApiManager';
 import { getClientIp } from '@platform/rateLimit/clientIp';
 import { createRateLimiter, rateLimitOptionsFromEnv } from '@platform/rateLimit/rateLimit';

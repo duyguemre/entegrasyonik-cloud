@@ -12,7 +12,7 @@ jest.mock('@services/billing/EntitlementService', () => ({ EntitlementService: {
 
 import { DatabaseManagerInstance } from '@database/DatabaseManager';
 import { EntitlementService } from '@services/billing/EntitlementService';
-import { handleBillingWebhook, configureBillingWebhookRoutes } from '@api/BillingWebhookApiManager';
+import { handleBillingWebhook, configureBillingWebhookRoutes } from '@api/webhooks/BillingWebhookApiManager';
 import { getPaymentProvider, resetPaymentProviderForTests } from '@services/billing/PaymentProviderFactory';
 import { MOCK_TEST_CARDS, MockPaymentProvider } from '@services/billing/MockPaymentProvider';
 

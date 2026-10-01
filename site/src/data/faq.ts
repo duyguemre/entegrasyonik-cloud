@@ -265,7 +265,7 @@ export const faq: FaqItem[] = [
       'Evet. Ekip arkadaşlarınızı hesabınıza kullanıcı olarak ekler, her birine üye, yönetici veya ana yönetici kademesi atarsınız. Entegrasyon bilgilerini değiştirmek gibi hassas işlemler üst kademe gerektirir ve yetki kontrolü sunucu tarafında yapılır.',
     evidence: [
       evidence('frontend/src/views/secure/user/AuthorizationListView.vue', 'Kullanıcı ekleme ekranı', 'UserService/createUser'),
-      evidence('backend/src/api/operationPolicy.ts', 'operationPolicy yetki kademeleri', 'member < admin < owner'),
+      evidence('backend/src/api/rpc/operationPolicy.ts', 'operationPolicy yetki kademeleri', 'member < admin < owner'),
       evidence(PATHS.adr0008, 'ADR-0008: kimlik bilgisi yazma yönetici işlemi', 'entegrasyon kimlik bilgisi yazmayla aynı gerekçe'),
     ],
   },
@@ -283,7 +283,7 @@ export const faq: FaqItem[] = [
         'eşzamanlılık testi: yalnızca stok kadarı rezerve',
         'tam 10 RESERVED + 40 OVERSOLD',
       ),
-      evidence('backend/src/api/operationPolicy.ts', 'operationPolicy varsayılan red', 'varsayılan olarak REDDEDİLİR'),
+      evidence('backend/src/api/rpc/operationPolicy.ts', 'operationPolicy varsayılan red', 'varsayılan olarak REDDEDİLİR'),
     ],
     internalNotes: ['S14: rakip adı VERİLMEZ; ölçütler yalnızca kayıtlı yeteneklerdir (tenant-database, secrets-encryption, stock-reservation, default-deny).'],
   },
@@ -328,8 +328,8 @@ export const faq: FaqItem[] = [
     answer:
       'Uygulamadaki destek ekranından talep oluşturabilir, süreci aynı ekranda mesajlaşarak takip edebilirsiniz. Satış öncesi sorularınız için iletişim sayfasından bize ulaşabilirsiniz.',
     evidence: [
-      evidence('backend/src/api/services/ticket-service.ts', 'Destek talebi açma', 'async openTicket'),
-      evidence('backend/src/api/services/ticket-service.ts', 'Destek talebi mesajlaşma', 'async sendTicketMessage'),
+      evidence('backend/src/api/rpc/handlers/ticket-service.ts', 'Destek talebi açma', 'async openTicket'),
+      evidence('backend/src/api/rpc/handlers/ticket-service.ts', 'Destek talebi mesajlaşma', 'async sendTicketMessage'),
     ],
     internalNotes: ['Destek saatleri / yanıt süresi / kanal (telefon, canlı sohbet) iddiası YAPILMAZ — ürün sahibi kararı.'],
   },

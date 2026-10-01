@@ -22,7 +22,7 @@ function loadWithMockedRun(runImpl: (...a: any[]) => any) {
   jest.isolateModules(() => {
     jest.doMock('../../../src/api/rpc/RunOperation', () => ({ __esModule: true, default: runMock }));
     jest.doMock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: {} }));
-    jest.doMock('../../../src/api/authenticate', () => ({ ...(jest.requireActual('../../../src/api/authenticate') as any), authenticateRequest: authenticateRequestMock }));
+    jest.doMock('../../../src/api/http/authenticate', () => ({ ...(jest.requireActual('../../../src/api/http/authenticate') as any), authenticateRequest: authenticateRequestMock }));
     const { configureApis } = require('../../../src/api/rpc/ApiManager');
     app = makeFakeApp();
     configureApis(app, CTX);
@@ -273,8 +273,8 @@ describe('ApiManager: GET /userContext ve /checkAuthentication', () => {
     jest.isolateModules(() => {
       jest.doMock('../../../src/api/rpc/RunOperation', () => ({ __esModule: true, default: jest.fn() }));
       jest.doMock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: {} }));
-      jest.doMock('../../../src/api/authenticate', () => ({
-        ...(jest.requireActual('../../../src/api/authenticate') as any),
+      jest.doMock('../../../src/api/http/authenticate', () => ({
+        ...(jest.requireActual('../../../src/api/http/authenticate') as any),
         authenticateRequest: async () => { const { ApplicationError } = require('../../../src/platform/core/security/Security'); throw new ApplicationError('Token not verified', 401); },
       }));
       const { configureApis } = require('../../../src/api/rpc/ApiManager');
@@ -424,7 +424,7 @@ describe('ApiManager: login / register yanıtları', () => {
     jest.isolateModules(() => {
       jest.doMock('../../../src/api/rpc/RunOperation', () => ({ __esModule: true, default: runMock }));
       jest.doMock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: {} }));
-      jest.doMock('../../../src/api/authenticate', () => ({ ...(jest.requireActual('../../../src/api/authenticate') as any), authenticateRequest: authenticateRequestMock }));
+      jest.doMock('../../../src/api/http/authenticate', () => ({ ...(jest.requireActual('../../../src/api/http/authenticate') as any), authenticateRequest: authenticateRequestMock }));
       withTestContextIsolated = require('@platform/core/context').withTestContext;
       const { configureApis } = require('../../../src/api/rpc/ApiManager');
       app = makeFakeApp();

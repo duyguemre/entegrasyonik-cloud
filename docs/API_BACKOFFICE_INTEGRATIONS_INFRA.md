@@ -1,6 +1,6 @@
 # Backoffice entegrasyon sağlığı + altyapı + cache — API sözleşmesi (B5/B6/B6b/B6c, B8a-d, B9)
 
-`docs/BACKOFFICE_PLAN.md` §2.4, §2.6, §2.7. Yüzey: `/admin-api` (yalnız platformAdmin, TOTP tamamlanmış tam oturum). Kaynak: `backend/src/api/services/backoffice-integration-service.ts`, `backoffice-infra-service.ts`, `integration-config-service.ts` (`getCatalog`); mantık `backend/src/operations/backoffice/*`; şemalar `backend/src/capabilities/rpc-input/backoffice-infra.ts`; yetenekler `capabilities/domains/backoffice-infra.ts`.
+`docs/BACKOFFICE_PLAN.md` §2.4, §2.6, §2.7. Yüzey: `/admin-api` (yalnız platformAdmin, TOTP tamamlanmış tam oturum). Kaynak: `backend/src/api/rpc/handlers/backoffice-integration-service.ts`, `backoffice-infra-service.ts`, `integration-config-service.ts` (`getCatalog`); mantık `backend/src/operations/backoffice/*`; şemalar `backend/src/capabilities/rpc-input/backoffice-infra.ts`; yetenekler `capabilities/domains/backoffice-infra.ts`.
 
 ## Genel kurallar
 - Her uç `POST /admin-api/<Servis>/<operasyon>`, JSON gövde, çerezle oturum (`credentials:'include'`), yazmada `Origin` zorunlu. Başarı 200 + JSON.

@@ -38,7 +38,7 @@ function build() {
     // [ADR-0001 adım 5] sahte tenant servisi için kayıt eklenir (AdminService/SecurityService için GERÇEK kayıt kullanılır)
     require('../../../src/api/rpc/operationPolicy').OPERATION_POLICY.FakeTenantService = { whoami: 'member' };
     const { configureApis } = require('../../../src/api/rpc/ApiManager');
-    const { createAuthenticateMiddleware } = require('../../../src/api/authenticate');
+    const { createAuthenticateMiddleware } = require('../../../src/api/http/authenticate');
     app = makeFakeApp();
     configureApis(app, '/api');
     mw = createAuthenticateMiddleware('/api');

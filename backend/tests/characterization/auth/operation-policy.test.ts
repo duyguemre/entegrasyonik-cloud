@@ -391,7 +391,7 @@ describe('Kayıt bütünlüğü (ölü kayıt yok)', () => {
   });
 
   it('ImageApi rotaları ImageApiManager.ts\'teki gerçek rota adlarıyla eşleşir (upload, uploadIdentity, getImages, deleteImage, sortImages, deleteImageSelected + hedefsiz getImage, downloadImage)', () => {
-    const src = fs.readFileSync(path.join(SRC_API, 'ImageApiManager.ts'), 'utf8');
+    const src = fs.readFileSync(path.join(SRC_API, 'files', 'ImageApiManager.ts'), 'utf8');
     const routes = [...src.matchAll(/app\.(?:get|post)\(context \+ '\/([A-Za-z]+)/g)].map((m) => m[1]).sort();
     expect(routes).toEqual([...Object.keys(IMAGE_API_TARGETS), ...IMAGE_API_ROUTES_WITHOUT_BACKEND].sort());
     for (const r of IMAGE_API_ROUTES_WITHOUT_BACKEND) expect([r, r in OPERATION_POLICY.ImageApi, r in IMAGE_API_TARGETS]).toEqual([r, false, false]);
@@ -668,7 +668,7 @@ describe('Açık rotalar (login/register/logout) politika kaydına takılmaz', (
     const { OPEN_OPERATIONS } = require('../../../src/api/rpc/operationPolicy');
     jest.isolateModules(() => {
       jest.doMock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: {} }));
-      const { OPEN_ROUTES } = require('../../../src/api/authenticate');
+      const { OPEN_ROUTES } = require('../../../src/api/http/authenticate');
       const ACCOUNT_OPEN = ['requestPasswordReset', 'confirmPasswordReset', 'verifyEmail', 'getInvitation', 'acceptInvitation'].map((o) => 'AccountService/' + o); // hesap yaşam döngüsü
       const IMP_OPEN = ['SecurityService/redeemImpersonation']; // [ADR-0026 Karar 4.9] bilet = kimlik (dedicated rota)
       expect(OPEN_OPERATIONS).toEqual([...OPEN.map((o) => 'SecurityService/' + o), ...ACCOUNT_OPEN, ...IMP_OPEN]);

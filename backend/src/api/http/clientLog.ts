@@ -7,7 +7,7 @@ import type { Request, Response } from 'express';
 import { redactFreeText, redactLogObject, fingerprintOf } from '@platform/core/logger';
 import { recordErrorEvent } from '@platform/runtime/metrics';
 import { getRequestId } from '@platform/core/context';
-import { sendHttpError } from './http/errorEnvelope';
+import { sendHttpError } from './errorEnvelope';
 
 export const CLIENT_LOG_MAX_BODY_BYTES = 8 * 1024;
 const ALLOWED_LEVELS = ['error', 'warn'] as const;

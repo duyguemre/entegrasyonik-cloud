@@ -152,7 +152,7 @@ export const AGENT_CLAIMS = {
   'trust-role': {
     text: 'Her işlem rolünüzün izinleriyle denetlenir; yetkinizin yetmediği bir işlemi ajan da yapamaz.',
     readiness: live('Sunucu tarafı yetki denetimi (varsayılan red) kodda; ajan çağrılarının aynı yoldan geçtiği doğrulanmalı.', [
-      evidence('backend/src/api/operationPolicy.ts', 'operationPolicy varsayılan red', 'varsayılan olarak REDDEDİLİR'),
+      evidence('backend/src/api/rpc/operationPolicy.ts', 'operationPolicy varsayılan red', 'varsayılan olarak REDDEDİLİR'),
     ]),
   },
 
@@ -189,7 +189,7 @@ export const AGENT_CLAIMS = {
   },
   'faq-access': {
     text: 'Ajanlar yalnızca sizin hesabınızla ve rolünüzün izinleriyle çalışır. Rolünüzün yetmediği bir işlemi ajanlar da yapamaz.',
-    readiness: live('trust-role ile aynı.', [evidence('backend/src/api/operationPolicy.ts', 'operationPolicy varsayılan red', 'varsayılan olarak REDDEDİLİR')]),
+    readiness: live('trust-role ile aynı.', [evidence('backend/src/api/rpc/operationPolicy.ts', 'operationPolicy varsayılan red', 'varsayılan olarak REDDEDİLİR')]),
   },
   'faq-privacy': {
     text: 'Verileriniz yalnızca size aittir ve izole bir alanda korunur; entegrasyon anahtarlarınız şifreli saklanır. Öneri hazırlanırken son müşterilerinizin kişisel bilgileri varsayılan olarak maskelenir.',
@@ -221,7 +221,7 @@ export const AGENT_CLAIMS = {
   },
   'llms-trust': {
     text: 'Güven: veriler yalnızca işletmeye aittir ve izole bir alanda korunur; entegrasyon anahtarları şifreli saklanır; her işlem kullanıcının rol izinleriyle denetlenir.',
-    readiness: live('trust-data + trust-role ile aynı.', [evidence('backend/src/api/operationPolicy.ts', 'operationPolicy varsayılan red', 'varsayılan olarak REDDEDİLİR')]),
+    readiness: live('trust-data + trust-role ile aynı.', [evidence('backend/src/api/rpc/operationPolicy.ts', 'operationPolicy varsayılan red', 'varsayılan olarak REDDEDİLİR')]),
   },
 } as const satisfies Record<string, AgentClaim>
 

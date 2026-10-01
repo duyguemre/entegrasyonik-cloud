@@ -9,7 +9,7 @@ jest.mock('@database/DatabaseManager', () => ({
   },
 }));
 
-import { authenticateRequest } from '../../../src/api/authenticate';
+import { authenticateRequest } from '../../../src/api/http/authenticate';
 import { resetIdentityCacheForTests } from '../../../src/platform/core/security/identityCache';
 import { metricsRegistry } from '../../../src/platform/runtime/metrics';
 import { permissionsForProfile } from '../../../src/platform/core/authz/can';

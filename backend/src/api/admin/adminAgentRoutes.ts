@@ -12,7 +12,7 @@ import { logger } from '@platform/core/logger';
 import { AppError } from '@platform/core/errors';
 import { resolveTier } from '@platform/core/authz/tier';
 import { sendError } from '@api/rpc/ApiManager';
-import { buildUserContext } from '@api/authenticate';
+import { buildUserContext } from '@api/http/authenticate';
 import { getClientIp } from '@platform/rateLimit/clientIp';
 import type { SessionPrincipal } from '@platform/core/security/Security';
 import { AgentBroker, type AgentCtx } from '@operations/agent/AgentBroker';

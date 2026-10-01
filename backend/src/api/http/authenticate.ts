@@ -1,12 +1,12 @@
 import { NextFunction, Request, Response } from 'express';
 import { DatabaseManagerInstance } from '@database/DatabaseManager';
 import Security, { ApplicationError, SessionPrincipal } from '@platform/core/security/Security';
-import { OPEN_OPERATIONS } from './rpc/operationPolicy';
-import { sendHttpError } from './http/errorEnvelope';
+import { OPEN_OPERATIONS } from '../rpc/operationPolicy';
+import { sendHttpError } from './errorEnvelope';
 import { enrichContext } from '@platform/core/context';
 import { getIdentityCache } from '@platform/core/security/identityCache';
 import type { TenantEntry } from '@database/TenantRegistry';
-import { buildActor, type Actor } from './rpc/requestContext';
+import { buildActor, type Actor } from '../rpc/requestContext';
 import {
     MEMBERSHIP_CACHE_FIELD, decide, loadMembership, measureDual, membershipSource, overlayRole, type AuthzDecision,
 } from './membershipAuthz';

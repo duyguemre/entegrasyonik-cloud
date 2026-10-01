@@ -5,7 +5,7 @@ import { prepareExportDownload, ExportDownloadDeps } from '@operations/tenant/ex
 import { canFor } from '@platform/core/authz/can';
 import { createRateLimiter } from '@platform/rateLimit/rateLimit';
 import { getClientIp } from '@platform/rateLimit/clientIp';
-import { sendHttpError } from './http/errorEnvelope';
+import { sendHttpError } from '../http/errorEnvelope';
 
 // KVKK dışa aktarma indirme rotası (docs/API_TENANT_SURFACE.md §5; ADR-0003 adım 8 / F.22).
 // `TenantDataService.exportTenantData` bir `downloadToken` üretir; bu rota onu tüketir. Jenerik RPC'ye (JSON yanıt) sığmaz

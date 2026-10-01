@@ -1,6 +1,6 @@
 # Backoffice genel bakış (sağlık panosu) ve motor/kuyruklar — API sözleşmesi (B1, B7a-d)
 
-`docs/BACKOFFICE_PLAN.md` §2.5 (B7), §3 "B1 kompozisyonu". Yüzey: `/admin-api` (yalnız platformAdmin, TOTP tamamlanmış tam oturum). Kaynak: `backend/src/api/services/backoffice-overview-service.ts`, `backoffice-engine-service.ts` (ince sarmalayıcılar), iş mantığı `backend/src/api/admin/overviewOps.ts` + `engineOps.ts` (saf, enjekte bağımlılık), şemalar `backend/src/capabilities/rpc-input/backoffice-engine.ts`, yetenekler `backend/src/capabilities/domains/backoffice-engine.ts` (`platform.overview.health`, `platform.engine.*`).
+`docs/BACKOFFICE_PLAN.md` §2.5 (B7), §3 "B1 kompozisyonu". Yüzey: `/admin-api` (yalnız platformAdmin, TOTP tamamlanmış tam oturum). Kaynak: `backend/src/api/rpc/handlers/backoffice-overview-service.ts`, `backoffice-engine-service.ts` (ince sarmalayıcılar), iş mantığı `backend/src/api/admin/overviewOps.ts` + `engineOps.ts` (saf, enjekte bağımlılık), şemalar `backend/src/capabilities/rpc-input/backoffice-engine.ts`, yetenekler `backend/src/capabilities/domains/backoffice-engine.ts` (`platform.overview.health`, `platform.engine.*`).
 
 > Adlandırma notu: plan §3 paragrafı tek ucu `BackofficeHealthService/getOverview` diye anar; uygulanan ad görev kararıyla **`BackofficeOverviewService/getHealth`**'tir (FE bunu kullanır). B1'deki "bugünkü gelir özeti" (B4c) ve "yeni sorun" için ayrı L7 ucu bu işte YOK: gelir bölümü B4c bağlandığında `revenue` anahtarıyla EKLENİR (ek alan, kırıcı değil); sorun sayısı doğrudan `ErrorEvents`ten gelir.
 

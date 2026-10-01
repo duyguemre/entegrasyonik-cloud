@@ -1,8 +1,8 @@
 import { Express, NextFunction, Request, Response } from 'express';
 import multer from 'multer';
-import { runImageApi } from "./rpc/RunOperation";
+import { runImageApi } from "../rpc/RunOperation";
 import { sanitizeResponse } from "@platform/core/security/responseSanitizer";
-import { sendHttpError } from './http/errorEnvelope';
+import { sendHttpError } from '../http/errorEnvelope';
 import { logger } from '@platform/core/logger';
 
 function sendImageError(res: Response, error: any) {

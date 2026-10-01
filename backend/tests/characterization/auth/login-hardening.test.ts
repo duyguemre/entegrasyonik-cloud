@@ -259,7 +259,7 @@ describe('ImageApiManager: hata yanıtları istek gövdesini geri yansıtmaz', (
     jest.isolateModules(() => {
       jest.doMock('../../../src/api/rpc/RunOperation', () => ({ runImageApi: jest.fn(runImpl as any), default: jest.fn() }));
       jest.doMock('multer', () => ({ __esModule: true, default: Object.assign(() => ({ any: () => (_r: any, _s: any, cb: any) => cb(undefined) }), { memoryStorage: () => ({}) }) }));
-      const { configureImageServices } = require('../../../src/api/ImageApiManager');
+      const { configureImageServices } = require('../../../src/api/files/ImageApiManager');
       const fake: any = {
         get: (p: string, ...h: any[]) => { chains['GET ' + p] = h; },
         post: (p: string, ...h: any[]) => { chains['POST ' + p] = h; },

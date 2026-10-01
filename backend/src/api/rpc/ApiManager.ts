@@ -1,7 +1,7 @@
 import Security, { ApplicationError } from "@platform/core/security/Security"
 import { Express, Request, Response } from 'express';
 import runOperation, { RequestMeta } from "./RunOperation";
-import { authenticateRequest, isOpenRoute } from "../authenticate";
+import { authenticateRequest, isOpenRoute } from "../http/authenticate";
 import { isSessionResult } from "./dto/sessionResult";
 import { toProfileDto } from "./dto/profileDto";
 import { getClientIp } from "@platform/rateLimit/clientIp";
@@ -9,7 +9,7 @@ import {
     accountTokenRateLimitOptionsFromEnv, clientLogRateLimitOptionsFromEnv, createRateLimiter, passwordResetEmailRateLimitOptionsFromEnv,
     passwordResetIpRateLimitOptionsFromEnv, rateLimitOptionsFromEnv, registerRateLimitOptionsFromEnv,
 } from "@platform/rateLimit/rateLimit";
-import { handleClientLog } from "../clientLog";
+import { handleClientLog } from "../http/clientLog";
 import { sanitizeResponse } from "@platform/core/security/responseSanitizer";
 import { AuditLogger } from "@services/audit/AuditLogger";
 import { getRequestId } from "@platform/core/context";

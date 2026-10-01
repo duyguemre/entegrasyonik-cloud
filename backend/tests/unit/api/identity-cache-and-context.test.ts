@@ -20,7 +20,7 @@ jest.mock('@database/DatabaseManager', () => ({
   },
 }));
 
-import { createAuthenticateMiddleware } from '../../../src/api/authenticate';
+import { createAuthenticateMiddleware } from '../../../src/api/http/authenticate';
 import { BaseApi } from '../../../src/api/rpc/BaseApi';
 import ApiWrapper from '../../../src/api/rpc/ApiWrapper';
 import { buildRequestContext } from '../../../src/api/rpc/requestContext';

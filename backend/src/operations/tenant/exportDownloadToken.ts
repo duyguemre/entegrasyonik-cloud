@@ -7,7 +7,7 @@ import Security from '@platform/core/security/Security';
  * yetenek yok (bu ADR aşamasında eklenmedi). Bunun yerine BASİT bir HMAC imzalı token şeması kullanılır (yeni sır
  * YOK: mevcut JWT_SECRET'ın imzalama amaçlı yeniden kullanımı — Security.loadConfig zaten fail-fast).
  * [API_TENANT_SURFACE §5] Token artık `GET /api/tenant-data/export/download?token=...` rotasında tüketilir
- * (api/ExportDownloadApiManager.ts + operations/tenant/exportDownload.ts): oturumlu owner, tenant bağlı, tek kullanım, akış.
+ * (api/files/ExportDownloadApiManager.ts + operations/tenant/exportDownload.ts): oturumlu owner, tenant bağlı, tek kullanım, akış.
  * Token biçimi DEĞİŞMEDİ (tenant bağı anahtar yolundaki `exports/<clientId>/` ile sağlanır).
  */
 

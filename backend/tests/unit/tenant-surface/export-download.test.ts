@@ -14,7 +14,7 @@ jest.mock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: {} }));
 import { signExportDownloadToken } from '../../../src/operations/tenant/exportDownloadToken';
 import { parseExportArchiveKey } from '../../../src/operations/tenant/exportKey';
 import { prepareExportDownload, ConsumedTokenStore } from '../../../src/operations/tenant/exportDownload';
-import { configureExportDownloadRoutes, EXPORT_DOWNLOAD_ROUTE } from '../../../src/api/ExportDownloadApiManager';
+import { configureExportDownloadRoutes, EXPORT_DOWNLOAD_ROUTE } from '../../../src/api/files/ExportDownloadApiManager';
 import { storageService } from '../../../src/services/storage/StorageService';
 import S3Manager from '../../../src/services/storage/S3Manager';
 
@@ -231,12 +231,12 @@ describe('GET /api/tenant-data/export/download (route)', () => {
   it('rota IP başına oran sınırlıdır ve jenerik RPC/açık rota listesinde DEĞİLDİR', async () => {
     const { routes } = await call(OWNER, { token: tokenFor(4) });
     expect(typeof routes['/api' + EXPORT_DOWNLOAD_ROUTE + '#limiter']).toBe('function');
-    const auth = fs.readFileSync(path.join(__dirname, '../../../src/api/authenticate.ts'), 'utf8');
+    const auth = fs.readFileSync(path.join(__dirname, '../../../src/api/http/authenticate.ts'), 'utf8');
     expect(auth).not.toContain('tenant-data');
   });
 
   it('Webserver: indirme rotası authenticate middleware\'inden SONRA bağlanır (oturum zorunlu)', () => {
-    const src = fs.readFileSync(path.join(__dirname, '../../../src/Webserver.ts'), 'utf8');
+    const src = fs.readFileSync(path.join(__dirname, '../../../src/bootstrap/Webserver.ts'), 'utf8');
     const iAuth = src.indexOf('createAuthenticateMiddleware(config.context)');
     const iRoute = src.indexOf('configureExportDownloadRoutes(this.app, config.context)');
     expect(iAuth).toBeGreaterThan(-1);

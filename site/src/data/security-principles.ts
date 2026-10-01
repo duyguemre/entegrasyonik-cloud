@@ -68,7 +68,7 @@ export const securityPrinciples: SecurityPrinciple[] = [
         text: 'Kayıtlar hesap bazında ayrılır ve belirlenen saklama süresinin sonunda otomatik olarak silinir.',
         evidence: [
           evidence('backend/src/database/application/models/AuditLog.ts', 'AuditLog otomatik silme', 'expireAfterSeconds'),
-          evidence('backend/src/api/services/audit-service.ts', 'Denetim kaydı hesap filtresi', "KENDİ tenant'ının `AuditLogs` kayıtlarını okuma"),
+          evidence('backend/src/api/rpc/handlers/audit-service.ts', 'Denetim kaydı hesap filtresi', "KENDİ tenant'ının `AuditLogs` kayıtlarını okuma"),
         ],
       },
     ],
@@ -87,8 +87,8 @@ export const securityPrinciples: SecurityPrinciple[] = [
       {
         text: 'Hesap sahibi hesap verilerini panelden dışa aktarabilir; hesabın silinmesini ise parola doğrulamasıyla talep edebilir.',
         evidence: [
-          evidence('backend/src/api/services/tenant-data-service.ts', 'KVKK dışa aktarma', 'async exportTenantData'),
-          evidence('backend/src/api/services/tenant-data-service.ts', 'KVKK silme talebi', 'async requestDeletion'),
+          evidence('backend/src/api/rpc/handlers/tenant-data-service.ts', 'KVKK dışa aktarma', 'async exportTenantData'),
+          evidence('backend/src/api/rpc/handlers/tenant-data-service.ts', 'KVKK silme talebi', 'async requestDeletion'),
           evidence('frontend/src/views/secure/user/PrivacyDataView.vue', 'Gizlilik ve veri ekranı'),
         ],
       },
