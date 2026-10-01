@@ -51,6 +51,8 @@ const EXPECTED: Array<[string, number, number, string, string, 'worker' | 'any']
   ['alerts.evaluator', 60 * 1000, 60 * 1000, 'normal', 'always', 'worker'],
   // PRC-R1/PRC-CFG: buybox salt-okuma isi (features.competition kapaliyken DB/ag yok).
   ['pricing.buyboxRefresh', 60 * 1000, 50 * 1000, 'normal', 'always', 'worker'],
+  // COM-08: komisyon sapma taramasi (gunluk, ifDue).
+  ['finance.commissionDrift', DAY, 15 * MIN, 'normal', 'ifDue', 'worker'],
   // RET-02: AuditLogs IP maskeleme (gunluk, ifDue).
   ['retention.auditIpMask', DAY, 15 * MIN, 'normal', 'ifDue', 'worker'],
   ['observability.metrics-flush', 60 * 1000, 30 * 1000, 'normal', 'always', 'any'],

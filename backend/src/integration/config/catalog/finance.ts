@@ -40,4 +40,12 @@ export const FINANCE_SETTINGS: SettingDef<any>[] = [
         default: { _: null },
         label: { tr: 'Kargo katkısı (TL / kalem)', en: 'Shipping contribution (TL / item)' },
         help: { tr: `Satıcının kalem başına kargo katkısı (TL); kargo sözleşmesine bağlıdır. Boş = bilinmiyor. Kaynak: ${DOC} §4 (kanıtlı değer yok).`, en: `Seller's shipping contribution per item (TL); depends on the carrier contract. Empty = unknown. Source: ${DOC} §4 (no verified value).` } },
+    // COM-08: gerçekleşen oran (hakediş) ile referans (tenant override > statik tablo) arasındaki sapma eşiği. Kanal kapsamı (ADR-0020),
+    // `_platform` DEĞİL (ADR-0031 platform.* tavanlarına girmez). Başlangıç 2 puan: araştırmadaki KDV dahil/hariç farkı (~%20 göreli)
+    // ve seviye indirimleri (2,5+ puan) bu eşiği aşar; ölçülmedi, yeniden başlatmasız ayardır. Okuyucu: operations/finance/commissionDrift.ts.
+    { ...base, key: 'finance.commissionDriftThresholdPoints', schema: z.number().min(0.5).max(50), unit: 'percent', safeRange: { min: 1, max: 10 },
+        danger: 'safe', applies: 'next_cycle', consumers: ['../operations/finance/commissionDrift.ts'], since: '2026-10-01',
+        default: { _: 2 },
+        label: { tr: 'Komisyon sapma uyarı eşiği (puan)', en: 'Commission drift alert threshold (points)' },
+        help: { tr: `Gerçekleşen komisyon oranı (hakediş), tenant geçersiz kılması ya da kanal tablosundaki orandan en az bu kadar puan saparsa "komisyon tablosu bayat olabilir" bildirimi üretilir (kanal + kategori başına ayda en çok bir kez). Kaynak: ${DOC}.`, en: `When the realized commission rate (settlements) differs from the tenant override or the channel table rate by at least this many points, a "commission table may be stale" notification is raised (at most once a month per channel + category). Source: ${DOC}.` } },
 ];

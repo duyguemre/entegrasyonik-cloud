@@ -22,6 +22,7 @@ export const EN: Record<string, { title: string; body: string }> = {
     CATALOG_IMPORT_FAILED: { title: 'Import failed', body: 'The {integ} import failed (error code: {errorCode}). Support code: {corrId}.' },
     CATALOG_EXPORT_ERRORS_DIGEST: { title: 'Transfer errors', body: '{failedCount} transfers to {integ} failed.' },
     FINANCE_RECONCILIATION_MISMATCH: { title: 'Reconciliation mismatch', body: 'A reconciliation mismatch was found in {mismatchCount} items.' },
+    COMMISSION_RATE_DRIFT: { title: 'Commission table may be stale', body: 'On {integ}, the realized commission in a category is {realizedRate}% versus the expected {referenceRate}% ({deltaPoints} points apart, {sampleCount} settlement lines). Review your commission rates.' },
     BILLING_TRIAL_ENDING: { title: 'Your trial is ending', body: 'Your trial ends on {trialEnd} ({daysLeft} days left).' },
     BILLING_TRIAL_ENDED: { title: 'Your trial has ended', body: 'Your trial ended on {trialEnd}. Choose a plan to continue.' },
     BILLING_SUSPENSION_WARNING: { title: 'Your account will be suspended', body: 'If payment is not received, your account will be suspended on {suspendAt} ({daysLeft} days left).' },

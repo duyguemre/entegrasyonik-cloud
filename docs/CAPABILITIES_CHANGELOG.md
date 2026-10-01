@@ -81,3 +81,7 @@ buraya tarihli bir blok ekler (ADR-0019 §4.1). Kademe değişiklikleri HER ZAMA
 
 - Eklenen: `platform.prefs.push_config`, `platform.prefs.push_subscribe`, `platform.prefs.push_unsubscribe`, `platform.tenants.usage`
 
+## 2026-10-01 — sha256 6e8fa4b79ae4…
+
+- Eklenen: `finance.commission.drift`
+

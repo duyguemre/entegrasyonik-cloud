@@ -169,6 +169,8 @@ const BACKEND_ONLY_NOT_YET_IN_FE = [
   'FinancialService/getFinancialSummary', 'FinancialService/getCargoInvoices', 'FinancialService/getPayoutDetails',
   // [COM-03/COM-07] komisyon kaynagi RPC'leri: FE net fiyat gosterimi (COM-07 FE) bagli degil
   'FinancialService/getOrderCommissionSummary', 'FinancialService/getCommissionByBarcodes', 'FinancialService/getNetRevenuePreview', 'FinancialService/getRealizedCommissionByCategory',
+  // [COM-08] komisyon sapmasi okumasi: FE gosterimi bagli degil (bildirim /finance'a yonlendirir)
+  'FinancialService/getCommissionDrift',
   'ShipmentService/getShipments', 'OrderService/markAsPrinted', 'ClaimService/getClaimById', 'NotificationService/getUnreadCount',
   // [ADR-0029 NB4] bildirim merkezi v2 / tercihler: backend hazır, FE bulut işi (F-N1/F-N2)
   'NotificationService/archive', 'NotificationService/unarchive', 'NotificationService/getCatalog', 'NotificationService/getPreferences',
