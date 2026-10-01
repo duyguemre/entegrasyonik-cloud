@@ -140,7 +140,10 @@ test('güncelleme: yeni sürüm beklerken bildirim; Yenile ile etkinleşir (kend
     // Kendiliğinden geçiş yok: yeni sürüm bekliyor, eski denetleyici sürüyor.
     expect(await page.evaluate(async () => (await navigator.serviceWorker.getRegistration())!.waiting !== null)).toBe(true)
     expect(await page.evaluate(() => caches.keys())).toContain(`bo-shell-${current}`)
-    if (process.env.BO_REVIEW) await page.screenshot({ path: 'docs/bo-mob-review/61-guncelleme-light-390.png' })
+    if (process.env.BO_REVIEW) {
+      await page.waitForTimeout(500)
+      await page.screenshot({ path: 'docs/bo-mob-review/61-guncelleme-light-390.png' })
+    }
     await Promise.all([page.waitForEvent('load'), page.locator('.ek-toast', { hasText: 'Yeni sürüm hazır' }).getByRole('button', { name: 'Yenile' }).click()])
     await waitForController(page)
     await expect.poll(() => page.evaluate(() => caches.keys())).toContain(`bo-shell-${next}`)
