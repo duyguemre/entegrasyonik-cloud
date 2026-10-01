@@ -62,8 +62,9 @@ router.afterEach((to, from, failure) => {
   document.title = `${(to.meta.title as string) ?? 'Yönetim'} · Entegrasyonik Yönetim`
   // bo-wdg: ekran değişince odak içerik bölgesine (`#bo-main`, tabindex=-1) taşınır — klavye/ekran okuyucu yeni sayfanın
   // başından devam eder, mobilde kapanan çekmecede kalmaz. İlk açılış, yalnız sorgu/çapa değişimi (süzgeç, sekme,
-  // `#bölüm`) ve iptal edilen gezinme hariç; kaydırma `scrollBehavior`'da kalır (`preventScroll`).
-  if (failure || from === START_LOCATION || to.path === from.path) return
+  // `#bölüm`) girişten ilk geçiş ve iptal edilen gezinme hariç; kaydırma `scrollBehavior`'da kalır (`preventScroll`).
+  // Girişten panoya geçiş ilk açılış sayılır: odak belgede kalır, ilk sekme durağı yine "İçeriğe geç".
+  if (failure || from === START_LOCATION || from.meta.public || to.path === from.path) return
   void nextTick(() => {
     const main = document.getElementById('bo-main')
     main?.focus({ preventScroll: true })
