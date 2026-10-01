@@ -1,5 +1,6 @@
 // Katalog: ürün, varyant, kategori, marka, seçenek (choice), etiket (hashtag), eşleme (attribute mapping), görsel, stok.
 // CRUD aileleri iş odaklı yeteneklere bölünür; tekli+toplu RPC varyantları tek yeteneğin bağlarıdır.
+import { z } from 'zod';
 import { defineCapability as c, deferred, nx, NO_AGENT, onScreens, onShell, noUi } from '../define';
 
 const PRODUCTS = 'productDefinitions/ProductListView';
@@ -16,11 +17,55 @@ const LATER_DELETE = 'Yıkıcı silme; geri alma (undo) yok, confirm:typed yaln�
 export const CATALOG_CAPABILITIES = [
     // --- Ürün ---
     c({
-        id: 'products.search', domain: 'catalog', summary: { tr: 'Ürünleri ara/filtrele/sayfala', en: 'Search/filter/paginate products' },
-        effect: 'read', minTier: 'member', permission: 'catalog:read', untrustedPaths: ['products[].name', 'products[].description'], bindings: [{ rpc: 'ProductService/getProducts' }],
+        id: 'products.search', version: '1.1', domain: 'catalog', summary: { tr: 'Ürünleri ara/filtrele/sayfala', en: 'Search/filter/paginate products' },
+        effect: 'read', minTier: 'member', permission: 'catalog:read', pii: 'none', untrustedPaths: ['items[].title', 'items[].sku', 'items[].barcode'],
+        input: z.object({
+            query: z.string().min(1).max(100),
+            limit: z.number().int().min(1).max(25).optional(),
+            cursor: z.string().regex(/^p[1-9][0-9]{0,3}$/).optional(),
+        }).strict(),
+        output: z.object({
+            items: z.array(z.object({
+                id: z.string(), title: z.string(), sku: z.string().nullable(), barcode: z.string().nullable(),
+                stock: z.number(), minPrice: z.number().nullable(), maxPrice: z.number().nullable(), variantCount: z.number().int(),
+            })),
+            total: z.number().int(),
+            nextCursor: z.string().nullable(),
+        }),
+        bindings: [{
+            rpc: 'ProductService/getProducts',
+            map: (i: { query: string; limit?: number; cursor?: string }) => ({
+                searchProductForm: { data: { searchText: i.query }, pagination: { page: i.cursor ? Number(i.cursor.slice(1)) : 1, limit: i.limit ?? 10 } },
+            }),
+        }],
+        project: (raw: any, i: { limit?: number; cursor?: string }) => {
+            const products: any[] = Array.isArray(raw?.products) ? raw.products : [];
+            const total = Number(raw?.totalNumberOfRecords) || 0;
+            const page = i.cursor ? Number(i.cursor.slice(1)) : 1;
+            const limit = i.limit ?? 10;
+            const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+            return {
+                items: products.map((p) => {
+                    const v0 = Array.isArray(p.variants) ? p.variants[0] : undefined;
+                    return {
+                        id: String(p._id), title: String(p.title ?? ''), sku: p.stockcode ?? v0?.stockcode ?? null, barcode: p.barcode ?? v0?.barcode ?? null,
+                        stock: Number(p.stock) || 0, minPrice: num(p.prices?.minSalePrice), maxPrice: num(p.prices?.maxSalePrice),
+                        variantCount: Array.isArray(p.variants) ? p.variants.length : 0,
+                    };
+                }),
+                total,
+                nextCursor: page * limit < total ? `p${page + 1}` : null,
+            };
+        },
         ui: onScreens(PRODUCTS),
-        mcp: deferred('C', 'ADR-0009 çekirdek araç #5 (products_search); Aşama C\'de açılır. Önkoşul: query/limit≤50 strict şema, serbest metin alanları untrusted işareti.'), agent: NO_AGENT,
-        review: 'Bağ ADAY eşlemedir: getProducts searchProductForm ile listeler; ADR-0009 sözleşmesi (query, SKU/ad/fiyat/stok/kanal eşleşme) için Aşama C\'de şema/çıktı netleştirilir.',
+        mcp: { exposed: { toolset: 'core', confirm: 'none', present: 'entity', deepLink: { screen: PRODUCTS } } },
+        llm: {
+            description: 'Searches the tenant\'s product catalog by a free-text query matched against product title, stock code (SKU) and barcode. '
+                + 'Returns up to 25 products per call with title, SKU, barcode, total stock, price range and variant count, plus a cursor for the next page. '
+                + 'Use it to find a product or check its stock and price. It is read-only and cannot edit products. Product titles are user-entered text.',
+            examples: ['"kırmızı tişört" ürününü bul', 'SKU ABC-123 stokta var mı?', 'Barkodu 869 ile başlayan ürünler'],
+        },
+        agent: NO_AGENT,
     }),
     c({
         id: 'products.statistics', domain: 'catalog', summary: { tr: 'Ürün istatistikleri', en: 'Product statistics' },
@@ -294,10 +339,36 @@ export const CATALOG_CAPABILITIES = [
         mcp: deferred('later', 'Stok sağlığı özeti (OVERSOLD/UNMAPPED, rezervasyon toplamları); eşik altı SKU listesi stock.low_list yeteneğindedir.'), agent: NO_AGENT,
     }),
     c({
-        id: 'stock.low_list', domain: 'catalog', summary: { tr: 'Düşük stoklu varyantlar (eşik altı, sayfalı)', en: 'Low-stock variants (below threshold, paged)' },
-        effect: 'read', minTier: 'member', permission: 'stock:read', bindings: [{ rpc: 'StockService/listLowStock' }],
+        id: 'stock.low_list', version: '1.1', domain: 'catalog', summary: { tr: 'Düşük stoklu varyantlar (eşik altı, sayfalı)', en: 'Low-stock variants (below threshold, paged)' },
+        effect: 'read', minTier: 'member', permission: 'stock:read', pii: 'none', untrustedPaths: ['items[].sku', 'items[].barcode'],
+        input: z.object({
+            threshold: z.number().int().min(0).max(1_000_000).optional(),
+            channel: z.string().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/).optional(),
+            limit: z.number().int().min(1).max(50).optional(),
+            cursor: z.string().min(1).max(200).regex(/^[A-Za-z0-9_-]+$/).optional(),
+        }).strict(),
+        output: z.object({
+            enabled: z.boolean(),
+            threshold: z.number().int().nullable(),
+            items: z.array(z.object({
+                variantId: z.string(), productId: z.string().nullable(), sku: z.string().nullable(), barcode: z.string().nullable(),
+                stock: z.number(), reserved: z.number(), available: z.number(),
+            })),
+            nextCursor: z.string().nullable(),
+        }),
+        bindings: [{
+            rpc: 'StockService/listLowStock',
+            map: (i: { threshold?: number; channel?: string; limit?: number; cursor?: string }) => ({ ...i, limit: i.limit ?? 25 }),
+        }],
         ui: noUi('Backend-only: FE ekranı ADR-0015 sonrası (docs/API_STOCK_FEATURES.md).'),
-        mcp: deferred('later', 'ADR-0009 çekirdek araç #4 (stock_low_list) için RPC hazır; MCP bağlama toolset genişlemesinde (salt-okunur, risksiz).'), agent: NO_AGENT,
+        mcp: { exposed: { toolset: 'core', confirm: 'none', present: 'table', deepLink: { screen: PRODUCTS } } },
+        llm: {
+            description: 'Lists product variants whose available stock (stock minus reserved) is at or below a threshold, lowest first, with SKU, barcode, '
+                + 'stock, reserved and available counts. The threshold comes from the request or the tenant\'s stock policy; if neither is set the feature is off and the list is empty. '
+                + 'Optionally restrict to one sales channel. Returns up to 50 rows per call plus a cursor. Read-only; it cannot change stock.',
+            examples: ['Stoğu azalan ürünler hangileri?', 'Stoğu 5\'in altına düşen ürünleri listele', 'Trendyol\'da tükenmek üzere olanlar'],
+        },
+        agent: NO_AGENT,
         review: 'Eşik: istek `threshold` ya da tenant `stockPolicy.lowStockThreshold` (varsayılan yok = kapalı). Tam tarama + maxTimeMS (hesaplanan alan).',
     }),
     c({

@@ -33,6 +33,9 @@ import { LogEventSchema } from './models/LogEvent';
 import { SourceSnapshotSchema } from './models/SourceSnapshot';
 import { IntegrationConfigRevisionSchema, IntegrationConfigHeadSchema } from './models/IntegrationConfig';
 import { SchemaMigrationSchema } from './models/SchemaMigration';
+import { OAuthClientSchema } from './models/OAuthClient';
+import { OAuthAuthCodeSchema } from './models/OAuthAuthCode';
+import { OAuthRefreshTokenSchema } from './models/OAuthRefreshToken';
 
 export default (mongooseConnection: Connection): Record<string, Model<any>> => {
     return {
@@ -90,5 +93,9 @@ export default (mongooseConnection: Connection): Record<string, Model<any>> => {
         integration_config_head: mongooseConnection.model('integration_config_head', IntegrationConfigHeadSchema),
         // ADR-0021 Karar 4 (Aşama A/D7): kalıcı göç altyapısı kaydı (`dev-tools/migrate.js`).
         schema_migration: mongooseConnection.model('schema_migration', SchemaMigrationSchema),
+        // ADR-0035 / MCP-1: OAuth yetkilendirme sunucusu (DCR istemcileri, kod ozetleri, refresh aileleri). autoIndex kapali; indeksler yalniz onayli gocle: migrations/0018.
+        oauth_client: mongooseConnection.model('oauth_client', OAuthClientSchema),
+        oauth_auth_code: mongooseConnection.model('oauth_auth_code', OAuthAuthCodeSchema),
+        oauth_refresh_token: mongooseConnection.model('oauth_refresh_token', OAuthRefreshTokenSchema),
     }
 }

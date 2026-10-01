@@ -17,12 +17,24 @@ const SESSION_EXEMPT: ReadonlySet<string> = new Set([
     'SecurityService/selectStore', 'SecurityService/redeemImpersonation', 'SecurityService/endImpersonation', 'client-log',
 ].map((s) => s.toLowerCase()));
 
+/**
+ * Sohbet araci (`/api/agent/*`, ADR-0034 BR-3): bakimda ACIK. Okuma turlari calisir; yazma korumasi YETENEK duzeyindedir
+ * (`invokeCapability`/arac listesi `isMaintenanceBlocked` ile ayni ilke: yazma araclari gizli, onay ucu 503 `MAINTENANCE`).
+ * `agent/provider*` (BR-5: ayar yazimi) muaf DEGILDIR.
+ */
+const AGENT_EXEMPT = /^agent\/(turns|confirm|more|info|conversations\/[^/]+)$/i;
+
+/** MCP-2: bagli uygulama IPTALI guvenlik islemidir; bakimda da calisir (ayar yazimi `PUT /mcp/settings` muaf DEGILDIR). */
+const MCP_REVOKE_EXEMPT = /^mcp\/connections\/(revoke-all|[^/]+)$/i;
+
 /** `relPath`: context önekinden sonraki yol ('Servis/operasyon'). Saf. */
 export function isMaintenanceBlocked(method: string, relPath: string): boolean {
     const m = (method || '').toUpperCase();
     if (m === 'GET' || m === 'HEAD' || m === 'OPTIONS') return false;
     const p = (relPath || '').replace(/^\/+|\/+$/g, '');
     if (SESSION_EXEMPT.has(p.toLowerCase())) return false;
+    if (AGENT_EXEMPT.test(p)) return false;
+    if (MCP_REVOKE_EXEMPT.test(p)) return false;
     if (m === 'POST') {
         const cap = CAPABILITY_BY_RPC.get(p);
         if (cap && (cap.effect === 'read' || cap.effect === 'propose')) return false;

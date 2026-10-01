@@ -18,7 +18,7 @@ export const AuditLogSchema = new mongoose.Schema({
     // hangi yuzey (surface), impersonation oturumu (imp), istek korelasyonu (reqId). Mevcut kayitlarda YOK.
     actorType: { type: String, enum: ['user', 'platform', 'impersonator', 'system'] },
     onBehalfOf: { type: Number },
-    surface: { type: String, enum: ['app', 'backoffice'] },
+    surface: { type: String, enum: ['app', 'backoffice', 'chat', 'backoffice_chat', 'mcp'] },
     imp: { type: Boolean },
     reqId: { type: String },
     meta:   { type: mongoose.Schema.Types.Mixed } // küçük, PII içermeyen düz nesne

@@ -21,6 +21,9 @@ import Security from '@api/Security';
 import { createAuthenticateMiddleware } from '@api/authenticate';
 import { configureNotificationStreamRoutes, getNotificationStreamHub } from '@api/http/notificationStream';
 import { configureAgentRoutes, getAgentBroker } from '@api/http/agentRoutes';
+import { configureOAuthConsentRoutes, configureOAuthPublicRoutes } from '@api/oauth'
+import { configureMcpRoutes } from '@api/http/mcpRoutes';
+import { configureMcpEndpoint } from './mcp';
 import { createOriginCheckMiddleware, parseCorsOrigins } from '@api/originCheck';
 import { checkReadiness, AppRole } from '@health/HealthCheck';
 import { RedisService } from '@services/redis';
@@ -101,6 +104,10 @@ export default class Webserver {
         });
         // ADR-0034 BR-1: sohbet araci (`/api/agent/*`; SSE tur). Jenerik `/:service/:operation` rotasindan ONCE.
         configureAgentRoutes(this.app, config.context, { broker: getAgentBroker });
+        // ADR-0035 / MCP-1: cerezli onay ekrani uclari (`/api/oauth/requests/:id[/decision]`; oauth.consent.view|decide).
+        configureOAuthConsentRoutes(this.app, config.context);
+        // ADR-0035 / MCP-2: tenant MCP ayari + bagli uygulamalar (`/api/mcp/*`; mcp.settings.*, mcp.connections.*, mcp.approvals.list) + gercek ayar okuyucusu baglama.
+        configureMcpRoutes(this.app, config.context);
         configureApis(this.app, config.context)
         configureImageServices(this.app, config.context, config.imageFilesPath)
         // KVKK dışa aktarma indirme rotası (owner, oturumlu, tek kullanımlık token; docs/API_TENANT_SURFACE.md §5)
@@ -148,6 +155,10 @@ export default class Webserver {
             prefs: async () => (await DatabaseManagerInstance.getApplicationDB()).getNotificationPreferencesModel() as any,
         });
 
+        // ADR-0035 / MCP-3: uzak MCP ucu `POST /mcp` (durumsuz, Bearer `aud:mcp`). cookieParser/body-parser (10 MB)/authenticate'ten ONCE: kendi 256 KB govde sinirini ve
+        // kimlik hattini (McpAuth) kullanir; MCP_ENABLED=false iken 404.
+        configureMcpEndpoint(this.app);
+
         this.app.use(cookieParser());
         this.app.use(compression())
         this.app.use(bodyParser.json({ limit: '10mb' }));
@@ -157,6 +168,10 @@ export default class Webserver {
         // `originCheck`/`authenticate`'ten ÖNCE bağlanır: müşteri CORS listesi bu yolda devreye girmez (preflight dahil) ve
         // `JWT_TOKEN` çerezi hiç okunmaz. Bilinmeyen `/admin-api/*` yolu router içinde 404 ile biter (müşteri zincirine düşmez).
         configureAdminApi(this.app);
+
+        // ADR-0035 / MCP-1: kimliksiz OAuth yetkilendirme sunucusu (`/.well-known/*`, `/oauth/*`; cerezsiz, CORS `*`). originCheck/authenticate'ten ONCE
+        // (cross-origin tarayici istemcileri token/register'a erisebilsin). MCP_ENABLED=false iken her yol 404.
+        configureOAuthPublicRoutes(this.app);
 
         // .env'den gelen CORS ayarları uygulanıyor
         this.app.use(cors(config.corsOptions));

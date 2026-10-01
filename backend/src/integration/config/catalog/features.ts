@@ -44,4 +44,17 @@ export function buildFeatureSettings(flags: readonly FeatureFlagDef[]): SettingD
     return out;
 }
 
-export const FEATURE_SETTINGS: SettingDef<any>[] = buildFeatureSettings(FEATURE_FLAGS);
+/**
+ * ADR-0034 Karar 4.2 / BR-2: yetenek bazli kill-switch (`SystemFlags.disabledCapabilities` yerine platform ayari). Listedeki yetenek kimlikleri
+ * sohbet araci listesinde gorunmez ve zorla cagri `CAPABILITY_DISABLED` ile reddedilir (capabilities/invoke.ts). Bool bayrak degil liste oldugu icin
+ * `buildFeatureSettings` disinda tek satirla tanimlidir (`features.` oneki: varsayilan yoneticiye ozel, public-config'e girmez).
+ */
+const AGENT_DISABLED_CAPABILITIES: SettingDef<any> = {
+    key: 'features.agent.disabledCapabilities', scope: 'platform', group: 'platform.features', danger: 'safe', applies: 'immediate',
+    overridable: true, consumers: ['config/platformSettings.ts'], since: '2026-10-01',
+    type: 'stringList', schema: z.array(z.string().regex(/^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/).max(96)).max(100), default: [],
+    label: { tr: 'Sohbette kapalı yetenekler', en: 'Capabilities disabled in chat' },
+    help: { tr: 'Listedeki yetenek kimlikleri (ör. orders.approve) sohbet aracında görünmez ve çağrılamaz. Boş = hepsi açık.', en: 'Listed capability ids (e.g. orders.approve) are hidden from the chat tools and cannot be called. Empty = all enabled.' },
+};
+
+export const FEATURE_SETTINGS: SettingDef<any>[] = [...buildFeatureSettings(FEATURE_FLAGS), AGENT_DISABLED_CAPABILITIES];

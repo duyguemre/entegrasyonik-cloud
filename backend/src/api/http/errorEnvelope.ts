@@ -13,12 +13,19 @@ function currentRequestId(res: Response): string | undefined {
 }
 
 /** Ham `res.status(n).send({ error })` yerine: zarf `{ error, code, requestId }`. `message` verilmezse katalog iletisi. */
-export function sendHttpError(res: Response, status: number, message?: string, code?: string): void {
+export function sendHttpError(res: Response, status: number, message?: string, code?: string, extra?: Record<string, unknown>): void {
     const c = code ?? codeForStatus(status);
-    const body: Record<string, unknown> = { error: message ?? (isKnownErrorCode(c) ? ERROR_CODES[c].message : ERROR_CODES.INTERNAL.message), code: c };
+    const body: Record<string, unknown> = { error: message ?? (isKnownErrorCode(c) ? ERROR_CODES[c].message : ERROR_CODES.INTERNAL.message), code: c, ...extra };
     const requestId = currentRequestId(res);
     if (requestId) body.requestId = requestId;
     res.status(status).send(body);
+}
+
+/** [CHAT-ENT-1] Yanıta taşınabilen güvenli ek alanlar: yalnız `QUOTA_EXCEEDED` için `upgradeUrl` (yükseltme ipucu; başka ayrıntı sızmaz). */
+export function publicErrorExtras(e: unknown): Record<string, unknown> | undefined {
+    if (!(e instanceof AppError) || e.code !== 'QUOTA_EXCEEDED') return undefined;
+    const u = (e.details as { upgradeUrl?: unknown } | undefined)?.upgradeUrl;
+    return typeof u === 'string' && u.length <= 300 ? { upgradeUrl: u } : undefined;
 }
 
 /** Hiçbir rotanın karşılamadığı istek: JSON 404 (Express'in HTML'i yerine). */
@@ -32,7 +39,7 @@ export const notFoundHandler: RequestHandler = (_req: Request, res: Response) =>
  */
 export const errorHandler: ErrorRequestHandler = (err: any, req: Request, res: Response, next) => {
     if (res.headersSent) return next(err); // akış başladıysa Express bağlantıyı keser
-    if (err instanceof AppError && err.status < 500 && err.expose) return sendHttpError(res, err.status, err.message, err.code ?? codeForStatus(err.status));
+    if (err instanceof AppError && err.status < 500 && err.expose) return sendHttpError(res, err.status, err.message, err.code ?? codeForStatus(err.status), publicErrorExtras(err));
     const status = Number(err?.status ?? err?.statusCode);
     if (status === 413) return sendHttpError(res, 413, ERROR_CODES.PAYLOAD_TOO_LARGE.message, 'PAYLOAD_TOO_LARGE');
     if (status >= 400 && status < 500) {

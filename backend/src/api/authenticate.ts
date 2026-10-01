@@ -91,6 +91,29 @@ export function buildUserContext(user: any, principal: Pick<SessionPrincipal, 't
  */
 export async function authenticateRequest(req: Request, res: Response): Promise<AuthResult> {
     const principal = Security.getInstance().verify(req);
+    const { result, user } = await resolveIdentity(principal);
+
+    // Sliding yenileme (kalan < 4 saat ve auth_time'dan <= 7 gün); rol/ga/tv sunucudaki güncel değerlerden
+    if (Security.shouldRefresh(principal)) {
+        Security.setSessionCookie(res, {
+            sub: principal.sub,
+            tid: principal.tid,
+            role: user.roleCode,
+            ga: principal.ga,
+            tv: principal.tv,
+            imp: principal.imp,
+            auth_time: principal.auth_time,
+        });
+    }
+    return result;
+}
+
+/**
+ * Doğrulanmış (imza/aud zaten kontrol edilmiş) principal'dan kullanıcı/tenant/aktör çözümü: Users belgesi + `tv` + `ga` tutarlılığı + hesap
+ * durumu + üyelik kararı + Clients.status. Çerez hattı (`authenticateRequest`) ve `/mcp` Bearer hattı (ADR-0035, MCP-3) AYNI kuralları paylaşır.
+ * Çerez/sliding yenileme burada YOK (çağırana ait). Hata: ApplicationError (401/403). DB hatası fail-open OLMAZ.
+ */
+export async function resolveIdentity(principal: Pick<SessionPrincipal, 'sub' | 'tid' | 'tv' | 'ga'> & Partial<SessionPrincipal>): Promise<{ result: AuthResult; user: any }> {
     const tv = principal.tv;
 
     // ADR-0024 P1-CORE: kullanıcı belgesi (sub, tid, tv) anahtarlı kısa TTL'li kimlik önbelleğinden gelir (sıcakken 0 okuma).
@@ -155,23 +178,10 @@ export async function authenticateRequest(req: Request, res: Response): Promise<
         if (tenant.status !== 'ACTIVE') throw new ApplicationError('Tenant is not active', 403);
     }
 
-    // Sliding yenileme (kalan < 4 saat ve auth_time'dan <= 7 gün); rol/ga/tv sunucudaki güncel değerlerden
-    if (Security.shouldRefresh(principal)) {
-        Security.setSessionCookie(res, {
-            sub: principal.sub,
-            tid: principal.tid,
-            role: user.roleCode,
-            ga: principal.ga,
-            tv: principal.tv,
-            imp: principal.imp,
-            auth_time: principal.auth_time,
-        });
-    }
-
     let userContext = buildUserContext(user, principal);
     // membership modunda RunOperation/profil aynı rol kaynağını görsün: eski-şekilli alanlar üyelik rolünden üretilir
     if (decision?.overlay) userContext = overlayRole(userContext, decision.overlay);
-    return { principal, userContext, tenant, actor: buildActor(principal, userContext, { permissionSource: decision?.source })! };
+    return { result: { principal: principal as SessionPrincipal, userContext, tenant, actor: buildActor(principal, userContext, { permissionSource: decision?.source })! }, user };
 }
 
 function respondAuthError(res: Response, e: any) {

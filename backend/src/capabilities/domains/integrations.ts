@@ -1,7 +1,9 @@
 // Entegrasyon (pazaryeri/e-ticaret/ERP/kargo) yapılandırma + iş (export/import job) yetenekleri.
 // NOT: `stock.policy.*`/`brands.integration_mapping.save`/`products.platform_ready.set` (IntegrationService RPC'leri)
 // iş alanı olarak `catalog`'a bağlıdır (bkz. domains/catalog.ts) — "Yetenek ≠ RPC operasyonu", domain iş odaklıdır.
+import { z } from 'zod';
 import { defineCapability as c, deferred, nx, NO_AGENT, onScreens, onShell, noUi } from '../define';
+import { toIso } from '../derive/pii';
 
 const MP = 'integrations/MarketplaceView';
 const EC = 'integrations/ECommerceView';
@@ -104,10 +106,39 @@ export const INTEGRATIONS_CAPABILITIES = [
         mcp: deferred('later', 'Statik yetenek manifestosu (ADR-0018); sır/PII yok, düşük öncelik, toolset genişlemesinde (integrations) değerlendirilir.'), agent: NO_AGENT,
     }),
     c({
-        id: 'integrations.health.get', domain: 'integrations', summary: { tr: 'Kendi tenant\'ının entegrasyon sağlığını getir', en: "Get the tenant's own integration health" },
-        effect: 'read', minTier: 'admin', permission: 'integrations:manage', bindings: [{ rpc: 'IntegrationService/getIntegrationHealth' }],
+        id: 'integrations.health.get', version: '1.1', domain: 'integrations', summary: { tr: 'Kendi tenant\'ının entegrasyon sağlığını getir', en: "Get the tenant's own integration health" },
+        effect: 'read', minTier: 'admin', permission: 'integrations:manage', pii: 'none',
+        input: z.object({}).strict(),
+        output: z.object({
+            generatedAt: z.string().nullable(),
+            integrations: z.array(z.object({
+                code: z.string(), type: z.string().nullable(), enabled: z.boolean(),
+                health: z.enum(['not_configured', 'no_data', 'healthy', 'degraded', 'down']),
+                credentialsConfigured: z.boolean().nullable(), lastSuccessfulSyncAt: z.string().nullable(),
+                circuit: z.enum(['closed', 'open', 'half_open']).nullable(),
+                calls24h: z.number().int(), errors24h: z.number().int(), lastErrorCode: z.string().nullable(),
+            })),
+        }),
+        bindings: [{ rpc: 'IntegrationService/getIntegrationHealth' }],
+        project: (raw: any) => ({
+            generatedAt: toIso(raw?.generatedAt),
+            integrations: (Array.isArray(raw?.integrations) ? raw.integrations : []).map((x: any) => ({
+                code: String(x?.integrationCode ?? ''), type: typeof x?.type === 'string' ? x.type : null, enabled: x?.enabled !== false,
+                health: x?.health, credentialsConfigured: typeof x?.credentialsConfigured === 'boolean' ? x.credentialsConfigured : null,
+                lastSuccessfulSyncAt: toIso(x?.lastSuccessfulSyncAt), circuit: x?.circuit?.state ?? null,
+                calls24h: Number(x?.last24h?.total) || 0, errors24h: Number(x?.last24h?.error) || 0,
+                lastErrorCode: typeof x?.lastError?.code === 'string' ? x.lastError.code : null,
+            })),
+        }),
         ui: noUi('Backend-only: FE ekranı ADR-0015 sonrası (BACKEND_ONLY_NOT_YET_IN_FE; API_TENANT_SURFACE §3).'),
-        mcp: deferred('C', 'ADR-0009 çekirdek araç #1 (integrations_health); Aşama C\'de açılır. Sızdırmaz DTO zaten var (getSystemHealth\'in tenant-kapsamlı karşılığı).'), agent: NO_AGENT,
+        mcp: { exposed: { toolset: 'core', confirm: 'none', present: 'status', deepLink: { screen: MP } } },
+        llm: {
+            description: 'Returns the health of each of the tenant\'s connected integrations (marketplaces, e-commerce, ERP, shipping): overall status, whether credentials '
+                + 'are configured, last successful sync time, circuit-breaker state, and call/error counts for the last 24 hours with the last error code. '
+                + 'Use it to explain why orders or stock are not syncing. No secrets or raw error messages are returned. Read-only; admin-level permission required.',
+            examples: ['Entegrasyonlarım sağlıklı mı?', 'Trendyol neden senkronize olmuyor?', 'Son 24 saatte hangi entegrasyon hata veriyor?'],
+        },
+        agent: NO_AGENT,
     }),
     c({
         id: 'integrations.connection.test', domain: 'integrations', summary: { tr: 'Entegrasyon bağlantısını test et (kimlik/erişim doğrulaması)', en: 'Test an integration connection (credential/reachability check)' },

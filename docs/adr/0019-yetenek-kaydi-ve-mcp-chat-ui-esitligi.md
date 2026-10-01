@@ -20,6 +20,9 @@ Kabul edildi (2026-09-28).
 
 **Refactor, yeniden yazım değil:** `operationPolicy.ts` ve `RunOperation.ts` yeniden yazılmaz. Politika nesnesi bir türetme fonksiyonunun çıktısı olur ve mevcut testler aynen yeşil kalır (§7-A çıkış kapısı). `adr-writing` yeniden yazım kuralı tetiklenmez.
 
+> **BR-2 notu (2026-10-01; CHAT-BR-2, ADR-0034; mevcut metin SİLİNMEDİ, yalnız ekleme):** (1) `Binding` artık birleşimdir: `{ rpc }` (RPC operasyonu; `RunOperation`/OPERATION_POLICY yalnız bunları görür) **ya da** `{ http: 'METHOD /yol' }` (RPC'siz HTTP ucu; yetkiyi rota verir, politikaya girmez). Sohbet aracısı uçları `agent.{info,turn,confirm,more,reset}` bu türle kaydedildi (hepsi `mcp.notExposed ui_plumbing`, `ui: shell:chat`; `agent.reset` sohbet çalışma belleğini siler, iş verisine dokunmaz). (2) `invokeCapability` (`capabilities/invoke.ts`), araç adı türetimi (`derive/toolName.ts`: `.` -> `_`) ve `PendingAction` (Redis) yazıldı; MCP adaptörü bunları aynen kullanacaktır. (3) Aşama A'daki "hiçbir yetenek exposed olamaz" kuralı, `capability-parity.test.ts` içinde **dondurulmuş açık listeye** dönüştü: `integrations.health.get`, `orders.approve`, `orders.list`, `products.search`, `reports.sales.summary`, `stock.low_list` (kimlikler kayıttaki gerçek adlardır; §4.3 tablosundaki kısa adlar `integrations_health` vb. yaklaşık ad idi, kimlikler "kararlıdır" kuralı gereği değiştirilmedi). (4) Tip eklemeleri: `ExposedCapability.project?` (ham servis yanıtı -> çıktı şeması; alan seçimi + PII maskeleme), `adminChat?` (yalnız `scope:'platform'` + `effect:'read'`; kayıt değişmezi). (5) Kill-switch: `SystemFlags.disabledCapabilities` yerine platform ayarı `features.agent.disabledCapabilities` (ADR-0031 kataloğu).
+
+
 ## Bağlam
 
 ### Kanıt: yetenekler bugün 3–4 yerde dağınık ve elle senkronize ediliyor (2026-09-28, `faz3-arayuz` @ 389a72b)

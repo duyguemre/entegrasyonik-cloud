@@ -36,7 +36,7 @@ export function onScreens(...keys: Array<string | [string, string]>): UiMapping 
  * Kabuk (ekran OLMAYAN) FE yüzeyi: initApp, menü, bildirim çekmecesi, uygulama çubuğu araması, oturum akışı.
  * Sabit önek `shell:`; P4 bunu geçerli (ekran kaydı gerektirmeyen) bir yüzey olarak kabul eder.
  */
-export function onShell(surface: 'init' | 'menu' | 'notifications' | 'app_bar' | 'session'): UiMapping {
+export function onShell(surface: 'init' | 'menu' | 'notifications' | 'app_bar' | 'session' | 'chat'): UiMapping {
     return { screens: [{ screen: `shell:${surface}` }] };
 }
 

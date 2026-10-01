@@ -1,6 +1,10 @@
 // ADR-0019 §1: Yetenek Kaydı — TEK gerçek kaynak. Alan dosyalarını birleştirir ve DEĞİŞMEZLERİ (invariants) doğrular.
-import type { CapabilityDef, CapabilityId } from './types';
+import type { CapabilityDef, CapabilityId, HttpRef, RpcBinding } from './types';
+import { toolNameOf, TOOL_NAME_RE } from './derive/toolName';
 import { ACCOUNT_CAPABILITIES } from './domains/account';
+import { AGENT_CAPABILITIES } from './domains/agent';
+import { OAUTH_CAPABILITIES } from './domains/oauth';
+import { MCP_CAPABILITIES } from './domains/mcp';
 import { BILLING_CAPABILITIES } from './domains/billing';
 import { CATALOG_CAPABILITIES } from './domains/catalog';
 import { CLAIMS_CAPABILITIES } from './domains/claims';
@@ -26,9 +30,19 @@ import { minTierFromPermission } from './roles';
 /** [ADR-0023] `rpc-input/**` şemalarını ilgili bağlara iliştirir (girdi değişmez; şemalı bağ için yeni bağ nesnesi üretilir). */
 function attachRpcInputs(caps: ReadonlyArray<CapabilityDef>): CapabilityDef[] {
     return caps.map((cap) => {
-        if (!cap.bindings.some((b) => RPC_INPUT_SCHEMAS[b.rpc])) return cap;
-        return { ...cap, bindings: cap.bindings.map((b) => (RPC_INPUT_SCHEMAS[b.rpc] ? { ...b, input: RPC_INPUT_SCHEMAS[b.rpc] } : b)) } as CapabilityDef;
+        if (!cap.bindings.some((b) => b.rpc && RPC_INPUT_SCHEMAS[b.rpc])) return cap;
+        return { ...cap, bindings: cap.bindings.map((b) => (b.rpc && RPC_INPUT_SCHEMAS[b.rpc] ? { ...b, input: RPC_INPUT_SCHEMAS[b.rpc] } : b)) } as CapabilityDef;
     });
+}
+
+/** Yeteneğin RPC bağları (HTTP bağları hariç): OPERATION_POLICY, `RunOperation` ve koruma kancaları yalnız bunlara bakar. */
+export function rpcBindingsOf(cap: Pick<CapabilityDef, 'bindings'>): RpcBinding[] {
+    return cap.bindings.filter((b): b is RpcBinding => typeof b.rpc === 'string');
+}
+
+/** Yeteneğin HTTP rota bağları (`'POST /agent/turns'`). */
+export function httpBindingsOf(cap: Pick<CapabilityDef, 'bindings'>): HttpRef[] {
+    return cap.bindings.flatMap((b) => (typeof b.http === 'string' ? [b.http] : []));
 }
 
 /** Yetenek kaydı: TÜM alanların birleşimi. `local` alanı Aşama A'da boş (masaüstü yerel araçlar Faz 4). */
@@ -40,6 +54,9 @@ export const CAPABILITIES: ReadonlyArray<CapabilityDef> = attachRpcInputs([
     ...BACKOFFICE_ENGINE_CAPABILITIES,
     ...BACKOFFICE_NOTIFICATIONS_CAPABILITIES,
     ...ACCOUNT_CAPABILITIES,
+    ...AGENT_CAPABILITIES,
+    ...OAUTH_CAPABILITIES,
+    ...MCP_CAPABILITIES,
     ...BILLING_CAPABILITIES,
     ...SUPPORT_CAPABILITIES,
     ...MESSAGES_CAPABILITIES,
@@ -62,14 +79,14 @@ export const CAPABILITY_BY_ID: ReadonlyMap<CapabilityId, CapabilityDef> = new Ma
  */
 export const CAPABILITY_BY_RPC: ReadonlyMap<string, CapabilityDef> = (() => {
     const m = new Map<string, CapabilityDef>();
-    for (const cap of CAPABILITIES) for (const b of cap.bindings) m.set(b.rpc, cap);
+    for (const cap of CAPABILITIES) for (const b of rpcBindingsOf(cap)) m.set(b.rpc, cap);
     return m;
 })();
 
 /** `'Servis/operasyon'` -> RPC gövde şeması (yalnız şemalı bağlar; şemasız operasyon eskisi gibi çalışır). */
 export const RPC_INPUT_BY_RPC: ReadonlyMap<string, import('zod').ZodType<any>> = (() => {
     const m = new Map<string, import('zod').ZodType<any>>();
-    for (const cap of CAPABILITIES) for (const b of cap.bindings) if (b.input) m.set(b.rpc, b.input);
+    for (const cap of CAPABILITIES) for (const b of rpcBindingsOf(cap)) if (b.input) m.set(b.rpc, b.input);
     return m;
 })();
 
@@ -86,6 +103,8 @@ export function findRegistryInvariantViolations(caps: ReadonlyArray<CapabilityDe
     const out: RegistryInvariantViolation[] = [];
     const seenIds = new Set<string>();
     const rpcOwner = new Map<string, string>();
+    const httpOwner = new Map<string, string>();
+    const toolOwner = new Map<string, string>();
     for (const cap of caps) {
         if (seenIds.has(cap.id)) out.push({ kind: 'DUPLICATE_ID', detail: cap.id });
         seenIds.add(cap.id);
@@ -94,13 +113,32 @@ export function findRegistryInvariantViolations(caps: ReadonlyArray<CapabilityDe
         if (tiers.size > 1) out.push({ kind: 'MIXED_TIER_BINDINGS', detail: cap.id });
 
         for (const b of cap.bindings) {
+            if (typeof b.http === 'string') {
+                const hOwner = httpOwner.get(b.http);
+                if (hOwner && hOwner !== cap.id) out.push({ kind: 'HTTP_BOUND_TWICE', detail: `${b.http} (${hOwner}, ${cap.id})` });
+                httpOwner.set(b.http, cap.id);
+                continue;
+            }
             const owner = rpcOwner.get(b.rpc);
             if (owner && owner !== cap.id) out.push({ kind: 'RPC_BOUND_TWICE', detail: `${b.rpc} (${owner}, ${cap.id})` });
             rpcOwner.set(b.rpc, cap.id);
         }
         if (cap.executor === 'server' && cap.bindings.length === 0) out.push({ kind: 'SERVER_WITHOUT_BINDING', detail: cap.id });
 
+        // [ADR-0034 Karar 6] adminChat yalnız platform kapsamlı ve salt-okunur yeteneklerde (backoffice sohbeti v1 yazma aracı içermez).
+        if (cap.adminChat) {
+            if (cap.scope !== 'platform') out.push({ kind: 'ADMIN_CHAT_NOT_PLATFORM', detail: cap.id });
+            if (cap.effect !== 'read') out.push({ kind: 'ADMIN_CHAT_NOT_READ', detail: cap.id });
+        }
         if (cap.mcp.exposed) {
+            // Araç adı (`orders.list` -> `orders_list`): geçerli biçim ve TEKİL (aynı ada inen iki kimlik olamaz).
+            const tn = toolNameOf(cap.id);
+            if (!TOOL_NAME_RE.test(tn)) out.push({ kind: 'TOOL_NAME_INVALID', detail: `${cap.id} (${tn})` });
+            const tOwner = toolOwner.get(tn);
+            if (tOwner && tOwner !== cap.id) out.push({ kind: 'TOOL_NAME_COLLISION', detail: `${tn} (${tOwner}, ${cap.id})` });
+            toolOwner.set(tn, cap.id);
+            if (cap.scope === 'platform') out.push({ kind: 'EXPOSED_PLATFORM_SCOPE', detail: cap.id });
+            if (cap.effect !== 'read' && cap.effect !== 'propose' && cap.mcp.exposed.confirm === 'none') out.push({ kind: 'EXPOSED_WRITE_WITHOUT_CONFIRM', detail: cap.id });
             if (!cap.llm) out.push({ kind: 'EXPOSED_WITHOUT_LLM', detail: cap.id });
             if (cap.output === 'legacy') out.push({ kind: 'EXPOSED_WITH_LEGACY_OUTPUT', detail: cap.id });
             if (cap.pii === 'raw') out.push({ kind: 'EXPOSED_WITH_RAW_PII', detail: cap.id });
@@ -134,3 +172,4 @@ export * from './types';
 export * from './define';
 export * from './permissions';
 export * from './roles';
+export { toolNameOf, TOOL_NAME_RE } from './derive/toolName';

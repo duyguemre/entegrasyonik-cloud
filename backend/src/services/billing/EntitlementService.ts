@@ -119,7 +119,10 @@ function quotaReasonFor(resource: QuotaResource, limit: number): string {
     return `Planınız ${limit} ${labels[resource]} izin veriyor; yükseltmek için abonelik ayarlarına gidin.`;
 }
 
-interface CacheEntry { access: AccessTriple; status: EffectiveStatus; limits: Record<QuotaResource, number> | null; expiresAt: number; }
+interface CacheEntry { access: AccessTriple; status: EffectiveStatus; limits: Record<QuotaResource, number> | null; planCode?: string; billingExempt: boolean; expiresAt: number; }
+
+/** Plan kimligi (CHAT-ENT-1: ajan katmanı yetkisi plan koduna göre katalogdan çözülür; plan değişince `invalidate` ile anında güncellenir). */
+export interface PlanInfo { status: EffectiveStatus; planCode?: string; billingExempt: boolean }
 
 export class EntitlementService {
     private static cache = new Map<number, CacheEntry>();
@@ -163,7 +166,7 @@ export class EntitlementService {
         const access = sub ? computeAccess(sub, now) : NO_ACCESS;
         const limits = await EntitlementService.loadLimits(sub);
 
-        const entry: CacheEntry = { access, status, limits, expiresAt: now.getTime() + CACHE_TTL_MS };
+        const entry: CacheEntry = { access, status, limits, planCode: sub?.planCode, billingExempt: sub?.billingExempt === true, expiresAt: now.getTime() + CACHE_TTL_MS };
         EntitlementService.cache.set(tenantId, entry);
         return entry;
     }
@@ -173,6 +176,12 @@ export class EntitlementService {
         const entry = await EntitlementService.getEntry(tenantId, now);
         const allowed = entry.access[dimension];
         return allowed ? { allowed: true, status: entry.status } : { allowed: false, status: entry.status, reason: reasonFor(entry.status, dimension) };
+    }
+
+    /** Aboneliğin plan kodu + muafiyet bilgisi (aynı 60 sn önbellek; `checkAccess`/`checkQuota` ile tutarlı). */
+    public static async getPlanInfo(tenantId: number, now: Date = new Date()): Promise<PlanInfo> {
+        const e = await EntitlementService.getEntry(tenantId, now);
+        return { status: e.status, planCode: e.planCode, billingExempt: e.billingExempt };
     }
 
     /**

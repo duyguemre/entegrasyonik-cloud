@@ -28,6 +28,16 @@ export const PAZARAMA_READ_POST_PATHS: readonly RegExp[] = [
     /\/QuestionAnswer\/getApprovalAnswersByMerchant(Search)?$/i, /\/product\/getProductDetail$/i,
 ];
 
+/**
+ * ADR-0034 BR-5: LLM saglayicilari. GET/HEAD (model dogrulama) serbest; POST YALNIZ cikarim uclari (cikarim entegrasyona/pazaryerine YAZMA degildir;
+ * tenant verisi degismez). Baska her POST/yol bloklu.
+ */
+export const LLM_POST_PATHS: Readonly<Record<string, RegExp>> = {
+    'llm-anthropic': /^\/v1\/messages$/,
+    'llm-openai': /^\/v1\/chat\/completions$/,
+    'llm-google': /^\/v1beta\/models\/[A-Za-z0-9._-]+:streamGenerateContent$/,
+};
+
 const PAZARAMA_TOKEN_PATH = /\/connect\/token$/i;
 const IDEASOFT_TOKEN_PATH = /\/oauth(\/v\d+)?\/(token|authorize)$/i;
 const READ_METHODS = new Set(['GET', 'HEAD']);
@@ -120,6 +130,7 @@ export function evaluateLiveRequest(req: LiveRequest, opts: LivePolicyOptions = 
 
     // --- Yazma yöntemi: yalnız açık okuma allowlist'i ---
     if (method === 'POST') {
+        if (LLM_POST_PATHS[adapter]?.test(path)) return { action: 'allow', reason: 'llm-inference', operation: 'inference' };
         if (adapter === 'pazarama') {
             if (PAZARAMA_TOKEN_PATH.test(path)) return { action: 'allow', reason: 'oauth-token', operation: 'token' };
             if (PAZARAMA_READ_POST_PATHS.some(r => r.test(path))) return { action: 'allow', reason: 'read-post', operation: path.split('/').pop() };

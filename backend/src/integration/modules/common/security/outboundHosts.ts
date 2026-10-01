@@ -15,6 +15,7 @@
 import { IntegrationError } from '../IntegrationError';
 import { MockPrefix, readMockConfig, isMockSafeUrl } from '../mock/MockMode';
 import { ADAPTER_KEYS } from '../../adapterKeys';
+import { LLM_HOSTS } from '@platform/llm/catalog';
 
 /**
  * Adaptör kodu -> izinli host desenleri. Desen: tam host (`apigw.trendyol.com`) veya joker (`*.ideasoft.com.tr`: EN AZ bir etiket +
@@ -33,6 +34,11 @@ export const ALLOWED_OUTBOUND_HOSTS: Readonly<Record<string, readonly string[]>>
     ideasoft: ['*.ideasoft.com.tr', '*.myideasoft.com'],
     // Bizimhesap: kod varsayılanı `api.bizimhesap.com`; yerel DB kopyasındaki `Integrations.urls` `bizimhesap.com`.
     bizimhesap: ['api.bizimhesap.com', 'bizimhesap.com'],
+    // ADR-0034 BR-5: sohbet LLM saglayicilari (BYOK). Host'lar `platform/llm/catalog.ts`'te SABIT (tenant yazamaz); bunlar ADAPTOR degildir
+    // (`llm-` oneki; adapterKeys tablosunda yer almaz, mock oneki yok). Yalniz cikarim uclari icin POST: liveReadonlyPolicy.LLM_POST_PATHS.
+    'llm-anthropic': [LLM_HOSTS.anthropic],
+    'llm-openai': [LLM_HOSTS.openai],
+    'llm-google': [LLM_HOSTS.google],
 };
 
 /** ResilientHttpClient'a verilen kod (`n11-soap` gibi eklerle) -> izin listesi anahtarı + mock ön eki. */

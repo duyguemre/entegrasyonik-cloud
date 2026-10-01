@@ -31,6 +31,8 @@ export const EN: Record<string, { title: string; body: string }> = {
     SECURITY_OWNERSHIP_TRANSFERRED: { title: 'Account ownership transferred', body: 'Account ownership was transferred (record: {transferId}).' },
     SECURITY_MEMBER_SUSPENDED: { title: 'Member suspended', body: 'A member was suspended and their sessions were ended (user: {targetUserId}).' },
     SECURITY_OWNERSHIP_TRANSFER_REQUESTED: { title: 'Ownership transfer request', body: 'Account ownership is being transferred to you. The acceptance link was sent to your email (valid until {expiresAt}).' },
+    SECURITY_MCP_CONNECTED: { title: 'An AI app was connected', body: '"{clientName}" ({redirectHost}) was connected to your account as an AI app and can read store data. If this was not you, disconnect it right away under Account > Connected apps.' },
+    SYSTEM_MCP_APPROVAL_PENDING: { title: 'An AI action awaits your approval', body: '"{clientName}" proposes an action: {title}. Nothing happens until you approve it; review the details and approve or reject within 10 minutes.' },
     SYSTEM_ANNOUNCEMENT: { title: 'Announcement', body: 'A new announcement was published. Open it for details.' },
     PLATFORM_ALERT_FIRING: { title: 'Platform alert', body: 'Rule {ruleId} fired (alert: {alertId}).' },
     PLATFORM_ALERT_RESOLVED: { title: 'Platform alert resolved', body: 'Rule {ruleId} returned to normal (alert: {alertId}).' },

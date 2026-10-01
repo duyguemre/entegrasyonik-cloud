@@ -24,9 +24,10 @@ export interface AuditEntry {
 }
 
 export type AuditActorType = 'user' | 'platform' | 'impersonator' | 'system';
-export type AuditSurface = 'app' | 'backoffice';
+/** `chat`/`backoffice_chat`: sohbet araci (ADR-0034 BR-3); `mcp`: uzak MCP (MCP-3). */
+export type AuditSurface = 'app' | 'backoffice' | 'chat' | 'backoffice_chat' | 'mcp';
 const ACTOR_TYPES: ReadonlyArray<string> = ['user', 'platform', 'impersonator', 'system'];
-const SURFACES: ReadonlyArray<string> = ['app', 'backoffice'];
+const SURFACES: ReadonlyArray<string> = ['app', 'backoffice', 'chat', 'backoffice_chat', 'mcp'];
 
 export type AuditSink = (record: Record<string, any>) => Promise<void>;
 

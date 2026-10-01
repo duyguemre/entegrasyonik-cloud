@@ -68,6 +68,14 @@ export interface McpExposed {
     deepLink?: DeepLinkSpec;
 }
 
+/**
+ * [ADR-0034 Karar 6 / BR-4] Backoffice sohbetine AÇIK KATILIM (MCP'den bağımsız). DEĞİŞMEZ: yalnız `scope:'platform'` yetenek
+ * taşıyabilir ve v1'de yalnız `effect:'read'` (kayıt değişmezi + test). BR-2'de yalnız tip/değişmez vardır; broker BR-4'te.
+ */
+export interface AdminChatExposed {
+    exposed: { present: Presentation; llm: Llm };
+}
+
 export type McpNotExposed =
     | { reason: Exclude<NotExposedReason, 'deferred'>; note: string; until?: undefined }
     | { reason: 'deferred'; note: string; until: Stage };
@@ -92,7 +100,18 @@ export type Undo =
 /** RPC operasyon bağı: `'Servis/operasyon'` (ImageApi sözde-servisi dahil). */
 export type RpcRef = `${string}/${string}`;
 
-export interface Binding<I = any> {
+/** HTTP rotası bağı (RPC'siz uçlar: sohbet/akış). `'METHOD /yol'` (`/api` öneki hariç). RunOperation/OPERATION_POLICY'ye GİRMEZ; yetki rotanın kendisindedir. */
+export type HttpRef = `${'GET' | 'POST' | 'PUT' | 'DELETE'} /${string}`;
+
+export interface HttpBinding {
+    http: HttpRef;
+    rpc?: undefined;
+    map?: undefined;
+    input?: undefined;
+}
+
+export interface RpcBinding<I = any> {
+    http?: undefined;
     rpc: RpcRef;
     map?: (input: I) => unknown;
     /**
@@ -103,6 +122,9 @@ export interface Binding<I = any> {
      */
     input?: ZodType<any>;
 }
+
+/** Bir yeteneğin yürütme bağı: RPC operasyonu ya da (yalnız RPC'siz uçlar için) HTTP rotası. */
+export type Binding<I = any> = RpcBinding<I> | HttpBinding;
 
 export interface Llm {
     /** EN, 3–6 cümle: ne yapar, ne zaman kullanılır, ne zaman KULLANILMAZ, sınırlar. */
@@ -120,6 +142,8 @@ interface CapabilityBase<I> {
     domain: Domain;
     summary: { tr: string; en: string };
     llm?: Llm;
+    /** [ADR-0034 Karar 6] yalnız `scope:'platform'` (kayıt değişmezi). BR-2: tip + değişmez; backoffice broker BR-4. */
+    adminChat?: AdminChatExposed;
     input: ZodType<I>;
     effect: Effect;
     /** OPERATION_POLICY bundan türetilir. Bir yeteneğin TÜM bağları aynı kademeyi paylaşır. */
@@ -151,6 +175,11 @@ export type ExposedCapability<I = any, O = any> = CapabilityBase<I> & {
     llm: Llm;
     output: ZodType<O>;
     pii: 'none' | 'masked';
+    /**
+     * [ADR-0034 BR-2] Ham servis yanıtını `output` şemasına girecek biçime çevirir (alan seçimi, tarih → ISO, PII maskeleme).
+     * `output.parse` bunun ÇIKTISINDA çalışır (strip): şemada olmayan alan dışarı çıkmaz. Yoksa ham yanıt doğrudan `output`a girer.
+     */
+    project?: (raw: any, input: I) => unknown;
 };
 
 export type NotExposedCapability<I = any, O = any> = CapabilityBase<I> & {

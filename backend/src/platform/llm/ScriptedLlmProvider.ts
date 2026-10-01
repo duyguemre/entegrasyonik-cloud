@@ -51,7 +51,7 @@ export const DEFAULT_SCRIPT_RULES: ScriptRule[] = [
     { id: 'llm-rate', triggers: ['yoğun'], steps: [{ type: 'fail', error: new LlmError('LLM_RATE_LIMITED', { retryAfterSec: 20 }) }] },
     {
         id: 'approve-orders', triggers: ['onayla'], requiresTool: 'orders_approve',
-        steps: [text('Siparişleri onay için hazırlıyorum.'), { type: 'tool-call', id: 'call_approve_1', name: 'orders_approve', input: {} }, done('tool_use')],
+        steps: [text('Siparişleri onay için hazırlıyorum.'), { type: 'tool-call', id: 'call_approve_1', name: 'orders_approve', input: { orderIds: ['65f0c1000000000000000001', '65f0c1000000000000000002', '65f0c1000000000000000003'] } }, done('tool_use')],
         afterTool: [text('İşlem için onayınız gerekiyor.'), usage(40, 12), done()],
     },
     {
@@ -66,7 +66,7 @@ export const DEFAULT_SCRIPT_RULES: ScriptRule[] = [
     },
     {
         id: 'entity', triggers: ['ürün', 'stok'], requiresTool: 'products_search',
-        steps: [{ type: 'tool-call', id: 'call_entity_1', name: 'products_search', input: {} }, done('tool_use')],
+        steps: [{ type: 'tool-call', id: 'call_entity_1', name: 'products_search', input: { query: 'tişört' } }, done('tool_use')],
         afterTool: [text('İstediğiniz ürün kaydı yukarıda.'), usage(50, 9), done()],
     },
     {

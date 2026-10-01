@@ -3,6 +3,7 @@ import { CookieOptions, Response, Request } from 'express';
 import bcrypt from 'bcrypt';
 import { ApplicationError } from '@platform/core/errors';
 import { config } from '@config';
+import { verifyOAuthAccessToken, type OAuthPrincipal } from './oauthTokens';
 
 // ADR-0001 (Karar 1-4): imzalı, süreli, asgari claim'li oturum JWT'si.
 // Sır yalnızca env'den okunur (JWT_SECRET); eski kaynak-koddaki sabit sır hiçbir koşulda kabul edilmez.
@@ -240,6 +241,14 @@ export default class Security {
             iss: payload.iss,
             aud: payload.aud,
         };
+    }
+
+    /**
+     * [ADR-0035 / MCP-1] Bearer (OAuth) access token doğrulayıcısı: ayrı sır + `kid`, `aud` = `expectedAud` (MCP kaynak URI'si), ga/imp yok.
+     * Çerez hattından (`verify`) TAMAMEN ayrıdır: web çerezi burada, `aud:mcp` token `/api` çerez yolunda geçmez. Aile durumu (iptal) ayrıca denetlenir.
+     */
+    public verifyBearer(token: string, expectedAud: string): OAuthPrincipal {
+        return verifyOAuthAccessToken(token, expectedAud);
     }
 
     /** İstekteki çerezden token'ı okuyup doğrular. */

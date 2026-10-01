@@ -21,7 +21,7 @@ export const HISTOGRAM_BUCKET_SETS: Readonly<Record<string, readonly number[]>> 
     long: [...HISTOGRAM_BUCKETS_MS, 120000, 300000, 900000, 1800000, 3600000],
 };
 /** Metrik adı -> kova seti adı (listede olmayan metrik `default`). */
-const METRIC_BUCKET_SET: Readonly<Record<string, string>> = { stock_publish_lag_ms: 'long' };
+const METRIC_BUCKET_SET: Readonly<Record<string, string>> = { stock_publish_lag_ms: 'long', agent_confirm_wait_ms: 'long' };
 
 function bucketSetNameFor(metric: string): string {
     const n = METRIC_BUCKET_SET[metric];

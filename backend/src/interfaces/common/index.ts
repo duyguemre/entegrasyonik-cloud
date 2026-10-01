@@ -196,6 +196,9 @@ export interface IApplicationDB {
     // [ADR-0029 NB7/NB8] platform duyurulari + uyari yasam dongusu.
     getAnnouncementModel(): any
     getAlertModel(): any
+    getOAuthClientModel(): any
+    getOAuthAuthCodeModel(): any
+    getOAuthRefreshTokenModel(): any
     // [ADR-0016 §2 / ADR-0017 Karar 3] `platform/runtime/scheduler`: iş başına Mongo lease + JobRunRegistry.
     getJobLeaseModel(): any
     getJobStateModel(): any

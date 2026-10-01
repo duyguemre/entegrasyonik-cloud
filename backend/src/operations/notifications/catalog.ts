@@ -240,6 +240,22 @@ const TENANT: NotificationDefinition[] = [
         params: z.object({ transferId: id(), expiresAt: dateStr() }).strict(), action: () => '/settings/users',
         dedupeKey: (p) => p.transferId, retention: 'long', surface: 'tenant', example: { transferId: 'T-1', expiresAt: '2026-10-03T10:00:00Z' },
     }),
+    // [ADR-0035 MCP-2] Yeni yapay zeka uygulamasi baglantisi (baglanan kullaniciya; `opts.recipients` ile). clientName DCR'dan gelen duz kisa metin (serbest uzun metin degil);
+    // `redirectHost` bildirimde gercek kimlik ipucudur (ad taklit edilebilir). Token/kod bildirime GIRMEZ.
+    defineNotification({
+        code: 'SECURITY_MCP_CONNECTED', category: 'security', severity: 'info', mandatory: true,
+        defaultChannels: { inApp: true, email: 'instant' }, audience: { permission: 'self:manage', fallbackMinTier: 'member', actorOnly: true },
+        params: z.object({ familyId: id(), clientName: z.string().max(60), redirectHost: z.string().max(80) }).strict(), action: () => '/account/connected-apps',
+        dedupeKey: (p) => p.familyId, retention: 'long', surface: 'tenant', example: { familyId: 'F-1', clientName: 'Ornek Uygulama', redirectHost: 'client.example.test' },
+    }),
+    // [ADR-0035 MCP-4] Bir yapay zeka uygulamasi yazma islemi onerdi ve KULLANICININ onayini bekliyor (bant disi onay). Kullaniciya (istegi baslatan kisi); tercihe tabi (mandatory:false).
+    // Yalniz kisa/duz alanlar: uygulama adi (DCR, <=60) + yetenek basligi (kayittan). Onay on izlemesi/girdi bildirime GIRMEZ (sayfada gosterilir).
+    defineNotification({
+        code: 'SYSTEM_MCP_APPROVAL_PENDING', category: 'system', severity: 'warning', mandatory: false,
+        defaultChannels: { inApp: true, email: 'off' }, audience: { permission: 'app:use', fallbackMinTier: 'member', actorOnly: true },
+        params: z.object({ approvalId: id(), clientName: z.string().max(60), title: z.string().max(120) }).strict(), action: (p) => `/approve/${q(p.approvalId)}`,
+        dedupeKey: (p) => p.approvalId, retention: 'short', surface: 'tenant', example: { approvalId: 'A-1', clientName: 'Ornek Uygulama', title: 'Siparisleri onayla' },
+    }),
     // ---- system ----
     defineNotification({
         code: 'SYSTEM_ANNOUNCEMENT', category: 'system', severity: (p) => (p.kind === 'info' || p.kind === 'release' ? 'info' : 'warning'), severities: ['info', 'warning'],

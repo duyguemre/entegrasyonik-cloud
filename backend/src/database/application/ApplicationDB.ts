@@ -106,6 +106,10 @@ export default class ApplicationDB implements IApplicationDB {
     public getNotificationPreferencesModel() { return this.database.getModel('notification_preferences'); }
     public getAnnouncementModel() { return this.database.getModel('announcement'); }
     public getAlertModel() { return this.database.getModel('alert'); }
+    // [ADR-0035 / MCP-1] OAuth yetkilendirme sunucusu.
+    public getOAuthClientModel() { return this.database.getModel('oauth_client'); }
+    public getOAuthAuthCodeModel() { return this.database.getModel('oauth_auth_code'); }
+    public getOAuthRefreshTokenModel() { return this.database.getModel('oauth_refresh_token'); }
     // [ADR-0016 §2 / ADR-0017 Karar 3] `platform/runtime/scheduler`: iş başına Mongo lease + JobRunRegistry.
     public getJobLeaseModel() { return this.database.getModel('job_lease'); }
     public getJobStateModel() { return this.database.getModel('job_state'); }

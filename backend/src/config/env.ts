@@ -27,6 +27,11 @@ export type { MockPrefixName };
 
 const JWT_SECRET_MIN_BYTES = 32;
 
+function trimSlash(v: string | undefined): string | undefined {
+    const t = (v ?? '').trim().replace(/\/+$/, '');
+    return t === '' ? undefined : t;
+}
+
 /**
  * ADR-0031 Karar 3 / BE-CFG-1: eski (yerleşik) görsel kökü. Kod tabanında `images.entegrasyonik.com` YALNIZ burada geçer
  * (statik test: tests/static/imageBaseUrl.static.test.ts). `R2_PUBLIC_URL_IMAGE` tanımlıysa o kullanılır; bu değer ADR-0027
@@ -291,6 +296,16 @@ function buildShape(m: Mode) {
         // YALNIZ yerel/test (APP_ENV/NODE_ENV=production iken süreç başlamaz; ayrıca ScriptedLlmProvider üretimde kurulamaz). Değer yok = kapalı.
         AGENT_LLM_SCRIPTED: t.bool(false),
 
+        // --- ADR-0035 / MCP-1: uzak MCP + gömülü OAuth yetkilendirme sunucusu. MCP_ENABLED=false (varsayılan): /oauth ve /.well-known uçları
+        // KAPALI (404). Açıkken JWT_OAUTH_SECRET (>=32 bayt, web JWT_SECRET'ten AYRI) + PUBLIC_API_URL + PUBLIC_APP_URL zorunludur (süreç başlamaz).
+        // MCP_RESOURCE_URI boşsa `${PUBLIC_API_URL}/mcp`. Sır değerleri yalnız .env'de. ---
+        MCP_ENABLED: t.bool(false),
+        JWT_OAUTH_SECRET: t.str(),
+        JWT_OAUTH_SECRET_PREVIOUS: t.str(),
+        MCP_RESOURCE_URI: t.str(),
+        // MCP-3: `/mcp` Origin izinli listesine EK originler (virgülle). Varsayılan liste: CORS_ORIGINS + PUBLIC_APP_URL; `Origin` başlığı yoksa (yerel/sunucu istemcileri) denetim yok.
+        MCP_ALLOWED_ORIGINS: t.list(),
+
         // --- ADR-0020 Karar 3.2/9.1 (Aşama B): iki kişi kuralı iskeleti ---
         // Varsayılan `false` (KAPALI): bugün tek platformAdmin var; açılırsa hiçbir `dangerous` yayın yapılamaz
         // (Karar 9.1). Açılma eşiği insan kararıdır (aktif platformAdmin ≥2 ve ekip dışı erişim ya da bir olay).
@@ -445,6 +460,16 @@ function nest(e: Record<string, any>) {
             alertEvaluatorEnabled: e.ALERT_EVALUATOR_ENABLED as boolean, alertShadowUntil: e.ALERT_SHADOW_UNTIL as string | undefined, alertEmailTo: e.ALERT_EMAIL_TO as string | undefined },
         // ADR-0034 (sohbet aracısı)
         agent: { llmScripted: e.AGENT_LLM_SCRIPTED as boolean },
+        // ADR-0035 (uzak MCP / OAuth). `resourceUri`: RFC 8707/9728 kaynak tanıtıcısı (token `aud`'u).
+        mcp: {
+            enabled: e.MCP_ENABLED as boolean,
+            oauthSecret: e.JWT_OAUTH_SECRET as string | undefined,
+            oauthSecretPrevious: e.JWT_OAUTH_SECRET_PREVIOUS as string | undefined,
+            apiOrigin: trimSlash(e.PUBLIC_API_URL as string | undefined),
+            appOrigin: trimSlash(e.PUBLIC_APP_URL as string | undefined),
+            allowedOrigins: (e.MCP_ALLOWED_ORIGINS as string[]).filter((o) => o !== '*'),
+            resourceUri: trimSlash(e.MCP_RESOURCE_URI as string | undefined) ?? (trimSlash(e.PUBLIC_API_URL as string | undefined) ? `${trimSlash(e.PUBLIC_API_URL as string | undefined)}/mcp` : undefined),
+        },
         // LIVE-RO: canlı salt-okuma kipi
         liveReadonly: { enabled: e.LIVE_READONLY as boolean, allowTokenRefresh: (e.LIVE_READONLY_ALLOW_TOKEN_REFRESH as string[]).map(s => s.toLowerCase()) },
         // ADR-0020 Karar 3.2/9.1 (Aşama B)
@@ -503,12 +528,27 @@ function assertAgentScriptedNotInProduction(cfg: AppConfig): void {
     }
 }
 
+/** ADR-0035: MCP açıksa OAuth sırrı + dış adresler zorunlu; sır tanımlıysa (MCP kapalı olsa da) >=32 bayt olmalı. Yalnız değişken ADLARI. */
+function assertMcpConfig(cfg: AppConfig): void {
+    const issues: string[] = [];
+    const bad = (v: string | undefined) => v !== undefined && Buffer.byteLength(v, 'utf8') < JWT_SECRET_MIN_BYTES;
+    if (bad(cfg.mcp.oauthSecret)) issues.push(`JWT_OAUTH_SECRET: tanımlıysa en az ${JWT_SECRET_MIN_BYTES} bayt olmalı`);
+    if (bad(cfg.mcp.oauthSecretPrevious)) issues.push(`JWT_OAUTH_SECRET_PREVIOUS: tanımlıysa en az ${JWT_SECRET_MIN_BYTES} bayt olmalı`);
+    if (cfg.mcp.enabled) {
+        if (!cfg.mcp.oauthSecret) issues.push('JWT_OAUTH_SECRET: MCP_ENABLED=true iken zorunlu (tanımsız)');
+        if (!cfg.mcp.apiOrigin) issues.push('PUBLIC_API_URL: MCP_ENABLED=true iken zorunlu (tanımsız)');
+        if (!cfg.mcp.appOrigin) issues.push('PUBLIC_APP_URL: MCP_ENABLED=true iken zorunlu (tanımsız)');
+        if (cfg.isProduction && cfg.mcp.apiOrigin && !cfg.mcp.apiOrigin.startsWith('https://')) issues.push('PUBLIC_API_URL: production ortamında https olmalı');
+    }
+    if (issues.length) throw new ConfigError(issues);
+}
+
 /** Ham ortamı (varsayılan process.env) doğrular. Strict: hata listesi + ConfigError; lenient: hep tipli sonuç. */
 export function parseEnv(raw: NodeJS.ProcessEnv, opts: { strict: boolean }): AppConfig {
     const { schema } = getSchema(opts.strict);
     const res = schema.safeParse(raw);
     if (res.success) {
-        if (opts.strict) { assertAdminCorsDisjoint(raw); assertAgentScriptedNotInProduction(res.data); }
+        if (opts.strict) { assertAdminCorsDisjoint(raw); assertAgentScriptedNotInProduction(res.data); assertMcpConfig(res.data); }
         return res.data;
     }
     const issues = res.error.issues.map(i => `${String(i.path[0] ?? '(env)')}: ${reasonOf(i)}`);

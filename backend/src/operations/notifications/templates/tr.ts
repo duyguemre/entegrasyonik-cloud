@@ -32,6 +32,8 @@ export const TR: Record<string, { title: string; body: string }> = {
     SECURITY_OWNERSHIP_TRANSFERRED: { title: 'Hesap sahipliği devredildi', body: 'Hesap sahipliği devredildi (kayıt: {transferId}).' },
     SECURITY_MEMBER_SUSPENDED: { title: 'Üye askıya alındı', body: 'Bir üye askıya alındı; oturumları kapatıldı (kullanıcı: {targetUserId}).' },
     SECURITY_OWNERSHIP_TRANSFER_REQUESTED: { title: 'Sahiplik devri talebi', body: 'Hesap sahipliği size devredilmek isteniyor. Kabul bağlantısı e-postanıza gönderildi ({expiresAt} tarihine kadar geçerli).' },
+    SECURITY_MCP_CONNECTED: { title: 'Yapay zekâ uygulaması bağlandı', body: '"{clientName}" ({redirectHost}) hesabınıza yapay zekâ uygulaması olarak bağlandı ve mağaza verilerinizi okuyabilir. Siz yapmadıysanız Hesap > Bağlı uygulamalar bölümünden bağlantıyı hemen kesin.' },
+    SYSTEM_MCP_APPROVAL_PENDING: { title: 'Yapay zekâ işlemi onayınızı bekliyor', body: '"{clientName}" bir işlem öneriyor: {title}. İşlem siz onaylayana kadar YAPILMAZ; ayrıntıları inceleyip onaylayın ya da reddedin (10 dakika içinde).' },
     SYSTEM_ANNOUNCEMENT: { title: 'Duyuru', body: 'Yeni bir duyuru yayınlandı. Ayrıntılar için açın.' },
     PLATFORM_ALERT_FIRING: { title: 'Platform uyarısı', body: '{ruleId} kuralı tetiklendi (uyarı: {alertId}).' },
     PLATFORM_ALERT_RESOLVED: { title: 'Platform uyarısı çözüldü', body: '{ruleId} kuralı normale döndü (uyarı: {alertId}).' },
