@@ -608,9 +608,12 @@ defineExpose({
 
 .ek-notification-center__error {
   display: flex;
-  align-items: center;
+  align-items: safe center;
   justify-content: center;
   height: 100%;
+  box-sizing: border-box;
+  /* Açık filtre paneli listeyi kısaltınca (1280x800) hata kartı/Tekrar dene sayfalamanın altında kalıyordu → kaydırılabilir. */
+  overflow-y: auto;
   padding: var(--ek-space-8) var(--ek-space-4);
 }
 
