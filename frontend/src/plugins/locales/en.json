@@ -786,7 +786,7 @@
       "noBarcode": "Costs for {count} variants were not saved because they have no barcode — add a barcode, then edit the product to enter the cost."
     },
     "coverage": {
-      "label": "Cost coverage {percent}%",
+      "label": "Cost coverage {percent}",
       "hint": "Profit is not calculated for products without a cost.",
       "loading": "Loading cost coverage",
       "error": "Cost coverage could not be loaded"

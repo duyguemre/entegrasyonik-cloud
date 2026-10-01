@@ -527,7 +527,7 @@ const CellBody = defineComponent({
 .vg-c-chan { width: 96px; }
 .vg-c-int { width: 68px; }
 .vg-c-shelf { width: 80px; }
-.vg-c-cost { width: 132px; }
+.vg-c-cost { width: 172px; }
 .vg-c-actions { width: 84px; }
 
 /* başlık */

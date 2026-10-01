@@ -15,7 +15,7 @@
 
     <template v-else-if="view">
       <EkStatusChip :tone="view.complete ? 'success' : 'neutral'" :icon="view.complete ? 'mdi-check-circle-outline' : 'mdi-calculator-variant-outline'"
-        :label="t('pricing.coverage.label', { percent: view.percent })" />
+        :label="t('pricing.coverage.label', { percent: percentText })" />
       <span v-if="!view.complete" id="ccc-hint" class="ccc__hint">{{ t('pricing.coverage.hint') }}</span>
     </template>
   </span>
@@ -27,11 +27,13 @@ import { useI18n } from 'vue-i18n'
 import { EkStatusChip } from '@entegrasyonik/ui/components'
 import { coverageView, usePricingApi, type CostCoverage } from '@/composables/usePricingApi'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const api = usePricingApi()
 const state = ref<'loading' | 'ready' | 'error' | 'hidden'>('loading')
 const coverage = ref<CostCoverage | null>(null)
 const view = computed(() => coverageView(coverage.value))
+// Yüzde işareti Türkçede önde (%60), İngilizcede sonda (60%).
+const percentText = computed(() => (locale.value === 'en' ? `${view.value?.percent}%` : `%${view.value?.percent}`))
 
 async function load() {
   state.value = 'loading'
@@ -50,5 +52,5 @@ defineExpose({ load })
 .ccc__muted, .ccc__hint { color: var(--ek-color-content-muted); font-size: var(--ek-type-caption-size); line-height: var(--ek-type-caption-line); }
 .ccc__retry { color: var(--ek-color-action); font-size: var(--ek-type-caption-size); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; border-radius: var(--ek-radius-control); }
 .ccc__retry:focus-visible { outline: none; box-shadow: var(--ek-focus-ring); }
-@media (max-width: 760px) { .ccc__hint { display: none; } }
+
 </style>

@@ -65,7 +65,6 @@
 
         <p v-if="view.costMissing" class="cp__muted" data-testid="cost-hint">
           {{ t('pricing.panel.costHint') }}
-          <button type="button" class="cp__link" @click="emit('focus-cost')">{{ t('pricing.panel.enterCost') }}</button>
         </p>
         <p v-else-if="view.missing.length" class="cp__muted" data-testid="missing-note">{{ t('pricing.panel.missing', { list: missingText }) }}</p>
 

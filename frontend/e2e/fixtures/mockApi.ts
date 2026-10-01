@@ -84,6 +84,9 @@ export const defaultRoutes: Record<string, MockValue> = {
   'IntegrationService/getCatalog': integrationCatalogFixture(),
   'OrderService/getOrders': ordersDoluFixture,
   'ProductService/getProducts': productsDoluFixture,
+  // PRC-R0/R1: varsayılan = özellik kapalı + kapsam verisi yok (rozet/gösterge çizilmez); spec'ler kendi durumunu verir.
+  'PricingService/listCosts': { items: [], nextCursor: null, staleAfterDays: 90, coverage: { total: 0, withCost: 0, percent: 0, stale: 0 } },
+  'PricingService/listBuybox': { channel: 'trendyol', channels: [], settings: { enabled: false, skuCap: 0, refreshMin: 0, freshnessMin: 30, eligible: 0, tracked: 0 }, summary: { winning: 0, losing: 0, not_found: 0, unchecked: 0 }, items: [], nextCursor: null },
   'ClaimService/getClaims': claimsDoluFixture,
   'CustomerService/getCustomers': customersDoluFixture,
   'CustomerService/getCustomerDetail': buildCustomerDetail(),

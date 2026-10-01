@@ -387,6 +387,10 @@ function setCollapsed(v: boolean) {
 .ek-list-screen__summary {
   flex: none;
 }
+/* Yuva içeriği koşullu (v-if) boşalabilir: boş sarmalayıcı boşluk üretmesin. */
+.ek-list-screen__summary:empty {
+  display: none;
+}
 
 @media (min-width: 1024px) {
   .ek-list-screen__head:not(.is-headless) .ek-list-screen__head-actions {

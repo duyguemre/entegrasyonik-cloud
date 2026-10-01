@@ -2401,7 +2401,7 @@
       "noBarcode": "{count} varyantın maliyeti kaydedilemedi çünkü barkodu yok — barkod ekleyip ürünü düzenleyerek maliyeti girin."
     },
     "coverage": {
-      "label": "Maliyet kapsamı %{percent}",
+      "label": "Maliyet kapsamı {percent}",
       "hint": "Maliyeti girilmemiş ürünlerde kâr hesaplanmaz.",
       "loading": "Maliyet kapsamı yükleniyor",
       "error": "Maliyet kapsamı alınamadı"
