@@ -8,7 +8,7 @@
  * uydurma fiyat/indirim yok (yıllık seçenek seed'de yok → aralık geçişi gösterilmez).
  *
  * KURGU (S27b): koyu, ortalı kısa hero (vaat + güven çipleri + taslak notu) → kartlar hero'nun alt kenarına taşar
- * (göz ilk ekranda fiyatı görür) → önerilen plan koyu "vitrin" kartı (sayfanın tek koyu kartı) → "Her planda" şeridi
+ * (göz ilk ekranda fiyatı görür) → önerilen plan koyu "vitrin" kartı (sayfanın tek koyu kartı; "her planda" çekirdeği ilk kartta, tekrar şeridi yok)
  * → kanıtlanabilir güven unsurları (kayıttan) → Otopilot her planda (K46; açık zeminde merdiven) → karşılaştırma
  * tablosu (grup ikonları, öne çıkan sütun) → iki sütunlu SSS (+ belgeler, yardım) → kapanış (ücretsiz deneme + demo).
  * Koyu sahne sayısı: hero + kapanış (BRAND §4). CTA'lar uygulamaya devreder:
@@ -203,32 +203,6 @@ const planFeatureRows = [...new Map(plans.flatMap((p) => p.features.map((f) => [
         }
       </ul>
 
-      {
-        commonFeatures.length > 0 && (
-          <div class="common" data-testid="plan-common">
-            <p class="common__title">
-              <Icon name="layers" size="sm" />
-              Her planda
-            </p>
-            <ul class="common__list" role="list">
-              {commonFeatures.map((f) => (
-                <li>
-                  <span class="plan__check" aria-hidden="true">
-                    <Icon name="check" size="sm" />
-                  </span>
-                  <span>{f}</span>
-                </li>
-              ))}
-            </ul>
-            {featuresHref && (
-              <a class="link common__link" href={featuresHref}>
-                Tüm özellikler <Icon name="arrow" size="sm" />
-              </a>
-            )}
-          </div>
-        )
-      }
-
       <ul class="trust" role="list" aria-label="Güvenceler" data-testid="plan-trust">
         {
           trust.map((t) => (
@@ -237,13 +211,27 @@ const planFeatureRows = [...new Map(plans.flatMap((p) => p.features.map((f) => [
                 <Icon name={t.icon} size="sm" />
               </span>
               <span class="trust__text">
-                {t.meta && <strong>{t.meta}</strong>}
-                <span>{t.label}</span>
+                {t.meta ? (
+                  <>
+                    <strong>{t.meta}</strong> {t.label}
+                  </>
+                ) : (
+                  t.label
+                )}
               </span>
             </li>
           ))
         }
       </ul>
+      {
+        featuresHref && (
+          <p class="trust__more">
+            <a class="link" href={featuresHref}>
+              Her planda gelen özelliklerin tamamı <Icon name="arrow" size="sm" />
+            </a>
+          </p>
+        )
+      }
     </Container>
   </section>
 
@@ -887,84 +875,47 @@ const planFeatureRows = [...new Map(plans.flatMap((p) => p.features.map((f) => [
     background: var(--ek-color-secondary);
   }
 
-  /* --- Her planda şeridi --- */
-  .common {
-    display: grid;
-    gap: var(--ek-space-4);
-    align-items: center;
-    margin-top: var(--ek-space-8);
-    padding: var(--ek-space-5) var(--ek-space-6);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--site-radius-panel);
-    background: var(--ek-color-surface);
-  }
-  .common__title {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-    color: var(--site-text-heading);
-    font-size: var(--ek-font-size-md);
-    font-weight: var(--ek-font-weight-bold);
-    white-space: nowrap;
-  }
-  .common__title :global(.icon) {
-    color: var(--site-link-accent);
-  }
-  .common__list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ek-space-3) var(--ek-space-5);
-  }
-  .common__list li {
-    display: inline-flex;
-    gap: var(--ek-space-2);
-    align-items: center;
-    color: var(--site-text-body);
-    font-size: var(--ek-font-size-sm);
-  }
-  .common__link {
-    justify-self: start;
-    font-size: var(--ek-font-size-sm);
-    white-space: nowrap;
-  }
-
   /* --- Güven unsurları (kayıttan) --- */
   .trust {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
-    gap: var(--ek-space-2);
-    margin: var(--ek-space-6) 0 0;
-    padding: 0;
+    margin: var(--ek-space-10) 0 0;
+    padding: var(--ek-space-2);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--site-radius-panel);
+    background: var(--ek-color-surface);
     list-style: none;
   }
   .trust__item {
     display: flex;
     gap: var(--ek-space-3);
     align-items: center;
-    padding: var(--ek-space-3);
+    padding: var(--ek-space-3) var(--ek-space-4);
   }
   .trust__icon {
     display: inline-flex;
     flex: none;
     align-items: center;
     justify-content: center;
-    width: var(--ek-space-10);
-    height: var(--ek-space-10);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-surface);
+    width: var(--ek-space-8);
+    height: var(--ek-space-8);
+    border-radius: var(--ek-radius-md);
+    background: color-mix(in srgb, var(--ek-color-secondary) 10%, var(--ek-color-surface));
     color: var(--site-link-accent);
   }
   .trust__text {
-    display: grid;
-    color: var(--site-text-body);
+    color: var(--site-text-heading);
     font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-medium);
     line-height: var(--ek-line-height-tight);
   }
   .trust__text strong {
-    color: var(--site-text-heading);
-    font-size: var(--ek-font-size-md);
     font-weight: var(--ek-font-weight-bold);
+  }
+  .trust__more {
+    margin: var(--ek-space-4) auto 0;
+    font-size: var(--ek-font-size-md);
+    text-align: center;
   }
 
   /* --- Otopilot her planda (açık zemin; merdiven) --- */
@@ -1282,9 +1233,6 @@ const planFeatureRows = [...new Map(plans.flatMap((p) => p.features.map((f) => [
       grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
       align-items: stretch;
     }
-    .common {
-      grid-template-columns: auto minmax(0, 1fr) auto;
-    }
     .agent-ladder {
       grid-template-columns: repeat(3, minmax(0, 1fr));
       align-items: end;
@@ -1322,7 +1270,6 @@ const planFeatureRows = [...new Map(plans.flatMap((p) => p.features.map((f) => [
     }
     .trust {
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      column-gap: var(--ek-space-6);
     }
     /* Önerilen kart komşularından yüksek durur (hiyerarşi). */
     .plan--featured .plan__card {
