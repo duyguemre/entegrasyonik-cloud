@@ -10,7 +10,7 @@
     <MessageDetailComponent v-model="detailDialog.show" :message="selectedMessage" @reply="handleReply" />
 
     <div class="d-flex pa-2 pt-2 pb-0 mt-0 mb-1 align-start flex-wrap search-section">
-      <v-text-field clearable density="compact" label="Mesaj içeriği, Ürün Adı veya Sipariş No" variant="outlined"
+      <v-text-field clearable density="compact" label="Mesaj içeriği, ürün adı veya sipariş no" variant="outlined"
         v-model="searchForm.data.globalSearch" class="customTextField flex-grow-1" hide-details
         @keyup.enter.stop="getMessages(true)" @click:clear="searchForm.data.globalSearch = ''; getMessages(true)">
         <template #append-inner>

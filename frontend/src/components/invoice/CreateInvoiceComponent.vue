@@ -8,7 +8,7 @@
 
         <p class="cif-note">
           <v-icon icon="mdi-information-outline" size="16" aria-hidden="true" />
-          <span>Bu ekrandan eklediğiniz faturalar <strong>MANUAL</strong> statüsünde kaydedilir. Bir pazaryeri sipariş
+          <span>Bu ekrandan eklediğiniz faturalar <strong>“Elle yüklendi”</strong> olarak kaydedilir. Bir pazaryeri sipariş
             numarası girerseniz fatura o siparişle otomatik eşleştirilir.</span>
         </p>
         <EkFormGrid :columns="2">

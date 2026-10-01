@@ -119,7 +119,7 @@ test.describe('ADR-0018 — Entegrasyon uyum konsolu', () => {
     await expect(view.getByText('İzleme aktif', { exact: false })).toBeVisible()
     await expect(view.getByText('izlenmeyen uçlardaki değişiklikleri kapsamaz', { exact: false })).toBeVisible()
     await expect(view.locator('.compliance-summary__card')).toHaveCount(6)
-    await expect(view.getByText('Henüz kayıtlı bir probe turu yok.')).toBeVisible()
+    await expect(view.getByText('Henüz kayıtlı bir kontrol turu yok.')).toBeVisible()
     await expect(view.locator('tbody tr')).toHaveCount(0)
   })
 
@@ -237,7 +237,7 @@ test.describe('ADR-0018 — Entegrasyon uyum konsolu', () => {
     await expect(sheet).not.toContainText('400')
   })
 
-  test('rol (olumlu): platformAdmin menüde "Entegrasyon Uyum" girişini görür', async ({ page }) => {
+  test('rol (olumlu): platformAdmin menüde "Entegrasyon uyumu" girişini görür', async ({ page }) => {
     await mocks(page)
     await page.goto('/')
     await waitForWorkplaceReady(page)

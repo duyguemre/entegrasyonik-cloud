@@ -6,7 +6,7 @@
     attach=".adminClientListView">
 
     <EkFormSection title="Mağaza temel bilgileri" icon="mdi-store-outline">
-      <v-text-field v-model="form.name" label="Mağaza Adı" placeholder="Örn: Trendyol Mağazam" />
+      <v-text-field v-model="form.name" label="Mağaza adı" placeholder="Örn: Trendyol Mağazam" />
       <v-text-field v-model="form.title" label="Mağaza Başlığı" placeholder="Örn: MyStore E-Ticaret" />
     </EkFormSection>
 

@@ -123,6 +123,14 @@ describe('N10 denetim günlüğü yardımcıları', () => {
     expect(metaRows(null)).toEqual([])
   })
 
+  // P09 (K49): neden kodu okunur karşılıkla, ham kod ikincil; kayıtta olmayan kod uydurulmaz.
+  it('meta: neden kodu okunur karşılık + ham kod; bilinmeyen kod ham kalır (P09)', () => {
+    expect(metaRows({ reason: 'wrong_current' })).toEqual([
+      { key: 'reason', label: 'Neden', value: 'Mevcut parola hatalı', code: 'wrong_current' },
+    ])
+    expect(metaRows({ reason: 'yeni_kod' })).toEqual([{ key: 'reason', label: 'Neden', value: 'yeni_kod' }])
+  })
+
   it('kullanıcı adı: ad+soyad, yoksa e-posta; biçimsiz kimlik elenir', () => {
     expect(toAuditUsers({ users: [
       { _id: 'u-1', name: 'Ayşe', surname: 'Demir' },

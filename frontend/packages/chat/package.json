@@ -11,7 +11,8 @@
     "./protocol": "./src/protocol/index.ts",
     "./transports/sse": "./src/transport/sse.ts",
     "./transports/mock": "./src/transport/mock/index.ts",
-    "./testing": "./src/testing.ts"
+    "./testing": "./src/testing.ts",
+    "./confirm": "./src/confirm.ts"
   },
   "scripts": {
     "test": "vitest run"

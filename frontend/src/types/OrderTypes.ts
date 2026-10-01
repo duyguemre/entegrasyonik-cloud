@@ -10,12 +10,12 @@ export enum OrderInternalStatusEnum {
 
 
 export const ORDER_INTERNAL_STATUS_LABELS: Record<OrderInternalStatusEnum, string> = {
-    [OrderInternalStatusEnum.UNAPPROVED]: 'Platform Onayı Bekliyor',
-    [OrderInternalStatusEnum.AWAITING_APPROVAL]: 'Satıcı Onayı Bekliyor',
-    [OrderInternalStatusEnum.APPROVED]: 'Sipariş Onaylandı',
+    [OrderInternalStatusEnum.UNAPPROVED]: 'Kanal onayı bekliyor',
+    [OrderInternalStatusEnum.AWAITING_APPROVAL]: 'Satıcı onayı bekliyor',
+    [OrderInternalStatusEnum.APPROVED]: 'Sipariş onaylandı',
     [OrderInternalStatusEnum.SHIPPED]: 'Kargoda',
-    [OrderInternalStatusEnum.DELIVERED]: 'Teslim Edildi',
-    [OrderInternalStatusEnum.CANCELLED]: 'İptal Edildi',
+    [OrderInternalStatusEnum.DELIVERED]: 'Teslim edildi',
+    [OrderInternalStatusEnum.CANCELLED]: 'İptal edildi',
     [OrderInternalStatusEnum.RETURNED]: 'İade Edildi'
 };
 

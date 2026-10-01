@@ -12,7 +12,7 @@ test.describe('P1 — integrations/EInvoiceView', () => {
     await openScreen(page, 'EInvoiceView')
 
     await expectScreenOpen(page, '.einvoiceView')
-    await expect(page.locator('.einvoiceView').getByText('Hızlı Başlangıç Rehberi')).toBeVisible()
+    await expect(page.locator('.einvoiceView').getByText('Hızlı başlangıç rehberi')).toBeVisible()
     // einvoiceStore statik olduğu için bu ekranda gerçek bir "boş durum" senaryosu yoktur
     // (liste her zaman dolu) — bu, sabitlenen gerçek davranıştır.
     await expect(page.locator('.einvoiceView').getByText('Başlamak için seçim yapın')).toHaveCount(0)

@@ -29,7 +29,7 @@
       :error="loadError"
       error-title="Faturalar yüklenemedi"
       :search="searchInvoiceForm.search"
-      search-placeholder="Fatura No, Sipariş No veya Pazar Yeri Kodu Filtrele"
+      search-placeholder="Fatura no, sipariş no veya pazaryeri kodu"
       :chips="activeChips"
       :filter-count="panelFilterCount"
       selectable

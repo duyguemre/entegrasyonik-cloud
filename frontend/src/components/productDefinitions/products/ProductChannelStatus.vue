@@ -8,7 +8,7 @@
     • Panel (tıklayınca): kanal başına uzun rozet + durum çipi + varyant dağılımı + (varsa) kısa neden ve "Gönderime hazır"
       anahtarı (`platformUploads.<kod>.isReady`; kaydı ebeveyn `IntegrationService/savePlatformUploadIsReadyForProduct` ile
       yapar). NOT: backend bu bayrağı yalnız YAZAR, aktarım akışı okumaz (2026-09-30 tarama) → metin otomatik gönderim VAAT
-      ETMEZ; gönderim Toplu işlemler → Platformlara Yükle. Eski satır-içi "logoya tıkla = hazır/değil" gizli davranışının
+      ETMEZ; gönderim Toplu işlemler → Kanallara yükle. Eski satır-içi "logoya tıkla = hazır/değil" gizli davranışının
       yerini alır: ne yaptığı yazılı, durumu görünür, geri alınabilir.
   Veri: `channelStatus.ts` (saf, testli). Durum çipi dili `EkStatusChip` (renk + ikon + metin).
 -->
@@ -55,7 +55,7 @@
       <footer class="pcs-panel__foot">
         <v-icon icon="mdi-information-outline" aria-hidden="true" />
         <span><strong class="ek-num">{{ readyCount }}</strong> kanal gönderime hazır işaretli. İşaret planlama içindir; gönderimi
-          Toplu işlemler → Platformlara Yükle başlatır.</span>
+          Toplu işlemler → Kanallara yükle başlatır.</span>
       </footer>
     </section>
   </v-menu>

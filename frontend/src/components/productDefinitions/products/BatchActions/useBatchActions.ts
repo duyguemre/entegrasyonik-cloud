@@ -213,8 +213,8 @@ export function useBatchActions(props: any, emits: any, loadingComponentRef: any
     // Orijinal Helper'lar
     const getConfig = (mode: string) => {
         const config: any = {
-            TRANSFER: { title: 'Platformlara Ürün Yükleme', icon: 'mdi-upload-outline', color: 'primary', hint: 'Seçili ürünleri belirlediğiniz platformlara yeni ürün olarak gönderir.' },
-            UPDATE: { title: 'Platformlarda Ürünleri Güncelleme', icon: 'mdi-sync', color: 'success', hint: 'Ürün bilgilerini (başlık, açıklama vb.) platformlarda senkronize eder.' },
+            TRANSFER: { title: 'Kanallara ürün yükleme', icon: 'mdi-upload-outline', color: 'primary', hint: 'Seçili ürünleri belirlediğiniz platformlara yeni ürün olarak gönderir.' },
+            UPDATE: { title: 'Kanallarda ürünleri güncelleme', icon: 'mdi-sync', color: 'success', hint: 'Ürün bilgilerini (başlık, açıklama vb.) platformlarda senkronize eder.' },
             UPDATE_PRICE: { title: 'Platform Fiyatlarını Güncelleme', icon: 'mdi-currency-try', color: 'success', hint: 'Sadece fiyat bilgilerini seçili platformlarda günceller.' },
             UPDATE_STOCK: { title: 'Platform Stoklarını Güncelleme', icon: 'mdi-counter', color: 'success', hint: 'Stok adetlerini seçili platformlarda günceller.' },
             FETCH_PRODUCT: { title: 'Platformdan Ürün Yükleme', icon: 'mdi-download-outline', color: 'primary', hint: 'Platformda mevcut olan ürünleri çekerek sisteminize kaydeder.' },

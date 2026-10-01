@@ -16,7 +16,7 @@ test.describe('P2 — İade Talepleri (ClaimListView)', () => {
     await openScreen(page, 'ClaimListView')
 
     await expect(page.locator('.claimListView')).toBeVisible()
-    await expect(page.getByLabel('İade No, Sipariş No veya Takip Ara').first()).toBeVisible()
+    await expect(page.getByLabel('İade no, sipariş no veya takip no ara').first()).toBeVisible()
     await expect(page.getByText('CLM-E2E-0001')).toBeVisible()
     await expect(page.getByText('CLM-E2E-0002')).toBeVisible()
   })

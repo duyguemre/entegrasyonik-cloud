@@ -10,8 +10,8 @@ export enum PLATFORM_PROCESS {
 
 
 export const PLATFORM_PROCESS_LABELS: Record<PLATFORM_PROCESS, string> = {
-    [PLATFORM_PROCESS.TRANSFER]: 'Ürün Gönderimi',
-    [PLATFORM_PROCESS.UPDATE_PRICE]: 'Fiyat Güncelleme',
+    [PLATFORM_PROCESS.TRANSFER]: 'Ürün gönderimi',
+    [PLATFORM_PROCESS.UPDATE_PRICE]: 'Fiyat güncelleme',
     [PLATFORM_PROCESS.UPDATE_STOCK]: 'Stok Güncelleme',
     [PLATFORM_PROCESS.UPDATE]: 'Ürün Güncelleme',
     [PLATFORM_PROCESS.UPDATE_VARIANT]: 'Varyant Güncelleme',

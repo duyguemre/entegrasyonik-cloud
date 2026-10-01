@@ -31,9 +31,9 @@ test.describe('P2 — Ürün Gönderim İşlemleri (ExportLogList)', () => {
     await openScreen(page, 'LogListView')
 
     await expect(page.locator('.exportLogList')).toBeVisible()
-    await expect(page.getByLabel('Ürün Adı, Barkod, Stok Kodu veya Platform Ara').first()).toBeVisible()
+    await expect(page.getByLabel('Ürün adı, barkod, stok kodu veya kanal').first()).toBeVisible()
     await expect(page.locator('.exportLogList').getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
-    await expect(page.locator('.exportLogList').getByText('E2E Test Ürünü 2 - Fiyat Güncelleme')).toBeVisible()
+    await expect(page.locator('.exportLogList').getByText('E2E Test Ürünü 2 - Fiyat güncelleme')).toBeVisible()
   })
 
   test('boş durum: sonuç yoksa "Gönderim kaydı bulunamadı" kartı gösterilir (BİLİNÇLİ TAMAMLAMA — bkz. BACKLOG.md)', async ({ page }, testInfo) => {

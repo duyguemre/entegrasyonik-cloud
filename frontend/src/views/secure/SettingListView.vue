@@ -57,11 +57,11 @@
           </header>
           <div class="sl-identity">
             <EkDetailPanel v-show="cardShown(['storeName', 'brandColor', 'logo'])" title="Ad ve görünüm" icon="mdi-store-outline" flush>
-              <SettingRow v-show="rowShown('storeName')" name="storeName" label="Mağaza Adı" for-id="sl-storeName"
+              <SettingRow v-show="rowShown('storeName')" name="storeName" label="Mağaza adı" for-id="sl-storeName"
                 :description="row('storeName').description" :changed="changed('storeName')">
                 <v-text-field id="sl-storeName" v-model="settings.storeName" clearable maxlength="128" counter />
               </SettingRow>
-              <SettingRow v-show="rowShown('brandColor')" name="brandColor" label="Mağaza Renk Paleti" stacked
+              <SettingRow v-show="rowShown('brandColor')" name="brandColor" label="Mağaza renk paleti" stacked
                 :description="row('brandColor').description" :changed="changed('brandColor')">
                 <div class="sl-swatches">
                   <button v-for="color in premiumPalettes" :key="color.hex" type="button" class="color-swatch-item"
@@ -82,10 +82,10 @@
                       <v-color-picker v-model="settings.brandColor" hide-inputs show-swatches flat mode="hex"></v-color-picker>
                     </v-card>
                   </v-menu>
-                  <v-text-field v-model="settings.brandColor" label="Seçili Renk Kodu" class="sl-color-code" prepend-inner-icon="mdi-pound" hide-details />
+                  <v-text-field v-model="settings.brandColor" label="Seçili renk kodu" class="sl-color-code" prepend-inner-icon="mdi-pound" hide-details />
                 </div>
               </SettingRow>
-              <SettingRow v-show="rowShown('logo')" name="logo" label="Mağaza Logosu" stacked
+              <SettingRow v-show="rowShown('logo')" name="logo" label="Mağaza logosu" stacked
                 :description="row('logo').description" :changed="changed('logo')">
                 <div class="sl-logo">
                   <v-switch v-model="useLogoUrl" label="URL kullan" color="primary" density="compact" hide-details class="sl-logo__mode" />
@@ -98,7 +98,7 @@
                     </v-avatar>
                     <div class="settingListView__upload-text">
                       <p class="settingListView__help">Resmi mağaza logonuzu buradan yükleyebilirsiniz.</p>
-                      <EkButton tone="secondary" size="sm" icon="mdi-upload-outline" @click="logoInput?.click()">{{ settings.logo ? 'Logoyu Değiştir' : 'Logo Seç' }}</EkButton>
+                      <EkButton tone="secondary" size="sm" icon="mdi-upload-outline" @click="logoInput?.click()">{{ settings.logo ? 'Logoyu Değiştir' : 'Logo seç' }}</EkButton>
                     </div>
                     <input type="file" ref="logoInput" class="d-none" accept="image/*" @change="onLogoFileChange($event)" />
                   </div>
@@ -124,10 +124,10 @@
                   <v-icon v-else size="24" class="settingListView__avatar-icon">mdi-image-plus-outline</v-icon>
                 </v-avatar>
                 <div class="settingListView__preview-text">
-                  <h3 class="settingListView__preview-name">{{ settings.storeName || 'Mağaza Adı' }}</h3>
+                  <h3 class="settingListView__preview-name">{{ settings.storeName || 'Mağaza adı' }}</h3>
                   <div class="settingListView__verified">
                     <v-icon size="14" color="success">mdi-check-decagram-outline</v-icon>
-                    <span>Doğrulanmış Mağaza</span>
+                    <span>Doğrulanmış mağaza</span>
                   </div>
                 </div>
               </div>
@@ -283,7 +283,7 @@
           <div class="sl-savebar__actions">
             <EkButton v-if="isDirty" tone="secondary" @click="revertChanges">Vazgeç</EkButton>
             <!-- fe-polish: FR2 §2 tek kaydet standardı (intent="save": primary · kaydet ikonu). -->
-            <EkButton intent="save" class="settingListView__save" @click="saveSettings">Ayarları Kaydet</EkButton>
+            <EkButton intent="save" class="settingListView__save" @click="saveSettings">Ayarları kaydet</EkButton>
           </div>
         </div>
       </div>
@@ -350,17 +350,17 @@ const settings: any = ref({
  */
 type GroupId = 1 | 2 | 3 | 4
 const GROUPS: Array<{ value: GroupId; label: string; short: string; description: string; icon: string }> = [
-  { value: 1, label: 'Mağaza Kimliği', short: 'Ad, renk, logo', description: 'Müşterilerin gördüğü mağaza adı, marka rengi ve logo.', icon: 'mdi-store-cog-outline' },
-  { value: 2, label: 'Fatura & Yasal Bilgiler', short: 'Fatura kimliği, adres', description: 'Faturalarda ve yasal belgelerde basılan kimlik ve adres bilgileri.', icon: 'mdi-file-document-outline' },
-  { value: 3, label: 'Lojistik & Operasyon', short: 'Varsayılanlar, takvim', description: 'Ürün ve gönderi varsayılanları, zaman dilimi ve çalışma günleri.', icon: 'mdi-truck-delivery-outline' },
-  { value: 4, label: 'İletişim & Bildirimler', short: 'Hata e-postası, destek', description: 'Hata bildirimlerinin gideceği adres ve müşterilerinizin göreceği destek numarası.', icon: 'mdi-bell-ring-outline' },
+  { value: 1, label: 'Mağaza kimliği', short: 'Ad, renk, logo', description: 'Müşterilerin gördüğü mağaza adı, marka rengi ve logo.', icon: 'mdi-store-cog-outline' },
+  { value: 2, label: 'Fatura ve yasal bilgiler', short: 'Fatura kimliği, adres', description: 'Faturalarda ve yasal belgelerde basılan kimlik ve adres bilgileri.', icon: 'mdi-file-document-outline' },
+  { value: 3, label: 'Lojistik ve operasyon', short: 'Varsayılanlar, takvim', description: 'Ürün ve gönderi varsayılanları, zaman dilimi ve çalışma günleri.', icon: 'mdi-truck-delivery-outline' },
+  { value: 4, label: 'İletişim ve bildirimler', short: 'Hata e-postası, destek', description: 'Hata bildirimlerinin gideceği adres ve müşterilerinizin göreceği destek numarası.', icon: 'mdi-bell-ring-outline' },
 ]
 
 interface SettingDef { group: GroupId; label: string; description?: string; keywords?: string; path: string; corporate?: boolean }
 const ROWS: Record<string, SettingDef> = {
-  storeName: { group: 1, label: 'Mağaza Adı', description: 'Müşterilere ve e-postalarda görünecek resmi mağaza adınız.', keywords: 'isim unvan', path: 'storeName' },
-  brandColor: { group: 1, label: 'Mağaza Renk Paleti', description: 'Mağaza kimliğinizin rengi; önizlemede görünür. Paletten seçin ya da kendi renginizi girin.', keywords: 'renk marka tema', path: 'brandColor' },
-  logo: { group: 1, label: 'Mağaza Logosu', description: 'Dosya yükleyin ya da doğrudan bir görsel bağlantısı yapıştırın.', keywords: 'logo görsel resim', path: 'logo' },
+  storeName: { group: 1, label: 'Mağaza adı', description: 'Müşterilere ve e-postalarda görünecek resmi mağaza adınız.', keywords: 'isim unvan', path: 'storeName' },
+  brandColor: { group: 1, label: 'Mağaza renk paleti', description: 'Mağaza kimliğinizin rengi; önizlemede görünür. Paletten seçin ya da kendi renginizi girin.', keywords: 'renk marka tema', path: 'brandColor' },
+  logo: { group: 1, label: 'Mağaza logosu', description: 'Dosya yükleyin ya da doğrudan bir görsel bağlantısı yapıştırın.', keywords: 'logo görsel resim', path: 'logo' },
   invoiceType: { group: 2, label: 'Fatura tipi', description: 'Kurumsal seçildiğinde şirket bilgileri bölümü açılır.', keywords: 'bireysel kurumsal şahıs şirket', path: 'invoice.type' },
   firstname: { group: 2, label: 'İsim', keywords: 'ad', path: 'invoice.firstname' },
   lastname: { group: 2, label: 'Soyisim', keywords: 'soyad', path: 'invoice.lastname' },

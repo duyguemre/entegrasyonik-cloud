@@ -178,7 +178,7 @@
                   <div class="text-subtitle-2 font-weight-black color-slate-800 mb-4 uppercase">TEMEL BİLGİLER</div>
                   <v-row>
                     <v-col cols="12" md="6">
-                      <v-text-field v-model="form.name" label="Mağaza Adı" variant="outlined" density="compact"
+                      <v-text-field v-model="form.name" label="Mağaza adı" variant="outlined" density="compact"
                         class="customTextField" hide-details></v-text-field>
                     </v-col>
                     <v-col cols="12" md="6">

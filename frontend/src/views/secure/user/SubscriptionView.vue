@@ -1,7 +1,7 @@
 <template>
   <div class="subscriptionView">
     <div class="subscription-inner">
-      <EkPageHeader section="Hesap" title="Abonelik ve Planlar"
+      <EkPageHeader section="Hesap" title="Abonelik ve planlar"
         description="İşletmenize uygun planı seçin, mevcut aboneliğinizin durumunu buradan izleyin." />
 
       <!-- Durum bandı (ADR-0008 §3 durum makinesi -- boş/hata/yükleniyor AYRI durumlardır) -->
@@ -59,14 +59,14 @@
         <div v-else class="plans-grid" role="list" aria-label="Abonelik planları">
           <article v-for="plan in plans" :key="plan.code" class="plan-card" role="listitem"
             :class="{ 'plan-card--current': isCurrentPlan(plan), 'plan-card--suggested': !isCurrentPlan(plan) && suggestedPlan?.code === plan.code }">
-            <div v-if="isCurrentPlan(plan)" class="plan-card-ribbon">Mevcut Planınız</div>
+            <div v-if="isCurrentPlan(plan)" class="plan-card-ribbon">Mevcut planınız</div>
             <div v-else-if="suggestedPlan?.code === plan.code" class="plan-card-ribbon">Seçtiğiniz Plan</div>
 
             <h4 class="plan-card-name">{{ plan.name }}</h4>
 
             <div class="plan-card-price">
               <span class="price-amount">{{ formatPrice(plan) }}</span>
-              <span v-if="plan.priceMinor > 0" class="price-note">{{ plan.vatIncluded ? 'KDV Dahil' : 'KDV Hariç' }}</span>
+              <span v-if="plan.priceMinor > 0" class="price-note">{{ plan.vatIncluded ? 'KDV Dahil' : 'KDV hariç' }}</span>
             </div>
 
             <ul class="plan-card-limits">
@@ -163,8 +163,9 @@ const confirmDialog = ref<{ show: boolean; planCode: string; title: string; subt
 });
 
 const FEATURE_LABELS: Record<string, string> = {
-  einvoice: 'E-Fatura', erp: 'ERP Entegrasyonu', shipping: 'Kargo Entegrasyonu',
-  mcp: 'MCP / AI Asistan', desktopApp: 'Masaüstü Uygulaması',
+  // fe-r3d (APP_IDENTITY §8): cümle düzeni; MCP kullanıcı dilinde "Yapay zekâ bağlantısı" (P-MCP-1 ekran adı).
+  einvoice: 'E-Fatura', erp: 'ERP entegrasyonu', shipping: 'Kargo entegrasyonu',
+  mcp: 'Yapay zekâ bağlantısı', desktopApp: 'Masaüstü uygulaması',
 };
 
 const statusMeta = computed(() => subscriptionStatusMeta(subscriptionStatus.value));
@@ -179,8 +180,8 @@ function isCurrentPlan(plan: Plan): boolean {
 
 function planActionLabel(plan: Plan): string {
   if (!subscriptionData.value) return 'Planı Seç';
-  if (isCurrentPlan(plan)) return isActiveLike.value ? 'Mevcut Planınız' : 'Yeniden Etkinleştir';
-  return 'Bu Plana Geç';
+  if (isCurrentPlan(plan)) return isActiveLike.value ? 'Mevcut planınız' : 'Yeniden Etkinleştir';
+  return 'Bu plana geç';
 }
 
 // P08 (K49): plan kaydındaki tavan değerler "sınırsız" anlamındadır (Kurumsal: 999 kanal/kullanıcı, 999.999 varyant/çağrı).
@@ -198,7 +199,7 @@ function featureLabel(f: string): string {
 }
 
 function formatPrice(plan: Plan): string {
-  if (!plan.priceMinor) return 'Özel Teklif';
+  if (!plan.priceMinor) return 'Özel teklif';
   const amount = formatNumber(Math.round(plan.priceMinor / 100));
   return `₺${amount} / ${plan.interval === 'year' ? 'yıl' : 'ay'}`;
 }

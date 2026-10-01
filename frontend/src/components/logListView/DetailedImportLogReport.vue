@@ -37,9 +37,9 @@
                 :class="[stepDotClass(index, step.status), currentStepIndex === index && isProcessing ? 'step-dot--processing' : '']"></span>
               <span class="step-title"
                 :class="{ 'active-text': currentStepIndex === index, 'passed-text': currentStepIndex > index }">
-                {{ currentStepIndex === index && localItem.status === 'FAILED' ? 'Hata Oluştu' : (currentStepIndex
+                {{ currentStepIndex === index && localItem.status === 'FAILED' ? 'Hata oluştu' : (currentStepIndex
                   ===
-                  index && localItem.status === 'CANCELLED' ? 'İptal Edildi' : step.title) }}
+                  index && localItem.status === 'CANCELLED' ? 'İptal edildi' : step.title) }}
               </span>
             </div>
           </div>

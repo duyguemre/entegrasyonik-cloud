@@ -28,7 +28,7 @@
       :error="loadError"
       error-title="Mesajlar yüklenemedi"
       :search="searchForm.data.globalSearch"
-      search-placeholder="Mesaj içeriği, Ürün Adı veya Sipariş No"
+      search-placeholder="Mesaj içeriği, ürün adı veya sipariş no"
       :chips="activeChips"
       :filter-count="panelFilterCount"
       selectable
@@ -58,7 +58,7 @@
         <EkSelect kind="channel" v-model="searchForm.data.integrationCodes" :items="CHANNEL_OPTIONS" item-title="title" item-value="value" label="Kanal" multiple clearable />
         <v-select v-model="searchForm.data.status" :items="statusOptions" label="Mesaj durumu" item-title="label" item-value="value" clearable />
         <v-select v-model="searchForm.data.type" :items="typeOptions" label="Mesaj tipi" item-title="label" item-value="value" clearable />
-        <v-select v-model="searchForm.data.isRejected" :items="REJECT_OPTIONS" label="Red durumu" item-title="label" item-value="value" clearable />
+        <v-select v-model="searchForm.data.isRejected" :items="REJECT_OPTIONS" label="Ret durumu" item-title="label" item-value="value" clearable />
         <EkDateRange v-model:start="searchForm.data.startDate" v-model:end="searchForm.data.endDate" label="Mesaj tarihi" value-format="iso-date" />
       </template>
 

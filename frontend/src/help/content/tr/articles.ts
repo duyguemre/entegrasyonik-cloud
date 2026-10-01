@@ -30,7 +30,7 @@ export const ARTICLES_TR: HelpArticle[] = [
           'Giriş ekranında **Kayıt** sekmesini açın.',
           'Ad, soyad, e-posta ve parolanızı girin; parolayı ikinci alana tekrar yazın.',
           'Kullanım Koşulları, Abonelik Sözleşmesi ve Ön Bilgilendirme Formu onay kutusunu işaretleyip kaydı tamamlayın.',
-          'Tanıtım sitesinden bir plan seçerek geldiyseniz kayıttan sonra **Abonelik ve Planlar** ekranı o plan seçili olarak açılır.',
+          'Tanıtım sitesinden bir plan seçerek geldiyseniz kayıttan sonra **Abonelik ve planlar** ekranı o plan seçili olarak açılır.',
         ],
       },
       { type: 'h', text: 'Giriş ve mağaza seçimi' },
@@ -60,8 +60,8 @@ export const ARTICLES_TR: HelpArticle[] = [
     related: ['acc-password', 'gs-first-integration', 'acc-subscription', 'ts-common'],
   },
 
-  // Kanıt: frontend/src/views/secure/integrations/MarketplaceView.vue (Hızlı Başlangıç Rehberi, IntegrationPlatformRail, IntegrationCapabilityChips),
-  //        frontend/src/components/integrations/marketplace/TrendyolComponent.vue (sekmeler "API Bilgileri"/"Varsayılan Bilgiler", "Entegrasyon Durumu"),
+  // Kanıt: frontend/src/views/secure/integrations/MarketplaceView.vue (Hızlı başlangıç rehberi, IntegrationPlatformRail, IntegrationCapabilityChips),
+  //        frontend/src/components/integrations/marketplace/TrendyolComponent.vue (sekmeler "API Bilgileri"/"Varsayılan Bilgiler", "Entegrasyon durumu"),
   //        frontend/src/components/integrations/IntegrationFormFrame.vue (Kaydet), site/src/data/connect.ts (COMMON_STEPS/WHERE),
   //        frontend/src/help/channels.ts, frontend/src/plugins/locales/tr.json (integrationCoverage)
   {
@@ -79,7 +79,7 @@ export const ARTICLES_TR: HelpArticle[] = [
           'İlgili kanalın satıcı veya mağaza panelinden API kimlik bilgilerinizi edinin. Hangi bilgilerin gerektiği **Kanal bağlantı adımları** makalesindeki tabloda yer alır.',
           'Sol menüden **Entegrasyonlar** bölümünü ve kanal türünü (Pazaryeri, E-Ticaret veya ERP) açın.',
           'Üstteki kanal simgelerinden bağlayacağınız kanalı seçin.',
-          '**API Bilgileri** sekmesinde kimlik bilgilerini girin ve **Entegrasyon Durumu** anahtarını açın.',
+          '**API Bilgileri** sekmesinde kimlik bilgilerini girin ve **Entegrasyon durumu** anahtarını açın.',
           '**Varsayılan Bilgiler** sekmesinde kargo firması, kargo süresi, sevkiyat ve iade adresi gibi kanalın istediği varsayılanları doldurun.',
           '**Kaydet**’e basın. Eksik bir alan varsa ekran hangi bilginin gerektiğini belirtir.',
         ],
@@ -96,7 +96,7 @@ export const ARTICLES_TR: HelpArticle[] = [
   },
 
   // Kanıt: frontend/src/views/secure/productDefinitions/ProductListView.vue ("Yeni ürün", "Toplu işlemler", Platform durumu sütunu, platformAriaLabel),
-  //        frontend/src/components/productDefinitions/products/BatchActions/subcomponents/BatchActionMenu.vue ("Platformlara Yükle", "Platformdan Ürün Yükle"),
+  //        frontend/src/components/productDefinitions/products/BatchActions/subcomponents/BatchActionMenu.vue ("Kanallara yükle", "Platformdan Ürün Yükle"),
   //        frontend/src/components/productDefinitions/products/BatchActions/subcomponents/BatchProcessDialog.vue (Kapsam: Seçilenler/Filtrelenmiş/Tüm Katalog),
   //        frontend/src/components/productDefinitions/crud/ProductFormWizardBar.vue (adımlar), frontend/src/components/CategorySyncComponent.vue,
   //        frontend/src/components/logListView/DetailedExportLogReport.vue (gönderim adımları), frontend/src/views/secure/LogListView.vue
@@ -125,7 +125,7 @@ export const ARTICLES_TR: HelpArticle[] = [
         type: 'steps',
         items: [
           '**Ürünler** ekranında göndereceğiniz ürünleri seçin.',
-          '**Toplu işlemler > Platformlara Yükle**’yi seçin.',
+          '**Toplu işlemler > Kanallara yükle**’yi seçin.',
           'Kapsamı belirleyin: **Seçilenler**, **Filtrelenmiş** (mevcut filtre sonucunun tamamı) veya **Tüm Katalog**.',
           'Hedef kanalları işaretleyip işlemi onaylayın.',
           'İlerlemeyi **İşlem kayıtları** ekranından izleyin: Kuyrukta → Ürün Doğrulanıyor → İşlem Pazaryerine Gönderiliyor → Gönderim Sorgulanıyor → Ürün Onayı Bekleniyor → Tamamlandı.',
@@ -772,12 +772,12 @@ export const ARTICLES_TR: HelpArticle[] = [
         type: 'table',
         head: ['Durum', 'Anlamı', 'Yapabilecekleriniz'],
         rows: [
-          ['Platform Onayı Bekliyor', 'Sipariş kanal tarafında henüz onaylanmadı.', 'İptal'],
-          ['Satıcı Onayı Bekliyor', 'Siparişin sizin tarafınızdan onaylanması bekleniyor.', 'Onayla, İptal'],
-          ['Sipariş Onaylandı', 'Sipariş hazırlanıyor.', 'Fatura oluştur, Kargoya ver, Kargo etiketi yazdır (takip kodu varsa), İptal'],
+          ['Kanal onayı bekliyor', 'Sipariş kanal tarafında henüz onaylanmadı.', 'İptal'],
+          ['Satıcı onayı bekliyor', 'Siparişin sizin tarafınızdan onaylanması bekleniyor.', 'Onayla, İptal'],
+          ['Sipariş onaylandı', 'Sipariş hazırlanıyor.', 'Fatura oluştur, Kargoya ver, Kargo etiketi yazdır (takip kodu varsa), İptal'],
           ['Teslimat Bekleniyor', 'Sipariş kargoya verildi.', 'Fatura oluştur (fatura yoksa), Kargo etiketi yazdır'],
-          ['Teslim Edildi', 'Sipariş müşteriye ulaştı.', 'Fatura oluştur (fatura yoksa)'],
-          ['İptal Edildi', 'Sipariş iptal edildi; iptalin kaynağı (Satıcı, Müşteri, Platform) gösterilir.', 'Görüntüleme'],
+          ['Teslim edildi', 'Sipariş müşteriye ulaştı.', 'Fatura oluştur (fatura yoksa)'],
+          ['İptal edildi', 'Sipariş iptal edildi; iptalin kaynağı (Satıcı, Müşteri, Platform) gösterilir.', 'Görüntüleme'],
           ['İade Edildi', 'Sipariş iade süreciyle kapandı.', 'Görüntüleme'],
         ],
       },
@@ -804,7 +804,7 @@ export const ARTICLES_TR: HelpArticle[] = [
       {
         type: 'steps',
         items: [
-          '**Siparişler** ekranında onaylayacağınız siparişleri seçin. İsterseniz **Sipariş durumu** filtresiyle yalnız “Satıcı Onayı Bekliyor” olanları listeleyin.',
+          '**Siparişler** ekranında onaylayacağınız siparişleri seçin. İsterseniz **Sipariş durumu** filtresiyle yalnız “Satıcı onayı bekliyor” olanları listeleyin.',
           'Listenin üstündeki **Onayla** düğmesine basın. Düğmedeki sayı, seçiminizdeki onaylanabilir sipariş sayısıdır.',
           'Onay penceresini doğrulayın. Tek bir sipariş için satırın **⋯** menüsünden **Onayla**’yı da kullanabilirsiniz.',
         ],
@@ -844,7 +844,7 @@ export const ARTICLES_TR: HelpArticle[] = [
           ['İade Talebi Oluşturuldu', 'Talep kanalda açıldı.'],
           ['İncelemede', 'Talep sizin kararınızı bekliyor veya itiraz sürecinde.'],
           ['Tamamlandı', 'Talep onaylandı, reddedildi veya kanalda sonuçlandı.'],
-          ['İptal Edildi', 'Talep iptal edildi.'],
+          ['İptal edildi', 'Talep iptal edildi.'],
         ],
       },
       {
@@ -878,7 +878,7 @@ export const ARTICLES_TR: HelpArticle[] = [
       {
         type: 'steps',
         items: [
-          '**Mesajlar** ekranını açın; isterseniz durum filtresiyle yalnız “Cevap Bekleniyor” mesajları listeleyin.',
+          '**Mesajlar** ekranını açın; isterseniz durum filtresiyle yalnız “Cevap bekleniyor” mesajları listeleyin.',
           'En uzun bekleyenleri öne almak için **Bekleyenler önce** düğmesini kullanın.',
           'Satırdaki **Mesajı cevapla** ile mesajı açın, yanıtınızı yazıp gönderin.',
         ],
@@ -1255,7 +1255,7 @@ export const ARTICLES_TR: HelpArticle[] = [
     related: ['acc-users', 'acc-subscription', 'support-ticket'],
   },
 
-  // Kanıt: frontend/src/views/secure/user/SubscriptionView.vue (planlar, limitler, "Mevcut Planınız", test/mock ödeme uyarısı, "Kurumsal Anlaşma"),
+  // Kanıt: frontend/src/views/secure/user/SubscriptionView.vue (planlar, limitler, "Mevcut planınız", test/mock ödeme uyarısı, "Kurumsal Anlaşma"),
   //        backend/src/capabilities/domains/billing.ts (billing.checkout.start minTier admin), frontend/src/plugins/locales/tr.json (status.subscription, subscriptionBanner.*),
   //        frontend/src/components/layout/ShellSubscriptionBanner.vue
   {
@@ -1266,11 +1266,11 @@ export const ARTICLES_TR: HelpArticle[] = [
     summary: 'Abonelik durumunuzu görün, planları karşılaştırın ve plan seçin.',
     keywords: ['abonelik', 'plan', 'paket', 'ödeme', 'deneme', 'fatura bilgileri', 'limit'],
     body: [
-      { type: 'p', text: '**Abonelik ve Planlar** ekranı mevcut abonelik durumunuzu ve seçilebilecek planları gösterir. Durum şunlardan biri olabilir: Abonelik Yok, Deneme Sürümü, Aktif, Ödeme Gecikti, İptal Edildi.' },
+      { type: 'p', text: '**Abonelik ve planlar** ekranı mevcut abonelik durumunuzu ve seçilebilecek planları gösterir. Durum şunlardan biri olabilir: Abonelik Yok, Deneme Sürümü, Aktif, Ödeme Gecikti, İptal edildi.' },
       {
         type: 'steps',
         items: [
-          '**Abonelik ve Planlar** ekranını açın ve üstteki durum bandını kontrol edin.',
+          '**Abonelik ve planlar** ekranını açın ve üstteki durum bandını kontrol edin.',
           'Plan kartlarında fiyatı ve limitleri (kanal, varyant, kullanıcı sayısı) karşılaştırın. Mevcut planınız kartta işaretlidir.',
           'Geçmek istediğiniz planın düğmesine basın ve onay penceresini doğrulayın.',
         ],
@@ -1299,7 +1299,7 @@ export const ARTICLES_TR: HelpArticle[] = [
       {
         type: 'steps',
         items: [
-          'Gönderimi başlattığınızdan emin olun: ürün kaydetmek tek başına gönderim yapmaz. **Ürünler > Toplu işlemler > Platformlara Yükle** ile gönderin.',
+          'Gönderimi başlattığınızdan emin olun: ürün kaydetmek tek başına gönderim yapmaz. **Ürünler > Toplu işlemler > Kanallara yükle** ile gönderin.',
           '**Ürünler** ekranında **Platform yüklenme durumu** filtresiyle ürünün durumuna bakın: Hazırlanan, Onay bekleyen, Hatalı veya Onaylanan.',
           '**İşlem kayıtları** ekranında ilgili gönderim kaydını açın ve hangi adımda kaldığını görün. Hatalı adımın açıklaması nedeni belirtir.',
           'Kayıt **Ürün Onayı Bekleniyor** adımındaysa ürün pazaryerinin incelemesindedir; kanalın onayını bekleyin.',
@@ -1309,7 +1309,7 @@ export const ARTICLES_TR: HelpArticle[] = [
           'Kanal bağlantısının sağlıklı olduğunu **Entegrasyon sağlığı** ekranından doğrulayın.',
         ],
       },
-      { type: 'note', tone: 'info', text: 'Düzeltmeleri yaptıktan sonra ürünü yeniden gönderin. Ürün zaten kanalda varsa içerik değişiklikleri için **Platformlarda Güncelle**’yi kullanın.' },
+      { type: 'note', tone: 'info', text: 'Düzeltmeleri yaptıktan sonra ürünü yeniden gönderin. Ürün zaten kanalda varsa içerik değişiklikleri için **Kanallarda güncelle**’yi kullanın.' },
     ],
     goTo: [
       { screen: 'LogListView', label: 'İşlem kayıtları ekranını aç' },
@@ -1318,7 +1318,7 @@ export const ARTICLES_TR: HelpArticle[] = [
     related: ['cat-mapping', 'cat-required-attributes', 'int-health', 'gs-first-product-transfer'],
   },
 
-  // Kanıt: frontend/src/components/integrations/marketplace/TrendyolComponent.vue ("Entegrasyon Durumu"), frontend/src/components/integrations/IntegrationWebhookPanel.vue (zamanlanmış çekim + Trendyol webhook),
+  // Kanıt: frontend/src/components/integrations/marketplace/TrendyolComponent.vue ("Entegrasyon durumu"), frontend/src/components/integrations/IntegrationWebhookPanel.vue (zamanlanmış çekim + Trendyol webhook),
   //        frontend/src/views/secure/OrderListView.vue (filtreler, "Sipariş bulunamadı"), frontend/src/plugins/locales/tr.json (integrationWebhook.*, integrationHealth.*), frontend/src/components/layout/ShellSearch.vue
   {
     id: 'ts-order-missing',
@@ -1335,7 +1335,7 @@ export const ARTICLES_TR: HelpArticle[] = [
           '**Siparişler** ekranında filtrelerinizi temizleyin; kayıtlı bir görünüm veya durum filtresi siparişi gizliyor olabilir.',
           'Sipariş numarasını akıllı aramada arayın.',
           'Siparişin kanalda yeni oluştuğunu düşünüyorsanız bir sonraki zamanlanmış çekimi bekleyip listeyi yenileyin.',
-          'Kanalın ayar ekranında **Entegrasyon Durumu**’nun açık olduğunu kontrol edin.',
+          'Kanalın ayar ekranında **Entegrasyon durumu**’nun açık olduğunu kontrol edin.',
           '**Entegrasyon sağlığı** ekranında kanalın son başarılı senkron zamanına, son hatasına ve devre kesici durumuna bakın.',
           'Trendyol kullanıyorsanız webhook durumunun **Bildirim alınıyor** olduğunu kontrol edin; **Bildirim kesildi** görünüyorsa yeni adres üretip Trendyol panelinde güncelleyin.',
         ],
@@ -1440,7 +1440,7 @@ export const ARTICLES_TR: HelpArticle[] = [
         type: 'faq',
         items: [
           { q: 'Hangi kanallarla çalışabilirim?', a: 'Pazaryeri olarak Trendyol, Hepsiburada, N11 ve Pazarama; e-ticaret olarak Ideasoft (şu an test ortamında) ve ERP olarak Bizimhesap bağlanabilir. Kargo ve e-fatura entegrasyonları henüz yoktur.' },
-          { q: 'Ürünlerim kaydettiğimde pazaryerine otomatik gider mi?', a: 'Hayır. Ürünü kaydetmek gönderim yapmaz; ürün listesindeki Toplu işlemler > Platformlara Yükle ile gönderimi siz başlatırsınız.' },
+          { q: 'Ürünlerim kaydettiğimde pazaryerine otomatik gider mi?', a: 'Hayır. Ürünü kaydetmek gönderim yapmaz; ürün listesindeki Toplu işlemler > Kanallara yükle ile gönderimi siz başlatırsınız.' },
           { q: 'Her pazaryeri için ayrı stok girmem gerekir mi?', a: 'Hayır. Her varyantın tek bir stoğu vardır ve tüm kanallar bu stoktan beslenir. Kanallara yayınlanan miktar, stok politikanızdaki tampon kadar daha az olabilir.' },
           { q: 'Pazaryerindeki stok neden benim girdiğimden az görünüyor?', a: 'Büyük olasılıkla birincil olmayan kanallara uygulanan tampon (güvenlik stoğu) veya kargolanmamış siparişler için ayrılan rezerv nedeniyle. Stok politikası ve Stok sağlığı ekranlarından kontrol edebilirsiniz.' },
           { q: 'Aşırı satış olursa ne olur?', a: 'Sipariş kalemi Aşırı satış olarak işaretlenir. Stok politikanızdaki bekleme süresi (varsayılan 30 dakika) boyunca stok gelmesi beklenir; süre dolduğunda otomatik iptal açıksa ve kanal destekliyorsa satır iptal edilir, değilse işlem size düşer.' },
@@ -1459,7 +1459,7 @@ export const ARTICLES_TR: HelpArticle[] = [
 
   // ───────────────────────────── Destek ─────────────────────────────
 
-  // Kanıt: frontend/src/views/secure/supports/TicketListView.vue ("Yeni Bilet Aç", filtreler Durumlar/Öncelik Seviyesi/Talep Tipleri/Başlangıç/Bitiş, toplu kapatma),
+  // Kanıt: frontend/src/views/secure/supports/TicketListView.vue ("Yeni Bilet Aç", filtreler Durumlar/Öncelik/Talep tipi/Başlangıç/Bitiş, toplu kapatma),
   //        frontend/src/components/ticket/TicketCreateDialog.vue (Talep tipi, Öncelik, Konu, Mesajınız, karakter sayacı, "Talebi Gönder", "Talebiniz alındı", Talep no, "Talebi görüntüle"),
   //        frontend/src/components/ticket/TicketDetailComponent.vue (Yazışma geçmişi, "Yanıtınız", Gönder), frontend/src/types/TicketTypes.ts (tip/öncelik etiketleri),
   //        frontend/src/plugins/locales/tr.json (status.ticket), frontend/src/components/layout/ApplicationBar.vue (Yardım menüsü > "Destek kayıtları"), backend/src/capabilities/domains/support.ts

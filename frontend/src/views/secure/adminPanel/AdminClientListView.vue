@@ -4,7 +4,7 @@
 
     <EkListScreen
       section="Yönetim"
-      title="Mağaza Yönetimi"
+      title="Mağaza yönetimi"
       description="Platformdaki tüm mağaza kayıtlarını görüntüleyin, oluşturun ve yönetin."
       label="Mağazalar tablosu"
       noun="mağaza"
@@ -16,7 +16,7 @@
       :error="loadError"
       error-title="Mağazalar yüklenemedi"
       :search="search"
-      search-placeholder="Müşteri / Mağaza Ara"
+      search-placeholder="Mağaza adı veya kodu ara"
       :chips="activeChips"
       :sort="gridSort"
       :page="pagination.page"
@@ -44,8 +44,8 @@
 
       <template #toolbar-start>
         <span class="ek-admin-summary">
-          <span class="ek-admin-summary__item">Toplam Mağaza <strong>{{ clients.length }}</strong></span>
-          <span class="ek-admin-summary__item">Aktif Mağaza <strong class="is-success">{{ activeCount }}</strong></span>
+          <span class="ek-admin-summary__item">Toplam mağaza <strong>{{ clients.length }}</strong></span>
+          <span class="ek-admin-summary__item">Aktif mağaza <strong class="is-success">{{ activeCount }}</strong></span>
           <span class="ek-admin-summary__item">Pasif <strong class="is-danger">{{ (pagination.total || 0) - activeCount }}</strong></span>
         </span>
       </template>
