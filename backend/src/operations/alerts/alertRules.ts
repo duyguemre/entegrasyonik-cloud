@@ -1,7 +1,10 @@
 // ADR-0017 Karar 4 (Asama C, NB8): ALARM KURALLARI -- SAF hesap (DB/Redis yok; olcum kaynaklari `RuleSources` portuyla ENJEKTE edilir).
 // Uygulanan kural seti (kucuk, eyleme donuk): R1 entegrasyon hata orani (tenant x entegrasyon), R2 kimlik hatasi + devre acik > 10 dk
 // (platform + tenant x entegrasyon), R3 siparis senkron gecikmesi, R4 kuyruk birikmesi, R7 bildirim outbox olu mektup, R8 cozulmemis
-// OVERSOLD. Esikler `_platform` ayarlarindan (ADR-0031, `alertThresholds.ts`). R5/R6/R9-R11 kaynaklari ayri is (BACKLOG NB8).
+// OVERSOLD; platform: R5 katalog birikmesi, R6 zamanlanmis is sagligi, R9 surec/bagimlilik, R10 stok yayin gecikmesi, R11 yeni hata turu.
+// Esikler `_platform` ayarlarindan (ADR-0031, `alertThresholds.ts`); R6/R9 ADR sabitleri kodda. Yeni kaynaklar istege bagli (port yoksa
+// kural atlanir). Bilincli disarida: R9 olay dongusu p99 (metrigi yok), R11 regresyon (ErrorEvents yeniden acilma izi tutmuyor),
+// R4 "olcekleme esigi" bilgisi (Alerts duzeyleri warning/critical).
 // Bulgu (`Finding`) yalniz kural kimligi + kapsam anahtari + sayisal/kodlu ayrinti tasir (PII/ham hata metni YOK).
 
 export type AlertLevel = 'warning' | 'critical';
@@ -19,6 +22,16 @@ export interface Thresholds {
     r7WindowMs: number; r7Dead: number;
     /** R8: grace sonrasi tenant'a gorev acilmis (escalated) OVERSOLD satirin hala acik kalma suresi (ms). */
     r8UnresolvedMs: number;
+    /** R5: en eski (ertelenmemis) PENDING katalog sinyalinin yasi (ms). */
+    r5PendingMs: number;
+    /** R6: ardisik basarisiz kosu esigi (ADR sabiti). */
+    r6Failures: number;
+    /** R9: hazirlik hatasi surekliligi (ms) ve saatlik yakalanmamis red esigi (> esik; ADR sabitleri). */
+    r9NotReadyMs: number; r9UnhandledPerHour: number;
+    /** R10: 1 sa stok yayin gecikmesi p95 (ms) ve en az gozlem. */
+    r10P95Ms: number; r10MinCount: number;
+    /** R11: ilk gorulme penceresi (ms) ve en az olusum. */
+    r11WindowMs: number; r11MinCount: number;
 }
 
 const MIN = 60_000;
@@ -29,6 +42,11 @@ export const DEFAULT_THRESHOLDS: Thresholds = {
     r4Wait: 200, r4OldestSec: 10 * 60,
     r7WindowMs: 60 * MIN, r7Dead: 10,
     r8UnresolvedMs: 60 * MIN,
+    r5PendingMs: 30 * MIN,
+    r6Failures: 3,
+    r9NotReadyMs: 2 * MIN, r9UnhandledPerHour: 0,
+    r10P95Ms: 5 * MIN, r10MinCount: 20,
+    r11WindowMs: 60 * MIN, r11MinCount: 5,
 };
 
 export interface CallAggregate { clientId: string; integrationCode: string; total: number; errors: number; authErrors: number; dataErrors: number }
@@ -37,6 +55,9 @@ export interface CircuitRow { integrationCode: string; open: number; lastOpenedA
 export interface TenantCircuitRow { clientId: string; integrationCode: string; calls: number; open: number; closed: number }
 /** Etkin siparis entegrasyonunun son basarili senkron ani (`Clients.integrations[].lastSuccessfulOrderSync`). */
 export interface OrderSyncRow { tid: number; integrationCode: string; lastSuccessAt: number }
+export interface JobHealthRow { name: string; health: 'ok' | 'stale' | 'hung' | 'never-ran' | 'unknown'; consecutiveFailures: number; critical: boolean }
+/** `id` = ErrorEvents belge kimligi (parmak izi mesaj sablonu icerdiginden kapsam anahtarina GIRMEZ). */
+export interface NewErrorRow { id: string; source: string; code: string | null; count: number }
 
 export interface RuleSources {
     /** Pencere icinde tenant x entegrasyon cagri/hata toplami (`dataErrors` = VALIDATION/NOT_SUPPORTED: oran disi). */
@@ -53,6 +74,16 @@ export interface RuleSources {
     orderSyncLagging?(staleBeforeMs: number): Promise<OrderSyncRow[]>;
     /** R8: `escalatedBeforeMs`'den once tenant'a gorev acilmis ve hala OVERSOLD satir sayisi (tenant basina; 0 olanlar donmez). */
     oversoldUnresolved?(escalatedBeforeMs: number): Promise<Array<{ tid: number; count: number }>>;
+    /** R5: en eski ertelenmemis PENDING katalog sinyali (yoksa null). */
+    catalogBacklog?(): Promise<{ oldestAt: number; count: number } | null>;
+    /** R6: zamanlanmis islerin turetilmis sagligi (`deriveJobHealth`). */
+    jobHealth?(): Promise<JobHealthRow[]>;
+    /** R9: son 1 sa yakalanmamis red sayisi; hazirlik hatasi suruyorsa baslangic ani (yoksa null). */
+    processHealth?(): Promise<{ unhandledLastHour: number; notReadySince: number | null; failing: string[] }>;
+    /** R10: 1 sa stok yayin gecikmesi p95 (ms; asim varsa Infinity) ve gozlem sayisi. Veri yoksa null. */
+    publishLag?(): Promise<{ p95Ms: number | null; count: number } | null>;
+    /** R11: `sinceMs` sonrasi ilk kez gorulen, en az `minCount` olusumlu hata turleri. */
+    newErrors?(sinceMs: number, minCount: number): Promise<NewErrorRow[]>;
 }
 
 /** Tenant bildirimi (yalniz tenant-kapsamli eyleme donuk kurallar: R1, R2, R3, R8 -- ADR-0017 Karar 4 kanallar). */
@@ -160,6 +191,51 @@ export async function evaluateRules(src: RuleSources, t: Thresholds = DEFAULT_TH
                 ruleId: 'R8', scopeKey: `oversold:${r.tid}`, level: 'warning', detail: { tid: r.tid, count: r.count },
                 tenant: { tid: r.tid, code: 'STOCK_OVERSOLD_UNRESOLVED', params: { count: r.count } },
             });
+        }
+    }
+
+    // R5 katalog birikmesi (platform)
+    if (src.catalogBacklog) {
+        const b = await src.catalogBacklog();
+        if (b && now - b.oldestAt > t.r5PendingMs) {
+            out.push({ ruleId: 'R5', scopeKey: 'catalog-pending', level: 'warning', detail: { oldestPendingMinutes: Math.floor((now - b.oldestAt) / MIN), pending: b.count } });
+        }
+    }
+
+    // R6 zamanlanmis is sagligi (platform; kritik iste kritik)
+    if (src.jobHealth) {
+        for (const j of await src.jobHealth()) {
+            if (!/^[A-Za-z0-9_.:-]{1,80}$/.test(j.name)) continue;
+            const unhealthy = j.health === 'stale' || j.health === 'hung' || j.health === 'never-ran';
+            if (!unhealthy && j.consecutiveFailures < t.r6Failures) continue;
+            out.push({ ruleId: 'R6', scopeKey: `job:${j.name}`, level: j.critical ? 'critical' : 'warning', detail: { job: j.name, health: j.health, consecutiveFailures: j.consecutiveFailures } });
+        }
+    }
+
+    // R9 surec/bagimlilik (platform)
+    if (src.processHealth) {
+        const p = await src.processHealth();
+        if (p.unhandledLastHour > t.r9UnhandledPerHour) {
+            out.push({ ruleId: 'R9', scopeKey: 'unhandled-rejections', level: 'warning', detail: { unhandledLastHour: p.unhandledLastHour } });
+        }
+        if (p.notReadySince !== null && now - p.notReadySince > t.r9NotReadyMs) {
+            out.push({ ruleId: 'R9', scopeKey: 'readiness', level: 'critical', detail: { notReadyForSec: Math.floor((now - p.notReadySince) / 1000), failing: p.failing.filter((x) => SAFE.test(x)).join(',') } });
+        }
+    }
+
+    // R10 stok yayin gecikmesi (platform)
+    if (src.publishLag) {
+        const l = await src.publishLag();
+        if (l && l.count >= t.r10MinCount && l.p95Ms !== null && l.p95Ms > t.r10P95Ms) {
+            out.push({ ruleId: 'R10', scopeKey: 'stock-publish-lag', level: 'warning', detail: { p95Sec: Number.isFinite(l.p95Ms) ? Math.round(l.p95Ms / 1000) : -1, count: l.count } });
+        }
+    }
+
+    // R11 yeni hata turu (platform; ADR'de "bilgi" -- Alerts duzeyleri warning/critical oldugundan warning)
+    if (src.newErrors) {
+        for (const e of await src.newErrors(now - t.r11WindowMs, t.r11MinCount)) {
+            if (!/^[a-f0-9]{24}$/.test(e.id) || e.count < t.r11MinCount) continue;
+            out.push({ ruleId: 'R11', scopeKey: `error:${e.id}`, level: 'warning', detail: { errorId: e.id, source: SAFE.test(e.source) ? e.source : 'unknown', code: e.code && SAFE.test(e.code) ? e.code : '-', count: e.count } });
         }
     }
     return out;

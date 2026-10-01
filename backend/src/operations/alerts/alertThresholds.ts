@@ -25,5 +25,8 @@ export function readAlertThresholds(get: SettingReader): Thresholds {
         r4OldestSec: n('alerts.r4.oldestWaitMin', d.r4OldestSec / 60) * 60,
         r7Dead: n('alerts.r7.deadPerHour', d.r7Dead),
         r8UnresolvedMs: n('alerts.r8.unresolvedMin', d.r8UnresolvedMs / MIN) * MIN,
+        r5PendingMs: n('alerts.r5.pendingMin', d.r5PendingMs / MIN) * MIN,
+        r10P95Ms: n('alerts.r10.p95Min', d.r10P95Ms / MIN) * MIN,
+        r11MinCount: n('alerts.r11.minCount', d.r11MinCount),
     };
 }

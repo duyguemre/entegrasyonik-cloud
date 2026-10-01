@@ -91,8 +91,8 @@ describe('R3 kaynak seçimi (lagging)', () => {
 });
 
 describe('eşikler platform ayarından (ADR-0031)', () => {
-    it('katalog: 11 anahtar, platform kapsamı, yöneticiye özel (public-config dışı), varsayılan şemayı geçer, tüketici dosyası var', () => {
-        expect(ALERT_SETTINGS).toHaveLength(11);
+    it('katalog: 14 anahtar (R5/R10/R11 dahil), platform kapsamı, yöneticiye özel (public-config dışı), varsayılan şemayı geçer, tüketici dosyası var', () => {
+        expect(ALERT_SETTINGS).toHaveLength(14);
         for (const s of ALERT_SETTINGS) {
             expect(s.key.startsWith('alerts.')).toBe(true);
             expect(s.scope).toBe('platform');

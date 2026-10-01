@@ -6,6 +6,8 @@ import { RedisService } from '@services/redis/RedisService';
 import { getPlatformSetting } from '@integration/config/platformSettings';
 import { allowNewWork } from '@integration/config/intakeGate';
 import { EntitlementService } from '@services/billing/EntitlementService';
+import { deriveJobHealth, listStartedJobDefs } from '@platform/runtime/scheduler';
+import { getPublishLagSummary } from '../stock/publishLag';
 import { AlertEvaluator, type AlertEvaluatorDeps } from './AlertEvaluator';
 import type { OrderSyncRow, RuleSources } from './alertRules';
 import { readAlertThresholds } from './alertThresholds';
@@ -29,6 +31,9 @@ export function parseShadowUntil(raw: string | undefined): Date | undefined {
 }
 
 let queue: Queue | undefined;
+/** R9: bu surecte hazirlik hatasinin ilk gorulme ani (iyilesince sifirlanir). */
+let notReadySince: number | null = null;
+const HOUR_MS = 3_600_000;
 
 export function createRuleSources(): RuleSources {
     return {
@@ -101,6 +106,50 @@ export function createRuleSources(): RuleSources {
             }
             return out;
         }),
+        async catalogBacklog() {
+            const filter = { status: 'PENDING', nextRunAt: { $lte: new Date() } }; // ertelenmis (nextRunAt ileride) sinyaller haric
+            const model = (await app()).getExportSignalModel();
+            const oldest: any = await model.findOne(filter).select({ createdAt: 1 }).sort({ createdAt: 1 }).maxTimeMS(QUERY_MAX_TIME_MS).lean();
+            if (!oldest?.createdAt) return null;
+            const count = await model.countDocuments(filter).maxTimeMS(QUERY_MAX_TIME_MS);
+            return { oldestAt: new Date(oldest.createdAt).getTime(), count };
+        },
+        async jobHealth() {
+            // JobState kritiklik/sure saklamaz: tanimi bu surecte bilinen isler (worker rolundeki degerlendirici worker islerini gorur).
+            const defs = listStartedJobDefs();
+            if (defs.length === 0) return [];
+            const docs: any[] = await (await app()).getJobStateModel().find({ name: { $in: defs.map((d) => d.name) } }).limit(500).maxTimeMS(QUERY_MAX_TIME_MS).lean();
+            const byName = new Map((docs ?? []).map((d) => [d.name, d]));
+            const now = new Date();
+            const processUptimeMs = Math.floor(process.uptime() * 1000);
+            return defs.map((d) => {
+                const st = byName.get(d.name) ?? null;
+                return {
+                    name: d.name, critical: d.critical, consecutiveFailures: Number(st?.consecutiveFailures ?? 0),
+                    health: deriveJobHealth(st, { now, expectedIntervalMs: d.everyMs, maxDurationMs: d.maxDurationMs, isDaily: d.everyMs >= 24 * HOUR_MS, processUptimeMs }),
+                };
+            });
+        },
+        async processHealth() {
+            const docs: any[] = await (await app()).getMetricRollupModel()
+                .find({ metric: 'unhandled_rejections', resolution: '5m', bucketStart: { $gte: new Date(Date.now() - HOUR_MS) } }).maxTimeMS(QUERY_MAX_TIME_MS).lean();
+            let unhandled = 0;
+            for (const d of docs ?? []) for (const sr of Object.values(d?.series ?? {}) as any[]) unhandled += Number(sr?.c ?? 0);
+            // Mongo: bu sorgu calistiysa hazir. Redis: worker rolunde zorunlu (siparis kuyrugu).
+            const failing = RedisService.isReady() ? [] : ['redis'];
+            notReadySince = failing.length === 0 ? null : (notReadySince ?? Date.now());
+            return { unhandledLastHour: unhandled, notReadySince, failing };
+        },
+        async publishLag() {
+            const s = await getPublishLagSummary((await app()).getMetricRollupModel(), '1h');
+            if (!s.total.count) return null;
+            return { p95Ms: s.total.p95Overflow ? Number.POSITIVE_INFINITY : s.total.p95Ms, count: s.total.count };
+        },
+        async newErrors(sinceMs, minCount) {
+            const rows: any[] = await (await app()).getErrorEventModel().find({ status: 'open', firstSeen: { $gte: new Date(sinceMs) }, count: { $gte: minCount } })
+                .select({ _id: 1, source: 1, code: 1, count: 1 }).sort({ count: -1 }).limit(20).maxTimeMS(QUERY_MAX_TIME_MS).lean();
+            return (rows ?? []).map((r) => ({ id: String(r._id), source: String(r.source ?? ''), code: typeof r.code === 'string' ? r.code : null, count: Number(r.count ?? 0) }));
+        },
     };
 }
 
