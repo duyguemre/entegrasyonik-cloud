@@ -103,7 +103,7 @@ export function getPricingFaqRecords(source: PlanSource = defaultPlanSource): Pr
     id: 'plan-degisikligi',
     question: 'Planımı sonradan değiştirebilir miyim?',
     answer: 'Evet. Uygulamadaki Abonelik ve Planlar ekranından plan seçebilir ve planınızı değiştirebilirsiniz.',
-    evidence: [evidence('frontend/src/views/secure/user/SubscriptionView.vue', 'Abonelik ekranı plan geçişi', 'Bu Plana Geç')],
+    evidence: [evidence('frontend/src/views/secure/user/SubscriptionView.vue', 'Abonelik ekranı plan geçişi', 'Bu plana geç')],
   })
 
   records.push({

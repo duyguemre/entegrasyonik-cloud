@@ -65,7 +65,7 @@ export const fairPrinciples: FairPrinciple[] = [
     value: 'Stokunuzda otomatik yapılan değişiklikler nedeniyle birlikte kayda geçer; bir sayının neden değiştiği sonradan izlenebilir.',
     evidence: [
       evidence('backend/src/database/client/models/StockMovement.ts', 'Stok hareket defteri: neden alanı zorunlu', 'reason: { type: String, enum: STOCK_MOVEMENT_REASONS, required: true }'),
-      evidence('backend/src/api/services/stock-service.ts', 'Stok hareketlerini listeleme', 'async listMovements()'),
+      evidence('backend/src/api/rpc/handlers/stock-service.ts', 'Stok hareketlerini listeleme', 'async listMovements()'),
     ],
   },
   {

@@ -315,7 +315,7 @@ export const faq: FaqItem[] = [
     category: 'fiyat-plan',
     question: 'Ücretsiz deneme nasıl işler?',
     answer: `${trialSentence()}${trialPlanName() ? ` Deneme, ${trialPlanName()} planının limitleriyle çalışır;` : ''} devam etmek istediğinizde uygulama içinden işinize uygun planı seçersiniz.`,
-    evidence: [...trialEvidence(), evidence(SUBSCRIPTION_VIEW, 'Abonelik ekranı plan geçişi', 'Bu Plana Geç')],
+    evidence: [...trialEvidence(), evidence(SUBSCRIPTION_VIEW, 'Abonelik ekranı plan geçişi', 'Bu plana geç')],
   },
   {
     id: 'plan-secimi',
@@ -352,7 +352,7 @@ export const faq: FaqItem[] = [
     answer:
       'Evet. Kanal, ürün veya ekip sayınız arttığında uygulamadaki Abonelik ve Planlar ekranından daha kapsamlı bir plana geçebilirsiniz. Standart limitlerin ötesine geçtiğinizde size özel teklif hazırlarız.',
     evidence: [
-      evidence(SUBSCRIPTION_VIEW, 'Abonelik ekranı plan geçişi', 'Bu Plana Geç'),
+      evidence(SUBSCRIPTION_VIEW, 'Abonelik ekranı plan geçişi', 'Bu plana geç'),
       evidence(PLAN_SEED, 'Plans seed: özel teklif limitleri', 'Özel teklif: limitler'),
     ],
   },
