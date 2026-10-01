@@ -7,6 +7,7 @@ import { ObjectId } from 'mongodb'
 import crypto from 'crypto'
 import { VariantRepository } from '@database/repositories/tenant/VariantRepository'
 import { ProductRepository } from '@database/repositories/tenant/ProductRepository'
+import { ChoiceRepository } from '@database/repositories/tenant/ChoiceRepository'
 
 /**
  * [DB-07 / DBR-09] Bu servisin TÜM varyant okuma/yazmaları kanonik `Variants` koleksiyonuna (getVariantModel) gider.
@@ -76,9 +77,7 @@ export default class VariantService extends BaseApi implements IService {
 
     async getChoices(): Promise<any> {
         if (this.choices == undefined) {
-            const filterQuery = {}
-            const choices = await this.clientDB.getChoiceModel().find(filterQuery, {})
-            this.choices = choices
+            this.choices = await new ChoiceRepository(this.clientDB).findAll({})
         }
         return this.choices
     }

@@ -18,9 +18,9 @@ export class ChoiceRepository {
         return await query.lean()
     }
 
-    /** autoMatch için tüm seçenekler (lean DEĞİL, sıralama yok). */
-    async findAll(): Promise<any[]> {
-        return await this.model.find({})
+    /** Tüm seçenekler (lean DEĞİL, sıralama yok). autoMatch projeksiyonsuz, VariantService `{}` projeksiyonla çağırır. */
+    async findAll(projection?: Record<string, unknown>): Promise<any[]> {
+        return projection === undefined ? await this.model.find({}) : await this.model.find({}, projection)
     }
 
     async create(document: any): Promise<any> {
