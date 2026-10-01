@@ -31,8 +31,7 @@
           multiple
           clearable
         />
-        <EkDateField v-model="form.startDate" :label="t('finance.filters.startDate')" :max="form.endDate" />
-        <EkDateField v-model="form.endDate" :label="t('finance.filters.endDate')" :min="form.startDate" />
+        <EkDateRange v-model:start="form.startDate" v-model:end="form.endDate" :label="t('finance.filters.dateRange')" :start-label="t('finance.filters.startDate')" :end-label="t('finance.filters.endDate')" value-format="date" />
       </EkFilterPanel>
 
       <section class="ek-fin-kpis" :aria-label="t('finance.summary.kpiLabel')" :aria-busy="loading || undefined">
@@ -99,7 +98,7 @@
 </template>
 
 <script setup lang="ts">
-import { EkSelect, EkListFrame, EkFilterPanel, EkDateField, EkKpiRow, EkKpiCard, EkEmptyState, EkErrorState, EkDataGrid, type EkGridColumn, EkChannelDot, EkStatusChip } from '@entegrasyonik/ui/components'
+import { EkSelect, EkListFrame, EkFilterPanel, EkDateRange, EkKpiRow, EkKpiCard, EkEmptyState, EkErrorState, EkDataGrid, type EkGridColumn, EkChannelDot, EkStatusChip } from '@entegrasyonik/ui/components'
 import type { EkActiveFilterChip } from '@entegrasyonik/ui/components'
 import { channelOptionsFrom } from '@entegrasyonik/ui/components/selectOptions'
 import { computed, onMounted, reactive, ref } from 'vue'

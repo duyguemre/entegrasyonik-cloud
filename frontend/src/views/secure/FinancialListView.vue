@@ -4,7 +4,7 @@
   DS-v2 Aşama 2 — liste standardı (EkListScreen). API sözleşmesi DEĞİŞMEDİ:
   `FinancialService/getTransactionData` gövdesi (searchForm + page/limit/sortBy), özet (`res.summary`),
   detay diyaloğu (satır nesnesini doğrudan kullanır) AYNEN korundu. Sıralama SUNUCUDA (externalId,
-  netAmount, transactionDate). Tarih filtreleri EkDateField (Date modeli — eski v-date-picker ile aynı).
+  netAmount, transactionDate). Tarih filtresi EkDateRange (FR3 madde 10; Date modeli — eski v-date-picker ile aynı).
   Arama Enter ile sorgular. Özet şeridi tablonun üstünde kalır.
 
   C1.4 — sayfa başlığı (EkPageHeader) + sekmeler (EkPageTabs): İşlemler (yukarıdaki içerik, DEĞİŞMEDİ) ·
@@ -216,8 +216,7 @@
         <EkSelect kind="channel" v-model="searchForm.integrationCodes" :items="channelOptionsFrom(integrationStore.getClientPlatforms())" label="Platformlar" multiple clearable />
         <EkSelect v-model="searchForm.transactionTypes" :items="transactionTypeOptions" label="İşlem Tipi"
           multiple clearable />
-        <EkDateField v-model="searchForm.startDate" label="Başlangıç" :max="searchForm.endDate" />
-        <EkDateField v-model="searchForm.endDate" label="Bitiş" :min="searchForm.startDate" />
+        <EkDateRange v-model:start="searchForm.startDate" v-model:end="searchForm.endDate" label="İşlem tarihi" value-format="date" />
       </template>
 
       <template #cell-externalId="{ row }">
@@ -266,7 +265,7 @@
 </template>
 
 <script setup lang="ts">
-import { EkSelect, EkRowActions, EkButton, EkDateField, EkChannelDot, EkStatusChip, EkPageTabs, EkTooltip, type EkPageTab } from '@entegrasyonik/ui/components'
+import { EkSelect, EkRowActions, EkButton, EkDateRange, EkChannelDot, EkStatusChip, EkPageTabs, EkTooltip, type EkPageTab } from '@entegrasyonik/ui/components'
 import type { EkGridColumn, EkGridSort, EkActiveFilterChip } from '@entegrasyonik/ui/components'
 import { channelOptionsFrom } from '@entegrasyonik/ui/components/selectOptions'
 import { ref, reactive, computed, watch } from 'vue';

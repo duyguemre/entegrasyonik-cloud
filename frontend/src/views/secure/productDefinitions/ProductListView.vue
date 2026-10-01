@@ -960,7 +960,7 @@ const resetSearchProductForm = () => {
 }
 
 .custom-float {
-  animation: float 1s ease-in-out infinite;
+  animation: float var(--ek-motion-loop-flow) var(--ek-easing-standard) infinite;
 }
 
 @keyframes float {

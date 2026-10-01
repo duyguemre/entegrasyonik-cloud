@@ -60,8 +60,7 @@ var expandHtml = () => {
 /*     top: -40px;
  */    z-index: 3;
 /*     right: 56%; */
-    transition: top .5s ease-in-out, right .5s ease-in-out
-        /*     transition: top .3s ease, right .3s ease */
+    transition: top var(--ek-motion-reveal), right var(--ek-motion-reveal)
 }
 
 .expand-button.expanded {

@@ -765,7 +765,7 @@ onBeforeUnmount(() => {
   background: var(--ek-color-border-strong);
   position: relative;
   z-index: 2;
-  transition: background-color var(--ek-duration-slow) var(--ek-easing-standard);
+  transition: background-color var(--ek-motion-layout);
 }
 
 .step-dot--upcoming {

@@ -38,21 +38,30 @@
           :hook-classes="HOOK_CLASSES"
           @select="onSelect"
           @expand-request="$emit('expand-request')"
+          @reorder="onReorder"
+          @dismiss-empty="dismissFavoritesHint"
         >
-          <template #item-trailing="{ item }">
-            <button
+          <template #item-trailing="{ item, section }">
+            <EkTooltip
               v-if="isFavoritable(item.key)"
-              type="button"
-              class="ek-shell-nav__fav"
-              :class="{ 'is-on': isFavorite(item.key) }"
-              :aria-pressed="isFavorite(item.key)"
-              :aria-label="isFavorite(item.key) ? `Favorilerden çıkar: ${item.label}` : `Favorilere ekle: ${item.label}`"
-              @click.stop="toggleFavorite(item.key)"
+              :text="isFavorite(item.key) ? t('shell.favorites.remove') : t('shell.favorites.add')"
+              location="end"
+              :open-delay="400"
             >
-              <v-icon :icon="isFavorite(item.key) ? 'mdi-star' : 'mdi-star-outline'" aria-hidden="true" />
-            </button>
+              <button
+                type="button"
+                class="ek-shell-nav__fav"
+                :class="{ 'is-on': isFavorite(item.key), 'is-pinned-row': section?.id === FAVORITES_SECTION_ID }"
+                :aria-pressed="isFavorite(item.key)"
+                :aria-label="isFavorite(item.key) ? `${t('shell.favorites.remove')}: ${item.label}` : `${t('shell.favorites.add')}: ${item.label}`"
+                @click.stop="toggleFavorite(item.key, item.label)"
+              >
+                <v-icon :icon="isFavorite(item.key) ? 'mdi-star' : 'mdi-star-outline'" aria-hidden="true" />
+              </button>
+            </EkTooltip>
           </template>
         </EkSidebarNav>
+        <p class="ek-sr-only" aria-live="polite">{{ announce }}</p>
       </div>
 
       <div v-if="!temporary" class="ek-shell-nav__footer">
@@ -79,11 +88,12 @@
   </v-navigation-drawer>
 </template>
 <script lang="ts" setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import useUser from '@/composables/user'
-import { EkSidebarNav, EkKbd } from '@entegrasyonik/ui/components'
+import { useI18n } from 'vue-i18n'
+import { EkSidebarNav, EkKbd, EkTooltip } from '@entegrasyonik/ui/components'
 import { shortcutKeys, withShortcut } from '@entegrasyonik/ui/shortcuts'
-import { useShellMenu } from './useShellMenu'
+import { dismissFavoritesHint, FAVORITES_SECTION_ID, useShellMenu } from './useShellMenu'
 
 const HOOK_CLASSES = { item: 'soft-item', group: 'v-list-group', groupHeader: 'v-list-group__header', subItem: 'sub-item-soft' }
 
@@ -94,6 +104,7 @@ const emit = defineEmits<{ 'update:modelValue': [boolean]; 'collapse-request': [
 const isRail = computed(() => !props.temporary && props.rail)
 
 const userApi = useUser()
+const { t } = useI18n({ useScope: 'global' })
 const { model, activeKey, linkFor, openKey, menuStore } = useShellMenu()
 
 // Kalıcı modda drawer her zaman görünür; `v-model` yalnızca `temporary` modda anlamlı.
@@ -123,11 +134,23 @@ const isFavoritable = (key: string) => {
   return !!link && !link.isConstant && link.code !== 'ExitView'
 }
 const isFavorite = (key: string) => !!linkFor(key)?.isFavorite
-function toggleFavorite(key: string) {
+/** FR3 madde 2: ekle/çıkar iyimser (menü deposu) — Favoriler bölümü anında güncellenir; ekran okuyucuya kısa duyuru. */
+const announce = ref('')
+function toggleFavorite(key: string, label: string) {
   const link = linkFor(key)
   if (!link) return
-  if (link.isFavorite) menuStore.deleteFavorite(link.code)
-  else menuStore.addFavorite(link.code)
+  if (link.isFavorite) {
+    menuStore.deleteFavorite(link.code)
+    announce.value = `${label} ${t('shell.favorites.removed')}`
+  } else {
+    menuStore.addFavorite(link.code)
+    announce.value = `${label} ${t('shell.favorites.added')}`
+  }
+}
+function onReorder(sectionId: string, keys: string[]) {
+  if (sectionId !== FAVORITES_SECTION_ID) return
+  const codes = keys.map((k) => linkFor(k)?.code).filter(Boolean)
+  menuStore.sortFavorites(codes)
 }
 </script>
 
@@ -138,7 +161,7 @@ function toggleFavorite(key: string) {
   background: var(--ek-color-sidebar-bg) !important;
   border-right: 1px solid var(--ek-color-sidebar-border) !important;
   transition-duration: var(--ek-app-nav-move) !important;
-  transition-timing-function: var(--ek-easing-enter) !important;
+  transition-timing-function: var(--ek-motion-layout-easing) !important;
   transition-delay: 0ms;
 }
 
@@ -154,10 +177,17 @@ function toggleFavorite(key: string) {
   height: 100%;
 }
 
+/* FR3 madde 1 (fe-r3a) — ray hatası: öğe odak/hover ile görünür alana kaydırılınca (Tab, ipucu) çekmece içeriği yatayda
+   ~160px kayıyor, tüm ikonlar ekrandan çıkıyordu (`overflow: hidden` programatik kaydırmaya izin verir). `clip` kaydırmaz. */
+.ek-shell-nav :deep(.v-navigation-drawer__content) {
+  /* İki eksen birden `clip` (biri auto olursa clip → hidden'a döner); dikey kaydırma iç `__scroll`'da. */
+  overflow: clip;
+}
+
 .ek-shell-nav__scroll {
   flex: 1;
   min-height: 0;
-  overflow-x: hidden;
+  overflow-x: clip;
   overflow-y: auto;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
@@ -185,18 +215,38 @@ function toggleFavorite(key: string) {
   font-size: var(--ek-icon-sm);
   opacity: 0;
   cursor: pointer;
-  transition: var(--ek-transition-colors), opacity var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: var(--ek-transition-colors), opacity var(--ek-motion-feedback);
 }
 
-/* Favori: vurgu rengi DEĞİL (tek vurgu = etkin sayfa) — nötr koyu dolu yıldız. */
+/* Favori: vurgu rengi DEĞİL (tek vurgu = etkin sayfa) — nötr dolu yıldız; işaretli öğede her zaman görünür (nerede
+   favori olduğu bir bakışta), Favoriler bölümündeki satırda yalnız hover/odakta (orada zaten favori olduğu belli). */
 .ek-shell-nav__fav.is-on {
-  color: var(--ek-color-content-default);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-icon-xs);
   opacity: 1;
 }
 
-:deep(.ek-side__entry:hover) .ek-shell-nav__fav,
-.ek-shell-nav__fav:focus-visible {
+.ek-shell-nav__fav.is-on:hover {
+  color: var(--ek-color-content-strong);
+}
+
+.ek-shell-nav__fav.is-on.is-pinned-row {
+  opacity: 0;
+}
+
+:deep(.ek-side__entry:hover > .ek-side__trailing) .ek-shell-nav__fav,
+:deep(.ek-side__subentry:hover) .ek-shell-nav__fav,
+.ek-shell-nav__fav:focus-visible,
+.ek-shell-nav__fav.is-on.is-pinned-row:focus-visible {
   opacity: 1;
+}
+
+:deep(.ek-side__entry:hover > .ek-side__trailing) .ek-shell-nav__fav.is-pinned-row {
+  opacity: 1;
+}
+
+:deep(.ek-tooltip__anchor) {
+  display: inline-flex;
 }
 
 .ek-shell-nav__fav:hover {
@@ -233,7 +283,7 @@ function toggleFavorite(key: string) {
   font-size: var(--ek-type-label-size);
   font-weight: var(--ek-type-label-weight);
   cursor: pointer;
-  transition: color var(--ek-duration-fast) var(--ek-easing-enter);
+  transition: color var(--ek-motion-feedback);
 }
 
 .ek-shell-nav__toggle::after {
@@ -244,17 +294,17 @@ function toggleFavorite(key: string) {
   border-radius: inherit;
   background: transparent;
   transition:
-    background-color var(--ek-duration-fast) var(--ek-easing-enter),
-    box-shadow var(--ek-duration-fast) var(--ek-easing-enter),
-    right var(--ek-app-nav-move) var(--ek-easing-enter) 0ms;
+    background-color var(--ek-motion-feedback),
+    box-shadow var(--ek-motion-feedback),
+    right var(--ek-app-nav-move) var(--ek-motion-layout-easing) 0ms;
 }
 
 .is-rail .ek-shell-nav__toggle::after {
   right: calc(100% - var(--ek-control-h-lg));
   transition:
-    background-color var(--ek-duration-fast) var(--ek-easing-enter),
-    box-shadow var(--ek-duration-fast) var(--ek-easing-enter),
-    right var(--ek-app-nav-move) var(--ek-easing-enter) var(--ek-app-nav-lag);
+    background-color var(--ek-motion-feedback),
+    box-shadow var(--ek-motion-feedback),
+    right var(--ek-app-nav-move) var(--ek-motion-layout-easing) var(--ek-app-nav-lag);
 }
 
 .ek-shell-nav__toggle:hover {
@@ -276,13 +326,13 @@ function toggleFavorite(key: string) {
 .ek-shell-nav__toggle-icon {
   flex: none;
   font-size: var(--ek-icon-md);
-  transition: transform var(--ek-app-nav-move) var(--ek-easing-enter) 0ms;
+  transition: transform var(--ek-app-nav-move) var(--ek-motion-layout-easing) 0ms;
 }
 
 /* Ok, genişlikle birlikte (aynı gecikme) döner — solma sırasında yarı dönük kalmaz. */
 .is-rail .ek-shell-nav__toggle-icon {
   transform: rotate(180deg);
-  transition: transform var(--ek-app-nav-move) var(--ek-easing-enter) var(--ek-app-nav-lag);
+  transition: transform var(--ek-app-nav-move) var(--ek-motion-layout-easing) var(--ek-app-nav-lag);
 }
 
 .ek-shell-nav__toggle-label {
@@ -292,12 +342,12 @@ function toggleFavorite(key: string) {
 }
 
 .ek-shell-nav__fade {
-  transition: opacity var(--ek-duration-base) var(--ek-easing-enter) var(--ek-app-nav-reveal);
+  transition: opacity var(--ek-motion-overlay) var(--ek-app-nav-reveal);
 }
 
 .is-rail .ek-shell-nav__fade {
   opacity: 0;
-  transition: opacity var(--ek-app-nav-fade) var(--ek-easing-standard) 0ms;
+  transition: opacity var(--ek-app-nav-fade) var(--ek-motion-dismiss-easing) 0ms;
 }
 
 .ek-shell-nav__tip {

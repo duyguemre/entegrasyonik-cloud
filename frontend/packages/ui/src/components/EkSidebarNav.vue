@@ -23,24 +23,61 @@
   <nav class="ek-side" :class="{ 'ek-side--collapsed': collapsed }" :aria-label="label">
     <div
       v-for="(section, sIndex) in sections"
-      :key="section.label || `s${sIndex}`"
+      :key="section.id || section.label || `s${sIndex}`"
       class="ek-side__section"
-      :class="{ 'is-first': sIndex === 0, 'has-label': showLabel(section) }"
+      :class="{
+        'is-first': sIndex === 0,
+        'has-label': showLabel(section),
+        'is-pinned': !!section.reorderable,
+        'is-editing': isEditing(section),
+        'is-empty': !section.items.length,
+      }"
+      :data-section="section.id"
     >
       <div v-if="sIndex > 0" class="ek-side__section-rule" aria-hidden="true"></div>
-      <!-- B4: başlık rayda da DOM'da kalır (yuvası korunur → ikonlar daralırken dikeyde kıpırdamaz); yalnız solar. -->
-      <p
-        v-if="showLabel(section)"
-        :id="`${uid}-s${sIndex}`"
-        class="ek-side__section-label ek-side__fade"
-        :aria-hidden="collapsed ? 'true' : undefined"
-      >{{ section.label }}</p>
-      <ul class="ek-side__list" :aria-labelledby="!collapsed && showLabel(section) ? `${uid}-s${sIndex}` : undefined">
+      <!-- B4: başlık rayda da DOM'da kalır (yuvası korunur → ikonlar daralırken dikeyde kıpırdamaz); yalnız solar.
+           FR3 madde 2: sıralanabilir bölümde (favoriler) başlığın sağında "Düzenle / Bitti". -->
+      <div v-if="showLabel(section)" class="ek-side__section-head ek-side__fade" :aria-hidden="collapsed ? 'true' : undefined">
+        <p :id="`${uid}-s${sIndex}`" class="ek-side__section-label">
+          <v-icon v-if="section.icon" class="ek-side__section-icon" :icon="section.icon" aria-hidden="true" />
+          {{ section.label }}
+        </p>
+        <button
+          v-if="section.reorderable && section.items.length > 1 && !collapsed"
+          type="button"
+          class="ek-side__section-action"
+          :aria-pressed="isEditing(section)"
+          :aria-label="isEditing(section) ? `${section.label} sıralamasını bitir` : `${section.label} sıralamasını düzenle`"
+          @click="toggleEdit(section)"
+        >{{ isEditing(section) ? 'Bitti' : 'Düzenle' }}</button>
+      </div>
+      <!-- FR3 madde 2: boş sıralanabilir bölüm — tek satırlık sakin ipucu (çağıran kapatabilir: `dismiss-empty`). -->
+      <div v-if="!section.items.length && section.emptyText" class="ek-side__empty ek-side__fade" :inert="collapsed || undefined">
+        <v-icon class="ek-side__empty-icon" :icon="section.icon || 'mdi-star-outline'" aria-hidden="true" />
+        <p class="ek-side__empty-text">{{ section.emptyText }}</p>
+        <button
+          type="button"
+          class="ek-side__empty-close"
+          :aria-label="`İpucunu kapat: ${section.label}`"
+          @click="emit('dismiss-empty', section.id || section.label)"
+        >
+          <v-icon icon="mdi-close" aria-hidden="true" />
+        </button>
+      </div>
+      <TransitionGroup
+        tag="ul"
+        name="ek-side-pin"
+        class="ek-side__list"
+        :aria-labelledby="!collapsed && showLabel(section) ? `${uid}-s${sIndex}` : undefined"
+      >
         <li
-          v-for="item in section.items"
+          v-for="(item, iIndex) in section.items"
           :key="item.key"
           class="ek-side__entry"
-          :class="[item.children ? hookClasses?.group : undefined, { 'has-trailing': !!$slots['item-trailing'] && !item.children }]"
+          :class="[item.children ? hookClasses?.group : undefined, {
+            'has-trailing': !!$slots['item-trailing'] && !item.children,
+            'has-move': isEditing(section),
+          }]"
         >
           <v-tooltip :eager="false" transition="fade-transition" :disabled="!collapsed" location="end" :text="item.label">
             <template #activator="{ props: tipProps }">
@@ -62,7 +99,9 @@
                 :aria-current="item.key === activeKey ? 'page' : undefined"
                 :aria-expanded="item.children && !collapsed ? isOpen(item.key) : undefined"
                 :aria-label="collapsed ? item.label : undefined"
+                :aria-keyshortcuts="section.reorderable ? 'Alt+ArrowUp Alt+ArrowDown' : undefined"
                 @click="onItem(item)"
+                @keydown="onItemKeydown($event, section, iIndex)"
               >
                 <v-icon class="ek-side__icon" :icon="outlineIcon(item.icon) ?? 'mdi-circle-small'" aria-hidden="true" />
                 <span class="ek-side__label ek-side__fade">{{ item.label }}</span>
@@ -77,8 +116,17 @@
               </button>
             </template>
           </v-tooltip>
-          <span v-if="$slots['item-trailing'] && !item.children" class="ek-side__trailing ek-side__fade ek-side__hideable">
-            <slot name="item-trailing" :item="item" />
+          <!-- FR3 madde 2: sıralama modu — yukarı/aşağı (klavyede Alt+↑/↓ her zaman çalışır). -->
+          <span v-if="isEditing(section) && !collapsed" class="ek-side__move">
+            <button type="button" class="ek-side__move-btn" :disabled="iIndex === 0" :aria-label="`Yukarı taşı: ${item.label}`" @click="move(section, iIndex, -1)">
+              <v-icon icon="mdi-arrow-up" aria-hidden="true" />
+            </button>
+            <button type="button" class="ek-side__move-btn" :disabled="iIndex === section.items.length - 1" :aria-label="`Aşağı taşı: ${item.label}`" @click="move(section, iIndex, 1)">
+              <v-icon icon="mdi-arrow-down" aria-hidden="true" />
+            </button>
+          </span>
+          <span v-else-if="$slots['item-trailing'] && !item.children" class="ek-side__trailing ek-side__fade ek-side__hideable">
+            <slot name="item-trailing" :item="item" :section="section" />
           </span>
           <!-- B4: alt liste yükseklik (grid 0fr↔1fr) + opaklıkla açılır/kapanır; kapalıyken görünmez ve odaklanamaz. -->
           <div
@@ -89,7 +137,7 @@
           >
             <div class="ek-side__subclip">
               <ul class="ek-side__sublist">
-                <li v-for="child in item.children" :key="child.key">
+                <li v-for="child in item.children" :key="child.key" class="ek-side__subentry" :class="{ 'has-trailing': !!$slots['item-trailing'] }">
                   <button
                     type="button"
                     class="ek-side__subitem"
@@ -101,12 +149,16 @@
                     <span class="ek-side__label">{{ child.label }}</span>
                     <EkBadge v-if="child.badge" :variant="child.badgeVariant ?? 'count'" :tone="child.badgeTone ?? 'neutral'" :text="child.badge" />
                   </button>
+                  <span v-if="$slots['item-trailing']" class="ek-side__trailing ek-side__trailing--sub">
+                    <slot name="item-trailing" :item="child" :section="section" />
+                  </span>
                 </li>
               </ul>
             </div>
           </div>
         </li>
-      </ul>
+      </TransitionGroup>
+      <p v-if="section.reorderable" class="ek-sr-only" aria-live="polite">{{ liveText }}</p>
     </div>
   </nav>
 </template>
@@ -132,6 +184,14 @@ export interface EkSideItem {
 export interface EkSideSection {
   label: string
   items: EkSideItem[]
+  /** Ek (geri uyumlu, FR3): kararlı bölüm kimliği (olaylarda döner). */
+  id?: string
+  /** Ek (FR3): başlığın önünde küçük ikon (ör. favoriler yıldızı). */
+  icon?: string
+  /** Ek (FR3): sıralanabilir bölüm (favoriler) — "Düzenle" modu + Alt+↑/↓ → `reorder`. */
+  reorderable?: boolean
+  /** Ek (FR3): bölüm boşken tek satırlık ipucu (kapatma → `dismiss-empty`). */
+  emptyText?: string
 }
 
 const props = withDefaults(
@@ -148,7 +208,13 @@ const props = withDefaults(
   { label: 'Ana menü', collapsed: false, defaultOpen: () => [] },
 )
 
-const emit = defineEmits<{ select: [key: string]; 'expand-request': [key: string] }>()
+const emit = defineEmits<{
+  select: [key: string]
+  'expand-request': [key: string]
+  /** FR3: sıralanabilir bölümde yeni sıra (öğe anahtarları). */
+  reorder: [sectionId: string, keys: string[]]
+  'dismiss-empty': [sectionId: string]
+}>()
 const open = ref(new Set(props.defaultOpen))
 
 // Etkin öğe kapalı bir grubun içindeyse grubu aç (kullanıcı nerede olduğunu görsün).
@@ -180,6 +246,37 @@ const isOpen = (key: string) => open.value.has(key)
 const isAncestor = (item: EkSideItem) => !!item.children?.some((c) => c.key === props.activeKey)
 const isActive = (item: EkSideItem) => item.key === props.activeKey || (props.collapsed && isAncestor(item))
 
+// ---- FR3 madde 2: sıralanabilir bölüm (favoriler) ----
+const editing = ref(new Set<string>())
+const liveText = ref('')
+const sectionId = (section: EkSideSection) => section.id || section.label
+const isEditing = (section: EkSideSection) => !!section.reorderable && editing.value.has(sectionId(section))
+function toggleEdit(section: EkSideSection) {
+  const next = new Set(editing.value)
+  const id = sectionId(section)
+  if (next.has(id)) next.delete(id)
+  else next.add(id)
+  editing.value = next
+}
+function move(section: EkSideSection, index: number, delta: -1 | 1) {
+  const target = index + delta
+  if (target < 0 || target >= section.items.length) return
+  const keys = section.items.map((i) => i.key)
+  const [moved] = keys.splice(index, 1)
+  keys.splice(target, 0, moved)
+  liveText.value = `${section.items[index].label}: ${target + 1}. sıraya taşındı`
+  emit('reorder', sectionId(section), keys)
+}
+function onItemKeydown(event: KeyboardEvent, section: EkSideSection, index: number) {
+  if (!section.reorderable || !event.altKey || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) return
+  event.preventDefault()
+  const key = section.items[index]?.key
+  move(section, index, event.key === 'ArrowUp' ? -1 : 1)
+  // Odak taşınan öğeyle gider (liste yeniden çizildikten sonra).
+  const root = (event.currentTarget as HTMLElement).closest('.ek-side__section')
+  requestAnimationFrame(() => root?.querySelector<HTMLElement>(`.ek-side__item[data-key="${key}"]`)?.focus())
+}
+
 function onItem(item: EkSideItem) {
   if (!item.children) return emit('select', item.key)
   if (props.collapsed) return emit('expand-request', item.key)
@@ -205,8 +302,8 @@ function onItem(item: EkSideItem) {
   --ek-side-pad: var(--ek-space-3);
   --ek-side-rail-item: var(--ek-control-h-lg);
   /* Hedef = GENİŞ: geometri hemen, içerik genişliğin yarısında belirir. */
-  --ek-side-geo: var(--ek-app-nav-move, 0ms) var(--ek-easing-enter) 0ms;
-  --ek-side-fade-t: opacity var(--ek-duration-base) var(--ek-easing-enter) var(--ek-app-nav-reveal, 0ms);
+  --ek-side-geo: var(--ek-app-nav-move, 0ms) var(--ek-motion-layout-easing) 0ms;
+  --ek-side-fade-t: opacity var(--ek-motion-overlay) var(--ek-app-nav-reveal, 0ms);
   display: flex;
   flex-direction: column;
   padding: var(--ek-space-3) var(--ek-side-pad) var(--ek-space-4);
@@ -216,8 +313,8 @@ function onItem(item: EkSideItem) {
 
 /* Hedef = RAY: içerik hemen solar, geometri yarım solma kadar gecikir. */
 .ek-side--collapsed {
-  --ek-side-geo: var(--ek-app-nav-move, 0ms) var(--ek-easing-enter) var(--ek-app-nav-lag, 0ms);
-  --ek-side-fade-t: opacity var(--ek-app-nav-fade, 0ms) var(--ek-easing-standard) 0ms;
+  --ek-side-geo: var(--ek-app-nav-move, 0ms) var(--ek-motion-layout-easing) var(--ek-app-nav-lag, 0ms);
+  --ek-side-fade-t: opacity var(--ek-app-nav-fade, 0ms) var(--ek-motion-dismiss-easing) 0ms;
 }
 
 .ek-side__fade {
@@ -230,26 +327,27 @@ function onItem(item: EkSideItem) {
 
 /* Rayda odaklanabilir kalmasın (favori yıldızı vb.): görünürlük solma bittikten sonra kapanır. */
 .ek-side__hideable {
-  transition: var(--ek-side-fade-t), visibility 0ms linear 0ms;
+  transition: var(--ek-side-fade-t), visibility 0ms 0ms;
 }
 
 .ek-side--collapsed .ek-side__hideable {
   visibility: hidden;
-  transition: var(--ek-side-fade-t), visibility 0ms linear var(--ek-app-nav-fade, 0ms);
+  transition: var(--ek-side-fade-t), visibility 0ms var(--ek-app-nav-fade, 0ms);
 }
 
 .ek-side__section + .ek-side__section {
-  margin-top: var(--ek-space-4);
+  margin-top: var(--ek-space-5);
 }
 
-/* Etiketli bölümde ayırıcı çizgi gizli (etiket + boşluk ayırır); rayda etiket solduğu için çizgi geri gelir. */
-.ek-side__section.has-label > .ek-side__section-rule {
+/* FR3 madde 1: tam menüde bölümler YALNIZ boşluk + etiketle ayrılır (çizgi yok — etiketsiz bölümde kalan tek çizgi
+   "dağınık" görünüyordu); rayda etiketler soluk olduğu için kısa ayraç çizgisi geri gelir. */
+.ek-side__section > .ek-side__section-rule {
   opacity: 0;
   margin-bottom: 0;
   height: 0;
 }
 
-.ek-side--collapsed .ek-side__section.has-label > .ek-side__section-rule {
+.ek-side--collapsed .ek-side__section > .ek-side__section-rule {
   opacity: 1;
   height: 1px;
   margin-bottom: var(--ek-space-3);
@@ -269,8 +367,69 @@ function onItem(item: EkSideItem) {
   margin-left: calc((var(--ek-side-rail-item) - var(--ek-space-6)) / 2);
 }
 
+/* FR3 madde 1–2: bölüm başlığı satırı — etiket + (sıralanabilir bölümde) "Düzenle". */
+.ek-side__section-head {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  min-height: 20px;
+  padding-right: var(--ek-space-1);
+}
+
+.ek-side__section-icon {
+  margin-right: 2px;
+  font-size: var(--ek-icon-xs);
+  vertical-align: -2px;
+}
+
+.ek-side__section-action {
+  flex: none;
+  margin-left: auto;
+  padding: 0 var(--ek-space-2);
+  height: 20px;
+  border: 0;
+  border-radius: var(--ek-radius-sm);
+  background: transparent;
+  color: var(--ek-color-content-muted);
+  font-family: inherit;
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-medium);
+  cursor: pointer;
+  opacity: 0;
+  transition: var(--ek-transition-colors);
+}
+
+.ek-side__section:hover .ek-side__section-action,
+.ek-side__section-action:focus-visible,
+.ek-side__section-action[aria-pressed='true'] {
+  opacity: 1;
+}
+
+.ek-side__section-action:hover {
+  background: var(--ek-color-sidebar-hover);
+  color: var(--ek-color-content-strong);
+}
+
+.ek-side__section-action[aria-pressed='true'] {
+  background: var(--ek-color-sidebar-hover);
+  color: var(--ek-color-content-strong);
+}
+
+.ek-side__section-action:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--ek-color-border-focus);
+}
+
+@media (hover: none) {
+  .ek-side__section-action {
+    opacity: 1;
+  }
+}
+
 /* Bölüm başlığı: ikincil metin tonu (nötr, AA) mikro etiket — grup "renkli/açık" görünmez (B4 geri bildirimi). */
 .ek-side__section-label {
+  flex: 1 1 auto;
+  min-width: 0;
   margin: 0;
   padding: 0 var(--ek-space-3) var(--ek-space-1);
   overflow: hidden;
@@ -285,6 +444,125 @@ function onItem(item: EkSideItem) {
 
 .ek-side__section.is-first.has-label .ek-side__section-label {
   padding-top: var(--ek-space-1);
+}
+
+/* FR3 madde 2: boş favoriler — tek satırlık sakin ipucu (kesik çizgili, nötr), kapatılabilir. */
+.ek-side__empty {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ek-space-2);
+  margin: var(--ek-space-1) 0 0;
+  padding: var(--ek-space-2) var(--ek-space-1) var(--ek-space-2) var(--ek-space-3);
+  border: 1px dashed var(--ek-color-border-default);
+  border-radius: var(--ek-radius-control);
+  color: var(--ek-color-content-muted);
+}
+
+.ek-side__empty-icon {
+  flex: none;
+  margin-top: 1px;
+  font-size: var(--ek-icon-sm);
+}
+
+.ek-side__empty-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+}
+
+.ek-side__empty-close {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: var(--ek-radius-sm);
+  background: transparent;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-icon-xs);
+  cursor: pointer;
+  transition: var(--ek-transition-colors);
+}
+
+.ek-side__empty-close:hover {
+  background: var(--ek-color-sidebar-hover);
+  color: var(--ek-color-content-strong);
+}
+
+.ek-side__empty-close:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--ek-color-border-focus);
+}
+
+/* Sıralama modu: yukarı/aşağı düğmeleri öğenin sağında (yıldızın yerine). */
+.ek-side__entry.has-move > .ek-side__item {
+  padding-right: calc(var(--ek-space-3) + 52px);
+}
+
+.ek-side__move {
+  position: absolute;
+  top: 0;
+  right: var(--ek-space-1);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: var(--ek-control-h-md);
+}
+
+.ek-side__move-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: var(--ek-radius-sm);
+  background: transparent;
+  color: var(--ek-color-content-default);
+  font-size: var(--ek-icon-xs);
+  cursor: pointer;
+  transition: var(--ek-transition-colors);
+}
+
+.ek-side__move-btn:hover:not(:disabled) {
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-content-strong);
+}
+
+.ek-side__move-btn:disabled {
+  color: var(--ek-color-content-subtle);
+  cursor: default;
+}
+
+.ek-side__move-btn:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--ek-color-border-focus);
+}
+
+/* Favori ekleme/çıkarma/sıralama: yeni öğe `overlay` ile belirir, çıkan `dismiss` ile söner, kayan `reveal`. */
+.ek-side-pin-move {
+  transition: transform var(--ek-motion-reveal);
+}
+
+.ek-side-pin-enter-active {
+  transition: opacity var(--ek-motion-overlay), transform var(--ek-motion-overlay);
+}
+
+.ek-side-pin-leave-active {
+  transition: opacity var(--ek-motion-dismiss);
+}
+
+.ek-side-pin-enter-from {
+  opacity: 0;
+  transform: translateY(calc(-1 * var(--ek-motion-distance-sm)));
+}
+
+.ek-side-pin-leave-to {
+  opacity: 0;
 }
 
 .ek-side__list,
@@ -320,7 +598,7 @@ function onItem(item: EkSideItem) {
   font-weight: var(--ek-font-weight-medium);
   text-align: left;
   cursor: pointer;
-  transition: color var(--ek-duration-fast) var(--ek-easing-enter);
+  transition: color var(--ek-motion-feedback);
 }
 
 .ek-side__subitem {
@@ -338,8 +616,8 @@ function onItem(item: EkSideItem) {
   border-radius: inherit;
   background: var(--ek-side-fill);
   transition:
-    background-color var(--ek-duration-fast) var(--ek-easing-enter),
-    box-shadow var(--ek-duration-fast) var(--ek-easing-enter),
+    background-color var(--ek-motion-feedback),
+    box-shadow var(--ek-motion-feedback),
     right var(--ek-side-geo);
 }
 
@@ -383,17 +661,27 @@ function onItem(item: EkSideItem) {
   background: var(--ek-color-action);
 }
 
+/* FR3 madde 2: favoriler (sıralanabilir bölüm) satırı etkin sayfayı yalnız metin/ikon tonuyla gösterir — zemin hapı ve
+   gösterge çizgisi menü ağacındaki asıl yerinde kalır (aynı anda iki vurgulu hap görünmez). Rayda ikon hapı korunur. */
+.ek-side:not(.ek-side--collapsed) .ek-side__section.is-pinned .ek-side__item.is-active:not(:hover) {
+  --ek-side-fill: transparent;
+}
+
+.ek-side:not(.ek-side--collapsed) .ek-side__section.is-pinned .ek-side__item.is-active::before {
+  display: none;
+}
+
 /* Ray'da etkin öğe grubun içindeyse grup ikonu etkinliği taşır — ama yalnız alt liste SOLDUKTAN sonra belirir
    (aynı anda iki vurgulu hap görünmesin). */
 .ek-side--collapsed .ek-side__item.is-parent-active::after {
   transition:
-    background-color var(--ek-duration-base) var(--ek-easing-enter) var(--ek-app-nav-fade, 0ms),
-    box-shadow var(--ek-duration-fast) var(--ek-easing-enter),
+    background-color var(--ek-motion-overlay) var(--ek-app-nav-fade, 0ms),
+    box-shadow var(--ek-motion-feedback),
     right var(--ek-side-geo);
 }
 
 .ek-side--collapsed .ek-side__item.is-parent-active::before {
-  animation: ek-side-reveal var(--ek-duration-base) var(--ek-easing-enter) var(--ek-app-nav-fade, 0ms) both;
+  animation: ek-side-reveal var(--ek-motion-overlay) var(--ek-app-nav-fade, 0ms) both;
 }
 
 @keyframes ek-side-reveal {
@@ -411,7 +699,7 @@ function onItem(item: EkSideItem) {
   flex: none;
   font-size: var(--ek-icon-md);
   color: var(--ek-color-content-muted);
-  transition: color var(--ek-duration-fast) var(--ek-easing-enter);
+  transition: color var(--ek-motion-feedback);
 }
 
 .ek-side__item:hover .ek-side__icon,
@@ -459,7 +747,7 @@ function onItem(item: EkSideItem) {
   color: var(--ek-color-content-muted);
   transition:
     var(--ek-side-fade-t),
-    transform var(--ek-duration-base) var(--ek-easing-standard);
+    transform var(--ek-motion-reveal);
 }
 
 .ek-side__chevron.is-open {
@@ -473,9 +761,9 @@ function onItem(item: EkSideItem) {
   opacity: 0;
   visibility: hidden;
   transition:
-    grid-template-rows var(--ek-duration-base) var(--ek-easing-standard),
-    opacity var(--ek-duration-fast) var(--ek-easing-standard),
-    visibility 0ms linear var(--ek-duration-base);
+    grid-template-rows var(--ek-motion-reveal),
+    opacity var(--ek-motion-feedback),
+    visibility 0ms var(--ek-motion-reveal-duration);
 }
 
 .ek-side__subwrap.is-open {
@@ -483,17 +771,17 @@ function onItem(item: EkSideItem) {
   opacity: 1;
   visibility: visible;
   transition:
-    grid-template-rows var(--ek-duration-base) var(--ek-easing-enter),
-    opacity var(--ek-duration-base) var(--ek-easing-enter),
-    visibility 0ms linear 0ms;
+    grid-template-rows var(--ek-motion-reveal),
+    opacity var(--ek-motion-reveal),
+    visibility 0ms 0ms;
 }
 
 /* Ray'a geçerken alt liste önce solar, sonra katlanır (genişlikle aynı gecikme). */
 .ek-side--collapsed .ek-side__subwrap {
   transition:
     grid-template-rows var(--ek-side-geo),
-    opacity var(--ek-app-nav-fade, 0ms) var(--ek-easing-standard),
-    visibility 0ms linear var(--ek-app-nav-fade, 0ms);
+    opacity var(--ek-app-nav-fade, 0ms) var(--ek-motion-dismiss-easing),
+    visibility 0ms var(--ek-app-nav-fade, 0ms);
 }
 
 /* Kırpıcı ayrı katman: alt listenin dolgu/kenar boşluğu 0fr'de yükseklik bırakmaz (kapalı grup = 0px). */
@@ -511,9 +799,25 @@ function onItem(item: EkSideItem) {
 }
 
 .ek-side__subitem {
+  --ek-side-ink: var(--ek-color-content-muted);
   min-height: var(--ek-control-h-sm);
   padding-top: var(--ek-space-1);
   padding-bottom: var(--ek-space-1);
+  /* FR3 madde 1: alt öğe bir kademe sakin (ağırlık 400, ikincil mürekkep) — hiyerarşi girinti + ton ile okunur;
+     hover/etkin durumda mürekkep koyulaşır, ağırlık sabit (geometri değişmez). */
+  font-weight: var(--ek-font-weight-regular);
+}
+
+.ek-side__subentry {
+  position: relative;
+}
+
+.ek-side__subentry.has-trailing > .ek-side__subitem {
+  padding-right: calc(var(--ek-space-3) + 24px);
+}
+
+.ek-side__trailing--sub {
+  height: var(--ek-control-h-sm);
 }
 
 /* Etkin alt öğe: göstergesi kılavuz çizgisinin ÜSTÜNDE (öğe kutusunun solunda değil) — hiyerarşi çizgisi kesintisiz. */

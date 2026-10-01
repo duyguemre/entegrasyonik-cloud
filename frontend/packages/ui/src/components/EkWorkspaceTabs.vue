@@ -74,17 +74,20 @@
       </div>
     </div>
     </div>
-    <!-- FR2-SHELL madde 9 (fe-r2a): sekmeler taşarsa kenar okları + kaydırma YERİNE sağda "daha fazla" listesi —
-         şeritte tam görünmeyen sekmeler sayısıyla; seçilen sekme etkinleşir ve şeritte görünür alana gelir. -->
-    <v-menu v-if="hiddenTabs.length" v-model="moreOpen" location="bottom end" :offset="6">
+    <!-- FR3 madde 4 (fe-r3a): "sığmayan sekmeler (+N)" ve "toplam sekme" düğmeleri TEK düğme — toplam sayı her zaman,
+         şeritte görünmeyen varsa yanında "+N" hapı. Liste iki grup: şeritte görünmeyenler (önce) · şeritteki sekmeler;
+         seçilen sekme etkinleşir ve şeritte görünür alana gelir. -->
+    <v-menu v-if="showAll" v-model="moreOpen" location="bottom end" :offset="6">
       <template #activator="{ props: menuProps }">
-        <button v-bind="menuProps" type="button" class="ek-tabs__more" :class="{ 'is-open': moreOpen }"
-          :aria-label="`Daha fazla sekme (${hiddenTabs.length})`" data-tabs-more>
-          <span class="ek-num">+{{ hiddenTabs.length }}</span>
-          <v-icon icon="mdi-chevron-down" aria-hidden="true" />
+        <button v-bind="menuProps" type="button" class="ek-tabs__more" :class="{ 'is-open': moreOpen, 'has-hidden': hiddenTabs.length > 0 }"
+          :aria-label="allLabel" :title="allLabel" data-tabs-more>
+          <v-icon class="ek-tabs__more-icon" icon="mdi-tab" aria-hidden="true" />
+          <span class="ek-tabs__more-total ek-num">{{ tabs.length }}</span>
+          <span v-if="hiddenTabs.length" class="ek-tabs__more-hidden ek-num">+{{ hiddenTabs.length }}</span>
+          <v-icon class="ek-tabs__more-chevron" icon="mdi-chevron-down" aria-hidden="true" />
         </button>
       </template>
-      <EkMenuPanel autofocus :groups="moreGroups" label="Daha fazla sekme" @select="onMoreSelect" @close="moreOpen = false" />
+      <EkMenuPanel autofocus :groups="moreGroups" :label="`Açık sekmeler (${tabs.length})`" @select="onMoreSelect" @close="moreOpen = false" />
     </v-menu>
     <div v-if="$slots.trailing" class="ek-tabs__trailing"><slot name="trailing" /></div>
     <span :id="closeHintId" class="ek-sr-only">Kapatmak için Delete tuşuna basın</span>
@@ -110,12 +113,17 @@ const props = defineProps<{
   label: string
   panelIdPrefix?: string
   forceHoverId?: string
+  /** FR3: "Tüm sekmeler" listesinde sekmenin kısayolu (ör. sıra → ['Alt', '1']). */
+  shortcutForIndex?: (index: number) => string[] | undefined
+  /** FR3: listenin sonundaki eylemler (ör. "Tümünü kapat") → `list-action`. */
+  listActions?: EkMenuItem[]
 }>()
 
 const emit = defineEmits<{
   'update:modelValue': [id: string]
   close: [id: string]
   contextmenu: [id: string, point: { x: number; y: number }]
+  'list-action': [key: string]
 }>()
 
 const closeHintId = `ek-tabs-close-hint-${useId()}`
@@ -139,9 +147,35 @@ const hiddenIds = ref<string[]>([])
 const moreOpen = ref(false)
 // Etkin sekme listede yer almaz: her zaman şeritte görünür alana getirilir (revealActive).
 const hiddenTabs = computed(() => props.tabs.filter((t) => t.id !== props.modelValue && hiddenIds.value.includes(t.id)))
-const moreGroups = computed<EkMenuGroup[]>(() => [
-  { items: hiddenTabs.value.map((t) => ({ key: t.id, label: t.title, icon: t.icon ? outlineIcon(t.icon) : undefined })) },
-])
+/** FR3 madde 4: tek "Tüm sekmeler" düğmesi — birden çok sekme varsa ya da şeride sığmayan varsa görünür. */
+const showAll = computed(() => props.tabs.length > 1 || hiddenTabs.value.length > 0)
+const allLabel = computed(() =>
+  hiddenTabs.value.length
+    ? `Tüm sekmeler (${props.tabs.length}) — ${hiddenTabs.value.length} sekme şeritte görünmüyor`
+    : `Tüm sekmeler (${props.tabs.length})`,
+)
+const menuItem = (t: EkWorkspaceTab): EkMenuItem => {
+  const index = props.tabs.indexOf(t)
+  const active = t.id === props.modelValue
+  return {
+    key: t.id,
+    label: t.title,
+    icon: active ? 'mdi-check' : t.icon ? outlineIcon(t.icon) : undefined,
+    description: active ? 'Etkin sekme' : undefined,
+    shortcut: props.shortcutForIndex?.(index),
+  }
+}
+const moreGroups = computed<EkMenuGroup[]>(() => {
+  const hidden = new Set(hiddenTabs.value.map((t) => t.id))
+  const visible = props.tabs.filter((t) => !hidden.has(t.id))
+  const groups: EkMenuGroup[] = hidden.size
+    ? [
+        { label: `Şeritte görünmeyen (${hidden.size})`, items: hiddenTabs.value.map(menuItem) },
+        { label: 'Şeritteki sekmeler', items: visible.map(menuItem) },
+      ]
+    : [{ items: visible.map(menuItem) }]
+  return props.listActions?.length ? [...groups, { items: props.listActions }] : groups
+})
 
 function updateOverflow() {
   const el = listRef.value
@@ -163,6 +197,7 @@ function updateOverflow() {
 
 function onMoreSelect(item: EkMenuItem) {
   moreOpen.value = false
+  if (props.listActions?.some((a) => a.key === item.key)) return emit('list-action', item.key)
   emit('update:modelValue', item.key)
   nextTick(() => focusTab(item.key))
 }
@@ -362,11 +397,12 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
 .ek-tabs__more {
   display: inline-flex;
   flex: none;
-  align-self: center;
   align-items: center;
-  gap: 2px;
-  height: 28px;
-  margin-left: var(--ek-space-1);
+  gap: var(--ek-space-1);
+  /* Şeridin altına yaslı (üstteki 12px yüzen tutamak ShellChromeHandle ile çakışmaz). */
+  align-self: flex-end;
+  height: 24px;
+  margin: 0 0 var(--ek-space-1) var(--ek-space-1);
   padding: 0 var(--ek-space-1) 0 var(--ek-space-2);
   border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-control);
@@ -383,7 +419,27 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
 .ek-tabs__more .v-icon {
   font-size: var(--ek-icon-sm);
   color: var(--ek-color-content-muted);
-  transition: transform var(--ek-duration-base) var(--ek-easing-standard);
+}
+
+.ek-tabs__more-chevron {
+  transition: transform var(--ek-motion-reveal);
+}
+
+.ek-tabs__more-icon {
+  font-size: var(--ek-icon-xs) !important;
+}
+
+/* Şeritte görünmeyen sekme sayısı: nötr hap (vurgu rengi yok — tek vurgu etkin sekmenin). */
+.ek-tabs__more-hidden {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: var(--ek-radius-chip);
+  background: var(--ek-color-surface-sunken);
+  color: var(--ek-color-content-default);
+  font-size: var(--ek-type-micro-size);
+  font-weight: var(--ek-font-weight-semibold);
 }
 
 .ek-tabs__more:hover,
@@ -393,7 +449,7 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   color: var(--ek-color-content-strong);
 }
 
-.ek-tabs__more.is-open .v-icon {
+.ek-tabs__more.is-open .ek-tabs__more-chevron {
   transform: rotate(180deg);
 }
 
@@ -407,29 +463,30 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   display: flex;
   align-items: center;
   flex: 0 1 220px;
-  min-width: 120px;
+  /* FR3 madde 4: pasif sekme okunur kalır ("Müşt…" yerine en az ~12 karakter); sığmayan "Tüm sekmeler"e düşer. */
+  min-width: 132px;
   height: 34px;
   /* Tüm sekmelerde aynı (saydam) kenarlık → etkinleşince içerik 1px kaymaz. */
   border: 1px solid transparent;
   border-bottom: 0;
   border-radius: var(--ek-radius-tab) var(--ek-radius-tab) 0 0;
-  color: var(--ek-color-content-muted);
+  color: var(--ek-color-content-default);
   /* Etkinleşme/pasifleşme ANINDA: zemin + kenarlık + içbükey köşeler aynı karede değişir (zemin solarken köşelerin
      anında belirmesi renk sıçraması üretiyordu). Sakin geçişi gösterge çubuğu ve içerik girişi taşır; renk geçişi
      yalnız hover'a girerken. */
-  transition: color var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: color var(--ek-motion-feedback);
 }
 
-/* Pasif sekmeler arasındaki ince ayraç (etkin sekmenin iki yanında gizlenir). */
+/* Pasif sekmeler arasındaki ince ayraç (etkin sekmenin iki yanında gizlenir). FR3: bir kademe sakin (border-default). */
 .ek-tab + .ek-tab::before {
   content: '';
   position: absolute;
   left: -1px;
-  top: 10px;
-  bottom: 10px;
+  top: 11px;
+  bottom: 11px;
   width: 1px;
-  background: var(--ek-color-border-strong);
-  transition: opacity var(--ek-duration-fast) var(--ek-easing-standard);
+  background: var(--ek-color-border-default);
+  transition: opacity var(--ek-motion-feedback);
 }
 
 /* A12 — pasif hover ışıması: ayrı katman, YALNIZ opaklık geçişi (giriş + çıkış simetrik, motion token'ları). Zemin
@@ -444,7 +501,7 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   background: linear-gradient(to bottom, var(--ek-color-tab-hover), color-mix(in srgb, var(--ek-color-tab-hover) 35%, transparent));
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: opacity var(--ek-motion-feedback);
 }
 
 .ek-tab__wash::after {
@@ -484,16 +541,24 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   opacity: 0;
 }
 
-/* Hover metni bir kademe öne gelir (muted → default); `content-strong` + yarı kalın yalnız ETKİN sekmenindir. */
+/* Hover metni bir kademe öne gelir (default → strong); yarı kalın + aksiyon ikonu yalnız ETKİN sekmenindir.
+   FR3 madde 4: pasif metin `content-default` (önce muted — şerit tonunda soluk/okunaksızdı), ikon muted kalır. */
 .ek-tab:not(.is-active):hover,
 .ek-tab.is-hover:not(.is-active) {
-  color: var(--ek-color-content-default);
+  color: var(--ek-color-content-strong);
+}
+
+.ek-tab:not(.is-active) .ek-tab__icon {
+  color: var(--ek-color-content-muted);
 }
 
 /* ETKİN (A10 — klasör sekmesi): zemin = içerik zemini (`tab-active` ≡ `background`), şeridin önüne çıkar.
    Dış hat 1px `--ek-tab-line` YALNIZ üst + yanlarda (alt kenar yok → içerikle tek parça); hat alt köşelerde
    içbükey eğriyle şeridin alt çizgisine bağlanır. Gölge yalnız yukarı (şeride), içeriğe düşmez. */
 .ek-tab.is-active {
+  /* FR3 madde 4: etkin sekme KISALMAZ (başlık tam okunur; en fazla 260px) — taşmada önce pasifler "Tüm sekmeler"e düşer. */
+  flex: 0 0 auto;
+  max-width: 260px;
   height: 36px;
   border-color: var(--ek-tab-line);
   background: var(--ek-color-tab-active);
@@ -514,7 +579,7 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   height: 2px;
   border-radius: 0 0 2px 2px;
   background: var(--ek-color-action);
-  animation: ek-tab-indicator var(--ek-duration-base) var(--ek-easing-enter) both;
+  animation: ek-tab-indicator var(--ek-motion-overlay) both;
 }
 
 @keyframes ek-tab-indicator {
@@ -626,6 +691,26 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* FR3 madde 4: pasif sekmede kesilen başlık "…" yerine yumuşak solar (tarayıcı sekmesi dili); kapatma düğmesi yer
+   AYIRMAZ — hover/odakta solma bölgesinin üstünde belirir (geometri değişmez). */
+.ek-tab:not(.is-active) .ek-tab__title {
+  text-overflow: clip;
+  mask-image: linear-gradient(to left, transparent 0, black var(--ek-space-6));
+}
+
+.ek-tab:not(.is-active) .ek-tab__button {
+  padding-right: var(--ek-space-2);
+}
+
+.ek-tab:not(.is-active) .ek-tab__close {
+  position: absolute;
+  top: 50%;
+  right: var(--ek-space-1);
+  margin: 0;
+  transform: translateY(-50%);
+  background: var(--ek-color-tab-hover);
 }
 
 /* Hayalet kalın başlık: yüksekliği 0, görünmez; başlık kutusu HER durumda yarı kalın genişliği ayırır → etkin ↔ pasif

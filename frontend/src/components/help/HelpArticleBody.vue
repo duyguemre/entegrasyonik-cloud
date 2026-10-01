@@ -492,7 +492,7 @@ const channelRows = channelGuideRows()
 .ek-help-body__faq-item summary .v-icon {
   flex: none;
   color: var(--ek-color-content-muted);
-  transition: transform var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: transform var(--ek-motion-feedback);
 }
 
 .ek-help-body__faq-item[open] summary .v-icon {

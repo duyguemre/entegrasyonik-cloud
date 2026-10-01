@@ -176,9 +176,10 @@ describe('statik bekçi — EkCascadePicker hareket sözleşmesi', () => {
   })
 
   it('süre/eğri/mesafe yalnız token; ham ms/px kayma ya da cubic-bezier yok', () => {
-    expect(css).toMatch(/var\(--ek-duration-base\)/)
-    expect(css).toMatch(/var\(--ek-duration-fast\)/)
-    expect(css).toMatch(/var\(--ek-easing-enter\)/)
+    // FR3 madde 7: seviye açılışı = filtre paneli (`reveal`), kapanış `dismiss`, adım `stagger` (tek kaynak).
+    expect(css).toMatch(/var\(--ek-motion-reveal\)/)
+    expect(css).toMatch(/var\(--ek-motion-dismiss\)/)
+    expect(css).toMatch(/var\(--ek-motion-stagger\)/)
     expect(css).toMatch(/var\(--ek-motion-distance-md\)/)
     expect(css).not.toMatch(/\d+ms/)
     expect(css).not.toMatch(/cubic-bezier/)

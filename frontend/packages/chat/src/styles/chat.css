@@ -262,8 +262,8 @@
 /* Mesaj giriş geçişi (gönder/al): kısa fade + 4px kayma. */
 .ek-chat-msg-enter-active {
   transition:
-    opacity var(--ek-duration-base) var(--ek-easing-enter),
-    transform var(--ek-duration-base) var(--ek-easing-enter);
+    opacity var(--ek-motion-overlay),
+    transform var(--ek-motion-overlay);
 }
 
 .ek-chat-msg-enter-from {
@@ -280,7 +280,7 @@
   vertical-align: text-bottom;
   border-radius: var(--ek-radius-sm);
   background: var(--ek-color-action);
-  animation: ek-chat-blink 1s steps(2, jump-none) infinite;
+  animation: ek-chat-blink var(--ek-motion-loop-flow) steps(2, jump-none) infinite;
 }
 
 .ek-chat-text {
@@ -301,15 +301,15 @@
   height: var(--ek-space-1);
   border-radius: var(--ek-radius-full);
   background: var(--ek-color-content-subtle);
-  animation: ek-chat-pulse 1s ease-in-out infinite;
+  animation: ek-chat-pulse var(--ek-motion-loop-flow) var(--ek-easing-standard) infinite;
 }
 
 .ek-chat-dots span:nth-child(2) {
-  animation-delay: var(--ek-duration-base);
+  animation-delay: calc(var(--ek-motion-loop-flow) / 5);
 }
 
 .ek-chat-dots span:nth-child(3) {
-  animation-delay: calc(var(--ek-duration-base) * 2);
+  animation-delay: calc(var(--ek-motion-loop-flow) / 5 * 2);
 }
 
 @keyframes ek-chat-blink {

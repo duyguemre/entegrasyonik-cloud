@@ -6,7 +6,8 @@
   kesilen başlıkta tooltip; soldaki boşluk YOK — ilk sekme şeridin başından
   başlar). Durum `stores/workspace.ts`'te; bu bileşen yalnızca görünüm + eylem.
     - Sağ tık / Shift+F10: Kapat · Diğerlerini kapat · Sağdakileri kapat
-    - Sağ uç: YALNIZ açık sekmeler listesi (Alt+1…9 ipuçlu). Aşama 5: "üst bölümü daralt" ve
+    - Sağ uç: FR3 madde 4 — TEK "Tüm sekmeler" düğmesi (EkWorkspaceTabs: toplam + şeritte görünmeyen "+N"; liste
+      Alt+1…9 ipuçlu, sonda "Tümünü kapat"). Önceki ayrı "+N" ve "≡ toplam" düğmeleri birleşti. Aşama 5: "üst bölümü daralt" ve
       "tam ekran" düğmeleri şeridi daralttığı için buradan kalktı → üst barın alt kenarındaki yüzen
       tutamak (`ShellChromeHandle`) + kısayollar (Ctrl+Shift+H / Ctrl+Shift+F).
   Her sekme ayrı bir örnektir (çok örnekli kayıt sekmeleri de ayrı sekme).
@@ -23,26 +24,10 @@
       @update:model-value="onActivate"
       @close="onClose"
       @contextmenu="onContextMenu"
+      :shortcut-for-index="(i: number) => (i < 9 ? ['Alt', String(i + 1)] : undefined)"
+      :list-actions="listActions"
+      @list-action="onListAction"
     >
-      <template #trailing>
-        <div class="ek-shell-tabs__tools">
-          <v-menu v-model="listOpen" location="bottom end" :offset="6">
-            <template #activator="{ props: menuProps }">
-              <v-tooltip :eager="false" transition="fade-transition" location="bottom" :open-delay="400">
-                <template #activator="{ props: tipProps }">
-                  <button v-bind="{ ...menuProps, ...tipProps }" type="button" class="ek-shell-tabs__tool" :aria-label="`Açık sekmeler (${viewTabs.length})`">
-                    <v-icon icon="mdi-view-list-outline" aria-hidden="true" />
-                    <span class="ek-shell-tabs__count ek-num">{{ viewTabs.length }}</span>
-                  </button>
-                </template>
-                <span>Açık sekmeler</span>
-              </v-tooltip>
-            </template>
-            <EkMenuPanel autofocus ref="listPanelRef" class="ek-shell-tabs__list" :groups="listGroups" label="Açık sekmeler" @select="onListSelect" @close="listOpen = false" />
-          </v-menu>
-
-        </div>
-      </template>
     </EkWorkspaceTabs>
 
     <v-menu v-model="ctxOpen" :target="ctxPoint" location="bottom start" :offset="4">
@@ -64,9 +49,7 @@ const { t, te } = useI18n({ useScope: 'global' })
 const workspace = useWorkspaceStore()
 
 const tabsRef = ref<InstanceType<typeof EkWorkspaceTabs> | null>(null)
-const listPanelRef = ref<InstanceType<typeof EkMenuPanel> | null>(null)
 const ctxPanelRef = ref<InstanceType<typeof EkMenuPanel> | null>(null)
-const listOpen = ref(false)
 const ctxOpen = ref(false)
 const ctxPoint = ref<[number, number]>([0, 0])
 const ctxTabId = ref<string>()
@@ -128,27 +111,13 @@ function onCtxSelect(item: EkMenuItem) {
   nextTick(() => tabsRef.value?.focusActive())
 }
 
-// --- Açık sekmeler listesi ---
-const listGroups = computed<EkMenuGroup[]>(() => [
-  {
-    label: `Açık sekmeler (${viewTabs.value.length})`,
-    items: viewTabs.value.map((tab, index) => ({
-      key: tab.id,
-      label: tab.title,
-      icon: tab.id === activeId.value ? 'mdi-check' : tab.icon,
-      description: tab.id === activeId.value ? 'Etkin sekme' : undefined,
-      shortcut: index < 9 ? ['Alt', String(index + 1)] : undefined,
-    })),
-  },
-  {
-    items: [{ key: '__close-all', label: 'Tümünü kapat', icon: 'mdi-close-box-multiple-outline', danger: true, disabled: !viewTabs.value.some((x) => x.closable) }],
-  },
+// --- FR3 madde 4: "Tüm sekmeler" listesi tek düğmede (EkWorkspaceTabs) — kabuk yalnız liste sonu eylemini verir ---
+const listActions = computed<EkMenuItem[]>(() => [
+  { key: '__close-all', label: 'Tümünü kapat', icon: 'mdi-close-box-multiple-outline', danger: true, disabled: !viewTabs.value.some((x) => x.closable) },
 ])
 
-function onListSelect(item: EkMenuItem) {
-  listOpen.value = false
-  if (item.key === '__close-all') workspace.closeAll()
-  else workspace.activateTab(tabById(item.key))
+function onListAction(key: string) {
+  if (key === '__close-all') workspace.closeAll()
 }
 </script>
 
@@ -161,59 +130,4 @@ function onListSelect(item: EkMenuItem) {
   height: var(--ek-app-tabstrip-height);
 }
 
-.ek-shell-tabs__strip :deep(.ek-tabs__trailing) {
-  align-self: stretch;
-  align-items: flex-end;
-}
-
-.ek-shell-tabs__tools {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  /* Üstteki 12px yüzen tutamağa (ShellChromeHandle) ayrılır: liste düğmesi şeridin altına yaslı, çakışma yok. */
-  align-self: flex-end;
-  padding: 0 0 var(--ek-space-1) var(--ek-space-1);
-}
-
-
-.ek-shell-tabs__tool {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  /* Genişlik = üstteki yüzen tutamak (52px): ikisi tek sütun gibi hizalı, sekmelere taşmaz. */
-  min-width: 52px;
-  height: 24px;
-  padding: 0 var(--ek-space-2);
-  border: 0;
-  border-radius: var(--ek-radius-control);
-  background: transparent;
-  color: var(--ek-color-content-muted);
-  font-family: inherit;
-  font-size: var(--ek-icon-md);
-  cursor: pointer;
-  transition: var(--ek-transition-colors);
-}
-
-.ek-shell-tabs__tool:hover {
-  background: var(--ek-color-tab-hover);
-  color: var(--ek-color-content-strong);
-}
-
-
-.ek-shell-tabs__tool:focus-visible {
-  outline: none;
-  box-shadow: inset 0 0 0 2px var(--ek-color-border-focus);
-}
-
-.ek-shell-tabs__count {
-  font-size: var(--ek-type-caption-size);
-  font-weight: var(--ek-font-weight-semibold);
-}
-
-
-.ek-shell-tabs__list {
-  max-height: min(480px, calc(100vh - 120px));
-  overflow-y: auto;
-}
 </style>

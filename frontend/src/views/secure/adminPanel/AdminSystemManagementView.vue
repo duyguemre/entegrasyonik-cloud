@@ -1269,7 +1269,7 @@ onUnmounted(() => {
   background: var(--ek-color-surface);
   border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-lg);
-  transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
+  transition: border-color var(--ek-motion-reveal);
 
   &:hover { border-color: var(--ek-color-border-strong); }
 }
@@ -1419,8 +1419,8 @@ onUnmounted(() => {
 // Tıklanabilir önbellek kartları: hover/odakta yalnızca kenarlık geri bildirimi + görünür odak halkası.
 .hover-effect {
   cursor: pointer;
-  transition: border-color var(--ek-duration-base) var(--ek-easing-standard),
-    box-shadow var(--ek-duration-base) var(--ek-easing-standard);
+  transition: border-color var(--ek-motion-reveal),
+    box-shadow var(--ek-motion-reveal);
 }
 
 .hover-effect:hover,
