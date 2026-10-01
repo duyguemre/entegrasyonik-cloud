@@ -12,7 +12,7 @@ Görsel onay yerelde (Windows) yapılır.
 | `/guvenlik` (tam sayfa) | Güvence ilkeleri → Kapsam | Hero'da "Adil rekabet" eylemi; Güvence ilkeleri → **Adil rekabet** (açık gri zemin, solda başlık, sağda 2×2 ince çizgili ilke listesi) → Kapsam (zemin beyaza döndü, açık/koyu ritim korunur) |
 | Ana sayfa `#guvenlik` | Dört sütun + kalkan vitrini | Altta tek satırlık **"Adil rekabet ilkemiz"** bandı (kontur ikon, kısa cümle, "İlkelerimizi okuyun →"); 390'da bağlantı alt satıra iner |
 | `/otopilot#kontrol` | 5 güvence maddesi (3 + 2) | 6 madde (3 + 3): **"Fiyatınız, sizin kuralınız"** |
-| `/sss#guvenlik-veri` | Dört soru | Yeni soru: "Entegrasyonik fiyatlarıma karar verir mi…" |
+| `/sss#guvenlik-veri` | Beş soru | Yeni soru: "Entegrasyonik fiyatlarıma karar verir mi…" |
 
 ## Tasarım kararları
 
