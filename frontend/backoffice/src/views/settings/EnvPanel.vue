@@ -5,7 +5,7 @@
         <h2 id="bo-env-title" class="bo-panel__title">Ortam (salt okunur)</h2>
         <p class="bo-panel__hint">Bu değerler sunucu ortam değişkenlerinden gelir; burada düzenlenemez ve hiçbir kaydetme isteğine girmez. Sır, CORS ve bağlantı dizesi gösterilmez.</p>
       </div>
-      <EkRefreshButton :loading="env.refreshing.value" @refresh="env.load()" />
+      <EkRefreshButton quiet-success :loading="env.refreshing.value" @refresh="env.load()" />
     </header>
     <EkCard flush>
       <StateBlock :phase="env.phase.value" :error="env.error.value" skeleton="form" :rows="3" error-title="Ortam bilgisi okunamadı" @retry="env.load()">

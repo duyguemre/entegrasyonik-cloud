@@ -5,7 +5,7 @@
         <h2 id="bo-health-title" class="bo-panel__title">API sağlığı</h2>
         <p class="bo-panel__hint">Dış servis çağrıları, hata oranı ve gecikme. Gecikme değeri kova üst sınırıdır (yaklaşık); ölçüm 30 gün saklanır.</p>
       </div>
-      <EkRefreshButton :loading="res.refreshing.value || res.phase.value === 'loading'" :last-updated="res.loadedAt.value" :error="res.stale.value ? res.error.value?.title : null" @refresh="res.load()" />
+      <EkRefreshButton quiet-success :loading="res.refreshing.value || res.phase.value === 'loading'" :last-updated="res.loadedAt.value" :error="res.stale.value ? res.error.value?.title : null" @refresh="res.load()" />
     </header>
 
     <div class="bo-toolbar">

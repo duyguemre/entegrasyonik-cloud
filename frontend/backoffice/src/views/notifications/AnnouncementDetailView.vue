@@ -18,7 +18,7 @@
             {{ startsInFuture ? 'Zamanla' : 'Şimdi yayınla' }}
           </EkButton>
           <EkButton v-if="cancellable" tone="danger" icon="mdi-cancel" data-testid="cancel" @click="cancel.open(a.id)">İptal et</EkButton>
-          <EkRefreshButton :loading="res.refreshing.value" @refresh="reload" />
+          <EkRefreshButton quiet-success :loading="res.refreshing.value" @refresh="reload" />
         </template>
       </BoPageHeader>
 

@@ -5,7 +5,7 @@
         <h2 id="bo-cat-title" class="bo-panel__title">Katalog ve etkin ayar</h2>
         <p class="bo-panel__hint">Ayar tanımları ile seçili hedefte bugün geçerli değerler. Değer kaynağı, riski ve uygulanma zamanı görünür. Bu ekranda ayar değiştirilmez.</p>
       </div>
-      <EkRefreshButton :loading="res.refreshing.value || res.phase.value === 'loading'" :last-updated="res.loadedAt.value" :error="res.stale.value ? res.error.value?.title : null" @refresh="res.load()" />
+      <EkRefreshButton quiet-success :loading="res.refreshing.value || res.phase.value === 'loading'" :last-updated="res.loadedAt.value" :error="res.stale.value ? res.error.value?.title : null" @refresh="res.load()" />
     </header>
 
     <div class="bo-toolbar">

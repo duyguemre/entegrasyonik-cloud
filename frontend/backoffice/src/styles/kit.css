@@ -27,13 +27,7 @@
   font-size: var(--ek-type-label-size);
 }
 
-.bo-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--ek-space-3);
-}
-
+/* .bo-toolbar ve .bo-seg TEK tanım: styles/backoffice.css (NT-04 — önceden iki dosyada ayrı ayrı tanımlıydı). */
 .bo-toolbar__field {
   flex: 0 1 220px;
   min-width: 160px;
@@ -43,34 +37,6 @@
   flex: 1 1 auto;
 }
 
-.bo-seg {
-  display: inline-flex;
-  padding: 3px;
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-control);
-  background: var(--ek-color-surface-muted);
-}
-
-.bo-seg__opt {
-  height: 30px;
-  padding: 0 var(--ek-space-3);
-  border: 0;
-  border-radius: var(--ek-radius-md);
-  background: transparent;
-  color: var(--ek-color-content-muted);
-  font: inherit;
-  font-size: var(--ek-type-label-size);
-  font-weight: var(--ek-font-weight-medium);
-  cursor: pointer;
-}
-
-.bo-seg__opt[aria-checked='true'] {
-  background: var(--ek-color-surface);
-  color: var(--ek-color-content-strong);
-  box-shadow: var(--ek-shadow-sm);
-}
-
-.bo-seg__opt:focus-visible,
 .bo-link-btn:focus-visible {
   outline: 2px solid var(--ek-color-border-focus);
   outline-offset: 1px;

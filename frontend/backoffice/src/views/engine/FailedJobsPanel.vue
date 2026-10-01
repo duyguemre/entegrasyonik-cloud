@@ -5,7 +5,7 @@
         <h2 id="bo-failed-title" class="bo-panel__title">Başarısız işler</h2>
         <p class="bo-panel__hint">En yeni önce. BullMQ başarısız kümesi son 500 işle sınırlıdır; kalıcı hatalar ölü mektup kuyruğundadır.</p>
       </div>
-      <EkRefreshButton :loading="list.refreshing.value || list.phase.value === 'loading'" @refresh="list.reload({ keep: true })" />
+      <EkRefreshButton quiet-success :loading="list.refreshing.value || list.phase.value === 'loading'" @refresh="list.reload({ keep: true })" />
     </header>
 
     <div class="bo-toolbar">

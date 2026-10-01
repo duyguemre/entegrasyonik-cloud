@@ -5,7 +5,7 @@
         <h2 id="bo-res-title" class="bo-panel__title">Dayanıklılık durumu</h2>
         <p class="bo-panel__hint">Devre kesici, hız bütçesi ve alım (intake) kipi; her pod kendi anlık görüntüsünü yaklaşık 60 sn'de bir yazar.</p>
       </div>
-      <EkRefreshButton :loading="res.refreshing.value || res.phase.value === 'loading'" :last-updated="res.loadedAt.value" :error="res.stale.value ? res.error.value?.title : null" @refresh="res.load()" />
+      <EkRefreshButton quiet-success :loading="res.refreshing.value || res.phase.value === 'loading'" :last-updated="res.loadedAt.value" :error="res.stale.value ? res.error.value?.title : null" @refresh="res.load()" />
     </header>
 
     <StateBlock

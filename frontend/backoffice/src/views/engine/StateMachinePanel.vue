@@ -5,7 +5,7 @@
         <h2 id="bo-sm-title" class="bo-panel__title">Katalog durum makinesi</h2>
         <p class="bo-panel__hint">Ürün gönderim sinyalleri (ExportSignals) ve içe aktarma işleri (ImportJobs). Takılı kira: sahibi dolu ama süresi dolmuş ya da {{ timeoutText }} boyunca ilerlemeyen iş.</p>
       </div>
-      <EkRefreshButton :loading="res.refreshing.value || res.phase.value === 'loading'" :last-updated="res.loadedAt.value" @refresh="res.load()" />
+      <EkRefreshButton quiet-success :loading="res.refreshing.value || res.phase.value === 'loading'" :last-updated="res.loadedAt.value" @refresh="res.load()" />
     </header>
 
     <StateBlock :phase="res.phase.value" :error="res.error.value" skeleton="cards" :rows="2" @retry="res.load()">

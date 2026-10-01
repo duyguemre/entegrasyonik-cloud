@@ -5,7 +5,7 @@
         <h2 id="bo-runs-title" class="bo-panel__title">Zamanlanmış görevler</h2>
         <p class="bo-panel__hint">Son durum görev başına; geçmişte yalnız anlamlı turlar (başarısız, kısmi, nedenli atlama, iş yapan) ve saatte en az bir tur tutulur · {{ retention }} gün saklanır.</p>
       </div>
-      <EkRefreshButton :loading="list.refreshing.value || list.phase.value === 'loading'" @refresh="list.reload({ keep: true })" />
+      <EkRefreshButton quiet-success :loading="list.refreshing.value || list.phase.value === 'loading'" @refresh="list.reload({ keep: true })" />
     </header>
 
     <EkCard v-if="states.length || list.phase.value === 'loading'" title="Görev durumu" icon="mdi-calendar-clock-outline" icon-tone="info" flush>
