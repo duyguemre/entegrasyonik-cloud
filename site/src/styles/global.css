@@ -45,14 +45,14 @@ h4 {
   color: var(--site-text-heading);
   font-weight: var(--ek-font-weight-bold);
   line-height: var(--ek-line-height-tight);
-  /* site-wdg W13: çok satırlı başlıklarda dul kelime kalmasın (tüm sayfa/bileşen başlıkları tek kuraldan). */
+  /* site-wdg W13: çok satırlı başlıklarda dul kelime kalmasın (tüm sayfa/bileşen başlıkları tek kuraldan). Gövde `p`'ye
+     site geneli `text-wrap: pretty` bilerek eklenmedi: her paragrafta ek yerleşim maliyeti, kazancı küçük. */
   text-wrap: balance;
 }
 
 p {
   margin: 0;
   max-width: var(--site-measure);
-  text-wrap: pretty;
 }
 
 /*
@@ -124,26 +124,30 @@ html:is([data-motion='paused'], [data-motion='reduced']) :is(a .icon[data-icon='
  * site-wdg W17: "Hareket" anahtarı kapalı ya da reduced-motion → kart/ikon hover hareketleri de durur (önceden yalnız
  * geçiş süresi kısalıyordu, yükselme/dönme/ölçek yine uygulanıyordu). Geri bildirim renk/zemin/gölge ile sürer.
  * Liste: hover'da konum/ölçek değiştiren bileşenler (tek yer; yeni hover hareketi eklenirse buraya da eklenir).
+ * Seçiciler düz yazıldı (`:is()` içine karmaşık `:hover` seçicileri gömülmez; özgüllük bileşen kurallarını aşar).
  */
-html:is([data-motion='paused'], [data-motion='reduced'])
-  :is(
-    .tile:hover .tile__icon,
-    .tile:hover .tile__icon svg,
-    .tile:hover .tile__frame > *,
-    .eco__node:hover .eco__icon,
-    .plan:hover,
-    .topic:hover,
-    .featured__card:hover,
-    .others__link:is(:hover, :focus-visible),
-    .int-card:hover .int-card__arrow,
-    .mega-feature:hover .mega-feature__cta .icon
-  ) {
-  transform: none;
+/* Bireysel dönüşüm özellikleri (translate/rotate/scale) kullananlar. `transform` ile aynı kurala yazılmaz: küçültücü
+   dördünü tek `transform` kısayoluna birleştirip bireysel özellikleri sıfırlamadan bırakıyordu. */
+html[data-motion]:not([data-motion='play']) .tile:hover .tile__icon,
+html[data-motion]:not([data-motion='play']) .tile:hover .tile__icon svg,
+html[data-motion]:not([data-motion='play']) .tile:hover .tile__frame > *,
+html[data-motion]:not([data-motion='play']) .eco__node:hover .eco__icon,
+html[data-motion]:not([data-motion='play']) .plan:hover,
+html[data-motion]:not([data-motion='play']) .others__link:hover,
+html[data-motion]:not([data-motion='play']) .others__link:focus-visible {
   translate: none;
   rotate: none;
   scale: none;
 }
-html:is([data-motion='paused'], [data-motion='reduced']) :is(.btn--primary, .btn--inverse)::after {
+/* `transform` kullananlar. */
+html[data-motion]:not([data-motion='play']) .topic:hover,
+html[data-motion]:not([data-motion='play']) .featured__card:hover,
+html[data-motion]:not([data-motion='play']) .int-card:hover .int-card__arrow,
+html[data-motion]:not([data-motion='play']) .mega-feature:hover .mega-feature__cta .icon {
+  transform: none;
+}
+html[data-motion]:not([data-motion='play']) .btn--primary::after,
+html[data-motion]:not([data-motion='play']) .btn--inverse::after {
   display: none;
 }
 
