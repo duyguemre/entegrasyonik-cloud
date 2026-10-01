@@ -7,7 +7,8 @@ import { MongoDeliveryStore } from '../delivery/deliveryStore';
 import { createEmailDispatcherDeps, lazyModelPort } from '../delivery/createEmailDispatcher';
 import { PushDispatcher, type LedgerEventLite, type PushSender } from './PushDispatcher';
 import { createPushSubscriptionPort, type PushSubscriptionRepoLike } from './subscriptions';
-import { currentVapid, isPushEnabled } from './pushConfig';
+import { currentFcm, currentVapid, isPushEnabled } from './pushConfig';
+import { createFcmSender } from './fcm';
 
 const app = () => DatabaseManagerInstance.getApplicationDB();
 
@@ -24,9 +25,16 @@ function lazyRepo(): PushSubscriptionRepoLike {
     };
 }
 
+let fcmSender: ReturnType<typeof createFcmSender> | undefined;
+
+/** Hedef turune gore tasiyici: tarayici aboneligi -> web-push (VAPID), FCM belirteci -> FCM HTTP v1 (MOB-07 Android kabugu). */
 export function createWebPushSender(): PushSender {
     return {
         async send(target, payload, opts) {
+            if ('fcmToken' in target) {
+                fcmSender ??= createFcmSender({ config: currentFcm });
+                return fcmSender.send(target.fcmToken, payload, opts);
+            }
             const vapid = currentVapid();
             if (!vapid) throw Object.assign(new Error('web push kapali'), { statusCode: 503 });
             // eslint-disable-next-line @typescript-eslint/no-require-imports -- TS6-01: node16 CJS, tembel yukleme

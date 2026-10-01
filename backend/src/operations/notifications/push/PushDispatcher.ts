@@ -20,7 +20,8 @@ export const PUSH_STALE_MS = 24 * 60 * MIN;
 /** Push servisinin cihaz cevrimdisiyken iletiyi tutma suresi (sn). */
 export const PUSH_TTL_SECONDS = 12 * 60 * 60;
 
-export interface PushTarget { id: string; endpoint: string; keys: { p256dh: string; auth: string } }
+/** Web push aboneligi (tarayici) ya da FCM cihaz belirteci (MOB-07 Android kabugu). Dagiticilar yalniz `id` okur; gonderici yonlendirir. */
+export type PushTarget = { id: string; endpoint: string; keys: { p256dh: string; auth: string } } | { id: string; fcmToken: string };
 
 export interface PushSubscriptionPort {
     /** Kullanicinin (tid kapsamli) cihaz abonelikleri, cozulmus. Cozulemeyen kayit atlanir (cagiran loglar). */

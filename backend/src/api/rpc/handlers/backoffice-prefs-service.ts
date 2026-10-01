@@ -3,9 +3,9 @@ import { BaseApi } from '../BaseApi'
 import { listViews, saveView, deleteView } from '../../../operations/backoffice/viewsAdmin'
 import { ApplicationError } from '@platform/core/errors'
 import { PushSubscriptionRepository } from '@database/repositories/app/PushSubscriptionRepository'
-import { currentVapid, isPushEnabled } from '@operations/notifications/push/pushConfig'
+import { currentVapid, isFcmEnabled, isPushEnabled, isWebPushEnabled } from '@operations/notifications/push/pushConfig'
 import { PLATFORM_PUSH_TID } from '@operations/notifications/push/platformAttentionPush'
-import { listPushDevices, PushSubscriptionError, removePushSubscription, savePushSubscription } from '@operations/notifications/push/subscriptions'
+import { listPushDevices, PushRequestError, PushSubscriptionError, removePushSubscription, subscribeFromBody, unsubscribeTarget } from '@operations/notifications/push/subscriptions'
 
 /**
  * BE-05 (K51) -- `/admin-api` kayıtlı görünümler: yönetici başına, ekran başına adlandırılmış URL süzgeçleri (<=20). Yalnız çağıranın kayıtları (`principal.sub`).
@@ -30,29 +30,32 @@ export default class BackofficePrefsService extends BaseApi implements IService 
         return sub
     }
 
-    /** Kanal durumu + VAPID açık anahtarı (sır değil) + bu yöneticinin cihazları. Kanal kapalıyken cihaz listesi okunmaz. */
+    /** Kanal durumu + VAPID açık anahtarı (sır değil) + FCM (Android kabuğu) + bu yöneticinin cihazları. Kanal kapalıyken cihaz listesi okunmaz. */
     async getPushConfig(): Promise<any> {
-        const vapid = isPushEnabled() ? currentVapid() : undefined
-        if (!vapid) return { enabled: false, publicKey: null, devices: [] }
-        return { enabled: true, publicKey: vapid.publicKey, devices: await listPushDevices(this.pushSubs, PLATFORM_PUSH_TID, this.admin()) }
+        if (!isPushEnabled()) return { enabled: false, publicKey: null, fcm: false, devices: [] }
+        return {
+            enabled: true, publicKey: isWebPushEnabled() ? currentVapid()?.publicKey ?? null : null, fcm: isFcmEnabled(),
+            devices: await listPushDevices(this.pushSubs, PLATFORM_PUSH_TID, this.admin()),
+        }
     }
 
-    /** Bu cihazı kaydet (aynı uç = güncelle). İzin istemi istemcide YALNIZ kullanıcı eylemiyle. */
+    /** Bu cihazı kaydet (tarayıcı aboneliği ya da Android kabuğu FCM belirteci). İzin istemi istemcide YALNIZ kullanıcı eylemiyle. */
     async subscribePush(): Promise<any> {
-        if (!isPushEnabled()) throw new ApplicationError('Anlık bildirimler şu an kullanılamıyor.', 409, 'PUSH_DISABLED')
+        const admin = this.admin()
         try {
-            await savePushSubscription(this.pushSubs, { tid: PLATFORM_PUSH_TID, userId: this.admin(), subscription: this.request.subscription, deviceLabel: this.request.deviceLabel, now: new Date() })
+            await subscribeFromBody(this.pushSubs, { tid: PLATFORM_PUSH_TID, userId: admin, body: this.request, now: new Date(), channels: { web: isWebPushEnabled(), fcm: isFcmEnabled() } })
         } catch (e) {
+            if (e instanceof PushRequestError) throw new ApplicationError(e.message, e.code === 'PUSH_DISABLED' ? 409 : 400, e.code)
             if (e instanceof PushSubscriptionError) throw new ApplicationError(e.message, 400, e.code)
             throw e
         }
         return { ok: true }
     }
 
-    /** Cihaz aboneliğini sil (uç ya da cihaz kimliği; yalnız kendi kaydı). Kanal kapalıyken de çalışır. İdempotent. */
+    /** Cihaz aboneliğini sil (uç, cihaz kimliği ya da FCM belirteci; yalnız kendi kaydı). Kanal kapalıyken de çalışır. İdempotent. */
     async unsubscribePush(): Promise<any> {
-        const { endpoint, id } = this.request || {}
-        if (!endpoint === !id) throw new ApplicationError('Uç ya da cihaz kimliğinden yalnız biri gönderilmeli.', 400, 'VALIDATION')
-        return { removed: await removePushSubscription(this.pushSubs, { tid: PLATFORM_PUSH_TID, userId: this.admin(), endpoint, id }) }
+        let target
+        try { target = unsubscribeTarget(this.request) } catch (e) { throw new ApplicationError((e as Error).message, 400, 'VALIDATION') }
+        return { removed: await removePushSubscription(this.pushSubs, { tid: PLATFORM_PUSH_TID, userId: this.admin(), ...target }) }
     }
 }

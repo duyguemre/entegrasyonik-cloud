@@ -74,9 +74,10 @@ describe('PlatformAttentionPusher', () => {
     let admins: Set<string>;
     const sender: PushSender = {
         async send(t, payload, opts) {
-            const code = failFor.get(t.endpoint);
+            const endpoint = 'endpoint' in t ? t.endpoint : `fcm:${t.fcmToken}`;
+            const code = failFor.get(endpoint);
             if (code !== undefined) throw Object.assign(new Error('x'), code ? { statusCode: code } : {});
-            sent.push({ endpoint: t.endpoint, payload: JSON.parse(payload), opts }); return { statusCode: 201 };
+            sent.push({ endpoint, payload: JSON.parse(payload), opts }); return { statusCode: 201 };
         },
     };
     function pusher(over: Partial<PlatformAttentionPushDeps> = {}, seen = new Map<string, number>()) {
@@ -163,7 +164,7 @@ describe('BackofficePrefsService push uçları', () => {
     afterEach(() => { for (const k of KEYS) { if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k]; } });
 
     it('kanal kapalı: getPushConfig kapalı, subscribe 409; açık: açık anahtar (özel ASLA) + yalnız kendi cihazlarım', async () => {
-        expect(await svc().getPushConfig()).toEqual({ enabled: false, publicKey: null, devices: [] });
+        expect(await svc().getPushConfig()).toEqual({ enabled: false, publicKey: null, fcm: false, devices: [] });
         await expect(svc({ subscription: sub() }).subscribePush()).rejects.toMatchObject({ statusCode: 409, code: 'PUSH_DISABLED' });
         const k = enable();
         await svc({ subscription: sub(), deviceLabel: 'Android · Chrome' }).subscribePush();

@@ -38,7 +38,7 @@ afterEach(() => { for (const k of KEYS) { if (saved[k] === undefined) delete pro
 describe('getPushConfig', () => {
     it('VAPID yoksa kanal kapalı (süreç çökmez), açık anahtar null, cihaz listesi okunmaz', async () => {
         process.env.NOTIFY_V2_ENABLED = 'true';
-        expect(await svc().getPushConfig()).toEqual({ result: true, enabled: false, publicKey: null, devices: [] });
+        expect(await svc().getPushConfig()).toEqual({ result: true, enabled: false, publicKey: null, fcm: false, devices: [] });
         process.env.WEBPUSH_VAPID_PUBLIC = 'bozuk'; process.env.WEBPUSH_VAPID_PRIVATE = 'x'; process.env.WEBPUSH_VAPID_SUBJECT = 'mailto:a@b.c';
         expect((await svc().getPushConfig()).enabled).toBe(false);
     });

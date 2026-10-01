@@ -289,6 +289,8 @@ function buildShape(m: Mode) {
         WEBPUSH_VAPID_PUBLIC: t.str(),
         WEBPUSH_VAPID_PRIVATE: t.str(),
         WEBPUSH_VAPID_SUBJECT: t.str(),
+        // MOB-07 Android kabuğu yerel push (FCM HTTP v1). Hizmet hesabı JSON'u (ham ya da base64) -- SIR; yalnız .env. Yoksa FCM kapalı.
+        FCM_SERVICE_ACCOUNT_JSON: t.str(),
         // --- ADR-0017 Asama C / ADR-0029 NB8: platform alarm degerlendiricisi (varsayilan KAPALI; DB kapisi 0017 gocu) ---
         // ALERT_EVALUATOR_ENABLED=false: degerlendirici is DB'ye dokunmadan doner. ALERT_SHADOW_UNTIL (ISO tarih): bu tarihe dek yalniz kayit (e-posta/tenant bildirimi YOK).
         ALERT_EVALUATOR_ENABLED: t.bool(false),
@@ -462,7 +464,8 @@ function nest(e: Record<string, any>) {
             streamEnabled: e.NOTIFY_STREAM_ENABLED as boolean, streamMaxPerUser: e.NOTIFY_STREAM_MAX_PER_USER as number, streamMaxTotal: e.NOTIFY_STREAM_MAX_TOTAL as number,
             realtimeBus: e.REALTIME_BUS as string | undefined, publicApiUrl: e.PUBLIC_API_URL as string | undefined, unsubSecret: e.NOTIFY_UNSUB_SECRET as string | undefined,
             alertEvaluatorEnabled: e.ALERT_EVALUATOR_ENABLED as boolean, alertShadowUntil: e.ALERT_SHADOW_UNTIL as string | undefined, alertEmailTo: e.ALERT_EMAIL_TO as string | undefined,
-            webpush: { publicKey: e.WEBPUSH_VAPID_PUBLIC as string | undefined, privateKey: e.WEBPUSH_VAPID_PRIVATE as string | undefined, subject: e.WEBPUSH_VAPID_SUBJECT as string | undefined } },
+            webpush: { publicKey: e.WEBPUSH_VAPID_PUBLIC as string | undefined, privateKey: e.WEBPUSH_VAPID_PRIVATE as string | undefined, subject: e.WEBPUSH_VAPID_SUBJECT as string | undefined },
+            fcmServiceAccount: e.FCM_SERVICE_ACCOUNT_JSON as string | undefined },
         // ADR-0034 (sohbet aracısı)
         agent: { llmScripted: e.AGENT_LLM_SCRIPTED as boolean },
         // ADR-0035 (uzak MCP / OAuth). `resourceUri`: RFC 8707/9728 kaynak tanıtıcısı (token `aud`'u).

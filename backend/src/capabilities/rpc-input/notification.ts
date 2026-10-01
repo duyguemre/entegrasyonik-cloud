@@ -24,15 +24,18 @@ const prefsBody = {
 
 /** Ortak ilk öğeler: sayfalama tavanı 200 (imleç yoksa) / 50 (imleçle) servis içinde sıkılaştırılır. */
 /** MOB-04/MOB-06 web push gövdeleri (tenant NotificationService ve backoffice BackofficePrefsService ortak). */
+// Tarayıcı aboneliği (`subscription`) YA DA Android kabuğu FCM belirteci (`fcmToken`, MOB-07) -- yalnız biri (serviste 400).
+const fcmToken = z.string().regex(/^[A-Za-z0-9_:-]{32,4096}$/, 'fcm');
 export const PUSH_SUBSCRIBE_BODY = {
     subscription: z.object({
         endpoint: z.string().url().max(1024),
         expirationTime: z.number().nullable().optional(),
         keys: z.object({ p256dh: b64url.max(128), auth: b64url.max(64) }).strict(),
-    }).strict(),
+    }).strict().optional(),
+    fcmToken: fcmToken.optional(),
     deviceLabel: z.string().max(60).optional(),
 };
-export const PUSH_UNSUBSCRIBE_BODY = { endpoint: z.string().url().max(1024).optional(), id: objectIdStr.optional() };
+export const PUSH_UNSUBSCRIBE_BODY = { endpoint: z.string().url().max(1024).optional(), id: objectIdStr.optional(), fcmToken: fcmToken.optional() };
 
 export const NOTIFICATION_RPC_INPUT: Partial<Record<RpcRef, z.ZodType<any>>> = {
     'NotificationService/get': strictBody({

@@ -9,8 +9,8 @@ import { getCatalogDto } from '@operations/notifications/catalog'
 import { NOTIFICATION_CATEGORIES } from '@operations/notifications/catalog.types'
 import { categoryLocks, violatedMandatory } from '@operations/notifications/preferences'
 import { PushSubscriptionRepository } from '@database/repositories/app/PushSubscriptionRepository'
-import { currentVapid, isPushEnabled } from '@operations/notifications/push/pushConfig'
-import { listPushDevices, PushSubscriptionError, removePushSubscription, savePushSubscription } from '@operations/notifications/push/subscriptions'
+import { currentVapid, isFcmEnabled, isPushEnabled, isWebPushEnabled } from '@operations/notifications/push/pushConfig'
+import { listPushDevices, PushRequestError, PushSubscriptionError, removePushSubscription, subscribeFromBody, unsubscribeTarget } from '@operations/notifications/push/subscriptions'
 import { buildListFilter, buildOwnUpdateFilter, buildUnreadFilter, presentNotification } from '@operations/notifications/inAppRepository'
 
 /**
@@ -208,33 +208,32 @@ export default class NotificationService extends BaseApi implements IService {
 
     // ---- Web push (MOB-04): kullanıcı × cihaz aboneliği. Tenant + kullanıcı kapsamlı; destek oturumu yazamaz. ----
 
-    /** Kanal durumu + VAPID açık anahtarı (sır değil) + kendi cihazlarım. Kanal kapalıyken cihaz listesi okunmaz. */
+    /** Kanal durumu + VAPID açık anahtarı (sır değil) + FCM (Android kabuğu) açık mı + kendi cihazlarım. Kanal kapalıyken cihaz listesi okunmaz. */
     async getPushConfig(): Promise<any> {
-        const vapid = isPushEnabled() ? currentVapid() : undefined
-        if (!vapid) return { result: true, enabled: false, publicKey: null, devices: [] }
+        if (!isPushEnabled()) return { result: true, enabled: false, publicKey: null, fcm: false, devices: [] }
         const devices = this.ctx.actor.imp === true ? [] : await listPushDevices(this.pushSubs, this.tid, this.uid)
-        return { result: true, enabled: true, publicKey: vapid.publicKey, devices }
+        return { result: true, enabled: true, publicKey: isWebPushEnabled() ? currentVapid()?.publicKey ?? null : null, fcm: isFcmEnabled(), devices }
     }
 
-    /** Bu cihazı kaydet (aynı uç = güncelle). Uç yalnız bilinen push servisleri (SSRF koruması). */
+    /** Bu cihazı kaydet: tarayıcı aboneliği (aynı uç = güncelle) YA DA Android kabuğu FCM belirteci. Uç yalnız bilinen push servisleri (SSRF). */
     async subscribePush(): Promise<any> {
         this.assertWritable()
-        if (!isPushEnabled()) throw new ApplicationError('Anlık bildirimler şu an kullanılamıyor.', 409, 'PUSH_DISABLED')
         try {
-            await savePushSubscription(this.pushSubs, { tid: this.tid, userId: this.uid, subscription: this.request.subscription, deviceLabel: this.request.deviceLabel, now: new Date() })
+            await subscribeFromBody(this.pushSubs, { tid: this.tid, userId: this.uid, body: this.request, now: new Date(), channels: { web: isWebPushEnabled(), fcm: isFcmEnabled() } })
         } catch (e) {
+            if (e instanceof PushRequestError) throw new ApplicationError(e.message, e.code === 'PUSH_DISABLED' ? 409 : 400, e.code)
             if (e instanceof PushSubscriptionError) throw new ApplicationError(e.message, 400, e.code)
             throw e
         }
         return { result: true, message: 'Bu cihazda anlık bildirimler açıldı.' }
     }
 
-    /** Cihaz aboneliğini sil (uç ya da cihaz kimliği; yalnız kendi kaydı). Kanal kapalıyken de çalışır (temizlik). İdempotent. */
+    /** Cihaz aboneliğini sil (uç, cihaz kimliği ya da FCM belirteci; yalnız kendi kaydı). Kanal kapalıyken de çalışır (temizlik). İdempotent. */
     async unsubscribePush(): Promise<any> {
         this.assertWritable()
-        const { endpoint, id } = this.request
-        if (!endpoint === !id) throw new ApplicationError('Uç ya da cihaz kimliğinden yalnız biri gönderilmeli.', 400, 'VALIDATION')
-        const removed = await removePushSubscription(this.pushSubs, { tid: this.tid, userId: this.uid, endpoint, id })
+        let target
+        try { target = unsubscribeTarget(this.request) } catch (e) { throw new ApplicationError((e as Error).message, 400, 'VALIDATION') }
+        const removed = await removePushSubscription(this.pushSubs, { tid: this.tid, userId: this.uid, ...target })
         return { result: true, removed, message: 'Bu cihazda anlık bildirimler kapatıldı.' }
     }
 }

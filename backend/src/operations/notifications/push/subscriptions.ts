@@ -5,6 +5,7 @@ import { createHash } from 'crypto';
 import { decryptField, encryptField } from '@utils/FieldCrypto';
 import { logger } from '@platform/core/logger';
 import { isAllowedPushEndpoint } from './pushHosts';
+import { FCM_TOKEN_RE } from './fcm';
 import type { PushSubscriptionPort, PushTarget } from './PushDispatcher';
 
 const log = logger.child({ module: 'notifications.push.subscriptions' });
@@ -23,12 +24,15 @@ export interface PushSubscriptionInput { endpoint: string; keys: { p256dh: strin
 export interface PushDevice { id: string; deviceLabel: string | null; createdAt: Date; lastSuccessAt: Date | null }
 
 export class PushSubscriptionError extends Error {
-    constructor(readonly code: 'PUSH_ENDPOINT_NOT_ALLOWED' | 'PUSH_KEYS_INVALID', message: string) { super(message); }
+    constructor(readonly code: 'PUSH_ENDPOINT_NOT_ALLOWED' | 'PUSH_KEYS_INVALID' | 'PUSH_TOKEN_INVALID', message: string) { super(message); }
 }
 
 export function hashEndpoint(endpoint: string): string {
     return createHash('sha256').update(endpoint, 'utf8').digest('hex');
 }
+
+/** MOB-07: FCM belirtecinin tekillik anahtari (web ucuyla cakismasin diye onekli). */
+export const hashFcmToken = (token: string): string => hashEndpoint(`fcm:${token}`);
 
 const b64urlBytes = (v: string) => (/^[A-Za-z0-9_-]+=*$/.test(v) ? Buffer.from(v.replace(/=+$/, ''), 'base64url').length : -1);
 
@@ -56,7 +60,16 @@ export async function savePushSubscription(repo: PushSubscriptionRepoLike, i: { 
     return {};
 }
 
-export async function removePushSubscription(repo: PushSubscriptionRepoLike, i: { tid: number; userId: string; endpoint?: string; id?: string }): Promise<number> {
+/** MOB-07: Android kabugu FCM cihaz belirteci (ayni koleksiyon, ayni sifreleme ve cihaz siniri; `sub` = {fcm}). */
+export async function saveFcmToken(repo: PushSubscriptionRepoLike, i: { tid: number; userId: string; token: string; deviceLabel?: unknown; now: Date }): Promise<void> {
+    if (typeof i.token !== 'string' || !FCM_TOKEN_RE.test(i.token)) throw new PushSubscriptionError('PUSH_TOKEN_INVALID', 'Cihaz bildirim kaydı geçersiz.');
+    await repo.upsertByHash(hashFcmToken(i.token), { tid: i.tid, userId: i.userId, sub: encryptField(JSON.stringify({ fcm: i.token })), deviceLabel: cleanDeviceLabel(i.deviceLabel), createdAt: i.now });
+    const rows = await repo.listByUser(i.tid, i.userId);
+    if (rows.length > MAX_DEVICES_PER_USER) await repo.deleteManyByIds(rows.slice(MAX_DEVICES_PER_USER).map((r) => r._id));
+}
+
+export async function removePushSubscription(repo: PushSubscriptionRepoLike, i: { tid: number; userId: string; endpoint?: string; id?: string; fcmToken?: string }): Promise<number> {
+    if (i.fcmToken) return repo.deleteOwned(i.tid, i.userId, { endpointHash: hashFcmToken(i.fcmToken) });
     if (i.endpoint) return repo.deleteOwned(i.tid, i.userId, { endpointHash: hashEndpoint(i.endpoint) });
     if (i.id) return repo.deleteOwned(i.tid, i.userId, { id: i.id });
     return 0;
@@ -71,6 +84,7 @@ export async function listPushDevices(repo: PushSubscriptionRepoLike, tid: numbe
 export function decodePushTarget(r: { _id: unknown; sub: string }): PushTarget | null {
     try {
         const s = JSON.parse(decryptField(r.sub));
+        if (typeof s?.fcm === 'string' && FCM_TOKEN_RE.test(s.fcm)) return { id: String(r._id), fcmToken: s.fcm };
         if (isAllowedPushEndpoint(s?.endpoint) && s?.keys?.p256dh && s?.keys?.auth) return { id: String(r._id), endpoint: s.endpoint, keys: s.keys };
         log.warn({ subscriptionId: String(r._id) }, 'push aboneligi gecersiz; atlandi');
     } catch {
@@ -89,4 +103,32 @@ export function createPushSubscriptionPort(repo: PushSubscriptionRepoLike): Push
         remove: (id) => repo.deleteById(id),
         markSuccess: (id, at) => repo.markSuccess(id, at),
     };
+}
+
+/**
+ * RPC gövdesinden kayıt (tenant NotificationService + backoffice BackofficePrefsService ortak): tarayıcı aboneliği YA DA FCM belirteci,
+ * yalnız biri. Kanal denetimi: web için VAPID, FCM için hizmet hesabı açık olmalı (`channels`). Hata: PushSubscriptionError | 'PUSH_DISABLED' | 'VALIDATION'.
+ */
+export async function subscribeFromBody(repo: PushSubscriptionRepoLike, i: {
+    tid: number; userId: string; body: { subscription?: PushSubscriptionInput; fcmToken?: string; deviceLabel?: unknown }; now: Date; channels: { web: boolean; fcm: boolean };
+}): Promise<void> {
+    const { subscription, fcmToken, deviceLabel } = i.body ?? {};
+    if (!subscription === !fcmToken) throw new PushRequestError('VALIDATION', 'Abonelik ya da cihaz belirtecinden yalnız biri gönderilmeli.');
+    if (fcmToken) {
+        if (!i.channels.fcm) throw new PushRequestError('PUSH_DISABLED', 'Anlık bildirimler şu an kullanılamıyor.');
+        return saveFcmToken(repo, { tid: i.tid, userId: i.userId, token: fcmToken, deviceLabel, now: i.now });
+    }
+    if (!i.channels.web) throw new PushRequestError('PUSH_DISABLED', 'Anlık bildirimler şu an kullanılamıyor.');
+    await savePushSubscription(repo, { tid: i.tid, userId: i.userId, subscription: subscription!, deviceLabel, now: i.now });
+}
+
+export class PushRequestError extends Error {
+    constructor(readonly code: 'VALIDATION' | 'PUSH_DISABLED', message: string) { super(message); }
+}
+
+/** Silme gövdesi: uç | cihaz kimliği | FCM belirteci -- tam olarak biri. */
+export function unsubscribeTarget(body: { endpoint?: string; id?: string; fcmToken?: string } | undefined): { endpoint?: string; id?: string; fcmToken?: string } {
+    const { endpoint, id, fcmToken } = body ?? {};
+    if ([endpoint, id, fcmToken].filter(Boolean).length !== 1) throw new PushRequestError('VALIDATION', 'Uç, cihaz kimliği ya da belirteçten yalnız biri gönderilmeli.');
+    return { endpoint, id, fcmToken };
 }

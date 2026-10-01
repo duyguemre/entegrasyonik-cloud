@@ -100,7 +100,12 @@ describe('egress-guard (Protokol 7: loopback dışına çıkış yok)', () => {
         expect(guard.isAllowedHost('evilnotify.windows.com')).toBe(false);
         expect(guard.isAllowedHost('api.trendyol.com')).toBe(false);
         expect(guard.isAllowedHost('api.anthropic.com')).toBe(false); // push bayragi LLM'i acmaz
+        // MOB-07: FCM HTTP v1 OAuth2 ucu ayni bayrakla; ayni kaynakla hizali
+        const { FCM_TOKEN_URL } = require('../../src/operations/notifications/push/fcm');
+        expect(guard.FCM_OAUTH_HOSTS).toEqual([new URL(FCM_TOKEN_URL).hostname]);
+        expect(guard.isAllowedHost('oauth2.googleapis.com')).toBe(true);
         delete process.env.EGRESS_ALLOW_WEBPUSH;
+        expect(guard.isAllowedHost('oauth2.googleapis.com')).toBe(false);
     });
     it("LLM saglayici host'lari VARSAYILAN ENGELLI; yalniz EGRESS_ALLOW_LLM=1 ile acilir ve liste katalogla AYNIDIR (ADR-0034 BR-5)", () => {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
