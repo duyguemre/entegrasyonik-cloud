@@ -24,14 +24,11 @@ const ROOTS = ['src', 'packages/ui/src', 'packages/chat/src']
 const TOKEN_LAYER = new Set(['packages/ui/src/styles/app.css'])
 
 /**
- * Ratchet — paralel FR3 görevlerinin (fe-r3b ekranları, fe-r3c çıktılar) dosyaları: çakışma olmasın diye bu dalda
+ * Ratchet — paralel FR3 görevlerinin (fe-r3c çıktılar) dosyaları: çakışma olmasın diye bu dalda
  * role GÖÇ ETTİRİLMEDİ; o görevler dosyaya dokunduğunda rollere geçer ve sayı düşer. Sayı ARTAMAZ, yeni dosya EKLENEMEZ.
  */
 const PRIMITIVE_RATCHET: Record<string, number> = {
   'src/views/secure/PrintoutListView.vue': 6,
-  'src/views/secure/SettingListView.vue': 6,
-  'src/views/secure/productDefinitions/ProductListView.vue': 4,
-  'src/components/productDefinitions/products/ProductChannelStatus.vue': 6,
 }
 
 function walk(dir: string, out: string[] = []): string[] {

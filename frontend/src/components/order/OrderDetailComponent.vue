@@ -4,28 +4,32 @@
   Aşama 6b (Standart 6) — sipariş detayı: özet başlık (kanal rengi, durum, tutar, tarih) → uyarılar (EkAlert) →
   durum zaman çizgisi (tarihler veriden) → kalemler + tutar dökümü → Alıcı · Teslimat · Kargo · Fatura kartları →
   stok tahsisi. Ana eylemler başlıkta: sıradaki iş BİRİNCİL, diğerleri ikincil, iptal tehlikeli tonda (onay ekranda).
-  Uydurma veri yok: alan yoksa "—" ya da açıklayıcı boş metin. Sekme içi yan sayfa (EkDetailSheet, Standart 7).
+  Uydurma veri yok: alan yoksa "—" ya da açıklayıcı boş metin. Sekme içi yan sayfa — FR3-12 ortak kayıt detayı deseni (EkRecordSheet + EkDetailPanel: özet üstte, başlıklı
+  bölüm kartları tuvalde, iş akışı eylemleri sabit alt çubukta).
 -->
 <template>
-  <EkDetailSheet v-model="isOpen" size="lg" :identity="order?.orderNumber ?? 'Sipariş detayı'">
+  <EkRecordSheet v-model="isOpen" size="lg" kind="Sipariş" :identity="order?.orderNumber ?? 'Sipariş detayı'">
     <template #status>
       <EkStatusChip v-if="order" :tone="statusEntry.tone" :label="$t(statusEntry.labelKey)" />
     </template>
-    <template #actions>
-      <template v-if="order">
-        <EkActionButton v-if="isOrderActionAllowed(order, 'CANCEL')" action="cancel" show-label size="md" label="İptal et" :disabled="isLocked" @click="emit('cancel', order)" />
-        <EkButton
-          v-for="a in forwardActions"
-          :key="a.key"
-          :tone="a.key === primaryKey ? 'primary' : 'secondary'"
-          :icon="a.icon"
-          :disabled="isLocked"
-          @click="emitAction(a.key)"
-        >{{ a.label }}</EkButton>
-      </template>
+    <!-- FR3-12: iş akışı eylemleri sabit alt çubukta — yıkıcı (iptal) solda, sıradaki iş (birincil) en sağda. -->
+    <template v-if="order && isOrderActionAllowed(order, 'CANCEL')" #footer-start>
+      <EkActionButton action="cancel" show-label size="md" label="İptal et" :disabled="isLocked" @click="emit('cancel', order)" />
+    </template>
+    <template v-if="order && (forwardActions.length || nextStepOwnAction)" #actions>
+      <EkButton v-if="nextStepOwnAction && nextStep?.action" :tone="forwardActions.length ? 'secondary' : 'primary'" :icon="nextStep.action.icon"
+        :disabled="isLocked" @click="runNextStep(nextStep.action.key)">{{ nextStep.action.label }}</EkButton>
+      <EkButton
+        v-for="a in orderedForwardActions"
+        :key="a.key"
+        :tone="a.key === primaryKey ? 'primary' : 'secondary'"
+        :icon="a.icon"
+        :disabled="isLocked"
+        @click="emitAction(a.key)"
+      >{{ a.label }}</EkButton>
     </template>
 
-    <div v-if="order" class="ek-od">
+    <template v-if="order" #summary>
       <EkRecordSummary
         :channel="order.integrationCode"
         kind="Sipariş"
@@ -40,6 +44,9 @@
           <EkStatusChip v-for="b in metaBadges" :key="b.label" :tone="b.tone" :label="b.label" />
         </template>
       </EkRecordSummary>
+    </template>
+
+    <div v-if="order" class="ek-od">
 
       <EkAlert v-if="order.platformDiscrepancy?.hasDiscrepancy" tone="error" title="Pazaryeri tutarı faturadan farklı" :text="order.platformDiscrepancy?.message">
         <template #actions>
@@ -60,20 +67,20 @@
           <div><dt>Gerekçe</dt><dd>{{ order.cancelReason || 'Pazaryeri gerekçe iletmedi' }}</dd></div>
           <div v-if="order.dates?.cancelledDate"><dt>Tarih</dt><dd class="ek-num">{{ formatDateTime(order.dates.cancelledDate) }}</dd></div>
         </dl>
-        <template v-if="nextStep.action || nextStep.link" #actions>
-          <EkButton v-if="nextStep.action" tone="primary" :icon="nextStep.action.icon" :disabled="isLocked" @click="runNextStep(nextStep.action.key)">{{ nextStep.action.label }}</EkButton>
+        <!-- FR3-12: eylemler tek yerde (alt çubuk); kart "ne / neden" anlatır, yalnız dış bağlantı (kargo takibi) taşır. -->
+        <template v-if="nextStep.link" #actions>
           <EkButton v-if="nextStep.link" tone="secondary" :icon="icons.openExternal" @click="openLink(nextStep.link.url)">{{ nextStep.link.label }}</EkButton>
         </template>
       </EkNextStep>
 
-      <EkSection title="Süreç">
+      <EkDetailPanel title="Süreç" icon="mdi-timeline-check-outline" :description="processText">
         <EkStatusTimeline :steps="timelineSteps" label="Sipariş süreci" />
-      </EkSection>
+      </EkDetailPanel>
 
       <div class="ek-od-grid">
         <div class="ek-od-main">
-          <EkSection title="Ürünler" :description="itemCountText">
-            <RecordLineList :lines="orderLines" label="Sipariş kalemleri" />
+          <EkDetailPanel title="Ürünler" icon="mdi-package-variant-closed" :description="itemCountText" flush>
+            <RecordLineList :lines="orderLines" label="Sipariş kalemleri" plain />
             <dl class="ek-od-totals">
               <div><dt>Ara toplam</dt><dd class="ek-num">{{ formatMoney(order.financials?.subTotal) }}</dd></div>
               <div v-if="order.financials?.totalDiscount > 0"><dt>İndirim</dt><dd class="ek-num ek-od-totals__discount">−{{ formatMoney(order.financials?.totalDiscount) }}</dd></div>
@@ -81,10 +88,12 @@
               <div><dt>Kargo ücreti</dt><dd class="ek-num">{{ order.financials?.shippingFee ? formatMoney(order.financials.shippingFee) : 'Ücretsiz' }}</dd></div>
               <div class="ek-od-totals__grand"><dt>Ödenecek toplam</dt><dd class="ek-num">{{ formatMoney(order.financials?.grandTotal) }}</dd></div>
             </dl>
-          </EkSection>
+          </EkDetailPanel>
 
           <!-- C1.1: kalem stok tahsisi — yalnızca en az bir kalemde tahsis durumu varsa. -->
-          <OrderAllocationTimeline v-if="hasAllocation" :items="order.items" />
+          <EkDetailPanel v-if="hasAllocation" title="Stok tahsisi" icon="mdi-warehouse" description="Kalemlerin stoktan ayrılma durumu">
+            <OrderAllocationTimeline :items="order.items" embedded />
+          </EkDetailPanel>
         </div>
 
         <aside class="ek-od-side" aria-label="Alıcı, kargo ve fatura">
@@ -109,12 +118,12 @@
     </div>
 
     <EkSkeleton v-else type="detail" />
-  </EkDetailSheet>
+  </EkRecordSheet>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { EkDetailSheet, EkSection, EkStatusChip, EkSkeleton, EkAlert, EkButton, EkActionButton, EkRecordSummary, type EkSummaryFact, EkStatusTimeline, type EkTimelineStep, EkInfoCard, EkNextStep, type EkTone } from '@entegrasyonik/ui/components';
+import { EkRecordSheet, EkDetailPanel, EkStatusChip, EkSkeleton, EkAlert, EkButton, EkActionButton, EkRecordSummary, type EkSummaryFact, EkStatusTimeline, type EkTimelineStep, EkInfoCard, EkNextStep, type EkTone } from '@entegrasyonik/ui/components';
 import CustomerBuyerCard, { type BuyerPerson } from '@/components/customer/card/CustomerBuyerCard.vue';
 import { addressView } from '@/components/customer/customerCard';
 import { icons } from '@entegrasyonik/ui/icons';
@@ -286,6 +295,15 @@ const FORWARD = [
 ] as const;
 const forwardActions = computed(() => (props.order ? FORWARD.filter((a) => isOrderActionAllowed(props.order, a.key as any)) : []));
 const primaryKey = computed(() => forwardActions.value[0]?.key);
+// Alt çubukta birincil en sağda: ikinciller önce, sıradaki iş sonda.
+const orderedForwardActions = computed(() => [...forwardActions.value.slice(1), ...forwardActions.value.slice(0, 1)]);
+const processText = computed(() => {
+    const steps = timelineSteps.value;
+    const current = steps.find((s) => s.state === 'current');
+    if (current) return `Şu an: ${current.label}`;
+    const last = steps[steps.length - 1];
+    return last ? `Son durum: ${last.label}` : undefined;
+});
 
 
 
@@ -302,6 +320,11 @@ const isLocked = computed(() => {
 });
 
 const lockMessage = computed(() => props.order?.platformOperation?.message || 'İşlem yapılıyor, lütfen bekleyiniz...');
+
+const nextStepOwnAction = computed(() => {
+    const a = nextStep.value?.action;
+    return !!a && !forwardActions.value.some((f) => f.key === a.key);
+});
 
 const runNextStep = (key: string) => {
     if (key === 'PRINT') emit('print', props.order);
@@ -354,7 +377,7 @@ const nextStep = computed<NextStep | null>(() => {
 .ek-od {
   display: flex;
   flex-direction: column;
-  gap: var(--ek-space-6);
+  gap: var(--ek-space-4);
   container-type: inline-size;
 }
 
@@ -362,7 +385,7 @@ const nextStep = computed<NextStep | null>(() => {
 .ek-od-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--ek-space-6);
+  gap: var(--ek-space-4);
   align-items: start;
 }
 
@@ -376,19 +399,25 @@ const nextStep = computed<NextStep | null>(() => {
 .ek-od-side {
   display: flex;
   flex-direction: column;
-  gap: var(--ek-space-5);
+  gap: var(--ek-space-4);
   min-width: 0;
 }
 
+/* Tutar dökümü: kalem listesinin altında hafif tonlu bant (öne çıkan kutu), satırlar sağa yaslı. */
 .ek-od-totals {
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-1);
-  width: min(100%, 320px);
-  margin: var(--ek-space-3) 0 0 auto;
+  margin: 0;
+  padding: var(--ek-space-3) var(--ek-space-4) var(--ek-space-4);
+  border-top: 1px solid var(--ek-color-border-subtle);
+  border-radius: 0 0 var(--ek-radius-card) var(--ek-radius-card);
+  background: var(--ek-color-surface-muted);
 }
 
 .ek-od-totals > div {
+  width: min(100%, 320px);
+  margin-inline-start: auto;
   display: flex;
   justify-content: space-between;
   gap: var(--ek-space-4);

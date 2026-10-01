@@ -10,7 +10,7 @@
     :subtitle="subtitle"
     icon="mdi-alert-decagram-outline"
     :icon-tone="attentionLines > 0 ? 'error' : 'success'"
-    :heading-level="2"
+    :heading-level="3"
     :to-label="canOpen('orderList') ? 'Sipariş listesini aç' : undefined"
     class="dash-stock"
     @open="open('orderList')"

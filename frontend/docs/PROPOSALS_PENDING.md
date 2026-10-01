@@ -198,3 +198,10 @@ talepleri — iki alandan tek bileşene). Aşağıdakiler backend parametresi is
 | P-R3A-3 | 2026-10-01 | cloud/fe-r3a | **Yönetim → destek talepleri tarih aralığı.** Son mesaj sütunu var; `AdminService/getTickets` tarih almıyor. `startDate/endDate` (→ `lastMessageAt`) + `EkDateRange`. | Backend parametresi (yönetim yüzeyi) | BEKLİYOR |
 | P-R3A-4 | 2026-10-01 | cloud/fe-r3a | **Denetim günlüğü tarih alanları.** Kendi metin alanları (`from/to`, GG.AA.YYYY) + hazır düğmeler kullanıyor; varsayılan son 30 gün, en çok 366 gün. Öneri: `EkDateRange` (takvim + aynı hazır aralıklar) + 366 gün sınırı bileşen dışında doğrulama. | Varsayılan aralık ve doğrulama davranışı değişir | BEKLİYOR |
 | P-R3A-5 | 2026-10-01 | cloud/fe-r3a | **Tek alt öğeli menü grubu.** "Ürün Kataloğu" grubu (Satış bölümünde) tek alt öğe taşıyınca açılır grup gereksiz bir tık ekliyor; ayrıca ayrı "Katalog" bölümü var. Öneri: tek alt öğeli grup düz öğe gösterilsin (ad = alt öğe, ikon = grup) ve katalog öğeleri tek bölümde toplansın (P11 grup düzeniyle birlikte). | Bilgi mimarisi (menü verisi backend'de; e2e menü gezinmesi etkilenir) | BEKLİYOR |
+
+## FR3 ekranlar (cloud/fe-r3b) önerileri
+
+| # | Tarih | Kaynak | Öneri | Neden onay gerekiyor | Durum |
+|---|---|---|---|---|---|
+| P-R3B-1 | 2026-10-01 | cloud/fe-r3b | **Kullanılmayan mağaza ayarları.** Hata bildirim e-postası, çalışma günleri, zaman dilimi, destek telefonu, kargo süresi ve maks. satış adedi backend'de yalnız saklanıyor (tarama 2026-10-01). Açıklamalar dürüstleştirildi (olmayan otomasyon vaat edilmiyor). Öneri: ya davranış backend'de yazılsın (ör. hata e-postası bildirimi, iş günü kaydırması) ya da kullanılmayan alanlar "Yakında" demeden gizlensin. | Ürün kararı + backend işi | BEKLİYOR |
+| P-R3B-2 | 2026-10-01 | cloud/fe-r3b | **Ana sayfa KPI'larında tekrar.** "Kargo bekleyen" KPI kartı artık "Bugün sırada" listesindeki kargo işiyle aynı sayıyı tekrar ediyor. Öneri: KPI satırında yerine "Bekleyen iade tutarı" ya da "Son 7 gün iade oranı" (insights `totals.returnAmount/returnCount` mevcut). Alternatif: olduğu gibi kalsın. | Ana sayfa bilgi düzeni | BEKLİYOR |

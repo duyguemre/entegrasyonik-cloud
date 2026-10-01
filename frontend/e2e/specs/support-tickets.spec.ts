@@ -119,7 +119,7 @@ test.describe('ADR-0015 B5-3 — TicketListView (destek) + TicketCreateDialog + 
     await openScreen(page, 'TicketListView')
 
     await page.locator('.ticketListView').getByRole('button', { name: 'Görüntüle / Yanıtla' }).first().click()
-    const dialog = page.getByRole('dialog').filter({ hasText: 'Destek talebi DSK-100001' })
+    const dialog = page.getByRole('dialog').filter({ hasText: 'DSK-100001' })
     await expect(dialog).toBeVisible()
     await expect(dialog.getByText('Fatura oluşturamıyorum.')).toBeVisible()
 

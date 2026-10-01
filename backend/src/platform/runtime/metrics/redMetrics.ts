@@ -112,3 +112,9 @@ export function recordRateBucketMetric(e: { integrationCode: string; group: stri
         metricsRegistry.incCounter('integration_barcode_price_deferred_total', { integrationCode: e.integrationCode }, 1);
     }
 }
+
+/** Platform sipariş içe alma sayacı `orders_ingested_total{channel}` (tenant etiketi YOK; yalnız YENİ sipariş). Asla fırlatmaz. */
+export const ORDERS_INGESTED_METRIC = 'orders_ingested_total';
+export function recordOrdersIngested(channel: string, count = 1): void {
+    if (count > 0) metricsRegistry.incCounter(ORDERS_INGESTED_METRIC, { channel: String(channel || 'unknown') }, count);
+}

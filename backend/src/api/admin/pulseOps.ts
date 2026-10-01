@@ -28,10 +28,10 @@ export class PulseOps {
     async getPulse(): Promise<any> {
         const nowMs = this.now();
         const buckets = this.httpBuckets(nowMs); buckets.catch(() => undefined); // tek okuma; iki blok paylaşır (reddedilirse her blok kendi degraded'ını üretir)
-        const [tenants, calls, errorRate, mrr] = await Promise.all([
-            this.block(() => this.tenants()), this.block(() => this.calls(nowMs, buckets)), this.block(() => this.errorRate(nowMs, buckets)), this.block(() => this.mrr()),
+        const [tenants, orders, calls, errorRate, mrr] = await Promise.all([
+            this.block(() => this.tenants()), this.block(() => this.orders(nowMs)), this.block(() => this.calls(nowMs, buckets)), this.block(() => this.errorRate(nowMs, buckets)), this.block(() => this.mrr()),
         ]);
-        return { generatedAt: new Date(nowMs).toISOString(), tenants, orders: this.orders(), calls, errorRate, mrr };
+        return { generatedAt: new Date(nowMs).toISOString(), tenants, orders, calls, errorRate, mrr };
     }
 
     private async tenants() {
@@ -42,9 +42,27 @@ export class PulseOps {
         return { active: byStatus.ACTIVE ?? 0, total, byStatus };
     }
 
-    /** Platform seviyesinde sipariş sayacı/rollup'ı YOK (siparişler tenant DB'lerinde; kuyruk iş sayısı sipariş sayısı değildir) -> hesaplanamadı (BULGU). */
-    private orders() {
-        return { status: 'ok' as const, computable: false, last24h: null, last7d: null, previous24h: null, hourly: [] as Array<{ t: string; count: number }>, note: NOT_COMPUTABLE };
+    /** `orders_ingested_total` 1 sa kovaları (tenant etiketsiz platform sayacı, yalnız yeni siparişler): 24s, 7g, önceki 24s + değişim. Kova yoksa hesaplanamadı. */
+    private async orders(nowMs: number) {
+        const since = new Date(Math.floor((nowMs - 7 * DAY_MS) / HOUR_MS) * HOUR_MS);
+        const docs: any[] = await this.d.metricRollupModel.find({ metric: 'orders_ingested_total', resolution: '1h', bucketStart: { $gte: since } }, { series: 1, bucketStart: 1, _id: 0 })
+            .limit(24 * 7 + 5).maxTimeMS(QUERY_MAX_TIME_MS).lean();
+        const buckets = docs.map((doc) => {
+            let count = 0;
+            for (const e of Object.values(doc?.series || {}) as any[]) count += Number(e?.c) || 0;
+            return { t: new Date(doc.bucketStart).getTime(), count };
+        });
+        if (buckets.length === 0) return { computable: false, last24h: null, last7d: null, previous24h: null, changePct: null, hourly: [] as Array<{ t: string; count: number }>, note: NOT_COMPUTABLE };
+        const cut24 = nowMs - DAY_MS, cut48 = nowMs - 2 * DAY_MS;
+        const sum = (xs: typeof buckets) => xs.reduce((a, b) => a + b.count, 0);
+        const last24h = sum(buckets.filter((b) => b.t >= cut24));
+        const hasPrev = buckets.some((b) => b.t < cut24);   // önceki dönem verisi yoksa karşılaştırma uydurulmaz
+        const previous24h = hasPrev ? sum(buckets.filter((b) => b.t >= cut48 && b.t < cut24)) : null;
+        const changePct = previous24h !== null && previous24h > 0 ? Math.round(((last24h - previous24h) / previous24h) * 1000) / 10 : null;
+        return {
+            computable: true, last24h, last7d: sum(buckets), previous24h, changePct,
+            hourly: buckets.filter((b) => b.t >= cut24).sort((x, y) => x.t - y.t).map((b) => ({ t: new Date(b.t).toISOString(), count: b.count })),
+        };
     }
 
     /** `http_requests` 1 sa kovaları (90 gün): son 7 gün; saatlik seri son 24 sa. Kova yoksa hesaplanamadı. */

@@ -4,15 +4,22 @@
   backend IInvoice'dan; olmayan alan satırı çizilmez. KVKK: TCKN/VKN varsayılan maskeli (son 3 hane).
 -->
 <template>
-  <EkDetailSheet :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)" :identity="invoice ? (invoice.invoiceNumber || 'Numarasız fatura') : 'Fatura detayı'">
+  <EkRecordSheet :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)" kind="Fatura"
+    :identity="invoice ? (invoice.invoiceNumber || 'Numarasız fatura') : 'Fatura detayı'">
     <template #status>
       <EkStatusChip v-if="invoice" :tone="statusEntry.tone" :label="$t(statusEntry.labelKey)" />
     </template>
-    <template #actions>
-      <EkButton v-if="fileUrl" tone="primary" icon="mdi-file-pdf-box" @click="openLink(fileUrl)">Faturayı aç</EkButton>
+    <!-- FR3-12: belge eylemi sabit alt çubukta; PDF yoksa çubuk nedenini söyler (eylem uydurulmaz). -->
+    <template v-if="invoice && !fileUrl" #footer-start>
+      <p class="ek-id-note">
+        <v-icon icon="mdi-file-hidden" size="16" aria-hidden="true" /> Bu fatura için henüz PDF bağlantısı yok. Fatura kesildiğinde buradan açılır.
+      </p>
+    </template>
+    <template v-if="invoice && fileUrl" #actions>
+      <EkButton tone="primary" icon="mdi-file-pdf-box" @click="openLink(fileUrl)">Faturayı aç</EkButton>
     </template>
 
-    <div v-if="invoice" class="ek-id">
+    <template v-if="invoice" #summary>
       <EkRecordSummary
         :channel="invoice.integrationCode"
         :kind="typeLabel"
@@ -23,30 +30,25 @@
         :amount-hint="docLabel"
         label="Fatura özeti"
       />
-
       <EkNextStep :tone="step.tone" :icon="step.icon" eyebrow="Durum" :title="step.title" :text="step.text" />
+    </template>
 
-      <div class="ek-id-cards">
-        <EkInfoCard title="Fatura bilgileri" icon="mdi-receipt-text-outline" :rows="infoRows" />
-        <EkInfoCard title="Alıcı" icon="mdi-account-outline" :rows="buyerRows" empty-text="Faturada alıcı bilgisi yok.">
-          <template v-if="rawTax" #aside>
-            <CustomerRevealToggle v-model="revealTax" compact />
-          </template>
-        </EkInfoCard>
-      </div>
-
-      <p v-if="!fileUrl" class="ek-id-note">
-        <v-icon icon="mdi-file-hidden" size="16" aria-hidden="true" /> Bu fatura için henüz PDF bağlantısı yok. Fatura kesildiğinde burada açılır.
-      </p>
+    <div v-if="invoice" class="ek-id-cards">
+      <EkDetailPanel title="Fatura bilgileri" icon="mdi-receipt-text-outline" :rows="infoRows" />
+      <EkDetailPanel title="Alıcı" icon="mdi-account-outline" :rows="buyerRows" empty-text="Faturada alıcı bilgisi yok.">
+        <template v-if="rawTax" #aside>
+          <CustomerRevealToggle v-model="revealTax" compact />
+        </template>
+      </EkDetailPanel>
     </div>
 
     <EkSkeleton v-else type="detail" />
-  </EkDetailSheet>
+  </EkRecordSheet>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { EkDetailSheet, EkStatusChip, EkSkeleton, EkButton, EkRecordSummary, type EkSummaryFact, EkInfoCard, EkNextStep, type EkTone } from '@entegrasyonik/ui/components';
+import { EkRecordSheet, EkDetailPanel, EkStatusChip, EkSkeleton, EkButton, EkRecordSummary, type EkSummaryFact, EkNextStep, type EkTone } from '@entegrasyonik/ui/components';
 import { formatMoney, formatDateTime } from '@entegrasyonik/ui/format';
 import { INVOICE_STATUS_TONE } from '@/design/status-map';
 import { maskTaxNumber } from '@/components/customer/customerCard';
@@ -138,12 +140,6 @@ const openLink = (url?: string) => { if (url) window.open(url, '_blank', 'noopen
 </script>
 
 <style scoped>
-.ek-id {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ek-space-6);
-}
-
 .ek-id-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));

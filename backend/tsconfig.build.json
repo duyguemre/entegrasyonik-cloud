@@ -1,0 +1,14 @@
+{
+  // Üretim derlemesi (npm run build / Dockerfile). Tip denetimi ve jest tsconfig.json'u kullanır (testler dahil).
+  // Yalnızca uygulama kaynağını derler: tests/, dev-tools/, coverage/ ve kökteki *.json kopyaları dist/'e GİRMEZ;
+  // src içinde `import` edilen .json dosyaları (config/seed/commissions) TS tarafından otomatik yayılır.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "incremental": false,
+    "declaration": false,
+    "declarationMap": false
+  },
+  "include": ["entegrasyonik.ts", "src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "tests", "dev-tools", "coverage", "src/**/*.test.ts"]
+}

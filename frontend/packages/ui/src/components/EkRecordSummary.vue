@@ -10,9 +10,11 @@
 <template>
   <section class="ek-summary" :class="channelClass(channel)" :aria-label="label">
     <div class="ek-summary__head">
-      <EkPlatformMark :name="channelName(channel, channelTitle)" :code="channel" size="lg" :show-name="false" />
+      <EkIconTile v-if="icon && !channel" :icon="icon" :tone="iconTone" size="md" />
+      <EkPlatformMark v-else :name="channelName(channel, channelTitle)" :code="channel" size="lg" :show-name="false" />
       <div class="ek-summary__who">
-        <span class="ek-summary__channel">{{ channelName(channel, channelTitle) }}<template v-if="kind"> · {{ kind }}</template></span>
+        <span v-if="icon && !channel" class="ek-summary__channel">{{ kind }}</span>
+        <span v-else class="ek-summary__channel">{{ channelName(channel, channelTitle) }}<template v-if="kind"> · {{ kind }}</template></span>
         <span class="ek-summary__title ek-num">{{ title }}</span>
       </div>
       <div class="ek-summary__status"><slot name="status" /></div>
@@ -24,7 +26,8 @@
           <dd :class="{ 'ek-num': f.numeric }">{{ f.value || '—' }}</dd>
         </div>
       </dl>
-      <div v-if="amount !== undefined" class="ek-summary__amount">
+      <div v-if="$slots.aside" class="ek-summary__amount"><slot name="aside" /></div>
+      <div v-else-if="amount !== undefined" class="ek-summary__amount">
         <span class="ek-summary__amount-label">{{ amountLabel }}</span>
         <span class="ek-summary__amount-value ek-num">{{ amount }}</span>
         <span v-if="amountHint" class="ek-summary__amount-hint">{{ amountHint }}</span>
@@ -35,6 +38,7 @@
 
 <script setup lang="ts">
 import EkPlatformMark from './EkPlatformMark.vue'
+import EkIconTile, { type EkTone } from './EkIconTile.vue'
 import { channelClass, channelName } from '../tokens/channels'
 
 export interface EkSummaryFact {
@@ -55,8 +59,11 @@ withDefaults(
     amountLabel?: string
     amountHint?: string
     label?: string
+    /** FR3-13 (additive): kanalı olmayan kayıt (ör. destek talebi) — kanal işareti yerine ikon karosu. */
+    icon?: string
+    iconTone?: EkTone
   }>(),
-  { amountLabel: 'Toplam', label: 'Kayıt özeti' },
+  { amountLabel: 'Toplam', label: 'Kayıt özeti', iconTone: 'neutral' },
 )
 </script>
 

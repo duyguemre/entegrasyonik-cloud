@@ -1,0 +1,15 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": ["dev-tools/*.js", "tests/**/*.test.ts"],
+  "project": ["src/**/*.ts", "dev-tools/*.js", "tests/**/*.ts"],
+  "ignoreBinaries": ["ncc"],
+  "ignoreDependencies": ["prettier"],
+  "ignoreExportsUsedInFile": true,
+  "ignoreIssues": {
+    "src/platform/**/index.ts": ["exports", "types"],
+    "src/api/admin/index.ts": ["exports"],
+    "src/capabilities/**": ["exports"],
+    "src/operations/agent/protocol/v1.ts": ["exports", "types"],
+    "src/interfaces/**/index.ts": ["types"]
+  }
+}

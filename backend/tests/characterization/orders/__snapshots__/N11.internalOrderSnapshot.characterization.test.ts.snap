@@ -1,0 +1,278 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`N11 internal order snapshot rest 1`] = `
+[
+  {
+    "customer": {
+      "email": "e@f.g",
+      "firstName": "Ay Se",
+      "lastName": "",
+      "phone": "6",
+    },
+    "order": {
+      "billingAddress": {
+        "addressLine1": "B",
+        "city": "C",
+        "firstName": "Ay Se",
+        "isCorporate": true,
+        "phone": "5",
+        "postalCode": "1",
+        "state": "D",
+        "taxNumber": "T",
+        "taxOffice": "H",
+      },
+      "dates": {
+        "approvedDate": 2026-01-10T09:00:00.000Z,
+        "externalUpdatedAt": 2026-01-10T08:00:00.000Z,
+        "orderDate": 2026-01-10T07:00:00.000Z,
+      },
+      "externalOrderId": "77",
+      "externalStatus": "Shipped",
+      "financials": {
+        "grandTotal": 99,
+        "subTotal": 99,
+        "totalDiscount": 4,
+      },
+      "fulfillment": [],
+      "integrationCode": "n11",
+      "internalStatus": "SHIPPED",
+      "items": [
+        {
+          "discountAmount": 2,
+          "externalItemId": "9",
+          "externalLineItemId": "5",
+          "productName": "P",
+          "quantity": 3,
+          "sku": "SC",
+          "taxAmount": 0,
+          "taxRate": 20,
+          "totalPrice": 28,
+          "unitPrice": 10,
+        },
+      ],
+      "meta": {
+        "agreedDeliveryDate": 1768035600000,
+        "billingAddress": {
+          "address": "B",
+          "city": "C",
+          "district": "D",
+          "fullName": "Ay Se",
+          "gsm": "5",
+          "invoiceType": 2,
+          "postalCode": "1",
+          "taxHouse": "H",
+          "taxId": "T",
+        },
+        "customerEmail": "e@f.g",
+        "customerfullName": "Ay Se",
+        "id": 77,
+        "lastModifiedDate": 1768032000000,
+        "lines": [
+          {
+            "orderLineId": 5,
+            "price": "10",
+            "productId": 9,
+            "productName": "P",
+            "quantity": 3,
+            "stockCode": "SC",
+            "totalSellerDiscountPrice": "2",
+          },
+        ],
+        "orderNumber": "N3",
+        "packageHistories": [
+          {
+            "createdDate": 1768028400000,
+            "status": "Created",
+          },
+        ],
+        "shipmentPackageStatus": "Shipped",
+        "shippingAddress": {
+          "address": "S",
+          "city": "C",
+          "district": "D",
+          "fullName": "Ay Se",
+          "gsm": "6",
+          "postalCode": "2",
+        },
+        "totalAmount": "99",
+        "totalDiscountAmount": "4",
+      },
+      "orderNumber": "N3",
+      "shippingAddress": {
+        "addressLine1": "S",
+        "city": "C",
+        "firstName": "Ay Se",
+        "phone": "6",
+        "postalCode": "2",
+        "state": "D",
+      },
+    },
+  },
+  {
+    "customer": {
+      "email": "",
+      "firstName": "Bilinmeyen Kullanıcı",
+      "lastName": "",
+      "phone": "",
+    },
+    "order": {
+      "billingAddress": {
+        "addressLine1": "",
+        "city": "",
+        "firstName": "Bilinmeyen",
+        "isCorporate": false,
+        "phone": undefined,
+        "postalCode": undefined,
+        "state": "",
+        "taxNumber": undefined,
+        "taxOffice": undefined,
+      },
+      "dates": {
+        "approvedDate": undefined,
+        "externalUpdatedAt": undefined,
+        "orderDate": 2026-05-05T05:05:05.000Z,
+      },
+      "externalOrderId": "N4",
+      "externalStatus": undefined,
+      "financials": {
+        "grandTotal": 0,
+        "subTotal": 0,
+        "totalDiscount": undefined,
+      },
+      "fulfillment": [],
+      "integrationCode": "n11",
+      "internalStatus": "APPROVED",
+      "items": [],
+      "meta": {
+        "orderNumber": "N4",
+      },
+      "orderNumber": "N4",
+      "shippingAddress": {
+        "addressLine1": "",
+        "city": "",
+        "firstName": "Bilinmeyen",
+        "phone": undefined,
+        "postalCode": undefined,
+        "state": "",
+      },
+    },
+  },
+]
+`;
+
+exports[`N11 internal order snapshot soap 1`] = `
+[
+  {
+    "customer": {
+      "email": "a@b.c",
+      "firstName": "Ali Veli",
+      "lastName": "",
+      "phone": "",
+    },
+    "order": {
+      "billingAddress": {
+        "addressLine1": "A",
+        "city": "C",
+        "firstName": "Ali Veli",
+        "state": "D",
+      },
+      "dates": {
+        "orderDate": 2026-01-10T05:30:00.000Z,
+      },
+      "externalOrderId": "N1",
+      "externalStatus": "Created",
+      "financials": {
+        "grandTotal": 150.5,
+        "subTotal": 150.5,
+      },
+      "fulfillment": [],
+      "integrationCode": "n11",
+      "internalStatus": "UNAPPROVED",
+      "items": [
+        {
+          "externalItemId": "P1",
+          "externalLineItemId": "I1",
+          "productName": "U",
+          "quantity": 2,
+          "sku": "S",
+          "taxAmount": 0,
+          "taxRate": 20,
+          "totalPrice": 100,
+          "unitPrice": 50,
+        },
+      ],
+      "meta": {
+        "buyer": {
+          "email": "a@b.c",
+          "fullName": "Ali Veli",
+        },
+        "createDate": "10/01/2026 08:30",
+        "orderItemList": {
+          "orderItem": {
+            "id": "I1",
+            "price": "50",
+            "productId": "P1",
+            "productName": "U",
+            "quantity": "2",
+            "sellerStockCode": "S",
+          },
+        },
+        "orderNumber": "N1",
+        "shippingAddress": {
+          "address": "A",
+          "city": "C",
+          "district": "D",
+        },
+        "status": "Created",
+        "totalAmount": "150.5",
+      },
+      "orderNumber": "N1",
+      "shippingAddress": {
+        "addressLine1": "A",
+        "city": "C",
+        "firstName": "Ali Veli",
+        "state": "D",
+      },
+    },
+  },
+  {
+    "customer": {
+      "email": "",
+      "firstName": "Bilinmeyen Kullanıcı",
+      "lastName": "",
+      "phone": "",
+    },
+    "order": {
+      "billingAddress": {
+        "addressLine1": "",
+        "city": "",
+        "firstName": "Bilinmeyen",
+        "state": "",
+      },
+      "dates": {
+        "orderDate": 2026-05-05T05:05:05.000Z,
+      },
+      "externalOrderId": "N2",
+      "externalStatus": undefined,
+      "financials": {
+        "grandTotal": 0,
+        "subTotal": 0,
+      },
+      "fulfillment": [],
+      "integrationCode": "n11",
+      "internalStatus": "APPROVED",
+      "items": [],
+      "meta": {
+        "orderNumber": "N2",
+      },
+      "orderNumber": "N2",
+      "shippingAddress": {
+        "addressLine1": "",
+        "city": "",
+        "firstName": "Bilinmeyen",
+        "state": "",
+      },
+    },
+  },
+]
+`;

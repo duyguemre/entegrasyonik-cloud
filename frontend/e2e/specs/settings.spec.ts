@@ -99,7 +99,7 @@ test.describe('ADR-0015 B5-3 — SettingListView', () => {
 
     await expect(page.getByLabel('Seçili Renk Kodu', { exact: true })).toHaveValue('#4F46E5')
     await tab(page, 'Lojistik & Operasyon')
-    await expect(page.locator('.v-window-item--active').getByText('Europe/Istanbul')).toBeVisible()
+    await expect(page.locator('.settingListView .sl-group:visible').getByText('Europe/Istanbul')).toBeVisible()
     for (const d of ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma']) {
       await expect(page.getByLabel(d, { exact: true })).toBeChecked()
     }
@@ -169,6 +169,36 @@ test.describe('ADR-0015 B5-3 — SettingListView', () => {
     await tab(page, 'İletişim & Bildirimler')
     await expect(page.getByLabel('Hata Bildirim E-postası', { exact: true })).toHaveValue('hata@example.com')
     await expect(page.getByLabel('Müşteri Destek Telefonu', { exact: true })).toHaveValue('02120000000')
+  })
+
+  test('FR3-14 arama: eşleşen ayarlar gruplarıyla gösterilir, grup sayaçları görünür; Esc temizler', async ({ page }) => {
+    await installApiMocks(page, withMenu({ 'SettingService/getSettings': settingsDolu }))
+    await gotoAuthed(page)
+    await openScreen(page, 'SettingListView')
+    await expect(page.getByLabel('Mağaza Adı', { exact: true })).toHaveValue('Elif Ticaret')
+    const search = page.getByLabel('Ayarlarda ara')
+    await search.fill('vergi')
+    await expect(page.locator('.settingListView .sl-search-state')).toContainText('3 ayar')
+    await expect(page.getByLabel('Vergi Dairesi', { exact: true })).toBeVisible()
+    await expect(page.getByLabel('Varsayılan KDV Oranı', { exact: true })).toBeVisible()
+    await expect(page.getByLabel('Mağaza Adı', { exact: true })).toBeHidden()
+    await search.press('Escape')
+    await expect(page.getByLabel('Mağaza Adı', { exact: true })).toBeVisible()
+  })
+
+  test('FR3-14 değişiklik durumu: değişen alan ve grup işaretlenir, Vazgeç kayıtlı değere döndürür', async ({ page }) => {
+    await installApiMocks(page, withMenu({ 'SettingService/getSettings': settingsDolu }))
+    await gotoAuthed(page)
+    await openScreen(page, 'SettingListView')
+    const bar = page.getByRole('region', { name: 'Kaydetme durumu' })
+    await expect(bar).toContainText('Kaydedilmemiş değişiklik yok')
+    await page.getByLabel('Mağaza Adı', { exact: true }).fill('Yeni Ad')
+    await expect(bar).toContainText('Kaydedilmemiş değişiklik var · Mağaza Kimliği')
+    await expect(page.locator('[data-setting="storeName"]')).toContainText('Değişti')
+    await expect(page.getByRole('tab', { name: /Mağaza Kimliği/ })).toContainText('Kaydedilmemiş değişiklik var')
+    await bar.getByRole('button', { name: 'Vazgeç' }).click()
+    await expect(page.getByLabel('Mağaza Adı', { exact: true })).toHaveValue('Elif Ticaret')
+    await expect(bar).toContainText('Kaydedilmemiş değişiklik yok')
   })
 
   test('kaydet: düzenlenen alanlar SettingService/updateSettings gövdesinde { settings } olarak gider, başarıda yeniden yüklenir + başarı bildirimi', async ({ page }) => {

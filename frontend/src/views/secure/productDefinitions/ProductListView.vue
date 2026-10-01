@@ -612,7 +612,7 @@ const columns: EkGridColumn[] = [
   { key: 'price', label: 'Fiyat', type: 'num', sortable: true },
   { key: 'stock', label: 'Stok', type: 'num', sortable: true },
   { key: 'brandCategory', label: 'Marka / kategori' },
-  { key: 'platforms', label: 'Kanallar', width: '200px' },
+  { key: 'platforms', label: 'Kanallar', width: '232px' },
   { key: 'actions', label: 'İşlemler', align: 'end', hideLabel: true, pin: 'end' },
 ]
 
@@ -1063,7 +1063,7 @@ const resetSearchProductForm = () => {
 /* --- plv- öneki: bu <style> global olduğu için ad çakışmasını önler. Toplu işlem/aktarım
    diyaloğu kabın içine (attach) iliştirilir; kapalıyken görünmez tutulur. --- */
 .plv-dialog-transition {
-  transition: opacity var(--ek-duration-fast) var(--ek-easing-enter) !important;
+  transition: opacity var(--ek-motion-overlay) !important;
 }
 
 .plv-dialog-hidden {
@@ -1159,7 +1159,7 @@ const resetSearchProductForm = () => {
 
 .plv-variants-toggle__chevron {
   font-size: var(--ek-icon-sm);
-  transition: transform var(--ek-duration-base) var(--ek-easing-standard);
+  transition: transform var(--ek-motion-reveal);
 }
 
 .plv-variants-toggle__chevron.is-open {

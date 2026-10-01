@@ -1,0 +1,15 @@
+# ADR-0027 §9: Railway yapılandırması (config-as-code). Servis GitHub'a BAĞLANMAZ; dağıtım yalnız insan komutuyla:
+#   cd backend && railway up --service backend --environment production
+# Sır/ortam değişkeni DEĞERLERİ burada DEĞİL — Railway panelinde (Variables). Ad listesi: docs/DEPLOYMENT.md §4.
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# /ready: Mongo + (rol all/worker ise) Redis hazır mı (ADR-0006 Karar 5). Dağıtım yalnız 200 dönünce trafiğe alınır.
+healthcheckPath = "/ready"
+healthcheckTimeout = 120
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
+# Tek süreç (ADR-0006): zamanlayıcı/kuyruk tüketicisi çift çalışmasın.
+numReplicas = 1

@@ -1,10 +1,14 @@
 <!--
   Genel bakış (dashboard) — DS-v2 Aşama 2.
 
+  FR3-16 hiyerarşisi: (1) "Bugün sırada" — sıradaki iş + sonra yapılacaklar (DashboardNextActions, nextActions.ts;
+  sipariş bekleyenleri + stok uyarıları + entegrasyon sağlığından), (2) işletme performansı (KPI), (3) sipariş ve kanal
+  durumu, (4) stok ve katalog. Eski "Bekleyen aksiyonlar" kartı (1)'in içine taşındı.
+
   Kart ↔ veri kaynağı (YALNIZCA gerçek backend uçları; uydurma sayı/trend yok):
-    KPI satırı, Son 7 gün, Sipariş durumları, Bekleyen aksiyonlar → OrderService/getOrderDashboardInsights (member, tek istek)
-    Stok ve eşleşme uyarıları                                    → StockService/getStockOverview (member)
-    Entegrasyon sağlığı                                          → IntegrationService/getIntegrationHealth (admin; 403 → kart gizli)
+    Bugün sırada, KPI satırı, Son 7 gün, Sipariş durumları → OrderService/getOrderDashboardInsights (member, tek istek)
+    Stok ve eşleşme uyarıları (+ Bugün sırada)                  → StockService/getStockOverview (member)
+    Entegrasyon sağlığı (+ Bugün sırada)                         → IntegrationService/getIntegrationHealth (admin; 403 → kart gizli)
     Katalog ve kanal aktarımı                                     → ProductService/getProductStatistics (member)
     Son işlemler                                                  → IntegrationService/getExportJobs (member)
   Kart başlığındaki ok ve satır bağlantıları yalnızca kullanıcının menüsünde olan ekranlar için görünür.
@@ -26,8 +30,18 @@
           @refresh="refreshAll"
         />
 
+        <!-- FR3-16: aksiyon önce — "ilk ne yapmalıyım" en üstte; sonra bugünün performansı, durum ve katalog bölümleri. -->
+        <DashboardNextActions
+          :insights="insights.data.value"
+          :stock="stock.data.value"
+          :health="health.data.value"
+          :loading="insights.state.value === 'loading'"
+          :error="insights.state.value === 'error'"
+          @retry="refreshAll"
+        />
+
         <section class="dash-section" aria-labelledby="dash-performance">
-          <p id="dash-performance" class="dash-section__label">İŞLETME PERFORMANSI</p>
+          <h2 id="dash-performance" class="dash-section__label">İŞLETME PERFORMANSI</h2>
           <EkErrorState
             v-if="insights.state.value === 'error'"
             size="inline"
@@ -38,19 +52,27 @@
           <DashboardKpiRow v-else :data="insights.data.value" :loading="insights.state.value === 'loading'" />
         </section>
 
-        <div class="dash-grid">
-          <div class="dash-col dash-col--main">
+        <section class="dash-section" aria-labelledby="dash-status">
+          <h2 id="dash-status" class="dash-section__label">SİPARİŞ VE KANAL DURUMU</h2>
+          <div class="dash-grid">
             <OrderTrendCard class="dash-o-trend" v-bind="view(insights)" @retry="insights.load" />
-            <StockAttentionCard v-if="visible(stock)" class="dash-o-stock" v-bind="view(stock)" @retry="stock.load" />
+            <div class="dash-col">
+              <OrderStatusCard class="dash-o-status" v-bind="view(insights)" @retry="insights.load" />
+              <IntegrationHealthCard v-if="healthVisible" class="dash-o-health" v-bind="view(health)" @retry="health.load" />
+            </div>
+          </div>
+        </section>
+
+        <section class="dash-section" aria-labelledby="dash-catalog">
+          <h2 id="dash-catalog" class="dash-section__label">STOK VE KATALOG</h2>
+          <div class="dash-grid">
+            <div class="dash-col">
+              <StockAttentionCard v-if="visible(stock)" class="dash-o-stock" v-bind="view(stock)" @retry="stock.load" />
+              <RecentJobsCard v-if="visible(jobs)" class="dash-o-jobs" v-bind="view(jobs)" @retry="jobs.load" />
+            </div>
             <CatalogSummaryCard class="dash-o-catalog" v-bind="view(catalog)" @retry="catalog.load" />
-            <RecentJobsCard v-if="visible(jobs)" class="dash-o-jobs" v-bind="view(jobs)" @retry="jobs.load" />
           </div>
-          <div class="dash-col dash-col--side">
-            <PendingActionsCard class="dash-o-pending" v-bind="view(insights)" @retry="insights.load" />
-            <OrderStatusCard class="dash-o-status" v-bind="view(insights)" @retry="insights.load" />
-            <IntegrationHealthCard v-if="healthVisible" class="dash-o-health" v-bind="view(health)" @retry="health.load" />
-          </div>
-        </div>
+        </section>
       </div>
     </div>
   </div>
@@ -65,7 +87,7 @@ import { formatDateTime } from '@entegrasyonik/ui/format'
 import DashboardKpiRow from '@/components/dashboard/DashboardKpiRow.vue'
 import OrderTrendCard from '@/components/dashboard/OrderTrendCard.vue'
 import OrderStatusCard from '@/components/dashboard/OrderStatusCard.vue'
-import PendingActionsCard from '@/components/dashboard/PendingActionsCard.vue'
+import DashboardNextActions from '@/components/dashboard/DashboardNextActions.vue'
 import StockAttentionCard from '@/components/dashboard/StockAttentionCard.vue'
 import IntegrationHealthCard from '@/components/dashboard/IntegrationHealthCard.vue'
 import CatalogSummaryCard, { type ProductStatistics } from '@/components/dashboard/CatalogSummaryCard.vue'
@@ -155,6 +177,7 @@ onMounted(refreshAll)
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-3);
+  margin-top: var(--ek-space-2);
 }
 
 .dash-section__label {
@@ -186,7 +209,7 @@ onMounted(refreshAll)
   min-width: 0;
 }
 
-/* Tek kolon (tablet/mobil): kolon kapları kaybolur, kartlar önem sırasına göre dizilir. */
+/* Tek kolon (tablet/mobil): kolon kapları kaybolur, kartlar bölüm içi sırayla dizilir. */
 @media (max-width: 1099px) {
   .dash-grid {
     display: flex;
@@ -198,13 +221,6 @@ onMounted(refreshAll)
     display: contents;
   }
 
-  .dash-o-pending { order: 1; }
-  .dash-o-trend { order: 2; }
-  .dash-o-stock { order: 3; }
-  .dash-o-status { order: 4; }
-  .dash-o-health { order: 5; }
-  .dash-o-catalog { order: 6; }
-  .dash-o-jobs { order: 7; }
 }
 
 @media (max-width: 599px) {
