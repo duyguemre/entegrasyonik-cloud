@@ -1,6 +1,6 @@
 import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
-import { StatsOperations } from '@operations/client/StatsOperations'
+import { StatsOperations } from '@operations/reports/StatsOperations'
 import { findStockChanges, recordManualStockMovements, stockDirtyFields } from '@operations/stock/markStockDirty'
 import { stripEngineOwnedVariantFields } from './product-service'
 import { ObjectId } from 'mongodb'

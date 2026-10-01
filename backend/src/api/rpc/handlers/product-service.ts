@@ -1,12 +1,13 @@
 import { IService } from '@interfaces/index'
-import { ImageOperations, storageService } from '@services/index'
+import { storageService } from '@services/index'
+import { imageOperations as ImageOperations } from '@operations/catalog/images/image-operations'
 import { BaseApi } from '../BaseApi'
 import { ObjectId } from 'mongodb'
 import { ApplicationError } from '@platform/core/security/Security'
 import { containsRegex, normalizePagination } from '@utils/search'
 import ExcelJS from 'exceljs'
 import crypto from 'crypto';
-import { StatsOperations } from '@operations/client/StatsOperations';
+import { StatsOperations } from '@operations/reports/StatsOperations';
 import { config } from '@config';
 import { findStockChanges, recordManualStockMovements, stockDirtyFields } from '@operations/stock/markStockDirty';
 

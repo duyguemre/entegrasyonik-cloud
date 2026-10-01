@@ -15,7 +15,8 @@ import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals
 import { ObjectId } from 'mongodb';
 
 import ImageService from '@api/rpc/handlers/image-service';
-import { ImageOperations, storageService } from '@services/index';
+import { storageService } from '@services/index';
+import { imageOperations as ImageOperations } from '@operations/catalog/images/image-operations';
 
 let productModel: any;
 let variantModel: any;

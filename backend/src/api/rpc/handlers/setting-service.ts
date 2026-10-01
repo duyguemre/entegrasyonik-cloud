@@ -1,6 +1,7 @@
 import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
-import { ImageOperations, storageService } from '@services/index'
+import { storageService } from '@services/index'
+import { imageOperations as ImageOperations } from '@operations/catalog/images/image-operations'
 
 /**
  * Sunucu-sahipli ayar alt nesneleri: tenant ayar RPC'leriyle OKUNMAZ/YAZILMAZ (ADR-0034 BR-5: `agent` = BYOK anahtari + KVKK aktarim onayi;

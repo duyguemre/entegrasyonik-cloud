@@ -1,7 +1,8 @@
 import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import { ObjectId } from 'mongodb'
-import { ImageOperations, storageService } from '@services/index'
+import { storageService } from '@services/index'
+import { imageOperations as ImageOperations } from '@operations/catalog/images/image-operations'
 import {
     imageVariantUrl, MAX_PIXELS, productImageKey, publicImageUrl, readImageUploadSettings, sha256Hex, sniffImageType, THUMB_WIDTH,
 } from '@services/storage/imagePolicy'

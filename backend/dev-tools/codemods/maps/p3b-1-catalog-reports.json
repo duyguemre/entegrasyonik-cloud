@@ -1,0 +1,6 @@
+{
+  "moves": [
+    { "from": "src/services/image/image-operations.ts", "to": "src/operations/catalog/images/image-operations.ts" },
+    { "from": "src/operations/client/StatsOperations.ts", "to": "src/operations/reports/StatsOperations.ts" }
+  ]
+}
