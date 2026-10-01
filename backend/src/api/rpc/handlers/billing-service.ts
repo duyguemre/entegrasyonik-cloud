@@ -3,6 +3,8 @@ import { BaseApi } from '../BaseApi'
 import { getPaymentProvider } from '@services/billing/PaymentProviderFactory'
 import { EntitlementService } from '@services/billing/EntitlementService'
 import type { BillingInterval } from '@services/billing/PaymentProvider'
+import { PlanRepository } from '@database/repositories/app/PlanRepository'
+import { SubscriptionRepository } from '@database/repositories/app/SubscriptionRepository'
 
 // ADR-0008 "Etki Alanı": "Frontend: gerçek abonelik/plan ekranı (SubscriptionView.vue yer
 // tutucusunun yerine)". Aşama A (bkz. BACKLOG.md C16) yalnızca İÇ katmanları (PaymentProvider
@@ -20,6 +22,9 @@ import type { BillingInterval } from '@services/billing/PaymentProvider'
 // TEK yerdir" ilkesi (a) API guard'ı, (b) IntegrationEngine, (c) MCP ile AYNI karar motorunu
 // kullanır; bu servis KENDİ boole mantığını yazmaz.
 export default class BillingService extends BaseApi implements IService {
+
+    private get plansRepo() { return new PlanRepository(this.applicationDB) }
+    private get subscriptions() { return new SubscriptionRepository(this.applicationDB) }
 
     /**
      * `IService.get?()` -- diğer TÜM kayıtlı servislerde (ör. `NotificationService.get`) olduğu gibi
@@ -40,15 +45,8 @@ export default class BillingService extends BaseApi implements IService {
      * FE'nin "plan tanımları henüz yayınlanmadı" boş-durumuyla karşılanır.
      */
     async getPlans(): Promise<any> {
-        try {
-            const plans = await this.applicationDB.getPlanModel()
-                .find({ active: true, public: true })
-                .sort({ priceMinor: 1 })
-                .lean();
-            return { result: true, plans };
-        } catch (error) {
-            throw error;
-        }
+        const plans = await this.plansRepo.listPublicActive();
+        return { result: true, plans };
     }
 
     /**
@@ -58,58 +56,52 @@ export default class BillingService extends BaseApi implements IService {
      * döner -- FE bunu "aboneliğiniz yok, bir plan seçin" durumuyla karşılar (HATA değil).
      */
     async getMySubscription(): Promise<any> {
-        try {
-            const sub: any = await this.applicationDB.getSubscriptionModel()
-                .findOne({ clientId: this.clientId })
-                .lean();
+        const sub: any = await this.subscriptions.findByClientId(this.clientId);
 
-            if (!sub) {
-                return {
-                    result: true,
-                    subscription: null,
-                    plan: null,
-                    status: 'no_subscription',
-                    access: { read: true, write: false, engine: false },
-                };
-            }
-
-            const plan: any = sub.planCode
-                ? await this.applicationDB.getPlanModel().findOne({ code: sub.planCode }).lean()
-                : null;
-
-            const [readDecision, writeDecision, engineDecision] = await Promise.all([
-                EntitlementService.checkAccess(this.clientId, 'read'),
-                EntitlementService.checkAccess(this.clientId, 'write'),
-                EntitlementService.checkAccess(this.clientId, 'engine'),
-            ]);
-
+        if (!sub) {
             return {
                 result: true,
-                subscription: {
-                    planCode: sub.planCode,
-                    planVersion: sub.planVersion,
-                    status: sub.status,
-                    trialEndsAt: sub.trialEndsAt,
-                    currentPeriodStart: sub.currentPeriodStart,
-                    currentPeriodEnd: sub.currentPeriodEnd,
-                    cancelAtPeriodEnd: sub.cancelAtPeriodEnd,
-                    graceUntil: sub.graceUntil,
-                    billingExempt: sub.billingExempt,
-                    cardLast4: sub.cardLast4,
-                    cardBrand: sub.cardBrand,
-                },
-                plan: plan ? {
-                    code: plan.code, name: plan.name, priceMinor: plan.priceMinor, currency: plan.currency,
-                    interval: plan.interval, vatIncluded: plan.vatIncluded, limits: plan.limits, features: plan.features,
-                } : null,
-                status: sub.status,
-                access: { read: readDecision.allowed, write: writeDecision.allowed, engine: engineDecision.allowed },
-                // Banner için TEK bir insan-okunabilir gerekçe: en kısıtlı (en "gerçek") boyuttan.
-                reason: (!readDecision.allowed && readDecision.reason) || (!writeDecision.allowed && writeDecision.reason) || (!engineDecision.allowed && engineDecision.reason) || undefined,
+                subscription: null,
+                plan: null,
+                status: 'no_subscription',
+                access: { read: true, write: false, engine: false },
             };
-        } catch (error) {
-            throw error;
         }
+
+        const plan: any = sub.planCode
+            ? await this.plansRepo.findByCode(sub.planCode)
+            : null;
+
+        const [readDecision, writeDecision, engineDecision] = await Promise.all([
+            EntitlementService.checkAccess(this.clientId, 'read'),
+            EntitlementService.checkAccess(this.clientId, 'write'),
+            EntitlementService.checkAccess(this.clientId, 'engine'),
+        ]);
+
+        return {
+            result: true,
+            subscription: {
+                planCode: sub.planCode,
+                planVersion: sub.planVersion,
+                status: sub.status,
+                trialEndsAt: sub.trialEndsAt,
+                currentPeriodStart: sub.currentPeriodStart,
+                currentPeriodEnd: sub.currentPeriodEnd,
+                cancelAtPeriodEnd: sub.cancelAtPeriodEnd,
+                graceUntil: sub.graceUntil,
+                billingExempt: sub.billingExempt,
+                cardLast4: sub.cardLast4,
+                cardBrand: sub.cardBrand,
+            },
+            plan: plan ? {
+                code: plan.code, name: plan.name, priceMinor: plan.priceMinor, currency: plan.currency,
+                interval: plan.interval, vatIncluded: plan.vatIncluded, limits: plan.limits, features: plan.features,
+            } : null,
+            status: sub.status,
+            access: { read: readDecision.allowed, write: writeDecision.allowed, engine: engineDecision.allowed },
+            // Banner için TEK bir insan-okunabilir gerekçe: en kısıtlı (en "gerçek") boyuttan.
+            reason: (!readDecision.allowed && readDecision.reason) || (!writeDecision.allowed && writeDecision.reason) || (!engineDecision.allowed && engineDecision.reason) || undefined,
+        };
     }
 
     /**
@@ -127,45 +119,34 @@ export default class BillingService extends BaseApi implements IService {
      * değerdir (ADR §4).
      */
     async startCheckout(): Promise<any> {
-        try {
-            const { planCode, billingInterval } = this.request as { planCode?: string; billingInterval?: BillingInterval };
-            if (!planCode || typeof planCode !== 'string') {
-                return { result: false, message: 'Lütfen bir plan seçin.' };
-            }
-
-            const plan: any = await this.applicationDB.getPlanModel().findOne({ code: planCode, active: true }).lean();
-            if (!plan) {
-                return { result: false, message: 'Seçilen plan artık satışa açık değil -- lütfen sayfayı yenileyip tekrar deneyin.' };
-            }
-
-            // ADR-0014 S4a: `priceMinor === 0` = "Özel teklif" (Kurumsal; seed'de limitler limitOverrides ile belirlenir) --
-            // self-servis checkout başlatılamaz (0 TL'ye abonelik oluşmasın); satış görüşmesi/iletişim akışına yönlendirilir.
-            if (!(typeof plan.priceMinor === 'number' && plan.priceMinor > 0)) {
-                return { result: false, message: 'Bu plan için özel teklif gerekiyor -- lütfen bizimle iletişime geçin.' };
-            }
-
-            const interval: BillingInterval = billingInterval === 'year' ? 'year' : 'month';
-            const provider = getPaymentProvider();
-            const checkout = await provider.createCheckout(this.clientId, planCode, interval);
-
-            await this.applicationDB.getSubscriptionModel().updateOne(
-                { clientId: this.clientId },
-                {
-                    $set: {
-                        planCode,
-                        planVersion: plan.version,
-                        provider: provider.name,
-                        providerSubscriptionRef: checkout.providerRef,
-                    },
-                    $setOnInsert: { status: 'trialing' },
-                },
-                { upsert: true },
-            );
-            EntitlementService.invalidate(this.clientId);
-
-            return { result: true, checkoutUrl: checkout.checkoutUrl, formToken: checkout.formToken, providerRef: checkout.providerRef };
-        } catch (error) {
-            throw error;
+        const { planCode, billingInterval } = this.request as { planCode?: string; billingInterval?: BillingInterval };
+        if (!planCode || typeof planCode !== 'string') {
+            return { result: false, message: 'Lütfen bir plan seçin.' };
         }
+
+        const plan: any = await this.plansRepo.findActiveByCode(planCode);
+        if (!plan) {
+            return { result: false, message: 'Seçilen plan artık satışa açık değil -- lütfen sayfayı yenileyip tekrar deneyin.' };
+        }
+
+        // ADR-0014 S4a: `priceMinor === 0` = "Özel teklif" (Kurumsal; seed'de limitler limitOverrides ile belirlenir) --
+        // self-servis checkout başlatılamaz (0 TL'ye abonelik oluşmasın); satış görüşmesi/iletişim akışına yönlendirilir.
+        if (!(typeof plan.priceMinor === 'number' && plan.priceMinor > 0)) {
+            return { result: false, message: 'Bu plan için özel teklif gerekiyor -- lütfen bizimle iletişime geçin.' };
+        }
+
+        const interval: BillingInterval = billingInterval === 'year' ? 'year' : 'month';
+        const provider = getPaymentProvider();
+        const checkout = await provider.createCheckout(this.clientId, planCode, interval);
+
+        await this.subscriptions.upsertCheckout(this.clientId, {
+            planCode,
+            planVersion: plan.version,
+            provider: provider.name,
+            providerSubscriptionRef: checkout.providerRef,
+        });
+        EntitlementService.invalidate(this.clientId);
+
+        return { result: true, checkoutUrl: checkout.checkoutUrl, formToken: checkout.formToken, providerRef: checkout.providerRef };
     }
 }

@@ -1,138 +1,71 @@
 import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import { ObjectId } from 'mongodb'
+import { HashtagRepository } from '@database/repositories/tenant/HashtagRepository'
+
 export default class HashtagService extends BaseApi implements IService {
+    // Getter: test, servisi kurduktan SONRA `svc.clientDB` atar (BrandService deseni).
+    private get hashtags() { return new HashtagRepository(this.clientDB) }
+
     async get(): Promise<any> {
-        try {
-            const filterQuery = {}
-            const hashtags = await this.clientDB.getHashtagModel().find(filterQuery).sort({ title: 1 }).lean()
-            for (const hashtag of hashtags) {
-                if (hashtag.values) {
-                    hashtag.values.sort((a: any, b: any) => {
-                        return a.title.toLowerCase().localeCompare(b.title.toLowerCase());
-                    })
-                }
+        const hashtags = await this.hashtags.listByTitle()
+        for (const hashtag of hashtags) {
+            if (hashtag.values) {
+                hashtag.values.sort((a: any, b: any) => {
+                    return a.title.toLowerCase().localeCompare(b.title.toLowerCase());
+                })
             }
-            return hashtags
-        } catch (error) {
-            throw error
         }
+        return hashtags
     }
 
     async addHashtag(): Promise<any> {
-        try {
-            const document = {
-                title: this.request.title,
-                color: this.request.color || '#455a64',
-                values: []
-            }
-            const resp = await this.clientDB.getHashtagModel().create(document)
-            return { result: resp }
-        } catch (error) {
-            throw error
+        const document = {
+            title: this.request.title,
+            color: this.request.color || '#455a64',
+            values: []
         }
+        const resp = await this.hashtags.create(document)
+        return { result: resp }
     }
 
     async updateHashtag(): Promise<any> {
-        try {
-            const updateQuery = { _id: new ObjectId(this.request._id as string) }
-            const updateSet = {
-                $set: {
-                    title: this.request.title,
-                    color: this.request.color
-                }
-            }
-            const resp = await this.clientDB.getHashtagModel().updateOne(updateQuery, updateSet)
-            return { result: resp }
-        } catch (error) {
-            throw error
-        }
+        const resp = await this.hashtags.updateTitleColor(this.request._id as string, this.request.title, this.request.color)
+        return { result: resp }
     }
 
     async removeHashtag(): Promise<any> {
-        try {
-            const deleteQuery = { _id: new ObjectId(this.request._id as string) }
-            const resp = await this.clientDB.getHashtagModel().deleteOne(deleteQuery)
-            return { result: resp }
-        } catch (error) {
-            throw error
-        }
+        const resp = await this.hashtags.remove(this.request._id as string)
+        return { result: resp }
     }
 
     async addHashtagValue(): Promise<any> {
-        try {
-            const hashtagId = new ObjectId(this.request._id as string);
-            const title = this.request.title;
-            const color = this.request.color || '#455a64';
+        const hashtagId = new ObjectId(this.request._id as string);
+        const title = this.request.title;
+        const color = this.request.color || '#455a64';
 
-            const filterQuery = {
-                _id: hashtagId,
-                "values.title": title
-            };
-
-            const existing = await this.clientDB.getHashtagModel().findOne(filterQuery);
-            if (existing) {
-                throw new Error(`"${title}" etiketi zaten mevcut`);
-            }
-
-            const pushQuery = {
-                $push: {
-                    values: {
-                        title: title,
-                        color: color
-                    }
-                }
-            };
-
-            await this.clientDB.getHashtagModel().updateOne(
-                { _id: hashtagId },
-                pushQuery
-            );
-
-            return true;
-        } catch (error) {
-            throw error;
+        if (await this.hashtags.hasValueTitle(hashtagId, title)) {
+            throw new Error(`"${title}" etiketi zaten mevcut`);
         }
+
+        await this.hashtags.pushValue(hashtagId, title, color);
+
+        return true;
     }
 
     async updateHashtagValue(): Promise<any> {
-        try {
-            const hashtagId = new ObjectId(this.request._id as string);
-            const valueId = new ObjectId(this.request.id as string);
-            const newTitle = this.request.title;
-            const newColor = this.request.color;
+        const hashtagId = new ObjectId(this.request._id as string);
+        const valueId = new ObjectId(this.request.id as string);
 
-            const filterQuery = {
-                _id: hashtagId,
-                "values._id": valueId
-            };
-
-            const updateQuery = {
-                $set: {
-                    "values.$.title": newTitle,
-                    "values.$.color": newColor
-                }
-            };
-
-            const resp = await this.clientDB.getHashtagModel().updateOne(filterQuery, updateQuery);
-            return { result: resp };
-        } catch (error) {
-            throw error;
-        }
+        const resp = await this.hashtags.updateValue(hashtagId, valueId, this.request.title, this.request.color);
+        return { result: resp };
     }
 
     async removeHashtagValue(): Promise<any> {
-        try {
-            const hashtagId = new ObjectId(this.request._id as string);
-            const valueId = new ObjectId(this.request.id as string);
+        const hashtagId = new ObjectId(this.request._id as string);
+        const valueId = new ObjectId(this.request.id as string);
 
-            const filterQuery = { _id: hashtagId };
-            const updateQuery = { "$pull": { "values": { _id: valueId } } };
-
-            const resp = await this.clientDB.getHashtagModel().updateOne(filterQuery, updateQuery);
-            return { result: resp };
-        } catch (error) {
-            throw error;
-        }
+        const resp = await this.hashtags.pullValue(hashtagId, valueId);
+        return { result: resp };
     }
 }

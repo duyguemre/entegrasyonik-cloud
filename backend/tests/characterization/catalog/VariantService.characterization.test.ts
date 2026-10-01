@@ -34,10 +34,10 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { ObjectId } from 'mongodb';
 
-jest.mock('@operations/client/StatsOperations');
+jest.mock('@operations/reports/StatsOperations');
 
 import VariantService from '@api/rpc/handlers/variant-service';
-import { StatsOperations } from '@operations/client/StatsOperations';
+import { StatsOperations } from '@operations/reports/StatsOperations';
 
 const StatsOperationsMock = StatsOperations as unknown as jest.Mock<any>;
 

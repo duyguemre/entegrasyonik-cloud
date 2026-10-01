@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, jest, afterEach } from '@jest/globals';
 import sharp from 'sharp';
-import { imageOperations } from '../../../src/services/image/image-operations';
+import { imageOperations } from '../../../src/operations/catalog/images/image-operations';
 
 const makePng = (width: number, height: number) =>
   sharp({ create: { width, height, channels: 3, background: { r: 255, g: 0, b: 0 } } }).png().toBuffer();
