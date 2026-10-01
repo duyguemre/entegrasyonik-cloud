@@ -36,6 +36,7 @@ import { SchemaMigrationSchema } from './models/SchemaMigration';
 import { OAuthClientSchema } from './models/OAuthClient';
 import { OAuthAuthCodeSchema } from './models/OAuthAuthCode';
 import { OAuthRefreshTokenSchema } from './models/OAuthRefreshToken';
+import { BackofficeViewSchema } from './models/BackofficeView';
 
 export default (mongooseConnection: Connection): Record<string, Model<any>> => {
     return {
@@ -97,5 +98,7 @@ export default (mongooseConnection: Connection): Record<string, Model<any>> => {
         oauth_client: mongooseConnection.model('oauth_client', OAuthClientSchema),
         oauth_auth_code: mongooseConnection.model('oauth_auth_code', OAuthAuthCodeSchema),
         oauth_refresh_token: mongooseConnection.model('oauth_refresh_token', OAuthRefreshTokenSchema),
+        // BE-05 / K51: backoffice kayitli gorunumler (yonetici basina, <=20). autoIndex kapali; indeksler yalniz onayli gocle: migrations/0019.
+        backoffice_view: mongooseConnection.model('backoffice_view', BackofficeViewSchema),
     }
 }

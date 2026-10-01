@@ -4,6 +4,7 @@
 // yalnız ÖNEK (regex YOK). Sayfalama: (ts,_id) keyset imleci (skip yok).
 import { Types } from 'mongoose';
 import type { LogEventDoc } from './logRecord';
+import { tenantBucketOf } from '../metrics/errorEvents';
 
 export const QUERY_MAX_TIME_MS = 5000;
 export const MAX_PAGE_SIZE = 200;
@@ -138,6 +139,8 @@ export interface IssueGroupFilters extends TimeRange {
     source?: 'server' | 'client';
     module?: string;
     integrationCode?: string;
+    /** BE-06: tenant süzgeci. ErrorEvents tenant kimliği saklamaz; kova (`tenantBuckets`) eşleşmesiyle uygulanır -> YAKLAŞIK (fazla gelebilir, eksik gelmez). */
+    tenantId?: number;
     sort?: IssueSort;
     limit?: number;
 }
@@ -160,6 +163,10 @@ export async function getIssueGroups(filters: IssueGroupFilters = {}, deps?: Log
     if (filters.source !== undefined) { if (filters.source !== 'server' && filters.source !== 'client') throw new LogQueryError('source: geçersiz'); match.source = filters.source; }
     const mod = optStr('module', filters.module); if (mod) match.module = mod;
     const integ = optStr('integrationCode', filters.integrationCode); if (integ) match.integrationCode = integ;
+    if (filters.tenantId !== undefined) {
+        if (typeof filters.tenantId !== 'number' || !Number.isInteger(filters.tenantId) || filters.tenantId <= 0) throw new LogQueryError('tenantId: geçersiz değer');
+        match.tenantBuckets = tenantBucketOf(filters.tenantId);
+    }
     const sortKey = filters.sort ?? 'lastSeen';
     if (!SORTS[sortKey]) throw new LogQueryError('sort: geçersiz');
     const limit = clampLimit(filters.limit, 50, MAX_GROUPS);

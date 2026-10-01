@@ -196,6 +196,7 @@ export interface IApplicationDB {
     // [ADR-0029 NB7/NB8] platform duyurulari + uyari yasam dongusu.
     getAnnouncementModel(): any
     getAlertModel(): any
+    getBackofficeViewModel(): any
     getOAuthClientModel(): any
     getOAuthAuthCodeModel(): any
     getOAuthRefreshTokenModel(): any
