@@ -55,10 +55,10 @@
       <!-- faz3-fe-help: ilk kullanım — hiç kayıt yokken "Nasıl başlanır?" (filtreli boş sonuçta gösterilmez). -->
       <template #empty-action><HelpStartLink article="ord-messages-sla" /></template>
       <template #filters>
+        <EkSelect kind="channel" v-model="searchForm.data.integrationCodes" :items="CHANNEL_OPTIONS" item-title="title" item-value="value" label="Kanal" multiple clearable />
         <v-select v-model="searchForm.data.status" :items="statusOptions" label="Mesaj durumu" item-title="label" item-value="value" clearable />
         <v-select v-model="searchForm.data.type" :items="typeOptions" label="Mesaj tipi" item-title="label" item-value="value" clearable />
-        <v-select v-model="searchForm.data.isRejected" :items="REJECT_OPTIONS" label="Red durumu" item-title="label" item-value="value" />
-        <EkSelect kind="channel" v-model="searchForm.data.integrationCodes" :items="CHANNEL_OPTIONS" item-title="title" item-value="value" label="Kanal" multiple clearable />
+        <v-select v-model="searchForm.data.isRejected" :items="REJECT_OPTIONS" label="Red durumu" item-title="label" item-value="value" clearable />
         <EkDateRange v-model:start="searchForm.data.startDate" v-model:end="searchForm.data.endDate" label="Mesaj tarihi" value-format="iso-date" />
       </template>
 
@@ -204,7 +204,8 @@ const searchForm = reactive({
 const statusOptions = Object.entries(MESSAGE_STATUS_LABELS).map(([value, label]) => ({ value, label }));
 const typeOptions = Object.entries(MESSAGE_TYPE_LABELS).map(([value, label]) => ({ value, label }));
 
-const REJECT_OPTIONS = [{ label: 'Tümü', value: null }, { label: 'Sadece reddedilenler', value: true }, { label: 'Reddedilmeyenler', value: false }];
+// P02 (K49): boş alan = tümü; "Tümü" seçeneği yok (temizlenebilir).
+const REJECT_OPTIONS = [{ label: 'Sadece reddedilenler', value: true }, { label: 'Reddedilmeyenler', value: false }];
 const CHANNEL_OPTIONS = [{ title: 'Trendyol', value: 'trendyol' }, { title: 'Hepsiburada', value: 'hepsiburada' }, { title: 'N11', value: 'n11' }];
 
 // DS-v2 liste standardı. MessageService.getMessages `sortBy.key` ile SUNUCUDA sıralar
