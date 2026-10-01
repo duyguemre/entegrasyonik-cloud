@@ -269,7 +269,7 @@
         </section>
 
         <!-- Kaydetme durumu: sabit alt çubuk — değişiklik var mı, kaydedildi mi tek bakışta. -->
-        <div class="sl-savebar" :class="{ 'is-dirty': isDirty }" role="region" aria-label="Kaydetme durumu">
+        <div class="sl-savebar" data-ek-sticky-bottom :class="{ 'is-dirty': isDirty }" role="region" aria-label="Kaydetme durumu">
           <p class="sl-savebar__state" aria-live="polite">
             <template v-if="isDirty">
               <v-icon icon="mdi-circle-medium" class="sl-savebar__icon is-dirty" aria-hidden="true" />

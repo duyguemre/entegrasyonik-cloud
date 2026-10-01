@@ -115,6 +115,8 @@ test.describe('DS-v2 liste standardı — sipariş listesi', () => {
     await expect(view.getByText('E2E-100001')).toBeVisible()
     const pager = view.getByRole('navigation', { name: /sayfalama/ })
     const header = view.locator('thead th').nth(1)
+    // P15 (K49): kısa görünümde (açık filtre + tur teklifi payı) liste kartı asgari yükseklikte kalır, ekran kendi içinde kayar.
+    await view.locator('.ek-list-screen').evaluate((el) => el.scrollTo(0, el.scrollHeight))
     const pagerBox1 = await pager.boundingBox()
     const headBox1 = await header.boundingBox()
     await view.locator('.ek-grid').evaluate((el) => el.scrollTo(0, el.scrollHeight))

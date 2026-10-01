@@ -307,8 +307,13 @@ function setCollapsed(v: boolean) {
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-3);
-  height: 100%;
+  /* P15 (K49): liste kartı asgari yükseklikten (EkListFrame) aşağı ezilmez; sığmazsa ekran KENDİ içinde kayar.
+     4px iç pay + eşit negatif dış pay: kaydırma kabı kart gölgesini ve odak halkasını kırpmasın. */
+  height: calc(100% + 2 * var(--ek-space-1));
   min-height: 0;
+  margin: calc(-1 * var(--ek-space-1));
+  padding: var(--ek-space-1);
+  overflow-y: auto;
 }
 
 .ek-list-screen__head {
@@ -372,6 +377,7 @@ function setCollapsed(v: boolean) {
 @media (max-width: 767px) {
   .ek-list-screen {
     height: auto;
+    overflow-y: visible;
   }
 
   .ek-list-screen__head-actions {
