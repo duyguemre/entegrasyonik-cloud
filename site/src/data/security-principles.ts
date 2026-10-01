@@ -41,15 +41,21 @@ export const securityPrinciples: SecurityPrinciple[] = [
     id: 'sifreleme',
     icon: 'key',
     title: 'Şifreleme',
-    value: 'Pazaryeri ve entegrasyon sırları AES-256-GCM ile şifreli saklanır; arayüzde ve API yanıtlarında gösterilmez.',
+    value: 'Pazaryeri ve entegrasyon anahtarlarınız güçlü şifrelemeyle saklanır; kaydedildikten sonra ekranlarda açık gösterilmez.',
     capabilityIds: ['secrets-encryption', 'secrets-masked'],
-    points: [],
+    // S27c: algoritma adı özet cümleden "Ayrıntı" paneline taşındı (BRAND §3 — teknik ayrıntının tek yeri).
+    points: [
+      {
+        text: 'Şifreleme, endüstri standardı AES-256-GCM algoritmasıyla yapılır.',
+        evidence: [evidence('backend/src/utils/FieldCrypto.ts', 'Alan şifreleme algoritması', 'AES-256-GCM')],
+      },
+    ],
   },
   {
     id: 'erisim',
     icon: 'lock',
     title: 'Erişim ve oturum güvenliği',
-    value: 'Ekibinizde kimin neyi yapabileceğini rol kademeleri belirler; tanımsız işlemler sunucuda varsayılan olarak reddedilir.',
+    value: 'Ekibinizde kimin neyi yapabileceğini rol kademeleri belirler; yetkisi tanımlanmamış bir işlem yapılamaz.',
     capabilityIds: ['role-based-access', 'default-deny', 'session-cookie'],
     points: [],
   },
@@ -98,7 +104,7 @@ export const securityPrinciples: SecurityPrinciple[] = [
     id: 'sureklilik',
     icon: 'refresh',
     title: 'Yedekleme ve süreklilik',
-    value: 'Verilerinizi etkileyen bakım adımları doğrulanmış yedek şartına bağlıdır; pazaryeri bağlantıları geçici hatalara karşı dayanıklılık katmanından geçer.',
+    value: 'Verilerinizi etkileyen bakım adımları doğrulanmış yedek şartına bağlıdır; pazaryeri bağlantılarındaki geçici kesintiler kontrollü biçimde yönetilir.',
     capabilityIds: ['integration-resilience'],
     points: [
       {

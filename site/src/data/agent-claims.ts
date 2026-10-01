@@ -197,7 +197,7 @@ export const AGENT_CLAIMS = {
     readiness: live('trust-role ile aynı.', [evidence('backend/src/api/operationPolicy.ts', 'operationPolicy varsayılan red', 'varsayılan olarak REDDEDİLİR')]),
   },
   'faq-privacy': {
-    text: 'Verileriniz yalnızca size aittir ve izole bir alanda korunur; entegrasyon anahtarlarınız şifreli saklanır. Öneri hazırlanırken son müşterilerinizin kişisel bilgileri varsayılan olarak maskelenir.',
+    text: 'Verileriniz yalnızca size aittir ve izole bir alanda korunur; entegrasyon anahtarlarınız şifreli saklanır. Öneri hazırlanırken alıcılarınızın kişisel bilgileri varsayılan olarak maskelenir.',
     readiness: planned('Kişisel veri maskeleme henüz yok; yayından önce uygulanmalı ya da ikinci cümle kaldırılmalı.'),
   },
   'faq-start': {

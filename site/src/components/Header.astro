@@ -1,6 +1,6 @@
 ---
 /**
- * Header — logotip, gruplanmış birincil gezinme, "Giriş yap" ve birincil CTA "Ücretsiz dene" (uygulamaya bağlantı;
+ * Header — logotip, gruplanmış birincil gezinme, "Giriş yap" ve birincil CTA "Ücretsiz deneyin" (uygulamaya bağlantı;
  * ADR-0014 Karar 2).
  *
  * S23 (SR2-NAV): Ürün / Çözümler / Kaynaklar açılır panel (mega-menü), Fiyatlandırma doğrudan bağlantı.
@@ -217,7 +217,7 @@ const registerHref = appUrls.register()
       }
       <div class="nav-desktop__actions">
         <a class="nav-link nav-login" href={loginHref} data-testid="login-link" aria-label="Giriş yap">Giriş</a>
-        <Button href={registerHref} variant="primary" data-testid="register-link">Ücretsiz dene</Button>
+        <Button href={registerHref} variant="primary" data-testid="register-link">Ücretsiz deneyin</Button>
       </div>
     </nav>
 
@@ -321,7 +321,7 @@ const registerHref = appUrls.register()
         </div>
         <div class="nav-mobile__actions">
           <Button href={loginHref} variant="secondary" size="lg" data-testid="login-link-mobile">Giriş yap</Button>
-          <Button href={registerHref} variant="primary" size="lg" data-testid="register-link-mobile">Ücretsiz dene</Button>
+          <Button href={registerHref} variant="primary" size="lg" data-testid="register-link-mobile">Ücretsiz deneyin</Button>
         </div>
       </nav>
     </details>

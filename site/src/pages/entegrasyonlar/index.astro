@@ -14,6 +14,7 @@ import CoverageMatrix from '../../components/pages/CoverageMatrix.astro'
 import CtaBand from '../../components/pages/CtaBand.astro'
 import HeroActions from '../../components/pages/HeroActions.astro'
 import StatPanel from '../../components/pages/StatPanel.astro'
+import Eyebrow from '../../components/Eyebrow.astro'
 import { getPublicIntegrations, COVERAGE_LABELS, type CoverageLevel, type IntegrationKind } from '../../data/integrations'
 import { appUrls } from '../../lib/site-config'
 
@@ -68,6 +69,7 @@ const coverageLevels = Object.keys(COVERAGE_LABELS) as CoverageLevel[]
   <Section id="katalog" labelledby="katalog-title" class="tight-section">
     <div class="cat-head">
       <div class="cat-head__text">
+        <Eyebrow>Katalog</Eyebrow>
         <h2 id="katalog-title">Entegrasyon kataloğu</h2>
         <p>Kategoriye göre süzün; her kartta desteklenen işlemler ve kapsam düzeyi yer alır.</p>
       </div>
@@ -113,6 +115,7 @@ const coverageLevels = Object.keys(COVERAGE_LABELS) as CoverageLevel[]
 
   <Section id="kapsam" labelledby="kapsam-title" tone="muted" class="tight-section">
     <div class="group__head">
+      <Eyebrow>Kapsam</Eyebrow>
       <h2 id="kapsam-title">Kanal bazında kapsam</h2>
       <p>
         Her kanalın desteklediği işlemler bir bakışta. Kapsam, kanalın sunduğu olanaklara göre farklılaşır; ayrıntılar
@@ -126,7 +129,7 @@ const coverageLevels = Object.keys(COVERAGE_LABELS) as CoverageLevel[]
     id="entegrasyon-cta"
     title="Kanallarınızı bugün bağlayın"
     text="Hesabınızı oluşturun, kanal bilgilerinizi girin; ürün, stok ve siparişleriniz ilk günden aynı akışta ilerlesin."
-    primary={{ label: 'Ücretsiz dene', href: appUrls.register() }}
+    primary={{ label: 'Ücretsiz deneyin', href: appUrls.register() }}
     secondary={{ label: 'Sık sorulan sorular', href: '/sss' }}
   />
 </BaseLayout>

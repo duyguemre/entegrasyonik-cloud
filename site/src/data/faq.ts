@@ -170,7 +170,7 @@ export const faq: FaqItem[] = [
   {
     id: 'iade-soru',
     category: 'kanallar',
-    question: 'İade taleplerini ve müşteri sorularını da yönetebilir miyim?',
+    question: 'İade taleplerini ve alıcı sorularını da yönetebilir miyim?',
     answer: `Evet. ${capability('returns').summary} ${capability('questions').summary} Kapsam kanala göre değişir; ayrıntılar entegrasyon sayfalarındadır.`,
     evidence: [registry('§2.1', '### 2.1 Trendyol'), registry('§2.4', '### 2.4 Pazarama')],
   },

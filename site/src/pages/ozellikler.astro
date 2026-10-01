@@ -73,8 +73,8 @@ const CLUSTERS: Array<{ id: string; title: string; lead: string; ids: string[] }
   },
   {
     id: 'satis-sonrasi',
-    title: 'Satış sonrası ve müşteri',
-    lead: 'İade taleplerini ve müşteri sorularını her pazaryeri paneline ayrı ayrı girmeden yanıtlayın.',
+    title: 'Satış sonrası ve alıcı iletişimi',
+    lead: 'İade taleplerini ve alıcı sorularını her pazaryeri paneline ayrı ayrı girmeden yanıtlayın.',
     ids: ['returns', 'questions'],
   },
   {
@@ -301,7 +301,7 @@ const LEVEL_STATE: Record<CapabilityLevel, 'yes' | 'limited'> = { supported: 'ye
     id="ozellik-cta"
     title="Özellikleri kendi hesabınızda deneyin"
     text="Kanallarınızı bağlayın; siparişleriniz rezervasyondan geçsin, iade ve sorular tek ekranda toplansın."
-    primary={{ label: 'Ücretsiz dene', href: appUrls.register() }}
+    primary={{ label: 'Ücretsiz deneyin', href: appUrls.register() }}
     secondary={{ label: 'Entegrasyonlar', href: '/entegrasyonlar' }}
   />
 </BaseLayout>
