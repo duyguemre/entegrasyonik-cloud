@@ -352,11 +352,11 @@ Bileşenler `src/components/triage/` altında (backoffice'e özgü; ortak pakete
 
 | Hedef | Yol | Okunan süzgeç (ekran) | Sözleşme (`API_BACKOFFICE_ATTENTION.md`) adı → çeviri (`src/api/attention.ts routeOf`) |
 |---|---|---|---|
-| `engine` | `/motor` | `sekme=kuyruklar|basarisiz|durum|zamanlanmis`, `kaynak=dlq` | `tab=queues|failed|state-machine|scheduled` → `sekme`; `source` → `kaynak` |
+| `engine` | `/motor` | `sekme=kuyruklar|basarisiz|durum|zamanlanmis`, `kaynak=dlq`; başarısız işler `tid`, `entegrasyon`, `kod` (BE-03; sözleşme adları `integrationCode`, `errorCode` da okunur) | `tab=queues|failed|state-machine|scheduled` → `sekme`; `source` → `kaynak` |
 | `integrations` | `/entegrasyonlar` | `sekme=saglik|dayaniklilik|katalog` | `tab=api-health|resilience|catalog` → `sekme`; `integrationCode`, `range` geçer (ekran henüz süzmüyor — panel ucu `integrationCode` almıyor) |
 | `infra` | `/altyapi` | `sekme=redis|mongodb|yavas` | `tab=slow-queries` → `sekme=yavas`; `range` geçer |
 | `cache` | `/altyapi/onbellek` | `#bo-cache-families` (bo-r1b) | — |
-| `logs` | `/loglar` | `tid`, `level`, `category`, `reqId`, `fp`, `sekme=akis|sorunlar`, `sirala=lastSeen|count|tenantCount|new`; süzgeç değişimi URL'e yazılır (bo-r1b) | `tab=issues` düşer (varsayılan sekme); `status=open` geçer (sorun durumu süzgeci yok; açık gruplar zaten öndedir) |
+| `logs` | `/loglar` | `tid` (olay akışı kesin; sorun grupları BE-06 ile YAKLAŞIK), `level`, `category`, `reqId`, `fp`, `sekme=akis|sorunlar`, `sirala=lastSeen|count|tenantCount|new`; süzgeç değişimi URL'e yazılır (bo-r1b) | `tab=issues` düşer (varsayılan sekme); `status=open` geçer (sorun durumu süzgeci yok; açık gruplar zaten öndedir) |
 | `audit` | `/denetim` | `event`, `result=ok|fail|error`, `surface`, `range=24h|7d`, `tid`, `reqId` | — |
 | `alerts` | `/bildirimler/uyarilar` | `durum=firing|resolved|all`, `onem=critical|warning`, `kural=R1…` (bo-r1b); sözleşme adları `status`, `ruleId` de okunur | `status=firing`, `ruleId` geçer |
 | `deliveries` | `/bildirimler/teslimler` | `durum`, `kod`, `tid`, `olay` | — |
@@ -365,7 +365,7 @@ Bileşenler `src/components/triage/` altında (backoffice'e özgü; ortak pakete
 | `tenant` | `/musteriler/:tid` | `sekme=ozet|yasam-dongusu`, `eylem=destek` (destek oturumu güvenli akışı; tek kullanımlık — NT-01) | tek müşterili öğe buraya yönlenir (aşağıda) |
 | `subscription` | `/abonelikler/:tid` | `#iptal` (yönetim eylemleri kartı; bo-r1b) | tek müşterili abonelik öğesi buraya yönlenir |
 | `subscriptions` | `/abonelikler` | `sekme=abonelikler|gelir`, `durum=<abonelik durumu>`, `plan=<kod>` (bo-r1b); sözleşme adı `status` de okunur | `status=past_due|suspended|trialing`, `endingInDays` geçer (`endingInDays` süzgeci uçta yok) |
-| `tenants` | `/musteriler` | `q`, `durum=aktif|pasif|eski|kanalsiz`, `sira=magaza|sonEsitleme|kayit` (`-` önek azalan) (bo-r1b, NT-03/05) | `hasIssues=1` geçer (BE-01 `ops` gelince okunur) |
+| `tenants` | `/musteriler` | `q`, `durum=aktif|pasif|eski|kanalsiz|sorunlu`, `sira=magaza|sonEsitleme|kayit|acikSorun|basarisizIs|sonHata` (`-` önek azalan) (bo-r1b, NT-03/05, BE-01) | `hasIssues=1` → `durum=sorunlu` |
 | `admins` | `/yoneticiler` | `filtre=nomfa|locked|invites|idle`, `davet=1` (davet diyaloğunu açar; tek kullanımlık) (bo-r1b) | — |
 | `flags` | `/sistem/bayraklar` | `#bakim`, `#taslak`, `#gecmis`, `#ayarlar` (bo-r1b) | — |
 | (yakında) | `/musteriler/yasam-dongusu`, `/musteriler/destek` | ekran planlı | `status=…`, `olderThanHours` — ekran gelene dek tek müşterili öğe müşteri detayına yönlenir |
@@ -392,6 +392,7 @@ katalog, uyarılar) bu deseni **tek uyarlayıcı** üzerinden kullanır:
 | Üretimde kimlik yazdırma | `DangerActionDialog confirmText` / `GuardedDialog confirmText` | NT-02: yalnız `currentEnv.key === 'production'` + yıkıcı iken "Onay için `<kimlik>` yazın" alanı; eşleşmeden onay kapalı. Verilen yerler: iş silme (iş kimliği), abonelik iptali (tid), teslim atma (teslim kimliği), yönetici devre dışı/2FA sıfırlama (e-posta). |
 | Sessiz yenileme onayı | `EkRefreshButton quiet-success` (paket, ekleyici) | NT-07: backoffice panel düğmeleri başarıda yeşil tik yerine nötr "Güncellendi" (tazelik ≠ sağlık). Ana uygulama varsayılanı değişmedi. |
 | Otomatik yenileme metni | `BoPageHeader :auto-refresh="30"` | NT-09: tek metin "Sekme açıkken 30 sn'de bir yenilenir". |
+| BE-01..06 bağları | `api/contracts/ops.ts`, `contracts/engine.ts`, `api/mock/ops/{tenantOps,prefs,engine}.ts` | Müşteri listesi ops sütunları + "Sorunlu müşteriler" (BE-01); müşteri detayı "Şu an" kartı (BE-02, `degradedSections` → "okunamadı"); başarısız işlerde süzgeç + seçim + "Seçilenleri yeniden dene" (BE-03, `retryJobs` step-up + gerekçe, iş başına sonuç) ve iz sütunu (BE-04 `reqId` → `/loglar?reqId=`); başlıkta "Görünüm" grubu = Bağlantı + kayıtlı görünümler menüsü (BE-05, `SavedViewsMenu`, ekran anahtarı `route.meta.screen`, yönetici başına ≤ 20); sorun gruplarında `tid` (BE-06, yaklaşık ipucu). Sahte uçlar sözleşmeye birebir (`tests/ops-*-contract.test.ts`). |
 | Hash kaydırma | `router.ts scrollBehavior` | Hüküm bağlantısı sayfa içi bölüme (`#bakim`, `#bo-cache-families`) kaydırır; davet bileti `#t=` etkilenmez. |
 
 **Panodaki uygulama (bo-r1a):** genel bakış dört soruyu sırayla yanıtlar — 1 sistemde müdahale (getAttention

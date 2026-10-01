@@ -20,7 +20,7 @@ Doğrulama (her görevde): `cd frontend && npm run test:backoffice && npm run bu
 - Kabul: `?env=production` önizlemede iş silme/abonelik iptali bu alanı ister; staging/mock'ta istemez; e2e.
 
 ### NT-03 · Paylaşılabilir görünüm (URL süzgeçleri + "Bağlantıyı kopyala") — FL-3
-- **Durum (2026-10-01):** ✔ bo-r1b (BE-05 hariç) — `CopyViewLink` ("Bağlantı"); müşteri listesi `q/durum/sira`, motor `sekme/kaynak`, uyarılar `durum/onem/kural`, teslimler `durum/kod/tid/olay`, loglar/denetim süzgeçleri URL'de (BO_UI_PATTERNS §11.6).
+- **Durum (2026-10-01):** ✔ bo-r1b (+ BE-05 kayıtlı görünümler menüsü) — `CopyViewLink` ("Bağlantı"); müşteri listesi `q/durum/sira`, motor `sekme/kaynak`, uyarılar `durum/onem/kural`, teslimler `durum/kod/tid/olay`, loglar/denetim süzgeçleri URL'de (BO_UI_PATTERNS §11.6).
 - Ne: Müşteri listesi (arama, durum), başarısız işler (kuyruk, kaynak — kaynak bitti), uyarılar (durum, önem, kural),
   teslim günlüğü süzgeçleri URL'de; `BoPageHeader` eylemlerinde `EkCopyButton label="Bu görünümün bağlantısı"`.
 - Kabul: bağlantı yeni sekmede aynı görünümü açar; e2e her ekran için bir senaryo. Sunucu tarafı kayıtlı görünüm → BE-05.
@@ -35,7 +35,7 @@ Doğrulama (her görevde): `cd frontend && npm run test:backoffice && npm run bu
 - Kabul: görsel fark yerelde onaylı; mevcut e2e yeşil; hata kodu açıklaması kartta görünür (dokunmatik).
 
 ### NT-05 · Müşteri listesi: sütun sıralama + plan sütunu — IA-7 (kısmi)
-- **Durum (2026-10-01):** ✔ bo-r1b (plan sütunu hariç — BE-01 yok) — Mağaza/son eşitleme/kayıt sıralaması, `aria-sort`, `?sira=`; e2e `tenants-url.spec.ts`.
+- **Durum (2026-10-01):** ✔ bo-r1b (plan + ops sütunları BE-01 ile) — Mağaza/son eşitleme/kayıt sıralaması, `aria-sort`, `?sira=`; e2e `tenants-url.spec.ts`.
 - Ne: Mağaza / son eşitleme / kayıt sütunlarında sıralama (`getClients sortField/sortOrder` sözleşmede VAR). Plan sütunu
   yalnız BE-01 gelirse.
 - Kabul: başlık düğmesi `aria-sort`; URL'de `?sira=`; e2e.
@@ -72,10 +72,12 @@ Doğrulama (her görevde): `cd frontend && npm run test:backoffice && npm run bu
 
 ## B. Backend gerektirenler (sözleşme önerisiyle)
 
-> **Durum (2026-10-01, bo-r1b):** origin/main'de BE-01..BE-06 sözleşmesi (`docs/cloud-contracts/API_BACKOFFICE_*.md`) YOK;
-> ekranlar mevcut verilerle hüküm kurar ve eksikliği hüküm notunda söyler (müşteri detayı: "açık sorun / başarısız iş bu
-> özette yok"). Ek istekler bo-r1b raporunda: sorun grubu üstlen/çöz/sustur yazma uçları, denetim sunucu sayımı
-> (`byEvent/byResult`), abonelik durum sayaçları, bildirim e-posta kanalı sağlığı, yönetici rolü + davet bitişi.
+> **Durum (2026-10-01, bo-r1b):** sözleşme `docs/cloud-contracts/API_BACKOFFICE_ATTENTION.md` (BE-01..06) origin/main'e geldi;
+> altısı da önyüzde bağlandı (sahte uçlar sözleşmeye birebir; ayrıntı BO_UI_PATTERNS §11.7). Notlar: BE-06 sözleşmede
+> `BackofficeLogService/issueGroups`, önyüz taslağı `LogCenterService/getIssueGroups` — alan taslak uca eklendi, gerçek
+> bağlamada yalnız uç adı değişir. Plan sütunu (NT-05) BE-01 ile geldi. Ek istekler bo-r1b raporunda: sorun grubu
+> üstlen/çöz/sustur yazma uçları, denetim sunucu sayımı (`byEvent/byResult`), abonelik durum sayaçları, bildirim e-posta
+> kanalı sağlığı, yönetici rolü + davet bitişi, uyarılarda `tid` süzgeci.
 
 > Bulutta backend salt-okunur. Aşağıdakiler yerel backend hattına (BACKOFFICE_PLAN §2) önerilir; önyüz ekranları sözleşme
 > gelince bağlanır. Alanlar öneridir, mevcut adlandırmaya (ERROR_CODES.md, ADR-0026) uydurulur.
