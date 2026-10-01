@@ -1,5 +1,5 @@
 // BE-05 kayıtlı görünümler: kaydet → listede → aç → URL süzgeci uygulandı → sil. Sahte /admin-api (bellekte); görsel taban YOK.
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import { expectNoA11yViolations, settle, signInFully } from '../support/session'
 
 test.describe('Kayıtlı görünümler', () => {
@@ -20,13 +20,15 @@ test.describe('Kayıtlı görünümler', () => {
     await expectNoA11yViolations(page, '[data-testid="saved-views-menu"]')
     await page.keyboard.press('Escape')
 
-    // Süzgeci temizle (Filtreleri temizle) → URL'de level kalmaz.
+    // Süzgeci temizle (Filtreleri temizle) → URL'de level kalmaz. Telefonda (MOB-06) süzgeçler katlıdır: önce aç.
+    await openFacets(page)
     await page.getByRole('button', { name: 'Filtreleri temizle' }).click()
     await expect(page).not.toHaveURL(/level=/)
 
     await page.getByTestId('saved-views-trigger').click()
     await page.getByTestId('saved-views-menu').locator('[data-view-name="Yalnız hatalar"] .bo-views__item').click()
     await expect(page).toHaveURL(/level=error/)
+    await openFacets(page)
     await expect(page.getByRole('checkbox', { name: /Hata/ }).first()).toBeChecked()
 
     await page.getByTestId('saved-views-trigger').click()
@@ -43,3 +45,9 @@ test.describe('Kayıtlı görünümler', () => {
     await expect(page.getByTestId('saved-views-menu')).toBeVisible()
   })
 })
+
+/** MOB-06: < 768 px'te log süzgeçleri `facets-toggle` arkasında katlıdır; açık değilse açar (masaüstünde düğme görünmez). */
+async function openFacets(page: Page) {
+  const toggle = page.getByTestId('facets-toggle')
+  if ((await toggle.isVisible()) && (await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click()
+}

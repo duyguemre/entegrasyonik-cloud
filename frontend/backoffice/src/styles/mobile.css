@@ -75,7 +75,19 @@
   #app .bo-link-btn,
   #app .bo-sd__tid,
   #app .ek-chat-setup__help,
-  #app .bo-hit {
+  #app .bo-hit,
+  /* INT-1001: bo-r1a/b yönlendirme bileşenleri (Durum → Karar → Eylem) */
+  #app .bo-sh__fact.is-link,
+  #app .bo-act-link,
+  #app .bo-al__more,
+  #app .bo-al__secondary,
+  #app .bo-al__tenant,
+  #app .bo-ts__more,
+  #app .bo-verdict-more__link,
+  #app .bo-us__link,
+  #app .bo-trace-cell__link,
+  #app .bo-tenants__sort,
+  #app .bo-subs__link {
     position: relative;
   }
 
@@ -95,7 +107,18 @@
   #app .bo-link-btn::after,
   #app .bo-sd__tid::after,
   #app .ek-chat-setup__help::after,
-  #app .bo-hit::after {
+  #app .bo-hit::after,
+  #app .bo-sh__fact.is-link::after,
+  #app .bo-act-link::after,
+  #app .bo-al__more::after,
+  #app .bo-al__secondary::after,
+  #app .bo-al__tenant::after,
+  #app .bo-ts__more::after,
+  #app .bo-verdict-more__link::after,
+  #app .bo-us__link::after,
+  #app .bo-trace-cell__link::after,
+  #app .bo-tenants__sort::after,
+  #app .bo-subs__link::after {
     content: '';
     position: absolute;
     top: min(0px, calc((100% - var(--ek-control-h-touch)) / 2));
