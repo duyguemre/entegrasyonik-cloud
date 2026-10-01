@@ -1,6 +1,7 @@
 import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import { containsRegex, toSearchString } from '@utils/search'
+import { SmartSummaryRepository } from '@database/repositories/tenant/SmartSummaryRepository'
 
 /** [GV-01] ReDoS/maliyet sınırı: sorgu ≤ 100 karakter, en çok 5 kelime (her kelime 4 koleksiyonda x çok alanda regex). */
 const MAX_SEARCH_WORDS = 5
@@ -11,6 +12,9 @@ const MAX_SEARCH_WORDS = 5
  * çoklu kelime destekli (AND) ve performanslı bir şekilde arar.
  */
 export default class SmartService extends BaseApi implements IService {
+    // getter: test, servisi kurduktan SONRA svc.clientDB atıyor
+    private get summaries() { return new SmartSummaryRepository(this.clientDB) }
+
     async get() {
         throw new Error('Method not implemented.');
     }
@@ -58,36 +62,7 @@ export default class SmartService extends BaseApi implements IService {
             };
         });
 
-        return await this.clientDB.getProductModel().aggregate([
-            {
-                $lookup: {
-                    from: 'Categories',
-                    localField: 'category',
-                    foreignField: '_id',
-                    as: 'categoryDetail'
-                }
-            },
-            {
-                $lookup: {
-                    from: 'Brands',
-                    localField: 'brand',
-                    foreignField: '_id',
-                    as: 'brandDetail'
-                }
-            },
-            { $match: { $and: matchQueries } },
-            { $limit: 10 },
-            {
-                $project: {
-                    _id: 1,
-                    title: 1,
-                    image: { $arrayElemAt: ["$images.url", 0] },
-                    price: "$prices.minSalePrice",
-                    stock: "$stock",
-                    brand: { $arrayElemAt: ["$brandDetail.title", 0] }
-                }
-            }
-        ]);
+        return await this.summaries.searchProducts(matchQueries);
     }
 
     /**
@@ -110,13 +85,7 @@ export default class SmartService extends BaseApi implements IService {
             };
         });
 
-        return await this.clientDB.getCustomerModel().find({ $and: matchQueries }, {
-            _id: 1,
-            firstName: 1,
-            lastName: 1,
-            phone: 1,
-            email: 1
-        }).limit(10).lean();
+        return await this.summaries.searchCustomers(matchQueries);
     }
 
     /**
@@ -138,14 +107,7 @@ export default class SmartService extends BaseApi implements IService {
             };
         });
 
-        return await this.clientDB.getOrderModel().find({ $and: matchQueries }, {
-            _id: 1,
-            orderNumber: 1,
-            'billingAddress.firstName': 1,
-            'billingAddress.lastName': 1,
-            integrationCode: 1,
-            'dates.orderDate': 1 // [ADR-0021 D1 / GV-02] şema alanı dates.orderDate (üst düzey orderDate yoktu)
-        }).sort({ 'dates.orderDate': -1 }).limit(10).lean();
+        return await this.summaries.searchOrders(matchQueries);
     }
 
     /**
@@ -165,30 +127,6 @@ export default class SmartService extends BaseApi implements IService {
             };
         });
 
-        return await this.clientDB.getClaimModel().aggregate([
-            {
-                $lookup: {
-                    from: 'Customers',
-                    localField: 'customerId',
-                    foreignField: '_id',
-                    as: 'customerDetail'
-                }
-            },
-            { $match: { $and: matchQueries } },
-            { $limit: 10 },
-            {
-                $project: {
-                    _id: 1,
-                    externalClaimId: 1,
-                    externalOrderId: 1,
-                    type: 1,
-                    integrationCode: 1,
-                    customer: {
-                        firstName: { $arrayElemAt: ["$customerDetail.firstName", 0] },
-                        lastName: { $arrayElemAt: ["$customerDetail.lastName", 0] }
-                    }
-                }
-            }
-        ]);
+        return await this.summaries.searchClaims(matchQueries);
     }
 }

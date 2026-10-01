@@ -4,6 +4,10 @@ import { ApplicationError } from '@platform/core/security/Security'
 import { ObjectId } from 'mongodb'
 import { ATTENTION_ALLOCATION_STATES } from '@operations/stock/allocationStates'
 import { pickLowStockThreshold, STOCK_POLICY_LIMITS } from '@operations/stock/stockPolicyValidation'
+import { VariantRepository } from '@database/repositories/tenant/VariantRepository'
+import { StockMovementRepository } from '@database/repositories/tenant/StockMovementRepository'
+import { StockHealthRepository } from '@database/repositories/tenant/StockHealthRepository'
+import { MetricRollupRepository } from '@database/repositories/app/MetricRollupRepository'
 import { getPublishLagSummary, PUBLISH_LAG_WINDOWS, PublishLagWindow } from '@operations/stock/publishLag'
 
 const DEFAULT_RECENT_LIMIT = 20
@@ -23,6 +27,11 @@ const CHANNEL_RE = /^[A-Za-z0-9_-]{1,64}$/
  * DÖNMEZ; yalnızca toplamlar döner.
  */
 export default class StockService extends BaseApi implements IService {
+    // getter'lar: test, servisi kurduktan SONRA svc.clientDB / svc.applicationDB atıyor
+    private get variants() { return new VariantRepository(this.clientDB) }
+    private get movements() { return new StockMovementRepository(this.clientDB) }
+    private get health() { return new StockHealthRepository(this.clientDB) }
+    private get metricRollups() { return new MetricRollupRepository(this.applicationDB) }
 
     async get(): Promise<any> {
         // IService gereksinimi; kullanılmıyor
@@ -46,29 +55,14 @@ export default class StockService extends BaseApi implements IService {
         }
 
         const attention = [...ATTENTION_ALLOCATION_STATES]
-        const orderMatch = { items: { $elemMatch: { allocationState: { $in: attention } } } }
-        const orderModel = this.clientDB.getOrderModel()
-        const variantModel = this.clientDB.getVariantModel()
 
         const [stateRows, recentOrders, variantTotals, withReservations, overReserved, publishPending] = await Promise.all([
-            orderModel.aggregate([
-                { $match: orderMatch },
-                { $unwind: '$items' },
-                { $match: { 'items.allocationState': { $in: attention } } },
-                { $group: { _id: '$items.allocationState', lines: { $sum: 1 }, units: { $sum: '$items.quantity' } } },
-            ]),
-            orderModel.aggregate([
-                { $match: orderMatch },
-                { $sort: { 'dates.orderDate': -1 } },
-                { $limit: limit },
-                { $project: { orderNumber: 1, externalOrderId: 1, integrationCode: 1, 'dates.orderDate': 1, items: 1 } },
-            ]),
-            variantModel.aggregate([
-                { $group: { _id: null, total: { $sum: 1 }, totalStock: { $sum: '$stock' }, reservedUnits: { $sum: '$reserved' } } },
-            ]),
-            variantModel.countDocuments({ reserved: { $gt: 0 } }),
-            variantModel.countDocuments({ $expr: { $gt: [{ $ifNull: ['$reserved', 0] }, { $ifNull: ['$stock', 0] }] } }),
-            variantModel.countDocuments({ stockDirty: true }),
+            this.health.attentionStateTotals(attention),
+            this.health.recentAttentionOrders(attention, limit),
+            this.variants.stockTotals(),
+            this.variants.countWithReservations(),
+            this.variants.countOverReserved(),
+            this.variants.countPublishPending(),
         ])
 
         const count = (state: string) => {
@@ -174,7 +168,7 @@ export default class StockService extends BaseApi implements IService {
         let threshold: number | null = requested ?? null
         let thresholdSource: 'request' | 'tenant' | null = requested !== undefined ? 'request' : null
         if (threshold === null) {
-            const doc: any = await this.clientDB.getClientIntegrationModel().findOne({}, { 'stockPolicy.lowStockThreshold': 1 }).lean()
+            const doc: any = await this.health.findLowStockThresholdDoc()
             threshold = pickLowStockThreshold(doc?.stockPolicy?.lowStockThreshold)
             if (threshold !== null) thresholdSource = 'tenant'
         }
@@ -193,7 +187,7 @@ export default class StockService extends BaseApi implements IService {
         pipeline.push({ $sort: { _avail: 1, _id: 1 } }, { $limit: limit + 1 })
         pipeline.push({ $project: { productId: 1, stockcode: 1, barcode: 1, stock: 1, reserved: 1, _avail: 1, ...(publishedField ? { _published: `$${publishedField}` } : {}) } })
 
-        const rows: any[] = await this.clientDB.getVariantModel().aggregate(pipeline).option({ maxTimeMS: QUERY_MAX_TIME_MS })
+        const rows: any[] = await this.variants.aggregateWithMaxTime(pipeline, QUERY_MAX_TIME_MS)
         const page = rows.slice(0, limit)
         const last = page[page.length - 1]
         return {
@@ -244,7 +238,7 @@ export default class StockService extends BaseApi implements IService {
             variantId = new ObjectId(req.variantId)
         } else {
             if (typeof req.barcode !== 'string' || req.barcode.length < 1 || req.barcode.length > 200) throw new ApplicationError('barcode geçersiz.', 400)
-            const v: any = await this.clientDB.getVariantModel().findOne({ barcode: req.barcode }, { _id: 1 }).lean()
+            const v: any = await this.variants.findIdByBarcode(req.barcode)
             if (!v) return { variantId: null, items: [], nextCursor: null }
             variantId = new ObjectId(String(v._id))
         }
@@ -256,8 +250,7 @@ export default class StockService extends BaseApi implements IService {
             if (Number.isNaN(at.getTime())) throw new ApplicationError('cursor geçersiz.', 400)
             and.push({ $or: [{ at: { $lt: at } }, { at, _id: { $lt: new ObjectId(cursor[1]) } }] })
         }
-        const rows: any[] = await this.clientDB.getStockMovementModel().find({ $and: and })
-            .sort({ at: -1, _id: -1 }).limit(limit + 1).maxTimeMS(QUERY_MAX_TIME_MS).lean()
+        const rows: any[] = await this.movements.findPage(and, limit, QUERY_MAX_TIME_MS)
         const page = rows.slice(0, limit)
         const last = page[page.length - 1]
         return {
@@ -284,6 +277,6 @@ export default class StockService extends BaseApi implements IService {
     async getPublishLagSummary(): Promise<any> {
         const window = this.request?.window ?? '1h'
         if (!(PUBLISH_LAG_WINDOWS as ReadonlyArray<string>).includes(window)) throw new ApplicationError("window '1h' ya da '24h' olmalıdır.", 400)
-        return getPublishLagSummary(this.applicationDB.getMetricRollupModel(), window as PublishLagWindow)
+        return getPublishLagSummary(this.metricRollups.queryModel(), window as PublishLagWindow)
     }
 }
