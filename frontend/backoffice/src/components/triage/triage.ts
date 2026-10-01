@@ -23,19 +23,27 @@ export const HEALTH_BADGE: Record<Health, { label: string; icon: string; tone: S
   unknown: { label: 'Bilinmiyor', icon: 'mdi-help-circle-outline', tone: 'neutral' },
 }
 
-/** Dikkat listesinin bir maddesi: ne oldu (title) · ne kadar ciddi (severity + impact) · ne yapmalı (advice) · eylem. */
+/**
+ * Dikkat listesinin bir maddesi: ne oldu (title + why) · ne kadar ciddi (severity + count + impact + since) ·
+ * ne yapmalı (advice) · eylem (action: ilgili ekran + süzgeç). Metin kaynağı sayfanındır (pano: sunucu metni).
+ */
 export interface AttentionEntry {
   id: string
   severity: Severity
   title: string
-  impact: string
-  advice: string
-  action: { label: string; to: RouteLocationRaw }
+  why?: string
+  impact?: string | null
+  /** "1.240 iş" gibi sayı + birim. */
+  count?: string | null
+  advice?: string
+  action?: { label: string; to: RouteLocationRaw }
   secondary?: { label: string; to: RouteLocationRaw }
+  /** Yerinde güvenli eylem önerileri — ilgili ekranda step-up + gerekçeyle yapılır (yalnız ipucu olarak gösterilir). */
+  capabilities?: Array<{ label: string; capabilityId: string }>
   /** Durumun başladığı an (ISO) → "52 dk önce başladı". */
   since?: string
-  /** Müşteri kapsamlı maddede nötr kimlik etiketi. */
-  tenant?: { tid: number; name: string | null }
+  /** Etkilenen müşteriler (≤ 5 örnek): nötr kimlik etiketi, müşteri detayına bağlı. */
+  subjects?: Array<{ tid: number; name: string | null }>
 }
 
 /** Bir madde listesinden sağlık hükmü: kritik varsa critical, uyarı varsa warning, yoksa ok (info sağlığı bozmaz). */

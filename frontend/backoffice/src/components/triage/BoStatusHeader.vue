@@ -88,16 +88,15 @@ const badge = computed(() => HEALTH_BADGE[props.health])
   box-shadow: var(--ek-shadow-card);
 }
 
+/* Sorun varken de yüzey sakin kalır: ton sol çizgi, ikon ve rozette (kırmızı az olursa görülür). */
 .bo-sh.is-warning {
   --bo-sh-accent: var(--ek-color-warning);
-  background: var(--ek-color-warning-subtle);
   border-color: var(--ek-color-warning-border);
   border-left-color: var(--bo-sh-accent);
 }
 
 .bo-sh.is-critical {
   --bo-sh-accent: var(--ek-color-error);
-  background: var(--ek-color-error-subtle);
   border-color: var(--ek-color-error-border);
   border-left-color: var(--bo-sh-accent);
 }
@@ -249,8 +248,15 @@ const badge = computed(() => HEALTH_BADGE[props.health])
     align-items: flex-start;
   }
 
+  .bo-sh__text {
+    flex: 1 1 calc(100% - var(--ek-icon-lg) - var(--ek-space-3));
+  }
+
+  .bo-sh__verdict {
+    font-size: var(--ek-type-body-size);
+  }
+
   .bo-sh__badge {
-    order: 3;
     margin-left: calc(var(--ek-icon-lg) + var(--ek-space-3));
   }
 

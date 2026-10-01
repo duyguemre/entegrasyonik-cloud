@@ -96,15 +96,16 @@ const PLAN_ITEMS = [{ title: 'Tüm planlar', value: '' }, ...Object.entries(PLAN
 // Süzgeçler URL'de (?durum= ?plan=): hüküm bağlantıları ve paylaşılan görünüm aynı listeyi açar.
 const route = useRoute()
 const router = useRouter()
-const queryRef = <T extends string>(key: string, valid: (v: string) => boolean, fallback: T) =>
+// `alias`: genel bakış (getAttention) sözleşme adıyla gelir (`status=past_due`) — okunur, yazımda Türkçe ada çevrilir.
+const queryRef = <T extends string>(key: string, valid: (v: string) => boolean, fallback: T, alias?: string) =>
   computed<T>({
     get: () => {
-      const v = route.query[key]
+      const v = route.query[key] ?? (alias ? route.query[alias] : undefined)
       return typeof v === 'string' && valid(v) ? (v as T) : fallback
     },
-    set: (v) => void router.replace({ query: { ...route.query, [key]: v || undefined } }),
+    set: (v) => void router.replace({ query: { ...route.query, ...(alias ? { [alias]: undefined } : {}), [key]: v || undefined } }),
   })
-const status = queryRef<SubscriptionStatus | ''>('durum', (v) => v in SUB_STATUS, '')
+const status = queryRef<SubscriptionStatus | ''>('durum', (v) => v in SUB_STATUS, '', 'status')
 const plan = queryRef<string>('plan', (v) => v in PLAN, '')
 const filtered = computed(() => !!status.value || !!plan.value)
 
@@ -123,7 +124,7 @@ function cardLabel(s: SubscriptionRow) {
 }
 function clearFilters() {
   // Tek geçişte: iki ayrı replace eski sorguyu üst üste yazar.
-  void router.replace({ query: { ...route.query, durum: undefined, plan: undefined } })
+  void router.replace({ query: { ...route.query, durum: undefined, status: undefined, plan: undefined } })
 }
 
 watch([status, plan], () => list.reload())

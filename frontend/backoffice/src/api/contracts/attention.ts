@@ -1,118 +1,118 @@
 /**
- * Genel bakış triyajı — "dikkat gerektirenler" + "nabız" (K51, BO1-DASH). [ÖNERİ — BE yazılıyor]
- * Uçlar: `BackofficeOverviewService/getAttention`, `BackofficeOverviewService/getPulse`.
- * Resmî sözleşme `docs/cloud-contracts/API_BACKOFFICE_ATTENTION.md` gelene dek bu dosya ÖNERİDİR
- * (`frontend/backoffice/docs/ATTENTION_CONTRACT_PROPOSAL.md`). Ekranlar bu tipleri DOĞRUDAN kullanmaz;
- * `src/api/attention.ts` adaptörü görünüm modeline çevirir (sözleşme değişirse yalnız adaptör değişir).
+ * Yönlendiren genel bakış — `getAttention` + `getPulse` (K51, BO1-DASH). [SÖZLEŞME: docs/cloud-contracts/API_BACKOFFICE_ATTENTION.md]
+ * Alan adları sözleşmeden BİREBİR. Ekranlar bu tipleri DOĞRUDAN kullanmaz; `src/api/attention.ts` adaptörü görünüm
+ * modeline çevirir (sözleşme değişirse yalnız adaptör değişir). BE-01..06 ekleri bu dosyada değil (bo-r1b kapsamı).
  */
 
 export type AttentionSeverity = 'critical' | 'warning' | 'info'
-export type AttentionScope = 'system' | 'tenant'
+export type AttentionGroup = 'system' | 'customers'
+export type AttentionCountUnit = 'iş' | 'müşteri' | 'çağrı' | 'sorgu' | 'uyarı' | 'kayıt' | 'pod'
 
-/**
- * Bilinen türler. Metin (ne oldu / ne yapmalı) istemcide `kind`'e göre kurulur; bilinmeyen tür genel metinle gösterilir.
- * Sistem: dependency.down, queue.dlq, queue.backlog, queue.unavailable, breaker.open, integration.error_rate,
- *   integration.latency, issue.spike, alert.firing, intake.restricted
- * Müşteri: tenant.integration_failing, tenant.auth_failed, tenant.sync_lag, tenant.payment_failed, tenant.trial_ending,
- *   tenant.suspended, tenant.provisioning_failed, tenant.deletion_pending, tenant.support_waiting
- */
-export type AttentionKind = string
+/** Kontrol bölümü (`degradedSections.section`). `alerts` iki grubu da besler. */
+export type AttentionSection =
+  | 'queues'
+  | 'circuits'
+  | 'apiHealth'
+  | 'leases'
+  | 'infra'
+  | 'alerts'
+  | 'slowQueries'
+  | 'orderSync'
+  | 'subscriptions'
+  | 'lifecycle'
+  | 'tickets'
 
-export interface AttentionTarget {
-  /** Ekran kaydı anahtarı (`navigation/screens.ts`) ya da detay rota adı (`tenant`, `subscription`). */
-  screen: string
-  /** Detay rotası parametreleri (ör. `{ tid: 107 }`). */
-  params?: Record<string, string | number>
-  /** Hedef ekranda önceden uygulanacak süzgeç (ör. `{ sekme: 'basarisiz', kaynak: 'dlq' }`). */
-  query?: Record<string, string>
-}
+export type AttentionAction =
+  | { label: string; kind: 'navigate'; target: { route: string; query?: Record<string, string> } }
+  | { label: string; kind: 'action'; capabilityId: string }
 
 export interface AttentionItemDto {
-  /** Kararlı kimlik (`<kind>:<anahtar>`); aynı sorun yenilemelerde aynı id ile gelir. */
+  /** `<grup kısaltması>.<kontrol>[:<kapsam>]` — ör. `sys.queue.dlq:order-sync-queue`, `cus.payment.problem`. */
   id: string
-  scope: AttentionScope
+  group: AttentionGroup
   severity: AttentionSeverity
-  kind: AttentionKind
-  /** Durumun başladığı an (ISO). */
-  since: string
-  /** Metin parametreleri — yalnız sayı, kod, kısa ad; yük/hata METNİ yok. */
-  facts: {
-    count?: number
-    tenantCount?: number
-    rate?: number
-    thresholdRate?: number
-    valueMs?: number
-    integrationCode?: string
-    queue?: string
-    daysLeft?: number
-    dependency?: 'mongo' | 'redis'
-    errorCode?: string
-    step?: string
-  }
-  tid?: number
-  tenantName?: string | null
-  target: AttentionTarget
-  /** Kaynak kayıt (sorun parmak izi, uyarı id'si) — iz bağlantısı için. */
-  ref?: { fp?: string; alertId?: string }
+  /** TR, ≤ 60 karakter. */
+  title: string
+  /** Tek cümle, ≤ 200 karakter. */
+  why: string
+  count: number | null
+  countUnit: AttentionCountUnit | null
+  /** Tek cümle, ≤ 160 karakter ya da null. */
+  impact: string | null
+  since: string | null
+  /** Yalnız müşteri öğeleri (ve tenant'a özgü sistem öğeleri); ≤ 5 örnek. */
+  subjects?: Array<{ tid: number; name: string | null }>
+  /** 1..3; ilki önerilen (birincil). */
+  actions: AttentionAction[]
+}
+
+export interface AttentionGroupDto {
+  total: number
+  truncated: boolean
+  items: AttentionItemDto[]
+}
+
+export interface GetAttentionRequest {
+  /** 1..50, varsayılan 20 — GRUP başına üst sınır. */
+  limit?: number
 }
 
 export interface GetAttentionResponse {
   generatedAt: string
-  /** critical > 0 → 'critical'; warning > 0 → 'warning'; aksi 'ok'. Okunamayan kaynak varsa `degradedSources` doludur. */
-  status: 'ok' | 'warning' | 'critical'
-  counts: Record<AttentionScope, Record<AttentionSeverity, number>>
-  /** Önem sırasına dizili (critical → warning → info, sonra `since` eskiden yeniye). Sınır: kapsam başına 25. */
-  items: AttentionItemDto[]
-  /** Hangi denetimler yapıldı — "her şey yolunda" durumunda neyin denetlendiğini söylemek için. */
-  checks: Array<{ key: string; scope: AttentionScope; status: 'ok' | 'degraded' }>
-  /** Okunamayan kaynaklar (bölüm düşmez, liste eksik olabilir). */
-  degradedSources: string[]
+  status: 'ok' | 'attention' | 'degraded'
+  /** İki grup toplamı (kesmeden önce). */
+  summary: Record<AttentionSeverity, number>
+  degradedSections: Array<{ section: AttentionSection; error: 'timeout' | 'error' }>
+  groups: Record<AttentionGroup, AttentionGroupDto>
 }
 
-export type PulseRange = '24h' | '7d'
-export interface PulsePoint {
+// ---------------------------------------------------------------- getPulse
+type Degraded = { status: 'degraded'; error: 'timeout' | 'error' }
+type Ok<T> = { status: 'ok' } & T
+
+export interface PulseHourlyCount {
   t: string
-  v: number | null
+  count: number
 }
-export interface PulseMetric {
-  value: number | null
-  /** Önceki eş dönem (24h → dünkü aynı saatler, 7d → önceki 7 gün); yoksa null. */
-  previous: number | null
-  series: PulsePoint[]
+export interface PulseHourlyRate {
+  t: string
+  requests: number
+  errors5xx: number
+  rate: number | null
 }
+
+export type PulseTenants = Ok<{ active: number; total: number; byStatus: Record<string, number> }> | Degraded
+export type PulseOrders =
+  | Ok<{ computable: boolean; last24h: number | null; last7d: number | null; previous24h: number | null; hourly: PulseHourlyCount[]; note?: string }>
+  | Degraded
+export type PulseCalls =
+  | Ok<{
+      http: { computable: boolean; last24h: number | null; last7d: number | null; hourly: PulseHourlyCount[]; note?: string }
+      integration: { computable: boolean; last24h: number | null; last7d: number | null; note?: string }
+    }>
+  | Degraded
+export type PulseErrorRate =
+  | Ok<{
+      http: { computable: boolean; hourly: PulseHourlyRate[]; note?: string }
+      integration: { computable: boolean; last24h: number | null; last7d: number | null; note?: string }
+    }>
+  | Degraded
+export type PulseMrr =
+  | Ok<{ computable: boolean; unit: 'minor'; currency: Record<string, number>; activeSubscriptions: number; trialing: number; lostLast30d: number; note?: string }>
+  | Degraded
+
 export interface GetPulseResponse {
   generatedAt: string
-  range: PulseRange
-  system: {
-    requestsPerMinute: PulseMetric
-    errorRate: PulseMetric
-    p95Ms: PulseMetric
-    ordersProcessed: PulseMetric
-    catalogPublished: PulseMetric
-  }
-  customers: {
-    active: number
-    trialing: number
-    pastDue: number
-    suspended: number
-    deletionPending: number
-    newInRange: number
-    churnedInRange: number
-    /** Aylık yinelenen gelir (kuruş) para birimine göre. */
-    mrrMinor: Record<string, number>
-    /** Önceki eş dönemdeki MRR (kuruş). */
-    mrrPreviousMinor: Record<string, number>
-  }
-  usage: {
-    connectedChannels: Array<{ code: string; tenants: number }>
-    activeTenantsInRange: number
-  }
-  degradedSources: string[]
+  tenants: PulseTenants
+  orders: PulseOrders
+  calls: PulseCalls
+  errorRate: PulseErrorRate
+  mrr: PulseMrr
 }
 
 declare module '../contract' {
   interface AdminRpc {
-    'BackofficeOverviewService/getAttention': [Record<string, never>, GetAttentionResponse]
-    'BackofficeOverviewService/getPulse': [{ range?: PulseRange }, GetPulseResponse]
+    'BackofficeOverviewService/getAttention': [GetAttentionRequest, GetAttentionResponse]
+    'BackofficeOverviewService/getPulse': [Record<string, never>, GetPulseResponse]
   }
 }

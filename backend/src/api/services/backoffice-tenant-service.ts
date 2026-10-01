@@ -3,6 +3,9 @@ import { BaseApi } from '../BaseApi'
 import { ApplicationError } from '../Security'
 import { createTenantLifecycleService } from '../tenantLifecycleFactory'
 import { getTenantLifecycle } from '../../operations/backoffice/tenantLifecycle'
+import { listTenants, getHealthSummary, type TenantOpsDeps } from '../../operations/backoffice/tenantOps'
+import { productionFailedBullJobs } from './backoffice-attention-support'
+import { auditSensitiveRead } from './backoffice-support'
 
 /**
  * B2 (plan §2.2) -- müşteri (tenant) yaşam döngüsü paneli. Yalnız platformAdmin (`/admin-api`). `getLifecycle` salt okunur ve `backoffice.sensitive_read`
@@ -17,6 +20,25 @@ export default class BackofficeTenantService extends BaseApi implements IService
             clientModel: this.applicationDB.getClientModel(), subscriptionModel: this.applicationDB.getSubscriptionModel(), auditModel: this.applicationDB.getAuditLogModel(),
         }, this.request?.tid)
     }
+
+    private opsDeps(): TenantOpsDeps {
+        const db = this.applicationDB
+        return {
+            clientModel: db.getClientModel(), subscriptionModel: db.getSubscriptionModel(), errorEventModel: db.getErrorEventModel(), dlqModel: db.getDeadLetterQueueModel(),
+            callMetricModel: db.getIntegrationCallMetricModel(), alertModel: db.getAlertModel(), failedBullJobs: productionFailedBullJobs,
+        }
+    }
+
+    /** BE-01 (K51): müşteri listesi + operasyon özeti. Tenant adı = PII sayılabilir -> çağrı başına tek `backoffice.sensitive_read` (yalnız süzgeç özeti). */
+    async listTenants(): Promise<any> {
+        const r = this.request || {}
+        const out = await listTenants(this.opsDeps(), r)
+        auditSensitiveRead(this.request, 'BackofficeTenantService', 'listTenants', { hasIssues: r.hasIssues, subscriptionStatus: r.subscriptionStatus, status: r.status, q: r.q ? '[q]' : undefined, sortBy: r.sortBy }, out.items.length)
+        return out
+    }
+
+    /** BE-02 (K51): "Şu an" kartı; yalnız sayaç/kod (hassas okuma değil, denetimsiz). */
+    async getHealthSummary(): Promise<any> { return getHealthSummary(this.opsDeps(), this.request?.tid) }
 
     async cancelDeletion(): Promise<any> {
         const tid = this.request?.tid

@@ -157,7 +157,10 @@ const COLUMNS: EkTableColumn[] = [
 const router = useRouter()
 const route = useRoute()
 // NT-03: süzgeçler URL'de (?durum=, ?onem=, ?kural=); varsayılan "Etkin" yazılmaz.
-const qs = (k: string) => (typeof route.query[k] === 'string' ? (route.query[k] as string) : '')
+// Genel bakış (getAttention) sözleşme adlarıyla da gelir: `status` → durum, `ruleId` → kural (BO_UI_PATTERNS §11.6).
+const ALIAS: Record<string, string> = { durum: 'status', kural: 'ruleId' }
+const str = (v: unknown) => (typeof v === 'string' ? v : '')
+const qs = (k: string) => str(route.query[k]) || (ALIAS[k] ? str(route.query[ALIAS[k]]) : '')
 const status = ref<AlertStatus | 'all'>(['firing', 'resolved', 'all'].includes(qs('durum')) ? (qs('durum') as AlertStatus | 'all') : 'firing')
 const level = ref<AlertLevel | 'all'>(['critical', 'warning'].includes(qs('onem')) ? (qs('onem') as AlertLevel) : 'all')
 const rule = ref<string | null>(qs('kural') in ALERT_RULE ? qs('kural') : null)

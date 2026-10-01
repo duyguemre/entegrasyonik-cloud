@@ -70,17 +70,6 @@ export const CHANNEL: Record<string, string> = {
   bizimhesap: 'Bizimhesap',
 }
 
-/** Hesap kurulum adımı (B2 yaşam döngüsü `provisioning.steps[].step`). */
-export const PROVISIONING_STEP: Record<string, string> = {
-  client: 'Mağaza kaydı',
-  'order-limit': 'Sipariş limiti',
-  'central-user': 'Merkezi kullanıcı',
-  'tenant-seed': 'Tenant veritabanı',
-  'tenant-user': 'Tenant kullanıcısı',
-  subscription: 'Abonelik',
-  activate: 'Etkinleştirme',
-}
-
 /** Kanal türü (Clients.integrations[].type) — ham enum ekranda gösterilmez (BO-ELEV ST-3). Bilinmeyen tür olduğu gibi. */
 export const CHANNEL_TYPE: Record<string, string> = {
   MARKETPLACE: 'Pazaryeri',

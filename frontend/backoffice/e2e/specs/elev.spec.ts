@@ -6,17 +6,16 @@ import { expectNoA11yViolations, settle, signInFully } from '../support/session'
 test.describe('BO-ELEV', () => {
   test.beforeEach(async ({ page }) => signInFully(page))
 
-  test('genel bakış: şerit maddeleri hedef ekrana bağlı; DLQ maddesi ölü mektuplara açılır; axe 0', async ({ page }) => {
+  // BO-R1a: karar şeridi yerini durum başlığı + dikkat listelerine bıraktı (bkz. r1a.spec.ts); burada yalnız DLQ bağlantısı.
+  test('genel bakış: DLQ maddesinin eylemi ölü mektuplara süzgeçle açılır; axe 0', async ({ page }) => {
     await settle(page)
-    const strip = page.getByTestId('overall-status')
-    await expect(strip.getByText(/konu dikkat istiyor/)).toBeVisible()
+    await expect(page.getByTestId('status-header')).toBeVisible()
     await expectNoA11yViolations(page)
-    await strip.getByRole('link', { name: /elle inceleme bekliyor/ }).click()
+    const more = page.getByTestId('triage-sistem').getByRole('button', { name: /madde daha göster/ })
+    if (await more.count()) await more.click()
+    await page.getByTestId('triage-sistem').getByRole('link', { name: 'Ölü mektuplara git' }).click()
     await expect(page).toHaveURL(/\/motor\?.*kaynak=dlq/)
     await expect(page.getByRole('radio', { name: 'Ölü mektup' })).toHaveAttribute('aria-checked', 'true')
-    await page.goBack()
-    await page.getByTestId('overall-status').getByRole('link', { name: /Hata oranı/ }).click()
-    await expect(page).toHaveURL(/\/loglar\?level=fatal(%2C|,)error/)
   })
 
   test('klavye: g → m müşteri listesi, g → d denetim; ? kısayol yardımı (axe 0, Esc kapatır)', async ({ page }, info) => {
@@ -80,7 +79,7 @@ test.describe('BO-ELEV', () => {
     await page.evaluate(`window.__boMock.failOps('BackofficeOverviewService/')`)
     await page.getByRole('button', { name: 'Yenile', exact: true }).click()
     await expect(page.getByTestId('page-updated')).toContainText('Yenilenemedi')
-    await expect(page.getByTestId('overall-status')).toBeVisible()
+    await expect(page.getByTestId('status-header')).toBeVisible()
     await page.evaluate(`window.__boMock.failOps(null)`)
     await page.getByRole('button', { name: 'Yenile', exact: true }).click()
     await expect(page.getByTestId('page-updated')).toContainText('Güncellendi')

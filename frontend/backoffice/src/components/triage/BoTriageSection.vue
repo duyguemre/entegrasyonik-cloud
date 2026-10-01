@@ -1,7 +1,7 @@
 <!--
   BoTriageSection — soru-cevap bölümü (BO_UI_PATTERNS §11.5). Başlık bir SORUDUR ("Müşterilerimde müdahale gereken var
   mı?"), hemen yanında tek kelimelik/kısa CEVAP rozeti ("Evet · 2 kritik" / "Hayır"). Gövde: cevabın kanıtı
-  (dikkat listesi, sakin trend). Bölümler sayfada sorulma sırasıyla dizilir; numara okuma sırasını gösterir.
+  (dikkat listesi, sakin trend). `#tools` yuvası başlığın sağında (ör. aralık seçimi). Bölümler sayfada sorulma sırasıyla dizilir; numara okuma sırasını gösterir.
 
     <BoTriageSection id="sistem" :index="1" question="Sistemde müdahale gereken var mı?" :health="h" answer="Evet · 1 kritik">
       <BoAttentionList … />
@@ -14,6 +14,7 @@
       <component :is="`h${headingLevel}`" :id="`${id}-q`" class="bo-ts__q">{{ question }}</component>
       <EkStatusChip v-if="answer" class="bo-ts__a" :tone="tone" :label="answer" dot data-testid="triage-answer" />
       <span class="bo-ts__spacer"></span>
+      <slot name="tools" />
       <RouterLink v-if="more" :to="more.to" class="bo-ts__more">{{ more.label }}<v-icon icon="mdi-arrow-right" aria-hidden="true" /></RouterLink>
     </header>
     <p v-if="lede" class="bo-ts__lede">{{ lede }}</p>
@@ -130,6 +131,14 @@ const tone = computed<StatusTone>(() => (props.calm ? 'neutral' : HEALTH_BADGE[p
 @media (max-width: 600px) {
   .bo-ts {
     padding: var(--ek-space-3) var(--ek-space-4);
+  }
+
+  /* Soru kendi satırında (numarayla); cevap rozeti ve bağlantı alt satıra iner — üst üste binme yok. */
+  .bo-ts__q {
+    flex: 1 1 calc(100% - 22px - var(--ek-space-3));
+    min-width: 0;
+    font-size: var(--ek-type-body-size);
+    line-height: var(--ek-type-body-line);
   }
 }
 </style>

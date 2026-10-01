@@ -109,7 +109,7 @@ export const SCREENS: BoScreen[] = [
     key: 'overview',
     hotkey: 'o',
     label: 'Genel bakış',
-    lede: 'Platformun anlık sağlığı: bağımlılıklar, istek sağlığı, kuyruklar ve dikkat isteyen sorunlar.',
+    lede: 'Önce müdahale gerekenler, sonra büyük resim: sistem ve müşteri sorunları öncelik sırasıyla, her birinde ne yapmalı.',
     icon: 'mdi-view-dashboard-outline',
     group: 'overview',
     status: 'ready',

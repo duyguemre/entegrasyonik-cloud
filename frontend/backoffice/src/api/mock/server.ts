@@ -7,6 +7,7 @@
 import type {
   AdminOp,
   ApiErrorBody,
+  AttentionSection,
   AuditRecord,
   BackofficeMe,
   GetIssueGroupsRequest,
@@ -26,6 +27,7 @@ import { REASON_MIN, REAUTH_OPS } from '../contract'
 import { MockHttpError } from './errors'
 import { DAY, HOUR, ISSUE_TENANTS, MOCK_ACCOUNTS, buildAudit, buildClients, buildLogStore, rng } from './data'
 import { UNHANDLED, assertImpersonatable, createP2Domains, publicConfigOf, setMockFeatureFlags, type MockCtx } from './ops'
+import { buildAttention, buildPulse } from './ops/attention'
 
 export interface MockResponse {
   status: number
@@ -73,6 +75,9 @@ export class MockAdminServer {
   private degraded = false
   private liveReadonly = false
   private failPrefix: string | null = null
+  private calm = false
+  private attentionMissing = false
+  private attentionSections: AttentionSection[] = []
   private readonly p2: ReturnType<typeof createP2Domains>
   private readonly degradedSections = new Map<OverviewSectionKey, 'timeout' | 'error'>()
   private readonly t0: number
@@ -116,6 +121,21 @@ export class MockAdminServer {
   /** NOTIFY_EMAIL_ENABLED=false: sendTestEmail 503 NOTIFY_EMAIL_UNAVAILABLE. */
   setNotifyEmail(value: boolean) {
     this.p2.notifications.setEmailEnabled(value)
+  }
+
+  /** "Her şey yolunda" senaryosu (BO-R1): getAttention boş, getHealth olağan (DLQ 0, hata oranı düşük, alım açık, yeni sorun yok). */
+  setCalm(value: boolean) {
+    this.calm = value
+  }
+
+  /** getAttention/getPulse henüz yok (eski backend) → 404 NOT_FOUND; adaptörün getHealth geri düşüşü denenir. */
+  setAttentionMissing(value: boolean) {
+    this.attentionMissing = value
+  }
+
+  /** getAttention'da okunamayan kontroller (ör. `['circuits']`); `[]` düzeltir. */
+  setAttentionDegraded(sections: AttentionSection[]) {
+    this.attentionSections = [...sections]
   }
 
   /** Hata durumu denemesi: öneki eşleşen operasyonlar 500 INTERNAL döner (ör. `failOps('BackofficeBillingService/')`); null kapatır. */
@@ -228,6 +248,12 @@ export class MockAdminServer {
         }
       case 'BackofficeOverviewService/getHealth':
         return this.getHealth()
+      case 'BackofficeOverviewService/getAttention':
+        if (this.attentionMissing) break
+        return buildAttention(this.ctx(), body, { calm: this.calm, sections: this.attentionSections })
+      case 'BackofficeOverviewService/getPulse':
+        if (this.attentionMissing) break
+        return buildPulse(this.ctx(), body, { calm: this.calm })
       case 'BackofficeTenantService/startImpersonation': {
         const reason = String(body.reason ?? '').trim()
         if (reason.length < 10) {
@@ -280,9 +306,9 @@ export class MockAdminServer {
         windowMinutes: 60,
         from: iso(now - HOUR),
         requests: 1284,
-        byStatusClass: { '2xx': 1221, '4xx': 41, '5xx': 22 },
-        errors5xx: 22,
-        errorRate: 22 / 1284,
+        byStatusClass: { '2xx': this.calm ? 1238 : 1221, '4xx': 41, '5xx': this.calm ? 5 : 22 },
+        errors5xx: this.calm ? 5 : 22,
+        errorRate: (this.calm ? 5 : 22) / 1284,
         requestsPerMinute: 21.4,
         durationAvgMs: 142,
         durationP95Ms: 500,
@@ -294,12 +320,14 @@ export class MockAdminServer {
         status: 'ok' as const,
         items: [
           redisUp
-            ? { name: 'order-sync-queue', available: true, backlog: 5, active: 2, failed: 3, dlqPending: 1 }
-            : { name: 'order-sync-queue', available: false, backlog: null, active: null, failed: null, dlqPending: 1 },
+            ? { name: 'order-sync-queue', available: true, backlog: 5, active: 2, failed: this.calm ? 0 : 3, dlqPending: this.calm ? 0 : 1 }
+            : { name: 'order-sync-queue', available: false, backlog: null, active: null, failed: null, dlqPending: this.calm ? 0 : 1 },
         ],
       },
-      intake: { status: 'ok' as const, allOpen: false, scope: 'process' as const, restricted: [{ target: 'platform:n11', intake: 'drain' }] },
-      issues: { status: 'ok' as const, open: open.length, newLast24h: open.filter((i) => now - Date.parse(i.firstSeen) < DAY).length },
+      intake: this.calm
+        ? { status: 'ok' as const, allOpen: true, scope: 'process' as const, restricted: [] }
+        : { status: 'ok' as const, allOpen: false, scope: 'process' as const, restricted: [{ target: 'platform:n11', intake: 'drain' }] },
+      issues: { status: 'ok' as const, open: open.length, newLast24h: this.calm ? 0 : open.filter((i) => now - Date.parse(i.firstSeen) < DAY).length },
     }
     const out = { ...sections } as unknown as OverviewHealthResponse
     for (const [key, error] of this.degradedSections) (out as unknown as Record<string, unknown>)[key] = { status: 'degraded', error }
