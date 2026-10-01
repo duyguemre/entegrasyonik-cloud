@@ -119,7 +119,7 @@ const listed = computed<AttentionEntry[]>(() =>
       advice: a.advice ?? '',
       action: { label: a.cta ?? 'Göster', to: a.to! },
       since: a.since,
-      tenant: a.tenant,
+      subjects: a.tenant ? [a.tenant] : undefined,
     })),
 )
 const unreadableItems = computed(() => (props.verdict?.attention ?? []).filter((a) => a.source))
