@@ -55,10 +55,10 @@
     },
     "otherByRule": {
       "@typescript-eslint/no-unused-vars": 7,
-      "no-var": 29,
-      "prefer-const": 21,
+      "no-var": 23,
+      "prefer-const": 19,
       "no-empty": 1,
-      "no-useless-catch": 87,
+      "no-useless-catch": 2,
       "@typescript-eslint/no-floating-promises": 7,
       "@typescript-eslint/no-unused-expressions": 2,
       "@typescript-eslint/no-require-imports": 5,
