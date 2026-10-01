@@ -3,6 +3,7 @@ import { IOrder } from '@interfaces/order';
 import { getLogPrefix, LoggerType } from '@utils/Logger';
 import { eventLog } from '@platform/core/logger';
 import { guardOrderRequiredFields } from './orderRequiredGuard';
+import { recordOrdersIngested } from '@platform/runtime/metrics/redMetrics';
 
 const log = eventLog('worker', 'OrderRepository');
 
@@ -250,6 +251,12 @@ export class OrderRepository {
                     insertedExternalIds.push(o.externalOrderId);
                 }
             });
+
+            // Platform sayacı: yalnız YENİ siparişler, kanal bazlı (tenant etiketi yok); güncelleme sayılmaz.
+            const insertedSet = new Set(insertedExternalIds);
+            const byChannel = new Map<string, number>();
+            for (const o of orders) if (insertedSet.has(o.externalOrderId)) byChannel.set(o.integrationCode, (byChannel.get(o.integrationCode) ?? 0) + 1);
+            byChannel.forEach((n, ch) => recordOrdersIngested(ch, n));
 
             log.info('ORDERREPOSITORY_ISLEM_OZETI_YENI_GUNCELLEME', `İşlem Özeti: ${insertedExternalIds.length} Yeni, ${updatedExternalIds.length} Güncelleme.`);
 

@@ -1,0 +1,2211 @@
+{
+  "app": {
+    "Integrations": [
+      {
+        "name": "code_1",
+        "fields": {
+          "code": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
+    ],
+    "IntegrationTypes": [],
+    "Menu": [],
+    "Users": [
+      {
+        "name": "clientId_1",
+        "fields": {
+          "clientId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "uniq_email",
+        "fields": {
+          "email": 1
+        },
+        "options": {
+          "unique": true,
+          "partialFilterExpression": {
+            "email": {
+              "$type": "string"
+            }
+          }
+        }
+      }
+    ],
+    "GlobalRoles": [
+      {
+        "name": "code_1",
+        "fields": {
+          "code": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
+    ],
+    "Resources": [],
+    "Clients": [
+      {
+        "name": "uniq_clientId",
+        "fields": {
+          "clientId": 1
+        },
+        "options": {
+          "unique": true
+        }
+      },
+      {
+        "name": "uniq_dbConfig_dbname",
+        "fields": {
+          "dbConfig.dbname": 1
+        },
+        "options": {
+          "unique": true,
+          "partialFilterExpression": {
+            "dbConfig.dbname": {
+              "$type": "string"
+            }
+          }
+        }
+      },
+      {
+        "name": "uniq_order",
+        "fields": {
+          "order": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
+    ],
+    "Tickets": [
+      {
+        "name": "clientId_1",
+        "fields": {
+          "clientId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "status_1",
+        "fields": {
+          "status": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "ticketNumber_1",
+        "fields": {
+          "ticketNumber": 1
+        },
+        "options": {
+          "unique": true
+        }
+      },
+      {
+        "name": "type_1",
+        "fields": {
+          "type": 1
+        },
+        "options": {}
+      }
+    ],
+    "Counters": [],
+    "CachedIntegrationDatas": [],
+    "ExportSignals": [
+      {
+        "name": "batchId_1",
+        "fields": {
+          "batchId": 1
+        },
+        "options": {
+          "unique": true
+        }
+      },
+      {
+        "name": "completedAt_1",
+        "fields": {
+          "completedAt": 1
+        },
+        "options": {
+          "expireAfterSeconds": 1296000
+        }
+      },
+      {
+        "name": "groupId_1",
+        "fields": {
+          "groupId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "lockedBy_1_status_1_clientId_1_integrationCode_1_nextRunAt_1",
+        "fields": {
+          "lockedBy": 1,
+          "status": 1,
+          "clientId": 1,
+          "integrationCode": 1,
+          "nextRunAt": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "lockedBy_1_status_1_nextRunAt_1_createdAt_1",
+        "fields": {
+          "lockedBy": 1,
+          "status": 1,
+          "nextRunAt": 1,
+          "createdAt": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "lockedBy_1_updatedAt_1",
+        "fields": {
+          "lockedBy": 1,
+          "updatedAt": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "status_1_lockedBy_1_createdAt_1_sequence_1",
+        "fields": {
+          "status": 1,
+          "lockedBy": 1,
+          "createdAt": 1,
+          "sequence": 1
+        },
+        "options": {}
+      }
+    ],
+    "ExportFlag": [
+      {
+        "name": "clientId_1_integrationCode_1",
+        "fields": {
+          "clientId": 1,
+          "integrationCode": 1
+        },
+        "options": {
+          "unique": true
+        }
+      },
+      {
+        "name": "integrationCode_1_queuedCount_1_priority_-1_lastUpdatedAt_1",
+        "fields": {
+          "integrationCode": 1,
+          "queuedCount": 1,
+          "priority": -1,
+          "lastUpdatedAt": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "queuedCount_1",
+        "fields": {
+          "queuedCount": 1
+        },
+        "options": {}
+      }
+    ],
+    "ImportJobs": [
+      {
+        "name": "clientId_1",
+        "fields": {
+          "clientId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "integrationCode_1",
+        "fields": {
+          "integrationCode": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "jobId_1",
+        "fields": {
+          "jobId": 1
+        },
+        "options": {
+          "unique": true
+        }
+      },
+      {
+        "name": "lastCheckedAt_1",
+        "fields": {
+          "lastCheckedAt": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "lockedBy_1",
+        "fields": {
+          "lockedBy": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "matchKey_1",
+        "fields": {
+          "matchKey": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "status_1",
+        "fields": {
+          "status": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "status_1_lockedBy_1_updatedAt_1",
+        "fields": {
+          "status": 1,
+          "lockedBy": 1,
+          "updatedAt": 1
+        },
+        "options": {}
+      }
+    ],
+    "DeadLetterQueue": [
+      {
+        "name": "clientId_1",
+        "fields": {
+          "clientId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "clientId_1_status_1",
+        "fields": {
+          "clientId": 1,
+          "status": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "dlqType_1",
+        "fields": {
+          "dlqType": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "failedAt_1",
+        "fields": {
+          "failedAt": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "integrationCode_1",
+        "fields": {
+          "integrationCode": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "queueName_1",
+        "fields": {
+          "queueName": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "status_1",
+        "fields": {
+          "status": 1
+        },
+        "options": {}
+      }
+    ],
+    "IntegrationOperationLogs": [
+      {
+        "name": "clientId_1",
+        "fields": {
+          "clientId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "clientId_1_integrationCode_1_operationType_1_startedAt_-1",
+        "fields": {
+          "clientId": 1,
+          "integrationCode": 1,
+          "operationType": 1,
+          "startedAt": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "clientId_1_startedAt_-1",
+        "fields": {
+          "clientId": 1,
+          "startedAt": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "createdAt_1",
+        "fields": {
+          "createdAt": 1
+        },
+        "options": {
+          "expireAfterSeconds": 7776000
+        }
+      },
+      {
+        "name": "integrationCode_1",
+        "fields": {
+          "integrationCode": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "operationType_1",
+        "fields": {
+          "operationType": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "startedAt_1",
+        "fields": {
+          "startedAt": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "status_1",
+        "fields": {
+          "status": 1
+        },
+        "options": {}
+      }
+    ],
+    "AuditLogs": [
+      {
+        "name": "at_1",
+        "fields": {
+          "at": 1
+        },
+        "options": {
+          "expireAfterSeconds": 31536000
+        }
+      },
+      {
+        "name": "event_1_at_-1",
+        "fields": {
+          "event": 1,
+          "at": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "sub_1_at_-1",
+        "fields": {
+          "sub": 1,
+          "at": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "tid_1_at_-1",
+        "fields": {
+          "tid": 1,
+          "at": -1
+        },
+        "options": {}
+      }
+    ],
+    "IntegrationCallMetrics": [
+      {
+        "name": "at_1",
+        "fields": {
+          "at": 1
+        },
+        "options": {
+          "expireAfterSeconds": 2592000
+        }
+      },
+      {
+        "name": "integrationCode_1_clientId_1_at_-1",
+        "fields": {
+          "integrationCode": 1,
+          "clientId": 1,
+          "at": -1
+        },
+        "options": {}
+      }
+    ],
+    "QueueMetrics": [
+      {
+        "name": "minute_1",
+        "fields": {
+          "minute": 1
+        },
+        "options": {
+          "expireAfterSeconds": 2592000
+        }
+      },
+      {
+        "name": "queue_1_integrationCode_1_minute_1",
+        "fields": {
+          "queue": 1,
+          "integrationCode": 1,
+          "minute": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
+    ],
+    "Plans": [
+      {
+        "name": "uniq_code",
+        "fields": {
+          "code": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
+    ],
+    "Subscriptions": [
+      {
+        "name": "provider_ref",
+        "fields": {
+          "provider": 1,
+          "providerSubscriptionRef": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "status",
+        "fields": {
+          "status": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "uniq_clientId",
+        "fields": {
+          "clientId": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
+    ],
+    "BillingEvents": [
+      {
+        "name": "clientId_receivedAt",
+        "fields": {
+          "clientId": 1,
+          "receivedAt": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "status",
+        "fields": {
+          "status": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "uniq_provider_eventId",
+        "fields": {
+          "provider": 1,
+          "providerEventId": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
+    ],
+    "AccountTokens": [
+      {
+        "name": "sub_1_purpose_1_createdAt_-1",
+        "fields": {
+          "sub": 1,
+          "purpose": 1,
+          "createdAt": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "ttl_expires_at",
+        "fields": {
+          "expiresAt": 1
+        },
+        "options": {
+          "expireAfterSeconds": 0
+        }
+      },
+      {
+        "name": "uniq_token_hash",
+        "fields": {
+          "tokenHash": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
+    ],
+    "Memberships": [
+      {
+        "name": "tid_1_role_1",
+        "fields": {
+          "tid": 1,
+          "role": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "tid_1_status_1",
+        "fields": {
+          "tid": 1,
+          "status": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "uniq_user_tid",
+        "fields": {
+          "userId": 1,
+          "tid": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
+    ],
+    "Invitations": [
+      {
+        "name": "ttl_expires_at",
+        "fields": {
+          "expiresAt": 1
+        },
+        "options": {
+          "expireAfterSeconds": 2592000
+        }
+      },
+      {
+        "name": "uniq_pending_tid_email",
+        "fields": {
+          "tid": 1,
+          "email": 1
+        },
+        "options": {
+          "unique": true,
+          "partialFilterExpression": {
+            "status": "pending"
+          }
+        }
+      },
+      {
+        "name": "uniq_token_hash",
+        "fields": {
+          "tokenHash": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
+    ],
+    "AdminMfa": [
+      {
+        "name": "uniq_sub",
+        "fields": {
+          "sub": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
+    ],
+    "NotificationEvents": [
+      {
+        "name": "code_1_createdAt_-1",
+        "fields": {
+          "code": 1,
+          "createdAt": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "tid_1_createdAt_-1",
+        "fields": {
+          "tid": 1,
+          "createdAt": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "ttl_exp_at",
+        "fields": {
+          "expAt": 1
+        },
+        "options": {
+          "expireAfterSeconds": 0
+        }
+      },
+      {
+        "name": "uniq_idem_key",
+        "fields": {
+          "idemKey": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
+    ],
+    "NotificationDeliveries": [
+      {
+        "name": "eventId_1",
+        "fields": {
+          "eventId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "status_1_nextAttemptAt_1",
+        "fields": {
+          "status": 1,
+          "nextAttemptAt": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "tid_1_createdAt_-1",
+        "fields": {
+          "tid": 1,
+          "createdAt": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "ttl_exp_at",
+        "fields": {
+          "expAt": 1
+        },
+        "options": {
+          "expireAfterSeconds": 0
+        }
+      }
+    ],
+    "NotificationPreferences": [
+      {
+        "name": "uniq_tid_userId",
+        "fields": {
+          "tid": 1,
+          "userId": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
+    ],
+    "Announcements": [
+      {
+        "name": "createdAt_-1",
+        "fields": {
+          "createdAt": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "status_1_startsAt_1",
+        "fields": {
+          "status": 1,
+          "startsAt": 1
+        },
+        "options": {}
+      }
+    ],
+    "Alerts": [
+      {
+        "name": "status_1_lastSeenAt_-1",
+        "fields": {
+          "status": 1,
+          "lastSeenAt": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "ttl_exp_at",
+        "fields": {
+          "expAt": 1
+        },
+        "options": {
+          "expireAfterSeconds": 0
+        }
+      },
+      {
+        "name": "uniq_rule_scope",
+        "fields": {
+          "ruleId": 1,
+          "scopeKey": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
+    ],
+    "JobLeases": [
+      {
+        "name": "name_1",
+        "fields": {
+          "name": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
+    ],
+    "JobState": [
+      {
+        "name": "name_1",
+        "fields": {
+          "name": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
+    ],
+    "JobRuns": [
+      {
+        "name": "finishedAt_1",
+        "fields": {
+          "finishedAt": 1
+        },
+        "options": {
+          "expireAfterSeconds": 1209600
+        }
+      },
+      {
+        "name": "name_1_finishedAt_-1",
+        "fields": {
+          "name": 1,
+          "finishedAt": -1
+        },
+        "options": {}
+      }
+    ],
+    "IntegrationFindings": [
+      {
+        "name": "closedAt_1",
+        "fields": {
+          "closedAt": 1
+        },
+        "options": {
+          "expireAfterSeconds": 31536000,
+          "partialFilterExpression": {
+            "status": {
+              "$in": [
+                "fixed",
+                "wontfix",
+                "false_positive"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "name": "dedupKey_1",
+        "fields": {
+          "dedupKey": 1
+        },
+        "options": {
+          "unique": true
+        }
+      },
+      {
+        "name": "integrationCode_1_kind_1_status_1",
+        "fields": {
+          "integrationCode": 1,
+          "kind": 1,
+          "status": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "status_1_severity_1_lastSeenAt_-1",
+        "fields": {
+          "status": 1,
+          "severity": 1,
+          "lastSeenAt": -1
+        },
+        "options": {}
+      }
+    ],
+    "MetricRollups": [
+      {
+        "name": "metric_1_resolution_1_bucketStart_1",
+        "fields": {
+          "metric": 1,
+          "resolution": 1,
+          "bucketStart": 1
+        },
+        "options": {
+          "unique": true
+        }
+      },
+      {
+        "name": "ttl_bucket_1h",
+        "fields": {
+          "bucketStart": 1
+        },
+        "options": {
+          "expireAfterSeconds": 7776000,
+          "partialFilterExpression": {
+            "resolution": "1h"
+          }
+        }
+      },
+      {
+        "name": "ttl_bucket_5m",
+        "fields": {
+          "bucketStart": 1
+        },
+        "options": {
+          "expireAfterSeconds": 604800,
+          "partialFilterExpression": {
+            "resolution": "5m"
+          }
+        }
+      }
+    ],
+    "ErrorEvents": [
+      {
+        "name": "fp_1",
+        "fields": {
+          "fp": 1
+        },
+        "options": {
+          "unique": true
+        }
+      },
+      {
+        "name": "lastSeen_1",
+        "fields": {
+          "lastSeen": 1
+        },
+        "options": {
+          "expireAfterSeconds": 7776000
+        }
+      },
+      {
+        "name": "status_1_lastSeen_-1",
+        "fields": {
+          "status": 1,
+          "lastSeen": -1
+        },
+        "options": {}
+      }
+    ],
+    "LogEvents": [
+      {
+        "name": "correlationId_1",
+        "fields": {
+          "correlationId": 1
+        },
+        "options": {
+          "sparse": true
+        }
+      },
+      {
+        "name": "expAt_1",
+        "fields": {
+          "expAt": 1
+        },
+        "options": {
+          "expireAfterSeconds": 0
+        }
+      },
+      {
+        "name": "fingerprint_1_ts_-1",
+        "fields": {
+          "fingerprint": 1,
+          "ts": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "source_1_level_1_ts_-1",
+        "fields": {
+          "source": 1,
+          "level": 1,
+          "ts": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "tenantId_1_ts_-1",
+        "fields": {
+          "tenantId": 1,
+          "ts": -1
+        },
+        "options": {
+          "sparse": true
+        }
+      },
+      {
+        "name": "ts_-1",
+        "fields": {
+          "ts": -1
+        },
+        "options": {}
+      }
+    ],
+    "SourceSnapshots": [
+      {
+        "name": "integrationCode_1",
+        "fields": {
+          "integrationCode": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "url_1",
+        "fields": {
+          "url": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
+    ],
+    "IntegrationConfigRevisions": [
+      {
+        "name": "target_1",
+        "fields": {
+          "target": 1
+        },
+        "options": {
+          "unique": true,
+          "partialFilterExpression": {
+            "status": "draft"
+          }
+        }
+      },
+      {
+        "name": "target_1_status_1_version_-1",
+        "fields": {
+          "target": 1,
+          "status": 1,
+          "version": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "target_1_version_1",
+        "fields": {
+          "target": 1,
+          "version": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
+    ],
+    "IntegrationConfigHeads": [],
+    "SchemaMigrations": [
+      {
+        "name": "status_1",
+        "fields": {
+          "status": 1
+        },
+        "options": {}
+      }
+    ],
+    "OAuthClients": [
+      {
+        "name": "ttl_unused_expire_at",
+        "fields": {
+          "unusedExpireAt": 1
+        },
+        "options": {
+          "expireAfterSeconds": 0
+        }
+      },
+      {
+        "name": "uniq_client_id",
+        "fields": {
+          "clientId": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
+    ],
+    "OAuthAuthCodes": [
+      {
+        "name": "ttl_purge_at",
+        "fields": {
+          "purgeAt": 1
+        },
+        "options": {
+          "expireAfterSeconds": 0
+        }
+      },
+      {
+        "name": "uniq_code_hash",
+        "fields": {
+          "codeHash": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
+    ],
+    "OAuthRefreshTokens": [
+      {
+        "name": "familyId_1",
+        "fields": {
+          "familyId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "sub_1_revokedAt_1",
+        "fields": {
+          "sub": 1,
+          "revokedAt": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "tid_1_revokedAt_1",
+        "fields": {
+          "tid": 1,
+          "revokedAt": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "ttl_purge_at",
+        "fields": {
+          "purgeAt": 1
+        },
+        "options": {
+          "expireAfterSeconds": 0
+        }
+      },
+      {
+        "name": "uniq_token_hash",
+        "fields": {
+          "tokenHash": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
+    ],
+    "BackofficeViews": [
+      {
+        "name": "sub_1_updatedAt_-1",
+        "fields": {
+          "sub": 1,
+          "updatedAt": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "uniq_sub_screen_name",
+        "fields": {
+          "sub": 1,
+          "screen": 1,
+          "name": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
+    ]
+  },
+  "tenant": {
+    "Users": [
+      {
+        "name": "email_1",
+        "fields": {
+          "email": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
+    ],
+    "ClientIntegrations": [
+      {
+        "name": "ecommerce.code_1_ecommerce.syncMetadata.lastOrderSync_1",
+        "fields": {
+          "ecommerce.code": 1,
+          "ecommerce.syncMetadata.lastOrderSync": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "ecommerce.code_1_ecommerce.syncMetadata.lastStatusCheck_1",
+        "fields": {
+          "ecommerce.code": 1,
+          "ecommerce.syncMetadata.lastStatusCheck": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "erp.code_1_erp.syncMetadata.lastOrderSync_1",
+        "fields": {
+          "erp.code": 1,
+          "erp.syncMetadata.lastOrderSync": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "erp.code_1_erp.syncMetadata.lastStatusCheck_1",
+        "fields": {
+          "erp.code": 1,
+          "erp.syncMetadata.lastStatusCheck": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "marketplace.code_1_marketplace.syncMetadata.lastOrderSync_1",
+        "fields": {
+          "marketplace.code": 1,
+          "marketplace.syncMetadata.lastOrderSync": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "marketplace.code_1_marketplace.syncMetadata.lastStatusCheck_1",
+        "fields": {
+          "marketplace.code": 1,
+          "marketplace.syncMetadata.lastStatusCheck": 1
+        },
+        "options": {}
+      }
+    ],
+    "Products": [
+      {
+        "name": "barcode_1",
+        "fields": {
+          "barcode": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "brand_1",
+        "fields": {
+          "brand": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "category_1",
+        "fields": {
+          "category": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "maincode_1",
+        "fields": {
+          "maincode": 1
+        },
+        "options": {
+          "unique": true
+        }
+      },
+      {
+        "name": "stock_1",
+        "fields": {
+          "stock": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "stockcode_1",
+        "fields": {
+          "stockcode": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "title_1",
+        "fields": {
+          "title": 1
+        },
+        "options": {}
+      }
+    ],
+    "Variants": [
+      {
+        "name": "allocations.key_1",
+        "fields": {
+          "allocations.key": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "barcode_1",
+        "fields": {
+          "barcode": 1
+        },
+        "options": {
+          "unique": true,
+          "sparse": true
+        }
+      },
+      {
+        "name": "productId_1",
+        "fields": {
+          "productId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "stockcode_1",
+        "fields": {
+          "stockcode": 1
+        },
+        "options": {
+          "unique": true,
+          "sparse": true
+        }
+      },
+      {
+        "name": "stockDirty_true",
+        "fields": {
+          "stockDirty": 1
+        },
+        "options": {
+          "partialFilterExpression": {
+            "stockDirty": true
+          }
+        }
+      },
+      {
+        "name": "tempId_1",
+        "fields": {
+          "tempId": 1
+        },
+        "options": {
+          "unique": true
+        }
+      },
+      {
+        "name": "variantHash_1",
+        "fields": {
+          "variantHash": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
+    ],
+    "Orders": [
+      {
+        "name": "customerId_1",
+        "fields": {
+          "customerId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "dates.externalUpdatedAt_1",
+        "fields": {
+          "dates.externalUpdatedAt": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "dates.invoiceDate_1",
+        "fields": {
+          "dates.invoiceDate": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "dates.orderDate_1",
+        "fields": {
+          "dates.orderDate": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "externalOrderId_1",
+        "fields": {
+          "externalOrderId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "integrationCode_1",
+        "fields": {
+          "integrationCode": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "integrationCode_1_dates.orderDate_-1",
+        "fields": {
+          "integrationCode": 1,
+          "dates.orderDate": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "integrationCode_1_externalOrderId_1",
+        "fields": {
+          "integrationCode": 1,
+          "externalOrderId": 1
+        },
+        "options": {
+          "unique": true
+        }
+      },
+      {
+        "name": "internalStatus_1",
+        "fields": {
+          "internalStatus": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "internalStatus_1_dates.orderDate_-1",
+        "fields": {
+          "internalStatus": 1,
+          "dates.orderDate": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "orderNumber_1",
+        "fields": {
+          "orderNumber": 1
+        },
+        "options": {}
+      }
+    ],
+    "Customers": [
+      {
+        "name": "addresses.city_1",
+        "fields": {
+          "addresses.city": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "email_1",
+        "fields": {
+          "email": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "externalIdentities.integrationCode_1_externalIdentities.externalCustomerId_1",
+        "fields": {
+          "externalIdentities.integrationCode": 1,
+          "externalIdentities.externalCustomerId": 1
+        },
+        "options": {
+          "unique": false
+        }
+      },
+      {
+        "name": "firstName_1",
+        "fields": {
+          "firstName": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "firstName_text_lastName_text_email_text_phone_text",
+        "fields": {
+          "firstName": "text",
+          "lastName": "text",
+          "email": "text",
+          "phone": "text"
+        },
+        "options": {}
+      },
+      {
+        "name": "lastName_1",
+        "fields": {
+          "lastName": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "metrics.totalClaimCount_-1",
+        "fields": {
+          "metrics.totalClaimCount": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "metrics.totalSpent_-1",
+        "fields": {
+          "metrics.totalSpent": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "phone_1",
+        "fields": {
+          "phone": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "status_1",
+        "fields": {
+          "status": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "tags_1",
+        "fields": {
+          "tags": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "taxNumber_1",
+        "fields": {
+          "taxNumber": 1
+        },
+        "options": {}
+      }
+    ],
+    "Claims": [
+      {
+        "name": "claimedAt_1",
+        "fields": {
+          "claimedAt": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "customerId_1",
+        "fields": {
+          "customerId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "customerId_1_internalStatus_1",
+        "fields": {
+          "customerId": 1,
+          "internalStatus": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "externalClaimId_1",
+        "fields": {
+          "externalClaimId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "externalOrderId_1",
+        "fields": {
+          "externalOrderId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "flags.isMetricsProcessed_1",
+        "fields": {
+          "flags.isMetricsProcessed": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "integrationCode_1",
+        "fields": {
+          "integrationCode": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "integrationCode_1_externalClaimId_1",
+        "fields": {
+          "integrationCode": 1,
+          "externalClaimId": 1
+        },
+        "options": {
+          "unique": true
+        }
+      },
+      {
+        "name": "integrationCode_1_externalOrderId_1",
+        "fields": {
+          "integrationCode": 1,
+          "externalOrderId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "internalStatus_1",
+        "fields": {
+          "internalStatus": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "orderId_1",
+        "fields": {
+          "orderId": 1
+        },
+        "options": {}
+      }
+    ],
+    "Images": [],
+    "Settings": [],
+    "Categories": [],
+    "Brands": [],
+    "Choices": [],
+    "Hashtags": [],
+    "Favorites": [],
+    "Invoices": [
+      {
+        "name": "customerId_1",
+        "fields": {
+          "customerId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "ettn_1",
+        "fields": {
+          "ettn": 1
+        },
+        "options": {
+          "unique": true
+        }
+      },
+      {
+        "name": "externalInvoiceId_1",
+        "fields": {
+          "externalInvoiceId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "externalOrderId_1",
+        "fields": {
+          "externalOrderId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "integrationCode_1",
+        "fields": {
+          "integrationCode": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "invoiceMethod_1",
+        "fields": {
+          "invoiceMethod": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "invoiceNumber_1",
+        "fields": {
+          "invoiceNumber": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "orderId_1",
+        "fields": {
+          "orderId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "status_1",
+        "fields": {
+          "status": 1
+        },
+        "options": {}
+      }
+    ],
+    "Counters": [],
+    "Statistics": [
+      {
+        "name": "isDirty_1",
+        "fields": {
+          "isDirty": 1
+        },
+        "options": {}
+      }
+    ],
+    "AttributeMappings": [
+      {
+        "name": "localCategoryId_1",
+        "fields": {
+          "localCategoryId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "localCategoryId_1_integrationCode_1_platformAttributeId_1",
+        "fields": {
+          "localCategoryId": 1,
+          "integrationCode": 1,
+          "platformAttributeId": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
+    ],
+    "Notifications": [
+      {
+        "name": "createdAt_1",
+        "fields": {
+          "createdAt": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "expiresAt_1",
+        "fields": {
+          "expiresAt": 1
+        },
+        "options": {
+          "expireAfterSeconds": 0
+        }
+      },
+      {
+        "name": "isDeleted_1",
+        "fields": {
+          "isDeleted": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "isRead_1",
+        "fields": {
+          "isRead": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "mode_1",
+        "fields": {
+          "mode": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "type_1",
+        "fields": {
+          "type": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "userId_1",
+        "fields": {
+          "userId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "userId_1_isRead_1_createdAt_-1",
+        "fields": {
+          "userId": 1,
+          "isRead": 1,
+          "createdAt": -1
+        },
+        "options": {}
+      }
+    ],
+    "ExportStagedProducts": [
+      {
+        "name": "barcode_1",
+        "fields": {
+          "barcode": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "barcode_1_createdAt_-1",
+        "fields": {
+          "barcode": 1,
+          "createdAt": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "barcode_1_status_1_mode_1",
+        "fields": {
+          "barcode": 1,
+          "status": 1,
+          "mode": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "batchId_1",
+        "fields": {
+          "batchId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "batchId_1_status_1_nextRunAt_1",
+        "fields": {
+          "batchId": 1,
+          "status": 1,
+          "nextRunAt": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "integrationCode_1",
+        "fields": {
+          "integrationCode": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "integrationCode_1_status_1_mode_1_priorityScore_-1_createdAt_1",
+        "fields": {
+          "integrationCode": 1,
+          "status": 1,
+          "mode": 1,
+          "priorityScore": -1,
+          "createdAt": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "isArchived_1",
+        "fields": {
+          "isArchived": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "mode_1",
+        "fields": {
+          "mode": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "nextRunAt_1",
+        "fields": {
+          "nextRunAt": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "requestId_1",
+        "fields": {
+          "requestId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "trackingId_1",
+        "fields": {
+          "trackingId": 1
+        },
+        "options": {
+          "sparse": true
+        }
+      }
+    ],
+    "ImportStagedProducts": [
+      {
+        "name": "barcode_1",
+        "fields": {
+          "barcode": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "createdAt_1",
+        "fields": {
+          "createdAt": 1
+        },
+        "options": {
+          "expireAfterSeconds": 604800
+        }
+      },
+      {
+        "name": "importStatus_1",
+        "fields": {
+          "importStatus": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "integrationCode_1",
+        "fields": {
+          "integrationCode": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "jobId_1",
+        "fields": {
+          "jobId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "jobId_1_importStatus_1__id_1",
+        "fields": {
+          "jobId": 1,
+          "importStatus": 1,
+          "_id": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "localCategoryId_1",
+        "fields": {
+          "localCategoryId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "maincode_1",
+        "fields": {
+          "maincode": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "stockcode_1",
+        "fields": {
+          "stockcode": 1
+        },
+        "options": {}
+      }
+    ],
+    "ImportStagedProductSummaries": [
+      {
+        "name": "jobId_1",
+        "fields": {
+          "jobId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "jobId_1_maincode_1",
+        "fields": {
+          "jobId": 1,
+          "maincode": 1
+        },
+        "options": {
+          "unique": true
+        }
+      },
+      {
+        "name": "updatedAt_1",
+        "fields": {
+          "updatedAt": 1
+        },
+        "options": {
+          "expireAfterSeconds": 604800
+        }
+      }
+    ],
+    "ImportJobReports": [
+      {
+        "name": "jobId_1",
+        "fields": {
+          "jobId": 1
+        },
+        "options": {
+          "unique": true
+        }
+      },
+      {
+        "name": "updatedAt_1",
+        "fields": {
+          "updatedAt": 1
+        },
+        "options": {
+          "expireAfterSeconds": 604800
+        }
+      }
+    ],
+    "Messages": [
+      {
+        "name": "customerId_1",
+        "fields": {
+          "customerId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "date_-1",
+        "fields": {
+          "date": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "integrationCode_1",
+        "fields": {
+          "integrationCode": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "integrationCode_1_externalMessageId_1",
+        "fields": {
+          "integrationCode": 1,
+          "externalMessageId": 1
+        },
+        "options": {
+          "unique": true
+        }
+      },
+      {
+        "name": "isRejected_1",
+        "fields": {
+          "isRejected": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "isRejected_1_status_1",
+        "fields": {
+          "isRejected": 1,
+          "status": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "orderId_1",
+        "fields": {
+          "orderId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "status_1",
+        "fields": {
+          "status": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "type_1",
+        "fields": {
+          "type": 1
+        },
+        "options": {}
+      }
+    ],
+    "FinancialTransactions": [
+      {
+        "name": "integrationCode_1",
+        "fields": {
+          "integrationCode": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "integrationCode_1_externalId_1",
+        "fields": {
+          "integrationCode": 1,
+          "externalId": 1
+        },
+        "options": {
+          "unique": true
+        }
+      },
+      {
+        "name": "integrationCode_1_transactionDate_-1",
+        "fields": {
+          "integrationCode": 1,
+          "transactionDate": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "orderNumber_1",
+        "fields": {
+          "orderNumber": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "paymentOrderId_1",
+        "fields": {
+          "paymentOrderId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "payoutDate_1",
+        "fields": {
+          "payoutDate": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "shipmentPackageId_1",
+        "fields": {
+          "shipmentPackageId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "transactionDate_1",
+        "fields": {
+          "transactionDate": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "transactionType_1",
+        "fields": {
+          "transactionType": 1
+        },
+        "options": {}
+      }
+    ],
+    "CargoInvoices": [
+      {
+        "name": "integrationCode_1",
+        "fields": {
+          "integrationCode": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "integrationCode_1_invoiceNumber_1_packageId_1",
+        "fields": {
+          "integrationCode": 1,
+          "invoiceNumber": 1,
+          "packageId": 1
+        },
+        "options": {
+          "unique": true
+        }
+      },
+      {
+        "name": "invoiceNumber_1",
+        "fields": {
+          "invoiceNumber": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "orderNumber_1",
+        "fields": {
+          "orderNumber": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "packageId_1",
+        "fields": {
+          "packageId": 1
+        },
+        "options": {}
+      },
+      {
+        "name": "transactionDate_1",
+        "fields": {
+          "transactionDate": 1
+        },
+        "options": {}
+      }
+    ],
+    "IdempotencyKeys": [
+      {
+        "name": "expAt_1",
+        "fields": {
+          "expAt": 1
+        },
+        "options": {
+          "expireAfterSeconds": 0
+        }
+      },
+      {
+        "name": "userId_1_operation_1_key_1",
+        "fields": {
+          "userId": 1,
+          "operation": 1,
+          "key": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
+    ],
+    "StockMovements": [
+      {
+        "name": "ttl_purge_at",
+        "fields": {
+          "purgeAt": 1
+        },
+        "options": {
+          "expireAfterSeconds": 0
+        }
+      },
+      {
+        "name": "uniq_refkey_reason",
+        "fields": {
+          "ref.key": 1,
+          "reason": 1
+        },
+        "options": {
+          "unique": true,
+          "partialFilterExpression": {
+            "ref.key": {
+              "$type": "string"
+            }
+          }
+        }
+      },
+      {
+        "name": "variantId_1_at_-1",
+        "fields": {
+          "variantId": 1,
+          "at": -1
+        },
+        "options": {}
+      }
+    ],
+    "CommissionOverrides": [
+      {
+        "name": "uniq_integration_scope_category",
+        "fields": {
+          "integrationCode": 1,
+          "scope": 1,
+          "platformCategoryId": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
+    ]
+  }
+}

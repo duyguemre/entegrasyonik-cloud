@@ -1,0 +1,5214 @@
+{
+  "schemaVersion": 1,
+  "sha256": "e8ab45c628666d0e30d350c21e11511fc1bb4df48623bd77286e4a3ab8cc4e7e",
+  "generatedAt": "2026-10-01T08:07:49.703Z",
+  "stage": "A",
+  "totalCapabilities": 280,
+  "totalBindings": 316,
+  "capabilities": [
+    {
+      "id": "account.email_verification.resend",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [
+        "AccountService/resendVerificationEmail"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "credential"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "account.password.change",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [
+        "AccountService/changePassword"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "credential"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "account.reauthenticate",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [
+        "AccountService/reauthenticate"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "credential"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "account.tenant.data.export",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "owner",
+      "scope": "tenant",
+      "rpc": [
+        "TenantDataService/exportTenantData"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "binary_file"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "account.tenant.deletion.request",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "destructive",
+      "minTier": "owner",
+      "scope": "tenant",
+      "rpc": [
+        "TenantDataService/requestDeletion"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "irreversible"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "agent.confirm",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [],
+      "http": [
+        "POST /agent/confirm"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "agent.info",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [],
+      "http": [
+        "GET /agent/info"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "agent.more",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [],
+      "http": [
+        "POST /agent/more"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "agent.provider.consent",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [],
+      "http": [
+        "POST /agent/provider/consent"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "credential"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "agent.provider.get",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "read",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [],
+      "http": [
+        "GET /agent/provider"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "credential"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "agent.provider.remove",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [],
+      "http": [
+        "DELETE /agent/provider"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "credential"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "agent.provider.save",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [],
+      "http": [
+        "PUT /agent/provider"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "credential"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "agent.provider.test",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "read",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [],
+      "http": [
+        "POST /agent/provider/test"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "credential"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "agent.reset",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [],
+      "http": [
+        "DELETE /agent/conversations/:id"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "agent.turn",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "propose",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [],
+      "http": [
+        "POST /agent/turns"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "audit.logs.list",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "read",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "AuditService/getAuditLogs"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "billing.checkout.start",
+      "version": "1.0",
+      "domain": "billing",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "BillingService/startCheckout"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "irreversible"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "billing.plans.list",
+      "version": "1.0",
+      "domain": "billing",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "BillingService/getPlans"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "billing.subscription.get",
+      "version": "1.0",
+      "domain": "billing",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "BillingService/getMySubscription"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "brands.create",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "BrandService/addBrand"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "brands.delete",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "destructive",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "BrandService/deleteBrand"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "brands.integration_mapping.save",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "BrandService/saveIntegrationBrand",
+        "IntegrationService/saveOrUpdateIntegrationBrand"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "brands.list",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "BrandService/get"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "brands.update",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "BrandService/updateBrand"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "categories.create",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "CategoryService/addCategory"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "categories.delete",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "destructive",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "CategoryService/deleteCategory"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "categories.list",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "CategoryService/get"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "categories.move",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "CategoryService/moveCategory",
+        "CategoryService/changeOrderCategory"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "categories.update",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "CategoryService/updateCategory"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "choices.create",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "ChoiceService/addChoice",
+        "ChoiceService/addPreparedChoice"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "choices.delete",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "destructive",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "ChoiceService/removeChoice"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "choices.list",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "ChoiceService/get"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "choices.update",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "ChoiceService/updateChoice"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "choices.values.add",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "ChoiceService/addChoiceValue"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "choices.values.remove",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "destructive",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "ChoiceService/removeChoiceValue"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "choices.values.update",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "ChoiceService/updateChoiceValue"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "claims.approve",
+      "version": "1.0",
+      "domain": "claims",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "ClaimService/approveClaim",
+        "ClaimService/bulkApproveClaim"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "irreversible"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "claims.get",
+      "version": "1.0",
+      "domain": "claims",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "ClaimService/getClaimById"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "claims.list",
+      "version": "1.0",
+      "domain": "claims",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "ClaimService/getClaims"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "claims.reject",
+      "version": "1.0",
+      "domain": "claims",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "ClaimService/rejectClaim"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "irreversible"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "config.get",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "ConfigurationService/get"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "customers.anonymize",
+      "version": "1.0",
+      "domain": "customers",
+      "effect": "destructive",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "CustomerService/anonymizeCustomer"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "irreversible"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "customers.get",
+      "version": "1.0",
+      "domain": "customers",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "CustomerService/getCustomerDetail"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "customers.list",
+      "version": "1.0",
+      "domain": "customers",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "CustomerService/getCustomers"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "customers.update",
+      "version": "1.0",
+      "domain": "customers",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "CustomerService/updateCustomer"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "finance.cargo_invoices.list",
+      "version": "1.0",
+      "domain": "finance",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "FinancialService/getCargoInvoices"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "finance.commission.by_barcode",
+      "version": "1.0",
+      "domain": "finance",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "FinancialService/getCommissionByBarcodes"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "finance.commission.order_summary",
+      "version": "1.0",
+      "domain": "finance",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "FinancialService/getOrderCommissionSummary"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "finance.commission.overrides.delete",
+      "version": "1.0",
+      "domain": "finance",
+      "effect": "destructive",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "FinancialService/deleteCommissionOverride"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "finance.commission.overrides.list",
+      "version": "1.0",
+      "domain": "finance",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "FinancialService/listCommissionOverrides"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "finance.commission.overrides.set",
+      "version": "1.0",
+      "domain": "finance",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "FinancialService/setCommissionOverride"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "finance.commission.realized_by_category",
+      "version": "1.0",
+      "domain": "finance",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "FinancialService/getRealizedCommissionByCategory"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "finance.net_revenue.preview",
+      "version": "1.0",
+      "domain": "finance",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "FinancialService/getNetRevenuePreview"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "finance.payouts.detail",
+      "version": "1.0",
+      "domain": "finance",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "FinancialService/getPayoutDetails"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "finance.summary",
+      "version": "1.0",
+      "domain": "finance",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "FinancialService/getFinancialSummary"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "finance.transactions.list",
+      "version": "1.0",
+      "domain": "finance",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "FinancialService/getTransactionData"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "hashtags.create",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "HashtagService/addHashtag"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "hashtags.delete",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "destructive",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "HashtagService/removeHashtag"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "hashtags.list",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "HashtagService/get"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "hashtags.update",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "HashtagService/updateHashtag"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "hashtags.values.add",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "HashtagService/addHashtagValue"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "hashtags.values.remove",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "destructive",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "HashtagService/removeHashtagValue"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "hashtags.values.update",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "HashtagService/updateHashtagValue"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "images.assign",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "ImageService/assignImages"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "binary_file"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "images.delete",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "destructive",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "ImageApi/deleteImage",
+        "ImageApi/deleteImageSelected"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "binary_file"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "images.list",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "ImageApi/getImages"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "binary_file"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "images.sort",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "ImageApi/sortImages"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "binary_file"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "images.upload",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "ImageApi/upload",
+        "ImageService/createUploadUrl",
+        "ImageService/confirmUpload"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "binary_file"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "integrations.batch.dispatch",
+      "version": "1.0",
+      "domain": "integrations",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "IntegrationService/batchCreator",
+        "IntegrationService/requestFetchFromPlatform"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "integrations.catalog.list",
+      "version": "1.0",
+      "domain": "integrations",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "IntegrationService/get",
+        "IntegrationService/integrationTypes"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "integrations.catalog.manifest.get",
+      "version": "1.0",
+      "domain": "integrations",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "IntegrationService/getCatalog"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "integrations.client.list",
+      "version": "1.0",
+      "domain": "integrations",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "IntegrationService/getClientIntegrations"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "integrations.connection.test",
+      "version": "1.0",
+      "domain": "integrations",
+      "effect": "read",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "IntegrationService/testConnection"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "integrations.ecommerce.settings.get",
+      "version": "1.0",
+      "domain": "integrations",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "IntegrationService/retrieveClientECommerceSettings"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "credential"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "integrations.ecommerce.settings.save",
+      "version": "1.0",
+      "domain": "integrations",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "IntegrationService/saveClientECommerceSettings"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "credential"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "integrations.ecommerce.token.exchange",
+      "version": "1.0",
+      "domain": "integrations",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "IntegrationService/retrieveAndSetExternalToken"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "credential"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "integrations.erp.settings.get",
+      "version": "1.0",
+      "domain": "integrations",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "IntegrationService/retrieveClientErpSettings"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "credential"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "integrations.erp.settings.save",
+      "version": "1.0",
+      "domain": "integrations",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "IntegrationService/saveClientErpSettings"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "credential"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "integrations.export.jobs.detail",
+      "version": "1.0",
+      "domain": "integrations",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "IntegrationService/getExportJobDetail"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "integrations.export.jobs.list",
+      "version": "1.0",
+      "domain": "integrations",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "IntegrationService/getExportJobs",
+        "IntegrationService/advancedSearchExportJobs"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "integrations.health.get",
+      "version": "1.1",
+      "domain": "integrations",
+      "effect": "read",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "IntegrationService/getIntegrationHealth"
+      ],
+      "mcp": {
+        "exposed": true,
+        "toolset": "core"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "integrations.import.jobs.detail",
+      "version": "1.0",
+      "domain": "integrations",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "IntegrationService/getImportJobByJobId",
+        "IntegrationService/getJobReport"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "integrations.import.jobs.list",
+      "version": "1.0",
+      "domain": "integrations",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "IntegrationService/getImportJobs",
+        "IntegrationService/archiveImportJobs"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "integrations.marketplace.settings.get",
+      "version": "1.0",
+      "domain": "integrations",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "IntegrationService/retrieveClientMarketplaceSettings"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "credential"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "integrations.marketplace.settings.save",
+      "version": "1.0",
+      "domain": "integrations",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "IntegrationService/saveClientMarketplaceSettings"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "credential"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "integrations.marketplace.sort",
+      "version": "1.0",
+      "domain": "integrations",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "IntegrationService/sortClientMarketplaces"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "integrations.platform_info.get",
+      "version": "1.0",
+      "domain": "integrations",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "IntegrationService/retrievePlatformInfos",
+        "IntegrationService/retrieveCommisionForCategoryFromIntegration",
+        "IntegrationService/retrieveCategoriesFromIntegration",
+        "IntegrationService/retrieveBrandsFromIntegration",
+        "IntegrationService/retrieveCategoryAttributesFromIntegration",
+        "IntegrationService/retrieveCategoryAttributeValuesFromIntegration"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "integrations.shipment.settings.get",
+      "version": "1.0",
+      "domain": "integrations",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "IntegrationService/retrieveClientShipmentSettings"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "credential"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "integrations.shipment.settings.save",
+      "version": "1.0",
+      "domain": "integrations",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "IntegrationService/saveClientShipmentSettings"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "credential"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "integrations.webhook_token.generate",
+      "version": "1.0",
+      "domain": "integrations",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "IntegrationService/generateWebhookToken"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "credential"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "invoices.create",
+      "version": "1.0",
+      "domain": "invoices",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "InvoiceService/createInvoice",
+        "InvoiceService/bulkCreateInvoice"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "irreversible"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "invoices.create_manual",
+      "version": "1.0",
+      "domain": "invoices",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "InvoiceService/createManualInvoice"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "irreversible"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "invoices.delete",
+      "version": "1.0",
+      "domain": "invoices",
+      "effect": "destructive",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "InvoiceService/deleteInvoice"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "irreversible"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "invoices.list",
+      "version": "1.0",
+      "domain": "invoices",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "InvoiceService/getInvoices"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "invoices.reissue",
+      "version": "1.0",
+      "domain": "invoices",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "InvoiceService/resolveAndReissueInvoice"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "irreversible"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "mappings.attribute.get",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "AttributeMappingService/getAttributeMapping"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "mappings.attribute.save",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "AttributeMappingService/saveAttributeMapping",
+        "AttributeMappingService/saveAttributeValueMapping"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "mappings.category.auto_match",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "AttributeMappingService/autoMatchAllCategories"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "mappings.category.get",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "AttributeMappingService/getCategoryMapping"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "mappings.category.save",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "AttributeMappingService/saveCategoryMapping"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "mappings.delete",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "destructive",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "AttributeMappingService/deleteFullMapping"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "mappings.list",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "AttributeMappingService/get"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "mcp.approvals.decide",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [],
+      "http": [
+        "POST /mcp/approvals/:id"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "mcp.approvals.list",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [],
+      "http": [
+        "GET /mcp/approvals"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "mcp.approvals.view",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [],
+      "http": [
+        "GET /mcp/approvals/:id"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "mcp.connections.list",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [],
+      "http": [
+        "GET /mcp/connections"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "mcp.connections.revoke",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [],
+      "http": [
+        "DELETE /mcp/connections/:id"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "mcp.connections.revoke_all",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [],
+      "http": [
+        "POST /mcp/connections/revoke-all"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "mcp.settings.get",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [],
+      "http": [
+        "GET /mcp/settings"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "mcp.settings.save",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [],
+      "http": [
+        "PUT /mcp/settings"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "menu.favorites.add",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [
+        "MenuService/addFavorite"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "menu.favorites.list",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [
+        "MenuService/retrieveFavorites"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "menu.favorites.remove",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "destructive",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [
+        "MenuService/deleteFavorite"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "menu.favorites.sort",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [
+        "MenuService/sortFavorites"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "menu.get",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "MenuService/get"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "messages.delete",
+      "version": "1.0",
+      "domain": "messages",
+      "effect": "destructive",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "MessageService/deleteMessage",
+        "MessageService/bulkDeleteMessages"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "messages.list",
+      "version": "1.0",
+      "domain": "messages",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "MessageService/getMessages"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "messages.mark_read",
+      "version": "1.0",
+      "domain": "messages",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "MessageService/markAsRead"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "messages.reply",
+      "version": "1.0",
+      "domain": "messages",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "MessageService/replyMessage"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "irreversible"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "notifications.announcements.active",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "AnnouncementService/getActive"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "notifications.archive",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [
+        "NotificationService/archive",
+        "NotificationService/unarchive"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "notifications.catalog",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "NotificationService/getCatalog"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "notifications.delete",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "destructive",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [
+        "NotificationService/delete"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "notifications.list",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [
+        "NotificationService/get"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "notifications.mark_read",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [
+        "NotificationService/markAsRead"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "notifications.preferences.get",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [
+        "NotificationService/getPreferences"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "notifications.preferences.update",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [
+        "NotificationService/updatePreferences"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "notifications.tenant_defaults.get",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "read",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "NotificationService/getTenantDefaults"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "notifications.tenant_defaults.update",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "NotificationService/updateTenantDefaults"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "notifications.unread_count",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [
+        "NotificationService/getUnreadCount"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "oauth.consent.decide",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [],
+      "http": [
+        "POST /oauth/requests/:id/decision"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "oauth.consent.view",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [],
+      "http": [
+        "GET /oauth/requests/:id"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "orders.approve",
+      "version": "1.1",
+      "domain": "orders",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "OrderService/approveOrder",
+        "OrderService/bulkApproveOrder"
+      ],
+      "mcp": {
+        "exposed": true,
+        "toolset": "orders"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "orders.cancel",
+      "version": "1.0",
+      "domain": "orders",
+      "effect": "destructive",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "OrderService/cancelOrder",
+        "OrderService/bulkCancelOrder"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "irreversible"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "orders.list",
+      "version": "1.1",
+      "domain": "orders",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "OrderService/getOrders"
+      ],
+      "mcp": {
+        "exposed": true,
+        "toolset": "core"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "orders.mark_printed",
+      "version": "1.0",
+      "domain": "orders",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "OrderService/markAsPrinted"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "orders.rejection_reasons.list",
+      "version": "1.0",
+      "domain": "orders",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "OrderService/getOrderRejectionReasons"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.admin.get",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "AdminService/get"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.admins.disable",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "destructive",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeAdminUserService/disable"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.admins.enable",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeAdminUserService/enable"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.admins.invite",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeAdminUserService/invite"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.admins.list",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeAdminUserService/list"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.admins.reset_mfa",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "destructive",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeAdminUserService/resetMfa"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.agent.confirm",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [],
+      "http": [
+        "POST /admin-api/agent/confirm"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.agent.info",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [],
+      "http": [
+        "GET /admin-api/agent/info"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.agent.more",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [],
+      "http": [
+        "POST /admin-api/agent/more"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.agent.provider.get",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [],
+      "http": [
+        "GET /admin-api/agent/provider"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "credential"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.agent.provider.remove",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [],
+      "http": [
+        "DELETE /admin-api/agent/provider"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "credential"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.agent.provider.save",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [],
+      "http": [
+        "PUT /admin-api/agent/provider"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "credential"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.agent.provider.test",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [],
+      "http": [
+        "POST /admin-api/agent/provider/test"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "credential"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.agent.reset",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [],
+      "http": [
+        "DELETE /admin-api/agent/conversations/:id"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.agent.turn",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "propose",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [],
+      "http": [
+        "POST /admin-api/agent/turns"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.alerts.list",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeNotificationService/listAlerts"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.alerts.mute",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeNotificationService/muteAlert"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.announcements.cancel",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "destructive",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeNotificationService/cancelAnnouncement"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.announcements.list",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeNotificationService/listAnnouncements",
+        "BackofficeNotificationService/getAnnouncement",
+        "BackofficeNotificationService/previewAnnouncement"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.announcements.save",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeNotificationService/createAnnouncement",
+        "BackofficeNotificationService/updateAnnouncement"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.announcements.schedule",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeNotificationService/scheduleAnnouncement"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.audit.list",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeAuditService/list"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.clients.create",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "AdminService/createClient"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.clients.delete",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "destructive",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "AdminService/deleteClient"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.clients.integrations.list",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "AdminService/getClientIntegrations"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.clients.list",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "AdminService/getClients"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.clients.stats",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "AdminService/getClientStats"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.clients.update",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "AdminService/updateClient"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.engine.discard_job",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "destructive",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeEngineService/discardJob"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.engine.failed_jobs",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeEngineService/listFailedJobs"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.engine.job_runs",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeEngineService/listJobRuns"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.engine.queues",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeEngineService/getQueues"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.engine.release_stuck_lease",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeEngineService/releaseStuckLease"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.engine.retry_job",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeEngineService/retryJob"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.engine.retry_jobs",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeEngineService/retryJobs"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.engine.state_machine_jobs",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeEngineService/getStateMachineJobs"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.exports.detail",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "AdminService/getExportDetails"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.infra.cache_metrics",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeInfraService/getCacheMetrics"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.infra.flush_cache_family",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeInfraService/flushCacheFamily"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.infra.mongo_collections",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeInfraService/getMongoCollections"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.infra.mongo_status",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeInfraService/getMongoStatus"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.infra.redis_status",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeInfraService/getRedisStatus"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.infra.slow_queries",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeInfraService/getSlowQueries"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.integration_compliance.get_detail",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "IntegrationComplianceService/getDetail"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.integration_compliance.list",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "IntegrationComplianceService/list",
+        "IntegrationComplianceService/get"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.integration_compliance.summary",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "IntegrationComplianceService/summary"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.integration_compliance.transition",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "IntegrationComplianceService/transition"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.integration_config.catalog",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "IntegrationConfigService/getCatalog"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.integration_config.discard_draft",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "IntegrationConfigService/discardDraft"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.integration_config.get",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "IntegrationConfigService/get",
+        "IntegrationConfigService/getEffectiveConfig"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.integration_config.history",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "IntegrationConfigService/history"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.integration_config.preview_publish",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "propose",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "IntegrationConfigService/previewPublish"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.integration_config.propose_from_finding",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "IntegrationConfigService/proposeFromFinding"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.integration_config.publish",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "IntegrationConfigService/publish"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.integration_config.rollback",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "IntegrationConfigService/rollback"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.integration_config.save_draft",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "IntegrationConfigService/saveDraft"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.integration_config.take_over_lock",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "IntegrationConfigService/takeOverLock"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.integration_config.test_endpoint",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "IntegrationConfigService/testEndpoint"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.integrations.api_health",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeIntegrationService/getApiHealth"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.integrations.list",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "IntegrationConfigService/list"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.integrations.resilience",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeIntegrationService/getResilienceState"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.integrations.set_intake",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "destructive",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "IntegrationConfigService/setIntake"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.logs.issue_groups",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeLogService/issueGroups"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.logs.issue_set_status",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeErrorService/setStatus"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.logs.issue_trend",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeLogService/issueTrend"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.logs.list",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeLogService/list"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.logs.trace",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeLogService/trace"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.logs.volume",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeLogService/volume"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.metrics.global",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "AdminService/getGlobalMetrics"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.notifications.catalog",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeNotificationService/getCatalog",
+        "BackofficeNotificationService/previewTemplate"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.notifications.deliveries.discard",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "destructive",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeNotificationService/discardDelivery"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.notifications.deliveries.read",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeNotificationService/getDeliveryStats",
+        "BackofficeNotificationService/listDeliveries"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.notifications.deliveries.retry",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeNotificationService/retryDelivery"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.notifications.tenant_history",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeNotificationService/getTenantHistory"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.notifications.test_email",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeNotificationService/sendTestEmail"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.overview.attention",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeOverviewService/getAttention"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.overview.health",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeOverviewService/getHealth"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.overview.pulse",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeOverviewService/getPulse"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.prefs.delete_view",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficePrefsService/deleteView"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.prefs.list_views",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficePrefsService/listViews"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.prefs.save_view",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficePrefsService/saveView"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.revenue.metrics",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeBillingService/getRevenueMetrics"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.store.select",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "SecurityService/selectStore"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.subscriptions.cancel",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "destructive",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeBillingService/cancelSubscription"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.subscriptions.change_plan",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeBillingService/changePlan"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.subscriptions.extend_trial",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeBillingService/extendTrial"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.subscriptions.get",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeBillingService/getSubscription"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.subscriptions.list",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeBillingService/listSubscriptions"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.system.health",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "AdminService/getSystemHealth"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.tenant.deletion.cancel",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "TenantDataService/cancelDeletion"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.tenant.deletion.cancel_backoffice",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeTenantService/cancelDeletion"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.tenant.lifecycle",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeTenantService/getLifecycle"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.tenants.health_summary",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeTenantService/getHealthSummary"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.tenants.list",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeTenantService/listTenants"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.tickets.create",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "AdminService/createTicket"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.tickets.delete",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "destructive",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "AdminService/deleteTicket"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.tickets.list",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "AdminService/getTickets"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.tickets.reply",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "AdminService/replyToTicket"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "products.create",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "ProductService/saveProduct"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "products.delete",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "destructive",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "ProductService/deleteProduct"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "products.export",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "ProductService/exportExcel"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "binary_file"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "products.get",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "ProductService/retrieveProduct"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "products.onsale.set",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "ProductService/updateOnsale"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "products.platform_ready.set",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "IntegrationService/savePlatformUploadIsReadyForProduct"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "products.search",
+      "version": "1.1",
+      "domain": "catalog",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "ProductService/getProducts"
+      ],
+      "mcp": {
+        "exposed": true,
+        "toolset": "core"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "products.statistics",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "ProductService/getProductStatistics"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "products.update",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "ProductService/updateProduct"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "reports.sales.summary",
+      "version": "1.1",
+      "domain": "reports",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "OrderService/getOrderDashboardInsights"
+      ],
+      "mcp": {
+        "exposed": true,
+        "toolset": "core"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "resources.list",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "UserService/getResources"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "roles.list",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "UserService/getRoles"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "search.unified",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "SmartService/unifiedSearch"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "settings.get",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "SettingService/getSettings"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "settings.logo.upload",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "ImageApi/uploadIdentity"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "binary_file"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "settings.update",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "SettingService/updateSettings"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "shipments.create",
+      "version": "1.0",
+      "domain": "shipments",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "ShipmentService/createShipment",
+        "ShipmentService/bulkCreateShipment"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "irreversible"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "shipments.list",
+      "version": "1.0",
+      "domain": "shipments",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "ShipmentService/getShipments"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "stock.low_list",
+      "version": "1.1",
+      "domain": "catalog",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "StockService/listLowStock"
+      ],
+      "mcp": {
+        "exposed": true,
+        "toolset": "core"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "stock.movements.list",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "StockService/listMovements"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "stock.overview",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "StockService/getStockOverview"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "stock.policy.get",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "read",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "IntegrationService/getStockPolicy"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "stock.policy.save",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "IntegrationService/saveTenantStockPolicy",
+        "IntegrationService/saveChannelStockPolicy"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "stock.publish_lag.summary",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "read",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "StockService/getPublishLagSummary"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "tickets.close",
+      "version": "1.0",
+      "domain": "support",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "TicketService/closeTicket"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "tickets.list",
+      "version": "1.0",
+      "domain": "support",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "TicketService/getTickets"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "tickets.message.send",
+      "version": "1.0",
+      "domain": "support",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "TicketService/sendTicketMessage"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "tickets.open",
+      "version": "1.0",
+      "domain": "support",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "TicketService/openTicket"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "users.create",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "UserService/createUser"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "users.delete",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "destructive",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "UserService/deleteUser"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "users.invitation.list",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "read",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "UserService/listInvitations"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "users.invitation.resend",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "UserService/resendInvitation"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "users.invitation.revoke",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "UserService/revokeInvitation"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "users.invite",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "UserService/inviteUser"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "users.list",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "read",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "UserService/getUsers"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "users.ownership.transfer.accept",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [
+        "UserService/acceptOwnershipTransfer"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "irreversible"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "users.ownership.transfer.cancel",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "owner",
+      "scope": "tenant",
+      "rpc": [
+        "UserService/cancelOwnershipTransfer"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "irreversible"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "users.ownership.transfer.initiate",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "owner",
+      "scope": "tenant",
+      "rpc": [
+        "UserService/initiateOwnershipTransfer"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "irreversible"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "users.reactivate",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "UserService/reactivateUser"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "users.suspend",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "UserService/suspendUser"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "users.update",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "UserService/updateUser"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "variants.add",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "VariantService/addVariant",
+        "VariantService/addVariants"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "variants.delete",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "destructive",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "VariantService/deleteVariant",
+        "VariantService/batchProcessDelete"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "variants.list",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "VariantService/getVariants",
+        "VariantService/getVariantsList"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "variants.update",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "VariantService/updateVariants",
+        "VariantService/batchProcessUpdate"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "D"
+      },
+      "agent": {
+        "allowed": false
+      }
+    }
+  ]
+}
