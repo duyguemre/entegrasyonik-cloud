@@ -252,6 +252,8 @@ function buildShape(m: Mode) {
         // --- Gözlemlenebilirlik bayrakları (yalnız test/geliştirme) ---
         INTEGRATION_METRICS_DISABLED: t.bool(false),
         AUDIT_LOG_DISABLED: t.bool(false),
+        // [MOB-08] günlük kullanım kaydı (UsageDaily) kapalı -- yalnız test (jest setup açar).
+        USAGE_RECORD_DISABLED: t.bool(false),
 
         // --- Zamanlayıcı (ADR-0016 §2.2) ---
         // Kaçış anahtarı: yalnız acil durum için `off`. Varsayılan `on` (Mongo lease etkin).
@@ -444,6 +446,7 @@ function nest(e: Record<string, any>) {
         trendyolRatePerMin: { global: e.TY_RATE_PER_MIN as number | undefined, orderList: e.TY_ORDER_LIST_RATE_PER_MIN as number | undefined },
         flags: {
             integrationMetricsDisabled: e.INTEGRATION_METRICS_DISABLED as boolean, auditLogDisabled: e.AUDIT_LOG_DISABLED as boolean,
+            usageRecordDisabled: e.USAGE_RECORD_DISABLED as boolean,
             entitlementGuardEnabled: e.ENTITLEMENT_GUARD_ENABLED as boolean,
             membershipSource: e.MEMBERSHIP_SOURCE as 'legacy' | 'dual' | 'membership',
             idempotencyEnforce: e.IDEMPOTENCY_ENFORCE as 'observe' | 'enforce',

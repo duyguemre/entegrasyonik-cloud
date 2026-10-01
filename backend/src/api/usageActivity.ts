@@ -2,6 +2,7 @@
 // Sayılmaz: tenant'sız oturum, platform yöneticisi (ga) ve impersonation (destek oturumu müşteri kullanımı değildir).
 import type { SessionPrincipal } from '@platform/core/security/Security';
 import { isClientPlatform } from '@platform/core/context';
+import { config } from '@config';
 import { UsageRecorder } from '../operations/usage/usageRecorder';
 
 let recorder: UsageRecorder | undefined;
@@ -26,7 +27,7 @@ export function setUsageRecorderForTests(r: UsageRecorder | undefined): void { r
 
 export function recordUsageActivity(principal: Partial<SessionPrincipal> | undefined, platform: unknown): void {
     // USAGE_RECORD_DISABLED=true yalnız test/geliştirme (jest setup açar; AUDIT_LOG_DISABLED ile aynı desen).
-    if (process.env.USAGE_RECORD_DISABLED === 'true' && !injected) return;
+    if (config.flags.usageRecordDisabled && !injected) return;
     if (!principal || principal.imp || principal.ga || typeof principal.sub !== 'string') return;
     const tid = Number(principal.tid);
     if (!Number.isInteger(tid) || tid <= 0 || !isClientPlatform(platform)) return;
