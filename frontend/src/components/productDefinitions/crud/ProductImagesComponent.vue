@@ -77,11 +77,15 @@
 
         <!-- boş durum = büyük bırakma alanı -->
         <div v-if="!visible.length && !uploadItems.length" class="pig-empty">
-          <button type="button" class="pig-drop" @click="pickFiles">
-            <span class="pig-drop__icon" aria-hidden="true"><v-icon :icon="icons.upload" /></span>
-            <span class="pig-drop__title"><span class="pig-pointer">Ürün görsellerini buraya bırakın</span><span class="pig-touch">Ürün görsellerini ekleyin</span></span>
-            <span class="pig-drop__sub"><span class="pig-pointer">ya da </span><u>cihazınızdan seçin</u><span class="pig-pointer"> · panoya kopyaladığınız görseli <kbd>Ctrl</kbd>+<kbd>V</kbd> ile yapıştırın</span></span>
-          </button>
+          <div class="pig-empty__main">
+            <button type="button" class="pig-drop" @click="pickFiles">
+              <span class="pig-drop__icon" aria-hidden="true"><v-icon :icon="icons.upload" /></span>
+              <span class="pig-drop__title"><span class="pig-pointer">Ürün görsellerini buraya bırakın</span><span class="pig-touch">Ürün görsellerini ekleyin</span></span>
+              <span class="pig-drop__sub"><span class="pig-pointer">ya da </span><u>cihazınızdan seçin</u><span class="pig-pointer"> · panoya kopyaladığınız görseli <kbd>Ctrl</kbd>+<kbd>V</kbd> ile yapıştırın</span></span>
+            </button>
+            <!-- MOB-02: telefonda/tablette doğrudan kamera (konum bilgisi silinir, uzun kenar küçültülür). -->
+            <EkButton v-if="showDeviceInput" class="pig-camera" icon="mdi-camera-outline" :loading="preparing > 0" @click="takePhoto">Fotoğraf çek</EkButton>
+          </div>
           <ul class="pig-guide" aria-label="Görsel önerileri">
             <li><v-icon icon="mdi-file-image-outline" aria-hidden="true" />JPG, PNG ya da WebP · tek seferde en çok {{ IMAGE_GUIDE.maxFilesPerBatch }}</li>
             <li><v-icon icon="mdi-arrow-expand-all" aria-hidden="true" />Kısa kenar en az {{ IMAGE_GUIDE.recommendedPx }} px (yakınlaştırma için)</li>
@@ -176,6 +180,12 @@
               <span class="pig-add__sub pig-pointer">Sürükleyin, seçin ya da yapıştırın</span>
             </button>
           </li>
+          <li v-if="showDeviceInput" class="pig-tile pig-tile--add">
+            <button type="button" class="pig-add pig-add--camera" :disabled="preparing > 0" @click="takePhoto">
+              <v-icon :icon="preparing > 0 ? 'mdi-progress-clock' : 'mdi-camera-outline'" aria-hidden="true" />
+              <span class="pig-add__title">{{ preparing > 0 ? 'Hazırlanıyor…' : 'Fotoğraf çek' }}</span>
+            </button>
+          </li>
         </ul>
 
         <p id="pig-kbd-help" class="ek-sr-only">
@@ -198,12 +208,15 @@
       </div>
       <input ref="fileInputRef" class="pig-file" type="file" multiple :accept="IMAGE_GUIDE.acceptAttr" tabindex="-1" aria-hidden="true"
         @change="onFileInput" />
+      <input v-if="showDeviceInput" ref="cameraInputRef" class="pig-file pig-file--camera" type="file" accept="image/*" capture="environment"
+        tabindex="-1" aria-hidden="true" @change="onCameraInput" />
       <div class="ek-sr-only" aria-live="assertive" aria-atomic="true">{{ liveMsg }}</div>
     </div>
 
     <template #actions-start>
       <span class="pig-save" role="status">
         <template v-if="saving"><v-icon icon="mdi-cloud-sync-outline" aria-hidden="true" />Kaydediliyor…</template>
+        <template v-else-if="preparing > 0"><v-icon icon="mdi-camera-outline" aria-hidden="true" />Fotoğraf hazırlanıyor…</template>
         <template v-else-if="uploadItems.length"><v-icon :icon="icons.upload" aria-hidden="true" />{{ uploadLine }}</template>
         <template v-else><v-icon icon="mdi-cloud-check-outline" aria-hidden="true" /><span>Sıra ve silme anında kaydedilir<span v-if="hasVariants" class="pig-wide"> · varyant atamaları ürünle kaydedilir</span></span></template>
       </span>
@@ -228,6 +241,8 @@ import GalleryThumb from '@/components/productDefinitions/images/GalleryThumb.vu
 import ImageLightbox from '@/components/productDefinitions/images/ImageLightbox.vue'
 import VariantImageAssign from '@/components/productDefinitions/images/VariantImageAssign.vue'
 import { useImageUploads } from '@/components/productDefinitions/images/useImageUploads'
+import { PhotoPrepError, PHOTO_PREP_MESSAGES, preparePhoto } from '@/components/productDefinitions/images/photoPrep'
+import { useDeviceInput } from '@/composables/useDeviceInput'
 import { motionMs } from '@/components/productDefinitions/images/motion'
 import { motionEasing } from '@entegrasyonik/ui/motion'
 import {
@@ -642,6 +657,38 @@ function addFiles(files: File[]) {
 
 function pickFiles() {
   fileInputRef.value?.click()
+}
+
+// MOB-02 — kamerayla çek: istemcide küçült + EXIF/konum temizle (photoPrep), sonra aynı yükleme kuyruğu.
+const { showDeviceInput } = useDeviceInput()
+const cameraInputRef = ref<HTMLInputElement | null>(null)
+const preparing = ref(0)
+function takePhoto() {
+  cameraInputRef.value?.click()
+}
+async function onCameraInput(e: Event) {
+  const input = e.target as HTMLInputElement
+  const files = Array.from(input.files ?? [])
+  input.value = ''
+  if (!files.length) return
+  preparing.value += files.length
+  announce('Fotoğraf hazırlanıyor')
+  const ready: File[] = []
+  const failed: { name: string; reason: string }[] = []
+  for (const f of files) {
+    try {
+      ready.push((await preparePhoto(f)).file)
+    } catch (err) {
+      failed.push({ name: f.name || 'Fotoğraf', reason: err instanceof PhotoPrepError ? err.message : PHOTO_PREP_MESSAGES['encode-failed'] })
+    } finally {
+      preparing.value--
+    }
+  }
+  if (ready.length) addFiles(ready)
+  if (failed.length) {
+    rejected.value = [...(ready.length ? rejected.value : []), ...failed]
+    announce(`${failed.length} fotoğraf eklenmedi`)
+  }
 }
 function onFileInput(e: Event) {
   const input = e.target as HTMLInputElement
@@ -1428,6 +1475,17 @@ kbd {
 
 .pig-file {
   display: none;
+}
+
+.pig-empty__main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-3);
+  min-width: 0;
+}
+
+.pig-empty__main .pig-drop {
+  flex: 1;
 }
 
 .pig-save {

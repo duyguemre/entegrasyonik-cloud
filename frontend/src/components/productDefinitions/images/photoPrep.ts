@@ -14,6 +14,7 @@
  *
  * Tarayıcı API'leri `deps` ile verilebilir (birim testleri düğüm ortamında koşar; gerçek tuval Playwright'ta).
  */
+import { semanticColorsLight } from '@entegrasyonik/ui/tokens'
 
 export const PHOTO_PREP = {
   /** Uzun kenar üst sınırı (px). */
@@ -224,8 +225,8 @@ export function browserDeps(): PhotoPrepDeps {
       canvas.height = height
       const ctx = canvas.getContext('2d')
       if (!ctx) return Promise.reject(new Error('2d context yok'))
-      // Saydam PNG → JPEG'de siyah zemin olmasın: beyaz zemin (pazaryeri görsel önerisi de beyaz zemin).
-      ctx.fillStyle = '#ffffff'
+      // Saydam PNG → JPEG'de siyah zemin olmasın: açık tema yüzey rengi = beyaz (pazaryeri görsel önerisi de beyaz zemin).
+      ctx.fillStyle = semanticColorsLight.surface
       ctx.fillRect(0, 0, width, height)
       ctx.imageSmoothingEnabled = true
       ctx.imageSmoothingQuality = 'high'
