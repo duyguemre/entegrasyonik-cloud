@@ -611,6 +611,28 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
     background: var(--site-glass-bg);
     box-shadow: var(--site-shadow-panel);
   }
+  /*
+   * N7 (S27a): kartta TEK birincil eylem (Demo talep edin); "Adresi kopyala" ve "Hemen başlayın" ikincil METİN
+   * bağlantısı ağırlığında. Üç eylem korunur (e-posta istemcisi olmayan ziyaretçi için kopyala), yalnız görsel
+   * hiyerarşi netleşir. Paylaşılan EmailActions bileşenine dokunulmaz; kapsam yalnız bu kart.
+   */
+  .cta__panel :global(.ea .ea__btn.ea__btn--ghost) {
+    border-color: transparent;
+    background: transparent;
+    padding-inline: var(--ek-space-2);
+    color: var(--site-text-on-dark-body);
+    font-weight: var(--ek-font-weight-medium);
+  }
+  .cta__panel :global(.ea .ea__btn.ea__btn--ghost:hover) {
+    color: var(--site-text-on-dark-heading);
+  }
+  .cta__panel .cta__start {
+    margin-top: var(--ek-space-6);
+    padding-top: var(--ek-space-4);
+    border-top: var(--site-border-width) solid var(--site-glass-border);
+    width: 100%;
+    font-size: var(--ek-font-size-sm);
+  }
 
   /* ------------------------------------------------------------------ (3) sınırlar */
   .gateflow {
