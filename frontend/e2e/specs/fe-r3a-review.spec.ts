@@ -143,7 +143,8 @@ const CASES: Case[] = [
       await open(page, theme, '/orders', ['OrderListView', 'ProductListView'])
       await page.locator('.collapse-btn').first().click().catch(() => undefined)
       await page.waitForTimeout(700)
-      await nav(page).locator('[data-key="CustomerListView"]').first().hover().catch(() => undefined)
+      // Rayda düğmenin yalnız ikon sütunu görünür: hover görünür noktaya (öğenin ortası kırpılmış alanda).
+      await nav(page).locator('.ek-side__section:not([data-section]) [data-key="CustomerListView"]').first().hover({ position: { x: 20, y: 18 } }).catch(() => undefined)
       await page.waitForTimeout(500)
       await shot('menu-ray')
     },

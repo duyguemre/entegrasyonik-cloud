@@ -349,7 +349,15 @@
     "error": "Could not create the webhook address — make sure your Trendyol integration is set up and try again."
   },
   "shell": {
+    "favorites": {
+      "empty": "Star the screens you use most; they stay pinned here.",
+      "add": "Add to favorites",
+      "remove": "Remove from favorites",
+      "added": "added to favorites",
+      "removed": "removed from favorites"
+    },
     "section": {
+      "favorites": "Favorites",
       "general": "General",
       "catalog": "Catalog",
       "orders": "Orders",

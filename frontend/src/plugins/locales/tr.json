@@ -1353,7 +1353,15 @@
     }
   },
   "shell": {
+    "favorites": {
+      "empty": "Sık kullandığınız ekranları yıldızlayın; burada sabitlenir.",
+      "add": "Favorilere ekle",
+      "remove": "Favorilerden çıkar",
+      "added": "favorilere eklendi",
+      "removed": "favorilerden çıkarıldı"
+    },
     "section": {
+      "favorites": "Favoriler",
       "general": "Genel",
       "catalog": "Katalog",
       "orders": "Siparişler",
