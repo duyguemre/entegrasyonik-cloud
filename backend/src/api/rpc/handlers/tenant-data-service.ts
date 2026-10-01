@@ -8,6 +8,7 @@ import { storageService } from '@services/storage/StorageService';
 import { createTenantLifecycleService } from '../tenantLifecycleFactory';
 import { EXPORT_COLLECTIONS, sanitizeExportDoc } from '@operations/tenant/exportCollections';
 import { signExportDownloadToken } from '@operations/tenant/exportDownloadToken';
+import { ClientRepository } from '@database/repositories/app/ClientRepository';
 
 /** ADR-0003 Karar F.22: dışa aktarma indirme token'ı 24 saat geçerli. */
 const EXPORT_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
@@ -17,6 +18,8 @@ const EXPORT_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
  * (`requestDeletion`, `exportTenantData`) + platformAdmin `cancelDeletion` (aynı serviste, ADR öyle tanımlıyor).
  */
 export default class TenantDataService extends BaseApi implements IService {
+    private get clients() { return new ClientRepository(this.applicationDB); }
+
     async get(): Promise<any> { /* IService gereksinimi; kullanılmıyor */ }
 
     /**
@@ -36,7 +39,7 @@ export default class TenantDataService extends BaseApi implements IService {
         const passwordOk = !!userDoc && typeof userDoc.password === 'string' && (await security.comparePassword(password, userDoc.password));
         if (!passwordOk) throw new ApplicationError('Parola doğrulanamadı.', 401);
 
-        const client: any = await this.applicationDB.getClientModel().findOne({ order }).lean();
+        const client: any = await this.clients.findByOrder(order);
         if (!client) throw new ApplicationError('Tenant bulunamadı.', 404);
         const expectedName = String(client.title ?? '').trim();
         if (expectedName === '' || typeof confirmTenantName !== 'string' || confirmTenantName.trim() !== expectedName) {
