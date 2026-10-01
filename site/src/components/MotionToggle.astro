@@ -159,6 +159,12 @@
     }
   }
 
+  /* En dar ekranlarda (< 24rem) yalnız ray: header 320 px'e sığar. */
+  @media (max-width: 23.99rem) {
+    .motion-toggle__icon {
+      display: none;
+    }
+  }
   /* S24/S25 üst bar sadeliği: etiket görsel olarak gizli (her genişlikte), erişilebilir ad yine buradan okunur. */
   .motion-toggle__label {
     position: absolute;

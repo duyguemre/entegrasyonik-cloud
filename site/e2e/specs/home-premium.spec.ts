@@ -56,24 +56,31 @@ test.describe('MotionToggle header\'a sığar (320–1600 px)', () => {
       })
       expect(overflow.doc, `${width} doküman`).toBeLessThanOrEqual(0)
       expect(overflow.bar, `${width} header`).toBeLessThanOrEqual(0)
-      // S24: üst bar sadeliği — her genişlikte yalnızca simge (ad ekran okuyucuda)
-      await expect(page.locator('.motion-toggle__label')).toBeHidden()
+      // S24/S25 üst bar sadeliği: görünür metin etiketi yok (etiket görsel olarak gizli, adın kaynağı)
+      const label = (await page.locator('.motion-toggle__label').boundingBox())!
+      expect(label.width, `${width} etiket`).toBeLessThanOrEqual(2)
     }
   })
 
-  test('erişilebilir ad sabit; aria-pressed durumu tutar; durdurunca data-motion=paused', async ({ page }) => {
+  test('S26 anahtar: role=switch, ad "Animasyon"; tıklama ve Space ile aç/kapa; tercih yeniden yüklemede kalır', async ({ page }) => {
     await page.goto('/')
     await readyMotion(page)
-    const toggle = page.getByRole('button', { name: 'Hareketi durdur' })
-    await expect(toggle).toHaveAttribute('aria-pressed', 'false')
+    const toggle = page.getByRole('switch', { name: 'Animasyon' })
+    await expect(toggle).toHaveAttribute('aria-checked', 'true')
     await expect(page.locator('html')).toHaveAttribute('data-motion', 'play')
     await toggle.click()
-    await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    await expect(toggle).toHaveAttribute('aria-checked', 'false')
     await expect(page.locator('html')).toHaveAttribute('data-motion', 'paused')
-    await expect(page.getByRole('button', { name: 'Hareketi durdur' })).toHaveCount(1) // ad değişmedi
-    await toggle.click()
-    await expect(toggle).toHaveAttribute('aria-pressed', 'false')
+    await page.reload()
+    await readyMotion(page)
+    await expect(page.locator('html')).toHaveAttribute('data-motion', 'paused')
+    await expect(toggle).toHaveAttribute('aria-checked', 'false')
+    await toggle.focus()
+    await page.keyboard.press('Space')
+    await expect(toggle).toHaveAttribute('aria-checked', 'true')
     await expect(page.locator('html')).toHaveAttribute('data-motion', 'play')
+    // odak halkası rayın çevresinde
+    await expect(page.locator('.motion-toggle__track')).not.toHaveCSS('outline-style', 'none')
   })
 })
 
@@ -133,13 +140,20 @@ test.describe('Hero ürün paneli', () => {
     expect(await runningAnimations(page, true, '[data-testid="hero-mock"], [data-scene="hero-bg"], [data-scene="marquee"]')).toBe(0)
   })
 
-  test('prefers-reduced-motion: mock statik son durumda, hiçbir animasyon yok, kontrol gizli', async ({ page }) => {
+  test('prefers-reduced-motion: mock statik son durumda, hiçbir animasyon yok, anahtar kapalı + devre dışı', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await page.goto('/')
     await waitForFonts(page)
     await expect(page.getByTestId('hero-mock')).toBeVisible()
     await expect(page.locator('html')).toHaveAttribute('data-motion', 'reduced')
-    await expect(page.getByTestId('motion-toggle')).toBeHidden()
+    // S26: anahtar görünür ama KAPALI ve devre dışı (sistem ayarı öncelikli); tıklamak durumu değiştirmez
+    const sw = page.getByRole('switch', { name: 'Animasyon' })
+    await expect(sw).toHaveAttribute('aria-checked', 'false')
+    await expect(sw).toHaveAttribute('aria-disabled', 'true')
+    await expect(sw).toHaveAccessibleDescription(/hareket azaltma/)
+    await sw.dispatchEvent('click') // aria-disabled: Playwright normal tıklamayı bekletir; olayı doğrudan gönder
+    await expect(page.locator('html')).toHaveAttribute('data-motion', 'reduced')
+    await expect(sw).toHaveAttribute('aria-checked', 'false')
     expect(await runningAnimations(page)).toBe(0)
     expect(await stockText(page)).toBe('9')
     // üç sipariş "Rezerve" (statik son durum); "Yeni" rozeti görünmez
@@ -382,16 +396,21 @@ test.describe('S15-B: tek merkez akışı (kanallar -> göbek -> senkron)', () =
     await expect(page.locator('.ps__packet').first()).toHaveCSS('opacity', '0')
   })
 
-  test('reduced-motion: döngü hiç başlamaz; tüm çipler aynı (senkron) değeri gösterir', async ({ page }) => {
+  test('S26 reduced-motion: döngü hiç başlamaz; tek anlamlı son kare (tüm kanallar + merkez aynı yeni değer, rezerve, sonuç)', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await page.goto('/')
     await page.locator('.ps__net').scrollIntoViewIfNeeded()
     expect((await running(page)).filter((n) => n.startsWith('loop-ps-'))).toEqual([])
-    const values = await page.locator('.ps__chip-new').allTextContents()
-    expect(values).toHaveLength(4)
-    expect(new Set(values).size).toBe(1)
-    for (const el of await page.locator('.ps__chip-new').all()) await expect(el).toHaveCSS('opacity', '1')
+    const finals = page.locator('.ps__net .ps__chip-new[data-act="0"]')
+    const values = await finals.allTextContents()
+    expect(values).toHaveLength(5) // dört kanal + merkez
+    expect(new Set(values.map((v) => v.trim())).size).toBe(1)
+    for (const el of await finals.all()) await expect(el).toHaveCSS('opacity', '1')
     for (const el of await page.locator('.ps__chip-old').all()) await expect(el).toHaveCSS('opacity', '0')
+    for (const el of await page.locator('.ps__net .ps__chip-new:not([data-act="0"])').all()) await expect(el).toHaveCSS('opacity', '0')
+    await expect(page.locator('.ps__resv')).toHaveCSS('opacity', '1')
+    await expect(page.locator('.ps__order[data-act="0"]')).toHaveCSS('opacity', '1')
+    await expect(page.locator('.ps__result')).toContainText('aşırı satış yok')
   })
 })
 

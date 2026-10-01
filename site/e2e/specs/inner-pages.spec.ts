@@ -320,7 +320,9 @@ test.describe('ajan sayfası — sohbet sahnesi', () => {
       await expect(scene.locator(`[data-part="${part}"]`)).toHaveCSS('opacity', '1')
     }
     await expect(scene.locator('[data-part="ai-typing1"]')).toHaveCSS('opacity', '0')
-    await expect(page.getByTestId('motion-toggle')).toBeHidden()
+    // S26: anahtar görünür ama kapalı + devre dışı (sistem ayarı öncelikli)
+    await expect(page.getByTestId('motion-toggle')).toHaveAttribute('aria-checked', 'false')
+    await expect(page.getByTestId('motion-toggle')).toHaveAttribute('aria-disabled', 'true')
   })
 
   test('hareket açık: durdurma kontrolü görünür; durdurunca sahne statik son kareye döner', async ({ page }) => {
@@ -329,7 +331,7 @@ test.describe('ajan sayfası — sohbet sahnesi', () => {
     const toggle = page.getByTestId('motion-toggle')
     await expect(toggle).toBeVisible()
     await toggle.click()
-    await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    await expect(toggle).toHaveAttribute('aria-checked', 'false')
     await expect(page.getByTestId('assistant-scene').locator('[data-part="ai-approve"]')).toHaveCSS('opacity', '1')
   })
 
