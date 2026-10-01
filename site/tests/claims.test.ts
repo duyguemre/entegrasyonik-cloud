@@ -37,6 +37,7 @@ import {
   PROPOSAL_NOTICE,
   PLAN_SEED_PATH,
 } from '../src/data/plans'
+import { getPlanCards, getPlanTrustPoints } from '../src/data/plan-cards'
 import { getComparisonRows, getPricingFaq, getPricingFaqRecords, getPlanPitch, getPlanCommonFeatures, getPlanAgentRows, getPlanAgentSummary, planAgentIntro } from '../src/data/pricing'
 import { menuGroups } from '../src/data/nav-menu'
 import { featuresBridge, heroAgentEntry } from '../src/data/assistant'
@@ -116,6 +117,15 @@ function publicContent() {
     // de katı taramadan geçer. Rakamlı alanlar (deneme süresi, okuma süresi) `meta` anahtarındadır → sayı denetiminden
     // muaf (değer kayıttan: plan seed / rehber metni).
     nav: menuGroups().map((g) => ({ label: g.label, lead: g.lead, links: g.links.map((l) => [l.label, l.description ?? '']), footer: g.footer, feature: g.feature })),
+    // S27b: tek plan kartı kaydı (anasayfa + fiyat sayfası) ve güven şeridi de katı taramadan geçer (rakamlı vurgu `meta`)
+    // Seed değerleri (fiyat, limit, deneme günü) plan testlerinde seed'e karşı doğrulanır; burada yalnız kopya taranır.
+    planCards: getPlanCards().map((c) => ({
+      name: c.name, headline: c.headline, tagline: c.tagline, includesLabel: c.includesLabel, includes: c.includes, addOns: c.addOns,
+      agent: c.agent, limits: c.limits.map((l) => l.label), price: { note: c.price.note },
+      cta: { label: c.cta.label, ariaLabel: c.cta.ariaLabel, ...(c.trial ? { meta: c.cta.note } : { note: c.cta.note }) },
+      ...(c.trial ? { trial: { meta: c.trial.label } } : {}),
+    })),
+    planTrust: getPlanTrustPoints().map(({ source: _s, ...t }) => t),
     planAgent: { intro: planAgentIntro, rows: getPlanAgentRows(), summary: getPublicPlans().map((p) => getPlanAgentSummary(p.code)) },
   }
 }
