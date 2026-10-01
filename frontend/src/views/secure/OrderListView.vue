@@ -98,6 +98,8 @@
     >
       <!-- faz3-fe-help: ilk kullanım — hiç kayıt yokken "Nasıl başlanır?" (filtreli boş sonuçta gösterilmez). -->
       <template #empty-action><HelpStartLink article="gs-first-integration" /></template>
+      <!-- MOB-03: telefonda barkod okut → aynı genel arama (sipariş no / pazaryeri no / kargo takip no); tek sonuçta detay açılır. -->
+      <template #search-append><BarcodeScanButton target="order" @code="onScannedCode" /></template>
       <template #filters>
         <EkSelect v-model="filters.integrationCodes" kind="channel" :items="channelSelectOptions" label="Kanal" multiple clearable />
         <EkSelect v-model="filters.internalStatuses" kind="status" :items="statusSelectOptions" label="Sipariş durumu" multiple clearable recent-key="orders.status" />
@@ -189,6 +191,7 @@ import useRestApi from '@/composables/restapi'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import { useIntegrationStore } from '@/stores/integrationStore'
 import { useListQuery, listPayload } from '@/composables/useListQuery'
+import BarcodeScanButton from '@/components/barcode/BarcodeScanButton.vue'
 import { isOrderLocked, countBulkEligible, bulkTargetIds } from '@/components/order/orderRules'
 import { useOrderActions } from '@/components/order/composables/useOrderActions'
 import { useOrderCancel } from '@/components/order/composables/useOrderCancel'
@@ -593,6 +596,13 @@ const onOrderSelectionUpdate = (item: any, val: boolean) => {
   else selectedOrders.value = selectedOrders.value.filter(id => id !== item._id);
 };
 const openDetailedReport = (item: any) => { selectedOrderForDetail.value = item; isDetailOpen.value = true; };
+
+// MOB-03: okunan kod genel aramaya yazılır (yazma yok). Tek sipariş eşleşirse detayı açılır; birden çoksa liste filtreli kalır.
+async function onScannedCode(code: string) {
+  filters.value.globalSearch = code
+  await submitSearch()
+  if (!error.value && orders.value.length === 1 && total.value === 1) openDetailedReport(orders.value[0])
+}
 
 const getCancelSourceLabel = (source: string) => {
   if (source === 'SELLER') return 'Satıcı';

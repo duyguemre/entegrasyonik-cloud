@@ -6,6 +6,7 @@
   bileşimidir; ekran yalnız VERİ, KOLON, FİLTRE ALANLARI ve EYLEMLERİ verir.
 
     başlık  : H1 + açıklama ................. [hızlı arama] [#header-actions] [yenile]
+              #search-append: arama kutusunun hemen yanında (MOB-03 barkod düğmesi; yalnız telefon/tablet)
     filtre  : sayfa İÇİ katlanır panel (#filters dolu ise) — popup/overlay DEĞİL,
               yalnız bu sekmenin bileşen örneğinde yaşar → filtre yalnız bu sekmeyi etkiler
     çipler  : aktif filtreler (`chips`) — A8: filtre panelinin BAŞLIĞINDA kompakt özet (kapalıyken de görünür),
@@ -40,6 +41,7 @@
               @keyup.enter="emit('search-submit')"
               @click:clear="emit('search-submit')"
             />
+            <slot name="search-append" />
             <span v-if="$slots['header-actions']" class="ek-list-screen__extra"><slot name="header-actions" /></span>
           </div>
         </template>
@@ -63,6 +65,7 @@
           @keyup.enter="emit('search-submit')"
           @click:clear="emit('search-submit')"
         />
+        <slot name="search-append" />
         <span v-if="$slots['header-actions']" class="ek-list-screen__extra"><slot name="header-actions" /></span>
         <span v-if="refreshable" class="ek-list-screen__refresh"><EkRefreshButton :loading="loading" :label="refreshLabel" @refresh="emit('refresh')" /></span>
       </div>
