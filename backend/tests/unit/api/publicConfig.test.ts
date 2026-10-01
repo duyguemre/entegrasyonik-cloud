@@ -66,7 +66,8 @@ describe('GET /api/public-config', () => {
 
   it('exposure taşımayan bir katalog anahtarı yanıta girmez; katalogdaki her scope=platform anahtar exposure taşımalı (yeni anahtar eklenince bilinçli karar)', () => {
     // `features.*` (B11 ozellik bayraklari) varsayilan yoneticiye ozeldir; `clientVisible` ile bilincli acilir (catalog/features.ts).
-    const platformKeys = listSettings().filter((s) => s.scope === 'platform' && !s.key.startsWith('features.'));
+    // `alerts.*` (ADR-0029 NB8 alarm esikleri) de yoneticiye ozeldir (catalog/alerts.ts); public-config'e girmez.
+    const platformKeys = listSettings().filter((s) => s.scope === 'platform' && !s.key.startsWith('features.') && !s.key.startsWith('alerts.'));
     expect(platformKeys.filter((s) => s.exposure !== 'public').map((s) => s.key)).toEqual([]);
     const body = buildPublicConfig();
     const nonPublic = listSettings().filter((s) => s.exposure !== 'public').map((s) => s.key);
