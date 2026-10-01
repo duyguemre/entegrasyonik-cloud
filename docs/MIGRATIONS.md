@@ -16,6 +16,7 @@ Kaynak: `docs/audits/DATABASE_REVIEW_2026-09-30.md` §10 (DB-10/11/12/14/15), AD
 | 0012 | `0012-export-staged-archive-ttl-tenant` | DB-12 | tenant / index | ESP `ttl_archived_at` (`{archivedAt:1}`, partial `{isArchived:true}`), **30 gün** | indeksi düşürür (silinen belgeler yalnız yedekten döner) |
 | 0013 | `0013-exportflag-clientid-number-app` | DB-14 / D12 | app / migrate (küçük) | `ExportFlag.clientId` String → Number (koşullu `updateOne`), `clientId_1` düşer | Number → String, `clientId_1` geri kurulur |
 | 0014 | `0014-admin-mfa-sub-unique-app` | B12 / ADR-0026 | app / index | `AdminMfa` koleksiyonu + `uniq_sub` UNIQUE `{sub:1}` (`autoIndex:false`; ilk kayıt yarışını DB düzeyinde kapatır); `plan` yinelenen `sub` **grup sayısını** verir | `uniq_sub` düşer (koleksiyon/veri silinmez) |
+| 0021 | `0021-pricing-competition-tenant` | PRC-R0/R1 | tenant / index | `Variants` kısmi `costPrice_number` (`{costPrice:1}`, partial `costPrice` sayı) + `competition_trendyol_status` (partial `$exists`); `BuyboxSnapshots` `integ_barcode_observedAt` + `ttl_observedAt_90d` (90 g). Veri dönüşümü YOK. **ÇALIŞTIRILMADI** (bulut, 2026-10-01; docs/PRICING_COMPETITION.md §6) | yalnız bu göçün indeksleri düşer (koleksiyon/veri silinmez) |
 
 Numara notu: 0004 hiç kullanılmadı, 0008 boştu (durdurulan iş dosya bırakmadı); 0007 son eski göçtü. `up --all` numara sırasıyla koşar
 (0001, 0002, 0003, 0005, ... 0013) ve D16 → D10 → D9 sırasını **bozar**: bu partide `--all` **kullanılmaz**, kimlik tek tek verilir (bkz. §2).
