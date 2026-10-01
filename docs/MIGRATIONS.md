@@ -85,3 +85,9 @@ ve `0021-usage-daily-app`); kullanım göçü **0023**'e alındı. Hepsi bulutta
 | 0020 | `0020-push-subscriptions-app` | MOB-04 / ADR-0029 | app / index | `PushSubscriptions` `uniq_endpointHash` (UNIQUE), `tid_1_userId_1_createdAt_-1`; `WEBPUSH_VAPID_*` açılmadan önce `done` olmalı | indeksleri düşürür (veri silinmez) |
 | 0023 | `0023-usage-daily-app` | MOB-08 / K55 | app / index | `UsageDaily` `uniq_day_tid_platform` (UNIQUE), `tid_1_day_-1`, `expAt_ttl` (180 g); ilk dağıtımdan önce uygulanmalı | indeksleri düşürür (veri silinmez) |
 
+
+**Bulut be-com08 (2026-10-01) — RET-02 AuditLogs IP maskeleme.** Bulutta yazıldı, ÇALIŞTIRILMADI. Ayrıntı: `backend/docs/BE_COM08_REPORT.md`.
+
+| No | Kimlik | İş | Kapsam / tür | Ne yapar | Geri alma (`down`) |
+|---|---|---|---|---|---|
+| 0024 | `0024-audit-ip-mask-pending-app` | RET-02 | app / index | `AuditLogs` kısmi `ret02_ip_pending` (`{at:1,_id:1}`, partial `ip $exists`): günlük `retention.auditIpMask` işi yalnız maskelenmemiş kayıtları tarar. Veri dönüşümü göçte YOK (maskeleme iştir); 365 g TTL (`at_1`) değişmez. İndeks yokken iş yine çalışır (TTL indeksiyle, daha çok tarama) | indeksi düşürür (maskelenmiş IP geri gelmez — maskeleme bilerek geri alınamaz) |

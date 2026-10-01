@@ -13,6 +13,8 @@ export const AuditLogSchema = new mongoose.Schema({
     sub:    { type: String },                    // merkezi Users._id (başarısız girişte YOK)
     tid:    { type: Number },                    // tenant order
     ip:     { type: String },
+    // RET-02: 90 gunden eski kayitta `ip` kaldirilir, yalniz ag oneki burada kalir (IPv4 /24, IPv6 /48; operations/retention/auditIpMask.ts).
+    ipMasked: { type: String },
     result: { type: String, enum: ['ok', 'fail', 'error'], required: true },
     // ADR-0026 Karar 4.8 / ADR-0028 §10 (geriye uyumlu, hepsi istege bagli): kim (actorType), kimin adina (onBehalfOf = hedef tenant),
     // hangi yuzey (surface), impersonation oturumu (imp), istek korelasyonu (reqId). Mevcut kayitlarda YOK.
@@ -38,3 +40,6 @@ AuditLogSchema.index({ sub: 1, at: -1 });
 // (audit-service.ts:30-34 -- tenant denetim kaydı listesi, tid filtresi + at aralık sıralaması).
 // Uygulama: backend/migrations/0001-d9-indexes-app.js.
 AuditLogSchema.index({ tid: 1, at: -1 }, { name: 'tid_1_at_-1' });
+// RET-02: IP maskeleme isinin bekleyen kayit taramasi (yalniz `ip` alani olan kayitlar; maskelenen kayit indeksten duser).
+// Uygulama: backend/migrations/0024-audit-ip-mask-pending-app.js.
+AuditLogSchema.index({ at: 1, _id: 1 }, { name: 'ret02_ip_pending', partialFilterExpression: { ip: { $exists: true } } });

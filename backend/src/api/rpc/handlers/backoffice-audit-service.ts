@@ -59,7 +59,7 @@ export default class BackofficeAuditService extends BaseApi implements IService 
         return {
             items: page.map((x: any) => ({
                 id: String(x._id), at: x.at, event: x.event, result: x.result, actor: x.sub ?? null, tid: x.tid ?? null, onBehalfOf: x.onBehalfOf ?? null,
-                actorType: x.actorType ?? null, surface: x.surface ?? null, imp: x.imp === true, reqId: x.reqId ?? null, ip: x.ip ?? null, meta: sanitizeMeta(x.meta) ?? null,
+                actorType: x.actorType ?? null, surface: x.surface ?? null, imp: x.imp === true, reqId: x.reqId ?? null, ip: x.ip ?? x.ipMasked ?? null, ipMasked: x.ip === undefined && typeof x.ipMasked === 'string', meta: sanitizeMeta(x.meta) ?? null,
             })),
             nextCursor: hasMore && last ? encodeCursor(last.at, last._id) : null,
             from, to,
