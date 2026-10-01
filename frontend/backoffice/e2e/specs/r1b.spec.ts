@@ -49,7 +49,7 @@ test.describe('BO-R1b sayfa hükümleri', () => {
       if (title) await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible()
       await expectVerdict(page)
       // Her dikkat maddesinin eylemi bir bağlantıdır (bağlantısız uyarı yok — CONSOLE_IDENTITY ilke 1).
-      const items = page.getByTestId('verdict-attention').locator('li')
+      const items = page.getByTestId('verdict-attention').locator('ol > li')
       const n = await items.count()
       for (let i = 0; i < n; i++) await expect(items.nth(i).getByTestId('attention-action')).toHaveAttribute('href', /.+/)
       await expectNoA11yViolations(page)
