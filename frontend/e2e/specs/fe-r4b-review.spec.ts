@@ -102,6 +102,14 @@ for (const v of VIEWS) {
       await shot(page, 'duzenle-2-tanim', v)
       await step(root, page, /Tekil Ürün Bilgisi/)
       await shot(page, 'duzenle-3-tekil', v)
+      // uzun adımda aşağı kaydırma: kayıt çubuğu (varsa yapışkan) görünür kalır
+      await root.evaluate((el: HTMLElement) => {
+        let n: HTMLElement | null = el
+        while (n && !(n.scrollHeight > n.clientHeight + 4 && /(auto|scroll)/.test(getComputedStyle(n).overflowY))) n = n.parentElement
+        n?.scrollBy(0, 420)
+      })
+      await page.waitForTimeout(300)
+      await shot(page, 'duzenle-3-tekil-kaydirilmis', v)
       await step(root, page, /Detay Bilgiler/)
       await shot(page, 'duzenle-4-detay', v)
       await root.getByRole('button', { name: /Eksikleri göster|Kayıt özeti/ }).first().click().catch(() => undefined)

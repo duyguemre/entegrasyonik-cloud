@@ -11,6 +11,8 @@
   nesnesi doğrudan düzenlenir).
 -->
 <template>
+  <ProductStepCard title="Ürün tanımı" icon="mdi-text-box-edit-outline"
+    description="Ürün tipi, marka, başlık ve açıklama; görseller galeriden yönetilir.">
   <div class="pif-layout">
     <div class="pif-gallery">
       <!-- FR2-PFORM 27: kapak + sıradaki görseller görünür; düğmenin ne yaptığı yazılı. -->
@@ -42,10 +44,15 @@
 
     <div class="pif-fields">
       <EkFormSection title="Ürün tipi" icon="mdi-shape-outline">
-        <v-radio-group inline hide-details v-model="productInfoForm.hasVariant" class="pif-radios">
-          <v-radio :value="false" :label="$t('productDefinitions.product.define.withoutVariant')" />
-          <v-radio :value="true" :label="$t('productDefinitions.product.define.withVariant')" />
-        </v-radio-group>
+        <div class="ek-span-full">
+          <v-radio-group inline hide-details v-model="productInfoForm.hasVariant" class="pif-radios" aria-label="Ürün tipi">
+            <v-radio :value="false" :label="$t('productDefinitions.product.define.withoutVariant')" />
+            <v-radio :value="true" :label="$t('productDefinitions.product.define.withVariant')" />
+          </v-radio-group>
+          <p class="pif-type-hint">{{ productInfoForm.hasVariant
+            ? 'Renk, beden gibi seçeneklerin her birleşimi ayrı stok kodu, barkod, fiyat ve stok taşır.'
+            : 'Tek stok kodu ve barkodla satılan ürün.' }}</p>
+        </div>
         <v-text-field v-if="productInfoForm.hasVariant" clearable maxlength="32" counter data-pf-field="maincode"
           :rules="formRules.stockcodeRules" v-model="productInfoForm.maincode"
           :label="`${$t('productDefinitions.product.define.maincode')} *`"
@@ -70,12 +77,14 @@
       </EkFormSection>
     </div>
   </div>
+  </ProductStepCard>
 </template>
 
 <script setup lang="ts">
 import { QuillEditor } from '@vueup/vue-quill'
 import '@vueup/vue-quill/dist/vue-quill.snow.css'
 import { EkFormSection } from '@entegrasyonik/ui/components'
+import ProductStepCard from './ProductStepCard.vue'
 import BrandSelectBoxComponent from '@/components/common/BrandSelectBoxComponent.vue'
 import { computed } from 'vue'
 import GalleryThumb from '@/components/productDefinitions/images/GalleryThumb.vue'
@@ -101,16 +110,9 @@ const formRules: any = useFormRules()
 <style scoped>
 .pif-layout {
   display: grid;
-  grid-template-columns: 232px minmax(0, 1fr);
-  gap: var(--ek-space-6);
+  grid-template-columns: 248px minmax(0, 1fr);
+  gap: var(--ek-space-8);
   align-items: start;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: var(--ek-space-6);
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-card);
-  background: var(--ek-color-surface);
-  box-shadow: var(--ek-shadow-card);
 }
 
 .pif-gallery {
@@ -255,8 +257,54 @@ const formRules: any = useFormRules()
   min-width: 0;
 }
 
+/* Ürün tipi: iki seçim kutucuğu (radyo + etiket tek tıklama alanı); seçili kutucuk aksiyon tonunda. */
 .pif-radios :deep(.v-selection-control-group) {
-  gap: var(--ek-space-4);
+  flex-wrap: wrap;
+  gap: var(--ek-space-3);
+}
+
+.pif-radios :deep(.v-radio) {
+  flex: 1 1 200px;
+  max-width: 320px;
+  min-height: 48px;
+  padding: 0 var(--ek-space-4) 0 var(--ek-space-1);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-control);
+  background: var(--ek-color-surface);
+  transition: var(--ek-transition-colors);
+}
+
+.pif-radios :deep(.v-radio:hover) {
+  border-color: var(--ek-color-action-border);
+}
+
+.pif-radios :deep(.v-radio.v-selection-control--dirty) {
+  border-color: var(--ek-color-action);
+  background: var(--ek-color-action-subtle);
+  box-shadow: var(--ek-selection-ring);
+}
+
+.pif-radios :deep(.v-radio .v-label) {
+  flex: 1 1 auto;
+  min-height: 46px;
+  color: var(--ek-color-content-strong);
+  font-weight: var(--ek-font-weight-medium);
+  opacity: 1;
+  cursor: pointer;
+}
+
+.pif-type-hint {
+  margin: var(--ek-space-1) 0 0;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pif-radios :deep(.v-radio),
+  .pif-gallery__tile {
+    transition: none;
+  }
 }
 
 .pif-editor {
@@ -289,8 +337,9 @@ const formRules: any = useFormRules()
 }
 
 @media (max-width: 599px) {
-  .pif-layout {
-    padding: var(--ek-space-4);
+  .pif-gallery {
+    max-width: 200px;
   }
 }
+
 </style>

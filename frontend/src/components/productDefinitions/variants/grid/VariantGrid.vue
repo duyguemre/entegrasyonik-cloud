@@ -524,7 +524,7 @@ const CellBody = defineComponent({
 .vg-c-int { width: 68px; }
 .vg-c-shelf { width: 80px; }
 .vg-c-cost { width: 172px; }
-.vg-c-actions { width: 84px; }
+.vg-c-actions { width: 104px; }
 
 /* başlık */
 .vg-th {
@@ -598,6 +598,9 @@ const CellBody = defineComponent({
 
 /* grup (rowspan) — görünüm ortak `VariantGroupCell`; burada yalnız ızgaraya özgü konum/zemin önceliği */
 .vg-group { --ek-vgroup-top: var(--vg-head); vertical-align: top; padding: 0; background: var(--ek-color-surface-sunken); }
+/* FE R4 B (görsel cila, yapı aynı): grup hücresinde ince aksiyon şeridi — grubun satırlarını bir arada okutur. */
+td.vg-group { box-shadow: inset 3px 0 0 var(--ek-color-action-border); }
+.vg--narrow td.vg-group { box-shadow: inset 3px 0 0 var(--ek-color-action-border), var(--ek-shadow-scroll-start); }
 .vg-row.is-group-odd .vg-group { background: var(--ek-color-surface-muted); }
 
 /* düzenlenebilir hücre */
@@ -653,13 +656,15 @@ const CellBody = defineComponent({
 }
 .vg-thumb:hover { border-color: var(--ek-color-action-border); box-shadow: var(--ek-shadow-card); }
 .vg-thumb:focus-visible { outline: none; box-shadow: var(--ek-focus-ring); }
+/* Görselsiz varyant: uyarı tonu yalnız kesik çerçeve + ikon/metinde (dolu blok koyu temada ağır duruyordu). */
 .vg-thumb.is-empty {
   border-style: dashed;
   border-color: var(--ek-color-warning-border);
-  background: var(--ek-color-warning-subtle);
+  background: var(--ek-color-surface);
   color: var(--ek-color-warning-emphasis);
   cursor: pointer;
 }
+.vg-thumb.is-empty:hover { border-color: var(--ek-color-warning); background: var(--ek-color-warning-subtle); }
 .vg-thumb__add {
   display: flex;
   flex-direction: column;
