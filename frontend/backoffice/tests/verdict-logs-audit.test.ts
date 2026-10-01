@@ -76,10 +76,12 @@ describe('log merkezi hükmü', () => {
     expect(v.actions.find((a) => a.id === 'screen')?.to).toBe('/altyapi')
   })
 
-  it('tid kapsamı: özet "Müşteri #N için" der; platform geneli ayrımı yapılır', () => {
+  it('tid kapsamı: özet "Müşteri #N için" der; sorun grupları da müşteri kapsamlı ve yaklaşık', () => {
     const v = logCenterVerdict({ ...base(), tid: { tid: 105, errors: 4, warns: 1 } })
     expect(v.summary.startsWith('Müşteri #105 için')).toBe(true)
-    expect(v.summary).toContain('Platform genelinde')
+    expect(v.summary).toContain('Müşterinin sorun gruplarında (yaklaşık)')
+    expect(v.note).toContain('başka müşterinin grubu da görünebilir')
+    expect(v.attention[0].impact).toContain('yaklaşık')
     expect(v.attention[0].id).toBe('tenant-errors')
     expect(v.attention[0].to).toEqual({ query: { tid: '105', level: 'error,fatal', sekme: 'akis' } })
     expect(v.actions.find((a) => a.id === 'tenant')?.to).toBe('/musteriler/105')

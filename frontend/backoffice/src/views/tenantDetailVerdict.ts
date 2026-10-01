@@ -1,11 +1,12 @@
 /**
  * Müşteri detayı — sayfa hükmü (K51). Saf: girdi yaşam döngüsü + (varsa) liste satırı.
- * BE-02 (sağlık özeti: açık sorun grupları, başarısız iş sayısı, uyarılar) henüz yok: "şu an" hükmü yalnız yaşam
- * döngüsü (durum, kurulum, silme, abonelik, son eşitleme) ve kanal listesinden kurulur; sorun/iş sayıları iz
- * bağlantılarına bırakılır.
+ * "Şu an" hükmü yaşam döngüsü (durum, kurulum, silme, abonelik, son eşitleme), kanal listesi ve BE-02 sağlık özeti
+ * (açık sorun grupları ~yaklaşık, başarısız işler, firing uyarılar) ile kurulur. Sağlık özetinin okunamayan bölümü
+ * (`degradedSections`) "okunamadı" der; boş değer "sorun yok" diye okunmaz.
  */
 import type { RouteLocationRaw } from 'vue-router'
 import type { ClientDto, TenantLifecycle } from '@bo/api/contract'
+import type { HealthSummarySection, TenantHealthSummary } from '@bo/api/contracts/ops'
 import { buildVerdict, unreadable, type AttentionItem, type PageVerdict, type SuggestedAction } from '@bo/utils/verdict'
 import { SUB_STATUS, TENANT_STATUS, planLabel } from '@bo/utils/labels'
 import { formatRelative } from '@bo/utils/format'
@@ -15,6 +16,12 @@ export const TRIAL_ENDING_DAYS = 3
 /** Kanallı aktif hesapta son başarılı sipariş eşitlemesi bu süreden eskiyse uyarılır (liste uyarısıyla aynı eşik). */
 export const SYNC_STALE_MS = 24 * 3_600_000
 
+/** Müşterinin bullmq başarısız işi bu sayıya ulaşırsa kırmızı (liste hükmündeki FAILED_JOBS_ERROR ile aynı eşik). */
+export const FAILED_JOBS_ERROR = 10
+/** Açık sorun grubu (yaklaşık) bu sayıya ulaşırsa kırmızı (liste hükmündeki OPEN_ISSUES_ERROR ile aynı eşik). */
+export const OPEN_ISSUES_ERROR = 3
+const SECTION_LABEL: Record<HealthSummarySection, string> = { openIssues: 'Açık sorun grupları', failedJobs: 'Başarısız iş sayıları (kuyruk)', lastSyncAt: 'Entegrasyon eşitleme zamanları', alerts: 'Etkin uyarılar' }
+
 export interface TenantDetailVerdictInput {
   tid: number
   life: TenantLifecycle | null
@@ -23,6 +30,10 @@ export interface TenantDetailVerdictInput {
   failed: boolean
   stale?: boolean
   retry: () => void
+  /** BE-02 sağlık özeti; verilmezse (undefined) sağlık maddeleri yazılmaz, `null` + `healthFailed` okunamadı demektir. */
+  health?: TenantHealthSummary | null
+  healthFailed?: boolean
+  retryHealth?: () => void
   /** Sayfa içi sekmeye götüren konum (`?sekme=`; diğer sorgu korunur). */
   tabTo: (tab: 'ozet' | 'yasam-dongusu') => RouteLocationRaw
   /** Güvenli eylemler: ilgili GuardedDialog'u açar (yalnız uygun olduğunda verilir). */
@@ -120,12 +131,65 @@ export function tenantDetailVerdict(i: TenantDetailVerdictInput): PageVerdict {
     }
   }
 
+  // BE-02 sağlık özeti. Boş bölüm "sorun yok" değildir: `degradedSections` önce okunur.
+  const h = i.health
+  const bad = new Set((h?.degradedSections ?? []).map((d) => d.section))
+  const retryHealth = i.retryHealth ?? i.retry
+  if (i.healthFailed && !h) attention.push(unreadable('health', 'Sağlık özeti (sorun, başarısız iş, uyarı)', retryHealth))
+  if (h) {
+    for (const sec of bad) attention.push(unreadable(`health-${sec}`, SECTION_LABEL[sec], retryHealth))
+    const n = h.openIssues.items.length
+    if (!bad.has('openIssues') && n) {
+      const top = h.openIssues.items[0]
+      attention.push({
+        id: 'open-issues',
+        tone: n >= OPEN_ISSUES_ERROR ? 'error' : 'warning',
+        title: `~${n} açık sorun grubu`,
+        impact: `Sayı yaklaşıktır; en yeni: ${top.module} · ${top.code} (${top.count} olay).`,
+        advice: 'Sorun gruplarını loglarda açıp en çok tekrarlananı kontrol edin.',
+        to: { path: '/loglar', query: { ...q, sekme: 'sorunlar', fp: top.fp } },
+        cta: 'Sorun gruplarını aç',
+        since: top.lastSeen,
+      })
+    }
+    const fj = h.failedJobs
+    const total = (fj.bullmq ?? 0) + (fj.dlq ?? 0)
+    if (!bad.has('failedJobs') && total) {
+      const onlyDlq = !(fj.bullmq ?? 0)
+      attention.push({
+        id: 'failed-jobs',
+        tone: (fj.bullmq ?? 0) >= FAILED_JOBS_ERROR ? 'error' : 'warning',
+        title: `${[fj.bullmq ? `${fj.bullmq} başarısız iş` : '', fj.dlq ? `${fj.dlq} iş elle inceleme bekliyor` : ''].filter(Boolean).join(', ')}`,
+        impact: fj.bullmqAvailable ? 'Başarısız işler yeniden denenmezse müşterinin sipariş ve ürün güncellemeleri eksik kalır.' : 'Kuyruk okunamadı; yalnız elle inceleme bekleyen işler biliniyor, sayı eksik olabilir.',
+        advice: 'Motorda bu müşteriye süzülmüş başarısız işleri kontrol edin.',
+        to: { path: '/motor', query: { sekme: 'basarisiz', ...(onlyDlq ? { kaynak: 'dlq' } : {}), ...q } },
+        cta: 'Başarısız işleri aç',
+      })
+    }
+    if (!bad.has('alerts'))
+      for (const a of h.alerts) {
+        const muted = !!a.mutedUntil && Date.parse(a.mutedUntil) > now
+        attention.push({
+          id: `alert-${a.ruleId}-${a.scopeKey}`,
+          tone: muted ? 'info' : a.level === 'critical' ? 'error' : 'warning',
+          title: `${a.level === 'critical' ? 'Kritik' : 'Uyarı'}: ${a.ruleId} kuralı etkin${muted ? ' (susturulmuş)' : ''}`,
+          impact: muted ? 'Bildirimler susturuldu; durum sürüyor.' : 'Kural tetiklendi ve çözülmedi.',
+          advice: 'Uyarıyı açıp kapsamını ve nedenini kontrol edin.',
+          to: { path: '/bildirimler/uyarilar', query: { durum: 'firing' } },
+          cta: 'Etkin uyarıları aç',
+          since: a.firstFiredAt,
+        })
+      }
+  }
+
   const attentive = attention.some((a) => a && a.tone !== 'info')
   const trialRelevant = l?.trial && !l.trial.billingExempt && (l.trial.subscriptionStatus === 'trialing' || l.trial.subscriptionStatus === 'suspended')
   // İlk eylem en önemlisi: silme bekleyen hesapta geri alma, deneme/askıda uzatma, aksi halde iz bağlantıları.
   if (l?.status === 'DELETION_PENDING' && l.deletion?.canCancel && i.undoDeletion)
     actions.push({ id: 'undo-deletion', label: 'Silme talebini geri al', detail: 'Hesap yeniden aktif olur; planlanan silme iptal edilir.', icon: 'mdi-undo-variant', guarded: true, onSelect: i.undoDeletion })
   if (trialRelevant) actions.push({ id: 'extend-trial', label: 'Denemeyi uzat ya da planı değiştir', detail: 'Abonelik sayfasında gerekçe ve kimlik doğrulamasıyla yapılır.', icon: 'mdi-timer-plus-outline', to: `/abonelikler/${i.tid}` })
+  const fjs = h && !bad.has('failedJobs') ? (h.failedJobs.bullmq ?? 0) + (h.failedJobs.dlq ?? 0) : 0
+  if (fjs) actions.push({ id: 'failed-jobs', label: 'Başarısız işleri motorda aç', detail: 'Bu müşteriye süzülmüş; yeniden deneme motor ekranında gerekçeyle yapılır.', icon: 'mdi-engine-outline', to: { path: '/motor', query: { sekme: 'basarisiz', ...q } } })
   if (attentive && i.impersonate && l?.status === 'ACTIVE')
     actions.push({ id: 'impersonate', label: 'Müşterinin gözünden aç', detail: 'Sorunu müşterinin ekranında görün; oturum 30 dakika sürer, yazma işlemleri kapalıdır.', icon: 'mdi-account-eye-outline', guarded: true, onSelect: i.impersonate })
   if (attention.length) {
@@ -135,6 +199,7 @@ export function tenantDetailVerdict(i: TenantDetailVerdictInput): PageVerdict {
   }
 
   const unknown = i.failed && !l
+  const healthClean = !!h && !bad.size && !h.openIssues.items.length && !((h.failedJobs.bullmq ?? 0) + (h.failedJobs.dlq ?? 0)) && !h.alerts.length
   const sub = l?.trial ? `${planLabel(l.trial.planCode)} · ${SUB_STATUS[l.trial.subscriptionStatus].label.toLocaleLowerCase('tr')}` : 'abonelik kaydı yok'
   const sync = l?.lastSuccessfulOrderSync ? `son sipariş eşitleme ${formatRelative(l.lastSuccessfulOrderSync, now)}` : 'henüz sipariş eşitlemesi yok'
   return buildVerdict({
@@ -142,9 +207,9 @@ export function tenantDetailVerdict(i: TenantDetailVerdictInput): PageVerdict {
     actions,
     calm: unknown
       ? { summary: 'Hesap durumu okunamadı — hüküm verilemiyor; bağlantıyı denetleyip tekrar deneyin.', tone: 'neutral' }
-      : { summary: `Hesap ${l ? TENANT_STATUS[l.status].label.toLocaleLowerCase('tr') : ''}; abonelik ${sub}; ${sync}.`.replace('Hesap ;', 'Hesap;') },
-    note: 'Açık sorun grubu, başarısız iş ve uyarı sayıları bu özete dahil değil (sağlık özeti ucu yok); iz bağlantılarından bakın.',
-    checks: ['Hesap durumu', 'Kurulum ve silme süreci', 'Abonelik', 'Son sipariş eşitleme', 'Bağlı kanallar'],
+      : { summary: `Hesap ${l ? TENANT_STATUS[l.status].label.toLocaleLowerCase('tr') : ''}; abonelik ${sub}; ${sync}${healthClean ? '; açık sorun, başarısız iş ve etkin uyarı yok' : ''}.`.replace('Hesap ;', 'Hesap;') },
+    note: h && !bad.size ? 'Açık sorun sayısı yaklaşıktır (kova eşleşmesi); başarısız iş ve uyarılar anlık okundu.' : 'Sağlık özeti okunamadığı bölümlerde hüküm verilemez; iz bağlantılarından bakın.',
+    checks: ['Hesap durumu', 'Kurulum ve silme süreci', 'Abonelik', 'Son sipariş eşitleme', 'Bağlı kanallar', ...(h ? ['Açık sorun grupları', 'Başarısız işler', 'Etkin uyarılar'] : [])],
     okTitle: 'Bu hesapta dikkat isteyen bir şey yok',
     busy: ({ errors, top }) =>
       unknown

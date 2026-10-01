@@ -11,6 +11,7 @@ import type {
   AuditRecord,
   BackofficeMe,
   GetIssueGroupsRequest,
+  GetIssueGroupsResponse,
   IssueGroup,
   ListLogsRequest,
   LogCategory,
@@ -471,6 +472,8 @@ export class MockAdminServer {
   }
 
   private getIssueGroups(req: GetIssueGroupsRequest) {
+    // BE-06: `tid` pozitif tam sayı; strict gövde (bilinmeyen alan 400).
+    if (req.tid !== undefined && (!Number.isInteger(req.tid) || req.tid < 1)) throw new MockHttpError(400, 'VALIDATION', 'Geçersiz istek.', [{ path: 'tid', message: 'pozitif tam sayı olmalı' }])
     const range = req.range ?? '24h'
     const items: IssueGroup[] = this.logs.issues
       .map((issue) => {
@@ -481,6 +484,24 @@ export class MockAdminServer {
       .filter((i) => !req.status?.length || req.status.includes(i.status))
       .filter((i) => !req.category?.length || req.category.includes(i.category))
       .filter((i) => !req.src?.length || req.src.includes(i.src))
+    // BE-06 benzetimi: gerçek süzgeç kova eşleşmesidir (yaklaşık). Burada müşterinin olaylarının/etkilenen listesinin geçtiği gruplar +
+    // kova çakışması gibi en çok 2 yabancı grup (deterministik: grup sırası + tid) — eksik gelmez, fazla gelebilir.
+    let tenantFilter: GetIssueGroupsResponse['tenantFilter']
+    if (req.tid !== undefined) {
+      const tid = req.tid
+      const own = (fp: string) => (ISSUE_TENANTS[fp] ?? []).includes(tid) || this.logs.events.some((e) => e.fp === fp && e.tid === tid)
+      let foreign = 0
+      const kept = items.filter((g, idx) => {
+        if (own(g.fp)) return true
+        if (foreign < 2 && (idx + tid) % 4 === 0) {
+          foreign++
+          return true
+        }
+        return false
+      })
+      items.splice(0, items.length, ...kept)
+      tenantFilter = { tid, approximate: true }
+    }
     const sort = req.sort ?? 'lastSeen'
     items.sort((a, b) => {
       if (sort === 'count') return b.count - a.count
@@ -488,7 +509,7 @@ export class MockAdminServer {
       if (sort === 'new') return Number(b.isNew) - Number(a.isNew) || Date.parse(b.firstSeen) - Date.parse(a.firstSeen)
       return Date.parse(b.lastSeen) - Date.parse(a.lastSeen)
     })
-    return { items }
+    return tenantFilter ? { items, tenantFilter } : { items }
   }
 
   private getIssueTrend(fp: string, range: LogRange) {

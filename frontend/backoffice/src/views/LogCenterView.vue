@@ -8,6 +8,7 @@
         <div class="bo-seg" role="radiogroup" aria-label="Zaman aralığı">
           <button v-for="r in RANGES" :key="r.value" type="button" role="radio" class="bo-seg__opt" :aria-checked="range === r.value" @click="range = r.value">{{ r.label }}</button>
         </div>
+        <CopyViewLink />
         <EkButton tone="secondary" icon="mdi-refresh" :loading="loading || summary.refreshing.value" data-page-refresh @click="refresh">Yenile</EkButton>
       </template>
     </BoPageHeader>
@@ -77,7 +78,7 @@
               <v-icon icon="mdi-close" aria-hidden="true" />
             </button>
           </span>
-          <span class="bo-logs__scope-note">Olay akışına uygulanır; sorun grupları platform genelidir.</span>
+          <span class="bo-logs__scope-note" data-testid="tid-scope-note">Olay akışı kesin süzülür; sorun grupları yaklaşıktır (başka müşterinin grubu da görünebilir).</span>
         </p>
         <div class="bo-tabs">
           <div class="bo-tabs__list" role="tablist" aria-label="Görünüm">
@@ -102,6 +103,9 @@
 
         <!-- Sorun grupları -->
         <div v-if="tab === 'issues'" id="panel-issues" role="tabpanel" aria-labelledby="tab-issues">
+          <p v-if="tid && issues" class="bo-logs__scope-note bo-logs__approx" data-testid="issues-approx">
+            <v-icon icon="mdi-information-outline" aria-hidden="true" />Yaklaşık: müşteri #{{ tid }} süzgeci kova eşleşmesiyle uygulanır; başka müşterinin grubu da görünebilir.
+          </p>
           <BoPanelState v-if="issuesError" state="error" :error="issuesError" error-text="Sorun grupları yüklenemedi" @retry="loadIssues" />
           <EkSkeleton v-else-if="!issues" type="table" :rows="6" />
           <EkEmptyState v-else-if="!issues.length" variant="no-results" title="Bu filtrelerde sorun yok" message="Aralığı genişletin ya da filtreleri temizleyin." />
@@ -238,6 +242,7 @@ import BarTrend from '@bo/components/BarTrend.vue'
 import Sparkline from '@bo/components/Sparkline.vue'
 import TraceDialog from '@bo/components/TraceDialog.vue'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import CopyViewLink from '@bo/components/CopyViewLink.vue'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import { useVerdictSources } from '@bo/composables/useVerdictSources'
 import { logCenterVerdict, type TidScope } from './logCenterVerdict'
@@ -277,7 +282,8 @@ const queryList = <T extends string>(key: string, allowed: readonly T[]): T[] =>
 const queryTid = Number(route.query.tid)
 const tid = ref<number | undefined>(Number.isInteger(queryTid) && queryTid > 0 ? queryTid : undefined)
 const range = ref<LogRange>('24h')
-const tab = ref<'issues' | 'stream'>(tid.value ? 'stream' : 'issues')
+// Açılışta ?sekme= önceliklidir (hüküm/kayıtlı görünüm bağlantıları); yoksa ?tid= olay akışıyla, aksi halde sorun gruplarıyla başlar.
+const tab = ref<'issues' | 'stream'>(route.query.sekme === 'sorunlar' ? 'issues' : route.query.sekme === 'akis' || tid.value ? 'stream' : 'issues')
 const sort = ref<'lastSeen' | 'count' | 'tenantCount' | 'new'>('lastSeen')
 const category = ref<LogCategory[]>(queryList('category', Object.keys(CATEGORY) as LogCategory[]))
 const level = ref<LogLevel[]>(queryList('level', ['fatal', 'error', 'warn', 'info'] as const))
@@ -296,9 +302,9 @@ const issuesError = ref<unknown>(null)
 const streamError = ref<unknown>(null)
 
 // Hüküm: süzgeç ve aralıktan bağımsız son 24 saatin sorun grupları (+ ?tid= varsa müşterinin olay sayıları).
-// BE-06 yok: sorun grupları tid'e göre süzülemez → müşteri kapsamı yalnız olay sayımına uygulanır.
+// BE-06: `?tid=` sorun gruplarına da uygulanır (kova eşleşmesi → yaklaşık); müşteri sayımı olay akışı yüzlerinden.
 const summary = useVerdictSources({
-  groups: () => api.call('LogCenterService/getIssueGroups', { range: '24h', sort: 'count' }),
+  groups: () => api.call('LogCenterService/getIssueGroups', { range: '24h', sort: 'count', tid: tid.value }),
   tenant: async () => (tid.value ? api.call('LogCenterService/listLogs', { range: '24h', tid: tid.value, limit: 1 }) : null),
 })
 const tidScope = computed<TidScope | null>(() => {
@@ -377,6 +383,7 @@ async function loadIssues() {
       sort: sort.value,
       category: category.value.length ? category.value : undefined,
       src: src.value.length ? src.value : undefined,
+      tid: tid.value,
     })
     // Seviye yüzü sorun gruplarında da uygulanır (grup = tek seviye).
     issues.value = level.value.length ? res.items.filter((i) => level.value.includes(i.level)) : res.items
@@ -454,6 +461,7 @@ watch(tid, (v) => {
   const { tid: _tid, ...rest } = route.query
   router.replace({ query: v ? { ...rest, tid: String(v) } : rest })
   void loadStream()
+  void loadIssues()
   void summary.load()
 })
 
@@ -494,6 +502,13 @@ onMounted(async () => {
 }
 
 /* ---- müşteri kapsamı (?tid=) ---- */
+.bo-logs__approx {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  margin: 0 0 var(--ek-space-2);
+}
+
 .bo-logs__scope {
   display: flex;
   flex-wrap: wrap;

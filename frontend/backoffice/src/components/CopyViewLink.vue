@@ -1,11 +1,14 @@
 <!--
   CopyViewLink — NT-03 "Bu görünümün bağlantısı": geçerli URL'yi (sekme + süzgeçler sorgu dizgisinde) panoya kopyalar.
-  Sayfa başlığı eylemlerinde, "Yenile"nin solunda. Sunucu tarafı kayıtlı görünüm → BE-05.
+  Sayfa başlığı eylemlerinde, "Yenile"nin solunda. Yanında "Görünümler" menüsü (BE-05 kayıtlı görünümler, SavedViewsMenu).
 -->
 <template>
+  <div class="bo-view-group" role="group" aria-label="Görünüm">
   <EkButton tone="secondary" :icon="state === 'done' ? 'mdi-check' : 'mdi-link-variant'" data-testid="copy-view-link" :aria-label="ariaLabel" @click="copy">
     <span class="bo-copy-view__text">{{ state === 'done' ? 'Kopyalandı' : state === 'failed' ? 'Kopyalanamadı' : 'Bağlantı' }}</span>
   </EkButton>
+  <SavedViewsMenu />
+  </div>
   <span class="ek-sr-only" aria-live="polite">{{ state === 'done' ? 'Görünüm bağlantısı kopyalandı' : state === 'failed' ? 'Bağlantı kopyalanamadı' : '' }}</span>
 </template>
 
@@ -13,6 +16,7 @@
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { EkButton } from '@entegrasyonik/ui/components'
+import SavedViewsMenu from '@bo/components/SavedViewsMenu.vue'
 
 const route = useRoute()
 const state = ref<'idle' | 'done' | 'failed'>('idle')
@@ -38,6 +42,12 @@ onBeforeUnmount(() => clearTimeout(timer))
 </script>
 
 <style scoped>
+.bo-view-group {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+}
+
 @media (max-width: 599px) {
   .bo-copy-view__text {
     position: absolute;

@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from 'vitest'
 import type { ClientDto, TenantLifecycle } from '@bo/api/contract'
 import { SEGMENT_SLUG, SLUG_SEGMENT, inSegment, tenantsVerdict } from '@bo/views/tenantsVerdict'
 import { tenantDetailVerdict } from '@bo/views/tenantDetailVerdict'
+import type { TenantHealthSummary, TenantOpsRow } from '@bo/api/contracts/ops'
+import { FAILED_JOBS_ERROR, OPEN_ISSUES_ERROR } from '@bo/views/tenantsVerdict'
 
 const NOW = Date.parse('2026-10-01T12:00:00Z')
 const ago = (ms: number) => new Date(NOW - ms).toISOString()
@@ -78,6 +80,57 @@ describe('müşteri listesi hükmü', () => {
     expect(v.attention[0].source).toBe('Müşteri listesi')
   })
 
+  const opsRow = (tid: number, o: Partial<TenantOpsRow['ops']> = {}, status = 'ACTIVE'): TenantOpsRow => ({
+    tid,
+    name: `Mağaza ${tid}`,
+    status,
+    ops: { planCode: 'growth', subscriptionStatus: 'active', openIssues: 0, openIssuesApprox: true, failedJobs24h: 0, lastErrorAt: null, ...o },
+  })
+
+  it('operasyon: sakin müşteriler → özet açık sorun yok der', () => {
+    const v = tenantsVerdict({ ...base, clients: [client(1), client(2)], ops: [opsRow(1), opsRow(2)], opsDegraded: [] })
+    expect(v.tone).toBe('success')
+    expect(v.summary).toContain('açık sorun ya da başarısız iş yok')
+  })
+
+  it('operasyon: eşik üstü müşteri kırmızı, adıyla (tenant) ve detaya bağlı; eylemin ilki en sorunlu müşteri', () => {
+    const ops = [opsRow(1, { openIssues: 1 }), opsRow(2, { failedJobs24h: FAILED_JOBS_ERROR, openIssues: OPEN_ISSUES_ERROR }), opsRow(3, { failedJobs24h: 2 })]
+    const v = tenantsVerdict({ ...base, clients: [client(1), client(2), client(3)], ops })
+    expect(v.tone).toBe('error')
+    expect(v.attention[0]).toMatchObject({ id: 'tenant-2', tone: 'error', to: '/musteriler/2', tenant: { tid: 2, name: 'Mağaza 2' } })
+    expect(v.attention.find((a) => a.id === 'tenant-3')?.tone).toBe('warning')
+    expect(v.attention.find((a) => a.id === 'problem-tenants')?.to).toEqual({ query: { durum: 'sorunlu' } })
+    expect(v.actions[0]).toMatchObject({ id: 'top-tenant', to: '/musteriler/2' })
+  })
+
+  it('operasyon: askıda ve ödeme gecikti abonelikler abonelik listesine bağlı', () => {
+    const ops = [opsRow(1, { subscriptionStatus: 'suspended' }), opsRow(2, { subscriptionStatus: 'past_due' })]
+    const v = tenantsVerdict({ ...base, clients: [client(1), client(2)], ops })
+    expect(v.attention.find((a) => a.id === 'sub-suspended')?.to).toEqual({ path: '/abonelikler', query: { durum: 'suspended' } })
+    expect(v.attention.find((a) => a.id === 'sub-past-due')?.to).toEqual({ path: '/abonelikler', query: { durum: 'past_due' } })
+    expect(v.tone).toBe('warning')
+  })
+
+  it('operasyon okunamadı / bölüm eksik: "okunamadı" yazılır, sakin özet çıkmaz', () => {
+    const failed = tenantsVerdict({ ...base, clients: [client(1)], ops: null, opsFailed: true })
+    expect(failed.attention[0].id).toBe('unreadable-ops')
+    expect(failed.summary).not.toContain('açık sorun ya da başarısız iş yok')
+    const part = tenantsVerdict({ ...base, clients: [client(1)], ops: [opsRow(1)], opsDegraded: ['failedJobs'] })
+    expect(part.attention[0]).toMatchObject({ id: 'unreadable-ops-failedJobs', title: expect.stringContaining('okunamadı') })
+    expect(part.tone).toBe('warning')
+  })
+
+  it('sorunlu segment: sunucudaki hasIssues kuralı (sorun, başarısız iş, son 24 saatte hata)', () => {
+    const ops = new Map<number, TenantOpsRow['ops']>([
+      [1, opsRow(1).ops],
+      [2, opsRow(2, { openIssues: 1 }).ops],
+      [3, opsRow(3, { lastErrorAt: ago(2 * H) }).ops],
+      [4, opsRow(4, { lastErrorAt: ago(30 * H) }).ops],
+    ])
+    const got = [1, 2, 3, 4].filter((id) => inSegment(client(id), 'sorunlu', NOW, (t) => ops.get(t)))
+    expect(got).toEqual([2, 3])
+  })
+
   it('URL eşlemesi iki yönlü', () => {
     for (const [seg, slug] of Object.entries(SEGMENT_SLUG)) if (slug) expect(SLUG_SEGMENT[slug]).toBe(seg)
   })
@@ -142,6 +195,61 @@ describe('müşteri detayı hükmü', () => {
     expect(v.tone).toBe('warning')
     expect(v.attention[0].to).toMatchObject({ path: '/loglar', query: { tid: '102', category: 'order' } })
     expect(v.actions.find((a) => a.id === 'impersonate')?.guarded).toBe(true)
+  })
+
+  const health = (over: Partial<TenantHealthSummary> = {}): TenantHealthSummary => ({
+    tid: 102,
+    generatedAt: ago(0),
+    openIssues: { approx: true, items: [] },
+    failedJobs: { bullmq: 0, dlq: 0, bullmqAvailable: true },
+    lastSyncAt: { trendyol: ago(5 * 60_000) },
+    lastOrderSyncAt: ago(5 * 60_000),
+    alerts: [],
+    degradedSections: [],
+    ...over,
+  })
+  const issue = { fp: 'adapter::trendyol::RATE_LIMITED::a1f3', module: 'adapter-trendyol', code: 'RATE_LIMITED', integrationCode: 'trendyol', lastSeen: ago(4 * 60_000), count: 38, status: 'open' }
+
+  it('sağlık özeti sakin: özet "sorun yok" der; BE-02 yok ifadesi kalmadı', () => {
+    const v = tenantDetailVerdict({ ...dbase, life: life(), health: health() })
+    expect(v.tone).toBe('success')
+    expect(v.summary).toContain('açık sorun, başarısız iş ve etkin uyarı yok')
+    expect(v.note).not.toMatch(/ucu yok/)
+  })
+
+  it('sağlık özeti: açık sorun loglara (tid+fp), başarısız iş motora, firing uyarı uyarılara bağlı', () => {
+    const v = tenantDetailVerdict({
+      ...dbase,
+      life: life(),
+      health: health({
+        openIssues: { approx: true, items: [issue, { ...issue, fp: 'b' }, { ...issue, fp: 'c' }] },
+        failedJobs: { bullmq: 12, dlq: 1, bullmqAvailable: true },
+        alerts: [{ ruleId: 'R1', scopeKey: 'trendyol:102', level: 'critical', status: 'firing', firstFiredAt: ago(H), lastSeenAt: ago(60_000), mutedUntil: null }],
+      }),
+    })
+    expect(v.tone).toBe('error')
+    expect(v.attention.find((a) => a.id === 'open-issues')).toMatchObject({ tone: 'error', to: { path: '/loglar', query: { tid: '102', fp: issue.fp } } })
+    expect(v.attention.find((a) => a.id === 'failed-jobs')).toMatchObject({ tone: 'error', to: { path: '/motor', query: { sekme: 'basarisiz', tid: '102' } } })
+    expect(v.attention.find((a) => a.id.startsWith('alert-'))?.to).toEqual({ path: '/bildirimler/uyarilar', query: { durum: 'firing' } })
+    expect(v.actions.find((a) => a.id === 'failed-jobs')).toBeTruthy()
+  })
+
+  it('yalnız elle inceleme bekleyen iş → kaynak=dlq; susturulmuş uyarı bilgi', () => {
+    const v = tenantDetailVerdict({
+      ...dbase,
+      life: life(),
+      health: health({ failedJobs: { bullmq: 0, dlq: 2, bullmqAvailable: true }, alerts: [{ ruleId: 'R2', scopeKey: 'x', level: 'critical', status: 'firing', firstFiredAt: ago(H), lastSeenAt: ago(0), mutedUntil: new Date(NOW + H).toISOString() }] }),
+    })
+    expect(v.attention.find((a) => a.id === 'failed-jobs')).toMatchObject({ tone: 'warning', to: { query: { kaynak: 'dlq' } } })
+    expect(v.attention.find((a) => a.id.startsWith('alert-'))?.tone).toBe('info')
+  })
+
+  it('degradedSections: bölüm "okunamadı", boş değer sorun yok sayılmaz', () => {
+    const v = tenantDetailVerdict({ ...dbase, life: life(), health: health({ failedJobs: { bullmq: null, dlq: null, bullmqAvailable: false }, degradedSections: [{ section: 'failedJobs', error: 'timeout' }] }) })
+    expect(v.tone).toBe('warning')
+    expect(v.attention[0]).toMatchObject({ id: 'unreadable-health-failedJobs', title: expect.stringContaining('okunamadı') })
+    expect(v.summary).not.toContain('başarısız iş ve etkin uyarı yok')
+    expect(tenantDetailVerdict({ ...dbase, life: life(), health: null, healthFailed: true }).attention[0].id).toBe('unreadable-health')
   })
 
   it('okunamadı → hüküm verilmez', () => {

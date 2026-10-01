@@ -1,4 +1,4 @@
-/** Log kontrol merkezi — sayfa hükmü (K51). Saf: girdi sorun grupları (son 24 saat, süzgeçsiz), çıktı `PageVerdict`. */
+/** Log kontrol merkezi — sayfa hükmü (K51). Saf: girdi sorun grupları (son 24 saat; `?tid=` varsa BE-06 ile müşteri kapsamlı, yaklaşık), çıktı `PageVerdict`. */
 import type { IssueGroup, LogCategory, LogLevel } from '@bo/api/contract'
 import { buildVerdict, unreadable, type AttentionItem, type PageVerdict, type SuggestedAction } from '@bo/utils/verdict'
 import { formatCount } from '@bo/utils/units'
@@ -155,7 +155,7 @@ export function logCenterVerdict(i: LogVerdictInput): PageVerdict {
       id: 'tenant-errors',
       tone: 'warning',
       title: `Müşteri #${i.tid.tid} için son 24 saatte ${formatCount(i.tid.errors)} hata ve kritik olay var`,
-      impact: 'Sayım yalnız bu müşterinin olaylarıdır; sorun grupları platform geneli.',
+      impact: 'Sayım bu müşterinin kendi olaylarıdır (kesin); sorun grupları kova eşleşmesiyle süzüldüğü için yaklaşıktır.',
       advice: 'Olay akışında istek kimliklerini kontrol edin.',
       tenant: { tid: i.tid.tid, name: null },
       cta: 'Olay akışını aç',
@@ -176,7 +176,7 @@ export function logCenterVerdict(i: LogVerdictInput): PageVerdict {
   if (i.tid) actions.push({ id: 'tenant', label: `Müşteri #${i.tid.tid} sayfasını aç`, icon: 'mdi-storefront-outline', to: `/musteriler/${i.tid.tid}` })
 
   const tidPrefix = i.tid
-    ? `Müşteri #${i.tid.tid} için son 24 saatte ${i.tid.errors ? `${formatCount(i.tid.errors)} hata ve kritik olay var` : 'hata ya da kritik olay yok'}. Platform genelinde: `
+    ? `Müşteri #${i.tid.tid} için son 24 saatte ${i.tid.errors ? `${formatCount(i.tid.errors)} hata ve kritik olay var` : 'hata ya da kritik olay yok'}. Müşterinin sorun gruplarında (yaklaşık): `
     : ''
   const lower = (s: string) => (tidPrefix ? s.charAt(0).toLocaleLowerCase('tr-TR') + s.slice(1) : s)
   const unknown = i.failed
@@ -184,7 +184,9 @@ export function logCenterVerdict(i: LogVerdictInput): PageVerdict {
   return buildVerdict({
     attention,
     actions,
-    note: 'Son 24 saatin sorun grupları süzgeçsiz değerlendirildi.',
+    note: i.tid
+      ? `Müşteri #${i.tid.tid} kapsamındaki son 24 saatin sorun grupları değerlendirildi; başka müşterinin grubu da görünebilir.`
+      : 'Son 24 saatin sorun grupları süzgeçsiz değerlendirildi.',
     checks: ['Kritik ve hata grupları', 'Yeni gruplar (24 sa)', 'Yükselen gruplar'],
     calm: {
       summary:
