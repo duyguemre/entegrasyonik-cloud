@@ -122,6 +122,7 @@
               <span class="bo-jobid__body">
                 <span class="bo-failed__type">{{ jobTypeLabel(jobTypeCode(item as never)) }}</span>
                 <code class="bo-id" :title="String(item.operation)">{{ item.id }}</code>
+                <span v-if="item.reqId" class="bo-trace-cell"><code class="bo-id" data-testid="req-id" title="İstek kimliği">{{ item.reqId }}</code><EkCopyButton :value="String(item.reqId)" label="İstek kimliği" /></span>
                 <span v-if="rowErrors[String(item.id)]" class="bo-jobid__err" role="alert" data-testid="row-error">{{ rowErrors[String(item.id)] }}</span>
               </span>
             </span>
@@ -130,6 +131,7 @@
             <span class="bo-jobid__body">
               <span class="bo-failed__type">{{ jobTypeLabel(jobTypeCode(item as never)) }}</span>
               <code class="bo-id" :title="`Ölü mektup kaydı: ${item.id}`">{{ item.originalJobId }}</code>
+              <span v-if="item.reqId" class="bo-trace-cell"><code class="bo-id" data-testid="req-id" title="İstek kimliği">{{ item.reqId }}</code><EkCopyButton :value="String(item.reqId)" label="İstek kimliği" /></span>
             </span>
           </template>
           <template #cell-state="{ item }">
@@ -165,20 +167,16 @@
               <EkChannelDot v-if="item.integrationCode" :code="String(item.integrationCode)" :name="CHANNEL[String(item.integrationCode)] ?? String(item.integrationCode)" variant="plain" />
             </span>
           </template>
-          <template #cell-reqId="{ item }">
-            <span v-if="item.reqId" class="bo-trace-cell">
-              <code class="bo-id" data-testid="req-id">{{ item.reqId }}</code>
-              <EkCopyButton :value="String(item.reqId)" label="İstek kimliği" />
-              <BoAction kind="detail" size="sm" :to="{ path: '/loglar', query: { reqId: String(item.reqId) } }" :aria-label="`${item.originalJobId ?? item.id} işinin izini aç`" data-testid="trace-link">İz</BoAction>
-            </span>
-            <span v-else class="bo-muted">—</span>
-          </template>
           <template #cell-actions="{ item }">
             <span class="bo-row-actions">
+              <BoAction v-if="item.reqId" kind="detail" size="sm" :to="{ path: '/loglar', query: { reqId: String(item.reqId) } }" :aria-label="`${item.originalJobId ?? item.id} işinin izini aç`" data-testid="trace-link">İz</BoAction>
               <BoAction kind="retry" icon-only size="sm" :object="String(item.id)" :disabled="item.state === 'retrying'" data-testid="retry" @click="retry.open(item as unknown as FailedBullJob)" />
               <span class="bo-row-actions__sep" aria-hidden="true"></span>
-              <BoAction kind="delete" icon-only size="sm" :object="String(item.id)" data-testid="discard" @click="discard.open(item as unknown as FailedBullJob)" />
+              <BoAction kind="discard" icon-only size="sm" :object="String(item.id)" data-testid="discard" @click="discard.open(item as unknown as FailedBullJob)" />
             </span>
+          </template>
+          <template #cell-dlqActions="{ item }">
+            <BoAction v-if="item.reqId" kind="detail" size="sm" :to="{ path: '/loglar', query: { reqId: String(item.reqId) } }" :aria-label="`${item.originalJobId ?? item.id} işinin izini aç`" data-testid="trace-link">İz</BoAction>
           </template>
           <template #footer>
             <BoPagination :count="list.items.value.length" :has-more="list.hasMore.value" :loading="list.loadingMore.value" :error="list.moreError.value" @more="list.loadMore()" />
@@ -262,7 +260,6 @@ const BULL_COLUMNS: EkTableColumn[] = [
   { key: 'attempts', label: 'Deneme', align: 'end' },
   { key: 'failedAt', label: 'Zaman' },
   { key: 'tenantId', label: 'Müşteri' },
-  { key: 'reqId', label: 'İz' },
   { key: 'actions', label: '', type: 'actions' },
 ]
 const DLQ_COLUMNS: EkTableColumn[] = [
@@ -272,7 +269,7 @@ const DLQ_COLUMNS: EkTableColumn[] = [
   { key: 'attempts', label: 'Deneme', align: 'end' },
   { key: 'failedAt', label: 'Zaman' },
   { key: 'tenantId', label: 'Müşteri' },
-  { key: 'reqId', label: 'İz' },
+  { key: 'dlqActions', label: '', type: 'actions' },
 ]
 const GROUP_COLUMNS: EkTableColumn[] = [
   { key: 'errorCode', label: 'Hata nedeni' },
