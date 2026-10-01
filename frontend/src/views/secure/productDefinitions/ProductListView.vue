@@ -78,6 +78,8 @@
       <!-- MOB-03: telefonda barkod okut → aynı arama (barkod/stok kodu/ad); tek sonuçta ürün açılır. -->
       <template #search-append><BarcodeScanButton target="product" @code="onScannedCode" /></template>
       <template #header-actions>
+        <!-- PRC-R0: maliyet kapsamı (kâr hesabının girdisi); %100 değilse ipucu yanında. -->
+        <CostCoverageChip />
         <EkButton icon="mdi-plus" @click="openProductDefinition()">Yeni ürün</EkButton>
       </template>
 
@@ -92,6 +94,9 @@
         <VCurrencyComponentVue v-model="searchProductForm.data.prices.maxSalePrice" :isIconExist="false" label="Maksimum fiyat" clearable :required="false" />
         <EkSelect v-model="searchProductForm.data.transferStatuses" :items="transferStatusOptions" item-title="title" item-value="value"
           label="Platform yüklenme durumu" multiple clearable class="ek-span-2" />
+        <!-- PRC-R1: Trendyol buybox durumu (salt okuma). Özellik kapalıysa görünmez; bildirimden gelen filtre açıksa görünür kalır. -->
+        <v-select v-if="buyboxEnabled || searchProductForm.data.buyboxStatus" v-model="searchProductForm.data.buyboxStatus" :items="buyboxFilterItems"
+          item-title="title" item-value="value" clearable :label="$t('pricing.filter.label')" data-testid="buybox-filter" />
       </template>
 
       <template #bulk-actions>
@@ -141,6 +146,7 @@
               <span class="ek-num">{{ row.variants.length }}</span> seçenek
               <v-icon class="plv-variants-toggle__chevron" :class="{ 'is-open': productIdForVariantList == row._id }" icon="mdi-chevron-down" aria-hidden="true" />
             </button>
+            <BuyboxBadge :summary="buyboxSummary(row)" />
             <span v-if="row.hashtags?.length" class="plv-tags">
               <span v-for="hashtag of row.hashtags" :key="hashtag._id ?? hashtag.title" class="plv-tag" :title="hashtag.title">
                 <span class="plv-tag__dot" aria-hidden="true" :style="{ '--plv-hashtag-color': hashtag.value }"></span>{{ hashtag.title }}
@@ -216,6 +222,12 @@ import { productImageSrcs } from '@/components/productDefinitions/products/produ
 import { formatMoney } from '@entegrasyonik/ui/format'
 import EkListScreen from '@/components/page/templates/EkListScreen.vue'
 import BarcodeScanButton from '@/components/barcode/BarcodeScanButton.vue'
+import BuyboxBadge from '@/components/pricing/BuyboxBadge.vue'
+import CostCoverageChip from '@/components/pricing/CostCoverageChip.vue'
+import {
+  BUYBOX_FILTER_VALUES, buyboxFilterFromParams, buyboxPageRequest, groupBuyboxByProduct, summarizeBuybox, usePricingApi,
+  type BuyboxRow,
+} from '@/composables/usePricingApi'
 import { isRequestError } from '@entegrasyonik/ui/components/listStandard'
 import CategorySelectBoxComponent from '@/components/common/CategorySelectBoxComponent.vue'
 import BrandSelectBoxComponent from '@/components/common/BrandSelectBoxComponent.vue'
@@ -282,6 +294,24 @@ const loading = ref(false)
 const show = ref(true)
 
 const selectedVariantsMap = ref<any>({})
+
+// PRC-R1: sayfadaki ürünler için TEK `listBuybox` çağrısı → ürün başına rozet (özellik kapalıysa rozet yok).
+const pricingApi = usePricingApi()
+const buyboxByProduct = ref<Record<string, BuyboxRow[]>>({})
+const buyboxEnabled = ref(false)
+let buyboxSeq = 0
+const buyboxSummary = (row: any) => summarizeBuybox(buyboxByProduct.value[String(row._id)], buyboxEnabled.value)
+const buyboxFilterItems = computed(() => BUYBOX_FILTER_VALUES.map((value) => ({ value, title: t(`pricing.filter.${value}`) })))
+async function loadBuyboxBadges() {
+  const seq = ++buyboxSeq
+  const ids = products.value.map((p: any) => String(p._id))
+  if (!ids.length) { buyboxByProduct.value = {}; return }
+  const res = await pricingApi.listBuybox(buyboxPageRequest(ids))
+  if (seq !== buyboxSeq) return // daha yeni bir sayfa yüklendi
+  // Rozet isteğe bağlı bilgidir: hata/yetki yoksa liste engellenmez, rozet çizilmez.
+  buyboxEnabled.value = res.ok && !!res.data.settings?.enabled
+  buyboxByProduct.value = res.ok ? groupBuyboxByProduct(res.data.items) : {}
+}
 
 const isProductIndeterminate = (item: any) => {
   if (!item.hasVariant) return false
@@ -571,6 +601,7 @@ const getProducts = async (reset: boolean = false) => {
 
   if (response && response.products) {
     products.value = response.products
+    void loadBuyboxBadges()
 
     for (const product of products.value) {
       product.images = product.images.sort((a: any, b: any) => a.order - b.order)
@@ -666,6 +697,7 @@ const activeChips = computed<EkActiveFilterChip[]>(() => {
   if (a.brand) chips.push({ key: 'brand', label: 'Marka', value: brandsStore.getBrand(a.brand)?.title ?? 'Seçili' })
   if (a.prices?.minSalePrice) chips.push({ key: 'minSalePrice', label: 'Min. fiyat', value: formatMoney(a.prices.minSalePrice) })
   if (a.prices?.maxSalePrice) chips.push({ key: 'maxSalePrice', label: 'Maks. fiyat', value: formatMoney(a.prices.maxSalePrice) })
+  if (a.buyboxStatus) chips.push({ key: 'buyboxStatus', label: 'Buybox', value: t(`pricing.filter.${a.buyboxStatus}`) })
   if (a.transferStatuses?.length) {
     const titleOf = (id: string) => transferStatusOptions.value.find((o: any) => o.value === id)?.title ?? id
     chips.push({ key: 'transferStatuses', label: 'Platform durumu', value: a.transferStatuses.map(titleOf).join(', ') })
@@ -770,6 +802,13 @@ const resetAndSetTransferStatus = (forceSearchProducts?: boolean) => {
       getProducts()
     }
   }
+  // PRC-R1: `?buybox=losing[&barcode=…]` (bildirim eylemi) → buybox filtresi (+ barkod). Kapalı küme dışı değer yok sayılır.
+  const bb = buyboxFilterFromParams(props.parameters)
+  if (bb.buyboxStatus) {
+    searchProductForm.value.data.buyboxStatus = bb.buyboxStatus
+    if (bb.barcode) searchProductForm.value.data.barcode = bb.barcode
+    if (forceSearchProducts == true && !(props.parameters?.transferStatuses?.length > 0)) getProducts(true)
+  }
   emits("clear")
 }
 
@@ -834,6 +873,7 @@ const isFormDirty = () => {
     !!data.title?.trim() ||         // boşluklu bile olsa temizler
     !!data.barcode?.trim() ||
     !!data.stockcode?.trim() ||
+    !!data.buyboxStatus ||
     data.transferStatuses?.length > 0
   )
 }
@@ -913,6 +953,7 @@ const resetSearchProductForm = () => {
       title: undefined,
       barcode: undefined,
       stockcode: undefined,
+      buyboxStatus: undefined,
       onSale: -1,
       transferStatuses: []
     },

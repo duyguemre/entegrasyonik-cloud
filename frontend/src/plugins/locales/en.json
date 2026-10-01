@@ -773,6 +773,124 @@
     "invitationAccepted": "Your account was created. Sign in with your e-mail and new password.",
     "ownershipTransferred": "Ownership transfer completed. Please sign in again."
   },
+  "pricing": {
+    "retry": "Try again",
+    "cost": {
+      "label": "Cost (excl. VAT)",
+      "hint": "Unit purchase cost, excluding VAT. Needed for profit; if left empty, profit is not calculated for this variant.",
+      "saved": "Costs saved ({count} variants)",
+      "partial": "Some costs were not saved: {count} variants were not found — reload the product and try again.",
+      "failed": "The product was saved, but the costs could not be saved — your entered costs are still in the form; press Update again.",
+      "failedCreate": "The product was added, but the costs could not be saved — edit the product and enter the costs again.",
+      "failedUnauthorized": "The product was saved, but you are not allowed to save costs — ask your account administrator for catalog write access.",
+      "noBarcode": "Costs for {count} variants were not saved because they have no barcode — add a barcode, then edit the product to enter the cost."
+    },
+    "coverage": {
+      "label": "Cost coverage {percent}%",
+      "hint": "Profit is not calculated for products without a cost.",
+      "loading": "Loading cost coverage",
+      "error": "Cost coverage could not be loaded"
+    },
+    "badge": {
+      "losing": "Buy Box lost",
+      "winning": "You hold the Buy Box",
+      "losingDetail": "Buy Box lost on {losing} of {total} variants"
+    },
+    "filter": {
+      "label": "Buy Box (Trendyol)",
+      "winning": "Won",
+      "losing": "Lost",
+      "not_found": "Not found",
+      "unchecked": "Not checked yet"
+    },
+    "status": {
+      "winning": "You hold the Buy Box",
+      "losing": "Buy Box lost",
+      "not_found": "Not found on Trendyol",
+      "unchecked": "Not checked yet"
+    },
+    "panel": {
+      "title": "Competition and profit",
+      "subtitle": "Trendyol Buy Box status and estimated profit. View only: your prices are never changed automatically.",
+      "reload": "Refresh",
+      "variant": "Variant",
+      "variantFallback": "Variant",
+      "truncated": "Showing the first {count} variants.",
+      "disabled": "Buy Box monitoring is off for this account. Profit is calculated at your current price; Buy Box fields are not read.",
+      "belowFloorTitle": "Reaching the Buy Box is below your break-even price",
+      "belowFloor": "The Buy Box price ({price}) is below your break-even price ({floor}); matching it would lose money.",
+      "ineligibleTitle": "Recommendations and rules are off",
+      "ineligible": "Price recommendations and rules do not run for this product because this is missing: {reasons}.",
+      "enterCost": "Enter cost",
+      "costHint": "Profit cannot be calculated because no cost is entered.",
+      "missing": "Components missing from the profit calculation: {list}. Profit is a partial estimate.",
+      "stale": "Stale data",
+      "freshness": "Freshness",
+      "error": "Competition data could not be loaded — check your connection and try again.",
+      "unauthorizedTitle": "You do not have access to this section",
+      "unauthorized": "Competition and profit data needs catalog and finance read access; ask your account administrator.",
+      "emptyTitle": "No variants to show",
+      "empty": "Once the product is saved and has variants, Buy Box and profit data appear here."
+    },
+    "field": {
+      "status": "Buy Box status",
+      "order": "Rank {order}",
+      "buyboxPrice": "Buy Box price",
+      "ownPrice": "My price",
+      "gap": "Difference",
+      "profitNow": "Profit at current price",
+      "profitAtBuybox": "Profit at Buy Box price",
+      "breakEven": "Break-even price",
+      "commission": "Commission",
+      "lastUpdate": "Last updated",
+      "nextRefresh": "Next refresh"
+    },
+    "commission": {
+      "override": "contract",
+      "actual": "actual",
+      "estimated": "estimated",
+      "unknown": "unknown"
+    },
+    "missing": {
+      "cost": "cost",
+      "vat": "VAT rate",
+      "commission": "commission",
+      "commissionVat": "commission VAT",
+      "serviceFee": "service fee",
+      "shipping": "shipping share",
+      "withholding": "withholding tax"
+    },
+    "ineligible": {
+      "cost_missing": "cost",
+      "vat_missing": "VAT rate",
+      "commission_unknown": "commission rate"
+    },
+    "refresh": {
+      "off": "Refresh is off",
+      "pending": "Not checked yet",
+      "never": "Not checked yet",
+      "overdue": "Delayed due to load (scheduled: {when})"
+    },
+    "chart": {
+      "title": "Last {days} days",
+      "loading": "Loading price history…",
+      "error": "Price history could not be loaded.",
+      "empty": "No price history in this period yet. It appears here as readings are taken.",
+      "noBarcode": "No history is kept for a variant without a barcode.",
+      "buybox": "Buy Box price",
+      "own": "My price",
+      "summary": "{count} readings in the last {days} days; price range {min} to {max}."
+    },
+    "channels": {
+      "title": "Channel support"
+    },
+    "level": {
+      "supported": "Supported",
+      "limited": "Limited support",
+      "platform_auto": "Managed automatically by the marketplace",
+      "not_supported": "Not supported"
+    }
+  },
   "help": {
     "center": {
       "title": "Help center"
