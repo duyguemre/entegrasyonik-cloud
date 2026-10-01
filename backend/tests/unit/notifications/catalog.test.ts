@@ -17,7 +17,7 @@ import { EN } from '@operations/notifications/templates/en';
 
 const ALL = [...NOTIFICATION_CATALOG, ...LEGACY_CATALOG];
 const BASELINE = path.join(__dirname, 'notification-catalog-baseline.json');
-const ACTION_PREFIXES = ['/integrations', '/orders', '/logs', '/catalog', '/finance', '/subscription', '/account', '/settings', '/notifications', '/approve', '/products', '/pricing'];
+const ACTION_PREFIXES = ['/integrations', '/orders', '/logs', '/catalog', '/finance', '/subscription', '/account', '/settings', '/notifications', '/approve', '/products'];
 const SECRET_RE = /enc:v1:|token=|password=|secret|api[_-]?key|bearer\s/i;
 
 describe('NB1 katalog: sayilar ve benzersizlik', () => {

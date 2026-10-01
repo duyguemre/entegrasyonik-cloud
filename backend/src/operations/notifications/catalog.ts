@@ -154,7 +154,7 @@ const TENANT: NotificationDefinition[] = [
         code: 'PRICE_RULE_PAUSED', category: 'catalog', severity: 'warning', mandatory: false,
         defaultChannels: { inApp: true, email: 'digest' }, audience: { permission: 'catalog:read', fallbackMinTier: 'member' },
         params: z.object({ integ: code(), ruleId: id(), reason: z.enum(['external_change', 'oscillation']), day: dateStr() }).strict(),
-        action: (p) => `/pricing/rules?rule=${q(p.ruleId)}`, dedupeKey: (p) => `${p.ruleId}:${p.reason}:${p.day}`,
+        action: (p) => `/catalog/pricing-rules?rule=${q(p.ruleId)}`, dedupeKey: (p) => `${p.ruleId}:${p.reason}:${p.day}`,
         group: { key: (p) => p.integ, windowMs: HOUR }, retention: 'short', surface: 'tenant',
         example: { integ: 'trendyol', ruleId: '650000000000000000000001', reason: 'external_change', day: '2026-10-01' },
     }),
