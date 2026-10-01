@@ -143,6 +143,11 @@ const queue = ref<string>('')
 const route = useRoute()
 const router = useRouter()
 const source = ref<FailedJobSource>(route.query.kaynak === 'dlq' ? 'dlq' : 'bullmq')
+// Hüküm bloğundaki "Ölü mektuplar" bağlantısı sekme açıkken de kaynağı değiştirir (K51).
+watch(
+  () => route.query.kaynak,
+  (k) => (source.value = k === 'dlq' ? 'dlq' : 'bullmq'),
+)
 watch(source, (v) => {
   const { kaynak: _k, ...rest } = route.query
   router.replace({ query: v === 'dlq' ? { ...rest, kaynak: 'dlq' } : rest })
