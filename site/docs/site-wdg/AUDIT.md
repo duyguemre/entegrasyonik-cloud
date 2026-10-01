@@ -62,7 +62,7 @@ Uygulananlar (gerçekten fark ettirenler):
 - W13 `src/styles/global.css:38-46` - başlıklarda `text-wrap: balance` yalnız 7 bileşende; iç sayfa/yasal/rehber/vitrin
   başlıklarında (404:117, sss:373, guvenlik:230, iletisim:189, [ajan]:271, sozluk:277, LegalLayout:455, AssistantTeaser:195,
   OrderStory:179, HowItWorks:537, SecuritySummary:446, Capabilities:1211, IntegrationShowcase:344, CtaBand:43, SectionHead:47,
-  Header:958/1174) dul kelime → global `h1–h4 { text-wrap: balance }`, gövde `p`'ye `text-wrap: pretty`.
+  Header:958/1174) dul kelime → global `h1–h4 { text-wrap: balance }`.
 - W14 `src/layouts/LegalLayout.astro:450,601`, `src/pages/guvenlik.astro:293,369`, `src/pages/sss.astro:351`,
   `src/components/rehber/GuideArticle.astro:352,437`, `src/components/pages/Accordion.astro:51`,
   `src/components/pages/CoverageMatrix.astro:355`, `src/pages/rehber/sozluk.astro:176,202` - yerel `scroll-margin-top`
