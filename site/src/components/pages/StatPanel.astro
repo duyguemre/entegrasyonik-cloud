@@ -109,7 +109,8 @@ const { tag, stats, testid, chips = [], chipsLabel = 'Kullanılabilir kanallar' 
     display: inline-flex;
     align-items: center;
     gap: var(--ek-space-2);
-    min-height: calc(var(--ek-space-8) + var(--ek-space-1));
+    /* site-wdg W25: diğer bağlantılarla aynı 44 px dokunma hedefi. */
+    min-height: var(--site-tap-target);
     padding-inline: var(--ek-space-3);
     border: var(--site-border-width) solid var(--site-glass-border);
     border-radius: var(--ek-radius-full);

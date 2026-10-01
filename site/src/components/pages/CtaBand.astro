@@ -40,13 +40,15 @@ const { id, title, text, primary, secondary } = Astro.props
     gap: var(--ek-space-4);
     max-width: var(--site-container-narrow);
   }
-  .cta-band h2 {
+  /* site-wdg W10: `.cta-band` öğesi Section'ın kapsamını taşır — `.cta-band h2` kapsamlı seçicisi hiç eşleşmiyordu;
+     başlık ve gövde ölçeği kendi gövde kabından uygulanır. */
+  .cta-band__body h2 {
     font-size: var(--site-font-display-sm);
     font-weight: var(--site-font-display-weight);
     line-height: var(--site-font-display-line-height);
     letter-spacing: var(--site-font-display-tracking);
   }
-  .cta-band p {
+  .cta-band__body p {
     font-size: var(--ek-font-size-xl);
   }
   .cta-band__actions {

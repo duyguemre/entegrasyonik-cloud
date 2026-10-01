@@ -355,7 +355,7 @@ export const pazaryeriGuides: Guide[] = [
     answer:
       'Hakediş, pazaryerinde yaptığınız satıştan komisyon, kargo, hizmet bedeli ve iade gibi kesintiler düşüldükten sonra size ödenecek tutardır. Ödeme, pazaryerinin satıcı sözleşmesinde belirlediği takvime göre yapılır; takvim ve oranlar değişebildiği için güncel bilgi satıcı panelindedir. Hakedişi sipariş, iade ve fatura kayıtlarınızla düzenli olarak karşılaştırmak (mutabakat) eksik veya hatalı kesintiyi fark etmenin yoludur.',
     keyPoints: [
-      'Hakediş = satış tutarı − kesintiler (komisyon, kargo, hizmet bedeli, iade...).',
+      'Hakediş = satış tutarı − kesintiler (komisyon, kargo, hizmet bedeli, iade…).',
       'Ödeme takvimi pazaryerine özgüdür ve değişebilir; gün verilmez.',
       'Düzenli mutabakat, hatalı kesintiyi erken yakalar.',
     ],

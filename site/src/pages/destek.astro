@@ -264,11 +264,8 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
   .quick__arrow {
     margin-inline-start: auto;
     color: var(--site-color-on-primary-muted);
-    transition: transform var(--ek-duration-base) var(--ek-easing-standard);
   }
-  .quick__link:hover .quick__arrow {
-    transform: translateX(var(--ek-space-1));
-  }
+  /* site-wdg W16: ok kayması global.css'teki tek kuraldan (a:hover .icon[data-icon='arrow']); yerel ikinci kayma kaldırıldı. */
 
   /* --- Kategori ızgarası --- */
   /* --- S16: konu kartları, kanal rehberleri, destek kanalları, iletişim bandı --- */
@@ -395,10 +392,6 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
   .chan__arrow {
     display: inline-flex;
     color: var(--site-link-accent);
-    transition: transform var(--ek-duration-base) var(--ek-easing-standard);
-  }
-  .chan:hover .chan__arrow {
-    transform: translateX(var(--ek-space-1));
   }
   .channels {
     display: grid;
@@ -471,12 +464,6 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
     border: var(--site-border-width) solid var(--site-glass-border);
     border-radius: var(--site-radius-panel);
     background: var(--site-glass-bg);
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .topic:hover,
-    .chan:hover .chan__arrow {
-      transform: none;
-    }
   }
   @media (min-width: 640px) {
     .topics,
@@ -601,6 +588,10 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
     color: var(--site-color-link);
     font-size: var(--ek-font-size-md);
     font-weight: var(--ek-font-weight-semibold);
+  }
+  /* site-wdg W18: kapsamlı renk global a:hover'ı eziyordu → hover rengi. */
+  .support-card__more:hover {
+    color: var(--site-color-link-hover);
   }
 
   /* --- Hâlâ yardım --- */
