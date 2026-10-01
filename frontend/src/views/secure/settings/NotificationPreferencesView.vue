@@ -13,6 +13,8 @@
     2. E-posta özeti — günlük (saat) / saatlik; yalnız "Özet" seçili kategori varsa etkin.
     3. Sessiz saatler — anında e-postalar aralık sonuna ertelenir (NB5 kabul listesi).
     4. E-posta dili — tr / en.
+  MOB-04: sunucuda web push açıksa (`getPushConfig.enabled`) ve masaüstü kabuğu (Electron) değilse matrise "Telefon" sütunu
+  (kategori başına anlık bildirim; kilitli kategoride de değiştirilebilir) ve "Bu cihazda anlık bildirimler" kartı eklenir.
   Sözleşme gövdesi: `stores/notificationPreferences.ts` (şekil sözleşme kopyasında yazılı değil — savunmacı okuma).
   Ham renk yok; tüm kontroller etiketli; kilitli hücrelerde açıklama `aria-describedby` ile bağlı.
 -->
@@ -40,11 +42,12 @@
             <h2 id="np-matrix-title" class="ek-np-block__title">Kategoriler ve kanallar</h2>
             <p class="ek-np-block__desc">Her kategori için uygulama içi bildirimi ve e-posta sıklığını seçin. “Özet” seçilen bildirimler, aşağıda belirlediğiniz saatte tek e-postada toplanır.</p>
           </header>
-          <div class="ek-np-matrix" role="group" aria-label="Kategori ve kanal tercihleri">
+          <div class="ek-np-matrix" :class="{ 'has-push': pushVisible }" role="group" aria-label="Kategori ve kanal tercihleri">
             <div class="ek-np-matrix__head" aria-hidden="true">
               <span>Kategori</span>
               <span>Uygulama içi</span>
               <span>E-posta</span>
+              <span v-if="pushVisible">Telefon</span>
             </div>
             <div v-for="cat in rows" :key="cat.key" class="ek-np-row" :class="{ 'is-locked': cat.locked }" :data-category="cat.key">
               <div class="ek-np-row__label">
@@ -92,6 +95,19 @@
                   </label>
                 </div>
               </div>
+
+              <div v-if="pushVisible" class="ek-np-row__cell" data-col="push">
+                <span class="ek-np-row__cell-label" aria-hidden="true">Telefon</span>
+                <v-switch
+                  role="switch"
+                  v-model="form.categories[cat.key].push"
+                  color="primary"
+                  hide-details
+                  density="compact"
+                  :aria-label="`${cat.label}: telefon ve tarayıcı anlık bildirimi`"
+                  :aria-describedby="`np-${cat.key}-hint`"
+                />
+              </div>
             </div>
           </div>
           <p v-if="catalog.source === 'fallback'" class="ek-np-note">
@@ -99,6 +115,8 @@
             Kategori listesi sunucudan alınamadı; varsayılan katalog gösteriliyor.
           </p>
         </section>
+
+        <PushDeviceCard v-if="pushVisible && pushConfig" :config="pushConfig" @changed="loadPush" />
 
         <EkSettingsSection title="E-posta özeti" description="“Özet” seçili kategorilerdeki bildirimler tek e-postada toplanır. Saat dilimi: Türkiye (GMT+3).">
           <div class="ek-np-fields" :class="{ 'is-muted': !digestActive }">
@@ -156,8 +174,15 @@ import {
   type NotificationPreferences,
 } from '@/stores/notificationPreferences'
 import type { EmailMode } from '@/types/NotificationTypes'
+import PushDeviceCard from '@/components/settings/PushDeviceCard.vue'
+import { detectPushSupport, useWebPush, type PushConfig } from '@/pwa/webPush'
 
 const catalog = useNotificationCatalogStore()
+const webPush = useWebPush()
+// MOB-04: masaüstü kabuğunda (Electron) push yok; sunucu kanalı kapalıysa sütun/kart gizli.
+const desktopShell = detectPushSupport() === 'desktop-shell'
+const pushConfig = ref<PushConfig | null>(null)
+const pushVisible = computed(() => !desktopShell && pushConfig.value?.enabled === true)
 const api = useNotificationPreferencesApi()
 const { showToast } = useToast()
 const { locale } = useI18n({ useScope: 'global' })
@@ -218,7 +243,7 @@ async function load() {
   state.value = 'loading'
   saveError.value = ''
   await catalog.ensureLoaded()
-  const prefs = await api.load(catalog.categories)
+  const [prefs] = await Promise.all([api.load(catalog.categories), loadPush()])
   if (!prefs) {
     state.value = 'error'
     return
@@ -226,6 +251,11 @@ async function load() {
   saved.value = prefs
   form.value = clone(prefs)
   state.value = 'ready'
+}
+
+async function loadPush() {
+  if (desktopShell) return
+  pushConfig.value = await webPush.loadConfig() // hata/kapalı → null/enabled:false → sütun gizli
 }
 
 async function save() {
@@ -312,6 +342,11 @@ defineExpose({
   align-items: center;
   gap: var(--ek-space-4);
   padding: var(--ek-space-3) var(--ek-space-4);
+}
+
+.ek-np-matrix.has-push .ek-np-matrix__head,
+.ek-np-matrix.has-push .ek-np-row {
+  grid-template-columns: minmax(0, 1fr) 112px 232px 88px;
 }
 
 .ek-np-matrix__head {
@@ -505,7 +540,8 @@ defineExpose({
     display: none;
   }
 
-  .ek-np-row {
+  .ek-np-row,
+  .ek-np-matrix.has-push .ek-np-row {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--ek-space-2);
     padding: var(--ek-space-4);
@@ -529,6 +565,30 @@ defineExpose({
 
   .ek-np-row__cell[data-col='email'] .ek-np-seg {
     flex: 0 1 228px;
+  }
+}
+
+/* MOB-04: dört sütunlu matris (Telefon) daha erken karta döner. */
+@container (min-width: 561px) and (max-width: 720px) {
+  .ek-np-matrix.has-push .ek-np-matrix__head {
+    display: none;
+  }
+
+  .ek-np-matrix.has-push .ek-np-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-4);
+  }
+
+  .ek-np-matrix.has-push .ek-np-row__cell {
+    justify-content: space-between;
+    padding-left: calc(28px + var(--ek-space-3));
+  }
+
+  .ek-np-matrix.has-push .ek-np-row__cell-label {
+    display: inline;
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-type-caption-size);
   }
 }
 
