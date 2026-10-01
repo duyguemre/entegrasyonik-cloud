@@ -1,9 +1,6 @@
 <template>
   <div class="bo-page">
-    <BoPageHeader :updated-at="loadedAt ?? undefined" :stale="stale">
-      <template #meta>
-        <span>Sekme açıkken 30 saniyede bir kendiliğinden yenilenir.</span>
-      </template>
+    <BoPageHeader :updated-at="loadedAt ?? undefined" :stale="stale" :auto-refresh="30">
       <template #actions>
         <CopyViewLink />
         <EkButton tone="secondary" icon="mdi-refresh" :loading="list.refreshing.value || list.phase.value === 'loading' || firingSrc.refreshing.value" data-page-refresh @click="refresh">Yenile</EkButton>

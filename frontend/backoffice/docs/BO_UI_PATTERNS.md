@@ -350,13 +350,42 @@ Bileşenler `src/components/triage/` altında (backoffice'e özgü; ortak pakete
 | `integrations` | `/entegrasyonlar` | `sekme=saglik|dayaniklilik|katalog` |
 | `infra` | `/altyapi` | `sekme=redis|mongodb|yavas` |
 | `logs` | `/loglar` | `tid`, `level`, `category`, `reqId`, `fp` |
-| `alerts` | `/bildirimler/uyarilar` | — (bo-r1b: `?durum=firing` önerilir) |
+| `alerts` | `/bildirimler/uyarilar` | `durum=firing|resolved|all`, `onem=critical|warning`, `kural=R1…` (bo-r1b) |
 | `tenant` | `/musteriler/:tid` | `sekme=ozet|yasam-dongusu` |
 | `subscription` | `/abonelikler/:tid` | — |
-| `subscriptions` | `/abonelikler` | `sekme=abonelikler|gelir` (bo-r1b: `?durum=past_due|trialing|suspended` önerilir) |
+| `subscriptions` | `/abonelikler` | `sekme=abonelikler|gelir`, `durum=<abonelik durumu>`, `plan=<kod>` (bo-r1b) |
+| `subscription` | `/abonelikler/:tid` | `#iptal` (yönetim eylemleri kartı; bo-r1b) |
+| `tenants` | `/musteriler` | `q`, `durum=aktif|pasif|eski|kanalsiz`, `sira=magaza|sonEsitleme|kayit` (`-` önek azalan) (bo-r1b, NT-03/05) |
+| `tenant` (ek) | `/musteriler/:tid` | `eylem=destek` → destek oturumu güvenli akışı (tek kullanımlık; NT-01) |
+| `logs` (ek) | `/loglar` | `sekme=akis|sorunlar`, `sirala=lastSeen|count|tenantCount|new`; süzgeç değişimi URL'e yazılır (bo-r1b) |
+| `audit` | `/denetim` | `event`, `result=ok|fail|error`, `surface`, `range=24h|7d`, `tid`, `reqId` |
+| `deliveries` | `/bildirimler/teslimler` | `durum`, `kod`, `tid`, `olay` |
+| `announcements` | `/sistem/duyurular` | `durum=active|scheduled|draft|ended|cancelled` (bo-r1b) |
+| `notification-catalog` | `/bildirimler/katalog` | `ara=<kod>` (bo-r1b) |
+| `admins` | `/yoneticiler` | `filtre=nomfa|locked|invites|idle`, `davet=1` (davet diyaloğunu açar; tek kullanımlık) (bo-r1b) |
+| `flags` | `/sistem/bayraklar` | `#bakim`, `#taslak`, `#gecmis`, `#ayarlar` (bo-r1b) |
+| `cache` | `/altyapi/onbellek` | `#bo-cache-families` (bo-r1b) |
 
 6. Kontrol: ilk ekranda (1440 × 900 ve 390 × 844) hüküm + ilk dikkat maddesi + eylemi görünür mü? "Her şey yolunda"
    senaryosu da çizildi mi (sahte API'de sakin kol)? Axe açık/koyu 0.
+
+### 11.7 Sayfalara uygulama — bo-r1b yapı taşları
+Genel bakış dışındaki tüm sayfalar (müşteriler + detay, abonelikler + detay, motor, entegrasyonlar, altyapı, önbellek,
+loglar, denetim, yöneticiler, platform ayarları, Otopilot ayarı/sohbet, duyurular, teslimler, müşteri bildirim geçmişi,
+katalog, uyarılar) bu deseni **tek uyarlayıcı** üzerinden kullanır:
+
+| Yapı taşı | Yer | Kural |
+|---|---|---|
+| Hüküm modeli | `src/utils/verdict.ts` | Sayfa kendi verisinden SAF bir `<ad>Verdict.ts` fonksiyonuyla `PageVerdict` üretir (`buildVerdict({ attention, actions, calm, checks, note, busy })`). Madde: `title` (ne oldu) + `impact` + `advice` + `to` (ZORUNLU; aynı sayfa sekmesi için göreli `{ query: { sekme } }`) + `cta`. Okunamayan kaynak `unreadable(id, ad, retry)` → "X okunamadı — Yeniden dene" (asla "sağlıklı"). Varsayılan hüküm kısa ve sayılı ("2 konu şimdi müdahale istiyor"), en acil madde ikinci cümlede. Her sayfanın vitest'i `tests/verdict*.test.ts`. |
+| `PageVerdict` | `src/components/verdict/PageVerdict.vue` | `BoPageHeader`'ın HEMEN altında `<PageVerdict :verdict="v" />` (null → denetleniyor). İçte §11.1–11.3 bileşenleri: tone → `Health` (success/info → ok, error → critical, neutral → unknown); ilk YIKICI OLMAYAN eylem "Önerilen ilk adım" kartı (`guarded` → kilit notu, akış sayfanın `GuardedDialog`'u); kalan eylemler sakin "Diğer eylemler" satırı; dikkat listesi `limit` 3. Acil madde yoksa bilgi maddeleri büyük liste yerine Durum'daki bağlantılı **özet çipleri** (`facts`) olur. Sonunda "Ayrıntılar" ayracı (`detailsLabel=false` ile kapatılır — Otopilot sohbeti). |
+| `useVerdictSources` | `src/composables/useVerdictSources.ts` | Sekmeli sayfada hüküm için hafif özet okumaları (`settled`, `failed(k)`, `stale`, `updatedAt` = en eski başarılı okuma). Başlıkta metinli "Yenile" (`data-page-refresh`) hüküm kaynaklarını VE açık paneli (`:key` nesli) birlikte tazeler; `BoPageHeader :updated-at :stale`. |
+| `CopyViewLink` | `src/components/CopyViewLink.vue` | NT-03: başlık eylemlerinde "Bağlantı" (Yenile'nin solunda) — geçerli URL (sekme + süzgeçler) panoya. Kayıtlı görünüm sunucuda → BE-05. |
+| Bağlam eylemleri | `navigation/screens.ts` `actions?: (route) => ContextAction[]` | NT-01: palette boş sorguda en üstte "Bu ekranda" (en çok 3). Detay rotası da tanımlayabilir (müşteri detayı: destek oturumu → `?eylem=destek`). |
+| Satır klavyesi | `navigation/rowNav.ts` (+ `hotkeys.ts` `row`) | NT-10: `#bo-main` içindeki görünür `tbody tr` / `.bo-rowcard` satırlarında j/k, Enter, Esc. Sayfa kodu gerekmez; satırın birincil bağlantısı odaklanır (`[data-kb-row]` sakin vurgu). |
+| Üretimde kimlik yazdırma | `DangerActionDialog confirmText` / `GuardedDialog confirmText` | NT-02: yalnız `currentEnv.key === 'production'` + yıkıcı iken "Onay için `<kimlik>` yazın" alanı; eşleşmeden onay kapalı. Verilen yerler: iş silme (iş kimliği), abonelik iptali (tid), teslim atma (teslim kimliği), yönetici devre dışı/2FA sıfırlama (e-posta). |
+| Sessiz yenileme onayı | `EkRefreshButton quiet-success` (paket, ekleyici) | NT-07: backoffice panel düğmeleri başarıda yeşil tik yerine nötr "Güncellendi" (tazelik ≠ sağlık). Ana uygulama varsayılanı değişmedi. |
+| Otomatik yenileme metni | `BoPageHeader :auto-refresh="30"` | NT-09: tek metin "Sekme açıkken 30 sn'de bir yenilenir". |
+| Hash kaydırma | `router.ts scrollBehavior` | Hüküm bağlantısı sayfa içi bölüme (`#bakim`, `#bo-cache-families`) kaydırır; davet bileti `#t=` etkilenmez. |
 
 **Panodaki uygulama (bo-r1a):** genel bakış dört soruyu sırayla yanıtlar — 1 sistemde müdahale (getAttention `scope:system`),
 2 büyük resim (getPulse trendleri, sakin), 3 müşterilerde müdahale (`scope:tenant`), 4 genel kullanım (müşteri/gelir/kanal
