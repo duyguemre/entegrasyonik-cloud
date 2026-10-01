@@ -8,6 +8,7 @@ import { initApi, api } from './api'
 import { session } from './auth/session'
 import { requestReauth } from './auth/reauth'
 import { initialThemeMode } from './theme'
+import { onNativePushOpen } from '@entegrasyonik/ui/native'
 
 async function bootstrap() {
   await initApi()
@@ -20,6 +21,8 @@ async function bootstrap() {
   const app = createApp(App)
   app.use(createEkVuetify({ mode: initialThemeMode() }))
   app.use(router)
+  // MOB-07 — Android kabuğu: bildirime dokunulunca yalnız panel içi yola gidilir (kabuk dışında no-op).
+  onNativePushOpen((path) => void router.push(path))
   void session.boot()
   app.mount('#app')
 }

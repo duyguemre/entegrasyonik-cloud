@@ -4,7 +4,7 @@
       <p v-if="support === 'ios-install'" class="bo-muted" data-testid="bo-push-ios">iPhone/iPad'de bildirim için önce Paylaş → Ana Ekrana Ekle ile paneli kurun, sonra buradan açın.</p>
       <p v-else-if="support === 'ios-unsupported'" class="bo-muted">Bu iOS sürümü anlık bildirimi desteklemiyor (16.4 ve sonrası gerekir).</p>
       <p v-else-if="support === 'unsupported'" class="bo-muted">Bu tarayıcı anlık bildirimi desteklemiyor. Uyarılar panelde ve e-postada görünmeye devam eder.</p>
-      <p v-else-if="permission === 'denied'" class="bo-muted" data-testid="bo-push-denied">Bildirim izni reddedilmiş. Tarayıcı ayarlarından bu site için bildirimlere izin verin.</p>
+      <p v-else-if="permission === 'denied' && !native" class="bo-muted" data-testid="bo-push-denied">Bildirim izni reddedilmiş. Tarayıcı ayarlarından bu site için bildirimlere izin verin.</p>
       <div v-else class="bo-push__row">
         <span>{{ thisDevice ? 'Bu cihazda açık.' : 'Bu cihazda kapalı.' }}</span>
         <EkButton v-if="thisDevice" tone="secondary" size="sm" :loading="busy" data-testid="bo-push-disable" @click="onDisable">Bu cihazda kapat</EkButton>
@@ -28,7 +28,8 @@ import { EkButton, EkCard } from '@entegrasyonik/ui/components'
 import type { BoPushConfig } from '@bo/api/contract'
 import { formatDateTime } from '@bo/utils/format'
 import { notify } from '@bo/utils/toast'
-import { currentPermission, detectPushSupport, useBoWebPush, type PermissionState, type PushSupport } from './webPush'
+import { isNativeShell } from '@entegrasyonik/ui/native'
+import { currentPermission, detectPushSupport, pushUsableHere, useBoWebPush, type PermissionState, type PushSupport } from './webPush'
 
 const push = useBoWebPush()
 const cfg = ref<BoPushConfig | null>(null)
@@ -36,12 +37,15 @@ const support = ref<PushSupport>('unsupported')
 const permission = ref<PermissionState>('default')
 const thisDevice = ref(false)
 const busy = ref(false)
+const native = isNativeShell()
 
 async function refresh() {
-  support.value = detectPushSupport()
   permission.value = currentPermission()
   cfg.value = await push.loadConfig()
-  thisDevice.value = cfg.value?.enabled === true && permission.value === 'granted' && (await push.currentSubscription()) !== null
+  // MOB-07: sunucu kanalı bu cihaz türüne kapalıysa (tarayıcıda VAPID / kabukta FCM yok) "desteklenmiyor".
+  support.value = pushUsableHere(cfg.value) ? detectPushSupport() : 'unsupported'
+  // Kabukta izin Android ayarındadır; WebView'in Notification.permission'ı anlamsız.
+  thisDevice.value = cfg.value?.enabled === true && (isNativeShell() || permission.value === 'granted') && (await push.isSubscribedHere())
 }
 
 async function run(action: () => Promise<{ ok: boolean; message?: string }>, done: string) {
@@ -56,7 +60,7 @@ async function run(action: () => Promise<{ ok: boolean; message?: string }>, don
   }
 }
 
-const onEnable = () => run(() => push.enable(cfg.value!.publicKey!), 'Kritik uyarılar bu cihazda açıldı.')
+const onEnable = () => run(() => push.enable(cfg.value?.publicKey ?? null), 'Kritik uyarılar bu cihazda açıldı.')
 const onDisable = () => run(() => push.disable(), 'Bu cihazda bildirimler kapatıldı.')
 async function onRemove(id: string) {
   if (await push.removeDevice(id)) notify('success', 'Cihaz kaldırıldı.')

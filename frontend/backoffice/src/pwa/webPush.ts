@@ -6,12 +6,14 @@
  *  - İzin YALNIZ kullanıcı eylemiyle istenir (`enable` bir düğme tıklamasından çağrılır; sayfa açılışında istem yok).
  *  - iOS/iPadOS: push yalnız ana ekrana eklenmiş PWA'da (16.4+).
  *  - Sunucu kanalı kapalıysa (`getPushConfig.enabled=false`) arayüz gizlenir.
+ *  - Android kabuğu (MOB-07): WebView'de Web Push yok → FCM cihaz belirteci (`@entegrasyonik/ui/native`); belirteç yalnız bu cihazda tutulur.
  * Backend: `BackofficePrefsService/{getPushConfig,subscribePush,unsubscribePush}`.
  */
 import { api } from '../api'
 import { AdminApiError } from '../api/client'
 import type { BoPushConfig } from '../api/contract'
 import { isStandalone } from './pwaState'
+import { hasNativePush, isNativeShell, nativeDeviceLabel, registerNativePush } from '@entegrasyonik/ui/native'
 
 export type PushSupport = 'ios-install' | 'ios-unsupported' | 'unsupported' | 'supported'
 export type PermissionState = 'default' | 'granted' | 'denied'
@@ -23,6 +25,7 @@ export function isIos(ua: string, maxTouchPoints = 0): boolean {
 
 /** Bu cihazda push mümkün mü (izin durumundan bağımsız). */
 export function detectPushSupport(win: Window = window): PushSupport {
+  if (isNativeShell(win)) return hasNativePush(win) ? 'supported' : 'unsupported'
   const nav = win.navigator
   const hasApis = 'serviceWorker' in nav && 'PushManager' in win && 'Notification' in win
   if (isIos(nav.userAgent, nav.maxTouchPoints ?? 0)) {
@@ -57,10 +60,30 @@ function sameKey(a: ArrayBuffer | null | undefined, b: Uint8Array): boolean {
   return x.length === b.length && x.every((v, i) => v === b[i])
 }
 
+/** Bu cihazda kullanılabilir mi: kabukta sunucu FCM'i, tarayıcıda VAPID açık anahtarı gerekir. */
+export function pushUsableHere(cfg: BoPushConfig | null, win: Window = window): boolean {
+  if (!cfg?.enabled) return false
+  return isNativeShell(win) ? cfg.fcm : cfg.publicKey !== null
+}
+
+/** Bu cihazın FCM belirteci (yalnız Android kabuğunda; "bu cihazda kapat" için). Uygulamanın anahtarından ayrı (`bo-` öneki). */
+export const NATIVE_TOKEN_KEY = 'bo-native-push-token'
+function nativeToken(v?: string | null): string | null {
+  try {
+    if (v === undefined) return localStorage.getItem(NATIVE_TOKEN_KEY)
+    if (v) localStorage.setItem(NATIVE_TOKEN_KEY, v)
+    else localStorage.removeItem(NATIVE_TOKEN_KEY)
+  } catch {
+    // depolama kapalı
+  }
+  return null
+}
+
 const SERVER_ERRORS: Record<string, string> = {
   PUSH_DISABLED: 'Anlık bildirimler şu an kullanılamıyor.',
   PUSH_ENDPOINT_NOT_ALLOWED: 'Bu tarayıcının bildirim servisi desteklenmiyor.',
   PUSH_KEYS_INVALID: 'Tarayıcı geçersiz bir abonelik üretti; sayfayı yenileyip tekrar deneyin.',
+  PUSH_TOKEN_INVALID: 'Cihaz bildirim kaydı geçersiz; uygulamayı yeniden açıp tekrar deneyin.',
 }
 const serverMessage = (e: unknown, dflt: string) => (e instanceof AdminApiError && SERVER_ERRORS[e.code]) || dflt
 
@@ -75,7 +98,9 @@ export function useBoWebPush(win: Window = window) {
   async function loadConfig(): Promise<BoPushConfig | null> {
     try {
       const r = await api.call('BackofficePrefsService/getPushConfig', {})
-      return { enabled: r.enabled === true && !!r.publicKey, publicKey: r.publicKey ?? null, devices: Array.isArray(r.devices) ? r.devices : [] }
+      const publicKey = r.publicKey || null
+      const fcm = r.fcm === true
+      return { enabled: r.enabled === true && (publicKey !== null || fcm), publicKey, fcm, devices: Array.isArray(r.devices) ? r.devices : [] }
     } catch {
       return null
     }
@@ -90,9 +115,32 @@ export function useBoWebPush(win: Window = window) {
     }
   }
 
-  /** YALNIZ kullanıcı eylemiyle: izin → abonelik → sunucuya kayıt. Sunucu reddederse tarayıcı aboneliği geri alınır. */
-  async function enable(publicKey: string): Promise<PushActionResult> {
+  /** Bu cihaz abone mi (tarayıcı aboneliği ya da kabukta saklı FCM belirteci). İzin istemez. */
+  async function isSubscribedHere(): Promise<boolean> {
+    return isNativeShell(win) ? nativeToken() !== null : (await currentSubscription()) !== null
+  }
+
+  /** MOB-07 Android kabuğu: izin → FCM belirteci → sunucuya kayıt. */
+  async function enableNative(): Promise<PushActionResult> {
+    const r = await registerNativePush(win)
+    if (!r.ok) {
+      if (r.reason === 'denied') return { ok: false, reason: 'denied', message: 'Bildirim izni reddedildi. Telefonun Ayarlar > Uygulamalar > Entegrasyonik Yönetim > Bildirimler bölümünden izin verin.' }
+      return { ok: false, reason: r.reason === 'unsupported' ? 'unsupported' : 'error', message: 'Anlık bildirimler açılamadı — tekrar deneyin.' }
+    }
+    try {
+      await api.call('BackofficePrefsService/subscribePush', { fcmToken: r.token, deviceLabel: nativeDeviceLabel(win) })
+      nativeToken(r.token)
+      return { ok: true }
+    } catch (e) {
+      return { ok: false, reason: 'server', message: serverMessage(e, 'Anlık bildirimler açılamadı — tekrar deneyin.') }
+    }
+  }
+
+  /** YALNIZ kullanıcı eylemiyle: izin → abonelik → sunucuya kayıt. Sunucu reddederse tarayıcı aboneliği geri alınır. Kabukta FCM. */
+  async function enable(publicKey: string | null): Promise<PushActionResult> {
     if (detectPushSupport(win) !== 'supported') return { ok: false, reason: 'unsupported', message: 'Bu cihazda anlık bildirim desteklenmiyor.' }
+    if (isNativeShell(win)) return enableNative()
+    if (!publicKey) return { ok: false, reason: 'unsupported', message: 'Bu cihazda anlık bildirim desteklenmiyor.' }
     let sub: PushSubscription | null = null
     try {
       const N = (win as Window & { Notification: typeof Notification }).Notification
@@ -125,6 +173,12 @@ export function useBoWebPush(win: Window = window) {
   /** Bu cihazda kapat: sunucudan sil + tarayıcı aboneliğini bırak. */
   async function disable(): Promise<PushActionResult> {
     try {
+      if (isNativeShell(win)) {
+        const token = nativeToken()
+        if (token) await api.call('BackofficePrefsService/unsubscribePush', { fcmToken: token })
+        nativeToken(null)
+        return { ok: true }
+      }
       const sub = await currentSubscription()
       if (!sub) return { ok: true }
       await api.call('BackofficePrefsService/unsubscribePush', { endpoint: sub.endpoint })
@@ -145,5 +199,5 @@ export function useBoWebPush(win: Window = window) {
     }
   }
 
-  return { loadConfig, currentSubscription, enable, disable, removeDevice }
+  return { loadConfig, currentSubscription, isSubscribedHere, enable, disable, removeDevice }
 }

@@ -68,13 +68,16 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { EkAlert, EkButton, EkRelativeTime, EkStatusChip } from '@entegrasyonik/ui/components'
-import { currentPermission, detectPushSupport, useWebPush, type PermissionState, type PushConfig, type PushSupport } from '@/pwa/webPush'
+import { isNativeShell } from '@entegrasyonik/ui/native'
+import { currentPermission, detectPushSupport, pushUsableHere, useWebPush, type PermissionState, type PushConfig, type PushSupport } from '@/pwa/webPush'
 
 const props = defineProps<{ config: PushConfig }>()
 const emit = defineEmits<{ (e: 'changed'): void }>()
 
 const push = useWebPush()
-const support = ref<PushSupport>(detectPushSupport())
+const nativeShell = isNativeShell() // kabukta izin Android ayarındadır; WebView'in Notification.permission'ı anlamsız
+// MOB-07: sunucu kanalı bu cihaz türüne kapalıysa (tarayıcıda VAPID yok / kabukta FCM yok) "desteklenmiyor".
+const support = ref<PushSupport>(pushUsableHere(props.config) ? detectPushSupport() : 'unsupported')
 const permission = ref<PermissionState>(currentPermission())
 const subscribed = ref(false)
 const busy = ref(false)
@@ -86,16 +89,16 @@ const devices = computed(() => props.config.devices)
 const view = computed(() => {
   if (support.value !== 'supported') return support.value
   if (permission.value === 'denied') return 'denied'
-  return subscribed.value && permission.value === 'granted' ? 'on' : 'off'
+  return subscribed.value && (nativeShell || permission.value === 'granted') ? 'on' : 'off'
 })
 
 async function refreshLocal() {
-  subscribed.value = !!(await push.currentSubscription())
+  subscribed.value = await push.isSubscribedHere()
   permission.value = currentPermission()
 }
 
 async function enable() {
-  if (!props.config.publicKey) return
+  if (!pushUsableHere(props.config)) return
   busy.value = true
   message.value = ''
   const r = await push.enablePush(props.config.publicKey)

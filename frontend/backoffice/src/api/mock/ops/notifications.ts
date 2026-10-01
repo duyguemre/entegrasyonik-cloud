@@ -425,14 +425,21 @@ export function createNotificationsMock(t0: number): MockDomain & { setEmailEnab
         // MOB-06: platform yöneticisi web push aboneliği. Açık anahtar gerçek bir P-256 VAPID açık anahtarıdır (sır değil; özel eşi YOK).
         case 'BackofficePrefsService/getPushConfig':
           strict(body, [])
-          return { enabled: pushEnabled, publicKey: pushEnabled ? MOCK_VAPID_PUBLIC : null, devices: pushEnabled ? pushDevices.map(({ endpoint: _e, ...d }) => d) : [] }
+          return { enabled: pushEnabled, publicKey: pushEnabled ? MOCK_VAPID_PUBLIC : null, fcm: pushEnabled, devices: pushEnabled ? pushDevices.map(({ endpoint: _e, ...d }) => d) : [] }
         case 'BackofficePrefsService/subscribePush': {
-          strict(body, ['subscription', 'deviceLabel'])
+          strict(body, ['subscription', 'fcmToken', 'deviceLabel'])
           if (!pushEnabled) throw new MockHttpError(409, 'PUSH_DISABLED', 'Anlık bildirimler şu an kullanılamıyor.')
-          const sub = body.subscription as { endpoint?: unknown } | undefined
-          const endpoint = typeof sub?.endpoint === 'string' ? sub.endpoint : ''
-          if (!/^https:\/\/(fcm\.googleapis\.com|updates\.push\.services\.mozilla\.com|web\.push\.apple\.com|[a-z0-9-]+\.notify\.windows\.com)\//.test(endpoint)) {
-            throw new MockHttpError(400, 'PUSH_ENDPOINT_NOT_ALLOWED', 'Bu tarayıcının bildirim servisi desteklenmiyor.')
+          if (!body.subscription === !body.fcmToken) throw validation('subscription', 'abonelik ya da fcmToken — yalnız biri')
+          let endpoint: string
+          if (body.fcmToken) {
+            if (!/^[A-Za-z0-9_:-]{32,4096}$/.test(String(body.fcmToken))) throw new MockHttpError(400, 'PUSH_TOKEN_INVALID', 'Cihaz bildirim kaydı geçersiz.')
+            endpoint = `fcm:${String(body.fcmToken)}`
+          } else {
+            const sub = body.subscription as { endpoint?: unknown } | undefined
+            endpoint = typeof sub?.endpoint === 'string' ? sub.endpoint : ''
+            if (!/^https:\/\/(fcm\.googleapis\.com|updates\.push\.services\.mozilla\.com|web\.push\.apple\.com|[a-z0-9-]+\.notify\.windows\.com)\//.test(endpoint)) {
+              throw new MockHttpError(400, 'PUSH_ENDPOINT_NOT_ALLOWED', 'Bu tarayıcının bildirim servisi desteklenmiyor.')
+            }
           }
           const existing = pushDevices.find((d) => d.endpoint === endpoint)
           if (existing) existing.deviceLabel = typeof body.deviceLabel === 'string' ? body.deviceLabel : null
@@ -440,10 +447,11 @@ export function createNotificationsMock(t0: number): MockDomain & { setEmailEnab
           return { ok: true }
         }
         case 'BackofficePrefsService/unsubscribePush': {
-          strict(body, ['endpoint', 'id'])
-          if (!body.endpoint === !body.id) throw validation('endpoint', 'uç ya da kimlikten yalnız biri')
+          strict(body, ['endpoint', 'id', 'fcmToken'])
+          if ([body.endpoint, body.id, body.fcmToken].filter(Boolean).length !== 1) throw validation('endpoint', 'uç, kimlik ya da fcmToken — yalnız biri')
+          const target = body.fcmToken ? `fcm:${String(body.fcmToken)}` : body.endpoint
           const before = pushDevices.length
-          pushDevices = pushDevices.filter((d) => d.endpoint !== body.endpoint && d.id !== body.id)
+          pushDevices = pushDevices.filter((d) => d.endpoint !== target && d.id !== body.id)
           return { removed: before - pushDevices.length }
         }
         case 'BackofficeNotificationService/muteAlert': {

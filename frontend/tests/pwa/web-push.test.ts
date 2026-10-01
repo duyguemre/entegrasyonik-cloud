@@ -10,6 +10,7 @@ import {
   detectPushSupport,
   deviceLabelFrom,
   normalizePushConfig,
+  pushUsableHere,
   urlBase64ToUint8Array,
   useWebPush,
 } from '../../src/pwa/webPush'
@@ -72,10 +73,10 @@ describe('yardımcılar', () => {
     expect(k.length).toBe(65)
     expect(k[0]).toBe(4)
   })
-  it('normalizePushConfig: anahtar yoksa kapalı; bozuk cihaz satırları elenir', () => {
+  it('normalizePushConfig: anahtar ve FCM yoksa kapalı; bozuk cihaz satırları elenir', () => {
     expect(normalizePushConfig({ result: true, enabled: true, publicKey: null }).enabled).toBe(false)
     const c = normalizePushConfig({ enabled: true, publicKey: KEY, devices: [{ id: 'd1', deviceLabel: 'Android · Chrome', createdAt: '2026-10-01T10:00:00Z' }, null, { x: 1 }] })
-    expect(c).toEqual({ enabled: true, publicKey: KEY, devices: [{ id: 'd1', deviceLabel: 'Android · Chrome', createdAt: '2026-10-01T10:00:00Z', lastSuccessAt: null }] })
+    expect(c).toEqual({ enabled: true, publicKey: KEY, fcm: false, devices: [{ id: 'd1', deviceLabel: 'Android · Chrome', createdAt: '2026-10-01T10:00:00Z', lastSuccessAt: null }] })
   })
 })
 
@@ -135,5 +136,58 @@ describe('enablePush / disablePush', () => {
     expect(await useWebPush(f.win).disablePush()).toEqual({ ok: true })
     expect(post).toHaveBeenLastCalledWith('NotificationService/unsubscribePush', { endpoint: 'https://fcm.googleapis.com/fcm/send/dev-1' })
     expect(f.current).toBeNull()
+  })
+})
+
+describe('MOB-07 Android kabuğu (FCM)', () => {
+  const TOKEN = 'f'.repeat(48)
+  function shellWin(fcm: '0' | '1', perm = 'granted') {
+    const listeners: Record<string, (e: any) => void> = {}
+    const plugin = {
+      requestPermissions: vi.fn(async () => ({ receive: perm })),
+      checkPermissions: vi.fn(async () => ({ receive: perm })),
+      addListener: vi.fn(async (ev: string, fn: (e: any) => void) => { listeners[ev] = fn; return { remove: async () => undefined } }),
+      register: vi.fn(async () => { await Promise.resolve(); listeners.registration?.({ value: TOKEN }) }),
+    }
+    const win: any = {
+      navigator: { userAgent: `${ANDROID}; wv EntegrasyonikShell/0.1.0 (app; fcm=${fcm})`, maxTouchPoints: 5 },
+      matchMedia: () => ({ matches: false }),
+      Capacitor: { isNativePlatform: () => true, Plugins: { PushNotifications: plugin } },
+    }
+    return { win, plugin }
+  }
+  beforeEach(() => {
+    const store = new Map<string, string>()
+    vi.stubGlobal('localStorage', { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => store.set(k, v), removeItem: (k: string) => store.delete(k) })
+  })
+
+  it('kabukta FCM ile destekli, FCM\'siz desteklenmez; sunucu kanalı türüne göre kullanılabilirlik', () => {
+    expect(detectPushSupport(shellWin('1').win)).toBe('supported')
+    expect(detectPushSupport(shellWin('0').win)).toBe('unsupported')
+    const fcmOnly = normalizePushConfig({ enabled: true, publicKey: null, fcm: true, devices: [] })
+    expect(fcmOnly.enabled).toBe(true)
+    expect(pushUsableHere(fcmOnly, shellWin('1').win)).toBe(true)
+    expect(pushUsableHere(fcmOnly, fakeWindow().win)).toBe(false) // tarayıcıda VAPID gerekir
+    expect(pushUsableHere(normalizePushConfig({ enabled: true, publicKey: KEY, fcm: false }), shellWin('1').win)).toBe(false)
+  })
+  it('aç → izin → FCM belirteci sunucuya (cihaz adı ile); kapat → belirteçle silinir', async () => {
+    const { win, plugin } = shellWin('1')
+    post.mockResolvedValue({ result: true })
+    const p = useWebPush(win)
+    expect(await p.enablePush(null)).toEqual({ ok: true })
+    expect(plugin.requestPermissions).toHaveBeenCalledTimes(1)
+    expect(post).toHaveBeenLastCalledWith('NotificationService/subscribePush', { fcmToken: TOKEN, deviceLabel: 'Android · Uygulama' })
+    expect(await p.isSubscribedHere()).toBe(true)
+    expect(await p.disablePush()).toEqual({ ok: true })
+    expect(post).toHaveBeenLastCalledWith('NotificationService/unsubscribePush', { fcmToken: TOKEN })
+    expect(await p.isSubscribedHere()).toBe(false)
+  })
+  it('izin reddi: sunucuya gidilmez; sunucu reddi: belirteç saklanmaz', async () => {
+    expect(await useWebPush(shellWin('1', 'denied').win).enablePush(null)).toMatchObject({ ok: false, reason: 'denied' })
+    expect(post).not.toHaveBeenCalled()
+    post.mockResolvedValue({ isError: true, code: 'PUSH_DISABLED' })
+    const p = useWebPush(shellWin('1').win)
+    expect(await p.enablePush(null)).toMatchObject({ ok: false, reason: 'server' })
+    expect(await p.isSubscribedHere()).toBe(false)
   })
 })

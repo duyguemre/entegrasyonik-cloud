@@ -6,12 +6,15 @@
  *  - iOS/iPadOS: push yalnız ana ekrana eklenmiş PWA'da (16.4+). Safari sekmesinde dürüst açıklama gösterilir.
  *  - Masaüstü kabuğunda (Electron) push yok: sistem bildirimi kabuğun işi (DESK) — arayüz gizlenir.
  *  - Sunucu kanalı kapalıysa (`getPushConfig.enabled=false`, VAPID yok) arayüz gizlenir.
+ *  - Android kabuğu (MOB-07, Capacitor): WebView'de Web Push yok → FCM cihaz belirteci (`@entegrasyonik/ui/native`). Kabuk FCM'siz
+ *    derlendiyse ya da sunucuda FCM kapalıysa "desteklenmiyor" gösterilir. Bu cihazın belirteci yalnız bu cihazda tutulur (kapatmak için).
  * Backend: `NotificationService/{getPushConfig,subscribePush,unsubscribePush}`; ileti içeriği sunucuda hassas veri içermez.
  */
 import useRestApi from '@/composables/restapi'
 import logger from '@/composables/logger'
 import { apiCode, isApiError } from '@/composables/apiErrors'
 import { isDesktopShell, isStandalone } from '@/pwa/pwaState'
+import { hasNativePush, isNativeShell, nativeDeviceLabel, registerNativePush } from '@entegrasyonik/ui/native'
 
 export type PushSupport =
   | 'desktop-shell' // Electron: gizli
@@ -30,7 +33,27 @@ export interface PushDevice {
 export interface PushConfig {
   enabled: boolean
   publicKey: string | null
+  /** Sunucuda FCM (Android kabuğu yerel push) açık mı. */
+  fcm: boolean
   devices: PushDevice[]
+}
+
+/** Bu cihazın FCM belirteci (yalnız Android kabuğunda; kişisel/oturum verisi değil — "bu cihazda kapat" için). */
+export const NATIVE_TOKEN_KEY = 'ek-native-push-token'
+function readNativeToken(): string | null {
+  try {
+    return localStorage.getItem(NATIVE_TOKEN_KEY)
+  } catch {
+    return null
+  }
+}
+function writeNativeToken(v: string | null): void {
+  try {
+    if (v) localStorage.setItem(NATIVE_TOKEN_KEY, v)
+    else localStorage.removeItem(NATIVE_TOKEN_KEY)
+  } catch {
+    // depolama kapalı: yalnız sunucu kaydı kalır (cihaz listesinden kaldırılabilir)
+  }
 }
 
 type Win = Window & { entegrasyonikDesktop?: { isDesktop?: boolean } }
@@ -41,6 +64,7 @@ export function isIos(ua: string, maxTouchPoints = 0): boolean {
 
 /** Bu cihazda push mümkün mü (izin durumundan bağımsız). */
 export function detectPushSupport(win: Win = window): PushSupport {
+  if (isNativeShell(win)) return hasNativePush(win) ? 'supported' : 'unsupported'
   if (isDesktopShell(win)) return 'desktop-shell'
   const nav = win.navigator
   const hasApis = 'serviceWorker' in nav && 'PushManager' in win && 'Notification' in win
@@ -108,9 +132,12 @@ function sameKey(a: ArrayBuffer | null | undefined, b: Uint8Array): boolean {
 
 export function normalizePushConfig(res: any): PushConfig {
   const devices = Array.isArray(res?.devices) ? res.devices : []
+  const publicKey = typeof res?.publicKey === 'string' && res.publicKey.length > 0 ? res.publicKey : null
+  const fcm = res?.fcm === true
   return {
-    enabled: res?.enabled === true && typeof res?.publicKey === 'string' && res.publicKey.length > 0,
-    publicKey: typeof res?.publicKey === 'string' ? res.publicKey : null,
+    enabled: res?.enabled === true && (publicKey !== null || fcm),
+    publicKey,
+    fcm,
     devices: devices
       .filter((d: any) => d && typeof d.id === 'string')
       .map((d: any) => ({
@@ -122,12 +149,19 @@ export function normalizePushConfig(res: any): PushConfig {
   }
 }
 
+/** Bu cihazda kullanılabilir mi: Android kabuğunda sunucu FCM'i, tarayıcıda VAPID açık anahtarı gerekir. */
+export function pushUsableHere(cfg: PushConfig | null, win: Window = window): boolean {
+  if (!cfg?.enabled) return false
+  return isNativeShell(win) ? cfg.fcm : cfg.publicKey !== null
+}
+
 export type PushActionResult = { ok: true } | { ok: false; reason: 'denied' | 'dismissed' | 'unsupported' | 'server' | 'error'; message: string }
 
 const SERVER_ERRORS: Record<string, string> = {
   PUSH_DISABLED: 'Anlık bildirimler şu an kullanılamıyor.',
   PUSH_ENDPOINT_NOT_ALLOWED: 'Bu tarayıcının bildirim servisi desteklenmiyor.',
   PUSH_KEYS_INVALID: 'Tarayıcı geçersiz bir abonelik üretti; sayfayı yenileyip tekrar deneyin.',
+  PUSH_TOKEN_INVALID: 'Cihaz bildirim kaydı geçersiz; uygulamayı yeniden açıp tekrar deneyin.',
   IMPERSONATION_READ_ONLY: 'Destek görünümünde bildirim ayarı değiştirilemez.',
 }
 
@@ -162,9 +196,40 @@ export function useWebPush(win: Window = window) {
     }
   }
 
-  /** YALNIZ kullanıcı eylemiyle çağrılır: izin → abonelik → sunucuya kayıt. */
-  async function enablePush(publicKey: string): Promise<PushActionResult> {
+  /** Bu cihaz abone mi (tarayıcı aboneliği ya da kabukta saklı FCM belirteci). İzin istemez. */
+  async function isSubscribedHere(): Promise<boolean> {
+    if (isNativeShell(win)) return readNativeToken() !== null
+    return (await currentSubscription()) !== null
+  }
+
+  /** MOB-07: Android kabuğu — izin → FCM belirteci → sunucuya kayıt. */
+  async function enableNative(): Promise<PushActionResult> {
+    const r = await registerNativePush(win)
+    if (!r.ok) {
+      if (r.reason === 'denied') return { ok: false, reason: 'denied', message: 'Bildirim izni reddedildi. Telefonun Ayarlar > Uygulamalar > Entegrasyonik > Bildirimler bölümünden izin verin.' }
+      return { ok: false, reason: r.reason === 'unsupported' ? 'unsupported' : 'error', message: 'Anlık bildirimler açılamadı — tekrar deneyin.' }
+    }
+    const res: any = await restApi.post('NotificationService/subscribePush', { fcmToken: r.token, deviceLabel: nativeDeviceLabel(win) })
+    if (!isApiError(res) && res?.result) {
+      writeNativeToken(r.token)
+      return { ok: true }
+    }
+    const code = apiCode(res)
+    return { ok: false, reason: 'server', message: (code && SERVER_ERRORS[code]) || 'Anlık bildirimler açılamadı — tekrar deneyin.' }
+  }
+
+  /** YALNIZ kullanıcı eylemiyle çağrılır: izin → abonelik → sunucuya kayıt. Kabukta `publicKey` kullanılmaz (FCM). */
+  async function enablePush(publicKey: string | null): Promise<PushActionResult> {
     if (detectPushSupport(win as Win) !== 'supported') return { ok: false, reason: 'unsupported', message: 'Bu cihazda anlık bildirim desteklenmiyor.' }
+    if (isNativeShell(win)) {
+      try {
+        return await enableNative()
+      } catch (error) {
+        logger.error('Anlık bildirim açılamadı', { module: 'webPush', op: 'enableNative', error })
+        return { ok: false, reason: 'error', message: 'Anlık bildirimler açılamadı — tekrar deneyin.' }
+      }
+    }
+    if (!publicKey) return { ok: false, reason: 'unsupported', message: 'Bu cihazda anlık bildirim desteklenmiyor.' }
     try {
       const N = (win as Window & { Notification: typeof Notification }).Notification
       const permission = N.permission === 'granted' ? 'granted' : await N.requestPermission()
@@ -194,9 +259,20 @@ export function useWebPush(win: Window = window) {
     }
   }
 
-  /** Bu cihazda kapat: sunucudan sil + tarayıcı aboneliğini bırak. */
+  /** Bu cihazda kapat: sunucudan sil + tarayıcı aboneliğini (kabukta saklı belirteci) bırak. */
   async function disablePush(): Promise<PushActionResult> {
     try {
+      if (isNativeShell(win)) {
+        const token = readNativeToken()
+        if (!token) return { ok: true }
+        const res: any = await restApi.post('NotificationService/unsubscribePush', { fcmToken: token })
+        if (isApiError(res) || !res?.result) {
+          const code = apiCode(res)
+          return { ok: false, reason: 'server', message: (code && SERVER_ERRORS[code]) || 'Anlık bildirimler kapatılamadı — tekrar deneyin.' }
+        }
+        writeNativeToken(null)
+        return { ok: true }
+      }
       const sub = await currentSubscription()
       if (!sub) return { ok: true }
       const res: any = await restApi.post('NotificationService/unsubscribePush', { endpoint: sub.endpoint })
@@ -223,5 +299,5 @@ export function useWebPush(win: Window = window) {
     }
   }
 
-  return { loadConfig, currentSubscription, enablePush, disablePush, removeDevice }
+  return { loadConfig, currentSubscription, isSubscribedHere, enablePush, disablePush, removeDevice }
 }

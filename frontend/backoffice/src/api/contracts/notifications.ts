@@ -213,13 +213,16 @@ export interface BoPushDevice {
 /** Kanal kapalıysa (`NOTIFY_V2_ENABLED`/VAPID yok) `enabled:false`, `publicKey:null`, cihaz listesi boş. */
 export interface BoPushConfig {
   enabled: boolean
+  /** Tarayıcı web push (VAPID) açıksa açık anahtar; değilse null. */
   publicKey: string | null
+  /** Android kabuğu yerel push (FCM) açık mı (MOB-07). */
+  fcm: boolean
   devices: BoPushDevice[]
 }
-export interface BoPushSubscribeRequest {
-  subscription: { endpoint: string; expirationTime?: number | null; keys: { p256dh: string; auth: string } }
-  deviceLabel?: string
-}
+/** Tarayıcı aboneliği YA DA Android kabuğu FCM belirteci — yalnız biri. */
+export type BoPushSubscribeRequest =
+  | { subscription: { endpoint: string; expirationTime?: number | null; keys: { p256dh: string; auth: string } }; deviceLabel?: string }
+  | { fcmToken: string; deviceLabel?: string }
 
 interface Page<T> {
   items: T[]
@@ -246,7 +249,7 @@ declare module '../contract' {
     'BackofficeNotificationService/listAlerts': [ListAlertsRequest, Page<AlertRow>]
     'BackofficePrefsService/getPushConfig': [Record<string, never>, BoPushConfig]
     'BackofficePrefsService/subscribePush': [BoPushSubscribeRequest, { ok: true }]
-    'BackofficePrefsService/unsubscribePush': [{ endpoint: string } | { id: string }, { removed: number }]
+    'BackofficePrefsService/unsubscribePush': [{ endpoint: string } | { id: string } | { fcmToken: string }, { removed: number }]
     'BackofficeNotificationService/muteAlert': [{ ruleId: string; scopeKey: string; hours: number; reason: string }, { ruleId: string; scopeKey: string; mutedUntil: string | null }]
   }
 }

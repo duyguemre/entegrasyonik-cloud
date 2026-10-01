@@ -105,3 +105,44 @@ describe('useBoWebPush', () => {
     expect(calls.at(-1)).toEqual({ op: 'BackofficePrefsService/unsubscribePush', body: { id: 'abc' } })
   })
 })
+
+describe('MOB-07 Android kabuğu (FCM)', () => {
+  function shellWin(fcm: '0' | '1', perm = 'granted', token: string | null = 'f'.repeat(40)) {
+    const listeners: Record<string, (e: any) => void> = {}
+    const plugin = {
+      requestPermissions: vi.fn(async () => ({ receive: perm })),
+      checkPermissions: vi.fn(async () => ({ receive: perm })),
+      addListener: vi.fn(async (ev: string, fn: (e: any) => void) => { listeners[ev] = fn; return { remove: async () => undefined } }),
+      register: vi.fn(async () => { await Promise.resolve(); token ? listeners.registration?.({ value: token }) : listeners.registrationError?.({}) }),
+    }
+    const win = {
+      navigator: { userAgent: `${ANDROID}; wv EntegrasyonikShell/0.1.0 (backoffice; fcm=${fcm})`, maxTouchPoints: 5 },
+      matchMedia: () => ({ matches: false }),
+      Capacitor: { isNativePlatform: () => true, Plugins: { PushNotifications: plugin } },
+    } as unknown as Window
+    return { win, plugin }
+  }
+  beforeEach(() => {
+    const store = new Map<string, string>()
+    vi.stubGlobal('localStorage', { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => store.set(k, v), removeItem: (k: string) => store.delete(k) })
+  })
+
+  it('FCM ile derlenmiş kabuk: destekli; aç → FCM belirteci sunucuya; kapat → belirteçle silinir', async () => {
+    const { win, plugin } = shellWin('1')
+    expect(detectPushSupport(win)).toBe('supported')
+    const p = useBoWebPush(win)
+    expect(await p.enable(null)).toEqual({ ok: true })
+    expect(plugin.requestPermissions).toHaveBeenCalledTimes(1)
+    expect(calls.at(-1)).toEqual({ op: 'BackofficePrefsService/subscribePush', body: { fcmToken: 'f'.repeat(40), deviceLabel: 'Android · Yönetim' } })
+    expect(await p.isSubscribedHere()).toBe(true)
+    expect(await p.disable()).toEqual({ ok: true })
+    expect(calls.at(-1)).toEqual({ op: 'BackofficePrefsService/unsubscribePush', body: { fcmToken: 'f'.repeat(40) } })
+    expect(await p.isSubscribedHere()).toBe(false)
+  })
+  it('FCM\'siz kabuk desteklenmez; izin reddi sunucuya gitmez', async () => {
+    expect(detectPushSupport(shellWin('0').win)).toBe('unsupported')
+    const { win } = shellWin('1', 'denied')
+    expect(await useBoWebPush(win).enable(null)).toMatchObject({ ok: false, reason: 'denied' })
+    expect(calls).toHaveLength(0)
+  })
+})

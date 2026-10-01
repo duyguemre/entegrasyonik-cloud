@@ -15,7 +15,8 @@
     "./styles": "./src/styles/index.ts",
     "./format": "./src/format.ts",
     "./motion": "./src/motion.ts",
-    "./brand/*": "./src/brand/*"
+    "./brand/*": "./src/brand/*",
+    "./native": "./src/native/shell.ts"
   },
   "scripts": {
     "test": "vitest run"

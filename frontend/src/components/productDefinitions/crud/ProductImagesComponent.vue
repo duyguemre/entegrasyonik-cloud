@@ -243,6 +243,7 @@ import VariantImageAssign from '@/components/productDefinitions/images/VariantIm
 import { useImageUploads } from '@/components/productDefinitions/images/useImageUploads'
 import { PhotoPrepError, PHOTO_PREP_MESSAGES, preparePhoto } from '@/components/productDefinitions/images/photoPrep'
 import { useDeviceInput } from '@/composables/useDeviceInput'
+import { hasNativeCamera, takeNativePhoto } from '@entegrasyonik/ui/native'
 import { motionMs } from '@/components/productDefinitions/images/motion'
 import { motionEasing } from '@entegrasyonik/ui/motion'
 import {
@@ -663,13 +664,26 @@ function pickFiles() {
 const { showDeviceInput } = useDeviceInput()
 const cameraInputRef = ref<HTMLInputElement | null>(null)
 const preparing = ref(0)
-function takePhoto() {
-  cameraInputRef.value?.click()
+// MOB-07: Android kabuğunda yerel kamera (Capacitor Camera); başka her yerde `capture` girdisi. İkisi de aynı hazırlama hattına gider.
+async function takePhoto() {
+  if (!hasNativeCamera()) {
+    cameraInputRef.value?.click()
+    return
+  }
+  try {
+    const file = await takeNativePhoto()
+    if (file) await prepareAndAdd([file])
+  } catch {
+    rejected.value = [{ name: 'Fotoğraf', reason: 'Kamera açılamadı — tekrar deneyin.' }]
+  }
 }
 async function onCameraInput(e: Event) {
   const input = e.target as HTMLInputElement
   const files = Array.from(input.files ?? [])
   input.value = ''
+  await prepareAndAdd(files)
+}
+async function prepareAndAdd(files: File[]) {
   if (!files.length) return
   preparing.value += files.length
   announce('Fotoğraf hazırlanıyor')
