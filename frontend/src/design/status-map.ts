@@ -25,6 +25,7 @@ import { TicketStatusEnum } from '@/types/TicketTypes'
 import { InvoiceStatusEnum } from '@/types/InvoiceTypes'
 
 import type { StatusTone } from '@entegrasyonik/ui/components/statusTone'
+import type { EkSelectOption } from '@entegrasyonik/ui/components/selectOptions'
 export type { StatusTone }
 
 export interface StatusMapEntry {
@@ -49,7 +50,7 @@ export const CLAIM_STATUS_TONE: Record<ClaimInternalStatusEnum, StatusMapEntry> 
   [ClaimInternalStatusEnum.WAITING]: { tone: 'info', labelKey: 'status.claim.waiting' },
   [ClaimInternalStatusEnum.UNDER_REVIEW]: { tone: 'warning', labelKey: 'status.claim.underReview' },
   [ClaimInternalStatusEnum.APPROVED]: { tone: 'success', labelKey: 'status.claim.approved' },
-  [ClaimInternalStatusEnum.REJECTED]: { tone: 'success', labelKey: 'status.claim.rejected' },
+  [ClaimInternalStatusEnum.REJECTED]: { tone: 'danger', labelKey: 'status.claim.rejected' },
   [ClaimInternalStatusEnum.CANCELLED]: { tone: 'neutral', labelKey: 'status.claim.cancelled' },
   [ClaimInternalStatusEnum.DISPUTED]: { tone: 'warning', labelKey: 'status.claim.disputed' },
   [ClaimInternalStatusEnum.COMPLETED]: { tone: 'success', labelKey: 'status.claim.completed' },
@@ -204,3 +205,83 @@ export const ALLOCATION_STATE_TONE: Record<AllocationState, StatusMapEntry> = {
   RESTOCKED: { tone: 'neutral', labelKey: 'status.allocation.restocked' },
   UNMAPPED: { tone: 'warning', labelKey: 'status.allocation.unmapped' },
 }
+
+// ============================================================================
+// FR2-ORDERS 31-32 (fe-r2d) — durumların "insan dili": kısa açıklama, grup ve sıra.
+// Etiket + ton yukarıdaki haritalarda kalır; burada yalnız seçim listesi alt satırı/grubu ve
+// liste satırındaki sade ipucu. Gruplar iş akışına göre (eylem bekleyen üstte, kapanan altta).
+// Metin yalnız durum koduna bağlıdır; sayı/metrik üretmez.
+// ============================================================================
+export interface StatusGuide {
+  /** Seçim listesi grubu. */
+  group: string
+  /** Tek satırlık, sade açıklama (liste alt satırı + rozet ipucu). */
+  hint: string
+}
+
+export const ORDER_GROUPS = { action: 'İşlem bekleyen', platform: 'Pazaryerinde', transit: 'Yolda', closed: 'Kapanan' } as const
+
+/** Yaşam döngüsü sırası (liste ve seçim menüsü bu sırayla). */
+export const ORDER_STATUS_ORDER: OrderInternalStatusEnum[] = [
+  OrderInternalStatusEnum.AWAITING_APPROVAL,
+  OrderInternalStatusEnum.APPROVED,
+  OrderInternalStatusEnum.UNAPPROVED,
+  OrderInternalStatusEnum.SHIPPED,
+  OrderInternalStatusEnum.DELIVERED,
+  OrderInternalStatusEnum.CANCELLED,
+  OrderInternalStatusEnum.RETURNED,
+]
+
+export const ORDER_STATUS_GUIDE: Record<OrderInternalStatusEnum, StatusGuide> = {
+  [OrderInternalStatusEnum.AWAITING_APPROVAL]: { group: ORDER_GROUPS.action, hint: 'Onaylamanız gerekiyor' },
+  [OrderInternalStatusEnum.APPROVED]: { group: ORDER_GROUPS.action, hint: 'Fatura ve kargo hazırlığı' },
+  [OrderInternalStatusEnum.UNAPPROVED]: { group: ORDER_GROUPS.platform, hint: 'Sizden işlem beklenmiyor' },
+  [OrderInternalStatusEnum.SHIPPED]: { group: ORDER_GROUPS.transit, hint: 'Teslimat bekleniyor' },
+  [OrderInternalStatusEnum.DELIVERED]: { group: ORDER_GROUPS.closed, hint: 'Süreç tamamlandı' },
+  [OrderInternalStatusEnum.CANCELLED]: { group: ORDER_GROUPS.closed, hint: 'Sipariş iptal edildi' },
+  [OrderInternalStatusEnum.RETURNED]: { group: ORDER_GROUPS.closed, hint: 'Müşteri iade etti' },
+}
+
+export const CLAIM_GROUPS = { open: 'Karar bekleyen', closed: 'Sonuçlanan' } as const
+
+export const CLAIM_STATUS_ORDER: ClaimInternalStatusEnum[] = [
+  ClaimInternalStatusEnum.WAITING,
+  ClaimInternalStatusEnum.UNDER_REVIEW,
+  ClaimInternalStatusEnum.DISPUTED,
+  ClaimInternalStatusEnum.APPROVED,
+  ClaimInternalStatusEnum.REJECTED,
+  ClaimInternalStatusEnum.COMPLETED,
+  ClaimInternalStatusEnum.CANCELLED,
+]
+
+export const CLAIM_STATUS_GUIDE: Record<ClaimInternalStatusEnum, StatusGuide> = {
+  [ClaimInternalStatusEnum.WAITING]: { group: CLAIM_GROUPS.open, hint: 'Ürün size doğru yolda' },
+  [ClaimInternalStatusEnum.UNDER_REVIEW]: { group: CLAIM_GROUPS.open, hint: 'Kararınız bekleniyor' },
+  [ClaimInternalStatusEnum.DISPUTED]: { group: CLAIM_GROUPS.open, hint: 'Red kararına itiraz edildi' },
+  [ClaimInternalStatusEnum.APPROVED]: { group: CLAIM_GROUPS.closed, hint: 'Ödeme iadesi sürecinde' },
+  [ClaimInternalStatusEnum.REJECTED]: { group: CLAIM_GROUPS.closed, hint: 'Karar pazaryerine iletildi' },
+  [ClaimInternalStatusEnum.COMPLETED]: { group: CLAIM_GROUPS.closed, hint: 'Dosya kapandı' },
+  [ClaimInternalStatusEnum.CANCELLED]: { group: CLAIM_GROUPS.closed, hint: 'Müşteri talebi geri çekti' },
+}
+
+/** Backend `ClaimTypeEnum` (REFUND/REPLACEMENT/CANCEL/UNKNOWN) → kullanıcı dili. Eski adlar (RETURN/EXCHANGE) de karşılanır. */
+export const CLAIM_TYPE_LABEL: Record<string, string> = {
+  REFUND: 'Para iadesi',
+  RETURN: 'Para iadesi',
+  REPLACEMENT: 'Değişim',
+  EXCHANGE: 'Değişim',
+  CANCEL: 'İptal',
+  UNKNOWN: 'Belirtilmedi',
+}
+export const claimTypeLabel = (type?: string | null) => (type ? CLAIM_TYPE_LABEL[type] ?? type : 'Belirtilmedi')
+
+/** Durum seçim listesi: yaşam döngüsü sırası + ton noktası + açıklama alt satırı + gruplar. */
+function guideOptions<S extends string>(order: S[], tone: Record<S, StatusMapEntry>, guide: Record<S, StatusGuide>, label: (s: S) => string): EkSelectOption[] {
+  return order.map((s) => ({ value: s, title: label(s), tone: tone[s]?.tone, subtitle: guide[s]?.hint, group: guide[s]?.group }))
+}
+
+export const orderStatusOptions = (label: (s: OrderInternalStatusEnum) => string) =>
+  guideOptions(ORDER_STATUS_ORDER, ORDER_STATUS_TONE, ORDER_STATUS_GUIDE, label)
+
+export const claimStatusOptions = (label: (s: ClaimInternalStatusEnum) => string) =>
+  guideOptions(CLAIM_STATUS_ORDER, CLAIM_STATUS_TONE, CLAIM_STATUS_GUIDE, label)

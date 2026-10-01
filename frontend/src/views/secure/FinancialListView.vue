@@ -223,30 +223,26 @@
       <template #cell-externalId="{ row }">
         <span class="ek-fin-id">
           <span class="ek-num">{{ row.externalId }}</span>
-          <span class="ek-fin-id__sub">Sipariş: {{ row.orderNumber || 'Manuel' }}</span>
+          <span class="ek-fin-id__sub">{{ row.orderNumber ? `Sipariş: ${row.orderNumber}` : 'Siparişe bağlı değil' }}</span>
         </span>
       </template>
       <template #cell-channel="{ row }"><EkChannelDot :code="row.integrationCode" /></template>
       <template #cell-transactionType="{ row }">
-        <v-tooltip :text="row.platformType" location="top">
-          <template v-slot:activator="{ props }">
-            <span v-bind="props" tabindex="0">
-              <EkStatusChip :tone="typeTone(row.transactionType)" :label="translateTransactionType(row.transactionType)" />
-            </span>
-          </template>
-        </v-tooltip>
+        <EkTooltip :text="row.platformType" location="top">
+          <span tabindex="0">
+            <EkStatusChip :tone="typeTone(row.transactionType)" :label="translateTransactionType(row.transactionType)" />
+          </span>
+        </EkTooltip>
       </template>
       <template #cell-amount="{ row }">
+        <!-- FR2-FIN 38: alacak ve kesinti ayrı, etiketli; sıfır kalem "—" (gürültü yok). -->
         <span class="ek-fin-amount ek-num">
-          <span :class="row.credit > 0 ? 'ek-fin-positive' : 'ek-muted'">
-            {{ row.credit > 0 ? '+' : '' }}{{ formatCurrency(row.credit) }}
-          </span>
-          <span :class="row.debt > 0 ? 'ek-fin-negative' : 'ek-muted'">
-            {{ row.debt > 0 ? '-' : '' }}{{ formatCurrency(row.debt) }}
-          </span>
+          <span v-if="row.credit > 0" class="ek-fin-amount__line"><span class="ek-fin-amount__tag">Alacak</span><span class="ek-fin-positive">+{{ formatCurrency(row.credit) }}</span></span>
+          <span v-if="row.debt > 0" class="ek-fin-amount__line"><span class="ek-fin-amount__tag">Kesinti</span><span class="ek-fin-negative">−{{ formatCurrency(row.debt) }}</span></span>
+          <span v-if="!(row.credit > 0) && !(row.debt > 0)" class="ek-muted">—</span>
         </span>
       </template>
-      <template #cell-netAmount="{ row }"><span class="ek-fin-net ek-num">{{ formatCurrency(row.netAmount) }}</span></template>
+      <template #cell-netAmount="{ row }"><span class="ek-fin-net ek-num" :class="{ 'ek-fin-net--in': row.netAmount > 0 }">{{ row.netAmount > 0 ? '+' : '' }}{{ formatCurrency(row.netAmount) }} ₺</span></template>
       <template #cell-transactionDate="{ row }">
         <span class="ek-fin-id">
           <span class="ek-num">{{ formatDate(row.transactionDate) }}</span>
@@ -270,7 +266,7 @@
 </template>
 
 <script setup lang="ts">
-import { EkSelect, EkRowActions, EkButton, EkDateField, EkChannelDot, EkStatusChip, EkPageTabs, type EkPageTab } from '@entegrasyonik/ui/components'
+import { EkSelect, EkRowActions, EkButton, EkDateField, EkChannelDot, EkStatusChip, EkPageTabs, EkTooltip, type EkPageTab } from '@entegrasyonik/ui/components'
 import type { EkGridColumn, EkGridSort, EkActiveFilterChip } from '@entegrasyonik/ui/components'
 import { channelOptionsFrom } from '@entegrasyonik/ui/components/selectOptions'
 import { ref, reactive, computed, watch } from 'vue';
@@ -347,7 +343,7 @@ const columns: EkGridColumn[] = [
   { key: 'externalId', label: 'İşlem no', type: 'id', sortable: true },
   { key: 'channel', label: 'Kanal' },
   { key: 'transactionType', label: 'Tür' },
-  { key: 'amount', label: 'Tutar detayı (+/-)', align: 'end' },
+  { key: 'amount', label: 'Alacak / kesinti', align: 'end' },
   { key: 'netAmount', label: 'Net etki', type: 'num', align: 'end', sortable: true },
   { key: 'transactionDate', label: 'İşlem tarihi', sortable: true },
   { key: 'actions', label: 'Detay', align: 'end', hideLabel: true, pin: 'end' },
@@ -591,8 +587,16 @@ defineExpose({ initialize: applyParameters, activate: applyParameters });
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
 }
-.ek-fin-amount { display: flex; flex-direction: column; align-items: flex-end; }
-.ek-fin-net { font-weight: var(--ek-font-weight-semibold); }
+.ek-fin-amount { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.ek-fin-amount__line { display: inline-flex; align-items: baseline; gap: var(--ek-space-2); }
+.ek-fin-amount__tag {
+  font-size: var(--ek-type-micro-size);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+  color: var(--ek-color-content-muted);
+}
+.ek-fin-net { font-weight: var(--ek-font-weight-semibold); color: var(--ek-color-content-strong); }
+.ek-fin-net--in { color: var(--ek-color-success-emphasis); }
 
 /* Detay diyaloğu */
 .ek-fin-detail__head {

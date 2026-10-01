@@ -9,6 +9,18 @@ import { defineConfig, devices } from '@playwright/test'
 // server'ını yeniden kullanıp yüzlerce SAHTE başarısızlık üretiyordu (bu oturumda 4+ kez yaşandı). Paralel
 // çalışırken her oturum kendi portunu seçmeli: `E2E_PORT=4351 npm run test:e2e`. Varsayılan 4300 DEĞİŞMEDİ.
 const PORT = Number(process.env.E2E_PORT) || 4300
+
+// FR2-DARK — koyu projede koşan spec'ler (kabuk, pano, sipariş/ürün/müşteri listeleri, giriş, DS vitrini, dark-mode).
+const DARK_SPECS = [
+  /dark-mode\.spec\.ts$/,
+  /design-system\.spec\.ts$/,
+  /dashboard\.spec\.ts$/,
+  /orders\.spec\.ts$/,
+  /products\.spec\.ts$/,
+  /customers\.spec\.ts$/,
+  /login\.spec\.ts$/,
+  /shell-dsv2\.spec\.ts$/,
+]
 const baseURL = `http://127.0.0.1:${PORT}`
 
 export default defineConfig({
@@ -57,6 +69,13 @@ export default defineConfig({
     {
       name: 'chromium-desktop',
       use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } },
+    },
+    // ADR-0026 Karar 3.7 / FR2-DARK: koyu tema (sistem tercihi koyu → varsayılan `system` tercihi koyu çözer).
+    // Dark tabanlar YALNIZ masaüstü ve seçili P1 + DS vitrini spec'leri için (`*-chromium-desktop-dark-win32.png`).
+    {
+      name: 'chromium-desktop-dark',
+      testMatch: DARK_SPECS,
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 }, colorScheme: 'dark' },
     },
     // Faz kapanış QA'sı için (ADR-0011 Karar 4 — günlük koşuda ÇALIŞTIRILMAZ):
     // { name: 'firefox-desktop', use: { ...devices['Desktop Firefox'], viewport: { width: 1280, height: 800 } } },

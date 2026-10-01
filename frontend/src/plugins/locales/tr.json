@@ -129,7 +129,9 @@
       "changePassword": "Şifre Değiştir",
       "exit": "Çıkış"
     },
-    "account": "Hesabım"
+    "account": "Hesabım",
+    "management": "Kullanıcı Yönetimi",
+    "supports": "Destek"
   },
   "batch": {
     "menu": {
@@ -921,7 +923,7 @@
     "storename": "Mağaza Adı",
     "apikey": "API Key (Merchant ID)",
     "apisecret": "API Secret",
-    "sellerid": "Satıcı Id",
+    "sellerid": "Satıcı ID",
     "isSynchronized": "Eşitleme Yapılsın",
     "isUnapprovedOrders": "Onaylanmamış Siparişler Çekilsin",
     "shippingDuration": "Kargo Süresi",
@@ -1073,18 +1075,18 @@
       "unapproved": "Platform Onayı Bekliyor",
       "awaitingApproval": "Satıcı Onayı Bekliyor",
       "approved": "Sipariş Onaylandı",
-      "shipped": "Teslimat Bekleniyor",
+      "shipped": "Kargoda",
       "delivered": "Teslim Edildi",
       "cancelled": "İptal Edildi",
       "returned": "İade Edildi"
     },
     "claim": {
-      "waiting": "İade Talebi Oluşturuldu",
+      "waiting": "Yeni Talep",
       "underReview": "İncelemede",
-      "approved": "Tamamlandı",
-      "rejected": "Tamamlandı",
+      "approved": "Onaylandı",
+      "rejected": "Reddedildi",
       "cancelled": "İptal Edildi",
-      "disputed": "İncelemede",
+      "disputed": "İtirazda",
       "completed": "Tamamlandı"
     },
     "message": {

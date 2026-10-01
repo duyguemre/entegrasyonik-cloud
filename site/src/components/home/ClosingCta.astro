@@ -2,7 +2,7 @@
 /**
  * Kapanış CTA (ADR-0014 Karar 2, bölüm 9; S12 PARÇA C) — koyu "stage" zemin. Uygulama bağlantıları site-config'ten.
  * Satın almaya teşvik eden son çağrı: fayda odaklı başlık + üç kazanım (merkezi stok, birleşik sipariş, güvenlik),
- * birincil "ücretsiz başlat", ikincil giriş; altında deneme notu ve kazanım/güvenlik çipleri. Tüm olgular kayıttan
+ * birincil "ücretsiz başlat", ikincil "Demo talep edin" (ELEV A3; mailto, form yok); altında deneme notu ve kazanım/güvenlik çipleri. Tüm olgular kayıttan
  * (deneme süresi/kart gereksinimi: seed; güvenlik çipleri: yetenek kaydı).
  * Görsel: eş merkezli halkalar (dekoratif, `cta-rings` döngüsü scenes-loops.css) + yavaşça dönen ışık halkası.
  */
@@ -13,6 +13,8 @@ import { appUrls } from '../../lib/site-config'
 import { getPublicTrial } from '../../data/plans'
 import { getPublicCapabilities } from '../../data/capabilities'
 import { pageHref } from './links'
+import { contactEmail, mailtoHref } from '../../lib/contact'
+import { BRAND_SLOGAN } from '../../data/brand'
 
 const trial = getPublicTrial()
 const capabilities = getPublicCapabilities()
@@ -20,10 +22,12 @@ const has = (id: string) => capabilities.some((c) => c.id === id)
 const encrypted = has('secrets-encryption')
 const tenant = has('tenant-database')
 const contactHref = pageHref('/iletisim')
+// ELEV (A3): sayfanın en güçlü dönüşüm anı yeni ziyaretçiye konuşur — ikincil eylem "Demo talep edin" (K43); giriş üst barda.
+const demoHref = mailtoHref(contactEmail, 'Entegrasyonik demo talebi')
 
 // Kazanım satırı: yalnızca kayıtta `available` olan yeteneklere dayanır (kopya, olgu değil).
 const gains = [
-  has('stock-reservation') && { icon: 'stock' as const, text: 'Merkezi stok ve overselling koruması' },
+  has('stock-reservation') && { icon: 'stock' as const, text: 'Merkezi stok ve aşırı satış koruması' },
   has('unified-orders') && { icon: 'orders' as const, text: 'Tüm kanallardan tek sipariş akışı' },
   ].filter((g): g is { icon: 'stock' | 'orders'; text: string } => Boolean(g))
 ---
@@ -32,23 +36,23 @@ const gains = [
   <div class="cta" data-scene="cta-reveal">
     <span class="cta__rings" data-part="cta-rings" aria-hidden="true"><i></i><i></i><i></i></span>
     <span class="cta__orbit" aria-hidden="true"></span>
-    <p class="cta__eyebrow" data-reveal><span class="cta__dot" aria-hidden="true"></span>Çok kanallı satışın yeni merkezi</p>
+    <p class="cta__eyebrow" data-reveal><span class="cta__dot" aria-hidden="true"></span>{BRAND_SLOGAN}</p>
     <h2 id="kapanis-baslik" class="cta__title" data-reveal>
       Tüm kanallarınızı <span class="cta__accent">tek yerde toplayın</span>, büyümeye odaklanın
     </h2>
     <p class="cta__lead" data-reveal>
-      Stok, sipariş ve ürün operasyonunuzu tek panelde birleştirin; overselling riskini azaltın, ekibinize operasyonel
-      verimlilik kazandırın. Kurulum için kod yazmanız gerekmez.
+      Stok, sipariş ve ürün operasyonunuzu tek panelde birleştirin; aşırı satış riskini azaltın, ekibinize zaman
+      kazandırın. Kurulum için kod yazmanız gerekmez.
     </p>
     <div class="cta__actions" data-reveal>
       <Button href={appUrls.register()} variant="inverse" size="lg" data-testid="closing-cta-primary">Ücretsiz denemeyi başlatın</Button>
-      <Button href={appUrls.login()} variant="inverse-outline" size="lg" data-testid="closing-cta-login">Giriş yap</Button>
+      <Button href={demoHref} variant="inverse-outline" size="lg" data-testid="closing-cta-demo">Demo talep edin</Button>
     </div>
     <p class="cta__note" data-reveal><span data-count={trial.days}>{trial.days}</span> gün ücretsiz deneme{!trial.cardRequired && ', kart bilgisi gerekmez'}.{contactHref && <> Kurumsal ihtiyaçlarınız için <a href={contactHref}>bizimle görüşün</a>.</>}</p>
     <ul class="cta__chips" data-reveal aria-label="Kazanımlar">
       {gains.map((g) => <li><Icon name={g.icon} size="sm" />{g.text}</li>)}
       {encrypted && <li><Icon name="lock" size="sm" />Şifreli anahtar saklama</li>}
-      {tenant && <li><Icon name="database" size="sm" />Ayrı müşteri veritabanı</li>}
+      {tenant && <li><Icon name="database" size="sm" />Verileriniz yalnızca size ait</li>}
     </ul>
   </div>
 </Section>

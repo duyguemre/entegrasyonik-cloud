@@ -3,7 +3,7 @@ import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 import { defineConfig } from 'vite'
 import { fileURLToPath, URL } from 'node:url'
 
-// Backoffice (ADR-0026 Karar 1). Port 3100 — müşteri uygulaması 3000'de.
+// Backoffice (ADR-0026 Karar 1). Port 3100 — müşteri uygulaması 3020'de.
 // Takma ad: @bo → backoffice/src (bu uygulamanın kendi kodu). Tasarım sistemi YALNIZ @entegrasyonik/ui paketinden
 // gelir (tokens/theme/components/styles); müşteri uygulamasının kaynağına (`@/`) hiçbir bağ yoktur.
 export default defineConfig({

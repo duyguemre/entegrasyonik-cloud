@@ -1,8 +1,8 @@
 ---
 /**
  * Yetenekler (ADR-0014 Karar 2, bölüm 4) — S12: pazarlama dili, sade kart hiyerarşisi.
- * Üç katman: (1) koyu bantta dört değer sütunu (`getHomePillars()`), (2) beş animasyonlu bento karo,
- * (3) "Günlük işleriniz için" kartları. Metinler kayıttaki `home` alanlarından gelir (capabilities.ts).
+ * İki katman (ELEV A10: koyu "dört değer sütunu" bandı kaldırıldı — aynı dört fikri hemen altındaki bento
+ * karoları gösteriyordu): (1) beş animasyonlu bento karo, (2) "Günlük işleriniz için" kartları. Metinler kayıttaki `home` alanlarından gelir (capabilities.ts).
  * Ana sayfada kanal ADI, durum rozeti (Mevcut/Kısmi) ve kapsam notu YOK (S12 kullanıcı geri bildirimi);
  * kanal ayrımı yalnızca isimsiz renkli noktayla (`data-code` -> `--chan`). Kapsam farkları ve sınır notları
  * alt sayfalarda (/ozellikler, /entegrasyonlar) eksiksiz yazılıdır.
@@ -11,14 +11,14 @@
  *     (halka + kalan sayacı 1 -> 0) -> biri rezerve, diğeri aşırı satış olarak işaretlenir (S15-C: ışıklı döngü)
  *   - `orders-merge`: farklı kanallardan sipariş ve iade talepleri iki yönden gelip tek listede birleşir
  *   - `integration-status`: bağlı kanallar (tür etiketiyle) tek merkezde; ürün/stok/sipariş akış çubukları
- *   - `secret-encryption`: girilen anahtar -> kilit -> `enc:v1:` biçiminde saklanan -> arayüzde maskeli
+ *   - `secret-encryption`: girilen anahtar -> kilit -> şifreli kasada -> ekranda maskeli (ELEV: teknik önek/algoritma adı görselde yok, K44)
  *   - `tenant-isolation`: her müşteri hesabı kendi veritabanına bağlanır
  * Görseller örnek arayüzdür (aria-hidden; S15-C: ayrı "Örnek görünüm" etiketi yok); uydurma müşteri/ölçüm YOK.
  */
 import Section from '../Section.astro'
 import SectionHeading from './SectionHeading.astro'
 import Icon from './Icon.astro'
-import { getPublicCapabilities, getHomePillars, type PublicProductCapability } from '../../data/capabilities'
+import { getPublicCapabilities, type PublicProductCapability } from '../../data/capabilities'
 import { getPublicIntegrations, type CapabilityKey } from '../../data/integrations'
 
 const all = getPublicCapabilities('core')
@@ -34,12 +34,8 @@ const stock = byId(all, 'stock-reservation')
 const orders = byId(all, 'unified-orders')
 const secrets = byId(security, 'secrets-encryption')
 const tenant = byId(security, 'tenant-database')
-// Algoritma adı satır sonunda tirelerinden bölünmesin (metnin kendisi kayıttan, değişmeden).
-const ALGO = 'AES-256-GCM'
-const secretParts = secrets.summary.split(ALGO)
 const spotlightIds = new Set([stock.id, orders.id])
 const rest = all.filter((c) => !spotlightIds.has(c.id))
-const pillars = getHomePillars()
 
 const ICONS: Record<string, 'stock' | 'layers' | 'orders' | 'returns' | 'chat' | 'finance' | 'notice' | 'plug'> = {
   'stock-reservation': 'stock',
@@ -81,32 +77,9 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
   <SectionHeading
     id="yetenek-baslik"
     eyebrow="Yetenekler"
-    title="Çok kanallı satışın tamamı, tek merkezde"
-    accent="tek merkezde"
-    lead="Merkezi stok yönetiminden sipariş operasyonuna, iadeden finans görünümüne: omnichannel satışın her adımı aynı panelde, aynı ritimde."
+    title="Siparişten iadeye, işinizin tamamı"
+    lead="Stoktan siparişe, iadeden hakedişe: ekibiniz her işi aynı ekrandan, aynı adımlarla yürütür."
   />
-
-  <div class="clusters-band">
-    <ul class="clusters" data-scene="reveal" data-testid="capability-clusters">
-      {
-        pillars.map((p) => (
-          <li class="cluster" data-part="cluster" data-reveal data-tilt>
-            <span class="cluster__icon"><Icon name={p.icon} size="md" /></span>
-            <h3 class="cluster__title">{p.title}</h3>
-            <p class="cluster__lead">{p.line}</p>
-            <ul class="cluster__items">
-              {p.points.map((item) => (
-                <li>
-                  <Icon name="check" size="sm" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </li>
-        ))
-      }
-    </ul>
-  </div>
 
   <div class="bento" data-testid="bento">
     {/* A: stok rezervasyonu (geniş) */}
@@ -285,34 +258,26 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
       <div class="tile__copy" data-reveal>
         <span class="tile__icon"><Icon name="lock" size="md" /></span>
         <h3 id="spot-vault-title" class="tile__title">{secrets.title}</h3>
-        <p class="tile__text">
-          {secretParts.map((part, n) => (
-            <>
-              {part}
-              {n < secretParts.length - 1 && <span class="nowrap">{ALGO}</span>}
-            </>
-          ))}
-        </p>
+        <p class="tile__text">{secrets.summary}</p>
       </div>
       <div class="tile__frame" data-reveal>
         <div class="vault" data-scene="secret-encryption" aria-hidden="true">
           <div class="vault__row">
-            <span class="vault__label">Girdiğiniz API anahtarı</span>
+            <span class="vault__label">Girdiğiniz anahtar</span>
             <span class="vault__field" data-part="plain"><Icon name="key" size="sm" />••••••••••••••••</span>
           </div>
           <div class="vault__step" data-part="lock">
             <Icon name="lock" size="md" />
-            <span class="vault__algo" data-part="algorithm">AES-256-GCM</span>
+            <span class="vault__algo" data-part="algorithm">Şifrelenir</span>
           </div>
           <div class="vault__row">
-            <span class="vault__label">Veritabanında saklanan</span>
+            <span class="vault__label">Kasada</span>
             <span class="vault__field vault__field--cipher" data-part="cipher">
-              <span class="vault__prefix">enc:v1:</span>
               <span class="vault__bars"><i data-part="bar"></i><i data-part="bar"></i><i data-part="bar"></i><i data-part="bar"></i></span>
             </span>
           </div>
           <div class="vault__row">
-            <span class="vault__label">Arayüz ve API yanıtlarında</span>
+            <span class="vault__label">Ekranlarınızda</span>
             <span class="vault__field" data-part="masked"><Icon name="eye" size="sm" />••••••••<em class="vault__hidden">gizli</em></span>
           </div>
           <span class="vault__rail"><i class="vault__spark"></i></span>
@@ -334,14 +299,14 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
               [1, 2, 3].map((n) => (
                 <div class="tenant__col" data-part="tenant-col">
                   {n > 1 && <span class="tenant__wall"><Icon name="shield" size="sm" /></span>}
-                  <span class="tenant__acct" data-part="tenant-acct"><Icon name="users" size="md" /><span>Hesap</span></span>
+                  <span class="tenant__acct" data-part="tenant-acct"><Icon name="users" size="md" /><span>İşletme</span></span>
                   <span class="tenant__link" data-part="tenant-link"></span>
-                  <span class="tenant__db" data-part="tenant-db"><Icon name="database" size="md" /><span>Ayrı veritabanı</span><span class="tenant__rows"><i></i><i></i><i></i></span></span>
+                  <span class="tenant__db" data-part="tenant-db"><Icon name="database" size="md" /><span>İzole alan</span><span class="tenant__rows"><i></i><i></i><i></i></span></span>
                 </div>
               ))
             }
           </div>
-          <p class="tenant__platform" data-part="tenant-platform"><Icon name="server" size="sm" />Ortak platform: yalnızca hesap ve yapılandırma kayıtları</p>
+          <p class="tenant__platform" data-part="tenant-platform"><Icon name="shield" size="sm" />Her işletmenin verisi yalnızca kendisine ait</p>
         </div>
       </div>
     </article>
@@ -446,116 +411,6 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
    * Renk hiyerarşisi (S12): tek başlık tonu (content-strong) + tek gövde tonu (content-default). Üçüncü bir ton
    * yok; vurgu yalnızca ikon rozetinde ve isimsiz kanal noktalarında. Tipografi `--site-card-*` token setinden.
    */
-
-  /* --- Dört değer sütunu: koyu "sahne" bandı --- */
-  .clusters-band {
-    position: relative;
-    overflow: hidden;
-    isolation: isolate;
-    margin-top: var(--ek-space-12);
-    padding: var(--ek-space-6) var(--ek-space-4);
-    border-radius: var(--site-radius-panel);
-    background: var(--site-stage-mesh);
-    box-shadow: var(--site-shadow-panel);
-  }
-  .clusters-band::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background-image: var(--site-texture-grid);
-    background-size: var(--site-texture-grid-size);
-    -webkit-mask-image: var(--site-texture-fade);
-    mask-image: var(--site-texture-fade);
-    pointer-events: none;
-  }
-  .clusters {
-    display: grid;
-    gap: var(--ek-space-3);
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .cluster {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-3);
-    padding: var(--ek-space-6);
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-xl);
-    background: var(--site-glass-bg);
-    backdrop-filter: blur(var(--site-glass-blur));
-    /* `transform` (eğim) buraya da eklenir (bkz. PricingSummary.astro aynı not: kısayol birleşmez). */
-    transition:
-      box-shadow var(--ek-duration-base) var(--ek-easing-standard),
-      border-color var(--ek-duration-base) var(--ek-easing-standard),
-      transform var(--tilt-transition-duration, var(--ek-duration-fast)) var(--ek-easing-standard);
-  }
-  .cluster:hover {
-    border-color: color-mix(in srgb, var(--ek-color-secondary) 60%, transparent);
-    box-shadow: var(--site-shadow-card-hover);
-  }
-  .cluster__icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--ek-space-10);
-    height: var(--ek-space-10);
-    margin-bottom: var(--ek-space-2);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 45%, transparent);
-    border-radius: var(--ek-radius-lg);
-    background: color-mix(in srgb, var(--ek-color-secondary) 16%, transparent);
-    color: var(--ek-color-secondary);
-  }
-  .cluster__title {
-    color: var(--site-color-on-primary);
-    font-size: var(--site-card-title-size);
-    font-weight: var(--site-card-title-weight);
-    line-height: var(--ek-line-height-tight);
-    letter-spacing: -0.01em;
-  }
-  .cluster__lead {
-    color: var(--site-color-on-primary-muted);
-    font-size: var(--site-card-desc-size);
-    font-weight: var(--site-card-desc-weight);
-    line-height: var(--ek-line-height-normal);
-  }
-  .cluster__items {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-2);
-    margin-top: auto;
-    padding-top: var(--ek-space-4);
-    border-top: var(--site-border-width) solid var(--site-glass-border);
-    color: var(--site-color-on-primary);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-medium);
-  }
-  .cluster__items li {
-    display: flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-  }
-  .cluster__items :global(.icon) {
-    flex: none;
-    color: var(--ek-color-secondary);
-  }
-
-  @media (min-width: 640px) {
-    .clusters-band {
-      padding: var(--ek-space-8);
-    }
-    .clusters {
-      gap: var(--ek-space-4);
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-  @media (min-width: 1024px) {
-    .clusters-band {
-      padding: var(--ek-space-10);
-    }
-    .clusters {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-  }
 
   /* --- Bento ızgarası --- */
   .bento {
@@ -700,9 +555,6 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     font-weight: var(--site-card-desc-weight);
     line-height: var(--ek-line-height-normal);
     text-wrap: pretty;
-  }
-  .nowrap {
-    white-space: nowrap;
   }
   /* Mini arayüz bir "ürün vitrini" gibi karonun üzerinde süzülür; hover'da hafifçe yükselir (yalnızca translate). */
   .tile__frame {
@@ -1518,10 +1370,6 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     position: relative;
     overflow: hidden;
     color: var(--ek-color-secondary);
-  }
-  .vault__prefix {
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0;
   }
   .vault__bars {
     display: inline-flex;

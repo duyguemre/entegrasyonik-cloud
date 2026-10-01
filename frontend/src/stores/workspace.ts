@@ -33,6 +33,7 @@ import {
   screenKeyForLink,
 } from '@/navigation/screens'
 import { HELP_SCREEN_KEY, helpCenterLink } from '@/help/helpLink'
+import { CHAT_SCREEN_KEY, CHAT_SETTINGS_SCREEN_KEY, CHAT_SETTINGS_TITLE, chatPageLink, chatSettingsLink } from '@/chat/chatLinks'
 
 const PERSIST_VERSION = 1
 
@@ -339,6 +340,9 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   function findLinkByScreenKey(key: string): any {
     // Yardım merkezi menü ağacında değildir (statik içerik, herkese açık) — istemci bağlantısı (`help/helpLink.ts`).
     if (key === HELP_SCREEN_KEY) return helpCenterLink(menuStore)
+    // Otopilot (ADR-0034): tam sayfa + ayarlar da istemci bağlantısıdır (`chat/chatLinks.ts`).
+    if (key === CHAT_SCREEN_KEY) return chatPageLink(menuStore)
+    if (key === CHAT_SETTINGS_SCREEN_KEY) return chatSettingsLink(menuStore, CHAT_SETTINGS_TITLE)
     const menu = menuStore.getMenu()
     if (!Array.isArray(menu)) return undefined // menü hiç yüklenmedi VEYA hata gövdesi döndü (dizi DEĞİL) — bkz. resolveActiveFromRoute.
     const search = (links: any[]): any => {

@@ -21,6 +21,11 @@
  * "uygulama penceresi"ne yükseltildi — pencere çubuğu (nötr noktalar + ortada başlık hapı + sessiz araç çubukları),
  * marka gradyanından kenar ışığı, cam kasa (bezel), üst kenarda her sahne geçişinde tek sakin parıltı, zemin ışıması.
  * Adaylar (katmanlı derinlik, çerçevesiz sahne) ve gerekçe: docs/s21-review/README.md; korumalar: tests/hero-frame.test.ts.
+ *
+ * S22 (SR2-HOME): kopyanın en üstünde ajan ürününe giriş hapı — ad + tek cümle değer + sayfa bağlantısı. Metin
+ * `heroAgentEntry` kaydından (src/data/assistant.ts); İSTİSNA DEĞİLDİR (claims.test.ts katı taraması; "yolda" dili yok),
+ * aşama etiketi ("Erken erişim") görünür. Operasyon merkezi penceresinin canlı noktasıyla aynı görsel dil.
+ * Ana mesaj (başlık, açıklama, CTA'lar) değişmedi.
  */
 import Button from '../Button.astro'
 import Icon from './Icon.astro'
@@ -28,6 +33,7 @@ import { appUrls } from '../../lib/site-config'
 import { getPublicIntegrations } from '../../data/integrations'
 import { getPublicCapabilities } from '../../data/capabilities'
 import { getPublicTrial } from '../../data/plans'
+import { ASSISTANT_PATH, heroAgentEntry as agent } from '../../data/assistant'
 
 const trial = getPublicTrial()
 // Kanal noktaları: yalnızca mevcut entegrasyonların RENGİ (ad DOM'a yazılmaz; sahne aria-hidden'dır).
@@ -35,13 +41,8 @@ const channels = getPublicIntegrations().map((c) => ({ code: c.code }))
 const marketplaces = getPublicIntegrations('marketplace')
 const storefront = getPublicIntegrations('ecommerce')[0]
 
-// Üst seviye faydalar — her biri kanıtlı bir yetenek kaydına dayanır (capabilities.ts); kayıt yoksa gösterilmez.
+// S24: üst seviye faydalar hero'da ayrı liste olarak TEKRARLANMAZ — fayda rayı (Proof.astro) hero'nun alt kenarındadır.
 const capIds = new Set(getPublicCapabilities().map((c) => c.id))
-const benefits = [
-  { icon: 'stock' as const, label: 'Merkezi stok yönetimi', requires: ['stock-reservation', 'multi-channel-products'] },
-  { icon: 'orders' as const, label: 'Tüm siparişler tek ekranda', requires: ['unified-orders'] },
-  { icon: 'shield' as const, label: 'Kurumsal düzeyde güvenlik', requires: ['secrets-encryption', 'tenant-database', 'role-based-access'] },
-].filter((b) => b.requires.every((id) => capIds.has(id)))
 
 // Show sahneleri: her biri bir yetenek kaydına dayanır. Zamanlama 4 sahneye göre kuruludur (scenes-loops.css) →
 // kayıt eksikse sahneyi sessizce düşürmek yerine derleme durur (kanıtsız gösterim yok, zamanlama bozulmaz).
@@ -89,31 +90,26 @@ const secureItems = [
 
   <div class="hero__inner">
     <div class="hero__copy">
-      <p class="hero__eyebrow"><span class="hero__eyebrow-dot" aria-hidden="true"></span>Çok kanallı satış yönetimi</p>
+      <a class="hero__agent" href={ASSISTANT_PATH} data-testid="hero-agent-entry">
+        <span class="hero__agent-row">
+          <span class="hero__agent-badge"><i class="hero__agent-live" aria-hidden="true"></i>{agent.badge}</span>
+          <strong class="hero__agent-name">{agent.name}</strong>
+          <span class="hero__agent-cta"><span class="hero__agent-cta-label">{agent.cta}</span><Icon name="arrow" size="sm" /></span>
+        </span>
+        <span class="hero__agent-value">{agent.value}</span>
+      </a>
       <h1 id="hero-title" class="hero__title">
         Tüm pazaryerleriniz, <span class="hero__accent">tek stok</span>, tek panel.
       </h1>
       <p class="hero__lead" data-testid="hero-lead">
-        Pazaryerlerindeki ürün, stok, sipariş ve iade operasyonunuzu tek merkezde birleştirin. Eşzamanlı gelen
-        siparişlerde stok rezerve edilir, aşırı satış riski azalır; ekibiniz panel panel dolaşmak yerine satışa odaklanır.
+        Ürün, stok, sipariş ve iadeleriniz tek merkezde. Satış hangi kanalda olursa olsun stok tek merkezden düşer ve
+        tüm kanallara iletilir; ekibiniz panel panel dolaşmak yerine satışa odaklanır.
       </p>
       <div class="hero__actions">
         <Button href={appUrls.register()} variant="inverse" size="lg" data-testid="hero-cta-primary">Ücretsiz dene</Button>
         <Button href="#nasil-calisir" variant="inverse-outline" size="lg" data-testid="hero-cta-secondary">Nasıl çalışır</Button>
       </div>
       <p class="hero__note">{trial.days} gün ücretsiz deneme{!trial.cardRequired && ', kart bilgisi gerekmez'}.</p>
-      <ul class="hero__trust" aria-label="Öne çıkan faydalar" data-testid="hero-benefits">
-        {
-          benefits.map((b) => (
-            <li>
-              <span class="hero__trust-icon" aria-hidden="true">
-                <Icon name={b.icon} size="sm" />
-              </span>
-              <span>{b.label}</span>
-            </li>
-          ))
-        }
-      </ul>
     </div>
 
 
@@ -316,10 +312,12 @@ const secureItems = [
 <style>
   .hero {
     position: relative;
-    overflow: hidden;
+    /* S24: yalnızca yatay kırpma — mock'un zemine oturan ışıması alt kenarda kesilmeden fayda rayının zeminine akar. */
+    overflow-x: clip;
     isolation: isolate;
-    padding-block: var(--ek-space-12) var(--ek-space-16);
-    background: var(--site-stage-mesh);
+    padding-block: var(--ek-space-12) var(--ek-space-10);
+    /* S24: zemin `index.astro` → `.stage-top` (hero + fayda rayı tek sahne). */
+    background: transparent;
     color: var(--site-text-on-dark-heading);
   }
 
@@ -329,6 +327,9 @@ const secureItems = [
     inset: 0;
     z-index: -1;
     pointer-events: none;
+    /* S24: ızgara ve ışımalar alt kenarda söner → fayda rayına (ortak `.stage-top` zemini) kesitsiz geçiş. */
+    -webkit-mask-image: linear-gradient(to bottom, var(--ek-color-content-strong) 70%, transparent);
+    mask-image: linear-gradient(to bottom, var(--ek-color-content-strong) 70%, transparent);
   }
   .hero__grid {
     position: absolute;
@@ -372,25 +373,85 @@ const secureItems = [
     gap: var(--ek-space-6);
     min-width: 0;
   }
-  .hero__eyebrow {
+  /* S22: ajan girişi hapı — cam zemin + marka gradyanından ince kenar; odak/üzerine gelme durumları site genelindeki
+     bağlantı dilinde. Dar ekranda değer cümlesi gizlenir (ad + aşama + bağlantı kalır). */
+  .hero__agent {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+    max-width: 36rem;
+    padding: var(--ek-space-3) var(--ek-space-4);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 38%, transparent);
+    border-radius: var(--ek-radius-lg);
+    background:
+      linear-gradient(100deg, color-mix(in srgb, var(--ek-color-secondary) 14%, transparent), transparent 75%),
+      var(--site-glass-bg);
+    color: var(--site-text-on-dark-body);
+    font-size: var(--ek-font-size-sm);
+    text-decoration: none;
+    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .hero__agent:hover {
+    border-color: var(--site-accent-on-dark);
+  }
+  .hero__agent:focus-visible {
+    outline: var(--site-focus-ring-width) solid var(--site-color-focus-ring);
+    outline-offset: var(--site-focus-ring-offset);
+  }
+  .hero__agent-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ek-space-2) var(--ek-space-3);
+  }
+  .hero__agent-badge {
     display: inline-flex;
     align-items: center;
     gap: var(--ek-space-2);
-    padding: var(--ek-space-1) var(--ek-space-3);
-    border: var(--site-border-width) solid var(--site-glass-border);
+    padding: 0 var(--ek-space-2);
     border-radius: var(--ek-radius-full);
-    background: var(--site-glass-bg);
-    color: var(--site-text-on-dark-heading);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.04em;
+    background: var(--site-gradient-accent-on-dark);
+    color: var(--site-stage-deep);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-bold);
+    line-height: var(--ek-line-height-normal);
   }
-  .hero__eyebrow-dot {
-    width: var(--ek-space-2);
-    height: var(--ek-space-2);
+  .hero__agent-live {
+    width: calc(var(--ek-space-1) * 1.5);
+    height: calc(var(--ek-space-1) * 1.5);
     border-radius: var(--ek-radius-full);
-    background: var(--site-accent);
-    box-shadow: var(--site-glow-ring);
+    background: var(--site-stage-deep);
+  }
+  .hero__agent-name {
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .hero__agent-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-1);
+    margin-inline-start: auto;
+    color: var(--site-accent-on-dark);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .hero__agent:hover .hero__agent-cta :global(.icon) {
+    translate: calc(var(--ek-space-1) * 0.5) 0;
+  }
+  .hero__agent-value {
+    color: var(--site-text-on-dark-body);
+    line-height: var(--ek-line-height-normal);
+  }
+  /* Dar ekran: kart zaten bağlantı; "Keşfedin" etiketi tek başına alt satıra düşmesin — yalnızca ok kalır. */
+  @media (max-width: 479.98px) {
+    .hero__agent-cta-label {
+      position: absolute;
+      width: var(--site-border-width);
+      height: var(--site-border-width);
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
   }
   .hero__title {
     color: var(--site-text-on-dark-heading);
@@ -422,32 +483,6 @@ const secureItems = [
     color: var(--site-text-on-dark-meta);
     font-size: var(--ek-font-size-md);
   }
-  .hero__trust {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ek-space-3) var(--ek-space-6);
-    padding-top: var(--ek-space-5);
-    border-top: var(--site-border-width) solid var(--site-glass-border);
-    color: var(--site-text-on-dark-heading);
-    font-size: var(--ek-font-size-md);
-    font-weight: var(--ek-font-weight-medium);
-  }
-  .hero__trust li {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-  }
-  .hero__trust-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--ek-space-6);
-    height: var(--ek-space-6);
-    border-radius: var(--ek-radius-md);
-    background: color-mix(in srgb, var(--site-accent) 16%, transparent);
-    color: var(--site-accent);
-  }
-
 
   /* --- Show sahnesi (S13): koyu, derinlikli sahne; 4 dönen sahne (döngü: scenes-loops.css) --- */
   /*
@@ -468,9 +503,10 @@ const secureItems = [
     content: '';
     position: absolute;
     z-index: -1;
-    inset: 12% -10% -14%;
+    /* S24: ışıma kendi kutusunun İÇİNDE söner (önceden alt kenarda kesiliyor, hero altında sert çizgi bırakıyordu). */
+    inset: 12% -10% -24%;
     background:
-      radial-gradient(46% 22% at 50% 96%, color-mix(in srgb, var(--ek-color-secondary) 38%, transparent), transparent 80%),
+      radial-gradient(46% 16% at 50% 78%, color-mix(in srgb, var(--ek-color-secondary) 38%, transparent), transparent 80%),
       radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-secondary) 16%, transparent), transparent);
     pointer-events: none;
   }

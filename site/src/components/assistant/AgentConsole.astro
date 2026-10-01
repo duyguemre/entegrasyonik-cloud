@@ -1,0 +1,310 @@
+---
+/**
+ * AgentConsole (S22) — ajan sayfası hero görseli: "ajan konsolu".
+ *
+ * Dört ajan satırı, ajan döngüsünün dört durumunu (Gözlüyor / Öneri hazır / Onayınızı bekliyor / Raporlandı) canlı durum
+ * göstergesiyle gösterir; altta onay kapısı (insan onayı) durur. Görsel dekoratiftir (`aria-hidden`); anlamı sayfa
+ * metnindedir. S24 (K44): "Örnek görünüm" etiketi ve alt not kaldırıldı. Rakam YOK. Sahte düğmeler `<span>`'dır
+ * (klavye sırasına girmez).
+ *
+ * Hareket (scenes-loops.css, `agent-console`): durum noktalarında sakin bir ışıma ve konsolu dikey tarayan ince ışık —
+ * yalnızca opacity/translate, görünürken çalışır; reduced-motion / "Hareket" kapalı / JS'siz: statik (noktalar dolu,
+ * tarama ışığı görünmez). Yerleşim sabit (CLS 0).
+ */
+import Icon from '../home/Icon.astro'
+import { agentConsole as c } from '../../data/assistant'
+---
+
+<figure class="console" data-scene="agent-console" data-testid="agent-console">
+  <div class="console__window" aria-hidden="true">
+    <span class="console__rim"></span>
+    <span class="console__scan" data-part="agent-scan"></span>
+    <div class="console__bar">
+      <span class="console__dots"><i></i><i></i><i></i></span>
+      <span class="console__title">
+        <span class="console__glyph"><Icon name="sparkle" size="sm" /></span>
+        {c.windowTitle}
+      </span>
+      <span class="console__mode">{c.status}</span>
+    </div>
+    <ul class="console__rows" role="list">
+      {
+        c.rows.map((r) => (
+          <li class="agent" data-state-kind={r.state}>
+            <span class="agent__icon">
+              <Icon name={r.icon} size="sm" />
+            </span>
+            <span class="agent__body">
+              <span class="agent__name">{r.name}</span>
+              <span class="agent__detail">{r.detail}</span>
+            </span>
+            <span class="agent__state">
+              <i class="agent__live" data-part="agent-live"></i>
+              {r.stateLabel}
+            </span>
+          </li>
+        ))
+      }
+    </ul>
+    <div class="gate">
+      <span class="gate__lock">
+        <Icon name="lock" size="sm" />
+      </span>
+      <span class="gate__body">
+        <span class="gate__title">{c.gateTitle}</span>
+        <span class="gate__text">{c.gateText}</span>
+      </span>
+      <span class="gate__actions">
+        <span class="gate__btn gate__btn--ghost">{c.gateReview}</span>
+        <span class="gate__btn">{c.gateApprove}</span>
+      </span>
+    </div>
+  </div>
+</figure>
+
+<style>
+  .console {
+    position: relative;
+    margin: 0;
+    min-width: 0;
+  }
+  .console__window {
+    position: relative;
+    overflow: hidden;
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--site-radius-panel);
+    background:
+      radial-gradient(120% 70% at 100% 0%, color-mix(in srgb, var(--ek-color-secondary) 16%, transparent), transparent 60%),
+      color-mix(in srgb, var(--site-stage-deep) 72%, transparent);
+    box-shadow:
+      0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-background) 4%, transparent),
+      var(--site-shadow-panel);
+  }
+  /* Üst kenar ışığı (S21 operasyon merkezi çerçevesiyle aynı dil). */
+  .console__rim {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 12%;
+    height: var(--site-border-width);
+    background: linear-gradient(90deg, transparent, var(--site-accent-on-dark), transparent);
+    opacity: 0.8;
+  }
+  /* Dikey tarama ışığı: statik hâlde görünmez; yalnızca hareket açıkken döngüde süzülür. */
+  .console__scan {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: 0;
+    z-index: 0;
+    height: var(--ek-space-16);
+    background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--ek-color-secondary) 10%, transparent), transparent);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .console__bar {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-3) var(--ek-space-4);
+    border-bottom: var(--site-border-width) solid var(--site-glass-border);
+  }
+  .console__dots {
+    display: inline-flex;
+    gap: var(--ek-space-1);
+  }
+  .console__dots i {
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-background) 22%, transparent);
+  }
+  .console__title {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .console__glyph {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-6);
+    height: var(--ek-space-6);
+    border-radius: var(--ek-radius-md);
+    background: var(--site-gradient-accent-on-dark);
+    color: var(--site-stage-deep);
+  }
+  .console__mode {
+    padding: 0 var(--ek-space-2);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-full);
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-xs);
+    white-space: nowrap;
+  }
+  .console__rows {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    margin: 0;
+    padding: var(--ek-space-4);
+    list-style: none;
+  }
+  .agent {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-3);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-lg);
+    background: var(--site-glass-bg);
+  }
+  .agent__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-8);
+    height: var(--ek-space-8);
+    border-radius: var(--ek-radius-md);
+    background: color-mix(in srgb, var(--ek-color-secondary) 16%, transparent);
+    color: var(--site-accent-on-dark);
+  }
+  .agent__body {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .agent__name {
+    overflow: hidden;
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .agent__detail {
+    overflow: hidden;
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-xs);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* Durum rozeti: renk durumdan (izleme = teal, öneri = bilgi, onay bekliyor = amber, rapor = başarı). */
+  .agent__state {
+    --state: var(--ek-color-secondary);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-1) var(--ek-space-2);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--state) 45%, transparent);
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--state) 12%, transparent);
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    white-space: nowrap;
+  }
+  .agent[data-state-kind='propose'] .agent__state {
+    --state: var(--ek-color-info-border);
+  }
+  .agent[data-state-kind='wait'] .agent__state {
+    --state: var(--ek-color-amber);
+  }
+  .agent[data-state-kind='report'] .agent__state {
+    --state: var(--ek-color-success);
+  }
+  .agent[data-state-kind='wait'] {
+    border-color: color-mix(in srgb, var(--ek-color-amber) 40%, transparent);
+  }
+  .agent__live {
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: var(--state);
+    box-shadow: 0 0 0 calc(var(--ek-space-1) * 0.75) color-mix(in srgb, var(--state) 25%, transparent);
+  }
+  .agent:nth-child(2) .agent__live {
+    --k: 1;
+  }
+  .agent:nth-child(3) .agent__live {
+    --k: 2;
+  }
+  .agent:nth-child(4) .agent__live {
+    --k: 3;
+  }
+
+  .gate {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--ek-space-3);
+    margin: 0 var(--ek-space-4) var(--ek-space-4);
+    padding: var(--ek-space-3) var(--ek-space-4);
+    border: var(--site-border-width) dashed color-mix(in srgb, var(--ek-color-amber) 55%, transparent);
+    border-radius: var(--ek-radius-lg);
+    background: color-mix(in srgb, var(--ek-color-amber) 8%, transparent);
+  }
+  .gate__lock {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-8);
+    height: var(--ek-space-8);
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-amber) 20%, transparent);
+    color: var(--ek-color-amber-light);
+  }
+  .gate__body {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .gate__title {
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .gate__text {
+    color: var(--site-text-on-dark-body);
+    font-size: var(--ek-font-size-xs);
+  }
+  .gate__actions {
+    display: inline-flex;
+    gap: var(--ek-space-2);
+  }
+  .gate__btn {
+    padding: var(--ek-space-1) var(--ek-space-3);
+    border-radius: var(--ek-radius-md);
+    background: var(--site-gradient-accent-on-dark);
+    color: var(--site-stage-deep);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-bold);
+  }
+  .gate__btn--ghost {
+    border: var(--site-border-width) solid var(--site-glass-border);
+    background: transparent;
+    color: var(--site-text-on-dark-heading);
+  }
+
+
+  /* Dar ekran: ayrıntı satırı ve mod hapı gizlenir; onay düğmeleri alta iner. */
+  @media (max-width: 479.98px) {
+    .console__mode,
+    .agent__detail {
+      display: none;
+    }
+    .gate {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+    .gate__actions {
+      grid-column: 1 / -1;
+      justify-content: flex-end;
+    }
+  }
+</style>

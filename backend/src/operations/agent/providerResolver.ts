@@ -6,6 +6,7 @@ import { ScriptedLlmProvider, assertScriptedAllowed } from '@platform/llm';
 import type { ResolvedProvider } from './AgentBroker';
 import { getAgentKv } from './kv';
 import { getProviderService } from './providerSettings';
+import { PLATFORM_AGENT_TID, getPlatformProviderService } from './platformProvider';
 import { meterProvider } from './providerUsage';
 
 let scripted: ScriptedLlmProvider | undefined;
@@ -32,4 +33,23 @@ export async function resolveSetupState(tid: number): Promise<{ configured: bool
     const s = await getProviderService().resolveState(tid);
     if (s.state === 'ready') return { configured: true, consentRequired: false, provider: s.provider, model: s.model };
     return { configured: s.configured, consentRequired: s.consentRequired, ...(s.provider ? { provider: s.provider } : {}), ...(s.model ? { model: s.model } : {}) };
+}
+
+// ---- BR-4: backoffice sohbeti -- PLATFORM anahtari (tenant anahtari buraya ASLA girmez; platform anahtari yukaridaki tenant yoluna ASLA girmez) ----
+export async function resolvePlatformProvider(): Promise<ResolvedProvider | null> {
+    if (isScriptedMode()) {
+        assertScriptedAllowed();
+        scripted ??= new ScriptedLlmProvider();
+        return { provider: scripted };
+    }
+    const r = await getPlatformProviderService().createProviderFor(PLATFORM_AGENT_TID);
+    if (!r) return null;
+    return { provider: meterProvider(r.provider, { tid: PLATFORM_AGENT_TID, surface: 'backoffice_chat', kv: getAgentKv }), providerId: r.providerId, model: r.model };
+}
+
+export async function resolvePlatformSetupState(): Promise<{ configured: boolean; consentRequired: boolean; provider?: 'anthropic' | 'openai' | 'google'; model?: string }> {
+    if (isScriptedMode()) return { configured: true, consentRequired: false };
+    const s = await getPlatformProviderService().resolveState(PLATFORM_AGENT_TID);
+    if (s.state === 'ready') return { configured: true, consentRequired: false, provider: s.provider, model: s.model };
+    return { configured: s.configured, consentRequired: false, ...(s.provider ? { provider: s.provider } : {}), ...(s.model ? { model: s.model } : {}) };
 }

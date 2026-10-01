@@ -79,7 +79,7 @@ function resolveCtx(req: Request, res: Response): AgentCtx | null {
     };
 }
 
-function toNext(next: NextFunction, res: Response, e: unknown) {
+export function toNext(next: NextFunction, res: Response, e: unknown) {
     if (e instanceof AppError && e.code === 'RATE_LIMITED') {
         const s = (e.details as { retryAfterSec?: number } | undefined)?.retryAfterSec;
         if (s) res.setHeader('Retry-After', String(s));
@@ -91,7 +91,7 @@ function toNext(next: NextFunction, res: Response, e: unknown) {
 }
 
 /** ADR-0029 Karar 6 baslik/nabiz kurallariyla SSE yaniti; `fn` olaylari `emit` ile yazar. Istemci kopunca `signal` iptal olur. */
-async function streamSse(req: Request, res: Response, heartbeatMs: number, fn: (emit: (e: ServerEvent) => void, signal: AbortSignal) => Promise<void>): Promise<void> {
+export async function streamSse(req: Request, res: Response, heartbeatMs: number, fn: (emit: (e: ServerEvent) => void, signal: AbortSignal) => Promise<void>): Promise<void> {
     const ac = new AbortController();
     let ended = false;
     res.on('close', () => { ended = true; if (!res.writableEnded) ac.abort(); }); // istemci koptu -> tur + saglayici iptali

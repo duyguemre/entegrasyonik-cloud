@@ -127,8 +127,8 @@
         </template>
 
         <template #filters>
-          <v-select v-model="searchUserForm.filters.roleCodes" :items="globalRoles" label="Yetki grubu"
-            multiple chips clearable item-title="name" item-value="code" class="ek-span-2" />
+          <EkSelect v-model="searchUserForm.filters.roleCodes" :items="roleSelectOptions" label="Yetki grubu"
+            multiple clearable class="ek-span-2" />
         </template>
 
         <template #cell-name="{ row }">
@@ -155,7 +155,7 @@
 </template>
 
 <script setup lang="ts">
-import { EkRowActions, EkButton, EkStatusChip, EkConfirmDialog, EkDialog, EkAlert, EkBadge } from '@entegrasyonik/ui/components'
+import { EkRowActions, EkButton, EkStatusChip, EkConfirmDialog, EkDialog, EkAlert, EkBadge, EkSelect } from '@entegrasyonik/ui/components'
 import type { EkGridColumn, EkGridSort, EkActiveFilterChip, EkRowAction } from '@entegrasyonik/ui/components'
 import { useI18n } from 'vue-i18n';
 import { ref, onMounted, onBeforeMount, onActivated, computed, onDeactivated } from 'vue'
@@ -224,12 +224,16 @@ const pagination = ref({
   totalNumberOfRecords: 0
 })
 
-// Karakterizasyon: `item.roleCode` HAM değeri korunuyor — yalnızca EkStatusChip'e taşınıyor.
+// FR2-SCREENS 36 (fe-r2d) — BİLİNÇLİ DEĞİŞİKLİK: rozet ham `roleCode` yerine UserService/getRoles'taki rol adını gösterir
+// (listede yoksa kod); tüm çiplerle aynı cümle düzeni.
 function roleLabel(item: any): string {
-  if (item.isGlobalAdmin) return 'SÜPER YÖNETİCİ'
-  if (item.owner) return 'MAĞAZA YÖNETİCİSİ'
-  return item.roleCode || 'PERSONEL'
+  if (item.isGlobalAdmin) return 'Süper yönetici'
+  if (item.owner) return 'Mağaza sahibi'
+  if (!item.roleCode) return 'Personel'
+  return globalRoles.value.find((r: any) => r.code === item.roleCode)?.name || item.roleCode
 }
+/** Filtre seçimi: rol adı + açıklaması alt satırda (diğer filtrelerle aynı seçim listesi standardı). */
+const roleSelectOptions = computed(() => (globalRoles.value ?? []).map((r: any) => ({ value: r.code, title: r.name || r.code, subtitle: r.description, icon: 'mdi-account-key-outline' })))
 function roleTone(item: any): StatusTone {
   if (item.isGlobalAdmin) return 'danger'
   if (item.owner) return 'warning'

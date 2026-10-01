@@ -10,6 +10,10 @@
   `collapsed` (ray) modunda yalnızca ikonlar; ad `aria-label` + tooltip.
   Klavye: doğal Tab sırası (düğmeler); grup düğmesi `aria-expanded`.
   Etkin öğe bir grubun içindeyse grup kendiliğinden açılır.
+  FR2-SHELL madde 2 (fe-r2a): grup ile yaprak arasında RENK/AĞIRLIK farkı yok — tüm öğeler aynı mürekkep ve ağırlık
+  (orta); hiyerarşi yalnız girinti + ince kılavuz çizgisiyle okunur. Alt öğe metni üst öğenin METNİYLE aynı hizada
+  başlar; etkin alt öğenin göstergesi kılavuz çizgisinin üstünde 2px segment. Etiketli bölümler arasında çizgi yok
+  (etiket + boşluk yeter; çizgi yalnız etiketsiz bölümde). Hover yumuşak, etkin tek vurgu.
   Ek (geri uyumlu): `hookClasses` — kabukta eski spec çapası sınıfları
   (öğe/grup/grup başlığı/alt öğe) düğmelere eklemek için; `#item-trailing`
   — yaprak öğenin sağında, düğmenin KARDEŞİ olarak (iç içe düğme yok) ek
@@ -48,6 +52,7 @@
                   hookClasses?.item,
                   item.children ? hookClasses?.groupHeader : undefined,
                   {
+                    'is-muted': item.muted,
                     'is-active': isActive(item),
                     'is-hover': forceHoverKey === item.key,
                     'is-parent-active': !!item.children && isAncestor(item),
@@ -61,7 +66,7 @@
               >
                 <v-icon class="ek-side__icon" :icon="outlineIcon(item.icon) ?? 'mdi-circle-small'" aria-hidden="true" />
                 <span class="ek-side__label ek-side__fade">{{ item.label }}</span>
-                <EkBadge v-if="item.badge" class="ek-side__fade" variant="count" :tone="item.badgeTone ?? 'action'" :text="item.badge" />
+                <EkBadge v-if="item.badge" class="ek-side__fade" :variant="item.badgeVariant ?? 'count'" :tone="item.badgeTone ?? 'action'" :text="item.badge" />
                 <v-icon
                   v-if="item.children"
                   class="ek-side__chevron ek-side__fade"
@@ -88,13 +93,13 @@
                   <button
                     type="button"
                     class="ek-side__subitem"
-                    :class="[hookClasses?.subItem, { 'is-active': child.key === activeKey, 'is-hover': forceHoverKey === child.key }]"
+                    :class="[hookClasses?.subItem, { 'is-muted': child.muted, 'is-active': child.key === activeKey, 'is-hover': forceHoverKey === child.key }]"
                     :data-key="child.key"
                     :aria-current="child.key === activeKey ? 'page' : undefined"
                     @click="emit('select', child.key)"
                   >
                     <span class="ek-side__label">{{ child.label }}</span>
-                    <EkBadge v-if="child.badge" variant="count" :tone="child.badgeTone ?? 'neutral'" :text="child.badge" />
+                    <EkBadge v-if="child.badge" :variant="child.badgeVariant ?? 'count'" :tone="child.badgeTone ?? 'neutral'" :text="child.badge" />
                   </button>
                 </li>
               </ul>
@@ -117,6 +122,10 @@ export interface EkSideItem {
   icon?: string
   badge?: string | number
   badgeTone?: 'action' | 'success' | 'warning' | 'error' | 'info' | 'neutral'
+  /** Ek (geri uyumlu): rozet biçimi — varsayılan `count` (dolu sayaç); `label` sakin çerçeveli etiket (ör. "Yakında"). */
+  badgeVariant?: 'count' | 'label'
+  /** Ek (geri uyumlu): henüz hazır olmayan ekran — etiket soluk; tıklanabilir kalır. */
+  muted?: boolean
   children?: EkSideItem[]
 }
 
@@ -230,7 +239,20 @@ function onItem(item: EkSideItem) {
 }
 
 .ek-side__section + .ek-side__section {
-  margin-top: var(--ek-space-3);
+  margin-top: var(--ek-space-4);
+}
+
+/* Etiketli bölümde ayırıcı çizgi gizli (etiket + boşluk ayırır); rayda etiket solduğu için çizgi geri gelir. */
+.ek-side__section.has-label > .ek-side__section-rule {
+  opacity: 0;
+  margin-bottom: 0;
+  height: 0;
+}
+
+.ek-side--collapsed .ek-side__section.has-label > .ek-side__section-rule {
+  opacity: 1;
+  height: 1px;
+  margin-bottom: var(--ek-space-3);
 }
 
 .ek-side__section-rule {
@@ -250,7 +272,7 @@ function onItem(item: EkSideItem) {
 /* Bölüm başlığı: ikincil metin tonu (nötr, AA) mikro etiket — grup "renkli/açık" görünmez (B4 geri bildirimi). */
 .ek-side__section-label {
   margin: 0;
-  padding: 0 var(--ek-space-3) var(--ek-space-2);
+  padding: 0 var(--ek-space-3) var(--ek-space-1);
   overflow: hidden;
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-micro-size);
@@ -278,7 +300,7 @@ function onItem(item: EkSideItem) {
 .ek-side__item,
 .ek-side__subitem {
   --ek-side-fill: transparent;
-  --ek-side-ink: inherit;
+  --ek-side-ink: var(--ek-color-content-default);
   position: relative;
   isolation: isolate;
   display: flex;
@@ -295,7 +317,7 @@ function onItem(item: EkSideItem) {
   font-family: inherit;
   font-size: var(--ek-type-label-size);
   line-height: var(--ek-type-label-line);
-  font-weight: var(--ek-type-label-weight);
+  font-weight: var(--ek-font-weight-medium);
   text-align: left;
   cursor: pointer;
   transition: color var(--ek-duration-fast) var(--ek-easing-enter);
@@ -304,6 +326,7 @@ function onItem(item: EkSideItem) {
 .ek-side__subitem {
   padding-left: var(--ek-space-3);
 }
+
 
 /* Zemin + odak halkası sahte öğede: rayda ikon sütununa (40px) daralır; düğmenin kutusu hiç değişmez. */
 .ek-side__item::after,
@@ -349,8 +372,7 @@ function onItem(item: EkSideItem) {
   --ek-side-ink: var(--ek-color-action-emphasis);
 }
 
-.ek-side__item.is-active::before,
-.ek-side__subitem.is-active::before {
+.ek-side__item.is-active::before {
   content: '';
   position: absolute;
   left: 0;
@@ -400,6 +422,12 @@ function onItem(item: EkSideItem) {
 
 .ek-side__item.is-active .ek-side__icon {
   color: var(--ek-color-action);
+}
+
+.ek-side__item.is-muted:not(.is-active) .ek-side__label,
+.ek-side__item.is-muted:not(.is-active) .ek-side__icon,
+.ek-side__subitem.is-muted:not(.is-active) .ek-side__label {
+  color: var(--ek-color-content-muted);
 }
 
 .ek-side__label {
@@ -476,8 +504,9 @@ function onItem(item: EkSideItem) {
 
 .ek-side__sublist {
   position: relative;
-  margin: 0 0 0 calc(var(--ek-side-rail-item) / 2);
-  padding: 2px 0 var(--ek-space-1) var(--ek-space-3);
+  /* Kılavuz çizgisi üst öğenin ikon sütunu ortasında; alt öğe METNİ üst öğenin metniyle aynı x'te başlar. */
+  margin: 2px 0 var(--ek-space-1) calc(var(--ek-side-rail-item) / 2);
+  padding: 0 0 0 calc(var(--ek-icon-md) / 2 - 1px);
   border-left: 1px solid var(--ek-color-sidebar-border);
 }
 
@@ -485,7 +514,18 @@ function onItem(item: EkSideItem) {
   min-height: var(--ek-control-h-sm);
   padding-top: var(--ek-space-1);
   padding-bottom: var(--ek-space-1);
-  font-weight: var(--ek-font-weight-regular);
+}
+
+/* Etkin alt öğe: göstergesi kılavuz çizgisinin ÜSTÜNDE (öğe kutusunun solunda değil) — hiyerarşi çizgisi kesintisiz. */
+.ek-side__subitem.is-active::before {
+  content: '';
+  position: absolute;
+  top: var(--ek-space-1);
+  bottom: var(--ek-space-1);
+  left: calc(var(--ek-icon-md) / -2 - 0.5px);
+  width: 2px;
+  border-radius: var(--ek-radius-sm);
+  background: var(--ek-color-action);
 }
 
 @media (prefers-reduced-motion: reduce) {

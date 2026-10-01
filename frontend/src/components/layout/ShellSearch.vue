@@ -42,6 +42,8 @@ import { useWorkspaceStore } from '@/stores/workspace'
 import { screenKeyForLink } from '@/navigation/screens'
 import { useShellMenu } from './useShellMenu'
 import { useHelpNavigation } from '@/help/useHelpNavigation'
+import { CHAT_ICON } from '@entegrasyonik/chat/brand'
+import { useOtopilotStore } from '@/chat/otopilotStore'
 
 defineEmits<{ dismiss: [] }>()
 
@@ -182,9 +184,24 @@ const recordGroups = computed<EkSearchGroup[]>(() => {
   ]
 })
 
+// --- Kaynak 0: "Otopilot'a sor: «…»" (ADR-0034 / CHAT_UI_CONTRACT §7.1) — yazılan sorgu için EN ÜSTTE; Enter panelde
+// açar ve metni gönderir. Otopilot kapalıysa (DISABLED) ya da sorgu < 2 karakterse gösterilmez.
+const otopilot = useOtopilotStore()
+const askGroup = computed<EkSearchGroup | null>(() => {
+  if (!otopilot.available || q.value.length < MIN_REMOTE_LENGTH) return null
+  const t = otopilot.getController().t
+  return {
+    key: 'otopilot',
+    label: t('entry.askGroup'),
+    icon: CHAT_ICON,
+    items: [{ id: 'otopilot:ask', title: t('entry.ask', { query: q.value.slice(0, 120) }), icon: CHAT_ICON, tone: 'action' as const, __kind: 'ask', __ref: q.value } as EkSearchItem],
+  }
+})
+
 const groups = computed<EkSearchGroup[]>(() => {
   if (!q.value) return recentGroup.value.items.length ? [recentGroup.value] : []
-  return [screenGroup.value, ...(q.value.length >= MIN_REMOTE_LENGTH ? [...recordGroups.value, helpGroup.value] : [])]
+  const ask = askGroup.value ? [askGroup.value] : []
+  return [...ask, screenGroup.value, ...(q.value.length >= MIN_REMOTE_LENGTH ? [...recordGroups.value, helpGroup.value] : [])]
 })
 
 /** İskelet yalnızca GÖSTERİLECEK hiçbir şey yokken (ekran eşleşmesi varsa önce onlar görünür, kayıtlar gelince eklenir). */
@@ -243,7 +260,8 @@ function openWith(title: string, parameters: Record<string, unknown>) {
 function onSelect(item: EkSearchItem) {
   const { __kind: kind, __ref: ref } = item as EkSearchItem & { __kind: string; __ref: any }
   query.value = ''
-  if (kind === 'screen' || kind === 'recent') eventBus?.emit('openTab', ref)
+  if (kind === 'ask') otopilot.open({ via: 'palette', text: String(ref) })
+  else if (kind === 'screen' || kind === 'recent') eventBus?.emit('openTab', ref)
   else if (kind === 'help') helpNav.openHelp(ref)
   else if (kind === 'order') openWith('orderList', { globalSearch: ref.orderNumber })
   else if (kind === 'product') openWith('productUpdate', { productId: ref._id })

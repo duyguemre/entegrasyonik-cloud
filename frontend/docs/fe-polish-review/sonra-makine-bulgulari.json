@@ -1,0 +1,1131 @@
+[
+ {
+  "sayfa": "account-privacy-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "account-privacy-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "account-privacy-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "account-privacy-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "account-security-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "account-security-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "account-security-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "account-security-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-clients-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-clients-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-clients-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-clients-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-effective-config-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [
+   "resilience.timeoutMs",
+   "resilience.retry.maxAttempts",
+   "order.syncIntervalMs"
+  ],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-effective-config-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [
+   "resilience.timeoutMs",
+   "resilience.retry.maxAttempts",
+   "order.syncIntervalMs"
+  ],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-effective-config-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [
+   "resilience.timeoutMs",
+   "resilience.retry.maxAttempts",
+   "order.syncIntervalMs"
+  ],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-effective-config-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [
+   "resilience.timeoutMs",
+   "resilience.retry.maxAttempts",
+   "order.syncIntervalMs"
+  ],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-engine-settings-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-engine-settings-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-engine-settings-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-engine-settings-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-integration-compliance-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-integration-compliance-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-integration-compliance-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-integration-compliance-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-integrations-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-integrations-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-integrations-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-integrations-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-integrations-settings-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-integrations-settings-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-integrations-settings-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-integrations-settings-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-system-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-system-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-system-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-system-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-tickets-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-tickets-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-tickets-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "admin-tickets-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "catalog-stock-health-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "catalog-stock-health-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "catalog-stock-health-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "catalog-stock-health-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "catalog-stock-policy-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "catalog-stock-policy-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "catalog-stock-policy-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "catalog-stock-policy-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "claims-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "claims-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "claims-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "claims-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "customers-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "customers-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "customers-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "customers-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "dashboard-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "dashboard-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "dashboard-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "dashboard-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "finance-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "finance-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "finance-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "finance-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "giris-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "giris-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "giris-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "giris-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "help-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "help-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "help-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "help-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "integrations-ecommerce-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "integrations-ecommerce-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "integrations-ecommerce-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "integrations-ecommerce-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "integrations-einvoice-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "integrations-einvoice-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "integrations-einvoice-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "integrations-einvoice-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "integrations-erp-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "integrations-erp-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "integrations-erp-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "integrations-erp-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "integrations-health-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "integrations-health-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "integrations-health-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "integrations-health-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "integrations-marketplace-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "integrations-marketplace-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "integrations-marketplace-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "integrations-marketplace-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "integrations-shipping-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "integrations-shipping-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "integrations-shipping-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "integrations-shipping-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "invoices-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "invoices-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "invoices-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "invoices-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "logs-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "logs-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "logs-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "logs-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "menu-authorization-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "menu-authorization-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "menu-authorization-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "menu-authorization-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "menu-printout-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "menu-printout-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "menu-printout-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "menu-printout-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "menu-setting-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "menu-setting-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "menu-setting-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "menu-setting-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "menu-ticket-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "menu-ticket-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "menu-ticket-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "messages-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "messages-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "messages-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "messages-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "notifications-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "notifications-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "notifications-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "notifications-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "orders-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "orders-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "orders-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "orders-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "products-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "products-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "products-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "products-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "settings-audit-log-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [
+   "stock.policy.channel",
+   "user.role_change",
+   "user.password_change",
+   "tenant.export.requested",
+   "tenant.export.completed",
+   "future.unknown_event"
+  ],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "settings-audit-log-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [
+   "stock.policy.channel",
+   "user.role_change",
+   "user.password_change",
+   "tenant.export.requested",
+   "tenant.export.completed",
+   "future.unknown_event"
+  ],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "settings-audit-log-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [
+   "stock.policy.channel",
+   "user.role_change",
+   "user.password_change",
+   "tenant.export.requested",
+   "tenant.export.completed",
+   "future.unknown_event"
+  ],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "settings-audit-log-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [
+   "stock.policy.channel",
+   "user.role_change",
+   "user.password_change",
+   "tenant.export.requested",
+   "tenant.export.completed",
+   "future.unknown_event"
+  ],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "settings-notifications-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "settings-notifications-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "settings-notifications-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "settings-notifications-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "siparis-detay-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "siparis-detay-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "siparis-detay-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "siparis-detay-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "subscription-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "subscription-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "subscription-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "subscription-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "urun-yeni-dark-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "urun-yeni-dark-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "urun-yeni-light-1440",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ },
+ {
+  "sayfa": "urun-yeni-light-390",
+  "axe": [],
+  "tasma": [],
+  "hamAnahtar": [],
+  "bozukMetin": []
+ }
+]

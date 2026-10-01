@@ -82,6 +82,8 @@ export type TenantLlmState =
 const isoOf = (v: Date | string | undefined): string | undefined => (v === undefined ? undefined : new Date(v).toISOString());
 const knownProvider = (p: unknown): p is LlmProviderId => p === 'anthropic' || p === 'openai' || p === 'google';
 const hasValidConsent = (a: StoredAgentSettings | undefined) => a?.transferConsent?.textVersion === CONSENT_TEXT_VERSION;
+/** BR-4: platform (backoffice) anahtarinda tenant KVKK onayi kavrami YOKTUR (arac sonuclari tenant verisi tasimaz); yalniz BYOK (tenant) servisinde zorunlu. */
+const OK_CONSENT = (requireConsent: boolean, a: StoredAgentSettings | undefined) => !requireConsent || hasValidConsent(a);
 
 export class ProviderTestFailed extends Error {
     constructor(readonly result: ProviderTestResult) { super(result.code ?? 'LLM_UNAVAILABLE'); this.name = 'ProviderTestFailed'; }
@@ -105,6 +107,10 @@ export interface ProviderServiceDeps {
     /** Test: dogrulama cagrisi. */
     verify?: typeof verifyProviderKey;
     testsPerMinute?: number;
+    /** Varsayilan true (tenant BYOK: sahip onayi sart). BR-4 platform anahtari: false. */
+    requireConsent?: boolean;
+    /** Denetim yuzeyi (varsayilan `chat`; BR-4 `backoffice_chat`: actorType platform, tid yazilmaz). */
+    surface?: 'chat' | 'backoffice_chat';
 }
 
 export class ProviderService {
@@ -114,8 +120,12 @@ export class ProviderService {
     private readonly verify: typeof verifyProviderKey;
     private readonly cache = new Map<number, { at: number; value: TenantLlmState }>();
     private readonly limiter: ReturnType<typeof createRateLimiter>;
+    private readonly requireConsent: boolean;
+    private readonly surface: 'chat' | 'backoffice_chat';
 
     constructor(private readonly deps: ProviderServiceDeps = {}) {
+        this.requireConsent = deps.requireConsent !== false;
+        this.surface = deps.surface ?? 'chat';
         this.store = deps.store ?? mongoSettingsStore;
         this.kv = deps.kv ?? getAgentKv;
         this.now = deps.now ?? Date.now;
@@ -140,7 +150,7 @@ export class ProviderService {
     private async loadState(tid: number): Promise<TenantLlmState> {
         const a = await this.store.read(tid);
         if (!a || !a.apiKey || !knownProvider(a.provider) || !a.model || !isAllowedModel(a.provider, a.model)) return { state: 'setup', configured: false, consentRequired: false };
-        if (!hasValidConsent(a)) return { state: 'setup', configured: true, consentRequired: true, provider: a.provider, model: a.model };
+        if (!OK_CONSENT(this.requireConsent, a)) return { state: 'setup', configured: true, consentRequired: true, provider: a.provider, model: a.model };
         let apiKey: string;
         try { apiKey = decryptField(a.apiKey); } catch (e) {
             log.error({ tid, err: (e as Error).name }, 'Saglayici anahtari cozulemedi'); // anahtar/sifreli deger YOK
@@ -167,7 +177,7 @@ export class ProviderService {
             v: 1,
             configured,
             canConfigure: ctx.canConfigure,
-            consentRequired: configured && !hasValidConsent(a),
+            consentRequired: configured && !OK_CONSENT(this.requireConsent, a),
             canConsent: ctx.canConsent,
             ...(configured && knownProvider(a?.provider) ? { provider: a!.provider as LlmProviderId, model: a!.model, apiKey: 'sensitive' as const } : {}),
             ...(a?.lastTest ? { lastTest: { at: isoOf(a.lastTest.at)!, ok: a.lastTest.ok === true, ...(isKnownCode(a.lastTest.code) ? { code: a.lastTest.code } : {}) } } : {}),
@@ -219,7 +229,7 @@ export class ProviderService {
     }
 
     /** Kaydet: once TEST (basarisizsa kaydetme -> ProviderTestFailed 422). `consent` yalniz sahipten. */
-    async save(ctx: AgentCtx, req: ProviderSaveRequest): Promise<ProviderStatus> {
+    async save(ctx: AgentCtx, req: ProviderSaveRequest, reason?: string): Promise<ProviderStatus> {
         if (!isAllowedModel(req.provider, req.model)) throw AppError.of('VALIDATION', { message: 'Model bu sağlayıcı için izinli değil.' });
         if (req.consent) {
             if (!ctx.canConsent) throw AppError.of('FORBIDDEN', { message: 'Veri aktarım onayını yalnızca mağaza sahibi verebilir.' });
@@ -235,16 +245,16 @@ export class ProviderService {
         if (req.consent) set.transferConsent = { at: new Date(this.now()), by: ctx.userId, byRole: 'owner', textVersion: CONSENT_TEXT_VERSION };
         await this.store.patch(ctx.tid, { set });
         this.invalidate(ctx.tid);
-        await auditProvider(ctx, 'agent.provider.saved', { provider: req.provider, model: req.model, replaced: fresh });
+        await auditProvider(ctx, 'agent.provider.saved', { provider: req.provider, model: req.model, replaced: fresh }, { surface: this.surface, reason });
         if (req.consent) await auditProvider(ctx, 'agent.transfer_consent.given', { textVersion: CONSENT_TEXT_VERSION });
         return this.status(ctx);
     }
 
-    async remove(ctx: AgentCtx): Promise<void> {
+    async remove(ctx: AgentCtx, reason?: string): Promise<void> {
         const a = await this.store.read(ctx.tid);
         await this.store.patch(ctx.tid, { unset: ['provider', 'model', 'apiKey', 'lastTest'] });
         this.invalidate(ctx.tid);
-        await auditProvider(ctx, 'agent.provider.removed', { ...(knownProvider(a?.provider) ? { provider: a!.provider as string } : {}) });
+        await auditProvider(ctx, 'agent.provider.removed', { ...(knownProvider(a?.provider) ? { provider: a!.provider as string } : {}) }, { surface: this.surface, reason });
     }
 
     /** KVKK aktarim onayi: YALNIZ tenant sahibi (canConsent = owner && !impersonation). */
@@ -269,13 +279,18 @@ const isKnownCode = (c: unknown): c is NonNullable<ProviderTestResult['code']> =
 export type ProviderAuditEvent = 'agent.provider.saved' | 'agent.provider.removed' | 'agent.transfer_consent.given' | 'agent.transfer_consent.revoked';
 
 /** Denetim: YALNIZ saglayici/model/surum/bayrak. Anahtar ASLA (sizinti testi). Best-effort (AuditLogger firlatmaz). */
-export function auditProvider(ctx: Pick<AgentCtx, 'tid' | 'userId' | 'session'>, event: ProviderAuditEvent, meta: Record<string, string | number | boolean>): Promise<void> {
+export function auditProvider(
+    ctx: Pick<AgentCtx, 'tid' | 'userId' | 'session'>, event: ProviderAuditEvent, meta: Record<string, string | number | boolean>,
+    opts: { surface?: 'chat' | 'backoffice_chat'; reason?: string } = {},
+): Promise<void> {
     const principal = ctx.session?.invoke.principal as { imp?: boolean } | undefined;
     const imp = principal?.imp === true;
     const reqId = getRequestId();
+    const bo = opts.surface === 'backoffice_chat';
     return AuditLogger.log({
-        event, result: 'ok', sub: ctx.userId, tid: ctx.tid, ip: ctx.session?.invoke.ip, surface: 'chat',
-        actorType: imp ? 'impersonator' : 'user', ...(imp ? { imp: true, onBehalfOf: ctx.tid } : {}), reqId, meta: { ...meta, ...(reqId ? { corrId: reqId.slice(0, 64) } : {}) },
+        event, result: 'ok', sub: ctx.userId, ...(bo ? {} : { tid: ctx.tid }), ip: ctx.session?.invoke.ip, surface: bo ? 'backoffice_chat' : 'chat',
+        actorType: bo ? 'platform' : imp ? 'impersonator' : 'user', ...(imp ? { imp: true, onBehalfOf: ctx.tid } : {}), reqId,
+        meta: { ...meta, ...(opts.reason ? { reason: opts.reason.slice(0, 500) } : {}), ...(reqId ? { corrId: reqId.slice(0, 64) } : {}) },
     });
 }
 

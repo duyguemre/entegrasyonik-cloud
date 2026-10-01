@@ -29,13 +29,13 @@ const topics: Array<{ id: string; label: string; text: string; subject: string; 
   { id: 'teklif', label: 'Kurumsal teklif', text: 'Özel gereksinimleriniz veya birden fazla hesap için teklif isteyin.', subject: 'Kurumsal teklif talebi', icon: 'layers' },
   { id: 'soru', label: 'Genel soru', text: 'Ürün, kapsam veya entegrasyonlar hakkında bir sorunuz mu var?', subject: 'Genel soru', icon: 'chat' },
   { id: 'kanal', label: 'Kanal talebi', text: 'Listede yer almayan bir satış kanalı için ihtiyacınızı bize iletin.', subject: 'Kanal talebi', icon: 'plug' },
-  { id: 'destek', label: 'Mevcut müşteri', text: 'Hesabınızla ilgili bir konuda yardım isteyin.', subject: 'Destek talebi', icon: 'users' },
+  { id: 'destek', label: 'Hesabınız varsa', text: 'Hesabınızla ilgili bir konuda yardım isteyin.', subject: 'Destek talebi', icon: 'users' },
 ]
 
 const notes: Array<{ icon: 'mail' | 'lock' | 'help'; title: string; text: string }> = [
   { icon: 'mail', title: 'Form yok', text: 'Mesajınız kendi e-posta uygulamanızda hazırlanır; konu satırı seçtiğiniz başlığa göre dolar.' },
   { icon: 'lock', title: 'Veri toplanmaz', text: 'Bu site ziyaretçiden kişisel veri toplamaz; yalnızca size yazdığınız e-posta ulaşır.' },
-  { icon: 'help', title: 'Mevcut müşteriler', text: 'Hesabınızdaki destek ekranından talep açıp süreci aynı yerden takip edebilirsiniz.' },
+  { icon: 'help', title: 'Hesap sahipleri', text: 'Hesabınızdaki destek ekranından talep açıp süreci aynı yerden takip edebilirsiniz.' },
 ]
 
 const showAddress = hasValue(company.address)
@@ -45,8 +45,8 @@ const showPhone = hasValue(company.phone)
 <BaseLayout>
 
   <PageHero
-    title="İletişim"
-    eyebrow="Bize ulaşın"
+    title="Size nasıl yardımcı olabiliriz?"
+    eyebrow="İletişim"
     lead="Sorularınız, teklif talepleriniz ve kanal ihtiyaçlarınız için e-posta ile yazın. Bu sayfada form yoktur; site kişisel veri toplamaz."
     crumbs={crumbs}
   >
@@ -160,7 +160,7 @@ const showPhone = hasValue(company.phone)
 
   <CtaBand
     id="giris-title"
-    title="Zaten müşteri misiniz?"
+    title="Zaten Entegrasyonik kullanıyor musunuz?"
     text="Hesabınıza giriş yaparak panelinize ve destek ekranına erişebilirsiniz."
     primary={{ label: 'Giriş yap', href: appUrls.login() }}
     secondary={{ label: 'Destek merkezi', href: '/destek' }}

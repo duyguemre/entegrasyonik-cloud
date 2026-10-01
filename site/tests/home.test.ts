@@ -12,7 +12,7 @@ import path from 'node:path'
 import { buildSite, siteRoot } from '../scripts/lib/build.mjs'
 import { getPublicIntegrations, integrations, AVAILABLE_INTEGRATION_CODES, getEcosystemNodes, ecosystemPromises } from '../src/data/integrations'
 import { getPublicPlans, getPlanSourceNotice, getPublicTrial } from '../src/data/plans'
-import { getPublicCapabilities, getHomePillars } from '../src/data/capabilities'
+import { getPublicCapabilities } from '../src/data/capabilities'
 import { getPublicFaq } from '../src/data/faq'
 
 const APP_URL = 'https://app.example.test'
@@ -38,7 +38,7 @@ describe('yapı: bölümler, başlıklar, landmark', () => {
       'senaryo-baslik',
       'yetenek-baslik',
       'entegrasyon-baslik',
-      'asistan-baslik', // S18: "yolda" bandı (UPCOMING yüzeyi)
+      'ajan-bandi-baslik', // S18: "yolda" bandı (UPCOMING yüzeyi; S22 kimliği addan bağımsız)
       'nasil-baslik',
       'fiyat-baslik',
       'guvenlik-baslik',
@@ -126,7 +126,9 @@ describe('CTA ve bağlantılar', () => {
     expect(tag('hero-cta-primary')).toContain(`href="${APP_URL}/login?mode=register"`)
     expect(tag('hero-cta-secondary')).toContain('href="#nasil-calisir"')
     expect(tag('closing-cta-primary')).toContain(`href="${APP_URL}/login?mode=register"`)
-    expect(tag('closing-cta-login')).toContain(`href="${APP_URL}/login"`)
+    // ELEV A3: kapanışın ikincil eylemi giriş değil demo talebi (mailto, konu hazır).
+    expect(tag('closing-cta-demo')).toMatch(/href="mailto:[^"]+\?subject=Entegrasyonik%20demo%20talebi"/)
+    expect(html).not.toContain('data-testid="closing-cta-login"')
     expect(html).toMatch(/data-testid="hero-cta-primary"[^>]*>\s*Ücretsiz dene/)
     expect(html).toMatch(/data-testid="hero-cta-secondary"[^>]*>\s*Nasıl çalışır/)
   })
@@ -227,13 +229,10 @@ describe('entegrasyon ekosistemi (S12: vizyon dili; kanal adı ve durum dili ana
 describe('içerik kayıttan gelir', () => {
   const text = () => textOf(html)
 
-  it('yetenekler: dört değer sütunu + her çekirdek yeteneğin ana sayfa başlığı/fayda cümlesi görünür; sınır notu ve durum rozeti ana sayfada YOK (alt sayfalarda)', () => {
+  // ELEV A10: koyu "dört değer sütunu" bandı (ve kaydı) kaldırıldı — aynı fikirleri bento karoları gösteriyor.
+  it('yetenekler: koyu değer bandı yok + her çekirdek yeteneğin ana sayfa başlığı/fayda cümlesi görünür; sınır notu ve durum rozeti ana sayfada YOK (alt sayfalarda)', () => {
     const caps = textOf(html.match(/<section[^>]*id="ozellikler"[\s\S]*?<\/section>/)![0])
-    for (const p of getHomePillars()) {
-      expect(caps, p.id).toContain(p.title)
-      expect(caps, p.id).toContain(p.line)
-      for (const item of p.points) expect(caps, `${p.id}: ${item}`).toContain(item)
-    }
+    expect(html).not.toContain('data-testid="capability-clusters"')
     for (const c of getPublicCapabilities('core')) {
       expect(c.home, `${c.id}: home metni`).toBeDefined()
       expect(caps, c.id).toContain(c.home!.title)
@@ -243,10 +242,13 @@ describe('içerik kayıttan gelir', () => {
     expect(html).toContain('Aşırı satış olarak işaretlendi')
   })
 
-  it('güvenlik: yalnızca kanıtlı iddialar (AES-256-GCM, kiracı DB, RBAC, barındırılan ödeme); sertifika iddiası yok', () => {
+  // ELEV (K44): algoritma adı ana sayfada değil yalnız /guvenlik "Ayrıntı" panelinde (pages.test.ts korur); ana sayfa şifreleme
+  // iddiasını kayıttaki fayda cümlesiyle verir. Kısmi (ödeme) iddiasının dürüst sınır notu aynen zorunlu.
+  it('güvenlik: yalnızca kanıtlı iddialar (şifreli anahtar, izole veri, RBAC, barındırılan ödeme); sertifika iddiası yok', () => {
     for (const c of getPublicCapabilities('security')) expect(text(), c.id).toContain(c.title)
-    expect(text()).toContain('AES-256-GCM')
-    expect(text()).toContain('test (sandbox) aşamasında')
+    expect(text()).toContain(getPublicCapabilities('security').find((c) => c.id === 'secrets-encryption')!.summary)
+    expect(text()).not.toContain('AES-256-GCM')
+    expect(text()).toContain('Ödeme akışı bu sürümde test aşamasındadır.')
     expect(text().toLocaleLowerCase('tr-TR')).not.toMatch(/iso 27001|soc 2|tier 3|uptime|veri merkezi|sertifika/)
   })
 
@@ -293,7 +295,7 @@ describe('içerik kayıttan gelir', () => {
     expect([...nav.matchAll(/data-spy-link=/g)]).toHaveLength(4)
   })
 
-  it('senaryo (zaman çizgisi): beş adım, her adım yayımlanmış bir yetenek kaydına bağlı; kanal adı yok; örnek beyanı bölüm girişinde (S12 + S15-B)', () => {
+  it('senaryo (zaman çizgisi): beş adım, her adım yayımlanmış bir yetenek kaydına bağlı; kanal adı yok; örnek etiketi yok (S12 + S24)', () => {
     const block = html.match(/<ol[^>]*data-testid="story-steps"[\s\S]*?<\/ol>/)![0]
     const steps = [...block.matchAll(/<li[^>]*data-scene="story-step"[^>]*>/g)].map((m) => m[0])
     expect(steps).toHaveLength(5)
@@ -309,12 +311,12 @@ describe('içerik kayıttan gelir', () => {
     expect(t).toContain('yalnızca mevcut stok kadar rezervasyon yapılır')
     expect(t).toContain('onaylanır veya reddedilir')
     for (const i of getPublicIntegrations()) expect(t, i.name).not.toContain(i.name)
-    // S15-B (S15-C deseniyle uyum): sahne başına görünür "Örnek görünüm" etiketi YOK; sayıların örnek olduğunu
-    // bölüm girişindeki tek cümle beyan eder (uydurma veri iddiası yok). Sahneler aria-hidden kalır.
+    // S15-B → S24 (K44): sahne başına ve bölüm girişinde "örnek görünüm" beyanı YOK (kullanıcı kararı). Sahneler
+    // dekoratiftir (aria-hidden) ve sahnelerde kanal adı/uydurma ölçüm yoktur (yukarıdaki denetim).
     expect(block).not.toMatch(/Örnek görünüm/)
     expect([...block.matchAll(/<div class="viz"[^>]*>/g)].every((m) => m[0].includes('aria-hidden="true"'))).toBe(true)
     const section = html.match(/<section[^>]*id="senaryo"[\s\S]*?<\/section>/)![0]
-    expect(textOf(section.split('data-testid="story-steps"')[0])).toContain('Aşağıdaki sahneler örnek görünümdür.')
+    expect(textOf(section).toLocaleLowerCase('tr-TR')).not.toMatch(/örnek görünüm/)
   })
 
   it('sorun -> çözüm: tek kurgu (kaos + marka kartı); alttaki karşılaştırma tablosu yok; faydalar kanıtlı (S12)', () => {
@@ -326,19 +328,33 @@ describe('içerik kayıttan gelir', () => {
     for (const i of getPublicIntegrations()) expect(t, i.name).not.toContain(i.name)
   })
 
-  it('sorun -> çözüm tek merkez akışı (S15-B): isimsiz kanal çipleri; statik HTML senkron son durumu taşır (tüm çiplerde aynı değer)', () => {
+  it('sorun -> çözüm sıfır aşırı satış hikâyesi (S26): kanal rozetleri, perdeler; statik HTML 1. perdenin son karesi', () => {
     const ps = html.match(/data-scene="problem-solution"[\s\S]*?<\/section>/)![0]
-    const net = ps.match(/<div class="ps__net[^"]*"[^>]*aria-hidden="true"[\s\S]*?class="ps__result/)![0]
+    const net = ps.match(/<div class="ps__net[^"]*"[^>]*aria-hidden="true"[\s\S]*?<\/div>\s*<ul class="ps__gains/)![0]
     const chips = [...net.matchAll(/<li class="ps__node[^"]*"[^>]*data-code="([^"]+)"/g)].map((m) => m[1])
     expect(chips).toHaveLength(4)
-    const synced = [...net.matchAll(/data-part="chip-new"[^>]*>(\d+)</g)].map((m) => m[1])
+    // kanal rozeti sitenin standart bileşeni (ChannelMono), her çipte bir tane
+    expect([...net.matchAll(/class="chan-mono[^"]*"/g)]).toHaveLength(4)
+    // sabit, anlamsız "kullanılabilir stok" kartı kalktı
+    expect(textOf(net)).not.toMatch(/Kullanılabilir stok|tek merkezden tüm kanallara/)
+    // perdeler: dört ürün, her perdede tek sipariş kaynağı
+    const acts = [...net.matchAll(/data-part="act" data-act="(\d)"/g)].map((m) => m[1])
+    expect(acts).toEqual(['0', '1', '2', '3'])
+    for (const k of acts) expect([...net.matchAll(new RegExp(`data-part="order" data-act="${k}"`, 'g'))], k).toHaveLength(1)
+    // statik son kare (perde 0): tüm kanallar + merkez aynı YENİ değer = eski değer - 1
+    const val = (part: string) => [...net.matchAll(new RegExp(`data-part="${part}" data-act="0"[^>]*>(\\d+)<`, 'g'))].map((m) => Number(m[1]))
+    const synced = [...val('chip-new'), ...val('chip-new-origin')]
     expect(synced).toHaveLength(4)
     expect(new Set(synced).size).toBe(1)
-    // tek stok değeri: sonuç kartı ile kanal çipleri aynı sayıyı gösterir
-    expect(ps).toMatch(new RegExp(`class="ps__result-num[^"]*"[^>]*>${synced[0]}<`))
-    // akış parçaları: gidiş/dönüş paketi her kanalda, gövde paketi ve iki göbek halkası
+    expect(val('hub-new')).toEqual([synced[0]])
+    expect(val('hub-old')).toEqual([synced[0] + 1])
+    // hikâye metinleri: rezerve vurgusu ve eşzamanlılık sonucu
+    expect(textOf(net)).toContain('Yeni sipariş')
+    expect(textOf(net)).toContain('Rezerve edildi')
+    expect(textOf(net).replace(/\s+/g, ' ')).toContain('Tüm kanallarda eşzamanlı · aşırı satış yok')
+    // akış parçaları: sipariş kanalında iniş, diğer kanallarda eşzamanlı dönüş paketi; gövde paketi, iki halka
     expect([...net.matchAll(/data-part="packet"/g)]).toHaveLength(4)
-    expect([...net.matchAll(/data-part="packet-back"/g)]).toHaveLength(4)
+    expect([...net.matchAll(/data-part="packet-back"/g)]).toHaveLength(12)
     expect([...net.matchAll(/data-part="hub-ring"/g)]).toHaveLength(2)
     expect(net).toContain('data-part="stem-packet"')
     const t = textOf(net)
@@ -362,10 +378,13 @@ describe('içerik kayıttan gelir', () => {
     expect(heroText.toLocaleLowerCase('tr-TR')).not.toMatch(/uygulanan|bugün bağlanabilen/)
   })
 
-  it('hero fayda maddeleri üst seviye ve her biri kanıtlı bir yetenek kaydına dayanır (S12)', () => {
-    const list = html.match(/<ul[^>]*data-testid="hero-benefits"[\s\S]*?<\/ul>/)![0]
-    const items = [...list.matchAll(/<li\b[\s\S]*?<\/li>/g)].map((m) => textOf(m[0]))
-    expect(items).toEqual(['Merkezi stok yönetimi', 'Tüm siparişler tek ekranda', 'Kurumsal düzeyde güvenlik'])
+  it('fayda rayı (S24: hero\'daki ayrı liste yerine hero\'nun alt kenarındaki tek ray) üst seviye ve kayıtlara dayanır', () => {
+    expect(html).not.toContain('data-testid="hero-benefits"')
+    const list = html.match(/<ul[^>]*data-testid="stat-list"[\s\S]*?<\/ul>/)![0]
+    const labels = [...list.matchAll(/<p class="stat__label"[^>]*>([\s\S]*?)<\/p>/g)].map((m) => textOf(m[1]))
+    expect(labels).toEqual(['Tek merkez', 'Eşzamanlı stok', `${getPublicTrial().days} gün ücretsiz`, 'Kurumsal güvenlik'])
+    // hero ve ray tek koyu sahnede (ortak zemin); ray ayrı bir zemin bandı değil
+    expect(html).toMatch(/<div class="stage-top"[^>]*>\s*<section class="hero"[\s\S]*?<\/section>\s*<section class="proof"/)
     const ids = getPublicCapabilities().map((c) => c.id)
     for (const id of ['stock-reservation', 'multi-channel-products', 'unified-orders', 'secrets-encryption', 'tenant-database', 'role-based-access']) {
       expect(ids, id).toContain(id)
@@ -400,15 +419,19 @@ describe('animasyon sahneleri: betik, durdurma kontrolü, CSP (ADR-0014 S3)', ()
   const scriptFiles = () => readdirSync(assetsDir()).filter((f) => f.endsWith('.js'))
   const gz = (f: string) => gzipSync(readFileSync(path.join(assetsDir(), f))).length
 
-  it('durdurma kontrolü header içinde, düğme, aria-pressed=false, sabit erişilebilir ad; yalnızca sahneli sayfada', () => {
+  it('animasyon anahtarı (S26): header içinde, role="switch" + aria-checked, ad görünür etiketten; yalnızca sahneli sayfada', () => {
     const header = html.match(/<header\b[\s\S]*?<\/header>/)![0]
     const btn = header.match(/<button\b[^>]*data-motion-toggle[^>]*>[\s\S]*?<\/button>/)![0]
     expect(btn).toContain('type="button"')
-    expect(btn).toContain('aria-pressed="false"')
-    // erişilebilir ad sabit; görünür kısa etiket ("Hareket") aria-hidden ve adın içinde geçer (WCAG 2.5.3)
-    const name = textOf(btn.replace(/<span[^>]*aria-hidden="true"[^>]*>[\s\S]*?<\/span>/g, ''))
-    expect(name).toBe('Hareketi durdur')
-    expect(btn).toMatch(/aria-hidden="true"[^>]*>Hareket</)
+    expect(btn).toContain('role="switch"')
+    // statik HTML "açık" başlar; betik tercihe / sistem ayarına göre günceller
+    expect(btn).toContain('aria-checked="true"')
+    expect(btn).not.toContain('aria-pressed')
+    // erişilebilir ad görünür etiketten (WCAG 2.5.3); açıklama ipucu öğesinden
+    const labelId = btn.match(/aria-labelledby="([^"]+)"/)![1]
+    expect(btn).toMatch(new RegExp(`id="${labelId}"[^>]*>Animasyon<`))
+    const hintId = btn.match(/aria-describedby="([^"]+)"/)![1]
+    expect(btn).toMatch(new RegExp(`id="${hintId}"`))
     expect([...html.matchAll(/data-motion-toggle/g)]).toHaveLength(1)
     // sahnesi olmayan iç sayfada kontrol ve sahne öğesi yok
     const inner = readFileSync(path.join(outDir, 'ozellikler', 'index.html'), 'utf8')

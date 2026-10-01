@@ -8,6 +8,7 @@
 // gösterir). Bu yüzden iddialar `getByText` ile (tablo hücresi/kart fark etmeksizin AYNI metin)
 // yazıldı; tabloya/karta ÖZGÜ DOM yapısı test EDİLMEDİ.
 import { test, expect } from '@playwright/test'
+import { suppressTourOffer } from '../fixtures/appDialog'
 import { installApiMocks, mockError } from '../fixtures/mockApi'
 import { gotoAuthed, menuFixtureWithAccountSupport, openScreen } from '../fixtures/nav'
 
@@ -47,6 +48,9 @@ const ticketDetailFixture = {
 }
 
 test.describe('ADR-0015 B5-3 — TicketListView (destek) + TicketCreateDialog + TicketDetailComponent', () => {
+  // Sağ alttaki (mobilde tam genişlik) tur teklifi kartı sayfalama/çip/çekmece öğelerini örter → kullanıcı gibi önce kapatılmış sayılır.
+  test.beforeEach(async ({ page }) => { await suppressTourOffer(page) })
+
   test('smoke: arama alanı + destek talebi kayıtları render olur', async ({ page }) => {
     await installApiMocks(page, withSupportMenu({ 'TicketService/getTickets': ticketsDoluFixture }))
     await gotoAuthed(page)
@@ -101,8 +105,8 @@ test.describe('ADR-0015 B5-3 — TicketListView (destek) + TicketCreateDialog + 
     expect(created.ticket.message).toBe('Bu bir E2E test mesajıdır.')
   })
 
-  test('detay: görüntüle/yanıtla ikonuna tıklayınca talep detayı açılır, yanıt gönderilince TicketService/sendTicketMessage çağrılır', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'chromium-desktop', 'Masaüstü tablodaki mdi-message-text-outline ikonuyla açılıyor (mdAndUp/>=960px); mobil kart aynı eylemi mdi-message-text ile sunar')
+  test('detay: "Görüntüle / Yanıtla" düğmesine tıklayınca talep detayı açılır, yanıt gönderilince TicketService/sendTicketMessage çağrılır', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium-desktop', 'Masaüstü tablosundaki satır eylemiyle açılıyor (mdAndUp/>=960px); mobil kart aynı eylemi farklı yerleşimle sunar')
     let sendPayload: any = null
     await installApiMocks(page, withSupportMenu({
       'TicketService/getTickets': ticketsDoluFixture,
@@ -114,8 +118,8 @@ test.describe('ADR-0015 B5-3 — TicketListView (destek) + TicketCreateDialog + 
     await gotoAuthed(page)
     await openScreen(page, 'TicketListView')
 
-    await page.locator('.ticketListView button:has(.mdi-message-text-outline)').first().click()
-    const dialog = page.getByRole('dialog').filter({ hasText: 'DESTEK TALEBİ' })
+    await page.locator('.ticketListView').getByRole('button', { name: 'Görüntüle / Yanıtla' }).first().click()
+    const dialog = page.getByRole('dialog').filter({ hasText: 'Destek talebi DSK-100001' })
     await expect(dialog).toBeVisible()
     await expect(dialog.getByText('Fatura oluşturamıyorum.')).toBeVisible()
 

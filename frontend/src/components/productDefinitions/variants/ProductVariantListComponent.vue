@@ -32,9 +32,8 @@
           </div>
           <ul class="pvl-summary__channels" aria-label="Kanal kapsamı">
             <li class="pvl-summary__label" aria-hidden="true">Kanallar</li>
-            <li v-for="c in sentChannels" :key="c.code" class="pvl-cov" :class="channelClass(c.code)">
-              <span class="pvl-cov__dot" aria-hidden="true"></span>
-              <span class="pvl-cov__name">{{ channelTitle(c.code) }}</span>
+            <li v-for="c in sentChannels" :key="c.code" class="pvl-cov">
+              <EkChannelBadge :code="c.code" :name="channelTitle(c.code)" size="xs" />
               <span class="pvl-cov__val"><span class="ek-num">{{ c.live }}/{{ summary.count }}</span> yayında</span>
               <span v-if="c.failed" class="pvl-cov__err"><v-icon icon="mdi-alert-circle-outline" aria-hidden="true" /><span class="ek-num">{{ c.failed }}</span> hata</span>
               <span v-else-if="c.waiting" class="pvl-cov__wait"><v-icon icon="mdi-clock-outline" aria-hidden="true" /><span class="ek-num">{{ c.waiting }}</span> bekliyor</span>
@@ -93,7 +92,8 @@
                 <td class="pvl-td pvl-td--variant">
                   <div class="pvl-ident">
                     <ProductThumb class="pvl-thumb" :src="imagesOf(r.variant)[0]" :gallery="imagesOf(r.variant)"
-                      :size="isCompact ? 'xs' : 'sm'" :label="rowTitle(r.variant)" />
+                      :size="isCompact ? 'xs' : 'sm'" :interactive="imagesOf(r.variant).length > 0"
+                      :label="`${rowTitle(r.variant)} görsellerini aç`" :caption="rowTitle(r.variant)" @click="openGallery(r.variant)" />
                     <span class="pvl-ident__text">
                       <span class="pvl-choices">
                         <span v-for="choice of rowChoices(r.variant.choices, grouped)" :key="choice.choiceId" class="pvl-choice">
@@ -134,18 +134,17 @@
                   </span>
                 </td>
                 <td class="pvl-td pvl-td--channels" data-label="Kanallar">
+                  <!-- FR2 21: ürün satırıyla AYNI kanal karosu (kısa rozet + durum işareti); gönderilmiş kanal tıklanınca ayrıntı kartı. -->
                   <span class="pvl-channels">
-                    <template v-for="ch in rowChannels(r.variant).sent" :key="ch.code">
-                      <v-menu :close-on-content-click="false" location="bottom center" transition="fade-transition" offset="8">
+                    <template v-for="ch in rowChannels(r.variant).all" :key="ch.code">
+                      <v-menu v-if="ch.status.key !== 'none'" :close-on-content-click="false" location="bottom center" transition="fade-transition" offset="8">
                         <template #activator="{ props: menuProps }">
                           <v-tooltip location="top" :open-delay="300" :eager="false" transition="fade-transition" max-width="320">
                             <template #activator="{ props: tipProps }">
-                              <button type="button" v-bind="mergeProps(menuProps, tipProps)" class="pvl-ch" :class="[channelClass(ch.code), `is-${ch.state.tone}`]"
+                              <button type="button" v-bind="mergeProps(menuProps, tipProps)" class="pvl-ch"
                                 :data-channel-state="ch.state.tone"
                                 :aria-label="`${channelTitle(ch.code)}: ${ch.state.label}${ch.state.reason ? ' — ' + ch.state.reason : ''}. Ayrıntı`">
-                                <span class="pvl-ch__dot" aria-hidden="true"></span>
-                                <span class="pvl-ch__name">{{ channelTitle(ch.code) }}</span>
-                                <v-icon class="pvl-ch__state" :icon="ch.state.icon" aria-hidden="true" />
+                                <ChannelStatusTile :status="ch.status" :name="channelTitle(ch.code)" :size="isCompact ? 'xs' : 'sm'" />
                               </button>
                             </template>
                             <span class="pvl-tip">
@@ -157,12 +156,11 @@
                         </template>
                         <ProductVariantListTooltipComponent :data="r.variant.platforms?.[ch.code]" :channel-code="ch.code" :channel-name="channelTitle(ch.code)" />
                       </v-menu>
+                      <span v-else class="pvl-ch is-unsent" :title="`${channelTitle(ch.code)}: gönderilmedi`">
+                        <ChannelStatusTile :status="ch.status" :name="channelTitle(ch.code)" :size="isCompact ? 'xs' : 'sm'" />
+                        <span class="ek-sr-only">{{ channelTitle(ch.code) }}: gönderilmedi</span>
+                      </span>
                     </template>
-                    <span v-if="rowChannels(r.variant).unsent.length" class="pvl-ch is-unsent"
-                      :title="rowChannels(r.variant).unsent.map(channelTitle).join(', ') + ': gönderilmedi'">
-                      <template v-if="rowChannels(r.variant).sent.length"><span aria-hidden="true">+{{ rowChannels(r.variant).unsent.length }}</span><span class="ek-sr-only">{{ rowChannels(r.variant).unsent.map(channelTitle).join(', ') }}: gönderilmedi</span></template>
-                      <template v-else>Kanala gönderilmedi</template>
-                    </span>
                   </span>
                 </td>
                 <td class="pvl-td pvl-td--actions">
@@ -181,6 +179,9 @@
           </button>
         </footer>
       </section>
+      <ProductGalleryDialog :open="!!galleryVariant" :images="galleryVariant ? imagesOf(galleryVariant) : []"
+        :title="productInfoForm.title ?? 'Ürün'" :subtitle="galleryVariant ? rowTitle(galleryVariant) : ''"
+        @close="galleryVariant = null" @edit="editFromGallery" />
     </div>
   </div>
 </template>
@@ -191,11 +192,14 @@ import { formatMoney } from '@entegrasyonik/ui/format'
 import { useChoicesStore } from '@/stores/choicesStore'
 import { useIntegrationStore } from '@/stores/integrationStore'
 import { useToast } from '@entegrasyonik/ui/composables/useToast'
-import { channelClass, channelName } from '@entegrasyonik/ui/tokens'
+import { channelName } from '@entegrasyonik/ui/tokens'
 import { icons } from '@entegrasyonik/ui/icons'
-import { EkRowActions } from '@entegrasyonik/ui/components'
+import { EkChannelBadge, EkRowActions } from '@entegrasyonik/ui/components'
 import type { EkRowAction } from '@entegrasyonik/ui/components'
 import ProductThumb from '../products/ProductThumb.vue'
+import ProductGalleryDialog from '../products/ProductGalleryDialog.vue'
+import ChannelStatusTile from '../products/ChannelStatusTile.vue'
+import { productChannelStatus, type ProductChannelStatus } from '../products/channelStatus'
 import { variantImageSrcs } from '../products/productImage'
 import ProductVariantListTooltipComponent from './ProductVariantListTooltipComponent.vue'
 import VariantGroupCell from './VariantGroupCell.vue'
@@ -318,15 +322,25 @@ const channelPrices = (v: any, field: 'salePrice' | 'marketPrice') =>
 const minOf = (v: any, f: 'salePrice' | 'marketPrice') => { const xs = channelPrices(v, f); return xs.length ? Math.min(...xs) : 0 }
 const maxOf = (v: any, f: 'salePrice' | 'marketPrice') => { const xs = channelPrices(v, f); return xs.length ? Math.max(...xs) : 0 }
 
+/** Satırın kanal durumları: bağlı TÜM kanallar (gönderilmemişler pasif karo) — ürün satırıyla aynı tek bakış dili. */
 const rowChannels = (v: any) => {
-  const sent: { code: string; state: ChannelState }[] = []
-  const unsent: string[] = []
-  for (const code of channelCodes.value) {
-    const state = channelState(v, code)
-    if (state.key === 'none') unsent.push(code)
-    else sent.push({ code, state })
-  }
-  return { sent, unsent }
+  const all: { code: string; state: ChannelState; status: ProductChannelStatus }[] = channelCodes.value.map((code) => ({
+    code,
+    state: channelState(v, code),
+    status: productChannelStatus({ variants: [v] }, code),
+  }))
+  return { all, sent: all.filter((c) => c.state.key !== 'none'), unsent: all.filter((c) => c.state.key === 'none').map((c) => c.code) }
+}
+
+// FR2 19–20: varyant görseli tıklanınca salt-okunur galeri (ürün satırıyla aynı).
+const galleryVariant = ref<any>(null)
+function openGallery(v: any) {
+  if (imagesOf(v).length) galleryVariant.value = v
+}
+function editFromGallery() {
+  const v = galleryVariant.value
+  galleryVariant.value = null
+  if (v) emit('editProduct', { variantId: v._id })
 }
 
 async function copy(text: string, what: string) {
@@ -457,27 +471,13 @@ const rowActions = (v: any): EkRowAction[] => [
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 24px;
-  padding: 0 var(--ek-space-2);
+  height: 28px;
+  padding: 0 var(--ek-space-2) 0 3px;
   border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-chip);
   background: var(--ek-color-surface);
   color: var(--ek-color-content-default);
   white-space: nowrap;
-}
-
-.pvl-cov__dot,
-.pvl-ch__dot {
-  flex: none;
-  width: 7px;
-  height: 7px;
-  border-radius: var(--ek-radius-chip);
-  background: var(--ek-ch-solid);
-}
-
-.pvl-cov__name {
-  color: var(--ek-ch-text);
-  font-weight: var(--ek-font-weight-semibold);
 }
 
 .pvl-cov__val {
@@ -772,48 +772,25 @@ td.pvl-vgroup { border-top: 0; border-bottom: 1px solid var(--ek-color-border-st
 .pvl-channels {
   display: flex;
   flex-wrap: nowrap; /* B1: satır yüksekliği sabit — çipler tek satır */
-  gap: var(--ek-space-1);
+  gap: 2px;
   max-width: 360px;
 }
 
 .pvl-ch {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 24px;
-  padding: 0 6px 0 var(--ek-space-2);
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-chip);
-  background: var(--ek-color-surface);
-  color: var(--ek-color-content-default);
+  padding: 4px 8px 6px 4px;
+  border: 1px solid transparent;
+  border-radius: var(--ek-radius-control);
+  background: transparent;
   font: inherit;
-  font-size: var(--ek-type-caption-size);
-  font-weight: var(--ek-font-weight-semibold);
-  white-space: nowrap;
   cursor: pointer;
   transition: var(--ek-transition-colors);
 }
 
-.pvl-ch:hover { border-color: var(--ek-ch-solid); background: var(--ek-ch-subtle); }
-.pvl-ch__state { font-size: var(--ek-icon-sm); }
-.pvl-ch.is-success .pvl-ch__state { color: var(--ek-color-success); }
-.pvl-ch.is-warning .pvl-ch__state { color: var(--ek-color-warning); }
-.pvl-ch.is-info .pvl-ch__state { color: var(--ek-color-info); }
-.pvl-ch.is-danger {
-  border-color: var(--ek-color-error-border);
-  background: var(--ek-color-error-subtle);
-  color: var(--ek-color-error-emphasis);
-}
-.pvl-ch.is-danger .pvl-ch__state { color: var(--ek-color-error); }
-
-.pvl-ch.is-unsent {
-  padding: 0 var(--ek-space-2);
-  border-style: dashed;
-  background: transparent;
-  color: var(--ek-color-content-muted);
-  font-weight: var(--ek-font-weight-regular);
-  cursor: default;
-}
+.pvl-ch:hover { border-color: var(--ek-color-border-default); background: var(--ek-color-surface-muted); }
+.pvl-ch.is-unsent { cursor: default; }
+.pvl-ch.is-unsent:hover { border-color: transparent; background: transparent; }
 
 .pvl-tip {
   display: flex;

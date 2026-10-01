@@ -43,6 +43,9 @@ export const SYSTEM_PROMPT = 'You are the in-app helper of an e-commerce integra
 
 export type { AgentCtx } from './types';
 
+/** BR-4: calisma bellegi alani yuzeyden gelir (backoffice sohbeti musteri anahtarlariyla kesismez). */
+const convScopeOf = (ctx: Pick<AgentCtx, 'surface'>): 'app' | 'bo' => (ctx.surface === 'backoffice_chat' ? 'bo' : 'app');
+
 /** Onay ucu gozlem durumu (metrik/denetim icin; model/istemciye gitmez). */
 interface ConfirmObs { capId?: string; version?: string; createdAt?: number }
 
@@ -61,6 +64,9 @@ export interface BrokerDeps {
     tools?: ToolRuntime;
     /** K46 kancasi: plan yetkisi (tier + gunluk eylem kotasi). Varsayilan: `resolveAgentEntitlement`. */
     entitlement?: (tid: number) => Promise<AgentEntitlement>;
+    /** BR-4: yuzeye ozgu oneri cipleri ve sistem istemi (varsayilan: musteri sohbeti). */
+    suggestions?: Record<Locale, Array<{ id: string; text: string }>>;
+    systemPrompt?: string;
     /** Test: saat (ms). */
     now?: () => number;
     turnsPerMinute?: number;
@@ -159,7 +165,7 @@ export class AgentBroker {
             v: 1 as const,
             readOnly: ctx.readOnly || this.deps.isMaintenance(),
             limits: { maxInputChars: MAX_INPUT_CHARS, turnsPerMinute: this.turnsPerMinute },
-            suggestions: SUGGESTIONS[locale],
+            suggestions: (this.deps.suggestions ?? SUGGESTIONS)[locale],
         };
         const off = (reason: 'DISABLED', configured = false): AgentInfo => ({
             ...base, enabled: false, reason, setup: { configured, canConfigure: ctx.canConfigure, consentRequired: false, canConsent: ctx.canConsent },
@@ -218,9 +224,9 @@ export class AgentBroker {
         };
     }
 
-    async reset(ctx: Pick<AgentCtx, 'tid' | 'userId'>, conversationId: string): Promise<void> {
+    async reset(ctx: Pick<AgentCtx, 'tid' | 'userId' | 'surface'>, conversationId: string): Promise<void> {
         if (!CONVERSATION_ID_RE.test(conversationId)) throw AppError.of('VALIDATION', { message: 'Geçersiz konuşma kimliği.' });
-        await new ConversationStore(this.deps.kv()).reset(ctx.tid, ctx.userId, conversationId);
+        await new ConversationStore(this.deps.kv(), convScopeOf(ctx)).reset(ctx.tid, ctx.userId, conversationId);
     }
 
     // ---------------------------------------------------------------------------------------------------------------
@@ -259,7 +265,7 @@ export class AgentBroker {
         const messageId = randomUUID();
         const text = req.input.kind === 'text' ? req.input.text : '';
         try {
-            const store = new ConversationStore(kv);
+            const store = new ConversationStore(kv, convScopeOf(ctx));
             const history = await store.load(ctx.tid, ctx.userId, conversationId);
             const messages: LlmMessage[] = [
                 ...history.map((m): LlmMessage => (m.role === 'user' ? { role: 'user', content: m.text } : { role: 'assistant', content: m.text })),
@@ -282,7 +288,7 @@ export class AgentBroker {
                 const pendingCalls: Array<{ id: string; name: string; input: unknown }> = [];
                 try {
                     // Saglayici sinyali yok sayarsa bile tur iptal/zaman asiminda TAKILMAZ: her adim iptal sinyaliyle yaristirilir.
-                    const it = rp.provider.stream({ system: SYSTEM_PROMPT, messages, tools: llmTools, maxTokens: MAX_TOKENS, signal: ac.signal })[Symbol.asyncIterator]();
+                    const it = rp.provider.stream({ system: this.deps.systemPrompt ?? SYSTEM_PROMPT, messages, tools: llmTools, maxTokens: MAX_TOKENS, signal: ac.signal })[Symbol.asyncIterator]();
                     const textPartId = `text-${round}`;
                     let opened = false;
                     while (true) {
@@ -485,6 +491,7 @@ export class AgentBroker {
         if (!this.deps.isEnabled()) throw AppError.of('UNAVAILABLE', { message: 'Sohbet şu an kullanılamıyor.' });
         if (req.decision === 'approve' && this.deps.isMaintenance()) throw AppError.of('MAINTENANCE');
         if (!ctx.session || !this.tools) throw AppError.of('UNAVAILABLE', { message: 'Sohbet şu an kullanılamıyor.' });
+        if (ctx.surface === 'backoffice_chat') throw AppError.of('CONFIRM_EXPIRED'); // BR-4 v1: backoffice sohbetinde yazma araci/onay karti YOK
         const tools = this.tools;
         const pending = new PendingActions(this.deps.kv(), this.now);
         const expired = () => AppError.of('CONFIRM_EXPIRED');

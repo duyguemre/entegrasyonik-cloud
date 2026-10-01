@@ -104,11 +104,21 @@
               </span>
               <span class="ek-help-center__cat-count ek-num">{{ c.articles.length }} makale</span>
             </button>
+            <!-- FR2-HELP madde 17: makale bağlantıları sessiz liste satırı (belge glifi + başlık + hover'da ok), mavi
+                 alt çizgili bağlantı değil; 3'ten fazla makalede kart altında "Tümünü gör". -->
             <ul class="ek-help-center__cat-links">
               <li v-for="a in c.articles.slice(0, 3)" :key="a.id">
-                <button type="button" class="ek-help-center__link" @click="goArticle(a.id)">{{ a.title }}</button>
+                <button type="button" class="ek-help-center__cat-link" @click="goArticle(a.id)">
+                  <v-icon class="ek-help-center__cat-link-doc" icon="mdi-file-document-outline" aria-hidden="true" />
+                  <span class="ek-help-center__cat-link-text">{{ a.title }}</span>
+                  <v-icon class="ek-help-center__cat-link-go" icon="mdi-chevron-right" aria-hidden="true" />
+                </button>
               </li>
             </ul>
+            <button v-if="c.articles.length > 3" type="button" class="ek-link ek-link--sm ek-help-center__cat-all" @click="goCategory(c.id)">
+              Tümünü gör ({{ c.articles.length }})
+              <v-icon class="ek-link__arrow" icon="mdi-arrow-right" aria-hidden="true" />
+            </button>
           </li>
         </ul>
       </section>
@@ -117,7 +127,10 @@
         <section v-if="faqItems.length" class="ek-help-center__faq" aria-labelledby="help-faq-title">
           <div class="ek-help-center__section-head">
             <h2 id="help-faq-title" class="ek-help-center__h2">Sık sorulan sorular</h2>
-            <button type="button" class="ek-help-center__link" @click="goArticle('faq-general')">Tümünü gör</button>
+            <button type="button" class="ek-link ek-link--sm" @click="goArticle('faq-general')">
+              Tümünü gör
+              <v-icon class="ek-link__arrow" icon="mdi-arrow-right" aria-hidden="true" />
+            </button>
           </div>
           <HelpArticleBody :blocks="[{ type: 'faq', items: faqItems }]" />
         </section>
@@ -156,7 +169,7 @@
         <!-- Kategori -->
         <section v-if="mode === 'category' && currentCategory" class="ek-help-center__category" aria-labelledby="help-category-title">
           <nav class="ek-help-center__crumbs" aria-label="Yardım yolu">
-            <button type="button" class="ek-help-center__crumb" @click="goHome">Yardım merkezi</button>
+            <button type="button" class="ek-link ek-link--sm ek-help-center__crumb" @click="goHome">Yardım merkezi</button>
             <v-icon icon="mdi-chevron-right" aria-hidden="true" />
             <span aria-current="page">{{ currentCategory.title[locale] }}</span>
           </nav>
@@ -181,9 +194,9 @@
         <!-- Makale -->
         <article v-else-if="article" ref="articleEl" class="ek-help-center__article" :data-article-id="article.id" aria-labelledby="help-article-title" tabindex="-1">
           <nav class="ek-help-center__crumbs" aria-label="Yardım yolu">
-            <button type="button" class="ek-help-center__crumb" @click="goHome">Yardım merkezi</button>
+            <button type="button" class="ek-link ek-link--sm ek-help-center__crumb" @click="goHome">Yardım merkezi</button>
             <v-icon icon="mdi-chevron-right" aria-hidden="true" />
-            <button type="button" class="ek-help-center__crumb" @click="goCategory(article.category)">{{ categoryTitle(article.category) }}</button>
+            <button type="button" class="ek-link ek-link--sm ek-help-center__crumb" @click="goCategory(article.category)">{{ categoryTitle(article.category) }}</button>
           </nav>
           <header class="ek-help-center__article-top">
             <h2 id="help-article-title" class="ek-help-center__article-title">{{ article.title }}</h2>
@@ -211,7 +224,7 @@
               <template v-if="vote === 'up'">Teşekkürler! Geri bildiriminiz bu cihazda kaydedildi.</template>
               <template v-else-if="vote === 'down'">
                 Teşekkürler. Sorununuz çözülmediyse
-                <button type="button" class="ek-help-center__inline-link" @click="ticketOpen = true">destek talebi açın</button>; ekibimiz yardımcı olsun.
+                <button type="button" class="ek-link ek-help-center__inline-link" @click="ticketOpen = true">destek talebi açın</button>; ekibimiz yardımcı olsun.
               </template>
             </p>
           </section>
@@ -687,26 +700,90 @@ defineExpose({ initialize, activate: initialize })
   list-style: none;
 }
 
-.ek-help-center__link,
-.ek-help-center__inline-link {
-  padding: var(--ek-space-1) 0;
+.ek-help-center__cat-links {
+  gap: 2px;
+}
+
+.ek-help-center__cat-link {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  width: 100%;
+  min-height: 32px;
+  margin: 0 calc(-1 * var(--ek-space-2));
+  padding: var(--ek-space-1) var(--ek-space-2);
   border: 0;
+  border-radius: var(--ek-radius-control);
   background: transparent;
-  color: var(--ek-color-action);
+  color: var(--ek-color-content-default);
   font: inherit;
   font-size: var(--ek-type-table-size);
+  line-height: var(--ek-type-table-line);
   text-align: left;
   cursor: pointer;
+  transition: var(--ek-transition-colors);
+}
+
+.ek-help-center__cat-link-doc {
+  flex: none;
+  font-size: var(--ek-icon-sm);
+  color: var(--ek-color-content-subtle);
+}
+
+.ek-help-center__cat-link-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.ek-help-center__cat-link-go {
+  flex: none;
+  font-size: var(--ek-icon-sm);
+  color: var(--ek-color-action);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition:
+    opacity var(--ek-duration-fast) var(--ek-easing-standard),
+    transform var(--ek-duration-base) var(--ek-easing-standard);
+}
+
+.ek-help-center__cat-link:hover,
+.ek-help-center__cat-link:focus-visible {
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-content-strong);
+}
+
+.ek-help-center__cat-link:hover .ek-help-center__cat-link-doc {
+  color: var(--ek-color-action);
+}
+
+.ek-help-center__cat-link:hover .ek-help-center__cat-link-go,
+.ek-help-center__cat-link:focus-visible .ek-help-center__cat-link-go {
+  opacity: 1;
+  transform: none;
+}
+
+.ek-help-center__cat-link:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+}
+
+.ek-help-center__cat-all {
+  margin: auto var(--ek-space-4) var(--ek-space-3);
+}
+
+.ek-help-center__cat {
+  transition:
+    border-color var(--ek-duration-fast) var(--ek-easing-standard),
+    box-shadow var(--ek-duration-base) var(--ek-easing-standard);
+}
+
+.ek-help-center__cat:hover {
+  border-color: var(--ek-color-border-default);
+  box-shadow: var(--ek-shadow-raised);
 }
 
 .ek-help-center__inline-link {
-  padding: 0;
-  font-size: inherit;
-  text-decoration: underline;
-}
-
-.ek-help-center__link:hover {
-  text-decoration: underline;
+  display: inline;
 }
 
 .ek-help-center__start-card:hover,
@@ -825,7 +902,8 @@ defineExpose({ initialize, activate: initialize })
 
 .ek-help-center__nav {
   position: sticky;
-  top: 0;
+  /* FR2 madde 3: çalışma alanı artık kaydırma kabı → konu ağacı okurken görünür kalır. */
+  top: var(--ek-space-4);
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-2);
@@ -943,19 +1021,6 @@ defineExpose({ initialize, activate: initialize })
 .ek-help-center__crumbs .v-icon {
   font-size: var(--ek-icon-sm);
   color: var(--ek-color-content-subtle);
-}
-
-.ek-help-center__crumb {
-  padding: 2px 0;
-  border: 0;
-  background: transparent;
-  color: var(--ek-color-action);
-  font: inherit;
-  cursor: pointer;
-}
-
-.ek-help-center__crumb:hover {
-  text-decoration: underline;
 }
 
 .ek-help-center__article-head {

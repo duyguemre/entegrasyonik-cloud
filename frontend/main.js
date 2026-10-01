@@ -11,7 +11,7 @@ function createWindow () {
     }
   })
 
-  win.loadURL('http://localhost:3000');
+  win.loadURL('http://localhost:3020');
 
 /*   win.loadFile(path.join(__dirname, "dist/index.html")); */
 /*   win.loadFile('dist/index.html') */
@@ -44,7 +44,7 @@ const server = express();
 server.use(express.static(path.join(__dirname, 'dist')));
 
 // Start server
-const port = 3000; // Change port if needed
+const port = 3020; // Change port if needed
 server.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });

@@ -9,6 +9,7 @@ import path from 'node:path'
 import zlib from 'node:zlib'
 import { fileURLToPath } from 'node:url'
 import { parseHeadersFile, pathMatches } from '../src/lib/headers.mjs'
+import { parseRedirectsFile } from '../src/lib/redirects.mjs'
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -28,6 +29,9 @@ export function startServer({ dir, port, host = '127.0.0.1' }) {
   const root = path.resolve(dir)
   const headersFile = path.join(root, '_headers')
   const blocks = fs.existsSync(headersFile) ? parseHeadersFile(fs.readFileSync(headersFile, 'utf8')) : []
+  // S22: `dist/_redirects` (kalıcı yönlendirmeler) üretimdeki gibi uygulanır.
+  const redirectsFile = path.join(root, '_redirects')
+  const redirects = fs.existsSync(redirectsFile) ? parseRedirectsFile(fs.readFileSync(redirectsFile, 'utf8')) : []
   const cache = new Map()
 
   const resolveFile = (pathname) => {
@@ -43,6 +47,12 @@ export function startServer({ dir, port, host = '127.0.0.1' }) {
 
   const server = http.createServer((req, res) => {
     const url = new URL(req.url ?? '/', 'http://x')
+    const redirect = redirects.find((r) => r.from === url.pathname)
+    if (redirect) {
+      res.writeHead(redirect.status, { Location: redirect.to + url.search, 'Content-Length': 0 })
+      res.end()
+      return
+    }
     let file = resolveFile(url.pathname)
     let status = 200
     if (!file) {

@@ -17,6 +17,8 @@ import {
   type ShortcutDefinition,
   type ShortcutReference,
 } from '@entegrasyonik/ui/shortcuts'
+import { isEditableTarget, type ShortcutKeyEvent } from '@entegrasyonik/ui/shortcuts'
+import { CHAT_PRODUCT } from '@entegrasyonik/chat/brand'
 
 export type KeyPlatform = 'mac' | 'win'
 
@@ -73,12 +75,56 @@ export function fromReference(ref: ShortcutReference): CatalogShortcut {
   }
 }
 
+// ---- Uygulama düzeyi kabuk kısayolları (ui paketindeki `SHORTCUTS` kaydına DOKUNMADAN; ADR-0034 / CHAT_UI_CONTRACT §7.1) ----
+
+export type AppShortcutId = 'otopilotToggle'
+
+/**
+ * Uygulamaya özgü kabuk kısayolları: `@entegrasyonik/ui/shortcuts` kaydı ortak (backoffice de kullanır) ve paralel
+ * işler orada; Otopilot girişi bu yüzden burada durur. Diyalog kataloğuna kabuk kısayolu olarak düşer; eşleyici
+ * `matchAppShortcut`. Çakışma testi: `tests/shell-shortcuts.test.ts` (ui kaydı + bileşen başvuruları).
+ * Ctrl/⌘+J: tarayıcıda "İndirilenler" kısayoludur ama sayfa tarafından ezilebilir (Ctrl+W/T/N gibi ayrılmış değil);
+ * sohbet paneli için yaygın beklenen tuş. Metin alanındayken de çalışır (composer'dan paneli kapatmak için).
+ */
+export const APP_SHORTCUTS: readonly CatalogShortcut[] = [
+  {
+    id: 'otopilotToggle',
+    keys: ['Ctrl', 'J'],
+    aliases: [],
+    label: `${CHAT_PRODUCT.name} panelini aç / kapat`,
+    description: `${CHAT_PRODUCT.name} sohbet panelini açar; açıksa kapatır ve odağı geri verir.`,
+    category: 'view',
+    context: DEFAULT_CONTEXT,
+    scope: 'global',
+    allowInEditable: true,
+    sequence: false,
+    shortLabel: CHAT_PRODUCT.name,
+  },
+]
+
+export function appShortcutKeys(id: AppShortcutId): string[] {
+  return [...(APP_SHORTCUTS.find((s) => s.id === id)?.keys ?? [])]
+}
+
+/** Uygulama kısayolu eşleyicisi (ui `matchShortcut` ile aynı kurallar: Ctrl ≡ ⌘, `code` düzen bağımsız). */
+export function matchAppShortcut(event: ShortcutKeyEvent, target?: EventTarget | null): AppShortcutId | undefined {
+  const mod = event.ctrlKey || event.metaKey
+  const key = event.key.length === 1 ? event.key.toLocaleLowerCase('en-US') : event.key
+  if (mod && !event.altKey && !event.shiftKey && (key === 'j' || event.code === 'KeyJ')) {
+    const def = APP_SHORTCUTS.find((s) => s.id === 'otopilotToggle')
+    if (isEditableTarget(target) && !def?.allowInEditable) return undefined
+    return 'otopilotToggle'
+  }
+  return undefined
+}
+
 /** Kayıtlardan diyalog kataloğu: kategori sırası `SHORTCUT_CATEGORIES`, kategori içinde önce kabuk sonra bileşen kısayolları. */
 export function buildShortcutCatalog(
   global: readonly ShortcutDefinition[] = SHORTCUTS,
   contextual: readonly ShortcutReference[] = CONTEXT_SHORTCUTS,
+  app: readonly CatalogShortcut[] = APP_SHORTCUTS,
 ): CatalogShortcut[] {
-  const all = [...global.map(fromDefinition), ...contextual.map(fromReference)]
+  const all = [...global.map(fromDefinition), ...app, ...contextual.map(fromReference)]
   const order = new Map(SHORTCUT_CATEGORIES.map((c, i) => [c.id, i]))
   return all
     .map((item, index) => ({ item, index }))

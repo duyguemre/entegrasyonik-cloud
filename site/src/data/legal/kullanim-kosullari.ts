@@ -28,7 +28,7 @@ export const kullanimKosullari: LegalDoc = {
       blocks: [
         {
           type: 'p',
-          text: 'Entegrasyonik, e-ticaret satıcılarının pazaryeri, e-ticaret platformu ve muhasebe/ERP sistemlerindeki ürün, stok, fiyat, sipariş ve benzeri işlemlerini tek bir yönetim panelinden yürütmesine yardımcı olan, tarayıcı üzerinden kullanılan bir yazılım hizmetidir (SaaS). Desteklenen entegrasyonların ve her birinin kapsamının güncel hâli sitede ve uygulamada yer alır; kapsam zaman içinde değişebilir.',
+          text: 'Entegrasyonik, e-ticaret satıcılarının pazaryeri, e-ticaret platformu ve muhasebe/ERP sistemlerindeki ürün, stok, fiyat, sipariş ve benzeri işlemlerini tek bir yönetim panelinden yürütmesine yardımcı olan, tarayıcı üzerinden kullanılan bir platform hizmetidir (SaaS). Desteklenen entegrasyonların ve her birinin kapsamının güncel hâli sitede ve uygulamada yer alır; kapsam zaman içinde değişebilir.',
         },
       ],
     },

@@ -9,12 +9,12 @@ export enum ClaimInternalStatusEnum {
 }
 
 export const CLAIM_INTERNAL_STATUS_LABELS: Record<ClaimInternalStatusEnum, string> = {
-    [ClaimInternalStatusEnum.WAITING]: 'İade Talebi Oluşturuldu',
+    [ClaimInternalStatusEnum.WAITING]: 'Yeni Talep',
     [ClaimInternalStatusEnum.UNDER_REVIEW]: 'İncelemede',
-    [ClaimInternalStatusEnum.APPROVED]: 'Tamamlandı',
-    [ClaimInternalStatusEnum.REJECTED]: 'Tamamlandı',
+    [ClaimInternalStatusEnum.APPROVED]: 'Onaylandı',
+    [ClaimInternalStatusEnum.REJECTED]: 'Reddedildi',
     [ClaimInternalStatusEnum.CANCELLED]: 'İptal Edildi',
-    [ClaimInternalStatusEnum.DISPUTED]: 'İncelemede',
+    [ClaimInternalStatusEnum.DISPUTED]: 'İtirazda',
     [ClaimInternalStatusEnum.COMPLETED]: 'Tamamlandı'
 };
 
@@ -22,7 +22,7 @@ export const CLAIM_INTERNAL_STATUS_COLORS: Record<ClaimInternalStatusEnum, strin
     [ClaimInternalStatusEnum.WAITING]: 'info',
     [ClaimInternalStatusEnum.UNDER_REVIEW]: 'warning',
     [ClaimInternalStatusEnum.APPROVED]: 'success',
-    [ClaimInternalStatusEnum.REJECTED]: 'success',
+    [ClaimInternalStatusEnum.REJECTED]: 'error',
     [ClaimInternalStatusEnum.CANCELLED]: 'neutral',
     [ClaimInternalStatusEnum.DISPUTED]: 'warning',
     [ClaimInternalStatusEnum.COMPLETED]: 'success'

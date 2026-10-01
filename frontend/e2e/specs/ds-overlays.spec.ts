@@ -143,7 +143,7 @@ test.describe('DS-v2 A2 — tehlikeli onay diyaloğu (ürün silme)', () => {
     await gotoAuthed(page)
     await openScreen(page, 'ProductListView')
     const row = page.locator('.productListView tbody tr').first()
-    await expect(row.getByRole('button', { name: 'Ürünü düzenle' })).toBeVisible()
+    await expect(row.getByRole('button', { name: 'Ürünü düzenle', exact: true })).toBeVisible()
     const deleteButton = row.getByRole('button', { name: 'Ürünü sil' })
     await deleteButton.click()
 

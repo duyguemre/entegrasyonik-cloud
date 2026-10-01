@@ -5,7 +5,10 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { ACCOUNT } from '../support/session'
 
-const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'docs', 'review')
+// BO_REVIEW_OUT: çıktı klasörü (backoffice/ köküne göre; varsayılan docs/review). BO_REVIEW_TAG: dosya adı öneki (ör. once/sonra).
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
+const OUT = join(ROOT, process.env.BO_REVIEW_OUT ?? join('docs', 'review'))
+const TAG = process.env.BO_REVIEW_TAG ? `${process.env.BO_REVIEW_TAG}-` : ''
 const CONFIGS = [
   { theme: 'light', width: 1440 },
   { theme: 'dark', width: 1440 },
@@ -17,8 +20,11 @@ test.skip(!process.env.BO_REVIEW, 'BO_REVIEW=1 ile koşar')
 test.setTimeout(240_000)
 
 async function shot(page: Page, name: string, cfg: (typeof CONFIGS)[number], fullPage = true) {
+  // Tam yükleme (goto) açılış ekranından geçer: kabuk + iskeletler bitsin.
+  await page.waitForLoadState('networkidle')
+  await expect(page.locator('.v-skeleton-loader, .bo-boot, .ek-boot')).toHaveCount(0, { timeout: 10_000 }).catch(() => undefined)
   await page.waitForTimeout(700)
-  await page.screenshot({ path: join(OUT, `${name}-${cfg.theme}-${cfg.width}.png`), fullPage, animations: 'disabled' })
+  await page.screenshot({ path: join(OUT, `${TAG}${name}-${cfg.theme}-${cfg.width}.png`), fullPage, animations: 'disabled' })
 }
 
 async function login(page: Page, email: string) {
@@ -44,6 +50,17 @@ for (const cfg of CONFIGS) {
     await shot(page, '02c-kurtarma-kodlari', cfg)
     await page.evaluate(() => (window as unknown as { __boMock: { expireSession(): void } }).__boMock.expireSession())
 
+    // Açılış ekranı (EkBootScreen): 200 ms gecikmeyle belirir; sahte API gecikmesi yetmezse kare atlanır.
+    {
+      const bootPage = await ctx.newPage()
+      await bootPage.addInitScript(() => ((window as unknown as { __boMockLatency: number[] }).__boMockLatency = [2500, 2500]))
+      await bootPage.goto('/genel-bakis')
+      await bootPage.locator('[data-testid="boot-screen"].is-visible').waitFor({ timeout: 5000 })
+      await bootPage.waitForTimeout(500)
+      await bootPage.screenshot({ path: join(OUT, `${TAG}00-acilis-${cfg.theme}-${cfg.width}.png`) })
+      await bootPage.close()
+    }
+
     await page.goto('/giris')
     await expect(page.getByRole('heading', { name: 'Yönetim girişi' })).toBeVisible()
     await shot(page, '01-giris', cfg)
@@ -61,6 +78,26 @@ for (const cfg of CONFIGS) {
       await shot(page, '03b-menu', cfg, false)
       await page.keyboard.press('Escape')
     }
+
+    // Genel bakış: bölüm düşmesi (degraded) + Redis yok
+    await page.evaluate(() => {
+      const m = (window as unknown as { __boMock: { degradeSection(k: string, e?: string): void; setDegraded(v: boolean): void } }).__boMock
+      m.degradeSection('red', 'timeout')
+      m.setDegraded(true)
+    })
+    await page.getByRole('button', { name: 'Yenile' }).click()
+    await shot(page, '03c-genel-bakis-kismi-bozulma', cfg)
+    await page.evaluate(() => {
+      const m = (window as unknown as { __boMock: { degradeSection(k: null): void; setDegraded(v: boolean): void } }).__boMock
+      m.degradeSection(null)
+      m.setDegraded(false)
+    })
+
+    // Komut paleti
+    await page.keyboard.press('Control+k')
+    await page.getByRole('combobox', { name: /Ekran, müşteri numarası/ }).fill('kuy')
+    await shot(page, '08-komut-paleti', cfg, false)
+    await page.keyboard.press('Escape')
 
     await page.goto('/musteriler')
     await page.waitForTimeout(900)
@@ -93,6 +130,11 @@ for (const cfg of CONFIGS) {
     await page.getByRole('tab', { name: /Olay akışı/ }).click()
     await page.waitForTimeout(900)
     await shot(page, '06d-olay-akisi', cfg, false)
+
+    await page.goto('/motor')
+    await shot(page, '09-yakinda-motor', cfg)
+    await page.goto('/genel-bakis?env=production')
+    await shot(page, '10-uretim-ortami', cfg, false)
 
     await page.goto('/denetim')
     await page.waitForTimeout(900)

@@ -63,8 +63,8 @@ describe('sahte API ↔ sözleşme', () => {
   it('getLifecycle / getSystemHealth', async () => {
     const api = await signedIn()
     conforms(await api.call('BackofficeTenantService/getLifecycle', { tid: 103 }) as unknown as Record<string, unknown>, {
-      tid: 'number', status: 'string', planCode: 'string', 'trialEndsAt?': 'string', 'deletionScheduledAt?': 'string', provisioning: 'array', 'lastActivityAt?': 'string', usage: 'object',
-    }, 'getLifecycle')
+      tid: 'number', status: 'string', name: 'string', lastSuccessfulOrderSync: 'string', trial: 'object', deletion: 'object', provisioning: 'object', recentEvents: 'array',
+    }, 'getLifecycle (B2)')
     const h = await api.call('AdminService/getSystemHealth', { timeFrame: 'DAY' })
     expect(Object.keys(h.infrastructure.queues).sort()).toEqual(['export', 'import', 'orderSync'])
     conforms(h.infrastructure.redis, { usedMemory: 'string', connectedClients: 'string', uptime: 'string', version: 'string' }, 'redis')
@@ -124,5 +124,33 @@ describe('sahte API ↔ sözleşme', () => {
     expect(res.items.some((a) => Object.keys(a.meta ?? {}).some((k) => k.startsWith('b_')))).toBe(true)
     const bo = await api.call('BackofficeAuditService/search', { range: '7d', surface: 'backoffice' })
     expect(bo.items.every((a) => a.surface === 'backoffice')).toBe(true)
+  })
+
+  it('genel bakış (B1): getHealth bölüm şekilleri; tek bölüm düşünce yalnız o bölüm degraded', async () => {
+    const server = new MockAdminServer()
+    const api = createAdminApi({ baseURL: '/admin-api', adapter: createMockAdapter({ server }) })
+    await api.call('BackofficeAuthService/login', { email: MOCK_ACCOUNTS.enrolled.email, password: MOCK_ACCOUNTS.password })
+    await api.call('BackofficeAuthService/verifyTotp', { code: '123456' })
+    const h = await api.call('BackofficeOverviewService/getHealth')
+    conforms(h as unknown as Record<string, unknown>, { generatedAt: 'string', status: 'string', degradedSections: 'array', dependencies: 'object', pods: 'object', red: 'object', queues: 'object', intake: 'object', issues: 'object' }, 'getHealth')
+    expect(h.generatedAt).toMatch(ISO)
+    expect(h.status).toBe('ok')
+    conforms(h.dependencies as unknown as Record<string, unknown>, { status: 'string', ready: 'boolean', role: 'string', mongo: 'string', redis: 'string' }, 'dependencies')
+    conforms(h.red as unknown as Record<string, unknown>, { status: 'string', windowMinutes: 'number', from: 'string', requests: 'number', byStatusClass: 'object', errors5xx: 'number', errorRate: 'number', requestsPerMinute: 'number', durationAvgMs: 'number', durationP95Ms: 'number', durationP95Overflow: 'boolean', scope: 'string', 'note?': 'string' }, 'red')
+    if (h.queues.status !== 'ok') throw new Error('queues degraded')
+    conforms(h.queues.items[0] as unknown as Record<string, unknown>, { name: 'string', available: 'boolean', backlog: 'number', active: 'number', failed: 'number', dlqPending: 'number' }, 'queues.items')
+    conforms(h.issues as unknown as Record<string, unknown>, { status: 'string', open: 'number', newLast24h: 'number' }, 'issues')
+
+    server.degradeSection('red', 'timeout')
+    server.setDegraded(true)
+    const d = await api.call('BackofficeOverviewService/getHealth')
+    expect(d.status).toBe('degraded')
+    expect(d.degradedSections).toEqual(['red'])
+    expect(d.red).toEqual({ status: 'degraded', error: 'timeout' })
+    expect(d.pods.status).toBe('ok')
+    // Redis düşük: bağımlılık bölümü yine 'ok' (bilgi geçerli), kuyruk sayaçları null.
+    expect(d.dependencies).toMatchObject({ status: 'ok', ready: false, redis: 'fail' })
+    if (d.queues.status !== 'ok') throw new Error('queues degraded')
+    expect(d.queues.items[0]).toMatchObject({ available: false, backlog: null })
   })
 })

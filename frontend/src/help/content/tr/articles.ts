@@ -61,7 +61,7 @@ export const ARTICLES_TR: HelpArticle[] = [
   },
 
   // Kanıt: frontend/src/views/secure/integrations/MarketplaceView.vue (Hızlı Başlangıç Rehberi, IntegrationPlatformRail, IntegrationCapabilityChips),
-  //        frontend/src/components/integrations/marketplace/TrendyolComponent.vue (sekmeler "Api Bilgileri"/"Varsayılan Bilgiler", "Entegrasyon Durumu"),
+  //        frontend/src/components/integrations/marketplace/TrendyolComponent.vue (sekmeler "API Bilgileri"/"Varsayılan Bilgiler", "Entegrasyon Durumu"),
   //        frontend/src/components/integrations/IntegrationFormFrame.vue (Kaydet), site/src/data/connect.ts (COMMON_STEPS/WHERE),
   //        frontend/src/help/channels.ts, frontend/src/plugins/locales/tr.json (integrationCoverage)
   {
@@ -79,7 +79,7 @@ export const ARTICLES_TR: HelpArticle[] = [
           'İlgili kanalın satıcı veya mağaza panelinden API kimlik bilgilerinizi edinin. Hangi bilgilerin gerektiği **Kanal bağlantı adımları** makalesindeki tabloda yer alır.',
           'Sol menüden **Entegrasyonlar** bölümünü ve kanal türünü (Pazaryeri, E-Ticaret veya ERP) açın.',
           'Üstteki kanal simgelerinden bağlayacağınız kanalı seçin.',
-          '**Api Bilgileri** sekmesinde kimlik bilgilerini girin ve **Entegrasyon Durumu** anahtarını açın.',
+          '**API Bilgileri** sekmesinde kimlik bilgilerini girin ve **Entegrasyon Durumu** anahtarını açın.',
           '**Varsayılan Bilgiler** sekmesinde kargo firması, kargo süresi, sevkiyat ve iade adresi gibi kanalın istediği varsayılanları doldurun.',
           '**Kaydet**’e basın. Eksik bir alan varsa ekran hangi bilginin gerektiğini belirtir.',
         ],
@@ -355,18 +355,27 @@ export const ARTICLES_TR: HelpArticle[] = [
     related: ['app-bulk-actions', 'app-workspace-tabs', 'ord-approve-cancel'],
   },
 
-  // Kanıt: frontend/src/stores/theme.ts (toggleTheme gövdesi boş/yorum satırı), frontend/src/plugins/vuetify.ts (defaultTheme: 'lightTheme'),
-  //        frontend/src/components/layout/ApplicationBar.vue (Yardım/Hesap menüsünde tema seçeneği yok), frontend/src/navigation/shortcuts.ts (headerToggle, focusMode, sidebarToggle)
+  // Kanıt: frontend/src/stores/theme.ts (appTheme = createThemeController('ek-theme')), frontend/public/theme-boot.js (ilk kare),
+  //        frontend/src/components/layout/ApplicationBar.vue (Hesap menüsü → Görünüm: Açık / Koyu / Sistem), frontend/src/navigation/shortcuts.ts (headerToggle, focusMode, sidebarToggle)
   {
     id: 'app-theme',
     category: 'using-the-app',
     order: 8,
     title: 'Açık ve koyu görünüm',
-    summary: 'Uygulama şu an yalnız açık görünümle çalışır; ekranı rahatlatmak için kullanabileceğiniz seçenekler.',
-    keywords: ['tema', 'koyu tema', 'karanlık mod', 'dark mode', 'açık tema', 'görünüm'],
+    summary: 'Uygulamayı açık, koyu veya işletim sisteminizin ayarını izleyen görünümde kullanın.',
+    keywords: ['tema', 'koyu tema', 'karanlık mod', 'dark mode', 'açık tema', 'görünüm', 'sistem teması'],
     body: [
-      { type: 'p', text: 'Entegrasyonik şu an **yalnız açık görünümle** çalışır. Uygulamada koyu görünüme geçiş seçeneği bulunmaz ve işletim sisteminizin koyu tema ayarı uygulamanın renklerini değiştirmez.' },
-      { type: 'p', text: 'Ekran alanını ve odağınızı düzenlemek için bugün kullanabileceğiniz seçenekler:' },
+      { type: 'p', text: 'Sağ üstteki **hesap menüsünü** açın; **Görünüm** bölümünde üç seçenek bulunur:' },
+      {
+        type: 'list',
+        items: [
+          '**Açık:** Uygulama her zaman açık renklerle görünür.',
+          '**Koyu:** Uygulama her zaman koyu renklerle görünür; loş ortamda göz yorgunluğunu azaltır.',
+          '**Sistem:** İşletim sisteminizin ya da tarayıcınızın açık/koyu ayarını izler; o ayar değişince uygulama da kendiliğinden değişir. İlk açılışta bu seçenek geçerlidir.',
+        ],
+      },
+      { type: 'p', text: 'Seçiminiz bu tarayıcıda saklanır ve uygulama bir sonraki açılışta doğrudan seçtiğiniz görünümle başlar. Başka bir bilgisayar veya tarayıcıda seçimi ayrıca yapmanız gerekir.' },
+      { type: 'p', text: 'Ekran alanını ve odağınızı düzenlemek için ayrıca şu seçenekleri kullanabilirsiniz:' },
       {
         type: 'list',
         items: [

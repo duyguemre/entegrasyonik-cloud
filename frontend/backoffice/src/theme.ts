@@ -1,52 +1,23 @@
 /**
- * Tema denetleyicisi: ortak paketteki tercih kuralları + Vuetify tema adı + html öznitelikleri tek yerde.
+ * Tema denetleyicisi: ortak paketteki fabrika (`createThemeController`) backoffice anahtarıyla.
  * İlk kareyi public/theme-boot.js boyar; bu modül aynı kuralla devralır ve değişiklikleri uygular.
  */
-import { computed, ref } from 'vue'
 import type { ThemeInstance } from 'vuetify'
-import {
-  THEME_NAMES,
-  THEME_STORAGE_KEYS,
-  applyThemeToDocument,
-  queryOverride,
-  readPreference,
-  resolveTheme,
-  systemPrefersDark,
-  writePreference,
-  type ThemeMode,
-  type ThemePreference,
-} from '@entegrasyonik/ui/theme'
+import { THEME_STORAGE_KEYS, createThemeController, type ThemeMode, type ThemePreference } from '@entegrasyonik/ui/theme'
 
-const KEY = THEME_STORAGE_KEYS.backoffice
-const preference = ref<ThemePreference>(readPreference(KEY))
-const prefersDark = ref(systemPrefersDark())
-const override = typeof location === 'undefined' ? null : queryOverride(location.search)
+const controller = createThemeController(THEME_STORAGE_KEYS.backoffice)
 
-export const themeMode = computed<ThemeMode>(() => resolveTheme(preference.value, prefersDark.value, override))
-export const themePreference = computed(() => preference.value)
-
-let vuetifyTheme: ThemeInstance | null = null
-
-function apply() {
-  applyThemeToDocument(themeMode.value)
-  if (vuetifyTheme) vuetifyTheme.global.name.value = THEME_NAMES[themeMode.value]
-}
+export const themeMode = controller.mode
+export const themePreference = controller.preference
 
 export function initialThemeMode(): ThemeMode {
-  return themeMode.value
+  return controller.initialMode()
 }
 
 export function bindTheme(theme: ThemeInstance) {
-  vuetifyTheme = theme
-  apply()
-  window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-    prefersDark.value = e.matches
-    apply()
-  })
+  controller.bind(theme)
 }
 
 export function setThemePreference(next: ThemePreference) {
-  preference.value = next
-  writePreference(KEY, next)
-  apply()
+  controller.setPreference(next)
 }

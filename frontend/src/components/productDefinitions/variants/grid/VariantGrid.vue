@@ -13,11 +13,11 @@
 <template>
   <div class="vg" :class="{ 'vg--narrow': narrow }" ref="rootRef">
     <div class="vg-scroll" ref="scrollRef" @scroll.passive="onScroll">
-      <table class="vg-table" role="grid" :aria-label="ariaLabel" :aria-rowcount="rows.length + 1" aria-colcount="11"
+      <table class="vg-table" role="grid" :aria-label="ariaLabel" :aria-rowcount="rows.length + 1" aria-colcount="10"
         aria-multiselectable="true" @keydown="onKeydown" @copy="onCopy" @paste="onPaste">
         <colgroup>
           <col class="vg-c-sel" /><col class="vg-c-group" /><col class="vg-c-code" /><col class="vg-c-barcode" />
-          <col class="vg-c-opts" /><col class="vg-c-money" /><col class="vg-c-money" /><col class="vg-c-chan" />
+          <col class="vg-c-money" /><col class="vg-c-money" /><col class="vg-c-chan" />
           <col class="vg-c-int" /><col class="vg-c-shelf" /><col class="vg-c-actions" />
         </colgroup>
         <thead>
@@ -36,11 +36,11 @@
               </button>
               <span v-else>{{ h.label }}</span>
             </th>
-            <th class="vg-th vg-sticky-end" aria-colindex="11" scope="col"><span class="ek-sr-only">İşlemler</span></th>
+            <th class="vg-th vg-sticky-end" aria-colindex="10" scope="col"><span class="ek-sr-only">İşlemler</span></th>
           </tr>
         </thead>
         <tbody>
-          <tr v-if="win.start > 0" class="vg-pad vg-pad--top" aria-hidden="true"><td colspan="11"></td></tr>
+          <tr v-if="win.start > 0" class="vg-pad vg-pad--top" aria-hidden="true"><td colspan="10"></td></tr>
           <tr v-for="r in windowRows" :key="r.key" role="row" class="vg-row"
             :class="{ 'is-picked': isPicked(r.variant), 'is-group-start': r.groupStart, 'is-group-odd': r.groupIndex % 2 === 1 }"
             :aria-rowindex="r.index + 2" :aria-selected="isPicked(r.variant)">
@@ -59,13 +59,16 @@
                 <button type="button" class="vg-thumb" :class="{ 'is-empty': !imageCount(r.variant) }"
                   :aria-label="`Varyant resimleri: ${r.variant.stockcode || rowTitle(r.variant)} — ${imageCount(r.variant) ? `${imageCount(r.variant)} görsel` : 'görsel yok'}`"
                   tabindex="-1" @mousedown.stop @click.stop="emit('images', r.variant)">
-                  <ProductVariantImageComponent v-if="imageCount(r.variant)" :productInfoForm="productInfoForm" :height="36"
-                    :imageId="r.variant.images[0]" />
-                  <v-icon v-else icon="mdi-image-plus-outline" aria-hidden="true" />
+                  <GalleryThumb v-if="imageCount(r.variant)" :src="thumbSrc(r.variant)" />
+                  <span v-else class="vg-thumb__add"><v-icon icon="mdi-image-plus-outline" aria-hidden="true" /><span>Ekle</span></span>
                   <span v-if="imageCount(r.variant) > 1" class="vg-thumb__n ek-num" aria-hidden="true">{{ imageCount(r.variant) }}</span>
                 </button>
-                <CellBody :sheet="sheet" :r="r.index" :c="0" :value="r.variant.stockcode" kind="text" strong
-                  :issue="issueOf(r, 0)" :label="`Stok kodu, ${rowTitle(r.variant)}`" />
+                <span class="vg-code__text">
+                  <CellBody :sheet="sheet" :r="r.index" :c="0" :value="r.variant.stockcode" kind="text" strong
+                    :issue="issueOf(r, 0)" :label="`Stok kodu, ${rowTitle(r.variant)}`" />
+                  <!-- FR2-PFORM 24: seçenekler ayrı sütun yerine kodun altında (tablo sığar, satır kendini anlatır) -->
+                  <span class="vg-code__opts" :title="optionLine(r.variant)">{{ optionLine(r.variant) }}</span>
+                </span>
               </div>
             </td>
             <td v-bind="cellAttrs(r, 1)" class="vg-td vg-cell vg-mono" :class="cellClass(r, 1)">
@@ -73,20 +76,13 @@
                 :issue="issueOf(r, 1)" :label="`Barkod, ${rowTitle(r.variant)}`" />
             </td>
 
-            <td class="vg-td vg-opts" aria-colindex="5">
-              <span v-for="o in optionChips(r.variant)" :key="o.id" class="vg-chip">
-                <span class="vg-chip__k">{{ o.choice }}</span>{{ o.value }}
-              </span>
-              <span v-if="!optionChips(r.variant).length" class="vg-muted">—</span>
-            </td>
-
             <!-- fiyatlar -->
             <template v-if="r.variant.prices?.isPlatformBasedPrice">
-              <td class="vg-td vg-num vg-chanrange" colspan="2" aria-colindex="6">
+              <td class="vg-td vg-num vg-chanrange" colspan="2" aria-colindex="5">
                 <button type="button" class="vg-rangebtn" @click="emit('channelPrices', r.variant)"
                   :aria-label="`Kanal fiyatlarını düzenle: ${rowTitle(r.variant)}`">
                   <span class="vg-rangebtn__val ek-num">{{ priceRange(r.variant, 'salePrice') }}</span>
-                  <span class="vg-rangebtn__sub">Kanal bazında · düzenle</span>
+                  <span class="vg-rangebtn__sub">Kanal fiyatları · düzenle</span>
                 </button>
               </td>
             </template>
@@ -100,7 +96,7 @@
                   :issue="issueOf(r, 3)" :label="`Piyasa fiyatı, ${rowTitle(r.variant)}`" />
               </td>
             </template>
-            <td class="vg-td vg-chan" aria-colindex="8">
+            <td class="vg-td vg-chan" aria-colindex="7">
               <v-checkbox-btn density="compact" :model-value="!!r.variant.prices?.isPlatformBasedPrice"
                 :aria-label="`${$t('productDefinitions.product.platformPrice')}: ${rowTitle(r.variant)}`"
                 @update:model-value="(on: boolean | null) => setChannelBased(r.variant, !!on)" />
@@ -115,7 +111,7 @@
                 :issue="issueOf(r, 5)" :label="`Raf, ${rowTitle(r.variant)}`" placeholder="—" />
             </td>
 
-            <td class="vg-td vg-sticky-end vg-actions" aria-colindex="11">
+            <td class="vg-td vg-sticky-end vg-actions" aria-colindex="10">
               <EkTooltip text="Özellikler ve kanal bilgileri">
                 <v-btn icon variant="text" size="small" density="comfortable" class="vg-act"
                     aria-label="Varyantı düzenle" @click="emit('edit', r.variant)"><v-icon icon="mdi-pencil-outline" size="18" /></v-btn>
@@ -126,7 +122,7 @@
               </EkTooltip>
             </td>
           </tr>
-          <tr v-if="win.end < rows.length" class="vg-pad vg-pad--bottom" aria-hidden="true"><td colspan="11"></td></tr>
+          <tr v-if="win.end < rows.length" class="vg-pad vg-pad--bottom" aria-hidden="true"><td colspan="10"></td></tr>
         </tbody>
       </table>
       <div v-if="!rows.length" class="vg-empty">
@@ -142,7 +138,10 @@ import { computed, defineComponent, h, nextTick, onBeforeUnmount, onMounted, ref
 import { EkTooltip } from '@entegrasyonik/ui/components'
 import { formatMoney } from '@entegrasyonik/ui/format'
 import { useChoicesStore } from '@/stores/choicesStore'
-import ProductVariantImageComponent from '../ProductVariantImageComponent.vue'
+import GalleryThumb from '../../images/GalleryThumb.vue'
+import { useProductImageUrl } from '@/composables/useProductImageUrl'
+import { useIntegrationStore } from '@/stores/integrationStore'
+import { channelRows } from '../channelPriceModel'
 import VariantGroupCell from '../VariantGroupCell.vue'
 import { useVariantGrouping } from '../useVariantGrouping'
 import { variantImageIds } from '../../images/galleryModel'
@@ -152,7 +151,8 @@ import {
 } from './variantSheet'
 import { useVariantSheet, type VariantSheet } from './useVariantSheet'
 
-const ROW_H = 56
+// FR2-PFORM 24/29: satır 56 → 72px (küçük resim 56px, okunur); sanal kaydırma aynı sabitle.
+const ROW_H = 72
 
 const props = defineProps<{
   variants: any[]
@@ -168,6 +168,15 @@ const emit = defineEmits<{
 }>()
 /** Galeride karşılığı olan görsel sayısı (Faz 3 B2 — silinmiş görsele işaret eden referans sayılmaz). */
 const imageCount = (v: any) => (v?.images?.length ? variantImageIds(v, props.productInfoForm?.images ?? []).length : 0)
+const productImageUrl = useProductImageUrl()
+/** Varyantın ilk (galeride karşılığı olan) görseli — galeriyle aynı görsel kutusu (GalleryThumb, `contain`). */
+function thumbSrc(v: any) {
+  const gallery = props.productInfoForm?.images ?? []
+  const id = variantImageIds(v, gallery)[0]
+  if (typeof id === 'string' && id.startsWith('http')) return id
+  const img = gallery.find((x: any) => x._id === id)
+  return img ? productImageUrl(img, props.productInfoForm, { thumbnail: true }) : undefined
+}
 
 const choicesStore = useChoicesStore()
 
@@ -215,6 +224,11 @@ const rowVariants = computed(() => ordered.value)
 
 const groupTitle = computed(() => grouping.groupTitle(props.variants))
 const rowTitle = (v: any) => (v.choices || []).map((c: any) => valueTitle(c.choiceValueId)).filter(Boolean).join(' / ') || v.stockcode || 'varyant'
+/** Grup dışındaki seçenekler tek satır: "Beden: M · Kumaş: Pamuk". */
+function optionLine(v: any) {
+  const chips = optionChips(v)
+  return chips.length ? chips.map((o: { choice: string; value: string }) => `${o.choice}: ${o.value}`).join(' · ') : 'Tek seçenek'
+}
 function optionChips(v: any) {
   return (v.choices || []).slice(1).map((c: any) => ({
     id: `${c.choiceId}:${c.choiceValueId}`,
@@ -226,12 +240,11 @@ function optionChips(v: any) {
 const dataHeads = [
   { idx: 3, label: 'Stok kodu', sortKey: 'stockcode' as SortKey, cls: 'vg-sticky vg-s-code' },
   { idx: 4, label: 'Barkod', sortKey: 'barcode' as SortKey, cls: '' },
-  { idx: 5, label: 'Seçenekler', sortKey: null, cls: '' },
-  { idx: 6, label: 'Satış fiyatı', sortKey: 'salePrice' as SortKey, cls: 'vg-th--num' },
-  { idx: 7, label: 'Piyasa fiyatı', sortKey: 'marketPrice' as SortKey, cls: 'vg-th--num' },
-  { idx: 8, label: 'Kanal fiyatı', sortKey: null, cls: 'vg-th--center' },
-  { idx: 9, label: 'Stok', sortKey: 'stock' as SortKey, cls: 'vg-th--num' },
-  { idx: 10, label: 'Raf', sortKey: null, cls: '' },
+  { idx: 5, label: 'Satış fiyatı', sortKey: 'salePrice' as SortKey, cls: 'vg-th--num' },
+  { idx: 6, label: 'Piyasa fiyatı', sortKey: 'marketPrice' as SortKey, cls: 'vg-th--num' },
+  { idx: 7, label: 'Kanal fiyatı', sortKey: null, cls: 'vg-th--center' },
+  { idx: 8, label: 'Stok', sortKey: 'stock' as SortKey, cls: 'vg-th--num' },
+  { idx: 9, label: 'Raf', sortKey: null, cls: '' },
 ]
 
 // ── sanal kaydırma ──
@@ -295,7 +308,7 @@ function cellAttrs(r: ViewRow, c: number): Record<string, any> {
   const issue = issueOf(r, c)
   return {
     role: 'gridcell',
-    'aria-colindex': [3, 4, 6, 7, 9, 10][c],
+    'aria-colindex': [3, 4, 5, 6, 8, 9][c],
     'aria-selected': sheet.isSelected(r.index, c),
     'aria-invalid': issue?.level === 'error' ? 'true' : undefined,
     tabindex: sheet.isActive(r.index, c) ? 0 : -1,
@@ -396,8 +409,12 @@ function setChannelBased(v: any, on: boolean) {
   v.prices = v.prices || {}
   v.prices.isPlatformBasedPrice = on
 }
+// FR2-PFORM 25: özel fiyatı olmayan kanal ana fiyatla gider (dönüştürücü `platforms[kod].prices || prices`) — aralığa dahil.
+const integrationStore = useIntegrationStore()
+const channelList = computed(() => [...(integrationStore.getClientMarketplaces() ?? []), ...(integrationStore.getClientECommerces() ?? [])]
+  .map((c: any) => ({ code: c.code, title: c.title || c.code })))
 function priceRange(v: any, field: 'salePrice' | 'marketPrice') {
-  const vals = Object.values(v.platforms || {}).map((p: any) => Number(p?.prices?.[field])).filter((n) => Number.isFinite(n) && n > 0)
+  const vals = channelRows(channelList.value, v).map((r) => (field === 'salePrice' ? r.sale : r.market)).filter((n) => Number.isFinite(n) && n > 0)
   if (!vals.length) return 'Fiyat girilmedi'
   const lo = Math.min(...vals); const hi = Math.max(...vals)
   return lo === hi ? formatMoney(lo) : `${formatMoney(lo)} – ${formatMoney(hi)}`
@@ -436,7 +453,7 @@ const CellBody = defineComponent({
       const s = p.sheet
       if (s.isEditing(p.r, p.c) && s.editing.value) {
         const ed = s.editing.value
-        return h('input', {
+        return h('span', { class: 'vg-edit' }, [h('input', {
           class: ['vg-input', { 'is-num': p.kind !== 'text' }],
           value: ed.draft,
           'aria-label': p.label,
@@ -446,7 +463,7 @@ const CellBody = defineComponent({
           spellcheck: false,
           onInput: (e: Event) => { if (s.editing.value) s.editing.value.draft = (e.target as HTMLInputElement).value },
           onBlur: () => { if (s.isEditing(p.r, p.c) && !s.commitEdit()) s.cancelEdit() },
-        })
+        }), ed.error ? h('span', { class: 'vg-edit__err', role: 'alert' }, ed.error) : null])
       }
       const empty = p.value === undefined || p.value === null || p.value === ''
       const text = empty ? p.placeholder : p.kind === 'money' ? formatMoney(Number(p.value)) : String(p.value)
@@ -464,17 +481,17 @@ const CellBody = defineComponent({
 
 <style scoped>
 .vg {
-  --vg-row: 56px;
+  --vg-row: 72px;
   --vg-head: 44px;
   --vg-w-sel: 44px;
-  --vg-w-group: 112px;
-  --vg-w-code: 180px;
+  --vg-w-group: 128px;
+  --vg-w-code: 252px;
   display: flex;
   flex-direction: column;
   min-height: 0;
   background: var(--ek-color-surface);
 }
-.vg--narrow { --vg-w-group: 96px; --vg-w-code: 176px; }
+.vg--narrow { --vg-w-group: 104px; --vg-w-code: 232px; }
 
 .vg-scroll {
   position: relative;
@@ -484,7 +501,7 @@ const CellBody = defineComponent({
 }
 .vg-table {
   width: 100%;
-  min-width: 1120px;
+  min-width: 1040px;
   border-collapse: separate;
   border-spacing: 0;
   table-layout: fixed;
@@ -595,75 +612,108 @@ const CellBody = defineComponent({
 .vg-cell.is-changed:not(.is-sel):not(.is-active) { background: var(--ek-color-highlight); }
 .vg-cell.is-error { box-shadow: inset 3px 0 0 var(--ek-color-error); }
 .vg-cell.is-error.is-active { box-shadow: inset 0 0 0 2px var(--ek-color-error); }
-.vg-cell.is-editing { padding: 0 var(--ek-space-2); }
+.vg-cell.is-editing { padding: 0 var(--ek-space-3); background: var(--ek-color-surface) !important; box-shadow: inset 0 0 0 2px var(--ek-color-action), var(--ek-shadow-raised); }
+.vg-cell.is-editing.is-error { box-shadow: inset 0 0 0 2px var(--ek-color-error), var(--ek-shadow-raised); }
+.vg-cell:not(.is-editing):not(.is-sel):hover { background: var(--ek-color-action-subtle) !important; cursor: text; }
 .vg-num { text-align: right; }
 .vg-mono { font-variant-numeric: tabular-nums; color: var(--ek-color-content-muted); }
 
 .vg-code { display: flex; align-items: center; gap: var(--ek-space-3); min-width: 0; }
+.vg-code__text { display: flex; flex: 1 1 auto; flex-direction: column; gap: 2px; min-width: 0; }
+.vg-code__opts {
+  overflow: hidden;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .vg-code :deep(.vg-val) { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .vg-thumb {
+  position: relative;
   flex: 0 0 auto;
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: 56px;
+  height: 56px;
+  padding: 0;
   overflow: hidden;
   border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-tile);
   background: var(--ek-color-surface-sunken);
   color: var(--ek-color-content-subtle);
-  cursor: pointer;
+  cursor: zoom-in;
+  transition: var(--ek-transition-colors);
 }
-.vg-thumb:hover { border-color: var(--ek-color-action-border); }
+.vg-thumb:hover { border-color: var(--ek-color-action-border); box-shadow: var(--ek-shadow-card); }
 .vg-thumb:focus-visible { outline: none; box-shadow: var(--ek-focus-ring); }
-.vg-thumb :deep(.v-icon) { font-size: 22px !important; }
-.vg-thumb { position: relative; }
 .vg-thumb.is-empty {
   border-style: dashed;
   border-color: var(--ek-color-warning-border);
   background: var(--ek-color-warning-subtle);
   color: var(--ek-color-warning-emphasis);
+  cursor: pointer;
 }
-.vg-thumb.is-empty :deep(.v-icon) { font-size: 18px !important; }
+.vg-thumb__add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: var(--ek-type-micro-size);
+  font-weight: 600;
+  line-height: 1;
+}
+.vg-thumb__add :deep(.v-icon) { font-size: 20px !important; }
 .vg-thumb__n {
   position: absolute;
-  right: 1px;
-  bottom: 1px;
-  min-width: 16px;
-  padding: 0 3px;
-  border-radius: var(--ek-radius-chip);
+  right: 3px;
+  bottom: 3px;
+  min-width: 18px;
+  padding: 0 4px;
+  border-radius: var(--ek-radius-full);
   background: var(--ek-color-surface-inverse);
   color: var(--ek-color-content-inverse);
   font-size: var(--ek-type-micro-size);
-  line-height: 14px;
+  line-height: 16px;
   font-weight: 600;
   text-align: center;
 }
 
 :deep(.vg-val) { display: inline-flex; align-items: center; gap: var(--ek-space-1); max-width: 100%; }
 :deep(.vg-val.is-strong) { color: var(--ek-color-content-strong); font-weight: 600; }
-:deep(.vg-val.is-empty) { color: var(--ek-color-content-subtle); }
+:deep(.vg-val.is-empty) { color: var(--ek-color-content-muted); }
 :deep(.vg-issue) { display: inline-flex; flex: 0 0 auto; }
 :deep(.vg-issue__icon) { font-size: var(--ek-icon-sm); line-height: 1; }
 :deep(.vg-issue--error) { color: var(--ek-color-error); }
 :deep(.vg-issue--warning) { color: var(--ek-color-warning); }
+/* FR2-PFORM 26: hücre içi düzenleme — kutu içinde kutu yok; hücrenin kendisi düzenleme alanı olur
+   (odak halkası hücrede, giriş çerçevesiz ve tam hücre), hata metni hücrenin altında okunur. */
 :deep(.vg-input) {
   width: 100%;
-  height: 36px;
-  padding: 0 var(--ek-space-2);
-  border: 1px solid var(--ek-color-border-focus);
-  border-radius: var(--ek-radius-control);
-  background: var(--ek-color-surface);
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: var(--ek-color-content-strong);
   font: inherit;
+  font-weight: 600;
   outline: none;
-  box-shadow: var(--ek-focus-ring);
+  caret-color: var(--ek-color-action);
 }
 :deep(.vg-input.is-num) { text-align: right; font-variant-numeric: tabular-nums; }
-:deep(.vg-input[aria-invalid='true']) { border-color: var(--ek-color-error); }
+:deep(.vg-edit) { display: flex; flex-direction: column; justify-content: center; height: 100%; }
+:deep(.vg-edit__err) {
+  overflow: hidden;
+  color: var(--ek-color-error-emphasis);
+  font-size: var(--ek-type-micro-size);
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 /* seçenek çipleri */
-.vg-opts { white-space: normal; text-overflow: clip; line-height: 1; }
+.vg-opts { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1; }
 .vg-chip {
   display: inline-flex;
   align-items: baseline;
@@ -677,8 +727,10 @@ const CellBody = defineComponent({
   font-weight: 600;
   font-size: var(--ek-type-caption-size);
   line-height: var(--ek-type-caption-line);
+  white-space: nowrap;
+  max-width: 100%;
 }
-.vg-chip__k { color: var(--ek-color-content-muted); font-weight: 400; }
+.vg-chip__k { overflow: hidden; max-width: 96px; color: var(--ek-color-content-muted); font-weight: 400; text-overflow: ellipsis; }
 .vg-muted { color: var(--ek-color-content-subtle); }
 
 /* kanal */

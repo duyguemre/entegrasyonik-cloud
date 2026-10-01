@@ -11,6 +11,7 @@
     <transition name="ek-tour-fade">
       <section
         v-if="offerOpen && !running"
+        ref="offerEl"
         class="ek-tour-offer"
         role="dialog"
         aria-modal="false"
@@ -228,11 +229,33 @@ watch(
   { immediate: true },
 )
 
+// FR2-SHELL madde 3 sonrası (fe-r2a): çalışma alanı kendi içinde kaydığı için sağ alttaki teklif kartı sayfanın EN ALTINDAKİ
+// içeriği (ör. formun "Kaydet" düğmesi) kalıcı olarak örtebiliyordu. Kart açıkken yüksekliği kadar alt pay ayrılır
+// (`--ek-tour-offer-space`, kabuk `.workplace-area` alt dolgusu) → içerik kartın üstüne kaydırılabilir.
+const offerEl = ref<HTMLElement | null>(null)
+let offerObserver: ResizeObserver | undefined
+function setOfferSpace(px: number) {
+  document.documentElement.style.setProperty('--ek-tour-offer-space', px > 0 ? `${Math.ceil(px)}px` : '0px')
+}
+watch(offerEl, (el) => {
+  offerObserver?.disconnect()
+  offerObserver = undefined
+  if (!el) return setOfferSpace(0)
+  const measure = () => setOfferSpace(el.getBoundingClientRect().height + 24)
+  measure()
+  if (typeof ResizeObserver !== 'undefined') {
+    offerObserver = new ResizeObserver(measure)
+    offerObserver.observe(el)
+  }
+}, { flush: 'post' })
+
 onMounted(() => {
   window.addEventListener('ek:help-tour', onExternalStart)
   window.addEventListener('resize', onResize)
 })
 onBeforeUnmount(() => {
+  offerObserver?.disconnect()
+  setOfferSpace(0)
   clearTimeout(offerTimer)
   window.removeEventListener('ek:help-tour', onExternalStart)
   window.removeEventListener('resize', onResize)
@@ -244,7 +267,8 @@ defineExpose({ start })
 <style scoped>
 .ek-tour-offer {
   position: fixed;
-  right: var(--ek-space-6);
+  /* ADR-0034: Otopilot yan paneli açıkken teklif kartı panelin soluna kayar (`--ek-otopilot-offset`, OtopilotDock yazar). */
+  right: calc(var(--ek-otopilot-offset, 0px) + var(--ek-space-6));
   bottom: var(--ek-space-6);
   z-index: var(--ek-z-toast);
   display: grid;

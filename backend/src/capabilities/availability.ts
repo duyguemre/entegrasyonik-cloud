@@ -45,3 +45,20 @@ export function hiddenReasonFor(cap: CapabilityDef, actor: AuthzActor | undefine
     if (env.imp && (cap.effect !== 'read' || rpcBindingsOf(cap).some((x) => impersonationDenial(x.rpc) !== undefined))) return 'impersonation';
     return undefined;
 }
+
+/**
+ * [ADR-0034 Karar 6 / BR-4] Backoffice sohbetinde (`backoffice_chat`) bir yetenegin kullanilabilirligi. `hiddenReasonFor`'dan AYRI ve DAR:
+ * yalniz `adminChat` isaretli, `scope:'platform'`, `effect:'read'` yetenekler; RBAC = `can()` (PLATFORM_ONLY -> yalniz platformAdmin);
+ * kill-switch ortaktir. Okuma oldugu icin LIVE_READONLY/bakim/impersonation bu yuzeyde engel degildir (dis yazma yok).
+ */
+export function hiddenReasonForAdminChat(cap: CapabilityDef, actor: AuthzActor | undefined, env: AvailabilityEnv): HiddenReason | undefined {
+    if (!cap.adminChat || cap.executor !== 'server' || cap.effect !== 'read') return 'not_exposed';
+    if (cap.scope !== 'platform') return 'scope';
+    if (!can(actor, cap.permission).allowed) return 'rbac';
+    if (env.disabled.has(cap.id)) return 'disabled';
+    const b = chatBindingOf(cap);
+    if (!b) return 'not_exposed';
+    const [service, operation] = b.rpc.split('/');
+    if (env.liveReadonly && isLiveReadonlyBlockedRpc(service, operation)) return 'live_readonly';
+    return undefined;
+}

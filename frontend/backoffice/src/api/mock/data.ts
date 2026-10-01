@@ -12,7 +12,6 @@ import type {
   LogEvent,
   LogLevel,
   LogSource,
-  TenantLifecycle,
 } from '../contract'
 
 export const HOUR = 3_600_000
@@ -66,11 +65,9 @@ const CHANNEL_SETS: string[][] = [
   ['pazarama'],
   ['trendyol'],
 ]
-const LIFECYCLE: Array<TenantLifecycle['status']> = [
+/** Müşteri listesi `status` alanı için (askıda/silme bekliyor → PASSIVE); abonelik/yaşam döngüsü ops/billing.ts'te. */
+const LIFECYCLE: string[] = [
   'active', 'active', 'trialing', 'active', 'past_due', 'active', 'active', 'trialing', 'suspended', 'active', 'pending_deletion', 'active',
-]
-const PLANS: Array<TenantLifecycle['planCode']> = [
-  'profesyonel', 'kurumsal', 'baslangic', 'profesyonel', 'baslangic', 'profesyonel', 'kurumsal', 'baslangic', 'baslangic', 'profesyonel', 'baslangic', 'profesyonel',
 ]
 
 export function buildClients(now: number): ClientDto[] {
@@ -93,30 +90,6 @@ export function buildClients(now: number): ClientDto[] {
       updatedAt: new Date(now - Math.floor(r() * 20) * DAY).toISOString(),
     }
   })
-}
-
-export function buildLifecycle(client: ClientDto, index: number, now: number): TenantLifecycle {
-  const r = rng(100 + index)
-  const status = LIFECYCLE[index] ?? 'active'
-  return {
-    tid: client.clientId,
-    status,
-    planCode: PLANS[index] ?? 'baslangic',
-    trialEndsAt: status === 'trialing' ? new Date(now + (3 + index) * DAY).toISOString() : undefined,
-    deletionScheduledAt: status === 'pending_deletion' ? new Date(now + 12 * DAY).toISOString() : undefined,
-    provisioning: [
-      { step: 'Uygulama kaydı', status: 'done', at: client.createdAt },
-      { step: 'Tenant veritabanı', status: 'done', at: client.createdAt },
-      { step: 'Varsayılan ayarlar', status: 'done', at: client.createdAt },
-      { step: 'Hoş geldin e-postası', status: index === 7 ? 'failed' : 'done', at: client.createdAt },
-    ],
-    lastActivityAt: new Date(now - Math.floor(r() * 36) * HOUR).toISOString(),
-    usage: {
-      users: 1 + Math.floor(r() * 6),
-      products: Math.floor(200 + r() * 9000),
-      ordersLast30d: status === 'suspended' ? 0 : Math.floor(r() * 2400),
-    },
-  }
 }
 
 // ---------------------------------------------------------------- Log kontrol merkezi

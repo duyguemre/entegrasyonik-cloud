@@ -5,6 +5,7 @@
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { installApiMocks, mockError, type MockValue } from '../fixtures/mockApi'
+import { expectProblemState } from '../fixtures/problemState'
 import { userContextFixture } from '../fixtures/apiData'
 import { AXE_TAGS, B4_SCREENS, menuFixtureWithB4, openB4Screen } from '../fixtures/b4Screens'
 import { openDrawer } from '../fixtures/nav'
@@ -20,6 +21,9 @@ const PROFILE = {
 const ROOT = B4_SCREENS.AccountSecurityView.root
 
 async function mocks(page: any, overrides: Record<string, MockValue> = {}) {
+  // fe-r2a: çalışma alanı artık kendi içinde kayıyor; formun en altındaki gönder düğmesi görünür alanda kalıp sağ alttaki
+  // tur teklif kartının altına denk gelebiliyor (Playwright görünür öğeyi kaydırmaz). Bu spec turu test etmez → teklif kapalı.
+  await page.addInitScript(() => localStorage.setItem('ek.help.v1.tour', 'dismissed'))
   await installApiMocks(page, { MenuService: menuFixtureWithB4(), userContext: PROFILE, ...overrides })
 }
 
@@ -73,10 +77,9 @@ test.describe('ADR-0015 B4-P0 — N1 Hesabım ve güvenlik', () => {
     await page.goto(`/${B4_SCREENS.AccountSecurityView.slug}`)
     const root = page.locator(`${ROOT}:not(.hide-tab-component)`)
 
-    await expect(root.getByText('Hesap bilgileriniz yüklenemedi — bağlantınızı kontrol edip tekrar deneyin.')).toBeVisible({ timeout: 20000 })
+    await expectProblemState(root, 'Hesap bilgileriniz yüklenemedi — bağlantınızı kontrol edip tekrar deneyin.', { timeout: 20000 })
     await expect(root).not.toContainText('500')
     await expect(root).not.toContainText('stack')
-    await expect(root.getByRole('button', { name: 'Tekrar dene' })).toBeVisible()
   })
 
   test('etkileşim: parola değiştirme — istek gövdesi YALNIZCA {currentPassword,newPassword}; başarıda alanlar temizlenir', async ({ page }) => {

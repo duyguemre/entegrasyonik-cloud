@@ -3,6 +3,7 @@ import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { primaryNav, legalNav, published } from '../src/data/navigation'
+import { AGENT_PATH } from '../src/data/agent-brand'
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const src = path.join(siteRoot, 'src')
@@ -212,6 +213,9 @@ describe('gezinme haritası', () => {
       .map((i) => i.href)
       .filter((href) => {
         const base = path.join(src, 'pages', href)
+        // S22 DAR İSTİSNA: ajan sayfasının rotası ad sabitinden türer → tek dinamik dosya `[ajan].astro` (yalnızca bu yol;
+        // derlenen sayfanın varlığı tests/pages.test.ts "rota kümesi"nde ayrıca doğrulanır).
+        if (href === AGENT_PATH) return !existsSync(path.join(src, 'pages', '[ajan].astro'))
         return !(existsSync(`${base}.astro`) || existsSync(path.join(base, 'index.astro')))
       })
     expect(missing).toEqual([])

@@ -145,13 +145,16 @@ function onKeydown(event: KeyboardEvent) {
   background: var(--ek-color-surface);
   border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-control);
-  box-shadow: inset 3px 0 0 var(--ek-ch-brand), var(--ek-shadow-card);
+  /* fe-polish: koyu temada koyu marka renkleri (ör. Ideasoft) koyu yüzeyde kaybolur → K13 rozet kenarlığı (marka hex'i
+     değişmez, açık mürekkeple karışır). Açık temada birebir marka rengi. */
+  --ek-rail-accent: var(--ek-ch-brand);
+  box-shadow: inset 3px 0 0 var(--ek-rail-accent), var(--ek-shadow-card);
   cursor: pointer;
   transition: var(--ek-transition-colors);
 }
 
 .ek-integration-rail__item:hover {
-  border-color: var(--ek-ch-brand);
+  border-color: var(--ek-rail-accent);
 }
 
 .ek-integration-rail__item:focus-visible {
@@ -160,8 +163,12 @@ function onKeydown(event: KeyboardEvent) {
 }
 
 .ek-integration-rail__item.is-selected {
-  border-color: var(--ek-ch-brand);
-  box-shadow: inset 3px 0 0 var(--ek-ch-brand), 0 0 0 1px var(--ek-ch-brand);
+  border-color: var(--ek-rail-accent);
+  box-shadow: inset 3px 0 0 var(--ek-rail-accent), 0 0 0 1px var(--ek-rail-accent);
+}
+
+:global(:root[data-theme='dark']) .ek-integration-rail__item {
+  --ek-rail-accent: var(--ek-ch-badge-border);
 }
 
 .ek-integration-rail__item.is-selected :deep(.ek-platform-mark__name) {

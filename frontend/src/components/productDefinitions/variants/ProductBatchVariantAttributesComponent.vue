@@ -936,11 +936,11 @@ const imageSrc = computed(() => {
 .pva-state { padding: var(--ek-space-4) 0; }
 .dropZone {
   position: relative;
-  border: 1px dashed black;
+  border: 1px dashed var(--ek-color-border-strong);
 }
 
 .dropZone:hover {
-  background-color: red;
+  background-color: var(--ek-color-error-subtle);
 }
 
 .dropZone:hover .dropZone-title {
@@ -1067,7 +1067,7 @@ const imageSrc = computed(() => {
 .pbva-s5 {
   cursor: pointer !important;
   border-radius: 5px !important;
-  border: 1px solid white !important;
+  border: 1px solid var(--ek-color-surface) !important;
 }
 
 .pbva-s6 {
@@ -1111,7 +1111,7 @@ const imageSrc = computed(() => {
 }
 
 .pbva-s14 {
-  color: red !important;
+  color: var(--ek-color-error) !important;
 }
 
 /* Platform sekme logolari (onceki dinamik satir ici stil; arka plan VERI rengi olarak satir icinde kalir). */

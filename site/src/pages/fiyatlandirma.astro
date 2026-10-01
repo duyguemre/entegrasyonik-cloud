@@ -28,7 +28,8 @@ import CtaBand from '../components/pages/CtaBand.astro'
 import { appUrls } from '../lib/site-config'
 import { primaryNav, published } from '../data/navigation'
 import { getPublicPlans, getPlanSourceNotice, getVatNotice, getPublicTrial, getTrialPlanCode } from '../data/plans'
-import { getComparisonRows, getPricingFaq, getPlanPitch, getPlanCommonFeatures } from '../data/pricing'
+import { getComparisonRows, getPricingFaq, getPlanPitch, getPlanCommonFeatures, getPlanAgentRows, getPlanAgentSummary, planAgentIntro } from '../data/pricing'
+import { AGENT_BRAND, AGENT_PATH } from '../data/agent-brand'
 
 
 const plans = getPublicPlans()
@@ -63,6 +64,9 @@ const planFeatureRows = [...new Map(plans.flatMap((p) => p.features.map((f) => [
   ([code, label]) => ({ code, label, cells: plans.map((p) => p.features.some((f) => f.code === code)) }),
 )
 const trialDaysLabel = `${fmt(trial.days)} gün`
+// S25 (K46): ajan ürünü her planda — kademe satırları ve kart özeti (nitel; rakam yok).
+const agentRows = getPlanAgentRows(plans)
+const agentLadder = plans.map((p, i) => ({ plan: p, prev: plans[i - 1], summary: getPlanAgentSummary(p.code) })).filter((x) => x.summary)
 ---
 
 <BaseLayout>
@@ -164,6 +168,28 @@ const trialDaysLabel = `${fmt(trial.days)} gün`
                   </ul>
                 )}
 
+                {(() => {
+                  const agent = getPlanAgentSummary(plan.code)
+                  const idx = plans.indexOf(plan)
+                  const prev = idx > 0 ? plans[idx - 1] : undefined
+                  return (
+                    agent && (
+                      <div class="plan__agent" data-testid="plan-agent">
+                        <p class="plan__agent-title">
+                          <Icon name="sparkle" size="sm" />
+                          {agent.title}
+                        </p>
+                        {prev && <p class="plan__agent-prev">{prev.name} planındakilere ek olarak:</p>}
+                        <ul class="plan__agent-list" role="list">
+                          {agent.items.map((it) => (
+                            <li>{it}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )
+                  )
+                })()}
+
                 <div class="plan__cta">
                   {plan.cta === 'trial' ? (
                     <Button
@@ -211,6 +237,51 @@ const trialDaysLabel = `${fmt(trial.days)} gün`
       )
     }
   </Section>
+
+  {
+    agentLadder.length > 0 && (
+      <Section id="ajan-her-planda" labelledby="agent-plan-title" class="tight-section">
+        <div class="agent-plan" data-testid="plan-ai">
+          <div class="agent-plan__copy">
+            <p class="agent-plan__eyebrow">
+              <Icon name="sparkle" size="sm" />
+              {planAgentIntro.eyebrow}
+            </p>
+            <h2 id="agent-plan-title" class="agent-plan__title">{planAgentIntro.title}</h2>
+            <p class="agent-plan__text">{planAgentIntro.text}</p>
+            <ul class="agent-plan__points" role="list">
+              {planAgentIntro.points.map((pt) => (
+                <li>
+                  <Icon name="check" size="sm" />
+                  {pt}
+                </li>
+              ))}
+            </ul>
+            <a class="agent-plan__link" href={AGENT_PATH}>
+              {AGENT_BRAND} nasıl çalışır
+              <Icon name="arrow" size="sm" />
+            </a>
+          </div>
+          <ol class="agent-ladder" aria-label={`${AGENT_BRAND}: planlara göre yetki`}>
+            {agentLadder.map(({ plan, prev, summary }) => (
+              <li class="agent-ladder__step" data-plan={plan.code}>
+                <p class="agent-ladder__name">{plan.name}</p>
+                {prev && <p class="agent-ladder__prev">{prev.name} planındakilere ek olarak</p>}
+                <ul class="agent-ladder__list" role="list">
+                  {summary!.items.map((it) => (
+                    <li>
+                      <Icon name="check" size="sm" />
+                      {it}
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </Section>
+    )
+  }
 
   <Section id="karsilastir" labelledby="compare-title" class="tight-section">
     <SectionHead
@@ -307,6 +378,33 @@ const trialDaysLabel = `${fmt(trial.days)} gün`
               </tr>
             ))
           }
+          <tr class="compare__group">
+            <td colspan={plans.length + 1}>{AGENT_BRAND} (her planda dahil)</td>
+          </tr>
+          {
+            agentRows.map((r) => (
+              <tr data-row-kind="agent">
+                <th scope="row">{r.label}</th>
+                {r.cells.map(({ planCode, cell }) => (
+                  <td class:list={{ 'is-featured': planCode === featuredCode }}>
+                    {cell.kind === 'check' ? (
+                      <>
+                        <span class="cell-check" aria-hidden="true"><Icon name="check" size="sm" /></span>
+                        <span class="sr-only">Dahil</span>
+                      </>
+                    ) : cell.kind === 'text' ? (
+                      <span class="cell-strong">{cell.text}</span>
+                    ) : (
+                      <>
+                        <span class="cell-dash" aria-hidden="true" />
+                        <span class="sr-only">Dahil değil</span>
+                      </>
+                    )}
+                  </td>
+                ))}
+              </tr>
+            ))
+          }
         </tbody>
       </table>
     </div>
@@ -337,7 +435,7 @@ const trialDaysLabel = `${fmt(trial.days)} gün`
   <CtaBand
     id="cta-title"
     title="Tüm kanallarınızı tek panelde yönetmeye bugün başlayın"
-    text="Ücretsiz denemeyle pazaryeri hesaplarınızı bağlayın; merkezi stok yönetimi, overselling koruması ve birleşik sipariş akışını kendi operasyonunuzda görün."
+    text="Ücretsiz denemeyle pazaryeri hesaplarınızı bağlayın; merkezi stok yönetimi, aşırı satış koruması ve birleşik sipariş akışını kendi operasyonunuzda görün."
     primary={{ label: 'Ücretsiz dene', href: closingHref }}
     secondary={{ label: 'Giriş yap', href: appUrls.login() }}
   />
@@ -849,7 +947,7 @@ const trialDaysLabel = `${fmt(trial.days)} gün`
     }
     .compare__table thead th {
       position: sticky;
-      top: var(--site-header-height);
+      top: var(--site-header-visible);
       z-index: 2;
     }
     .compare__table thead th:first-child {
@@ -864,6 +962,197 @@ const trialDaysLabel = `${fmt(trial.days)} gün`
     .plan__card--featured {
       margin-block: calc(var(--ek-space-3) * -1);
       padding-block: calc(var(--ek-space-8) + var(--ek-space-3)) calc(var(--ek-space-6) + var(--ek-space-3));
+    }
+  }
+  /* --- S25 (K46): ajan ürünü her planda --- */
+  .plan__agent {
+    display: grid;
+    gap: var(--ek-space-2);
+    margin-top: var(--ek-space-4);
+    padding: var(--ek-space-4);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 26%, var(--ek-color-border-default));
+    border-radius: var(--ek-radius-lg);
+    background: color-mix(in srgb, var(--ek-color-secondary) 6%, var(--ek-color-background));
+  }
+  .plan__agent-title {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    margin: 0;
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-bold);
+  }
+  .plan__agent-title :global(.icon) {
+    color: var(--site-link-accent);
+  }
+  .plan__agent-prev {
+    margin: 0;
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-xs);
+  }
+  .plan__agent-list {
+    display: grid;
+    gap: var(--ek-space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .plan__agent-list li {
+    position: relative;
+    padding-inline-start: var(--ek-space-4);
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-sm);
+  }
+  .plan__agent-list li::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: var(--ek-space-1);
+    top: 0.6em;
+    width: calc(var(--ek-space-1) * 1.5);
+    height: calc(var(--ek-space-1) * 1.5);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-secondary-darken-1);
+  }
+
+  .agent-plan {
+    position: relative;
+    display: grid;
+    gap: var(--ek-space-8);
+    padding: var(--ek-space-8) var(--ek-space-6);
+    overflow: hidden;
+    border-radius: var(--site-radius-panel);
+    background: var(--site-stage-mesh);
+    color: var(--site-text-on-dark-body);
+  }
+  .agent-plan::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: var(--site-texture-grid);
+    background-size: var(--site-texture-grid-size);
+    mask-image: linear-gradient(160deg, var(--ek-color-content-strong), transparent 65%);
+    pointer-events: none;
+  }
+  .agent-plan > * {
+    position: relative;
+  }
+  .agent-plan__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    margin: 0 0 var(--ek-space-3);
+    color: var(--site-accent-on-dark);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-bold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .agent-plan__title {
+    margin: 0;
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-3xl);
+    letter-spacing: var(--site-font-display-tracking);
+    line-height: var(--ek-line-height-tight);
+  }
+  .agent-plan__text {
+    max-width: var(--site-measure);
+    margin: var(--ek-space-4) 0 0;
+    font-size: var(--ek-font-size-lg);
+    line-height: var(--site-font-body-line-height);
+  }
+  .agent-plan__points {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2);
+    margin: var(--ek-space-5) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .agent-plan__points li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-1) var(--ek-space-3);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-full);
+    background: var(--site-glass-bg);
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-medium);
+  }
+  .agent-plan__points :global(.icon) {
+    color: var(--site-accent-on-dark);
+  }
+  .agent-plan__link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-1);
+    min-height: var(--site-tap-target);
+    margin-top: var(--ek-space-4);
+    color: var(--site-accent-on-dark);
+    font-weight: var(--ek-font-weight-semibold);
+    text-decoration: none;
+  }
+  .agent-plan__link:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+  .agent-ladder {
+    display: grid;
+    gap: var(--ek-space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: tier;
+  }
+  .agent-ladder__step {
+    padding: var(--ek-space-4) var(--ek-space-5);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-lg);
+    background: var(--site-glass-bg);
+  }
+  /* Kademe: her üst plan biraz daha parlak kenar (renk tek başına anlam taşımaz — metin "ek olarak" der). */
+  .agent-ladder__step:nth-child(2) {
+    border-color: color-mix(in srgb, var(--ek-color-secondary) 40%, transparent);
+  }
+  .agent-ladder__step:nth-child(3) {
+    border-color: color-mix(in srgb, var(--ek-color-secondary) 70%, transparent);
+  }
+  .agent-ladder__name {
+    margin: 0;
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-lg);
+    font-weight: var(--ek-font-weight-bold);
+  }
+  .agent-ladder__prev {
+    margin: var(--ek-space-1) 0 0;
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-xs);
+  }
+  .agent-ladder__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-1) var(--ek-space-4);
+    margin: var(--ek-space-2) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .agent-ladder__list li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-1);
+    color: var(--site-text-on-dark-body);
+    font-size: var(--ek-font-size-sm);
+  }
+  .agent-ladder__list :global(.icon) {
+    color: var(--site-accent-on-dark);
+  }
+  @media (min-width: 64rem) {
+    .agent-plan {
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+      align-items: center;
+      padding: var(--ek-space-12) var(--ek-space-10);
     }
   }
 </style>

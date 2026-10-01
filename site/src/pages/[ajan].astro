@@ -1,0 +1,767 @@
+---
+/**
+ * Ajan sayfası — "Entegrasyonik Otopilot: operasyon ajanları" (S18 "Asistan" → S22 ajan-önce → S24 pazarlama dili).
+ *
+ * ROTA: dosya adı dinamiktir (`[ajan].astro`); tek yol `AGENT_PATH` ad sabitinden gelir (src/data/agent-brand.ts).
+ * Ad değişince rota, başlık, gezinme ve e-posta konusu kendiliğinden değişir; eski yol `AGENT_LEGACY_PATHS` → 301
+ * (`dist/_redirects`, astro.config.mjs). S18 adresi `/asistan` bu yolla yönlenir.
+ *
+ * S24 (kullanıcı kararları K43–K46): Otopilot hazır bir özellik gibi, şimdiki zamanla anlatılır. Aşama rozeti,
+ * "erken erişim" formu/mailto'su, "örnek görünüm/senaryo" etiketleri ve teknik anlatım (açık standart, protokol,
+ * yerel uygulama) kaldırıldı. Tüm metin `src/data/assistant.ts`'ten; her VAAT cümlesi yalnızca `agent-claims.ts`
+ * kaydından gelir (markup'ta sabit metin yazılmaz; tests/agent-claims.test.ts). Demo talebi: form YOK — `mailto:`
+ * (EmailActions), konu `${AGENT_BRAND} demo talebi`; ikinci yol kayıt ("Hemen başlayın").
+ *
+ * Bölüm ritmi: koyu hero (tek başlık + tek cümle + tek CTA; ajan konsolu) -> açık (ajan döngüsü) -> koyu (ajanlar)
+ * -> açık (kontrol sizde) -> gri (sohbet) -> açık (SSS) -> koyu (demo).
+ */
+import BaseLayout from '../layouts/BaseLayout.astro'
+import Section from '../components/Section.astro'
+import Button from '../components/Button.astro'
+import Icon from '../components/home/Icon.astro'
+import Breadcrumb from '../components/pages/Breadcrumb.astro'
+import SectionHead from '../components/pages/SectionHead.astro'
+import Accordion from '../components/pages/Accordion.astro'
+import EmailActions from '../components/pages/EmailActions.astro'
+import ChatScene from '../components/assistant/ChatScene.astro'
+import AgentConsole from '../components/assistant/AgentConsole.astro'
+import AgentLoop from '../components/assistant/AgentLoop.astro'
+import {
+  AGENT_PATH,
+  assistantHero as hero,
+  loopSection,
+  agentsSection,
+  controlSection,
+  chatSection,
+  assistantFaq,
+  assistantCta,
+} from '../data/assistant'
+import { contactEmail } from '../lib/contact'
+import { appUrls } from '../lib/site-config'
+import { crumbsFor } from '../data/seo'
+
+export function getStaticPaths() {
+  return [{ params: { ajan: AGENT_PATH.slice(1) } }]
+}
+
+const crumbs = crumbsFor(AGENT_PATH)
+const [titleBefore, titleAfter] = hero.title.split(hero.accent)
+---
+
+<BaseLayout scenes>
+
+  <!-- Hero: tek başlık + tek cümle + tek CTA; sağda ajan konsolu -->
+  <Section tone="stage" labelledby="page-title" class="ai-hero">
+    <Breadcrumb items={crumbs} inverse />
+    <div class="ai-hero__grid">
+      <div class="ai-hero__body">
+        <p class="ai-hero__chip" data-testid="agent-hero-chip">
+          <span class="ai-hero__chip-icon" aria-hidden="true"><Icon name="sparkle" size="sm" /></span>
+          <span>{hero.eyebrow}</span>
+        </p>
+        <h1 id="page-title">{titleBefore}<span class="ai-accent">{hero.accent}</span>{titleAfter}</h1>
+        <p class="ai-hero__lead">{hero.lead}</p>
+        <div class="ai-hero__actions">
+          <Button href="#demo" variant="inverse" size="lg" data-testid="agent-hero-cta">{hero.primary}</Button>
+        </div>
+      </div>
+      <div class="ai-hero__visual">
+        <AgentConsole />
+      </div>
+    </div>
+  </Section>
+
+  <!-- (1) Ajan döngüsü -->
+  <Section id="dongu" labelledby="dongu-title" class="ai-section">
+    <SectionHead id="dongu-title" eyebrow={loopSection.eyebrow} title={loopSection.title} lead={loopSection.lead} />
+    <AgentLoop />
+    <p class="principle-note">
+      <Icon name="shield" size="sm" />
+      <span>{loopSection.principle}</span>
+    </p>
+  </Section>
+
+  <!-- (2) Ajanlar -->
+  <Section id="ajanlar" labelledby="ajanlar-title" tone="stage" class="ai-section">
+    <SectionHead id="ajanlar-title" eyebrow={agentsSection.eyebrow} title={agentsSection.title} lead={agentsSection.lead} inverse />
+    <ul class="cards cards--4" role="list">
+      {
+        agentsSection.cards.map((c) => (
+          <li class="pcard pcard--dark acard" data-testid="assistant-card">
+            <div class="pcard__top">
+              <span class="pcard__icon acard__icon" aria-hidden="true">
+                <Icon name={c.icon} size="md" />
+                <i class="acard__led"></i>
+              </span>
+            </div>
+            <h3 class="pcard__title">{c.title}</h3>
+            <p class="pcard__text">{c.text}</p>
+            <dl class="acard__io">
+              <div>
+                <dt><Icon name="eye" size="sm" />{agentsSection.watchLabel}</dt>
+                <dd>{c.watches}</dd>
+              </div>
+              <div>
+                <dt><Icon name="sparkle" size="sm" />{agentsSection.bringLabel}</dt>
+                <dd>{c.brings}</dd>
+              </div>
+            </dl>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <!-- (3) Kontrol sizde: onay kapısı akışı + güvence maddeleri (fayda dili) -->
+  <Section id="kontrol" labelledby="kontrol-title" class="ai-section">
+    <SectionHead id="kontrol-title" eyebrow={controlSection.eyebrow} title={controlSection.title} lead={controlSection.lead} />
+    <ol class="gateflow" aria-label={controlSection.flowLabel} data-testid="gate-flow">
+      {
+        controlSection.flow.map((f) => (
+          <li class:list={['gateflow__item', { 'gateflow__item--you': f.actor === 'you' }]} data-actor={f.actor}>
+            <span class="gateflow__icon" aria-hidden="true"><Icon name={f.icon} size="sm" /></span>
+            <span>{f.label}</span>
+          </li>
+        ))
+      }
+    </ol>
+    <ul class="guards" role="list">
+      {
+        controlSection.items.map((g) => (
+          <li class="guard" data-testid="guardrail">
+            <span class="guard__icon" aria-hidden="true"><Icon name={g.icon} size="md" /></span>
+            <h3 class="guard__title">{g.title}</h3>
+            <p class="guard__text">{g.text}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <!-- (4) Sohbetle yönetin -->
+  <Section id="sohbet" labelledby="sohbet-title" tone="muted" class="ai-section ai-chat">
+    <div class="split">
+      <div class="split__aside">
+        <SectionHead id="sohbet-title" eyebrow={chatSection.eyebrow} title={chatSection.title} lead={chatSection.lead} compact />
+        <div class="prompts">
+          <p class="prompts__label">{chatSection.examplesLabel}</p>
+          <ul class="prompts__list" role="list">
+            {
+              chatSection.examples.map((q) => (
+                <li class="prompt">
+                  <Icon name="chat" size="sm" />
+                  <span>{q}</span>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </div>
+      <div class="split__scene">
+        <ChatScene />
+      </div>
+    </div>
+    <ul class="cards cards--4 chat-cards" role="list">
+      {
+        chatSection.cards.map((c) => (
+          <li class="pcard" data-testid="assistant-card">
+            <div class="pcard__top">
+              <span class="pcard__icon" aria-hidden="true"><Icon name={c.icon} size="md" /></span>
+            </div>
+            <h3 class="pcard__title">{c.title}</h3>
+            <p class="pcard__text">{c.text}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <!-- SSS -->
+  <Section id="sorular" labelledby="sorular-title" class="ai-section" size="narrow">
+    <SectionHead id="sorular-title" eyebrow={assistantFaq.eyebrow} title={assistantFaq.title} />
+    <Accordion items={assistantFaq.items} />
+  </Section>
+
+  <!-- Demo -->
+  <Section id="demo" labelledby="demo-title" tone="stage" class="ai-section ai-cta">
+    <div class="cta">
+      <div class="cta__body">
+        <p class="cta__eyebrow">{assistantCta.eyebrow}</p>
+        <h2 id="demo-title">{assistantCta.title}</h2>
+        <p class="cta__text">{assistantCta.text}</p>
+        <ul class="cta__points" role="list">
+          {
+            assistantCta.points.map((p) => (
+              <li>
+                <Icon name="check" size="sm" />
+                <span>{p}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <div class="cta__panel" data-testid="assistant-cta">
+        <p class="cta__subject"><Icon name="mail" size="sm" /><span>{assistantCta.subjectNote} <strong>{assistantCta.subject}</strong></span></p>
+        <EmailActions email={contactEmail} id="ajan-demo" subject={assistantCta.subject} tone="dark" sendLabel={assistantCta.sendLabel} />
+        <a class="cta__start" href={appUrls.register()} data-testid="agent-start-link">
+          <span>{assistantCta.start}</span>
+          <Icon name="arrow" size="sm" />
+        </a>
+      </div>
+    </div>
+  </Section>
+</BaseLayout>
+
+<script>
+  import '../scripts/interactions'
+</script>
+
+<style>
+  /* S22 (madde 1) KÖK NEDEN: `.ai-hero:global(.section)` sayfanın kapsam kimliğini istiyordu, oysa <section>'ı
+     Section.astro kendi kimliğiyle basar → kural hiç eşleşmiyor, hero varsayılan bölüm boşluğunu (üstte ~8rem) alıyordu.
+     Seçiciler tamamen global; sayfaya özgü sınıf adları (ai-*) yalnızca bu sayfada kullanılır. */
+  :global(.section.ai-section) {
+    padding-block: calc(var(--site-section-y) * 0.78);
+  }
+
+  /* ------------------------------------------------------------------ hero */
+  /* S22 (madde 1): üst iç boşluk header'a göre sıkı; ızgara üstten hizalı (dikey ortalama, uzun görselin kopyayı
+     aşağı itip header ile içerik arasında boş bant bırakmasına yol açıyordu). */
+  :global(.section.ai-hero) {
+    padding-block: var(--ek-space-6) calc(var(--site-section-y) * 0.62);
+    overflow: hidden;
+  }
+  .ai-hero__grid {
+    display: grid;
+    gap: var(--ek-space-10);
+    margin-top: var(--ek-space-6);
+  }
+  .ai-hero__body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--ek-space-5);
+    min-width: 0;
+  }
+  .ai-hero__chip {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ek-space-2);
+    margin: 0;
+    padding: var(--ek-space-1) var(--ek-space-3) var(--ek-space-1) var(--ek-space-1);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 45%, transparent);
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-secondary) 12%, transparent);
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .ai-hero__chip-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-6);
+    height: var(--ek-space-6);
+    border-radius: var(--ek-radius-full);
+    background: var(--site-gradient-accent-on-dark);
+    color: var(--site-stage-deep);
+  }
+  .ai-hero__body h1 {
+    max-width: 18ch;
+    font-size: var(--site-font-display-md);
+    font-weight: var(--site-font-display-weight);
+    line-height: var(--site-font-display-line-height);
+    letter-spacing: var(--site-font-display-tracking);
+  }
+  .ai-accent {
+    background: var(--site-gradient-accent-on-dark);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .ai-hero__lead {
+    max-width: 38rem;
+    color: var(--site-text-on-dark-body);
+    font-size: var(--ek-font-size-lg);
+    line-height: var(--site-font-body-line-height);
+  }
+  .ai-hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-3);
+    margin-top: var(--ek-space-1);
+  }
+  .ai-hero__visual {
+    min-width: 0;
+  }
+  /* S24: kopya artık kısa (tek başlık + tek cümle + tek CTA) → sütunlar dikeyde ortalanır. */
+  @media (min-width: 1024px) {
+    .ai-hero__grid {
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+      align-items: center;
+    }
+  }
+  /* ------------------------------------------------------------------ ortak kart */
+  .cards {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--ek-space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  @media (min-width: 640px) {
+    .cards--2,
+    .cards--4 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1200px) {
+    .cards--4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  .pcard {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    min-width: 0;
+    padding: var(--ek-space-6);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--site-radius-panel);
+    background:
+      radial-gradient(90% 70% at 100% 0%, color-mix(in srgb, var(--ek-color-secondary) 7%, transparent), transparent 70%),
+      var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
+    transition:
+      border-color var(--ek-duration-base) var(--ek-easing-standard),
+      box-shadow var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .pcard:hover {
+    border-color: color-mix(in srgb, var(--ek-color-secondary) 40%, var(--ek-color-border-default));
+    box-shadow: var(--site-shadow-card-hover);
+  }
+  .pcard__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--ek-space-3);
+  }
+  .pcard__icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-12);
+    height: var(--ek-space-12);
+    border-radius: var(--ek-radius-lg);
+    background: linear-gradient(140deg, var(--ek-color-primary), var(--ek-color-primary-darken-1));
+    box-shadow: 0 var(--ek-space-2) var(--ek-space-4) calc(var(--ek-space-2) * -1) color-mix(in srgb, var(--ek-color-primary) 70%, transparent);
+    color: var(--site-color-on-primary);
+  }
+  .pcard__title {
+    color: var(--site-text-heading);
+    font-size: var(--site-card-title-size);
+    font-weight: var(--site-card-title-weight);
+    letter-spacing: -0.01em;
+  }
+  .pcard__text {
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-md);
+    line-height: var(--site-font-body-line-height);
+  }
+  .pcard--dark {
+    border-color: var(--site-glass-border);
+    background:
+      radial-gradient(90% 70% at 100% 0%, color-mix(in srgb, var(--ek-color-secondary) 12%, transparent), transparent 70%),
+      var(--site-glass-bg);
+    box-shadow: none;
+  }
+  .pcard--dark .pcard__icon {
+    background: color-mix(in srgb, var(--ek-color-secondary) 18%, transparent);
+    box-shadow: none;
+    color: var(--site-accent-on-dark);
+  }
+  .pcard--dark .pcard__title {
+    color: var(--site-text-on-dark-heading);
+  }
+  .pcard--dark .pcard__text {
+    color: var(--site-text-on-dark-body);
+  }
+
+  /* ------------------------------------------------------------------ (a) sohbet */
+  .split {
+    display: grid;
+    gap: var(--ek-space-10);
+  }
+  @media (min-width: 1024px) {
+    .split {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      align-items: start;
+    }
+  }
+  .split__aside {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-8);
+    min-width: 0;
+  }
+  .prompts {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+  }
+  .prompts__label {
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .prompts__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .prompt {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-3) var(--ek-space-4);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-lg) var(--ek-radius-lg) var(--ek-radius-lg) var(--ek-radius-sm);
+    background: var(--ek-color-surface-sunken);
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-medium);
+  }
+  .prompt :global(.icon) {
+    flex: none;
+    color: var(--site-accent);
+  }
+
+  /* ------------------------------------------------------------------ (2) ajanlar */
+  .acard__icon {
+    position: relative;
+  }
+  /* "Canlı" durum ledi: statik (dekoratif); ajanın sürekli izleme rolünü simgeler. */
+  .acard__led {
+    position: absolute;
+    inset-block-start: calc(var(--ek-space-1) * -1);
+    inset-inline-end: calc(var(--ek-space-1) * -1);
+    width: var(--ek-space-3);
+    height: var(--ek-space-3);
+    border: calc(var(--site-border-width) * 2) solid var(--site-stage-deep);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-secondary);
+    box-shadow: 0 0 var(--ek-space-3) color-mix(in srgb, var(--ek-color-secondary) 70%, transparent);
+  }
+  .acard__io {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    margin: auto 0 0;
+    padding-top: var(--ek-space-4);
+    border-top: var(--site-border-width) dashed var(--site-glass-border);
+  }
+  .acard__io div {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+  }
+  .acard__io dt {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-1);
+    color: var(--site-accent-on-dark);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .acard__io dd {
+    margin: 0;
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-medium);
+    line-height: var(--ek-line-height-normal);
+  }
+  .principle-note {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ek-space-3);
+    max-width: 52rem;
+    margin: var(--ek-space-10) 0 0;
+    padding: var(--ek-space-4) var(--ek-space-5);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface-sunken);
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-md);
+    line-height: var(--site-font-body-line-height);
+  }
+  .principle-note :global(.icon) {
+    flex: none;
+    margin-top: var(--ek-space-1);
+    color: var(--site-accent);
+  }
+
+  /* ------------------------------------------------------------------ (e) CTA */
+  .cta {
+    display: grid;
+    gap: var(--ek-space-10);
+  }
+  @media (min-width: 1024px) {
+    .cta {
+      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      align-items: center;
+    }
+  }
+  .cta__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-4);
+  }
+  .cta__eyebrow {
+    color: var(--site-accent-on-dark);
+    font-size: var(--site-card-eyebrow-size);
+    font-weight: var(--site-card-eyebrow-weight);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .cta h2 {
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--site-font-display-md);
+    font-weight: var(--site-font-display-weight);
+    line-height: var(--site-font-display-line-height);
+    letter-spacing: var(--site-font-display-tracking);
+  }
+  .cta__text {
+    max-width: 40rem;
+    color: var(--site-text-on-dark-body);
+    font-size: var(--ek-font-size-lg);
+    line-height: var(--site-font-body-line-height);
+  }
+  .cta__points {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .cta__points li {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ek-space-2);
+    color: var(--site-text-on-dark-body);
+    font-size: var(--ek-font-size-md);
+  }
+  .cta__points :global(.icon) {
+    flex: none;
+    margin-top: 0.1875rem;
+    color: var(--site-accent-on-dark);
+  }
+  .cta__subject {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    margin: 0 0 var(--ek-space-5);
+    padding-bottom: var(--ek-space-4);
+    border-bottom: var(--site-border-width) solid var(--site-glass-border);
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-sm);
+  }
+  .cta__subject strong {
+    color: var(--site-text-on-dark-heading);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .cta__subject :global(.icon) {
+    flex: none;
+    color: var(--site-accent-on-dark);
+  }
+  .cta__start {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    margin-top: var(--ek-space-5);
+    color: var(--site-accent-on-dark);
+    font-weight: var(--ek-font-weight-semibold);
+    text-decoration: none;
+  }
+  .cta__start:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+  .cta__start:focus-visible {
+    outline: var(--site-focus-ring-width) solid currentColor;
+    outline-offset: var(--site-focus-ring-offset);
+    border-radius: var(--ek-radius-sm);
+  }
+  .cta__panel {
+    min-width: 0;
+    padding: var(--ek-space-8) var(--ek-space-6);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--site-radius-panel);
+    background: var(--site-glass-bg);
+    box-shadow: var(--site-shadow-panel);
+  }
+
+  /* ------------------------------------------------------------------ (3) sınırlar */
+  .gateflow {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--ek-space-2);
+    margin: 0 0 var(--ek-space-8);
+    padding: 0;
+    list-style: none;
+    counter-reset: none;
+  }
+  .gateflow__item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-3) var(--ek-space-4);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface);
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .gateflow__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-8);
+    height: var(--ek-space-8);
+    border-radius: var(--ek-radius-full);
+    background: var(--site-accent-soft);
+    color: var(--site-accent);
+  }
+  /* Dar ekran: aşamalar arası dikey bağ çizgisi (simge merkezinden). */
+  .gateflow__item + .gateflow__item::before {
+    content: '';
+    position: absolute;
+    inset-block-end: 100%;
+    inset-inline-start: calc(var(--ek-space-4) + var(--ek-space-4) - var(--site-border-width) / 2);
+    width: var(--site-border-width);
+    height: var(--ek-space-2);
+    background: var(--site-accent-line);
+  }
+  .gateflow__item--you {
+    border-color: color-mix(in srgb, var(--ek-color-amber) 65%, transparent);
+    background: var(--ek-color-warning-subtle);
+    box-shadow: 0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-amber) 14%, transparent);
+  }
+  .gateflow__item--you .gateflow__icon {
+    background: linear-gradient(140deg, var(--ek-color-primary), var(--ek-color-primary-darken-1));
+    color: var(--site-color-on-primary);
+  }
+  @media (min-width: 768px) {
+    .gateflow {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--ek-space-6);
+    }
+    /* Aşamalar arası ok: kutular arasındaki boşlukta ince çizgi + uç. */
+    .gateflow__item + .gateflow__item::before {
+      content: '';
+      position: absolute;
+      inset-block-start: 50%;
+      inset-block-end: auto;
+      inset-inline-start: auto;
+      inset-inline-end: 100%;
+      width: var(--ek-space-6);
+      height: var(--site-border-width);
+      background: var(--site-accent-line);
+    }
+    .gateflow__item + .gateflow__item::after {
+      content: '';
+      position: absolute;
+      inset-block-start: calc(50% - var(--ek-space-1));
+      inset-inline-end: calc(100% + var(--site-border-width));
+      width: 0;
+      height: 0;
+      border-block: var(--ek-space-1) solid transparent;
+      border-inline-start: var(--ek-space-1) solid var(--site-accent-line);
+      translate: 100% 0;
+    }
+  }
+  .guards {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--ek-space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  /* S24: beş güvence maddesi → geniş ekranda üstte üç, altta iki (6 sütunlu ızgara; kenarlar hizalı). */
+  @media (min-width: 768px) {
+    .guards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1024px) {
+    .guards {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+    .guard {
+      grid-column: span 2;
+    }
+    .guard:nth-child(n + 4) {
+      grid-column: span 3;
+    }
+  }
+  .guard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    min-width: 0;
+    padding: var(--ek-space-6);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--site-radius-panel);
+    background:
+      linear-gradient(180deg, var(--site-accent-soft), transparent 45%),
+      var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
+  }
+  .guard__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-12);
+    height: var(--ek-space-12);
+    border: var(--site-border-width) solid var(--site-accent-line);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface);
+    color: var(--site-accent);
+  }
+  .guard__title {
+    color: var(--site-text-heading);
+    font-size: var(--site-card-title-size);
+    font-weight: var(--site-card-title-weight);
+  }
+  .guard__text {
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-md);
+    line-height: var(--site-font-body-line-height);
+  }
+
+  /* ------------------------------------------------------------------ (4) sohbet */
+  .split__scene {
+    min-width: 0;
+  }
+  /* Sohbet sahnesinin dekoratif ışıması (S18'de hero'nun overflow:hidden'ı içindeydi) dar ekranda yatay taşma yapmasın. */
+  :global(.section.ai-chat) {
+    overflow-x: clip;
+  }
+  .chat-cards {
+    margin-top: var(--ek-space-10);
+  }
+</style>

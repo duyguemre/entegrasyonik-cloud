@@ -29,6 +29,8 @@
     "test:module": "node tests/tools/run-tests.js module",
     "test:modules": "node tests/tools/run-tests.js list",
     "integration:new": "node dev-tools/integration-new.js",
+    "test:mcp": "node tests/tools/run-tests.js module mcp",
+    "test:agent": "node tests/tools/run-tests.js module agent",
     "test:api": "node tests/tools/run-tests.js module api",
     "test:integration-engine": "node tests/tools/run-tests.js module integration-engine",
     "test:adapters": "node tests/tools/run-tests.js module trendyol && node tests/tools/run-tests.js module common",

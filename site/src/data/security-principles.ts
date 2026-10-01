@@ -33,7 +33,7 @@ export const securityPrinciples: SecurityPrinciple[] = [
     id: 'izolasyon',
     icon: 'database',
     title: 'Veri izolasyonu',
-    value: 'Her müşteri hesabının ürün, stok ve sipariş verisi kendisine ayrılmış bir veritabanında tutulur.',
+    value: 'Verileriniz yalnızca size aittir; ürün, stok ve sipariş verileriniz izole bir alanda tutulur.',
     capabilityIds: ['tenant-database'],
     points: [],
   },
@@ -98,7 +98,7 @@ export const securityPrinciples: SecurityPrinciple[] = [
     id: 'sureklilik',
     icon: 'refresh',
     title: 'Yedekleme ve süreklilik',
-    value: 'Veritabanını değiştiren bakım adımları doğrulanmış yedek şartına bağlıdır; pazaryeri bağlantıları geçici hatalara karşı dayanıklılık katmanından geçer.',
+    value: 'Verilerinizi etkileyen bakım adımları doğrulanmış yedek şartına bağlıdır; pazaryeri bağlantıları geçici hatalara karşı dayanıklılık katmanından geçer.',
     capabilityIds: ['integration-resilience'],
     points: [
       {

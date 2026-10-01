@@ -167,7 +167,11 @@ describe('Standart 11 — form elemanları tek ızgara', () => {
 
   it('tek yükseklik ve ızgara hizası kuralları vuetify-overrides.css içinde', () => {
     const css = readFileSync(join(ROOT, 'packages/ui/src/styles/vuetify-overrides.css'), 'utf8')
-    expect(css).toMatch(/--v-field-input-min-height: var\(--ek-control-h-lg\)/)
+    // FR2-SHELL madde 5 (fe-r2a): alan yüksekliği 40 → 36 (`--ek-control-h-field`, düğme `md` ile aynı hiza).
+    expect(css).toMatch(/--v-field-input-min-height: var\(--ek-control-h-field\)/)
+    expect(css).not.toMatch(/--v-field-input-min-height: var\(--ek-control-h-lg\)/)
+    // FR2-SHELL madde 4: dinlenen etiket opaklığı geçişsiz (yer tutucu gibi görünüp sönme yok).
+    expect(css).toMatch(/\.v-field \.v-label\.v-field-label \{\s*transition-property: transform;/)
     expect(css).toMatch(/grid-template-rows: auto auto;/)
   })
 })

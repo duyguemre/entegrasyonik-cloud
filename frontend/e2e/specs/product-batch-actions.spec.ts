@@ -20,6 +20,8 @@ async function openBatchMenu(page: Page) {
   await installApiMocks(page, {})
   await gotoAuthed(page)
   await openScreen(page, 'ProductListView')
+  // FR2 kabuk: ilk ziyaret "Uygulamayı tanıyın" teklif kartı (sağ alt, fixed) uzun menünün alt öğelerini ("Toplu Sil") örter.
+  await page.getByRole('button', { name: 'Şimdi değil' }).click({ timeout: 3000 }).catch(() => undefined)
   await page.locator('.productListView').getByRole('button', { name: 'Toplu işlemler' }).click()
   // DS-v2 A2: menü içeriği EkMenuPanel (role=menu) — eski `.v-list` seçicisi bilinçli güncellendi.
   const menu = page.locator('.v-overlay--active [role="menu"]').filter({ hasText: 'Toplu Ürün İşlemleri' })

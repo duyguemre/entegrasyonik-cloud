@@ -2,10 +2,10 @@
   <div class="brand-select-wrapper">
     <LoadingComponent v-if="loading" ref="loadingComponentRef" attach=".brand-select-wrapper"></LoadingComponent>
 
-    <v-autocomplete v-model="brandId" v-model:search="brandSearchText" :items="computedBrands" item-value="_id"
-      item-title="title"
+    <v-autocomplete v-model="brandId" v-model:search="brandSearchText" v-model:menu="menuOpen" :items="computedBrands" item-value="_id"
+      item-title="title" :custom-filter="brandFilter" @keydown.enter="onEnter"
       :rules="mandatory ? formRules.mandatoryRule : []" :placeholder="$t('productDefinitions.brand.search')"
-      :no-data-text="$t('productDefinitions.brand.nodata')" auto-select-first clearable persistent-hint :menu-props="{
+      :no-data-text="createQuery ? `“${createQuery}” ile eşleşen marka yok` : $t('productDefinitions.brand.nodata')" auto-select-first @update:focused="selectOnFocus" clearable persistent-hint :menu-props="{
         contentClass: 'brand-autocomplete-menu',
         maxHeight: '400',
         transition: false
@@ -15,13 +15,6 @@
         {{ $t('productDefinitions.brand.name') }}{{ mandatory ? ' *' : '' }}
       </template>
 
-      <template v-slot:selection="{ item }: any">
-        <div class="d-flex align-center overflow-hidden">
-          <span class="text-truncate">
-            {{ item.title }}
-          </span>
-        </div>
-      </template>
 
       <template v-slot:item="{ item, props: itemProps }: any">
         <v-list-item v-bind="itemProps" role="option" class="custom-brand-item" title="">
@@ -38,32 +31,27 @@
       </template>
 
       <template v-slot:append-item>
-        <v-divider></v-divider>
-        <div class="pa-4 bg-surface-muted">
-          <v-form v-model="isNewBrandValid" @submit.prevent="addNewBrand">
-            <v-text-field v-model="newBrandName" variant="outlined" density="compact" hide-details="auto"
-              :placeholder="$t('productDefinitions.brand.title')" :rules="titleRules">
-              <template v-slot:append-inner>
-                <v-btn color="primary" variant="flat" size="small" :disabled="!isNewBrandValid || !newBrandName"
-                  @click="addNewBrand">
-                  <v-icon>mdi-plus</v-icon>
-                </v-btn>
-              </template>
-            </v-text-field>
-          </v-form>
-        </div>
+        <QuickCreateRow noun="marka" :query="createQuery" :has-results="hasResults" @create="openCreate" />
       </template>
     </v-autocomplete>
+
+    <QuickCreateDialog v-model="createOpen" noun="marka" icon="mdi-tag-plus-outline" :initial-name="createQuery"
+      :existing="brandsStore.getBrands()?.value || []" :create="createBrand"
+      description="Marka listenize eklenir ve bu ürün için seçilir. Pazaryeri marka eşleşmesini Tanımlar › Markalar'dan yapabilirsiniz."
+      @created="onCreated" @picked="onPicked" />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, getCurrentInstance, nextTick } from 'vue'
 import { useBrandsStore } from '@/stores/brandsStore'
 import { useI18n } from 'vue-i18n'
 import useFormRules from '@/composables/formrules'
-import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useToast } from '@entegrasyonik/ui/composables/useToast'
 import LoadingComponent from '@/components/LoadingComponent.vue'
+import QuickCreateRow from './QuickCreateRow.vue'
+import QuickCreateDialog from './QuickCreateDialog.vue'
+import { findDuplicate, normalizeTitle, trIncludes } from './quickCreate'
 
 const props = defineProps<{
   noInit?: boolean
@@ -76,53 +64,74 @@ const emits = defineEmits(['change'])
 const brandsStore = useBrandsStore()
 const { t } = useI18n()
 const formRules: any = useFormRules()
-const snackbarStore = useSnackbarStore()
+const { showToast } = useToast()
 
 const brandId = defineModel({ default: undefined })
 const brandSearchText = ref("")
-const newBrandName = ref("")
-const isNewBrandValid = ref(false)
+const menuOpen = ref(false)
 const loading = ref(false)
 
-const titleRules = [
-  (v: any) => !!v || t("rules.mandatory"),
-  (v: string) => (v && v.length >= 2 && v.length <= 160) || t("rules.2_160characters"),
-]
+// FR2-PFORM 23: filtre Vuetify'a bırakılır (Türkçe harf duyarsız). Eskiden liste arama metniyle ÖNCEDEN
+// süzülüyordu; seçili marka süzülen listeden düşünce kutu ham kimliği ("brand-…") gösteriyordu.
+const brandFilter = (_value: string, query: string, item?: any) => item?.raw?._id === -1 || trIncludes(item?.raw?.title, query)
 
 const computedBrands = computed(() => {
   const storeBrands = brandsStore.getBrands()?.value || []
   let processedList = [...storeBrands]
 
-  // 1. ARAMA FİLTRESİ
-  if (brandSearchText.value && brandSearchText.value.length >= 2) {
-    processedList = processedList.filter((b: any) =>
-      b.title.toLocaleUpperCase('tr-TR').includes(brandSearchText.value.toLocaleUpperCase('tr-TR'))
-    )
-  }
-
-  // 2. HEPSİ SEÇENEĞİ
+  // HEPSİ SEÇENEĞİ
   if (props.withAll) {
     processedList = [{ _id: -1, title: t('common.all') || 'Hepsi' }, ...processedList]
   }
 
-  // 3. MAIN/SİSTEM BRAND'LERİ FİLTRELE (withAll modu değilse ve isMain ise gizle)
-  // Mevcut BrandSelectBoxComponent.vue mantığını koruyoruz
+  // MAIN/SİSTEM BRAND'LERİ FİLTRELE (withAll modu değilse ve isMain ise gizle)
   return processedList.filter((item: any) => {
     if (props.withAll && item.isMain) return false
     return true
   })
 })
 
-const addNewBrand = async () => {
-  if (!newBrandName.value || !isNewBrandValid.value) return
-  loading.value = true
-  try {
-    await brandsStore.addBrand({ title: newBrandName.value })
-    newBrandName.value = ""
-    snackbarStore.addSnackbar({ text: t('common.success'), color: 'success' })
-  } finally {
-    loading.value = false
-  }
+// ---- yeni marka (QuickCreateDialog) ----
+const selectedTitle = computed(() => computedBrands.value.find((b: any) => b._id === brandId.value)?.title)
+/** Arama kutusunda seçili markanın adı duruyorsa öneri yapılmaz; yalnız kullanıcının yazdığı metin önerilir. */
+const createQuery = computed(() => {
+  const q = normalizeTitle(brandSearchText.value)
+  return q && q !== selectedTitle.value ? q : ''
+})
+const hasResults = computed(() => !createQuery.value || computedBrands.value.some((b: any) => trIncludes(b.title, createQuery.value)))
+const createOpen = ref(false)
+
+function openCreate() {
+  menuOpen.value = false
+  createOpen.value = true
+}
+
+/** Enter: eşleşme yoksa (ve yazılan ad listede değilse) yeni marka diyaloğu açılır. */
+function onEnter() {
+  if (createQuery.value && !hasResults.value && !findDuplicate(computedBrands.value, createQuery.value)) openCreate()
+}
+
+const createBrand = (title: string) => brandsStore.addBrand({ title })
+
+function onCreated(id: string, title: string) {
+  brandId.value = id as any
+  brandSearchText.value = ''
+  showToast({ tone: 'success', message: `“${title}” markası eklendi ve seçildi.` })
+}
+
+/** Odakta mevcut ad seçili gelir: yazmaya başlayınca ad DEĞİŞİR (seçili adın sonuna eklenmez). */
+const instance = getCurrentInstance()
+function selectOnFocus(focused: boolean) {
+  if (!focused) return
+  const input = (instance?.proxy?.$el as HTMLElement | undefined)?.querySelector?.('input')
+  if (!input) return
+  // Fare tıklamasında imleci yerleştiren mouseup seçimi bozmasın (tek seferlik).
+  input.addEventListener('mouseup', (e) => e.preventDefault(), { once: true })
+  nextTick(() => setTimeout(() => input.select(), 0))
+}
+
+function onPicked(id: string) {
+  brandId.value = id as any
 }
 
 onMounted(() => {

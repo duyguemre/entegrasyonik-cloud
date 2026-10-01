@@ -4,6 +4,8 @@
 // frontend/docs/design-system-review/ altına yazar (belge görseli; Playwright tabanı DEĞİLDİR).
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import { expectProblemState } from '../fixtures/problemState'
+import { suppressTourOffer } from '../fixtures/appDialog'
 import { installApiMocks, mockError, type MockValue } from '../fixtures/mockApi'
 import { AXE_TAGS, B4P1C_SCREENS, auditLogsFixture, auditUsersFixture, menuFixtureWithB4P1c, openB4P1cScreen } from '../fixtures/b4p1cScreens'
 
@@ -37,6 +39,9 @@ async function openFilters(page: any) {
 const grid = (page: any) => page.locator(ROOT).getByRole('table', { name: 'Denetim kayıtları tablosu' })
 
 test.describe('ADR-0015 B4-P1c — N10 Denetim günlüğü', () => {
+  // Sağ alttaki (mobilde tam genişlik) tur teklifi kartı sayfalama/çip/çekmece öğelerini örter → kullanıcı gibi önce kapatılmış sayılır.
+  test.beforeEach(async ({ page }) => { await suppressTourOffer(page) })
+
   test('smoke: varsayılan son 30 gün isteği, okunur olay adları, kullanıcı adı çözümü, sonuç çipleri; ip/tid yok', async ({ page }) => {
     const bodies: any[] = []
     const errors: string[] = []
@@ -95,7 +100,7 @@ test.describe('ADR-0015 B4-P1c — N10 Denetim günlüğü', () => {
     })
     await openB4P1cScreen(page, 'AuditLogView')
     const root = page.locator(ROOT)
-    await expect(root.getByText('Denetim kayıtları yüklenemedi — bağlantınızı kontrol edip tekrar deneyin.')).toBeVisible()
+    await expectProblemState(root, 'Denetim kayıtları yüklenemedi — bağlantınızı kontrol edip tekrar deneyin.')
     await expect(root).not.toContainText('Mongo')
     await root.getByRole('button', { name: 'Tekrar dene' }).click()
     await expect(grid(page).locator('tbody tr')).toHaveCount(8)
@@ -140,6 +145,9 @@ test.describe('ADR-0015 B4-P1c — N10 Denetim günlüğü', () => {
     await expect(chips).toContainText('Ece Kaya')
     await expect(chips).toContainText('Başarısız')
 
+    // Dar ekranda çipler "+N filtre daha göster" altında toplanır (ilk çip dışında) — önce açılır.
+    const moreChips = chips.getByRole('button', { name: /filtre daha göster/ })
+    if (await moreChips.count()) await moreChips.click()
     await chips.getByRole('button', { name: 'Kullanıcı filtresini kaldır' }).click()
     await expect.poll(() => bodies.length).toBe(3)
     expect(bodies[2].userId).toBeUndefined()
@@ -205,7 +213,8 @@ test.describe('ADR-0015 B4-P1c — N10 Denetim günlüğü', () => {
     await mocks(page)
     await openB4P1cScreen(page, 'AuditLogView')
     await grid(page).getByRole('button', { name: 'Kullanıcı rolü değiştirildi kaydının ayrıntılarını aç' }).click()
-    const sheet = page.getByRole('dialog')
+    // Tur teklifi de role=dialog olduğundan yan sayfa kayıt adıyla daraltılır.
+    const sheet = page.getByRole('dialog').filter({ hasText: 'user.role_change' })
     await expect(sheet).toContainText('Kullanıcı rolü değiştirildi')
     await expect(sheet).toContainText('user.role_change')
     await expect(sheet).toContainText('Deniz Yılmaz')
@@ -216,7 +225,7 @@ test.describe('ADR-0015 B4-P1c — N10 Denetim günlüğü', () => {
     await expect(sheet).toHaveCount(0)
 
     await grid(page).locator('tbody tr').filter({ hasText: 'Oturum açıldı' }).click()
-    await expect(page.getByRole('dialog')).toContainText('Bu kayıt için ek ayrıntı yok.')
+    await expect(page.getByRole('dialog').filter({ hasText: 'Bu kayıt için ek ayrıntı yok.' })).toBeVisible()
   })
 
   test('rol (olumsuz): ekran menüde yoksa menüde görünmez ve derin bağlantı panoya döner', async ({ page }) => {
@@ -257,8 +266,11 @@ test.describe('ADR-0015 B4-P1c — N10 Denetim günlüğü', () => {
     const invalid = await new AxeBuilder({ page }).include(ROOT).withTags(AXE_TAGS).analyze()
     expect(invalid.violations, JSON.stringify(invalid.violations, null, 2)).toEqual([])
 
+    // Açık filtre paneli + hata uyarısı 1280x800'de tablo alanını 0 yüksekliğe sıkıştırır (satır sayfalamanın altında kalır);
+    // kullanıcı gibi paneli kapatıp satıra geçilir.
+    await page.locator(ROOT).getByRole('button', { name: /^Filtreler/ }).click()
     await grid(page).getByRole('button', { name: 'Oturum açıldı kaydının ayrıntılarını aç' }).click()
-    await expect(page.getByRole('dialog')).toBeVisible()
+    await expect(page.getByRole('dialog').filter({ hasText: 'Oturum açıldı' })).toBeVisible()
     await page.waitForTimeout(500) // açılış geçişi (fade) bitsin — yarı saydam kare kontrastı yanlış ölçer
     const sheet = await new AxeBuilder({ page }).include('.ek-detail-sheet').withTags(AXE_TAGS).analyze()
     expect(sheet.violations, JSON.stringify(sheet.violations, null, 2)).toEqual([])

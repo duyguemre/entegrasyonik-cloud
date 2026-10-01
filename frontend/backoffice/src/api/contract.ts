@@ -21,6 +21,10 @@ export type ApiErrorCode =
   | 'REAUTH_REQUIRED'
   | 'MFA_REQUIRED'
   | 'IMPERSONATION_UNAVAILABLE'
+  | 'LIVE_READONLY'
+  | 'QUEUE_UNAVAILABLE'
+  | 'INFRA_UNAVAILABLE'
+  | 'QUERY_TIMEOUT'
   | 'INTERNAL'
 
 export interface ApiErrorBody {
@@ -30,6 +34,8 @@ export interface ApiErrorBody {
   service?: string
   operation?: string
   fields?: Array<{ path: string; message: string }>
+  /** Koda özgü sayısal ayrıntı (ör. TRIAL_EXTENSION_LIMIT → remainingDays/usedDays/maxTotalDays). Değer/sır taşımaz. */
+  details?: Record<string, unknown>
 }
 
 // ---------------------------------------------------------------- BackofficeAuthService [2-BE]
@@ -102,26 +108,19 @@ export interface GetClientsResponse {
   limit: number
 }
 
-export type LifecycleStatus = 'trialing' | 'active' | 'past_due' | 'suspended' | 'pending_deletion'
-/** [PLAN B2] BackofficeTenantService/getLifecycle {tid}. */
-export interface TenantLifecycle {
-  tid: number
-  status: LifecycleStatus
-  planCode: 'baslangic' | 'profesyonel' | 'kurumsal'
-  trialEndsAt?: string
-  deletionScheduledAt?: string
-  provisioning: Array<{ step: string; status: 'done' | 'failed' | 'pending'; at?: string }>
-  lastActivityAt?: string
-  /** Kullanım istatistikleri — sayı, iş verisi DEĞİL. */
-  usage: { users: number; products: number; ordersLast30d: number }
-}
+/** B2 yaşam döngüsü tipleri: ./contracts/billing.ts (TenantLifecycle). */
 /** [2-BE] BackofficeTenantService/startImpersonation — step-up + gerekçe; tek kullanımlık 60 sn bilet URL'i. */
 export interface StartImpersonationRequest {
   tid: number
   reason: string
 }
+/** K41: destek oturumu sabit 30 dk, uzatılamaz (ADR-0026 §4.9). Geri sayım müşteri uygulamasında `userContext.impersonation.expiresAt`'ten. */
+export const IMPERSONATION_SESSION_MINUTES = 30
 export interface StartImpersonationResponse {
+  /** `<PUBLIC_APP_URL>/impersonate#t=<bilet>` — yalnız window.open'a verilir; saklanmaz/loglanmaz/kopyalanmaz. */
   url: string
+  /** Bilet ömrü (60 sn, tek kullanımlık). */
+  expiresInSeconds: number
 }
 
 // ---------------------------------------------------------------- Sistem durumu
@@ -143,6 +142,78 @@ export interface SystemHealthResponse {
     redis: { usedMemory: string; connectedClients: string; uptime: string; version: string }
     queues: Record<'orderSync' | 'export' | 'import', { wait: number; active: number }>
   }
+}
+
+// ---------------------------------------------------------------- Genel bakış [2-BE B1 — cloud-contracts/API_BACKOFFICE_OVERVIEW_ENGINE.md]
+/** Bölüm 2 sn içinde toplanamadıysa yalnız o bölüm düşer; uç 200 döner. */
+export interface DegradedSection {
+  status: 'degraded'
+  error: 'timeout' | 'error'
+}
+export type HealthSection<T> = ({ status: 'ok' } & T) | DegradedSection
+export interface HealthDependencies {
+  ready: boolean
+  role: 'web' | 'worker' | 'all'
+  mongo: 'ok' | 'fail'
+  redis: 'ok' | 'fail' | 'n/a'
+}
+export interface HealthPod {
+  pod: string
+  activeLeases: number
+  runningJobs: number
+  lastSeenAt: string
+  self: boolean
+}
+export interface HealthPods {
+  self: string
+  windowMinutes: number
+  items: HealthPod[]
+}
+export interface HealthRed {
+  windowMinutes: number
+  from: string
+  requests: number
+  byStatusClass: Partial<Record<'2xx' | '3xx' | '4xx' | '5xx', number>>
+  errors5xx: number
+  /** 5xx / toplam; istek yoksa null. */
+  errorRate: number | null
+  requestsPerMinute: number
+  durationAvgMs: number | null
+  /** Histogram kovasının üst sınırı; `null` + overflow = 60 sn üstü. */
+  durationP95Ms: number | null
+  durationP95Overflow: boolean
+  scope: 'platform'
+  note?: string
+}
+export interface HealthQueue {
+  name: string
+  /** false → Redis hazır değil; sayaçlar null. */
+  available: boolean
+  backlog: number | null
+  active: number | null
+  failed: number | null
+  dlqPending: number | null
+}
+export interface HealthIntake {
+  allOpen: boolean
+  scope: 'process'
+  restricted: Array<{ target: string; intake: string }>
+}
+export interface HealthIssues {
+  open: number
+  newLast24h: number
+}
+export type OverviewSectionKey = 'dependencies' | 'pods' | 'red' | 'queues' | 'intake' | 'issues'
+export interface OverviewHealthResponse {
+  generatedAt: string
+  status: 'ok' | 'degraded'
+  degradedSections: OverviewSectionKey[]
+  dependencies: HealthSection<HealthDependencies>
+  pods: HealthSection<HealthPods>
+  red: HealthSection<HealthRed>
+  queues: HealthSection<{ items: HealthQueue[] }>
+  intake: HealthSection<HealthIntake>
+  issues: HealthSection<HealthIssues>
 }
 
 // ---------------------------------------------------------------- Log Kontrol Merkezi [PLAN L6–L8]
@@ -315,7 +386,7 @@ export interface AdminRpc {
   'BackofficeAuthService/me': [Record<string, never>, BackofficeMe]
   'AdminService/getClients': [GetClientsRequest, GetClientsResponse]
   'AdminService/getSystemHealth': [{ timeFrame?: 'DAY' | 'WEEK' | 'MONTH' | 'ALL' }, SystemHealthResponse]
-  'BackofficeTenantService/getLifecycle': [{ tid: number }, TenantLifecycle]
+  'BackofficeOverviewService/getHealth': [Record<string, never>, OverviewHealthResponse]
   'BackofficeTenantService/startImpersonation': [StartImpersonationRequest, StartImpersonationResponse]
   'LogCenterService/listLogs': [ListLogsRequest, ListLogsResponse]
   'LogCenterService/getIssueGroups': [GetIssueGroupsRequest, GetIssueGroupsResponse]
@@ -328,8 +399,39 @@ export type AdminOp = keyof AdminRpc
 export type ReqOf<K extends AdminOp> = AdminRpc[K][0]
 export type ResOf<K extends AdminOp> = AdminRpc[K][1]
 
-/** Adım-yükseltmesi isteyen operasyonlar (ADR-0026 Karar 4.6; 2-BE `admin/stepUp.ts` REAUTH_RPCS). */
-export const REAUTH_OPS: readonly AdminOp[] = ['BackofficeTenantService/startImpersonation']
+/**
+ * Adım-yükseltmesi (son 5 dk parola + TOTP) + gerekçe (≥10) isteyen operasyonlar — backend `admin/stepUp.ts` REAUTH_RPCS ile
+ * birebir (tests/contract-ops.test.ts korur). İstemci bunları özel ele almaz (REAUTH_REQUIRED → diyalog); sahte API zorlar.
+ */
+export const REAUTH_OPS: readonly AdminOp[] = [
+  'IntegrationConfigService/publish',
+  'IntegrationConfigService/rollback',
+  'BackofficeTenantService/startImpersonation',
+  'BackofficeTenantService/cancelDeletion',
+  'BackofficeBillingService/extendTrial',
+  'BackofficeBillingService/cancelSubscription',
+  'BackofficeBillingService/changePlan',
+  'BackofficeAdminUserService/invite',
+  'BackofficeAdminUserService/disable',
+  'BackofficeAdminUserService/enable',
+  'BackofficeAdminUserService/resetMfa',
+  'BackofficeInfraService/flushCacheFamily',
+  'BackofficeEngineService/retryJob',
+  'BackofficeEngineService/discardJob',
+  'BackofficeEngineService/releaseStuckLease',
+  // ADR-0029 NB7/NB8: yazan bildirim/duyuru/uyarı uçları (toplu e-posta dahil)
+  'BackofficeNotificationService/createAnnouncement',
+  'BackofficeNotificationService/updateAnnouncement',
+  'BackofficeNotificationService/scheduleAnnouncement',
+  'BackofficeNotificationService/cancelAnnouncement',
+  'BackofficeNotificationService/retryDelivery',
+  'BackofficeNotificationService/discardDelivery',
+  'BackofficeNotificationService/sendTestEmail',
+  'BackofficeNotificationService/muteAlert',
+]
+/** Gerekçe alt/üst sınırı (backend REASON_MIN_LENGTH / REASON_MAX_LENGTH). */
+export const REASON_MIN = 10
+export const REASON_MAX = 500
 /** Oturum gerektirmeyen / yarım oturumla çağrılan kimlik operasyonları. */
 export const AUTH_FLOW_OPS: readonly AdminOp[] = [
   'BackofficeAuthService/login',
@@ -338,6 +440,15 @@ export const AUTH_FLOW_OPS: readonly AdminOp[] = [
   'BackofficeAuthService/verifyTotp',
   'BackofficeAuthService/logout',
   'BackofficeAuthService/me',
+  // Kimliksiz davet kabulü (oturum açmaz; 401/403 oturum akışını tetiklemez).
+  'BackofficeAuthService/acceptInvite',
   // Yanlış parola/kod oturumu düşürmez; diyalog kendi hatasını gösterir.
   'BackofficeAuthService/reauth',
 ]
+
+// ---------------------------------------------------------------- Aşama 4 uç grupları (BE HAZIR; alan adları sözleşmeden birebir)
+export * from './contracts/engine'
+export * from './contracts/billing'
+export * from './contracts/infra'
+export * from './contracts/platform'
+export * from './contracts/notifications'

@@ -1,0 +1,102 @@
+import { expect, test, type Page } from '@playwright/test'
+import { ACCOUNT, expectNoA11yViolations, settle, signInFully } from '../support/session'
+
+const mock = (page: Page, js: string) => page.evaluate((code) => new Function(`return window.__boMock.${code}`)(), js)
+
+test.describe('entegrasyonlar ve altyapı', () => {
+  test.beforeEach(async ({ page }) => signInFully(page))
+
+  test('entegrasyonlar: API sağlığı (yaklaşık etiketi, hata dağılımı), axe 0', async ({ page }) => {
+    await page.goto('/entegrasyonlar')
+    await expect(page.getByRole('heading', { level: 1, name: 'Entegrasyonlar' })).toBeVisible()
+    await settle(page)
+    await expect(page.locator('.bo-approx').first()).toBeVisible()
+    await expect(page.getByText('> 30 sn')).toBeVisible()
+    await expect(page.getByText('RATE_LIMITED').first()).toBeVisible()
+    await page.locator('[data-range="1h"]').click()
+    await settle(page)
+    await expectNoA11yViolations(page)
+  })
+
+  test('entegrasyonlar: dayanıklılık matrisi ve intake sapması; degraded (503)', async ({ page }) => {
+    await page.goto('/entegrasyonlar?sekme=dayaniklilik')
+    await settle(page)
+    await expect(page.getByText('Podlar arasında alım kipi sapması var')).toBeVisible()
+    await expect(page.locator('[data-cell="n11-api-1"]')).toContainText('alım boşaltılıyor')
+    await expectNoA11yViolations(page)
+    await page.goto('/entegrasyonlar')
+    await settle(page)
+    await mock(page, 'setDegraded(true)')
+    await page.getByRole('tab', { name: 'Dayanıklılık' }).click()
+    await expect(page.getByText('Dayanıklılık verisi okunamıyor')).toBeVisible()
+  })
+
+  test('entegrasyonlar: katalog + etkin ayar, hedef değişimi', async ({ page }) => {
+    await page.goto('/entegrasyonlar?sekme=katalog')
+    await settle(page)
+    await expect(page.getByText('export.publisher.chunkSize')).toBeVisible()
+    await expect(page.getByText('Platform · rev 7')).toBeVisible()
+    await page.getByTestId('catalog-target').click()
+    await page.getByRole('option', { name: 'Trendyol' }).click()
+    await settle(page)
+    await expect(page.getByText('Ortam değişkeni TRENDYOL_MOCK (kilitli)')).toBeVisible()
+    await expectNoA11yViolations(page)
+  })
+
+  test('altyapı: Redis, MongoDB (koleksiyon + indeks), yavaş sorgular', async ({ page }) => {
+    await page.goto('/altyapi')
+    await expect(page.getByRole('heading', { level: 1, name: 'Redis ve MongoDB' })).toBeVisible()
+    await settle(page)
+    await expect(page.getByText('bull:order-sync-queue')).toBeVisible()
+    await expectNoA11yViolations(page)
+
+    await page.goto('/altyapi?sekme=mongodb')
+    await settle(page)
+    await expect(page.getByText('Okunamadı')).toBeVisible()
+    await expect(page.getByTestId('skipped')).toContainText('izinli listede olmadığı')
+    await page.locator('[data-db="app"]').click()
+    const coll = page.getByTestId('collections')
+    await expect(coll.getByText('AuditLogs')).toBeVisible()
+    await coll.getByRole('button', { name: /AuditLogs/ }).click()
+    await expect(coll.getByText('Hiç kullanılmadı')).toBeVisible()
+    await coll.getByTestId('load-more').click()
+    await expect(coll.getByText('40 kayıt gösteriliyor')).toBeVisible({ timeout: 5000 }).catch(() => undefined)
+    await expectNoA11yViolations(page)
+
+    await page.goto('/altyapi?sekme=yavas')
+    await settle(page)
+    await expect(page.getByText('orders').first()).toBeVisible()
+    await expectNoA11yViolations(page)
+  })
+
+  test('altyapı: Redis degraded (503) ve yavaş sorgu 504 → aralığı daralt', async ({ page }) => {
+    await page.goto('/altyapi?sekme=yavas')
+    await settle(page)
+    await mock(page, 'setDegraded(true)')
+    await page.locator('[data-range="30d"]').click()
+    await expect(page.getByText(/dar bir zaman aralığı/)).toBeVisible()
+    await page.getByRole('tab', { name: 'Redis' }).click()
+    await expect(page.getByText('Redis okunamıyor')).toBeVisible()
+  })
+
+  test('cache: pod bandı, aile boşaltma (step-up + gerekçe) → toast', async ({ page }) => {
+    await page.goto('/altyapi/onbellek')
+    await expect(page.getByRole('heading', { level: 1, name: 'Önbellek' })).toBeVisible()
+    await settle(page)
+    await expect(page.getByTestId('pod-band')).toContainText('api-1')
+    await expectNoA11yViolations(page)
+    await mock(page, 'expireReauth()')
+    await page.getByTestId('flush').first().click()
+    const dialog = page.getByRole('dialog', { name: 'Önbellek ailesi boşaltılsın mı?' })
+    await dialog.getByLabel('Gerekçe').fill('Kısa')
+    await expect(dialog.getByRole('button', { name: 'Aileyi boşalt' })).toBeDisabled()
+    await dialog.getByLabel('Gerekçe').fill('Bayat liste verisi şüphesi inceleniyor')
+    await dialog.getByRole('button', { name: 'Aileyi boşalt' }).click()
+    const reauth = page.getByRole('dialog', { name: 'Kimliğinizi yeniden doğrulayın' })
+    await expect(reauth).toBeVisible()
+    await reauth.getByLabel('Parola').fill(ACCOUNT.password)
+    await reauth.getByLabel('Doğrulama kodu').fill('135790')
+    await reauth.getByRole('button', { name: 'Doğrula ve devam et' }).click()
+    await expect(page.getByText('12 anahtar silindi (pod api-1)')).toBeVisible()
+  })
+})

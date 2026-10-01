@@ -129,6 +129,11 @@ export function findRegistryInvariantViolations(caps: ReadonlyArray<CapabilityDe
         if (cap.adminChat) {
             if (cap.scope !== 'platform') out.push({ kind: 'ADMIN_CHAT_NOT_PLATFORM', detail: cap.id });
             if (cap.effect !== 'read') out.push({ kind: 'ADMIN_CHAT_NOT_READ', detail: cap.id });
+            // BR-4: adminChat araci strict ciktisiz (legacy) / PII'li olamaz; `llm` zorunlu; MCP'ye acilamaz.
+            if (cap.output === 'legacy') out.push({ kind: 'ADMIN_CHAT_OUTPUT_LEGACY', detail: cap.id });
+            if (cap.pii !== 'none') out.push({ kind: 'ADMIN_CHAT_PII', detail: cap.id });
+            if (!cap.adminChat.exposed.llm?.description || (cap.adminChat.exposed.llm.examples ?? []).length < 2) out.push({ kind: 'ADMIN_CHAT_LLM_MISSING', detail: cap.id });
+            if (cap.mcp.exposed) out.push({ kind: 'ADMIN_CHAT_MCP_EXPOSED', detail: cap.id });
         }
         if (cap.mcp.exposed) {
             // Araç adı (`orders.list` -> `orders_list`): geçerli biçim ve TEKİL (aynı ada inen iki kimlik olamaz).

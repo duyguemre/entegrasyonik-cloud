@@ -1,17 +1,27 @@
 <template>
   <div class="bo-shell">
     <a class="bo-skip" href="#bo-main">İçeriğe geç</a>
-    <TopBar class="bo-shell__top" :menu-open="drawerOpen" :compact="mobile" @toggle-menu="drawerOpen = !drawerOpen" @logout="logout" />
+    <TopBar class="bo-shell__top" :menu-open="drawerOpen" :compact="mobile" @toggle-menu="drawerOpen = !drawerOpen" @logout="logout" @open-palette="paletteOpen = true" />
+    <CommandPalette v-model="paletteOpen" @logout="logout" @shortcuts="helpOpen = true" />
+    <ShortcutsDialog v-model="helpOpen" />
     <v-navigation-drawer
       v-model="drawerOpen"
       :permanent="!mobile"
       :temporary="mobile"
-      :width="248"
+      :width="280"
       class="bo-shell__nav"
       aria-label="Yönetim menüsü"
     >
       <EkSidebarNav :sections="sections" :active-key="activeKey" label="Yönetim ekranları" @select="onSelect" />
+      <template #append>
+        <button type="button" class="bo-shell__hint" @click="paletteOpen = true">
+          <v-icon icon="mdi-lightning-bolt-outline" aria-hidden="true" />
+          <span>Hızlı geçiş</span>
+          <EkKbd :keys="['Ctrl', 'K']" />
+        </button>
+      </template>
     </v-navigation-drawer>
+    <OtopilotDock />
     <v-main class="bo-shell__main">
       <main id="bo-main" tabindex="-1">
         <RouterView :key="route.path" />
@@ -21,13 +31,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
-import { EkSidebarNav, type EkSideSection } from '@entegrasyonik/ui/components'
+import { EkKbd, EkSidebarNav, type EkSideItem, type EkSideSection } from '@entegrasyonik/ui/components'
 import TopBar from '@bo/components/TopBar.vue'
+import CommandPalette from '@bo/components/shell/CommandPalette.vue'
+import ShortcutsDialog from '@bo/components/shell/ShortcutsDialog.vue'
+import { clickPageRefresh, createHotkeyHandler } from '@bo/navigation/hotkeys'
+import { loadRecents, pushRecent } from '@bo/navigation/recents'
+import OtopilotDock from '@bo/chat/OtopilotDock.vue'
+import { otopilot } from '@bo/chat/otopilot'
 import { session } from '@bo/auth/session'
-import { SCREENS, SECTION_ORDER, screenByPath } from '@bo/navigation/screens'
+import { GROUPS, SCREENS, SECTIONS, STATUS_BADGE, screenByKey, screensOf, type BoScreen } from '@bo/navigation/screens'
 import { notify } from '@bo/utils/toast'
 
 const route = useRoute()
@@ -36,29 +52,79 @@ const router = useRouter()
 const { smAndDown } = useDisplay()
 const mobile = computed(() => smAndDown.value)
 const drawerOpen = ref(!mobile.value)
+const paletteOpen = ref(false)
+const helpOpen = ref(false)
 watch(mobile, (m) => (drawerOpen.value = !m))
 
+// BO-ELEV E2: g + harf, ?, Alt+R (navigation/hotkeys.ts). Açık diyalog/palet varken beklemede.
+const onHotkey = createHotkeyHandler({
+  go: (path) => router.push(path),
+  help: () => (helpOpen.value = true),
+  refresh: () => clickPageRefresh(),
+  blocked: () => paletteOpen.value || helpOpen.value || !!document.querySelector('.v-dialog.v-overlay--active'),
+})
+
+// Son açılanlar (palet): ekran anahtarı ve müşteri numarası; yönetici başına ayrı.
+watch(() => session.state.user?.sub, (sub) => loadRecents(sub), { immediate: true })
+watch(
+  () => route.fullPath,
+  () => {
+    const tid = Number(route.params.tid)
+    if (route.name === 'tenant' && Number.isInteger(tid)) pushRecent({ kind: 'tenant', tid })
+    else if (typeof route.meta.screen === 'string' && route.meta.screen) pushRecent({ kind: 'screen', key: route.meta.screen })
+  },
+  { immediate: true },
+)
+
+// Mobil çekmece Esc ile kapanır; odak menü düğmesine döner.
+function onEsc(e: KeyboardEvent) {
+  if (e.key !== 'Escape' || !mobile.value || !drawerOpen.value || paletteOpen.value) return
+  drawerOpen.value = false
+  document.querySelector<HTMLButtonElement>('.bo-top__start .bo-top__icon-btn')?.focus()
+}
+// Otopilot: Ctrl/⌘+J aç/kapat (web ile aynı kısayol; metin alanında da çalışır — composer'dan kapatmak için).
+function onChatKey(e: KeyboardEvent) {
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'j') {
+    e.preventDefault()
+    otopilot.toggle('shortcut')
+  }
+}
+onMounted(() => {
+  window.addEventListener('keydown', onEsc)
+  window.addEventListener('keydown', onChatKey)
+  window.addEventListener('keydown', onHotkey)
+  otopilot.init()
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onEsc)
+  window.removeEventListener('keydown', onChatKey)
+  window.removeEventListener('keydown', onHotkey)
+})
+
+const leaf = (s: BoScreen, label = s.label): EkSideItem => {
+  const badge = STATUS_BADGE[s.status]
+  return { key: s.key, label, icon: s.icon, muted: s.status === 'planned', ...(badge ? { badge: badge.text, badgeTone: badge.tone, badgeVariant: 'label' as const } : {}) }
+}
+
+// Menü YALNIZ ekran kaydından: bölüm → grup (tek ekranlı grup yaprak, çok ekranlı grup açılır) → ekran.
 const sections = computed<EkSideSection[]>(() =>
-  SECTION_ORDER.map((label) => ({
-    label,
-    items: SCREENS.filter((s) => s.section === label).map((s) => ({
-      key: s.key,
-      label: s.label,
-      icon: s.icon,
-      ...(s.status === 'draft' ? { badge: 'Taslak', badgeTone: 'info' as const } : {}),
-    })),
+  SECTIONS.map((section) => ({
+    label: section.label,
+    items: GROUPS.filter((g) => g.section === section.key).map((g) => {
+      const screens = screensOf(g.key)
+      if (screens.length === 1) return leaf(screens[0], g.label)
+      const ready = screens.filter((s) => s.status !== 'planned').length
+      return { key: `group:${g.key}`, label: g.label, icon: g.icon, muted: !ready, children: screens.map((s) => leaf(s)) }
+    }),
   })),
 )
 
-const activeKey = computed(() => {
-  if (route.name === 'planned') return String(route.params.key)
-  return screenByPath(route.path)?.key
-})
+const activeKey = computed(() => screenByKey(String(route.meta.screen ?? ''))?.key)
 
 function onSelect(key: string) {
   const screen = SCREENS.find((s) => s.key === key)
   if (screen) router.push(screen.path)
-  if (mobile.value) drawerOpen.value = false
+  if (screen && mobile.value) drawerOpen.value = false
 }
 
 async function logout() {
@@ -83,6 +149,37 @@ async function logout() {
 
 .bo-shell__nav :deep(.ek-side) {
   padding-top: var(--ek-space-4);
+}
+
+.bo-shell__hint {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  width: calc(100% - 2 * var(--ek-space-3));
+  margin: var(--ek-space-3);
+  padding: var(--ek-space-2) var(--ek-space-3);
+  border: 1px dashed var(--ek-color-sidebar-border);
+  border-radius: var(--ek-radius-control);
+  background: transparent;
+  color: var(--ek-color-content-muted);
+  font: inherit;
+  font-size: var(--ek-type-caption-size);
+  cursor: pointer;
+  transition: var(--ek-transition-colors);
+}
+
+.bo-shell__hint:hover {
+  color: var(--ek-color-content-strong);
+  background: var(--ek-color-sidebar-hover);
+}
+
+.bo-shell__hint:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+}
+
+.bo-shell__hint .ek-kbd {
+  margin-left: auto;
 }
 
 .bo-shell__main {

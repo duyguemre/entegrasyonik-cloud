@@ -182,6 +182,10 @@ ul {
 :where([data-code]:not([data-part='plan'])) {
   --chan: var(--channel-neutral);
   --chan-on: var(--channel-neutral-on);
+  /* S23 kanal rozeti (FR2 11/15): koyu kenarlık + açık iç zemin + koyu harf — yalnız oranlarla türetilir. */
+  --chan-badge-bg: color-mix(in srgb, var(--chan) var(--channel-badge-tint), var(--ek-color-background));
+  --chan-badge-border: color-mix(in srgb, var(--chan) var(--channel-badge-shade), var(--channel-badge-mix-ink));
+  --chan-badge-fg: color-mix(in srgb, var(--chan) var(--channel-badge-ink), var(--channel-badge-mix-ink));
 }
 [data-code='trendyol'] {
   --chan: var(--channel-trendyol);

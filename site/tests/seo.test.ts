@@ -21,7 +21,6 @@ import {
   ogImageFor,
   entityDefinition,
   crumbTrail,
-  UPCOMING_NOTE,
   TITLE_MAX,
   DESCRIPTION_MIN,
   DESCRIPTION_MAX,
@@ -36,7 +35,6 @@ import { defaultPlanSource } from '../src/data/plans'
 import { getPublicFaq } from '../src/data/faq'
 import { integrations, getPublicIntegrations } from '../src/data/integrations'
 import { LEGAL_REVIEWED } from '../src/data/legal'
-import { UPCOMING_SURFACES } from '../src/data/assistant'
 
 const APP = 'https://app.example.test'
 const SITE = 'https://entegrasyonik.example.test'
@@ -157,8 +155,9 @@ describe('varlık tanımı ("Entegrasyonik nedir?")', () => {
     }
   })
 
-  it('kategori ifadesi net: pazaryeri entegrasyonu ve stok yönetimi yazılımı', () => {
-    expect(def).toMatch(/^Entegrasyonik, .*pazaryeri entegrasyonu ve stok yönetimi yazılımıdır\./)
+  // S23 (SR2-ENTITY 8): Entegrasyonik bir yazılım değil PLATFORMDUR (kategori terimi korunur, öz-tanım "platform").
+  it('kategori ifadesi net: pazaryeri entegrasyonu ve stok yönetimi platformu', () => {
+    expect(def).toMatch(/^Entegrasyonik, .*pazaryeri entegrasyonu ve stok yönetimi platformudur\./)
   })
 })
 
@@ -455,12 +454,8 @@ describe('LLM görünürlüğü: llms.txt, llms-full.txt, markdown alternatifler
     expect(llmsFull()).toContain(entityDefinition())
   })
 
-  it('geliştirme aşamasındaki sayfalar LLM metinlerinde notla geçer', () => {
-    for (const e of indexableEntries().filter((x) => x.upcoming)) {
-      const lineOf = (t: string) => t.split('\n').find((l) => l.includes(canonicalUrl(e.path))) ?? ''
-      expect(lineOf(llms()), e.path).toContain(UPCOMING_NOTE)
-      expect(lineOf(llmsFull()), e.path).toContain(UPCOMING_NOTE)
-    }
+  it('S24 (K43): LLM metinlerinde "geliştirme aşamasında / upcoming" notu yok', () => {
+    for (const t of [llms(), llmsFull()]) expect(t.toLocaleLowerCase('tr-TR')).not.toMatch(/geliştirme aşamasında|upcoming|erken erişim/)
   })
 
   it('markdown: tek H1 (sayfanın h1\'i), açıklama alıntısı, varlık tanımı; HTML/betik kalıntısı yok', () => {
@@ -481,27 +476,13 @@ describe('LLM görünürlüğü: llms.txt, llms-full.txt, markdown alternatifler
   it('markdown: roadmap/mevcut olmayan kanal adı ve yol haritası dili geçmez', () => {
     const roadmap = integrations.filter((i) => i.status === 'roadmap').flatMap((i) => [i.name, ...i.aliases])
     const hits: string[] = []
-    // S18 dar istisnası: "yolda" dili yalnızca UPCOMING_SURFACES sayfalarında serbest (tests/upcoming.test.ts); o sayfaların
-    // markdown'ı yerine "geliştirme aşamasında" notunun varlığı zorunlu.
-    const upcomingPages = new Set<string>(UPCOMING_SURFACES.pages)
-    // UPCOMING bileşeni (ana sayfa Asistan bandı, `UPCOMING_SURFACES.components`) aynı istisnayı taşır: denetim, o bant
-    // çıkarılmış HTML'in markdown'ı üzerinde yapılır (bandın dışında "yolda" dili yine yasak).
-    const withoutUpcomingBand = (html: string) => html.replace(/<section\b[^>]*\bid="asistan"[\s\S]*?<\/section>/g, '')
+    // S24 (K43): S18'deki "yolda" istisnası (ajan sayfası + ana sayfa bandı) KALDIRILDI — her sayfa aynı taramadan geçer.
     for (const e of indexableEntries()) {
-      const html = read(e.path)
-      const md = (html.includes('data-testid="assistant-teaser"')
-        ? htmlToMarkdown(withoutUpcomingBand(html))
-        : readFileSync(path.join(dir, markdownPath(e.path)), 'utf8')
-      ).toLocaleLowerCase('tr-TR')
+      const md = readFileSync(path.join(dir, markdownPath(e.path)), 'utf8').toLocaleLowerCase('tr-TR')
       // S20b DAR İSTİSNA: rehber sayfaları pazarı anlatır (ör. pazaryerleri genel bakışı kayıtta "roadmap" olan
       // kanalları KONU olarak adlandırabilir) → YALNIZCA kanal adı taramasından muaf; yol haritası dili yasağı sürer.
       // Rehber metninin ad/rakip korumaları tests/rehber.test.ts'te.
       const names = e.section === 'rehber' ? [] : roadmap
-      if (upcomingPages.has(e.path)) {
-        expect(e.upcoming, e.path).toBe(true)
-        expect(md, e.path).toContain(UPCOMING_NOTE)
-        continue
-      }
       for (const n of names) if (new RegExp(`(?<![\\p{L}\\d])${n.toLocaleLowerCase('tr-TR').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\p{L}\\d])`, 'u').test(md)) hits.push(`${e.path}: ${n}`)
       if (/(?<![\p{L}\d])(yakında|çok yakında|planlanıyor|yol haritası|roadmap|beta)(?![\p{L}\d])/u.test(md)) hits.push(`${e.path}: yol haritası dili`)
     }

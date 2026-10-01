@@ -17,6 +17,9 @@
  *  - inlineStyle:  `style="` (Vue `:style="` bağlaması da bu alt dizeyi
  *                  içerdiği için otomatik sayılır)
  *  - cubicBezier:  `cubic-bezier(`
+ *  - namedColor:   FR2-DARK — CSS adlı renk (white/black/red/…) bir renk özelliğinde, Vuetify sabit palet
+ *                  sınıfı (`text-white`, `bg-grey-lighten-3`) veya renk prop'u (`color="red"`). Bunlar temadan
+ *                  bağımsızdır → koyu zeminde kırılır. Taban kaydı yoksa 0 sayılır (kategori 0'dan kilitli doğar).
  *  - motion:       şüpheli-uzun geçiş süresi — `300ms`-`999ms` arası VEYA
  *                  `0.4s`-`0.9xs` arası (>300ms sınırının kaba işaretleri;
  *                  ADR premium-ui-standards skill'i motion'ı 150-300ms ile
@@ -25,12 +28,25 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
+const NAMED_COLORS =
+  'white|black|red|green|blue|gray|grey|orange|yellow|purple|pink|silver|navy|maroon|olive|lime|aqua|teal|fuchsia|' +
+  'brown|gold|violet|indigo|cyan|magenta|beige|crimson|coral|salmon|tomato|khaki|whitesmoke|gainsboro';
+const VUETIFY_PALETTE = `(?:${NAMED_COLORS}|blue-grey|deep-[a-z]+|light-[a-z]+)(?:-(?:lighten|darken|accent)-\\d)?`;
+
 const PATTERNS = {
   hex: /(?<![0-9a-fA-F])#[0-9a-fA-F]{3,8}(?![0-9a-fA-F])/g,
   rgb: /rgba?\(/g,
   inlineStyle: /style="/g,
   cubicBezier: /cubic-bezier\(/g,
   motion: /[3-9]\d\dms|0\.[4-9]\d*s/g,
+  namedColor: new RegExp(
+    `(?:(?<![\\w-])(?:color|background(?:-color)?|border(?:-(?:top|right|bottom|left))?(?:-color)?|outline(?:-color)?|fill|stroke|box-shadow|text-shadow|caret-color)\\s*:[^;{}\\n]*?(?<![\\w-])(?:${NAMED_COLORS})(?![\\w-]))` +
+      `|(?:\\b(?:bg|text|border)-${VUETIFY_PALETTE}\\b(?!-))` +
+      `|(?:\\b(?:color|bg-color|base-color|icon-color)="${VUETIFY_PALETTE}")` +
+      // JS ile atanan adlı renk: `el.style.color = "black"`, `style.backgroundColor = 'red'`
+      `|(?:\\.style\\.(?:color|background(?:Color)?|border(?:Color)?|outlineColor|fill|stroke)\\s*=\\s*['"\`](?:${NAMED_COLORS})['"\`])`,
+    'gi',
+  ),
 };
 
 const CATEGORIES = Object.keys(PATTERNS);
@@ -105,7 +121,12 @@ function listStyleFiles(srcDir) {
 /** `repoRoot`'a göre `src/**` (+ ADR-0015 A1b: seçili `public/assets/css/*`) içindeki her dosya için sayım map'i üretir. */
 function buildCounts(repoRoot) {
   // ADR-0026: ortak DS kaynağı (packages/ui/src) artık src/ dışında — mandal kapsamı AYNI kalır.
-  const files = [...listStyleFiles(path.join(repoRoot, 'src')), ...listStyleFiles(path.join(repoRoot, 'packages/ui/src'))];
+  // ADR-0034 / CHAT_UI_CONTRACT §1: sohbet paketi (packages/chat/src) de taranır; taban 0 (yeni dosyalar 0 ile başlar).
+  const files = [
+    ...listStyleFiles(path.join(repoRoot, 'src')),
+    ...listStyleFiles(path.join(repoRoot, 'packages/ui/src')),
+    ...listStyleFiles(path.join(repoRoot, 'packages/chat/src')),
+  ];
   const map = {};
   for (const absPath of files) {
     const relPath = path.relative(repoRoot, absPath).split(path.sep).join('/');

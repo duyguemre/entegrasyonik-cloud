@@ -167,7 +167,7 @@ export const FEATURE_STATE_LABELS: Record<FeatureState, string> = {
   soon: 'Yakında',
 }
 
-export const LIMIT_LABELS = { channels: 'Kanal', skus: 'Ürün varyantı (SKU)', users: 'Kullanıcı' } as const
+export const LIMIT_LABELS = { channels: 'Kanal', skus: 'Ürün varyantı', users: 'Kullanıcı' } as const
 
 export interface PublicPlanFeature {
   code: PlanFeatureCode

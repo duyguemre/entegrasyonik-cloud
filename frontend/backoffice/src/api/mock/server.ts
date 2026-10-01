@@ -17,11 +17,15 @@ import type {
   LogLevel,
   LogRange,
   LogSource,
+  OverviewHealthResponse,
+  OverviewSectionKey,
   SearchAuditRequest,
   TraceEvent,
 } from '../contract'
-import { REAUTH_OPS } from '../contract'
-import { DAY, HOUR, ISSUE_TENANTS, MOCK_ACCOUNTS, buildAudit, buildClients, buildLifecycle, buildLogStore, rng } from './data'
+import { REASON_MIN, REAUTH_OPS } from '../contract'
+import { MockHttpError } from './errors'
+import { DAY, HOUR, ISSUE_TENANTS, MOCK_ACCOUNTS, buildAudit, buildClients, buildLogStore, rng } from './data'
+import { UNHANDLED, assertImpersonatable, createP2Domains, publicConfigOf, setMockFeatureFlags, type MockCtx } from './ops'
 
 export interface MockResponse {
   status: number
@@ -46,7 +50,7 @@ export interface MockServerOptions {
   now?: () => number
   /** Oturum durumunu sayfa yenilemesinde korumak için (yalnız tarayıcıda). */
   persist?: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> | null
-  /** İmpersonation biletinin açılacağı müşteri uygulaması kökü (dev: http://localhost:3000). */
+  /** İmpersonation biletinin açılacağı müşteri uygulaması kökü (dev: http://localhost:3020). */
   appOrigin?: string
 }
 
@@ -67,6 +71,10 @@ export class MockAdminServer {
   private readonly appOrigin: string
   private state: SessionState
   private degraded = false
+  private liveReadonly = false
+  private failPrefix: string | null = null
+  private readonly p2: ReturnType<typeof createP2Domains>
+  private readonly degradedSections = new Map<OverviewSectionKey, 'timeout' | 'error'>()
   private readonly t0: number
   private readonly clients
   private readonly logs
@@ -75,11 +83,12 @@ export class MockAdminServer {
   constructor(options: MockServerOptions = {}) {
     this.now = options.now ?? Date.now
     this.persist = options.persist ?? null
-    this.appOrigin = options.appOrigin ?? 'http://localhost:3000'
+    this.appOrigin = options.appOrigin ?? 'http://localhost:3020'
     this.t0 = this.now()
     this.clients = buildClients(this.t0)
     this.logs = buildLogStore(this.t0)
     this.audit = buildAudit(this.t0)
+    this.p2 = createP2Domains(this.t0, MOCK_ACCOUNTS.enrolled.email)
     this.state = this.load()
   }
 
@@ -95,6 +104,33 @@ export class MockAdminServer {
   setDegraded(value: boolean) {
     this.degraded = value
   }
+  /** LIVE_READONLY=1: dış sisteme yazan yetenekler (retryJob, cancelSubscription sağlayıcı yolu, changePlan, scheduleAnnouncement, retryDelivery, sendTestEmail) 423. */
+  setLiveReadonly(value: boolean) {
+    this.liveReadonly = value
+  }
+  /** Örnek özellik bayrakları (backend kataloğu başlangıçta boştur). */
+  setFeatureFlags(value: boolean) {
+    setMockFeatureFlags(value)
+  }
+
+  /** NOTIFY_EMAIL_ENABLED=false: sendTestEmail 503 NOTIFY_EMAIL_UNAVAILABLE. */
+  setNotifyEmail(value: boolean) {
+    this.p2.notifications.setEmailEnabled(value)
+  }
+
+  /** Hata durumu denemesi: öneki eşleşen operasyonlar 500 INTERNAL döner (ör. `failOps('BackofficeBillingService/')`); null kapatır. */
+  failOps(prefix: string | null) {
+    this.failPrefix = prefix
+  }
+
+  private ctx(): MockCtx {
+    return { now: this.now(), t0: this.t0, degraded: this.degraded, liveReadonly: this.liveReadonly, clients: this.clients, actorEmail: this.state.email ?? '' }
+  }
+  /** Genel bakışta tek bölümü düşür (ör. `degradeSection('red')`); `degradeSection(null)` hepsini düzeltir. */
+  degradeSection(key: OverviewSectionKey | null, error: 'timeout' | 'error' = 'timeout') {
+    if (key === null) this.degradedSections.clear()
+    else this.degradedSections.set(key, error)
+  }
 
   // ------------------------------------------------------------ giriş noktası
   handle(method: 'GET' | 'POST', path: string, body: unknown): MockResponse {
@@ -105,6 +141,7 @@ export class MockAdminServer {
         const status = { ready: !this.degraded, mongo: 'ok', redis: this.degraded ? 'fail' : 'ok' }
         return { status: this.degraded ? 503 : 200, data: status, headers: { 'x-request-id': rid } }
       }
+      if (method === 'GET' && path.endsWith('/api/public-config')) return this.ok(publicConfigOf(this.p2.platform, this.ctx()), rid)
       const op = path.replace(/^.*?\/?([A-Za-z]+Service\/[A-Za-z]+)$/, '$1') as AdminOp
       return this.ok(this.rpc(op, (body ?? {}) as Record<string, unknown>), rid)
     } catch (error) {
@@ -120,6 +157,8 @@ export class MockAdminServer {
   }
 
   private rpc(op: AdminOp, body: Record<string, unknown>): unknown {
+    // failOps her operasyona uygulanır (BO-ELEV: genel bakış yenileme hatası da denenebilsin); oturum uçları hariç.
+    if (this.failPrefix && op.startsWith(this.failPrefix) && !op.startsWith('BackofficeAuthService/')) throw new MockHttpError(500, 'INTERNAL', 'Beklenmeyen bir hata oluştu.')
     switch (op) {
       case 'BackofficeAuthService/login':
         return this.login(String(body.email ?? ''), String(body.password ?? ''))
@@ -159,11 +198,18 @@ export class MockAdminServer {
       case 'BackofficeAuthService/me':
         this.requireStage('full')
         return this.me()
+      case 'BackofficeAuthService/acceptInvite':
+        // Kimliksiz: oturum aşaması aranmaz, oturum/çerez açılmaz.
+        return this.p2.handle(op, body, this.ctx())
     }
 
     this.requireStage('full')
     if ((REAUTH_OPS as readonly string[]).includes(op) && (!this.state.reauthAt || this.now() - this.state.reauthAt > STEP_UP_WINDOW)) {
       throw new MockHttpError(401, 'REAUTH_REQUIRED', 'Bu işlem için yeniden doğrulama gerekli.')
+    }
+    // requireReason (admin/stepUp.ts): kırpılmış ≥10 karakter, aksi 400 VALIDATION.
+    if ((REAUTH_OPS as readonly string[]).includes(op) && String(body.reason ?? '').trim().length < REASON_MIN) {
+      throw new MockHttpError(400, 'VALIDATION', `Gerekçe (reason) en az ${REASON_MIN} karakter olmalı.`, [{ path: 'reason', message: `en az ${REASON_MIN} karakter` }])
     }
 
     switch (op) {
@@ -180,20 +226,18 @@ export class MockAdminServer {
             queues: { orderSync: { wait: 3, active: 1 }, export: { wait: 42, active: 2 }, import: { wait: 0, active: 1 } },
           },
         }
-      case 'BackofficeTenantService/getLifecycle': {
-        const index = this.clients.findIndex((c) => c.clientId === Number(body.tid))
-        if (index < 0) throw new MockHttpError(404, 'NOT_FOUND', 'Kayıt bulunamadı.')
-        return buildLifecycle(this.clients[index], index, this.t0)
-      }
+      case 'BackofficeOverviewService/getHealth':
+        return this.getHealth()
       case 'BackofficeTenantService/startImpersonation': {
         const reason = String(body.reason ?? '').trim()
         if (reason.length < 10) {
           throw new MockHttpError(400, 'VALIDATION', 'Geçersiz istek.', [{ path: 'reason', message: 'en az 10 karakter' }])
         }
         if (!this.clients.some((c) => c.clientId === Number(body.tid))) throw new MockHttpError(404, 'NOT_FOUND', 'Kayıt bulunamadı.')
+        assertImpersonatable(this.p2.billing, Number(body.tid), this.ctx())
         if (this.degraded) throw new MockHttpError(503, 'IMPERSONATION_UNAVAILABLE', 'Impersonation şu an kullanılamıyor.')
         const ticket = Array.from({ length: 4 }, () => Math.floor(Math.random() * 0xffffffff).toString(16).padStart(8, '0')).join('')
-        return { url: `${this.appOrigin}/impersonate#t=${ticket}` }
+        return { url: `${this.appOrigin}/impersonate#t=${ticket}`, expiresInSeconds: 60 }
       }
       case 'LogCenterService/listLogs':
         return this.listLogs(body as unknown as ListLogsRequest)
@@ -208,7 +252,59 @@ export class MockAdminServer {
       case 'BackofficeAuditService/search':
         return this.searchAudit(body as unknown as SearchAuditRequest)
     }
+    const handled = this.p2.handle(op, body, this.ctx())
+    if (handled !== UNHANDLED) return handled
     throw new MockHttpError(404, 'NOT_FOUND', `Bilinmeyen operasyon: ${op}`)
+  }
+
+  // ------------------------------------------------------------ genel bakış (B1)
+  private getHealth(): OverviewHealthResponse {
+    const now = this.now()
+    const iso = (ms: number) => new Date(ms).toISOString()
+    const redisUp = !this.degraded
+    const open = this.logs.issues.filter((i) => i.status === 'open' || i.status === 'acknowledged')
+    const sections = {
+      dependencies: { status: 'ok' as const, ready: redisUp, role: 'all' as const, mongo: 'ok' as const, redis: redisUp ? ('ok' as const) : ('fail' as const) },
+      pods: {
+        status: 'ok' as const,
+        self: 'web-7d9f-2x',
+        windowMinutes: 15,
+        items: [
+          { pod: 'web-7d9f-2x', activeLeases: 3, runningJobs: 1, lastSeenAt: iso(now - 20_000), self: true },
+          { pod: 'web-7d9f-8q', activeLeases: 2, runningJobs: 0, lastSeenAt: iso(now - 45_000), self: false },
+          { pod: 'worker-5c1b-9k', activeLeases: 7, runningJobs: 4, lastSeenAt: iso(now - 12_000), self: false },
+        ],
+      },
+      red: {
+        status: 'ok' as const,
+        windowMinutes: 60,
+        from: iso(now - HOUR),
+        requests: 1284,
+        byStatusClass: { '2xx': 1221, '4xx': 41, '5xx': 22 },
+        errors5xx: 22,
+        errorRate: 22 / 1284,
+        requestsPerMinute: 21.4,
+        durationAvgMs: 142,
+        durationP95Ms: 500,
+        durationP95Overflow: false,
+        scope: 'platform' as const,
+        note: 'Pod flush aralığı (60 sn) kadar gecikmeli; tüm podlar toplanır.',
+      },
+      queues: {
+        status: 'ok' as const,
+        items: [
+          redisUp
+            ? { name: 'order-sync-queue', available: true, backlog: 5, active: 2, failed: 3, dlqPending: 1 }
+            : { name: 'order-sync-queue', available: false, backlog: null, active: null, failed: null, dlqPending: 1 },
+        ],
+      },
+      intake: { status: 'ok' as const, allOpen: false, scope: 'process' as const, restricted: [{ target: 'platform:n11', intake: 'drain' }] },
+      issues: { status: 'ok' as const, open: open.length, newLast24h: open.filter((i) => now - Date.parse(i.firstSeen) < DAY).length },
+    }
+    const out = { ...sections } as unknown as OverviewHealthResponse
+    for (const [key, error] of this.degradedSections) (out as unknown as Record<string, unknown>)[key] = { status: 'degraded', error }
+    const degradedSections = [...this.degradedSections.keys()]
+    return { ...out, generatedAt: iso(now), status: degradedSections.length || !redisUp ? 'degraded' : 'ok', degradedSections }
   }
 
   // ------------------------------------------------------------ oturum
@@ -457,15 +553,4 @@ export class MockAdminServer {
   }
 }
 
-export class MockHttpError extends Error {
-  readonly body: ApiErrorBody
-  constructor(
-    readonly status: number,
-    code: string,
-    message: string,
-    fields?: ApiErrorBody['fields'],
-  ) {
-    super(message)
-    this.body = { error: message, code, ...(fields ? { fields } : {}) }
-  }
-}
+export { MockHttpError } from './errors'

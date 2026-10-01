@@ -35,7 +35,7 @@ npm run start        # Build and start: npm run build && node dist/entegrasyonik
 
 ### Frontend (`/frontend`)
 ```bash
-npm run dev          # Vite dev server on port 3000
+npm run dev          # Vite dev server on port 3020 (3000 kullanıcının başka projesine ayrılmış)
 npm run build        # Type-check (vue-tsc) + Vite bundle
 npm run preview      # Preview production build
 npm start            # Launch Electron desktop app
@@ -90,7 +90,7 @@ Vue 3 + TypeScript + Vuetify 3, also packaged as an Electron desktop app.
 - **Auth**: `src/composables/user.ts`
 - **Types**: `src/types/` — ClaimTypes, OrderTypes, InvoiceTypes, MessageTypes, TicketTypes, PlatformProcess
 - **i18n**: Turkish and English, wired in `src/plugins/`
-- **Electron main process**: `frontend/main.js` — loads `http://localhost:3000` in dev, `dist/index.html` in production
+- **Electron main process**: `frontend/main.js` — loads `http://localhost:3020` in dev, `dist/index.html` in production
 
 ### Environment & Deployment
 

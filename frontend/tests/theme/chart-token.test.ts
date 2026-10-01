@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { buildChartCategoricalPalette, buildEchartsTheme, CHART_STATUS, chartStatusFill } from '../../src/design/echarts-theme'
-import { semanticColorsLight } from '@entegrasyonik/ui/tokens'
+import { buildChartCategoricalPalette, buildChartCategoricalPaletteDark, buildEchartsTheme, CHART_STATUS, chartStatusFill } from '../../src/design/echarts-theme'
+import { appSemanticColorsDark, semanticColorsLight } from '@entegrasyonik/ui/tokens'
 import { contrastRatio } from './contrastRatio'
 
 /**
@@ -58,5 +58,29 @@ describe('buildEchartsTheme — literal renk değil, token değeri kullanır', (
     const theme = buildEchartsTheme(semanticColorsLight)
     expect(theme.animationDuration).toBeLessThanOrEqual(250)
     expect(theme.animationEasing).toBe('quadraticOut')
+  })
+})
+
+describe('FR2-DARK — koyu grafik teması', () => {
+  const dark = appSemanticColorsDark
+  const palette = buildChartCategoricalPaletteDark(dark.primary, dark.secondary)
+
+  it.each(palette)('koyu kategorik "%s" / koyu surface ≥ 3:1', (hex) => {
+    expect(contrastRatio(hex, dark.surface)).toBeGreaterThanOrEqual(3)
+  })
+
+  it('koyu tema koyu kategorik paleti ve koyu token değerlerini kullanır', () => {
+    const theme = buildEchartsTheme(dark, 'dark')
+    expect(theme.color).toEqual(palette)
+    expect(theme.tooltip.backgroundColor).toBe(dark.surface)
+    expect(theme.valueAxis.axisLabel.color).toBe(dark['content-muted'])
+  })
+
+  it.each(['success', 'warning', 'error', 'info', 'neutral', 'action'] as const)('durum/aksiyon dolgusu "%s" koyu surface üzerinde ≥ 3:1', (key) => {
+    expect(contrastRatio(dark[key], dark.surface)).toBeGreaterThanOrEqual(3)
+  })
+
+  it('eksen etiketi (content-muted) koyu surface üzerinde AA', () => {
+    expect(contrastRatio(dark['content-muted'], dark.surface)).toBeGreaterThanOrEqual(4.5)
   })
 })

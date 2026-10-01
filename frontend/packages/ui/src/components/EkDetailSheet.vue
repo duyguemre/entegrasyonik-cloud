@@ -18,7 +18,7 @@
     </EkDetailSheet>
 -->
 <template>
-  <v-dialog v-model="isOpen" content-class="ek-detail-sheet" transition="fade-transition"
+  <v-dialog v-model="isOpen" :content-class="['ek-detail-sheet', `ek-detail-sheet--${size ?? 'md'}`].join(' ')" transition="fade-transition"
     :content-props="{ id: contentId }" v-bind="tabOverlay.overlayProps.value">
     <v-card class="ek-detail-sheet__card">
       <header class="ek-detail-sheet__header">
@@ -48,6 +48,8 @@ const props = defineProps<{
   identity: string
   /** Açık hedef (verilmezse çalışma alanı sekmesinin kabı; sekme dışında gövde). */
   attach?: string | boolean | Element
+  /** Genişlik: `md` 720px (varsayılan) · `lg` 960px — iki kolonlu kayıt detayları (sipariş, iade; fe-r2d). */
+  size?: 'md' | 'lg'
 }>()
 
 const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>()
@@ -83,6 +85,10 @@ const isOpen = computed({
   width: 720px;
   max-width: 100%;
   border-radius: 0;
+}
+
+.ek-detail-sheet--lg.v-overlay__content {
+  width: 960px;
 }
 
 /* Sekme kabına bağlı (contained): kabın sağına yaslı, kabın yüksekliğinde. */
@@ -131,6 +137,10 @@ const isOpen = computed({
 }
 
 .ek-detail-sheet__title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: var(--ek-font-size-lg);
   font-weight: var(--ek-font-weight-semibold);
   color: var(--ek-color-content-strong);
@@ -154,6 +164,26 @@ const isOpen = computed({
 </style>
 
 <style scoped>
+/* Dar ekran (fe-r2d): kimlik satırı tam genişlik; eylemler alt satıra sarılır (kimlik gizlenmez). */
+@media (max-width: 599px) {
+  .ek-detail-sheet__header {
+    flex-wrap: wrap;
+    row-gap: var(--ek-space-2);
+    padding: var(--ek-space-3) var(--ek-space-4);
+  }
+
+  .ek-detail-sheet__identity {
+    flex: 1 1 100%;
+    order: -1;
+  }
+
+  .ek-detail-sheet__header-actions {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
+
 /* Kaydırılan gövde klavyeyle odaklanabilir (axe scrollable-region-focusable); odak halkası iç kenarda. */
 .ek-detail-sheet__body:focus-visible {
   outline: none;

@@ -31,10 +31,8 @@ import { reportUnexpectedError } from '@/composables/errorReporting'
 
 // ADR-0015 Karar 3.6 (A5) — ECharts tema adaptörü tek noktadan kaydedilir;
 // tüketiciler (`StatisticsComponent` vb.) `theme="entegrasyonik"` ile bağlanır.
-import * as echarts from 'echarts/core'
-import { buildEchartsTheme } from '@/design/echarts-theme'
-import { semanticColorsLight } from '@entegrasyonik/ui/tokens'
-echarts.registerTheme('entegrasyonik', buildEchartsTheme(semanticColorsLight))
+import { registerChartThemes } from '@/composables/useChartTheme'
+registerChartThemes()
 
 const pinia = createPinia()
 const app = createApp(App)
@@ -79,6 +77,9 @@ window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => 
 // (img/script/link) YAKALAMAZ — yalnızca script çalışma zamanı hatalarını (window'a
 // kadar bubble eden) yakalar; broken image gibi durumlar için gürültülü toast riski yok.
 window.addEventListener('error', (event: ErrorEvent) => {
+  // "ResizeObserver loop completed with undelivered notifications." tarayıcının zararsız bir uyarısıdır (hata değil,
+  // işlev etkilenmez); dar ekranda kullanıcıya "Bir şeyler ters gitti" bildirimi olarak çıkması yanlış alarmdı.
+  if (/^ResizeObserver loop (completed with undelivered notifications|limit exceeded)/.test(event.message)) return
   reportUnexpectedError('Yakalanmamış global hata', {
     module: 'errorHandler',
     message: event.message,

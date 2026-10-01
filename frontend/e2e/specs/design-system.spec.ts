@@ -92,9 +92,12 @@ test.describe('DS-v2 vitrini (/design-system)', () => {
     await expect(page.getByText(/18 sipariş seçildi/)).toBeVisible()
   })
 
-  test('kademeli seçici: → alt kolona geçer, arama yaprak yollarını listeler', async ({ page }) => {
+  test('kademeli seçici: → alt kolona geçer, arama yaprak yollarını listeler', async ({ page }, testInfo) => {
     await openVitrine(page)
-    const picker = page.locator('#kademeli')
+    // §12'de iki seçici var (ana + lazy); ana olanı başlığıyla (role=group) seç.
+    const picker = page.locator('#kademeli').getByRole('group', { name: 'Pazaryeri kategorisi seç' })
+    // Dar alanda (< 640px) seçici tek panel gösterir ve seçili yolun en derin seviyesinde açılır → önce seviye yolundan köke dön.
+    if (testInfo.project.name === 'chromium-mobile') await picker.getByRole('button', { name: 'Ana kategoriler' }).click()
     await picker.getByRole('option', { name: /Elektronik/ }).click()
     await expect(picker.getByRole('listbox', { name: 'Elektronik' })).toBeVisible()
     await picker.getByRole('searchbox', { name: 'Kategori ara…' }).fill('kılıf')

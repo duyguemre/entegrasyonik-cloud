@@ -71,12 +71,14 @@ export const useMenuStore = defineStore('menu', () => {
     ['user/InvoiceInfoView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/InvoiceInfoView.vue')))],
     ['user/ChangePasswordView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/ChangePasswordView.vue')))],
     ['user/SubscriptionView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/SubscriptionView.vue')))],
-    ['user/EducationView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/SubscriptionView.vue')))],
     ['user/ExitView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/ExitView.vue')))],
 
     ['AuthorizationListView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/AuthorizationListView.vue')))],
     ['NotificationCenterView', shallowRef(defineAsyncComponent(() => import('@/views/secure/NotificationCenterView.vue')))],
     ['NotificationPreferencesView', shallowRef(defineAsyncComponent(() => import('@/views/secure/settings/NotificationPreferencesView.vue')))],
+    // MCP-6 (ADR-0035) — bağlı uygulamalar (S3) + yapay zekâ bağlantısı ayarı (S4). Menü kaydı yerel iştir (screens.ts notu).
+    ['ConnectedAppsView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/ConnectedAppsView.vue')))],
+    ['settings/AiConnectionView', shallowRef(defineAsyncComponent(() => import('@/views/secure/settings/AiConnectionView.vue')))],
 
     // ADR-0015 B4-P1c — yeni ekranlar (yalnızca EKLEME; `screens.ts` ile birebir anahtar, register-intent testi eşliği korur).
     // Gerçek menü ağacı kaydı (ApplicationDB `menus`) bu bulut görevinin kapsamı dışı — B4-P0 ile aynı emsal.
@@ -91,8 +93,25 @@ export const useMenuStore = defineStore('menu', () => {
     ['StockHealthView', shallowRef(defineAsyncComponent(() => import('@/views/secure/StockHealthView.vue')))],
     // Yardım merkezi (statik içerik; menü ağacına bağlı değil — bağlantı `help/helpLink.ts`).
     ['HelpCenterView', shallowRef(defineAsyncComponent(() => import('@/views/secure/HelpCenterView.vue')))],
+    // ADR-0034 — Otopilot tam sayfa + ayarlar (menü ağacına bağlı değil — bağlantı `chat/chatLinks.ts`).
+    ['chat', shallowRef(defineAsyncComponent(() => import('@/views/secure/OtopilotView.vue')))],
+    ['OtopilotSettingsView', shallowRef(defineAsyncComponent(() => import('@/views/secure/settings/OtopilotSettingsView.vue')))],
 
   ]);
+
+  /**
+   * FR2-SHELL madde 8 (fe-r2a): menü kaydının bileşeni. Önce `parent/Code` (kayıtlı iç içe ekranlar), yoksa yalnız `Code`.
+   * Üretim menüsünde "Ayarlar" grubunun çocukları (`settings/SettingListView` …) haritada yalnız kök anahtarla kayıtlı —
+   * bileşen `undefined` kalıyor, sekme açılınca uygulama BEYAZ ekrana düşüyordu ("Uygulama Ayarları çalışmıyor").
+   */
+  const resolveView = (link: any) => {
+    if (!link?.code) return undefined
+    if (link.parent) {
+      const nested = views.get(link.parent + '/' + link.code)
+      if (nested) return nested
+    }
+    return views.get(link.code)
+  }
 
   const restApi = useRestApi()
   const data = {
@@ -234,10 +253,7 @@ export const useMenuStore = defineStore('menu', () => {
       var processMenu = (parent: any, links: any) => {
         links.forEach((menuLink: any) => {
           menuLink.fullPath = parent + '.' + menuLink.title
-          if (menuLink.parent == "")
-            menuLink.component = views.get(menuLink.code)
-          else
-            menuLink.component = views.get(menuLink.parent + '/' + menuLink.code)
+          menuLink.component = resolveView(menuLink)
           menuLink.id = tempId++
           if (menuLink.children) {
             processMenu(menuLink.fullPath, menuLink.children)
@@ -270,7 +286,6 @@ export const useMenuStore = defineStore('menu', () => {
 
       supportMenu.push(getMenuLinkWithTitle('ticketDefinition'))
       supportMenu.push(getMenuLinkWithTitle('ticketList'))
-      supportMenu.push(getMenuLinkWithTitle('educationCenter'))
 
       systemMenu.push(getMenuLinkWithTitle('subscription'))
       systemMenu.push(getMenuLinkWithTitle('changePassword'))

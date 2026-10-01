@@ -23,10 +23,15 @@ function resolveLevel(): LogLevel {
  * (ör. `IntegrationError.code`), önceden sanitize edilmiş düz nesneler (axios vb.) OLDUĞU GİBİ, redakte edilerek döner.
  */
 /** `Error` -> düz, enumerable nesne (`type,message,stack` + alt sınıfın kendi alanları, ör. `IntegrationError.code`). Redaksiyon YOK (çağıran uygular). */
-function errorToPlain(err: Error): Record<string, unknown> {
+function errorToPlain(err: Error, depth = 0): Record<string, unknown> {
     const type = err.name || (err as any).constructor?.name || 'Error';
     const out: Record<string, unknown> = { type, message: err.message, stack: err.stack };
-    for (const k of Object.keys(err)) if (!(k in out)) out[k] = (err as any)[k];
+    for (const k of Object.keys(err)) if (!(k in out) && k !== 'cause') out[k] = (err as any)[k];
+    // [MCP-5] `cause` (ES2022) non-enumerable'dır; zincir düzleştirilir ki mesaj/stack aynı maske hattından geçsin (derinlik sınırlı).
+    const cause = (err as any).cause;
+    if (cause !== undefined) {
+        out.cause = cause instanceof Error ? (depth < 5 ? errorToPlain(cause, depth + 1) : '[cause truncated]') : cause;
+    }
     return out;
 }
 

@@ -7,6 +7,8 @@ import { writeFile, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { resolveSiteConfig } from './src/lib/site-config.ts'
 import { buildHeadersFile } from './src/lib/headers.mjs'
+import { buildRedirectRules, buildRedirectsFile } from './src/lib/redirects.mjs'
+import { AGENT_LEGACY_PATHS, AGENT_PATH } from './src/data/agent-brand.ts'
 import { htmlToMarkdown } from './src/lib/html-to-markdown.mjs'
 import { lastModified } from './src/lib/lastmod.mjs'
 import { findSeoEntry, indexableEntries, markdownPath, canonicalPath, entityDefinition, fullTitle } from './src/data/seo.ts'
@@ -22,6 +24,8 @@ const securityHeaders = {
   hooks: {
     'astro:build:done': async ({ dir }) => {
       await writeFile(path.join(fileURLToPath(dir), '_headers'), buildHeadersFile(config.appUrl), 'utf8')
+      // S22: eski ajan sayfası adresleri (S18 `/asistan`) → ad sabitinden türeyen yeni rota, kalıcı (301).
+      await writeFile(path.join(fileURLToPath(dir), '_redirects'), buildRedirectsFile(buildRedirectRules(AGENT_LEGACY_PATHS, AGENT_PATH)), 'utf8')
     },
   },
 }

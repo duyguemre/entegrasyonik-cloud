@@ -4,91 +4,65 @@
       <EkStatusChip v-if="message" :tone="effectiveTone" :label="effectiveLabel" />
     </template>
 
-    <div v-if="message" class="d-flex flex-column ek-gap-8">
-      <div class="d-flex align-center flex-wrap ek-gap-4">
-        <div class="d-flex flex-column justify-center flex-grow-1">
-          <div class="d-flex align-center ek-gap-2 flex-wrap">
-            <span class="text-caption font-weight-medium ek-chip-neutral"><v-icon size="14" class="mr-1">{{ MESSAGE_TYPE_ICONS[message.type as MessageTypeEnum] }}</v-icon>{{ MESSAGE_TYPE_LABELS[message.type as MessageTypeEnum] }}</span>
-            <EkChannelDot class="text-caption" :code="message.integrationCode" />
-          </div>
-          <div class="text-caption ek-muted mt-2">Gönderim tarihi: {{ formatDateTime(message.date) }}</div>
-          <MessageWaitChip v-if="awaiting" class="mt-2" :message="message" :now="now" show-hint />
-        </div>
-
-        <div class="customer-preview pa-3 rounded-lg border-subtle d-flex align-center">
-          <v-avatar color="surface-muted" size="36" class="mr-3">
-            <span class="text-caption font-weight-bold">
-              {{ message.customer ? (message.customer.firstName?.[0] + message.customer.lastName?.[0]) : (message.externalUserName?.[0] || '?') }}
-            </span>
-          </v-avatar>
-          <div class="d-flex flex-column">
-            <span class="text-caption font-weight-medium">
-              {{ message.customer ? `${message.customer.firstName} ${message.customer.lastName}` : (message.externalUserName || 'Anonim müşteri') }}
-            </span>
-            <span class="text-caption ek-muted">{{ message.customer?.phone || 'Pazaryeri müşterisi' }}</span>
-          </div>
-        </div>
+    <!-- FR2-SCREENS 35 (fe-r2d): mesaj = sohbet görünümü (müşteri balonu → sizin yanıtınız → yanıt alanı). -->
+    <div v-if="message" class="ek-md">
+      <div class="ek-md-context">
+        <span class="ek-md-type"><v-icon size="16" :icon="MESSAGE_TYPE_ICONS[message.type as MessageTypeEnum]" aria-hidden="true" />{{ MESSAGE_TYPE_LABELS[message.type as MessageTypeEnum] }}</span>
+        <EkChannelDot :code="message.integrationCode" />
+        <MessageWaitChip v-if="awaiting" :message="message" :now="now" />
       </div>
 
-      <EkAlert v-if="message.isRejected" tone="error" title="Pazaryeri red sebebi">
-        <div class="text-body-2">{{ message.rejectionReason || 'Belirtilmemiş bir hata nedeniyle reddedildi.' }}</div>
-        <div v-if="message.rejectedAt" class="text-caption ek-muted mt-1">Tarih: {{ formatDateTime(message.rejectedAt) }}</div>
+      <EkAlert v-if="message.isRejected" tone="error" title="Pazaryeri yanıtınızı reddetti" :text="message.rejectionReason || 'Pazaryeri bir gerekçe iletmedi.'">
+        <div v-if="message.rejectedAt" class="ek-md-muted ek-num">{{ formatDateTime(message.rejectedAt) }}</div>
       </EkAlert>
 
-      <EkSection title="Mesaj">
-        <div class="message-bubble pa-4 rounded-lg border-subtle">
-          <div class="text-body-2">{{ message.text }}</div>
-        </div>
-      </EkSection>
-
-      <EkSection v-if="message.context" title="İlgili kayıt">
-        <div class="context-card pa-4 rounded-lg border-subtle d-flex align-center ek-gap-4">
-          <v-avatar v-if="message.context.imageUrl" rounded="lg" size="56">
-            <v-img :src="message.context.imageUrl" cover />
-          </v-avatar>
-          <EkIconTile v-else icon="mdi-package-variant" tone="neutral" />
-
-          <div class="d-flex flex-column flex-grow-1">
-            <span v-if="message.context.productName" class="text-caption font-weight-medium">{{ message.context.productName }}</span>
-            <div class="d-flex align-center ek-gap-2 mt-1">
-              <span v-if="message.context.orderNumber" class="text-caption ek-num ek-link-color">Sipariş: {{ message.context.orderNumber }}</span>
-              <span v-if="message.context.productMainId" class="text-caption ek-muted">Model: {{ message.context.productMainId }}</span>
-              <v-btn v-if="message.orderId" variant="text" size="small" color="primary" :to="{ name: 'OrderListView', query: { search: message.context.orderNumber } }">
-                Siparişe git
-              </v-btn>
-            </div>
+      <ol class="ek-md-thread" aria-label="Konuşma">
+        <li class="ek-md-msg ek-md-msg--in">
+          <span class="ek-md-avatar" aria-hidden="true">{{ customerInitials }}</span>
+          <div class="ek-md-bubble">
+            <div class="ek-md-meta"><strong>{{ customerName }}</strong><time class="ek-num" :datetime="String(message.date ?? '')">{{ formatDateTime(message.date) }}</time></div>
+            <p class="ek-md-text">{{ message.text }}</p>
           </div>
-        </div>
-      </EkSection>
-
-      <EkSection title="Yanıt">
-        <div v-if="message.answer && !message.isRejected">
-          <div class="text-caption ek-muted mb-2">Gönderilen cevap</div>
-          <div class="answer-bubble pa-4 rounded-lg border-subtle">
-            {{ message.answer }}
-            <div class="text-right mt-2 text-caption ek-muted">Cevaplanma: {{ formatDateTime(message.answeredAt) }}</div>
+        </li>
+        <li v-if="message.answer" class="ek-md-msg ek-md-msg--out" :class="{ 'is-rejected': message.isRejected }">
+          <div class="ek-md-bubble">
+            <div class="ek-md-meta"><strong>Yanıtınız</strong><time v-if="message.answeredAt" class="ek-num" :datetime="String(message.answeredAt)">{{ formatDateTime(message.answeredAt) }}</time></div>
+            <p class="ek-md-text">{{ message.answer }}</p>
           </div>
-        </div>
+        </li>
+      </ol>
 
-        <div v-else-if="!(message.status === MessageStatusEnum.ANSWERED || message.isRejected === true)">
-          <v-textarea v-model="answerText" label="Cevabınızı buraya yazınız…" rows="4" auto-grow
-            class="ek-message-answer"
-            :placeholder="message.isRejected ? 'Red sebebine göre cevabınızı güncelleyiniz…' : 'Müşteriye nazik ve açıklayıcı bir cevap veriniz.'"
-            :counter="answerRule ? answerRule.max : true"
-            :counter-value="() => answerLength.count"
-            :hint="answerHint"
-            persistent-hint
-            persistent-counter
-            :error-messages="answerError"
-            @blur="answerTouched = true" />
-
-          <div class="d-flex justify-end mt-4">
-            <EkButton tone="primary" icon="mdi-send-outline" :disabled="!canSend" :loading="loading" @click="submitReply">
-              {{ message.isRejected ? 'Güncelle ve gönder' : 'Cevabı gönder' }}
-            </EkButton>
-          </div>
+      <section v-if="message.context" class="ek-md-record" aria-label="İlgili kayıt">
+        <v-avatar v-if="message.context.imageUrl" rounded="lg" size="48"><v-img :src="message.context.imageUrl" cover alt="" /></v-avatar>
+        <EkIconTile v-else :icon="message.context.orderNumber ? 'mdi-cart-outline' : 'mdi-package-variant'" tone="neutral" />
+        <div class="ek-md-record__body">
+          <span class="ek-md-record__eyebrow">{{ message.context.orderNumber ? 'İlgili sipariş' : 'İlgili ürün' }}</span>
+          <span v-if="message.context.productName" class="ek-md-record__title">{{ message.context.productName }}</span>
+          <span class="ek-md-muted">
+            <template v-if="message.context.orderNumber"><span class="ek-num">Sipariş {{ message.context.orderNumber }}</span></template>
+            <template v-if="message.context.productMainId"><template v-if="message.context.orderNumber"> · </template>Model {{ message.context.productMainId }}</template>
+          </span>
         </div>
-      </EkSection>
+        <EkButton v-if="orderLink && eventBus" tone="ghost" size="sm" trailing-icon="mdi-arrow-right" @click="goOrder">Siparişe git</EkButton>
+      </section>
+
+      <section v-if="!(message.status === MessageStatusEnum.ANSWERED && !message.isRejected)" class="ek-md-reply" aria-label="Yanıt yaz">
+        <v-textarea v-model="answerText" :label="message.isRejected ? 'Yanıtınızı güncelleyin' : 'Yanıtınız'" rows="4" auto-grow
+          class="ek-message-answer"
+          :placeholder="message.isRejected ? 'Red gerekçesine göre yanıtınızı düzenleyin…' : 'Müşteriye nazik ve açıklayıcı bir yanıt yazın.'"
+          :counter="answerRule ? answerRule.max : true"
+          :counter-value="() => answerLength.count"
+          :hint="answerHint"
+          persistent-hint
+          persistent-counter
+          :error-messages="answerError"
+          @blur="answerTouched = true" />
+        <div class="ek-md-reply__actions">
+          <EkButton tone="primary" icon="mdi-send-outline" :disabled="!canSend" :loading="loading" @click="submitReply">
+            {{ message.isRejected ? 'Güncelle ve gönder' : 'Yanıtı gönder' }}
+          </EkButton>
+        </div>
+      </section>
     </div>
 
     <EkSkeleton v-else type="detail" />
@@ -98,6 +72,9 @@
 <script setup lang="ts">
 import { EkAlert, EkDetailSheet, EkSection, EkStatusChip, EkSkeleton, EkButton, EkChannelDot, EkIconTile } from '@entegrasyonik/ui/components'
 import { ref, computed, watch } from 'vue';
+import { inject } from 'vue';
+import { useMenuStore } from '@/stores/site/menu';
+import { initials } from '@/components/customer/customerCard';
 import { useI18n } from 'vue-i18n';
 ;
 ;
@@ -182,6 +159,21 @@ function submitReply() {
   });
 }
 
+const customerName = computed(() => {
+  const c = props.message?.customer;
+  return [c?.firstName, c?.lastName].filter(Boolean).join(' ') || props.message?.externalUserName || 'Pazaryeri müşterisi';
+});
+const customerInitials = computed(() => initials(customerName.value.split(' ')[0], customerName.value.split(' ').slice(1).join(' ')) || '?');
+// "Siparişe git": kabuğun sekme açma yolu (ShellSearch ile aynı) — sipariş numarasıyla aramalı sipariş listesi.
+const eventBus: any = inject('eventBus', null);
+const menuStore: any = useMenuStore();
+const orderLink = computed(() => (props.message?.context?.orderNumber ? menuStore?.getMenuLinkWithTitle?.('orderList') : undefined));
+function goOrder() {
+  const link = orderLink.value;
+  if (!eventBus || !link) return;
+  eventBus.emit('openTab', { ...link, parameters: { globalSearch: props.message?.context?.orderNumber } });
+}
+
 const identity = computed(() => props.message ? MESSAGE_TYPE_LABELS[props.message.type as MessageTypeEnum] : 'Mesaj detayı');
 const effectiveTone = computed<StatusTone>(() => {
   if (!props.message) return 'neutral';
@@ -196,42 +188,160 @@ const effectiveLabel = computed(() => {
 </script>
 
 <style scoped>
-.ek-gap-2 { gap: var(--ek-space-2); }
-.ek-gap-4 { gap: var(--ek-space-4); }
-.ek-gap-8 { gap: var(--ek-space-8); }
-
-.border-subtle {
-  border: 1px solid var(--ek-color-border-default);
+.ek-md {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-5);
 }
 
-.ek-muted {
+.ek-md-context {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ek-space-2) var(--ek-space-3);
+}
+
+.ek-md-type {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  font-size: var(--ek-type-body-size);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-strong);
+}
+
+.ek-md-muted {
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
   color: var(--ek-color-content-muted);
 }
 
-.ek-link-color {
-  color: var(--ek-color-primary);
+.ek-md-thread {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-4);
+  margin: 0;
+  padding: var(--ek-space-5);
+  list-style: none;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface-sunken);
 }
 
-.ek-chip-neutral {
+.ek-md-msg {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--ek-space-3);
+  max-width: min(100%, 560px);
+}
+
+.ek-md-msg--out {
+  align-self: flex-end;
+}
+
+.ek-md-avatar {
   display: inline-flex;
+  flex: none;
   align-items: center;
-  padding: 2px var(--ek-space-2);
-  border-radius: var(--ek-radius-full);
-  background: var(--ek-color-neutral-subtle);
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--ek-radius-chip);
+  background: var(--ek-color-surface);
+  border: 1px solid var(--ek-color-border-default);
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-semibold);
   color: var(--ek-color-content-default);
+}
+
+.ek-md-bubble {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-1);
+  padding: var(--ek-space-3) var(--ek-space-4);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card) var(--ek-radius-card) var(--ek-radius-card) var(--ek-radius-sm);
+  background: var(--ek-color-surface);
+  min-width: 0;
+}
+
+.ek-md-msg--out .ek-md-bubble {
+  border-color: var(--ek-color-action-border);
+  border-radius: var(--ek-radius-card) var(--ek-radius-card) var(--ek-radius-sm) var(--ek-radius-card);
+  background: var(--ek-color-action-subtle);
+}
+
+.ek-md-msg--out.is-rejected .ek-md-bubble {
+  border-color: var(--ek-color-error-border);
+  background: var(--ek-color-error-subtle);
+}
+
+.ek-md-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--ek-space-1) var(--ek-space-3);
+  font-size: var(--ek-type-caption-size);
+  color: var(--ek-color-content-muted);
+}
+
+.ek-md-meta strong {
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-strong);
+}
+
+.ek-md-text {
+  margin: 0;
+  font-size: var(--ek-type-body-size);
+  line-height: var(--ek-type-body-line);
+  color: var(--ek-color-content-default);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.ek-md-record {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-3);
+  padding: var(--ek-space-3) var(--ek-space-4);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface);
+}
+
+.ek-md-record__body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ek-md-record__eyebrow {
+  font-size: var(--ek-type-micro-size);
+  font-weight: var(--ek-font-weight-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ek-color-content-muted);
+}
+
+.ek-md-record__title {
+  font-weight: var(--ek-font-weight-medium);
+  color: var(--ek-color-content-strong);
+}
+
+.ek-md-reply {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-3);
+}
+
+.ek-md-reply__actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .ek-message-answer :deep(.v-counter) {
   font-variant-numeric: tabular-nums;
-}
-
-.customer-preview {
-  min-width: 180px;
-}
-
-.message-bubble,
-.answer-bubble,
-.context-card {
-  border-radius: var(--ek-radius-lg);
 }
 </style>

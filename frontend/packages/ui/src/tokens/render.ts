@@ -40,7 +40,7 @@ import {
   motionDistance,
   zIndex,
 } from './scale'
-import { channelPalette } from './palette'
+import { channelPalette, channelBadgeMix } from './palette'
 
 export type RenderTarget = 'app' | 'static'
 
@@ -187,6 +187,9 @@ function renderChannelLines(): string[] {
     cssVarLine('channel-neutral-brand', 'var(--ek-color-neutral)'),
     cssVarLine('channel-neutral-on-brand', 'var(--ek-color-neutral-contrast)'),
     cssVarLine('channel-ring', 'color-mix(in srgb, var(--ek-color-content-default) 20%, transparent)'),
+    cssVarLine('channel-badge-tint', `${channelBadgeMix.light.tint}%`),
+    cssVarLine('channel-badge-shade', `${channelBadgeMix.light.shade}%`),
+    cssVarLine('channel-badge-ink', `${channelBadgeMix.light.ink}%`),
   )
   return lines
 }
@@ -222,6 +225,30 @@ function renderChannelScopes(): string[] {
   })
 }
 
+/**
+ * K13 — kanal ROZETİ tonları (`palette.ts` `channelBadgeMix`): tüm kanal kapsamlarında (ve nötrde) aynı formül, tek kural.
+ * `--ek-ch-badge-{bg,border,fg}` → `EkChannelBadge` ve rozet biçimini kullanan tüm bileşenler. Koyu temada oranlar
+ * `<html data-theme="dark">` ve Vuetify koyu tema sınıfı (`.v-theme--darkTheme`, `THEME_NAMES.dark`) üzerinde değişir
+ * (yüzey/mürekkep rolleri zaten temayla döner). fe-polish: eski `.v-theme--dark` seçicisi hiçbir öğeyle eşleşmiyordu.
+ */
+function renderChannelBadgeRules(): string[] {
+  const selectors = CHANNEL_SCOPE_CODES.map((code) => `.ek-ch-${code}`).join(',\n')
+  return [
+    ":root[data-theme='dark'],",
+    '.v-theme--darkTheme {',
+    `  --ek-channel-badge-tint: ${channelBadgeMix.dark.tint}%;`,
+    `  --ek-channel-badge-shade: ${channelBadgeMix.dark.shade}%;`,
+    `  --ek-channel-badge-ink: ${channelBadgeMix.dark.ink}%;`,
+    '}',
+    '',
+    `${selectors} {`,
+    '  --ek-ch-badge-bg: color-mix(in srgb, var(--ek-ch-brand) var(--ek-channel-badge-tint), var(--ek-color-surface));',
+    '  --ek-ch-badge-border: color-mix(in srgb, var(--ek-ch-brand) var(--ek-channel-badge-shade), var(--ek-color-content-strong));',
+    '  --ek-ch-badge-fg: color-mix(in srgb, var(--ek-ch-brand) var(--ek-channel-badge-ink), var(--ek-color-content-strong));',
+    '}',
+  ]
+}
+
 function renderShadowLines(light: boolean): string[] {
   const source = light ? shadow.light : shadow.dark
   return Object.entries(source).map(([key, value]) => cssVarLine(`shadow-${key}`, value))
@@ -248,6 +275,8 @@ export function renderTokenCss(target: RenderTarget): string {
       '}',
       '',
       renderChannelScopes().join('\n\n'),
+      '',
+      renderChannelBadgeRules().join('\n'),
       '',
     ].join('\n')
   }

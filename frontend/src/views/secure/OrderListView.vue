@@ -134,7 +134,7 @@
       <template #cell-items="{ row }">
         <button type="button" class="ek-order-items" :aria-label="`${row.orderNumber} içeriğini görüntüle`" @click="openDetailedReport(row)">
           <span class="ek-num">{{ row.items?.length || 0 }} kalem</span>
-          <span v-if="row.items?.length > 0" class="ek-order-items__name">{{ row.items[0].productName }}</span>
+          <span v-if="row.items?.length > 0" class="ek-order-items__name" :title="row.items[0].productName">{{ row.items[0].productName }}</span>
         </button>
       </template>
       <template #cell-allocation="{ row }">
@@ -158,9 +158,11 @@
       </template>
       <template #cell-internalStatus="{ row }">
         <span class="ek-order-status">
-          <EkStatusChip :tone="statusEntry(row.internalStatus).tone" :label="$t(statusEntry(row.internalStatus).labelKey)" />
-          <EkStatusChip v-if="isOrderLocked(row)" tone="warning" label="Kilitli" />
-          <EkStatusChip v-if="row.internalStatus === OrderInternalStatusEnum.CANCELLED" tone="neutral" :label="getCancelSourceLabel(row.cancelSource)" />
+          <span class="ek-order-status__chips">
+            <EkStatusChip :tone="statusEntry(row.internalStatus).tone" :label="$t(statusEntry(row.internalStatus).labelKey)" />
+            <EkStatusChip v-if="isOrderLocked(row)" tone="warning" icon="mdi-lock-clock" label="Kilitli" />
+          </span>
+          <span class="ek-order-status__hint">{{ statusHint(row) }}</span>
         </span>
       </template>
       <template #cell-actions="{ row }">
@@ -190,6 +192,7 @@ import { useOrderCancel } from '@/components/order/composables/useOrderCancel'
 import { useLifecycle } from '@/composables/useLifecycle'
 import { formatMoney, formatDateTime } from '@entegrasyonik/ui/format'
 import { ORDER_STATUS_TONE, ALLOCATION_STATE_TONE, ALLOCATION_STATES } from '@/design/status-map'
+import { orderStatusOptions, ORDER_STATUS_GUIDE } from '@/design/status-map'
 import { useI18n } from 'vue-i18n'
 import { isAllocationState, summarizeOrderAllocation } from '@/composables/useStockHealthApi'
 
@@ -226,12 +229,13 @@ const columns: EkGridColumn[] = [
   { key: 'orderNumber', label: 'Sipariş no', type: 'id', sortable: true },
   { key: 'integrationCode', label: 'Kanal', sortable: true },
   { key: 'customer', label: 'Müşteri' },
+  // FR2-ORDERS 31: durum, kaydırmadan görünsün diye kimlik bilgisinin hemen ardında (chip + sade ipucu satırı).
+  { key: 'internalStatus', label: 'Durum', sortable: true },
+  { key: 'total', label: 'Tutar', type: 'num', sortable: true },
   { key: 'items', label: 'İçerik' },
   // C1.1: kalem stok tahsis durumu (en önemli kalem durumu; getOrders items[].allocationState)
   { key: 'allocation', label: 'Stok' },
   { key: 'orderDate', label: 'Tarih', sortable: true },
-  { key: 'total', label: 'Tutar', type: 'num', sortable: true },
-  { key: 'internalStatus', label: 'Durum', sortable: true },
   { key: 'actions', label: 'İşlemler', align: 'end', hideLabel: true, pin: 'end' },
 ]
 
@@ -359,7 +363,13 @@ function onGridSort(sort: EkGridSort) {
 const allocationOptions = computed(() => ALLOCATION_STATES.map(id => ({ id, title: allocationTitle(id) })))
 // Aşama 6b (Standart 12): alana özel seçim deneyimi — kanal rengi / durum tonu noktası (tek kaynak status-map).
 const channelSelectOptions = computed(() => channelOptionsFrom(integrationStore.getClientPlatforms()))
-const statusSelectOptions = computed(() => toneOptionsFrom(statusOptions.value, (id) => ORDER_STATUS_TONE[id as OrderInternalStatusEnum]?.tone))
+// FR2-ORDERS 31: yaşam döngüsü sırası + sade açıklama alt satırı + iş akışı grupları (status-guide).
+const statusSelectOptions = computed(() => orderStatusOptions((s) => ORDER_INTERNAL_STATUS_LABELS[s]))
+/** Satırdaki durum ipucu: iptalde kaynak (müşteri/satıcı), diğerlerinde sıradaki işin sade adı. */
+function statusHint(row: any): string {
+  if (row?.internalStatus === OrderInternalStatusEnum.CANCELLED) return row.cancelSource ? `${getCancelSourceLabel(row.cancelSource)} iptal etti` : 'Sipariş iptal edildi'
+  return ORDER_STATUS_GUIDE[row?.internalStatus as OrderInternalStatusEnum]?.hint ?? ''
+}
 const allocationSelectOptions = computed(() => toneOptionsFrom(allocationOptions.value, (id) => ALLOCATION_STATE_TONE[id as keyof typeof ALLOCATION_STATE_TONE]?.tone))
 function allocationTitle(id: string): string {
   return isAllocationState(id) ? t(ALLOCATION_STATE_TONE[id].labelKey) : id
@@ -669,7 +679,7 @@ defineExpose({
   display: inline-flex;
   flex-direction: column;
   align-items: flex-start;
-  max-width: 240px;
+  max-width: 220px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -686,7 +696,10 @@ defineExpose({
 }
 
 .ek-order-items__name {
-  max-width: 100%;
+  /* fe-polish: ürün adı kolonu genişletip 1440px'te Tarih kolonunu yapışık eylem kolonunun altına itiyordu;
+     tam ad ipucunda (title). */
+  max-width: 160px;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--ek-color-content-muted);
@@ -696,8 +709,22 @@ defineExpose({
 .ek-order-total,
 .ek-order-status {
   display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.ek-order-status__chips {
+  display: inline-flex;
   align-items: center;
   gap: var(--ek-space-1);
+}
+
+.ek-order-status__hint {
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+  color: var(--ek-color-content-muted);
+  white-space: nowrap;
 }
 
 .ek-order-alloc {

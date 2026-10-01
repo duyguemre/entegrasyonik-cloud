@@ -8,7 +8,7 @@ uygulamaya özel kopya açılmaz** (bekçiler: `tests/no-app-imports.test.ts`, `
 |---|---|
 | `@entegrasyonik/ui/tokens` | Token kaydı (palet, semantik, workspace, rol, kontrast, ölçek, kanal adı/rengi) — `src/tokens` |
 | `@entegrasyonik/ui/theme` | `createEkVuetify` (light + dark AYNI token seti), `lightTheme`/`darkTheme`, `vuetifyDefaults`, tema tercihi (`system/light/dark`, `?theme=`), `applyThemeToDocument`, `theme-boot.js` |
-| `@entegrasyonik/ui/components` | 65 DS bileşeni (`Ek*`) + tipleri. Saf TS yardımcıları .vue yüklemeden: `@entegrasyonik/ui/components/<ad>` (listStandard, pageTrail, refreshState, filterHeader, selectOptions, cascadeMotion, statusTone) |
+| `@entegrasyonik/ui/components` | 66 DS bileşeni (`Ek*`) + tipleri. Saf TS yardımcıları .vue yüklemeden: `@entegrasyonik/ui/components/<ad>` (listStandard, pageTrail, refreshState, filterHeader, selectOptions, cascadeMotion, statusTone) |
 | `@entegrasyonik/ui/styles` | Vuetify + MDI + token CSS + türev değişkenler + override + Inter (kademe sırası sabit) |
 | `@entegrasyonik/ui/icons`, `/shortcuts`, `/format`, `/composables/useToast`, `/composables/useTabScope` | DS seviyesinde saf TS modülleri |
 
@@ -26,7 +26,12 @@ teması (`echarts-theme.ts`) de uygulamadadır; paketin `StatusTone` tipini kull
 
 ## Dark mode
 `darkTheme` = workspace semantik dark + legacy anahtarların DS-v2 rol eşlemesinden (`LEGACY_TO_WORKSPACE_MAP`) dark değerleri
-(light ile aynı 119 anahtar). Kontrast birim testleri (`tests/themes.test.ts`). Müşteri uygulaması bu temayı kaydeder ama dark
-geçişini kullanıcıya sunmaz (kapı kapalı; FR2-DARK ayrı iş). Backoffice tema tercihini `theme-boot.js` (`data-storage-key`) ile yönetir.
+(light ile aynı 119 anahtar). Kontrast birim testleri (`tests/themes.test.ts`). **İki uygulamada da açık** (FR2-DARK):
+- Tercih `system | light | dark` (varsayılan `system`), `createThemeController(key)` ile — anahtar `ek-theme` (uygulama) /
+  `ek-bo-theme` (backoffice). `?theme=dark|light` geliştirici/test geçersiz kılmasıdır (kalıcı değil).
+- İlk kare: `theme-boot.js` (eşzamanlı, `<head>`'de; uygulamaların `public/` kopyaları bayt bayt aynı — testlerle korunur).
+- Seçici: `EkThemeSwitch` (Açık / Koyu / Sistem, ARIA radio grubu) uygulamanın hesap menüsünde; backoffice'in üst bar tema menüsü aynı denetleyiciyi kullanır.
+- Tema geçişi kuralı (`html.ek-theme-switching`) ve koyu türevler (`--ek-app-login-*`, `--ek-app-media-plate`, kanal halkası)
+  `styles/app.css`'te; ekranlar yalnız `--ek-*` token'ı kullanır (literal + adlı renk mandalı: `scripts/check-style-baseline.js`).
 
 `npm run test -w @entegrasyonik/ui`

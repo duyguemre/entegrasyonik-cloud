@@ -41,7 +41,7 @@
     <div :id="panelId" class="ek-help-hint__panel" role="dialog" :aria-labelledby="`${panelId}-title`">
       <p :id="`${panelId}-title`" class="ek-help-hint__title">{{ resolved.title }}</p>
       <p class="ek-help-hint__text">{{ resolved.text }}</p>
-      <button v-if="resolved.article" type="button" class="ek-help-hint__more" @click="readMore">
+      <button v-if="resolved.article" type="button" class="ek-link ek-link--sm ek-help-hint__more" @click="readMore">
         Yardım merkezinde oku
         <v-icon icon="mdi-arrow-right" aria-hidden="true" />
       </button>
@@ -165,7 +165,7 @@ function readMore() {
 }
 
 .ek-help-hint__more:hover {
-  text-decoration: underline;
+  color: var(--ek-color-action-hover);
 }
 
 .ek-help-hint__more:focus-visible {

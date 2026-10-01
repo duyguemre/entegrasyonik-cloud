@@ -2,10 +2,10 @@
 // Sira: `mcp.exposed` -> `can()` -> entitlement -> kill-switch -> LIVE_READONLY -> bakim -> impersonation (hepsi `hiddenReasonFor` + `entitled`;
 // yeni kural listesi yok). Butce <= 30 arac (core + sayfa toolset'i onceli), ad sirasi deterministik (prompt onbellegi). Girdi semasi zod'dan JSON Schema.
 import { CAPABILITIES } from '../../capabilities';
-import { hiddenReasonFor, needsConfirmation, type AvailabilityEnv } from '../../capabilities/availability';
+import { hiddenReasonFor, hiddenReasonForAdminChat, needsConfirmation, type AvailabilityEnv } from '../../capabilities/availability';
 import { toolNameOf } from '../../capabilities/derive/toolName';
 import { zodToJsonSchema } from '../../capabilities/derive/jsonSchema';
-import { errorForHidden, invokeCapability, liveAvailabilityEnv, parseInput, findExposed, type Approval, type InvokeOptions, type InvokeResult } from '../../capabilities/invoke';
+import { errorForHidden, invokeCapability, liveAvailabilityEnv, parseInput, findAdminChat, findExposed, type Approval, type InvokeOptions, type InvokeResult } from '../../capabilities/invoke';
 import type { CapabilityDef, Toolset } from '../../capabilities/types';
 import { config } from '@config';
 import { AppError } from '@platform/core/errors';
@@ -15,8 +15,9 @@ import type { AgentCtx } from './types';
 
 export const MAX_TOOLS = 30;
 
-/** Yuzey -> listelenen etki sinifi. `chat`: hepsi (yazma onay kartiyla); `mcp`: okuma, `mcp:write` etkinse (MCP-4) yazma araclari da (yurutme YALNIZ bant disi onayla). */
-export type ToolSurface = 'chat' | 'mcp';
+/** Yuzey -> listelenen etki sinifi. `chat`: hepsi (yazma onay kartiyla); `mcp`: okuma, `mcp:write` etkinse (MCP-4) yazma araclari da (yurutme YALNIZ bant disi onayla).
+ *  `backoffice_chat` (BR-4): YALNIZ `adminChat` isaretli platform okuma yetenekleri (ayri kume; tenant sohbetiyle kesismez). */
+export type ToolSurface = 'chat' | 'mcp' | 'backoffice_chat';
 const MCP_LISTED_EFFECTS: ReadonlySet<CapabilityDef['effect']> = new Set<CapabilityDef['effect']>(['read']);
 
 export interface AgentTool {
@@ -83,6 +84,16 @@ export function toolOf(cap: CapabilityDef): AgentTool {
     };
 }
 
+/** BR-4: backoffice sohbeti arac tanimi (yalniz `adminChat`; okuma; onaysiz). */
+export function adminToolOf(cap: CapabilityDef): AgentTool {
+    const ex = cap.adminChat!.exposed;
+    return {
+        name: toolNameOf(cap.id), capId: cap.id, version: cap.version, description: ex.llm.description,
+        inputSchema: schemaOf(cap), effect: cap.effect, confirm: 'none', external: false, untrustedPaths: ex.untrustedPaths ?? [],
+        title: cap.summary, toolset: 'core',
+    };
+}
+
 export interface DeriveOptions {
     caps?: ReadonlyArray<CapabilityDef>;
     actor: { tier?: 'member' | 'admin' | 'owner'; platformAdmin?: boolean } | undefined;
@@ -99,6 +110,11 @@ export interface DeriveOptions {
 /** Saf turetme (I/O yok; entitlement onceden cozulmus predikat olarak gelir). */
 export function deriveTools(o: DeriveOptions): AgentTool[] {
     const caps = o.caps ?? CAPABILITIES;
+    if (o.surface === 'backoffice_chat') {
+        // BR-4: ayri kume. Plan/abonelik tenant kavramidir (platform yoneticisi icin yok); kill-switch/RBAC ortak.
+        return caps.filter((c) => c.adminChat && hiddenReasonForAdminChat(c, o.actor, o.env) === undefined)
+            .map(adminToolOf).sort((a, b) => a.name.localeCompare(b.name)).slice(0, MAX_TOOLS);
+    }
     const visible = caps.filter((c) => (o.surface !== 'mcp' || o.mcpWrite === true || MCP_LISTED_EFFECTS.has(c.effect))
         && hiddenReasonFor(c, o.actor, o.env) === undefined && (o.entitled ? o.entitled(c) : true));
     const hint = toolsetForScreen(o.screen);
@@ -132,11 +148,12 @@ export function createToolRuntime(deps: RuntimeDeps): ToolRuntime {
         async list(ctx, screen) {
             if (!ctx.session) return [];
             const actor = resolveTier(ctx.session.invoke.userContext, ctx.session.invoke.principal);
+            if (ctx.surface === 'backoffice_chat') return deriveTools({ actor, env: envOf(ctx), surface: 'backoffice_chat' });
             const entitled = await (deps.entitled ?? liveEntitled)(ctx.tid);
             return deriveTools({ actor, env: envOf(ctx), entitled, screen, surface: ctx.surface === 'mcp' ? 'mcp' : 'chat', mcpWrite: ctx.surface === 'mcp' && ctx.mcpWrite === true });
         },
         validate(capId, input) {
-            const cap = findExposed(capId);
+            const cap = findExposed(capId) ?? findAdminChat(capId);
             if (!cap) throw new Error('bilinmeyen arac');
             return parseInput(cap, input);
         },
@@ -144,11 +161,13 @@ export function createToolRuntime(deps: RuntimeDeps): ToolRuntime {
             if (!ctx.session) throw new Error('oturum yok');
             return invokeCapability(ctx.session.invoke, capId, input, ctx.surface ?? 'chat', { approval, env: envOf(ctx), run: deps.run });
         },
-        versionOf(capId) { return findExposed(capId)?.version; },
+        versionOf(capId) { return (findExposed(capId) ?? findAdminChat(capId))?.version; },
         async unavailable(ctx, capId) {
-            const cap = findExposed(capId);
+            const admin = ctx.surface === 'backoffice_chat';
+            const cap = admin ? findAdminChat(capId) : findExposed(capId);
             if (!cap || !ctx.session) return AppError.of('FORBIDDEN');
             const actor = resolveTier(ctx.session.invoke.userContext, ctx.session.invoke.principal);
+            if (admin) { const r = hiddenReasonForAdminChat(cap, actor, envOf(ctx)); return r ? errorForHidden(r) : undefined; }
             const reason = hiddenReasonFor(cap, actor, envOf(ctx));
             if (reason) return errorForHidden(reason);
             const entitled = await (deps.entitled ?? liveEntitled)(ctx.tid);

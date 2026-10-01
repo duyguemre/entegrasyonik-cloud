@@ -6,6 +6,12 @@
     secondary — ikincil iş (Temizle, Vazgeç). Nötr yüzey + çerçeve.
     ghost     — üçüncül/araç çubuğu işi. Zeminsiz; hover'da hafif zemin.
     danger    — yıkıcı iş. YALNIZCA onay diyaloğunun son adımında dolgu.
+    danger-quiet — sayfa/form içindeki yıkıcı iş (Sil, Kaldır): yüzey zemin + kırmızı metin/ikon; onay diyaloğu açar.
+  FR2-SHELL madde 9 — kaydet/sil TEK standart (frontend/docs/FR2_PATTERNS.md §2): `intent` ton + ikon + varsayılan
+  metni birlikte verir, ekranlar renk/ikon seçmez:
+    <EkButton intent="save" :loading="saving" @click="save" />        → primary · içerik kaydet ikonu · "Kaydet"
+    <EkButton intent="delete" @click="askDelete" />                   → danger-quiet · çöp kutusu · "Sil"
+    <EkButton intent="delete" confirm @click="remove">Kalıcı sil</EkButton>  → onay diyaloğunun son adımı (dolgu)
   Durumlar: hover / active / focus-visible (odak halkası) / disabled / loading.
   `forceState` yalnızca geliştirme vitrini içindir (durumları statik göstermek).
 
@@ -19,7 +25,7 @@
     :type="type"
     class="ek-btn"
     :class="[
-      `ek-btn--${tone}`,
+      `ek-btn--${resolvedTone}`,
       `ek-btn--${size}`,
       {
         'ek-btn--icon-only': iconOnly,
@@ -34,18 +40,23 @@
     <span v-if="loading" class="ek-btn__spinner" aria-hidden="true">
       <v-progress-circular indeterminate :size="spinnerSize" :width="2" />
     </span>
-    <v-icon v-else-if="icon" class="ek-btn__icon" :icon="icon" aria-hidden="true" />
-    <span v-if="!iconOnly" class="ek-btn__label"><slot /></span>
+    <v-icon v-else-if="resolvedIcon" class="ek-btn__icon" :icon="resolvedIcon" aria-hidden="true" />
+    <span v-if="!iconOnly" class="ek-btn__label"><slot>{{ intentLabel }}</slot></span>
     <v-icon v-if="trailingIcon && !iconOnly" class="ek-btn__icon" :icon="trailingIcon" aria-hidden="true" />
   </button>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { ACTION_ICONS } from '../icons'
 
 const props = withDefaults(
   defineProps<{
-    tone?: 'primary' | 'secondary' | 'ghost' | 'danger'
+    tone?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'danger-quiet'
+    /** Kaydet/sil tek standardı: ton + ikon + varsayılan metin (açık `tone`/`icon`/slot üstündür). */
+    intent?: 'save' | 'delete'
+    /** `intent="delete"` onay diyaloğunun SON adımında: dolgu `danger`. */
+    confirm?: boolean
     size?: 'sm' | 'md'
     icon?: string
     trailingIcon?: string
@@ -56,8 +67,21 @@ const props = withDefaults(
     type?: 'button' | 'submit' | 'reset'
     forceState?: 'hover' | 'active' | 'focus'
   }>(),
-  { tone: 'secondary', size: 'md', type: 'button' },
+  { tone: undefined, size: 'md', type: 'button' },
 )
+
+const INTENTS = {
+  save: { tone: 'primary', icon: ACTION_ICONS.save.icon, label: ACTION_ICONS.save.label },
+  delete: { tone: 'danger-quiet', icon: ACTION_ICONS.delete.icon, label: ACTION_ICONS.delete.label },
+} as const
+
+const resolvedTone = computed(() => {
+  if (props.tone) return props.tone
+  if (props.intent === 'delete' && props.confirm) return 'danger'
+  return props.intent ? INTENTS[props.intent].tone : 'secondary'
+})
+const resolvedIcon = computed(() => props.icon ?? (props.intent ? INTENTS[props.intent].icon : undefined))
+const intentLabel = computed(() => (props.intent ? INTENTS[props.intent].label : ''))
 
 const spinnerSize = computed(() => (props.size === 'sm' ? 14 : 16))
 </script>
@@ -144,6 +168,14 @@ const spinnerSize = computed(() => (props.size === 'sm' ? 14 : 16))
   --ek-btn-bg-hover: var(--ek-color-error-emphasis);
   --ek-btn-bg-active: var(--ek-color-error-emphasis);
   --ek-btn-border-hover: var(--ek-color-error-emphasis);
+}
+
+.ek-btn--danger-quiet {
+  --ek-btn-fg: var(--ek-color-error);
+  --ek-btn-border: var(--ek-color-border-strong);
+  --ek-btn-bg-hover: var(--ek-color-error-subtle);
+  --ek-btn-bg-active: var(--ek-color-error-subtle);
+  --ek-btn-border-hover: var(--ek-color-error-border);
 }
 
 .ek-btn:hover:not(:disabled),

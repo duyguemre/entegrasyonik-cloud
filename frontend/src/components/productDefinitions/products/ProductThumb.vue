@@ -1,14 +1,15 @@
 <!--
   frontend/src/components/productDefinitions/products/ProductThumb.vue
 
-  B1 — ürün listesi ve satır altı varyant listesinin ORTAK küçük görseli.
-    • Tutarlı kare (sm 40 / md 44 / xs 28 px), `object-fit: cover`, ince kenar + `--ek-radius-tile`.
+  Ürün listesi ve satır altı varyant listesinin ORTAK küçük görseli (B1 → FR2 madde 18–20).
+    • Kare ölçüler büyütüldü: xs 32 / sm 44 / md 56 / lg 64 px. Görsel hücreye DOĞRU oturur: `object-fit: contain` + beyaz
+      yüzey (ürün fotoğrafı kırpılmaz; yatay/dikey fotoğraf ortalanır), ince kenar + `--ek-radius-tile`.
     • Yüklenirken iskelet (sessiz nabız; reduced-motion'da durağan), yüklenemezse / görsel yoksa zarif yer tutucu ikon.
-    • Çoklu görsel: SAYI YOK — çerçevenin arkasında tek, ince "yığın" kenarı (sağ-üst 3 px; yerleşimi etkilemez →
-      satır yüksekliği değişmez).
-    • Önizleme: üzerine gelince (ve odaklanılabilir sürümde klavye odağında) gecikmeli (450 ms) büyük önizleme.
-      Sabit 240 px çerçeve (görsel yüklenince boyut DEĞİŞMEZ → hoplamaz), çoklu görselde altta en fazla 5 küçük kare şerit.
-      `v-tooltip` (etkileşimsiz, `pointer-events: none`) — odak kapanı yok; açıklama `aria-describedby` ile.
+    • Çoklu görsel: çerçevenin arkasında tek ince "yığın" kenarı (sağ-üst 3 px; yerleşimi etkilemez).
+    • Önizleme (FR2 madde 19): üzerine gelince / klavye odağında gecikmeli (450 ms) TEK BÜYÜK görsel (sabit 280 px çerçeve →
+      hoplamaz) + alt satırda ad ve görsel adedi; tıklanabilir sürümde "Tıklayın: galeri" ipucu. Eski "küçük resim şeridi"
+      kaldırıldı (hover'da açıldığı için tıklanamıyordu). Galeriye gezinme TIKLAMAYLA (`click` → ebeveyn `ProductGalleryDialog`).
+      `v-tooltip` (etkileşimsiz) — odak kapanı yok.
   Görsel adresi çözümü `productImage.ts`'te (saf, testli).
 -->
 <template>
@@ -29,20 +30,19 @@
       <span class="pth-pop__frame" :class="{ 'is-loading': previewState === 'loading' }">
         <img v-if="previewState !== 'error'" class="pth-pop__img" :src="src" alt="" @load="previewState = 'loaded'" @error="previewState = 'error'" />
         <v-icon v-else class="pth-pop__placeholder" icon="mdi-image-broken-variant" aria-hidden="true" />
+        <span v-if="count > 1" class="pth-pop__count ek-num"><v-icon icon="mdi-image-multiple-outline" aria-hidden="true" />{{ count }}</span>
       </span>
-      <span v-if="strip.length > 1" class="pth-pop__strip" aria-hidden="true">
-        <span v-for="(s, i) in strip" :key="s" class="pth-pop__cell" :class="{ 'is-current': i === 0 }">
-          <img :src="s" alt="" loading="lazy" />
-        </span>
+      <span class="pth-pop__meta">
+        <span class="pth-pop__caption">{{ caption ?? label }}</span>
+        <span v-if="interactive" class="pth-pop__hint">{{ count > 1 ? `${count} görsel · tıklayın: galeri` : 'Tıklayın: büyük görünüm' }}</span>
+        <span v-else-if="count > 1" class="pth-pop__hint">{{ count }} görsel</span>
       </span>
-      <span class="pth-pop__caption">{{ caption ?? label }}<span v-if="gallery.length > 1" class="ek-sr-only"> — {{ gallery.length }} görsel</span></span>
     </span>
   </v-tooltip>
 </template>
 
 <script setup lang="ts">
 import { computed, mergeProps, ref, watch } from 'vue'
-import { PREVIEW_STRIP_LIMIT } from './productImage'
 
 // Kök `v-tooltip`: sınıf/öznitelikler tooltip'e değil görsel öğesine geçsin.
 defineOptions({ inheritAttrs: false })
@@ -50,13 +50,13 @@ defineOptions({ inheritAttrs: false })
 const props = withDefaults(defineProps<{
   /** Gösterilen (ilk) görsel adresi; yoksa yer tutucu. */
   src?: string
-  /** Tüm görseller (önizleme şeridi + yığın ipucu). `src` genelde ilk öğedir. */
+  /** Tüm görseller (adet + yığın ipucu; galeri ebeveynde). `src` genelde ilk öğedir. */
   gallery?: string[]
   /** Erişilebilir ad / önizleme alt yazısı (ürün adı ya da varyant seçenekleri). */
   label: string
   /** Önizleme alt yazısı (verilmezse `label`). */
   caption?: string
-  size?: 'xs' | 'sm' | 'md'
+  size?: 'xs' | 'sm' | 'md' | 'lg'
   /** Düğme olarak çiz (odaklanabilir, tıklanabilir); aksi hâlde yalnız görsel. */
   interactive?: boolean
 }>(), { gallery: () => [], size: 'sm', interactive: false })
@@ -73,10 +73,8 @@ watch(() => props.src, () => { state.value = 'loading'; previewState.value = 'lo
 
 const showImage = computed(() => hasSrc.value && state.value !== 'error')
 const stacked = computed(() => showImage.value && props.gallery.length > 1)
-const strip = computed(() => {
-  const all = props.src && !props.gallery.includes(props.src) ? [props.src, ...props.gallery] : props.gallery
-  return all.slice(0, PREVIEW_STRIP_LIMIT)
-})
+/** Görsel adedi (`src` galeride yoksa ona eklenir). */
+const count = computed(() => (props.src && !props.gallery.includes(props.src) ? props.gallery.length + 1 : props.gallery.length))
 
 function onClick(e: MouseEvent) {
   if (props.interactive) emit('click', e)
@@ -85,7 +83,7 @@ function onClick(e: MouseEvent) {
 
 <style scoped>
 .pth {
-  --pth-size: 40px;
+  --pth-size: 44px;
   position: relative;
   isolation: isolate;
   display: inline-flex;
@@ -98,8 +96,9 @@ function onClick(e: MouseEvent) {
   vertical-align: middle;
 }
 
-.pth--xs { --pth-size: 28px; }
-.pth--md { --pth-size: 44px; }
+.pth--xs { --pth-size: 32px; }
+.pth--md { --pth-size: 56px; }
+.pth--lg { --pth-size: 64px; }
 
 .pth__frame {
   position: relative;
@@ -110,14 +109,16 @@ function onClick(e: MouseEvent) {
   overflow: hidden;
   border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-tile);
-  background: var(--ek-color-surface-sunken);
+  /* Ürün fotoğrafları çoğunlukla beyaz zeminli: `contain` boşluğu yüzeyle birleşir (kutu içinde kutu görünmez). */
+  background: var(--ek-color-surface);
   transition: border-color var(--ek-duration-fast) var(--ek-easing-standard);
 }
 
 .pth__img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  padding: 2px;
+  object-fit: contain;
   opacity: 1;
   transition: opacity var(--ek-duration-base) var(--ek-easing-enter);
 }
@@ -178,17 +179,40 @@ function onClick(e: MouseEvent) {
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-2);
-  width: 240px;
+  width: 280px;
 }
 
 .pth-pop__frame {
+  position: relative;
   display: grid;
   place-items: center;
-  width: 240px;
-  height: 240px;
+  width: 280px;
+  height: 280px;
   overflow: hidden;
   border-radius: var(--ek-radius-tile);
-  background: var(--ek-color-surface-sunken);
+  background: var(--ek-color-surface);
+  box-shadow: inset 0 0 0 1px var(--ek-color-border-subtle);
+}
+
+/* Görsel adedi: sağ üstte sakin sayaç (şerit yerine; hover'da tıklanamayan küçük resimler gösterilmez). */
+.pth-pop__count {
+  position: absolute;
+  top: var(--ek-space-2);
+  right: var(--ek-space-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px var(--ek-space-2);
+  border-radius: var(--ek-radius-chip);
+  background: var(--ek-color-surface-raised);
+  box-shadow: inset 0 0 0 1px var(--ek-color-border-default);
+  color: var(--ek-color-content-default);
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.pth-pop__count .v-icon {
+  font-size: var(--ek-icon-sm);
 }
 
 .pth-pop__frame.is-loading { animation: pth-pop-pulse 1.4s var(--ek-easing-standard) infinite; }
@@ -211,32 +235,25 @@ function onClick(e: MouseEvent) {
   font-size: var(--ek-icon-lg);
 }
 
-.pth-pop__strip {
+
+.pth-pop__meta {
   display: flex;
-  gap: var(--ek-space-1);
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
-.pth-pop__cell {
-  width: 36px;
-  height: 36px;
-  overflow: hidden;
-  border: 1px solid var(--ek-color-border-subtle);
-  border-radius: var(--ek-radius-sm);
-  background: var(--ek-color-surface-sunken);
-}
-
-.pth-pop__cell.is-current { border-color: var(--ek-color-action-border); }
-
-.pth-pop__cell img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.pth-pop__hint {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
 }
 
 .pth-pop__caption {
   overflow: hidden;
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-font-size-sm);
+  font-weight: var(--ek-font-weight-semibold);
   line-height: var(--ek-type-caption-line);
   white-space: nowrap;
   text-overflow: ellipsis;

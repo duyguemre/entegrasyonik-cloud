@@ -17,7 +17,8 @@
 import { getPublicIntegrations, type IntegrationKind, type PublicIntegration } from './integrations'
 import { getConnectGuide } from './connect'
 import { legalDocs, legalHref, LEGAL_REVIEWED } from './legal'
-import { ASSISTANT_NAME, ASSISTANT_PATH, assistantLlms } from './assistant'
+import { ASSISTANT_PATH, assistantLlms } from './assistant'
+import { AGENT_BRAND, AGENT_DESCRIPTOR, AGENT_NAME } from './agent-brand'
 import { clusterOf, guideHref, guides, GLOSSARY_PATH, REHBER_PATH } from './kb'
 import { HUB } from './kb/hub'
 import { GLOSSARY_META } from './kb/glossary'
@@ -70,11 +71,6 @@ export interface SeoEntry {
   previewOnly?: boolean
   /** lastmod için kaynak dosyalar (site/ köküne göreli). */
   sources: string[]
-  /**
-   * Geliştirme aşamasındaki (henüz kullanıma açık olmayan) bir özelliği tanıtan sayfa: llms.txt / llms-full.txt /
-   * markdown çıktısında "geliştirme aşamasında" notuyla geçer (yol haritası dili YOK; tests/seo.test.ts korur).
-   */
-  upcoming?: boolean
   /** İlgili entegrasyon kodu (HowTo/OG için). */
   integrationCode?: string
   /** Rehber sayfası (S20b): içerik ve JSON-LD `src/data/kb/**` kaydından. */
@@ -101,7 +97,7 @@ export function entityDefinition(integrations: PublicIntegration[] = getPublicIn
   for (const i of integrations) if (!kinds.includes(i.kind)) kinds.push(i.kind)
   const groups = kinds.map((k) => `${listTr(integrations.filter((i) => i.kind === k).map((i) => i.name))} ${KIND_PHRASE[k]}`)
   return (
-    `${SITE_NAME}, çok kanallı satış yapan işletmeler için web tabanlı pazaryeri entegrasyonu ve stok yönetimi yazılımıdır. ` +
+    `${SITE_NAME}, çok kanallı satış yapan işletmeler için web tabanlı pazaryeri entegrasyonu ve stok yönetimi platformudur. ` +
     `${listTr(groups)} tek panelde buluşturur; ürün, stok, sipariş ve iade süreçlerini tek yerden yönetmenizi sağlar ve ` +
     `stok rezervasyonuyla aşırı satış riskini azaltır.`
   )
@@ -193,7 +189,7 @@ const STATIC_ENTRIES: SeoEntry[] = [
     path: '/sss',
     title: 'Sık sorulan sorular',
     description:
-      'Entegrasyonik hakkında sık sorulan sorular: kurulum, pazaryeri uyumu, merkezi stok ve overselling koruması, güvenlik, fiyatlandırma ve destek.',
+      'Entegrasyonik hakkında sık sorulan sorular: kurulum, pazaryeri uyumu, merkezi stok ve aşırı satış koruması, güvenlik, fiyatlandırma ve destek.',
     index: true,
     crumb: 'Sık sorulan sorular',
     schema: ['FAQPage'],
@@ -219,7 +215,7 @@ const STATIC_ENTRIES: SeoEntry[] = [
     path: '/iletisim',
     title: 'İletişim ve kurumsal teklif',
     description:
-      'Entegrasyonik ile iletişime geçin: kurumsal teklif, genel sorular, yeni kanal talepleri ve mevcut müşteri destek talepleri için e-posta.',
+      'Entegrasyonik ile iletişime geçin: kurumsal teklif, genel sorular, yeni kanal talepleri ve hesap destek talepleri için e-posta.',
     index: true,
     crumb: 'İletişim',
     schema: ['ContactPage'],
@@ -229,20 +225,18 @@ const STATIC_ENTRIES: SeoEntry[] = [
     sources: ['src/pages/iletisim.astro', 'src/data/company.ts'],
   },
   {
-    // S18 (içerik kararları S18'e ait): vizyon sayfası — ürünün bugünkü sürümünde YOK; LLM metinlerinde S18'in
-    // `assistantLlms.short` satırıyla ("geliştirme aşamasında") geçer. Açıklama 155 sınırı için S18 metninden kısaltıldı.
+    // S18 → S22: ad/rota/başlık/ekmek kırıntısı TEK ad sabitinden (src/data/agent-brand.ts). S24 (K43): pazarlama dili;
+    // "geliştirme aşamasında" notu yok. LLM özeti vaat kaydından (`assistantLlms.short` → src/data/agent-claims.ts).
     path: ASSISTANT_PATH,
-    title: ASSISTANT_NAME,
-    description:
-      'Stok, sipariş ve fiyat işlerinizi sohbetle yöneteceğiniz, kritik işlemleri onayınıza sunacak asistan. Geliştirme aşamasında; erken erişim listesi açık.',
+    title: `${AGENT_BRAND}: ${AGENT_DESCRIPTOR}`,
+    description: `${AGENT_NAME}: stok, sipariş ve katalog işlerinizi izleyen, hazır öneriler getiren ve yalnızca onayınızla uygulayan operasyon ajanları.`,
     index: true,
-    upcoming: true,
-    crumb: 'Asistan',
+    crumb: AGENT_BRAND,
     schema: ['WebPage'],
-    ogEyebrow: 'Geliştirme aşamasında',
+    ogEyebrow: 'Operasyon ajanları',
     section: 'product',
     llmsSummary: assistantLlms.short,
-    sources: ['src/pages/asistan.astro', 'src/data/assistant.ts', 'src/components/assistant'],
+    sources: ['src/pages/[ajan].astro', 'src/data/assistant.ts', 'src/data/agent-brand.ts', 'src/components/assistant'],
   },
   {
     path: '/404',
@@ -442,9 +436,6 @@ export function crumbsFor(pathname: string): Array<{ label: string; href?: strin
   const trail = crumbTrail(pathname)
   return trail.map((c, i) => (i < trail.length - 1 ? { label: c.label, href: c.path } : { label: c.label }))
 }
-
-/** LLM metinlerinde geliştirme aşamasındaki sayfalara eklenen not. */
-export const UPCOMING_NOTE = 'geliştirme aşamasında'
 
 export const indexableEntries = (): SeoEntry[] => seoEntries.filter((e) => e.index)
 export const previewOnlyPaths = (): string[] => seoEntries.filter((e) => e.previewOnly).map((e) => e.path)

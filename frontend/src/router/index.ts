@@ -90,6 +90,26 @@ const routes: RouteRecordRaw[] = [
           requiresAuth: false
         }
       },
+      // MCP-6 (ADR-0035, MCP_UI_CONTRACT §1 S1/S2): sade kabuk (menü yok) ama OTURUM ister — oturum yoksa guard
+      // `/login?redirect=<tam adres>` ile girişe gönderir, giriş sonrası buraya döner. Menüde görünmezler.
+      // S1: dış yapay zekâ uygulamasının OAuth yetkilendirmesinden gelen onay ekranı (`?req={id}`).
+      {
+        path: 'oauth/consent',
+        name: 'OAuthConsent',
+        component: () => import('@/views/unsecure/OAuthConsentView.vue'),
+        meta: {
+          requiresAuth: true
+        }
+      },
+      // S2: bant dışı yazma onayı; URL'de kimlik dışında parametre YOK.
+      {
+        path: 'approve/:id',
+        name: 'McpApproval',
+        component: () => import('@/views/unsecure/McpApprovalView.vue'),
+        meta: {
+          requiresAuth: true
+        }
+      },
     ],
   },
 ]
@@ -103,6 +123,13 @@ if (import.meta.env.DEV) {
     path: '/design-system',
     name: 'DesignSystem',
     component: () => import('@/views/dev/DesignSystemView.vue'),
+    meta: { requiresAuth: false },
+  })
+  // ADR-0034 — Otopilot inceleme tezgâhı (mock taşıyıcı, açık/koyu tema; packages/chat/docs/review görselleri + axe).
+  routes.unshift({
+    path: '/dev/otopilot',
+    name: 'OtopilotHarness',
+    component: () => import('@/views/dev/OtopilotHarnessView.vue'),
     meta: { requiresAuth: false },
   })
 }

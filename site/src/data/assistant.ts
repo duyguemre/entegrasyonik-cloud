@@ -1,84 +1,188 @@
 /**
- * Entegrasyonik Asistan — "yolda" (upcoming) anlatısı (S18; ADR-0019 yetenek kaydı + Chat-as-UI eşitliği,
- * ADR-0018 entegrasyon uyum izleme + ajan-hazır altyapı, ADR-0009 MCP topolojisi, ADR-0007 yerel uygulama).
+ * Entegrasyonik Otopilot — operasyon ajanları: sayfa, ana sayfa bandı, hero girişi, Özellikler köprüsü ve llms
+ * metinleri (S18 → S22 ad sabiti → S24 pazarlama dili, kullanıcı kararları K43–K46).
  *
- * DÜRÜSTLÜK SINIRI: Sohbetle yönetim, yerel uygulama ve ajanlar ürünün bugünkü sürümünde YOK. Bu dosya iki tür
- * içerik taşır ve ikisini veri düzeyinde ayırır:
- *   - `planned`  : geliştirme aşamasındaki / planlanan yetenekler. Her kart bir `stage` etiketi taşır ve metni
- *                  gelecek/niyet kipindedir ("-acak/-ecek", "geliştiriyoruz"); kesin kip ("yapar/yapıyor") YOK.
- *   - `proven`   : altyapısı bugün kodda olan güvence maddeleri. Her madde repo içi `evidence` taşır
- *                  (claims.test.ts ile aynı PATHS/`evidence` deseni: dosya mevcut + atıf metni dosyada geçer).
- * `scenario` bir ÖRNEK senaryodur (canlı ürün değildir); içindeki rakamlar ve ürün adları kurgusal örnek veridir.
+ * AD: ürün adı ve rota TEK sabitten gelir (`./agent-brand.ts`); bu dosyada ad metin olarak YAZILMAZ, `AGENT_BRAND` /
+ * `AGENT_NAME` şablonla kullanılır. Ad bir sözcüğe ek almayacak biçimde cümle kurulur.
  *
- * İSTİSNA KAPSAMI (dar ve gerekçeli): "yakında/planlanan" dili ve "MCP" adı yalnızca `UPCOMING_SURFACES`
- * içinde (bu sayfa + ana sayfa bandı) görünebilir. Diğer tüm sayfalar claims.test.ts'in katı kurallarında kalır;
- * Özellikler köprüsü (`featuresBridge`) istisna DEĞİLDİR ve katı taramadan geçer. Koruma: tests/upcoming.test.ts.
+ * S24: Otopilot hazır bir özellik gibi, şimdiki zamanla anlatılır; aşama rozeti, "erken erişim", "örnek görünüm/
+ * senaryo" etiketi ve teknik anlatım (protokol, mimari, veritabanı yapısı) YOKTUR. Her VAAT cümlesi (açıklama,
+ * kart metni, SSS yanıtı, llms satırı) yalnızca `./agent-claims.ts` kaydından `claim(id)` ile gelir; kayıttaki
+ * `readiness` iç notu (yayın öncesi ürün kontrolü) bu dosyaya ve sayfaya girmez. Burada yalnızca başlık/etiket gibi
+ * kısa yönlendirme metinleri yazılır. Koruma: tests/agent-claims.test.ts (+ claims.test.ts katı taraması).
  */
-import { evidence, PATHS, type EvidenceRef } from './evidence'
+import { AGENT_BRAND, AGENT_DESCRIPTOR, AGENT_NAME, AGENT_PATH } from './agent-brand'
+import { claim } from './agent-claims'
 
-export const ASSISTANT_NAME = 'Entegrasyonik Asistan'
-export const ASSISTANT_PATH = '/asistan'
+export { AGENT_BRAND, AGENT_DESCRIPTOR, AGENT_NAME, AGENT_PATH }
+/** S18 adları (içe aktaranlar kırılmasın): ad sabitinden türer. */
+export const ASSISTANT_NAME = AGENT_NAME
+export const ASSISTANT_PATH = AGENT_PATH
 
-/**
- * "Yolda" dilinin kullanılabildiği yüzeyler — başka hiçbir sayfa/bileşen eklenemez (upcoming.test.ts sabitler).
- * `pages`: rota; `components`: `src/` altına göreli kaynak (ana sayfa bandı).
- */
-export const UPCOMING_SURFACES = {
+/** Otopilot anlatısının göründüğü yüzeyler (vaat kaydı testi bu listeyi tarar). */
+export const AGENT_SURFACES = {
   pages: [ASSISTANT_PATH],
-  components: ['components/home/AssistantTeaser.astro'],
+  components: ['components/home/AssistantTeaser.astro', 'components/home/Hero.astro'],
 } as const
 
-export type AssistantStage = 'development' | 'early-access' | 'planned'
-export const STAGE_LABELS: Record<AssistantStage, string> = {
-  development: 'Geliştirme aşamasında',
-  'early-access': 'Erken erişim',
-  planned: 'Planlanan',
-}
+export type AssistantIcon = 'chat' | 'layers' | 'eye' | 'check' | 'bolt' | 'key' | 'book' | 'link' | 'plug' | 'orders' | 'stock' | 'refresh' | 'search' | 'sparkle' | 'lock' | 'shield' | 'database' | 'users'
 
-export type AssistantIcon = 'chat' | 'layers' | 'eye' | 'check' | 'bolt' | 'key' | 'book' | 'link' | 'plug' | 'orders' | 'stock' | 'refresh' | 'search' | 'sparkle'
-
-export interface PlannedCard {
+/** Ajan kartı: ne gözlediği ve ne getirdiği ayrı, kısa satırlar. */
+export interface AgentCard {
   id: string
   icon: AssistantIcon
-  stage: AssistantStage
   title: string
   text: string
+  watches: string
+  brings: string
 }
 
-export interface ProvenItem {
+export interface FeatureCard {
   id: string
-  icon: 'layers' | 'lock' | 'eye' | 'database' | 'shield' | 'search'
+  icon: AssistantIcon
   title: string
   text: string
-  /** Kodda nerede? (görünür kısa etiket; ör. "Yetenek kaydı"). */
-  where: string
-  evidence: EvidenceRef[]
-}
-
-export interface PlannedTrustItem {
-  id: string
-  icon: 'check' | 'users' | 'eye'
-  stage: AssistantStage
-  title: string
-  text: string
-  /** Tasarım kararı (ADR) — "kanıt" değil, gerekçe. Sayfada gösterilmez. */
-  basis: EvidenceRef[]
 }
 
 // ------------------------------------------------------------------------------------------ hero
 
+/** S24 madde 7: sade hero — tek güçlü başlık + tek cümle + tek CTA; ayrıntı aşağıda. Fiyat/paket vaadi yok. */
 export const assistantHero = {
-  eyebrow: 'Entegrasyonik Asistan',
-  badge: STAGE_LABELS['early-access'],
-  title: 'Operasyonunuzu sohbetle yönetin.',
-  accent: 'sohbetle',
-  lead: 'Stoğunuzu, siparişlerinizi ve fiyatlarınızı günlük dille yöneteceğiniz bir asistan geliştiriyoruz. Siz sorunuzu yazacaksınız; asistan yanıtı panelinizdeki güncel veriden hazırlayacak, değişiklikleri ise yalnızca sizin onayınızla uygulayacak.',
-  note: 'Geliştirme aşamasında: sohbetle yönetim, yerel uygulama ve ajanlar ürünün bugünkü sürümünde yoktur.',
-  primary: 'Erken erişim listesine katılın',
-  secondary: 'Nasıl çalışacak?',
+  eyebrow: AGENT_NAME,
+  descriptor: AGENT_DESCRIPTOR,
+  title: claim('core-title'),
+  accent: 'onayınızla',
+  lead: claim('core-lead'),
+  primary: 'Demo talep edin',
 }
 
-// ------------------------------------------------------------------------------------------ örnek senaryo (hero sahnesi)
+/**
+ * Hero görseli — ajan konsolu (dekoratif; aria-hidden; rakam YOK). Dört ajan satırı döngünün dört durumunu gösterir;
+ * altta onay kapısı. S24 madde 2: "Örnek görünüm" etiketi ve "canlı ürün ekranı değildir" notu kaldırıldı.
+ */
+export type ConsoleState = 'watch' | 'propose' | 'wait' | 'report'
+export const agentConsole = {
+  windowTitle: AGENT_BRAND,
+  status: 'Ajanlar · onay modunda',
+  rows: [
+    { id: 'stok-farki', icon: 'stock', state: 'watch', stateLabel: 'Gözlüyor', name: 'Stok farkı açıklayıcı', detail: 'Kanallar arası stok eşleşmesi' },
+    { id: 'siparis-takip', icon: 'orders', state: 'propose', stateLabel: 'Öneri hazır', name: 'Sipariş takip yardımcısı', detail: 'Geciken siparişler için eylem listesi' },
+    { id: 'katalog-sagligi', icon: 'layers', state: 'wait', stateLabel: 'Onayınızı bekliyor', name: 'Katalog sağlığı yardımcısı', detail: 'Reddedilen ürünler için düzeltme taslağı' },
+    { id: 'uyum-izleme', icon: 'search', state: 'report', stateLabel: 'Raporlandı', name: 'Entegrasyon izleme ajanı', detail: 'Kanal değişikliği özeti' },
+  ] satisfies Array<{ id: string; icon: AssistantIcon; state: ConsoleState; stateLabel: string; name: string; detail: string }>,
+  gateTitle: 'Onay kapısı',
+  gateText: 'Katalog düzeltme taslağı · siz onaylamadan uygulanmaz',
+  gateApprove: 'Onayla',
+  gateReview: 'İncele',
+}
+
+// ------------------------------------------------------------------------------------------ ajan döngüsü
+
+export type LoopActor = 'agent' | 'you'
+export const loopSection = {
+  eyebrow: 'Ajan döngüsü',
+  title: 'Gözle, öner, onayla, uygula, raporla',
+  lead: claim('loop-lead'),
+  actorLabels: { agent: 'Ajan', you: 'Siz' } satisfies Record<LoopActor, string>,
+  gateLabel: 'Onay kapısı',
+  steps: [
+    { id: 'gozle', icon: 'eye', actor: 'agent', title: 'Gözle', text: claim('loop-watch') },
+    { id: 'oner', icon: 'sparkle', actor: 'agent', title: 'Öner', text: claim('loop-propose') },
+    { id: 'onayla', icon: 'check', actor: 'you', title: 'Onayla', text: claim('loop-approve') },
+    { id: 'uygula', icon: 'bolt', actor: 'agent', title: 'Uygula', text: claim('loop-apply') },
+    { id: 'raporla', icon: 'book', actor: 'agent', title: 'Raporla', text: claim('loop-report') },
+  ] satisfies Array<{ id: string; icon: AssistantIcon; actor: LoopActor; title: string; text: string }>,
+  principle: claim('loop-principle'),
+}
+
+// ------------------------------------------------------------------------------------------ ajanlar
+
+export const agentsSection = {
+  eyebrow: 'Ajanlar',
+  title: 'Arka planda göz kulak olan ajanlar',
+  lead: claim('agents-lead'),
+  watchLabel: 'İzler',
+  bringLabel: 'Getirir',
+  cards: [
+    {
+      id: 'uyum-izleme',
+      icon: 'search',
+      title: 'Entegrasyon izleme ajanı',
+      text: claim('agent-monitor'),
+      watches: claim('agent-monitor-watches'),
+      brings: claim('agent-monitor-brings'),
+    },
+    {
+      id: 'siparis-takip',
+      icon: 'orders',
+      title: 'Sipariş takip yardımcısı',
+      text: claim('agent-orders'),
+      watches: claim('agent-orders-watches'),
+      brings: claim('agent-orders-brings'),
+    },
+    {
+      id: 'katalog-sagligi',
+      icon: 'layers',
+      title: 'Katalog sağlığı yardımcısı',
+      text: claim('agent-catalog'),
+      watches: claim('agent-catalog-watches'),
+      brings: claim('agent-catalog-brings'),
+    },
+    {
+      id: 'stok-farki',
+      icon: 'stock',
+      title: 'Stok farkı açıklayıcı',
+      text: claim('agent-stock'),
+      watches: claim('agent-stock-watches'),
+      brings: claim('agent-stock-brings'),
+    },
+  ] satisfies AgentCard[],
+}
+
+// ------------------------------------------------------------------------------------------ kontrol + güven
+
+/** S24: sınırlar ve güven tek bölümde, fayda diliyle (kanıt/aşama ayrımı ve teknik etiketler kaldırıldı). */
+export const controlSection = {
+  eyebrow: 'Kontrol sizde',
+  title: 'Hız ajanlardan, karar sizden',
+  lead: claim('control-lead'),
+  flowLabel: 'Bir önerinin izlediği yol',
+  flow: [
+    { id: 'oneri', icon: 'sparkle', label: 'Ajan önerisi', actor: 'agent' },
+    { id: 'kapi', icon: 'lock', label: 'Onay kapısı', actor: 'you' },
+    { id: 'uygulama', icon: 'bolt', label: 'Uygulama', actor: 'agent' },
+    { id: 'kayit', icon: 'book', label: 'Kayıt', actor: 'agent' },
+  ] satisfies Array<{ id: string; icon: AssistantIcon; label: string; actor: LoopActor }>,
+  items: [
+    { id: 'onay-kapisi', icon: 'check', title: 'Onayınız olmadan değişiklik yok', text: claim('control-gate') },
+    { id: 'salt-okuma', icon: 'eye', title: 'Varsayılan: yalnızca okuma', text: claim('control-readonly') },
+    { id: 'denetim-kaydi', icon: 'book', title: 'Her adım kayıt altında', text: claim('control-audit') },
+    { id: 'veri', icon: 'lock', title: 'Verileriniz yalnızca size ait', text: claim('trust-data') },
+    { id: 'yetki', icon: 'users', title: 'Sizin yetkinizle', text: claim('trust-role') },
+  ] satisfies FeatureCard[],
+}
+
+// ------------------------------------------------------------------------------------------ sohbet
+
+export const chatSection = {
+  eyebrow: 'Sohbetle yönetin',
+  title: 'Ajanlarla aynı yetenekler, sohbetin rahatlığıyla',
+  lead: claim('chat-lead'),
+  examplesLabel: 'Şöyle sorabilirsiniz',
+  examples: [
+    'Bugün kargoya vermem gereken siparişler hangileri?',
+    'Geçen haftaya göre iadesi artan ürünleri listele',
+    'Stokta olmayıp satışta görünen ürün var mı?',
+  ],
+  cards: [
+    { id: 'dogal-dil', icon: 'chat', title: 'Günlük dille sorun', text: claim('chat-natural') },
+    { id: 'ayni-kural', icon: 'layers', title: 'Panelle aynı kurallar', text: claim('chat-same-rules') },
+    { id: 'kart-sonuc', icon: 'eye', title: 'Yanıtlar kart ve tablo olarak', text: claim('chat-cards') },
+    { id: 'onizleme-onay', icon: 'check', title: 'Önce önizleme, sonra onay', text: claim('chat-preview') },
+  ] satisfies FeatureCard[],
+}
+
+// ------------------------------------------------------------------------------------------ sohbet sahnesi
 
 export interface ScenarioRow {
   name: string
@@ -91,11 +195,13 @@ export interface ScenarioChange {
   to: string
 }
 
-/** Hero sohbet sahnesi: kurgusal örnek veri. Rakamlar yalnızca burada serbesttir (upcoming.test.ts). */
+/**
+ * Sohbet sahnesi (dekoratif görsel; ürün adları ve rakamlar kurgusaldır). S24 madde 2: görünür "Örnek senaryo"
+ * etiketi kaldırıldı; rakamlar yalnızca bu sahnede serbesttir (tests/agent-claims.test.ts + pages.test.ts).
+ */
 export const assistantScenario = {
-  label: 'Örnek senaryo',
-  caption: 'Temsilî tasarım; canlı ürün ekranı değildir. Ürün adları ve rakamlar örnektir.',
-  windowTitle: 'Asistan',
+  windowTitle: AGENT_BRAND,
+  sceneLabel: 'Sohbet ekranı',
   status: 'Hesabınıza bağlı · Yetkiniz: Yönetici',
   ask1: 'Çiçek kategorisinde stoku 5’in altına düşen ürünleri göster',
   resultTitle: 'Stok 5’in altında · Çiçek',
@@ -117,325 +223,71 @@ export const assistantScenario = {
   approve: 'Onayla ve uygula',
   cancel: 'Vazgeç',
   approvalNote: 'Siz onaylamadan hiçbir fiyat değişmez.',
-  typing: 'Asistan yazıyor',
+  typing: 'Yanıt hazırlanıyor',
   inputPlaceholder: 'Bir şey sorun…',
-}
-
-// ------------------------------------------------------------------------------------------ bölümler (planlanan)
-
-export const chatSection = {
-  eyebrow: 'Sohbetle yönet',
-  title: 'Sorunuzu yazın, gerisini ekranlarla aynı yetenekler üstlensin',
-  lead: 'Asistan, uygulamadaki ekranların kullandığı işlemlerin aynısını çağıracak. Ayrı, eksik ya da farklı davranan bir kopya olmayacak; sohbete açılan her işlem, ekrandaki kurallarla birebir aynı şekilde çalışacak.',
-  examplesLabel: 'Şöyle sorabileceksiniz',
-  examples: [
-    'Bugün kargoya vermem gereken siparişler hangileri?',
-    'Geçen haftaya göre iadesi artan ürünleri listele',
-    'Stokta olmayıp satışta görünen ürün var mı?',
-  ],
-  cards: [
-    {
-      id: 'dogal-dil',
-      icon: 'chat',
-      stage: 'development',
-      title: 'Günlük dille sorun',
-      text: 'Stok, sipariş ve ürün sorularınızı menü aramadan, konuşur gibi yazabileceksiniz. Asistan hangi ekrana ve filtreye ihtiyacınız olduğunu sizin yerinize bulacak.',
-    },
-    {
-      id: 'ayni-yetenek',
-      icon: 'layers',
-      stage: 'development',
-      title: 'Ekranlarla aynı yetenekler',
-      text: 'Sohbet, ekranların kullandığı yetenek kaydının aynısından beslenecek. Uygulamaya eklenen her yeni yetenek için sohbette yer alıp almayacağı açıkça kararlaştırılacak; sohbete açılanlar aynı izin kurallarıyla çalışacak.',
-    },
-    {
-      id: 'kart-sonuc',
-      icon: 'eye',
-      stage: 'planned',
-      title: 'Yanıtlar kart ve tablo olarak',
-      text: 'Sonuçlar düz metin yerine uygulamanın kendi tablo ve kartlarıyla gelecek; tek dokunuşla ilgili ekrana geçip kaldığınız yerden devam edebileceksiniz.',
-    },
-    {
-      id: 'onizleme-onay',
-      icon: 'check',
-      stage: 'development',
-      title: 'Önce önizleme, sonra onay',
-      text: 'Fiyat, stok ya da sipariş durumunu değiştirecek her istek önce bir önizleme kartına dönüşecek. Değişiklik ancak siz onayladığınızda uygulanacak.',
-    },
-  ] satisfies PlannedCard[],
-}
-
-export const localSection = {
-  eyebrow: 'Yerel uygulama',
-  title: 'Bilgisayarınızda, iş akışınızın tam ortasında',
-  lead: 'Asistanı bilgisayarınıza kurulan hafif bir uygulama olarak tasarlıyoruz. Panel sekmeleri arasında dolaşmak yerine sorunuzu yazacak, yanıtı ve onay kartını aynı pencerede göreceksiniz.',
-  protocol: {
-    name: 'Model Context Protocol (MCP)',
-    short: 'MCP',
-    nodes: [ASSISTANT_NAME, 'Yetenek kaydı ve yetki'],
-    title: 'Açık standart: Model Context Protocol',
-    text: 'MCP, yapay zekâ uygulamalarının iş yazılımlarına standart ve denetimli bir yoldan bağlanması için geliştirilmiş açık bir protokoldür. Onu ortak bir priz gibi düşünebilirsiniz: asistan, Entegrasyonik’e kapalı ve özel bir kabloyla değil, tanımlı araçlar ve izinler üzerinden bağlanacak.',
-    points: [
-      'Asistanın neyi yapabileceği, sunucudaki yetenek listesiyle sınırlı olacak.',
-      'Her çağrı sizin hesabınızla ve rolünüzün izinleriyle yapılacak.',
-      'Açık standart olduğu için bağlantı, tek bir yapay zekâ sağlayıcısına kilitlenmeyecek.',
-    ],
-  },
-  cards: [
-    {
-      id: 'masaustu',
-      icon: 'bolt',
-      stage: 'planned',
-      title: 'Hızlı ve odaklı',
-      text: 'Tarayıcı sekmelerinden bağımsız, tek pencerelik bir çalışma alanı olacak. Sık sorduğunuz sorular ve son yanıtlar bir tık uzağınızda duracak.',
-    },
-    {
-      id: 'kendi-modeliniz',
-      icon: 'key',
-      stage: 'planned',
-      title: 'Kendi modelinizi seçin',
-      text: 'Kullanacağınız yapay zekâ modelini siz seçeceksiniz. Model anahtarınız sunucumuzda değil, cihazınızda saklanacak.',
-    },
-    {
-      id: 'secilen-dosya',
-      icon: 'book',
-      stage: 'planned',
-      title: 'Yalnızca seçtiğiniz dosya',
-      text: 'Asistan yalnızca sizin seçtiğiniz dosyayı okuyabilecek. Örneğin tedarikçi fiyat listesini sohbete bırakıp güncel fiyatlarınızla karşılaştırma isteyebileceksiniz.',
-    },
-    {
-      id: 'is-akisi',
-      icon: 'link',
-      stage: 'planned',
-      title: 'Açık uçlu bağlantı',
-      text: 'Açık standart sayesinde, zamanla kullandığınız diğer uyumlu yapay zekâ araçlarından da Entegrasyonik’e aynı izinlerle bağlanabilmeyi hedefliyoruz.',
-    },
-  ] satisfies PlannedCard[],
-}
-
-export const agentsSection = {
-  eyebrow: 'Ajanlar',
-  title: 'Arka planda göz kulak olan yardımcılar',
-  lead: 'Ajanları, tekrar eden takip işlerini sizin yerinize izleyen ve size hazır bir öneri getiren yardımcılar olarak planlıyoruz. Ajanlar yalnızca öneri hazırlayacak; uygulama kararı sizde kalacak.',
-  flowLabel: 'Bir ajanın çalışma biçimi',
-  flow: ['Sinyal', 'Ajan önerisi', 'Sizin onayınız', 'Uygulama'],
-  highlight: { id: 'uyum-izleme', label: 'İlk hedefimiz' },
-  principle: 'Önce kural, sonra yapay zekâ: tespit ve eşikler kodda tanımlı olacak; yapay zekâ yalnızca özetleme ve öneri metni katmanında devreye girecek.',
-  cards: [
-    {
-      id: 'uyum-izleme',
-      icon: 'search',
-      stage: 'development',
-      title: 'Entegrasyon izleme ajanı',
-      text: 'Pazaryeri API’lerindeki değişiklikleri takip edecek, etkisini özetleyecek ve ekibimize düzeltme önerisi hazırlayacak. Böylece kanal tarafındaki bir değişiklik size ulaşmadan ele alınabilecek.',
-    },
-    {
-      id: 'siparis-takip',
-      icon: 'orders',
-      stage: 'planned',
-      title: 'Sipariş takip yardımcısı',
-      text: 'Geciken ya da bir adımda takılı kalan siparişleri fark edecek ve size öncelik sırasına dizilmiş bir eylem listesi önerecek.',
-    },
-    {
-      id: 'katalog-sagligi',
-      icon: 'layers',
-      stage: 'planned',
-      title: 'Katalog sağlığı yardımcısı',
-      text: 'Kanal tarafından reddedilen ya da eksik bilgili ürünleri bulacak ve düzeltme için hazır bir taslak getirecek.',
-    },
-    {
-      id: 'stok-farki',
-      icon: 'stock',
-      stage: 'planned',
-      title: 'Stok farkı açıklayıcı',
-      text: 'Kanallar arasındaki stok farklarının nedenini sade bir dille açıklayacak ve düzeltici adımı onayınıza sunacak.',
-    },
-  ] satisfies PlannedCard[],
-}
-
-// ------------------------------------------------------------------------------------------ güven (kanıtlı vs planlanan)
-
-const CAP = 'backend/src/capabilities'
-
-export const trustSection = {
-  eyebrow: 'Güven',
-  title: 'Güven, asistandan önce kuruldu',
-  lead: 'Asistanın dayanacağı güvenlik temelleri bugün üründe çalışıyor. Aşağıda kodda olanları ve asistanla birlikte geleceklerini ayrı ayrı gösteriyoruz.',
-  provenLabel: 'Bugün kodda',
-  provenTag: 'Kodda',
-  provenLead: 'Bu maddelerin her biri ürünün bugünkü yazılımında uygulanmıştır.',
-  plannedLabel: 'Asistanla birlikte gelecek',
-  plannedLead: 'Bu maddeler tasarım kararı olarak yazıldı; asistanla birlikte uygulanacak.',
-  proven: [
-    {
-      id: 'yetenek-kaydi',
-      icon: 'layers',
-      title: 'Tek yetenek kaydı',
-      text: 'Uygulamadaki işlemler tek bir yetenek kaydında tanımlıdır ve rol tabanlı yetki tablosu bu kayıttan üretilir. Asistan da aynı kayıttan beslenecek.',
-      where: 'Yetenek kaydı',
-      evidence: [
-        evidence(`${CAP}/index.ts`, 'Yetenek kaydı: tek gerçek kaynak (ADR-0019 §1)', 'Yetenek Kaydı — TEK gerçek kaynak'),
-        evidence(`${CAP}/derive/policy.ts`, 'Yetki tablosu kayıttan türetilir', 'export function derivePolicy'),
-      ],
-    },
-    {
-      id: 'yetkiniz',
-      icon: 'lock',
-      title: 'Sizin yetkinizle',
-      text: 'Her istek sunucuda rolünüze göre denetlenir; kayıtta tanımlı olmayan bir işlem varsayılan olarak reddedilir.',
-      where: 'Yetki denetimi',
-      evidence: [
-        evidence('backend/src/api/operationPolicy.ts', 'operationPolicy varsayılan red', 'varsayılan olarak REDDEDİLİR'),
-        evidence('backend/src/api/RunOperation.ts', 'RunOperation kademe denetimi', 'isAllowed(required'),
-      ],
-    },
-    {
-      id: 'denetim-izi',
-      icon: 'eye',
-      title: 'Denetim izi',
-      text: 'Oturum açma ve hassas hesap işlemleri, yalnızca gerekli asgari bilgiyle denetim kaydına yazılır.',
-      where: 'Denetim kaydı',
-      evidence: [
-        evidence('backend/src/services/audit/AuditLogger.ts', 'AuditLogger asgari denetim kaydı', 'asgari denetim kaydı'),
-        evidence('backend/src/database/application/models/AuditLog.ts', 'AuditLog asgari alanlar', 'PII olarak YALNIZCA sub / tid / ip'),
-      ],
-    },
-    {
-      id: 'kiraci-izolasyonu',
-      icon: 'database',
-      title: 'Kiracı izolasyonu',
-      text: 'Her müşteri hesabı için ayrı bir operasyon veritabanı kullanılır; asistan da yalnızca oturum açtığınız hesabın verisiyle çalışacak.',
-      where: 'Hesap başına veritabanı',
-      evidence: [
-        evidence(PATHS.adr0003, 'ADR-0003 kiracı DB adlandırma', 'entegrasyonikClient_1'),
-        evidence('CLAUDE.md', 'CLAUDE.md kiracı DB sözleşmesi', 'entegrasyonikClient_<n>'),
-      ],
-    },
-    {
-      id: 'ajan-kapali',
-      icon: 'shield',
-      title: 'Ajan izinleri varsayılan kapalı',
-      text: 'Kayıttaki her yetenek, ajanlara açık olup olmadığını açıkça belirtmek zorundadır. Bugün hiçbir yetenek ajanlara açık değildir.',
-      where: 'Ajan kararı',
-      evidence: [
-        evidence(`${CAP}/define.ts`, 'Varsayılan ajan kararı: kapalı', 'export const NO_AGENT: AgentDecision = { allowed: false }'),
-        evidence(`${CAP}/types.ts`, 'Ajan kararı zorunlu alan', 'export type AgentDecision'),
-      ],
-    },
-    {
-      id: 'sozlesme-bekcisi',
-      icon: 'search',
-      title: 'Sözleşme bekçisi',
-      text: 'Pazaryeri yanıtlarındaki beklenmeyen biçim değişiklikleri, akışı yavaşlatmadan bir sözleşme bekçisiyle kayda alınır. İzleme ajanı bu altyapının üzerine kurulacak.',
-      where: 'Entegrasyon uyum izleme',
-      evidence: [
-        evidence('backend/src/integration/compliance/ContractGuard.ts', 'ADR-0018 Karar 2a pasif sözleşme bekçisi', 'Pasif sözleşme bekçisi'),
-        evidence('backend/src/integration/compliance/FindingService.ts', 'Bulgu kaydı', 'FindingService'),
-      ],
-    },
-  ] satisfies ProvenItem[],
-  planned: [
-    {
-      id: 'insan-onayi',
-      icon: 'check',
-      stage: 'development',
-      title: 'Kritik işlemde insan onayı',
-      text: 'Sohbetten ya da bir ajandan gelecek her değişiklik, yapay zekânın erişemeyeceği ayrı bir onay adımından geçecek.',
-      basis: [evidence('docs/adr/0018-entegrasyon-uyum-izleme-ve-ajan-hazir-altyapi.md', 'ADR-0018 Karar 3c', 'Model veya ajan onay kanalına erişemez')],
-    },
-    {
-      id: 'onaylayan-kimligi',
-      icon: 'users',
-      stage: 'development',
-      title: 'Onaylayanın kimliğiyle',
-      text: 'Onaylanan işlem sizin kimliğinizle ve ekranlardaki yetki denetimlerinin aynısıyla çalışacak; ajanlara ayrı bir yetki tanınmayacak.',
-      basis: [evidence('docs/adr/0018-entegrasyon-uyum-izleme-ve-ajan-hazir-altyapi.md', 'ADR-0018 Karar 3c', 'onaylayan kullanıcının kimliğiyle')],
-    },
-    {
-      id: 'kaynakli-kayit',
-      icon: 'eye',
-      stage: 'planned',
-      title: 'Her adım kaynağıyla kayıtta',
-      text: 'Asistan ve ajan çağrıları, nereden geldikleri belirtilerek denetim kaydına yazılacak; kim neyi, hangi kanaldan istedi sorusunun yanıtı hazır olacak.',
-      basis: [evidence('docs/adr/0018-entegrasyon-uyum-izleme-ve-ajan-hazir-altyapi.md', 'ADR-0018 Karar 3c guardrail (iii)', "source:'agent'")],
-    },
-  ] satisfies PlannedTrustItem[],
 }
 
 // ------------------------------------------------------------------------------------------ SSS
 
 export const assistantFaq = {
   eyebrow: 'Merak edilenler',
-  title: 'Asistan hakkında kısa yanıtlar',
+  title: `${AGENT_BRAND} hakkında kısa yanıtlar`,
   items: [
-    {
-      id: 'asistan-ne-zaman',
-      question: 'Asistan ne zaman kullanıma açılacak?',
-      answer: 'Bugün bir tarih vermiyoruz. Asistan geliştirme aşamasında; hazır olduğunda önce erken erişim listesindeki işletmelerle paylaşacağız.',
-    },
-    {
-      id: 'asistan-yetki',
-      question: 'Asistan verilerime nasıl erişecek?',
-      answer: 'Asistan, sizin hesabınız ve rolünüzün izinleriyle, ekranların kullandığı yetki denetimlerinin aynısıyla çalışacak. Rolünüzün yetmediği bir işlemi sohbetten de yapamayacaksınız.',
-    },
-    {
-      id: 'asistan-model-veri',
-      question: 'Verilerim yapay zekâ modeline gönderilecek mi?',
-      answer: 'Kullanılacak modeli siz seçeceksiniz; model yalnızca sorunuzu yanıtlamak için gereken veriyi görecek. Son müşterilerinizin ad, adres ve iletişim bilgileri gibi kişisel verileri varsayılan olarak maskelenecek.',
-    },
-    {
-      id: 'asistan-ucret',
-      question: 'Asistan ücretli olacak mı?',
-      answer: 'Kapsam ve fiyatlandırma henüz belirlenmedi; erken erişim sürecindeki geri bildirimlerle birlikte netleşecek.',
-    },
+    { id: 'ajan-onay', question: 'Ajanlar benim onayım olmadan bir şey değiştirir mi?', answer: claim('faq-approval') },
+    { id: 'ajan-yetki', question: 'Ajanlar verilerime nasıl erişir?', answer: claim('faq-access') },
+    { id: 'ajan-veri', question: 'Verilerim güvende mi?', answer: claim('faq-privacy') },
+    { id: 'ajan-baslangic', question: 'Nasıl başlarım?', answer: claim('faq-start') },
   ],
 }
 
 // ------------------------------------------------------------------------------------------ CTA
 
+/** S24 madde 1: erken erişim listesi → "Demo talep edin" (mailto; form yok) + "Hemen başlayın" (kayıt). */
 export const assistantCta = {
-  eyebrow: STAGE_LABELS['early-access'],
-  title: 'Erken erişim listesine katılın',
-  text: 'Asistanı ilk deneyenlerden olmak ve geliştirme sürecine fikirlerinizle katkı vermek isterseniz bize yazın. Uygun aşamaya geldiğimizde sizinle iletişime geçeceğiz.',
-  subject: 'Asistan erken erişim',
+  eyebrow: AGENT_NAME,
+  title: `${AGENT_BRAND} ajanlarını iş başında görün`,
+  text: claim('cta-text'),
+  subject: `${AGENT_BRAND} demo talebi`,
   subjectNote: 'E-postanın konu satırı hazır gelir:',
-  sendLabel: 'Listeye katılmak için yazın',
-  points: [
-    'Form yok, hesap açmanız gerekmez: tek bir e-posta yeterli.',
-    'Hangi işleri sohbetle yapmak istediğinizi yazarsanız önceliklendirmemize yön vermiş olursunuz.',
-  ],
+  sendLabel: 'Demo talep edin',
+  start: 'Hemen başlayın',
+  points: ['Form doldurmanız gerekmez; tek bir e-posta yeterli.', 'Hangi takip işlerini ajanlara bırakmak istediğinizi yazın, demoyu ona göre hazırlayalım.'],
 }
 
 // ------------------------------------------------------------------------------------------ diğer yüzeyler
 
-/** Ana sayfa bandı (UPCOMING yüzeyi). */
+/** Ana sayfa bölümü (S24 madde 6: premium bölüm). */
 export const assistantTeaser = {
-  eyebrow: 'Yakında',
-  badge: STAGE_LABELS['early-access'],
-  title: 'Entegrasyonik Asistan',
-  lead: 'Operasyonunuzu sohbetle yöneteceğiniz asistanı geliştiriyoruz: sorunuzu günlük dille yazacaksınız, sonucu kartlarla göreceksiniz; kritik her işlem sizin onayınızla ilerleyecek.',
-  points: ['Ekranlarla aynı yetenekler', 'Kritik işlemde insan onayı', 'Yerel uygulama'],
-  cta: 'Asistanı keşfedin',
-  bubbleAsk: 'Stoku azalan ürünleri göster',
-  bubbleAnswer: 'Onayınız gerekiyor',
+  eyebrow: 'Operasyon ajanları',
+  title: AGENT_NAME,
+  lead: claim('core-short'),
+  points: [
+    { icon: 'eye', title: 'Gözler', text: claim('loop-watch') },
+    { icon: 'sparkle', title: 'Önerir', text: claim('loop-propose') },
+    { icon: 'check', title: 'Onayınızla uygular', text: claim('control-gate') },
+  ] satisfies Array<{ icon: AssistantIcon; title: string; text: string }>,
+  cta: 'Ajanları keşfedin',
+  demo: 'Demo talep edin',
 }
 
-/** Özellikler sayfası köprüsü — istisna DEĞİL: claims.test.ts'in katı taramasından geçer ("yakında"/MCP yok). */
+/** Ana sayfa HERO girişi — ad + tek cümle + sayfaya giriş (claims.test.ts katı taramasından geçer). */
+export const heroAgentEntry = {
+  badge: 'Yeni',
+  name: AGENT_NAME,
+  value: claim('core-title'),
+  cta: 'Keşfedin',
+}
+
+/** Özellikler sayfası köprüsü (claims.test.ts katı taramasından geçer). */
 export const featuresBridge = {
-  eyebrow: 'Yolda',
-  title: 'Sırada: Entegrasyonik Asistan',
-  text: 'Sohbetle yönetim ve yardımcı ajanlar üzerinde çalışıyoruz. Geliştirme aşamasındaki bu yetenekleri, bugün ürünün sunduklarından ayrı tutmak için kendi sayfasında anlatıyoruz.',
-  cta: 'Asistan sayfasına gidin',
+  eyebrow: 'Yeni',
+  title: AGENT_NAME,
+  text: claim('bridge-text'),
+  cta: `${AGENT_BRAND} sayfasına gidin`,
 }
 
-/** llms.txt / llms-full.txt satırı: "upcoming" notu; MCP adı ve "yakında" dili burada da KULLANILMAZ. */
+/** llms.txt / llms-full.txt satırları (vaat kaydından). */
 export const assistantLlms = {
-  short: 'upcoming — geliştirme aşamasında, ürünün bugünkü sürümünde yok. Sohbetle yönetim, yerel uygulama ve öneri hazırlayan ajanlar için vizyon ve erken erişim.',
-  full: [
-    'Durum: upcoming (geliştirme aşamasında). Aşağıdakiler ürünün bugünkü sürümünde YOKTUR.',
-    'Sohbetle yönetim: ekranlarla aynı yetenek kaydından beslenecek; değişiklikler önizleme ve kullanıcı onayıyla uygulanacak.',
-    'Yerel uygulama: bilgisayara kurulan bir çalışma alanı olarak tasarlıyoruz; kullanıcı kendi yapay zekâ modelini seçecek.',
-    'Ajanlar: yalnızca öneri hazırlayacak; uygulama kararı kullanıcıda kalacak.',
-    'Bugün kodda olan temel: tek yetenek kaydı, sunucu tarafı yetki denetimi (varsayılan red), denetim kaydı, hesap başına ayrı veritabanı, ajan izinlerinin varsayılan kapalı olması.',
-  ],
+  short: claim('llms-short'),
+  full: [claim('llms-loop'), claim('llms-chat'), claim('llms-trust')],
 }

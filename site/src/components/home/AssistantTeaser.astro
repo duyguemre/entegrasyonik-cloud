@@ -1,70 +1,107 @@
 ---
 /**
- * AssistantTeaser (S18) — ana sayfada "Entegrasyonik Asistan" bandı: dikkat çekici ama sayfayı ele geçirmeyen tek kart.
- * UPCOMING yüzeyidir (`UPCOMING_SURFACES.components`): "yolda" dili yalnızca burada ve /asistan'da görünebilir.
- * Tüm metin `assistantTeaser` kaydından (src/data/assistant.ts); aşama rozeti ZORUNLU (tests/upcoming.test.ts).
- * Sağdaki küçük sohbet önizlemesi dekoratiftir (aria-hidden), hareketsizdir; asıl örnek senaryo /asistan'dadır.
- * Yerleşim: Entegrasyonlar (gri) ile Nasıl çalışır (koyu) arasında açık zeminli, dar dikey boşluklu bir bant.
+ * AssistantTeaser — ana sayfada Entegrasyonik Otopilot bölümü (S18 bant → S24 premium vitrin, kullanıcı madde 6).
+ *
+ * Tüm metin `assistantTeaser` kaydından (src/data/assistant.ts); vaat cümleleri `agent-claims.ts` kaydından gelir
+ * (tests/agent-claims.test.ts). Aşama rozeti / "yakında" dili YOK (K43).
+ *
+ * Tasarım: derin lacivert vitrin paneli — üstte ince aurora ışıması ve sönük ızgara, degrade ince çerçeve. Solda ad
+ * (markanın ürün adı vurgulu), tek cümle değer ve iki eylem; altında üç adım (Gözler / Önerir / Onayınızla uygular)
+ * ince ayraçlı sütunlar. Sağda dekoratif ajan konsolu parçası (aria-hidden): iki ajan satırı + onay kartı; dar
+ * ekranda gizlenmez, sadeleşir. Hareket yok (statik vitrin; ana sayfa zaten animasyonlu sahnelerle dolu).
  */
 import Section from '../Section.astro'
 import Icon from './Icon.astro'
-import StageBadge from '../assistant/StageBadge.astro'
-import { ASSISTANT_PATH, assistantTeaser as t } from '../../data/assistant'
+import { ASSISTANT_PATH, AGENT_BRAND, agentConsole, assistantTeaser as t } from '../../data/assistant'
+
+const [lead, ...restName] = t.title.split(AGENT_BRAND)
+const rows = agentConsole.rows.slice(0, 2)
 ---
 
-<Section id="asistan" labelledby="asistan-baslik" class="teaser-section">
+<Section id="ajan-bandi" labelledby="ajan-bandi-baslik" class="teaser-section">
   <div class="teaser" data-testid="assistant-teaser">
+    <span class="teaser__aurora" aria-hidden="true"></span>
+    <span class="teaser__grid" aria-hidden="true"></span>
+
     <div class="teaser__body">
-      <div class="teaser__tags">
-        <span class="teaser__soon"><Icon name="sparkle" size="sm" />{t.eyebrow}</span>
-        <StageBadge stage="early-access" inverse />
-      </div>
-      <h2 id="asistan-baslik">{t.title}</h2>
+      <p class="teaser__eyebrow">
+        <span class="teaser__eyebrow-icon" aria-hidden="true"><Icon name="sparkle" size="sm" /></span>
+        {t.eyebrow}
+      </p>
+      <h2 id="ajan-bandi-baslik">{lead}<span class="teaser__brand">{AGENT_BRAND}</span>{restName.join(AGENT_BRAND)}</h2>
       <p class="teaser__lead">{t.lead}</p>
-      <ul class="teaser__points" role="list">
-        {
-          t.points.map((p) => (
-            <li>
-              <Icon name="check" size="sm" />
-              <span>{p}</span>
-            </li>
-          ))
-        }
-      </ul>
-      <a class="teaser__cta" href={ASSISTANT_PATH} data-testid="assistant-teaser-link">
-        <span>{t.cta}</span>
-        <Icon name="arrow" size="sm" />
-      </a>
+      <div class="teaser__actions">
+        <a class="teaser__cta" href={ASSISTANT_PATH} data-testid="assistant-teaser-link">
+          <span>{t.cta}</span>
+          <Icon name="arrow" size="sm" />
+        </a>
+        <a class="teaser__link" href={`${ASSISTANT_PATH}#demo`} data-testid="assistant-teaser-demo">
+          {t.demo}
+        </a>
+      </div>
     </div>
+
     <div class="teaser__visual" aria-hidden="true">
-      <p class="mini mini--user">{t.bubbleAsk}</p>
-      <div class="mini mini--bot">
-        <span class="mini__lines"><i></i><i></i><i></i></span>
-      </div>
-      <div class="mini mini--approve">
-        <Icon name="shield" size="sm" />
-        <span>{t.bubbleAnswer}</span>
-        <span class="mini__btn"><Icon name="check" size="sm" /></span>
+      <div class="deck">
+        <div class="deck__bar">
+          <span class="deck__glyph"><Icon name="sparkle" size="sm" /></span>
+          <span class="deck__title">{agentConsole.windowTitle}</span>
+          <span class="deck__mode">{agentConsole.status}</span>
+        </div>
+        <ul class="deck__rows" role="list">
+          {
+            rows.map((r) => (
+              <li class="deck__row" data-state-kind={r.state}>
+                <span class="deck__icon"><Icon name={r.icon} size="sm" /></span>
+                <span class="deck__name">{r.name}</span>
+                <span class="deck__state"><i></i>{r.stateLabel}</span>
+              </li>
+            ))
+          }
+        </ul>
+        <div class="deck__gate">
+          <span class="deck__lock"><Icon name="lock" size="sm" /></span>
+          <span class="deck__gate-body">
+            <span class="deck__gate-title">{agentConsole.gateTitle}</span>
+            <span class="deck__gate-text">{agentConsole.gateText}</span>
+          </span>
+          <span class="deck__approve">{agentConsole.gateApprove}</span>
+        </div>
       </div>
     </div>
+
+    <ol class="teaser__steps" role="list">
+      {
+        t.points.map((p) => (
+          <li class="step">
+            <span class="step__icon" aria-hidden="true"><Icon name={p.icon} size="sm" /></span>
+            <span class="step__body">
+              <strong class="step__title">{p.title}</strong>
+              <span class="step__text">{p.text}</span>
+            </span>
+          </li>
+        ))
+      }
+    </ol>
   </div>
 </Section>
 
 <style>
   .teaser-section:global(.section) {
-    padding-block: calc(var(--site-section-y) * 0.5);
+    padding-block: calc(var(--site-section-y) * 0.6);
   }
   .teaser {
     position: relative;
+    isolation: isolate;
     display: grid;
     gap: var(--ek-space-8);
     overflow: hidden;
-    padding: var(--ek-space-8) var(--ek-space-6);
-    border-radius: calc(var(--site-radius-panel) + var(--ek-space-1));
+    padding: var(--ek-space-8) var(--ek-space-5);
+    border-radius: calc(var(--site-radius-panel) + var(--ek-space-2));
     background:
-      radial-gradient(60% 90% at 100% 0%, color-mix(in srgb, var(--ek-color-secondary) 26%, transparent), transparent 65%),
-      radial-gradient(50% 80% at 0% 100%, color-mix(in srgb, var(--ek-color-primary-lighten) 40%, transparent), transparent 70%),
-      var(--site-gradient-stage);
+      radial-gradient(70% 60% at 85% -10%, color-mix(in srgb, var(--ek-color-secondary) 22%, transparent), transparent 70%),
+      radial-gradient(60% 70% at -10% 110%, color-mix(in srgb, var(--ek-color-primary-lighten) 45%, transparent), transparent 70%),
+      linear-gradient(160deg, var(--site-stage-base) 0%, var(--site-stage-deep) 70%);
     box-shadow: var(--site-shadow-panel);
     color: var(--site-text-on-dark-body);
   }
@@ -73,10 +110,16 @@ import { ASSISTANT_PATH, assistantTeaser as t } from '../../data/assistant'
     content: '';
     position: absolute;
     inset: 0;
+    z-index: 2;
     padding: var(--site-border-width);
     border-radius: inherit;
-    background: var(--site-gradient-accent-on-dark);
-    opacity: 0.55;
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--ek-color-secondary) 70%, transparent),
+      color-mix(in srgb, var(--ek-color-background) 10%, transparent) 40%,
+      color-mix(in srgb, var(--ek-color-background) 6%, transparent) 70%,
+      color-mix(in srgb, var(--ek-color-secondary) 40%, transparent)
+    );
     -webkit-mask:
       linear-gradient(var(--ek-color-content-strong) 0 0) content-box,
       linear-gradient(var(--ek-color-content-strong) 0 0);
@@ -84,79 +127,93 @@ import { ASSISTANT_PATH, assistantTeaser as t } from '../../data/assistant'
     mask-composite: exclude;
     pointer-events: none;
   }
+  /* Üst kenarda yumuşak aurora ışığı + sönük ızgara (derinlik; yalnızca dekor) */
+  .teaser__aurora {
+    position: absolute;
+    inset: -40% 10% auto 30%;
+    z-index: -1;
+    height: 70%;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-secondary) 26%, transparent), transparent);
+    filter: blur(2.5rem);
+    pointer-events: none;
+  }
+  .teaser__grid {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image:
+      linear-gradient(color-mix(in srgb, var(--ek-color-background) 5%, transparent) var(--site-border-width), transparent var(--site-border-width)),
+      linear-gradient(90deg, color-mix(in srgb, var(--ek-color-background) 5%, transparent) var(--site-border-width), transparent var(--site-border-width));
+    background-size: var(--ek-space-12) var(--ek-space-12);
+    -webkit-mask-image: radial-gradient(80% 70% at 70% 20%, var(--ek-color-content-strong), transparent 75%);
+    mask-image: radial-gradient(80% 70% at 70% 20%, var(--ek-color-content-strong), transparent 75%);
+    pointer-events: none;
+  }
+
+  /* --- Metin --- */
   .teaser__body {
-    position: relative;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: var(--ek-space-4);
+    gap: var(--ek-space-5);
     min-width: 0;
   }
-  .teaser__tags {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--ek-space-2);
-  }
-  .teaser__soon {
+  .teaser__eyebrow {
     display: inline-flex;
     align-items: center;
-    gap: var(--ek-space-1);
-    padding: var(--ek-space-1) var(--ek-space-3);
-    border-radius: var(--ek-radius-full);
+    gap: var(--ek-space-2);
+    margin: 0;
+    color: var(--site-accent-on-dark);
+    font-size: var(--site-card-eyebrow-size);
+    font-weight: var(--site-card-eyebrow-weight);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .teaser__eyebrow-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-6);
+    height: var(--ek-space-6);
+    border-radius: var(--ek-radius-md);
     background: var(--site-gradient-accent-on-dark);
     color: var(--site-stage-deep);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-bold);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
   }
   .teaser h2 {
     color: var(--site-text-on-dark-heading);
-    font-size: var(--site-font-display-sm);
+    font-size: var(--site-font-display-md);
     font-weight: var(--site-font-display-weight);
     line-height: var(--site-font-display-line-height);
     letter-spacing: var(--site-font-display-tracking);
   }
+  .teaser__brand {
+    background: var(--site-gradient-accent-on-dark);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
   .teaser__lead {
-    max-width: 40rem;
+    max-width: 34rem;
     font-size: var(--ek-font-size-lg);
     line-height: var(--site-font-body-line-height);
   }
-  .teaser__points {
+  .teaser__actions {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--ek-space-2);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-  .teaser__points li {
-    display: inline-flex;
     align-items: center;
-    gap: var(--ek-space-1);
-    padding: var(--ek-space-1) var(--ek-space-3);
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-full);
-    background: var(--site-glass-bg);
-    color: var(--site-text-on-dark-heading);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-medium);
-  }
-  .teaser__points :global(.icon) {
-    color: var(--site-accent-on-dark);
+    gap: var(--ek-space-3) var(--ek-space-6);
   }
   .teaser__cta {
     display: inline-flex;
     align-items: center;
     gap: var(--ek-space-2);
     min-height: var(--site-tap-target);
-    margin-top: var(--ek-space-1);
     padding: var(--ek-space-2) var(--ek-space-5);
     border-radius: var(--ek-radius-md);
     background: var(--ek-color-background);
     color: var(--ek-color-primary);
-    font-size: var(--ek-font-size-lg);
+    font-size: var(--ek-font-size-md);
     font-weight: var(--ek-font-weight-semibold);
     text-decoration: none;
     transition: background-color var(--ek-duration-base) var(--ek-easing-standard);
@@ -164,100 +221,246 @@ import { ASSISTANT_PATH, assistantTeaser as t } from '../../data/assistant'
   .teaser__cta:hover {
     background: color-mix(in srgb, var(--ek-color-background) 88%, var(--ek-color-secondary));
   }
-  .teaser__cta:focus-visible {
+  .teaser__link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--site-tap-target);
+    color: var(--site-text-on-dark-heading);
+    font-weight: var(--ek-font-weight-semibold);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--ek-color-secondary) 70%, transparent);
+    text-underline-offset: 0.3em;
+  }
+  .teaser__link:hover {
+    text-decoration-color: currentColor;
+  }
+  .teaser__cta:focus-visible,
+  .teaser__link:focus-visible {
     outline: var(--site-focus-ring-width) solid var(--ek-color-background);
     outline-offset: var(--site-focus-ring-offset);
   }
 
-  /* Dekoratif mini sohbet */
+  /* --- Dekoratif ajan paneli --- */
   .teaser__visual {
-    position: relative;
+    min-width: 0;
+  }
+  .deck {
     display: flex;
     flex-direction: column;
-    justify-content: center;
     gap: var(--ek-space-3);
-    min-width: 0;
-    padding: var(--ek-space-5);
+    padding: var(--ek-space-4);
     border: var(--site-border-width) solid var(--site-glass-border);
     border-radius: var(--site-radius-panel);
-    background: color-mix(in srgb, var(--site-stage-deep) 55%, transparent);
-  }
-  .mini {
-    margin: 0;
+    background: color-mix(in srgb, var(--site-stage-deep) 62%, transparent);
+    box-shadow:
+      inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 10%, transparent),
+      var(--site-shadow-panel);
     font-size: var(--ek-font-size-sm);
   }
-  .mini--user {
-    align-self: flex-end;
-    max-width: 85%;
-    padding: var(--ek-space-2) var(--ek-space-4);
-    border-radius: var(--ek-radius-lg) var(--ek-radius-lg) var(--ek-radius-sm) var(--ek-radius-lg);
-    background: linear-gradient(140deg, var(--ek-color-primary-lighten), var(--ek-color-primary));
-    color: var(--site-text-on-dark-heading);
-    font-weight: var(--ek-font-weight-medium);
-  }
-  .mini--bot {
-    width: 78%;
-    padding: var(--ek-space-3) var(--ek-space-4);
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-lg) var(--ek-radius-lg) var(--ek-radius-lg) var(--ek-radius-sm);
-    background: var(--site-glass-bg);
-  }
-  .mini__lines {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-2);
-  }
-  .mini__lines i {
-    height: var(--ek-space-2);
-    border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-background) 18%, transparent);
-  }
-  .mini__lines i:nth-child(2) {
-    width: 80%;
-  }
-  .mini__lines i:nth-child(3) {
-    width: 55%;
-    background: color-mix(in srgb, var(--ek-color-secondary) 45%, transparent);
-  }
-  .mini--approve {
+  .deck__bar {
     display: flex;
     align-items: center;
     gap: var(--ek-space-2);
-    width: 78%;
-    padding: var(--ek-space-2) var(--ek-space-2) var(--ek-space-2) var(--ek-space-4);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-warning) 55%, transparent);
-    border-radius: var(--ek-radius-lg);
-    background: color-mix(in srgb, var(--ek-color-warning) 10%, transparent);
+    padding-bottom: var(--ek-space-3);
+    border-bottom: var(--site-border-width) solid var(--site-glass-border);
+  }
+  .deck__glyph {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-6);
+    height: var(--ek-space-6);
+    border-radius: var(--ek-radius-md);
+    background: var(--site-gradient-accent-on-dark);
+    color: var(--site-stage-deep);
+  }
+  .deck__title {
     color: var(--site-text-on-dark-heading);
     font-weight: var(--ek-font-weight-semibold);
   }
-  .mini--approve > :global(.icon) {
-    color: color-mix(in srgb, var(--ek-color-warning) 60%, var(--ek-color-background));
+  .deck__mode {
+    margin-inline-start: auto;
+    padding: 0 var(--ek-space-2);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-full);
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-xs);
   }
-  .mini__btn {
+  .deck__rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .deck__row {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-3);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-lg);
+    background: var(--site-glass-bg);
+  }
+  .deck__icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: var(--ek-space-8);
     height: var(--ek-space-8);
+    border-radius: var(--ek-radius-md);
+    background: color-mix(in srgb, var(--ek-color-secondary) 14%, transparent);
+    color: var(--site-accent-on-dark);
+  }
+  .deck__name {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--site-text-on-dark-heading);
+    font-weight: var(--ek-font-weight-medium);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .deck__state {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-1);
     margin-inline-start: auto;
+    padding: 0 var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-secondary) 14%, transparent);
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    white-space: nowrap;
+  }
+  .deck__state i {
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    border-radius: 50%;
+    background: var(--ek-color-secondary);
+  }
+  .deck__row[data-state-kind='propose'] .deck__state i {
+    background: var(--ek-color-primary-lighten);
+    box-shadow: 0 0 0 var(--site-border-width) var(--site-text-on-dark-heading);
+  }
+  .deck__gate {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-3);
+    border: var(--site-border-width) dashed color-mix(in srgb, var(--ek-color-amber) 55%, transparent);
+    border-radius: var(--ek-radius-lg);
+    background: color-mix(in srgb, var(--ek-color-amber) 8%, transparent);
+  }
+  .deck__lock {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: var(--ek-space-8);
+    height: var(--ek-space-8);
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--ek-color-amber) 22%, transparent);
+    color: var(--ek-color-amber-light);
+  }
+  .deck__gate-body {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .deck__gate-title {
+    color: var(--site-text-on-dark-heading);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .deck__gate-text {
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-xs);
+  }
+  .deck__approve {
+    flex: none;
+    margin-inline-start: auto;
+    padding: var(--ek-space-1) var(--ek-space-3);
     border-radius: var(--ek-radius-md);
     background: var(--ek-color-secondary);
     color: var(--site-stage-deep);
+    font-weight: var(--ek-font-weight-bold);
     box-shadow: var(--site-glow-ring);
   }
 
-  /* Dar ekranda bant kısa kalsın (sayfayı ele geçirmesin): dekoratif önizleme yalnızca geniş ekranda. */
-  @media (max-width: 899.98px) {
-    .teaser__visual {
+  /* --- Üç adım: ince ayraçlı sütunlar --- */
+  .teaser__steps {
+    display: grid;
+    gap: var(--ek-space-5);
+    margin: 0;
+    padding: var(--ek-space-6) 0 0;
+    border-top: var(--site-border-width) solid var(--site-glass-border);
+    list-style: none;
+  }
+  .step {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ek-space-3);
+    min-width: 0;
+  }
+  .step__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: var(--ek-space-8);
+    height: var(--ek-space-8);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 40%, transparent);
+    border-radius: var(--ek-radius-md);
+    color: var(--site-accent-on-dark);
+  }
+  .step__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+  }
+  .step__title {
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .step__text {
+    color: var(--site-text-on-dark-body);
+    font-size: var(--ek-font-size-sm);
+    line-height: var(--ek-line-height-normal);
+  }
+
+  /* Dar ekran: panel sadeleşir (mod hapı ve onay metni gizli) */
+  @media (max-width: 479.98px) {
+    .deck__mode,
+    .deck__gate-text {
       display: none;
     }
   }
-  @media (min-width: 900px) {
+  @media (min-width: 768px) {
+    .teaser__steps {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0;
+    }
+    .step {
+      padding-inline: var(--ek-space-5);
+    }
+    .step:first-child {
+      padding-inline-start: 0;
+    }
+    .step + .step {
+      border-inline-start: var(--site-border-width) solid var(--site-glass-border);
+    }
+  }
+  @media (min-width: 1024px) {
     .teaser {
-      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
       align-items: center;
-      padding: var(--ek-space-10) var(--ek-space-12);
+      column-gap: var(--ek-space-16);
+      padding: var(--ek-space-12) var(--ek-space-12) var(--ek-space-10);
+    }
+    .teaser__steps {
+      grid-column: 1 / -1;
     }
   }
 </style>

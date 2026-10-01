@@ -74,8 +74,8 @@ export function auditAgent(ctx: Pick<AgentCtx, 'tid' | 'userId' | 'surface' | 's
     return AuditLogger.log({
         event: a.event,
         result: a.outcome === 'ok' || a.outcome === 'approval_required' ? 'ok' : a.outcome === 'error' ? 'error' : 'fail',
-        sub: ctx.userId, tid: ctx.tid, ip: ctx.session?.invoke.ip, surface: surfaceOf(ctx),
-        actorType: imp ? 'impersonator' : 'user', ...(imp ? { imp: true, onBehalfOf: ctx.tid } : {}),
+        sub: ctx.userId, ...(ctx.surface === 'backoffice_chat' ? {} : { tid: ctx.tid }), ip: ctx.session?.invoke.ip, surface: surfaceOf(ctx),
+        actorType: ctx.surface === 'backoffice_chat' ? 'platform' : imp ? 'impersonator' : 'user', ...(imp ? { imp: true, onBehalfOf: ctx.tid } : {}),
         reqId: corrId, meta,
     });
 }

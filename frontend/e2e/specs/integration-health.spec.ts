@@ -4,6 +4,8 @@
 // frontend/docs/design-system-review/ altına yazar (belge görseli; Playwright tabanı DEĞİLDİR).
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import { expectProblemState } from '../fixtures/problemState'
+import { suppressTourOffer } from '../fixtures/appDialog'
 import { installApiMocks, mockError, type MockValue } from '../fixtures/mockApi'
 import { AXE_TAGS, B4P1C_SCREENS, integrationHealthFixture, menuFixtureWithB4P1c, openB4P1cScreen } from '../fixtures/b4p1cScreens'
 
@@ -17,6 +19,9 @@ async function mocks(page: any, overrides: Record<string, MockValue> = {}) {
 const card = (page: any, name: string) => page.locator(`${ROOT} .ek-health-card`).filter({ has: page.getByRole('heading', { level: 3, name }) })
 
 test.describe('ADR-0015 B4-P1c — N7 Entegrasyon sağlığı', () => {
+  // Sağ alttaki (mobilde tam genişlik) tur teklifi kartı sayfalama/çip/çekmece öğelerini örter → kullanıcı gibi önce kapatılmış sayılır.
+  test.beforeEach(async ({ page }) => { await suppressTourOffer(page) })
+
   test('smoke: özet KPI, kartlar (sorunlu önce), durum çipleri, generatedAt', async ({ page }) => {
     const errors: string[] = []
     page.on('pageerror', (e) => errors.push(e.message))
@@ -91,7 +96,7 @@ test.describe('ADR-0015 B4-P1c — N7 Entegrasyon sağlığı', () => {
     })
     await openB4P1cScreen(page, 'IntegrationHealthView')
     const root = page.locator(ROOT)
-    await expect(root.getByText('Entegrasyon sağlığı yüklenemedi — bağlantınızı kontrol edip tekrar deneyin.')).toBeVisible()
+    await expectProblemState(root, 'Entegrasyon sağlığı yüklenemedi — bağlantınızı kontrol edip tekrar deneyin.')
     await expect(root).not.toContainText('Mongo')
     await root.getByRole('button', { name: 'Tekrar dene' }).click()
     await expect(root.locator('.ek-health-card')).toHaveCount(5)
@@ -130,11 +135,12 @@ test.describe('ADR-0015 B4-P1c — N7 Entegrasyon sağlığı', () => {
   })
 
   test('rol (olumsuz): ekran menüde yoksa menüde görünmez ve derin bağlantı panoya döner', async ({ page }) => {
-    let called = false
+    // Panonun kendi sağlık kartı (DashboardView) aynı operasyonu çağırır — yalnızca ekranın kendi URL'sindeyken gelen çağrı ihlaldir.
+    let calledOnScreen = false
     await installApiMocks(page, {
       MenuService: menuFixtureWithB4P1c(['AuditLogView']),
       [OP]: async (route: any, headers: Record<string, string>) => {
-        called = true
+        if (page.url().includes(B4P1C_SCREENS.IntegrationHealthView.slug)) calledOnScreen = true
         return route.fulfill({ status: 403, contentType: 'application/json', headers, body: '{"error":"Forbidden"}' })
       },
     })
@@ -142,7 +148,7 @@ test.describe('ADR-0015 B4-P1c — N7 Entegrasyon sağlığı', () => {
     await expect(page).toHaveURL(/\/dashboard$/, { timeout: 20000 })
     await expect(page.locator(ROOT)).toHaveCount(0)
     await expect(page.locator(`.mdi-heart-pulse`)).toHaveCount(0)
-    expect(called).toBe(false)
+    expect(calledOnScreen).toBe(false)
   })
 
   test('ekran görüntüsü tabanı (entegrasyon sağlığı)', async ({ page }) => {

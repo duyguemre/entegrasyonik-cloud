@@ -36,6 +36,13 @@ export const LOG_PII_KEY_NAMES: ReadonlySet<string> = new Set<string>([
 export const LOG_PII_REDACTED = '[REDACTED_PII]';
 
 const LOG_TEXT_PATTERNS: ReadonlyArray<{ re: RegExp; replacement: string }> = [
+    // [MCP-5] URI icindeki kimlik bilgisi (mongodb[+srv]/redis[s]/amqp/https://kullanici:parola@host): yalniz userinfo maskelenir, host/yol kalir
+    { re: /\b([a-z][a-z0-9+.-]{1,20}:\/\/)[^\s/@:]*:?[^\s/@]*@/gi, replacement: '$1[REDACTED]@' },
+    // [MCP-5] AES-GCM sifreli alan degeri (enc:v1:...) ve yaygin API anahtari bicimleri (sk-/sk-ant-, AWS AKIA/ASIA, GitHub gh*_)
+    { re: /\benc:v1:[A-Za-z0-9+/=_:.-]+/g, replacement: '[REDACTED_ENC]' },
+    { re: /\bsk-(?:ant-)?[A-Za-z0-9_-]{16,}/g, replacement: '[REDACTED_KEY]' },
+    { re: /\b(?:AKIA|ASIA)[A-Z0-9]{16}\b/g, replacement: '[REDACTED_KEY]' },
+    { re: /\bgh[pousr]_[A-Za-z0-9]{30,}/g, replacement: '[REDACTED_KEY]' },
     { re: /\b(Bearer|Basic)\s+[A-Za-z0-9._~+/=-]{6,}/gi, replacement: '$1 [REDACTED]' },
     { re: /\b[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g, replacement: '[REDACTED_TOKEN]' },
     // anahtar=değer / "anahtar":"değer" biçimindeki sırlar (appkey, appsecret, api key/secret, token, password, authorization...)

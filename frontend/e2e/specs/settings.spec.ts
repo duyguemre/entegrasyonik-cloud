@@ -2,6 +2,7 @@
 // Protokol 13: bu spec önce DEĞİŞMEMİŞ ekrana karşı yazıldı (karakterizasyon); görsel yenilemeden
 // sonra AYNI spec yeşil kalmalıdır.
 import { test, expect } from '@playwright/test'
+import { suppressTourOffer } from '../fixtures/appDialog'
 import { installApiMocks, mockError } from '../fixtures/mockApi'
 import { gotoAuthed, menuFixtureWithAccountSupport, openScreen } from '../fixtures/nav'
 
@@ -61,6 +62,9 @@ async function tab(page: any, name: string) {
 }
 
 test.describe('ADR-0015 B5-3 — SettingListView', () => {
+  // Sağ alttaki tur teklifi kartı alt sabit "Ayarları Kaydet" çubuğunu örter (kaydırılamaz) → kullanıcı gibi önce kapatılmış sayılır.
+  test.beforeEach(async ({ page }) => { await suppressTourOffer(page) })
+
   test('smoke: 4 sekme + Mağaza Kimliği alanları + kaydet düğmesi render olur', async ({ page }) => {
     await installApiMocks(page, withMenu())
     await gotoAuthed(page)

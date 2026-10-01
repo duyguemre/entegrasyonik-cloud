@@ -70,8 +70,8 @@
       <template #empty-action><HelpStartLink article="ord-returns" /></template>
       <template #filters>
         <EkSelect kind="channel" v-model="filters.integrationCodes" :items="channelOptionsFrom(integrationStore.getClientPlatforms())" label="Kanal" multiple clearable />
-        <EkSelect v-model="filters.internalStatuses" kind="status" :items="toneOptionsFrom(statusOptions, (id) => CLAIM_STATUS_TONE[id as ClaimInternalStatusEnum]?.tone)" item-title="title"
-          item-value="id" label="Talep durumu" multiple clearable />
+        <EkSelect v-model="filters.internalStatuses" kind="status" :items="statusSelectOptions" label="Talep durumu" multiple clearable recent-key="claims.status" />
+        <EkSelect v-model="filters.types" kind="status" :items="typeSelectOptions" label="Talep türü" multiple clearable />
       </template>
 
       <template #bulk-actions>
@@ -85,14 +85,18 @@
       <template #cell-items="{ row }">
         <span class="ek-claim-items">
           <span class="ek-num">{{ row.items?.length || 0 }} kalem</span>
-          <span v-if="row.items?.length" class="ek-claim-items__name">{{ row.items[0].productName }}</span>
+          <span v-if="row.items?.length" class="ek-claim-items__name" :title="row.items[0].productName">{{ row.items[0].productName }}</span>
         </span>
       </template>
       <template #cell-totalRefundAmount="{ row }">
         <span class="ek-num">{{ formatMoney(row.totalRefundAmount, row.currencyCode) }}</span>
       </template>
+      <template #cell-type="{ row }"><span class="ek-claim-type">{{ claimTypeLabel(row.type) }}</span></template>
       <template #cell-internalStatus="{ row }">
-        <EkStatusChip :tone="statusEntry(row.internalStatus).tone" :label="$t(statusEntry(row.internalStatus).labelKey)" />
+        <span class="ek-claim-status">
+          <EkStatusChip :tone="statusEntry(row.internalStatus).tone" :label="$t(statusEntry(row.internalStatus).labelKey)" />
+          <span class="ek-claim-status__hint">{{ statusHint(row.internalStatus) }}</span>
+        </span>
       </template>
       <template #cell-claimedAt="{ row }"><span class="ek-num">{{ formatDateTime(row.claimedAt) }}</span></template>
       <template #cell-actions="{ row }">
@@ -111,7 +115,7 @@ import HelpStartLink from '@/components/help/HelpStartLink.vue'
 import EkHelpHint from '@/components/page/EkHelpHint.vue'
 import { EkSelect, EkRowActions, EkButton, EkChannelDot, EkStatusChip, EkConfirmDialog, EkFormDialog } from '@entegrasyonik/ui/components'
 import type { EkGridColumn, EkGridSort, EkActiveFilterChip } from '@entegrasyonik/ui/components'
-import { channelOptionsFrom, toneOptionsFrom } from '@entegrasyonik/ui/components/selectOptions'
+import { channelOptionsFrom } from '@entegrasyonik/ui/components/selectOptions'
 import { problemFromError, type ProblemCopy } from '@/composables/useProblem'
 import { ref, computed, reactive } from 'vue'
 
@@ -124,6 +128,7 @@ import { useClaimActions } from '@/components/claim/composables/useClaimActions'
 import { useLifecycle } from '@/composables/useLifecycle'
 import { formatMoney, formatDateTime } from '@entegrasyonik/ui/format'
 import { CLAIM_STATUS_TONE } from '@/design/status-map'
+import { claimStatusOptions, claimTypeLabel, CLAIM_STATUS_GUIDE } from '@/design/status-map'
 
 // Enums & Types
 import { ClaimInternalStatusEnum, CLAIM_INTERNAL_STATUS_LABELS } from '@/types/ClaimTypes'
@@ -159,11 +164,11 @@ const columns: EkGridColumn[] = [
   { key: 'externalClaimId', label: 'Talep no', type: 'id', sortable: true },
   { key: 'externalOrderId', label: 'Sipariş no', sortable: true },
   { key: 'integrationCode', label: 'Kanal', sortable: true },
-  { key: 'items', label: 'İçerik' },
-  { key: 'type', label: 'Tür', type: 'muted', sortable: true },
-  { key: 'claimedAt', label: 'Tarih', sortable: true },
-  { key: 'totalRefundAmount', label: 'İade tutarı', type: 'num', sortable: true },
   { key: 'internalStatus', label: 'Durum', sortable: true },
+  { key: 'totalRefundAmount', label: 'İade tutarı', type: 'num', sortable: true },
+  { key: 'items', label: 'İçerik' },
+  { key: 'type', label: 'Tür', sortable: true },
+  { key: 'claimedAt', label: 'Tarih', sortable: true },
   { key: 'actions', label: 'İşlemler', align: 'end', hideLabel: true, pin: 'end' },
 ]
 
@@ -186,10 +191,11 @@ const activeChips = computed<EkActiveFilterChip[]>(() => {
     const titleOf = (id: string) => statusOptions.value.find((o: any) => o.id === id)?.title ?? id
     chips.push({ key: 'internalStatuses', label: 'Durum', value: applied.value.internalStatuses.map(titleOf).join(', ') })
   }
+  if (applied.value.types.length) chips.push({ key: 'types', label: 'Tür', value: applied.value.types.map(claimTypeLabel).join(', ') })
   return chips
 })
 
-const panelFilterCount = computed(() => (applied.value.integrationCodes.length ? 1 : 0) + (applied.value.internalStatuses.length ? 1 : 0))
+const panelFilterCount = computed(() => (applied.value.integrationCodes.length ? 1 : 0) + (applied.value.internalStatuses.length ? 1 : 0) + (applied.value.types.length ? 1 : 0))
 
 // C2.4 kayıtlı görünümler: görünüme YALNIZ screens.ts `urlParams` alanı (talep durumu) girer.
 const savedViews = computed<EkSavedViewsConfig>(() => ({
@@ -204,6 +210,7 @@ function applySavedView(params: Record<string, any>) {
   data.globalSearch = ''
   data.integrationCodes = []
   data.internalStatuses = Array.isArray(params.internalStatuses) ? [...params.internalStatuses] : []
+  data.types = []
   getClaims(true)
 }
 
@@ -212,6 +219,7 @@ function removeChip(key: string) {
   if (key === 'globalSearch') data.globalSearch = ''
   if (key === 'integrationCodes') data.integrationCodes = []
   if (key === 'internalStatuses') data.internalStatuses = []
+  if (key === 'types') data.types = []
   getClaims(true)
 }
 
@@ -250,6 +258,14 @@ const loadError = computed(() => error.value !== null)
 const loadProblem = computed<ProblemCopy | null>(() => error.value ? problemFromError(error.value, 'ClaimService/getClaims') : null)
 const getClaims = load
 const statusOptions = computed(() => Object.values(ClaimInternalStatusEnum).map((id) => ({ id, title: CLAIM_INTERNAL_STATUS_LABELS[id] })))
+// FR2-ORDERS 32: durum listesi iş akışı gruplarıyla (Karar bekleyen / Sonuçlanan) + sade açıklama alt satırı.
+const statusSelectOptions = computed(() => claimStatusOptions((s) => CLAIM_INTERNAL_STATUS_LABELS[s]))
+// Talep türü (backend ClaimTypeEnum; `filter.types` claim-service'te destekli).
+const CLAIM_TYPES = ['REFUND', 'REPLACEMENT', 'CANCEL'] as const
+const TYPE_HINT: Record<string, string> = { REFUND: 'Ürün geri gelir, ücret iade edilir', REPLACEMENT: 'Ürün yenisiyle değiştirilir', CANCEL: 'Kargo öncesi iptal' }
+const TYPE_ICON: Record<string, string> = { REFUND: 'mdi-cash-refund', REPLACEMENT: 'mdi-swap-horizontal', CANCEL: 'mdi-close-circle-outline' }
+const typeSelectOptions = CLAIM_TYPES.map((t) => ({ value: t, title: claimTypeLabel(t), subtitle: TYPE_HINT[t], icon: TYPE_ICON[t] }))
+const statusHint = (s: ClaimInternalStatusEnum) => CLAIM_STATUS_GUIDE[s]?.hint
 
 const executeClaimAction = async (endpoint: string, payload: any) => await restApi.post(endpoint, payload);
 
@@ -336,6 +352,24 @@ defineExpose({
   }
 }
 
+.ek-claim-status {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.ek-claim-status__hint {
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+  color: var(--ek-color-content-muted);
+  white-space: nowrap;
+}
+
+.ek-claim-type {
+  color: var(--ek-color-content-default);
+}
+
 .ek-claim-items {
   display: inline-flex;
   flex-direction: column;
@@ -343,6 +377,10 @@ defineExpose({
 }
 
 .ek-claim-items__name {
+  /* fe-polish: ürün adı kolonu genişletip 1440px'te Tarih kolonunu yapışık eylem kolonunun altına itiyordu;
+     tam ad ipucunda (title). */
+  max-width: 160px;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--ek-color-content-muted);

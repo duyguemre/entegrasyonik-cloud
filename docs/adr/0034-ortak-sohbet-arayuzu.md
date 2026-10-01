@@ -154,3 +154,6 @@
 **Açık kalanlar (Protokol 12; varsayılanları var, önyüz ve BR-1..BR-5'i durdurmaz):**
 - **H2 — KVKK yurt dışı aktarım nihai metni:** geçici çözüm K38 ile sabit (açık bilgilendirme + tenant sahibi onayı + denetim kaydı). Nihai hukuki metin gelince `consentText` sürümü artar, sahiplerden yeniden onay alınır. Canlıya çıkıştan önce hukuki göz önerilir.
 - **H4 — Backoffice platform anahtarı:** hangi sağlayıcı/hesap (ücretli hesap Protokol 12). **Varsayılan:** anahtar girilene kadar backoffice sohbeti `SETUP_REQUIRED`.
+
+## BR-4 uygulama notu (2026-10-01)
+Backoffice platform LLM anahtarı `_platform` ayar kataloğunda **tutulmaz**: katalog sır taşıyamaz (revizyon geçmişi, diff ve UI yankısı değeri sızdırır). Anahtar, ApplicationDB `PlatformSettings` içinde ayrı bir belgede `agent.platformProvider` altında saklanır: değer `enc:v1` şifreli, `tid=0` (platform sentineli), yazma/rotasyon step-up + gerekçe (reason) ile. Yeni şema ve göç yoktur (mevcut koleksiyon, yeni anahtar). Yukarıdaki "Etki Alanı"daki "backoffice anahtarı" ifadesi bu anlamda okunur.

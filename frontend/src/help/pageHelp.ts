@@ -11,6 +11,7 @@
  * `pageRefresh` (Alt+R) yalnızca ekranda `EkRefreshButton` (EkPageHeader/EkPageBar/EkListScreen `refreshable`)
  * olduğunda listelenir — EkListScreen'de `refreshable` varsayılan olarak açıktır.
  */
+import { CHAT_PRODUCT } from '@entegrasyonik/chat/brand'
 import type { PageHelp } from './types'
 
 export const PAGE_HELP: Record<string, PageHelp> = {
@@ -472,7 +473,7 @@ export const PAGE_HELP: Record<string, PageHelp> = {
     purpose:
       'Pazaryeri hesaplarınızı bağlayın ve API ayarlarını buradan yönetin.',
     tips: [
-      'Üstteki listeden bir pazaryeri seçin; Api Bilgileri ve Varsayılan Bilgiler sekmeleri açılır.',
+      'Üstteki listeden bir pazaryeri seçin; API Bilgileri ve Varsayılan Bilgiler sekmeleri açılır.',
       'API kimlik bilgilerinizi pazaryerinin satıcı panelinden edinip Bağlantı bilgileri bölümüne girin ve Kaydet düğmesine basın.',
       'Varsayılan Bilgiler sekmesinde kargo firması, sevkiyat ve iade adresi gibi varsayılanları tanımlayın.',
       'Kodu hazır olmayan pazaryerleri "Yakında" olarak gösterilir; bunlar için kayıt yapılamaz.',
@@ -587,19 +588,6 @@ export const PAGE_HELP: Record<string, PageHelp> = {
     article: 'acc-subscription',
   },
 
-  // Kanıt: stores/site/menu.ts ('user/EducationView' → views/secure/user/SubscriptionView.vue), composables/subscriptionStatus.ts
-  'user/EducationView': {
-    purpose:
-      'Bu menü öğesi şu an Abonelik ve Planlar ekranını açar. İşletmenize uygun planı seçin, mevcut aboneliğinizin durumunu buradan izleyin.',
-    tips: [
-      'Üstteki durum bandı aboneliğinizin güncel durumunu ve ne anlama geldiğini açıklar.',
-      'Plan kartlarında kanal, varyant (SKU), kullanıcı ve günlük MCP çağrısı limitleri yer alır.',
-      'Uygulamayı öğrenmek için yardım merkezindeki Başlarken makalelerine göz atın.',
-    ],
-    shortcuts: ['search', 'tabClose'],
-    article: 'gs-account',
-  },
-
   // Kanıt: views/secure/user/ExitView.vue (işlevsiz ekran), components/layout/ApplicationBar.vue (hesap menüsü → Çıkış)
   'user/ExitView': {
     purpose:
@@ -683,6 +671,35 @@ export const PAGE_HELP: Record<string, PageHelp> = {
     article: 'acc-users',
   },
 
+  // Kanıt: views/secure/user/ConnectedAppsView.vue (MCP-6). Ayrı "yapay zekâ bağlantısı" makalesi MCP-7'de (ADR-0035
+  // Etki Alanı "kullanıcıya yönelik bağlantı rehberi"); o zamana dek veri/gizlilik makalesine bağlanır.
+  ConnectedAppsView: {
+    purpose:
+      'Hesabınıza bağladığınız yapay zekâ uygulamalarını görün, onay bekleyen işlemleri inceleyin ve bağlantıları kesin.',
+    tips: [
+      '"Nasıl bağlanırım?" bölümündeki adresi yapay zekâ uygulamanızın bağlayıcı ekleme ekranına yapıştırın.',
+      'Bağlı uygulamaların önerdiği her işlem burada ve bağlantıda verilen sayfada ayrıca onayınızı bekler.',
+      'Bir bağlantıyı kestiğinizde uygulama hesabınıza en geç bir dakika içinde erişemez.',
+      'Mağaza sahibi ve yöneticiler mağazadaki tüm bağlantıları görebilir ve hepsini birden kesebilir.',
+    ],
+    shortcuts: ['tabClose'],
+    article: 'acc-privacy',
+  },
+
+  // Kanıt: views/secure/settings/AiConnectionView.vue (MCP-6)
+  'settings/AiConnectionView': {
+    purpose:
+      'Mağazanızdaki kullanıcıların kendi yapay zekâ uygulamalarını bu mağazaya bağlayıp bağlayamayacağını belirleyin.',
+    tips: [
+      'Varsayılan Kapalı’dır; açmak için veri aktarımı bilgilendirmesini okuyup onaylamanız gerekir.',
+      'Yalnız okuma seçeneğinde uygulamalar işlem öneremez; okuma + işlem önerme seçeneğinde her işlem ayrıca onaylanır.',
+      'Kapalı’ya almak mevcut bağlantıları askıya alır; tamamen kesmek için Bağlı uygulamalar ekranını kullanın.',
+      'Bu ayarı yalnız mağaza sahibi değiştirebilir; diğer kullanıcılar durumu görür.',
+    ],
+    shortcuts: ['tabClose'],
+    article: 'acc-privacy',
+  },
+
   // Kanıt: views/secure/user/AccountSecurityView.vue
   AccountSecurityView: {
     purpose:
@@ -752,6 +769,33 @@ export const PAGE_HELP: Record<string, PageHelp> = {
       'Yanıt bulamazsanız Destek Talepleri ekranından destek ekibine talep açın.',
     ],
     shortcuts: ['search', 'shortcutHelp', 'tabClose'],
+    article: 'app-page-help',
+  },
+
+  // ADR-0034 / CHAT_UI_CONTRACT §7.1 — tam sayfa sohbet ve ayarları (ad tek sabitten, K39).
+  // Kanıt: views/secure/OtopilotView.vue, packages/chat/src/components/{ChatComposer,parts/PartConfirm,parts/PartTable}.vue
+  chat: {
+    purpose: `${CHAT_PRODUCT.name} ile siparişleri, stokları ve satışları sorarak işinizi yürütün; yapılacak her değişiklik önce onayınıza gelir.`,
+    tips: [
+      'Enter mesajı gönderir, Shift+Enter yeni satır açar; yanıt sürerken Durdur ile kesebilirsiniz.',
+      'Onay kartında ne olacağı, etkilenen kayıtlar ve risk yazar; Onayla ya da Reddet seçmeden hiçbir değişiklik yapılmaz.',
+      'Tablolarda Daha fazla göster ile satır ekleyin, Ekranda aç ile ilgili listeye geçin.',
+      'Sohbetler kaydedilmez; oturum kapanınca silinir. Yeni sohbet düğmesi konuşmayı sıfırlar.',
+    ],
+    shortcuts: ['search', 'tabClose'],
+    article: 'app-page-help',
+  },
+  // Kanıt: views/secure/settings/OtopilotSettingsView.vue (description = paket i18n `entry.settingsDescription`),
+  // packages/chat/src/components/ChatProviderSetup.vue
+  OtopilotSettingsView: {
+    purpose: `${CHAT_PRODUCT.name}'un kullanacağı yapay zekâ sağlayıcısını, modeli ve API anahtarını yönetin; veri aktarım onayını ve bilgi amaçlı kullanım sayılarını görün.`,
+    tips: [
+      'Bağlantıyı test et ile anahtarı kaydetmeden önce sınayın; kayıtta anahtar yeniden sınanır.',
+      'Kayıtlı anahtar hiçbir yerde geri gösterilmez; değiştirmek için Değiştir ile yenisini girin.',
+      'Sohbetin açılması için hesap sahibinin veri aktarım bilgilendirmesini onaylaması gerekir.',
+      'Kullanım sayıları yalnız bilgi amaçlıdır; ücret sağlayıcınızın hesabına yansır.',
+    ],
+    shortcuts: ['tabClose'],
     article: 'app-page-help',
   },
 }

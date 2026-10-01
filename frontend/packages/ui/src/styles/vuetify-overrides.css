@@ -284,6 +284,16 @@
   opacity: 0 !important;
 }
 
+/* ---- FR2-SHELL madde 4: "tıklayınca yer tutucu bir an görünüp kayboluyor" ----
+ * Kök neden (kare kare ölçüldü, docs/fe-r2a-review/README.md): Vuetify etiket geçişini WAAPI ile (FLIP) yapar ve
+ * bitince satır içi `visibility`'yi kaldırır; o anda yukarıdaki erişilebilirlik kuralı DİNLENEN etiketi yeniden
+ * `opacity:0` yapar — ama Vuetify'ın `.v-field-label` CSS geçişi (`opacity 150ms`) yüzünden etiket dinlenme yerinde
+ * TAM opak belirip 150ms'de sönüyordu (alanın içinde yer tutucu gibi görünen metin). Opaklık artık geçişsiz
+ * (anında); konum hareketi WAAPI'de kaldığı için yalnız `transform` geçişi korunur. */
+.v-field .v-label.v-field-label {
+  transition-property: transform;
+}
+
 /* ---- Aşama 5: yüzen etiket TİTREMESİ (kullanıcı geri bildirimi madde 8) — tüm alan türleri (text, select,
  * autocomplete, combobox, textarea, EkDateField) aynı VField'ı kullanır, düzeltme tek yerde.
  * Vuetify odakta DİNLENEN etiketi `translate + scale(--v-field-label-scale)` ile yüzen etiketin yerine taşır
@@ -348,24 +358,33 @@
 }
 
 /* ---- Aşama 6b (Standart 11): form elemanları — makine gibi tutarlı ızgara ----
- * Tek yükseklik: tüm metin/seçim/tarih alanları `--ek-control-h-lg` (40px, compact); çok satırlı çip seçimi büyür
+ * Tek yükseklik: tüm metin/seçim/tarih alanları `--ek-control-h-field` (36px, compact; FR2 madde 5); çok satırlı çip seçimi büyür
  * ama tek satırda aynı hizada. Seçim denetimleri (checkbox/switch/radio) aynı 40px satır yüksekliğinde, dikey
  * ortalı → form ızgarasında alanlarla aynı taban çizgisi. Yardım/hata metni alanın altında aynı girintiyle (caption). */
+/* FR2-SHELL madde 5 (2026-09-30): alan yüksekliği bir kademe inceldi 40 → 36 (`--ek-control-h-field` = düğmelerle
+ * AYNI `md` yükseklik: filtre/form satırında alan ve düğme aynı hizada). Dikey iç boşluk 8 → 7 (21px metin satırı
+ * + 7 + 7 = 35 ≤ 36); yüzen etiket çerçeve üzerinde kaldığı için sığar. Tüm alan türleri tek yerden. */
+.v-input--density-compact .v-field--variant-outlined {
+  --v-input-padding-top: 7px;
+  --v-field-padding-bottom: 7px;
+  --v-input-control-height: var(--ek-control-h-field);
+}
+
 .v-field.v-field--variant-outlined {
-  --v-field-input-min-height: var(--ek-control-h-lg);
+  --v-field-input-min-height: var(--ek-control-h-field);
 }
 
 .v-input--density-compact .v-field--variant-outlined .v-field__input {
-  min-height: var(--ek-control-h-lg);
+  min-height: var(--ek-control-h-field);
 }
 
 .v-selection-control.v-selection-control--density-compact {
-  min-height: var(--ek-control-h-lg);
+  min-height: var(--ek-control-h-field);
 }
 
 .v-switch.v-input--density-compact .v-input__control,
 .v-checkbox.v-input--density-compact .v-input__control {
-  min-height: var(--ek-control-h-lg);
+  min-height: var(--ek-control-h-field);
 }
 
 .v-selection-control .v-label {
@@ -395,4 +414,27 @@
 .v-input.v-text-field:not(.v-textarea) {
   grid-template-rows: auto auto;
   align-content: start;
+}
+
+/* ---- FR2-SHELL madde 9: sil düğmesi TEK biçim (frontend/docs/FR2_PATTERNS.md §2) ----
+ * Ham `v-btn` ikon düğmesi `color="error"` (dolgu kırmızı kare / kırmızı metin) — satır eylemi standardına
+ * (`EkActionButton` danger: zeminsiz, kırmızı glif, hover'da `error-subtle` zemin) çekilir. Böylece ekran kodu
+ * değişmeden tüm satır/kart silme ikonları aynı görünür. `!important`: Vuetify `bg-error` yardımcı sınıfı
+ * zemin ve rengi `!important` ile yazar. */
+.v-btn.v-btn--icon.bg-error:not(.v-tab),
+.v-btn.v-btn--icon.text-error:not(.v-tab) {
+  background: transparent !important;
+  color: var(--ek-color-error) !important;
+  box-shadow: none !important;
+  border-radius: var(--ek-radius-control);
+}
+
+.v-btn.v-btn--icon.bg-error:not(.v-tab):hover,
+.v-btn.v-btn--icon.text-error:not(.v-tab):hover {
+  background: var(--ek-color-error-subtle) !important;
+}
+
+.v-btn.v-btn--icon.bg-error > .v-btn__overlay,
+.v-btn.v-btn--icon.text-error > .v-btn__overlay {
+  opacity: 0;
 }

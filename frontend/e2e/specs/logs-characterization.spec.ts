@@ -17,6 +17,12 @@ function trLabel(sentence: string) {
   return new RegExp(`${esc(sentence)}|${esc(sentence.toLocaleUpperCase('tr-TR'))}`)
 }
 
+// Pano (DashboardView) sekme-ana bilgisayarında canlı kalır ve getExportJobs'u limit:5 (sortBy yok) ile çağırır;
+// log listesi gövdeleri sortBy taşır — yalnızca onları sayar.
+function listBodies(bodies: any[]) {
+  return bodies.filter((b) => b && 'sortBy' in b)
+}
+
 function recorder(response: any, bodies: any[]) {
   return async (route: Route, headers: Record<string, string>) => {
     bodies.push(route.request().postDataJSON?.() ?? null)
@@ -25,7 +31,7 @@ function recorder(response: any, bodies: any[]) {
 }
 
 async function openImportTab(page: Page) {
-  await page.getByRole('tab', { name: 'Ürün Çekim İşlemleri' }).click()
+  await page.getByRole('tab', { name: 'Ürün çekim işlemleri' }).click()
   await expect(page.locator('.importLogList')).toBeVisible()
 }
 
@@ -39,9 +45,9 @@ test.describe('B3 karakterizasyon — log listeleri istek gövdeleri', () => {
     await installApiMocks(page, { MenuService: menuFixtureWithLogs, 'IntegrationService/getExportJobs': recorder(exportJobsDoluFixture, bodies) })
     await gotoAuthed(page)
     await openScreen(page, 'LogListView')
-    await expect(page.getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
+    await expect(page.locator('.exportLogList').getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
 
-    expect(bodies[0]).toEqual({ page: 1, limit: 25, sortBy: 'createdAt', sortOrder: 'desc' })
+    expect(listBodies(bodies)[0]).toEqual({ page: 1, limit: 25, sortBy: 'createdAt', sortOrder: 'desc' })
   })
 
   test('gönderim listesi: arama kutusunda Enter → globalSearch (kırpılmış) ile sayfa 1 yeniden istenir', async ({ page }) => {
@@ -49,13 +55,13 @@ test.describe('B3 karakterizasyon — log listeleri istek gövdeleri', () => {
     await installApiMocks(page, { MenuService: menuFixtureWithLogs, 'IntegrationService/getExportJobs': recorder(exportJobsDoluFixture, bodies) })
     await gotoAuthed(page)
     await openScreen(page, 'LogListView')
-    await expect(page.getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
+    await expect(page.locator('.exportLogList').getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
 
     const search = page.getByLabel('Ürün Adı, Barkod, Stok Kodu veya Platform Ara').first()
     await search.fill('  E2E-BARKOD  ')
     await search.press('Enter')
-    await expect.poll(() => bodies.length).toBeGreaterThanOrEqual(2)
-    expect(bodies.at(-1)).toEqual({ page: 1, limit: 25, sortBy: 'createdAt', sortOrder: 'desc', globalSearch: 'E2E-BARKOD' })
+    await expect.poll(() => listBodies(bodies).length).toBeGreaterThanOrEqual(2)
+    expect(listBodies(bodies).at(-1)).toEqual({ page: 1, limit: 25, sortBy: 'createdAt', sortOrder: 'desc', globalSearch: 'E2E-BARKOD' })
   })
 
   test('gönderim listesi: yenile düğmesi aynı gövdeyle yeniden ister', async ({ page }) => {
@@ -63,11 +69,11 @@ test.describe('B3 karakterizasyon — log listeleri istek gövdeleri', () => {
     await installApiMocks(page, { MenuService: menuFixtureWithLogs, 'IntegrationService/getExportJobs': recorder(exportJobsDoluFixture, bodies) })
     await gotoAuthed(page)
     await openScreen(page, 'LogListView')
-    await expect(page.getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
+    await expect(page.locator('.exportLogList').getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
 
     await page.getByRole('button', { name: 'Listeyi yenile' }).click()
-    await expect.poll(() => bodies.length).toBe(2)
-    expect(bodies[1]).toEqual(bodies[0])
+    await expect.poll(() => listBodies(bodies).length).toBe(2)
+    expect(listBodies(bodies)[1]).toEqual(listBodies(bodies)[0])
   })
 
   test('gönderim listesi: sayfa içi filtre paneli açılır, "Sorgula" advancedSearchExportJobs çağırır', async ({ page }) => {
@@ -80,7 +86,7 @@ test.describe('B3 karakterizasyon — log listeleri istek gövdeleri', () => {
     })
     await gotoAuthed(page)
     await openScreen(page, 'LogListView')
-    await expect(page.getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
+    await expect(page.locator('.exportLogList').getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
 
     const view = page.locator('.exportLogList')
     await view.getByRole('button', { name: /Filtreler/ }).click()

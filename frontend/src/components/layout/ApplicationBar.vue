@@ -26,13 +26,18 @@
       <template #search>
         <ShellSearch id="tour-homepage-smartsearch" ref="searchRef" @dismiss="$emit('search-dismiss')" @focusout="$emit('search-blur')" />
       </template>
+      <!-- ADR-0034: Otopilot girişi (DISABLED iken çizilmez). -->
+      <template #end-start>
+        <OtopilotLauncher :compact="!isDesktop" />
+      </template>
     </EkAppHeader>
 
     <v-menu v-model="helpOpen" activator="[data-header-action=help]" location="bottom end" :offset="8">
       <EkMenuPanel autofocus ref="helpPanelRef" :groups="helpGroups" label="Yardım" @select="onHelpSelect" @close="helpOpen = false" />
     </v-menu>
 
-    <v-menu v-model="accountOpen" activator="[data-header-action=account]" location="bottom end" :offset="8">
+    <!-- FR2-DARK: içerik tıklaması menüyü kapatmaz (tema seçimi yerinde görülür); öğeler onAccountSelect ile kapatır. -->
+    <v-menu v-model="accountOpen" activator="[data-header-action=account]" location="bottom end" :offset="8" :close-on-content-click="false">
       <div class="ek-shell-account">
         <div class="ek-shell-account__head">
           <StoreLogoAvatar :size="36" :store-name="storeName" :logo="userApi.getStoreLogo()" />
@@ -41,6 +46,8 @@
             <span class="ek-shell-account__meta">{{ userApi.getUsername.value }}</span>
           </div>
         </div>
+        <!-- FR2-DARK: tema tercihi (Açık / Koyu / Sistem) — kalıcı, ilk karede theme-boot.js uygular. -->
+        <EkThemeSwitch class="ek-shell-account__theme" :model-value="themePreference" @update:model-value="appTheme.setPreference" />
         <EkMenuPanel autofocus ref="accountPanelRef" class="ek-shell-account__menu" :groups="accountGroups" label="Hesap" @select="onAccountSelect" @close="accountOpen = false" />
       </div>
     </v-menu>
@@ -57,7 +64,9 @@ import useUser from '@/composables/user'
 import LoadingComponent from '../LoadingComponent.vue'
 import StoreLogoAvatar from './StoreLogoAvatar.vue'
 import ShellSearch from './ShellSearch.vue'
-import { EkAppHeader, EkMenuPanel, type EkMenuGroup, type EkMenuItem } from '@entegrasyonik/ui/components'
+import OtopilotLauncher from '@/chat/OtopilotLauncher.vue'
+import { EkAppHeader, EkMenuPanel, EkThemeSwitch, type EkMenuGroup, type EkMenuItem } from '@entegrasyonik/ui/components'
+import { appTheme } from '@/stores/theme'
 import { useWorkspaceStore } from '@/stores/workspace'
 import { useShellBreakpoints } from '@/composables/useShellBreakpoints'
 import { shortcutKeys } from '@entegrasyonik/ui/shortcuts'
@@ -116,10 +125,14 @@ const helpGroups = computed<EkMenuGroup[]>(() => [
 ])
 
 // Dar ekranda (< 768) üst barın yardım düğmesi gizlidir; destek iletişimi hesap menüsünde, çıkıştan önce görünür.
+const themePreference = appTheme.preference
+
 const accountGroups = computed<EkMenuGroup[]>(() => [
   {
     items: [
-      { key: 'settings', label: 'Ayarlar', icon: 'mdi-cog-outline' },
+      // FR2-SHELL madde 8: menü ağacındaki Uygulama Ayarları'nı (kod ile; iç içe kayıt da bulunur) açar. Kullanıcının
+      // menüsünde ekran yoksa (yetki) giriş gösterilmez — önce ölü "Ayarlar" girişi boş sekme/beyaz ekran açıyordu.
+      ...(settingsLink.value ? [{ key: 'settings', label: 'Uygulama ayarları', description: 'Mağaza, fatura, lojistik ve iletişim', icon: 'mdi-cog-outline' }] : []),
       { key: 'shortcuts', label: 'Klavye kısayolları', icon: 'mdi-keyboard-outline', shortcut: shortcutKeys('shortcutHelp') },
     ],
   },
@@ -137,6 +150,10 @@ const accountGroups = computed<EkMenuGroup[]>(() => [
 
 
 const openByTitle = (title: string) => eventBus.emit('openTab', menuStore.getMenuLinkWithTitle(title))
+const settingsLink = computed(() => (menuStore.getMenu?.() ? menuStore.getMenuLinkWithCode?.('SettingListView') : undefined))
+const openSettings = () => {
+  if (settingsLink.value) eventBus.emit('openTab', settingsLink.value)
+}
 
 function onHelpSelect(item: EkMenuItem) {
   helpOpen.value = false
@@ -155,7 +172,7 @@ function openSupportContact(key: string) {
 
 function onAccountSelect(item: EkMenuItem) {
   accountOpen.value = false
-  if (item.key === 'settings') openByTitle('settingList')
+  if (item.key === 'settings') openSettings()
   else if (item.key === 'shortcuts') emit('open-shortcuts')
   else if (item.key === 'helpCenter') helpNav.openHelp()
   else if (item.key === 'tour') window.dispatchEvent(new CustomEvent('ek:help-tour'))
@@ -239,6 +256,10 @@ defineExpose({ focusSearch: () => searchRef.value?.focus() })
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
   line-height: var(--ek-type-caption-line);
+}
+
+.ek-shell-account__theme {
+  border-bottom: 1px solid var(--ek-color-border-subtle);
 }
 
 .ek-shell-account__menu {

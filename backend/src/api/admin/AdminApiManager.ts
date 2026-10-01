@@ -32,6 +32,7 @@ import { isFreshReauth, requireReason, requireStepUp, requiresStepUp } from './s
 import { issueImpersonationTicket, IMPERSONATION_TICKET_TTL_SECONDS } from './impersonationTicket';
 import { sendHttpError } from '../http/errorEnvelope';
 import { AdminUserManager } from './adminUserManager';
+import { mountAdminAgentRoutes, type AdminAgentRouteDeps } from './adminAgentRoutes';
 
 /** `/admin-api` uzerinden ASLA cagrilamayan platformAdmin RPC'leri (cerez basan/musteri oturumuna ozgu). Impersonation yalniz bilet ile. */
 export const ADMIN_API_DENIED_RPCS: ReadonlySet<string> = new Set(['SecurityService/selectStore']);
@@ -84,7 +85,7 @@ function adminCors() {
         return cors({
             origin: origins.length ? origins : false,
             credentials: true,
-            methods: ['GET', 'POST', 'OPTIONS'],
+            methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // PUT/DELETE: yalniz /agent/provider + /agent/conversations (BR-4)
             allowedHeaders: ['Content-Type', 'X-Request-Id'],
             exposedHeaders: ['X-Request-Id'],
             maxAge: 600,
@@ -107,7 +108,7 @@ function sessionPrincipalOf(p: AdminPrincipal): SessionPrincipal {
     return { sub: p.sub, tid: undefined, role: undefined, ga: true, tv: p.tv, imp: false, auth_time: p.auth_time, iat: p.iat, exp: p.exp, iss: '', aud: 'backoffice' };
 }
 
-export function createAdminRouter(deps: AdminDeps = defaultAdminDeps()): Router {
+export function createAdminRouter(deps: AdminDeps = defaultAdminDeps(), agent: Pick<AdminAgentRouteDeps, 'broker' | 'providers' | 'heartbeatMs'> = {}): Router {
     const router = express.Router();
     const loginLimiter = createRateLimiter(rateLimitOptionsFromEnv());
     const mfaLimiter = createRateLimiter(rateLimitOptionsFromEnv());
@@ -298,6 +299,9 @@ export function createAdminRouter(deps: AdminDeps = defaultAdminDeps()): Router 
             throw e;
         }
     }));
+
+    // ---- BR-4: backoffice sohbeti (`/admin-api/agent/*`); jenerik RPC rotasindan ONCE ----
+    mountAdminAgentRoutes(router, { deps, sessionPrincipalOf, now, ...agent });
 
     // ---- Jenerik RPC (yalniz platformAdmin yetenekleri) ----
     router.post('/:service/:operation', wrap(async (req, res) => {

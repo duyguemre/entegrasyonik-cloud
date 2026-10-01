@@ -6,12 +6,7 @@ body {
   font-family: var(--ek-font-sans);
 }
 
-/* Tema geçişinde bir kare renk animasyonu yok (ADR-0026 Karar 3.4). */
-html.ek-theme-switching *,
-html.ek-theme-switching *::before,
-html.ek-theme-switching *::after {
-  transition: none !important;
-}
+/* Tema geçişi kuralı (ek-theme-switching) ortak pakette: @entegrasyonik/ui/styles app.css. */
 
 .bo-page {
   display: flex;
@@ -70,4 +65,227 @@ html.ek-theme-switching *::after {
     padding: var(--ek-space-4) var(--ek-space-4) var(--ek-space-6);
     gap: var(--ek-space-4);
   }
+}
+
+/* Başlık meta satırında kısa not (ikon + metin). */
+.bo-inline-note {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+}
+
+.bo-inline-note .v-icon {
+  font-size: var(--ek-icon-xs);
+}
+
+/* ----------------------------------------------------------------------------------------------------------------
+   Yoğun veri tablosu standardı (BO_UI_PATTERNS §3). Kullanım: <div class="bo-table-wrap"><table class="bo-table">…
+   - Başlık yapışkan (kaydırmada görünür), satır yüksekliği `data-density` ile: comfortable 44px · compact 36px.
+   - Sayı sütunu: <td class="is-num"> → sağa hizalı, tabular rakam. Kimlik sütunu: <td class="is-id"> → mono.
+   - Tıklanabilir satır: <tr class="is-link" tabindex="0"> + Enter → açılır; odak halkası satırın tamamında.
+   ---------------------------------------------------------------------------------------------------------------- */
+.bo-table-wrap {
+  position: relative;
+  overflow: auto;
+  max-height: var(--bo-table-max-h, none);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface);
+}
+
+.bo-table-wrap:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+}
+
+.bo-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--ek-type-table-size);
+  line-height: var(--ek-type-table-line);
+  color: var(--ek-color-content-default);
+}
+
+.bo-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  height: 36px;
+  padding: 0 var(--ek-space-4);
+  border-bottom: 1px solid var(--ek-color-border-default);
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.bo-table tbody td,
+.bo-table tbody th {
+  height: 44px;
+  padding: var(--ek-space-1) var(--ek-space-4);
+  border-bottom: 1px solid var(--ek-color-border-subtle);
+  text-align: left;
+  vertical-align: middle;
+  font-weight: var(--ek-font-weight-regular);
+}
+
+.bo-table[data-density='compact'] tbody td,
+.bo-table[data-density='compact'] tbody th {
+  height: 36px;
+}
+
+.bo-table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.bo-table .is-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.bo-table .is-id {
+  font-family: var(--ek-font-mono);
+  font-size: 0.92em;
+  white-space: nowrap;
+}
+
+.bo-table .is-muted {
+  color: var(--ek-color-content-muted);
+}
+
+.bo-table tbody tr.is-link {
+  cursor: pointer;
+}
+
+.bo-table tbody tr:hover > * {
+  background: var(--ek-color-surface-muted);
+}
+
+.bo-table tbody tr.is-link:focus-visible {
+  outline: none;
+}
+
+.bo-table tbody tr.is-link:focus-visible > * {
+  background: var(--ek-color-action-subtle);
+  box-shadow: inset 0 1px 0 var(--ek-color-border-focus), inset 0 -1px 0 var(--ek-color-border-focus);
+}
+
+.bo-table tbody tr.is-link:focus-visible > :first-child {
+  box-shadow: inset 2px 0 0 var(--ek-color-border-focus), inset 0 1px 0 var(--ek-color-border-focus), inset 0 -1px 0 var(--ek-color-border-focus);
+}
+
+/* Tablo altı: sayım + kaynak (sol), sayfalama (sağ). */
+.bo-table-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ek-space-2);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+}
+
+/* Segment seçici (tek seçimli filtre: durum, aralık, yüzey). role=radiogroup + role=radio düğmeler. */
+.bo-seg {
+  display: inline-flex;
+  flex-wrap: wrap;
+  padding: 3px;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-control);
+  background: var(--ek-color-surface-muted);
+}
+
+.bo-seg__opt {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  height: 30px;
+  padding: 0 var(--ek-space-3);
+  border: 0;
+  border-radius: var(--ek-radius-md);
+  background: transparent;
+  color: var(--ek-color-content-muted);
+  font: inherit;
+  font-size: var(--ek-type-label-size);
+  font-weight: var(--ek-font-weight-medium);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: var(--ek-transition-colors);
+}
+
+.bo-seg__opt:hover {
+  color: var(--ek-color-content-strong);
+}
+
+.bo-seg__opt[aria-checked='true'] {
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-strong);
+  box-shadow: var(--ek-shadow-sm);
+}
+
+.bo-seg__opt:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+}
+
+.bo-seg__count {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Filtre çubuğu: arama + segmentler + seçimler tek satır, sarılır. */
+.bo-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ek-space-3);
+}
+
+/* Liste sayfalarında < 768 px gizlenen ikincil sütun / yalnız dar ekranda görünen kısa etiket. */
+.bo-show-sm {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .bo-hide-sm {
+    display: none;
+  }
+
+  .bo-show-sm {
+    display: inline;
+  }
+
+  .bo-table thead th,
+  .bo-table tbody td,
+  .bo-table tbody th {
+    padding-inline: var(--ek-space-3);
+  }
+}
+
+/* ---- BO-ELEV E6: sayfa içi süzgeç alanları tek boy ve tek punto ----
+   Vuetify'ın compact alanları (40 px, 16 px yazı) .bo-seg (38 px, 14 px) ve düğmelerle aynı göz hizasına çekilir.
+   Yalnız sayfa gövdesi (.bo-page) — giriş/diyalog formları etkilenmez. */
+.bo-page .v-input--density-compact {
+  --v-input-control-height: 38px;
+}
+
+.bo-page .v-input--density-compact .v-field {
+  --v-field-input-padding-top: 7px;
+  --v-field-input-padding-bottom: 7px;
+  font-size: var(--ek-type-label-size);
+}
+
+.bo-page .v-input--density-compact .v-field__input {
+  min-height: 38px;
+}
+
+.bo-page .v-input--density-compact .v-field-label:not(.v-field-label--floating) {
+  font-size: var(--ek-type-label-size);
 }

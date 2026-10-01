@@ -48,6 +48,19 @@ test.describe('Fiyatlandırma', () => {
     expect(problems).toEqual([])
   })
 
+  test('S25 (K46): ajan ürünü her planda — bölüm, kart özeti, karşılaştırma satırları; axe 0', async ({ page }) => {
+    await page.goto('/fiyatlandirma')
+    const section = page.getByTestId('plan-ai')
+    await section.scrollIntoViewIfNeeded()
+    await expect(section).toContainText('Kendi yapay zekâ anahtarınızı getirirsiniz; yapay zekâ için bize ekstra ücret ödemezsiniz.')
+    await expect(section.locator('.agent-ladder__step')).toHaveCount(3)
+    await expect(page.getByTestId('plan-agent')).toHaveCount(3)
+    await expect(page.locator('tr[data-row-kind="agent"]')).toHaveCount(5)
+    const text = (await page.locator('main').innerText()).toLocaleLowerCase('tr-TR')
+    for (const w of ['kredi', 'token', 'sınırsız']) expect(text, w).not.toContain(w)
+    await expectNoViolations(page)
+  })
+
   test('deneme ifadesi yalnızca deneme planında (seed trial): süre + kartsız', async ({ page }) => {
     await page.goto('/fiyatlandirma')
     const cards = page.getByTestId('plan-cards').locator('.plan')
@@ -96,9 +109,9 @@ test.describe('Fiyatlandırma', () => {
     const table = page.getByTestId('compare-table')
     await expect(table.getByRole('columnheader')).toHaveText(['Plan', 'Başlangıç', 'Büyüme', 'Kurumsal'])
     // S17: fiyat/limit satırları önce ve aynen; ardından özellik satırları (deneme + her planda + plan eklentileri)
-    await expect(table.locator('tbody tr[data-row-kind="limit"] th')).toHaveText(['Aylık fiyat', 'Kanal', 'Ürün varyantı (SKU)', 'Kullanıcı'])
+    await expect(table.locator('tbody tr[data-row-kind="limit"] th')).toHaveText(['Aylık fiyat', 'Kanal', 'Ürün varyantı', 'Kullanıcı'])
     const heads = await table.getByRole('rowheader').allInnerTexts()
-    expect(heads.slice(0, 4)).toEqual(['Aylık fiyat', 'Kanal', 'Ürün varyantı (SKU)', 'Kullanıcı'])
+    expect(heads.slice(0, 4)).toEqual(['Aylık fiyat', 'Kanal', 'Ürün varyantı', 'Kullanıcı'])
     await expect(table.locator('tbody tr[data-row-kind="feature"]').filter({ hasText: 'ERP bağlantısı (Bizimhesap, yalnızca okuma)' })).toHaveCount(1)
     await expect(table.locator('tbody tr[data-row-kind="feature"]').filter({ hasText: 'Ücretsiz deneme' })).toContainText('14 gün')
     await expect(table.getByRole('row').nth(2)).toContainText('Özel limit')
@@ -122,10 +135,10 @@ test.describe('Fiyatlandırma', () => {
   test('üst gezinmede "Fiyatlandırma" yayımlanmış ve çalışır', async ({ page }) => {
     await page.goto('/fiyatlandirma')
     if (isDesktop(page)) {
-      await expect(page.getByRole('navigation', { name: 'Ana gezinme' }).first().getByRole('link', { name: 'Fiyatlandırma' })).toBeVisible()
+      await expect(page.getByRole('navigation', { name: 'Ana gezinme' }).first().getByRole('link', { name: 'Fiyatlar', exact: true })).toBeVisible()
     } else {
       await page.getByTestId('menu-toggle').click()
-      await expect(page.locator('.nav-mobile__panel').getByRole('link', { name: 'Fiyatlandırma' })).toBeVisible()
+      await expect(page.locator('.nav-mobile__panel').getByRole('link', { name: 'Fiyatlar', exact: true })).toBeVisible()
     }
   })
 

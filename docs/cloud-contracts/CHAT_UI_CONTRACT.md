@@ -558,3 +558,18 @@ Backend `CHAT-BR-2` ile araç + onay + "daha fazla" uçlarını açtı (protokol
 - **Katalog:** sağlayıcı başına 2 model (biri `recommended`); model kimlikleri sunucuda izinli listeden doğrulanır (liste dışı `400`). Katalog sağlayıcı belgesiyle canlı öncesi insan tarafından doğrulanacak.
 - **Kullanım:** `usage.today/month` yalnız bilgidir (istek, girdi/çıktı token); kota/kesme yok.
 - **Anahtar alanı (FE):** yalnız `PUT`/`test` gövdesinde gönderilir; yanıtta dönmez; kayıttan sonra boşaltılır, `localStorage`/Pinia'ya yazılmaz (bkz. §9 `ChatProviderSetup`).
+
+## 13. BR-4 notu (backend, 2026-10-01 — backoffice taşıyıcı uçları ve kurulum; protokol `chat/v1` DEĞİŞMEDİ)
+
+Backoffice sohbeti aynı `@entegrasyonik/chat` paketi ve aynı `chat/v1` protokolüyle çalışır; **yalnız `baseUrl` + kimlik + kurulum akışı farklıdır**. Müşteri uygulamasının uçlarından ayrıdır (çerez, rota, anahtar, bellek, araç kümesi paylaşılmaz).
+
+- **Taşıyıcı tabanı:** `baseUrl = <admin-api>/agent` (backoffice SPA'nın `/admin-api` kökü). Kimlik yalnız **`EK_ADMIN` çerezi** (TOTP tamamlanmış tam oturum, `credentials:'include'`; yazma isteklerinde `Origin` zorunlu). Müşteri çerezi bu uçlarda `401`; yarı oturum (TOTP bekleyen) `403 MFA_REQUIRED`. Yeniden doğrulama (`reauth`) sonrası 5 dk içinde step-up'lı uçlar çalışır.
+- **Uçlar** (`/admin-api` altında; gövde/yanıt şemaları müşteri uçlarıyla birebir):
+  - `GET /agent/info?locale=` -> `AgentInfo`. `setup.canConfigure:true` (her platform yöneticisi), `canConsent:false`, `consentRequired:false` (platform anahtarında tenant KVKK onayı kavramı yoktur). Öneri çipleri backoffice'e özgüdür (sağlık/kuyruk/entegrasyon API'si).
+  - `POST /agent/turns` (SSE) — `SETUP_REQUIRED`/`RATE_LIMITED`/`TURN_IN_PROGRESS`/`TURN_DUPLICATE` SSE başlamadan 4xx (müşteri ucuyla aynı).
+  - `POST /agent/confirm` — **v1'de yazma aracı olmadığından onay kartı da yoktur**; uç yalnız protokol tamlığı içindir ve daima `410 CONFIRM_EXPIRED` döner. FE onay kartı akışını backoffice'te bağlamaz.
+  - `POST /agent/more` (JSON; v1 araçları sayfalanmadığından yalnız `404`), `DELETE /agent/conversations/:id` (`204`).
+  - **Kurulum:** `GET /agent/provider` -> `ProviderStatus` (anahtar `'sensitive'`, katalog, kullanım); `POST /agent/provider/test` (`ProviderTestRequest`; `ProviderTestResult`); `PUT /agent/provider` ve `DELETE /agent/provider` **step-up (5 dk) + `reason` (>=10, <=500 karakter) ister**: gövdeye `reason` alanı eklenir (`ProviderSaveRequest` alanlarına ek), yoksa `400 VALIDATION`, step-up yoksa `401 REAUTH_REQUIRED` (backoffice reauth akışı). `PUT` önce sağlayıcıyı sınar; başarısızsa `422 ProviderTestResult` ve yazılmaz. `/provider/consent` YOKTUR.
+- **Platform anahtarı yoksa:** `info` -> `enabled:false, reason:SETUP_REQUIRED, setup.configured:false, canConfigure:true`; `turns` -> `403 SETUP_REQUIRED`. Backoffice kurulum formu müşteri `ChatProviderSetup`'ının sahip-onayı bölümü OLMADAN, ek olarak "gerekçe" alanı ve step-up (reauth) istemiyle çalışır. `features.agent` bayrağı kapalıysa `DISABLED` (müşteriyle aynı bayrak).
+- **Araçlar:** model yalnız 4 platform salt-okuma aracını görür (`platform_overview_health`, `platform_engine_queues`, `platform_integrations_api_health`, `platform_integrations_resilience`); sonuçlar `table` parçasıdır (sayaç/durum; tenant iş verisi, pod adı, hata metni yok). Yazma aracı yoktur; `awaiting-confirm` durumu backoffice'te oluşmaz.
+- **Oturum/bellek:** aynı yönetici iki yüzeyde ayrı sohbet görür (çalışma belleği `agent:conv:bo:{adminId}:{convId}`). Hata kodları ve `Retry-After` müşteri uçlarıyla aynı katalogdan (`docs/ERROR_CODES.md`); `/admin-api` kimlik hataları kendi zarfındadır (`{error, code}`).

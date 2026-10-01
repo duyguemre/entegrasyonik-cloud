@@ -54,7 +54,7 @@ test.describe('P2 — Müşteriler (CustomerListView)', () => {
     await gotoAuthed(page)
     await openScreen(page, 'CustomerListView')
 
-    await page.locator('.customerListView tbody tr').first().locator('button:has(.mdi-eye)').click()
+    await page.locator('.customerListView tbody tr').first().locator('button:has([class*="mdi-eye"])').click()
 
     const dialog = page.getByRole('dialog').filter({ hasText: 'Müşteri Kartı' })
     await expect(dialog).toBeVisible()
@@ -106,7 +106,7 @@ test.describe('C1.6 — Müşteri anonimleştirme', () => {
     })
     await gotoAuthed(page)
     await openScreen(page, 'CustomerListView')
-    await page.locator('.customerListView tbody tr').first().locator('button:has(.mdi-eye)').click()
+    await page.locator('.customerListView tbody tr').first().locator('button:has([class*="mdi-eye"])').click()
     const dialog = page.getByRole('dialog').filter({ hasText: 'Müşteri Kartı' })
     await expect(dialog).toBeVisible()
     return dialog

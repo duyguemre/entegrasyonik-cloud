@@ -7,6 +7,8 @@ import { test, expect, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { installApiMocks, mockError, type MockValue } from '../fixtures/mockApi'
 import { userContextFixture } from '../fixtures/apiData'
+import { suppressTourOffer } from '../fixtures/appDialog'
+import { expectProblemState } from '../fixtures/problemState'
 import { openDrawer, waitForWorkplaceReady } from '../fixtures/nav'
 import {
   AXE_TAGS, COMPLIANCE_MENU_ICON, COMPLIANCE_ROOT, COMPLIANCE_SLUG, LIST_FIXTURE, SUMMARY_CLEAN_FIXTURE, SUMMARY_FIXTURE, SUMMARY_NO_PROBE_FIXTURE,
@@ -22,6 +24,9 @@ function json(route: any, headers: Record<string, string>, status: number, body:
 /** Uyum RPC'lerini gövde kaydederek karşılar; `overrides` ile tek bir uç değiştirilebilir. */
 async function mocks(page: Page, opts: { admin?: boolean; menu?: boolean; overrides?: Record<string, MockValue> } = {}): Promise<Calls> {
   const calls: Calls = { list: [], summary: [], getDetail: [], transition: [] }
+  // Sağ alttaki tur teklifi kartı (HelpTour) mobilde "Tekrar dene"yi örtüyor, ekran görüntülerine zamanlamaya bağlı
+  // girip çıkıyor — bu spec'te her zaman bastırılır (tercih: dismissed).
+  await suppressTourOffer(page)
   const record = (op: keyof Calls, handler: (body: any) => { status: number; body: unknown }) =>
     async (route: any, headers: Record<string, string>) => {
       const body = route.request().postDataJSON?.() ?? {}
@@ -131,7 +136,7 @@ test.describe('ADR-0018 — Entegrasyon uyum konsolu', () => {
     await openComplianceScreen(page)
     const view = root(page)
 
-    await expect(view.getByText('Uyum bulguları yüklenemedi — bağlantınızı kontrol edip tekrar deneyin.')).toBeVisible()
+    await expectProblemState(view, 'Uyum bulguları yüklenemedi — bağlantınızı kontrol edip tekrar deneyin.')
     await expect(view).not.toContainText('500')
     await expect(view).not.toContainText('INTERNAL')
     await expect(view).not.toContainText('FindingService')

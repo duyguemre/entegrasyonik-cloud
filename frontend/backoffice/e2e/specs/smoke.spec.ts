@@ -48,7 +48,9 @@ test.describe('giriş', () => {
     await settle(page)
     if (info.project.name === 'chromium-mobile') await page.getByRole('button', { name: 'Menüyü aç' }).click()
     await page.evaluate(() => (window as unknown as { __boMock: { expireSession(): void } }).__boMock.expireSession())
-    await page.getByRole('navigation', { name: 'Yönetim ekranları' }).getByRole('button', { name: 'Müşteriler' }).click()
+    const nav = page.getByRole('navigation', { name: 'Yönetim ekranları' })
+    await nav.getByRole('button', { name: 'Müşteriler', exact: true }).click()
+    await nav.getByRole('button', { name: 'Müşteri listesi', exact: true }).click()
     await expect(page).toHaveURL(/\/giris\?r=/)
     await expect(page.getByText('Oturumunuz sona erdi')).toBeVisible()
   })
@@ -57,32 +59,78 @@ test.describe('giriş', () => {
 test.describe('kabuk ve ekranlar', () => {
   test.beforeEach(async ({ page }) => signInFully(page))
 
-  for (const [label, path, heading] of [
-    ['Genel bakış', '/genel-bakis', 'Genel bakış'],
-    ['Müşteriler', '/musteriler', 'Müşteriler'],
-    ['Log kontrol merkezi', '/loglar', 'Log kontrol merkezi'],
-    ['Denetim kayıtları', '/denetim', 'Denetim kayıtları'],
+  // [menü yolu (grup → ekran), adres, h1]
+  for (const [menu, path, heading] of [
+    [['Genel bakış'], '/genel-bakis', 'Genel bakış'],
+    [['Müşteriler', 'Müşteri listesi'], '/musteriler', 'Müşteri listesi'],
+    [['Loglar ve sorunlar'], '/loglar', 'Log kontrol merkezi'],
+    [['Denetim'], '/denetim', 'Denetim kayıtları'],
   ] as const) {
-    test(`${label}: menüden açılır, axe 0, görsel taban`, async ({ page }, info) => {
+    test(`${heading}: menüden açılır, axe 0, görsel taban`, async ({ page }, info) => {
       if (info.project.name === 'chromium-mobile') await page.getByRole('button', { name: 'Menüyü aç' }).click()
-      await page.getByRole('navigation', { name: 'Yönetim ekranları' }).getByRole('button', { name: label }).click()
+      const nav = page.getByRole('navigation', { name: 'Yönetim ekranları' })
+      for (const label of menu) await nav.getByRole('button', { name: new RegExp(`^${label}(\\s|$)`) }).click()
       await expect(page).toHaveURL(new RegExp(`${path}$`))
       await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible()
       await settle(page)
       await expectNoA11yViolations(page)
       if (info.project.name !== 'chromium-mobile') {
-        await expect(page).toHaveScreenshot(`${path.slice(1)}.png`, { fullPage: true, mask: [page.locator('.ek-num, time, .bo-page__lede .bo-muted')] })
+        await expect(page).toHaveScreenshot(`${path.slice(1)}.png`, { fullPage: true, mask: [page.locator('.ek-num, time, .bo-page__lede .bo-muted, [data-testid="stepup-indicator"]')] })
       }
     })
   }
 
-  test('planlanan ekranlar gezilebilir (menüde tüm gruplar)', async ({ page }, info) => {
+  test('planlanan ekranlar kalıcı yollarında "yakında" durumuyla açılır (menüde tüm gruplar)', async ({ page }, info) => {
     test.skip(info.project.name === 'chromium-mobile')
     const nav = page.getByRole('navigation', { name: 'Yönetim ekranları' })
-    for (const label of ['Üyelik ve abonelikler', 'Motor ve kuyruklar', 'Redis ve MongoDB', 'Bildirimler ve duyurular', 'Yöneticiler ve güvenlik']) {
-      await nav.getByRole('button', { name: label }).click()
-      await expect(page.getByRole('heading', { level: 1, name: label })).toBeVisible()
+    for (const [menu, heading, path] of [
+      // bo-next sonrası hâlâ planlı olanlar (Abonelik, Motor, Altyapı, Yöneticiler, Platform ayarları, Bildirimler hazır).
+      [['Müşteriler', 'Hesap kuyruğu'], 'Hesap kuyruğu', '/musteriler/yasam-dongusu'],
+      [['Destek talepleri'], 'Destek talepleri', '/musteriler/destek'],
+    ] as const) {
+      for (const label of menu) {
+        const btn = nav.getByRole('button', { name: new RegExp(`^${label}(\\s|$)`) })
+        // Açık grubun başlığına yeniden tıklamak onu kapatır: yalnız kapalıysa aç.
+        if ((await btn.getAttribute('aria-expanded')) !== 'true') await btn.click()
+      }
+      await expect(page).toHaveURL(new RegExp(`${path}$`))
+      await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible()
+      await expect(page.getByRole('heading', { level: 2, name: `${heading} ekranı hazırlanıyor` })).toBeVisible()
     }
+    await expectNoA11yViolations(page)
+  })
+
+  test('komut paleti: Ctrl+K → ekran arama ve müşteri numarasıyla hızlı geçiş (yalnız klavye)', async ({ page }) => {
+    await settle(page)
+    await page.keyboard.press('Control+k')
+    const input = page.getByRole('combobox', { name: /Ekran, müşteri numarası/ })
+    await expect(input).toBeFocused()
+    await input.fill('kuyruk')
+    await expect(page.getByRole('option').first()).toContainText('Motor ve kuyruklar')
+    await expectNoA11yViolations(page, '.bo-cmdk')
+    await page.keyboard.press('Enter')
+    await expect(page).toHaveURL(/\/motor$/)
+    await page.keyboard.press('Control+k')
+    await input.fill('102')
+    await page.keyboard.press('Enter')
+    await expect(page).toHaveURL(/\/musteriler\/102$/)
+    await expect(page.getByRole('heading', { level: 1, name: 'Örnek · Poyraz Outdoor' })).toBeVisible()
+  })
+
+  test('adım-yükseltmesi göstergesi: girişte doğrulandı; süre dolunca kilitli → "Şimdi doğrula"', async ({ page }, info) => {
+    test.skip(info.project.name === 'chromium-mobile')
+    const indicator = page.getByTestId('stepup-indicator')
+    await expect(indicator).toContainText('Doğrulandı')
+    await page.evaluate(() => (window as unknown as { __boMock: { expireReauth(): void } }).__boMock.expireReauth())
+    await page.reload()
+    await expect(indicator).toContainText('Hassas işlemler kilitli')
+    await indicator.click()
+    await page.getByRole('button', { name: 'Şimdi doğrula' }).click()
+    const reauth = page.getByRole('dialog', { name: 'Kimliğinizi yeniden doğrulayın' })
+    await reauth.getByLabel('Parola').fill(ACCOUNT.password)
+    await reauth.getByLabel('Doğrulama kodu').fill('135790')
+    await reauth.getByRole('button', { name: 'Doğrula ve devam et' }).click()
+    await expect(indicator).toContainText('Doğrulandı')
   })
 
   test('müşteri → geçici erişim: gerekçe + step-up → yeni sekme (noopener), URL loglanmaz', async ({ page }) => {
@@ -101,8 +149,10 @@ test.describe('kabuk ve ekranlar', () => {
     await page.evaluate(() => (window as unknown as { __boMock: { expireReauth(): void } }).__boMock.expireReauth())
 
     await page.getByTestId('impersonate').click()
-    const dialog = page.getByRole('dialog', { name: 'Hesaba geçici erişim' })
-    const start = dialog.getByRole('button', { name: 'Gerekçeyle başlat' })
+    const dialog = page.getByRole('dialog', { name: 'Müşterinin gözünden açılsın mı?' })
+    await expect(dialog.getByText('Geri alınabilir', { exact: true })).toBeVisible()
+    await expect(dialog.getByText('Onayladığınızda parola ve doğrulama kodu istenecek', { exact: false })).toBeVisible()
+    const start = dialog.getByRole('button', { name: 'Gerekçeyle aç' })
     await dialog.getByLabel('Gerekçe').fill('kısa')
     await expect(start).toBeDisabled()
     await dialog.getByLabel('Gerekçe').fill('Destek talebi: eşleme ekranı hatası')
@@ -117,6 +167,7 @@ test.describe('kabuk ve ekranlar', () => {
     await reauth.getByRole('button', { name: 'Doğrula ve devam et' }).click()
 
     await expect(page.getByText('Müşteri hesabı yeni sekmede açıldı')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Denetim kaydını aç' })).toBeVisible()
     const opened = await page.evaluate(() => (window as unknown as { __opened: unknown[][] }).__opened)
     expect(opened).toHaveLength(1)
     expect(opened[0][0]).toMatch(/\/impersonate#t=[0-9a-f]{32}$/)

@@ -116,6 +116,50 @@ export const PRESENT_SPECS: Readonly<Record<string, PresentSpec>> = {
         ],
         openIn: () => ({ screen: 'integrations/MarketplaceView' }),
     },
+    // ---- BR-4 backoffice sohbeti (`adminChat`): yalniz sayac/durum tablolari; tenant verisi yok ----
+    'platform.overview.health': {
+        kind: 'table', title: { tr: 'Platform sağlığı', en: 'Platform health' }, itemsKey: 'items', rowKey: 'area',
+        columns: [
+            { key: 'area', label: { tr: 'Alan', en: 'Area' }, type: 'text' },
+            { key: 'status', label: { tr: 'Durum', en: 'Status' }, type: 'text' },
+            { key: 'detail', label: { tr: 'Ayrıntı', en: 'Detail' }, type: 'text' },
+        ],
+    },
+    'platform.engine.queues': {
+        kind: 'table', title: { tr: 'İş kuyrukları', en: 'Job queues' }, itemsKey: 'items', rowKey: 'queue',
+        columns: [
+            { key: 'queue', label: { tr: 'Kuyruk', en: 'Queue' }, type: 'text' },
+            { key: 'available', label: { tr: 'Erişilebilir', en: 'Available' }, type: 'boolean' },
+            { key: 'waiting', label: { tr: 'Bekleyen', en: 'Waiting' }, type: 'number' },
+            { key: 'active', label: { tr: 'Aktif', en: 'Active' }, type: 'number' },
+            { key: 'delayed', label: { tr: 'Ertelenen', en: 'Delayed' }, type: 'number' },
+            { key: 'failed', label: { tr: 'Başarısız', en: 'Failed' }, type: 'number' },
+            { key: 'pendingReview', label: { tr: 'İnceleme bekleyen', en: 'Pending review' }, type: 'number' },
+        ],
+    },
+    'platform.integrations.api_health': {
+        kind: 'table', title: { tr: 'Entegrasyon API sağlığı', en: 'Integration API health' }, itemsKey: 'items', rowKey: 'integrationCode',
+        columns: [
+            { key: 'integrationCode', label: { tr: 'Entegrasyon', en: 'Integration' }, type: 'channel' },
+            { key: 'total', label: { tr: 'Çağrı', en: 'Calls' }, type: 'number' },
+            { key: 'errors', label: { tr: 'Hata', en: 'Errors' }, type: 'number' },
+            { key: 'errorRate', label: { tr: 'Hata oranı (0-1)', en: 'Error rate (0-1)' }, type: 'number' },
+            { key: 'p95Ms', label: { tr: 'p95 (ms)', en: 'p95 (ms)' }, type: 'number' },
+            { key: 'affectedTenants', label: { tr: 'Etkilenen mağaza', en: 'Affected stores' }, type: 'number' },
+            { key: 'topErrorCode', label: { tr: 'Sık hata kodu', en: 'Top error code' }, type: 'text' },
+        ],
+    },
+    'platform.integrations.resilience': {
+        kind: 'table', title: { tr: 'Entegrasyon dayanıklılığı', en: 'Integration resilience' }, itemsKey: 'items', rowKey: 'integrationCode',
+        columns: [
+            { key: 'integrationCode', label: { tr: 'Entegrasyon', en: 'Integration' }, type: 'channel' },
+            { key: 'podsReporting', label: { tr: 'Raporlayan pod', en: 'Reporting pods' }, type: 'number' },
+            { key: 'circuitsOpen', label: { tr: 'Açık devre', en: 'Open circuits' }, type: 'number' },
+            { key: 'circuitsHalfOpen', label: { tr: 'Yarı açık', en: 'Half-open' }, type: 'number' },
+            { key: 'rateLimited', label: { tr: 'Hız sınırlı', en: 'Rate limited' }, type: 'number' },
+            { key: 'intake', label: { tr: 'Alım', en: 'Intake' }, type: 'text' },
+        ],
+    },
     'reports.sales.summary': {
         kind: 'kpi', title: { tr: 'Satış özeti', en: 'Sales summary' }, openIn: { screen: 'DashboardView' },
         items: (d, loc): KpiItem[] => {

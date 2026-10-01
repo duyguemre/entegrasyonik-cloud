@@ -30,7 +30,7 @@
           <template #start>
             <span class="pig-bar__hint">
               <v-icon icon="mdi-gesture-tap-hold" aria-hidden="true" />
-              <span><span class="pig-wide">Sürükleyerek sıralayın — </span>ilk görsel <strong>kapak</strong> olur</span>
+              <span><strong>Sırayı değiştirmek için</strong> görseli sürükleyin<span class="pig-wide"> ya da ⋯ menüsünden taşıyın</span> · 1. görsel <strong>kapak</strong></span>
             </span>
           </template>
           <template #end>
@@ -93,9 +93,10 @@
         <ul v-else ref="gridRef" class="pig-grid" role="list" aria-label="Ürün görselleri" aria-describedby="pig-kbd-help">
           <li v-for="(img, i) in visible" :key="img._id" class="pig-tile" :data-id="img._id"
             :class="{ 'is-cover': i === 0, 'is-selected': isSelected(img._id), 'is-grabbed': grabbed === img._id, 'has-selection': selected.length > 0 }">
+            <div class="pig-tile__media">
             <button type="button" class="pig-tile__open" :aria-label="`Görsel ${i + 1}${i === 0 ? ' (kapak)' : ''} — büyük önizleme`"
               @click="openLightbox(i)">
-              <GalleryThumb :src="img.url" />
+              <GalleryThumb :src="img.url" :alt="`Görsel ${i + 1}`" />
             </button>
 
             <div class="pig-tile__top">
@@ -120,8 +121,6 @@
             </div>
 
             <div class="pig-tile__foot">
-              <span v-if="i === 0" class="pig-badge pig-badge--cover"><v-icon icon="mdi-star" aria-hidden="true" />Kapak</span>
-              <span v-else class="pig-badge pig-badge--pos ek-num" aria-hidden="true">{{ i + 1 }}</span>
               <span class="pig-tile__meta">
                 <EkTooltip v-if="qualityOf(img).length" :text="qualityOf(img).map((h) => h.text).join(' ')">
                   <span class="pig-badge" :class="`pig-badge--${worstLevel(qualityOf(img))}`" tabindex="0" role="img"
@@ -138,11 +137,20 @@
                 </EkTooltip>
               </span>
             </div>
+            </div>
+            <!-- FR2-PFORM 27: hangi görsel olduğu altyazıda (sıra · kapak · dosya adı · çözünürlük) -->
+            <div class="pig-tile__cap">
+              <span class="pig-tile__pos ek-num" :class="{ 'is-cover': i === 0 }">
+                <v-icon v-if="i === 0" icon="mdi-star" aria-hidden="true" />{{ i === 0 ? 'Kapak' : `${i + 1}. görsel` }}
+              </span>
+              <span class="pig-tile__name" :title="img.width && img.height ? `${imageName(img, i)} · ${img.width}×${img.height} px` : imageName(img, i)">{{ imageName(img, i) }}</span>
+              <span v-if="i === 0 && img.width && img.height" class="pig-tile__dim ek-num">{{ img.width }}×{{ img.height }} px</span>
+            </div>
           </li>
 
           <!-- yüklenenler -->
           <li v-for="up in uploadItems" :key="up.id" class="pig-tile pig-tile--upload" :class="`is-${up.status}`">
-            <span class="pig-tile__open pig-tile__open--static"><GalleryThumb :src="up.previewUrl" :alt="up.name" /></span>
+            <div class="pig-tile__media"><span class="pig-tile__open pig-tile__open--static"><GalleryThumb :src="up.previewUrl" :alt="up.name" /></span></div>
             <div class="pig-up" :role="up.status === 'error' ? 'alert' : undefined">
               <template v-if="up.status === 'error'">
                 <span class="pig-up__title"><v-icon icon="mdi-alert-circle-outline" aria-hidden="true" />Yüklenemedi</span>
@@ -258,7 +266,9 @@ const visible = computed(() => images.value.filter((img) => !pendingIds.value.ha
 
 const description = computed(() => {
   const n = visible.value.length
-  return n ? `${n} görsel · ilk görsel kapak olarak kullanılır` : 'Henüz görsel yok'
+  return n
+    ? `${n} görsel · ürün sayfasında ve kanallarda bu sırayla gösterilir; 1. görsel kapaktır`
+    : 'Ürününüzün görsellerini ekleyin; ilk görsel kapak olur'
 })
 
 const valueTitle = (id: string) => choicesStore.getDirectChoiceValueTitle(id) as string | undefined
@@ -279,6 +289,13 @@ function qualityOf(img: GalleryImage) {
   let q = qualityCache.get(img)
   if (!q) { q = imageQuality(img); qualityCache.set(img, q) }
   return q
+}
+
+/** Görselin okunur adı: yüklenen dosya adı (varsa), yoksa sıra. */
+function imageName(img: GalleryImage, i: number) {
+  const raw = String(img.originalname ?? img.originalName ?? img.name ?? '').trim()
+  // Adsız yüklemede backend yükleme kimliğini ad yapar — kimlik gösterilmez.
+  return raw && !/^[0-9a-f-]{16,}$/i.test(raw) ? raw : `Görsel ${i + 1}`
 }
 
 function announce(msg: string) {
@@ -570,6 +587,9 @@ function initSortable() {
     animation: motionMs('base'),
     easing: 'ease-out',
     forceFallback: true,
+    // FR2-PFORM 28: kopya BODY'ye eklenir. Kapta kalınca (varsayılan) diyalog kabının `transform`'u `position:fixed`
+    // kopyanın kapsayıcı bloğunu değiştiriyor, kopya imleçten diyalog ofseti kadar uzakta çiziliyordu.
+    fallbackOnBody: true,
     fallbackTolerance: 4,
     fallbackClass: 'pig-drag-clone',
     ghostClass: 'is-ghost',
@@ -673,7 +693,8 @@ onBeforeUnmount(() => window.removeEventListener('paste', onPaste))
 
 <style scoped>
 .pig {
-  --pig-tile: 148px;
+  /* FR2-PFORM 27: kutular büyüdü (148 → 184px); 1440'ta 5 kolon, kapak 2×2. */
+  --pig-tile: 184px;
   height: 100%;
 }
 
@@ -931,7 +952,8 @@ kbd {
 
 .pig-tile {
   position: relative;
-  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-card);
@@ -981,6 +1003,60 @@ kbd {
   cursor: grabbing !important;
 }
 
+.pig-tile__media {
+  position: relative;
+  flex: 1 1 auto;
+  aspect-ratio: 1;
+  min-height: 0;
+}
+
+.pig-tile.is-cover .pig-tile__media {
+  aspect-ratio: auto;
+}
+
+.pig-tile__cap {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  min-height: 36px;
+  padding: var(--ek-space-1) var(--ek-space-2) var(--ek-space-1) var(--ek-space-3);
+  border-top: 1px solid var(--ek-color-border-subtle);
+  background: var(--ek-color-surface);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+}
+
+.pig-tile__pos {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  color: var(--ek-color-content-strong);
+  font-weight: 600;
+}
+
+.pig-tile__pos.is-cover {
+  color: var(--ek-color-action-emphasis);
+}
+
+.pig-tile__pos :deep(.v-icon) {
+  font-size: 14px;
+}
+
+.pig-tile__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ek-color-content-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pig-tile__dim {
+  flex: none;
+  color: var(--ek-color-content-muted);
+}
+
 .pig-tile__open {
   display: block;
   width: 100%;
@@ -1003,16 +1079,28 @@ kbd {
   align-items: center;
   gap: var(--ek-space-1);
   padding: var(--ek-space-2);
+}
+
+/* Sıralama tutamağı HER ZAMAN görünür (sıranın değiştirilebildiği anlaşılsın — FR2-PFORM 27); seçim ve menü üzerine gelince. */
+.pig-tile__top > .pig-check,
+.pig-tile__top > .pig-menu,
+.pig-tile__top > :deep(.pig-menu) {
   opacity: 0;
   transition: opacity var(--ek-duration-fast) var(--ek-easing-enter);
 }
 
-.pig-tile:hover .pig-tile__top,
-.pig-tile:focus-within .pig-tile__top,
-.pig-tile.is-selected .pig-tile__top,
-.pig-tile.has-selection .pig-tile__top,
-.pig-tile.is-grabbed .pig-tile__top {
+.pig-tile:hover .pig-tile__top > *,
+.pig-tile:focus-within .pig-tile__top > *,
+.pig-tile.is-selected .pig-tile__top > *,
+.pig-tile.has-selection .pig-tile__top > *,
+.pig-tile.is-grabbed .pig-tile__top > * {
   opacity: 1;
+}
+
+@media (pointer: coarse) {
+  .pig-tile__top > * {
+    opacity: 1 !important;
+  }
 }
 
 .pig-tile__spacer {

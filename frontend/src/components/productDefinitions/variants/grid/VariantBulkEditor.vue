@@ -638,7 +638,7 @@ tr.is-group-start > th, tr.is-group-start > td { border-top: 1px solid var(--ek-
 .vbe-cell.is-error.is-active { box-shadow: inset 0 0 0 2px var(--ek-color-error); }
 .vbe-cell.is-editing { padding: 0 var(--ek-space-1); }
 .vbe-val { display: inline-flex; align-items: center; gap: var(--ek-space-1); }
-.vbe-val.is-empty { color: var(--ek-color-content-subtle); }
+.vbe-val.is-empty { color: var(--ek-color-content-muted); }
 .vbe-issue { display: inline-flex; }
 .vbe-issue .v-icon { font-size: var(--ek-icon-sm); }
 .vbe-issue--error { color: var(--ek-color-error); }

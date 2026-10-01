@@ -54,7 +54,9 @@ test.describe('C1.1 — Stok sağlığı (StockHealthView)', () => {
     await expect(recon).not.toContainText(/\d{2}\.\d{2}\.\d{4}/)
 
     // Sözleşme: { limit } (1..50), tenant kimliği gövdede YOK.
-    expect(bodies[0]).toEqual({ limit: 20 })
+    // Anasayfa sekmesi (Dashboard StockAttentionCard) aynı uç noktayı { limit: 5 } ile çağırır; ekranın kendi isteği { limit: 20 }.
+    expect(bodies).toContainEqual({ limit: 20 })
+    expect(bodies.every((b) => Object.keys(b).join() === 'limit')).toBe(true)
   })
 
   test('boş: açık aşırı satış/eşleşmeyen kalem yoksa sakin metin (sahte "mükemmel" yok, 0 ≠ —)', async ({ page }) => {
@@ -85,6 +87,8 @@ test.describe('C1.1 — Stok sağlığı (StockHealthView)', () => {
     let calls = 0
     const view = await openStockHealth(page, {
       'StockService/getStockOverview': async (route: any, headers: any) => {
+        // Dashboard'un { limit: 5 } çağrısı sayılmaz — yalnız Stok sağlığı ekranının kendi isteği ({ limit: 20 }).
+        if (route.request().postDataJSON()?.limit !== 20) return route.fulfill({ status: 200, headers, contentType: 'application/json', body: JSON.stringify(stockOverviewDoluFixture) })
         calls += 1
         if (calls === 1) return route.fulfill({ status: 200, headers, contentType: 'application/json', body: JSON.stringify(stockOverviewDoluFixture) })
         return route.fulfill({ status: 500, headers, contentType: 'application/json', body: '{"error":"x"}' })
@@ -161,6 +165,8 @@ test.describe('C1.1 — Sipariş listesi stok durumu (OrderListView)', () => {
     await installApiMocks(page, { 'OrderService/getOrders': capture(bodies, ordersWithAllocationFixture) })
     await gotoAuthed(page)
     await openScreen(page, 'OrderListView')
+    // FR2 kabuk: ilk ziyaret "Uygulamayı tanıyın" teklif kartı (mobilde alt şerit, fixed) açılır listenin öğelerini örter.
+    await page.getByRole('button', { name: 'Şimdi değil' }).click({ timeout: 3000 }).catch(() => undefined)
     const view = page.locator('.orderListView')
     const toggle = view.getByRole('button', { name: /Filtreler/ })
     if ((await toggle.getAttribute('aria-expanded')) === 'false') await toggle.click()

@@ -45,6 +45,7 @@ import { EkDialog } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import { AdminApiError } from '@bo/api/client'
 import { reauthState, settleReauth } from '@bo/auth/reauth'
+import { session } from '@bo/auth/session'
 
 const password = ref('')
 const code = ref('')
@@ -72,6 +73,8 @@ async function submit() {
   try {
     await api.call('BackofficeAuthService/reauth', { password: password.value, code: code.value })
     settleReauth(true)
+    // Üst bardaki "Doğrulandı · 4:59" göstergesi yeni `reauthAt`'i okusun.
+    void session.refresh()
   } catch (e) {
     const err = e instanceof AdminApiError ? e : null
     error.value = err?.message ?? 'Doğrulanamadı.'

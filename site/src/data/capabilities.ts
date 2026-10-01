@@ -184,8 +184,9 @@ export const productCapabilities: ProductCapability[] = [
   {
     id: 'tenant-database',
     group: 'security',
-    title: 'Her müşteri için ayrı veritabanı',
-    summary: 'Her müşteri hesabı için ayrı bir veritabanı kullanılır.',
+    // S24 (K46): ziyaretçiye "müşteri" denmez; yapı (veritabanı) değil üst seviye güven mesajı anlatılır.
+    title: 'Verileriniz yalnızca size ait',
+    summary: 'Ürün, stok ve sipariş verileriniz izole bir alanda tutulur; başka bir işletmenin verisiyle karışmaz.',
     status: 'available',
     evidence: [
       evidence(PATHS.adr0003, 'ADR-0003 kiracı DB adlandırma', 'entegrasyonikClient_1'),
@@ -199,7 +200,7 @@ export const productCapabilities: ProductCapability[] = [
     id: 'secrets-encryption',
     group: 'security',
     title: 'Entegrasyon anahtarları şifreli saklanır',
-    summary: 'Pazaryeri ve entegrasyon API anahtarları veritabanında AES-256-GCM ile şifrelenerek saklanır.',
+    summary: 'Pazaryeri ve entegrasyon anahtarlarınız güçlü şifrelemeyle saklanır; kaydedildikten sonra arayüzde maskeli görünür.',
     status: 'available',
     evidence: [evidence('backend/src/utils/FieldCrypto.ts', 'FieldCrypto AES-256-GCM', 'aes-256-gcm')],
     internalNotes: ['Canlı veri göçü (--apply) insan onayı bekliyor (BACKLOG C5/C12); iddia kod yeteneğine dayanır.'],
@@ -207,7 +208,7 @@ export const productCapabilities: ProductCapability[] = [
   {
     id: 'secrets-masked',
     group: 'security',
-    title: 'Anahtarlar arayüzde ve API yanıtlarında gösterilmez',
+    title: 'Anahtarlar ekranlarda açık gösterilmez',
     summary: 'Kaydedilmiş entegrasyon anahtarları arayüze ve API yanıtlarına maskelenmiş olarak döner.',
     status: 'available',
     evidence: [evidence('backend/src/platform/core/security/responseSanitizer.ts', 'responseSanitizer maskeleme', 'sensitive')],
@@ -226,9 +227,9 @@ export const productCapabilities: ProductCapability[] = [
   {
     id: 'default-deny',
     group: 'security',
-    title: 'Yetkisiz işlemler varsayılan olarak reddedilir',
+    title: 'Yetkisiz işlem yapılamaz',
     summary:
-      'Sunucuda tanımlı işlem listesinde olmayan her işlem varsayılan olarak reddedilir; kullanıcının yetki kademesi istemciden gelen bilgiye değil sunucudaki hesap kaydına göre belirlenir.',
+      'Tanımlı olmayan ya da yetkinizin yetmediği bir işlem sunucuda reddedilir; yetkiniz tarayıcıdan gelen bilgiye değil hesap kaydınıza göre belirlenir.',
     status: 'available',
     evidence: [
       evidence('backend/src/api/operationPolicy.ts', 'operationPolicy varsayılan red', 'varsayılan olarak REDDEDİLİR'),
@@ -238,7 +239,7 @@ export const productCapabilities: ProductCapability[] = [
   {
     id: 'session-cookie',
     group: 'security',
-    title: 'Oturum bilgisi tarayıcı betiklerinden okunamayan çerezde taşınır',
+    title: 'Oturumunuz korumalı ve süreli',
     summary:
       'Oturum, imzalı bir belirteç (JWT) ile yönetilir; belirteç HTTP-only çerezde taşınır, süresi sınırlıdır ve tarayıcıdaki betikler tarafından okunamaz.',
     status: 'available',
@@ -250,7 +251,7 @@ export const productCapabilities: ProductCapability[] = [
   {
     id: 'integration-resilience',
     group: 'security',
-    title: 'Pazaryeri çağrıları dayanıklılık katmanından geçer',
+    title: 'Pazaryeri bağlantıları geçici hatalara dayanıklı',
     summary:
       'Pazaryeri ve entegrasyon çağrıları zaman aşımı, kontrollü yeniden deneme ve devre kesici ile yapılır; art arda hata veren bir bağlantı geçici olarak durdurulur ve sonra yeniden denenir.',
     caveat: 'Bu katman geçici hataları yönetir; pazaryeri tarafındaki kesintiyi ortadan kaldırmaz.',
@@ -274,7 +275,7 @@ export const productCapabilities: ProductCapability[] = [
     group: 'security',
     title: 'Kart verisi Entegrasyonik sistemlerinden geçmez',
     summary: 'Ödeme, ödeme sağlayıcısının barındırdığı formda alınacak şekilde tasarlanmıştır; kart verisi bize gelmez.',
-    caveat: 'Ödeme akışı bu sürümde test (sandbox) aşamasındadır.',
+    caveat: 'Ödeme akışı bu sürümde test aşamasındadır.',
     status: 'partial',
     evidence: [evidence(PATHS.adr0008, 'ADR-0008 barındırılan ödeme formu', 'kart verisi bize gelmez')],
     internalNotes: [
@@ -387,62 +388,6 @@ export function capabilityState(id: string): FeatureState | undefined {
 }
 
 export { CAPABILITY_LABELS }
-
-// ---------------------------------------------------------------------------- Ana sayfa: dört değer sütunu
-
-/**
- * Ana sayfa "Yetenekler" koyu bandındaki dört değer sütunu (S12 pazarlama dili). Her sütun `basedOn` ile
- * kayıtlı (roadmap olmayan) yeteneklere bağlanır — metin yalnızca o yeteneklerin olgularını pazarlama diliyle
- * anlatır; yeni özellik iddiası yoktur (tests/claims.test.ts `basedOn` bağını ve yasaklı ifadeleri denetler).
- */
-export interface HomePillar {
-  id: string
-  icon: 'stock' | 'orders' | 'database' | 'users'
-  title: string
-  line: string
-  points: string[]
-  basedOn: string[]
-}
-
-export const homePillars: HomePillar[] = [
-  {
-    id: 'oversell',
-    icon: 'stock',
-    title: 'Overselling kontrol altında',
-    line: 'Merkezi stok rezervasyonu, eşzamanlı siparişlerde bile yalnızca mevcut adet kadar rezervasyon yapar.',
-    points: ['Eşzamanlı sipariş koruması', 'Tek merkezden stok ve fiyat', 'Aşırı satışta telafi akışı'],
-    basedOn: ['stock-reservation', 'multi-channel-products'],
-  },
-  {
-    id: 'ops',
-    icon: 'orders',
-    title: 'Tek ekranda operasyon',
-    line: 'Sipariş, iade ve müşteri soruları tek akışta; ekip aynı ekrandan çalışır.',
-    points: ['Birleşik sipariş listesi', 'İade ve talep yönetimi', 'Soru ve mesaj yanıtlama'],
-    basedOn: ['unified-orders', 'returns', 'questions'],
-  },
-  {
-    id: 'isolation',
-    icon: 'database',
-    title: 'Size özel, şifreli veri',
-    line: 'Her hesap kendi veritabanında; entegrasyon anahtarları şifreli saklanır.',
-    points: ['Hesaba özel veritabanı', 'AES-256-GCM ile şifreleme', 'Maskeli anahtar gösterimi'],
-    basedOn: ['tenant-database', 'secrets-encryption', 'secrets-masked'],
-  },
-  {
-    id: 'rbac',
-    icon: 'users',
-    title: 'Ekibinize doğru yetki',
-    line: 'Kademeli roller ekibinizi yetkilendirir; hassas işlemler üst kademeye ayrılır.',
-    points: ['Üye, yönetici, ana yönetici', 'Yetkisiz işleme varsayılan red', 'Korumalı oturum çerezi'],
-    basedOn: ['role-based-access', 'default-deny', 'session-cookie'],
-  },
-]
-
-/** Sayfaların tek girişi (dört değer sütunu). */
-export function getHomePillars(): HomePillar[] {
-  return homePillars.map((p) => ({ ...p, points: [...p.points], basedOn: [...p.basedOn] }))
-}
 
 // ---------------------------------------------------------------------------- S14: stok rezervasyonu sayfası
 

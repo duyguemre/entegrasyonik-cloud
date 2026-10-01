@@ -239,7 +239,7 @@ describe('S15-B: tek merkez akışı (sorun -> çözüm) ve sipariş hikâyesi c
   const loops = stripComments(read('styles/scenes-loops.css'))
 
   it('statik hâl = senkron son durum: eski değer, paketler, halkalar ve ışıklar görünmez', () => {
-    for (const sel of ['.ps__chip-old', '.ps__packet', '.ps__hub-ring', '.ps__chip::after', '.ps__bus::after', '.ps__result::after']) {
+    for (const sel of ['.ps__chip-old', '.ps__packet', '.ps__hub-ring', '.ps__chip::after', '.ps__bus::after', '.ps__result::after', ".ps__net [data-act]:not([data-act='0'])"]) {
       expect(rule(psCss, sel), sel).toMatch(/opacity:\s*0;/)
     }
     // yeni (senkron) değerin statik opaklığı düşürülmez
@@ -252,15 +252,18 @@ describe('S15-B: tek merkez akışı (sorun -> çözüm) ve sipariş hikâyesi c
     expect(rule(psCss, '.ps__after')).toMatch(/overflow:\s*hidden;/)
   })
 
-  it('döngü: 12 sn sahne token\'ı, yalnızca oynatma + görünürken; paket gidiş/dönüş, nabız ve senkron kareleri tanımlı', () => {
-    for (const k of ['loop-ps-old', 'loop-ps-new', 'loop-ps-in', 'loop-ps-bus', 'loop-ps-stem', 'loop-ps-ring', 'loop-ps-glow', 'loop-ps-back', 'loop-ps-halo', 'loop-ps-result']) {
+  it('döngü (S26): 30 sn = dört perde; perde öğeleri tam döngü + negatif kaydırma, ortak öğeler perde başına bir tur; yalnızca oynatma + görünürken', () => {
+    for (const k of ['loop-ps-act', 'loop-ps-order', 'loop-ps-old', 'loop-ps-new', 'loop-ps-old-origin', 'loop-ps-new-origin', 'loop-ps-in', 'loop-ps-back', 'loop-ps-bus', 'loop-ps-stem', 'loop-ps-ring', 'loop-ps-glow', 'loop-ps-resv', 'loop-ps-halo', 'loop-ps-result-text', 'loop-ps-result']) {
       expect(loops, k).toContain(`@keyframes ${k} {`)
       const use = loops.match(new RegExp(`\\{\\s*animation-name:\\s*${k};`))
       expect(use, k).not.toBeNull()
     }
-    const timing = loops.match(/\[data-scene='problem-solution'\]\[data-state='play'\] :is\([^{]*\{([^}]*)\}/)![1]
-    expect(timing).toMatch(/animation-duration:\s*var\(--site-motion-loop-scene\)/)
-    expect(timing).toMatch(/animation-play-state:\s*paused/)
+    const blocks = [...loops.matchAll(/\[data-scene='problem-solution'\]\[data-state='play'\] :is\([^{]*\{([^}]*)\}/g)].map((m) => m[1])
+    expect(blocks.some((b) => /animation-duration:\s*var\(--site-motion-loop-marquee\);/.test(b) && /paused/.test(b))).toBe(true)
+    expect(blocks.some((b) => /animation-duration:\s*calc\(var\(--site-motion-loop-marquee\) \/ 4\);/.test(b) && /paused/.test(b))).toBe(true)
+    for (const [k, f] of [['1', '-0.75'], ['2', '-0.5'], ['3', '-0.25']]) {
+      expect(loops, k).toMatch(new RegExp(`\\[data-act='${k}'\\] \\{\\s*animation-delay: calc\\(var\\(--site-motion-loop-marquee\\) \\* ${f}\\);`))
+    }
     expect(loops).toMatch(/\[data-scene='problem-solution'\]\[data-state='play'\]\[data-visible='true'\] :is\([^{]*\{\s*animation-play-state:\s*running/)
   })
 

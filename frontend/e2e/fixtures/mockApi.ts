@@ -110,6 +110,14 @@ export const defaultRoutes: Record<string, MockValue> = {
   'AdminService/getSystemHealth': adminSystemHealthDoluFixture,
   'AdminService/getExportDetails': adminExportDetailsFixture,
   'SmartService/unifiedSearch': { navigation: [], orders: [], products: [] },
+  // ADR-0034 — Otopilot `sse` taşıyıcısının açılış çağrısı (`GET /api/agent/info`). Varsayılan KAPALI (DISABLED): giriş
+  // noktaları gizli → mevcut ekran specleri/görsel tabanları değişmez. Sohbet specleri mock taşıyıcıyı init script
+  // (`window.__EK_CHAT_MOCK__`) ile seçer (e2e/fixtures/otopilot.ts).
+  'agent/info': {
+    v: 1, enabled: false, reason: 'DISABLED',
+    setup: { configured: false, canConfigure: false, consentRequired: false, canConsent: false },
+    readOnly: false, limits: { maxInputChars: 4000, turnsPerMinute: 10 }, suggestions: [],
+  },
   'IntegrationService/retrievePlatformInfos': {},
   'IntegrationService/retrieveClientMarketplaceSettings': async (route: Route, headers: Record<string, string>) => {
     const body = route.request().postDataJSON?.() ?? {}

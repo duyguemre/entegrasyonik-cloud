@@ -15,6 +15,7 @@ export class AdminApiError extends Error {
   readonly code: string
   readonly requestId?: string
   readonly fields?: ApiErrorBody['fields']
+  readonly details?: ApiErrorBody['details']
   /** Step-up diyaloğu kullanıcı tarafından kapatıldı. */
   cancelled = false
 
@@ -25,6 +26,7 @@ export class AdminApiError extends Error {
     this.code = body.code || (status === 0 ? 'NETWORK' : status === 401 ? 'UNAUTHENTICATED' : 'INTERNAL')
     this.requestId = body.requestId ?? requestId
     this.fields = body.fields
+    this.details = body.details && typeof body.details === 'object' ? body.details : undefined
   }
 }
 

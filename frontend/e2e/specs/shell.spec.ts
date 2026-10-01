@@ -39,11 +39,13 @@ test.describe('P1 — Kabuk (SecureLayout/NavigationMenu/ApplicationBar)', () =>
 
   test('hata durumu: MenuService 500 döndürürse aynı sessiz boş davranış tekrarlanır (gizli davranış)', async ({ page }) => {
     await installApiMocks(page, { MenuService: mockError(500) })
+    const menuResponse = page.waitForResponse((r) => r.url().includes('MenuService'))
     await page.goto('/')
-
-    await page.waitForTimeout(500)
+    expect((await menuResponse).status()).toBe(500)
     await expect(page.locator('.dashboard')).toHaveCount(0)
-    await expect(page.locator('body')).not.toContainText('500')
+    // Kullanıcıya insan-okunur bildirim ("Bir şeyler ters gitti. Destek kodu: c-<hex>") çıkabilir; rastgele destek kodu
+    // "500" alt dizisini içerebildiğinden HTTP kodu YALNIZ tam sözcük olarak aranır (düz alt dize eşleşmesi flaky).
+    await expect(page.locator('body')).not.toHaveText(/\b500\b/)
     await expect(page.locator('body')).not.toContainText('Internal Server Error')
   })
 

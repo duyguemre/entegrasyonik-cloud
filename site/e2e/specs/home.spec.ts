@@ -6,7 +6,7 @@ import { APP_URL, collectProblems, isDesktop, waitForFonts } from '../helpers'
 // Bu turda (S12 Parça A) sahiplenilen bölümlerin başlıkları birebir; diğer bölümlerin başlıkları paralel turlarda
 // (Parça B/C) pazarlama diliyle yeniden yazılabildiğinden yalnızca var ve boş değil olarak denetlenir.
 const SECTION_TITLES = [
-  ['sorun-cozum-baslik', /Dağınık yönetim/],
+  ['sorun-cozum-baslik', /Her kanal ayrı panel/],
   ['senaryo-baslik', /Bir sipariş geldiğinde ne olur\?/],
   ['yetenek-baslik', /\S/],
   ['entegrasyon-baslik', /\S/],

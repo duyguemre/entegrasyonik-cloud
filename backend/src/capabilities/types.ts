@@ -73,7 +73,16 @@ export interface McpExposed {
  * taşıyabilir ve v1'de yalnız `effect:'read'` (kayıt değişmezi + test). BR-2'de yalnız tip/değişmez vardır; broker BR-4'te.
  */
 export interface AdminChatExposed {
-    exposed: { present: Presentation; llm: Llm };
+    exposed: {
+        present: Presentation;
+        llm: Llm;
+        /**
+         * Ham servis yanıtını `output` şemasına girecek biçime çevirir (BR-4: yalnız sayaç/durum/kod alanları; tenant iş verisi ve serbest metin yok).
+         * `output.parse` bunun ÇIKTISINDA çalışır (strip). Yoksa ham yanıt doğrudan `output`a girer.
+         */
+        project?: (raw: any, input: any) => unknown;
+        untrustedPaths?: string[];
+    };
 }
 
 export type McpNotExposed =

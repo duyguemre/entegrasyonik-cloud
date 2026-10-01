@@ -69,6 +69,22 @@ export const DEFAULT_SCRIPT_RULES: ScriptRule[] = [
         steps: [{ type: 'tool-call', id: 'call_entity_1', name: 'products_search', input: { query: 'tişört' } }, done('tool_use')],
         afterTool: [text('İstediğiniz ürün kaydı yukarıda.'), usage(50, 9), done()],
     },
+    // BR-4 (backoffice sohbeti, yalniz adminChat araclari sunulunca): platform salt-okuma senaryolari
+    {
+        id: 'bo-health', triggers: ['sağlık', 'sağlıklı', 'durum'], requiresTool: 'platform_overview_health',
+        steps: [{ type: 'tool-call', id: 'call_bo_health_1', name: 'platform_overview_health', input: {} }, done('tool_use')],
+        afterTool: [text('Platform sağlık özeti yukarıda.'), usage(50, 8), done()],
+    },
+    {
+        id: 'bo-queues', triggers: ['kuyruk', 'iş'], requiresTool: 'platform_engine_queues',
+        steps: [{ type: 'tool-call', id: 'call_bo_queues_1', name: 'platform_engine_queues', input: {} }, done('tool_use')],
+        afterTool: [text('Kuyruk durumu yukarıda.'), usage(50, 8), done()],
+    },
+    {
+        id: 'bo-api-health', triggers: ['entegrasyon', 'api'], requiresTool: 'platform_integrations_api_health',
+        steps: [{ type: 'tool-call', id: 'call_bo_api_1', name: 'platform_integrations_api_health', input: { range: '24h' } }, done('tool_use')],
+        afterTool: [text('Entegrasyon API sağlığı yukarıda.'), usage(50, 8), done()],
+    },
     {
         id: 'long-stream', triggers: ['rapor', 'uzun'],
         steps: [...longText().map((c): ScriptStep => text(c)).flatMap((s): ScriptStep[] => [s, { type: 'delay', ms: 40 }]), usage(30, 700), done()],

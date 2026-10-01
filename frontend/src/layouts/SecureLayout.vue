@@ -37,6 +37,8 @@
       <NavigationMenu v-else key="nav-temporary" v-model="menuTemporaryOpen" temporary />
     </template>
     <NotificationDrawerComponent />
+    <!-- ADR-0034 / CHAT_UI_CONTRACT §7.1: Otopilot yan paneli — kabuktaki TEK bağlama noktası (push ≥1280 / overlay). -->
+    <OtopilotDock />
 
     <v-main class="ek-shell__main">
       <div v-if="hasBanner" ref="bannerRef" class="ek-shell__banner">
@@ -117,9 +119,13 @@ import { useShellBreakpoints } from '@/composables/useShellBreakpoints'
 import { useTabStore } from '@/composables/opentab'
 import { isPinnedLink, useWorkspaceStore } from '@/stores/workspace'
 import { matchShortcut, type ShortcutMatch } from '@entegrasyonik/ui/shortcuts'
+import { matchAppShortcut } from '@/navigation/shortcutCatalog'
+import OtopilotDock from '@/chat/OtopilotDock.vue'
+import { useOtopilotStore } from '@/chat/otopilotStore'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
+const otopilot = useOtopilotStore()
 const tabStore = useTabStore()
 const workspace = useWorkspaceStore()
 const eventBus = mitt()
@@ -299,6 +305,12 @@ function onGlobalKeydown(event: KeyboardEvent) {
   // Aşama 6b (Standart 7): sekme kabına bağlı örtüler (`.ek-tab-host` içi) yalnız o sekmeyi örter — sekmeler arası
   // geçiş, üst bölüm ve arama kısayolları çalışmaya devam eder.
   const overlayOpen = Array.from(document.querySelectorAll('.v-overlay--active.v-dialog, .v-overlay--active.v-menu')).some((el) => !el.closest('.ek-tab-host'))
+  // Uygulama kısayolu (Otopilot Ctrl/⌘+J; kayıt: navigation/shortcutCatalog.ts APP_SHORTCUTS).
+  if (!overlayOpen && otopilot.available && matchAppShortcut(event, event.target) === 'otopilotToggle') {
+    event.preventDefault()
+    otopilot.toggle('shortcut')
+    return
+  }
   const match = matchShortcut(event, event.target)
   if (!match) return
   if (overlayOpen && match.id !== 'search') return
@@ -383,6 +395,7 @@ onMounted(async () => {
   window.addEventListener('ek:shortcut-help', openShortcutHelp)
   document.addEventListener('fullscreenchange', onFullscreenChange)
   subscriptionStore.start()
+  otopilot.init()
   await workspace.init()
   const menu = menuStore.getMenu?.()
   tourReady.value = Array.isArray(menu) && menu.length > 0
@@ -477,9 +490,19 @@ const closeTemporaryMenu = () => {
   transition: top var(--ek-duration-base) var(--ek-easing-standard);
 }
 
+/* FR2-SHELL madde 3 (fe-r2a): çalışma alanı KAYDIRMA KABIDIR. Önceden `overflow: visible` idi → kendi iç kaydırıcısı
+   olmayan uzun sayfalar (Yardım merkezi, ürün formu …) BELGEYİ kaydırıyor, mutlak konumlu sekme şeridi ve başlık
+   sayfayla birlikte yukarı kayıyordu (ölçüm: /help belge 1793px / pencere 800px). Artık belge kaymaz; ana sekmeler
+   her sayfada sabit. `overscroll-behavior: contain` — iç kaydırma sonunda sayfa zıplamaz. `.workarea-scroll`
+   kullanan ekranlar (mutlak iç kaydırıcı) değişmez. */
 .workplace-area {
   top: calc(var(--v-layout-top, 0px) + var(--ek-shell-banner-h, 0px) + var(--ek-app-tabstrip-height));
   bottom: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* Sağ alttaki tur teklif kartı açıkken (HelpTour) en alttaki içerik kartın üstüne kaydırılabilsin. */
+  padding-bottom: var(--ek-tour-offer-space, 0px);
   border: none;
   border-radius: 0;
   background-color: var(--ek-color-background);

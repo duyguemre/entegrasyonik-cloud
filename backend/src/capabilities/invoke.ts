@@ -11,7 +11,7 @@ import { getPlatformSetting } from '@integration/config/platformSettings';
 import type { TenantEntry } from '@database/TenantRegistry';
 import runOperation from '../api/RunOperation';
 import { CAPABILITY_BY_ID } from './index';
-import { chatBindingOf, hiddenReasonFor, needsConfirmation, type AvailabilityEnv, type HiddenReason } from './availability';
+import { chatBindingOf, hiddenReasonFor, hiddenReasonForAdminChat, needsConfirmation, type AvailabilityEnv, type HiddenReason } from './availability';
 import type { CapabilityDef, ExposedCapability } from './types';
 
 const log = logger.child({ module: 'capabilities.invoke' });
@@ -85,6 +85,17 @@ export function findExposed(id: string): CapabilityDef | undefined {
     return cap && cap.mcp.exposed && cap.executor === 'server' ? cap : undefined;
 }
 
+/** [BR-4] Backoffice sohbetine acik katilim (`adminChat`) isaretli, sunucu yurutuculu yetenek. `mcp.exposed` yetenekler ile KESISMEZ (tenant sohbeti bunu goremez). */
+export function findAdminChat(id: string): CapabilityDef | undefined {
+    const cap = CAPABILITY_BY_ID.get(id as any);
+    return cap && cap.adminChat && cap.executor === 'server' ? cap : undefined;
+}
+
+/** Yuzeye gore arac yeteneginin bulunmasi: `backoffice_chat` YALNIZ `adminChat`, digerleri YALNIZ `mcp.exposed`. */
+export function findForSurface(id: string, surface: InvokeSurface): CapabilityDef | undefined {
+    return surface === 'backoffice_chat' ? findAdminChat(id) : findExposed(id);
+}
+
 /** strict girdi dogrulamasi; hata = 400 VALIDATION (yalniz alan yollari; DEGER yansitilmaz). */
 export function parseInput(cap: CapabilityDef, input: unknown): unknown {
     const r = cap.input.safeParse(input ?? {});
@@ -95,15 +106,18 @@ export function parseInput(cap: CapabilityDef, input: unknown): unknown {
 
 export async function invokeCapability(ctx: InvokeContext, id: string, input: unknown, surface: InvokeSurface, opts: InvokeOptions = {}): Promise<InvokeResult> {
     // 1. kayitta bul (yoksa / exposed degilse 403; varligi sizdirilmaz)
-    const cap = findExposed(id);
+    const cap = findForSurface(id, surface);
     if (!cap) throw AppError.of('FORBIDDEN');
+    const admin = surface === 'backoffice_chat';
     // 2. girdi dogrulamasi
     const parsed = parseInput(cap, input);
     // 3. yeniden denetim (arac listesiyle AYNI fonksiyon): rbac, kill-switch, LIVE_READONLY, bakim, impersonation
     const actor = resolveTier(ctx.userContext, ctx.principal);
-    const reason = hiddenReasonFor(cap, actor, opts.env ?? liveAvailabilityEnv(ctx.principal));
+    const env = opts.env ?? liveAvailabilityEnv(ctx.principal);
+    const reason = admin ? hiddenReasonForAdminChat(cap, actor, env) : hiddenReasonFor(cap, actor, env);
     if (reason) throw errorForHidden(reason);
     // 4. yazma/yan etkili: YALNIZ onay ucundan (PendingActions.claim sonrasi). Bu kapi olmadan dogrudan yurutme imkansizdir.
+    if (admin && cap.effect !== 'read') throw AppError.of('FORBIDDEN'); // v1: backoffice sohbetinde yazma yolu YOK (defansif; kayit degismezi de engeller)
     if (needsConfirmation(cap)) {
         if (!opts.approval || !APPROVAL_ID_RE.test(opts.approval.pendingActionId)) {
             throw AppError.of('FORBIDDEN', { message: 'Bu işlem yalnızca onay adımından sonra yürütülebilir.' });
@@ -116,10 +130,10 @@ export async function invokeCapability(ctx: InvokeContext, id: string, input: un
     const body = b.map ? b.map(parsed) : parsed;
     const run = opts.run ?? runOperation;
     const raw = await run(ctx.userContext, service, operation, body, ctx.principal, {
-        ip: ctx.ip, tenant: ctx.tenant, surface: 'app', idempotencyKey: opts.approval?.pendingActionId,
+        ip: ctx.ip, tenant: ctx.tenant, surface: admin ? 'backoffice' : 'app', idempotencyKey: opts.approval?.pendingActionId,
     });
     // 6. cikti: projeksiyon (alan secimi + PII maskeleme) -> output zod (strip) -> boyut siniri
-    const project = (cap as ExposedCapability).project;
+    const project = admin ? cap.adminChat?.exposed.project : (cap as ExposedCapability).project;
     const shaped = project ? project(raw, parsed) : raw;
     const out = (cap.output as Exclude<CapabilityDef['output'], 'legacy'>).safeParse(shaped);
     if (!out.success) {
@@ -128,5 +142,5 @@ export async function invokeCapability(ctx: InvokeContext, id: string, input: un
     }
     const bytes = Buffer.byteLength(JSON.stringify(out.data), 'utf8');
     if (bytes > MAX_RESULT_BYTES) throw AppError.of('PAYLOAD_TOO_LARGE', { message: 'Araç yanıtı çok büyük; filtreyi daraltın.' });
-    return { capabilityId: cap.id, version: cap.version, data: out.data, untrustedPaths: cap.untrustedPaths ?? [], bytes };
+    return { capabilityId: cap.id, version: cap.version, data: out.data, untrustedPaths: (admin ? cap.adminChat?.exposed.untrustedPaths : cap.untrustedPaths) ?? [], bytes };
 }

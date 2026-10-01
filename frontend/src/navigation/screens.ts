@@ -18,6 +18,7 @@
  * bakar. T4b/T4c/T4d kendi P1/P2 ekranlarını taşırken buraya kayıt ekler.
  */
 
+import { CHAT_ICON, CHAT_PRODUCT } from '@entegrasyonik/chat/brand'
 import { REGISTER_PLAN_CODES } from './registerIntent'
 
 /** URL sorgu parametresi tanımı — PII/serbest-metin YASAK (yalnızca kapalı değer kümesi veya teknik kimlik). */
@@ -176,6 +177,11 @@ export const SCREENS: readonly ScreenDefinition[] = [
   // `titleKey`/`icon`: menüde henüz karşılığı yokken sunum yüzeylerinin (breadcrumb/palet) yedeği.
   { key: 'AccountSecurityView', slug: 'account/security', icon: 'mdi-shield-account-outline', titleKey: 'menu.accountSecurity' },
   { key: 'PrivacyDataView', slug: 'account/privacy', icon: 'mdi-shield-lock-outline', titleKey: 'menu.privacyData' },
+  // MCP-6 (ADR-0035, MCP_UI_CONTRACT §1 S3/S4). Ekranlar parametre okumaz → `urlParams` YOK. Menü kaydı (ApplicationDB
+  // `menus`, kodlar `ConnectedAppsView` / `settings/AiConnectionView`) yerel iştir (MCP-7). S3 herkes; S4 `settings:read`
+  // görür, yalnız sahip değiştirir (asıl sınır backend `canEdit`).
+  { key: 'ConnectedAppsView', slug: 'account/connected-apps', icon: 'mdi-connection', titleKey: 'menu.connectedApps' },
+  { key: 'settings/AiConnectionView', slug: 'settings/ai-connection', section: 'settings', order: 2, icon: 'mdi-robot-outline', titleKey: 'menu.aiConnection' },
   { key: 'StockPolicyView', slug: 'catalog/stock-policy', section: 'catalog', order: 5, icon: 'mdi-scale-balance', titleKey: 'menu.stockPolicy' },
   // C1.1 (F-01) stok sağlığı (StockService/getStockOverview, member). Ekran filtre/parametre okumaz → `urlParams` YOK.
   // Gerçek menü kaydı (ApplicationDB `menus`, kod `StockHealthView`, başlık `stockHealth`) yerel iştir.
@@ -191,10 +197,16 @@ export const SCREENS: readonly ScreenDefinition[] = [
       { name: 'category', kind: 'enum', allowed: ['getting-started', 'using-the-app', 'catalog', 'stock', 'orders', 'integrations', 'finance', 'account', 'troubleshooting', 'faq', 'support'] },
     ],
   },
+  // ADR-0034 / CHAT_UI_CONTRACT §7.1 — Otopilot tam sayfa sohbet + Ayarlar → Otopilot (yalnızca EKLEME). Yardım merkezi gibi
+  // `MenuService` ağacına bağlı DEĞİL; bağlantı istemcide (`chat/chatLinks.ts`). Slug ürün adı sabitinden (K39). Parametre
+  // okumazlar → `urlParams` YOK (sohbet metni/bağlam URL'ye YAZILMAZ). Ayarların gerçek menü kaydı (ayarlar bölümü) yerel iştir.
+  { key: 'chat', slug: CHAT_PRODUCT.slug, section: 'general', order: 2, icon: CHAT_ICON },
+  { key: 'OtopilotSettingsView', slug: `settings/${CHAT_PRODUCT.slug}`, section: 'settings', order: 2, icon: 'mdi-cog-outline' },
 ] as const
 
 /** URL'nin ilk segmenti hiçbir zaman bir ekran slug'ı OLAMAZ (ADR-0012 Karar 1 — başka uç noktalar/statikler ile çakışmasın). */
-export const RESERVED_FIRST_SEGMENTS: readonly string[] = ['login', 'oauth', '.well-known', 'api', 'mcp', 'assets']
+// `approve`: MCP-6 S2 bant dışı onay sayfası (`/approve/{id}`, sade kabuk) — ekran slug'ı olamaz.
+export const RESERVED_FIRST_SEGMENTS: readonly string[] = ['login', 'oauth', '.well-known', 'api', 'mcp', 'assets', 'approve']
 
 export function resolveScreenByKey(key: string): ScreenDefinition | undefined {
   return SCREENS.find((s) => s.key === key)

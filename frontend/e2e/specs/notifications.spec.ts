@@ -5,6 +5,7 @@
 // (belge görseli; Playwright tabanı DEĞİLDİR).
 import { test, expect, type Page, type Route } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import { suppressTourOffer } from '../fixtures/appDialog'
 import { installApiMocks, mockError } from '../fixtures/mockApi'
 import { menuFixture, waitForWorkplaceReady, gotoAuthed } from '../fixtures/nav'
 
@@ -136,26 +137,29 @@ async function expandFilters(page: Page) {
 }
 
 test.describe('C1.5 — bildirim merkezi', () => {
-  test('smoke: liste yüklenir (limit 200), dikkat türleri üstte sabit, dış adres için "Görüntüle" yok', async ({ page }) => {
+  // Sağ alttaki (mobilde tam genişlik) tur teklifi kartı sayfalama/çip/çekmece öğelerini örter → kullanıcı gibi önce kapatılmış sayılır.
+  test.beforeEach(async ({ page }) => { await suppressTourOffer(page) })
+
+  test('smoke: liste yüklenir (sayfa limiti 25), sunucu sırası, dış adres için "Görüntüle" yok', async ({ page }) => {
     const { routes, h } = statefulMocks()
     await installApiMocks(page, routes)
     await gotoCenter(page)
 
     await expect(rows(page)).toHaveCount(5)
     await expect.poll(() => h.getBodies.length).toBeGreaterThan(0)
-    expect(h.getBodies[0]).toMatchObject({ limit: 200, onlyUnread: false })
+    expect(h.getBodies[0]).toMatchObject({ limit: 25, onlyUnread: false })
 
-    // STOCK_ALERT + SYSTEM (dikkat) daha eski olsalar da ilk iki satır.
-    await expect(rows(page).nth(0)).toContainText('E2E aşırı satış uyarısı')
-    await expect(rows(page).nth(1)).toContainText('E2E sistem bakımı')
-    await expect(rows(page).nth(0).getByText('Dikkat')).toBeVisible()
-    await expect(rows(page).nth(2)).toContainText('E2E içe aktarma tamamlandı')
+    // C2b (ADR-0029): "dikkat türleri üstte sabit" kaldırıldı — sıra sunucunun (zamana göre) sırasıdır; dikkat gerektirenler
+    // araç çubuğundaki "kritik okunmamış" sayacında öne çıkar.
+    await expect(rows(page).nth(0)).toContainText('E2E içe aktarma tamamlandı')
+    await expect(rows(page).nth(1)).toContainText('E2E aşırı satış uyarısı')
+    await expect(rows(page).nth(3)).toContainText('E2E sistem bakımı')
 
     // Rozet: hafif sayım ucundan (2 okunmamış).
     await expect(bell(page)).toHaveAttribute('aria-label', 'Bildirimler, 2 okunmamış')
 
-    // Tür etiketleri i18n'den (dar ekranda yalnız ekran okuyucuya).
-    await expect(rows(page).nth(0)).toContainText('Stok uyarısı')
+    // Kategori etiketleri i18n'den (dar ekranda yalnız ekran okuyucuya).
+    await expect(rows(page).nth(1)).toContainText('Stok')
     // İç yol → Görüntüle var, dış adres → yok. Satır düğmesi yalnız geniş ekranda (dar ekranda ayrıntıda).
     if ((page.viewportSize()?.width ?? 0) >= 768) {
       await expect(center(page).getByRole('button', { name: 'Görüntüle: E2E içe aktarma tamamlandı' })).toBeVisible()
@@ -257,20 +261,30 @@ test.describe('C1.5 — bildirim merkezi', () => {
     await expect(rows(page)).toHaveCount(5)
   })
 
-  test('etkileşim: tür filtresi istemcide uygulanır (i18n etiketli çip)', async ({ page }) => {
-    const { routes } = statefulMocks()
+  // C2b (ADR-0029): eski "Tür" filtresi yerine Kategori (SUNUCUDA, istek gövdesinde `category`) + Önem (yüklenen kayıtlara İSTEMCİDE).
+  test('etkileşim: önem filtresi istemcide uygulanır (gövdede yok), kategori filtresi sunucuya gider', async ({ page }) => {
+    const { routes, h } = statefulMocks()
     await installApiMocks(page, routes)
     await gotoCenter(page)
     await expandFilters(page)
+    await expect(rows(page)).toHaveCount(5)
 
-    await center(page).getByRole('combobox').filter({ hasText: 'Tür' }).click()
-    await page.getByRole('option', { name: 'Sipariş' }).click()
+    await center(page).getByRole('combobox').filter({ hasText: 'Önem' }).click()
+    await page.getByRole('option', { name: 'Hata' }).click()
     await page.keyboard.press('Escape')
     await center(page).getByRole('button', { name: 'Sorgula' }).click()
 
     await expect(rows(page)).toHaveCount(1)
-    await expect(rows(page).first()).toContainText('E2E yeni sipariş')
-    await expect(center(page).getByRole('group', { name: 'Aktif filtreler' })).toContainText('Tür:')
+    await expect(rows(page).first()).toContainText('E2E aşırı satış uyarısı')
+    await expect(center(page).getByRole('group', { name: 'Aktif filtreler' })).toContainText('Önem:')
+    // Önem sözleşmede YOK: istek gövdesine girmez, süzme yüklenen kayıtlar üzerinde istemcide yapılır.
+    expect(Object.keys(h.getBodies.at(-1)).filter((k) => /sever/i.test(k))).toEqual([])
+
+    await center(page).getByRole('combobox').filter({ hasText: 'Kategori' }).click()
+    await page.getByRole('option', { name: 'Siparişler' }).click()
+    await center(page).getByRole('button', { name: 'Sorgula' }).click()
+    await expect.poll(() => h.getBodies.at(-1)?.category).toBe('order')
+    await expect(center(page).getByRole('group', { name: 'Aktif filtreler' })).toContainText('Kategori:')
   })
 
   test('ayrıntı: satır başlığı ayrıntıyı açar, okunmamışsa okundu işaretlenir; özet metaData\'dan', async ({ page }) => {
