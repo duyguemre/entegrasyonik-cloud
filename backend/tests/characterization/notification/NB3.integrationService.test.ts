@@ -15,7 +15,7 @@ jest.mock('@integration/modules/IntegrationFactory', () => ({ __esModule: true, 
 jest.mock('@integration/engine/IntegrationEventBus', () => ({ EVENTS: {}, integrationEventBus: { emit: jest.fn(), on: jest.fn() } }));
 
 import IntegrationFactory from '@integration/modules/IntegrationFactory';
-import IntegrationService from '@api/services/integration-service';
+import IntegrationService from '@api/rpc/handlers/integration-service';
 import { NotificationService } from '@services/notification/NotificationService';
 import { notificationEventBus } from '@services/notification/NotificationEventBus';
 import { NOTIFICATION_EVENTS } from '@interfaces/index';

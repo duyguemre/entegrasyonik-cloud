@@ -15,7 +15,7 @@ jest.mock('@integration/modules/IntegrationFactory', () => ({ __esModule: true, 
 jest.mock('@integration/engine/IntegrationEventBus', () => ({ EVENTS: {}, integrationEventBus: { emit: jest.fn(), on: jest.fn() } }));
 jest.mock('@services/notification/NotificationService', () => ({ NotificationService: {} }));
 
-import IntegrationService from '../../../src/api/services/integration-service';
+import IntegrationService from '../../../src/api/rpc/handlers/integration-service';
 import { decryptSecrets } from '../../../src/platform/core/security/integrationSecrets';
 
 const lean = (v: any): any => { const c: any = { lean: jest.fn(async () => v) }; c.sort = jest.fn(() => c); return c; };

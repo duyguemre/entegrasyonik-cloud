@@ -507,7 +507,7 @@ function snippets(v) {
     add(15, 'backend/tests/tools/run-tests.js  (MODULES haritası)',
         "  " + v.code + ": ['[" + v.code.charAt(0) + v.code.charAt(0).toUpperCase() + "]" + v.code.slice(1) + "'],");
     add(11, 'backend/src/capabilities/domains/*.ts', '(yalnız YENİ RPC açılıyorsa; genel RPC\'ler integrationCode parametreli — CAPABILITY_CHECKLIST.md)');
-    add(12, 'backend/src/api/services/integration-service.ts', '(yalnız FE yetkilendirme adresi gibi bir `urls` alt kümesi gerekiyorsa FE_VISIBLE_PLATFORM_URLS)');
+    add(12, 'backend/src/api/rpc/handlers/integration-service.ts', '(yalnız FE yetkilendirme adresi gibi bir `urls` alt kümesi gerekiyorsa FE_VISIBLE_PLATFORM_URLS)');
     add(14, 'backend/src/api/WebhookApiManager.ts', '(yalnız webhook varsa, playbook §4.10)');
     add('16-20', 'frontend/src + site/src  (bulut önyüz işi, docs/CLOUD_BRIEFS.md)',
         "  16 frontend/src/components/integrations/" + ins + "/" + v.pascal + "Component.vue + ilgili *View.vue dalı\n" +

@@ -18,7 +18,7 @@ import { getIdentityCache } from '@platform/core/security/identityCache';
 import { AuditLogger, type AuditEntry } from '@services/audit/AuditLogger';
 import { getRequestId } from '@platform/core/context';
 import { decryptField, encryptField } from '@utils/FieldCrypto';
-import { GENERIC_LOGIN_ERROR } from '@api/services/security-service';
+import { GENERIC_LOGIN_ERROR } from '@api/rpc/handlers/security-service';
 import {
     ADMIN_ABSOLUTE_SECONDS, ADMIN_API_PATH, ADMIN_REAUTH_SECONDS, expireAdminSessionCookie, readAdminCookie, setAdminSessionCookie,
     verifyAdminToken, refreshAdminSession, type AdminPrincipal,

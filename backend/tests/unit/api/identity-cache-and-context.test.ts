@@ -26,7 +26,7 @@ import ApiWrapper from '../../../src/api/ApiWrapper';
 import { buildRequestContext } from '../../../src/api/requestContext';
 import { getTenantRegistry } from '../../../src/database/TenantRegistry';
 import { getIdentityCache, resetIdentityCacheForTests } from '../../../src/platform/core/security/identityCache';
-import AdminService from '../../../src/api/services/admin-service';
+import AdminService from '../../../src/api/rpc/handlers/admin-service';
 import { makeReq, makeRes, signedToken, TEST_USER_ID } from '../../characterization/auth/_helpers';
 
 let userDoc: any;

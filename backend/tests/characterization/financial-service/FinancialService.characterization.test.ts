@@ -1,5 +1,5 @@
 /**
- * CHARACTERIZATION: FinancialService (backend/src/api/services/financial-service.ts)
+ * CHARACTERIZATION: FinancialService (backend/src/api/rpc/handlers/financial-service.ts)
  *
  * Kapsam: get, getTransactionData, getCargoInvoices, getFinancialSummary (deprecated), getPayoutDetails
  * (tenant/clientId kullanımı dahil).
@@ -14,7 +14,7 @@
  */
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 
-import FinancialService, { CARGO_INVOICES_MAX_ROWS } from '@api/services/financial-service';
+import FinancialService, { CARGO_INVOICES_MAX_ROWS } from '@api/rpc/handlers/financial-service';
 
 let financialModel: any;
 let cargoInvoiceModel: any;

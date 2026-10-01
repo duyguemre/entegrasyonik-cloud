@@ -15,7 +15,7 @@ jest.mock('@integration/modules/IntegrationFactory', () => ({ __esModule: true, 
 jest.mock('@integration/engine/IntegrationEventBus', () => ({ EVENTS: {}, integrationEventBus: { emit: jest.fn(), on: jest.fn() } }));
 jest.mock('@services/notification/NotificationService', () => ({ NotificationService: {} }));
 
-import IntegrationService from '../../../src/api/services/integration-service';
+import IntegrationService from '../../../src/api/rpc/handlers/integration-service';
 import { sanitizeResponse } from '../../../src/platform/core/security/responseSanitizer';
 import { buildIntegrationHealth, sanitizeOperation, CIRCUIT_STALE_MS } from '../../../src/operations/integration/IntegrationHealthOperations';
 

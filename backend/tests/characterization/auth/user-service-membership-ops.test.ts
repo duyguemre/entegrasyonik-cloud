@@ -16,8 +16,8 @@ jest.mock('@operations/users/invitations', () => ({
 jest.mock('@operations/users/suspension', () => ({ SuspensionService: jest.fn().mockImplementation(() => ({ suspend: mk('suspend'), reactivate: mk('reactivate') })) }));
 jest.mock('@operations/users/ownership', () => ({ OwnershipService: jest.fn().mockImplementation(() => ({ initiate: mk('initiate'), cancel: mk('cancel'), accept: mk('accOwn') })) }));
 
-import UserService from '../../../src/api/services/user-service';
-import AccountService from '../../../src/api/services/account-service';
+import UserService from '../../../src/api/rpc/handlers/user-service';
+import AccountService from '../../../src/api/rpc/handlers/account-service';
 import { OPERATION_POLICY, OPEN_OPERATIONS } from '../../../src/api/operationPolicy';
 
 beforeEach(() => { calls.length = 0; });

@@ -1,5 +1,5 @@
 /**
- * CHARACTERIZATION: InvoiceService (backend/src/api/services/invoice-service.ts)
+ * CHARACTERIZATION: InvoiceService (backend/src/api/rpc/handlers/invoice-service.ts)
  *
  * Kapsam: createManualInvoice, getInvoices, deleteInvoice, createInvoice, bulkCreateInvoice,
  * resolveAndReissueInvoice, syncInvoiceToPlatform (private, createInvoice üzerinden dolaylı).
@@ -33,7 +33,7 @@ jest.mock('@database/DatabaseManager', () => ({
 }));
 jest.mock('@integration/modules/IntegrationFactory', () => ({ __esModule: true, default: jest.fn() }));
 
-import InvoiceService from '@api/services/invoice-service';
+import InvoiceService from '@api/rpc/handlers/invoice-service';
 import IntegrationFactory from '@integration/modules/IntegrationFactory';
 
 const factoryCtor = IntegrationFactory as unknown as jest.Mock<any>;

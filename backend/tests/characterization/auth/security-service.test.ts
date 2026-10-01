@@ -1,7 +1,7 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import jwt from 'jsonwebtoken';
 
-// Characterization: backend/src/api/services/security-service.ts (+ ApiManager üzerinden uçtan uca yanıt biçimi)
+// Characterization: backend/src/api/rpc/handlers/security-service.ts (+ ApiManager üzerinden uçtan uca yanıt biçimi)
 // DB katmanı jest ile mock'lanır. Parolalar/özetler sahte test değerleridir; kaynak koddaki gömülü kimlik bilgileri assert EDİLMEZ.
 
 const appDb: any = {};
@@ -15,7 +15,7 @@ jest.mock('@database/DatabaseManager', () => ({
   },
 }));
 
-import SecurityService from '../../../src/api/services/security-service';
+import SecurityService from '../../../src/api/rpc/handlers/security-service';
 import { AuditLogger } from '../../../src/services/audit/AuditLogger';
 import Security from '../../../src/platform/core/security/Security';
 import { makeFakeApp, makeReq, makeRes } from './_helpers';

@@ -8,7 +8,7 @@ jest.mock('@database/DatabaseManager', () => ({
 }));
 
 import { nextSequence } from '@utils/sequence';
-import TicketService from '@api/services/ticket-service';
+import TicketService from '@api/rpc/handlers/ticket-service';
 
 /** Tek belge üzerinde atomik $inc davranışını taklit eden sahte Counters modeli (her çağrı farklı değer alır). */
 function fakeCounterModel(start = 0) {

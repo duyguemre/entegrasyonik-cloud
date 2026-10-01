@@ -16,7 +16,7 @@ jest.mock('@aws-sdk/client-s3', () => {
   };
 });
 
-import ImageService from '@api/services/image-service';
+import ImageService from '@api/rpc/handlers/image-service';
 import { ImageOperations, storageService } from '@services/index';
 
 const CFG = { accessKeyId: 'AKIDEXAMPLE', secretAccessKey: 'example-not-a-secret', bucketName: 'img-bucket', endpoint: 'https://acct.r2.cloudflarestorage.com', region: 'auto' };

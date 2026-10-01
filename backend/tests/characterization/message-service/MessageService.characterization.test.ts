@@ -1,5 +1,5 @@
 /**
- * CHARACTERIZATION: MessageService (backend/src/api/services/message-service.ts)
+ * CHARACTERIZATION: MessageService (backend/src/api/rpc/handlers/message-service.ts)
  *
  * Kapsam: get, getMessages, replyMessage, markAsRead, deleteMessage, bulkDeleteMessages
  * (tenant/clientId kullanımı dahil).
@@ -21,7 +21,7 @@ jest.mock('@database/DatabaseManager', () => ({
 }));
 jest.mock('@integration/modules/IntegrationFactory', () => ({ __esModule: true, default: jest.fn() }));
 
-import MessageService from '@api/services/message-service';
+import MessageService from '@api/rpc/handlers/message-service';
 import IntegrationFactory from '@integration/modules/IntegrationFactory';
 
 const factoryCtor = IntegrationFactory as unknown as jest.Mock<any>;

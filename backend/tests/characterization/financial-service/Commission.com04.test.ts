@@ -7,7 +7,7 @@ import { tenantOverrideRate } from '@operations/finance/commissionSummary';
 import { getCommissionByBarcodes } from '@operations/finance/commissionQueries';
 import { assertValidRate, setCommissionOverride, deleteCommissionOverride, listCommissionOverrides, CommissionOverrideStore } from '@operations/finance/commissionOverrides';
 import { resetCacheForTests } from '@utils/decorator/cache';
-import FinancialService from '@api/services/financial-service';
+import FinancialService from '@api/rpc/handlers/financial-service';
 import { CAPABILITY_BY_RPC } from '../../../src/capabilities';
 import { COMMERCE_RPC_INPUT } from '../../../src/capabilities/rpc-input/commerce';
 import { planAppWriteAudit, buildAppWriteEntry, WRITE_AUDIT_FIELDS } from '../../../src/api/appWriteAudit';

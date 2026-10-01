@@ -10,7 +10,7 @@ import { getRequiredTier } from '../../../../src/api/operationPolicy';
 import { requiresStepUp, isSensitiveRead } from '../../../../src/api/admin/stepUp';
 import { isLiveReadonlyBlockedRpc } from '../../../../src/api/liveReadonlyRpcGuard';
 import services from '../../../../src/api';
-import AnnouncementService from '../../../../src/api/services/announcement-service';
+import AnnouncementService from '../../../../src/api/rpc/handlers/announcement-service';
 import { FakeNotifyModel } from '../../../helpers/fakeNotifyDb';
 
 const RPCS = Object.keys(BACKOFFICE_NOTIFICATIONS_RPC_INPUT);

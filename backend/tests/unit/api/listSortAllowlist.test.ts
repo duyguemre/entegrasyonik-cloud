@@ -1,8 +1,8 @@
 /** DB-02: Tickets / ImportJobs sıralama alanı izin listesi (bilinmeyen alan => varsayılan sıralama, hata yok). */
 import { describe, it, expect, jest } from '@jest/globals';
 import { pickSortField } from '@utils/search';
-import TicketService from '@api/services/ticket-service';
-import IntegrationService from '@api/services/integration-service';
+import TicketService from '@api/rpc/handlers/ticket-service';
+import IntegrationService from '@api/rpc/handlers/integration-service';
 
 describe('pickSortField', () => {
     it('izinli alan geçer; bilinmeyen/tür dışı => fallback', () => {

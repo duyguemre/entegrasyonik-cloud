@@ -5,7 +5,7 @@ import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals
 
 jest.mock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: { getApplicationDB: jest.fn(), getClientDB: jest.fn() } }));
 
-import AuditService from '../../../src/api/services/audit-service';
+import AuditService from '../../../src/api/rpc/handlers/audit-service';
 import { sanitizeResponse } from '../../../src/platform/core/security/responseSanitizer';
 
 const NOW = new Date('2026-09-28T12:00:00.000Z');

@@ -9,7 +9,7 @@ import mongoose from 'mongoose';
 
 jestGlobal.setTimeout(120000);
 
-import IntegrationConfigService from '../../src/api/services/integration-config-service';
+import IntegrationConfigService from '../../src/api/rpc/handlers/integration-config-service';
 import { IntegrationConfigRevisionSchema, IntegrationConfigHeadSchema } from '@database/application/models/IntegrationConfig';
 import { AuditLogger } from '@services/audit/AuditLogger';
 import { getSettingWithPublishedOverrides } from '@integration/config/ConfigResolver';

@@ -10,7 +10,7 @@ import mongoose from 'mongoose';
 
 jestGlobal.setTimeout(120000);
 
-import NotificationService from '@api/services/notification-service';
+import NotificationService from '@api/rpc/handlers/notification-service';
 import { NotificationSchema } from '@database/client/models/Notification';
 import { NotificationPreferencesSchema } from '@database/application/models/NotificationPreferences';
 import { createNotifierDeps } from '@operations/notifications/createNotifier';

@@ -1,5 +1,5 @@
 /**
- * CHARACTERIZATION: CustomerService (backend/src/api/services/customer-service.ts)
+ * CHARACTERIZATION: CustomerService (backend/src/api/rpc/handlers/customer-service.ts)
  *
  * Kapsam: get, getCustomers, getCustomerDetail, updateCustomer (tenant/clientId kullanımı dahil).
  * `anonymizeCustomer` KAPSAM DIŞI — bkz. tests/characterization/tenant/customer-service-anonymize.test.ts
@@ -16,7 +16,7 @@
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import { ObjectId } from 'mongodb';
 
-import CustomerService from '@api/services/customer-service';
+import CustomerService from '@api/rpc/handlers/customer-service';
 
 // getCustomerDetail `new ObjectId(customerId)` çağırır (recentOrders/recentClaims filtresi) -> geçersiz
 // hex string senkron fırlatır; bu yüzden test genelinde GEÇERLİ bir ObjectId hex string kullanılır.

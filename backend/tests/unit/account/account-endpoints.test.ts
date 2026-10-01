@@ -16,8 +16,8 @@ jest.mock('@services/mail/MailService', () => ({ mailService: { send: jest.fn() 
 jest.mock('../../../src/api/index', () => ({
   __esModule: true,
   default: {
-    AccountService: require('../../../src/api/services/account-service').default,
-    SecurityService: require('../../../src/api/services/security-service').default,
+    AccountService: require('../../../src/api/rpc/handlers/account-service').default,
+    SecurityService: require('../../../src/api/rpc/handlers/security-service').default,
   },
 }));
 

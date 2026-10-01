@@ -1,5 +1,5 @@
 /**
- * CHARACTERIZATION: ImageService (backend/src/api/services/image-service.ts) — ADR-0016 B-R-T3.
+ * CHARACTERIZATION: ImageService (backend/src/api/rpc/handlers/image-service.ts) — ADR-0016 B-R-T3.
  * DB/Redis/ağ YOK; `clientDB`/`applicationDB` sahte model nesneleridir; `ImageOperations.prepareImageQueries`
  * ve `storageService.*` jest ile mock'lanır (sharp/R2'ye hiç dokunulmaz). Kod DEĞİŞTİRİLMEDİ, yalnızca
  * mevcut davranış sabitlenir. (NOT: bu dosya `ProductService.copyTempImages`i test eden
@@ -14,7 +14,7 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { ObjectId } from 'mongodb';
 
-import ImageService from '@api/services/image-service';
+import ImageService from '@api/rpc/handlers/image-service';
 import { ImageOperations, storageService } from '@services/index';
 
 let productModel: any;

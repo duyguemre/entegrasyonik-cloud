@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import express from 'express';
 import type { Server } from 'http';
 import { AdminUserManager } from '../../../../src/api/admin/adminUserManager';
-import { resolveBackofficeBaseUrl } from '../../../../src/api/services/backoffice-admin-user-service';
+import { resolveBackofficeBaseUrl } from '../../../../src/api/rpc/handlers/backoffice-admin-user-service';
 import { requiresStepUp, REAUTH_RPCS } from '../../../../src/api/admin/stepUp';
 import { getRequiredTier } from '../../../../src/api/operationPolicy';
 import { BACKOFFICE_RPC_INPUT } from '../../../../src/capabilities/rpc-input/backoffice';

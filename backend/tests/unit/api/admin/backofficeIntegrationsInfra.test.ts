@@ -14,8 +14,8 @@ import { ResilientHttpClient } from '../../../../src/integration/modules/common/
 import { recordSlowQuery, SLOW_QUERY_METRIC, setSlowQueryAppDbName } from '../../../../src/platform/runtime/metrics/slowQueryPlugin';
 import { metricsRegistry } from '../../../../src/platform/runtime/metrics/MetricsRegistry';
 import { nodeCache, resetCacheForTests } from '../../../../src/utils/decorator/cache';
-import BackofficeInfraService from '../../../../src/api/services/backoffice-infra-service';
-import IntegrationConfigService from '../../../../src/api/services/integration-config-service';
+import BackofficeInfraService from '../../../../src/api/rpc/handlers/backoffice-infra-service';
+import IntegrationConfigService from '../../../../src/api/rpc/handlers/integration-config-service';
 
 const RPCS = [
     'BackofficeIntegrationService/getApiHealth', 'BackofficeIntegrationService/getResilienceState', 'IntegrationConfigService/getCatalog',
