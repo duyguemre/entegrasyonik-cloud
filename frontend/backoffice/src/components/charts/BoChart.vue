@@ -2,7 +2,7 @@
   BoChart — ORTAK GRAFİK SARMALAYICI (BO2-60). Vue ECharts (tree-shaken, SVG çizici) + token'dan türeyen açık/koyu tema.
   Her grafik aynı dört durumu ve aynı erişilebilirlik katmanını taşır:
     - `state`: loading (iskelet, yükseklik sabit) · empty (sakin metin + neden) · error (Tekrar dene) · ready
-    - `summary`: ekran okuyucu metni (zorunlu); verilmezse serilerden türetilir (toplam / en yüksek / son)
+    - `summary`: grafik alanının erişilebilir adı (`role="img"`); serilerden toplam / en yüksek / son eklenir
     - "Tablo olarak göster": aynı veri erişilebilir tabloda (sparkline hariç)
     - Renk yalnız anlam taşır: `tone` durum serileri için (error = başarısız), yoksa kategorik sıra.
     - `prefers-reduced-motion` → animasyon yok.
@@ -33,10 +33,10 @@
       <span>{{ emptyText }}</span>
     </div>
     <template v-else>
-      <div v-show="!asTable" class="bo-chart__canvas" :style="{ height: `${height}px` }" aria-hidden="true">
+      <!-- Grafik alanı tek bir görsel: ad = özet (ne gösterildiği + toplam/en yüksek/son). İç SVG sunumsal. -->
+      <div v-show="!asTable" class="bo-chart__canvas" :style="{ height: `${height}px` }" role="img" :aria-label="summaryText" data-testid="chart-summary">
         <VChart :option="option" :theme="themeName" autoresize :init-options="{ renderer: 'svg' }" />
       </div>
-      <p class="ek-sr-only" data-testid="chart-summary">{{ summaryText }}</p>
       <div v-if="asTable" class="bo-chart__table" tabindex="0" role="region" :aria-label="`${summary ?? title ?? 'Grafik'} tablosu`">
         <table>
           <caption class="ek-sr-only">{{ summary ?? title }}</caption>
