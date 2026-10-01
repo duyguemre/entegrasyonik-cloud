@@ -142,7 +142,7 @@
             </span>
           </template>
           <template #cell-errorCode="{ item }">
-            <span class="bo-cell-stack">
+            <span class="bo-cell-stack bo-failed__reason">
               <span>{{ codeInfo(String(item.errorCode)).text }}</span>
               <code class="bo-code-tag" :title="codeInfo(String(item.errorCode)).text">{{ item.errorCode }}</code>
             </span>
@@ -152,7 +152,7 @@
             <span v-else class="bo-muted">—</span>
           </template>
           <template #cell-failedAt="{ item }">
-            <span class="bo-cell-stack">
+            <span class="bo-cell-stack bo-failed__times">
               <span>Son hata <EkRelativeTime :value="item.failedAt as string" /></span>
               <span v-if="item.firstFailedAt && item.firstFailedAt !== item.failedAt">İlk hata <EkRelativeTime :value="item.firstFailedAt as string" /></span>
               <span v-else-if="item.enqueuedAt">Kuyruğa alındı <EkRelativeTime :value="item.enqueuedAt as string" /></span>
@@ -497,13 +497,21 @@ onMounted(async () => {
   font-size: var(--ek-type-caption-size);
 }
 .bo-failed__type {
+  white-space: nowrap;
   color: var(--ek-color-content-strong);
   font-size: var(--ek-type-label-size);
   font-weight: var(--ek-type-label-weight);
 }
 .bo-failed__cause {
+  min-width: 14em;
   color: var(--ek-color-content-strong);
   font-weight: var(--ek-type-label-weight);
+}
+.bo-failed__reason {
+  min-width: 16em;
+}
+.bo-failed__times {
+  white-space: nowrap;
 }
 .bo-failed__types {
   display: flex;
