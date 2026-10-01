@@ -150,9 +150,8 @@
         </template>
         <template #cell-user="{ row }">
           <span v-if="row.userName" class="ek-audit-view__user-name">{{ row.userName }}</span>
-          <span v-else-if="row.userId" class="ek-audit-view__user-unknown">
-            {{ t('auditLog.userUnknown') }} <code>{{ row.userShort }}</code>
-          </span>
+          <!-- P09: ham kimlik listede gösterilmez (ayrıntı panelinde ikincil satırda). -->
+          <span v-else-if="row.userId" class="ek-audit-view__user-unknown">{{ unresolvedUserLabel }}</span>
           <span v-else class="ek-audit-view__user-unknown">{{ t('auditLog.userSystem') }}</span>
         </template>
         <template #cell-result="{ row }">
@@ -193,7 +192,7 @@
             <dt>{{ t('auditLog.detail.user') }}</dt>
             <dd>
               <template v-if="selected.userName">{{ selected.userName }}</template>
-              <template v-else-if="selected.userId">{{ t('auditLog.userUnknown') }}</template>
+              <template v-else-if="selected.userId">{{ unresolvedUserLabel }}</template>
               <template v-else>{{ t('auditLog.userSystem') }}</template>
               <code v-if="selected.userId" class="ek-audit-view__muted-code">{{ selected.userId }}</code>
             </dd>
@@ -206,7 +205,7 @@
         <dl v-if="selected.meta.length" class="ek-audit-view__kv">
           <div v-for="m in selected.meta" :key="m.key">
             <dt>{{ m.label }}</dt>
-            <dd>{{ m.value }}</dd>
+            <dd>{{ m.value }}<code v-if="m.code" class="ek-audit-view__muted-code">{{ m.code }}</code></dd>
           </div>
         </dl>
         <p v-else class="ek-audit-view__no-meta">{{ t('auditLog.detail.noMeta') }}</p>
@@ -226,7 +225,7 @@ import type { StatusTone } from '@/design/status-map'
 import {
   DEFAULT_LIMIT, PAGE_SIZE_OPTIONS, RESULTS, buildRequest, defaultRange, emptyFilters, eventIcon, eventKeyLabel, eventLabel,
   eventOptions, metaRows, presetRange, resultPresentation, shortId, useAuditLogApi, validateFilters,
-  type AuditFilters, type AuditLogEntry, type AuditResult, type AuditUser, type FilterErrors,
+  type AuditFilters, type AuditLogEntry, type AuditMetaRow, type AuditResult, type AuditUser, type FilterErrors,
 } from '@/composables/useAuditLogApi'
 
 interface AuditRow {
@@ -239,11 +238,10 @@ interface AuditRow {
   icon: string
   userId: string | null
   userName: string | null
-  userShort: string
   resultTone: StatusTone
   resultLabel: string
   detailsText: string
-  meta: { key: string; label: string; value: string }[]
+  meta: AuditMetaRow[]
 }
 
 const { t } = useI18n()
@@ -262,6 +260,8 @@ const limit = ref<number>(DEFAULT_LIMIT)
 const total = ref(0)
 const logs = ref<AuditLogEntry[]>([])
 const users = ref<AuditUser[]>([])
+/** P09: kullanıcı dizini eksiksizse listede olmayan kimlik "Silinmiş kullanıcı" (aksi hâlde "Bilinmeyen"). */
+const usersComplete = ref(false)
 const detailOpen = ref(false)
 const selected = ref<AuditRow | null>(null)
 let requestSeq = 0
@@ -278,6 +278,7 @@ const columns = computed<EkGridColumn[]>(() => [
 ])
 
 const userNames = computed(() => new Map(users.value.map((u) => [u.id, u.name])))
+const unresolvedUserLabel = computed(() => t(usersComplete.value ? 'auditLog.userDeleted' : 'auditLog.userUnknown'))
 
 const rows = computed<AuditRow[]>(() =>
   logs.value.map((l) => {
@@ -293,7 +294,6 @@ const rows = computed<AuditRow[]>(() =>
       icon: eventIcon(l.event),
       userId: l.userId,
       userName: l.userId ? userNames.value.get(l.userId) ?? null : null,
-      userShort: l.userId ? shortId(l.userId) : '',
       resultTone: rp.tone,
       resultLabel: rp.labelKey ? t(rp.labelKey) : String(l.result ?? '—'),
       detailsText: meta.slice(0, 2).map((m) => `${m.label}: ${m.value}`).join(' · '),
@@ -403,7 +403,10 @@ function openDetail(row: Record<string, any>) {
 
 onMounted(async () => {
   // Kullanıcı listesi yalnızca ad çözümü içindir; başarısızlığı listeyi engellemez.
-  api.getUsers().then((list) => (users.value = list))
+  api.getUserDirectory().then((dir) => {
+    users.value = dir.users
+    usersComplete.value = dir.complete
+  })
   await load()
 })
 </script>
@@ -525,6 +528,11 @@ onMounted(async () => {
 
 .ek-audit-view__event-code,
 .ek-audit-view__user-unknown code,
+.ek-audit-view__kv dd .ek-audit-view__muted-code {
+  /* P09: okunur karşılığın altında ikincil satır. */
+  display: block;
+}
+
 .ek-audit-view__muted-code {
   color: var(--ek-color-content-muted);
   font-family: var(--ek-font-mono);

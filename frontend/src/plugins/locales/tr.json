@@ -1671,6 +1671,7 @@
     },
     "openDetail": "{event} kaydının ayrıntılarını aç",
     "userUnknown": "Bilinmeyen kullanıcı",
+    "userDeleted": "Silinmiş kullanıcı",
     "userSystem": "Sistem",
     "pagerAria": "Denetim kayıtları sayfalama",
     "detail": {
