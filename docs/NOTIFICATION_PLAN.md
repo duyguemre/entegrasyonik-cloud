@@ -59,6 +59,7 @@ Kısaltmalar:
 | `CATALOG_IMPORT_FAILED` | catalog | error | – | UI / dig | `catalog:read` (member) | `/logs?mode=IMPORT&job={jobId}` | D `jobId` | St | `ImportOrchestrator.ts:110` |
 | `CATALOG_EXPORT_ERRORS_DIGEST` | catalog | warning | – | UI / dig | `catalog:read` (member) | `/logs?mode=TRANSFER&status=FAILED` | G `integ`, 1 sa | St | yeni (Publisher/Sentinel son başarısızlık; F-07 hata kutusu ile) |
 | `FINANCE_RECONCILIATION_MISMATCH` | finance | warning | – | UI / dig | `finance:read` (admin) | `/finance` | G tenant, 24 sa | L | yeni (ExternalReconciliation, planlı) |
+| `COMMISSION_RATE_DRIFT` | finance | warning | – | UI / dig | `finance:read` (admin) | `/finance` | D `integ:categoryId:YYYY-MM` (ay başına 1/kanal+kategori); G `integ`, 24 sa | L | COM-08 (`finance.commissionDrift`, günlük, yalnız Trendyol; eşik `finance.commissionDriftThresholdPoints`; ayrıntı `FinancialService/getCommissionDrift`) |
 | `BILLING_TRIAL_ENDING` | billing | warning | ✓ | UI / inst | `billing:read` (owner) | `/subscription` | D `trialEnd:T-3` | L | `TrialExpiryJob.ts:163` |
 | `BILLING_TRIAL_ENDED` | billing | error | ✓ | UI / inst | `billing:read` (owner) | `/subscription` | D `trialEnd` | L | `TrialExpiryJob.ts:138` |
 | `BILLING_SUSPENSION_WARNING` | billing | critical | ✓ | UI / inst | `billing:read` (owner) | `/subscription` | D `suspendAt:T-3` | L | yeni (ADR-0008 satır 71) |

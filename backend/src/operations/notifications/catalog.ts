@@ -185,6 +185,20 @@ const TENANT: NotificationDefinition[] = [
         params: z.object({ mismatchCount: num() }).strict(), action: () => '/finance',
         group: { key: () => 'tenant', windowMs: 24 * HOUR }, retention: 'long', surface: 'tenant', example: { mismatchCount: 4 },
     }),
+    // COM-08: gercek komisyon (hakedis) referanstan (tenant override > statik tablo) esik kadar sapti -> "tablo bayat olabilir".
+    // Kanal + kategori basina takvim ayinda (Europe/Istanbul) EN FAZLA bir kez (dedupeKey). Ayni gun cok kategori -> tek kayitta toplanir (group).
+    // params makinece okunabilir sapma olayidir (ADR-0018): oranlar puan, kaynak enum; ayrinti `FinancialService/getCommissionDrift`.
+    defineNotification({
+        code: 'COMMISSION_RATE_DRIFT', category: 'finance', severity: 'warning', mandatory: false,
+        defaultChannels: { inApp: true, email: 'digest' }, audience: { permission: 'finance:read', fallbackMinTier: 'admin' },
+        params: z.object({
+            integ: code(), categoryId: id(), realizedRate: num(), referenceRate: num(), referenceSource: z.enum(['override', 'estimated']),
+            deltaPoints: num(), thresholdPoints: num(), sampleCount: num(), window: dateStr(),
+        }).strict(),
+        action: () => '/finance', dedupeKey: (p) => `${p.integ}:${p.categoryId}:${p.window}`,
+        group: { key: (p) => p.integ, windowMs: 24 * HOUR }, retention: 'long', surface: 'tenant',
+        example: { integ: 'trendyol', categoryId: '64b000000000000000000001', realizedRate: 21.36, referenceRate: 18, referenceSource: 'estimated', deltaPoints: 3.36, thresholdPoints: 2, sampleCount: 42, window: '2026-10' },
+    }),
     // ---- billing ----
     defineNotification({
         code: 'BILLING_TRIAL_ENDING', category: 'billing', severity: 'warning', mandatory: true,

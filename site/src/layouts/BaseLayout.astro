@@ -39,7 +39,8 @@ const entry = getSeoEntry(path ?? Astro.url.pathname)
 const title = fullTitle(entry)
 const indexable = !siteConfig.draft && entry.index
 const robots = indexable ? 'index,follow' : 'noindex,nofollow'
-const themeColor = lightToken('--ek-color-primary')
+// site-wdg W15: tarayıcı çubuğu sayfa/üst bar zeminiyle aynı (beyaz).
+const themeColor = lightToken('--ek-color-background')
 // Canonical/og:url yalnızca yayın modunda (alan adı PUBLIC_SITE_URL'den; taslakta uydurma adres yok).
 const canonical = !siteConfig.draft && siteConfig.siteUrl ? pageUrl(entry.path) : undefined
 const ogImage = abs(ogImageFor(entry))

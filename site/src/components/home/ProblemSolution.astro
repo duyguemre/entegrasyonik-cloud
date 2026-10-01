@@ -284,7 +284,8 @@ const gains = [
     opacity: calc(1 - var(--p) * 0.22);
   }
   .ps__before-title {
-    color: var(--site-text-meta);
+    /* site-wdg W04: sütun opaklığı (0,78) meta tonunu ~3,1:1'e düşürüyordu → gövde tonu (~5,3:1); "soluk" görünüm opaklıktan gelir. */
+    color: var(--ek-color-content-default);
     font-size: var(--ek-font-size-xl);
     font-weight: var(--ek-font-weight-semibold);
     line-height: var(--ek-line-height-tight);
@@ -368,7 +369,7 @@ const gains = [
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-3);
-    color: var(--site-text-meta);
+    color: var(--ek-color-content-default);
     font-size: var(--ek-font-size-md);
   }
   .ps__pains li {
@@ -789,7 +790,8 @@ const gains = [
     padding: calc(var(--ek-space-1) * 0.5) var(--ek-space-2);
     border-radius: var(--ek-radius-full);
     background: var(--ek-color-background);
-    color: var(--site-link-accent);
+    /* site-wdg W26: koyu sahne içindeki beyaz hap — koyu yüzey eşlemesi açık teal veriyordu (~2,8:1); açık zemin tonu sabitlenir. */
+    color: color-mix(in srgb, var(--ek-color-secondary-darken-1) 82%, var(--ek-color-content-strong));
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
     line-height: var(--ek-line-height-tight);

@@ -119,6 +119,22 @@ describe('BackofficeAuditService', () => {
         expect(audits).toHaveLength(2);
         expect(audits[0].meta).toMatchObject({ service: 'BackofficeAuditService', operation: 'list', f_tid: 5, f_event: 'app.write' });
     });
+    it('ip: ham deger aynen; alan yoksa null (karakterizasyon, RET-02 oncesi)', async () => {
+        const rows = [
+            { _id: '64b000000000000000000005', at: new Date('2026-09-10T10:00:00Z'), event: 'login', result: 'ok', ip: '203.0.113.7' },
+            { _id: '64b000000000000000000004', at: new Date('2026-09-10T09:00:00Z'), event: 'login', result: 'ok' },
+        ];
+        const out = await svcWith(rows, { from: iso(1), to: iso(20) }).list();
+        expect(out.items.map((i: any) => i.ip)).toEqual(['203.0.113.7', null]);
+    });
+    it('RET-02: maskelenmis kayitta ip = ag oneki (ipMasked) ve ipMasked:true; ham ip varsa false', async () => {
+        const rows = [
+            { _id: '64b000000000000000000007', at: new Date('2026-09-10T10:00:00Z'), event: 'login', result: 'ok', ipMasked: '203.0.113.0/24' },
+            { _id: '64b000000000000000000006', at: new Date('2026-09-10T09:00:00Z'), event: 'login', result: 'ok', ip: '203.0.113.7' },
+        ];
+        const out = await svcWith(rows, { from: iso(1), to: iso(20) }).list();
+        expect(out.items.map((i: any) => [i.ip, i.ipMasked])).toEqual([['203.0.113.0/24', true], ['203.0.113.7', false]]);
+    });
 });
 
 describe('BackofficeErrorService.setStatus', () => {

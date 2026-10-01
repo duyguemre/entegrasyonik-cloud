@@ -241,6 +241,10 @@ const rows = agentConsole.rows
     color: var(--site-text-on-dark-heading);
     font-weight: var(--ek-font-weight-semibold);
   }
+  /* site-wdg W06: global açık zemin `a:hover` rengi (koyu teal) lacivert panelde ~2:1'e düşürüyordu. */
+  .teaser__link:hover {
+    color: var(--site-accent-on-dark);
+  }
   .teaser__cta:focus-visible,
   .teaser__link:focus-visible {
     outline: var(--site-focus-ring-width) solid var(--ek-color-background);

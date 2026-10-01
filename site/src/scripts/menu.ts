@@ -42,6 +42,12 @@ if (menu) {
   window.addEventListener('resize', () => {
     if (menu.open && getComputedStyle(menu).display === 'none') menu.open = false
   })
+
+  // site-wdg W07: çekmece açıkken arkadaki sayfa etkisiz — Tab sabit panelin altında kalan (görünmeyen) içeriğe kaçmaz.
+  const behind = [...document.querySelectorAll<HTMLElement>('main, .site-footer, .skip-link')]
+  menu.addEventListener('toggle', () => {
+    for (const el of behind) el.inert = menu.open
+  })
 }
 
 const nav = document.querySelector<HTMLElement>('[data-nav]')

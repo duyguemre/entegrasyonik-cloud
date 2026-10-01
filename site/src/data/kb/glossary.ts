@@ -40,7 +40,7 @@ export const glossary: GlossaryTerm[] = [
   t('varyant', 'Varyant', 'Aynı ürünün beden, renk gibi seçeneklerinden her biri; her varyantın kendi stok kodu ve stoğu olur.'),
   t('urun-katalogu-esleme', 'Ürün kataloğu eşleme', 'Aynı ürünün farklı kanallardaki karşılıklarının tek ürün kaydına bağlanması.', STOK),
   t('kategori-esleme', 'Kategori eşleme', 'Kendi kategori ağacınızın her pazaryerinin kategori ağacıyla eşleştirilmesi.', STOK),
-  t('ozellik-esleme', 'Özellik eşleme', 'Ürün özelliklerinin (renk, beden, malzeme...) pazaryerinin istediği özellik şablonuna eşlenmesi.', STOK, 'Attribute eşleme'),
+  t('ozellik-esleme', 'Özellik eşleme', 'Ürün özelliklerinin (renk, beden, malzeme…) pazaryerinin istediği özellik şablonuna eşlenmesi.', STOK, 'Attribute eşleme'),
   t('buybox', 'Buybox', 'Aynı ürünü satan satıcılar arasında ürün sayfasındaki satın alma kutusunda gösterilme yarışı.'),
   t('hakedis', 'Hakediş', 'Satıcının satış tutarından komisyon ve diğer kesintiler düşüldükten sonra alacağı tutar.', HAKEDIS),
   t('komisyon', 'Komisyon', 'Pazaryerinin her satıştan aldığı pay; oranlar genellikle kategori bazlıdır ve satıcı panelinde yayımlanır.', HAKEDIS),

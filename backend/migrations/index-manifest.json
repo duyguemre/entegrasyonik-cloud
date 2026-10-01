@@ -408,6 +408,20 @@
         "options": {}
       },
       {
+        "name": "ret02_ip_pending",
+        "fields": {
+          "at": 1,
+          "_id": 1
+        },
+        "options": {
+          "partialFilterExpression": {
+            "ip": {
+              "$exists": true
+            }
+          }
+        }
+      },
+      {
         "name": "sub_1_at_-1",
         "fields": {
           "sub": 1,

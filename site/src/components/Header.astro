@@ -448,6 +448,8 @@ const registerHref = appUrls.register()
   }
   .mega-chan:hover {
     border-color: var(--ek-color-border-strong);
+    /* site-wdg W18: yalnız kenarlık değişimi seçili hâlden zayıftı → hover zemini. */
+    background: color-mix(in srgb, var(--ek-color-surface-sunken) 60%, var(--ek-color-background));
   }
   .mega-chan[aria-current] {
     border-color: var(--site-accent-line);
@@ -553,6 +555,16 @@ const registerHref = appUrls.register()
   }
   .drawer-group__summary::-webkit-details-marker {
     display: none;
+  }
+  /* site-wdg W18: çekmece grup/doğrudan satırları alt bağlantılarla aynı hover zeminini alır. */
+  .drawer-group__summary,
+  .drawer-direct {
+    border-radius: var(--ek-radius-lg);
+    transition: background-color var(--ek-duration-fast) var(--ek-easing-standard);
+  }
+  .drawer-group__summary:hover,
+  .drawer-direct:hover {
+    background: color-mix(in srgb, var(--ek-color-surface-sunken) 60%, var(--ek-color-background));
   }
   .drawer-group__label {
     display: grid;
@@ -673,6 +685,10 @@ const registerHref = appUrls.register()
     background: var(--site-stage-mesh);
     color: var(--site-text-on-dark-heading);
     text-decoration: none;
+    transition: box-shadow var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .drawer-feature:hover {
+    box-shadow: var(--site-shadow-card-hover);
   }
   .drawer-feature__icon {
     grid-row: 1 / span 2;

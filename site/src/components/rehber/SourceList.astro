@@ -83,6 +83,10 @@ const { sources, updated, reviewBy } = Astro.props
     line-height: var(--ek-line-height-tight);
     overflow-wrap: anywhere;
   }
+  /* site-wdg W18: sınıflı bağlantı global hover'ı almıyordu → aynı renk geçişi. */
+  .src__title:hover {
+    color: var(--site-color-link-hover);
+  }
   .src__title :global(.icon) {
     display: inline-block;
     margin-inline-start: var(--ek-space-1);

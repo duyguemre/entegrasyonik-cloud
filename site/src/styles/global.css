@@ -10,6 +10,8 @@
 }
 
 html {
+  /* site-wdg W15: site yalnız açık temalı — form denetimleri ve kaydırma çubuğu açık çizilir. */
+  color-scheme: light;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   scroll-padding-top: calc(var(--site-header-height) + var(--ek-space-4));
@@ -43,11 +45,14 @@ h4 {
   color: var(--site-text-heading);
   font-weight: var(--ek-font-weight-bold);
   line-height: var(--ek-line-height-tight);
+  /* site-wdg W13: çok satırlı başlıklarda dul kelime kalmasın (tüm sayfa/bileşen başlıkları tek kuraldan). */
+  text-wrap: balance;
 }
 
 p {
   margin: 0;
   max-width: var(--site-measure);
+  text-wrap: pretty;
 }
 
 /*
@@ -115,6 +120,32 @@ html:is([data-motion='paused'], [data-motion='reduced']) :is(a .icon[data-icon='
   transform: none;
   transition: none;
 }
+/*
+ * site-wdg W17: "Hareket" anahtarı kapalı ya da reduced-motion → kart/ikon hover hareketleri de durur (önceden yalnız
+ * geçiş süresi kısalıyordu, yükselme/dönme/ölçek yine uygulanıyordu). Geri bildirim renk/zemin/gölge ile sürer.
+ * Liste: hover'da konum/ölçek değiştiren bileşenler (tek yer; yeni hover hareketi eklenirse buraya da eklenir).
+ */
+html:is([data-motion='paused'], [data-motion='reduced'])
+  :is(
+    .tile:hover .tile__icon,
+    .tile:hover .tile__icon svg,
+    .tile:hover .tile__frame > *,
+    .eco__node:hover .eco__icon,
+    .plan:hover,
+    .topic:hover,
+    .featured__card:hover,
+    .others__link:is(:hover, :focus-visible),
+    .int-card:hover .int-card__arrow,
+    .mega-feature:hover .mega-feature__cta .icon
+  ) {
+  transform: none;
+  translate: none;
+  rotate: none;
+  scale: none;
+}
+html:is([data-motion='paused'], [data-motion='reduced']) :is(.btn--primary, .btn--inverse)::after {
+  display: none;
+}
 
 img,
 svg {
@@ -152,6 +183,8 @@ ul {
   /* Türetilmiş tokenlar :root'ta çözülür → koyu yüzeyde ayrıca eşlenir. */
   --site-eyebrow-color: var(--site-accent-on-dark);
   --site-color-link-hover: var(--site-text-on-dark-heading);
+  /* site-wdg W01: lacivert odak halkası koyu zeminde ~1,1:1 (görünmez) → açık teal (~6,4:1, WCAG 2.4.7 / 1.4.11). */
+  --site-color-focus-ring: var(--site-accent-on-dark);
 }
 
 ::selection {

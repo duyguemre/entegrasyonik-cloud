@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "sha256": "ebd1470f62547a8a63c48687e2a9e16f3ebbb98704bf59fdf38dd73d7169cb4a",
-  "generatedAt": "2026-10-01T15:14:16.844Z",
+  "sha256": "6e8fa4b79ae44ab34bbd7943131b6c44771955de673800309e50afc454d81fc8",
+  "generatedAt": "2026-10-01T19:13:35.674Z",
   "stage": "A",
-  "totalCapabilities": 299,
-  "totalBindings": 340,
+  "totalCapabilities": 300,
+  "totalBindings": 341,
   "capabilities": [
     {
       "id": "account.email_verification.resend",
@@ -883,6 +883,25 @@
       "scope": "tenant",
       "rpc": [
         "FinancialService/getCommissionByBarcodes"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "finance.commission.drift",
+      "version": "1.0",
+      "domain": "finance",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "FinancialService/getCommissionDrift"
       ],
       "mcp": {
         "exposed": false,

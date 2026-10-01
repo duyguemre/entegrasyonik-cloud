@@ -31,7 +31,7 @@ const addrId = `${id}-address`
       <span>{sendLabel}</span>
       <Icon name="arrow" size="sm" />
     </a>
-    <button type="button" class="ea__btn ea__btn--ghost" data-copy={email} data-copy-target={`#${addrId}`} data-testid="contact-copy">
+    <button type="button" class="ea__btn ea__btn--ghost" hidden data-copy={email} data-copy-target={`#${addrId}`} data-testid="contact-copy">
       <span class="ea__icon ea__icon--idle"><Icon name="copy" size="sm" /></span>
       <span class="ea__icon ea__icon--done"><Icon name="check" size="sm" /></span>
       <span data-copy-label>Adresi kopyala</span>
@@ -45,6 +45,10 @@ const addrId = `${id}-address`
 </script>
 
 <style>
+  /* site-wdg W22: kopyala düğmesi JS yokken gizli (betik açar) — çalışmayan düğme görünmez. */
+  .ea__btn[hidden] {
+    display: none;
+  }
   .ea {
     display: flex;
     flex-direction: column;

@@ -444,9 +444,7 @@ const diffRows = channels.slice(0, 3)
     color: var(--site-accent-on-dark);
     font-weight: var(--ek-font-weight-semibold);
   }
-  .hero__agent:hover .hero__agent-cta :global(.icon) {
-    translate: calc(var(--ek-space-1) * 0.5) 0;
-  }
+  /* site-wdg W16: ok kayması global.css'teki tek kuraldan (a:hover .icon[data-icon='arrow']); yerel ikinci kayma kaldırıldı. */
   .hero__agent-value {
     color: var(--site-text-on-dark-body);
     line-height: var(--ek-line-height-normal);

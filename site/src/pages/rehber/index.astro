@@ -154,7 +154,7 @@ const cta = getGuideCta('channels')
           Pazar verisinin tamamı <Icon name="arrow" size="sm" />
         </a>
       </div>
-      <figure class="market__stats">
+      <figure class="market__stats" data-surface="dark">
         <dl>
           {
             MARKET_HIGHLIGHT.stats.map((s) => (
@@ -372,7 +372,8 @@ const cta = getGuideCta('channels')
     border-radius: var(--site-radius-panel);
     background: var(--ek-color-surface);
     box-shadow: var(--site-shadow-card);
-    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
+    /* site-wdg W14: üst bar payı html scroll-padding-top’ta; burada yalnız ek boşluk. */
+    scroll-margin-top: var(--ek-space-2);
   }
   .cluster__head {
     display: flex;
@@ -522,6 +523,10 @@ const cta = getGuideCta('channels')
   }
   .market__stats figcaption a {
     color: var(--site-text-on-dark-heading);
+  }
+  /* site-wdg W02: koyu kartta hover geri bildirimi (odak halkası data-surface eşlemesinden açık teal). */
+  .market__stats figcaption a:hover {
+    color: var(--site-accent-on-dark);
   }
 
   /* --- Sözlük bandı --- */
