@@ -859,19 +859,6 @@
   color: var(--ek-color-content-default);
 }
 
-.ek-chat-confirm__external {
-  display: flex;
-  align-items: center;
-  gap: var(--ek-space-2);
-  margin: 0;
-  padding: var(--ek-space-2) var(--ek-space-3);
-  border-radius: var(--ek-radius-md);
-  background: var(--ek-color-info-subtle);
-  color: var(--ek-color-info-emphasis);
-  font-size: var(--ek-type-caption-size);
-  font-weight: var(--ek-font-weight-medium);
-}
-
 .ek-chat-confirm__block {
   display: flex;
   flex-direction: column;
@@ -884,32 +871,6 @@
   font-size: var(--ek-type-caption-size);
   font-weight: var(--ek-font-weight-semibold);
   text-align: left;
-}
-
-.ek-chat-confirm__sample {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ek-space-1);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.ek-chat-confirm__sample li {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ek-space-1);
-  padding: 0 var(--ek-space-2);
-  min-height: var(--ek-app-chip-h-sm);
-  border: 1px solid var(--ek-color-border-subtle);
-  border-radius: var(--ek-radius-chip);
-  background: var(--ek-color-surface);
-  font-size: var(--ek-type-caption-size);
-}
-
-.ek-chat-confirm__sample li.is-more {
-  border-style: dashed;
-  color: var(--ek-color-content-muted);
 }
 
 .ek-chat-confirm__changes {
