@@ -205,3 +205,32 @@ talepleri — iki alandan tek bileşene). Aşağıdakiler backend parametresi is
 |---|---|---|---|---|---|
 | P-R3B-1 | 2026-10-01 | cloud/fe-r3b | **Kullanılmayan mağaza ayarları.** Hata bildirim e-postası, çalışma günleri, zaman dilimi, destek telefonu, kargo süresi ve maks. satış adedi backend'de yalnız saklanıyor (tarama 2026-10-01). Açıklamalar dürüstleştirildi (olmayan otomasyon vaat edilmiyor). Öneri: ya davranış backend'de yazılsın (ör. hata e-postası bildirimi, iş günü kaydırması) ya da kullanılmayan alanlar "Yakında" demeden gizlensin. | Ürün kararı + backend işi | BEKLİYOR |
 | P-R3B-2 | 2026-10-01 | cloud/fe-r3b | **Ana sayfa KPI'larında tekrar.** "Kargo bekleyen" KPI kartı artık "Bugün sırada" listesindeki kargo işiyle aynı sayıyı tekrar ediyor. Öneri: KPI satırında yerine "Bekleyen iade tutarı" ya da "Son 7 gün iade oranı" (insights `totals.returnAmount/returnCount` mevcut). Alternatif: olduğu gibi kalsın. | Ana sayfa bilgi düzeni | BEKLİYOR |
+
+## Çıktılar / şablon tasarımcısı (cloud/fe-r3c, 2026-10-01) — FR3 madde 15
+
+Yeniden tasarım K49 ile onaylı ve uygulandı (bkz. `docs/fe-r3c-review/README.md`). Aşağıdakiler mevcut backend
+sözleşmesinin DIŞINA çıkan ya da akış değiştiren maddelerdir; HİÇBİRİ uygulanmadı. Numaralar paralel görevlerle
+çakışmasın diye `C` önekli.
+
+### Backend istekleri
+
+| No | İstek | Neden | Önyüz hazırlığı |
+|---|---|---|---|
+| C01 | **Şablon kaydı API'si**: `PrintTemplateService` — `list`, `get`, `save` (oluştur/güncelle, `version` ile iyimser kilit), `delete`, `setDefault(kind)`. Kiracı (mağaza) kapsamlı; gövde = `TemplateDoc` JSON (`frontend/src/components/printouts/templateModel.ts`), boyut sınırı ~64 KB, şablon sayısı ≤ 50 | Bugün şablonlar yalnız bu tarayıcıda (`ek.printTemplates.v1.<kullanıcı>.<mağaza>`): ekip arkadaşı göremez, cihaz değişince kaybolur | `templateStore.ts` tek okuma/yazma noktası; API gelince yalnız bu dosya değişir. Yerel şablonları bir kez sunucuya taşıma düğmesi önerilir |
+| C02 | **Sürüm geçmişi** (son 20 kayıt, kim/ne zaman) + taslak/yayın ayrımı | Araştırma 9.2–9.5: yarım şablonla toplu basımı önler | Düzenleyicide "Kaydedildi/Kaydedilmedi" durumu var; "Yayınla" düğmesi API ile eklenir |
+| C03 | **Yazdırıldı kaydı**: `OrderService` üzerinde sipariş başına "etiket/fiş basıldı" damgası (tarih, şablon kimliği) | Araştırma 13: çift etiket/çift gönderi riski; sipariş listesinde "basılmadı" süzgeci | Önizleme `printed` olayını yayıyor; API gelince bağlanır |
+| C04 | **Pazaryeri/kargo etiketi PDF'i** (`IFulfillment.labelUrl`) önizlemede olduğu gibi basma | Araştırma 11.1–11.2: kargo firmasının kendi barkodu yeniden üretilmemeli | `labelUrl` alanı arayüzde var; önizlemede "Pazaryeri etiketi" sekmesi olarak eklenebilir (bağımsız, küçük) |
+| C05 | **Mağaza bilgileri alanları** (mağaza adı, logo, iade adresi) yazdırma verisine | Fiş/irsaliyede gönderici bilgisi; bugün yalnız "Sabit not" alanı var | Alan kataloğuna `store.*` grubu eklenir (ayarlar ekranındaki mağaza kimliğinden) |
+
+### Akış önerileri (onay bekler)
+
+- **C06 — Sipariş listesinden yazdırma varsayılan şablonla:** Sipariş satırındaki "Kargo etiketi yazdır" ve toplu
+  yazdırma bugün sabit 100×100 etiketi (`BarcodePrintComponent`) kullanıyor ve DEĞİŞTİRİLMEDİ. Öneri: tür başına
+  varsayılan şablon (galeride "Varsayılan" rozeti) kullanılsın; şablon yoksa bugünkü etiket. **Risk:** kullanıcının
+  alıştığı çıktı değişir → C01 (sunucu kaydı) ile birlikte açılması önerilir.
+- **C07 — Çok sayfalı belgeler:** A4'te kalem tablosu sayfaya sığmazsa bugün "+N kalem daha" basılır ve denetim uyarır.
+  Öneri: başlık tekrarlı otomatik sayfa bölme (araştırma 8.3). Orta büyüklük; render motorunda sayfa bölme gerekir.
+- **C08 — Menü yeri:** Çıktılar "Finans ve raporlar" altında; işlevi siparişe yakın. Öneri: "Satış" grubuna taşımak
+  (menü verisi backend'de — P11 ile birlikte değerlendirilir).
+- **C09 — Doğrudan termal yazdırma (ZPL) ve 203/300 dpi barkod modül yuvarlama:** bugün tarayıcı yazdırma + vektör
+  SVG barkod (ölçekte bulanıklık yok). Termal yazıcı dağılımı netleşince (araştırma Q2) değerlendirilir.

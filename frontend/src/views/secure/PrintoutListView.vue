@@ -1,591 +1,307 @@
 <!--
   frontend/src/views/secure/PrintoutListView.vue
 
-  ADR-0015 B5-3 — GÖRSEL KATMAN (bkz. e2e/specs/printouts.spec.ts). Davranış DEĞİŞMEDİ: ekran bir
-  liste değil, backend'e HİÇ istek atmayan bir şablon tasarımcısı taslağıdır; sürükle-bırak (dragstart/
-  drop/dragend), tuvale `<p type="move">` ekleme, tıklayınca seçme (seçili öğe mavi), ayar paneli,
-  "Sil", kâğıt boyutu düğmeleri (tuval `:width/:height` inline style), ölü "Test Çıktısı"/"Temizle"
-  düğmeleri ve `#a4` kimliği AYNEN korundu. Görünen metinler/etiketler değişmedi.
-
-  - Başlık `EkPageHeader`'a; token'sız renk/inline style, `bg-color="textfieldColor"`, eski
-    `scroll-element`/`expand-background-patch`/`ScrollComponent` (özel kaydırma çubuğu) kaldırıldı;
-    kaydırma yerel `overflow:auto`. Palet metinleri `paletteGroups` verisinden render edilir.
-  - Yerleşim: araç çubuğu sarılır (mobil/tabletteki üst üste binme giderildi), tuval küçülmez
-    (`flex:none`, kap içinde kaydırılır).
-  - Karakterizasyon (DÜZELTİLMEDİ): seçim rengi (saf mavi, `blue`) ve sürükleme opaklığı script'te DOM'a
-    doğrudan yazılır (spec bunu mavi olarak bekler); Genişlik/Yükseklik/Çıktı Tipi/Yazı Tipi/Yazı
-    Büyüklüğü/Kopya Sayısı alanları hiçbir state'e bağlı değil; "Sil" sonrası seçim temizlenmez;
-    paletteki alanlar klavyeyle sürüklenemez (yalnızca HTML5 fare DnD).
+  FR3 madde 15 (fe-r3c) — Çıktılar: şablon galerisi → düzenleyici → önizleme → yazdır (K49 onaylı yeniden tasarım;
+  araştırma: frontend/docs/research/TEMPLATE_DESIGNER_2026-10-01.md). Eski ekran backend'e hiç bağlı olmayan bir
+  sürükle-bırak taslağıydı (ADR-0015 B5-3 karakterizasyonu); onun yerine:
+    - Galeri: belge türüne göre süzülen "Şablonlarım" + "Hazır şablonlar"; küçük resimler gerçek render.
+      Hazır şablon salt-okunurdur → "Kopyasını düzenle". Tür başına bir varsayılan.
+    - Düzenleyici (TemplateEditor): sol alanlar/bileşenler, orta tuval (mm), sağ özellikler; geri al/yinele, klavye.
+    - Önizleme (TemplatePreview): örnek / stres / eksik veri ya da son siparişler (mevcut OrderService/getOrders),
+      denetim, toplu yazdırma (tarayıcı yazdır penceresi; PDF aynı yerden).
+  Saklama: backend sözleşmesi yok → bu tarayıcı, kullanıcı + mağaza kapsamlı (templateStore). Ekran bunu söyler.
+  Sipariş ekranındaki "Kargo etiketi yazdır" (BarcodePrintComponent) DEĞİŞMEDİ; varsayılan şablona bağlanması
+  PROPOSALS_PENDING'de (backend şablon kaydı ile birlikte).
 -->
 <template>
   <div class="printoutListView">
-    <EkPageHeader
-      section="Finans"
-      :title="$t('menu.printoutList')"
-      description="Sipariş çıktı şablonlarınızı alanları tuvale sürükleyerek tasarlayın."
-    />
+    <EkPageHeader section="Finans" :title="$t('menu.printoutList')"
+      description="Kargo etiketi, sipariş fişi, irsaliye taslağı ve toplama listesi şablonlarınızı tasarlayın, gerçek siparişle önizleyip yazdırın."
+      :tips="TIPS" :primary-action="view === 'gallery' ? { label: 'Yeni şablon', icon: 'mdi-plus', onClick: openCreate } : undefined" />
 
-    <div class="ek-printout__toolbar">
-      <v-select clearable prepend-icon="mdi-form-textbox"
-        :label="$t('printouts.printout.searchlabel')" variant="outlined" hide-details
-        class="ek-printout__select ek-printout__select--type"></v-select>
+    <!-- GALERİ -->
+    <template v-if="view === 'gallery'">
+      <EkAlert v-if="!persistent" tone="warning" dense title="Tarayıcı depolaması kullanılamıyor"
+        text="Şablonlarınız bu oturumda çalışır ama sayfadan çıkınca kaybolur. Gizli pencere kullanıyorsanız normal pencerede açın." />
 
-      <div class="ek-printout__papers" role="group" aria-label="Kâğıt boyutu">
-        <!-- FR2-SCREENS 37 (fe-r2d): kâğıt = segment düğmesi; minyatür sayfa (oran gerçek ölçüden) + "A4 · Dikey". -->
-        <button v-for="paperSize in paperSizes" :key="paperSize.id" type="button" class="ek-printout__paper"
-          :class="{ 'ek-printout__paper--active': selectedPaperSize.id == paperSize.id }"
-          :aria-pressed="selectedPaperSize.id == paperSize.id" :aria-label="paperLabel(paperSize)" @click="selectedPaperSize = paperSize">
-          <span class="ek-printout__paper-thumb" aria-hidden="true"
-            :style="{ width: paperSize.width / 36 + 'px', height: paperSize.height / 36 + 'px' }" />
-          <span class="ek-printout__paper-text">
-            <span class="ek-printout__paper-name">{{ paperSize.name.toUpperCase() }}</span>
-            <span class="ek-printout__paper-orient">{{ paperSize.width < paperSize.height ? 'Dikey' : 'Yatay' }}</span>
-          </span>
-        </button>
+      <div class="ek-tpl-gallery__toolbar">
+        <EkPageTabs v-model="kindFilter" :tabs="kindTabs" label="Belge türü" />
       </div>
 
-      <v-select clearable :label="$t('printouts.printout.fontsize')" variant="outlined"
-        hide-details class="ek-printout__select"></v-select>
-      <v-select clearable :label="$t('printouts.printout.fontfamily')" variant="outlined"
-        hide-details class="ek-printout__select"></v-select>
-      <v-select clearable :label="$t('printouts.printout.copy')" variant="outlined"
-        hide-details class="ek-printout__select"></v-select>
+      <section class="ek-tpl-gallery__section" aria-labelledby="ek-tpl-mine">
+        <header class="ek-tpl-gallery__head">
+          <h2 id="ek-tpl-mine">Şablonlarım</h2>
+          <span>{{ mine.length }}</span>
+          <p class="ek-tpl-gallery__storage"><v-icon icon="mdi-laptop" size="14" aria-hidden="true" />
+            {{ mine.length ? 'Bu tarayıcıda, hesabınıza ve mağazanıza özel saklanır.' : 'Henüz kendi şablonunuz yok — hazır bir şablonun kopyasıyla ya da boş tuvalle başlayın. Şablonlar bu tarayıcıda, hesabınıza özel saklanır.' }}</p>
+        </header>
+        <ul class="ek-tpl-grid">
+          <li>
+            <button type="button" class="ek-tpl-create" @click="openCreate">
+              <span class="ek-tpl-create__icon" aria-hidden="true"><v-icon icon="mdi-plus" size="24" /></span>
+              <strong>Boş şablon</strong>
+              <span>{{ kindFilter === 'all' ? 'Tür ve kâğıt seçerek başlayın' : `${docKindLabel(kindFilter)} · boş tuval` }}</span>
+            </button>
+          </li>
+          <li v-for="t in mine" :key="t.id">
+            <article class="ek-tpl-card" :aria-label="t.name">
+              <button type="button" class="ek-tpl-card__thumb" :aria-label="`${t.name} önizle`" @click="openPreview(t)">
+                <TemplatePaper :doc="t" :data="thumbData" :fit="THUMB" :label="`${t.name} küçük resmi`" />
+              </button>
+              <div class="ek-tpl-card__body">
+                <h3 class="ek-tpl-card__name">{{ t.name }}</h3>
+                <p class="ek-tpl-card__meta">{{ docKindLabel(t.kind) }} · {{ paperLabel(t.paper) }}</p>
+                <div class="ek-tpl-card__badges">
+                  <EkBadge v-if="isDefault(t)" text="Varsayılan" tone="success" />
+                  <span v-if="t.updatedAt" class="ek-tpl-card__time">{{ formatDateTime(t.updatedAt) }}</span>
+                </div>
+              </div>
+              <footer class="ek-tpl-card__actions">
+                <EkButton tone="secondary" size="sm" icon="mdi-pencil-outline" @click="openEditor(t)">Düzenle</EkButton>
+                <EkRowActions :label="`${t.name} işlemleri`" :items="cardActions(t)" />
+              </footer>
+            </article>
+          </li>
+        </ul>
+      </section>
 
-      <div class="ek-printout__actions">
-        <!-- Dürüst durum: şablon kaydı/test çıktısı backend'e bağlı değil (API yok) → düğmeler devre dışı + açıklama. -->
-        <EkButton tone="primary" icon="mdi-printer-outline" disabled :title="NOT_CONNECTED">{{ $t("printouts.printout.test") }}</EkButton>
-        <EkButton tone="secondary" icon="mdi-cancel" disabled :title="NOT_CONNECTED">{{ $t("printouts.printout.clear") }}</EkButton>
-      </div>
-    </div>
+      <section class="ek-tpl-gallery__section" aria-labelledby="ek-tpl-starters">
+        <header class="ek-tpl-gallery__head">
+          <h2 id="ek-tpl-starters">Hazır şablonlar</h2>
+          <span>{{ starters.length }}</span>
+          <p>Değiştirilemez; kopyasını düzenleyerek kendi şablonunuzu oluşturun.</p>
+        </header>
+        <ul class="ek-tpl-grid">
+          <li v-for="t in starters" :key="t.id">
+            <article class="ek-tpl-card" :aria-label="t.name">
+              <button type="button" class="ek-tpl-card__thumb" :aria-label="`${t.name} önizle`" @click="openPreview(t)">
+                <TemplatePaper :doc="t" :data="thumbData" :fit="THUMB" :label="`${t.name} küçük resmi`" />
+              </button>
+              <div class="ek-tpl-card__body">
+                <h3 class="ek-tpl-card__name">{{ t.name }}</h3>
+                <p class="ek-tpl-card__meta">{{ docKindLabel(t.kind) }} · {{ paperLabel(t.paper) }}</p>
+                <div class="ek-tpl-card__badges">
+                  <EkBadge text="Hazır" tone="neutral" />
+                  <EkBadge v-if="isDefault(t)" text="Varsayılan" tone="success" />
+                </div>
+              </div>
+              <footer class="ek-tpl-card__actions">
+                <EkButton tone="secondary" size="sm" icon="mdi-content-copy" @click="editCopy(t)">Kopyasını düzenle</EkButton>
+                <EkRowActions :label="`${t.name} işlemleri`" :items="cardActions(t)" />
+              </footer>
+            </article>
+          </li>
+        </ul>
+      </section>
+    </template>
 
-    <EkAlert tone="info" dense icon="mdi-flask-outline" title="Şablon tasarımcısı önizlemede"
-      text="Alanları soldaki listeden kâğıda sürükleyip yerleşimi deneyebilirsiniz. Şablonu kaydetme ve test çıktısı alma henüz bağlı değil; tasarımınız sayfadan çıkınca saklanmaz." />
+    <!-- Düzenleyiciden önizlemeye geçerken düzenleyici AÇIK kalır (v-show): geri al geçmişi ve kaydedilmemiş durum korunur. -->
+    <TemplateEditor v-if="current && (view === 'editor' || (view === 'preview' && previewFrom === 'editor'))" v-show="view === 'editor'"
+      :template="current" @save="onSave" @close="requestClose" @preview="(d) => openPreview(d, 'editor')" @dirty="(v) => (editorDirty = v)" />
 
-    <div class="ek-printout__workspace">
-      <div class="ek-printout__palette" @dragstart="dragStart">
-        <section v-for="group in paletteGroups" :key="group.title" class="ek-printout__group">
-          <h2 class="ek-printout__group-title">{{ group.title }}</h2>
-          <div v-for="field in group.fields" :key="field" draggable="true" class="ek-printout__field">{{ field }}</div>
-        </section>
-      </div>
+    <TemplatePreview v-if="view === 'preview' && previewDoc" :doc="previewDoc" :back-label="previewFrom === 'editor' ? 'Düzenleyici' : 'Şablonlar'"
+      @back="previewFrom === 'editor' ? (view = 'editor') : backToGallery()" @edit="onPreviewEdit"
+      @printed="(n) => toast(`${n} sayfa yazdırma penceresine gönderildi.`)" />
 
-      <div class="ek-printout__stage">
-        <div v-if="selectedDragElement" class="ek-printout__panel">
-          <div class="ek-printout__panel-title">{{ selectedDragElement.target.innerHTML }}</div>
-          <div class="ek-printout__panel-fields">
-            <v-text-field clearable :label="$t('printouts.printout.width')"
-              variant="outlined" hide-details></v-text-field>
-            <v-text-field clearable :label="$t('printouts.printout.height')"
-              variant="outlined" hide-details></v-text-field>
-          </div>
-          <v-btn prepend-icon="mdi-trash-can-outline" @click="selectedDragElement.target.remove()" variant="outlined"
-            color="error" class="ek-printout__delete">{{ $t("printouts.printout.delete") }}</v-btn>
-        </div>
+    <!-- Yeni şablon -->
+    <EkFormDialog v-model="createOpen" title="Yeni şablon" description="Belge türünü ve kâğıdı seçin; boş tuvalle başlarsınız." submit-label="Oluştur" submit-icon="mdi-plus"
+      @submit="createBlank" @cancel="createOpen = false">
+      <fieldset class="ek-tpl-kinds">
+        <legend>Belge türü</legend>
+        <label v-for="k in DOC_KINDS" :key="k.id" class="ek-tpl-kind" :class="{ 'is-active': createKind === k.id }">
+          <input v-model="createKind" type="radio" name="ek-tpl-kind" :value="k.id" />
+          <v-icon :icon="k.icon" size="20" aria-hidden="true" />
+          <span><strong>{{ k.label }}</strong><small>{{ k.hint }}</small></span>
+        </label>
+      </fieldset>
+      <v-select v-model="createPaper" :items="PAPER_PRESETS" item-title="label" item-value="id" label="Kâğıt / etiket" hide-details>
+        <template #item="{ props: ip, item }"><v-list-item v-bind="ip" role="option" :subtitle="item.raw.hint" /></template>
+      </v-select>
+    </EkFormDialog>
 
-        <!-- fe-polish (axe scrollable-region-focusable): dar ekranda yatay kayan kâğıt alanı klavyeyle de kaydırılabilir. -->
-        <div class="ek-printout__canvas-scroll" tabindex="0" role="region" aria-label="Şablon kâğıdı">
-          <v-card id="a4" :height="selectedPaperSize.height" :width="selectedPaperSize.width" @drop="drop"
-            class="ek-printout__canvas" elevation="0" @dragover="allowDrop" @dragend="dragLeave">
-          </v-card>
-        </div>
-      </div>
-    </div>
+    <EkConfirmDialog v-model="deleteAsk.open" :title="`'${deleteAsk.doc?.name}' silinsin mi?`" danger confirm-label="Sil"
+      description="Şablon bu tarayıcıdan kalıcı olarak silinir. Varsayılan şablonsa bu türün varsayılanı hazır şablona döner."
+      @confirm="confirmDelete" @cancel="deleteAsk.open = false" />
+    <EkConfirmDialog v-model="leaveAsk" title="Kaydedilmemiş değişiklikler silinsin mi?" danger confirm-label="Değişiklikleri at"
+      description="Düzenleyiciden çıkarsanız son kaydettiğiniz sürüm kalır." @confirm="discardAndLeave" @cancel="leaveAsk = false" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n';
-import { ref, reactive, onMounted, watch } from 'vue'
-import { EkAlert, EkButton } from '@entegrasyonik/ui/components'
+import { computed, reactive, ref, watch } from 'vue'
+import { EkAlert, EkBadge, EkButton, EkConfirmDialog, EkFormDialog, EkPageTabs, EkRowActions, type EkPageTab, type EkRowAction } from '@entegrasyonik/ui/components'
+import { formatDateTime } from '@entegrasyonik/ui/format'
 import EkPageHeader from '@/components/page/EkPageHeader.vue'
+import useUser from '@/composables/user'
+import { useToast } from '@entegrasyonik/ui/composables/useToast'
+import TemplateEditor from '@/components/printouts/TemplateEditor.vue'
+import TemplatePaper from '@/components/printouts/TemplatePaper.vue'
+import TemplatePreview from '@/components/printouts/TemplatePreview.vue'
+import {
+  DOC_KINDS, PAPER_PRESETS, STARTER_TEMPLATES, blankTemplate, cloneDoc, copyTemplate, docKindLabel, paperLabel, sampleData,
+  type DocKind, type TemplateDoc,
+} from '@/components/printouts/templateModel'
+import { TEMPLATE_LIMIT, readTemplates, templateStorageKey, writeTemplates, type TemplateFile } from '@/components/printouts/templateStore'
 
-
-const { t } = useI18n()
-var globalDragEvent: any = undefined
-var selectedDragElement: any = ref(undefined)
-
-var printoutDatas = [
-  {
-    title: "Müşteri Bilgileri"
-  },
-  {
-    title: "Fatura Bilgileri"
-  },
-  {
-    title: "Ürün/Hizmet Bilgileri"
-  },
-  {
-    title: "Tutar Bilgileri"
-  },
-  {
-    title: "Notlar"
-  },
-
+const TIPS = [
+  'Hazır bir şablonun kopyasıyla başlayın; alanları soldan tıklayarak ya da sürükleyerek ekleyin.',
+  'Önizlemede "Uzun içerik" verisiyle taşmayı yazdırmadan görün; denetim sorunlu öğeyi gösterir.',
+  'Birden çok sipariş seçip tek seferde yazdırın; her sipariş ayrı sayfa olur.',
 ]
-var paperSizeDimensions = {
-  width: 630,
-  height: 891
-}
-var paperSizes = [
-  {
-    id: 1,
-    name: 'a4',
-    width: paperSizeDimensions.width,
-    height: paperSizeDimensions.height,
-  },
-  {
-    id: 2,
-    name: 'a4',
-    width: paperSizeDimensions.height,
-    height: paperSizeDimensions.width,
-  },
-  {
-    id: 3,
-    name: 'a5',
-    width: paperSizeDimensions.width / 1.414,
-    height: paperSizeDimensions.height / 1.414,
-  },
-  {
-    id: 4,
-    name: 'a5',
-    width: paperSizeDimensions.height / 1.414,
-    height: paperSizeDimensions.width / 1.414,
-  },
-]
-var selectedPaperSize: any = ref(paperSizes[0])
-const paperLabel = (p: any) => `${String(p.name).toUpperCase()} ${p.width < p.height ? 'dikey' : 'yatay'}`
-const NOT_CONNECTED = 'Şablon kaydı ve test çıktısı henüz bağlı değil'
+const THUMB = { w: 176, h: 168 }
 
-// Sürüklenebilir alan paleti (görsel katman — önceki statik şablonla AYNI metinler/sıra/gruplar).
-const paletteGroups = [
-  { title: 'Müşteri Bilgileri', fields: ['Müşteri Adı/Soyadı', 'TC Kimlik/Vergi Numarası', 'Teslimat Adresi', 'Fatura Adresi', 'İl', 'İlçe', 'Vergi Dairesi'] },
-  { title: 'Ürün Bilgileri', fields: ['Ürün Adı', 'Ürün Stok Kodu', 'Ürün Adedi', 'Ürün Barkodu', 'Ürün Birim Fiyat', 'Ürün KDV Oranı', 'Ürün KDV Tutarı', 'Ürün Toplam Tutar'] },
-  { title: 'Fatura Bilgileri', fields: ['Sipariş Numarası', 'Tarih', 'Saat', 'Sevk Tarihi', 'Açıklama', 'Sabit Açıklama', 'KDV %18', 'KDV %8', 'KDV %1'] },
-  { title: 'Toplamlar', fields: ['KDV Toplamı', "KDV'siz Toplam", "KDV'li Toplam"] },
-]
+const { getSessionScope } = useUser()
+const { showToast } = useToast()
+const toast = (message: string) => showToast({ tone: 'success', message })
 
-
-var selectDragElement = (event: any) => {
-  if (selectedDragElement.value && selectedDragElement.value.target) selectedDragElement.value.target.style.color = "var(--ek-color-content-default)"
-  if (selectedDragElement.value && selectedDragElement.value.target && selectedDragElement.value.target.innerHTML == event.target.innerHTML) {
-    selectedDragElement.value = undefined
-  }
-  else {
-    selectedDragElement.value = event
-    selectedDragElement.value.target.style.color = "var(--ek-color-action)" // FR2-DARK: seçili alan, iki temada token
-  }
-
+// ─── Saklama ───
+const storageKey = computed(() => templateStorageKey(getSessionScope.value.userId, getSessionScope.value.tenantId))
+const file = ref<TemplateFile>({ v: 1, templates: [], defaults: {} })
+const persistent = ref(true)
+watch(storageKey, (k) => {
+  const r = readTemplates(k)
+  file.value = r.file
+  persistent.value = r.persistent || !k
+}, { immediate: true })
+function persist() {
+  if (!writeTemplates(storageKey.value, file.value) && storageKey.value) persistent.value = false
 }
 
-var dragStart = (event: any) => {
-  console.log("drag start")
-  globalDragEvent = event
-  if (event.target.getAttribute("type") == "move")
-    event.target.style.opacity = ".5"
+// ─── Galeri ───
+type KindFilter = DocKind | 'all'
+const kindFilter = ref<KindFilter>('all')
+const all = computed(() => [...file.value.templates, ...STARTER_TEMPLATES])
+const kindTabs = computed<EkPageTab[]>(() => [
+  { value: 'all', label: 'Tümü', count: all.value.length },
+  ...DOC_KINDS.map((k) => ({ value: k.id, label: k.label, count: all.value.filter((t) => t.kind === k.id).length })),
+])
+const byKind = (list: readonly TemplateDoc[]) => (kindFilter.value === 'all' ? [...list] : list.filter((t) => t.kind === kindFilter.value))
+const mine = computed(() => byKind(file.value.templates).sort((a, b) => String(b.updatedAt ?? '').localeCompare(String(a.updatedAt ?? ''))))
+const starters = computed(() => byKind(STARTER_TEMPLATES))
+const thumbData = sampleData('normal')
+
+/** Tür başına varsayılan: kullanıcı seçimi yoksa o türün ilk hazır şablonu. */
+function isDefault(t: TemplateDoc) {
+  const chosen = file.value.defaults[t.kind]
+  if (chosen && all.value.some((x) => x.id === chosen)) return chosen === t.id
+  return STARTER_TEMPLATES.find((s) => s.kind === t.kind)?.id === t.id
 }
-
-var dragLeave = (event: any) => {
-  console.log("drag leave")
-  // globalDragEvent = event
-  globalDragEvent.target.style.opacity = "1"
+function setDefault(t: TemplateDoc) {
+  file.value = { ...file.value, defaults: { ...file.value.defaults, [t.kind]: t.id } }
+  persist()
+  toast(`'${t.name}' artık ${docKindLabel(t.kind).toLocaleLowerCase('tr-TR')} için varsayılan.`)
 }
-
-var allowDrop = (event: any) => {
-  event.preventDefault();
-}
-
-var drop = (event: any) => {
-  event.preventDefault();
-  var a4 = document.getElementById("a4")
-  if (a4) {
-    var mouseX = event.clientX - a4.getBoundingClientRect().left;
-    var mouseY = event.clientY - a4.getBoundingClientRect().top;
-    if (globalDragEvent) {
-      var clientHeight = globalDragEvent.offsetY;
-      var clientWidth = globalDragEvent.offsetX;
-      var type = globalDragEvent.target.getAttribute("type")
-      if (type == "move") {
-        globalDragEvent.target.remove()
-      }
-      var newParagraph = document.createElement('p');
-      newParagraph.style.position = "absolute"
-      newParagraph.style.left = (mouseX - clientWidth) + 'px'
-      newParagraph.draggable = true
-      newParagraph.ondragstart = dragStart
-      newParagraph.onclick = selectDragElement
-      newParagraph.setAttribute("type", "move")
-      newParagraph.style.top = (mouseY - clientHeight) + 'px'
-      newParagraph.innerHTML = globalDragEvent.target.innerHTML
-      a4.appendChild(newParagraph)
-
-    }
-  }
-
-}
-
-var hebele = () => {
-  console.log("34343")
-}
-var reportsMenu = {
-  title: t('printouts.printout.reports.title'),
-  desc: t('printouts.printout.reports.desc'),
-  list: [
-    {
-      id: 1,
-      title: t('printouts.printout.reports.tax'),
-      path: '/support/ticket',
-      icon: 'mdi-message-question-outline'
-    },
-    {
-      id: 2,
-      title: t('printouts.printout.reports.commission'),
-      path: '/support/ticket/list',
-      icon: 'mdi-list-status'
-    },
-    {
-      id: 3,
-      title: t('printouts.printout.reports.category'),
-      path: '/support/school',
-      icon: 'mdi-school-outline'
-    },
-    {
-      id: 4,
-      title: t('printouts.printout.reports.brand'),
-      path: '/support/school',
-      icon: 'mdi-school-outline'
-    },
-
+function cardActions(t: TemplateDoc): EkRowAction[] {
+  const items: EkRowAction[] = [
+    { key: 'view', action: 'view', label: 'Önizle ve yazdır', icon: 'mdi-printer-outline', onClick: () => openPreview(t), inline: true },
+    { key: 'copy', action: 'copy', label: 'Çoğalt', onClick: () => duplicate(t), inline: false },
   ]
+  if (!isDefault(t)) items.push({ key: 'default', action: 'approve', label: 'Varsayılan yap', icon: 'mdi-star-outline', onClick: () => setDefault(t), inline: false })
+  if (!t.system) items.push({ key: 'delete', action: 'delete', label: 'Sil', onClick: () => askDelete(t), inline: false })
+  return items
 }
 
-var a = () => {
+// ─── Görünüm akışı ───
+const view = ref<'gallery' | 'editor' | 'preview'>('gallery')
+/** Düzenleyicideki şablon (kayıtlı sürüm). */
+const current = ref<TemplateDoc | null>(null)
+/** Önizlenen anlık görüntü (düzenleyiciden geldiyse kaydedilmemiş değişiklikleri içerir). */
+const previewDoc = ref<TemplateDoc | null>(null)
+const previewFrom = ref<'gallery' | 'editor'>('gallery')
+const editorDirty = ref(false)
+const leaveAsk = ref(false)
+
+function addTemplate(doc: TemplateDoc): boolean {
+  if (file.value.templates.length >= TEMPLATE_LIMIT) {
+    showToast({ tone: 'warning', message: `En fazla ${TEMPLATE_LIMIT} şablon saklanabilir — kullanmadıklarınızı silin.` })
+    return false
+  }
+  const stamped = { ...doc, updatedAt: new Date().toISOString() }
+  file.value = { ...file.value, templates: [stamped, ...file.value.templates] }
+  persist()
+  return true
+}
+function openEditor(t: TemplateDoc) {
+  current.value = cloneDoc(t)
+  previewDoc.value = null
+  editorDirty.value = false
+  view.value = 'editor'
+}
+function editCopy(t: TemplateDoc) {
+  const c = copyTemplate(t)
+  if (!addTemplate(c)) return
+  toast(`'${c.name}' oluşturuldu.`)
+  openEditor(file.value.templates[0])
+}
+function duplicate(t: TemplateDoc) {
+  const c = copyTemplate(t)
+  if (addTemplate(c)) toast(`'${c.name}' oluşturuldu.`)
+}
+function openPreview(t: TemplateDoc, from: 'gallery' | 'editor' = 'gallery') {
+  previewDoc.value = cloneDoc(t)
+  previewFrom.value = from
+  if (from === 'gallery') current.value = null
+  view.value = 'preview'
+}
+function onPreviewEdit() {
+  const d = previewDoc.value
+  if (!d) return
+  if (previewFrom.value === 'editor') view.value = 'editor'
+  else if (d.system) editCopy(d)
+  else openEditor(file.value.templates.find((t) => t.id === d.id) ?? d)
+}
+function backToGallery() {
+  view.value = 'gallery'
+  current.value = null
+  previewDoc.value = null
+}
+function onSave(doc: TemplateDoc) {
+  const stamped = { ...doc, system: false, updatedAt: new Date().toISOString() }
+  const exists = file.value.templates.some((t) => t.id === doc.id)
+  file.value = { ...file.value, templates: exists ? file.value.templates.map((t) => (t.id === doc.id ? stamped : t)) : [stamped, ...file.value.templates] }
+  persist()
+  current.value = stamped
+  editorDirty.value = false
+  toast(`'${doc.name}' kaydedildi.`)
+}
+function requestClose() {
+  if (editorDirty.value) leaveAsk.value = true
+  else backToGallery()
+}
+function discardAndLeave() {
+  leaveAsk.value = false
+  editorDirty.value = false
+  backToGallery()
 }
 
-var buttons = [
-  {
-    title: t("printouts.printout.save"),
-    icon: 'mdi-pencil-outline',
-    color: 'primary',
-    to: '',
-    click: a
-  },
-]
+// ─── Yeni şablon ───
+const createOpen = ref(false)
+const createKind = ref<DocKind>('shipping-label')
+const createPaper = ref('label-100x150')
+watch(createKind, (k) => { createPaper.value = k === 'shipping-label' ? 'label-100x150' : 'a4' })
+function openCreate() {
+  createKind.value = kindFilter.value === 'all' ? 'shipping-label' : kindFilter.value
+  createOpen.value = true
+}
+function createBlank() {
+  const doc = blankTemplate(createKind.value, createPaper.value)
+  if (!addTemplate(doc)) return
+  createOpen.value = false
+  openEditor(file.value.templates[0])
+}
 
-
-const headers = [
-  {
-    id: 1,
-    title: t('printouts.printout.headers.platform'),
-    value: "platform",
-    sortable: true
-  },
-  {
-    id: 1,
-    title: t('printouts.printout.headers.customer'),
-    value: "customer",
-    sortable: true
-  },
-  {
-    id: 1,
-    title: t('printouts.printout.headers.product'),
-    value: "product",
-    sortable: true
-  },
-  {
-    id: 1,
-    title: t('printouts.printout.headers.stockcode'),
-    value: "stockcode",
-    sortable: true
-  },
-  {
-    id: 1,
-    title: t('printouts.printout.headers.count'),
-    value: "count",
-    sortable: true
-  },
-  {
-    id: 1,
-    title: t('printouts.printout.headers.commission'),
-    value: "commission",
-    sortable: true
-  },
-  {
-    id: 1,
-    title: t('printouts.printout.headers.price'),
-    value: "price",
-    sortable: true
-  },
-  {
-    id: 1,
-    title: "actions",
-    value: "actions"
-  },
-]
-
-const items = [
-  {
-    id: 1,
-    orderId: 232323,
-    customer: "Emre Yalçınkaya",
-    date: '09 Ocak 2024',
-    cost: '2.099,90',
-    totals: {
-      count: 1,
-      price: "2.099,90",
-      commission: "345,00"
-    },
-    products: [
-      {
-        name: "Hobby 226028 Hakiki Deri Kadın Günlük Bot Siyah 37",
-        stockcode: "hb226028s-37",
-        count: 1,
-        price: "2.099,90",
-        commission: "345,00",
-      }
-    ],
-
-    platform: 'n11',
-    status: 1,
-  },
-  {
-
-    id: 1,
-    orderId: 232323,
-    customer: "Emre Yalçınkaya",
-    date: '09 Ocak 2024',
-    cost: '2.099,90',
-    totals: {
-      count: 2,
-      price: "4.099,90",
-      commission: "745,00"
-    },
-    products: [
-      {
-        name: "Hobby 226028 Hakiki Deri Kadın Günlük Bot Siyah 37",
-        stockcode: "hb226028s-37",
-        count: 1,
-        price: "2.099,90",
-        commission: "345,00",
-      },
-      {
-        name: "Hobby 226028 Hakiki Deri Kadın Günlük Bot Siyah 37",
-        stockcode: "hb226028s-37",
-        count: 1,
-        price: "2.099,90",
-        commission: "345,00",
-      }
-
-    ],
-
-    platform: 'amazon',
-    status: 1,
-
-  },
-  {
-    id: 1,
-    orderId: 232323,
-    customer: "Emre Yalçınkaya",
-    date: '09 Ocak 2024',
-    cost: '2.099,90',
-    totals: {
-      count: 1,
-      price: "2.099,90",
-      commission: "345,00"
-    },
-    products: [
-      {
-        name: "Hobby 226028 Hakiki Deri Kadın Günlük Bot Siyah 37",
-        stockcode: "hb226028s-37",
-        count: 1,
-        price: "2.099,90",
-        commission: "345,00",
-      }
-    ],
-
-    platform: 'hepsiburada',
-    status: 1,
-
-  },
-  {
-    id: 1,
-    orderId: 232323,
-    customer: "Emre Yalçınkaya",
-    date: '09 Ocak 2024',
-    cost: '2.099,90',
-    totals: {
-      count: 1,
-      price: "2.099,90",
-      commission: "345,00"
-    },
-    products: [
-      {
-        name: "Hobby 226028 Hakiki Deri Kadın Günlük Bot Siyah 37",
-        stockcode: "hb226028s-37",
-        count: 1,
-        price: "2.099,90",
-        commission: "345,00",
-      }
-    ],
-
-    platform: 'trendyol',
-    status: 1,
-
-  },
-  {
-    id: 1,
-    orderId: 232323,
-    customer: "Emre Yalçınkaya",
-    date: '09 Ocak 2024',
-    cost: '2.099,90',
-    totals: {
-      count: 1,
-      price: "2.099,90",
-      commission: "345,00"
-    },
-    products: [
-      {
-        name: "Hobby 226028 Hakiki Deri Kadın Günlük Bot Siyah 37",
-        stockcode: "hb226028s-37",
-        count: 1,
-        price: "2.099,90",
-        commission: "345,00",
-      }
-    ],
-
-    platform: 'pazarama',
-    status: 1,
-  },
-  {
-    id: 1,
-    orderId: 232323,
-    customer: "Emre Yalçınkaya",
-    date: '09 Ocak 2024',
-    cost: '2.099,90',
-    totals: {
-      count: 1,
-      price: "2.099,90",
-      commission: "345,00"
-    },
-    products: [
-      {
-        name: "Hobby 226028 Hakiki Deri Kadın Günlük Bot Siyah 37",
-        stockcode: "hb226028s-37",
-        count: 1,
-        price: "2.099,90",
-        commission: "345,00",
-      }
-    ],
-
-    platform: 'pttavm',
-    status: 1,
-
-  },
-  {
-    id: 1,
-    orderId: 232323,
-    customer: "Emre Yalçınkaya",
-    date: '09 Ocak 2024',
-    cost: '2.099,90',
-    totals: {
-      count: 1,
-      price: "2.099,90",
-      commission: "345,00"
-    },
-    products: [
-      {
-        name: "Hobby 226028 Hakiki Deri Kadın Günlük Bot Siyah 37",
-        stockcode: "hb226028s-37",
-        count: 1,
-        price: "2.099,90",
-        commission: "345,00",
-      }
-    ],
-
-    platform: 'hepsiburada',
-    status: 1,
-  },
-  {
-    id: 1,
-    orderId: 232323,
-    customer: "Emre Yalçınkaya",
-    date: '09 Ocak 2024',
-    cost: '2.099,90',
-    totals: {
-      count: 1,
-      price: "2.099,90",
-      commission: "345,00"
-    },
-    products: [
-      {
-        name: "Hobby 226028 Hakiki Deri Kadın Günlük Bot Siyah 37",
-        stockcode: "hb226028s-37",
-        count: 1,
-        price: "2.099,90",
-        commission: "345,00",
-      }
-    ],
-
-    platform: 'hepsiburada',
-    status: 1,
-  },
-  {
-    id: 1,
-    orderId: 232323,
-    customer: "Emre Yalçınkaya",
-    date: '09 Ocak 2024',
-    cost: '2.099,90',
-    totals: {
-      count: 1,
-      price: "2.099,90",
-      commission: "345,00"
-    },
-    products: [
-      {
-        name: "Hobby 226028 Hakiki Deri Kadın Günlük Bot Siyah 37",
-        stockcode: "hb226028s-37",
-        count: 1,
-        price: "2.099,90",
-        commission: "345,00",
-      }
-    ],
-
-    platform: 'hepsiburada',
-    status: 1,
-  },
-  {
-    id: 1,
-    orderId: 232323,
-    customer: "Emre Yalçınkaya",
-    date: '09 Ocak 2024',
-    cost: '2.099,90',
-    totals: {
-      count: 1,
-      price: "2.099,90",
-      commission: "345,00"
-    },
-    products: [
-      {
-        name: "Hobby 226028 Hakiki Deri Kadın Günlük Bot Siyah 37",
-        stockcode: "hb226028s-37",
-        count: 1,
-        price: "2.099,90",
-        commission: "345,00",
-      }
-    ],
-    platform: 'hepsiburada',
-    status: 1,
-  },
-
-]
-
-onMounted(() => {
-});
-
-
-
-var selectedUpdateId = ref(-1)
-var openUpdate = (id: number) => {
-
+// ─── Silme ───
+const deleteAsk = reactive<{ open: boolean; doc: TemplateDoc | null }>({ open: false, doc: null })
+function askDelete(t: TemplateDoc) { deleteAsk.doc = t; deleteAsk.open = true }
+function confirmDelete() {
+  const t = deleteAsk.doc
+  deleteAsk.open = false
+  if (!t) return
+  const defaults = { ...file.value.defaults }
+  if (defaults[t.kind] === t.id) delete defaults[t.kind]
+  file.value = { ...file.value, templates: file.value.templates.filter((x) => x.id !== t.id), defaults }
+  persist()
+  toast(`'${t.name}' silindi.`)
 }
 </script>
 
@@ -597,218 +313,130 @@ var openUpdate = (id: number) => {
   padding: var(--ek-space-6);
   min-width: 0;
 }
-
-.ek-printout__toolbar {
+.ek-tpl-gallery__toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--ek-space-3);
+  justify-content: space-between;
+  gap: var(--ek-space-2) var(--ek-space-4);
+  border-bottom: 1px solid var(--ek-color-border-subtle);
 }
-
-.ek-printout__select {
-  flex: 1 1 160px;
-  min-width: 160px;
-  max-width: 240px;
-}
-
-.ek-printout__select--type {
-  flex-basis: 200px;
-}
-
-.ek-printout__papers {
+.ek-tpl-gallery__toolbar :deep(.ek-page-tabs) { min-width: 0; max-width: 100%; }
+.ek-tpl-gallery__head .ek-tpl-gallery__storage { display: flex; align-items: flex-start; gap: var(--ek-space-1); }
+.ek-tpl-gallery__storage .v-icon { margin-top: 2px; flex: none; }
+.ek-tpl-create {
   display: flex;
-  align-items: flex-end;
-  gap: var(--ek-space-2);
-}
-
-.ek-printout__paper {
-  display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  gap: var(--ek-space-2);
-  min-height: 44px;
-  padding: var(--ek-space-1) var(--ek-space-3);
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-control, var(--ek-radius-sm));
-  background: var(--ek-color-surface);
-  color: var(--ek-color-content-default);
-  cursor: pointer;
-  transition: background-color var(--ek-duration-fast) var(--ek-easing-standard),
-    border-color var(--ek-duration-fast) var(--ek-easing-standard);
-}
-
-.ek-printout__paper:hover {
-  border-color: var(--ek-color-border-strong);
-}
-
-.ek-printout__paper:focus-visible {
-  outline: none;
-  box-shadow: var(--ek-focus-ring);
-}
-
-.ek-printout__paper--active {
-  border-color: var(--ek-color-action-border);
-  background: var(--ek-color-action-subtle);
-  color: var(--ek-color-action-emphasis);
-}
-
-.ek-printout__paper-thumb {
-  flex: none;
-  border: 1.5px solid currentColor;
-  border-radius: 2px;
-  background: var(--ek-color-surface);
-}
-
-.ek-printout__paper-text {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  line-height: 1.15;
-}
-
-.ek-printout__paper-name {
-  font-size: var(--ek-type-caption-size);
-  font-weight: var(--ek-font-weight-semibold);
-}
-
-.ek-printout__paper-orient {
-  font-size: var(--ek-type-micro-size);
-  color: var(--ek-color-content-muted);
-}
-
-.ek-printout__actions {
-  display: flex;
-  gap: var(--ek-space-2);
-  margin-left: auto;
-}
-
-.ek-printout__workspace {
-  display: grid;
-  grid-template-columns: minmax(0, 424px) minmax(0, 1fr);
-  gap: var(--ek-space-4);
-  align-items: start;
+  justify-content: center;
+  gap: var(--ek-space-1);
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
   padding: var(--ek-space-4);
-  background: var(--ek-color-surface-muted);
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-lg);
-}
-
-.ek-printout__palette {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--ek-space-3);
-  align-items: start;
-}
-
-.ek-printout__group {
-  padding: var(--ek-space-3);
+  border: 1px dashed var(--ek-color-border-strong);
+  border-radius: var(--ek-radius-card);
   background: var(--ek-color-surface);
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-md);
-}
-
-.ek-printout__group-title {
-  margin: 0 0 var(--ek-space-2);
-  font-size: var(--ek-font-size-xs);
-  font-weight: var(--ek-font-weight-semibold);
-  color: var(--ek-color-content-muted);
-}
-
-.ek-printout__field {
-  padding: var(--ek-space-1) var(--ek-space-2);
-  font-size: var(--ek-font-size-sm);
-  color: var(--ek-color-content-default);
-  border-radius: var(--ek-radius-sm);
-  cursor: grab;
-  transition: background-color var(--ek-duration-fast) var(--ek-easing-standard);
-}
-
-.ek-printout__field:hover {
-  background: var(--ek-color-surface-sunken);
-}
-
-.ek-printout__stage {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ek-space-3);
-  min-width: 0;
-}
-
-.ek-printout__panel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ek-space-3);
-  max-width: 420px;
-  padding: var(--ek-space-4);
-  background: var(--ek-color-surface);
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-md);
-}
-
-.ek-printout__panel-title {
-  font-size: var(--ek-font-size-sm);
-  font-weight: var(--ek-font-weight-semibold);
   color: var(--ek-color-content-strong);
+  font-size: var(--ek-font-size-sm);
+  text-align: center;
+  transition: var(--ek-transition-colors);
 }
-
-.ek-printout__panel-fields {
+.ek-tpl-create > span:last-child { font-size: var(--ek-font-size-xs); color: var(--ek-color-content-muted); }
+.ek-tpl-create:hover { border-color: var(--ek-color-action-border); background: var(--ek-color-action-subtle); }
+.ek-tpl-create:focus-visible { outline: none; box-shadow: var(--ek-focus-ring); }
+.ek-tpl-create__icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: var(--ek-space-2);
+  border-radius: var(--ek-radius-full);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action);
+}
+.ek-tpl-gallery__section + .ek-tpl-gallery__section { margin-top: var(--ek-space-4); }
+.ek-tpl-gallery__head {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--ek-space-2);
+  align-items: baseline;
+  gap: var(--ek-space-1) var(--ek-space-2);
+  margin-bottom: var(--ek-space-3);
 }
+.ek-tpl-gallery__head h2 { margin: 0; font-size: var(--ek-font-size-md); font-weight: var(--ek-font-weight-semibold); color: var(--ek-color-content-strong); }
+.ek-tpl-gallery__head > span { font-size: var(--ek-font-size-xs); color: var(--ek-color-content-muted); font-variant-numeric: tabular-nums; }
+.ek-tpl-gallery__head p { flex-basis: 100%; margin: 0; font-size: var(--ek-font-size-xs); color: var(--ek-color-content-muted); }
 
-.ek-printout__panel-fields > * {
-  flex: 1 1 140px;
-}
-
-.ek-printout__delete {
-  align-self: flex-start;
-}
-
-.ek-printout__canvas-scroll {
-  overflow: auto;
-  max-width: 100%;
-}
-
-.ek-printout__canvas-scroll:focus-visible {
-  outline: none;
-  border-radius: var(--ek-radius-sm);
-  box-shadow: var(--ek-focus-ring);
-}
-
-.ek-printout__canvas {
-  flex: none;
-  background: var(--ek-color-surface);
-  border: 1px solid var(--ek-color-border-strong);
-  border-radius: var(--ek-radius-sm);
-  box-shadow: var(--ek-shadow-sm);
-}
-
-.ek-printout__canvas :deep(p) {
+.ek-tpl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+  gap: var(--ek-space-4);
+  list-style: none;
   margin: 0;
-  padding: 0 var(--ek-space-1);
-  font-size: var(--ek-font-size-sm);
-  cursor: grab;
+  padding: 0;
+}
+.ek-tpl-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 1px solid var(--ek-color-border-subtle);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface);
+  box-shadow: var(--ek-shadow-card);
+  overflow: hidden;
+  transition: var(--ek-transition-colors);
+}
+.ek-tpl-card:hover { border-color: var(--ek-color-border-strong); box-shadow: var(--ek-shadow-md); }
+.ek-tpl-card__thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  background: var(--ek-color-surface-sunken);
+  border-bottom: 1px solid var(--ek-color-border-subtle);
+  cursor: zoom-in;
+}
+.ek-tpl-card__thumb:focus-visible { outline: none; box-shadow: inset var(--ek-focus-ring); }
+.ek-tpl-card__body { display: flex; flex-direction: column; gap: var(--ek-space-1); flex: 1 1 auto; padding: var(--ek-space-3) var(--ek-space-4) var(--ek-space-2); }
+.ek-tpl-card__name { margin: 0; font-size: var(--ek-font-size-sm); font-weight: var(--ek-font-weight-semibold); color: var(--ek-color-content-strong); }
+.ek-tpl-card__meta { margin: 0; font-size: var(--ek-font-size-xs); color: var(--ek-color-content-muted); }
+.ek-tpl-card__badges { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ek-space-2); min-height: 22px; margin-top: var(--ek-space-1); }
+.ek-tpl-card__time { font-size: var(--ek-font-size-2xs); color: var(--ek-color-content-subtle); font-variant-numeric: tabular-nums; }
+.ek-tpl-card__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ek-space-2);
+  padding: var(--ek-space-2) var(--ek-space-3) var(--ek-space-3) var(--ek-space-4);
 }
 
-@media (max-width: 959px) {
-  .printoutListView {
-    padding: var(--ek-space-4);
-  }
-
-  .ek-printout__workspace {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .ek-printout__actions {
-    margin-left: 0;
-    width: 100%;
-  }
+.ek-tpl-kinds { display: grid; grid-template-columns: 1fr 1fr; gap: var(--ek-space-2); border: 0; margin: 0 0 var(--ek-space-4); padding: 0; }
+.ek-tpl-kinds legend { margin-bottom: var(--ek-space-2); font-size: var(--ek-font-size-sm); font-weight: var(--ek-font-weight-medium); color: var(--ek-color-content-strong); }
+.ek-tpl-kind {
+  display: flex;
+  gap: var(--ek-space-2);
+  align-items: flex-start;
+  padding: var(--ek-space-3);
+  border: 1px solid var(--ek-color-border-subtle);
+  border-radius: var(--ek-radius-md);
+  cursor: pointer;
+  color: var(--ek-color-content-muted);
+  transition: var(--ek-transition-colors);
 }
+.ek-tpl-kind:hover { border-color: var(--ek-color-border-strong); }
+.ek-tpl-kind.is-active { border-color: var(--ek-color-action-border); background: var(--ek-color-action-subtle); color: var(--ek-color-action); }
+.ek-tpl-kind input { position: absolute; opacity: 0; pointer-events: none; }
+.ek-tpl-kind:has(input:focus-visible) { box-shadow: var(--ek-focus-ring); }
+.ek-tpl-kind span { display: flex; flex-direction: column; font-size: var(--ek-font-size-sm); color: var(--ek-color-content-strong); }
+.ek-tpl-kind small { font-size: var(--ek-font-size-xs); color: var(--ek-color-content-muted); }
 
+@media (max-width: 599px) {
+  .ek-tpl-kinds { grid-template-columns: 1fr; }
+  .ek-tpl-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: var(--ek-space-3); }
+  .ek-tpl-card__thumb { height: 168px; }
+  .ek-tpl-card__actions { flex-wrap: wrap; padding-left: var(--ek-space-3); }
+}
 @media (prefers-reduced-motion: reduce) {
-  .ek-printout__paper,
-  .ek-printout__field {
-    transition: none;
-  }
+  .ek-tpl-card, .ek-tpl-kind, .ek-tpl-create { transition: none; }
 }
 </style>

@@ -229,11 +229,11 @@ export const PAGE_HELP: Record<string, PageHelp> = {
   // Kanıt: views/secure/PrintoutListView.vue
   PrintoutListView: {
     purpose:
-      'Sipariş çıktı şablonlarınızı alanları tuvale sürükleyerek tasarlayın. Bu ekran taslak aşamasındadır; tasarım sunucuya kaydedilmez.',
+      'Kargo etiketi, sipariş fişi, irsaliye taslağı ve toplama listesi şablonları: hazır şablondan başlayın, düzenleyin, gerçek siparişle önizleyip yazdırın. Şablonlar bu tarayıcıda, hesabınıza özel saklanır.',
     tips: [
-      'Soldaki paletten bir alanı fareyle tuvale sürükleyin.',
-      'Kâğıt boyutu düğmeleriyle tuvalin ölçüsünü değiştirin.',
-      'Tuvaldeki bir öğeye tıklayınca seçilir; ayar panelindeki Sil düğmesiyle kaldırın.',
+      'Hazır şablonlar değiştirilemez; "Kopyasını düzenle" ile kendi şablonunuzu oluşturun.',
+      'Düzenleyicide alanı tıklayın ya da tuvale sürükleyin; oklarla 1 mm (Shift ile 5 mm) taşıyın, Ctrl+Z ile geri alın.',
+      'Önizlemede "Uzun içerik" verisiyle taşmayı görün; "Siparişlerim" ile birden çok siparişi tek seferde yazdırın.',
     ],
     shortcuts: ['tabClose', 'focusMode'],
     article: 'fin-invoices-reports',
