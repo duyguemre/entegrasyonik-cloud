@@ -22,6 +22,19 @@ export interface UnexpectedErrorOptions {
 }
 
 /**
+ * P16 (PROPOSALS_PENDING, K49 onayı): aynı kök hatadan doğan ardışık beklenmeyen hatalar (ör. menü isteği 500 →
+ * router + promise reddi + bileşen hatası) kısa bir pencerede TEK bildirimde toplanır ve TEK Destek kodu taşır.
+ * Yalnız varsayılan ileti toplanır; çağıranın kendi iletisi (`userMessage`) her zaman gösterilir.
+ */
+export const UNEXPECTED_ERROR_COALESCE_MS = 4000
+let lastNotice: { code: string; at: number } | null = null
+
+/** Testler için: toplama penceresini sıfırlar. */
+export function resetUnexpectedErrorCoalescing(): void {
+  lastNotice = null
+}
+
+/**
  * Ortak "beklenmeyen hata" işleyicisi. Destek kodunu üretir, `logger.error`'a yazar, mevcut
  * Snackbar deseniyle kullanıcıya nazik bir bildirim gösterir (Pinia henüz hazır değilse — ör.
  * çok erken bootstrap hatası — sessizce geçilir, hata yine de loglanmış olur) ve üretilen Destek
@@ -32,8 +45,18 @@ export function reportUnexpectedError(
   context: LogContext,
   options: UnexpectedErrorOptions = {}
 ): string {
-  const supportCode = generateSupportCode()
-  logger.error(logMessage, { ...context, supportCode })
+  const now = Date.now()
+  const coalesce =
+    !options.userMessage && !options.silent && lastNotice !== null && now - lastNotice.at < UNEXPECTED_ERROR_COALESCE_MS
+  const supportCode = coalesce && lastNotice ? lastNotice.code : generateSupportCode()
+  logger.error(logMessage, { ...context, supportCode, ...(coalesce ? { coalesced: true } : {}) })
+
+  if (coalesce && lastNotice) {
+    // Aynı pencerede ikinci/üçüncü hata: bildirim zaten ekranda; pencere son hatadan itibaren uzar.
+    lastNotice.at = now
+    return supportCode
+  }
+  if (!options.silent && !options.userMessage) lastNotice = { code: supportCode, at: now }
 
   if (!options.silent) {
     try {
