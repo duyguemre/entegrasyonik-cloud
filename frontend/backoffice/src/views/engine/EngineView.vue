@@ -23,7 +23,6 @@ import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import CopyViewLink from '@bo/components/CopyViewLink.vue'
 import { computed, onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
 import { EkButton, EkPageTabs, type EkPageTab } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import { useTabQuery } from '@bo/composables/useTabQuery'
@@ -35,10 +34,7 @@ import JobRunsPanel from './JobRunsPanel.vue'
 import { engineVerdict } from './engineVerdict'
 
 const TABS = ['kuyruklar', 'basarisiz', 'durum', 'zamanlanmis'] as const
-type Tab = (typeof TABS)[number]
 const tab = useTabQuery(TABS, 'kuyruklar')
-const route = useRoute()
-const router = useRouter()
 const failed = ref<number | null>(null)
 const stuck = ref<number | null>(null)
 /** Sayfa "Yenile": hüküm kaynakları + açık sekme paneli birlikte tazelenir. */
@@ -51,11 +47,6 @@ const summary = useVerdictSources({
   jobs: () => api.call('BackofficeEngineService/listJobRuns', { limit: 1 }),
 })
 
-function goTab(next: Tab, kaynak?: 'dlq') {
-  const { sekme: _s, kaynak: _k, ...rest } = route.query
-  router.replace({ query: { ...rest, ...(next === 'kuyruklar' ? {} : { sekme: next }), ...(kaynak ? { kaynak } : {}) } })
-}
-
 const verdict = computed(() =>
   summary.settled.value
     ? engineVerdict({
@@ -64,7 +55,6 @@ const verdict = computed(() =>
         jobs: summary.sources.jobs.data.value?.states ?? null,
         failed: { queues: summary.failed('queues'), sm: summary.failed('sm'), jobs: summary.failed('jobs') },
         retry: () => summary.load(),
-        tab: goTab,
       })
     : null,
 )

@@ -46,12 +46,13 @@ describe('motor hükmü', () => {
     queues: [{ name: 'q', available: true, counts: { wait: 3, active: 1, delayed: 0, failed: 0, completed: 9, paused: 0 }, dlq: { pendingReview: 0 }, metrics: { resolution: '1h', from: '', to: '', series: [] }, ...over }],
   })
   const sm = (stuck = 0) => ({ stuckLeaseCount: stuck, leaseTimeoutMs: { export: 1_800_000, import: 1_800_000 } }) as GetStateMachineJobsResponse
-  const base = { failed: { queues: false, sm: false, jobs: false }, retry: () => undefined, tab: vi.fn() }
+  const base = { failed: { queues: false, sm: false, jobs: false }, retry: () => undefined }
 
   it('sakin', () => {
     const v = engineVerdict({ ...base, queues: queues(), sm: sm(), jobs: [] })
     expect(v.tone).toBe('success')
     expect(v.actions).toEqual([])
+    expect(v.checks?.length).toBeGreaterThan(0)
   })
 
   it('Redis düşük → kırmızı ve altyapıya bağlı', () => {
@@ -61,11 +62,11 @@ describe('motor hükmü', () => {
   })
 
   it('DLQ ölü mektup sekmesine götürür; yeniden deneme güvenli eylemdir', () => {
-    const tab = vi.fn()
-    const v = engineVerdict({ ...base, tab, queues: queues({ dlq: { pendingReview: 4 }, counts: { wait: 0, active: 0, delayed: 0, failed: 2, completed: 0, paused: 0 } }), sm: sm(1), jobs: [] })
+    const v = engineVerdict({ ...base, queues: queues({ dlq: { pendingReview: 4 }, counts: { wait: 0, active: 0, delayed: 0, failed: 2, completed: 0, paused: 0 } }), sm: sm(1), jobs: [] })
     expect(v.tone).toBe('warning')
-    v.attention.find((a) => a.id === 'dlq')!.onSelect!()
-    expect(tab).toHaveBeenCalledWith('basarisiz', 'dlq')
+    expect(v.attention.find((a) => a.id === 'dlq')!.to).toEqual({ query: { sekme: 'basarisiz', kaynak: 'dlq' } })
+    // Her madde bağlantılı (okunamayan kaynak dışında) ve etki + öneri taşır (§11.2).
+    for (const a of v.attention) expect(a.to && a.impact && a.advice).toBeTruthy()
     expect(v.actions.find((a) => a.id === 'retry')?.guarded).toBe(true)
     expect(v.actions.find((a) => a.id === 'release')?.guarded).toBe(true)
   })

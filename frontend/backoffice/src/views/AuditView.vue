@@ -1,6 +1,12 @@
 <template>
   <div class="bo-page">
-    <BoPageHeader />
+    <BoPageHeader :updated-at="summary.updatedAt.value" :stale="summary.stale.value">
+      <template #actions>
+        <EkButton tone="secondary" icon="mdi-refresh" :loading="summary.refreshing.value" data-page-refresh @click="refresh">Yenile</EkButton>
+      </template>
+    </BoPageHeader>
+
+    <PageVerdict :verdict="verdict" />
 
     <div class="bo-toolbar">
       <div class="bo-seg" role="radiogroup" aria-label="Yüzey">
@@ -119,6 +125,9 @@ import { EkButton, EkCopyButton, EkRelativeTime, EkStatusChip, type StatusTone }
 import BoPanelState, { type PanelState } from '@bo/components/shell/BoPanelState.vue'
 import TraceDialog from '@bo/components/TraceDialog.vue'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
+import { useVerdictSources } from '@bo/composables/useVerdictSources'
+import { auditVerdict } from './auditVerdict'
 import { api } from '@bo/api'
 import type { AuditRecord, LogRange } from '@bo/api/contract'
 import { formatDateTime } from '@bo/utils/format'
@@ -166,6 +175,39 @@ const cursor = ref<string | undefined>()
 const open = reactive(new Set<string>())
 const traceId = ref<string | null>(null)
 
+// Hüküm: süzgeçlerden bağımsız son 7 günlük özet okuma (son 24 saat + önceki günlerin tabanı).
+const summary = useVerdictSources({
+  recent: () => api.call('BackofficeAuditService/search', { range: '7d', limit: 200 }),
+})
+const verdict = computed(() =>
+  summary.settled.value
+    ? auditVerdict({
+        records: summary.sources.recent.data.value?.items ?? null,
+        truncated: !!summary.sources.recent.data.value?.nextCursor,
+        failed: summary.failed('recent'),
+        retry: () => summary.load(),
+      })
+    : null,
+)
+
+/** Hüküm bağlantıları göreli konumdur (`{ query }`): URL değişince süzgeçler uygulanır (kullanıcı yazarken URL'i beklemez). */
+let lastSynced = ''
+function applyQuery() {
+  if (JSON.stringify(route.query) === lastSynced) return
+  surface.value = q('surface') === 'backoffice' || q('surface') === 'app' ? (q('surface') as 'backoffice' | 'app') : undefined
+  event.value = q('event') || null
+  result.value = ['ok', 'fail', 'error'].includes(q('result')) ? (q('result') as AuditRecord['result']) : null
+  range.value = q('range') === '24h' ? '24h' : '7d'
+  tid.value = q('tid')
+  reqId.value = q('reqId')
+}
+watch(() => route.query, applyQuery)
+
+function refresh() {
+  void summary.load()
+  void load()
+}
+
 async function load(more = false) {
   if (!more) {
     items.value = null
@@ -199,6 +241,7 @@ function syncUrl() {
   if (tid.value) query.tid = tid.value
   if (reqId.value) query.reqId = reqId.value
   if (range.value !== '7d') query.range = range.value
+  lastSynced = JSON.stringify(query)
   void router.replace({ query })
 }
 
@@ -221,7 +264,10 @@ watch([surface, event, result, range, reqId], () => load())
 watch(tid, (v) => {
   if (!v) void load()
 })
-onMounted(() => load())
+onMounted(() => {
+  void summary.load()
+  void load()
+})
 
 function toggle(id: string) {
   if (open.has(id)) open.delete(id)
@@ -303,9 +349,9 @@ const changes = (a: AuditRecord) => auditChanges(a.meta)
 
 .bo-audit {
   position: relative;
-  overflow: auto;
-  /* Uzun listede başlık görünür kalsın: tablo kendi içinde kayar (masaüstü). */
-  max-height: calc(100vh - var(--ek-app-topbar-height) - 220px);
+  /* NT-04: iç kaydırma yok (çift kaydırma olmasın) — sayfa kayar, başlık satırı yapışkan kalır.
+     `clip` kaydırma kapsayıcısı yaratmaz; köşe yarıçapı korunur ve sticky sayfaya göre çalışır. */
+  overflow: clip;
   border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-card);
   background: var(--ek-color-surface);
@@ -325,7 +371,7 @@ const changes = (a: AuditRecord) => auditChanges(a.meta)
 
 .bo-audit > table > thead th {
   position: sticky;
-  top: 0;
+  top: var(--ek-app-topbar-height);
   z-index: 1;
   padding: var(--ek-space-3);
   background: var(--ek-color-surface-muted);
@@ -587,9 +633,4 @@ const changes = (a: AuditRecord) => auditChanges(a.meta)
   }
 }
 
-@media (max-width: 767px) {
-  .bo-audit {
-    max-height: none;
-  }
-}
 </style>

@@ -6,7 +6,8 @@
  *  Eylem   : önerilen eylemler — ekrana/süzgece bağlantı ya da güvenli eylem (step-up + gerekçe; `guarded`)
  *  Ayrıntı : sayfanın mevcut tabloları/panelleri, hükmün ALTINDA
  *
- * Sayfalar hükmü kendi verisinden `buildVerdict` ile üretir; çizim `components/verdict/PageVerdict.vue` (bo-r1b uyarlayıcısı).
+ * Sayfalar hükmü kendi verisinden `buildVerdict` ile üretir; çizim `components/verdict/PageVerdict.vue` — bo-r1a'nın
+ * triyaj bileşenlerine (BoStatusHeader · BoAttentionList · BoActionCard; BO_UI_PATTERNS §11) uyarlayıcı.
  * Renk yalnız durum taşır (CONSOLE_IDENTITY ilke 2); okunamayan kaynak "okunamadı" der (ilke 7), "sağlıklı" demez.
  */
 import type { RouteLocationRaw } from 'vue-router'
@@ -18,21 +19,37 @@ export interface AttentionItem {
   /** Kararlı anahtar (v-for, e2e). */
   id: string
   tone: AttentionTone
-  /** "<ne oldu>" — kısa, sayıyla ("3 iş elle inceleme bekliyor"). */
+  /** Ne oldu — kısa, sayıyla ("3 iş elle inceleme bekliyor"). */
   title: string
-  /** "<ne yapılmalı>" ya da bağlam — tek cümle, isteğe bağlı. */
+  /** Ne kadar ciddi — kim/ne etkileniyor, eşik (§11.2 `impact`). */
+  impact?: string
+  /** Ne yapmalı — tek cümle, siz dili (§11.2 `advice`). */
+  advice?: string
+  /** Eski alan: `impact` yoksa onun yerine geçer. */
   detail?: string
-  /** Hedef ekran/süzgeç (bağlantısız uyarı yazılmaz — CONSOLE_IDENTITY ilke 1). */
+  /**
+   * Hedef ekran/süzgeç (bağlantısız uyarı yazılmaz — CONSOLE_IDENTITY ilke 1). Aynı sayfadaki sekme için göreli konum:
+   * `{ query: { sekme: 'basarisiz' } }`. Yalnız `unreadable()` maddelerinde yoktur.
+   */
   to?: RouteLocationRaw
-  /** Bağlantı metni; varsayılan "Göster". */
+  /** Eylem bağlantısı metni; varsayılan "Göster". */
   cta?: string
-  /** Bağlantı yerine sayfa içi eylem (ör. sekmeye geç, tekrar dene). */
+  /** Durumun başladığı an (ISO). */
+  since?: string
+  /** Müşteri kapsamlı madde: nötr kimlik. */
+  tenant?: { tid: number; name: string | null }
+  /** Okunamayan kaynak adı (`unreadable()`); adaptör "X okunamadı — Yeniden dene" notuna çevirir. */
+  source?: string
+  /** Yalnız okunamayan kaynakta: tekrar dene. */
   onSelect?: () => void
 }
 
 export interface SuggestedAction {
   id: string
+  /** Kart başlığı / bağlantı metni ("Ölü mektupları inceleyin"). */
   label: string
+  /** Kart düğmesi metni (ilk eylem kart olur); varsayılan "Aç" / "Başlat…". */
+  cta?: string
   /** Neden/etki — tek cümle. */
   detail?: string
   icon?: string
@@ -48,10 +65,15 @@ export interface PageVerdict {
   tone: VerdictTone
   /** Rozet metni ("Sağlıklı", "İzlenmeli", "Müdahale gerekli"…). */
   badge: string
-  /** Tek cümle durum özeti. */
+  /** Tek cümle durum özeti (hüküm). */
   summary: string
+  /** İkinci cümle: neye bakıldı, ne kadar güncel. */
+  note?: string
   attention: AttentionItem[]
   actions: SuggestedAction[]
+  /** Dikkat listesi boşken "Denetlenen: …". */
+  checks?: string[]
+  okTitle?: string
 }
 
 export const BADGE: Record<VerdictTone, string> = {
@@ -91,6 +113,9 @@ export interface VerdictInput {
   calm: { summary: string; tone?: VerdictTone; badge?: string }
   /** Dikkat varken özet; verilmezse "N konu dikkat istiyor". İlk (en önemli) öğe ve sayaçlarla çağrılır. */
   busy?: (ctx: { top: AttentionItem; errors: number; warnings: number; total: number }) => string
+  note?: string
+  checks?: string[]
+  okTitle?: string
 }
 
 /**
@@ -103,9 +128,10 @@ export function buildVerdict(input: VerdictInput): PageVerdict {
   const errors = attention.filter((i) => i.tone === 'error').length
   const warnings = attention.filter((i) => i.tone === 'warning').length
   const urgent = errors + warnings
+  const extra = { note: input.note, checks: input.checks, okTitle: input.okTitle }
   if (!urgent) {
     const tone = input.calm.tone ?? 'success'
-    return { tone, badge: input.calm.badge ?? BADGE[tone], summary: input.calm.summary, attention, actions }
+    return { tone, badge: input.calm.badge ?? BADGE[tone], summary: input.calm.summary, attention, actions, ...extra }
   }
   const tone = errors ? 'error' : 'warning'
   const summary = input.busy
@@ -113,7 +139,7 @@ export function buildVerdict(input: VerdictInput): PageVerdict {
     : urgent === 1
       ? `1 konu dikkat istiyor: ${attention[0].title}.`
       : `${countPhrase(urgent, 'konu')} dikkat istiyor; en acili: ${attention[0].title}.`
-  return { tone, badge: BADGE[tone], summary, attention, actions }
+  return { tone, badge: BADGE[tone], summary, attention, actions, ...extra }
 }
 
 /**
@@ -125,8 +151,10 @@ export function unreadable(id: string, what: string, retry: () => void, stale = 
     id: `unreadable-${id}`,
     tone: 'warning',
     title: stale ? `${what} yenilenemedi` : `${what} okunamadı`,
-    detail: stale ? 'Gösterilen veri eski olabilir — tekrar deneyin.' : 'Bu bölüm hakkında hüküm verilemiyor — tekrar deneyin.',
+    impact: stale ? 'Gösterilen veri eski olabilir.' : 'Bu bölüm hakkında hüküm verilemiyor.',
+    advice: 'Bağlantıyı denetleyip tekrar deneyin.',
     cta: 'Tekrar dene',
+    source: what,
     onSelect: retry,
   }
 }

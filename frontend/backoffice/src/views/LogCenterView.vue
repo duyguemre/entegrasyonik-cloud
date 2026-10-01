@@ -1,6 +1,6 @@
 <template>
   <div class="bo-page">
-    <BoPageHeader>
+    <BoPageHeader :updated-at="summary.updatedAt.value" :stale="summary.stale.value">
       <template #meta>
         <span class="bo-inline-note"><v-icon icon="mdi-flask-outline" aria-hidden="true" />Örnek veriyle taslak — uçlar (L6–L8) henüz yok</span>
       </template>
@@ -8,9 +8,11 @@
         <div class="bo-seg" role="radiogroup" aria-label="Zaman aralığı">
           <button v-for="r in RANGES" :key="r.value" type="button" role="radio" class="bo-seg__opt" :aria-checked="range === r.value" @click="range = r.value">{{ r.label }}</button>
         </div>
-        <EkButton tone="secondary" icon="mdi-refresh" icon-only aria-label="Yenile" :loading="loading" data-page-refresh @click="loadAll" />
+        <EkButton tone="secondary" icon="mdi-refresh" :loading="loading || summary.refreshing.value" data-page-refresh @click="refresh">Yenile</EkButton>
       </template>
     </BoPageHeader>
+
+    <PageVerdict :verdict="verdict" />
 
     <!-- Kategori şeridi: kontrol merkezinin ana ekseni -->
     <section class="bo-cats" aria-label="Kategoriler">
@@ -109,8 +111,8 @@
                 <span class="bo-issue__lvl" :class="`lvl-${issue.level}`" :title="LEVEL[issue.level].label"><v-icon :icon="LEVEL[issue.level].icon" aria-hidden="true" /><span class="ek-sr-only">{{ LEVEL[issue.level].label }}</span></span>
                 <span class="bo-issue__main">
                   <span class="bo-issue__title">
-                    <EkBadge v-if="issue.isNew" text="Yeni" tone="error" />
-                    {{ issue.title }}
+                    <EkBadge v-if="issue.isNew" text="Yeni" tone="error" class="bo-issue__new" />
+                    <span class="bo-issue__text" :title="issue.title">{{ issue.title }}</span>
                   </span>
                   <span class="bo-issue__meta">
                     <span class="bo-issue__cat"><v-icon :icon="CATEGORY[issue.category].icon" aria-hidden="true" />{{ CATEGORY[issue.category].label }}</span>
@@ -236,6 +238,9 @@ import BarTrend from '@bo/components/BarTrend.vue'
 import Sparkline from '@bo/components/Sparkline.vue'
 import TraceDialog from '@bo/components/TraceDialog.vue'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
+import { useVerdictSources } from '@bo/composables/useVerdictSources'
+import { logCenterVerdict, type TidScope } from './logCenterVerdict'
 import { api } from '@bo/api'
 import type {
   GetIssueTrendResponse,
@@ -289,6 +294,51 @@ const trend = ref<GetIssueTrendResponse | null>(null)
 const traceId = ref<string | null>(null)
 const issuesError = ref<unknown>(null)
 const streamError = ref<unknown>(null)
+
+// Hüküm: süzgeç ve aralıktan bağımsız son 24 saatin sorun grupları (+ ?tid= varsa müşterinin olay sayıları).
+// BE-06 yok: sorun grupları tid'e göre süzülemez → müşteri kapsamı yalnız olay sayımına uygulanır.
+const summary = useVerdictSources({
+  groups: () => api.call('LogCenterService/getIssueGroups', { range: '24h', sort: 'count' }),
+  tenant: async () => (tid.value ? api.call('LogCenterService/listLogs', { range: '24h', tid: tid.value, limit: 1 }) : null),
+})
+const tidScope = computed<TidScope | null>(() => {
+  const f = summary.sources.tenant.data.value?.facets.level
+  return tid.value && f ? { tid: tid.value, errors: (f.error ?? 0) + (f.fatal ?? 0), warns: f.warn ?? 0 } : tid.value ? { tid: tid.value, errors: 0, warns: 0 } : null
+})
+const verdict = computed(() =>
+  summary.settled.value
+    ? logCenterVerdict({
+        issues: summary.sources.groups.data.value?.items ?? null,
+        failed: summary.failed('groups'),
+        tid: tidScope.value,
+        tidFailed: !!tid.value && summary.failed('tenant'),
+        retry: () => summary.load(),
+      })
+    : null,
+)
+
+/** Hüküm bağlantıları göreli konumdur (`{ query }`): ?level= ?category= ?sekme=akis|sorunlar ?sirala= ?fp= değişince uygulanır. */
+const SORT_KEYS = ['lastSeen', 'count', 'tenantCount', 'new'] as const
+function applyQuery() {
+  const q = route.query
+  const lv = queryList('level', LEVELS)
+  const cat = queryList('category', Object.keys(CATEGORY) as LogCategory[])
+  if (lv.join() !== level.value.join()) level.value = lv
+  if (cat.join() !== category.value.join()) category.value = cat
+  if (q.sekme === 'akis' || q.sekme === 'sorunlar') tab.value = q.sekme === 'akis' ? 'stream' : 'issues'
+  const sirala = SORT_KEYS.find((k) => k === q.sirala)
+  if (sirala && sirala !== sort.value) sort.value = sirala
+  if (typeof q.fp === 'string' && q.fp && selected.value?.fp !== q.fp) {
+    const hit = [...(issues.value ?? []), ...(summary.sources.groups.data.value?.items ?? [])].find((g) => g.fp === q.fp)
+    if (hit) void openIssue(hit)
+  }
+}
+watch(() => route.query, applyQuery)
+
+function refresh() {
+  void summary.load()
+  void loadAll()
+}
 
 const facets = computed(() => stream.value?.facets)
 const sourcesShown = computed(() => ALL_SOURCES.filter((s) => (facets.value?.src[s] ?? 0) > 0 || src.value.includes(s)))
@@ -386,11 +436,25 @@ function debouncedStream() {
 
 watch(range, loadAll)
 watch([category, level, src], () => Promise.all([loadIssues(), loadStream()]), { deep: true })
+// Süzgeçler, sekme ve sıra paylaşılabilir adrese yazılır (?level=&category=&sekme=&sirala=; ?tid=/?fp= korunur).
+watch([category, level, tab, sort], () => {
+  const { level: _l, category: _c, sekme: _s, sirala: _o, ...rest } = route.query
+  void router.replace({
+    query: {
+      ...rest,
+      ...(level.value.length ? { level: level.value.join(',') } : {}),
+      ...(category.value.length ? { category: category.value.join(',') } : {}),
+      ...(tab.value === 'stream' ? { sekme: 'akis' } : {}),
+      ...(sort.value !== 'lastSeen' ? { sirala: sort.value } : {}),
+    },
+  })
+}, { deep: true })
 watch(sort, loadIssues)
 watch(tid, (v) => {
   const { tid: _tid, ...rest } = route.query
   router.replace({ query: v ? { ...rest, tid: String(v) } : rest })
   void loadStream()
+  void summary.load()
 })
 
 async function openIssue(issue: IssueGroup) {
@@ -407,6 +471,7 @@ function closeIssue() {
 }
 
 onMounted(async () => {
+  void summary.load()
   // Komut paleti / denetim bağlantısı: ?reqId= → istek zinciri doğrudan açılır.
   if (typeof route.query.reqId === 'string' && route.query.reqId) traceId.value = route.query.reqId
   await loadAll()
@@ -774,14 +839,26 @@ onMounted(async () => {
 
 .bo-issue__title {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--ek-space-2);
-  overflow: hidden;
   color: var(--ek-color-content-strong);
   font-size: var(--ek-type-body-size);
   font-weight: var(--ek-font-weight-medium);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+
+.bo-issue__new {
+  flex: none;
+}
+
+/* NT-06: başlık iki satıra kadar sarılır, tam metin title özniteliğinde. */
+.bo-issue__text {
+  display: -webkit-box;
+  min-width: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
 }
 
 .bo-issue__meta {
@@ -1018,6 +1095,17 @@ onMounted(async () => {
   }
 }
 
+/* NT-06: 1280 altında sparkline sütunu gizlenir. */
+@media (max-width: 1279px) {
+  .bo-issue {
+    grid-template-columns: 28px minmax(0, 1fr) 64px 64px 128px;
+  }
+
+  .bo-issue__spark {
+    display: none;
+  }
+}
+
 @media (max-width: 1023px) {
   .bo-logs {
     grid-template-columns: 1fr;
@@ -1033,7 +1121,6 @@ onMounted(async () => {
     grid-template-columns: 28px minmax(0, 1fr) 64px;
   }
 
-  .bo-issue__spark,
   .bo-issue__num--tenants,
   .bo-issue__when {
     display: none;
@@ -1043,10 +1130,6 @@ onMounted(async () => {
 @media (max-width: 599px) {
   .bo-cats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .bo-issue__title {
-    white-space: normal;
   }
 }
 </style>

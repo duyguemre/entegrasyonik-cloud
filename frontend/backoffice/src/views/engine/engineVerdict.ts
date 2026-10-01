@@ -1,4 +1,5 @@
-/** Motor ve kuyruklar — sayfa hükmü (K51). Saf: girdi okunan özetler, çıktı `PageVerdict`. */
+/** Motor ve kuyruklar — sayfa hükmü (K51, BO_UI_PATTERNS §11). Saf: girdi okunan özetler, çıktı `PageVerdict`. */
+import type { RouteLocationRaw } from 'vue-router'
 import type { GetQueuesResponse, GetStateMachineJobsResponse, JobState } from '@bo/api/contract'
 import { buildVerdict, unreadable, type AttentionItem, type PageVerdict, type SuggestedAction } from '@bo/utils/verdict'
 import { formatCount, formatDuration } from '@bo/utils/units'
@@ -8,20 +9,23 @@ export const BACKLOG_WARN = 500
 /** Zamanlanmış görev art arda bu kadar başarısızsa kırmızı. */
 export const FAILURE_STREAK_ERROR = 3
 
+export type EngineTab = 'kuyruklar' | 'basarisiz' | 'durum' | 'zamanlanmis'
+/** Aynı sayfada sekme (+ kaynak) — göreli konum; paylaşılan bağlantı aynı görünümü açar. */
+export const engineTab = (tab: EngineTab, kaynak?: 'dlq'): RouteLocationRaw => ({ query: { ...(tab === 'kuyruklar' ? {} : { sekme: tab }), ...(kaynak ? { kaynak } : {}) } })
+
 export interface EngineVerdictInput {
   queues: GetQueuesResponse | null
   sm: GetStateMachineJobsResponse | null
   jobs: JobState[] | null
   failed: { queues: boolean; sm: boolean; jobs: boolean }
   retry: () => void
-  /** Sekmeye geç (`?sekme=`); `kaynak` yalnız başarısız işler sekmesinde. */
-  tab: (tab: 'kuyruklar' | 'basarisiz' | 'durum' | 'zamanlanmis', kaynak?: 'dlq') => void
 }
 
 export function engineVerdict(i: EngineVerdictInput): PageVerdict {
   const attention: Array<AttentionItem | null> = []
   const actions: SuggestedAction[] = []
   const qs = i.queues?.queues ?? []
+  const LOGS: RouteLocationRaw = { path: '/loglar', query: { category: 'order', level: 'fatal,error' } }
 
   const down = qs.filter((q) => !q.available)
   if (down.length)
@@ -29,9 +33,10 @@ export function engineVerdict(i: EngineVerdictInput): PageVerdict {
       id: 'redis-down',
       tone: 'error',
       title: 'Redis hazır değil — sipariş kuyruğu işlenemiyor',
-      detail: 'Kuyruk sayaçları ve başarısız işler okunamıyor; önce Redis bağlantısını denetleyin.',
+      impact: 'Siparişler kuyruğa alınamıyor ve işlenmiyor; tüm müşterilerin sipariş eşitlemesi bekliyor.',
+      advice: 'Altyapı ekranında Redis bağlantısını ve belleğini kontrol edin.',
       to: { path: '/altyapi', query: { sekme: 'redis' } },
-      cta: 'Altyapı',
+      cta: 'Redis durumunu aç',
     })
 
   const dlq = qs.reduce((n, q) => n + (q.dlq.pendingReview ?? 0), 0)
@@ -40,9 +45,10 @@ export function engineVerdict(i: EngineVerdictInput): PageVerdict {
       id: 'dlq',
       tone: 'warning',
       title: `${formatCount(dlq)} iş elle inceleme bekliyor (ölü mektup)`,
-      detail: 'Otomatik yeniden deneme bitti; neden çözülmeden iş ilerlemez.',
-      cta: 'Ölü mektuplar',
-      onSelect: () => i.tab('basarisiz', 'dlq'),
+      impact: 'Otomatik yeniden deneme bitti; neden çözülmeden bu işler ilerlemez.',
+      advice: 'Hata koduna bakın: AUTH ise müşterinin anahtarı yenilenmeli, VALIDATION ise veri düzeltilmeli.',
+      to: engineTab('basarisiz', 'dlq'),
+      cta: 'Ölü mektupları aç',
     })
 
   const failedJobs = qs.reduce((n, q) => n + (q.counts?.failed ?? 0), 0)
@@ -51,9 +57,10 @@ export function engineVerdict(i: EngineVerdictInput): PageVerdict {
       id: 'failed',
       tone: 'warning',
       title: `${formatCount(failedJobs)} başarısız iş yeniden denenebilir`,
-      detail: 'Hata kodu geçici ise (UNAVAILABLE, RATE_LIMITED) yeniden deneyin; AUTH ise müşteri anahtarı yenilenmeli.',
-      cta: 'Başarısız işler',
-      onSelect: () => i.tab('basarisiz'),
+      impact: 'İlgili siparişlerin pazaryerine aktarımı yarım kaldı.',
+      advice: 'Geçici hata kodlarında (UNAVAILABLE, RATE_LIMITED) yeniden deneyin; AUTH ise önce müşteri anahtarını yeniletin.',
+      to: engineTab('basarisiz'),
+      cta: 'Başarısız işleri aç',
     })
 
   const backlog = qs.reduce((n, q) => n + (q.counts?.wait ?? 0), 0)
@@ -62,9 +69,10 @@ export function engineVerdict(i: EngineVerdictInput): PageVerdict {
       id: 'backlog',
       tone: 'warning',
       title: `Kuyrukta ${formatCount(backlog)} bekleyen iş birikti`,
-      detail: 'İşçi podları yetişmiyor olabilir; işleme süresini ve işçi sayısını denetleyin.',
-      cta: 'Kuyruklar',
-      onSelect: () => i.tab('kuyruklar'),
+      impact: `Eşik ${formatCount(BACKLOG_WARN)} iş; sipariş güncellemeleri gecikiyor.`,
+      advice: 'İşleme süresini ve işçi pod sayısını kontrol edin.',
+      to: engineTab('kuyruklar'),
+      cta: 'Kuyrukları aç',
     })
 
   const stuck = i.sm?.stuckLeaseCount ?? 0
@@ -73,9 +81,10 @@ export function engineVerdict(i: EngineVerdictInput): PageVerdict {
       id: 'stuck',
       tone: 'warning',
       title: `${formatCount(stuck)} kira takılı kaldı`,
-      detail: `Sahip pod ${formatDuration(i.sm!.leaseTimeoutMs.export)} içinde ilerlemedi; ilgili müşterinin eşitlemesi bekliyor.`,
-      cta: 'Durum makinesi',
-      onSelect: () => i.tab('durum'),
+      impact: `Sahip pod ${formatDuration(i.sm!.leaseTimeoutMs.export)} içinde ilerlemedi; ilgili müşterilerin eşitlemesi bekliyor.`,
+      advice: 'Sahip podun yaşadığını kontrol edin; yaşamıyorsa kirayı serbest bırakın.',
+      to: engineTab('durum'),
+      cta: 'Takılı kiraları aç',
     })
 
   const jobs = i.jobs ?? []
@@ -85,9 +94,10 @@ export function engineVerdict(i: EngineVerdictInput): PageVerdict {
       id: 'job-streak',
       tone: 'error',
       title: streak.length === 1 ? `${streak[0].job} art arda ${streak[0].consecutiveFailures} kez başarısız` : `${streak.length} zamanlanmış görev art arda başarısız`,
-      detail: 'Görev çıktısı üretilmiyor; son koşunun hata kodunu inceleyin.',
-      cta: 'Zamanlanmış görevler',
-      onSelect: () => i.tab('zamanlanmis'),
+      impact: 'Görevin çıktısı (stok, sipariş, deneme süresi) üretilmiyor.',
+      advice: 'Son koşunun hata kodunu inceleyin; dış servis kaynaklıysa entegrasyon sağlığına bakın.',
+      to: engineTab('zamanlanmis'),
+      cta: 'Görevleri aç',
     })
   const overdue = jobs.filter((j) => j.overdue)
   if (overdue.length)
@@ -95,33 +105,36 @@ export function engineVerdict(i: EngineVerdictInput): PageVerdict {
       id: 'job-overdue',
       tone: 'warning',
       title: overdue.length === 1 ? `${overdue[0].job} görevi gecikti` : `${overdue.length} zamanlanmış görev gecikti`,
-      detail: 'Beklenen aralıkta koşmadı; zamanlayıcı podunu ve kilitleri denetleyin.',
-      cta: 'Zamanlanmış görevler',
-      onSelect: () => i.tab('zamanlanmis'),
+      impact: 'Beklenen aralıkta koşmadı.',
+      advice: 'Zamanlayıcı podunu ve görev kilidini kontrol edin.',
+      to: engineTab('zamanlanmis'),
+      cta: 'Görevleri aç',
     })
 
   if (i.failed.queues) attention.push(unreadable('queues', 'Kuyruk durumu', i.retry))
   if (i.failed.sm) attention.push(unreadable('sm', 'Durum makinesi', i.retry))
   if (i.failed.jobs) attention.push(unreadable('jobs', 'Zamanlanmış görevler', i.retry))
 
-  if (down.length) actions.push({ id: 'infra', label: 'Redis durumunu aç', detail: 'Bellek, bağlantı ve gecikme — salt okuma.', icon: 'mdi-memory', to: { path: '/altyapi', query: { sekme: 'redis' } } })
-  if (dlq > 0) actions.push({ id: 'review-dlq', label: 'Ölü mektupları incele', detail: 'Hata koduna göre neden çözün; iş müşteri tarafında yeniden tetiklenir.', icon: 'mdi-email-alert-outline', onSelect: () => i.tab('basarisiz', 'dlq') })
-  if (failedJobs > 0)
-    actions.push({ id: 'retry', label: 'Başarısız işleri yeniden dene', detail: 'Satırdan iş başına; her deneme denetime yazılır.', icon: 'mdi-replay', guarded: true, onSelect: () => i.tab('basarisiz') })
-  if (stuck > 0) actions.push({ id: 'release', label: 'Takılı kirayı serbest bırak', detail: 'Sunucu kirayı yeniden denetler; sağlıklıysa değişiklik olmaz.', icon: 'mdi-lock-open-variant-outline', guarded: true, onSelect: () => i.tab('durum') })
-  if (failedJobs > 0 || dlq > 0 || streak.length)
-    actions.push({ id: 'logs', label: 'Sipariş hatalarını loglarda aç', detail: 'Aynı süzgeçle: sipariş kategorisi, hata ve kritik.', icon: 'mdi-pulse', to: { path: '/loglar', query: { category: 'order', level: 'fatal,error' } } })
+  // Eylemler önem sırasıyla: ilki "Önerilen ilk adım" kartı olur.
+  if (down.length) actions.push({ id: 'infra', label: 'Redis bağlantısını kontrol edin', detail: 'Bellek, bağlantı ve gecikme — salt okuma.', cta: 'Redis durumunu aç', icon: 'mdi-memory', to: { path: '/altyapi', query: { sekme: 'redis' } } })
+  if (streak.length) actions.push({ id: 'jobs', label: 'Başarısız görevin son koşusunu inceleyin', detail: 'Hata kodu ve süre zamanlanmış görevler sekmesinde.', cta: 'Görevleri aç', icon: 'mdi-calendar-alert', to: engineTab('zamanlanmis') })
+  if (dlq > 0) actions.push({ id: 'review-dlq', label: 'Ölü mektupları inceleyin', detail: 'Neden çözülünce iş müşteri tarafında yeniden tetiklenir.', cta: 'Ölü mektupları aç', icon: 'mdi-email-alert-outline', to: engineTab('basarisiz', 'dlq') })
+  if (failedJobs > 0) actions.push({ id: 'retry', label: 'Başarısız işleri yeniden deneyin', detail: 'İş başına; her deneme gerekçeyle denetime yazılır.', cta: 'Başarısız işler', icon: 'mdi-replay', guarded: true, to: engineTab('basarisiz') })
+  if (stuck > 0) actions.push({ id: 'release', label: 'Takılı kirayı serbest bırakın', detail: 'Sunucu kirayı yeniden denetler; sağlıklıysa değişiklik olmaz.', cta: 'Takılı kiralar', icon: 'mdi-lock-open-variant-outline', guarded: true, to: engineTab('durum') })
+  if (failedJobs > 0 || dlq > 0 || streak.length) actions.push({ id: 'logs', label: 'Sipariş hatalarını loglarda açın', icon: 'mdi-pulse', to: LOGS })
 
   const unknown = i.failed.queues && i.failed.sm && i.failed.jobs
   return buildVerdict({
     attention,
     actions,
-    calm: { summary: 'Kuyruklar akıyor: başarısız iş, takılı kira ve geciken görev yok.' },
+    calm: { summary: 'Her şey yolunda: kuyruklar akıyor; başarısız iş, takılı kira ve geciken görev yok.' },
+    checks: ['Kuyruk sayaçları', 'Ölü mektuplar', 'Takılı kiralar', 'Zamanlanmış görevler'],
+    okTitle: 'Motorda müdahale gereken bir şey yok',
     busy: ({ errors, total, top }) =>
       unknown
-        ? 'Motor durumu okunamadı — hüküm verilemiyor; bağlantıyı denetleyip tekrar deneyin.'
+        ? 'Motor durumu okunamadı — hüküm verilemiyor.'
         : errors
-        ? `Motorda şimdi müdahale gereken ${errors === 1 ? 'bir konu' : `${errors} konu`} var: ${top.title}.`
-        : `Motor çalışıyor ama ${total === 1 ? 'bir konu' : `${total} konu`} izlenmeli; en önemlisi: ${top.title}.`,
+          ? `${errors === 1 ? 'Bir konu' : `${errors} konu`} şimdi müdahale istiyor: ${top.title}.`
+          : `${total === 1 ? 'Bir konu' : `${total} konu`} izlenmeli; en önemlisi: ${top.title}.`,
   })
 }

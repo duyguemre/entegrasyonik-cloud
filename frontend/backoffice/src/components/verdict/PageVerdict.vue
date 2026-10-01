@@ -1,204 +1,137 @@
 <!--
-  PageVerdict — sayfanın üstündeki "Durum → Karar → Eylem" bloğu (K51; BO_FEEDBACK_R1 madde 6). Ayrıntılar (tablolar,
-  paneller) bu bloğun ALTINDA, "Ayrıntılar" etiketinden sonra gelir.
+  PageVerdict — sayfanın "Durum → Karar → Eylem" katmanları (K51; BO_UI_PATTERNS §11). Ayrıntı (mevcut tablolar,
+  paneller) bu bloğun ALTINDA, "Ayrıntılar" etiketinden sonra gelir (§11.6 madde 4: ayrıntı = sayfanın kendisi).
 
-    <PageVerdict :verdict="verdict" />      // verdict: PageVerdict | null (null → okunuyor)
+    <PageVerdict :verdict="verdict" />      // verdict: PageVerdict | null (null → durum denetleniyor)
 
-  bo-r1b UYARLAYICISI: sayfalar yalnız bu bileşeni ve `utils/verdict.ts` modelini kullanır. bo-r1a'nın ortak bileşenleri
-  (durum başlığı, dikkat listesi, önerilen eylem kartı) geldiğinde YALNIZ bu dosyanın içi onlara geçirilir; sayfalar değişmez.
-  Güvenli eylem: `guarded` eylem sayfanın `GuardedDialog`'unu açar (step-up + gerekçe); burada yalnız bunu söyleyen not var.
+  bo-r1b UYARLAYICISI: sayfalar yalnız bu bileşeni ve `utils/verdict.ts` modelini kullanır; çizim bo-r1a'nın triyaj
+  bileşenleridir — BoStatusHeader (Durum) · BoActionCard "Önerilen ilk adım" (Eylem) · BoAttentionList (Karar).
+  Eşleme: tone success/info → ok · warning → warning · error → critical · neutral → unknown; madde error → critical.
+  `unreadable()` maddeleri listeye değil BoAttentionList'in "X okunamadı — Yeniden dene" notuna gider.
+  Kalan eylemler sakin bağlantı satırıdır (sayfada tek dolgu/kart kuralı — §11.3).
 -->
 <template>
-  <section
-    class="bo-verdict"
-    :class="verdict ? `is-${verdict.tone}` : 'is-loading'"
-    :aria-busy="verdict ? undefined : 'true'"
-    :aria-labelledby="`${uid}-summary`"
+  <BoStatusHeader
+    :health="health"
+    :verdict="verdict?.summary ?? ''"
+    :summary="verdict?.note"
+    :badge-label="badgeLabel"
+    :loading="!verdict"
+    label="Sayfa durumu"
     data-testid="page-verdict"
     :data-tone="verdict?.tone ?? 'loading'"
   >
-    <div class="bo-verdict__head">
-      <v-icon class="bo-verdict__icon" :icon="icon" aria-hidden="true" />
-      <p :id="`${uid}-summary`" class="bo-verdict__summary" data-testid="verdict-summary">
-        <span class="ek-sr-only">Durum: </span>{{ verdict?.summary ?? 'Durum okunuyor…' }}
-      </p>
-      <EkStatusChip v-if="verdict" class="bo-verdict__badge" :tone="CHIP[verdict.tone]" :label="verdict.badge" dot data-testid="verdict-badge" />
-    </div>
+    <BoActionCard
+      v-if="first"
+      eyebrow="Önerilen ilk adım"
+      :title="first.label"
+      :text="first.detail"
+      :action-label="first.cta ?? (first.to ? 'Aç' : 'Başlat…')"
+      :to="first.to"
+      :tone="cardTone"
+      :icon="first.icon ?? 'mdi-lightbulb-on-outline'"
+      :guarded="first.guarded"
+      :heading-level="2"
+      data-testid="verdict-first-action"
+      @act="first.onSelect?.()"
+    />
+  </BoStatusHeader>
 
-    <div v-if="verdict && (verdict.attention.length || verdict.actions.length)" class="bo-verdict__body" :class="{ 'has-both': verdict.attention.length && verdict.actions.length }">
-      <div v-if="verdict.attention.length" class="bo-verdict__col">
-        <h2 class="bo-verdict__label">Dikkat gerektirenler</h2>
-        <ol class="bo-verdict__list" data-testid="verdict-attention">
-          <li v-for="item in verdict.attention" :key="item.id" class="bo-verdict__item" :class="`is-${item.tone}`" :data-id="item.id">
-            <span class="bo-verdict__dot" aria-hidden="true"></span>
-            <span class="ek-sr-only">{{ TONE_SR[item.tone] }}: </span>
-            <span class="bo-verdict__text">
-              <span class="bo-verdict__title">{{ item.title }}</span>
-              <span v-if="item.detail" class="bo-verdict__detail">{{ item.detail }}</span>
-            </span>
-            <RouterLink v-if="item.to" :to="item.to" class="bo-verdict__go">
-              {{ item.cta ?? 'Göster' }}<span class="ek-sr-only"> — {{ item.title }}</span>
-              <v-icon icon="mdi-arrow-right" aria-hidden="true" />
-            </RouterLink>
-            <button v-else-if="item.onSelect" type="button" class="bo-verdict__go" @click="item.onSelect()">
-              {{ item.cta ?? 'Göster' }}<span class="ek-sr-only"> — {{ item.title }}</span>
-              <v-icon :icon="item.cta === 'Tekrar dene' ? 'mdi-refresh' : 'mdi-arrow-right'" aria-hidden="true" />
-            </button>
-          </li>
-        </ol>
-      </div>
-
-      <div v-if="verdict.actions.length" class="bo-verdict__col">
-        <h2 class="bo-verdict__label">Önerilen eylemler</h2>
-        <ul class="bo-verdict__actions" data-testid="verdict-actions">
-          <li v-for="a in verdict.actions" :key="a.id" :data-id="a.id">
-            <component
-              :is="a.to ? RouterLink : 'button'"
-              v-bind="a.to ? { to: a.to } : { type: 'button' }"
-              class="bo-verdict__action"
-              :class="{ 'is-danger': a.danger }"
-              @click="a.to ? undefined : a.onSelect?.()"
-            >
-              <v-icon class="bo-verdict__action-icon" :icon="a.icon ?? (a.to ? 'mdi-arrow-right' : 'mdi-play-circle-outline')" aria-hidden="true" />
-              <span class="bo-verdict__text">
-                <span class="bo-verdict__title">{{ a.label }}</span>
-                <span v-if="a.detail" class="bo-verdict__detail">{{ a.detail }}</span>
-                <span v-if="a.guarded" class="bo-verdict__guard"><v-icon icon="mdi-shield-key-outline" aria-hidden="true" />Gerekçe ve kimlik doğrulaması ister</span>
-              </span>
-            </component>
-          </li>
-        </ul>
-      </div>
-    </div>
+  <section v-if="verdict && (listed.length || degraded.length || verdict.checks?.length)" class="bo-verdict-decide" aria-label="Dikkat isteyenler">
+    <BoAttentionList
+      :items="listed"
+      state="ready"
+      :degraded="degraded"
+      :checks="verdict.checks"
+      :ok-title="verdict.okTitle ?? 'Müdahale gereken bir şey yok'"
+      list-label="Bu sayfada dikkat isteyenler"
+      :limit="3"
+      :heading-level="3"
+      data-testid="verdict-attention"
+      @retry="retry"
+    />
   </section>
+
+  <nav v-if="rest.length" class="bo-verdict-more" aria-label="Diğer eylemler" data-testid="verdict-actions">
+    <span class="bo-verdict-more__k">Diğer eylemler</span>
+    <ul>
+      <li v-for="a in rest" :key="a.id" :data-id="a.id">
+        <RouterLink v-if="a.to" :to="a.to" class="bo-verdict-more__link" :class="{ 'is-danger': a.danger }">
+          <v-icon :icon="a.icon ?? 'mdi-arrow-right'" aria-hidden="true" />{{ a.label }}
+        </RouterLink>
+        <button v-else type="button" class="bo-verdict-more__link" :class="{ 'is-danger': a.danger }" @click="a.onSelect?.()">
+          <v-icon :icon="a.guarded ? 'mdi-shield-lock-outline' : (a.icon ?? 'mdi-play-circle-outline')" aria-hidden="true" />{{ a.label }}<span v-if="a.guarded" class="ek-sr-only"> (kimlik doğrulama ve gerekçe istenir)</span>
+        </button>
+      </li>
+    </ul>
+  </nav>
+
   <h2 v-if="detailsLabel" class="bo-verdict-details" data-testid="details-label">{{ detailsLabel }}</h2>
 </template>
 
 <script setup lang="ts">
-import { computed, useId } from 'vue'
+import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
-import { EkStatusChip, type StatusTone } from '@entegrasyonik/ui/components'
-import type { AttentionTone, PageVerdict, VerdictTone } from '@bo/utils/verdict'
+import BoStatusHeader from '@bo/components/triage/BoStatusHeader.vue'
+import BoAttentionList from '@bo/components/triage/BoAttentionList.vue'
+import BoActionCard from '@bo/components/triage/BoActionCard.vue'
+import type { AttentionEntry, Health, Severity } from '@bo/components/triage/triage'
+import type { AttentionTone, PageVerdict, SuggestedAction, VerdictTone } from '@bo/utils/verdict'
 
 const props = withDefaults(defineProps<{ verdict: PageVerdict | null; detailsLabel?: string | false }>(), { detailsLabel: 'Ayrıntılar' })
 
-const uid = useId()
-const CHIP: Record<VerdictTone, StatusTone> = { success: 'success', warning: 'warning', error: 'danger', info: 'info', neutral: 'neutral' }
-const ICON: Record<VerdictTone, string> = {
-  success: 'mdi-check-circle',
-  warning: 'mdi-alert',
-  error: 'mdi-alert-octagon',
-  info: 'mdi-information',
-  neutral: 'mdi-help-circle-outline',
+const HEALTH: Record<VerdictTone, Health> = { success: 'ok', info: 'ok', warning: 'warning', error: 'critical', neutral: 'unknown' }
+const SEV: Record<AttentionTone, Severity> = { error: 'critical', warning: 'warning', info: 'info' }
+
+const health = computed<Health>(() => (props.verdict ? HEALTH[props.verdict.tone] : 'unknown'))
+/** Bilgi tonlu sakin sayfa (ör. denetim) "Sağlıklı" değil kendi rozetini taşır; diğerleri HEALTH_BADGE. */
+const badgeLabel = computed(() => (props.verdict && (props.verdict.tone === 'info' || props.verdict.badge !== defaultBadge(props.verdict.tone)) ? props.verdict.badge : undefined))
+function defaultBadge(t: VerdictTone) {
+  return { success: 'Sağlıklı', warning: 'İzlenmeli', error: 'Müdahale gerekli', info: 'Bilgi', neutral: 'Bilinmiyor' }[t]
 }
-const TONE_SR: Record<AttentionTone, string> = { error: 'Şimdi müdahale', warning: 'İzlenmeli', info: 'Bilgi' }
-const icon = computed(() => (props.verdict ? ICON[props.verdict.tone] : 'mdi-timer-sand'))
+
+const listed = computed<AttentionEntry[]>(() =>
+  (props.verdict?.attention ?? [])
+    .filter((a) => !a.source && a.to)
+    .map((a) => ({
+      id: a.id,
+      severity: SEV[a.tone],
+      title: a.title,
+      impact: a.impact ?? a.detail ?? '',
+      advice: a.advice ?? '',
+      action: { label: a.cta ?? 'Göster', to: a.to! },
+      since: a.since,
+      tenant: a.tenant,
+    })),
+)
+const unreadableItems = computed(() => (props.verdict?.attention ?? []).filter((a) => a.source))
+const degraded = computed(() => unreadableItems.value.map((a) => a.source!))
+function retry() {
+  // Kaynaklar genelde tek "hepsini yenile" çağrısı paylaşır: aynı işlevi bir kez çağır.
+  new Set(unreadableItems.value.map((a) => a.onSelect).filter(Boolean)).forEach((f) => f!())
+}
+
+const actions = computed<SuggestedAction[]>(() => props.verdict?.actions ?? [])
+/** §11.3: yıkıcı eylem kartla önerilmez → ilk YIKICI OLMAYAN eylem kart olur. */
+const first = computed<(SuggestedAction & { cta?: string }) | undefined>(() => actions.value.find((a) => !a.danger))
+const rest = computed(() => actions.value.filter((a) => a !== first.value))
+const cardTone = computed(() => (health.value === 'critical' ? 'critical' : health.value === 'warning' ? 'warning' : 'neutral'))
 </script>
 
 <style scoped>
-/* Sakin kap: yüzey zemini + tonlu sol kenar; yalnız hüküm bandı tonlanır (kırmızı az görülürse görülür — ilke 2). */
-.bo-verdict {
-  --bo-verdict-accent: var(--ek-color-success);
-  --bo-verdict-band: var(--ek-color-surface);
-  overflow: hidden;
-  border: 1px solid var(--ek-color-border-default);
-  border-left: 3px solid var(--bo-verdict-accent);
-  border-radius: var(--ek-radius-card);
-  background: var(--ek-color-surface);
+.bo-verdict-decide {
+  min-width: 0;
 }
 
-.bo-verdict.is-warning {
-  --bo-verdict-accent: var(--ek-color-warning);
-  --bo-verdict-band: var(--ek-color-warning-subtle);
-}
-
-.bo-verdict.is-error {
-  --bo-verdict-accent: var(--ek-color-error);
-  --bo-verdict-band: var(--ek-color-error-subtle);
-  border-color: var(--ek-color-error-border);
-  border-left-color: var(--bo-verdict-accent);
-}
-
-.bo-verdict.is-info {
-  --bo-verdict-accent: var(--ek-color-info);
-}
-
-.bo-verdict.is-neutral,
-.bo-verdict.is-loading {
-  --bo-verdict-accent: var(--ek-color-border-strong);
-}
-
-.bo-verdict__head {
+.bo-verdict-more {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--ek-space-3);
-  min-width: 0;
-  padding: var(--ek-space-3) var(--ek-space-4);
-  background: var(--bo-verdict-band);
+  gap: var(--ek-space-1) var(--ek-space-3);
+  margin-top: calc(var(--ek-space-2) * -1);
 }
 
-.bo-verdict__icon {
-  flex: none;
-  color: var(--ek-color-success-emphasis);
-  font-size: var(--ek-icon-lg);
-}
-
-.bo-verdict.is-warning .bo-verdict__icon {
-  color: var(--ek-color-warning-emphasis);
-}
-
-.bo-verdict.is-error .bo-verdict__icon {
-  color: var(--ek-color-error-emphasis);
-}
-
-.bo-verdict.is-info .bo-verdict__icon {
-  color: var(--ek-color-info-emphasis);
-}
-
-.bo-verdict.is-neutral .bo-verdict__icon,
-.bo-verdict.is-loading .bo-verdict__icon {
-  color: var(--ek-color-content-subtle);
-}
-
-.bo-verdict__summary {
-  flex: 1;
-  min-width: 0;
-  margin: 0;
-  color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-body-size);
-  line-height: var(--ek-type-body-line);
-  font-weight: var(--ek-font-weight-semibold);
-}
-
-.bo-verdict.is-loading .bo-verdict__summary {
-  color: var(--ek-color-content-muted);
-  font-weight: var(--ek-font-weight-regular);
-}
-
-.bo-verdict__badge {
-  flex: none;
-}
-
-.bo-verdict__body {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--ek-space-3) var(--ek-space-6);
-  padding: var(--ek-space-3) var(--ek-space-4) var(--ek-space-4) calc(var(--ek-space-4) + var(--ek-icon-lg) + var(--ek-space-3));
-  border-top: 1px solid var(--ek-color-border-subtle);
-}
-
-.bo-verdict__body.has-both {
-  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-}
-
-.bo-verdict__col {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ek-space-1);
-  min-width: 0;
-}
-
-.bo-verdict__label,
+.bo-verdict-more__k,
 .bo-verdict-details {
   margin: 0;
   color: var(--ek-color-content-muted);
@@ -209,11 +142,56 @@ const icon = computed(() => (props.verdict ? ICON[props.verdict.tone] : 'mdi-tim
   text-transform: uppercase;
 }
 
+.bo-verdict-more ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ek-space-1) var(--ek-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bo-verdict-more__link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  min-height: 32px;
+  margin: 0;
+  padding: 0 var(--ek-space-2);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-control);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-strong);
+  font: inherit;
+  font-size: var(--ek-type-label-size);
+  font-weight: var(--ek-font-weight-medium);
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--ek-transition-colors);
+}
+
+.bo-verdict-more__link:hover {
+  border-color: var(--ek-color-border-strong);
+}
+
+.bo-verdict-more__link:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+}
+
+.bo-verdict-more__link .v-icon {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-icon-sm);
+}
+
+.bo-verdict-more__link.is-danger .v-icon {
+  color: var(--ek-color-error-emphasis);
+}
+
 .bo-verdict-details {
   display: flex;
   align-items: center;
   gap: var(--ek-space-3);
-  margin-top: var(--ek-space-1);
 }
 
 .bo-verdict-details::after {
@@ -221,189 +199,5 @@ const icon = computed(() => (props.verdict ? ICON[props.verdict.tone] : 'mdi-tim
   flex: 1;
   height: 1px;
   background: var(--ek-color-border-subtle);
-}
-
-.bo-verdict__list,
-.bo-verdict__actions {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.bo-verdict__actions {
-  gap: var(--ek-space-1);
-}
-
-.bo-verdict__item {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--ek-space-2);
-  padding: var(--ek-space-2) 0;
-}
-
-.bo-verdict__item + .bo-verdict__item {
-  border-top: 1px solid var(--ek-color-border-subtle);
-}
-
-.bo-verdict__dot {
-  width: 8px;
-  height: 8px;
-  flex: none;
-  margin-top: calc((var(--ek-type-label-line) - 8px) / 2 + 2px);
-  border-radius: var(--ek-radius-full);
-  background: var(--ek-color-info);
-}
-
-.bo-verdict__item.is-warning .bo-verdict__dot {
-  background: var(--ek-color-warning);
-}
-
-.bo-verdict__item.is-error .bo-verdict__dot {
-  background: var(--ek-color-error);
-}
-
-.bo-verdict__text {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-width: 0;
-  padding-top: 2px;
-}
-
-.bo-verdict__title {
-  color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-label-size);
-  line-height: var(--ek-type-label-line);
-  font-weight: var(--ek-font-weight-medium);
-}
-
-.bo-verdict__detail {
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
-  line-height: var(--ek-type-caption-line);
-}
-
-.bo-verdict__go {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  gap: var(--ek-space-1);
-  min-height: 28px;
-  margin: 0;
-  padding: 0 var(--ek-space-2);
-  border: 0;
-  border-radius: var(--ek-radius-sm);
-  background: transparent;
-  color: var(--ek-color-action-emphasis);
-  font: inherit;
-  font-size: var(--ek-type-label-size);
-  font-weight: var(--ek-font-weight-medium);
-  text-decoration: none;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: var(--ek-transition-colors);
-}
-
-.bo-verdict__go:hover {
-  background: var(--ek-color-surface-muted);
-}
-
-.bo-verdict__go:focus-visible,
-.bo-verdict__action:focus-visible {
-  outline: none;
-  box-shadow: var(--ek-focus-ring);
-}
-
-.bo-verdict__go .v-icon {
-  font-size: var(--ek-icon-sm);
-}
-
-.bo-verdict__action {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--ek-space-2);
-  width: 100%;
-  min-height: 36px;
-  margin: 0;
-  padding: var(--ek-space-2) var(--ek-space-3);
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-control);
-  background: var(--ek-color-surface);
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  text-decoration: none;
-  cursor: pointer;
-  transition: var(--ek-transition-colors);
-}
-
-.bo-verdict__action:hover {
-  border-color: var(--ek-color-border-strong);
-  background: var(--ek-color-surface-muted);
-}
-
-.bo-verdict__action-icon {
-  flex: none;
-  margin-top: 2px;
-  color: var(--ek-color-action-emphasis);
-  font-size: var(--ek-icon-sm);
-}
-
-.bo-verdict__action.is-danger .bo-verdict__action-icon {
-  color: var(--ek-color-error-emphasis);
-}
-
-.bo-verdict__guard {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ek-space-1);
-  margin-top: 2px;
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
-}
-
-.bo-verdict__guard .v-icon {
-  font-size: var(--ek-icon-xs);
-}
-
-@media (max-width: 959px) {
-  .bo-verdict__body.has-both {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-@media (max-width: 599px) {
-  .bo-verdict__head {
-    flex-wrap: wrap;
-    padding: var(--ek-space-3);
-  }
-
-  .bo-verdict__summary {
-    flex-basis: calc(100% - var(--ek-icon-lg) - var(--ek-space-3));
-  }
-
-  .bo-verdict__badge {
-    margin-left: calc(var(--ek-icon-lg) + var(--ek-space-3));
-  }
-
-  .bo-verdict__body {
-    padding: var(--ek-space-2) var(--ek-space-3) var(--ek-space-3);
-  }
-
-  .bo-verdict__item {
-    flex-wrap: wrap;
-  }
-
-  /* Mobilde önce hüküm ve sayılar (CONSOLE_IDENTITY): açıklama satırları hedef ekranda okunur. */
-  .bo-verdict__detail {
-    display: none;
-  }
-
-  .bo-verdict__go {
-    margin-left: calc(8px + var(--ek-space-2));
-    padding-left: 0;
-  }
 }
 </style>
