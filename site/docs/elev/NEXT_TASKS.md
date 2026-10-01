@@ -18,6 +18,7 @@ spec'leri + axe yeşil, 1440/390 önce–sonra görüntüleri `docs/elev/review/
 - **Kabul:** `pages.test.ts` sayaç kuralları (`EXPECTED_STATS`) yeşil; kapsam sınırı sayfada hâlâ görünür.
 
 ## N3 — Anasayfa kurgusunu kısalt (A10, A15) · L
+- **Durum (S27a):** kısmen — 16.884 → 14.168 px (1440); (1)(2)(3) yapıldı, (4) 5 adım korunup tek ekran yatay çizgiye indi; ≤ 12.000 için "Nasıl çalışır" kaldı. `docs/s27a-review/`.
 - **Amaç:** ~16.900 px → ≤ 12.000 px (1440); her bölüm tek mesaj sütunu.
 - **Kapsam:** (1) Yetenekler bentosundaki iki güvenlik karosu (şifreli anahtar, izole veri) güvenlik bölümüyle
   birebir tekrar → bentodan çıkar, güvenlik bölümünde birleştir. (2) "Günlük işleriniz için" 6 kartı kompakt bir
@@ -34,6 +35,7 @@ spec'leri + axe yeşil, 1440/390 önce–sonra görüntüleri `docs/elev/review/
 - **Kabul:** taslak derlemede not görünür; `SITE_DRAFT=false` derlemesinde davranış kararla belirlenir.
 
 ## N5 — Kanıtlanabilir güven şeridi (A13) · M
+- **Durum (S27a):** yapıldı — hero sonrası açık zeminde güven şeridi, öğe başına `data-source` + test. `docs/s27a-review/`.
 - **Amaç:** Sahte müşteri/rakam olmadan "neden şimdi, neden biz" güveni.
 - **Kapsam:** fiyat bölümü üstünde ya da hero altında tek satır güven şeridi; her öğe kayıttan: canlı kanal sayısı
   (`integrations.ts`), deneme süresi + kartsız (`plans.ts`), "Verileriniz yalnızca size ait" (`security`),
@@ -48,12 +50,14 @@ spec'leri + axe yeşil, 1440/390 önce–sonra görüntüleri `docs/elev/review/
 - **Kabul:** `tokens.test.ts` (ham değer yok) yeşil; açık/koyu zeminde AA kontrast (axe).
 
 ## N7 — Otopilot demo kartı sadeliği (A17) · S
+- **Durum (S27a):** yapıldı — üç eylem korundu, tek birincil + iki metin ağırlığında ikincil. `docs/s27a-review/`.
 - **Amaç:** Kart tek birincil eylem (Demo talep edin) + iki ikincil metin bağlantısı (adresi kopyala, ücretsiz deneyin).
 - **Not:** ELEV'de değiştirilmedi; üç eylem farklı işler görüyor (e-posta istemcisi olmayan ziyaretçi için kopyala).
   Görsel ağırlık dengesi yeterli olabilir — önce/sonra ile karar ver.
 - **Kabul:** `inner-pages.spec.ts` kopyala/mailto testleri yeşil.
 
 ## N8 — Mobil hero sadeleşmesi (A18) · M
+- **Durum (S27a):** yapıldı — 390 px ilk içeriğe ~1,34 ekran. `docs/s27a-review/`.
 - **Amaç:** 390 px'te ilk içerik bölümüne ≤ 1,5 ekran.
 - **Kapsam:** hero ürün panelinde sahne adım çubuğu (`.show__nav`) ve alt sipariş kartları dar ekranda gizlenir;
   fayda şeridi 2×2 kalır; çip listesi dar ekranda tek satır yatay kaydırma (ya da gizleme — `home-premium.spec.ts`
@@ -61,6 +65,7 @@ spec'leri + axe yeşil, 1440/390 önce–sonra görüntüleri `docs/elev/review/
 - **Kabul:** yatay taşma yok (320/375/390), e2e görünürlük testleri güncel.
 
 ## N9 — Hareket ekonomisi (A19) · M
+- **Durum (S27a):** yapıldı — bento/hikâye/şerit/yörünge/güvenlik halka döngüleri kaldırıldı. `docs/s27a-review/`.
 - **Amaç:** "Görünür ekranda en fazla bir döngü" ilkesi (BRAND §4).
 - **Kapsam:** bento mini sahneleri ve ekosistem halkaları tek seferlik girişe; döngü yalnız hero vitrini ve sıfır
   aşırı satış hikâyesinde. IntersectionObserver ile tek aktif döngü.
