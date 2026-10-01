@@ -11,8 +11,11 @@
  *   depcruise  — katman sözleşmesi ihlalleri (kural başına; .dependency-cruiser.cjs, uyarı modu)
  *   unusedLocals — `tsc --noEmit --noUnusedLocals` hata sayısı (src + entegrasyonik.ts; testler hariç)
  *   knip       — kullanılmayan dosya/export/tip/bağımlılık sayıları (knip.json)
+ *   handlers   — ADR-0024 P4-GATE: `src/api/rpc/handlers/**` dosya başına satır sayısı (yalnız HANDLER_MAX_LINES üstü; yeni
+ *                dosya bu sınırı aşamaz, aşan mevcut dosya büyüyemez) ve dosya başına `getXModel()` çağrısı (depo katmanına
+ *                taşındıkça azalır, artamaz)
  *
- * Kullanım: node quality/check-ratchets.js [--update] [--only=eslint,depcruise,unusedLocals,knip]
+ * Kullanım: node quality/check-ratchets.js [--update] [--only=eslint,depcruise,unusedLocals,knip,handlers]
  * Gerçek DB/Redis/ağ kullanmaz.
  */
 'use strict';
@@ -25,7 +28,9 @@ const BASELINE_PATH = path.join(__dirname, 'baseline.json');
 const args = process.argv.slice(2);
 const UPDATE = args.includes('--update');
 const onlyArg = args.find((a) => a.startsWith('--only='));
-const ONLY = onlyArg ? onlyArg.slice(7).split(',') : ['eslint', 'depcruise', 'unusedLocals', 'knip'];
+const ONLY = onlyArg ? onlyArg.slice(7).split(',') : ['eslint', 'depcruise', 'unusedLocals', 'knip', 'handlers'];
+const HANDLERS_DIR = path.join(ROOT, 'src', 'api', 'rpc', 'handlers');
+const HANDLER_MAX_LINES = 400;
 
 const rel = (p) => path.relative(ROOT, p).split(path.sep).join('/');
 
@@ -87,6 +92,29 @@ function measureKnip() {
   return counts;
 }
 
+function listTs(dir) {
+  const out = [];
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) out.push(...listTs(p));
+    else if (e.name.endsWith('.ts')) out.push(p);
+  }
+  return out;
+}
+
+function measureHandlers() {
+  const linesOverMax = {};
+  const getModelCalls = {};
+  for (const f of listTs(HANDLERS_DIR)) {
+    const src = fs.readFileSync(f, 'utf8');
+    const lines = src.split(/\r?\n/).length;
+    if (lines > HANDLER_MAX_LINES) linesOverMax[rel(f)] = lines;
+    const n = (src.match(/\bget[A-Z][A-Za-z0-9]*Model\(/g) || []).length;
+    if (n) getModelCalls[rel(f)] = n;
+  }
+  return { linesOverMax, getModelCalls };
+}
+
 /** current <= baseline (kalem kalem). Döner: { violations: string[], improvements: string[] } */
 function compareMap(label, current, base) {
   const violations = [];
@@ -108,6 +136,7 @@ async function main() {
   if (ONLY.includes('depcruise')) current.depcruise = measureDepcruise();
   if (ONLY.includes('unusedLocals')) current.unusedLocals = measureUnusedLocals();
   if (ONLY.includes('knip')) current.knip = measureKnip();
+  if (ONLY.includes('handlers')) current.handlers = measureHandlers();
 
   const violations = [];
   const improvements = [];
@@ -121,6 +150,10 @@ async function main() {
   if (current.depcruise) push(compareMap('dependency-cruiser', current.depcruise, baseline.depcruise));
   if (current.unusedLocals !== undefined) push(compareMap('noUnusedLocals', { total: current.unusedLocals }, { total: baseline.unusedLocals || 0 }));
   if (current.knip) push(compareMap('knip', current.knip, baseline.knip));
+  if (current.handlers) {
+    push(compareMap(`handler satır (>${HANDLER_MAX_LINES})`, current.handlers.linesOverMax, baseline.handlers && baseline.handlers.linesOverMax));
+    push(compareMap('handler getXModel()', current.handlers.getModelCalls, baseline.handlers && baseline.handlers.getModelCalls));
+  }
 
   const totalConsole = current.eslint ? Object.values(current.eslint.consoleByFile).reduce((a, b) => a + b, 0) : undefined;
   console.log('[ratchet] ölçülen:', JSON.stringify({
@@ -129,6 +162,8 @@ async function main() {
     depcruise: current.depcruise,
     unusedLocals: current.unusedLocals,
     knip: current.knip,
+    handlerSatirAsan: current.handlers && Object.keys(current.handlers.linesOverMax).length,
+    handlerGetModel: current.handlers && Object.values(current.handlers.getModelCalls).reduce((a, b) => a + b, 0),
   }));
 
   if (UPDATE) {
