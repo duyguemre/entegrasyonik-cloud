@@ -502,13 +502,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-@media (min-width: 768px) {
-  .bo-fb :deep(.bo-filter__fields) {
-    flex: 1 1 auto;
-    flex-wrap: nowrap;
-  }
-}
-
 .bo-cat:focus-visible,
 .bo-issue:focus-visible,
 .bo-link:focus-visible {

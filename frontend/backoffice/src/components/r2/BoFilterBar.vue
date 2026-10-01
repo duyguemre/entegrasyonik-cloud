@@ -49,8 +49,9 @@ const emit = defineEmits<{ clear: [] }>()
 }
 
 .bo-filter__fields {
+  /* Esnek taban: alanlar arama ile aynı satırda kalır, sığmazsa kendi içinde sarar (bütün grup alt satıra düşmez). */
   display: flex;
-  flex: 0 1 auto;
+  flex: 1 1 320px;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--ek-space-3);
