@@ -383,7 +383,7 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
 .ek-tabs__more .v-icon {
   font-size: var(--ek-icon-sm);
   color: var(--ek-color-content-muted);
-  transition: transform var(--ek-duration-base) var(--ek-easing-standard);
+  transition: transform var(--ek-motion-reveal);
 }
 
 .ek-tabs__more:hover,
@@ -417,7 +417,7 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   /* Etkinleşme/pasifleşme ANINDA: zemin + kenarlık + içbükey köşeler aynı karede değişir (zemin solarken köşelerin
      anında belirmesi renk sıçraması üretiyordu). Sakin geçişi gösterge çubuğu ve içerik girişi taşır; renk geçişi
      yalnız hover'a girerken. */
-  transition: color var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: color var(--ek-motion-feedback);
 }
 
 /* Pasif sekmeler arasındaki ince ayraç (etkin sekmenin iki yanında gizlenir). */
@@ -429,7 +429,7 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   bottom: 10px;
   width: 1px;
   background: var(--ek-color-border-strong);
-  transition: opacity var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: opacity var(--ek-motion-feedback);
 }
 
 /* A12 — pasif hover ışıması: ayrı katman, YALNIZ opaklık geçişi (giriş + çıkış simetrik, motion token'ları). Zemin
@@ -444,7 +444,7 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   background: linear-gradient(to bottom, var(--ek-color-tab-hover), color-mix(in srgb, var(--ek-color-tab-hover) 35%, transparent));
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: opacity var(--ek-motion-feedback);
 }
 
 .ek-tab__wash::after {
@@ -514,7 +514,7 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   height: 2px;
   border-radius: 0 0 2px 2px;
   background: var(--ek-color-action);
-  animation: ek-tab-indicator var(--ek-duration-base) var(--ek-easing-enter) both;
+  animation: ek-tab-indicator var(--ek-motion-overlay) both;
 }
 
 @keyframes ek-tab-indicator {

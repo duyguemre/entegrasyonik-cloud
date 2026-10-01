@@ -624,7 +624,7 @@ defineExpose({
 }
 
 .pdv-variants {
-  transition: opacity var(--ek-duration-base) var(--ek-easing-enter) !important;
+  transition: opacity var(--ek-motion-overlay) !important;
 }
 
 .pdv-variants--dim {

@@ -94,7 +94,7 @@ const focusLabel = computed(() => (props.focusMode ? 'Odak modundan çık' : 'Ta
   pointer-events: auto;
   /* Dinlenirken yalnız alttaki 12px görünür (üstü kabın dışında kalır → kırpılır). */
   transform: translateY(calc(var(--ek-handle-rest) - var(--ek-handle-open)));
-  transition: transform var(--ek-duration-base) var(--ek-easing-standard);
+  transition: transform var(--ek-motion-reveal);
 }
 
 .ek-chrome-handle:hover .ek-chrome-handle__pill,
@@ -144,7 +144,7 @@ const focusLabel = computed(() => (props.focusMode ? 'Odak modundan çık' : 'Ta
   border-radius: var(--ek-radius-chip);
   background: var(--ek-color-chrome-text-muted);
   transform: translateX(-50%);
-  transition: opacity var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: opacity var(--ek-motion-feedback);
   pointer-events: none;
 }
 

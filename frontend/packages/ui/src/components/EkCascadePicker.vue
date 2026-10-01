@@ -17,9 +17,9 @@
 
   Faz 3 A9 — seviye geçişleri (mantık: `cascadeMotion.ts`, DS §4 hareket token'ları; yalnız transform + opacity):
     - Klasör seçilince sağdaki yeni seviye opaklık + `--ek-motion-distance-md` yatay kayma ile açılır
-      (`--ek-duration-base`, `--ek-easing-enter`). Kolonlar SABİT 260px; kapanan kolonlar akıştan çıkarılıp
+      (FR3 madde 7: `--ek-motion-reveal` — filtre paneli açılışıyla AYNI rol/hız). Kolonlar SABİT 260px; kapanan kolonlar akıştan çıkarılıp
       yerinde söner (pinLeaving); sağdaki "kuyruk" yalnız içeriğini yeniler → genişlik zıplaması / layout thrash yok.
-    - Üst seviye değişince alt seviyeler derinden sığa SIRAYLA kapanır (`--ek-duration-fast`, adım fast/3,
+    - Üst seviye değişince alt seviyeler derinden sığa SIRAYLA kapanır (`--ek-motion-dismiss`, adım `--ek-motion-stagger` = fast/3,
       en fazla 2 adım), yeni seviye kapanışlar bitince açılır; toplam ≤ slow token. Geri gidişte ters yön.
     - Yaprak seçilince son seviye "Seçildi" onay durumu (kolon başlığı rozeti + kuyrukta onay kartı).
     - Dar alan (< 640px, ör. 390px telefon): kolonlar yerine ileri/geri kayan TEK panel + seviye yolu
@@ -1108,7 +1108,7 @@ onBeforeUnmount(() => {
 
 /* Tek panelde eski panel giriş eğrisiyle (hızlı başlar) söner; yeni panel `data-open-step=2` ile iki adım sonra gelir. */
 .is-compact .ek-cascade-col-leave-active {
-  transition-timing-function: var(--ek-easing-enter);
+  transition-timing-function: var(--ek-motion-overlay-easing);
 }
 
 /* Sıralı adım = fast / 3; en fazla 2 adım (cascadeMotion.MAX_STAGGER_STEPS) → toplam ≤ --ek-duration-slow. */
@@ -1130,18 +1130,18 @@ onBeforeUnmount(() => {
 
 .ek-cascade-col-enter-active {
   transition:
-    opacity var(--ek-duration-base) var(--ek-easing-enter),
-    transform var(--ek-duration-base) var(--ek-easing-enter);
-  transition-delay: calc(var(--ek-cascade-open-step, 0) * var(--ek-duration-fast) / 3);
+    opacity var(--ek-motion-reveal),
+    transform var(--ek-motion-reveal);
+  transition-delay: calc(var(--ek-cascade-open-step, 0) * var(--ek-motion-stagger));
 }
 
 .ek-cascade-col-leave-active {
   z-index: 1;
   pointer-events: none;
   transition:
-    opacity var(--ek-duration-fast) var(--ek-easing-standard),
-    transform var(--ek-duration-fast) var(--ek-easing-standard);
-  transition-delay: calc(var(--ek-cascade-close-step, 0) * var(--ek-duration-fast) / 3);
+    opacity var(--ek-motion-dismiss),
+    transform var(--ek-motion-dismiss);
+  transition-delay: calc(var(--ek-cascade-close-step, 0) * var(--ek-motion-stagger));
 }
 
 .ek-cascade-col-enter-from {
@@ -1158,9 +1158,9 @@ onBeforeUnmount(() => {
    kalkar, yenisi aynı giriş diliyle (opaklık + sm) gelir → iki metin üst üste binmez, taşma/kaydırma çubuğu oluşmaz. */
 .ek-cascade-tail-enter-active {
   transition:
-    opacity var(--ek-duration-base) var(--ek-easing-enter),
-    transform var(--ek-duration-base) var(--ek-easing-enter);
-  transition-delay: calc(var(--ek-cascade-open-step, 0) * var(--ek-duration-fast) / 3);
+    opacity var(--ek-motion-reveal),
+    transform var(--ek-motion-reveal);
+  transition-delay: calc(var(--ek-cascade-open-step, 0) * var(--ek-motion-stagger));
 }
 
 .ek-cascade-tail-enter-from {
@@ -1171,15 +1171,15 @@ onBeforeUnmount(() => {
 /* İçerik değişimi (iskelet → liste, ipucu → onay kartı): çapraz geçiş, eski katman akıştan çıkar. */
 .ek-cascade-swap-enter-active {
   transition:
-    opacity var(--ek-duration-base) var(--ek-easing-enter),
-    transform var(--ek-duration-base) var(--ek-easing-enter);
+    opacity var(--ek-motion-reveal),
+    transform var(--ek-motion-reveal);
 }
 
 .ek-cascade-swap-leave-active {
   position: absolute;
   inset: 0 auto auto 0;
   width: 100%;
-  transition: opacity var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: opacity var(--ek-motion-dismiss);
 }
 
 .ek-cascade-swap-enter-from {
@@ -1193,7 +1193,7 @@ onBeforeUnmount(() => {
 
 .ek-cascade-fade-enter-active,
 .ek-cascade-fade-leave-active {
-  transition: opacity var(--ek-duration-fast) var(--ek-easing-enter);
+  transition: opacity var(--ek-motion-dismiss);
 }
 
 .ek-cascade-fade-enter-from,
@@ -1202,7 +1202,7 @@ onBeforeUnmount(() => {
 }
 
 .ek-cascade__item-end.is-check {
-  animation: ek-cascade-check-in var(--ek-duration-base) var(--ek-easing-enter);
+  animation: ek-cascade-check-in var(--ek-motion-overlay);
 }
 
 @keyframes ek-cascade-check-in {

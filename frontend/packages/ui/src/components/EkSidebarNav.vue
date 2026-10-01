@@ -205,8 +205,8 @@ function onItem(item: EkSideItem) {
   --ek-side-pad: var(--ek-space-3);
   --ek-side-rail-item: var(--ek-control-h-lg);
   /* Hedef = GENİŞ: geometri hemen, içerik genişliğin yarısında belirir. */
-  --ek-side-geo: var(--ek-app-nav-move, 0ms) var(--ek-easing-enter) 0ms;
-  --ek-side-fade-t: opacity var(--ek-duration-base) var(--ek-easing-enter) var(--ek-app-nav-reveal, 0ms);
+  --ek-side-geo: var(--ek-app-nav-move, 0ms) var(--ek-motion-layout-easing) 0ms;
+  --ek-side-fade-t: opacity var(--ek-motion-overlay) var(--ek-app-nav-reveal, 0ms);
   display: flex;
   flex-direction: column;
   padding: var(--ek-space-3) var(--ek-side-pad) var(--ek-space-4);
@@ -216,8 +216,8 @@ function onItem(item: EkSideItem) {
 
 /* Hedef = RAY: içerik hemen solar, geometri yarım solma kadar gecikir. */
 .ek-side--collapsed {
-  --ek-side-geo: var(--ek-app-nav-move, 0ms) var(--ek-easing-enter) var(--ek-app-nav-lag, 0ms);
-  --ek-side-fade-t: opacity var(--ek-app-nav-fade, 0ms) var(--ek-easing-standard) 0ms;
+  --ek-side-geo: var(--ek-app-nav-move, 0ms) var(--ek-motion-layout-easing) var(--ek-app-nav-lag, 0ms);
+  --ek-side-fade-t: opacity var(--ek-app-nav-fade, 0ms) var(--ek-motion-dismiss-easing) 0ms;
 }
 
 .ek-side__fade {
@@ -230,12 +230,12 @@ function onItem(item: EkSideItem) {
 
 /* Rayda odaklanabilir kalmasın (favori yıldızı vb.): görünürlük solma bittikten sonra kapanır. */
 .ek-side__hideable {
-  transition: var(--ek-side-fade-t), visibility 0ms linear 0ms;
+  transition: var(--ek-side-fade-t), visibility 0ms 0ms;
 }
 
 .ek-side--collapsed .ek-side__hideable {
   visibility: hidden;
-  transition: var(--ek-side-fade-t), visibility 0ms linear var(--ek-app-nav-fade, 0ms);
+  transition: var(--ek-side-fade-t), visibility 0ms var(--ek-app-nav-fade, 0ms);
 }
 
 .ek-side__section + .ek-side__section {
@@ -320,7 +320,7 @@ function onItem(item: EkSideItem) {
   font-weight: var(--ek-font-weight-medium);
   text-align: left;
   cursor: pointer;
-  transition: color var(--ek-duration-fast) var(--ek-easing-enter);
+  transition: color var(--ek-motion-feedback);
 }
 
 .ek-side__subitem {
@@ -338,8 +338,8 @@ function onItem(item: EkSideItem) {
   border-radius: inherit;
   background: var(--ek-side-fill);
   transition:
-    background-color var(--ek-duration-fast) var(--ek-easing-enter),
-    box-shadow var(--ek-duration-fast) var(--ek-easing-enter),
+    background-color var(--ek-motion-feedback),
+    box-shadow var(--ek-motion-feedback),
     right var(--ek-side-geo);
 }
 
@@ -387,13 +387,13 @@ function onItem(item: EkSideItem) {
    (aynı anda iki vurgulu hap görünmesin). */
 .ek-side--collapsed .ek-side__item.is-parent-active::after {
   transition:
-    background-color var(--ek-duration-base) var(--ek-easing-enter) var(--ek-app-nav-fade, 0ms),
-    box-shadow var(--ek-duration-fast) var(--ek-easing-enter),
+    background-color var(--ek-motion-overlay) var(--ek-app-nav-fade, 0ms),
+    box-shadow var(--ek-motion-feedback),
     right var(--ek-side-geo);
 }
 
 .ek-side--collapsed .ek-side__item.is-parent-active::before {
-  animation: ek-side-reveal var(--ek-duration-base) var(--ek-easing-enter) var(--ek-app-nav-fade, 0ms) both;
+  animation: ek-side-reveal var(--ek-motion-overlay) var(--ek-app-nav-fade, 0ms) both;
 }
 
 @keyframes ek-side-reveal {
@@ -411,7 +411,7 @@ function onItem(item: EkSideItem) {
   flex: none;
   font-size: var(--ek-icon-md);
   color: var(--ek-color-content-muted);
-  transition: color var(--ek-duration-fast) var(--ek-easing-enter);
+  transition: color var(--ek-motion-feedback);
 }
 
 .ek-side__item:hover .ek-side__icon,
@@ -459,7 +459,7 @@ function onItem(item: EkSideItem) {
   color: var(--ek-color-content-muted);
   transition:
     var(--ek-side-fade-t),
-    transform var(--ek-duration-base) var(--ek-easing-standard);
+    transform var(--ek-motion-reveal);
 }
 
 .ek-side__chevron.is-open {
@@ -473,9 +473,9 @@ function onItem(item: EkSideItem) {
   opacity: 0;
   visibility: hidden;
   transition:
-    grid-template-rows var(--ek-duration-base) var(--ek-easing-standard),
-    opacity var(--ek-duration-fast) var(--ek-easing-standard),
-    visibility 0ms linear var(--ek-duration-base);
+    grid-template-rows var(--ek-motion-reveal),
+    opacity var(--ek-motion-feedback),
+    visibility 0ms var(--ek-motion-reveal-duration);
 }
 
 .ek-side__subwrap.is-open {
@@ -483,17 +483,17 @@ function onItem(item: EkSideItem) {
   opacity: 1;
   visibility: visible;
   transition:
-    grid-template-rows var(--ek-duration-base) var(--ek-easing-enter),
-    opacity var(--ek-duration-base) var(--ek-easing-enter),
-    visibility 0ms linear 0ms;
+    grid-template-rows var(--ek-motion-reveal),
+    opacity var(--ek-motion-reveal),
+    visibility 0ms 0ms;
 }
 
 /* Ray'a geçerken alt liste önce solar, sonra katlanır (genişlikle aynı gecikme). */
 .ek-side--collapsed .ek-side__subwrap {
   transition:
     grid-template-rows var(--ek-side-geo),
-    opacity var(--ek-app-nav-fade, 0ms) var(--ek-easing-standard),
-    visibility 0ms linear var(--ek-app-nav-fade, 0ms);
+    opacity var(--ek-app-nav-fade, 0ms) var(--ek-motion-dismiss-easing),
+    visibility 0ms var(--ek-app-nav-fade, 0ms);
 }
 
 /* Kırpıcı ayrı katman: alt listenin dolgu/kenar boşluğu 0fr'de yükseklik bırakmaz (kapalı grup = 0px). */

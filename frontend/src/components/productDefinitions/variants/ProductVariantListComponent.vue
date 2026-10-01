@@ -368,8 +368,8 @@ const rowActions = (v: any): EkRowAction[] => [
   grid-template-rows: 0fr;
   opacity: 0;
   transition:
-    grid-template-rows var(--ek-duration-base) var(--ek-easing-enter),
-    opacity var(--ek-duration-base) var(--ek-easing-enter);
+    grid-template-rows var(--ek-motion-reveal),
+    opacity var(--ek-motion-reveal);
 }
 
 .pvl-reveal.is-open {
@@ -594,7 +594,7 @@ const rowActions = (v: any): EkRowAction[] => [
   border-bottom: 1px solid var(--ek-color-border-subtle);
   color: var(--ek-color-content-default);
   vertical-align: middle;
-  transition: background-color var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: background-color var(--ek-motion-feedback);
 }
 
 .pvl-row:last-child > .pvl-td { border-bottom: 0; }
@@ -701,7 +701,7 @@ td.pvl-vgroup { border-top: 0; border-bottom: 1px solid var(--ek-color-border-st
   color: var(--ek-color-content-muted);
   cursor: pointer;
   opacity: 0;
-  transition: var(--ek-transition-colors), opacity var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: var(--ek-transition-colors), opacity var(--ek-motion-feedback);
 }
 
 .pvl-copy .v-icon { font-size: var(--ek-icon-xs); }
@@ -842,7 +842,7 @@ td.pvl-vgroup { border-top: 0; border-bottom: 1px solid var(--ek-color-border-st
 
 .pvl-more__chevron {
   font-size: var(--ek-icon-sm);
-  transition: transform var(--ek-duration-base) var(--ek-easing-standard);
+  transition: transform var(--ek-motion-reveal);
 }
 
 .pvl-more__chevron.is-open { transform: rotate(180deg); }

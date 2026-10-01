@@ -188,6 +188,56 @@ export const easing = {
 } as const
 
 /**
+ * FR3 madde 7 (fe-r3a) — HAREKET ROLLERİ: uygulamadaki HER geçiş bu rollerden birini kullanır (tek kaynak).
+ * Bileşen süre/eğri SEÇMEZ, etkileşimin TÜRÜNÜ seçer; aynı tür her yerde aynı hızda akar (ör. filtre paneli
+ * açılışı = kategori seçicide seviye açılışı = menü grubu açılışı → hepsi `reveal`).
+ * CSS: `--ek-motion-<rol>` (kısaltma: "<süre> <eğri>", `transition: opacity var(--ek-motion-reveal)`),
+ * `--ek-motion-<rol>-duration`, `--ek-motion-<rol>-easing`. JS: `@entegrasyonik/ui/motion` (`motionMs`, `motionEasing`).
+ * Süreler `duration`'a, eğriler `easing`'e BAĞLIDIR (reduced-motion'da kök süreler 0'a iner → roller de).
+ * Statik bekçi: `frontend/tests/motion-single-source.test.ts` (literal süre/eğri yasak).
+ */
+export const motionRole = {
+  /** Hover/basma/odak geri bildirimi — renk, zemin, kenarlık, gölge, opaklık. */
+  feedback: { duration: 'fast', easing: 'enter', use: 'Hover, odak, seçili durum renk geçişleri' },
+  /** Aç/kapa — yükseklik + opaklık: filtre paneli, sayfa hakkında, menü grubu, kategori seviyesi, akordeon, ok dönüşü. */
+  reveal: { duration: 'base', easing: 'standard', use: 'Genişleyen/daralan içerik, kademeli seviye açılışı' },
+  /** Kaybolan geçici öğe — çıkış her zaman girişten kısa. */
+  dismiss: { duration: 'fast', easing: 'standard', use: 'Kapanan menü/diyalog/kolon, silinen satır' },
+  /** Yükselen katman girişi — menü, açılır liste, diyalog, bildirim, sekme içeriği (opaklık + kısa kayma). */
+  overlay: { duration: 'base', easing: 'enter', use: 'Popover, menü, diyalog, toast, sekme geçişi' },
+  /** Kabuk/yerleşim — sol menü daralma/genişleme, büyük alan kayması. */
+  layout: { duration: 'slow', easing: 'enter', use: 'Sol menü ray ↔ tam, kabuk bölgeleri' },
+} as const satisfies Record<string, { duration: keyof typeof duration; easing: keyof typeof easing; use: string }>
+
+/**
+ * Sıralı (kademeli) hareket adımı: ardışık öğeler arası gecikme = `fast / 3` (en fazla 2 adım; toplam ≤ slow).
+ * CSS: `--ek-motion-stagger`.
+ */
+export const motionStaggerDivisor = 3
+
+/**
+ * Döngüsel (ambient) hareket — YALNIZ bekleme göstergeleri (iskelet nabzı, marka yükleyicisi, akış çizgisi).
+ * 150–300ms ölçeğinin bilinçli istisnasıdır (döngü bir etkileşim geri bildirimi değildir); reduced-motion'da
+ * bileşen döngüyü durdurur. CSS: `--ek-motion-loop-<ad>` (süre) + eğri her zaman `--ek-easing-standard`
+ * (sabit hızlı akış çizgisi `linear` — `--ek-easing-linear`).
+ */
+export const motionLoop = {
+  /** İskelet/yükleniyor nabzı. */
+  pulse: 1400,
+  /** Marka yükleyicisi (logo çizgisi + hale). */
+  brand: 1800,
+  /** Akış/aktarma çizgisi (sabit hız), yazıyor göstergesi. */
+  flow: 1000,
+  /** Yenile düğmesi dönüşü (yükleniyor). */
+  spin: 900,
+  /** Aktarım gösterimi — simgenin kaynaktan hedefe yolculuğu (ürün aktarma paneli). */
+  transfer: 8000,
+} as const
+
+/** Sabit hızlı döngü eğrisi (yalnız `motionLoop.flow`; etkileşim geçişlerinde YASAK). */
+export const easingLinear = 'linear'
+
+/**
  * DS-v2 — hareket MESAFESİ (px). Açılan katman giriş anında en fazla bu
  * kadar kayar (fade + kısa slide); hover'da kayma/ölçek YOK.
  */

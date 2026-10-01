@@ -24,9 +24,9 @@ defineProps<{ open: boolean }>()
   opacity: 0;
   visibility: hidden;
   transition:
-    grid-template-rows var(--ek-duration-base) var(--ek-easing-standard),
-    opacity var(--ek-duration-base) var(--ek-easing-standard),
-    visibility 0s linear var(--ek-duration-base);
+    grid-template-rows var(--ek-motion-reveal),
+    opacity var(--ek-motion-reveal),
+    visibility 0s var(--ek-motion-reveal-duration);
 }
 
 .ek-collapse.is-open {
@@ -34,9 +34,9 @@ defineProps<{ open: boolean }>()
   opacity: 1;
   visibility: visible;
   transition:
-    grid-template-rows var(--ek-duration-base) var(--ek-easing-standard),
-    opacity var(--ek-duration-base) var(--ek-easing-standard),
-    visibility 0s linear 0s;
+    grid-template-rows var(--ek-motion-reveal),
+    opacity var(--ek-motion-reveal),
+    visibility 0s 0s;
 }
 
 .ek-collapse__inner {

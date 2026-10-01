@@ -229,6 +229,7 @@ import ImageLightbox from '@/components/productDefinitions/images/ImageLightbox.
 import VariantImageAssign from '@/components/productDefinitions/images/VariantImageAssign.vue'
 import { useImageUploads } from '@/components/productDefinitions/images/useImageUploads'
 import { motionMs } from '@/components/productDefinitions/images/motion'
+import { motionEasing } from '@entegrasyonik/ui/motion'
 import {
   IMAGE_GUIDE, addImagesToVariants, buildOptionGroups, imageQuality, imageUsage, keyboardTarget, makeCover, matchingVariants,
   moveItem, pruneVariantRefs, sameOrder, sortByGallery, unassignedVariants, uploadSummary, variantKey, variantLabel, worstLevel,
@@ -585,7 +586,7 @@ function initSortable() {
     filter: '.pig-check, .pig-iconbtn',
     preventOnFilter: false,
     animation: motionMs('base'),
-    easing: 'ease-out',
+    easing: motionEasing('reveal'),
     forceFallback: true,
     // FR2-PFORM 28: kopya BODY'ye eklenir. Kapta kalınca (varsayılan) diyalog kabının `transform`'u `position:fixed`
     // kopyanın kapsayıcı bloğunu değiştiriyor, kopya imleçten diyalog ofseti kadar uzakta çiziliyordu.
@@ -959,7 +960,7 @@ kbd {
   border-radius: var(--ek-radius-card);
   background: var(--ek-color-surface);
   overflow: hidden;
-  transition: border-color var(--ek-duration-fast) var(--ek-easing-enter), box-shadow var(--ek-duration-fast) var(--ek-easing-enter);
+  transition: border-color var(--ek-motion-feedback), box-shadow var(--ek-motion-feedback);
 }
 
 .pig-tile.is-cover {
@@ -1086,7 +1087,7 @@ kbd {
 .pig-tile__top > .pig-menu,
 .pig-tile__top > :deep(.pig-menu) {
   opacity: 0;
-  transition: opacity var(--ek-duration-fast) var(--ek-easing-enter);
+  transition: opacity var(--ek-motion-feedback);
 }
 
 .pig-tile:hover .pig-tile__top > *,
@@ -1405,7 +1406,7 @@ kbd {
   border-radius: var(--ek-radius-card);
   background: color-mix(in srgb, var(--ek-color-action-subtle) 88%, transparent);
   pointer-events: none;
-  animation: pig-fade var(--ek-duration-fast) var(--ek-easing-enter);
+  animation: pig-fade var(--ek-motion-feedback);
 }
 
 .pig-dropveil__box {

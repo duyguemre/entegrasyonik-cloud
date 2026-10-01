@@ -27,7 +27,7 @@ describe('A12 — pasif sekme hover yalnız renk/opaklık', () => {
     expect(wash).toMatch(/background: linear-gradient\(to bottom, var\(--ek-color-tab-hover\), color-mix\(in srgb, var\(--ek-color-tab-hover\) \d+%, transparent\)\)/)
     expect(wash).toContain('inset: -1px -1px 1px') // alt çizgi hover altında görünür
     expect(wash).toContain('opacity: 0')
-    expect(wash).toMatch(/transition: opacity var\(--ek-duration-fast\) var\(--ek-easing-standard\)/)
+    expect(wash).toMatch(/transition: opacity var\(--ek-motion-feedback\)/)
     expect(rule('.ek-tab__wash::after')).toContain('background: var(--ek-color-action-border)')
     // A10: etkinleşince ışıma ANINDA kalkar
     expect(rule('.ek-tab.is-active .ek-tab__wash')).toMatch(/opacity: 0;\s*transition: none/)

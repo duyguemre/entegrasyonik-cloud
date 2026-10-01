@@ -161,7 +161,7 @@ function renderCell(item: Record<string, any>, column: EkTableColumn): string {
 
 .ek-data-table__row {
   border-bottom: 1px solid var(--ek-color-border-default);
-  transition: background-color var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: background-color var(--ek-motion-feedback);
 }
 
 .ek-data-table__row:hover {

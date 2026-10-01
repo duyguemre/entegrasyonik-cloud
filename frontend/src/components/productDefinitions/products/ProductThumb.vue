@@ -111,7 +111,7 @@ function onClick(e: MouseEvent) {
   border-radius: var(--ek-radius-tile);
   /* Ürün fotoğrafları çoğunlukla beyaz zeminli: `contain` boşluğu yüzeyle birleşir (kutu içinde kutu görünmez). */
   background: var(--ek-color-surface);
-  transition: border-color var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: border-color var(--ek-motion-feedback);
 }
 
 .pth__img {
@@ -120,12 +120,12 @@ function onClick(e: MouseEvent) {
   padding: 2px;
   object-fit: contain;
   opacity: 1;
-  transition: opacity var(--ek-duration-base) var(--ek-easing-enter);
+  transition: opacity var(--ek-motion-overlay);
 }
 
 /* İskelet: görsel gelene kadar sessiz nabız; görsel yüklenince yumuşak belirme. */
 .pth.is-loading .pth__img { opacity: 0; }
-.pth.is-loading .pth__frame { animation: pth-pulse 1.4s var(--ek-easing-standard) infinite; }
+.pth.is-loading .pth__frame { animation: pth-pulse var(--ek-motion-loop-pulse) var(--ek-easing-standard) infinite; }
 
 @keyframes pth-pulse {
   0%, 100% { background: var(--ek-color-surface-sunken); }
@@ -215,7 +215,7 @@ function onClick(e: MouseEvent) {
   font-size: var(--ek-icon-sm);
 }
 
-.pth-pop__frame.is-loading { animation: pth-pop-pulse 1.4s var(--ek-easing-standard) infinite; }
+.pth-pop__frame.is-loading { animation: pth-pop-pulse var(--ek-motion-loop-pulse) var(--ek-easing-standard) infinite; }
 .pth-pop__frame.is-loading .pth-pop__img { opacity: 0; }
 
 @keyframes pth-pop-pulse {
@@ -227,7 +227,7 @@ function onClick(e: MouseEvent) {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  transition: opacity var(--ek-duration-base) var(--ek-easing-enter);
+  transition: opacity var(--ek-motion-overlay);
 }
 
 .pth-pop__placeholder {

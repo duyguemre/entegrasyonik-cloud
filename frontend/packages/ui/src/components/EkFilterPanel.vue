@@ -267,9 +267,9 @@ function onHeadClick(e: MouseEvent) {
   color: var(--ek-color-content-muted);
   font-size: var(--ek-icon-lg);
   transition:
-    transform var(--ek-duration-base) var(--ek-easing-standard),
-    background-color var(--ek-duration-fast) var(--ek-easing-standard),
-    color var(--ek-duration-fast) var(--ek-easing-standard);
+    transform var(--ek-motion-reveal),
+    background-color var(--ek-motion-feedback),
+    color var(--ek-motion-feedback);
 }
 
 .ek-filter__head:hover .ek-filter__chevron {

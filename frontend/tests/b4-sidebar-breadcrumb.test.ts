@@ -64,11 +64,11 @@ describe('B4 — daralma/genişleme koreografisi', () => {
   })
 
   it('süre/eğri/gecikme yalnız hareket token’larından; ray’a giderken geometri solmadan SONRA', () => {
-    expect(app).toContain('--ek-app-nav-fade: var(--ek-duration-fast)')
-    expect(app).toContain('--ek-app-nav-move: var(--ek-duration-slow)')
-    expect(rule(style(nav), '.ek-side--collapsed')).toMatch(/--ek-side-geo: var\(--ek-app-nav-move, 0ms\) var\(--ek-easing-enter\) var\(--ek-app-nav-lag, 0ms\)/)
+    expect(app).toContain('--ek-app-nav-fade: var(--ek-motion-dismiss-duration)')
+    expect(app).toContain('--ek-app-nav-move: var(--ek-motion-layout-duration)')
+    expect(rule(style(nav), '.ek-side--collapsed')).toMatch(/--ek-side-geo: var\(--ek-app-nav-move, 0ms\) var\(--ek-motion-layout-easing\) var\(--ek-app-nav-lag, 0ms\)/)
     expect(rule(style(menu), '.ek-shell-nav.is-rail')).toContain('transition-delay: var(--ek-app-nav-lag)')
-    expect(style(shell)).toMatch(/\.ek-shell--rail \{\s*--ek-shell-left: left var\(--ek-app-nav-move\) var\(--ek-easing-enter\) var\(--ek-app-nav-lag\)/)
+    expect(style(shell)).toMatch(/\.ek-shell--rail \{\s*--ek-shell-left: left var\(--ek-app-nav-move\) var\(--ek-motion-layout-easing\) var\(--ek-app-nav-lag\)/)
     for (const src of [nav, menu, shell]) expect(style(src)).not.toMatch(/cubic-bezier|\d{3,}ms/)
   })
 

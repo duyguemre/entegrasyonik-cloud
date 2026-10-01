@@ -21,10 +21,13 @@
   /* B4 — sol menü daralma/genişleme koreografisi (yalnız hareket token'larından): içerik önce solar (`fade`),
    * genişlik yarım solma kadar gecikip (`lag`) yavaşlayarak daralır (`move`, easing-enter = ease-out). Açılışta
    * sıra tersine: önce genişlik, içerik genişliğin yarısında belirir. Kabuk (`SecureLayout`) aynı değerlerle kayar. */
-  --ek-app-nav-fade: var(--ek-duration-fast);
-  --ek-app-nav-move: var(--ek-duration-slow);
-  --ek-app-nav-lag: calc(var(--ek-duration-fast) / 2);
-  --ek-app-nav-reveal: calc(var(--ek-duration-slow) / 2);
+  /* FR3 madde 7: koreografi hareket ROLLERİNDEN — solma = `dismiss`, genişlik = `layout`. */
+  --ek-app-nav-fade: var(--ek-motion-dismiss-duration);
+  --ek-app-nav-move: var(--ek-motion-layout-duration);
+  --ek-app-nav-lag: calc(var(--ek-motion-dismiss-duration) / 2);
+  --ek-app-nav-reveal: calc(var(--ek-motion-layout-duration) / 2);
+  /* Yükleme katmanı gecikmeli belirir (hızlı yüklemede yanıp sönme yok — FR2-LOADER). */
+  --ek-app-loader-delay: var(--ek-motion-feedback-duration);
   --ek-app-topbar-height: 56px;
   /* DS-v2 Aşama 2: gerçek sekme şeridi (EkWorkspaceTabs) 40px — etkin sekme 36px + üst boşluk. */
   --ek-app-tabstrip-height: 40px;

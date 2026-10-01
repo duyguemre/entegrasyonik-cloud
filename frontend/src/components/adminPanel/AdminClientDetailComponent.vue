@@ -490,8 +490,8 @@ watch(activeTab, (val) => {
 // Hover: yalnızca renk/kenarlık geri bildirimi (token süre, 200ms). Eski `translateY(-2px)` "zıplama"
 // efekti kaldırıldı (premium-ui-standards: yalnızca işlevsel geri bildirim).
 .hover-card {
-  transition: border-color var(--ek-duration-base) var(--ek-easing-standard),
-    background-color var(--ek-duration-base) var(--ek-easing-standard);
+  transition: border-color var(--ek-motion-reveal),
+    background-color var(--ek-motion-reveal);
   cursor: pointer;
 
   &:hover {
@@ -503,7 +503,7 @@ watch(activeTab, (val) => {
 .metric-pill {
   min-width: 130px;
   box-shadow: var(--ek-shadow-sm);
-  transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
+  transition: border-color var(--ek-motion-reveal);
 
   &:hover {
     border-color: var(--ek-color-border-strong);

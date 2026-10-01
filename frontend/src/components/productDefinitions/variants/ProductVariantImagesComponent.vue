@@ -440,7 +440,7 @@ kbd {
   color: var(--ek-color-content-default);
   cursor: pointer;
   opacity: 0;
-  transition: var(--ek-transition-colors), opacity var(--ek-duration-fast) var(--ek-easing-enter);
+  transition: var(--ek-transition-colors), opacity var(--ek-motion-feedback);
 }
 
 .pvi-own:hover .pvi-own__remove,

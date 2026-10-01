@@ -455,11 +455,11 @@ function toggleSort(key: string) {
 
 /* Aşama 5: genişleyen satır yumuşak girer/çıkar (opaklık + 4px; reduced-motion'da süre token'ı 0). */
 .ek-grid-expand-enter-active {
-  transition: opacity var(--ek-duration-base) var(--ek-easing-enter);
+  transition: opacity var(--ek-motion-reveal);
 }
 
 .ek-grid-expand-leave-active {
-  transition: opacity var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: opacity var(--ek-motion-dismiss);
 }
 
 .ek-grid-expand-enter-from,
@@ -468,7 +468,7 @@ function toggleSort(key: string) {
 }
 
 .ek-grid-expand-enter-active > .ek-grid__expanded-cell > * {
-  animation: ek-grid-expand-in var(--ek-duration-base) var(--ek-easing-enter);
+  animation: ek-grid-expand-in var(--ek-motion-reveal);
 }
 
 @keyframes ek-grid-expand-in {

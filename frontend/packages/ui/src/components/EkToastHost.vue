@@ -217,7 +217,7 @@ function onAction(toast: Toast) {
 
 .ek-toast-enter-active,
 .ek-toast-leave-active {
-  transition: opacity var(--ek-duration-base) var(--ek-easing-standard), transform var(--ek-duration-base) var(--ek-easing-standard);
+  transition: opacity var(--ek-motion-reveal), transform var(--ek-motion-reveal);
 }
 
 .ek-toast-enter-from,

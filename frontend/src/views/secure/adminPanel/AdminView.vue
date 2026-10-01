@@ -564,7 +564,7 @@ defineExpose({
 }
 
 .row-hover {
-  transition: background-color var(--ek-duration-base) var(--ek-easing-standard);
+  transition: background-color var(--ek-motion-reveal);
   cursor: pointer;
 
   &:hover {

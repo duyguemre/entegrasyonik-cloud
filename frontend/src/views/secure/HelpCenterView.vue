@@ -742,8 +742,8 @@ defineExpose({ initialize, activate: initialize })
   opacity: 0;
   transform: translateX(-4px);
   transition:
-    opacity var(--ek-duration-fast) var(--ek-easing-standard),
-    transform var(--ek-duration-base) var(--ek-easing-standard);
+    opacity var(--ek-motion-feedback),
+    transform var(--ek-motion-reveal);
 }
 
 .ek-help-center__cat-link:hover,
@@ -773,8 +773,8 @@ defineExpose({ initialize, activate: initialize })
 
 .ek-help-center__cat {
   transition:
-    border-color var(--ek-duration-fast) var(--ek-easing-standard),
-    box-shadow var(--ek-duration-base) var(--ek-easing-standard);
+    border-color var(--ek-motion-feedback),
+    box-shadow var(--ek-motion-reveal);
 }
 
 .ek-help-center__cat:hover {

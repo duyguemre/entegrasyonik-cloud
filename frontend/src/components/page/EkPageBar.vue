@@ -468,8 +468,8 @@ async function copyRecord() {
   background-position: var(--ek-space-1) calc(100% - 5px);
   background-size: 0% 1px;
   transition:
-    background-size var(--ek-duration-base) var(--ek-easing-standard),
-    color var(--ek-duration-fast) var(--ek-easing-standard);
+    background-size var(--ek-motion-reveal),
+    color var(--ek-motion-feedback);
 }
 
 .ek-crumbs__link:hover {

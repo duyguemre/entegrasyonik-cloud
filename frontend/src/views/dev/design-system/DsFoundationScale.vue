@@ -192,7 +192,7 @@ const radiusPx = (key: keyof typeof radius) => (radius[key] > 100 ? 'hap' : `${r
 
 .ds-fade-slide-enter-active,
 .ds-fade-slide-leave-active {
-  transition: opacity var(--ek-duration-base) var(--ek-easing-enter), transform var(--ek-duration-base) var(--ek-easing-enter);
+  transition: opacity var(--ek-motion-overlay), transform var(--ek-motion-overlay);
 }
 
 .ds-fade-slide-enter-from,

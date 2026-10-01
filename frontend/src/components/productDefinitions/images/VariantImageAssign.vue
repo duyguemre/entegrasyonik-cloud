@@ -329,7 +329,7 @@ defineExpose({ missingCount: computed(() => missing.value.length) })
 }
 
 .via__expand :deep(.v-icon) {
-  transition: transform var(--ek-duration-base) var(--ek-easing-standard);
+  transition: transform var(--ek-motion-reveal);
 }
 
 .via__expand[aria-expanded='true'] :deep(.v-icon) {

@@ -138,7 +138,7 @@ function toggleFavorite(key: string) {
   background: var(--ek-color-sidebar-bg) !important;
   border-right: 1px solid var(--ek-color-sidebar-border) !important;
   transition-duration: var(--ek-app-nav-move) !important;
-  transition-timing-function: var(--ek-easing-enter) !important;
+  transition-timing-function: var(--ek-motion-layout-easing) !important;
   transition-delay: 0ms;
 }
 
@@ -185,7 +185,7 @@ function toggleFavorite(key: string) {
   font-size: var(--ek-icon-sm);
   opacity: 0;
   cursor: pointer;
-  transition: var(--ek-transition-colors), opacity var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: var(--ek-transition-colors), opacity var(--ek-motion-feedback);
 }
 
 /* Favori: vurgu rengi DEĞİL (tek vurgu = etkin sayfa) — nötr koyu dolu yıldız. */
@@ -233,7 +233,7 @@ function toggleFavorite(key: string) {
   font-size: var(--ek-type-label-size);
   font-weight: var(--ek-type-label-weight);
   cursor: pointer;
-  transition: color var(--ek-duration-fast) var(--ek-easing-enter);
+  transition: color var(--ek-motion-feedback);
 }
 
 .ek-shell-nav__toggle::after {
@@ -244,17 +244,17 @@ function toggleFavorite(key: string) {
   border-radius: inherit;
   background: transparent;
   transition:
-    background-color var(--ek-duration-fast) var(--ek-easing-enter),
-    box-shadow var(--ek-duration-fast) var(--ek-easing-enter),
-    right var(--ek-app-nav-move) var(--ek-easing-enter) 0ms;
+    background-color var(--ek-motion-feedback),
+    box-shadow var(--ek-motion-feedback),
+    right var(--ek-app-nav-move) var(--ek-motion-layout-easing) 0ms;
 }
 
 .is-rail .ek-shell-nav__toggle::after {
   right: calc(100% - var(--ek-control-h-lg));
   transition:
-    background-color var(--ek-duration-fast) var(--ek-easing-enter),
-    box-shadow var(--ek-duration-fast) var(--ek-easing-enter),
-    right var(--ek-app-nav-move) var(--ek-easing-enter) var(--ek-app-nav-lag);
+    background-color var(--ek-motion-feedback),
+    box-shadow var(--ek-motion-feedback),
+    right var(--ek-app-nav-move) var(--ek-motion-layout-easing) var(--ek-app-nav-lag);
 }
 
 .ek-shell-nav__toggle:hover {
@@ -276,13 +276,13 @@ function toggleFavorite(key: string) {
 .ek-shell-nav__toggle-icon {
   flex: none;
   font-size: var(--ek-icon-md);
-  transition: transform var(--ek-app-nav-move) var(--ek-easing-enter) 0ms;
+  transition: transform var(--ek-app-nav-move) var(--ek-motion-layout-easing) 0ms;
 }
 
 /* Ok, genişlikle birlikte (aynı gecikme) döner — solma sırasında yarı dönük kalmaz. */
 .is-rail .ek-shell-nav__toggle-icon {
   transform: rotate(180deg);
-  transition: transform var(--ek-app-nav-move) var(--ek-easing-enter) var(--ek-app-nav-lag);
+  transition: transform var(--ek-app-nav-move) var(--ek-motion-layout-easing) var(--ek-app-nav-lag);
 }
 
 .ek-shell-nav__toggle-label {
@@ -292,12 +292,12 @@ function toggleFavorite(key: string) {
 }
 
 .ek-shell-nav__fade {
-  transition: opacity var(--ek-duration-base) var(--ek-easing-enter) var(--ek-app-nav-reveal);
+  transition: opacity var(--ek-motion-overlay) var(--ek-app-nav-reveal);
 }
 
 .is-rail .ek-shell-nav__fade {
   opacity: 0;
-  transition: opacity var(--ek-app-nav-fade) var(--ek-easing-standard) 0ms;
+  transition: opacity var(--ek-app-nav-fade) var(--ek-motion-dismiss-easing) 0ms;
 }
 
 .ek-shell-nav__tip {
