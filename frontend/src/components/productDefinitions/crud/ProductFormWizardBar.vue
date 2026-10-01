@@ -667,14 +667,25 @@ function onIssue(item: ProgressItem) {
   }
 
   .pfw-step {
+    gap: var(--ek-space-2);
     padding-right: var(--ek-space-2);
+  }
+
+  /* Tablette başlık kesilmez, iki satıra sarılır. */
+  .pfw-step__title {
+    white-space: normal;
+    text-wrap: balance;
+  }
+
+  .pfw-steps__link {
+    min-width: var(--ek-space-2);
   }
 }
 
 /* Mobil: işaretçiler bağlantıyla tek sıra, başlık + durum altta ortalı; kayıt çubuğu iki satır (akışta, yapışkan değil). */
 @media (max-width: 599px) {
   .pfw-nav {
-    padding: var(--ek-space-3) var(--ek-space-2);
+    padding: var(--ek-space-3);
   }
 
   .pfw-steps {

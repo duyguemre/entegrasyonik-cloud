@@ -14,6 +14,8 @@ const VIEWS: Array<{ w: number; h: number; theme: 'light' | 'dark' }> = [
   { w: 1440, h: 900, theme: 'light' },
   { w: 1440, h: 900, theme: 'dark' },
   { w: 390, h: 844, theme: 'light' },
+  // R4B_TABLET=1: ara öz-eleştiri turunda tablet genişliği (rapora girmez)
+  ...(process.env.R4B_TABLET ? [{ w: 800, h: 1024, theme: 'light' as const }] : []),
 ]
 
 test.skip(!TAG, 'R4B_REVIEW=once|sonra ile çalıştırılır')

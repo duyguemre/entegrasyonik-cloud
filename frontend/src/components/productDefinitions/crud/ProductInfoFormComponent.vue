@@ -72,7 +72,7 @@
       <EkFormSection title="Ürün açıklaması" icon="mdi-text-long" :columns="1">
         <div class="pif-editor">
           <QuillEditor v-model:content="productInfoForm.description" content-type="html" theme="snow"
-            :toolbar="quillToolbar" />
+            :toolbar="quillToolbar" @ready="labelToolbar" />
         </div>
       </EkFormSection>
     </div>
@@ -105,6 +105,31 @@ const productImageUrl = useProductImageUrl()
 const images = computed<any[]>(() => (Array.isArray(props.productInfoForm.images) ? props.productInfoForm.images : []))
 const thumb = (img: any) => productImageUrl(img, props.imageProductId as string, { thumbnail: true })
 const formRules: any = useFormRules()
+
+/**
+ * FE R4 B (axe `aria-command-name`): Quill araç çubuğu denetimleri adsızdı (başlık seçicisi `role="button"` span'i) ya da
+ * İngilizce adlıydı. Editör hazır olunca her denetime Türkçe erişilebilir ad verilir; düzenleyici davranışı değişmez.
+ */
+const TOOLBAR_LABELS: Record<string, string> = {
+  bold: 'Kalın', italic: 'İtalik', underline: 'Altı çizili', blockquote: 'Alıntı', link: 'Bağlantı', clean: 'Biçimi temizle',
+  'list:ordered': 'Numaralı liste', 'list:bullet': 'Madde işaretli liste', 'indent:-1': 'Girintiyi azalt', 'indent:+1': 'Girintiyi artır',
+}
+function labelToolbar(quill: any) {
+  const bar: HTMLElement | undefined = quill?.getModule?.('toolbar')?.container
+  if (!bar) return
+  bar.setAttribute('role', 'toolbar')
+  bar.setAttribute('aria-label', 'Açıklama biçimlendirme')
+  bar.querySelectorAll<HTMLButtonElement>('button[class^="ql-"]').forEach((b) => {
+    const format = b.className.replace(/^ql-/, '').split(' ')[0]
+    const label = TOOLBAR_LABELS[b.value ? `${format}:${b.value}` : format]
+    if (label) b.setAttribute('aria-label', label)
+  })
+  bar.querySelectorAll<HTMLElement>('.ql-header .ql-picker-label').forEach((el) => el.setAttribute('aria-label', 'Başlık düzeyi'))
+  bar.querySelectorAll<HTMLElement>('.ql-header .ql-picker-item').forEach((el) => {
+    const level = el.getAttribute('data-value')
+    el.setAttribute('aria-label', level ? `Başlık ${level}` : 'Normal metin')
+  })
+}
 </script>
 
 <style scoped>
