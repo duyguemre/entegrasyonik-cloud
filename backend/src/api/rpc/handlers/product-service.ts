@@ -37,9 +37,15 @@ const PRODUCT_SORT_FIELDS: readonly string[] = [
  * bu alanlar gövdeden gelirse bayat değer arada olan bir rezervasyonu ezerdi. Girdi değiştirilmez; temizlenmiş sığ kopya döner.
  */
 export const ENGINE_OWNED_VARIANT_FIELDS: ReadonlyArray<string> = ['reserved', 'allocations', 'stockVersion', 'stockDirty'];
+/**
+ * [PRC-R0/R1] Maliyet ve rekabet alanlarının TEK yazma yolu vardır: maliyet `PricingService/setVariantCosts` (doğrulama + `costUpdatedAt`),
+ * `competition` buybox okuma işi. Genel varyant/ürün kaydında gövdeden gelirse yok sayılır (bayat form maliyeti ezmesin, tarih atlanmasın).
+ */
+export const PRICING_OWNED_VARIANT_FIELDS: ReadonlyArray<string> = ['costPrice', 'costUpdatedAt', 'competition'];
 export function stripEngineOwnedVariantFields(variant: any): any {
     const copy: any = { ...(variant || {}) };
     for (const f of ENGINE_OWNED_VARIANT_FIELDS) delete copy[f];
+    for (const f of PRICING_OWNED_VARIANT_FIELDS) delete copy[f];
     return copy;
 }
 

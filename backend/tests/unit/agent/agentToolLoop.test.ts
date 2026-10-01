@@ -121,7 +121,7 @@ describe('okuma araci: sunucu sunumu (tablo modelden bagimsiz)', () => {
         expect(toolMsg.content).not.toContain('Ayşe');
         expect(toolMsg.content).toContain('oid1');
         // arac listesi: member icin health yok; yazma araci var
-        expect(prov.seen[0].tools.map((x) => x.name)).toEqual(['orders_approve', 'orders_list', 'products_search', 'reports_sales_summary', 'stock_low_list']);
+        expect(prov.seen[0].tools.map((x) => x.name)).toEqual(['orders_approve', 'orders_list', 'pricing_buybox_list', 'pricing_cost_list', 'pricing_cost_set', 'pricing_margin_preview', 'pricing_rules_list', 'pricing_suggestions_list', 'products_search', 'reports_sales_summary', 'stock_low_list']);
     });
 
     it('KPI sunumu (sales) ve entity-link (tek urun) / tablo (cok urun)', async () => {

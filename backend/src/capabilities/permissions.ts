@@ -18,6 +18,8 @@ export const PERMISSIONS = [
     'customers:read', 'customers:write', 'customers:anonymize', 'messages:read', 'messages:reply',
     // Fatura / kargo / finans
     'invoices:read', 'invoices:write', 'invoices:delete', 'shipments:read', 'shipments:write', 'finance:read',
+    // Fiyat kuralları (PRC-R2): kural yazma + öneri onayı/uygulaması (yönetici)
+    'pricing:manage',
     // Entegrasyon
     'integrations:read', 'integrations:manage', 'integrations:sync',
     // Rapor / toplu veri

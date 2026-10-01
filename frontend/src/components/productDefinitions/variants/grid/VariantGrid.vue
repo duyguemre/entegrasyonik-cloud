@@ -13,12 +13,12 @@
 <template>
   <div class="vg" :class="{ 'vg--narrow': narrow }" ref="rootRef">
     <div class="vg-scroll" ref="scrollRef" @scroll.passive="onScroll">
-      <table class="vg-table" role="grid" :aria-label="ariaLabel" :aria-rowcount="rows.length + 1" aria-colcount="10"
+      <table class="vg-table" role="grid" :aria-label="ariaLabel" :aria-rowcount="rows.length + 1" aria-colcount="11"
         aria-multiselectable="true" @keydown="onKeydown" @copy="onCopy" @paste="onPaste">
         <colgroup>
           <col class="vg-c-sel" /><col class="vg-c-group" /><col class="vg-c-code" /><col class="vg-c-barcode" />
           <col class="vg-c-money" /><col class="vg-c-money" /><col class="vg-c-chan" />
-          <col class="vg-c-int" /><col class="vg-c-shelf" /><col class="vg-c-actions" />
+          <col class="vg-c-int" /><col class="vg-c-shelf" /><col class="vg-c-cost" /><col class="vg-c-actions" />
         </colgroup>
         <thead>
           <tr role="row" aria-rowindex="1">
@@ -36,11 +36,11 @@
               </button>
               <span v-else>{{ h.label }}</span>
             </th>
-            <th class="vg-th vg-sticky-end" aria-colindex="10" scope="col"><span class="ek-sr-only">İşlemler</span></th>
+            <th class="vg-th vg-sticky-end" aria-colindex="11" scope="col"><span class="ek-sr-only">İşlemler</span></th>
           </tr>
         </thead>
         <tbody>
-          <tr v-if="win.start > 0" class="vg-pad vg-pad--top" aria-hidden="true"><td colspan="10"></td></tr>
+          <tr v-if="win.start > 0" class="vg-pad vg-pad--top" aria-hidden="true"><td colspan="11"></td></tr>
           <tr v-for="r in windowRows" :key="r.key" role="row" class="vg-row"
             :class="{ 'is-picked': isPicked(r.variant), 'is-group-start': r.groupStart, 'is-group-odd': r.groupIndex % 2 === 1 }"
             :aria-rowindex="r.index + 2" :aria-selected="isPicked(r.variant)">
@@ -111,7 +111,13 @@
                 :issue="issueOf(r, 5)" :label="`Raf, ${rowTitle(r.variant)}`" placeholder="—" />
             </td>
 
-            <td class="vg-td vg-sticky-end vg-actions" aria-colindex="10">
+            <!-- PRC-R0: birim alış maliyeti (KDV hariç). Boş = maliyet yok (0 DEĞİL); yalnız `PricingService/setVariantCosts` ile yazılır. -->
+            <td v-bind="cellAttrs(r, 6)" class="vg-td vg-cell vg-num" :class="cellClass(r, 6)">
+              <CellBody :sheet="sheet" :r="r.index" :c="6" :value="r.variant.costPrice" kind="moneyOpt"
+                :issue="issueOf(r, 6)" :label="`${$t('pricing.cost.label')}, ${rowTitle(r.variant)}`" placeholder="—" />
+            </td>
+
+            <td class="vg-td vg-sticky-end vg-actions" aria-colindex="11">
               <EkTooltip text="Özellikler ve kanal bilgileri">
                 <v-btn icon variant="text" size="small" density="comfortable" class="vg-act"
                     aria-label="Varyantı düzenle" @click="emit('edit', r.variant)"><v-icon icon="mdi-pencil-outline" size="18" /></v-btn>
@@ -122,7 +128,7 @@
               </EkTooltip>
             </td>
           </tr>
-          <tr v-if="win.end < rows.length" class="vg-pad vg-pad--bottom" aria-hidden="true"><td colspan="10"></td></tr>
+          <tr v-if="win.end < rows.length" class="vg-pad vg-pad--bottom" aria-hidden="true"><td colspan="11"></td></tr>
         </tbody>
       </table>
       <div v-if="!rows.length" class="vg-empty">
@@ -136,6 +142,7 @@
 <script setup lang="ts">
 import { computed, defineComponent, h, nextTick, onBeforeUnmount, onMounted, ref, watch, type PropType } from 'vue'
 import { EkTooltip } from '@entegrasyonik/ui/components'
+import { useI18n } from 'vue-i18n'
 import { formatMoney } from '@entegrasyonik/ui/format'
 import { useChoicesStore } from '@/stores/choicesStore'
 import GalleryThumb from '../../images/GalleryThumb.vue'
@@ -151,6 +158,7 @@ import {
 } from './variantSheet'
 import { useVariantSheet, type VariantSheet } from './useVariantSheet'
 
+const { t } = useI18n()
 // FR2-PFORM 24/29: satır 56 → 72px (küçük resim 56px, okunur); sanal kaydırma aynı sabitle.
 const ROW_H = 72
 
@@ -184,7 +192,7 @@ const choicesStore = useChoicesStore()
 const grouping = useVariantGrouping()
 const { valueTitle } = grouping
 
-type SortKey = 'stockcode' | 'barcode' | 'salePrice' | 'marketPrice' | 'stock'
+type SortKey = 'stockcode' | 'barcode' | 'salePrice' | 'marketPrice' | 'stock' | 'costPrice'
 const sortKey = ref<SortKey | null>(null)
 const sortDir = ref<'asc' | 'desc'>('asc')
 function toggleSort(k: SortKey) {
@@ -237,7 +245,7 @@ function optionChips(v: any) {
   }))
 }
 
-const dataHeads = [
+const dataHeads = computed(() => [
   { idx: 3, label: 'Stok kodu', sortKey: 'stockcode' as SortKey, cls: 'vg-sticky vg-s-code' },
   { idx: 4, label: 'Barkod', sortKey: 'barcode' as SortKey, cls: '' },
   { idx: 5, label: 'Satış fiyatı', sortKey: 'salePrice' as SortKey, cls: 'vg-th--num' },
@@ -245,7 +253,8 @@ const dataHeads = [
   { idx: 7, label: 'Kanal fiyatı', sortKey: null, cls: 'vg-th--center' },
   { idx: 8, label: 'Stok', sortKey: 'stock' as SortKey, cls: 'vg-th--num' },
   { idx: 9, label: 'Raf', sortKey: null, cls: '' },
-]
+  { idx: 10, label: t('pricing.cost.label'), sortKey: 'costPrice' as SortKey, cls: 'vg-th--num' },
+])
 
 // ── sanal kaydırma ──
 const rootRef = ref<HTMLElement | null>(null)
@@ -308,7 +317,7 @@ function cellAttrs(r: ViewRow, c: number): Record<string, any> {
   const issue = issueOf(r, c)
   return {
     role: 'gridcell',
-    'aria-colindex': [3, 4, 5, 6, 8, 9][c],
+    'aria-colindex': [3, 4, 5, 6, 8, 9, 10][c],
     'aria-selected': sheet.isSelected(r.index, c),
     'aria-invalid': issue?.level === 'error' ? 'true' : undefined,
     tabindex: sheet.isActive(r.index, c) ? 0 : -1,
@@ -442,7 +451,7 @@ const CellBody = defineComponent({
     sheet: { type: Object as PropType<VariantSheet>, required: true },
     r: { type: Number, required: true }, c: { type: Number, required: true },
     value: { type: [String, Number, null] as PropType<any>, default: undefined },
-    kind: { type: String as PropType<'text' | 'money' | 'int'>, required: true },
+    kind: { type: String as PropType<'text' | 'money' | 'moneyOpt' | 'int'>, required: true },
     issue: { type: Object as PropType<CellIssue | null>, default: null },
     label: { type: String, required: true },
     strong: Boolean,
@@ -466,7 +475,7 @@ const CellBody = defineComponent({
         }), ed.error ? h('span', { class: 'vg-edit__err', role: 'alert' }, ed.error) : null])
       }
       const empty = p.value === undefined || p.value === null || p.value === ''
-      const text = empty ? p.placeholder : p.kind === 'money' ? formatMoney(Number(p.value)) : String(p.value)
+      const text = empty ? p.placeholder : p.kind === 'money' || p.kind === 'moneyOpt' ? formatMoney(Number(p.value)) : String(p.value)
       return h('span', { class: ['vg-val', { 'is-strong': p.strong, 'is-empty': empty, 'ek-num': p.kind !== 'text' }] }, [
         text,
         p.issue ? h('span', { class: ['vg-issue', `vg-issue--${p.issue.level}`], title: p.issue.message }, [
@@ -518,6 +527,7 @@ const CellBody = defineComponent({
 .vg-c-chan { width: 96px; }
 .vg-c-int { width: 68px; }
 .vg-c-shelf { width: 80px; }
+.vg-c-cost { width: 172px; }
 .vg-c-actions { width: 84px; }
 
 /* başlık */

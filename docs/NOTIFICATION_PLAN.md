@@ -48,6 +48,7 @@ Kısaltmalar:
 | `STOCK_COMPENSATION_MANUAL` | stock | error | ✓ | UI / inst | `stock:read` (member) | `/orders/{orderId}` | D `lineId:manual:{reason}` | L | `OversellCompensationJob.ts:194,227` (belirsiz iptal / yetersiz stok; `reason` parametresi) |
 | `STOCK_OVERSOLD_UNRESOLVED` | stock | warning | ✓ | UI / dig | `stock:read` (member) | `/catalog/stock-health` | G tenant, 4 sa | L | ADR-0017 R8 (NB8) |
 | `STOCK_LOW` | stock | warning | - | UI / dig | `stock:read` (member) | `/catalog/stock-health?low=1` | dedupe `<variantId>:<gün>` (günde 1/varyant) | S | Faz-3 (`StockPublishTrigger`, tenant `lowStockThreshold`; docs/API_STOCK_FEATURES.md) |
+| `BUYBOX_LOST` | catalog | warning | - | UI / dig | `catalog:read` (member) | `/products?buybox=losing&barcode={barcode}` | D `integ:barcode:gün`; G `integ`, 1 sa; üretici soğuması 24 sa/barkod; **gölge mod varsayılan** (`pricing.buybox.notify.shadow`) | S | PRC-R1 (`pricing.buyboxRefresh`, yalnız Trendyol; docs/PRICING_COMPETITION.md §4.4) |
 | `INTEGRATION_AUTH_FAILED` | integration | critical | ✓ | UI / inst | `integrations:read` (member) | `/integrations/marketplace?code={integ}` | G `integ`, 24 sa | L | ADR-0017 R2 (NB8) |
 | `INTEGRATION_CIRCUIT_OPEN` | integration | warning | – | UI / off | `integrations:read` (member) | `/integrations/health?code={integ}` | G `integ`, 4 sa | St | ADR-0017 R2 (NB8) |
 | `INTEGRATION_ERROR_RATE_HIGH` | integration | warning/critical | – | UI / dig | `integrations:read` (member) | `/integrations/health?code={integ}` | G `integ`, 4 sa | St | ADR-0017 R1 (NB8) |

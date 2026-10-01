@@ -16,6 +16,7 @@ Kaynak: `docs/audits/DATABASE_REVIEW_2026-09-30.md` §10 (DB-10/11/12/14/15), AD
 | 0012 | `0012-export-staged-archive-ttl-tenant` | DB-12 | tenant / index | ESP `ttl_archived_at` (`{archivedAt:1}`, partial `{isArchived:true}`), **30 gün** | indeksi düşürür (silinen belgeler yalnız yedekten döner) |
 | 0013 | `0013-exportflag-clientid-number-app` | DB-14 / D12 | app / migrate (küçük) | `ExportFlag.clientId` String → Number (koşullu `updateOne`), `clientId_1` düşer | Number → String, `clientId_1` geri kurulur |
 | 0014 | `0014-admin-mfa-sub-unique-app` | B12 / ADR-0026 | app / index | `AdminMfa` koleksiyonu + `uniq_sub` UNIQUE `{sub:1}` (`autoIndex:false`; ilk kayıt yarışını DB düzeyinde kapatır); `plan` yinelenen `sub` **grup sayısını** verir | `uniq_sub` düşer (koleksiyon/veri silinmez) |
+| 0021 | `0021-pricing-competition-tenant` | PRC-R0/R1 | tenant / index | `Variants` kısmi `costPrice_number` (`{costPrice:1}`, partial `costPrice` sayı) + `competition_trendyol_status` (partial `$exists`); `BuyboxSnapshots` `integ_barcode_observedAt` + `ttl_observedAt_90d` (90 g). Veri dönüşümü YOK. **ÇALIŞTIRILMADI** (bulut, 2026-10-01; docs/PRICING_COMPETITION.md §6) | yalnız bu göçün indeksleri düşer (koleksiyon/veri silinmez) |
 
 Numara notu: 0004 hiç kullanılmadı, 0008 boştu (durdurulan iş dosya bırakmadı); 0007 son eski göçtü. `up --all` numara sırasıyla koşar
 (0001, 0002, 0003, 0005, ... 0013) ve D16 → D10 → D9 sırasını **bozar**: bu partide `--all` **kullanılmaz**, kimlik tek tek verilir (bkz. §2).
@@ -62,3 +63,16 @@ Diğerleri kapsam dışı: D8 `DB_AUTO_INDEX` (DB-08), D16'nın kalan kalemleri,
 - `backend/tests/mongo-semantics/faz4DbMigrationBatch.mongoSemantics.test.ts`: her göç için plan → up → up(no-op) → down → up; 0009'da iki TTL'in ayrı adlarla birlikte kurulması ve bildirim `uniq_idem_key` E11000 tekilleştirmesi; 0010'da kanallar arası kimlik; 0011'de kirli precheck'te hiçbir indeks kurulmaması; 0012'de süre değişince `collMod`; 0013'te çakışma/sayısal olmayan atlama ve down.
 - `backend/tests/unit/migrateFaz4DbBatch.test.ts`: numara sırası, biçim, göç tanımları ile manifest eşleşmesi, izinsiz DB kapısı, DB-12 süre parametresi.
 - `backend/tests/static/indexManifest.static.test.ts`: manifest artık kaynak TS'ten (`dev-tools/_indexManifestSource.js`, `dist/` gerekmez) üretilir ve `*_INDEXES` sabitlerini (bildirim defteri) ve MetricRollups iki TTL'ini kapsar; `node dev-tools/generate-index-manifest.js [--check]`.
+
+## 6. Rekabet ve fiyat kuralı göçleri (bulutta yazıldı, ÇALIŞTIRILMADI)
+
+Ayrıntı: `docs/PRICING_COMPETITION.md` §6 (0021) ve §R2.6 (0022). İkisi de yalnız indeks ekler (veri dönüşümü yok), tenant kapsamlıdır,
+idempotenttir; `down` yalnız kendi indekslerini düşürür. Önce yedek (CLAUDE.md kural 3), önce yerel `plan` → `up`, Atlas ayrı onay.
+
+| No | Kimlik | İş | Kapsam / tür | Ne yapar | Geri alma (`down`) |
+|---|---|---|---|---|---|
+| 0021 | `0021-pricing-competition-tenant` | PRC-R0/R1 | tenant / index | `Variants` `costPrice_number`, `competition_trendyol_status` (kısmi); `BuyboxSnapshots` geçmiş + TTL 90 g | indeksleri düşürür |
+| 0022 | `0022-pricing-rules-tenant` | PRC-R2 | tenant / index | `PriceRules` `type_integ_enabled`; `PriceSuggestions` `ruleId_variantId_current` (UNIQUE, kısmi `current:true`), `status_updatedAt`, `ttl_createdAt_90d`; `PriceHistory` `integ_variant_at`, `ttl_at_90d` | indeksleri düşürür (koleksiyon/veri silinmez) |
+
+Sıra: 0021 → 0022 (0022, 0021'e bağlı değildir ama PRC-R2 PRC-R1 verisini okur). `PriceSuggestions` tekillik indeksi kurulmadan
+`features.pricingRules` açılmamalıdır (aynı (kural, varyant) için çift güncel kayıt riski).

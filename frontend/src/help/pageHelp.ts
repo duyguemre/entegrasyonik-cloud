@@ -757,6 +757,20 @@ export const PAGE_HELP: Record<string, PageHelp> = {
     article: 'stock-health',
   },
 
+  // Kanıt: views/secure/pricing/PricingRulesView.vue (PRC-R2; docs/PRICING_COMPETITION.md §R2)
+  'pricing/PricingRulesView': {
+    purpose:
+      'Trendyol buybox fiyatına göre kendi kuralınızla fiyat önerisi alın; fiyat yalnız siz onaylayınca güncellenir.',
+    tips: [
+      'Kural, buybox fiyatının belirlediğiniz farkla altında ya da üstünde kalır; fark sıfırdan büyük olmalıdır, eşitleme yapılmaz.',
+      'Taban fiyat maliyet, komisyon, kargo, KDV ve hedef marjınızdan hesaplanır; maliyeti girilmemiş üründe öneri üretilmez.',
+      'Önerileri tek tek ya da toplu seçip onaylayın; uygulamadan hemen önce sınırlar güncel veriyle yeniden denetlenir.',
+      'Fiyat Entegrasyonik dışında değişirse ya da kısa sürede ileri geri giderse kural duraklar; gözden geçirip yeniden kaydedin.',
+    ],
+    shortcuts: ['pageRefresh', 'tabClose'],
+    article: 'app-page-help',
+  },
+
   // Kanıt: help/types.ts (HelpArticle.keywords / HelpGoTo), stores/site/menu.ts (ekran açma), supports/TicketListView.vue
   HelpCenterView: {
     purpose:

@@ -285,6 +285,17 @@ export const SCREENS: BoScreen[] = [
     view: () => import('../views/settings/SettingsView.vue'),
   },
   {
+    key: 'competition-settings',
+    label: 'Rekabet ayarları',
+    lede: 'Buybox izleme ve fiyat kuralları: kill-switch, plan varsayılanları, Trendyol çağrı bütçesi, bildirim gölge modu ve müşteri istisnaları; taslak, gerekçeli yayın ve geri alma.',
+    icon: 'mdi-chart-line-variant',
+    group: 'settings',
+    path: '/sistem/rekabet',
+    keywords: ['buybox', 'rekabet', 'rakip', 'fiyat izleme', 'trendyol bütçe', 'sku tavanı', 'tazeleme', 'gölge mod', 'istisna', 'pilot', 'fiyat kuralı', 'kill-switch', 'öneri'],
+    status: 'ready',
+    view: () => import('../views/settings/CompetitionSettingsView.vue'),
+  },
+  {
     key: 'otopilot-settings',
     label: 'Otopilot',
     lede: 'Yönetim uygulamasındaki sohbetin platform yapay zekâ sağlayıcı anahtarı. Müşteri anahtarları burada görünmez.',

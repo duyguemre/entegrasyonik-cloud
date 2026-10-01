@@ -91,6 +91,8 @@ export const useMenuStore = defineStore('menu', () => {
     ['PrivacyDataView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/PrivacyDataView.vue')))],
     ['StockPolicyView', shallowRef(defineAsyncComponent(() => import('@/views/secure/integrations/StockPolicyView.vue')))],
     ['StockHealthView', shallowRef(defineAsyncComponent(() => import('@/views/secure/StockHealthView.vue')))],
+    // PRC-R2: rekabet fiyat kuralları + öneriler + onaylı uygulama + fiyat geçmişi (yetenekler pricing.rules.* / pricing.suggestions.*).
+    ['pricing/PricingRulesView', shallowRef(defineAsyncComponent(() => import('@/views/secure/pricing/PricingRulesView.vue')))],
     // Yardım merkezi (statik içerik; menü ağacına bağlı değil — bağlantı `help/helpLink.ts`).
     ['HelpCenterView', shallowRef(defineAsyncComponent(() => import('@/views/secure/HelpCenterView.vue')))],
     // ADR-0034 — Otopilot tam sayfa + ayarlar (menü ağacına bağlı değil — bağlantı `chat/chatLinks.ts`).

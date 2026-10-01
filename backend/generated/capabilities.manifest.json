@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "sha256": "5208c53c43505a5e78c0c6c5f87d4597e3c1a8d18fc65011c83c92cb92f6f073",
-  "generatedAt": "2026-10-01T14:00:49.647Z",
+  "sha256": "059b0a852c7ff3458125ecaa899172950a85c667ed0fdcd7945999b66554a0eb",
+  "generatedAt": "2026-10-01T14:17:03.992Z",
   "stage": "A",
-  "totalCapabilities": 287,
-  "totalBindings": 323,
+  "totalCapabilities": 295,
+  "totalBindings": 336,
   "capabilities": [
     {
       "id": "account.email_verification.resend",
@@ -3151,6 +3151,43 @@
       }
     },
     {
+      "id": "platform.competition.override.set",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeBillingService/setCompetitionOverride"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.competition.settings",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeBillingService/getCompetitionSettings",
+        "BackofficeBillingService/getTenantCompetition"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
       "id": "platform.engine.discard_job",
       "version": "1.0",
       "domain": "platform",
@@ -4091,60 +4128,6 @@
       }
     },
     {
-      "id": "platform.prefs.push_config",
-      "version": "1.0",
-      "domain": "platform",
-      "effect": "read",
-      "minTier": "platformAdmin",
-      "scope": "platform",
-      "rpc": [
-        "BackofficePrefsService/getPushConfig"
-      ],
-      "mcp": {
-        "exposed": false,
-        "reason": "platform_admin"
-      },
-      "agent": {
-        "allowed": false
-      }
-    },
-    {
-      "id": "platform.prefs.push_subscribe",
-      "version": "1.0",
-      "domain": "platform",
-      "effect": "write",
-      "minTier": "platformAdmin",
-      "scope": "platform",
-      "rpc": [
-        "BackofficePrefsService/subscribePush"
-      ],
-      "mcp": {
-        "exposed": false,
-        "reason": "platform_admin"
-      },
-      "agent": {
-        "allowed": false
-      }
-    },
-    {
-      "id": "platform.prefs.push_unsubscribe",
-      "version": "1.0",
-      "domain": "platform",
-      "effect": "write",
-      "minTier": "platformAdmin",
-      "scope": "platform",
-      "rpc": [
-        "BackofficePrefsService/unsubscribePush"
-      ],
-      "mcp": {
-        "exposed": false,
-        "reason": "platform_admin"
-      },
-      "agent": {
-        "allowed": false
-      }
-    },
-    {
       "id": "platform.prefs.save_view",
       "version": "1.0",
       "domain": "platform",
@@ -4153,6 +4136,24 @@
       "scope": "platform",
       "rpc": [
         "BackofficePrefsService/saveView"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.pricing_rules.overview",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeBillingService/getPricingRulesOverview"
       ],
       "mcp": {
         "exposed": false,
@@ -4397,24 +4398,6 @@
       }
     },
     {
-      "id": "platform.tenants.usage",
-      "version": "1.0",
-      "domain": "platform",
-      "effect": "read",
-      "minTier": "platformAdmin",
-      "scope": "platform",
-      "rpc": [
-        "BackofficeTenantService/getUsage"
-      ],
-      "mcp": {
-        "exposed": false,
-        "reason": "platform_admin"
-      },
-      "agent": {
-        "allowed": false
-      }
-    },
-    {
       "id": "platform.tickets.create",
       "version": "1.0",
       "domain": "platform",
@@ -4481,6 +4464,173 @@
       "mcp": {
         "exposed": false,
         "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "pricing.buybox.list",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "PricingService/listBuybox",
+        "PricingService/getBuyboxHistory"
+      ],
+      "mcp": {
+        "exposed": true,
+        "toolset": "catalog"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "pricing.cost.list",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "PricingService/listCosts"
+      ],
+      "mcp": {
+        "exposed": true,
+        "toolset": "catalog"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "pricing.cost.set",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "PricingService/setVariantCosts"
+      ],
+      "mcp": {
+        "exposed": true,
+        "toolset": "catalog"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "pricing.margin.preview",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "PricingService/previewMargin"
+      ],
+      "mcp": {
+        "exposed": true,
+        "toolset": "catalog"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "pricing.rules.list",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "PricingService/getRules"
+      ],
+      "mcp": {
+        "exposed": true,
+        "toolset": "catalog"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "pricing.rules.save",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "PricingService/saveRule",
+        "PricingService/deleteRule"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "pricing.rules.settings",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "PricingService/setPricingSettings"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "irreversible"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "pricing.suggestions.apply",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "PricingService/applySuggestions",
+        "PricingService/dismissSuggestions"
+      ],
+      "mcp": {
+        "exposed": true,
+        "toolset": "catalog"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "pricing.suggestions.list",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "PricingService/listSuggestions",
+        "PricingService/getPriceHistory"
+      ],
+      "mcp": {
+        "exposed": true,
+        "toolset": "catalog"
       },
       "agent": {
         "allowed": false

@@ -1,5 +1,6 @@
 /** Aşama 4 sahte uç alanları (motor, abonelik/yaşam döngüsü, entegrasyon/altyapı, platform/yöneticiler, bildirimler). */
 import { createBillingMock } from './billing'
+import { createCompetitionMock } from './competition'
 import { UNHANDLED, type MockCtx, type MockDomain } from './context'
 import { createEngineMock } from './engine'
 import { createInfraMock } from './infra'
@@ -18,7 +19,8 @@ export function createP2Domains(t0: number, selfEmail: string) {
   const notifications = createNotificationsMock(t0)
   const usage = createUsageMock(t0)
   // Sıra önemli: `_platform` hedefli yapılandırma çağrıları önce platform'a, diğer hedefler infra'ya düşer.
-  const domains: MockDomain[] = [createEngineMock(t0), billing, platform, notifications, createInfraMock(t0), usage]
+  const competition = createCompetitionMock(t0, billing, platform)
+  const domains: MockDomain[] = [createEngineMock(t0), billing, competition, platform, notifications, createInfraMock(t0), usage]
   return {
     billing,
     platform,

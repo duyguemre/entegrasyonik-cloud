@@ -69,3 +69,11 @@ buraya tarihli bir blok ekler (ADR-0019 §4.1). Kademe değişiklikleri HER ZAMA
 
 - Eklenen: `platform.tenants.usage`
 
+## 2026-10-01 — sha256 1d7f89e86bbb…
+
+- Eklenen: `platform.competition.override.set`, `platform.competition.settings`, `pricing.buybox.list`, `pricing.cost.list`, `pricing.cost.set`, `pricing.margin.preview`
+
+## 2026-10-01 — sha256 059b0a852c7f…
+
+- Eklenen: `platform.pricing_rules.overview`, `pricing.rules.list`, `pricing.rules.save`, `pricing.rules.settings`, `pricing.suggestions.apply`, `pricing.suggestions.list`
+

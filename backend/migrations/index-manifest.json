@@ -1316,6 +1316,32 @@
         }
       },
       {
+        "name": "competition_trendyol_status",
+        "fields": {
+          "competition.trendyol.status": 1
+        },
+        "options": {
+          "partialFilterExpression": {
+            "competition.trendyol.status": {
+              "$exists": true
+            }
+          }
+        }
+      },
+      {
+        "name": "costPrice_number",
+        "fields": {
+          "costPrice": 1
+        },
+        "options": {
+          "partialFilterExpression": {
+            "costPrice": {
+              "$type": "number"
+            }
+          }
+        }
+      },
+      {
         "name": "productId_1",
         "fields": {
           "productId": 1
@@ -2256,6 +2282,90 @@
           "unique": true
         }
       }
-    ]
+    ],
+    "BuyboxSnapshots": [
+      {
+        "name": "integ_barcode_observedAt",
+        "fields": {
+          "integrationCode": 1,
+          "barcode": 1,
+          "observedAt": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "ttl_observedAt_90d",
+        "fields": {
+          "observedAt": 1
+        },
+        "options": {
+          "expireAfterSeconds": 7776000
+        }
+      }
+    ],
+    "PriceRules": [
+      {
+        "name": "type_integ_enabled",
+        "fields": {
+          "type": 1,
+          "integrationCode": 1,
+          "enabled": 1
+        },
+        "options": {}
+      }
+    ],
+    "PriceSuggestions": [
+      {
+        "name": "ruleId_variantId_current",
+        "fields": {
+          "ruleId": 1,
+          "variantId": 1
+        },
+        "options": {
+          "unique": true,
+          "partialFilterExpression": {
+            "current": true
+          }
+        }
+      },
+      {
+        "name": "status_updatedAt",
+        "fields": {
+          "status": 1,
+          "updatedAt": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "ttl_createdAt_90d",
+        "fields": {
+          "createdAt": 1
+        },
+        "options": {
+          "expireAfterSeconds": 7776000
+        }
+      }
+    ],
+    "PriceHistory": [
+      {
+        "name": "integ_variant_at",
+        "fields": {
+          "integrationCode": 1,
+          "variantId": 1,
+          "at": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "ttl_at_90d",
+        "fields": {
+          "at": 1
+        },
+        "options": {
+          "expireAfterSeconds": 7776000
+        }
+      }
+    ],
+    "PricingSettings": []
   }
 }

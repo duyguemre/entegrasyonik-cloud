@@ -113,6 +113,16 @@ export class MockAdminServer {
     setMockFeatureFlags(value)
   }
 
+  /**
+   * Rekabet pilotu kurgusu: `features.competition` açık (+ pilot tenant listesi) ve bildirim gölge modu `shadowDaysAgo` gün önce
+   * açık bırakılmış bir yayın sürümü ekler. `budget` verilirse bütçe de yayınlanır. Taslağı etkilemez.
+   */
+  seedCompetitionPilot(options: { tenants?: string[]; budget?: number; daysAgo?: number } = {}) {
+    const patch: Record<string, unknown> = { 'features.competition': true, 'features.competition.tenants': options.tenants ?? ['101', '102'] }
+    if (options.budget !== undefined) patch['pricing.buybox.budget.trendyol.perMin'] = options.budget
+    this.p2.platform.seedRevision(patch, options.daysAgo ?? 20, 'Rekabet pilotu açıldı (örnek)')
+  }
+
   /** NOTIFY_EMAIL_ENABLED=false: sendTestEmail 503 NOTIFY_EMAIL_UNAVAILABLE. */
   setNotifyEmail(value: boolean) {
     this.p2.notifications.setEmailEnabled(value)

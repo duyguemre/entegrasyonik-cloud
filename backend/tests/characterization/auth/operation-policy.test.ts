@@ -146,6 +146,10 @@ const BACKEND_ONLY_NOT_YET_IN_FE = [
   'BackofficeAdminUserService/list', 'BackofficeAdminUserService/invite', 'BackofficeAdminUserService/disable', 'BackofficeAdminUserService/enable', 'BackofficeAdminUserService/resetMfa',
   // [B2/B4] abonelik + gelir + tenant yaşam döngüsü (yalnız /admin-api): backoffice SPA ayrı yüzey.
   'BackofficeBillingService/listSubscriptions', 'BackofficeBillingService/getSubscription', 'BackofficeBillingService/extendTrial', 'BackofficeBillingService/cancelSubscription', 'BackofficeBillingService/changePlan', 'BackofficeBillingService/getRevenueMetrics',
+  // [PRC-CFG] rekabet modülü ayarları + tenant istisnası (yalnız /admin-api): backoffice SPA ayrı yüzey.
+  'BackofficeBillingService/getCompetitionSettings', 'BackofficeBillingService/getTenantCompetition', 'BackofficeBillingService/setCompetitionOverride',
+  // [PRC-R2] fiyat kuralları kill-switch durumu + toplam istatistik (yalnız /admin-api): backoffice SPA ayrı yüzey.
+  'BackofficeBillingService/getPricingRulesOverview',
   'BackofficeTenantService/getLifecycle', 'BackofficeTenantService/cancelDeletion', 'BackofficeTenantService/listTenants', 'BackofficeTenantService/getHealthSummary', 'BackofficeTenantService/getUsage',
   'BackofficePrefsService/listViews', 'BackofficePrefsService/saveView', 'BackofficePrefsService/deleteView',
   // [B5/B6/B8/B9] entegrasyon sağlığı + altyapı gözlemi + cache (yalnız /admin-api).

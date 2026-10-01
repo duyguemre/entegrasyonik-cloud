@@ -109,6 +109,11 @@ export default class ClientDB implements IClientDB {
     public getIdempotencyKeyModel() { return this.database.getModel('idempotency_key'); }
     public getStockMovementModel() { return this.database.getModel('stock_movement'); }
     public getCommissionOverrideModel() { return this.database.getModel('commission_override'); }
+    public getBuyboxSnapshotModel() { return this.database.getModel('buybox_snapshot'); }
+    public getPriceRuleModel() { return this.database.getModel('price_rule'); }
+    public getPriceSuggestionModel() { return this.database.getModel('price_suggestion'); }
+    public getPriceHistoryModel() { return this.database.getModel('price_history'); }
+    public getPricingSettingsModel() { return this.database.getModel('pricing_settings'); }
     public getCargoInvoiceModel() { return this.database.getModel('cargo_invoice'); }
 
     /** ADR-0003 adım 8 (purge): tenant veritabanını KALICI olarak siler (geri dönüşsüz). Yalnızca purge işinden çağrılır. */

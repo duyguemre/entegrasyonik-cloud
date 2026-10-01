@@ -50,6 +50,10 @@
             </p>
           </template>
           <p v-else class="bo-muted">Plan kaydı bulunamadı; limit ve özellikler gösterilemiyor.</p>
+          <p class="bo-sd__features">
+            <RouterLink :to="`/sistem/rekabet?tid=${tid}`" data-testid="competition-link">Rekabet izleme ayarı ve istisnası</RouterLink>
+            <span class="bo-muted"> · buybox izleme kapsamını bu müşteri için değiştirir</span>
+          </p>
         </EkCard>
       </div>
 

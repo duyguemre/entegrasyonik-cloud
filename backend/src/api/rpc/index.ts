@@ -29,6 +29,7 @@ import TenantDataService from "./handlers/tenant-data-service"
 import BillingService from "./handlers/billing-service"
 import AccountService from "./handlers/account-service"
 import StockService from "./handlers/stock-service"
+import PricingService from "./handlers/pricing-service"
 import AuditService from "./handlers/audit-service"
 import IntegrationConfigService from "./handlers/integration-config-service"
 import IntegrationComplianceService from "./handlers/integration-compliance-service"
@@ -77,6 +78,7 @@ export default {
     BillingService,
     AccountService,
     StockService,
+    PricingService,
     AuditService,
     IntegrationConfigService,
     IntegrationComplianceService,

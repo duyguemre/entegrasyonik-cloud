@@ -107,6 +107,8 @@ import ProductDetailsComponent from '@/components/productDefinitions/variants/Pr
 import ProductInfoFormComponent from '@/components/productDefinitions/crud/ProductInfoFormComponent.vue';
 import { useSnackbarStore } from '@/stores/snackbarStore';
 const snackbarStore = useSnackbarStore();
+import { useCostSave } from '@/composables/useCostSave'
+const costSave = useCostSave()
 
 
 const choicesStore = useChoicesStore()
@@ -408,6 +410,8 @@ const saveProduct = async () => {
     variant.maincode = productInfoForm.value.maincode
   }
   const { images, ...productRequest } = productInfoForm.value
+  // PRC-R0: yeni varyantların maliyeti genel kayda GİTMEZ (backend süzer); kayıttan sonra barkodla ayrı yazılır.
+  const costDiff = costSave.plan({}, productInfoForm.value.variants)
   let response: any
   try {
     response = await restApi.post("ProductService/saveProduct", { productInfo: productRequest })
@@ -423,6 +427,7 @@ const saveProduct = async () => {
       timeout: 2000,
       color: 'success'
     })
+    await costSave.persist(undefined, costDiff, 'create')
     reset()
   }
 }

@@ -131,7 +131,8 @@
     },
     "account": "Hesabım",
     "management": "Kullanıcı Yönetimi",
-    "supports": "Destek"
+    "supports": "Destek",
+    "pricingRules": "Fiyat kuralları"
   },
   "batch": {
     "menu": {
@@ -2388,9 +2389,357 @@
       "expired": "Abonelik sona erdi · stok senkronu kapalı"
     }
   },
+  "pricing": {
+    "retry": "Yeniden dene",
+    "cost": {
+      "label": "Maliyet (KDV hariç)",
+      "hint": "Birim alış maliyeti, KDV hariç. Kâr hesabı için gerekir; boş bırakırsanız bu varyantta kâr hesaplanmaz.",
+      "saved": "Maliyetler kaydedildi ({count} varyant)",
+      "partial": "Maliyetlerin bir kısmı kaydedilemedi: {count} varyant bulunamadı — ürünü yenileyip tekrar deneyin.",
+      "failed": "Ürün kaydedildi, ancak maliyetler kaydedilemedi — girdiğiniz maliyetler formda duruyor; Güncelle'ye tekrar basın.",
+      "failedCreate": "Ürün eklendi, ancak maliyetler kaydedilemedi — maliyetleri ürünü düzenleyerek yeniden girin.",
+      "failedUnauthorized": "Ürün kaydedildi, ancak maliyet kaydetme yetkiniz yok — hesap yöneticinizden katalog yazma yetkisi isteyin.",
+      "noBarcode": "{count} varyantın maliyeti kaydedilemedi çünkü barkodu yok — barkod ekleyip ürünü düzenleyerek maliyeti girin."
+    },
+    "coverage": {
+      "label": "Maliyet kapsamı {percent}",
+      "hint": "Maliyeti girilmemiş ürünlerde kâr hesaplanmaz.",
+      "loading": "Maliyet kapsamı yükleniyor",
+      "error": "Maliyet kapsamı alınamadı"
+    },
+    "badge": {
+      "losing": "Buybox kaybedildi",
+      "winning": "Buybox sizde",
+      "losingDetail": "{total} varyantın {losing} tanesinde buybox kaybedildi"
+    },
+    "filter": {
+      "label": "Buybox (Trendyol)",
+      "winning": "Kazanılan",
+      "losing": "Kaybedilen",
+      "not_found": "Bulunamadı",
+      "unchecked": "Okunmadı"
+    },
+    "status": {
+      "winning": "Buybox sizde",
+      "losing": "Buybox kaybedildi",
+      "not_found": "Trendyol'da bulunamadı",
+      "unchecked": "Henüz okunmadı"
+    },
+    "panel": {
+      "title": "Rekabet ve kâr",
+      "subtitle": "Trendyol buybox durumu ve tahmini kâr. Yalnızca görüntüleme: fiyatlarınız otomatik değişmez.",
+      "reload": "Yenile",
+      "variant": "Varyant",
+      "variantFallback": "Varyant",
+      "truncated": "İlk {count} varyant gösteriliyor.",
+      "disabled": "Buybox izleme bu hesapta kapalı. Kâr, mevcut fiyatınız üzerinden hesaplanır; buybox alanları okunmaz.",
+      "belowFloorTitle": "Buybox'a ulaşmak başa baş fiyatın altında",
+      "belowFloor": "Buybox fiyatı ({price}) başa baş fiyatınızın ({floor}) altında; bu fiyata inmek zarar ettirir.",
+      "ineligibleTitle": "Öneri ve kurallar kapalı",
+      "ineligible": "Şu bilgiler eksik olduğu için bu üründe fiyat önerisi ve kural çalışmaz: {reasons}.",
+      "enterCost": "Maliyet girin",
+      "costHint": "Maliyet girilmediği için kâr hesaplanamıyor.",
+      "missing": "Kâr hesabında eksik bileşenler: {list}. Kâr kısmi (tahmini) hesaplandı.",
+      "stale": "Bayat veri",
+      "freshness": "Güncellik",
+      "error": "Rekabet bilgisi yüklenemedi — bağlantınızı kontrol edip yeniden deneyin.",
+      "unauthorizedTitle": "Bu bölümü görme yetkiniz yok",
+      "unauthorized": "Rekabet ve kâr bilgisi katalog ve finans okuma yetkisi gerektirir; hesap yöneticinizden yetki isteyin.",
+      "emptyTitle": "Gösterilecek varyant yok",
+      "empty": "Ürün kaydedilip varyantları oluştuğunda buybox ve kâr bilgisi burada görünür."
+    },
+    "field": {
+      "status": "Buybox durumu",
+      "order": "{order}. sıra",
+      "buyboxPrice": "Buybox fiyatı",
+      "ownPrice": "Fiyatım",
+      "gap": "Fark",
+      "profitNow": "Mevcut fiyatta kâr",
+      "profitAtBuybox": "Buybox fiyatında kâr",
+      "breakEven": "Başa baş fiyat",
+      "commission": "Komisyon",
+      "lastUpdate": "Son güncelleme",
+      "nextRefresh": "Bir sonraki tazeleme"
+    },
+    "commission": {
+      "override": "sözleşme",
+      "actual": "gerçekleşen",
+      "estimated": "tahmini",
+      "unknown": "bilinmiyor"
+    },
+    "missing": {
+      "cost": "maliyet",
+      "vat": "KDV oranı",
+      "commission": "komisyon",
+      "commissionVat": "komisyon KDV'si",
+      "serviceFee": "hizmet bedeli",
+      "shipping": "kargo katkısı",
+      "withholding": "stopaj"
+    },
+    "ineligible": {
+      "cost_missing": "maliyet",
+      "vat_missing": "KDV oranı",
+      "commission_unknown": "komisyon oranı"
+    },
+    "refresh": {
+      "off": "Tazeleme kapalı",
+      "pending": "Henüz okunmadı",
+      "never": "Henüz okunmadı",
+      "overdue": "Yoğunluk nedeniyle gecikti (planlanan: {when})"
+    },
+    "chart": {
+      "title": "Son {days} gün",
+      "loading": "Fiyat geçmişi yükleniyor…",
+      "error": "Fiyat geçmişi yüklenemedi.",
+      "empty": "Bu aralıkta kayıtlı fiyat geçmişi yok. Okuma yapıldıkça burada görünür.",
+      "noBarcode": "Barkodu olmayan varyant için geçmiş tutulmaz.",
+      "buybox": "Buybox fiyatı",
+      "own": "Fiyatım",
+      "summary": "Son {days} günde {count} kayıt; fiyat aralığı {min} ile {max} arasında."
+    },
+    "channels": {
+      "title": "Kanal desteği"
+    },
+    "level": {
+      "supported": "Destekleniyor",
+      "limited": "Sınırlı destek",
+      "platform_auto": "Pazaryeri otomatik yönetiyor",
+      "not_supported": "Desteklenmiyor"
+    }
+  },
   "help": {
     "center": {
       "title": "Yardım merkezi"
     }
+  },
+  "pricingRules": {
+    "section": "Katalog",
+    "title": "Fiyat kuralları",
+    "description": "Trendyol buybox'ına göre kendi kuralınızla fiyat önerisi. Fiyat yalnız siz onaylayınca güncellenir.",
+    "tabs": {
+      "suggestions": "Öneriler",
+      "rules": "Kurallar",
+      "history": "Fiyat geçmişi"
+    },
+    "banner": {
+      "platform_off": {
+        "title": "Fiyat kuralları şu an kullanılamıyor",
+        "text": "Bu özellik platform genelinde kapalı. Açıldığında burada kural tanımlayabilirsiniz."
+      },
+      "needs_enable": {
+        "title": "Fiyat kuralları kapalı",
+        "text": "Açmak için sorumluluk metnini okuyup onaylayın. Kapalıyken hiçbir öneri üretilmez."
+      },
+      "needs_consent": {
+        "title": "Sorumluluk metni güncellendi",
+        "text": "Devam etmek için güncel metni okuyup onaylayın."
+      },
+      "competition_off": {
+        "title": "Buybox verisi kapalı",
+        "text": "Öneri için Trendyol buybox verisi gerekir; hesabınızda henüz açık değil."
+      },
+      "active": {
+        "title": "Fiyat kuralları açık",
+        "text": "Öneriler buybox verisi yenilendikçe güncellenir. Fiyat yalnız sizin onayınızla değişir."
+      }
+    },
+    "enable": "Fiyat kurallarını aç",
+    "disable": "Kapat",
+    "disableConfirm": {
+      "title": "Fiyat kuralları kapatılsın mı?",
+      "text": "Açık öneriler kapanır, yeni öneri üretilmez. Kurallarınız silinmez.",
+      "confirm": "Kapat"
+    },
+    "consent": {
+      "title": "Fiyat kurallarını aç",
+      "draft": "Taslak metin — hukuki gözden geçirme sürüyor",
+      "accept": "Okudum, onaylıyorum",
+      "dualEngine": "Pazaryerinin kendi otomatik fiyatlandırma aracını aynı ürünlerde kapattım.",
+      "version": "Metin sürümü: {version}",
+      "acceptedAt": "Onaylandı: {time}",
+      "submit": "Aç"
+    },
+    "rules": {
+      "emptyTitle": "Henüz kural yok",
+      "emptyText": "Buybox fiyatının altında ya da üstünde kalmak için kural ekleyin.",
+      "add": "Kural ekle",
+      "edit": "Düzenle",
+      "delete": "Sil",
+      "deleteTitle": "\"{name}\" kuralı silinsin mi?",
+      "deleteText": "Bu kuralın açık önerileri kapanır.",
+      "paused": "Duraklatıldı",
+      "on": "Açık",
+      "off": "Kapalı",
+      "version": "Sürüm {v}",
+      "open": "{n} açık öneri",
+      "blocked": "{n} engel",
+      "modeBelow": "Buybox fiyatının altında kal",
+      "modeAbove": "Buybox fiyatının üstünde kal",
+      "delta": "Fark",
+      "floor": "Taban",
+      "floorValue": "maliyet + kesintiler + {margin} marj",
+      "ceiling": "Tavan",
+      "limits": "Sınırlar",
+      "limitsValue": "günde ≤{changes} · {cooldown} dk ara · artış ≤{increase}/gün",
+      "scope": "Kapsam",
+      "scopeAll": "Tüm uygun Trendyol ürünleri",
+      "scopeBarcodes": "{n} barkod",
+      "actions": "{name} işlemleri",
+      "listLabel": "Fiyat kuralları"
+    },
+    "pause": {
+      "external_change": "Fiyat Entegrasyonik dışında değişti (pazaryerinin kendi aracı açık olabilir). Kuralı gözden geçirip yeniden kaydedin.",
+      "oscillation": "Fiyat kısa sürede ileri geri değişti. Kuralı gözden geçirip yeniden kaydedin."
+    },
+    "form": {
+      "titleNew": "Yeni fiyat kuralı",
+      "titleEdit": "Kuralı düzenle",
+      "name": "Kural adı",
+      "mode": "Yön",
+      "deltaAmount": "Fark (TL)",
+      "deltaPercent": "Fark (%)",
+      "deltaHint": "Fark sıfırdan büyük olmalıdır. Buybox fiyatına eşitleme yapılmaz. İkisi girilirse büyük olan kullanılır.",
+      "floorMarginPercent": "Taban: hedef marj (%)",
+      "floorHint": "Taban = maliyet + komisyon + kargo + KDV + bu marj. Maliyeti girilmemiş üründe kural çalışmaz.",
+      "ceiling": "Tavan fiyat (TL)",
+      "step": "Fiyat adımı (TL)",
+      "stepHint": "Öneri bu adıma yuvarlanır (ör. 0,01).",
+      "maxChangesPerDay": "Günlük en çok değişiklik",
+      "cooldownMin": "Değişiklikler arası en az süre (dk)",
+      "maxIncrease": "Günlük en çok artış (%)",
+      "maxIncreaseHint": "Platform üst sınırı: {max}. 30 günde en çok {max30}.",
+      "exclude": "Stokta olmayan ürünlerde öneri üretme",
+      "barcodes": "Yalnız bu barkodlar (isteğe bağlı)",
+      "barcodesHint": "Virgül ya da boşlukla ayırın; boşsa tüm uygun Trendyol ürünleri.",
+      "enabled": "Kural açık",
+      "noSeller": "Kurallar belirli bir satıcıyı hedefleyemez; yalnız Trendyol buybox fiyatına göre çalışır.",
+      "save": "Kaydet",
+      "valuesYours": "Değerleri siz belirlersiniz; Entegrasyonik önerilen değer vermez."
+    },
+    "errors": {
+      "name": "Kural adı girin (en çok 80 karakter).",
+      "mode": "Yön seçin.",
+      "delta_required": "En az bir fark değeri girin.",
+      "k1_equalize": "Fark en az 0,01 TL ya da %0,1 olmalı. Buybox fiyatına eşitleme yapılmaz.",
+      "floorMarginPercent": "0 ile 90 arasında bir marj girin.",
+      "ceiling": "Tavan fiyat girin.",
+      "step": "Adım en az 0,01 TL olmalı.",
+      "maxChangesPerDay": "1 ile {max} arasında bir sayı girin.",
+      "cooldownMin": "{min} ile 1440 dk arasında girin.",
+      "maxIncreasePercentPerDay": "0 ile {max} arasında girin.",
+      "barcodes": "En çok 500 barkod girilebilir.",
+      "load": "Fiyat kuralları yüklenemedi.",
+      "save": "Kaydedilemedi. Değerleri kontrol edip tekrar deneyin.",
+      "forbiddenTitle": "Bu işlem için yetkiniz yok",
+      "forbidden": "Fiyat kuralları ve öneri onayı yalnız yöneticiye açıktır."
+    },
+    "suggestions": {
+      "filterLabel": "Öneri durumu",
+      "open": "Açık",
+      "blocked": "Engellenen",
+      "applied": "Uygulanan",
+      "dismissed": "{n} öneri reddedildi.",
+      "lostOnly": "Yalnız buybox'ı başkasında olanlar",
+      "emptyTitle": "Açık öneri yok",
+      "emptyText": "Kurallarınız buybox verisi yenilendikçe öneri üretir.",
+      "emptyOther": "Bu durumda öneri yok.",
+      "applySelected": "Seçilenleri onayla ({n})",
+      "applyOne": "Onayla",
+      "dismiss": "Reddet",
+      "dismissSelected": "Seçilenleri reddet",
+      "selectionCap": "Tek onayda en çok {max} öneri seçilebilir.",
+      "listLabel": "Fiyat önerileri",
+      "more": "Daha fazla yükle",
+      "col": {
+        "product": "Ürün",
+        "current": "Şimdiki fiyat",
+        "suggested": "Önerilen fiyat",
+        "buybox": "Buybox",
+        "profit": "Tahmini kâr",
+        "bounds": "Taban / tavan",
+        "lowest10d": "Son 10 gün en düşük",
+        "reason": "Gerekçe",
+        "actions": "İşlemler"
+      },
+      "rowActions": "{barcode} işlemleri",
+      "rank": "{order}. sıra",
+      "ruleVersion": "Kural sürümü {v}",
+      "lowestHint": "Kanal bazında gerçekleşen en düşük satış fiyatı (yardımcı bilgi; hukuki garanti değildir)."
+    },
+    "apply": {
+      "title": "{n} fiyat güncellensin mi?",
+      "text": "Onaylarsanız Trendyol satış fiyatı güncellenir. Uygulamadan hemen önce taban, tavan, eşitleme yasağı, artış ve sıklık sınırları güncel veriyle yeniden denetlenir; geçmeyen öneri uygulanmaz. Liste (üstü çizili) fiyat değişmez.",
+      "confirm": "{n} fiyatı güncelle",
+      "done": "{n} ürünün fiyatı güncellendi.",
+      "partial": "{applied} fiyat güncellendi, {rejected} öneri denetimden geçmedi.",
+      "none": "Hiçbir öneri denetimden geçmedi; fiyat değişmedi.",
+      "rejectedTitle": "Uygulanmayan öneriler",
+      "error": "Öneriler uygulanamadı. Tekrar deneyin.",
+      "previewLabel": "Fiyat önizlemesi",
+      "col": {
+        "product": "Ürün",
+        "before": "Şimdi",
+        "after": "Sonra",
+        "change": "Değişim"
+      }
+    },
+    "history": {
+      "emptyTitle": "Fiyat değişikliği yok",
+      "emptyText": "Son 30 günde onaylı öneri ya da dış değişiklik kaydı yok.",
+      "listLabel": "Fiyat geçmişi",
+      "col": {
+        "time": "Zaman",
+        "product": "Barkod",
+        "change": "Fiyat (önce → sonra)",
+        "source": "Kaynak",
+        "buybox": "Buybox",
+        "rule": "Kural sürümü"
+      },
+      "source": {
+        "suggestion": "Onaylı öneri",
+        "external": "Entegrasyonik dışında"
+      }
+    },
+    "reason": {
+      "cost_missing": "Maliyet girilmemiş: kural bu üründe çalışmaz.",
+      "vat_missing": "KDV oranı bilinmiyor.",
+      "commission_unknown": "Komisyon oranı bilinmiyor.",
+      "floor_unreachable": "Bu marjla taban fiyat hesaplanamıyor.",
+      "below_floor": "Hedef fiyat tabanın altında kalıyor.",
+      "above_ceiling": "Hedef fiyat tavanı aşıyor.",
+      "above_list_price": "Hedef fiyat liste (üstü çizili) fiyatı aşıyor.",
+      "discount_display_active": "Üstü çizili fiyat gösteriliyor: yukarı yönlü öneri yapılmaz.",
+      "increase_limit": "Artış sınırı nedeniyle öneri yok.",
+      "equalize_forbidden": "Fark sıfıra yuvarlanıyor: eşitleme yapılmaz.",
+      "stale_data": "Buybox verisi eski.",
+      "price_changed": "Fiyat öneriden sonra değişti.",
+      "suggestion_changed": "Güncel veriyle hedef fiyat değişti; yeni öneriyi bekleyin.",
+      "rule_changed": "Kural güncellendi; öneri eski sürüme ait.",
+      "rule_disabled": "Kural kapalı.",
+      "rule_paused": "Kural duraklatıldı.",
+      "not_found": "Öneri bulunamadı.",
+      "not_open": "Öneri artık açık değil.",
+      "cooldown": "Bekleme süresi dolmadı.",
+      "daily_limit": "Günlük değişiklik sınırı doldu.",
+      "awaiting_publish": "Son fiyatın pazaryerinde görünmesi bekleniyor.",
+      "already_winning": "Buybox sizde.",
+      "no_buybox": "Buybox bilgisi yok.",
+      "out_of_stock": "Stokta yok.",
+      "variant_not_found": "Ürün bulunamadı.",
+      "duplicate_variant": "Aynı ürün için birden çok öneri seçildi.",
+      "no_change": "Fiyat zaten hedefte.",
+      "fuse": "Fiyat sigortasından geçmedi.",
+      "unknown": "Öneri uygulanamadı."
+    },
+    "warning": {
+      "discount_display_active": "Üstü çizili fiyat gösteriliyor",
+      "increase_capped": "Artış sınırına göre kırpıldı",
+      "ceiling_applied": "Tavana göre kırpıldı",
+      "extra_step_k1": "Eşitlemeyi önlemek için bir adım daha",
+      "partial_deductions": "Bazı kesintiler bilinmiyor (kâr kısmi)",
+      "unknown": "Uyarı"
+    },
+    "legalNote": "Bu araç hukuki danışmanlık değildir. Fiyat mevzuatına uyum için danışmanınıza başvurun.",
+    "adminOnly": "Kural ve onay işlemleri yöneticiye açıktır; siz önerileri görüntüleyebilirsiniz."
   }
 }
