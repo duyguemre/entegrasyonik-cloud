@@ -80,7 +80,7 @@
               </ul>
             </EkAlert>
 
-            <EkDataGrid
+            <EkDataGrid focusable-scroll
               :columns="sugColumns" :rows="sugRows" row-key="id" label-key="barcode" :label="t('pricingRules.suggestions.listLabel')"
               :selectable="sugStatus === 'open'" :selected="selected" :loading="sugLoading" :error="sugError"
               :error-title="t('pricingRules.errors.load')" :empty-title="sugStatus === 'open' ? t('pricingRules.suggestions.emptyTitle') : t('pricingRules.suggestions.emptyOther')"
@@ -170,7 +170,7 @@
           <!-- FİYAT GEÇMİŞİ (denetim) -->
           <section v-else class="pr-panel pr-section" aria-labelledby="pr-hist-title" data-testid="history-panel">
             <h2 id="pr-hist-title" class="ek-sr-only">{{ t('pricingRules.tabs.history') }}</h2>
-            <EkDataGrid :columns="histColumns" :rows="histRows" row-key="id" label-key="barcode" :label="t('pricingRules.history.listLabel')"
+            <EkDataGrid focusable-scroll :columns="histColumns" :rows="histRows" row-key="id" label-key="barcode" :label="t('pricingRules.history.listLabel')"
               :loading="histLoading" :error="histError" :error-title="t('pricingRules.errors.load')"
               :empty-title="t('pricingRules.history.emptyTitle')" :empty-text="t('pricingRules.history.emptyText')" empty-icon="mdi-history" data-testid="history-grid">
               <template #cell-time="{ row }"><span class="ek-num">{{ formatDateTime(row.at) }}</span></template>
@@ -242,7 +242,7 @@
     <!-- İNSAN ONAYI: önce → sonra önizlemesi; sunucu uygulamadan önce sigortayı yeniden çalıştırır -->
     <EkConfirmDialog v-model="applyState.open" :title="t('pricingRules.apply.title', { n: applyState.rows.length })" :description="t('pricingRules.apply.text')"
       :confirm-label="t('pricingRules.apply.confirm', { n: applyState.rows.length })" icon="mdi-check-decagram-outline" :loading="busy" data-testid="apply-dialog" @confirm="doApply">
-      <EkDataGrid :columns="previewColumns" :rows="applyState.rows" row-key="id" label-key="barcode" :label="t('pricingRules.apply.previewLabel')" data-testid="apply-preview">
+      <EkDataGrid focusable-scroll :columns="previewColumns" :rows="applyState.rows" row-key="id" label-key="barcode" :label="t('pricingRules.apply.previewLabel')" data-testid="apply-preview">
         <template #cell-product="{ row }"><span class="ek-num">{{ row.sku ?? row.barcode }}</span></template>
         <template #cell-before="{ row }"><span class="ek-num">{{ formatMoney(row.before) }}</span></template>
         <template #cell-after="{ row }"><span class="ek-num pr-strong">{{ formatMoney(row.after) }}</span></template>
