@@ -335,3 +335,19 @@ değişikliği gerektirdiği için UYGULANMADI (K48).
 | P-PRC-6 | 2026-10-01 | cloud/prc-r1 | **Backend: ürün başına buybox özeti.** `listBuybox` varyant satırı döner (limit ≤200, `productIds` ≤100); çok varyantlı ürünlerde satır kırpılırsa rozet eksik varyantları görmez. İstek: `listBuybox { groupBy: 'product' }` → `{ productId, losing, winning, total }`. Ayrıca `previewMargin` yanıtına `nextRefreshAt/overdue/settings.enabled` eklenirse panel ikinci çağrıdan kurtulur. | Backend sözleşmesi (bu iş backend'e dokunmadı) | BEKLİYOR |
 | P-PRC-7 | 2026-10-01 | cloud/prc-r1 | **Varyant ızgarası metinleri i18n dışı.** Izgara/toplu düzenleyici başlıkları ve doğrulama mesajları (Stok kodu, Satış fiyatı, "Negatif olamaz"…) kod içinde Türkçe sabit; bu iş yalnız yeni "Maliyet (KDV hariç)" başlığını/etiketini i18n'ledi. Tüm ızgarayı `t()`'ye taşımak ayrı bir iş. | Çok dosyalı metin göçü | BEKLİYOR |
 | P-PRC-8 | 2026-10-01 | cloud/prc-r1 | **Maliyet kaydı hatasında çift bildirim.** `setVariantCosts` 5xx döndüğünde uygulama geneli "Bir şeyler ters gitti. Destek kodu…" bildirimi ile bu ekranın özel bildirimi ("Ürün kaydedildi, ancak maliyetler kaydedilemedi…") birlikte görünür (P16 ile aynı aile). Öneri: çağrı başına genel bildirimi bastırma seçeneği (`PostOptions`). | `restapi.ts` genel hata davranışı | BEKLİYOR |
+
+## Fiyat kuralları — onaylı öneri (cloud/prc-r2, 2026-10-01) — PRC-R2
+
+Uygulananlar ve testler: `docs/prc-r2-review/README.md`. Aşağıdakiler akış / bilgi mimarisi / davranış içerdiği ya da ürün kararı gerektirdiği
+için uygulanmadı (K48); kullanıcı onayı bekler. Hukuk sınırları (AUTO_PRICING_LEGAL K1–K20, K58) hiçbir öneride gevşetilmez; otomatik (onaysız)
+uygulama PRC-R3'tür ve avukat yanıtını bekler.
+
+| # | Tarih | Kaynak | Öneri | Neden onay gerekir | Durum |
+|---|---|---|---|---|---|
+| P-PRC-9 | 2026-10-01 | cloud/prc-r2 | **Menü yeri.** "Fiyat kuralları" ekranı şimdilik Katalog bölümünde ayrı ekran (`catalog/pricing-rules`); gerçek menü kaydı (ApplicationDB `menus`, kod `pricing/PricingRulesView`) yerel iştir. Alternatif: "Ürün kataloğu" grubunun altında ya da ürün listesindeki "Buybox kaybedildi" rozetinden doğrudan öneriye geçiş. | Bilgi mimarisi (menü ağacı) | BEKLİYOR |
+| P-PRC-10 | 2026-10-01 | cloud/prc-r2 | **Ürün ekranından öneri.** "Rekabet ve kâr" bölümüne (PRC-R1) o varyantın açık önerisi + "Onayla" düğmesi; kâr önizlemesinde "kural bu fiyatı önerirdi" satırı. | Ürün düzenleme akışına yeni eylem | BEKLİYOR |
+| P-PRC-11 | 2026-10-01 | cloud/prc-r2 | **Kural kapsamı seçici.** Kural kapsamı bugün "tüm uygun Trendyol ürünleri" ya da elle barkod listesi. Ürün/kategori/marka seçici (ve backend `scope.productIds` zaten var) daha kullanışlı olur. | Yeni seçim akışı + backend kategori/marka kapsamı | BEKLİYOR |
+| P-PRC-12 | 2026-10-01 | cloud/prc-r2 | **Kural değerleri için "kendi geçmişimden öner".** K4 izin verir: değerler yalnız satıcının KENDİ geçmişinden türetilebilir (ör. son 30 gün ortalama marjı). Şimdi form tamamen boş başlar. | Ürün kararı; hukuk K4 sınırı | BEKLİYOR |
+| P-PRC-13 | 2026-10-01 | cloud/prc-r2 | **Öneri bildirimi.** Yeni açık öneri oluştuğunda (günlük özet) bildirim; bugün yalnız kural duraklayınca `PRICE_RULE_PAUSED` var. | Bildirim kataloğu + tercih | BEKLİYOR |
+| P-PRC-14 | 2026-10-01 | cloud/prc-r2 | **Kampanya ekranında "yasal önceki fiyat".** K10 yardımcısı (`lowestPrice10d`) bugün yalnız öneri tablosunda. Kampanya modülü (CMP-02) geldiğinde indirim kurulurken "son 10 gün en düşük" otomatik gösterilsin. | CMP-02'ye bağlı | BEKLİYOR |
+| P-PRC-15 | 2026-10-01 | cloud/prc-r2 | **Rol ayrımı.** Öneri listesi üyeye (operator) açık, onay/kural yöneticiye (`pricing:manage`). Operatörün "onaya gönder" (yöneticiye öneri) akışı istenebilir. | Yetki modeli/akış | BEKLİYOR |

@@ -60,6 +60,8 @@ Değişiklik backoffice "Sistem ayarları"ndaki mevcut taslak → yayın akış�
 | `pricing.buybox.budget.trendyol.perMin` | **60** (güvenli düşük; Trendyol ~1000/dk ve satıcı hesabının diğer çağrılarıyla paylaşılır) | 1–1000 |
 | `pricing.buybox.notify.shadow` | `true` (yalnız defter) | bool |
 | `features.competition` (+ `.tenants`) | `false` | bool + tenant listesi (pilot) |
+| `pricing.suggestions.bulkApplyQuota` (PRC-R2, **PRC-OPEN S6 açık karar**) | `per_approval` (toplu onay = 1 eylem) | `per_approval` · `per_item` |
+| `features.pricingRules` (PRC-R2 platform kill-switch, K19) | `false` | bool |
 
 Öncelik politikası: `changed_first` = son 24 saatte buybox'ı değişen → stoklu → en eski gözlem; `stocked_only` = yalnız stoklu SKU (en eski önce); `oldest_first` = yalnız en eski gözlem.
 
