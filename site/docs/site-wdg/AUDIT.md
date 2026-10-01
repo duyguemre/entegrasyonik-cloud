@@ -70,14 +70,15 @@ Uygulananlar (gerçekten fark ettirenler):
   ~2 üst bar aşağıya bırakıyor → yerel değerler yalnız ek pay (sozluk: yapışkan dizin yüksekliği) olacak şekilde sadeleşir.
 - W15 `src/layouts/BaseLayout.astro:42,58` - `theme-color` lacivert, sayfa ve üst bar beyaz → `--ek-color-background`;
   `color-scheme: light` bildirimi yok (form denetimleri/kaydırma çubuğu) → `html { color-scheme: light }`.
-- W16 Hover'da çift ok kayması: `Hero.astro:447-449`, `IntegrationShowcase.astro:439-444`, `destek.astro:269-271,400-402` -
+- W16 Hover'da çift ok kayması: `Hero.astro:447-449`, `IntegrationShowcase.astro:439-444`, `destek.astro:269-271,400-402`,
+  `iletisim.astro:298-303`, `NextLinks.astro:101-112`, `[code].astro:900-903` -
   yerel `translate`/`translateX` + global ok kuralı aynı oku iki kez kaydırıyor; yerel kural "Hareket" anahtarıyla
   durmuyor → yerel kural silinir, global ok kuralı (tek kaynak) kalır.
 - W17 "Hareket" anahtarı kapalıyken hover yükselmeleri sürüyor: `Capabilities.astro:391-397,423-425`,
   `IntegrationShowcase.astro:336-338`, `PricingSummary.astro:233-235`, `destek.astro:302-306`, `iletisim.astro:243-247,301-303`,
-  `rehber/index.astro:325-327`, `Header.astro:1264-1266`, `IntegrationCard.astro:271-275`, `NextLinks.astro:110-112`,
-  `Button.astro:116-119` (parıltı) → global tek kural: `html[data-motion=paused|reduced]` altında `[data-hover-lift]`
-  yerine bileşen sınıflarına `translate/rotate/scale: none`.
+  `rehber/index.astro:325-327`, `Header.astro:1264-1266`, `IntegrationCard.astro:271-275`, `[code].astro:870-875`,
+  `Button.astro:116-119` (parıltı) → `global.css`'te tek kural: `html[data-motion=paused|reduced]` altında bu hover
+  hedeflerine `transform/translate/rotate/scale: none`, düğme parıltısı gizli.
 - W18 Hover durumu yok/zayıf: `Header.astro:540-553,665-676,705-715` (çekmece grup/doğrudan/öne çıkan),
   `Header.astro:449-451` `.mega-chan`, `CoverageMatrix.astro:128,282-298` `.cm__card-head`, `SourceList.astro:79-85`
   `.src__title`, `sss.astro:195-203` `.hero-list a`, `guvenlik.astro:408-419` ve `ozellikler.astro:804-814` "Ayrıntı"
@@ -122,8 +123,9 @@ Atlananlar (gerekçe):
   EmailActions:27; fiyatlandirma:257,396; ChatScene:55) → yalnız `Logo.astro:26` uygulandı (her sayfada, tek nokta);
   kanal adları Türkçe sayfada otomatik çeviriye zaten aday değil.
 - Sayı + birim bölünmez boşluk: `Hero.astro:115`, `PricingSummary.astro:52`, `ClosingCta.astro:50`, `Proof.astro:44`,
-  `HowItWorks.astro:49,166`, `fiyatlandirma.astro:343`, `GuideArticle.astro:58,77`, `sozluk.astro:44` → **uygulandı**
-  (tipografik karakter; metin aynı). Testlerde düz boşluk beklentisi taranıp doğrulandı.
+  `HowItWorks.astro:49,166`, `fiyatlandirma.astro:343`, `GuideArticle.astro:58,77`, `sozluk.astro:44` → ATLANDI: içerik
+  bekçi testleri düz boşlukla metni birebir arar (`home.test.ts:267,383`, `nav-menu.test.ts:70`); test gevşetmeden
+  uygulanamaz. Ayrı metin işinde test ile birlikte yapılmalı.
 - Yer tutucu `…`: `sss.astro:62`, `404.astro:34` "Sorularda arayın" → "Sorularda arayın…" **uygulandı**.
 - Veri dosyalarında `...`: `src/data/kb/glossary.ts:43`, `src/data/kb/guides/pazaryerleri.ts:358` → `…` **uygulandı**
   (yalnız tipografik karakter; REPORT.md'de listelendi).
