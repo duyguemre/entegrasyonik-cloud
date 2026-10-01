@@ -112,7 +112,7 @@
               </span>
             </template>
           </EkDataTable>
-          <LoadMore :count="list.items.value.length" :has-more="list.hasMore.value" :loading="list.loadingMore.value" :error="list.moreError.value" @more="list.loadMore()" />
+          <BoPagination :count="list.items.value.length" :has-more="list.hasMore.value" :loading="list.loadingMore.value" :error="list.moreError.value" @more="list.loadMore()" />
         </StateBlock>
       </EkCard>
     </section>
@@ -155,7 +155,7 @@ import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import CopyViewLink from '@bo/components/CopyViewLink.vue'
 import { deliveriesVerdict } from './notificationsVerdict'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
-import LoadMore from '@bo/components/kit/LoadMore.vue'
+import BoPagination from '@bo/components/r2/BoPagination.vue'
 import GuardedDialog from '@bo/components/kit/GuardedDialog.vue'
 import MeterList, { type MeterRow } from '@bo/components/kit/MeterList.vue'
 import { DELIVERY_STATUS, deliveryErrorLabel } from '@bo/utils/labels'

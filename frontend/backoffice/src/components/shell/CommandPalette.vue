@@ -317,7 +317,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   background: transparent;
   color: var(--ek-color-content-strong);
   font: inherit;
-  font-size: var(--ek-font-size-md);
+  font-size: var(--ek-type-body-size);
   outline: none;
 }
 

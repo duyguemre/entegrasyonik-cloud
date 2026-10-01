@@ -71,7 +71,7 @@
             </span>
           </template>
         </EkDataTable>
-        <LoadMore :count="list.items.value.length" :has-more="list.hasMore.value" :loading="list.loadingMore.value" :error="list.moreError.value" @more="list.loadMore()" />
+        <BoPagination :count="list.items.value.length" :has-more="list.hasMore.value" :loading="list.loadingMore.value" :error="list.moreError.value" @more="list.loadMore()" />
       </StateBlock>
     </EkCard>
   </section>
@@ -84,7 +84,7 @@ import { api } from '@bo/api'
 import type { JobRun, JobRunStatus, JobState } from '@bo/api/contract'
 import { useCursorList } from '@bo/composables/useCursorList'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
-import LoadMore from '@bo/components/kit/LoadMore.vue'
+import BoPagination from '@bo/components/r2/BoPagination.vue'
 import { CHANNEL } from '@bo/utils/labels'
 import { codeInfo } from '@bo/utils/codes'
 import { formatDateTime, formatRelative } from '@bo/utils/format'

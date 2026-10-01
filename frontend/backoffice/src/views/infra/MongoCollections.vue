@@ -72,7 +72,7 @@
           </tbody>
         </table>
       </div>
-      <LoadMore :count="list.items.value.length" :has-more="list.hasMore.value" :loading="list.loadingMore.value" :error="list.moreError.value" @more="list.loadMore()" />
+      <BoPagination :count="list.items.value.length" :has-more="list.hasMore.value" :loading="list.loadingMore.value" :error="list.moreError.value" @more="list.loadMore()" />
     </StateBlock>
   </EkCard>
 </template>
@@ -84,7 +84,7 @@ import { api } from '@bo/api'
 import type { MongoCollection } from '@bo/api/contract'
 import { useCursorList } from '@bo/composables/useCursorList'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
-import LoadMore from '@bo/components/kit/LoadMore.vue'
+import BoPagination from '@bo/components/r2/BoPagination.vue'
 import { formatDate } from '@bo/utils/format'
 import { formatBytes, formatCount, formatDuration } from '@bo/utils/units'
 import '@bo/styles/kit.css'

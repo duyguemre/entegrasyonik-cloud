@@ -105,7 +105,7 @@ const related = computed(() => {
   border-radius: var(--ek-radius-xl);
   background: var(--ek-color-action-subtle);
   color: var(--ek-color-action-emphasis);
-  font-size: 32px;
+  font-size: var(--ek-icon-2xl);
 }
 
 .bo-soon__intro {

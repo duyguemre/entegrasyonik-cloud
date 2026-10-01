@@ -64,7 +64,7 @@
             </span>
           </template>
         </EkDataTable>
-        <LoadMore :count="list.items.value.length" :has-more="list.hasMore.value" :loading="list.loadingMore.value" :error="list.moreError.value" @more="list.loadMore()" />
+        <BoPagination :count="list.items.value.length" :has-more="list.hasMore.value" :loading="list.loadingMore.value" :error="list.moreError.value" @more="list.loadMore()" />
       </StateBlock>
     </EkCard>
     <p class="bo-table-foot">Yeni oluşturulan önce · kaynak: BackofficeNotificationService/listAnnouncements</p>
@@ -83,7 +83,7 @@ import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import { useVerdictSources } from '@bo/composables/useVerdictSources'
 import { announcementsVerdict } from './notificationsVerdict'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
-import LoadMore from '@bo/components/kit/LoadMore.vue'
+import BoPagination from '@bo/components/r2/BoPagination.vue'
 import { ANN_KIND, ANN_SEVERITY, ANN_STATUS } from '@bo/utils/labels'
 import { formatRelative } from '@bo/utils/format'
 import { channelsText, targetText, windowText } from './announcementText'

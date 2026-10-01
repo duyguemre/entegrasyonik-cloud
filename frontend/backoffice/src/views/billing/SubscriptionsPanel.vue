@@ -58,7 +58,7 @@
             <time :datetime="(item as Row).updatedAt" :title="formatDateTime((item as Row).updatedAt)">{{ formatRelative((item as Row).updatedAt) }}</time>
           </template>
         </EkDataTable>
-        <LoadMore :count="list.items.value.length" :has-more="list.hasMore.value" :loading="list.loadingMore.value" :error="list.moreError.value" @more="list.loadMore()" />
+        <BoPagination :count="list.items.value.length" :has-more="list.hasMore.value" :loading="list.loadingMore.value" :error="list.moreError.value" @more="list.loadMore()" />
       </StateBlock>
     </EkCard>
   </section>
@@ -72,7 +72,7 @@ import { api } from '@bo/api'
 import type { SubscriptionRow, SubscriptionStatus } from '@bo/api/contract'
 import { useCursorList } from '@bo/composables/useCursorList'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
-import LoadMore from '@bo/components/kit/LoadMore.vue'
+import BoPagination from '@bo/components/r2/BoPagination.vue'
 import { PLAN, SUB_STATUS, planLabel } from '@bo/utils/labels'
 import { formatDate, formatDateTime, formatRelative } from '@bo/utils/format'
 import '@bo/styles/kit.css'

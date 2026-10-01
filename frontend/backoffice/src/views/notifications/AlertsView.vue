@@ -78,7 +78,7 @@
             </span>
           </template>
         </EkDataTable>
-        <LoadMore :count="list.items.value.length" :has-more="list.hasMore.value" :loading="list.loadingMore.value" :error="list.moreError.value" @more="list.loadMore()" />
+        <BoPagination :count="list.items.value.length" :has-more="list.hasMore.value" :loading="list.loadingMore.value" :error="list.moreError.value" @more="list.loadMore()" />
       </StateBlock>
     </EkCard>
 
@@ -122,7 +122,7 @@ import { useVerdictSources } from '@bo/composables/useVerdictSources'
 import { alertsVerdict, muteUntilText } from './notificationsVerdict'
 import PushCard from '@bo/pwa/PushCard.vue'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
-import LoadMore from '@bo/components/kit/LoadMore.vue'
+import BoPagination from '@bo/components/r2/BoPagination.vue'
 import GuardedDialog from '@bo/components/kit/GuardedDialog.vue'
 import { ALERT_LEVEL, ALERT_RULE, CHANNEL } from '@bo/utils/labels'
 import { formatDateTime } from '@bo/utils/format'

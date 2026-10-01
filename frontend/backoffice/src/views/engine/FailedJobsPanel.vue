@@ -136,7 +136,7 @@
           </template>
           <template #cell-failedAt="{ item }"><EkRelativeTime :value="item.failedAt" /></template>
         </EkDataTable>
-        <LoadMore :count="list.items.value.length" :has-more="list.hasMore.value" :loading="list.loadingMore.value" :error="list.moreError.value" @more="list.loadMore()" />
+        <BoPagination :count="list.items.value.length" :has-more="list.hasMore.value" :loading="list.loadingMore.value" :error="list.moreError.value" @more="list.loadMore()" />
       </StateBlock>
     </EkCard>
 
@@ -182,7 +182,7 @@ import { useCursorList } from '@bo/composables/useCursorList'
 import { useGuardedAction } from '@bo/composables/useGuardedAction'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import GuardedDialog from '@bo/components/kit/GuardedDialog.vue'
-import LoadMore from '@bo/components/kit/LoadMore.vue'
+import BoPagination from '@bo/components/r2/BoPagination.vue'
 import { CHANNEL } from '@bo/utils/labels'
 import { ERROR_CODE_TEXT, codeInfo } from '@bo/utils/codes'
 import { formatCount } from '@bo/utils/units'
@@ -376,7 +376,7 @@ onMounted(async () => {
   margin: var(--ek-space-1) 0 0;
   color: var(--ek-color-content-strong);
   font-size: var(--ek-type-label-size);
-  font-weight: 600;
+  font-weight: var(--ek-font-weight-semibold);
 }
 .bo-failed__tid {
   max-width: 160px;

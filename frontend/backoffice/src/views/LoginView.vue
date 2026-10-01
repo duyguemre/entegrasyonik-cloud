@@ -468,7 +468,7 @@ function download() {
 
 .bo-login__code :deep(input) {
   font-family: var(--ek-font-mono);
-  font-size: 20px;
+  font-size: var(--ek-type-heading-size);
   letter-spacing: 0.4em;
 }
 

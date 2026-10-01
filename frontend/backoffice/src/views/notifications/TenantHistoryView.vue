@@ -76,7 +76,7 @@
             >Teslimler</RouterLink>
           </template>
         </EkDataTable>
-        <LoadMore :count="list.items.value.length" :has-more="list.hasMore.value" :loading="list.loadingMore.value" :error="list.moreError.value" @more="list.loadMore()" />
+        <BoPagination :count="list.items.value.length" :has-more="list.hasMore.value" :loading="list.loadingMore.value" :error="list.moreError.value" @more="list.loadMore()" />
       </StateBlock>
     </EkCard>
     <p class="bo-table-foot">Defter kaydı 30 gün saklanır · kaynak: BackofficeNotificationService/getTenantHistory</p>
@@ -94,7 +94,7 @@ import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import { tenantHistoryVerdict } from './notificationsVerdict'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
-import LoadMore from '@bo/components/kit/LoadMore.vue'
+import BoPagination from '@bo/components/r2/BoPagination.vue'
 import { DELIVERY_STATUS, NOTIFY_CATEGORY, NOTIFY_SEVERITY } from '@bo/utils/labels'
 import { formatDateTime, formatRelative } from '@bo/utils/format'
 import '@bo/styles/kit.css'
