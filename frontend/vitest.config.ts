@@ -1,10 +1,13 @@
 import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
 
 // ADR-0011 Karar 4 — Vitest (birim/statik + tema characterization).
 // Ayrı bir config dosyası: `vite.config.mts`'e dokunmuyoruz (T1a kapsamı
 // yalnızca test/tooling ekler, mevcut build/dev yapılandırmasını değiştirmez).
 export default defineConfig({
+  // fe-r4b: .vue bileşenlerini (happy-dom) bağlayan karakterizasyon testleri için SFC derleyicisi (yalnız ekleme).
+  plugins: [vue()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
