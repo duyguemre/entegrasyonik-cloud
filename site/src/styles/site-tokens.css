@@ -52,6 +52,11 @@
   --site-color-on-primary: var(--ek-color-background);
   --site-color-on-primary-muted: color-mix(in srgb, var(--ek-color-background) 78%, transparent);
   --site-color-link: var(--ek-color-primary);
+  /* S27b (SR4-11): hover'da alt çizgi YOK — renk + yumuşak zemin + ok. Bağlantı hover tonu ve "işaret" zemini. */
+  --site-color-link-hover: color-mix(in srgb, var(--ek-color-secondary-darken-1) 82%, var(--ek-color-content-strong));
+  --site-link-hover-bg: color-mix(in srgb, var(--ek-color-secondary) 14%, transparent);
+  --site-link-hover-bg-on-dark: color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
+  --site-link-arrow-shift: 0.25em;
   --site-color-focus-ring: var(--ek-color-primary);
 
   /* Degrade / ışıma — yalnızca token renklerinden türetilir */

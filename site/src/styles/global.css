@@ -51,72 +51,68 @@ p {
 }
 
 /*
- * Linkler (S15 — kullanıcı: "linklerin altı çizili olmasın, daha naif kendilerini belli etsinler"):
- * varsayılan hâlde alt çizgi YOK; link rengiyle ayrışır. Üzerine gelince ince (1 px), yarı saydam bir alt çizgi belirir
- * (yalnızca renk geçişi — yerleşim değişmez). Paragraf içi gövde linkleri (ve yasal metinler) okunabilirlik için ayrıca
- * yarı kalındır (renk + kalınlık; alt çizgiye gerek yok). Odak göstergesi `:focus-visible` halkasıdır (değişmedi).
- * Koyu yüzeylerde link rengi açık teal varyantına döner (AA).
+ * BAĞLANTI HOVER — TEK GLOBAL KURAL (S27b, SR4-11; S15 "altı çizili olmasın" kararının devamı).
+ * Sitede hiçbir bağlantı/öğe hiçbir durumda ALT ÇİZGİ almaz (statik test: tests/link-hover.test.ts). Hover dili:
+ *  1) Her bağlantı: renk geçişi (`--site-color-link-hover`; koyu yüzeyde başlık beyazı).
+ *  2) Metin içi bağlantı (paragraf, liste, tablo, yasal/rehber gövdesi; sınıfsız `a`): varsayılanda yarı kalın + renk
+ *     (renk tek başına değil — WCAG 1.4.1); hover/odakta yumuşak teal "işaret" zemini (satır kırılsa da her satırda).
+ *  3) Bağımsız "devam" bağlantısı (`.link` ve ok ikonlu bağlantılar): renk + ok ileri kayar (yalnız transform).
+ * Odak göstergesi `:focus-visible` halkasıdır (değişmedi). Reduced-motion / "Hareket" kapalı: ok kaymaz, renk/zemin
+ * değişimi anında (geri bildirim korunur). Bileşenler kendi hover'ında yalnız renk/zemin/kenarlık/ok kullanır.
  */
 a {
   color: var(--site-color-link);
-  text-decoration-line: underline;
-  text-decoration-color: transparent;
-  text-decoration-thickness: var(--site-border-width);
-  text-underline-offset: 0.25em;
+  text-decoration: none;
   transition:
     color var(--ek-duration-fast) var(--ek-easing-standard),
-    text-decoration-color var(--ek-duration-base) var(--ek-easing-standard);
+    background-color var(--ek-duration-fast) var(--ek-easing-standard),
+    box-shadow var(--ek-duration-fast) var(--ek-easing-standard);
 }
 a:hover {
-  text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+  color: var(--site-color-link-hover);
 }
-:where(p, .legal-body, .legal-fields) a:not([class]) {
+:where(p, li, td, dd, figcaption, blockquote, .legal-body, .legal-fields) a:not([class]) {
   font-weight: var(--ek-font-weight-semibold);
+  border-radius: var(--ek-radius-sm);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+:where(p, li, td, dd, figcaption, blockquote, .legal-body, .legal-fields) a:not([class]):is(:hover, :focus-visible) {
+  background-color: var(--site-link-hover-bg);
+  box-shadow: 0 0 0 0.15em var(--site-link-hover-bg);
+}
+:where(.section--stage, [data-surface='dark']) a:hover {
+  color: var(--site-text-on-dark-heading);
+}
+:where(.section--stage, [data-surface='dark']) :where(p, li, td, dd) a:not([class]):is(:hover, :focus-visible) {
+  background-color: var(--site-link-hover-bg-on-dark);
+  box-shadow: 0 0 0 0.15em var(--site-link-hover-bg-on-dark);
 }
 
-/*
- * `.link` — bağımsız "devam" linki (ör. "Planları ayrıntılı karşılaştırın →"): vurgu rengi + yarı kalın + ok ikonu.
- * Hover: alt çizgi soldan sağa ince bir ışık çizgisi olarak açılır (scaleX) ve ok hafifçe ileri kayar (translateX) —
- * yalnızca transform/opacity. Reduced-motion'da (global kural) dönüşüm geçişi yoktur: çizgi doğrudan görünür.
- * "Hareket" durdurulmuşken de ok kaymaz; çizgi yine anında görünür (geri bildirim korunur).
- */
+/* `.link` — bağımsız "devam" bağlantısı: vurgu rengi + yarı kalın + ok; hover'da renk koyulaşır, ok ileri kayar. */
 .link {
-  position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--ek-space-2);
   min-height: var(--site-tap-target);
   color: var(--site-link-accent);
   font-weight: var(--ek-font-weight-semibold);
-  text-decoration: none;
 }
-.link::after {
-  content: '';
-  position: absolute;
-  inset-inline: 0 calc(var(--ek-space-4) + var(--ek-space-2));
-  inset-block-end: calc(50% - 0.8em);
-  height: var(--site-border-width);
-  background: linear-gradient(90deg, currentColor, color-mix(in srgb, currentColor 30%, transparent));
-  opacity: 0.7;
-  transform: scaleX(0);
-  transform-origin: left center;
-  transition: transform var(--ek-duration-slow) var(--ek-easing-standard);
-  pointer-events: none;
+.link:hover {
+  color: var(--site-color-link-hover);
 }
-.link:hover::after {
-  transform: scaleX(1);
-}
+/* Ok ikonlu her bağlantı (Icon `arrow`) aynı ok hareketini paylaşır — bileşen başına ayrı hover kuralı gerekmez. */
+a .icon[data-icon='arrow'],
 .link > svg {
   flex: none;
   transition: transform var(--ek-duration-base) var(--ek-easing-standard);
 }
+a:hover .icon[data-icon='arrow'],
 .link:hover > svg {
-  transform: translateX(0.25em);
+  transform: translateX(var(--site-link-arrow-shift));
 }
-html:is([data-motion='paused'], [data-motion='reduced']) .link > svg {
+html:is([data-motion='paused'], [data-motion='reduced']) :is(a .icon[data-icon='arrow'], .link > svg) {
   transform: none;
-}
-html:is([data-motion='paused'], [data-motion='reduced']) .link::after {
   transition: none;
 }
 
