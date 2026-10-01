@@ -1,17 +1,23 @@
 import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import { ApplicationError } from '@platform/core/security/Security'
-import { containsRegex, clampPage, clampLimit } from '@utils/search'
+import { FinancialPanelRepository } from '@database/repositories/tenant/FinancialPanelRepository'
+import { queryTransactions, cargoInvoices, financialSummary, payoutDetails } from '@operations/finance/financialPanel'
 import { listCommissionOverrides, setCommissionOverride, deleteCommissionOverride } from '@operations/finance/commissionOverrides'
 import { getOrderCommissionSummary, getCommissionByBarcodes, getRealizedCommissionByCategory, getNetRevenuePreview, MAX_NET_PREVIEW_ITEMS } from '@operations/finance/commissionQueries'
 import { eventLog } from '@platform/core/logger';
 
 const log = eventLog('api', 'financial-service');
 
-/** getCargoInvoices tek yanıtta en fazla bu kadar satır döner (en yeni önce). */
-export const CARGO_INVOICES_MAX_ROWS = 5000
+export { CARGO_INVOICES_MAX_ROWS } from '@operations/finance/financialPanel'
 
+/**
+ * Finans RPC cephesi (ADR-0024 Dalga 3 P3-ORD). Sorgular `FinancialPanelRepository`'de, iş kuralları
+ * `operations/finance/financialPanel`'de; RPC adları ve yanıt biçimleri değişmedi.
+ */
 export default class FinancialService extends BaseApi implements IService {
+
+    private get finance(): FinancialPanelRepository { return new FinancialPanelRepository(this.clientDB) }
 
     async get() {
         return {}
@@ -22,88 +28,14 @@ export default class FinancialService extends BaseApi implements IService {
      * Tüm finansal hareketleri (Satış, İade, Kesinti vb.) filtreli ve sıralı getirir.
      */
     async getTransactionData(): Promise<any> {
-        try {
-            const {
-                startDate,
-                endDate,
-                integrationCodes,
-                transactionTypes,
-                externalIdSearch,
-                page: rawPage,
-                limit: rawLimit,
-                sortBy
-            } = this.request;
+        const { filterQuery, transactions, totalNumberOfRecords, summary } = await queryTransactions(this.finance, this.request);
 
-            const filterQuery: any = {};
-
-            // Çoklu platform filtresi
-            if (integrationCodes && integrationCodes.length > 0) {
-                filterQuery.integrationCode = { $in: integrationCodes };
-            }
-
-            // Çoklu işlem tipi filtresi
-            if (transactionTypes && transactionTypes.length > 0) {
-                filterQuery.transactionType = { $in: transactionTypes };
-            }
-
-            // İşlem No (externalId) araması
-            if (externalIdSearch) {
-                filterQuery.externalId = containsRegex(externalIdSearch); // [GV-01]
-            }
-
-            // Tarih Aralığı Filtresi
-            if (startDate || endDate) {
-                filterQuery.transactionDate = {};
-                if (startDate) filterQuery.transactionDate.$gte = new Date(startDate);
-                if (endDate) filterQuery.transactionDate.$lte = new Date(endDate);
-            }
-
-            // Sıralama
-            const sortQuery: any = {};
-            if (sortBy && sortBy.length > 0) {
-                sortBy.forEach((s: any) => {
-                    sortQuery[s.key] = s.order === 'asc' ? 1 : -1;
-                });
-            } else {
-                sortQuery.transactionDate = -1;
-            }
-
-            const page = clampPage(rawPage); // [GV-01/MM-08]
-            const limit = clampLimit(rawLimit, 20);
-            const skip = (page - 1) * limit;
-            const model = this.clientDB.getFinancialTransactionModel();
-
-            const [totalNumberOfRecords, transactions, summary] = await Promise.all([
-                model.countDocuments(filterQuery),
-                model.find(filterQuery).sort(sortQuery).skip(skip).limit(limit).lean(),
-                model.aggregate([
-                    { $match: filterQuery },
-                    {
-                        $group: {
-                            _id: null,
-                            totalCredit: { $sum: "$credit" },
-                            totalDebt: { $sum: "$debt" },
-                            totalCargo: { $sum: "$cargoAmount" },
-                            netAmount: { $sum: "$netAmount" },
-                            transactionCount: { $sum: 1 }
-                        }
-                    }
-                ])
-            ]);
-
-            log.debug('FINANCIAL_GET_RESULT', '[FinancialService:get] sorgu sonucu', { filterKeys: Object.keys(filterQuery), found: transactions.length });
-            if (transactions.length > 0) {
-                log.debug('FINANCIAL_GET_SAMPLE', '[FinancialService:get] örnek kayıt', { integrationCode: transactions[0].integrationCode, transactionType: transactions[0].transactionType });
-            }
-
-            return {
-                transactions,
-                totalNumberOfRecords,
-                summary: summary[0] ?? { totalCredit: 0, totalDebt: 0, totalCargo: 0, netAmount: 0, transactionCount: 0 }
-            };
-        } catch (error) {
-            throw error;
+        log.debug('FINANCIAL_GET_RESULT', '[FinancialService:get] sorgu sonucu', { filterKeys: Object.keys(filterQuery), found: transactions.length });
+        if (transactions.length > 0) {
+            log.debug('FINANCIAL_GET_SAMPLE', '[FinancialService:get] örnek kayıt', { integrationCode: transactions[0].integrationCode, transactionType: transactions[0].transactionType });
         }
+
+        return { transactions, totalNumberOfRecords, summary };
     }
 
     /**
@@ -111,35 +43,7 @@ export default class FinancialService extends BaseApi implements IService {
      * Kargo bazlı mutabakat ekranı için verileri sağlar.
      */
     async getCargoInvoices(): Promise<any> {
-        try {
-            const {
-                invoiceNumber,
-                orderNumber,
-                integrationCode,
-                startDate,
-                endDate
-            } = this.request;
-
-            const filterQuery: any = {};
-
-            if (integrationCode) filterQuery.integrationCode = integrationCode;
-            if (invoiceNumber) filterQuery.invoiceNumber = invoiceNumber;
-            if (orderNumber) filterQuery.orderNumber = orderNumber;
-
-            if (startDate || endDate) {
-                filterQuery.transactionDate = {};
-                if (startDate) filterQuery.transactionDate.$gte = new Date(startDate);
-                if (endDate) filterQuery.transactionDate.$lte = new Date(endDate);
-            }
-
-            return await this.clientDB.getCargoInvoiceModel()
-                .find(filterQuery)
-                .sort({ transactionDate: -1 })
-                .limit(CARGO_INVOICES_MAX_ROWS) // [API_TENANT_SURFACE §6] sayfasız uç genel RPC'ye açılırken sınırsız okuma engellendi
-                .lean();
-        } catch (error) {
-            throw error;
-        }
+        return cargoInvoices(this.finance, this.request);
     }
 
     /**
@@ -148,60 +52,7 @@ export default class FinancialService extends BaseApi implements IService {
      * @deprecated Bu metod get() içerisine entegre edilmiştir.
      */
     async getFinancialSummary(): Promise<any> {
-        try {
-            const {
-                startDate,
-                endDate,
-                integrationCodes,
-                transactionTypes,
-                externalIdSearch
-            } = this.request;
-
-            const matchQuery: any = {};
-
-            // Frontend'deki aktif filtrelerle aynı koşullar
-            if (integrationCodes && integrationCodes.length > 0) {
-                matchQuery.integrationCode = { $in: integrationCodes };
-            }
-            if (transactionTypes && transactionTypes.length > 0) {
-                matchQuery.transactionType = { $in: transactionTypes };
-            }
-            // İşlem No (externalId) araması
-            if (externalIdSearch) {
-                matchQuery.externalId = containsRegex(externalIdSearch); // [GV-01]
-            }
-            if (startDate || endDate) {
-                matchQuery.transactionDate = {};
-                if (startDate) matchQuery.transactionDate.$gte = new Date(startDate);
-                if (endDate) matchQuery.transactionDate.$lte = new Date(endDate);
-            }
-
-            // Tek bir grup olarak tüm filtrelenmiş kayıtların toplamı
-            const result = await this.clientDB.getFinancialTransactionModel().aggregate([
-                { $match: matchQuery },
-                {
-                    $group: {
-                        _id: null,
-                        totalCredit: { $sum: "$credit" },
-                        totalDebt: { $sum: "$debt" },
-                        totalCargo: { $sum: "$cargoAmount" },
-                        netAmount: { $sum: "$netAmount" },
-                        transactionCount: { $sum: 1 }
-                    }
-                }
-            ]);
-
-            // Sonuç yoksa sıfır değerleri döndür
-            return result[0] ?? {
-                totalCredit: 0,
-                totalDebt: 0,
-                totalCargo: 0,
-                netAmount: 0,
-                transactionCount: 0
-            };
-        } catch (error) {
-            throw error;
-        }
+        return financialSummary(this.finance, this.request);
     }
 
     /**
@@ -209,19 +60,7 @@ export default class FinancialService extends BaseApi implements IService {
      * "Bu hafta hangi ödemede ne kadar kazandım?" sorusu için.
      */
     async getPayoutDetails(): Promise<any> {
-        try {
-            const { paymentOrderId } = this.request;
-            if (!paymentOrderId) throw new Error("Ödeme emri ID (paymentOrderId) gereklidir.");
-            // [API_TENANT_SURFACE §6] yalnızca skaler kimlik: nesne ({$ne:null} vb. operatör) ile tüm ödeme kayıtlarını listeleme engellenir
-            if (typeof paymentOrderId !== 'string' && typeof paymentOrderId !== 'number') throw new ApplicationError("paymentOrderId geçersiz.", 400);
-
-            return await this.clientDB.getFinancialTransactionModel()
-                .find({ paymentOrderId })
-                .sort({ transactionDate: 1 })
-                .lean();
-        } catch (error) {
-            throw error;
-        }
+        return payoutDetails(this.finance, this.request);
     }
 
     /** [COM-03/COM-07] Girdi: yalnızca skaler string/sayı (nesne/operatör enjeksiyonu engellenir). */

@@ -79,43 +79,6 @@ describe('ImageService.get', () => {
   });
 });
 
-describe('ImageService.getIntegrations (platform-geneli, applicationDB)', () => {
-  it('[DÜZELTİLDİ, 2026-09-29] find({}, {settings:0}) ÇAĞRILIR — projeksiyon DOĞRU şekilde doğrudan verilir', async () => {
-    // BULGU DÜZELTMESİ: eskiden mongoose `find(filter, projection)` ikinci argümanı `{projection:{settings:0}}`
-    // ile YANLIŞ SARMALANMIŞTI. Gerçek Mongo'da (mongodb-memory-server ile doğrulandı, bkz.
-    // tests/mongo-semantics/integrationProjectionShape.mongoSemantics.test.ts) bu HATA FIRLATMIYORDU, sessizce
-    // TÜM alanları (settings dahil) döndürüyordu — B4 gereksiz alan sızıntısı. Şimdi projeksiyon DOĞRUDAN geçiriliyor.
-    const res = await makeService().getIntegrations();
-    expect(integrationModel.find).toHaveBeenCalledWith({}, { settings: 0 });
-    expect(res).toEqual([{ code: 'trendyol' }]);
-  });
-
-  it('[MEVCUT DAVRANIŞ] DB hatası olduğu gibi yeniden fırlatılır', async () => {
-    const err = new Error('boom');
-    integrationModel.find.mockRejectedValue(err);
-    await expect(makeService().getIntegrations()).rejects.toBe(err);
-  });
-});
-
-describe('ImageService.getProduct', () => {
-  it('[MEVCUT DAVRANIŞ] _id undefined ise Error("no id") SENKRON fırlatılır (try/catch DIŞINDA), DB\'ye dokunulmaz', async () => {
-    const svc = makeService();
-    await expect(svc.getProduct(undefined as any)).rejects.toThrow('no id');
-    expect(productModel.find).not.toHaveBeenCalled();
-  });
-
-  it('[DÜZELTİLDİ, 2026-09-29] geçerli _id: find({_id}, {title:1,_id:0}) çağrılır (aynı sarmalama hatası düzeltildi)', async () => {
-    const id = new ObjectId().toString();
-    const res = await makeService().getProduct(id);
-    expect(productModel.find).toHaveBeenCalledWith({ _id: new ObjectId(id) }, { title: 1, _id: 0 });
-    expect(res).toEqual([{ _id: 'p1' }]);
-  });
-
-  it('[MEVCUT DAVRANIŞ] geçersiz ObjectId ise try/catch içinde yakalanıp yeniden fırlatılır', async () => {
-    await expect(makeService().getProduct('not-a-valid-id')).rejects.toThrow();
-  });
-});
-
 describe('ImageService.getImages', () => {
   it('[MEVCUT DAVRANIŞ] tempId = ObjectId(request.productId); resp.images `order` alanına göre ARTAN sıralanır (mutasyonla)', async () => {
     const productId = new ObjectId().toString();

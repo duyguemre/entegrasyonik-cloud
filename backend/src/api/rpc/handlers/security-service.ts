@@ -1,4 +1,5 @@
 import { IService } from '@interfaces/index'
+import { UserRepository } from '@database/repositories/app/UserRepository'
 import { getIdentityCache } from '@platform/core/security/identityCache'
 import { BaseApi } from '../BaseApi'
 import Security, { ApplicationError, SessionClaimsInput } from '@platform/core/security/Security'
@@ -9,6 +10,7 @@ import { AuditLogger } from '@services/audit/AuditLogger'
 import { TenantProvisioningService } from '@operations/tenant/TenantProvisioningService'
 import { AccountLifecycleService, runInBackground } from '@operations/account/AccountLifecycleService'
 import { config } from '@config'
+import { ClientRepository } from '@database/repositories/app/ClientRepository'
 import { buildUserContext } from '../../http/authenticate'
 import { defaultTicketRedis, IMPERSONATION_SESSION_SECONDS, redeemImpersonationTicket } from '../../admin/impersonationTicket'
 import { eventLog } from '@platform/core/logger';
@@ -19,6 +21,8 @@ const log = eventLog('api', 'security-service');
 export const GENERIC_LOGIN_ERROR = 'E-posta veya parola hatalı'
 
 export default class SecurityService extends BaseApi implements IService {
+
+    private get clients() { return new ClientRepository(this.applicationDB) }
 
     async get(): Promise<any> {
     }
@@ -59,78 +63,74 @@ export default class SecurityService extends BaseApi implements IService {
 
 
     async login() {
-        try {
-            const { username, password } = this.request;
-            const security = Security.getInstance();
+        const { username, password } = this.request;
+        const security = Security.getInstance();
 
-            // ADR-0001 Karar 10: yalnızca string (NoSQL operatör enjeksiyonu: { "$ne": null } vb. reddedilir)
-            if (typeof username !== 'string' || typeof password !== 'string'
-                || username.length === 0 || password.length === 0 || username.length > 320 || password.length > 1024) {
-                throw new ApplicationError('Geçersiz istek.', 400);
+        // ADR-0001 Karar 10: yalnızca string (NoSQL operatör enjeksiyonu: { "$ne": null } vb. reddedilir)
+        if (typeof username !== 'string' || typeof password !== 'string'
+            || username.length === 0 || password.length === 0 || username.length > 320 || password.length > 1024) {
+            throw new ApplicationError('Geçersiz istek.', 400);
+        }
+
+        const users = new UserRepository(this.applicationDB);
+
+        // 1. Kullanıcıyı bul (Sadece Central DB'den, Registry mantığıyla)
+        const user = await users.findByEmail(username);
+
+        // Kullanıcı yok / pasif / kilitli: parola bakılmadan reddedilir ama zamanlamayı yaklaştırmak için sahte bcrypt
+        // karşılaştırması yapılır ve AYNI generik hata döner (hangi durumun olduğu istemciye sızmaz)
+        const locked = !!(user && user.lockUntil && user.lockUntil > new Date());
+        if (!user || user.isActive === false || locked) {
+            await security.comparePassword(password, await security.getDummyHash());
+            throw new ApplicationError(GENERIC_LOGIN_ERROR, 401);
+        }
+
+        // [ADR-0028 WP-A5] Sahte captcha KALDIRILDI (istemcide görünen, doğrulanmayan kod bot koruması değildi). Gerçek koruma: IP hız sınırlayıcı
+        // (loginLimiter) + 5 hatalı denemede 15 dk hesap kilidi. `captcha` gövde alanı yok sayılır (eski istemciler zarar görmez).
+
+        // 4. Şifre Doğrulama (Bcrypt)
+        const isMatch = await security.comparePassword(password, typeof user.password === 'string' ? user.password : await security.getDummyHash());
+
+        if (isMatch) {
+            // Başarılı giriş: Hatalı deneme sayısını sıfırla
+            await users.updateById(user._id, {
+                $set: { failedLoginAttempts: 0 },
+                $unset: { lockUntil: 1 }
+            });
+
+            const userObj = user.toObject();
+            // [ADR-0026 Aşama 3, BAYRAK: ADMIN_API_ONLY; varsayılan false] platform yöneticisi girişi `/api` üzerinde kapalı; yönetim uygulamasından.
+            if (userObj.isGlobalAdmin && config.admin.apiOnly) {
+                throw new ApplicationError("Yönetim girişi yönetim uygulamasından yapılır.", 403, 'ADMIN_API_ONLY');
+            }
+            const sessionClaims = Security.claimsFromUser(userObj);
+            // ADR-0028 WP-A3: `membership` modunda profil (permissions[]) üyelik rolünden; üyelik yok/askıda -> 403. legacy/dual: aynen.
+            const profile = toProfileDto(await resolveProfileSource(this.applicationDB, userObj));
+
+            // SÜPER YÖNETİCİ: Giriş sonrası mağaza seçimi zorunlu
+            if (userObj.isGlobalAdmin) {
+                const clients = await this.clients.listActiveIdTitle();
+                return {
+                    sessionClaims,
+                    body: { requireStoreSelection: true, clients: clients, user: profile }
+                } as SessionResult;
             }
 
-            const userModel = this.applicationDB.getUserModel();
+            return { sessionClaims, body: profile } as SessionResult;
+        } else {
+            // Hatalı giriş: Deneme sayısını arttır
+            const attempts = user.failedLoginAttempts + 1;
+            const update: any = { $set: { failedLoginAttempts: attempts } };
 
-            // 1. Kullanıcıyı bul (Sadece Central DB'den, Registry mantığıyla)
-            const user = await userModel.findOne({ email: username });
-
-            // Kullanıcı yok / pasif / kilitli: parola bakılmadan reddedilir ama zamanlamayı yaklaştırmak için sahte bcrypt
-            // karşılaştırması yapılır ve AYNI generik hata döner (hangi durumun olduğu istemciye sızmaz)
-            const locked = !!(user && user.lockUntil && user.lockUntil > new Date());
-            if (!user || user.isActive === false || locked) {
-                await security.comparePassword(password, await security.getDummyHash());
-                throw new ApplicationError(GENERIC_LOGIN_ERROR, 401);
+            // 5 denemeden sonra 15 dk kilitle
+            if (attempts >= 5) {
+                update.$set.lockUntil = new Date(Date.now() + 15 * 60 * 1000);
             }
 
-            // [ADR-0028 WP-A5] Sahte captcha KALDIRILDI (istemcide görünen, doğrulanmayan kod bot koruması değildi). Gerçek koruma: IP hız sınırlayıcı
-            // (loginLimiter) + 5 hatalı denemede 15 dk hesap kilidi. `captcha` gövde alanı yok sayılır (eski istemciler zarar görmez).
+            await users.updateById(user._id, update);
+            if (attempts >= 5) getIdentityCache().invalidateUser(user._id); // ADR-0024 P1-CORE: kilit, açık oturumlara anında yansır
 
-            // 4. Şifre Doğrulama (Bcrypt)
-            const isMatch = await security.comparePassword(password, typeof user.password === 'string' ? user.password : await security.getDummyHash());
-
-            if (isMatch) {
-                // Başarılı giriş: Hatalı deneme sayısını sıfırla
-                await userModel.updateOne({ _id: user._id }, {
-                    $set: { failedLoginAttempts: 0 },
-                    $unset: { lockUntil: 1 }
-                });
-
-                const userObj = user.toObject();
-                // [ADR-0026 Aşama 3, BAYRAK: ADMIN_API_ONLY; varsayılan false] platform yöneticisi girişi `/api` üzerinde kapalı; yönetim uygulamasından.
-                if (userObj.isGlobalAdmin && config.admin.apiOnly) {
-                    throw new ApplicationError("Yönetim girişi yönetim uygulamasından yapılır.", 403, 'ADMIN_API_ONLY');
-                }
-                const sessionClaims = Security.claimsFromUser(userObj);
-                // ADR-0028 WP-A3: `membership` modunda profil (permissions[]) üyelik rolünden; üyelik yok/askıda -> 403. legacy/dual: aynen.
-                const profile = toProfileDto(await resolveProfileSource(this.applicationDB, userObj));
-
-                // SÜPER YÖNETİCİ: Giriş sonrası mağaza seçimi zorunlu
-                if (userObj.isGlobalAdmin) {
-                    const clients = await this.applicationDB.getClientModel().find({ status: 'ACTIVE' }, 'clientId title').lean();
-                    return {
-                        sessionClaims,
-                        body: { requireStoreSelection: true, clients: clients, user: profile }
-                    } as SessionResult;
-                }
-
-                return { sessionClaims, body: profile } as SessionResult;
-            } else {
-                // Hatalı giriş: Deneme sayısını arttır
-                const attempts = user.failedLoginAttempts + 1;
-                const update: any = { $set: { failedLoginAttempts: attempts } };
-
-                // 5 denemeden sonra 15 dk kilitle
-                if (attempts >= 5) {
-                    update.$set.lockUntil = new Date(Date.now() + 15 * 60 * 1000);
-                }
-
-                await userModel.updateOne({ _id: user._id }, update);
-                if (attempts >= 5) getIdentityCache().invalidateUser(user._id); // ADR-0024 P1-CORE: kilit, açık oturumlara anında yansır
-
-                throw new ApplicationError(GENERIC_LOGIN_ERROR, 401);
-            }
-        } catch (error) {
-            throw error;
+            throw new ApplicationError(GENERIC_LOGIN_ERROR, 401);
         }
     }
 
@@ -162,7 +162,7 @@ export default class SecurityService extends BaseApi implements IService {
         }
 
         // Hedef tenant mevcut ve ACTIVE olmalı (authenticate de sonraki isteklerde aynı kuralı uygular)
-        const client: any = await this.applicationDB.getClientModel().findOne({ order: tid }, 'order clientId title status').lean();
+        const client: any = await this.clients.findSessionTarget(tid);
         if (!client || client.status !== 'ACTIVE') {
             throw fail("Geçersiz mağaza.", 400, 'store_not_active');
         }
@@ -205,13 +205,13 @@ export default class SecurityService extends BaseApi implements IService {
         const payload = await redeemImpersonationTicket(defaultTicketRedis(), this.request.ticket);
         if (!payload) throw deny('ticket_invalid');
 
-        const user: any = await this.applicationDB.getUserModel().findById(payload.sub).lean();
+        const user: any = await new UserRepository(this.applicationDB).findByIdLean(payload.sub);
         const tvNow = Number.isInteger(user?.tokenVersion) ? user.tokenVersion : 0;
         if (!user || user.isGlobalAdmin !== true || user.isActive === false || tvNow !== payload.tv
             || (user.lockUntil && new Date(user.lockUntil) > new Date())) {
             throw deny('admin_invalid', { sub: payload.sub, tid: payload.tid });
         }
-        const client: any = await this.applicationDB.getClientModel().findOne({ order: payload.tid }, 'order clientId title status').lean();
+        const client: any = await this.clients.findSessionTarget(payload.tid);
         if (!client || client.status !== 'ACTIVE') throw deny('store_not_active', { sub: payload.sub, tid: payload.tid });
 
         const sessionClaims: SessionClaimsInput = {
@@ -233,10 +233,6 @@ export default class SecurityService extends BaseApi implements IService {
     }
 
     async logout() {
-        try {
-            return true
-        } catch (error) {
-            throw error
-        }
+        return true
     }
 }
