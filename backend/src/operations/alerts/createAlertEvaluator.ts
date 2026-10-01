@@ -4,14 +4,22 @@ import { config } from '@config';
 import { DatabaseManagerInstance } from '@database/DatabaseManager';
 import { RedisService } from '@services/redis/RedisService';
 import { getPlatformSetting } from '@integration/config/platformSettings';
+import { allowNewWork } from '@integration/config/intakeGate';
+import { EntitlementService } from '@services/billing/EntitlementService';
 import { AlertEvaluator, type AlertEvaluatorDeps } from './AlertEvaluator';
-import type { RuleSources } from './alertRules';
+import type { OrderSyncRow, RuleSources } from './alertRules';
+import { readAlertThresholds } from './alertThresholds';
 import { readResilienceState } from '../backoffice/resilienceState';
+import { tidOfClient } from '../backoffice/tenantOps';
 import { createNotifier } from '../notifications/createNotifier';
 import { createPlatformNotifier } from '../notifications/createPlatformNotifier';
 
 const QUERY_MAX_TIME_MS = 5000;
 const DATA_ERROR_CODES = ['VALIDATION', 'NOT_SUPPORTED'];
+/** R8 tenant DB taramasi pahali (tenant basina bir sorgu): sonuc bu sure onbellekte tutulur; degerlendirici her dakika calisir. */
+export const OVERSOLD_SCAN_TTL_MS = 10 * 60_000;
+const MAX_TENANTS_SCANNED = 500;
+const ORDER_INTEGRATION_TYPES = new Set(['marketplace', 'ecommerce']); // OrderQueueProducer ile ayni kume
 const app = () => DatabaseManagerInstance.getApplicationDB();
 
 export function parseShadowUntil(raw: string | undefined): Date | undefined {
@@ -57,6 +65,72 @@ export function createRuleSources(): RuleSources {
         async deadDeliveries(sinceMs) {
             return (await app()).getNotificationDeliveryModel().countDocuments({ status: 'dead', createdAt: { $gte: new Date(sinceMs) } }).maxTimeMS(QUERY_MAX_TIME_MS);
         },
+        async tenantCircuits(sinceMs) {
+            const rows: any[] = await (await app()).getIntegrationCallMetricModel().aggregate([
+                { $match: { at: { $gte: new Date(sinceMs) } } },
+                { $group: {
+                    _id: { clientId: '$clientId', integrationCode: '$integrationCode' }, calls: { $sum: 1 },
+                    open: { $sum: { $cond: [{ $eq: ['$circuitState', 'open'] }, 1, 0] } },
+                    closed: { $sum: { $cond: [{ $eq: ['$circuitState', 'closed'] }, 1, 0] } },
+                } },
+                { $match: { open: { $gt: 0 }, closed: 0 } },
+                { $limit: 5000 },
+            ]).option({ maxTimeMS: QUERY_MAX_TIME_MS });
+            return rows.map((r) => ({ clientId: String(r._id.clientId), integrationCode: String(r._id.integrationCode), calls: r.calls, open: r.open, closed: r.closed }));
+        },
+        async orderSyncLagging(staleBeforeMs) {
+            const clients: any[] = await (await app()).getClientModel()
+                .find({ status: 'ACTIVE' }, { clientId: 1, order: 1, integrations: 1, _id: 0 }).limit(MAX_TENANTS_SCANNED).maxTimeMS(QUERY_MAX_TIME_MS).lean();
+            return lagging(clients, staleBeforeMs, async (tid) => !config.flags.entitlementGuardEnabled || (await EntitlementService.checkAccess(tid, 'engine')).allowed);
+        },
+        oversoldUnresolved: memoize(OVERSOLD_SCAN_TTL_MS, async (escalatedBeforeMs: number) => {
+            const clients: any[] = await (await app()).getClientModel()
+                .find({ status: 'ACTIVE' }, { clientId: 1, order: 1, _id: 0 }).limit(MAX_TENANTS_SCANNED).maxTimeMS(QUERY_MAX_TIME_MS).lean();
+            const out: Array<{ tid: number; count: number }> = [];
+            for (const c of clients) {
+                const tid = tidOfClient(c);
+                if (tid === null) continue;
+                try {
+                    const db = await DatabaseManagerInstance.getClientDB(tid);
+                    if (!db) continue;
+                    const count = await db.getOrderModel().countDocuments({
+                        items: { $elemMatch: { allocationState: 'OVERSOLD', oversoldEscalatedAt: { $lte: new Date(escalatedBeforeMs) } } },
+                    }).maxTimeMS(QUERY_MAX_TIME_MS);
+                    if (count > 0) out.push({ tid, count });
+                } catch { /* tek tenant hatasi turu bozmaz; sonraki taramada yeniden denenir */ }
+            }
+            return out;
+        }),
+    };
+}
+
+/** R3 saf secim: etkin (status true) siparis entegrasyonu, senkron kesici (ADR-0030 X6) acik, imleci `staleBeforeMs`'den eski. Imleci olmayan atlanir. */
+export async function lagging(clients: any[], staleBeforeMs: number, entitled: (tid: number) => Promise<boolean>): Promise<OrderSyncRow[]> {
+    const out: OrderSyncRow[] = [];
+    for (const c of clients) {
+        const tid = tidOfClient(c);
+        if (tid === null) continue;
+        const rows: OrderSyncRow[] = [];
+        for (const i of Array.isArray(c.integrations) ? c.integrations : []) {
+            if (!i || i.status !== true || !ORDER_INTEGRATION_TYPES.has(i.type) || typeof i.integrationCode !== 'string') continue;
+            const at = i.lastSuccessfulOrderSync ? new Date(i.lastSuccessfulOrderSync).getTime() : NaN;
+            if (!Number.isFinite(at) || at >= staleBeforeMs || !allowNewWork(i.integrationCode)) continue;
+            rows.push({ tid, integrationCode: i.integrationCode, lastSuccessAt: at });
+        }
+        if (rows.length && await entitled(tid).catch(() => true)) out.push(...rows);
+    }
+    return out;
+}
+
+/** Tek argumanli kaynak icin TTL onbellegi (argumandan bagimsiz: esik degisirse en gec TTL sonunda yansir). */
+function memoize<A, R>(ttlMs: number, fn: (a: A) => Promise<R>): (a: A) => Promise<R> {
+    let cached: { at: number; value: R } | undefined;
+    return async (a: A) => {
+        const now = Date.now();
+        if (cached && now - cached.at < ttlMs) return cached.value;
+        const value = await fn(a);
+        cached = { at: now, value };
+        return value;
     };
 }
 
@@ -70,6 +144,7 @@ export function createAlertEvaluatorDeps(): AlertEvaluatorDeps {
         tenantNotify: (code, tid, params, opts) => tenantNotifier.notify(code, tid, params, opts),
         flags: () => ({ enabled: config.notify.alertEvaluatorEnabled, shadowUntil: parseShadowUntil(config.notify.alertShadowUntil) }),
         isMaintenance: () => getPlatformSetting<boolean>('maintenance.enabled') === true,
+        thresholds: () => readAlertThresholds((k) => getPlatformSetting(k)),
     };
 }
 
