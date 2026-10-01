@@ -85,7 +85,7 @@ test.describe('P3 (B5-2) — Varyant diyalogları (ProductVariantsComponent alt 
     await row.getByLabel('Platform Bazında Fiyat').check()
     await row.getByText('Satış Fiyatı').first().click()
 
-    const card = page.locator('.v-overlay--active').filter({ hasText: 'Platform Bazında Varyant Fiyatları' }).first()
+    const card = page.locator('.v-overlay--active').filter({ hasText: 'Kanal bazında fiyatlar' }).first()
     await expect(card).toBeVisible()
     await shot(page, 'variant-platform-prices.png')
     await axeReport(page, testInfo, 'ProductVariantPlatformPricesComponent', '.v-overlay--active:not(.v-snackbar)')

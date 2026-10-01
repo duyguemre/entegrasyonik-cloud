@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import useRestApi from '@/composables/restapi'
 import { registerStoreReset } from '@/stores/resetRegistry'
+import type { CreateResult } from '@/components/common/quickCreate'
 export const useCategoriesStore = defineStore('categoriesStore', () => {
   const categories = ref()
   const selectCategories = ref()
@@ -151,20 +152,22 @@ export const useCategoriesStore = defineStore('categoriesStore', () => {
     return countCategories(categories.value) - 1
   }
 
-  const addCategory = (newCategory: any) => {
+  /** FR2-PFORM 23: istek beklenir; başarıda ağaç yenilenir ve yeni kimlik döner, hata yutulmaz. Üst yoksa ana kök. */
+  const addCategory = async (newCategory: any): Promise<CreateResult> => {
     if (!newCategory.parentId) {
-      for (const category of categories.value) {
+      for (const category of categories.value ?? []) {
         if (category.isMain == true) {
           newCategory.parentId = category._id
           break
         }
       }
     }
-    restApi.post("CategoryService/addCategory", { parentCategoryId: newCategory.parentId, title: newCategory.title }).then((response: any) => {
-      if (response && response._id) {
-        retrieve()
-      }
-    })
+    const response: any = await restApi.post("CategoryService/addCategory", { parentCategoryId: newCategory.parentId || undefined, title: newCategory.title })
+    if (response && response._id) {
+      await retrieve()
+      return { id: String(response._id) }
+    }
+    return { error: response }
   }
 
 

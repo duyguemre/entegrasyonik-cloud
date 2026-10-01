@@ -306,7 +306,7 @@ defineExpose({ missingCount: computed(() => missing.value.length) })
   display: flex;
   align-items: center;
   gap: var(--ek-space-3);
-  min-height: 64px;
+  min-height: 80px;
   padding: var(--ek-space-2) var(--ek-space-4) var(--ek-space-2) var(--ek-space-2);
 }
 
@@ -363,19 +363,20 @@ defineExpose({ missingCount: computed(() => missing.value.length) })
   min-width: 0;
 }
 
+/* FR2-PFORM 29: varyant görselleri okunur boyutta (44 → 60px; alt satırlar 32 → 44px). */
 .via__thumb {
   flex: 0 0 auto;
-  width: 44px;
-  height: 44px;
+  width: 60px;
+  height: 60px;
   border: 1px solid var(--ek-color-border-subtle);
   border-radius: var(--ek-radius-control);
   overflow: hidden;
 }
 
 .via__thumb--sm {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--ek-radius-sm);
 }
 
 .via__more {

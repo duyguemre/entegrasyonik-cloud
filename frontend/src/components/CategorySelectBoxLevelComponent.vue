@@ -11,7 +11,8 @@
 -->
 <template>
   <EkEmptyState v-if="!tree.length" variant="first-run" title="Henüz kategori tanımlanmamış"
-    message="Ürün eklemek için önce Tanımlar › Kategoriler ekranından kategori ağacınızı oluşturun." />
+    message="İlk kategorinizi buradan ekleyebilir ya da ağacınızı Tanımlar › Kategoriler ekranından kurabilirsiniz."
+    show-action action-text="Kategori ekle" @action="createOpen = true" />
   <EkCascadePicker
     v-else
     v-model="path"
@@ -24,12 +25,21 @@
     root-label="Ana kategoriler"
     search-placeholder="Kategori ara…"
     @update:model-value="onPathChange"
-  />
+  >
+    <template #actions>
+      <EkButton tone="ghost" size="sm" icon="mdi-plus" data-qc-open="category" @click="createOpen = true">
+        {{ createParent ? `“${createParent.label}” altına kategori ekle` : 'Yeni kategori ekle' }}
+      </EkButton>
+    </template>
+  </EkCascadePicker>
+  <QuickCreateCategoryDialog v-model="createOpen" :initial-parent-id="createParent?.id" @created="onCreated" @picked="onPicked" />
 </template>
 
 <script lang="ts" setup>
 import { computed, ref, watch } from 'vue'
-import { EkCascadePicker, type EkCascadeNode, EkEmptyState } from '@entegrasyonik/ui/components'
+import { EkButton, EkCascadePicker, type EkCascadeNode, EkEmptyState } from '@entegrasyonik/ui/components'
+import { useToast } from '@entegrasyonik/ui/composables/useToast'
+import QuickCreateCategoryDialog from '@/components/common/QuickCreateCategoryDialog.vue'
 import { formatNumber } from '@entegrasyonik/ui/format'
 import { useCategoriesStore } from '@/stores/categoriesStore'
 
@@ -62,8 +72,9 @@ function countLeaves(nodes: EkCascadeNode[]): number {
 const tree = computed<EkCascadeNode[]>(() => {
   const source = categoriesStore.getCategories() as { value?: CategoryRecord[] } | CategoryRecord[] | undefined
   const roots = (Array.isArray(source) ? source : source?.value) ?? []
-  // Tek "ana" kök (isMain) varsa kullanıcıya görünen ilk kademe onun çocuklarıdır.
-  const main = roots.length === 1 && roots[0].isMain ? roots[0].children : roots
+  // Tek "ana" kök (isMain) varsa kullanıcıya görünen ilk kademe onun çocuklarıdır. Backend `get` ana kökü
+  // çocuksuz ilk öğe + ana seviye kategoriler olarak da döndürür — o durumda ana kök listelenmez.
+  const main = roots.length === 1 && roots[0].isMain ? roots[0].children : roots.filter((r) => !r.isMain)
   return toNodes(main)
 })
 
@@ -104,6 +115,26 @@ function nodeFor(ids: string[]): EkCascadeNode | undefined {
     level = node.children ?? []
   }
   return node
+}
+
+// ---- FR2-PFORM 23: yeni kategori (açık klasörün altına; yaprak seçiliyse onun klasörüne) ----
+const { showToast } = useToast()
+const createOpen = ref(false)
+const createParent = computed<EkCascadeNode | undefined>(() => {
+  const ids = path.value.slice()
+  while (ids.length) {
+    const n = nodeFor(ids)
+    if (n?.children?.length) return n
+    ids.pop()
+  }
+  return undefined
+})
+function onCreated(id: string, title: string) {
+  categoryId.value = id
+  showToast({ tone: 'success', message: `“${title}” kategorisi eklendi ve seçildi.` })
+}
+function onPicked(id: string) {
+  categoryId.value = id
 }
 
 function onPathChange(ids: string[]) {
