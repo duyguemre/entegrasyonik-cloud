@@ -23,7 +23,7 @@
     "help": "Yardım",
     "notification": "Bildirimler",
     "messages": "Mesajlar",
-    "financialList": "Finansal İşlemler",
+    "financialList": "Finans",
     "educationCenter": "Eğitim Merkezi",
     "appManagement": "Uygulama Yönetimi",
     "userManagement": "",
@@ -32,28 +32,28 @@
     "change_password": "Parola değiştir",
     "roles": "Yetkilendirme",
     "exit": "Çıkış",
-    "support_ticket": "Destek Kaydı",
-    "support_ticket_list": "Destek Kayıtları",
+    "support_ticket": "Destek talebi",
+    "support_ticket_list": "Destek talepleri",
     "support_school": "Eğitim Merkezi",
     "applicationAdministration": "Uygulama Yönetimi",
     "userAdministration": "Kullanıcı Yönetimi",
     "invoiceInfo": "Fatura Bilgileri",
     "changePassword": "Parola değiştir",
     "authorization": "Yetkilendirme",
-    "subscription": "Abonelik İşlemleri",
+    "subscription": "Abonelik",
     "sale": "Satış",
     "favorites": "Favoriler",
     "dashboard": "Anasayfa",
-    "orderList": "Sipariş Yönetimi",
-    "ticketList": "Destek Kayıtları",
-    "settingList": "Ayarlar",
-    "claimList": "İade Yönetimi",
+    "orderList": "Siparişler",
+    "ticketList": "Destek talepleri",
+    "settingList": "Mağaza ayarları",
+    "claimList": "İadeler",
     "customerList": "Müşteriler",
     "messageList": "Mesajlar",
     "invoiceList": "Faturalar",
     "reports": "Raporlar",
     "printoutList": "Çıktılar",
-    "logList": "İşlemler",
+    "logList": "İşlem kayıtları",
     "define_product": "Ürün Tanımla",
     "add_customer": "Müşteri Ekle",
     "new": {
@@ -114,7 +114,7 @@
       "authorizationList": "Yetkilendirme",
       "settingList": "Uygulama Ayarları",
       "printoutList": "Çıktılar",
-      "logList": "İşlemler"
+      "logList": "İşlem kayıtları"
     },
     "integrationHealth": "Entegrasyon Sağlığı",
     "auditLog": "Denetim Günlüğü",
@@ -124,7 +124,7 @@
     "stockHealth": "Stok Sağlığı",
     "user": {
       "user": "Hesabım",
-      "subscription": "Abonelik İşlemleri",
+      "subscription": "Abonelik",
       "invoiceInfo": "Fatura Bilgileri",
       "changePassword": "Parola değiştir",
       "exit": "Çıkış"
@@ -232,7 +232,7 @@
     "ticket": {
       "new": {
         "title": "Yeni Destek Kaydı",
-        "search": "Destek Kayıtlarında Ara",
+        "search": "Destek taleplerinde ara",
         "type": "Destek Tipi",
         "platform": "Platform",
         "subject": "Konu",
@@ -249,7 +249,7 @@
         "save": "Kaydet",
         "clear": "Temizle"
       },
-      "search": "Destek Kayıtlarında Ara",
+      "search": "Destek taleplerinde ara",
       "searchlabel": "Destek Konusu vb...",
       "headers": {
         "supportType": "Destek Tipi",
@@ -1478,8 +1478,8 @@
     "keepsSettings": "Daha önce girilmiş ayarlarınız varsa silinmez.",
     "alternativesTitle": "Bugün yapabilecekleriniz",
     "alternatives": {
-      "shippingNotice": "Sipariş Yönetimi'ndeki \"Kargoya ver\" işlemiyle takip bilgisini girip siparişin geldiği kanala iletebilirsiniz. Bu kanallarda çalışır:",
-      "invoiceNotice": "Faturayı kendi e-fatura sağlayıcınızda kestikten sonra Sipariş Yönetimi'ndeki \"Fatura oluştur\" işlemiyle fatura bağlantısını siparişin geldiği kanala iletebilirsiniz. Bu kanallarda çalışır:"
+      "shippingNotice": "Siparişler ekranındaki \"Kargoya ver\" işlemiyle takip bilgisini girip siparişin geldiği kanala iletebilirsiniz. Bu kanallarda çalışır:",
+      "invoiceNotice": "Faturayı kendi e-fatura sağlayıcınızda kestikten sonra Siparişler ekranındaki \"Fatura oluştur\" işlemiyle fatura bağlantısını siparişin geldiği kanala iletebilirsiniz. Bu kanallarda çalışır:"
     },
     "saveReason": "Kaydedilecek ayar yok — bu sağlayıcı için entegrasyon henüz geliştirilmedi.",
     "save": "Kaydet",

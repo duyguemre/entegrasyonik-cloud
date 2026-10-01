@@ -366,7 +366,7 @@ const nextStep = computed<NextStep | null>(() => {
         case S.CANCELLED:
             return { tone: 'neutral', icon: 'mdi-close-circle-outline', eyebrow: 'Durum', title: 'Sipariş iptal edildi', text: 'Bu sipariş üzerinde artık işlem yapılamaz.' };
         case S.RETURNED:
-            return { tone: 'warning', icon: 'mdi-keyboard-return', eyebrow: 'Durum', title: 'Sipariş iade edildi', text: 'Müşteri siparişi iade etti. İade sürecini İade Yönetimi ekranından takip edebilirsiniz.' };
+            return { tone: 'warning', icon: 'mdi-keyboard-return', eyebrow: 'Durum', title: 'Sipariş iade edildi', text: 'Müşteri siparişi iade etti. İade sürecini İadeler ekranından takip edebilirsiniz.' };
         default:
             return null;
     }

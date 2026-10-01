@@ -19,7 +19,7 @@
 -->
 <template>
   <div class="settingListView">
-    <EkPageHeader section="Ayarlar" title="Mağaza Ayarları"
+    <EkPageHeader section="Ayarlar" title="Mağaza ayarları"
       description="Mağaza kimliği, fatura bilgileri, lojistik varsayılanları ve bildirim tercihleri." />
     <LoadingComponent attach=".settingListView" ref="loadingComponentRef"></LoadingComponent>
 

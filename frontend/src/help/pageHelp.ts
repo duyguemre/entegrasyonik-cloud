@@ -393,7 +393,7 @@ export const PAGE_HELP: Record<string, PageHelp> = {
       'Fatura tanımları için hazırlanan taslak ekrandır; tablo örnek verilerle gösterilir ve kayıt yapılmaz.',
     tips: [
       'Faturalarınızı Faturalar ekranında görüntüleyip manuel fatura ekleyin.',
-      'Mağazanızın fatura bilgileri Mağaza Ayarları ekranındaki Fatura & Yasal Bilgiler sekmesinden kaydedilir.',
+      'Mağazanızın fatura bilgileri Mağaza ayarları ekranındaki Fatura & Yasal Bilgiler sekmesinden kaydedilir.',
       'Aradığınız ekranı bulmak için akıllı aramayı (Ctrl+K) kullanın.',
     ],
     shortcuts: ['search', 'tabClose'],
@@ -540,7 +540,7 @@ export const PAGE_HELP: Record<string, PageHelp> = {
     purpose:
       'Destek ekibiyle yazışmalarınızı buradan takip edin ve yeni talep açın.',
     tips: [
-      'Yeni Bilet Aç düğmesiyle destek talebi oluşturun.',
+      'Yeni talep düğmesiyle destek talebi oluşturun.',
       'Durum, öncelik, talep tipi ve tarih aralığı filtreleriyle taleplerinizi bulun.',
       'Satırdaki ⋯ menüsünden yazışmayı görüntüleyip yanıtlayın veya talebi kapatın.',
       'Birden çok talebi seçip Toplu Kapat ile kapatabilirsiniz.',
@@ -554,7 +554,7 @@ export const PAGE_HELP: Record<string, PageHelp> = {
     purpose:
       'Fatura bilgileri için hazırlanan taslak ekrandır; bu ekrandaki alanlar kaydedilmez.',
     tips: [
-      'Mağazanızın fatura bilgilerini Mağaza Ayarları ekranındaki Fatura & Yasal Bilgiler sekmesinden kaydedin.',
+      'Mağazanızın fatura bilgilerini Mağaza ayarları ekranındaki Fatura & Yasal Bilgiler sekmesinden kaydedin.',
       'Abonelik planınızı ve durumunu Abonelik ve Planlar ekranında görebilirsiniz.',
       'Aradığınız ekranı bulmak için akıllı aramayı (Ctrl+K) kullanın.',
     ],

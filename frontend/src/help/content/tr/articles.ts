@@ -1475,8 +1475,8 @@ export const ARTICLES_TR: HelpArticle[] = [
       {
         type: 'steps',
         items: [
-          'Üst bardaki **Yardım** menüsünden **Destek kayıtları**’nı seçin veya **Destek Talepleri** ekranını açın.',
-          '**Yeni Bilet Aç**’a basın.',
+          'Üst bardaki **Yardım** menüsünden **Destek talepleri**’ni seçin veya menüdeki **Destek talepleri** ekranını açın.',
+          '**Yeni talep**’e basın.',
           '**Talep tipi**ni seçin: Genel, Teknik Destek, Muhasebe / Fatura, Özellik Talebi, Hata Bildirimi veya Diğer.',
           '**Öncelik** seçin: Düşük, Orta, Yüksek veya Acil.',
           '**Konu** ve **Mesajınız** alanlarını doldurun. Alanların altındaki sayaç kullandığınız karakter sayısını ve sınırı gösterir.',

@@ -21,7 +21,7 @@
 
     <EkListScreen
       section="Destek"
-      title="Destek Talepleri"
+      title="Destek talepleri"
       description="Destek ekibiyle yazışmalarınızı buradan takip edin ve yeni talep açın."
       label="Destek talepleri tablosu"
       noun="talep"
@@ -60,7 +60,7 @@
       @refresh="getTickets(true)"
     >
       <template #header-actions>
-        <EkButton icon="mdi-plus" @click="isCreateDialogOpen = true">Yeni Bilet Aç</EkButton>
+        <EkButton icon="mdi-plus" @click="isCreateDialogOpen = true">Yeni talep</EkButton>
       </template>
 
       <template #filters>

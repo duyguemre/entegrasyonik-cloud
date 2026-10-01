@@ -19,7 +19,7 @@ import { SECTIONS } from '@/navigation/sections'
 import { firstMessage, humanizeKey, resolveMenuTitle } from '@/navigation/menuTitle'
 import type { EkSideSection, EkSideItem } from '@entegrasyonik/ui/components'
 import { HELP_SCREEN_KEY, helpCenterLink } from '@/help/helpLink'
-import { shapeGroupLinks } from '@/navigation/menuShape'
+import { inheritedIcon, regroupMenu, shapeGroupLinks } from '@/navigation/menuShape'
 
 /** Sidebar'ın sağında favori yıldızı taşıyabilen öğe (menü `isConstant` değilse). */
 export interface ShellMenuEntry {
@@ -66,7 +66,8 @@ export function useShellMenu() {
 
   const groups = computed<any[]>(() => {
     const menu = menuStore?.getMenu?.()
-    return Array.isArray(menu) ? menu.filter((g: any) => g && g.group !== 'favorites') : []
+    // P11 (K49): Mağaza ayarları + Çıktılar + Yetkilendirme tek "Ayarlar" bölümünde (yalnız sunum; erişim aynı).
+    return Array.isArray(menu) ? regroupMenu(menu.filter((g: any) => g && g.group !== 'favorites')) : []
   })
 
   const sectionLabel = (group: any) => {
@@ -109,9 +110,10 @@ export function useShellMenu() {
             }),
           })
         } else {
-          iconByKey.set(key, link.icon ?? resolveScreenByKey(key)?.icon)
-          items.push({ key, label: title, icon: link.icon ?? resolveScreenByKey(key)?.icon })
-          if (link.code !== 'ExitView') entries.push({ key, link, title, icon: link.icon, sectionLabel: label })
+          const icon = link.icon ?? inheritedIcon(link) ?? resolveScreenByKey(key)?.icon
+          iconByKey.set(key, icon)
+          items.push({ key, label: title, icon })
+          if (link.code !== 'ExitView') entries.push({ key, link, title, icon, sectionLabel: label })
         }
       }
       if (items.length) sections.push({ label, items })

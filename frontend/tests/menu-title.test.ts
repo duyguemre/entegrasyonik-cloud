@@ -14,7 +14,7 @@ const t = (key: string) => {
 
 describe('resolveMenuTitle', () => {
   it('menü anahtarı metinse onu kullanır', () => {
-    expect(resolveMenuTitle({ code: 'OrderListView', parent: '', title: 'orderList', fullPath: 'menu.orderList' }, t, te)).toBe('Sipariş Yönetimi')
+    expect(resolveMenuTitle({ code: 'OrderListView', parent: '', title: 'orderList', fullPath: 'menu.orderList' }, t, te)).toBe('Siparişler')
   })
 
   it('grup düğümünün `menu.user.user` anahtarı çevrilir (ham anahtar gösterilmez)', () => {
