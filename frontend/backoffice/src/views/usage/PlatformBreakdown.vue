@@ -40,7 +40,7 @@ import { formatCount } from '@bo/utils/units'
 const props = defineProps<{ byClass: ByClass; byPlatform: ByPlatform; label: string; unit?: string; note?: string; openSub?: boolean }>()
 const max = computed(() => Math.max(1, ...Object.values(props.byClass), ...Object.values(props.byPlatform)))
 const total = computed(() => Object.values(props.byClass).reduce((a, b) => a + b, 0))
-const DONUT_TONE: Record<string, ChartTone> = { desktop: 'action', mobile: 'success', unknown: 'neutral' }
+const DONUT_TONE: Record<string, ChartTone> = { desktop: 'info', mobile: 'success', unknown: 'neutral' }
 const donutTones = computed<ChartTone[]>(() => classRows.value.map((r) => DONUT_TONE[r.key] ?? 'neutral'))
 const shown = (n: number) => `${formatCount(n)}${props.unit ? ` ${props.unit}` : ''}`
 
