@@ -76,6 +76,16 @@ const CASES: Case[] = [
     },
   },
   { name: 'ayarlar', run: async (p) => { await installApiMocks(p, mocks(true)); await gotoAuthed(p); await openScreen(p, 'SettingListView'); await settle(p) } },
+  { name: 'ayarlar-degisiklik', run: async (p) => {
+    await installApiMocks(p, mocks(true)); await gotoAuthed(p); await openScreen(p, 'SettingListView'); await settle(p)
+    await p.locator('#sl-storeName').fill('Örnek Ticaret Mağazası')
+    await p.locator('.settingListView .color-swatch-item').nth(4).click()
+    await p.mouse.move(1, 1); await p.waitForTimeout(400)
+  } },
+  { name: 'ayarlar-arama', run: async (p) => {
+    await installApiMocks(p, mocks(true)); await gotoAuthed(p); await openScreen(p, 'SettingListView'); await settle(p)
+    await p.getByLabel('Ayarlarda ara').fill('vergi'); await p.waitForTimeout(400)
+  } },
 ]
 
 /** Detay diyaloğunun kaydırılabilir gövdesini adım adım görüntüler. */
