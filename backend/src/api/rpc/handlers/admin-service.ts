@@ -15,7 +15,7 @@ import { getTenantRegistry } from '@database/TenantRegistry';
 import { getIdentityCache } from '@platform/core/security/identityCache';
 import { ClientRepository } from '@database/repositories/app/ClientRepository';
 import { ExportSignalRepository } from '@database/repositories/app/ExportSignalRepository';
-import { ImportJobRepository } from '@database/repositories/app/ImportJobRepository';
+import { PlatformImportJobStatsRepository } from '@database/repositories/app/PlatformImportJobStatsRepository';
 import { TenantFootprintRepository } from '@database/repositories/tenant/TenantFootprintRepository';
 import { resolveAdminOwnerName } from '@operations/tenant/resolveAdminOwnerName';
 import { buildSystemHealth } from '@operations/backoffice/platformSystemHealth';
@@ -29,7 +29,7 @@ export default class AdminService extends BaseApi implements IService {
 
     private get clients() { return new ClientRepository(this.applicationDB) }
     private get exportSignals() { return new ExportSignalRepository(this.applicationDB) }
-    private get importJobs() { return new ImportJobRepository(this.applicationDB) }
+    private get importJobs() { return new PlatformImportJobStatsRepository(this.applicationDB) }
     private get tickets() { return new TicketRepository(this.applicationDB) }
 
     async get() { }

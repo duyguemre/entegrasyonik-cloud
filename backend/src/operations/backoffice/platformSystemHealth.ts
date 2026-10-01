@@ -1,7 +1,7 @@
 import type { IApplicationDB } from '@interfaces/index'
 import { RedisService } from '@services/redis/RedisService'
 import { ExportSignalRepository } from '@database/repositories/app/ExportSignalRepository'
-import { ImportJobRepository } from '@database/repositories/app/ImportJobRepository'
+import { PlatformImportJobStatsRepository } from '@database/repositories/app/PlatformImportJobStatsRepository'
 import { ExportFlagRepository } from '@database/repositories/app/ExportFlagRepository'
 import { OperationLogRepository } from '@database/repositories/app/OperationLogRepository'
 import { ClientRepository } from '@database/repositories/app/ClientRepository'
@@ -18,7 +18,7 @@ export async function buildSystemHealth(
 ) {
     const { timeFrame, targetClientId } = req // DAY, WEEK, MONTH, ALL, targetClientId
     const exportsRepo = new ExportSignalRepository(db)
-    const importsRepo = new ImportJobRepository(db)
+    const importsRepo = new PlatformImportJobStatsRepository(db)
     const flagsRepo = new ExportFlagRepository(db)
     const opLogs = new OperationLogRepository(db)
     const clientsRepo = new ClientRepository(db)

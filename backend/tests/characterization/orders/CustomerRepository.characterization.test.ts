@@ -5,7 +5,7 @@ import { Types } from 'mongoose';
 jest.mock('@database/index', () => ({ DatabaseManagerInstance: { getClientDB: jest.fn() } }));
 
 import { DatabaseManagerInstance } from '@database/index';
-import { CustomerRepository } from '@integration/engine/order/CustomerRepository';
+import { CustomerRepository } from '@database/repositories/tenant/CustomerRepository';
 
 const anyFn = () => jest.fn<(...a: any[]) => any>();
 let model: any;

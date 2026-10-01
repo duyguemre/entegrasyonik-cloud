@@ -7,7 +7,7 @@ import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 
 jest.mock('@database/index', () => ({ DatabaseManagerInstance: { getApplicationDB: jest.fn(), getClientDB: jest.fn() } }));
 jest.mock('@services/redis/RedisService', () => ({ RedisService: { isReady: jest.fn() } }));
-jest.mock('@operations/integration/PostOrderOperations', () => ({
+jest.mock('@operations/orders/postOrder', () => ({
     // `AllocationSweepJob` kaynağı `PostOrderOperations.SETTLED_MIRROR_STATES` static alanını okuyor;
     // mock factory'de de taşınması GEREKİR (aksi halde $nin filtresi undefined olur).
     PostOrderOperations: Object.assign(
@@ -19,7 +19,7 @@ jest.mock('@operations/integration/PostOrderOperations', () => ({
 import { AllocationSweepJob } from '@operations/stock/AllocationSweepJob';
 import { DatabaseManagerInstance } from '@database/index';
 import { RedisService } from '@services/redis/RedisService';
-import { PostOrderOperations } from '@operations/integration/PostOrderOperations';
+import { PostOrderOperations } from '@operations/orders/postOrder';
 
 function leanFind(mockFn: any, result: any[]) {
     mockFn.mockReturnValue({ lean: jest.fn(async () => result) });
