@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "sha256": "1d7f89e86bbb6c5e7cbd01ab0ccf75af1a86245e9f2c14319d82c5ab179f8036",
-  "generatedAt": "2026-10-01T13:21:57.692Z",
+  "sha256": "059b0a852c7ff3458125ecaa899172950a85c667ed0fdcd7945999b66554a0eb",
+  "generatedAt": "2026-10-01T14:17:03.992Z",
   "stage": "A",
-  "totalCapabilities": 289,
-  "totalBindings": 327,
+  "totalCapabilities": 295,
+  "totalBindings": 336,
   "capabilities": [
     {
       "id": "account.email_verification.resend",
@@ -4146,6 +4146,24 @@
       }
     },
     {
+      "id": "platform.pricing_rules.overview",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeBillingService/getPricingRulesOverview"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
       "id": "platform.revenue.metrics",
       "version": "1.0",
       "domain": "platform",
@@ -4515,6 +4533,100 @@
       "scope": "tenant",
       "rpc": [
         "PricingService/previewMargin"
+      ],
+      "mcp": {
+        "exposed": true,
+        "toolset": "catalog"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "pricing.rules.list",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "PricingService/getRules"
+      ],
+      "mcp": {
+        "exposed": true,
+        "toolset": "catalog"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "pricing.rules.save",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "PricingService/saveRule",
+        "PricingService/deleteRule"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "pricing.rules.settings",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "PricingService/setPricingSettings"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "irreversible"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "pricing.suggestions.apply",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "write",
+      "minTier": "admin",
+      "scope": "tenant",
+      "rpc": [
+        "PricingService/applySuggestions",
+        "PricingService/dismissSuggestions"
+      ],
+      "mcp": {
+        "exposed": true,
+        "toolset": "catalog"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "pricing.suggestions.list",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "PricingService/listSuggestions",
+        "PricingService/getPriceHistory"
       ],
       "mcp": {
         "exposed": true,
