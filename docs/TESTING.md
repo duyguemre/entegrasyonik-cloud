@@ -35,6 +35,15 @@ Ek jest argümanı: `npm run test:module -- trendyol --coverage=false -t "429"`.
 - API/servis/auth: `test:api`.
 - İş bitimi / büyük değişiklik: `npm run test:all && npm run typecheck && npm run lint && npm run ratchet` (veya `npm run verify`).
 
+## Kaynak yerleşimi ve dosya taşıma (ADR-0024 P2-MOVE)
+
+`src/api/` ağacı: `rpc/` (ApiManager, RunOperation, BaseApi, operationPolicy, servis kaydı `index.ts`, RPC kancaları),
+`rpc/handlers/` (`<ad>-service.ts`, eski `api/services`), `rpc/dto/`, `http/` (authenticate, originCheck, clientLog,
+membershipAuthz + mevcut http rotaları), `webhooks/`, `files/` (ImageApiManager, ExportDownloadApiManager), `admin/`, `oauth/`.
+`Webserver.ts` → `src/bootstrap/Webserver.ts`. Dosya taşımak için elle düzenleme yerine dönüştürücü kullanılır:
+`node dev-tools/codemods/move-module.js <harita.json>` (kuru çalıştırma) → `--write` (git mv + `import`/`require`/`jest.mock` yolları).
+`tests/static/noMockedShim.static.test.ts`: `jest.mock` hedefi yalnız yeniden-dışa-aktarma (shim) dosyası olamaz.
+
 ## Gerçek-Mongo testleri neden varsayılan koşuda değil
 
 `tests/integration/*` (`*.realmongo.test.ts`, `mongoLease`, `StockAllocator.concurrency`, `realMongoTestDb.selfcheck`) yerel
