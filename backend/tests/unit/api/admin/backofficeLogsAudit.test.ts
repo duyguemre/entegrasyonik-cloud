@@ -1,8 +1,8 @@
 // ADR-0026 WP-LOG L2: BackofficeLog/Error/Audit servisleri -- girdi semasi, kademe, 400 VALIDATION esleme, kesme, tek-kayit hassas okuma denetimi. DB/Redis YOK (sahte modeller).
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { BACKOFFICE_RPC_INPUT } from '../../../../src/capabilities/rpc-input/backoffice';
-import { getRequiredTier } from '../../../../src/api/operationPolicy';
-import { truncateLogEntry } from '../../../../src/api/services/backoffice-support';
+import { getRequiredTier } from '../../../../src/api/rpc/operationPolicy';
+import { truncateLogEntry } from '../../../../src/api/rpc/handlers/backoffice-support';
 import { AuditLogger } from '../../../../src/services/audit/AuditLogger';
 
 let audits: any[];
@@ -49,7 +49,7 @@ function loadLog(logs: any) {
     let Svc: any;
     jest.isolateModules(() => {
         jest.doMock('@platform/runtime/logs', () => ({ ...logs, LogQueryError: LQE }));
-        Svc = require('../../../../src/api/services/backoffice-log-service').default;
+        Svc = require('../../../../src/api/rpc/handlers/backoffice-log-service').default;
         // izole kayit defterindeki AuditLogger ornegine sink baglanir
         require('../../../../src/services/audit/AuditLogger').AuditLogger.setSink(async (r: any) => { audits.push(r); });
     });
@@ -89,7 +89,7 @@ describe('BackofficeLogService', () => {
 
 describe('BackofficeAuditService', () => {
     function svcWith(rows: any[], request: any) {
-        const Svc = require('../../../../src/api/services/backoffice-audit-service').default;
+        const Svc = require('../../../../src/api/rpc/handlers/backoffice-audit-service').default;
         const s = new Svc(undefined, request);
         s.applicationDB = { getAuditLogModel: () => ({ find: (q: any) => { s.q = q; const c: any = { sort: () => c, limit: (n: number) => { s.n = n; return c; }, maxTimeMS: () => c, lean: async () => rows }; return c; } }) };
         return s;
@@ -123,7 +123,7 @@ describe('BackofficeAuditService', () => {
 
 describe('BackofficeErrorService.setStatus', () => {
     it('durumu gunceller; yoksa 404', async () => {
-        const Svc = require('../../../../src/api/services/backoffice-error-service').default;
+        const Svc = require('../../../../src/api/rpc/handlers/backoffice-error-service').default;
         const s = new Svc(undefined, { fingerprint: 'fp1', status: 'resolved' });
         let upd: any;
         s.applicationDB = { getErrorEventModel: () => ({ updateOne: (f: any, u: any) => { upd = [f, u]; return { maxTimeMS: async () => ({ matchedCount: 1 }) }; } }) };

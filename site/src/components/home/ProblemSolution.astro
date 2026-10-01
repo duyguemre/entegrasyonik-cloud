@@ -29,6 +29,7 @@ import SectionHeading from './SectionHeading.astro'
 import Icon from './Icon.astro'
 import ChannelMono from '../pages/ChannelMono.astro'
 import { getPublicIntegrations } from '../../data/integrations'
+import { homeAgentGain as agentGain } from '../../data/assistant'
 import { getPublicCapabilities } from '../../data/capabilities'
 
 // Örnek senaryo: her kanalın kendi panelinde farklı (çelişen) stok sayısı görmesi — sabit görsel örnek.
@@ -60,7 +61,7 @@ const gains = [
   {
     icon: 'layers' as const,
     title: 'Merkezi stok yönetimi',
-    text: 'Ürün, fiyat ve stok değişiklikleri bağlı kanallara tek yerden iletilir.',
+    text: 'Ürün, fiyat ve stok bilgisini bir kez güncellersiniz; bağlı kanallarınıza iletilir.',
     requires: ['multi-channel-products'],
   },
   {
@@ -72,14 +73,15 @@ const gains = [
   {
     icon: 'orders' as const,
     title: 'Tek sipariş akışı',
-    text: 'Farklı kanallardan gelen siparişler tek listede, iade ve sorular tek yerde.',
+    text: 'Her kanaldan gelen sipariş aynı listede; iade ve alıcı soruları da yanında.',
     requires: ['unified-orders', 'returns', 'questions'],
   },
+  // S27a (SR4 madde 5): güvenlik maddesi Güvenlik bölümüne taşındı (tekrar yok); yerine Otopilot (Zaman sütunu).
   {
-    icon: 'shield' as const,
-    title: 'Kurumsal düzeyde güvenlik',
-    text: 'Entegrasyon anahtarlarınız şifreli saklanır; verileriniz yalnızca size ait, izole bir alanda korunur.',
-    requires: ['secrets-encryption', 'tenant-database'],
+    icon: 'sparkle' as const,
+    title: agentGain.title,
+    text: agentGain.text,
+    requires: ['unified-orders', 'stock-reservation'],
   },
 ].filter((g) => g.requires.every((id) => capIds.has(id)))
 ---
@@ -476,13 +478,9 @@ const gains = [
     line-height: var(--site-font-display-line-height);
     text-wrap: balance;
   }
+  /* S27c (BRAND §4 vurgu ekonomisi): degrade vurgu yalnız hero, kapanış ve Otopilot vitrininde; burada kırılmaz kelime grubu. */
   .ps__accent {
     white-space: nowrap;
-    background: var(--site-gradient-accent);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: var(--site-accent);
   }
   .ps__after-body {
     display: grid;

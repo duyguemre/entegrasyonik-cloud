@@ -1,5 +1,5 @@
 /**
- * CHARACTERIZATION: SettingService (backend/src/api/services/setting-service.ts) — ADR-0016 B-R-T3.
+ * CHARACTERIZATION: SettingService (backend/src/api/rpc/handlers/setting-service.ts) — ADR-0016 B-R-T3.
  * DB/Redis/ağ YOK; `clientDB` sahte model, `ImageOperations`/`storageService` jest ile mock'lanır (R2/S3'e
  * hiç dokunulmaz). Kod DEĞİŞTİRİLMEDİ, yalnızca mevcut davranış sabitlenir.
  *
@@ -9,8 +9,9 @@
  */
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 
-import SettingService from '@api/services/setting-service';
-import { ImageOperations, storageService } from '@services/index';
+import SettingService from '@api/rpc/handlers/setting-service';
+import { storageService } from '@services/index';
+import { imageOperations as ImageOperations } from '@operations/catalog/images/image-operations';
 
 let settingModel: any;
 

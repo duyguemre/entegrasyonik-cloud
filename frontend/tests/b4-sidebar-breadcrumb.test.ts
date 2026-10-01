@@ -64,11 +64,11 @@ describe('B4 — daralma/genişleme koreografisi', () => {
   })
 
   it('süre/eğri/gecikme yalnız hareket token’larından; ray’a giderken geometri solmadan SONRA', () => {
-    expect(app).toContain('--ek-app-nav-fade: var(--ek-duration-fast)')
-    expect(app).toContain('--ek-app-nav-move: var(--ek-duration-slow)')
-    expect(rule(style(nav), '.ek-side--collapsed')).toMatch(/--ek-side-geo: var\(--ek-app-nav-move, 0ms\) var\(--ek-easing-enter\) var\(--ek-app-nav-lag, 0ms\)/)
+    expect(app).toContain('--ek-app-nav-fade: var(--ek-motion-dismiss-duration)')
+    expect(app).toContain('--ek-app-nav-move: var(--ek-motion-layout-duration)')
+    expect(rule(style(nav), '.ek-side--collapsed')).toMatch(/--ek-side-geo: var\(--ek-app-nav-move, 0ms\) var\(--ek-motion-layout-easing\) var\(--ek-app-nav-lag, 0ms\)/)
     expect(rule(style(menu), '.ek-shell-nav.is-rail')).toContain('transition-delay: var(--ek-app-nav-lag)')
-    expect(style(shell)).toMatch(/\.ek-shell--rail \{\s*--ek-shell-left: left var\(--ek-app-nav-move\) var\(--ek-easing-enter\) var\(--ek-app-nav-lag\)/)
+    expect(style(shell)).toMatch(/\.ek-shell--rail \{\s*--ek-shell-left: left var\(--ek-app-nav-move\) var\(--ek-motion-layout-easing\) var\(--ek-app-nav-lag\)/)
     for (const src of [nav, menu, shell]) expect(style(src)).not.toMatch(/cubic-bezier|\d{3,}ms/)
   })
 
@@ -89,11 +89,12 @@ describe('B4 — breadcrumb çipleri + yardım tetikleyicisi', () => {
   const css = style(bar)
 
   // FR2-SHELL madde 1 (fe-r2a, bilinçli güncelleme): çip kenarlığı/zemini KALKTI — sakin metin izi (kullanıcı: "amatör").
-  it('ara öğeler ve kök nötr metin halkası (kenarlık/zemin yok, chip-h-md hedef yüksekliği); vurgu rengi yok', () => {
+  it('FR3 madde 3 (K49): ara öğeler ve kök NÖTR ÇİP (hap, ince kenarlık, soluk zemin, ikincil metin); vurgu rengi yok', () => {
     const chip = rule(css, '.ek-crumbs__chip')
-    expect(chip).toContain('height: var(--ek-app-chip-h-md)')
-    expect(chip).toContain('border: 0')
-    expect(chip).toContain('background: transparent')
+    expect(chip).toContain('height: var(--ek-app-chip-h-sm)')
+    expect(chip).toContain('border: 1px solid var(--ek-color-border-subtle)')
+    expect(chip).toContain('border-radius: var(--ek-radius-chip)')
+    expect(chip).toContain('background: var(--ek-color-surface-muted)')
     expect(chip).toContain('color: var(--ek-color-content-muted)')
     const crumbBlocks = blocks(css).filter((b) => b.sel.includes('ek-crumbs'))
     for (const b of crumbBlocks) expect(b.body, b.sel).not.toMatch(/--ek-color-action/)

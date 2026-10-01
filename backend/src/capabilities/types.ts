@@ -1,7 +1,7 @@
 // ADR-0019 §1: Yetenek Kaydı (Capability Registry) TİP SÖZLEŞMESİ.
 //
 // Bu dosya SAF tiplerdir (çalışma-anı mantığı define.ts/index.ts'te). ADR-0016 sınır kuralı: `capabilities/**` (invoke hariç)
-// `api/**`'yi İÇE AKTARMAZ — `Tier` bu yüzden burada tanımlıdır ve `api/operationPolicy.ts` oradan yeniden dışa verir.
+// `api/**`'yi İÇE AKTARMAZ — `Tier` bu yüzden burada tanımlıdır ve `api/rpc/operationPolicy.ts` oradan yeniden dışa verir.
 //
 // Derleme-zamanı zorlama (ADR-0019 Karar, P3):
 //  - `mcp` alanı ZORUNLUDUR ve ayrımlı birleşimdir: `{ exposed }` YA DA `{ notExposed }`. MCP kararı olmayan yetenek TİP HATASIDIR.
@@ -66,6 +66,8 @@ export interface McpExposed {
     confirm: 'none' | 'confirm' | 'typed';
     present: Presentation;
     deepLink?: DeepLinkSpec;
+    /** Onay kartı risk düzeyi geçersiz kılma (yoksa türetilir: destructive=high, dış yazma=medium, yerel=low). PRC-R2 fiyat uygulaması: high. */
+    risk?: 'high';
 }
 
 /**

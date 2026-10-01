@@ -5,7 +5,7 @@
         <h2 id="bo-health-title" class="bo-panel__title">API sağlığı</h2>
         <p class="bo-panel__hint">Dış servis çağrıları, hata oranı ve gecikme. Gecikme değeri kova üst sınırıdır (yaklaşık); ölçüm 30 gün saklanır.</p>
       </div>
-      <EkRefreshButton :loading="res.refreshing.value || res.phase.value === 'loading'" :last-updated="res.loadedAt.value" :error="res.stale.value ? res.error.value?.title : null" @refresh="res.load()" />
+      <EkRefreshButton quiet-success :loading="res.refreshing.value || res.phase.value === 'loading'" :last-updated="res.loadedAt.value" :error="res.stale.value ? res.error.value?.title : null" @refresh="res.load()" />
     </header>
 
     <div class="bo-toolbar">
@@ -133,6 +133,18 @@ function meter(i: ApiHealthItem): MeterRow[] {
 .bo-health__meter {
   min-width: 240px;
   padding-block: var(--ek-space-2);
+}
+/* MOB-06: kart görünümünde dağılım hücresi etiketin altına tam genişlik iner (değer kırpılmaz). */
+@media (max-width: 599.98px) {
+  .bo-health__meter {
+    width: 100%;
+    min-width: 0;
+  }
+  :deep(.ek-data-table__td:has(.bo-health__meter)) {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: left;
+  }
 }
 .bo-health__p95 {
   display: inline-flex;

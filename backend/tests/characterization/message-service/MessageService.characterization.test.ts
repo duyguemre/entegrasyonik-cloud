@@ -1,5 +1,5 @@
 /**
- * CHARACTERIZATION: MessageService (backend/src/api/services/message-service.ts)
+ * CHARACTERIZATION: MessageService (backend/src/api/rpc/handlers/message-service.ts)
  *
  * Kapsam: get, getMessages, replyMessage, markAsRead, deleteMessage, bulkDeleteMessages
  * (tenant/clientId kullanımı dahil).
@@ -21,8 +21,14 @@ jest.mock('@database/DatabaseManager', () => ({
 }));
 jest.mock('@integration/modules/IntegrationFactory', () => ({ __esModule: true, default: jest.fn() }));
 
-import MessageService from '@api/services/message-service';
+import MessageService from '@api/rpc/handlers/message-service';
 import IntegrationFactory from '@integration/modules/IntegrationFactory';
+import { captureLogs, type LogCapture } from '../../helpers/logCapture';
+
+// F-06 (ADR-0024 P4): api/** console -> eventLog; loglar stdout JSON satırlarından doğrulanır.
+let cap: LogCapture;
+beforeEach(() => { cap = captureLogs(); });
+afterEach(() => { cap.restore(); });
 
 const factoryCtor = IntegrationFactory as unknown as jest.Mock<any>;
 
@@ -162,7 +168,7 @@ describe('MessageService.getMessages', () => {
   it('[MEVCUT DAVRANIŞ] hata console.error ile loglanıp olduğu gibi yeniden fırlatılır', async () => {
     messageModel.aggregate.mockRejectedValue(new Error('agg fail'));
     await expect(makeService({}).getMessages()).rejects.toThrow('agg fail');
-    expect(console.error).toHaveBeenCalled();
+    expect(cap.lines).toContainEqual(expect.objectContaining({ level: 'error' })); // F-06: console.error -> eventLog
   });
 
   it('[TENANT İZOLASYONU, PLATFORM_BASELINE B2] $match içinde clientId/tenant alanı YOK; izolasyon clientDB seçimine bağlıdır', async () => {
@@ -233,7 +239,7 @@ describe('MessageService.replyMessage', () => {
   it('[MEVCUT DAVRANIŞ] pazaryeri istisnası olduğu gibi yayılır (console.error ile loglanır); DB güncellenmez', async () => {
     instance.answerMessage.mockRejectedValue(new Error('market down'));
     await expect(makeService({ messageId: 'm1', answerText: 'a' }).replyMessage()).rejects.toThrow('market down');
-    expect(console.error).toHaveBeenCalled();
+    expect(cap.lines).toContainEqual(expect.objectContaining({ level: 'error' })); // F-06: console.error -> eventLog
     expect(messageModel.findByIdAndUpdate).not.toHaveBeenCalled();
   });
 });
@@ -267,7 +273,7 @@ describe('MessageService.markAsRead', () => {
   it('[MEVCUT DAVRANIŞ] hata console.error ile loglanıp yeniden fırlatılır', async () => {
     messageModel.findById.mockRejectedValue(new Error('db down'));
     await expect(makeService({ messageId: 'm1' }).markAsRead()).rejects.toThrow('db down');
-    expect(console.error).toHaveBeenCalled();
+    expect(cap.lines).toContainEqual(expect.objectContaining({ level: 'error' })); // F-06: console.error -> eventLog
   });
 });
 
@@ -291,7 +297,7 @@ describe('MessageService.deleteMessage', () => {
   it('[MEVCUT DAVRANIŞ] DB hatası console.error ile loglanıp yeniden fırlatılır', async () => {
     messageModel.findByIdAndDelete.mockRejectedValue(new Error('db down'));
     await expect(makeService({ messageId: 'm1' }).deleteMessage()).rejects.toThrow('db down');
-    expect(console.error).toHaveBeenCalled();
+    expect(cap.lines).toContainEqual(expect.objectContaining({ level: 'error' })); // F-06: console.error -> eventLog
   });
 });
 
@@ -318,12 +324,12 @@ describe('MessageService.bulkDeleteMessages', () => {
   it('[MEVCUT DAVRANIŞ] geçersiz bir ObjectId formatı senkron olarak fırlar; console.error ile loglanıp yeniden fırlatılır (deleteMany hiç çağrılmaz)', async () => {
     await expect(makeService({ messageIds: ['not-a-valid-object-id'] }).bulkDeleteMessages()).rejects.toThrow();
     expect(messageModel.deleteMany).not.toHaveBeenCalled();
-    expect(console.error).toHaveBeenCalled();
+    expect(cap.lines).toContainEqual(expect.objectContaining({ level: 'error' })); // F-06: console.error -> eventLog
   });
 
   it('[MEVCUT DAVRANIŞ] DB hatası console.error ile loglanıp yeniden fırlatılır', async () => {
     messageModel.deleteMany.mockRejectedValue(new Error('db down'));
     await expect(makeService({ messageIds: [MSG_ID_1] }).bulkDeleteMessages()).rejects.toThrow('db down');
-    expect(console.error).toHaveBeenCalled();
+    expect(cap.lines).toContainEqual(expect.objectContaining({ level: 'error' })); // F-06: console.error -> eventLog
   });
 });

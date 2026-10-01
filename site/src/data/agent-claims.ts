@@ -59,6 +59,11 @@ export const AGENT_CLAIMS = {
     readiness: planned('core-lead ile aynı koşul.'),
   },
 
+  'hero-moment': {
+    text: 'Sorunu fark eder, öneriyi hazırlar; siz onaylayınca uygular.',
+    readiness: planned('core-lead ile aynı koşul; ana sayfa vitrinindeki öneri → onay → uygulama anı (stok farkı örneği) üründe gösterilebilir olmalı.'),
+  },
+
   // ---------------------------------------------------------------- ajan döngüsü
   'loop-lead': {
     text: 'Her ajan aynı beş adımlı döngüyle çalışır. Dört adımı ajan üstlenir; karar adımı yalnızca sizindir.',
@@ -142,6 +147,14 @@ export const AGENT_CLAIMS = {
       evidence('backend/src/services/audit/AuditLogger.ts', 'AuditLogger asgari denetim kaydı', 'asgari denetim kaydı'),
     ]),
   },
+  // PRC-MKT (K58): adil rekabet ilkesinin Otopilot karşılığı — yalnız İLKE dili; fiyatlama özelliği vaat edilmez (K43).
+  'trust-price': {
+    text: 'Ajanlar fiyat kararını sizin yerinize vermez: fiyata dokunan bir öneri yalnızca sizin kurallarınıza ve sizin verinize dayanır; başka bir işletmenin verisi hesaba katılmaz.',
+    readiness: building('Fiyat önerisi yapan ajan yok; yayına girdiğinde AUTO_PRICING_LEGAL §c K2 (işletmeler arası veri yok) ve K4 (satıcının kendi kuralı, dayatılan değer yok) korunmalı.', [
+      evidence(PATHS.adr0003, 'ADR-0003 hesap başına veri alanı', 'entegrasyonikClient_1'),
+      adr18('Model veya ajan onay kanalına erişemez'),
+    ]),
+  },
   'trust-data': {
     text: 'Verileriniz yalnızca size aittir ve izole bir alanda korunur; ajanlar yalnızca sizin hesabınızın verisiyle çalışır.',
     readiness: live('Hesap başına ayrı veri alanı ve şifreli anahtarlar kodda; ajan erişiminin oturumdaki hesapla sınırlı kaldığı doğrulanmalı.', [
@@ -152,7 +165,7 @@ export const AGENT_CLAIMS = {
   'trust-role': {
     text: 'Her işlem rolünüzün izinleriyle denetlenir; yetkinizin yetmediği bir işlemi ajan da yapamaz.',
     readiness: live('Sunucu tarafı yetki denetimi (varsayılan red) kodda; ajan çağrılarının aynı yoldan geçtiği doğrulanmalı.', [
-      evidence('backend/src/api/operationPolicy.ts', 'operationPolicy varsayılan red', 'varsayılan olarak REDDEDİLİR'),
+      evidence('backend/src/api/rpc/operationPolicy.ts', 'operationPolicy varsayılan red', 'varsayılan olarak REDDEDİLİR'),
     ]),
   },
 
@@ -189,10 +202,10 @@ export const AGENT_CLAIMS = {
   },
   'faq-access': {
     text: 'Ajanlar yalnızca sizin hesabınızla ve rolünüzün izinleriyle çalışır. Rolünüzün yetmediği bir işlemi ajanlar da yapamaz.',
-    readiness: live('trust-role ile aynı.', [evidence('backend/src/api/operationPolicy.ts', 'operationPolicy varsayılan red', 'varsayılan olarak REDDEDİLİR')]),
+    readiness: live('trust-role ile aynı.', [evidence('backend/src/api/rpc/operationPolicy.ts', 'operationPolicy varsayılan red', 'varsayılan olarak REDDEDİLİR')]),
   },
   'faq-privacy': {
-    text: 'Verileriniz yalnızca size aittir ve izole bir alanda korunur; entegrasyon anahtarlarınız şifreli saklanır. Öneri hazırlanırken son müşterilerinizin kişisel bilgileri varsayılan olarak maskelenir.',
+    text: 'Verileriniz yalnızca size aittir ve izole bir alanda korunur; entegrasyon anahtarlarınız şifreli saklanır. Öneri hazırlanırken alıcılarınızın kişisel bilgileri varsayılan olarak maskelenir.',
     readiness: planned('Kişisel veri maskeleme henüz yok; yayından önce uygulanmalı ya da ikinci cümle kaldırılmalı.'),
   },
   'faq-start': {
@@ -221,7 +234,7 @@ export const AGENT_CLAIMS = {
   },
   'llms-trust': {
     text: 'Güven: veriler yalnızca işletmeye aittir ve izole bir alanda korunur; entegrasyon anahtarları şifreli saklanır; her işlem kullanıcının rol izinleriyle denetlenir.',
-    readiness: live('trust-data + trust-role ile aynı.', [evidence('backend/src/api/operationPolicy.ts', 'operationPolicy varsayılan red', 'varsayılan olarak REDDEDİLİR')]),
+    readiness: live('trust-data + trust-role ile aynı.', [evidence('backend/src/api/rpc/operationPolicy.ts', 'operationPolicy varsayılan red', 'varsayılan olarak REDDEDİLİR')]),
   },
 } as const satisfies Record<string, AgentClaim>
 

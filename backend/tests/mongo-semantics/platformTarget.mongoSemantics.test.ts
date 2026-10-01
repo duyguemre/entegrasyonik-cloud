@@ -9,7 +9,7 @@ import mongoose from 'mongoose';
 
 jestGlobal.setTimeout(120000);
 
-import IntegrationConfigService from '../../src/api/services/integration-config-service';
+import IntegrationConfigService from '../../src/api/rpc/handlers/integration-config-service';
 import { IntegrationConfigRevisionSchema, IntegrationConfigHeadSchema } from '@database/application/models/IntegrationConfig';
 import { AuditLogger } from '@services/audit/AuditLogger';
 import { getSettingWithPublishedOverrides } from '@integration/config/ConfigResolver';
@@ -80,7 +80,18 @@ describe('IntegrationConfigService — _platform hedefi', () => {
         s.request = { target: T };
         const eff = await s.getEffectiveConfig();
         expect(eff.values.map((v: any) => v.key).sort()).toEqual([
-            'announcement.enabled', 'announcement.level', 'announcement.text', 'features.agent', 'features.agent.disabledCapabilities', 'maintenance.enabled', 'maintenance.message',
+            // ADR-0029 NB8: alarm eşikleri (catalog/alerts.ts, yöneticiye özel)
+            'alerts.r1.criticalPercent', 'alerts.r1.minCalls', 'alerts.r1.warnPercent', 'alerts.r10.p95Min', 'alerts.r11.minCount', 'alerts.r2.authErrors', 'alerts.r2.circuitOpenMin',
+            'alerts.r3.lagCriticalMin', 'alerts.r3.lagWarnMin', 'alerts.r4.oldestWaitMin', 'alerts.r4.queueWait', 'alerts.r5.pendingMin', 'alerts.r7.deadPerHour', 'alerts.r8.unresolvedMin',
+            'announcement.enabled', 'announcement.level', 'announcement.text', 'features.agent', 'features.agent.disabledCapabilities',
+            // PRC-R1/R2: rekabet + fiyat kuralları bayrakları ve buybox bütçe/plan ayarları (catalog/pricing)
+            'features.competition', 'features.competition.tenants', 'features.pricingRules',
+            'maintenance.enabled', 'maintenance.message',
+            'pricing.buybox.budget.trendyol.perMin', 'pricing.buybox.notify.shadow',
+            'pricing.buybox.plan.enterprise.freshnessMin', 'pricing.buybox.plan.enterprise.priority', 'pricing.buybox.plan.enterprise.refreshMin', 'pricing.buybox.plan.enterprise.skuCap',
+            'pricing.buybox.plan.growth.freshnessMin', 'pricing.buybox.plan.growth.priority', 'pricing.buybox.plan.growth.refreshMin', 'pricing.buybox.plan.growth.skuCap',
+            'pricing.buybox.plan.starter.freshnessMin', 'pricing.buybox.plan.starter.priority', 'pricing.buybox.plan.starter.refreshMin', 'pricing.buybox.plan.starter.skuCap',
+            'pricing.suggestions.bulkApplyQuota',
             'support.email', 'support.phone', 'ui.listPageSize', 'ui.reportPollMs',
         ]);
         expect(eff.values.find((v: any) => v.key === 'ui.listPageSize')).toMatchObject({ value: 100, source: 'platform' });

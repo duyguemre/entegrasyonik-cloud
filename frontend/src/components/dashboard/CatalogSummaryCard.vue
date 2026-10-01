@@ -9,7 +9,7 @@
     title="Katalog ve kanal aktarımı"
     subtitle="Varyantların pazaryeri/kanal aktarım durumu"
     icon="mdi-tag-multiple-outline"
-    :heading-level="2"
+    :heading-level="3"
     :to-label="linkable ? 'Ürün listesini aç' : undefined"
     class="dash-catalog"
     @open="open('productList')"

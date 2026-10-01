@@ -66,7 +66,12 @@ test.describe('ADR-0015 B4-P1c — N10 Denetim günlüğü', () => {
     await expect(grid(page)).toContainText('Parola değiştirildi')
     await expect(grid(page)).toContainText('Başarısız')
     await expect(grid(page)).toContainText('Sistem') // userId null
-    await expect(grid(page)).toContainText('Bilinmeyen kullanıcı') // listede olmayan kimlik
+    // P09: kullanıcı dizini eksiksiz (toplam = dönen) → listede olmayan kimlik "Silinmiş kullanıcı"; ham kimlik listede yok.
+    await expect(grid(page)).toContainText('Silinmiş kullanıcı')
+    await expect(grid(page)).not.toContainText('Bilinmeyen kullanıcı')
+    // P09: neden kodu okunur karşılıkla (ham kod yalnız ayrıntı panelinde).
+    await expect(grid(page)).toContainText('Neden: Mevcut parola hatalı')
+    await expect(grid(page)).not.toContainText('wrong_current')
     await expect(grid(page)).toContainText('future.unknown_event') // bilinmeyen olay → ham ad
     await expect(root).not.toContainText('tid')
     await expect(root.getByRole('navigation', { name: 'Denetim kayıtları sayfalama' })).toContainText('8 kayıt')

@@ -13,7 +13,7 @@ export const INVOICE_STATUS_LABELS: Record<InvoiceStatusEnum, string> = {
     [InvoiceStatusEnum.PROCESSING]: 'İşleniyor',
     [InvoiceStatusEnum.APPROVED]: 'Onaylandı',
     [InvoiceStatusEnum.FAILED]: 'Hatalı',
-    [InvoiceStatusEnum.CANCELLED]: 'İptal Edildi'
+    [InvoiceStatusEnum.CANCELLED]: 'İptal edildi'
 };
 
 export const INVOICE_STATUS_COLORS: Record<InvoiceStatusEnum, string> = {

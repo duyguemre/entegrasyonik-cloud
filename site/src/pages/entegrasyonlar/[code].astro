@@ -76,7 +76,10 @@ const meterLabel =
   limitedCount > 0
     ? `Yetenek matrisinde bir kısmı destekleniyor, bir kısmı kısmi kapsamlı; ayrıntı aşağıdadır.`
     : `Yetenek matrisindeki tüm işlemler destekleniyor; ayrıntı aşağıdadır.`
-const previewCapabilities = i.capabilities.slice(0, 4)
+// N2 (S27b, ELEV A9): hero'da güç önce — önizleme desteklenen işlemlerle başlar; kısmi kapsam rozeti ve oran çubuğu
+// hero'da yalnız geniş kapsamda görünür. Kapsam şeffaflığı aynen aşağıda: "Bir bakışta" (Kapsam), matris ve sınırlamalar.
+const previewCapabilities = [...i.capabilities].sort((a, b) => (a.level === 'supported' ? 0 : 1) - (b.level === 'supported' ? 0 : 1)).slice(0, 4)
+const showMeter = i.coverage === 'broad'
 ---
 
 <BaseLayout>
@@ -86,7 +89,7 @@ const previewCapabilities = i.capabilities.slice(0, 4)
       <span class="hero-status__dot" aria-hidden="true"></span>
       {i.statusLabel}
     </span>
-    <Badge tone={coverageTone[i.coverage]}>{i.coverageLabel}</Badge>
+    {i.coverage === 'broad' && <Badge tone={coverageTone[i.coverage]}>{i.coverageLabel}</Badge>}
     {guide && <a class="hero-guide-link" href="#baglanti-rehberi">Bağlantı rehberi</a>}
     <Fragment slot="visual">
       <div class="hero-visual" data-code={i.code}>
@@ -94,13 +97,15 @@ const previewCapabilities = i.capabilities.slice(0, 4)
           <ChannelMono code={i.code} name={i.name} size="lg" />
           <p class="hero-visual__kind">{i.kindLabel}</p>
         </div>
-        <div class="hero-meter" role="img" aria-label={meterLabel}>
-          {
-            Array.from({ length: METER_SEGMENTS }).map((_, idx) => (
-              <span class:list={['hero-meter__seg', { 'hero-meter__seg--on': idx < filledSegments }]} />
-            ))
-          }
-        </div>
+        {showMeter && (
+          <div class="hero-meter" role="img" aria-label={meterLabel}>
+            {
+              Array.from({ length: METER_SEGMENTS }).map((_, idx) => (
+                <span class:list={['hero-meter__seg', { 'hero-meter__seg--on': idx < filledSegments }]} />
+              ))
+            }
+          </div>
+        )}
         <ul class="hero-preview">
           {
             previewCapabilities.map((c) => (
@@ -116,7 +121,7 @@ const previewCapabilities = i.capabilities.slice(0, 4)
   </PageHero>
 
   <Section labelledby="matris-title" class="tight-section">
-    <SectionHead id="matris-title" title="Yetenek matrisi" lead="Bu entegrasyonda hangi işlemlerin tam, hangilerinin temel düzeyde desteklendiği." />
+    <SectionHead id="matris-title" eyebrow="Kapsam" title="Yetenek matrisi" lead="Bu entegrasyonda hangi işlemlerin tam, hangilerinin temel düzeyde desteklendiği." />
     <div class="matrix-layout matrix-layout--split">
       <div class="matrix">
       <p class="matrix__head" aria-hidden="true"><span>İşlem</span><span>Ne yapılır</span></p>
@@ -256,20 +261,28 @@ const previewCapabilities = i.capabilities.slice(0, 4)
         </div>
       )
     }
-    <div class="related">
-      <h3 class="related__label">Diğer entegrasyonlar</h3>
+    {/* S27a (SR4 madde 8): "Diğer entegrasyonlar" hap satırından kart ızgarasına — rozet + ad + tür + ok; kanal
+        rengi yalnız rozette ve hover'da ince üst çizgide (K13). Başlık satırında "Tüm entegrasyonlar" bağlantısı. */}
+    <div class="related" data-testid="related-integrations">
+      <div class="related__head">
+        <h3 class="related__label">Diğer entegrasyonlar</h3>
+        <a class="related__all" href="/entegrasyonlar">Tüm entegrasyonlar <Icon name="arrow" size="sm" /></a>
+      </div>
       <ul class="others" role="list">
         {
           others.map((o) => (
             <li>
               <a class="others__link" href={`/entegrasyonlar/${o.code}`} data-code={o.code}>
-                <ChannelMono code={o.code} name={o.name} size="sm" />
-                <span>{o.name}</span>
+                <ChannelMono code={o.code} name={o.name} size="md" />
+                <span class="others__text">
+                  <span class="others__name">{o.name}</span>
+                  <span class="others__kind">{o.kindLabel}</span>
+                </span>
+                <span class="others__go" aria-hidden="true"><Icon name="arrow" size="sm" /></span>
               </a>
             </li>
           ))
         }
-        <li><a class="others__all" href="/entegrasyonlar">Tüm entegrasyonlar</a></li>
       </ul>
     </div>
   </Section>
@@ -277,8 +290,8 @@ const previewCapabilities = i.capabilities.slice(0, 4)
   <CtaBand
     id="detay-cta"
     title={`${i.name} kanalınızı bağlayın`}
-    text="Hesabınızı oluşturun ve kimlik bilgilerinizi girerek başlayın."
-    primary={{ label: 'Ücretsiz dene', href: appUrls.register() }}
+    text="Hesabınızı oluşturun, kanal bilgilerinizi girin; stok ve siparişleriniz ilk günden aynı akışta ilerlesin."
+    primary={{ label: 'Ücretsiz deneyin', href: appUrls.register() }}
     secondary={{ label: 'İletişime geçin', href: '/iletisim' }}
   />
 </BaseLayout>
@@ -289,7 +302,7 @@ const previewCapabilities = i.capabilities.slice(0, 4)
 
 <style>
   /* Bölümler arası dikey ritim genel olarak sıkılaştırıldı (S11b). */
-  .tight-section:global(.section) {
+  :global(.section.tight-section) {
     padding-block: calc(var(--site-section-y) * 0.72);
   }
 
@@ -559,9 +572,6 @@ const previewCapabilities = i.capabilities.slice(0, 4)
     font-weight: var(--ek-font-weight-semibold);
     text-decoration: none;
   }
-  .glance__link:hover {
-    text-decoration: underline;
-  }
 
   /* Yan kutu (masaüstü sticky; "Sınırlamalar ve sunulmayanlar" artık ayrı bölüm değil, S11b). */
   .limits-aside {
@@ -788,55 +798,127 @@ const previewCapabilities = i.capabilities.slice(0, 4)
     font-size: var(--ek-font-size-md);
   }
 
-  /* "Diğer entegrasyonlar" artık "Nasıl bağlanırsınız" bölümünün alt şeridi (S11b — ayrı tam bölüm değil). */
+  /* "Diğer entegrasyonlar" — "Nasıl bağlanırsınız" bölümünün alt şeridi (S11b); S27a: kart ızgarası. */
   .related {
     margin-top: var(--ek-space-10);
     padding-top: var(--ek-space-8);
     border-top: var(--site-border-width) solid var(--ek-color-border-default);
   }
-  .related__label {
-    margin: 0 0 var(--ek-space-4);
-    color: var(--ek-color-content-muted);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-  .others {
+  .related__head {
     display: flex;
     flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
     gap: var(--ek-space-3);
+    margin-bottom: var(--ek-space-5);
   }
-  .others__link {
+  .related__label {
+    margin: 0;
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-xl);
+    font-weight: var(--ek-font-weight-bold);
+    letter-spacing: -0.01em;
+  }
+  .related__all {
     display: inline-flex;
     align-items: center;
     gap: var(--ek-space-2);
     min-height: var(--site-tap-target);
-    padding-inline: var(--ek-space-3) var(--ek-space-4);
-    border: var(--site-border-width) solid var(--ek-color-border-strong);
-    border-radius: var(--ek-radius-full);
-    color: var(--ek-color-content-strong);
-    font-weight: var(--ek-font-weight-medium);
+    color: var(--site-link-accent);
+    font-weight: var(--ek-font-weight-semibold);
     text-decoration: none;
-    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
   }
-  .others__link:hover {
-    border-color: color-mix(in srgb, var(--chan, var(--ek-color-primary)) 60%, transparent);
+  .others {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+    gap: var(--ek-space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
-  .others__all {
-    display: inline-flex;
+  .others__link {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
-    min-height: var(--site-tap-target);
-    padding-inline: var(--ek-space-4);
-    border: var(--site-border-width) dashed var(--ek-color-border-strong);
-    border-radius: var(--ek-radius-full);
-    color: var(--ek-color-primary);
-    font-weight: var(--ek-font-weight-medium);
+    gap: var(--ek-space-3);
+    height: 100%;
+    padding: var(--ek-space-4);
+    overflow: hidden;
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
+    color: var(--site-text-heading);
     text-decoration: none;
-    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
+    transition:
+      border-color var(--ek-duration-base) var(--ek-easing-standard),
+      box-shadow var(--ek-duration-base) var(--ek-easing-standard),
+      translate var(--ek-duration-base) var(--ek-easing-standard);
   }
-  .others__all:hover {
-    border-color: var(--ek-color-primary);
+  /* Kanal renginde ince üst çizgi — yalnız hover/odakta (renk yalnız kanal kimliği için, K13). */
+  .others__link::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: calc(var(--site-border-width) * 3);
+    background: var(--chan, var(--ek-color-secondary));
+    opacity: 0;
+    transition: opacity var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .others__link:hover,
+  .others__link:focus-visible {
+    border-color: color-mix(in srgb, var(--chan, var(--ek-color-primary)) 45%, var(--ek-color-border-default));
+    box-shadow: var(--site-shadow-card-hover);
+    translate: 0 calc(var(--ek-space-1) * -0.5);
+  }
+  .others__link:hover::before,
+  .others__link:focus-visible::before {
+    opacity: 1;
+  }
+  .others__text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .others__name {
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .others__kind {
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-xs);
+  }
+  .others__go {
+    display: inline-flex;
+    color: var(--site-text-meta);
+    transition:
+      color var(--ek-duration-base) var(--ek-easing-standard),
+      translate var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .others__link:hover .others__go {
+    color: var(--site-link-accent);
+    translate: var(--ek-space-1) 0;
+  }
+  /* Dar ekran: iki sütun, ok gizli (beş kartlık uzun dikey liste olmasın). */
+  @media (max-width: 479.98px) {
+    .others {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .others__link {
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: var(--ek-space-2);
+      padding: var(--ek-space-3);
+    }
+    .others__go {
+      display: none;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .others__link,
+    .others__go {
+      transition: none;
+    }
   }
 
   @media (min-width: 768px) {

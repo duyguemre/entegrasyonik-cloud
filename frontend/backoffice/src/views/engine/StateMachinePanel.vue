@@ -5,7 +5,7 @@
         <h2 id="bo-sm-title" class="bo-panel__title">Katalog durum makinesi</h2>
         <p class="bo-panel__hint">Ürün gönderim sinyalleri (ExportSignals) ve içe aktarma işleri (ImportJobs). Takılı kira: sahibi dolu ama süresi dolmuş ya da {{ timeoutText }} boyunca ilerlemeyen iş.</p>
       </div>
-      <EkRefreshButton :loading="res.refreshing.value || res.phase.value === 'loading'" :last-updated="res.loadedAt.value" @refresh="res.load()" />
+      <EkRefreshButton quiet-success :loading="res.refreshing.value || res.phase.value === 'loading'" :last-updated="res.loadedAt.value" @refresh="res.load()" />
     </header>
 
     <StateBlock :phase="res.phase.value" :error="res.error.value" skeleton="cards" :rows="2" @retry="res.load()">
@@ -32,7 +32,7 @@
               <span class="bo-cell-stack"><span>{{ item.kind === 'export' ? 'Gönderim' : 'İçe aktarma' }}</span><code class="bo-code">{{ item.id }}</code></span>
             </template>
             <template #cell-tenantId="{ item }">
-              <RouterLink v-if="item.tenantId" :to="`/musteriler/${item.tenantId}`" class="ek-num">#{{ item.tenantId }}</RouterLink>
+              <RouterLink v-if="item.tenantId" :to="`/musteriler/${item.tenantId}`" class="ek-num bo-hit">#{{ item.tenantId }}</RouterLink>
               <span v-else class="bo-muted">—</span>
             </template>
             <template #cell-integrationCode="{ item }">

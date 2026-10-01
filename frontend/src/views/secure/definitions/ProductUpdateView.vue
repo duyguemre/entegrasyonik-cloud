@@ -72,6 +72,10 @@
           </v-form>
         </div>
 
+        <!-- PRC-R1: Rekabet ve kâr (Trendyol, salt okuma) — yalnız kayıtlı üründe, Varyantlar adımının altında. -->
+        <CompetitionPanel v-if="stepper == 2 && productInfoForm._id" class="pdv-competition" :key="`${productInfoForm._id}-${competitionKey}`"
+          :product-id="String(productInfoForm._id)" :variants="productInfoForm.variants || []" @focus-cost="focusCostColumn" />
+
         <ProductFormStepFooter :form="productInfoForm" :current="stepper" @navigate="onNavigate" />
       </div>
 
@@ -115,8 +119,19 @@ import { useIntegrationStore } from '@/stores/integrationStore';
 import CategorySelectBoxLevelComponent from '@/components/CategorySelectBoxLevelComponent.vue';
 import { useSnackbarStore } from '@/stores/snackbarStore';
 import ProductDetailsComponent from '@/components/productDefinitions/variants/ProductDetailsComponent.vue';
+import CompetitionPanel from '@/components/pricing/CompetitionPanel.vue'
+import { useCostSave } from '@/composables/useCostSave'
+import type { CostBaseline } from '@/composables/usePricingApi'
 import ProductInfoFormComponent from '@/components/productDefinitions/crud/ProductInfoFormComponent.vue';
 const snackbarStore = useSnackbarStore();
+const costSave = useCostSave()
+// PRC-R0: açılıştaki (sunucudaki) maliyetler — kaydetmede yalnız DEĞİŞENLER `setVariantCosts` ile gider.
+const costBase = ref<CostBaseline>({})
+const competitionKey = ref(0)
+const focusCostColumn = () => {
+  stepper.value = 2
+  nextTick(() => rootRef.value?.querySelector<HTMLElement>('.pv-frame')?.scrollIntoView({ block: 'center' }))
+}
 
 const menuStore: any = inject('useMenuStore')
 const eventBus: any = inject('eventBus', undefined)
@@ -282,6 +297,7 @@ const refreshVariants = async () => {
   loadingComponentRef.value.remove(guid)
   if (response) {
     productInfoForm.value.variants = response
+    costBase.value = costSave.baseline(response)
   }
 }
 
@@ -300,6 +316,7 @@ const retrieveProduct = async () => {
   if (response && response.product && response.product._id) {
     productInfoForm.value = response.product
     checkSingleVariant()
+    costBase.value = costSave.baseline(productInfoForm.value.variants)
 
     console.log("productInfoForm.value", productInfoForm.value, productInfoForm.value.variants)
     if (productInfoForm.value.prices == undefined) productInfoForm.value.prices = {}
@@ -359,6 +376,7 @@ const updateProduct = async () => {
       calculateSetSalePrice()
     }
    */
+  const costDiff = costSave.plan(costBase.value, productInfoForm.value.variants)
   let guid = loadingComponentRef.value.info(t('loading.info.updateProduct'))
   checkVariantAttributes()
   let response: any
@@ -377,6 +395,11 @@ const updateProduct = async () => {
       color: 'success'
     })
     setTabTitle()
+    // PRC-R0: maliyet ayrı yazma yolu; sonucu AYRI bildirilir (kayıt başarılı + maliyet başarısız açıkça görünür).
+    costBase.value = costSave.baseline(productInfoForm.value.variants)
+    const outcome = await costSave.persist(productInfoForm.value.variants, costDiff, 'update')
+    if (outcome.status === 'ok') costBase.value = costSave.baseline(productInfoForm.value.variants)
+    if (outcome.status !== 'none') competitionKey.value++
   }
 }
 
@@ -571,7 +594,7 @@ const headers = [
 }
 
 .pdv-variants {
-  transition: opacity var(--ek-duration-base) var(--ek-easing-enter) !important;
+  transition: opacity var(--ek-motion-overlay) !important;
 }
 
 .pdv-variants--dim {
@@ -612,5 +635,11 @@ const headers = [
 /* Varyant adımı sarmalayıcısı normal akışta blok kapsayıcıdır; konum/yükseklik dayatılmaz (içindeki bileşen yönetir). */
 .pdv-step-variants {
   display: block;
+}
+
+/* PRC-R1: Rekabet ve kâr bölümü — varyant tablosu ile adım altbilgisi arasında. */
+.pdv-competition {
+  max-width: 1200px;
+  margin: var(--ek-space-4) auto 0;
 }
 </style>

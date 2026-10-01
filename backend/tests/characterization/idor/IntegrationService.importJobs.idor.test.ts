@@ -1,6 +1,6 @@
 /**
  * CHARACTERIZATION: IntegrationService import-job IDOR (BACKLOG C4 / QA-FAZ2 kritik-1)
- * Kaynak: backend/src/api/services/integration-service.ts  getImportJobByJobId (~862), archiveImportJobs (~904)
+ * Kaynak: backend/src/api/rpc/handlers/integration-service.ts  getImportJobByJobId (~862), archiveImportJobs (~904)
  *
  * DÜZELTME (QA-FAZ2 kritik-1, L-04): getImportJobByJobId ve archiveImportJobs artık `getImportJobs` ile
  * AYNI DESENİ kullanıyor: sorgu/filtre nesnesine `clientId: this.currentClientId` eklendi. Tenant A artık
@@ -26,7 +26,7 @@ jest.mock('@integration/engine/IntegrationEventBus', () => ({
 }));
 jest.mock('@services/notification/NotificationService', () => ({ NotificationService: {} }));
 
-import IntegrationService from '@api/services/integration-service';
+import IntegrationService from '@api/rpc/handlers/integration-service';
 
 const anyFn = (): any => jest.fn();
 

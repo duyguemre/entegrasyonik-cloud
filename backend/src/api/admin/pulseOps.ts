@@ -1,6 +1,8 @@
 // K51 (BO1): büyük resim kullanım özeti ("pulse"). Mevcut metrik/rollup'lardan; veri yoksa uydurma 0 YOK: `computable:false` + `note:'hesaplanamadı'`.
 // SAF: modeller enjekte edilir. Her blok 2 sn zaman aşımıyla; okunamayan blok `{ status:'degraded', error }`. Tenant iş verisi dönmez (yalnız sayaç).
 import { guard, SECTION_TIMEOUT_MS } from '../../operations/backoffice/guarded';
+import { pulseActiveUsers } from '../../operations/backoffice/usageOps';
+import type { PlatformFilter } from '@platform/core/context';
 
 const HOUR_MS = 3_600_000;
 const DAY_MS = 86_400_000;
@@ -9,6 +11,8 @@ export const NOT_COMPUTABLE = 'hesaplanamadı';
 
 export interface PulseDeps {
     clientModel: any; metricRollupModel: any; callMetricModel: any;
+    /** [MOB-08] UsageDaily (aktif kullanıcı + platform kırılımı). */
+    usageModel: any;
     revenue: () => Promise<any>;   // computeRevenueMetrics(..., '30d') sonucu
     now?: () => number; sectionTimeoutMs?: number;
 }
@@ -25,13 +29,15 @@ export class PulseOps {
         return g.ok ? { status: 'ok', ...g.value } : { status: 'degraded', error: g.error };
     }
 
-    async getPulse(): Promise<any> {
+    /** `platform` (MOB-08): yalnız `activeUsers` bloğunu süzer (diğer bloklar platform boyutu taşımaz). */
+    async getPulse(platform?: PlatformFilter): Promise<any> {
         const nowMs = this.now();
         const buckets = this.httpBuckets(nowMs); buckets.catch(() => undefined); // tek okuma; iki blok paylaşır (reddedilirse her blok kendi degraded'ını üretir)
-        const [tenants, orders, calls, errorRate, mrr] = await Promise.all([
+        const [tenants, orders, calls, errorRate, mrr, activeUsers] = await Promise.all([
             this.block(() => this.tenants()), this.block(() => this.orders(nowMs)), this.block(() => this.calls(nowMs, buckets)), this.block(() => this.errorRate(nowMs, buckets)), this.block(() => this.mrr()),
+            this.block(() => pulseActiveUsers({ usageModel: this.d.usageModel, now: () => nowMs }, platform)),
         ]);
-        return { generatedAt: new Date(nowMs).toISOString(), tenants, orders, calls, errorRate, mrr };
+        return { generatedAt: new Date(nowMs).toISOString(), tenants, orders, calls, errorRate, mrr, activeUsers };
     }
 
     private async tenants() {

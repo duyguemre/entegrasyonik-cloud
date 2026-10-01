@@ -58,7 +58,8 @@
       "effectiveConfig": "Effective configuration"
     },
     "management": "User Management",
-    "supports": "Support"
+    "supports": "Support",
+    "pricingRules": "Pricing rules"
   },
   "title": {
     "config": "Configuration"
@@ -349,7 +350,15 @@
     "error": "Could not create the webhook address — make sure your Trendyol integration is set up and try again."
   },
   "shell": {
+    "favorites": {
+      "empty": "Screens you star are pinned here.",
+      "add": "Add to favorites",
+      "remove": "Remove from favorites",
+      "added": "added to favorites",
+      "removed": "removed from favorites"
+    },
     "section": {
+      "favorites": "Favorites",
       "general": "General",
       "catalog": "Catalog",
       "orders": "Orders",
@@ -375,6 +384,7 @@
     "filters": {
       "channels": "Channels",
       "channel": "Channel",
+      "dateRange": "Date range",
       "startDate": "Start",
       "endDate": "End",
       "orderNumber": "Order no",
@@ -764,9 +774,357 @@
     "invitationAccepted": "Your account was created. Sign in with your e-mail and new password.",
     "ownershipTransferred": "Ownership transfer completed. Please sign in again."
   },
+  "pricing": {
+    "retry": "Try again",
+    "cost": {
+      "label": "Cost (excl. VAT)",
+      "hint": "Unit purchase cost, excluding VAT. Needed for profit; if left empty, profit is not calculated for this variant.",
+      "saved": "Costs saved ({count} variants)",
+      "partial": "Some costs were not saved: {count} variants were not found — reload the product and try again.",
+      "failed": "The product was saved, but the costs could not be saved — your entered costs are still in the form; press Update again.",
+      "failedCreate": "The product was added, but the costs could not be saved — edit the product and enter the costs again.",
+      "failedUnauthorized": "The product was saved, but you are not allowed to save costs — ask your account administrator for catalog write access.",
+      "noBarcode": "Costs for {count} variants were not saved because they have no barcode — add a barcode, then edit the product to enter the cost."
+    },
+    "coverage": {
+      "label": "Cost coverage {percent}",
+      "hint": "Profit is not calculated for products without a cost.",
+      "loading": "Loading cost coverage",
+      "error": "Cost coverage could not be loaded"
+    },
+    "badge": {
+      "losing": "Buy Box lost",
+      "winning": "You hold the Buy Box",
+      "losingDetail": "Buy Box lost on {losing} of {total} variants"
+    },
+    "filter": {
+      "label": "Buy Box (Trendyol)",
+      "winning": "Won",
+      "losing": "Lost",
+      "not_found": "Not found",
+      "unchecked": "Not checked yet"
+    },
+    "status": {
+      "winning": "You hold the Buy Box",
+      "losing": "Buy Box lost",
+      "not_found": "Not found on Trendyol",
+      "unchecked": "Not checked yet"
+    },
+    "panel": {
+      "title": "Competition and profit",
+      "subtitle": "Trendyol Buy Box status and estimated profit. View only: your prices are never changed automatically.",
+      "reload": "Refresh",
+      "variant": "Variant",
+      "variantFallback": "Variant",
+      "truncated": "Showing the first {count} variants.",
+      "disabled": "Buy Box monitoring is off for this account. Profit is calculated at your current price; Buy Box fields are not read.",
+      "belowFloorTitle": "Reaching the Buy Box is below your break-even price",
+      "belowFloor": "The Buy Box price ({price}) is below your break-even price ({floor}); matching it would lose money.",
+      "ineligibleTitle": "Recommendations and rules are off",
+      "ineligible": "Price recommendations and rules do not run for this product because this is missing: {reasons}.",
+      "enterCost": "Enter cost",
+      "costHint": "Profit cannot be calculated because no cost is entered.",
+      "missing": "Components missing from the profit calculation: {list}. Profit is a partial estimate.",
+      "stale": "Stale data",
+      "freshness": "Freshness",
+      "error": "Competition data could not be loaded — check your connection and try again.",
+      "unauthorizedTitle": "You do not have access to this section",
+      "unauthorized": "Competition and profit data needs catalog and finance read access; ask your account administrator.",
+      "emptyTitle": "No variants to show",
+      "empty": "Once the product is saved and has variants, Buy Box and profit data appear here."
+    },
+    "field": {
+      "status": "Buy Box status",
+      "order": "Rank {order}",
+      "buyboxPrice": "Buy Box price",
+      "ownPrice": "My price",
+      "gap": "Difference",
+      "profitNow": "Profit at current price",
+      "profitAtBuybox": "Profit at Buy Box price",
+      "breakEven": "Break-even price",
+      "commission": "Commission",
+      "lastUpdate": "Last updated",
+      "nextRefresh": "Next refresh"
+    },
+    "commission": {
+      "override": "contract",
+      "actual": "actual",
+      "estimated": "estimated",
+      "unknown": "unknown"
+    },
+    "missing": {
+      "cost": "cost",
+      "vat": "VAT rate",
+      "commission": "commission",
+      "commissionVat": "commission VAT",
+      "serviceFee": "service fee",
+      "shipping": "shipping share",
+      "withholding": "withholding tax"
+    },
+    "ineligible": {
+      "cost_missing": "cost",
+      "vat_missing": "VAT rate",
+      "commission_unknown": "commission rate"
+    },
+    "refresh": {
+      "off": "Refresh is off",
+      "pending": "Not checked yet",
+      "never": "Not checked yet",
+      "overdue": "Delayed due to load (scheduled: {when})"
+    },
+    "chart": {
+      "title": "Last {days} days",
+      "loading": "Loading price history…",
+      "error": "Price history could not be loaded.",
+      "empty": "No price history in this period yet. It appears here as readings are taken.",
+      "noBarcode": "No history is kept for a variant without a barcode.",
+      "buybox": "Buy Box price",
+      "own": "My price",
+      "summary": "{count} readings in the last {days} days; price range {min} to {max}."
+    },
+    "channels": {
+      "title": "Channel support"
+    },
+    "level": {
+      "supported": "Supported",
+      "limited": "Limited support",
+      "platform_auto": "Managed automatically by the marketplace",
+      "not_supported": "Not supported"
+    }
+  },
   "help": {
     "center": {
       "title": "Help center"
     }
+  },
+  "pricingRules": {
+    "section": "Catalog",
+    "title": "Pricing rules",
+    "description": "Price suggestions from your own rule against the Trendyol buybox. The price changes only when you approve.",
+    "tabs": {
+      "suggestions": "Suggestions",
+      "rules": "Rules",
+      "history": "Price history"
+    },
+    "banner": {
+      "platform_off": {
+        "title": "Pricing rules are not available right now",
+        "text": "This feature is turned off platform-wide. When it is on, you can define rules here."
+      },
+      "needs_enable": {
+        "title": "Pricing rules are off",
+        "text": "Read and accept the responsibility text to turn them on. While off, no suggestions are produced."
+      },
+      "needs_consent": {
+        "title": "The responsibility text was updated",
+        "text": "Read and accept the current text to continue."
+      },
+      "competition_off": {
+        "title": "Buybox data is off",
+        "text": "Suggestions need Trendyol buybox data, which is not on for your account yet."
+      },
+      "active": {
+        "title": "Pricing rules are on",
+        "text": "Suggestions update as buybox data refreshes. The price changes only with your approval."
+      }
+    },
+    "enable": "Turn on pricing rules",
+    "disable": "Turn off",
+    "disableConfirm": {
+      "title": "Turn off pricing rules?",
+      "text": "Open suggestions are closed and no new ones are produced. Your rules are kept.",
+      "confirm": "Turn off"
+    },
+    "consent": {
+      "title": "Turn on pricing rules",
+      "draft": "Draft text — legal review in progress",
+      "accept": "I have read and accept",
+      "dualEngine": "I turned off the marketplace's own automatic pricing tool for the same products.",
+      "version": "Text version: {version}",
+      "acceptedAt": "Accepted: {time}",
+      "submit": "Turn on"
+    },
+    "rules": {
+      "emptyTitle": "No rules yet",
+      "emptyText": "Add a rule to stay below or above the buybox price.",
+      "add": "Add rule",
+      "edit": "Edit",
+      "delete": "Delete",
+      "deleteTitle": "Delete rule \"{name}\"?",
+      "deleteText": "This rule's open suggestions are closed.",
+      "paused": "Paused",
+      "on": "On",
+      "off": "Off",
+      "version": "Version {v}",
+      "open": "{n} open",
+      "blocked": "{n} blocked",
+      "modeBelow": "Stay below the buybox price",
+      "modeAbove": "Stay above the buybox price",
+      "delta": "Gap",
+      "floor": "Floor",
+      "floorValue": "cost + deductions + {margin} margin",
+      "ceiling": "Ceiling",
+      "limits": "Limits",
+      "limitsValue": "≤{changes}/day · {cooldown} min apart · increase ≤{increase}/day",
+      "scope": "Scope",
+      "scopeAll": "All eligible Trendyol products",
+      "scopeBarcodes": "{n} barcodes",
+      "actions": "{name} actions",
+      "listLabel": "Pricing rules"
+    },
+    "pause": {
+      "external_change": "The price changed outside Entegrasyonik (the marketplace's own tool may be on). Review and save the rule again.",
+      "oscillation": "The price moved back and forth in a short time. Review and save the rule again."
+    },
+    "form": {
+      "titleNew": "New pricing rule",
+      "titleEdit": "Edit rule",
+      "name": "Rule name",
+      "mode": "Direction",
+      "deltaAmount": "Gap (TRY)",
+      "deltaPercent": "Gap (%)",
+      "deltaHint": "The gap must be greater than zero. Prices are never matched to the buybox. If both are set, the larger is used.",
+      "floorMarginPercent": "Floor: target margin (%)",
+      "floorHint": "Floor = cost + commission + shipping + VAT + this margin. The rule does not run for products without a cost.",
+      "ceiling": "Ceiling price (TRY)",
+      "step": "Price step (TRY)",
+      "stepHint": "Suggestions are rounded to this step (e.g. 0.01).",
+      "maxChangesPerDay": "Max changes per day",
+      "cooldownMin": "Min time between changes (min)",
+      "maxIncrease": "Max increase per day (%)",
+      "maxIncreaseHint": "Platform cap: {max}. At most {max30} in 30 days.",
+      "exclude": "No suggestions for out-of-stock products",
+      "barcodes": "Only these barcodes (optional)",
+      "barcodesHint": "Separate with commas or spaces; empty means all eligible Trendyol products.",
+      "enabled": "Rule on",
+      "noSeller": "Rules cannot target a specific seller; they only use the Trendyol buybox price.",
+      "save": "Save",
+      "valuesYours": "You set the values; Entegrasyonik does not suggest values."
+    },
+    "errors": {
+      "name": "Enter a rule name (max 80 characters).",
+      "mode": "Choose a direction.",
+      "delta_required": "Enter at least one gap value.",
+      "k1_equalize": "The gap must be at least 0.01 TRY or 0.1%. Prices are never matched to the buybox.",
+      "floorMarginPercent": "Enter a margin between 0 and 90.",
+      "ceiling": "Enter a ceiling price.",
+      "step": "The step must be at least 0.01 TRY.",
+      "maxChangesPerDay": "Enter a number between 1 and {max}.",
+      "cooldownMin": "Enter between {min} and 1440 minutes.",
+      "maxIncreasePercentPerDay": "Enter between 0 and {max}.",
+      "barcodes": "At most 500 barcodes.",
+      "load": "Pricing rules could not be loaded.",
+      "save": "Could not save. Check the values and try again.",
+      "forbiddenTitle": "You do not have permission for this",
+      "forbidden": "Pricing rules and suggestion approval are available to admins only."
+    },
+    "suggestions": {
+      "filterLabel": "Suggestion status",
+      "open": "Open",
+      "blocked": "Blocked",
+      "applied": "Applied",
+      "dismissed": "{n} suggestion(s) dismissed.",
+      "lostOnly": "Only where another seller holds the buybox",
+      "emptyTitle": "No open suggestions",
+      "emptyText": "Your rules produce suggestions as buybox data refreshes.",
+      "emptyOther": "No suggestions in this status.",
+      "applySelected": "Approve selected ({n})",
+      "applyOne": "Approve",
+      "dismiss": "Dismiss",
+      "dismissSelected": "Dismiss selected",
+      "selectionCap": "At most {max} suggestions per approval.",
+      "listLabel": "Price suggestions",
+      "more": "Load more",
+      "col": {
+        "product": "Product",
+        "current": "Current price",
+        "suggested": "Suggested price",
+        "buybox": "Buybox",
+        "profit": "Est. profit",
+        "bounds": "Floor / ceiling",
+        "lowest10d": "Lowest in 10 days",
+        "reason": "Reason",
+        "actions": "Actions"
+      },
+      "rowActions": "{barcode} actions",
+      "rank": "rank {order}",
+      "ruleVersion": "Rule version {v}",
+      "lowestHint": "Lowest realised sale price on this channel (helper only; not a legal guarantee)."
+    },
+    "apply": {
+      "title": "Update {n} price(s)?",
+      "text": "If you approve, the Trendyol sale price is updated. Right before applying, floor, ceiling, no-matching, increase and frequency limits are re-checked with fresh data; failing suggestions are not applied. The list (strikethrough) price does not change.",
+      "confirm": "Update {n} price(s)",
+      "done": "{n} price(s) updated.",
+      "partial": "{applied} price(s) updated, {rejected} suggestion(s) did not pass the checks.",
+      "none": "No suggestion passed the checks; no price changed.",
+      "rejectedTitle": "Not applied",
+      "error": "Suggestions could not be applied. Try again.",
+      "previewLabel": "Price preview",
+      "col": {
+        "product": "Product",
+        "before": "Now",
+        "after": "After",
+        "change": "Change"
+      }
+    },
+    "history": {
+      "emptyTitle": "No price changes",
+      "emptyText": "No approved suggestions or external changes in the last 30 days.",
+      "listLabel": "Price history",
+      "col": {
+        "time": "Time",
+        "product": "Barcode",
+        "change": "Price (before → after)",
+        "source": "Source",
+        "buybox": "Buybox",
+        "rule": "Rule version"
+      },
+      "source": {
+        "suggestion": "Approved suggestion",
+        "external": "Outside Entegrasyonik"
+      }
+    },
+    "reason": {
+      "cost_missing": "No cost entered: the rule does not run for this product.",
+      "vat_missing": "VAT rate unknown.",
+      "commission_unknown": "Commission rate unknown.",
+      "floor_unreachable": "A floor price cannot be calculated with this margin.",
+      "below_floor": "The target price would be below the floor.",
+      "above_ceiling": "The target price would exceed the ceiling.",
+      "above_list_price": "The target price would exceed the list (strikethrough) price.",
+      "discount_display_active": "A strikethrough price is shown: no upward suggestion.",
+      "increase_limit": "No suggestion due to the increase limit.",
+      "equalize_forbidden": "The gap rounds to zero: prices are never matched.",
+      "stale_data": "Buybox data is stale.",
+      "price_changed": "The price changed after the suggestion.",
+      "suggestion_changed": "The target changed with fresh data; wait for the new suggestion.",
+      "rule_changed": "The rule was updated; the suggestion belongs to an older version.",
+      "rule_disabled": "The rule is off.",
+      "rule_paused": "The rule is paused.",
+      "not_found": "Suggestion not found.",
+      "not_open": "The suggestion is no longer open.",
+      "cooldown": "Cooldown has not passed yet.",
+      "daily_limit": "Daily change limit reached.",
+      "awaiting_publish": "Waiting for the last price to appear on the marketplace.",
+      "already_winning": "You hold the buybox.",
+      "no_buybox": "No buybox data.",
+      "out_of_stock": "Out of stock.",
+      "variant_not_found": "Product not found.",
+      "duplicate_variant": "More than one suggestion selected for the same product.",
+      "no_change": "The price is already at the target.",
+      "fuse": "Did not pass the price fuse.",
+      "unknown": "The suggestion could not be applied."
+    },
+    "warning": {
+      "discount_display_active": "Strikethrough price shown",
+      "increase_capped": "Capped by the increase limit",
+      "ceiling_applied": "Capped by the ceiling",
+      "extra_step_k1": "One more step to avoid matching",
+      "partial_deductions": "Some deductions unknown (partial profit)",
+      "unknown": "Warning"
+    },
+    "legalNote": "This tool is not legal advice. Consult your adviser on pricing regulations.",
+    "adminOnly": "Rule and approval actions are for admins; you can view suggestions."
   }
 }

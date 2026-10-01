@@ -7,6 +7,7 @@
 <template>
   <div class="bo-page">
     <BoPageHeader />
+    <PageVerdict :verdict="verdict" />
     <div class="bo-grid-2 bo-otps">
       <EkCard title="Platform sağlayıcı anahtarı" subtitle="Yalnız yönetim uygulamasındaki sohbet kullanır; müşteri anahtarlarından ayrıdır." icon="mdi-key-chain-variant">
         <v-text-field
@@ -38,15 +39,23 @@
 </template>
 
 <script setup lang="ts">
-import { defineAsyncComponent } from 'vue'
+import { computed, defineAsyncComponent, onMounted } from 'vue'
 import { CHAT_PRODUCT } from '@entegrasyonik/chat/brand'
 import { EkButton, EkCard } from '@entegrasyonik/ui/components'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
+import { otopilotVerdict } from './otopilotVerdict'
 import { otopilot } from '@bo/chat/otopilot'
 import { platformKeyReason } from '@bo/chat/setupReason'
 import '@bo/styles/kit.css'
 
 const ChatProviderSetup = defineAsyncComponent(() => import('@entegrasyonik/chat').then((m) => m.ChatProviderSetup))
+
+const verdict = computed(() => {
+  const m = otopilot.controllerRef.value.machine.value
+  return otopilotVerdict({ status: m.status, unavailableReason: m.unavailableReason, errorCode: m.error?.code, retry: () => void otopilot.controller().ensureLoaded(true) })
+})
+onMounted(() => void otopilot.controller().ensureLoaded())
 
 function onChanged() {
   platformKeyReason.value = ''

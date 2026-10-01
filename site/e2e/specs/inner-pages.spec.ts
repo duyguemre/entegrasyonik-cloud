@@ -279,7 +279,9 @@ test.describe('guvenlik', () => {
     await summary.focus()
     await page.keyboard.press('Enter')
     await expect(page.getByTestId('security-claim').first()).toBeVisible()
-    await expect(page.getByText('AES-256-GCM').first()).toBeVisible()
+    // S27c (BRAND §3): algoritma adı özet cümlede değil, "Şifreleme" ilkesinin "Ayrıntı" panelinde.
+    await page.locator('[data-principle="sifreleme"] summary').click()
+    await expect(page.locator('[data-principle="sifreleme"]').getByText('AES-256-GCM').first()).toBeVisible()
     await expect(page.getByText('sertifikasyon veya bağımsız denetim belgesi değildir')).toBeVisible()
     // S5 yasal sayfaları yayımlandı (legalNav published): bekleyen-not yerine gerçek bağlantı.
     await expect(page.getByTestId('kvkk-pending')).toHaveCount(0)

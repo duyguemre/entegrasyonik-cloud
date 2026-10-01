@@ -10,7 +10,7 @@
  * Yardım merkezi (veri erişimi yok) kabuğun "Yardım" bölümüne istemcide eklenir.
  * FR2 (fe-r2a): emekli "Eğitim Merkezi" düşer, "Uygulama Ayarları" üst seviyeye çıkar (`navigation/menuShape.ts`).
  */
-import { computed, inject } from 'vue'
+import { computed, inject, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useMenuStore } from '@/stores/site/menu'
 import { useWorkspaceStore } from '@/stores/workspace'
@@ -19,7 +19,7 @@ import { SECTIONS } from '@/navigation/sections'
 import { firstMessage, humanizeKey, resolveMenuTitle } from '@/navigation/menuTitle'
 import type { EkSideSection, EkSideItem } from '@entegrasyonik/ui/components'
 import { HELP_SCREEN_KEY, helpCenterLink } from '@/help/helpLink'
-import { shapeGroupLinks } from '@/navigation/menuShape'
+import { inheritedIcon, regroupMenu, shapeGroupLinks } from '@/navigation/menuShape'
 
 /** Sidebar'ın sağında favori yıldızı taşıyabilen öğe (menü `isConstant` değilse). */
 export interface ShellMenuEntry {
@@ -34,6 +34,28 @@ export interface ShellMenuEntry {
 
 const isVisible = (link: any) => !!link && link.status !== false && link.inMenu !== false
 
+/** FR3 madde 2: boş favoriler ipucu kapatıldı mı (kişisel kolaylık; okunamazsa ipucu görünür). */
+const FAV_HINT_KEY = 'ek.nav.v1.favHint'
+function readHintDismissed(): boolean {
+  try {
+    return typeof localStorage !== 'undefined' && localStorage.getItem(FAV_HINT_KEY) === 'dismissed'
+  } catch {
+    return false
+  }
+}
+const favHintDismissed = ref(readHintDismissed())
+export function dismissFavoritesHint() {
+  favHintDismissed.value = true
+  try {
+    localStorage.setItem(FAV_HINT_KEY, 'dismissed')
+  } catch {
+    /* depolama kapalı — yalnız bu oturumda gizli */
+  }
+}
+
+/** Favoriler bölümünün kimliği (EkSidebarNav `reorder` / `dismiss-empty` olayları). */
+export const FAVORITES_SECTION_ID = 'favorites'
+
 export function useShellMenu() {
   const menuStore: any = useMenuStore()
   const workspace = useWorkspaceStore()
@@ -44,7 +66,8 @@ export function useShellMenu() {
 
   const groups = computed<any[]>(() => {
     const menu = menuStore?.getMenu?.()
-    return Array.isArray(menu) ? menu.filter((g: any) => g && g.group !== 'favorites') : []
+    // P11 (K49): Mağaza ayarları + Çıktılar + Yetkilendirme tek "Ayarlar" bölümünde (yalnız sunum; erişim aynı).
+    return Array.isArray(menu) ? regroupMenu(menu.filter((g: any) => g && g.group !== 'favorites')) : []
   })
 
   const sectionLabel = (group: any) => {
@@ -59,6 +82,8 @@ export function useShellMenu() {
   /** Sidebar bölümleri (EkSidebarNav modeli) + anahtar → menü düğümü eşlemesi. */
   const model = computed(() => {
     const byKey = new Map<string, any>()
+    /** Alt öğenin kendi ikonu yoksa modülün (üst öğenin) ikonu — favoriler bölümünde ikonsuz satır olmasın. */
+    const iconByKey = new Map<string, string | undefined>()
     const entries: ShellMenuEntry[] = []
     const sections: EkSideSection[] = []
     for (const group of groups.value) {
@@ -79,13 +104,16 @@ export function useShellMenu() {
             children: visibleChildren.map((child: any) => {
               const childKey = screenKeyForLink(child)
               byKey.set(childKey, child)
+              iconByKey.set(childKey, child.icon ?? link.icon)
               entries.push({ key: childKey, link: child, title: titleOf(child), icon: child.icon ?? link.icon, parentTitle: title, sectionLabel: label })
               return { key: childKey, label: titleOf(child) }
             }),
           })
         } else {
-          items.push({ key, label: title, icon: link.icon ?? resolveScreenByKey(key)?.icon })
-          if (link.code !== 'ExitView') entries.push({ key, link, title, icon: link.icon, sectionLabel: label })
+          const icon = link.icon ?? inheritedIcon(link) ?? resolveScreenByKey(key)?.icon
+          iconByKey.set(key, icon)
+          items.push({ key, label: title, icon })
+          if (link.code !== 'ExitView') entries.push({ key, link, title, icon, sectionLabel: label })
         }
       }
       if (items.length) sections.push({ label, items })
@@ -103,6 +131,26 @@ export function useShellMenu() {
       if (existing) existing.items.push(item)
       else sections.push({ label: helpSection, items: [item] })
       entries.push({ key: HELP_SCREEN_KEY, link: helpLink, title: helpTitle, icon: 'mdi-lifebuoy', sectionLabel: helpSection })
+    }
+    // FR3 madde 2: Favoriler — menünün EN ÜSTÜNDE kendi bölümü (kayıtlı sırayla); boşken kapatılabilir tek satır ipucu.
+    if (groups.value.length > 0) {
+      const favLinks: any[] = typeof menuStore?.getFavorites === 'function' ? menuStore.getFavorites() : []
+      const favItems: EkSideItem[] = []
+      for (const link of favLinks) {
+        const key = screenKeyForLink(link)
+        if (!byKey.has(key) || favItems.some((i) => i.key === key)) continue
+        favItems.push({ key, label: titleOf(link), icon: iconByKey.get(key) ?? link.icon })
+      }
+      if (favItems.length || !favHintDismissed.value) {
+        sections.unshift({
+          id: FAVORITES_SECTION_ID,
+          label: t('shell.section.favorites'),
+          icon: 'mdi-star-outline',
+          reorderable: true,
+          emptyText: t('shell.favorites.empty'),
+          items: favItems,
+        })
+      }
     }
     return { sections, byKey, entries }
   })

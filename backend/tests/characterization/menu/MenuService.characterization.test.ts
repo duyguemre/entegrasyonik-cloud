@@ -1,5 +1,5 @@
 /**
- * CHARACTERIZATION: MenuService (backend/src/api/services/menu-service.ts) — ADR-0016 B-R-T3.
+ * CHARACTERIZATION: MenuService (backend/src/api/rpc/handlers/menu-service.ts) — ADR-0016 B-R-T3.
  * DB/Redis/ağ YOK; `applicationDB`/`clientDB` sahte model nesneleridir. Kod DEĞİŞTİRİLMEDİ, yalnızca
  * mevcut davranış sabitlenir.
  *
@@ -12,7 +12,13 @@
  */
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 
-import MenuService from '@api/services/menu-service';
+import MenuService from '@api/rpc/handlers/menu-service';
+import { captureLogs, type LogCapture } from '../../helpers/logCapture';
+
+// F-06 (ADR-0024 P4): api/** console -> eventLog; loglar stdout JSON satırlarından doğrulanır.
+let cap: LogCapture;
+beforeEach(() => { cap = captureLogs(); });
+afterEach(() => { cap.restore(); });
 
 let menuModel: any;
 let favoriteModel: any;
@@ -59,7 +65,7 @@ describe('MenuService.get (platform-geneli, applicationDB)', () => {
   it('[MEVCUT DAVRANIŞ] res var ama list yoksa Error("no list") fırlatılır, console.log ile loglanır', async () => {
     menuModel.findOne.mockReturnValue(chainableFindOne({ _id: 'entegrator' }));
     await expect(makeService().get()).rejects.toThrow('no list');
-    expect(console.log).toHaveBeenCalledTimes(1);
+    expect(cap.filter((l) => l.code === 'MENU_GET_FAILED')).toHaveLength(1);
   });
 
   it('[MEVCUT DAVRANIŞ] res null ise Error("no list") fırlatılır', async () => {
@@ -71,7 +77,7 @@ describe('MenuService.get (platform-geneli, applicationDB)', () => {
     const err = new Error('mongo down');
     menuModel.findOne.mockReturnValue({ lean: jest.fn(async () => { throw err; }) });
     await expect(makeService().get()).rejects.toBe(err);
-    expect(console.log).toHaveBeenCalledWith(err);
+    expect(cap.lines).toContainEqual(expect.objectContaining({ level: 'error', code: 'MENU_GET_FAILED', err: expect.objectContaining({ message: 'mongo down' }) }));
   });
 });
 

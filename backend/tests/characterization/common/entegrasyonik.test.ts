@@ -85,8 +85,8 @@ async function bootEntegrasyonik(opts: {
         return { installConsoleBridge: mocks.installConsoleBridge, logger: { child: () => log, ...log }, eventLog: () => log };
       });
       jest.doMock('@bootstrap/schedules', () => ({ startSchedules: mocks.startSchedules, stopSchedules: mocks.stopSchedules }));
-      jest.doMock('../../../src/Webserver', () => ({ __esModule: true, default: { getInstance: jest.fn(() => webserverInstance) } }));
-      jest.doMock('../../../src/api/Security', () => ({ __esModule: true, default: mocks.Security }));
+      jest.doMock('../../../src/bootstrap/Webserver', () => ({ __esModule: true, default: { getInstance: jest.fn(() => webserverInstance) } }));
+      jest.doMock('../../../src/platform/core/security/Security', () => ({ __esModule: true, default: mocks.Security }));
       jest.doMock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: { close: mocks.close } }));
       jest.doMock('../../../src/integration/engine/IntegrationEngine', () => ({ __esModule: true, default: { start: mocks.IntegrationEngineStart } }));
       jest.doMock('@services/notification/NotificationService', () => ({ NotificationService: { init: mocks.NotificationServiceInit } }));

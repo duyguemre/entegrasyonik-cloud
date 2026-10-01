@@ -4,25 +4,31 @@
  * C2b (ADR-0029 Karar 4-5, NOTIFICATION_PLAN §2.3 + F-N2) — kişisel bildirim tercihleri: kategori × kanal
  * (uygulama içi açık/kapalı, e-posta kapalı/anında/özet), özet zamanı, sessiz saatler, e-posta dili.
  *
- * SÖZLEŞME NOTU: NB4 `getPreferences` / `updatePreferences` RPC'lerinin gövde şekli sözleşme kopyasında
- * (docs/cloud-contracts) YAZILI DEĞİL. Aşağıdaki biçim plan §2.3 + NB5 kabul listesinden (özet, sessiz saat)
- * türetildi ve savunmacı okunur: bilinmeyen alan yok sayılır, eksik alan varsayılana düşer. Backend kesinleşince
- * yalnız `normalizePreferences` / `preferencesBody` güncellenir.
- *
- *   getPreferences    {}  → { result, data: { categories: { <cat>: { inApp, email } }, digest: { frequency, hour },
- *                                           quietHours: { enabled, start, end }, locale } }
- *   updatePreferences { categories, digest, quietHours, locale }  (kilitli — tümü zorunlu — kategoriler GÖNDERİLMEZ)
+ * SÖZLEŞME (backend `NotificationService`, ADR-0029 NB4; rpc-input `strict` — bilinmeyen alan 400):
+ *   getPreferences    {}  → { result, data: { locale, matrix: { <cat>: { inApp?, email?: 'off'|'instant'|'digest', push? } },
+ *                                           digest: { cadence: 'daily'|'hourly', hourLocal } | null,
+ *                                           quietHours: { start, end, tz } | null },
+ *                             tenantDefaults: { …aynı şekil }, locks: [{ category, locked, catalogDefault: { inApp, email, push } }] }
+ *   updatePreferences { matrix, digest, quietHours (null = kapalı), locale }
+ * E-posta modu sınırda eşlenir (`instant/digest` ↔ `inst/dig`). Kilitli (tümü zorunlu) kategoride yalnız `push` gönderilir
+ * (uygulama içi/e-posta kapatılamaz; push tamamlayıcı kanaldır — MOB-04). Eski biçim (`categories`, `frequency/hour`,
+ * `quietHours.enabled`) savunmacı olarak okunmaya devam eder.
  */
 import useRestApi from '@/composables/restapi'
 import logger from '@/composables/logger'
 import { apiCode, isApiError } from '@/composables/apiErrors'
 import { EMAIL_MODES, NOTIFICATION_CATEGORIES, type EmailMode, type NotificationCategory } from '@/types/NotificationTypes'
-import { CATEGORY_DEFAULTS, type CategoryMeta } from '@/stores/notificationCatalog'
+import { CATEGORY_DEFAULTS, fromWireEmail, toWireEmail, type CategoryMeta } from '@/stores/notificationCatalog'
 
 export interface CategoryPreference {
   inApp: boolean
   email: EmailMode
+  /** MOB-04: bu kategoride telefon/tarayıcı anlık bildirimi (cihaz aboneliği ayrıca gerekir). */
+  push: boolean
 }
+
+/** Sessiz saatlerin saat dilimi (ürün Türkiye odaklı; özet saati ile aynı). */
+export const PREFS_TZ = 'Europe/Istanbul'
 
 export type DigestFrequency = 'daily' | 'hourly'
 
@@ -48,55 +54,70 @@ export function defaultPreferences(categories?: readonly CategoryMeta[]): Notifi
   const cats = {} as Record<NotificationCategory, CategoryPreference>
   for (const key of NOTIFICATION_CATEGORIES) {
     const d = byKey.get(key)?.defaults ?? CATEGORY_DEFAULTS[key]
-    cats[key] = { inApp: d.inApp, email: d.email }
+    cats[key] = { inApp: d.inApp, email: d.email, push: d.push }
   }
   return { categories: cats, digest: { ...DEFAULT_DIGEST }, quietHours: { ...DEFAULT_QUIET_HOURS }, locale: 'tr' }
 }
 
 /**
- * Sunucu yanıtı → tercih (varsayılanların üstüne). Tümü zorunlu (kilitli) kategoriler sunucu ne derse desin
- * varsayılanında kalır (kapatılamaz). Geçersiz değerler yok sayılır.
+ * Sunucu yanıtı → tercih: varsayılan ← kategori kilit tablosu (`locks[].catalogDefault`) ← mağaza varsayılanı
+ * (`tenantDefaults`) ← kendi tercihim. Tümü zorunlu (kilitli) kategoride uygulama içi/e-posta varsayılanında kalır.
  */
 export function normalizePreferences(raw: any, categories?: readonly CategoryMeta[]): NotificationPreferences {
   const out = defaultPreferences(categories)
   const data = raw?.data ?? raw
   if (!data || typeof data !== 'object') return out
   const locked = new Set((categories ?? []).filter((c) => c.locked).map((c) => c.key))
-  const src = data.categories && typeof data.categories === 'object' ? data.categories : {}
-  for (const key of NOTIFICATION_CATEGORIES) {
-    if (locked.has(key)) continue
-    const row = src[key]
-    if (!row || typeof row !== 'object') continue
-    if (typeof row.inApp === 'boolean') out.categories[key].inApp = row.inApp
-    if ((EMAIL_MODES as readonly string[]).includes(row.email)) out.categories[key].email = row.email
+  for (const lock of Array.isArray(raw?.locks) ? raw.locks : []) {
+    if (lock && (NOTIFICATION_CATEGORIES as readonly string[]).includes(lock.category) && typeof lock.catalogDefault?.push === 'boolean') {
+      out.categories[lock.category as NotificationCategory].push = lock.catalogDefault.push
+    }
   }
-  const digest = data.digest
-  if (digest && typeof digest === 'object') {
-    if (digest.frequency === 'daily' || digest.frequency === 'hourly') out.digest.frequency = digest.frequency
-    if (Number.isInteger(digest.hour) && digest.hour >= 0 && digest.hour <= 23) out.digest.hour = digest.hour
+  const apply = (src: any) => {
+    const matrix = src?.matrix && typeof src.matrix === 'object' ? src.matrix : src?.categories && typeof src.categories === 'object' ? src.categories : {}
+    for (const key of NOTIFICATION_CATEGORIES) {
+      const row = matrix[key]
+      if (!row || typeof row !== 'object') continue
+      if (typeof row.push === 'boolean') out.categories[key].push = row.push
+      if (locked.has(key)) continue
+      if (typeof row.inApp === 'boolean') out.categories[key].inApp = row.inApp
+      const email = fromWireEmail(row.email) ?? ((EMAIL_MODES as readonly string[]).includes(row.email) ? (row.email as EmailMode) : undefined)
+      if (email) out.categories[key].email = email
+    }
+    const digest = src?.digest
+    if (digest && typeof digest === 'object') {
+      const cadence = digest.cadence ?? digest.frequency
+      const hour = digest.hourLocal ?? digest.hour
+      if (cadence === 'daily' || cadence === 'hourly') out.digest.frequency = cadence
+      if (Number.isInteger(hour) && hour >= 0 && hour <= 23) out.digest.hour = hour
+    }
+    const quiet = src?.quietHours
+    if (quiet === null) out.quietHours.enabled = false
+    else if (quiet && typeof quiet === 'object') {
+      out.quietHours.enabled = quiet.enabled === undefined ? true : quiet.enabled === true
+      if (isValidTime(quiet.start)) out.quietHours.start = quiet.start
+      if (isValidTime(quiet.end)) out.quietHours.end = quiet.end
+    }
+    if (src?.locale === 'en' || src?.locale === 'tr') out.locale = src.locale
   }
-  const quiet = data.quietHours
-  if (quiet && typeof quiet === 'object') {
-    out.quietHours.enabled = quiet.enabled === true
-    if (isValidTime(quiet.start)) out.quietHours.start = quiet.start
-    if (isValidTime(quiet.end)) out.quietHours.end = quiet.end
-  }
-  if (data.locale === 'en' || data.locale === 'tr') out.locale = data.locale
+  if (raw?.tenantDefaults && typeof raw.tenantDefaults === 'object') apply(raw.tenantDefaults)
+  apply(data)
   return out
 }
 
-/** Kayıt gövdesi: kilitli kategoriler çıkarılır (sunucu zaten reddeder); derin kopya. */
+/** Kayıt gövdesi (backend şekli): kilitli kategoride yalnız `push`; e-posta modu backend adıyla. */
 export function preferencesBody(prefs: NotificationPreferences, categories?: readonly CategoryMeta[]) {
   const locked = new Set((categories ?? []).filter((c) => c.locked).map((c) => c.key))
-  const cats: Partial<Record<NotificationCategory, CategoryPreference>> = {}
+  const matrix: Partial<Record<NotificationCategory, { inApp?: boolean; email?: 'off' | 'instant' | 'digest'; push: boolean }>> = {}
   for (const key of NOTIFICATION_CATEGORIES) {
-    if (locked.has(key)) continue
-    cats[key] = { inApp: prefs.categories[key].inApp, email: prefs.categories[key].email }
+    const c = prefs.categories[key]
+    matrix[key] = locked.has(key) ? { push: c.push } : { inApp: c.inApp, email: toWireEmail(c.email), push: c.push }
   }
+  const q = prefs.quietHours
   return {
-    categories: cats,
-    digest: { frequency: prefs.digest.frequency, hour: prefs.digest.hour },
-    quietHours: { ...prefs.quietHours },
+    matrix,
+    digest: { cadence: prefs.digest.frequency, hourLocal: prefs.digest.hour },
+    quietHours: q.enabled ? { start: q.start, end: q.end, tz: PREFS_TZ } : null,
     locale: prefs.locale,
   }
 }

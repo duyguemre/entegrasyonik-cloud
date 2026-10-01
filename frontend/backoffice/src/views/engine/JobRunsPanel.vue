@@ -5,7 +5,7 @@
         <h2 id="bo-runs-title" class="bo-panel__title">Zamanlanmış görevler</h2>
         <p class="bo-panel__hint">Son durum görev başına; geçmişte yalnız anlamlı turlar (başarısız, kısmi, nedenli atlama, iş yapan) ve saatte en az bir tur tutulur · {{ retention }} gün saklanır.</p>
       </div>
-      <EkRefreshButton :loading="list.refreshing.value || list.phase.value === 'loading'" @refresh="list.reload({ keep: true })" />
+      <EkRefreshButton quiet-success :loading="list.refreshing.value || list.phase.value === 'loading'" @refresh="list.reload({ keep: true })" />
     </header>
 
     <EkCard v-if="states.length || list.phase.value === 'loading'" title="Görev durumu" icon="mdi-calendar-clock-outline" icon-tone="info" flush>
@@ -64,7 +64,7 @@
                 <span v-for="(v, k) in item.counts" :key="k">{{ k }} <strong class="ek-num">{{ formatCount(v) }}</strong></span>
               </span>
               <span>
-                <template v-if="item.scope.level === 'tenant'">Müşteri <RouterLink :to="`/musteriler/${item.scope.tenantId}`">#{{ item.scope.tenantId }}</RouterLink><template v-if="item.scope.integrationCode"> · {{ CHANNEL[item.scope.integrationCode] ?? item.scope.integrationCode }}</template> · </template>
+                <template v-if="item.scope.level === 'tenant'">Müşteri <RouterLink :to="`/musteriler/${item.scope.tenantId}`" class="bo-hit">#{{ item.scope.tenantId }}</RouterLink><template v-if="item.scope.integrationCode"> · {{ CHANNEL[item.scope.integrationCode] ?? item.scope.integrationCode }}</template> · </template>
                 <template v-if="item.pod">{{ item.pod }}</template>
                 <template v-if="item.corrId"> · <span class="bo-mono">{{ item.corrId }}</span></template>
               </span>

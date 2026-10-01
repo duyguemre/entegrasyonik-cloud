@@ -118,7 +118,7 @@ test.describe('müşteri yaşam döngüsü ve destek girişi', () => {
     await expect(page.getByTestId('impersonate')).toBeDisabled()
     await expect(page.getByText(/Destek oturumu yalnız aktif mağazada açılabilir/)).toBeVisible()
     // Müşteri uygulaması bu testte yok: yeni sekmenin açılışı yerel yanıtla karşılanır.
-    await context.route('http://localhost:3000/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<title>impersonate</title>' }))
+    await context.route('http://localhost:3020/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<title>impersonate</title>' }))
     await page.goto('/musteriler/102')
     await page.getByTestId('impersonate').click()
     const dialog = page.getByRole('dialog', { name: 'Müşterinin gözünden açılsın mı?' })

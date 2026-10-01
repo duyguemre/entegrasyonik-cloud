@@ -16,7 +16,7 @@ test.describe('P1 — Kayıt sekmesi (characterization)', () => {
 
     await expect(page.getByLabel('İsim')).toBeVisible()
     await expect(page.getByLabel('Soyisim')).toBeVisible()
-    await expect(page.getByLabel('Şifre (Tekrar)')).toBeVisible()
+    await expect(page.getByLabel('Parola (Tekrar)')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Kayıt Ol' })).toBeVisible()
   })
 
@@ -34,8 +34,8 @@ test.describe('P1 — Kayıt sekmesi (characterization)', () => {
     await page.getByLabel('İsim').fill('Deneme')
     await page.getByLabel('Soyisim').fill('Kullanici')
     await page.getByLabel('E-posta').last().fill('yeni@example.invalid')
-    await page.getByLabel('Şifre', { exact: true }).last().fill('e2e-pass-1234')
-    await page.getByLabel('Şifre (Tekrar)').fill('e2e-pass-1234')
+    await page.getByLabel('Parola', { exact: true }).last().fill('e2e-pass-1234')
+    await page.getByLabel('Parola (Tekrar)').fill('e2e-pass-1234')
     await page.getByRole('checkbox', { name: /okudum, kabul ediyorum/ }).check()
     await page.getByRole('button', { name: 'Kayıt Ol' }).click()
 
@@ -61,7 +61,7 @@ test.describe('P1 — Kayıt sekmesi (characterization)', () => {
     await installApiMocks(page, NO_SESSION)
     await page.goto('/login')
     await page.getByRole('tab', { name: 'Kayıt' }).click()
-    await expect(page.getByLabel('Şifre (Tekrar)')).toBeVisible()
+    await expect(page.getByLabel('Parola (Tekrar)')).toBeVisible()
     await page.evaluate(() => document.fonts.ready)
     await page.waitForTimeout(400)
     await expect(page).toHaveScreenshot('login-register.png', { fullPage: false })

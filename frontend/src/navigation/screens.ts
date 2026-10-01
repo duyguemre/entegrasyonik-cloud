@@ -89,11 +89,14 @@ export const SCREENS: readonly ScreenDefinition[] = [
     slug: 'products',
     section: 'catalog',
     order: 0,
-    // NOT: ProductListView.vue şu an `parameters` prop'undan HİÇBİR filtre okumuyor (yalnızca
-    // `ProductUpdateView` klonlama akışında `productId` üretiyor, bkz. ADR-0012 Açık Soru 2) —
-    // bu yüzden burada `urlParams` YOK (var olmayan bir parametreyi URL'ye yazmak yanıltıcı olur).
-    // `productId` ile çok-örnekli ürün düzenleme derin bağlantısı, klonlama mantığının sahibi olan
-    // T4b (ProductListView göçü) kapsamında eklenecek — bkz. BACKLOG.md.
+    // PRC-R1: ProductListView `parameters.buybox` (kapalı küme) + `parameters.barcode` (teknik kimlik) okur —
+    // bildirim eylemi `/products?buybox=losing&barcode=…` Trendyol buybox filtresini açar (`buyboxFilterFromParams`).
+    // `barcode` yalnız `buybox` ile birlikte süzgeç olur. `productId` ile çok-örnekli ürün düzenleme derin bağlantısı
+    // ayrıdır (klonlama mantığı, bkz. ADR-0012 Açık Soru 2).
+    urlParams: [
+      { name: 'buybox', kind: 'enum', allowed: ['winning', 'losing', 'not_found', 'unchecked'] },
+      { name: 'barcode', kind: 'id' },
+    ],
   },
   { key: 'ClaimListView', slug: 'claims', urlParams: [{ name: 'internalStatuses', kind: 'enum', multi: true }], section: 'orders', order: 1 },
   // `status`: MessageListView.vue'nin okuduğu (`parameters?.status`) TEKİL (multi DEĞİL) durum filtresi.
@@ -186,6 +189,12 @@ export const SCREENS: readonly ScreenDefinition[] = [
   // C1.1 (F-01) stok sağlığı (StockService/getStockOverview, member). Ekran filtre/parametre okumaz → `urlParams` YOK.
   // Gerçek menü kaydı (ApplicationDB `menus`, kod `StockHealthView`, başlık `stockHealth`) yerel iştir.
   { key: 'StockHealthView', slug: 'catalog/stock-health', section: 'catalog', order: 6, icon: 'mdi-scale-unbalanced', titleKey: 'menu.stockHealth' },
+  // PRC-R2: fiyat kuralları (öneri + onaylı uygulama). `rule` = kural kimliği (PRICE_RULE_PAUSED bildirimi), `tab` = sekme. PII yok.
+  // Gerçek menü kaydı (ApplicationDB `menus`, kod `pricing/PricingRulesView`, başlık `pricingRules`) yerel iştir.
+  {
+    key: 'pricing/PricingRulesView', slug: 'catalog/pricing-rules', section: 'catalog', order: 7, icon: 'mdi-tag-arrow-down-outline', titleKey: 'menu.pricingRules',
+    urlParams: [{ name: 'rule', kind: 'id' }, { name: 'tab', kind: 'enum', allowed: ['suggestions', 'rules', 'history'] }],
+  },
   // Yardım merkezi (faz3-fe-help): statik içerik, veri erişimi yok → `MenuService` ağacına bağlı DEĞİL; bağlantı istemcide
   // kurulur (`help/helpLink.ts`) ve kabuk onu "Yardım" bölümünde, yardım menüsünde ve Ctrl+K'da gösterir. `article`:
   // makale kimliği (kebab-case teknik kimlik; PII/serbest metin DEĞİL) — makaleye derin bağlantı + tarayıcı geri/ileri.

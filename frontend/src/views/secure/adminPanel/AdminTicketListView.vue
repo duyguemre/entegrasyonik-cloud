@@ -12,7 +12,7 @@
     <EkListScreen
       section="Yönetim"
       class="ticket-list-view__screen"
-      title="Destek Yönetimi"
+      title="Destek yönetimi"
       description="Talepleri filtreleyin, yanıtlayın veya yeni bir destek süreci başlatın."
       label="Destek talepleri tablosu"
       noun="talep"
@@ -24,7 +24,7 @@
       :error="loadError"
       error-title="Talepler yüklenemedi"
       :search="search"
-      search-placeholder="Talep No, Konu veya Mesaj Ara"
+      search-placeholder="Talep no, konu veya mesaj ara"
       :chips="activeChips"
       :filter-count="panelFilterCount"
       :sort="gridSort"
@@ -96,7 +96,7 @@
       @cancel="createDialog.show = false" attach=".ticket-list-view" maxWidth="600px">
       <div class="pa-2">
         <v-autocomplete v-model="createDialog.targetClientId" :items="clients" item-title="name" item-value="clientId"
-          label="Hedef Mağaza (Dükkan)" variant="outlined" density="compact" class="customTextField mb-4"
+          label="Hedef mağaza" variant="outlined" density="compact" class="customTextField mb-4"
           prepend-inner-icon="mdi-store-outline" hide-details></v-autocomplete>
 
         <v-text-field v-model="createDialog.subject" label="Talep Konusu" variant="outlined" density="compact"
@@ -175,7 +175,7 @@ const pagination = reactive({
 const columns: EkGridColumn[] = [
   { key: 'ticketNumber', label: 'Talep no', type: 'id', sortable: true },
   { key: 'subject', label: 'Konu ve tip', sortable: true },
-  { key: 'clientId', label: 'Dükkan', sortable: true },
+  { key: 'clientId', label: 'Mağaza', sortable: true },
   { key: 'priority', label: 'Öncelik', sortable: true },
   { key: 'status', label: 'Durum', sortable: true },
   { key: 'lastMessageAt', label: 'Son mesaj', sortable: true },

@@ -66,11 +66,11 @@ const addrId = `${id}-address`
     overflow-wrap: anywhere;
     color: inherit;
     text-decoration: none;
-    border-bottom: var(--site-border-width) solid transparent;
-    transition: border-color var(--ek-duration-fast) var(--ek-easing-standard);
+    border-radius: var(--ek-radius-sm);
   }
   .ea__address a:hover {
-    border-bottom-color: currentColor;
+    background-color: var(--site-link-hover-bg);
+    box-shadow: 0 0 0 0.15em var(--site-link-hover-bg);
   }
   .ea--light .ea__address {
     color: var(--site-text-heading);

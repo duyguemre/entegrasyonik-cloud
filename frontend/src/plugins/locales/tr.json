@@ -23,37 +23,37 @@
     "help": "Yardım",
     "notification": "Bildirimler",
     "messages": "Mesajlar",
-    "financialList": "Finansal İşlemler",
+    "financialList": "Finans",
     "educationCenter": "Eğitim Merkezi",
     "appManagement": "Uygulama Yönetimi",
     "userManagement": "",
     "sales": "ETicaret Yönetim",
     "profile": "Kullanıcı",
-    "change_password": "Şifre Değiştir",
+    "change_password": "Parola değiştir",
     "roles": "Yetkilendirme",
     "exit": "Çıkış",
-    "support_ticket": "Destek Kaydı",
-    "support_ticket_list": "Destek Kayıtları",
+    "support_ticket": "Destek talebi",
+    "support_ticket_list": "Destek talepleri",
     "support_school": "Eğitim Merkezi",
     "applicationAdministration": "Uygulama Yönetimi",
     "userAdministration": "Kullanıcı Yönetimi",
     "invoiceInfo": "Fatura Bilgileri",
-    "changePassword": "Şifre Değiştir",
+    "changePassword": "Parola değiştir",
     "authorization": "Yetkilendirme",
-    "subscription": "Abonelik İşlemleri",
+    "subscription": "Abonelik",
     "sale": "Satış",
     "favorites": "Favoriler",
     "dashboard": "Anasayfa",
-    "orderList": "Sipariş Yönetimi",
-    "ticketList": "Destek Kayıtları",
-    "settingList": "Ayarlar",
-    "claimList": "İade Yönetimi",
+    "orderList": "Siparişler",
+    "ticketList": "Destek talepleri",
+    "settingList": "Mağaza ayarları",
+    "claimList": "İadeler",
     "customerList": "Müşteriler",
     "messageList": "Mesajlar",
     "invoiceList": "Faturalar",
     "reports": "Raporlar",
     "printoutList": "Çıktılar",
-    "logList": "İşlemler",
+    "logList": "İşlem kayıtları",
     "define_product": "Ürün Tanımla",
     "add_customer": "Müşteri Ekle",
     "new": {
@@ -71,7 +71,7 @@
     },
     "productDefinitions": {
       "productDefinition": "Ürün Ekle",
-      "productDefinitions": "Ürün Kataloğu",
+      "productDefinitions": "Ürün kataloğu",
       "productList": "Ürünler",
       "categoryList": "Kategoriler",
       "brandList": "Markalar",
@@ -89,12 +89,12 @@
     },
     "adminPanel": {
       "adminPanel": "Admin Paneli",
-      "adminClientlist": "Mağaza Yönetimi",
+      "adminClientlist": "Mağaza yönetimi",
       "adminClientDetail": "Mağaza Detayı",
-      "adminTicketList": "Destek Yönetimi",
+      "adminTicketList": "Destek yönetimi",
       "adminOperations": "Platform İşlemleri",
-      "adminSystemManagement": "Sistem Yönetimi",
-      "adminIntegrationCompliance": "Entegrasyon Uyum",
+      "adminSystemManagement": "Sistem yönetimi",
+      "adminIntegrationCompliance": "Entegrasyon uyumu",
       "integrationConfigList": "Entegrasyonlar",
       "integrationSettings": "Entegrasyon ayarları",
       "engineSettings": "Motor ayarları",
@@ -107,31 +107,32 @@
       "erp": "ERP",
       "shipping": "Kargo",
       "einvoice": "E-Fatura",
-      "integrationHealth": "Entegrasyon Sağlığı"
+      "integrationHealth": "Entegrasyon sağlığı"
     },
     "settings": {
       "settings": "Ayarlar",
       "authorizationList": "Yetkilendirme",
       "settingList": "Uygulama Ayarları",
       "printoutList": "Çıktılar",
-      "logList": "İşlemler"
+      "logList": "İşlem kayıtları"
     },
-    "integrationHealth": "Entegrasyon Sağlığı",
-    "auditLog": "Denetim Günlüğü",
-    "accountSecurity": "Hesabım ve Güvenlik",
-    "privacyData": "Veri ve Gizlilik",
-    "stockPolicy": "Stok Politikası",
-    "stockHealth": "Stok Sağlığı",
+    "integrationHealth": "Entegrasyon sağlığı",
+    "auditLog": "Denetim günlüğü",
+    "accountSecurity": "Hesabım ve güvenlik",
+    "privacyData": "Veri ve gizlilik",
+    "stockPolicy": "Stok politikası",
+    "stockHealth": "Stok sağlığı",
     "user": {
       "user": "Hesabım",
-      "subscription": "Abonelik İşlemleri",
+      "subscription": "Abonelik",
       "invoiceInfo": "Fatura Bilgileri",
-      "changePassword": "Şifre Değiştir",
+      "changePassword": "Parola değiştir",
       "exit": "Çıkış"
     },
     "account": "Hesabım",
     "management": "Kullanıcı Yönetimi",
-    "supports": "Destek"
+    "supports": "Destek",
+    "pricingRules": "Fiyat kuralları"
   },
   "batch": {
     "menu": {
@@ -232,7 +233,7 @@
     "ticket": {
       "new": {
         "title": "Yeni Destek Kaydı",
-        "search": "Destek Kayıtlarında Ara",
+        "search": "Destek taleplerinde ara",
         "type": "Destek Tipi",
         "platform": "Platform",
         "subject": "Konu",
@@ -249,7 +250,7 @@
         "save": "Kaydet",
         "clear": "Temizle"
       },
-      "search": "Destek Kayıtlarında Ara",
+      "search": "Destek taleplerinde ara",
       "searchlabel": "Destek Konusu vb...",
       "headers": {
         "supportType": "Destek Tipi",
@@ -422,7 +423,7 @@
   },
   "products": {
     "product": {
-      "searchlabel": "Ürün Adı, Stok Kodu, Barkod",
+      "searchlabel": "Ürün adı, stok kodu, barkod",
       "search": "Ürünlerde Ara"
     }
   },
@@ -474,18 +475,18 @@
   },
   "login": {
     "forgottenpassword": {
-      "title": "Şifremi Unuttum",
-      "reset": "Şifremi sıfırla"
+      "title": "Parolamı unuttum",
+      "reset": "Parolamı sıfırla"
     },
     "register": {
       "title": "Kayıt ol",
-      "repassword": "Şifre (Tekrar)",
+      "repassword": "Parola (Tekrar)",
       "name": "İsim",
       "surname": "Soyisim"
     },
     "username": "Kullanıcı Adı",
     "email": "E-posta",
-    "password": "Şifre",
+    "password": "Parola",
     "title": "Giriş",
     "google": "Google İle Giriş Yap"
   },
@@ -514,7 +515,7 @@
       },
       "headers": {
         "log": "İşlem",
-        "logType": "İşlem Tipi",
+        "logType": "İşlem türü",
         "date": "Tarih",
         "status": "Sonuç",
         "address": "Adres",
@@ -904,8 +905,8 @@
       "company": "Firma Ünvanı"
     },
     "changePassword": {
-      "password": "Yeni Şifre",
-      "repassword": "Yeni Şifre (Tekrar)",
+      "password": "Yeni parola",
+      "repassword": "Yeni parola (Tekrar)",
       "save": "Değiştir"
     },
     "subscription": {},
@@ -920,14 +921,14 @@
     "updatePrices": "Fiyatlar Güncellensin",
     "updateStocks": "Stoklar Güncellensin",
     "help": "Yardım",
-    "storename": "Mağaza Adı",
+    "storename": "Mağaza adı",
     "apikey": "API Key (Merchant ID)",
     "apisecret": "API Secret",
     "sellerid": "Satıcı ID",
     "isSynchronized": "Eşitleme Yapılsın",
     "isUnapprovedOrders": "Onaylanmamış Siparişler Çekilsin",
     "shippingDuration": "Kargo Süresi",
-    "status": "Entegrasyon Durumu",
+    "status": "Entegrasyon durumu",
     "apiinfo": "API Bilgileri",
     "shippinginfo": "Kargo Bilgileri",
     "autoProcessOrders": "Siparişler Otomatik İşleme Alınsın",
@@ -976,7 +977,7 @@
     "all": "Hepsi",
     "select": "Seçiniz",
     "apply": "Uygula",
-    "smartsearch": "Akıllı Arama",
+    "smartsearch": "Akıllı arama",
     "count": "adet",
     "platformPrices": "Platform Fiyat Bilgileri",
     "ok": "Tamam",
@@ -1072,25 +1073,25 @@
   },
   "status": {
     "order": {
-      "unapproved": "Platform Onayı Bekliyor",
-      "awaitingApproval": "Satıcı Onayı Bekliyor",
-      "approved": "Sipariş Onaylandı",
+      "unapproved": "Kanal onayı bekliyor",
+      "awaitingApproval": "Satıcı onayı bekliyor",
+      "approved": "Sipariş onaylandı",
       "shipped": "Kargoda",
-      "delivered": "Teslim Edildi",
-      "cancelled": "İptal Edildi",
+      "delivered": "Teslim edildi",
+      "cancelled": "İptal edildi",
       "returned": "İade Edildi"
     },
     "claim": {
-      "waiting": "Yeni Talep",
+      "waiting": "Yeni talep",
       "underReview": "İncelemede",
       "approved": "Onaylandı",
       "rejected": "Reddedildi",
-      "cancelled": "İptal Edildi",
+      "cancelled": "İptal edildi",
       "disputed": "İtirazda",
       "completed": "Tamamlandı"
     },
     "message": {
-      "waitingSeller": "Cevap Bekleniyor",
+      "waitingSeller": "Cevap bekleniyor",
       "answered": "Cevaplandı",
       "rejected": "Reddedildi",
       "unread": "Okunmadı",
@@ -1110,7 +1111,7 @@
       "processing": "İşleniyor",
       "approved": "Onaylandı",
       "failed": "Hatalı",
-      "cancelled": "İptal Edildi"
+      "cancelled": "İptal edildi"
     },
     "job": {
       "queued": "Kuyrukta",
@@ -1124,7 +1125,7 @@
       "trialing": "Deneme Sürümü",
       "active": "Aktif",
       "pastDue": "Ödeme Gecikti",
-      "canceled": "İptal Edildi"
+      "canceled": "İptal edildi"
     },
     "store": {
       "active": "Aktif",
@@ -1231,11 +1232,11 @@
       "empty": "Katalogda tanımlı bir entegrasyon bulunamadı."
     },
     "probe": {
-      "title": "Son probe turu",
+      "title": "Son kontrol turu",
       "scopeNote": "Probe tüm entegrasyonlar için tek bir platform turu olarak koşar; bu sonuç entegrasyon başına ayrı değildir.",
-      "never": "Henüz kayıtlı bir probe turu yok.",
+      "never": "Henüz kayıtlı bir kontrol turu yok.",
       "notFinished": "Henüz tamamlanmadı",
-      "processed": "{n} probe işlendi",
+      "processed": "{n} kontrol işlendi",
       "failed": "{n} başarısız"
     },
     "table": {
@@ -1353,7 +1354,15 @@
     }
   },
   "shell": {
+    "favorites": {
+      "empty": "Yıldızladığınız ekranlar burada sabitlenir.",
+      "add": "Favorilere ekle",
+      "remove": "Favorilerden çıkar",
+      "added": "favorilere eklendi",
+      "removed": "favorilerden çıkarıldı"
+    },
     "section": {
+      "favorites": "Favoriler",
       "general": "Genel",
       "catalog": "Katalog",
       "orders": "Siparişler",
@@ -1470,14 +1479,14 @@
     "keepsSettings": "Daha önce girilmiş ayarlarınız varsa silinmez.",
     "alternativesTitle": "Bugün yapabilecekleriniz",
     "alternatives": {
-      "shippingNotice": "Sipariş Yönetimi'ndeki \"Kargoya ver\" işlemiyle takip bilgisini girip siparişin geldiği kanala iletebilirsiniz. Bu kanallarda çalışır:",
-      "invoiceNotice": "Faturayı kendi e-fatura sağlayıcınızda kestikten sonra Sipariş Yönetimi'ndeki \"Fatura oluştur\" işlemiyle fatura bağlantısını siparişin geldiği kanala iletebilirsiniz. Bu kanallarda çalışır:"
+      "shippingNotice": "Siparişler ekranındaki \"Kargoya ver\" işlemiyle takip bilgisini girip siparişin geldiği kanala iletebilirsiniz. Bu kanallarda çalışır:",
+      "invoiceNotice": "Faturayı kendi e-fatura sağlayıcınızda kestikten sonra Siparişler ekranındaki \"Fatura oluştur\" işlemiyle fatura bağlantısını siparişin geldiği kanala iletebilirsiniz. Bu kanallarda çalışır:"
     },
     "saveReason": "Kaydedilecek ayar yok — bu sağlayıcı için entegrasyon henüz geliştirilmedi.",
     "save": "Kaydet",
     "guide": {
       "step1Title": "Durum: yakında",
-      "step1Text": "Bu kategoride henüz otomatik entegrasyon bulunmuyor; listedeki sağlayıcılarla henüz bağlantı kurulamıyor.",
+      "step1Text": "Bu kategoride henüz otomatik entegrasyon bulunmuyor; kargo entegrasyonu henüz geliştirilmedi.",
       "step2Title": "Kimlik bilgisi girmeyin",
       "step2Text": "Entegrasyon açılana kadar bu ekrandan API anahtarı veya parola kaydedilmez.",
       "step3Title": "Bugün ne yapabilirim?",
@@ -1663,6 +1672,7 @@
     },
     "openDetail": "{event} kaydının ayrıntılarını aç",
     "userUnknown": "Bilinmeyen kullanıcı",
+    "userDeleted": "Silinmiş kullanıcı",
     "userSystem": "Sistem",
     "pagerAria": "Denetim kayıtları sayfalama",
     "detail": {
@@ -1960,7 +1970,7 @@
     },
     "expiredText": "Davet bağlantıları 7 gün geçerlidir. Mağaza yöneticisinden daveti yeniden göndermesini isteyin; yeni bağlantı e-postanıza gelir.",
     "revokedText": "Mağaza yöneticisi bu daveti geri çekti. Bir yanlışlık olduğunu düşünüyorsanız yöneticiyle iletişime geçin.",
-    "acceptedText": "Bu davetle hesabınız zaten oluşturulmuş. E-posta adresiniz ve parolanızla giriş yapın; parolanızı hatırlamıyorsanız \"Şifremi unuttum\"u kullanın.",
+    "acceptedText": "Bu davetle hesabınız zaten oluşturulmuş. E-posta adresiniz ve parolanızla giriş yapın; parolanızı hatırlamıyorsanız \"Parolanızı mı unuttunuz?\" bağlantısını kullanın.",
     "invalidText": "Bağlantı eksik ya da bozuk kopyalanmış olabilir. Davet e-postasındaki bağlantıyı yeniden açın."
   },
   "ownership": {
@@ -1993,7 +2003,7 @@
       "title": "Verilerinizi dışa aktarın",
       "description": "KVKK kapsamındaki veri taşınabilirliği için mağazanıza ait verilerin tamamını tek bir arşiv olarak indirin.",
       "facts": {
-        "scope": "Ürünler, varyantlar, kategoriler, markalar, siparişler, müşteriler, iadeler, faturalar, mesajlar, finans kayıtları, ayarlar ve kullanıcılar ZIP arşivinde NDJSON dosyaları olarak yer alır.",
+        "scope": "Ürünler, varyantlar, kategoriler, markalar, siparişler, müşteriler, iadeler, faturalar, mesajlar, finans kayıtları, ayarlar ve kullanıcılar tek bir sıkıştırılmış arşivde yer alır.",
         "secrets": "Parolalar ve pazaryeri API anahtarları gibi gizli bilgiler arşive eklenmez.",
         "validity": "İndirme bağlantısı 24 saat geçerlidir; hazırlık, veri hacmine göre birkaç dakika sürebilir.",
         "singleUse": "Bağlantı tek kullanımlıktır: indirme tamamlanınca arşiv sunucudan silinir."
@@ -2244,6 +2254,7 @@
     "filters": {
       "channels": "Kanallar",
       "channel": "Kanal",
+      "dateRange": "Tarih aralığı",
       "startDate": "Başlangıç",
       "endDate": "Bitiş",
       "orderNumber": "Sipariş no",
@@ -2378,9 +2389,357 @@
       "expired": "Abonelik sona erdi · stok senkronu kapalı"
     }
   },
+  "pricing": {
+    "retry": "Yeniden dene",
+    "cost": {
+      "label": "Maliyet (KDV hariç)",
+      "hint": "Birim alış maliyeti, KDV hariç. Kâr hesabı için gerekir; boş bırakırsanız bu varyantta kâr hesaplanmaz.",
+      "saved": "Maliyetler kaydedildi ({count} varyant)",
+      "partial": "Maliyetlerin bir kısmı kaydedilemedi: {count} varyant bulunamadı — ürünü yenileyip tekrar deneyin.",
+      "failed": "Ürün kaydedildi, ancak maliyetler kaydedilemedi — girdiğiniz maliyetler formda duruyor; Güncelle'ye tekrar basın.",
+      "failedCreate": "Ürün eklendi, ancak maliyetler kaydedilemedi — maliyetleri ürünü düzenleyerek yeniden girin.",
+      "failedUnauthorized": "Ürün kaydedildi, ancak maliyet kaydetme yetkiniz yok — hesap yöneticinizden katalog yazma yetkisi isteyin.",
+      "noBarcode": "{count} varyantın maliyeti kaydedilemedi çünkü barkodu yok — barkod ekleyip ürünü düzenleyerek maliyeti girin."
+    },
+    "coverage": {
+      "label": "Maliyet kapsamı {percent}",
+      "hint": "Maliyeti girilmemiş ürünlerde kâr hesaplanmaz.",
+      "loading": "Maliyet kapsamı yükleniyor",
+      "error": "Maliyet kapsamı alınamadı"
+    },
+    "badge": {
+      "losing": "Buybox kaybedildi",
+      "winning": "Buybox sizde",
+      "losingDetail": "{total} varyantın {losing} tanesinde buybox kaybedildi"
+    },
+    "filter": {
+      "label": "Buybox (Trendyol)",
+      "winning": "Kazanılan",
+      "losing": "Kaybedilen",
+      "not_found": "Bulunamadı",
+      "unchecked": "Okunmadı"
+    },
+    "status": {
+      "winning": "Buybox sizde",
+      "losing": "Buybox kaybedildi",
+      "not_found": "Trendyol'da bulunamadı",
+      "unchecked": "Henüz okunmadı"
+    },
+    "panel": {
+      "title": "Rekabet ve kâr",
+      "subtitle": "Trendyol buybox durumu ve tahmini kâr. Yalnızca görüntüleme: fiyatlarınız otomatik değişmez.",
+      "reload": "Yenile",
+      "variant": "Varyant",
+      "variantFallback": "Varyant",
+      "truncated": "İlk {count} varyant gösteriliyor.",
+      "disabled": "Buybox izleme bu hesapta kapalı. Kâr, mevcut fiyatınız üzerinden hesaplanır; buybox alanları okunmaz.",
+      "belowFloorTitle": "Buybox'a ulaşmak başa baş fiyatın altında",
+      "belowFloor": "Buybox fiyatı ({price}) başa baş fiyatınızın ({floor}) altında; bu fiyata inmek zarar ettirir.",
+      "ineligibleTitle": "Öneri ve kurallar kapalı",
+      "ineligible": "Şu bilgiler eksik olduğu için bu üründe fiyat önerisi ve kural çalışmaz: {reasons}.",
+      "enterCost": "Maliyet girin",
+      "costHint": "Maliyet girilmediği için kâr hesaplanamıyor.",
+      "missing": "Kâr hesabında eksik bileşenler: {list}. Kâr kısmi (tahmini) hesaplandı.",
+      "stale": "Bayat veri",
+      "freshness": "Güncellik",
+      "error": "Rekabet bilgisi yüklenemedi — bağlantınızı kontrol edip yeniden deneyin.",
+      "unauthorizedTitle": "Bu bölümü görme yetkiniz yok",
+      "unauthorized": "Rekabet ve kâr bilgisi katalog ve finans okuma yetkisi gerektirir; hesap yöneticinizden yetki isteyin.",
+      "emptyTitle": "Gösterilecek varyant yok",
+      "empty": "Ürün kaydedilip varyantları oluştuğunda buybox ve kâr bilgisi burada görünür."
+    },
+    "field": {
+      "status": "Buybox durumu",
+      "order": "{order}. sıra",
+      "buyboxPrice": "Buybox fiyatı",
+      "ownPrice": "Fiyatım",
+      "gap": "Fark",
+      "profitNow": "Mevcut fiyatta kâr",
+      "profitAtBuybox": "Buybox fiyatında kâr",
+      "breakEven": "Başa baş fiyat",
+      "commission": "Komisyon",
+      "lastUpdate": "Son güncelleme",
+      "nextRefresh": "Bir sonraki tazeleme"
+    },
+    "commission": {
+      "override": "sözleşme",
+      "actual": "gerçekleşen",
+      "estimated": "tahmini",
+      "unknown": "bilinmiyor"
+    },
+    "missing": {
+      "cost": "maliyet",
+      "vat": "KDV oranı",
+      "commission": "komisyon",
+      "commissionVat": "komisyon KDV'si",
+      "serviceFee": "hizmet bedeli",
+      "shipping": "kargo katkısı",
+      "withholding": "stopaj"
+    },
+    "ineligible": {
+      "cost_missing": "maliyet",
+      "vat_missing": "KDV oranı",
+      "commission_unknown": "komisyon oranı"
+    },
+    "refresh": {
+      "off": "Tazeleme kapalı",
+      "pending": "Henüz okunmadı",
+      "never": "Henüz okunmadı",
+      "overdue": "Yoğunluk nedeniyle gecikti (planlanan: {when})"
+    },
+    "chart": {
+      "title": "Son {days} gün",
+      "loading": "Fiyat geçmişi yükleniyor…",
+      "error": "Fiyat geçmişi yüklenemedi.",
+      "empty": "Bu aralıkta kayıtlı fiyat geçmişi yok. Okuma yapıldıkça burada görünür.",
+      "noBarcode": "Barkodu olmayan varyant için geçmiş tutulmaz.",
+      "buybox": "Buybox fiyatı",
+      "own": "Fiyatım",
+      "summary": "Son {days} günde {count} kayıt; fiyat aralığı {min} ile {max} arasında."
+    },
+    "channels": {
+      "title": "Kanal desteği"
+    },
+    "level": {
+      "supported": "Destekleniyor",
+      "limited": "Sınırlı destek",
+      "platform_auto": "Pazaryeri otomatik yönetiyor",
+      "not_supported": "Desteklenmiyor"
+    }
+  },
   "help": {
     "center": {
       "title": "Yardım merkezi"
     }
+  },
+  "pricingRules": {
+    "section": "Katalog",
+    "title": "Fiyat kuralları",
+    "description": "Trendyol buybox'ına göre kendi kuralınızla fiyat önerisi. Fiyat yalnız siz onaylayınca güncellenir.",
+    "tabs": {
+      "suggestions": "Öneriler",
+      "rules": "Kurallar",
+      "history": "Fiyat geçmişi"
+    },
+    "banner": {
+      "platform_off": {
+        "title": "Fiyat kuralları şu an kullanılamıyor",
+        "text": "Bu özellik platform genelinde kapalı. Açıldığında burada kural tanımlayabilirsiniz."
+      },
+      "needs_enable": {
+        "title": "Fiyat kuralları kapalı",
+        "text": "Açmak için sorumluluk metnini okuyup onaylayın. Kapalıyken hiçbir öneri üretilmez."
+      },
+      "needs_consent": {
+        "title": "Sorumluluk metni güncellendi",
+        "text": "Devam etmek için güncel metni okuyup onaylayın."
+      },
+      "competition_off": {
+        "title": "Buybox verisi kapalı",
+        "text": "Öneri için Trendyol buybox verisi gerekir; hesabınızda henüz açık değil."
+      },
+      "active": {
+        "title": "Fiyat kuralları açık",
+        "text": "Öneriler buybox verisi yenilendikçe güncellenir. Fiyat yalnız sizin onayınızla değişir."
+      }
+    },
+    "enable": "Fiyat kurallarını aç",
+    "disable": "Kapat",
+    "disableConfirm": {
+      "title": "Fiyat kuralları kapatılsın mı?",
+      "text": "Açık öneriler kapanır, yeni öneri üretilmez. Kurallarınız silinmez.",
+      "confirm": "Kapat"
+    },
+    "consent": {
+      "title": "Fiyat kurallarını aç",
+      "draft": "Taslak metin — hukuki gözden geçirme sürüyor",
+      "accept": "Okudum, onaylıyorum",
+      "dualEngine": "Pazaryerinin kendi otomatik fiyatlandırma aracını aynı ürünlerde kapattım.",
+      "version": "Metin sürümü: {version}",
+      "acceptedAt": "Onaylandı: {time}",
+      "submit": "Aç"
+    },
+    "rules": {
+      "emptyTitle": "Henüz kural yok",
+      "emptyText": "Buybox fiyatının altında ya da üstünde kalmak için kural ekleyin.",
+      "add": "Kural ekle",
+      "edit": "Düzenle",
+      "delete": "Sil",
+      "deleteTitle": "\"{name}\" kuralı silinsin mi?",
+      "deleteText": "Bu kuralın açık önerileri kapanır.",
+      "paused": "Duraklatıldı",
+      "on": "Açık",
+      "off": "Kapalı",
+      "version": "Sürüm {v}",
+      "open": "{n} açık öneri",
+      "blocked": "{n} engel",
+      "modeBelow": "Buybox fiyatının altında kal",
+      "modeAbove": "Buybox fiyatının üstünde kal",
+      "delta": "Fark",
+      "floor": "Taban",
+      "floorValue": "maliyet + kesintiler + {margin} marj",
+      "ceiling": "Tavan",
+      "limits": "Sınırlar",
+      "limitsValue": "günde ≤{changes} · {cooldown} dk ara · artış ≤{increase}/gün",
+      "scope": "Kapsam",
+      "scopeAll": "Tüm uygun Trendyol ürünleri",
+      "scopeBarcodes": "{n} barkod",
+      "actions": "{name} işlemleri",
+      "listLabel": "Fiyat kuralları"
+    },
+    "pause": {
+      "external_change": "Fiyat Entegrasyonik dışında değişti (pazaryerinin kendi aracı açık olabilir). Kuralı gözden geçirip yeniden kaydedin.",
+      "oscillation": "Fiyat kısa sürede ileri geri değişti. Kuralı gözden geçirip yeniden kaydedin."
+    },
+    "form": {
+      "titleNew": "Yeni fiyat kuralı",
+      "titleEdit": "Kuralı düzenle",
+      "name": "Kural adı",
+      "mode": "Yön",
+      "deltaAmount": "Fark (TL)",
+      "deltaPercent": "Fark (%)",
+      "deltaHint": "Fark sıfırdan büyük olmalıdır. Buybox fiyatına eşitleme yapılmaz. İkisi girilirse büyük olan kullanılır.",
+      "floorMarginPercent": "Taban: hedef marj (%)",
+      "floorHint": "Taban = maliyet + komisyon + kargo + KDV + bu marj. Maliyeti girilmemiş üründe kural çalışmaz.",
+      "ceiling": "Tavan fiyat (TL)",
+      "step": "Fiyat adımı (TL)",
+      "stepHint": "Öneri bu adıma yuvarlanır (ör. 0,01).",
+      "maxChangesPerDay": "Günlük en çok değişiklik",
+      "cooldownMin": "Değişiklikler arası en az süre (dk)",
+      "maxIncrease": "Günlük en çok artış (%)",
+      "maxIncreaseHint": "Platform üst sınırı: {max}. 30 günde en çok {max30}.",
+      "exclude": "Stokta olmayan ürünlerde öneri üretme",
+      "barcodes": "Yalnız bu barkodlar (isteğe bağlı)",
+      "barcodesHint": "Virgül ya da boşlukla ayırın; boşsa tüm uygun Trendyol ürünleri.",
+      "enabled": "Kural açık",
+      "noSeller": "Kurallar belirli bir satıcıyı hedefleyemez; yalnız Trendyol buybox fiyatına göre çalışır.",
+      "save": "Kaydet",
+      "valuesYours": "Değerleri siz belirlersiniz; Entegrasyonik önerilen değer vermez."
+    },
+    "errors": {
+      "name": "Kural adı girin (en çok 80 karakter).",
+      "mode": "Yön seçin.",
+      "delta_required": "En az bir fark değeri girin.",
+      "k1_equalize": "Fark en az 0,01 TL ya da %0,1 olmalı. Buybox fiyatına eşitleme yapılmaz.",
+      "floorMarginPercent": "0 ile 90 arasında bir marj girin.",
+      "ceiling": "Tavan fiyat girin.",
+      "step": "Adım en az 0,01 TL olmalı.",
+      "maxChangesPerDay": "1 ile {max} arasında bir sayı girin.",
+      "cooldownMin": "{min} ile 1440 dk arasında girin.",
+      "maxIncreasePercentPerDay": "0 ile {max} arasında girin.",
+      "barcodes": "En çok 500 barkod girilebilir.",
+      "load": "Fiyat kuralları yüklenemedi.",
+      "save": "Kaydedilemedi. Değerleri kontrol edip tekrar deneyin.",
+      "forbiddenTitle": "Bu işlem için yetkiniz yok",
+      "forbidden": "Fiyat kuralları ve öneri onayı yalnız yöneticiye açıktır."
+    },
+    "suggestions": {
+      "filterLabel": "Öneri durumu",
+      "open": "Açık",
+      "blocked": "Engellenen",
+      "applied": "Uygulanan",
+      "dismissed": "{n} öneri reddedildi.",
+      "lostOnly": "Yalnız buybox'ı başkasında olanlar",
+      "emptyTitle": "Açık öneri yok",
+      "emptyText": "Kurallarınız buybox verisi yenilendikçe öneri üretir.",
+      "emptyOther": "Bu durumda öneri yok.",
+      "applySelected": "Seçilenleri onayla ({n})",
+      "applyOne": "Onayla",
+      "dismiss": "Reddet",
+      "dismissSelected": "Seçilenleri reddet",
+      "selectionCap": "Tek onayda en çok {max} öneri seçilebilir.",
+      "listLabel": "Fiyat önerileri",
+      "more": "Daha fazla yükle",
+      "col": {
+        "product": "Ürün",
+        "current": "Şimdiki fiyat",
+        "suggested": "Önerilen fiyat",
+        "buybox": "Buybox",
+        "profit": "Tahmini kâr",
+        "bounds": "Taban / tavan",
+        "lowest10d": "Son 10 gün en düşük",
+        "reason": "Gerekçe",
+        "actions": "İşlemler"
+      },
+      "rowActions": "{barcode} işlemleri",
+      "rank": "{order}. sıra",
+      "ruleVersion": "Kural sürümü {v}",
+      "lowestHint": "Kanal bazında gerçekleşen en düşük satış fiyatı (yardımcı bilgi; hukuki garanti değildir)."
+    },
+    "apply": {
+      "title": "{n} fiyat güncellensin mi?",
+      "text": "Onaylarsanız Trendyol satış fiyatı güncellenir. Uygulamadan hemen önce taban, tavan, eşitleme yasağı, artış ve sıklık sınırları güncel veriyle yeniden denetlenir; geçmeyen öneri uygulanmaz. Liste (üstü çizili) fiyat değişmez.",
+      "confirm": "{n} fiyatı güncelle",
+      "done": "{n} ürünün fiyatı güncellendi.",
+      "partial": "{applied} fiyat güncellendi, {rejected} öneri denetimden geçmedi.",
+      "none": "Hiçbir öneri denetimden geçmedi; fiyat değişmedi.",
+      "rejectedTitle": "Uygulanmayan öneriler",
+      "error": "Öneriler uygulanamadı. Tekrar deneyin.",
+      "previewLabel": "Fiyat önizlemesi",
+      "col": {
+        "product": "Ürün",
+        "before": "Şimdi",
+        "after": "Sonra",
+        "change": "Değişim"
+      }
+    },
+    "history": {
+      "emptyTitle": "Fiyat değişikliği yok",
+      "emptyText": "Son 30 günde onaylı öneri ya da dış değişiklik kaydı yok.",
+      "listLabel": "Fiyat geçmişi",
+      "col": {
+        "time": "Zaman",
+        "product": "Barkod",
+        "change": "Fiyat (önce → sonra)",
+        "source": "Kaynak",
+        "buybox": "Buybox",
+        "rule": "Kural sürümü"
+      },
+      "source": {
+        "suggestion": "Onaylı öneri",
+        "external": "Entegrasyonik dışında"
+      }
+    },
+    "reason": {
+      "cost_missing": "Maliyet girilmemiş: kural bu üründe çalışmaz.",
+      "vat_missing": "KDV oranı bilinmiyor.",
+      "commission_unknown": "Komisyon oranı bilinmiyor.",
+      "floor_unreachable": "Bu marjla taban fiyat hesaplanamıyor.",
+      "below_floor": "Hedef fiyat tabanın altında kalıyor.",
+      "above_ceiling": "Hedef fiyat tavanı aşıyor.",
+      "above_list_price": "Hedef fiyat liste (üstü çizili) fiyatı aşıyor.",
+      "discount_display_active": "Üstü çizili fiyat gösteriliyor: yukarı yönlü öneri yapılmaz.",
+      "increase_limit": "Artış sınırı nedeniyle öneri yok.",
+      "equalize_forbidden": "Fark sıfıra yuvarlanıyor: eşitleme yapılmaz.",
+      "stale_data": "Buybox verisi eski.",
+      "price_changed": "Fiyat öneriden sonra değişti.",
+      "suggestion_changed": "Güncel veriyle hedef fiyat değişti; yeni öneriyi bekleyin.",
+      "rule_changed": "Kural güncellendi; öneri eski sürüme ait.",
+      "rule_disabled": "Kural kapalı.",
+      "rule_paused": "Kural duraklatıldı.",
+      "not_found": "Öneri bulunamadı.",
+      "not_open": "Öneri artık açık değil.",
+      "cooldown": "Bekleme süresi dolmadı.",
+      "daily_limit": "Günlük değişiklik sınırı doldu.",
+      "awaiting_publish": "Son fiyatın pazaryerinde görünmesi bekleniyor.",
+      "already_winning": "Buybox sizde.",
+      "no_buybox": "Buybox bilgisi yok.",
+      "out_of_stock": "Stokta yok.",
+      "variant_not_found": "Ürün bulunamadı.",
+      "duplicate_variant": "Aynı ürün için birden çok öneri seçildi.",
+      "no_change": "Fiyat zaten hedefte.",
+      "fuse": "Fiyat sigortasından geçmedi.",
+      "unknown": "Öneri uygulanamadı."
+    },
+    "warning": {
+      "discount_display_active": "Üstü çizili fiyat gösteriliyor",
+      "increase_capped": "Artış sınırına göre kırpıldı",
+      "ceiling_applied": "Tavana göre kırpıldı",
+      "extra_step_k1": "Eşitlemeyi önlemek için bir adım daha",
+      "partial_deductions": "Bazı kesintiler bilinmiyor (kâr kısmi)",
+      "unknown": "Uyarı"
+    },
+    "legalNote": "Bu araç hukuki danışmanlık değildir. Fiyat mevzuatına uyum için danışmanınıza başvurun.",
+    "adminOnly": "Kural ve onay işlemleri yöneticiye açıktır; siz önerileri görüntüleyebilirsiniz."
   }
 }

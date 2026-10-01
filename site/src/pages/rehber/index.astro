@@ -12,6 +12,7 @@ import HeroActions from '../../components/pages/HeroActions.astro'
 import Accordion from '../../components/pages/Accordion.astro'
 import CtaBand from '../../components/pages/CtaBand.astro'
 import Icon from '../../components/home/Icon.astro'
+import Eyebrow from '../../components/Eyebrow.astro'
 import { clusters, getGuide, getGuideCta, guideHref, guides, guidesIn, GLOSSARY_PATH, REHBER_PATH } from '../../data/kb'
 import { glossary } from '../../data/kb/glossary'
 import { sources } from '../../data/kb/sources'
@@ -65,7 +66,7 @@ const cta = getGuideCta('channels')
   <Section labelledby="rehber-hakkinda" class="hub-intro">
     <div class="hub-intro__grid">
       <div class="hub-answer" data-testid="guide-answer">
-        <p class="hub-answer__tag"><Icon name="sparkle" size="sm" /> Bu rehber nedir?</p>
+        <Eyebrow data-testid="guide-answer-tag">Bu rehber nedir?</Eyebrow>
         <h2 id="rehber-hakkinda" class="sr-only">Rehber hakkında</h2>
         <p class="hub-answer__text">{HUB.answer}</p>
       </div>
@@ -200,7 +201,7 @@ const cta = getGuideCta('channels')
     id="rehber-cta"
     title={cta.title}
     text={cta.text}
-    primary={{ label: 'Ücretsiz dene', href: appUrls.register() }}
+    primary={{ label: 'Ücretsiz deneyin', href: appUrls.register() }}
     secondary={{ label: cta.link.label, href: cta.link.href }}
   />
 </BaseLayout>
@@ -243,7 +244,7 @@ const cta = getGuideCta('channels')
   }
 
   /* --- Giriş --- */
-  .hub-intro:global(.section) {
+  :global(.section.hub-intro) {
     padding-block: calc(var(--site-section-y) * 0.6);
   }
   .hub-intro__grid {
@@ -255,17 +256,6 @@ const cta = getGuideCta('channels')
     flex-direction: column;
     gap: var(--ek-space-3);
     max-width: var(--site-measure);
-  }
-  .hub-answer__tag {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-    margin: 0;
-    color: var(--site-link-accent);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-bold);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
   }
   .hub-answer__text {
     margin: 0;
@@ -453,8 +443,6 @@ const cta = getGuideCta('channels')
   }
   .cluster__list a:hover .cluster__link-title {
     color: var(--site-color-link);
-    text-decoration: underline;
-    text-underline-offset: 0.2em;
   }
   .cluster__link-summary {
     color: var(--site-text-meta);

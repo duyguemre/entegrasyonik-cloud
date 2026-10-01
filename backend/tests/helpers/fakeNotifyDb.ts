@@ -82,8 +82,13 @@ export class FakeNotifyModel {
     findOne(f: Doc = {}) { return new Q<Doc | null>(() => this.docs.filter((d) => matches(d, f)), true); }
     countDocuments(f: Doc = {}) { return new Q<number>(() => [], false).then(() => this.docs.filter((d) => matches(d, f)).length) as any; }
     aggregate(p: any[]) { const r = typeof this.aggregateResult === 'function' ? this.aggregateResult(p) : this.aggregateResult; return new Q<Doc[]>(() => r, false); }
-    async updateOne(f: Doc, u: Doc) {
+    async updateOne(f: Doc, u: Doc, opts: { upsert?: boolean } = {}) {
         const d = this.docs.find((x) => matches(x, f));
+        if (!d && opts.upsert) { // esitlik suzgeci alanlari + $set (MOB-04 PushSubscriptions)
+            const base: Doc = Object.fromEntries(Object.entries(f).filter(([k, v]) => !k.startsWith('$') && (v === null || typeof v !== 'object')));
+            const nd = this.insertSync(base); applyUpdate(nd, { ...u, $unset: undefined });
+            return { matchedCount: 0, modifiedCount: 0, upsertedCount: 1 };
+        }
         if (!d) return { matchedCount: 0, modifiedCount: 0 };
         applyUpdate(d, u);
         return { matchedCount: 1, modifiedCount: 1 };
@@ -102,5 +107,7 @@ export class FakeNotifyModel {
             return [opts.new ? d : before!];
         }, true);
     }
+    async deleteMany(f: Doc) { const before = this.docs.length; this.docs = this.docs.filter((x) => !matches(x, f)); return { deletedCount: before - this.docs.length }; }
+    async distinct(key: string, f: Doc = {}) { return [...new Set(this.docs.filter((d) => matches(d, f)).map((d) => val(d, key)).filter((v) => v !== undefined))]; }
     async deleteOne(f: Doc) { const i = this.docs.findIndex((x) => matches(x, f)); if (i >= 0) this.docs.splice(i, 1); return { deletedCount: i >= 0 ? 1 : 0 }; }
 }

@@ -11,7 +11,7 @@
             {{ r === '7d' ? '7 gün' : r === '30d' ? '30 gün' : '90 gün' }}
           </button>
         </div>
-        <EkRefreshButton :loading="res.refreshing.value || res.phase.value === 'loading'" @refresh="res.load()" />
+        <EkRefreshButton quiet-success :loading="res.refreshing.value || res.phase.value === 'loading'" @refresh="res.load()" />
       </div>
     </header>
 

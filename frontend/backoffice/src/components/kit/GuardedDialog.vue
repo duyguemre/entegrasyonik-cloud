@@ -21,6 +21,7 @@
     :confirm-icon="confirmIcon"
     :busy="action.busy.value"
     :blocked="confirmDisabled"
+    :confirm-text="danger ? confirmText : undefined"
     :error="action.error.value?.message ?? ''"
     @update:model-value="(v: boolean) => (v ? undefined : action.close())"
     @confirm="action.confirm"
@@ -50,6 +51,8 @@ withDefaults(
     confirmLabel?: string
     confirmIcon?: string
     danger?: boolean
+    /** NT-02: yıkıcı işlemin hedef kimliği (iş kimliği, müşteri no). Yalnız üretimde ve `danger` iken yazdırılır. */
+    confirmText?: string
     /** Ek alanlar geçersizken onayı kapatır. */
     confirmDisabled?: boolean
     width?: 'sm' | 'md' | 'lg'

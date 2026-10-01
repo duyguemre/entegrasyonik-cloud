@@ -103,7 +103,7 @@ export function getPricingFaqRecords(source: PlanSource = defaultPlanSource): Pr
     id: 'plan-degisikligi',
     question: 'Planımı sonradan değiştirebilir miyim?',
     answer: 'Evet. Uygulamadaki Abonelik ve Planlar ekranından plan seçebilir ve planınızı değiştirebilirsiniz.',
-    evidence: [evidence('frontend/src/views/secure/user/SubscriptionView.vue', 'Abonelik ekranı plan geçişi', 'Bu Plana Geç')],
+    evidence: [evidence('frontend/src/views/secure/user/SubscriptionView.vue', 'Abonelik ekranı plan geçişi', 'Bu plana geç')],
   })
 
   records.push({
@@ -188,7 +188,7 @@ export const planAgentIntro = {
   eyebrow: `${AGENT_BRAND} her planda`,
   title: 'Yapay zekâ için ayrıca ödeme yok',
   text: 'Kendi yapay zekâ anahtarınızı getirirsiniz; yapay zekâ için bize ekstra ücret ödemezsiniz. Her pakette başlayın, büyüdükçe ajanlarınıza daha fazla yetki verin.',
-  points: ['Her planda dahil', 'Kendi anahtarınızla çalışır', 'Ekstra yapay zekâ ücreti yok'],
+  points: ['Her planda dahil', 'Kendi anahtarınızla çalışır', 'Büyüdükçe daha fazla yetki'],
 } as const
 
 export type AgentCell = { kind: 'check' } | { kind: 'none' } | { kind: 'text'; text: string }

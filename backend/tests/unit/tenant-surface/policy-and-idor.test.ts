@@ -17,8 +17,8 @@ jest.mock('@integration/modules/IntegrationFactory', () => ({ __esModule: true, 
 jest.mock('@integration/engine/IntegrationEventBus', () => ({ EVENTS: {}, integrationEventBus: { emit: jest.fn(), on: jest.fn() } }));
 jest.mock('@services/notification/NotificationService', () => ({ NotificationService: {} }));
 
-import run from '../../../src/api/RunOperation';
-import { OPERATION_POLICY, getRequiredTier, resolveTier, isAllowed } from '../../../src/api/operationPolicy';
+import run from '../../../src/api/rpc/RunOperation';
+import { OPERATION_POLICY, getRequiredTier, resolveTier, isAllowed } from '../../../src/api/rpc/operationPolicy';
 
 const uc = (order: number, extra: any = {}) => ({ order, roleCode: 'ROLE_OPERATOR', owner: false, ...extra });
 const pr = (tid: number, extra: any = {}) => ({ sub: 'u-' + tid, tid, ga: false, ...extra });
@@ -60,7 +60,7 @@ describe('kademe atamaları (gerçek politika)', () => {
   });
 
   it('yeni kayıtlar politika kaydında ölü değil: her biri gerçek servis metoduna karşılık gelir', () => {
-    const Apis = require('../../../src/api/index').default;
+    const Apis = require('../../../src/api/rpc/index').default;
     for (const [s, o] of [['IntegrationService', 'getStockPolicy'], ['IntegrationService', 'saveTenantStockPolicy'], ['IntegrationService', 'saveChannelStockPolicy'],
       ['IntegrationService', 'getIntegrationHealth'], ['StockService', 'getStockOverview'], ['AuditService', 'getAuditLogs'], ['FinancialService', 'getFinancialSummary'],
       ['FinancialService', 'getCargoInvoices'], ['FinancialService', 'getPayoutDetails'], ['ShipmentService', 'getShipments'], ['OrderService', 'markAsPrinted'],

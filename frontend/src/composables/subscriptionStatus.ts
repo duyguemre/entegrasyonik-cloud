@@ -49,7 +49,7 @@ export const SUBSCRIPTION_STATUS_META: Record<string, SubscriptionStatusMeta> = 
   active: { label: 'Aktif', tone: 'success', icon: 'mdi-check-circle-outline' },
   past_due: { label: 'Ödeme Bekliyor', tone: 'warning', icon: 'mdi-alert-circle-outline' },
   suspended: { label: 'Askıya Alındı', tone: 'error', icon: 'mdi-pause-circle-outline' },
-  canceled: { label: 'İptal Edildi', tone: 'error', icon: 'mdi-close-circle-outline' },
+  canceled: { label: 'İptal edildi', tone: 'error', icon: 'mdi-close-circle-outline' },
   expired: { label: 'Sona Erdi', tone: 'error', icon: 'mdi-calendar-remove-outline' },
   no_subscription: { label: 'Abonelik Yok', tone: 'grey', icon: 'mdi-help-circle-outline' },
 }

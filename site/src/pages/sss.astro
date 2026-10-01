@@ -46,8 +46,8 @@ const CATEGORY_ICONS: Record<FaqCategoryId, 'bolt' | 'plug' | 'stock' | 'shield'
 <BaseLayout>
 
   <PageHero
-    title="Sık sorulan sorular"
-    eyebrow="Yardım"
+    title="Merak ettiklerinize net yanıtlar"
+    eyebrow="Sık sorulan sorular"
     lead="Kurulumdan güvenliğe, stok yönetiminden fiyatlandırmaya: çok kanallı satış operasyonunuzu Entegrasyonik'e taşımadan önce merak ettiğiniz her şey."
     crumbs={crumbs}
     visualDesktopOnly
@@ -139,8 +139,8 @@ const CATEGORY_ICONS: Record<FaqCategoryId, 'bolt' | 'plug' | 'stock' | 'shield'
 
   <CtaBand
     id="sss-cta"
-    title="Tüm kanallarınızı tek panelde yönetmeye başlayın"
-    text="Ücretsiz denemeyle kanallarınızı bağlayın; merkezi stok yönetimi ve birleşik sipariş akışını kendi operasyonunuzda görün."
+    title="Sorularınız yanıtlandıysa, başlayalım"
+    text="Ücretsiz denemeyle kanallarınızı bağlayın; stoğun her kanalda aynı kaldığını kendi operasyonunuzda görün."
     primary={{ label: 'Ücretsiz deneyin', href: appUrls.register() }}
     secondary={{ label: 'Planları karşılaştırın', href: '/fiyatlandirma' }}
   />
@@ -151,7 +151,7 @@ const CATEGORY_ICONS: Record<FaqCategoryId, 'bolt' | 'plug' | 'stock' | 'shield'
 </script>
 
 <style>
-  .tight-section:global(.section) {
+  :global(.section.tight-section) {
     padding-block: calc(var(--site-section-y) * 0.72);
   }
 
@@ -200,9 +200,6 @@ const CATEGORY_ICONS: Record<FaqCategoryId, 'bolt' | 'plug' | 'stock' | 'shield'
     font-weight: var(--ek-font-weight-medium);
     line-height: var(--ek-line-height-tight);
     text-decoration: none;
-  }
-  .hero-list a:hover {
-    text-decoration: underline;
   }
   .hero-list a:focus-visible {
     outline-color: var(--site-color-on-primary);

@@ -40,7 +40,7 @@ watch(() => props.src, () => { broken.value = false; loaded.value = false })
   display: block;
   object-fit: contain;
   opacity: 0;
-  transition: opacity var(--ek-duration-base) var(--ek-easing-enter);
+  transition: opacity var(--ek-motion-overlay);
 }
 
 .gth--cover img {

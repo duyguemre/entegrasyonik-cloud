@@ -74,7 +74,7 @@ withDefaults(
   box-shadow: var(--ek-shadow-card);
   text-align: left;
   font-family: inherit;
-  transition: border-color var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: border-color var(--ek-motion-feedback);
 }
 
 .ek-kpi-card--clickable {

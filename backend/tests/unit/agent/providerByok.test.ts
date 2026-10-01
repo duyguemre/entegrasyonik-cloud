@@ -6,7 +6,7 @@ import { describe, it, expect, afterEach, beforeEach } from '@jest/globals';
 import http from 'http';
 import express from 'express';
 import { configureAgentRoutes } from '../../../src/api/http/agentRoutes';
-import { createOriginCheckMiddleware } from '../../../src/api/originCheck';
+import { createOriginCheckMiddleware } from '../../../src/api/http/originCheck';
 import { errorHandler, notFoundHandler } from '../../../src/api/http/errorEnvelope';
 import { AgentBroker } from '../../../src/operations/agent/AgentBroker';
 import { MemoryKv } from '../../../src/operations/agent/kv';
@@ -20,7 +20,7 @@ import { ROLE_PERMISSIONS, type Role } from '../../../src/capabilities/roles';
 import { metricsRegistry } from '../../../src/platform/runtime/metrics';
 import { LlmError, type LlmEvent, type LlmProvider } from '../../../src/platform/llm';
 import { decryptField, encryptField } from '../../../src/utils/FieldCrypto';
-import SettingService from '../../../src/api/services/setting-service';
+import SettingService from '../../../src/api/rpc/handlers/setting-service';
 
 const KEY_A = 'sk-ant-TENANT-A-SECRET-111111';
 const KEY_B = 'sk-ant-TENANT-B-SECRET-222222';

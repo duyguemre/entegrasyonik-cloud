@@ -66,7 +66,7 @@ import HelpBand from '../components/pages/HelpBand.astro'
 </BaseLayout>
 
 <style>
-  .nf-section:global(.section) {
+  :global(.section.nf-section) {
     display: flex;
     align-items: center;
     min-height: calc(62vh - var(--site-header-height));
@@ -189,7 +189,7 @@ import HelpBand from '../components/pages/HelpBand.astro'
     margin-top: var(--ek-space-2);
   }
 
-  .nf-links:global(.section) {
+  :global(.section.nf-links) {
     padding-block: calc(var(--site-section-y) * 0.72);
   }
   .nf-links :global(.next-links) {

@@ -289,15 +289,47 @@ export const META_LABELS: Record<string, string> = {
   provider: 'Sağlayıcı',
 }
 
-export function metaRows(meta: AuditLogEntry['meta']): { key: string; label: string; value: string }[] {
+/**
+ * P09 (K49): `meta.reason` kodlarının okunur karşılığı. Kaynak: backend'in AuditLogger çağrıları (tam küme, tarama
+ * 2026-10-01 — `AccountLifecycleService`, `security-service` impersonation.redeem, davet/sahiplik devri). Kayıtta
+ * olmayan yeni kod ham hâliyle gösterilir (uydurma metin yok); ham kod ayrıntı panelinde ikincil satırda kalır.
+ */
+export const REASON_LABELS: Record<string, string> = {
+  wrong_current: 'Mevcut parola hatalı',
+  same_password: 'Yeni parola eskisiyle aynı',
+  weak_password: 'Yeni parola yeterince güçlü değil',
+  invalid_token: 'Bağlantı geçersiz veya süresi dolmuş',
+  unknown_token: 'Davet bağlantısı bulunamadı',
+  parties_changed: 'Devir sırasında taraflar değişti',
+  ticket_invalid: 'Destek oturumu bileti geçersiz',
+  admin_invalid: 'Destek yetkilisi doğrulanamadı',
+  store_not_active: 'Mağaza etkin değil',
+}
+
+export interface AuditMetaRow {
+  key: string
+  label: string
+  value: string
+  /** Okunur karşılığı gösterilen ham kod (yalnız ayrıntı panelinde, ikincil). */
+  code?: string
+}
+
+export function metaRows(meta: AuditLogEntry['meta']): AuditMetaRow[] {
   if (!meta || typeof meta !== 'object') return []
   return Object.entries(meta)
     .filter(([, v]) => typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean')
-    .map(([k, v]) => ({
-      key: k,
-      label: META_LABELS[k] ?? k,
-      value: typeof v === 'boolean' ? (v ? 'Evet' : 'Hayır') : String(v),
-    }))
+    .map(([k, v]) => {
+      const row: AuditMetaRow = {
+        key: k,
+        label: META_LABELS[k] ?? k,
+        value: typeof v === 'boolean' ? (v ? 'Evet' : 'Hayır') : String(v),
+      }
+      if (k === 'reason' && typeof v === 'string' && REASON_LABELS[v]) {
+        row.value = REASON_LABELS[v]
+        row.code = v
+      }
+      return row
+    })
 }
 
 // ---- Kullanıcılar ----
@@ -336,10 +368,21 @@ export function useAuditLogApi() {
 
   /** Filtre + ad çözümü için mağaza kullanıcıları (ilk 100). Başarısızsa boş liste — ekran kimlikle devam eder. */
   async function getUsers(): Promise<AuditUser[]> {
-    const res: any = await restApi.post('UserService/getUsers', { pagination: { page: 1, limit: MAX_LIMIT } })
-    if (apiErrorStatus(res) !== undefined) return []
-    return toAuditUsers(res)
+    return (await getUserDirectory()).users
   }
 
-  return { getAuditLogs, getUsers }
+  /**
+   * P09: ad çözümü için kullanıcı dizini. `complete` = liste alındı ve mağazanın TÜM kullanıcılarını içeriyor
+   * (toplam ≤ dönen) → listede olmayan kimlik "Silinmiş kullanıcı"dır; aksi hâlde (hata / kesik liste) "Bilinmeyen".
+   */
+  async function getUserDirectory(): Promise<{ users: AuditUser[]; complete: boolean }> {
+    const res: any = await restApi.post('UserService/getUsers', { pagination: { page: 1, limit: MAX_LIMIT } })
+    if (apiErrorStatus(res) !== undefined) return { users: [], complete: false }
+    const users = toAuditUsers(res)
+    const total = Number(res?.totalNumberOfRecords)
+    const listed = Array.isArray(res?.users) ? res.users.length : 0
+    return { users, complete: Array.isArray(res?.users) && (!Number.isFinite(total) || total <= listed) }
+  }
+
+  return { getAuditLogs, getUsers, getUserDirectory }
 }

@@ -1,7 +1,7 @@
 # Operasyon politika kaydı (OPERATION_POLICY)
 
 **Bu belge ADR-0019 Aşama A ile `docs/CAPABILITIES.md`'ye devredildi.** Asıl kayıt artık
-`backend/src/capabilities/` (Yetenek Kaydı, zod-şemalı TypeScript) — `backend/src/api/operationPolicy.ts` bu kayıttan
+`backend/src/capabilities/` (Yetenek Kaydı, zod-şemalı TypeScript) — `backend/src/api/rpc/operationPolicy.ts` bu kayıttan
 `derivePolicy()` ile bellekte türetilir (dışa açık API: `getRequiredTier`, `OPERATION_POLICY`, `OPEN_OPERATIONS`
 DEĞİŞMEDİ — bkz. `docs/adr/0019-yetenek-kaydi-ve-mcp-chat-ui-esitligi.md` §2).
 

@@ -18,11 +18,12 @@
             {{ startsInFuture ? 'Zamanla' : 'Şimdi yayınla' }}
           </EkButton>
           <EkButton v-if="cancellable" tone="danger" icon="mdi-cancel" data-testid="cancel" @click="cancel.open(a.id)">İptal et</EkButton>
-          <EkRefreshButton :loading="res.refreshing.value" @refresh="reload" />
+          <EkRefreshButton quiet-success :loading="res.refreshing.value" @refresh="reload" />
         </template>
       </BoPageHeader>
 
       <EkAlert v-if="res.stale.value && res.error.value" tone="warning" title="Güncel veri alınamadı" :text="res.error.value.message" />
+      <EkAlert v-if="note" :tone="note.tone" dense :title="note.title" :text="note.text" data-testid="ann-note" />
       <EkAlert v-if="a.status === 'draft'" tone="info" dense title="Taslak — müşteriler henüz görmüyor" :text="draftText" />
       <EkAlert v-else-if="a.status === 'ended' || a.status === 'cancelled'" tone="info" dense title="Bu duyuru artık değiştirilemez" text="Gönderilmiş uygulama içi bildirimler ve e-postalar geri alınmaz. Yeni bir duyuru oluşturabilirsiniz." />
 
@@ -143,6 +144,7 @@ import { formatCount } from '@bo/utils/units'
 import { notifyAudited } from '@bo/utils/toast'
 import AnnouncementPreview from './AnnouncementPreview.vue'
 import { channelsText, targetText, windowText } from './announcementText'
+import { announcementNote } from './notificationsVerdict'
 import '@bo/styles/kit.css'
 
 const route = useRoute()
@@ -152,6 +154,7 @@ const id = String(route.params.id)
 const res = useResource<{ announcement: Announcement }>(() => api.call('BackofficeNotificationService/getAnnouncement', { id }))
 const pv = useResource<Preview>(() => api.call('BackofficeNotificationService/previewAnnouncement', { id }))
 const a = computed(() => res.data.value?.announcement ?? null)
+const note = computed(() => (a.value ? announcementNote(a.value, Date.now()) : null))
 const startsInFuture = computed(() => !!a.value && Date.parse(a.value.startsAt) > Date.now())
 const cancellable = computed(() => !!a.value && ['draft', 'scheduled', 'active'].includes(a.value.status))
 const draftText = computed(() =>

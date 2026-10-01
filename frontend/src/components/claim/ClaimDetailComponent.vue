@@ -7,18 +7,19 @@
   Onayla (birincil) · Reddet (tehlikeli ton). Uydurma veri yok — müşteri metrikleri gelmiyorsa satır gösterilmez.
 -->
 <template>
-  <EkDetailSheet v-model="isOpen" size="lg" :identity="claim?.externalClaimId ?? 'Talep detayı'">
+  <EkRecordSheet v-model="isOpen" size="lg" kind="İade talebi" :identity="claim?.externalClaimId ?? 'Talep detayı'">
     <template #status>
       <EkStatusChip v-if="claim" :tone="statusEntry.tone" :label="$t(statusEntry.labelKey)" />
     </template>
-    <template #actions>
-      <template v-if="claim">
-        <EkActionButton action="reject" show-label size="md" label="Reddet" class="ek-cd-reject" :disabled="!isClaimActionAllowed(claim, 'REJECT')" @click="emit('reject', claim)" />
-        <EkButton tone="primary" icon="mdi-package-variant-closed-check" :disabled="!isClaimActionAllowed(claim, 'APPROVE')" @click="emit('approve', claim)">Onayla</EkButton>
-      </template>
+    <!-- FR3-12: karar eylemleri sabit alt çubukta — Reddet solda (yıkıcı), Onayla en sağda (birincil). Yalnız izinliyse. -->
+    <template v-if="claim && isClaimActionAllowed(claim, 'REJECT')" #footer-start>
+      <EkActionButton action="reject" show-label size="md" label="Reddet" class="ek-cd-reject" @click="emit('reject', claim)" />
+    </template>
+    <template v-if="claim && isClaimActionAllowed(claim, 'APPROVE')" #actions>
+      <EkButton tone="primary" icon="mdi-package-variant-closed-check" @click="emit('approve', claim)">Onayla</EkButton>
     </template>
 
-    <div v-if="claim" class="ek-cd">
+    <template v-if="claim" #summary>
       <EkRecordSummary
         :channel="claim.integrationCode"
         :kind="claimKind"
@@ -29,33 +30,32 @@
         :amount-hint="itemCountText"
         label="İade talebi özeti"
       />
+    </template>
+
+    <div v-if="claim" class="ek-cd">
 
       <!-- FR2-ORDERS 33: sipariş detayıyla aynı "sıradaki adım" dili; karar eylemleri kartın içinde de. -->
       <EkNextStep v-if="nextStep" :tone="nextStep.tone" :icon="nextStep.icon" :eyebrow="nextStep.eyebrow" :title="nextStep.title" :text="nextStep.text">
-        <template v-if="nextStep.decide || nextStep.link" #actions>
-          <template v-if="nextStep.decide">
-            <EkButton tone="secondary" icon="mdi-close" :disabled="!isClaimActionAllowed(claim, 'REJECT')" @click="emit('reject', claim)">Reddet</EkButton>
-            <EkButton tone="primary" icon="mdi-check" :disabled="!isClaimActionAllowed(claim, 'APPROVE')" @click="emit('approve', claim)">Onayla</EkButton>
-          </template>
-          <EkButton v-if="nextStep.link" tone="secondary" :icon="icons.openExternal" @click="openLink(nextStep.link)">Kargoyu takip et</EkButton>
+        <template v-if="nextStep.link" #actions>
+          <EkButton tone="secondary" :icon="icons.openExternal" @click="openLink(nextStep.link)">Kargoyu takip et</EkButton>
         </template>
       </EkNextStep>
 
-      <EkSection title="Süreç">
+      <EkDetailPanel title="Süreç" icon="mdi-timeline-check-outline">
         <EkStatusTimeline :steps="processSteps" label="İade süreci" />
-      </EkSection>
+      </EkDetailPanel>
 
       <div class="ek-cd-grid">
         <div class="ek-cd-main">
-          <EkSection title="İade edilen ürünler" :description="reasonSummary">
-            <RecordLineList :lines="claimLines" label="İade edilen ürünler" :currency="claim.currencyCode || undefined" />
+          <EkDetailPanel title="İade edilen ürünler" icon="mdi-package-variant-closed" :description="reasonSummary" flush>
+            <RecordLineList :lines="claimLines" label="İade edilen ürünler" :currency="claim.currencyCode || undefined" plain />
             <dl class="ek-cd-total">
               <dt>Toplam iade</dt>
               <dd class="ek-num">{{ formatMoney(claim.totalRefundAmount ?? calculateTotalRefund(), claim.currencyCode || undefined) }}</dd>
             </dl>
-          </EkSection>
+          </EkDetailPanel>
 
-          <EkSection title="Geçmiş" description="Pazaryerinden gelen durum değişiklikleri, yeniden eskiye.">
+          <EkDetailPanel title="Geçmiş" icon="mdi-history" description="Pazaryerinden gelen durum değişiklikleri, yeniden eskiye">
             <ol class="ek-cd-history">
               <li v-for="(log, index) in historyEntries" :key="index" class="ek-cd-history__item" :class="{ 'is-latest': index === 0 }">
                 <span class="ek-cd-history__dot" aria-hidden="true" />
@@ -66,7 +66,7 @@
                 <time class="ek-cd-history__time ek-num" :datetime="String(log.changedAt ?? '')">{{ formatDateTime(log.changedAt) }}</time>
               </li>
             </ol>
-          </EkSection>
+          </EkDetailPanel>
         </div>
 
         <aside class="ek-cd-side" aria-label="Müşteri ve kargo">
@@ -90,12 +90,12 @@
     </div>
 
     <EkSkeleton v-else type="detail" />
-  </EkDetailSheet>
+  </EkRecordSheet>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { EkDetailSheet, EkSection, EkStatusChip, EkSkeleton, EkButton, EkActionButton, EkRecordSummary, type EkSummaryFact, EkStatusTimeline, type EkTimelineStep, EkInfoCard, EkNextStep, type EkTone } from '@entegrasyonik/ui/components';
+import { EkRecordSheet, EkDetailPanel, EkStatusChip, EkSkeleton, EkButton, EkActionButton, EkRecordSummary, type EkSummaryFact, EkStatusTimeline, type EkTimelineStep, EkInfoCard, EkNextStep, type EkTone } from '@entegrasyonik/ui/components';
 import RecordLineList, { type RecordLine } from '@/components/common/RecordLineList.vue';
 import { claimTypeLabel } from '@/design/status-map';
 import { icons } from '@entegrasyonik/ui/icons';
@@ -255,14 +255,14 @@ const translateStatus = (s: any) => CLAIM_INTERNAL_STATUS_LABELS[s as ClaimInter
 .ek-cd {
   display: flex;
   flex-direction: column;
-  gap: var(--ek-space-6);
+  gap: var(--ek-space-4);
   container-type: inline-size;
 }
 
 .ek-cd-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--ek-space-6);
+  gap: var(--ek-space-4);
   align-items: start;
 }
 
@@ -276,7 +276,7 @@ const translateStatus = (s: any) => CLAIM_INTERNAL_STATUS_LABELS[s as ClaimInter
 .ek-cd-side {
   display: flex;
   flex-direction: column;
-  gap: var(--ek-space-5);
+  gap: var(--ek-space-4);
   min-width: 0;
 }
 
@@ -287,14 +287,17 @@ const translateStatus = (s: any) => CLAIM_INTERNAL_STATUS_LABELS[s as ClaimInter
   color: var(--ek-color-content-muted);
 }
 
+/* Toplam: kalem listesinin altında hafif tonlu bant (sipariş detayındaki tutar dökümüyle aynı dil). */
 .ek-cd-total {
   display: flex;
-  justify-content: space-between;
-  gap: var(--ek-space-4);
-  width: min(100%, 320px);
-  margin: var(--ek-space-3) 0 0 auto;
-  padding-top: var(--ek-space-2);
-  border-top: 1px solid var(--ek-color-border-default);
+  justify-content: flex-end;
+  align-items: baseline;
+  gap: var(--ek-space-6);
+  margin: 0;
+  padding: var(--ek-space-3) var(--ek-space-4);
+  border-top: 1px solid var(--ek-color-border-subtle);
+  border-radius: 0 0 var(--ek-radius-card) var(--ek-radius-card);
+  background: var(--ek-color-surface-muted);
   font-weight: var(--ek-font-weight-bold);
   color: var(--ek-color-content-strong);
 }

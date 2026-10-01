@@ -8,6 +8,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { buildSite } from '../scripts/lib/build.mjs'
 import { VOICE_BANNED, MESSAGE_PILLARS, BRAND_SLOGAN } from '../src/data/brand'
+import { marketingText } from './fixtures/marketing-text'
 
 const lower = (s: string) => s.toLocaleLowerCase('tr-TR')
 
@@ -18,19 +19,7 @@ function walk(dir: string): string[] {
   })
 }
 
-const decode = (s: string) =>
-  s.replace(/&#39;|&apos;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-
-/** Görünür metin + başlık + meta açıklamalar (JSON-LD ve gizli dev notları hariç). */
-export function marketingText(html: string): string {
-  const metas = [...html.matchAll(/<meta (?:name|property)="(?:description|og:description|og:title)" content="([^"]*)"/g)].map((m) => m[1])
-  const title = html.match(/<title>([^<]*)<\/title>/)?.[1] ?? ''
-  const body = html
-    .replace(/<head[\s\S]*?<\/head>/g, '')
-    .replace(/<(script|style|template)[\s\S]*?<\/\1>/g, '')
-    .replace(/<[^>]+>/g, ' ')
-  return decode([title, ...metas, body].join('\n')).replace(/\s+/g, ' ')
-}
+export { marketingText }
 
 export function voiceViolations(rel: string, text: string): string[] {
   const t = lower(text)

@@ -94,7 +94,7 @@ const focusLabel = computed(() => (props.focusMode ? 'Odak modundan çık' : 'Ta
   pointer-events: auto;
   /* Dinlenirken yalnız alttaki 12px görünür (üstü kabın dışında kalır → kırpılır). */
   transform: translateY(calc(var(--ek-handle-rest) - var(--ek-handle-open)));
-  transition: transform var(--ek-duration-base) var(--ek-easing-standard);
+  transition: transform var(--ek-motion-reveal);
 }
 
 .ek-chrome-handle:hover .ek-chrome-handle__pill,
@@ -144,7 +144,7 @@ const focusLabel = computed(() => (props.focusMode ? 'Odak modundan çık' : 'Ta
   border-radius: var(--ek-radius-chip);
   background: var(--ek-color-chrome-text-muted);
   transform: translateX(-50%);
-  transition: opacity var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: opacity var(--ek-motion-feedback);
   pointer-events: none;
 }
 
@@ -172,6 +172,24 @@ const focusLabel = computed(() => (props.focusMode ? 'Odak modundan çık' : 'Ta
 
   .ek-chrome-handle__grip {
     opacity: 0;
+  }
+}
+
+/* MOB-00: dokunmatikte düğme 44 px genişlikte, yükseklik görünmez genişletmeyle 44 px (--ek-control-h-touch).
+   Sekme şeridi bu genişliği SecureLayout'ta ayırır (tutamak "Tüm sekmeler" düğmesinin üstüne binmez). */
+@media (pointer: coarse) {
+  .ek-chrome-handle__btn {
+    position: relative;
+    min-width: var(--ek-control-h-touch);
+  }
+  .ek-chrome-handle__btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, var(--ek-control-h-touch));
+    height: max(100%, var(--ek-control-h-touch));
+    transform: translate(-50%, -50%);
   }
 }
 </style>

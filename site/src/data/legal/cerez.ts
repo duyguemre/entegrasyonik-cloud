@@ -35,7 +35,7 @@ export const cerez: LegalDoc = {
         },
         {
           type: 'p',
-          text: 'Site içindeki “Giriş yap” ve “Ücretsiz dene” bağlantılarına tıkladığınızda uygulama sayfasına geçersiniz; uygulamada aşağıdaki bölüm geçerlidir.',
+          text: 'Site içindeki “Giriş yap” ve “Ücretsiz deneyin” bağlantılarına tıkladığınızda uygulama sayfasına geçersiniz; uygulamada aşağıdaki bölüm geçerlidir.',
         },
         {
           type: 'note',

@@ -1,6 +1,6 @@
 <template>
   <div class="bo-page">
-    <BoPageHeader>
+    <BoPageHeader :updated-at="summary.updatedAt.value" :stale="summary.stale.value">
       <template #meta>
         <span class="bo-inline-note"><v-icon icon="mdi-flask-outline" aria-hidden="true" />Örnek veriyle taslak — uçlar (L6–L8) henüz yok</span>
       </template>
@@ -8,9 +8,12 @@
         <div class="bo-seg" role="radiogroup" aria-label="Zaman aralığı">
           <button v-for="r in RANGES" :key="r.value" type="button" role="radio" class="bo-seg__opt" :aria-checked="range === r.value" @click="range = r.value">{{ r.label }}</button>
         </div>
-        <EkButton tone="secondary" icon="mdi-refresh" icon-only aria-label="Yenile" :loading="loading" data-page-refresh @click="loadAll" />
+        <CopyViewLink />
+        <EkButton tone="secondary" icon="mdi-refresh" :loading="loading || summary.refreshing.value" data-page-refresh @click="refresh">Yenile</EkButton>
       </template>
     </BoPageHeader>
+
+    <PageVerdict :verdict="verdict" />
 
     <!-- Kategori şeridi: kontrol merkezinin ana ekseni -->
     <section class="bo-cats" aria-label="Kategoriler">
@@ -42,7 +45,21 @@
     </section>
 
     <div class="bo-logs">
-      <aside class="bo-facets" aria-label="Filtreler">
+      <!-- MOB-06: telefonda seviye/kaynak süzgeçleri katlanır — önce sorunlar (Durum → Karar), süzgeç istenince. -->
+      <button
+        type="button"
+        class="bo-facets-toggle"
+        :aria-expanded="facetsOpen"
+        aria-controls="bo-facets"
+        data-testid="facets-toggle"
+        @click="facetsOpen = !facetsOpen"
+      >
+        <v-icon icon="mdi-filter-variant" aria-hidden="true" />
+        <span>Seviye ve kaynak süzgeci</span>
+        <span v-if="facetCount" class="bo-facets-toggle__n ek-num">{{ facetCount }}</span>
+        <v-icon class="bo-facets-toggle__chev" :icon="facetsOpen ? 'mdi-chevron-up' : 'mdi-chevron-down'" aria-hidden="true" />
+      </button>
+      <aside id="bo-facets" class="bo-facets" :class="{ 'is-open': facetsOpen }" aria-label="Filtreler">
         <fieldset class="bo-facet">
           <legend>Seviye</legend>
           <label v-for="l in LEVELS" :key="l" class="bo-facet__opt" :class="`lvl-${l}`">
@@ -70,12 +87,12 @@
         <p v-if="tid" class="bo-logs__scope" data-testid="tid-scope">
           <span class="bo-logs__scope-chip">
             <v-icon icon="mdi-storefront-outline" aria-hidden="true" />
-            Müşteri <RouterLink :to="`/musteriler/${tid}`" class="ek-num">#{{ tid }}</RouterLink>
+            Müşteri <RouterLink :to="`/musteriler/${tid}`" class="ek-num bo-hit">#{{ tid }}</RouterLink>
             <button type="button" class="bo-logs__scope-x" :aria-label="`Müşteri #${tid} süzgecini kaldır`" @click="tid = undefined">
               <v-icon icon="mdi-close" aria-hidden="true" />
             </button>
           </span>
-          <span class="bo-logs__scope-note">Olay akışına uygulanır; sorun grupları platform genelidir.</span>
+          <span class="bo-logs__scope-note" data-testid="tid-scope-note">Olay akışı kesin süzülür; sorun grupları yaklaşıktır (başka müşterinin grubu da görünebilir).</span>
         </p>
         <div class="bo-tabs">
           <div class="bo-tabs__list" role="tablist" aria-label="Görünüm">
@@ -100,6 +117,9 @@
 
         <!-- Sorun grupları -->
         <div v-if="tab === 'issues'" id="panel-issues" role="tabpanel" aria-labelledby="tab-issues">
+          <p v-if="tid && issues" class="bo-logs__scope-note bo-logs__approx" data-testid="issues-approx">
+            <v-icon icon="mdi-information-outline" aria-hidden="true" />Yaklaşık: müşteri #{{ tid }} süzgeci kova eşleşmesiyle uygulanır; başka müşterinin grubu da görünebilir.
+          </p>
           <BoPanelState v-if="issuesError" state="error" :error="issuesError" error-text="Sorun grupları yüklenemedi" @retry="loadIssues" />
           <EkSkeleton v-else-if="!issues" type="table" :rows="6" />
           <EkEmptyState v-else-if="!issues.length" variant="no-results" title="Bu filtrelerde sorun yok" message="Aralığı genişletin ya da filtreleri temizleyin." />
@@ -109,8 +129,8 @@
                 <span class="bo-issue__lvl" :class="`lvl-${issue.level}`" :title="LEVEL[issue.level].label"><v-icon :icon="LEVEL[issue.level].icon" aria-hidden="true" /><span class="ek-sr-only">{{ LEVEL[issue.level].label }}</span></span>
                 <span class="bo-issue__main">
                   <span class="bo-issue__title">
-                    <EkBadge v-if="issue.isNew" text="Yeni" tone="error" />
-                    {{ issue.title }}
+                    <EkBadge v-if="issue.isNew" text="Yeni" tone="error" class="bo-issue__new" />
+                    <span class="bo-issue__text" :title="issue.title">{{ issue.title }}</span>
                   </span>
                   <span class="bo-issue__meta">
                     <span class="bo-issue__cat"><v-icon :icon="CATEGORY[issue.category].icon" aria-hidden="true" />{{ CATEGORY[issue.category].label }}</span>
@@ -208,7 +228,7 @@
         <section v-if="trend?.tenants.length" class="bo-drawer__section">
           <h3>Etkilenen müşteriler</h3>
           <div class="bo-drawer__tenants">
-            <RouterLink v-for="t in trend.tenants" :key="t" :to="`/musteriler/${t}`" class="bo-drawer__tenant ek-num">#{{ t }}</RouterLink>
+            <RouterLink v-for="t in trend.tenants" :key="t" :to="`/musteriler/${t}`" class="bo-drawer__tenant ek-num bo-hit">#{{ t }}</RouterLink>
           </div>
         </section>
         <section v-if="trend?.reqIds.length" class="bo-drawer__section">
@@ -236,6 +256,10 @@ import BarTrend from '@bo/components/BarTrend.vue'
 import Sparkline from '@bo/components/Sparkline.vue'
 import TraceDialog from '@bo/components/TraceDialog.vue'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import CopyViewLink from '@bo/components/CopyViewLink.vue'
+import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
+import { useVerdictSources } from '@bo/composables/useVerdictSources'
+import { logCenterVerdict, type TidScope } from './logCenterVerdict'
 import { api } from '@bo/api'
 import type {
   GetIssueTrendResponse,
@@ -272,7 +296,8 @@ const queryList = <T extends string>(key: string, allowed: readonly T[]): T[] =>
 const queryTid = Number(route.query.tid)
 const tid = ref<number | undefined>(Number.isInteger(queryTid) && queryTid > 0 ? queryTid : undefined)
 const range = ref<LogRange>('24h')
-const tab = ref<'issues' | 'stream'>(tid.value ? 'stream' : 'issues')
+// Açılışta ?sekme= önceliklidir (hüküm/kayıtlı görünüm bağlantıları); yoksa ?tid= olay akışıyla, aksi halde sorun gruplarıyla başlar.
+const tab = ref<'issues' | 'stream'>(route.query.sekme === 'sorunlar' ? 'issues' : route.query.sekme === 'akis' || tid.value ? 'stream' : 'issues')
 const sort = ref<'lastSeen' | 'count' | 'tenantCount' | 'new'>('lastSeen')
 const category = ref<LogCategory[]>(queryList('category', Object.keys(CATEGORY) as LogCategory[]))
 const level = ref<LogLevel[]>(queryList('level', ['fatal', 'error', 'warn', 'info'] as const))
@@ -290,6 +315,51 @@ const traceId = ref<string | null>(null)
 const issuesError = ref<unknown>(null)
 const streamError = ref<unknown>(null)
 
+// Hüküm: süzgeç ve aralıktan bağımsız son 24 saatin sorun grupları (+ ?tid= varsa müşterinin olay sayıları).
+// BE-06: `?tid=` sorun gruplarına da uygulanır (kova eşleşmesi → yaklaşık); müşteri sayımı olay akışı yüzlerinden.
+const summary = useVerdictSources({
+  groups: () => api.call('LogCenterService/getIssueGroups', { range: '24h', sort: 'count', tid: tid.value }),
+  tenant: async () => (tid.value ? api.call('LogCenterService/listLogs', { range: '24h', tid: tid.value, limit: 1 }) : null),
+})
+const tidScope = computed<TidScope | null>(() => {
+  const f = summary.sources.tenant.data.value?.facets.level
+  return tid.value && f ? { tid: tid.value, errors: (f.error ?? 0) + (f.fatal ?? 0), warns: f.warn ?? 0 } : tid.value ? { tid: tid.value, errors: 0, warns: 0 } : null
+})
+const verdict = computed(() =>
+  summary.settled.value
+    ? logCenterVerdict({
+        issues: summary.sources.groups.data.value?.items ?? null,
+        failed: summary.failed('groups'),
+        tid: tidScope.value,
+        tidFailed: !!tid.value && summary.failed('tenant'),
+        retry: () => summary.load(),
+      })
+    : null,
+)
+
+/** Hüküm bağlantıları göreli konumdur (`{ query }`): ?level= ?category= ?sekme=akis|sorunlar ?sirala= ?fp= değişince uygulanır. */
+const SORT_KEYS = ['lastSeen', 'count', 'tenantCount', 'new'] as const
+function applyQuery() {
+  const q = route.query
+  const lv = queryList('level', LEVELS)
+  const cat = queryList('category', Object.keys(CATEGORY) as LogCategory[])
+  if (lv.join() !== level.value.join()) level.value = lv
+  if (cat.join() !== category.value.join()) category.value = cat
+  if (q.sekme === 'akis' || q.sekme === 'sorunlar') tab.value = q.sekme === 'akis' ? 'stream' : 'issues'
+  const sirala = SORT_KEYS.find((k) => k === q.sirala)
+  if (sirala && sirala !== sort.value) sort.value = sirala
+  if (typeof q.fp === 'string' && q.fp && selected.value?.fp !== q.fp) {
+    const hit = [...(issues.value ?? []), ...(summary.sources.groups.data.value?.items ?? [])].find((g) => g.fp === q.fp)
+    if (hit) void openIssue(hit)
+  }
+}
+watch(() => route.query, applyQuery)
+
+function refresh() {
+  void summary.load()
+  void loadAll()
+}
+
 const facets = computed(() => stream.value?.facets)
 const sourcesShown = computed(() => ALL_SOURCES.filter((s) => (facets.value?.src[s] ?? 0) > 0 || src.value.includes(s)))
 const legacyShare = computed(() => {
@@ -298,6 +368,8 @@ const legacyShare = computed(() => {
   const total = Object.values(f).reduce((a, b) => a + (b ?? 0), 0)
   return total ? Math.round(((f['legacy-console'] ?? 0) / total) * 100) : 0
 })
+const facetsOpen = ref(false)
+const facetCount = computed(() => level.value.length + src.value.length)
 const filtered = computed(() => category.value.length + level.value.length + src.value.length > 0 || !!text.value || !!tid.value)
 
 function toggle<T>(list: T[], value: T) {
@@ -327,6 +399,7 @@ async function loadIssues() {
       sort: sort.value,
       category: category.value.length ? category.value : undefined,
       src: src.value.length ? src.value : undefined,
+      tid: tid.value,
     })
     // Seviye yüzü sorun gruplarında da uygulanır (grup = tek seviye).
     issues.value = level.value.length ? res.items.filter((i) => level.value.includes(i.level)) : res.items
@@ -386,11 +459,26 @@ function debouncedStream() {
 
 watch(range, loadAll)
 watch([category, level, src], () => Promise.all([loadIssues(), loadStream()]), { deep: true })
+// Süzgeçler, sekme ve sıra paylaşılabilir adrese yazılır (?level=&category=&sekme=&sirala=; ?tid=/?fp= korunur).
+watch([category, level, tab, sort], () => {
+  const { level: _l, category: _c, sekme: _s, sirala: _o, ...rest } = route.query
+  void router.replace({
+    query: {
+      ...rest,
+      ...(level.value.length ? { level: level.value.join(',') } : {}),
+      ...(category.value.length ? { category: category.value.join(',') } : {}),
+      ...(tab.value === 'stream' ? { sekme: 'akis' } : {}),
+      ...(sort.value !== 'lastSeen' ? { sirala: sort.value } : {}),
+    },
+  })
+}, { deep: true })
 watch(sort, loadIssues)
 watch(tid, (v) => {
   const { tid: _tid, ...rest } = route.query
   router.replace({ query: v ? { ...rest, tid: String(v) } : rest })
   void loadStream()
+  void loadIssues()
+  void summary.load()
 })
 
 async function openIssue(issue: IssueGroup) {
@@ -407,6 +495,7 @@ function closeIssue() {
 }
 
 onMounted(async () => {
+  void summary.load()
   // Komut paleti / denetim bağlantısı: ?reqId= → istek zinciri doğrudan açılır.
   if (typeof route.query.reqId === 'string' && route.query.reqId) traceId.value = route.query.reqId
   await loadAll()
@@ -429,6 +518,13 @@ onMounted(async () => {
 }
 
 /* ---- müşteri kapsamı (?tid=) ---- */
+.bo-logs__approx {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  margin: 0 0 var(--ek-space-2);
+}
+
 .bo-logs__scope {
   display: flex;
   flex-wrap: wrap;
@@ -774,14 +870,26 @@ onMounted(async () => {
 
 .bo-issue__title {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--ek-space-2);
-  overflow: hidden;
   color: var(--ek-color-content-strong);
   font-size: var(--ek-type-body-size);
   font-weight: var(--ek-font-weight-medium);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+
+.bo-issue__new {
+  flex: none;
+}
+
+/* NT-06: başlık iki satıra kadar sarılır, tam metin title özniteliğinde. */
+.bo-issue__text {
+  display: -webkit-box;
+  min-width: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
 }
 
 .bo-issue__meta {
@@ -1018,6 +1126,17 @@ onMounted(async () => {
   }
 }
 
+/* NT-06: 1280 altında sparkline sütunu gizlenir. */
+@media (max-width: 1279px) {
+  .bo-issue {
+    grid-template-columns: 28px minmax(0, 1fr) 64px 64px 128px;
+  }
+
+  .bo-issue__spark {
+    display: none;
+  }
+}
+
 @media (max-width: 1023px) {
   .bo-logs {
     grid-template-columns: 1fr;
@@ -1033,9 +1152,52 @@ onMounted(async () => {
     grid-template-columns: 28px minmax(0, 1fr) 64px;
   }
 
-  .bo-issue__spark,
   .bo-issue__num--tenants,
   .bo-issue__when {
+    display: none;
+  }
+}
+
+.bo-facets-toggle {
+  display: none;
+}
+
+@media (max-width: 767.98px) {
+  .bo-facets-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    width: 100%;
+    min-height: 44px;
+    padding: 0 var(--ek-space-3);
+    border: 1px solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-control);
+    background: var(--ek-color-surface);
+    color: var(--ek-color-content-strong);
+    font: inherit;
+    font-size: var(--ek-type-label-size);
+    font-weight: var(--ek-font-weight-medium);
+    cursor: pointer;
+  }
+
+  .bo-facets-toggle:focus-visible {
+    outline: 2px solid var(--ek-color-border-focus);
+    outline-offset: 1px;
+  }
+
+  .bo-facets-toggle__n {
+    padding: 0 var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-action);
+    color: var(--ek-color-action-contrast);
+    font-size: var(--ek-type-caption-size);
+  }
+
+  .bo-facets-toggle__chev {
+    margin-left: auto;
+  }
+
+  .bo-facets:not(.is-open) {
     display: none;
   }
 }
@@ -1043,10 +1205,6 @@ onMounted(async () => {
 @media (max-width: 599px) {
   .bo-cats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .bo-issue__title {
-    white-space: normal;
   }
 }
 </style>

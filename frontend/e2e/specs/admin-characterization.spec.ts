@@ -22,7 +22,7 @@ function recorder(response: any, bodies: any[]) {
   }
 }
 
-test.describe('B3 karakterizasyon — Mağaza Yönetimi (AdminClientListView)', () => {
+test.describe('B3 karakterizasyon — Mağaza yönetimi (AdminClientListView)', () => {
   test.beforeEach(async ({}, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'Davranış viewport bağımsız; tek viewport yeterli (token tasarrufu)')
   })
@@ -38,8 +38,8 @@ test.describe('B3 karakterizasyon — Mağaza Yönetimi (AdminClientListView)', 
     // yapılarak sunucuya giden gövde AYNI tutuldu.
     expect(bodies[0]).toEqual({ search: '', page: 1, limit: 10, sortField: 'order', sortOrder: 1 })
     const view = page.locator('.adminClientListView')
-    await expect(view).toContainText('Toplam Mağaza')
-    await expect(view).toContainText('Aktif Mağaza')
+    await expect(view).toContainText('Toplam mağaza')
+    await expect(view).toContainText('Aktif mağaza')
     await expect(view).toContainText('Pasif')
     await expect(view).toContainText('ID: 1001')
     await expect(view).toContainText('E2E Örnek Ticaret A.Ş.')
@@ -55,7 +55,7 @@ test.describe('B3 karakterizasyon — Mağaza Yönetimi (AdminClientListView)', 
     await expect(page.getByText('E2E Örnek Mağaza', { exact: true })).toBeVisible()
     const initial = bodies.length
 
-    const search = page.getByLabel('Müşteri / Mağaza Ara').first()
+    const search = page.getByLabel('Mağaza adı veya kodu ara').first()
     await search.fill('Pasif')
     await search.press('Enter')
     await expect.poll(() => bodies.length).toBe(initial + 1)
@@ -82,7 +82,7 @@ test.describe('B3 karakterizasyon — Mağaza Yönetimi (AdminClientListView)', 
     await page.getByRole('button', { name: 'Yeni mağaza oluştur' }).click()
     const dialog = page.getByRole('dialog').filter({ hasText: 'Yeni Mağaza Oluştur' })
     await expect(dialog).toBeVisible()
-    for (const label of ['Mağaza Adı', 'Mağaza Başlığı', 'Ad Soyad', 'E-Posta Adresi', 'Giriş Şifresi']) {
+    for (const label of ['Mağaza adı', 'Mağaza Başlığı', 'Ad Soyad', 'E-Posta Adresi', 'Giriş parolası']) {
       await expect(dialog.getByLabel(label)).toBeVisible()
     }
 
@@ -92,11 +92,11 @@ test.describe('B3 karakterizasyon — Mağaza Yönetimi (AdminClientListView)', 
     expect(createBodies).toHaveLength(0)
 
     const listBefore = listBodies.length
-    await dialog.getByLabel('Mağaza Adı').fill('E2E Yeni Mağaza')
+    await dialog.getByLabel('Mağaza adı').fill('E2E Yeni Mağaza')
     await dialog.getByLabel('Mağaza Başlığı').fill('E2E Yeni Ticaret')
     await dialog.getByLabel('Ad Soyad').fill('E2E Yönetici')
     await dialog.getByLabel('E-Posta Adresi').fill('yonetici@e2e.invalid')
-    await dialog.getByLabel('Giriş Şifresi').fill('E2e-Sifre-123')
+    await dialog.getByLabel('Giriş parolası').fill('E2e-Sifre-123')
     await submit.click()
 
     await expect.poll(() => createBodies.length).toBe(1)

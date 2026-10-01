@@ -7,7 +7,7 @@
 import jwt from 'jsonwebtoken';
 import type { CookieOptions, Request, Response } from 'express';
 import { randomUUID } from 'crypto';
-import Security, { ApplicationError } from '@api/Security';
+import Security, { ApplicationError } from '@platform/core/security/Security';
 import { config } from '@config';
 
 export const ADMIN_API_PATH = '/admin-api';

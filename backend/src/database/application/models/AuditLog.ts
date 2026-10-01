@@ -21,6 +21,8 @@ export const AuditLogSchema = new mongoose.Schema({
     surface: { type: String, enum: ['app', 'backoffice', 'chat', 'backoffice_chat', 'mcp'] },
     imp: { type: Boolean },
     reqId: { type: String },
+    // [MOB-08 / K55] istemci platform SINIFI (X-Client-Platform ya da UA'dan kaba sınıf); ham UA/cihaz bilgisi YOK. Eski kayıtlarda yok (= bilinmiyor).
+    platform: { type: String, enum: ['desktop_web', 'electron', 'mobile_web', 'pwa', 'android_app', 'unknown'] },
     meta:   { type: mongoose.Schema.Types.Mixed } // küçük, PII içermeyen düz nesne
 }, {
     collection: 'AuditLogs',

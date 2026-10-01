@@ -1,5 +1,5 @@
 /**
- * CHARACTERIZATION: OrderService (backend/src/api/services/order-service.ts)
+ * CHARACTERIZATION: OrderService (backend/src/api/rpc/handlers/order-service.ts)
  *
  * Kapsam: getOrders, cancelOrder, bulkCancelOrder, approveOrder, bulkApproveOrder, updateOrderStatus,
  * markAsPrinted, getOrderRejectionReasons, getOrderDashboardInsights, tenant (clientId) kullanımı.
@@ -18,9 +18,15 @@ jest.mock('@database/DatabaseManager', () => ({
 }));
 jest.mock('@integration/modules/IntegrationFactory', () => ({ __esModule: true, default: jest.fn() }));
 
-import OrderService from '@api/services/order-service';
+import OrderService from '@api/rpc/handlers/order-service';
 import { DatabaseManagerInstance } from '@database/DatabaseManager';
 import IntegrationFactory from '@integration/modules/IntegrationFactory';
+import { captureLogs, type LogCapture } from '../../helpers/logCapture';
+
+// F-06 (ADR-0024 P4): api/** console -> eventLog; loglar stdout JSON satırlarından doğrulanır.
+let cap: LogCapture;
+beforeEach(() => { cap = captureLogs(); });
+afterEach(() => { cap.restore(); });
 
 const factoryCtor = IntegrationFactory as unknown as jest.Mock<any>;
 const dbm = DatabaseManagerInstance as any;
@@ -255,7 +261,7 @@ describe('OrderService.getOrders', () => {
   it('[MEVCUT DAVRANIŞ] hata console.error ile loglanıp olduğu gibi yeniden fırlatılır', async () => {
     orderModel.aggregate.mockRejectedValue(new Error('agg fail'));
     await expect(makeService({}).getOrders()).rejects.toThrow('agg fail');
-    expect(console.error).toHaveBeenCalled();
+    expect(cap.lines).toContainEqual(expect.objectContaining({ level: 'error' })); // F-06: console.error -> eventLog
   });
 
   it('[MEVCUT DAVRANIŞ] get() tekil sipariş için henüz yok: undefined döner', async () => {

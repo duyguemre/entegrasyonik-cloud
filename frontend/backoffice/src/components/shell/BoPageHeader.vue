@@ -27,8 +27,11 @@
           <slot name="status" />
         </div>
         <p v-if="lede ?? screen?.lede" class="bo-ph__lede">{{ lede ?? screen?.lede }}</p>
-        <div v-if="$slots.meta || updatedAt" class="bo-ph__meta">
+        <div v-if="$slots.meta || updatedAt || autoRefresh" class="bo-ph__meta">
           <slot name="meta" />
+          <span v-if="autoRefresh" class="bo-ph__updated" data-testid="page-auto-refresh">
+            <v-icon icon="mdi-autorenew" aria-hidden="true" />Sekme açıkken {{ autoRefresh }} sn'de bir yenilenir
+          </span>
           <span v-if="updatedAt" class="bo-ph__updated" :class="{ 'is-stale': stale }" data-testid="page-updated">
             <v-icon :icon="stale ? 'mdi-alert-circle-outline' : 'mdi-clock-outline'" aria-hidden="true" />
             <template v-if="stale">Yenilenemedi — gösterilen veri <EkRelativeTime :value="updatedAt" /> alındı</template>
@@ -57,6 +60,8 @@ const props = defineProps<{
   updatedAt?: number | string
   /** Son yenileme başarısız; ekrandaki veri `updatedAt` anından (BO-ELEV DG-3: bozulma dürüsttür). */
   stale?: boolean
+  /** NT-09 (TX-2): otomatik yenileme aralığı (sn) — tek metin "Sekme açıkken 30 sn'de bir yenilenir". */
+  autoRefresh?: number
 }>()
 
 const route = useRoute()

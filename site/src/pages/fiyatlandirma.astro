@@ -1,253 +1,249 @@
 ---
 /**
- * /fiyatlandirma — plan karşılaştırma + deneme + fiyat SSS'si (ADR-0014 Karar 2, S4b).
- * Tüm fiyat/limit/deneme değerleri `src/data/plans.ts` seçicilerinden (repo içindeki plans.seed.json) gelir; sayfa
- * hiçbir olgusal değer sabit yazmaz. Yol haritası özellikleri (ROADMAP_VISIBLE=false) kartlarda görünmez.
- * CTA'lar uygulamaya devreder: `${PUBLIC_APP_URL}/login?mode=register&plan=<kod>&interval=<aralık>`.
- * Kurumsal (özel teklif) planın CTA'sı /iletisim'e gider; sayfa henüz yayımlanmamışsa bağlantı üretilmez (kırık link yok).
+ * /fiyatlandirma — plan seçimi (ADR-0014 Karar 2, S4b; S17; S25 K46; S27b SR4-10 üst seviye fiyat sayfası).
  *
- * S17 (S16 tasarım dili): koyu hero + ortak `HeroActions`; önerilen plan (kayıttan: en çok özellikli sabit fiyatlı
- * plan) şerit + yükseltilmiş kartla vurgulanır; kart altında "Her planda" paneli (`getPlanCommonFeatures()`,
- * yalnızca `available` yetenekler). Karşılaştırma tablosu fiyat/limit satırlarının ardından özellik satırlarını
- * (her planda ortak + plan eklentileri + deneme) gösterir; ≥1024 px'te başlık satırı site header'ının altına
- * yapışır (kapsayıcı kaydırma kapsayıcısı DEĞİL, S16 CoverageMatrix deseni), daha dar ekranda yatay kaydırılır ve
- * ilk sütun sabit kalır. SSS ortak `Accordion`, kapanış ortak `CtaBand` + `HelpBand`.
+ * VERİ: tüm fiyat/limit/deneme değerleri tek görünüm kaydından — `src/data/plan-cards.ts` (`getPlanCards`,
+ * `getPlanTrustPoints`, `getPlanNotice`, `getBillingIntervals`); o da `plans.ts` (repo içi seed) ve `pricing.ts`
+ * kopyasını okur. Anasayfa planlar bölümü (S27a) AYNI kaydı kullanır. Sayfa hiçbir olgusal değer sabit yazmaz;
+ * uydurma fiyat/indirim yok (yıllık seçenek seed'de yok → aralık geçişi gösterilmez).
+ *
+ * KURGU (S27b): koyu, ortalı kısa hero (vaat + güven çipleri + taslak notu) → kartlar hero'nun alt kenarına taşar
+ * (göz ilk ekranda fiyatı görür) → önerilen plan koyu "vitrin" kartı (sayfanın tek koyu kartı; "her planda" çekirdeği ilk kartta, tekrar şeridi yok)
+ * → kanıtlanabilir güven unsurları (kayıttan) → Otopilot her planda (K46; açık zeminde merdiven) → karşılaştırma
+ * tablosu (grup ikonları, öne çıkan sütun) → iki sütunlu SSS (+ belgeler, yardım) → kapanış (ücretsiz deneme + demo).
+ * Koyu sahne sayısı: hero + kapanış (BRAND §4). CTA'lar uygulamaya devreder:
+ * `${PUBLIC_APP_URL}/login?mode=register&plan=<kod>&interval=<aralık>`; Kurumsal → /iletisim (yayımlı değilse not).
  */
 import BaseLayout from '../layouts/BaseLayout.astro'
 import { crumbsFor } from '../data/seo'
 import Section from '../components/Section.astro'
+import Container from '../components/Container.astro'
 import Button from '../components/Button.astro'
-import Badge from '../components/Badge.astro'
+import Eyebrow from '../components/Eyebrow.astro'
 import Icon from '../components/home/Icon.astro'
 import PageHero from '../components/pages/PageHero.astro'
-import HeroActions from '../components/pages/HeroActions.astro'
 import SectionHead from '../components/pages/SectionHead.astro'
 import Accordion from '../components/pages/Accordion.astro'
 import HelpBand from '../components/pages/HelpBand.astro'
 import CtaBand from '../components/pages/CtaBand.astro'
 import { appUrls } from '../lib/site-config'
+import { contactEmail, mailtoHref } from '../lib/contact'
 import { primaryNav, published } from '../data/navigation'
-import { getPublicPlans, getPlanSourceNotice, getVatNotice, getPublicTrial, getTrialPlanCode } from '../data/plans'
-import { getComparisonRows, getPricingFaq, getPlanPitch, getPlanCommonFeatures, getPlanAgentRows, getPlanAgentSummary, planAgentIntro } from '../data/pricing'
+import { getPublicPlans, getPublicTrial, getTrialPlanCode } from '../data/plans'
+import { getComparisonRows, getPricingFaq, getPlanCommonFeatures, getPlanAgentRows, planAgentIntro } from '../data/pricing'
+import { getPlanCards, getPlanTrustPoints, getPlanNotice, getBillingIntervals } from '../data/plan-cards'
 import { AGENT_BRAND, AGENT_PATH } from '../data/agent-brand'
 
-
 const plans = getPublicPlans()
+const cards = getPlanCards(plans)
 const rows = getComparisonRows(plans)
 const faq = getPricingFaq()
 const trial = getPublicTrial()
 const trialPlanCode = getTrialPlanCode()
-const proposalNotice = getPlanSourceNotice()
-const vatNotice = getVatNotice()
+const notice = getPlanNotice()
+const trust = getPlanTrustPoints()
+const intervals = getBillingIntervals(plans)
 const commonFeatures = getPlanCommonFeatures()
+const agentRows = getPlanAgentRows(plans)
 const crumbs = crumbsFor('/fiyatlandirma')
 
 const isPublished = (href: string) => published(primaryNav).some((i) => i.href === href)
-const contactHref = isPublished('/iletisim') ? '/iletisim' : undefined
 const faqPageHref = isPublished('/sss') ? '/sss' : undefined
+const featuresHref = isPublished('/ozellikler') ? '/ozellikler' : undefined
 
 const fmt = (n: number) => new Intl.NumberFormat('tr-TR').format(n)
 const registerPlan = plans.find((p) => p.code === trialPlanCode) ?? plans.find((p) => p.priceKind === 'fixed')
 const closingHref = appUrls.register({ plan: registerPlan?.code, interval: registerPlan?.interval })
-
-// Hero görseli: sabit fiyatlı planlar ARTAN fiyat sırasındadır (getPublicPlans() garantisi) — çubuk yüksekliği
-// bu sıraya göre CSS'te (nth-child) kademelenir. Inline `style` KULLANILMAZ (CSP `style-src 'self'`).
-const fixedPlans = plans.filter((p) => p.priceKind === 'fixed')
-// Görsel vurgu: en çok özelliği içeren sabit fiyatlı plan (gerçek veriden, iddia metni eklenmez).
-const featuredCode = [...fixedPlans].sort((a, b) => b.features.length - a.features.length)[0]?.code
-
-type LimitKey = (typeof plans)[number]['limits'][number]['key']
-const LIMIT_ICON: Record<LimitKey, 'plug' | 'layers' | 'users'> = { channels: 'plug', skus: 'layers', users: 'users' }
+const demoHref = mailtoHref(contactEmail, 'Entegrasyonik demo talebi')
+const featuredCode = cards.find((c) => c.recommended)?.code
+// Hero çipleri: güven kaydının ilk üç öğesi (deneme, kart, ajan ürünü); tamamı kartların altında şerit olarak.
+const heroChips = trust.filter((t) => ['trial', 'card', 'agent'].includes(t.id))
+const ladder = cards.filter((c) => c.agent)
 
 // Karşılaştırma: plan eklentisi satırları — planlardaki özellik kodlarının birleşimi (kayıt sırası korunur).
 const planFeatureRows = [...new Map(plans.flatMap((p) => p.features.map((f) => [f.code, f.label] as const))).entries()].map(
   ([code, label]) => ({ code, label, cells: plans.map((p) => p.features.some((f) => f.code === code)) }),
 )
-const trialDaysLabel = `${fmt(trial.days)} gün`
-// S25 (K46): ajan ürünü her planda — kademe satırları ve kart özeti (nitel; rakam yok).
-const agentRows = getPlanAgentRows(plans)
-const agentLadder = plans.map((p, i) => ({ plan: p, prev: plans[i - 1], summary: getPlanAgentSummary(p.code) })).filter((x) => x.summary)
 ---
 
 <BaseLayout>
-
   <PageHero
     title="İşinize uygun planı seçin"
     eyebrow="Fiyatlandırma"
-    lead="Çok kanallı satış operasyonunuzu ölçeğinize uygun planla yönetin. Ücretsiz denemeyle başlayın; kanal, ürün ve ekip sayınız büyüdükçe planınızı uygulama içinden yükseltin."
+    lead="Bugün ihtiyacınız olan kapasiteyle başlayın; kanal, ürün ve ekip sayınız büyüdükçe planınızı uygulama içinden yükseltin."
     crumbs={crumbs}
+    align="center"
+    overlap
   >
-    <HeroActions
-      actions={[
-        { label: 'Planları karşılaştırın', href: '#karsilastir' },
-        { label: 'Sık sorulan sorular', href: '#fiyat-sss' },
-      ]}
-    />
+    <ul class="hero-chips" role="list" aria-label="Plan güvenceleri">
+      {
+        heroChips.map((t) => (
+          <li>
+            <Icon name={t.icon} size="sm" />
+            <span>
+              {t.meta && <strong>{t.meta}</strong>} {t.label}
+            </span>
+          </li>
+        ))
+      }
+    </ul>
     {
-      (proposalNotice || vatNotice) && (
-        <div class="notice" role="note" data-testid="pricing-notice">
+      notice && (
+        <p class="notice" role="note" data-testid="pricing-notice" data-proposal-notice={notice.internal}>
           <Icon name="info" size="sm" />
-          <div>
-            {proposalNotice && <strong>{proposalNotice}</strong>}
-            <span>Fiyatlar ve plan içerikleri taslaktır; nihai değerler onaylandığında güncellenir.{vatNotice ? ` ${vatNotice}` : ''}</span>
-          </div>
-        </div>
+          {notice.visitor}
+        </p>
       )
     }
-    <Fragment slot="visual">
-      <p class="panel-tag">Aylık fiyat kademesi</p>
-      <ul class="tier-chart" role="list">
-        {
-          fixedPlans.map((p) => (
-            <li data-featured={p.code === featuredCode ? 'true' : undefined}>
-              <span class="tier-chart__price">{p.priceLabel}</span>
-              <span class="tier-chart__bar" aria-hidden="true" />
-              <span class="tier-chart__name">{p.name}</span>
-            </li>
-          ))
-        }
-      </ul>
-      <p class="panel-caption">Kurumsal plan özel tekliftir; sabit fiyat gösterilmez.</p>
-    </Fragment>
   </PageHero>
 
-  <Section id="planlar" tone="muted" labelledby="plans-title" class="tight-section">
-    <SectionHead
-      id="plans-title"
-      eyebrow="Planlar"
-      title="Ölçeğinize uygun plan"
-      lead="Her plan aynı çekirdekle gelir; kanal, ürün varyantı ve kullanıcı limitleri ölçeğinize göre değişir."
-    />
-    <ul class="plans" data-testid="plan-cards" role="list">
+  <section id="planlar" class="plans-section" aria-labelledby="plans-title">
+    <Container class="plans-wrap">
+      <h2 id="plans-title" class="sr-only">Planlar</h2>
       {
-        plans.map((plan) => {
-          const isTrialPlan = trialPlanCode === plan.code
-          const isFeatured = plan.code === featuredCode
-          const pitch = getPlanPitch(plan.code)
-          return (
-            <li class="plan" data-plan={plan.code}>
-              <article aria-labelledby={`plan-${plan.code}-name`} class:list={['plan__card', { 'plan__card--featured': isFeatured }]}>
-                {isFeatured && <p class="plan__ribbon">Önerilen</p>}
+        intervals.length > 1 && (
+          <p class="interval-note" data-testid="interval-options">
+            {intervals.map((i) => (i === 'year' ? 'Yıllık' : 'Aylık')).join(' · ')}
+          </p>
+        )
+      }
+      <ul class="plans" data-testid="plan-cards" role="list">
+        {
+          cards.map((c) => (
+            <li class:list={['plan', { 'plan--featured': c.recommended }]} data-plan={c.code}>
+              <article
+                aria-labelledby={`plan-${c.code}-name`}
+                class:list={['plan__card', { 'plan__card--featured': c.recommended }]}
+                data-surface={c.recommended ? 'dark' : undefined}
+              >
+                {c.recommended && (
+                  <p class="plan__ribbon">
+                    <Icon name="sparkle" size="sm" />
+                    Önerilen
+                  </p>
+                )}
                 <header class="plan__head">
-                  <h3 id={`plan-${plan.code}-name`}>{plan.name}</h3>
-                  {pitch && <p class="plan__pitch">{pitch.headline}</p>}
-                  {plan.tagline && <p class="plan__tagline">{plan.tagline}</p>}
+                  <h3 id={`plan-${c.code}-name`} class="plan__name">{c.name}</h3>
+                  {c.headline && <p class="plan__pitch">{c.headline}</p>}
                 </header>
 
                 <div class="plan__pricebox">
-                  <div class="plan__price">
-                    <span class="plan__amount" data-testid="plan-price">{plan.priceLabel}</span>
-                    {plan.periodLabel && <span class="plan__period">{plan.periodLabel}</span>}
-                  </div>
-                  <p class="plan__vat">{plan.vatLabel || 'Kapsama göre size özel'}</p>
-                  {isTrialPlan && (
-                    <Badge tone="info" class="plan__trial">
-                      {fmt(trial.days)} gün ücretsiz deneme{trial.cardRequired ? '' : ' · kart gerekmez'}
-                    </Badge>
-                  )}
+                  <p class="plan__price">
+                    <span class:list={['plan__amount', { 'plan__amount--quote': c.price.kind === 'quote' }]} data-testid="plan-price">
+                      {c.price.label}
+                    </span>
+                    {c.price.period && <span class="plan__period">{c.price.period}</span>}
+                  </p>
+                  <p class="plan__vat">{c.price.note}</p>
+                  {c.trial && <p class="plan__trial">{c.trial.label}</p>}
                 </div>
 
-                <ul class="plan__list" aria-label={`${plan.name} plan limitleri`}>
-                  {plan.limits.map((l) => (
+                <div class="plan__cta">
+                  {c.cta.href ? (
+                    <Button
+                      href={c.cta.href}
+                      variant={c.recommended ? 'inverse' : c.cta.kind === 'trial' ? 'primary' : 'secondary'}
+                      size="lg"
+                      aria-label={c.cta.ariaLabel}
+                      data-testid="plan-cta"
+                    >
+                      {c.cta.label}
+                    </Button>
+                  ) : null}
+                  {!c.trial && <p class="plan__cta-note">{c.cta.note}</p>}
+                </div>
+
+                {c.tagline && <p class="plan__tagline">{c.tagline}</p>}
+
+                <ul class="plan__limits" aria-label={`${c.name} plan limitleri`}>
+                  {c.limits.map((l) => (
                     <li>
-                      <span class="plan__list-icon" aria-hidden="true"><Icon name={LIMIT_ICON[l.key]} size="sm" /></span>
-                      <span class="plan__list-label">{l.label}</span>
-                      <span class="plan__list-value">{l.value === null ? 'Özel limit' : fmt(l.value)}</span>
+                      <span class="plan__limit-icon" aria-hidden="true">
+                        <Icon name={l.icon} size="sm" />
+                      </span>
+                      <span class="plan__limit-label">{l.label}</span>
+                      <span class="plan__limit-value">{l.display}</span>
                     </li>
                   ))}
                 </ul>
 
-                {plan.features.length > 0 && (
-                  <ul class="plan__features" aria-label={`${plan.name} plan özellikleri`}>
-                    {plan.features.map((f) => (
-                      <li>
-                        <span class="plan__check" aria-hidden="true"><Icon name="check" size="sm" /></span>
-                        <span>{f.label}</span>
-                      </li>
-                    ))}
-                  </ul>
+                {c.includes.length > 0 && (
+                  <div class="plan__inc">
+                    <p class="plan__inc-label">{c.includesLabel}</p>
+                    <ul class="plan__features" aria-label={`${c.name} plan özellikleri`}>
+                      {[...new Set([...c.includes, ...c.addOns])].map((f) => (
+                        <li>
+                          <span class="plan__check" aria-hidden="true">
+                            <Icon name="check" size="sm" />
+                          </span>
+                          <span>{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 )}
 
-                {(() => {
-                  const agent = getPlanAgentSummary(plan.code)
-                  const idx = plans.indexOf(plan)
-                  const prev = idx > 0 ? plans[idx - 1] : undefined
-                  return (
-                    agent && (
-                      <div class="plan__agent" data-testid="plan-agent">
-                        <p class="plan__agent-title">
-                          <Icon name="sparkle" size="sm" />
-                          {agent.title}
-                        </p>
-                        {prev && <p class="plan__agent-prev">{prev.name} planındakilere ek olarak:</p>}
-                        <ul class="plan__agent-list" role="list">
-                          {agent.items.map((it) => (
-                            <li>{it}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )
-                  )
-                })()}
-
-                <div class="plan__cta">
-                  {plan.cta === 'trial' ? (
-                    <Button
-                      href={appUrls.register({ plan: plan.code, interval: plan.interval })}
-                      variant={isFeatured || (!featuredCode && isTrialPlan) ? 'primary' : 'secondary'}
-                      size="lg"
-                      aria-label={`${plan.name} planı için ${isTrialPlan ? 'ücretsiz dene' : 'planı seç'}`}
-                      data-testid="plan-cta"
-                    >
-                      {isTrialPlan ? 'Ücretsiz dene' : 'Planı seç'}
-                    </Button>
-                  ) : contactHref ? (
-                    <Button href={contactHref} variant="secondary" size="lg" aria-label={`${plan.name} plan için teklif iste`} data-testid="plan-cta">
-                      Teklif iste
-                    </Button>
-                  ) : (
-                    <p class="plan__cta-note">Teklif için iletişim bilgileri hazırlanıyor.</p>
-                  )}
-                </div>
+                {c.agent && (
+                  <div class="plan__agent" data-testid="plan-agent">
+                    <p class="plan__agent-title">
+                      <Icon name="sparkle" size="sm" />
+                      {c.agent.title}
+                    </p>
+                    {c.agent.previous && <p class="plan__agent-prev">{c.agent.previous} planındakilere ek olarak:</p>}
+                    <ul class="plan__agent-list" role="list">
+                      {c.agent.items.map((it) => (
+                        <li>{it}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </article>
             </li>
-          )
-        })
-      }
-    </ul>
+          ))
+        }
+      </ul>
 
-    {
-      commonFeatures.length > 0 && (
-        <div class="common" data-testid="plan-common">
-          <div class="common__head">
-            <p class="common__title">Her planda</p>
-            <a class="common__link" href="/ozellikler">
-              Tüm özellikler <Icon name="arrow" size="sm" />
+      <ul class="trust" role="list" aria-label="Güvenceler" data-testid="plan-trust">
+        {
+          trust.map((t) => (
+            <li class="trust__item" data-trust={t.id}>
+              <span class="trust__icon" aria-hidden="true">
+                <Icon name={t.icon} size="sm" />
+              </span>
+              <span class="trust__text">
+                {t.meta ? (
+                  <>
+                    <strong>{t.meta}</strong> {t.label}
+                  </>
+                ) : (
+                  t.label
+                )}
+              </span>
+            </li>
+          ))
+        }
+      </ul>
+      {
+        featuresHref && (
+          <p class="trust__more">
+            <a class="link" href={featuresHref}>
+              Her planda gelen özelliklerin tamamı <Icon name="arrow" size="sm" />
             </a>
-          </div>
-          <ul class="common__list" role="list">
-            {commonFeatures.map((f) => (
-              <li>
-                <span class="plan__check" aria-hidden="true"><Icon name="check" size="sm" /></span>
-                <span>{f}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )
-    }
-  </Section>
+          </p>
+        )
+      }
+    </Container>
+  </section>
 
   {
-    agentLadder.length > 0 && (
+    ladder.length > 0 && (
       <Section id="ajan-her-planda" labelledby="agent-plan-title" class="tight-section">
         <div class="agent-plan" data-testid="plan-ai">
           <div class="agent-plan__copy">
-            <p class="agent-plan__eyebrow">
-              <Icon name="sparkle" size="sm" />
-              {planAgentIntro.eyebrow}
-            </p>
-            <h2 id="agent-plan-title" class="agent-plan__title">{planAgentIntro.title}</h2>
+            <Eyebrow icon="sparkle">{planAgentIntro.eyebrow}</Eyebrow>
+            <h2 id="agent-plan-title" class="agent-plan__title">
+              {planAgentIntro.title}
+            </h2>
             <p class="agent-plan__text">{planAgentIntro.text}</p>
             <ul class="agent-plan__points" role="list">
               {planAgentIntro.points.map((pt) => (
@@ -257,18 +253,24 @@ const agentLadder = plans.map((p, i) => ({ plan: p, prev: plans[i - 1], summary:
                 </li>
               ))}
             </ul>
-            <a class="agent-plan__link" href={AGENT_PATH}>
-              {AGENT_BRAND} nasıl çalışır
-              <Icon name="arrow" size="sm" />
+            <a class="link" href={AGENT_PATH}>
+              {AGENT_BRAND} nasıl çalışır <Icon name="arrow" size="sm" />
             </a>
           </div>
           <ol class="agent-ladder" aria-label={`${AGENT_BRAND}: planlara göre yetki`}>
-            {agentLadder.map(({ plan, prev, summary }) => (
-              <li class="agent-ladder__step" data-plan={plan.code}>
-                <p class="agent-ladder__name">{plan.name}</p>
-                {prev && <p class="agent-ladder__prev">{prev.name} planındakilere ek olarak</p>}
+            {ladder.map((c, i) => (
+              <li class:list={['agent-ladder__step', { 'is-featured': c.recommended }]} data-plan={c.code} data-step={i + 1}>
+                <p class="agent-ladder__name">
+                  <span class="agent-ladder__level" aria-hidden="true">
+                    {ladder.map((_, j) => (
+                      <span class:list={{ on: j <= i }} />
+                    ))}
+                  </span>
+                  {c.name}
+                </p>
+                {c.agent!.previous && <p class="agent-ladder__prev">{c.agent!.previous} planındakilere ek olarak</p>}
                 <ul class="agent-ladder__list" role="list">
-                  {summary!.items.map((it) => (
+                  {c.agent!.items.map((it) => (
                     <li>
                       <Icon name="check" size="sm" />
                       {it}
@@ -283,12 +285,12 @@ const agentLadder = plans.map((p, i) => ({ plan: p, prev: plans[i - 1], summary:
     )
   }
 
-  <Section id="karsilastir" labelledby="compare-title" class="tight-section">
+  <Section id="karsilastir" tone="muted" labelledby="compare-title" class="tight-section">
     <SectionHead
       id="compare-title"
       eyebrow="Karşılaştırma"
-      title="Planları karşılaştırın"
-      lead="Fiyat, limit ve özellikleri yan yana görün; tablo kaydırılırken plan adları üstte kalır."
+      title="Planları yan yana görün"
+      lead={`Limitler, özellikler ve ${AGENT_BRAND} yetkileri tek tabloda; tablo kaydırılırken plan adları üstte kalır.`}
     />
     <div class="table-wrap" role="region" aria-label="Plan karşılaştırma tablosu" tabindex="0">
       <table class="compare__table" data-testid="compare-table">
@@ -310,7 +312,7 @@ const agentLadder = plans.map((p, i) => ({ plan: p, prev: plans[i - 1], summary:
             <th scope="row">{plans[0]?.intervalLabel} fiyat</th>
             {plans.map((p) => (
               <td class:list={{ 'is-featured': p.code === featuredCode }}>
-                <span class="cell-strong">{p.priceLabel}</span>
+                <span class="cell-price">{p.priceLabel}</span>
                 {p.vatLabel && <span class="cell-note">{p.vatLabel}</span>}
               </td>
             ))}
@@ -326,14 +328,19 @@ const agentLadder = plans.map((p, i) => ({ plan: p, prev: plans[i - 1], summary:
             ))
           }
           <tr class="compare__group">
-            <td colspan={plans.length + 1}>Özellikler</td>
+            <td colspan={plans.length + 1}>
+              <span class="compare__group-label">
+                <Icon name="layers" size="sm" />
+                Özellikler
+              </span>
+            </td>
           </tr>
           <tr data-row-kind="feature">
             <th scope="row">Ücretsiz deneme</th>
             {plans.map((p) => (
               <td class:list={{ 'is-featured': p.code === featuredCode }}>
                 {p.code === trialPlanCode ? (
-                  <span class="cell-strong">{trialDaysLabel}</span>
+                  <span class="cell-strong">{fmt(trial.days)} gün</span>
                 ) : (
                   <>
                     <span class="cell-dash" aria-hidden="true" />
@@ -349,7 +356,9 @@ const agentLadder = plans.map((p, i) => ({ plan: p, prev: plans[i - 1], summary:
                 <th scope="row">{f}</th>
                 {plans.map((p) => (
                   <td class:list={{ 'is-featured': p.code === featuredCode }}>
-                    <span class="cell-check" aria-hidden="true"><Icon name="check" size="sm" /></span>
+                    <span class="cell-check" aria-hidden="true">
+                      <Icon name="check" size="sm" />
+                    </span>
                     <span class="sr-only">Dahil</span>
                   </td>
                 ))}
@@ -364,7 +373,9 @@ const agentLadder = plans.map((p, i) => ({ plan: p, prev: plans[i - 1], summary:
                   <td class:list={{ 'is-featured': plans[idx].code === featuredCode }}>
                     {has ? (
                       <>
-                        <span class="cell-check" aria-hidden="true"><Icon name="check" size="sm" /></span>
+                        <span class="cell-check" aria-hidden="true">
+                          <Icon name="check" size="sm" />
+                        </span>
                         <span class="sr-only">Dahil</span>
                       </>
                     ) : (
@@ -378,8 +389,13 @@ const agentLadder = plans.map((p, i) => ({ plan: p, prev: plans[i - 1], summary:
               </tr>
             ))
           }
-          <tr class="compare__group">
-            <td colspan={plans.length + 1}>{AGENT_BRAND} (her planda dahil)</td>
+          <tr class="compare__group compare__group--agent">
+            <td colspan={plans.length + 1}>
+              <span class="compare__group-label">
+                <Icon name="sparkle" size="sm" />
+                {AGENT_BRAND} (her planda dahil)
+              </span>
+            </td>
           </tr>
           {
             agentRows.map((r) => (
@@ -389,7 +405,9 @@ const agentLadder = plans.map((p, i) => ({ plan: p, prev: plans[i - 1], summary:
                   <td class:list={{ 'is-featured': planCode === featuredCode }}>
                     {cell.kind === 'check' ? (
                       <>
-                        <span class="cell-check" aria-hidden="true"><Icon name="check" size="sm" /></span>
+                        <span class="cell-check" aria-hidden="true">
+                          <Icon name="check" size="sm" />
+                        </span>
                         <span class="sr-only">Dahil</span>
                       </>
                     ) : cell.kind === 'text' ? (
@@ -406,145 +424,151 @@ const agentLadder = plans.map((p, i) => ({ plan: p, prev: plans[i - 1], summary:
             ))
           }
         </tbody>
+        <tfoot>
+          <tr>
+            <th scope="row">
+              <span class="sr-only">Plan seçimi</span>
+            </th>
+            {
+              cards.map((c) => (
+                <td class:list={{ 'is-featured': c.recommended }}>
+                  {c.cta.href && (
+                    <a class="compare__cta" href={c.cta.href} aria-label={c.cta.ariaLabel}>
+                      {c.cta.label}
+                      <Icon name="arrow" size="sm" />
+                    </a>
+                  )}
+                </td>
+              ))
+            }
+          </tr>
+        </tfoot>
       </table>
     </div>
-    <p class="compare__note">Plan içerikleri taslaktır; nihai kapsam onaylandığında güncellenir.</p>
   </Section>
 
-  <Section id="fiyat-sss" tone="muted" labelledby="faq-title" size="narrow" class="tight-section">
-    <SectionHead id="faq-title" eyebrow="SSS" title="Fiyatlandırma hakkında sorular" />
-    <div data-testid="pricing-faq">
-      <Accordion items={faq} />
+  <Section id="fiyat-sss" labelledby="faq-title" class="tight-section">
+    <div class="faq-grid">
+      <div class="faq-grid__aside">
+        <SectionHead id="faq-title" eyebrow="SSS" title="Fiyatlandırma hakkında sorular" lead="Deneme, faturalama ve plan değişikliği hakkında merak edilenler." compact />
+        <ul class="doc-links" role="list" aria-label="İlgili belgeler">
+          {
+            faqPageHref && (
+              <li>
+                <a href={faqPageHref}>
+                  <Icon name="help" size="sm" />
+                  Tüm sık sorulan sorular
+                </a>
+              </li>
+            )
+          }
+          <li>
+            <a href="/yasal/abonelik-sozlesmesi">
+              <Icon name="book" size="sm" />
+              Abonelik sözleşmesi
+            </a>
+          </li>
+          <li>
+            <a href="/yasal/iptal-iade">
+              <Icon name="book" size="sm" />
+              İptal ve iade koşulları
+            </a>
+          </li>
+        </ul>
+      </div>
+      <div class="faq-grid__main">
+        <div data-testid="pricing-faq">
+          <Accordion items={faq} />
+        </div>
+        <HelpBand
+          title="Planınızdan emin değil misiniz?"
+          text="Operasyonunuzu anlatın, size uygun planı birlikte seçelim."
+          links={[
+            { label: 'Bize yazın', href: '/iletisim' },
+            { label: 'Destek merkezi', href: '/destek' },
+          ]}
+        />
+      </div>
     </div>
-    <ul class="doc-links" role="list" aria-label="İlgili belgeler">
-      {faqPageHref && (
-        <li>
-          <a href={faqPageHref}><Icon name="help" size="sm" />Tüm sık sorulan sorular</a>
-        </li>
-      )}
-      <li>
-        <a href="/yasal/abonelik-sozlesmesi"><Icon name="book" size="sm" />Abonelik sözleşmesi</a>
-      </li>
-      <li>
-        <a href="/yasal/iptal-iade"><Icon name="book" size="sm" />İptal ve iade koşulları</a>
-      </li>
-    </ul>
-    <HelpBand title="Planınızdan emin değil misiniz?" text="Operasyonunuzu anlatın, size uygun planı birlikte seçelim." links={[{ label: 'Bize yazın', href: '/iletisim' }, { label: 'Destek merkezi', href: '/destek' }]} />
   </Section>
 
   <CtaBand
     id="cta-title"
-    title="Tüm kanallarınızı tek panelde yönetmeye bugün başlayın"
-    text="Ücretsiz denemeyle pazaryeri hesaplarınızı bağlayın; merkezi stok yönetimi, aşırı satış koruması ve birleşik sipariş akışını kendi operasyonunuzda görün."
-    primary={{ label: 'Ücretsiz dene', href: closingHref }}
-    secondary={{ label: 'Giriş yap', href: appUrls.login() }}
+    title="Operasyonunuzu bugün tek merkeze taşıyın"
+    text={`Ücretsiz denemeyle kanallarınızı bağlayın; stok, sipariş ve ${AGENT_BRAND} önerilerini kendi işinizde görün.`}
+    primary={{ label: 'Ücretsiz deneyin', href: closingHref }}
+    secondary={{ label: 'Demo talep edin', href: demoHref }}
   />
 </BaseLayout>
 
 <style>
-  .tight-section:global(.section) {
+  :global(.section.tight-section) {
     padding-block: calc(var(--site-section-y) * 0.72);
   }
 
   /* --- Hero --- */
-  /* Taslak fiyat notu (ürün kararı bekliyor): kaldırılmaz; cam zeminli küçük dipnot. */
-  .notice {
+  .hero-chips {
     display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: var(--ek-space-2);
-    align-items: flex-start;
-    max-width: var(--site-measure);
-    margin-top: var(--ek-space-3);
-    padding: var(--ek-space-3) var(--ek-space-4);
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-lg);
-    background: var(--site-glass-bg);
-    color: var(--site-text-on-dark-body);
-    font-size: var(--ek-font-size-xs);
-    line-height: var(--site-font-body-line-height);
-  }
-  .notice :global(.icon) {
-    flex: none;
-    margin-top: 0.1em;
-    color: var(--site-accent-on-dark);
-  }
-  .notice div {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-1);
-  }
-  .notice strong {
-    color: var(--site-text-on-dark-heading);
-    font-weight: var(--ek-font-weight-semibold);
-  }
-  .panel-tag {
-    margin: 0 0 var(--ek-space-5);
-    color: var(--site-text-on-dark-meta);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-  .panel-caption {
-    margin: var(--ek-space-5) 0 0;
-    padding-top: var(--ek-space-4);
-    border-top: var(--site-border-width) solid var(--site-glass-border);
-    color: var(--site-text-on-dark-body);
-    font-size: var(--ek-font-size-sm);
-  }
-  .tier-chart {
-    display: flex;
-    align-items: flex-end;
-    gap: var(--ek-space-6);
-    height: calc(var(--ek-space-16) * 2.4);
     margin: 0;
-    padding: 0 var(--ek-space-4);
+    padding: 0;
     list-style: none;
   }
-  .tier-chart li {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
+  .hero-chips li {
+    display: inline-flex;
     align-items: center;
-    justify-content: flex-end;
-    height: 100%;
     gap: var(--ek-space-2);
-  }
-  .tier-chart__bar {
-    display: block;
-    width: 100%;
-    max-width: var(--ek-space-16);
-    /* Planlar artan fiyat sırasındadır (getPublicPlans()); yükseklik bu sıraya göre kademelenir. */
-    height: 40%;
-    border-radius: var(--ek-radius-md) var(--ek-radius-md) 0 0;
-    background: linear-gradient(180deg, color-mix(in srgb, var(--ek-color-secondary) 55%, transparent), color-mix(in srgb, var(--ek-color-secondary) 12%, transparent));
-    box-shadow: inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-secondary) 80%, transparent);
-  }
-  .tier-chart li:nth-child(2) .tier-chart__bar {
-    height: 68%;
-  }
-  .tier-chart li:nth-child(3) .tier-chart__bar {
-    height: 90%;
-  }
-  .tier-chart li[data-featured] .tier-chart__bar {
-    background: linear-gradient(180deg, var(--ek-color-secondary), color-mix(in srgb, var(--ek-color-secondary) 45%, var(--ek-color-primary-darken-1)));
-  }
-  .tier-chart__name {
-    color: var(--site-text-on-dark-heading);
+    min-height: calc(var(--ek-space-8) + var(--ek-space-1));
+    padding-inline: var(--ek-space-3) var(--ek-space-4);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-full);
+    background: var(--site-glass-bg);
+    color: var(--site-text-on-dark-body);
     font-size: var(--ek-font-size-sm);
+  }
+  .hero-chips :global(.icon) {
+    color: var(--site-accent-on-dark);
+  }
+  .hero-chips strong {
+    color: var(--site-text-on-dark-heading);
     font-weight: var(--ek-font-weight-semibold);
   }
-  .tier-chart__price {
-    color: var(--site-text-on-dark-heading);
-    font-size: var(--ek-font-size-lg);
-    font-weight: var(--ek-font-weight-bold);
-    font-variant-numeric: tabular-nums;
+  /* Taslak fiyat notu (N4): küçük, sakin dipnot — ziyaretçi dili; iç kayıt yalnız öznitelikte. */
+  .notice {
+    flex-basis: 100%;
+    max-width: none;
+    text-align: center;
+    margin-top: var(--ek-space-2);
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-sm);
+  }
+  .notice :global(.icon) {
+    display: inline-block;
+    margin-inline-end: var(--ek-space-1);
+    vertical-align: -0.2em;
+    color: var(--site-accent-on-dark);
   }
 
-  /* --- Plan kartları --- */
+  /* --- Plan kartları: hero'nun alt kenarına taşar --- */
+  .plans-section {
+    position: relative;
+    z-index: 1;
+    padding-bottom: calc(var(--site-section-y) * 0.6);
+    background: linear-gradient(180deg, transparent var(--site-hero-overlap), var(--ek-color-surface-muted) var(--site-hero-overlap));
+    border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
+  }
+  .plans-wrap {
+    margin-top: calc(var(--site-hero-overlap) * -1);
+  }
+  .interval-note {
+    margin: 0 auto var(--ek-space-4);
+    text-align: center;
+  }
   .plans {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--ek-space-6);
+    gap: var(--ek-space-5);
     margin: 0;
     padding: 0;
     list-style: none;
@@ -556,89 +580,104 @@ const agentLadder = plans.map((p, i) => ({ plan: p, prev: plans[i - 1], summary:
   .plan__card {
     position: relative;
     display: flex;
+    flex: 1;
     flex-direction: column;
     gap: var(--ek-space-5);
-    width: 100%;
     padding: var(--ek-space-8) var(--ek-space-6) var(--ek-space-6);
     border: var(--site-border-width) solid var(--ek-color-border-default);
     border-radius: var(--site-radius-panel);
     background: var(--ek-color-surface);
-    box-shadow: var(--site-shadow-card);
+    box-shadow:
+      0 var(--ek-space-6) var(--ek-space-12) calc(var(--ek-space-6) * -1) color-mix(in srgb, var(--ek-color-content-strong) 22%, transparent),
+      var(--site-shadow-card);
     transition:
       border-color var(--ek-duration-base) var(--ek-easing-standard),
-      box-shadow var(--ek-duration-base) var(--ek-easing-standard);
+      box-shadow var(--ek-duration-base) var(--ek-easing-standard),
+      transform var(--ek-duration-base) var(--ek-easing-standard);
   }
-  .plan__card:hover,
-  .plan__card:focus-within {
+  .plan__card:hover {
     border-color: var(--ek-color-border-strong);
-    box-shadow: var(--site-shadow-card-hover);
+    box-shadow:
+      0 var(--ek-space-8) var(--ek-space-16) calc(var(--ek-space-6) * -1) color-mix(in srgb, var(--ek-color-content-strong) 28%, transparent),
+      var(--site-shadow-card-hover);
+    transform: translateY(calc(var(--ek-space-1) * -1));
   }
+  :global(html:is([data-motion='paused'], [data-motion='reduced'])) .plan__card:hover {
+    transform: none;
+  }
+  /* Önerilen plan: sayfanın tek koyu vitrin kartı — derin lacivert sahne, ince teal kenar ışığı, açık metin. */
   .plan__card--featured {
-    border: calc(var(--site-border-width) * 2) solid var(--ek-color-secondary-darken-1);
+    border-color: transparent;
     background:
-      radial-gradient(90% 50% at 50% 0%, color-mix(in srgb, var(--ek-color-secondary) 12%, transparent), transparent 70%),
-      var(--ek-color-surface);
-    box-shadow: var(--site-shadow-card-hover);
+      radial-gradient(90% 50% at 50% 0%, color-mix(in srgb, var(--ek-color-secondary) 22%, transparent), transparent 70%),
+      var(--site-stage-mesh);
+    color: var(--site-text-on-dark-body);
+    box-shadow:
+      0 0 0 var(--site-border-width) color-mix(in srgb, var(--ek-color-secondary) 45%, transparent),
+      0 var(--ek-space-8) var(--ek-space-16) calc(var(--ek-space-4) * -1) color-mix(in srgb, var(--ek-color-content-strong) 45%, transparent);
   }
-  .plan__card--featured:hover,
-  .plan__card--featured:focus-within {
-    border-color: var(--ek-color-secondary-darken-1);
+  .plan__card--featured:hover {
+    border-color: transparent;
   }
   .plan__ribbon {
     position: absolute;
-    inset-block-start: 0;
-    inset-inline-start: 50%;
-    padding: var(--ek-space-1) var(--ek-space-4);
+    top: 0;
+    left: 50%;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-1);
+    margin: 0;
+    padding: var(--ek-space-1) var(--ek-space-3);
     border-radius: var(--ek-radius-full);
-    background: var(--ek-color-secondary-darken-1);
-    color: var(--site-color-on-primary);
-    font-size: var(--site-card-eyebrow-size);
+    background: var(--ek-color-secondary);
+    color: var(--site-stage-deep);
+    font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-bold);
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    white-space: nowrap;
-    transform: translate(-50%, -50%);
+    translate: -50% -50%;
+    box-shadow: var(--site-shadow-card);
   }
   .plan__head {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-2);
+    display: grid;
+    gap: var(--ek-space-1);
   }
-  .plan__head h3 {
+  .plan__name {
     color: var(--site-text-heading);
     font-size: var(--ek-font-size-2xl);
     font-weight: var(--ek-font-weight-bold);
-    letter-spacing: -0.01em;
+    letter-spacing: -0.015em;
   }
   .plan__pitch {
-    color: var(--site-text-heading);
+    color: var(--site-text-body);
     font-size: var(--ek-font-size-md);
-    font-weight: var(--ek-font-weight-semibold);
   }
-  .plan__tagline {
-    color: var(--site-text-meta);
-    font-size: var(--ek-font-size-md);
-    line-height: var(--site-font-body-line-height);
+  .plan__card--featured .plan__name {
+    color: var(--site-text-on-dark-heading);
+  }
+  .plan__card--featured .plan__pitch {
+    color: var(--site-text-on-dark-body);
   }
   .plan__pricebox {
-    display: flex;
-    flex-direction: column;
+    display: grid;
     gap: var(--ek-space-1);
-    padding-block: var(--ek-space-4);
-    border-block: var(--site-border-width) solid var(--ek-color-border-default);
   }
   .plan__price {
     display: flex;
     align-items: baseline;
     gap: var(--ek-space-1);
+    margin: 0;
   }
   .plan__amount {
     color: var(--site-text-heading);
-    font-size: var(--site-font-display-sm);
+    font-size: var(--site-font-display-md);
     font-weight: var(--site-font-display-weight);
-    font-variant-numeric: tabular-nums;
     letter-spacing: var(--site-font-display-tracking);
-    line-height: 1.1;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .plan__amount--quote {
+    font-size: var(--site-font-display-sm);
   }
   .plan__period {
     color: var(--site-text-meta);
@@ -649,59 +688,111 @@ const agentLadder = plans.map((p, i) => ({ plan: p, prev: plans[i - 1], summary:
     color: var(--site-text-meta);
     font-size: var(--ek-font-size-sm);
   }
-  .plan__pricebox :global(.plan__trial) {
+  .plan__card--featured .plan__amount {
+    color: var(--site-text-on-dark-heading);
+  }
+  .plan__card--featured :is(.plan__period, .plan__vat) {
+    color: var(--site-text-on-dark-meta);
+  }
+  .plan__trial {
+    justify-self: start;
     margin-top: var(--ek-space-2);
+    padding: calc(var(--ek-space-1) * 0.5) var(--ek-space-3);
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-secondary) 14%, var(--ek-color-surface));
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
   }
-  .plan__list {
-    display: flex;
-    flex-direction: column;
+  .plan__cta {
+    display: grid;
+    gap: var(--ek-space-2);
+  }
+  .plan__cta :global(.btn) {
+    width: 100%;
+  }
+  .plan__cta-note {
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-sm);
+    text-align: center;
+  }
+  .plan__card--featured .plan__cta-note {
+    color: var(--site-text-on-dark-meta);
+  }
+  .plan__tagline {
+    padding-top: var(--ek-space-5);
+    border-top: var(--site-border-width) solid var(--ek-color-border-default);
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-sm);
+    line-height: var(--ek-line-height-normal);
+  }
+  .plan__card--featured .plan__tagline {
+    border-top-color: var(--site-glass-border);
+    color: var(--site-text-on-dark-body);
+  }
+  .plan__limits {
+    display: grid;
+    gap: var(--ek-space-2);
+  }
+  .plan__limits li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     gap: var(--ek-space-3);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-  .plan__list li {
-    display: flex;
     align-items: center;
-    gap: var(--ek-space-3);
+    color: var(--site-text-body);
     font-size: var(--ek-font-size-md);
   }
-  .plan__list-icon {
+  .plan__limit-icon {
     display: inline-flex;
-    flex: none;
     align-items: center;
     justify-content: center;
     width: var(--ek-space-8);
     height: var(--ek-space-8);
     border-radius: var(--ek-radius-md);
-    background: var(--ek-color-surface-muted);
+    background: color-mix(in srgb, var(--ek-color-secondary) 10%, var(--ek-color-surface));
     color: var(--site-link-accent);
   }
-  .plan__list-label {
-    flex: 1;
-    color: var(--site-text-body);
-  }
-  .plan__list-value {
+  .plan__limit-value {
     color: var(--site-text-heading);
     font-weight: var(--ek-font-weight-bold);
     font-variant-numeric: tabular-nums;
   }
-  .plan__features {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-2);
-    margin: 0;
-    padding: 0;
-    list-style: none;
+  .plan__card--featured .plan__limits li {
+    color: var(--site-text-on-dark-body);
   }
-  .plan__features li,
-  .common__list li {
+  .plan__card--featured .plan__limit-icon {
+    background: var(--site-glass-bg);
+    color: var(--site-accent-on-dark);
+  }
+  .plan__card--featured .plan__limit-value {
+    color: var(--site-text-on-dark-heading);
+  }
+  .plan__inc {
+    display: grid;
+    gap: var(--ek-space-2);
+  }
+  .plan__inc-label {
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .plan__card--featured .plan__inc-label {
+    color: var(--site-text-on-dark-heading);
+  }
+  .plan__features {
+    display: grid;
+    gap: var(--ek-space-2);
+  }
+  .plan__features li {
     display: flex;
+    gap: var(--ek-space-2);
     align-items: flex-start;
-    gap: var(--ek-space-3);
     color: var(--site-text-body);
-    font-size: var(--ek-font-size-md);
-    line-height: var(--site-font-body-line-height);
+    font-size: var(--ek-font-size-sm);
+    line-height: var(--ek-line-height-normal);
+  }
+  .plan__card--featured .plan__features li {
+    color: var(--site-text-on-dark-body);
   }
   .plan__check {
     display: inline-flex;
@@ -710,7 +801,6 @@ const agentLadder = plans.map((p, i) => ({ plan: p, prev: plans[i - 1], summary:
     justify-content: center;
     width: var(--ek-space-5);
     height: var(--ek-space-5);
-    margin-top: 0.1em;
     border-radius: var(--ek-radius-full);
     background: var(--ek-color-secondary-darken-1);
     color: var(--site-color-on-primary);
@@ -719,65 +809,237 @@ const agentLadder = plans.map((p, i) => ({ plan: p, prev: plans[i - 1], summary:
     width: var(--ek-space-3);
     height: var(--ek-space-3);
   }
-  .plan__cta {
+  .plan__card--featured .plan__check {
+    background: var(--ek-color-secondary);
+    color: var(--site-stage-deep);
+  }
+  /* Otopilot bloğu: kartın tabanında, ince teal çerçeveli "dahil" paneli. */
+  .plan__agent {
+    display: grid;
+    gap: var(--ek-space-2);
     margin-top: auto;
-    padding-top: var(--ek-space-2);
+    padding: var(--ek-space-4);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 30%, var(--ek-color-border-default));
+    border-radius: var(--ek-radius-lg);
+    background: color-mix(in srgb, var(--ek-color-secondary) 6%, var(--ek-color-surface));
   }
-  .plan__cta :global(.btn) {
-    width: 100%;
-  }
-  .plan__cta-note {
-    color: var(--site-text-meta);
-    font-size: var(--ek-font-size-sm);
-  }
-
-  /* --- Her planda --- */
-  .common {
-    margin-top: var(--ek-space-8);
-    padding: var(--ek-space-6);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--site-radius-panel);
-    background: var(--ek-color-surface);
-  }
-  .common__head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--ek-space-3);
-    margin-bottom: var(--ek-space-4);
-  }
-  .common__title {
-    color: var(--site-text-meta);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-  .common__link {
+  .plan__agent-title {
     display: inline-flex;
     align-items: center;
     gap: var(--ek-space-2);
-    min-height: var(--site-tap-target);
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-bold);
+  }
+  .plan__agent-title :global(.icon) {
     color: var(--site-link-accent);
-    font-size: var(--ek-font-size-md);
-    font-weight: var(--ek-font-weight-semibold);
-    text-decoration: none;
   }
-  .common__link:hover {
-    text-decoration: underline;
+  .plan__agent-prev {
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-xs);
   }
-  .common__list {
+  .plan__agent-list {
     display: grid;
-    gap: var(--ek-space-3) var(--ek-space-6);
+    gap: var(--ek-space-1);
+  }
+  .plan__agent-list li {
+    position: relative;
+    padding-inline-start: var(--ek-space-4);
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-sm);
+  }
+  .plan__agent-list li::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: var(--ek-space-1);
+    top: 0.6em;
+    width: calc(var(--ek-space-1) * 1.25);
+    height: calc(var(--ek-space-1) * 1.25);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-secondary-darken-1);
+  }
+  .plan__card--featured .plan__agent {
+    border-color: var(--site-glass-border);
+    background: var(--site-glass-bg);
+  }
+  .plan__card--featured :is(.plan__agent-title, .plan__agent-list li) {
+    color: var(--site-text-on-dark-heading);
+  }
+  .plan__card--featured .plan__agent-title :global(.icon) {
+    color: var(--site-accent-on-dark);
+  }
+  .plan__card--featured .plan__agent-prev {
+    color: var(--site-text-on-dark-meta);
+  }
+  .plan__card--featured .plan__agent-list li::before {
+    background: var(--ek-color-secondary);
+  }
+
+  /* --- Güven unsurları (kayıttan) --- */
+  .trust {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    margin: var(--ek-space-10) 0 0;
+    padding: var(--ek-space-2);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--site-radius-panel);
+    background: var(--ek-color-surface);
+    list-style: none;
+  }
+  .trust__item {
+    display: flex;
+    gap: var(--ek-space-3);
+    align-items: center;
+    padding: var(--ek-space-3) var(--ek-space-4);
+  }
+  .trust__icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-8);
+    height: var(--ek-space-8);
+    border-radius: var(--ek-radius-md);
+    background: color-mix(in srgb, var(--ek-color-secondary) 10%, var(--ek-color-surface));
+    color: var(--site-link-accent);
+  }
+  .trust__text {
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-medium);
+    line-height: var(--ek-line-height-tight);
+  }
+  .trust__text strong {
+    font-weight: var(--ek-font-weight-bold);
+  }
+  .trust__more {
+    margin: var(--ek-space-4) auto 0;
+    font-size: var(--ek-font-size-md);
+    text-align: center;
+  }
+
+  /* --- Otopilot her planda (açık zemin; merdiven) --- */
+  .agent-plan {
+    display: grid;
+    gap: var(--ek-space-10);
+    align-items: center;
+  }
+  .agent-plan__copy {
+    display: grid;
+    gap: var(--ek-space-4);
+    justify-items: start;
+  }
+  .agent-plan__title {
+    color: var(--site-text-heading);
+    font-size: var(--site-font-display-sm);
+    font-weight: var(--site-font-display-weight);
+    letter-spacing: var(--site-font-display-tracking);
+    line-height: var(--site-font-display-line-height);
+    text-wrap: balance;
+  }
+  .agent-plan__text {
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-lg);
+    line-height: var(--site-font-body-line-height);
+  }
+  .agent-plan__points {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2);
+  }
+  .agent-plan__points li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-1) var(--ek-space-3);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 30%, var(--ek-color-border-default));
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-secondary) 7%, var(--ek-color-surface));
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .agent-plan__points :global(.icon) {
+    color: var(--site-link-accent);
+  }
+  .agent-ladder {
+    display: grid;
+    gap: var(--ek-space-3);
     margin: 0;
     padding: 0;
     list-style: none;
   }
+  .agent-ladder__step {
+    display: grid;
+    align-content: start;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-5);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--site-radius-panel);
+    background: var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
+  }
+  .agent-ladder__step.is-featured {
+    border-color: color-mix(in srgb, var(--ek-color-secondary) 45%, var(--ek-color-border-default));
+    background:
+      radial-gradient(80% 60% at 100% 0%, color-mix(in srgb, var(--ek-color-secondary) 12%, transparent), transparent 70%),
+      var(--ek-color-surface);
+  }
+  .agent-ladder__name {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-3);
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-lg);
+    font-weight: var(--ek-font-weight-bold);
+  }
+  /* Yetki seviyesi: dolu çubuk sayısı = kademe (yalnız görsel; metin "öncekine ek olarak" ile anlatır). */
+  .agent-ladder__level {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: calc(var(--ek-space-1) * 0.5);
+    height: var(--ek-space-4);
+  }
+  .agent-ladder__level span {
+    width: calc(var(--ek-space-1) * 1.25);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-border-strong);
+  }
+  .agent-ladder__level span:nth-child(1) {
+    height: 40%;
+  }
+  .agent-ladder__level span:nth-child(2) {
+    height: 70%;
+  }
+  .agent-ladder__level span:nth-child(3) {
+    height: 100%;
+  }
+  .agent-ladder__level span.on {
+    background: var(--ek-color-secondary-darken-1);
+  }
+  .agent-ladder__prev {
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-xs);
+  }
+  .agent-ladder__list {
+    display: grid;
+    gap: var(--ek-space-2);
+  }
+  .agent-ladder__list li {
+    display: flex;
+    gap: var(--ek-space-2);
+    align-items: flex-start;
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-sm);
+  }
+  .agent-ladder__list :global(.icon) {
+    flex: none;
+    margin-top: 0.15em;
+    color: var(--site-link-accent);
+  }
 
   /* --- Karşılaştırma tablosu --- */
   .table-wrap {
-    /* Konumlu kapsayıcı: hücrelerdeki mutlak konumlu .sr-only metinler kaydırma alanında kalır (sayfayı taşırmaz). */
     position: relative;
     overflow-x: auto;
     border: var(--site-border-width) solid var(--ek-color-border-default);
@@ -799,21 +1061,28 @@ const agentLadder = plans.map((p, i) => ({ plan: p, prev: plans[i - 1], summary:
     text-align: start;
     vertical-align: middle;
   }
+  .compare__table :is(thead th, tbody td, tfoot td):not(:first-child) {
+    text-align: center;
+  }
   .compare__table thead th {
     background: var(--ek-color-surface);
     color: var(--site-text-heading);
     font-size: var(--ek-font-size-lg);
     font-weight: var(--ek-font-weight-bold);
-    border-bottom: calc(var(--site-border-width) * 2) solid var(--ek-color-border-strong);
+    border-bottom: var(--site-border-width) solid var(--ek-color-border-strong);
   }
   .compare__table thead th:first-child {
     color: var(--site-text-meta);
     font-size: var(--ek-font-size-xs);
-    letter-spacing: 0.08em;
+    letter-spacing: var(--site-eyebrow-tracking);
     text-transform: uppercase;
   }
-  .compare__table thead th.is-featured {
+  /* Öne çıkan sütun: üstte teal çizgi + hafif zemin; tüm satırlar boyunca süreklilik. */
+  .compare__table .is-featured {
     background: color-mix(in srgb, var(--ek-color-secondary) 6%, var(--ek-color-surface));
+  }
+  .compare__table thead th.is-featured {
+    box-shadow: inset 0 calc(var(--site-border-width) * 3) 0 var(--ek-color-secondary-darken-1);
     color: var(--site-link-accent);
   }
   .compare__table tbody th {
@@ -824,25 +1093,48 @@ const agentLadder = plans.map((p, i) => ({ plan: p, prev: plans[i - 1], summary:
     color: var(--site-text-heading);
     font-variant-numeric: tabular-nums;
   }
-  .compare__table .is-featured {
-    background: color-mix(in srgb, var(--ek-color-secondary) 6%, var(--ek-color-surface));
-  }
-  .compare__table tbody tr:last-child th,
-  .compare__table tbody tr:last-child td {
-    border-bottom: 0;
-  }
-  .compare__table tbody tr:not(.compare__group):hover th,
-  .compare__table tbody tr:not(.compare__group):hover td {
-    background: var(--ek-color-surface-muted);
+  .compare__table tbody tr:not(.compare__group):hover > * {
+    background: color-mix(in srgb, var(--ek-color-secondary) 4%, var(--ek-color-surface-muted));
   }
   .compare__group td {
     padding-block: var(--ek-space-3);
     background: var(--ek-color-surface-muted);
-    color: var(--site-text-meta);
+    text-align: start;
+  }
+  .compare__group-label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    color: var(--site-text-heading);
     font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.08em;
+    font-weight: var(--ek-font-weight-bold);
+    letter-spacing: var(--site-eyebrow-tracking);
     text-transform: uppercase;
+  }
+  .compare__group-label :global(.icon) {
+    color: var(--site-link-accent);
+  }
+  .compare__group--agent td {
+    background: color-mix(in srgb, var(--ek-color-secondary) 8%, var(--ek-color-surface-muted));
+  }
+  .compare__table tfoot td,
+  .compare__table tfoot th {
+    border-bottom: 0;
+  }
+  .compare__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-1);
+    min-height: var(--site-tap-target);
+    color: var(--site-link-accent);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .cell-price {
+    display: block;
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-xl);
+    font-weight: var(--ek-font-weight-bold);
   }
   .cell-strong {
     display: block;
@@ -872,18 +1164,19 @@ const agentLadder = plans.map((p, i) => ({ plan: p, prev: plans[i - 1], summary:
     background: var(--ek-color-border-strong);
     vertical-align: middle;
   }
-  .compare__note {
-    margin-top: var(--ek-space-4);
-    color: var(--site-text-meta);
-    font-size: var(--ek-font-size-sm);
-  }
 
-  /* --- SSS belgeleri --- */
+  /* --- SSS: iki sütun --- */
+  .faq-grid {
+    display: grid;
+    gap: var(--ek-space-8);
+  }
+  .faq-grid__aside :global(.shead) {
+    margin-bottom: var(--ek-space-6);
+  }
   .doc-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ek-space-2) var(--ek-space-3);
-    margin: var(--ek-space-6) 0 0;
+    display: grid;
+    gap: var(--ek-space-2);
+    margin: 0;
     padding: 0;
     list-style: none;
   }
@@ -899,11 +1192,14 @@ const agentLadder = plans.map((p, i) => ({ plan: p, prev: plans[i - 1], summary:
     color: var(--site-text-heading);
     font-size: var(--ek-font-size-md);
     font-weight: var(--ek-font-weight-medium);
-    text-decoration: none;
-    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
+    transition:
+      border-color var(--ek-duration-base) var(--ek-easing-standard),
+      background-color var(--ek-duration-base) var(--ek-easing-standard);
   }
   .doc-links a:hover {
-    border-color: var(--ek-color-secondary-darken-1);
+    border-color: var(--site-accent-line);
+    background: var(--site-link-hover-bg);
+    color: var(--site-text-heading);
   }
   .doc-links :global(.icon) {
     color: var(--site-link-accent);
@@ -919,6 +1215,9 @@ const agentLadder = plans.map((p, i) => ({ plan: p, prev: plans[i - 1], summary:
       width: 10rem;
       font-size: var(--ek-font-size-sm);
     }
+    .plan__card {
+      padding-inline: var(--ek-space-5);
+    }
   }
   @media (max-width: 1023.98px) {
     .compare__table th:first-child {
@@ -929,15 +1228,21 @@ const agentLadder = plans.map((p, i) => ({ plan: p, prev: plans[i - 1], summary:
       box-shadow: var(--site-border-width) 0 0 var(--ek-color-border-default);
     }
   }
-  @media (min-width: 768px) {
-    .common__list {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
   @media (min-width: 800px) {
     .plans {
       grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
       align-items: stretch;
+    }
+    .agent-ladder {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      align-items: end;
+    }
+    /* Merdiven: her kademe bir öncekinden biraz yüksek başlar (yetki arttıkça). */
+    .agent-ladder__step[data-step='1'] {
+      margin-top: var(--ek-space-12);
+    }
+    .agent-ladder__step[data-step='2'] {
+      margin-top: var(--ek-space-6);
     }
   }
   /* >=1024: tablo sığar → kapsayıcı kaydırma kapsayıcısı DEĞİL; başlık satırı site header'ının altına yapışır. */
@@ -951,208 +1256,40 @@ const agentLadder = plans.map((p, i) => ({ plan: p, prev: plans[i - 1], summary:
       z-index: 2;
     }
     .compare__table thead th:first-child {
+      width: 34%;
       border-start-start-radius: var(--site-radius-panel);
+    }
+    .compare__table {
+      table-layout: fixed;
     }
     .compare__table thead th:last-child {
       border-start-end-radius: var(--site-radius-panel);
     }
-    .common__list {
+    .plans {
+      gap: var(--ek-space-6);
+    }
+    .trust {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
-    .plan__card--featured {
-      margin-block: calc(var(--ek-space-3) * -1);
-      padding-block: calc(var(--ek-space-8) + var(--ek-space-3)) calc(var(--ek-space-6) + var(--ek-space-3));
+    /* Önerilen kart komşularından yüksek durur (hiyerarşi). */
+    .plan--featured .plan__card {
+      margin-block: calc(var(--ek-space-4) * -1);
+      padding-top: calc(var(--ek-space-8) + var(--ek-space-4));
     }
-  }
-  /* --- S25 (K46): ajan ürünü her planda --- */
-  .plan__agent {
-    display: grid;
-    gap: var(--ek-space-2);
-    margin-top: var(--ek-space-4);
-    padding: var(--ek-space-4);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 26%, var(--ek-color-border-default));
-    border-radius: var(--ek-radius-lg);
-    background: color-mix(in srgb, var(--ek-color-secondary) 6%, var(--ek-color-background));
-  }
-  .plan__agent-title {
-    display: flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-    margin: 0;
-    color: var(--site-text-heading);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-bold);
-  }
-  .plan__agent-title :global(.icon) {
-    color: var(--site-link-accent);
-  }
-  .plan__agent-prev {
-    margin: 0;
-    color: var(--site-text-meta);
-    font-size: var(--ek-font-size-xs);
-  }
-  .plan__agent-list {
-    display: grid;
-    gap: var(--ek-space-1);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-  .plan__agent-list li {
-    position: relative;
-    padding-inline-start: var(--ek-space-4);
-    color: var(--site-text-body);
-    font-size: var(--ek-font-size-sm);
-  }
-  .plan__agent-list li::before {
-    content: '';
-    position: absolute;
-    inset-inline-start: var(--ek-space-1);
-    top: 0.6em;
-    width: calc(var(--ek-space-1) * 1.5);
-    height: calc(var(--ek-space-1) * 1.5);
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-secondary-darken-1);
-  }
-
-  .agent-plan {
-    position: relative;
-    display: grid;
-    gap: var(--ek-space-8);
-    padding: var(--ek-space-8) var(--ek-space-6);
-    overflow: hidden;
-    border-radius: var(--site-radius-panel);
-    background: var(--site-stage-mesh);
-    color: var(--site-text-on-dark-body);
-  }
-  .agent-plan::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: var(--site-texture-grid);
-    background-size: var(--site-texture-grid-size);
-    mask-image: linear-gradient(160deg, var(--ek-color-content-strong), transparent 65%);
-    pointer-events: none;
-  }
-  .agent-plan > * {
-    position: relative;
-  }
-  .agent-plan__eyebrow {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-    margin: 0 0 var(--ek-space-3);
-    color: var(--site-accent-on-dark);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-bold);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-  .agent-plan__title {
-    margin: 0;
-    color: var(--site-text-on-dark-heading);
-    font-size: var(--ek-font-size-3xl);
-    letter-spacing: var(--site-font-display-tracking);
-    line-height: var(--ek-line-height-tight);
-  }
-  .agent-plan__text {
-    max-width: var(--site-measure);
-    margin: var(--ek-space-4) 0 0;
-    font-size: var(--ek-font-size-lg);
-    line-height: var(--site-font-body-line-height);
-  }
-  .agent-plan__points {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ek-space-2);
-    margin: var(--ek-space-5) 0 0;
-    padding: 0;
-    list-style: none;
-  }
-  .agent-plan__points li {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-    padding: var(--ek-space-1) var(--ek-space-3);
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-full);
-    background: var(--site-glass-bg);
-    color: var(--site-text-on-dark-heading);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-medium);
-  }
-  .agent-plan__points :global(.icon) {
-    color: var(--site-accent-on-dark);
-  }
-  .agent-plan__link {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-1);
-    min-height: var(--site-tap-target);
-    margin-top: var(--ek-space-4);
-    color: var(--site-accent-on-dark);
-    font-weight: var(--ek-font-weight-semibold);
-    text-decoration: none;
-  }
-  .agent-plan__link:hover {
-    text-decoration: underline;
-    text-underline-offset: 0.2em;
-  }
-  .agent-ladder {
-    display: grid;
-    gap: var(--ek-space-3);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    counter-reset: tier;
-  }
-  .agent-ladder__step {
-    padding: var(--ek-space-4) var(--ek-space-5);
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-lg);
-    background: var(--site-glass-bg);
-  }
-  /* Kademe: her üst plan biraz daha parlak kenar (renk tek başına anlam taşımaz — metin "ek olarak" der). */
-  .agent-ladder__step:nth-child(2) {
-    border-color: color-mix(in srgb, var(--ek-color-secondary) 40%, transparent);
-  }
-  .agent-ladder__step:nth-child(3) {
-    border-color: color-mix(in srgb, var(--ek-color-secondary) 70%, transparent);
-  }
-  .agent-ladder__name {
-    margin: 0;
-    color: var(--site-text-on-dark-heading);
-    font-size: var(--ek-font-size-lg);
-    font-weight: var(--ek-font-weight-bold);
-  }
-  .agent-ladder__prev {
-    margin: var(--ek-space-1) 0 0;
-    color: var(--site-text-on-dark-meta);
-    font-size: var(--ek-font-size-xs);
-  }
-  .agent-ladder__list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ek-space-1) var(--ek-space-4);
-    margin: var(--ek-space-2) 0 0;
-    padding: 0;
-    list-style: none;
-  }
-  .agent-ladder__list li {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-1);
-    color: var(--site-text-on-dark-body);
-    font-size: var(--ek-font-size-sm);
-  }
-  .agent-ladder__list :global(.icon) {
-    color: var(--site-accent-on-dark);
-  }
-  @media (min-width: 64rem) {
     .agent-plan {
-      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-      align-items: center;
-      padding: var(--ek-space-12) var(--ek-space-10);
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    }
+    .faq-grid {
+      grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+      gap: var(--ek-space-12);
+    }
+    .faq-grid__aside {
+      position: sticky;
+      top: calc(var(--site-header-visible) + var(--ek-space-6));
+      align-self: start;
+    }
+    .faq-grid__main :global(.help-band-wrap) {
+      margin-top: var(--ek-space-8);
     }
   }
 </style>

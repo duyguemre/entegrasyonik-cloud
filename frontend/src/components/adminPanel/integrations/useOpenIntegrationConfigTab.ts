@@ -1,6 +1,6 @@
 // frontend/src/components/adminPanel/integrations/useOpenIntegrationConfigTab.ts
 //
-// ADR-0020 Aşama C — bu 4 ekran (Entegrasyonlar/Entegrasyon Ayarları/Motor Ayarları/Etkin
+// ADR-0020 Aşama C — bu 4 ekran (Entegrasyonlar/Entegrasyon Ayarları/Motor ayarları/Etkin
 // Yapılandırma) arasında geçiş. GERÇEK menü kaydı (ApplicationDB `menus`, platformAdmin grubu)
 // bu görevin kapsamı DIŞINDADIR (backend/DB'ye dokunulmaz) — bu yüzden `menuStore.getMenuLinkWithTitle`
 // (backend'den yüklenen menü ağacına bağımlı, bkz. `ProductListView.vue` `openProductDefinition`)
@@ -21,7 +21,7 @@ export type IntegrationConfigViewName =
 const VIEW_TITLES: Record<IntegrationConfigViewName, string> = {
   IntegrationConfigListView: 'Entegrasyonlar',
   IntegrationSettingsView: 'Entegrasyon Ayarları',
-  EngineSettingsView: 'Motor Ayarları',
+  EngineSettingsView: 'Motor ayarları',
   EffectiveConfigView: 'Etkin Yapılandırma',
 }
 
@@ -50,7 +50,7 @@ export function useOpenIntegrationConfigTab() {
       // her zaman `link.title` (düz metin) kullanır — `ProductUpdateView` klonlama deseniyle AYNI
       // (bkz. dosya başı notu). Sekme tekilleştirmesi `link.code` eşleşmesiyle çalışır (workspace.ts
       // `openTab`), `singleton` alanına bağımlı DEĞİLDİR — bu yüzden tekrar tıklamada AYNI sekmeye
-      // dönülmesi (Motor Ayarları gibi tek-örnekli ekranlarda istenen davranış) korunur.
+      // dönülmesi (Motor ayarları gibi tek-örnekli ekranlarda istenen davranış) korunur.
       singleton: false,
       component,
       parameters,

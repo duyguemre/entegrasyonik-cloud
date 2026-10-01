@@ -16,6 +16,7 @@ import App from './App.vue'
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import router from './router'
+import { onNativePushOpen } from '@entegrasyonik/ui/native'
 import { usePublicConfigStore } from '@/stores/publicConfig'
 
 import HorizontalScrollComponent from '@/components/HorizontalScrollComponent.vue';
@@ -94,6 +95,8 @@ window.addEventListener('error', (event: ErrorEvent) => {
 // güvenli varsayılanlarla açılır). Sonra 5 dk'da bir / sekme görünür olunca / rota değişiminde (eskiyse) tazelenir.
 const publicConfig = usePublicConfigStore(pinia)
 router.afterEach(() => { void publicConfig.ensureFresh() })
+// MOB-07 — Android kabuğu: bildirime dokunulunca yalnız uygulama içi yola gidilir (kabuk dışında no-op).
+onNativePushOpen((path) => void router.push(path))
 publicConfig.refresh().finally(() => {
   publicConfig.startAutoRefresh()
   app.mount('#app')

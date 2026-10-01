@@ -31,12 +31,12 @@ function loadRun(mode?: string) {
   if (mode) process.env.IDEMPOTENCY_ENFORCE = mode; else delete process.env.IDEMPOTENCY_ENFORCE;
   let run: any; let metrics: any;
   jest.isolateModules(() => {
-    jest.doMock('../../src/api/index', () => ({ __esModule: true, default: { OrderService } }));
+    jest.doMock('../../src/api/rpc/index', () => ({ __esModule: true, default: { OrderService } }));
     jest.doMock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: {
       getClientDB: async () => ({ getIdempotencyKeyModel: () => Model }),
       getClientDBForTenant: async () => ({ getIdempotencyKeyModel: () => Model }),
     } }));
-    run = require('../../src/api/RunOperation').default;
+    run = require('../../src/api/rpc/RunOperation').default;
     metrics = require('../../src/platform/runtime/metrics/MetricsRegistry').metricsRegistry;
   });
   return { run: run as (u: any, s: string, o: string, r: any, p?: any, m?: any) => Promise<any>, metrics };

@@ -1,6 +1,6 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 
-// Characterization: backend/src/api/services/admin-service.ts
+// Characterization: backend/src/api/rpc/handlers/admin-service.ts
 // Odak: hiçbir metot userContext / rol kontrolü yapmaz (servis katmanında). BACKLOG C2.
 // ADR-0001 adım 3 sonrası: HTTP'den bu servise artık token'sız ulaşılamaz (authenticate middleware 401; bkz. authenticate.test.ts/auth-pipeline.test.ts).
 // [ADR-0001 adım 5] Yetki kısıtı SERVİS SINIFINDA DEĞİL, RunOperation politika katmanındadır (OPERATION_POLICY.AdminService = tamamı platformAdmin;
@@ -28,8 +28,8 @@ jest.mock('@utils/decorator/cache', () => ({
 const redisMock: any = { info: jest.fn(async () => 'redis_version:7.0\r\nused_memory_human:1M\r\nconnected_clients:2\r\nuptime_in_seconds:10\r\n'), llen: jest.fn(async () => 0), zcard: jest.fn(async () => 0) };
 jest.mock('@services/redis/RedisService', () => ({ RedisService: { getInstance: () => redisMock } }));
 
-import AdminService from '../../../src/api/services/admin-service';
-import Security from '../../../src/api/Security';
+import AdminService from '../../../src/api/rpc/handlers/admin-service';
+import Security from '../../../src/platform/core/security/Security';
 import { makeCentralDb, makeTenantDb } from '../tenant/_fakes';
 
 function chain(result: any) {

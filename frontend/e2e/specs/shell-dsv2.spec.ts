@@ -73,17 +73,17 @@ test.describe('DS-v2 kabuk — kısayollar', () => {
     await page.locator('.workplace-area').focus()
 
     await page.keyboard.press('Control+ArrowLeft')
-    await expect(page.getByRole('tab', { name: 'Sipariş Yönetimi' })).toHaveAttribute('aria-selected', 'true')
+    await expect(page.getByRole('tab', { name: 'Siparişler' })).toHaveAttribute('aria-selected', 'true')
     await expect(page).toHaveURL(/\/orders$/)
 
     await page.keyboard.press('Control+ArrowRight')
-    await expect(page.getByRole('tab', { name: 'İade Yönetimi' })).toHaveAttribute('aria-selected', 'true')
+    await expect(page.getByRole('tab', { name: 'İadeler' })).toHaveAttribute('aria-selected', 'true')
 
     await page.keyboard.press('Alt+1')
     await expect(page.getByRole('tab', { name: 'Anasayfa' })).toHaveAttribute('aria-selected', 'true')
 
     await page.keyboard.press('Alt+3')
-    await expect(page.getByRole('tab', { name: 'İade Yönetimi' })).toHaveAttribute('aria-selected', 'true')
+    await expect(page.getByRole('tab', { name: 'İadeler' })).toHaveAttribute('aria-selected', 'true')
     await page.keyboard.press('Alt+w')
     await expect(page.locator(TAB)).toHaveCount(2)
     // Sabit (pano) sekmesi Alt+W ile kapanmaz.
@@ -100,7 +100,7 @@ test.describe('DS-v2 kabuk — kısayollar', () => {
     const input = page.getByRole('combobox', { name: 'Akıllı arama' })
     await input.fill('iki kelime')
     await page.keyboard.press('Control+ArrowLeft')
-    await expect(page.getByRole('tab', { name: 'Sipariş Yönetimi' })).toHaveAttribute('aria-selected', 'true')
+    await expect(page.getByRole('tab', { name: 'Siparişler' })).toHaveAttribute('aria-selected', 'true')
   })
 
   test('Alt+U üst bölümü daraltır, Ctrl+Shift+F odak modu, Ctrl+K daraltılmışken aramayı gösterir', async ({ page }) => {
@@ -182,10 +182,10 @@ test.describe('DS-v2 kabuk — akıllı arama', () => {
     await page.keyboard.press('Control+k')
     const recent = page.getByRole('group', { name: /Son açılanlar/ })
     await expect(recent).toBeVisible()
-    await expect(recent.getByRole('option').nth(1)).toContainText('Sipariş Yönetimi')
+    await expect(recent.getByRole('option').nth(1)).toContainText('Siparişler')
     await page.keyboard.press('ArrowDown')
     await page.keyboard.press('Enter')
-    await expect(page.getByRole('tab', { name: 'Sipariş Yönetimi' })).toHaveAttribute('aria-selected', 'true')
+    await expect(page.getByRole('tab', { name: 'Siparişler' })).toHaveAttribute('aria-selected', 'true')
   })
 })
 
@@ -198,7 +198,7 @@ test.describe('DS-v2 kabuk — sekme menüsü ve sol menü', () => {
     await openScreen(page, 'CustomerListView')
     await expect(page.locator(TAB)).toHaveCount(4)
 
-    await page.getByRole('tab', { name: 'Sipariş Yönetimi' }).click({ button: 'right' })
+    await page.getByRole('tab', { name: 'Siparişler' }).click({ button: 'right' })
     const menu = page.getByRole('menu', { name: 'Sekme işlemleri' })
     await expect(menu).toBeVisible()
     await expect(menu.getByRole('menuitem', { name: /^Kapat/ })).toBeFocused()
@@ -206,11 +206,11 @@ test.describe('DS-v2 kabuk — sekme menüsü ve sol menü', () => {
     expect(axe.violations).toEqual([])
     await menu.getByRole('menuitem', { name: 'Sağdakileri kapat' }).click()
     await expect(page.locator(TAB)).toHaveCount(2)
-    await expect(page.getByRole('tab', { name: 'Sipariş Yönetimi' })).toHaveAttribute('aria-selected', 'true')
+    await expect(page.getByRole('tab', { name: 'Siparişler' })).toHaveAttribute('aria-selected', 'true')
 
     await openScreen(page, 'ClaimListView')
     // Klavye: sekmeye odaklan + Shift+F10.
-    await page.getByRole('tab', { name: 'İade Yönetimi' }).focus()
+    await page.getByRole('tab', { name: 'İadeler' }).focus()
     await page.keyboard.press('Shift+F10')
     await expect(menu).toBeVisible()
     await menu.getByRole('menuitem', { name: 'Diğerlerini kapat' }).click()
@@ -240,8 +240,8 @@ test.describe('DS-v2 kabuk — sekme menüsü ve sol menü', () => {
     await page.keyboard.press('Control+b')
     const rail = page.locator('.v-navigation-drawer.soft-rail')
     // Rayda düğme kabı 214px genişliğinde ama yalnız 64px'lik şerit görünür; merkeze değil ikonun üstüne gelinir.
-    await rail.locator('button[aria-label="Sipariş Yönetimi"]').hover({ position: { x: 20, y: 18 } })
-    await expect(page.getByRole('tooltip').filter({ hasText: 'Sipariş Yönetimi' })).toBeVisible()
+    await rail.locator('button[aria-label="Siparişler"]').hover({ position: { x: 20, y: 18 } })
+    await expect(page.getByRole('tooltip').filter({ hasText: 'Siparişler' })).toBeVisible()
     const railAxe = await shellAxe(page).analyze()
     expect(railAxe.violations).toEqual([])
     await page.keyboard.press('Control+b')
@@ -283,7 +283,7 @@ test.describe('DS-v2 kabuk — inceleme görselleri', () => {
     await page.screenshot({ path: `${dir}/a2-shell-${tag}-arama.png` })
     await page.keyboard.press('Escape')
 
-    await page.getByRole('tab', { name: 'Sipariş Yönetimi' }).click({ button: 'right' })
+    await page.getByRole('tab', { name: 'Siparişler' }).click({ button: 'right' })
     await page.waitForTimeout(300)
     await page.screenshot({ path: `${dir}/a2-shell-${tag}-sekme-menusu.png` })
     await page.keyboard.press('Escape')
@@ -297,8 +297,8 @@ test.describe('DS-v2 kabuk — inceleme görselleri', () => {
     if (vw >= 1440) {
       await page.keyboard.press('Control+b')
       await page.waitForTimeout(400)
-      await page.locator('.v-navigation-drawer.soft-rail button[aria-label="Sipariş Yönetimi"]').hover()
-      await expect(page.getByRole('tooltip').filter({ hasText: 'Sipariş Yönetimi' })).toBeVisible()
+      await page.locator('.v-navigation-drawer.soft-rail button[aria-label="Siparişler"]').hover()
+      await expect(page.getByRole('tooltip').filter({ hasText: 'Siparişler' })).toBeVisible()
       await page.waitForTimeout(400)
       await page.screenshot({ path: `${dir}/a2-shell-${tag}-ray.png` })
       await page.keyboard.press('Control+b')

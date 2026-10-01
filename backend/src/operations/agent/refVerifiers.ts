@@ -18,7 +18,44 @@ async function existingOrderIds(tid: number, ids: string[]): Promise<Set<string>
     return new Set(rows.map((r) => String(r._id)));
 }
 
+async function existingVariantRefs(tid: number, ids: string[], barcodes: string[]): Promise<{ ids: Set<string>; barcodes: Set<string> }> {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- tembel yukleme (bkz. existingOrderIds)
+    const { DatabaseManagerInstance } = require('@database/DatabaseManager') as typeof import('@database/DatabaseManager');
+    const db = await DatabaseManagerInstance.getClientDB(tid);
+    if (!db) throw new Error('tenant db yok');
+    const or: any[] = [];
+    if (ids.length) or.push({ _id: { $in: ids } });
+    if (barcodes.length) or.push({ barcode: { $in: barcodes } });
+    const rows: Array<{ _id: unknown; barcode?: string }> = or.length ? await db.getVariantModel().find({ $or: or }, { _id: 1, barcode: 1 }).lean() : [];
+    return { ids: new Set(rows.map((r) => String(r._id))), barcodes: new Set(rows.map((r) => String(r.barcode ?? ''))) };
+}
+
+async function openSuggestions(tid: number, ids: string[]): Promise<any[]> {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- tembel yukleme (bkz. existingOrderIds)
+    const { DatabaseManagerInstance } = require('@database/DatabaseManager') as typeof import('@database/DatabaseManager');
+    const db = await DatabaseManagerInstance.getClientDB(tid);
+    if (!db) throw new Error('tenant db yok');
+    return ids.length ? (db as any).getPriceSuggestionModel().find({ _id: { $in: ids }, status: 'open', current: true }, { _id: 1, barcode: 1, beforePrice: 1, afterPrice: 1, buyboxPrice: 1 }).lean() : [];
+}
+
 export const REF_VERIFIERS: Readonly<Record<string, Verifier>> = {
+    // PRC-R2: onay kartı yalnız bu tenant'ta VAR OLAN ve hâlâ AÇIK öneriler için (uydurma/kapanmış kimlik = kart yok).
+    'pricing.suggestions.apply': async (tid, input) => {
+        const raw: unknown[] = Array.isArray(input?.suggestionIds) ? input.suggestionIds : [];
+        const unique = [...new Set(raw.filter((x): x is string => typeof x === 'string'))];
+        const wellFormed = unique.filter((id) => OBJECT_ID.test(id));
+        const found = new Set((await openSuggestions(tid, wellFormed)).map((r) => String(r._id)));
+        return unique.filter((id) => !found.has(id));
+    },
+    // PRC-R0: maliyet yazımı — kart yalnız bu tenant'ta VAR OLAN varyantlar için (variantId ya da barkod).
+    'pricing.cost.set': async (tid, input) => {
+        const items: any[] = Array.isArray(input?.items) ? input.items : [];
+        const ids = [...new Set(items.map((x) => x?.variantId).filter((x): x is string => typeof x === 'string'))];
+        const bcs = [...new Set(items.map((x) => x?.barcode).filter((x): x is string => typeof x === 'string' && x !== ''))];
+        const wellFormed = ids.filter((id) => OBJECT_ID.test(id));
+        const found = (wellFormed.length || bcs.length) ? await existingVariantRefs(tid, wellFormed, bcs) : { ids: new Set<string>(), barcodes: new Set<string>() };
+        return [...ids.filter((id) => !found.ids.has(id)), ...bcs.filter((b) => !found.barcodes.has(b))];
+    },
     'orders.approve': async (tid, input) => {
         const raw: unknown[] = Array.isArray(input?.orderIds) ? input.orderIds : [];
         const ids = raw.filter((x): x is string => typeof x === 'string');
@@ -35,4 +72,25 @@ export async function dbVerifyRefs(ctx: AgentCtx, capId: string, input: unknown)
     if (!v) return undefined;
     const missing = await v(ctx.tid, input);
     return missing.length ? { code: 'ENTITY_NOT_FOUND', missing } : undefined;
+}
+
+/** Onay kartı ÖNİZLEMESİ (sunucu verisi; model metni değil): yetenek başına önce → sonra satırları. Tanımsız yetenekte yalnız girdiden türetilen önizleme. */
+export interface ChangeLine { label: string; from?: string; to: string }
+type Previewer = (tid: number, input: any) => Promise<ChangeLine[]>;
+const tl = (n: unknown) => (typeof n === 'number' ? `${n.toFixed(2)} TRY` : '-');
+
+export const CHANGE_PREVIEWS: Readonly<Record<string, Previewer>> = {
+    // PRC-R2: her önerinin şimdiki → önerilen fiyatı (buybox fiyatıyla). Uygulamada sigorta taze veriyle yeniden çalışır.
+    'pricing.suggestions.apply': async (tid, input) => {
+        const ids = (Array.isArray(input?.suggestionIds) ? input.suggestionIds : []).filter((x: unknown): x is string => typeof x === 'string' && OBJECT_ID.test(x));
+        const rows = await openSuggestions(tid, [...new Set<string>(ids)]);
+        return rows.slice(0, 20).map((r) => ({ label: `${String(r.barcode ?? '').slice(0, 60)} (buybox ${tl(r.buyboxPrice)})`, from: tl(r.beforePrice), to: tl(r.afterPrice) }));
+    },
+};
+
+/** `ToolRuntime.previewChanges` canli uygulamasi; hata/tanimsiz -> undefined (kart girdiden turetilen ozetle devam eder). */
+export async function dbPreviewChanges(ctx: AgentCtx, capId: string, input: unknown): Promise<ChangeLine[] | undefined> {
+    const p = CHANGE_PREVIEWS[capId];
+    if (!p) return undefined;
+    try { return await p(ctx.tid, input); } catch { return undefined; }
 }

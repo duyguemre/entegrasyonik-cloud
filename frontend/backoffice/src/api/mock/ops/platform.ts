@@ -5,6 +5,7 @@
  */
 import type { CatalogItem, ConfigDiffEntry, ConfigRevision, PlatformAdmin } from '../../contract'
 import { MockHttpError } from '../errors'
+import { BULK_QUOTA_KEY, COMPETITION_CATALOG, COMPETITION_FLAGS, COMPETITION_LIMITS, PRIORITIES } from './competitionCatalog'
 import { DAY, HOUR, MIN, UNHANDLED, conflict, hex24, iso, notFound, strict, validation, type MockCtx, type MockDomain } from './context'
 
 const T = (tr: string, en: string) => ({ tr, en })
@@ -36,7 +37,8 @@ export function setMockFeatureFlags(on: boolean) {
   flagsOn = on
 }
 export function platformCatalog(): CatalogItem[] {
-  return flagsOn ? [...PLATFORM_CATALOG, ...SAMPLE_FLAGS] : PLATFORM_CATALOG
+  const real = [...PLATFORM_CATALOG, ...COMPETITION_FLAGS, ...COMPETITION_CATALOG]
+  return flagsOn ? [...real, ...SAMPLE_FLAGS] : real
 }
 
 const PLAIN = /^[^<>\u0000-\u001f\u007f]*$/
@@ -58,6 +60,12 @@ function validate(key: string, v: unknown): string | null {
     case 'ui.reportPollMs':
       return Number.isInteger(v) && (v as number) >= 3000 && (v as number) <= 60000 ? null : '3000-60000 arası tam sayı'
   }
+  if (key === BULK_QUOTA_KEY) return v === 'per_approval' || v === 'per_item' ? null : 'per_approval | per_item'
+  if (def.group === 'platform.pricing' && def.type === 'enum') return (PRIORITIES as readonly string[]).includes(v as string) ? null : 'changed_first | stocked_only | oldest_first'
+  if (def.group === 'platform.pricing' && def.type === 'int') {
+    const r = def.safeRange ?? COMPETITION_LIMITS.budgetPerMin
+    return Number.isInteger(v) && (v as number) >= r.min && (v as number) <= r.max ? null : `${r.min}–${r.max} arası tam sayı olmalı`
+  }
   if (def.type === 'bool') return typeof v === 'boolean' ? null : 'true/false olmalı'
   if (def.type === 'stringList') return Array.isArray(v) && v.length <= 500 && v.every((x) => typeof x === 'string' && /^\d{1,12}$/.test(x)) ? null : 'Tenant numaraları listesi'
   return null
@@ -75,7 +83,7 @@ function diffOf(from: Record<string, unknown>, to: Record<string, unknown>): Con
 export const MOCK_INVITE_TOKEN = 'ornekDavetBileti0000000000000000000000000000'
 const PASSWORD_POLICY = /^(?=.*[A-Za-zÇĞİÖŞÜçğıöşü])(?=.*\d).{12,128}$/
 
-export function createPlatformMock(t0: number, selfEmail: string): MockDomain {
+export function createPlatformMock(t0: number, selfEmail: string): MockDomain & { seedRevision(patch: Record<string, unknown>, daysAgo: number, reason: string): void } {
   const admin1 = hex24(5001)
   const revisions: Revision[] = []
   const add = (overrides: Record<string, unknown>, daysAgo: number, reason: string, origin = 'manual') => {
@@ -112,6 +120,11 @@ export function createPlatformMock(t0: number, selfEmail: string): MockDomain {
   const isSelf = (a: PlatformAdmin, ctx: MockCtx) => a.email === (ctx.actorEmail || selfEmail)
 
   return {
+    /** Sahne kurgusu (`__boMock`): yayınlanmış değerlerin üstüne bir sürüm ekler (taslak/diğer sürümler etkilenmez). */
+    seedRevision(patch, daysAgo, reason) {
+      const prev = published()?.overrides ?? {}
+      add({ ...prev, ...patch }, daysAgo, reason)
+    },
     handle(op, body, ctx) {
       switch (op) {
         case 'IntegrationConfigService/getEffectiveConfig': {

@@ -4,8 +4,8 @@
 // bakim modu (`maintenanceGuard` ile ayni ilke: read/propose serbest), kill-switch (`features.agent.disabledCapabilities`).
 // Entitlement (plan/abonelik) asenkron oldugu icin ayridir (tools.ts `entitled` kancasi + RunOperation `enforceEntitlementGuard`).
 import { can, type AuthzActor } from '@platform/core/authz/can';
-import { isLiveReadonlyBlockedRpc } from '../api/liveReadonlyRpcGuard';
-import { impersonationDenial } from '../api/impersonationPolicy';
+import { isLiveReadonlyBlockedRpc } from '../api/rpc/liveReadonlyRpcGuard';
+import { impersonationDenial } from '../api/rpc/impersonationPolicy';
 import type { CapabilityDef, RpcBinding } from './types';
 import { rpcBindingsOf } from './index';
 

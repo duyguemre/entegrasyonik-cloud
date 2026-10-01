@@ -34,7 +34,10 @@ export type SettingGroup =
     | 'platform.announcement'
     | 'platform.maintenance'
     | 'platform.features'
-    | 'platform.ui';
+    | 'platform.ui'
+    | 'platform.alerts'
+    // PRC-CFG (K57-S5): rekabet modülü ayarları
+    | 'platform.pricing';
 
 /** `platform` (ADR-0031): YALNIZ `_platform` hedefinde geçerli; `_engine`/entegrasyon çözümlemesinde görünmez. */
 export type SettingScope = 'engine' | 'integration' | 'engine+integration' | 'platform';

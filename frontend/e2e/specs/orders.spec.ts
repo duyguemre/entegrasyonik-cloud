@@ -19,7 +19,7 @@ test.describe('P1 — Siparişler (OrderListView)', () => {
     await openScreen(page, 'OrderListView')
 
     await expect(page.locator('.orderListView')).toBeVisible()
-    await expect(page.getByLabel('Sipariş No, Müşteri Adı veya Telefon Ara').first()).toBeVisible()
+    await expect(page.getByLabel('Sipariş no, müşteri adı veya telefon ara').first()).toBeVisible()
     await expect(page.getByText('E2E-100001')).toBeVisible()
     await expect(page.getByText('E2E-100002')).toBeVisible()
   })

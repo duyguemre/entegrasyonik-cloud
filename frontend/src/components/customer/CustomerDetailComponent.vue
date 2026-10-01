@@ -9,12 +9,12 @@
   Uydurma veri yok: metrikler yalnız backend alanları (customerCard.ts).
 -->
 <template>
-    <EkDetailSheet v-model="isOpen" identity="Müşteri kartı">
+    <EkRecordSheet v-model="isOpen" kind="Müşteri kartı" :identity="sheetIdentity">
         <template v-if="customer" #status>
             <EkStatusChip :tone="entry.tone" :label="$t(entry.labelKey)" />
         </template>
-        <template v-if="customer" #actions>
-            <span v-if="!anonymized" class="ek-cust-editbtn">
+        <template v-if="customer" #header-actions>
+            <span v-if="!anonymized && !editing" class="ek-cust-editbtn">
                 <EkButton tone="secondary" :icon="icons.edit" aria-label="Profili düzenle" :aria-pressed="editing ? 'true' : 'false'" @click="toggleEdit">Düzenle</EkButton>
             </span>
             <!-- C1.6: yıkıcı eylem ⋯ menüsünde, en sonda (admin; asıl sınır backend `customers.anonymize` minTier admin). -->
@@ -25,16 +25,16 @@
             </EkContextMenu>
         </template>
 
-        <EkProblemState v-if="error && !loading" size="inline" title="Müşteri kartı açılamadı"
-            cause="Müşteri kaydı şu anda getirilemedi; bağlantı ya da sunucu kaynaklı geçici bir sorun olabilir."
-            action="Birkaç saniye sonra yeniden deneyin. Sorun sürerse listeyi yenileyin." retryable autofocus @retry="emit('retry')" />
+        <!-- FR3-12: düzenleme eylemleri sabit alt çubukta (form gövdede kalır). -->
+        <template v-if="customer && editing" #actions>
+            <EkButton tone="secondary" @click="cancelEdit">Vazgeç</EkButton>
+            <EkButton intent="save" @click="saveCustomer" />
+        </template>
 
-        <EkSkeleton v-else-if="loading || !customer" type="detail" />
-
-        <div v-else class="ek-cust-detail">
+        <template v-if="customer && !loading && !error" #summary>
             <section class="ek-cust-profile" aria-label="Müşteri profili">
                 <div class="ek-cust-profile__head">
-                    <CustomerIdentity size="lg" as="h2" :first-name="customer.firstName" :last-name="customer.lastName"
+                    <CustomerIdentity size="lg" as="h3" :first-name="customer.firstName" :last-name="customer.lastName"
                         :company-name="customer.companyName" :is-corporate="customer.isCorporate" :channel="originChannel"
                         :created-at="customer.createdAt">
                         <template #tags>
@@ -45,7 +45,15 @@
                 </div>
                 <CustomerMetrics v-if="metrics" :summary="metrics" class="ek-cust-profile__metrics" />
             </section>
+        </template>
 
+        <EkProblemState v-if="error && !loading" size="inline" title="Müşteri kartı açılamadı"
+            cause="Müşteri kaydı şu anda getirilemedi; bağlantı ya da sunucu kaynaklı geçici bir sorun olabilir."
+            action="Birkaç saniye sonra yeniden deneyin. Sorun sürerse listeyi yenileyin." retryable autofocus @retry="emit('retry')" />
+
+        <EkSkeleton v-else-if="loading || !customer" type="detail" />
+
+        <div v-else class="ek-cust-detail">
             <EkPageTabs v-model="tab" label="Müşteri ayrıntıları" :tabs="[
                 { value: 'general', label: 'Genel bakış', icon: 'mdi-account-details-outline' },
                 { value: 'orders', label: 'Siparişler', icon: 'mdi-cart-outline', count: customer.recentOrders?.length || 0 },
@@ -63,10 +71,6 @@
                                 <v-text-field v-model="editData.phone" label="Telefon" autocomplete="off" inputmode="tel" />
                                 <v-text-field v-model="editData.email" label="E-posta" autocomplete="off" type="email" />
                             </EkFormSection>
-                            <div class="ek-cust-edit__bar">
-                                <EkButton tone="secondary" @click="cancelEdit">Vazgeç</EkButton>
-                                <EkButton tone="primary" type="submit" :icon="icons.save">Kaydet</EkButton>
-                            </div>
                         </form>
                         <div class="ek-cust-detail__cards">
                             <EkInfoCard title="İletişim" icon="mdi-card-account-phone-outline">
@@ -84,6 +88,7 @@
                 </v-window-item>
 
                 <v-window-item value="orders">
+                    <EkDetailPanel title="Son siparişler" icon="mdi-cart-outline" :description="recentText(customer.recentOrders?.length)" flush>
                     <EkDataTable v-if="customer.recentOrders?.length" :items="customer.recentOrders" row-key="_id" :columns="orderColumns">
                         <template #cell-platform="{ item }"><EkChannelDot :code="item.integrationCode" variant="plain" /></template>
                         <template #cell-date="{ item }"><span class="ek-num">{{ formatDate(item.dates?.orderDate || item.createdAt) }}</span></template>
@@ -91,9 +96,11 @@
                         <template #cell-status="{ item }"><EkStatusChip :tone="orderStatusEntry(item.internalStatus).tone" :label="$t(orderStatusEntry(item.internalStatus).labelKey)" /></template>
                     </EkDataTable>
                     <EkEmptyState v-else variant="no-data" title="Sipariş kaydı yok" message="Bu müşteriye ait henüz bir sipariş bulunmuyor." />
+                    </EkDetailPanel>
                 </v-window-item>
 
                 <v-window-item value="claims">
+                    <EkDetailPanel title="Son iadeler" icon="mdi-undo-variant" :description="recentText(customer.recentClaims?.length)" flush>
                     <EkDataTable v-if="customer.recentClaims?.length" :items="customer.recentClaims" row-key="_id" :columns="claimColumns">
                         <template #cell-platform="{ item }"><EkChannelDot :code="item.integrationCode" variant="plain" /></template>
                         <template #cell-date="{ item }"><span class="ek-num">{{ formatDate(item.externalCreatedAt || item.createdAt) }}</span></template>
@@ -102,15 +109,16 @@
                         <template #cell-status="{ item }"><EkStatusChip :tone="claimStatusEntry(item.internalStatus).tone" :label="$t(claimStatusEntry(item.internalStatus).labelKey)" /></template>
                     </EkDataTable>
                     <EkEmptyState v-else variant="no-data" title="İade kaydı yok" message="Bu müşteriye ait henüz bir iade talebi bulunmuyor." />
+                    </EkDetailPanel>
                 </v-window-item>
             </v-window>
         </div>
-    </EkDetailSheet>
+    </EkRecordSheet>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { EkPageTabs, EkDetailSheet, EkStatusChip, EkEmptyState, EkSkeleton, EkProblemState, EkInfoCard, EkFormSection, EkBadge, EkChannelDot, EkDataTable, type EkTableColumn, EkContextMenu, EkButton } from '@entegrasyonik/ui/components'
+import { EkPageTabs, EkRecordSheet, EkDetailPanel, EkStatusChip, EkEmptyState, EkSkeleton, EkProblemState, EkInfoCard, EkFormSection, EkBadge, EkChannelDot, EkDataTable, type EkTableColumn, EkContextMenu, EkButton } from '@entegrasyonik/ui/components'
 import type { EkMenuGroup, EkMenuItem } from '@entegrasyonik/ui/components';
 ;
 ;
@@ -211,6 +219,13 @@ const saveCustomer = () => {
     });
 };
 
+const sheetIdentity = computed(() => {
+    const c = props.customer;
+    if (!c) return 'Müşteri';
+    if (c.isCorporate && c.companyName) return c.companyName;
+    return [c.firstName, c.lastName].filter(Boolean).join(' ') || c.companyName || 'Müşteri';
+});
+const recentText = (n?: number) => (n ? `${n} kayıt · en yeniden eskiye` : undefined);
 const anonymized = computed(() => isAnonymized(props.customer?.firstName));
 const isVip = computed(() => !!props.customer?.insights?.isVip || (props.customer?.tags ?? []).includes('VIP'));
 // Kanal kökeni: ilk eşleşen platform kimliği; yoksa "Sistem" (manuel kayıt).
@@ -234,7 +249,7 @@ const claimStatusEntry = (status: ClaimInternalStatusEnum) => CLAIM_STATUS_TONE[
 .ek-cust-detail {
     display: flex;
     flex-direction: column;
-    gap: var(--ek-space-5);
+    gap: var(--ek-space-4);
 }
 
 /* Profil kartı: tek çerçeve (ince kenarlık + yumuşak gölge), alt bantta metrikler — kart içinde kart yok. */
@@ -292,12 +307,6 @@ const claimStatusEntry = (status: ClaimInternalStatusEnum) => CLAIM_STATUS_TONE[
     border: 1px solid var(--ek-color-action-border);
     border-radius: var(--ek-radius-card);
     background: var(--ek-color-surface);
-}
-
-.ek-cust-edit__bar {
-    display: flex;
-    justify-content: flex-end;
-    gap: var(--ek-space-2);
 }
 
 @media (max-width: 599px) {

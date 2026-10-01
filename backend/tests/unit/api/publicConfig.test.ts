@@ -11,7 +11,7 @@ import { configurePublicConfigRoute, buildPublicConfig, PUBLIC_CONFIG_CACHE_CONT
 import { setTargetOverride, resetPlatformOverrideStoreForTests } from '@integration/config/platformOverrideStore';
 import { listSettings } from '@integration/config/catalog';
 import { envKeys, resetConfigForTests } from '@config';
-import { isOpenRoute } from '@api/authenticate';
+import { isOpenRoute } from '@api/http/authenticate';
 import { errorHandler } from '@api/http/errorEnvelope';
 import { DatabaseManagerInstance } from '@database/DatabaseManager';
 
@@ -66,7 +66,9 @@ describe('GET /api/public-config', () => {
 
   it('exposure taşımayan bir katalog anahtarı yanıta girmez; katalogdaki her scope=platform anahtar exposure taşımalı (yeni anahtar eklenince bilinçli karar)', () => {
     // `features.*` (B11 ozellik bayraklari) varsayilan yoneticiye ozeldir; `clientVisible` ile bilincli acilir (catalog/features.ts).
-    const platformKeys = listSettings().filter((s) => s.scope === 'platform' && !s.key.startsWith('features.'));
+    // `alerts.*` (ADR-0029 NB8 alarm esikleri) de yoneticiye ozeldir (catalog/alerts.ts); public-config'e girmez.
+    // `pricing.*` (PRC-CFG rekabet ayarlari) de yoneticiye ozeldir (catalog/pricing.ts); public-config'e girmez.
+    const platformKeys = listSettings().filter((s) => s.scope === 'platform' && !s.key.startsWith('features.') && !s.key.startsWith('alerts.') && !s.key.startsWith('pricing.'));
     expect(platformKeys.filter((s) => s.exposure !== 'public').map((s) => s.key)).toEqual([]);
     const body = buildPublicConfig();
     const nonPublic = listSettings().filter((s) => s.exposure !== 'public').map((s) => s.key);

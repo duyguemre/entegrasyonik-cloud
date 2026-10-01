@@ -72,6 +72,12 @@ export const VariantSchema = new mongoose.Schema({
         }, required: true
     },
     images: { type: [{ type: mongoose.Schema.Types.Mixed, required: false }], required: false },
+    // PRC-R0 (K57-S4): birim maliyet (TL, KDV HARİÇ alış). Yoksa kâr hesaplanmaz, rekabet kuralı/önerisi kapalıdır. Yalnız
+    // `PricingService/setVariantCosts` yazar (genel varyant kaydı bu alanları süzer). Göç: 0021 (kapsam indeksi; veri dönüşümü yok).
+    costPrice: { type: Number, required: false },
+    costUpdatedAt: { type: Date, required: false },
+    // PRC-R1: kanal başına güncel buybox durumu (`competition.trendyol`), yalnız buybox okuma işi yazar. Geçmiş `BuyboxSnapshots`'ta.
+    competition: { type: Object, required: false },
     transferFromPlatformId: { type: mongoose.Schema.Types.ObjectId, required: false },
 
 }, {
@@ -106,3 +112,8 @@ VariantSchema.pre('save', function (next) {
     }
     next();
 });
+
+// PRC-R0: maliyet kapsamı sayımı (`costPrice` sayı olan varyantlar) için kısmi indeks. PRC-R1: ürün listesi buybox filtresi.
+// Uygulama: backend/migrations/0021-pricing-competition-tenant.js (onaylı göç, ÇALIŞTIRILMADI). Ad ve tanım göçle BİREBİR.
+VariantSchema.index({ costPrice: 1 }, { name: 'costPrice_number', partialFilterExpression: { costPrice: { $type: 'number' } } });
+VariantSchema.index({ 'competition.trendyol.status': 1 }, { name: 'competition_trendyol_status', partialFilterExpression: { 'competition.trendyol.status': { $exists: true } } });

@@ -113,7 +113,8 @@ export interface Harness {
 }
 
 export function buildHarness(opts: { familyLimit?: (f: string) => boolean; onConnected?: OAuthServiceDeps['onConnected'] } = {}): Harness {
-    const clock = { t: Date.UTC(2026, 9, 1, 12, 0, 0) };
+    // Gerçek saat: verifyOAuthAccessToken jwt.verify ile gerçek zamanı kullanır; sabit tarih 15 dk sonra "süresi dolmuş" olurdu.
+    const clock = { t: Date.now() };
     const now = () => clock.t;
     const store = new MemoryOAuthStore();
     const kv = new MemoryKv(now);

@@ -1,7 +1,7 @@
 import { describe, it, expect, jest } from '@jest/globals';
 import bodyParser from 'body-parser';
 import { errorHandler, notFoundHandler } from '../../../src/api/http/errorEnvelope';
-import { sendError } from '../../../src/api/ApiManager';
+import { sendError } from '../../../src/api/rpc/ApiManager';
 import { AppError } from '../../../src/platform/core/errors';
 
 // [ADR-0030 X5] JSON 404 + son hata işleyici (soket açmadan, sahte req/res): zarf `{ error, code, requestId }`, 500'de sızıntı yok.

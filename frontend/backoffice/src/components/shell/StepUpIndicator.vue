@@ -143,4 +143,20 @@ async function verifyNow() {
 .bo-stepup-menu__text strong {
   color: var(--ek-color-content-strong);
 }
+
+/* MOB-06: telefonda görsel hap 32 px kalır, dokunma alanı 44 px (görünmez ::after). */
+@media (max-width: 599.98px) {
+  .bo-stepup {
+    position: relative;
+    height: 32px;
+    margin-inline: 2px;
+    padding: 0 var(--ek-space-2);
+  }
+
+  .bo-stepup::after {
+    content: '';
+    position: absolute;
+    inset: -6px -4px;
+  }
+}
 </style>

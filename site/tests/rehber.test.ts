@@ -24,6 +24,7 @@ import { HUB, HUB_FAQ, MARKET_HIGHLIGHT, PRINCIPLES } from '../src/data/kb/hub'
 import { kbLinks, plainKb } from '../src/lib/kb-render'
 import { AVAILABLE_INTEGRATION_CODES, integrations } from '../src/data/integrations'
 import { primaryNav, published } from '../src/data/navigation'
+import { COMPETITOR_NAMES } from './fixtures/competitors'
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const SITE = 'https://site.example.test'
@@ -57,11 +58,6 @@ const ABSOLUTE_PREFIXES = [
 ]
 const UNPROVEN_INFRA = ['iso 27001', 'soc 2', 'tier 3', 'uptime', 'sla taahhut', '%99', 'veri merkezi', 'onayli entegrator', 'resmi ortak', 'sertifikali']
 
-/** Rakip / entegratör adları (docs/research/COMPETITORS_2026-09.md + KB §14 kaynakları). Sitede geçmez. */
-const COMPETITOR_NAMES = [
-  'Entegra', 'entegrabilisim', 'Sopyo', 'Yengeç', 'Paraşüt', 'BirFatura', 'Sovos', 'ikas', 'Sentos', 'Dopigo', 'StockMount', 'Ticimax', 'T-Soft',
-  'Akinon', 'Kolaysoft', 'Logo İşbaşı',
-]
 /** KB §14: [RAKİP-ADI] etiketli + yalnız tanıtım (S50) kaynakları — defterde ve sitede bulunamaz. */
 const BANNED_KB_SOURCES = ['S9', 'S10', 'S11', 'S12', 'S31', 'S33', 'S34', 'S38', 'S42', 'S48', 'S49', 'S50']
 const BANNED_DOMAINS = ['parasut.com', 'birfatura.com', 'sovos.com', 'ikas.com', 'milliyet.com.tr/advertorial', 'ideasoft.com.tr/e-ticaret-icin', 'ideasoft.com.tr/hepsiburada', 'ideasoft.com.tr/amazonda']

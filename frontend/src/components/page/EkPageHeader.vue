@@ -19,7 +19,9 @@
   <header class="ek-page-header">
     <EkPageBar :section="section" :section-icon="sectionIcon" :trail="trail" :record="record" :title="title" :description="description" :tips="tips" :meta="meta"
       :refreshable="refreshable" :refreshing="refreshing" :last-updated="lastUpdated" @refresh="emit('refresh')">
-      <template v-if="primaryAction || secondaryActions?.length || overflowActions?.length" #actions>
+      <template v-if="toolsId || primaryAction || secondaryActions?.length || overflowActions?.length" #actions>
+        <!-- P03: sekmeli ekranda etkin sekmenin araç satırı (arama + eylemler + yenile) buraya taşınır (listTools.ts). -->
+        <div v-if="toolsId" :id="toolsId" class="ek-page-header__tools" />
         <v-btn
           v-for="action in secondaryActions"
           :key="action.label"
@@ -97,6 +99,8 @@ defineProps<{
   refreshable?: boolean
   refreshing?: boolean
   lastUpdated?: Date | string | number | null
+  /** P03: sekme araç satırı yuvasının DOM kimliği (bkz. `listTools.ts`). */
+  toolsId?: string
 }>()
 const emit = defineEmits<{ refresh: [] }>()
 </script>
@@ -107,5 +111,9 @@ const emit = defineEmits<{ refresh: [] }>()
   flex-direction: column;
   width: 100%;
   min-width: 0;
+}
+
+.ek-page-header__tools {
+  display: contents;
 }
 </style>

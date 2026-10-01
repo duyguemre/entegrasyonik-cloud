@@ -8,6 +8,8 @@ delete process.env.JWT_SECRET_PREVIOUS;
 
 // ADR-0001 Karar 11: testlerde audit kaydı varsayılan olarak yazılmaz (gerçek DB'ye bağlanılmasın); audit testleri AuditLogger.setSink ile açar.
 process.env.AUDIT_LOG_DISABLED = 'true';
+// MOB-08: günlük kullanım kaydı testlerde DB'ye gitmez (testler setUsageRecorderForTests ile enjekte eder).
+process.env.USAGE_RECORD_DISABLED = 'true';
 
 // ADR-0006 Karar 1: testlerde IntegrationCallMetrics varsayılan olarak yazılmaz (gerçek DB'ye bağlanılmasın); metrik testleri IntegrationCallMetrics.setSink ile açar.
 process.env.INTEGRATION_METRICS_DISABLED = 'true';

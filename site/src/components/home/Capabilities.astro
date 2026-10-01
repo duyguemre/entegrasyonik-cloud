@@ -14,6 +14,13 @@
  *   - `secret-encryption`: girilen anahtar -> kilit -> şifreli kasada -> ekranda maskeli (ELEV: teknik önek/algoritma adı görselde yok, K44)
  *   - `tenant-isolation`: her müşteri hesabı kendi veritabanına bağlanır
  * Görseller örnek arayüzdür (aria-hidden; S15-C: ayrı "Örnek görünüm" etiketi yok); uydurma müşteri/ölçüm YOK.
+ *
+ * S27a (SR4 madde 5–6, N3, N9) — KARAR: "Yetenekler" ve "Günlük işler" BİRLEŞTİ. Gerekçe: ikisi de aynı sütuna
+ * (Kontrol) hizmet ediyor ve aynı kayıttan besleniyordu; ayrı başlıkla iki katman ziyaretçiye "ikinci bir yetenek
+ * listesi" gibi okunuyordu. Artık tek bölüm, tek başlık: üstte üç vitrin karosu (rezervasyon, birleşik sipariş, tek
+ * merkez), altında aynı bölümün içinde kompakt "Günlük işleriniz de aynı ekranda" listesi (ikon + başlık + tek satır;
+ * kart/illüstrasyon yok). Şifreli anahtar ve izole veri karoları (`secret-encryption`, `tenant-isolation`) Güvenlik
+ * bölümüne taşındı (orada tek kez anlatılır). Bento karolarının sürekli döngüleri kaldırıldı: yalnızca tek seferlik giriş.
  */
 import Section from '../Section.astro'
 import SectionHeading from './SectionHeading.astro'
@@ -22,7 +29,6 @@ import { getPublicCapabilities, type PublicProductCapability } from '../../data/
 import { getPublicIntegrations, type CapabilityKey } from '../../data/integrations'
 
 const all = getPublicCapabilities('core')
-const security = getPublicCapabilities('security')
 const byId = (list: PublicProductCapability[], id: string): PublicProductCapability => {
   const c = list.find((x) => x.id === id)
   if (!c) throw new Error(`Yetenek kaydı bulunamadı: ${id}`)
@@ -32,8 +38,6 @@ const homeOf = (c: PublicProductCapability) => c.home ?? { title: c.title, line:
 
 const stock = byId(all, 'stock-reservation')
 const orders = byId(all, 'unified-orders')
-const secrets = byId(security, 'secrets-encryption')
-const tenant = byId(security, 'tenant-database')
 const spotlightIds = new Set([stock.id, orders.id])
 const rest = all.filter((c) => !spotlightIds.has(c.id))
 
@@ -47,19 +51,6 @@ const ICONS: Record<string, 'stock' | 'layers' | 'orders' | 'returns' | 'chat' |
   'shipping-invoice-notice': 'notice',
   'erp-read': 'plug',
 }
-
-// "Günlük işleriniz için" kartlarında küçük, canlı illüstrasyon (S13-C). Yalnızca biçim/iskelet: metin, sayı veya
-// kanal adı taşımaz; kanal noktaları kaydın `channels` listesinden (isimsiz renk).
-type Art = 'sync' | 'returns' | 'chat' | 'finance' | 'ship' | 'erp'
-const ARTS: Record<string, Art> = {
-  'multi-channel-products': 'sync',
-  returns: 'returns',
-  questions: 'chat',
-  finance: 'finance',
-  'shipping-invoice-notice': 'ship',
-  'erp-read': 'erp',
-}
-const FIN_BARS = [0.45, 0.7, 0.55, 0.85, 0.6, 1]
 
 const integrations = getPublicIntegrations()
 const marketplaceCodes = getPublicIntegrations('marketplace').map((i) => i.code)
@@ -254,156 +245,25 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     </article>
 
     {/* D: şifreli anahtarlar */}
-    <article class="tile tile--vault" aria-labelledby="spot-vault-title" data-tilt data-scene="tile">
-      <div class="tile__copy" data-reveal>
-        <span class="tile__icon"><Icon name="lock" size="md" /></span>
-        <h3 id="spot-vault-title" class="tile__title">{secrets.title}</h3>
-        <p class="tile__text">{secrets.summary}</p>
-      </div>
-      <div class="tile__frame" data-reveal>
-        <div class="vault" data-scene="secret-encryption" aria-hidden="true">
-          <div class="vault__row">
-            <span class="vault__label">Girdiğiniz anahtar</span>
-            <span class="vault__field" data-part="plain"><Icon name="key" size="sm" />••••••••••••••••</span>
-          </div>
-          <div class="vault__step" data-part="lock">
-            <Icon name="lock" size="md" />
-            <span class="vault__algo" data-part="algorithm">Şifrelenir</span>
-          </div>
-          <div class="vault__row">
-            <span class="vault__label">Kasada</span>
-            <span class="vault__field vault__field--cipher" data-part="cipher">
-              <span class="vault__bars"><i data-part="bar"></i><i data-part="bar"></i><i data-part="bar"></i><i data-part="bar"></i></span>
+  </div>
+
+  {/* S27a (SR4 madde 6): "Günlük işleriniz için" ayrı bölüm/katman olmaktan çıktı — aynı bölümde kompakt liste. */}
+  <div class="daily" data-testid="daily">
+    <h3 class="daily__title" data-testid="more-title">Günlük işleriniz de aynı ekranda</h3>
+    <ul class="daily__list" data-scene="reveal" data-testid="capability-grid">
+      {
+        rest.map((c) => (
+          <li class="daily__item" data-part="capability" data-id={c.id} data-reveal>
+            <span class="daily__icon" aria-hidden="true"><Icon name={ICONS[c.id] ?? 'layers'} size="sm" /></span>
+            <span class="daily__body">
+              <strong class="daily__name">{homeOf(c).title}</strong>
+              <span class="daily__line">{homeOf(c).line}</span>
             </span>
-          </div>
-          <div class="vault__row">
-            <span class="vault__label">Ekranlarınızda</span>
-            <span class="vault__field" data-part="masked"><Icon name="eye" size="sm" />••••••••<em class="vault__hidden">gizli</em></span>
-          </div>
-          <span class="vault__rail"><i class="vault__spark"></i></span>
-        </div>
-      </div>
-    </article>
-
-    {/* E: çoklu kiracı */}
-    <article class="tile tile--tenant" aria-labelledby="spot-tenant-title" data-tilt data-scene="tile">
-      <div class="tile__copy" data-reveal>
-        <span class="tile__icon"><Icon name="database" size="md" /></span>
-        <h3 id="spot-tenant-title" class="tile__title">{tenant.title}</h3>
-        <p class="tile__text">{tenant.summary}</p>
-      </div>
-      <div class="tile__frame" data-reveal>
-        <div class="tenant" data-scene="tenant-isolation" aria-hidden="true">
-          <div class="tenant__cols">
-            {
-              [1, 2, 3].map((n) => (
-                <div class="tenant__col" data-part="tenant-col">
-                  {n > 1 && <span class="tenant__wall"><Icon name="shield" size="sm" /></span>}
-                  <span class="tenant__acct" data-part="tenant-acct"><Icon name="users" size="md" /><span>İşletme</span></span>
-                  <span class="tenant__link" data-part="tenant-link"></span>
-                  <span class="tenant__db" data-part="tenant-db"><Icon name="database" size="md" /><span>İzole alan</span><span class="tenant__rows"><i></i><i></i><i></i></span></span>
-                </div>
-              ))
-            }
-          </div>
-          <p class="tenant__platform" data-part="tenant-platform"><Icon name="shield" size="sm" />Her işletmenin verisi yalnızca kendisine ait</p>
-        </div>
-      </div>
-    </article>
-  </div>
-
-  <div class="more">
-    <h3 class="more__title" data-testid="more-title">Günlük işleriniz için</h3>
-    <p class="more__lead">Operasyonel verimliliği artıran araçlar, aynı panelde.</p>
-  </div>
-
-  <ul class="caps" data-scene="reveal" data-testid="capability-grid">
-    {
-      rest.map((c) => {
-        const art = ARTS[c.id]
-        const chans = c.channels.slice(0, 5)
-        return (
-          <li class="cap" data-part="capability" data-id={c.id} data-reveal data-tilt>
-            <div class="cap__head">
-              <span class="cap__icon"><Icon name={ICONS[c.id] ?? 'layers'} size="md" /></span>
-              {chans.length > 0 && (
-                <span class="cap__dots" aria-hidden="true">
-                  {chans.map((ch) => (
-                    <i data-code={ch.code} />
-                  ))}
-                </span>
-              )}
-            </div>
-            <h4 class="cap__title">{homeOf(c).title}</h4>
-            <p class="cap__text">{homeOf(c).line}</p>
-            {art && (
-              <div class={`art art--${art}`} aria-hidden="true">
-                {art === 'sync' && (
-                  <>
-                    <span class="art__hub"><Icon name="layers" size="sm" /></span>
-                    <span class="art__fan">
-                      <i class="art__wire" />
-                      {chans.map((ch) => (
-                        <span class="art__spoke" data-code={ch.code}>
-                          <i class="art__node" />
-                        </span>
-                      ))}
-                    </span>
-                  </>
-                )}
-                {art === 'returns' && (
-                  <span class="art__steps">
-                    <span class="art__track"><i class="art__progress" /></span>
-                    <i class="art__step" />
-                    <i class="art__step" />
-                    <i class="art__step art__step--end" />
-                  </span>
-                )}
-                {art === 'chat' && (
-                  <span class="art__thread">
-                    <span class="art__bubble art__bubble--in" data-code={chans[0]?.code}>
-                      <i class="art__dot" />
-                      <span class="art__lines"><i class="art__skel" /><i class="art__skel art__skel--short" /></span>
-                    </span>
-                    <span class="art__bubble art__bubble--out">
-                      <i class="art__typing" />
-                      <i class="art__typing" />
-                      <i class="art__typing" />
-                    </span>
-                  </span>
-                )}
-                {art === 'finance' && (
-                  <span class="art__bars">
-                    {FIN_BARS.map((_h, k) => (
-                      <i class="art__bar" data-k={k} />
-                    ))}
-                  </span>
-                )}
-                {art === 'ship' && (
-                  <span class="art__road">
-                    <span class="art__end"><Icon name="receipt" size="sm" /></span>
-                    <span class="art__lane-wrap">
-                      <span class="art__lane"><span class="art__parcel"><Icon name="notice" size="sm" /></span></span>
-                    </span>
-                    <span class="art__end art__end--to" data-code={chans[0]?.code}><i class="art__dot" /></span>
-                  </span>
-                )}
-                {art === 'erp' && (
-                  <span class="art__road">
-                    <span class="art__box"><Icon name="database" size="sm" /></span>
-                    <span class="art__lane-wrap art__lane-wrap--solid">
-                      <span class="art__lane"><span class="art__packet" /></span>
-                    </span>
-                    <span class="art__box art__box--panel"><Icon name="eye" size="sm" /></span>
-                  </span>
-                )}
-              </div>
-            )}
           </li>
-        )
-      })
-    }
-  </ul>
+        ))
+      }
+    </ul>
+  </div>
 </Section>
 
 <style>
@@ -501,11 +361,10 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     max-width: 34rem;
   }
   /*
-   * İkon rozeti (karo + günlük iş kartları): derin marka degradesi, üst iç kenar ışığı, vurgu tonunda iç halka
+   * İkon rozeti (bento karoları): derin marka degradesi, üst iç kenar ışığı, vurgu tonunda iç halka
    * ve yumuşak renkli ışıma. Hover'da rozet hafifçe yükselir, içindeki çizgi ikon küçük bir açıyla döner.
    */
-  .tile__icon,
-  .cap__icon {
+  .tile__icon {
     position: relative;
     display: inline-flex;
     flex: none;
@@ -526,18 +385,13 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
       0 var(--ek-space-3) var(--ek-space-8) calc(var(--ek-space-3) * -1) color-mix(in srgb, var(--ek-color-secondary) 55%, transparent);
     transition: translate var(--ek-duration-base) var(--ek-easing-standard);
   }
-  .tile__icon :global(svg),
-  .cap__icon :global(svg) {
+  .tile__icon :global(svg) {
     transition: rotate var(--ek-duration-base) var(--ek-easing-standard), scale var(--ek-duration-base) var(--ek-easing-standard);
   }
-  .tile:hover .tile__icon,
-  .cap:hover .cap__icon,
-  .cap:focus-within .cap__icon {
+  .tile:hover .tile__icon {
     translate: 0 calc(var(--ek-space-1) * -0.5);
   }
-  .tile:hover .tile__icon :global(svg),
-  .cap:hover .cap__icon :global(svg),
-  .cap:focus-within .cap__icon :global(svg) {
+  .tile:hover .tile__icon :global(svg) {
     rotate: -8deg;
     scale: 1.1;
   }
@@ -591,8 +445,7 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
    * işaretlenir (uyarı rengi). Masaüstünde yatay hatlar (SVG, en-boy serbest), <640px'te aynı hatlar dikey.
    * Statik hâl (hareket kapalı / reduced / JS'siz) = hikâyenin sonu: kalan 0, halka "rezerve" renginde, iki sonuç.
    */
-  .stock,
-  .tenant {
+  .stock {
     padding: var(--ek-space-5);
     border: var(--site-border-width) solid var(--ek-color-border-default);
     border-radius: var(--ek-radius-xl);
@@ -1218,1400 +1071,13 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     background: var(--site-gradient-accent);
   }
 
-  /* Görünürken ince ışık kanal çubuklarında soldan sağa akar (veri akışı hissi; yalnızca translate/opacity,
-     durdurulmuş/reduced/JS'siz durumda yok; görünmezken duraklatılır). */
-  .istat__seg::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ek-color-background) 85%, transparent), transparent);
-    opacity: 0;
-  }
-  @media (prefers-reduced-motion: no-preference) {
-    @keyframes cap-flow {
-      0% {
-        opacity: 0;
-        translate: -100% 0;
-      }
-      12% {
-        opacity: 1;
-      }
-      30%,
-      100% {
-        opacity: 0;
-        translate: 100% 0;
-      }
-    }
-    :global(html[data-motion='play']) .istat .istat__seg.is-on::after {
-      animation: cap-flow var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
-      animation-delay: calc(var(--site-motion-ambient-fast) * var(--flow-i, 0) * 0.07);
-    }
-    :global(html[data-motion='play']) .istat[data-visible='true'] .istat__seg.is-on::after {
-      animation-play-state: running;
-    }
-    .istat__row:nth-child(2) {
-      --flow-i: 2;
-    }
-    .istat__row:nth-child(3) {
-      --flow-i: 4;
-    }
-    .istat__row:nth-child(4) {
-      --flow-i: 6;
-    }
-    .istat__row:nth-child(5) {
-      --flow-i: 8;
-    }
-    .istat__row:nth-child(6) {
-      --flow-i: 10;
-    }
-    :global(html[data-motion='play']) .istat .istat__seg.is-on:nth-child(2)::after {
-      animation-delay: calc(var(--site-motion-ambient-fast) * (var(--flow-i, 0) * 0.07 + 0.05));
-    }
-    :global(html[data-motion='play']) .istat .istat__seg.is-on:nth-child(3)::after {
-      animation-delay: calc(var(--site-motion-ambient-fast) * (var(--flow-i, 0) * 0.07 + 0.1));
-    }
-  }
 
-  /* --- D: anahtar şifreleme --- */
-  .vault {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-3);
-    padding: var(--ek-space-5);
-    border-radius: var(--ek-radius-xl);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-background) 10%, transparent);
-    background: var(--site-stage-mesh);
-    box-shadow:
-      inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 14%, transparent),
-      var(--window-shadow);
-    color: var(--site-color-on-primary);
-  }
-  .vault__row {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-1);
-  }
-  .vault__label {
-    color: var(--site-color-on-primary-muted);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-  .vault__field {
-    display: flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-    padding: var(--ek-space-2) var(--ek-space-3);
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-md);
-    background: var(--site-glass-bg);
-    color: var(--site-color-on-primary);
-    font-family: var(--ek-font-mono);
-    font-size: var(--ek-font-size-md);
-    letter-spacing: 0.08em;
-  }
-  .vault__field > :global(.icon) {
-    flex: none;
-    color: var(--site-color-on-primary-muted);
-  }
-  .vault__hidden {
-    margin-inline-start: auto;
-    padding: 0 var(--ek-space-2);
-    border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
-    color: var(--site-color-on-primary);
-    font-family: var(--ek-font-sans, inherit);
-    font-size: var(--ek-font-size-xs);
-    font-style: normal;
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.02em;
-  }
-  /* Anahtarın yolculuğu: girdi alanından kilidin arkasından geçip saklanan alana inen ince hat; üzerinde ışık iner. */
-  .vault__rail {
-    position: absolute;
-    inset-block-start: calc(var(--ek-space-16) + var(--ek-space-5));
-    inset-inline-start: calc(50% - var(--site-border-width));
-    z-index: 0;
-    width: calc(var(--site-border-width) * 2);
-    height: calc(var(--ek-space-16) + var(--ek-space-4));
-    border-radius: var(--ek-radius-full);
-    background: linear-gradient(180deg, color-mix(in srgb, var(--ek-color-secondary) 55%, transparent), color-mix(in srgb, var(--ek-color-secondary) 25%, transparent));
-    pointer-events: none;
-  }
-  .vault > :not(.vault__rail) {
-    position: relative;
-    z-index: 1;
-  }
-  .vault__spark {
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at 50% 0, var(--ek-color-secondary) 0 var(--ek-space-1), transparent calc(var(--ek-space-1) * 1.6)) no-repeat;
-    background-size: var(--ek-space-3) var(--ek-space-3);
-    background-position: 50% 0;
-    overflow: visible;
-    opacity: 0;
-  }
-  .vault__bars i {
-    position: relative;
-    overflow: hidden;
-  }
-  .vault__bars i::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: var(--ek-color-secondary);
-    box-shadow: 0 0 var(--ek-space-2) var(--ek-color-secondary);
-    opacity: 0;
-  }
-  .vault__field--cipher {
-    position: relative;
-    overflow: hidden;
-    color: var(--ek-color-secondary);
-  }
-  .vault__bars {
-    display: inline-flex;
-    flex: 1;
-    gap: var(--ek-space-1);
-  }
-  .vault__bars i {
-    display: block;
-    flex: 1;
-    height: var(--ek-space-2);
-    border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-secondary) 60%, transparent);
-  }
-  .vault__step {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    align-self: center;
-    gap: var(--ek-space-2);
-    padding: var(--ek-space-1) var(--ek-space-3);
-    border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
-    color: var(--site-color-on-primary);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-semibold);
-  }
-
-  /* --- E: çoklu kiracı --- */
-  .tenant__cols {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--ek-space-3);
-  }
-  .tenant__col {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .tenant__acct,
-  .tenant__db {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--ek-space-1);
-    padding: var(--ek-space-3) var(--ek-space-2);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-lg);
-    background: var(--ek-color-surface);
-    box-shadow: var(--float-shadow);
-    color: var(--ek-color-primary-darken-1);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-semibold);
-    line-height: var(--ek-line-height-tight);
-    text-align: center;
-  }
-  .tenant__db {
-    border-color: var(--ek-color-secondary);
-    color: var(--ek-color-secondary-darken-1);
-    box-shadow: 0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-secondary) 12%, transparent), var(--float-shadow);
-  }
-  .tenant__acct span,
-  .tenant__db span {
-    color: var(--ek-color-content-strong);
-  }
-  .tenant__link {
-    position: relative;
-    align-self: center;
-    width: calc(var(--site-border-width) * 2);
-    height: var(--ek-space-8);
-    background: linear-gradient(180deg, var(--ek-color-primary-darken-1), var(--ek-color-secondary));
-    transform-origin: 50% 0;
-  }
-  /* İzolasyon duvarı: sütunlar arasında kesikli ayraç + kalkan rozeti (veri paylaşılmaz). */
-  .tenant__wall {
-    position: absolute;
-    inset-block: 0;
-    inset-inline-start: calc(var(--ek-space-3) / -2);
-    z-index: 1;
-    display: grid;
-    place-items: center;
-    width: 0;
-    border-inline-start: var(--site-border-width) dashed color-mix(in srgb, var(--ek-color-secondary) 55%, var(--ek-color-border-strong));
-    color: var(--ek-color-secondary-darken-1);
-  }
-  .tenant__wall :global(.icon) {
-    box-sizing: content-box;
-    padding: calc(var(--ek-space-1) * 0.75);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 55%, var(--ek-color-border-default));
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-surface);
-    box-shadow: var(--float-shadow);
-  }
-  .tenant__db {
-    position: relative;
-  }
-  .tenant__db::after {
-    content: '';
-    position: absolute;
-    inset: calc(var(--site-border-width) * -1);
-    border: calc(var(--site-border-width) * 2) solid var(--ek-color-secondary);
-    border-radius: inherit;
-    box-shadow: 0 0 var(--ek-space-5) calc(var(--ek-space-1) * -1) var(--ek-color-secondary);
-    opacity: 0;
-    pointer-events: none;
-  }
-  /* Veritabanının içindeki kayıt satırları (yalnızca biçim). */
-  .tenant__rows {
-    display: flex;
-    flex-direction: column;
-    gap: calc(var(--ek-space-1) * 0.75);
-    align-self: stretch;
-    margin-top: var(--ek-space-1);
-  }
-  .tenant__rows i {
-    display: block;
-    height: calc(var(--ek-space-1) * 0.75);
-    border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-secondary) 35%, var(--ek-color-surface-sunken));
-    transform-origin: 0 50%;
-  }
-  .tenant__rows i:nth-child(2) {
-    width: 80%;
-  }
-  .tenant__rows i:nth-child(3) {
-    width: 55%;
-  }
-  .tenant__platform {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--ek-space-2);
-    margin-top: var(--ek-space-4);
-    padding: var(--ek-space-2) var(--ek-space-3);
-    border: var(--site-border-width) dashed var(--ek-color-border-strong);
-    border-radius: var(--ek-radius-lg);
-    color: var(--ek-color-content-default);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-semibold);
-    text-align: center;
-  }
-
-  /* --- Günlük işleriniz için --- */
-  .more {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-2);
-    margin-top: var(--ek-space-16);
-  }
-  .more__title {
-    color: var(--ek-color-content-strong);
-    font-size: var(--site-font-display-sm);
-    font-weight: var(--site-font-display-weight);
-    line-height: var(--site-font-display-line-height);
-    letter-spacing: var(--site-font-display-tracking);
-  }
-  .more__lead {
-    color: var(--ek-color-content-default);
-    font-size: var(--ek-font-size-lg);
-  }
-  .caps {
-    display: grid;
-    gap: var(--ek-space-4);
-    margin-top: var(--ek-space-8);
-    grid-template-columns: minmax(0, 1fr);
-  }
-  /*
-   * Günlük iş kartı (S13-C): sade ama etkileyici — büyük degrade ikon rozeti, tek güçlü başlık, kısa gövde ve altta
-   * küçük canlı illüstrasyon ("ürün vitrini"). Katmanlı yüzey + iç kenar ışığı; hover'da üstten vurgu ışıması (::after).
-   */
-  .cap {
-    position: relative;
-    isolation: isolate;
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-2);
-    padding: var(--ek-space-6);
-    border: var(--site-border-width) solid transparent;
-    border-radius: var(--site-radius-panel);
-    background:
-      linear-gradient(180deg, var(--ek-color-surface) 0%, var(--ek-color-surface-muted) 100%) padding-box,
-      linear-gradient(170deg, color-mix(in srgb, var(--ek-color-border-default) 60%, var(--ek-color-surface)), var(--ek-color-border-default)) border-box;
-    box-shadow:
-      inset 0 var(--site-border-width) 0 var(--ek-color-surface),
-      0 var(--site-border-width) calc(var(--site-border-width) * 2) color-mix(in srgb, var(--ek-color-content-strong) 5%, transparent),
-      0 var(--ek-space-4) var(--ek-space-8) calc(var(--ek-space-4) * -1) color-mix(in srgb, var(--ek-color-content-strong) 10%, transparent);
-    /* `transform` (eğim) buraya da eklenir (bkz. PricingSummary.astro aynı not: kısayol birleşmez). */
-    transition:
-      box-shadow var(--ek-duration-base) var(--ek-easing-standard),
-      background var(--ek-duration-base) var(--ek-easing-standard),
-      translate var(--ek-duration-base) var(--ek-easing-standard),
-      transform var(--tilt-transition-duration, var(--ek-duration-fast)) var(--ek-easing-standard);
-  }
-  .cap::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    border-radius: inherit;
-    background: radial-gradient(80% 60% at 20% 0%, color-mix(in srgb, var(--ek-color-secondary) 13%, transparent), transparent 70%);
-    opacity: 0;
-    transition: opacity var(--ek-duration-slow) var(--ek-easing-standard);
-    pointer-events: none;
-  }
-  .cap:hover,
-  .cap:focus-within {
-    translate: 0 calc(var(--ek-space-1) * -1);
-    background:
-      linear-gradient(180deg, var(--ek-color-surface) 0%, var(--ek-color-surface-muted) 100%) padding-box,
-      var(--site-gradient-border) border-box;
-    box-shadow:
-      inset 0 var(--site-border-width) 0 var(--ek-color-surface),
-      0 var(--site-border-width) calc(var(--site-border-width) * 2) color-mix(in srgb, var(--ek-color-content-strong) 6%, transparent),
-      0 var(--ek-space-8) var(--ek-space-16) calc(var(--ek-space-8) * -1) color-mix(in srgb, var(--ek-color-secondary-darken-1) 34%, transparent);
-  }
-  .cap:hover::after,
-  .cap:focus-within::after {
-    opacity: 1;
-  }
-  .cap__head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: var(--ek-space-3);
-    margin-bottom: var(--ek-space-3);
-  }
-  .cap__icon {
-    margin-bottom: 0;
-  }
-  .cap__title {
-    color: var(--ek-color-content-strong);
-    font-size: var(--site-card-title-size);
-    font-weight: var(--site-font-display-weight);
-    line-height: var(--ek-line-height-tight);
-    letter-spacing: -0.018em;
-  }
-  .cap__text {
-    color: var(--ek-color-content-default);
-    font-size: var(--site-card-desc-size);
-    font-weight: var(--site-card-desc-weight);
-    line-height: var(--ek-line-height-normal);
-    text-wrap: pretty;
-  }
-  /* Kanal noktaları: isimsiz, rozetin karşısında küçük bir "bağlı kanallar" imzası (anlam metindedir). */
-  .cap__dots {
-    display: inline-flex;
-    gap: calc(var(--ek-space-1) * 1.5);
-    margin-top: var(--ek-space-2);
-    padding: var(--ek-space-1) var(--ek-space-2);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-surface);
-  }
-  .cap__dots i,
-  .art__dot,
-  .art__node {
-    display: block;
-    flex: none;
-    width: calc(var(--ek-space-2) * 0.75);
-    height: calc(var(--ek-space-2) * 0.75);
-    border-radius: var(--ek-radius-full);
-    background: var(--chan, var(--ek-color-secondary));
-  }
-
-  /* --- Kart illüstrasyonları (aria-hidden; yalnızca biçim) --- */
-  .art {
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    height: calc(var(--ek-space-16) + var(--ek-space-4));
-    margin-top: auto;
-    padding: var(--ek-space-3) var(--ek-space-4);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-xl);
-    background:
-      radial-gradient(90% 80% at 50% 0%, color-mix(in srgb, var(--ek-color-secondary) 9%, transparent), transparent 70%),
-      var(--site-texture-dots),
-      var(--ek-color-surface-sunken);
-    background-size: auto, var(--site-texture-dots-size), auto;
-    box-shadow: inset 0 var(--site-border-width) var(--ek-space-2) color-mix(in srgb, var(--ek-color-content-strong) 5%, transparent);
-    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
-  }
-  .cap__text {
-    margin-bottom: var(--ek-space-4);
-  }
-  .cap:hover .art {
-    border-color: color-mix(in srgb, var(--ek-color-secondary) 40%, var(--ek-color-border-default));
-  }
-  /* Ortak "chip" yüzeyi: süzülen beyaz öğe */
-  .art__hub,
-  .art__box,
-  .art__end,
-  .art__bubble {
-    display: inline-flex;
-    flex: none;
-    align-items: center;
-    justify-content: center;
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    background: var(--ek-color-surface);
-    box-shadow:
-      0 var(--site-border-width) calc(var(--site-border-width) * 2) color-mix(in srgb, var(--ek-color-content-strong) 6%, transparent),
-      0 var(--ek-space-2) var(--ek-space-4) calc(var(--ek-space-2) * -1) color-mix(in srgb, var(--ek-color-primary-darken-1) 22%, transparent);
-    color: var(--site-accent);
-  }
-
-  /* sync: merkez -> kanallara yelpaze */
-  .art--sync {
-    gap: var(--ek-space-3);
-  }
-  .art__hub {
-    width: var(--ek-space-10);
-    height: var(--ek-space-10);
-    border-color: color-mix(in srgb, var(--ek-color-secondary) 55%, var(--ek-color-border-default));
-    border-radius: var(--ek-radius-lg);
-  }
-  /* Tek tel üzerinde kanallar; sinyal soldan sağa akar, eriştiği kanal noktası kısa bir an büyür. */
-  .art__fan {
-    position: relative;
-    display: flex;
-    flex: 1;
-    align-items: center;
-    justify-content: space-between;
-    padding-inline-start: var(--ek-space-4);
-  }
-  .art__wire {
-    position: absolute;
-    inset-inline: 0 var(--ek-space-3);
-    inset-block-start: 50%;
-    overflow: hidden;
-    height: calc(var(--site-border-width) * 2);
-    translate: 0 -50%;
-    border-radius: var(--ek-radius-full);
-    background: linear-gradient(90deg, color-mix(in srgb, var(--ek-color-secondary) 55%, transparent), var(--ek-color-border-default));
-  }
-  /* Akan sinyal: tel boyunca uzanan şerit, döngüde soldan sağa kayar (statik hâlde görünmez). */
-  .art__wire::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, transparent, var(--ek-color-secondary), transparent);
-    translate: -100% 0;
-    opacity: 0;
-  }
-  .art__spoke {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--ek-space-6);
-    height: var(--ek-space-6);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 45%, var(--ek-color-border-default));
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-surface);
-    box-shadow: 0 var(--ek-space-1) var(--ek-space-2) calc(var(--ek-space-1) * -1) color-mix(in srgb, var(--ek-color-content-strong) 20%, transparent);
-  }
-  .art__node {
-    width: var(--ek-space-2);
-    height: var(--ek-space-2);
-  }
-
-  /* returns: üç adımlı ilerleme */
-  .art__steps {
-    position: relative;
-    display: flex;
-    flex: 1;
-    align-items: center;
-    justify-content: space-between;
-    padding-inline: var(--ek-space-2);
-  }
-  .art__track {
-    position: absolute;
-    inset-inline: var(--ek-space-4);
-    inset-block-start: 50%;
-    height: calc(var(--site-border-width) * 2);
-    translate: 0 -50%;
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-border-default);
-  }
-  .art__progress {
-    display: block;
-    height: 100%;
-    border-radius: inherit;
-    background: var(--site-gradient-accent);
-    transform-origin: 0 50%;
-  }
-  .art__step {
-    position: relative;
-    display: block;
-    width: var(--ek-space-4);
-    height: var(--ek-space-4);
-    border: calc(var(--site-border-width) * 2) solid var(--site-accent);
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-surface);
-    box-shadow: 0 0 0 var(--ek-space-1) var(--site-accent-soft);
-  }
-  .art__step--end {
-    background: var(--site-accent);
-  }
-
-  /* chat: gelen soru + yazılıyor yanıtı */
-  .art__thread {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    gap: calc(var(--ek-space-1) * 1.5);
-  }
-  .art__bubble {
-    gap: var(--ek-space-2);
-    padding: var(--ek-space-2) var(--ek-space-3);
-    border-radius: var(--ek-radius-lg) var(--ek-radius-lg) var(--ek-radius-lg) var(--ek-radius-sm);
-  }
-  .art__bubble--in {
-    align-self: flex-start;
-    width: 70%;
-  }
-  .art__bubble--out {
-    align-self: flex-end;
-    gap: var(--ek-space-1);
-    padding-inline: var(--ek-space-4);
-    border-color: transparent;
-    border-radius: var(--ek-radius-lg) var(--ek-radius-lg) var(--ek-radius-sm) var(--ek-radius-lg);
-    background: linear-gradient(150deg, var(--ek-color-primary), var(--ek-color-primary-darken-1));
-  }
-  .art__lines {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    gap: var(--ek-space-1);
-  }
-  .art__skel--short {
-    width: 60%;
-  }
-  .art__skel {
-    display: block;
-    flex: none;
-    height: var(--ek-space-1);
-    border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-content-muted) 25%, var(--ek-color-surface-sunken));
-  }
-  .art__typing {
-    display: block;
-    width: calc(var(--ek-space-1) * 1.5);
-    height: calc(var(--ek-space-1) * 1.5);
-    border-radius: var(--ek-radius-full);
-    background: var(--site-color-on-primary);
-    opacity: 0.85;
-  }
-
-  /* finance: iskelet sütun grafik (değer/sayı yok) */
-  .art__bars {
-    display: flex;
-    flex: 1;
-    align-items: flex-end;
-    gap: var(--ek-space-2);
-    height: 100%;
-    padding-top: var(--ek-space-1);
-    border-bottom: var(--site-border-width) solid var(--ek-color-border-strong);
-  }
-  .art__bar {
-    display: block;
-    flex: 1;
-    height: 100%;
-    border-radius: var(--ek-radius-sm) var(--ek-radius-sm) 0 0;
-    background: linear-gradient(180deg, color-mix(in srgb, var(--ek-color-secondary) 70%, var(--ek-color-surface)), color-mix(in srgb, var(--ek-color-secondary) 25%, var(--ek-color-surface)));
-    transform-origin: 50% 100%;
-  }
-  /* Yalnızca biçim (değer yok): sabit iskelet yükseklikleri; döngü bunları ölçekler. */
-  .art__bar:nth-child(1) {
-    height: 45%;
-  }
-  .art__bar:nth-child(2) {
-    height: 70%;
-  }
-  .art__bar:nth-child(3) {
-    height: 55%;
-  }
-  .art__bar:nth-child(4) {
-    height: 85%;
-  }
-  .art__bar:nth-child(5) {
-    height: 62%;
-  }
-  .art__bar:nth-child(6) {
-    background: var(--site-gradient-accent);
-  }
-
-  /* ship / erp: iki uç arasında akan paket */
-  .art__road {
-    display: flex;
-    flex: 1;
-    align-items: center;
-    gap: var(--ek-space-2);
-  }
-  .art__end,
-  .art__box {
-    width: var(--ek-space-10);
-    height: var(--ek-space-10);
-    border-radius: var(--ek-radius-lg);
-  }
-  .art__end--to {
-    border-radius: var(--ek-radius-full);
-    border-color: color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 50%, var(--ek-color-border-default));
-  }
-  .art__end--to .art__dot {
-    width: var(--ek-space-3);
-    height: var(--ek-space-3);
-  }
-  .art__box--panel {
-    border-color: color-mix(in srgb, var(--ek-color-secondary) 55%, var(--ek-color-border-default));
-  }
-  .art__lane-wrap {
-    position: relative;
-    flex: 1;
-    height: calc(var(--site-border-width) * 2);
-    background: repeating-linear-gradient(90deg, var(--site-accent-line) 0 var(--ek-space-2), transparent var(--ek-space-2) var(--ek-space-3));
-  }
-  .art__lane-wrap--solid {
-    background: linear-gradient(90deg, var(--ek-color-border-strong), var(--site-accent-line));
-  }
-  /* Şerit yol boyunca uzanır; statik hâlde paket varışta (%100). */
-  .art__lane {
-    position: absolute;
-    inset: 0;
-    translate: 100% 0;
-  }
-  .art__parcel,
-  .art__packet {
-    position: absolute;
-    inset-block-start: 50%;
-    inset-inline-start: 0;
-    translate: -100% -50%;
-  }
-  .art__parcel {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--ek-space-6);
-    height: var(--ek-space-6);
-    border-radius: var(--ek-radius-md);
-    background: var(--site-accent);
-    box-shadow: 0 var(--ek-space-1) var(--ek-space-3) color-mix(in srgb, var(--ek-color-secondary) 45%, transparent);
-    color: var(--site-color-on-primary);
-  }
-  .art__packet {
-    width: var(--ek-space-2);
-    height: var(--ek-space-2);
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-secondary);
-    box-shadow: 0 0 0 var(--ek-space-1) var(--site-accent-soft);
-  }
 
   /*
-   * Canlı döngüler (S13-C). KURALLAR (scenes-loops.css ile aynı sözleşme): yalnızca opacity/translate/scale;
-   * tamamı `prefers-reduced-motion: no-preference` + `html[data-motion='play']` koşullu → durdurulmuş/reduced/JS'siz
-   * durumda statik son hâl; `paused` başlar, YALNIZCA sahne görünürken (`data-visible='true'`) çalışır; sekme
-   * gizliyken scenes.css genel kuralı durdurur. Süreler token (6 / 12 sn). Adlar `cap-*`.
+   * N9 (S27a, hareket ekonomisi — BRAND §4 "görünür ekranda en fazla bir döngü"): bento karolarının sürekli döngüleri
+   * KALDIRILDI. Karolar yalnızca tek seferlik giriş sahnesi oynar (scenes.css: stock-single-winner, orders-merge,
+   * integration-status) ve statik son karede durur; sürekli döngü yalnız hero vitrini ve sıfır aşırı satış hikâyesinde.
    */
-  @media (prefers-reduced-motion: no-preference) {
-    @keyframes cap-wire {
-      0%,
-      8% {
-        opacity: 0;
-        translate: -100% 0;
-      }
-      14% {
-        opacity: 1;
-      }
-      34%,
-      100% {
-        opacity: 0;
-        translate: 100% 0;
-      }
-    }
-    @keyframes cap-node {
-      0%,
-      26%,
-      100% {
-        scale: 1;
-      }
-      32% {
-        scale: 1.5;
-      }
-      44% {
-        scale: 1;
-      }
-    }
-    @keyframes cap-progress {
-      0% {
-        scale: 0 1;
-      }
-      40%,
-      86% {
-        scale: 1 1;
-      }
-      96%,
-      100% {
-        scale: 0 1;
-      }
-    }
-    @keyframes cap-typing {
-      0%,
-      60%,
-      100% {
-        opacity: 0.35;
-        translate: 0 0;
-      }
-      30% {
-        opacity: 1;
-        translate: 0 calc(var(--ek-space-1) * -0.5);
-      }
-    }
-    @keyframes cap-bars {
-      0%,
-      100% {
-        scale: 1 1;
-      }
-      50% {
-        scale: 1 0.82;
-      }
-    }
-    @keyframes cap-lane {
-      0% {
-        translate: 0 0;
-        opacity: 0;
-      }
-      8% {
-        opacity: 1;
-      }
-      55%,
-      88% {
-        translate: 100% 0;
-        opacity: 1;
-      }
-      96%,
-      100% {
-        translate: 100% 0;
-        opacity: 0;
-      }
-    }
-    @keyframes cap-scan {
-      0% {
-        opacity: 0;
-        translate: 0 0;
-      }
-      6%,
-      18% {
-        opacity: 1;
-        translate: 0 0;
-      }
-      24%,
-      38% {
-        translate: 0 100%;
-      }
-      44%,
-      58% {
-        translate: 0 200%;
-      }
-      64%,
-      78% {
-        translate: 0 300%;
-      }
-      84%,
-      92% {
-        opacity: 1;
-        translate: 0 400%;
-      }
-      100% {
-        opacity: 0;
-        translate: 0 400%;
-      }
-    }
-    @keyframes cap-ring {
-      0% {
-        opacity: 0.55;
-        scale: 1;
-      }
-      40%,
-      100% {
-        opacity: 0;
-        scale: 2.6;
-      }
-    }
-    @keyframes cap-shine {
-      0%,
-      30% {
-        opacity: 0;
-        translate: -100% 0;
-      }
-      38% {
-        opacity: 1;
-      }
-      60%,
-      100% {
-        opacity: 0;
-        translate: 100% 0;
-      }
-    }
-    @keyframes cap-drop {
-      0%,
-      10% {
-        opacity: 0;
-        translate: -50% 0;
-      }
-      18% {
-        opacity: 1;
-      }
-      42% {
-        opacity: 1;
-        translate: -50% var(--ek-space-8);
-      }
-      50%,
-      100% {
-        opacity: 0;
-        translate: -50% var(--ek-space-8);
-      }
-    }
-
-    /* --- Günlük iş kartları --- */
-    :global(html[data-motion='play']) .art__wire::after {
-      animation: cap-wire var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
-      animation-delay: calc(var(--site-motion-stagger) * var(--d, 0));
-    }
-    :global(html[data-motion='play']) .art__node {
-      animation: cap-node var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
-      animation-delay: calc(var(--site-motion-stagger) * var(--d, 0));
-    }
-    :global(html[data-motion='play']) .art__progress {
-      animation: cap-progress var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
-      animation-delay: calc(var(--site-motion-stagger) * var(--d, 0));
-    }
-    :global(html[data-motion='play']) .art__typing {
-      animation: cap-typing calc(var(--site-motion-ambient-fast) / 4) var(--site-motion-ease-loop) infinite paused;
-      animation-delay: calc(var(--site-motion-stagger) * var(--d, 0));
-    }
-    :global(html[data-motion='play']) .art__bar {
-      animation: cap-bars var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
-      animation-delay: calc(var(--site-motion-stagger) * var(--d, 0));
-    }
-    :global(html[data-motion='play']) .art__lane {
-      animation: cap-lane var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
-      animation-delay: calc(var(--site-motion-stagger) * var(--d, 0));
-    }
-    /* Faz kaydırma: `--d` × stagger (özel özellik ::after'a da miras kalır). */
-    .art__spoke:nth-child(3),
-    .art__typing:nth-child(2),
-    .art__bar:nth-child(2),
-    .tenant__col:nth-child(2) {
-      --d: 3;
-    }
-    .art__spoke:nth-child(4),
-    .art__typing:nth-child(3),
-    .art__bar:nth-child(3) {
-      --d: 6;
-    }
-    .art__spoke:nth-child(5),
-    .art__bar:nth-child(4),
-    .tenant__col:nth-child(3) {
-      --d: 9;
-    }
-    .art__spoke:nth-child(6),
-    .art__bar:nth-child(5) {
-      --d: 12;
-    }
-    .art__bar:nth-child(6) {
-      --d: 15;
-    }
-    :global(html[data-motion='play']) .caps[data-visible='true'] :is(.art__node, .art__progress, .art__typing, .art__bar, .art__lane),
-    :global(html[data-motion='play']) .caps[data-visible='true'] .art__wire::after {
-      animation-play-state: running;
-    }
-
-    /* --- Bento karoları --- */
-    .win__rows::before {
-      content: '';
-      position: absolute;
-      inset-inline: 0;
-      inset-block-start: 0;
-      z-index: 0;
-      height: 20%;
-      background: linear-gradient(90deg, color-mix(in srgb, var(--ek-color-secondary) 12%, transparent), color-mix(in srgb, var(--ek-color-secondary) 4%, transparent));
-      box-shadow: inset calc(var(--site-border-width) * 2) 0 0 var(--ek-color-secondary);
-      opacity: 0;
-      pointer-events: none;
-    }
-    :global(html[data-motion='play']) .win__rows::before {
-      animation: cap-scan var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
-      animation-delay: var(--site-motion-scene-max);
-    }
-    :global(html[data-motion='play']) [data-scene='orders-merge'][data-visible='true'] .win__rows::before {
-      animation-play-state: running;
-    }
-
-    .istat__dot::after,
-    .vault__step::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      box-shadow: 0 0 0 var(--site-border-width) var(--chan, var(--ek-color-secondary));
-      opacity: 0;
-      pointer-events: none;
-    }
-    :global(html[data-motion='play']) :is(.istat__dot, .vault__step)::after {
-      animation: cap-ring var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
-      animation-delay: calc(var(--site-motion-stagger) * var(--ring-i, 0) * 4);
-    }
-    .istat__row:nth-child(2) {
-      --ring-i: 2;
-    }
-    .istat__row:nth-child(3) {
-      --ring-i: 4;
-    }
-    .istat__row:nth-child(4) {
-      --ring-i: 6;
-    }
-    .istat__row:nth-child(5) {
-      --ring-i: 8;
-    }
-    .istat__row:nth-child(6) {
-      --ring-i: 10;
-    }
-    :global(html[data-motion='play']) .istat[data-visible='true'] .istat__dot::after,
-    :global(html[data-motion='play']) [data-scene='secret-encryption'][data-visible='true'] .vault__step::after {
-      animation-play-state: running;
-    }
-
-    .vault__field--cipher::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ek-color-secondary) 30%, transparent), transparent);
-      opacity: 0;
-      translate: -100% 0;
-      pointer-events: none;
-    }
-    :global(html[data-motion='play']) .vault__field--cipher::after {
-      animation: cap-shine var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
-    }
-    :global(html[data-motion='play']) [data-scene='secret-encryption'][data-visible='true'] .vault__field--cipher::after {
-      animation-play-state: running;
-    }
-
-    .tenant__link::after {
-      content: '';
-      position: absolute;
-      inset-block-start: 0;
-      inset-inline-start: 50%;
-      width: calc(var(--ek-space-1) * 1.5);
-      height: calc(var(--ek-space-1) * 1.5);
-      margin-block-start: calc(var(--ek-space-1) * -0.75);
-      border-radius: var(--ek-radius-full);
-      background: var(--ek-color-secondary);
-      box-shadow: 0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-secondary) 25%, transparent);
-      opacity: 0;
-      translate: -50% 0;
-      pointer-events: none;
-    }
-    :global(html[data-motion='play']) .tenant__link::after {
-      animation: cap-drop var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
-      animation-delay: calc(var(--site-motion-ambient-fast) * var(--q, 0) / 3);
-    }
-    :global(html[data-motion='play']) [data-scene='tenant-isolation'][data-visible='true'] .tenant__link::after {
-      animation-play-state: running;
-    }
-
-    /*
-     * Bento karoları (S15-C) — sakin, tek odaklı döngüler (T = ambient-fast):
-     *  B gelen sipariş bildirimi listeye süzülür · C ışık kanal hattından aşağı iner, "Tek panel" yanar ·
-     *  D ışık anahtarın yolunu izler, kilit oturur, şifreli çubuklar sırayla parlar · E hesaplar sırayla kendi
-     *  veritabanına yazar (kayıt satırları dolar, veritabanı yanar); sütunlar arası duvar sabit kalır.
-     */
-    @keyframes cap-toast {
-      0%,
-      8% {
-        opacity: 0;
-        translate: 0 calc(var(--ek-space-3) * -1);
-      }
-      14%,
-      34% {
-        opacity: 1;
-        translate: 0 0;
-      }
-      42%,
-      100% {
-        opacity: 0;
-        translate: 0 var(--ek-space-3);
-      }
-    }
-    @keyframes cap-fall {
-      0% {
-        opacity: 0;
-        translate: 0 0;
-      }
-      5% {
-        opacity: 1;
-      }
-      50% {
-        opacity: 1;
-        translate: 0 100%;
-      }
-      56%,
-      100% {
-        opacity: 0;
-        translate: 0 100%;
-      }
-    }
-    @keyframes cap-glow {
-      0%,
-      48% {
-        opacity: 0;
-      }
-      54%,
-      60% {
-        opacity: 1;
-      }
-      80%,
-      100% {
-        opacity: 0;
-      }
-    }
-    @keyframes cap-snap {
-      0%,
-      9%,
-      100% {
-        scale: 1;
-        rotate: 0deg;
-      }
-      15% {
-        scale: 1.18;
-        rotate: -10deg;
-      }
-      23% {
-        scale: 1;
-        rotate: 0deg;
-      }
-    }
-    @keyframes cap-cipher {
-      0%,
-      40% {
-        opacity: 0;
-      }
-      46% {
-        opacity: 0.85;
-      }
-      60%,
-      100% {
-        opacity: 0;
-      }
-    }
-    @keyframes cap-write {
-      0%,
-      30% {
-        scale: 0 1;
-        opacity: 0.4;
-      }
-      42%,
-      86% {
-        scale: 1 1;
-        opacity: 1;
-      }
-      96%,
-      100% {
-        scale: 1 1;
-        opacity: 1;
-      }
-    }
-    :global(html[data-motion='play']) [data-scene='orders-merge'][data-state='play'] .win__toast {
-      animation: cap-toast var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
-      animation-delay: calc(var(--site-motion-scene-max) + var(--site-motion-loop-scene) * 0.05);
-    }
-    :global(html[data-motion='play']) .istat[data-state='play'] .istat__rows::after,
-    :global(html[data-motion='play']) [data-scene='secret-encryption'][data-state='play'] .vault__spark {
-      animation: cap-fall var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
-    }
-    :global(html[data-motion='play']) .istat[data-state='play'] .istat__hub::after {
-      animation: cap-glow var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
-    }
-    :global(html[data-motion='play']) [data-scene='secret-encryption'][data-state='play'] .vault__step :global(svg) {
-      animation: cap-snap var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
-    }
-    :global(html[data-motion='play']) [data-scene='secret-encryption'][data-state='play'] .vault__bars i::after {
-      animation: cap-cipher var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
-      animation-delay: calc(var(--site-motion-stagger) * var(--d, 0) + var(--site-motion-ambient-fast) * 0.04);
-    }
-    .vault__bars i:nth-child(2) {
-      --d: 2;
-    }
-    .vault__bars i:nth-child(3) {
-      --d: 4;
-    }
-    .vault__bars i:nth-child(4) {
-      --d: 6;
-    }
-    /* E: sütunlar sırayla (üçte bir tur arayla) — damla iner, satırlar yazılır, veritabanı yanar. */
-    .tenant__col {
-      --q: 0;
-    }
-    .tenant__col:nth-child(2) {
-      --q: 1;
-    }
-    .tenant__col:nth-child(3) {
-      --q: 2;
-    }
-    :global(html[data-motion='play']) [data-scene='tenant-isolation'][data-state='play'] .tenant__db::after {
-      animation: cap-glow var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
-      animation-delay: calc(var(--site-motion-ambient-fast) * (var(--q) / 3 - 0.1));
-    }
-    :global(html[data-motion='play']) [data-scene='tenant-isolation'][data-state='play'] .tenant__rows i {
-      animation: cap-write var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
-      animation-delay: calc(var(--site-motion-ambient-fast) * (var(--q) / 3 + 0.1) + var(--site-motion-stagger) * var(--r, 0));
-    }
-    .tenant__rows i:nth-child(2) {
-      --r: 2;
-    }
-    .tenant__rows i:nth-child(3) {
-      --r: 4;
-    }
-    :global(html[data-motion='play']) [data-scene='orders-merge'][data-visible='true'] .win__toast,
-    :global(html[data-motion='play']) .istat[data-visible='true'] :is(.istat__rows, .istat__hub)::after,
-    :global(html[data-motion='play']) [data-scene='secret-encryption'][data-visible='true'] :is(.vault__spark, .vault__step :global(svg), .vault__bars i::after),
-    :global(html[data-motion='play']) [data-scene='tenant-isolation'][data-visible='true'] :is(.tenant__db::after, .tenant__rows i) {
-      animation-play-state: running;
-    }
-
-    /*
-     * A: stok rezervasyonu döngüsü (T = loop-scene, giriş sahnesi bittikten sonra başlar). Faz (`--p`, T'nin kesri):
-     * 0–0,04 halka "son adet"e döner (0 -> 1) · 0,06 iki sipariş AYNI ANDA yanar · 0,10 iki ışık birlikte çekirdeğe
-     * akar · 0,17 çekirdek parlar, sayaç 1 -> 0, halka "rezerve" rengine döner · 0,22 başarı hattından ışık ·
-     * 0,26 uyarı hattından ışık · 0,29 / 0,33 sonuç kartları yanar · kalan süre sakin (son durum tutulur).
-     * Yalnızca sahnenin iç öğeleri ve sözde öğeleri hareket eder (scenes.css giriş animasyonuyla çakışmaz).
-     */
-    @keyframes stock-glow {
-      0% {
-        opacity: 0;
-      }
-      2.5%,
-      7% {
-        opacity: 1;
-      }
-      15%,
-      100% {
-        opacity: 0;
-      }
-    }
-    @keyframes stock-wave {
-      0% {
-        opacity: 0.8;
-        scale: 0.92;
-      }
-      14%,
-      100% {
-        opacity: 0;
-        scale: 1.45;
-      }
-    }
-    @keyframes stock-travel {
-      0% {
-        opacity: 0;
-        translate: 0 0;
-      }
-      1% {
-        opacity: 1;
-      }
-      3.5% {
-        translate: var(--m1);
-      }
-      6.5% {
-        opacity: 1;
-        translate: var(--m2);
-      }
-      8%,
-      100% {
-        opacity: 0;
-        translate: var(--m2);
-      }
-    }
-    @keyframes stock-one {
-      0% {
-        opacity: 0;
-        translate: 0 40%;
-      }
-      4%,
-      17% {
-        opacity: 1;
-        translate: 0 0;
-      }
-      21%,
-      100% {
-        opacity: 0;
-        translate: 0 -40%;
-      }
-    }
-    @keyframes stock-zero {
-      0% {
-        opacity: 1;
-        translate: 0 0;
-      }
-      4% {
-        opacity: 0;
-        translate: 0 -40%;
-      }
-      17% {
-        opacity: 0;
-        translate: 0 40%;
-      }
-      21%,
-      100% {
-        opacity: 1;
-        translate: 0 0;
-      }
-    }
-    @keyframes stock-free {
-      0% {
-        opacity: 0;
-      }
-      4%,
-      17% {
-        opacity: 1;
-      }
-      21%,
-      100% {
-        opacity: 0;
-      }
-    }
-    @keyframes stock-held {
-      0% {
-        opacity: 1;
-      }
-      4%,
-      17% {
-        opacity: 0.15;
-      }
-      21%,
-      100% {
-        opacity: 1;
-      }
-    }
-    @keyframes stock-lock {
-      0% {
-        opacity: 1;
-        scale: 1;
-      }
-      4%,
-      17% {
-        opacity: 0.35;
-        scale: 0.94;
-      }
-      21% {
-        opacity: 1;
-        scale: 1.06;
-      }
-      25%,
-      100% {
-        opacity: 1;
-        scale: 1;
-      }
-    }
-    .stock__order,
-    .stock__dot,
-    .stock__live {
-      --p: 0.06;
-    }
-    .stock__carrier--a,
-    .stock__carrier--b {
-      --p: 0.1;
-    }
-    .stock__engine {
-      --p: 0.17;
-    }
-    .stock__carrier--ok {
-      --p: 0.22;
-    }
-    .stock__carrier--warn {
-      --p: 0.26;
-    }
-    .stock__result--ok {
-      --p: 0.29;
-    }
-    .stock__result--warn {
-      --p: 0.33;
-    }
-    .stock__live::after {
-      content: '';
-      position: absolute;
-      inset: calc(var(--site-border-width) * -1);
-      border: var(--site-border-width) solid var(--ek-color-secondary);
-      border-radius: inherit;
-      opacity: 0;
-      pointer-events: none;
-    }
-    .stock__dot::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      box-shadow: 0 0 0 var(--site-border-width) var(--chan, var(--ek-color-secondary));
-      opacity: 0;
-      pointer-events: none;
-    }
-    :global(html[data-motion='play']) .stock[data-state='play'] :is(.stock__order, .stock__result, .stock__live)::after,
-    :global(html[data-motion='play']) .stock[data-state='play'] .stock__flash {
-      animation: stock-glow var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
-      animation-delay: calc(var(--site-motion-scene-max) + var(--site-motion-loop-scene) * var(--p, 0));
-    }
-    :global(html[data-motion='play']) .stock[data-state='play'] .stock__dot::after {
-      animation: cap-ring var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
-      animation-delay: calc(var(--site-motion-scene-max) + var(--site-motion-loop-scene) * var(--p, 0));
-    }
-    :global(html[data-motion='play']) .stock[data-state='play'] .stock__wave {
-      animation: stock-wave var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
-      animation-delay: calc(var(--site-motion-scene-max) + var(--site-motion-loop-scene) * var(--p, 0));
-    }
-    :global(html[data-motion='play']) .stock[data-state='play'] .stock__pulse {
-      animation: stock-travel var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
-      animation-delay: calc(var(--site-motion-scene-max) + var(--site-motion-loop-scene) * var(--p, 0));
-    }
-    :global(html[data-motion='play']) .stock[data-state='play'] .stock__one {
-      animation: stock-one var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
-      animation-delay: var(--site-motion-scene-max);
-    }
-    :global(html[data-motion='play']) .stock[data-state='play'] .stock__zero {
-      animation: stock-zero var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
-      animation-delay: var(--site-motion-scene-max);
-    }
-    :global(html[data-motion='play']) .stock[data-state='play'] .stock__ring-arc--free {
-      animation: stock-free var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
-      animation-delay: var(--site-motion-scene-max);
-    }
-    :global(html[data-motion='play']) .stock[data-state='play'] .stock__ring-arc--held {
-      animation: stock-held var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
-      animation-delay: var(--site-motion-scene-max);
-    }
-    :global(html[data-motion='play']) .stock[data-state='play'] .stock__lock {
-      animation: stock-lock var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
-      animation-delay: var(--site-motion-scene-max);
-    }
-    :global(html[data-motion='play']) .stock[data-state='play'][data-visible='true'] :is(.stock__order, .stock__result, .stock__live, .stock__dot)::after,
-    :global(html[data-motion='play']) .stock[data-state='play'][data-visible='true'] :is(.stock__flash, .stock__wave, .stock__pulse, .stock__one, .stock__zero, .stock__ring-arc, .stock__lock) {
-      animation-play-state: running;
-    }
-  }
 
   /* Karo iki sütuna bölündüğü ara genişlikte (1024–1279) sonuç kartlarında rozet metnin üstünde (dar sütun). */
   @media (min-width: 1024px) and (max-width: 1279px) {
@@ -2682,11 +1148,6 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     }
   }
 
-  @media (min-width: 640px) {
-    .caps {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
   @media (min-width: 1024px) {
     .bento {
       grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -2713,14 +1174,6 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     .tile--status {
       grid-column: span 5;
     }
-    .tile--vault,
-    .tile--tenant {
-      grid-column: span 6;
-    }
-    .caps {
-      gap: var(--ek-space-5);
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
   }
   @media (max-width: 639px) {
     .tile {
@@ -2735,9 +1188,7 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     .win__toast .win__skel {
       display: none;
     }
-    .stock,
-    .tenant,
-    .vault {
+    .stock {
       padding: var(--ek-space-4);
     }
     .istat__cols i,
@@ -2746,6 +1197,88 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     }
     .tile__title {
       font-size: var(--ek-font-size-xl);
+    }
+  }
+
+  /* --- Günlük işler (S27a: bento ile aynı bölümde kompakt liste; kart/illüstrasyon yok, ikon + başlık + tek satır) --- */
+  .daily {
+    margin-top: var(--ek-space-8);
+    padding: var(--ek-space-6) var(--ek-space-5);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--site-radius-panel);
+    background: linear-gradient(180deg, var(--ek-color-surface-muted), var(--ek-color-background));
+  }
+  .daily__title {
+    margin: 0 0 var(--ek-space-5);
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-xl);
+    font-weight: var(--site-font-display-weight);
+    letter-spacing: var(--site-font-display-tracking);
+  }
+  .daily__list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .daily__item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--ek-space-3);
+    align-items: start;
+    padding-block: var(--ek-space-4);
+    border-top: var(--site-border-width) solid var(--ek-color-border-default);
+  }
+  .daily__icon {
+    display: inline-grid;
+    place-items: center;
+    width: var(--ek-icon-tile-sm);
+    height: var(--ek-icon-tile-sm);
+    border-radius: var(--ek-radius-tile);
+    background: var(--site-accent-soft);
+    color: var(--site-accent);
+  }
+  .daily__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+    min-width: 0;
+  }
+  .daily__name {
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .daily__line {
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-sm);
+    line-height: var(--ek-line-height-normal);
+  }
+  @media (min-width: 640px) {
+    .daily__list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: var(--ek-space-8);
+    }
+  }
+  @media (min-width: 1024px) {
+    .daily {
+      display: grid;
+      grid-template-columns: minmax(0, 0.32fr) minmax(0, 1fr);
+      gap: var(--ek-space-10);
+      padding: var(--ek-space-10);
+    }
+    .daily__title {
+      margin: 0;
+      font-size: var(--ek-font-size-2xl);
+    }
+    .daily__list {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      column-gap: var(--ek-space-6);
+    }
+    .daily__item:nth-child(-n + 3) {
+      border-top: 0;
+      padding-top: 0;
     }
   }
 </style>

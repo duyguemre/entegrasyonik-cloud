@@ -123,13 +123,13 @@ export const productCapabilities: ProductCapability[] = [
     id: 'questions',
     group: 'core',
     home: {
-      title: 'Müşteri soruları tek yerde',
+      title: 'Alıcı soruları tek yerde',
       line: 'Pazaryerlerinden gelen soru ve mesajları aynı ekrandan yanıtlayın.',
     },
     title: 'Soru-cevap ve mesaj yönetimi',
-    summary: 'Müşteri soruları ve mesajları kanal bazında listelenir ve cevaplanır.',
+    summary: 'Alıcı soruları ve mesajları kanal bazında listelenir ve cevaplanır.',
     caveat: 'Kapsam kanala göre değişir; ayrıntı için entegrasyon sayfalarına bakın.',
-    action: 'Müşterinin pazaryerinde sorduğu soruyu panelde görün ve aynı ekrandan yanıtlayın.',
+    action: 'Alıcının pazaryerinde sorduğu soruyu panelde görün ve aynı ekrandan yanıtlayın.',
     status: 'partial',
     channelsFrom: { key: 'questions' },
     evidence: [registry('§2.1', '### 2.1 Trendyol'), registry('§2.4', '### 2.4 Pazarama')],
@@ -209,7 +209,7 @@ export const productCapabilities: ProductCapability[] = [
     id: 'secrets-masked',
     group: 'security',
     title: 'Anahtarlar ekranlarda açık gösterilmez',
-    summary: 'Kaydedilmiş entegrasyon anahtarları arayüze ve API yanıtlarına maskelenmiş olarak döner.',
+    summary: 'Kaydedilmiş entegrasyon anahtarları ekranlarda yalnızca maskeli hâliyle görünür.',
     status: 'available',
     evidence: [evidence('backend/src/platform/core/security/responseSanitizer.ts', 'responseSanitizer maskeleme', 'sensitive')],
   },
@@ -220,7 +220,7 @@ export const productCapabilities: ProductCapability[] = [
     summary: 'Kullanıcılar üye, yönetici ve ana yönetici kademeleriyle yetkilendirilir; hassas işlemler üst kademe gerektirir.',
     status: 'available',
     evidence: [
-      evidence('backend/src/api/operationPolicy.ts', 'operationPolicy yetki kademeleri', 'member < admin < owner'),
+      evidence('backend/src/api/rpc/operationPolicy.ts', 'operationPolicy yetki kademeleri', 'member < admin < owner'),
       evidence(PATHS.adr0001, 'ADR-0001 RBAC'),
     ],
   },
@@ -232,8 +232,8 @@ export const productCapabilities: ProductCapability[] = [
       'Tanımlı olmayan ya da yetkinizin yetmediği bir işlem sunucuda reddedilir; yetkiniz tarayıcıdan gelen bilgiye değil hesap kaydınıza göre belirlenir.',
     status: 'available',
     evidence: [
-      evidence('backend/src/api/operationPolicy.ts', 'operationPolicy varsayılan red', 'varsayılan olarak REDDEDİLİR'),
-      evidence('backend/src/api/operationPolicy.ts', 'operationPolicy yetki kaynağı', "token'daki `role` claim'i KULLANILMAZ"),
+      evidence('backend/src/api/rpc/operationPolicy.ts', 'operationPolicy varsayılan red', 'varsayılan olarak REDDEDİLİR'),
+      evidence('backend/src/api/rpc/operationPolicy.ts', 'operationPolicy yetki kaynağı', "token'daki `role` claim'i KULLANILMAZ"),
     ],
   },
   {
@@ -447,7 +447,7 @@ export const stockReservationStory: StockReservationStory = {
     },
     {
       title: 'Eşzamanlı siparişte yalnızca mevcut adet kadar',
-      text: 'Aynı stok için eşzamanlı siparişlerde yalnızca mevcut stok kadar rezervasyon yapılır; stok eksiye düşmez. Aynı sipariş satırı tekrar işlense de yalnızca bir kez rezerve edilir.',
+      text: 'Aynı stok için eşzamanlı siparişlerde yalnızca mevcut stok kadar rezervasyon yapılır; stok eksiye düşmez. Aynı sipariş birden fazla kez ulaşsa da stoktan yalnızca bir kez düşülür.',
       basedOn: ['stock-reservation'],
     },
     {

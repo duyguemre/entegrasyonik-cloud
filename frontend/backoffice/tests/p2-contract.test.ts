@@ -61,7 +61,7 @@ describe('B7 motor ve kuyruklar', () => {
       const res = await api.call('BackofficeEngineService/listFailedJobs', { queue: 'order-sync-queue', cursor, limit: 10 })
       conforms(res, { source: 'string', queue: 'string', items: 'array', nextCursor: 'string|null' }, 'listFailedJobs')
       for (const j of res.items) {
-        conforms(j, { id: 'string', operation: 'string', tenantId: 'number|null', integrationCode: 'string|null', errorCode: 'string', attemptsMade: 'number', maxAttempts: 'number', failedAt: 'string', enqueuedAt: 'string' }, 'job')
+        conforms(j, { id: 'string', operation: 'string', tenantId: 'number|null', integrationCode: 'string|null', errorCode: 'string', attemptsMade: 'number', maxAttempts: 'number', failedAt: 'string', enqueuedAt: 'string', reqId: 'string|null', traceId: 'null' }, 'job')
         expect(seen.has(j.id)).toBe(false)
         seen.add(j.id)
       }
@@ -70,7 +70,7 @@ describe('B7 motor ve kuyruklar', () => {
     } while (cursor && pages < 10)
     expect(seen.size).toBe(37)
     const dlq = await api.call('BackofficeEngineService/listFailedJobs', { queue: 'order-sync-queue', source: 'dlq' })
-    for (const d of dlq.items) conforms(d, { id: 'string', originalJobId: 'string', tenantId: 'number|null', integrationCode: 'string|null', errorCode: 'string', dlqType: 'string', status: 'string', failedAt: 'string' }, 'dlq')
+    for (const d of dlq.items) conforms(d, { id: 'string', originalJobId: 'string', tenantId: 'number|null', integrationCode: 'string|null', errorCode: 'string', dlqType: 'string', status: 'string', failedAt: 'string', reqId: 'string|null', traceId: 'null' }, 'dlq')
     await expect(api.call('BackofficeEngineService/listFailedJobs', { queue: 'order-sync-queue', cursor: 'bozuk' })).rejects.toMatchObject({ status: 400, code: 'VALIDATION' })
     await expect(api.call('BackofficeEngineService/listFailedJobs', { queue: 'order-sync-queue', payload: 1 } as never)).rejects.toMatchObject({ status: 400, code: 'VALIDATION' })
     server.setDegraded(true)
@@ -256,11 +256,12 @@ describe('B5/B6/B8/B9 entegrasyon, altyapı, önbellek', () => {
     await expect(api.call('BackofficeIntegrationService/getResilienceState', {})).rejects.toMatchObject({ status: 503, code: 'INFRA_UNAVAILABLE' })
   })
 
-  it('getCatalog/getEffectiveConfig: hedef süzgeci; _platform 9 anahtar, bayrak yok; bilinmeyen hedef 404', async () => {
+  it('getCatalog/getEffectiveConfig: hedef süzgeci; _platform = 9 temel + 15 rekabet (PRC-R2 S6 dahil) + 3 bayrak (rekabet + fiyat kuralları); örnek bayrak yok; bilinmeyen hedef 404', async () => {
     const { api } = await signedIn()
     const p = await api.call('IntegrationConfigService/getCatalog', { target: '_platform' })
-    expect(p.items.map((i) => i.key)).toHaveLength(9)
-    expect(p.items.some((i) => i.group === 'platform.features')).toBe(false)
+    expect(p.items.filter((i) => i.group !== 'platform.pricing' && i.group !== 'platform.features')).toHaveLength(9)
+    expect(p.items.filter((i) => i.group === 'platform.pricing')).toHaveLength(15)
+    expect(p.items.filter((i) => i.group === 'platform.features').map((i) => i.key)).toEqual(['features.competition', 'features.competition.tenants', 'features.pricingRules'])
     const e = await api.call('IntegrationConfigService/getCatalog', { target: '_engine' })
     expect(e.items.every((i) => i.scope !== 'integration' && i.scope !== 'platform')).toBe(true)
     const eff = await api.call('IntegrationConfigService/getEffectiveConfig', { target: 'trendyol' })

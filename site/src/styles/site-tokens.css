@@ -52,6 +52,23 @@
   --site-color-on-primary: var(--ek-color-background);
   --site-color-on-primary-muted: color-mix(in srgb, var(--ek-color-background) 78%, transparent);
   --site-color-link: var(--ek-color-primary);
+  /* S27b: fiyat kartlarının koyu hero'ya taşma payı (PageHero `overlap` + fiyat sayfası). */
+  --site-hero-overlap: calc(var(--ek-space-16) * 1.5);
+  /* S27b (N6, ELEV A14): TEK eyebrow biçimi — anasayfa bölümleri, iç sayfa hero/bölüm başlıkları, menü ve fiyat sayfası.
+     Küçük, büyük harf, aralıklı, vurgu rengi; solda ince degrade çizgi işareti (her yerde). Koyu zeminde renk
+     `--site-link-accent` eşlemesiyle kendiliğinden açık teal'e döner (global.css). */
+  --site-eyebrow-size: var(--ek-font-size-sm);
+  --site-eyebrow-weight: var(--ek-font-weight-semibold);
+  --site-eyebrow-tracking: 0.1em;
+  --site-eyebrow-color: var(--site-link-accent);
+  --site-eyebrow-gap: var(--ek-space-2);
+  --site-eyebrow-mark-width: var(--ek-space-5);
+  --site-eyebrow-mark-height: calc(var(--site-border-width) * 2);
+  /* S27b (SR4-11): hover'da alt çizgi YOK — renk + yumuşak zemin + ok. Bağlantı hover tonu ve "işaret" zemini. */
+  --site-color-link-hover: color-mix(in srgb, var(--ek-color-secondary-darken-1) 82%, var(--ek-color-content-strong));
+  --site-link-hover-bg: color-mix(in srgb, var(--ek-color-secondary) 14%, transparent);
+  --site-link-hover-bg-on-dark: color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
+  --site-link-arrow-shift: 0.25em;
   --site-color-focus-ring: var(--ek-color-primary);
 
   /* Degrade / ışıma — yalnızca token renklerinden türetilir */

@@ -51,11 +51,8 @@
         <v-checkbox v-model="draftOnly" label="Yalnızca taslağı olanlar" hide-details density="comfortable" />
       </template>
 
-      <template #toolbar-start>
-        <span class="integrationConfigListView__data-note">
-          Sağlık özeti, kapsam özeti, aktif mağaza sayısı ve açık uyum bulgusu bu sürümde bağlanmadı — ilgili sütunlarda "—" görünür.
-        </span>
-      </template>
+      <!-- fe-r3d (APP_IDENTITY §8): geliştirici notu ekrandan kalktı — bağlanmamış sütunlar "—" gösterir
+           (sağlık/kapsam özeti, aktif mağaza sayısı, açık uyum bulgusu henüz bağlı değil). -->
 
       <template #cell-target="{ row }">
         <EkPlatformMark :name="row.displayName" :code="row.target !== '_engine' ? row.target : undefined" />
@@ -308,8 +305,4 @@ defineExpose({
   color: var(--ek-color-content-muted);
 }
 
-.integrationConfigListView__data-note {
-  font-size: var(--ek-type-caption-size);
-  color: var(--ek-color-content-muted);
-}
 </style>

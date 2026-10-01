@@ -46,6 +46,8 @@ const GENERAL: Array<{ label: string; keys: string[][] }> = [
   { label: 'Komut paleti', keys: [['Ctrl', 'K'], ['/']] },
   { label: `${CHAT_PRODUCT.name} paneli`, keys: [['Ctrl', 'J']] },
   { label: 'Sayfa verisini yenile', keys: [['Alt', 'R']] },
+  { label: 'Tabloda sonraki / önceki satır', keys: [['J'], ['K']] },
+  { label: 'Satırı aç', keys: [['Enter']] },
   { label: 'Bu yardım', keys: [['?']] },
   { label: 'Diyalog, palet ya da menüyü kapat', keys: [['Esc']] },
 ]

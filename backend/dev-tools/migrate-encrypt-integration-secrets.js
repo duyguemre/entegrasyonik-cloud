@@ -1,7 +1,7 @@
 'use strict';
 /**
  * ADR-0003 adım 6 (C.10, C.12, C.13) — tüm tenant DB'lerindeki `ClientIntegrations` belgelerinde SIR alanlarını
- * (kayıt: src/api/integrationSecrets.ts > isSecretField) AES-256-GCM ile `enc:v1:<kid>:...` biçimine şifreler.
+ * (kayıt: src/platform/core/security/integrationSecrets.ts > isSecretField) AES-256-GCM ile `enc:v1:<kid>:...` biçimine şifreler.
  *
  * VARSAYILAN = DRY-RUN: yalnızca "N alan şifrelenecek" SAYILARI ve alan ADLARI raporlanır; hiçbir DEĞER yazdırılmaz.
  * Yazma için AÇIK `--apply` şart. İdempotent: `enc:v1:` ile başlayan değer tanınır ve atlanır (yeniden çalıştırmak güvenlidir).

@@ -38,7 +38,49 @@ const productInfo = productInfoOf(false);
 const variantScope = z.number().int().min(0).max(2);
 const batchForm = allowList({ stock: numLike.optional(), shelf: text(200).optional(), prices: z.record(z.string(), z.unknown()) });
 
+// [PRC-R0/R1] PricingService tel gövdeleri (iş kuralı sınırları operations/pricing/*'ta ikinci kez doğrulanır).
+const barcodeStr = z.string().min(1).max(128);
+const costMoney = z.number().finite().min(0).max(10_000_000);
+const variantOrBarcode = { variantId: objectIdStr.optional(), barcode: barcodeStr.optional() };
+const PRICING_RPC_INPUT: Partial<Record<RpcRef, z.ZodType<any>>> = {
+    'PricingService/listCosts': strictBody({
+        variantIds: z.array(objectIdStr).max(200).optional(), barcodes: z.array(barcodeStr).max(200).optional(), productId: objectIdStr.optional(),
+        missingOnly: z.boolean().optional(), limit: z.number().int().min(1).max(200).optional(), cursor: objectIdStr.optional(),
+    }),
+    'PricingService/setVariantCosts': strictBody({ items: z.array(allowList({ ...variantOrBarcode, costPrice: costMoney.nullable() })).min(1).max(500) }),
+    'PricingService/listBuybox': strictBody({
+        status: z.enum(['winning', 'losing', 'not_found', 'unchecked']).optional(), productIds: z.array(objectIdStr).max(100).optional(),
+        barcodes: z.array(barcodeStr).max(100).optional(), limit: z.number().int().min(1).max(200).optional(), cursor: objectIdStr.optional(),
+    }),
+    'PricingService/getBuyboxHistory': strictBody({ barcode: barcodeStr, days: z.number().int().min(1).max(90).optional() }),
+    'PricingService/previewMargin': strictBody({ items: z.array(allowList({ ...variantOrBarcode, price: costMoney.optional() })).min(1).max(50) }),
+    // [PRC-R2] Kural/öneri/uygulama tel gövdeleri. K1/K4/K6 iş kuralları `operations/pricing/priceRule.ts`'te (sunucuda) ikinci kez doğrulanır;
+    // burada da rakip/mağaza alanı TANINMAZ (strict).
+    'PricingService/getRules': strictBody({}),
+    'PricingService/saveRule': strictBody({
+        id: objectIdStr.optional(), name: z.string().min(1).max(80), enabled: z.boolean(), integrationCode: z.literal('trendyol'),
+        scope: strictBody({ productIds: z.array(objectIdStr).max(500).optional(), barcodes: z.array(barcodeStr).max(500).optional() }).optional(),
+        competition: strictBody({
+            mode: z.enum(['below', 'above']), deltaAmount: z.number().finite().min(0).max(100_000).nullable().optional(),
+            deltaPercent: z.number().finite().min(0).max(50).nullable().optional(), floorMarginPercent: z.number().finite().min(0).max(90),
+            ceiling: z.number().finite().positive().max(10_000_000), step: z.number().finite().min(0.01).max(1000),
+            maxChangesPerDay: z.number().int().min(1).max(24), cooldownMin: z.number().int().min(15).max(1440),
+            maxIncreasePercentPerDay: z.number().finite().min(0).max(10), excludeIfOutOfStock: z.boolean(),
+        }),
+    }),
+    'PricingService/deleteRule': strictBody({ id: objectIdStr }),
+    'PricingService/setPricingSettings': strictBody({ enabled: z.boolean(), consentVersion: z.string().max(40).optional(), dualEngineAcknowledged: z.boolean().optional() }),
+    'PricingService/listSuggestions': strictBody({
+        status: z.enum(['open', 'blocked', 'applied', 'dismissed', 'expired']).optional(), ruleId: objectIdStr.optional(),
+        barcodes: z.array(barcodeStr).max(100).optional(), buyboxLostOnly: z.boolean().optional(), limit: z.number().int().min(1).max(200).optional(), cursor: objectIdStr.optional(),
+    }),
+    'PricingService/getPriceHistory': strictBody({ barcode: barcodeStr.optional(), days: z.number().int().min(1).max(90).optional(), limit: z.number().int().min(1).max(200).optional(), cursor: objectIdStr.optional() }),
+    'PricingService/applySuggestions': strictBody({ suggestionIds: z.array(objectIdStr).min(1).max(50) }),
+    'PricingService/dismissSuggestions': strictBody({ suggestionIds: z.array(objectIdStr).min(1).max(50) }),
+};
+
 export const CATALOG_RPC_INPUT: Partial<Record<RpcRef, z.ZodType<any>>> = {
+    ...PRICING_RPC_INPUT,
     // --- Stok (Faz-3; docs/API_STOCK_FEATURES.md) ---
     'StockService/listLowStock': strictBody({
         threshold: z.number().int().min(0).max(1_000_000).optional(), channel: integrationCode.optional(),

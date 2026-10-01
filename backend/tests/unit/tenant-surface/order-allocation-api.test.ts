@@ -8,8 +8,8 @@ import path from 'path';
 jest.mock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: { getApplicationDB: jest.fn(), getClientDB: jest.fn() } }));
 jest.mock('@integration/modules/IntegrationFactory', () => ({ __esModule: true, default: jest.fn() }));
 
-import OrderService from '../../../src/api/services/order-service';
-import ProductService from '../../../src/api/services/product-service';
+import OrderService from '../../../src/api/rpc/handlers/order-service';
+import ProductService from '../../../src/api/rpc/handlers/product-service';
 import { ORDER_ITEM_ALLOCATION_STATES } from '../../../src/operations/stock/allocationStates';
 import { deriveAvailable } from '../../../src/interfaces/stock';
 

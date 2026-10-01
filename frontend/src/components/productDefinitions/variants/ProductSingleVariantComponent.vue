@@ -49,6 +49,12 @@
               <span class="psvc-chk__hint">Kanallara farklı fiyat verin; girmediğiniz kanal ana fiyatla satılır</span></span>
           </template>
         </v-checkbox>
+        <!-- PRC-R0: birim alış maliyeti (KDV hariç). Boş = maliyet yok (0 değil); ürün kaydıyla DEĞİL, ayrı `setVariantCosts` ile kaydedilir. -->
+        <div data-pf-field="costPrice">
+          <VCurrencyComponentVue v-model="singleVariant.costPrice" :compact="true" nullToEmpty
+            :label="$t('pricing.cost.label')" clearable :isIconExist="false" />
+          <p class="psvc-cost-hint">{{ $t('pricing.cost.hint') }}</p>
+        </div>
       </EkFormSection>
 
       <EkFormSection title="Stok" icon="mdi-warehouse">
@@ -248,6 +254,13 @@ const channelPriceRows = computed(() => channelRows(
   font-size: var(--ek-type-caption-size);
 }
 
+.psvc-cost-hint {
+  margin: var(--ek-space-1) 0 0;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+}
+
 .psvc-kv {
   display: flex;
   flex-direction: column;
@@ -295,7 +308,7 @@ const channelPriceRows = computed(() => channelRows(
    bilesen kokleri scoped ozniteligi almayabilir; onek dosyaya ozgudur. */
 
 .psvc-s11 {
-  transition: opacity var(--ek-duration-base) var(--ek-easing-standard) !important;
+  transition: opacity var(--ek-motion-reveal) !important;
 }
 
 .psvc-dim {

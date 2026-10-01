@@ -123,7 +123,7 @@ const STATIC_ENTRIES: SeoEntry[] = [
     path: '/ozellikler',
     title: 'Özellikler: stok, sipariş, iade ve mesajlar',
     description:
-      'Eşzamanlı siparişte stok rezervasyonu, tek listede siparişler, iade onayı, müşteri soruları ve hakediş takibi: özellikler ve kanal kapsamları.',
+      'Eşzamanlı siparişte stok rezervasyonu, tek listede siparişler, iade onayı, alıcı soruları ve hakediş takibi: özellikler ve kanal kapsamları.',
     index: true,
     crumb: 'Özellikler',
     schema: ['WebPage'],

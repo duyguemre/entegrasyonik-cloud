@@ -20,7 +20,7 @@ import {
 import { getPublicIntegrations, type PublicIntegration } from './integrations'
 import { clusterOf, clusters, getGuide, guideHref, guides, guidesIn, readingMinutes } from './kb'
 import { getPublicTrial, getTrialPlanCode } from './plans'
-import { assistantTeaser } from './assistant'
+import { assistantTeaser, loopSection } from './assistant'
 import { AGENT_BRAND, AGENT_PATH } from './agent-brand'
 import { appUrls } from '../lib/site-config'
 
@@ -46,6 +46,8 @@ export interface MenuFeature {
   meta?: string[]
   /** Kısa madde listesi (ör. deneme adımları). */
   points?: string[]
+  /** S27b: ajan kartında çalışma döngüsü adımları (Otopilot sayfasındaki döngü kaydından; yalnız adım adları). */
+  flow?: string[]
 }
 
 export interface MenuGroup extends NavGroup {
@@ -73,7 +75,7 @@ function feature(kind: NavFeatureKind): MenuFeature | undefined {
   if (kind === 'agent') {
     const item = published(primaryNav).find((i) => i.href === AGENT_PATH)
     if (!item) return undefined
-    return { kind, eyebrow: copy.eyebrow, badge: item.badge, title: AGENT_BRAND, text: assistantTeaser.lead, cta: { label: copy.cta, href: AGENT_PATH } }
+    return { kind, eyebrow: copy.eyebrow, badge: item.badge, title: AGENT_BRAND, text: assistantTeaser.lead, flow: loopSection.steps.map((st) => st.title), cta: { label: copy.cta, href: AGENT_PATH } }
   }
   if (kind === 'trial') {
     const code = getTrialPlanCode()

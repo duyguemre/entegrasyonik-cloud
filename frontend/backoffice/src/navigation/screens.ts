@@ -10,7 +10,18 @@
  *
  * Bilgi mimarisi: 5 bölüm → 12 grup → ekranlar. Grubun tek ekranı varsa menüde yaprak, birden fazlaysa açılır grup.
  */
+import type { RouteLocationNormalizedLoaded, RouteLocationRaw } from 'vue-router'
+
 export type ScreenStatus = 'ready' | 'draft' | 'planned'
+
+/** NT-01: komut paletinde boş sorguda "Bu ekranda" grubu (1–3 bağlam eylemi; hedef ekran + süzgeç). */
+export interface ContextAction {
+  id: string
+  label: string
+  icon: string
+  to: RouteLocationRaw
+}
+type ContextActions = (route: RouteLocationNormalizedLoaded) => ContextAction[]
 
 export type SectionKey = 'home' | 'customers' | 'platform' | 'observe' | 'govern'
 
@@ -53,6 +64,8 @@ export interface BoScreen {
   view?: () => Promise<unknown>
   /** Yalnız `planned`: yakında durumunda gösterilen kapsam. */
   plan?: { items: string[]; endpoints: string }
+  /** NT-01: bu ekrandayken palette üstte gösterilen bağlam eylemleri. */
+  actions?: ContextActions
 }
 
 /** Kayıttaki bir ekranın alt sayfası (ör. müşteri detayı): menüde görünmez, breadcrumb'da ebeveyni gösterir. */
@@ -62,6 +75,7 @@ export interface BoDetailRoute {
   parent: string
   title: string
   view: () => Promise<unknown>
+  actions?: ContextActions
 }
 
 export const SECTIONS: Array<{ key: SectionKey; label: string }> = [
@@ -95,7 +109,7 @@ export const SCREENS: BoScreen[] = [
     key: 'overview',
     hotkey: 'o',
     label: 'Genel bakış',
-    lede: 'Platformun anlık sağlığı: bağımlılıklar, istek sağlığı, kuyruklar ve dikkat isteyen sorunlar.',
+    lede: 'Önce müdahale gerekenler, sonra büyük resim: sistem ve müşteri sorunları öncelik sırasıyla, her birinde ne yapmalı.',
     icon: 'mdi-view-dashboard-outline',
     group: 'overview',
     status: 'ready',
@@ -130,6 +144,19 @@ export const SCREENS: BoScreen[] = [
     path: '/musteriler',
     keywords: ['tenant', 'mağaza', 'hesap'],
     view: () => import('../views/TenantsView.vue'),
+  },
+  {
+    // MOB-08 / K55: kullanım izleme -- masaüstü / mobil ana kırılım, alt türler ayrıntıda, platform süzgeci.
+    key: 'usage',
+    hotkey: 'n',
+    label: 'Kullanım',
+    lede: 'Aktif kullanıcılar masaüstü ve mobil ayrımıyla (tarayıcı, kurulu uygulama, Android, masaüstü uygulaması); müşteri bazında ayrıntı müşteri detayında.',
+    icon: 'mdi-devices',
+    group: 'customers',
+    status: 'ready',
+    path: '/musteriler/kullanim',
+    keywords: ['kullanım', 'aktif kullanıcı', 'mobil', 'masaüstü', 'pwa', 'android', 'platform', 'dau'],
+    view: () => import('../views/usage/UsageView.vue'),
   },
   planned({
     key: 'lifecycle',
@@ -174,6 +201,11 @@ export const SCREENS: BoScreen[] = [
   // ---------------------------------------------------------------- Platform
   {
     key: 'engine',
+    actions: () => [
+      { id: 'dlq', label: 'Ölü mektuplara geç', icon: 'mdi-email-alert-outline', to: { path: '/motor', query: { sekme: 'basarisiz', kaynak: 'dlq' } } },
+      { id: 'failed', label: 'Başarısız işler', icon: 'mdi-alert-circle-outline', to: { path: '/motor', query: { sekme: 'basarisiz' } } },
+      { id: 'leases', label: 'Takılı kiralar', icon: 'mdi-lock-clock', to: { path: '/motor', query: { sekme: 'durum' } } },
+    ],
     hotkey: 'k',
     label: 'Motor ve kuyruklar',
     lede: 'Sipariş kuyruğu, başarısız işler, takılı kiralar ve zamanlayıcı koşuları.',
@@ -186,6 +218,10 @@ export const SCREENS: BoScreen[] = [
   },
   {
     key: 'integrations',
+    actions: () => [
+      { id: 'resilience', label: 'Devre kesiciler ve hız bütçesi', icon: 'mdi-shield-half-full', to: { path: '/entegrasyonlar', query: { sekme: 'dayaniklilik' } } },
+      { id: 'logs', label: 'Entegrasyon hatalarını loglarda aç', icon: 'mdi-pulse', to: { path: '/loglar', query: { category: 'integration', level: 'fatal,error' } } },
+    ],
     hotkey: 'e',
     label: 'Entegrasyonlar',
     lede: 'Platform geneli API sağlığı, pod bazında dayanıklılık (devre kesici, hız bütçesi, alım) ve ayar kataloğu ile etkin değerler.',
@@ -198,6 +234,10 @@ export const SCREENS: BoScreen[] = [
   },
   {
     key: 'infra',
+    actions: () => [
+      { id: 'slow', label: 'Yavaş sorgular', icon: 'mdi-timer-alert-outline', to: { path: '/altyapi', query: { sekme: 'yavas' } } },
+      { id: 'queues', label: 'Motor kuyrukları', icon: 'mdi-tray-full', to: '/motor' },
+    ],
     hotkey: 'i',
     label: 'Redis ve MongoDB',
     lede: 'Salt okuma altyapı durumu. Anahtar adı, değer ve belge içeriği asla gösterilmez.',
@@ -223,6 +263,10 @@ export const SCREENS: BoScreen[] = [
   // ---------------------------------------------------------------- Gözlem
   {
     key: 'logs',
+    actions: (r) => [
+      { id: 'errors', label: 'Yalnız kritik ve hatalar', icon: 'mdi-alert-octagon-outline', to: { path: '/loglar', query: { ...r.query, level: 'fatal,error' } } },
+      { id: 'audit', label: 'Aynı kapsamda denetim kayıtları', icon: 'mdi-shield-search', to: { path: '/denetim', query: r.query.tid ? { tid: r.query.tid } : {} } },
+    ],
     hotkey: 'l',
     label: 'Log kontrol merkezi',
     lede: 'Olaylar kategoriye ve parmak izine göre gruplu: önce “ne bozuk”, sonra “hangi istekte”.',
@@ -235,6 +279,10 @@ export const SCREENS: BoScreen[] = [
   },
   {
     key: 'audit',
+    actions: () => [
+      { id: 'failed', label: 'Reddedilen işlemler (24 sa)', icon: 'mdi-shield-alert-outline', to: { path: '/denetim', query: { result: 'fail', range: '24h' } } },
+      { id: 'support', label: 'Destek oturumları', icon: 'mdi-lifebuoy', to: { path: '/denetim', query: { event: 'impersonation.start' } } },
+    ],
     hotkey: 'd',
     label: 'Denetim kayıtları',
     lede: 'Kim, ne zaman, neyi, hangi gerekçeyle değiştirdi. Kayıtlar değiştirilemez; 365 gün saklanır.',
@@ -270,6 +318,17 @@ export const SCREENS: BoScreen[] = [
     keywords: ['feature flag', 'bayrak', 'bakım', 'maintenance', 'duyuru şeridi', 'destek e-postası', 'ortam'],
     status: 'ready',
     view: () => import('../views/settings/SettingsView.vue'),
+  },
+  {
+    key: 'competition-settings',
+    label: 'Rekabet ayarları',
+    lede: 'Buybox izleme ve fiyat kuralları: kill-switch, plan varsayılanları, Trendyol çağrı bütçesi, bildirim gölge modu ve müşteri istisnaları; taslak, gerekçeli yayın ve geri alma.',
+    icon: 'mdi-chart-line-variant',
+    group: 'settings',
+    path: '/sistem/rekabet',
+    keywords: ['buybox', 'rekabet', 'rakip', 'fiyat izleme', 'trendyol bütçe', 'sku tavanı', 'tazeleme', 'gölge mod', 'istisna', 'pilot', 'fiyat kuralı', 'kill-switch', 'öneri'],
+    status: 'ready',
+    view: () => import('../views/settings/CompetitionSettingsView.vue'),
   },
   {
     key: 'otopilot-settings',
@@ -332,6 +391,10 @@ export const SCREENS: BoScreen[] = [
   },
   {
     key: 'alerts',
+    actions: () => [
+      { id: 'logs', label: 'Kritik olayları loglarda aç', icon: 'mdi-pulse', to: { path: '/loglar', query: { level: 'fatal,error' } } },
+      { id: 'deliveries', label: 'Teslim günlüğü', icon: 'mdi-email-fast-outline', to: '/bildirimler/teslimler' },
+    ],
     hotkey: 'u',
     label: 'Platform uyarıları',
     lede: 'Hata oranı, kimlik hatası, kuyruk birikimi ve teslim sorunları için tetiklenen uyarılar; süreli susturma.',
@@ -345,7 +408,21 @@ export const SCREENS: BoScreen[] = [
 ]
 
 export const DETAIL_ROUTES: BoDetailRoute[] = [
-  { name: 'tenant', path: '/musteriler/:tid(\\d+)', parent: 'tenants', title: 'Müşteri', view: () => import('../views/TenantDetailView.vue') },
+  {
+    name: 'tenant',
+    path: '/musteriler/:tid(\\d+)',
+    parent: 'tenants',
+    title: 'Müşteri',
+    view: () => import('../views/TenantDetailView.vue'),
+    actions: (r) => {
+      const tid = String(r.params.tid)
+      return [
+        { id: 'support', label: 'Destek oturumu aç', icon: 'mdi-account-switch-outline', to: { path: `/musteriler/${tid}`, query: { eylem: 'destek' } } },
+        { id: 'logs', label: 'Bu müşterinin olay akışı', icon: 'mdi-pulse', to: { path: '/loglar', query: { tid } } },
+        { id: 'subscription', label: 'Aboneliği aç', icon: 'mdi-card-account-details-outline', to: `/abonelikler/${tid}` },
+      ]
+    },
+  },
   { name: 'subscription', path: '/abonelikler/:tid(\\d+)', parent: 'subscriptions', title: 'Abonelik', view: () => import('../views/billing/SubscriptionDetailView.vue') },
   { name: 'announcement-new', path: '/sistem/duyurular/yeni', parent: 'announcements', title: 'Yeni duyuru', view: () => import('../views/notifications/AnnouncementEditorView.vue') },
   { name: 'announcement', path: '/sistem/duyurular/:id([a-f0-9]{24})', parent: 'announcements', title: 'Duyuru', view: () => import('../views/notifications/AnnouncementDetailView.vue') },
@@ -363,6 +440,13 @@ export function groupOf(screen: BoScreen): BoGroup {
 
 export function screensOf(group: GroupKey): BoScreen[] {
   return SCREENS.filter((s) => s.group === group)
+}
+
+/** NT-01: bulunulan rotanın bağlam eylemleri (detay sayfası önce, sonra ekran). En çok 3. */
+export function contextActionsFor(route: RouteLocationNormalizedLoaded): ContextAction[] {
+  const detail = DETAIL_ROUTES.find((d) => d.name === route.name)
+  const screen = detail ? undefined : SCREENS.find((s) => s.key === route.name)
+  return ((detail ?? screen)?.actions?.(route) ?? []).slice(0, 3)
 }
 
 export function screenByKey(key: string): BoScreen | undefined {

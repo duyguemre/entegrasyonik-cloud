@@ -4,7 +4,20 @@ import { useLoadingStore } from '@/stores/loadingStore'
 import logger from '@/composables/logger'
 import { apiBaseUrl, imageBaseUrl } from '@/config/env'
 import { requestReauth } from '@/composables/reauth'
+import { CLIENT_PLATFORM_HEADER, clientPlatform } from '@entegrasyonik/ui/platform'
 axios.defaults.withCredentials = true
+
+// MOB-08 / K55: kendi API'mize giden HER istekte istemci platform sınıfı (`X-Client-Platform`; tek kaynak
+// `@entegrasyonik/ui/platform`). Yalnız sınıf değeri gider (ham UA/cihaz bilgisi yok); dış adreslere eklenmez.
+export function withClientPlatformHeader<T extends { url?: string; headers?: any }>(config: T): T {
+  const url = config?.url ?? ''
+  if (typeof url === 'string' && url.startsWith(apiBaseUrl)) {
+    if (config.headers && typeof config.headers.set === 'function') config.headers.set(CLIENT_PLATFORM_HEADER, clientPlatform())
+    else config.headers = { ...(config.headers ?? {}), [CLIENT_PLATFORM_HEADER]: clientPlatform() }
+  }
+  return config
+}
+axios.interceptors.request.use(withClientPlatformHeader)
 
 // Çağrı başına seçenek: `skipSessionRedirect` → bu isteğin 401'i genel "oturum düştü → /login" yakalayıcısını
 // TETİKLEMEZ; hata her zamanki gibi çağırana `resolve` edilir. YALNIZCA 401'i oturum dışı bir anlamla döndüren

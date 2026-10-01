@@ -32,10 +32,10 @@ test.describe('A3 inceleme görüntüleri', () => {
     })
   }
 
-  const unsecure: Array<{ name: string; path: string; tab?: string; extra?: Record<string, unknown> }> = [
+  const unsecure: Array<{ name: string; path: string; tab?: string; button?: string; extra?: Record<string, unknown> }> = [
     { name: 'auth-giris', path: '/login' },
     { name: 'auth-kayit', path: '/login', tab: 'Kayıt' },
-    { name: 'auth-sifremi-unuttum', path: '/login', tab: 'Şifremi unuttum' },
+    { name: 'auth-sifremi-unuttum', path: '/login', button: 'Parolanızı mı unuttunuz?' },
     { name: 'auth-sifre-sifirla', path: '/reset-password?token=e2e-sentetik-belirtec' },
     { name: 'auth-eposta-dogrula', path: '/verify-email?token=e2e-sentetik-belirtec', extra: { 'AccountService/verifyEmail': { success: true } } },
   ]
@@ -45,6 +45,7 @@ test.describe('A3 inceleme görüntüleri', () => {
       await installApiMocks(page, { ...NO_SESSION, ...(u.extra ?? {}) })
       await page.goto(u.path)
       if (u.tab) await page.getByRole('tab', { name: u.tab }).click()
+      if (u.button) await page.getByRole('button', { name: u.button }).click()
       await page.evaluate(() => document.fonts.ready)
       await page.waitForTimeout(800)
       await page.screenshot({ path: fileName(u.name), fullPage: FULL })

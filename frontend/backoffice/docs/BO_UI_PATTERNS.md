@@ -253,3 +253,171 @@ menüde yaprak görünür. Duyuru alt sayfaları `DETAIL_ROUTES`: `/sistem/duyur
 
 **Sahte API (ek):** `failOps(prefix)` artık tüm operasyonlara uygulanır (oturum uçları hariç) — genel bakış yenileme
 hatası `failOps('BackofficeOverviewService/')` ile denenir.
+
+---
+
+## 11. Sayfa deseni: Durum → Karar → Eylem → Ayrıntı (BO-R1, K51) — **TÜM sayfalar**
+Kaynak: kullanıcı geri bildirimi `docs/cloud-contracts/BO_FEEDBACK_R1_2026-10-01.md` (BO1-PAGES 6-7), karar K51. İlke:
+`elev/CONSOLE_IDENTITY.md` §1 "Önce karar, sonra veri". Konsol bilgi yığmaz, **yönlendirir**: her sayfa yukarıdan aşağı
+dört soruyu sırayla yanıtlar. Kaynak dal: `cloud/bo-r1a` (bileşenler + genel bakış); diğer sayfalara uygulama `cloud/bo-r1b`. İnceleme kareleri:
+`docs/bo-r1a-review/` (`REVIEW.md`).
+
+| Katman | Soru | Bileşen | Kural |
+|---|---|---|---|
+| **1 · Durum** | Mevcut durumdan ne anlamalıyım? | `BoStatusHeader` | `BoPageHeader`'ın HEMEN altında, tek cümle hüküm + sağlık rozeti. Her sayfada bir tane. |
+| **2 · Karar** | Müdahale etmeli miyim? | `BoAttentionList` | Dikkat isteyenler önem sırasıyla; boşsa "her şey yolunda" + neyin denetlendiği. |
+| **3 · Eylem** | Nasıl müdahale ederim? | `BoActionCard` (+ maddedeki eylem bağlantısı) | Tek somut öneri + tek düğme. Yazma eylemi `guarded` → `useGuardedAction`/`GuardedDialog`. |
+| **4 · Ayrıntı** | Kanıt nerede? | `BoDetailSection` (ya da mevcut tablo kartları) | Tablolar, loglar, geçmiş en altta; panoda katlanır ve ilk açılışta yüklenir. |
+
+Bileşenler `src/components/triage/` altında (backoffice'e özgü; ortak pakete taşıma ayrı karar). Ortak türler ve eşlemeler:
+`triage.ts` (`Severity`, `Health`, `SEVERITY`, `HEALTH_BADGE`, `AttentionEntry`, `healthOf()`, `countText()`).
+
+### 11.1 Durum — `BoStatusHeader`
+```vue
+<BoStatusHeader :health="health" :verdict="verdict" :summary="summary" :facts="facts" :loading="!loaded">
+  <BoActionCard v-if="first" eyebrow="Önerilen ilk adım" … />   <!-- isteğe bağlı: en önemli maddeden türetilir -->
+</BoStatusHeader>
+```
+- `health`: `ok` (doğrulanmış iyi) · `warning` (izlenmeli) · `critical` (şimdi müdahale) · `unknown` (okunamadı). Rozet metni
+  `HEALTH_BADGE`'den: Sağlıklı · İzlenmeli · Müdahale gerekli · Bilinmiyor. Gerekirse `badge-label` ("Kısmi bozulma").
+- `verdict` tek cümle, sayı içerir: "Her şey yolunda" / "2 konu şimdi müdahale istiyor" / "Kuyruklar okunamadı — durum eksik".
+  `summary` ikinci cümle: neye bakıldı, ne kadar güncel ("Sistem ve müşteri denetimleri 30 sn önce yapıldı.").
+- `facts`: en çok 4 bağlantılı özet (`{ label, value, tone, href|to }`): sayfa içi bölüme (`#sistem`) ya da başka ekrana.
+- Yüzey: `ok` → nötr yüzey, yeşil yalnız ikon/rozet/sol çizgi (sakin); `warning`/`critical` → ince tonlu zemin. Canlı bölge
+  (`role="status"`) yalnız hüküm metnini okur. `loading` → iskelet, yerleşim kaymaz.
+- `ok` iken metin **"Her şey yolunda"** + neyin denetlendiği; yeşil tik yalnız doğrulanmış iyilik içindir (okunamayan bölüm
+  varsa `unknown`/`warning`, asla `ok`).
+
+### 11.2 Karar — `BoAttentionList`
+```vue
+<BoAttentionList :items="entries" :state="state" :error="error" :checks="checks" :degraded="degraded"
+  ok-title="Sistem tarafında müdahale gereken bir şey yok" list-label="Sistemde dikkat isteyenler" @retry="load" />
+```
+- Madde (`AttentionEntry`, `triage.ts`): `{ id, severity, title, why?, impact?, count?, advice?, action?, secondary?,
+  capabilities?, since?, subjects? }`. Her madde aynı sırayla üç soruyu yanıtlar: **Ne oldu** (`title` + `why`) · **Ne
+  kadar ciddi** (önem metni ikonla + `count` "412 çağrı" + `impact` + `since` "52 dk önce başladı") · **Ne yapmalı**
+  (`advice`, tek cümle) + **eylem** (`action.to`: hedef ekran + süzgeç önceden uygulanmış; yerinde yazma değil).
+  `capabilities` (yerinde güvenli eylem önerisi, ör. "Hepsini yeniden dene") yalnız kilit ikonlu ipucu olarak çizilir;
+  akış ilgili ekranda `GuardedDialog` ile yapılır. `subjects` → nötr müşteri kimlikleri (ilk 3 + "+N müşteri").
+- Sıra: sayfanın verdiği sıra korunur (panoda sunucu sırası: ciddiyet → etki ağırlığı → eskiden yeniye). Sayfa kendi
+  verisinden liste kuruyorsa `critical` → `warning` → `info`, aynı önemde eskiden yeniye dizer.
+- `limit` (5; mobilde panoda 2): fazlası "N madde daha göster (2 uyarı · 1 bilgi)"; **kritikler limitten bağımsız hep
+  görünür**. `total` (sunucu toplamı) `items`'tan büyükse "Toplam N maddenin en önemli M tanesi gösteriliyor".
+- Kritik maddenin eylemi dolgu (`.bo-act-link.is-primary`), diğerleri sakin ikincil. Ekranda tek bir dolgu düğme hedeflenir.
+- Durumlar: `loading` (iskelet) · `error` (`BoPanelState` hata + Tekrar dene) · `unsupported` (uç yok — "henüz bağlı değil",
+  uydurma veri YOK) · `ready` + boş → **her şey yolunda** (`okTitle` + `okText` + "Denetlenen: …") · `ready` + `degraded`
+  dolu → sarı not "X okunamadı — liste eksik olabilir" + Yeniden dene (liste yine çizilir).
+- Müşteri kapsamlı maddede `subjects` → nötr kimlik (`#107 Örnek · Mağaza`, müşteri detayına bağlı); renkli rozet olmaz.
+- Önem rengi yalnız ikon ve önem sözcüğünde ("Kritik"/"Uyarı"); ikon biçimi de farklıdır (sekizgen/üçgen/daire) — renk
+  tek taşıyıcı değil. Kritik maddenin eylemi dolgu, diğerleri sakin.
+- Metin kuralı: başlık ünlemsiz, enum yok; sayı birimiyle (birimsiz sayı gösterilmez); `advice` "…kontrol edin" (siz dili).
+
+### 11.3 Eylem — `BoActionCard`
+```vue
+<!-- gezinme -->
+<BoActionCard eyebrow="Önerilen ilk adım" tone="critical" :title="top.title" :text="top.advice" :action-label="top.action.label" :to="top.action.to" />
+<!-- yerinde güvenli eylem (step-up + gerekçe) -->
+<BoActionCard title="Denemeyi uzatın" text="Kurulum sürüyor; 14 gün ek süre önerilir." action-label="Uzat…" guarded @act="extend.open(tid)" />
+```
+- Sayfada en çok **bir** önerilen ilk adım (Durum içinde) + bölüm başına en çok bir kart. Kart veri yazmaz; `guarded` yalnız
+  "Kimlik doğrulama ve gerekçe istenir; işlem denetime yazılır" notunu ve kilit ikonunu gösterir, akış sayfadadır (§6).
+- Tehlikeli (yıkıcı) eylem kartla önerilmez; ilgili ekrana götürülür ve orada `DangerActionDialog` ile yapılır.
+
+### 11.4 Ayrıntı — `BoDetailSection`
+```vue
+<BoDetailSection id="teknik" title="Teknik ayrıntılar" summary="Bağımlılıklar · podlar · kuyruk sayaçları" sync-query @open="loadDetails">
+  …mevcut kartlar/tablolar…
+</BoDetailSection>
+```
+- Kapalıyken içerik çizilmez; ilk açılışta `@open` → sayfa veriyi o an çeker. `sync-query` → `?ayrinti=teknik,…` (paylaşılan
+  bağlantı aynı görünümü açar). Başlık h2 içinde `aria-expanded` düğme.
+- Liste/tablo ağırlıklı sayfalarda (müşteriler, loglar) ayrıntı = sayfanın kendisi; katlanmaz, yalnız Durum/Karar üstüne eklenir.
+
+### 11.5 Soru-cevap bölümü — `BoTriageSection` (pano ve çok sorulu sayfalar)
+```vue
+<BoTriageSection id="sistem" :index="1" question="Sistemde müdahale gereken var mı?" :health="h" answer="Evet · 1 kritik"
+  :more="{ label: 'Uyarılar', to: { name: 'alerts' } }">…</BoTriageSection>
+```
+- Başlık (h2) bir SORUDUR; yanında kısa cevap rozeti ("Hayır" / "Evet · 2 kritik"). Sakin bilgi bölümlerinde (`calm`)
+  rozet nötr ("Olağan", "Son 24 saat"). Bölümler sorulma sırasıyla dizilir; `index` okuma sırasını gösterir.
+
+### 11.6 Sayfaya uygulama (bo-r1b için kontrol listesi)
+1. `BoPageHeader` → **`BoStatusHeader`** (hüküm sayfanın verisinden; okunamayan bölüm → `unknown`/`warning`).
+2. Sayfanın "dikkat" kümesini çıkarın (başarısız iş, açık devre, ödeme sorunu…) → `AttentionEntry[]` → **`BoAttentionList`**
+   (sayfa kendi verisini çevirir; yeni uç gerekmez). Eylem bağlantısı aynı sayfada bir süzgeç/sekme olabilir.
+3. Sayfada tek önerilen eylem varsa **`BoActionCard`** (yazma ise `guarded` + `GuardedDialog`).
+4. Mevcut tablolar/paneller **Ayrıntı** katmanıdır: yeri aşağı, içerik değişmez. Durum/Karar eklemek için tablo silinmez.
+5. Hedef sayfalar gelen süzgeci okur (`?sekme=`, `?kaynak=`, `?tid=`, `?fp=`, `?level=`); okumuyorsa eklenir (§Ek BO-ELEV "İz
+   bağlantıları"). Yeni okunan sorgu parametresi bu tabloya yazılır:
+
+| Hedef | Yol | Okunan süzgeç (ekran) | Sözleşme (`API_BACKOFFICE_ATTENTION.md`) adı → çeviri (`src/api/attention.ts routeOf`) |
+|---|---|---|---|
+| `engine` | `/motor` | `sekme=kuyruklar|basarisiz|durum|zamanlanmis`, `kaynak=dlq`; başarısız işler `tid`, `entegrasyon`, `kod` (BE-03; sözleşme adları `integrationCode`, `errorCode` da okunur) | `tab=queues|failed|state-machine|scheduled` → `sekme`; `source` → `kaynak` |
+| `integrations` | `/entegrasyonlar` | `sekme=saglik|dayaniklilik|katalog` | `tab=api-health|resilience|catalog` → `sekme`; `integrationCode`, `range` geçer (ekran henüz süzmüyor — panel ucu `integrationCode` almıyor) |
+| `infra` | `/altyapi` | `sekme=redis|mongodb|yavas` | `tab=slow-queries` → `sekme=yavas`; `range` geçer |
+| `cache` | `/altyapi/onbellek` | `#bo-cache-families` (bo-r1b) | — |
+| `logs` | `/loglar` | `tid` (olay akışı kesin; sorun grupları BE-06 ile YAKLAŞIK), `level`, `category`, `reqId`, `fp`, `sekme=akis|sorunlar`, `sirala=lastSeen|count|tenantCount|new`; süzgeç değişimi URL'e yazılır (bo-r1b) | `tab=issues` düşer (varsayılan sekme); `status=open` geçer (sorun durumu süzgeci yok; açık gruplar zaten öndedir) |
+| `audit` | `/denetim` | `event`, `result=ok|fail|error`, `surface`, `range=24h|7d`, `tid`, `reqId` | — |
+| `alerts` | `/bildirimler/uyarilar` | `durum=firing|resolved|all`, `onem=critical|warning`, `kural=R1…` (bo-r1b); sözleşme adları `status`, `ruleId` de okunur | `status=firing`, `ruleId` geçer |
+| `deliveries` | `/bildirimler/teslimler` | `durum`, `kod`, `tid`, `olay` | — |
+| `announcements` | `/sistem/duyurular` | `durum=active|scheduled|draft|ended|cancelled` (bo-r1b) | — |
+| `notification-catalog` | `/bildirimler/katalog` | `ara=<kod>` (bo-r1b) | — |
+| `tenant` | `/musteriler/:tid` | `sekme=ozet|yasam-dongusu`, `eylem=destek` (destek oturumu güvenli akışı; tek kullanımlık — NT-01) | tek müşterili öğe buraya yönlenir (aşağıda) |
+| `subscription` | `/abonelikler/:tid` | `#iptal` (yönetim eylemleri kartı; bo-r1b) | tek müşterili abonelik öğesi buraya yönlenir |
+| `subscriptions` | `/abonelikler` | `sekme=abonelikler|gelir`, `durum=<abonelik durumu>`, `plan=<kod>` (bo-r1b); sözleşme adı `status` de okunur | `status=past_due|suspended|trialing`, `endingInDays` geçer (`endingInDays` süzgeci uçta yok) |
+| `tenants` | `/musteriler` | `q`, `durum=aktif|pasif|eski|kanalsiz|sorunlu`, `sira=magaza|sonEsitleme|kayit|acikSorun|basarisizIs|sonHata` (`-` önek azalan) (bo-r1b, NT-03/05, BE-01) | `hasIssues=1` → `durum=sorunlu` |
+| `admins` | `/yoneticiler` | `filtre=nomfa|locked|invites|idle`, `davet=1` (davet diyaloğunu açar; tek kullanımlık) (bo-r1b) | — |
+| `flags` | `/sistem/bayraklar` | `#bakim`, `#taslak`, `#gecmis`, `#ayarlar` (bo-r1b) | — |
+| (yakında) | `/musteriler/yasam-dongusu`, `/musteriler/destek` | ekran planlı | `status=…`, `olderThanHours` — ekran gelene dek tek müşterili öğe müşteri detayına yönlenir |
+
+Tek müşterili öğe kuralı (`preferDetail`): `subjects` tek ise liste hedefi (`/abonelikler`, `/musteriler`,
+`/musteriler/yasam-dongusu`, `/musteriler/destek`) yerine o müşterinin kaydı açılır — tek tıkla doğru kayıt.
+
+6. Kontrol: ilk ekranda (1440 × 900 ve 390 × 844) hüküm + ilk dikkat maddesi + eylemi görünür mü? "Her şey yolunda"
+   senaryosu da çizildi mi (sahte API'de sakin kol)? Axe açık/koyu 0.
+
+### 11.7 Sayfalara uygulama — bo-r1b yapı taşları
+Genel bakış dışındaki tüm sayfalar (müşteriler + detay, abonelikler + detay, motor, entegrasyonlar, altyapı, önbellek,
+loglar, denetim, yöneticiler, platform ayarları, Otopilot ayarı/sohbet, duyurular, teslimler, müşteri bildirim geçmişi,
+katalog, uyarılar) bu deseni **tek uyarlayıcı** üzerinden kullanır:
+
+| Yapı taşı | Yer | Kural |
+|---|---|---|
+| Hüküm modeli | `src/utils/verdict.ts` | Sayfa kendi verisinden SAF bir `<ad>Verdict.ts` fonksiyonuyla `PageVerdict` üretir (`buildVerdict({ attention, actions, calm, checks, note, busy })`). Madde: `title` (ne oldu) + `impact` + `advice` + `to` (ZORUNLU; aynı sayfa sekmesi için göreli `{ query: { sekme } }`) + `cta`. Okunamayan kaynak `unreadable(id, ad, retry)` → "X okunamadı — Yeniden dene" (asla "sağlıklı"). Varsayılan hüküm kısa ve sayılı ("2 konu şimdi müdahale istiyor"), en acil madde ikinci cümlede. Her sayfanın vitest'i `tests/verdict*.test.ts`. |
+| `PageVerdict` | `src/components/verdict/PageVerdict.vue` | `BoPageHeader`'ın HEMEN altında `<PageVerdict :verdict="v" />` (null → denetleniyor). İçte §11.1–11.3 bileşenleri: tone → `Health` (success/info → ok, error → critical, neutral → unknown); ilk YIKICI OLMAYAN eylem "Önerilen ilk adım" kartı (`guarded` → kilit notu, akış sayfanın `GuardedDialog`'u); kalan eylemler sakin "Diğer eylemler" satırı; dikkat listesi `limit` 3. Acil madde yoksa bilgi maddeleri büyük liste yerine Durum'daki bağlantılı **özet çipleri** (`facts`) olur. Sonunda "Ayrıntılar" ayracı (`detailsLabel=false` ile kapatılır — Otopilot sohbeti). |
+| `useVerdictSources` | `src/composables/useVerdictSources.ts` | Sekmeli sayfada hüküm için hafif özet okumaları (`settled`, `failed(k)`, `stale`, `updatedAt` = en eski başarılı okuma). Başlıkta metinli "Yenile" (`data-page-refresh`) hüküm kaynaklarını VE açık paneli (`:key` nesli) birlikte tazeler; `BoPageHeader :updated-at :stale`. |
+| `CopyViewLink` | `src/components/CopyViewLink.vue` | NT-03: başlık eylemlerinde "Bağlantı" (Yenile'nin solunda) — geçerli URL (sekme + süzgeçler) panoya. Kayıtlı görünüm sunucuda → BE-05. |
+| Bağlam eylemleri | `navigation/screens.ts` `actions?: (route) => ContextAction[]` | NT-01: palette boş sorguda en üstte "Bu ekranda" (en çok 3). Detay rotası da tanımlayabilir (müşteri detayı: destek oturumu → `?eylem=destek`). |
+| Satır klavyesi | `navigation/rowNav.ts` (+ `hotkeys.ts` `row`) | NT-10: `#bo-main` içindeki görünür `tbody tr` / `.bo-rowcard` satırlarında j/k, Enter, Esc. Sayfa kodu gerekmez; satırın birincil bağlantısı odaklanır (`[data-kb-row]` sakin vurgu). |
+| Üretimde kimlik yazdırma | `DangerActionDialog confirmText` / `GuardedDialog confirmText` | NT-02: yalnız `currentEnv.key === 'production'` + yıkıcı iken "Onay için `<kimlik>` yazın" alanı; eşleşmeden onay kapalı. Verilen yerler: iş silme (iş kimliği), abonelik iptali (tid), teslim atma (teslim kimliği), yönetici devre dışı/2FA sıfırlama (e-posta). |
+| Sessiz yenileme onayı | `EkRefreshButton quiet-success` (paket, ekleyici) | NT-07: backoffice panel düğmeleri başarıda yeşil tik yerine nötr "Güncellendi" (tazelik ≠ sağlık). Ana uygulama varsayılanı değişmedi. |
+| Otomatik yenileme metni | `BoPageHeader :auto-refresh="30"` | NT-09: tek metin "Sekme açıkken 30 sn'de bir yenilenir". |
+| BE-01..06 bağları | `api/contracts/ops.ts`, `contracts/engine.ts`, `api/mock/ops/{tenantOps,prefs,engine}.ts` | Müşteri listesi ops sütunları + "Sorunlu müşteriler" (BE-01); müşteri detayı "Şu an" kartı (BE-02, `degradedSections` → "okunamadı"); başarısız işlerde süzgeç + seçim + "Seçilenleri yeniden dene" (BE-03, `retryJobs` step-up + gerekçe, iş başına sonuç) ve iz sütunu (BE-04 `reqId` → `/loglar?reqId=`); başlıkta "Görünüm" grubu = Bağlantı + kayıtlı görünümler menüsü (BE-05, `SavedViewsMenu`, ekran anahtarı `route.meta.screen`, yönetici başına ≤ 20); sorun gruplarında `tid` (BE-06, yaklaşık ipucu). Sahte uçlar sözleşmeye birebir (`tests/ops-*-contract.test.ts`). |
+| Hash kaydırma | `router.ts scrollBehavior` | Hüküm bağlantısı sayfa içi bölüme (`#bakim`, `#bo-cache-families`) kaydırır; davet bileti `#t=` etkilenmez. |
+
+**Panodaki uygulama (bo-r1a):** genel bakış dört soruyu sırayla yanıtlar — 1 sistemde müdahale (getAttention
+`groups.system`), 2 büyük resim (getPulse: API isteği, kanal çağrısı, 5xx ve kanal hata oranı, sipariş — sakin), 3
+müşterilerde müdahale (`groups.customers`), 4 genel kullanım (müşteri/abonelik sayıları, MRR); teknik ayrıntılar
+(bağımlılık/pod/kuyruk/alım/son yönetim işlemleri) katlanır (`?ayrinti=teknik`). 1440'ta duvar düzeni (1|2 / 1|4 / 3|4;
+DOM sırası 1-2-3-4). Veri tek adaptörden: `src/api/attention.ts` (`loadAttention`, `loadPulse`; uç yoksa `getHealth`'ten
+sistem maddeleri türetilir, müşteri bölümü "henüz bağlı değil"). Sözleşme: `docs/cloud-contracts/API_BACKOFFICE_ATTENTION.md`.
+Metin (title/why/impact/eylem etiketi) sunucudandır; önyüz yalnız kontrol kimliğine göre "Ne yapmalı" ipucu ekler.
+
+**Sahte API (ek):** `__boMock.setCalm(true)` → "her şey yolunda" (getAttention boş, getHealth olağan);
+`setAttentionDegraded(['circuits'])` → okunamayan kontrol (`status:'degraded'`); `setAttentionMissing(true)` →
+getAttention/getPulse 404 (eski backend; adaptör geri düşüşü). Sahte durum sayfa yenilemesinde sıfırlanır: kolu çekip
+"Yenile"ye basın (e2e: `r1a.spec.ts`).
+
+## Ek — MOB-08 (kullanımda platform ayrımı) yapı taşları
+Sözleşme `docs/API_BACKOFFICE_USAGE.md`; karar K55. K51 sayfa hiyerarşisi (Durum → Karar → Eylem → Ayrıntı) kullanım bölümlerinde bu parçalarla kurulur.
+
+| Yapı taşı | Yer | Kural |
+|---|---|---|
+| `usageVerdict.ts` | `views/usage/` | SAF hüküm: `{tone, title, sentence, decisions[], actions[]}`. Eşikler yalnız burada (`UNKNOWN_SHARE_WARN` %20, `MOBILE_MAJORITY` %50, `INACTIVE_DAYS_WARN` 7). Okunamayan (degraded) ≠ "kullanım yok"; hesaplanamayan ayrı hüküm. Eylem ≤ 3, hepsi bağlantı. |
+| `UsageVerdictBlock` | `views/usage/` | Durum (h2 + tek cümle, `role=status`) → "Müdahale gerekir mi?" → "Ne yapılabilir?". < 768 px tek sütun. Ton sol kenar + ikon + metin (renk tek başına anlam taşımaz). |
+| `PlatformBreakdown` | `views/usage/` | Ana kırılım Masaüstü / Mobil (+ varsa Belirlenemedi) her zaman görünür; alt türler `<details>` içinde. `MeterList` (değer metin). |
+| `PlatformFilter` | `views/usage/` | `.bo-seg` Tümü/Masaüstü/Mobil + "Alt tür" seçimi; değer URL'de `?platform=` (`platformFromQuery`). Alt tür seçiliyken segmentte işaret yok. |
+| Etiketler | `utils/labels.ts` `PLATFORM_CLASS`, `CLIENT_PLATFORM` | Ekranda satır içi platform adı yazılmaz. Değer listesi `@entegrasyonik/ui/platform` (tek kaynak). |
+| `SeriesBars` `tone:'success'` | `components/kit/` | Kategorik ikinci seri (mobil); alarm anlamı yok. |
+
+**Sahte API kolu (ek):** `__boMock.setUsageEmpty(true)` → `getPulse.activeUsers` ve `getUsage.activeUsers` `computable:false`.

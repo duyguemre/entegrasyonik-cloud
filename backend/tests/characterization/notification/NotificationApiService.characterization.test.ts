@@ -1,5 +1,5 @@
 /**
- * CHARACTERIZATION: NotificationService (backend/src/api/services/notification-service.ts) -- ADR-0016 B-R-T3 + ADR-0029 NB4.
+ * CHARACTERIZATION: NotificationService (backend/src/api/rpc/handlers/notification-service.ts) -- ADR-0016 B-R-T3 + ADR-0029 NB4.
  *
  * DIKKAT: `@services/notification/NotificationService` (event-bus tuketicisi, Notification.characterization.test.ts) ile AYNI
  * ADLI ama FARKLI sinif: bu dosya REST katmaninin cagirdigi API servisini kapsar. DB/Redis/ag YOK; `clientDB` sahte model.
@@ -11,7 +11,7 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { ObjectId } from 'mongodb';
 
-import NotificationService from '@api/services/notification-service';
+import NotificationService from '@api/rpc/handlers/notification-service';
 
 const UID = 'aaaaaaaaaaaaaaaaaaaaaaa1';
 let notificationModel: any;

@@ -91,6 +91,8 @@ export const useMenuStore = defineStore('menu', () => {
     ['PrivacyDataView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/PrivacyDataView.vue')))],
     ['StockPolicyView', shallowRef(defineAsyncComponent(() => import('@/views/secure/integrations/StockPolicyView.vue')))],
     ['StockHealthView', shallowRef(defineAsyncComponent(() => import('@/views/secure/StockHealthView.vue')))],
+    // PRC-R2: rekabet fiyat kuralları + öneriler + onaylı uygulama + fiyat geçmişi (yetenekler pricing.rules.* / pricing.suggestions.*).
+    ['pricing/PricingRulesView', shallowRef(defineAsyncComponent(() => import('@/views/secure/pricing/PricingRulesView.vue')))],
     // Yardım merkezi (statik içerik; menü ağacına bağlı değil — bağlantı `help/helpLink.ts`).
     ['HelpCenterView', shallowRef(defineAsyncComponent(() => import('@/views/secure/HelpCenterView.vue')))],
     // ADR-0034 — Otopilot tam sayfa + ayarlar (menü ağacına bağlı değil — bağlantı `chat/chatLinks.ts`).
@@ -139,37 +141,48 @@ export const useMenuStore = defineStore('menu', () => {
   var leftMenu = ref(false)
   var menu: any = ref()
 
+  /** FR3 madde 2: menü düğümlerindeki `isFavorite` bayrağını favori listesiyle eşitler (yıldız durumu). */
+  const syncFavoriteFlags = () => {
+    if (!menu.value) return
+    findByCodeInMenu("", true)
+    for (const favorite of favorites.value) {
+      const temp = findByCodeInMenu(favorite.code)
+      if (temp) temp.isFavorite = true
+    }
+  }
+
   const retrieveFavorites = async () => {
     const resp = await restApi.post("MenuService/retrieveFavorites", {})
-    if (resp) {
+    if (Array.isArray(resp)) {
       favorites.value = resp
-      findByCodeInMenu("", true)
+      syncFavoriteFlags()
     }
-    if (resp && resp.length > 0) {
-      for (const favorite of favorites.value) {
-        const temp = findByCodeInMenu(favorite.code)
-        if (temp)
-          temp.isFavorite = true
-      }
-    }
+  }
+
+  // FR3 madde 2: ekle/çıkar/sırala İYİMSER — menüdeki Favoriler bölümü anında güncellenir, sunucu reddederse geri alınır.
+  const optimistic = async (next: any[], call: () => Promise<any>) => {
+    const prev = favorites.value
+    favorites.value = next
+    syncFavoriteFlags()
+    const resp = await call().catch(() => undefined)
+    if (resp) return retrieveFavorites()
+    favorites.value = prev
+    syncFavoriteFlags()
   }
 
   const addFavorite = async (code: string) => {
-    const resp = await restApi.post("MenuService/addFavorite", { code: code })
-    if (resp)
-      retrieveFavorites()
+    if (favorites.value.some((f: any) => f.code === code)) return
+    return optimistic([...favorites.value, { code, order: favorites.value.length + 1 }], () => restApi.post("MenuService/addFavorite", { code: code }))
   }
 
   const deleteFavorite = async (code: string) => {
-    const resp = await restApi.post("MenuService/deleteFavorite", { code: code })
-    if (resp)
-      retrieveFavorites()
+    return optimistic(favorites.value.filter((f: any) => f.code !== code), () => restApi.post("MenuService/deleteFavorite", { code: code }))
   }
 
   const sortFavorites = async (sortedCodes: any) => {
-    const resp = await restApi.post("MenuService/sortFavorites", { sortedCodes: sortedCodes })
-    if (resp)
-      retrieveFavorites()
+    const byCode = new Map(favorites.value.map((f: any) => [f.code, f]))
+    const next = (sortedCodes as string[]).map((code, i) => ({ ...(byCode.get(code) as any ?? { code }), order: i + 1 }))
+    return optimistic(next, () => restApi.post("MenuService/sortFavorites", { sortedCodes: sortedCodes }))
   }
 
 

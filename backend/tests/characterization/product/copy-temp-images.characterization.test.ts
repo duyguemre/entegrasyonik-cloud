@@ -1,6 +1,6 @@
 /**
  * CHARACTERIZATION: ProductService.copyTempImages / updateTempImageDocuments
- * (backend/src/api/services/product-service.ts)
+ * (backend/src/api/rpc/handlers/product-service.ts)
  *
  * [ADR-0013 B3, 2026-09-27] BACKLOG.md ("R2 isimlendirme incelemesi", 2026-09-27) bulgusu: bu iki metot
  * taslak (tempId) -> kalıcı ürün görseli kopyalama/URL yazımını YANLIŞ kuruyordu:
@@ -18,7 +18,7 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { ObjectId } from 'mongodb';
 
-import ProductService from '../../../src/api/services/product-service';
+import ProductService from '../../../src/api/rpc/handlers/product-service';
 import { storageService } from '@services/index';
 
 const CLIENT_ID = 42;

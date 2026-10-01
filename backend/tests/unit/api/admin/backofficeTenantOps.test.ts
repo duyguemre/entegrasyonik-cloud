@@ -4,7 +4,7 @@ import { listTenants, getHealthSummary, type TenantOpsDeps } from '../../../../s
 import { tenantBucketOf } from '../../../../src/platform/runtime/metrics/errorEvents';
 import { BACKOFFICE_ATTENTION_RPC_INPUT } from '../../../../src/capabilities/rpc-input/backoffice-attention';
 import { CAPABILITY_BY_RPC } from '../../../../src/capabilities';
-import { getRequiredTier } from '../../../../src/api/operationPolicy';
+import { getRequiredTier } from '../../../../src/api/rpc/operationPolicy';
 import { requiresStepUp } from '../../../../src/api/admin/stepUp';
 import { FakeModel } from '../../../helpers/fakeEngineDb';
 

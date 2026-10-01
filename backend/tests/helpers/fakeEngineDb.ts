@@ -1,9 +1,9 @@
 // Bellek-içi sahte Mongoose modeli (B1/B7 testleri): gerçek Mongo'nun TİP-KISITLI karşılaştırma semantiğini taklit eder
-// ($lt/$lte/$gte yalnız aynı tipteki (Date/number) alanla eşleşir; `null` eşitliği alan-yok'u da eşler). DB/Redis/ağ YOK.
+// ($lt/$lte/$gte yalnız aynı tipteki (Date/number/string) alanla eşleşir; `null` eşitliği alan-yok'u da eşler). DB/Redis/ağ YOK.
 type Doc = Record<string, any>;
 
 const isDate = (v: any) => v instanceof Date;
-const cmpOk = (a: any, b: any) => (isDate(a) && isDate(b)) || (typeof a === 'number' && typeof b === 'number');
+const cmpOk = (a: any, b: any) => (isDate(a) && isDate(b)) || (typeof a === 'number' && typeof b === 'number') || (typeof a === 'string' && typeof b === 'string'); // Mongo: aynı tip string'ler de sıralanır (MOB-08 gün anahtarı)
 const val = (d: Doc, path: string) => path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), d);
 
 function matchField(v: any, cond: any): boolean {

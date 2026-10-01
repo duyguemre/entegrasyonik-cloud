@@ -60,7 +60,7 @@ export function createEmailDispatcher(): EmailDispatcher {
 }
 
 /** Model tembel cozulur; find zinciri (sort/limit/lean) `find` cagrisi ile birlikte cozulur. */
-function lazyModelPort() {
+export function lazyModelPort() {
     return {
         findOneAndUpdate: (...a: any[]) => lazy('getNotificationDeliveryModel', 'findOneAndUpdate', a),
         updateOne: (...a: any[]) => lazy('getNotificationDeliveryModel', 'updateOne', a),

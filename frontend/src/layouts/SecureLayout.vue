@@ -123,6 +123,7 @@ import { matchAppShortcut } from '@/navigation/shortcutCatalog'
 import OtopilotDock from '@/chat/OtopilotDock.vue'
 import { useOtopilotStore } from '@/chat/otopilotStore'
 import { useRouter } from 'vue-router'
+import { motionDistancePx, motionEasing, motionMs } from '@entegrasyonik/ui/motion'
 
 const router = useRouter()
 const otopilot = useOtopilotStore()
@@ -369,20 +370,13 @@ watch(bannerRef, (el) => {
 
 // ---- Sekme geçişi: kısa fade + hafif kayma (DS hareket token'ları; reduced-motion'da yok) ----
 
-function cssMs(name: string, fallback: number) {
-  const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
-  const value = parseFloat(raw)
-  return Number.isFinite(value) ? value : fallback
-}
-
 function playTabEnter() {
   const el: HTMLElement | undefined = workAreaRef.value?.$el
-  if (!el?.animate || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
-  const duration = cssMs('--ek-duration-base', 200)
+  if (!el?.animate) return
+  // FR3 madde 7: sekme geçişi = `overlay` rolü (tek kaynak `@entegrasyonik/ui/motion`; azaltılmış harekette 0).
+  const duration = motionMs('overlay')
   if (!duration) return
-  const distance = cssMs('--ek-motion-distance-sm', 4)
-  const easing = getComputedStyle(document.documentElement).getPropertyValue('--ek-easing-enter').trim() || 'ease-out'
-  el.animate([{ opacity: 0, transform: `translateY(${distance}px)` }, { opacity: 1, transform: 'none' }], { duration, easing })
+  el.animate([{ opacity: 0, transform: `translateY(${motionDistancePx('sm')}px)` }, { opacity: 1, transform: 'none' }], { duration, easing: motionEasing('overlay') })
 }
 
 onMounted(async () => {
@@ -443,12 +437,12 @@ const closeTemporaryMenu = () => {
 .ek-shell {
   /* B4: içerik sol menüyle AYNI süre/eğri/gecikmeyle kayar (app.css --ek-app-nav-*): ray'a giderken menü içeriği
      solduktan sonra, genişlerken hemen. */
-  --ek-shell-left: left var(--ek-app-nav-move) var(--ek-easing-enter) 0ms;
+  --ek-shell-left: left var(--ek-app-nav-move) var(--ek-motion-layout-easing) 0ms;
   background: var(--ek-color-background);
 }
 
 .ek-shell--rail {
-  --ek-shell-left: left var(--ek-app-nav-move) var(--ek-easing-enter) var(--ek-app-nav-lag);
+  --ek-shell-left: left var(--ek-app-nav-move) var(--ek-motion-layout-easing) var(--ek-app-nav-lag);
 }
 
 /* ÖNEMLİ (mühendislik notu — kalıcı kenar menü): `v-main` kalıcı drawer/app-bar için
@@ -461,7 +455,7 @@ const closeTemporaryMenu = () => {
   left: var(--v-layout-left, 0px);
   right: var(--v-layout-right, 0px);
   transition:
-    top var(--ek-duration-base) var(--ek-easing-standard),
+    top var(--ek-motion-reveal),
     var(--ek-shell-left);
 }
 
@@ -472,7 +466,7 @@ const closeTemporaryMenu = () => {
   right: var(--v-layout-right, 0px);
   z-index: var(--ek-z-sticky);
   transition:
-    top var(--ek-duration-base) var(--ek-easing-standard),
+    top var(--ek-motion-reveal),
     var(--ek-shell-left);
 }
 
@@ -487,7 +481,15 @@ const closeTemporaryMenu = () => {
   top: calc(var(--v-layout-top, 0px) + var(--ek-shell-banner-h, 0px));
   right: calc(var(--v-layout-right, 0px) + var(--ek-space-2));
   z-index: calc(var(--ek-z-sticky) + 1);
-  transition: top var(--ek-duration-base) var(--ek-easing-standard);
+  transition: top var(--ek-motion-reveal);
+}
+
+/* MOB-00: dokunmatikte tutamak hep açık (ShellChromeHandle) → sekme şeridi sağda onun genişliğini ayırır; aksi hâlde
+   tutamak şeridin "Tüm sekmeler" düğmesinin üstüne biniyordu (360–430 px ölçümü). Genişlik = 2 dokunma hedefi + boşluk. */
+@media (hover: none) {
+  .ek-shell__tabs {
+    right: calc(var(--v-layout-right, 0px) + 2 * var(--ek-control-h-touch) + var(--ek-space-3));
+  }
 }
 
 /* FR2-SHELL madde 3 (fe-r2a): çalışma alanı KAYDIRMA KABIDIR. Önceden `overflow: visible` idi → kendi iç kaydırıcısı

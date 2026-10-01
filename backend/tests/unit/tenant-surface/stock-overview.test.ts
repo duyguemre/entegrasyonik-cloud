@@ -5,8 +5,8 @@ import { aggregate, matchDoc } from './_miniAggregate';
 
 jest.mock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: { getApplicationDB: jest.fn(), getClientDB: jest.fn() } }));
 
-import StockService from '../../../src/api/services/stock-service';
-import { sanitizeResponse } from '../../../src/api/responseSanitizer';
+import StockService from '../../../src/api/rpc/handlers/stock-service';
+import { sanitizeResponse } from '../../../src/platform/core/security/responseSanitizer';
 
 const D = (s: string) => new Date(s);
 

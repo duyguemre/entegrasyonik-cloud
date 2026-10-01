@@ -1,6 +1,6 @@
 # Backoffice abonelikler, gelir metrikleri ve tenant yaşam döngüsü — API sözleşmesi (B4a/b/c, B2)
 
-ADR-0008 (billing) + ADR-0026 + `docs/BACKOFFICE_PLAN.md` §2.2 (B2) ve §2.3 (B4). Yüzey: `/admin-api` (yalnız platformAdmin, TOTP tamamlanmış tam oturum). Kaynak: `backend/src/api/services/backoffice-billing-service.ts`, `backoffice-tenant-service.ts` (ince sarmalayıcılar), iş mantığı `backend/src/operations/backoffice/{subscriptionAdmin,revenueMetrics,tenantLifecycle}.ts` (saf), şemalar `backend/src/capabilities/rpc-input/backoffice-billing.ts`, yetenekler `backend/src/capabilities/domains/backoffice-billing.ts` (`platform.subscriptions.*`, `platform.revenue.metrics`, `platform.tenant.lifecycle`, `platform.tenant.deletion.cancel_backoffice`).
+ADR-0008 (billing) + ADR-0026 + `docs/BACKOFFICE_PLAN.md` §2.2 (B2) ve §2.3 (B4). Yüzey: `/admin-api` (yalnız platformAdmin, TOTP tamamlanmış tam oturum). Kaynak: `backend/src/api/rpc/handlers/backoffice-billing-service.ts`, `backoffice-tenant-service.ts` (ince sarmalayıcılar), iş mantığı `backend/src/operations/backoffice/{subscriptionAdmin,revenueMetrics,tenantLifecycle}.ts` (saf), şemalar `backend/src/capabilities/rpc-input/backoffice-billing.ts`, yetenekler `backend/src/capabilities/domains/backoffice-billing.ts` (`platform.subscriptions.*`, `platform.revenue.metrics`, `platform.tenant.lifecycle`, `platform.tenant.deletion.cancel_backoffice`).
 
 ## Genel kurallar
 

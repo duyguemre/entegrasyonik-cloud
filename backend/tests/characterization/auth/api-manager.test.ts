@@ -10,7 +10,7 @@ const UC = { _id: 'u1', order: 3, roleCode: 'ROLE_OWNER' };
 const authed = (over: any = {}) => makeRes({ userContext: UC, principal: PRINCIPAL, ...over });
 const authenticateRequestMock = async (..._a: any[]) => ({ principal: PRINCIPAL, userContext: UC });
 
-// Characterization: backend/src/api/ApiManager.ts (rota davranışı)
+// Characterization: backend/src/api/rpc/ApiManager.ts (rota davranışı)
 // Express yerine handler'ları yakalayan sahte app kullanılır; RunOperation mock'lanır veya sahte servis kaydıyla gerçek kullanılır.
 // Test verilerindeki parola/token değerleri sahte, yalnızca test amaçlıdır.
 
@@ -20,10 +20,10 @@ function loadWithMockedRun(runImpl: (...a: any[]) => any) {
   const runMock = jest.fn(runImpl as any);
   let app: ReturnType<typeof makeFakeApp>;
   jest.isolateModules(() => {
-    jest.doMock('../../../src/api/RunOperation', () => ({ __esModule: true, default: runMock }));
+    jest.doMock('../../../src/api/rpc/RunOperation', () => ({ __esModule: true, default: runMock }));
     jest.doMock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: {} }));
-    jest.doMock('../../../src/api/authenticate', () => ({ ...(jest.requireActual('../../../src/api/authenticate') as any), authenticateRequest: authenticateRequestMock }));
-    const { configureApis } = require('../../../src/api/ApiManager');
+    jest.doMock('../../../src/api/http/authenticate', () => ({ ...(jest.requireActual('../../../src/api/http/authenticate') as any), authenticateRequest: authenticateRequestMock }));
+    const { configureApis } = require('../../../src/api/rpc/ApiManager');
     app = makeFakeApp();
     configureApis(app, CTX);
   });
@@ -32,13 +32,13 @@ function loadWithMockedRun(runImpl: (...a: any[]) => any) {
 
 function loadWithRealRun(apis: any) {
   let app: ReturnType<typeof makeFakeApp>;
-  jest.dontMock('../../../src/api/RunOperation'); // önceki doMock kaydı temizlenir
+  jest.dontMock('../../../src/api/rpc/RunOperation'); // önceki doMock kaydı temizlenir
   jest.isolateModules(() => {
     jest.doMock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: {} }));
-    jest.doMock('../../../src/api/index', () => ({ __esModule: true, default: apis }));
+    jest.doMock('../../../src/api/rpc/index', () => ({ __esModule: true, default: apis }));
     // [ADR-0001 adım 5] sahte servis için politika kaydı (gerçek kayıt operation-policy.test.ts'te sınanır)
-    Object.assign(require('../../../src/api/operationPolicy').OPERATION_POLICY, { Svc: { ok: 'member', ghost: 'member', ownerOnly: 'owner' } });
-    const { configureApis } = require('../../../src/api/ApiManager');
+    Object.assign(require('../../../src/api/rpc/operationPolicy').OPERATION_POLICY, { Svc: { ok: 'member', ghost: 'member', ownerOnly: 'owner' } });
+    const { configureApis } = require('../../../src/api/rpc/ApiManager');
     app = makeFakeApp();
     configureApis(app, CTX);
   });
@@ -271,13 +271,13 @@ describe('ApiManager: GET /userContext ve /checkAuthentication', () => {
   it('[MEVCUT DAVRANIŞ] checkAuthentication doğrulama hatası: ApplicationError.statusCode (401) kullanılır', async () => {
     let app: ReturnType<typeof makeFakeApp>;
     jest.isolateModules(() => {
-      jest.doMock('../../../src/api/RunOperation', () => ({ __esModule: true, default: jest.fn() }));
+      jest.doMock('../../../src/api/rpc/RunOperation', () => ({ __esModule: true, default: jest.fn() }));
       jest.doMock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: {} }));
-      jest.doMock('../../../src/api/authenticate', () => ({
-        ...(jest.requireActual('../../../src/api/authenticate') as any),
-        authenticateRequest: async () => { const { ApplicationError } = require('../../../src/api/Security'); throw new ApplicationError('Token not verified', 401); },
+      jest.doMock('../../../src/api/http/authenticate', () => ({
+        ...(jest.requireActual('../../../src/api/http/authenticate') as any),
+        authenticateRequest: async () => { const { ApplicationError } = require('../../../src/platform/core/security/Security'); throw new ApplicationError('Token not verified', 401); },
       }));
-      const { configureApis } = require('../../../src/api/ApiManager');
+      const { configureApis } = require('../../../src/api/rpc/ApiManager');
       app = makeFakeApp();
       configureApis(app, CTX);
     });
@@ -422,11 +422,11 @@ describe('ApiManager: login / register yanıtları', () => {
     let app: ReturnType<typeof makeFakeApp>;
     let withTestContextIsolated: typeof import('@platform/core/context').withTestContext;
     jest.isolateModules(() => {
-      jest.doMock('../../../src/api/RunOperation', () => ({ __esModule: true, default: runMock }));
+      jest.doMock('../../../src/api/rpc/RunOperation', () => ({ __esModule: true, default: runMock }));
       jest.doMock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: {} }));
-      jest.doMock('../../../src/api/authenticate', () => ({ ...(jest.requireActual('../../../src/api/authenticate') as any), authenticateRequest: authenticateRequestMock }));
+      jest.doMock('../../../src/api/http/authenticate', () => ({ ...(jest.requireActual('../../../src/api/http/authenticate') as any), authenticateRequest: authenticateRequestMock }));
       withTestContextIsolated = require('@platform/core/context').withTestContext;
-      const { configureApis } = require('../../../src/api/ApiManager');
+      const { configureApis } = require('../../../src/api/rpc/ApiManager');
       app = makeFakeApp();
       configureApis(app, CTX);
     });
@@ -445,7 +445,7 @@ describe('ApiManager: POST /client-log [ADR-0017 Karar 1.8]', () => {
     jest.isolateModules(() => {
       jest.doMock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: {} }));
       jest.doMock('@platform/runtime/metrics', () => ({ recordErrorEvent }));
-      const { configureApis } = require('../../../src/api/ApiManager');
+      const { configureApis } = require('../../../src/api/rpc/ApiManager');
       app = makeFakeApp();
       configureApis(app, CTX);
     });

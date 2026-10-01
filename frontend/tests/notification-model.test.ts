@@ -123,7 +123,8 @@ describe('yedek katalog (plan §2.1 v1) ve kategoriler', () => {
     for (const k of ['order', 'catalog', 'finance', 'system'] as const) expect(cats[k].mandatoryCodes).toEqual([])
   })
   it('plan §2.3 varsayılanları', () => {
-    expect(CATEGORY_DEFAULTS.catalog).toEqual({ inApp: true, email: 'off' })
+    expect(CATEGORY_DEFAULTS.catalog).toEqual({ inApp: true, email: 'off', push: false })
+    expect(CATEGORY_DEFAULTS.stock.push).toBe(true) // MOB-04: zorunlu/kritik kodu olan kategori
     expect(CATEGORY_DEFAULTS.billing.email).toBe('inst')
     expect(CATEGORY_DEFAULTS.order.email).toBe('dig')
   })

@@ -57,3 +57,27 @@ buraya tarihli bir blok ekler (ADR-0019 §4.1). Kademe değişiklikleri HER ZAMA
 
 - Eklenen: `platform.engine.retry_jobs`, `platform.overview.attention`, `platform.overview.pulse`, `platform.prefs.delete_view`, `platform.prefs.list_views`, `platform.prefs.save_view`, `platform.tenants.health_summary`, `platform.tenants.list`
 
+## 2026-10-01 — sha256 3bfd6aab5406…
+
+- Eklenen: `notifications.push.config`, `notifications.push.subscribe`, `notifications.push.unsubscribe`
+
+## 2026-10-01 — sha256 110d6cf1a3bf…
+
+- Eklenen: `platform.prefs.push_config`, `platform.prefs.push_subscribe`, `platform.prefs.push_unsubscribe`
+
+## 2026-10-01 — sha256 5208c53c4350…
+
+- Eklenen: `platform.tenants.usage`
+
+## 2026-10-01 — sha256 1d7f89e86bbb…
+
+- Eklenen: `platform.competition.override.set`, `platform.competition.settings`, `pricing.buybox.list`, `pricing.cost.list`, `pricing.cost.set`, `pricing.margin.preview`
+
+## 2026-10-01 — sha256 059b0a852c7f…
+
+- Eklenen: `platform.pricing_rules.overview`, `pricing.rules.list`, `pricing.rules.save`, `pricing.rules.settings`, `pricing.suggestions.apply`, `pricing.suggestions.list`
+
+## 2026-10-01 — sha256 ebd1470f6254…
+
+- Eklenen: `platform.prefs.push_config`, `platform.prefs.push_subscribe`, `platform.prefs.push_unsubscribe`, `platform.tenants.usage`
+

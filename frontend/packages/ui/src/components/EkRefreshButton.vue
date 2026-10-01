@@ -26,7 +26,7 @@
         v-bind="tip"
         type="button"
         class="ek-refresh"
-        :class="[`is-${state}`, { 'is-reduced': reducedMotion }]"
+        :class="[`is-${state}`, { 'is-reduced': reducedMotion, 'is-quiet': quietSuccess }]"
         :data-state="state"
         :aria-label="ariaLabel"
         :aria-busy="loading || undefined"
@@ -35,11 +35,12 @@
         @click="onClick"
       >
         <span class="ek-refresh__glyph" aria-hidden="true">
-          <v-icon v-if="state === 'success'" key="ok" :icon="icons.approve" class="ek-refresh__icon ek-refresh__icon--ok" />
+          <v-icon v-if="state === 'success' && !quietSuccess" key="ok" :icon="icons.approve" class="ek-refresh__icon ek-refresh__icon--ok" />
           <v-icon v-else key="rf" :icon="icons.refresh" class="ek-refresh__icon" />
           <span v-if="state === 'error'" class="ek-refresh__dot" />
         </span>
         <span v-if="state === 'loading' && reducedMotion" class="ek-refresh__text">Yenileniyor…</span>
+        <span v-else-if="state === 'success' && quietSuccess" class="ek-refresh__text">Güncellendi</span>
       </button>
     </template>
     <span class="ek-refresh__tip">
@@ -70,8 +71,13 @@ const props = withDefaults(
     lastUpdated?: Date | string | number | null
     /** Son yenileme başarısız (true ya da kısa metin). Verilmezse atadaki `provideRefreshState`. */
     error?: boolean | string | null
+    /**
+     * Başarıda yeşil tik yerine nötr "Güncellendi" metni (ekleyici; varsayılan kapalı — ana uygulama değişmez).
+     * Backoffice: tik "sağlıklı" okunuyordu (BO-ELEV ST-2/NT-07); tazelik sağlık değildir.
+     */
+    quietSuccess?: boolean
   }>(),
-  { loading: false, disabled: false, label: 'Yenile', lastUpdated: undefined, error: undefined },
+  { loading: false, disabled: false, label: 'Yenile', lastUpdated: undefined, error: undefined, quietSuccess: false },
 )
 const emit = defineEmits<{ refresh: [] }>()
 
@@ -218,7 +224,7 @@ function onClick() {
 }
 
 .ek-refresh.is-loading .ek-refresh__icon {
-  animation: ek-refresh-spin calc(var(--ek-duration-slow) * 3) var(--ek-easing-standard) infinite;
+  animation: ek-refresh-spin var(--ek-motion-loop-spin) var(--ek-easing-standard) infinite;
 }
 
 .ek-refresh.is-success {
@@ -227,12 +233,20 @@ function onClick() {
   color: var(--ek-color-success);
 }
 
+.ek-refresh.is-quiet.is-success {
+  padding: 0 var(--ek-space-3) 0 var(--ek-space-2);
+  gap: var(--ek-space-1);
+  border-color: var(--ek-color-border-default);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-muted);
+}
+
 .ek-refresh.is-error {
   border-color: var(--ek-color-error-border);
 }
 
 .ek-refresh__icon--ok {
-  animation: ek-refresh-pop var(--ek-duration-base) var(--ek-easing-enter);
+  animation: ek-refresh-pop var(--ek-motion-overlay);
 }
 
 .ek-refresh__dot {

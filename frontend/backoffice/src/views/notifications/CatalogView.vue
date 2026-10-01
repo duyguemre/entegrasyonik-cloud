@@ -1,11 +1,13 @@
 <template>
   <div class="bo-page">
-    <BoPageHeader :updated-at="cat.loadedAt.value ?? undefined">
+    <BoPageHeader :updated-at="cat.loadedAt.value ?? undefined" :stale="cat.stale.value">
       <template #actions>
         <EkButton tone="secondary" icon="mdi-email-check-outline" data-testid="test-email" @click="testMail.open('self')">Test e-postası gönder</EkButton>
-        <EkRefreshButton :loading="cat.refreshing.value" @refresh="cat.load()" />
+        <EkButton tone="secondary" icon="mdi-refresh" :loading="cat.refreshing.value" data-page-refresh @click="cat.load()">Yenile</EkButton>
       </template>
     </BoPageHeader>
+
+    <PageVerdict :verdict="verdict" />
 
     <div class="bo-grid-2 bo-ncat">
       <section class="bo-panel" aria-labelledby="bo-ncat-list">
@@ -117,13 +119,15 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import { EkAlert, EkButton, EkCard, EkEmptyState, EkRefreshButton, EkStatusChip } from '@entegrasyonik/ui/components'
+import { useRoute, useRouter } from 'vue-router'
+import { EkAlert, EkButton, EkCard, EkEmptyState, EkStatusChip } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import type { NotificationCatalogItem, TemplatePreview } from '@bo/api/contract'
 import { useResource } from '@bo/composables/useResource'
 import { useGuardedAction } from '@bo/composables/useGuardedAction'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
+import { catalogVerdict } from './notificationsVerdict'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import GuardedDialog from '@bo/components/kit/GuardedDialog.vue'
 import { NOTIFY_CATEGORY, NOTIFY_SEVERITY } from '@bo/utils/labels'
@@ -150,7 +154,15 @@ const EMAIL_MODE: Record<string, string> = { off: 'Kapalı', instant: 'Anlık', 
 const router = useRouter()
 const cat = useResource<{ items: NotificationCatalogItem[] }>(() => api.call('BackofficeNotificationService/getCatalog', {}))
 const surface = ref<'all' | 'tenant' | 'platform'>('all')
-const search = ref('')
+const route = useRoute()
+// Hüküm bağlantısı `?ara=<kod>` ile açar.
+const search = ref(typeof route.query.ara === 'string' ? route.query.ara : '')
+watch(
+  () => route.query.ara,
+  (v) => {
+    search.value = typeof v === 'string' ? v : ''
+  },
+)
 const items = computed(() => {
   const q = (search.value ?? '').trim().toLocaleLowerCase('tr')
   return (cat.data.value?.items ?? []).filter(
@@ -211,6 +223,21 @@ onBeforeUnmount(() => clearTimeout(timer))
 const testMail = useGuardedAction(
   (_c: 'self', reason) => api.call('BackofficeNotificationService/sendTestEmail', { reason }),
   () => notifyAudited('Test e-postası kendi adresinize gönderildi. Gelen kutunuzu kontrol edin.', () => router.push({ path: '/denetim', query: { event: 'backoffice.write' } })),
+)
+
+/** Son test e-postası "gönderim kapalı" (503 NOTIFY_EMAIL_UNAVAILABLE) ile reddedildiyse hüküm uyarır; başarıda temizlenir. */
+const emailUnavailable = computed(() => testMail.error.value?.code === 'NOTIFY_EMAIL_UNAVAILABLE' || (testMail.error.value?.status === 503 && !testMail.isOpen.value))
+const verdict = computed(() =>
+  cat.data.value || cat.phase.value !== 'loading'
+    ? catalogVerdict({
+        items: cat.data.value?.items ?? null,
+        failed: !cat.data.value,
+        stale: cat.stale.value,
+        emailUnavailable: emailUnavailable.value,
+        retry: () => cat.load(),
+        testMail: () => testMail.open('self'),
+      })
+    : null,
 )
 
 onMounted(() => cat.load())

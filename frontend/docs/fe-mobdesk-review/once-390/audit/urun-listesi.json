@@ -1,0 +1,340 @@
+{
+  "overflowX": 0,
+  "wideOffenders": [
+    "nav.v-navigation-drawer.v-navigation-drawer--right.v-navigation-drawer--temporary",
+    "div.v-navigation-drawer__content"
+  ],
+  "smallTargets": [
+    {
+      "label": "Menüyü aç/kapat (Ctrl+B)",
+      "w": 36,
+      "h": 36,
+      "sel": "button.ek-header__icon-btn"
+    },
+    {
+      "label": "Akıllı arama",
+      "w": 144,
+      "h": 34,
+      "sel": "input.ek-search__input"
+    },
+    {
+      "label": "Bildirimler, 0 okunmamış",
+      "w": 36,
+      "h": 36,
+      "sel": "button.ek-header__icon-btn"
+    },
+    {
+      "label": "Hesap menüsü: E2E Test Mağazası",
+      "w": 38,
+      "h": 36,
+      "sel": "button.ek-header__user"
+    },
+    {
+      "label": "İpucunu kapat: Favoriler",
+      "w": 20,
+      "h": 20,
+      "sel": "button.ek-side__empty-close"
+    },
+    {
+      "label": "Anasayfa",
+      "w": 224,
+      "h": 36,
+      "sel": "button.ek-side__item.soft-item"
+    },
+    {
+      "label": "Favorilere ekle: Anasayfa",
+      "w": 24,
+      "h": 24,
+      "sel": "button.ek-shell-nav__fav"
+    },
+    {
+      "label": "Siparişler",
+      "w": 224,
+      "h": 36,
+      "sel": "button.ek-side__item.soft-item"
+    },
+    {
+      "label": "Favorilere ekle: Siparişler",
+      "w": 24,
+      "h": 24,
+      "sel": "button.ek-shell-nav__fav"
+    },
+    {
+      "label": "Ürün Kataloğu",
+      "w": 224,
+      "h": 36,
+      "sel": "button.ek-side__item.soft-item.v-list-group__header"
+    },
+    {
+      "label": "Ürünler",
+      "w": 195,
+      "h": 32,
+      "sel": "button.ek-side__subitem.sub-item-soft.is-active"
+    },
+    {
+      "label": "Favorilere ekle: Ürünler",
+      "w": 24,
+      "h": 24,
+      "sel": "button.ek-shell-nav__fav"
+    },
+    {
+      "label": "İadeler",
+      "w": 224,
+      "h": 36,
+      "sel": "button.ek-side__item.soft-item"
+    },
+    {
+      "label": "Favorilere ekle: İadeler",
+      "w": 24,
+      "h": 24,
+      "sel": "button.ek-shell-nav__fav"
+    },
+    {
+      "label": "Müşteriler",
+      "w": 224,
+      "h": 36,
+      "sel": "button.ek-side__item.soft-item"
+    },
+    {
+      "label": "Favorilere ekle: Müşteriler",
+      "w": 24,
+      "h": 24,
+      "sel": "button.ek-shell-nav__fav"
+    },
+    {
+      "label": "Faturalar",
+      "w": 224,
+      "h": 36,
+      "sel": "button.ek-side__item.soft-item"
+    },
+    {
+      "label": "Favorilere ekle: Faturalar",
+      "w": 24,
+      "h": 24,
+      "sel": "button.ek-shell-nav__fav"
+    },
+    {
+      "label": "Mesajlar",
+      "w": 224,
+      "h": 36,
+      "sel": "button.ek-side__item.soft-item"
+    },
+    {
+      "label": "Favorilere ekle: Mesajlar",
+      "w": 24,
+      "h": 24,
+      "sel": "button.ek-shell-nav__fav"
+    },
+    {
+      "label": "Stok Sağlığı",
+      "w": 224,
+      "h": 36,
+      "sel": "button.ek-side__item.soft-item"
+    },
+    {
+      "label": "Favorilere ekle: Stok Sağlığı",
+      "w": 24,
+      "h": 24,
+      "sel": "button.ek-shell-nav__fav"
+    },
+    {
+      "label": "Entegrasyonlar",
+      "w": 224,
+      "h": 36,
+      "sel": "button.ek-side__item.soft-item.v-list-group__header"
+    },
+    {
+      "label": "Hesabım",
+      "w": 224,
+      "h": 36,
+      "sel": "button.ek-side__item.soft-item.v-list-group__header"
+    },
+    {
+      "label": "Product definition",
+      "w": 224,
+      "h": 36,
+      "sel": "button.ek-side__item.soft-item"
+    },
+    {
+      "label": "Favorilere ekle: Product definition",
+      "w": 24,
+      "h": 24,
+      "sel": "button.ek-shell-nav__fav"
+    },
+    {
+      "label": "Yardım merkezi",
+      "w": 224,
+      "h": 36,
+      "sel": "button.ek-side__item.soft-item"
+    },
+    {
+      "label": "Bildirim işlemleri",
+      "w": 32,
+      "h": 32,
+      "sel": "button.ek-btn.ek-btn--ghost.ek-btn--sm"
+    },
+    {
+      "label": "Kapat",
+      "w": 32,
+      "h": 32,
+      "sel": "button.ek-btn.ek-btn--ghost.ek-btn--sm"
+    },
+    {
+      "label": "Tümü",
+      "w": 55,
+      "h": 28,
+      "sel": "button.v-btn.v-tab-item--selected.v-tab--selected"
+    },
+    {
+      "label": "Okunmamış\n0",
+      "w": 123,
+      "h": 28,
+      "sel": "button.v-btn.v-theme--lightTheme.v-btn--density-default"
+    },
+    {
+      "label": "Anasayfa",
+      "w": 150,
+      "h": 33,
+      "sel": "button.ek-tab__button"
+    },
+    {
+      "label": "Ürünler",
+      "w": 122,
+      "h": 35,
+      "sel": "button.ek-tab__button"
+    },
+    {
+      "label": "Tüm sekmeler (2) — 1 sekme şeritte görün",
+      "w": 90,
+      "h": 24,
+      "sel": "button.ek-tabs__more.has-hidden"
+    },
+    {
+      "label": "Üst bölümü daralt (Ctrl+Shift+H)",
+      "w": 24,
+      "h": 24,
+      "sel": "button.ek-chrome-handle__btn"
+    },
+    {
+      "label": "Tam ekran (odak modu) (Ctrl+Shift+F)",
+      "w": 24,
+      "h": 24,
+      "sel": "button.ek-chrome-handle__btn"
+    },
+    {
+      "label": "Sayfa hakkında: Ürünler",
+      "w": 24,
+      "h": 24,
+      "sel": "button.ek-page-bar__info"
+    },
+    {
+      "label": "",
+      "w": 231,
+      "h": 36,
+      "sel": "input.v-field__input"
+    },
+    {
+      "label": "Yeni ürün",
+      "w": 119,
+      "h": 36,
+      "sel": "button.ek-btn.ek-btn--secondary.ek-btn--md"
+    },
+    {
+      "label": "Yenile (Alt+R), son güncelleme az önce",
+      "w": 36,
+      "h": 36,
+      "sel": "button.ek-refresh.is-success.is-reduced"
+    },
+    {
+      "label": "Filtreler\n, aktif filtre yok",
+      "w": 96,
+      "h": 32,
+      "sel": "button.ek-filter__toggle"
+    },
+    {
+      "label": "Toplu işlemler",
+      "w": 127,
+      "h": 32,
+      "sel": "button.ek-btn.ek-btn--secondary.ek-btn--sm"
+    },
+    {
+      "label": "Tüm satırları seç",
+      "w": 16,
+      "h": 16,
+      "sel": "input.ek-grid__check"
+    },
+    {
+      "label": "ÜRÜN",
+      "w": 68,
+      "h": 24,
+      "sel": "button.ek-grid__sort"
+    },
+    {
+      "label": "STOK KODU / BARKOD",
+      "w": 167,
+      "h": 24,
+      "sel": "button.ek-grid__sort"
+    },
+    {
+      "label": "FİYAT",
+      "w": 68,
+      "h": 24,
+      "sel": "button.ek-grid__sort"
+    },
+    {
+      "label": "STOK",
+      "w": 67,
+      "h": 24,
+      "sel": "button.ek-grid__sort"
+    },
+    {
+      "label": "E2E Test Ürünü satırını seç",
+      "w": 16,
+      "h": 16,
+      "sel": "input.ek-grid__check"
+    },
+    {
+      "label": "Ürünü düzenle",
+      "w": 32,
+      "h": 32,
+      "sel": "button.ek-btn.ek-btn--ghost.ek-btn--sm"
+    },
+    {
+      "label": "Ürünü sil",
+      "w": 32,
+      "h": 32,
+      "sel": "button.ek-btn.ek-btn--ghost.ek-btn--sm"
+    },
+    {
+      "label": "E2E İkinci Ürün satırını seç",
+      "w": 16,
+      "h": 16,
+      "sel": "input.ek-grid__check"
+    },
+    {
+      "label": "Ürünü düzenle",
+      "w": 32,
+      "h": 32,
+      "sel": "button.ek-btn.ek-btn--ghost.ek-btn--sm"
+    },
+    {
+      "label": "Ürünü sil",
+      "w": 32,
+      "h": 32,
+      "sel": "button.ek-btn.ek-btn--ghost.ek-btn--sm"
+    },
+    {
+      "label": "10\n25\n50\n100",
+      "w": 69,
+      "h": 32,
+      "sel": "select.ek-pager__select"
+    },
+    {
+      "label": "Sayfa 1",
+      "w": 32,
+      "h": 32,
+      "sel": "button.ek-pager__btn.ek-pager__btn--num.is-current"
+    }
+  ],
+  "criticalSmall": []
+}

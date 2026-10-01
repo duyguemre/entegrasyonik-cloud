@@ -76,7 +76,7 @@ jest.mock('@database/DatabaseManager', () => ({
   },
 }));
 
-import IntegrationComplianceService from '../../../src/api/services/integration-compliance-service';
+import IntegrationComplianceService from '../../../src/api/rpc/handlers/integration-compliance-service';
 import { FindingService, computeDedupKey } from '../../../src/integration/compliance/FindingService';
 import { AuditLogger } from '../../../src/services/audit/AuditLogger';
 

@@ -1,11 +1,18 @@
 <template>
   <div class="bo-page">
-    <BoPageHeader>
+    <BoPageHeader :updated-at="res.loadedAt.value ?? undefined" :stale="res.stale.value">
       <template #actions>
-        <EkRefreshButton :loading="res.refreshing.value || res.phase.value === 'loading'" @refresh="res.load()" />
+        <EkButton tone="secondary" icon="mdi-refresh" :loading="res.refreshing.value || res.phase.value === 'loading'" data-page-refresh @click="res.load()">Yenile</EkButton>
         <EkButton tone="primary" icon="mdi-account-plus-outline" data-testid="invite" @click="openInvite">Davet et</EkButton>
       </template>
     </BoPageHeader>
+
+    <PageVerdict :verdict="verdict" />
+
+    <p v-if="filter !== 'all'" class="bo-admin__filter" data-testid="admin-filter" role="status">
+      Süzgeç: {{ FILTER_LABEL[filter] }} — {{ rows.length }} kayıt
+      <EkButton size="sm" tone="ghost" @click="filter = 'all'">Süzgeci temizle</EkButton>
+    </p>
 
     <EkCard flush>
       <StateBlock :phase="phase" :error="res.error.value" :rows="4" empty-title="Yönetici yok" empty-message="Listelenecek platform yöneticisi bulunamadı." error-title="Yönetici listesi yüklenemedi" degraded-title="Yönetici servisi şu an kullanılamıyor" @retry="res.load()">
@@ -64,6 +71,7 @@
       :items="disableItems"
       :confirm-label="disable.context.value?.status === 'invited' ? 'Daveti iptal et' : 'Devre dışı bırak'"
       confirm-icon="mdi-account-cancel-outline"
+      :confirm-text="disable.context.value?.email"
       danger
     />
     <GuardedDialog
@@ -81,6 +89,7 @@
       :items="['Mevcut doğrulayıcı kaydı ve kurtarma kodları silinir.', 'Yöneticinin tüm oturumları anında kapanır.', 'Sonraki girişte iki adımlı doğrulama yeniden kurulur.']"
       confirm-label="2FA sıfırla"
       confirm-icon="mdi-shield-refresh-outline"
+      :confirm-text="resetMfa.context.value?.email"
       danger
     />
   </div>
@@ -88,8 +97,10 @@
 
 <script setup lang="ts">
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
-import { computed, onMounted, ref } from 'vue'
-import { EkButton, EkCard, EkDataTable, EkRefreshButton, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
+import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { EkButton, EkCard, EkDataTable, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import type { AdminStatus, PlatformAdmin } from '@bo/api/contract'
 import { session } from '@bo/auth/session'
@@ -100,6 +111,7 @@ import GuardedDialog from '@bo/components/kit/GuardedDialog.vue'
 import { formatDate, formatDateTime, formatRelative } from '@bo/utils/format'
 import { notify } from '@bo/utils/toast'
 import { remapError } from '../settings/remapError'
+import { adminsVerdict, matchesFilter, type AdminFilter } from './adminsVerdict'
 import '@bo/styles/kit.css'
 
 const COLUMNS: EkTableColumn[] = [
@@ -118,8 +130,35 @@ const STATUS: Record<AdminStatus, { tone: 'success' | 'neutral' | 'info'; label:
 
 const res = useResource(() => api.call('BackofficeAdminUserService/list', {}))
 const items = computed(() => res.data.value?.items ?? [])
-const rows = computed(() => items.value as unknown as Array<Record<string, unknown>>)
+const route = useRoute()
+const router = useRouter()
+const FILTERS: AdminFilter[] = ['all', 'nomfa', 'locked', 'invites', 'idle']
+/** `?filtre=` — hüküm maddeleri bu sorguyla tabloyu süzer (BO_UI_PATTERNS §11.6). */
+const filter = computed<AdminFilter>({
+  get: () => (FILTERS.includes(route.query.filtre as AdminFilter) ? (route.query.filtre as AdminFilter) : 'all'),
+  set: (f) => {
+    const { filtre: _f, ...rest } = route.query
+    void router.replace({ query: f === 'all' ? rest : { ...rest, filtre: f } })
+  },
+})
+const filterTo = (f: AdminFilter) => ({ query: { ...route.query, filtre: f } })
+const FILTER_LABEL: Record<AdminFilter, string> = { all: 'tümü', nomfa: 'iki adımlı doğrulaması olmayanlar', locked: 'parola kilidi olanlar', invites: 'bekleyen davetler', idle: 'uzun süredir girmeyenler' }
+const rows = computed(() => items.value.filter((a) => matchesFilter(a, filter.value, Date.now())) as unknown as Array<Record<string, unknown>>)
 const phase = computed(() => (res.phase.value === 'ready' && !items.value.length ? 'empty' : res.phase.value))
+const verdict = computed(() =>
+  res.phase.value === 'loading' && !res.data.value
+    ? null
+    : adminsVerdict({
+        items: res.data.value?.items ?? null,
+        failed: res.data.value === null,
+        stale: res.stale.value,
+        now: Date.now(),
+        retry: () => void res.load(),
+        filterTo,
+        inviteTo: { query: { ...route.query, davet: '1' } },
+        invite: openInvite,
+      }),
+)
 const full = (a: PlatformAdmin) => (a.status === 'invited' ? 'Davet bekliyor' : `${a.name} ${a.surname}`.trim())
 const isSelf = (a: PlatformAdmin) => !!session.state.user && session.state.user.email.toLowerCase() === a.email.toLowerCase()
 
@@ -196,6 +235,18 @@ const resetMfa = useGuardedAction(
   },
 )
 
+// `?davet=1` (hüküm bağlantısı): davet diyaloğunu aç, sorguyu temizle.
+watch(
+  () => route.query.davet,
+  (v) => {
+    if (!v) return
+    const { davet: _d, ...rest } = route.query
+    void router.replace({ query: rest })
+    openInvite()
+  },
+  { immediate: true },
+)
+
 onMounted(() => res.load())
 </script>
 
@@ -207,6 +258,15 @@ onMounted(() => res.load())
   gap: var(--ek-space-2);
   color: var(--ek-color-content-strong);
   font-weight: var(--ek-font-weight-medium);
+}
+.bo-admin__filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ek-space-2);
+  margin: 0;
+  color: var(--ek-color-content-default);
+  font-size: var(--ek-type-label-size);
 }
 .bo-admin__flags {
   display: inline-flex;

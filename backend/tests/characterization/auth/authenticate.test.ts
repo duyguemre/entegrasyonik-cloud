@@ -1,7 +1,7 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import jwt from 'jsonwebtoken';
 
-// ADR-0001 adım 3-4: tek authenticate middleware'i (backend/src/api/authenticate.ts).
+// ADR-0001 adım 3-4: tek authenticate middleware'i (backend/src/api/http/authenticate.ts).
 // DB katmanı jest ile mock'lanır (DB/Redis/ağ YOK). Tüm sırlar test-only'dir (tests/setup/jwt-env.js).
 
 const appDb: any = {};
@@ -18,7 +18,7 @@ jest.mock('@database/DatabaseManager', () => ({
   },
 }));
 
-import { createAuthenticateMiddleware, isOpenRoute, OPEN_ROUTES, authenticateRequest } from '../../../src/api/authenticate';
+import { createAuthenticateMiddleware, isOpenRoute, OPEN_ROUTES, authenticateRequest } from '../../../src/api/http/authenticate';
 import {
   makeReq, makeRes, signedToken, forgedToken, unsignedToken, tokenSignedWith, legacyStyleToken, nowSec, TEST_USER_ID,
 } from './_helpers';

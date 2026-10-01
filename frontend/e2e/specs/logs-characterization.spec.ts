@@ -57,7 +57,7 @@ test.describe('B3 karakterizasyon — log listeleri istek gövdeleri', () => {
     await openScreen(page, 'LogListView')
     await expect(page.locator('.exportLogList').getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
 
-    const search = page.getByLabel('Ürün Adı, Barkod, Stok Kodu veya Platform Ara').first()
+    const search = page.getByLabel('Ürün adı, barkod, stok kodu veya kanal').first()
     await search.fill('  E2E-BARKOD  ')
     await search.press('Enter')
     await expect.poll(() => listBodies(bodies).length).toBeGreaterThanOrEqual(2)

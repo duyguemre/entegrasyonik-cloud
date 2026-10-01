@@ -72,6 +72,10 @@ let customReader: FindingReader | undefined;
 export interface AlertContext { integrationCode: string; kind: string; severity: string; findingId: string }
 export type AlertHook = (ctx: AlertContext) => void | Promise<unknown>;
 let customAlertHook: AlertHook | undefined;
+/** ADR-0018 "Tenant görünürlüğü" / ADR-0029 NB8: `accepted` + severity ≥ high bulgunun etkilediği tenant'lar (`INTEGRATION_CHANGE_NOTICE`). */
+export interface ChangeNoticeContext { integrationCode: string; severity: 'high' | 'critical'; findingId: string; tenants: number[] }
+export type ChangeNoticeHook = (ctx: ChangeNoticeContext) => void | Promise<unknown>;
+let customChangeNoticeHook: ChangeNoticeHook | undefined;
 
 async function getModel() {
     // eslint-disable-next-line @typescript-eslint/no-require-imports -- TS6-01: node16 CJS, tembel yukleme (dinamik import yerine)
@@ -239,6 +243,9 @@ export class FindingService {
     /** ADR-0029 NB8: R12 alarm kancası (bootstrap `platformNotify`a bağlar). `undefined` => no-op. Kanca hatası/promise reddi bulgu kaydını ETKİLEMEZ. */
     public static setAlertHook(hook: AlertHook | undefined): void { customAlertHook = hook; }
 
+    /** ADR-0029 NB8: triage sonrası tenant bildirimi kancası (bootstrap `notify('INTEGRATION_CHANGE_NOTICE')`a bağlar). `undefined` => no-op. */
+    public static setChangeNoticeHook(hook: ChangeNoticeHook | undefined): void { customChangeNoticeHook = hook; }
+
     private static raiseAlert(ctx: AlertContext): void {
         try { void Promise.resolve(customAlertHook?.(ctx)).catch(() => undefined); } catch { /* en iyi caba */ }
     }
@@ -276,5 +283,18 @@ export class FindingService {
 
         const sink = customSink ?? defaultSink;
         await sink('transition', record);
+
+        // ADR-0018 "Tenant görünürlüğü": tenant'a yalnız admin `accepted` yaptığında ve severity ≥ high ise (otomatik/triage'sız tenant uyarısı YOK).
+        // Bulgu içeriği/kanıt bildirime GİRMEZ. Kanca/okuma hatası geçişi ETKİLEMEZ.
+        if (action === 'accept' && customChangeNoticeHook) {
+            try {
+                const rec = await (customReader ?? defaultReader)(dedupKey);
+                const tenants = (rec?.affectedTenants ?? []).filter((t) => Number.isInteger(t) && t > 0);
+                if (rec && (rec.severity === 'high' || rec.severity === 'critical') && tenants.length) {
+                    const hook = customChangeNoticeHook;
+                    void Promise.resolve(hook({ integrationCode: rec.integrationCode, severity: rec.severity, findingId: dedupKey.slice(0, 16), tenants })).catch(() => undefined);
+                }
+            } catch { /* en iyi caba */ }
+        }
     }
 }

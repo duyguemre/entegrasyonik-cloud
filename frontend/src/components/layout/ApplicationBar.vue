@@ -118,7 +118,7 @@ const helpGroups = computed<EkMenuGroup[]>(() => [
   {
     label: 'Destek',
     items: [
-      { key: 'tickets', label: 'Destek kayıtları', description: 'Talep oluşturun, yanıtları izleyin', icon: 'mdi-lifebuoy' },
+      { key: 'tickets', label: 'Destek talepleri', description: 'Talep oluşturun, yanıtları izleyin', icon: 'mdi-lifebuoy' },
     ],
   },
   ...supportContactGroups(publicConfig.supportEmail, publicConfig.supportPhone),

@@ -60,7 +60,7 @@ withDefaults(
   opacity: 0.22;
   transform-box: fill-box;
   transform-origin: center;
-  animation: ek-bl-halo 1.8s ease-in-out infinite;
+  animation: ek-bl-halo var(--ek-motion-loop-brand) var(--ek-easing-standard) infinite;
 }
 
 .ek-brand-loader__stroke {
@@ -70,24 +70,24 @@ withDefaults(
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-dasharray: 100;
-  animation: ek-bl-stroke 1.8s ease-in-out infinite;
+  animation: ek-bl-stroke var(--ek-motion-loop-brand) var(--ek-easing-standard) infinite;
 }
 
 .ek-brand-loader__hub {
   fill: var(--ek-color-secondary);
   transform-box: fill-box;
   transform-origin: center;
-  animation: ek-bl-hub 1.8s ease-in-out infinite;
+  animation: ek-bl-hub var(--ek-motion-loop-brand) var(--ek-easing-standard) infinite;
 }
 
 .ek-brand-loader__node {
   fill: var(--ek-color-chrome-text);
   opacity: 0.45;
-  animation: ek-bl-node 1.8s ease-in-out infinite;
+  animation: ek-bl-node var(--ek-motion-loop-brand) var(--ek-easing-standard) infinite;
 }
 
 .ek-brand-loader__node--b {
-  animation-delay: 0.3s;
+  animation-delay: calc(var(--ek-motion-loop-brand) / 6);
 }
 
 .ek-brand-loader__label {

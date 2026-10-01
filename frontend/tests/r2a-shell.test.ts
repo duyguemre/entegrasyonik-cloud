@@ -76,7 +76,9 @@ describe('kabuk (madde 3, 9)', () => {
     const tabs = read('packages/ui/src/components/EkWorkspaceTabs.vue')
     expect(tabs).not.toMatch(/ek-tabs__arrow/)
     expect(tabs).toMatch(/data-tabs-more/)
-    expect(tabs).toMatch(/:aria-label="`Daha fazla sekme \(\$\{hiddenTabs\.length\}\)`"/)
+    // FR3 madde 4: "+N" ve toplam düğmesi TEK düğme — erişilebilir ad toplamı ve gizli sayısını söyler.
+    expect(tabs).toMatch(/:aria-label="allLabel"/)
+    expect(tabs).toMatch(/şeritte görünmüyor/)
   })
 })
 

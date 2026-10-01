@@ -59,7 +59,7 @@
       </EkSettingsSection>
 
       <EkSettingsSection v-if="mode === 'integration'" title="Uç noktalar" description="Uç nokta host seçimi ve yol şablonları.">
-        <EkEmptyState variant="not-connected" title="Bu bölüm bu sürümde bağlı değil" message="Uç nokta host/yol verisi hiçbir yönetim ucundan dönmüyor (ADR-0020 Aşama B kapsamı dışı kaldı)." />
+        <EkEmptyState variant="not-connected" title="Bu bölüm bu sürümde bağlı değil" message="Uç nokta adresi ve yol şablonları henüz yönetim ekranından görüntülenemiyor." />
       </EkSettingsSection>
 
       <template v-for="entry in visibleGroups" :key="entry.group">

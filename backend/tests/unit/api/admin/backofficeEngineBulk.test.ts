@@ -6,7 +6,7 @@ import { BACKOFFICE_ENGINE_RPC_INPUT } from '../../../../src/capabilities/rpc-in
 import { BACKOFFICE_RPC_INPUT } from '../../../../src/capabilities/rpc-input/backoffice';
 import { CAPABILITY_BY_RPC } from '../../../../src/capabilities';
 import { requiresStepUp } from '../../../../src/api/admin/stepUp';
-import { isLiveReadonlyBlockedRpc } from '../../../../src/api/liveReadonlyRpcGuard';
+import { isLiveReadonlyBlockedRpc } from '../../../../src/api/rpc/liveReadonlyRpcGuard';
 import { FakeModel, FakeQueue, FakeJob } from '../../../helpers/fakeEngineDb';
 
 const NOW = Date.parse('2026-10-01T12:00:00Z');
