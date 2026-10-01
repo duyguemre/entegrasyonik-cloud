@@ -484,7 +484,7 @@ const ticks = Array.from({ length: 24 }, (_, i) => ({ a: i * 15, long: i % 6 ===
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
     gap: var(--ek-space-3) var(--ek-space-4);
-    align-items: center;
+    align-items: start;
     margin-top: var(--ek-space-10);
     padding: var(--ek-space-5) var(--ek-space-6);
     border: var(--site-border-width) solid var(--ek-color-border-default);
@@ -532,6 +532,7 @@ const ticks = Array.from({ length: 24 }, (_, i) => ({ a: i * 15, long: i % 6 ===
   @media (min-width: 768px) {
     .pledge {
       grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
     }
     .pledge__link {
       grid-column: auto;
