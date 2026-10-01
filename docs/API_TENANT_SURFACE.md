@@ -2,7 +2,7 @@
 
 Tarih: 2026-09-28 · Kaynak: `backend/src/api/**`, `backend/src/operations/**` · Testler: `backend/tests/unit/tenant-surface/*`
 Kapsam: FRONTEND_GAP_ANALYSIS N4/N5/N6/N7/N10 + §b-2 (politikasız metotlar). **Frontend'e dokunulmadı**; ekranlar ADR-0015 sonrası.
-Kademe kaynağı: `backend/src/api/operationPolicy.ts` (tablo: `docs/OPERATION_POLICY.md` "Tenant-yüzlü yeni uçlar").
+Kademe kaynağı: `backend/src/api/rpc/operationPolicy.ts` (tablo: `docs/OPERATION_POLICY.md` "Tenant-yüzlü yeni uçlar").
 
 ## 0. Ortak sözleşme (jenerik RPC)
 

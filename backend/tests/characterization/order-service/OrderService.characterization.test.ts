@@ -1,5 +1,5 @@
 /**
- * CHARACTERIZATION: OrderService (backend/src/api/services/order-service.ts)
+ * CHARACTERIZATION: OrderService (backend/src/api/rpc/handlers/order-service.ts)
  *
  * Kapsam: getOrders, cancelOrder, bulkCancelOrder, approveOrder, bulkApproveOrder, updateOrderStatus,
  * markAsPrinted, getOrderRejectionReasons, getOrderDashboardInsights, tenant (clientId) kullanımı.
@@ -18,7 +18,7 @@ jest.mock('@database/DatabaseManager', () => ({
 }));
 jest.mock('@integration/modules/IntegrationFactory', () => ({ __esModule: true, default: jest.fn() }));
 
-import OrderService from '@api/services/order-service';
+import OrderService from '@api/rpc/handlers/order-service';
 import { DatabaseManagerInstance } from '@database/DatabaseManager';
 import IntegrationFactory from '@integration/modules/IntegrationFactory';
 

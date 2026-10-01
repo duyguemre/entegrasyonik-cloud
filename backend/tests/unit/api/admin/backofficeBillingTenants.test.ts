@@ -1,7 +1,7 @@
 // Backoffice B2/B4: abonelik yonetimi, gelir metrikleri, tenant yasam dongusu. DB/ag YOK (sahte modeller + MockPaymentProvider).
 import { describe, it, expect, jest, beforeAll } from '@jest/globals';
 import { BACKOFFICE_BILLING_RPC_INPUT } from '../../../../src/capabilities/rpc-input/backoffice-billing';
-import { getRequiredTier } from '../../../../src/api/operationPolicy';
+import { getRequiredTier } from '../../../../src/api/rpc/operationPolicy';
 import { requiresStepUp } from '../../../../src/api/admin/stepUp';
 import { CAPABILITY_BY_RPC } from '../../../../src/capabilities';
 import { extendTrial, cancelSubscription, changePlan } from '../../../../src/operations/backoffice/subscriptionAdmin';

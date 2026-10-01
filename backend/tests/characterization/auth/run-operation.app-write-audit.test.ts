@@ -33,10 +33,10 @@ let AuditLogger: any;
 function load() {
   let run: any;
   jest.isolateModules(() => {
-    jest.doMock('../../../src/api/index', () => ({ __esModule: true, default: { ProductService, VariantService, IntegrationService } }));
+    jest.doMock('../../../src/api/rpc/index', () => ({ __esModule: true, default: { ProductService, VariantService, IntegrationService } }));
     jest.doMock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: { getClientDB: async () => fakeDb } }));
     AuditLogger = require('../../../src/services/audit/AuditLogger').AuditLogger;
-    run = require('../../../src/api/RunOperation').default;
+    run = require('../../../src/api/rpc/RunOperation').default;
   });
   return run as (uc: any, s: string, o: string, r: any, p?: any) => Promise<any>;
 }

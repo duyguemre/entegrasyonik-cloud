@@ -8,7 +8,7 @@ import { ObjectId } from 'mongodb';
 
 jest.mock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: { getApplicationDB: jest.fn(), getClientDB: jest.fn() } }));
 
-import StockService from '../../../src/api/services/stock-service';
+import StockService from '../../../src/api/rpc/handlers/stock-service';
 import { percentileFromBuckets, summarizeBuckets } from '../../../src/operations/stock/publishLag';
 import { HISTOGRAM_BUCKETS_MS, HISTOGRAM_BUCKET_SETS } from '../../../src/platform/runtime/metrics';
 

@@ -6,11 +6,11 @@ jest.mock('../../../../src/health/HealthCheck', () => ({ checkReadiness: jest.fn
 
 import { BACKOFFICE_NOTIFICATIONS_RPC_INPUT, announcementInput } from '../../../../src/capabilities/rpc-input/backoffice-notifications';
 import { CAPABILITY_BY_RPC } from '../../../../src/capabilities';
-import { getRequiredTier } from '../../../../src/api/operationPolicy';
+import { getRequiredTier } from '../../../../src/api/rpc/operationPolicy';
 import { requiresStepUp, isSensitiveRead } from '../../../../src/api/admin/stepUp';
-import { isLiveReadonlyBlockedRpc } from '../../../../src/api/liveReadonlyRpcGuard';
-import services from '../../../../src/api';
-import AnnouncementService from '../../../../src/api/services/announcement-service';
+import { isLiveReadonlyBlockedRpc } from '../../../../src/api/rpc/liveReadonlyRpcGuard';
+import services from '../../../../src/api/rpc';
+import AnnouncementService from '../../../../src/api/rpc/handlers/announcement-service';
 import { FakeNotifyModel } from '../../../helpers/fakeNotifyDb';
 
 const RPCS = Object.keys(BACKOFFICE_NOTIFICATIONS_RPC_INPUT);

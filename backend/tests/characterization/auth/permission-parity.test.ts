@@ -3,7 +3,7 @@ import { CAPABILITIES, CAPABILITY_BY_RPC, findRegistryInvariantViolations } from
 import { PERMISSIONS, PLATFORM_ONLY, isPermission } from '../../../src/capabilities/permissions';
 import { ROLES, ROLE_PERMISSIONS, minTierFromPermission } from '../../../src/capabilities/roles';
 import { can, canFor, permissionsOf, permissionsForProfile, type AuthzActor } from '../../../src/platform/core/authz/can';
-import { isAllowed, getRequiredPermission } from '../../../src/api/operationPolicy';
+import { isAllowed, getRequiredPermission } from '../../../src/api/rpc/operationPolicy';
 import { OPERATION_POLICY_SNAPSHOT } from './operationPolicy.snapshot';
 
 // ADR-0028 WP-A1: izin kataloğu + kademe paritesi. Referans: Aşama A öncesi ELLE tablo (snapshot; bağımsız kaynak).

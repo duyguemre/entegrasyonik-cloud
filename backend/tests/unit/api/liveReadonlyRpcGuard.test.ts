@@ -1,6 +1,6 @@
 // LIVE-RO Katman B (API): canlı salt-okuma kipinde dış-yazma RPC'lerinin tek merkezî reddi (423 LIVE_READONLY).
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
-import { enforceLiveReadonlyForRpc, isLiveReadonlyBlockedRpc, LIVE_READONLY_ALLOWED_RPCS, LIVE_READONLY_DENIED_RPCS } from '../../../src/api/liveReadonlyRpcGuard';
+import { enforceLiveReadonlyForRpc, isLiveReadonlyBlockedRpc, LIVE_READONLY_ALLOWED_RPCS, LIVE_READONLY_DENIED_RPCS } from '../../../src/api/rpc/liveReadonlyRpcGuard';
 import { CAPABILITIES, rpcBindingsOf } from '../../../src/capabilities';
 
 const thrown = (fn: () => void) => { try { fn(); } catch (e: any) { return e; } return undefined; };

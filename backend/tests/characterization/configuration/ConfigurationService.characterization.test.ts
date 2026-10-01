@@ -1,5 +1,5 @@
 /**
- * CHARACTERIZATION: ConfigurationService (backend/src/api/services/configuration-service.ts) — ADR-0016 B-R-T3.
+ * CHARACTERIZATION: ConfigurationService (backend/src/api/rpc/handlers/configuration-service.ts) — ADR-0016 B-R-T3.
  * `get()` yalnızca YEDİ alt servisi (Menu/Product/Category/Choice/Hashtag/Brand/Integration) INSTANTIATE edip
  * `init()` + veri metotlarını paralel çalıştıran bir AGGREGATOR'dır. DB/Redis/ağ YOK: alt servis SINIFLARININ
  * KENDİSİ jest.mock ile sahte `init`/veri metotlarıyla değiştirilir (gerçek BaseApi.init() hiç çalışmaz).
@@ -14,23 +14,23 @@ import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 
 const calls: any[] = [];
 
-import MenuServiceModule from '@api/services/menu-service';
-import ProductServiceModule from '@api/services/product-service';
-import CategoryServiceModule from '@api/services/category-service';
-import ChoiceServiceModule from '@api/services/choice-service';
-import HashtagServiceModule from '@api/services/hashtag-service';
-import BrandServiceModule from '@api/services/brand-service';
-import IntegrationServiceModule from '@api/services/integration-service';
+import MenuServiceModule from '@api/rpc/handlers/menu-service';
+import ProductServiceModule from '@api/rpc/handlers/product-service';
+import CategoryServiceModule from '@api/rpc/handlers/category-service';
+import ChoiceServiceModule from '@api/rpc/handlers/choice-service';
+import HashtagServiceModule from '@api/rpc/handlers/hashtag-service';
+import BrandServiceModule from '@api/rpc/handlers/brand-service';
+import IntegrationServiceModule from '@api/rpc/handlers/integration-service';
 
-jest.mock('@api/services/menu-service');
-jest.mock('@api/services/product-service');
-jest.mock('@api/services/category-service');
-jest.mock('@api/services/choice-service');
-jest.mock('@api/services/hashtag-service');
-jest.mock('@api/services/brand-service');
-jest.mock('@api/services/integration-service');
+jest.mock('@api/rpc/handlers/menu-service');
+jest.mock('@api/rpc/handlers/product-service');
+jest.mock('@api/rpc/handlers/category-service');
+jest.mock('@api/rpc/handlers/choice-service');
+jest.mock('@api/rpc/handlers/hashtag-service');
+jest.mock('@api/rpc/handlers/brand-service');
+jest.mock('@api/rpc/handlers/integration-service');
 
-import ConfigurationService from '@api/services/configuration-service';
+import ConfigurationService from '@api/rpc/handlers/configuration-service';
 
 beforeEach(() => {
   calls.length = 0;

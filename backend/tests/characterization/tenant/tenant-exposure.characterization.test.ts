@@ -17,10 +17,10 @@ jest.mock('@integration/modules/IntegrationFactory', () => ({ __esModule: true, 
 jest.mock('@integration/engine/IntegrationEventBus', () => ({ EVENTS: {}, integrationEventBus: { emit: jest.fn(), on: jest.fn() } }));
 jest.mock('@services/notification/NotificationService', () => ({ NotificationService: {} }));
 
-import AdminService from '../../../src/api/services/admin-service';
-import UserService from '../../../src/api/services/user-service';
-import IntegrationService from '../../../src/api/services/integration-service';
-import { decryptSecrets } from '../../../src/api/integrationSecrets';
+import AdminService from '../../../src/api/rpc/handlers/admin-service';
+import UserService from '../../../src/api/rpc/handlers/user-service';
+import IntegrationService from '../../../src/api/rpc/handlers/integration-service';
+import { decryptSecrets } from '../../../src/platform/core/security/integrationSecrets';
 import { isEncrypted } from '../../../src/utils/FieldCrypto';
 
 // [ADR-0003 adım 6] Yazma yolunda sır alanları artık `enc:v1:` ile şifreli yazılır (eskiden düz metin). Testler yazılan değeri

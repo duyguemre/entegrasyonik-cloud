@@ -11,7 +11,7 @@ import { configurePublicConfigRoute, buildPublicConfig, PUBLIC_CONFIG_CACHE_CONT
 import { setTargetOverride, resetPlatformOverrideStoreForTests } from '@integration/config/platformOverrideStore';
 import { listSettings } from '@integration/config/catalog';
 import { envKeys, resetConfigForTests } from '@config';
-import { isOpenRoute } from '@api/authenticate';
+import { isOpenRoute } from '@api/http/authenticate';
 import { errorHandler } from '@api/http/errorEnvelope';
 import { DatabaseManagerInstance } from '@database/DatabaseManager';
 

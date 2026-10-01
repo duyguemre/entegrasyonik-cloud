@@ -236,9 +236,9 @@ Not: Pazarama `Service.ts` eskiden iki farklı varsayılan mock portu kullanıyo
 | 9 | `config/env.ts` `<ENVPREFIX>_HTTP_TIMEOUT_MS` | yalnız test/operasyon düğmesi | türetilir |
 | 10 | `operations/tenant/TenantProvisioningService.ts` | yeni tenant seed'ine girdi (status:false; kimlik bilgisi YOK) | aynen |
 | 11 | `capabilities/domains/*.ts` | yalnız **yeni RPC** açılıyorsa (entegrasyona özgü RPC nadirdir; genel RPC'ler `integrationCode` parametreli) — `CAPABILITY_CHECKLIST.md` | aynen |
-| 12 | `api/services/integration-service.ts` `FE_VISIBLE_PLATFORM_URLS` | yalnız FE'nin okuduğu `urls` alt kümesi gerekiyorsa (OAuth yetkilendirme adresi) | aynen |
+| 12 | `api/rpc/handlers/integration-service.ts` `FE_VISIBLE_PLATFORM_URLS` | yalnız FE'nin okuduğu `urls` alt kümesi gerekiyorsa (OAuth yetkilendirme adresi) | aynen |
 | 13 | `utils/secretKeys.ts` `INTEGRATION_SECRET_FIELD_NAMES` | yeni sır alan ADI mevcut listede yoksa (ör. `lwarefreshtoken`) | aynen |
-| 14 | `api/WebhookApiManager.ts` | yalnız webhook varsa (bkz. §4.10) | aynen |
+| 14 | `api/webhooks/WebhookApiManager.ts` | yalnız webhook varsa (bkz. §4.10) | aynen |
 | 15 | `tests/tools/run-tests.js` modül haritası | `<kod>: ['[Kk]od']` | türetilir |
 | 16 | `frontend/src/components/integrations/<kategori>/<Kod>Component.vue` + ilgili `*View.vue` dalı | bağlantı formu (bulut önyüz işi, `docs/CLOUD_BRIEFS.md`) | INT-06 sonrası descriptor alanlarından üretilen ortak form (yalnız özel alan varsa bileşen) |
 | 17 | `frontend/src/plugins/locales/{tr,en}.json` | Bağlantı formu etiketleri **alan adından** gelir: her `descriptor.auth.requiredSettings` alanı için `integrations.<alan küçük harf>` (ör. `integrations.apikey`) hem `tr` hem `en`'de bulunur; `integrations.<kod>.*` biçimi KULLANILMAZ (statik test P11 denetler) | aynen |
@@ -307,7 +307,7 @@ Her kural bir kanıta (test/kod) bağlanır. "DoD" satırları PR açıklamasın
 - Adaptör kendi zamanlayıcısını (`setInterval`/`setTimeout` döngüsü, cron) kurmaz; tüm periyodik iş motor tüketicilerinden
   (`OrderQueueProducer`, `Dispatcher`, `StockPublishTrigger`, `ExternalReconciliationJob`) gelir ve `intakeGate.allowNewWork(code)` ile
   kapatılabilir. Statik test: modül dizininde zamanlayıcı yok.
-- Kullanıcı tetiklemeli RPC'ler de aynı kapıdan geçer (X6-b, `api/intakeRpcGuard.ts`, RunOperation'da idempotency'den ÖNCE): yetenek kaydı
+- Kullanıcı tetiklemeli RPC'ler de aynı kapıdan geçer (X6-b, `api/rpc/intakeRpcGuard.ts`, RunOperation'da idempotency'den ÖNCE): yetenek kaydı
   `external:true` + etki alanı integrations/orders/claims/invoices/shipments/messages (hesap e-postası/ödeme hariç). Entegrasyon kodu girdiden
   (`integrationCode`, `selectedIntegrations`) çözülür; çözülemezse (X6-c) yalnız bir entegrasyon kısıtlıyken kayıt kimliğinden (`orderId`/`claimId`/`invoiceId`/`messageId` + bulk dizileri) tek sorguyla çözülür, hata olursa yalnız `_engine`. `off` → okuma dahil 503 `INTEGRATION_PAUSED`; `drain` → yalnız
   `effect !== 'read'` reddedilir. Yeni bir dış çağrı RPC'si eklerken yetenek kaydında `external:true` işaretlemek yeterli (ayrı liste yok);
@@ -352,7 +352,7 @@ Her kural bir kanıta (test/kod) bağlanır. "DoD" satırları PR açıklamasın
 ### 4.10 Webhook (varsa)
 - Webhook = **sinyal**, polling = **doğruluk**: gelen olay yalnız ilgili kaydın yeniden çekimini tetikler; gövde veri kaynağı olarak
   doğrudan yazılmaz (sıra/tekrar/sahte olay riskine karşı en ucuz koruma). Polling yedeği her zaman çalışır.
-- Doğrulama: `api/webhookAuth.ts` (`safeEqual` sabit zamanlı, basic/başlık/HMAC); URL token + platform imzası; olay kimliğiyle tekilleştirme;
+- Doğrulama: `api/webhooks/webhookAuth.ts` (`safeEqual` sabit zamanlı, basic/başlık/HMAC); URL token + platform imzası; olay kimliğiyle tekilleştirme;
   WP10 testleri (`tests/characterization/webhooks/WebhookSecurity.wp10.test.ts`) kalıbıyla test.
 - Bugün rota yalnız `/hooks/trendyol/:hookToken`. İkinci webhook'lu adaptör geldiğinde (tetikleyici) rota `/hooks/:code/:hookToken`
   olarak genelleştirilir ve adaptör `webhook.ts` (`verify`, `parse`) sağlar (ADR-0033 Karar 5).
@@ -604,7 +604,7 @@ Aşama 3 — Genel (status:'available', verification.liveApi:true)
 - `backend/src/integration/config/catalog/integrationHttp.ts`
 - `backend/src/operations/stock/markStockDirty.ts`
 - `backend/src/utils/secretKeys.ts`
-- `backend/src/api/webhookAuth.ts`
+- `backend/src/api/webhooks/webhookAuth.ts`
 - `backend/tests/helpers/localHttpServer.ts`
 - `backend/tests/helpers/logCapture.ts`
 - `backend/tests/conformance/kit.ts`

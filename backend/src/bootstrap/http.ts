@@ -1,7 +1,7 @@
 // ADR-0024 P0-LIFE: rol bazli HTTP yuzeyi. `web`/`all` -> tam Express API; `worker` -> yalniz /health,/ready.
 import type { AppRole } from '@health/HealthCheck';
 import { startHealthOnlyServer, MinimalHealthServer } from '@health/HealthServer';
-import Webserver from '../Webserver';
+import Webserver from './Webserver';
 import { runsWeb } from './roles';
 import { eventLog } from '@platform/core/logger';
 

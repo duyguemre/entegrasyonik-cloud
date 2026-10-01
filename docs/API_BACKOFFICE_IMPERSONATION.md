@@ -1,6 +1,6 @@
 # Destek oturumu (impersonation) — API ve önyüz sözleşmesi (B3)
 
-ADR-0026 Karar 4.9 + ADR-0028 Karar 9 + `docs/BACKOFFICE_PLAN.md` §2.2 (B3). Kaynak: `backend/src/api/admin/{AdminApiManager,impersonationTicket}.ts`, `backend/src/api/services/security-service.ts`, `backend/src/api/ApiManager.ts` (özel rotalar), merkezî yasak kuralı `backend/src/api/impersonationPolicy.ts`. Bu belge iki önyüz için sözleşmedir: **backoffice** (bileti alır, yeni sekme açar) ve **müşteri uygulaması** (`/impersonate` karşılaması + kalıcı bant). Önyüz kodu bu işte yazılmadı.
+ADR-0026 Karar 4.9 + ADR-0028 Karar 9 + `docs/BACKOFFICE_PLAN.md` §2.2 (B3). Kaynak: `backend/src/api/admin/{AdminApiManager,impersonationTicket}.ts`, `backend/src/api/rpc/handlers/security-service.ts`, `backend/src/api/rpc/ApiManager.ts` (özel rotalar), merkezî yasak kuralı `backend/src/api/rpc/impersonationPolicy.ts`. Bu belge iki önyüz için sözleşmedir: **backoffice** (bileti alır, yeni sekme açar) ve **müşteri uygulaması** (`/impersonate` karşılaması + kalıcı bant). Önyüz kodu bu işte yazılmadı.
 
 ## 1. Akış
 

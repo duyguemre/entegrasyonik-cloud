@@ -2,8 +2,8 @@
 import { describe, it, expect } from '@jest/globals';
 import { testIntegrationConnection, type TestConnectionDeps } from '../../../src/operations/integration/TestConnectionOperation';
 import { CAPABILITY_BY_RPC } from '../../../src/capabilities';
-import { isIntakeGatedRpc } from '../../../src/api/intakeRpcGuard';
-import { OPERATION_POLICY } from '../../../src/api/operationPolicy';
+import { isIntakeGatedRpc } from '../../../src/api/rpc/intakeRpcGuard';
+import { OPERATION_POLICY } from '../../../src/api/rpc/operationPolicy';
 import { createRateLimiter } from '../../../src/platform/rateLimit/rateLimit';
 import { TEST_CONNECTION_RATE } from '../../../src/operations/integration/TestConnectionOperation';
 

@@ -148,13 +148,13 @@ describe('RunOperation: AdminService YAZMA işlemleri audit\'lenir (tek noktada,
   function loadRun() {
     let run: any;
     jest.isolateModules(() => {
-      jest.doMock('../../../src/api/index', () => ({ __esModule: true, default: { AdminService: FakeAdmin } }));
-      jest.doMock('../../../src/api/requestValidation', () => ({ validateRpcRequest: (_s: string, _o: string, b: unknown) => b })); // [ADR-0023] yetki testi: gövde şeması ayrı sınanır (tests/unit/api/requestValidation.test.ts)
-      const policy = require('../../../src/api/operationPolicy');
+      jest.doMock('../../../src/api/rpc/index', () => ({ __esModule: true, default: { AdminService: FakeAdmin } }));
+      jest.doMock('../../../src/api/rpc/requestValidation', () => ({ validateRpcRequest: (_s: string, _o: string, b: unknown) => b })); // [ADR-0023] yetki testi: gövde şeması ayrı sınanır (tests/unit/api/requestValidation.test.ts)
+      const policy = require('../../../src/api/rpc/operationPolicy');
       Object.assign(policy.OPERATION_POLICY, { AdminService: { createClient: 'platformAdmin', getClients: 'platformAdmin', retrieveThing: 'platformAdmin', deleteClient: 'platformAdmin' } });
       const { AuditLogger: IsoLogger } = require('../../../src/services/audit/AuditLogger');
       IsoLogger.setSink(async (r: any) => { records.push(r); });
-      run = require('../../../src/api/RunOperation').default;
+      run = require('../../../src/api/rpc/RunOperation').default;
     });
     return run as (...a: any[]) => Promise<any>;
   }
@@ -187,11 +187,11 @@ describe('RunOperation: AdminService YAZMA işlemleri audit\'lenir (tek noktada,
   it('audit sink hatası AdminService işlemini DÜŞÜRMEZ (best-effort)', async () => {
     let run: any;
     jest.isolateModules(() => {
-      jest.doMock('../../../src/api/index', () => ({ __esModule: true, default: { AdminService: FakeAdmin } }));
-      jest.doMock('../../../src/api/requestValidation', () => ({ validateRpcRequest: (_s: string, _o: string, b: unknown) => b })); // [ADR-0023] yetki testi: gövde şeması ayrı sınanır (tests/unit/api/requestValidation.test.ts)
-      Object.assign(require('../../../src/api/operationPolicy').OPERATION_POLICY, { AdminService: { createClient: 'platformAdmin' } });
+      jest.doMock('../../../src/api/rpc/index', () => ({ __esModule: true, default: { AdminService: FakeAdmin } }));
+      jest.doMock('../../../src/api/rpc/requestValidation', () => ({ validateRpcRequest: (_s: string, _o: string, b: unknown) => b })); // [ADR-0023] yetki testi: gövde şeması ayrı sınanır (tests/unit/api/requestValidation.test.ts)
+      Object.assign(require('../../../src/api/rpc/operationPolicy').OPERATION_POLICY, { AdminService: { createClient: 'platformAdmin' } });
       require('../../../src/services/audit/AuditLogger').AuditLogger.setSink(async () => { throw new Error('audit down'); });
-      run = require('../../../src/api/RunOperation').default;
+      run = require('../../../src/api/rpc/RunOperation').default;
     });
     await expect(run(UC, 'AdminService', 'createClient', {}, PR_ADMIN)).resolves.toEqual({ created: true });
     await flush();
@@ -202,10 +202,10 @@ describe('RunOperation: AdminService YAZMA işlemleri audit\'lenir (tek noktada,
     let run: any;
     jest.isolateModules(() => {
       class Other { constructor(public c: any, public r: any) {} async init() {} async createThing() { return 1; } }
-      jest.doMock('../../../src/api/index', () => ({ __esModule: true, default: { Other } }));
-      Object.assign(require('../../../src/api/operationPolicy').OPERATION_POLICY, { Other: { createThing: 'member' } });
+      jest.doMock('../../../src/api/rpc/index', () => ({ __esModule: true, default: { Other } }));
+      Object.assign(require('../../../src/api/rpc/operationPolicy').OPERATION_POLICY, { Other: { createThing: 'member' } });
       require('../../../src/services/audit/AuditLogger').AuditLogger.setSink(async (r: any) => { records.push(r); });
-      run = require('../../../src/api/RunOperation').default;
+      run = require('../../../src/api/rpc/RunOperation').default;
     });
     await run({ order: 1 }, 'Other', 'createThing', {}, { sub: 'u', tid: 1, ga: false, tv: 0, imp: false });
     await flush();
@@ -217,9 +217,9 @@ describe('RunOperation: AdminService YAZMA işlemleri audit\'lenir (tek noktada,
     let run: any;
     jest.isolateModules(() => {
       class Spy { constructor(public c: any, public r: any) { seen = r; } async init() {} async ping() { return 1; } }
-      jest.doMock('../../../src/api/index', () => ({ __esModule: true, default: { Spy } }));
-      Object.assign(require('../../../src/api/operationPolicy').OPERATION_POLICY, { Spy: { ping: 'member' } });
-      run = require('../../../src/api/RunOperation').default;
+      jest.doMock('../../../src/api/rpc/index', () => ({ __esModule: true, default: { Spy } }));
+      Object.assign(require('../../../src/api/rpc/operationPolicy').OPERATION_POLICY, { Spy: { ping: 'member' } });
+      run = require('../../../src/api/rpc/RunOperation').default;
     });
     await run({ order: 1 }, 'Spy', 'ping', { requestMeta: { ip: 'spoofed' }, principal: { sub: 'evil' }, x: 1 }, { sub: 'u', tid: 1, ga: false, tv: 0, imp: false }, { ip: '5.5.5.5' });
     expect(seen.requestMeta).toEqual({ ip: '5.5.5.5' });

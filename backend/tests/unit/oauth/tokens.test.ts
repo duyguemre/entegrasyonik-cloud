@@ -5,7 +5,7 @@
  */
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import jwt from 'jsonwebtoken';
-import Security from '../../../src/api/Security';
+import Security from '../../../src/platform/core/security/Security';
 import {
     OAUTH_ACCESS_TTL_SECONDS, OAUTH_KID_CURRENT, OAUTH_KID_PREVIOUS, isMcpEnabled, pkceS256Matches, signOAuthAccessToken, verifyOAuthAccessToken,
 } from '../../../src/platform/core/security/oauthTokens';

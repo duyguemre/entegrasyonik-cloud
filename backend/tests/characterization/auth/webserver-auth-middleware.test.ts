@@ -2,9 +2,9 @@ import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals
 import * as fs from 'fs';
 import * as path from 'path';
 
-// Characterization: backend/src/Webserver.ts -> init() kurulumu.
+// Characterization: backend/src/bootstrap/Webserver.ts -> init() kurulumu.
 // ADR-0001 adım 3: eski "MOCK SECURITY" middleware'i (cookie -> jwt.decode -> res.locals.userContext) SİLİNDİ;
-// yerine tek authenticate middleware'i (src/api/authenticate.ts) takılır. Onun davranışı authenticate.test.ts'te sınanır.
+// yerine tek authenticate middleware'i (src/api/http/authenticate.ts) takılır. Onun davranışı authenticate.test.ts'te sınanır.
 // Express/cors/compression/body-parser/cookie-parser ve ApiManager/ImageApiManager/authenticate mock'lanır; gerçek sunucu/port/ağ YOK.
 
 type Captured = {
@@ -37,8 +37,8 @@ async function bootWebserver(): Promise<Captured> {
       jest.doMock('compression', () => ({ __esModule: true, default: named('compression') }));
       jest.doMock('cors', () => ({ __esModule: true, default: (opts: any) => { corsArgs.push(opts); return named('cors')(); } }));
       jest.doMock('body-parser', () => ({ __esModule: true, default: { json: named('json'), urlencoded: named('urlencoded') } }));
-      jest.doMock('../../../src/api/ApiManager', () => ({ configureApis }));
-      jest.doMock('../../../src/api/ImageApiManager', () => ({ configureImageServices: configureImage }));
+      jest.doMock('../../../src/api/rpc/ApiManager', () => ({ configureApis }));
+      jest.doMock('../../../src/api/files/ImageApiManager', () => ({ configureImageServices: configureImage }));
       // [ADR-0026] `/admin-api` baglama noktasi kendi testlerinde (tests/unit/api/admin) sinanir; burada app.use sirasini bozmamasi icin mock.
       jest.doMock('../../../src/api/admin', () => ({ configureAdminApi: jest.fn() }));
       // [ADR-0029 NB5] e-posta abonelik-iptal ucu `app.post(...)` + `express.urlencoded` kullanir; fakeApp'te yok -> ayni gerekceyle mock.
@@ -47,11 +47,11 @@ async function bootWebserver(): Promise<Captured> {
       // testte yalnızca `use/get/listen` sağlar (ApiManager/ImageApiManager de AYNI nedenle mock'lanmış) --
       // bu testin ilgisi `order`/`uses` sırasıdır, webhook rota kaydı KAPSAM DIŞI (ayrıntı: WebhookApiManager
       // kendi testinde, tests/characterization/webhooks/Trendyol.webhook.test.ts).
-      jest.doMock('../../../src/api/WebhookApiManager', () => ({ configureWebhookRoutes: jest.fn() }));
+      jest.doMock('../../../src/api/webhooks/WebhookApiManager', () => ({ configureWebhookRoutes: jest.fn() }));
       // ADR-0008 §4: billing webhook rotası da AYNI nedenle mock'lanır (`app.post(...)` çağırır, fakeApp'te
       // `express.raw` yok) -- kendi testi tests/characterization/webhooks/Billing.webhook.test.ts'te.
-      jest.doMock('../../../src/api/BillingWebhookApiManager', () => ({ configureBillingWebhookRoutes: jest.fn() }));
-      jest.doMock('../../../src/api/MockCheckoutApiManager', () => ({ configureMockCheckoutRoutes: jest.fn() })); // [ADR-0014 S4a]
+      jest.doMock('../../../src/api/webhooks/BillingWebhookApiManager', () => ({ configureBillingWebhookRoutes: jest.fn() }));
+      jest.doMock('../../../src/api/webhooks/MockCheckoutApiManager', () => ({ configureMockCheckoutRoutes: jest.fn() })); // [ADR-0014 S4a]
       // [ADR-0034 BR-1] sohbet araci uclari `app.delete/post` kullanir; fakeApp'te yok -> ayni gerekceyle mock (kendi testi tests/unit/agent/agentRoutes.test.ts).
       jest.doMock('../../../src/api/http/agentRoutes', () => ({ configureAgentRoutes: jest.fn(), getAgentBroker: jest.fn() }));
       // [ADR-0035 MCP-1] OAuth uclari `app.post/delete/use([...])` + cors kullanir; fakeApp'te yok -> AYNI nedenle mock (kendi testi tests/unit/oauth/routes.test.ts).
@@ -60,9 +60,9 @@ async function bootWebserver(): Promise<Captured> {
       jest.doMock('../../../src/api/http/mcpRoutes', () => ({ configureMcpRoutes: jest.fn() }));
       // [ADR-0035 MCP-3] `POST /mcp` ucu `app.all` kullanir; fakeApp'te yok -> AYNI nedenle mock (kendi testi tests/unit/mcp/).
       jest.doMock('../../../src/mcp', () => ({ configureMcpEndpoint: () => undefined }));
-      jest.doMock('../../../src/api/authenticate', () => ({ createAuthenticateMiddleware: createAuthMw }));
-      jest.doMock('../../../src/api/index', () => ({ __esModule: true, default: {} }));
-      const Webserver = require('../../../src/Webserver').default;
+      jest.doMock('../../../src/api/http/authenticate', () => ({ createAuthenticateMiddleware: createAuthMw }));
+      jest.doMock('../../../src/api/rpc/index', () => ({ __esModule: true, default: {} }));
+      const Webserver = require('../../../src/bootstrap/Webserver').default;
       Webserver.getInstance().init().then(resolve, reject);
     });
   });
@@ -156,7 +156,7 @@ describe('Webserver kurulumu (ADR-0001 adım 3)', () => {
 
 describe('Kaynak taraması (statik): istek yolunda jwt.decode ve MOCK SECURITY kalmadı', () => {
   const root = path.join(__dirname, '../../../src');
-  const files = ['Webserver.ts', 'api/ApiManager.ts', 'api/ImageApiManager.ts', 'api/RunOperation.ts', 'api/Security.ts', 'api/authenticate.ts', 'api/services/security-service.ts'];
+  const files = ['bootstrap/Webserver.ts', 'api/rpc/ApiManager.ts', 'api/files/ImageApiManager.ts', 'api/rpc/RunOperation.ts', 'platform/core/security/Security.ts', 'api/http/authenticate.ts', 'api/rpc/handlers/security-service.ts'];
   const read = (f: string) => fs.readFileSync(path.join(root, f), 'utf8');
 
   it('[ADR-0001 adım 3] hiçbir kimlik dosyasında decode( çağrısı yoktur (yorum satırları hariç)', () => {
@@ -167,10 +167,10 @@ describe('Kaynak taraması (statik): istek yolunda jwt.decode ve MOCK SECURITY k
   });
 
   it('[ADR-0001 adım 3] "MOCK SECURITY" middleware\'i Webserver.ts\'te yok', () => {
-    expect(read('Webserver.ts')).not.toMatch(/MOCK SECURITY DEVREYE/);
+    expect(read('bootstrap/Webserver.ts')).not.toMatch(/MOCK SECURITY DEVREYE/);
   });
 
   it('[ADR-0001 adım 2] kaynak kodda gömülü JWT sırrı alanı yok (accessTokenSecret)', () => {
-    expect(read('api/Security.ts')).not.toMatch(/accessTokenSecret/);
+    expect(read('platform/core/security/Security.ts')).not.toMatch(/accessTokenSecret/);
   });
 });

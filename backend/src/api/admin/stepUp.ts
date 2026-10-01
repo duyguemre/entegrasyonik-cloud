@@ -6,7 +6,7 @@
 // paralel isle paylasimli oldugundan bu paket, `requiresReauth` kararini bu MODULDE tek kayit olarak tutar (`REAUTH_RPCS`);
 // yetenek alani geldiginde yalniz bu kume bosaltilip `cap.requiresReauth` okunur (davranis ayni). Yeni servis eklerken buraya girin.
 import { CAPABILITY_BY_RPC } from '../../capabilities';
-import { ApplicationError } from '@api/Security';
+import { ApplicationError } from '@platform/core/security/Security';
 import { ADMIN_REAUTH_SECONDS, type AdminPrincipal } from './adminSession';
 
 export const REASON_MIN_LENGTH = 10;

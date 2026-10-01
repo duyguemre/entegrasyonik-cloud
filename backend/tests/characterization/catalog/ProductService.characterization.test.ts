@@ -1,5 +1,5 @@
 /**
- * CHARACTERIZATION: ProductService (backend/src/api/services/product-service.ts)
+ * CHARACTERIZATION: ProductService (backend/src/api/rpc/handlers/product-service.ts)
  *
  * Bu dosya `tests/characterization/product/*.characterization.test.ts` (copyTempImages/updateTempImageDocuments,
  * saveProduct/updateProduct motor-alanı temizliği — ADR-0013 B3 / N6) tarafından ZATEN kapsanan metotları
@@ -15,7 +15,7 @@ import { ObjectId } from 'mongodb';
 
 jest.mock('@operations/client/StatsOperations');
 
-import ProductService from '@api/services/product-service';
+import ProductService from '@api/rpc/handlers/product-service';
 import { StatsOperations } from '@operations/client/StatsOperations';
 
 const StatsOperationsMock = StatsOperations as unknown as jest.Mock<any>;

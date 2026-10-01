@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { CAPABILITIES, CAPABILITY_BY_RPC, findRegistryInvariantViolations, rpcBindingsOf } from '../../../src/capabilities';
 import { derivePolicy } from '../../../src/capabilities/derive/policy';
-import { OPERATION_POLICY } from '../../../src/api/operationPolicy';
+import { OPERATION_POLICY } from '../../../src/api/rpc/operationPolicy';
 import { OPERATION_POLICY_SNAPSHOT } from './operationPolicy.snapshot';
 
 // ADR-0019 §3: Parite kapısı v1 (Aşama A). `operation-policy.test.ts` DEĞİŞTİRİLMEDEN yeşil kalır (ayrı dosya, ayrı

@@ -1,12 +1,12 @@
 /**
  * CustomerService.anonymizeCustomer (ADR-0003 adım 8, Karar F.23) — yeni metot, DB/ağ YOK, tamamen mock.
- * Kaynak: backend/src/api/services/customer-service.ts. Mevcut metotlar (getCustomers/getCustomerDetail/
+ * Kaynak: backend/src/api/rpc/handlers/customer-service.ts. Mevcut metotlar (getCustomers/getCustomerDetail/
  * updateCustomer) DEĞİŞTİRİLMEDİ; bu dosya yalnızca YENİ metodu test eder.
  */
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { ObjectId } from 'mongodb';
 
-import CustomerService from '../../../src/api/services/customer-service';
+import CustomerService from '../../../src/api/rpc/handlers/customer-service';
 
 const CUSTOMER_ID = new ObjectId().toString();
 

@@ -13,15 +13,15 @@ jest.mock('@integration/modules/IntegrationFactory', () => ({ __esModule: true, 
 jest.mock('@utils/decorator/cache', () => ({ nodeCache: { getStats: () => ({}), keys: () => [] }, Cache: () => () => undefined }));
 jest.mock('@services/redis/RedisService', () => ({ RedisService: { getInstance: () => ({}) } }));
 
-import ClaimService from '@api/services/claim-service';
-import CustomerService from '@api/services/customer-service';
-import MessageService from '@api/services/message-service';
-import InvoiceService from '@api/services/invoice-service';
-import FinancialService from '@api/services/financial-service';
-import TicketService from '@api/services/ticket-service';
-import NotificationService from '@api/services/notification-service';
-import AdminService from '@api/services/admin-service';
-import ProductService from '@api/services/product-service';
+import ClaimService from '@api/rpc/handlers/claim-service';
+import CustomerService from '@api/rpc/handlers/customer-service';
+import MessageService from '@api/rpc/handlers/message-service';
+import InvoiceService from '@api/rpc/handlers/invoice-service';
+import FinancialService from '@api/rpc/handlers/financial-service';
+import TicketService from '@api/rpc/handlers/ticket-service';
+import NotificationService from '@api/rpc/handlers/notification-service';
+import AdminService from '@api/rpc/handlers/admin-service';
+import ProductService from '@api/rpc/handlers/product-service';
 
 const RAW = '(a+)+$';
 const ESC = '\\(a\\+\\)\\+\\$';

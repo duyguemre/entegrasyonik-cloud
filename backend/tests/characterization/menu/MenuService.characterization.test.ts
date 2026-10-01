@@ -1,5 +1,5 @@
 /**
- * CHARACTERIZATION: MenuService (backend/src/api/services/menu-service.ts) — ADR-0016 B-R-T3.
+ * CHARACTERIZATION: MenuService (backend/src/api/rpc/handlers/menu-service.ts) — ADR-0016 B-R-T3.
  * DB/Redis/ağ YOK; `applicationDB`/`clientDB` sahte model nesneleridir. Kod DEĞİŞTİRİLMEDİ, yalnızca
  * mevcut davranış sabitlenir.
  *
@@ -12,7 +12,7 @@
  */
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 
-import MenuService from '@api/services/menu-service';
+import MenuService from '@api/rpc/handlers/menu-service';
 
 let menuModel: any;
 let favoriteModel: any;

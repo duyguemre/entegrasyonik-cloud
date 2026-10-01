@@ -11,7 +11,7 @@ import mongoose from 'mongoose';
 jestGlobal.setTimeout(120000);
 
 import { CustomerSchema } from '@database/client/models/Customer';
-import CustomerService from '@api/services/customer-service';
+import CustomerService from '@api/rpc/handlers/customer-service';
 
 let mongod: import('mongodb-memory-server').MongoMemoryServer;
 let conn: mongoose.Connection;

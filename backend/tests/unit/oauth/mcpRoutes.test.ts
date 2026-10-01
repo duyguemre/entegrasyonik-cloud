@@ -19,7 +19,7 @@ import { ROLE_PERMISSIONS, type Role } from '../../../src/capabilities/roles';
 import { AuditLogger } from '../../../src/services/audit/AuditLogger';
 import { getDefinition } from '../../../src/operations/notifications/catalog';
 import { renderNotification } from '../../../src/operations/notifications/templates/render';
-import SettingService from '../../../src/api/services/setting-service';
+import SettingService from '../../../src/api/rpc/handlers/setting-service';
 import { sha256Hex } from '../../../src/platform/core/security/oauthTokens';
 import { McpApprovals } from '../../../src/operations/mcp/mcpApprovals';
 import { MemoryKv } from '../../../src/operations/agent/kv';

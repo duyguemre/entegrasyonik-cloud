@@ -1,5 +1,5 @@
 import { describe, it, expect, jest } from '@jest/globals';
-import { createOriginCheckMiddleware, isOriginAllowed, parseCorsOrigins } from '../../../src/api/originCheck';
+import { createOriginCheckMiddleware, isOriginAllowed, parseCorsOrigins } from '../../../src/api/http/originCheck';
 
 // [ADR-0001 adım 7] Origin/CSRF asgari koruması: durum değiştiren isteklerde Origin (yoksa Referer) CORS_ORIGINS'e karşı doğrulanır.
 // Başlıkların ikisi de yoksa izin (tarayıcı dışı istemci). Preflight (OPTIONS) etkilenmez. DB/ağ YOK.
