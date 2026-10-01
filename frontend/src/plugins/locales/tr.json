@@ -129,7 +129,9 @@
       "changePassword": "Şifre Değiştir",
       "exit": "Çıkış"
     },
-    "account": "Hesabım"
+    "account": "Hesabım",
+    "management": "Kullanıcı Yönetimi",
+    "supports": "Destek"
   },
   "batch": {
     "menu": {
@@ -921,7 +923,7 @@
     "storename": "Mağaza Adı",
     "apikey": "API Key (Merchant ID)",
     "apisecret": "API Secret",
-    "sellerid": "Satıcı Id",
+    "sellerid": "Satıcı ID",
     "isSynchronized": "Eşitleme Yapılsın",
     "isUnapprovedOrders": "Onaylanmamış Siparişler Çekilsin",
     "shippingDuration": "Kargo Süresi",

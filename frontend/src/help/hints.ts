@@ -60,11 +60,11 @@ export const HELP_HINTS = {
   },
 
   // Kanıt: site/src/data/connect.ts (bizimhesap: 'Anahtar (key)', 'Gizli anahtar (secret)'; WHERE.erp),
-  //        components/integrations/erp/BizimhesapComponent.vue (Bizimhesap ID → settings.key, Api Key → settings.secret)
+  //        components/integrations/erp/BizimhesapComponent.vue (Bizimhesap ID → settings.key, API Key → settings.secret)
   // Yer: components/integrations/erp/BizimhesapComponent.vue → EkFormSection title="Bağlantı bilgileri" başlığının yanı
   'integration.credentials.bizimhesap': {
     title: 'Bizimhesap kimlik bilgileri',
-    text: 'Gerekli bilgiler: anahtar (key) ve gizli anahtar (secret); formda Bizimhesap ID ve Api Key alanlarına girilir. ERP hesabınızdan entegrasyon kimlik bilgilerinizi edinin.',
+    text: 'Gerekli bilgiler: anahtar (key) ve gizli anahtar (secret); formda Bizimhesap ID ve API Key alanlarına girilir. ERP hesabınızdan entegrasyon kimlik bilgilerinizi edinin.',
     article: 'int-channel-connect',
   },
 

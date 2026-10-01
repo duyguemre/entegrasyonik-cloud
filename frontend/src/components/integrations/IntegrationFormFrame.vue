@@ -19,7 +19,7 @@
   binmez). Dış API (props/olaylar/slot) DEĞİŞMEDİ.
 
   Kullanım:
-    <IntegrationFormFrame v-model="activeTab" :tabs="[{value:1,label:'Api Bilgileri'},{value:2,label:'Varsayılan Bilgiler'}]"
+    <IntegrationFormFrame v-model="activeTab" :tabs="[{value:1,label:'API Bilgileri'},{value:2,label:'Varsayılan Bilgiler'}]"
       @save="emits('update', editingClientIntegration)" @clear="emits('refresh', editingClientIntegration.code)">
       <v-window-item :value="1">…</v-window-item>
       <v-window-item :value="2">…</v-window-item>

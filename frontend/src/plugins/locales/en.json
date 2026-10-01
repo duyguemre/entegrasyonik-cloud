@@ -56,7 +56,9 @@
       "integrationSettings": "Integration settings",
       "engineSettings": "Engine settings",
       "effectiveConfig": "Effective configuration"
-    }
+    },
+    "management": "User Management",
+    "supports": "Support"
   },
   "title": {
     "config": "Configuration"

@@ -61,7 +61,7 @@ export const ARTICLES_TR: HelpArticle[] = [
   },
 
   // Kanıt: frontend/src/views/secure/integrations/MarketplaceView.vue (Hızlı Başlangıç Rehberi, IntegrationPlatformRail, IntegrationCapabilityChips),
-  //        frontend/src/components/integrations/marketplace/TrendyolComponent.vue (sekmeler "Api Bilgileri"/"Varsayılan Bilgiler", "Entegrasyon Durumu"),
+  //        frontend/src/components/integrations/marketplace/TrendyolComponent.vue (sekmeler "API Bilgileri"/"Varsayılan Bilgiler", "Entegrasyon Durumu"),
   //        frontend/src/components/integrations/IntegrationFormFrame.vue (Kaydet), site/src/data/connect.ts (COMMON_STEPS/WHERE),
   //        frontend/src/help/channels.ts, frontend/src/plugins/locales/tr.json (integrationCoverage)
   {
@@ -79,7 +79,7 @@ export const ARTICLES_TR: HelpArticle[] = [
           'İlgili kanalın satıcı veya mağaza panelinden API kimlik bilgilerinizi edinin. Hangi bilgilerin gerektiği **Kanal bağlantı adımları** makalesindeki tabloda yer alır.',
           'Sol menüden **Entegrasyonlar** bölümünü ve kanal türünü (Pazaryeri, E-Ticaret veya ERP) açın.',
           'Üstteki kanal simgelerinden bağlayacağınız kanalı seçin.',
-          '**Api Bilgileri** sekmesinde kimlik bilgilerini girin ve **Entegrasyon Durumu** anahtarını açın.',
+          '**API Bilgileri** sekmesinde kimlik bilgilerini girin ve **Entegrasyon Durumu** anahtarını açın.',
           '**Varsayılan Bilgiler** sekmesinde kargo firması, kargo süresi, sevkiyat ve iade adresi gibi kanalın istediği varsayılanları doldurun.',
           '**Kaydet**’e basın. Eksik bir alan varsa ekran hangi bilginin gerektiğini belirtir.',
         ],

@@ -49,7 +49,7 @@ const cases: FormCase[] = [
     bodyKey: 'clientMarketplace',
     tab1: [
       { kind: 'text', label: 'Mağaza Adı', value: 'E2E Mağaza' },
-      { kind: 'text', label: 'Satıcı Id', value: '248113' },
+      { kind: 'text', label: 'Satıcı ID', value: '248113' },
       { kind: 'text', label: 'API Key (Merchant ID)', value: 'key-1' },
       { kind: 'text', label: 'API Secret', value: 'secret-1' },
       { kind: 'switch', label: 'Entegrasyon Durumu' },
@@ -169,7 +169,7 @@ const cases: FormCase[] = [
     bodyKey: 'clientErp',
     tab1: [
       { kind: 'text', label: 'Bizimhesap ID', value: 'bh-1' },
-      { kind: 'text', label: 'Api Key', value: 'bh-key' },
+      { kind: 'text', label: 'API Key', value: 'bh-key' },
       { kind: 'switch', label: 'Entegrasyon Durumu' },
     ],
     tab2Label: 'Kargo Bilgileri',

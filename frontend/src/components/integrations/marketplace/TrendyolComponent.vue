@@ -3,7 +3,7 @@
     <LoadingComponent attach=".marketplaceView" ref="loadingComponentRef"></LoadingComponent>
 
     <IntegrationFormFrame v-if="editingClientIntegration" v-model="activeTab" :tabs="[
-        { value: 1, label: 'Api Bilgileri' },
+        { value: 1, label: 'API Bilgileri' },
         { value: 2, label: 'Varsayılan Bilgiler' },
       ]" @save="emits('update', editingClientIntegration)" @clear="emits('refresh', editingClientIntegration.code)">
       <v-window-item :value="1">

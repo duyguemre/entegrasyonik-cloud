@@ -198,7 +198,7 @@ const columns: EkGridColumn[] = [
   { key: 'ticketNumber', label: 'Destek no & tip', sortable: true },
   { key: 'subject', label: 'Konu & mesaj', sortable: true },
   { key: 'priority', label: 'Öncelik', sortable: true },
-  { key: 'status', label: 'Statü', sortable: true },
+  { key: 'status', label: 'Durum', sortable: true },
   { key: 'lastMessageAt', label: 'Zamanlama', sortable: true },
   { key: 'actions', label: 'İşlemler', align: 'end', hideLabel: true, pin: 'end' },
 ]

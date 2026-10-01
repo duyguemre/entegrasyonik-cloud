@@ -472,7 +472,7 @@ export const PAGE_HELP: Record<string, PageHelp> = {
     purpose:
       'Pazaryeri hesaplarınızı bağlayın ve API ayarlarını buradan yönetin.',
     tips: [
-      'Üstteki listeden bir pazaryeri seçin; Api Bilgileri ve Varsayılan Bilgiler sekmeleri açılır.',
+      'Üstteki listeden bir pazaryeri seçin; API Bilgileri ve Varsayılan Bilgiler sekmeleri açılır.',
       'API kimlik bilgilerinizi pazaryerinin satıcı panelinden edinip Bağlantı bilgileri bölümüne girin ve Kaydet düğmesine basın.',
       'Varsayılan Bilgiler sekmesinde kargo firması, sevkiyat ve iade adresi gibi varsayılanları tanımlayın.',
       'Kodu hazır olmayan pazaryerleri "Yakında" olarak gösterilir; bunlar için kayıt yapılamaz.',

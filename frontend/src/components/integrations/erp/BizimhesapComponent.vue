@@ -3,7 +3,7 @@
     <LoadingComponent attach=".erpView" ref="loadingComponentRef"></LoadingComponent>
 
     <IntegrationFormFrame v-if="editingClientIntegration" v-model="activeTab" :tabs="[
-        { value: 1, label: 'Api Bilgileri' },
+        { value: 1, label: 'API Bilgileri' },
         { value: 2, label: 'Kargo Bilgileri' },
       ]" @save="emits('update', editingClientIntegration)" @clear="emits('refresh', editingClientIntegration.code)">
       <v-window-item :value="1">
@@ -11,7 +11,7 @@
           description="Bizimhesap panelindeki API erişim bilgilerinden alınır.">
           <template #legend-extra><EkHelpHint hint="integration.credentials.bizimhesap" /></template>
           <v-text-field clearable v-model="editingClientIntegration.settings.key" label="Bizimhesap ID" />
-          <v-text-field clearable v-model="editingClientIntegration.settings.secret" label="Api Key" />
+          <v-text-field clearable v-model="editingClientIntegration.settings.secret" label="API Key" />
           <v-switch class="ek-span-full" hide-details color="primary"
             v-model="editingClientIntegration.settings.status" :label="$t('integrations.status')" />
         </EkFormSection>
