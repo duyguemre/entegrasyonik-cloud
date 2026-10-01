@@ -123,6 +123,11 @@ export class MockAdminServer {
     this.p2.notifications.setPushEnabled(value)
   }
 
+  /** MOB-08: kullanım kaydı yok → getPulse.activeUsers ve getUsage.activeUsers `computable:false` ('hesaplanamadı'). */
+  setUsageEmpty(value: boolean) {
+    this.p2.usage.setEmpty(value)
+  }
+
   /** Hata durumu denemesi: öneki eşleşen operasyonlar 500 INTERNAL döner (ör. `failOps('BackofficeBillingService/')`); null kapatır. */
   failOps(prefix: string | null) {
     this.failPrefix = prefix

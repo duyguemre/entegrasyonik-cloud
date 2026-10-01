@@ -46,7 +46,7 @@ import { computed, ref } from 'vue'
 export interface SeriesDef {
   key: string
   label: string
-  tone: 'action' | 'error' | 'warning' | 'neutral'
+  tone: 'action' | 'error' | 'warning' | 'neutral' | 'success'
 }
 export interface SeriesPoint {
   t: string
@@ -161,6 +161,11 @@ g:hover .bo-series__hit {
 .is-neutral {
   fill: var(--ek-color-content-subtle);
   background: var(--ek-color-content-subtle);
+}
+/* MOB-08: masaüstü/mobil kırılımında ikinci kategorik seri (alarm anlamı taşımaz). */
+.is-success {
+  fill: var(--ek-color-success);
+  background: var(--ek-color-success);
 }
 .bo-series__axis {
   display: flex;

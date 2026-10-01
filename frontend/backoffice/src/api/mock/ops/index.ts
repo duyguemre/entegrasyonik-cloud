@@ -5,6 +5,7 @@ import { createEngineMock } from './engine'
 import { createInfraMock } from './infra'
 import { createNotificationsMock } from './notifications'
 import { createPlatformMock, setMockFeatureFlags } from './platform'
+import { createUsageMock } from './usage'
 
 export { UNHANDLED, type MockCtx }
 export { assertImpersonatable } from './billing'
@@ -15,12 +16,14 @@ export function createP2Domains(t0: number, selfEmail: string) {
   const billing = createBillingMock(t0)
   const platform = createPlatformMock(t0, selfEmail)
   const notifications = createNotificationsMock(t0)
+  const usage = createUsageMock(t0)
   // Sıra önemli: `_platform` hedefli yapılandırma çağrıları önce platform'a, diğer hedefler infra'ya düşer.
-  const domains: MockDomain[] = [createEngineMock(t0), billing, platform, notifications, createInfraMock(t0)]
+  const domains: MockDomain[] = [createEngineMock(t0), billing, platform, notifications, createInfraMock(t0), usage]
   return {
     billing,
     platform,
     notifications,
+    usage,
     handle(op: string, body: Record<string, unknown>, ctx: MockCtx) {
       for (const d of domains) {
         const res = d.handle(op, body, ctx)
