@@ -77,6 +77,11 @@ const ENUM_OPTIONS: Record<string, Array<{ value: string | number; title: string
     { value: 'warning', title: 'Uyarı (warning)' },
   ],
   'ui.listPageSize': [10, 25, 50, 100].map((n) => ({ value: n, title: String(n) })),
+  // PRC-R2 / PRC-OPEN S6 (açık karar): toplu öneri onayının kota sayımı.
+  'pricing.suggestions.bulkApplyQuota': [
+    { value: 'per_approval', title: 'Onay başına 1 eylem (per_approval)' },
+    { value: 'per_item', title: 'Öneri başına 1 eylem (per_item)' },
+  ],
 }
 const options = computed(() => ENUM_OPTIONS[props.item.key] ?? [{ value: props.item.default as string, title: String(props.item.default) }])
 const maxLength = computed(() => (props.item.key === 'support.email' ? 120 : props.item.key === 'support.phone' ? 20 : 280))

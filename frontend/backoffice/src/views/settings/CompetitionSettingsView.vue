@@ -18,6 +18,8 @@
 
       <div class="bo-settings">
         <CompetitionStatusPanel :cs="cs" />
+        <!-- PRC-R2: fiyat kuralları kill-switch + toplam istatistik (tenant verisi yok) -->
+        <PricingRulesPanel :cfg="cfg" />
         <CompetitionPlansPanel :cs="cs" />
         <CompetitionOverridesPanel :cs="cs" />
 
@@ -52,6 +54,7 @@ import { parseTidParam } from './competitionLogic'
 import CompetitionStatusPanel from './CompetitionStatusPanel.vue'
 import CompetitionPlansPanel from './CompetitionPlansPanel.vue'
 import CompetitionOverridesPanel from './CompetitionOverridesPanel.vue'
+import PricingRulesPanel from './PricingRulesPanel.vue'
 import OverrideDialog from './OverrideDialog.vue'
 import HistoryPanel from './HistoryPanel.vue'
 import PublishDialogs from './PublishDialogs.vue'

@@ -5,7 +5,7 @@
  */
 import type { CatalogItem, ConfigDiffEntry, ConfigRevision, PlatformAdmin } from '../../contract'
 import { MockHttpError } from '../errors'
-import { COMPETITION_CATALOG, COMPETITION_FLAGS, COMPETITION_LIMITS, PRIORITIES } from './competitionCatalog'
+import { BULK_QUOTA_KEY, COMPETITION_CATALOG, COMPETITION_FLAGS, COMPETITION_LIMITS, PRIORITIES } from './competitionCatalog'
 import { DAY, HOUR, MIN, UNHANDLED, conflict, hex24, iso, notFound, strict, validation, type MockCtx, type MockDomain } from './context'
 
 const T = (tr: string, en: string) => ({ tr, en })
@@ -60,6 +60,7 @@ function validate(key: string, v: unknown): string | null {
     case 'ui.reportPollMs':
       return Number.isInteger(v) && (v as number) >= 3000 && (v as number) <= 60000 ? null : '3000-60000 arası tam sayı'
   }
+  if (key === BULK_QUOTA_KEY) return v === 'per_approval' || v === 'per_item' ? null : 'per_approval | per_item'
   if (def.group === 'platform.pricing' && def.type === 'enum') return (PRIORITIES as readonly string[]).includes(v as string) ? null : 'changed_first | stocked_only | oldest_first'
   if (def.group === 'platform.pricing' && def.type === 'int') {
     const r = def.safeRange ?? COMPETITION_LIMITS.budgetPerMin

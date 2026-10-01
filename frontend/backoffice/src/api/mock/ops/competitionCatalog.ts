@@ -1,6 +1,6 @@
 /**
- * Sahte `_platform` kataloğunun rekabet bölümü (PRC-CFG): backend `integration/config/catalog/pricing.ts` (14 anahtar, grup
- * `platform.pricing`) + `features.competition` bayrağı (`features.ts`). Alan sınırları/varsayılanlar backend ile birebir.
+ * Sahte `_platform` kataloğunun rekabet bölümü (PRC-CFG): backend `integration/config/catalog/pricing.ts` (15 anahtar, grup
+ * `platform.pricing`; PRC-R2 toplu onay kota sayımı dahil) + `features.competition` ve `features.pricingRules` bayrakları (`features.ts`). Alan sınırları/varsayılanlar backend ile birebir.
  */
 import type { CatalogItem } from '../../contract'
 
@@ -27,6 +27,10 @@ export const PRIORITIES = ['changed_first', 'stocked_only', 'oldest_first'] as c
 export const planKey = (plan: string, field: string) => `pricing.buybox.plan.${plan}.${field}`
 export const BUDGET_KEY = 'pricing.buybox.budget.trendyol.perMin'
 export const SHADOW_KEY = 'pricing.buybox.notify.shadow'
+/** PRC-R2 / PRC-OPEN S6 (açık karar): toplu öneri onayının günlük eylem kotası sayımı. */
+export const BULK_QUOTA_KEY = 'pricing.suggestions.bulkApplyQuota'
+/** PRC-R2 (K19): fiyat kuralları platform kill-switch'i. */
+export const PRICING_RULES_FLAG = 'features.pricingRules'
 
 function planItems(plan: (typeof PLAN_CODES)[number]): CatalogItem[] {
   const d = PLAN_DEFAULTS[plan]
@@ -43,6 +47,7 @@ function planItems(plan: (typeof PLAN_CODES)[number]): CatalogItem[] {
 export const COMPETITION_CATALOG: CatalogItem[] = [
   ...PLAN_CODES.flatMap(planItems),
   { ...base, group: 'platform.pricing', danger: 'caution', key: BUDGET_KEY, type: 'int', unit: 'perMin', default: 60, safeRange: COMPETITION_LIMITS.budgetPerMin, label: T('Trendyol buybox çağrı bütçesi (dakika)', 'Trendyol buybox call budget (per minute)'), help: T("Tüm tenant'lar için dakikada en fazla buybox isteği (istek başına ≤10 barkod). Trendyol sınırı ~1000/dk ve satıcı hesabındaki diğer çağrılarla paylaşılır; güvenli düşük başlangıç 60.", 'Per-minute budget.'), impact: T('Yüksek değer pazaryeri kotasını tüketip sipariş/stok çağrılarını yavaşlatabilir.', 'A high value can consume the marketplace quota.') },
+  { ...base, group: 'platform.pricing', danger: 'safe', key: BULK_QUOTA_KEY, type: 'enum', default: 'per_approval', safeRange: null, label: T('Toplu fiyat önerisi onayının kota sayımı', 'Quota count of a bulk price suggestion approval'), help: T("per_approval: Otopilot'ta tek onayla uygulanan öneriler günlük eylem kotasından 1 eylem düşer. per_item: her öneri ayrı eylem sayılır. (Açık karar PRC-OPEN S6.)", 'per_approval: one approval = 1 action; per_item: each suggestion counts.') },
   { ...base, group: 'platform.pricing', danger: 'safe', key: SHADOW_KEY, type: 'bool', default: true, safeRange: null, label: T('"Buybox kaybedildi" bildirimi gölge modda', '"Buybox lost" notification in shadow mode'), help: T('Açıkken olay yalnız deftere yazılır (kullanıcıya gitmez). Gerçek veriyle doğrulama bitince kapatın.', 'Ledger only while on.') },
 ]
 
@@ -50,4 +55,5 @@ export const COMPETITION_CATALOG: CatalogItem[] = [
 export const COMPETITION_FLAGS: CatalogItem[] = [
   { ...base, group: 'platform.features', danger: 'safe', key: 'features.competition', type: 'bool', default: false, safeRange: null, label: T('Rekabet (buybox görünürlüğü)', 'Competition (buybox visibility)'), help: T("Açıkken Trendyol buybox bilgisi zamanlanmış olarak okunur (salt okuma). Tenant listesi doluysa yalnız o tenant'lar (pilot).", 'Read-only buybox reads on a schedule.') },
   { ...base, group: 'platform.features', danger: 'safe', key: 'features.competition.tenants', type: 'stringList', default: [], safeRange: null, label: T('Rekabet (buybox görünürlüğü) — tenant listesi', 'Competition — tenant list'), help: T('Boşsa bayrak herkes için geçerlidir; doluysa yalnız listedeki tenant numaraları için.', 'Empty: everyone.') },
+  { ...base, group: 'platform.features', danger: 'safe', key: PRICING_RULES_FLAG, type: 'bool', default: false, safeRange: null, label: T('Fiyat kuralları (onaylı öneri)', 'Pricing rules (approved suggestions)'), help: T("Açıkken tenant'lar rekabet fiyat kuralı tanımlayıp öneri alabilir ve öneriyi onaylayarak uygulayabilir. Kapatınca öneri üretimi ve uygulama tüm tenant'larda anında durur. Mevzuat değişikliğinde kapatın.", 'Platform kill-switch for pricing rules.') },
 ]

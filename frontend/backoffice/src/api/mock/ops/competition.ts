@@ -6,7 +6,7 @@
 import type { CompetitionField, CompetitionOverride, EffectiveCompetition, SubscriptionRow } from '../../contract'
 import { MockHttpError } from '../errors'
 import { DAY, UNHANDLED, iso, strict, tenantName, validation, type MockCtx, type MockDomain } from './context'
-import { BUDGET_KEY, COMPETITION_LIMITS, PLAN_CODES, PLAN_DEFAULTS, PRIORITIES, SHADOW_KEY, planKey } from './competitionCatalog'
+import { BUDGET_KEY, COMPETITION_LIMITS, PLAN_CODES, PLAN_DEFAULTS, PRICING_RULES_FLAG, PRIORITIES, SHADOW_KEY, planKey } from './competitionCatalog'
 
 const FIELDS: CompetitionField[] = ['skuCap', 'refreshMin', 'freshnessMin', 'priority']
 interface Stored { override: CompetitionOverride; note: string | null; updatedAt: number }
@@ -84,6 +84,20 @@ export function createCompetitionMock(t0: number, upstream: MockDomain, platform
   return {
     handle(op, body, ctx) {
       switch (op) {
+        // PRC-R2: fiyat kuralları — yalnız TOPLAM sayaç (tenant verisi yok); kill-switch yayınlanmış `features.pricingRules`'tan.
+        case 'BackofficeBillingService/getPricingRulesOverview': {
+          strict(body, [])
+          const read = published(ctx)
+          return {
+            killSwitch: { key: PRICING_RULES_FLAG, enabled: read(PRICING_RULES_FLAG) === true, label: { tr: 'Fiyat kuralları (onaylı öneri)', en: 'Pricing rules (approved suggestions)' }, help: null },
+            autoApply: { available: false, reason: 'PRC-R3' },
+            at: iso(t0),
+            scannedTenants: 6, tenantsEnabled: 2, tenantsWithRules: 2,
+            rules: { total: 5, enabled: 4, pausedExternal: 1, pausedOscillation: 0 },
+            suggestions: { open: 37, blocked: 9, applied7d: 64, dismissed7d: 12 },
+            failedTenants: 0, truncated: false,
+          }
+        }
         case 'BackofficeBillingService/getCompetitionSettings': {
           strict(body, [])
           const read = published(ctx)
