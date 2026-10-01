@@ -26,12 +26,11 @@
             <EkEmptyState v-if="!byCode.length" variant="no-data" title="Teslim yok" message="Bu aralıkta e-posta teslimi oluşmadı." />
             <BoTableFrame v-else :label="`Koda göre teslimler (${win === '24h' ? 'son 24 saat' : 'son 7 gün'})`" flat>
               <template #head>
-                <tr><th scope="col">Kod</th><th scope="col" class="is-num">Toplam</th><th scope="col" class="is-num">Gönderildi</th><th scope="col" class="is-num">Sorunlu</th></tr>
+                <tr><th scope="col">Kod</th><th scope="col" class="is-num">Toplam</th><th scope="col" class="is-num">Sorunlu</th></tr>
               </template>
               <tr v-for="c in byCode" :key="c.code">
                 <th scope="row"><button type="button" class="bo-link-btn bo-mono" :aria-label="`${c.code} teslimlerini listele`" @click="code = c.code">{{ c.code }}</button></th>
                 <td class="is-num ek-num">{{ c.total }}</td>
-                <td class="is-num ek-num">{{ c.sent }}</td>
                 <td class="is-num ek-num" :class="{ 'bo-dlv__bad': c.bad > 0 }">{{ c.bad }}</td>
               </tr>
             </BoTableFrame>

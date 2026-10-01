@@ -91,7 +91,7 @@ const verdict = computed(() => {
 })
 const chipTone = computed(() => {
   const t = verdict.value?.tone
-  return t === 'success' || t === 'error' || t === 'warning' ? t : 'info'
+  return t === 'error' ? 'danger' : t === 'success' || t === 'warning' ? t : 'info'
 })
 const statusLabel = computed(() => (verdict.value?.tone === 'success' ? 'Etkin' : verdict.value?.summary ?? ''))
 /** Yalnız anahtar sorunlarında ayara bağlantı (hükmün ilk maddesinin hedefi). */
