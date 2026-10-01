@@ -1,5 +1,5 @@
 <template>
-  <BoSection id="bo-env" flush title="Ortam (salt okunur)" description="Bu değerler sunucu ortam değişkenlerinden gelir; burada düzenlenemez ve hiçbir kaydetme isteğine girmez. Sır, CORS ve bağlantı dizesi gösterilmez.">
+  <BoSection id="bo-env" flush class="bo-flushed" title="Ortam (salt okunur)" description="Bu değerler sunucu ortam değişkenlerinden gelir; burada düzenlenemez ve hiçbir kaydetme isteğine girmez. Sır, CORS ve bağlantı dizesi gösterilmez.">
     <template #actions><EkRefreshButton quiet-success :loading="env.refreshing.value" @refresh="env.load()" /></template>
       <StateBlock :phase="env.phase.value" :error="env.error.value" skeleton="form" :rows="3" error-title="Ortam bilgisi okunamadı" @retry="env.load()">
         <dl class="bo-env">
@@ -60,6 +60,9 @@ onMounted(() => env.load())
 </script>
 
 <style scoped>
+.bo-flushed :deep(.bo-section__body) {
+  padding-top: var(--ek-space-3);
+}
 .bo-env {
   display: flex;
   flex-direction: column;

@@ -503,12 +503,12 @@ onMounted(async () => {
   font-weight: var(--ek-type-label-weight);
 }
 .bo-failed__cause {
-  min-width: 14em;
+  min-width: 0;
   color: var(--ek-color-content-strong);
   font-weight: var(--ek-type-label-weight);
 }
 .bo-failed__reason {
-  min-width: 16em;
+  min-width: 11em;
 }
 .bo-failed__times {
   white-space: nowrap;

@@ -1,5 +1,5 @@
 <template>
-  <BoSection id="bo-hist" flush title="Yayın geçmişi" description="Son 20 sürüm. Geri alma, eski sürümün içeriğini yeni bir sürüm olarak yayınlar.">
+  <BoSection id="bo-hist" flush class="bo-flushed" title="Yayın geçmişi" description="Son 20 sürüm. Geri alma, eski sürümün içeriğini yeni bir sürüm olarak yayınlar.">
     <BoDataTable :items="rows" :columns="COLUMNS" row-key="version" label="Yayınlanan sürümler" :phase="rows.length ? 'ready' : 'empty'" empty-title="Henüz yayın yok" empty-message="İlk yayın yapıldığında sürümler burada listelenir; şu an varsayılan değerler geçerli.">
           <template #cell-version="{ item }">
             <span class="bo-cell-stack"><span class="ek-num">v{{ (item as Row).version }}</span><EkStatusChip v-if="(item as Row).status === 'published'" tone="success" label="Yayında" dot /></span>
@@ -48,3 +48,13 @@ function summary(diff: ConfigDiffEntry[] | null): string {
   return `${keys.length} ayar: ${keys.slice(0, 3).join(', ')}${keys.length > 3 ? ` +${keys.length - 3}` : ''}`
 }
 </script>
+
+<style scoped>
+.bo-flushed :deep(.bo-section__body) {
+  padding-top: var(--ek-space-4);
+}
+.bo-flushed :deep(.ek-data-table) {
+  border-width: 1px 0 0;
+  border-radius: 0;
+}
+</style>

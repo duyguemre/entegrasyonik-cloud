@@ -1,6 +1,6 @@
 <!-- Tenant istisnaları: plan değerini alan alan geçersiz kılan müşteriler. Düzenleme OverrideDialog (gerekçeli, denetime yazılır). -->
 <template>
-  <BoSection id="bo-cs-ovr" flush title="Müşteri istisnaları" description="Belirli bir müşteri için plan değerini geçersiz kılar; boş bırakılan alan plan değerini kullanır. Kayıt anında etkilidir (taslak/yayın yok), gerekçe ister." data-testid="competition-overrides">
+  <BoSection id="bo-cs-ovr" flush title="Müşteri istisnaları" :description="description" data-testid="competition-overrides">
     <template #actions>
       <BoAction kind="add" label="İstisna ekle" :disabled="cs.comp.phase !== 'ready'" data-testid="override-add" @click="cs.openEditor()" />
     </template>
@@ -66,7 +66,6 @@
       </StateBlock>
     <template v-if="overrides.length" #footer>
       <BoPagination :count="overrides.length" :has-more="false" source="BackofficeBillingService/getCompetitionSettings" />
-      <p class="bo-co__legend">{{ overrides.length >= 200 ? 'En çok 200 istisna gösterilir. ' : '' }}Etkin değerlerde kalın yazı istisnayı, düz yazı plan değerini gösterir.</p>
     </template>
   </BoSection>
 </template>
@@ -85,6 +84,9 @@ import { FIELDS, beforeAfterRows, describeOverride, formatFieldValue } from './c
 import '@bo/styles/kit.css'
 
 const props = defineProps<{ cs: CompetitionState }>()
+const description = computed(
+  () => `Belirli bir müşteri için plan değerini geçersiz kılar; boş bırakılan alan plan değerini kullanır. Kayıt anında etkilidir (taslak/yayın yok), gerekçe ister. Etkin değerlerde kalın yazı istisnayı, düz yazı plan değerini gösterir.${overrides.value.length >= 200 ? ' En çok 200 istisna gösterilir.' : ''}`,
+)
 const overrides = computed(() => props.cs.comp.data?.overrides ?? [])
 const phase = computed(() => (props.cs.comp.phase === 'ready' && !overrides.value.length ? 'empty' : props.cs.comp.phase))
 const rows = computed(() => (props.cs.lastChange ? beforeAfterRows(props.cs.lastChange.before, props.cs.lastChange.after, props.cs.lastChange.effective) : []))

@@ -9,7 +9,7 @@
 
     <PageVerdict :verdict="verdict" />
 
-    <BoSection id="bo-admins" flush title="Platform yöneticileri" :description="`${items.length} hesap · giriş, iki adımlı doğrulama ve davet durumu`">
+    <BoSection id="bo-admins" flush class="bo-flushed" title="Platform yöneticileri" :description="`${items.length} hesap · giriş, iki adımlı doğrulama ve davet durumu`">
       <template #default>
         <BoFilterBar label="Yönetici süzgeci" :active="filter === 'all' ? 0 : 1" class="bo-admin__filter" @clear="filter = 'all'">
           <BoSegmented v-model="filter" :options="FILTER_OPTIONS" label="Yönetici süzgeci" />
@@ -259,6 +259,13 @@ onMounted(() => res.load())
 </script>
 
 <style scoped>
+.bo-flushed :deep(.ek-data-table) {
+  border-width: 0;
+  border-radius: 0;
+}
+.bo-flushed :deep(.bo-section__body) {
+  padding-top: var(--ek-space-3);
+}
 .bo-admin__name {
   display: inline-flex;
   flex-wrap: wrap;
