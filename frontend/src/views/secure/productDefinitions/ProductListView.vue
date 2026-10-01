@@ -935,7 +935,7 @@ const resetSearchProductForm = () => {
   content: "";
   position: absolute;
   inset: 0;
-  background: black;
+  background: var(--ek-color-scrim);
   mix-blend-mode: multiply;
   opacity: 0.2;
   z-index: 1;
@@ -981,7 +981,7 @@ const resetSearchProductForm = () => {
 .status-badge-wrapper {
   display: inline-flex;
   align-items: center;
-  background-color: white;
+  background-color: var(--ek-color-surface);
   /* Slate 100 */
   border: 1px solid var(--ek-color-border-color-light);
   /* Slate 200 */

@@ -337,7 +337,7 @@ function onHeadClick(e: MouseEvent) {
   display: inline-flex;
   align-items: center;
   gap: var(--ek-space-1);
-  color: var(--ek-color-content-muted);
+  color: var(--ek-color-content-muted); /* metin: AA (subtle yalnız dekoratif) */
   font-size: var(--ek-type-caption-size);
   line-height: var(--ek-type-caption-line);
 }

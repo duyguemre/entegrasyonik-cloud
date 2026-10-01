@@ -68,7 +68,7 @@
                 <span class="panel-title">En aktif 5 mağaza</span>
               </div>
             </div>
-            <v-chart v-if="isMounted" theme="entegrasyonik" class="chart chart-min-350" :option="exportChartOption" autoresize role="img"
+            <v-chart v-if="isMounted" :theme="chartTheme" class="chart chart-min-350" :option="exportChartOption" autoresize role="img"
               aria-label="En aktif 5 mağaza için export durumu grafiği (başarılı, hatalı, bekleyen)" />
           </div>
         </v-col>
@@ -95,7 +95,7 @@
                 <span class="panel-title">En aktif 5 mağaza</span>
               </div>
             </div>
-            <v-chart v-if="isMounted" theme="entegrasyonik" class="chart chart-min-350" :option="importChartOption" autoresize role="img"
+            <v-chart v-if="isMounted" :theme="chartTheme" class="chart chart-min-350" :option="importChartOption" autoresize role="img"
               aria-label="En aktif 5 mağaza için import durumu grafiği (tamamlanan, hatalı)" />
           </div>
         </v-col>
@@ -157,7 +157,7 @@
           <v-col cols="12" lg="5">
             <div class="label-caps col-title">OPERASYONEL BAŞARI TRENDİ</div>
             <div class="panel panel--inner fill-height">
-              <v-chart v-if="isMounted" theme="entegrasyonik" class="chart chart-h-300" :option="insightTimelineChartOption" autoresize role="img"
+              <v-chart v-if="isMounted" :theme="chartTheme" class="chart chart-h-300" :option="insightTimelineChartOption" autoresize role="img"
                 aria-label="Operasyonel başarı trendi grafiği (günlük başarılı ve hatalı işlemler)" />
             </div>
           </v-col>
@@ -165,12 +165,12 @@
           <v-col cols="12" lg="3">
             <div class="label-caps col-title">İŞLEM DAĞILIMI</div>
             <div class="panel panel--inner stack-gap">
-              <v-chart v-if="isMounted" theme="entegrasyonik" class="chart chart-h-180" :option="insightTypePieChartOption" autoresize role="img"
+              <v-chart v-if="isMounted" :theme="chartTheme" class="chart chart-h-180" :option="insightTypePieChartOption" autoresize role="img"
                 aria-label="İşlem türü dağılımı grafiği" />
             </div>
             <div class="label-caps col-title">ORTALAMA SÜRE (MS)</div>
             <div class="panel panel--inner">
-              <v-chart v-if="isMounted" theme="entegrasyonik" class="chart chart-h-120" :option="insightDurationBarChartOption" autoresize role="img"
+              <v-chart v-if="isMounted" :theme="chartTheme" class="chart chart-h-120" :option="insightDurationBarChartOption" autoresize role="img"
                 aria-label="İşlem türüne göre ortalama süre grafiği (milisaniye)" />
             </div>
           </v-col>
@@ -434,21 +434,21 @@
               <v-col cols="12">
                 <div class="panel">
                   <div class="label-caps col-title">GÜNLÜK İTEM TRAFİĞİ</div>
-                  <v-chart v-if="isMounted" theme="entegrasyonik" class="chart chart-h-400" :option="exportTimelineChartOption" autoresize role="img"
+                  <v-chart v-if="isMounted" :theme="chartTheme" class="chart chart-h-400" :option="exportTimelineChartOption" autoresize role="img"
                     aria-label="Günlük export item trafiği grafiği" />
                 </div>
               </v-col>
               <v-col cols="12" md="6">
                 <div class="panel h-100">
                   <div class="label-caps col-title">İŞLEM TİPİ DAĞILIMI (Ürün Bazlı)</div>
-                  <v-chart v-if="isMounted" theme="entegrasyonik" class="chart chart-h-350" :option="exportModePieChartOption" autoresize role="img"
+                  <v-chart v-if="isMounted" :theme="chartTheme" class="chart chart-h-350" :option="exportModePieChartOption" autoresize role="img"
                     aria-label="Export işlem tipi dağılımı grafiği" />
                 </div>
               </v-col>
               <v-col cols="12" md="6">
                 <div class="panel h-100">
                   <div class="label-caps col-title">DURUM DAĞILIMI (Ürün Bazlı)</div>
-                  <v-chart v-if="isMounted" theme="entegrasyonik" class="chart chart-h-350" :option="exportStatusPieChartOption" autoresize role="img"
+                  <v-chart v-if="isMounted" :theme="chartTheme" class="chart chart-h-350" :option="exportStatusPieChartOption" autoresize role="img"
                     aria-label="Export durum dağılımı grafiği" />
                 </div>
               </v-col>
@@ -487,7 +487,7 @@ import { CanvasRenderer } from 'echarts/renderers';
 import { BarChart, PieChart } from 'echarts/charts';
 import { TooltipComponent, GridComponent, LegendComponent } from 'echarts/components';
 import { LegacyGridContainLabel } from 'echarts/features';
-import { semanticColorsLight } from '@entegrasyonik/ui/tokens';
+import { useChartColors, useChartTheme } from '@/composables/useChartTheme';
 import { escapeHtml } from '@/utils/escapeHtml';
 
 use([CanvasRenderer, BarChart, PieChart, TooltipComponent, GridComponent, LegendComponent, LegacyGridContainLabel]);
@@ -495,19 +495,22 @@ use([CanvasRenderer, BarChart, PieChart, TooltipComponent, GridComponent, Legend
 // ECharts canvas renkleri CSS değişkeni okuyamaz (ADR-0011 Karar 2 Aşama 1 istisnası) — nötr
 // (eksen etiketi / dilim kenarlığı / dilim içi yazı) renkler token kaynağından JS değeri olarak
 // alınır (eski literal'lar semantik token ile BİREBİR aynı değerdi: slate-500 / beyaz).
+// FR2-DARK: değerler etkin moda göre okunur (getter → computed seçenekler tema değişince yeniden hesaplanır).
+const chartTheme = useChartTheme();
+const chartColors = useChartColors();
 const CHART_NEUTRAL = {
-  axisLabel: semanticColorsLight['content-muted'],
-  sliceBorder: semanticColorsLight.surface,
-  sliceLabel: semanticColorsLight.surface,
+  get axisLabel() { return chartColors.value['content-muted']; },
+  get sliceBorder() { return chartColors.value.surface; },
+  get sliceLabel() { return chartColors.value.surface; },
 };
 
 // Grafik durum renkleri: ADR-0015 Karar 3.3 — iş durumları anlamsal tonlara eşlenir, TEK kaynak
-// token setidir (semanticColorsLight); literal renk YOK. `accent` (kuyruk/genel vurgu) = `info`.
+// token setidir (etkin moda göre light/dark); literal renk YOK. `accent` (kuyruk/genel vurgu) = `info`.
 const CHART_STATUS = {
-  success: semanticColorsLight.success,
-  error: semanticColorsLight.error,
-  warning: semanticColorsLight.warning,
-  accent: semanticColorsLight.info,
+  get success() { return chartColors.value.success; },
+  get error() { return chartColors.value.error; },
+  get warning() { return chartColors.value.warning; },
+  get accent() { return chartColors.value.info; },
 };
 
 const cacheColumns: EkTableColumn[] = [

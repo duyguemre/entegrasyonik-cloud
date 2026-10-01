@@ -76,7 +76,7 @@ const props = withDefaults(defineProps<Props>(), {
   icon: 'mdi-alert-octagon-outline',
   color: 'danger',
   persistent: true,
-  cancelColor: 'white',
+  cancelColor: undefined,
   loading: false,
   attach: false,
   title: '',

@@ -109,7 +109,7 @@
         </v-col>
         <v-col cols="12" md="7">
           <div class="chart-card">
-            <v-chart v-if="isMounted" class="chart" theme="entegrasyonik" :option="chartOption" autoresize />
+            <v-chart v-if="isMounted" class="chart" :theme="chartTheme" :option="chartOption" autoresize />
           </div>
         </v-col>
       </v-row>
@@ -254,7 +254,7 @@ import DetailedImportLogReportMissingAttribute from './DetailedImportLogReportMi
 import PlatformImageComponent from '../platforms/PlatformImageComponent.vue'
 import { EkEmptyState, EkSkeleton } from '@entegrasyonik/ui/components'
 import { formatDateTime } from '@entegrasyonik/ui/format'
-import { semanticColorsLight } from '@entegrasyonik/ui/tokens'
+import { useChartColors, useChartTheme } from '@/composables/useChartTheme'
 import type { StatusTone } from '@/design/status-map'
 import { reportPollInterval } from '@/stores/publicConfig'
 
@@ -449,7 +449,10 @@ const STATUS_TONES: Record<string, StatusTone> = {
 };
 const TONE_KEY = { success: 'success', danger: 'error', info: 'info', warning: 'warning', neutral: 'neutral' } as const;
 /** ECharts canvas'ı CSS değişkeni çözemez; tema kaynağındaki değer okunur. */
-const toneHex = (tone: StatusTone) => semanticColorsLight[TONE_KEY[tone]];
+// FR2-DARK: grafik teması ve seri renkleri etkin moda göre (light/dark).
+const chartTheme = useChartTheme();
+const chartColors = useChartColors();
+const toneHex = (tone: StatusTone) => chartColors.value[TONE_KEY[tone]];
 const statusTone = (status: string): StatusTone => STATUS_TONES[status?.toUpperCase()] || 'neutral';
 
 /** Akış adımı noktası: aktif adım durumun tonunu, geçilenler kendi adım tonunu, gelecek adımlar nötr alır. */

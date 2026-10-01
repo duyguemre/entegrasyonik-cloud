@@ -139,7 +139,7 @@
             <span class="duration-total__label">TOPLAM SÜREÇ</span>
             <span class="duration-total__value">{{ totalDurationText }}</span>
           </div>
-          <v-chart v-if="isMounted" class="chart" theme="entegrasyonik" :option="chartOption" autoresize />
+          <v-chart v-if="isMounted" class="chart" :theme="chartTheme" :option="chartOption" autoresize />
         </EkSection>
       </div>
     </div>
@@ -161,7 +161,7 @@ import { LegacyGridContainLabel } from 'echarts/features'
 import PlatformImageComponent from '../platforms/PlatformImageComponent.vue'
 import { EkEmptyState, EkSkeleton, EkStatusChip, EkSection } from '@entegrasyonik/ui/components'
 import { formatDateTime } from '@entegrasyonik/ui/format'
-import { semanticColorsLight } from '@entegrasyonik/ui/tokens'
+import { useChartColors, useChartTheme } from '@/composables/useChartTheme'
 import type { StatusTone } from '@/design/status-map'
 import { escapeHtml } from '@/utils/escapeHtml'
 import { PLATFORM_PROCESS_LABELS, PLATFORM_PROCESS } from '@/types/PlatformProcess'
@@ -371,7 +371,10 @@ const TONE_KEY = { success: 'success', danger: 'error', info: 'info', warning: '
 /** CSS özel özelliği olarak ton rengi (Vuetify `color`/`dot-color` prop'ları için). */
 const toneVar = (tone: StatusTone) => `var(--ek-color-${TONE_KEY[tone]})`;
 /** ECharts canvas'ı CSS değişkeni çözemez; tema kaynağındaki değer okunur. */
-const toneHex = (tone: StatusTone) => semanticColorsLight[TONE_KEY[tone]];
+// FR2-DARK: grafik teması ve seri renkleri etkin moda göre (light/dark).
+const chartTheme = useChartTheme();
+const chartColors = useChartColors();
+const toneHex = (tone: StatusTone) => chartColors.value[TONE_KEY[tone]];
 
 /** Log satırları için Vuetify `dot-color` değeri. */
 const getLogStatusColor = (status: string) => toneVar(getLogTone(status));

@@ -27,6 +27,11 @@ const initial = computed(() => {
 </script>
 
 <style scoped>
+/* FR2-DARK: gerçek logo (çoğu şeffaf) iki temada da okunur bir plaka üzerinde. */
+.store-logo-avatar:not(.store-logo-avatar--monogram) {
+  background-color: var(--ek-app-media-plate);
+}
+
 .store-logo-avatar--monogram {
   background-color: var(--ek-color-surface-sunken);
 }

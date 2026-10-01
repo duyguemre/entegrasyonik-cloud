@@ -49,6 +49,39 @@
     var(--ek-color-brand) 0%,
     color-mix(in srgb, var(--ek-color-brand) 62%, var(--ek-color-chrome-end)) 100%
   );
+  /* Giriş paneli üzerindeki yazı/çizim mürekkebi (FR2-DARK: dark'ta krom metni). */
+  --ek-app-login-ink: var(--ek-color-background);
+
+  /* FR2-DARK — kullanıcı görseli zemini (mağaza logosu, şeffaf PNG/SVG): light'ta yüzey; dark'ta açık bir "plaka",
+   * koyu mürekkepli şeffaf logolar koyu zeminde kaybolmasın. Yalnız mevcut token'lardan türetilir. */
+  --ek-app-media-plate: var(--ek-color-surface);
+}
+
+/* FR2-DARK: koyu temada `brand` açık (logo işareti koyu zeminde görünsün diye); giriş paneli ise koyu marka
+ * kromunda kalır — degrade krom tonlarından (light değer DEĞİŞMEDİ). */
+:root[data-theme='dark'] {
+  --ek-app-login-gradient: linear-gradient(
+    160deg,
+    var(--ek-color-chrome) 0%,
+    color-mix(in srgb, var(--ek-color-chrome) 40%, var(--ek-color-chrome-end)) 100%
+  );
+  --ek-app-login-ink: var(--ek-color-chrome-text);
+  --ek-app-media-plate: color-mix(in srgb, var(--ek-color-content-strong) 94%, var(--ek-color-surface));
+  /* K13 + FR2-DARK: marka hex'i değişmez; koyu kanal tonları (Pazarama/Ideasoft/Bizimhesap) koyu zeminde kaybolmasın
+   * diye kanal noktası/dolgulu çipin iç halkası açık mürekkepten (koyu yüzeyde ≥3:1 — tests/theme/channel-dark.test.ts). */
+  --ek-channel-ring: color-mix(in srgb, var(--ek-color-content-strong) 60%, transparent);
+}
+
+/* Tema geçişinde bir kare renk animasyonu yok (ADR-0026 Karar 3.4) — iki uygulama için tek kural. */
+html.ek-theme-switching *,
+html.ek-theme-switching *::before,
+html.ek-theme-switching *::after {
+  transition: none !important;
+}
+
+/* Tarayıcının kendi yüzeyleri (kaydırma çubuğu, form denetimleri) etkin temayı izler; ilk kareyi theme-boot.js yazar. */
+html[data-theme='dark'] {
+  color-scheme: dark;
 }
 
 [data-density='compact'] {

@@ -36,7 +36,8 @@ defineProps<{ id: string; index: string; title: string; description?: string }>(
   width: var(--ek-icon-tile-md);
   height: var(--ek-icon-tile-md);
   border-radius: var(--ek-radius-tile);
-  background: var(--ek-color-brand);
+  /* Marka mürekkebi zemini: light'ta brand = chrome (aynı lacivert); dark'ta brand açık tondur → krom zemin + krom metni (AA). */
+  background: var(--ek-color-chrome);
   color: var(--ek-color-chrome-text);
   font-size: var(--ek-type-label-size);
   font-weight: var(--ek-font-weight-bold);

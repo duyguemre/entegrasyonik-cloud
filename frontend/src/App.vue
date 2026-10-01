@@ -14,6 +14,11 @@ import { ref, onMounted } from 'vue';
 import useUser from './composables/user';
 import { EkToastHost } from '@entegrasyonik/ui/components';
 import ReauthDialog from './components/user/ReauthDialog.vue';
+import { useTheme } from 'vuetify';
+import { appTheme } from './stores/theme';
+
+// FR2-DARK: tema tercihi (sistem değişimi dahil) kimliksiz ekranlarda da geçerli — Vuetify'a tek yerden bağlanır.
+appTheme.bind(useTheme());
 
 
 const userApi = useUser();

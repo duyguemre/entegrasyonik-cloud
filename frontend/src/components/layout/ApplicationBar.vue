@@ -32,7 +32,8 @@
       <EkMenuPanel autofocus ref="helpPanelRef" :groups="helpGroups" label="Yardım" @select="onHelpSelect" @close="helpOpen = false" />
     </v-menu>
 
-    <v-menu v-model="accountOpen" activator="[data-header-action=account]" location="bottom end" :offset="8">
+    <!-- FR2-DARK: içerik tıklaması menüyü kapatmaz (tema seçimi yerinde görülür); öğeler onAccountSelect ile kapatır. -->
+    <v-menu v-model="accountOpen" activator="[data-header-action=account]" location="bottom end" :offset="8" :close-on-content-click="false">
       <div class="ek-shell-account">
         <div class="ek-shell-account__head">
           <StoreLogoAvatar :size="36" :store-name="storeName" :logo="userApi.getStoreLogo()" />
@@ -41,6 +42,8 @@
             <span class="ek-shell-account__meta">{{ userApi.getUsername.value }}</span>
           </div>
         </div>
+        <!-- FR2-DARK: tema tercihi (Açık / Koyu / Sistem) — kalıcı, ilk karede theme-boot.js uygular. -->
+        <EkThemeSwitch class="ek-shell-account__theme" :model-value="themePreference" @update:model-value="appTheme.setPreference" />
         <EkMenuPanel autofocus ref="accountPanelRef" class="ek-shell-account__menu" :groups="accountGroups" label="Hesap" @select="onAccountSelect" @close="accountOpen = false" />
       </div>
     </v-menu>
@@ -57,7 +60,8 @@ import useUser from '@/composables/user'
 import LoadingComponent from '../LoadingComponent.vue'
 import StoreLogoAvatar from './StoreLogoAvatar.vue'
 import ShellSearch from './ShellSearch.vue'
-import { EkAppHeader, EkMenuPanel, type EkMenuGroup, type EkMenuItem } from '@entegrasyonik/ui/components'
+import { EkAppHeader, EkMenuPanel, EkThemeSwitch, type EkMenuGroup, type EkMenuItem } from '@entegrasyonik/ui/components'
+import { appTheme } from '@/stores/theme'
 import { useWorkspaceStore } from '@/stores/workspace'
 import { useShellBreakpoints } from '@/composables/useShellBreakpoints'
 import { shortcutKeys } from '@entegrasyonik/ui/shortcuts'
@@ -116,6 +120,8 @@ const helpGroups = computed<EkMenuGroup[]>(() => [
 ])
 
 // Dar ekranda (< 768) üst barın yardım düğmesi gizlidir; destek iletişimi hesap menüsünde, çıkıştan önce görünür.
+const themePreference = appTheme.preference
+
 const accountGroups = computed<EkMenuGroup[]>(() => [
   {
     items: [
@@ -245,6 +251,10 @@ defineExpose({ focusSearch: () => searchRef.value?.focus() })
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
   line-height: var(--ek-type-caption-line);
+}
+
+.ek-shell-account__theme {
+  border-bottom: 1px solid var(--ek-color-border-subtle);
 }
 
 .ek-shell-account__menu {

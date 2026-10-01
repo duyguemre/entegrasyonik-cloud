@@ -165,13 +165,13 @@ const paletteGroups = [
 
 
 var selectDragElement = (event: any) => {
-  if (selectedDragElement.value && selectedDragElement.value.target) selectedDragElement.value.target.style.color = "black"
+  if (selectedDragElement.value && selectedDragElement.value.target) selectedDragElement.value.target.style.color = "var(--ek-color-content-default)"
   if (selectedDragElement.value && selectedDragElement.value.target && selectedDragElement.value.target.innerHTML == event.target.innerHTML) {
     selectedDragElement.value = undefined
   }
   else {
     selectedDragElement.value = event
-    selectedDragElement.value.target.style.color = "blue"
+    selectedDragElement.value.target.style.color = "var(--ek-color-action)" // FR2-DARK: seçili alan, iki temada token
   }
 
 }
