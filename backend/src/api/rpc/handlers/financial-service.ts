@@ -5,6 +5,7 @@ import { FinancialPanelRepository } from '@database/repositories/tenant/Financia
 import { queryTransactions, cargoInvoices, financialSummary, payoutDetails } from '@operations/finance/financialPanel'
 import { listCommissionOverrides, setCommissionOverride, deleteCommissionOverride } from '@operations/finance/commissionOverrides'
 import { getOrderCommissionSummary, getCommissionByBarcodes, getRealizedCommissionByCategory, getNetRevenuePreview, MAX_NET_PREVIEW_ITEMS } from '@operations/finance/commissionQueries'
+import { getCommissionDrift } from '@operations/finance/commissionDrift'
 import { eventLog } from '@platform/core/logger';
 
 const log = eventLog('api', 'financial-service');
@@ -123,6 +124,12 @@ export default class FinancialService extends BaseApi implements IService {
     async getRealizedCommissionByCategory(): Promise<any> {
         const { integrationCode, days } = this.request;
         return getRealizedCommissionByCategory(this.clientDB, { integrationCode: this.scalarString(integrationCode ?? 'trendyol', 'integrationCode'), days });
+    }
+
+    /** COM-08: kategori başına gerçekleşen oran vs referans (override > tablo) sapması; eşik kanal ayarından. Salt okuma. */
+    async getCommissionDrift(): Promise<any> {
+        const { integrationCode, days } = this.request;
+        return getCommissionDrift(this.clientDB, this.clientId, { integrationCode: this.scalarString(integrationCode ?? 'trendyol', 'integrationCode'), days });
     }
 
     /** ÖNYÜZ (COM-04): Tenant komisyon override listesi (`integrationCode` verilirse yalnız o kanal). */

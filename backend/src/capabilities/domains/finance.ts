@@ -54,6 +54,12 @@ export const FINANCE_CAPABILITIES = [
         review: 'COM-03 kabul ölçütü: son 90 gün (en çok 180) kategori başına ortalama gerçekleşen oran.',
     }),
     c({
+        id: 'finance.commission.drift', domain: 'finance', summary: { tr: 'Komisyon sapması: gerçekleşen oran vs tablo/override (kategori başına)', en: 'Commission drift: realized rate vs table/override (per category)' },
+        effect: 'read', minTier: 'member', permission: 'finance:read', bindings: [{ rpc: 'FinancialService/getCommissionDrift' }],
+        ui: noUi(NEVER_CALLED), mcp: deferred('later', NOTE), agent: NO_AGENT,
+        review: 'COM-08: COMMISSION_RATE_DRIFT bildiriminin ayrıntısı; makinece okunabilir öğe (status enum, puan cinsinden delta). Eşik: finance.commissionDriftThresholdPoints (kanal ayarı). Ajan açılışı (ADR-0018 Karar 3) finans araç seti kararıyla birlikte.',
+    }),
+    c({
         id: 'finance.commission.overrides.list', domain: 'finance', summary: { tr: 'Tenant komisyon oranı geçersiz kılmalarını listele', en: 'List tenant commission rate overrides' },
         effect: 'read', minTier: 'member', permission: 'finance:read', bindings: [{ rpc: 'FinancialService/listCommissionOverrides' }],
         ui: noUi(NEVER_CALLED), mcp: deferred('later', NOTE), agent: NO_AGENT,

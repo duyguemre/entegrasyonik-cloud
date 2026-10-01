@@ -102,14 +102,8 @@ const { links } = Astro.props
     display: inline-flex;
     align-self: center;
     color: var(--site-link-accent);
-    transition: transform var(--ek-duration-base) var(--ek-easing-standard);
   }
-  .next-link:hover .next-link__arrow {
-    transform: translateX(var(--ek-space-1));
-  }
-  :global(html:is([data-motion='paused'], [data-motion='reduced'])) .next-link:hover .next-link__arrow {
-    transform: none;
-  }
+  /* site-wdg W16: ok kayması global.css'teki tek kuraldan (a:hover .icon[data-icon='arrow']); yerel ikinci kayma kaldırıldı. */
   @media (min-width: 768px) {
     .next-links {
       grid-template-columns: repeat(3, minmax(0, 1fr));

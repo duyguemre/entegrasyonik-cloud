@@ -21,8 +21,8 @@ const ACTION_PREFIXES = ['/integrations', '/orders', '/logs', '/catalog', '/fina
 const SECRET_RE = /enc:v1:|token=|password=|secret|api[_-]?key|bearer\s/i;
 
 describe('NB1 katalog: sayilar ve benzersizlik', () => {
-    it('35 tenant (29 + WP-A4 iki guvenlik kodu + STOCK_LOW + MCP-2 SECURITY_MCP_CONNECTED + MCP-4 SYSTEM_MCP_APPROVAL_PENDING + PRC-R1 BUYBOX_LOST + PRC-R2 PRICE_RULE_PAUSED) + 5 platform kodu (LEGACY_* haric)', () => {
-        expect(NOTIFICATION_CATALOG.filter((d) => d.surface === 'tenant')).toHaveLength(36);
+    it('35 tenant (29 + WP-A4 iki guvenlik kodu + STOCK_LOW + MCP-2 SECURITY_MCP_CONNECTED + MCP-4 SYSTEM_MCP_APPROVAL_PENDING + PRC-R1 BUYBOX_LOST + PRC-R2 PRICE_RULE_PAUSED + COM-08 COMMISSION_RATE_DRIFT) + 5 platform kodu (LEGACY_* haric)', () => {
+        expect(NOTIFICATION_CATALOG.filter((d) => d.surface === 'tenant')).toHaveLength(37);
         expect(NOTIFICATION_CATALOG.filter((d) => d.surface === 'platform')).toHaveLength(5);
     });
     it('kodlar benzersiz ve SCREAMING_SNAKE', () => {

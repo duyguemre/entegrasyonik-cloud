@@ -23,6 +23,7 @@ export const TR: Record<string, { title: string; body: string }> = {
     CATALOG_IMPORT_FAILED: { title: 'İçe aktarma başarısız', body: '{integ} içe aktarması başarısız oldu (hata kodu: {errorCode}). Destek kodu: {corrId}.' },
     CATALOG_EXPORT_ERRORS_DIGEST: { title: 'Aktarım hataları', body: '{integ} için {failedCount} aktarım başarısız oldu.' },
     FINANCE_RECONCILIATION_MISMATCH: { title: 'Mutabakat farkı', body: '{mismatchCount} kalemde mutabakat farkı bulundu.' },
+    COMMISSION_RATE_DRIFT: { title: 'Komisyon tablosu bayat olabilir', body: '{integ} kanalında bir kategoride gerçekleşen komisyon %{realizedRate}, beklenen oran %{referenceRate} ({deltaPoints} puan fark, {sampleCount} hakediş satırı). Komisyon oranlarını gözden geçirin.' },
     BILLING_TRIAL_ENDING: { title: 'Deneme süreniz bitiyor', body: 'Deneme süreniz {trialEnd} tarihinde bitiyor ({daysLeft} gün kaldı).' },
     BILLING_TRIAL_ENDED: { title: 'Deneme süreniz bitti', body: 'Deneme süreniz {trialEnd} tarihinde sona erdi. Devam etmek için bir plan seçin.' },
     BILLING_SUSPENSION_WARNING: { title: 'Hesabınız askıya alınacak', body: 'Ödeme alınamazsa hesabınız {suspendAt} tarihinde askıya alınacak ({daysLeft} gün kaldı).' },

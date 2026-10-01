@@ -3,15 +3,15 @@
 **ÜRETİLMİŞ BELGE — ELLE DÜZENLENMEZ.** Kaynak: `backend/src/capabilities/**` (zod-şemalı TypeScript kaydı).
 Yeniden üretmek için: `cd backend && npm run capabilities:docs`. Bu belge `docs/OPERATION_POLICY.md`'nin yerine geçer (ADR-0019 §2).
 
-Üretim zamanı: 2026-10-01T15:14:16.817Z · Kaynak commit bilgisi bu betiğin dışında (git) tutulur.
+Üretim zamanı: 2026-10-01T19:13:35.624Z · Kaynak commit bilgisi bu betiğin dışında (git) tutulur.
 
 ## Özet
 
-- Toplam yetenek: **299** (toplam RPC bağı: 340)
-- `effect`: write=126, read=142, destructive=28, propose=3
-- `minTier`: platformAdmin=105, member=150, owner=4, admin=40
-- MCP: `exposed`=13, `notExposed`=286 (bunun `deferred`=100)
-- Yetim (ui.none + mcp.notExposed + agent.allowed:false): 127 (bkz. `capability-baseline.json`, artamaz mandalı)
+- Toplam yetenek: **300** (toplam RPC bağı: 341)
+- `effect`: write=126, read=143, destructive=28, propose=3
+- `minTier`: platformAdmin=105, member=151, owner=4, admin=40
+- MCP: `exposed`=13, `notExposed`=287 (bunun `deferred`=101)
+- Yetim (ui.none + mcp.notExposed + agent.allowed:false): 128 (bkz. `capability-baseline.json`, artamaz mandalı)
 
 **Operasyon/yetenek sayısı tutarsızlığı çözümü (ADR-0019 Bağlam):** `operationPolicy.ts`nin bugünkü mekanik sayımı 
 (ImageApi sözde-servisi DAHİL, `OPEN_OPERATIONS` HARİÇ) **174** `(servis, operasyon)` çiftidir (member 137, admin 19, owner 2, 
@@ -197,12 +197,13 @@ metodu yok (bugün de 403/çalışmıyor; `operation-policy.test.ts` `FE_CALLS_W
 | `customers.list` | read | member | CustomerService/getCustomers | notExposed:deferred→later | CustomerListView | allowed:false |  |
 | `customers.update` | write | member | CustomerService/updateCustomer | notExposed:deferred→later | CustomerListView#update | allowed:false |  |
 
-### finance (11)
+### finance (12)
 
 | id | effect | minTier | RPC bağları | mcp | ui | agent | review |
 |---|---|---|---|---|---|---|---|
 | `finance.cargo_invoices.list` | read | member | FinancialService/getCargoInvoices | notExposed:deferred→later | none (Backend-only: FE henüz çağırmıyor (BACKEND_ONLY_NOT_YET_IN_FE).) | allowed:false | OPERATION_POLICY.md Belirsiz: 5000 satır üst sınırı; finansal veri kademe kararı. |
 | `finance.commission.by_barcode` | read | member | FinancialService/getCommissionByBarcodes | notExposed:deferred→later | none (Backend-only: FE henüz çağırmıyor (BACKEND_ONLY_NOT_YET_IN_FE).) | allowed:false | COM-07 ürün liste/detay net fiyat için; en çok 200 barkod. |
+| `finance.commission.drift` | read | member | FinancialService/getCommissionDrift | notExposed:deferred→later | none (Backend-only: FE henüz çağırmıyor (BACKEND_ONLY_NOT_YET_IN_FE).) | allowed:false | COM-08: COMMISSION_RATE_DRIFT bildiriminin ayrıntısı; makinece okunabilir öğe (status enum, puan cinsinden delta). Eşik: finance.commissionDriftThresholdPoints  |
 | `finance.commission.order_summary` | read | member | FinancialService/getOrderCommissionSummary | notExposed:deferred→later | none (Backend-only: FE henüz çağırmıyor (BACKEND_ONLY_NOT_YET_IN_FE).) | allowed:false | COM-03/COM-07: kaynak = gerçekleşen (hakediş) \| tahmini (kanal tablosu) \| bilinmiyor; override COM-04 (kategori > kanal varsayılan). FE net fiyat gösterimi ba |
 | `finance.commission.overrides.delete` | destructive | admin | FinancialService/deleteCommissionOverride | notExposed:deferred→later | none (Backend-only: FE henüz çağırmıyor (BACKEND_ONLY_NOT_YET_IN_FE).) | allowed:false | COM-04: yalnız override kaydı silinir (geri dönüş: gerçekleşen/tahmini oran). |
 | `finance.commission.overrides.list` | read | member | FinancialService/listCommissionOverrides | notExposed:deferred→later | none (Backend-only: FE henüz çağırmıyor (BACKEND_ONLY_NOT_YET_IN_FE).) | allowed:false | COM-04: entegrasyon ayarları "Komisyon oranları" tablosu (bulut FE); oran bilgisi komisyon okuma RPC leriyle aynı kademede. |

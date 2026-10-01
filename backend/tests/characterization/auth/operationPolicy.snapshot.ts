@@ -192,7 +192,7 @@ export const OPERATION_POLICY_SNAPSHOT: SnapshotPolicy = {
         resolveAndReissueInvoice: M, deleteInvoice: M,
     },
     // §6: finans özet/kargo faturası/ödeme emri dökümü — getTransactionData ile AYNI kademe ve aynı tenant DB'si (salt-okunur)
-    FinancialService: { getTransactionData: M, getFinancialSummary: M, getCargoInvoices: M, getPayoutDetails: M, getOrderCommissionSummary: M, getCommissionByBarcodes: M, getNetRevenuePreview: M, getRealizedCommissionByCategory: M, listCommissionOverrides: M, setCommissionOverride: A, deleteCommissionOverride: A },
+    FinancialService: { getTransactionData: M, getFinancialSummary: M, getCargoInvoices: M, getPayoutDetails: M, getOrderCommissionSummary: M, getCommissionByBarcodes: M, getNetRevenuePreview: M, getRealizedCommissionByCategory: M, getCommissionDrift: M, listCommissionOverrides: M, setCommissionOverride: A, deleteCommissionOverride: A },
 
     // --- Abonelik/plan (ADR-0008 Aşama A + frontend SONUÇ) ---
     // getPlans/getMySubscription: her tenant kullanıcısı kendi abonelik durumunu görebilmeli

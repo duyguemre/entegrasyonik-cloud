@@ -123,7 +123,9 @@
   --site-text-heading: var(--ek-color-content-strong);
   --site-text-body: var(--ek-color-content-default);
   --site-text-meta: var(--ek-color-content-muted);
-  --site-accent: var(--ek-color-secondary-darken-1);
+  /* site-wdg W03: düz teal (#018786) beyazda 4,36:1 — 12–14 px etiketlerde AA altı. Aynı teal, %12 lacivert ile
+     koyulaştırılır (beyazda ~5,2:1, surface-muted'da ~5,0:1). Degradeler ve ikon dolguları kendi tokenlarında kalır. */
+  --site-accent: color-mix(in srgb, var(--ek-color-secondary-darken-1) 88%, var(--ek-color-content-strong));
   --site-accent-on-dark: var(--ek-color-secondary);
   /* S15: bağımsız `.link` rengi — açık/renkli yüzeylerde de AA (≥4.5:1) kalsın diye vurgudan bir ton koyu */
   --site-link-accent: color-mix(in srgb, var(--ek-color-secondary-darken-1) 82%, var(--ek-color-content-strong));

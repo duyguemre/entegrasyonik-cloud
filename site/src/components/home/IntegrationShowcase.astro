@@ -436,12 +436,7 @@ const innerCodes = orbitCodes.filter((_, i) => i % 2 === 1)
     font-weight: var(--ek-font-weight-semibold);
     text-decoration: none;
   }
-  .eco__link :global(.icon) {
-    transition: translate var(--ek-duration-base) var(--ek-easing-standard);
-  }
-  .eco__link:hover :global(.icon) {
-    translate: var(--ek-space-1) 0;
-  }
+  /* site-wdg W16: ok kayması global.css'teki tek kuraldan (a:hover .icon[data-icon='arrow']); yerel ikinci kayma kaldırıldı. */
 
   @media (min-width: 640px) {
     .eco__nodes {

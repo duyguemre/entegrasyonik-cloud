@@ -30,7 +30,7 @@ const { blocks } = Astro.props
         )
       case 'steps':
         return (
-          <ol class="g-steps" data-testid="guide-steps">
+          <ol class="g-steps" role="list" data-testid="guide-steps">
             {b.items.map((s) => (
               <li class="g-steps__item">
                 <span class="g-steps__name">{s.name}</span>
@@ -42,20 +42,21 @@ const { blocks } = Astro.props
       case 'table':
         return (
           <div class="g-table-wrap">
-            <table class="g-table">
+            {/* site-wdg W21: dar ekranda `display:block` tablo anlamını siliyor → açık ARIA rolleri anlamı korur. */}
+            <table class="g-table" role="table">
               <caption>{b.caption}</caption>
-              <thead>
-                <tr>
+              <thead role="rowgroup">
+                <tr role="row">
                   {b.head.map((h) => (
-                    <th scope="col">{h}</th>
+                    <th scope="col" role="columnheader">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody>
+              <tbody role="rowgroup">
                 {b.rows.map((row) => (
-                  <tr>
+                  <tr role="row">
                     {row.map((cell, i) =>
-                      i === 0 ? <th scope="row" data-label={b.head[i]} set:html={renderKbInline(cell)} /> : <td data-label={b.head[i]} set:html={renderKbInline(cell)} />,
+                      i === 0 ? <th scope="row" role="rowheader" data-label={b.head[i]} set:html={renderKbInline(cell)} /> : <td role="cell" data-label={b.head[i]} set:html={renderKbInline(cell)} />,
                     )}
                   </tr>
                 ))}
@@ -79,7 +80,7 @@ const { blocks } = Astro.props
         return (
           <figure class="g-flow">
             <figcaption>{b.caption}</figcaption>
-            <ol class="g-flow__list">
+            <ol class="g-flow__list" role="list">
               {b.items.map((i) => (
                 <li>{i}</li>
               ))}

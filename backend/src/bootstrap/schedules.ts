@@ -33,6 +33,8 @@ import { createBuyboxRefreshJob } from '@operations/pricing/createBuyboxRefreshJ
 import { BUYBOX_JOB_NAME, type BuyboxRefreshJob } from '@operations/pricing/BuyboxRefreshJob';
 import { writeResilienceSnapshot } from '@integration/modules/common/http/resilienceSnapshot';
 import { RedisService } from '@services/redis/RedisService';
+import { AUDIT_IP_MASK_JOB_NAME, runAuditIpMaskProd } from '@operations/retention/auditIpMask';
+import { COMMISSION_DRIFT_JOB_NAME, createCommissionDriftDeps, runCommissionDrift, type CommissionDriftJobDeps } from '@operations/finance/commissionDriftJob';
 import { runsWorker } from './roles';
 
 const log = logger.child({ module: 'bootstrap.schedules' });
@@ -143,6 +145,24 @@ export const SCHEDULES: readonly ScheduleSpec[] = [
         return { skipped: r.skipped, processed: r.observed, failed: r.failedTenants, note: `tenants=${r.tenants} calls=${r.calls} lost=${r.lost} notified=${r.notified} deferred=${r.deferred}` };
       } });
   } },
+  // COM-08: komisyon sapma taramasi (gunluk, ifDue). NOTIFY_V2_ENABLED=false iken DB'ye dokunmadan doner (`notify_disabled`).
+  { id: COMMISSION_DRIFT_JOB_NAME, runsOn: 'worker', build: (impl?: CommissionDriftJobDeps) => {
+    let d: CommissionDriftJobDeps | undefined = impl;
+    return defineJob({
+      name: COMMISSION_DRIFT_JOB_NAME, everyMs: DAY, maxDurationMs: 15 * MIN, criticality: 'normal', runOnStart: 'ifDue',
+      run: async (ctx) => {
+        d ??= createCommissionDriftDeps();
+        const r = await runCommissionDrift(d, { signal: ctx.signal });
+        return { skipped: r.skipped, processed: r.evaluated, failed: r.failedTenants, note: `tenants=${r.tenants} drifted=${r.drifted} notified=${r.notified}` };
+      } });
+  } },
+  // RET-02: 90 gunden eski AuditLogs IP maskeleme (gunluk; deploy'da yeniden kosmaz -> 'ifDue'). Yalniz kendi DB'mize yazar; LIVE_READONLY'de baslamaz (varsayilan liste).
+  { id: AUDIT_IP_MASK_JOB_NAME, runsOn: 'worker', build: (impl?: typeof runAuditIpMaskProd) => defineJob({
+    name: AUDIT_IP_MASK_JOB_NAME, everyMs: DAY, maxDurationMs: 15 * MIN, criticality: 'normal', runOnStart: 'ifDue',
+    run: async (ctx) => {
+      const r = await (impl ?? runAuditIpMaskProd)({ signal: ctx.signal, heartbeat: ctx.heartbeat });
+      return { processed: r.processed, failed: r.failed, note: `batches=${r.batches} more=${r.more}` };
+    } }) },
   // Metrik flush: HER rolde; lease KASITLI kapali (her pod kendi surec-ici kayit defterini flush eder, ADR-0017 Karar 2.1).
   { id: 'observability.metrics-flush', runsOn: 'any', leaseOff: true, build: () => defineJob({
     name: 'observability.metrics-flush', everyMs: MIN, maxDurationMs: 30 * 1000, criticality: 'normal', runOnStart: 'always',

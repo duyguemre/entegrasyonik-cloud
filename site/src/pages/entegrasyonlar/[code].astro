@@ -669,7 +669,8 @@ const showMeter = i.coverage === 'broad'
     position: relative;
     padding: 0 0 var(--ek-space-5) var(--ek-space-12);
     counter-increment: guide;
-    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
+    /* site-wdg W14: üst bar payı html scroll-padding-top’ta; burada yalnız ek boşluk. */
+    scroll-margin-top: var(--ek-space-2);
   }
   .guide-step:last-child {
     padding-bottom: 0;
@@ -896,9 +897,9 @@ const showMeter = i.coverage === 'broad'
       color var(--ek-duration-base) var(--ek-easing-standard),
       translate var(--ek-duration-base) var(--ek-easing-standard);
   }
+  /* site-wdg W16: ok kayması global tek kuraldan (sarmalayıcıdaki ikinci kayma kaldırıldı). */
   .others__link:hover .others__go {
     color: var(--site-link-accent);
-    translate: var(--ek-space-1) 0;
   }
   /* Dar ekran: iki sütun, ok gizli (beş kartlık uzun dikey liste olmasın). */
   @media (max-width: 479.98px) {

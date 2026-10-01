@@ -66,7 +66,7 @@ const showPhone = hasValue(company.phone)
       {
         topics.map((t) => (
           <li>
-            <a class="topic" href={mailtoHref(contactEmail, t.subject)} data-testid="contact-mailto" aria-describedby={`topic-${t.id}-text`}>
+            <a class="topic" href={mailtoHref(contactEmail, t.subject)} data-testid="contact-mailto">
               <span class="topic__icon">
                 <Icon name={t.icon} size="md" />
               </span>
@@ -295,18 +295,7 @@ const showPhone = hasValue(company.phone)
     font-size: var(--ek-font-size-md);
     font-weight: var(--ek-font-weight-semibold);
   }
-  .topic__cta :global(.icon) {
-    transition: transform var(--ek-duration-base) var(--ek-easing-standard);
-  }
-  .topic:hover .topic__cta :global(.icon) {
-    transform: translateX(var(--ek-space-1));
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .topic:hover,
-    .topic:hover .topic__cta :global(.icon) {
-      transform: none;
-    }
-  }
+  /* site-wdg W16: ok kayması global.css'teki tek kuraldan (a:hover .icon[data-icon='arrow']); yerel ikinci kayma kaldırıldı. */
 
   /* --- Nasıl ilerler: sade not satırı --- */
   .notes {
