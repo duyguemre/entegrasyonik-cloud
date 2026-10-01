@@ -26,7 +26,7 @@
             <template v-for="c in list.items.value" :key="c.name">
               <tr>
                 <th scope="row">
-                  <button type="button" class="bo-coll__toggle" :aria-expanded="open.has(c.name)" :aria-controls="`idx-${c.name}`" @click="toggle(c.name)">
+                  <button type="button" class="bo-coll__toggle" :aria-expanded="open.has(c.name)" :aria-controls="open.has(c.name) ? `idx-${c.name}` : undefined" @click="toggle(c.name)">
                     <v-icon :icon="open.has(c.name) ? 'mdi-chevron-down' : 'mdi-chevron-right'" size="small" aria-hidden="true" />
                     <span>{{ c.name }}</span>
                     <EkStatusChip v-if="c.statsAvailable === false" tone="warning" label="İstatistik okunamadı" />

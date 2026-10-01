@@ -1,8 +1,4 @@
 <!--
-  PulseTrends — "Sistem kullanımı büyük resimde nasıl?" (genel bakış 2. soru). Sakin trend satırları: ad · değer ·
-  önceki eş döneme göre değişim (renksiz metin) · küçük çizgi. Renk yalnız eşik aşımında (hata oranı ≥ %1, p95 ≥ 1 sn).
--->
-<!--
   PulseTrends — "Kullanım büyük resimde nasıl?" (genel bakış 2. soru). Sakin satırlar: ad · değer · karşılaştırma/not
   (renksiz) · son 24 saatin saatlik çizgisi. Renk yalnız eşik aşımında (getAttention eşikleri: 5xx ≥ %5, kanal ≥ %20).
   Hesaplanamayan değer "—" + neden; okunamayan blok "Okunamadı" (boşluk "sorun yok" değildir).

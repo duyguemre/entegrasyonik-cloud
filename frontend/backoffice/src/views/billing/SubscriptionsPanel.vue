@@ -52,7 +52,8 @@
         <time :datetime="(item as Row).updatedAt" :title="formatDateTime((item as Row).updatedAt)">{{ formatRelative((item as Row).updatedAt) }}</time>
       </template>
       <template #cell-open="{ item }">
-        <BoAction kind="detail" icon-only object="Abonelik" :to="`/abonelikler/${(item as Row).tid}`" />
+        <!-- Her satırın bağlantısı benzersiz ad taşır: müşteri adı (yoksa no) + "aboneliği". -->
+        <BoAction kind="detail" icon-only :object="`${(item as Row).tenantName ?? `#${(item as Row).tid}`} aboneliği`" :to="`/abonelikler/${(item as Row).tid}`" />
       </template>
       <template #footer>
         <BoPagination :count="list.items.value.length" :has-more="list.hasMore.value" :loading="list.loadingMore.value" :error="list.moreError.value" @more="list.loadMore()" />

@@ -9,7 +9,7 @@
 
     <PageVerdict :verdict="verdict" />
 
-    <EkPageTabs v-model="tab" :tabs="tabs" label="Motor bölümleri" />
+    <BoTabs v-model="tab" :tabs="tabs" label="Motor bölümleri" />
 
     <QueuesPanel v-if="tab === 'kuyruklar'" :key="`q${gen}`" @counts="onCounts" @open-failed="tab = 'basarisiz'" />
     <FailedJobsPanel v-else-if="tab === 'basarisiz'" :key="`f${gen}`" />
@@ -24,7 +24,8 @@ import BoAction from '@bo/components/r2/BoAction.vue'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import CopyViewLink from '@bo/components/CopyViewLink.vue'
 import { computed, onMounted, ref } from 'vue'
-import { EkPageTabs, type EkPageTab } from '@entegrasyonik/ui/components'
+import type { EkPageTab } from '@entegrasyonik/ui/components'
+import BoTabs from '@bo/components/r2/BoTabs.vue'
 import { api } from '@bo/api'
 import { useTabQuery } from '@bo/composables/useTabQuery'
 import { useVerdictSources } from '@bo/composables/useVerdictSources'

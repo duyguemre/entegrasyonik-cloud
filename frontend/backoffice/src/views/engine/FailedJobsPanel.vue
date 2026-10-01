@@ -30,7 +30,9 @@
         <v-select :model-value="integF" :items="integrationItems" label="Entegrasyon" density="compact" hide-details clearable data-testid="f-integ" @update:model-value="(v: string | null) => setFilter('entegrasyon', v ?? '')" />
         <v-select :model-value="codeF" :items="codeItems" label="Hata kodu" density="compact" hide-details clearable data-testid="f-code" @update:model-value="(v: string | null) => setFilter('kod', v ?? '')" />
       </BoFilterBar>
-      <p v-if="filtered && total !== null && source === 'bullmq'" class="bo-failed__total" data-testid="filtered-total" aria-live="polite">{{ formatCount(total) }} iş (süzgeçli)</p>
+      <p v-if="filteredTotalText" class="bo-failed__total" data-testid="filtered-total">{{ filteredTotalText }}</p>
+      <!-- Canlı bölge kalıcı (v-if dışında): süzgeçli toplamın ilk görünüşü de duyurulur. -->
+      <span class="ek-sr-only" aria-live="polite">{{ filteredTotalText }}</span>
       <p v-if="codeF" class="bo-failed__codehint">{{ codeF }} — {{ codeInfo(codeF).text }}</p>
 
       <EkAlert v-if="source === 'dlq'" tone="info" dense title="Ölü mektuplar salt okunur" text="Kalıcı hatalı ya da denemesi tükenmiş işler. Yeniden kuyruğa alma/silme kuralı (idempotency) henüz karara bağlanmadı; bu yüzden yalnız listelenir." />
@@ -72,7 +74,7 @@
               <template #cell-count="{ item }"><strong class="ek-num">{{ formatCount(Number(item.count)) }}</strong></template>
               <template #cell-oldestFailedAt="{ item }"><EkRelativeTime :value="item.oldestFailedAt as string | null" /></template>
               <template #cell-actions="{ item }">
-                <BoAction kind="detail" size="sm" :aria-label="`${item.errorCode} hatalı işlerini ayrıntılı göster`" data-testid="group-open" @click="drill(String(item.errorCode))">İşleri göster</BoAction>
+                <BoAction kind="detail" size="sm" :aria-label="`İşleri göster — ${item.errorCode} hatalı işler`" data-testid="group-open" @click="drill(String(item.errorCode))">İşleri göster</BoAction>
               </template>
             </BoDataTable>
           </template>
@@ -169,14 +171,14 @@
           </template>
           <template #cell-actions="{ item }">
             <span class="bo-row-actions">
-              <BoAction v-if="item.reqId" kind="detail" size="sm" :to="{ path: '/loglar', query: { reqId: String(item.reqId) } }" :aria-label="`${item.originalJobId ?? item.id} işinin izini aç`" data-testid="trace-link">İz</BoAction>
+              <BoAction v-if="item.reqId" kind="detail" size="sm" :to="{ path: '/loglar', query: { reqId: String(item.reqId) } }" :aria-label="`İz — ${item.originalJobId ?? item.id} işinin izi`" data-testid="trace-link">İz</BoAction>
               <BoAction kind="retry" icon-only size="sm" :object="String(item.id)" :disabled="item.state === 'retrying'" data-testid="retry" @click="retry.open(item as unknown as FailedBullJob)" />
               <span class="bo-row-actions__sep" aria-hidden="true"></span>
               <BoAction kind="discard" icon-only size="sm" :object="String(item.id)" data-testid="discard" @click="discard.open(item as unknown as FailedBullJob)" />
             </span>
           </template>
           <template #cell-dlqActions="{ item }">
-            <BoAction v-if="item.reqId" kind="detail" size="sm" :to="{ path: '/loglar', query: { reqId: String(item.reqId) } }" :aria-label="`${item.originalJobId ?? item.id} işinin izini aç`" data-testid="trace-link">İz</BoAction>
+            <BoAction v-if="item.reqId" kind="detail" size="sm" :to="{ path: '/loglar', query: { reqId: String(item.reqId) } }" :aria-label="`İz — ${item.originalJobId ?? item.id} işinin izi`" data-testid="trace-link">İz</BoAction>
           </template>
           <template #footer>
             <BoPagination :count="list.items.value.length" :has-more="list.hasMore.value" :loading="list.loadingMore.value" :error="list.moreError.value" @more="list.loadMore()" />
@@ -377,6 +379,7 @@ function reloadAll(keep = false) {
 }
 
 const total = ref<number | null>(null)
+const filteredTotalText = computed(() => (filtered.value && total.value !== null && source.value === 'bullmq' ? `${formatCount(total.value)} iş (süzgeçli)` : ''))
 const list = useCursorList<FailedBullJob | DlqRecord>(async (cursor) => {
   const res = await api.call('BackofficeEngineService/listFailedJobs', {
     queue: queue.value,
@@ -531,7 +534,7 @@ onMounted(async () => {
   border: 1px solid var(--ek-color-border-subtle);
   border-radius: var(--ek-radius-md);
   background: var(--ek-color-surface-muted);
-  transition: background-color 150ms ease-out, border-color 150ms ease-out;
+  transition: var(--ek-transition-colors);
 }
 .bo-selbar.is-active {
   border-color: var(--ek-color-primary);
@@ -547,6 +550,13 @@ onMounted(async () => {
   align-items: flex-start;
   gap: var(--ek-space-1);
   min-width: 0;
+}
+/* Kart kipi (< 600 px tablo kabı): uzun iş/istek kimliği satırı taşırmasın — kırılır (masaüstü tablo tek satır kalır). */
+@container (max-width: 599.98px) {
+  .bo-jobid__body .bo-id {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
 }
 .bo-jobid__check {
   flex: none;

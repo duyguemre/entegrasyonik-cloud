@@ -22,7 +22,7 @@
           <p v-else class="bo-muted bo-redis__note">Bellek sınırı tanımlı değil (sınırsız); oran hesaplanamaz. Kullanılan: {{ formatBytes(d.memory.usedBytes) }}, tepe: {{ formatBytes(d.memory.peakBytes) }}.</p>
           <dl class="bo-kv">
             <div><dt>Kullanılan / tepe</dt><dd>{{ formatBytes(d.memory.usedBytes) }} / {{ formatBytes(d.memory.peakBytes) }}</dd></div>
-            <div><dt>Parçalanma oranı</dt><dd>{{ d.memory.fragmentationRatio ?? '—' }}</dd></div>
+            <div><dt>Parçalanma oranı</dt><dd class="ek-num">{{ formatRatio(d.memory.fragmentationRatio) }}</dd></div>
             <div><dt>Tahliye politikası</dt><dd>{{ d.memory.evictionPolicy ?? '—' }}</dd></div>
             <div><dt>Süresi dolan / tahliye edilen</dt><dd>{{ formatCount(d.stats.expiredKeys) }} / {{ formatCount(d.stats.evictedKeys) }}</dd></div>
             <div><dt>İsabet / ıska</dt><dd>{{ formatCount(d.stats.keyspaceHits) }} / {{ formatCount(d.stats.keyspaceMisses) }}</dd></div>
@@ -43,7 +43,7 @@
       </BoTileGrid>
 
       <BoSection title="Yavaş komutlar (slowlog)" description="Yalnız komut adı ve süre; argüman kaydedilmez" icon="mdi-timer-alert-outline" flush>
-        <BoDataTable tabindex="0" :items="slowRows" :columns="SLOW_COLUMNS" row-key="i" label="Yavaş komutlar" :phase="d.slowlog.length ? 'ready' : 'empty'" empty-title="Yavaş komut yok" empty-message="Slowlog eşiğini aşan komut kaydı bulunmuyor.">
+        <BoDataTable :items="slowRows" :columns="SLOW_COLUMNS" row-key="i" label="Yavaş komutlar" :phase="d.slowlog.length ? 'ready' : 'empty'" empty-title="Yavaş komut yok" empty-message="Slowlog eşiğini aşan komut kaydı bulunmuyor.">
           <template #cell-command="{ item }"><code class="bo-code">{{ item.command }}</code></template>
           <template #cell-duration="{ item }"><span class="ek-num">{{ micros(item.durationMicros as number) }}</span></template>
           <template #cell-at="{ item }"><span class="bo-cell-stack"><span>{{ formatRelative(item.at as string) }}</span><span class="ek-num">{{ formatDateTime(item.at as string) }}</span></span></template>
@@ -68,6 +68,10 @@ import MeterList, { type MeterRow } from '@bo/components/kit/MeterList.vue'
 import { formatDateTime, formatRelative } from '@bo/utils/format'
 import { formatBytes, formatCount, formatDuration, formatPercent, formatUptime } from '@bo/utils/units'
 import '@bo/styles/kit.css'
+
+// Parçalanma oranı (ör. 1,23): tr-TR ondalık virgül, en çok 2 hane; yoksa "—".
+const ratioFormat = new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 2 })
+const formatRatio = (v: number | null | undefined) => (v === null || v === undefined || Number.isNaN(v) ? '—' : ratioFormat.format(v))
 
 const SLOW_COLUMNS: EkTableColumn[] = [
   { key: 'command', label: 'Komut' },

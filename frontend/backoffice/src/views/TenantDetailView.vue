@@ -551,6 +551,9 @@ a.bo-now__row:focus-visible {
   box-shadow: inset 0 0 0 2px var(--ek-color-border-focus);
 }
 .bo-now__main {
+  /* `ruleId · scopeKey` ve uzun sorun adları kesintisiz olabilir: dar ekranda satırı taşırmasın. */
+  min-width: 0;
+  overflow-wrap: anywhere;
   color: var(--ek-color-content-strong);
   font-weight: var(--ek-font-weight-medium);
 }

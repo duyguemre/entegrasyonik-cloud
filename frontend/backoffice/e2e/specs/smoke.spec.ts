@@ -13,7 +13,11 @@ test.describe('giriş', () => {
     await expectNoA11yViolations(page)
     await page.getByLabel('Doğrulama kodu').fill('000000')
     await page.getByRole('button', { name: 'Doğrula', exact: true }).click()
-    await expect(page.getByRole('alert')).toContainText('Doğrulama kodu geçersiz')
+    // Sunucu hatası alana bağlı: aria-invalid + açıklama, odak alana döner.
+    const codeField = page.getByLabel('Doğrulama kodu')
+    await expect(codeField).toHaveAttribute('aria-invalid', 'true')
+    await expect(codeField).toHaveAccessibleDescription(/Doğrulama kodu geçersiz/)
+    await expect(codeField).toBeFocused()
     await page.getByLabel('Doğrulama kodu').fill('123456')
     await page.getByRole('button', { name: 'Doğrula', exact: true }).click()
     await expect(page).toHaveURL(/\/denetim$/)

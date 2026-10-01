@@ -87,7 +87,8 @@
               <span v-else class="bo-muted">Abonelik yok</span>
             </td>
             <td class="bo-hide-sm">
-              <span v-if="c.integrations?.length" class="bo-tenants__channels" :aria-label="c.integrations.map((i) => CHANNEL[i.integrationCode] ?? i.integrationCode).join(', ')">
+              <!-- Rolsüz span'e aria-label verilmez: her rozet kendi adını ekran okuyucuya söyler. -->
+              <span v-if="c.integrations?.length" class="bo-tenants__channels">
                 <EkChannelDot v-for="i in c.integrations" :key="i.integrationCode" :code="i.integrationCode" :name="CHANNEL[i.integrationCode] ?? i.integrationCode" :show-name="false" />
                 
               </span>

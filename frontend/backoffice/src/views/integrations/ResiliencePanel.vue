@@ -25,7 +25,7 @@
                   <th v-for="p in res.data.value.pods" :key="p.pod" scope="col">
                     <span class="bo-cell-stack">
                       <span class="bo-res__pod"><code class="bo-code">{{ p.pod }}</code><EkStatusChip :tone="intakeTone(p.engineIntake)" :label="`motor ${INTAKE[p.engineIntake]}`" /></span>
-                      <span>{{ ago(p.observedAt) }}</span>
+                      <span>{{ formatRelative(p.observedAt, res.loadedAt.value ?? Date.now()) }}</span>
                     </span>
                   </th>
                 </tr>
@@ -82,11 +82,6 @@ const drift = computed(() => (res.data.value?.items ?? []).filter((r) => new Set
 const engineDrift = computed(() => new Set((res.data.value?.pods ?? []).map((p) => p.engineIntake)).size > 1)
 const intakeTone = (m: IntakeMode): StatusTone => (m === 'on' ? 'success' : m === 'drain' ? 'warning' : 'danger')
 
-function ago(iso: string): string {
-  const base = res.loadedAt.value ?? Date.now()
-  const s = Math.max(0, Math.round((base - Date.parse(iso)) / 1000))
-  return s < 90 ? `${s} sn önce` : `${Math.round(s / 60)} dk önce`
-}
 </script>
 
 <style scoped>

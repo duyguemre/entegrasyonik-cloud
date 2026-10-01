@@ -21,7 +21,7 @@
         </BoTileGrid>
 
         <BoSection id="bo-cache-families" title="Önbellek aileleri" :description="`Pod ${d.pod}`" icon="mdi-lightning-bolt-outline" flush>
-            <BoDataTable tabindex="0" :items="rows" :columns="COLUMNS" row-key="name" label="Önbellek aileleri" :phase="d.breakdown.length ? 'ready' : 'empty'" empty-title="Önbellekte aile yok" empty-message="Bu pod'un önbelleğinde henüz kayıt bulunmuyor.">
+            <BoDataTable :items="rows" :columns="COLUMNS" row-key="name" label="Önbellek aileleri" :phase="d.breakdown.length ? 'ready' : 'empty'" empty-title="Önbellekte aile yok" empty-message="Bu pod'un önbelleğinde henüz kayıt bulunmuyor.">
               <template #cell-name="{ item }"><code class="bo-code">{{ item.name }}</code></template>
               <template #cell-count="{ item }"><span class="ek-num">{{ formatCount(item.count as number) }}</span></template>
               <template #cell-hit="{ item }"><span class="ek-num">{{ formatCount(item.hit as number) }}</span></template>

@@ -84,7 +84,7 @@
 
       <BoTriageSection id="kullanim" :index="4" question="Genel kullanım nasıl?" calm :answer="usageAnswer" :more="{ label: 'Abonelikler', to: { name: 'subscriptions' } }">
         <BoPanelState v-if="pulseState !== 'ready'" :state="pulseState" :error="pulseError" :rows="4" empty-title="Kullanım özeti henüz bağlı değil" empty-text="Abonelik ve gelir ayrıntısı: Abonelikler › gelir." empty-icon="mdi-account-group-outline" @retry="load" />
-        <UsageSummary v-else-if="pulse" :model="pulse" />
+        <UsageSummary v-else-if="pulse" :model="pulse" @retry="load" />
       </BoTriageSection>
     </BoTileGrid>
 

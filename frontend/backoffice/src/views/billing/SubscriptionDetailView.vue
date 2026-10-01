@@ -70,18 +70,19 @@
         <SubscriptionEvents v-else-if="tab === 'olaylar'" :events="res.data.value!.events" />
 
         <BoSection v-else id="yonetim-eylemleri" title="Yönetim eylemleri" description="Her eylem gerekçe ve kimlik doğrulaması ister; denetim kaydına yazılır. Gri düğmenin altında neden kullanılamadığı yazar." icon="mdi-shield-edit-outline">
+          <!-- Her düğme, altındaki açıklamaya bağlı: devre dışıyken neden kullanılamadığı ekran okuyucuya da söylenir. -->
           <ul class="bo-sd__actions">
             <li>
-              <EkButton tone="secondary" :icon="reopen ? 'mdi-restore' : 'mdi-timer-plus-outline'" :disabled="!!extendWhy" data-testid="extend-trial" @click="openExtend">{{ reopen ? 'Denemeyi yeniden aç' : 'Denemeyi uzat' }}</EkButton>
-              <p class="bo-muted bo-sd__why">{{ extendWhy || (reopen ? 'Deneme süresi bitmiş, abonelik askıda. Uzatma aboneliği yeniden deneme durumuna alır.' : 'Deneme süresine gün ekler; müşteri erişimi sürer.') }}</p>
+              <EkButton tone="secondary" :icon="reopen ? 'mdi-restore' : 'mdi-timer-plus-outline'" :disabled="!!extendWhy" aria-describedby="bo-sd-why-extend" data-testid="extend-trial" @click="openExtend">{{ reopen ? 'Denemeyi yeniden aç' : 'Denemeyi uzat' }}</EkButton>
+              <p id="bo-sd-why-extend" class="bo-muted bo-sd__why">{{ extendWhy || (reopen ? 'Deneme süresi bitmiş, abonelik askıda. Uzatma aboneliği yeniden deneme durumuna alır.' : 'Deneme süresine gün ekler; müşteri erişimi sürer.') }}</p>
             </li>
             <li>
-              <EkButton tone="secondary" icon="mdi-swap-horizontal" :disabled="!!changeWhy" data-testid="change-plan" @click="openChange">Planı değiştir</EkButton>
-              <p class="bo-muted bo-sd__why">{{ changeWhy || 'Müşteriyi başka bir plana geçirir; ücret farkı sağlayıcıda işlenir.' }}</p>
+              <EkButton tone="secondary" icon="mdi-swap-horizontal" :disabled="!!changeWhy" aria-describedby="bo-sd-why-change" data-testid="change-plan" @click="openChange">Planı değiştir</EkButton>
+              <p id="bo-sd-why-change" class="bo-muted bo-sd__why">{{ changeWhy || 'Müşteriyi başka bir plana geçirir; ücret farkı sağlayıcıda işlenir.' }}</p>
             </li>
             <li class="bo-sd__danger">
-              <BoAction kind="cancel" :disabled="!!cancelWhy" data-testid="cancel-sub" @click="openCancel">Aboneliği iptal et</BoAction>
-              <p class="bo-muted bo-sd__why">{{ cancelWhy || 'Geri alınamaz; onay için müşteri numarası yazılır.' }}</p>
+              <BoAction kind="cancel" :disabled="!!cancelWhy" aria-describedby="bo-sd-why-cancel" data-testid="cancel-sub" @click="openCancel">Aboneliği iptal et</BoAction>
+              <p id="bo-sd-why-cancel" class="bo-muted bo-sd__why">{{ cancelWhy || 'Geri alınamaz; onay için müşteri numarası yazılır.' }}</p>
             </li>
           </ul>
         </BoSection>

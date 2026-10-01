@@ -58,7 +58,7 @@ test.describe('motor ve kuyruklar', () => {
     await expect(page.getByRole('radio', { name: 'Özet' })).toHaveAttribute('aria-checked', 'true')
     await expect(summary.getByText('Dış servis geçici olarak kullanılamıyor.')).toBeVisible()
     await expect(summary.getByText('Sipariş çekme').first()).toBeVisible()
-    await summary.getByRole('button', { name: /UNAVAILABLE hatalı işlerini/ }).click()
+    await summary.getByRole('button', { name: /İşleri göster — UNAVAILABLE/ }).click()
     await expect(page).toHaveURL(/gorunum=ayrinti/)
     await expect(page).toHaveURL(/kod=UNAVAILABLE/)
     await settle(page)

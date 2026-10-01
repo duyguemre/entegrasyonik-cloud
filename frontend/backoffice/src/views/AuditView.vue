@@ -12,13 +12,25 @@
       <BoSegmented v-model="surfaceKey" :options="SURFACES" label="Yüzey" />
       <v-select v-model="event" :items="eventItems" label="Olay" density="compact" hide-details clearable />
       <v-select v-model="result" :items="RESULTS" label="Sonuç" density="compact" hide-details clearable />
-      <v-text-field v-model="tid" label="Müşteri no" density="compact" hide-details clearable inputmode="numeric" @update:model-value="debounced" />
+      <v-text-field
+        v-model="tid"
+        label="Müşteri no"
+        density="compact"
+        hide-details="auto"
+        clearable
+        inputmode="numeric"
+        autocomplete="off"
+        spellcheck="false"
+        :error-messages="tidError"
+        :aria-invalid="tidError ? 'true' : undefined"
+        @update:model-value="debounced"
+      />
       <v-select v-model="range" :items="RANGES" label="Aralık" density="compact" hide-details />
     </BoFilterBar>
     <p v-if="reqId" class="bo-audit__req-filter">
       <v-icon icon="mdi-transit-connection-horizontal" aria-hidden="true" />
       İstek kimliğine göre süzülüyor: <code class="bo-mono">{{ reqId }}</code><EkCopyButton :value="reqId" label="İstek kimliği" />
-      <button type="button" class="bo-audit__req-clear" @click="reqId = ''">Kaldır</button>
+      <button type="button" class="bo-audit__req-clear" aria-label="İstek kimliği süzgecini kaldır" @click="reqId = ''">Kaldır</button>
     </p>
 
     <BoSection title="Denetim kayıtları" description="Kim, neyi, ne zaman değiştirdi. Kayıtlar değiştirilemez ve 365 gün saklanır." icon="mdi-shield-search" flush>
@@ -178,7 +190,10 @@ const range = ref<LogRange>(q('range') === '24h' ? '24h' : '7d')
 const items = ref<AuditRecord[] | null>(null)
 const error = ref<unknown>(null)
 const eventItems = computed(() => (event.value && !EVENTS.includes(event.value) ? [event.value, ...EVENTS] : EVENTS))
-const activeCount = computed(() => [surface.value, event.value, result.value, tid.value, reqId.value, range.value !== '7d'].filter(Boolean).length)
+// "Müşteri no" yalnız rakam: geçersiz girdi sessizce yok sayılmaz → satır içi hata, etkin süzgeç sayılmaz.
+const tidValid = computed(() => /^\d+$/.test(tid.value ?? ''))
+const tidError = computed(() => (tid.value && !tidValid.value ? 'Yalnız rakam girin.' : undefined))
+const activeCount = computed(() => [surface.value, event.value, result.value, tidValid.value, reqId.value, range.value !== '7d'].filter(Boolean).length)
 const surfaceKey = computed<string>({
   get: () => surface.value ?? 'all',
   set: (v) => (surface.value = v === 'backoffice' || v === 'app' ? v : undefined),
@@ -237,7 +252,7 @@ async function load(more = false) {
       surface: surface.value,
       event: event.value ?? undefined,
       result: result.value ?? undefined,
-      tid: /^\d+$/.test(tid.value ?? '') ? Number(tid.value) : undefined,
+      tid: tidValid.value ? Number(tid.value) : undefined,
       reqId: reqId.value || undefined,
       cursor: more ? cursor.value : undefined,
       limit: 50,

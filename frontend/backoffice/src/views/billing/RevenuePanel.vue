@@ -49,7 +49,7 @@
 
       <BoSection title="Dönüşüm, kayıp ve ödemeler" :description="`${periodText} aralığında deneme dönüşümü, kaybedilen abonelik ve ödeme olayları.`" icon="mdi-swap-horizontal">
         <BoTileGrid :min="220" dense>
-          <BoStat label="Deneme → ücretli dönüşüm" :value="formatPercent(m.trialConversion.rate)" :hint="`${m.trialConversion.converted} / ${m.trialConversion.cohort} deneme`" info="Aralıkta açılan denemelerden ücretliye geçenlerin oranı." />
+          <BoStat label="Deneme → ücretli dönüşüm" :value="formatPercent(m.trialConversion.rate)" :hint="`${formatCount(m.trialConversion.converted)} / ${formatCount(m.trialConversion.cohort)} deneme`" info="Aralıkta açılan denemelerden ücretliye geçenlerin oranı." />
           <BoStat label="Kayıp abonelik" :value="formatCount(m.churn.count)" :hint="`Oran ${formatPercent(m.churn.rate)} · MRR ${lostText}`" tone="warning" />
           <BoStat label="Ödeme olayları" :value="`${formatCount(m.paymentEvents.succeeded)} başarılı`" :hint="`${formatCount(m.paymentEvents.failed)} başarısız`" />
         </BoTileGrid>
@@ -95,12 +95,12 @@ function money(byCurrency: Record<string, number>) {
 }
 const mrrText = computed(() => (m.value ? money(m.value.mrr.byCurrency) : '—'))
 const lostText = computed(() => (m.value ? money(m.value.churn.mrrLostByCurrency) : '—'))
-const periodText = computed(() => (m.value ? `${formatDate(m.value.from)} – ${formatDate(m.value.to)}` : 'yükleniyor'))
+const periodText = computed(() => (m.value ? `${formatDate(m.value.from)} – ${formatDate(m.value.to)}` : 'yükleniyor…'))
 
 const planRows = computed<MeterRow[]>(() =>
   (m.value?.mrr.byPlan ?? []).map((p) => ({
     key: p.planCode,
-    label: `${planLabel(p.planCode)} (${p.subscriptions})`,
+    label: `${planLabel(p.planCode)} (${formatCount(p.subscriptions)})`,
     value: p.mrrMinor,
     display: formatMinor(p.mrrMinor, p.currency),
     tone: 'info',

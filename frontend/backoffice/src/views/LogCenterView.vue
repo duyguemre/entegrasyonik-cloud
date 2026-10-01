@@ -31,8 +31,8 @@
           </span>
           <span class="bo-cat__total ek-num">{{ compact(c.total) }}<span class="bo-cat__unit"> olay</span></span>
           <span class="bo-cat__split">
-            <span :class="{ 'is-error': c.error }"><v-icon icon="mdi-close-circle" aria-hidden="true" />{{ c.error }} hata</span>
-            <span :class="{ 'is-warn': c.warn }"><v-icon icon="mdi-alert" aria-hidden="true" />{{ c.warn }} uyarı</span>
+            <span :class="{ 'is-error': c.error }"><v-icon icon="mdi-close-circle" aria-hidden="true" /><span class="ek-num">{{ formatCount(c.error) }}</span> hata</span>
+            <span :class="{ 'is-warn': c.warn }"><v-icon icon="mdi-alert" aria-hidden="true" /><span class="ek-num">{{ formatCount(c.warn) }}</span> uyarı</span>
           </span>
           <Sparkline :values="c.series" :tone="c.error ? 'error' : c.warn ? 'warning' : 'neutral'" :label="`${CATEGORY[c.category].label}: uyarı ve hata eğilimi`" />
         </button>
@@ -113,8 +113,8 @@
             </span>
           </td>
           <td class="bo-hide-sm bo-issue-row__spark"><Sparkline :values="Object.values(issue.daily)" :tone="issue.level === 'warn' ? 'warning' : 'error'" :label="`${issue.title}: 14 günlük eğilim`" /></td>
-          <td class="is-num ek-num">{{ issue.count }}</td>
-          <td class="is-num ek-num bo-hide-sm">{{ issue.tenantCount || '—' }}</td>
+          <td class="is-num ek-num">{{ formatCount(issue.count) }}</td>
+          <td class="is-num ek-num bo-hide-sm">{{ issue.tenantCount ? formatCount(issue.tenantCount) : '—' }}</td>
           <td class="bo-hide-sm bo-issue-row__when">
             <EkStatusChip :tone="ISSUE_STATUS[issue.status].tone" :label="ISSUE_STATUS[issue.status].label" dot />
             <span class="ek-num"><EkRelativeTime :value="issue.lastSeen" /></span>
@@ -179,8 +179,8 @@
         </div>
         <EkDescriptionList
           :items="[
-            { label: 'Olay (aralıkta)', value: selected.count },
-            { label: 'Etkilenen müşteri', value: selected.tenantCount },
+            { label: 'Olay (aralıkta)', value: formatCount(selected.count) },
+            { label: 'Etkilenen müşteri', value: formatCount(selected.tenantCount) },
             { label: 'İlk görülme', value: formatDateTime(selected.firstSeen) },
             { label: 'Son görülme', value: formatDateTime(selected.lastSeen) },
             { label: 'Hata sınıfı', value: selected.errClass ?? '—' },
@@ -254,6 +254,7 @@ import type {
 } from '@bo/api/contract'
 import { CATEGORY, CHANNEL, ISSUE_STATUS, LEVEL, SOURCE } from '@bo/utils/labels'
 import { formatClock, formatDateTime } from '@bo/utils/format'
+import { formatCount } from '@bo/utils/units'
 
 const RANGES: Array<{ value: LogRange; label: string }> = [
   { value: '1h', label: '1 sa' },

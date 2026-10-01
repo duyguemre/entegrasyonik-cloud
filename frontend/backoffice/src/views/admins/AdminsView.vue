@@ -39,7 +39,7 @@
           <template #cell-actions="{ item }">
             <span class="bo-row-actions">
               <template v-if="!isSelf(item as PlatformAdmin)">
-                <BoAction v-if="(item as PlatformAdmin).status === 'disabled'" kind="enable" size="sm" :aria-label="`${full(item as PlatformAdmin)} etkinleştir`" data-testid="enable" @click="enable.open(item as PlatformAdmin)" />
+                <BoAction v-if="(item as PlatformAdmin).status === 'disabled'" kind="enable" size="sm" :aria-label="`${full(item as PlatformAdmin)} hesabını etkinleştir`" data-testid="enable" @click="enable.open(item as PlatformAdmin)" />
                 <BoAction v-if="(item as PlatformAdmin).status === 'active'" kind="cancel" size="sm" label="Devre dışı bırak" :aria-label="`${full(item as PlatformAdmin)} devre dışı bırak`" data-testid="disable" @click="disable.open(item as PlatformAdmin)" />
                 <BoAction v-if="(item as PlatformAdmin).status === 'invited'" kind="cancel" size="sm" label="Daveti iptal et" :aria-label="`${(item as PlatformAdmin).email} davetini iptal et`" data-testid="revoke" @click="disable.open(item as PlatformAdmin)" />
                 <BoAction v-if="(item as PlatformAdmin).status !== 'invited'" kind="reset" label="2FA sıfırla" size="sm" :aria-label="`${full(item as PlatformAdmin)} iki adımlı doğrulamayı sıfırla`" data-testid="reset-mfa" @click="resetMfa.open(item as PlatformAdmin)" />
@@ -62,7 +62,7 @@
       confirm-icon="mdi-email-fast-outline"
       :confirm-disabled="!emailValid"
     >
-      <v-text-field v-model="inviteEmail" label="E-posta" type="email" autocomplete="off" density="compact" maxlength="254" :error-messages="inviteEmail && !emailValid ? 'Geçerli bir e-posta adresi girin.' : undefined" hide-details="auto" data-testid="invite-email" />
+      <v-text-field v-model="inviteEmail" label="E-posta" type="email" autocomplete="off" spellcheck="false" autocapitalize="off" autocorrect="off" density="compact" maxlength="254" :error-messages="inviteEmail && !emailValid ? 'Geçerli bir e-posta adresi girin.' : undefined" hide-details="auto" data-testid="invite-email" />
     </GuardedDialog>
 
     <GuardedDialog

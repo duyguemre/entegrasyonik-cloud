@@ -73,6 +73,9 @@ test.describe('kullanım (MOB-08)', () => {
     await page.goto('/musteriler/103?sekme=kullanim')
     await settle(page)
     await expect(page.getByTestId('usage-verdict')).toContainText('gündür aktif kullanıcı yok')
-    await expect(page.getByTestId('usage-actions').getByRole('link', { name: /Yaşam döngüsüne bak/ })).toBeVisible()
+    // Ortak PageVerdict: ilk eylem "Önerilen ilk adım" kartında (bağlantılı).
+    const first = page.getByTestId('usage-verdict').getByTestId('verdict-first-action')
+    await expect(first).toContainText('Yaşam döngüsüne bak')
+    await expect(first.getByRole('link')).toBeVisible()
   })
 })

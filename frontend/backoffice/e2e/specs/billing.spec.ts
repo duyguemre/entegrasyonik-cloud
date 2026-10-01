@@ -15,7 +15,7 @@ test.describe('abonelikler', () => {
     await expect(page.getByText('kartsız').first()).toBeVisible()
     await expect(page.getByText('VİSA •••• 4242')).toBeVisible()
     await expect(page.getByRole('tab', { name: /Abonelikler/ })).toContainText(/\d/)
-    await expect(page.getByRole('link', { name: 'Abonelik ayrıntı' }).first()).toBeVisible()
+    await expect(page.getByRole('link', { name: /aboneliği ayrıntı/ }).first()).toBeVisible()
     await expectNoA11yViolations(page)
 
     await page.getByTestId('status-filter').click()

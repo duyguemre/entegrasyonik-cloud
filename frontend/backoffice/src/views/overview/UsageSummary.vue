@@ -17,19 +17,29 @@
           </li>
         </ul>
       </template>
-      <p v-else class="bo-us__na">Müşteri sayıları okunamadı.</p>
+      <p v-else class="bo-us__na">
+        Müşteri sayıları okunamadı — yeniden deneyin; sürerse Entegrasyonlar › API sağlığı sayfasına bakın.
+        <button type="button" class="bo-link-btn" @click="emit('retry')">Yeniden dene</button>
+      </p>
     </div>
 
-    <dl class="bo-us__stats">
-      <div v-for="s in stats" :key="s.key" class="bo-us__stat">
-        <dt>{{ s.label }}</dt>
-        <dd>
-          <RouterLink v-if="s.value !== null" :to="s.to" class="bo-us__num ek-num" :aria-label="`${s.label}: ${s.value} — listeyi aç`">{{ s.value }}</RouterLink>
-          <span v-else class="bo-us__na">Okunamadı</span>
-          <span v-if="s.hint" class="bo-us__hint">{{ s.hint }}</span>
-        </dd>
-      </div>
-    </dl>
+    <div class="bo-us__stats">
+      <dl class="bo-us__stat-list">
+        <div v-for="s in stats" :key="s.key" class="bo-us__stat">
+          <dt>{{ s.label }}</dt>
+          <dd>
+            <RouterLink v-if="s.value !== null" :to="s.to" class="bo-us__num ek-num" :aria-label="`${s.label}: ${s.value} — listeyi aç`">{{ s.value }}</RouterLink>
+            <span v-else class="bo-us__na">Okunamadı</span>
+            <span v-if="s.hint" class="bo-us__hint">{{ s.hint }}</span>
+          </dd>
+        </div>
+      </dl>
+      <!-- Okunamayan sayılar için sonraki adım: yeniden dene; sürerse listeyi doğrudan aç. -->
+      <p v-if="mrrFailed" class="bo-us__na">
+        Abonelik sayıları okunamadı — yeniden deneyin ya da Abonelikler listesini açın.
+        <button type="button" class="bo-link-btn" @click="emit('retry')">Yeniden dene</button>
+      </p>
+    </div>
     <RouterLink :to="{ name: 'subscriptions', query: { sekme: 'gelir' } }" class="bo-us__link">Gelir metrikleri<v-icon icon="mdi-arrow-right" aria-hidden="true" /></RouterLink>
   </div>
 </template>
@@ -44,6 +54,9 @@ import type { TenantStatus } from '@bo/api/contract'
 import { TENANT_STATUS } from '@bo/utils/labels'
 
 const props = defineProps<{ model: PulseModel }>()
+// Okunamayan blokta "Yeniden dene": sayfa özeti yeniden yüklenir (genel bakış `load`).
+const emit = defineEmits<{ retry: [] }>()
+const mrrFailed = computed(() => props.model.usage.mrr.state !== 'ok')
 const nf = new Intl.NumberFormat('tr-TR')
 const TONE: Record<string, ChartTone> = { success: 'success', danger: 'error', warning: 'warning', info: 'info', neutral: 'neutral' }
 
@@ -167,6 +180,13 @@ const stats = computed(() => {
 
 .bo-us__stats {
   grid-area: stats;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-3);
+  min-width: 0;
+}
+
+.bo-us__stat-list {
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-3);
