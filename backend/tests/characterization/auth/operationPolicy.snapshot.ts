@@ -98,7 +98,7 @@ export const OPERATION_POLICY_SNAPSHOT: SnapshotPolicy = {
     // B12: platform yöneticisi yönetimi (invite/disable/enable/resetMfa step-up ister)
     BackofficeAdminUserService: { list: P, invite: P, disable: P, enable: P, resetMfa: P },
     // B2/B4: abonelik + gelir + tenant yaşam döngüsü (yazmalar step-up ister)
-    BackofficeBillingService: { listSubscriptions: P, getSubscription: P, extendTrial: P, cancelSubscription: P, changePlan: P, getRevenueMetrics: P },
+    BackofficeBillingService: { listSubscriptions: P, getSubscription: P, extendTrial: P, cancelSubscription: P, changePlan: P, getRevenueMetrics: P, getCompetitionSettings: P, getTenantCompetition: P, setCompetitionOverride: P },
     BackofficeTenantService: { getLifecycle: P, cancelDeletion: P, listTenants: P, getHealthSummary: P },
     // K51 (BO1) + BE-05: kayıtlı görünümler (yönetici başına)
     BackofficePrefsService: { listViews: P, saveView: P, deleteView: P },
@@ -204,6 +204,8 @@ export const OPERATION_POLICY_SNAPSHOT: SnapshotPolicy = {
     // --- Tenant-yüzlü yeni uçlar (docs/API_TENANT_SURFACE.md; FE ekranları ADR-0015 sonrası) ---
     // §2 stok sağlığı özeti (OVERSOLD/UNMAPPED, rezervasyon toplamları): operatörün günlük görünürlüğü -> member (getOrders ile aynı)
     StockService: { getStockOverview: M, listLowStock: M, listMovements: M, getPublishLagSummary: A },
+    // PRC-R0/R1 (2026-10-01): maliyet + buybox görünürlüğü (salt okuma) + kâr önizlemesi.
+    PricingService: { listCosts: M, setVariantCosts: M, listBuybox: M, getBuyboxHistory: M, previewMargin: M },
     // §4 denetim günlüğü: kim-ne-zaman kaydı yönetim bilgisidir -> admin+ (owner dahil); yalnızca kendi tenant'ı
     AuditService: { getAuditLogs: A },
 

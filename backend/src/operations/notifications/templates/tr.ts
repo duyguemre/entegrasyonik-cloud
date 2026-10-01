@@ -17,6 +17,7 @@ export const TR: Record<string, { title: string; body: string }> = {
     INTEGRATION_CHANGE_NOTICE: { title: 'Entegrasyon değişiklik bildirimi', body: '{integ} için bir API değişikliği tespit edildi (kayıt: {findingId}).' },
     CATALOG_BATCH_SUBMITTED: { title: 'Toplu işlem gönderildi', body: '{integ} için {itemCount} kayıt gönderildi (iş: {batchId}).' },
     CATALOG_BATCH_FAILED: { title: 'Toplu işlem başarısız', body: '{integ} toplu işlemi tamamlanamadı (hata kodu: {errorCode}). Destek kodu: {corrId}.' },
+    BUYBOX_LOST: { title: 'Buybox kaybedildi', body: '{integ} kanalında {barcode} barkodunda buybox başka satıcıya geçti (sıra: {buyboxOrder}, buybox fiyatı: {buyboxPrice} TL).' },
     CATALOG_IMPORT_COMPLETED: { title: 'İçe aktarma tamamlandı', body: '{integ} içe aktarması tamamlandı ({itemCount} kayıt).' },
     CATALOG_IMPORT_FAILED: { title: 'İçe aktarma başarısız', body: '{integ} içe aktarması başarısız oldu (hata kodu: {errorCode}). Destek kodu: {corrId}.' },
     CATALOG_EXPORT_ERRORS_DIGEST: { title: 'Aktarım hataları', body: '{integ} için {failedCount} aktarım başarısız oldu.' },

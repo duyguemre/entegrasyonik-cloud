@@ -44,9 +44,19 @@ export function buildVariantFilterQuery(searchProductForm: any) {
         searchMatch.push({ $or: transferStatusOr });
     }
 
+    // [PRC-R1] Buybox filtresi (yalnız Trendyol, K57-S1): izinli liste; `unchecked` = hiç okunmamış. Bilinmeyen değer yok sayılır.
+    const bb = searchProductForm?.buyboxStatus;
+    if (typeof bb === 'string' && (BUYBOX_FILTER_VALUES as readonly string[]).includes(bb)) {
+        searchMatch.push(bb === 'unchecked'
+            ? { 'competition.trendyol.status': { $exists: false } }
+            : { 'competition.trendyol.status': bb });
+    }
+
     if (searchMatch.length > 0) filterQuery = { $and: searchMatch };
     return filterQuery;
 }
+
+export const BUYBOX_FILTER_VALUES = ['winning', 'losing', 'not_found', 'unchecked'] as const;
 
 export function buildProductFilterQuery(searchProductForm: any): any {
     let filterQuery: any = {};

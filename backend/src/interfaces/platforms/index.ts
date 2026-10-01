@@ -216,6 +216,17 @@ export interface IInternalPlatformInfos {
  * TÜM PAZARYERİ ENTEGRASYONLARININ UYMASI GEREKEN ANA SÖZLEŞME (INTERFACE).
  * Sisteme eklenecek her yeni pazaryeri bu metodları implement etmek zorundadır.
  */
+/** [PRC-R1] Tek barkodun buybox gözlemi (kanal-bağımsız; eşleme adaptörde). `found:false` = pazaryeri bu barkod için bilgi dönmedi. */
+export interface IBuyboxObservation {
+    barcode: string;
+    found: boolean;
+    /** Buybox sırası (1 = buybox bizde). */
+    buyboxOrder: number | null;
+    /** Buybox'taki fiyat (KDV dahil, TL). */
+    buyboxPrice: number | null;
+    hasMultipleSeller: boolean | null;
+}
+
 export interface IPlatform {
     /** Gerekli ayar anahtarları listesi (Örn: SELLERID, APIKEY) */
     requiredSettings: string[];
@@ -225,6 +236,9 @@ export interface IPlatform {
 
     /** [ADR-0033] Opsiyonel: yan etkisiz bağlantı/kimlik doğrulama denemesi (yeni adaptörlerde zorunlu, playbook §2). Asla fırlatmaz. */
     testConnection?(): Promise<{ ok: boolean; code?: string; detail?: string }>
+
+    /** [PRC-R1] Opsiyonel, SALT OKUMA: barkod başına buybox bilgisi (manifesto `pricing.buybox.read`). Yalnız destekleyen adaptör uygular. */
+    readBuybox?(barcodes: string[]): Promise<IBuyboxObservation[]>
 
     /** Tanım Verileri: Kategori, Nitelik, Marka ve Komisyon çekme işlemleri */
     retrieveCategories(): Promise<ICategory[]>

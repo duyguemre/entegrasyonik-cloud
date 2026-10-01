@@ -38,7 +38,26 @@ const productInfo = productInfoOf(false);
 const variantScope = z.number().int().min(0).max(2);
 const batchForm = allowList({ stock: numLike.optional(), shelf: text(200).optional(), prices: z.record(z.string(), z.unknown()) });
 
+// [PRC-R0/R1] PricingService tel gövdeleri (iş kuralı sınırları operations/pricing/*'ta ikinci kez doğrulanır).
+const barcodeStr = z.string().min(1).max(128);
+const costMoney = z.number().finite().min(0).max(10_000_000);
+const variantOrBarcode = { variantId: objectIdStr.optional(), barcode: barcodeStr.optional() };
+const PRICING_RPC_INPUT: Partial<Record<RpcRef, z.ZodType<any>>> = {
+    'PricingService/listCosts': strictBody({
+        variantIds: z.array(objectIdStr).max(200).optional(), barcodes: z.array(barcodeStr).max(200).optional(), productId: objectIdStr.optional(),
+        missingOnly: z.boolean().optional(), limit: z.number().int().min(1).max(200).optional(), cursor: objectIdStr.optional(),
+    }),
+    'PricingService/setVariantCosts': strictBody({ items: z.array(allowList({ ...variantOrBarcode, costPrice: costMoney.nullable() })).min(1).max(500) }),
+    'PricingService/listBuybox': strictBody({
+        status: z.enum(['winning', 'losing', 'not_found', 'unchecked']).optional(), productIds: z.array(objectIdStr).max(100).optional(),
+        barcodes: z.array(barcodeStr).max(100).optional(), limit: z.number().int().min(1).max(200).optional(), cursor: objectIdStr.optional(),
+    }),
+    'PricingService/getBuyboxHistory': strictBody({ barcode: barcodeStr, days: z.number().int().min(1).max(90).optional() }),
+    'PricingService/previewMargin': strictBody({ items: z.array(allowList({ ...variantOrBarcode, price: costMoney.optional() })).min(1).max(50) }),
+};
+
 export const CATALOG_RPC_INPUT: Partial<Record<RpcRef, z.ZodType<any>>> = {
+    ...PRICING_RPC_INPUT,
     // --- Stok (Faz-3; docs/API_STOCK_FEATURES.md) ---
     'StockService/listLowStock': strictBody({
         threshold: z.number().int().min(0).max(1_000_000).optional(), channel: integrationCode.optional(),

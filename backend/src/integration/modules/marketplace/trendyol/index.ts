@@ -1,4 +1,4 @@
-import { ICategoryAttributeValue, ICategory, ICategoryAttribute, IVariant, ICategoryComission, IBrand, IPlatform, IPlatformProductSummary, MappingKey, IValidationResult, IFetchProductsResult, IInternalConversionResult, IBatchProcessResult, IInternalResult, IBatchCheckPayload, IInternalPlatformInfos, IExportStagedProduct, IOrderPackage, IOrderRejectionReason, IPlatformResponse, ISendTrackingPayload, ISendInvoicePayload, IClaimRejectParams, IOrderRejectParams, IMessage, IFinancialTransaction, ICargoInvoice } from '@interfaces/index';
+import { ICategoryAttributeValue, ICategory, ICategoryAttribute, IVariant, ICategoryComission, IBrand, IPlatform, IPlatformProductSummary, MappingKey, IValidationResult, IFetchProductsResult, IInternalConversionResult, IBatchProcessResult, IInternalResult, IBatchCheckPayload, IInternalPlatformInfos, IExportStagedProduct, IOrderPackage, IOrderRejectionReason, IPlatformResponse, ISendTrackingPayload, ISendInvoicePayload, IClaimRejectParams, IOrderRejectParams, IMessage, IFinancialTransaction, ICargoInvoice, IBuyboxObservation } from '@interfaces/index';
 
 // Temel Servis (HTTP/Client)
 import Service from './services/Service';
@@ -13,6 +13,7 @@ import { ShipmentService } from './services/ShipmentService';
 import { ClaimService } from './services/ClaimService';
 import { MessageService } from './services/MessageService';
 import { FinancialService } from './services/FinancialService';
+import { BuyboxConnector } from './api/BuyboxConnector';
 /**
  * Trendyol Entegrasyon Ana Sınıfı.
  * IPlatform arayüzünü implement ederek, Trendyol'a özel tüm iş mantığını
@@ -33,6 +34,7 @@ export default class Trendyol implements IPlatform {
     private _claimService!: ClaimService;
     private _messageService!: MessageService;
     private _financialService!: FinancialService;
+    private _buybox!: BuyboxConnector;
 
     constructor(private integrationParameters: any) {
         this.initializeModules();
@@ -55,6 +57,7 @@ export default class Trendyol implements IPlatform {
         this._claimService = new ClaimService(this.integrationParameters, this._service);
         this._messageService = new MessageService(this.integrationParameters, this._service);
         this._financialService = new FinancialService(this.integrationParameters, this._service);
+        this._buybox = new BuyboxConnector(this._service, this.integrationParameters);
     }
 
     /**
@@ -142,6 +145,11 @@ export default class Trendyol implements IPlatform {
     }
 
     /** Sadece fiyat bilgilerini günceller. */
+    /** [PRC-R1] SALT OKUMA: buybox sırası/fiyatı/çok-satıcı (≤10 barkod/istek). Alan eşlemesi `api/BuyboxConnector.ts`'te (doğrulanmadı). */
+    public async readBuybox(barcodes: string[]): Promise<IBuyboxObservation[]> {
+        return this._buybox.readBuybox(barcodes);
+    }
+
     public async updateProductPrice(stagedProducts: Array<IExportStagedProduct>): Promise<IBatchProcessResult> {
         return this._productService.updateProductPrice(stagedProducts);
     }

@@ -1,4 +1,4 @@
-// ADR-0029 Karar 1 / docs/NOTIFICATION_PLAN.md §2: TEK olay katalogu (v1: 29 tenant + 5 platform kodu + LEGACY_* koprusu).
+// ADR-0029 Karar 1 / docs/NOTIFICATION_PLAN.md §2: TEK olay katalogu (v1: 29 tenant [+ sonradan eklenenler, PRC-R1 BUYBOX_LOST dahil; sayi testte] + 5 platform kodu + LEGACY_* koprusu).
 // Kod, kategori, onem, izin, sablon anahtarlari, rota, dedupe/grup kurali, saklama, varsayilan kanallar, zorunluluk burada.
 // Degismezler tests/unit/notifications/catalog.test.ts'te. Kod silme/yeniden adlandirma baseline testinde kirilir (alias zorunlu).
 import { z } from 'zod';
@@ -137,6 +137,16 @@ const TENANT: NotificationDefinition[] = [
         action: (p) => `/logs?mode=${q(p.mode)}`, dedupeKey: (p) => p.batchId, retention: 'standard', surface: 'tenant',
         legacyType: 'BATCH_PROCESS', legacyMode: 'TRANSFER',
         example: { integ: 'trendyol', mode: 'TRANSFER', batchId: 'B-2', errorCode: 'BATCH_REJECTED', corrId: 'c-2' },
+    }),
+    // PRC-R1 (K57): buybox (Trendyol) bizdeyken başka satıcıya geçti. Soğuma: barkod başına `pricing.buybox.notify.cooldownHours`
+    // (üretici denetler) + gün içi dedupe. Gölge mod `pricing.buybox.notify.shadow` (varsayılan AÇIK: yalnız defter) — ADR-0029 NB8 deseni.
+    defineNotification({
+        code: 'BUYBOX_LOST', category: 'catalog', severity: 'warning', mandatory: false,
+        defaultChannels: { inApp: true, email: 'digest' }, audience: { permission: 'catalog:read', fallbackMinTier: 'member' },
+        params: z.object({ integ: code(), barcode: id(), buyboxOrder: num(), buyboxPrice: num(), day: dateStr() }).strict(),
+        action: (p) => `/products?buybox=losing&barcode=${q(p.barcode)}`, dedupeKey: (p) => `${p.integ}:${p.barcode}:${p.day}`,
+        group: { key: (p) => p.integ, windowMs: HOUR }, retention: 'short', surface: 'tenant',
+        example: { integ: 'trendyol', barcode: '8690000000001', buyboxOrder: 2, buyboxPrice: 249.9, day: '2026-10-01' },
     }),
     defineNotification({
         code: 'CATALOG_IMPORT_COMPLETED', category: 'catalog', severity: 'success', mandatory: false,
