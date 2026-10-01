@@ -32,12 +32,25 @@ test.describe('müşteri listesi: sıralama ve paylaşılan görünüm (NT-05, N
     await expect(page.getByRole('button', { name: 'Bu görünümün bağlantısını kopyala' })).toBeVisible()
   })
 
-  test('hüküm maddesi listeyi süzer (kanalsız hesaplar)', async ({ page }) => {
+  test('hüküm maddesi listeyi süzer (sorunlu müşteriler) ve operasyon sütunları görünür', async ({ page }) => {
     await page.goto('/musteriler')
     await settle(page)
-    // Sakin sayfada bilgi maddeleri Durum'daki bağlantılı özet çipleridir (PageVerdict `facts`).
-    await page.getByTestId('page-verdict').getByRole('link', { name: /bağlı kanal yok/ }).click()
-    await expect(page).toHaveURL(/durum=kanalsiz/)
-    await expect(page.getByRole('radio', { name: /Kanalsız/ })).toHaveAttribute('aria-checked', 'true')
+    // Operasyon özeti (BE-01): açık sorun ~ ve başarısız iş sütunları, #107 satırında.
+    const row = page.locator('tr', { hasText: 'Nar Mutfak' })
+    await expect(row.locator('[data-col="open-issues"]')).toContainText('~4')
+    await expect(row.locator('[data-col="failed-jobs"]')).toContainText('14')
+    await page.getByRole('link', { name: 'Sorunlu müşterileri aç' }).first().click()
+    await expect(page).toHaveURL(/durum=sorunlu/)
+    await expect(page.getByRole('radio', { name: /Sorunlu müşteriler/ })).toHaveAttribute('aria-checked', 'true')
+    await expect(page.locator('tbody tr').first()).toContainText('Nar Mutfak')
+    await expect(page.locator('tbody tr', { hasText: 'Kumaş' })).toHaveCount(0)
+  })
+
+  test('genel bakıştan gelen ?hasIssues=1 sorunlu segmente eşlenir', async ({ page }) => {
+    await page.goto('/musteriler?hasIssues=1')
+    await settle(page)
+    await expect(page.getByRole('radio', { name: /Sorunlu müşteriler/ })).toHaveAttribute('aria-checked', 'true')
+    await page.getByRole('radio', { name: /Tümü/ }).click()
+    await expect(page).not.toHaveURL(/hasIssues/)
   })
 })
