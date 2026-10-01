@@ -443,6 +443,25 @@ test.describe('C1.4 — Finans sekmeleri', () => {
     await expect(kpis).not.toContainText('Forbidden')
   })
 
+  // P03 (K49): sekmeli ekranda arama + yenile başlık çubuğunda; etkin sekmeye göre değişir, sekme gövdesinde araç satırı yok.
+  test('başlık araçları: arama + tek yenile başlık çubuğunda, etkin sekmenin aracı (P03)', async ({ page }) => {
+    await open(page, financeRoutes())
+    const view = page.locator('.financialListView')
+    const bar = view.locator('.ek-page-header')
+    await expect(bar.getByLabel('İşlem No Ara (External ID)', { exact: true })).toBeVisible()
+    await expect(view.getByRole('button', { name: 'Yenile' })).toHaveCount(1)
+    await expect(bar.getByRole('button', { name: 'Yenile' })).toBeVisible()
+
+    await view.getByRole('tab', { name: 'Kargo faturaları' }).click()
+    await expect(bar.getByLabel('Fatura no ile ara (tam eşleşme)', { exact: true })).toBeVisible()
+    await expect(bar.getByLabel('İşlem No Ara (External ID)', { exact: true })).toHaveCount(0)
+    await expect(bar.getByRole('button', { name: 'Yenile' })).toHaveCount(1)
+
+    // Araçsız sekme (Özet) başlıkta önceki sekmenin aracını bırakmaz.
+    await view.getByRole('tab', { name: 'Özet' }).click()
+    await expect(bar.getByLabel('Fatura no ile ara (tam eşleşme)', { exact: true })).toHaveCount(0)
+  })
+
   // ---- Kargo faturaları ----
   test('kargo: satırlar ₺ ve tr-TR tarihle listelenir; destek notu görünür', async ({ page }) => {
     await openTab(page, {}, 'Kargo faturaları')

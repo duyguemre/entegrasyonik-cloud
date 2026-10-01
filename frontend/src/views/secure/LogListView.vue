@@ -6,6 +6,7 @@
       section="Ayarlar"
       title="İşlem kayıtları"
       description="Pazaryerlerine gönderilen ve pazaryerlerinden çekilen ürün işlemlerini buradan izleyin."
+      :tools-id="toolsId"
     />
 
     <EkPageTabs v-model="activeTab" :tabs="tabs" />
@@ -18,11 +19,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, useId } from 'vue';
+import { provideListToolsTarget } from '@/components/page/listTools';
 import EkPageHeader from '@/components/page/EkPageHeader.vue';
 import { EkPageTabs } from '@entegrasyonik/ui/components';
 import ImportLogList from '@/components/logListView/ImportLogList.vue';
 import ExportLogList from '@/components/logListView/ExportLogList.vue';
+
+// P03 (K49): etkin sekmenin arama + yenile'si başlık çubuğunda.
+const toolsId = `ek-log-tools-${useId().replace(/[^\w-]/g, '-')}`
+provideListToolsTarget(toolsId)
 
 // Varsayılan sekme: ürün gönderim işlemleri
 const activeTab = ref('export');

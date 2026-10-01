@@ -16,7 +16,7 @@
 <template>
   <div class="financialListView">
     <div class="ek-fin-head">
-      <EkPageHeader section="Finans ve raporlar" :title="t('finance.title')" :description="t('finance.description')" />
+      <EkPageHeader section="Finans ve raporlar" :title="t('finance.title')" :description="t('finance.description')" :tools-id="toolsId" />
       <EkPageTabs v-model="activeTab" :tabs="tabs" :label="t('finance.tabs.label')" />
     </div>
 
@@ -177,6 +177,7 @@
 
     <EkListScreen channel-key="integrationCode"
       class="ek-fin-screen"
+      :tools-target="activeTab === 'transactions' ? toolsTarget : false"
       label="Finansal işlemler tablosu"
       noun="işlem"
       row-key="_id"
@@ -266,7 +267,8 @@
 import { EkSelect, EkRowActions, EkButton, EkDateRange, EkChannelDot, EkStatusChip, EkPageTabs, EkTooltip, type EkPageTab } from '@entegrasyonik/ui/components'
 import type { EkGridColumn, EkGridSort, EkActiveFilterChip } from '@entegrasyonik/ui/components'
 import { channelOptionsFrom } from '@entegrasyonik/ui/components/selectOptions'
-import { ref, reactive, computed, watch } from 'vue';
+import { ref, reactive, computed, watch, useId } from 'vue';
+import { provideListToolsTarget } from '@/components/page/listTools';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useIntegrationStore } from '@/stores/integrationStore';
@@ -289,9 +291,11 @@ import FinancialSummaryTab from '@/components/financial/FinancialSummaryTab.vue'
 import FinancialCargoInvoicesTab from '@/components/financial/FinancialCargoInvoicesTab.vue';
 import FinancialPayoutsTab from '@/components/financial/FinancialPayoutsTab.vue';
 import EkPageHeader from '@/components/page/EkPageHeader.vue';
-;
 import { buildScreenPath, resolveScreenByKey } from '@/navigation/screens';
 import type { StatusTone } from '@/design/status-map';
+// P03 (K49): etkin sekmenin arama + yenile'si başlık çubuğunda (sekme gövdesinde araç satırı yok).
+const toolsId = `ek-fin-tools-${useId().replace(/[^\w-]/g, '-')}`
+const toolsTarget = provideListToolsTarget(toolsId)
 
 // Sabitler
 const transactionTypeOptions = ['SALE', 'RETURN', 'PAYOUT', 'DEDUCTION', 'COMMISSION', 'CARGO'];
@@ -543,7 +547,10 @@ defineExpose({ initialize: applyParameters, activate: applyParameters });
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-3);
-  overflow: hidden;
+  /* P15: bu ekranlar EkListFrame'i EkListScreen dışında kullanır — liste kartı asgari yüksekliğe (340px)
+     ulaşınca ekran kökü kendi içinde kayar (kırpılıp sayfalama erişilemez olmasın). */
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: var(--ek-space-5) var(--ek-space-6);
 }
 
