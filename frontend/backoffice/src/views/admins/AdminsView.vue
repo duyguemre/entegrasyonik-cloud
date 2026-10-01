@@ -39,10 +39,10 @@
           <template #cell-actions="{ item }">
             <span class="bo-row-actions">
               <template v-if="!isSelf(item as PlatformAdmin)">
-                <EkButton v-if="(item as PlatformAdmin).status === 'disabled'" size="sm" tone="secondary" icon="mdi-account-check-outline" :aria-label="`${full(item as PlatformAdmin)} etkinleştir`" data-testid="enable" @click="enable.open(item as PlatformAdmin)">Etkinleştir</EkButton>
+                <BoAction v-if="(item as PlatformAdmin).status === 'disabled'" kind="enable" size="sm" :aria-label="`${full(item as PlatformAdmin)} etkinleştir`" data-testid="enable" @click="enable.open(item as PlatformAdmin)" />
                 <BoAction v-if="(item as PlatformAdmin).status === 'active'" kind="cancel" size="sm" label="Devre dışı bırak" :aria-label="`${full(item as PlatformAdmin)} devre dışı bırak`" data-testid="disable" @click="disable.open(item as PlatformAdmin)" />
                 <BoAction v-if="(item as PlatformAdmin).status === 'invited'" kind="cancel" size="sm" label="Daveti iptal et" :aria-label="`${(item as PlatformAdmin).email} davetini iptal et`" data-testid="revoke" @click="disable.open(item as PlatformAdmin)" />
-                <EkButton v-if="(item as PlatformAdmin).status !== 'invited'" size="sm" tone="ghost" icon="mdi-shield-refresh-outline" :aria-label="`${full(item as PlatformAdmin)} iki adımlı doğrulamayı sıfırla`" data-testid="reset-mfa" @click="resetMfa.open(item as PlatformAdmin)">2FA sıfırla</EkButton>
+                <BoAction v-if="(item as PlatformAdmin).status !== 'invited'" kind="reset" label="2FA sıfırla" size="sm" :aria-label="`${full(item as PlatformAdmin)} iki adımlı doğrulamayı sıfırla`" data-testid="reset-mfa" @click="resetMfa.open(item as PlatformAdmin)" />
               </template>
             </span>
           </template>
@@ -107,7 +107,7 @@ import BoPagination from '@bo/components/r2/BoPagination.vue'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { EkButton, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
+import { EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import type { AdminStatus, PlatformAdmin } from '@bo/api/contract'
 import { session } from '@bo/auth/session'
@@ -259,10 +259,6 @@ onMounted(() => res.load())
 </script>
 
 <style scoped>
-.bo-flushed :deep(.ek-data-table) {
-  border-width: 0;
-  border-radius: 0;
-}
 .bo-flushed :deep(.bo-section__body) {
   padding-top: var(--ek-space-3);
 }

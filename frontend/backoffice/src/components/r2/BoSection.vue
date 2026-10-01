@@ -186,7 +186,8 @@ const headingId = computed(() => `${props.id ?? uid}-title`)
   padding: var(--ek-space-3) 0 0;
 }
 
-.bo-section.is-flush .bo-section__body :deep(.bo-table-wrap) {
+.bo-section.is-flush .bo-section__body :deep(.bo-table-wrap),
+.bo-section.is-flush .bo-section__body :deep(.ek-data-table) {
   border-width: 1px 0 0;
   border-radius: 0;
 }

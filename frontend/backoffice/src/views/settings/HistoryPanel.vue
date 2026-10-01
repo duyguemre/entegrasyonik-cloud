@@ -12,7 +12,7 @@
           <template #cell-diff="{ item }">{{ summary((item as Row).diff) }}</template>
           <template #cell-origin="{ item }"><EkStatusChip :tone="(item as Row).origin === 'rollback' ? 'warning' : 'neutral'" :label="originLabel((item as Row).origin)" /></template>
           <template #cell-actions="{ item }">
-            <EkButton v-if="(item as Row).status !== 'published'" size="sm" tone="secondary" icon="mdi-undo-variant" :disabled="cfg.hasDraft" :title="cfg.hasDraft ? 'Açık taslak varken geri alınamaz; önce taslağı yayınlayın ya da vazgeçin.' : undefined" :aria-label="`v${(item as Row).version} sürümüne geri al`" data-testid="rollback" @click="cfg.rollback.open(item as Row)">Bu sürüme geri al</EkButton>
+            <BoAction v-if="(item as Row).status !== 'published'" kind="rollback" label="Bu sürüme geri al" size="sm" :disabled="cfg.hasDraft" :title="cfg.hasDraft ? 'Açık taslak varken geri alınamaz; önce taslağı yayınlayın ya da vazgeçin.' : undefined" :aria-label="`v${(item as Row).version} sürümüne geri al`" data-testid="rollback" @click="cfg.rollback.open(item as Row)" />
           </template>
     </BoDataTable>
   </BoSection>
@@ -20,7 +20,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { EkButton, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
+import { EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
+import BoAction from '@bo/components/r2/BoAction.vue'
 import BoSection from '@bo/components/r2/BoSection.vue'
 import BoDataTable from '@bo/components/r2/BoDataTable.vue'
 import type { ConfigDiffEntry, ConfigRevision } from '@bo/api/contract'
@@ -52,9 +53,5 @@ function summary(diff: ConfigDiffEntry[] | null): string {
 <style scoped>
 .bo-flushed :deep(.bo-section__body) {
   padding-top: var(--ek-space-4);
-}
-.bo-flushed :deep(.ek-data-table) {
-  border-width: 1px 0 0;
-  border-radius: 0;
 }
 </style>

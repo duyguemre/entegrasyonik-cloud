@@ -39,6 +39,12 @@ export const BO_ACTIONS = {
   openExternal: { icon: ACTION_ICONS.openExternal.icon, label: 'Yeni pencerede aç', tone: 'ghost' },
   more: { icon: ACTION_ICONS.more.icon, label: 'Diğer işlemler', tone: 'ghost' },
   save: { icon: ACTION_ICONS.save.icon, label: 'Kaydet', tone: 'primary' },
+  // bo-r2b: sayfa taşımalarında çıkan backoffice fiilleri (yerel EkButton kalmasın).
+  send: { icon: ACTION_ICONS.send.icon, label: 'Gönder', tone: 'secondary' },
+  rollback: { icon: 'mdi-restore', label: 'Geri al', tone: 'secondary' },
+  enable: { icon: 'mdi-check-circle-outline', label: 'Etkinleştir', tone: 'secondary' },
+  reset: { icon: 'mdi-lock-reset', label: 'Sıfırla', tone: 'danger-quiet', danger: true },
+  flush: { icon: 'mdi-broom', label: 'Boşalt', tone: 'danger-quiet', danger: true },
 } as const satisfies Record<string, BoActionDef>
 
 export type BoActionKind = keyof typeof BO_ACTIONS

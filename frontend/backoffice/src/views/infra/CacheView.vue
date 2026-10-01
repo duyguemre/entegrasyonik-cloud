@@ -32,7 +32,7 @@
               </template>
               <template #cell-actions="{ item }">
                 <span class="bo-row-actions">
-                  <BoAction kind="delete" label="Aileyi boşalt" icon-only size="sm" :aria-label="`${item.name} ailesini boşalt`" :title="`${item.name} ailesini boşalt`" data-testid="flush" @click="flush.open(String(item.name))" />
+                  <BoAction kind="flush" label="Aileyi boşalt" icon-only size="sm" :aria-label="`${item.name} ailesini boşalt`" :title="`${item.name} ailesini boşalt`" data-testid="flush" @click="flush.open(String(item.name))" />
                 </span>
               </template>
             </BoDataTable>

@@ -2,7 +2,7 @@
   <div class="bo-page">
     <BoPageHeader :updated-at="cat.loadedAt.value ?? undefined" :stale="cat.stale.value">
       <template #actions>
-        <EkButton tone="secondary" icon="mdi-email-check-outline" data-testid="test-email" @click="testMail.open('self')">Test e-postası gönder</EkButton>
+        <BoAction kind="send" label="Test e-postası gönder" data-testid="test-email" @click="testMail.open('self')" />
         <BoAction kind="refresh" :loading="cat.refreshing.value" data-page-refresh @click="cat.load()" />
       </template>
     </BoPageHeader>
@@ -109,7 +109,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { EkAlert, EkButton, EkEmptyState, EkStatusChip } from '@entegrasyonik/ui/components'
+import { EkAlert, EkEmptyState, EkStatusChip } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import type { NotificationCatalogItem, TemplatePreview } from '@bo/api/contract'
 import { useResource } from '@bo/composables/useResource'

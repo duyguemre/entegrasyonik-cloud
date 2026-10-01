@@ -81,7 +81,7 @@ describe('BO2-50 eylem sözlüğü tek kaynak', () => {
 
   it('yıkıcı eylemler sakin yıkıcı varyantta ve işaretli', () => {
     const danger = Object.entries(BO_ACTIONS).filter(([, d]) => 'danger' in d && d.danger).map(([k]) => k)
-    expect(danger.sort()).toEqual(['cancel', 'delete', 'discard'])
+    expect(danger.sort()).toEqual(['cancel', 'delete', 'discard', 'flush', 'reset'])
     for (const k of danger) expect(BO_ACTIONS[k as keyof typeof BO_ACTIONS].tone).toBe('danger-quiet')
   })
 

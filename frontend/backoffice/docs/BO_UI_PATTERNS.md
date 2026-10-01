@@ -480,6 +480,10 @@ kullanır; yerel kopya yazılmaz** — mandal `tests/r2-system.test.ts` (azalan 
 | `link` | bağlantı | Bağlantı | secondary | `CopyViewLink` ile aynı |
 | `clearFilters` | süzgeç-kaldır | Filtreleri temizle | ghost | yalnız `BoFilterBar` |
 | `copy`, `openExternal`, `more`, `filter`, `save` | paket glifleri | — | — | |
+| `send` | gönder (paket) | Gönder | secondary | bo-r2b: "Test e-postası gönder" |
+| `rollback` | `mdi-restore` | Geri al | secondary | bo-r2b: yayın geçmişi "Bu sürüme geri al" (onay diyaloğu) |
+| `enable` | `mdi-check-circle-outline` | Etkinleştir | secondary | bo-r2b: yönetici hesabı |
+| `reset` / `flush` | `mdi-lock-reset` / `mdi-broom` | Sıfırla / Boşalt | danger-quiet | **Yıkıcı** (onay zorunlu): 2FA sıfırla, önbellek ailesini boşalt |
 - Glifler ortak paketin `ACTION_ICONS` kayıt defterinden (müşteri uygulamasıyla aynı iş = aynı ikon). Ekran ikon/ton
   seçmez; yalnız `kind` (+ gerekirse `label`, `object`, `tone` primary/ghost). İkon düğmede erişilebilir ad
   `boActionLabel(kind, object)` ("Duyuruyu düzenle").
