@@ -72,3 +72,8 @@ Step-up listesi `REAUTH_OPS` backend `admin/stepUp.ts REAUTH_RPCS` ile testle e�
   tema tercihi (`ek-bo-theme`); sessionStorage'da yalnız dev sahte API oturumu.
 - `index.html`: `robots noindex,nofollow`, `referrer no-referrer`; tema önyüklemesi harici eşzamanlı betik (CSP'de hash gerekmez).
 - Sunucu başlıkları (barındırma ADR'si): `X-Robots-Tag`, `frame-ancestors 'none'`, sıkı `connect-src`, `Referrer-Policy`.
+
+## BO-ELEV (konsol kimliği)
+- İlkeler: `docs/elev/CONSOLE_IDENTITY.md` · denetim: `docs/elev/AUDIT.md` · kalanlar: `docs/elev/NEXT_TASKS.md` · önce/sonra: `docs/elev/review/`.
+- Kısayollar: `Ctrl/⌘+K` palet, `/` palet, `?` yardım, `g` + harf ekran (kayıttaki `hotkey`), `Alt+R` sayfa yenile, `Ctrl/⌘+J` Otopilot.
+- İnceleme kareleri: `BO_REVIEW=1 BO_REVIEW_PREFIX=sonra PW_CHROMIUM_PATH=/opt/pw-browsers/chromium npx playwright test review-elev.spec.ts --project=chromium-desktop`.

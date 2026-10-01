@@ -4,6 +4,8 @@ Kaynak dal: `cloud/bo-p1`. Bu belge **bağlayıcıdır**: `cloud/bo-p2` ve sonra
 kullanır; kopya kabuk/başlık/tablo/diyalog açılmaz. Görsel dil: premium ama sakin operasyon konsolu (Stripe/Linear
 seviyesi) — bilgi yoğun, renk yalnız anlam taşıdığında, hareket 150–300 ms ve yalnız opaklık/renk.
 
+**Önce ilkeler:** `elev/CONSOLE_IDENTITY.md` (konsolun ruhu, yap/yapma, kontrol listesi) bu belgenin üst katmanıdır.
+
 Hızlı özet — yeni ekran = **(1) kayıtta bir satır + (2) `BoPageHeader` + (3) her bölümde `BoPanelState` + (4) tehlikeli
 işlemde `DangerActionDialog` + (5) `.bo-table` / `EkRelativeTime` / `EkCopyButton`**.
 
@@ -227,3 +229,27 @@ menüde yaprak görünür. Duyuru alt sayfaları `DETAIL_ROUTES`: `/sistem/duyur
   anahtarları (`ek:chat:*`), mock bayrağı (`__EK_CHAT_MOCK__`) ve `/api/agent` backoffice kodunda geçmez (chat-storage.test.ts).
 - Geliştirme/test: sahte /admin-api açıkken mock taşıyıcı; Playwright `window.__BO_CHAT_MOCK__ = { config, speed }`. Bayraksız
   otomasyonda sohbet kapalıdır (mevcut specler ve görsel tabanlar etkilenmez).
+
+
+---
+
+## Ek — BO-ELEV (konsol kimliği) yapı taşları
+İlkeler: `elev/CONSOLE_IDENTITY.md`. Denetim ve kalanlar: `elev/AUDIT.md`, `elev/NEXT_TASKS.md`.
+
+| Yapı taşı | Yer | Kural |
+|---|---|---|
+| `hotkey` | `navigation/screens.ts` | Hazır/taslak ekrana tek harf; `g` + harf ile gidilir, `?` yardımında ve palette görünür. Tekil (elev.test.ts). Planlı ekrana verilmez. |
+| Kısayol işleyici | `navigation/hotkeys.ts` | `g`-dizisi (1,5 sn), `?`, Alt+R (görünür ilk `[data-page-refresh]`). Metin alanında / açık diyalogda çalışmaz. Sayfa başlığındaki metinli "Yenile" düğmesine `data-page-refresh` verin. |
+| Son açılanlar | `navigation/recents.ts` | Yalnız `{kind:'screen',key}` / `{kind:'tenant',tid}`; ad yazılmaz; `bo:recent:<sub>`. Depoya yazan izinli dosya (static.test). |
+| Karar şeridi | `OverviewView` `.bo-ov-status` | Hüküm + bağlantılı maddeler (`{label, where, to, tone}`); kırmızı madde varsa şerit kırmızı. Bağlantısız uyarı yazılmaz. |
+| `HealthKpi :to` | `components/HealthKpi.vue` | Kartın tamamı ayrıntıya gider; tek sekme durağı etiketteki bağlantı. |
+| `BoPageHeader :stale` | `components/shell/BoPageHeader.vue` | Son yenileme başarısızsa "Yenilenemedi — gösterilen veri X önce alındı". `updatedAt` yalnız başarılı okumada ilerler. |
+| `.bo-dense` | `styles/kit.css` | Operasyon listesi sarmalayıcısı → `EkDataTable` satırı 36 px. Hücreler tek satır; ikincil bilgi `title`'a. |
+| `.bo-id`, `.bo-code-tag` | `styles/kit.css` | Kimlik mono zeminsiz; hata kodu nötr mono etiket (açıklama `title`'da). Hata kodu için `EkStatusChip` KULLANILMAZ. |
+| `.bo-row-actions__sep`, `__danger` | `styles/kit.css` | Yıkıcı satır eylemi ayraçla ayrık, hayalet; yalnız üzerine gelince kırmızı. |
+| İz bağlantıları | `TenantDetailView` "İz sür" | Kimlik gösterilen yerde iz ekranına aynı süzgeçle bağlantı. URL süzgeçleri: `/loglar?tid=&level=&category=&reqId=&fp=`, `/denetim?tid=&reqId=`, `/bildirimler/musteri-gecmisi?tid=`, `/motor?sekme=basarisiz&kaynak=dlq`. |
+| Ortam satırı | `DangerActionDialog` | İlk satır Ortam; üretim kırmızı, staging sarı şerit. Ekran ek bir şey yapmaz. |
+| Süzgeç alanı boyu | `styles/backoffice.css` | `.bo-page` içindeki compact Vuetify alanları 38 px / 14 px (`.bo-seg` ile aynı göz hizası). |
+
+**Sahte API (ek):** `failOps(prefix)` artık tüm operasyonlara uygulanır (oturum uçları hariç) — genel bakış yenileme
+hatası `failOps('BackofficeOverviewService/')` ile denenir.
