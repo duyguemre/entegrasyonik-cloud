@@ -4,6 +4,9 @@ import { Types } from 'mongoose'
 import IntegrationFactory from '@integration/modules/IntegrationFactory';
 import { ApplicationError } from '@platform/core/security/Security'
 import { containsRegex, normalizePagination } from '@utils/search';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('api', 'invoice-service');
 
 /**
  * [MM-08 / ADR-0021 aynı desen] getInvoices sıralama alanı izin listesi. `InvoiceSchema` (Invoice.ts, `timestamps:true`
@@ -385,7 +388,7 @@ export default class InvoiceService extends BaseApi implements IService {
             return await this.createInvoice();
 
         } catch (error) {
-            console.error('[InvoiceService] Error:', error);
+            log.error('INVOICE_OPERATION_FAILED', '[InvoiceService] hata', { err: error });
             throw error;
         }
     }
@@ -428,7 +431,7 @@ export default class InvoiceService extends BaseApi implements IService {
 
             return { success: true, message: 'Platform fatura bildirimini desteklemiyor veya metod tanımlı değil.' };
         } catch (syncError: any) {
-            console.error("[InvoiceService] Platform Sync Error:", syncError);
+            log.error('INVOICE_PLATFORM_SYNC_FAILED', '[InvoiceService] platform senkron hatası', { err: syncError });
             return { success: false, message: syncError.message };
         }
     }

@@ -2,6 +2,9 @@ import { IService, OrderInternalStatusEnum, IPlatformResponse } from '@interface
 import { BaseApi } from '../BaseApi'
 import IntegrationFactory from '@integration/modules/IntegrationFactory';
 import { ApplicationError } from '@platform/core/security/Security';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('api', 'shipment-service');
 
 export const MAX_SHIPMENTS_PAGE_LIMIT = 100;
 
@@ -161,7 +164,7 @@ export default class ShipmentService extends BaseApi implements IService {
             };
 
         } catch (error: any) {
-            console.error('[ShipmentService] createShipment Hatası:', error);
+            log.error('SHIPMENT_CREATE_SHIPMENT_FAILED', '[ShipmentService] createShipment hatası', { err: error });
             throw error;
         }
     }
@@ -276,7 +279,7 @@ export default class ShipmentService extends BaseApi implements IService {
 
             return { success: true, message: 'Platform kargo bildirimini desteklemiyor veya metod tanımlı değil.' };
         } catch (syncError: any) {
-            console.error("[ShipmentService] Platform Sync Error:", syncError);
+            log.error('SHIPMENT_PLATFORM_SYNC_FAILED', '[ShipmentService] platform senkron hatası', { err: syncError });
             return { success: false, message: syncError.message };
         }
     }

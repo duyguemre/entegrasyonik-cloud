@@ -13,6 +13,9 @@ import { containsRegex, clampPage, clampLimit, pickSortField } from '@utils/sear
 import { TICKET_SORT_FIELDS } from '../listSortFields';
 import { getTenantRegistry } from '@database/TenantRegistry';
 import { getIdentityCache } from '@platform/core/security/identityCache';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('api', 'admin-service');
 
 /**
  * AdminService
@@ -66,7 +69,7 @@ export default class AdminService extends BaseApi implements IService {
                 limit: Number(limit)
             };
         } catch (error) {
-            console.error('[AdminService] getClients Hatası:', error);
+            log.error('ADMIN_GET_CLIENTS_FAILED', '[AdminService] getClients hatası', { err: error });
             throw error;
         }
     }
@@ -109,7 +112,7 @@ export default class AdminService extends BaseApi implements IService {
                 }
             };
         } catch (error) {
-            console.error('[AdminService] getClientStats Hatası:', error);
+            log.error('ADMIN_GET_CLIENT_STATS_FAILED', '[AdminService] getClientStats hatası', { err: error });
             throw error;
         }
     }
@@ -134,7 +137,7 @@ export default class AdminService extends BaseApi implements IService {
                 integrations: integrations.map(maskIntegrationItem)
             };
         } catch (error) {
-            console.error('[AdminService] getClientIntegrations Hatası:', error);
+            log.error('ADMIN_GET_CLIENT_INTEGRATIONS_FAILED', '[AdminService] getClientIntegrations hatası', { err: error });
             throw error;
         }
     }
@@ -165,7 +168,7 @@ export default class AdminService extends BaseApi implements IService {
                 imports
             };
         } catch (error) {
-            console.error('[AdminService] getGlobalMetrics Hatası:', error);
+            log.error('ADMIN_GET_GLOBAL_METRICS_FAILED', '[AdminService] getGlobalMetrics hatası', { err: error });
             throw error;
         }
     }
@@ -213,7 +216,7 @@ export default class AdminService extends BaseApi implements IService {
                 limit: Number(limit)
             };
         } catch (error) {
-            console.error('[AdminService] getTickets Hatası:', error);
+            log.error('ADMIN_GET_TICKETS_FAILED', '[AdminService] getTickets hatası', { err: error });
             throw error;
         }
     }
@@ -252,7 +255,7 @@ export default class AdminService extends BaseApi implements IService {
 
             return { success: true, ticket: res };
         } catch (error) {
-            console.error('[AdminService] createTicket Hatası:', error);
+            log.error('ADMIN_CREATE_TICKET_FAILED', '[AdminService] createTicket hatası', { err: error });
             throw error;
         }
     }
@@ -266,7 +269,7 @@ export default class AdminService extends BaseApi implements IService {
 
             return { success: true, message: 'Talep başarıyla silindi.' };
         } catch (error) {
-            console.error('[AdminService] deleteTicket Hatası:', error);
+            log.error('ADMIN_DELETE_TICKET_FAILED', '[AdminService] deleteTicket hatası', { err: error });
             throw error;
         }
     }
@@ -509,7 +512,7 @@ export default class AdminService extends BaseApi implements IService {
                 }
             };
         } catch (error) {
-            console.error('[AdminService] getSystemHealth Hatası:', error);
+            log.error('ADMIN_GET_SYSTEM_HEALTH_FAILED', '[AdminService] getSystemHealth hatası', { err: error });
             throw error;
         }
     }
@@ -542,7 +545,7 @@ export default class AdminService extends BaseApi implements IService {
 
             return { success: true, message: 'Cevap başarıyla iletildi.' };
         } catch (error) {
-            console.error('[AdminService] replyToTicket Hatası:', error);
+            log.error('ADMIN_REPLY_TO_TICKET_FAILED', '[AdminService] replyToTicket hatası', { err: error });
             throw error;
         }
     }
@@ -644,7 +647,7 @@ export default class AdminService extends BaseApi implements IService {
                 }
             };
         } catch (error) {
-            console.error('[AdminService] getExportDetails Hatası:', error);
+            log.error('ADMIN_GET_EXPORT_DETAILS_FAILED', '[AdminService] getExportDetails hatası', { err: error });
             throw error;
         }
     }
@@ -681,7 +684,7 @@ export default class AdminService extends BaseApi implements IService {
 
             return { success: true, client: toClientDto(result.client) };
         } catch (error: any) {
-            console.error('[AdminService] createClient Hatası:', error);
+            log.error('ADMIN_CREATE_CLIENT_FAILED', '[AdminService] createClient hatası', { err: error });
             throw error;
         }
     }
@@ -713,7 +716,7 @@ export default class AdminService extends BaseApi implements IService {
 
             return { success: true, client: toClientDto(res) };
         } catch (error) {
-            console.error('[AdminService] updateClient Hatası:', error);
+            log.error('ADMIN_UPDATE_CLIENT_FAILED', '[AdminService] updateClient hatası', { err: error });
             throw error;
         }
     }
@@ -738,7 +741,7 @@ export default class AdminService extends BaseApi implements IService {
 
             return { success: true, status: result.status, deletionScheduledAt: result.deletionScheduledAt };
         } catch (error) {
-            console.error('[AdminService] deleteClient Hatası:', error);
+            log.error('ADMIN_DELETE_CLIENT_FAILED', '[AdminService] deleteClient hatası', { err: error });
             throw error;
         }
     }

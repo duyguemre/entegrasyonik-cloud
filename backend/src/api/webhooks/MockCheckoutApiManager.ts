@@ -8,6 +8,9 @@ import {
 } from '@services/billing/mockCheckoutToken';
 import { createRateLimiter } from '@platform/rateLimit/rateLimit';
 import { handleBillingWebhook, IBillingWebhookResult } from './BillingWebhookApiManager';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('webhook', 'MockCheckoutApiManager');
 
 // ADR-0008 §1 (MockPaymentProvider "hosted checkout" sayfası + dev tetikleyicisi) + ADR-0014 S4a.
 //
@@ -256,7 +259,7 @@ export function configureMockCheckoutRoutes(app: Express) {
         try {
             send(res, await handleCheckoutPage(req.params.providerRef, req.query.t));
         } catch (e: any) {
-            console.error('[MockCheckoutApiManager] sayfa hatası:', e?.message);
+            log.error('MOCK_CHECKOUT_PAGE_FAILED', '[MockCheckoutApiManager] sayfa hatası', { err: e?.message });
             send(res, errorPage(500, 'Beklenmeyen hata', 'İşlem tamamlanamadı.'));
         }
     });
@@ -267,7 +270,7 @@ export function configureMockCheckoutRoutes(app: Express) {
             const body = (req.body || {}) as Record<string, unknown>;
             send(res, await handleCheckoutSubmit(req.params.providerRef, body.t, body.scenario));
         } catch (e: any) {
-            console.error('[MockCheckoutApiManager] gönderim hatası:', e?.message);
+            log.error('MOCK_CHECKOUT_SUBMIT_FAILED', '[MockCheckoutApiManager] gönderim hatası', { err: e?.message });
             send(res, errorPage(500, 'Beklenmeyen hata', 'İşlem tamamlanamadı.'));
         }
     });
@@ -277,7 +280,7 @@ export function configureMockCheckoutRoutes(app: Express) {
             const raw: Buffer = Buffer.isBuffer(req.body) ? req.body : Buffer.from([]);
             send(res, await handleDevSimulate(raw, req.headers['x-mock-dev-signature']));
         } catch (e: any) {
-            console.error('[MockCheckoutApiManager] dev tetikleyici hatası:', e?.message);
+            log.error('MOCK_CHECKOUT_DEV_TRIGGER_FAILED', '[MockCheckoutApiManager] dev tetikleyici hatası', { err: e?.message });
             send(res, { status: 500, contentType: 'application/json; charset=utf-8', body: '{"error":"internal"}' });
         }
     });

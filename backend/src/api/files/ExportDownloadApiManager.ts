@@ -6,6 +6,9 @@ import { canFor } from '@platform/core/authz/can';
 import { createRateLimiter } from '@platform/rateLimit/rateLimit';
 import { getClientIp } from '@platform/rateLimit/clientIp';
 import { sendHttpError } from '../http/errorEnvelope';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('api', 'ExportDownloadApiManager');
 
 // KVKK dışa aktarma indirme rotası (docs/API_TENANT_SURFACE.md §5; ADR-0003 adım 8 / F.22).
 // `TenantDataService.exportTenantData` bir `downloadToken` üretir; bu rota onu tüketir. Jenerik RPC'ye (JSON yanıt) sığmaz
@@ -58,14 +61,14 @@ export function configureExportDownloadRoutes(app: Express, context: string, dep
             res.on('finish', () => { finished = true; void outcome.complete(); });
             res.on('close', () => { if (!finished) { outcome.abort(); if (typeof outcome.body?.destroy === 'function') outcome.body.destroy(); } });
             outcome.body.on('error', (e: any) => {
-                console.error('[ExportDownload] akış hatası:', e?.name || e?.message);
+                log.error('EXPORT_DOWNLOAD_STREAM_FAILED', '[ExportDownload] akış hatası', { err: e?.name || e?.message });
                 outcome.abort();
                 if (!res.headersSent) sendHttpError(res, 500, 'Arşiv şu anda indirilemiyor.', 'INTERNAL');
                 else res.destroy();
             });
             outcome.body.pipe(res);
         } catch (e: any) {
-            console.error('[ExportDownload] beklenmeyen hata:', e?.name || e?.message);
+            log.error('EXPORT_DOWNLOAD_UNEXPECTED', '[ExportDownload] beklenmeyen hata', { err: e?.name || e?.message });
             if (!res.headersSent) sendHttpError(res, 500, 'Arşiv şu anda indirilemiyor.', 'INTERNAL');
         }
     });

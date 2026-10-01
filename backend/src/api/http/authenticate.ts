@@ -10,6 +10,9 @@ import { buildActor, type Actor } from '../rpc/requestContext';
 import {
     MEMBERSHIP_CACHE_FIELD, decide, loadMembership, measureDual, membershipSource, overlayRole, type AuthzDecision,
 } from './membershipAuthz';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('auth', 'authenticate');
 
 // ADR-0001 (Karar 1, 4, 5): tüm /api rotaları varsayılan olarak reddeden TEK kimlik middleware'i.
 // Açık (kimliksiz) rotalar yalnızca aşağıdaki sabit listedir; geri kalan her şey token yok/geçersizse 401.
@@ -190,7 +193,7 @@ function respondAuthError(res: Response, e: any) {
         return;
     }
     // Fail-closed: kimlik doğrulanamadıysa istek servise gitmez. Hata ayrıntısı istemciye verilmez.
-    console.error('[authenticate] beklenmeyen hata:', e?.message);
+    log.error('AUTHENTICATE_UNEXPECTED', '[authenticate] beklenmeyen hata', { err: e?.message });
     sendHttpError(res, 500, 'Authentication unavailable', 'INTERNAL');
 }
 

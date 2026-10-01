@@ -24,6 +24,9 @@ import {
     AUTO_CANCEL_SUPPORTED_CHANNELS, STOCK_POLICY_DEFAULTS, STOCK_POLICY_LIMITS, StockPolicyValidationError,
     pickChannelStockPolicy, pickLowStockThreshold, validateChannelStockPolicyPatch, validateIntegrationCode, validateLowStockThreshold,
 } from '@operations/stock/stockPolicyValidation'
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('api', 'integration-service');
 
 
 /** [K8] OAuth yetkilendirme adresi kuran FE bileşenlerinin (IdeasoftComponent.vue/BizimhesapComponent.vue) okuduğu tek `urls` alt kümesi. */
@@ -585,7 +588,7 @@ export default class IntegrationService extends BaseApi implements IService {
                 ]);
             }
         } catch (cleanupErr: any) {
-            console.error(`[API] Cleanup Error for Client ${clientId}:`, cleanupErr.message);
+            log.error('INTEGRATION_CLEANUP_FAILED', '[IntegrationService] temizlik hatası', { tenantId: clientId, err: cleanupErr.message });
             // Cleanup hatası kritik değilse devam edilebilir ama loglamak şart.
         }
 
@@ -673,7 +676,7 @@ export default class IntegrationService extends BaseApi implements IService {
             };
 
         } catch (err: any) {
-            console.error(`[getExportJobDetail] Error:`, err.message);
+            log.error('EXPORT_JOB_DETAIL_FAILED', '[IntegrationService] getExportJobDetail hatası', { err: err.message });
             return { success: false, message: "Sunucu hatası: " + err.message };
         }
     }
@@ -857,7 +860,7 @@ export default class IntegrationService extends BaseApi implements IService {
             };
 
         } catch (err: any) {
-            console.error(`[advancedSearchExportJobs] Error:`, err.message);
+            log.error('EXPORT_JOBS_SEARCH_FAILED', '[IntegrationService] advancedSearchExportJobs hatası', { err: err.message });
             return { success: false, message: err.message };
         }
     }
@@ -974,7 +977,7 @@ export default class IntegrationService extends BaseApi implements IService {
             };
 
         } catch (err: any) {
-            console.error(`[getExportJobs] Error:`, err.message);
+            log.error('EXPORT_JOBS_LIST_FAILED', '[IntegrationService] getExportJobs hatası', { err: err.message });
             return { success: false, message: err.message };
         }
     }
@@ -1062,7 +1065,7 @@ export default class IntegrationService extends BaseApi implements IService {
             }
 
         } catch (error: any) {
-            console.error("getJobByJobId Error:", error);
+            log.error('IMPORT_JOB_GET_FAILED', '[IntegrationService] getJobByJobId hatası', { err: error });
             return {
                 success: false,
                 message: "İşlem detayları getirilirken teknik bir hata oluştu.",
@@ -1114,7 +1117,7 @@ export default class IntegrationService extends BaseApi implements IService {
             }
 
         } catch (error) {
-            console.error("archiveImportJobs Error:", error);
+            log.error('IMPORT_JOBS_ARCHIVE_FAILED', '[IntegrationService] archiveImportJobs hatası', { err: error });
             return { success: false, message: "Arşivleme işlemi sırasında hata oluştu." }
         }
     }
@@ -1146,7 +1149,7 @@ export default class IntegrationService extends BaseApi implements IService {
 
             // AĞIR İŞİ ARKA PLANA AT (Await etmiyoruz)
             this.internalProcessBatch(this.request).catch(err => {
-                console.error("BatchCreator Background Error:", err);
+                log.error('BATCH_CREATOR_BACKGROUND_FAILED', '[BatchCreator] arka plan hatası', { err });
             });
 
             // Kullanıcıyı bekletmeden yanıt dön
@@ -1156,7 +1159,7 @@ export default class IntegrationService extends BaseApi implements IService {
             };
 
         } catch (error: any) {
-            console.error("Batch Creator Entry Error:", error);
+            log.error('BATCH_CREATOR_ENTRY_FAILED', '[BatchCreator] giriş hatası', { err: error });
             return { result: false, message: 'Sistemsel bir hata oluştu.' };
         }
     }
@@ -1208,9 +1211,9 @@ export default class IntegrationService extends BaseApi implements IService {
                 .map((code: string) => `platforms.${code}.upload`)
                 .join(' ');
 
-            console.log(`[BatchCreator] Starting search with query:`, JSON.stringify(query));
-            console.log(`[BatchCreator] Selected integrations:`, selectedIntegrations);
-            console.log(`[BatchCreator] MatchKeyMap:`, matchKeyMap);
+            log.debug('BATCH_CREATOR_SEARCH_START', '[BatchCreator] arama başlıyor', { queryKeys: Object.keys(query ?? {}) });
+            log.debug('BATCH_CREATOR_INTEGRATIONS', '[BatchCreator] seçili entegrasyonlar', { integrations: selectedIntegrations });
+            log.debug('BATCH_CREATOR_MATCH_KEYS', '[BatchCreator] eşleme anahtarları', { matchKeyMap });
 
             // 2. String'i objeye çeviriyoruz
             const projection: any = {
@@ -1265,7 +1268,7 @@ export default class IntegrationService extends BaseApi implements IService {
                     const matchValue = v[matchKey];
 
                     if (!matchValue) {
-                        console.error(`[integration-service] MatchValue missing for variant ${v._id} on ${integrationCode}. MatchKey: ${matchKey}`);
+                        log.error('BATCH_CREATOR_MATCH_VALUE_MISSING', '[BatchCreator] varyant eşleme değeri eksik', { variantId: String(v._id), integrationCode, matchKey });
                         continue;
                     }
 
@@ -1323,9 +1326,9 @@ export default class IntegrationService extends BaseApi implements IService {
                 }
             }
 
-            console.log(`[BatchCreator] Process finished. Total variants found: ${totalVariantsProcessed}`);
+            log.info('BATCH_CREATOR_FINISHED', '[BatchCreator] işlem bitti', { totalVariants: totalVariantsProcessed });
             for (const integrationCode of selectedIntegrations) {
-                console.log(`[BatchCreator] Result for ${integrationCode}: Accepted: ${acceptedCountMap[integrationCode]}, Skipped (Already Completed): ${skippedForAlreadyTransferCountMap[integrationCode]}, Skipped (No Transfer): ${skippedForNoTransferCountMap[integrationCode]}`);
+                log.info('BATCH_CREATOR_RESULT', '[BatchCreator] entegrasyon sonucu', { integrationCode, accepted: acceptedCountMap[integrationCode], skippedCompleted: skippedForAlreadyTransferCountMap[integrationCode], skippedNoTransfer: skippedForNoTransferCountMap[integrationCode] });
                 
                 // Kalan son kayıtları işle
                 await this.flushIntegration(integrationCode, stagedOpsMap, variantOpsMap, acceptedCountMap);
@@ -1370,7 +1373,7 @@ export default class IntegrationService extends BaseApi implements IService {
 
             }
         } catch (error: any) {
-            console.error("internalProcessBatch Critical Error:", error);
+            log.error('BATCH_CREATOR_FAILED', '[BatchCreator] internalProcessBatch kritik hata', { err: error });
 
             // [ADR-0029 NB3, N-05] Kullaniciya ham error.message GITMEZ: guvenli hata kodu + corrId. Bayrak kapaliyken eski olay
             // (ham mesaj dahil) birebir korunur; bayrak acilinca bu yol devreye girmez.

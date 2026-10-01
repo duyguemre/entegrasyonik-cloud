@@ -2,6 +2,9 @@ import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import { ObjectId } from 'mongodb'
 import { containsRegex, normalizePagination, pickSortField } from '@utils/search'
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('api', 'customer-service');
 
 /** [DB-02] Sıralama alanı izin listesi; bilinmeyen alan => varsayılan `createdAt`. */
 export const CUSTOMER_SORT_FIELDS: readonly string[] = [
@@ -102,7 +105,7 @@ export default class CustomerService extends BaseApi implements IService {
             };
 
         } catch (error) {
-            console.error('[CustomerService] getCustomers Hatası:', error);
+            log.error('CUSTOMER_GET_CUSTOMERS_FAILED', '[CustomerService] getCustomers hatası', { err: error });
             throw error;
         }
     }
@@ -149,7 +152,7 @@ export default class CustomerService extends BaseApi implements IService {
 
             return customer;
         } catch (error) {
-            console.error('[CustomerService] getCustomerDetail Hatası:', error);
+            log.error('CUSTOMER_GET_CUSTOMER_DETAIL_FAILED', '[CustomerService] getCustomerDetail hatası', { err: error });
             throw error;
         }
     }
@@ -164,7 +167,7 @@ export default class CustomerService extends BaseApi implements IService {
             await this.clientDB.getCustomerModel().findByIdAndUpdate(customerId, updateData);
             return { success: true };
         } catch (error) {
-            console.error('[CustomerService] updateCustomer Hatası:', error);
+            log.error('CUSTOMER_UPDATE_CUSTOMER_FAILED', '[CustomerService] updateCustomer hatası', { err: error });
             throw error;
         }
     }
@@ -224,7 +227,7 @@ export default class CustomerService extends BaseApi implements IService {
 
             return { success: true, customerId: String(oid) };
         } catch (error) {
-            console.error('[CustomerService] anonymizeCustomer Hatası:', error);
+            log.error('CUSTOMER_ANONYMIZE_CUSTOMER_FAILED', '[CustomerService] anonymizeCustomer hatası', { err: error });
             throw error;
         }
     }

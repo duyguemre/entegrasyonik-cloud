@@ -7,6 +7,9 @@ import {
     imageVariantUrl, MAX_PIXELS, productImageKey, publicImageUrl, readImageUploadSettings, sha256Hex, sniffImageType, THUMB_WIDTH,
 } from '@services/storage/imagePolicy'
 import { ApplicationError } from '@platform/core/security/Security'
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('api', 'image-service');
 
 /**
  * ADR-0027 §C: doğrudan yüklemeyle eklenen görsel alt belgesi (`products.images[]`, `strict:false` şema).
@@ -296,7 +299,7 @@ export default class ImageService extends BaseApi implements IService {
                     { new: true, upsert: true } // Güncellenen belgeyi geri döner
                 ).lean()
             } catch (e) {
-                console.error(" images update error:", e);
+                log.error('IMAGE_UPDATE_FAILED', '[ImageService] görsel güncelleme hatası', { err: e });
             }
             if (resp) {
                 const uploadPromises = imageUploads.map(async (imageUpload: any) => {
@@ -310,7 +313,7 @@ export default class ImageService extends BaseApi implements IService {
                         }
                         return true
                     } catch (error: any) {
-                        console.log(error)
+                        log.error('IMAGE_DELETE_FAILED', '[ImageService] görsel silme hatası', { err: error })
                         return
                     }
                 });

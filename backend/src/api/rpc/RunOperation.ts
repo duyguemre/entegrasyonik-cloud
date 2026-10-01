@@ -18,6 +18,9 @@ import { withIdempotency } from './idempotencyGuard';
 import { enforceIntakeForRpc } from './intakeRpcGuard';
 import { enforceLiveReadonlyForRpc } from './liveReadonlyRpcGuard';
 import { planAppWriteAudit, captureBefore, buildAppWriteEntry } from './appWriteAudit';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('api', 'RunOperation');
 var services = new Map<string, MicroserviceWrapper>()
 
 /**
@@ -34,7 +37,7 @@ function observeCapabilityResolution(service: string, operation: string): void {
         const rpc = service + '/' + operation;
         if (!CAPABILITY_BY_RPC.has(rpc) && !warnedRpcDrift.has(rpc)) {
             warnedRpcDrift.add(rpc);
-            console.warn(`[ADR-0019 capability-drift] Yetkili RPC bir yetenek kaydına ÇÖZÜLEMEDİ (yalnız gözlem, engellenmedi): ${rpc}`);
+            log.warn('CAPABILITY_DRIFT', '[ADR-0019 capability-drift] Yetkili RPC bir yetenek kaydına ÇÖZÜLEMEDİ (yalnız gözlem, engellenmedi)', { rpc });
         }
     } catch { /* gözlem asla çağrıyı etkilemez */ }
 }

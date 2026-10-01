@@ -8,6 +8,9 @@ import { storageService } from '@services/storage/StorageService';
 import { createTenantLifecycleService } from '../tenantLifecycleFactory';
 import { EXPORT_COLLECTIONS, sanitizeExportDoc } from '@operations/tenant/exportCollections';
 import { signExportDownloadToken } from '@operations/tenant/exportDownloadToken';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('api', 'tenant-data-service');
 
 /** ADR-0003 Karar F.22: dışa aktarma indirme token'ı 24 saat geçerli. */
 const EXPORT_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
@@ -91,7 +94,7 @@ export default class TenantDataService extends BaseApi implements IService {
             return { success: true, jobId, key, downloadToken, expiresAt: new Date(expiresAt) };
         } catch (e: any) {
             void AuditLogger.log({ event: 'tenant.export.completed', result: 'error', tid: order, sub });
-            console.error('[TenantDataService] exportTenantData hata:', e?.message);
+            log.error('TENANT_EXPORT_FAILED', '[TenantDataService] exportTenantData hata', { err: e?.message });
             throw e;
         }
     }
@@ -110,7 +113,7 @@ export default class TenantDataService extends BaseApi implements IService {
             try {
                 docs = await spec.getModel(this.clientDB).find({}).lean();
             } catch (e: any) {
-                console.error(`[TenantDataService] exportTenantData: '${spec.file}' okunamadı (atlandı):`, e?.message);
+                log.error('TENANT_EXPORT_FILE_SKIPPED', '[TenantDataService] exportTenantData: dosya okunamadı (atlandı)', { file: spec.file, err: e?.message });
                 docs = [];
             }
             const lines = (docs || []).map((d: any) => JSON.stringify(sanitizeExportDoc(d, spec.mask))).join('\n');

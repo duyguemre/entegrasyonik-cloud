@@ -7,6 +7,9 @@ import IntegrationFactory from '../../../integration/modules/IntegrationFactory'
 import { ApplicationError } from '@platform/core/security/Security'
 import { listIntegrationDescriptorsByCategory } from '@integration/catalog/IntegrationDescriptorRegistry'
 import { deleteStaleAttributeMappings } from '@operations/catalog/mapping/mappingCleanup'
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('api', 'attributeMapping-service');
 
 /** autoMatch varsayılan platformu (parametre verilmezse; eski sabit davranış). */
 const AUTO_MATCH_DEFAULT_CODE = 'trendyol'
@@ -541,7 +544,7 @@ export default class AttributeMappingService extends BaseApi implements IService
             return { result: resp.modifiedCount > 0 || resp.upsertedCount > 0 };
 
         } catch (error) {
-            console.error("saveAttributeValueMapping Error:", error);
+            log.error('ATTRIBUTE_VALUE_MAPPING_SAVE_FAILED', '[AttributeMappingService] saveAttributeValueMapping hatası', { err: error });
             throw error;
         }
     }

@@ -4,6 +4,9 @@ import IntegrationFactory from '@integration/modules/IntegrationFactory';
 import { ApplicationError } from '@platform/core/security/Security'
 import { ClaimInternalStatusEnum } from '@interfaces/claim';
 import { containsRegex, normalizePagination } from '@utils/search';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('api', 'claim-service');
 
 /**
  * [MM-08 / ADR-0021 aynı desen] getClaims sıralama alanı izin listesi. `ClaimSchema` (Claim.ts) alanlarından,
@@ -114,7 +117,7 @@ export default class ClaimService extends BaseApi implements IService {
             };
 
         } catch (error) {
-            console.error('[ClaimService] getClaims Hatası:', error);
+            log.error('CLAIM_GET_CLAIMS_FAILED', '[ClaimService] getClaims hatası', { err: error });
             throw error;
         }
     }

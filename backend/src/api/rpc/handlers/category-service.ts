@@ -3,6 +3,9 @@ import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import { ObjectId } from 'mongodb'
 import { deleteMappingsOfCategory } from '@operations/catalog/mapping/mappingCleanup'
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('api', 'category-service');
 export default class CategoryService extends BaseApi implements IService {
     async get(parentId = 0): Promise<any> {
         try {
@@ -102,7 +105,7 @@ export default class CategoryService extends BaseApi implements IService {
                     fromCategory = categories[1]
                     toCategory = categories[0]
                 }
-                console.log(fromCategory, toCategory)
+                log.debug('CATEGORY_REORDER', '[CategoryService] sıra değişimi', { fromId: String(fromCategory?._id ?? ''), toId: String(toCategory?._id ?? '') })
                 let tempOrder = -1
                 tempOrder = fromCategory.order
                 fromCategory.order = toCategory.order

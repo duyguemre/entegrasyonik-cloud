@@ -5,6 +5,9 @@ import { ApplicationError } from '@platform/core/security/Security'
 import { ORDER_ITEM_ALLOCATION_STATES } from '@operations/stock/allocationStates'
 import { containsRegex, normalizePagination } from '@utils/search'
 import { PLATFORM_TIME_ZONE, startOfDayInZone, endOfDayInZone, addDaysInZone, dayKeyInZone } from '@utils/timeZone'
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('api', 'order-service');
 
 /**
  * [ADR-0021 D1 / GV-02] getOrders sıralama alanı izin listesi. Sipariş tarihi şemada `dates.orderDate`'tir
@@ -132,7 +135,7 @@ export default class OrderService extends BaseApi implements IService {
             };
 
         } catch (error) {
-            console.error('[OrderService] getOrders Hatası:', error);
+            log.error('ORDER_GET_ORDERS_FAILED', '[OrderService] getOrders hatası', { err: error });
             throw error;
         }
     }

@@ -7,6 +7,7 @@ import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals
 import { ObjectId } from 'mongodb';
 
 import CustomerService from '../../../src/api/rpc/handlers/customer-service';
+import { captureLogs } from '../../helpers/logCapture';
 
 const CUSTOMER_ID = new ObjectId().toString();
 
@@ -103,11 +104,14 @@ describe('CustomerService.anonymizeCustomer', () => {
     expect(clientDb.messageModel.updateMany).toHaveBeenCalledWith({ customerId: expect.anything() }, { $set: { externalUserName: '[anonymized]' } });
   });
 
-  it('hata console.error ile loglanır ve yeniden fırlatılır', async () => {
+  it('hata yapılandırılmış log (F-06 eventLog) ile loglanır ve yeniden fırlatılır', async () => {
     const clientDb = makeClientDb({ _id: CUSTOMER_ID });
     clientDb.customerModel.updateOne.mockRejectedValueOnce(new Error('db down'));
     const svc = await make(clientDb, { customerId: CUSTOMER_ID });
-    await expect(svc.anonymizeCustomer()).rejects.toThrow('db down');
-    expect(console.error).toHaveBeenCalled();
+    const cap = captureLogs();
+    try {
+      await expect(svc.anonymizeCustomer()).rejects.toThrow('db down');
+      expect(cap.lines).toContainEqual(expect.objectContaining({ level: 'error', code: 'CUSTOMER_ANONYMIZE_CUSTOMER_FAILED' }));
+    } finally { cap.restore(); }
   });
 });
