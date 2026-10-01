@@ -4,7 +4,7 @@
  * ADR-0015 B4-P1c — N7 "Entegrasyon sağlığı" (tenant, YALNIZCA OKUMA) istemcisi + saf yardımcılar.
  * Sözleşme: `docs/API_TENANT_SURFACE.md` §3 — `IntegrationService/getIntegrationHealth` (admin, owner dahil).
  * Backend karşılığı (salt-okunur, grep ile doğrulandı): `backend/src/api/services/integration-service.ts`
- * `getIntegrationHealth` → `backend/src/operations/integration/IntegrationHealthOperations.ts`
+ * `getIntegrationHealth` → `backend/src/operations/integrations/health.ts`
  * (`IntegrationHealthDto` alanları birebir aşağıdaki tiplerdir; uydurma alan YOK).
  *
  * Yorum kuralları (§3):
